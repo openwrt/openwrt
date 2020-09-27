@@ -1,0 +1,26 @@
+From 69e4fbfbfd9c42af508954d9fb985c5c7b657784 Mon Sep 17 00:00:00 2001
+From: Karel Zak <kzak@redhat.com>
+Date: Tue, 11 Aug 2020 11:02:31 +0200
+Subject: [PATCH] hwclock: add fallback if SYS_settimeofday does not exist
+
+It seems Musl-C removes SYS_settimeofday macro at all.
+
+Addresses: https://github.com/karelzak/util-linux/commit/9c6139a72017cecb9145e46102152cb4f456ada6#commitcomment-41290951
+Signed-off-by: Karel Zak <kzak@redhat.com>
+---
+ sys-utils/hwclock.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/sys-utils/hwclock.c
++++ b/sys-utils/hwclock.c
+@@ -675,6 +675,10 @@ display_time(struct timeval hwctime)
+  */
+ #define __set_time(_tv)		settimeofday(_tv, NULL)
+ 
++#if !defined(SYS_settimeofday) && defined(__NR_settimeofday)
++# define SYS_settimeofday	__NR_settimeofday
++#endif
++
+ static inline int __set_timezone(const struct timezone *tz)
+ {
+ #ifdef SYS_settimeofday

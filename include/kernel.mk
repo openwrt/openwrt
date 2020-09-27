@@ -114,6 +114,7 @@ KERNEL_MAKE_FLAGS = \
 	KBUILD_BUILD_TIMESTAMP="$(KBUILD_BUILD_TIMESTAMP)" \
 	KBUILD_BUILD_VERSION="0" \
 	HOST_LOADLIBES="-L$(STAGING_DIR_HOST)/lib" \
+	KBUILD_HOSTLDLIBS="-L$(STAGING_DIR_HOST)/lib" \
 	CONFIG_SHELL="$(BASH)" \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
 	$(if $(PKG_BUILD_ID),LDFLAGS_MODULE=--build-id=0x$(PKG_BUILD_ID)) \
@@ -137,11 +138,13 @@ endif
 
 PKG_EXTMOD_SUBDIRS ?= .
 
+PKG_SYMVERS_DIR = $(KERNEL_BUILD_DIR)/symvers
+
 define populate_module_symvers
-	@mkdir -p $(PKG_INFO_DIR)
-	cat /dev/null > $(PKG_INFO_DIR)/$(PKG_NAME).symvers; \
+	@mkdir -p $(PKG_SYMVERS_DIR)
+	cat /dev/null > $(PKG_SYMVERS_DIR)/$(PKG_NAME).symvers; \
 	for subdir in $(PKG_EXTMOD_SUBDIRS); do \
-		cat $(PKG_INFO_DIR)/*.symvers 2>/dev/null > $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers; \
+		cat $(PKG_SYMVERS_DIR)/*.symvers 2>/dev/null > $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers; \
 	done
 endef
 
@@ -153,7 +156,7 @@ define collect_module_symvers
 			grep -F $$$$realdir $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
 	done; \
 	sort -u $(PKG_BUILD_DIR)/Module.symvers.tmp > $(PKG_BUILD_DIR)/Module.symvers; \
-	mv $(PKG_BUILD_DIR)/Module.symvers $(PKG_INFO_DIR)/$(PKG_NAME).symvers
+	mv $(PKG_BUILD_DIR)/Module.symvers $(PKG_SYMVERS_DIR)/$(PKG_NAME).symvers
 endef
 
 define KernelPackage/hooks

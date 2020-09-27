@@ -43,7 +43,7 @@ append_params() {
 		IFS="$LIST_SEP"
 		for v in $v; do
 			[ -n "$v" ] && [ "$p" != "push" ] && append_param "$s" "$p" && echo " $v" >> "/var/etc/openvpn-$s.conf"
-			[ -n "$v" ] && [ "$p" == "push" ] && append_param "$s" "$p" && echo " \"$v\"" >> "/var/etc/openvpn-$s.conf"
+			[ -n "$v" ] && [ "$p" = "push" ] && append_param "$s" "$p" && echo " \"$v\"" >> "/var/etc/openvpn-$s.conf"
 		done
 		unset IFS
 	done
@@ -69,17 +69,56 @@ section_enabled() {
 	[ $enable -gt 0 ] || [ $enabled -gt 0 ]
 }
 
+openvpn_get_dev() {
+	local dev dev_type
+	local name="$1"
+	local conf="$2"
+
+	# Do override only for configurations with config_file
+	config_get config_file "$name" config
+	[ -n "$config_file" ] || return
+
+	# Check there is someething to override
+	config_get dev "$name" dev
+	config_get dev_type "$name" dev_type
+	[ -n "$dev" ] || return
+
+	# If there is a no dev_type, try to guess it
+	if [ -z "$dev_type" ]; then
+		. /lib/functions/openvpn.sh
+
+		local odev odev_type
+		get_openvpn_option "$conf" odev dev
+		get_openvpn_option "$conf" odev_type dev-type
+		[ -n "$odev_type" ] || odev_type="$odev"
+
+		case "$odev_type" in
+			tun*) dev_type="tun" ;;
+			tap*) dev_type="tap" ;;
+			*) return;;
+		esac
+	fi
+
+	# Return overrides
+	echo "--dev-type $dev_type --dev $dev"
+}
+
 openvpn_add_instance() {
 	local name="$1"
 	local dir="$2"
 	local conf="$3"
+	local security="$4"
 
 	procd_open_instance "$name"
 	procd_set_param command "$PROG"	\
 		--syslog "openvpn($name)" \
 		--status "/var/run/openvpn.$name.status" \
 		--cd "$dir" \
-		--config "$conf"
+		--config "$conf" \
+		--up "/usr/libexec/openvpn-hotplug up $name" \
+		--down "/usr/libexec/openvpn-hotplug down $name" \
+		--script-security "${security:-2}" \
+		$(openvpn_get_dev "$name" "$conf")
 	procd_set_param file "$dir/$conf"
 	procd_set_param term_timeout 15
 	procd_set_param respawn
@@ -100,11 +139,14 @@ start_instance() {
 		return 1
 	}
 
+	local script_security
+	config_get script_security "$s" script_security
+
 	[ ! -d "/var/run" ] && mkdir -p "/var/run"
 
 	if [ ! -z "$config" ]; then
 		append UCI_STARTED "$config" "$LIST_SEP"
-		openvpn_add_instance "$s" "${config%/*}" "$config"
+		openvpn_add_instance "$s" "${config%/*}" "$config" "$script_security"
 		return
 	fi
 
@@ -115,7 +157,7 @@ start_instance() {
 	append_params "$s" $OPENVPN_PARAMS
 	append_list "$s" $OPENVPN_LIST
 
-	openvpn_add_instance "$s" "/var/etc" "openvpn-$s.conf"
+	openvpn_add_instance "$s" "/var/etc" "openvpn-$s.conf" "$script_security"
 }
 
 start_service() {

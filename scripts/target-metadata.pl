@@ -20,6 +20,7 @@ sub target_config_features(@) {
 		/^usb$/ and $ret .= "\tselect USB_SUPPORT\n";
 		/^usbgadget$/ and $ret .= "\tselect USB_GADGET_SUPPORT\n";
 		/^pcmcia$/ and $ret .= "\tselect PCMCIA_SUPPORT\n";
+		/^pwm$/ and $ret .= "\select PWM_SUPPORT\n";
 		/^rtc$/ and $ret .= "\tselect RTC_SUPPORT\n";
 		/^squashfs$/ and $ret .= "\tselect USES_SQUASHFS\n";
 		/^jffs2$/ and $ret .= "\tselect USES_JFFS2\n";
@@ -239,6 +240,7 @@ config TARGET_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
 	depends on TARGET_$target->{conf}
 EOF
+			$profile->{broken} and print "\tdepends on BROKEN\n";
 			my @pkglist = merge_package_lists($target->{packages}, $profile->{packages});
 			foreach my $pkg (@pkglist) {
 				print "\tselect DEFAULT_$pkg\n";
@@ -298,6 +300,7 @@ menuconfig TARGET_DEVICE_$target->{conf}_$profile->{id}
 	depends on TARGET_$target->{conf}
 	default $profile->{default}
 EOF
+			$profile->{broken} and print "\tdepends on BROKEN\n";
 			my @pkglist = merge_package_lists($target->{packages}, $profile->{packages});
 			foreach my $pkg (@pkglist) {
 				print "\tselect DEFAULT_$pkg if !TARGET_PER_DEVICE_ROOTFS\n";

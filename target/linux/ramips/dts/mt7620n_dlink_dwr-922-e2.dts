@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7620n.dtsi"
 
@@ -145,7 +144,7 @@
 
 &state_default {
 	default {
-		ralink,group = "spi refclk", "i2c", "ephy", "wled";
-		ralink,function = "gpio";
+		groups = "spi refclk", "i2c", "ephy", "wled";
+		function = "gpio";
 	};
 };

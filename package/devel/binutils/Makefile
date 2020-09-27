@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
-PKG_VERSION:=2.27
+PKG_VERSION:=2.34
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=@GNU/binutils
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_VERSION:=$(PKG_VERSION)
-PKG_HASH:=369737ce51587f92466041a97ab7d2358c6d9e1b6490b3940eb09fb0a9a6ac88
+PKG_HASH:=f00b0e8803dc9bab1e2165bd568528135be734df3fabf8d0161828cd56028952
 
 PKG_FIXUP:=autoreconf
 PKG_LIBTOOL_PATHS:=. gas bfd opcodes gprof binutils ld libiberty gold intl
@@ -37,10 +37,17 @@ define Package/libbfd
   DEPENDS:=+zlib $(ICONV_DEPENDS) $(INTL_DEPENDS)
 endef
 
+define Package/libctf
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=libctf
+  DEPENDS:=+libbfd
+endef
+
 define Package/libopcodes
   SECTION:=libs
   CATEGORY:=Libraries
-  TITLE:=libbfd
+  TITLE:=libopcodes
   DEPENDS:=+libbfd
 endef
 
@@ -49,13 +56,14 @@ define Package/binutils
   CATEGORY:=Development
   TITLE:=binutils
   DEPENDS:=+objdump +ar
+  ALTERNATIVES:=200:/usr/bin/strings:/usr/bin/binutils-strings
 endef
 
 define Package/objdump
   SECTION:=devel
   CATEGORY:=Development
   TITLE:=objdump
-  DEPENDS:=+libopcodes
+  DEPENDS:=+libopcodes +libctf
 endef
 
 define Package/ar
@@ -76,7 +84,8 @@ CONFIGURE_ARGS += \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--enable-shared \
 	--enable-install-libiberty \
-	--enable-install-libbfd
+	--enable-install-libbfd \
+	--enable-install-libctf
 
 define Build/Install
 	$(call Build/Install/Default)
@@ -93,7 +102,12 @@ endef
 
 define Package/libbfd/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbfd*.so $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbfd*.so* $(1)/usr/lib/
+endef
+
+define Package/libctf/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libctf*.so* $(1)/usr/lib/
 endef
 
 define Package/libopcodes/install
@@ -114,12 +128,13 @@ endef
 define Package/binutils/install
 	$(INSTALL_DIR) $(1)/usr $(1)/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ $(1)/usr/
-	mv $(1)/usr/bin/strings $(1)/bin/strings
+	mv $(1)/usr/bin/strings $(1)/usr/bin/binutils-strings
 	rm -f $(1)/usr/bin/objdump
 	rm -f $(1)/usr/bin/ar
 endef
 
 $(eval $(call BuildPackage,libbfd))
+$(eval $(call BuildPackage,libctf))
 $(eval $(call BuildPackage,libopcodes))
 $(eval $(call BuildPackage,binutils))
 $(eval $(call BuildPackage,objdump))

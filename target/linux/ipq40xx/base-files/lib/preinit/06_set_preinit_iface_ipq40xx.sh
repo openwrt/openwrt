@@ -1,5 +1,3 @@
-#!/bin/sh
-
 set_preinit_iface() {
 	. /lib/functions.sh
 
@@ -7,13 +5,13 @@ set_preinit_iface() {
 	aruba,ap-303| \
 	asus,rt-ac58u| \
 	avm,fritzbox-4040| \
+	ezviz,cs-w3-wd1200g-eup| \
 	glinet,gl-b1300| \
 	linksys,ea8300| \
+	linksys,mr8300| \
 	meraki,mr33| \
 	zyxel,nbg6617)
 		ifname=eth0
-		;;
-	*)
 		;;
 	esac
 }

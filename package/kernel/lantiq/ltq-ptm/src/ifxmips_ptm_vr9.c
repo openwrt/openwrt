@@ -84,7 +84,6 @@ static inline void uninit_pmu(void)
 
 static inline void reset_ppe(struct platform_device *pdev)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
 	struct device *dev = &pdev->dev;
 	struct reset_control *dsp;
 	struct reset_control *dfe;
@@ -121,7 +120,6 @@ static inline void reset_ppe(struct platform_device *pdev)
 	udelay(1000);
 	*PP32_SRST |= 0x000303CF;
 	udelay(1000);
-#endif
 }
 
 static inline void init_pdma(void)

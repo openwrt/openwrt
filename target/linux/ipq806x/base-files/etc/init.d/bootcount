@@ -4,6 +4,10 @@ START=99
 
 boot() {
 	case $(board_name) in
+	edgecore,ecw5410)
+		fw_setenv bootcount 0
+		;;
+	linksys,ea7500-v1 |\
 	linksys,ea8500)
 		mtd resetbc s_env || true
 		;;

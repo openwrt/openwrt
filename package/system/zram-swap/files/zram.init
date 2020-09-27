@@ -35,18 +35,18 @@ zram_applicable()
 		return 1
 	}
 
-	which mkswap >/dev/null || {
-		logger -s -t zram_applicable -p daemon.err "[ERROR] 'mkswap' not installed"
+	[ -x /sbin/mkswap ] || {
+		logger -s -t zram_applicable -p daemon.err "[ERROR] 'BusyBox mkswap' not installed"
 		return 1
 	}
 
-	which swapon >/dev/null || {
-		logger -s -t zram_applicable -p daemon.err "[ERROR] 'swapon' not installed"
+	[ -x /sbin/swapon ] || {
+		logger -s -t zram_applicable -p daemon.err "[ERROR] 'BusyBox swapon' not installed"
 		return 1
 	}
 
-	which swapoff >/dev/null || {
-		logger -s -t zram_applicable -p daemon.err "[ERROR] 'swapoff' not installed"
+	[ -x /sbin/swapoff ] || {
+		logger -s -t zram_applicable -p daemon.err "[ERROR] 'BusyBox swapoff' not installed"
 		return 1
 	}
 }
@@ -73,7 +73,7 @@ zram_getdev()
 	local zdev=$( zram_dev )
 
 	if [ "$(mount | grep $zdev)" ]; then
-		local idx=`cat /sys/class/zram-control/hot_add`
+		local idx=$(cat /sys/class/zram-control/hot_add)
 		zdev="$( zram_dev $idx )"
 	fi
 
@@ -85,11 +85,12 @@ zram_comp_algo()
 	local dev="$1"
 	local zram_comp_algo="$( uci -q get system.@system[0].zram_comp_algo )"
 
-	if [ -z "$zram_comp_algo" ] || [ ! -e /sys/block/$( basename $dev )/comp_algorithm ]; then
-		return 0
+	if [ -z "$zram_comp_algo" ]; then
+		# lzo-rle fails on small RAM devices, default to lzo, which is always available
+		zram_comp_algo="lzo"
 	fi
 
-	if [ `grep -c "$zram_comp_algo" /sys/block/$( basename $dev )/comp_algorithm` -ne 0 ]; then
+	if [ $(grep -c "$zram_comp_algo" /sys/block/$( basename $dev )/comp_algorithm) -ne 0 ]; then
 		logger -s -t zram_comp_algo -p daemon.debug "Set compression algorithm '$zram_comp_algo' for zram '$dev'"
 		echo $zram_comp_algo > "/sys/block/$( basename $dev )/comp_algorithm"
 	else
@@ -147,8 +148,8 @@ zram_compact()
 	# compact zram device (reduce memory allocation overhead)
 	local zdev="/sys/block/$( basename "$1" )"
 
-	local old_mem_used=`awk '{print $3}' <$zdev/mm_stat`
-	local old_overhead=`awk '{print $3-$2}' <$zdev/mm_stat`
+	local old_mem_used=$(awk '{print $3}' <$zdev/mm_stat)
+	local old_overhead=$(awk '{print $3-$2}' <$zdev/mm_stat)
 
 	echo 1 > $zdev/compact
 
@@ -172,6 +173,8 @@ start()
 	local zram_size="$( zram_getsize )"
 	local zram_dev="$( zram_getdev )"
 	zram_applicable "$zram_dev" || return 1
+	local zram_priority="$( uci -q get system.@system[0].zram_priority )"
+	zram_priority=${zram_priority:+-p $zram_priority}
 
 	logger -s -t zram_start -p daemon.debug "activating '$zram_dev' for swapping ($zram_size MegaBytes)"
 
@@ -179,8 +182,8 @@ start()
 	zram_comp_algo "$zram_dev"
 	zram_comp_streams "$zram_dev"
 	echo $(( $zram_size * 1024 * 1024 )) >"/sys/block/$( basename "$zram_dev" )/disksize"
-	mkswap "$zram_dev"
-	swapon "$zram_dev"
+	/sbin/mkswap "$zram_dev"
+	/sbin/swapon -d $zram_priority "$zram_dev"
 }
 
 stop()
@@ -189,7 +192,7 @@ stop()
 
 	for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
 		logger -s -t zram_stop -p daemon.debug "deactivate swap $zram_dev"
-		swapoff "$zram_dev" && zram_reset "$zram_dev" "claiming memory back"
+		/sbin/swapoff "$zram_dev" && zram_reset "$zram_dev" "claiming memory back"
 		local dev_index="$( echo $zram_dev | grep -o "[0-9]*$" )"
 		if [ $dev_index -ne 0 ]; then
 			logger -s -t zram_stop -p daemon.debug "removing zram $zram_dev"

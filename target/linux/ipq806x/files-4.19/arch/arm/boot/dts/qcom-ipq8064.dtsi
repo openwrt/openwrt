@@ -67,6 +67,9 @@
 
 		qcom,l2 {
 			qcom,l2-rates = <384000000 1000000000 1200000000>;
+			qcom,l2-cpufreq = <384000000 600000000 1200000000>;
+			qcom,l2-volt = <1100000 1100000 1150000>;
+			qcom,l2-supply = <&smb208_s1a>;
 		};
 
 		idle-states {
@@ -543,6 +546,15 @@
 		};
 	};
 
+	fab-scaling {
+		compatible = "qcom,fab-scaling";
+		clocks = <&rpmcc RPM_APPS_FABRIC_A_CLK>, <&rpmcc RPM_EBI1_A_CLK>;
+		clock-names = "apps-fab-clk", "ddr-fab-clk";
+		fab_freq_high = <533000000>;
+		fab_freq_nominal = <400000000>;
+		cpu_freq_threshold = <1000000000>;
+	};
+
 	firmware {
 		scm {
 			compatible = "qcom,scm-ipq806x";
@@ -806,7 +818,7 @@
 
 			syscon-tcsr = <&tcsr>;
 
-			uart2: serial@12490000 {
+			gsbi2_serial: serial@12490000 {
 				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
 				reg = <0x12490000 0x1000>,
 				      <0x12480000 0x1000>;
@@ -881,7 +893,7 @@
 
 			syscon-tcsr = <&tcsr>;
 
-			uart5: serial@1a240000 {
+			gsbi5_serial: serial@1a240000 {
 				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
 				reg = <0x1a240000 0x1000>,
 				      <0x1a200000 0x1000>;

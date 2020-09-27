@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7620a_iptime.dtsi"
 
@@ -53,7 +52,7 @@
 
 &state_default {
 	gpio {
-		ralink,group = "uartf", "spi refclk";
-		ralink,function = "gpio";
+		groups = "uartf", "spi refclk";
+		function = "gpio";
 	};
 };

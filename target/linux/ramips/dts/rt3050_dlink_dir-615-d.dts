@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "rt3050.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -17,7 +15,7 @@
 		label-mac-device = &wmac;
 	};
 
-	cfi@1f000000 {
+	flash@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
 		bank-width = <2>;
@@ -74,23 +72,23 @@
 	leds {
 		compatible = "gpio-leds";
 
-		status {
+		status_amber {
 			label = "dir-615-d:amber:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
-		led_status_green: status2 {
+		led_status_green: status_green {
 			label = "dir-615-d:green:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
-		wan {
+		wan_amber {
 			label = "dir-615-d:amber:wan";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
-		wan2 {
+		wan_green {
 			label = "dir-615-d:green:wan";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
@@ -112,7 +110,7 @@
 
 &state_default {
 	gpio {
-		ralink,group = "i2c", "spi", "jtag", "mdio", "rgmii", "uartf";
-		ralink,function = "gpio";
+		groups = "i2c", "spi", "jtag", "mdio", "rgmii", "uartf";
+		function = "gpio";
 	};
 };

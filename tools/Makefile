@@ -21,63 +21,58 @@ ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmwar
   BUILD_B43_TOOLS = y
 endif
 
-tools-$(BUILD_TOOLCHAIN) += gmp mpfr mpc libelf expat
-tools-y += m4 libtool autoconf automake flex bison pkg-config mklibs zlib
-tools-y += sstrip make-ext4fs e2fsprogs mtd-utils mkimage
-tools-y += firmware-utils patch-image quilt padjffs2
-tools-y += mm-macros missing-macros cmake bc findutils gengetopt patchelf
-tools-y += mtools dosfstools libressl
-tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
-tools-$(CONFIG_TARGET_x86) += qemu
-tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
-tools-$(CONFIG_TARGET_ar71xx) += lzma-old
-tools-$(CONFIG_TARGET_ar71xx)$(CONFIG_TARGET_ath79) += squashfs
-tools-$(CONFIG_USES_MINOR) += kernel2minor
-tools-y += lzma squashfskit4 zip
+tools-y += autoconf autoconf-archive automake bc bison cmake dosfstools
+tools-y += e2fsprogs fakeroot findutils firmware-utils flex gengetopt
+tools-y += libressl libtool lzma m4 make-ext4fs missing-macros mkimage
+tools-y += mklibs mm-macros mtd-utils mtools padjffs2 patch-image
+tools-y += patchelf pkgconf quilt squashfskit4 sstrip zip zlib zstd
 tools-$(BUILD_B43_TOOLS) += b43-tools
 tools-$(BUILD_ISL) += isl
-tools-$(CONFIG_USE_SPARSE) += sparse
+tools-$(BUILD_TOOLCHAIN) += expat gmp libelf mpc mpfr
 tools-$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini) += genext2fs
+tools-$(CONFIG_TARGET_ath79) += lzma-old squashfs
+tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
 tools-$(CONFIG_TARGET_tegra) += cbootimage cbootimage-configs
+tools-$(CONFIG_TARGET_x86) += qemu
+tools-$(CONFIG_USES_MINOR) += kernel2minor
+tools-$(CONFIG_USE_SPARSE) += sparse
 
 # builddir dependencies
-$(curdir)/bison/compile := $(curdir)/flex/compile
-$(curdir)/flex/compile := $(curdir)/libtool/compile
-$(curdir)/libtool/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/automake/compile $(curdir)/missing-macros/compile
-$(curdir)/squashfs/compile := $(curdir)/lzma-old/compile
-$(curdir)/squashfskit4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
-$(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
 $(curdir)/autoconf/compile := $(curdir)/m4/compile
-$(curdir)/automake/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/pkg-config/compile $(curdir)/xz/compile
+$(curdir)/automake/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/pkgconf/compile $(curdir)/xz/compile
+$(curdir)/b43-tools/compile := $(curdir)/bison/compile
+$(curdir)/bc/compile := $(curdir)/bison/compile
+$(curdir)/bison/compile := $(curdir)/flex/compile
+$(curdir)/cbootimage/compile += $(curdir)/automake/compile
+$(curdir)/cmake/compile += $(curdir)/libressl/compile
+$(curdir)/dosfstools/compile := $(curdir)/autoconf/compile $(curdir)/automake/compile
+$(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
+$(curdir)/findutils/compile := $(curdir)/bison/compile
+$(curdir)/firmware-utils/compile += $(curdir)/libressl/compile $(curdir)/zlib/compile
+$(curdir)/flex/compile := $(curdir)/libtool/compile
+$(curdir)/gengetopt/compile := $(curdir)/libtool/compile
 $(curdir)/gmp/compile := $(curdir)/libtool/compile
+$(curdir)/isl/compile := $(curdir)/gmp/compile
+$(curdir)/libelf/compile := $(curdir)/libtool/compile
+$(curdir)/libressl/compile := $(curdir)/pkgconf/compile
+$(curdir)/libtool/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/automake/compile $(curdir)/missing-macros/compile
+$(curdir)/lzma-old/compile := $(curdir)/zlib/compile
+$(curdir)/make-ext4fs/compile := $(curdir)/zlib/compile
+$(curdir)/missing-macros/compile := $(curdir)/autoconf/compile
+$(curdir)/mkimage/compile += $(curdir)/libressl/compile
+$(curdir)/mklibs/compile := $(curdir)/libtool/compile
+$(curdir)/mm-macros/compile := $(curdir)/libtool/compile
 $(curdir)/mpc/compile := $(curdir)/mpfr/compile $(curdir)/gmp/compile
 $(curdir)/mpfr/compile := $(curdir)/gmp/compile
 $(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/e2fsprogs/compile $(curdir)/zlib/compile
-$(curdir)/mklibs/compile := $(curdir)/libtool/compile
-$(curdir)/qemu/compile := $(curdir)/e2fsprogs/compile $(curdir)/zlib/compile
-$(curdir)/upslug2/compile := $(curdir)/libtool/compile
-$(curdir)/mm-macros/compile := $(curdir)/libtool/compile
-$(curdir)/missing-macros/compile := $(curdir)/autoconf/compile
-$(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
-$(curdir)/libelf/compile := $(curdir)/libtool/compile
-$(curdir)/sdcc/compile := $(curdir)/bison/compile
-$(curdir)/b43-tools/compile := $(curdir)/bison/compile
 $(curdir)/padjffs2/compile := $(curdir)/findutils/compile
-$(curdir)/isl/compile := $(curdir)/gmp/compile
-$(curdir)/bc/compile := $(curdir)/bison/compile
-$(curdir)/findutils/compile := $(curdir)/bison/compile
-$(curdir)/gengetopt/compile := $(curdir)/libtool/compile
 $(curdir)/patchelf/compile := $(curdir)/libtool/compile
-$(curdir)/dosfstools/compile := $(curdir)/autoconf/compile $(curdir)/automake/compile
-$(curdir)/libressl/compile := $(curdir)/pkg-config/compile
-$(curdir)/mkimage/compile += $(curdir)/libressl/compile
-$(curdir)/firmware-utils/compile += $(curdir)/libressl/compile $(curdir)/zlib/compile
-$(curdir)/cmake/compile += $(curdir)/libressl/compile
+$(curdir)/qemu/compile := $(curdir)/e2fsprogs/compile $(curdir)/zlib/compile
+$(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
+$(curdir)/sdcc/compile := $(curdir)/bison/compile
+$(curdir)/squashfs/compile := $(curdir)/lzma-old/compile
+$(curdir)/squashfskit4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
 $(curdir)/zlib/compile := $(curdir)/cmake/compile
-$(curdir)/wrt350nv2-builder/compile := $(curdir)/zlib/compile
-$(curdir)/lzma-old/compile := $(curdir)/zlib/compile
-$(curdir)/make-ext4fs/compile := $(curdir)/zlib/compile
-$(curdir)/cbootimage/compile += $(curdir)/automake/compile
 
 ifneq ($(HOST_OS),Linux)
   $(curdir)/squashfskit4/compile += $(curdir)/coreutils/compile
@@ -138,7 +133,11 @@ $(STAGING_DIR_HOST)/.prepared: $(TMP_DIR)/.build
 	mkdir -p $(BUILD_DIR_HOST)/stamp $(STAGING_DIR_HOST)/include/sys
 	$(INSTALL_DATA) $(TOPDIR)/tools/include/*.h $(STAGING_DIR_HOST)/include/
 	$(INSTALL_DATA) $(TOPDIR)/tools/include/sys/*.h $(STAGING_DIR_HOST)/include/sys/
-	ln -sf lib $(STAGING_DIR_HOST)/lib64
+ifneq ($(HOST_OS),Linux)
+	mkdir -p $(STAGING_DIR_HOST)/include/asm
+	$(INSTALL_DATA) $(TOPDIR)/tools/include/asm/*.h $(STAGING_DIR_HOST)/include/asm/
+endif
+	ln -snf lib $(STAGING_DIR_HOST)/lib64
 	touch $@
 
 endif

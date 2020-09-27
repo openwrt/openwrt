@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "mt7620a_lenovo_newifi-y1.dtsi"
 
 / {
@@ -54,6 +52,8 @@
 &ethernet {
 	pinctrl-names = "default";
 	pinctrl-0 = <&ephy_pins>;
+
 	mtd-mac-address = <&factory 0x28>;
+
 	mediatek,portmap = "llllw";
 };

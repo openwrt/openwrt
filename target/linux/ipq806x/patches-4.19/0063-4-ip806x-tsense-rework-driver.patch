@@ -13,7 +13,7 @@
  #include <linux/nvmem-consumer.h>
  #include <linux/io.h>
  #include <linux/interrupt.h>
-@@ -210,9 +212,8 @@
+@@ -210,9 +212,8 @@ static void tsens_scheduler_fn(struct wo
  	struct tsens_device *tmdev = container_of(work, struct tsens_device,
  					tsens_work);
  	unsigned int threshold, threshold_low, code, reg, sensor, mask;
@@ -24,7 +24,7 @@
  
  	ret = regmap_read(tmdev->map, STATUS_CNTL_8064, &reg);
  	if (ret)
-@@ -261,9 +262,8 @@
+@@ -261,9 +262,8 @@ static void tsens_scheduler_fn(struct wo
  		if (upper_th_x || lower_th_x) {
  			/* Notify user space */
  			schedule_work(&tmdev->sensor[0].notify_work);
@@ -35,7 +35,7 @@
  		}
  	}
  	regmap_write(tmdev->map, STATUS_CNTL_8064, reg & mask);
-@@ -372,40 +372,55 @@
+@@ -372,40 +372,55 @@ static int init_ipq8064(struct tsens_dev
  static int calibrate_ipq8064(struct tsens_device *tmdev)
  {
  	int i;

@@ -181,6 +181,8 @@ void wpas_ubus_add_bss(struct wpa_supplicant *wpa_s)
 	char *name;
 	int ret;
 
+	if (!wpas_ubus_init())
+		return;
 
 	if (asprintf(&name, "wpa_supplicant.%s", wpa_s->ifname) < 0)
 		return;
@@ -320,23 +322,12 @@ static struct ubus_object_type wpas_daemon_object_type =
 void wpas_ubus_add(struct wpa_global *global)
 {
 	struct ubus_object *obj = &global->ubus_global;
-	int name_len;
 	int ret;
 
 	if (!wpas_ubus_init())
 		return;
 
-	name_len = strlen("wpa_supplicant") + 1;
-	if (global->params.name)
-		name_len += strlen(global->params.name) + 1;
-	obj->name = malloc(name_len);
-	strcpy(obj->name, "wpa_supplicant");
-
-	if (global->params.name)
-	{
-		strcat(obj->name, ".");
-		strcat(obj->name, global->params.name);
-	}
+	obj->name = strdup("wpa_supplicant");
 
 	obj->type = &wpas_daemon_object_type;
 	obj->methods = wpas_daemon_object_type.methods;

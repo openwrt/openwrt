@@ -7,12 +7,13 @@
 
 menu "Global build settings"
 
-	config JSON_ADD_IMAGE_INFO
-		bool "Create JSON info files per build image"
+	config JSON_OVERVIEW_IMAGE_INFO
+		bool "Create JSON info file overview per target"
 		default BUILDBOT
 		help
-		  The JSON info files contain information about the device and
-		  build images, stored next to the firmware images.
+		  Create a JSON info file called profiles.json in the target
+		  directory containing machine readable list of built profiles
+		  and resulting images.
 
 	config ALL_NONSHARED
 		bool "Select all target specific packages by default"
@@ -100,7 +101,16 @@ menu "Global build settings"
 		bool "Include build configuration in firmware" if DEVEL
 		default n
 		help
-		  If enabled, config.buildinfo will be stored in /etc/build.config of firmware.
+		  If enabled, buildinfo files will be stored in /etc/build.* of firmware.
+
+	config REPRODUCIBLE_DEBUG_INFO
+		bool "Make debug information reproducible"
+		default BUILDBOT
+		help
+		  This strips the local build path out of debug information. This has the
+		  advantage of making it reproducible, but the disadvantage of making local
+		  debugging using ./scripts/remote-gdb harder, since the debug data will
+		  no longer point to the full path on the build host.
 
 	config COLLECT_KERNEL_DEBUG
 		bool
@@ -216,11 +226,10 @@ menu "Global build settings"
 		  this per package by adding PKG_CHECK_FORMAT_SECURITY:=0 in the package
 		  Makefile.
 
-	config PKG_ASLR_PIE
-		bool
+	choice
 		prompt "User space ASLR PIE compilation"
-		select BUSYBOX_DEFAULT_PIE
-		default n
+		default PKG_ASLR_PIE_NONE if ((SMALL_FLASH || LOW_MEMORY_FOOTPRINT) && !SDK)
+		default PKG_ASLR_PIE_REGULAR
 		help
 		  Add -fPIC to CFLAGS and -specs=hardened-build-ld to LDFLAGS.
 		  This enables package build as Position Independent Executables (PIE)
@@ -231,10 +240,24 @@ menu "Global build settings"
 		  to predict when an attacker is attempting a memory-corruption exploit.
 		  You can disable this per package by adding PKG_ASLR_PIE:=0 in the package
 		  Makefile.
+		  Be ware that ASLR increases the binary size.
+		config PKG_ASLR_PIE_NONE
+			bool "None"
+			help
+			  PIE is deactivated for all applications
+		config PKG_ASLR_PIE_REGULAR
+			bool "Regular"
+			help
+			  PIE is activated for some binaries, mostly network exposed applications
+		config PKG_ASLR_PIE_ALL
+			bool "All"
+			select BUSYBOX_DEFAULT_PIE
+			help
+			  PIE is activated for all applications
+	endchoice
 
 	choice
 		prompt "User space Stack-Smashing Protection"
-		depends on USE_MUSL
 		default PKG_CC_STACKPROTECTOR_REGULAR
 		help
 		  Enable GCC Stack Smashing Protection (SSP) for userspace applications
@@ -242,18 +265,13 @@ menu "Global build settings"
 			bool "None"
 		config PKG_CC_STACKPROTECTOR_REGULAR
 			bool "Regular"
-			select GCC_LIBSSP if !USE_MUSL
-			depends on KERNEL_CC_STACKPROTECTOR_REGULAR
 		config PKG_CC_STACKPROTECTOR_STRONG
 			bool "Strong"
-			select GCC_LIBSSP if !USE_MUSL
-			depends on KERNEL_CC_STACKPROTECTOR_STRONG
 	endchoice
 
 	choice
 		prompt "Kernel space Stack-Smashing Protection"
 		default KERNEL_CC_STACKPROTECTOR_REGULAR
-		depends on USE_MUSL || !(x86_64 || i386)
 		help
 		  Enable GCC Stack-Smashing Protection (SSP) for the kernel
 		config KERNEL_CC_STACKPROTECTOR_NONE
@@ -310,4 +328,14 @@ menu "Global build settings"
 			bool "Full"
 	endchoice
 
+	config TARGET_ROOTFS_SECURITY_LABELS
+		bool "Enable rootfs security labels"
+		select KERNEL_SQUASHFS_XATTR
+		select KERNEL_EXT4_FS_SECURITY
+		select KERNEL_F2FS_FS_SECURITY
+		select KERNEL_UBIFS_FS_SECURITY
+		select KERNEL_JFFS2_FS_SECURITY
+		select PACKAGE_refpolicy
+		help
+		  This option enables the usage of SELinux labels
 endmenu

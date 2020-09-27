@@ -24,9 +24,18 @@ platform_do_upgrade() {
 	qcom,ipq8064-ap161)
 		nand_do_upgrade "$1"
 		;;
-	zyxel,nbg6817)
-		zyxel_do_upgrade "$1"
+	edgecore,ecw5410)
+		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
+		if [ "$part" = "rootfs1" ]; then
+			fw_setenv active 2 || exit 1
+			CI_UBIPART="rootfs2"
+		else
+			fw_setenv active 1 || exit 1
+			CI_UBIPART="rootfs1"
+		fi
+		nand_do_upgrade "$1"
 		;;
+	linksys,ea7500-v1 |\
 	linksys,ea8500)
 		platform_do_upgrade_linksys "$1"
 		;;
@@ -40,7 +49,9 @@ platform_do_upgrade() {
 		MTD_CONFIG_ARGS="-s 0x200000"
 		default_do_upgrade "$1"
 		;;
-	nec,wg2600hp |\
+	zyxel,nbg6817)
+		zyxel_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;

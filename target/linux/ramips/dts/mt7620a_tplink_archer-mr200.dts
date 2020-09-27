@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "mt7620a.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -71,6 +69,7 @@
 		wlan {
 			label = "archer-mr200:white:wlan";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 
@@ -117,10 +116,10 @@
 &spi0 {
 	status = "okay";
 
-	m25p80@0 {
+	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <30000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -162,15 +161,14 @@
 
 &state_default {
 	gpio {
-		ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd", "ephy", "spi refclk";
-		ralink,function = "gpio";
+		groups = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd", "ephy", "spi refclk";
+		function = "gpio";
 	};
 };
 
 &ethernet {
-		mtd-mac-address = <&rom 0xf100>;
-		mediatek,portmap = "llll";
-	};
+	mtd-mac-address = <&rom 0xf100>;
+};
 
 &ehci {
 	status = "okay";

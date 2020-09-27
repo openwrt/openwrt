@@ -245,19 +245,15 @@ mtdsplit_uimage_parse_generic(struct mtd_info *master,
 				      uimage_verify_default);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_of_match_table[] = {
 	{ .compatible = "denx,uimage" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_generic_parser = {
 	.owner = THIS_MODULE,
 	.name = "uimage-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_generic,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
@@ -312,22 +308,67 @@ mtdsplit_uimage_parse_netgear(struct mtd_info *master,
 				      uimage_verify_wndr3700);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_netgear_of_match_table[] = {
 	{ .compatible = "netgear,uimage" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_netgear_parser = {
 	.owner = THIS_MODULE,
 	.name = "netgear-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_netgear_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_netgear,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
+
 };
+
+
+/**************************************************
+ * ALLNET
+ **************************************************/
+
+#define FW_MAGIC_SG8208M	0x00000006
+#define FW_MAGIC_SG8310PM	0x83000006
+
+static ssize_t uimage_verify_allnet(u_char *buf, size_t len, int *extralen)
+{
+	struct uimage_header *header = (struct uimage_header *)buf;
+
+	switch (be32_to_cpu(header->ih_magic)) {
+	case FW_MAGIC_SG8208M:
+	case FW_MAGIC_SG8310PM:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (header->ih_os != IH_OS_LINUX)
+		return -EINVAL;
+
+	return 0;
+}
+
+static int
+mtdsplit_uimage_parse_allnet(struct mtd_info *master,
+			      const struct mtd_partition **pparts,
+			      struct mtd_part_parser_data *data)
+{
+	return __mtdsplit_parse_uimage(master, pparts, data,
+				      uimage_verify_allnet);
+}
+
+static const struct of_device_id mtdsplit_uimage_allnet_of_match_table[] = {
+	{ .compatible = "allnet,uimage" },
+	{},
+};
+
+static struct mtd_part_parser uimage_allnet_parser = {
+	.owner = THIS_MODULE,
+	.name = "allnet-fw",
+	.of_match_table = mtdsplit_uimage_allnet_of_match_table,
+	.parse_fn = mtdsplit_uimage_parse_allnet,
+};
+
 
 /**************************************************
  * Edimax
@@ -364,19 +405,15 @@ mtdsplit_uimage_parse_edimax(struct mtd_info *master,
 				       uimage_find_edimax);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_edimax_of_match_table[] = {
 	{ .compatible = "edimax,uimage" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_edimax_parser = {
 	.owner = THIS_MODULE,
 	.name = "edimax-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_edimax_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_edimax,
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
@@ -407,20 +444,53 @@ mtdsplit_uimage_parse_fonfxc(struct mtd_info *master,
 				       uimage_find_fonfxc);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_fonfxc_of_match_table[] = {
 	{ .compatible = "fonfxc,uimage" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_fonfxc_parser = {
 	.owner = THIS_MODULE,
 	.name = "fonfxc-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_fonfxc_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_fonfxc,
+};
+
+/**************************************************
+ * SGE (T&W) Shenzhen Gongjin Electronics
+ **************************************************/
+
+#define SGE_PAD_LEN		96
+
+static ssize_t uimage_find_sge(u_char *buf, size_t len, int *extralen)
+{
+	if (uimage_verify_default(buf, len, extralen) < 0)
+		return -EINVAL;
+
+	*extralen = SGE_PAD_LEN;
+
+	return 0;
+}
+
+static int
+mtdsplit_uimage_parse_sge(struct mtd_info *master,
+			      const struct mtd_partition **pparts,
+			      struct mtd_part_parser_data *data)
+{
+	return __mtdsplit_parse_uimage(master, pparts, data,
+				       uimage_find_sge);
+}
+
+static const struct of_device_id mtdsplit_uimage_sge_of_match_table[] = {
+	{ .compatible = "sge,uimage" },
+	{},
+};
+
+static struct mtd_part_parser uimage_sge_parser = {
+	.owner = THIS_MODULE,
+	.name = "sge-fw",
+	.of_match_table = mtdsplit_uimage_sge_of_match_table,
+	.parse_fn = mtdsplit_uimage_parse_sge,
 };
 
 /**************************************************
@@ -464,19 +534,15 @@ mtdsplit_uimage_parse_okli(struct mtd_info *master,
 				      uimage_verify_okli);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static const struct of_device_id mtdsplit_uimage_okli_of_match_table[] = {
 	{ .compatible = "openwrt,okli" },
 	{},
 };
-#endif
 
 static struct mtd_part_parser uimage_okli_parser = {
 	.owner = THIS_MODULE,
 	.name = "okli-fw",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	.of_match_table = mtdsplit_uimage_okli_of_match_table,
-#endif
 	.parse_fn = mtdsplit_uimage_parse_okli,
 };
 
@@ -488,8 +554,10 @@ static int __init mtdsplit_uimage_init(void)
 {
 	register_mtd_parser(&uimage_generic_parser);
 	register_mtd_parser(&uimage_netgear_parser);
+	register_mtd_parser(&uimage_allnet_parser);
 	register_mtd_parser(&uimage_edimax_parser);
 	register_mtd_parser(&uimage_fonfxc_parser);
+	register_mtd_parser(&uimage_sge_parser);
 	register_mtd_parser(&uimage_okli_parser);
 
 	return 0;

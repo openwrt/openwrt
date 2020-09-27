@@ -20,6 +20,8 @@ PKG_LICENSE:=BSD-3-Clause
 
 PKG_BUILD_PARALLEL:=1
 
+PKG_CONFIG_DEPENDS:=CONFIG_IPERF_ENABLE_MULTICAST
+
 include $(INCLUDE_DIR)/uclibc++.mk
 include $(INCLUDE_DIR)/package.mk
 
@@ -37,8 +39,19 @@ define Package/iperf/description
  characteristics.
 endef
 
+define Package/iperf/config
+	config IPERF_ENABLE_MULTICAST
+		depends on PACKAGE_iperf
+		bool "Enable multicast support"
+endef
+
+
 TARGET_CFLAGS += -D_GNU_SOURCE
+ifeq ($(CONFIG_IPERF_ENABLE_MULTICAST),y)
+CONFIGURE_ARGS += --enable-multicast
+else
 CONFIGURE_ARGS += --disable-multicast
+endif
 
 ifeq ($(CONFIG_IPV6),)
 	CONFIGURE_ARGS += --disable-ipv6

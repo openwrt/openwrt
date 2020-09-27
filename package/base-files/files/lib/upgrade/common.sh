@@ -5,7 +5,7 @@ RAM_ROOT=/tmp/root
 export BACKUP_FILE=sysupgrade.tgz	# file extracted by preinit
 
 [ -x /usr/bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
-libs() { ldd $* 2>/dev/null | sed -r 's/(.* => )?(.*) .*/\2/'; }
+libs() { ldd $* 2>/dev/null | sed -E 's/(.* => )?(.*) .*/\2/'; }
 
 install_file() { # <file> [ <file> ... ]
 	local target dest dir
@@ -64,7 +64,7 @@ ask_bool() {
 }
 
 v() {
-	[ "$VERBOSE" -ge 1 ] && echo "$@"
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$@"
 }
 
 json_string() {
@@ -102,6 +102,24 @@ get_magic_long() {
 	(get_image "$@" | dd bs=4 count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2>/dev/null
 }
 
+get_magic_gpt() {
+	(get_image "$@" | dd bs=8 count=1 skip=64) 2>/dev/null
+}
+
+get_magic_vfat() {
+	(get_image "$@" | dd bs=1 count=3 skip=54) 2>/dev/null
+}
+
+part_magic_efi() {
+	local magic=$(get_magic_gpt "$@")
+	[ "$magic" = "EFI PART" ]
+}
+
+part_magic_fat() {
+	local magic=$(get_magic_vfat "$@")
+	[ "$magic" = "FAT" ]
+}
+
 export_bootdevice() {
 	local cmdline bootdisk rootpart uuid blockdev uevent line class
 	local MAJOR MINOR DEVNAME DEVTYPE
@@ -132,6 +150,17 @@ export_bootdevice() {
 					set -- $(dd if=$blockdev bs=1 skip=440 count=4 2>/dev/null | hexdump -v -e '4/1 "%02x "')
 					if [ "$4$3$2$1" = "$uuid" ]; then
 						uevent="/sys/class/block/${blockdev##*/}/uevent"
+						break
+					fi
+				done
+			;;
+			PARTUUID=????????-????-????-????-??????????02)
+				uuid="${rootpart#PARTUUID=}"
+				uuid="${uuid%02}00"
+				for disk in $(find /dev -type b); do
+					set -- $(dd if=$disk bs=1 skip=568 count=16 2>/dev/null | hexdump -v -e '8/1 "%02x "" "2/1 "%02x""-"6/1 "%02x"')
+					if [ "$4$3$2$1-$6$5-$8$7-$9" = "$uuid" ]; then
+						uevent="/sys/class/block/${disk##*/}/uevent"
 						break
 					fi
 				done
@@ -207,17 +236,34 @@ get_partitions() { # <device> <filename>
 		rm -f "/tmp/partmap.$filename"
 
 		local part
-		for part in 1 2 3 4; do
-			set -- $(hexdump -v -n 12 -s "$((0x1B2 + $part * 16))" -e '3/4 "0x%08X "' "$disk")
+		part_magic_efi "$disk" && {
+			#export_partdevice will fail when partition number is greater than 15, as
+			#the partition major device number is not equal to the disk major device number
+			for part in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+				set -- $(hexdump -v -n 48 -s "$((0x380 + $part * 0x80))" -e '4/4 "%08x"" "4/4 "%08x"" "4/4 "0x%08X "' "$disk")
 
-			local type="$(( $(hex_le32_to_cpu $1) % 256))"
-			local lba="$(( $(hex_le32_to_cpu $2) ))"
-			local num="$(( $(hex_le32_to_cpu $3) ))"
+				local type="$1"
+				local lba="$(( $(hex_le32_to_cpu $4) * 0x100000000 + $(hex_le32_to_cpu $3) ))"
+				local end="$(( $(hex_le32_to_cpu $6) * 0x100000000 + $(hex_le32_to_cpu $5) ))"
+				local num="$(( $end - $lba ))"
 
-			[ $type -gt 0 ] || continue
+				[ "$type" = "00000000000000000000000000000000" ] && continue
 
-			printf "%2d %5d %7d\n" $part $lba $num >> "/tmp/partmap.$filename"
-		done
+				printf "%2d %5d %7d\n" $part $lba $num >> "/tmp/partmap.$filename"
+			done
+		} || {
+			for part in 1 2 3 4; do
+				set -- $(hexdump -v -n 12 -s "$((0x1B2 + $part * 16))" -e '3/4 "0x%08X "' "$disk")
+
+				local type="$(( $(hex_le32_to_cpu $1) % 256))"
+				local lba="$(( $(hex_le32_to_cpu $2) ))"
+				local num="$(( $(hex_le32_to_cpu $3) ))"
+
+				[ $type -gt 0 ] || continue
+
+				printf "%2d %5d %7d\n" $part $lba $num >> "/tmp/partmap.$filename"
+			done
+		}
 	fi
 }
 

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7620a.dtsi"
 
@@ -139,6 +138,7 @@
 &ethernet {
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
+
 	mtd-mac-address = <&factory 0x4>;
 
 	port@5 {
@@ -186,8 +186,8 @@
 
 &state_default {
 	gpio {
-		ralink,group = "i2c", "uartf";
-		ralink,function = "gpio";
+		groups = "i2c", "uartf";
+		function = "gpio";
 	};
 };
 
