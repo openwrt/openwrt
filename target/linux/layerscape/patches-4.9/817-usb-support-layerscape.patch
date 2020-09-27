@@ -1322,7 +1322,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #endif				/* _EHCI_FSL_H */
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -278,6 +278,8 @@ static int ehci_bus_suspend (struct usb_
+@@ -277,6 +277,8 @@ static int ehci_bus_suspend (struct usb_
  		else if ((t1 & PORT_PE) && !(t1 & PORT_SUSPEND)) {
  			t2 |= PORT_SUSPEND;
  			set_bit(port, &ehci->bus_suspended);
@@ -1331,7 +1331,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		}
  
  		/* enable remote wakeup on all ports, if told to do so */
-@@ -305,6 +307,8 @@ static int ehci_bus_suspend (struct usb_
+@@ -304,6 +306,8 @@ static int ehci_bus_suspend (struct usb_
  						USB_PORT_STAT_HIGH_SPEED)
  				fs_idle_delay = true;
  			ehci_writel(ehci, t2, reg);
@@ -1689,7 +1689,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #define BCSR5_INT_USB			(0x02)
 --- a/include/linux/usb.h
 +++ b/include/linux/usb.h
-@@ -360,6 +360,7 @@ struct usb_bus {
+@@ -395,6 +395,7 @@ struct usb_bus {
  					 * for control transfers?
  					 */
  	u8 otg_port;			/* 0, or number of OTG/HNP port */
