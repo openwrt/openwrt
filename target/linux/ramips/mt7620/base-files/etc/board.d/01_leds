@@ -3,10 +3,6 @@
 . /lib/functions/leds.sh
 . /lib/functions/uci-defaults.sh
 
-set_wifi_led() {
-	ucidef_set_led_netdev "wifi_led" "wifi" "${1}" "${2:-wlan0}"
-}
-
 board=$(board_name)
 
 board_config_update
@@ -14,10 +10,10 @@ board_config_update
 case $board in
 aigale,ai-br100)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth0.2"
-	set_wifi_led "blue:wlan"
+	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wlan" "wlan0"
 	;;
 alfa-network,ac1200rm)
-	set_wifi_led "green:wlan2g" "wlan1"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan2g" "wlan1"
 	;;
 alfa-network,r36m-e4g)
 	ucidef_set_led_netdev "4g" "4g" "orange:4g" "wwan0"
@@ -30,24 +26,24 @@ alfa-network,tube-e4g)
 	;;
 asus,rp-n53)
 	ucidef_set_led_netdev "eth" "Network" "white:back" "eth0"
-	set_wifi_led "blue:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wifi" "wlan0"
 	;;
 asus,rt-n12p)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" eth0.1
 	ucidef_set_led_netdev "wan" "wan" "green:wan" eth0.2
-	set_wifi_led "green:air"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:air" "wlan0"
 	;;
 asus,rt-n14u)
 	ucidef_set_led_netdev "lan" "lan" "blue:lan" eth0.1
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" eth0.2
-	set_wifi_led "blue:air"
+	ucidef_set_led_netdev "wifi_led" "wifi" "blue:air" "wlan0"
 	;;
 bdcom,wap2100-sk)
-	set_wifi_led "green:wlan2g"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan2g" "wlan0"
 	;;
 comfast,cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "white:ethernet" eth0.1
-	set_wifi_led "white:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "white:wifi" "wlan0"
 	;;
 dlink,dir-810l|\
 trendnet,tew-810dr)
@@ -63,35 +59,35 @@ zbtlink,zbt-wr8305rt|\
 zyxel,keenetic-omni|\
 zyxel,keenetic-omni-ii|\
 zyxel,keenetic-viva)
-	set_wifi_led "green:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"
 	;;
 dlink,dwr-118-a1)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x1f"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x20"
-	set_wifi_led "green:wlan2g" "wlan1"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan2g" "wlan1"
 	;;
 dlink,dwr-118-a2)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
-	set_wifi_led "green:wlan2g" "wlan1"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan2g" "wlan1"
 	;;
 dlink,dwr-921-c1|\
 dlink,dwr-922-e2)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x0f"
 	ucidef_set_led_netdev "signalstrength" "signalstrength" "green:sigstrength" "wwan0" "link"
 	ucidef_set_led_netdev "4g" "4g" "green:4g" "wwan0" "tx rx"
-	set_wifi_led "green:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"
 	;;
 dlink,dwr-960)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x2e"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
 	;;
 dovado,tiny-ac)
-	set_wifi_led "orange:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "orange:wifi" "wlan0"
 	;;
 edimax,br-6478ac-v2|\
 edimax,ew-7478apc)
-	set_wifi_led "blue:wlan"
+	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wlan" "wlan0"
 	;;
 edimax,ew-7476rpc|\
 edimax,ew-7478ac)
@@ -99,7 +95,7 @@ edimax,ew-7478ac)
 	;;
 elecom,wrh-300cr)
 	ucidef_set_led_netdev "lan" "lan" "green:ethernet" "eth0"
-	set_wifi_led "green:wlan"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan" "wlan0"
 	;;
 engenius,esr600)
 	ucidef_set_led_netdev "wlan5g" "5.0GHz" "blue:wlan5g" "wlan0"
@@ -108,7 +104,7 @@ engenius,esr600)
 glinet,gl-mt300a|\
 glinet,gl-mt300n|\
 glinet,gl-mt750)
-	set_wifi_led "wlan"
+	ucidef_set_led_netdev "wifi_led" "wifi" "wlan" "wlan0"
 	;;
 hiwifi,hc5661|\
 hiwifi,hc5761)
@@ -128,16 +124,16 @@ iodata,wn-ac733gr3)
 	;;
 kimax,u25awf-h1)
 	ucidef_set_led_netdev "eth" "eth" "green:lan" "eth0"
-	set_wifi_led "red:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "red:wifi" "wlan0"
 	;;
 kimax,u35wf)
 	ucidef_set_led_netdev "eth" "ETH" "green:eth" "eth0"
-	set_wifi_led "blue:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wifi" "wlan0"
 	;;
 kingston,mlw221|\
 kingston,mlwg2|\
 sanlinking,d240)
-	set_wifi_led "blue:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wifi" "wlan0"
 	;;
 lava,lr-25g001)
 	ucidef_set_led_netdev "wlan2g" "WiFi 2.4GHz" "green:wlan2g" "wlan1"
@@ -155,7 +151,7 @@ lenovo,newifi-y1s)
 	;;
 netgear,ex2700|\
 netgear,wn3000rp-v3)
-	set_wifi_led "green:router"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:router" "wlan0"
 	;;
 netgear,ex3700|\
 netgear,ex6130)
@@ -170,11 +166,11 @@ netgear,jwnr2010-v5)
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
 	;;
 phicomm,psg1208)
-	set_wifi_led "white:wlan2g"
+	ucidef_set_led_netdev "wifi_led" "wifi" "white:wlan2g" "wlan0"
 	;;
 planex,mzk-ex750np|\
 zbtlink,zbt-we826-e)
-	set_wifi_led "red:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "red:wifi" "wlan0"
 	;;
 ravpower,rp-wd03)
 	ucidef_set_led_netdev "internet" "internet" "green:wifi" "eth0"
@@ -201,7 +197,7 @@ tplink,re200-v1)
 	;;
 youku,yk1)
 	ucidef_set_led_switch "wan" "wan" "blue:wan" "switch0" "0x10"
-	set_wifi_led "blue:air"
+	ucidef_set_led_netdev "wifi_led" "wifi" "blue:air" "wlan0"
 	;;
 zbtlink,zbt-ape522ii)
 	ucidef_set_led_netdev "wlan2g4" "wlan1-link" "green:wlan2g4" "wlan1"
@@ -209,19 +205,19 @@ zbtlink,zbt-ape522ii)
 	ucidef_set_led_netdev "sys2" "wlan0" "green:sys2" "wlan0" "tx rx"
 	;;
 zbtlink,zbt-wa05)
-	set_wifi_led "blue:air"
+	ucidef_set_led_netdev "wifi_led" "wifi" "blue:air" "wlan0"
 	;;
 zbtlink,zbt-we1026-5g-16m)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
-	set_wifi_led "green:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"
 	;;
 zbtlink,zbt-we1026-h-32m)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x8"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
-	set_wifi_led "green:wifi"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"
 	;;
 zbtlink,zbt-we2026)
-	set_wifi_led "green:wlan"
+	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan" "wlan0"
 	;;
 esac
 

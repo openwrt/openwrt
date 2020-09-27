@@ -3,10 +3,6 @@
 . /lib/functions/leds.sh
 . /lib/functions/uci-defaults.sh
 
-set_wifi_led() {
-	ucidef_set_led_netdev "wifi_led" "wifi" "${1}" "${2:-wlan0}"
-}
-
 board=$(board_name)
 
 board_config_update
