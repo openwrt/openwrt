@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=policycoreutils
 PKG_VERSION:=3.1
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/20200710
@@ -67,9 +67,11 @@ MAKE_FLAGS += \
 
 HOST_MAKE_FLAGS += \
 	PAMH=$(CONFIG_BUSYBOX_CONFIG_PAM) \
-	PREFIX=$(STAGING_DIR_HOSTPKG) \
-	SBINDIR=$(STAGING_DIR_HOSTPKG)/sbin \
-	ETCDIR=$(STAGING_DIR_HOSTPKG)/etc
+	DESTDIR=$(STAGING_DIR_HOSTPKG) \
+	PREFIX= \
+	SBINDIR=/bin
+
+HOST_LDFLAGS += -Wl,-rpath=$(STAGING_DIR_HOSTPKG)/lib
 
 $(eval $(foreach a,$(DIR_SBIN),ALTS_$(a):=300:/sbin/$(a):/sbin/policycoreutils-$(a)$(newline)))
 $(eval $(foreach a,$(DIR_USR_BIN),ALTS_$(a):=300:/usr/bin/$(a):/usr/bin/policycoreutils-$(a)$(newline)))

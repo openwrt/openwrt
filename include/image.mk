@@ -243,8 +243,7 @@ endef
 
 ifeq ($(CONFIG_TARGET_ROOTFS_SECURITY_LABELS),y)
 define Image/mkfs/squashfs
-	echo "LD_LIBRARY_PATH=\$$LD_LIBRARY_PATH:$(STAGING_DIR_HOSTPKG)/lib" \
-	     "$(STAGING_DIR_HOSTPKG)/sbin/setfiles -r" \
+	echo "$(STAGING_DIR_HOSTPKG)/bin/setfiles -r" \
 	     "$(call mkfs_target_dir,$(1))" \
 	     "$(call mkfs_target_dir,$(1))/etc/selinux/targeted/contexts/files/file_contexts " \
 	     "$(call mkfs_target_dir,$(1))" > $@.fakeroot-script
