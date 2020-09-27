@@ -11,9 +11,6 @@ board=$(board_name)
 
 board_config_update
 
-led_wlan="$(get_dt_led wlan)"
-[ -n "$led_wlan" ] && ucidef_set_led_wlan "wifi_led" "wifi" "$led_wlan" "phy0tpt"
-
 case $board in
 aigale,ai-br100)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth0.2"
