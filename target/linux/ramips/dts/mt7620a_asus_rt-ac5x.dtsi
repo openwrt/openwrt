@@ -6,6 +6,10 @@
 / {
 	aliases {
 		label-mac-device = &ethernet;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	keys {
@@ -21,6 +25,28 @@
 			label = "wps";
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "blue:power";
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			label = "blue:usb";
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ohci_port1>, <&ehci_port1>;
+			linux,default-trigger = "usbport";
+		};
+
+		wifi2g {
+			label = "blue:wifi2g";
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 };
@@ -86,6 +112,13 @@
 
 &gpio3 {
 	status = "okay";
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "wled", "uartf";
+		function = "gpio";
+	};
 };
 
 &ethernet {

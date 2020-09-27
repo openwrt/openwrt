@@ -7,9 +7,7 @@ set_wifi_led() {
 	ucidef_set_led_netdev "wifi_led" "wifi" "${1}" "${2:-wlan0}"
 }
 
-
 board=$(board_name)
-boardname="${board##*,}"
 
 board_config_update
 
@@ -22,7 +20,7 @@ airlink101,ar725w)
 	set_wifi_led "rt2800soc-phy0::radio"
 	;;
 belkin,f5d8235-v1)
-	set_wifi_led "$boardname:blue:wireless"
+	set_wifi_led "blue:wireless"
 	;;
 ralink,v11st-fe)
 	set_wifi_led "rt2800pci-phy0::radio"

@@ -6,6 +6,13 @@
 / {
 	compatible = "phicomm,psg1218", "ralink,mt7620a-soc";
 
+	aliases {
+		led-boot = &led_blue;
+		led-failsafe = &led_blue;
+		led-running = &led_blue;
+		led-upgrade = &led_blue;
+	};
+
 	keys {
 		compatible = "gpio-keys";
 
@@ -13,6 +20,26 @@
 			label = "reset";
 			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_blue: blue {
+			label = "blue:status";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		yellow {
+			label = "yellow:status";
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		};
+
+		red {
+			label = "red:status";
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

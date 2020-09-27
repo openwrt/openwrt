@@ -86,22 +86,22 @@
 		compatible = "gpio-leds";
 
 		led_router: router {
-			label = "wzr-agl300nh:green:router";
+			label = "green:router";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
 		diag {
-			label = "wzr-agl300nh:red:diag";
+			label = "red:diag";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		security_g {
-			label = "wzr-agl300nh:orange:security_g";
+			label = "orange:security_g";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		security_n {
-			label = "wzr-agl300nh:orange:security_n";
+			label = "orange:security_n";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};

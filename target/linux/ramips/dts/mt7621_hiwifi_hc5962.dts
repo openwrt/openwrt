@@ -22,12 +22,12 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "hc5962:white:status";
+			label = "white:status";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
 		led_system: system {
-			label = "hc5962:red:system";
+			label = "red:system";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};

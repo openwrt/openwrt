@@ -17,12 +17,12 @@
 		compatible = "gpio-leds";
 
 		led_cpu: cpu {
-			label = "a3:blue:cpu";
+			label = "blue:cpu";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "a3:blue:wlan";
+			label = "blue:wlan";
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

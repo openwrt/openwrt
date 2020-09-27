@@ -17,13 +17,13 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "ht-tm05:blue:power";
+			label = "blue:power";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		wifi {
-			label = "ht-tm05:green:wifi";
+			label = "green:wifi";
 			gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};

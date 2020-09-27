@@ -18,22 +18,22 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			label = "wrc-gst:green:power";
+			label = "green:power";
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_blue {
-			label = "wrc-gst:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps {
-			label = "wrc-gst:red:wps";
+			label = "red:wps";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_red {
-			label = "wrc-gst:red:power";
+			label = "red:power";
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 	};

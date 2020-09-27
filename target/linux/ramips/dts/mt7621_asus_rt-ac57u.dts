@@ -20,12 +20,12 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "rt-ac57u:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 48 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "rt-ac57u:blue:usb";
+			label = "blue:usb";
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ehci_port2>;
 			linux,default-trigger = "usbport";

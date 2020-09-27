@@ -8,6 +8,10 @@
 / {
 	aliases {
 		label-mac-device = &gmac0;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	keys {
@@ -39,6 +43,47 @@
 			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "blue:power";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi2g {
+			label = "blue:wifi2g";
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wifi5g {
+			label = "blue:wifi5g";
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wps_red {
+			label = "red:wps";
+			gpios = <&gpio 26 GPIO_ACTIVE_HIGH>;
+		};
+
+		wps_blue {
+			label = "blue:wps";
+			gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		eth_act {
+			label = "green:eth_act";
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_link {
+			label = "green:eth_link";
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
@@ -84,6 +129,13 @@
 				read-only;
 			};
 		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "rgmii2", "wdt";
+		function = "gpio";
 	};
 };
 

@@ -65,42 +65,42 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "u7628-01:green:power";
+			label = "green:power";
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "u7628-01:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "u7628-01:green:wan";
+			label = "green:wan";
 			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
 		};
 
 		lan1 {
-			label = "u7628-01:green:lan1";
+			label = "green:lan1";
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
 
 		lan2 {
-			label = "u7628-01:green:lan2";
+			label = "green:lan2";
 			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 		};
 
 		lan3 {
-			label = "u7628-01:green:lan3";
+			label = "green:lan3";
 			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
 		};
 
 		lan4 {
-			label = "u7628-01:green:lan4";
+			label = "green:lan4";
 			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "u7628-01:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";

@@ -23,18 +23,18 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "gl-mt300n-v2:green:power";
+			label = "green:power";
 			default-state = "on";
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "gl-mt300n-v2:green:wan";
+			label = "green:wan";
 			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "gl-mt300n-v2:red:wlan";
+			label = "red:wlan";
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 	};

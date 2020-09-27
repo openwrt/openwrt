@@ -8,6 +8,10 @@
 / {
 	aliases {
 		label-mac-device = &gmac0;
+		led-boot = &led_power_orange;
+		led-failsafe = &led_power_white;
+		led-running = &led_power_white;
+		led-upgrade = &led_net_orange;
 	};
 
 	keys {
@@ -23,6 +27,30 @@
 			label = "wps";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		led_power_orange: power_orange {
+			label = "orange:power";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_white: power_white {
+			label = "white:power";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		led_net_orange: net_orange {
+			label = "orange:net";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		net_white {
+			label = "white:net";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

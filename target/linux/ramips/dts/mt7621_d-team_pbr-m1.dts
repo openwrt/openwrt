@@ -22,28 +22,28 @@
 		compatible = "gpio-leds";
 
 		power {
-			label = "pbr-m1:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		led_sys: sys {
-			label = "pbr-m1:blue:sys";
+			label = "blue:sys";
 			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 		};
 
 		internet {
-			label = "pbr-m1:blue:internet";
+			label = "blue:internet";
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan2g {
-			label = "pbr-m1:blue:wlan2g";
+			label = "blue:wlan2g";
 			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan5g {
-			label = "pbr-m1:blue:wlan5g";
+			label = "blue:wlan5g";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 	};
