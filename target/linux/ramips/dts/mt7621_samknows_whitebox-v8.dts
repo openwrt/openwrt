@@ -18,12 +18,12 @@
 		compatible = "gpio-leds";
 
 		led_wps: wps {
-			label = "sk-wb8:green:wps";
+			label = "green:wps";
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "sk-wb8:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
 			linux,default-trigger = "usbport";

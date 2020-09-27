@@ -23,18 +23,18 @@
 		compatible = "gpio-leds";
 
 		led_blue: blue {
-			label = "miwifi-mini:blue:status";
+			label = "blue:status";
 			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		yellow {
-			label = "miwifi-mini:yellow:status";
+			label = "yellow:status";
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
 
 		red {
-			label = "miwifi-mini:red:status";
+			label = "red:status";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};
 	};
