@@ -1183,7 +1183,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  #endif				/* _EHCI_FSL_H */
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -305,6 +305,8 @@ static int ehci_bus_suspend (struct usb_
+@@ -304,6 +304,8 @@ static int ehci_bus_suspend (struct usb_
  						USB_PORT_STAT_HIGH_SPEED)
  				fs_idle_delay = true;
  			ehci_writel(ehci, t2, reg);
