@@ -1,0 +1,207 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/include/ "fsl/p1020si-pre.dtsi"
+/ {
+	model = "Edge-Core ECW7210-L";
+	compatible = "edgecore,ecw7210-l";
+
+	memory {
+		device_type = "memory";
+	};
+
+	lbc: localbus@ffe05000 {
+		reg = <0 0xffe05000 0 0x1000>;
+		ranges = <0x0 0x0 0x0 0xee000000 0x2000000
+			0x1 0x0 0x0 0xffa00000 0x0040000>;
+		interrupts = <0x13 0x2>;
+		#size-cells = <0x1>;
+		#address-cells = <0x2>;
+		bus-frequency = <24999999>;
+
+		/* In the stock configuration, the NAND contains the kernels,
+		* rootfses, and RW filesystem. We'll re-partition it here,
+		* but without a backup copy of the OS, and we'll put the
+		* rootfs in UBI.
+		*/
+
+		nand@1,0 {
+			#address-cells = <0x1>;
+			#size-cells = <0x1>;
+			compatible = "fsl,p1020-fcm-nand", "fsl,elbc-fcm-nand";
+			reg = <0x1 0x0 0x40000>;
+
+			partition@0 {
+				reg = <0x0 0x1000000>;
+				label = "kernel";
+			};
+
+			partition@01000000 {
+				reg = <0x1000000 0x1f000000>;
+				label = "ubi";
+			};
+		};
+
+		// It may be best to leave the NOR flash alone, contains U-boot
+		nor@0,0 {
+			device-width = <0x1>;
+			bank-width = <0x2>;
+			reg = <0x0 0x0 0x2000000>;
+			compatible = "cfi-flash";
+			#size-cells = <0x1>;
+			#address-cells = <0x1>;
+
+			partition@1f80000 {
+				read-only;
+				label = "mtd-uboot-image";
+				reg = <0x1f80000 0x80000>;
+			};
+
+			partition@1f60000 {
+				label = "uboot-env";
+				reg = <0x1f60000 0x20000>;
+			};
+
+			partition@1f40000 {
+				read-only;
+				label = "u-env-backup";
+				reg = <0x1f40000 0x20000>;
+			};
+
+			partition@1f20000 {
+				read-only;
+				label = "mtd-mfr";
+				reg = <0x1f20000 0x20000>;
+			};
+
+			partition@1e20000 {
+				read-only;
+				label = "mtd-reserved";
+				reg = <0x1e20000 0x100000>;
+			};
+
+			partition@1e00000 {
+				read-only;
+				label = "crashlog";
+				reg = <0x1e00000 0x20000>;
+			};
+
+			partition@60000 {
+				read-only;
+				label = "mtd-unused";
+				reg = <0x60000 0x1da0000>;
+			};
+
+			partition@20000 {
+				read-only;
+				label = "mtd-dtb";
+				reg = <0x20000 0x40000>;
+			};
+
+			partition@0 {
+				read-only;
+				label = "mtd-u-script";
+				reg = <0x0 0x20000>;
+			};
+		};
+	};
+
+	soc: soc@ffe00000 {
+		ranges = <0x0 0x0 0xffe00000 0x100000>;
+
+		i2c@3100 {
+			status = "okay";
+		};
+
+		serial@4500 {
+			clock-frequency = <399999996>;
+		};
+
+		pic@40000 {
+			clock-frequency = <399999996>;
+		};
+
+		// We seem to need to have the tbi_phy's laid out this way for enet2 to work
+		mdio@25000 {
+			compatible = "fsl,etsec2-tbi";
+
+			tbi_phy1: tbi-phy@12 {
+				reg = <0x12>;
+			};
+		};
+
+		mdio@24000 {
+			compatible = "fsl,etsec2-mdio";
+
+			phy0: ethernet-phy@0 {
+				reg = <0x0>;
+			};
+
+			phy1: ethernet-phy@1 {
+				reg = <0x1>;
+			};
+
+			tbi_phy0: tbi-phy@11 {
+				reg = <0x11>;
+			};
+		};
+
+		// Labeled on the case as Eth0/PoE+
+		enet2: ethernet@b2000 {
+			status = "okay";
+			phy-connection-type = "rgmii-id";
+			model = "eTSEC";
+			phy-handle = <&phy1>;
+			tbi-handle = <&tbi_phy1>;
+		};
+
+		// Labeled on the case as Eth1
+		enet0: ethernet@b0000 {
+			status = "okay";
+			phy-connection-type = "rgmii-id";
+			model = "eTSEC";
+			phy-handle = <&phy0>;
+			tbi-handle = <&tbi_phy0>;
+		};
+
+		enet1: ethernet@b1000 {
+			status = "disabled";
+		};
+
+		usb@22000 {
+			phy_type = "ulpi";
+			dr_mode = "host";
+		};
+
+		usb@23000 {
+			status = "disabled";
+		};
+	};
+
+	// Various fixups for things like interrupts and frequencies. U-boot usually does this,
+	// but it looks like the older u-boot doesn't like this newer device tree.
+	pci0: pcie@ffe09000 {
+		reg = <0x0 0xffe09000 0x0 0x1000>;
+		ranges = <0x2000000 0x0 0xa0000000 0x0 0xa0000000 0x0 0x20000000
+			0x1000000 0x0 0x00000000 0x0 0xffc30000 0x0 0x10000>;
+
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xa0000000 0x2000000 0x0 0xa0000000 0x0
+				0x20000000 0x1000000 0x0 0x0 0x1000000 0x0 0x0 0x0 0x100000>;
+		};
+
+	};
+
+	pci1: pcie@ffe0a000 {
+		reg = <0x0 0xffe0a000 0x0 0x1000>;
+		ranges = <0x2000000 0x0 0xc0000000 0x0 0xc0000000 0x0 0x20000000
+			0x1000000 0x0 0x00000000 0x0 0xffc20000 0x0 0x10000>;
+
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xc0000000 0x2000000 0x0 0xc0000000 0x0
+				0x20000000 0x1000000 0x0 0x0 0x1000000 0x0 0x0 0x0 0x100000>;
+		};
+	};
+
+};
+
+/include/ "fsl/p1020si-post.dtsi"
