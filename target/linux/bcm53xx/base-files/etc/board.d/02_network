@@ -89,9 +89,14 @@ bcm53xx_setup_macs()
 	netgear,r8500)
 		# As vendor doesn't use eth0 its MAC may be missing. Use one from eth2.
 		et2macaddr="$(nvram get et2macaddr)"
-		[ -n "$et2macaddr" ] && ucidef_set_interface_macaddr "lan" "$et2macaddr"
+		;;
+	meraki,mr32)
+		# The MAC is stored on an AT24C64 eeprom and not on the nvram
+		et2macaddr=$(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66)
 		;;
 	esac
+
+	[ -n "$et2macaddr" ] && ucidef_set_interface_macaddr "lan" "$et2macaddr"
 
 	wan_macaddr="$(nvram get wan_hwaddr)"
 	case "$board" in
