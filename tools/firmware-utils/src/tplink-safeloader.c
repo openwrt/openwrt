@@ -1443,7 +1443,7 @@ static struct device_info boards[] = {
 
 	/** Firmware layout for the TL-WPA8630P v2 (EU)*/
 	{
-		.id     = "TL-WPA8630P-V2-EU",
+		.id     = "TL-WPA8630P-V2.0-EU",
 		.vendor = "",
 		.support_list =
 			"SupportList:\n"
