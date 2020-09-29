@@ -738,6 +738,28 @@ define Device/dlink_dap-1365-a1
 endef
 TARGET_DEVICES += dlink_dap-1365-a1
 
+define Device/dlink_dap-2xxx
+  IMAGES += factory.img sysupgrade.bin
+  IMAGE/factory.img := append-kernel | pad-offset 6144k 160 | \
+	append-rootfs | wrgg-pad-rootfs | mkwrggimg | check-size
+  IMAGE/sysupgrade.bin := append-kernel | mkwrggimg | \
+	pad-to $$$$(BLOCKSIZE) | append-rootfs | append-metadata | check-size
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | mkwrggimg
+endef
+
+define Device/dlink_dap-2660-a1
+  $(Device/dlink_dap-2xxx)
+  SOC := qca9557
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-2660
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 15232k
+  DAP_SIGNATURE := wapac09_dkbs_dap2660
+endef
+TARGET_DEVICES += dlink_dap-2660-a1
+
 define Device/dlink_dap-2695-a1
   SOC := qca9558
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct

@@ -476,6 +476,10 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_text "mp" 0x1)
 		label_mac=$lan_mac
 		;;
+	dlink,dap-2660-a1)
+		lan_mac=$(mtd_get_mac_ascii bdcfg "lanmac")
+		label_mac=$lan_mac
+		;;
 	dlink,dap-2695-a1)
 		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
