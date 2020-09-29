@@ -243,10 +243,11 @@ endef
 
 ifeq ($(CONFIG_TARGET_ROOTFS_SECURITY_LABELS),y)
 define Image/mkfs/squashfs
+	echo ". $(call mkfs_target_dir,$(1))/etc/selinux/config" > $@.fakeroot-script
 	echo "$(STAGING_DIR_HOST)/bin/setfiles -r" \
 	     "$(call mkfs_target_dir,$(1))" \
-	     "$(call mkfs_target_dir,$(1))/etc/selinux/targeted/contexts/files/file_contexts " \
-	     "$(call mkfs_target_dir,$(1))" > $@.fakeroot-script
+	     "$(call mkfs_target_dir,$(1))/etc/selinux/\$${SELINUXTYPE}/contexts/files/file_contexts " \
+	     "$(call mkfs_target_dir,$(1))" >> $@.fakeroot-script
 	echo "$(Image/mkfs/squashfs-common)" >> $@.fakeroot-script
 	chmod +x $@.fakeroot-script
 	$(FAKEROOT) "$@.fakeroot-script"
