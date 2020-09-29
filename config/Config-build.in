@@ -335,7 +335,18 @@ menu "Global build settings"
 		select KERNEL_F2FS_FS_SECURITY
 		select KERNEL_UBIFS_FS_SECURITY
 		select KERNEL_JFFS2_FS_SECURITY
-		select PACKAGE_refpolicy
 		help
 		  This option enables the usage of SELinux labels
+
+	choice
+		prompt "default SELinux type"
+		depends on TARGET_ROOTFS_SECURITY_LABELS
+		default SELINUXTYPE_targeted
+		help
+		  Choose SELinux policy to be used for build.
+		config SELINUXTYPE_targeted
+			bool "targeted"
+			select PACKAGE_refpolicy
+	endchoice
+
 endmenu
