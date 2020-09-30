@@ -57,52 +57,52 @@
 	leds {
 		compatible = "gpio-leds";
 		power_blue: power1 {
-			label = "arv752dpw:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 		internet_red: internet {
-			label = "arv752dpw:red:internet";
+			label = "red:internet";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		message {
-			label = "arv752dpw:red:message";
+			label = "red:message";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power {
-			label = "arv752dpw:red:power";
+			label = "red:power";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		voice1 {
-			label = "arv752dpw:red:voice";
+			label = "red:voice";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		umts: umts {
-			label = "arv752dpw:red:umts";
+			label = "red:umts";
 			gpios = <&gpiomm 3 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "arv752dpw:red:wifi";
+			label = "red:wifi";
 			gpios = <&gpiomm 4 GPIO_ACTIVE_LOW>;
 		};
 		fxs1 {
-			label = "arv752dpw:green:tae-n";
+			label = "green:tae-n";
 			gpios = <&gpiomm 5 GPIO_ACTIVE_LOW>;
 		};
 		fxs2 {
-			label = "arv752dpw:green:tae-u";
+			label = "green:tae-u";
 			gpios = <&gpiomm 6 GPIO_ACTIVE_LOW>;
 		};
 		fxo {
-			label = "arv752dpw:green:isdn";
+			label = "green:isdn";
 			gpios = <&gpiomm 7 GPIO_ACTIVE_LOW>;
 		};
 		internet2 {
-			label = "arv752dpw:blue:internet";
+			label = "blue:internet";
 			gpios = <&gpiomm 8 GPIO_ACTIVE_LOW>;
 		};
 		voice2 {
-			label = "arv752dpw:blue:voice";
+			label = "blue:voice";
 			gpios = <&gpiomm 9 GPIO_ACTIVE_LOW>;
 		};
 	};

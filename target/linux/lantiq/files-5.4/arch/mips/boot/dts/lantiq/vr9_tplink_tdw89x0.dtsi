@@ -12,12 +12,12 @@
 
 	aliases {
 		/* the power led can't be controlled, use the wps led instead */
-		led-boot = &wps;
-		led-failsafe = &wps;
+		led-boot = &led_wps;
+		led-failsafe = &led_wps;
 
-		led-dsl = &dsl;
-		led-internet = &internet;
-		led-wifi = &wifi;
+		led-dsl = &led_dsl;
+		led-internet = &led_internet;
+		led-wifi = &led_wifi;
 		led-usb = &led_usb0;
 		led-usb2 = &led_usb2;
 	};
@@ -50,39 +50,44 @@
 		};
 	};
 
-	gpio-leds {
+	leds: leds {
 		compatible = "gpio-leds";
+
 		/*
 			power is not controllable via gpio
 		*/
-		dsl: dsl {
-			label = "tdw89x0:green:dsl";
+
+		led_dsl: dsl {
+			label = "green:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 		};
-		internet: internet {
-			label = "tdw89x0:green:internet";
+
+		led_internet: internet {
+			label = "green:internet";
 			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_usb0: usb0 {
-			label = "tdw89x0:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
 		};
+
 		led_usb2: usb2 {
-			label = "tdw89x0:green:usb2";
+			label = "green:usb2";
 			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 		};
-		wps: wps {
-			label = "tdw89x0:green:wps";
+
+		led_wps: wps {
+			label = "green:wps";
 			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
-	wifi-leds {
+	ath9k-leds {
 		compatible = "gpio-leds";
 
-		wifi: wifi {
-			label = "tdw89x0:green:wifi";
+		led_wifi: wifi {
+			label = "green:wifi";
 			gpios = <&ath9k 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};

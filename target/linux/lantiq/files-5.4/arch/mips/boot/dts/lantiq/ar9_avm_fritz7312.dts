@@ -45,24 +45,24 @@
 		compatible = "gpio-leds";
 
 		power: power {
-			label = "fritz7312:green:power";
+			label = "green:power";
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		voice {
-			label = "fritz7312:green:fon";
+			label = "green:fon";
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 		};
 		dect {
-			label = "fritz7312:green:dect";
+			label = "green:dect";
 			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 		};
 		wlan: wlan {
-			label = "fritz7312:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 		info_green: info_green {
-			label = "fritz7312:green:info";
+			label = "green:info";
 			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 		};
 	};

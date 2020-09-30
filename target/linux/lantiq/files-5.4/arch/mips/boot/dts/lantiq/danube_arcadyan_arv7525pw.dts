@@ -45,28 +45,28 @@
 	leds {
 		compatible = "gpio-leds";
 		power_green: power {
-			label = "arv7525pw:green:power";
+			label = "green:power";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power1 {
-			label = "arv7525pw:red:power";
+			label = "red:power";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		online: online {
-			label = "arv7525pw:green:online";
+			label = "green:online";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		voice {
-			label = "arv7525pw:green:telefonie";
+			label = "green:telefonie";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		voice2 {
-			label = "arv7525pw:red:telefonie";
+			label = "red:telefonie";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "arv7525pw:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 	};

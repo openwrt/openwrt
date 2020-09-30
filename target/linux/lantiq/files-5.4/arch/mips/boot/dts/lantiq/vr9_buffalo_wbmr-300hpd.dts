@@ -73,13 +73,13 @@
 		compatible = "gpio-leds";
 
 		diag_r: diag_r {
-			label = "wbmr300:red:diag";
+			label = "red:diag";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			default_state = "off";
 		};
 
 		wifi_g: wifi_g {
-			label = "wbmr300:green:wifi";
+			label = "green:wifi";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -89,52 +89,52 @@
 		};
 
 		router_y: router_y {
-			label = "wbmr300:yellow:router";
+			label = "yellow:router";
 			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		wifi_y: wifi_y {
-			label = "wbmr300:yellow:wifi";
+			label = "yellow:wifi";
 			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan1: lan1 {
-			label = "wbmr300:green:lan1";
+			label = "green:lan1";
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan: wan {
-			label = "wbmr300:green:wan";
+			label = "green:wan";
 			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan3: lan3 {
-			label = "wbmr300:green:lan3";
+			label = "green:lan3";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan2: lan2 {
-			label = "wbmr300:green:lan2";
+			label = "green:lan2";
 			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		};
 
 		internet_g: internet_g {
-			label = "wbmr300:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 34 GPIO_ACTIVE_HIGH>;
 		};
 
 		internet_y: internet_y {
-			label = "wbmr300:yellow:internet";
+			label = "yellow:internet";
 			gpios = <&gpio 35 GPIO_ACTIVE_HIGH>;
 		};
 
 		router_g: router_g {
-			label = "wbmr300:green:router";
+			label = "green:router";
 			gpios = <&gpio 36 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_g: power_g {
-			label = "wbmr300:green:power";
+			label = "green:power";
 			gpios = <&gpio 49 GPIO_ACTIVE_HIGH>;
 		};
 	};

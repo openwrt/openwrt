@@ -56,36 +56,36 @@
 	leds {
 		compatible = "gpio-leds";
 		power: power {
-			label = "vr200:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		dsl: dsl {
-			label = "vr200:blue:dsl";
+			label = "blue:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		internet: internet {
-			label = "vr200:blue:internet";
+			label = "blue:internet";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		led_usb: usb {
-			label = "vr200:blue:usb";
+			label = "blue:usb";
 			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
 		};
 		eth {
-			label = "vr200:blue:lan";
+			label = "blue:lan";
 			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
 		};
 		wlan {
-			label = "vr200:blue:wlan";
+			label = "blue:wlan";
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 		wlan5g: wifi {
-			label = "vr200:blue:wlan5g";
+			label = "blue:wlan5g";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 		led_wps {
-			label = "vr200:blue:wps";
+			label = "blue:wps";
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 	};	

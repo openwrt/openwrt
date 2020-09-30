@@ -13,13 +13,13 @@
 	};
 
 	aliases {
-		led-boot = &power_green;
-		led-failsafe = &power_red;
-		led-running = &power_green;
-		led-upgrade = &power_red;
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
 
-		led-dsl = &info_green;
-		led-wifi = &wifi;
+		led-dsl = &led_info_green;
+		led-wifi = &led_wifi;
 	};
 
 	memory@0 {
@@ -47,28 +47,34 @@
 	leds: leds {
 		compatible = "gpio-leds";
 
-		power_green: power {
+		led_power_green: power_green {
+			label = "green:power";
 			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
-		power_red: power2 {
+		led_power_red: power_red {
+			label = "red:power";
 			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
 		};
 
-		info_green: info_green {
+		led_info_green: info_green {
+			label = "green:info";
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi: wifi {
+		led_wifi: wifi {
+			label = "green:wlan";
 			gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
 		};
 
-		info_red: info_red {
+		info_red {
+			label = "red:info";
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 		};
 
-		dect: dect {
+		dect {
+			label = "green:dect";
 			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 		};
 	};
