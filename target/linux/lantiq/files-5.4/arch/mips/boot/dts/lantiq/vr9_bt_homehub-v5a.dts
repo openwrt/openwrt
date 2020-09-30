@@ -56,44 +56,44 @@
 
 		/* broadband-* is a single RGB led */
 		broadband-red {
-			label = "bthomehubv5a:red:broadband";
+			label = "red:broadband";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 		broadband-green {
-			label = "bthomehubv5a:green:broadband";
+			label = "green:broadband";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 		broadband_blue: broadband-blue {
-			label = "bthomehubv5a:blue:broadband";
+			label = "blue:broadband";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		/* wireless-* is a single RGB led */
 		wireless-red {
-			label = "bthomehubv5a:red:wireless";
+			label = "red:wireless";
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 		wireless-green {
-			label = "bthomehubv5a:green:wireless";
+			label = "green:wireless";
 			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 		wireless_blue: wireless-blue {
-			label = "bthomehubv5a:blue:wireless";
+			label = "blue:wireless";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		/* power-* is a single RGB led */
 		power_red: power-red {
-			label = "bthomehubv5a:red:power";
+			label = "red:power";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power-green {
-			label = "bthomehubv5a:green:power";
+			label = "green:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_blue: power-blue {
-			label = "bthomehubv5a:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 

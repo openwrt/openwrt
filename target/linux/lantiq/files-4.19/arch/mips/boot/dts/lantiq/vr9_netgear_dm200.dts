@@ -57,29 +57,29 @@
 		compatible = "gpio-leds";
 
 		power_amber: power_amber {
-			label = "dm200:amber:power";
+			label = "amber:power";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 		power_green: power_green {
-			label = "dm200:green:power";
+			label = "green:power";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan_amber {
-			label = "dm200:amber:lan";
+			label = "amber:lan";
 			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		};
 		lan_green {
-			label = "dm200:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		dsl_amber {
-			label = "dm200:amber:dsl";
+			label = "amber:dsl";
 			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
 		};
 		dsl_green: dsl_green {
-			label = "dm200:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 36 GPIO_ACTIVE_HIGH>;
 		};
 	};

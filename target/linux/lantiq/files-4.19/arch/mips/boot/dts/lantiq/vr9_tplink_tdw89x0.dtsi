@@ -56,24 +56,24 @@
 			power is not controllable via gpio
 		*/
 		dsl: dsl {
-			label = "tdw89x0:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 		};
 		internet: internet {
-			label = "tdw89x0:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_usb0: usb0 {
-			label = "tdw89x0:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
 		};
 		led_usb2: usb2 {
-			label = "tdw89x0:green:usb2";
+			label = "green:usb2";
 			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 		};
 		wps: wps {
-			label = "tdw89x0:green:wps";
+			label = "green:wps";
 			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -82,7 +82,7 @@
 		compatible = "gpio-leds";
 
 		wifi: wifi {
-			label = "tdw89x0:green:wifi";
+			label = "green:wifi";
 			gpios = <&ath9k 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};

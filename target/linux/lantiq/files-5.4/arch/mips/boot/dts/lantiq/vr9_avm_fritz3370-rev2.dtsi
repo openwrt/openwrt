@@ -53,38 +53,38 @@
 		compatible = "gpio-leds";
 
 		power_green: power {
-			label = "fritz3370:green:power";
+			label = "green:power";
 			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
 		power_red: power2 {
-			label = "fritz3370:red:power";
+			label = "red:power";
 			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
 		};
 
 		info_red {
-			label = "fritz3370:red:info";
+			label = "red:info";
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi: wifi {
-			label = "fritz3370:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 		};
 
 		dsl: dsl {
-			label = "fritz3370:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
-			label = "fritz3370:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 		};
 
 		info_green: info_green {
-			label = "fritz3370:green:info";
+			label = "green:info";
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 		};
 	};

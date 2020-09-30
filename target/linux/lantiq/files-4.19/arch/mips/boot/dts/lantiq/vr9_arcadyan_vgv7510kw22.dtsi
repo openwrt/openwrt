@@ -47,48 +47,48 @@
 		compatible = "gpio-leds";
 
 		dsl: dsl {
-			label = "vgv7510kw22:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
 		internet_red {
-			label = "vgv7510kw22:red:internet";
+			label = "red:internet";
 			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 
 		info_red {
-			label = "vgv7510kw22:red:info";
+			label = "red:info";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		power_green: power {
-			label = "vgv7510kw22:green:power";
+			label = "green:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
 		info_green {
-			label = "vgv7510kw22:green:info";
+			label = "green:info";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		internet_green: internet_green {
-			label = "vgv7510kw22:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi: wifi {
-			label = "vgv7510kw22:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 
 		power_red: power2 {
-			label = "vgv7510kw22:red:power";
+			label = "red:power";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 
 		phone {
-			label = "vgv7510kw22:green:telefon";
+			label = "green:telefon";
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 	};

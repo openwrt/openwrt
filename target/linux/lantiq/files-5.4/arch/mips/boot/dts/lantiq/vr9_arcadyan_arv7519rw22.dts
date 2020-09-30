@@ -52,32 +52,32 @@
 		compatible = "gpio-leds";
 
 		lan_green {
-			label = "arv7519rw22:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		internet_red {
-			label = "arv7519rw22:red:internet";
+			label = "red:internet";
 			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power_green {
-			label = "arv7519rw22:green:power";
+			label = "green:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		alarm_blue {
-			label = "arv7519rw22:blue:alarm";
+			label = "blue:alarm";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 		internet_orange {
-			label = "arv7519rw22:orange:internet";
+			label = "orange:internet";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 		internet_green: internet_green {
-			label = "arv7519rw22:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 		voice_green {
-			label = "arv7519rw22:green:voice";
+			label = "green:voice";
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 	};
