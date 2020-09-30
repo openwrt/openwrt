@@ -40,19 +40,19 @@
 		compatible = "gpio-leds";
 
 		dsl: dsl {
-			label = "asl56026:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
 		/* power-* is a bicolour led */
 		power_green: power_green {
-			label = "asl56026:green:power";
+			label = "green:power";
 			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 
 		power_red: power_red {
-			label = "asl56026:red:power";
+			label = "red:power";
 			gpios = <&gpio 18 GPIO_ACTIVE_HIGH>;
 		};
 	};

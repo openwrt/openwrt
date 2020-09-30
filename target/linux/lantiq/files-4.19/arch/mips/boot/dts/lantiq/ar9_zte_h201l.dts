@@ -54,32 +54,32 @@
 		compatible = "gpio-leds";
 
 		power_green: power {
-			label = "h201l:green:power";
+			label = "green:power";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		online: online {
-			label = "h201l:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
-			label = "h201l:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		phone {
-			label = "h201l:green:phone";
+			label = "green:phone";
 			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
 		};
 		wps {
-			label = "h201l:green:wps";
+			label = "green:wps";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "h201l:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		led_usb: usb {
-			label = "h201l:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 	};
