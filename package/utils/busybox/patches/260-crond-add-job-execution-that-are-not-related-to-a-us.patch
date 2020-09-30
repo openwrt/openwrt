@@ -1,0 +1,181 @@
+From af610e34944e5cad1c0c14158fa527bb979f8445 Mon Sep 17 00:00:00 2001
+From: Florian Eckert <fe@dev.tdt.de>
+Date: Wed, 30 Sep 2020 14:31:47 +0200
+Subject: [PATCH] crond: add job execution that are not related to a username
+
+Until now it was not possible to use crond jobs independent of a
+deticated username on the system. In the system there are normaly also
+other crond jobs that need to be processed.
+
+For this task you have to install an additional crond daemon to run these
+tasks or add all that jobs that need to be done to the root crontab file.
+
+On an embeded system where there is usually only root, all services have
+to edit or change this file. This is difficult and unfamiliar users may
+accidentally delete these tasks. Since they have not created them as
+root.
+
+So that this is no longer necessary, each service can be great their tasks
+file and the crond executes these tasks as root in the file. If the
+name of the file does not have an deticated user on the system.
+
+Signed-off-by: Florian Eckert <fe@dev.tdt.de>
+---
+ miscutils/crond.c | 51 ++++++++++++++++++++++++++---------------------
+ 1 file changed, 28 insertions(+), 23 deletions(-)
+
+diff --git a/miscutils/crond.c b/miscutils/crond.c
+index 2e8ca8b68..d6937e57c 100644
+--- a/miscutils/crond.c
++++ b/miscutils/crond.c
+@@ -108,7 +108,8 @@
+ typedef struct CronFile {
+ 	struct CronFile *cf_next;
+ 	struct CronLine *cf_lines;
+-	char *cf_username;
++	char *cf_name;
++	char *cf_user;
+ 	smallint cf_wants_starting;     /* bool: one or more jobs ready */
+ 	smallint cf_has_running;        /* bool: one or more jobs running */
+ 	smallint cf_deleted;            /* marked for deletion (but still has running jobs) */
+@@ -359,7 +360,7 @@ static void FixDayDow(CronLine *line)
+ }
+ 
+ /*
+- * delete_cronfile() - delete user database
++ * delete_cronfile() - delete file database
+  *
+  * Note: multiple entries for same user may exist if we were unable to
+  * completely delete a database due to running processes.
+@@ -377,13 +378,13 @@ static void FixDayDow(CronLine *line)
+ //is still running.
+ //OTOH most other versions of cron do not wait for job termination anyway,
+ //they end up with multiple copies of jobs if they don't terminate soon enough.
+-static void delete_cronfile(const char *userName)
++static void delete_cronfile(const char *fileName)
+ {
+ 	CronFile **pfile = &G.cron_files;
+ 	CronFile *file;
+ 
+ 	while ((file = *pfile) != NULL) {
+-		if (strcmp(userName, file->cf_username) == 0) {
++		if (strcmp(fileName, file->cf_name) == 0) {
+ 			CronLine **pline = &file->cf_lines;
+ 			CronLine *line;
+ 
+@@ -402,7 +403,8 @@ static void delete_cronfile(const char *userName)
+ 			}
+ 			if (file->cf_has_running == 0) {
+ 				*pfile = file->cf_next;
+-				free(file->cf_username);
++				free(file->cf_user);
++				free(file->cf_name);
+ 				free(file);
+ 				continue;
+ 			}
+@@ -424,11 +426,6 @@ static void load_crontab(const char *fileName)
+ 
+ 	delete_cronfile(fileName);
+ 
+-	if (!getpwnam(fileName)) {
+-		log7("ignoring file '%s' (no such user)", fileName);
+-		return;
+-	}
+-
+ 	parser = config_open(fileName);
+ 	if (!parser)
+ 		return;
+@@ -440,7 +437,15 @@ static void load_crontab(const char *fileName)
+ 		CronLine **pline;
+ 		int n;
+ 
+-		file->cf_username = xstrdup(fileName);
++		if (!getpwnam(fileName)) {
++			log7("execute jobs for file '%s' with user root", fileName);
++			file->cf_user = xstrdup("root");
++		}
++		else {
++			file->cf_user = xstrdup(fileName);
++		}
++
++		file->cf_name = xstrdup(fileName);
+ 		pline = &file->cf_lines;
+ 
+ 		while (1) {
+@@ -455,7 +460,7 @@ static void load_crontab(const char *fileName)
+ 			if (!n)
+ 				break;
+ 
+-			log5("user:%s entry:%s", fileName, parser->data);
++			log5("user:%s entry:%s", file->cf_user, parser->data);
+ 
+ 			/* check if line is setting MAILTO= */
+ 			if (is_prefixed_with(tokens[0], "MAILTO=")) {
+@@ -551,11 +556,11 @@ static void load_crontab(const char *fileName)
+ #endif
+ 			{
+ 				/* parse date ranges */
+-				ParseField(file->cf_username, line->cl_Mins, 60, 0, NULL, tokens[0]);
+-				ParseField(file->cf_username, line->cl_Hrs, 24, 0, NULL, tokens[1]);
+-				ParseField(file->cf_username, line->cl_Days, 32, 0, NULL, tokens[2]);
+-				ParseField(file->cf_username, line->cl_Mons, 12, -1, MonAry, tokens[3]);
+-				ParseField(file->cf_username, line->cl_Dow, 7, 0, DowAry, tokens[4]);
++				ParseField(file->cf_name, line->cl_Mins, 60, 0, NULL, tokens[0]);
++				ParseField(file->cf_name, line->cl_Hrs, 24, 0, NULL, tokens[1]);
++				ParseField(file->cf_name, line->cl_Days, 32, 0, NULL, tokens[2]);
++				ParseField(file->cf_name, line->cl_Mons, 12, -1, MonAry, tokens[3]);
++				ParseField(file->cf_name, line->cl_Dow, 7, 0, DowAry, tokens[4]);
+ 				/*
+ 				 * fix days and dow - if one is not "*" and the other
+ 				 * is "*", the other is set to 0, and vise-versa
+@@ -609,7 +614,7 @@ static void rescan_crontab_dir(void)
+  again:
+ 	for (file = G.cron_files; file; file = file->cf_next) {
+ 		if (!file->cf_deleted) {
+-			delete_cronfile(file->cf_username);
++			delete_cronfile(file->cf_name);
+ 			goto again;
+ 		}
+ 	}
+@@ -894,7 +899,7 @@ static void flag_starting_jobs(time_t t1, time_t t2)
+ 
+ 		ptm = localtime(&t);
+ 		for (file = G.cron_files; file; file = file->cf_next) {
+-			log5("file %s:", file->cf_username);
++			log5("file %s:", file->cf_name);
+ 			if (file->cf_deleted)
+ 				continue;
+ 			for (line = file->cf_lines; line; line = line->cl_next) {
+@@ -908,7 +913,7 @@ static void flag_starting_jobs(time_t t1, time_t t2)
+ 							(int)line->cl_pid, line->cl_cmd);
+ 					if (line->cl_pid > 0) {
+ 						log8("user %s: process already running: %s",
+-							file->cf_username, line->cl_cmd);
++							file->cf_user, line->cl_cmd);
+ 					} else if (line->cl_pid == 0) {
+ 						line->cl_pid = START_ME_NORMAL;
+ 						file->cf_wants_starting = 1;
+@@ -947,9 +952,9 @@ static void start_jobs(int wants_start)
+ 			if (line->cl_pid != wants_start)
+ 				continue;
+ 
+-			pid = start_one_job(file->cf_username, line);
++			pid = start_one_job(file->cf_user, line);
+ 			log8("USER %s pid %3d cmd %s",
+-				file->cf_username, (int)pid, line->cl_cmd);
++				file->cf_user, (int)pid, line->cl_cmd);
+ 			if (pid < 0) {
+ 				file->cf_wants_starting = 1;
+ 			}
+@@ -983,7 +988,7 @@ static int check_completions(void)
+ 
+ 			r = waitpid(line->cl_pid, NULL, WNOHANG);
+ 			if (r < 0 || r == line->cl_pid) {
+-				process_finished_job(file->cf_username, line);
++				process_finished_job(file->cf_user, line);
+ 				if (line->cl_pid == 0) {
+ 					/* sendmail was not started for it */
+ 					continue;
+-- 
+2.20.1
+
