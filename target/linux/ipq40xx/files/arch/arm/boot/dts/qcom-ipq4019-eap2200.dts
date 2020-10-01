@@ -29,40 +29,40 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "eap2200:amber:power";
+			label = "amber:power";
 			gpios = <&tlmm 43 GPIO_ACTIVE_LOW>;
 		};
 
 		lan1 {
-			label = "eap2200:blue:lan1";
+			label = "blue:lan1";
 			gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
 		};
 
 		lan2 {
-			label = "eap2200:blue:lan2";
+			label = "blue:lan2";
 			gpios = <&tlmm 45 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan2g {
-			label = "eap2200:blue:wlan2g";
+			label = "blue:wlan2g";
 			gpios = <&tlmm 46 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g {
-			label = "eap2200:yellow:wlan5g";
+			label = "yellow:wlan5g";
 			gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
 		wlan5g2 {
-			label = "eap2200:yellow:wlan5g2";
+			label = "yellow:wlan5g2";
 			gpios = <&tlmm 48 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy2tpt";
 		};
 
 		mode {
-			label = "eap2200:blue:mode";
+			label = "blue:mode";
 			gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
 		};
 	};

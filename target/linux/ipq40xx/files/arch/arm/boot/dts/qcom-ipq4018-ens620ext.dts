@@ -92,27 +92,27 @@
 		compatible = "gpio-leds";
 
 		power: power {
-			label = "ens620ext:amber:power";
+			label = "amber:power";
 			gpios = <&tlmm 58 GPIO_ACTIVE_LOW>;
 		};
 
 		lan1 {
-			label = "ens620ext:green:lan1";
+			label = "green:lan1";
 			gpios = <&tlmm 1 GPIO_ACTIVE_LOW>;
 		};
 
 		lan2 {
-			label = "ens620ext:green:lan2";
+			label = "green:lan2";
 			gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2G {
-			label = "ens620ext:green:wlan2G";
+		wlan2g {
+			label = "green:wlan2g";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
 		};
 
-		wlan5G {
-			label = "ens620ext:green:wlan5G";
+		wlan5g {
+			label = "green:wlan5g";
 			gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
 		};
 	};

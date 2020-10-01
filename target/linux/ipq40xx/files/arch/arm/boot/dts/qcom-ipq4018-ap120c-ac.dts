@@ -30,24 +30,24 @@
 		compatible = "gpio-leds";
 
 		status: status {
-			label = "ap120c-ac:blue:status";
+			label = "blue:status";
 			gpios = <&tlmm 5 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
 		wan {
-			label = "ap120c-ac:amber:wan";
+			label = "amber:wan";
 			gpios = <&qca8075 19 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan2g {
-			label = "ap120c-ac:green:wlan2g";
+			label = "green:wlan2g";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g {
-			label = "ap120c-ac:red:wlan5g";
+			label = "red:wlan5g";
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy1tpt";
 		};
