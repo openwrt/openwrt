@@ -19,25 +19,25 @@
 		compatible = "gpio-leds";
 
 		led_red: red {
-			label = "mr8300:red:alarm";
+			label = "red:alarm";
 			gpios = <&tlmm 47 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_amber: amber {
-			label = "mr8300:amber:programming";
+			label = "amber:programming";
 			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};
 
 		led_blue: blue {
-			label = "mr8300:blue:power";
+			label = "blue:power";
 			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
 		};
 
 		// On back panel, above USB socket
 
 		led_usb: usb {
-			label = "mr8300:green:usb";
+			label = "green:usb";
 			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&usb3_port1>, <&usb3_port2>,
 					  <&usb2_port1>;

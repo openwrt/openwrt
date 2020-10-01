@@ -109,33 +109,33 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "fritz4040:green:wlan";
+			label = "green:wlan";
 			gpios = <&qca8075 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		panic: info_red {
-			label = "fritz4040:red:info";
+			label = "red:info";
 			gpios = <&qca8075 3 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};
 
 		wan {
-			label = "fritz4040:green:wan";
+			label = "green:wan";
 			gpios = <&qca8075 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		power: power {
-			label = "fritz4040:green:power";
+			label = "green:power";
 			gpios = <&qca8075 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan {
-			label = "fritz4040:green:lan";
+			label = "green:lan";
 			gpios = <&qca8075 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		flash: info_amber {
-			label = "fritz4040:amber:info";
+			label = "amber:info";
 			gpios = <&qca8075 15 GPIO_ACTIVE_HIGH>;
 		};
 	};

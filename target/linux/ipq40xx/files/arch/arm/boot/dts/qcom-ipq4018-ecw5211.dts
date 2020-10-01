@@ -32,17 +32,17 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "ecw5211:yellow:power";
+			label = "yellow:power";
 			gpios = <&tlmm 5 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan2g {
-			label = "ecw5211:green:wlan2g";
+			label = "green:wlan2g";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan5g {
-			label = "ecw5211:green:wlan5g";
+			label = "green:wlan5g";
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 		};
 	};

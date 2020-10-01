@@ -105,18 +105,18 @@
 		compatible = "gpio-leds";
 
 		red {
-			label = "a42:red:status";
+			label = "red:status";
 			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "default-off";
 		};
 
 		power: green {
-			label = "a42:green:status";
+			label = "green:status";
 			gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		blue {
-			label = "a42:blue:status";
+			label = "blue:status";
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "default-off";
 		};
