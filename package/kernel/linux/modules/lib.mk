@@ -250,8 +250,7 @@ define KernelPackage/lib-cordic
   SUBMENU:=$(LIB_MENU)
   TITLE:=Cordic function support
   KCONFIG:=CONFIG_CORDIC
-  FILES:=$(LINUX_DIR)/lib/cordic.ko@lt5.2 \
-	  $(LINUX_DIR)/lib/math/cordic.ko@ge5.2
+  FILES:=$(LINUX_DIR)/lib/math/cordic.ko
   AUTOLOAD:=$(call AutoProbe,cordic)
 endef
 
