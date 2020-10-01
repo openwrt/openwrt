@@ -46,6 +46,7 @@ Building images:
 	make image BIN_DIR="<path>" # alternative output directory for the images
 	make image EXTRA_IMAGE_NAME="<string>" # Add this to the output image filename (sanitized)
 	make image DISABLED_SERVICES="<svc1> [<svc2> [<svc3> ..]]" # Which services in /etc/init.d/ should be disabled
+	make image ADD_LOCAL_KEY=1 # add locally generated siging key to image
 
 Print manifest:
 	List "all" packages which get installed into the image.
@@ -64,8 +65,10 @@ help: FORCE
 # override variables from rules.mk
 PACKAGE_DIR:=$(TOPDIR)/packages
 LISTS_DIR:=$(subst $(space),/,$(patsubst %,..,$(subst /,$(space),$(TARGET_DIR))))$(DL_DIR)
+export OPKG_KEYS:=$(TOPDIR)/keys
 OPKG:=$(call opkg,$(TARGET_DIR)) \
 	-f $(TOPDIR)/repositories.conf \
+	--verify-program $(SCRIPT_DIR)/opkg-key \
 	--cache $(DL_DIR) \
 	--lists-dir $(LISTS_DIR)
 
@@ -132,8 +135,19 @@ package_index: FORCE
 	@echo >&2
 	@echo Building package index... >&2
 	@mkdir -p $(TMP_DIR) $(TARGET_DIR)/tmp
+
+	$(if $(CONFIG_SIGNATURE_CHECK), \
+		@if [ ! -s $(BUILD_KEY) -o ! -s $(BUILD_KEY).pub ]; then \
+			echo Generate local signing keys... >&2; \
+			$(STAGING_DIR_HOST)/bin/usign -G -s $(BUILD_KEY) -p $(BUILD_KEY).pub -c "Local build key"; \
+			$(SCRIPT_DIR)/opkg-key add $(BUILD_KEY).pub; \
+		fi \
+	)
+
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
-		gzip -9nc Packages > Packages.gz \
+		gzip -9nc Packages > Packages.gz; \
+		$(if $(CONFIG_SIGNATURE_CHECK), \
+			$(STAGING_DIR_HOST)/bin/usign -S -m Packages -s $(BUILD_KEY)); \
 	) >/dev/null 2>/dev/null
 	$(OPKG) update >&2 || true
 
@@ -162,8 +176,13 @@ prepare_rootfs: FORCE
 	@echo Finalizing root filesystem...
 
 	$(CP) $(TARGET_DIR) $(TARGET_DIR_ORIG)
+	$(if $(CONFIG_SIGNATURE_CHECK), \
+		$(if $(ADD_LOCAL_KEY), \
+			OPKG_KEYS=$(TARGET_DIR)/etc/opkg/keys/ \
+			$(SCRIPT_DIR)/opkg-key add $(BUILD_KEY).pub \
+		) \
+	)
 	$(call prepare_rootfs,$(TARGET_DIR),$(USER_FILES),$(DISABLED_SERVICES))
-
 
 build_image: FORCE
 	@echo
