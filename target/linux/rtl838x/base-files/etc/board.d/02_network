@@ -57,7 +57,7 @@ rtl838x_setup_switch()
 	done
 	json_select ..
 	lan_list=$(echo $lan_list | xargs -n1 | sort -V | xargs)
-	ucidef_set_interface_lan "$lan_list"
+	ucidef_set_interface_lan "$lan_list" dhcp
 }
 
 rtl838x_setup_macs()
