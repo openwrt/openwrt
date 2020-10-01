@@ -1,0 +1,7 @@
+#!/bin/sh
+
+uci batch <<EOF
+delete dhcp.@dnsmasq[0].interface
+add_list dhcp.@dnsmasq[0].interface=lo
+commit dhcp
+EOF
