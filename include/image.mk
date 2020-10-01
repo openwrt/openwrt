@@ -162,18 +162,12 @@ DTC_FLAGS += \
   -Wno-unit_address_format \
   -Wno-pci_bridge \
   -Wno-pci_device_bus_num \
-  -Wno-pci_device_reg
-ifeq ($(strip $(call kernel_patchver_ge,4.17.0)),1)
-  DTC_FLAGS += \
-	-Wno-avoid_unnecessary_addr_size \
-	-Wno-alias_paths
-endif
-ifeq ($(strip $(call kernel_patchver_ge,4.18.0)),1)
-  DTC_FLAGS += \
-	-Wno-graph_child_address \
-	-Wno-graph_port \
-	-Wno-unique_unit_address
-endif
+  -Wno-pci_device_reg \
+  -Wno-avoid_unnecessary_addr_size \
+  -Wno-alias_paths \
+  -Wno-graph_child_address \
+  -Wno-graph_port \
+  -Wno-unique_unit_address
 
 define Image/pad-to
 	dd if=$(1) of=$(1).new bs=$(2) conv=sync
