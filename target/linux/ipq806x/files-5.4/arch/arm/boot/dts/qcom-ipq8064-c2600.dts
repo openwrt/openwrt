@@ -57,43 +57,43 @@
 		pinctrl-names = "default";
 
 		lan {
-			label = "c2600:white:lan";
+			label = "white:lan";
 			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_HIGH>;
 		};
 
 		usb4 {
-			label = "c2600:white:usb_4";
+			label = "white:usb_4";
 			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		usb2 {
-			label = "c2600:white:usb_2";
+			label = "white:usb_2";
 			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps {
-			label = "c2600:white:wps";
+			label = "white:wps";
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan_amber {
-			label = "c2600:amber:wan";
+			label = "amber:wan";
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_white {
-			label = "c2600:white:wan";
+			label = "white:wan";
 			gpios = <&qcom_pinmux 33 GPIO_ACTIVE_LOW>;
 		};
 
 		power: power {
-			label = "c2600:white:power";
+			label = "white:power";
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 
 		general: general {
-			label = "c2600:white:general";
+			label = "white:general";
 			gpios = <&qcom_pinmux 66 GPIO_ACTIVE_HIGH>;
 		};
 	};
