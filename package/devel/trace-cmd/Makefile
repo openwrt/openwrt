@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=trace-cmd
 PKG_VERSION:=v2.6.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/rostedt/trace-cmd.git/snapshot/
@@ -31,6 +31,7 @@ endef
 
 MAKE_FLAGS += \
 	NO_PYTHON=1 \
+	NO_AUDIT=1 \
 	prefix=/usr
 
 PLUGINS_DIR := $(PKG_INSTALL_DIR)/usr/lib/trace-cmd/plugins
