@@ -56,9 +56,8 @@ endef
 # builds is a small host tool that gets run as part of the build
 # process.
 MAKE_FLAGS += \
-	TEST_TOOLCHAIN="$(STAGING_DIR_HOSTPKG)" \
-	BINDIR=/bin \
-	SBINDIR=/sbin \
+	SETFILES="$(STAGING_DIR_HOST)/bin/setfiles" \
+	CHECKPOLICY="$(STAGING_DIR_HOSTPKG)/bin/checkpolicy" \
 	CC="$(HOSTCC)" \
 	CFLAGS="$(HOST_CFLAGS)"
 
