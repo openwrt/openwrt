@@ -13,6 +13,9 @@ set_preinit_iface() {
 	zyxel,nbg6617)
 		ifname=eth0
 		;;
+	devolo,magic-2-wifi-next)
+		ifname=eth1
+		;;
 	esac
 }
 
