@@ -29,7 +29,8 @@ migrate_led_sysfs() {
 }
 
 remove_devicename_led_sysfs() {
-	local cfg="$1"
+	local cfg="$1"; shift
+	local exceptions="$@"
 	local sysfs
 	local name
 	local new_sysfs
@@ -37,7 +38,13 @@ remove_devicename_led_sysfs() {
 	config_get sysfs ${cfg} sysfs
 	config_get name ${cfg} name
 
+	# only continue if two or more colons are present
 	echo "${sysfs}" | grep -q ":.*:" || return
+
+	for exception in ${exceptions}; do
+		# no change if exceptions provided as argument are found for devicename
+		echo "${sysfs}" | grep -q "^${exception}:" && return
+	done
 
 	new_sysfs=$(echo ${sysfs} | sed "s/^[^:]*://")
 
@@ -53,7 +60,7 @@ migrate_leds() {
 
 remove_devicename_leds() {
 	config_load system
-	config_foreach remove_devicename_led_sysfs led
+	config_foreach remove_devicename_led_sysfs led "$@"
 }
 
 migrations_apply() {
