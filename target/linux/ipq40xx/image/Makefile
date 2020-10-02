@@ -317,6 +317,25 @@ define Device/compex_wpj428
 endef
 TARGET_DEVICES += compex_wpj428
 
+define Device/devolo_magic-2-wifi-next
+	$(call Device/FitImage)
+	DEVICE_VENDOR := devolo
+	DEVICE_MODEL := Magic 2 WiFi next
+	SOC := qcom-ipq4018
+	KERNEL_SIZE := 4096k
+
+	# If the bootloader sees 0xDEADC0DE and this trailer at the 64k boundary of a TFTP image
+	# it will bootm it, just like we want for the initramfs.
+	KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to 64k |\
+		append-string -e '\xDE\xAD\xC0\xDE{"fl_initramfs":""}\x00'
+
+	IMAGE_SIZE := 26624k
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-devolo_magic-2-wifi-next uboot-envtools
+endef
+TARGET_DEVICES += devolo_magic-2-wifi-next
+
 define Device/dlink_dap-2610
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := D-Link
