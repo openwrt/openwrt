@@ -7,6 +7,7 @@ ARCH:=mips
 CPU_TYPE:=4kec
 BOARD:=rtl838x
 BOARDNAME:=Realtek MIPS
+DEVICE_TYPE:=basic
 FEATURES:=ramdisk squashfs
 
 KERNEL_PATCHVER:=5.4
