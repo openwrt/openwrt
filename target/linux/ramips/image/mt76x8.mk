@@ -119,6 +119,15 @@ define Device/glinet_vixmini
 endef
 TARGET_DEVICES += glinet_vixmini
 
+define Device/hak5_wifi-pineapple-mk7
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Hak5
+  DEVICE_MODEL := WiFi Pineapple Mark 7
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += wifi-pineapple-mk7
+endef
+TARGET_DEVICES += hak5_wifi-pineapple-mk7
+
 define Device/hilink_hlk-7628n
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := HILINK
