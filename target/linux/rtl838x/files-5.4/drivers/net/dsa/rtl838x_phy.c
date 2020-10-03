@@ -23,6 +23,7 @@
 #define PHY_ID_RTL8218B_E	0x001cc981
 #define PHY_ID_RTL8218B_I	0x001cca40
 #define PHY_ID_RTL8390_GENERIC	0x001ccab0
+#define PHY_ID_RTL8393_I	0x001c8393
 
 struct __attribute__ ((__packed__)) part {
 	uint16_t start;
@@ -116,6 +117,116 @@ void rtl8380_sds_rst(int mac)
 	sw_w32_mask(0, 0x1 << 6, RTL838X_SDS4_DUMMY0 + offset);
 	sw_w32_mask(0x1 << 6, 0, RTL838X_SDS4_DUMMY0 + offset);
 	pr_info("SERDES reset: %d\n", mac);
+}
+
+int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
+{
+	int offset = 0;
+	int reg;
+	u32 val;
+
+	if (phy_addr == 49)
+		offset = 0x100;
+
+	/* For the RTL8393 internal SerDes, we simulate a PHY ID in registers 2/3
+	 * which would otherwise read as 0
+	 */
+	if (soc_info.id == 0x8393) {
+		if (phy_reg == 2)
+			return 0x1c;
+		if (phy_reg == 3)
+			return 0x8393;
+	}
+
+	reg = (phy_reg << 1) & 0xfc;
+	val = sw_r32(RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
+
+	if (phy_reg & 1)
+		val = (val >> 16) & 0xffff;
+	else
+		val &= 0xffff;
+	return val;
+}
+
+int rtl838x_read_sds_phy(int phy_addr, int phy_reg)
+{
+	int offset = 0;
+	u32 val;
+
+	if (phy_addr == 26)
+		offset = 0x100;
+	val = sw_r32(MAPLE_SDS4_FIB_REG0r + offset + (phy_reg << 2)) & 0xffff;
+
+	return val;
+}
+
+int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v)
+{
+	int offset = 0;
+	int reg;
+	u32 val;
+
+	if (phy_addr == 49)
+		offset = 0x100;
+
+	reg = (phy_reg << 1) & 0xfc;
+	val = v;
+	if (phy_reg & 1) {
+		val = val << 16;
+		sw_w32_mask(0xffff0000, val,
+			    RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
+	} else {
+		sw_w32_mask(0xffff, val,
+			    RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
+	}
+
+	return 0;
+}
+
+/* Read the link and speed status of the 2 internal SGMII/1000Base-X
+ * ports of the RTL838x SoCs
+ */
+static int rtl8380_read_status(struct phy_device *phydev)
+{
+	int err;
+	int phy_addr = phydev->mdio.addr;
+
+	err = genphy_read_status(phydev);
+
+	if (phydev->link) {
+		phydev->speed = SPEED_1000;
+		phydev->duplex = DUPLEX_FULL;
+	}
+
+	return err;
+}
+
+/* Read the link and speed status of the 2 internal SGMII/1000Base-X
+ * ports of the RTL8393 SoC
+ */
+static int rtl8393_read_status(struct phy_device *phydev)
+{
+	int offset = 0;
+	int err;
+	int phy_addr = phydev->mdio.addr;
+	u32 v;
+
+	err = genphy_read_status(phydev);
+	if (phy_addr == 49)
+		offset = 0x100;
+
+	if (phydev->link) {
+		phydev->speed = SPEED_100;
+		/* Read SPD_RD_00 (bit 13) and SPD_RD_01 (bit 6) out of the internal
+		 * PHY registers
+		 */
+		v = sw_r32(RTL839X_SDS12_13_XSG0 + offset + 0x80);
+		if (!(v & (1 << 13)) && (v & (1 << 6)))
+			phydev->speed = SPEED_1000;
+		phydev->duplex = DUPLEX_FULL;
+	}
+
+	return err;
 }
 
 static struct fw_header *
@@ -406,7 +517,15 @@ static int rtl8218b_ext_match_phy_device(struct phy_device *phydev)
 {
 	int addr = phydev->mdio.addr;
 
-	return phydev->phy_id == PHY_ID_RTL8218B_E && addr < 8;
+	/* Both the RTL8214FC and the external RTL8218B have the same
+	 * PHY ID. On the RTL838x, the RTL8218B can only be attached_dev
+	 * at PHY IDs 0-7, while the RTL8214FC must be attached via
+	 * the pair of SGMII/1000Base-X with higher PHY-IDs
+	 */
+	if (soc_info.family == RTL8380_FAMILY_ID)
+		return phydev->phy_id == PHY_ID_RTL8218B_E && addr < 8;
+	else
+		return phydev->phy_id == PHY_ID_RTL8218B_E;
 }
 
 
@@ -1065,11 +1184,31 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 	return 0;
 }
 
+static int rtl8390_configure_serdes(struct phy_device *phydev)
+{
+	phydev_info(phydev, "Detected internal RTL8390 SERDES\n");
+
+	/* In autoneg state, force link, set SR4_CFG_EN_LINK_FIB1G */
+	sw_w32_mask(0, 1 << 18, RTL839X_SDS12_13_XSG0 + 0x0a);
+
+	/* Disable EEE: Clear FRE16_EEE_RSG_FIB1G, FRE16_EEE_STD_FIB1G,
+	 * FRE16_C1_PWRSAV_EN_FIB1G, FRE16_C2_PWRSAV_EN_FIB1G
+	 * and FRE16_EEE_QUIET_FIB1G
+	 */
+	sw_w32_mask(0x1f << 10, 0, RTL839X_SDS12_13_XSG0 + 0xe0);
+
+	return 0;
+}
+
 static int rtl8214fc_phy_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
 	struct rtl838x_phy_priv *priv;
 	int addr = phydev->mdio.addr;
+
+	/* 839x has internal SerDes */
+	if (soc_info.id == 0x8393)
+		return -ENODEV;
 
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
@@ -1118,7 +1257,7 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 	priv->name = "RTL8218B (external)";
 
 	/* All base addresses of the PHYs start at multiples of 8 */
-	if (!(addr % 8)) {
+	if (!(addr % 8) && soc_info.family == RTL8380_FAMILY_ID) {
 		/* Configuration must be done while patching still possible */
 		return rtl8380_configure_ext_rtl8218b(phydev);
 	}
@@ -1176,6 +1315,27 @@ static int rtl838x_serdes_probe(struct phy_device *phydev)
 	return -ENODEV;
 }
 
+static int rtl8393_serdes_probe(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	struct rtl838x_phy_priv *priv;
+	int addr = phydev->mdio.addr;
+
+	pr_info("%s: id: %d\n", __func__, addr);
+	if (soc_info.family != RTL8390_FAMILY_ID)
+		return -ENODEV;
+
+	if (addr < 24)
+		return -ENODEV;
+
+	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	priv->name = "RTL8393 Serdes";
+	return rtl8390_configure_serdes(phydev);
+}
+
 static int rtl8390_serdes_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
@@ -1198,8 +1358,8 @@ static int rtl8390_serdes_probe(struct phy_device *phydev)
 
 static struct phy_driver rtl838x_phy_driver[] = {
 	{
-		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214FC),
-		.name		= "REATLTEK RTL8214C",
+		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214C),
+		.name		= "REALTEK RTL8214C",
 		.features	= PHY_GBIT_FEATURES,
 		.match_phy_device = rtl8214c_match_phy_device,
 		.probe		= rtl8214c_phy_probe,
@@ -1209,7 +1369,7 @@ static struct phy_driver rtl838x_phy_driver[] = {
 	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214FC),
-		.name		= "REATLTEK RTL8214FC",
+		.name		= "REALTEK RTL8214FC",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
 		.match_phy_device = rtl8214fc_match_phy_device,
 		.probe		= rtl8214fc_phy_probe,
@@ -1225,7 +1385,7 @@ static struct phy_driver rtl838x_phy_driver[] = {
 	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218B_E),
-		.name		= "REATLTEK RTL8218B (external)",
+		.name		= "REALTEK RTL8218B (external)",
 		.features	= PHY_GBIT_FEATURES,
 		.match_phy_device = rtl8218b_ext_match_phy_device,
 		.probe		= rtl8218b_ext_phy_probe,
@@ -1239,7 +1399,7 @@ static struct phy_driver rtl838x_phy_driver[] = {
 	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218B_I),
-		.name		= "REATLTEK RTL8218B (internal)",
+		.name		= "REALTEK RTL8218B (internal)",
 		.features	= PHY_GBIT_FEATURES,
 		.probe		= rtl8218b_int_phy_probe,
 		.suspend	= genphy_suspend,
@@ -1252,7 +1412,7 @@ static struct phy_driver rtl838x_phy_driver[] = {
 	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218B_I),
-		.name		= "REATLTEK RTL8380 SERDES",
+		.name		= "REALTEK RTL8380 SERDES",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
 		.probe		= rtl838x_serdes_probe,
 		.suspend	= genphy_suspend,
@@ -1260,10 +1420,21 @@ static struct phy_driver rtl838x_phy_driver[] = {
 		.set_loopback	= genphy_loopback,
 		.read_mmd	= rtl8380_rtl8218b_read_mmd,
 		.write_mmd	= rtl8380_rtl8218b_write_mmd,
+		.read_status	= rtl8380_read_status,
+	},
+	{
+		PHY_ID_MATCH_MODEL(PHY_ID_RTL8393_I),
+		.name		= "REALTEK RTL8393 SERDES",
+		.features	= PHY_GBIT_FIBRE_FEATURES,
+		.probe		= rtl8393_serdes_probe,
+		.suspend	= genphy_suspend,
+		.resume		= genphy_resume,
+		.set_loopback	= genphy_loopback,
+		.read_status	= rtl8393_read_status,
 	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8390_GENERIC),
-		.name		= "REATLTEK RTL8390 Generic",
+		.name		= "REALTEK RTL8390 Generic",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
 		.probe		= rtl8390_serdes_probe,
 		.suspend	= genphy_suspend,
