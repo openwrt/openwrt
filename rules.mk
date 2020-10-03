@@ -258,6 +258,8 @@ else
 endif
 
 BUILD_KEY=$(TOPDIR)/key-build
+BUILD_KEY_APK_SEC=$(TOPDIR)/private-key.pem
+BUILD_KEY_APK_PUB=$(TOPDIR)/public-key.pem
 
 FAKEROOT:=$(STAGING_DIR_HOST)/bin/fakeroot
 

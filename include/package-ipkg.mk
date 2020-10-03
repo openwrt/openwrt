@@ -102,6 +102,7 @@ ifeq ($(DUMP),)
     ABIV_$(1):=$(call FormatABISuffix,$(1),$(ABI_VERSION))
     PDIR_$(1):=$(call FeedPackageDir,$(1))
     IPKG_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).ipk
+    APK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).apk
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
 
@@ -200,7 +201,7 @@ $(_endef)
     $(PKG_INFO_DIR)/$(1).provides $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
 	@rm -rf $$(IDIR_$(1)); \
 		$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
-	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL $(PKG_INFO_DIR)
+	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1)) $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	$(if $(Package/$(1)/install-overlay),mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/rootfs-overlay)
 	$(call Package/$(1)/install-overlay,$$(IDIR_$(1))/rootfs-overlay)
@@ -226,6 +227,37 @@ $(_endef)
 		) || true \
 	)
     endif
+
+    ifneq ($$(KEEP_$(1)),)
+		@( \
+			keepfiles=""; \
+			for x in $$(KEEP_$(1)); do \
+				[ -f "$$(IDIR_$(1))/$$$$x" ] || keepfiles="$$$${keepfiles:+$$$$keepfiles }$$$$x"; \
+			done; \
+			[ -z "$$$$keepfiles" ] || { \
+				mkdir -p $$(IDIR_$(1))/lib/upgrade/keep.d; \
+				for x in $$$$keepfiles; do echo $$$$x >> $$(IDIR_$(1))/lib/upgrade/keep.d/$(1); done; \
+			}; \
+		)
+    endif
+
+	$(INSTALL_DIR) $$(PDIR_$(1))
+
+	$(FAKEROOT) apk mkpkg \
+	  --info "name:$(1)" \
+	  --info "version:$(VERSION)" \
+	  --info "description:$()" \
+	  --info "arch:$(PKGARCH)" \
+	  --info "license:$(LICENSE)" \
+	  --info "origin:$(SOURCE)" \
+	  --info "maintainer:$(MAINTAINER)" \
+	  $$(foreach dep,$$(Package/$(1)/DEPENDS),--info "depends:$$(subst $$(comma),,$$(dep))") \
+	  --files "$$(IDIR_$(1))" \
+	  --output "$$(APK_$(1))" \
+	  --sign "$(BUILD_KEY_APK_SEC)"
+
+	mkdir -p $$(IDIR_$(1))/CONTROL
+
 	(cd $$(IDIR_$(1))/CONTROL; \
 		( \
 			echo "$$$$CONTROL"; \
@@ -249,20 +281,6 @@ $(_endef)
 		$($(1)_COMMANDS) \
 	)
 
-    ifneq ($$(KEEP_$(1)),)
-		@( \
-			keepfiles=""; \
-			for x in $$(KEEP_$(1)); do \
-				[ -f "$$(IDIR_$(1))/$$$$x" ] || keepfiles="$$$${keepfiles:+$$$$keepfiles }$$$$x"; \
-			done; \
-			[ -z "$$$$keepfiles" ] || { \
-				mkdir -p $$(IDIR_$(1))/lib/upgrade/keep.d; \
-				for x in $$$$keepfiles; do echo $$$$x >> $$(IDIR_$(1))/lib/upgrade/keep.d/$(1); done; \
-			}; \
-		)
-    endif
-
-	$(INSTALL_DIR) $$(PDIR_$(1))
 	$(FAKEROOT) $(SCRIPT_DIR)/ipkg-build -m "$(FILE_MODES)" $$(IDIR_$(1)) $$(PDIR_$(1))
 	@[ -f $$(IPKG_$(1)) ]
 
