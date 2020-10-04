@@ -1,18 +1,13 @@
-/dts-v1/;
-
 #include "bcm6358.dtsi"
 
 #include <dt-bindings/input/input.h>
 
 / {
-	model = "Huawei EchoLife HG553";
-	compatible = "huawei,echolife-hg553", "brcm,bcm6358";
-
 	aliases {
-		led-boot = &led_power_blue;
-		led-failsafe = &led_power_blue;
-		led-running = &led_power_blue;
-		led-upgrade = &led_power_blue;
+		led-boot = &led_power_red;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_red;
+		led-upgrade = &led_power_red;
 	};
 
 	chosen {
@@ -20,66 +15,76 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	keys {
+	gpiokeys: keys {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
 
-		rfkill {
-			label = "rfkill";
+		wlan {
+			label = "wlan";
 			gpios = <&pinctrl 9 1>;
-			linux,code = <KEY_RFKILL>;
+			linux,code = <KEY_WLAN>;
+			debounce-interval = <60>;
+		};
+
+		restart {
+			label = "restart";
+			gpios = <&pinctrl 10 1>;
+			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&pinctrl 37 1>;
-			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 11 1>;
+			linux,code = <KEY_CONFIG>;
 			debounce-interval = <60>;
 		};
 	};
 
-	leds {
+	gpioleds: leds {
 		compatible = "gpio-leds";
 
-		led_power_blue: power_blue {
-			label = "blue:power";
-			gpios = <&pinctrl 4 1>;
+		dsl_red {
+			label = "red:dsl";
+			gpios = <&pinctrl 2 1>;
+		};
+
+		led_power_red: power_red {
+			label = "red:power";
+			gpios = <&pinctrl 3 1>;
 			default-state = "on";
 		};
-		power_red {
-			label = "red:power";
-			gpios = <&pinctrl 5 1>;
-		};
-		hspa_red {
-			label = "red:hspa";
-			gpios = <&pinctrl 12 1>;
-		};
-		hspa_blue {
-			label = "blue:hspa";
+
+		lan1_red {
+			label = "red:lan1";
 			gpios = <&pinctrl 13 1>;
 		};
-		lan_red {
-			label = "red:lan";
+
+		lan2_red {
+			label = "red:lan2";
 			gpios = <&pinctrl 22 1>;
 		};
-		lan_blue {
-			label = "blue:lan";
+
+		lan3_green {
+			label = "green:lan3";
 			gpios = <&pinctrl 23 1>;
 		};
-		wifi_red {
-			label = "red:wifi";
-			gpios = <&pinctrl 25 1>;
+
+		lan3_red {
+			label = "red:lan3";
+			gpios = <&pinctrl 26 1>;
 		};
-		dsl_red {
-			label = "red:adsl";
-			gpios = <&pinctrl 34 1>;
+
+		lan4_green {
+			label = "green:lan4";
+			gpios = <&pinctrl 27 1>;
 		};
-		dsl_blue {
-			label = "blue:adsl";
-			gpios = <&pinctrl 35 1>;
+
+		lan4_red {
+			label = "red:lan4";
+			gpios = <&pinctrl 28 1>;
 		};
 	};
 };
@@ -100,8 +105,14 @@
 
 		linux@20000 {
 			label = "linux";
-			reg = <0x020000 0xfc0000>;
+			reg = <0x020000 0xec0000>;
 			compatible = "brcm,bcm963xx-imagetag";
+		};
+
+		cal_data@ee0000 {
+			label = "cal_data";
+			reg = <0xee0000 0x100000>;
+			read-only;
 		};
 
 		nvram@fe0000 {
