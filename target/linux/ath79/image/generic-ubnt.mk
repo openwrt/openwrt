@@ -122,6 +122,17 @@ define Device/ubnt_acb-isp
 endef
 TARGET_DEVICES += ubnt_acb-isp
 
+define Device/ubnt_acb-ac
+  $(Device/ubnt)
+  SOC := ar9342
+  DEVICE_MODEL := airCube AC
+  IMAGE_SIZE := 15744k
+  UBNT_BOARD := ACB-AC
+  UBNT_CHIP := ar9342
+  UBNT_TYPE := ACB
+endef
+TARGET_DEVICES += ubnt_acb-ac
+
 define Device/ubnt_airrouter
   $(Device/ubnt-xm)
   SOC := ar7241
