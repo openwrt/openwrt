@@ -1858,7 +1858,7 @@
 +static int
 +ar40xx_phy_read_status(struct phy_device *phydev)
 +{
-+	if (phydev->mdio.addr != 0)
++	if(phydev->mdio.bus != NULL)
 +		return genphy_read_status(phydev);
 +
 +	return 0;
@@ -1867,7 +1867,7 @@
 +static int
 +ar40xx_phy_config_aneg(struct phy_device *phydev)
 +{
-+	if (phydev->mdio.addr == 0)
++	if(phydev->mdio.bus == NULL)
 +		return 0;
 +
 +	return genphy_config_aneg(phydev);
