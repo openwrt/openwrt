@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+#include "qcom-ipq8065-nighthawk.dtsi"
+
+/ {
+	model = "Netgear XR500";
+	compatible = "netgear,xr500", "qcom,ipq8065", "qcom,ipq8064";
+	
+	aliases {
+		led-boot = &led_power_white;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power_white;
+		led-upgrade = &led_power_amber;
+	};
+
+	leds {
+		
+		led_power_white: power_white {
+			label = "xr500:white:power";
+			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+
+		led_power_amber: power_amber {
+			label = "xr500:amber:power";
+			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan_white {
+			label = "xr500:white:wan";
+			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan_amber {
+			label = "xr500:amber:wan";
+			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
+		};
+
+		usb1 {
+			label = "xr500:white:usb1";
+			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		usb2 {
+			label = "xr500:white:usb2";
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
+		};
+
+		wifi {
+			label = "xr500:white:wifi";
+			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
+		};
+
+		wps {
+			label = "xr500:white:wps";
+			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
+		};
+
+	};
+};
+
+&nand_controller {
+	nand@0 {
+		partitions {			
+			ubi@1880000 {
+				label = "ubi";
+				reg = <0x1880000 0xce00000>;
+			};
+
+			reserve@e680000 {
+				label = "reserve";
+				reg = <0xe680000 0x0780000>;
+				read-only;
+			};
+		};
+	};
+};
