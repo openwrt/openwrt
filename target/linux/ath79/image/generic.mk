@@ -75,6 +75,7 @@ endef
 define Build/engenius-tar-gz
 	-[ -f "$@" ] && \
 	mkdir -p $@.tmp && \
+	touch $@.tmp/failsafe.bin && \
 	echo '#!/bin/sh' > $@.tmp/before-upgrade.sh && \
 	echo ': > /tmp/_sys/sysupgrade.tgz' >> $@.tmp/before-upgrade.sh && \
 	$(CP) $(KDIR)/loader-$(DEVICE_NAME).uImage \
