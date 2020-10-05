@@ -37,7 +37,7 @@ define Device/dlink_dir-645
   SOC := rt3662
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7872k
-  KERNEL := kernel-bin | append-dtb | lzma -d10
+  KERNEL := $(KERNEL_DTB)
   SEAMA_SIGNATURE := wrgn39_dlob.hans_dir645
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-645
