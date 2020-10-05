@@ -148,6 +148,11 @@ define Build/sercom-seal
 		$(1)
 endef
 
+define Build/sign-dlink-ru
+	sign_dlink_ru $@ $1 $2
+	mv $@.new $@
+endef
+
 define Build/trx
 	$(STAGING_DIR_HOST)/bin/trx $(1) \
 		-o $@ \
