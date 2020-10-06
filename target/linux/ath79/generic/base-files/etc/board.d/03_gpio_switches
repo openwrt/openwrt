@@ -73,6 +73,9 @@ tplink,wbs510-v1|\
 tplink,wbs510-v2)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "20"
 	;;
+ubnt,aircube-isp)
+	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "11"
+	;;
 ubnt,nanostation-ac)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "3"
 	;;
@@ -81,9 +84,6 @@ ubnt,nanostation-m)
 	;;
 ubnt,nanostation-m-xw)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "2"
-	;;
-ubnt,acb-isp)
-	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "11"
 	;;
 zbtlink,zbt-wd323)
 	ucidef_add_gpio_switch "io0" "IO#0" "0"
