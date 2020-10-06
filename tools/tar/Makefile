@@ -1,14 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2015 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright 2015-2020 OpenWrt.org
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tar
 PKG_CPE_ID:=cpe:/a:gnu:tar
 PKG_VERSION:=1.32
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/tar
@@ -24,7 +23,7 @@ HOSTCXX := $(HOSTCXX_NOCACHE)
 HOST_CONFIGURE_ARGS += \
 	--without-posix-acls \
 	--without-selinux \
-	--without-xattrs \
+	--with-xattrs \
 	--disable-acl \
 	--disable-nls
 
