@@ -110,7 +110,7 @@ define Device/ubnt-xw
   UBNT_VERSION := 6.0.4
 endef
 
-define Device/ubnt_acb-isp
+define Device/ubnt_aircube-isp
   $(Device/ubnt)
   SOC := qca9533
   DEVICE_MODEL := airCube ISP
@@ -119,8 +119,9 @@ define Device/ubnt_acb-isp
   UBNT_CHIP := qca9533
   UBNT_TYPE := ACB
   UBNT_VERSION := 2.5.0
+  SUPPORTED_DEVICES += ubnt,acb-isp
 endef
-TARGET_DEVICES += ubnt_acb-isp
+TARGET_DEVICES += ubnt_aircube-isp
 
 define Device/ubnt_airrouter
   $(Device/ubnt-xm)
