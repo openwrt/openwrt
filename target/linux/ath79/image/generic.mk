@@ -2232,6 +2232,15 @@ define Device/yuncore_xd4200
 endef
 TARGET_DEVICES += yuncore_xd4200
 
+define Device/ziking_cpe46b
+  SOC := ar9330
+  DEVICE_VENDOR := ZiKing
+  DEVICE_MODEL := CPE46B
+  IMAGE_SIZE := 8000k
+  DEVICE_PACKAGES := kmod-i2c-gpio
+endef
+TARGET_DEVICES += ziking_cpe46b
+
 define Device/zbtlink_zbt-wd323
   SOC := ar9344
   DEVICE_VENDOR := ZBT
