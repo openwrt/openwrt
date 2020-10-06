@@ -1,0 +1,56 @@
+Index: libelf-0.8.13/config.h.in
+===================================================================
+--- libelf-0.8.13.orig/config.h.in
++++ libelf-0.8.13/config.h.in
+@@ -141,6 +141,9 @@
+ /* Define if you have the <stdint.h> header file.  */
+ #undef HAVE_STDINT_H
+ 
++/* Define if you have the <stdlib.h> header file.  */
++#undef HAVE_STDLIB_H
++
+ /* Define if you have the <sys/elf.h> header file.  */
+ #undef HAVE_SYS_ELF_H
+ 
+Index: libelf-0.8.13/configure
+===================================================================
+--- libelf-0.8.13.orig/configure
++++ libelf-0.8.13/configure
+@@ -1146,7 +1146,7 @@ EOF
+ 
+ fi
+ 
+-for ac_hdr in unistd.h stdint.h fcntl.h
++for ac_hdr in unistd.h stdint.h stdlib.h fcntl.h
+ do
+ ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+ echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
+@@ -1186,6 +1186,13 @@ else
+ fi
+ done
+ 
++cat >> confdefs.h <<EOF
++
++#ifdef HAVE_STDLIB_H
++# include <stdlib.h>
++#endif
++EOF
++
+ for ac_hdr in elf.h sys/elf.h link.h sys/link.h
+ do
+ ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+Index: libelf-0.8.13/lib/private.h
+===================================================================
+--- libelf-0.8.13.orig/lib/private.h
++++ libelf-0.8.13/lib/private.h
+@@ -37,6 +37,10 @@
+ #endif
+ #include <sys/types.h>
+ 
++#ifdef HAVE_STDLIB_H
++#include <stdlib.h>
++#endif
++
+ #if STDC_HEADERS
+ # include <stdlib.h>
+ # include <string.h>

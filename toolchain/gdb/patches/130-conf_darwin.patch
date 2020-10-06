@@ -1,0 +1,59 @@
+Index: gdb-8.3.1/readline/rltty.c
+===================================================================
+--- gdb-8.3.1.orig/readline/rltty.c
++++ gdb-8.3.1/readline/rltty.c
+@@ -37,9 +37,9 @@
+ 
+ #include "rldefs.h"
+ 
+-#if defined (GWINSZ_IN_SYS_IOCTL)
++#if defined (HAVE_SYS_IOCTL_H)
+ #  include <sys/ioctl.h>
+-#endif /* GWINSZ_IN_SYS_IOCTL */
++#endif /* HAVE_SYS_IOCTL_H */
+ 
+ #include "rltty.h"
+ #include "readline.h"
+Index: gdb-8.3.1/readline/terminal.c
+===================================================================
+--- gdb-8.3.1.orig/readline/terminal.c
++++ gdb-8.3.1/readline/terminal.c
+@@ -51,9 +51,9 @@
+ /* System-specific feature definitions and include files. */
+ #include "rldefs.h"
+ 
+-#if defined (GWINSZ_IN_SYS_IOCTL) && !defined (TIOCGWINSZ)
++#if defined (HAVE_SYS_IOCTL_H)
+ #  include <sys/ioctl.h>
+-#endif /* GWINSZ_IN_SYS_IOCTL && !TIOCGWINSZ */
++#endif /* HAVE_SYS_IOCTL_H */
+ 
+ #ifdef __MSDOS__
+ # include <pc.h>
+Index: gdb-8.3.1/readline/config.h.in
+===================================================================
+--- gdb-8.3.1.orig/readline/config.h.in
++++ gdb-8.3.1/readline/config.h.in
+@@ -142,6 +142,9 @@
+ /* Define if you have the <fcntl.h> header file.  */
+ #undef HAVE_FCNTL_H
+ 
++/* Define if you have the <sys/ioctl.h> header file.  */
++#undef HAVE_SYS_IOCTL_H
++
+ /* Define if you have the <langinfo.h> header file.  */
+ #undef HAVE_LANGINFO_H
+ 
+Index: gdb-8.3.1/readline/configure
+===================================================================
+--- gdb-8.3.1.orig/readline/configure
++++ gdb-8.3.1/readline/configure
+@@ -4580,7 +4580,7 @@ $as_echo "#define HAVE_STRCOLL 1" >>conf
+ fi
+ 
+ 
+-for ac_header in fcntl.h unistd.h stdlib.h varargs.h stdarg.h string.h strings.h \
++for ac_header in fcntl.h sys/ioctl.h unistd.h stdlib.h varargs.h stdarg.h string.h strings.h \
+ 		limits.h locale.h pwd.h memory.h termcap.h termios.h termio.h
+ do :
+   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
