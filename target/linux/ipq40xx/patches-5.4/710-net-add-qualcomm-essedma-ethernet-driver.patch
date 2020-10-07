@@ -11,13 +11,14 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
 
 --- a/drivers/net/ethernet/qualcomm/Kconfig
 +++ b/drivers/net/ethernet/qualcomm/Kconfig
-@@ -62,4 +62,13 @@ config QCOM_EMAC
+@@ -62,4 +62,14 @@ config QCOM_EMAC
  
  source "drivers/net/ethernet/qualcomm/rmnet/Kconfig"
  
 +config ESSEDMA
 +	tristate "Qualcomm Atheros ESS Edma support"
-+	---help---
++	depends on OF_MDIO
++	help
 +	  This driver supports ethernet edma adapter.
 +	  Say Y to build this driver.
 +
