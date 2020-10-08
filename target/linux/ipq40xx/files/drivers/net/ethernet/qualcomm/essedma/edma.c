@@ -2023,6 +2023,10 @@ int edma_open(struct net_device *netdev)
 	 */
 	if (adapter->poll_required) {
 		if (!IS_ERR(adapter->phydev)) {
+			/* AR40xx calibration will leave the PHY in unwanted state,
+			 * so a soft reset is required before phy_start()
+			 */
+			genphy_soft_reset(adapter->phydev);
 			phy_start(adapter->phydev);
 			phy_start_aneg(adapter->phydev);
 			adapter->link_state = __EDMA_LINKDOWN;
