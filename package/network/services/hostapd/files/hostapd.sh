@@ -276,6 +276,8 @@ hostapd_common_add_bss_config() {
 	config_add_string osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
 
 	config_add_int airtime_bss_weight airtime_bss_limit
+
+	config_add_string roam_rssi_threshold
 }
 
 hostapd_set_vlan_file() {
@@ -1188,6 +1190,10 @@ wpa_supplicant_add_network() {
 
 	[ -n "$bssid_blacklist" ] && append network_data "bssid_blacklist=$bssid_blacklist" "$N$T"
 	[ -n "$bssid_whitelist" ] && append network_data "bssid_whitelist=$bssid_whitelist" "$N$T"
+
+	local roam_rssi_threshold
+	json_get_var roam_rssi_threshold roam_rssi_threshold
+	[ -n "$roam_rssi_threshold" ] && append network_data "bgscan=\"simple:120:${roam_rssi_threshold}:600\"" "$N$T"
 
 	[ -n "$basic_rate" ] && {
 		local br rate_list=
