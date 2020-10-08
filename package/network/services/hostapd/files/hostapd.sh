@@ -278,6 +278,8 @@ hostapd_common_add_bss_config() {
 	config_add_int airtime_bss_weight airtime_bss_limit
 
 	config_add_string roam_rssi_threshold
+
+	config_add_string autoscan_periodic_interval
 }
 
 hostapd_set_vlan_file() {
@@ -897,10 +899,16 @@ wpa_supplicant_prepare_interface() {
 		[ -e "$multiap_flag_file" ] && rm "$multiap_flag_file"
 	fi
 	wpa_supplicant_teardown_interface "$ifname"
+
+	local autoscan_periodic_interval
+	json_get_var autoscan_periodic_interval autoscan_periodic_interval
+	[ -n "$autoscan_periodic_interval" ] && autoscan_periodic_interval="autoscan=periodic:${autoscan_periodic_interval}"
+
 	cat > "$_config" <<EOF
 ${scan_list:+freq_list=$scan_list}
 $ap_scan
 $country_str
+$autoscan_periodic_interval
 EOF
 	return 0
 }
