@@ -25,6 +25,7 @@
 #include <linux/workqueue.h>
 #include <linux/of_device.h>
 #include <linux/of_address.h>
+#include <linux/of_mdio.h>
 #include <linux/mdio.h>
 #include <linux/gpio.h>
 
@@ -1245,42 +1246,6 @@ ar40xx_init_globals(struct ar40xx_priv *priv)
 	ar40xx_write(priv, AR40XX_REG_PORT_FLOWCTRL_THRESH(0), t);
 }
 
-static void
-ar40xx_malibu_init(struct ar40xx_priv *priv)
-{
-	int i;
-	struct mii_bus *bus;
-	u16 val;
-
-	bus = priv->mii_bus;
-
-	/* war to enable AZ transmitting ability */
-	ar40xx_phy_mmd_write(priv, AR40XX_PSGMII_ID, 1,
-			     AR40XX_MALIBU_PSGMII_MODE_CTRL,
-			     AR40XX_MALIBU_PHY_PSGMII_MODE_CTRL_ADJUST_VAL);
-	for (i = 0; i < AR40XX_NUM_PORTS - 1; i++) {
-		/* change malibu control_dac */
-		val = ar40xx_phy_mmd_read(priv, i, 7,
-					  AR40XX_MALIBU_PHY_MMD7_DAC_CTRL);
-		val &= ~AR40XX_MALIBU_DAC_CTRL_MASK;
-		val |= AR40XX_MALIBU_DAC_CTRL_VALUE;
-		ar40xx_phy_mmd_write(priv, i, 7,
-				     AR40XX_MALIBU_PHY_MMD7_DAC_CTRL, val);
-		if (i == AR40XX_MALIBU_PHY_LAST_ADDR) {
-			/* to avoid goes into hibernation */
-			val = ar40xx_phy_mmd_read(priv, i, 3,
-						  AR40XX_MALIBU_PHY_RLP_CTRL);
-			val &= (~(1<<1));
-			ar40xx_phy_mmd_write(priv, i, 3,
-					     AR40XX_MALIBU_PHY_RLP_CTRL, val);
-		}
-	}
-
-	/* adjust psgmii serdes tx amp */
-	mdiobus_write(bus, AR40XX_PSGMII_ID, AR40XX_PSGMII_TX_DRIVER_1_CTRL,
-		      AR40XX_MALIBU_PHY_PSGMII_REDUCE_SERDES_TX_AMP);
-}
-
 static int
 ar40xx_hw_init(struct ar40xx_priv *priv)
 {
@@ -1288,9 +1253,7 @@ ar40xx_hw_init(struct ar40xx_priv *priv)
 
 	ar40xx_ess_reset(priv);
 
-	if (priv->mii_bus)
-		ar40xx_malibu_init(priv);
-	else
+	if (!priv->mii_bus)
 		return -1;
 
 	ar40xx_psgmii_self_test(priv);
@@ -1763,183 +1726,13 @@ static const struct switch_dev_ops ar40xx_sw_ops = {
 	.get_port_link = ar40xx_sw_get_port_link,
 };
 
-/* Start of phy driver support */
-
-static const u32 ar40xx_phy_ids[] = {
-	0x004dd0b1,
-	0x004dd0b2, /* AR40xx */
-};
-
-static bool
-ar40xx_phy_match(u32 phy_id)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(ar40xx_phy_ids); i++)
-		if (phy_id == ar40xx_phy_ids[i])
-			return true;
-
-	return false;
-}
-
-static bool
-is_ar40xx_phy(struct mii_bus *bus)
-{
-	unsigned i;
-
-	for (i = 0; i < 4; i++) {
-		u32 phy_id;
-
-		phy_id = mdiobus_read(bus, i, MII_PHYSID1) << 16;
-		phy_id |= mdiobus_read(bus, i, MII_PHYSID2);
-		if (!ar40xx_phy_match(phy_id))
-			return false;
-	}
-
-	return true;
-}
-
-static int
-ar40xx_phy_probe(struct phy_device *phydev)
-{
-	if (!is_ar40xx_phy(phydev->mdio.bus))
-		return -ENODEV;
-
-	ar40xx_priv->mii_bus = phydev->mdio.bus;
-	phydev->priv = ar40xx_priv;
-	if (phydev->mdio.addr == 0)
-		ar40xx_priv->phy = phydev;
-
-	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->supported);
-	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->advertising);
-	return 0;
-}
-
-static void
-ar40xx_phy_remove(struct phy_device *phydev)
-{
-	ar40xx_priv->mii_bus = NULL;
-	phydev->priv = NULL;
-}
-
-static int
-ar40xx_phy_config_init(struct phy_device *phydev)
-{
-	return 0;
-}
-
-static int
-ar40xx_phy_read_status(struct phy_device *phydev)
-{
-	if (phydev->mdio.addr != 0)
-		return genphy_read_status(phydev);
-
-	return 0;
-}
-
-static int
-ar40xx_phy_config_aneg(struct phy_device *phydev)
-{
-	if (phydev->mdio.addr == 0)
-		return 0;
-
-	return genphy_config_aneg(phydev);
-}
-
-static struct phy_driver ar40xx_phy_driver = {
-	.phy_id		= 0x004d0000,
-	.name		= "QCA Malibu",
-	.phy_id_mask	= 0xffff0000,
-	.features	= PHY_GBIT_FEATURES,
-	.probe		= ar40xx_phy_probe,
-	.remove		= ar40xx_phy_remove,
-	.config_init	= ar40xx_phy_config_init,
-	.config_aneg	= ar40xx_phy_config_aneg,
-	.read_status	= ar40xx_phy_read_status,
-};
-
-static uint16_t ar40xx_gpio_get_phy(unsigned int offset)
-{
-	return offset / 4;
-}
-
-static uint16_t ar40xx_gpio_get_reg(unsigned int offset)
-{
-	return 0x8074 + offset % 4;
-}
-
-static void ar40xx_gpio_set(struct gpio_chip *gc, unsigned int offset,
-			    int value)
-{
-	struct ar40xx_priv *priv = gpiochip_get_data(gc);
-
-	ar40xx_phy_mmd_write(priv, ar40xx_gpio_get_phy(offset), 0x7,
-			     ar40xx_gpio_get_reg(offset),
-			     value ? 0xA000 : 0x8000);
-}
-
-static int ar40xx_gpio_get(struct gpio_chip *gc, unsigned offset)
-{
-	struct ar40xx_priv *priv = gpiochip_get_data(gc);
-
-	return ar40xx_phy_mmd_read(priv, ar40xx_gpio_get_phy(offset), 0x7,
-				   ar40xx_gpio_get_reg(offset)) == 0xA000;
-}
-
-static int ar40xx_gpio_get_dir(struct gpio_chip *gc, unsigned offset)
-{
-	return 0; /* only out direction */
-}
-
-static int ar40xx_gpio_dir_out(struct gpio_chip *gc, unsigned offset,
-			       int value)
-{
-	/*
-	 * the direction out value is used to set the initial value.
-	 * support of this function is required by leds-gpio.c
-	 */
-	ar40xx_gpio_set(gc, offset, value);
-	return 0;
-}
-
-static void ar40xx_register_gpio(struct device *pdev,
-				 struct ar40xx_priv *priv,
-				 struct device_node *switch_node)
-{
-	struct gpio_chip *gc;
-	int err;
-
-	gc = devm_kzalloc(pdev, sizeof(*gc), GFP_KERNEL);
-	if (!gc)
-		return;
-
-	gc->label = "ar40xx_gpio",
-	gc->base = -1,
-	gc->ngpio = 5 /* mmd 0 - 4 */ * 4 /* 0x8074 - 0x8077 */,
-	gc->parent = pdev;
-	gc->owner = THIS_MODULE;
-
-	gc->get_direction = ar40xx_gpio_get_dir;
-	gc->direction_output = ar40xx_gpio_dir_out;
-	gc->get = ar40xx_gpio_get;
-	gc->set = ar40xx_gpio_set;
-	gc->can_sleep = true;
-	gc->label = priv->dev.name;
-	gc->of_node = switch_node;
-
-	err = devm_gpiochip_add_data(pdev, gc, priv);
-	if (err != 0)
-		dev_err(pdev, "Failed to register gpio %d.\n", err);
-}
-
-/* End of phy driver support */
-
 /* Platform driver probe function */
 
 static int ar40xx_probe(struct platform_device *pdev)
 {
 	struct device_node *switch_node;
 	struct device_node *psgmii_node;
+	struct device_node *mdio_node;
 	const __be32 *mac_mode;
 	struct clk *ess_clk;
 	struct switch_dev *swdev;
@@ -2010,18 +1803,21 @@ static int ar40xx_probe(struct platform_device *pdev)
 		return -EIO;
 	}
 
-	ret = phy_driver_register(&ar40xx_phy_driver, THIS_MODULE);
-	if (ret) {
-		dev_err(&pdev->dev, "Failed to register ar40xx phy driver!\n");
-		return -EIO;
-	}
-
 	mutex_init(&priv->reg_mutex);
 	mutex_init(&priv->mib_lock);
 	INIT_DELAYED_WORK(&priv->mib_work, ar40xx_mib_work_func);
 
 	/* register switch */
 	swdev = &priv->dev;
+
+	mdio_node = of_find_compatible_node(NULL, NULL, "qcom,ipq4019-mdio");
+	if (!mdio_node) {
+		dev_err(&pdev->dev, "Probe failed - Cannot find mdio node by phandle!\n");
+		ret = -ENODEV;
+		goto err_missing_phy;
+	}
+
+	priv->mii_bus = of_mdio_find_bus(mdio_node);
 
 	if (priv->mii_bus == NULL) {
 		dev_err(&pdev->dev, "Probe failed - Missing PHYs!\n");
@@ -2037,8 +1833,10 @@ static int ar40xx_probe(struct platform_device *pdev)
 	swdev->ports = AR40XX_NUM_PORTS;
 	swdev->ops = &ar40xx_sw_ops;
 	ret = register_switch(swdev, NULL);
-	if (ret)
-		goto err_unregister_phy;
+	if (ret < 0) {
+		dev_err(&pdev->dev, "Switch registration failed!\n");
+		return ret;
+	}
 
 	num_mibs = ARRAY_SIZE(ar40xx_mibs);
 	len = priv->dev.ports * num_mibs *
@@ -2051,15 +1849,10 @@ static int ar40xx_probe(struct platform_device *pdev)
 
 	ar40xx_start(priv);
 
-	if (of_property_read_bool(switch_node, "gpio-controller"))
-		ar40xx_register_gpio(&pdev->dev, ar40xx_priv, switch_node);
-
 	return 0;
 
 err_unregister_switch:
 	unregister_switch(&priv->dev);
-err_unregister_phy:
-	phy_driver_unregister(&ar40xx_phy_driver);
 err_missing_phy:
 	platform_set_drvdata(pdev, NULL);
 	return ret;
@@ -2073,8 +1866,6 @@ static int ar40xx_remove(struct platform_device *pdev)
 	cancel_delayed_work_sync(&priv->mib_work);
 
 	unregister_switch(&priv->dev);
-
-	phy_driver_unregister(&ar40xx_phy_driver);
 
 	return 0;
 }
