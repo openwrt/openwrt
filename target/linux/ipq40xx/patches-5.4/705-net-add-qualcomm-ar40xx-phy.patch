@@ -1,12 +1,12 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -584,6 +584,13 @@ config MDIO_IPQ40XX
- 	  This driver supports the MDIO interface found in Qualcomm
- 	  Atheros ipq40xx Soc chip.
+@@ -584,6 +584,13 @@ config XILINX_GMII2RGMII
+ 	  the Reduced Gigabit Media Independent Interface(RGMII) between
+ 	  Ethernet physical media devices and the Gigabit Ethernet controller.
  
 +config AR40XX_PHY
 +	tristate "Driver for Qualcomm Atheros IPQ40XX switches"
-+	depends on HAS_IOMEM && OF
++	depends on HAS_IOMEM && OF && OF_MDIO
 +	select SWCONFIG
 +	help
 +	   This is the driver for Qualcomm Atheros IPQ40XX ESS switches.
