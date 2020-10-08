@@ -10,13 +10,13 @@ include $(TOPDIR)/rules.mk
 UNPACK_CMD=unzip -q -p $(DL_DIR)/$(PKG_SOURCE) $(PKG_SOURCE_UNZIP) | gzip -dc | $(HOST_TAR) -C $(1) $(TAR_OPTIONS)
 
 PKG_NAME:=cypress-firmware
-PKG_VERSION:=v5.4.18-2020_0402
+PKG_VERSION:=v5.4.18-2020_0625
 PKG_RELEASE:=2
 
 PKG_SOURCE_UNZIP:=cypress-firmware-$(PKG_VERSION).tar.gz
 PKG_SOURCE:=cypress-fmac-$(PKG_VERSION).zip
-PKG_SOURCE_URL:=https://community.cypress.com/servlet/JiveServlet/download/19375-1-53475/
-PKG_HASH:=b12b0570f462c2f3c26dde98b10235a845a7109037def1e7e51af728bcc1a958
+PKG_SOURCE_URL:=https://community.cypress.com/servlet/JiveServlet/download/20044-1-56065/
+PKG_HASH:=d05807b21f089effe3286037793420d61007d697ac9e191ada09896818059767
 
 PKG_MAINTAINER:=Álvaro Fernández Rojas <noltari@gmail.com>
 
@@ -41,10 +41,10 @@ endef
 define Package/cypress-firmware-43012-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43012-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac43012-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43012-sdio.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43012-sdio.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac3012-sdio.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac43012-sdio.clm_blob
 endef
 
@@ -59,7 +59,7 @@ endef
 define Package/cypress-firmware-43340-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43340-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac43340-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43340-sdio.bin
 endef
 
@@ -75,7 +75,7 @@ endef
 define Package/cypress-firmware-43362-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43362-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac43362-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43362-sdio.bin
 endef
 
@@ -90,7 +90,7 @@ endef
 define Package/cypress-firmware-4339-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4339-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4339-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4339-sdio.bin
 endef
 
@@ -106,10 +106,10 @@ endef
 define Package/cypress-firmware-43430-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43430-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac43430-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43430-sdio.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac43430-sdio.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.clm_blob
 endef
 
@@ -125,10 +125,10 @@ endef
 define Package/cypress-firmware-43455-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43455-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac43455-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43455-sdio.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac43455-sdio.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.clm_blob
 endef
 
@@ -143,10 +143,10 @@ endef
 define Package/cypress-firmware-4354-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4354-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4354-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4354-sdio.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4354-sdio.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4354-sdio.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4354-sdio.clm_blob
 endef
 
@@ -161,10 +161,10 @@ endef
 define Package/cypress-firmware-4356-pcie/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4356-pcie.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4356-pcie.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4356-pcie.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4356-pcie.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4356-pcie.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4356-pcie.clm_blob
 endef
 
@@ -179,10 +179,10 @@ endef
 define Package/cypress-firmware-4356-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4356-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4356-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4356-sdio.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4356-sdio.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.clm_blob
 endef
 
@@ -197,10 +197,10 @@ endef
 define Package/cypress-firmware-43570-pcie/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43570-pcie.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac43570-pcie.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43570-pcie.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac43570-pcie.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac43570-pcie.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac43570-pcie.clm_blob
 endef
 
@@ -215,10 +215,10 @@ endef
 define Package/cypress-firmware-4359-pcie/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4359-pcie.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4359-pcie.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4359-pcie.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4359-pcie.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4359-pcie.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4359-pcie.clm_blob
 endef
 
@@ -233,10 +233,10 @@ endef
 define Package/cypress-firmware-4359-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4359-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4359-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4359-sdio.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4359-sdio.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4359-sdio.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4359-sdio.clm_blob
 endef
 
@@ -251,10 +251,10 @@ endef
 define Package/cypress-firmware-4373-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4373-sdio.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4373-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4373-sdio.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4373-sdio.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4373-sdio.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4373-sdio.clm_blob
 endef
 
@@ -269,10 +269,10 @@ endef
 define Package/cypress-firmware-4373-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4373-usb.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4373-usb.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4373-usb.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac4373.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4373.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4373.clm_blob
 endef
 
@@ -287,10 +287,10 @@ endef
 define Package/cypress-firmware-54591-pcie/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac54591-pcie.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac54591-pcie.bin \
 		$(1)/lib/firmware/brcm/brcmfmac54591-pcie.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac54591-pcie.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac54591-pcie.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac54591-pcie.clm_blob
 endef
 
@@ -305,10 +305,10 @@ endef
 define Package/cypress-firmware-89459-pcie/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac89459-pcie.bin \
+		$(PKG_BUILD_DIR)/firmware/cyfmac89459-pcie.bin \
 		$(1)/lib/firmware/brcm/brcmfmac89459-pcie.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/brcmfmac89459-pcie.clm_blob \
+		$(PKG_BUILD_DIR)/firmware/cyfmac89459-pcie.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac89459-pcie.clm_blob
 endef
 
