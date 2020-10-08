@@ -82,7 +82,7 @@ proto_qmi_setup() {
 	local uninitialized_timeout=0
 	while uqmi -s -d "$device" --get-pin-status | grep '"UIM uninitialized"' > /dev/null; do
 		[ -e "$device" ] || return 1
-		if [ "$uninitialized_timeout" -lt "$timeout" ]; then
+		if [ "$uninitialized_timeout" -lt "$timeout" -o "$timeout" = "0" ]; then
 			let uninitialized_timeout++
 			sleep 1;
 		else
@@ -195,7 +195,7 @@ proto_qmi_setup() {
 	local registration_timeout=0
 	while uqmi -s -d "$device" --get-serving-system | grep '"searching"' > /dev/null; do
 		[ -e "$device" ] || return 1
-		if [ "$registration_timeout" -lt "$timeout" ]; then
+		if [ "$registration_timeout" -lt "$timeout" -o "$timeout" = "0" ]; then
 			let registration_timeout++
 			sleep 1;
 		else
