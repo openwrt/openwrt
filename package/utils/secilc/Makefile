@@ -33,6 +33,7 @@ define Package/secilc
 	CATEGORY:=Utilities
 	TITLE:=SELinux Common Intermediate Language (CIL) Compiler
 	URL:=http://selinuxproject.org/page/Main_Page
+	DEPENDS:=+libsepol
 endef
 
 define Package/secilc/description
