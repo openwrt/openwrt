@@ -200,7 +200,7 @@ $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_TARGET_NPT, ip6t_DN
 
 $(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_MASQUERADE, $(P_V4)ipt_MASQUERADE, lt 5.2))
 $(eval $(call nf_add,IPT_NAT,CONFIG_NETFILTER_XT_TARGET_MASQUERADE, $(P_XT)xt_MASQUERADE, ge 5.2))
-$(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_REDIRECT, $(P_XT)xt_REDIRECT))
+$(eval $(call nf_add,IPT_NAT,CONFIG_NETFILTER_XT_TARGET_REDIRECT, $(P_XT)xt_REDIRECT))
 
 
 # nat-extra
