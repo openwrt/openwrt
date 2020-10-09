@@ -1,0 +1,27 @@
+diff --git a/bcm63xx_enet.c b/bcm63xx_enet.c
+index 2ba9f87..b2bac01 100644
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -317,6 +317,8 @@ static int bcm_enet_receive_queue(struct net_device *dev, int budget)
+ 	struct bcm_enet_priv *priv;
+ 	struct device *kdev;
+ 	int processed;
++	struct list_head rx_list;
++	INIT_LIST_HEAD(&rx_list);
+ 
+ 	priv = netdev_priv(dev);
+ 	kdev = &priv->pdev->dev;
+@@ -409,10 +411,12 @@ static int bcm_enet_receive_queue(struct net_device *dev, int budget)
+ 		skb->protocol = eth_type_trans(skb, dev);
+ 		dev->stats.rx_packets++;
+ 		dev->stats.rx_bytes += len;
+-		netif_receive_skb(skb);
++		list_add_tail(&skb->list, &rx_list);
+ 
+ 	} while (--budget > 0);
+ 
++	netif_receive_skb_list(&rx_list);
++
+ 	if (processed || !priv->rx_desc_count) {
+ 		bcm_enet_refill_rx(dev);
+ 
