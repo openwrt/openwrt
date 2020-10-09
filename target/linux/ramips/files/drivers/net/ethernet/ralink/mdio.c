@@ -88,13 +88,8 @@ int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node, int 
 		return -ENODEV;
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
-	phydev->supported &= PHY_GBIT_FEATURES;
-	phydev->advertising = phydev->supported;
-#else
 	phy_set_max_speed(phydev, SPEED_1000);
 	linkmode_copy(phydev->advertising, phydev->supported);
-#endif
 	phydev->no_auto_carrier_off = 1;
 
 	dev_info(priv->dev,
@@ -116,17 +111,11 @@ static void phy_init(struct fe_priv *priv, struct phy_device *phy)
 	phy->speed = 0;
 	phy->duplex = 0;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
-	phy->supported &= IS_ENABLED(CONFIG_NET_RALINK_MDIO_MT7620) ?
-			PHY_GBIT_FEATURES : PHY_BASIC_FEATURES;
-	phy->advertising = phy->supported | ADVERTISED_Autoneg;
-#else
 	phy_set_max_speed(phy, IS_ENABLED(CONFIG_NET_RALINK_MDIO_MT7620) ?
 				       SPEED_1000 :
 				       SPEED_100);
 	linkmode_copy(phy->advertising, phy->supported);
 	linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, phy->advertising);
-#endif
 
 	phy_start_aneg(phy);
 }
