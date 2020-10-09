@@ -40,6 +40,10 @@ alfa-network,n5q)
 	ucidef_set_led_rssi "signal3" "SIGNAL3" "green:signal3" "wlan0" "50" "100"
 	ucidef_set_led_rssi "signal4" "SIGNAL4" "green:signal4" "wlan0" "75" "100"
 	;;
+alfa-network,pi-wifi4)
+	ucidef_set_led_netdev "lan_data" "LAN_DATA" "orange:lan_data" "eth0" "tx rx"
+	ucidef_set_led_netdev "lan_link" "LAN_LINK" "green:lan_link" "eth0" "link"
+	;;
 alfa-network,r36a)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x10"

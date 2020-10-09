@@ -257,6 +257,15 @@ define Device/alfa-network_n5q
 endef
 TARGET_DEVICES += alfa-network_n5q
 
+define Device/alfa-network_pi-wifi4
+  SOC := qca9531
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := Pi-WiFi4
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport -swconfig
+  IMAGE_SIZE := 15872k
+endef
+TARGET_DEVICES += alfa-network_pi-wifi4
+
 define Device/alfa-network_r36a
   SOC := qca9531
   DEVICE_VENDOR := ALFA Network
