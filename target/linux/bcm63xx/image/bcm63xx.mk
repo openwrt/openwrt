@@ -781,6 +781,18 @@ define Device/huawei_echolife-hg655b
 endef
 TARGET_DEVICES += huawei_echolife-hg655b
 
+### Innacomm ###
+define Device/innacomm_w3400v6
+  $(Device/bcm63xx)
+  DEVICE_VENDOR := Innacomm
+  DEVICE_MODEL := W3400V6
+  CFE_BOARD_ID := 96328ang
+  CHIP_ID := 6328
+  FLASH_MB := 8
+  DEVICE_PACKAGES := $(B43_PACKAGES)
+endef
+TARGET_DEVICES += innacomm_w3400v6
+
 ### Inteno ###
 define Device/inteno_vg50
   $(Device/bcm63xx)
