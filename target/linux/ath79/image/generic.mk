@@ -965,6 +965,16 @@ define Device/engenius_eap300-v2
 endef
 TARGET_DEVICES += engenius_eap300-v2
 
+define Device/engenius_eap600
+  $(Device/engenius_loader_okli)
+  SOC := ar9344
+  DEVICE_MODEL := EAP600
+  IMAGE_SIZE := 12032k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := senao-eap600
+endef
+TARGET_DEVICES += engenius_eap600
+
 define Device/engenius_ecb1200
   SOC := qca9557
   DEVICE_VENDOR := EnGenius
