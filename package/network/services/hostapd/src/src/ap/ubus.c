@@ -395,6 +395,7 @@ hostapd_bss_list_bans(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
+#ifdef CONFIG_WPS
 static int
 hostapd_bss_wps_start(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
@@ -407,6 +408,53 @@ hostapd_bss_wps_start(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (rc != 0)
 		return UBUS_STATUS_NOT_SUPPORTED;
+
+	return 0;
+}
+
+
+static const char * pbc_status_enum_str(enum pbc_status status)
+{
+	switch (status) {
+	case WPS_PBC_STATUS_DISABLE:
+		return "Disabled";
+	case WPS_PBC_STATUS_ACTIVE:
+		return "Active";
+	case WPS_PBC_STATUS_TIMEOUT:
+		return "Timed-out";
+	case WPS_PBC_STATUS_OVERLAP:
+		return "Overlap";
+	default:
+		return "Unknown";
+	}
+}
+
+static int
+hostapd_bss_wps_status(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	int rc;
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+
+	blob_buf_init(&b, 0);
+
+	blobmsg_add_string(&b, "pbc_status", pbc_status_enum_str(hapd->wps_stats.pbc_status));
+	blobmsg_add_string(&b, "last_wps_result",
+			   (hapd->wps_stats.status == WPS_STATUS_SUCCESS ?
+			    "Success":
+			    (hapd->wps_stats.status == WPS_STATUS_FAILURE ?
+			     "Failed" : "None")));
+
+	/* If status == Failure - Add possible Reasons */
+	if(hapd->wps_stats.status == WPS_STATUS_FAILURE &&
+	   hapd->wps_stats.failure_reason > 0)
+		blobmsg_add_string(&b, "reason", wps_ei_str(hapd->wps_stats.failure_reason));
+
+	if (hapd->wps_stats.status)
+		blobmsg_printf(&b, "peer_address", MACSTR, MAC2STR(hapd->wps_stats.peer_addr));
+
+	ubus_send_reply(ctx, req, b.head);
 
 	return 0;
 }
@@ -426,6 +474,7 @@ hostapd_bss_wps_cancel(struct ubus_context *ctx, struct ubus_object *obj,
 
 	return 0;
 }
+#endif /* CONFIG_WPS */
 
 static int
 hostapd_bss_update_beacon(struct ubus_context *ctx, struct ubus_object *obj,
@@ -1100,8 +1149,11 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("get_clients", hostapd_bss_get_clients),
 	UBUS_METHOD("del_client", hostapd_bss_del_client, del_policy),
 	UBUS_METHOD_NOARG("list_bans", hostapd_bss_list_bans),
+#ifdef CONFIG_WPS
 	UBUS_METHOD_NOARG("wps_start", hostapd_bss_wps_start),
+	UBUS_METHOD_NOARG("wps_status", hostapd_bss_wps_status),
 	UBUS_METHOD_NOARG("wps_cancel", hostapd_bss_wps_cancel),
+#endif
 	UBUS_METHOD_NOARG("update_beacon", hostapd_bss_update_beacon),
 	UBUS_METHOD_NOARG("get_features", hostapd_bss_get_features),
 #ifdef NEED_AP_MLME
