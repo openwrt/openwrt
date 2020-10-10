@@ -38,20 +38,20 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			label = "D-4P-W:green:power";
+			label = "green:power";
 			gpios = <&pinctrl 0 1>;
 			default-state = "on";
 		};
 		status {
-			label = "D-4P-W::status";
+			label = "status";
 			gpios = <&pinctrl 3 1>;
 		};
 		inet_green {
-			label = "D-4P-W:green:internet";
+			label = "green:internet";
 			gpios = <&pinctrl 4 1>;
 		};
 		inet_red {
-			label = "D-4P-W:red:internet";
+			label = "red:internet";
 			gpios = <&pinctrl 5 1>;
 		};
 	};
