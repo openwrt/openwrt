@@ -20,7 +20,7 @@ sub target_config_features(@) {
 		/^usb$/ and $ret .= "\tselect USB_SUPPORT\n";
 		/^usbgadget$/ and $ret .= "\tselect USB_GADGET_SUPPORT\n";
 		/^pcmcia$/ and $ret .= "\tselect PCMCIA_SUPPORT\n";
-		/^pwm$/ and $ret .= "\select PWM_SUPPORT\n";
+		/^pwm$/ and $ret .= "\tselect PWM_SUPPORT\n";
 		/^rtc$/ and $ret .= "\tselect RTC_SUPPORT\n";
 		/^squashfs$/ and $ret .= "\tselect USES_SQUASHFS\n";
 		/^jffs2$/ and $ret .= "\tselect USES_JFFS2\n";
@@ -38,6 +38,7 @@ sub target_config_features(@) {
 		/^mips16$/ and $ret .= "\tselect HAS_MIPS16\n";
 		/^rfkill$/ and $ret .= "\tselect RFKILL_SUPPORT\n";
 		/^low_mem$/ and $ret .= "\tselect LOW_MEMORY_FOOTPRINT\n";
+		/^large_mem$/ and $ret .= "\tselect LARGE_MEMORY\n";
 		/^small_flash$/ and $ret .= "\tselect SMALL_FLASH\n";
 		/^nand$/ and $ret .= "\tselect NAND_SUPPORT\n";
 		/^virtio$/ and $ret .= "\tselect VIRTIO_SUPPORT\n";

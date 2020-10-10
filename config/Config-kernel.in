@@ -538,7 +538,7 @@ endif
 
 config KERNEL_KEYS
     bool "Enable kernel access key retention support"
-    default n
+    default y if LARGE_MEMORY
 
 config KERNEL_PERSISTENT_KEYRINGS
     bool "Enable kernel persistent keyrings"
@@ -578,7 +578,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_FREEZER
 		bool "legacy Freezer cgroup subsystem"
-		default n
+		default y if LARGE_MEMORY
 		select KERNEL_FREEZER
 		help
 		  Provides a way to freeze and unfreeze all tasks in a
@@ -588,7 +588,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_DEVICE
 		bool "legacy Device controller for cgroups"
-		default n
+		default y if LARGE_MEMORY
 		help
 		  Provides a cgroup implementing whitelists for devices which
 		  a process in the cgroup can mknod or open.
@@ -596,7 +596,7 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_HUGETLB
 		bool "HugeTLB controller"
-		default n
+		default y if LARGE_MEMORY
 		select KERNEL_HUGETLB_PAGE
 
 	config KERNEL_CGROUP_PIDS
@@ -720,7 +720,7 @@ if KERNEL_CGROUPS
 	config KERNEL_CGROUP_PERF
 		bool "Enable perf_event per-cpu per-container group (cgroup) monitoring"
 		select KERNEL_PERF_EVENTS
-		default n
+		default y if LARGE_MEMORY
 		help
 		  This option extends the per-cpu mode to restrict monitoring to
 		  threads which belong to the cgroup specified and run on the
@@ -785,6 +785,7 @@ if KERNEL_CGROUPS
 
 		config KERNEL_CFQ_GROUP_IOSCHED
 			bool "Proportional weight of disk bandwidth in CFQ"
+			default y if LARGE_MEMORY
 
 		config KERNEL_BLK_DEV_THROTTLING
 			bool "Enable throttling policy"
@@ -805,15 +806,15 @@ if KERNEL_CGROUPS
 
 	config KERNEL_NET_CLS_CGROUP
 		bool "legacy Control Group Classifier"
-		default n
+		default y if LARGE_MEMORY
 
 	config KERNEL_CGROUP_NET_CLASSID
 		bool "legacy Network classid cgroup"
-		default n
+		default y if LARGE_MEMORY
 
 	config KERNEL_CGROUP_NET_PRIO
 		bool "legacy Network priority cgroup"
-		default n
+		default y if LARGE_MEMORY
 
 endif
 
