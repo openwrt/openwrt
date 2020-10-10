@@ -208,8 +208,6 @@ define KernelPackage/fs-f2fs
   DEPENDS:= +kmod-crypto-hash +kmod-crypto-crc32 +!LINUX_4_19:kmod-nls-base
   KCONFIG:= \
 	CONFIG_F2FS_FS \
-	CONFIG_F2FS_STAT_FS=y \
-	CONFIG_F2FS_FS_XATTR=y \
 	CONFIG_F2FS_FS_POSIX_ACL=n \
 	CONFIG_F2FS_FS_SECURITY=n \
 	CONFIG_F2FS_CHECK_FS=n
