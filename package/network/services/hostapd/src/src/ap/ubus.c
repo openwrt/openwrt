@@ -212,6 +212,7 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 			struct blob_attr *msg)
 {
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct hostap_sta_driver_data sta_driver_data;
 	struct sta_info *sta;
 	void *list, *c;
 	char mac_buf[20];
@@ -254,6 +255,29 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 		if (retrieve_sta_taxonomy(hapd, sta, r, 1024) > 0)
 			blobmsg_add_string_buffer(&b);
 #endif
+
+		/* Driver information */
+		if (hostapd_drv_read_sta_data(hapd, &sta_driver_data, sta->addr) >= 0) {
+			r = blobmsg_open_table(&b, "bytes");
+			blobmsg_add_u64(&b, "rx", sta_driver_data.rx_bytes);
+			blobmsg_add_u64(&b, "tx", sta_driver_data.tx_bytes);
+			blobmsg_close_table(&b, r);
+			r = blobmsg_open_table(&b, "airtime");
+			blobmsg_add_u64(&b, "rx", sta_driver_data.rx_airtime);
+			blobmsg_add_u64(&b, "tx", sta_driver_data.tx_airtime);
+			blobmsg_close_table(&b, r);
+			r = blobmsg_open_table(&b, "packets");
+			blobmsg_add_u32(&b, "rx", sta_driver_data.rx_packets);
+			blobmsg_add_u32(&b, "tx", sta_driver_data.tx_packets);
+			blobmsg_close_table(&b, r);
+			r = blobmsg_open_table(&b, "rate");
+			/* Rate in kbits */
+			blobmsg_add_u32(&b, "rx", sta_driver_data.current_rx_rate * 100);
+			blobmsg_add_u32(&b, "tx", sta_driver_data.current_tx_rate * 100);
+			blobmsg_close_table(&b, r);
+			blobmsg_add_u32(&b, "signal", sta_driver_data.signal);
+		}
+
 		blobmsg_close_table(&b, c);
 	}
 	blobmsg_close_array(&b, list);
