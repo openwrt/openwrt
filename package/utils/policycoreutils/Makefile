@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=policycoreutils
 PKG_VERSION:=3.1
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/20200710
@@ -25,10 +25,6 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/nls.mk
 include $(INCLUDE_DIR)/host-build.mk
 
-DIR_SBIN:= \
-	restorecon \
-	setfiles
-
 DIR_USR_BIN:= \
 	newrole \
 	secon
@@ -43,7 +39,6 @@ LIBEXEC_UTILS := \
 
 SBIN_UTILS:= \
 	restorecon_xattr \
-	restorecon \
 	setfiles
 
 USR_BIN_UTILS:= \
@@ -76,6 +71,7 @@ HOST_LDFLAGS += -Wl,-rpath=$(STAGING_DIR_HOSTPKG)/lib
 $(eval $(foreach a,$(DIR_SBIN),ALTS_$(a):=300:/sbin/$(a):/sbin/policycoreutils-$(a)$(newline)))
 $(eval $(foreach a,$(DIR_USR_BIN),ALTS_$(a):=300:/usr/bin/$(a):/usr/bin/policycoreutils-$(a)$(newline)))
 $(eval $(foreach a,$(DIR_USR_SBIN),ALTS_$(a):=300:/usr/sbin/$(a):/usr/sbin/policycoreutils-$(a)$(newline)))
+ALTS_setfiles:=300:/sbin/restorecon:/sbin/policycoreutils-setfiles 300:/sbin/setfiles:/sbin/policycoreutils-setfiles
 
 DEPENDS_genhomedircon:=+libsemanage $(INTL_DEPENDS)
 DEPENDS_load_policy:=+libselinux $(INTL_DEPENDS)
@@ -83,7 +79,6 @@ DEPENDS_newrole:=+libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS
 DEPENDS_open_init_pty:=$(INTL_DEPENDS)
 DEPENDS_pp:=+libsepol $(INTL_DEPENDS)
 DEPENDS_restorecon_xattr:=+libselinux +libsepol +libaudit $(INTL_DEPENDS)
-DEPENDS_restorecon:=+libselinux +libsepol +libaudit $(INTL_DEPENDS)
 DEPENDS_run_init:=+libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
 DEPENDS_secon:=+libselinux $(INTL_DEPENDS)
 DEPENDS_semanage:=+libsemanage
