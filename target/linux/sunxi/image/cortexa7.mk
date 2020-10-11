@@ -47,6 +47,14 @@ define Device/friendlyarm_nanopi-neo-air
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo-air
 
+define Device/friendlyarm_zeropi
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := ZeroPi
+  DEVICE_PACKAGES := kmod-rtc-sunxi
+  SOC := sun8i-h3
+endef
+TARGET_DEVICES += friendlyarm_zeropi
+
 define Device/lamobo_lamobo-r1
   DEVICE_VENDOR := Lamobo
   DEVICE_MODEL := Lamobo R1
@@ -63,13 +71,15 @@ define Device/lemaker_bananapi
 endef
 TARGET_DEVICES += lemaker_bananapi
 
-define Device/lemaker_bananapi-m2-ultra
-  DEVICE_VENDOR := LeMaker
+define Device/sinovoip_bananapi-m2-ultra
+  DEVICE_VENDOR := Sinovoip
   DEVICE_MODEL := Banana Pi M2 Ultra
-  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi kmod-brcmfmac \
+	brcmfmac-firmware-43430a0-sdio wpad-basic
+  SUPPORTED_DEVICES:=lemaker,bananapi-m2-ultra
   SOC := sun8i-r40
 endef
-TARGET_DEVICES += lemaker_bananapi-m2-ultra
+TARGET_DEVICES += sinovoip_bananapi-m2-ultra
 
 define Device/lemaker_bananapro
   DEVICE_VENDOR := LeMaker

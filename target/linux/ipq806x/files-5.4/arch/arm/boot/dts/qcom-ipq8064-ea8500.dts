@@ -48,18 +48,18 @@
 		pinctrl-names = "default";
 
 		wps {
-			label = "ea8500:green:wps";
+			label = "green:wps";
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power: power {
-			label = "ea8500:white:power";
+			label = "white:power";
 			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
 		wifi {
-			label = "ea8500:green:wifi";
+			label = "green:wifi";
 			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_HIGH>;
 		};
 	};

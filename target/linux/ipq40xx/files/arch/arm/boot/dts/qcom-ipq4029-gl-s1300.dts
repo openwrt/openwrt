@@ -107,18 +107,18 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "gl-s1300:green:power";
+			label = "green:power";
 			gpios = <&tlmm 57 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		mesh {
-			label = "gl-s1300:green:mesh";
+			label = "green:mesh";
 			gpios = <&tlmm 59 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan {
-			label = "gl-s1300:green:wlan";
+			label = "green:wlan";
 			gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};

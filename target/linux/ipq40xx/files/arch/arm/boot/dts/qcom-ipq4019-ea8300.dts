@@ -24,35 +24,35 @@
 		// Front panel LEDs, top to bottom
 
 		led_plug: diag {
-			label = "ea8300:amber:plug";
+			label = "amber:plug";
 			gpios = <&tlmm 47 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_world: internet {
-			label = "ea8300:amber:world";
+			label = "amber:world";
 			gpios = <&tlmm 49 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_wps: wps {
-			label = "ea8300:white:wps";
+			label = "white:wps";
 			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_wps_amber: wps_amber {
-			label = "ea8300:amber:wps";
+			label = "amber:wps";
 			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};
 
 		led_linksys: pwr {
-			label = "ea8300:white:linksys";
+			label = "white:linksys";
 			gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
 		};
 
 		// On back panel, above USB socket
 
 		led_usb: usb {
-			label = "ea8300:green:usb";
+			label = "green:usb";
 			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&usb3_port1>, <&usb3_port2>,
 					  <&usb2_port1>;

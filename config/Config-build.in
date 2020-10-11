@@ -341,12 +341,15 @@ menu "Global build settings"
 	choice
 		prompt "default SELinux type"
 		depends on TARGET_ROOTFS_SECURITY_LABELS
-		default SELINUXTYPE_targeted
+		default SELINUXTYPE_dssp
 		help
 		  Choose SELinux policy to be used for build.
 		config SELINUXTYPE_targeted
 			bool "targeted"
 			select PACKAGE_refpolicy
+		config SELINUXTYPE_dssp
+			bool "dssp"
+			select PACKAGE_selinux-policy
 	endchoice
 
 endmenu

@@ -340,25 +340,25 @@
 		pinctrl-names = "default";
 
 		internet {
-			label = "nbg6817:white:internet";
+			label = "white:internet";
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
 		};
 
 		power: power {
-			label = "nbg6817:white:power";
+			label = "white:power";
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 
 		wifi2g {
-			label = "nbg6817:amber:wifi2g";
+			label = "amber:wifi2g";
 			gpios = <&qcom_pinmux 33 GPIO_ACTIVE_HIGH>;
 		};
 
 		/* wifi2g amber from the manual is missing */
 
 		wifi5g {
-			label = "nbg6817:amber:wifi5g";
+			label = "amber:wifi5g";
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
 		};
 
