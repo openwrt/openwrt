@@ -1,0 +1,195 @@
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+index a779fe771a55..6b12dd199f46 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -1237,6 +1237,8 @@ void rt2800_watchdog(struct rt2x00_dev *rt2x00dev)
+ 	if (test_bit(DEVICE_STATE_SCANNING, &rt2x00dev->flags))
+ 		return;
+ 
++	rt2800_update_survey(rt2x00dev);
++
+ 	queue_for_each(rt2x00dev, queue) {
+ 		switch (queue->qid) {
+ 		case QID_AC_VO:
+@@ -1273,6 +1275,18 @@ void rt2800_watchdog(struct rt2x00_dev *rt2x00dev)
+ }
+ EXPORT_SYMBOL_GPL(rt2800_watchdog);
+ 
++void rt2800_update_survey(struct rt2x00_dev *rt2x00dev)
++{
++	struct ieee80211_channel *chan = rt2x00dev->hw->conf.chandef.chan;
++	struct rt2x00_chan_survey *chan_survey =
++		   &rt2x00dev->chan_survey[chan->hw_value];
++
++	chan_survey->time_idle += rt2800_register_read(rt2x00dev, CH_IDLE_STA);
++	chan_survey->time_busy += rt2800_register_read(rt2x00dev, CH_BUSY_STA);
++	chan_survey->time_ext_busy += rt2800_register_read(rt2x00dev, CH_BUSY_STA_SEC);
++}
++EXPORT_SYMBOL_GPL(rt2800_update_survey);
++
+ static unsigned int rt2800_hw_beacon_base(struct rt2x00_dev *rt2x00dev,
+ 					  unsigned int index)
+ {
+@@ -10504,26 +10518,30 @@ int rt2800_get_survey(struct ieee80211_hw *hw, int idx,
+ {
+ 	struct rt2x00_dev *rt2x00dev = hw->priv;
+ 	struct ieee80211_conf *conf = &hw->conf;
+-	u32 idle, busy, busy_ext;
++	struct rt2x00_chan_survey *chan_survey =
++		   &rt2x00dev->chan_survey[idx];
++	enum nl80211_band band = NL80211_BAND_2GHZ;
++
++	if (idx >= rt2x00dev->bands[band].n_channels) {
++		idx -= rt2x00dev->bands[band].n_channels;
++		band = NL80211_BAND_5GHZ;
++	}
+ 
+-	if (idx != 0)
++	if (idx >= rt2x00dev->bands[band].n_channels)
+ 		return -ENOENT;
+ 
+-	survey->channel = conf->chandef.chan;
++	if (idx == 0)
++		rt2800_update_survey(rt2x00dev);
+ 
+-	idle = rt2800_register_read(rt2x00dev, CH_IDLE_STA);
+-	busy = rt2800_register_read(rt2x00dev, CH_BUSY_STA);
+-	busy_ext = rt2800_register_read(rt2x00dev, CH_BUSY_STA_SEC);
++	survey->channel = &rt2x00dev->bands[band].channels[idx];
+ 
+-	if (idle || busy) {
+-		survey->filled = SURVEY_INFO_TIME |
+-				 SURVEY_INFO_TIME_BUSY |
+-				 SURVEY_INFO_TIME_EXT_BUSY;
++	survey->filled = SURVEY_INFO_TIME |
++			 SURVEY_INFO_TIME_BUSY |
++			 SURVEY_INFO_TIME_EXT_BUSY;
+ 
+-		survey->time = (idle + busy) / 1000;
+-		survey->time_busy = busy / 1000;
+-		survey->time_ext_busy = busy_ext / 1000;
+-	}
++	survey->time = div_u64(chan_survey->time_idle + chan_survey->time_busy, 1000);
++	survey->time_busy = div_u64(chan_survey->time_busy, 1000);
++	survey->time_ext_busy = div_u64(chan_survey->time_ext_busy, 1000);
+ 
+ 	if (!(hw->conf.flags & IEEE80211_CONF_OFFCHANNEL))
+ 		survey->filled |= SURVEY_INFO_IN_USE;
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
+index 1139405c0ebb..bac0012201cf 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
+@@ -198,6 +198,7 @@ bool rt2800_txstatus_timeout(struct rt2x00_dev *rt2x00dev);
+ bool rt2800_txstatus_pending(struct rt2x00_dev *rt2x00dev);
+ 
+ void rt2800_watchdog(struct rt2x00_dev *rt2x00dev);
++void rt2800_update_survey(struct rt2x00_dev *rt2x00dev);
+ 
+ void rt2800_write_beacon(struct queue_entry *entry, struct txentry_desc *txdesc);
+ void rt2800_clear_beacon(struct queue_entry *entry);
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
+index 9a33baaa6184..0f9741c80885 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
+@@ -353,6 +353,7 @@ static const struct rt2x00lib_ops rt2800pci_rt2x00_ops = {
+ 	.gain_calibration	= rt2800_gain_calibration,
+ 	.vco_calibration	= rt2800_vco_calibration,
+ 	.watchdog		= rt2800_watchdog,
++	.update_survey		= rt2800_update_survey,
+ 	.start_queue		= rt2800mmio_start_queue,
+ 	.kick_queue		= rt2800mmio_kick_queue,
+ 	.stop_queue		= rt2800mmio_stop_queue,
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
+index bbfe1425c0ee..09089698aa77 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
+@@ -198,6 +198,7 @@ static const struct rt2x00lib_ops rt2800soc_rt2x00_ops = {
+ 	.gain_calibration	= rt2800_gain_calibration,
+ 	.vco_calibration	= rt2800_vco_calibration,
+ 	.watchdog		= rt2800_watchdog,
++	.update_survey		= rt2800_update_survey,
+ 	.start_queue		= rt2800mmio_start_queue,
+ 	.kick_queue		= rt2800mmio_kick_queue,
+ 	.stop_queue		= rt2800mmio_stop_queue,
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00.h b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+index ecc60d8cbb01..b4e124c31db2 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+@@ -181,6 +181,15 @@ struct rf_channel {
+ 	u32 rf4;
+ };
+ 
++/*
++ * Information structure for channel survey.
++ */
++struct rt2x00_chan_survey {
++	u64 time_idle;
++	u64 time_busy;
++	u64 time_ext_busy;
++};
++
+ /*
+  * Channel information structure
+  */
+@@ -565,6 +574,7 @@ struct rt2x00lib_ops {
+ 	 * Data queue handlers.
+ 	 */
+ 	void (*watchdog) (struct rt2x00_dev *rt2x00dev);
++	void (*update_survey) (struct rt2x00_dev *rt2x00dev);
+ 	void (*start_queue) (struct data_queue *queue);
+ 	void (*kick_queue) (struct data_queue *queue);
+ 	void (*stop_queue) (struct data_queue *queue);
+@@ -752,6 +762,7 @@ struct rt2x00_dev {
+ 	 */
+ 	struct ieee80211_hw *hw;
+ 	struct ieee80211_supported_band bands[NUM_NL80211_BANDS];
++	struct rt2x00_chan_survey *chan_survey;
+ 	enum nl80211_band curr_band;
+ 	int curr_freq;
+ 
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
+index 8c6d3099b19d..8eff57132154 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
+@@ -1026,6 +1026,12 @@ static int rt2x00lib_probe_hw_modes(struct rt2x00_dev *rt2x00dev,
+ 	if (!rates)
+ 		goto exit_free_channels;
+ 
++	rt2x00dev->chan_survey =
++		kcalloc(spec->num_channels, sizeof(struct rt2x00_chan_survey),
++			GFP_KERNEL);
++	if (!rt2x00dev->chan_survey)
++		goto exit_free_rates;
++
+ 	/*
+ 	 * Initialize Rate list.
+ 	 */
+@@ -1077,6 +1083,8 @@ static int rt2x00lib_probe_hw_modes(struct rt2x00_dev *rt2x00dev,
+ 
+ 	return 0;
+ 
++ exit_free_rates:
++	kfree(rates);
+  exit_free_channels:
+ 	kfree(channels);
+ 	rt2x00_err(rt2x00dev, "Allocation ieee80211 modes failed\n");
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c b/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
+index 2f68a31072ae..d305c3cce579 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
+@@ -316,6 +316,15 @@ int rt2x00mac_config(struct ieee80211_hw *hw, u32 changed)
+ 	if (!test_bit(DEVICE_STATE_PRESENT, &rt2x00dev->flags))
+ 		return 0;
+ 
++	/*
++	 * To provide correct survey data for survey-based ACS algorithm
++	 * we have to save survey data for current channel before switching.
++	 */
++	if (rt2x00dev->ops->lib->update_survey &&
++	    (changed & IEEE80211_CONF_CHANGE_CHANNEL)) {
++		rt2x00dev->ops->lib->update_survey(rt2x00dev);
++	}
++
+ 	/*
+ 	 * Some configuration parameters (e.g. channel and antenna values) can
+ 	 * only be set when the radio is enabled, but do require the RX to
