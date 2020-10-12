@@ -246,7 +246,7 @@ EOF
 
 hostapd_common_add_bss_config() {
 	config_add_string 'bssid:macaddr' 'ssid:string'
-	config_add_boolean wds wmm uapsd hidden utf8_ssid
+	config_add_boolean wds wmm uapsd hidden utf8_ssid ppsk
 
 	config_add_int maxassoc max_inactivity
 	config_add_boolean disassoc_low_ack isolate short_preamble skip_inactivity_poll
@@ -543,7 +543,7 @@ hostapd_set_bss_options() {
 		acct_server acct_secret acct_port acct_interval \
 		bss_load_update_period chan_util_avg_period sae_require_mfp sae_pwe \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
-		airtime_bss_weight airtime_bss_limit airtime_sta_weight \
+		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast proxy_arp per_sta_vif \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id \
 		vendor_elements fils ocv
@@ -566,6 +566,7 @@ hostapd_set_bss_options() {
 	set_default chan_util_avg_period 600
 	set_default utf8_ssid 1
 	set_default multi_ap 0
+	set_default ppsk 0
 	set_default airtime_bss_weight 0
 	set_default airtime_bss_limit 0
 	set_default eap_server 0
@@ -653,7 +654,15 @@ hostapd_set_bss_options() {
 		;;
 		psk|sae|psk-sae)
 			json_get_vars key wpa_psk_file
-			if [ ${#key} -eq 64 ]; then
+			if [ "$auth_type" = "psk" ] && [ "$ppsk" -ne 0 ] ; then
+				json_get_vars auth_server auth_secret auth_port
+				set_default auth_port 1812
+				append bss_conf "auth_server_addr=$auth_server" "$N"
+				append bss_conf "auth_server_port=$auth_port" "$N"
+				append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+				append bss_conf "macaddr_acl=2" "$N"
+				append bss_conf "wpa_psk_radius=2" "$N"
+			elif [ ${#key} -eq 64 ]; then
 				append bss_conf "wpa_psk=$key" "$N"
 			elif [ ${#key} -ge 8 ] && [ ${#key} -le 63 ]; then
 				append bss_conf "wpa_passphrase=$key" "$N"
