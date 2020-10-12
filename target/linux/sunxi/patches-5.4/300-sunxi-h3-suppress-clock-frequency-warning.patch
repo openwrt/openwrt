@@ -1,0 +1,56 @@
+From 110a7e180c605022cbc9a7be541f734c7b7789f3 Mon Sep 17 00:00:00 2001
+From: Jayantajit Gogoi <jayanta.gogoi525@gmail.com>
+Date: Mon, 12 Oct 2020 18:20:51 +0000
+Subject: [PATCH] sunxi: add clock-frequency property to sun8i-h3
+
+This patch suppresses the warning of missing clock-frequency
+property for sun8i h3 based boards.
+
+dmesg:
+
+[    0.002860] /cpus/cpu@0 missing clock-frequency property
+[    0.002895] /cpus/cpu@1 missing clock-frequency property
+[    0.002926] /cpus/cpu@2 missing clock-frequency property
+[    0.002956] /cpus/cpu@3 missing clock-frequency property
+
+Signed-off-by: Jayantajit Gogoi <jayanta.gogoi525@gmail.com>
+---
+ arch/arm/boot/dts/sun8i-h3.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun8i-h3.dtsi b/arch/arm/boot/dts/sun8i-h3.dtsi
+index 6056f206c9e..307a25b01d7 100644
+--- a/arch/arm/boot/dts/sun8i-h3.dtsi
++++ b/arch/arm/boot/dts/sun8i-h3.dtsi
+@@ -78,6 +78,7 @@
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu0_opp_table>;
+ 			#cooling-cells = <2>;
++			clock-frequency = <1296000000>;
+ 		};
+ 
+ 		cpu1: cpu@1 {
+@@ -88,6 +89,7 @@
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu0_opp_table>;
+ 			#cooling-cells = <2>;
++			clock-frequency = <1296000000>;
+ 		};
+ 
+ 		cpu2: cpu@2 {
+@@ -98,6 +100,7 @@
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu0_opp_table>;
+ 			#cooling-cells = <2>;
++			clock-frequency = <1296000000>;
+ 		};
+ 
+ 		cpu3: cpu@3 {
+@@ -108,6 +111,7 @@
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu0_opp_table>;
+ 			#cooling-cells = <2>;
++			clock-frequency = <1296000000>;
+ 		};
+ 	};
+ 
