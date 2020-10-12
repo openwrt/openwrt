@@ -47,6 +47,16 @@ define Device/friendlyarm_nanopi-neo-air
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo-air
 
+define Device/friendlyarm_nanopi-r1
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi R1
+  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-usb-net-rtl8152 \
+	kmod-brcmfmac kmod-leds-gpio kmod-ledtrig-heartbeat wpad-basic-wolfssl \
+	brcmfmac-firmware-43430-sdio
+  SOC := sun8i-h3
+endef
+TARGET_DEVICES += friendlyarm_nanopi-r1
+
 define Device/friendlyarm_zeropi
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := ZeroPi
