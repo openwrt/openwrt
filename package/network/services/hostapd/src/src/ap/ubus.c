@@ -206,6 +206,75 @@ hostapd_bss_reload(struct ubus_context *ctx, struct ubus_object *obj,
 	return ret;
 }
 
+
+static void
+hostapd_parse_vht_map_blobmsg(uint16_t map)
+{
+	char label[4];
+	int16_t val;
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		snprintf(label, 4, "%dss", i + 1);
+
+		val = (map & (BIT(1) | BIT(0))) + 7;
+		blobmsg_add_u16(&b, label, val == 10 ? -1 : val);
+		map = map >> 2;
+	}
+}
+
+static void
+hostapd_parse_vht_capab_blobmsg(struct ieee80211_vht_capabilities *vhtc)
+{
+	void *supported_mcs;
+	void *map;
+	int i;
+
+	static const struct {
+		const char *name;
+		uint32_t flag;
+	} vht_capas[] = {
+		{ "su_beamformee", VHT_CAP_SU_BEAMFORMEE_CAPABLE },
+		{ "mu_beamformee", VHT_CAP_MU_BEAMFORMEE_CAPABLE },
+	};
+
+	for (i = 0; i < ARRAY_SIZE(vht_capas); i++)
+		blobmsg_add_u8(&b, vht_capas[i].name,
+				!!(vhtc->vht_capabilities_info & vht_capas[i].flag));
+
+	supported_mcs = blobmsg_open_table(&b, "mcs_map");
+
+	/* RX map */
+	map = blobmsg_open_table(&b, "rx");
+	hostapd_parse_vht_map_blobmsg(le_to_host16(vhtc->vht_supported_mcs_set.rx_map));
+	blobmsg_close_table(&b, map);
+
+	/* TX map */
+	map = blobmsg_open_table(&b, "tx");
+	hostapd_parse_vht_map_blobmsg(le_to_host16(vhtc->vht_supported_mcs_set.tx_map));
+	blobmsg_close_table(&b, map);
+
+	blobmsg_close_table(&b, supported_mcs);
+}
+
+static void
+hostapd_parse_capab_blobmsg(struct sta_info *sta)
+{
+	void *r, *v;
+
+	v = blobmsg_open_table(&b, "capabilities");
+
+	if (sta->vht_capabilities) {
+		r = blobmsg_open_table(&b, "vht");
+		hostapd_parse_vht_capab_blobmsg(sta->vht_capabilities);
+		blobmsg_close_table(&b, r);
+	}
+
+	/* ToDo: Add HT / HE capability parsing */
+
+	blobmsg_close_table(&b, v);
+}
+
 static int
 hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
@@ -277,6 +346,8 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 			blobmsg_close_table(&b, r);
 			blobmsg_add_u32(&b, "signal", sta_driver_data.signal);
 		}
+
+		hostapd_parse_capab_blobmsg(sta);
 
 		blobmsg_close_table(&b, c);
 	}
