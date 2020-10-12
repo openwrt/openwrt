@@ -763,7 +763,7 @@ define Device/innacomm_w3400v6
   DEVICE_MODEL := W3400V6
   CFE_BOARD_ID := 96328ang
   CHIP_ID := 6328
-  FLASH_MB :=8
+  FLASH_MB := 8
   DEVICE_PACKAGES := $(B43_PACKAGES)
 endef
 TARGET_DEVICES += innacomm_w3400v6
