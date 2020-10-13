@@ -24,6 +24,9 @@ platform_do_upgrade() {
 	glinet,gl-x1200-nor-nand)
 		nand_nor_do_upgrade "$1"
 		;;
+	domywifi,dw33d-nor)
+		default_do_upgrade "$1"
+		;;
 	*)
 		nand_do_upgrade "$1"
 		;;
