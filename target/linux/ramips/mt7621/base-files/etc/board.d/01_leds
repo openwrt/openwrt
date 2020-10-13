@@ -220,6 +220,10 @@ xwrt,t-cpe1201k-v01)
 xwrt,mac500f)
 	ucidef_set_led_netdev "sfp" "SFP link" "green:sfp" "sfp"
 	;;
+xwrt,wr1800k-ax-nand)
+	ucidef_set_led_netdev "wan" "wan" "ether:blue" "wan" "link"
+	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "wlan:green" "wlan0" "link"
+	;;
 xiaomi,mi-router-ac2100)
 	ucidef_set_led_netdev "wan-blue" "WAN (blue)" "blue:wan" "eth1"
 	;;
