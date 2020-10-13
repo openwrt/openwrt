@@ -77,7 +77,8 @@ platform_do_upgrade() {
 	netgear,wac104|\
 	netgear,wac124|\
 	netis,wf2881|\
-	sercomm,na502)
+	sercomm,na502|\
+	xwrt,wr1800k-ax-nand)
 		nand_do_upgrade "$1"
 		;;
 	xiaomi,mi-router-3g|\
