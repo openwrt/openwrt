@@ -229,6 +229,15 @@ pcs,cr3000)
 qihoo,c301)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
+qxwlan,e600g-v2-8m|\
+qxwlan,e600g-v2-16m|\
+qxwlan,e600gac-v2-8m|\
+qxwlan,e600gac-v2-16m|\
+qxwlan,e750a-v4-8m|\
+qxwlan,e750a-v4-16m)
+	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x02"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	;;
 samsung,wam250)
 	ucidef_set_led_netdev "lan" "LAN" "white:lan" "eth0"
 	;;
