@@ -1496,6 +1496,27 @@ define Device/qxwlan_e750a-v4-8m
 endef
 TARGET_DEVICES += qxwlan_e750a-v4-8m
 
+define Device/qxwlan_e750g-v8
+  SOC := ar9344
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E750G
+  DEVICE_PACKAGES := kmod-usb2
+endef
+
+define Device/qxwlan_e750g-v8-16m
+  $(Device/qxwlan_e750g-v8)
+  DEVICE_VARIANT := v8 (16M)
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += qxwlan_e750g-v8-16m
+
+define Device/qxwlan_e750g-v8-8m
+  $(Device/qxwlan_e750g-v8)
+  DEVICE_VARIANT := v8 (8M)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += qxwlan_e750g-v8-8m
+
 define Device/rosinson_wr818
   SOC := qca9563
   DEVICE_VENDOR := Rosinson
