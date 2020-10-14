@@ -1475,6 +1475,27 @@ define Device/qihoo_c301
 endef
 TARGET_DEVICES += qihoo_c301
 
+define Device/qxwlan_e750a-v4
+  SOC := ar9344
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E750A
+  DEVICE_PACKAGES := kmod-usb2
+endef
+
+define Device/qxwlan_e750a-v4-16m
+  $(Device/qxwlan_e750a-v4)
+  DEVICE_VARIANT := v4 (16M)
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += qxwlan_e750a-v4-16m
+
+define Device/qxwlan_e750a-v4-8m
+  $(Device/qxwlan_e750a-v4)
+  DEVICE_VARIANT := v4 (8M)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += qxwlan_e750a-v4-8m
+
 define Device/rosinson_wr818
   SOC := qca9563
   DEVICE_VENDOR := Rosinson

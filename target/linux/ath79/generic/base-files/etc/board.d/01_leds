@@ -194,7 +194,9 @@ etactica,eg200)
 	ucidef_set_led_netdev "lan" "LAN" "red:eth0" "eth0"
 	ucidef_set_led_oneshot "modbus" "Modbus" "red:modbus" "100" "33"
 	;;
-glinet,gl-mifi)
+glinet,gl-mifi|\
+qxwlan,e750a-v4-8m|\
+qxwlan,e750a-v4-16m)
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x02"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	;;
