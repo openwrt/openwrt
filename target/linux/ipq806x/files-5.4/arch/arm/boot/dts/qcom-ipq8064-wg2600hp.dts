@@ -306,11 +306,39 @@
 
 &pcie0 {
 	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "pci168c,0040";
+			reg = <0x00010000 0 0 0 0>;
+
+			mtd-mac-address = <&PRODUCTDATA 0x12>;
+		};
+	};
 };
 
 &pcie1 {
 	status = "okay";
 	max-link-speed = <1>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "pci168c,0040";
+			reg = <0x00010000 0 0 0 0>;
+
+			mtd-mac-address = <&PRODUCTDATA 0xc>;
+		};
+	};
 };
 
 &qcom_pinmux {
