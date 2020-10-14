@@ -30,8 +30,6 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/dts-v1/;
-
 #include "mt7620a.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -64,12 +62,12 @@
 		compatible = "gpio-leds";
 
 		wlan2g {
-			label = "ac1200rm:green:wlan2g";
+			label = "green:wlan2g";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wps: wps {
-			label = "ac1200rm:green:wps";
+			label = "green:wps";
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		};
 	};

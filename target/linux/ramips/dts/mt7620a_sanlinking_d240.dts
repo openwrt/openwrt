@@ -31,8 +31,6 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/dts-v1/;
-
 #include "mt7620a.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -74,19 +72,19 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "d240:blue:power";
+			label = "blue:power";
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		};
 
 		usb {
-			label = "d240:blue:usb";
+			label = "blue:usb";
 			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
 
 		air {
-			label = "d240:blue:wifi";
+			label = "blue:wifi";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};

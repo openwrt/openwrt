@@ -30,6 +30,7 @@ ath79_setup_interfaces()
 	engenius,ecb1750|\
 	enterasys,ws-ap3705i|\
 	glinet,gl-ar300m-lite|\
+	hak5,wifi-pineapple-nano|\
 	meraki,mr16|\
 	netgear,ex6400|\
 	netgear,ex7300|\
@@ -74,6 +75,16 @@ ath79_setup_interfaces()
 	wd,mynet-wifi-rangeextender|\
 	winchannel,wb2000)
 		ucidef_set_interface_lan "eth0"
+		;;
+	alfa-network,ap121fe)
+		ucidef_set_interface_lan "eth0 usb0"
+		;;
+	alfa-network,n2q|\
+	alfa-network,n5q|\
+	devolo,dvl1200e|\
+	devolo,dvl1750e|\
+	ocedo,ursus)
+		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	avm,fritz4020|\
 	pcs,cr3000|\
@@ -143,11 +154,6 @@ ath79_setup_interfaces()
 	compex,wpj563)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan" "2:wan"
-		;;
-	devolo,dvl1200e|\
-	devolo,dvl1750e|\
-	ocedo,ursus)
-		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	devolo,magic-2-wifi)
 		ucidef_add_switch "switch0" \
@@ -317,8 +323,9 @@ ath79_setup_interfaces()
 			"0@eth0" "1:lan:1" "2:lan:3" "3:lan:2"
 		;;
 	tplink,tl-wpa8630-v1|\
-	tplink,tl-wpa8630p-v2-eu|\
-	tplink,tl-wpa8630p-v2-int)
+	tplink,tl-wpa8630p-v2-int|\
+	tplink,tl-wpa8630p-v2.0-eu|\
+	tplink,tl-wpa8630p-v2.1-eu)
 		# port 5 (internal) is the power-line port
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "5:lan:4"
@@ -342,7 +349,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
 		;;
-	ubnt,acb-isp)
+	ubnt,aircube-isp)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:1" "3:lan:3" "4:lan:2"
@@ -398,6 +405,9 @@ ath79_setup_macs()
 		label_mac=$lan_mac
 		;;
 	alfa-network,ap121f|\
+	alfa-network,ap121fe|\
+	alfa-network,n2q|\
+	alfa-network,r36a|\
 	engenius,ens202ext-v1)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
@@ -494,6 +504,10 @@ ath79_setup_macs()
 		;;
 	enterasys,ws-ap3705i)
 		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
+		;;
+	hak5,lan-turtle|\
+	hak5,packet-squirrel)
+		label_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
 		;;
 	iodata,etg3-r)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)

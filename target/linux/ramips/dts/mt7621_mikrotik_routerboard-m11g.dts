@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "mt7621_mikrotik.dtsi"
 
 / {
@@ -17,32 +15,32 @@
 		compatible = "gpio-leds";
 
 		led_usr: usr {
-			label = "routerboard-m11g:green:usr";
+			label = "green:usr";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
 		rssi0 {
-			label = "routerboard-m11g:green:rssi0";
+			label = "green:rssi0";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
 		rssi1 {
-			label = "routerboard-m11g:green:rssi1";
+			label = "green:rssi1";
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 		};
 
 		rssi2 {
-			label = "routerboard-m11g:green:rssi2";
+			label = "green:rssi2";
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 
 		rssi3 {
-			label = "routerboard-m11g:green:rssi3";
+			label = "green:rssi3";
 			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
 		};
 
 		rssi4 {
-			label = "routerboard-m11g:green:rssi4";
+			label = "green:rssi4";
 			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
 		};
 	};

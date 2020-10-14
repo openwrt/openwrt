@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include "qca956x.dtsi"
+
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-
-#include "qca956x.dtsi"
 
 / {
 	aliases {
@@ -17,7 +17,7 @@
 		compatible = "gpio-leds";
 
 		wps {
-			label = "elecom:red:wps";
+			label = "red:wps";
 			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		};
 	};

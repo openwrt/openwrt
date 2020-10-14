@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Device Tree Source for Meraki MR33 (Stinkbug)
  *
@@ -117,7 +117,7 @@
 		compatible = "gpio-leds";
 
 		power_orange: power {
-			label = "mr33:orange:power";
+			label = "orange:power";
 			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
@@ -169,25 +169,25 @@
 
 		/* RGB led */
 		status_red: chan0 {
-			chan-name = "mr33:red:status";
+			chan-name = "red:status";
 			led-cur = /bits/ 8 <0x20>;
 			max-cur = /bits/ 8 <0x60>;
 		};
 
 		status_green: chan1 {
-			chan-name = "mr33:green:status";
+			chan-name = "green:status";
 			led-cur = /bits/ 8 <0x20>;
 			max-cur = /bits/ 8 <0x60>;
 		};
 
 		chan2 {
-			chan-name = "mr33:blue:status";
+			chan-name = "blue:status";
 			led-cur = /bits/ 8 <0x20>;
 			max-cur = /bits/ 8 <0x60>;
 		};
 
 		chan3 {
-			chan-name = "mr33:white:status";
+			chan-name = "white:status";
 			led-cur = /bits/ 8 <0x20>;
 			max-cur = /bits/ 8 <0x60>;
 		};

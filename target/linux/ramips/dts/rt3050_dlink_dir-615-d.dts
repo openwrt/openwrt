@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "rt3050.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -75,28 +73,28 @@
 		compatible = "gpio-leds";
 
 		status_amber {
-			label = "dir-615-d:amber:status";
+			label = "amber:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_green: status_green {
-			label = "dir-615-d:green:status";
+			label = "green:status";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		wan_amber {
-			label = "dir-615-d:amber:wan";
+			label = "amber:wan";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_green {
-			label = "dir-615-d:green:wan";
+			label = "green:wan";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
-			label = "dir-615-d:blue:wps";
+			label = "blue:wps";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};

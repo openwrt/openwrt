@@ -243,11 +243,11 @@ endef
 
 ifeq ($(CONFIG_TARGET_ROOTFS_SECURITY_LABELS),y)
 define Image/mkfs/squashfs
-	echo "LD_LIBRARY_PATH=\$$LD_LIBRARY_PATH:$(STAGING_DIR_HOSTPKG)/lib" \
-	     "$(STAGING_DIR_HOSTPKG)/sbin/setfiles -r" \
+	echo ". $(call mkfs_target_dir,$(1))/etc/selinux/config" > $@.fakeroot-script
+	echo "$(STAGING_DIR_HOST)/bin/setfiles -r" \
 	     "$(call mkfs_target_dir,$(1))" \
-	     "$(call mkfs_target_dir,$(1))/etc/selinux/targeted/contexts/files/file_contexts " \
-	     "$(call mkfs_target_dir,$(1))" > $@.fakeroot-script
+	     "$(call mkfs_target_dir,$(1))/etc/selinux/\$${SELINUXTYPE}/contexts/files/file_contexts " \
+	     "$(call mkfs_target_dir,$(1))" >> $@.fakeroot-script
 	echo "$(Image/mkfs/squashfs-common)" >> $@.fakeroot-script
 	chmod +x $@.fakeroot-script
 	$(FAKEROOT) "$@.fakeroot-script"
@@ -432,6 +432,7 @@ define Device/Init
   DEVICE_DTS :=
   DEVICE_DTS_CONFIG :=
   DEVICE_DTS_DIR :=
+  DEVICE_FDT_NUM :=
   SOC :=
 
   BOARD_NAME :=
@@ -453,8 +454,9 @@ DEFAULT_DEVICE_VARS := \
   DEVICE_NAME KERNEL KERNEL_INITRAMFS KERNEL_INITRAMFS_IMAGE KERNEL_SIZE \
   CMDLINE UBOOTENV_IN_UBI KERNEL_IN_UBI BLOCKSIZE PAGESIZE SUBPAGESIZE \
   VID_HDR_OFFSET UBINIZE_OPTS UBINIZE_PARTS MKUBIFS_OPTS DEVICE_DTS \
-  DEVICE_DTS_CONFIG DEVICE_DTS_DIR SOC BOARD_NAME UIMAGE_NAME SUPPORTED_DEVICES \
-  IMAGE_METADATA KERNEL_ENTRY KERNEL_LOADADDR UBOOT_PATH IMAGE_SIZE \
+  DEVICE_DTS_CONFIG DEVICE_DTS_DIR DEVICE_FDT_NUM SOC BOARD_NAME \
+  UIMAGE_NAME SUPPORTED_DEVICES IMAGE_METADATA KERNEL_ENTRY KERNEL_LOADADDR \
+  UBOOT_PATH IMAGE_SIZE \
   DEVICE_COMPAT_VERSION DEVICE_COMPAT_MESSAGE \
   DEVICE_VENDOR DEVICE_MODEL DEVICE_VARIANT \
   DEVICE_ALT0_VENDOR DEVICE_ALT0_MODEL DEVICE_ALT0_VARIANT \

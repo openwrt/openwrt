@@ -1,16 +1,14 @@
-/dts-v1/;
-
 #include "vr9_tplink_tdw89x0.dtsi"
 
 / {
 	compatible = "tplink,tdw8980", "tplink,tdw89x0", "lantiq,xway", "lantiq,vr9";
 	model = "TP-LINK TD-W8980";
+};
 
-	gpio-leds {
-		wifi2 {
-			label = "tdw8980:green:wlan5ghz";
-			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
-		};
+&leds {
+	wifi2 {
+		label = "green:wlan5ghz";
+		gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 	};
 };
 

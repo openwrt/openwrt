@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "rt3050.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -63,12 +61,12 @@
 		compatible = "gpio-leds";
 
 		led_internet: internet {
-			label = "3g-6200nl:green:internet";
+			label = "green:internet";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "3g-6200nl:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};

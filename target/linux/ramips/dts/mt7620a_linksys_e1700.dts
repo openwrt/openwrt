@@ -8,8 +8,6 @@
  * warranty of any kind, whether express or implied.
  */
 
-/dts-v1/;
-
 #include "mt7620a.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -46,12 +44,12 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "e1700:green:power";
+			label = "green:power";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "e1700:green:wps";
+			label = "green:wps";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 	};

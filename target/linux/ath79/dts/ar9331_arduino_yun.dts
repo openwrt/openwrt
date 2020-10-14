@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
+
+#include "ar9331.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-
-#include "ar9331.dtsi"
 
 / {
 	model = "Arduino Yun";
@@ -54,13 +53,13 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "yun:blue:wlan";
+			label = "blue:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		usb {
-			label = "yun:white:usb";
+			label = "white:usb";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 			trigger-sources = <&hub_port1>;
 			linux,default-trigger = "usbport";

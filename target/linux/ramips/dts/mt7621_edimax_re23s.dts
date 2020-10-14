@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7621.dtsi"
 
@@ -22,22 +21,22 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "re23s:green:power";
+			label = "green:power";
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		wifi_green {
-			label = "re23s:green:wifi";
+			label = "green:wifi";
 			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		wifi_amber {
-			label = "re23s:amber:wifi";
+			label = "amber:wifi";
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_wifi_red: wifi_red {
-			label = "re23s:red:wifi";
+			label = "red:wifi";
 			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
 		};
 	};

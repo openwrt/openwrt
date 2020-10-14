@@ -41,15 +41,15 @@
 		compatible = "gpio-leds";
 
 		power_red: power2 {
-			label = "vg3503j:red:power";
+			label = "red:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
-			label = "vg3503j:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power {
-			label = "vg3503j:green:power";
+			label = "green:power";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};

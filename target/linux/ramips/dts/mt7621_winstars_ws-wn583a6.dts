@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7621.dtsi"
 
@@ -21,22 +20,22 @@
 		compatible = "gpio-leds";
 
 		night_light_white {
-			label = "ws-wn583a6:white:night_light";
+			label = "white:night_light";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_blue: status_blue {
-			label = "ws-wn583a6:blue:status";
+			label = "blue:status";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
 		status_amber {
-			label = "ws-wn583a6:amber:status";
+			label = "amber:status";
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_red: status_red {
-			label = "ws-wn583a6:red:status";
+			label = "red:status";
 			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
 		};
 	};

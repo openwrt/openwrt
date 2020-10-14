@@ -47,52 +47,52 @@
 		compatible = "gpio-leds";
 
 		internet_red {
-			label = "p2812hnufx:red:internet";
+			label = "red:internet";
 			gpios = <&stp 16 GPIO_ACTIVE_LOW>;
 		};
 		internet_green: internet_green {
-			label = "p2812hnufx:green:internet";
+			label = "green:internet";
 			gpios = <&stp 17 GPIO_ACTIVE_LOW>;
 		};
 		dsl_green: dsl_green {
-			label = "p2812hnufx:green:dsl";
+			label = "green:dsl";
 			gpios = <&stp 18 GPIO_ACTIVE_LOW>;
 		};
 		dsl_orange {
-			label = "p2812hnufx:orange:dsl";
+			label = "orange:dsl";
 			gpios = <&stp 19 GPIO_ACTIVE_LOW>;
 		};
 		wireless_orange {
-			label = "p2812hnufx:orange:wlan";
+			label = "orange:wlan";
 			gpios = <&stp 20 GPIO_ACTIVE_LOW>;
 		};
 		wireless_green: wireless_green {
-			label = "p2812hnufx:green:wlan";
+			label = "green:wlan";
 			gpios = <&stp 21 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power {
-			label = "p2812hnufx:red:power";
+			label = "red:power";
 			gpios = <&stp 22 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power2 {
-			label = "p2812hnufx:green:power";
+			label = "green:power";
 			gpios = <&stp 23 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		phone1 {
-			label = "p2812hnufx:green:phone";
+			label = "green:phone";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 		phone1warn {
-			label = "p2812hnufx:orange:phone";
+			label = "orange:phone";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 		phone2warn {
-			label = "p2812hnufx:orange:phone2";
+			label = "orange:phone2";
 			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
 		};
 		phone2 {
-			label = "p2812hnufx:green:phone2";
+			label = "green:phone2";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 	};

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7621.dtsi"
 
@@ -22,17 +21,17 @@
 		compatible = "gpio-leds";
 
 		led_status_red: status_red {
-			label = "wap6805:red:status";
+			label = "red:status";
 			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 		};
 
 		status_blink {
-			label = "wap6805:blink:status";
+			label = "blink:status";
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_green: status_green {
-			label = "wap6805:green:status";
+			label = "green:status";
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 	};

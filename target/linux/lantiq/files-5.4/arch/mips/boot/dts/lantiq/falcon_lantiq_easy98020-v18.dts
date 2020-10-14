@@ -1,9 +1,7 @@
-/dts-v1/;
-
-#include <dt-bindings/gpio/gpio.h>
-
 #include "falcon.dtsi"
 #include "falcon_sflash-16m.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Lantiq Falcon Reference Board V1.8";
@@ -40,27 +38,27 @@
 		pinctrl-0 = <&led_pins &bootled_pins>;
 
 		GPON {
-			label = "easy98020:green:gpon";
+			label = "green:gpon";
 			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		TEST {
-			label = "easy98020:green:test";
+			label = "green:test";
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		ETH {
-			label = "easy98020:green:status";
+			label = "green:status";
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		VOICE {
-			label = "easy98020:green:voice";
+			label = "green:voice";
 			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		VIDEO {
-			label = "easy98020:green:video";
+			label = "green:video";
 			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};

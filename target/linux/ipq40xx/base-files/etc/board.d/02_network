@@ -16,7 +16,8 @@ ipq40xx_setup_interfaces()
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
 	engenius,emr3500|\
-	engenius,ens620ext)
+	engenius,ens620ext|\
+	luma,wrtq-329acn)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	aruba,ap-303|\
@@ -52,7 +53,8 @@ ipq40xx_setup_interfaces()
 		;;
 	avm,fritzbox-4040|\
 	linksys,ea6350v3|\
-	linksys,ea8300)
+	linksys,ea8300|\
+	linksys,mr8300)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"

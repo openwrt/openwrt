@@ -11,8 +11,6 @@
  * warranty of any kind, whether express or implied.
  */
 
-/dts-v1/;
-
 #include "mt7620a.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -43,22 +41,22 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "br-6478ac-v2:white:power";
+			label = "white:power";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		internet {
-			label = "br-6478ac-v2:blue:internet";
+			label = "blue:internet";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "br-6478ac-v2:blue:wlan";
+			label = "blue:wlan";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "br-6478ac-v2:blue:usb";
+			label = "blue:usb";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";

@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "mt7620a.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -21,17 +19,17 @@
 		compatible = "gpio-leds";
 
 		led_blue: blue {
-			label = "k2g:blue:status";
+			label = "blue:status";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 
 		yellow {
-			label = "k2g:yellow:status";
+			label = "yellow:status";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		red {
-			label = "k2g:red:status";
+			label = "red:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};
 	};

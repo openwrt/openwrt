@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0 OR MIT
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
 
 #include "qcom-ipq4019.dtsi"
 #include <dt-bindings/gpio/gpio.h>
@@ -107,18 +107,18 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "gl-s1300:green:power";
+			label = "green:power";
 			gpios = <&tlmm 57 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		mesh {
-			label = "gl-s1300:green:mesh";
+			label = "green:mesh";
 			gpios = <&tlmm 59 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan {
-			label = "gl-s1300:green:wlan";
+			label = "green:wlan";
 			gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -223,7 +223,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	spidev1: spi@1 {
+	spidev1: spi@0 {
 		compatible = "siliconlabs,si3210";
 		reg = <0>;
 		spi-max-frequency = <24000000>;

@@ -347,24 +347,25 @@ TARGET_DEVICES += dlink_dap-2610
 define Device/edgecore_ecw5211
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
-	DEVICE_TITLE := Edgecore ECW5211
+	DEVICE_VENDOR := Edgecore
+	DEVICE_MODEL := ECW5211
+	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
-	DEVICE_DTS := qcom-ipq4018-ecw5211
-	DEVICE_PACKAGES := ipq-wifi-edgecore_ecw5211 kmod-tpm-i2c-atmel kmod-usb-acm uboot-envtools
+	DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-usb-acm uboot-envtools
 endef
 TARGET_DEVICES += edgecore_ecw5211
 
 define Device/edgecore_oap100
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
-	DEVICE_TITLE := Edgecore OAP100
+	DEVICE_VENDOR := Edgecore
+	DEVICE_MODEL := OAP100
+	SOC := qcom-ipq4019
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	IMAGES := nand-sysupgrade.bin
 	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
-	DEVICE_DTS := qcom-ipq4019-oap100
 	DEVICE_PACKAGES := ipq-wifi-edgecore_oap100 kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi uqmi
 endef
 TARGET_DEVICES += edgecore_oap100
@@ -539,6 +540,34 @@ define Device/linksys_ea8300
 	DEVICE_PACKAGES := uboot-envtools ath10k-firmware-qca9888-ct ipq-wifi-linksys_ea8300 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += linksys_ea8300
+
+define Device/linksys_mr8300
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := MR8300
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 3072k
+	IMAGE_SIZE := 87040k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
+	IMAGES += factory.bin
+	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR8300
+	DEVICE_PACKAGES := uboot-envtools ath10k-firmware-qca9888-ct ipq-wifi-linksys_mr8300-v0 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += linksys_mr8300
+
+define Device/luma_wrtq-329acn
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Luma Home
+	DEVICE_MODEL := WRTQ-329ACN
+	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := ipq-wifi-luma_wrtq-329acn kmod-ath3k kmod-eeprom-at24 kmod-i2c-gpio uboot-envtools
+	IMAGE_SIZE := 76632k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+endef
+TARGET_DEVICES += luma_wrtq-329acn
 
 define Device/meraki_mr33
 	$(call Device/FitImage)

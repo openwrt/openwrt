@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
+
+#include "ar7241.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-
-#include "ar7241.dtsi"
 
 / {
 	compatible = "ubnt,unifi", "qca,ar7241";
@@ -38,12 +37,12 @@
 		compatible = "gpio-leds";
 
 		led_dome_green: dome_green {
-			label = "ubnt:green:dome";
+			label = "green:dome";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
 		dome_orange {
-			label = "ubnt:orange:dome";
+			label = "orange:dome";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 	};

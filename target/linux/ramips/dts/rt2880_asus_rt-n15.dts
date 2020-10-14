@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "rt2880.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -82,7 +80,7 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "rt-n15:blue:power";
+			label = "blue:power";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 	};
