@@ -142,6 +142,13 @@ define Build/append-dtb
 	cat $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb >> $@
 endef
 
+define Build/append-dtb-elf
+	$(TARGET_CROSS)objcopy \
+		--set-section-flags=.appended_dtb=alloc,contents \
+		--update-section \
+		.appended_dtb=$(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@
+endef
+
 define Build/install-dtb
 	$(call locked, \
 		$(foreach dts,$(DEVICE_DTS), \
