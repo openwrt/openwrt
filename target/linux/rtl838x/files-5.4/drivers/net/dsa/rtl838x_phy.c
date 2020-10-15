@@ -251,8 +251,8 @@ rtl838x_request_fw(struct phy_device *phydev, const struct firmware *fw,
 	h = (struct fw_header *) fw->data;
 	pr_info("Firmware loaded. Size %d, magic: %08x\n", fw->size, h->magic);
 
-	if (h->phy != 0x83800000) {
-		pr_err("Wrong firmware file: PHY mismatch.\n");
+	if (h->magic != 0x83808380) {
+		pr_err("Wrong firmware file: MAGIC mismatch.\n");
 		goto out;
 	}
 
@@ -415,7 +415,7 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	if (!h)
 		return -1;
 
-	if (h->phy != 0x8218b00) {
+	if (h->phy != 0x8218b000) {
 		phydev_err(phydev, "Wrong firmware file: PHY mismatch.\n");
 		return -1;
 	}
