@@ -708,8 +708,8 @@ define Device/MikroTik
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16128k
   DEVICE_PACKAGES := kmod-usb3
-  LOADER_TYPE := elf
-  KERNEL := $(KERNEL_DTB) | loader-kernel
+  KERNEL_NAME := vmlinuz
+  KERNEL := kernel-bin | append-dtb-elf
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | \
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | \
 	check-size
