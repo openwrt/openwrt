@@ -75,7 +75,7 @@ define Device/sinovoip_bananapi-m2-ultra
   DEVICE_VENDOR := Sinovoip
   DEVICE_MODEL := Banana Pi M2 Ultra
   DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi kmod-brcmfmac \
-	brcmfmac-firmware-43430a0-sdio wpad-basic
+	brcmfmac-firmware-43430a0-sdio wpad-basic-wolfssl
   SUPPORTED_DEVICES:=lemaker,bananapi-m2-ultra
   SOC := sun8i-r40
 endef
