@@ -1,5 +1,7 @@
 BOARDNAME := MikroTik devices
 FEATURES += minor nand squashfs
+KERNELNAME := vmlinux vmlinuz
+IMAGES_DIR := ../../..
 
 DEFAULT_PACKAGES += wpad-basic-wolfssl
 

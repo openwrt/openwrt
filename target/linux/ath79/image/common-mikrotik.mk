@@ -1,8 +1,8 @@
 define Device/mikrotik
 	DEVICE_VENDOR := MikroTik
-	LOADER_TYPE := elf
-	KERNEL := kernel-bin | append-dtb | lzma | loader-kernel
-	KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel
+	KERNEL_NAME := vmlinuz
+	KERNEL := kernel-bin | append-dtb-elf
+	KERNEL_INITRAMFS := kernel-bin | append-dtb-elf
 endef
 
 define Device/mikrotik_nor
