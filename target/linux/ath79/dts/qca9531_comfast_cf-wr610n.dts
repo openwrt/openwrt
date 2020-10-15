@@ -1,0 +1,123 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca953x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "comfast,cf-wr610n", "qca,qca9531";
+	model = "COMFAST CF-WR610N";
+
+	aliases {
+		serial0 = &uart;
+		led-boot = &wan;
+		led-failsafe = &failsafe;
+		led-upgrade = &failsafe;
+		label-mac-device = &eth1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wifi {
+			label = "green:wifi";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		failsafe:failsafe {
+			label = "red:failsafe";
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan:wan {
+			label = "blue:wan";
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <1000>;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x010000>;
+				read-only;
+			};
+
+			art: partition@10000 {
+				label = "art";
+				reg = <0x010000 0x010000>;
+				read-only;
+			};
+
+			partition@20000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x020000 0xfd0000>;
+			};
+
+			partition@ff0000 {
+				label = "nvram";
+				reg = <0xff0000 0x010000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&uart {
+	status = "okay";
+};
+
+&eth0 {
+	status = "okay";
+
+	mtd-mac-address = <&art 0x6>;
+	phy-handle = <&swphy4>;
+};
+
+&eth1 {
+	mtd-mac-address = <&art 0x0>;
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <0>;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+};

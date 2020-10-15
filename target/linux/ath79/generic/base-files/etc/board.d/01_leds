@@ -145,6 +145,9 @@ telco,t1)
 	ucidef_set_led_switch "lan" "LAN" "blue:lan" "switch0" "0x02"
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	;;
+comfast,cf-wr610n)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
+	;;
 comfast,cf-wr752ac-v1|\
 engenius,ecb1750|\
 enterasys,ws-ap3705i)
