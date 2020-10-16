@@ -1124,6 +1124,7 @@ config KERNEL_SECURITY_SELINUX
 config KERNEL_SECURITY_SELINUX_BOOTPARAM
 	bool "NSA SELinux boot parameter"
 	depends on KERNEL_SECURITY_SELINUX
+	default y
 
 config KERNEL_SECURITY_SELINUX_DISABLE
 	bool "NSA SELinux runtime disable"
@@ -1132,6 +1133,7 @@ config KERNEL_SECURITY_SELINUX_DISABLE
 config KERNEL_SECURITY_SELINUX_DEVELOP
 	bool "NSA SELinux Development Support"
 	depends on KERNEL_SECURITY_SELINUX
+	default y
 
 config KERNEL_LSM
 	string
