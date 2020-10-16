@@ -1,0 +1,66 @@
+From aa9c5817b8fb470eb72f7c235237e010e7af8f66 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Fri, 16 Oct 2020 09:56:31 -1000
+Subject: [PATCH] pkg_hash: don't suggest incompatible packages
+
+Up until now opkg would suggest packages with unsatisfied dependencies
+as installable candidates. This is a frequent issue for the kmod feed in
+snapshot images. In these cases opkg suggest a newer kmod version than
+compatible with the installed kernel, because the same package is
+available both in the kmods archive and the target specific packages
+feed.
+
+This commit fixes the issue by dropping all package candidates by
+checking if all their dependencies could be installed.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ libopkg/pkg_hash.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/libopkg/pkg_hash.c b/libopkg/pkg_hash.c
+index 52c64ff..0d9b55b 100644
+--- a/libopkg/pkg_hash.c
++++ b/libopkg/pkg_hash.c
+@@ -20,6 +20,7 @@
+ #include "hash_table.h"
+ #include "pkg.h"
+ #include "opkg_message.h"
++#include "pkg_depends.h"
+ #include "pkg_vec.h"
+ #include "pkg_hash.h"
+ #include "parse_util.h"
+@@ -373,14 +374,27 @@ pkg_t *pkg_hash_fetch_best_installation_candidate(abstract_pkg_t * apkg,
+ 					 arch_priority, pkg_get_string(maybe, PKG_VERSION));
+ 				/* We make sure not to add the same package twice. Need to search for the reason why
+ 				   they show up twice sometimes. */
+-				if ((arch_priority > 0)
+-				    &&
+-				    (!pkg_vec_contains(matching_pkgs, maybe))) {
++				char **unresolved = NULL;
++				pkg_vec_t *depends = pkg_vec_alloc();
++				pkg_hash_fetch_unsatisfied_dependencies(maybe, depends,
++					&unresolved);
++
++				if (!unresolved &&
++						(arch_priority > 0) &&
++						(!pkg_vec_contains(matching_pkgs, maybe))) {
+ 					max_count++;
+ 					abstract_pkg_vec_insert(matching_apkgs,
+ 								maybe->parent);
+ 					pkg_vec_insert(matching_pkgs, maybe);
+ 				}
++
++				if (unresolved) {
++					char **tmp = unresolved;
++					while (*tmp)
++						free(*(tmp++));
++					free(unresolved);
++				}
++				pkg_vec_free(depends);
+ 			}
+ 
+ 			if (vec->len > 0 && matching_pkgs->len < 1)
+-- 
+2.25.1
+
