@@ -21,7 +21,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
 
 --- a/fs/ubifs/io.c
 +++ b/fs/ubifs/io.c
-@@ -452,16 +452,22 @@ static enum hrtimer_restart wbuf_timer_c
+@@ -464,16 +464,22 @@ static enum hrtimer_restart wbuf_timer_c
   */
  static void new_wbuf_timer_nolock(struct ubifs_wbuf *wbuf)
  {
@@ -48,7 +48,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  			       HRTIMER_MODE_REL);
  }
  
-@@ -1059,10 +1065,6 @@ int ubifs_wbuf_init(struct ubifs_info *c
+@@ -1071,10 +1077,6 @@ int ubifs_wbuf_init(struct ubifs_info *c
  
  	hrtimer_init(&wbuf->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
  	wbuf->timer.function = wbuf_timer_callback_nolock;
