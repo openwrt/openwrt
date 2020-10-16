@@ -409,7 +409,7 @@ mac80211_generate_mac() {
 	[ "$mask" = "00:00:00:00:00:00" ] && {
 		mask="ff:ff:ff:ff:ff:ff";
 
-		[ "$(wc -l < /sys/class/ieee80211/${phy}/addresses)" -gt 1 ] && {
+		[ "$(wc -l < /sys/class/ieee80211/${phy}/addresses)" -gt $id ] && {
 			addr="$(mac80211_get_addr "$phy" "$id")"
 			[ -n "$addr" ] && {
 				echo "$addr"
@@ -429,7 +429,7 @@ mac80211_generate_mac() {
 	[ "$((0x$mask1))" -gt 0 ] && {
 		b1="0x$1"
 		[ "$id" -gt 0 ] && \
-			b1=$(($b1 ^ ((($id - !($b1 & 2)) << 2) | 0x2)))
+			b1=$(($b1 ^ ((($id - !($b1 & 2)) << 2)) | 0x2))
 		printf "%02x:%s:%s:%s:%s:%s" $b1 $2 $3 $4 $5 $6
 		return
 	}
