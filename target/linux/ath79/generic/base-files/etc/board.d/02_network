@@ -285,6 +285,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan"
 		;;
+	qxwlan,e558-v2-8m|\
+	qxwlan,e558-v2-16m)
+		ucidef_add_switch "switch0" \
+			"0@eth1" "4:lan" "5:lan" "6@eth0" "3:wan"
+		;;
 	rosinson,wr818)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:wan"
