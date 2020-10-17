@@ -7,10 +7,6 @@ platform_get_rootfs() {
 
 	if read cmdline < /proc/cmdline; then
 		case "$cmdline" in
-			*block2mtd=*)
-				rootfsdev="${cmdline##*block2mtd=}"
-				rootfsdev="${rootfsdev%%,*}"
-			;;
 			*root=*)
 				rootfsdev="${cmdline##*root=}"
 				rootfsdev="${rootfsdev%% *}"
