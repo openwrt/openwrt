@@ -138,7 +138,10 @@ package_index: FORCE
 	$(OPKG) update >&2 || true
 
 package_reload:
-	if [ ! -f "$(PACKAGE_DIR)/Packages" ] || [ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || [ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ]; then \
+	if [ -d "$(PACKAGE_DIR)" ] && ( \
+			[ ! -f "$(PACKAGE_DIR)/Packages" ] || \
+			[ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || \
+			[ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ] ); then \
 		echo "Package list missing or not up-to-date, generating it." >&2 ;\
 		$(MAKE) package_index; \
 	else \
