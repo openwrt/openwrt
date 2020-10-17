@@ -1480,6 +1480,7 @@ define Device/qxwlan_e1700ac-v2
   DEVICE_VENDOR := Qxwlan
   DEVICE_MODEL := E1700AC
   DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  SUPPORTED_DEVICES += e1700ac-v2
 endef
 
 define Device/qxwlan_e1700ac-v2-16m
@@ -1501,6 +1502,7 @@ define Device/qxwlan_e558-v2
   DEVICE_VENDOR := Qxwlan
   DEVICE_MODEL := E558
   DEVICE_PACKAGES := kmod-usb2
+  SUPPORTED_DEVICES += e558-v2
 endef
 
 define Device/qxwlan_e558-v2-16m
@@ -1522,6 +1524,7 @@ define Device/qxwlan_e750a-v4
   DEVICE_VENDOR := Qxwlan
   DEVICE_MODEL := E750A
   DEVICE_PACKAGES := kmod-usb2
+  SUPPORTED_DEVICES += e750a-v4
 endef
 
 define Device/qxwlan_e750a-v4-16m
@@ -1543,6 +1546,7 @@ define Device/qxwlan_e750g-v8
   DEVICE_VENDOR := Qxwlan
   DEVICE_MODEL := E750G
   DEVICE_PACKAGES := kmod-usb2
+  SUPPORTED_DEVICES += e750g-v8
 endef
 
 define Device/qxwlan_e750g-v8-16m
