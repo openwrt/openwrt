@@ -1,0 +1,11 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -307,7 +307,7 @@
+ #define RX_DMA_VTAG		BIT(15)
+ 
+ /* QDMA descriptor rxd3 */
+-#define RX_DMA_VID(_x)		((_x) & 0xfff)
++#define RX_DMA_VID(_x)		((_x) & 0xffff)
+ 
+ /* QDMA descriptor rxd4 */
+ #define MTK_RXD4_FOE_ENTRY	GENMASK(13, 0)

@@ -1,0 +1,227 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -985,6 +985,15 @@ static int mtk_tx_map(struct sk_buff *sk
+ 	if (skb_vlan_tag_present(skb))
+ 		txd4 |= TX_DMA_INS_VLAN | skb_vlan_tag_get(skb);
+ 
++	if ((skb->vlan_tci & HWNAT_QUEUE_MAPPING_MAGIC_MASK) == HWNAT_QUEUE_MAPPING_MAGIC &&
++		(skb->hash & HWNAT_QUEUE_MAPPING_MAGIC_MASK) == HWNAT_QUEUE_MAPPING_MAGIC) {
++		txd4 &= ~(TX_DMA_FPORT_MASK << TX_DMA_FPORT_SHIFT);
++		txd4 |= (0x4 & TX_DMA_FPORT_MASK) << TX_DMA_FPORT_SHIFT;
++		if (mac->id && !skb_vlan_tag_present(skb)) {
++			txd4 |= TX_DMA_INS_VLAN | 1;
++		}
++	}
++
+ 	mapped_addr = dma_map_single(eth->dev, skb->data,
+ 				     skb_headlen(skb), DMA_TO_DEVICE);
+ 	if (unlikely(dma_mapping_error(eth->dev, mapped_addr)))
+@@ -1270,7 +1279,6 @@ static int mtk_poll_rx(struct napi_struc
+ 		struct net_device *netdev;
+ 		unsigned int pktlen;
+ 		dma_addr_t dma_addr;
+-		u32 hash;
+ 		int mac;
+ 
+ 		ring = mtk_get_rx_ring(eth);
+@@ -1340,12 +1348,6 @@ static int mtk_poll_rx(struct napi_struc
+ 		skb->protocol = eth_type_trans(skb, netdev);
+ 		bytes += pktlen;
+ 
+-		hash = trxd.rxd4 & GENMASK(13, 0);
+-		if (hash != GENMASK(13, 0)) {
+-			hash = jhash_1word(hash, 0);
+-			skb_set_hash(skb, hash, PKT_HASH_TYPE_L4);
+-		}
+-
+ 		if (netdev->features & NETIF_F_HW_VLAN_CTAG_RX &&
+ 		    (trxd.rxd2 & RX_DMA_VTAG))
+ 			__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
+@@ -2893,16 +2895,26 @@ mtk_flow_offload(enum flow_offload_type
+ 		struct flow_offload_hw_path *src,
+ 		struct flow_offload_hw_path *dest)
+ {
+-	struct mtk_mac *mac = netdev_priv(src->dev);
+-	struct mtk_eth *eth = mac->hw;
++	struct mtk_mac *mac = NULL;
++	struct mtk_eth *eth;
+ 
+-	if (!eth->soc->offload_version)
++	/* for now offload only do support natflow */
++	if (flow->flags != 0) {
+ 		return -EINVAL;
++	}
+ 
+-	if (src->dev->base_addr != dest->dev->base_addr)
++	if (src->dev->netdev_ops->ndo_flow_offload == mtk_flow_offload) {
++		mac = netdev_priv(src->dev);
++	} else if (dest->dev->netdev_ops->ndo_flow_offload == mtk_flow_offload) {
++		mac = netdev_priv(dest->dev);
++	} else {
+ 		return -EINVAL;
++	}
+ 
+-	mac = netdev_priv(src->dev);
++	eth = mac->hw;
++
++	if (!eth->soc->offload_version)
++		return -EINVAL;
+ 
+ 	return mtk_flow_offload_add(eth, type, flow, src, dest);
+ }
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -514,6 +514,11 @@
+ #define MT7628_SDM_RBCNT	(MT7628_SDM_OFFSET + 0x10c)
+ #define MT7628_SDM_CS_ERR	(MT7628_SDM_OFFSET + 0x110)
+ 
++/* natflow.h */
++#define HWNAT_QUEUE_MAPPING_MAGIC      0x8000
++#define HWNAT_QUEUE_MAPPING_MAGIC_MASK 0xe000
++#define HWNAT_QUEUE_MAPPING_HASH_MASK  0x1fff
++
+ struct mtk_rx_dma {
+ 	unsigned int rxd1;
+ 	unsigned int rxd2;
+--- a/drivers/net/ethernet/mediatek/mtk_offload.c
++++ b/drivers/net/ethernet/mediatek/mtk_offload.c
+@@ -25,6 +25,8 @@ mtk_offload_prepare_v4(struct mtk_eth *e
+ 	if (dest->dev == eth->netdev[1])
+ 	    dest_port = 2;
+ 
++	dest_port = (dest->dev->netdev_ops->ndo_flow_offload ? dest_port : 0);
++
+ 	mtk_foe_entry_prepare(entry, MTK_PPE_PKT_TYPE_IPV4_HNAPT, s_tuple->l4proto,
+ 			      dest_port, dest->eth_src, dest->eth_dest);
+ 	mtk_foe_entry_set_ipv4_tuple(entry, false,
+@@ -40,7 +42,7 @@ mtk_offload_prepare_v4(struct mtk_eth *e
+ 	if (dest->flags & FLOW_OFFLOAD_PATH_VLAN)
+ 		mtk_foe_entry_set_vlan(entry, dest->vlan_id);
+ 
+-	if (dest->flags & FLOW_OFFLOAD_PATH_DSA)
++	if (dest->dsa_port != 0xffff)
+ 		mtk_foe_entry_set_dsa(entry, dest->dsa_port);
+ 
+ 	return 0;
+@@ -55,15 +57,16 @@ int mtk_flow_offload_add(struct mtk_eth
+ 	struct flow_offload_tuple *otuple = &flow->tuplehash[FLOW_OFFLOAD_DIR_ORIGINAL].tuple;
+ 	struct flow_offload_tuple *rtuple = &flow->tuplehash[FLOW_OFFLOAD_DIR_REPLY].tuple;
+ 	struct mtk_foe_entry orig, reply;
+-	u32 ohash, rhash, timestamp;
++	int ohash, rhash;
++	u32 timestamp;
+ 
+ 	if (otuple->l4proto != IPPROTO_TCP && otuple->l4proto != IPPROTO_UDP)
+ 		return -EINVAL;
+ 
+ 	if (type == FLOW_OFFLOAD_DEL) {
+-		ohash = (unsigned long)flow->priv;
+-		rhash = ohash >> 16;
+-		ohash &= 0xffff;
++		rhash = (unsigned long)flow->timeout;
++		ohash = rhash >> 16;
++		rhash &= 0xffff;
+ 		mtk_foe_entry_clear(&eth->ppe, ohash);
+ 		mtk_foe_entry_clear(&eth->ppe, rhash);
+ 		rcu_assign_pointer(eth->foe_flow_table[ohash], NULL);
+@@ -85,11 +88,11 @@ int mtk_flow_offload_add(struct mtk_eth
+ 
+ 	timestamp = mtk_r32(eth, 0x0010);
+ 
+-	ohash = mtk_foe_entry_commit(&eth->ppe, &orig, timestamp);
++	ohash = mtk_foe_entry_commit(&eth->ppe, &orig, timestamp, ((flow->timeout >> 16) & 0xffff));
+ 	if (ohash < 0)
+ 		return -EINVAL;
+ 
+-	rhash = mtk_foe_entry_commit(&eth->ppe, &reply, timestamp);
++	rhash = mtk_foe_entry_commit(&eth->ppe, &reply, timestamp, ((flow->timeout >> 0) & 0xffff));
+ 	if (rhash < 0) {
+ 		mtk_foe_entry_clear(&eth->ppe, ohash);
+ 		return -EINVAL;
+@@ -98,8 +101,10 @@ int mtk_flow_offload_add(struct mtk_eth
+ 	rcu_assign_pointer(eth->foe_flow_table[ohash], flow);
+ 	rcu_assign_pointer(eth->foe_flow_table[rhash], flow);
+ 
+-	ohash |= rhash << 16;
+-	flow->priv = (void *)(unsigned long)ohash;
++	/* XXX: also the same was set in natflow
++	rhash |= ohash << 16;
++	flow->timeout = (void *)(unsigned long)rhash;
++	*/
+ 
+ 	return 0;
+ }
+@@ -110,8 +115,13 @@ static void mtk_offload_keepalive(struct
+ 
+ 	rcu_read_lock();
+ 	flow = rcu_dereference(eth->foe_flow_table[hash]);
+-	if (flow)
+-		flow->timeout = jiffies + 30 * HZ;
++	if (flow) {
++		void (*func)(unsigned int);
++		func = (void *)flow->priv;
++		if (func) {
++			func(hash);
++		}
++	}
+ 	rcu_read_unlock();
+ }
+ 
+@@ -128,6 +138,13 @@ int mtk_offload_check_rx(struct mtk_eth
+ 		return -1;
+ 	case MTK_PPE_CPU_REASON_PACKET_SAMPLING:
+ 		return -1;
++	case MTK_PPE_CPU_REASON_HIT_BIND_FORCE_CPU:
++		hash = FIELD_GET(MTK_RXD4_FOE_ENTRY, rxd4);
++		skb_set_hash(skb, (HWNAT_QUEUE_MAPPING_MAGIC | hash), PKT_HASH_TYPE_L4);
++		skb->vlan_tci |= HWNAT_QUEUE_MAPPING_MAGIC;
++		skb->pkt_type = PACKET_HOST;
++		skb->protocol = htons(ETH_P_IP); /* force to ETH_P_IP */
++		/* fallthrough */
+ 	default:
+ 		return 0;
+ 	}
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -326,7 +326,7 @@ static inline bool mtk_foe_entry_usable(
+ }
+ 
+ int mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_foe_entry *entry,
+-			 u16 timestamp)
++			 u16 timestamp, u32 orig_hash)
+ {
+ 	struct mtk_foe_entry *hwe;
+ 	u32 hash;
+@@ -344,6 +344,21 @@ int mtk_foe_entry_commit(struct mtk_ppe
+ 		if (!mtk_foe_entry_usable(hwe))
+ 			return -ENOSPC;
+ 	}
++	if (hash != orig_hash) {
++		if (hash % 2 == 0) {
++			hwe = &ppe->foe_table[hash + 1];
++			if (!mtk_foe_entry_usable(hwe)) {
++				return -ENOSPC;
++			} else {
++				hash++;
++				if (hash != orig_hash) {
++					return -ENOSPC;
++				}
++			}
++		} else {
++			return -ENOSPC;
++		}
++	}
+ 
+ 	memcpy(&hwe->data, &entry->data, sizeof(hwe->data));
+ 	wmb();
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.h
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.h
+@@ -269,7 +269,7 @@ int mtk_foe_entry_set_dsa(struct mtk_foe
+ int mtk_foe_entry_set_vlan(struct mtk_foe_entry *entry, int vid);
+ int mtk_foe_entry_set_pppoe(struct mtk_foe_entry *entry, int sid);
+ int mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_foe_entry *entry,
+-			 u16 timestamp);
++			 u16 timestamp, u32 orig_hash);
+ 
+ /* internal */
+ int mtk_ppe_debugfs_init(struct mtk_ppe *ppe);
