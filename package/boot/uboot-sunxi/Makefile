@@ -226,6 +226,14 @@ define U-Boot/pangolin
   UENV:=pangolin
 endef
 
+define U-Boot/libretech_all_h3_cc_h5
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Libre Computer ALL-H3-CC H5
+  BUILD_DEVICES:=libretech_all-h3-cc-h5
+  DEPENDS:=+PACKAGE_u-boot-libretech_all_h3_cc_h5:arm-trusted-firmware-sunxi
+  UENV:=a64
+endef
+
 define U-Boot/nanopi_neo_plus2
   BUILD_SUBTARGET:=cortexa53
   NAME:=NanoPi NEO Plus2 (H5)
@@ -328,7 +336,8 @@ UBOOT_TARGETS := \
 	pangolin \
 	pine64_plus \
 	sopine_baseboard \
-	orangepi_zero_plus
+	orangepi_zero_plus \
+	libretech_all_h3_cc_h5
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 

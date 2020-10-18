@@ -38,6 +38,15 @@ define Device/friendlyarm_nanopi-neo2
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo2
 
+define Device/libretech_all-h3-cc-h5
+  DEVICE_VENDOR := Libre Computer
+  DEVICE_MODEL := ALL-H3-CC
+  DEVICE_VARIANT := H5
+  $(Device/sun50i-h5)
+  SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-libretech-all-h3-cc
+endef
+TARGET_DEVICES += libretech_all-h3-cc-h5
+
 define Device/olimex_a64-olinuxino
   DEVICE_VENDOR := Olimex
   DEVICE_MODEL := A64-Olinuxino
