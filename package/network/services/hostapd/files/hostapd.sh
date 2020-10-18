@@ -245,6 +245,9 @@ hostapd_common_add_bss_config() {
 
 	config_add_boolean ieee80211k rrm_neighbor_report rrm_beacon_report
 
+	config_add_boolean ftm_responder stationary_ap
+	config_add_string lci civic
+
 	config_add_boolean ieee80211r pmk_r1_push ft_psk_generate_local ft_over_ds
 	config_add_int r0_key_lifetime reassociation_deadline
 	config_add_string mobility_domain r1_key_holder
@@ -626,6 +629,16 @@ hostapd_set_bss_options() {
 
 	[ "$rrm_neighbor_report" -eq "1" ] && append bss_conf "rrm_neighbor_report=1" "$N"
 	[ "$rrm_beacon_report" -eq "1" ] && append bss_conf "rrm_beacon_report=1" "$N"
+
+	json_get_vars ftm_responder stationary_ap lci civic
+	if [ "$ftm_responder" -eq "1" ]; then
+		iw phy "$phy" info | grep -q "ENABLE_FTM_RESPONDER" && {
+			append bss_conf "ftm_responder=1" "$N"
+			[ "$stationary_ap" -eq "1" ] && append bss_conf "stationary_ap=1" "$N"
+			[ -n "$lci" ] && append bss_conf "lci=$lci" "$N"
+			[ -n "$civic" ] && append bss_conf "lci=$civic" "$N"
+		}
+	fi
 
 	if [ "$wpa" -ge "1" ]; then
 		json_get_vars ieee80211r
