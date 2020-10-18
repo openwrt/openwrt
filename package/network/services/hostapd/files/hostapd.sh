@@ -239,7 +239,7 @@ hostapd_common_add_bss_config() {
 	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
 	config_add_string multi_ap_backhaul_ssid multi_ap_backhaul_key
 
-	config_add_boolean ieee80211v wnm_sleep_mode bss_transition
+	config_add_boolean wnm_sleep_mode bss_transition
 	config_add_int time_advertisement
 	config_add_string time_zone
 
@@ -610,20 +610,12 @@ hostapd_set_bss_options() {
 		append bss_conf "iapp_interface=$ifname" "$N"
 	}
 
-	json_get_vars ieee80211v
-	set_default ieee80211v 0
-	if [ "$ieee80211v" -eq "1" ]; then
-		json_get_vars time_advertisement time_zone wnm_sleep_mode bss_transition
+	json_get_vars time_advertisement time_zone wnm_sleep_mode bss_transition
 
-		set_default time_advertisement 0
-		set_default wnm_sleep_mode 0
-		set_default bss_transition 0
-
-		append bss_conf "time_advertisement=$time_advertisement" "$N"
-		[ -n "$time_zone" ] && append bss_conf "time_zone=$time_zone" "$N"
-		append bss_conf "wnm_sleep_mode=$wnm_sleep_mode" "$N"
-		append bss_conf "bss_transition=$bss_transition" "$N"
-	fi
+	[ -n "$time_advertisement" ] && append bss_conf "time_advertisement=$time_advertisement" "$N"
+	[ -n "$time_zone" ] && append bss_conf "time_zone=$time_zone" "$N"
+	[ "$wnm_sleep_mode" -eq "1" ] && append bss_conf "wnm_sleep_mode=1" "$N"
+	[ "$bss_transition" -eq "1" ] && append bss_conf "bss_transition=1" "$N"
 
 	json_get_vars ieee80211k rrm_neighbor_report rrm_beacon_report
 	set_default ieee80211k 0
