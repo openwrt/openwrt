@@ -284,7 +284,7 @@ endef
 define U-Boot/Bananapi_M2_Ultra
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Ultra
-  BUILD_DEVICES:=lemaker_bananapi-m2-ultra
+  BUILD_DEVICES:=sinovoip_bananapi-m2-ultra
 endef
 
 UBOOT_TARGETS := \
