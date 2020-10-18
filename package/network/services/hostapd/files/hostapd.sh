@@ -625,16 +625,15 @@ hostapd_set_bss_options() {
 		append bss_conf "bss_transition=$bss_transition" "$N"
 	fi
 
-	json_get_vars ieee80211k
+	json_get_vars ieee80211k rrm_neighbor_report rrm_beacon_report
 	set_default ieee80211k 0
 	if [ "$ieee80211k" -eq "1" ]; then
-		json_get_vars rrm_neighbor_report rrm_beacon_report
-
 		set_default rrm_neighbor_report 1
 		set_default rrm_beacon_report 1
-		append bss_conf "rrm_neighbor_report=$rrm_neighbor_report" "$N"
-		append bss_conf "rrm_beacon_report=$rrm_beacon_report" "$N"
 	fi
+
+	[ "$rrm_neighbor_report" -eq "1" ] && append bss_conf "rrm_neighbor_report=1" "$N"
+	[ "$rrm_beacon_report" -eq "1" ] && append bss_conf "rrm_beacon_report=1" "$N"
 
 	if [ "$wpa" -ge "1" ]; then
 		json_get_vars ieee80211r
