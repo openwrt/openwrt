@@ -1,0 +1,12 @@
+--- a/networking/ntpd.c
++++ b/networking/ntpd.c
+@@ -2414,9 +2414,6 @@ static NOINLINE void ntp_init(char **arg
+ 
+ 	srand(getpid());
+ 
+-	if (getuid())
+-		bb_error_msg_and_die(bb_msg_you_must_be_root);
+-
+ 	/* Set some globals */
+ 	G.discipline_jitter = G_precision_sec;
+ 	G.stratum = MAXSTRAT;
