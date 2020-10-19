@@ -11,7 +11,9 @@ include $(INCLUDE_DIR)/feeds.mk
 include $(INCLUDE_DIR)/rootfs.mk
 
 -include $(TMP_DIR)/.packagedeps
-package-y += kernel/linux
+ifndef SDK
+  package-y += kernel/linux
+endif
 $(curdir)/autoremove:=1
 $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
 $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
