@@ -37,7 +37,7 @@
 
 		wan {
 			label = "amber:wan";
-			gpios = <&qca8075 19 GPIO_ACTIVE_HIGH>;
+			gpios = <&ethphy4 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan2g {
@@ -119,14 +119,11 @@
 			status = "okay";
 		};
 
-		qca8075: ess-switch@c000000 {
+		ess-switch@c000000 {
 			status = "okay";
 
 			switch_lan_bmp = <0x10>;
 			switch_wan_bmp = <0x20>;
-
-			#gpio-cells = <2>;
-			gpio-controller;
 		};
 
 		edma@c080000 {
@@ -262,6 +259,11 @@
 
 &cryptobam {
 	status = "okay";
+};
+
+&ethphy4 {
+	gpio-controller;
+	#gpio-cells = <2>;
 };
 
 &gmac0 {
