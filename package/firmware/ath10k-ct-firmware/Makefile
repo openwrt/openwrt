@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath10k-ct-firmware
 PKG_VERSION:=2020-07-02
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -226,13 +226,19 @@ $(Package/ath10k-ct-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca988x
+  CONFLICTS:=ath10k-firmware-qca988x
 endef
 define Package/ath10k-firmware-qca988x-ct-full-htt
 $(Package/ath10k-ct-firmware-default)
   TITLE:=ath10k CT 10.1 full-htt-mgt fw for QCA988x
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca988x
+  PROVIDES:=\
+    ath10k-firmware-qca988x \
+    ath10k-firmware-qca988x-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca988x \
+    ath10k-firmware-qca988x-ct
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
@@ -242,13 +248,19 @@ $(Package/ath10k-ct-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca9887
+  CONFLICTS:=ath10k-firmware-qca9887
 endef
 define Package/ath10k-firmware-qca9887-ct-full-htt
 $(Package/ath10k-ct-firmware-default)
   TITLE:=ath10k CT 10.1 full-htt-mgt fw for QCA9887
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca9887
+  PROVIDES:=\
+    ath10k-firmware-qca9887 \
+    ath10k-firmware-qca9887-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca9887 \
+    ath10k-firmware-qca9887-ct
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
@@ -258,13 +270,20 @@ $(Package/ath10k-ct-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca99x0
+  CONFLICTS:=ath10k-firmware-qca99x0
 endef
 define Package/ath10k-firmware-qca99x0-ct-full-htt
 $(Package/ath10k-ct-firmware-default)
   TITLE:=ath10k CT 10.4 full-htt-mgt fw for QCA99x0
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca99x0
+  PROVIDES:=\
+    ath10k-firmware-qca99x0 \
+    ath10k-firmware-qca99x0-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca99x0 \
+    ath10k-firmware-qca99x0-ct \
+    ath10k-firmware-qca99x0-ct-htt
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 define Package/ath10k-firmware-qca99x0-ct-htt
@@ -272,7 +291,12 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4 htt-mgt fw for QCA99x0
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca99x0
+  PROVIDES:=\
+    ath10k-firmware-qca99x0 \
+    ath10k-firmware-qca99x0-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca99x0 \
+    ath10k-firmware-qca99x0-ct
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
@@ -282,13 +306,20 @@ $(Package/ath10k-ct-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca9984
+  CONFLICTS:=ath10k-firmware-qca9984
 endef
 define Package/ath10k-firmware-qca9984-ct-full-htt
 $(Package/ath10k-ct-firmware-default)
   TITLE:=ath10k CT 10.4 full-htt-mgt fw for QCA9984
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca9984
+  PROVIDES:=\
+    ath10k-firmware-qca9984 \
+    ath10k-firmware-qca9984-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca9984 \
+    ath10k-firmware-qca9984-ct \
+    ath10k-firmware-qca9984-ct-htt
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 define Package/ath10k-firmware-qca9984-ct-htt
@@ -296,7 +327,12 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4 htt-mgt fw for QCA9984
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca9984
+  PROVIDES:=\
+    ath10k-firmware-qca9984 \
+    ath10k-firmware-qca9984-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca9984 \
+    ath10k-firmware-qca9984-ct
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
@@ -306,13 +342,20 @@ $(Package/ath10k-ct-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca4019
+  CONFLICTS:=ath10k-firmware-qca4019
 endef
 define Package/ath10k-firmware-qca4019-ct-full-htt
 $(Package/ath10k-ct-firmware-default)
   TITLE:=ath10k CT 10.4 full-htt-mgt for QCA4018/9
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca4019
+  PROVIDES:=\
+    ath10k-firmware-qca4019 \
+    ath10k-firmware-qca4019-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca4019 \
+    ath10k-firmware-qca4019-ct \
+    ath10k-firmware-qca4019-ct-htt
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 define Package/ath10k-firmware-qca4019-ct-htt
@@ -320,7 +363,12 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4 htt-mgt for QCA4018/9
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca4019
+  PROVIDES:=\
+    ath10k-firmware-qca4019 \
+    ath10k-firmware-qca4019-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca4019 \
+    ath10k-firmware-qca4019-ct
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
@@ -330,13 +378,20 @@ $(Package/ath10k-ct-firmware-default)
   SECTION:=firmware
   CATEGORY:=Firmware
   PROVIDES:=ath10k-firmware-qca9888
+  CONFLICTS:=ath10k-firmware-qca9888
 endef
 define Package/ath10k-firmware-qca9888-ct-full-htt
 $(Package/ath10k-ct-firmware-default)
   TITLE:=ath10k CT 10.4 full-htt-mgt fw for QCA9886/8
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca9888
+  PROVIDES:=\
+    ath10k-firmware-qca9888 \
+    ath10k-firmware-qca9888-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca9888 \
+    ath10k-firmware-qca9888-ct \
+    ath10k-firmware-qca9888-ct-htt
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 define Package/ath10k-firmware-qca9888-ct-htt
@@ -344,7 +399,12 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4 htt-mgt fw for QCA9886/8
   SECTION:=firmware
   CATEGORY:=Firmware
-  PROVIDES:=ath10k-firmware-qca9888
+  PROVIDES:=\
+    ath10k-firmware-qca9888 \
+    ath10k-firmware-qca9888-ct
+  CONFLICTS:=\
+    ath10k-firmware-qca9888 \
+    ath10k-firmware-qca9888-ct
   DEPENDS:=+!PACKAGE_kmod-ath10k-ct-smallbuffers:kmod-ath10k-ct
 endef
 
