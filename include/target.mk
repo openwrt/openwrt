@@ -15,7 +15,6 @@ DEVICE_TYPE?=router
 # Default packages - the really basic set
 DEFAULT_PACKAGES:=\
 	base-files \
-	busybox \
 	ca-bundle \
 	dropbear \
 	fstools \
@@ -30,6 +29,13 @@ DEFAULT_PACKAGES:=\
 	uclient-fetch \
 	urandom-seed \
 	urngd
+
+ifneq ($(CONFIG_SELINUX),)
+DEFAULT_PACKAGES+=busybox-selinux procd-selinux
+else
+DEFAULT_PACKAGES+=busybox procd
+endif
+
 # For the basic set
 DEFAULT_PACKAGES.basic:=
 # For nas targets
