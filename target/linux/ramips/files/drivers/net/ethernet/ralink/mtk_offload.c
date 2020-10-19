@@ -123,7 +123,7 @@ mtk_check_entry_available(struct mtk_eth *eth, u32 hash)
 {
 	struct mtk_foe_entry entry = ((struct mtk_foe_entry *)eth->foe_table)[hash];
 
-	return (entry.bfib1.state == BIND)? 0:1;
+	return (entry.bfib1.state == BIND || entry.udib1.sta == 1)? 0:1;
 }
 
 static void
@@ -352,6 +352,15 @@ static int mtk_ppe_start(struct mtk_eth *eth)
 
 	/* flush the table */
 	memset(eth->foe_table, 0, MTK_PPE_TBL_SZ);
+
+	if (IS_ENABLED(CONFIG_SOC_MT7621)) {
+		/* skip all entries that cross the 1024 byte boundary */
+		static const u8 skip[] = { 12, 25, 38, 51, 76, 89, 102 };
+		int i, k;
+		for (i = 0; i < MTK_PPE_ENTRY_CNT; i += 128)
+			for (k = 0; k < ARRAY_SIZE(skip); k++)
+				((struct mtk_foe_entry *)eth->foe_table)[i + skip[k]].udib1.sta = 1;
+	}
 
 	/* setup hashing */
 	mtk_m32(eth,
