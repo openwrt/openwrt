@@ -269,6 +269,13 @@ hostapd_common_add_bss_config() {
 
 	config_add_string 'owe_transition_bssid:macaddr' 'owe_transition_ssid:string'
 
+	config_add_boolean iw_enabled iw_internet iw_asra iw_esr iw_uesa
+	config_add_int iw_access_network_type iw_venue_group iw_venue_type
+	config_add_int iw_ipaddr_type_availability iw_gas_address3
+	config_add_string iw_hessid iw_network_auth_type iw_qos_map_set
+	config_add_array iw_roaming_consortium iw_domain_name iw_anqp_3gpp_cell_net iw_nai_realm
+	config_add_array iw_anqp_elem
+
 	config_add_boolean hs20 disable_dgaf osen
 	config_add_int anqp_domain_id
 	config_add_int hs20_deauth_req_timeout
@@ -312,6 +319,34 @@ hostapd_set_psk() {
 
 	rm -f /var/run/hostapd-${ifname}.psk
 	for_each_station hostapd_set_psk_file ${ifname}
+}
+
+append_iw_roaming_consortium() {
+	[ -n "$1" ] && append bss_conf "roaming_consortium=$1" "$N"
+}
+
+append_iw_domain_name() {
+	if [ -z "$iw_domain_name_conf" ]; then
+		iw_domain_name_conf="$1"
+	else
+		iw_domain_name_conf="$iw_domain_name_conf,$1"
+	fi
+}
+
+append_iw_anqp_3gpp_cell_net() {
+	if [ -z "$iw_anqp_3gpp_cell_net_conf" ]; then
+		iw_anqp_3gpp_cell_net_conf="$1"
+	else
+		iw_anqp_3gpp_cell_net_conf="$iw_anqp_3gpp_cell_net_conf:$1"
+	fi
+}
+
+append_iw_anqp_elem() {
+	[ -n "$1" ] && append bss_conf "anqp_elem=$1" "$N"
+}
+
+append_iw_nai_realm() {
+	[ -n "$1" ] && append bss_conf "nai_realm=$1" "$N"
 }
 
 append_hs20_oper_friendly_name() {
@@ -773,6 +808,49 @@ hostapd_set_bss_options() {
 			append bss_conf "vlan_file=$vlan_file" "$N"
 		}
 	}
+
+	json_get_vars iw_enabled iw_internet iw_asra iw_esr iw_uesa iw_access_network_type
+	json_get_vars iw_hessid iw_venue_group iw_venue_type iw_network_auth_type
+	json_get_vars iw_roaming_consortium iw_domain_name iw_anqp_3gpp_cell_net iw_nai_realm
+	json_get_vars iw_anqp_elem iw_qos_map_set iw_ipaddr_type_availability iw_gas_address3
+
+	set_default iw_enabled 0
+	if [ "$iw_enabled" = "1" ]; then
+		append bss_conf "interworking=1" "$N"
+		set_default iw_internet 1
+		set_default iw_asra 0
+		set_default iw_esr 0
+		set_default iw_uesa 0
+
+		append bss_conf "internet=$iw_internet" "$N"
+		append bss_conf "asra=$iw_asra" "$N"
+		append bss_conf "esr=$iw_esr" "$N"
+		append bss_conf "uesa=$iw_uesa" "$N"
+
+		[ -n "$iw_access_network_type" ] && \
+			append bss_conf "access_network_type=$iw_access_network_type" "$N"
+		[ -n "$iw_hessid" ] && append bss_conf "hessid=$iw_hessid" "$N"
+		[ -n "$iw_venue_group" ] && \
+			append bss_conf "venue_group=$iw_venue_group" "$N"
+		[ -n "$iw_venue_type" ] && append bss_conf "venue_type=$iw_venue_type" "$N"
+		[ -n "$iw_network_auth_type" ] && \
+			append bss_conf "network_auth_type=$iw_network_auth_type" "$N"
+		[ -n "$iw_gas_address3" ] && append bss_conf "gas_address3=$iw_gas_address3" "$N"
+		[ -n "$iw_qos_map_set" ] && append bss_conf "qos_map_set=$iw_qos_map_set" "$N"
+
+		json_for_each_item append_iw_roaming_consortium iw_roaming_consortium
+		json_for_each_item append_iw_anqp_elem iw_anqp_elem
+		json_for_each_item append_iw_nai_realm iw_nai_realm
+
+		json_for_each_item append_iw_domain_name iw_domain_name
+		[ -n "$iw_domain_name_conf" ] && \
+			append bss_conf "domain_name=$iw_domain_name_conf" "$N"
+
+		json_for_each_item append_iw_anqp_3gpp_cell_net iw_anqp_3gpp_cell_net
+		[ -n "$iw_anqp_3gpp_cell_net_conf" ] && \
+			append bss_conf "anqp_3gpp_cell_net=$iw_anqp_3gpp_cell_net_conf" "$N"
+	fi
+
 
 	local hs20 disable_dgaf osen anqp_domain_id hs20_deauth_req_timeout \
 		osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
