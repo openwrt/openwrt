@@ -9,6 +9,7 @@ BOARD:=rtl838x
 BOARDNAME:=Realtek MIPS
 DEVICE_TYPE:=basic
 FEATURES:=ramdisk squashfs
+SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=5.4
 
@@ -17,6 +18,8 @@ define Target/Description
 endef
 
 include $(INCLUDE_DIR)/target.mk
+
+FEATURES := $(filter-out mips16,$(FEATURES))
 
 DEFAULT_PACKAGES += swconfig uboot-envtools ethtool kmod-gpio-button-hotplug
 
