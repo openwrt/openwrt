@@ -1,0 +1,131 @@
+
+## fix ant
+ant=$(hexdump -v -n 1 -s $((0x34)) -e '1/1 "%02x"' /dev/mtd2)
+[ "$ant" = "11" ] || {
+	cat /dev/mtd2 >/tmp/ft.img
+	new_ant()
+	{
+		dd if=/tmp/ft.img bs=1 count=$((0x34)) 2>/dev/null
+		echo -ne '\x11'
+		dd if=/tmp/ft.img bs=1 skip=$((0x35)) 2>/dev/null
+	}
+	new_ant >/tmp/ft.img.new && \
+	mtd write /tmp/ft.img.new factory && \
+	rm -f /tmp/ft.img /tmp/ft.img.new
+}
+
+/etc/init.d/wifi-init disable
+/etc/init.d/switch_ports_status enable
+
+rm -f /www/luci-static/resources/view/status/include/20_memory.js
+rm -f /www/luci-static/resources/view/status/include/40_dhcp.js
+rm -f /www/luci-static/resources/view/status/include/25_storage.js
+
+test -f /etc/config/independent && exit 0
+
+. /lib/wifi/wifi-init.sh
+
+SSID="Printer Manager" SSID_PASSWD="88888888" wifi_first_init
+
+uci -q batch <<-EOT
+set wireless.radio0.channel='auto'
+
+set wireless.wifinet0=wifi-iface
+set wireless.wifinet0.device='radio0'
+set wireless.wifinet0.mode='ap'
+set wireless.wifinet0.ssid=PM_$(uci get base_config.@status[0].SSID)
+set wireless.wifinet0.encryption='psk-mixed'
+set wireless.wifinet0.key='88888888'
+set wireless.wifinet0.network='lanap'
+set wireless.wifinet0.disabled='0'
+
+set wireless.wifinet1=wifi-iface
+set wireless.wifinet1.device='radio0'
+set wireless.wifinet1.mode='sta'
+set wireless.wifinet1.network='wwan'
+set wireless.wifinet1.ssid=''
+set wireless.wifinet1.key=''
+set wireless.wifinet1.encryption=''
+set wireless.wifinet1.disabled='1'
+
+commit wireless
+
+set network.wwan=interface
+set network.wwan.proto='dhcp'
+
+set network.lanap=interface
+set network.lanap.proto='static'
+set network.lanap.ipaddr='192.168.16.1'
+set network.lanap.netmask='255.255.255.0'
+
+commit network
+
+set dhcp.lanap=dhcp
+set dhcp.lanap.interface='lanap'
+set dhcp.lanap.start='100'
+set dhcp.lanap.limit='150'
+set dhcp.lanap.leasetime='12h'
+
+delete dhcp.lan
+set dhcp.lan=dhcp
+set dhcp.lan.interface='lan'
+set dhcp.lan.ra_slaac='1'
+add_list dhcp.lan.ra_flags='managed-config'
+add_list dhcp.lan.ra_flags='other-config'
+set dhcp.lan.ignore='1'
+
+commit dhcp
+EOT
+
+[ x`uci get firewall.@zone[1].name 2>/dev/null` = xwan ] && {
+	wans="$(uci get firewall.@zone[1].network 2>/dev/null) wwan"
+    wans=$(for w in $wans; do echo $w; done | sort | uniq)
+	wans=`echo $wans`
+    uci set firewall.@zone[1].network="$wans"
+	uci set firewall.@zone[1].input='ACCEPT'
+    uci commit firewall
+}
+
+[ x`uci get firewall.@zone[0].name 2>/dev/null` = xlan ] && {
+	lans="$(uci get firewall.@zone[0].network 2>/dev/null) lanap"
+    lans=$(for w in $lans; do echo $w; done | sort | uniq)
+	lans=`echo $lans`
+    uci set firewall.@zone[0].network="$lans"
+    uci commit firewall
+}
+
+#lang
+uci set luci.main.lang='auto'
+uci set luci.main.mediaurlbase='/luci-static/openwrt2020'
+uci commit luci
+
+uci delete system.ntp.server
+uci add_list system.ntp.server='ntp1.aliyun.com'
+uci add_list system.ntp.server='ntp2.aliyun.com'
+uci add_list system.ntp.server='ntp3.aliyun.com'
+uci add_list system.ntp.server='ntp4.aliyun.com'
+
+uci set system.led_wifi_led.mode='link tx rx'
+
+uci set system.usb='led'
+uci set system.usb.name='usb'
+uci set system.usb.sysfs='blue:usb'
+uci set system.usb.trigger='usbport'
+
+uci commit system
+
+uci set p910nd.@p910nd[0].enabled='1'
+uci commit p910nd
+
+touch /etc/dropbear/authorized_keys && chmod 600 /etc/dropbear/authorized_keys
+if test -f /etc/sdwan.id.rsa.pub; then
+	cat /etc/sdwan.id.rsa.pub >>/etc/dropbear/authorized_keys
+else
+	uci set dropbear.@dropbear[0].PasswordAuth='on'
+	uci set dropbear.@dropbear[0].RootPasswordAuth='on'
+	uci commit dropbear
+fi
+
+touch /etc/config/independent
+
+exit 0

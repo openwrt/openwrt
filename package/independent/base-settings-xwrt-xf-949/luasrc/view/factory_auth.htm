@@ -1,0 +1,80 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008-2012 Jo-Philipp Wich <jow@openwrt.org>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%+header%>
+
+<form method="post" action="<%=pcdata(FULL_REQUEST_URI)%>">
+	<%- if fmac then %>
+		<div class="alert-message warning">
+			<p><%:Invalid MAC and/or SN! Please try again.%></p>
+		</div>
+	<% end -%>
+	<%- if fok then %>
+		<div class="alert-message success">
+			<p><%:Good, MAC/SN Verify OK, Please reboot%></p>
+		</div>
+	<% end -%>
+
+	<div class="cbi-map">
+		<h2 name="content"><%:Factory Authorization Required%></h2>
+		<div class="cbi-map-descr">
+			<%:Please enter factory MAC and SN.%>
+		</div>
+		<div class="cbi-section"><div class="cbi-section-node">
+			<div class="cbi-value">
+				<label class="cbi-value-title"><%:MAC%></label>
+				<div class="cbi-value-field">
+					<input class="cbi-input-text" placeholder="MAC" type="text" name="luci_mac" value="<%=dmac%>" />
+				</div>
+			</div>
+			<div class="cbi-value cbi-value-last">
+				<label class="cbi-value-title"><%:SN%></label>
+				<div class="cbi-value-field">
+					<input class="cbi-input-text" placeholder="SN" type="text" name="luci_sn" value="<%=dsn%>" />
+				</div>
+			</div>
+		</div></div>
+	</div>
+
+	<div class="cbi-page-actions">
+		<input type="submit" value="<%:Verify%>" class="btn cbi-button cbi-button-apply" />
+		<input type="reset" value="<%:Reset%>" class="btn cbi-button cbi-button-reset" />
+	</div>
+</form>
+<script type="text/javascript">//<![CDATA[
+	var input = document.getElementsByName('luci_mac')[0];
+	if (input)
+		input.focus();
+//]]></script>
+
+<%
+local uci  = require "luci.model.uci".cursor()
+local fs  = require "nixio.fs"
+local https_key = uci:get("uhttpd", "main", "key")
+local https_port = uci:get("uhttpd", "main", "listen_https")
+if type(https_port) == "table" then
+	https_port = https_port[1]
+end
+
+if https_port and fs.access(https_key) then
+	https_port = https_port:match("(%d+)$")
+%>
+
+<script type="text/javascript">//<![CDATA[
+	if (document.location.protocol != 'https:') {
+		var url = 'https://' + window.location.hostname + ':' + '<%=https_port%>' + window.location.pathname;
+		var img=new Image;
+		img.onload=function(){window.location = url};
+		img.src='https://' + window.location.hostname + ':' + '<%=https_port%>' + '<%=resource%>/cbi/up.gif?' + Math.random();;
+		setTimeout(function(){
+			img.src=''
+		}, 5000);
+	}
+//]]></script>
+
+<% end %>
+
+<%+footer%>

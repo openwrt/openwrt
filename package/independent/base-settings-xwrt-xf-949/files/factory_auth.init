@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2019 X-WRT <dev@x-wrt.com>
+
+START=11
+
+start() {
+	mt7628factory.sh check || touch /tmp/factory_auth
+}
+
+stop() {
+	:
+}
+
+restart() {
+	:
+}
+
+reload() {
+	:
+}
