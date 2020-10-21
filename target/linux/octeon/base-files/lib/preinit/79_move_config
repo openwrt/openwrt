@@ -2,20 +2,23 @@
 
 move_config() {
 	. /lib/functions.sh
-	. /lib/upgrade/common.sh
-
+	local device
 	case "$(board_name)" in
 		erlite)
-			mount -t vfat /dev/sda1 /mnt
-			[ -f "/mnt/$BACKUP_FILE" ] && mv -f "/mnt/$BACKUP_FILE" /
-			umount /mnt
+			device="/dev/sda1"
 			;;
 		itus,shield-router)
-			mount -t vfat /dev/mmcblk1p1 /mnt
-			[ -f "/mnt/$BACKUP_FILE" ] && mv -f "/mnt/$BACKUP_FILE" /
-			umount /mnt
+			device="/dev/mmcblk1p1"
 			;;
 	esac
+
+	if [ -n "$device" ] && [ -b "$device" ] ; then
+		. /lib/upgrade/common.sh
+		mount -t vfat "$device" /mnt
+		[ -f "/mnt/$BACKUP_FILE" ] && mv -f "/mnt/$BACKUP_FILE" /
+		umount /mnt
+	fi
+	return 0
 }
 
 boot_hook_add preinit_mount_root move_config
