@@ -1015,6 +1015,16 @@ define Device/totolink_a7000r
 endef
 TARGET_DEVICES += totolink_a7000r
 
+define Device/totolink_x5000r
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 16064k
+  UIMAGE_NAME := C8343R-9999
+  DEVICE_VENDOR := TOTOLINK
+  DEVICE_MODEL := X5000R
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += totolink_x5000r
+
 define Device/tplink_re350-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
