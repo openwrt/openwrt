@@ -1,0 +1,30 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+main () {
+
+	case "$1" in
+		list)
+			json_init
+			json_add_object "info"
+			json_close_object
+			json_dump
+		;;
+		call)
+			case "$2" in
+			info)
+				json_init
+
+				line="$(cat /tmp/usb.info 2>/dev/null)"
+				json_add_string info "$line"
+
+				json_dump
+			;;
+			esac
+		;;
+	esac
+}
+
+main "$@"

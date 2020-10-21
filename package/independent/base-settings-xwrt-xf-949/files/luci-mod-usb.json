@@ -1,0 +1,10 @@
+{
+	"luci-mod-status-usb": {
+		"description": "Grant access to usb info",
+		"read": {
+			"ubus": {
+				"luci.usb": [ "info" ]
+			}
+		}
+	}
+}

@@ -1,0 +1,65 @@
+<%#
+ Copyright 2020 Jo-Philipp Wich <jo@mein.io>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+	local sys  = require "luci.sys"
+	local util = require "luci.util"
+	local http = require "luci.http"
+	local disp = require "luci.dispatcher"
+	local ver  = require "luci.version"
+
+	local boardinfo = util.ubus("system", "board") or { }
+
+	local node = disp.context.dispatched
+	local path = table.concat(disp.context.path, "-")
+
+	http.prepare_content("text/html; charset=UTF-8")
+-%>
+
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" type="text/css" media="screen" href="<%=media%>/cascade.css" />
+<link rel="icon" href="<%=media%>/favicon.png" type="image/svg+xml" />
+<script type="text/javascript" src="<%=url('admin/translations', luci.i18n.context.lang)%><%# ?v=PKG_VERSION %>"></script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<title><%=striptags( ( (node and node.title) and translate(node.title) .. ' - ' or '') ) .. translate("USB Device Share")%></title>
+</head>
+<body class="lang_<%=luci.i18n.context.lang%>" data-page="<%= pcdata(path) %>">
+
+<p class="skiplink">
+<span id="skiplink1"><a href="#navigation"><%:Skip to navigation%></a></span>
+<span id="skiplink2"><a href="#content"><%:Skip to content%></a></span>
+</p>
+
+<div id="menubar">
+	<h2 class="navigation"><a id="navigation" name="navigation"><%:Navigation%></a></h2>
+
+	<span class="hostname"><a class="brand" href="/">
+	<img src="/luci-static/openwrt2020/ll.png" />
+	</a></span>
+	<span class="distversion"></span>
+	<span id="indicators"></span>
+</div>
+
+<div id="modemenu" style="display:none"></div>
+
+<div id="maincontainer">
+	<div id="mainmenu"></div>
+
+	<div id="maincontent">
+		<%- if luci.sys.process.info("uid") == 0 and luci.sys.user.getuser("root") and not luci.sys.user.getpasswd("root") and category ~= "failsafe" and path ~= "admin-system-admin-password" then -%>
+		<div class="alert-message warning">
+			<h4><%:No password set!%></h4>
+			<p><%:There is no password set on this router. Please configure a root password to protect the web interface.%></p>
+			<% if disp.lookup("admin/system/admin") then %>
+				<div class="right"><a class="btn" href="<%=url("admin/system/admin")%>"><%:Go to password configuration...%></a></div>
+			<% end %>
+		</div>
+		<%- end -%>
+
+		<div id="tabmenu" style="display:none"></div>

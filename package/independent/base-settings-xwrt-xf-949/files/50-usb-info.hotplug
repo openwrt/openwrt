@@ -1,0 +1,12 @@
+#!/bin/sh
+
+case "$ACTION" in
+	add)
+		[ -n "${DEVNAME}" ] && [ "${DEVNAME##usb/lp*}" = "" ] && {
+			/usr/bin/lsusb | grep -v "Linux " >/tmp/usb.info
+		}
+	;;
+	remove)
+		echo -n >/tmp/usb.info
+	;;
+esac

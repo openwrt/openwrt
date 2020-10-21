@@ -856,7 +856,7 @@ define Device/xwrt_xf-949
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := XWRT
   DEVICE_MODEL := XF-949
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport base-settings-xwrt-xf-949
 endef
 TARGET_DEVICES += xwrt_xf-949
 
