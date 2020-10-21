@@ -365,10 +365,6 @@ config KERNEL_KPROBES
 	  instrumentation and testing.
 	  If in doubt, say "N".
 
-config KERNEL_KPROBE_EVENT
-	bool
-	default y if KERNEL_KPROBES
-
 config KERNEL_KPROBE_EVENTS
 	bool
 	default y if KERNEL_KPROBES
