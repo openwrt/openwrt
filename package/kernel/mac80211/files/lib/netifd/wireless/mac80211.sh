@@ -627,7 +627,7 @@ mac80211_setup_supplicant() {
 	local spobj="$(ubus -S list | grep wpa_supplicant.${ifname})"
 
 	[ "$enable" = 0 ] && {
-		ubus call wpa_supplicant.${phy} config_del "{\"iface\":\"$ifname\"}"
+		ubus call wpa_supplicant.${phy} config_remove "{\"iface\":\"$ifname\"}"
 		ip link set dev "$ifname" down
 		iw dev "$ifname" del
 		return 0
