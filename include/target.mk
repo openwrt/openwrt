@@ -36,10 +36,6 @@ else
 DEFAULT_PACKAGES+=busybox procd
 endif
 
-ifeq ($(CONFIG_SMALL_FLASH),)
-DEFAULT_PACKAGES+=procd-ujail procd-seccomp
-endif
-
 # For the basic set
 DEFAULT_PACKAGES.basic:=
 # For nas targets
