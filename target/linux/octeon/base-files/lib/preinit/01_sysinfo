@@ -2,36 +2,31 @@ do_sysinfo_octeon() {
 	local machine
 	local name
 
-	machine=$(grep "^system type" /proc/cpuinfo | sed "s/system type.*: \(.*\)/\1/g")
+	machine="$(awk '/^system type/ {print $4}' /proc/cpuinfo)"
 
 	case "$machine" in
-	"UBNT_E100"*)
+	"UBNT_E100")
 		name="erlite"
 		;;
-
-	"UBNT_E200"*)
+	"UBNT_E200")
 		name="er"
 		;;
-
-	"UBNT_E220"*)
+	"UBNT_E220")
 		name="erpro"
 		;;
-
-	"UBNT_E300"*)
+	"UBNT_E300")
 		# let generic 02_sysinfo handle it since device has its own device tree
 		return 0
 		;;
-
-	"ITUS_SHIELD"*)
+	"ITUS_SHIELD")
 		name="itus,shield-router"
 		;;
-
 	*)
 		name="generic"
 		;;
 	esac
 
-	[ -e "/tmp/sysinfo/" ] || mkdir -p "/tmp/sysinfo/"
+	mkdir -p "/tmp/sysinfo"
 
 	echo "$name" > /tmp/sysinfo/board_name
 	echo "$machine" > /tmp/sysinfo/model
