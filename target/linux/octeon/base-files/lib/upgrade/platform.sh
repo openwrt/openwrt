@@ -1,21 +1,21 @@
-platform_copy_config() {
-	local device
-
-	case "$(board_name)" in
-		erlite)
-			device="/dev/sda1"
-			;;
-		itus,shield-router)
-			device="/dev/mmcblk1p1"
-			;;
-	esac
-
-	if [ -n "$device}" ] && [ -b "$device" ] ; then
+platform_octeon_copy_config() {
+	local device="$1"
+	[ -n "$device}" ] && [ -b "$device" ] && {
 		mount -t "vfat" "$device" "/mnt"
 		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
 		umount "/mnt"
-	fi
-	return 0
+	}
+}
+
+platform_copy_config() {
+	case "$(board_name)" in
+		erlite)
+			platform_octeon_copy_config "/dev/sda1"
+			;;
+		itus,shield-router)
+			platform_octeon_copy_config "/dev/mmcblk1p1"
+			;;
+	esac
 }
 
 platform_do_flash() {
