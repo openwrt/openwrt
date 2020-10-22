@@ -1,24 +1,25 @@
 # Copyright (C) 2014 OpenWrt.org
 
-move_config() {
-	. /lib/functions.sh
-	local device
-	case "$(board_name)" in
-		erlite)
-			device="/dev/sda1"
-			;;
-		itus,shield-router)
-			device="/dev/mmcblk1p1"
-			;;
-	esac
-
-	if [ -n "$device" ] && [ -b "$device" ] ; then
-		. /lib/upgrade/common.sh
+octeon_move_config() {
+	. /lib/upgrade/common.sh
+	local device="$1"
+	[ -n "$device" ] && [ -b "$device" ] && {
 		mount -t vfat "$device" /mnt
 		[ -f "/mnt/$BACKUP_FILE" ] && mv -f "/mnt/$BACKUP_FILE" /
 		umount /mnt
-	fi
-	return 0
+	}
+}
+
+move_config() {
+	. /lib/functions.sh
+	case "$(board_name)" in
+		erlite)
+			octeon_move_config "/dev/sda1"
+			;;
+		itus,shield-router)
+			octeon_move_config "/dev/mmcblk1p1"
+			;;
+	esac
 }
 
 boot_hook_add preinit_mount_root move_config
