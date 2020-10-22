@@ -5,4 +5,9 @@ if [ -z "$(uci -q get uhttpd.main.ubus_prefix)" ]; then
 	uci commit uhttpd
 fi
 
+[ "$(uci -q get uhttpd.main.ubus_socket)" = "/var/run/ubus.sock" ] && {
+	uci set uhttpd.main.ubus_socket='/var/run/ubus/ubus.sock'
+	uci commit uhttpd
+}
+
 exit 0
