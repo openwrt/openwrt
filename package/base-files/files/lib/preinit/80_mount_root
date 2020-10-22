@@ -2,6 +2,19 @@
 # Copyright (C) 2006 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 
+missing_lines() {
+	local file1 file2 line
+	file1="$1"
+	file2="$2"
+	oIFS="$IFS"
+	IFS=":"
+	while read line; do
+		set -- $line
+		grep -q "^$1:" "$file2" || echo "$*"
+	done < "$file1"
+	IFS="$oIFS"
+}
+
 do_mount_root() {
 	mount_root
 	boot_run_hook preinit_mount_root
@@ -9,6 +22,9 @@ do_mount_root() {
 		echo "- config restore -"
 		cd /
 		tar xzf /sysupgrade.tgz
+		missing_lines /rom/etc/passwd /etc/passwd >> /etc/passwd
+		missing_lines /rom/etc/group /etc/group >> /etc/group
+		missing_lines /rom/etc/shadow /etc/shadow >> /etc/shadow
 		# Prevent configuration corruption on a power loss
 		sync
 	}
