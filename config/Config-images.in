@@ -42,6 +42,10 @@ menu "Target Images"
 
 			config TARGET_INITRAMFS_COMPRESSION_XZ
 				bool "xz"
+
+			config TARGET_INITRAMFS_COMPRESSION_ZSTD
+				depends on !LINUX_5_4 && !LINUX_4_19
+				bool "zstd"
 		endchoice
 
 		config EXTERNAL_CPIO
