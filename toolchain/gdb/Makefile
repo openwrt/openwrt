@@ -36,6 +36,8 @@ HOST_CONFIGURE_ARGS = \
 	--enable-threads \
 	--with-expat \
 	--without-python \
+	--disable-unit-tests \
+	--disable-ubsan \
 	--disable-binutils \
 	--disable-ld \
 	--disable-gas \
