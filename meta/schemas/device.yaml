@@ -1,0 +1,204 @@
+$id: http://openwrt.org/schema/device.yaml
+$schema: http://yaml-schema.org/draft-07/schema
+additionalProperties: true
+title: Schema for an OpenWrt device
+type: object
+
+required:
+  - vendor
+  - model
+  - cpu
+  - memory_mb
+  - storage
+  - target
+
+examples:
+  - bootloader: RedBoot
+    cpu:
+      cores: 2
+      mhz: 500
+      model: slow_cpu_2
+    cpu: Atheros AR2315
+    cpu_cores: 1
+    cpu_mhz: 180
+    detachable_antennas: 1
+    device_type: WiFi Router
+    ethernet:
+      - speed_mbit: 100
+        port_count: 1
+        function: lan
+    usb:
+      - plug: Type A
+        version: USB 2.0
+        port_count: 4
+    led:
+      - function: status
+        color: red
+    flash_mb: 8
+    jtag: false
+    memory_mb:
+      - 16
+    model: La Fonera
+    variant: v1
+    outdoor: false
+    power_supply:
+      volt: 5
+      type: DC
+      ampere: 2.0
+    serial: none
+    target: ath25
+    vendor: Fon
+    vlan: false
+    wifi:
+      - driver: foobar_driver_12
+        freq_ghz: 5.0
+        hardware: Foobar 1234
+      - driver: barfoo_42
+        freq_ghz: 2.4
+        hardware: Boofar 5678
+    storage:
+      - size_mb: 40
+        type: NOR
+
+properties:
+  bootloader:
+    $id: '#/properties/bootloader'
+    $ref: file:bootloader.yaml
+
+  cpu:
+    $id: '#/properties/cpu'
+    title: CPU
+    type: object
+    required:
+      - model
+      - mhz
+      - cores
+    properties:
+        model:
+            $id: '#/properties/cpu/properties/model'
+            title: Model
+            type: string
+        cores:
+            $id: '#/properties/cpu/properties/cores'
+            title: The cores schema
+            type: number
+            minimum: 1
+        mhz:
+            $id: '#/properties/cpu/properties/mhz'
+            title: MHz
+            type: number
+            minimum: 1
+
+  detachable_antennas:
+    $id: '#/properties/detachable_antennas'
+    title: The detachable_antennas schema
+    type: number
+    minimum: 0
+
+  device_type:
+    $id: '#/properties/device_type'
+    $ref: file:device-type.yaml
+    title: Type
+    type: string
+
+  ethernet:
+    $id: '#/properties/ethernets'
+    title: Ethernets
+    type: array
+    items:
+      $ref: file:ethernet.yaml
+    minItems: 1
+
+  usb:
+    $id: '#/properties/usb'
+    title: USB Ports
+    type: array
+    items:
+      $ref: file:usb.yaml
+
+  led:
+    $id: '#/properties/led'
+    title: LEDs
+    type: array
+    items:
+      $ref: file:led.yaml
+
+  jtag:
+    $id: '#/properties/jtag'
+    title: JTAG
+    type: boolean
+
+  memory_mb:
+    $id: '#/properties/memory_mb'
+    title: Memory in MegaByte
+    type: array
+    minItems: 1
+    contains:
+      type: number
+
+  model:
+    $id: '#/properties/model'
+    title: Model
+    type: string
+
+  variant:
+    $id: '#/properties/variant'
+    title: Variant
+    type: string
+
+  outdoor:
+    $id: '#/properties/outdoor'
+    title: Outdoor
+    type: boolean
+
+  power_supply:
+    $id: '#/properties/power_supply'
+    $ref: file:power_supply.yaml
+
+  serial:
+    $id: '#/properties/serial'
+    title: Serial
+    type: string
+    enum:
+      - unknown
+      - none
+      - 9600/8N1
+      - 19200/8N1
+      - 38400/8N1
+      - 57600/8N1
+      - 115200/8N1
+      - 1500000/8N1
+
+  storages:
+    $id: '#/properties/storages'
+    title: Storages
+    type: array
+    items:
+      $ref: file:storage.yaml
+    minItems: 1
+
+  target:
+    $id: '#/properties/target'
+    type: array
+    items:
+      $ref: file:target.yaml
+    minItems: 1
+
+  vendor:
+    $id: '#/properties/vendor'
+    $ref: file:vendor.yaml
+
+  vlan:
+    $id: '#/properties/vlan'
+    title: VLAN
+    enum:
+      - True
+      - False
+      - 16
+      - 4096
+
+  wifi:
+    $id: '#/properties/wifi'
+    type: array
+    items:
+      $ref: file:wifi.yaml
