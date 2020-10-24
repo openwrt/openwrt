@@ -513,6 +513,8 @@ ar8216_read_port_link(struct ar8xxx_priv *priv, int port,
 	}
 }
 
+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
+
 static struct sk_buff *
 ar8216_mangle_tx(struct net_device *dev, struct sk_buff *skb)
 {
@@ -578,6 +580,8 @@ ar8216_mangle_rx(struct net_device *dev, struct sk_buff *skb)
 	buf[14 + 2] |= vlan >> 8;
 	buf[15 + 2] = vlan & 0xff;
 }
+
+#endif
 
 int
 ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
@@ -2449,6 +2453,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	if (ret)
 		return ret;
 
+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	/* VID fixup only needed on ar8216 */
 	if (chip_is_ar8216(priv)) {
 		dev->phy_ptr = priv;
@@ -2456,6 +2461,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 		dev->eth_mangle_rx = ar8216_mangle_rx;
 		dev->eth_mangle_tx = ar8216_mangle_tx;
 	}
+#endif
 
 	return 0;
 }
@@ -2687,10 +2693,12 @@ ar8xxx_phy_detach(struct phy_device *phydev)
 	if (!dev)
 		return;
 
+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	dev->phy_ptr = NULL;
 	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
 	dev->eth_mangle_rx = NULL;
 	dev->eth_mangle_tx = NULL;
+#endif
 }
 
 static void
