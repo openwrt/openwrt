@@ -25,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/gdb/Default
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:=+!USE_MUSL:libthread-db +PACKAGE_zlib:zlib
+  DEPENDS:=+!USE_MUSL:libthread-db +zlib
   URL:=https://www.gnu.org/software/gdb/
 endef
 
@@ -55,6 +55,7 @@ endef
 # XXX: add --disable-werror to prevent build failure with arm
 CONFIGURE_ARGS+= \
 	--with-system-readline \
+	--with-system-zlib \
 	--without-expat \
 	--without-lzma \
 	--disable-sim \
