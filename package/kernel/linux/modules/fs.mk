@@ -243,6 +243,7 @@ $(eval $(call KernelPackage,fs-fscache))
 define KernelPackage/fs-hfs
   SUBMENU:=$(FS_MENU)
   TITLE:=HFS filesystem support
+  DEPENDS:=+kmod-cdrom
   KCONFIG:=CONFIG_HFS_FS
   FILES:=$(LINUX_DIR)/fs/hfs/hfs.ko
   AUTOLOAD:=$(call AutoLoad,30,hfs)
@@ -259,6 +260,7 @@ $(eval $(call KernelPackage,fs-hfs))
 define KernelPackage/fs-hfsplus
   SUBMENU:=$(FS_MENU)
   TITLE:=HFS+ filesystem support
+  DEPENDS:=+kmod-cdrom
   KCONFIG:=CONFIG_HFSPLUS_FS
   FILES:=$(LINUX_DIR)/fs/hfsplus/hfsplus.ko
   AUTOLOAD:=$(call AutoLoad,30,hfsplus)
@@ -275,7 +277,7 @@ $(eval $(call KernelPackage,fs-hfsplus))
 define KernelPackage/fs-isofs
   SUBMENU:=$(FS_MENU)
   TITLE:=ISO9660 filesystem support
-  DEPENDS:=+kmod-lib-zlib-inflate
+  DEPENDS:=+kmod-lib-zlib-inflate +kmod-cdrom
   KCONFIG:=CONFIG_ISO9660_FS CONFIG_JOLIET=y CONFIG_ZISOFS=n
   FILES:=$(LINUX_DIR)/fs/isofs/isofs.ko
   AUTOLOAD:=$(call AutoLoad,30,isofs)
@@ -513,7 +515,7 @@ define KernelPackage/fs-udf
   KCONFIG:=CONFIG_UDF_FS
   FILES:=$(LINUX_DIR)/fs/udf/udf.ko
   AUTOLOAD:=$(call AutoLoad,30,udf)
-  DEPENDS:=+kmod-lib-crc-itu-t
+  DEPENDS:=+kmod-lib-crc-itu-t +kmod-cdrom
   $(call AddDepends/nls)
 endef
 

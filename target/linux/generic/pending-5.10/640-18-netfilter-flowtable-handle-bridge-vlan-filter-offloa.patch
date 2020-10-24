@@ -1,0 +1,106 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 10 Feb 2021 19:44:33 +0100
+Subject: [PATCH] netfilter: flowtable: handle bridge vlan filter offload
+ tags from DSA/switchdev
+
+When a switchdev/DSA port is an untagged member of a bridge vlan, ingress
+packets could potentially be tagged with the id of the VLAN.
+When the VLAN port group has been uploaded to switchdev, report the bridge
+tag mode as DEV_PATH_BR_VLAN_UNTAG_HW instead of DEV_PATH_BR_VLAN_UNTAG
+and handle it in netfilter flow offloading by storing the tag in the tuple
+in_pvid field.
+This allows the ingress hook to detect the optional tag and remove it for
+software offload. This tag processing is for ingress only, egress needs to be
+fully untagged
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -853,6 +853,7 @@ struct net_device_path {
+ 				DEV_PATH_BR_VLAN_KEEP,
+ 				DEV_PATH_BR_VLAN_TAG,
+ 				DEV_PATH_BR_VLAN_UNTAG,
++				DEV_PATH_BR_VLAN_UNTAG_HW,
+ 			}		vlan_mode;
+ 			u16		vlan_id;
+ 			__be16		vlan_proto;
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -183,6 +183,10 @@ struct nf_flow_route {
+ 			u32			ifindex;
+ 			u16			vid[NF_FLOW_TABLE_VLAN_MAX];
+ 			__be16			vproto[NF_FLOW_TABLE_VLAN_MAX];
++			struct {
++				u16		id;
++				__be16		proto;
++			} pvid;
+ 			u8			num_vlans;
+ 		} in;
+ 		struct {
+--- a/net/bridge/br_device.c
++++ b/net/bridge/br_device.c
+@@ -435,6 +435,7 @@ static int br_fill_forward_path(struct n
+ 		ctx->vlan[ctx->num_vlans].proto = path->bridge.vlan_proto;
+ 		ctx->num_vlans++;
+ 		break;
++	case DEV_PATH_BR_VLAN_UNTAG_HW:
+ 	case DEV_PATH_BR_VLAN_UNTAG:
+ 		ctx->num_vlans--;
+ 		break;
+--- a/net/bridge/br_vlan.c
++++ b/net/bridge/br_vlan.c
+@@ -1374,6 +1374,8 @@ int br_vlan_fill_forward_path_mode(struc
+ 
+ 	if (path->bridge.vlan_mode == DEV_PATH_BR_VLAN_TAG)
+ 		path->bridge.vlan_mode = DEV_PATH_BR_VLAN_KEEP;
++	else if (v->priv_flags & BR_VLFLAG_ADDED_BY_SWITCHDEV)
++		path->bridge.vlan_mode = DEV_PATH_BR_VLAN_UNTAG_HW;
+ 	else
+ 		path->bridge.vlan_mode = DEV_PATH_BR_VLAN_UNTAG;
+ 
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -98,6 +98,8 @@ static int flow_offload_fill_route(struc
+ 		j++;
+ 	}
+ 	flow_tuple->in_vlan_num = route->tuple[dir].in.num_vlans;
++	flow_tuple->in_pvid.id = route->tuple[dir].in.pvid.id;
++	flow_tuple->in_pvid.proto = route->tuple[dir].in.pvid.proto;
+ 
+ 	switch (route->tuple[dir].xmit_type) {
+ 	case FLOW_OFFLOAD_XMIT_DIRECT:
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -67,6 +67,10 @@ struct nft_forward_info {
+ 	const struct net_device *dev;
+ 	__u16 vid[NF_FLOW_TABLE_VLAN_MAX];
+ 	__be16 vproto[NF_FLOW_TABLE_VLAN_MAX];
++	struct {
++		__u16 id;
++		__be16 proto;
++	} pvid;
+ 	u8 num_vlans;
+ 	u8 h_source[ETH_ALEN];
+ 	u8 h_dest[ETH_ALEN];
+@@ -127,6 +131,10 @@ static void nft_dev_path_info(const stru
+ 				info->vproto[info->num_vlans] = path->bridge.vlan_proto;
+ 				info->num_vlans++;
+ 				break;
++			case DEV_PATH_BR_VLAN_UNTAG_HW:
++				info->pvid.id = info->vid[info->num_vlans - 1];
++				info->pvid.proto = info->vproto[info->num_vlans - 1];
++				fallthrough;
+ 			case DEV_PATH_BR_VLAN_UNTAG:
+ 				info->num_vlans--;
+ 				break;
+@@ -185,6 +193,8 @@ static void nft_dev_forward_path(struct
+ 		route->tuple[!dir].in.vid[i] = info.vid[i];
+ 		route->tuple[!dir].in.vproto[i] = info.vproto[i];
+ 	}
++	route->tuple[!dir].in.pvid.id = info.pvid.id;
++	route->tuple[!dir].in.pvid.proto = info.pvid.proto;
+ 	route->tuple[!dir].in.num_vlans = info.num_vlans;
+ 
+ 	if (info.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT) {

@@ -1,0 +1,51 @@
+From: Pablo Neira Ayuso <pablo@netfilter.org>
+Date: Tue, 2 Feb 2021 17:10:07 +0100
+Subject: [PATCH] netfilter: nft_flow_offload: use direct xmit if
+ hardware offload is enabled
+
+If there is a forward path to reach an ethernet device and hardware
+offload is enabled, then use the direct xmit path.
+---
+
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -73,9 +73,18 @@ struct nft_forward_info {
+ 	enum flow_offload_xmit_type xmit_type;
+ };
+ 
++static bool nft_is_valid_ether_device(const struct net_device *dev)
++{
++	if (!dev || (dev->flags & IFF_LOOPBACK) || dev->type != ARPHRD_ETHER ||
++	    dev->addr_len != ETH_ALEN || !is_valid_ether_addr(dev->dev_addr))
++		return false;
++
++	return true;
++}
++
+ static void nft_dev_path_info(const struct net_device_path_stack *stack,
+ 			      struct nft_forward_info *info,
+-			      unsigned char *ha)
++			      unsigned char *ha, struct nf_flowtable *flowtable)
+ {
+ 	const struct net_device_path *path;
+ 	int i;
+@@ -131,6 +140,10 @@ static void nft_dev_path_info(const stru
+ 			break;
+ 		}
+ 	}
++
++	if (nf_flowtable_hw_offload(flowtable) &&
++	    nft_is_valid_ether_device(info->dev))
++		info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+ }
+ 
+ static bool nft_flowtable_find_dev(const struct net_device *dev,
+@@ -162,7 +175,7 @@ static void nft_dev_forward_path(struct
+ 	int i;
+ 
+ 	if (nft_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0)
+-		nft_dev_path_info(&stack, &info, ha);
++		nft_dev_path_info(&stack, &info, ha, &ft->data);
+ 
+ 	if (!info.dev || !nft_flowtable_find_dev(info.dev, ft))
+ 		return;

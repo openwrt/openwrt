@@ -1,0 +1,22 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 10 Feb 2021 10:23:38 +0100
+Subject: [PATCH] netfilter: nft_flow_offload: fix bridge vlan tag handling
+
+the brigde type uses the path->bridge.vlan_* fields
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -123,8 +123,8 @@ static void nft_dev_path_info(const stru
+ 
+ 			switch (path->bridge.vlan_mode) {
+ 			case DEV_PATH_BR_VLAN_TAG:
+-				info->vid[info->num_vlans] = path->vlan.id;
+-				info->vproto[info->num_vlans] = path->vlan.proto;
++				info->vid[info->num_vlans] = path->bridge.vlan_id;
++				info->vproto[info->num_vlans] = path->bridge.vlan_proto;
+ 				info->num_vlans++;
+ 				break;
+ 			case DEV_PATH_BR_VLAN_UNTAG:
