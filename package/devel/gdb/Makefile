@@ -58,6 +58,8 @@ CONFIGURE_ARGS+= \
 	--with-system-zlib \
 	--without-expat \
 	--without-lzma \
+	--disable-unit-tests \
+	--disable-ubsan \
 	--disable-sim \
 	--disable-werror \
 	--disable-source-highlight
