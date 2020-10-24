@@ -1,0 +1,364 @@
+From: Pablo Neira Ayuso <pablo@netfilter.org>
+Date: Fri, 20 Nov 2020 13:49:20 +0100
+Subject: [PATCH] netfilter: flowtable: add vlan support
+
+Add the vlan id and protocol to the flow tuple to uniquely identify
+flows from the receive path. For the transmit path, dev_hard_header() on
+the vlan device push the headers. This patch includes support for two
+VLAN headers (QinQ) from the ingress path.
+
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+---
+
+--- a/include/net/netfilter/nf_flow_table.h
++++ b/include/net/netfilter/nf_flow_table.h
+@@ -95,6 +95,8 @@ enum flow_offload_xmit_type {
+ 	FLOW_OFFLOAD_XMIT_DIRECT,
+ };
+ 
++#define NF_FLOW_TABLE_VLAN_MAX	2
++
+ struct flow_offload_tuple {
+ 	union {
+ 		struct in_addr		src_v4;
+@@ -113,13 +115,17 @@ struct flow_offload_tuple {
+ 
+ 	u8				l3proto;
+ 	u8				l4proto;
++	struct {
++		u16			id;
++		__be16			proto;
++	} in_vlan[NF_FLOW_TABLE_VLAN_MAX];
+ 
+ 	/* All members above are keys for lookups, see flow_offload_hash(). */
+ 	struct { }			__hash;
+ 
+-	u8				dir:6,
+-					xmit_type:2;
+-
++	u8				dir:4,
++					xmit_type:2,
++					in_vlan_num:2;
+ 	u16				mtu;
+ 	union {
+ 		struct dst_entry	*dst_cache;
+@@ -174,6 +180,9 @@ struct nf_flow_route {
+ 		struct dst_entry		*dst;
+ 		struct {
+ 			u32			ifindex;
++			u16			vid[NF_FLOW_TABLE_VLAN_MAX];
++			__be16			vproto[NF_FLOW_TABLE_VLAN_MAX];
++			u8			num_vlans;
+ 		} in;
+ 		struct {
+ 			u32			ifindex;
+--- a/net/netfilter/nf_flow_table_core.c
++++ b/net/netfilter/nf_flow_table_core.c
+@@ -80,6 +80,7 @@ static int flow_offload_fill_route(struc
+ {
+ 	struct flow_offload_tuple *flow_tuple = &flow->tuplehash[dir].tuple;
+ 	struct dst_entry *dst = route->tuple[dir].dst;
++	int i, j = 0;
+ 
+ 	switch (flow_tuple->l3proto) {
+ 	case NFPROTO_IPV4:
+@@ -91,6 +92,12 @@ static int flow_offload_fill_route(struc
+ 	}
+ 
+ 	flow_tuple->iifidx = route->tuple[dir].in.ifindex;
++	for (i = route->tuple[dir].in.num_vlans - 1; i >= 0; i--) {
++		flow_tuple->in_vlan[j].id = route->tuple[dir].in.vid[i];
++		flow_tuple->in_vlan[j].proto = route->tuple[dir].in.vproto[i];
++		j++;
++	}
++	flow_tuple->in_vlan_num = route->tuple[dir].in.num_vlans;
+ 
+ 	switch (route->tuple[dir].xmit_type) {
+ 	case FLOW_OFFLOAD_XMIT_DIRECT:
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -159,17 +159,35 @@ static bool ip_has_options(unsigned int
+ 	return thoff != sizeof(struct iphdr);
+ }
+ 
++static void nf_flow_tuple_vlan(struct sk_buff *skb,
++			       struct flow_offload_tuple *tuple)
++{
++	if (skb_vlan_tag_present(skb)) {
++		tuple->in_vlan[0].id = skb_vlan_tag_get(skb);
++		tuple->in_vlan[0].proto = skb->vlan_proto;
++	}
++	if (skb->protocol == htons(ETH_P_8021Q)) {
++		struct vlan_ethhdr *veth = (struct vlan_ethhdr *)skb_mac_header(skb);
++
++		tuple->in_vlan[1].id = ntohs(veth->h_vlan_TCI);
++		tuple->in_vlan[1].proto = skb->protocol;
++	}
++}
++
+ static int nf_flow_tuple_ip(struct sk_buff *skb, const struct net_device *dev,
+ 			    struct flow_offload_tuple *tuple)
+ {
+-	unsigned int thoff, hdrsize;
++	unsigned int thoff, hdrsize, offset = 0;
+ 	struct flow_ports *ports;
+ 	struct iphdr *iph;
+ 
+-	if (!pskb_may_pull(skb, sizeof(*iph)))
++	if (skb->protocol == htons(ETH_P_8021Q))
++		offset += VLAN_HLEN;
++
++	if (!pskb_may_pull(skb, sizeof(*iph) + offset))
+ 		return -1;
+ 
+-	iph = ip_hdr(skb);
++	iph = (struct iphdr *)(skb_network_header(skb) + offset);
+ 	thoff = iph->ihl * 4;
+ 
+ 	if (ip_is_fragment(iph) ||
+@@ -191,11 +209,11 @@ static int nf_flow_tuple_ip(struct sk_bu
+ 		return -1;
+ 
+ 	thoff = iph->ihl * 4;
+-	if (!pskb_may_pull(skb, thoff + hdrsize))
++	if (!pskb_may_pull(skb, thoff + hdrsize + offset))
+ 		return -1;
+ 
+-	iph = ip_hdr(skb);
+-	ports = (struct flow_ports *)(skb_network_header(skb) + thoff);
++	iph = (struct iphdr *)(skb_network_header(skb) + offset);
++	ports = (struct flow_ports *)(skb_network_header(skb) + thoff + offset);
+ 
+ 	tuple->src_v4.s_addr	= iph->saddr;
+ 	tuple->dst_v4.s_addr	= iph->daddr;
+@@ -204,6 +222,7 @@ static int nf_flow_tuple_ip(struct sk_bu
+ 	tuple->l3proto		= AF_INET;
+ 	tuple->l4proto		= iph->protocol;
+ 	tuple->iifidx		= dev->ifindex;
++	nf_flow_tuple_vlan(skb, tuple);
+ 
+ 	return 0;
+ }
+@@ -248,6 +267,37 @@ static unsigned int nf_flow_xmit_xfrm(st
+ 	return NF_STOLEN;
+ }
+ 
++static bool nf_flow_skb_vlan_protocol(const struct sk_buff *skb, __be16 proto)
++{
++	if (skb->protocol == htons(ETH_P_8021Q)) {
++		struct vlan_ethhdr *veth;
++
++		veth = (struct vlan_ethhdr *)skb_mac_header(skb);
++		if (veth->h_vlan_encapsulated_proto == proto)
++			return true;
++	}
++
++	return false;
++}
++
++static void nf_flow_vlan_pop(struct sk_buff *skb,
++			     struct flow_offload_tuple_rhash *tuplehash)
++{
++	struct vlan_hdr *vlan_hdr;
++	int i;
++
++	for (i = 0; i < tuplehash->tuple.in_vlan_num; i++) {
++		if (skb_vlan_tag_present(skb)) {
++			__vlan_hwaccel_clear_tag(skb);
++			continue;
++		}
++		vlan_hdr = (struct vlan_hdr *)skb->data;
++		__skb_pull(skb, VLAN_HLEN);
++		vlan_set_encap_proto(skb, vlan_hdr);
++		skb_reset_network_header(skb);
++	}
++}
++
+ static unsigned int nf_flow_queue_xmit(struct net *net, struct sk_buff *skb,
+ 				       const struct flow_offload_tuple_rhash *tuplehash,
+ 				       unsigned short type)
+@@ -280,9 +330,11 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 	unsigned int thoff;
+ 	struct iphdr *iph;
+ 	__be32 nexthop;
++	u32 offset = 0;
+ 	int ret;
+ 
+-	if (skb->protocol != htons(ETH_P_IP))
++	if (skb->protocol != htons(ETH_P_IP) &&
++	    !nf_flow_skb_vlan_protocol(skb, htons(ETH_P_IP)))
+ 		return NF_ACCEPT;
+ 
+ 	if (nf_flow_tuple_ip(skb, state->in, &tuple) < 0)
+@@ -298,11 +350,15 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 	if (unlikely(nf_flow_exceeds_mtu(skb, flow->tuplehash[dir].tuple.mtu)))
+ 		return NF_ACCEPT;
+ 
+-	if (skb_try_make_writable(skb, sizeof(*iph)))
++	if (skb->protocol == htons(ETH_P_8021Q))
++		offset += VLAN_HLEN;
++
++	if (skb_try_make_writable(skb, sizeof(*iph) + offset))
+ 		return NF_DROP;
+ 
+-	thoff = ip_hdr(skb)->ihl * 4;
+-	if (nf_flow_state_check(flow, ip_hdr(skb)->protocol, skb, thoff))
++	iph = (struct iphdr *)(skb_network_header(skb) + offset);
++	thoff = (iph->ihl * 4) + offset;
++	if (nf_flow_state_check(flow, iph->protocol, skb, thoff))
+ 		return NF_ACCEPT;
+ 
+ 	flow_offload_refresh(flow_table, flow);
+@@ -312,6 +368,9 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 		return NF_ACCEPT;
+ 	}
+ 
++	nf_flow_vlan_pop(skb, tuplehash);
++	thoff -= offset;
++
+ 	if (nf_flow_nat_ip(flow, skb, thoff, dir) < 0)
+ 		return NF_DROP;
+ 
+@@ -479,14 +538,17 @@ static int nf_flow_nat_ipv6(const struct
+ static int nf_flow_tuple_ipv6(struct sk_buff *skb, const struct net_device *dev,
+ 			      struct flow_offload_tuple *tuple)
+ {
+-	unsigned int thoff, hdrsize;
++	unsigned int thoff, hdrsize, offset = 0;
+ 	struct flow_ports *ports;
+ 	struct ipv6hdr *ip6h;
+ 
+-	if (!pskb_may_pull(skb, sizeof(*ip6h)))
++	if (skb->protocol == htons(ETH_P_8021Q))
++		offset += VLAN_HLEN;
++
++	if (!pskb_may_pull(skb, sizeof(*ip6h) + offset))
+ 		return -1;
+ 
+-	ip6h = ipv6_hdr(skb);
++	ip6h = (struct ipv6hdr *)(skb_network_header(skb) + offset);
+ 
+ 	switch (ip6h->nexthdr) {
+ 	case IPPROTO_TCP:
+@@ -503,11 +565,11 @@ static int nf_flow_tuple_ipv6(struct sk_
+ 		return -1;
+ 
+ 	thoff = sizeof(*ip6h);
+-	if (!pskb_may_pull(skb, thoff + hdrsize))
++	if (!pskb_may_pull(skb, thoff + hdrsize + offset))
+ 		return -1;
+ 
+-	ip6h = ipv6_hdr(skb);
+-	ports = (struct flow_ports *)(skb_network_header(skb) + thoff);
++	ip6h = (struct ipv6hdr *)(skb_network_header(skb) + offset);
++	ports = (struct flow_ports *)(skb_network_header(skb) + thoff + offset);
+ 
+ 	tuple->src_v6		= ip6h->saddr;
+ 	tuple->dst_v6		= ip6h->daddr;
+@@ -516,6 +578,7 @@ static int nf_flow_tuple_ipv6(struct sk_
+ 	tuple->l3proto		= AF_INET6;
+ 	tuple->l4proto		= ip6h->nexthdr;
+ 	tuple->iifidx		= dev->ifindex;
++	nf_flow_tuple_vlan(skb, tuple);
+ 
+ 	return 0;
+ }
+@@ -533,9 +596,11 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 	struct net_device *outdev;
+ 	struct ipv6hdr *ip6h;
+ 	struct rt6_info *rt;
++	u32 offset = 0;
+ 	int ret;
+ 
+-	if (skb->protocol != htons(ETH_P_IPV6))
++	if (skb->protocol != htons(ETH_P_IPV6) &&
++	    !nf_flow_skb_vlan_protocol(skb, htons(ETH_P_IPV6)))
+ 		return NF_ACCEPT;
+ 
+ 	if (nf_flow_tuple_ipv6(skb, state->in, &tuple) < 0)
+@@ -551,8 +616,11 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 	if (unlikely(nf_flow_exceeds_mtu(skb, flow->tuplehash[dir].tuple.mtu)))
+ 		return NF_ACCEPT;
+ 
+-	if (nf_flow_state_check(flow, ipv6_hdr(skb)->nexthdr, skb,
+-				sizeof(*ip6h)))
++	if (skb->protocol == htons(ETH_P_8021Q))
++		offset += VLAN_HLEN;
++
++	ip6h = (struct ipv6hdr *)(skb_network_header(skb) + offset);
++	if (nf_flow_state_check(flow, ip6h->nexthdr, skb, sizeof(*ip6h)))
+ 		return NF_ACCEPT;
+ 
+ 	flow_offload_refresh(flow_table, flow);
+@@ -562,6 +630,8 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 		return NF_ACCEPT;
+ 	}
+ 
++	nf_flow_vlan_pop(skb, tuplehash);
++
+ 	if (skb_try_make_writable(skb, sizeof(*ip6h)))
+ 		return NF_DROP;
+ 
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -65,6 +65,9 @@ static int nft_dev_fill_forward_path(con
+ 
+ struct nft_forward_info {
+ 	const struct net_device *dev;
++	__u16 vid[NF_FLOW_TABLE_VLAN_MAX];
++	__be16 vproto[NF_FLOW_TABLE_VLAN_MAX];
++	u8 num_vlans;
+ 	u8 h_source[ETH_ALEN];
+ 	u8 h_dest[ETH_ALEN];
+ 	enum flow_offload_xmit_type xmit_type;
+@@ -83,9 +86,22 @@ static void nft_dev_path_info(const stru
+ 		path = &stack->path[i];
+ 		switch (path->type) {
+ 		case DEV_PATH_ETHERNET:
++		case DEV_PATH_VLAN:
+ 			info->dev = path->dev;
+ 			if (is_zero_ether_addr(info->h_source))
+ 				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
++
++			if (path->type == DEV_PATH_ETHERNET)
++				break;
++
++			/* DEV_PATH_VLAN */
++			if (info->num_vlans >= NF_FLOW_TABLE_VLAN_MAX) {
++				info->dev = NULL;
++				break;
++			}
++			info->vid[info->num_vlans] = path->vlan.id;
++			info->vproto[info->num_vlans] = path->vlan.proto;
++			info->num_vlans++;
+ 			break;
+ 		case DEV_PATH_BRIDGE:
+ 			if (is_zero_ether_addr(info->h_source))
+@@ -93,7 +109,6 @@ static void nft_dev_path_info(const stru
+ 
+ 			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+ 			break;
+-		case DEV_PATH_VLAN:
+ 		default:
+ 			info->dev = NULL;
+ 			break;
+@@ -127,6 +142,7 @@ static void nft_dev_forward_path(struct
+ 	struct net_device_path_stack stack;
+ 	struct nft_forward_info info = {};
+ 	unsigned char ha[ETH_ALEN];
++	int i;
+ 
+ 	if (nft_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0)
+ 		nft_dev_path_info(&stack, &info, ha);
+@@ -135,6 +151,11 @@ static void nft_dev_forward_path(struct
+ 		return;
+ 
+ 	route->tuple[!dir].in.ifindex = info.dev->ifindex;
++	for (i = 0; i < info.num_vlans; i++) {
++		route->tuple[!dir].in.vid[i] = info.vid[i];
++		route->tuple[!dir].in.vproto[i] = info.vproto[i];
++	}
++	route->tuple[!dir].in.num_vlans = info.num_vlans;
+ 
+ 	if (info.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT) {
+ 		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);

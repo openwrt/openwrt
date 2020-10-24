@@ -1,0 +1,74 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 21 Aug 2020 15:07:54 +0200
+Subject: [PATCH] net: add sysfs attribute for enabling threaded NAPI
+
+This can be used to enable threaded NAPI on drivers that did not explicitly
+request it.
+
+Suggested-by: Eric Dumazet <eric.dumazet@gmail.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/core/net-sysfs.c
++++ b/net/core/net-sysfs.c
+@@ -472,6 +472,52 @@ static ssize_t proto_down_store(struct d
+ }
+ NETDEVICE_SHOW_RW(proto_down, fmt_dec);
+ 
++static int change_napi_threaded(struct net_device *dev, unsigned long val)
++{
++	struct napi_struct *napi;
++
++	if (list_empty(&dev->napi_list))
++		return -EOPNOTSUPP;
++
++	list_for_each_entry(napi, &dev->napi_list, dev_list) {
++		if (val)
++			set_bit(NAPI_STATE_THREADED, &napi->state);
++		else
++			clear_bit(NAPI_STATE_THREADED, &napi->state);
++	}
++
++	return 0;
++}
++
++static ssize_t napi_threaded_store(struct device *dev,
++				struct device_attribute *attr,
++				const char *buf, size_t len)
++{
++	return netdev_store(dev, attr, buf, len, change_napi_threaded);
++}
++
++static ssize_t napi_threaded_show(struct device *dev,
++				  struct device_attribute *attr,
++				  char *buf)
++{
++	struct net_device *netdev = to_net_dev(dev);
++	struct napi_struct *napi;
++	bool enabled = false;
++
++	if (!rtnl_trylock())
++		return restart_syscall();
++
++	list_for_each_entry(napi, &netdev->napi_list, dev_list) {
++		if (test_bit(NAPI_STATE_THREADED, &napi->state))
++			enabled = true;
++	}
++
++	rtnl_unlock();
++
++	return sprintf(buf, fmt_dec, enabled);
++}
++static DEVICE_ATTR_RW(napi_threaded);
++
+ static ssize_t phys_port_id_show(struct device *dev,
+ 				 struct device_attribute *attr, char *buf)
+ {
+@@ -564,6 +610,7 @@ static struct attribute *net_class_attrs
+ 	&dev_attr_tx_queue_len.attr,
+ 	&dev_attr_gro_flush_timeout.attr,
+ 	&dev_attr_napi_defer_hard_irqs.attr,
++	&dev_attr_napi_threaded.attr,
+ 	&dev_attr_phys_port_id.attr,
+ 	&dev_attr_phys_port_name.attr,
+ 	&dev_attr_phys_switch_id.attr,
