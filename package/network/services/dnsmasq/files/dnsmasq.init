@@ -359,6 +359,7 @@ dhcp_host_add() {
 
 	config_get mac "$cfg" mac
 	config_get duid "$cfg" duid
+	config_get clientid "$cfg" clientid
 	config_get tag "$cfg" tag
 
 	add_tag() {
@@ -378,7 +379,11 @@ dhcp_host_add() {
 		duids="id:${duid// */}"
 	fi
 
-	if [ -z "$macs" ] && [ -z "$duids" ]; then
+	if [ -n "$clientid" ]; then
+		clientid="id:${clientid}"
+	fi
+
+	if [ -z "$macs" ] && [ -z "$duids" ] && [ -z "$clientid" ]; then
 		# --dhcp-host=lap,192.168.0.199,[::beef]
 		[ -n "$name" ] || return 0
 		macs="$name"
@@ -403,9 +408,9 @@ dhcp_host_add() {
 
 	if [ $DNSMASQ_DHCP_VER -eq 6 ]; then
 		addrs="${ip:+,$ip}${hostid:+,[::$hostid]}"
-		xappend "--dhcp-host=$mtags$macs${duids:+,$duids}$hosttag$addrs$nametime"
+		xappend "--dhcp-host=$mtags$clientid$macs${duids:+,$duids}$hosttag$addrs$nametime"
 	else
-		xappend "--dhcp-host=$mtags$macs$hosttag${ip:+,$ip}$nametime"
+		xappend "--dhcp-host=$mtags$clientid$macs$hosttag${ip:+,$ip}$nametime"
 	fi
 }
 
