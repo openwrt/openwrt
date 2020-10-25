@@ -50,7 +50,7 @@ define Package/busybox/Default
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
   DEPENDS:=+BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
-  USERID:=ntpd=123:ntpd=123
+  USERID:=ntp=123:ntp=123
 endef
 
 define Package/busybox
