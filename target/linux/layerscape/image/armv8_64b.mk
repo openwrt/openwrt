@@ -15,7 +15,8 @@ define Device/Default
   DEVICE_DTS = freescale/$(subst _,-,$(1))
   SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
   IMAGE_SIZE := 64m
-  IMAGE/sysupgrade.bin = ls-append-dtb $$(DEVICE_DTS) | pad-to 1M | \
+  IMAGE/sysupgrade.bin = \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 1M | \
     append-kernel | pad-to 17M | \
     append-rootfs | pad-rootfs | \
     check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
@@ -45,7 +46,8 @@ define Device/fsl_ls1012a-frdm
     ls-append-dtb $$(DEVICE_DTS) | pad-to 16M | \
     append-kernel | pad-to $$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | check-size
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$(BLOCKSIZE) | \
+  IMAGE/sysupgrade.bin := \
+    append-kernel | pad-to $$(BLOCKSIZE) | \
     append-rootfs | pad-rootfs | \
     check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
   KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
