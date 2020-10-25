@@ -16,7 +16,8 @@ define Device/Default
   DEVICE_DTS = $(lastword $(subst _, ,$(1)))
   SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
   IMAGE_SIZE := 64m
-  IMAGE/sysupgrade.bin = ls-append-dtb $$(DEVICE_DTS) | pad-to 1M | \
+  IMAGE/sysupgrade.bin = \
+    ls-append-dtb $$(DEVICE_DTS) | pad-to 1M | \
     append-kernel | pad-to 17M | \
     append-rootfs | pad-rootfs | \
     check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
