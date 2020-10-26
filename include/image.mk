@@ -17,7 +17,6 @@ ifndef IB
   endif
 endif
 
-include $(INCLUDE_DIR)/image-legacy.mk
 include $(INCLUDE_DIR)/feeds.mk
 include $(INCLUDE_DIR)/rootfs.mk
 
@@ -683,8 +682,6 @@ define BuildImage
   prepare:
   compile:
   clean:
-  legacy-images-prepare:
-  legacy-images:
   image_prepare:
 
   ifeq ($(IB),)
@@ -700,9 +697,6 @@ define BuildImage
 		rm -rf $(BUILD_DIR)/json_info_files
 		$(call Image/Prepare)
 
-    legacy-images-prepare-make: image_prepare
-		$(MAKE) legacy-images-prepare BIN_DIR="$(BIN_DIR)"
-
   else
     image_prepare:
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
@@ -716,16 +710,11 @@ define BuildImage
 	$(call Image/InstallKernel)
 
   $(foreach device,$(TARGET_DEVICES),$(call Device,$(device)))
-  $(foreach device,$(LEGACY_DEVICES),$(call LegacyDevice,$(device)))
 
   install-images: kernel_prepare $(foreach fs,$(filter-out $(if $(UBIFS_OPTS),,ubifs),$(TARGET_FILESYSTEMS) $(fs-subtypes-y)),$(KDIR)/root.$(fs))
 	$(foreach fs,$(TARGET_FILESYSTEMS),
 		$(call Image/Build,$(fs))
 	)
-
-  legacy-images-make: install-images
-	$(call Image/mkfs/ubifs/legacy)
-	$(MAKE) legacy-images BIN_DIR="$(BIN_DIR)"
 
   install: install-images
 	$(call Image/Manifest)
