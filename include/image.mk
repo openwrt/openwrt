@@ -258,35 +258,6 @@ define Image/mkfs/squashfs
 endef
 endif
 
-# $(1): board name
-# $(2): rootfs type
-# $(3): kernel image
-# $(4): compat string
-ifneq ($(CONFIG_NAND_SUPPORT),)
-   define Image/Build/SysupgradeNAND
-	mkdir -p "$(KDIR_TMP)/sysupgrade-$(if $(4),$(4),$(1))/"
-	echo "BOARD=$(if $(4),$(4),$(1))" > "$(KDIR_TMP)/sysupgrade-$(if $(4),$(4),$(1))/CONTROL"
-	[ -z "$(2)" ] || $(CP) "$(KDIR)/root.$(2)" "$(KDIR_TMP)/sysupgrade-$(if $(4),$(4),$(1))/root"
-	[ -z "$(3)" ] || $(CP) "$(3)" "$(KDIR_TMP)/sysupgrade-$(if $(4),$(4),$(1))/kernel"
-	(cd "$(KDIR_TMP)"; $(TAR) cvf \
-		"$(BIN_DIR)/$(IMG_PREFIX)-$(1)-$(2)-sysupgrade.tar" sysupgrade-$(if $(4),$(4),$(1)) \
-			$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-	)
-   endef
-
-# $(1) board name
-# $(2) ubinize-image options (e.g. --uboot-env and/or --kernel kernelimage)
-# $(3) rootfstype (e.g. squashfs or ubifs)
-# $(4) options to pass-through to ubinize (i.e. $($(PROFILE)_UBI_OPTS)))
-   define Image/Build/UbinizeImage
-	sh $(TOPDIR)/scripts/ubinize-image.sh $(2) \
-		"$(KDIR)/root.$(3)" \
-		"$(KDIR)/$(IMG_PREFIX)-$(1)-$(3)-ubinized.bin" \
-		$(4)
-   endef
-
-endif
-
 define Image/mkfs/ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 		$(UBIFS_OPTS) $(call param_unmangle,$(call param_get,fs,$(1))) \
