@@ -1,0 +1,32 @@
+diff --git a/src/socket.c b/src/socket.c
+index c33e2c8..23f318e 100644
+--- a/src/socket.c
++++ b/src/socket.c
+@@ -82,6 +82,13 @@ static int send4(struct wg_device *wg, struct sk_buff *skb,
+ 	}
+ 
+ 	skb->ignore_df = 1;
++	if (skb->sk) {
++		/* Yep it is in irq but safe to call skb->destructor()
++		 */
++		skb->destructor(skb);
++		skb->sk = NULL;
++		skb->destructor = NULL;
++	}
+ 	udp_tunnel_xmit_skb(rt, sock, skb, fl.saddr, fl.daddr, ds,
+ 			    ip4_dst_hoplimit(&rt->dst), 0, fl.fl4_sport,
+ 			    fl.fl4_dport, false, false);
+@@ -149,6 +156,13 @@ static int send6(struct wg_device *wg, struct sk_buff *skb,
+ 	}
+ 
+ 	skb->ignore_df = 1;
++	if (skb->sk) {
++		/* Yep it is in irq but safe to call skb->destructor()
++		 */
++		skb->destructor(skb);
++		skb->sk = NULL;
++		skb->destructor = NULL;
++	}
+ 	udp_tunnel6_xmit_skb(dst, sock, skb, skb->dev, &fl.saddr, &fl.daddr, ds,
+ 			     ip6_dst_hoplimit(dst), 0, fl.fl6_sport,
+ 			     fl.fl6_dport, false);
