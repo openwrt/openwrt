@@ -285,14 +285,6 @@ define Build/check-size
 	}
 endef
 
-define Build/combined-image
-	-sh $(TOPDIR)/scripts/combined-image.sh \
-		"$(IMAGE_KERNEL)" \
-		"$@" \
-		"$@.new"
-	@mv $@.new $@
-endef
-
 define Build/linksys-image
 	$(TOPDIR)/scripts/linksys-image.sh \
 		"$(call param_get_default,type,$(1),$(DEVICE_NAME))" \
