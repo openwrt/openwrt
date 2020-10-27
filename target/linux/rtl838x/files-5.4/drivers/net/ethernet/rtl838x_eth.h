@@ -100,6 +100,22 @@
 #define TX_PAUSE_EN				(1 << 6)
 #define RX_PAUSE_EN				(1 << 7)
 
+/* RTL839X L2 Notification DMA interface */
+#define RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL	(0x785C)
+#define RTL839X_L2_NOTIFICATION_CTRL		(0x7808)
+#define RTL838X_L2_CTRL_0			(0x3200)
+#define RTL839X_L2_CTRL_0			(0x3800)
+
+/* TRAPPING to CPU-PORT */
+#define RTL838X_SPCL_TRAP_IGMP_CTRL		(0x6984)
+#define RTL839X_SPCL_TRAP_IGMP_CTRL		(0x1058)
+#define RTL838X_RMA_CTRL_0			(0x4300)
+#define RTL838X_RMA_CTRL_1			(0x4304)
+#define RTL839X_RMA_CTRL_0			(0x1200)
+#define RTL839X_RMA_CTRL_1			(0x1204)
+#define RTL839X_RMA_CTRL_2			(0x1208)
+#define RTL839X_RMA_CTRL_3			(0x120C)
+
 inline int rtl838x_mac_port_ctrl(int p)
 {
 	return RTL838X_MAC_PORT_CTRL + (p << 7);
