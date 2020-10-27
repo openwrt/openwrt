@@ -24,7 +24,6 @@
 extern char arcs_cmdline[];
 const void *fdt;
 extern const char __appended_dtb;
-//extern int __init rtl838x_serial_init(void);
 
 void prom_console_init(void)
 {
@@ -66,8 +65,6 @@ char prom_getchar(void)
 	return '\0';
 }
 #endif
-
-struct rtl838x_soc_info soc_info;
 
 const char *get_system_type(void)
 {

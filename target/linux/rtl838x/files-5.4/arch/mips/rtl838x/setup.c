@@ -28,7 +28,7 @@
 #include "mach-rtl838x.h"
 
 extern int rtl838x_serial_init(void);
-extern struct rtl838x_soc_info soc_info;
+struct rtl838x_soc_info soc_info;
 
 struct clk {
 	struct clk_lookup cl;

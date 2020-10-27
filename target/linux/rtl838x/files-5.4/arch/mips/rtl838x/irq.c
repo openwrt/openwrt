@@ -20,8 +20,6 @@
 #include <asm/mipsregs.h>
 #include <mach-rtl838x.h>
 
-extern struct rtl838x_soc_info soc_info;
-
 #define icu_r32(reg)			rtl838x_r32(soc_info.icu_base + reg)
 #define icu_w32(val, reg)		rtl838x_w32(val, soc_info.icu_base + reg)
 #define icu_w32_mask(clear, set, reg)	rtl838x_w32_mask(clear, set, soc_info.icu_base + reg)

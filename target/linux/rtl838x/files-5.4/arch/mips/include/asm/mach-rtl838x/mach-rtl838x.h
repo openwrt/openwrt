@@ -429,6 +429,9 @@ struct rtl838x_soc_info {
 	volatile void *icu_base;
 };
 
+extern struct rtl838x_soc_info soc_info;
+extern struct mutex smi_lock;
+
 void rtl838x_soc_detect(struct rtl838x_soc_info *i);
 
 #endif   /* _MACH_RTL838X_H_ */
