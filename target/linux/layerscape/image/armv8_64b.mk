@@ -63,6 +63,9 @@ define Device/fsl_ls1012a-rdb
   DEVICE_PACKAGES += \
     layerscape-ppfe \
     tfa-ls1012a-rdb \
+    kmod-hwmon-ina2xx \
+    kmod-iio-fxas21002c-i2c \
+    kmod-iio-fxos8700-i2c \
     kmod-ppfe
   IMAGE/firmware.bin := \
     ls-clean | \
