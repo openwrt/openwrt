@@ -24,7 +24,6 @@
 #include <asm/mach-rtl838x/mach-rtl838x.h>
 
 extern char arcs_cmdline[];
-extern struct rtl838x_soc_info soc_info;
 
 int __init rtl838x_serial_init(void)
 {

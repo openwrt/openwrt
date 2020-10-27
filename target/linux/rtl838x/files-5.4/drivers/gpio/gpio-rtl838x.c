@@ -38,8 +38,6 @@ struct rtl838x_gpios {
 	int i2c_sdc;
 };
 
-extern struct mutex smi_lock;
-
 u32 rtl838x_rtl8231_read(u8 bus_id, u32 reg)
 {
 	u32 t = 0;
