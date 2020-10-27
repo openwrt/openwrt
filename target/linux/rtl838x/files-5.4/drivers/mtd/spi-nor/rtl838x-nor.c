@@ -15,8 +15,6 @@
 #include "rtl838x-spi.h"
 #include <asm/mach-rtl838x/mach-rtl838x.h>
 
-extern struct rtl838x_soc_info soc_info;
-
 struct rtl838x_nor {
 	struct spi_nor nor;
 	struct device *dev;
