@@ -842,10 +842,12 @@ hostapd_set_bss_options() {
 		json_for_each_item append_iw_anqp_elem iw_anqp_elem
 		json_for_each_item append_iw_nai_realm iw_nai_realm
 
+		iw_domain_name_conf=
 		json_for_each_item append_iw_domain_name iw_domain_name
 		[ -n "$iw_domain_name_conf" ] && \
 			append bss_conf "domain_name=$iw_domain_name_conf" "$N"
 
+		iw_anqp_3gpp_cell_net_conf=
 		json_for_each_item append_iw_anqp_3gpp_cell_net iw_anqp_3gpp_cell_net
 		[ -n "$iw_anqp_3gpp_cell_net_conf" ] && \
 			append bss_conf "anqp_3gpp_cell_net=$iw_anqp_3gpp_cell_net_conf" "$N"
