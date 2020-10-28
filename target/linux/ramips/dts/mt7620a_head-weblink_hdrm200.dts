@@ -24,17 +24,17 @@
 		compatible = "gpio-leds";
 
 		rssi {
-			label = "hdrm200:red:rssi";
+			label = "red:rssi";
 			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 		};
 
 		led_system: system {
-			label = "hdrm200:green:system";
+			label = "green:system";
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		};
 
 		air {
-			label = "hdrm200:green:wifi";
+			label = "green:wifi";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};

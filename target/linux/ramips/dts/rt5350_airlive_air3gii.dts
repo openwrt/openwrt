@@ -11,12 +11,12 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "air3gii:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		mobile {
-			label = "air3gii:green:mobile";
+			label = "green:mobile";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";

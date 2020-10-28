@@ -36,17 +36,17 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "br-6475nd:green:power";
+			label = "green:power";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "br-6475nd:amber:wlan";
+			label = "amber:wlan";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan_5ghz {
-			label = "br-6475nd:amber:wlan_5ghz";
+			label = "amber:wlan_5ghz";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};

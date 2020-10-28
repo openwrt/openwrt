@@ -34,13 +34,13 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "dch-m225:green:power";
+			label = "green:power";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		status {
-			label = "dch-m225:red:status";
+			label = "red:status";
 			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
 		};
 	};

@@ -24,34 +24,34 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "mynet-wifi-rangeextender:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 			/* LED has no off state. It's either on or it blinks */
 		};
 
 		lan {
-			label = "mynet-wifi-rangeextender:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi {
-			label = "mynet-wifi-rangeextender:blue:wifi";
+			label = "blue:wifi";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wifi-rssi-low {
-			label = "mynet-wifi-rangeextender:blue:rssi-low";
+			label = "blue:rssi-low";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi-rssi-med {
-			label = "mynet-wifi-rangeextender:blue:rssi-med";
+			label = "blue:rssi-med";
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi-rssi-max {
-			label = "mynet-wifi-rangeextender:blue:rssi-max";
+			label = "blue:rssi-max";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 	};
