@@ -11,6 +11,7 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+askey,rt4230w-rev6 |\
 asrock,g10 |\
 nec,wg2600hp)
 	ucidef_add_switch "switch0" \
