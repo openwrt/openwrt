@@ -157,6 +157,16 @@ define Device/avm_fritz7412
 endef
 TARGET_DEVICES += avm_fritz7412
 
+define Device/avm_fritz7430
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 7430
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl fritz-tffs-nand fritz-caldata
+endef
+TARGET_DEVICES += avm_fritz7430
+
 define Device/bt_homehub-v5a
   $(Device/NAND)
   DEVICE_VENDOR := British Telecom

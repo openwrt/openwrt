@@ -41,4 +41,22 @@ define Device/allnet_all-sg8208m
 endef
 TARGET_DEVICES += allnet_all-sg8208m
 
+define Device/d-link_dgs-1210-16
+  SOC := rtl8382
+  IMAGE_SIZE := 13824k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DGS-1210-16
+  DEVICE_PACKAGES := ip-full ip-bridge ethtool tc
+endef
+TARGET_DEVICES += d-link_dgs-1210-16
+
+define Device/d-link_dgs-1210-10p
+  SOC := rtl8382
+  IMAGE_SIZE := 13824k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DGS-1210-10P
+  DEVICE_PACKAGES := ip-full ip-bridge ethtool tc lua-rs232
+endef
+TARGET_DEVICES += d-link_dgs-1210-10p
+
 $(eval $(call BuildImage))

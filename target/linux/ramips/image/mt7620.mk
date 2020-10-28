@@ -1078,6 +1078,15 @@ define Device/vonets_var11n-300
 endef
 TARGET_DEVICES += vonets_var11n-300
 
+define Device/wavlink_wl-wn530hg4
+  SOC := mt7620a
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN530HG4
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += wavlink_wl-wn530hg4
+
 define Device/wrtnode_wrtnode
   SOC := mt7620n
   IMAGE_SIZE := 16064k
