@@ -1,49 +1,23 @@
-From 1fc7d5523e21ed140fed43c4dde011a3b6d9ba08 Mon Sep 17 00:00:00 2001
+From 193856b5fe11c50a0b6ff22457dd674c1a45fec6 Mon Sep 17 00:00:00 2001
 From: John Crispin <john@phrozen.org>
-Date: Tue, 24 Jul 2018 14:47:55 +0200
-Subject: [PATCH 3/3] qcom: ipq4019: add USB devicetree nodes
+Date: Wed, 9 Sep 2020 18:31:03 +0200
+Subject: [PATCH] ARM: dts: qcom: ipq4019: add USB devicetree nodes
 
-This patch makes USB work on the Dakota EVB.
+Since we now have driver for the USB PHY, and USB controller is already supported by the DWC3 driver lets add the necessary nodes to DTSI.
 
 Signed-off-by: John Crispin <john@phrozen.org>
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Cc: Luka Perkov <luka.perkov@sartura.hr>
+Reviewed-by: Vinod Koul <vkoul@kernel.org>
 ---
- arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi | 20 ++++++++
- arch/arm/boot/dts/qcom-ipq4019.dtsi           | 74 +++++++++++++++++++++++++++
- 2 files changed, 94 insertions(+)
+ arch/arm/boot/dts/qcom-ipq4019.dtsi | 74 +++++++++++++++++++++++++++++
+ 1 file changed, 74 insertions(+)
 
---- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-@@ -109,5 +109,25 @@
- 		wifi@a800000 {
- 			status = "ok";
- 		};
-+
-+		usb3_ss_phy: ssphy@9a000 {
-+			status = "okay";
-+		};
-+
-+		usb3_hs_phy: hsphy@a6000 {
-+			status = "okay";
-+		};
-+
-+		usb3: usb3@8af8800 {
-+			status = "okay";
-+		};
-+
-+		usb2_hs_phy: hsphy@a8000 {
-+			status = "okay";
-+		};
-+
-+		usb2: usb2@60f8800 {
-+			status = "okay";
-+		};
- 	};
- };
 --- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-@@ -563,5 +563,79 @@
- 					  "legacy";
- 			status = "disabled";
+@@ -615,5 +615,79 @@
+ 				reg = <4>;
+ 			};
  		};
 +
 +		usb3_ss_phy: ssphy@9a000 {
@@ -66,7 +40,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +			status = "disabled";
 +		};
 +
-+		usb3@8af8800 {
++		usb3: usb3@8af8800 {
 +			compatible = "qcom,dwc3";
 +			reg = <0x8af8800 0x100>;
 +			#address-cells = <1>;
@@ -98,7 +72,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +			status = "disabled";
 +		};
 +
-+		usb2@60f8800 {
++		usb2: usb2@60f8800 {
 +			compatible = "qcom,dwc3";
 +			reg = <0x60f8800 0x100>;
 +			#address-cells = <1>;
