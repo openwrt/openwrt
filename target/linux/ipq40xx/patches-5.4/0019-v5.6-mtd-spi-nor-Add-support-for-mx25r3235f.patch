@@ -1,6 +1,6 @@
-From 158acdbf0336f601971637f988b57a6a67a0869b Mon Sep 17 00:00:00 2001
+From 707745e8d4e75b638b990d67950ab292b3b8ea2a Mon Sep 17 00:00:00 2001
 From: David Bauer <mail@david-bauer.net>
-Date: Sun, 15 Dec 2019 13:10:50 +0100
+Date: Mon, 16 Dec 2019 01:36:46 +0100
 Subject: [PATCH] mtd: spi-nor: Add support for mx25r3235f
 
 Add MTD support for the Macronix MX25R3235F SPI NOR chip from Macronix.
@@ -8,7 +8,10 @@ The chip has 4MB of total capacity, divided into a total of 64 sectors,
 each 64KB sized. The chip also supports 4KB large sectors.
 Additionally, it supports dual and quad read modes.
 
+Functionality was verified on an HPE/Aruba AP-303 board.
+
 Signed-off-by: David Bauer <mail@david-bauer.net>
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
 ---
  drivers/mtd/spi-nor/spi-nor.c | 2 ++
  1 file changed, 2 insertions(+)
