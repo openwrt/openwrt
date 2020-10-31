@@ -507,30 +507,30 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 		goto fail;
 	}
 
-#ifdef WANT_ALTERNATE_PTABLE
-	/* The alternate partition table (We omit it by default) */
-	swap(gpth.self, gpth.alternate);
-	gpth.first_entry = cpu_to_le64(end - GPT_ENTRY_SIZE * GPT_ENTRY_MAX / DISK_SECTOR_SIZE),
-	gpth.crc32 = 0;
-	gpth.crc32 = cpu_to_le32(gpt_crc32(&gpth, GPT_HEADER_SIZE));
+	if (use_guid_partition_table) {
+		/* The alternate partition table */
+		swap(gpth.self, gpth.alternate);
+		gpth.first_entry = cpu_to_le64(end - GPT_ENTRY_SIZE * GPT_ENTRY_MAX / DISK_SECTOR_SIZE),
+		gpth.crc32 = 0;
+		gpth.crc32 = cpu_to_le32(gpt_crc32(&gpth, GPT_HEADER_SIZE));
 
-	lseek(fd, end * DISK_SECTOR_SIZE - GPT_ENTRY_SIZE * GPT_ENTRY_MAX, SEEK_SET);
-	if (write(fd, &gpte, GPT_ENTRY_SIZE * GPT_ENTRY_MAX) != GPT_ENTRY_SIZE * GPT_ENTRY_MAX) {
-		fputs("write failed.\n", stderr);
-		goto fail;
-	}
+		lseek(fd, end * DISK_SECTOR_SIZE - GPT_ENTRY_SIZE * GPT_ENTRY_MAX, SEEK_SET);
+		if (write(fd, &gpte, GPT_ENTRY_SIZE * GPT_ENTRY_MAX) != GPT_ENTRY_SIZE * GPT_ENTRY_MAX) {
+			fputs("write failed.\n", stderr);
+			goto fail;
+		}
 
-	lseek(fd, end * DISK_SECTOR_SIZE, SEEK_SET);
-	if (write(fd, &gpth, GPT_HEADER_SIZE) != GPT_HEADER_SIZE) {
-		fputs("write failed.\n", stderr);
-		goto fail;
+		lseek(fd, end * DISK_SECTOR_SIZE, SEEK_SET);
+		if (write(fd, &gpth, GPT_HEADER_SIZE) != GPT_HEADER_SIZE) {
+			fputs("write failed.\n", stderr);
+			goto fail;
+		}
+		lseek(fd, (end + 1) * DISK_SECTOR_SIZE -1, SEEK_SET);
+		if (write(fd, "\x00", 1) != 1) {
+			fputs("write failed.\n", stderr);
+			goto fail;
+		}
 	}
-	lseek(fd, (end + 1) * DISK_SECTOR_SIZE -1, SEEK_SET);
-	if (write(fd, "\x00", 1) != 1) {
-		fputs("write failed.\n", stderr);
-		goto fail;
-	}
-#endif
 
 	ret = 0;
 fail:
