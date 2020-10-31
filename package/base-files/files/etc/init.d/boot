@@ -50,4 +50,11 @@ boot() {
 	
 	# temporary hack until configd exists
 	/sbin/reload_config
+
+	[ -d /sys/firmware/efi ] && {
+		[ -d /boot ] || mkdir /boot
+		fsck.ext4 -y PARTLABEL=openwrt_boot
+		mount PARTLABEL=openwrt_boot -o noatime /boot
+		[ -d /boot/boot ] && mount --bind /boot/boot /boot
+	}
 }

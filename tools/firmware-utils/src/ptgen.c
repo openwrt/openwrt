@@ -78,6 +78,10 @@ typedef struct {
 	GUID_INIT( 0xEBD0A0A2, 0xB9E5, 0x4433, \
 			0x87, 0xC0, 0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7)
 
+#define GUID_PARTITION_FREEDESKTOP_BOOT \
+	GUID_INIT( 0xBC13C2FF, 0x59E6, 0x4262, \
+			0xA3, 0x52, 0xB2, 0x75, 0xFD, 0x6F, 0x71, 0x72)
+
 #define GUID_PARTITION_BIOS_BOOT \
 	GUID_INIT( 0x21686148, 0x6449, 0x6E6F, \
 			0x74, 0x4E, 0x65, 0x65, 0x64, 0x45, 0x46, 0x49)
@@ -165,6 +169,7 @@ int active = 1;
 int heads = -1;
 int sectors = -1;
 int kb_align = 0;
+unsigned short int hybrid = 0;
 bool ignore_null_sized_partition = false;
 bool use_guid_partition_table = false;
 struct partinfo parts[GPT_ENTRY_MAX];
@@ -447,7 +452,7 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 		printf("%" PRIu64 "\n", (sect - start) * DISK_SECTOR_SIZE);
 	}
 
-	if (parts[0].actual_start > GPT_FIRST_ENTRY_SECTOR + GPT_SIZE) {
+	if (use_guid_partition_table && hybrid && parts[0].actual_start > GPT_FIRST_ENTRY_SECTOR + GPT_SIZE) {
 		gpte[GPT_ENTRY_MAX - 1].start = cpu_to_le64(GPT_FIRST_ENTRY_SECTOR + GPT_SIZE);
 		gpte[GPT_ENTRY_MAX - 1].end = cpu_to_le64(parts[0].actual_start - 1);
 		gpte[GPT_ENTRY_MAX - 1].type = GUID_PARTITION_BIOS_BOOT;
@@ -549,6 +554,9 @@ static guid_t type_to_guid_and_name(unsigned char type, char **name)
 				*name = "EFI System Partition";
 			guid = GUID_PARTITION_SYSTEM;
 			break;
+		case 0xea:
+			guid = GUID_PARTITION_FREEDESKTOP_BOOT;
+			break;
 		case 0x83:
 			guid = GUID_PARTITION_LINUX_FS_GUID;
 			break;
@@ -567,7 +575,7 @@ int main (int argc, char **argv)
 	int ch;
 	int part = 0;
 	char *name = NULL;
-	unsigned short int hybrid = 0, required = 0;
+	unsigned short int required = 0;
 	uint32_t signature = 0x5452574F; /* 'OWRT' */
 	guid_t guid = GUID_INIT( signature, 0x2211, 0x4433, \
 			0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0x00);
