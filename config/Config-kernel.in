@@ -46,6 +46,7 @@ config KERNEL_DEBUG_FS
 
 config KERNEL_MIPS_FP_SUPPORT
 	bool
+	default y if TARGET_pistachio
 
 config KERNEL_ARM_PMU
 	bool
