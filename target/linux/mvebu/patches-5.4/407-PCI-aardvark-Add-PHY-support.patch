@@ -76,7 +76,7 @@ Cc: Miquèl Raynal <miquel.raynal@bootlin.com>
  	/* Set to Direct mode */
  	reg = advk_readl(pcie, CTRL_CONFIG_REG);
  	reg &= ~(CTRL_MODE_MASK << CTRL_MODE_SHIFT);
-@@ -1084,6 +1093,62 @@ out_release_res:
+@@ -1083,6 +1092,62 @@ out_release_res:
  	return err;
  }
  
@@ -139,7 +139,7 @@ Cc: Miquèl Raynal <miquel.raynal@bootlin.com>
  static int advk_pcie_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
-@@ -1141,6 +1206,10 @@ static int advk_pcie_probe(struct platfo
+@@ -1140,6 +1205,10 @@ static int advk_pcie_probe(struct platfo
  	else
  		pcie->link_gen = ret;
  
@@ -149,4 +149,4 @@ Cc: Miquèl Raynal <miquel.raynal@bootlin.com>
 +
  	advk_pcie_setup_hw(pcie);
  
- 	advk_sw_pci_bridge_init(pcie);
+ 	ret = advk_sw_pci_bridge_init(pcie);
