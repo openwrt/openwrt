@@ -9,8 +9,7 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
-	8dev,lima|\
-	ubnt,unifi)
+	8dev,lima)
 		caldata_extract "art" 0x1000 0x800
 		;;
 	avm,fritz1750e|\
@@ -78,7 +77,8 @@ case "$FIRMWARE" in
 	engenius,enh202-v1)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
-	buffalo,wzr-hp-g450h)
+	buffalo,wzr-hp-g450h|\
+	ubnt,unifi)
 		caldata_extract "art" 0x1000 0x440
 		;;
 	dlink,dir-825-c1|\
