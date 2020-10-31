@@ -193,7 +193,7 @@ Acked-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
  
  	reg = advk_readl(pcie, PCIE_CORE_CMD_STATUS_REG);
  	reg |= PCIE_CORE_CMD_MEM_ACCESS_EN |
-@@ -1036,6 +1094,12 @@ static int advk_pcie_probe(struct platfo
+@@ -1035,6 +1093,12 @@ static int advk_pcie_probe(struct platfo
  		return ret;
  	}
  
@@ -205,4 +205,4 @@ Acked-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 +
  	advk_pcie_setup_hw(pcie);
  
- 	advk_sw_pci_bridge_init(pcie);
+ 	ret = advk_sw_pci_bridge_init(pcie);
