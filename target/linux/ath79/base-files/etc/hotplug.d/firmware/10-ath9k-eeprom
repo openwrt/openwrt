@@ -148,7 +148,8 @@ case "$FIRMWARE" in
 	tplink,tl-wr941-v4)
 		ath9k_eeprom_extract "art" 4096 3768
 		;;
-	buffalo,wzr-hp-g450h)
+	buffalo,wzr-hp-g450h|\
+	ubnt,unifi)
 		ath9k_eeprom_extract "art" 4096 1088
 		;;
 	dlink,dir-825-c1|\
@@ -188,9 +189,6 @@ case "$FIRMWARE" in
 		;;
 	pqi,air-pen)
 		ath9k_eeprom_extract "art" 4096 2002
-		;;
-	ubnt,unifi)
-		ath9k_eeprom_extract "art" 4096 2048
 		;;
 	wd,mynet-n750)
 		ath9k_eeprom_extract "art" 20480 1088
