@@ -207,6 +207,7 @@ menu "Target Images"
 		depends on TARGET_x86
 		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 		select PACKAGE_grub2-efi
+		select PACKAGE_grub2-editenv
 		select PACKAGE_kmod-fs-ext4
 		select PACKAGE_kmod-fs-vfat
 		default y

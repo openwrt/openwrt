@@ -69,6 +69,9 @@ define Build/grub-config
 		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
 		-e 's#@TITLE@#$(GRUB_TITLE)#g' \
 		./grub-$(1).cfg > $@.boot/boot/grub/grub.cfg
+	$(if $(filter $(1),efi),
+		$(STAGING_DIR_HOST)/bin/grub-editenv $@.boot/boot/grub/grubenv create
+		$(STAGING_DIR_HOST)/bin/grub-editenv $@.boot/boot/grub/grubenv set attempt=0)
 endef
 
 define Build/grub-install
