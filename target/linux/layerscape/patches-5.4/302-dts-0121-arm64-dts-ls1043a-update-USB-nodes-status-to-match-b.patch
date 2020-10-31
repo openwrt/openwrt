@@ -23,8 +23,6 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  arch/arm64/boot/dts/freescale/fsl-ls1043a.dtsi    | 3 +++
  3 files changed, 15 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/freescale/fsl-ls1043a-qds.dts b/arch/arm64/boot/dts/freescale/fsl-ls1043a-qds.dts
-index 219a98780..fe4c4e1fa 100644
 --- a/arch/arm64/boot/dts/freescale/fsl-ls1043a-qds.dts
 +++ b/arch/arm64/boot/dts/freescale/fsl-ls1043a-qds.dts
 @@ -167,6 +167,10 @@
@@ -38,11 +36,9 @@ index 219a98780..fe4c4e1fa 100644
  #include "fsl-ls1043-post.dtsi"
  
  &fman0 {
-diff --git a/arch/arm64/boot/dts/freescale/fsl-ls1043a-rdb.dts b/arch/arm64/boot/dts/freescale/fsl-ls1043a-rdb.dts
-index ace1d6061..aa2f88f8e 100644
 --- a/arch/arm64/boot/dts/freescale/fsl-ls1043a-rdb.dts
 +++ b/arch/arm64/boot/dts/freescale/fsl-ls1043a-rdb.dts
-@@ -213,3 +213,11 @@
+@@ -212,3 +212,11 @@
  		};
  	};
  };
@@ -54,8 +50,6 @@ index ace1d6061..aa2f88f8e 100644
 +&usb1 {
 +	status = "okay";
 +};
-diff --git a/arch/arm64/boot/dts/freescale/fsl-ls1043a.dtsi b/arch/arm64/boot/dts/freescale/fsl-ls1043a.dtsi
-index e19e05dda..f879ac8f0 100644
 --- a/arch/arm64/boot/dts/freescale/fsl-ls1043a.dtsi
 +++ b/arch/arm64/boot/dts/freescale/fsl-ls1043a.dtsi
 @@ -706,6 +706,7 @@
@@ -82,6 +76,3 @@ index e19e05dda..f879ac8f0 100644
  			};
  
  			sata: sata@3200000 {
--- 
-2.17.1
-
