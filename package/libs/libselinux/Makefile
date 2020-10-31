@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libselinux
 PKG_VERSION:=3.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/20200710
@@ -69,7 +69,7 @@ define Package/libselinux
   $(call Package/libselinux/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libsepol +libpcre +musl-fts
+  DEPENDS:=+libsepol +libpcre +USE_MUSL:musl-fts
 endef
 
 define Package/libselinux/description
@@ -109,8 +109,11 @@ HOST_MAKE_FLAGS += \
 	PREFIX=$(STAGING_DIR_HOSTPKG) \
 	SHLIBDIR=$(STAGING_DIR_HOSTPKG)/lib
 
+ifeq ($(CONFIG_USE_MUSL),y)
+MAKE_FLAGS += FTS_LDLIBS=-lfts
+endif
+
 MAKE_FLAGS += \
-	FTS_LDLIBS=-lfts \
 	SHLIBDIR=/usr/lib \
 	OS=Linux
 
