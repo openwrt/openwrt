@@ -102,6 +102,9 @@ ifeq ($(SSL_VARIANT),openssl)
   DRIVER_MAKEOPTS += CONFIG_TLS=openssl CONFIG_SAE=y
   TARGET_LDFLAGS += -lcrypto -lssl
 
+  ifeq ($(LOCAL_VARIANT),basic)
+    DRIVER_MAKEOPTS += CONFIG_OWE=y
+  endif
   ifeq ($(LOCAL_VARIANT),mesh)
     DRIVER_MAKEOPTS += CONFIG_AP=y CONFIG_MESH=y
   endif
@@ -114,6 +117,9 @@ ifeq ($(SSL_VARIANT),wolfssl)
   DRIVER_MAKEOPTS += CONFIG_TLS=wolfssl CONFIG_SAE=y
   TARGET_LDFLAGS += -lwolfssl
 
+  ifeq ($(LOCAL_VARIANT),basic)
+    DRIVER_MAKEOPTS += CONFIG_OWE=y
+  endif
   ifeq ($(LOCAL_VARIANT),mesh)
     DRIVER_MAKEOPTS += CONFIG_AP=y CONFIG_MESH=y CONFIG_WPS_NFC=1
   endif
