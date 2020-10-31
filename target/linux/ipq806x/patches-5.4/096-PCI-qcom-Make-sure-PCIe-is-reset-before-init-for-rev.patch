@@ -15,11 +15,9 @@ Cc: stable@vger.kernel.org # v4.19+
  drivers/pci/controller/dwc/pcie-qcom.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
-diff --git a/drivers/pci/controller/dwc/pcie-qcom.c b/drivers/pci/controller/dwc/pcie-qcom.c
-index 3aac77a295ba..82336bbaf8dc 100644
 --- a/drivers/pci/controller/dwc/pcie-qcom.c
 +++ b/drivers/pci/controller/dwc/pcie-qcom.c
-@@ -302,6 +302,9 @@ static void qcom_pcie_deinit_2_1_0(struct qcom_pcie *pcie)
+@@ -296,6 +296,9 @@ static void qcom_pcie_deinit_2_1_0(struc
  	reset_control_assert(res->por_reset);
  	reset_control_assert(res->ext_reset);
  	reset_control_assert(res->phy_reset);
@@ -29,7 +27,7 @@ index 3aac77a295ba..82336bbaf8dc 100644
  	regulator_bulk_disable(ARRAY_SIZE(res->supplies), res->supplies);
  }
  
-@@ -314,6 +317,16 @@ static int qcom_pcie_init_2_1_0(struct qcom_pcie *pcie)
+@@ -308,6 +311,16 @@ static int qcom_pcie_init_2_1_0(struct q
  	u32 val;
  	int ret;
  
@@ -46,6 +44,3 @@ index 3aac77a295ba..82336bbaf8dc 100644
  	ret = regulator_bulk_enable(ARRAY_SIZE(res->supplies), res->supplies);
  	if (ret < 0) {
  		dev_err(dev, "cannot enable regulators\n");
--- 
-2.27.0
-

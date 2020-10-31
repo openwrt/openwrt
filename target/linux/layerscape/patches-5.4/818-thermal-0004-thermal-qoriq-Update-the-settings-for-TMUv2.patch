@@ -13,8 +13,6 @@ Signed-off-by: Yuantian Tang <andy.tang@nxp.com>
  drivers/thermal/qoriq_thermal.c | 21 +++++++++++++++++++--
  1 file changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/thermal/qoriq_thermal.c b/drivers/thermal/qoriq_thermal.c
-index ba7d6105a..8b371fd3d 100644
 --- a/drivers/thermal/qoriq_thermal.c
 +++ b/drivers/thermal/qoriq_thermal.c
 @@ -23,6 +23,7 @@
@@ -50,7 +48,7 @@ index ba7d6105a..8b371fd3d 100644
  	u32 ipbrr0;		/* IP Block Revision Register 0 */
  	u32 ipbrr1;		/* IP Block Revision Register 1 */
  	u8 res8[0x300];
-@@ -158,7 +168,10 @@ static int tmu_get_temp(void *p, int *temp)
+@@ -158,7 +168,10 @@ static int tmu_get_temp(void *p, int *te
  	u32 val;
  
  	val = tmu_read(qdata, &qdata->regs->site[qsensor->id].tritsr);
@@ -62,7 +60,7 @@ index ba7d6105a..8b371fd3d 100644
  
  	return 0;
  }
-@@ -319,6 +332,8 @@ static int qoriq_tmu_calibration(struct platform_device *pdev)
+@@ -319,6 +332,8 @@ static int qoriq_tmu_calibration(struct
  
  static void qoriq_tmu_init_device(struct qoriq_tmu_data *data)
  {
@@ -71,7 +69,7 @@ index ba7d6105a..8b371fd3d 100644
  	/* Disable interrupt, using polling instead */
  	tmu_write(data, TIER_DISABLE, &data->regs->tier);
  
-@@ -328,6 +343,8 @@ static void qoriq_tmu_init_device(struct qoriq_tmu_data *data)
+@@ -328,6 +343,8 @@ static void qoriq_tmu_init_device(struct
  	} else {
  		tmu_write(data, TMTMIR_DEFAULT, &data->regs_v2->tmtmir);
  		tmu_write(data, TEUMR0_V2, &data->regs_v2->teumr0);
@@ -80,6 +78,3 @@ index ba7d6105a..8b371fd3d 100644
  	}
  
  	/* Disable monitoring */
--- 
-2.17.1
-
