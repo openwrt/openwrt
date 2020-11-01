@@ -532,6 +532,7 @@ define Device/Build/image
 	@mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(DEVICE_NAME)" \
 	BIN_DIR="$(BIN_DIR)" \
+	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	IMAGE_NAME="$(IMAGE_NAME)" \
 	IMAGE_TYPE=$(word 1,$(subst ., ,$(2))) \
 	IMAGE_FILESYSTEM="$(1)" \
