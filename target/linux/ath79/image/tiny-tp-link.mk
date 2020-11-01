@@ -5,6 +5,7 @@ define Device/tplink_tl-mr10u
   SOC := ar9331
   DEVICE_MODEL := TL-MR10U
   DEVICE_PACKAGES := kmod-usb-chipidea2
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x00100101
   SUPPORTED_DEVICES += tl-mr10u
 endef
@@ -16,7 +17,7 @@ define Device/tplink_tl-mr3020-v1
   SOC := ar9331
   DEVICE_MODEL := TL-MR3020
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-ledtrig-usbport -swconfig
   TPLINK_HWID := 0x30200001
   SUPPORTED_DEVICES += tl-mr3020
 endef
@@ -27,7 +28,7 @@ define Device/tplink_tl-mr3040-v2
   SOC := ar9331
   DEVICE_MODEL := TL-MR3040
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-ledtrig-usbport -swconfig
   TPLINK_HWID := 0x30400002
   SUPPORTED_DEVICES += tl-mr3040-v2
 endef
@@ -81,6 +82,7 @@ define Device/tplink_tl-wa701nd-v1
   SOC := ar7240
   DEVICE_MODEL := TL-WA701ND
   DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x07010001
   SUPPORTED_DEVICES += tl-wa901nd
 endef
@@ -91,6 +93,7 @@ define Device/tplink_tl-wa730re-v1
   SOC := ar7240
   DEVICE_MODEL := TL-WA730RE
   DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x07300001
   SUPPORTED_DEVICES += tl-wa901nd
 endef
@@ -101,6 +104,7 @@ define Device/tplink_tl-wa801nd-v1
   SOC := ar7240
   DEVICE_MODEL := TL-WA801ND
   DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x08010001
   SUPPORTED_DEVICES += tl-wa901nd
 endef
@@ -111,6 +115,7 @@ define Device/tplink_tl-wa801nd-v3
   SOC := qca9533
   DEVICE_MODEL := TL-WA801ND
   DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x08010003
   SUPPORTED_DEVICES += tl-wa801nd-v3
 endef
@@ -121,6 +126,7 @@ define Device/tplink_tl-wa801nd-v4
   SOC := qca9533
   DEVICE_MODEL := TL-WA801ND
   DEVICE_VARIANT := v4
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x08010004
   SUPPORTED_DEVICES += tl-wa801nd-v3
 endef
@@ -131,6 +137,7 @@ define Device/tplink_tl-wa830re-v1
   SOC := ar7240
   DEVICE_MODEL := TL-WA830RE
   DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x08300010
   SUPPORTED_DEVICES += tl-wa901nd
 endef
@@ -142,7 +149,7 @@ define Device/tplink_tl-wa850re-v1
   DEVICE_MODEL := TL-WA850RE
   DEVICE_VARIANT := v1
   TPLINK_HWID := 0x08500001
-  DEVICE_PACKAGES := rssileds
+  DEVICE_PACKAGES := rssileds -swconfig
   SUPPORTED_DEVICES += tl-wa850re
 endef
 TARGET_DEVICES += tplink_tl-wa850re-v1
@@ -155,7 +162,7 @@ define Device/tplink_tl-wa850re-v2
   DEVICE_VARIANT := v2
   TPLINK_BOARD_ID := TLWA850REV2
   TPLINK_HWID := 0x08500002
-  DEVICE_PACKAGES := rssileds
+  DEVICE_PACKAGES := rssileds -swconfig
   SUPPORTED_DEVICES += tl-wa850re-v2
   DEFAULT := n
 endef
@@ -166,6 +173,7 @@ define Device/tplink_tl-wa860re-v1
   SOC := ar9341
   DEVICE_MODEL := TL-WA860RE
   DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x08600001
   SUPPORTED_DEVICES += tl-wa860re
 endef
@@ -176,6 +184,7 @@ define Device/tplink_tl-wa901nd-v1
   SOC := ar7240
   DEVICE_MODEL := TL-WA901ND
   DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x09010001
   SUPPORTED_DEVICES += tl-wa901nd
 endef
@@ -186,6 +195,7 @@ define Device/tplink_tl-wa901nd-v2
   SOC := ar9132
   DEVICE_MODEL := TL-WA901ND
   DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x09010002
   SUPPORTED_DEVICES += tl-wa901nd-v2
 endef
@@ -196,6 +206,7 @@ define Device/tplink_tl-wa901nd-v3
   SOC := ar9341
   DEVICE_MODEL := TL-WA901ND
   DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x09010003
   SUPPORTED_DEVICES += tl-wa901nd-v3
 endef
@@ -206,6 +217,7 @@ define Device/tplink_tl-wa901nd-v4
   SOC := tp9343
   DEVICE_MODEL := TL-WA901ND
   DEVICE_VARIANT := v4
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x09010004
   SUPPORTED_DEVICES += tl-wa901nd-v4
   IMAGE/factory.bin := tplink-v1-image factory -C EU
@@ -217,6 +229,7 @@ define Device/tplink_tl-wa901nd-v5
   SOC := tp9343
   DEVICE_MODEL := TL-WA901ND
   DEVICE_VARIANT := v5
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x09010005
   SUPPORTED_DEVICES += tl-wa901nd-v5
   IMAGE/factory.bin := tplink-v1-image factory -C EU
@@ -227,7 +240,7 @@ define Device/tplink_tl-wr703n
   $(Device/tplink-4mlzma)
   SOC := ar9331
   DEVICE_MODEL := TL-WR703N
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  DEVICE_PACKAGES := kmod-usb-chipidea2 -swconfig
   TPLINK_HWID := 0x07030101
   SUPPORTED_DEVICES += tl-wr703n
 endef
@@ -308,6 +321,7 @@ define Device/tplink_tl-wr802n-v1
   SOC := qca9533
   DEVICE_MODEL := TL-WR802N
   DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x08020001
   SUPPORTED_DEVICES += tl-wr802n-v1
 endef
@@ -318,6 +332,7 @@ define Device/tplink_tl-wr802n-v2
   SOC := qca9533
   DEVICE_MODEL := TL-WR802N
   DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := -swconfig
   TPLINK_HWID := 0x08020002
   TPLINK_HWREV := 2
   SUPPORTED_DEVICES += tl-wr802n-v2
