@@ -29,6 +29,7 @@ ath79_setup_interfaces()
 	dlink,dap-1365-a1|\
 	dlink,dir-505|\
 	engenius,eap300-v2|\
+	engenius,ecb1200|\
 	engenius,ecb1750|\
 	enterasys,ws-ap3705i|\
 	glinet,gl-ar300m-lite|\
@@ -500,6 +501,7 @@ ath79_setup_macs()
 	elecom,wrc-300ghbk2-i)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" -2)
 		;;
+	engenius,ecb1200|\
 	engenius,ecb1750)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		label_mac=$(mtd_get_mac_ascii u-boot-env athaddr)

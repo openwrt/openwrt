@@ -942,6 +942,19 @@ define Device/engenius_eap300-v2
 endef
 TARGET_DEVICES += engenius_eap300-v2
 
+define Device/engenius_ecb1200
+  SOC := qca9557
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ECB1200
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 15680k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x101 -p 0x6e -t 2
+endef
+TARGET_DEVICES += engenius_ecb1200
+
 define Device/engenius_ecb1750
   SOC := qca9558
   DEVICE_VENDOR := EnGenius
