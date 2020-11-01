@@ -31,6 +31,7 @@ image_info = {
     "target": "{}/{}".format(getenv("TARGET"), getenv("SUBTARGET")),
     "version_code": getenv("VERSION_CODE"),
     "version_number": getenv("VERSION_NUMBER"),
+    "source_date_epoch": int(getenv("SOURCE_DATE_EPOCH")),
     "profiles": {
         device_id: {
             "image_prefix": getenv("IMAGE_PREFIX"),
