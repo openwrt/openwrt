@@ -28,7 +28,7 @@ Signed-off-by: Joakim Zhang <qiangqing.zhang@nxp.com>
  #include <linux/regmap.h>
  
  #define DRV_NAME			"flexcan"
-@@ -1920,7 +1921,7 @@ static int __maybe_unused flexcan_suspen
+@@ -1942,7 +1943,7 @@ static int __maybe_unused flexcan_suspen
  {
  	struct net_device *dev = dev_get_drvdata(device);
  	struct flexcan_priv *priv = netdev_priv(dev);
@@ -37,7 +37,7 @@ Signed-off-by: Joakim Zhang <qiangqing.zhang@nxp.com>
  
  	if (netif_running(dev)) {
  		/* if wakeup is enabled, enter stop mode
-@@ -1932,25 +1933,27 @@ static int __maybe_unused flexcan_suspen
+@@ -1954,25 +1955,27 @@ static int __maybe_unused flexcan_suspen
  			if (err)
  				return err;
  		} else {
@@ -69,7 +69,7 @@ Signed-off-by: Joakim Zhang <qiangqing.zhang@nxp.com>
  
  	priv->can.state = CAN_STATE_ERROR_ACTIVE;
  	if (netif_running(dev)) {
-@@ -1962,15 +1965,19 @@ static int __maybe_unused flexcan_resume
+@@ -1984,15 +1987,19 @@ static int __maybe_unused flexcan_resume
  			if (err)
  				return err;
  		} else {

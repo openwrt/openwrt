@@ -44,15 +44,9 @@ config KERNEL_DEBUG_FS
 	  write to these files. Many common debugging facilities, such as
 	  ftrace, require the existence of debugfs.
 
-# remove KERNEL_MIPS_FPU_EMULATOR after kernel 4.19 is gone
-config KERNEL_MIPS_FPU_EMULATOR
-	bool "Compile the kernel with MIPS FPU Emulator"
-	default y if TARGET_pistachio
-	depends on (mips || mipsel || mips64 || mips64el)
-
 config KERNEL_MIPS_FP_SUPPORT
 	bool
-	default y if KERNEL_MIPS_FPU_EMULATOR
+	default y if TARGET_pistachio
 
 config KERNEL_ARM_PMU
 	bool
@@ -1124,6 +1118,7 @@ config KERNEL_SECURITY_SELINUX
 config KERNEL_SECURITY_SELINUX_BOOTPARAM
 	bool "NSA SELinux boot parameter"
 	depends on KERNEL_SECURITY_SELINUX
+	default y
 
 config KERNEL_SECURITY_SELINUX_DISABLE
 	bool "NSA SELinux runtime disable"
@@ -1132,6 +1127,7 @@ config KERNEL_SECURITY_SELINUX_DISABLE
 config KERNEL_SECURITY_SELINUX_DEVELOP
 	bool "NSA SELinux Development Support"
 	depends on KERNEL_SECURITY_SELINUX
+	default y
 
 config KERNEL_LSM
 	string

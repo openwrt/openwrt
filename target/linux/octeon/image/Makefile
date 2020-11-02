@@ -44,6 +44,7 @@ define Device/ubnt_edgerouter
   DEVICE_MODEL := EdgeRouter
   BOARD_NAME := er
   CMDLINE := $(ER_CMDLINE)
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_edgerouter
 

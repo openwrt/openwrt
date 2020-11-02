@@ -264,12 +264,7 @@ endif
 
 BUILD_KEY=$(TOPDIR)/key-build
 
-ifeq ($(HOST_OS),Darwin)
-  FAKEROOT_SO:=$(STAGING_DIR_HOST)/lib/libfakeroot.dylib
-else
-  FAKEROOT_SO:=$(STAGING_DIR_HOST)/lib/libfakeroot.so
-endif
-FAKEROOT:=$(STAGING_DIR_HOST)/bin/fakeroot -l $(FAKEROOT_SO) -f $(STAGING_DIR_HOST)/bin/faked
+FAKEROOT:=$(STAGING_DIR_HOST)/bin/fakeroot
 
 TARGET_CC:=$(TARGET_CROSS)gcc
 TARGET_CXX:=$(TARGET_CROSS)g++

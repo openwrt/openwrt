@@ -111,7 +111,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct mvpp2_port *port = netdev_priv(dev);
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -446,9 +446,10 @@ static void mtk_mac_link_down(struct phy
+@@ -448,9 +448,10 @@ static void mtk_mac_link_down(struct phy
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
  }
  
@@ -127,7 +127,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  					   phylink_config);
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -951,8 +951,10 @@ static void stmmac_mac_link_down(struct
+@@ -925,8 +925,10 @@ static void stmmac_mac_link_down(struct
  }
  
  static void stmmac_mac_link_up(struct phylink_config *config,

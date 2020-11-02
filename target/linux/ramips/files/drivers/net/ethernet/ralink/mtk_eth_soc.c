@@ -715,19 +715,11 @@ next_frag:
 	/* TX SG offload */
 	nr_frags = skb_shinfo(skb)->nr_frags;
 	for (i = 0; i < nr_frags; i++) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
-		struct skb_frag_struct *frag;
-#else
 		skb_frag_t *frag;
-#endif
 
 		frag = &skb_shinfo(skb)->frags[i];
 		if (fe_tx_dma_map_page(ring, &st, skb_frag_page(frag),
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
-				       frag->page_offset, skb_frag_size(frag)))
-#else
 				       skb_frag_off(frag), skb_frag_size(frag)))
-#endif
 			goto err_dma;
 	}
 
@@ -762,11 +754,7 @@ next_frag:
 			netif_wake_queue(dev);
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
-	if (netif_xmit_stopped(netdev_get_tx_queue(dev, 0)) || !head->xmit_more)
-#else
 	if (netif_xmit_stopped(netdev_get_tx_queue(dev, 0)) || !netdev_xmit_more())
-#endif
 		fe_reg_w32(ring->tx_next_idx, FE_REG_TX_CTX_IDX0);
 
 	return 0;
@@ -825,22 +813,14 @@ static inline int fe_cal_txd_req(struct sk_buff *skb)
 {
 	struct sk_buff *head = skb;
 	int i, nfrags = 0;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
-	struct skb_frag_struct *frag;
-#else
 	skb_frag_t *frag;
-#endif
 
 next_frag:
 	nfrags++;
 	if (skb_is_gso(skb)) {
 		for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
 			frag = &skb_shinfo(skb)->frags[i];
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
-			nfrags += DIV_ROUND_UP(frag->size, TX_DMA_BUF_LEN);
-#else
 			nfrags += DIV_ROUND_UP(skb_frag_size(frag), TX_DMA_BUF_LEN);
-#endif
 		}
 	} else {
 		nfrags += skb_shinfo(skb)->nr_frags;
