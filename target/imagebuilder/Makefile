@@ -61,6 +61,14 @@ else
 		-exec $(CP) -t $(IB_LDIR)/ {} +
 endif
 
+ifneq ($(CONFIG_SIGNATURE_CHECK),)
+	echo ''                                                        >> $(PKG_BUILD_DIR)/repositories.conf
+	echo 'option check_signature'                                  >> $(PKG_BUILD_DIR)/repositories.conf
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/keys
+	$(CP) -L $(STAGING_DIR_ROOT)/etc/opkg/keys/ $(PKG_BUILD_DIR)/
+	$(CP) -L $(STAGING_DIR_ROOT)/usr/sbin/opkg-key $(PKG_BUILD_DIR)/scripts/
+endif
+
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
 	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
 		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
