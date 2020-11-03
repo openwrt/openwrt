@@ -6,3 +6,14 @@
 	compatible = "xiaomi,mi-router-4a-gigabit", "mediatek,mt7621-soc";
 	model = "Xiaomi Mi Router 4A Gigabit Edition";
 };
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		m25p,fast-read;
+	};
+};
