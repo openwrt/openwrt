@@ -19,7 +19,7 @@ platform_check_image() {
 
 	get_partitions "/dev/$diskdev" bootdisk
 
-	#extract the boot sector from the image
+	v "Extract boot sector from the image"
 	get_image_dd "$1" of=/tmp/image.bs count=63 bs=512b
 
 	get_partitions /tmp/image.bs image
@@ -82,7 +82,7 @@ platform_do_upgrade() {
 	if [ "$UPGRADE_OPT_SAVE_PARTITIONS" = "1" ]; then
 		get_partitions "/dev/$diskdev" bootdisk
 
-		#extract the boot sector from the image
+		v "Extract boot sector from the image"
 		get_image_dd "$1" of=/tmp/image.bs count=63 bs=512b
 
 		get_partitions /tmp/image.bs image
@@ -114,7 +114,6 @@ platform_do_upgrade() {
 		fi
 	done < /tmp/partmap.image
 
-	#copy partition uuid
 	v "Writing new UUID to /dev/$diskdev..."
 	get_image_dd "$1" of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
 
@@ -129,5 +128,4 @@ platform_do_upgrade() {
 		sed -i "s/\(PARTUUID=\)[a-f0-9-]\+/\1$4$3$2$1-$6$5-$8$7-$9/ig" /mnt/boot/grub/grub.cfg
 		umount /mnt
 	fi
-
 }
