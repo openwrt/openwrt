@@ -106,6 +106,17 @@ get_image() { # <source> [ <command> ]
 	$cmd <"$from"
 }
 
+get_image_dd() {
+	local from="$1"; shift
+
+	(
+		exec 3>&2
+		( exec 3>&2; get_image "$from" 2>&1 1>&3 | grep -v -F ' Broken pipe'     ) 2>&1 1>&3 \
+			| ( exec 3>&2; dd "$@" 2>&1 1>&3 | grep -v -E ' records (in|out)') 2>&1 1>&3
+		exec 3>&-
+	)
+}
+
 get_magic_word() {
 	(get_image "$@" | dd bs=2 count=1 | hexdump -v -n 2 -e '1/1 "%02x"') 2>/dev/null
 }
