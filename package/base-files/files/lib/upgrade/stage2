@@ -53,7 +53,7 @@ switch_to_ramfs() {
 	[ -L "/lib64" ] && ln -s /lib $RAM_ROOT/lib64
 
 	supivot $RAM_ROOT /mnt || {
-		echo "Failed to switch over to ramfs. Please reboot."
+		v "Failed to switch over to ramfs. Please reboot."
 		exit 1
 	}
 
@@ -75,7 +75,7 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 	local stat
 	local proc_ppid=$(cut -d' ' -f4  /proc/$$/stat)
 
-	echo -n "Sending $sig to remaining processes ... "
+	vn "Sending $sig to remaining processes ..."
 
 	while $run; do
 		run=false
@@ -95,7 +95,7 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 			# Skip kernel threads
 			[ -n "$cmdline" ] || continue
 
-			echo -n "$name "
+			_vn " $name"
 			kill -$sig $pid 2>/dev/null
 
 			[ $loop -eq 1 ] && run=true
@@ -103,12 +103,12 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 
 		let loop_limit--
 		[ $loop_limit -eq 0 ] && {
-			echo
-			echo "Failed to kill all processes."
+			_v
+			v "Failed to kill all processes."
 			exit 1
 		}
 	done
-	echo
+	_v
 }
 
 indicate_upgrade
@@ -129,7 +129,7 @@ if [ -n "$IMAGE" ] && type 'platform_pre_upgrade' >/dev/null 2>/dev/null; then
 fi
 
 if [ -n "$(rootfs_type)" ]; then
-	echo "Switching to ramdisk..."
+	v "Switching to ramdisk..."
 	switch_to_ramfs
 fi
 
