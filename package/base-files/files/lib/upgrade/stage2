@@ -42,7 +42,7 @@ switch_to_ramfs() {
 		mtd partx losetup mkfs.ext4 nandwrite flash_erase	\
 		ubiupdatevol ubiattach ubiblock ubiformat		\
 		ubidetach ubirsvol ubirmvol ubimkvol			\
-		snapshot snapshot_tool					\
+		snapshot snapshot_tool date				\
 		$RAMFS_COPY_BIN
 	do
 		local file="$(command -v "$binary" 2>/dev/null)"
