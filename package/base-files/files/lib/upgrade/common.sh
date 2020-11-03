@@ -64,7 +64,7 @@ ask_bool() {
 }
 
 v() {
-	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$@"
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$(date) upgrade: $@" >&2
 }
 
 json_string() {
