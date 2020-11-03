@@ -6,57 +6,11 @@
 
 rtl838x_setup_switch()
 {
-	local switchid net portid master device lan_role lan_list
+	local lan lan_list
 
-	json_select_object switch
-	# Find slave ports
-	for net in $(ls -d /sys/class/net/*); do
-		switchid=$(cat $net/phys_switch_id 2>/dev/null)
-		[ -z "$switchid" ] && continue
-		device=$(basename $net)
-		portid=$(cat $net/phys_port_name)
-		lan_role="$lan_role ${portid##p}"
-		lan_list="$lan_list $device"
-		json_select_object "switch$((switchid))"
-			json_add_boolean enable 1
-			json_add_boolean reset 0
-			json_add_boolean dsa 1
-			json_select_array ports
-				json_add_object
-					json_add_int num "${portid##p}"
-					json_add_string role "lan"
-					json_add_string device "$device"
-				json_close_object
-			json_select ..
-		json_select ..
+	for lan in /sys/class/net/lan*; do
+		lan_list="$lan_list $(basename $lan)"
 	done
-	# Add switch master device
-	for net in $(ls -d /sys/class/net/*/dsa); do
-		master=$(dirname $net)
-		device=$(basename $master)
-		portid=$(cat $master/phys_port_name)
-		lan_role="$lan_role ${portid##p}"
-		json_select_object "switch$((switchid))"
-			json_select_array ports
-				json_add_object
-					json_add_int num "${portid##p}"
-					json_add_string device "$device"
-					json_add_boolean need_tag 0
-					json_add_boolean want_untag 0
-					json_add_boolean master 1
-				json_close_object
-			json_select ..
-			json_select_array roles
-				json_add_object
-					json_add_string role "lan"
-					lan_role=$(echo $lan_role | xargs -n1 | sort -n | xargs)
-					json_add_string ports "$lan_role"
-				json_close_object
-			json_select ..
-		json_select ..
-	done
-	json_select ..
-	lan_list=$(echo $lan_list | xargs -n1 | sort -V | xargs)
 	ucidef_set_interface_lan "$lan_list"
 }
 
