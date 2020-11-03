@@ -17,7 +17,6 @@ ifndef IB
   endif
 endif
 
-include $(INCLUDE_DIR)/image-legacy.mk
 include $(INCLUDE_DIR)/feeds.mk
 include $(INCLUDE_DIR)/rootfs.mk
 
@@ -163,18 +162,12 @@ DTC_FLAGS += \
   -Wno-unit_address_format \
   -Wno-pci_bridge \
   -Wno-pci_device_bus_num \
-  -Wno-pci_device_reg
-ifeq ($(strip $(call kernel_patchver_ge,4.17.0)),1)
-  DTC_FLAGS += \
-	-Wno-avoid_unnecessary_addr_size \
-	-Wno-alias_paths
-endif
-ifeq ($(strip $(call kernel_patchver_ge,4.18.0)),1)
-  DTC_FLAGS += \
-	-Wno-graph_child_address \
-	-Wno-graph_port \
-	-Wno-unique_unit_address
-endif
+  -Wno-pci_device_reg \
+  -Wno-avoid_unnecessary_addr_size \
+  -Wno-alias_paths \
+  -Wno-graph_child_address \
+  -Wno-graph_port \
+  -Wno-unique_unit_address
 
 define Image/pad-to
 	dd if=$(1) of=$(1).new bs=$(2) conv=sync
@@ -256,35 +249,6 @@ else
 define Image/mkfs/squashfs
 	$(call Image/mkfs/squashfs-common,$(1))
 endef
-endif
-
-# $(1): board name
-# $(2): rootfs type
-# $(3): kernel image
-# $(4): compat string
-ifneq ($(CONFIG_NAND_SUPPORT),)
-   define Image/Build/SysupgradeNAND
-	mkdir -p "$(KDIR_TMP)/sysupgrade-$(if $(4),$(4),$(1))/"
-	echo "BOARD=$(if $(4),$(4),$(1))" > "$(KDIR_TMP)/sysupgrade-$(if $(4),$(4),$(1))/CONTROL"
-	[ -z "$(2)" ] || $(CP) "$(KDIR)/root.$(2)" "$(KDIR_TMP)/sysupgrade-$(if $(4),$(4),$(1))/root"
-	[ -z "$(3)" ] || $(CP) "$(3)" "$(KDIR_TMP)/sysupgrade-$(if $(4),$(4),$(1))/kernel"
-	(cd "$(KDIR_TMP)"; $(TAR) cvf \
-		"$(BIN_DIR)/$(IMG_PREFIX)-$(1)-$(2)-sysupgrade.tar" sysupgrade-$(if $(4),$(4),$(1)) \
-			$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-	)
-   endef
-
-# $(1) board name
-# $(2) ubinize-image options (e.g. --uboot-env and/or --kernel kernelimage)
-# $(3) rootfstype (e.g. squashfs or ubifs)
-# $(4) options to pass-through to ubinize (i.e. $($(PROFILE)_UBI_OPTS)))
-   define Image/Build/UbinizeImage
-	sh $(TOPDIR)/scripts/ubinize-image.sh $(2) \
-		"$(KDIR)/root.$(3)" \
-		"$(KDIR)/$(IMG_PREFIX)-$(1)-$(3)-ubinized.bin" \
-		$(4)
-   endef
-
 endif
 
 define Image/mkfs/ubifs
@@ -712,8 +676,6 @@ define BuildImage
   prepare:
   compile:
   clean:
-  legacy-images-prepare:
-  legacy-images:
   image_prepare:
 
   ifeq ($(IB),)
@@ -729,9 +691,6 @@ define BuildImage
 		rm -rf $(BUILD_DIR)/json_info_files
 		$(call Image/Prepare)
 
-    legacy-images-prepare-make: image_prepare
-		$(MAKE) legacy-images-prepare BIN_DIR="$(BIN_DIR)"
-
   else
     image_prepare:
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
@@ -745,16 +704,11 @@ define BuildImage
 	$(call Image/InstallKernel)
 
   $(foreach device,$(TARGET_DEVICES),$(call Device,$(device)))
-  $(foreach device,$(LEGACY_DEVICES),$(call LegacyDevice,$(device)))
 
   install-images: kernel_prepare $(foreach fs,$(filter-out $(if $(UBIFS_OPTS),,ubifs),$(TARGET_FILESYSTEMS) $(fs-subtypes-y)),$(KDIR)/root.$(fs))
 	$(foreach fs,$(TARGET_FILESYSTEMS),
 		$(call Image/Build,$(fs))
 	)
-
-  legacy-images-make: install-images
-	$(call Image/mkfs/ubifs/legacy)
-	$(MAKE) legacy-images BIN_DIR="$(BIN_DIR)"
 
   install: install-images
 	$(call Image/Manifest)
