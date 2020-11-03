@@ -10,7 +10,7 @@ fwtool_check_signature() {
 	}
 
 	if ! fwtool -q -s /tmp/sysupgrade.ucert "$1"; then
-		v "Image signature not found"
+		v "Image signature not present"
 		[ "$REQUIRE_IMAGE_SIGNATURE" = 1 -a "$FORCE" != 1 ] && {
 			v "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
 		}
@@ -30,7 +30,7 @@ fwtool_check_image() {
 	. /usr/share/libubox/jshn.sh
 
 	if ! fwtool -q -i /tmp/sysupgrade.meta "$1"; then
-		v "Image metadata not found"
+		v "Image metadata not present"
 		[ "$REQUIRE_IMAGE_METADATA" = 1 -a "$FORCE" != 1 ] && {
 			v "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
 		}
