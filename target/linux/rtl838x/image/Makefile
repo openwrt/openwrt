@@ -7,16 +7,6 @@ include $(INCLUDE_DIR)/image.mk
 KERNEL_LOADADDR = 0x80000000
 KERNEL_ENTRY = 0x80000400
 
-define Build/custom-uimage
-	mkimage -A $(LINUX_KARCH) \
-		-O linux -T kernel \
-		-C gzip -a $(KERNEL_LOADADDR) $(if $(UIMAGE_MAGIC),-M $(UIMAGE_MAGIC),) \
-		-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
-		-n '$(1)' -d $@ $@.new
-	mv $@.new $@
-endef
-
-
 define Device/Default
   PROFILES = Default
   KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
@@ -35,8 +25,7 @@ define Device/allnet_all-sg8208m
   DEVICE_VENDOR := ALLNET
   DEVICE_MODEL := ALL-SG8208M
   UIMAGE_MAGIC := 0x00000006
-  KERNEL := kernel-bin | append-dtb | gzip | custom-uimage 2.2.2.0
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | custom-uimage 2.2.2.0
+  UIMAGE_NAME := 2.2.2.0
   DEVICE_PACKAGES := ip-full ip-bridge kmod-gpio-button-hotplug tc
 endef
 TARGET_DEVICES += allnet_all-sg8208m
