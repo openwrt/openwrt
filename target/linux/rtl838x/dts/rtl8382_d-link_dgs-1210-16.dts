@@ -12,7 +12,7 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
-	};	
+	};
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
@@ -90,7 +90,7 @@
 		regmap = <&ethernet0>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		
+
 		/* External phy RTL8218B */
 		phy0: ethernet-phy@0 {
 			reg = <0>;
@@ -166,7 +166,7 @@
 			compatible = "ethernet-phy-ieee802.3-c22";
 			phy-is-integrated;
 		};
-		
+
 		/* External phy: RTL8214FC */
 		phy24: ethernet-phy@24 {
 			compatible = "ethernet-phy-ieee802.3-c22";
@@ -248,7 +248,6 @@
 			phy-handle = <&phy7>;
 			phy-mode = "qsgmii";
 		};
-		
 		port@8 {
 			reg = <8>;
 			label = "lan9";
