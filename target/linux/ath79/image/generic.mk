@@ -1348,8 +1348,6 @@ define Device/ocedo_koala
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   SUPPORTED_DEVICES += koala
   IMAGE_SIZE := 7424k
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
-	append-metadata | check-size
 endef
 TARGET_DEVICES += ocedo_koala
 
@@ -1358,8 +1356,6 @@ define Device/ocedo_raccoon
   DEVICE_VENDOR := Ocedo
   DEVICE_MODEL := Raccoon
   IMAGE_SIZE := 7424k
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
-	append-metadata | check-size
 endef
 TARGET_DEVICES += ocedo_raccoon
 
@@ -1369,8 +1365,6 @@ define Device/ocedo_ursus
   DEVICE_MODEL := Ursus
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 7424k
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
-	append-metadata | check-size
 endef
 TARGET_DEVICES += ocedo_ursus
 
