@@ -60,12 +60,13 @@ examples:
     sata_ports: 2
     gpio_pins: 8
     phone_ports:
-      - ISDN
+      - type: ISDN
+        port_count: 1
     video_ports:
-      - HDMI
-      - Camera
+      - type: HDMI
+      - type: Camera
     audio_ports:
-      - Line-In
+      - type: Line-In
 
 properties:
   bootloader:
@@ -88,12 +89,12 @@ properties:
         cores:
             $id: '#/properties/cpu/properties/cores'
             title: The cores schema
-            type: number
+            type: integer
             minimum: 1
         mhz:
             $id: '#/properties/cpu/properties/mhz'
             title: MHz
-            type: number
+            type: integer
             minimum: 1
 
   detachable_antennas:
@@ -231,51 +232,85 @@ properties:
       - 4096
 
   audio_ports:
-    $id: '#/properties/audio_ports'
     title: Audio Ports
     type: array
     items:
-      - type: string
-        enum:
-          - HDMI
-          - Headphone
-          - Headphone Jack
-          - I2S
-          - Line
-          - Line-In
-          - Line-Out
-          - Microphone
-          - S/PDIF
-          - other
+      anyOf:
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              $id: '#/properties/audio_ports/items/anyOf/0/properties/type'
+              type: string
+              enum:
+                - HDMI
+                - Headphone
+                - I2S
+                - Line
+                - Line-In
+                - Line-Out
+                - Microphone
+                - S/PDIF
+                - other
+                - unknown
+            port_count:
+              $id: '#/properties/audio_ports/items/anyOf/0/properties/port_count'
+              title: port_count
+              type: integer
+              minimum: 1
 
   video_ports:
-    $id: '#/properties/video_ports'
     title: Video Ports
     type: array
     items:
-      - type: string
-        enum:
-          - Camera
-          - Composite
-          - DVI-D
-          - HDMI
-          - I2S
-          - LVDS
-          - MIPI
-          - MIPI DSI
-          - VGA
-          - other
+      anyOf:
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - Camera
+                - Composite
+                - DVI-D
+                - HDMI
+                - I2S
+                - LVDS
+                - MIPI
+                - DSI
+                - VGA
+                - other
+                - unknown
+            port_count:
+              title: port_count
+              type: integer
+              minimum: 1
 
   phone_ports:
-    $id: '#/properties/phone_ports'
     title: Phone Ports
     type: array
     items:
-      - type: string
-        enum:
-          - ISDN
-          - POTS
-          - DECT
+      anyOf:
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              $id: '#/properties/phone_ports/items/anyOf/0/properties/type'
+              type: string
+              enum:
+                - DECT
+                - ISDN
+                - POTS
+                - other
+                - unknown
+            port_count:
+              $id: '#/properties/phone_ports/items/anyOf/0/properties/port_count'
+              title: port_count
+              type: integer
+              minimum: 1
 
   bluetooth:
     $id: '#/properties/bluetooth'
