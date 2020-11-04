@@ -2,6 +2,39 @@
 
 /dts-v1/;
 
+#define STRINGIZE(s) #s
+#define LAN_LABEL(p, s) STRINGIZE(p ## s)
+#define SWITCH_PORT_LABEL(n) LAN_LABEL(lan, n)
+
+#define INTERNAL_PHY(n) \
+	phy##n: ethernet-phy@##n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+		phy-is-integrated; \
+	};
+
+#define EXTERNAL_PHY(n) \
+	phy##n: ethernet-phy@##n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+	};
+
+#define EXTERNAL_SFP_PHY(n) \
+	phy##n: ethernet-phy@##n { \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+		sfp; \
+		media = "fibre"; \
+		reg = <##n>; \
+	};
+
+#define SWITCH_PORT(n, s, m) \
+	port@##n { \
+		reg = <##n>; \
+		label = SWITCH_PORT_LABEL(s) ; \
+		phy-handle = <&phy##n>; \
+		phy-mode = #m ; \
+	};
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
