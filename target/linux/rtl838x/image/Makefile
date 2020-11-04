@@ -61,4 +61,9 @@ define Device/d-link_dgs-1210-16
 endef
 TARGET_DEVICES += d-link_dgs-1210-16
 
+define Device/d-link_dgs-1210-28
+  $(Device/d-link_dgs-1210)
+  DEVICE_MODEL := DGS-1210-28
+endef
+TARGET_DEVICES += d-link_dgs-1210-28
 $(eval $(call BuildImage))
