@@ -10,6 +10,11 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+yinuolink,yn-q418)
+	ucidef_set_led_wlan "wlan" "WLAN" "${boardname}:blue:wlan" "phy1tpt" "phy0tpt"
+	ucidef_set_led_usbport "usb2" "USB2" "${boardname}:blue:usb2" "usb3-port1"
+	ucidef_set_led_usbport "usb3" "USB3" "${boardname}:blue:usb3" "usb 2-1-port3"
+	;;
 alfa-network,ap120c-ac)
 	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "eth1"
 	;;

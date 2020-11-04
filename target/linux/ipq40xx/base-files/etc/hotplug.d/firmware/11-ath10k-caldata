@@ -40,6 +40,7 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x9000 0x2f20
 		;;
 	linksys,ea8300 |\
+	yinuolink,yn-q418 |\
 	linksys,mr8300)
 		caldata_extract "ART" 0x9000 0x2f20
 		# OEM assigns 4 sequential MACs
@@ -71,8 +72,10 @@ case "$FIRMWARE" in
 		caldata_extract_ubi "Factory" 0x1000 0x2f20
 		;;
 	asus,rt-ac58u)
-		CI_UBIPART=UBI_DEV
-		caldata_extract_ubi "Factory" 0x1000 0x2f20
+#		CI_UBIPART=UBI_DEV
+#		caldata_extract_ubi "Factory" 0x1000 0x2f20
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary mfginfo 0x1D)
 		;;
 	avm,fritzbox-4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
@@ -127,6 +130,10 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
 		;;
+	yinuolink,yn-q418)
+	        caldata_extract "ART" 0x1000 0x2f20
+                ath10k_patch_mac $(macaddr_add "$(hexdump -v -n 6 -s 0x1006 -e '5/1 "%02x:" 1/1 "%02x"' /dev/mtd7)" 0)
+                ;;
 	meraki,mr33)
 		caldata_extract_ubi "ART" 0x1000 0x2f20
 		caldata_valid "202f" || caldata_extract "ART" 0x1000 0x2f20
@@ -168,8 +175,7 @@ case "$FIRMWARE" in
 		caldata_extract_ubi "Factory" 0x5000 0x2f20
 		;;
 	asus,rt-ac58u)
-		CI_UBIPART=UBI_DEV
-		caldata_extract_ubi "Factory" 0x5000 0x2f20
+		caldata_extract "ART" 0x5000 0x2f20
 		;;
 	avm,fritzbox-4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
@@ -224,6 +230,10 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 3)
 		;;
+	yinuolink,yn-q418)
+	        caldata_extract "ART" 0x5000 0x2f20
+                ath10k_patch_mac $(macaddr_add "$(hexdump -v -n 6 -s 0x5006 -e '5/1 "%02x:" 1/1 "%02x"' /dev/mtd7)" 2)
+                ;;
 	meraki,mr33)
 		caldata_extract_ubi "ART" 0x5000 0x2f20
 		caldata_valid "202f" || caldata_extract "ART" 0x5000 0x2f20

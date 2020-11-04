@@ -71,6 +71,7 @@ platform_do_upgrade() {
 	engenius,eap2200 |\
 	luma,wrtq-329acn |\
 	mobipromo,cm520-79f |\
+	yinuolink,yn-q418 |\
 	qxwlan,e2600ac-c2)
 		nand_do_upgrade "$1"
 		;;

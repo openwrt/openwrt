@@ -592,6 +592,19 @@ define Device/mobipromo_cm520-79f
 endef
 TARGET_DEVICES += mobipromo_cm520-79f
 
+define Device/yinuolink_yn-q418
+	$(call Device/FitzImage)
+	$(call Device/UbiFit)
+	DEVICE_DTS_CONFIG := config@5
+	DEVICE_VENDOR := YiNuoLink
+	DEVICE_MODEL := YN-Q418
+	SOC := qcom-ipq4018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += yinuolink_yn-q418
+
 define Device/netgear_ex61x0v2
 	$(call Device/DniImage)
 	DEVICE_DTS_CONFIG := config@4
