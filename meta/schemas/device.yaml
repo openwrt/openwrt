@@ -114,7 +114,6 @@ properties:
     type: array
     items:
       $ref: file:ethernet.yaml
-    minItems: 1
 
   usb:
     $id: '#/properties/usb'
@@ -135,6 +134,12 @@ properties:
     title: JTAG
     type: boolean
 
+  auto_converted:
+    $id: '#/properties/auto_converted'
+    title: Automatically Converted
+    description: Migrated from Wiki data source
+    type: boolean
+
   memory_mb:
     $id: '#/properties/memory_mb'
     title: Memory in MegaByte
@@ -147,6 +152,14 @@ properties:
     $id: '#/properties/model'
     title: Model
     type: string
+
+  supported_since_commit:
+    $id: '#/properties/supported_since_commit'
+    title: Supported Since Git Commit
+    type: string
+    pattern: "^[a-zA-Z0-9]+$"
+    minLength: 6
+    maxLength: 40
 
   variant:
     $id: '#/properties/variant'
@@ -168,6 +181,7 @@ properties:
     type: string
     enum:
       - unknown
+      - unknown_params
       - none
       - 9600/8N1
       - 19200/8N1
@@ -224,7 +238,10 @@ properties:
       - type: string
         enum:
           - HDMI
+          - Headphone
           - Headphone Jack
+          - I2S
+          - Line
           - Line-In
           - Line-Out
           - Microphone
@@ -240,8 +257,11 @@ properties:
         enum:
           - Camera
           - Composite
+          - DVI-D
           - HDMI
+          - I2S
           - LVDS
+          - MIPI
           - MIPI DSI
           - VGA
           - other
@@ -260,14 +280,15 @@ properties:
   bluetooth:
     $id: '#/properties/bluetooth'
     title: Bluetooth
-    type: number
+    type: string
     enum:
-      - 4.0
-      - 4.1
-      - 4.2
-      - 5.0
-      - 5.1
-      - 5.2
+      - BLE
+      - "4.0"
+      - "4.1"
+      - "4.2"
+      - "5.0"
+      - "5.1"
+      - "5.2"
 
   wifi:
     $id: '#/properties/wifi'

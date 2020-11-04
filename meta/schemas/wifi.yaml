@@ -53,3 +53,36 @@ items:
         $id: '#/properties/wifi/items/anyOf/0/properties/hardware'
         title: WiFi hardware
         type: string
+
+      version:
+        $id: '#/properties/wifi/items/anyOf/0/properties/version'
+        title: WiFi Alliance Version
+        type: array
+        items:
+          type: string
+          enum:
+            - Wi-Fi 6
+            - Wi-Fi 7
+
+      protocols:
+        $id: '#/properties/wifi/items/anyOf/0/properties/protocols'
+        title: WiFi protocol
+        type: array
+        items:
+          type: string
+          enum:
+            - a
+            - ac
+            - ad
+            - af
+            - ah
+            - ai
+            - aj
+            - aq
+            - ax
+            - ay
+            - b
+            - ba
+            - be
+            - g
+            - n
