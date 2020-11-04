@@ -7,21 +7,7 @@ include ./common-tp-link.mk
 DEFAULT_SOC := mt7621
 
 KERNEL_DTB += -d21
-DEVICE_VARS += UIMAGE_MAGIC ELECOM_HWNAME LINKSYS_HWNAME
-
-# The OEM webinterface expects an kernel with initramfs which has the uImage
-# header field ih_name.
-# We don't want to set the header name field for the kernel include in the
-# sysupgrade image as well, as this image shouldn't be accepted by the OEM
-# webinterface. It will soft-brick the board.
-define Build/custom-initramfs-uimage
-	mkimage -A $(LINUX_KARCH) \
-		-O linux -T kernel \
-		-C lzma -a $(KERNEL_LOADADDR) $(if $(UIMAGE_MAGIC),-M $(UIMAGE_MAGIC),) \
-		-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
-		-n '$(1)' -d $@ $@.new
-	mv $@.new $@
-endef
+DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME
 
 define Build/elecom-wrc-gs-factory
 	$(eval product=$(word 1,$(1)))
@@ -538,32 +524,35 @@ define Device/iodata_nand
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+# The OEM webinterface expects an kernel with initramfs which has the uImage
+# header field ih_name.
+# We don't want to set the header name field for the kernel include in the
+# sysupgrade image as well, as this image shouldn't be accepted by the OEM
+# webinterface. It will soft-brick the board.
+
 define Device/iodata_wn-ax1167gr2
   $(Device/iodata_nand)
-  UIMAGE_MAGIC := 0x434f4d42
   DEVICE_MODEL := WN-AX1167GR2
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
-	custom-initramfs-uimage 3.10(XBC.1)b10 | iodata-mstc-header
+	uImage lzma -M 0x434f4d42 -n '3.10(XBC.1)b10' | iodata-mstc-header
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr2
 
 define Device/iodata_wn-ax2033gr
   $(Device/iodata_nand)
-  UIMAGE_MAGIC := 0x434f4d42
   DEVICE_MODEL := WN-AX2033GR
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
-	custom-initramfs-uimage 3.10(VST.1)C10 | iodata-mstc-header
+	uImage lzma -M 0x434f4d42 -n '3.10(VST.1)C10' | iodata-mstc-header
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += iodata_wn-ax2033gr
 
 define Device/iodata_wn-dx1167r
   $(Device/iodata_nand)
-  UIMAGE_MAGIC := 0x434f4d43
   DEVICE_MODEL := WN-DX1167R
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
-	custom-initramfs-uimage 3.10(XIK.1)b10 | iodata-mstc-header
+	uImage lzma -M 0x434f4d43 -n '3.10(XIK.1)b10' | iodata-mstc-header
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += iodata_wn-dx1167r
