@@ -32,7 +32,7 @@ MAKE_VARS += PLATFORM=linux
 define Package/wireguard-tools
   $(call Package/wireguard/Default)
   TITLE:=WireGuard userspace control program (wg)
-  DEPENDS:=+ip
+  DEPENDS:=+@BUSYBOX_CONFIG_IP +@BUSYBOX_CONFIG_FEATURE_IP_LINK
 endef
 
 define Package/wireguard-tools/description
