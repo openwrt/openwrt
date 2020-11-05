@@ -862,6 +862,17 @@ define Device/engenius_loader_okli
 	check-size | engenius-tar-gz $$$$(ENGENIUS_IMGNAME)
 endef
 
+define Device/engenius_eap300-v2
+  $(Device/engenius_loader_okli)
+  SOC := ar9341
+  DEVICE_MODEL := EAP300
+  DEVICE_VARIANT := v2
+  IMAGE_SIZE := 12032k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := senao-eap300v2
+endef
+TARGET_DEVICES += engenius_eap300-v2
+
 define Device/engenius_ecb1750
   SOC := qca9558
   DEVICE_VENDOR := EnGenius
