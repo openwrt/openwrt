@@ -274,7 +274,7 @@ define Device/dlink_dir-1960-a1
 endef
 TARGET_DEVICES += dlink_dir-1960-a1
 
-define Device/dlink-dir-2640-a1
+define Device/dlink_dir-2640-a1
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-2640
   DEVICE_VARIANT := A1
