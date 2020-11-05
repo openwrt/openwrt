@@ -21,11 +21,12 @@ PKG_LICENSE:=GPL-3.0+
 PKG_CPE_ID:=cpe:/a:gnu:gdb
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/nls.mk
 
 define Package/gdb/Default
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:=+!USE_MUSL:libthread-db +zlib
+  DEPENDS:=+!USE_MUSL:libthread-db $(ICONV_DEPENDS) $(INTL_DEPENDS)
   URL:=https://www.gnu.org/software/gdb/
 endef
 
@@ -44,7 +45,7 @@ endef
 define Package/gdbserver
 $(call Package/gdb/Default)
   TITLE:=Remote server for GNU Debugger
-  DEPENDS=@!arc
+  DEPENDS+=@!arc
 endef
 
 define Package/gdbserver/description
@@ -68,6 +69,7 @@ CONFIGURE_VARS+= \
 	ac_cv_search_tgetent="$(TARGET_LDFLAGS) -lncurses -lreadline"
 
 TARGET_LDFLAGS+= \
+	$(INTL_LDFLAGS) $(if $(INTL_FULL),-lintl) \
 	-static-libstdc++ \
 	-Wl,--gc-sections
 
