@@ -63,7 +63,7 @@ platform_do_bootloader_upgrade() {
 			-d "/tmp/boot/boot/grub" \
 			-r "hd0,${parttable}1" \
 			"/dev/$diskdev" \
-		&& touch /tmp/boot/grub/upgraded
+		&& touch /tmp/boot/boot/grub/upgraded
 
 		umount /tmp/boot
 	fi

@@ -21,6 +21,9 @@ octeon_move_config() {
 		itus,shield-router)
 			move_config "/dev/mmcblk1p1"
 			;;
+		ubnt,edgerouter-4)
+			move_config "/dev/mmcblk0p1"
+			;;
 	esac
 }
 
