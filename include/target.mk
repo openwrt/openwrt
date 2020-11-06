@@ -38,6 +38,11 @@ ifeq ($(CONFIG_SMALL_FLASH),)
 DEFAULT_PACKAGES+=procd-ujail
 endif
 
+# include seccomp ld-preload hooks if kernel supports it
+ifneq ($(CONFIG_KERNEL_SECCOMP),)
+DEFAULT_PACKAGES+=procd-seccomp
+endif
+
 # For the basic set
 DEFAULT_PACKAGES.basic:=
 # For nas targets
