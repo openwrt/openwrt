@@ -637,7 +637,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return received;
 --- a/drivers/net/ethernet/freescale/gianfar.c
 +++ b/drivers/net/ethernet/freescale/gianfar.c
-@@ -3203,7 +3203,7 @@ static int gfar_poll_rx_sq(struct napi_s
+@@ -3195,7 +3195,7 @@ static int gfar_poll_rx_sq(struct napi_s
  
  	if (work_done < budget) {
  		u32 imask;
@@ -646,7 +646,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		/* Clear the halt bit in RSTAT */
  		gfar_write(&regs->rstat, gfargrp->rstat);
  
-@@ -3292,7 +3292,7 @@ static int gfar_poll_rx(struct napi_stru
+@@ -3284,7 +3284,7 @@ static int gfar_poll_rx(struct napi_stru
  
  	if (!num_act_queues) {
  		u32 imask;
@@ -701,7 +701,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/ibm/ibmveth.c
 +++ b/drivers/net/ethernet/ibm/ibmveth.c
-@@ -1323,7 +1323,7 @@ static int ibmveth_poll(struct napi_stru
+@@ -1334,7 +1334,7 @@ static int ibmveth_poll(struct napi_stru
  	ibmveth_replenish_task(adapter);
  
  	if (frames_processed < budget) {
@@ -1040,7 +1040,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		writel(irq->mask, adpt->base + EMAC_INT_MASK);
 --- a/drivers/net/ethernet/realtek/r8169.c
 +++ b/drivers/net/ethernet/realtek/r8169.c
-@@ -7578,7 +7578,7 @@ static int rtl8169_poll(struct napi_stru
+@@ -7582,7 +7582,7 @@ static int rtl8169_poll(struct napi_stru
  	}
  
  	if (work_done < budget) {
@@ -1390,7 +1390,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (more_to_do)
 --- a/drivers/staging/octeon/ethernet-rx.c
 +++ b/drivers/staging/octeon/ethernet-rx.c
-@@ -429,7 +429,7 @@ static int cvm_oct_napi_poll(struct napi
+@@ -433,7 +433,7 @@ static int cvm_oct_napi_poll(struct napi
  
  	if (rx_count < budget) {
  		/* No more work */

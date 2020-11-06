@@ -125,7 +125,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	return 0;
  }
  
-@@ -1780,7 +1850,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1782,7 +1852,8 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_OTPCTL,
  		.div_reg = CM_OTPDIV,
  		.int_bits = 4,
@@ -135,7 +135,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	/*
  	 * Used for a 1Mhz clock for the system clocksource, and also used
  	 * bythe watchdog timer and the camera pulse generator.
-@@ -1814,13 +1885,15 @@ static const struct bcm2835_clk_desc clk
+@@ -1816,13 +1887,15 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_H264CTL,
  		.div_reg = CM_H264DIV,
  		.int_bits = 4,
@@ -153,7 +153,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/*
  	 * Secondary SDRAM clock.  Used for low-voltage modes when the PLL
-@@ -1831,13 +1904,15 @@ static const struct bcm2835_clk_desc clk
+@@ -1833,13 +1906,15 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_SDCCTL,
  		.div_reg = CM_SDCDIV,
  		.int_bits = 6,
@@ -171,7 +171,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	/*
  	 * VPU clock.  This doesn't have an enable bit, since it drives
  	 * the bus for everything else, and is special so it doesn't need
-@@ -1851,7 +1926,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1853,7 +1928,8 @@ static const struct bcm2835_clk_desc clk
  		.int_bits = 12,
  		.frac_bits = 8,
  		.flags = CLK_IS_CRITICAL,
@@ -181,7 +181,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/* clocks with per parent mux */
  	[BCM2835_CLOCK_AVEO]	= REGISTER_PER_CLK(
-@@ -1859,19 +1935,22 @@ static const struct bcm2835_clk_desc clk
+@@ -1861,19 +1937,22 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_AVEOCTL,
  		.div_reg = CM_AVEODIV,
  		.int_bits = 4,
@@ -207,7 +207,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_CLOCK_DFT]	= REGISTER_PER_CLK(
  		.name = "dft",
  		.ctl_reg = CM_DFTCTL,
-@@ -1883,7 +1962,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1885,7 +1964,8 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_DPICTL,
  		.div_reg = CM_DPIDIV,
  		.int_bits = 4,
@@ -217,7 +217,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/* Arasan EMMC clock */
  	[BCM2835_CLOCK_EMMC]	= REGISTER_PER_CLK(
-@@ -1891,7 +1971,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1893,7 +1973,8 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_EMMCCTL,
  		.div_reg = CM_EMMCDIV,
  		.int_bits = 4,
@@ -227,7 +227,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/* General purpose (GPIO) clocks */
  	[BCM2835_CLOCK_GP0]	= REGISTER_PER_CLK(
-@@ -1900,7 +1981,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1902,7 +1983,8 @@ static const struct bcm2835_clk_desc clk
  		.div_reg = CM_GP0DIV,
  		.int_bits = 12,
  		.frac_bits = 12,
@@ -237,7 +237,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_CLOCK_GP1]	= REGISTER_PER_CLK(
  		.name = "gp1",
  		.ctl_reg = CM_GP1CTL,
-@@ -1908,7 +1990,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1910,7 +1992,8 @@ static const struct bcm2835_clk_desc clk
  		.int_bits = 12,
  		.frac_bits = 12,
  		.flags = CLK_IS_CRITICAL,
@@ -247,7 +247,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[BCM2835_CLOCK_GP2]	= REGISTER_PER_CLK(
  		.name = "gp2",
  		.ctl_reg = CM_GP2CTL,
-@@ -1923,40 +2006,46 @@ static const struct bcm2835_clk_desc clk
+@@ -1925,40 +2008,46 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_HSMCTL,
  		.div_reg = CM_HSMDIV,
  		.int_bits = 4,
@@ -300,7 +300,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/* TV encoder clock.  Only operating frequency is 108Mhz.  */
  	[BCM2835_CLOCK_VEC]	= REGISTER_PER_CLK(
-@@ -1969,7 +2058,8 @@ static const struct bcm2835_clk_desc clk
+@@ -1971,7 +2060,8 @@ static const struct bcm2835_clk_desc clk
  		 * Allow rate change propagation only on PLLH_AUX which is
  		 * assigned index 7 in the parent array.
  		 */
@@ -310,7 +310,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/* dsi clocks */
  	[BCM2835_CLOCK_DSI0E]	= REGISTER_PER_CLK(
-@@ -1977,25 +2067,29 @@ static const struct bcm2835_clk_desc clk
+@@ -1979,25 +2069,29 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_DSI0ECTL,
  		.div_reg = CM_DSI0EDIV,
  		.int_bits = 4,

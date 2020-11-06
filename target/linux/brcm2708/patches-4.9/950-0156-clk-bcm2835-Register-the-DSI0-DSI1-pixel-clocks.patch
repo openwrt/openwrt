@@ -109,7 +109,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	init.num_parents = 1;
  	init.name = data->name;
  	init.ops = &bcm2835_pll_clk_ops;
-@@ -1301,18 +1330,22 @@ static struct clk_hw *bcm2835_register_c
+@@ -1303,18 +1332,22 @@ static struct clk_hw *bcm2835_register_c
  	struct bcm2835_clock *clock;
  	struct clk_init_data init;
  	const char *parents[1 << CM_SRC_BITS];
@@ -139,7 +139,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	}
  
  	memset(&init, 0, sizeof(init));
-@@ -1448,6 +1481,47 @@ static const char *const bcm2835_clock_v
+@@ -1450,6 +1483,47 @@ static const char *const bcm2835_clock_v
  	__VA_ARGS__)
  
  /*
@@ -187,7 +187,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
   * the real definition of all the pll, pll_dividers and clocks
   * these make use of the above REGISTER_* macros
   */
-@@ -1910,6 +1984,18 @@ static const struct bcm2835_clk_desc clk
+@@ -1912,6 +1986,18 @@ static const struct bcm2835_clk_desc clk
  		.div_reg = CM_DSI1EDIV,
  		.int_bits = 4,
  		.frac_bits = 8),
@@ -206,7 +206,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/* the gates */
  
-@@ -1968,8 +2054,19 @@ static int bcm2835_clk_probe(struct plat
+@@ -1970,8 +2056,19 @@ static int bcm2835_clk_probe(struct plat
  	if (IS_ERR(cprman->regs))
  		return PTR_ERR(cprman->regs);
  
