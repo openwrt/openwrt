@@ -330,6 +330,8 @@ hostapd_common_add_bss_config() {
 
 	config_add_array airtime_sta_weight
 	config_add_int airtime_bss_weight airtime_bss_limit
+
+	config_add_array hostapd_bss_options
 }
 
 hostapd_set_vlan_file() {
@@ -939,6 +941,11 @@ hostapd_set_bss_options() {
 		json_for_each_item append_osu_provider osu_provider
 		json_for_each_item append_operator_icon operator_icon
 	fi
+
+	json_get_values opts hostapd_bss_options
+	for val in $opts; do
+		append bss_conf "$val" "$N"
+	done
 
 	bss_md5sum=$(echo $bss_conf | md5sum | cut -d" " -f1)
 	append bss_conf "config_id=$bss_md5sum" "$N"
