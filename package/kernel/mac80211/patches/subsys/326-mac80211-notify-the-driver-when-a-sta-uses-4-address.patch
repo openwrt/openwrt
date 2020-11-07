@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -3840,6 +3840,8 @@ enum ieee80211_reconfig_type {
+@@ -3843,6 +3843,8 @@ enum ieee80211_reconfig_type {
   *	This callback may sleep.
   * @update_vif_config: Update virtual interface offload flags
   *	This callback may sleep.
@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  struct ieee80211_ops {
  	void (*tx)(struct ieee80211_hw *hw,
-@@ -4153,6 +4155,8 @@ struct ieee80211_ops {
+@@ -4156,6 +4158,8 @@ struct ieee80211_ops {
  				struct ieee80211_sta *sta, u8 tids);
  	void (*update_vif_offload)(struct ieee80211_hw *hw,
  				   struct ieee80211_vif *vif);
@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1694,6 +1694,7 @@ static int ieee80211_change_station(stru
+@@ -1696,6 +1696,7 @@ static int ieee80211_change_station(stru
  
  			rcu_assign_pointer(vlansdata->u.vlan.sta, sta);
  			__ieee80211_check_fast_rx_iface(vlansdata);
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		if (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
 --- a/net/mac80211/driver-ops.h
 +++ b/net/mac80211/driver-ops.h
-@@ -1400,4 +1400,18 @@ static inline void drv_update_vif_offloa
+@@ -1399,4 +1399,18 @@ static inline void drv_update_vif_offloa
  	trace_drv_return_void(local);
  }
  
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* __MAC80211_DRIVER_OPS */
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -3518,6 +3518,9 @@ static bool ieee80211_assoc_success(stru
+@@ -3523,6 +3523,9 @@ static bool ieee80211_assoc_success(stru
  		goto out;
  	}
  
@@ -73,7 +73,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/*
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
-@@ -2739,6 +2739,33 @@ DEFINE_EVENT(local_sdata_addr_evt, drv_u
+@@ -2740,6 +2740,33 @@ DEFINE_EVENT(local_sdata_addr_evt, drv_u
  	TP_ARGS(local, sdata)
  );
  

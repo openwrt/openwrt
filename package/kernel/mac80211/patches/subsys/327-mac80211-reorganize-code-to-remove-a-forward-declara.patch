@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  bool __ieee80211_recalc_txpower(struct ieee80211_sub_if_data *sdata)
  {
-@@ -349,6 +348,511 @@ static int ieee80211_check_queues(struct
+@@ -349,6 +348,518 @@ static int ieee80211_check_queues(struct
  	return 0;
  }
  
@@ -220,7 +220,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	case NL80211_IFTYPE_P2P_DEVICE:
 +		/* relies on synchronize_rcu() below */
 +		RCU_INIT_POINTER(local->p2p_sdata, NULL);
-+		/* fall through */
++		fallthrough;
 +	default:
 +		cancel_work_sync(&sdata->work);
 +		/*
@@ -290,7 +290,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		if (!(sdata->u.mntr.flags & MONITOR_FLAG_ACTIVE))
 +			break;
 +
-+		/* fall through */
++		fallthrough;
 +	default:
 +		if (going_down)
 +			drv_remove_interface(local, sdata);
@@ -481,17 +481,24 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +{
 +	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 +	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 +	struct ieee80211_hdr *hdr;
-+	struct ieee80211_radiotap_header *rtap = (void *)skb->data;
++	int len_rthdr;
 +
 +	if (local->hw.queues < IEEE80211_NUM_ACS)
 +		return 0;
 +
-+	if (skb->len < 4 ||
-+	    skb->len < le16_to_cpu(rtap->it_len) + 2 /* frame control */)
++	/* reset flags and info before parsing radiotap header */
++	memset(info, 0, sizeof(*info));
++
++	if (!ieee80211_parse_tx_radiotap(skb, dev))
 +		return 0; /* doesn't matter, frame will be dropped */
 +
-+	hdr = (void *)((u8 *)skb->data + le16_to_cpu(rtap->it_len));
++	len_rthdr = ieee80211_get_radiotap_len(skb->data);
++	hdr = (struct ieee80211_hdr *)(skb->data + len_rthdr);
++	if (skb->len < len_rthdr + 2 ||
++	    skb->len < len_rthdr + ieee80211_hdrlen(hdr->frame_control))
++		return 0; /* doesn't matter, frame will be dropped */
 +
 +	return ieee80211_select_queue_80211(sdata, skb, hdr);
 +}
@@ -531,7 +538,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static bool ieee80211_iftype_supports_encap_offload(enum nl80211_iftype iftype)
  {
  	switch (iftype) {
-@@ -389,6 +893,31 @@ static bool ieee80211_set_sdata_offload_
+@@ -389,6 +900,31 @@ static bool ieee80211_set_sdata_offload_
  	return true;
  }
  
@@ -563,7 +570,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static void ieee80211_recalc_sdata_offload(struct ieee80211_sub_if_data *sdata)
  {
-@@ -866,511 +1395,6 @@ int ieee80211_do_open(struct wireless_de
+@@ -866,518 +1402,6 @@ int ieee80211_do_open(struct wireless_de
  	return res;
  }
  
@@ -764,7 +771,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	case NL80211_IFTYPE_P2P_DEVICE:
 -		/* relies on synchronize_rcu() below */
 -		RCU_INIT_POINTER(local->p2p_sdata, NULL);
--		/* fall through */
+-		fallthrough;
 -	default:
 -		cancel_work_sync(&sdata->work);
 -		/*
@@ -834,7 +841,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -		if (!(sdata->u.mntr.flags & MONITOR_FLAG_ACTIVE))
 -			break;
 -
--		/* fall through */
+-		fallthrough;
 -	default:
 -		if (going_down)
 -			drv_remove_interface(local, sdata);
@@ -1025,17 +1032,24 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -{
 -	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 -	struct ieee80211_local *local = sdata->local;
+-	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 -	struct ieee80211_hdr *hdr;
--	struct ieee80211_radiotap_header *rtap = (void *)skb->data;
+-	int len_rthdr;
 -
 -	if (local->hw.queues < IEEE80211_NUM_ACS)
 -		return 0;
 -
--	if (skb->len < 4 ||
--	    skb->len < le16_to_cpu(rtap->it_len) + 2 /* frame control */)
+-	/* reset flags and info before parsing radiotap header */
+-	memset(info, 0, sizeof(*info));
+-
+-	if (!ieee80211_parse_tx_radiotap(skb, dev))
 -		return 0; /* doesn't matter, frame will be dropped */
 -
--	hdr = (void *)((u8 *)skb->data + le16_to_cpu(rtap->it_len));
+-	len_rthdr = ieee80211_get_radiotap_len(skb->data);
+-	hdr = (struct ieee80211_hdr *)(skb->data + len_rthdr);
+-	if (skb->len < len_rthdr + 2 ||
+-	    skb->len < len_rthdr + ieee80211_hdrlen(hdr->frame_control))
+-		return 0; /* doesn't matter, frame will be dropped */
 -
 -	return ieee80211_select_queue_80211(sdata, skb, hdr);
 -}
@@ -1075,7 +1089,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void ieee80211_if_free(struct net_device *dev)
  {
  	free_percpu(netdev_tstats(dev));
-@@ -1401,32 +1425,6 @@ static void ieee80211_if_setup_no_queue(
+@@ -1408,32 +1432,6 @@ static void ieee80211_if_setup_no_queue(
  #endif
  }
  

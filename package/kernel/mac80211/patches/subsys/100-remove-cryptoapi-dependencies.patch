@@ -64,7 +64,7 @@
 -	aead_request_set_ad(aead_req, sg[0].length);
 -
 -	crypto_aead_encrypt(aead_req);
--	kzfree(aead_req);
+-	kfree_sensitive(aead_req);
 -
 -	return 0;
 -}
@@ -99,7 +99,7 @@
 -	aead_request_set_ad(aead_req, sg[0].length);
 -
 -	err = crypto_aead_decrypt(aead_req);
--	kzfree(aead_req);
+-	kfree_sensitive(aead_req);
 -
 -	return err;
 -}
