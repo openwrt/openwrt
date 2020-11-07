@@ -27,8 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	if (!mi->avg_ampdu_len)
 -		return AVG_AMPDU_SIZE;
 +	int duration;
- 
--	return MINSTREL_TRUNC(mi->avg_ampdu_len);
++
 +	if (mi->avg_ampdu_len)
 +		return MINSTREL_TRUNC(mi->avg_ampdu_len);
 +
@@ -36,7 +35,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		return 1;
 +
 +	duration = minstrel_get_duration(mi->max_tp_rate[0]);
-+
+ 
+-	return MINSTREL_TRUNC(mi->avg_ampdu_len);
 +	if (duration > 400 * 1000)
 +		return 2;
 +

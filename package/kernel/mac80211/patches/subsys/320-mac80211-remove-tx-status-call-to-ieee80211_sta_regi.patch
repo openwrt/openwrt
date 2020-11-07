@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -997,12 +997,6 @@ static void __ieee80211_tx_status(struct
+@@ -995,12 +995,6 @@ static void __ieee80211_tx_status(struct
  			ieee80211_sta_tx_notify(sta->sdata, (void *) skb->data,
  						acked, info->status.tx_time);
  

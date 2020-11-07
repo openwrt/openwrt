@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2045,8 +2045,6 @@ void ieee80211_dynamic_ps_timer(struct t
+@@ -2047,8 +2047,6 @@ void ieee80211_dynamic_ps_timer(struct t
  void ieee80211_send_nullfunc(struct ieee80211_local *local,
  			     struct ieee80211_sub_if_data *sdata,
  			     bool powersave);
@@ -73,7 +73,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void ieee80211_mlme_send_probe_req(struct ieee80211_sub_if_data *sdata,
-@@ -3600,8 +3575,8 @@ static bool ieee80211_assoc_success(stru
+@@ -3605,8 +3580,8 @@ static bool ieee80211_assoc_success(stru
  	 * Start timer to probe the connection to the AP now.
  	 * Also start the timer that will detect beacon loss.
  	 */
@@ -83,7 +83,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	ret = true;
   out:
-@@ -4569,10 +4544,26 @@ static void ieee80211_sta_conn_mon_timer
+@@ -4577,10 +4552,26 @@ static void ieee80211_sta_conn_mon_timer
  		from_timer(sdata, t, u.mgd.conn_mon_timer);
  	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
  	struct ieee80211_local *local = sdata->local;
@@ -122,7 +122,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	sta->rx_stats.fragments++;
  
  	u64_stats_update_begin(&rx->sta->rx_stats.syncp);
-@@ -4149,7 +4146,6 @@ void ieee80211_check_fast_rx(struct sta_
+@@ -4153,7 +4150,6 @@ void ieee80211_check_fast_rx(struct sta_
  			fastrx.sa_offs = offsetof(struct ieee80211_hdr, addr2);
  			fastrx.expected_ds_bits = 0;
  		} else {
@@ -130,7 +130,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			fastrx.da_offs = offsetof(struct ieee80211_hdr, addr1);
  			fastrx.sa_offs = offsetof(struct ieee80211_hdr, addr3);
  			fastrx.expected_ds_bits =
-@@ -4379,11 +4375,6 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4383,11 +4379,6 @@ static bool ieee80211_invoke_fast_rx(str
  	    pskb_trim(skb, skb->len - fast_rx->icv_len))
  		goto drop;
  
@@ -162,7 +162,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u8 da_offs, sa_offs;
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -1227,9 +1227,6 @@ void ieee80211_tx_status_8023(struct iee
+@@ -1225,9 +1225,6 @@ void ieee80211_tx_status_8023(struct iee
  	sta->status_stats.retry_count += retry_count;
  
  	if (ieee80211_hw_check(hw, REPORTS_TX_ACK_STATUS)) {

@@ -1,6 +1,6 @@
 --- a/local-symbols
 +++ b/local-symbols
-@@ -424,43 +424,6 @@ USB_SIERRA_NET=
+@@ -435,43 +435,6 @@ USB_SIERRA_NET=
  USB_VL600=
  USB_NET_CH9200=
  USB_NET_AQC111=
@@ -160,8 +160,8 @@
  	gpiodev = bus->chipco.dev ? : pcidev;
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmsmac/led.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmsmac/led.h
-@@ -22,7 +22,7 @@ struct brcms_led {
- 	bool active_low;
+@@ -24,7 +24,7 @@ struct brcms_led {
+ 	struct gpio_desc *gpiod;
  };
  
 -#ifdef CPTCFG_BCMA_DRIVER_GPIO
@@ -192,7 +192,7 @@
  	select BRCMUTIL
 --- a/Kconfig.local
 +++ b/Kconfig.local
-@@ -1276,117 +1276,6 @@ config BACKPORTED_USB_NET_CH9200
+@@ -1309,117 +1309,6 @@ config BACKPORTED_USB_NET_CH9200
  config BACKPORTED_USB_NET_AQC111
  	tristate
  	default USB_NET_AQC111
