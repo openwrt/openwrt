@@ -34,7 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -3749,7 +3749,7 @@ static int ath11k_mac_mgmt_tx_wmi(struct
+@@ -3898,7 +3898,7 @@ static int ath11k_mac_mgmt_tx_wmi(struct
  		return -ENOSPC;
  
  	info = IEEE80211_SKB_CB(skb);
@@ -43,7 +43,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		if ((ieee80211_is_action(hdr->frame_control) ||
  		     ieee80211_is_deauth(hdr->frame_control) ||
  		     ieee80211_is_disassoc(hdr->frame_control)) &&
-@@ -3876,7 +3876,7 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -4025,7 +4025,7 @@ static void ath11k_mac_op_tx(struct ieee
  	bool is_prb_rsp;
  	int ret;
  
@@ -84,18 +84,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 + * @IEEE80211_TX_INTCFL_NEED_TXPROCESSING: completely internal to mac80211,
 + *	used to indicate that a pending frame requires TX processing before
 + *	it can be sent out.
+  * @IEEE80211_TX_CTRL_NO_SEQNO: Do not overwrite the sequence number that
+  *	has already been assigned to this frame.
   *
-  * These flags are used in tx_info->control.flags.
-  */
-@@ -835,7 +835,7 @@ enum mac80211_tx_control_flags {
+@@ -837,7 +837,7 @@ enum mac80211_tx_control_flags {
  	IEEE80211_TX_CTRL_AMSDU			= BIT(3),
  	IEEE80211_TX_CTRL_FAST_XMIT		= BIT(4),
  	IEEE80211_TX_CTRL_SKIP_MPATH_LOOKUP	= BIT(5),
 -	IEEE80211_TX_CTRL_HW_80211_ENCAP	= BIT(6),
 +	IEEE80211_TX_INTCFL_NEED_TXPROCESSING	= BIT(6),
+ 	IEEE80211_TX_CTRL_NO_SEQNO		= BIT(7),
  };
  
- /*
 --- a/net/mac80211/mesh_hwmp.c
 +++ b/net/mac80211/mesh_hwmp.c
 @@ -212,7 +212,7 @@ static void prepare_frame_for_deferred_t
@@ -129,7 +129,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2897,7 +2897,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2901,7 +2901,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	fwd_hdr->frame_control &= ~cpu_to_le16(IEEE80211_FCTL_RETRY);
  	info = IEEE80211_SKB_CB(fwd_skb);
  	memset(info, 0, sizeof(*info));
@@ -153,7 +153,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	sta->status_stats.filtered++;
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -530,7 +530,7 @@ ieee80211_tx_h_unicast_ps_buf(struct iee
+@@ -531,7 +531,7 @@ ieee80211_tx_h_unicast_ps_buf(struct iee
  
  		info->control.jiffies = jiffies;
  		info->control.vif = &tx->sdata->vif;
@@ -162,7 +162,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		info->flags &= ~IEEE80211_TX_TEMPORARY_FLAGS;
  		skb_queue_tail(&sta->ps_tx_buf[ac], tx->skb);
  		spin_unlock(&sta->ps_lock);
-@@ -1132,7 +1132,7 @@ static bool ieee80211_tx_prep_agg(struct
+@@ -1134,7 +1134,7 @@ static bool ieee80211_tx_prep_agg(struct
  				       tx->sta->sta.addr, tx->sta->sta.aid);
  			}
  			info->control.vif = &tx->sdata->vif;
@@ -171,7 +171,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			info->flags &= ~IEEE80211_TX_TEMPORARY_FLAGS;
  			__skb_queue_tail(&tid_tx->pending, skb);
  			if (skb_queue_len(&tid_tx->pending) > STA_MAX_TX_BUFFER)
-@@ -1177,7 +1177,7 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1179,7 +1179,7 @@ ieee80211_tx_prepare(struct ieee80211_su
  	 * we are doing the needed processing, so remove the flag
  	 * now.
  	 */
@@ -180,7 +180,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	hdr = (struct ieee80211_hdr *) skb->data;
  
-@@ -1256,7 +1256,7 @@ static struct txq_info *ieee80211_get_tx
+@@ -1258,7 +1258,7 @@ static struct txq_info *ieee80211_get_tx
  	    (info->control.flags & IEEE80211_TX_CTRL_PS_RESPONSE))
  		return NULL;
  
@@ -189,7 +189,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	    unlikely(!ieee80211_is_data_present(hdr->frame_control))) {
  		if ((!ieee80211_is_mgmt(hdr->frame_control) ||
  		     ieee80211_is_bufferable_mmpdu(hdr->frame_control) ||
-@@ -3640,7 +3640,7 @@ begin:
+@@ -3637,7 +3637,7 @@ begin:
  	else
  		info->flags &= ~IEEE80211_TX_CTL_AMPDU;
  
@@ -198,7 +198,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto encap_out;
  
  	if (info->control.flags & IEEE80211_TX_CTRL_FAST_XMIT) {
-@@ -4230,7 +4230,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4227,7 +4227,7 @@ static void ieee80211_8023_xmit(struct i
  		sdata = container_of(sdata->bss,
  				     struct ieee80211_sub_if_data, u.ap);
  
@@ -207,7 +207,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	info->control.vif = &sdata->vif;
  
  	if (key)
-@@ -4355,7 +4355,7 @@ static bool ieee80211_tx_pending_skb(str
+@@ -4352,7 +4352,7 @@ static bool ieee80211_tx_pending_skb(str
  
  	sdata = vif_to_sdata(info->control.vif);
  
@@ -216,10 +216,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		chanctx_conf = rcu_dereference(sdata->vif.chanctx_conf);
  		if (unlikely(!chanctx_conf)) {
  			dev_kfree_skb(skb);
-@@ -4363,7 +4363,7 @@ static bool ieee80211_tx_pending_skb(str
+@@ -4360,7 +4360,7 @@ static bool ieee80211_tx_pending_skb(str
  		}
  		info->band = chanctx_conf->def.chan->band;
- 		result = ieee80211_tx(sdata, NULL, skb, true, 0);
+ 		result = ieee80211_tx(sdata, NULL, skb, true);
 -	} else if (info->control.flags & IEEE80211_TX_CTRL_HW_80211_ENCAP) {
 +	} else if (info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
  		if (ieee80211_lookup_ra_sta(sdata, skb, &sta)) {

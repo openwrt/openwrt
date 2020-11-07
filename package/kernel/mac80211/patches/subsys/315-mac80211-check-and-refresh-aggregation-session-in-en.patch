@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4189,6 +4189,8 @@ static void ieee80211_8023_xmit(struct i
+@@ -4186,6 +4186,8 @@ static void ieee80211_8023_xmit(struct i
  	bool authorized = false;
  	bool multicast;
  	unsigned char *ra = ehdr->h_dest;
@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (IS_ERR(sta) || (sta && !sta->uploaded))
  		sta = NULL;
-@@ -4226,6 +4228,22 @@ static void ieee80211_8023_xmit(struct i
+@@ -4223,6 +4225,22 @@ static void ieee80211_8023_xmit(struct i
  
  	memset(info, 0, sizeof(*info));
  

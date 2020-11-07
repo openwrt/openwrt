@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1092,12 +1092,14 @@ ieee80211_info_get_tx_time_est(struct ie
+@@ -1095,12 +1095,14 @@ ieee80211_info_get_tx_time_est(struct ie
   * @info: Basic tx status information
   * @skb: Packet skb (can be NULL if not provided by the driver)
   * @rate: The TX rate that was used when sending the packet
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -1053,7 +1053,10 @@ static void __ieee80211_tx_status(struct
+@@ -1051,7 +1051,10 @@ static void __ieee80211_tx_status(struct
  	 * with this test...
  	 */
  	if (!local->monitors && (!send_to_cooked || !local->cooked_mntrs)) {
@@ -39,7 +39,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return;
  	}
  
-@@ -1182,7 +1185,10 @@ free:
+@@ -1180,7 +1183,10 @@ free:
  		return;
  
  	ieee80211_report_used_skb(local, skb, false);

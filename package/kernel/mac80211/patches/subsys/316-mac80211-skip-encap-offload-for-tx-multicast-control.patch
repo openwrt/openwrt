@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4184,88 +4184,47 @@ static void ieee80211_8023_xmit(struct i
+@@ -4181,88 +4181,47 @@ static void ieee80211_8023_xmit(struct i
  				struct sk_buff *skb)
  {
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
  		sdata = container_of(sdata->bss,
-@@ -4286,6 +4245,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4283,6 +4242,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  					    struct net_device *dev)
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
@@ -123,7 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct sta_info *sta;
  
  	if (WARN_ON(!sdata->hw_80211_encap)) {
-@@ -4302,6 +4262,10 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4299,6 +4259,10 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  
  	if (ieee80211_lookup_ra_sta(sdata, skb, &sta))
  		kfree_skb(skb);
