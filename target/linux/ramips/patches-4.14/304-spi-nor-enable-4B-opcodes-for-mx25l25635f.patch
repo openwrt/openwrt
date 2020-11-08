@@ -1,4 +1,4 @@
-This hack can be dropped after the next stable release from
+This hack can be partially dropped after the next stable release from
 v5.x-tree.
 
 The problem was fixed upstream by
@@ -8,12 +8,18 @@ commit 2bffa65da43e ("mtd: spi-nor: Add a post BFPT fixup for MX25L25635E")
 For reference see:
 <https://github.com/openwrt/openwrt/pull/1743>
 
+There is another problem with mx25l25635e - unable to soft reboot
+https://forum.openwrt.org/t/newifi-d1-unable-to-reboot/7910
+It happens on Newifi D2 of mqmaker witi 512mb
+It is enough to add | SPI_NOR_4B_READ_OP to mx25l25635e flash info
+
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
 @@ -1103,6 +1103,7 @@ static const struct flash_info spi_nor_i
  	{ "mx25l12805d", INFO(0xc22018, 0, 64 * 1024, 256, 0) },
  	{ "mx25l12855e", INFO(0xc22618, 0, 64 * 1024, 256, 0) },
- 	{ "mx25l25635e", INFO(0xc22019, 0, 64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+-	{ "mx25l25635e", INFO(0xc22019, 0, 64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++	{ "mx25l25635e", INFO(0xc22019, 0, 64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_READ_OP) },
 +	{ "mx25l25635f", INFO(0xc22019, 0, 64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
  	{ "mx25u25635f", INFO(0xc22539, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_4B_OPCODES) },
  	{ "mx25l25655e", INFO(0xc22619, 0, 64 * 1024, 512, 0) },
