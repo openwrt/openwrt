@@ -512,8 +512,8 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  
  	return 0;
  
-@@ -1069,10 +1086,10 @@ static void flexcan_chip_stop(struct net
- 	flexcan_chip_disable(priv);
+@@ -1074,10 +1091,10 @@ static int __flexcan_chip_stop(struct ne
+ 		goto out_chip_unfreeze;
  
  	/* Disable all interrupts */
 -	flexcan_write(0, &regs->imask2);
@@ -527,7 +527,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  
  	flexcan_transceiver_disable(priv);
  	priv->can.state = CAN_STATE_STOPPED;
-@@ -1187,26 +1204,26 @@ static int register_flexcandev(struct ne
+@@ -1209,26 +1226,26 @@ static int register_flexcandev(struct ne
  	err = flexcan_chip_disable(priv);
  	if (err)
  		goto out_disable_per;
@@ -559,7 +559,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  	if (!(reg & FLEXCAN_MCR_FEN)) {
  		netdev_err(dev, "Could not enable RX FIFO, unsupported core\n");
  		err = -ENODEV;
-@@ -1234,8 +1251,12 @@ static void unregister_flexcandev(struct
+@@ -1256,8 +1273,12 @@ static void unregister_flexcandev(struct
  static const struct of_device_id flexcan_of_match[] = {
  	{ .compatible = "fsl,imx6q-flexcan", .data = &fsl_imx6q_devtype_data, },
  	{ .compatible = "fsl,imx28-flexcan", .data = &fsl_imx28_devtype_data, },
@@ -572,7 +572,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  	{ /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(of, flexcan_of_match);
-@@ -1315,6 +1336,21 @@ static int flexcan_probe(struct platform
+@@ -1337,6 +1358,21 @@ static int flexcan_probe(struct platform
  	dev->flags |= IFF_ECHO;
  
  	priv = netdev_priv(dev);

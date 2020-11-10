@@ -36,7 +36,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	pll = kzalloc(sizeof(*pll), GFP_KERNEL);
  	if (!pll)
  		return NULL;
-@@ -1398,8 +1403,10 @@ bcm2835_register_pll_divider(struct bcm2
+@@ -1400,8 +1405,10 @@ bcm2835_register_pll_divider(struct bcm2
  	divider->div.table = NULL;
  
  	if (!(cprman_read(cprman, data->cm_reg) & data->hold_mask)) {
@@ -49,7 +49,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	}
  
  	divider->cprman = cprman;
-@@ -2152,6 +2159,8 @@ static const struct bcm2835_clk_desc clk
+@@ -2154,6 +2161,8 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_PERIICTL),
  };
  
@@ -58,7 +58,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  /*
   * Permanently take a reference on the parent of the SDRAM clock.
   *
-@@ -2171,6 +2180,19 @@ static int bcm2835_mark_sdc_parent_criti
+@@ -2173,6 +2182,19 @@ static int bcm2835_mark_sdc_parent_criti
  	return clk_prepare_enable(parent);
  }
  
@@ -78,7 +78,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  static int bcm2835_clk_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
-@@ -2180,6 +2202,7 @@ static int bcm2835_clk_probe(struct plat
+@@ -2182,6 +2204,7 @@ static int bcm2835_clk_probe(struct plat
  	const struct bcm2835_clk_desc *desc;
  	const size_t asize = ARRAY_SIZE(clk_desc_array);
  	size_t i;
@@ -86,7 +86,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	int ret;
  
  	cprman = devm_kzalloc(dev, sizeof(*cprman) +
-@@ -2195,6 +2218,13 @@ static int bcm2835_clk_probe(struct plat
+@@ -2197,6 +2220,13 @@ static int bcm2835_clk_probe(struct plat
  	if (IS_ERR(cprman->regs))
  		return PTR_ERR(cprman->regs);
  

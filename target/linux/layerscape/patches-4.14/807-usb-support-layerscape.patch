@@ -382,7 +382,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	dwc->lpm_nyet_threshold = lpm_nyet_threshold;
  	dwc->tx_de_emphasis = tx_de_emphasis;
  
-@@ -1376,12 +1541,14 @@ static int dwc3_resume_common(struct dwc
+@@ -1387,12 +1552,14 @@ static int dwc3_resume_common(struct dwc
  
  	switch (dwc->dr_mode) {
  	case USB_DR_MODE_PERIPHERAL:
@@ -1206,7 +1206,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	struct list_head	cached_itd_list;
 --- a/drivers/usb/host/fsl-mph-dr-of.c
 +++ b/drivers/usb/host/fsl-mph-dr-of.c
-@@ -229,6 +229,17 @@ static int fsl_usb2_mph_dr_of_probe(stru
+@@ -232,6 +232,17 @@ static int fsl_usb2_mph_dr_of_probe(stru
  	pdata->has_fsl_erratum_a005697 =
  		of_property_read_bool(np, "fsl,usb_erratum-a005697");
  
