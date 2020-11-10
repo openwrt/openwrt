@@ -63,8 +63,20 @@ ask_bool() {
 	[ "$answer" -gt 0 ]
 }
 
+_v() {
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$*" >&2
+}
+
+_vn() {
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo -n "$*" >&2
+}
+
 v() {
-	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$(date) upgrade: $@" >&2
+	_v "$(date) upgrade: $@"
+}
+
+vn() {
+	_vn "$(date) upgrade: $@"
 }
 
 json_string() {
