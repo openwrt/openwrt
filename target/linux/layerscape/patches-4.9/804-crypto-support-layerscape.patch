@@ -9166,6 +9166,15 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	ablkcipher_unmap(jrdev, edesc, req);
  
+@@ -2052,7 +911,7 @@ static void ablkcipher_encrypt_done(stru
+ 	 * The crypto API expects us to set the IV (req->info) to the last
+ 	 * ciphertext block when running in CBC mode.
+ 	 */
+-	if ((ctx->class1_alg_type & OP_ALG_AAI_MASK) == OP_ALG_AAI_CBC)
++	if ((ctx->cdata.algtype & OP_ALG_AAI_MASK) == OP_ALG_AAI_CBC)
+ 		scatterwalk_map_and_copy(req->info, req->dst, req->nbytes -
+ 					 ivsize, ivsize, 0);
+ 
 @@ -2074,8 +933,7 @@ static void ablkcipher_decrypt_done(stru
  	dev_err(jrdev, "%s %d: err 0x%x\n", __func__, __LINE__, err);
  #endif
@@ -9189,6 +9198,15 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +		     edesc->dst_nents > 1 ? 100 : req->nbytes, 1);
  
  	ablkcipher_unmap(jrdev, edesc, req);
+ 
+@@ -2094,7 +952,7 @@ static void ablkcipher_decrypt_done(stru
+ 	 * The crypto API expects us to set the IV (req->info) to the last
+ 	 * ciphertext block when running in CBC mode.
+ 	 */
+-	if ((ctx->class1_alg_type & OP_ALG_AAI_MASK) == OP_ALG_AAI_CBC)
++	if ((ctx->cdata.algtype & OP_ALG_AAI_MASK) == OP_ALG_AAI_CBC)
+ 		scatterwalk_map_and_copy(req->info, req->src, req->nbytes -
+ 					 ivsize, ivsize, 0);
  
 @@ -2127,7 +985,7 @@ static void init_aead_job(struct aead_re
  	init_job_desc_shared(desc, ptr, len, HDR_SHARE_DEFER | HDR_REVERSE);
