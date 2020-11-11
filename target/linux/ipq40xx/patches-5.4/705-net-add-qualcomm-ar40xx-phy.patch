@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -588,6 +588,13 @@ config MDIO_IPQ40XX
+@@ -584,6 +584,13 @@ config MDIO_IPQ40XX
  	  This driver supports the MDIO interface found in Qualcomm
  	  Atheros ipq40xx Soc chip.
  
@@ -16,7 +16,7 @@
  config MICREL_KS8995MA
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -70,6 +70,7 @@ ifdef CONFIG_HWMON
+@@ -69,6 +69,7 @@ ifdef CONFIG_HWMON
  aquantia-objs			+= aquantia_hwmon.o
  endif
  obj-$(CONFIG_AQUANTIA_PHY)	+= aquantia.o
