@@ -1,0 +1,67 @@
+From 3c0e8e1259d223a1493c47f7e277d05b93909b6b Mon Sep 17 00:00:00 2001
+From: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+Date: Mon, 2 Nov 2020 11:34:06 +0800
+Subject: [PATCH 1/2] bcm63xx: add BQL support
+
+Add Byte Queue Limits support to reduce/remove bufferbloat in bcm63xx target.
+
+Signed-off-by: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+---
+ bcm63xx_enet.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -423,9 +423,11 @@ static int bcm_enet_tx_reclaim(struct ne
+ {
+ 	struct bcm_enet_priv *priv;
+ 	int released;
++	unsigned int bytes;
+ 
+ 	priv = netdev_priv(dev);
+ 	released = 0;
++	bytes = 0;
+ 
+ 	while (priv->tx_desc_count < priv->tx_ring_size) {
+ 		struct bcm_enet_desc *desc;
+@@ -461,10 +463,13 @@ static int bcm_enet_tx_reclaim(struct ne
+ 		if (desc->len_stat & DMADESC_UNDER_MASK)
+ 			dev->stats.tx_errors++;
+ 
++		bytes += skb->len;
+ 		dev_kfree_skb(skb);
+ 		released++;
+ 	}
+ 
++	netdev_completed_queue(dev, released, bytes);
++
+ 	if (netif_queue_stopped(dev) && released)
+ 		netif_wake_queue(dev);
+ 
+@@ -631,6 +636,8 @@ bcm_enet_start_xmit(struct sk_buff *skb,
+ 	desc->len_stat = len_stat;
+ 	wmb();
+ 
++	netdev_sent_queue(dev, skb->len);
++
+ 	/* kick tx dma */
+ 	enet_dmac_writel(priv, priv->dma_chan_en_mask,
+ 				 ENETDMAC_CHANCFG, priv->tx_chan);
+@@ -1051,6 +1058,8 @@ static int bcm_enet_open(struct net_devi
+ 	else
+ 		bcm_enet_adjust_link(dev);
+ 
++	netdev_reset_queue(dev);
++
+ 	netif_start_queue(dev);
+ 	return 0;
+ 
+@@ -2281,6 +2290,8 @@ static int bcm_enetsw_open(struct net_de
+ 	enet_dmac_writel(priv, ENETDMAC_IR_PKTDONE_MASK,
+ 			 ENETDMAC_IRMASK, priv->tx_chan);
+ 
++	netdev_reset_queue(dev);
++
+ 	netif_carrier_on(dev);
+ 	netif_start_queue(dev);
+ 
