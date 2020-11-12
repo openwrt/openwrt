@@ -1,0 +1,71 @@
+From 3c0e8e1259d223a1493c47f7e277d05b93909b6b Mon Sep 17 00:00:00 2001
+From: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+Date: Mon, 2 Nov 2020 11:34:06 +0800
+Subject: [PATCH 1/2] bcm63xx: add BQL support
+
+Add Byte Queue Limits support to reduce/remove bufferbloat in bcm63xx target.
+
+Signed-off-by: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+---
+ bcm63xx_enet.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/net/ethernet/broadcom/bcm63xx_enet.c b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+index 2ba9f87..f07b7ae 100644
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -432,9 +432,11 @@ static int bcm_enet_tx_reclaim(struct net_device *dev, int force)
+ {
+ 	struct bcm_enet_priv *priv;
+ 	int released;
++	unsigned int bytes;
+ 
+ 	priv = netdev_priv(dev);
+ 	released = 0;
++	bytes = 0;
+ 
+ 	while (priv->tx_desc_count < priv->tx_ring_size) {
+ 		struct bcm_enet_desc *desc;
+@@ -470,10 +472,13 @@ static int bcm_enet_tx_reclaim(struct net_device *dev, int force)
+ 		if (desc->len_stat & DMADESC_UNDER_MASK)
+ 			dev->stats.tx_errors++;
+ 
++		bytes += skb->len;
+ 		dev_kfree_skb(skb);
+ 		released++;
+ 	}
+ 
++	netdev_completed_queue(dev, released, bytes);
++
+ 	if (netif_queue_stopped(dev) && released)
+ 		netif_wake_queue(dev);
+ 
+@@ -640,6 +645,8 @@ bcm_enet_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	desc->len_stat = len_stat;
+ 	wmb();
+ 
++	netdev_sent_queue(dev, skb->len);
++
+ 	/* kick tx dma */
+ 	enet_dmac_writel(priv, priv->dma_chan_en_mask,
+ 				 ENETDMAC_CHANCFG, priv->tx_chan);
+@@ -1060,6 +1067,8 @@ static int bcm_enet_open(struct net_device *dev)
+ 	else
+ 		bcm_enet_adjust_link(dev);
+ 
++	netdev_reset_queue(dev);
++
+ 	netif_start_queue(dev);
+ 	return 0;
+ 
+@@ -2304,6 +2313,8 @@ static int bcm_enetsw_open(struct net_device *dev)
+ 	enet_dmac_writel(priv, ENETDMAC_IR_PKTDONE_MASK,
+ 			 ENETDMAC_IRMASK, priv->tx_chan);
+ 
++	netdev_reset_queue(dev);
++
+ 	netif_carrier_on(dev);
+ 	netif_start_queue(dev);
+ 
+-- 
+2.17.1
