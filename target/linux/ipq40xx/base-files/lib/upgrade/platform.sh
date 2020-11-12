@@ -111,6 +111,10 @@ platform_do_upgrade() {
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
+	mikrotik,hap-ac2)
+		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
+		default_do_upgrade "$1"
+		;;
 	openmesh,a42 |\
 	openmesh,a62 |\
 	plasmacloud,pa1200 |\
