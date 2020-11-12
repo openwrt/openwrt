@@ -1225,9 +1225,6 @@ define Device/xiaomi_mir3g-v2
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3G
   DEVICE_VARIANT := v2
-  DEVICE_ALT0_VENDOR := Xiaomi
-  DEVICE_ALT0_MODEL := Mi Router 4A
-  DEVICE_ALT0_VARIANT := Gigabit Edition
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += xiaomi_mir3g-v2
@@ -1250,6 +1247,17 @@ define Device/xiaomi_mir3p
 	kmod-usb-ledtrig-usbport uboot-envtools
 endef
 TARGET_DEVICES += xiaomi_mir3p
+
+define Device/xiaomi_mi-router-4a-gigabit
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 14848k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4A
+  DEVICE_VARIANT := Gigabit Edition
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+endef
+TARGET_DEVICES += xiaomi_mi-router-4a-gigabit
 
 define Device/xiaomi_redmi-router-ac2100
   $(Device/xiaomi-ac2100)
