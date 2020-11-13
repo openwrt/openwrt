@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -658,7 +658,7 @@ ieee80211_tx_h_select_key(struct ieee802
+@@ -662,7 +662,7 @@ ieee80211_tx_h_select_key(struct ieee802
  		if (!skip_hw && tx->key &&
  		    tx->key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE)
  			info->control.hw_key = &tx->key->conf;
