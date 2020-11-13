@@ -1,0 +1,82 @@
+--- a/mt7615/mcu.c
++++ b/mt7615/mcu.c
+@@ -730,12 +730,12 @@ mt7615_mcu_add_beacon_offload(struct mt7
+ 	memcpy(req.pkt + MT_TXD_SIZE, skb->data, skb->len);
+ 	req.pkt_len = cpu_to_le16(MT_TXD_SIZE + skb->len);
+ 	req.tim_ie_pos = cpu_to_le16(MT_TXD_SIZE + offs.tim_offset);
+-	if (offs.csa_counter_offs[0]) {
++	if (offs.cntdwn_counter_offs[0]) {
+ 		u16 csa_offs;
+ 
+-		csa_offs = MT_TXD_SIZE + offs.csa_counter_offs[0] - 4;
++		csa_offs = MT_TXD_SIZE + offs.cntdwn_counter_offs[0] - 4;
+ 		req.csa_ie_pos = cpu_to_le16(csa_offs);
+-		req.csa_cnt = skb->data[offs.csa_counter_offs[0]];
++		req.csa_cnt = skb->data[offs.cntdwn_counter_offs[0]];
+ 	}
+ 	dev_kfree_skb(skb);
+ 
+@@ -1801,10 +1801,10 @@ mt7615_mcu_uni_add_beacon_offload(struct
+ 	req.beacon_tlv.pkt_len = cpu_to_le16(MT_TXD_SIZE + skb->len);
+ 	req.beacon_tlv.tim_ie_pos = cpu_to_le16(MT_TXD_SIZE + offs.tim_offset);
+ 
+-	if (offs.csa_counter_offs[0]) {
++	if (offs.cntdwn_counter_offs[0]) {
+ 		u16 csa_offs;
+ 
+-		csa_offs = MT_TXD_SIZE + offs.csa_counter_offs[0] - 4;
++		csa_offs = MT_TXD_SIZE + offs.cntdwn_counter_offs[0] - 4;
+ 		req.beacon_tlv.csa_ie_pos = cpu_to_le16(csa_offs);
+ 	}
+ 	dev_kfree_skb(skb);
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -2358,7 +2358,7 @@ mt7915_mcu_beacon_csa(struct sk_buff *rs
+ 		      struct bss_info_bcn *bcn,
+ 		      struct ieee80211_mutable_offsets *offs)
+ {
+-	if (offs->csa_counter_offs[0]) {
++	if (offs->cntdwn_counter_offs[0]) {
+ 		struct tlv *tlv;
+ 		struct bss_info_bcn_csa *csa;
+ 
+@@ -2366,7 +2366,7 @@ mt7915_mcu_beacon_csa(struct sk_buff *rs
+ 						   sizeof(*csa), &bcn->sub_ntlv,
+ 						   &bcn->len);
+ 		csa = (struct bss_info_bcn_csa *)tlv;
+-		csa->cnt = skb->data[offs->csa_counter_offs[0]];
++		csa->cnt = skb->data[offs->cntdwn_counter_offs[0]];
+ 	}
+ }
+ 
+@@ -2388,8 +2388,8 @@ mt7915_mcu_beacon_cont(struct mt7915_dev
+ 	cont->pkt_len = cpu_to_le16(MT_TXD_SIZE + skb->len);
+ 	cont->tim_ofs = cpu_to_le16(offs->tim_offset);
+ 
+-	if (offs->csa_counter_offs[0])
+-		cont->csa_ofs = cpu_to_le16(offs->csa_counter_offs[0] - 4);
++	if (offs->cntdwn_counter_offs[0])
++		cont->csa_ofs = cpu_to_le16(offs->cntdwn_counter_offs[0] - 4);
+ 
+ 	buf = (u8 *)tlv + sizeof(*cont);
+ 	mt7915_mac_write_txwi(dev, (__le32 *)buf, skb, wcid, NULL,
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1082,7 +1082,7 @@ EXPORT_SYMBOL_GPL(mt76_get_txpower);
+ static void
+ __mt76_csa_finish(void *priv, u8 *mac, struct ieee80211_vif *vif)
+ {
+-	if (vif->csa_active && ieee80211_csa_is_complete(vif))
++	if (vif->csa_active && ieee80211_beacon_cntdwn_is_complete(vif))
+ 		ieee80211_csa_finish(vif);
+ }
+ 
+@@ -1107,7 +1107,7 @@ __mt76_csa_check(void *priv, u8 *mac, st
+ 	if (!vif->csa_active)
+ 		return;
+ 
+-	dev->csa_complete |= ieee80211_csa_is_complete(vif);
++	dev->csa_complete |= ieee80211_beacon_cntdwn_is_complete(vif);
+ }
+ 
+ void mt76_csa_check(struct mt76_dev *dev)
