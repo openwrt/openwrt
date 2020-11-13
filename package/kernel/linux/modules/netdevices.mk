@@ -286,20 +286,6 @@ endef
 
 $(eval $(call KernelPackage,switch-bcm53xx-mdio))
 
-define KernelPackage/switch-mvsw61xx
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Marvell 88E61xx switch support
-  DEPENDS:=+kmod-swconfig
-  KCONFIG:=CONFIG_MVSW61XX_PHY
-  FILES:=$(LINUX_DIR)/drivers/net/phy/mvsw61xx.ko
-  AUTOLOAD:=$(call AutoLoad,42,mvsw61xx)
-endef
-
-define KernelPackage/switch-mvsw61xx/description
- Marvell 88E61xx switch support
-endef
-
-$(eval $(call KernelPackage,switch-mvsw61xx))
 
 define KernelPackage/switch-ip17xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
