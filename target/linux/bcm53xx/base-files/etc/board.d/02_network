@@ -30,6 +30,10 @@ bcm53xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5t@eth0"
 		;;
+	linksys,panamera)
+		ucidef_add_switch "switch1" \
+			"0:lan" "1:lan:7" "2:lan:4" "3:lan:8" "4:wan" "5t@eth0"
+		;;
 	luxul,abr-4500-v1|\
 	luxul,xbr-4500-v1)
 		ucidef_add_switch "switch0" \
@@ -83,6 +87,7 @@ bcm53xx_setup_macs()
 
 	case "$board" in
 	dlink,dir-885l | \
+	linksys,panamera | \
 	netgear,r7900 | \
 	netgear,r8000 | \
 	netgear,r8500)
@@ -104,6 +109,7 @@ bcm53xx_setup_macs()
 		offset=1
 		;;
 	dlink,dir-885l | \
+	linksys,panamera | \
 	netgear,r7900 | \
 	netgear,r8000 | \
 	netgear,r8500)
