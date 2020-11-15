@@ -218,6 +218,25 @@ define Device/avm_fritzbox-4040
 endef
 TARGET_DEVICES += avm_fritzbox-4040
 
+define Device/pangubox_pgb-m5
+	$(call Device/FitImage)
+	DEVICE_VENDOR := PanguBox
+	DEVICE_MODEL := PGB-M5
+	SOC := qcom-ipq4019
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DTB_SIZE := 65536
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 65536k
+	UBINIZE_OPTS := -E 5
+	FILESYSTEMS := squashfs
+	IMAGES := nand-factory.bin nand-sysupgrade.bin
+	IMAGE/nand-factory.bin := append-ubi
+	DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9984-ct  \
+		kmod-usb-ledtrig-usbport ipq-wifi-pangubox_pbg-m5
+endef
+TARGET_DEVICES += pangubox_pgb-m5
+
 define Device/avm_fritzbox-7530
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := AVM
