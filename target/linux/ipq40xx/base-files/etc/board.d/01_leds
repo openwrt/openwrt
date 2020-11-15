@@ -46,6 +46,11 @@ engenius,ens620ext)
 	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "eth0"
 	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "eth1"
 	;;
+pangubox,pgb-m5)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "pgb-m5:2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "pgb-m5:5g" "phy1tpt"
+	ucidef_set_led_usbport "usb" "USB" "pgb-m5:usb" "usb1-port1" "usb2-port1"
+	;;
 mobipromo,cm520-79f)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "blue:lan1" "switch0" "0x10"
