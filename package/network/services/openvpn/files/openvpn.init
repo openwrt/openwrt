@@ -69,6 +69,14 @@ section_enabled() {
 	[ $enable -gt 0 ] || [ $enabled -gt 0 ]
 }
 
+create_temp_file() {
+	mkdir -p "$(dirname "$1")"
+	rm -f "$1"
+	touch "$1"
+	chown root "$1"
+	chmod 0600 "$1"
+}
+
 openvpn_get_dev() {
 	local dev dev_type
 	local name="$1"
@@ -103,6 +111,31 @@ openvpn_get_dev() {
 	echo "--dev-type $dev_type --dev $dev"
 }
 
+openvpn_get_credentials() {
+	local name="$1"
+	local ret=""
+
+	config_get cert_password "$name" cert_password
+	config_get password "$name" password
+	config_get username "$name" username
+
+	if [ -n "$cert_password" ]; then
+		create_temp_file /var/run/openvpn.$name.pass
+		echo "$cert_password" > /var/run/openvpn.$name.pass
+		ret=" --askpass /var/run/openvpn.$name.pass "
+	fi
+
+	if [ -n "$username" ]; then
+		create_temp_file /var/run/openvpn.$name.userpass
+		echo "$username" > /var/run/openvpn.$name.userpass
+		echo "$password" >> /var/run/openvpn.$name.userpass
+		ret=" --auth-user-pass /var/run/openvpn.$name.userpass "
+	fi
+
+	# Return overrides
+	echo "$ret"
+}
+
 openvpn_add_instance() {
 	local name="$1"
 	local dir="$2"
@@ -118,7 +151,8 @@ openvpn_add_instance() {
 		--up "/usr/libexec/openvpn-hotplug up $name" \
 		--down "/usr/libexec/openvpn-hotplug down $name" \
 		--script-security "${security:-2}" \
-		$(openvpn_get_dev "$name" "$conf")
+		$(openvpn_get_dev "$name" "$conf") \
+		$(openvpn_get_credentials "$name" "$conf")
 	procd_set_param file "$dir/$conf"
 	procd_set_param term_timeout 15
 	procd_set_param respawn
@@ -150,8 +184,7 @@ start_instance() {
 		return
 	fi
 
-	[ ! -d "/var/etc" ] && mkdir -p "/var/etc"
-	[ -f "/var/etc/openvpn-$s.conf" ] && rm "/var/etc/openvpn-$s.conf"
+	create_temp_file "/var/etc/openvpn-$s.conf"
 
 	append_bools "$s" $OPENVPN_BOOLS
 	append_params "$s" $OPENVPN_PARAMS
