@@ -978,7 +978,11 @@ static int edma_axi_probe(struct platform_device *pdev)
 		edma_netdev[i]->wanted_features = NETIF_F_HW_CSUM | NETIF_F_SG |
 					     NETIF_F_TSO | NETIF_F_GRO;
 
-		if (of_property_read_bool(np, "qcom,single-phy") && edma_cinfo->num_gmac == 1)
+		if ((of_property_read_bool(np, "qcom,single-phy") && edma_cinfo->num_gmac == 1)
+#ifdef CONFIG_IPQ40XX_PORT_ISOLATION
+				|| 1
+#endif
+		)
 			edma_netdev[i]->features |= NETIF_F_HW_VLAN_CTAG_TX;
 
 #ifdef CONFIG_RFS_ACCEL
@@ -986,7 +990,12 @@ static int edma_axi_probe(struct platform_device *pdev)
 		edma_netdev[i]->hw_features |=  NETIF_F_NTUPLE;
 		edma_netdev[i]->vlan_features |= NETIF_F_NTUPLE;
 		edma_netdev[i]->wanted_features |= NETIF_F_NTUPLE;
-		if (of_property_read_bool(np, "qcom,single-phy") && edma_cinfo->num_gmac == 1) {
+
+		if ((of_property_read_bool(np, "qcom,single-phy") && edma_cinfo->num_gmac == 1)
+#ifdef CONFIG_IPQ40XX_PORT_ISOLATION
+				|| 1
+#endif
+		) {
 			edma_netdev[i]->features |= NETIF_F_RXHASH;
 			edma_netdev[i]->hw_features |= NETIF_F_RXHASH;
 			edma_netdev[i]->vlan_features |= NETIF_F_RXHASH;

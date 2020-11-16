@@ -1,0 +1,15 @@
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -71,4 +71,12 @@ config ESSEDMA
+ 	  To compile this driver as a module, choose M here. The module
+ 	  will be called essedma.ko.
+ 
++config IPQ40XX_PORT_ISOLATION
++	default n
++	depends on ESSEDMA
++	bool "Enable port isolation on ipq40xx socs"
++	help
++	  This diver supports either port-isolation or nested vlans.
++	  Say Y to enable port-isolation instead of nested vlans.
++
+ endif # NET_VENDOR_QUALCOMM
