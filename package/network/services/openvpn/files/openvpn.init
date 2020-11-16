@@ -146,7 +146,15 @@ start_instance() {
 
 	if [ ! -z "$config" ]; then
 		append UCI_STARTED "$config" "$LIST_SEP"
-		openvpn_add_instance "$s" "${config%/*}" "$config" "$script_security"
+		# Allow to ignore up & down scripts as we have hotplug
+		config_get_bool drop_scripts "$s" 'drop_scripts' 0
+		if [ "$drop_scripts" -gt 0 ]; then
+			create_temp_file "/var/etc/openvpn-$s.conf"
+			sed -e 's|^[[:blank:]]*up|;up|' -e 's|^[[:blank:]]*down|;down|' "$config" > "/var/etc/openvpn-$s.conf"
+			openvpn_add_instance "$s" "${config%/*}" "/var/etc/openvpn-$s.conf" "$script_security"
+		else
+			openvpn_add_instance "$s" "${config%/*}" "$config" "$script_security"
+		fi
 		return
 	fi
 
