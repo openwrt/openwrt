@@ -152,14 +152,12 @@
 		hdd1_red {
 			label = "ls421de:red:hdd1";
 			gpios = <&gpio1 29 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
 			linux,default-trigger = "ata1";
 		};
 
 		hdd2_red {
 			label = "ls421de:red:hdd2";
 			gpios = <&gpio1 30 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
 			linux,default-trigger = "ata2";
 		};
 	};

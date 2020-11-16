@@ -81,7 +81,7 @@
  	};
  
  	cpus {
-@@ -40,23 +39,38 @@
+@@ -40,23 +39,36 @@
  
  	gpio-keys {
  		compatible = "gpio-keys";
@@ -108,13 +108,11 @@
 +		green {
 +			label = "bpi-r64:pio:green";
 +			gpios = <&pio 89 GPIO_ACTIVE_HIGH>;
-+			default-state = "off";
 +		};
 +
 +		red {
 +			label = "bpi-r64:pio:red";
 +			gpios = <&pio 88 GPIO_ACTIVE_HIGH>;
-+			default-state = "off";
  		};
  	};
  
