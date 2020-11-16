@@ -102,6 +102,8 @@ hostapd_common_add_device_config() {
 	config_add_string acs_chan_bias
 	config_add_array hostapd_options
 
+	config_add_int airtime_mode
+
 	hostapd_add_log_config
 }
 
