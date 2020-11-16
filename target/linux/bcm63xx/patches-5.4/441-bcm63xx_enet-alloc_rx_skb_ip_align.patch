@@ -6,7 +6,7 @@
  		if (!priv->rx_skb[desc_idx]) {
 -			skb = netdev_alloc_skb(dev, priv->rx_skb_size);
 +			if (priv->enet_is_sw)
-+				skb = napi_alloc_skb(&priv->napi, priv->rx_skb_size);
++				skb = netdev_alloc_skb_ip_align(dev, priv->rx_skb_size);
 +			else
 +				skb = netdev_alloc_skb(dev, priv->rx_skb_size);
  			if (!skb)
