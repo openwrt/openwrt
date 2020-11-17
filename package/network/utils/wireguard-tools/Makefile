@@ -31,13 +31,22 @@ MAKE_PATH:=src
 MAKE_VARS += PLATFORM=linux
 
 define Package/wireguard-tools
-  $(call Package/wireguard/Default)
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=VPN
+  URL:=https://www.wireguard.com
+  MAINTAINER:=Jason A. Donenfeld <Jason@zx2c4.com>
   TITLE:=WireGuard userspace control program (wg)
   DEPENDS:=+libmnl +ip
 endef
 
 define Package/wireguard-tools/description
-  $(call Package/wireguard/Default/description)
+  WireGuard is a novel VPN that runs inside the Linux Kernel and utilizes
+  state-of-the-art cryptography. It aims to be faster, simpler, leaner, and
+  more useful than IPSec, while avoiding the massive headache. It intends to
+  be considerably more performant than OpenVPN.  WireGuard is designed as a
+  general purpose VPN for running on embedded interfaces and super computers
+  alike, fit for many different circumstances. It uses UDP.
 
   This package provides the userspace control program for WireGuard,
   `wg(8)`, a netifd protocol helper, and a re-resolve watchdog script.
