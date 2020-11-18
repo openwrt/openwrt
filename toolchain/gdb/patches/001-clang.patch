@@ -1,0 +1,144 @@
+--- a/readline/configure
++++ b/readline/configure
+@@ -4938,6 +4938,7 @@ else
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ 
++#include <stdlib.h>
+ #include <signal.h>
+ #ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+@@ -5016,6 +5017,7 @@ else
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ 
++#include <stdlib.h>
+ #ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+ #endif
+@@ -5334,6 +5336,43 @@ $as_echo "#define GWINSZ_IN_SYS_IOCTL 1"
+ fi
+ 
+ 
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ioctl in termio.h termios.h" >&5
++$as_echo_n "checking for ioctl in termio.h termios.h... " >&6; }
++if ${bash_cv_termio_have_ioctl+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
++/* end confdefs.h.  */
++#ifdef HAVE_TERMIOS_H
++#  include <termios.h>
++#endif
++#ifdef HAVE_TERMIO_H
++#  include <termio.h>
++#endif
++int
++main ()
++{
++ioctl(0, 0, 0);
++  ;
++  return 0;
++}
++_ACEOF
++if ac_fn_c_try_compile "$LINENO"; then :
++  bash_cv_termio_have_ioctl=yes
++else
++  bash_cv_termio_have_ioctl=no
++fi
++rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
++fi
++
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $bash_cv_termio_have_ioctl" >&5
++$as_echo "$bash_cv_termio_have_ioctl" >&6; }
++if test $bash_cv_termio_have_ioctl = yes; then
++$as_echo "#define TERMIO_HAVE_IOCTL 1" >>confdefs.h
++
++fi
++
++
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sig_atomic_t in signal.h" >&5
+ $as_echo_n "checking for sig_atomic_t in signal.h... " >&6; }
+ if ${ac_cv_have_sig_atomic_t+:} false; then :
+--- a/readline/aclocal.m4
++++ b/readline/aclocal.m4
+@@ -780,6 +780,7 @@ AC_DEFUN(BASH_FUNC_POSIX_SETJMP,
+ AC_MSG_CHECKING(for presence of POSIX-style sigsetjmp/siglongjmp)
+ AC_CACHE_VAL(bash_cv_func_sigsetjmp,
+ [AC_TRY_RUN([
++#include <stdlib.h>
+ #ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+ #endif
+@@ -1300,6 +1301,7 @@ AC_REQUIRE([BASH_SYS_SIGNAL_VINTAGE])
+ AC_MSG_CHECKING([if signal handlers must be reinstalled when invoked])
+ AC_CACHE_VAL(bash_cv_must_reinstall_sighandlers,
+ [AC_TRY_RUN([
++#include <stdlib.h>
+ #include <signal.h>
+ #ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+@@ -1493,6 +1495,24 @@ AC_DEFINE(GWINSZ_IN_SYS_IOCTL)
+ fi
+ ])
+ 
++AC_DEFUN(BASH_TERMIO_HAVE_IOCTL,
++[AC_MSG_CHECKING(for ioctl in termio.h termios.h)
++AC_CACHE_VAL(bash_cv_termio_have_ioctl,
++[AC_TRY_COMPILE([
++#ifdef HAVE_TERMIOS_H
++#  include <termios.h>
++#endif
++#ifdef HAVE_TERMIO_H
++#  include <termio.h>
++#endif
++], [ioctl(0, 0, 0);],
++  bash_cv_termio_have_ioctl=yes,bash_cv_termio_have_ioctl=no)])
++AC_MSG_RESULT($bash_cv_termio_have_ioctl)
++if test $bash_cv_termio_have_ioctl = yes; then
++AC_DEFINE(TERMIO_HAVE_IOCTL)
++fi
++])
++
+ AC_DEFUN(BASH_HAVE_TIOCSTAT,
+ [AC_MSG_CHECKING(for TIOCSTAT in sys/ioctl.h)
+ AC_CACHE_VAL(bash_cv_tiocstat_in_ioctl,
+--- a/readline/config.h.in
++++ b/readline/config.h.in
+@@ -236,6 +236,8 @@
+ 
+ #undef GWINSZ_IN_SYS_IOCTL
+ 
++#undef TERMIO_HAVE_IOCTL
++
+ #undef STRUCT_WINSIZE_IN_SYS_IOCTL
+ 
+ #undef STRUCT_WINSIZE_IN_TERMIOS
+--- a/readline/rltty.c
++++ b/readline/rltty.c
+@@ -37,9 +37,9 @@
+ 
+ #include "rldefs.h"
+ 
+-#if defined (GWINSZ_IN_SYS_IOCTL)
++#if defined (GWINSZ_IN_SYS_IOCTL) || !defined (TERMIO_HAVE_IOCTL)
+ #  include <sys/ioctl.h>
+-#endif /* GWINSZ_IN_SYS_IOCTL */
++#endif /* GWINSZ_IN_SYS_IOCTL || !TERMIO_HAVE_IOCTL */
+ 
+ #include "rltty.h"
+ #include "readline.h"
+--- a/readline/terminal.c
++++ b/readline/terminal.c
+@@ -51,9 +51,9 @@
+ /* System-specific feature definitions and include files. */
+ #include "rldefs.h"
+ 
+-#if defined (GWINSZ_IN_SYS_IOCTL) && !defined (TIOCGWINSZ)
++#if (defined (GWINSZ_IN_SYS_IOCTL) && !defined (TIOCGWINSZ)) || !defined (TERMIO_HAVE_IOCTL)
+ #  include <sys/ioctl.h>
+-#endif /* GWINSZ_IN_SYS_IOCTL && !TIOCGWINSZ */
++#endif /* (GWINSZ_IN_SYS_IOCTL && !TIOCGWINSZ) || !TERMIO_HAVE_IOCTL*/
+ 
+ #ifdef __MSDOS__
+ # include <pc.h>
