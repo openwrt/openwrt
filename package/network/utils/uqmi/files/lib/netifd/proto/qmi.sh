@@ -174,6 +174,9 @@ proto_qmi_setup() {
 	# Cleanup current state if any
 	uqmi -s -d "$device" --stop-network 0xffffffff --autoconnect > /dev/null 2>&1
 
+	# Go online
+	uqmi -s -d "$device" --set-device-operating-mode online > /dev/null 2>&1
+
 	# Set IP format
 	uqmi -s -d "$device" --set-data-format 802.3 > /dev/null 2>&1
 	uqmi -s -d "$device" --wda-set-data-format 802.3 > /dev/null 2>&1
