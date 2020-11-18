@@ -1513,6 +1513,50 @@ define Device/qxwlan_e558-v2-8m
 endef
 TARGET_DEVICES += qxwlan_e558-v2-8m
 
+define Device/qxwlan_e600g-v2
+  SOC := qca9531
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E600G
+  DEVICE_PACKAGES := kmod-usb2
+  SUPPORTED_DEVICES += e600g-v2
+endef
+
+define Device/qxwlan_e600g-v2-16m
+  $(Device/qxwlan_e600g-v2)
+  DEVICE_VARIANT := v2 (16M)
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += qxwlan_e600g-v2-16m
+
+define Device/qxwlan_e600g-v2-8m
+  $(Device/qxwlan_e600g-v2)
+  DEVICE_VARIANT := v2 (8M)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += qxwlan_e600g-v2-8m
+
+define Device/qxwlan_e600gac-v2
+  SOC := qca9531
+  DEVICE_VENDOR := Qxwlan
+  DEVICE_MODEL := E600GAC
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  SUPPORTED_DEVICES += e600gac-v2
+endef
+
+define Device/qxwlan_e600gac-v2-16m
+  $(Device/qxwlan_e600gac-v2)
+  DEVICE_VARIANT := v2 (16M)
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += qxwlan_e600gac-v2-16m
+
+define Device/qxwlan_e600gac-v2-8m
+  $(Device/qxwlan_e600gac-v2)
+  DEVICE_VARIANT := v2 (8M)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += qxwlan_e600gac-v2-8m
+
 define Device/qxwlan_e750a-v4
   SOC := ar9344
   DEVICE_VENDOR := Qxwlan

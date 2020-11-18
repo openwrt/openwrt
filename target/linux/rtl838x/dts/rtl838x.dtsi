@@ -2,12 +2,44 @@
 
 /dts-v1/;
 
+#define STRINGIZE(s) #s
+#define LAN_LABEL(p, s) STRINGIZE(p ## s)
+#define SWITCH_PORT_LABEL(n) LAN_LABEL(lan, n)
+
+#define INTERNAL_PHY(n) \
+	phy##n: ethernet-phy@##n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+		phy-is-integrated; \
+	};
+
+#define EXTERNAL_PHY(n) \
+	phy##n: ethernet-phy@##n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+	};
+
+#define EXTERNAL_SFP_PHY(n) \
+	phy##n: ethernet-phy@##n { \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+		sfp; \
+		media = "fibre"; \
+		reg = <##n>; \
+	};
+
+#define SWITCH_PORT(n, s, m) \
+	port@##n { \
+		reg = <##n>; \
+		label = SWITCH_PORT_LABEL(s) ; \
+		phy-handle = <&phy##n>; \
+		phy-mode = #m ; \
+	};
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
 
 	compatible = "realtek,rtl838x-soc";
-	reg = <0xbb000000 0xa000>;
 
 	cpus {
 		#address-cells = <1>;
@@ -54,6 +86,8 @@
 		reg = <0xb8002000 0x100>;
 
 		clock-frequency = <200000000>;
+
+		interrupt-parent = <&cpuintc>;
 		interrupts = <31>;
 
 		reg-io-width = <1>;

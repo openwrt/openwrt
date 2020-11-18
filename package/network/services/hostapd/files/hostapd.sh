@@ -102,6 +102,8 @@ hostapd_common_add_device_config() {
 	config_add_string acs_chan_bias
 	config_add_array hostapd_options
 
+	config_add_int airtime_mode
+
 	hostapd_add_log_config
 }
 
@@ -285,6 +287,7 @@ hostapd_common_add_bss_config() {
 	config_add_array hs20_conn_capab
 	config_add_string osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
 
+	config_add_array airtime_sta_weight
 	config_add_int airtime_bss_weight airtime_bss_limit
 }
 
@@ -409,6 +412,10 @@ append_hs20_conn_capab() {
 	[ -n "$1" ] && append bss_conf "hs20_conn_capab=$1" "$N"
 }
 
+append_airtime_sta_weight() {
+	[ -n "$1" ] && append bss_conf "airtime_sta_weight=$1" "$N"
+}
+
 hostapd_set_bss_options() {
 	local var="$1"
 	local phy="$2"
@@ -430,7 +437,7 @@ hostapd_set_bss_options() {
 		acct_server acct_secret acct_port acct_interval \
 		bss_load_update_period chan_util_avg_period sae_require_mfp \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key \
-		airtime_bss_weight airtime_bss_limit
+		airtime_bss_weight airtime_bss_limit airtime_sta_weight
 
 	set_default isolate 0
 	set_default maxassoc 0
@@ -464,6 +471,7 @@ hostapd_set_bss_options() {
 
 	[ "$airtime_bss_weight" -gt 0 ] && append bss_conf "airtime_bss_weight=$airtime_bss_weight" "$N"
 	[ "$airtime_bss_limit" -gt 0 ] && append bss_conf "airtime_bss_limit=$airtime_bss_limit" "$N"
+	json_for_each_item append_airtime_sta_weight airtime_sta_weight
 
 	append bss_conf "bss_load_update_period=$bss_load_update_period" "$N"
 	append bss_conf "chan_util_avg_period=$chan_util_avg_period" "$N"
@@ -842,10 +850,12 @@ hostapd_set_bss_options() {
 		json_for_each_item append_iw_anqp_elem iw_anqp_elem
 		json_for_each_item append_iw_nai_realm iw_nai_realm
 
+		iw_domain_name_conf=
 		json_for_each_item append_iw_domain_name iw_domain_name
 		[ -n "$iw_domain_name_conf" ] && \
 			append bss_conf "domain_name=$iw_domain_name_conf" "$N"
 
+		iw_anqp_3gpp_cell_net_conf=
 		json_for_each_item append_iw_anqp_3gpp_cell_net iw_anqp_3gpp_cell_net
 		[ -n "$iw_anqp_3gpp_cell_net_conf" ] && \
 			append bss_conf "anqp_3gpp_cell_net=$iw_anqp_3gpp_cell_net_conf" "$N"

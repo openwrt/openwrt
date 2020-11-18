@@ -10,9 +10,9 @@ fwtool_check_signature() {
 	}
 
 	if ! fwtool -q -s /tmp/sysupgrade.ucert "$1"; then
-		echo "Image signature not found"
+		v "Image signature not present"
 		[ "$REQUIRE_IMAGE_SIGNATURE" = 1 -a "$FORCE" != 1 ] && {
-			echo "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
+			v "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
 		}
 		[ "$REQUIRE_IMAGE_SIGNATURE" = 1 ] && return 1
 		return 0
@@ -30,16 +30,16 @@ fwtool_check_image() {
 	. /usr/share/libubox/jshn.sh
 
 	if ! fwtool -q -i /tmp/sysupgrade.meta "$1"; then
-		echo "Image metadata not found"
+		v "Image metadata not present"
 		[ "$REQUIRE_IMAGE_METADATA" = 1 -a "$FORCE" != 1 ] && {
-			echo "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
+			v "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
 		}
 		[ "$REQUIRE_IMAGE_METADATA" = 1 ] && return 1
 		return 0
 	fi
 
 	json_load "$(cat /tmp/sysupgrade.meta)" || {
-		echo "Invalid image metadata"
+		v "Invalid image metadata"
 		return 1
 	}
 
@@ -64,15 +64,15 @@ fwtool_check_image() {
 		if [ "$dev" = "$device" ]; then
 			# major compat version -> no sysupgrade
 			if [ "${devicecompat%.*}" != "${imagecompat%.*}" ]; then
-				echo "The device is supported, but this image is incompatible for sysupgrade based on the image version ($devicecompat->$imagecompat)."
-				[ -n "$compatmessage" ] && echo "$compatmessage"
+				v "The device is supported, but this image is incompatible for sysupgrade based on the image version ($devicecompat->$imagecompat)."
+				[ -n "$compatmessage" ] && v "$compatmessage"
 				return 1
 			fi
 
 			# minor compat version -> sysupgrade with -n required
 			if [ "${devicecompat#.*}" != "${imagecompat#.*}" ] && [ "$SAVE_CONFIG" = "1" ]; then
-				echo "The device is supported, but the config is incompatible to the new image ($devicecompat->$imagecompat). Please upgrade without keeping config (sysupgrade -n)."
-				[ -n "$compatmessage" ] && echo "$compatmessage"
+				v "The device is supported, but the config is incompatible to the new image ($devicecompat->$imagecompat). Please upgrade without keeping config (sysupgrade -n)."
+				[ -n "$compatmessage" ] && v "$compatmessage"
 				return 1
 			fi
 
@@ -80,13 +80,13 @@ fwtool_check_image() {
 		fi
 	done
 
-	echo "Device $device not supported by this image"
-	echo -n "Supported devices:"
+	v "Device $device not supported by this image"
+	vn "Supported devices:"
 	for k in $dev_keys; do
 		json_get_var dev "$k"
-		echo -n " $dev"
+		_vn " $dev"
 	done
-	echo
+	_v
 
 	return 1
 }

@@ -25,7 +25,7 @@
  #ifdef HAVE_SYS_ACL_H
  #include <sys/acl.h>
  #endif /* HAVE_SYS_ACL_H */
-@@ -1894,7 +1901,7 @@ ssize_t fremovexattr(int fd, const char
+@@ -1894,7 +1901,7 @@ ssize_t fremovexattr(int fd, const char 
  }
  #endif /* HAVE_FREMOVEXATTR */
  
@@ -110,3 +110,23 @@
      if(argname){
          print "static __inline__ " ret " next_" name, argtype " __attribute__((always_inline));" > tmpffile;
          print "static __inline__ " ret " next_" name, argtype " {" > tmpffile;
+--- a/configure.ac
++++ b/configure.ac
+@@ -110,6 +110,7 @@ for first in size_t int; do
+ #include <sys/types.h>
+ #endif
+ #include <unistd.h>
++#include <stdio.h>
+ #ifdef HAVE_GRP_H
+ #include <grp.h>
+ #endif
+--- a/configure
++++ b/configure
+@@ -12847,6 +12847,7 @@ for first in size_t int; do
+ #include <sys/types.h>
+ #endif
+ #include <unistd.h>
++#include <stdio.h>
+ #ifdef HAVE_GRP_H
+ #include <grp.h>
+ #endif

@@ -1,11 +1,11 @@
-From cfc93329e00cd23c226f34b3ffd5552a93c35bd7 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Mon, 23 Mar 2020 22:33:46 +0100
+From 08f5e0df46ce1ad617bcde1fd5542545397630b9 Mon Sep 17 00:00:00 2001
+From: Hans Dedecker <dedeckeh@gmail.com>
+Date: Sat, 24 Oct 2020 21:13:30 +0200
 Subject: Revert "Disallow use of DES encryption functions in new programs."
 
 This reverts commit b10a0accee709a5efff2fadf0b0bbb79ff0ad759.
 
-ppp still uses the encrypt functions from the libc. musl libc also
+ppp still uses the encrypt functions from the libc while musl libc also
 provides them.
 ---
  conform/data/stdlib.h-data |   3 +
@@ -15,18 +15,19 @@ provides them.
  crypt/crypt.h              |  16 +++
  crypt/crypt_util.c         |   9 --
  manual/conf.texi           |   2 -
- manual/crypt.texi          | 201 +++++++++++++++++++++++++++++++++++++
+ manual/crypt.texi          | 204 +++++++++++++++++++++++++++++++++++++
  manual/string.texi         |  82 +++++++--------
- posix/unistd.h             |  22 ++--
+ posix/unistd.h             |  17 +++-
  stdlib/stdlib.h            |   6 ++
- sunrpc/Makefile            |   2 +-
  sunrpc/des_crypt.c         |   7 +-
  sunrpc/des_soft.c          |   2 +-
- 14 files changed, 303 insertions(+), 96 deletions(-)
+ 13 files changed, 305 insertions(+), 90 deletions(-)
 
+diff --git a/conform/data/stdlib.h-data b/conform/data/stdlib.h-data
+index 6913828196..d8fcccc2fb 100644
 --- a/conform/data/stdlib.h-data
 +++ b/conform/data/stdlib.h-data
-@@ -149,6 +149,9 @@ function {unsigned short int*} seed48 (u
+@@ -149,6 +149,9 @@ function {unsigned short int*} seed48 (unsigned short int[3])
  #if !defined ISO && !defined ISO99 && !defined ISO11 && !defined POSIX && !defined XPG4 && !defined XPG42 && !defined UNIX98
  function int setenv (const char*, const char*, int)
  #endif
@@ -36,6 +37,8 @@ provides them.
  #if !defined ISO && !defined ISO99 && !defined ISO11 && !defined XPG4 && !defined POSIX && !defined POSIX2008
  function {char*} setstate (char*)
  #endif
+diff --git a/conform/data/unistd.h-data b/conform/data/unistd.h-data
+index aa070528e8..ddf4f25132 100644
 --- a/conform/data/unistd.h-data
 +++ b/conform/data/unistd.h-data
 @@ -437,6 +437,9 @@ function int chroot (const char*)
@@ -58,6 +61,8 @@ provides them.
  function int execl (const char*, const char*, ...)
  function int execle (const char*, const char*, ...)
  function int execlp (const char*, const char*, ...)
+diff --git a/crypt/cert.c b/crypt/cert.c
+index e070ca398d..80029e9078 100644
 --- a/crypt/cert.c
 +++ b/crypt/cert.c
 @@ -10,22 +10,6 @@
@@ -97,6 +102,8 @@ provides them.
 -}
 -
 -#endif
+diff --git a/crypt/crypt-entry.c b/crypt/crypt-entry.c
+index 502b5846f0..09332c690a 100644
 --- a/crypt/crypt-entry.c
 +++ b/crypt/crypt-entry.c
 @@ -35,7 +35,6 @@
@@ -107,7 +114,7 @@ provides them.
  
  /* Prototypes for local functions.  */
  #ifndef __GNU_LIBRARY__
-@@ -177,7 +176,17 @@ crypt (const char *key, const char *salt
+@@ -177,7 +176,17 @@ crypt (const char *key, const char *salt)
    return __crypt_r (key, salt, &_ufc_foobar);
  }
  
@@ -127,6 +134,8 @@ provides them.
 +  return crypt (key, salt);
 +}
  #endif
+diff --git a/crypt/crypt.h b/crypt/crypt.h
+index ca8ad456cc..7d0de95018 100644
 --- a/crypt/crypt.h
 +++ b/crypt/crypt.h
 @@ -36,6 +36,14 @@ __BEGIN_DECLS
@@ -159,6 +168,8 @@ provides them.
  #endif
  
  __END_DECLS
+diff --git a/crypt/crypt_util.c b/crypt/crypt_util.c
+index 4b2f0a89cb..b012cde6bd 100644
 --- a/crypt/crypt_util.c
 +++ b/crypt/crypt_util.c
 @@ -34,7 +34,6 @@
@@ -185,7 +196,7 @@ provides them.
  
  /*
   * This is the final
-@@ -788,7 +785,6 @@ _ufc_output_conversion_r (ufc_long v1, u
+@@ -788,7 +785,6 @@ _ufc_output_conversion_r (ufc_long v1, ufc_long v2, const char *salt,
    __data->crypt_3_buf[13] = 0;
  }
  
@@ -193,7 +204,7 @@ provides them.
  
  /*
   * UNIX encrypt function. Takes a bitvector
-@@ -889,14 +885,12 @@ __encrypt_r (char *__block, int __edflag
+@@ -889,14 +885,12 @@ __encrypt_r (char *__block, int __edflag,
    }
  }
  weak_alias (__encrypt_r, encrypt_r)
@@ -208,7 +219,7 @@ provides them.
  
  
  /*
-@@ -921,15 +915,12 @@ __setkey_r (const char *__key, struct cr
+@@ -921,15 +915,12 @@ __setkey_r (const char *__key, struct crypt_data * __restrict __data)
    _ufc_mk_keytab_r((char *) ktab, __data);
  }
  weak_alias (__setkey_r, setkey_r)
@@ -224,9 +235,11 @@ provides them.
  
  void
  __b64_from_24bit (char **cp, int *buflen,
+diff --git a/manual/conf.texi b/manual/conf.texi
+index f959b00bb6..51fb2f5aa1 100644
 --- a/manual/conf.texi
 +++ b/manual/conf.texi
-@@ -780,8 +780,6 @@ Inquire about the parameter correspondin
+@@ -780,8 +780,6 @@ Inquire about the parameter corresponding to @code{_XOPEN_LEGACY}.
  @item _SC_XOPEN_CRYPT
  @standards{X/Open, unistd.h}
  Inquire about the parameter corresponding to @code{_XOPEN_CRYPT}.
@@ -235,9 +248,11 @@ provides them.
  
  @item _SC_XOPEN_ENH_I18N
  @standards{X/Open, unistd.h}
+diff --git a/manual/crypt.texi b/manual/crypt.texi
+index af23dd7847..1b151f2d74 100644
 --- a/manual/crypt.texi
 +++ b/manual/crypt.texi
-@@ -16,8 +16,19 @@ subject to them, even if you do not use
+@@ -16,8 +16,19 @@ subject to them, even if you do not use the functions in this chapter
  yourself.  The restrictions vary from place to place and are changed
  often, so we cannot give any more specific advice than this warning.
  
@@ -253,12 +268,12 @@ provides them.
 +
  @menu
  * Passphrase Storage::          One-way hashing for passphrases.
-+* DES Encryption::              Routines for DES encryption.
++* crypt::                       A one-way function for passwords.
  * Unpredictable Bytes::         Randomness for cryptographic purposes.
  @end menu
  
-@@ -200,6 +211,196 @@ hashes for the same passphrase.
- @include testpass.c.texi
+@@ -190,6 +201,199 @@ unpredictable as possible; @pxref{Unpredictable Bytes}.
+ @include genpass.c.texi
  @end smallexample
  
 +@node DES Encryption
@@ -451,9 +466,14 @@ provides them.
 +functions and their accompanying macros are all defined in the header
 +@file{rpc/des_crypt.h}.
 +
- @node Unpredictable Bytes
- @section Generating Unpredictable Bytes
- @cindex randomness source
++@node Unpredictable Bytes
++@section Generating Unpredictable Bytes
++
+ The next program demonstrates how to verify a passphrase.  It checks a
+ hash hardcoded into the program, because looking up real users' hashed
+ passphrases may require special privileges (@pxref{User Database}).
+diff --git a/manual/string.texi b/manual/string.texi
+index 23f516439a..5586b52dee 100644
 --- a/manual/string.texi
 +++ b/manual/string.texi
 @@ -36,8 +36,8 @@ too.
@@ -467,7 +487,7 @@ provides them.
  * Encode Binary Data::          Encoding and Decoding of Binary Data.
  * Argz and Envz Vectors::       Null-separated string vectors.
  @end menu
-@@ -2426,73 +2426,73 @@ functionality under a different name, su
+@@ -2426,73 +2426,73 @@ functionality under a different name, such as @code{explicit_memset},
  systems it may be in @file{strings.h} instead.
  @end deftypefun
  
@@ -518,19 +538,10 @@ provides them.
  
 -@node Obfuscating Data
 -@section Obfuscating Data
+-@cindex Rot13
 +@node Trivial Encryption
 +@section Trivial Encryption
 +@cindex encryption
-+
-+
-+The @code{memfrob} function converts an array of data to something
-+unrecognizable and back again.  It is not encryption in its usual sense
-+since it is easy for someone to convert the encrypted data back to clear
-+text.  The transformation is analogous to Usenet's ``Rot13'' encryption
-+method for obscuring offensive jokes from sensitive eyes and such.
-+Unlike Rot13, @code{memfrob} works on arbitrary binary data, not just
-+text.
- @cindex Rot13
  
 -The @code{memfrob} function reversibly obfuscates an array of binary
 -data.  This is not true encryption; the obfuscated data still bears a
@@ -538,12 +549,20 @@ provides them.
 -undo the obfuscation.  It is analogous to the ``Rot13'' cipher used on
 -Usenet for obscuring offensive jokes, spoilers for works of fiction,
 -and so on, but it can be applied to arbitrary binary data.
--
+ 
 -Programs that need true encryption---a transformation that completely
 -obscures the original and cannot be reversed without knowledge of a
 -secret key---should use a dedicated cryptography library, such as
 -@uref{https://www.gnu.org/software/libgcrypt/,,libgcrypt}.
--
++The @code{memfrob} function converts an array of data to something
++unrecognizable and back again.  It is not encryption in its usual sense
++since it is easy for someone to convert the encrypted data back to clear
++text.  The transformation is analogous to Usenet's ``Rot13'' encryption
++method for obscuring offensive jokes from sensitive eyes and such.
++Unlike Rot13, @code{memfrob} works on arbitrary binary data, not just
++text.
++@cindex Rot13
+ 
 -Programs that need to @emph{destroy} data should use
 -@code{explicit_bzero} (@pxref{Erasing Sensitive Data}), or possibly
 -@code{strfry} (@pxref{Shuffling Bytes}).
@@ -560,14 +579,13 @@ provides them.
 -beginning at @var{mem}, in place.  Each byte is bitwise xor-ed with
 -the binary pattern 00101010 (hexadecimal 0x2A).  The return value is
 -always @var{mem}.
--
--@code{memfrob} a second time on the same data returns it to
--its original state.
 +@code{memfrob} transforms (frobnicates) each byte of the data structure
 +at @var{mem}, which is @var{length} bytes long, by bitwise exclusive
 +oring it with binary 00101010.  It does the transformation in place and
 +its return value is always @var{mem}.
-+
+ 
+-@code{memfrob} a second time on the same data returns it to
+-its original state.
 +Note that @code{memfrob} a second time on the same data structure
 +returns it to its original state.
 +
@@ -582,6 +600,8 @@ provides them.
  @end deftypefun
  
  @node Encode Binary Data
+diff --git a/posix/unistd.h b/posix/unistd.h
+index 32b8161619..6fac59999f 100644
 --- a/posix/unistd.h
 +++ b/posix/unistd.h
 @@ -107,6 +107,9 @@ __BEGIN_DECLS
@@ -594,20 +614,20 @@ provides them.
  /* The enhanced internationalization capabilities according to XPG4.2
     are present.  */
  #define	_XOPEN_ENH_I18N	1
-@@ -1115,17 +1118,20 @@ ssize_t copy_file_range (int __infd, __o
+@@ -1129,17 +1132,25 @@ ssize_t copy_file_range (int __infd, __off64_t *__pinoff,
  extern int fdatasync (int __fildes);
  #endif /* Use POSIX199309 */
  
 -#ifdef __USE_MISC
--/* One-way hash PHRASE, returning a string suitable for storage in the
--   user database.  SALT selects the one-way function to use, and
--   ensures that no two users' hashes are the same, even if they use
--   the same passphrase.  The return value points to static storage
--   which will be overwritten by the next call to crypt.  */
-+
 +/* XPG4.2 specifies that prototypes for the encryption functions must
 +   be defined here.  */
 +#ifdef	__USE_XOPEN
+ /* One-way hash PHRASE, returning a string suitable for storage in the
+    user database.  SALT selects the one-way function to use, and
+    ensures that no two users' hashes are the same, even if they use
+    the same passphrase.  The return value points to static storage
+    which will be overwritten by the next call to crypt.  */
++
 +/* Encrypt at most 8 characters from KEY using salt to perturb DES.  */
  extern char *crypt (const char *__key, const char *__salt)
       __THROW __nonnull ((1, 2));
@@ -623,9 +643,11 @@ provides them.
  /* Swab pairs bytes in the first N bytes of the area pointed to by
     FROM and copy the result to TO.  The value of TO must not be in the
     range [FROM - N + 1, FROM - 1].  If N is odd the first byte in FROM
+diff --git a/stdlib/stdlib.h b/stdlib/stdlib.h
+index 3aa27a9d25..67e5e66f94 100644
 --- a/stdlib/stdlib.h
 +++ b/stdlib/stdlib.h
-@@ -961,6 +961,12 @@ extern int getsubopt (char **__restrict
+@@ -962,6 +962,12 @@ extern int getsubopt (char **__restrict __optionp,
  #endif
  
  
@@ -638,20 +660,11 @@ provides them.
  /* X/Open pseudo terminal handling.  */
  
  #ifdef __USE_XOPEN2KXSI
---- a/sunrpc/Makefile
-+++ b/sunrpc/Makefile
-@@ -51,7 +51,7 @@ rpcsvc = bootparam_prot.x nlm_prot.x rst
- headers-sunrpc = $(addprefix rpc/,auth.h auth_unix.h clnt.h pmap_clnt.h \
- 				  pmap_prot.h pmap_rmt.h rpc.h rpc_msg.h \
- 				  svc.h svc_auth.h types.h xdr.h auth_des.h \
--				  key_prot.h) \
-+				  des_crypt.h key_prot.h rpc_des.h) \
- 		       $(rpcsvc:%=rpcsvc/%) rpcsvc/bootparam.h
- headers = rpc/netdb.h
- install-others = $(inst_sysconfdir)/rpc
+diff --git a/sunrpc/des_crypt.c b/sunrpc/des_crypt.c
+index 9b4bd2d5dd..a4d8b2936b 100644
 --- a/sunrpc/des_crypt.c
 +++ b/sunrpc/des_crypt.c
-@@ -86,9 +86,6 @@ common_crypt (char *key, char *buf, regi
+@@ -86,9 +86,6 @@ common_crypt (char *key, char *buf, register unsigned len,
    return desdev == DES_SW ? DESERR_NONE : DESERR_NOHWDEVICE;
  }
  
@@ -661,7 +674,7 @@ provides them.
  /*
   * CBC mode encryption
   */
-@@ -105,7 +102,7 @@ cbc_crypt (char *key, char *buf, unsigne
+@@ -105,7 +102,7 @@ cbc_crypt (char *key, char *buf, unsigned int len, unsigned int mode,
    COPY8 (dp.des_ivec, ivec);
    return err;
  }
@@ -670,12 +683,14 @@ provides them.
  
  /*
   * ECB mode encryption
-@@ -118,4 +115,4 @@ ecb_crypt (char *key, char *buf, unsigne
+@@ -118,4 +115,4 @@ ecb_crypt (char *key, char *buf, unsigned int len, unsigned int mode)
    dp.des_mode = ECB;
    return common_crypt (key, buf, len, mode, &dp);
  }
 -hidden_nolink (ecb_crypt, libc, GLIBC_2_1)
 +libc_hidden_nolink_sunrpc (ecb_crypt, GLIBC_2_1)
+diff --git a/sunrpc/des_soft.c b/sunrpc/des_soft.c
+index a87de96cc7..f884f8f21b 100644
 --- a/sunrpc/des_soft.c
 +++ b/sunrpc/des_soft.c
 @@ -71,4 +71,4 @@ des_setparity (char *p)
@@ -684,3 +699,6 @@ provides them.
  }
 -hidden_nolink (des_setparity, libc, GLIBC_2_1)
 +libc_hidden_nolink_sunrpc (des_setparity, GLIBC_2_1)
+-- 
+2.25.1
+
