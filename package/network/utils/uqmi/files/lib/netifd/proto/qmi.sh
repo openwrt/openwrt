@@ -19,6 +19,7 @@ proto_qmi_init_config() {
 	proto_config_add_string modes
 	proto_config_add_string pdptype
 	proto_config_add_int profile
+	proto_config_add_boolean dhcp
 	proto_config_add_boolean dhcpv6
 	proto_config_add_boolean autoconnect
 	proto_config_add_int plmn
@@ -31,13 +32,13 @@ proto_qmi_setup() {
 	local interface="$1"
 	local dataformat connstat
 	local device apn auth username password pincode delay modes pdptype
-	local profile dhcpv6 autoconnect plmn timeout mtu $PROTO_DEFAULT_OPTIONS
+	local profile dhcp dhcpv6 autoconnect plmn timeout mtu $PROTO_DEFAULT_OPTIONS
 	local ip4table ip6table
 	local cid_4 pdh_4 cid_6 pdh_6
 	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
 
 	json_get_vars device apn auth username password pincode delay modes
-	json_get_vars pdptype profile dhcpv6 autoconnect plmn ip4table
+	json_get_vars pdptype profile dhcp dhcpv6 autoconnect plmn ip4table
 	json_get_vars ip6table timeout mtu $PROTO_DEFAULT_OPTIONS
 
 	[ "$timeout" = "" ] && timeout="10"
@@ -353,15 +354,41 @@ proto_qmi_setup() {
 	}
 
 	[ -n "$pdh_4" ] && {
-		json_init
-		json_add_string name "${interface}_4"
-		json_add_string ifname "@$interface"
-		json_add_string proto "dhcp"
-		[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
-		proto_add_dynamic_defaults
-		[ -n "$zone" ] && json_add_string zone "$zone"
-		json_close_object
-		ubus call network add_dynamic "$(json_dump)"
+		if [ "$dhcp" = 0 ]; then
+			json_load "$(uqmi -s -d $device --set-client-id wds,$cid_4 --get-current-settings)"
+			json_select ipv4
+			json_get_var ip_4 ip
+			json_get_var gateway_4 gateway
+			json_get_var dns1_4 dns1
+			json_get_var dns2_4 dns2
+			json_get_var subnet_4 subnet
+
+			proto_init_update "$ifname" 1
+			proto_set_keep 1
+			proto_add_ipv4_address "$ip_4" "$subnet_4"
+			proto_add_ipv4_route "$gateway_4" "128"
+			[ "$defaultroute" = 0 ] || proto_add_ipv4_route "0.0.0.0" 0 "$gateway_4"
+			[ "$peerdns" = 0 ] || {
+				proto_add_dns_server "$dns1_4"
+				proto_add_dns_server "$dns2_4"
+			}
+			[ -n "$zone" ] && {
+				proto_add_data
+				json_add_string zone "$zone"
+				proto_close_data
+			}
+			proto_send_update "$interface"
+		else
+			json_init
+			json_add_string name "${interface}_4"
+			json_add_string ifname "@$interface"
+			json_add_string proto "dhcp"
+			[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
+			proto_add_dynamic_defaults
+			[ -n "$zone" ] && json_add_string zone "$zone"
+			json_close_object
+			ubus call network add_dynamic "$(json_dump)"
+		fi
 	}
 }
 
