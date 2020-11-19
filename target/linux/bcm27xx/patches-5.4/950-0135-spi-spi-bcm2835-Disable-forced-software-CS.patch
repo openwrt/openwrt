@@ -13,7 +13,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/spi/spi-bcm2835.c
 +++ b/drivers/spi/spi-bcm2835.c
-@@ -1279,31 +1279,6 @@ static int bcm2835_spi_setup(struct spi_
+@@ -1278,31 +1278,6 @@ static int bcm2835_spi_setup(struct spi_
  		return -EINVAL;
  	}
  
@@ -33,7 +33,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 -
 -	spi->cs_gpiod = gpiochip_request_own_desc(chip, 8 - spi->chip_select,
 -						  DRV_NAME,
--						  lflags,
+-						  GPIO_LOOKUP_FLAGS_DEFAULT,
 -						  GPIOD_OUT_LOW);
 -	if (IS_ERR(spi->cs_gpiod))
 -		return PTR_ERR(spi->cs_gpiod);
