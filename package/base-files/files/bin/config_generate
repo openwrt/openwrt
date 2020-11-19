@@ -18,14 +18,15 @@ generate_bridge() {
 
 bridge_vlan_id=0
 generate_bridge_vlan() {
-	local device=$1
-	local ports="$2"
+	local name=$1_vlan
+	local device=$2
+	local ports="$3"
 	bridge_vlan_id=$((bridge_vlan_id + 1))
 	uci -q batch <<-EOF
-		add network bridge-vlan
-		set network.@bridge-vlan[-1].device='$device'
-		set network.@bridge-vlan[-1].vlan='$bridge_vlan_id'
-		set network.@bridge-vlan[-1].ports='$ports'
+		set network.$name=bridge-vlan
+		set network.$name.device='$device'
+		set network.$name.vlan='$bridge_vlan_id'
+		set network.$name.ports='$ports'
 	EOF
 }
 
@@ -101,7 +102,7 @@ generate_network() {
 	esac
 
 	[ -n "$bridge" ] && {
-		generate_bridge_vlan $bridge "$ifname"
+		generate_bridge_vlan $1 $bridge "$ifname"
 		ifname=$bridge.$bridge_vlan_id
 		type=""
 	}
