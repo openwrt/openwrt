@@ -1,6 +1,6 @@
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -142,20 +142,29 @@ static int read_fsr(struct spi_nor *nor)
+@@ -144,20 +144,29 @@ static int read_fsr(struct spi_nor *nor)
   * location. Return the configuration register value.
   * Returns negative if error occurred.
   */
@@ -33,7 +33,7 @@
  /*
   * Write status register 1 byte
   * Returns negative if error occurred.
-@@ -2895,9 +2904,16 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -2914,9 +2923,16 @@ int spi_nor_scan(struct spi_nor *nor, co
  	} else if (mtd->size > 0x1000000) {
  		/* enable 4-byte addressing if the device exceeds 16MiB */
  		nor->addr_width = 4;

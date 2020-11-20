@@ -1,0 +1,47 @@
+From e27072851bf7d706c592fc528549b52023b17a09 Mon Sep 17 00:00:00 2001
+From: Andy Yan <andy.yan@rock-chips.com>
+Date: Mon, 28 Aug 2017 09:58:29 +0800
+Subject: [PATCH 1/2] mtd: spi-nor: add a quad_enable callback in struct
+ flash_info
+
+Some manufacturers may use different bit to set QE on different
+memories.
+
+The GD25Q256 from GigaDevice is an example, which uses S6(bit 6
+of the Status Register-1) to set QE, which is different with
+other supported memories from GigaDevice that use S9(bit 1 of
+the Status Register-2). This makes it is impossible to select
+the quad enable method by distinguishing the MFR. This patch
+introduce a quad_enable function which can be set per memory
+in the flash_info list table.
+
+Signed-off-by: Andy Yan <andy.yan@rock-chips.com>
+Signed-off-by: Cyrille Pitchen <cyrille.pitchen@wedev4u.fr>
+
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -89,6 +89,8 @@ struct flash_info {
+ #define NO_CHIP_ERASE		BIT(12) /* Chip does not support chip erase */
+ #define SPI_NOR_SKIP_SFDP	BIT(13)	/* Skip parsing of SFDP tables */
+ #define USE_CLSR		BIT(14)	/* use CLSR command */
++
++	int	(*quad_enable)(struct spi_nor *nor);
+ };
+ 
+ #define JEDEC_MFR(info)	((info)->id[0])
+@@ -2433,6 +2435,15 @@ static int spi_nor_init_params(struct sp
+ 			params->quad_enable = spansion_quad_enable;
+ 			break;
+ 		}
++
++		/*
++		 * Some manufacturer like GigaDevice may use different
++		 * bit to set QE on different memories, so the MFR can't
++		 * indicate the quad_enable method for this case, we need
++		 * set it in flash info list.
++		 */
++		if (info->quad_enable)
++			params->quad_enable = info->quad_enable;
+ 	}
+ 
+ 	/* Override the parameters with data read from SFDP tables. */

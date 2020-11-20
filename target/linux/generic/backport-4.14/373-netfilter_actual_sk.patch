@@ -52,28 +52,28 @@ Signed-off-by: Aaron Goodman <aaronjg@stanford.edu>
 @@ -16,7 +16,7 @@ struct ip_rt_info {
  	u_int32_t mark;
  };
-
+ 
 -int ip_route_me_harder(struct net *net, struct sk_buff *skb, unsigned addr_type);
 +int ip_route_me_harder(struct net *net, struct sock *sk, struct sk_buff *skb, unsigned addr_type);
-
+ 
  struct nf_queue_entry;
-
+ 
 --- a/include/linux/netfilter_ipv6.h
 +++ b/include/linux/netfilter_ipv6.h
 @@ -41,7 +41,7 @@ struct nf_ipv6_ops {
  };
-
+ 
  #ifdef CONFIG_NETFILTER
 -int ip6_route_me_harder(struct net *net, struct sk_buff *skb);
 +int ip6_route_me_harder(struct net *net, struct sock *sk, struct sk_buff *skb);
  __sum16 nf_ip6_checksum(struct sk_buff *skb, unsigned int hook,
  			unsigned int dataoff, u_int8_t protocol);
-
+ 
 --- a/net/ipv4/netfilter.c
 +++ b/net/ipv4/netfilter.c
 @@ -17,17 +17,19 @@
  #include <net/netfilter/nf_queue.h>
-
+ 
  /* route_me_harder function, used by iptable_nat, iptable_mangle + ip_queue */
 -int ip_route_me_harder(struct net *net, struct sk_buff *skb, unsigned int addr_type)
 +int ip_route_me_harder(struct net *net, struct sock *sk, struct sk_buff *skb, unsigned int addr_type)
@@ -87,7 +87,7 @@ Signed-off-by: Aaron Goodman <aaronjg@stanford.edu>
 +	__u8 flags;
  	struct net_device *dev = skb_dst(skb)->dev;
  	unsigned int hh_len;
-
+ 
 +	sk = sk_to_full_sk(sk);
 +	flags = sk ? inet_sk_flowi_flags(sk) : 0;
 +
@@ -106,13 +106,13 @@ Signed-off-by: Aaron Goodman <aaronjg@stanford.edu>
 --- a/net/ipv4/netfilter/ipt_SYNPROXY.c
 +++ b/net/ipv4/netfilter/ipt_SYNPROXY.c
 @@ -53,7 +53,7 @@ synproxy_send_tcp(struct net *net,
-
+ 
  	skb_dst_set_noref(nskb, skb_dst(skb));
  	nskb->protocol = htons(ETH_P_IP);
 -	if (ip_route_me_harder(net, nskb, RTN_UNSPEC))
 +	if (ip_route_me_harder(net, nskb->sk, nskb, RTN_UNSPEC))
  		goto free_nskb;
-
+ 
  	if (nfct) {
 --- a/net/ipv4/netfilter/iptable_mangle.c
 +++ b/net/ipv4/netfilter/iptable_mangle.c
@@ -128,7 +128,7 @@ Signed-off-by: Aaron Goodman <aaronjg@stanford.edu>
 --- a/net/ipv4/netfilter/nf_nat_l3proto_ipv4.c
 +++ b/net/ipv4/netfilter/nf_nat_l3proto_ipv4.c
 @@ -397,7 +397,7 @@ nf_nat_ipv4_local_fn(void *priv, struct
-
+ 
  		if (ct->tuplehash[dir].tuple.dst.u3.ip !=
  		    ct->tuplehash[!dir].tuple.src.u3.ip) {
 -			err = ip_route_me_harder(state->net, skb, RTN_UNSPEC);
@@ -141,11 +141,11 @@ Signed-off-by: Aaron Goodman <aaronjg@stanford.edu>
 @@ -129,7 +129,7 @@ void nf_send_reset(struct net *net, stru
  				   ip4_dst_hoplimit(skb_dst(nskb)));
  	nf_reject_ip_tcphdr_put(nskb, oldskb, oth);
-
+ 
 -	if (ip_route_me_harder(net, nskb, RTN_UNSPEC))
 +	if (ip_route_me_harder(net, nskb->sk, nskb, RTN_UNSPEC))
  		goto free_nskb;
-
+ 
  	niph = ip_hdr(nskb);
 --- a/net/ipv4/netfilter/nft_chain_route_ipv4.c
 +++ b/net/ipv4/netfilter/nft_chain_route_ipv4.c
@@ -163,7 +163,7 @@ Signed-off-by: Aaron Goodman <aaronjg@stanford.edu>
 @@ -18,10 +18,10 @@
  #include <net/ip6_checksum.h>
  #include <net/netfilter/nf_queue.h>
-
+ 
 -int ip6_route_me_harder(struct net *net, struct sk_buff *skb)
 +int ip6_route_me_harder(struct net *net, struct sock *sk_partial, struct sk_buff *skb)
  {
@@ -196,7 +196,7 @@ Signed-off-by: Aaron Goodman <aaronjg@stanford.edu>
 --- a/net/ipv6/netfilter/nf_nat_l3proto_ipv6.c
 +++ b/net/ipv6/netfilter/nf_nat_l3proto_ipv6.c
 @@ -414,7 +414,7 @@ nf_nat_ipv6_local_fn(void *priv, struct
-
+ 
  		if (!nf_inet_addr_cmp(&ct->tuplehash[dir].tuple.dst.u3,
  				      &ct->tuplehash[!dir].tuple.src.u3)) {
 -			err = ip6_route_me_harder(state->net, skb);
@@ -219,7 +219,7 @@ Signed-off-by: Aaron Goodman <aaronjg@stanford.edu>
 +++ b/net/netfilter/ipvs/ip_vs_core.c
 @@ -713,12 +713,12 @@ static int ip_vs_route_me_harder(struct
  		struct dst_entry *dst = skb_dst(skb);
-
+ 
  		if (dst->dev && !(dst->dev->flags & IFF_LOOPBACK) &&
 -		    ip6_route_me_harder(ipvs->net, skb) != 0)
 +		    ip6_route_me_harder(ipvs->net, skb->sk, skb) != 0)
@@ -230,5 +230,5 @@ Signed-off-by: Aaron Goodman <aaronjg@stanford.edu>
 -		    ip_route_me_harder(ipvs->net, skb, RTN_LOCAL) != 0)
 +		    ip_route_me_harder(ipvs->net, skb->sk, skb, RTN_LOCAL) != 0)
  			return 1;
-
+ 
  	return 0;

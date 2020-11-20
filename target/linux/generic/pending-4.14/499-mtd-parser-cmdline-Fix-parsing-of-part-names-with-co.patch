@@ -23,11 +23,9 @@ Forwarded: https://patchwork.ozlabs.org/project/linux-mtd/patch/20201122001533.9
 Fixes: eb13fa022741 ("mtd: parser: cmdline: Support MTD names containing one or more colons")
 Signed-off-by: Sven Eckelmann <sven@narfation.org>
 
-diff --git a/drivers/mtd/cmdlinepart.c b/drivers/mtd/cmdlinepart.c
-index 0625b25620ca766318ea4646a6e3761ff4d3a4cc..22881ea4c132ea5a5ba7aebd025d91bf1cd023af 100644
 --- a/drivers/mtd/cmdlinepart.c
 +++ b/drivers/mtd/cmdlinepart.c
-@@ -218,7 +218,7 @@ static int mtdpart_setup_real(char *s)
+@@ -228,7 +228,7 @@ static int mtdpart_setup_real(char *s)
  		struct cmdline_mtd_partition *this_mtd;
  		struct mtd_partition *parts;
  		int mtd_id_len, num_parts;
@@ -36,7 +34,7 @@ index 0625b25620ca766318ea4646a6e3761ff4d3a4cc..22881ea4c132ea5a5ba7aebd025d91bf
  
  		/*
  		 * Replace the first ';' by a NULL char so strrchr can work
-@@ -228,6 +228,13 @@ static int mtdpart_setup_real(char *s)
+@@ -238,6 +238,13 @@ static int mtdpart_setup_real(char *s)
  		if (semicol)
  			*semicol = '\0';
  
@@ -50,7 +48,7 @@ index 0625b25620ca766318ea4646a6e3761ff4d3a4cc..22881ea4c132ea5a5ba7aebd025d91bf
  		mtd_id = s;
  
  		/*
-@@ -237,6 +244,10 @@ static int mtdpart_setup_real(char *s)
+@@ -247,6 +254,10 @@ static int mtdpart_setup_real(char *s)
  		 */
  		p = strrchr(s, ':');
  
