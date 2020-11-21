@@ -1,11 +1,11 @@
-# The U-Boot loader of the OpenMesh devices requires image sizes and
-# checksums to be provided in the U-Boot environment.
-# The OpenMesh devices come with 2 main partitions - while one is active
+# The U-Boot loader with the datachk patchset for dualbooting requires image
+# sizes and checksums to be provided in the U-Boot environment.
+# The devices come with 2 main partitions - while one is active
 # sysupgrade will flash the other. The boot order is changed to boot the
 # newly flashed partition. If the new partition can't be booted due to
 # upgrade failures the previously used partition is loaded.
 
-platform_do_upgrade_openmesh() {
+platform_do_upgrade_dualboot_datachk() {
 	local tar_file="$1"
 	local restore_backup
 	local primary_kernel_mtd
