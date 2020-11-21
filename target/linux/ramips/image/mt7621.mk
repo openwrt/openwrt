@@ -1092,6 +1092,16 @@ define Device/ubnt_unifi-nanohd
 endef
 TARGET_DEVICES += ubnt_unifi-nanohd
 
+define Device/unielec_u7621-01-16m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := UniElec
+  DEVICE_MODEL := U7621-01
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 wpad-basic-wolfssl
+endef
+TARGET_DEVICES += unielec_u7621-01-16m
+
 define Device/unielec_u7621-06-16m
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
