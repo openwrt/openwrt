@@ -362,12 +362,6 @@ menu "Global build settings"
 			help
 			  SELinux Reference Policy (refpolicy)
 
-		config SELINUXTYPE_targeted-modular
-			bool "targeted-modular"
-			select PACKAGE_refpolicy-modular
-			help
-			  Modular SELinux Reference Policy (refpolicy-modular)
-
 		config SELINUXTYPE_dssp
 			bool "dssp"
 			select PACKAGE_selinux-policy
