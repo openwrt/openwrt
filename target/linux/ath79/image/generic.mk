@@ -1637,6 +1637,13 @@ define Device/openmesh_om5p-ac-v2
 endef
 TARGET_DEVICES += openmesh_om5p-ac-v2
 
+define Device/openmesh_om5p-an
+  $(Device/openmesh_om5p-common)
+  DEVICE_MODEL := OM5P-AN
+  SUPPORTED_DEVICES += om5p-an
+endef
+TARGET_DEVICES += openmesh_om5p-an
+
 define Device/pcs_cap324
   SOC := ar9344
   DEVICE_VENDOR := PowerCloud Systems
