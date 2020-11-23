@@ -1836,6 +1836,16 @@ define Device/openmesh_mr1750-v2
 endef
 TARGET_DEVICES += openmesh_mr1750-v2
 
+define Device/openmesh_om2p-v1
+  $(Device/openmesh_common_256k)
+  SOC := ar7240
+  DEVICE_MODEL := OM2P
+  DEVICE_VARIANT := v1
+  OPENMESH_CE_TYPE := OM2P
+  SUPPORTED_DEVICES += om2p
+endef
+TARGET_DEVICES += openmesh_om2p-v1
+
 define Device/openmesh_om2p-v2
   $(Device/openmesh_common_256k)
   SOC := ar9330
