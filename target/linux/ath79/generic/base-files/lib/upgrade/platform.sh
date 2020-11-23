@@ -50,6 +50,10 @@ platform_do_upgrade() {
 	jjplus,ja76pf2)
 		redboot_fis_do_upgrade "$1" linux
 		;;
+	openmesh,om2p-v4)
+		PART_NAME="inactive"
+		platform_do_upgrade_openmesh "$1"
+		;;
 	plasmacloud,pa300|\
 	plasmacloud,pa300e)
 		PART_NAME="inactive"
