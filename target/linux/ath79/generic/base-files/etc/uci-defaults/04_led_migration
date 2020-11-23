@@ -23,6 +23,9 @@ openmesh,mr600-v1)
 openmesh,mr600-v2)
 	migrate_leds ":wlan24=:wifi2g" ":wlan58=:wifi5g"
 	;;
+openmesh,mr900-v1)
+	migrate_leds ":wlan24=:wifi2g" ":wlan58=:wifi5g" ":wan=:lan"
+	;;
 pcs,cap324)
 	migrate_leds "lan:amber=amber:lan" "lan:green=green:lan"
 	;;

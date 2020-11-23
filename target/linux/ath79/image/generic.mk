@@ -1552,6 +1552,26 @@ define Device/openmesh_mr600-v2
 endef
 TARGET_DEVICES += openmesh_mr600-v2
 
+define Device/openmesh_mr900-common
+  SOC := qca9558
+  DEVICE_VENDOR := OpenMesh
+  DEVICE_MODEL := MR900
+  DEVICE_PACKAGES := uboot-envtools
+  IMAGE_SIZE := 7808k
+  BLOCKSIZE := 64k
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
+	pad-to $$(BLOCKSIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+	openmesh-image ce_type=MR900 | append-metadata
+endef
+
+define Device/openmesh_mr900-v1
+  $(Device/openmesh_mr900-common)
+  DEVICE_VARIANT := v1
+  SUPPORTED_DEVICES += mr900
+endef
+TARGET_DEVICES += openmesh_mr900-v1
+
 define Device/openmesh_om2p-common
   DEVICE_VENDOR := OpenMesh
   DEVICE_PACKAGES := uboot-envtools
