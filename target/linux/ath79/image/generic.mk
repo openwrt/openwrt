@@ -1579,6 +1579,24 @@ define Device/pisen_wmm003n
 endef
 TARGET_DEVICES += pisen_wmm003n
 
+define Device/plasmacloud_pa300-common
+  SOC := qca9533
+  DEVICE_VENDOR := Plasma Cloud
+  DEVICE_PACKAGES := uboot-envtools
+  IMAGE_SIZE := 7168k
+  BLOCKSIZE := 64k
+  IMAGES += factory.bin
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-to $$(BLOCKSIZE)
+  IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA300
+  IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+
+define Device/plasmacloud_pa300
+  $(Device/plasmacloud_pa300-common)
+  DEVICE_MODEL := PA300
+endef
+TARGET_DEVICES += plasmacloud_pa300
+
 define Device/qihoo_c301
   $(Device/seama)
   SOC := ar9344
