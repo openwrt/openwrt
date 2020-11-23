@@ -1,5 +1,5 @@
 BOARDNAME := MikroTik devices
-FEATURES += minor nand squashfs
+FEATURES += minor nand
 KERNELNAME := vmlinux vmlinuz
 IMAGES_DIR := ../../..
 
