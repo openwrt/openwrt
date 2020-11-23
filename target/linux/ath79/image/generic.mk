@@ -1568,6 +1568,15 @@ define Device/openmesh_om2p-common
 	openmesh-image ce_type=OM2P | append-metadata
 endef
 
+define Device/openmesh_om2p-v2
+  $(Device/openmesh_om2p-common)
+  SOC := ar9330
+  DEVICE_MODEL := OM2P
+  DEVICE_VARIANT := v2
+  SUPPORTED_DEVICES += om2pv2
+endef
+TARGET_DEVICES += openmesh_om2p-v2
+
 define Device/openmesh_om2p-v4
   $(Device/openmesh_om2p-common)
   SOC := qca9533
