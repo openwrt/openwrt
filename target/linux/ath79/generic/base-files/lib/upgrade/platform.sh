@@ -52,6 +52,7 @@ platform_do_upgrade() {
 		;;
 	openmesh,mr600-v1|\
 	openmesh,mr600-v2|\
+	openmesh,mr900-v1|\
 	openmesh,om2p-v2|\
 	openmesh,om2p-v4|\
 	openmesh,om2p-hs-v1|\
