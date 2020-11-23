@@ -1630,6 +1630,25 @@ define Device/openmesh_om2p-lc
 endef
 TARGET_DEVICES += openmesh_om2p-lc
 
+define Device/openmesh_om5p-common
+  SOC := ar9344
+  DEVICE_VENDOR := OpenMesh
+  DEVICE_PACKAGES := uboot-envtools
+  IMAGE_SIZE := 7808k
+  BLOCKSIZE := 64k
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
+	pad-to $$(BLOCKSIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+	openmesh-image ce_type=OM5P | append-metadata
+endef
+
+define Device/openmesh_om5p
+  $(Device/openmesh_om5p-common)
+  DEVICE_MODEL := OM5P
+  SUPPORTED_DEVICES += om5p
+endef
+TARGET_DEVICES += openmesh_om5p
+
 define Device/openmesh_om5p-ac-v2
   SOC := qca9558
   DEVICE_VENDOR := OpenMesh
