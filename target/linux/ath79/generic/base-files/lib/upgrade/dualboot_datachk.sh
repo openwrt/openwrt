@@ -45,7 +45,8 @@ platform_do_upgrade_dualboot_datachk() {
 	# boot anymore to Linux until it was reflashed with ap51-flash.
 	local next_boot_part="1"
 	case "$(board_name)" in
-	plasmacloud,pa300)
+	plasmacloud,pa300|\
+	plasmacloud,pa300e)
 		primary_kernel_mtd=3
 		;;
 	*)
