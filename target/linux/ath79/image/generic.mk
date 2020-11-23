@@ -1525,6 +1525,26 @@ define Device/ocedo_ursus
 endef
 TARGET_DEVICES += ocedo_ursus
 
+define Device/openmesh_mr600-common
+  SOC := ar9344
+  DEVICE_VENDOR := OpenMesh
+  DEVICE_MODEL := MR600
+  DEVICE_PACKAGES := uboot-envtools
+  IMAGE_SIZE := 7808k
+  BLOCKSIZE := 64k
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
+	pad-to $$(BLOCKSIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+	openmesh-image ce_type=MR600 | append-metadata
+endef
+
+define Device/openmesh_mr600-v1
+  $(Device/openmesh_mr600-common)
+  DEVICE_VARIANT := v1
+  SUPPORTED_DEVICES += mr600
+endef
+TARGET_DEVICES += openmesh_mr600-v1
+
 define Device/openmesh_om2p-common
   DEVICE_VENDOR := OpenMesh
   DEVICE_PACKAGES := uboot-envtools
