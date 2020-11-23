@@ -1572,6 +1572,13 @@ define Device/openmesh_mr900-v1
 endef
 TARGET_DEVICES += openmesh_mr900-v1
 
+define Device/openmesh_mr900-v2
+  $(Device/openmesh_mr900-common)
+  DEVICE_VARIANT := v2
+  SUPPORTED_DEVICES += mr900v2
+endef
+TARGET_DEVICES += openmesh_mr900-v2
+
 define Device/openmesh_om2p-common
   DEVICE_VENDOR := OpenMesh
   DEVICE_PACKAGES := uboot-envtools
