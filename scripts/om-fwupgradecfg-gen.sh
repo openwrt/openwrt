@@ -7,7 +7,7 @@
 #
 
 usage() {
-	echo "Usage: $0 <OM2P|OM5P|OM5PAC|MR600|MR900|MR1750|A60|A42|A62> <out file path> <kernel path> <rootfs path>"
+	echo "Usage: $0 <OM2P|OM5P|OM5PAC|MR600|MR900|MR1750|A60|A42|A62|PA300> <out file path> <kernel path> <rootfs path>"
 	rm -f $CFG_OUT
 	exit 1
 }
@@ -20,6 +20,7 @@ KERNEL_PATH=$3
 ROOTFS_PATH=$4
 
 case $CE_TYPE in
+	PA300|\
 	OM2P)
 		MAX_PART_SIZE=7168
 		KERNEL_FLASH_ADDR=0x1c0000

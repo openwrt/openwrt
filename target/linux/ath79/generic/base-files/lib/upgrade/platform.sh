@@ -5,6 +5,9 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
+RAMFS_COPY_BIN='fw_printenv fw_setenv'
+RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
+
 redboot_fis_do_upgrade() {
 	local append
 	local sysup_file="$1"
@@ -46,6 +49,10 @@ platform_do_upgrade() {
 		;;
 	jjplus,ja76pf2)
 		redboot_fis_do_upgrade "$1" linux
+		;;
+	plasmacloud,pa300)
+		PART_NAME="inactive"
+		platform_do_upgrade_dualboot_datachk "$1"
 		;;
 	ubnt,routerstation|\
 	ubnt,routerstation-pro)
