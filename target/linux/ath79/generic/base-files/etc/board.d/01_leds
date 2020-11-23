@@ -271,6 +271,10 @@ openmesh,om2p-hs-v4)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth0"
 	ucidef_set_led_switch "lan" "LAN" "blue:lan" "switch0" "0x02"
 	;;
+openmesh,om5p-an)
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
+	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x02"
+	;;
 pcs,cr3000)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "blue:lan1" "switch0" "0x04"
