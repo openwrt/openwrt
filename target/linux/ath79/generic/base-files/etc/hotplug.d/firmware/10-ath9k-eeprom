@@ -120,6 +120,9 @@ case "$FIRMWARE" in
 	ubnt,rocket-m)
 		caldata_extract "art" 0x1000 0x1000
 		;;
+	openmesh,mr600-v1)
+		caldata_extract "ART" 0x5000 0x440
+		;;
 	wd,mynet-n750)
 		caldata_extract "art" 0x5000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
