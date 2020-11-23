@@ -1613,6 +1613,14 @@ define Device/openmesh_om2p-hs-v4
 endef
 TARGET_DEVICES += openmesh_om2p-hs-v4
 
+define Device/openmesh_om2p-lc
+  $(Device/openmesh_om2p-common)
+  SOC := ar9330
+  DEVICE_MODEL := OM2P-LC
+  SUPPORTED_DEVICES += om2p-lc
+endef
+TARGET_DEVICES += openmesh_om2p-lc
+
 define Device/openmesh_om5p-ac-v2
   SOC := qca9558
   DEVICE_VENDOR := OpenMesh
