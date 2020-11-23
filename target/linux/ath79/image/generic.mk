@@ -1597,6 +1597,12 @@ define Device/plasmacloud_pa300
 endef
 TARGET_DEVICES += plasmacloud_pa300
 
+define Device/plasmacloud_pa300e
+  $(Device/plasmacloud_pa300-common)
+  DEVICE_MODEL := PA300E
+endef
+TARGET_DEVICES += plasmacloud_pa300e
+
 define Device/qihoo_c301
   $(Device/seama)
   SOC := ar9344
