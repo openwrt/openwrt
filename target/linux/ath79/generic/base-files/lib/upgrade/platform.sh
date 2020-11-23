@@ -50,7 +50,8 @@ platform_do_upgrade() {
 	jjplus,ja76pf2)
 		redboot_fis_do_upgrade "$1" linux
 		;;
-	plasmacloud,pa300)
+	plasmacloud,pa300|\
+	plasmacloud,pa300e)
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
