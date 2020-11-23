@@ -120,7 +120,8 @@ case "$FIRMWARE" in
 	ubnt,rocket-m)
 		caldata_extract "art" 0x1000 0x1000
 		;;
-	openmesh,mr600-v1)
+	openmesh,mr600-v1|\
+	openmesh,mr600-v2)
 		caldata_extract "ART" 0x5000 0x440
 		;;
 	wd,mynet-n750)
