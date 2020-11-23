@@ -1628,6 +1628,16 @@ define Device/openmesh_common_256k
 	openmesh-image ce_type=$$$$(OPENMESH_CE_TYPE) | append-metadata
 endef
 
+define Device/openmesh_a60
+  $(Device/openmesh_common_64k)
+  SOC := qca9558
+  DEVICE_MODEL := A60
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2
+  OPENMESH_CE_TYPE := A60
+  SUPPORTED_DEVICES += a60
+endef
+TARGET_DEVICES += openmesh_a60
+
 define Device/openmesh_mr600-v1
   $(Device/openmesh_common_64k)
   SOC := ar9344
