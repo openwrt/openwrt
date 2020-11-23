@@ -51,6 +51,7 @@ platform_do_upgrade() {
 		redboot_fis_do_upgrade "$1" linux
 		;;
 	openmesh,mr600-v1|\
+	openmesh,mr600-v2|\
 	openmesh,om2p-v2|\
 	openmesh,om2p-v4|\
 	openmesh,om2p-hs-v1|\
