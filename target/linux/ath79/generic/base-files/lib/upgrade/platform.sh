@@ -50,7 +50,8 @@ platform_do_upgrade() {
 	jjplus,ja76pf2)
 		redboot_fis_do_upgrade "$1" linux
 		;;
-	openmesh,om2p-v4)
+	openmesh,om2p-v4|\
+	openmesh,om2p-hs-v4)
 		PART_NAME="inactive"
 		platform_do_upgrade_openmesh "$1"
 		;;
