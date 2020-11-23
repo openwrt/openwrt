@@ -20,6 +20,9 @@ glinet,gl-mifi)
 openmesh,mr600-v1)
 	migrate_leds ":wlan58=:wifi5g"
 	;;
+openmesh,mr600-v2)
+	migrate_leds ":wlan24=:wifi2g" ":wlan58=:wifi5g"
+	;;
 pcs,cap324)
 	migrate_leds "lan:amber=amber:lan" "lan:green=green:lan"
 	;;
