@@ -1601,6 +1601,17 @@ define Device/openmesh_mr1750-v1
 endef
 TARGET_DEVICES += openmesh_mr1750-v1
 
+define Device/openmesh_mr1750-v2
+  $(Device/openmesh_common_64k)
+  SOC := qca9558
+  DEVICE_MODEL := MR1750
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  OPENMESH_CE_TYPE := MR1750
+  SUPPORTED_DEVICES += mr1750v2
+endef
+TARGET_DEVICES += openmesh_mr1750-v2
+
 define Device/openmesh_om2p-v2
   $(Device/openmesh_common_256k)
   SOC := ar9330
