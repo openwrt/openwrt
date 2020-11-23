@@ -1913,6 +1913,17 @@ define Device/openmesh_om5p
 endef
 TARGET_DEVICES += openmesh_om5p
 
+define Device/openmesh_om5p-ac-v1
+  $(Device/openmesh_common_64k)
+  SOC := qca9558
+  DEVICE_MODEL := OM5P-AC
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  OPENMESH_CE_TYPE := OM5PAC
+  SUPPORTED_DEVICES += om5p-ac
+endef
+TARGET_DEVICES += openmesh_om5p-ac-v1
+
 define Device/openmesh_om5p-ac-v2
   SOC := qca9558
   DEVICE_VENDOR := OpenMesh
