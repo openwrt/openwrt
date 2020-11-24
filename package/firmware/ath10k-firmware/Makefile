@@ -400,7 +400,7 @@ endef
 define Package/ath10k-firmware-qca4019/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA4019/hw1.0
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/QCA4019/hw1.0/board-2.bin \
+		./files/lib/firmware/ath10k/QCA4019/hw1.0/board-2.bin \
 		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/QCA4019/hw1.0/3.5.3/firmware-5.bin_10.4-3.5.3-00057 \
@@ -565,7 +565,7 @@ endef
 define Package/ath10k-firmware-qca4019-ct/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA4019/hw1.0
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/QCA4019/hw1.0/board-2.bin \
+		./files/lib/firmware/ath10k/QCA4019/hw1.0/board-2.bin \
 		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/
 	$(INSTALL_DATA) \
 		$(DL_DIR)/$(call CT_FIRMWARE_FILE,QCA4019) \

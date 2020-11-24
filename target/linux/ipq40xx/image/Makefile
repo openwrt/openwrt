@@ -171,6 +171,20 @@ define Device/compex_wpj428
 endef
 TARGET_DEVICES += compex_wpj428
 
+define Device/Wallys_DR4029
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_DTS := qcom-ipq4019-DR4029
+	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
+	KERNEL_INSTALL := 1
+	KERNEL_SIZE := 4048k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := DR4029
+	DEVICE_TITLE := Wallys DR4029
+endef
+TARGET_DEVICES += Wallys_DR4029
+
 define Device/engenius_eap1300
 	$(call Device/FitImage)
 	DEVICE_TITLE := EnGenius EAP1300
