@@ -126,8 +126,7 @@ define Build/Configure
 		$(PKG_BUILD_DIR)/sysoptions.h
 
 	# disable legacy/unsafe methods and unused functionality
-	for OPTION in INETD_MODE DROPBEAR_CLI_NETCAT \
-	DROPBEAR_DSS DROPBEAR_USE_PASSWORD_ENV DO_MOTD ; do \
+	for OPTION in INETD_MODE DROPBEAR_CLI_NETCAT DROPBEAR_DSS DO_MOTD ; do \
 		echo "#define $$$$OPTION 0" >> \
 			$(PKG_BUILD_DIR)/localoptions.h; \
 	done
