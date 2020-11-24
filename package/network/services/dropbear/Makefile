@@ -107,20 +107,6 @@ define Build/Configure
 	echo '#define DEFAULT_PATH "$(TARGET_INIT_PATH)"' >> \
 		$(PKG_BUILD_DIR)/localoptions.h
 
-	echo '#define DROPBEAR_CURVE25519 $(if $(CONFIG_DROPBEAR_CURVE25519),1,0)' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
-
-	for OPTION in DROPBEAR_ECDSA DROPBEAR_ECDH; do \
-		echo "#define $$$$OPTION $(if $(CONFIG_DROPBEAR_ECC),1,0)" >> \
-			$(PKG_BUILD_DIR)/localoptions.h; \
-	done
-
-	echo '#define DROPBEAR_ED25519 $(if $(CONFIG_DROPBEAR_ED25519),1,0)' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
-
-	echo '#define DROPBEAR_CHACHA20POLY1305 $(if $(CONFIG_DROPBEAR_CHACHA20POLY1305),1,0)' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
-
 	# remove protocol idented software version number
 	$(ESED) 's,^(#define LOCAL_IDENT) .*$$$$,\1 "SSH-2.0-dropbear",g' \
 		$(PKG_BUILD_DIR)/sysoptions.h
@@ -128,6 +114,20 @@ define Build/Configure
 	# disable legacy/unsafe methods and unused functionality
 	for OPTION in INETD_MODE DROPBEAR_CLI_NETCAT DROPBEAR_DSS DO_MOTD ; do \
 		echo "#define $$$$OPTION 0" >> \
+			$(PKG_BUILD_DIR)/localoptions.h; \
+	done
+
+	echo '#define DROPBEAR_CURVE25519 $(if $(CONFIG_DROPBEAR_CURVE25519),1,0)' >> \
+		$(PKG_BUILD_DIR)/localoptions.h
+
+	echo '#define DROPBEAR_ED25519 $(if $(CONFIG_DROPBEAR_ED25519),1,0)' >> \
+		$(PKG_BUILD_DIR)/localoptions.h
+
+	echo '#define DROPBEAR_CHACHA20POLY1305 $(if $(CONFIG_DROPBEAR_CHACHA20POLY1305),1,0)' >> \
+		$(PKG_BUILD_DIR)/localoptions.h
+
+	for OPTION in DROPBEAR_ECDSA DROPBEAR_ECDH; do \
+		echo "#define $$$$OPTION $(if $(CONFIG_DROPBEAR_ECC),1,0)" >> \
 			$(PKG_BUILD_DIR)/localoptions.h; \
 	done
 
