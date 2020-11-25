@@ -15,7 +15,7 @@
  *
  */
 
-#include "qcom-ipq4019.dtsi"
+#include "qcom-ipq4019-mikrotik_nor.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
@@ -186,50 +186,17 @@
 	pinctrl-names = "default";
 	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
 	status = "okay";
+};
 
-	m25p80@0 {
-		reg = <0>;
-		compatible = "jedec,spi-nor";
-		spi-max-frequency = <24000000>;
+&flash0 {
+	spi-max-frequency = <24000000>;
+};
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				label = "Qualcomm";
-				reg = <0x0 0x80000>;
-				read-only;
-			};
-
-			partition@80000 {
-				compatible = "mikrotik,routerboot-partitions";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				label = "RouterBoot";
-				reg = <0x80000 0x80000>;
-				read-only;
-
-				hard_config {
-					read-only;
-					size = <0x2000>;
-				};
-
-				dtb_config {
-					read-only;
-				};
-
-				soft_config {
-				};
-			};
-
-			partition@100000 {
-				compatible = "mikrotik,minor";
-				label = "firmware";
-				reg = <0x100000 0xf00000>;
-			};
-		};
+&nor_partitions {
+	partition@100000 {
+		compatible = "mikrotik,minor";
+		label = "firmware";
+		reg = <0x100000 0xf00000>;
 	};
 };
 
