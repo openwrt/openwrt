@@ -10,7 +10,7 @@ platform_check_image_sdcard() {
 	get_partitions "/dev/$diskdev" bootdisk
 
 	#extract the boot sector from the image
-	get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b 2>/dev/null
+	get_image_dd "$1" of=/tmp/image.bs count=1 bs=512b
 
 	get_partitions /tmp/image.bs image
 
@@ -41,7 +41,7 @@ platform_do_upgrade_sdcard() {
 		get_partitions "/dev/$diskdev" bootdisk
 
 		#extract the boot sector from the image
-		get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b
+		get_image_dd "$1" of=/tmp/image.bs count=1 bs=512b
 
 		get_partitions /tmp/image.bs image
 
@@ -52,7 +52,7 @@ platform_do_upgrade_sdcard() {
 	fi
 
 	if [ -n "$diff" ]; then
-		get_image "$@" | dd of="/dev/$diskdev" bs=4096 conv=fsync
+		get_image_dd "$1" of="/dev/$diskdev" bs=4096 conv=fsync
 
 		# Separate removal and addtion is necessary; otherwise, partition 1
 		# will be missing if it overlaps with the old partition 2
@@ -60,12 +60,12 @@ platform_do_upgrade_sdcard() {
 		partx -a - "/dev/$diskdev"
 	else
 		#write uboot image
-		get_image "$@" | dd of="$diskdev" bs=512 skip=1 seek=1 count=2048 conv=fsync
+		get_image_dd "$1" of="$diskdev" bs=512 skip=1 seek=1 count=2048 conv=fsync
 		#iterate over each partition from the image and write it to the boot disk
 		while read part start size; do
 			if export_partdevice partdev $part; then
 				echo "Writing image to /dev/$partdev..."
-				get_image "$@" | dd of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
+				get_image_dd "$1" of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
 			else
 				echo "Unable to find partition $part device, skipped."
 			fi
@@ -73,7 +73,7 @@ platform_do_upgrade_sdcard() {
 
 		#copy partition uuid
 		echo "Writing new UUID to /dev/$diskdev..."
-		get_image "$@" | dd of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
+		get_image_dd "$1" of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
 	fi
 
 	case "$board" in
