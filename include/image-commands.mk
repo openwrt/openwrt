@@ -394,11 +394,16 @@ define Build/tplink-v2-image
 endef
 
 define Build/uImage
-	mkimage -A $(LINUX_KARCH) \
-		-O linux -T kernel \
-		-C $(word 1,$(1)) -a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
+	mkimage \
+		-A $(LINUX_KARCH) \
+		-O linux \
+		-T kernel \
+		-C $(word 1,$(1)) \
+		-a $(KERNEL_LOADADDR) \
+		-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		-n '$(if $(UIMAGE_NAME),$(UIMAGE_NAME),$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION))' \
-		$(wordlist 2,$(words $(1)),$(1)) -d $@ $@.new
+		$(wordlist 2,$(words $(1)),$(1)) \
+		-d $@ $@.new
 	mv $@.new $@
 endef
 
