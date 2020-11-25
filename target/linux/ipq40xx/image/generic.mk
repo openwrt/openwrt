@@ -636,6 +636,21 @@ define Device/netgear_ex6150v2
 endef
 TARGET_DEVICES += netgear_ex6150v2
 
+define Device/netgear_wac510
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Netgear
+	DEVICE_MODEL := WAC510
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@5
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGES += nand-factory.tar
+	IMAGE/nand-factory.tar := append-ubi | netgear-tar
+	DEVICE_PACKAGES := uboot-envtools
+endef
+TARGET_DEVICES += netgear_wac510
+
 define Device/openmesh_a42
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := OpenMesh
