@@ -1,22 +1,9 @@
 REQUIRE_IMAGE_METADATA=1
 
-get_magic_at() {
-	local pos="$2"
-	get_image "$1" | dd bs=1 count=2 skip="$pos" 2>/dev/null | hexdump -v -n 2 -e '1/1 "%02x"'
-}
-
 platform_check_image() {
 	local diskdev partdev diff
 
 	[ "$#" -gt 1 ] && return 1
-
-	case "$(get_magic_at "$1" 510)" in
-		55aa) ;;
-		*)
-			echo "Failed to verify MBR boot signature."
-			return 1
-		;;
-	esac
 
 	export_bootdevice && export_partdevice diskdev 0 || {
 		echo "Unable to determine upgrade device"
