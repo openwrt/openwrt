@@ -1,18 +1,6 @@
-get_magic_at() {
-	local file="$1"
-	local pos="$2"
-	get_image "$file" | dd bs=1 count=2 skip="$pos" 2>/dev/null | hexdump -v -n 2 -e '1/1 "%02x"'
-}
-
 platform_check_image_sdcard() {
 	local file="$1"
-	local magic diskdev partdev diff
-
-	magic=$(get_magic_at "$file" 510)
-	[ "$magic" != "55aa" ] && {
-		echo "Failed to verify MBR boot signature."
-		return 1
-	}
+	local diskdev partdev diff
 
 	export_bootdevice && export_partdevice diskdev 0 || {
 		echo "Unable to determine upgrade device"
