@@ -1,0 +1,193 @@
+<%#
+ Copyright 2011 Manuel Munz <freifunk at somakoma dot de>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+local fs  = require "nixio.fs"
+local utl = require "luci.util"
+local last_update
+local i = 1
+local rawdata
+local rawdata6
+local services_file_empty = true
+local has_services = false
+local uci = require "luci.model.uci".cursor()
+local ip = require "luci.ip"
+
+uci:foreach("olsrd", "LoadPlugin", function(s)
+	if s.library == "olsrd_nameservice" then
+		local services_file=s.services_file
+		if services_file and fs.access(services_file) then
+			has_services = true
+			rawdata = fs.readfile(s.services_file)
+		else
+			services_file="/var/run/services_olsr"
+			if fs.access(services_file) then
+				has_services = true
+				rawdata = fs.readfile(services_file)
+			end
+		end
+		services_file=services_file..".ipv6"
+		if services_file and fs.access(services_file) then
+			has_services = true
+			rawdata6 = fs.readfile(services_file)
+		else
+			services_file="/var/run/services_olsr.ipv6"
+			if fs.access(services_file) then
+				has_services = true
+				rawdata6 = fs.readfile(services_file)
+			end
+		end
+		if rawdata and #rawdata ~= 0 then
+			services_file_empty = nil
+		end
+		if rawdata6 and #rawdata6 ~= 0 then
+			services_file_empty = nil
+		end
+	end
+end)
+
+
+if not has_services or services_file_empty then
+%>
+	<%+header%>
+	<br />
+	<%:No services can be shown, because olsrd is not running or the olsrd-nameservice Plugin is not loaded.%>
+	<%+footer%>
+<%
+	return
+end
+
+function fetch_services()
+	local tables = {}
+	if rawdata and #rawdata ~= 0 then
+		tables = utl.split(utl.trim(rawdata), "\n", nil, true)
+		-- remove first 3 lines
+		for i = 1,3 do
+			table.remove(tables,1)
+		end
+	end
+	local tables6 = {}
+	if rawdata6 and #rawdata6 ~= 0 then
+		tables6 = utl.split(utl.trim(rawdata6), "\n", nil, true)
+		-- remove first 3 lines
+		for i = 1,3 do
+			table.remove(tables6,1)
+		end
+	end
+
+	-- store last line in last_update and remove it, then remove another empty line at the end
+	last_update=table.remove(tables)
+	table.remove(tables)
+	last_update=table.remove(tables6)
+	table.remove(tables6)
+	for k, v in ipairs(tables6) do
+		table.insert(tables, v)
+	end
+	return tables
+end
+local services = fetch_services()
+
+if luci.http.formvalue("status") == "1" then
+	local rv = {}
+	for k, line in ipairs(services) do
+		local field = utl.split(line, "[#|]", split, true)
+		local origin_lnk = ip.IPv6(pcdata(field[4]))
+		local origin_link = ""
+		if origin_lnk and origin_lnk:is6() then
+			origin_link = "["..origin_lnk:string().."]"
+		else
+			origin_link = pcdata(field[4])
+		end
+		local url, proto, descr, origin = pcdata(field[1]), pcdata(field[2]), utl.trim(pcdata(field[3])), pcdata(field[4])
+		rv[#rv+1] = {
+			url = url,
+			proto = proto,
+			origin = origin,
+			origin_link = origin_link,
+			descr = descr,
+			}
+	end
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(rv)
+	return
+end
+
+%>
+
+<%+header%>
+
+<script type="text/javascript">//<![CDATA[
+
+	XHR.poll(10 , '<%=REQUEST_URI%>', { status: 1 },
+		function(x, info)
+		{
+		var tbody = document.getElementById('olsr_services');
+			if (tbody)
+			{
+				var s = '<div class="tr cbi-section-table-titles">' +
+				'<div class="th cbi-section-table-cell"><%:Url%></div>' +
+				'<div class="th cbi-section-table-cell"><%:Protocol%></div>' +
+				'<div class="th cbi-section-table-cell"><%:Source%></div>' +
+				'</div>';
+
+				for (var idx = 0; idx < info.length; idx++)
+				{
+				var service = info[idx];
+				s += String.format(
+					'<div class="tr cbi-section-table-row cbi-rowstyle-'+(1 + (idx % 2))+'">' +
+						'<div class="td cbi-section-table-cell left"><a href="%s">%s</a></div>' +
+						'<div class="td cbi-section-table-cell left">%s</div>' +
+						'<div class="td cbi-section-table-cell left"><a href="http://%s/cgi-bin-status.html">%s</a></div>' +
+					'</div>',
+					service.url, service.descr, service.proto, service.origin_link, service.origin || '?'
+					);
+				}
+				tbody.innerHTML = s;
+			}
+		}
+	);
+//]]></script>
+	
+
+
+
+	<h2 name="content"><%:Services%></h2>
+
+	<fieldset class="cbi-section">
+	<legend><%:Internal services%></legend>
+	<div class="table cbi-section-table" id="olsr_services">
+			<div class="tr cbi-section-table-titles">
+				<div class="th cbi-section-table-cell"><%:Url%></div>
+				<div class="th cbi-section-table-cell"><%:Protocol%></div>
+				<div class="th cbi-section-table-cell"><%:Source%></div>
+			</div>
+
+	<%
+		for k, line in ipairs(services) do
+			local field = {}
+			-- split line at # and |, 1=url, 2=proto, 3=description, 4=source
+			local field = utl.split(line, "[#|]", split, true)
+			local origin_lnk = ip.IPv6(pcdata(field[4]))
+			local origin_link
+			if origin_lnk and origin_lnk:is6() then
+				origin_link = "["..origin_lnk:string().."]"
+			else
+				origin_link = pcdata(field[4])
+			end
+			local url, proto, descr, origin = pcdata(field[1]), pcdata(field[2]), utl.trim(pcdata(field[3])), pcdata(field[4])
+			%>
+
+			<div class="tr cbi-section-table-row cbi-rowstyle-<%=i%>">
+				<div class="td cbi-section-table-cell left"><a href="<%=url%>"><%=descr%></a></div>
+				<div class="td cbi-section-table-cell left"><%=proto%></div>
+				<div class="td cbi-section-table-cell left"><a href="http://<%=origin_link%>/cgi-bin-status.html"><%=origin%></a></div>
+			</div>
+			<% i = ((i % 2) + 1)
+		end %>
+	</div>
+	<br />
+	<%=last_update%>
+	</fieldset>
+<%+footer%>

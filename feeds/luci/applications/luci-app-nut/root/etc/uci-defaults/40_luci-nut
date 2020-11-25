@@ -1,0 +1,22 @@
+#!/bin/sh
+
+version="$(opkg status nut|grep 'Version: '|cut -f2 -d\ )"
+release="$(echo $version|cut -f2 -d-)"
+
+if [ "$version" = "2.7.4" ] && [ "$release" -lt 8 ]; then
+	uci -q batch <<-EOF >/dev/null
+		delete ucitrack.@nut_server[-1]
+		delete ucitrack.@nut_monitor[-1]
+		delete ucitrack.@nut_cgi[-1]
+		add ucitrack nut_server
+		set ucitrack.@nut_server[-1].init=nut-server
+		add ucitrack nut_monitor
+		set ucitrack.@nut_monitor[-1].init=nut-monitor
+		add ucitrack nut_cgi
+		set ucitrack.@nut_cgi[-1].init=nut-cgi
+		commit ucitrack
+EOF
+fi
+
+rm -f /tmp/luci-indexcache
+exit 0

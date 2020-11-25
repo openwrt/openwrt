@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ "$PKG_UPGRADE" != 1 ]; then
+	uci batch <<-EOF
+		set luci.themes.Material=/luci-static/material
+		set luci.main.mediaurlbase=/luci-static/material
+		commit luci
+	EOF
+fi
+
+exit 0

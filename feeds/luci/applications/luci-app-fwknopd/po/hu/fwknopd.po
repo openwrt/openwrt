@@ -1,0 +1,143 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: https://github.com/openwrt/luci/issues\n"
+"POT-Creation-Date: 2020-01-05 23:41+0000\n"
+"PO-Revision-Date: 2019-12-21 21:42+0000\n"
+"Last-Translator: Balázs Úr <balazs@urbalazs.hu>\n"
+"Language-Team: Hungarian <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationsfwknopd/hu/>\n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 3.10\n"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:48
+msgid ""
+"Allow SPA clients to request access to services through an iptables firewall "
+"instead of just to it."
+msgstr ""
+"Annak lehetővé tétele az SPA ügyfeleknek, hogy hozzáférést kérjenek a "
+"szolgáltatásokhoz egy iptables tűzfalon keresztül, ahelyett hogy csak ahhoz."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:49
+msgid "Allow SPA clients to request forwarding destination by DNS name."
+msgstr ""
+"Annak lehetővé tétele az SPA ügyfeleknek, hogy továbbítási célt kérjenek DNS-"
+"név alapján."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:22
+msgid "Base 64 key"
+msgstr "Base64 kulcs"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:33
+msgid ""
+"Define a set of ports and protocols (tcp or udp) that will be opened if a "
+"valid knock sequence is seen. If this entry is not set, fwknopd will attempt "
+"to honor any proto/port request specified in the SPA data (unless of it "
+"matches any “RESTRICT_PORTS” entries). Multiple entries are comma-separated."
+msgstr ""
+"Portok és protokollok (TCP vagy UDP) halmazának meghatározása, amelyek ki "
+"lesznek nyitva, ha egy érvényes kopogási sorozat látható. Ha ez a kulcs "
+"nincs beállítva, akkor az fwknopd megpróbálja tiszteletben tartani az SPA "
+"adatokban megadott bármely protokoll/port kéréseket (hacsak nem illeszkedik "
+"bármely „RESTRICT_PORTS” bejegyzésre). Több bejegyzést vesszővel elválasztva "
+"kell megadni."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:36
+msgid ""
+"Define the length of time access will be granted by fwknopd through the "
+"firewall after a valid knock sequence from a source IP address. If "
+"“FW_ACCESS_TIMEOUT” is not set then the default timeout of 30 seconds will "
+"automatically be set."
+msgstr ""
+"Az időhozzáférés hosszának meghatározása, amelyet az fwknopd fog megadni a "
+"tűzfalon keresztül egy forrás IP-címről érkező érvényes kopogási sorozat "
+"után. Ha az „FW_ACCESS_TIMEOUT” nincs beállítva, akkor az alapértelmezett 30 "
+"másodperces időkorlát lesz automatikusan beállítva."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:18
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:20
+msgid ""
+"Define the symmetric key used for decrypting an incoming SPA packet that is "
+"encrypted by the fwknop client with Rijndael."
+msgstr ""
+"Egy bejövő SPA csomag visszafejtéséhez használt szimmetrikus kulcs "
+"meghatározása, amely csomagot az fwknop ügyfél a Rijndael használatával "
+"titkosított."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:6
+msgid "Enable Uci/Luci control"
+msgstr "Uci/Luci vezérlés engedélyezése"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:8
+msgid "Enable config overwrite"
+msgstr "Beállítás felülírásának engedélyezése"
+
+#: applications/luci-app-fwknopd/luasrc/controller/fwknopd.lua:13
+msgid "Firewall Knock Daemon"
+msgstr "Tűzfalkopogó démon"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:4
+msgid "Firewall Knock Operator"
+msgstr "Tűzfalkopogó operátor"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:39
+msgid ""
+"Force all SPA packets to contain a real IP address within the encrypted "
+"data. This makes it impossible to use the -s command line argument on the "
+"fwknop client command line, so either -R has to be used to automatically "
+"resolve the external address (if the client behind a NAT) or the client must "
+"know the external IP and set it via the -a argument."
+msgstr ""
+"Az összes SPA csomag arra kényszerítése, hogy valós IP-címet tartalmazzon a "
+"titkosított adatokon belül. Ez lehetővé teszi a -s parancssori argumentum "
+"használatát az fwknop ügyfél parancssorában, így vagy a -R kapcsolót kell "
+"használni a külső cím automatikus feloldásához (ha az ügyfél NAT mögött "
+"van), vagy az ügyfélnek tudnia kell a külső IP-t, és be kell állítania a -a "
+"argumentumon keresztül."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:46
+msgid ""
+"Maximum age in seconds that an SPA packet will be accepted. defaults to 120 "
+"seconds"
+msgstr ""
+"Legnagyobb életkor másodpercben, amíg egy SPA csomag elfogadásra kerül. "
+"Alapértelmezetten 120 másodperc"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:19
+msgid "Normal Key"
+msgstr "Normál kulcs"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:47
+msgid "Specify the ethernet interface on which fwknopd will sniff packets."
+msgstr ""
+"Az ethernet csatoló megadása, amelyen az fwknopd szimatolni fogja a "
+"csomagokat."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:28
+msgid "The base64 hmac key"
+msgstr "A Base64 hmac kulcs"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:17
+msgid "Use ANY for any source ip"
+msgstr "BÁRMELY használata bármely forrás IP-nél"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:8
+msgid ""
+"When unchecked, the config files in /etc/fwknopd will be used as is, "
+"ignoring any settings here."
+msgstr ""
+"Ha nincs bejelölve, akkor az /etc/fwknopd könyvtárban lévő beállítófájlok "
+"úgy lesznek használva, ahogy vannak, minden beállítást figyelmen kívül "
+"hagyva itt."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:10
+msgid "access.conf stanzas"
+msgstr "access.conf stanzák"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:44
+msgid "fwknopd.conf config options"
+msgstr "fwknopd.conf beállítás kapcsolói"

@@ -1,0 +1,155 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008 Jo-Philipp Wich <jow@openwrt.org>
+ Copyright 2011 Manuel Munz <freifunk at somakoma dot de>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+local i = 1
+require("luci.model.uci")
+local uci = luci.model.uci.cursor_state()
+
+uci:foreach("olsrd", "olsrd", function(s)
+        if s.SmartGateway and s.SmartGateway == "yes" then has_smartgw  = true end
+end)
+
+
+if luci.http.formvalue("status") == "1" then
+	local rv = {}
+	for k, gw in ipairs(gws.ipv4, gws.ipv6) do
+		gw.cost = tonumber(gw.cost)/1024 or 0
+		if gw.cost >= 100 then
+                        gw.cost = 0
+                end
+
+		rv[#rv+1] = {
+			proto = gw.IPv4 and '4' or '6',
+			originator = gw.originator,
+			selected = gw.selected and luci.i18n.translate('yes') or luci.i18n.translate('no'),
+			cost = gw.cost > 0 and string.format("%.3f", gw.cost) or luci.i18n.translate('infinate'),
+			hops = gw.hops,
+			uplink = gw.uplink,
+			downlink = gw.downlink,
+			v4 = gw.IPv4 and luci.i18n.translate('yes') or luci.i18n.translate('no'),
+			v6 = gw.IPv6 and luci.i18n.translate('yes') or luci.i18n.translate('no'),
+			prefix = gw.prefix
+			}
+	end
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(rv)
+	return
+end
+%>
+
+<%+header%>
+
+<script type="text/javascript">//<![CDATA[
+XHR.poll(10, '<%=REQUEST_URI%>', { status: 1 },
+	function(x, info)
+	{
+	var smartgwdiv = document.getElementById('olsrd_smartgw');
+	if (smartgwdiv)
+	{
+		var s = '<div class="tr cbi-section-table-titles">' +
+			'<div class="th cbi-section-table-cell"><%:Gateway%></div>' +
+			'<div class="th cbi-section-table-cell"><%:Selected%></div>' +
+			'<div class="th cbi-section-table-cell"><%:ETX%></div>' +
+			'<div class="th cbi-section-table-cell"><%:Hops%></div>' +
+			'<div class="th cbi-section-table-cell"><%:Uplink%></div>' +
+			'<div class="th cbi-section-table-cell"><%:Downlink%></div>' +
+			'<div class="th cbi-section-table-cell"><%:IPv4%></div>' +
+			'<div class="th cbi-section-table-cell"><%:IPv6%></div>' +
+			'<div class="th cbi-section-table-cell"><%:Prefix%></div>' +
+			'</div>';
+
+		for (var idx = 0; idx < info.length; idx++)
+		{
+			var smartgw = info[idx];
+			var linkgw;
+			s += '<div class="tr cbi-section-table-row cbi-rowstyle-'+(1 + (idx % 2))+' proto-' + smartgw.proto + '">'
+			if (smartgw.proto == '6') {
+				linkgw = '<a href="http://[' + smartgw.originator + ']/cgi-bin-status.html">' + smartgw.originator + '</a>'
+			} else {
+				linkgw = '<a href="http://' + smartgw.originator + '/cgi-bin-status.html">' + smartgw.originator + '</a>'
+			}
+
+			s += String.format(
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>',
+				linkgw, smartgw.selected, smartgw.cost, smartgw.hops, smartgw.uplink, smartgw.downlink, smartgw.v4, smartgw.v6, smartgw.prefix
+                                )
+			s += '</div>'
+		}
+		smartgwdiv.innerHTML = s;
+	}
+}
+);
+//]]></script>
+
+<h2 name="content"><%:SmartGW announcements%></h2>
+
+<div id="togglebuttons"></div>
+
+<% if has_smartgw then %>
+
+	<fieldset class="cbi-section">
+		<legend><%:Overview of smart gateways in this network%></legend>
+		<div class="table cbi-section-table" id="olsrd_smartgw">
+			<div class="tr cbi-section-table-titles">
+				<div class="th cbi-section-table-cell"><%:Gateway%></div>
+				<div class="th cbi-section-table-cell"><%:Selected%></div>
+				<div class="th cbi-section-table-cell"><%:ETX%></div>
+				<div class="th cbi-section-table-cell"><%:Hops%></div>
+				<div class="th cbi-section-table-cell"><%:Uplink%></div>
+				<div class="th cbi-section-table-cell"><%:Downlink%></div>
+				<div class="th cbi-section-table-cell"><%:IPv4%></div>
+				<div class="th cbi-section-table-cell"><%:IPv6%></div>
+				<div class="th cbi-section-table-cell"><%:Prefix%></div>
+			</div>
+
+			<% for k, gw in ipairs(gws.ipv4, gws.ipv6) do 
+
+			gw.cost = tonumber(gw.cost)/1024 or 0
+	 		if gw.cost >= 100 then
+	                        gw.cost = 0
+               		end
+			%>
+
+			<div class="tr cbi-section-table-row cbi-rowstyle-<%=i%> proto-<%=proto%>">
+				<% if gw.proto == '6' then %>
+					<div class="td cbi-section-table-cell left"><a href="http://[<%=gw.originator%>]/cgi-bin-status.html"><%=gw.originator%></a></div>
+				<% else %>
+					<div class="td cbi-section-table-cell left"><a href="http://<%=gw.originator%>/cgi-bin-status.html"><%=gw.originator%></a></div>
+				<% end %>
+
+				<div class="td cbi-section-table-cell left"><%=gw.selected and luci.i18n.translate('yes') or luci.i18n.translate('no')%></div>
+				<div class="td cbi-section-table-cell left"><%=gw.cost > 0 and string.format("%.3f", gw.cost) or luci.i18n.translate('infinate')%></div>
+				<div class="td cbi-section-table-cell left"><%=gw.hops%></div>
+				<div class="td cbi-section-table-cell left"><%=gw.uplink%></div>
+				<div class="td cbi-section-table-cell left"><%=gw.downlink%></div>
+				<div class="td cbi-section-table-cell left"><%=gw.IPv4 and luci.i18n.translate('yes') or luci.i18n.translate('no')%></div>
+				<div class="td cbi-section-table-cell left"><%=gw.IPv6 and luci.i18n.translate('yes') or luci.i18n.translate('no')%></div>
+				<div class="td cbi-section-table-cell left"><%=gw.prefix%></div>
+			</div>
+
+			<% i = ((i % 2) + 1)
+			end %>
+		</div>
+	</fieldset>
+
+<% else %>
+
+	<%:SmartGateway is not configured on this system.%>
+
+<% end %>
+
+<%+status-olsr/common_js%>
+<%+footer%>

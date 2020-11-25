@@ -1,0 +1,81 @@
+<%+cbi/valueheader%>
+
+<%-
+	local utl = require "luci.util"
+	local nwm = require "luci.model.network".init()
+
+	local net, iface
+	local networks = nwm:get_networks()
+	local value = self:formvalue(section)
+
+	self.cast = nil
+
+	if not value or value == "-" then
+		value = self:cfgvalue(section) or self.default
+	end
+
+	local checked = { }
+	for value in utl.imatch(value) do
+		checked[value] = true
+	end
+-%>
+
+<div class="cbi-dropdown" display-items="10" placeholder="<%:-- please select -- %>"<%=
+	attr("name", cbid) ..
+	ifattr(self.widget == "checkbox", "multiple", "multiple") ..
+	ifattr(self.widget == "checkbox", "optional", "optional")
+%>>
+	<script type="item-template"><!--
+		<li data-value="{{value}}">
+			<span class="ifacebadge" style="background:repeating-linear-gradient(45deg,rgba(204,204,204,0.5),rgba(204,204,204,0.5) 5px,rgba(255,255,255,0.5) 5px,rgba(255,255,255,0.5) 10px)">
+				{{value}}: <em>(<%:create%>)</em>
+			</span>
+		</li>
+	--></script>
+	<ul>
+		<% if self.widget ~= "checkbox" then %>
+		<li data-value=""<%= ifattr(not value, "selected", "selected") %>>
+			<em><%:unspecified%></em>
+		</li>
+		<% end %>
+
+		<% for _, net in ipairs(networks) do
+		       if (net:name() ~= "loopback") and
+			      (net:name() ~= self.exclude) and
+			      (not self.novirtual or not net:is_virtual())
+			   then %>
+		<li<%= attr("data-value", net:name()) .. ifattr(checked[net:name()], "selected", "selected") %>>
+			<span class="ifacebadge"><%=net:name()%>:
+				<%
+					local empty = true
+					for _, iface in ipairs(net:is_bridge() and net:get_interfaces() or { net:get_interface() }) do
+						if not iface:is_bridge() then
+							empty = false
+				-%>
+					<img<%=attr("title", iface:get_i18n())%> style="width:16px; height:16px; vertical-align:middle" src="<%=resource%>/icons/<%=iface:type()%><%=iface:is_up() and "" or "_disabled"%>.png" />
+				<%- end end %>
+				<% if empty then %>
+					<em class="hide-close"><%:(no interfaces attached)%></em>
+					<em class="hide-open">-</em>
+				<% end %>
+			</span>
+		</li>
+		<% end end %>
+
+		<% if not self.nocreate then %>
+		<li data-value="-"<%= ifattr(not value and self.widget ~= "checkbox", "selected", "selected") %>>
+			<em>
+				<%- if self.widget == "checkbox" then -%>
+					<%:create:%>
+				<%- else -%>
+					<%:unspecified -or- create:%>
+				<%- end -%>
+			</em>
+			<input style="display:none" type="password" />
+			<input class="create-item-input" type="text" />
+		</li>
+		<% end %>
+	</ul>
+</div>
+
+<%+cbi/valuefooter%>

@@ -1,0 +1,67 @@
+<%#
+Copyright 2018 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%-
+	local util   = require("luci.util")
+	local ipsets = util.split(util.trim(util.exec("ipset -n -L 2>/dev/null | sort")), "\n", nil, true) or {}
+-%>
+
+<%+header%>
+<%+banip/banip_css%>
+
+<script type="text/javascript">
+//<![CDATA[
+	function ipset_view()
+	{
+		var div_ipsets = document.getElementById("div_ipsets");
+		var ipset      = div_ipsets.querySelector("#s_ipsets").value;
+		var filter     = document.getElementById("checkbox_filter").checked;
+		var view       = document.getElementById("view_id");
+
+		if (!ipset)
+		{
+			return;
+		}
+		view.value = "<%:Loading ...%>";
+
+	new XHR().get('<%=luci.dispatcher.build_url("admin", "services", "banip")%>/ipsetview/' + ipset + "/" + filter, null,
+		function(x)
+		{
+		if (!x)
+			{
+				view.value = "<%:No response!%>";
+				return;
+			}
+			view.value = x.responseText;
+		});
+	}
+//]]>
+</script>
+
+<div class="cbi-map">
+	<div class="cbi-section">
+		<div class="cbi-section-descr"><%:Check the current available IPSets.%></div>
+		<div class="cbi-section-node">
+			<div class="table cbi-section-table">
+				<div class="tr cbi-section-table-row">
+					<div class="td left">
+						<input class="cbi-input-checkbox" data-update="click change" type="checkbox" id="checkbox_filter" name="checkbox_filter" value="1" checked="checked" />
+						<label for="checkbox_filter"><%_Show only set member with packet counter &gt; 0%></label>
+					</div>
+				</div>
+				<div class="tr cbi-section-table-row" id="div_ipsets">
+					<div class="td left">
+						<select id="s_ipsets" class="cbi-input-select cbi-button" style="width:15em">
+							<%- for _, z in ipairs(ipsets) do -%><option value="<%=z%>"><%=z%></option><%- end -%>
+						</select>
+						<input type="button" id="bt_load" value="<%:Load%>" onclick="ipset_view()" class="cbi-button cbi-button-add" />
+					</div>
+				</div>
+			</div>
+		</div>
+		<textarea id="view_id" readonly="readonly" wrap="off" value=""></textarea>
+	</div>
+</div>
+<%+footer%>

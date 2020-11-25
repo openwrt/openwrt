@@ -1,0 +1,78 @@
+#!/usr/bin/env lua
+
+local json = require "luci.jsonc"
+local fs   = require "nixio.fs"
+
+local function readfile(path)
+	local s = fs.readfile(path)
+	return s and (s:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+
+local function writefile(path, data)
+	local n = fs.writefile(path, data)
+	return (n == #data)
+end
+
+local function parseInput()
+	local parse = json.new()
+	local done, err
+
+	while true do
+		local chunk = io.read(4096)
+		if not chunk then
+			break
+		elseif not done and not err then
+			done, err = parse:parse(chunk)
+		end
+	end
+
+	if not done then
+		print(json.stringify({ error = err or "Incomplete input" }))
+		os.exit(1)
+	end
+
+	return parse:get()
+end
+
+if arg[1] == "list" then
+	print(json.stringify({
+		getCertificates = {
+			interface = "interface"
+		},
+		setCertificates = {
+			interface = "interface",
+			user_certificate = "PEM file data",
+			user_privatekey = "PEM file data",
+			ca_certificate = "PEM file data"
+		}
+	}))
+elseif arg[1] == "call" then
+	local args = parseInput()
+
+	if not args.interface or
+	   type(args.interface) ~= "string" or
+	   not args.interface:match("^[a-zA-Z0-9_]+$")
+	then
+		print(json.stringify({ error = "Invalid interface name" }))
+		os.exit(1)
+	end
+
+	if arg[2] == "getCertificates" then
+		print(json.stringify({
+			user_certificate = readfile(string.format("/etc/openconnect/user-cert-%s.pem", args.interface)),
+			user_privatekey = readfile(string.format("/etc/openconnect/user-key-%s.pem", args.interface)),
+			ca_certificate = readfile(string.format("/etc/openconnect/ca-%s.pem", args.interface))
+		}))
+	elseif arg[2] == "setCertificates" then
+		if args.user_certificate then
+			writefile(string.format("/etc/openconnect/user-cert-%s.pem", args.interface), args.user_certificate)
+		end
+		if args.user_privatekey then
+			writefile(string.format("/etc/openconnect/user-key-%s.pem", args.interface), args.user_privatekey)
+		end
+		if args.ca_certificate then
+			writefile(string.format("/etc/openconnect/ca-%s.pem", args.interface), args.ca_certificate)
+		end
+		print(json.stringify({ result = true }))
+	end
+end

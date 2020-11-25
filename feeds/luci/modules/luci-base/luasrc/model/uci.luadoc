@@ -1,0 +1,369 @@
+---[[
+LuCI UCI model library.
+
+The typical workflow for UCI is:  Get a cursor instance from the
+cursor factory, modify data (via Cursor.add, Cursor.delete, etc.),
+save the changes to the staging area via Cursor.save and finally
+Cursor.commit the data to the actual config files.
+LuCI then needs to Cursor.apply the changes so daemons etc. are
+reloaded.
+@cstyle	instance
+]]
+module "luci.model.uci"
+
+---[[
+Create a new UCI-Cursor.
+
+@class				function
+@name				cursor
+@return				UCI-Cursor
+]]
+
+---[[
+Create a new Cursor initialized to the state directory.
+
+@class				function
+@name				cursor_state
+@return				UCI cursor
+]]
+
+---[[
+Applies UCI configuration changes.
+
+If the rollback parameter is set to true, the apply function will invoke the
+rollback mechanism which causes the configuration to be automatically reverted
+if no confirm() call occurs within a certain timeout.
+
+The current default timeout is 30s and can be increased using the
+"luci.apply.timeout" uci configuration key.
+
+@class				function
+@name				Cursor.apply
+@param rollback		Enable rollback mechanism
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Confirms UCI apply process.
+
+If a previous UCI apply with rollback has been invoked using apply(true),
+this function confirms the process and cancels the pending rollback timer.
+
+If no apply with rollback session is active, the function has no effect and
+returns with a "No data" error.
+
+@class				function
+@name				Cursor.confirm
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Cancels UCI apply process.
+
+If a previous UCI apply with rollback has been invoked using apply(true),
+this function cancels the process and rolls back the configuration to the
+pre-apply state.
+
+If no apply with rollback session is active, the function has no effect and
+returns with a "No data" error.
+
+@class				function
+@name				Cursor.rollback
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Checks whether a pending rollback is scheduled.
+
+If a previous UCI apply with rollback has been invoked using apply(true),
+and has not been confirmed or rolled back yet, this function returns true
+and the remaining time until rollback in seconds. If no rollback is pending,
+the function returns false. On error, the function returns false and an
+additional string describing the error.
+
+@class				function
+@name				Cursor.rollback_pending
+@return				Boolean whether rollback is pending
+@return				Remaining time in seconds
+]]
+
+---[[
+Delete all sections of a given type that match certain criteria.
+
+@class				function
+@name				Cursor.delete_all
+@param config		UCI config
+@param type			UCI section type
+@param comparator	Function that will be called for each section and returns
+					a boolean whether to delete the current section (optional)
+]]
+
+---[[
+Create a new section and initialize it with data.
+
+@class				function
+@name				Cursor.section
+@param config		UCI config
+@param type			UCI section type
+@param name			UCI section name (optional)
+@param values		Table of key - value pairs to initialize the section with
+@return				Name of created section
+]]
+
+---[[
+Updated the data of a section using data from a table.
+
+@class				function
+@name				Cursor.tset
+@param config		UCI config
+@param section		UCI section name (optional)
+@param values		Table of key - value pairs to update the section with
+]]
+
+---[[
+Get a boolean option and return it's value as true or false.
+
+@class				function
+@name				Cursor.get_bool
+@param config		UCI config
+@param section		UCI section name
+@param option		UCI option
+@return				Boolean
+]]
+
+---[[
+Get an option or list and return values as table.
+
+@class				function
+@name				Cursor.get_list
+@param config		UCI config
+@param section		UCI section name
+@param option		UCI option
+@return table.  	If the option was not found, you will simply get an empty
+					table.
+]]
+
+---[[
+Get the given option from the first section with the given type.
+
+@class				function
+@name				Cursor.get_first
+@param config		UCI config
+@param type			UCI section type
+@param option		UCI option (optional)
+@param default		Default value (optional)
+@return				UCI value
+]]
+
+---[[
+Set given values as list. Setting a list option to an empty list
+has the same effect as deleting the option.
+
+@class				function
+@name				Cursor.set_list
+@param config		UCI config
+@param section		UCI section name
+@param option		UCI option
+@param value		Value or table. Non-table values will be set as single
+					item UCI list.
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Create a sub-state of this cursor.
+
+The sub-state is tied to the parent cursor, means it the parent unloads or
+loads configs, the sub state will do so as well.
+
+@class				function
+@name				Cursor.substate
+@return				UCI state cursor tied to the parent cursor
+]]
+
+---[[
+Add an anonymous section.
+
+@class				function
+@name				Cursor.add
+@param config		UCI config
+@param type			UCI section type
+@return				Name of created section
+]]
+
+---[[
+Get a table of saved but uncommitted changes.
+
+@class				function
+@name				Cursor.changes
+@param config		UCI config
+@return				Table of changes
+@see				Cursor.save
+]]
+
+---[[
+Commit saved changes.
+
+@class				function
+@name				Cursor.commit
+@param config		UCI config
+@return				Boolean whether operation succeeded
+@see				Cursor.revert
+@see				Cursor.save
+]]
+
+---[[
+Deletes a section or an option.
+
+@class				function
+@name				Cursor.delete
+@param config		UCI config
+@param section		UCI section name
+@param option		UCI option (optional)
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Call a function for every section of a certain type.
+
+@class				function
+@name				Cursor.foreach
+@param config		UCI config
+@param type			UCI section type
+@param callback		Function to be called
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Get a section type or an option
+
+@class				function
+@name				Cursor.get
+@param config		UCI config
+@param section		UCI section name
+@param option		UCI option (optional)
+@return				UCI value
+]]
+
+---[[
+Get all sections of a config or all values of a section.
+
+@class				function
+@name				Cursor.get_all
+@param config		UCI config
+@param section		UCI section name (optional)
+@return				Table of UCI sections or table of UCI values
+]]
+
+---[[
+Manually load a config.
+
+@class				function
+@name				Cursor.load
+@param config		UCI config
+@return				Boolean whether operation succeeded
+@see				Cursor.save
+@see				Cursor.unload
+]]
+
+---[[
+Revert saved but uncommitted changes.
+
+@class				function
+@name				Cursor.revert
+@param config		UCI config
+@return				Boolean whether operation succeeded
+@see				Cursor.commit
+@see				Cursor.save
+]]
+
+---[[
+Saves changes made to a config to make them committable.
+
+@class				function
+@name				Cursor.save
+@param config		UCI config
+@return				Boolean whether operation succeeded
+@see				Cursor.load
+@see				Cursor.unload
+]]
+
+---[[
+Set a value or create a named section.
+
+When invoked with three arguments `config`, `sectionname`, `sectiontype`,
+then a named section of the given type is created.
+
+When invoked with four arguments `config`, `sectionname`, `optionname` and
+`optionvalue` then the value of the specified option is set to the given value.
+
+@class				function
+@name				Cursor.set
+@param config		UCI config
+@param section		UCI section name
+@param option		UCI option or UCI section type
+@param value		UCI value or nothing if you want to create a section
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Get the configuration directory.
+
+@class				function
+@name				Cursor.get_confdir
+@return				Configuration directory
+]]
+
+---[[
+Get the directory for uncomitted changes.
+
+@class				function
+@name				Cursor.get_savedir
+@return				Save directory
+]]
+
+---[[
+Get the effective session ID.
+
+@class				function
+@name				Cursor.get_session_id
+@return				String containing the session ID
+]]
+
+---[[
+Set the configuration directory.
+
+@class				function
+@name				Cursor.set_confdir
+@param directory	UCI configuration directory
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Set the directory for uncommitted changes.
+
+@class				function
+@name				Cursor.set_savedir
+@param directory	UCI changes directory
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Set the effective session ID.
+
+@class				function
+@name				Cursor.set_session_id
+@param id			String containing the session ID to set
+@return				Boolean whether operation succeeded
+]]
+
+---[[
+Discard changes made to a config.
+
+@class				function
+@name				Cursor.unload
+@param config		UCI config
+@return				Boolean whether operation succeeded
+@see				Cursor.load
+@see				Cursor.save
+]]
+

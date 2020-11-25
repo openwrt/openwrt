@@ -1,0 +1,130 @@
+<%+header%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript" src="<%=resource%>/bmx7/js/polling.js"></script>
+
+<div class="cbi-map">
+	<center>
+		<img src="<%=resource%>/bmx7/bmx7logo.png" />
+		<br />
+		<br />
+		A mesh routing protocol for Linux devices.<br />
+		Visit <a href="http://bmx6.net">bmx6.net</a> for more information.<br />
+		<br />
+	</center>
+
+<div class="cbi-map-descr"></div>
+
+<div class="cbi-section">
+	<legend><%:Node configuration%></legend>
+	<div class="cbi-section-node">
+	<div class="table" id="config_div">
+		<div class="tr table-titles">
+			<div class="th"><%:Short ID%></div>
+			<div class="th"><%:Node name%></div>
+			<div class="th"><%:Primary IPv6 address%></div>
+			<div class="th"><%:Node key%></div>
+			<div class="th"><%:Short DHash%></div>
+			<div class="th"><%:BMX7 revision%></div>
+		</div>
+	</div>
+	</div>
+</div>
+
+
+<div class="cbi-section">
+	<legend><%:Node status%></legend>
+	<div class="cbi-section-node">
+	<div class="table" id="status_div">
+		<div class="tr table-titles">
+			<div class="th"><%:Nodes seen%></div>
+			<div class="th"><%:Neighbours%></div>
+			<div class="th"><%:Tunnelled IPv6 address%></div>
+			<div class="th"><%:Tunnelled IPv4 address%></div>
+			<div class="th"><%:Uptime%></div>
+			<div class="th"><%:CPU usage%></div>
+			<div class="th"><%:Memory usage%></div>
+			<div class="th"><%:Tx queue%></div>
+		</div>
+	</div>
+	</div>
+</div>
+
+<div class="cbi-section">
+	<legend><%:Network interfaces%></legend>
+	<div class="cbi-section-node">
+	<div class="table" id="ifaces_div">
+		<div class="tr table-titles">
+			<div class="th"><%:Interface%></div>
+			<div class="th"><%:State%></div>
+			<div class="th"><%:Type%></div>
+			<div class="th"><%:Max rate%></div>
+			<div class="th"><%:LinkLocal Ipv6%></div>
+			<div class="th"><%:RX BpP%></div>
+			<div class="th"><%:TX BpP%></div>
+		</div>
+	</div>
+	</div>
+</div>
+
+
+<div class="cbi-section">
+	<legend><%:Links%></legend>
+	<div class="cbi-section-node">
+	<div class="table" id="links_div">
+		<div class="tr table-titles">
+			<div class="th"><%:Short ID%></div>
+			<div class="th"><%:Name%></div>
+			<div class="th"><%:Link key%></div>
+			<div class="th"><%:Remote linklocal IPv6%></div>
+			<div class="th"><%:Device%></div>
+			<div class="th"><%:RX rate%></div>
+			<div class="th"><%:TX rate%></div>
+			<div class="th"><%:Routes%></div>
+		</div>
+	</div>
+	</div>
+</div>
+
+</div>
+
+<script type="text/javascript">//<![CDATA[
+	new TablePooler(1,"/cgi-bin/bmx7-info", {'$info':''}, "config_div", function(st){
+		var res = Array();
+		var sta = st.info[0].status;
+		res.push([sta.shortId, sta.name, sta.primaryIp, sta.nodeKey, sta.shortDhash, sta.revision]);
+		return res;
+	});
+
+	new TablePooler(1,"/cgi-bin/bmx7-info", {'$info':''}, "status_div", function(st){
+		var res = Array();
+		var sta = st.info[0].status;
+		var mem = st.info[3].memory.bmx7;
+		var txQ = sta.txQ.split('/');
+		var ptxQ = '<p style="color:rgb('+parseInt(255*txQ[0]/txQ[1])+','+parseInt(128*(txQ[1]-txQ[0])/txQ[1])+',0)")>'+sta.txQ+'</p>';
+		res.push([sta.nodes, sta.nbs, sta.tun6Address, sta.tun4Address, sta.uptime, sta.cpu, mem, ptxQ]);
+		return res;
+	});
+
+	new TablePooler(1,"/cgi-bin/bmx7-info", {'$info':''}, "ifaces_div", function(st){
+		var res = Array();
+		var ifaces = st.info[1].interfaces;
+
+		ifaces.forEach(function(iface){
+			res.push([iface.dev, iface.state, iface.type, iface.rateMax, iface.localIp, iface.rxBpP, iface.txBpP]);
+		});
+		return res;
+	});
+
+	new TablePooler(1,"/cgi-bin/bmx7-info", {'$info':''}, "links_div", function(st){
+		var res = Array();
+		links = st.info[2].links;
+
+		links.forEach(function(link){
+			res.push([link.shortId, link.name, link.linkKey, link.nbLocalIp, link.dev, link.rxRate, link.txRate, link.rts]);
+		});
+		return res;
+	});
+
+//]]></script>
+
+<%+footer%>

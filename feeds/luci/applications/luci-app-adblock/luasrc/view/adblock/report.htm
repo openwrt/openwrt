@@ -1,0 +1,310 @@
+<%#
+Copyright 2017-2019 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%+header%>
+<%+adblock/adblock_css%>
+
+<script type="text/javascript">
+//<![CDATA[
+	function report_json(json)
+	{
+		document.getElementById("value_1").innerHTML = json.data.start_date + ", " + json.data.start_time || "-";
+		document.getElementById("value_2").innerHTML = json.data.end_date + ", " + json.data.end_time || "-";
+		document.getElementById("value_3").innerHTML = json.data.total || "-";
+		document.getElementById("value_4").innerHTML = json.data.blocked + " (" + json.data.percent + ")" || "-";
+
+		var a_cnt;
+		var b_cnt;
+		var c_cnt;
+		var a_val;
+		var b_val;
+		var c_val;
+		var s = '<div class="tr table-titles">';
+		s += '<div class="th left"><%:Count%></div>';
+		s += '<div class="th left"><%:Name / IP-Address%></div>';
+		s += '<div class="th left"><%:Count%></div>';
+		s += '<div class="th left"><%:Domain%></div>';
+		s += '<div class="th left"><%:Count%></div>';
+		s += '<div class="th left"><%:Blocked Domain%></div></div>';
+
+		for(var i=0;i<10;i++)
+		{
+			if (i < json.top_clients.length)
+			{
+				a_cnt = json.top_clients[i].count;
+				a_val = json.top_clients[i].address;
+			}
+			else
+			{
+				a_cnt = "-";
+				a_val = "";
+			}
+
+			if (i < json.top_domains.length)
+			{
+				b_cnt = json.top_domains[i].count;
+				b_val = json.top_domains[i].address;
+			}
+			else
+			{
+				b_cnt = "-";
+				b_val = "";
+			}
+
+			if (i < json.top_blocked.length)
+			{
+				c_cnt = json.top_blocked[i].count;
+				c_val = json.top_blocked[i].address;
+			}
+			else
+			{
+				c_cnt = "-";
+				c_val = "";
+			}
+
+			s += '<div class="tr left">';
+			s += '<div class="td left" data-title="<%:Count%>">' + a_cnt + '</div>';
+			s += '<div class="td left" data-title="<%:Name / IP-Address%>">' + a_val + '</div>';
+			s += '<div class="td left" data-title="<%:Count%>">' + b_cnt + '</div>';
+			s += '<div class="td left" data-title="<%:Domain%>">' + b_val + '</div>';
+			s += '<div class="td left" data-title="<%:Count%>">' + c_cnt + '</div>';
+			s += '<div class="td left" data-title="<%:Blocked Domain%>">' + c_val + '</div></div>';
+		}
+		document.getElementById("value_5").innerHTML = s;
+	}
+
+	function report_text(text)
+	{
+		var s = '<div class="tr table-titles">';
+		s += '<div class="th left"><%:Date%></div>';
+		s += '<div class="th left"><%:Time%></div>';
+		s += '<div class="th left"><%:Client%></div>';
+		s += '<div class="th left"><%:Domain%></div>';
+		s += '<div class="th left"><%:Answer%></div>';
+		s += '<div class="th left"><%:Action%></div></div>';
+		var btn1;
+		var record;
+		var title_arr = ["<%:Date%>", "<%:Time%>", "<%:Client%>", "<%:Domain%>", "<%:Answer%>", "<%:Action%>"];
+		var array = text.split("\n");
+		for (var i=0;i<array.length;i++)
+		{
+			record = array[i].split("\t");
+			if (record[0] && record[0] != "undefined")
+			{
+				s += '<div class="tr left">';
+				for (var j=0;j<5;j++)
+				{
+					s += '<div class="td left" data-title="' + title_arr[j] + '">' + record[j] + '</div>';
+					if (record[4] === "NX")
+					{
+						btn1 = '<div class="td left" data-title="' + title_arr[5] + '"><input type="button" class="cbi-button cbi-button-edit" name="add_whitelist,' + record[3] + '" value="<%:Whitelist%>" onclick="btn_action(this)" /></div>';
+					}
+					else if (record[4] === "OK")
+					{
+						btn1 = '<div class="td left" data-title="' + title_arr[5] + '"><input type="button" class="cbi-button cbi-button-remove" name="add_blacklist,' + record[3] + '" value="<%:Blacklist%>" onclick="btn_action(this)" /></div>';
+					}
+					else
+					{
+						btn1 = '-'
+					}
+				}
+				s += btn1 + '</div>'
+			}
+		}
+		document.getElementById("value_6").innerHTML = s;
+	}
+
+	function btn_action(value)
+	{
+		var action = value.name.split(",");
+
+		if (action[0] === "do_report")
+		{
+			var btn1         = document.getElementById("btn1");
+			var btn1_running = document.getElementById("btn1_running");
+
+			btn1.disabled = true;
+			running(btn1_running, 1);
+
+			document.getElementById("filter_search").value = '';
+			document.getElementById("filter_count").selectedIndex = 1;
+
+			XHR.get('<%=luci.dispatcher.build_url("admin", "services", "adblock")%>/action/' + action[0], null,
+			function(x)
+			{
+				if (!x)
+				{
+					return;
+				}
+				XHR.get('<%=luci.dispatcher.build_url("admin", "services", "adblock", "report_json")%>', null,
+				function(x, json_info)
+				{
+					if (!x || !json_info || !json_info.data)
+					{
+						running(btn1_running, 0);
+						btn1.disabled = false;
+						return;
+					}
+					report_json(json_info);
+				});
+				XHR.get('<%=luci.dispatcher.build_url("admin", "services", "adblock", "report_text")%>', null,
+				function(x)
+				{
+					if (!x || !x.responseText)
+					{
+						return;
+					}
+					report_text(x.responseText);
+					running(btn1_running, 0);
+					btn1.disabled = false;
+				});
+			});
+		}
+		else if (action[0] === "do_filter")
+		{
+			var btn2         = document.getElementById("btn2");
+			var btn2_running = document.getElementById("btn2_running");
+			var search       = document.getElementById("filter_search").value.replace(/[^\x00-\x7F]|[\s!@#$%^&*()+=\[\]{};'"\\|,<>\/?]/g,'') || "\"+\"";
+			var count        = document.getElementById("filter_count").value;
+
+			btn2.disabled = true;
+			running(btn2_running, 1);
+			if (search != "\"+\"")
+			{
+				document.getElementById("filter_search").value = search;
+			}
+
+			XHR.get('<%=luci.dispatcher.build_url("admin", "services", "adblock")%>/action/' + action[0] + "/" + "-" + "/" + search + "/" + count + "/" + "true" + "/" + "false", null,
+			function(x)
+			{
+				if (!x)
+				{
+					return;
+				}
+				XHR.get('<%=luci.dispatcher.build_url("admin", "services", "adblock", "report_text")%>', null,
+				function(x)
+				{
+					if (!x || !x.responseText)
+					{
+						return;
+					}
+					report_text(x.responseText);
+					running(btn2_running, 0);
+					btn2.disabled = false;
+				});
+			});
+		}
+		else if (action[0] === "add_blacklist" || action[0] === "add_whitelist")
+		{
+			XHR.get('<%=luci.dispatcher.build_url("admin", "services", "adblock")%>/action/' + action[0] + "/" + action[1], null,
+			function(x)
+			{
+				if (!x)
+				{
+					return;
+				}
+				btn3 = document.getElementsByName(value.name);
+				for (var i=0; i<btn3.length; i++)
+				{
+					btn3[i].disabled = true;
+				}
+			});
+		}
+	}
+
+	function running(element, state)
+	{
+		if (state === 1)
+		{
+			var running_html  = '<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" width="16" height="16" style="vertical-align:middle" />';
+			element.innerHTML = running_html;
+		}
+		else
+		{
+			element.innerHTML = '';
+		}
+	}
+
+	XHR.get('<%=luci.dispatcher.build_url("admin", "services", "adblock", "report_json")%>', null,
+	function(x, json_info)
+	{
+		if (!x || !json_info || !json_info.data)
+		{
+			running(btn1_running, 0);
+			btn1.disabled = false;
+			return;
+		}
+		report_json(json_info);
+	});
+
+	XHR.get('<%=luci.dispatcher.build_url("admin", "services", "adblock", "report_text")%>', null,
+	function(x)
+	{
+		if (!x || !x.responseText)
+		{
+			return;
+		}
+		report_text(x.responseText);
+	});
+//]]>
+</script>
+
+<div class="cbi-section">
+	<div class="cbi-value" id="status_1">
+		<label class="cbi-value-title" for="status_1"><%:Start Date%></label>
+		<div class="cbi-value-field">
+			<span class="runtime" id="value_1">-</span>
+		</div>
+	</div>
+	<div class="cbi-value" id="status_2">
+		<label class="cbi-value-title" for="status_2"><%:End Date%></label>
+		<div class="cbi-value-field">
+			<span class="runtime" id="value_2">-</span>
+		</div>
+	</div>
+	<div class="cbi-value" id="status_3">
+		<label class="cbi-value-title" for="status_3"><%:Total DNS Queries%></label>
+		<div class="cbi-value-field">
+			<span class="runtime" id="value_3">-</span>
+		</div>
+	</div>
+	<div class="cbi-value" id="status_4">
+		<label class="cbi-value-title" for="status_4"><%:Blocked DNS Queries%></label>
+		<div class="cbi-value-field">
+			<span class="runtime" id="value_4">-</span>
+		</div>
+	</div>
+	<br />
+	<div id="button">
+		<input type="button" class="cbi-button cbi-button-action important" id="btn1" name="do_report" value="<%:Refresh Report%>" onclick="btn_action(this)" />
+		<span id="btn1_running" class="btn1_running"></span>
+	</div>
+</div>
+<br />
+<div class="cbi-section">
+	<h3><%:Top 10 Reporting%></h3>
+	<div class="table" id="value_5"></div>
+</div>
+<hr />
+<div class="cbi-section">
+	<div class="cbi-section-descr"><%:Filter the DNS Query result set for a particular domain, client or time frame.%></div>
+	<div style="float:left;">
+		<input type="text" placeholder="<%:Domain/Client/Date/Time%>" id="filter_search" name="filter_search" />
+		<select name="filter_count" id="filter_count">
+			<option value="25">25</option>
+			<option value="50" selected="selected">50</option>
+			<option value="100">100</option>
+			<option value="250">250</option>
+			<option value="500">500</option>
+		</select>
+		<input type="button" class="cbi-button cbi-button-action" id="btn2" name="do_filter" value="<%:Filter%>" onclick="btn_action(this)" />
+		<span id="btn2_running" class="btn2_running"></span>
+	</div>
+	<br />
+	<br />
+	<h3><%:Latest DNS Queries%></h3>
+	<div class="table" id="value_6"></div>
+</div>
+<%+footer%>

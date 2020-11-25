@@ -1,0 +1,17 @@
+{
+	"luci-proto-openconnect": {
+		"description": "Grant access to LuCI OpenConnect procedures",
+		"read": {
+			"ubus": {
+				"luci.openconnect": [ "getCertificates" ]
+			},
+			"uci": [ "network" ]
+		},
+		"write": {
+			"ubus": {
+				"luci.openconnect": [ "setCertificates" ]
+			},
+			"uci": [ "network" ]
+		}
+	}
+}

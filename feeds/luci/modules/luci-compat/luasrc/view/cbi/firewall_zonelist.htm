@@ -1,0 +1,108 @@
+<%+cbi/valueheader%>
+
+<%-
+	local utl = require "luci.util"
+	local fwm = require "luci.model.firewall".init()
+	local nwm = require "luci.model.network".init()
+
+	local zone, net, iface
+	local zones = fwm:get_zones()
+	local value = self:formvalue(section)
+	if not value or value == "-" then
+		value = self:cfgvalue(section) or self.default
+	end
+
+	local selected = false
+	local checked = { }
+
+	for value in utl.imatch(value) do
+		checked[value] = true
+	end
+
+	if not next(checked) then
+		checked[""] = true
+	end
+-%>
+
+<div class="cbi-dropdown" dropdown-items="5" placeholder="<%:-- please select -- %>"<%=
+	attr("name", cbid) ..
+	ifattr(self.widget == "checkbox", "multiple", "multiple") ..
+	ifattr(self.rmempty or self.optional, "optional", "optional")
+%>>
+	<script type="item-template"><!--
+		<li data-value="{{value}}">
+			<span class="zonebadge" style="background:repeating-linear-gradient(45deg,rgba(204,204,204,0.5),rgba(204,204,204,0.5) 5px,rgba(255,255,255,0.5) 5px,rgba(255,255,255,0.5) 10px)">
+				<strong>{{value}}:</strong><em>(<%:create%>)</em>
+			</span>
+		</li>
+	--></script>
+	<ul>
+		<% if self.allowlocal then %>
+		<li data-value=""<%=ifattr(checked[""], "selected", "selected")%>>
+			<span style="background-color:<%=fwm.zone.get_color()%>" class="zonebadge">
+				<strong><%:Device%></strong>
+				<% if self.allowany and self.allowlocal then -%>
+					(<%= self.alias ~= "dest"
+						and translate("output") or translate("input") %>)
+				<%- end %>
+			</span>
+		</li>
+		<% elseif self.widget ~= "checkbox" and (self.rmempty or self.optional) then %>
+		<li data-value=""<%=ifattr(checked[""], "selected", "selected")%>>
+			<span class="zonebadge">
+				<em><%:unspecified%></em>
+			</span>
+		</li>
+		<% end %>
+		<% if self.allowany then %>
+		<li data-value="*"<%=ifattr(checked["*"], "selected", "selected")%>>
+			<span style="background-color:<%=fwm.zone.get_color()%>" class="zonebadge">
+				<strong><%:Any zone%></strong>
+				<% if self.allowany and self.allowlocal then %>(<%:forward%>)<% end %>
+			</span>
+		</li>
+		<% end %>
+		<%
+			for _, zone in utl.spairs(zones, function(a,b) return (zones[a]:name() < zones[b]:name()) end) do
+				if zone:name() ~= self.exclude then
+					selected = selected or (value == zone:name())
+		%>
+		<li<%=attr("data-value", zone:name()) .. ifattr(checked[zone:name()], "selected", "selected")%>>
+			<span style="background-color:<%=zone:get_color()%>" class="zonebadge">
+				<strong><%=zone:name()%>:</strong>
+				<%-
+					local zempty = true
+					for _, net in ipairs(zone:get_networks()) do
+						net = nwm:get_network(net)
+						if net then
+							zempty = false
+				-%>
+					<span class="ifacebadge<% if net:name() == self.network then %> ifacebadge-active<% end %>"><%=net:name()%>:
+					<%-
+						local nempty = true
+						for _, iface in ipairs(net:is_bridge() and net:get_interfaces() or { net:get_interface() }) do
+							nempty = false
+					%>
+						<img<%=attr("title", iface:get_i18n())%> src="<%=resource%>/icons/<%=iface:type()%><%=iface:is_up() and "" or "_disabled"%>.png" />
+					<% end %>
+					<% if nempty then %><em><%:(empty)%></em><% end -%>
+					</span>
+				<%- end end -%>
+				<%- if zempty then %><em><%:(empty)%></em><% end -%>
+			</span>
+		</li>
+		<% end end %>
+
+		<% if self.widget ~= "checkbox" and not self.nocreate then %>
+		<li data-value="-">
+			<span class="zonebadge">
+				<em><%:create%>:</em>
+				<input type="password" style="display:none" />
+				<input class="create-item-input" type="text" data-type="and(uciname,maxlength(11))" data-optional="true" />
+			</span>
+		</li>
+		<% end %>
+	</ul>
+</div>
+
+<%+cbi/valuefooter%>

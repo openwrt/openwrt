@@ -1,0 +1,11 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@banip[-1]
+	add ucitrack banip
+	set ucitrack.@banip[-1].init=banip
+	commit ucitrack
+EOF
+
+rm -f /tmp/luci-indexcache
+exit 0

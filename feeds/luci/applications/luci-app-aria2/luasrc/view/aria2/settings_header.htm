@@ -1,0 +1,116 @@
+<%#
+ Copyright 2017-2019 Xingwang Liao <kuoruan@gmail.com>
+ Licensed to the public under the MIT License.
+-%>
+
+<%
+	local ipkg = require "luci.model.ipkg"
+	local has_ui = false
+
+	local uilist = {
+		supported = {
+			["ariang"] = "AriaNg",
+			["webui-aria2"] = "WebUI-Aria2",
+			["yaaw"] = "YAAW"
+		},
+		installed = {}
+	}
+
+	for k in pairs(uilist.supported) do
+		if ipkg.installed(k) then
+			uilist.installed[#uilist.installed + 1] = k
+			has_ui = true
+		end
+	end
+%>
+
+<fieldset class="cbi-section">
+	<p id="aria2_status">
+		<em><%:Collecting data...%></em>
+	</p>
+	<% if has_ui then %>
+	<p>
+		<%:Installed web interface: %>
+		<%- for _, v in pairs(uilist.installed) do %>
+		<input type="button" class="cbi-button" style="margin: 0 5px;" value="<%=uilist.supported[v]%>" onclick="openWebInterface('<%=v%>');" />
+		<%- end %>
+	<p>
+	<% end %>
+</fieldset>
+
+<script type="text/javascript">//<![CDATA[
+XHR.poll(5, '<%=url("admin/services/aria2/status")%>', null,
+	function(x, data) {
+		var tb = document.getElementById('aria2_status');
+		if (data && tb) {
+			tb.innerHTML = data.running
+				? '<%:The Aria2 service is running.%>'
+				: '<%:The Aria2 service is not running.%>';
+		}
+	}
+);
+
+function randomString(len) {
+	var randomStr = '';
+	var restLen = len;
+	while ((restLen = len - randomStr.length) > 0) {
+		randomStr += Math.random().toString(36).substring(2, 2 + restLen);
+	}
+	return randomStr;
+}
+
+function randomToken() {
+	var len = 32;
+	var inputLength = prompt('<%:Please input token length:%>', len);
+	if (inputLength === null || inputLength === '') {
+		return;
+	} else if (/^\d+$/.test(inputLength)) {
+		len = parseInt(inputLength);
+	}
+
+	var secretInput = document.getElementById('cbid.aria2.main.rpc_secret');
+	if (secretInput) {
+		secretInput.value = randomString(len);
+	}
+};
+
+function showRPCURL() {
+	var portElm = document.getElementById('cbid.aria2.main.rpc_listen_port');
+	var authMethodElm = document.getElementById('cbid.aria2.main.rpc_auth_method');
+	var useWSElm = document.getElementById('cbid.aria2.main._use_ws');
+	var secureElm = document.getElementById('cbid.aria2.main.rpc_secure');
+
+	var port = (portElm && /^\d+$/.test(portElm.value)) ? parseInt(portElm.value) : 6800;
+	var authMethod = (authMethodElm && authMethodElm.value) ? authMethodElm.value : "none";
+	var useWS = (useWSElm && useWSElm.checked) ? true : false;
+	var secure = (secureElm && secureElm.checked) ? true : false;
+
+	var protocol = useWS
+		? (secure ? 'wss' : 'ws')
+		: (secure ? 'https' : 'http');
+	var url = protocol + "://";
+
+	if (authMethod == 'token') {
+		var authToken = document.getElementById('cbid.aria2.main.rpc_secret').value;
+		url += 'token:' + authToken + '@';
+	} else if (authMethod == 'user_pass') {
+		var authUser = document.getElementById('cbid.aria2.main.rpc_user').value;
+		var authPasswd = document.getElementById('cbid.aria2.main.rpc_passwd').value;
+		url += authUser + ':' + authPasswd + '@';
+	}
+	url += window.location.hostname + ':' + port + '/jsonrpc';
+	var rpcUrlElm = document.getElementById('cbid.aria2.main._rpc_url');
+
+	if (rpcUrlElm) {
+		rpcUrlElm.value = url;
+	} else {
+		alert(url)
+	}
+};
+
+function openWebInterface(path) {
+	var host = window.location.host;
+	var protocol = window.location.protocol;
+	window.open(protocol + '//' + host + '/' + path);
+};
+//]]></script>

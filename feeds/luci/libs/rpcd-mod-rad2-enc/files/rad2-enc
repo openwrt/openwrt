@@ -1,0 +1,50 @@
+#!/usr/bin/python3
+
+import base64
+import sys
+import json
+from passlib import hash
+
+def main():
+
+    if len(sys.argv) < 2:
+        return -1
+
+    if sys.argv[1] == 'list':
+        print('{ "encrypt": { "type": "str", "plainpass": "str" } }\n')
+        return 0
+
+    if sys.argv[1] == 'call':
+        if len(sys.argv) < 3:
+            return -1
+
+    if sys.argv[2] != 'encrypt':
+        return -1
+
+    encpass = ""
+    try:
+        jsonin = json.loads(sys.stdin.readline())
+        enctype = jsonin['type'].strip()
+        plainpass = jsonin['plainpass']
+
+        if enctype == 'ssha':
+            encpass = hash.ldap_salted_sha1.hash(plainpass)
+        elif enctype == 'sha1':
+            encpass = hash.ldap_sha1.hash(plainpass)
+        elif enctype == 'plain':
+            encpass = plainpass
+        elif enctype == 'md5':
+            encpass = hash.apr_md5_crypt.hash(plainpass)
+        elif enctype == 'bcrypt':
+            encpass = hash.bcrypt.hash(plainpass)
+        elif enctype == 'crypt':
+            encpass = hash.des_crypt.hash(plainpass)
+
+    except:
+        encpass = ""
+
+    print(json.dumps({ "encrypted_password": encpass}))
+
+    return 0
+
+main()

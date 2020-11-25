@@ -1,0 +1,7 @@
+config 'bmx7' 'luci'
+	option ignore '0'
+	option place 'admin network BMX7'
+	#option place 'qmp Mesh'
+	option position '3'
+	#option json 'http://127.0.0.1/cgi-bin/bmx7-info?'
+	option json 'exec:/www/cgi-bin/bmx7-info -s'

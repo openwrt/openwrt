@@ -1,0 +1,14 @@
+<% for _, tab in ipairs(self.tab_names) do data = self.tabs[tab] %>
+	<div class="cbi-tabcontainer"<%=
+		attr("id", "container.%s.%s.%s" %{ self.config, section, tab }) ..
+		attr("data-tab", tab) ..
+		attr("data-tab-title", data.title) ..
+		attr("data-tab-active", tostring(tab == self.selected_tab))
+	%>>
+		<% if data.description then %>
+			<div class="cbi-tab-descr"><%=data.description%></div>
+		<% end %>
+
+		<% self:render_tab(tab, section, scope or {}) %>
+	</div>
+<% end %>

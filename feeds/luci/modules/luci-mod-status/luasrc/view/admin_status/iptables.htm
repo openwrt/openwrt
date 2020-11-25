@@ -1,0 +1,73 @@
+<%#
+ Copyright 2008-2009 Steven Barth <steven@midlink.org>
+ Copyright 2008-2018 Jo-Philipp Wich <jo@mein.io>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%-
+	local fs = require "nixio.fs"
+	local has_ip6tables = fs.access("/usr/sbin/ip6tables")
+	local mode = 4
+
+	if has_ip6tables then
+		mode = luci.dispatcher.context.requestpath
+	    mode = tonumber(mode[#mode] ~= "iptables" and mode[#mode]) or 4
+	end
+-%>
+
+<%+header%>
+
+<style type="text/css">
+	span.jump, .cbi-tooltip-container {
+		border-bottom: 1px dotted blue;
+		cursor: pointer;
+	}
+
+	ul {
+		list-style: none;
+	}
+
+	.references {
+		position: relative;
+	}
+
+	.references .cbi-tooltip {
+		left: 0 !important;
+		top: 1.5em !important;
+	}
+
+	h4 > span {
+		font-size: 90%;
+	}
+</style>
+
+<h2 name="content"><%:Firewall Status%></h2>
+
+<% if has_ip6tables then %>
+<ul class="cbi-tabmenu">
+	<li data-mode="4" class="cbi-tab<%= mode ~= 4 and "-disabled" %>">
+		<a href="<%=url("admin/status/iptables/4")%>"><%:IPv4 Firewall%></a>
+	</li>
+	<li data-mode="6" class="cbi-tab<%= mode ~= 6 and "-disabled" %>">
+		<a href="<%=url("admin/status/iptables/6")%>"><%:IPv6 Firewall%></a>
+	</li>
+</ul>
+<% end %>
+
+<div style="position: relative">
+	<form method="post" action="<%=url("admin/status/iptables_action")%>" style="position: absolute; right: 0">
+		<input type="hidden" name="token" value="<%=token%>" />
+		<input type="hidden" name="family" value="<%=mode%>" />
+		<input type="button" class="cbi-button" data-hide-empty="false" value="<%:Hide empty chains%>" onclick="hide_empty(this)" />
+		<input type="submit" class="cbi-button" name="zero" value="<%:Reset Counters%>" />
+		<input type="submit" class="cbi-button" name="restart" value="<%:Restart Firewall%>" />
+	</form>
+</div>
+
+<div id="iptables">
+	<p><em class="spinning"><%:Collecting data...%></em></p>
+</div>
+
+<script type="text/javascript" src="<%=resource%>/view/status/iptables.js"></script>
+
+<%+footer%>

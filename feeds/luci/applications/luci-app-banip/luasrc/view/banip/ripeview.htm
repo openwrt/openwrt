@@ -1,0 +1,107 @@
+<%#
+Copyright 2018 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%+header%>
+<%+banip/banip_css%>
+
+<script type="text/javascript">
+//<![CDATA[
+	function ripe_desc()
+	{
+		var div_ripe = document.getElementById("div_ripe");
+		var query    = div_ripe.querySelector("#s_ripe").value;
+		var output   = document.getElementById("ripe_desc");
+		
+		switch (query) {
+			case "geoloc":
+				output.innerHTML = "<%:This data call returns geolocation information for the given IP space, or for announced IP prefixes in the case of ASNs.%>";
+			break;
+			case "as-overview":
+				output.innerHTML = "<%:This data call shows general informations about an ASN like its announcement status and the name of its holder according to the WHOIS service.%>";
+			break;
+			case "announced-prefixes":
+				output.innerHTML = "<%:This data call returns all announced prefixes for a given ASN.%>";
+			break;
+			case "network-info":
+				output.innerHTML = "<%:This data call returns the containing prefix and announcing ASN of a given IP address.%>";
+			break;
+			case "country-resource-list":
+				output.innerHTML = "<%:This data call lists the Internet resources associated with a country, including ASNs, IPv4 ranges and IPv4/6 CIDR prefixes.%>";
+			break;
+			case "whois":
+				output.innerHTML = "<%:This data call returns whois information from the relevant Regional Internet Registry and Routing Registry.%>";
+			break;
+			case "dns-chain":
+				output.innerHTML = "<%:This data call returns the recursive chain of DNS forward (A/AAAA/CNAME) and reverse (PTR) records starting form either a hostname or an IP address.%>";
+			break;
+			case "iana-registry-info":
+				output.innerHTML = "<%:This data call gives access to various data sources maintained by IANA.%>";
+			break;
+			default:
+				output.innerHTML = "";
+		}
+	}
+
+	function ripe_view()
+	{
+		var div_ripe = document.getElementById("div_ripe");
+		var query    = div_ripe.querySelector("#s_ripe").value;
+		var input    = document.getElementById("ripe_input");
+		var view     = document.getElementById("view_id");
+
+		if (!input.value)
+		{
+			return;
+		}
+		view.value = "<%:Loading ...%>";
+
+		new XHR().get('<%=luci.dispatcher.build_url("admin", "services", "banip")%>/ripeview/' + query + "/" + input.value, null,
+		function(x)
+		{
+		if (!x)
+			{
+				view.value = "<%:No response!%>";
+				return;
+			}
+			view.value = x.responseText;
+		});
+	}
+	window.onload = ripe_desc;
+//]]>
+</script>
+
+<div class="cbi-map">
+	<div class="cbi-section">
+		<div class="cbi-section-descr"><%_The RIPEstat Data API is the public data interface provided by RIPE NCC, for details look <a href="https://stat.ripe.net/docs/data_api" target="_blank" rel="noopener noreferrer">here</a>.%></div>
+		<div class="cbi-section-node">
+			<div class="table cbi-section-table">
+				<div class="tr cbi-section-table-row">
+					<div class="td left">
+						<input class="cbi-input-text" style="width:20em" type="text" id="ripe_input" placeholder="<%:Enter IP/CIDR/ASN/ISO%>" value="" />
+					</div>
+				</div>
+				<div class="tr cbi-section-table-row" id="div_ripe">
+					<div class="td left">
+						<select id="s_ripe" class="cbi-input-select cbi-button" style="width:15em" onchange="ripe_desc()">
+							<option value="geoloc" selected="selected"><%:Geo Location%></option>
+							<option value="as-overview"><%:ASN Overview%></option>
+							<option value="announced-prefixes"><%:ASN Prefixes%></option>
+							<option value="network-info"><%:IP/ASN Mapping%></option>
+							<option value="country-resource-list"><%:Country Resources%></option>
+							<option value="whois"><%:Whois Information%></option>
+							<option value="dns-chain"><%:DNS Chain%></option>
+							<option value="iana-registry-info"><%:IANA Information%></option>
+						</select>
+						<input type="button" id="bt_load" value="<%:Load%>" onclick="ripe_view()" class="cbi-button cbi-button-add" /><br /><br />
+						<span class="ripe_desc" id="ripe_desc"></span>
+					</div>
+				</div>
+			</div>
+		</div>
+		<textarea id="view_id" readonly="readonly" wrap="off" value=""></textarea>
+	</div>
+</div>
+
+<%+footer%>

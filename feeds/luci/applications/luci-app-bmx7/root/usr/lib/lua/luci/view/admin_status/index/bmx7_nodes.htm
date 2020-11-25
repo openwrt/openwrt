@@ -1,0 +1,40 @@
+<div class="cbi-map">
+<div class="cbi-section">
+	<legend><%:Bmx7 mesh nodes%></legend>
+	<div class="cbi-section-node">
+	<div class="table" id="nodes_div">
+		<div class="tr table-titles">
+			<div class="th"><%:Name%></div>
+			<div class="th"><%:Short ID%></div>
+			<div class="th"><%:S/s/T/t%></div>
+			<div class="th"><%:Primary IPv6%></div>
+			<div class="th"><%:Via Neighbour%></div>
+			<div class="th"><%:Device%></div>
+			<div class="th"><%:Metric%></div>
+			<div class="th"><%:Last Ref%></div>
+		</div>
+	</div>
+	</div>
+</div>
+</div>
+
+<script type="text/javascript" src="<%=resource%>/bmx7/js/polling.js"></script>
+<script type="text/javascript">//<![CDATA[
+		new TablePooler(10,"/cgi-bin/bmx7-info", {'$originators':''}, "nodes_div", function(st){
+			var originators = st.originators;
+			var res = Array();
+			originators.forEach(function(originator,i){
+				var name =  originator.name;
+				var shortId =  originator.shortId;
+				var SsTt = originator.S+'/'+originator.s+'/'+originator.T+'/'+originator.t;
+				var primaryIp = originator.primaryIp;
+				var nbName = originator.nbName;
+				var dev = originator.dev;
+				var metric = originator.metric;
+				var lastRef = originator.lastRef;
+			res.push([name, shortId, SsTt, primaryIp,
+								nbName, dev, metric, lastRef]);
+		  });
+		  return res;
+		});
+//]]></script>

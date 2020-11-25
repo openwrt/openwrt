@@ -1,0 +1,57 @@
+#!/bin/sh /etc/rc.common
+
+START=80
+USE_PROCD=1
+
+register_init() {
+	local config="$1"
+	local init="$2"
+	shift; shift
+
+	if [ -x "$init" ] && "$init" enabled && ! grep -sqE 'USE_PROCD=.' "$init"; then
+		logger -t "ucitrack" "Setting up /etc/config/$config reload trigger for non-procd $init"
+		procd_add_config_trigger "config.change" "$config" "$init" "$@"
+	fi
+}
+
+register_trigger() {
+	local sid="$1"
+	local config init exec affects affected
+
+	config_get config "$sid" TYPE
+	config_get init "$sid" init
+	config_get exec "$sid" exec
+	config_get affects "$sid" affects
+
+	if [ -n "$init" ]; then
+		register_init "$config" "/etc/init.d/$init" "reload"
+	fi
+
+	if [ -n "$exec" ]; then
+		case "$exec" in
+			/etc/init.d/*)
+				set -- $exec
+				register_init "$config" "$@"
+			;;
+			*)
+				logger -t "ucitrack" "Setting up non-init /etc/config/$config reload handler: $exec"
+				procd_add_config_trigger "config.change" "$config" "$exec"
+			;;
+		esac
+	fi
+
+	for affected in $affects; do
+		logger -t "ucitrack" "Setting up /etc/config/$config reload dependency on /etc/config/$affected"
+		procd_add_config_trigger "config.change" "$affected" \
+			ubus call service event \
+			"$(printf '{"type":"config.change","data":{"package":"%s"}}' $config)"
+	done
+}
+
+service_triggers() {
+	config_foreach register_trigger
+}
+
+start_service() {
+	config_load ucitrack
+}

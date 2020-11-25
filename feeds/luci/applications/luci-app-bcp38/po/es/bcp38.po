@@ -1,0 +1,80 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2019-10-22 08:53+0000\n"
+"Last-Translator: Franco Castillo <castillofrancodamian@gmail.com>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationsbcp38/es/>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 3.9.1-dev\n"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:61
+msgid "Allowed IP ranges"
+msgstr "Rangos de IP permitidos"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:34
+msgid ""
+"Attempt to automatically detect if the upstream IP will be blocked by the "
+"configuration, and add an exception if it will. If this does not work "
+"correctly, you can add exceptions manually below."
+msgstr ""
+"Intente detectar automáticamente si la IP ascendente será bloqueada por la "
+"configuración, y agregue una excepción si lo hace. Si esto no funciona "
+"correctamente, puede agregar excepciones manualmente a continuación."
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:33
+msgid "Auto-detect upstream IP"
+msgstr "Detección automática de IP ascendente"
+
+#: applications/luci-app-bcp38/luasrc/controller/bcp38.lua:6
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:20
+msgid "BCP38"
+msgstr "BCP38"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:27
+msgid "BCP38 config"
+msgstr "Configuración de BCP38"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:56
+msgid "Blocked IP ranges"
+msgstr "Rangos de IP bloqueados"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:30
+msgid "Enable"
+msgstr "Activar"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:39
+msgid "Interface name"
+msgstr "Nombre de interfaz"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:39
+msgid ""
+"Interface to apply the blocking to (should be the upstream WAN interface)."
+msgstr ""
+"Interfaz para aplicar el bloqueo a (debe ser la interfaz WAN ascendente)."
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:61
+msgid ""
+"Takes precedence over blocked ranges. Use to whitelist your upstream network "
+"if you're behind a double NAT and the auto-detection doesn't work."
+msgstr ""
+"Tiene prioridad sobre los rangos bloqueados. Úselo para incluir en la lista "
+"blanca a su red ascendente si está detrás de un NAT doble y la detección "
+"automática no funciona."
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:21
+msgid ""
+"This function blocks packets with private address destinations from going "
+"out onto the internet as per <a href=\"http://tools.ietf.org/html/"
+"bcp38\">BCP 38</a>. For IPv6, only source specific default routes are "
+"installed, so no BCP38 firewall routes are needed."
+msgstr ""
+"Esta función impide que los paquetes con destinos de direcciones privadas "
+"salgan a Internet según <a href=\"http://tools.ietf.org/html/bcp38\">BCP 38</"
+"a>. Para IPv6, solo se instalan rutas predeterminadas específicas de la "
+"fuente, por lo que no se necesitan rutas de firewall BCP38."

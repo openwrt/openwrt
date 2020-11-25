@@ -1,0 +1,19 @@
+<%+cbi/valueheader%>
+<div<%=attr("data-ui-widget", luci.util.serialize_json({
+	"Dropdown", self:cfgvalue(section) or self.default, self:choices(), {
+		id = cbid,
+		name = cbid,
+		sort = self.keylist,
+		multiple = self.multiple,
+		datatype = self.datatype,
+		optional = self.optional or self.rmempty,
+		readonly = self.readonly,
+		maxlength = self.maxlength,
+		placeholder = self.placeholder,
+		display_items = self.display or self.size or 3,
+		dropdown_items = self.dropdown or self.display or self.size or 5,
+		custom_placeholder = self.custom or
+			(self.multiple and translate("Enter custom values") or translate("Enter custom value"))
+	}
+}))%>></div>
+<%+cbi/valuefooter%>

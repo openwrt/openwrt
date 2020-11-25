@@ -1,0 +1,27 @@
+<%+cbi/valueheader%>
+	<script type="text/javascript">
+		function switchToCIDRList(ev) {
+			var input = ev.target.previousElementSibling,
+			    usecidr = document.getElementById(input.id + '_usecidr');
+
+			ev.preventDefault();
+
+			usecidr.value = '1';
+			cbi_d_update();
+		}
+	</script>
+	<input data-update="change"<%=
+		attr("id", cbid) ..
+		attr("name", cbid) ..
+		attr("type", "text") ..
+		attr("class", "cbi-input-text") ..
+		attr("value", self:cfgvalue(section) or self.default) ..
+		ifattr(self.size, "size") ..
+		ifattr(self.placeholder, "placeholder") ..
+		ifattr(self.datatype, "data-type", self.datatype) ..
+		ifattr(self.datatype, "data-optional", self.optional or self.rmempty) ..
+		ifattr(self.combobox_manual, "data-manual", self.combobox_manual) ..
+		ifattr(#self.keylist > 0, "data-choices", { self.keylist, self.vallist })
+	%> /><!--
+	--><button class="cbi-button cbi-button-neutral" title="<%:Switch to CIDR list notation%>" aria-label="<%:Switch to CIDR list notation%>" onclick="switchToCIDRList(event)">…</button>
+<%+cbi/valuefooter%>

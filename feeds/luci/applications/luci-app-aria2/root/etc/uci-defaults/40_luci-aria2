@@ -1,0 +1,25 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@aria2[-1]
+	add ucitrack aria2
+	set ucitrack.@aria2[-1].init=aria2
+	commit ucitrack
+EOF
+
+if [ ."$(uci -q get aria2.main)" != ."aria2" ]; then
+	uci -q batch <<-EOF >/dev/null
+		add aria2 aria2
+		rename aria2.@aria2[-1]="main"
+		set aria2.main.enabled=0
+		set aria2.main.dir="/var/run/aria2"
+		set aria2.main.config_dir="/var/etc/aria2"
+		add_list aria2.main.header=""
+		add_list aria2.main.bt_tracker=""
+		add_list aria2.main.extra_setting=""
+		commit aria2
+	EOF
+fi
+
+rm -f /tmp/luci-indexcache
+exit 0

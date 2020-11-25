@@ -1,0 +1,541 @@
+#
+# Yangfl <mmyangfl@gmail.com>, 2018.
+#
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2020-02-19 20:00+0000\n"
+"Last-Translator: xiazhang <xz@xia.plus>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"openwrt/luciapplicationsnlbwmon/zh_Hans/>\n"
+"Language: zh_Hans\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 3.11\n"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:661
+msgid "%d IPv4-only hosts"
+msgstr "%d 台仅 IPv4 主机"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:668
+msgid "%d IPv6-only hosts"
+msgstr "%d 台仅 IPv6 主机"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:675
+msgid "%d dual-stack hosts"
+msgstr "%d 台双协议栈主机"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:71
+msgid "%s and %s"
+msgstr "%s 和 %s"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:69
+msgid "%s, %s and %s"
+msgstr "%s，%s 和 %s"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:68
+msgid "-1 - Restart every last day of month"
+msgstr "-1 - 每月的最后一天重新开始"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:69
+msgid "-7 - Restart a week before end of month"
+msgstr "-7 - 每月底前一周重新开始"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:67
+msgid "1 - Restart every 1st of month"
+msgstr "1 - 每月的第一天重新开始"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:183
+msgid "10m - frequent commits at the expense of flash wear"
+msgstr "10m - 频繁提交，闪存损耗的开销也增大"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:182
+msgid "12h - compromise between risk of data loss and flash wear"
+msgstr "12h - 平衡统计数据丢失的风险以及闪存使用寿命"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:181
+msgid "24h - least flash wear at the expense of data loss risk"
+msgstr "24h - 以数据丢失风险的代价换取最小的闪存损耗"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:191
+msgid "30s - refresh twice per minute for reasonably current stats"
+msgstr "30s - 每分钟刷新二次以获得较准确的当前统计值"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:192
+msgid "5m - rarely refresh to avoid frequently clearing conntrack counters"
+msgstr "5m - 较少刷新以避免频繁清除连接跟踪计数器"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:184
+msgid "60s - commit minutely, useful for non-flash storage"
+msgstr "60s - 每分钟提交，适用于非闪存类型存储"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:40
+msgid "<big id=\"conn-total\">0</big> connections"
+msgstr "连接：<big id=\"conn-total\">0</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:37
+msgid "<big id=\"host-total\">0</big> hosts"
+msgstr "主机：<big id=\"host-total\">0</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:114
+msgid "<big id=\"ipv6-hosts\">0%</big> IPv6 support rate among hosts"
+msgstr "支持 IPv6 的主机比例：<big id=\"ipv6-hosts\">0%</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:116
+msgid "<big id=\"ipv6-rx\">0B</big> total IPv6 download"
+msgstr "IPv6 总下载量：<big id=\"ipv6-rx\">0B</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:115
+msgid "<big id=\"ipv6-share\">0%</big> of the total traffic is IPv6"
+msgstr "IPv6 流量比例：<big id=\"ipv6-share\">0%</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:117
+msgid "<big id=\"ipv6-tx\">0B</big> total IPv6 upload"
+msgstr "IPv6 总上传量：<big id=\"ipv6-tx\">0B</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:79
+msgid "<big id=\"layer7-most-conn\">0</big> cause the most connections"
+msgstr "连接数最多的协议：<big id=\"layer7-most-conn\">0</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:77
+msgid "<big id=\"layer7-most-rx\">0</big> cause the most download"
+msgstr "下载量最大的协议：<big id=\"layer7-most-rx\">0</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:78
+msgid "<big id=\"layer7-most-tx\">0</big> cause the most upload"
+msgstr "上传量最大的协议：<big id=\"layer7-most-tx\">0</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:76
+msgid "<big id=\"layer7-total\">0</big> different application protocols"
+msgstr "应用层协议计数：<big id=\"layer7-total\">0</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:38
+msgid "<big id=\"rx-total\">0</big> download"
+msgstr "下载：<big id=\"rx-total\">0</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:39
+msgid "<big id=\"tx-total\">0</big> upload"
+msgstr "上传：<big id=\"tx-total\">0</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:25
+msgid "Accounting period"
+msgstr "统计周期"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:21
+msgid "Advanced Settings"
+msgstr "高级设置"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:85
+msgid "Application"
+msgstr "应用层"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:62
+msgid "Application Protocols"
+msgstr "应用层协议"
+
+#: applications/luci-app-nlbwmon/luasrc/controller/nlbw.lua:10
+msgid "Backup"
+msgstr "备份"
+
+#: applications/luci-app-nlbwmon/luasrc/controller/nlbw.lua:7
+msgid "Bandwidth Monitor"
+msgstr "带宽监控"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:142
+msgid "CSV, grouped by IP"
+msgstr "CSV，按 IP 分组"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:141
+msgid "CSV, grouped by MAC"
+msgstr "CSV，按 MAC 分组"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:143
+msgid "CSV, grouped by protocol"
+msgstr "CSV，按协议分组"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:52
+msgid ""
+"Changing the accounting interval type will invalidate existing databases!"
+"<br /><strong><a href=\"%s\">Download backup</a></strong>."
+msgstr ""
+"更改统计周期类型会使现有数据库无效！<br /><strong><a href=\"%s\">下载备份</"
+"a></strong>。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:26
+msgid ""
+"Choose \"Day of month\" to restart the accounting period monthly on a "
+"specific date, e.g. every 3rd. Choose \"Fixed interval\" to restart the "
+"accounting period exactly every N days, beginning at a given date."
+msgstr ""
+"选择“每月的某一天”来设置统计周期的重启时间，例如：每个月的第 3 天。选择“固定"
+"周期”来设置从给定日期开始每 N 天重启统计周期。"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:56
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:94
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:133
+msgid "Collecting data..."
+msgstr "正在收集数据…"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:177
+msgid "Commit interval"
+msgstr "提交间隔"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:164
+msgid "Compress database"
+msgstr "压缩数据库"
+
+#: applications/luci-app-nlbwmon/luasrc/controller/nlbw.lua:9
+msgid "Configuration"
+msgstr "配置"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:302
+msgid "Conn."
+msgstr "连接"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:48
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:86
+msgid "Connections"
+msgstr "连接"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:31
+msgid "Connections / Host"
+msgstr "连接 / 主机"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:195
+msgid "Database directory"
+msgstr "数据库目录"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:196
+msgid ""
+"Database storage directory. One file per accounting period will be placed "
+"into this directory."
+msgstr "数据库存储目录。每个“统计周期”的文件将被放到这个目录中。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:28
+msgid "Day of month"
+msgstr "每月的某一天"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:63
+msgid ""
+"Day of month to restart the accounting period. Use negative values to count "
+"towards the end of month, e.g. \"-5\" to specify the 27th of July or the "
+"24th of Februrary."
+msgstr ""
+"每个月重启统计周期的日期。使用负数表示从月底开始计算，例如：\"-5\" 可以表示7"
+"月27号或者2月24号。"
+
+#: applications/luci-app-nlbwmon/luasrc/controller/nlbw.lua:8
+msgid "Display"
+msgstr "显示"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:303
+msgid "Down. (Bytes)"
+msgstr "下载量（字节）"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:304
+msgid "Down. (Pkts.)"
+msgstr "下载量（包）"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:285
+msgid "Download"
+msgstr "下载"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:49
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:87
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:126
+msgid "Download (Bytes)"
+msgstr "下载量（字节）"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:50
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:88
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:127
+msgid "Download (Packets)"
+msgstr "下载量（包）"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:65
+msgid "Download / Application"
+msgstr "下载 / 应用层协议"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/backup.htm:25
+msgid "Download Database Backup"
+msgstr "下载数据库备份"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:108
+msgid "Dualstack enabled hosts"
+msgstr "双协议栈主机"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:62
+msgid "Due date"
+msgstr "重置日期"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:139
+msgid "Export"
+msgstr "导出"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:125
+msgid "Family"
+msgstr "协议簇"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:29
+msgid "Fixed interval"
+msgstr "固定周期"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:476
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:534
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:639
+msgid "Force reload…"
+msgstr "强制重新加载…"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:20
+msgid "General Settings"
+msgstr "常规设置"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/backup.htm:28
+msgid "Generate Backup"
+msgstr "生成备份"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:46
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:123
+msgid "Host"
+msgstr "主机"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:294
+msgid "Hostname: <big id=\"bubble-hostname\">example.org</big>"
+msgstr "主机名：<big id=\"bubble-hostname\">example.org</big>"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:624
+msgid "IPv4"
+msgstr "IPv4"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:103
+msgid "IPv4 vs. IPv6"
+msgstr "IPv4 与 IPv6"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:625
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:100
+msgid "IPv6"
+msgstr "IPv6"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:95
+msgid "Interval"
+msgstr "周期"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:178
+msgid ""
+"Interval at which the temporary in-memory database is committed to the "
+"persistent database directory."
+msgstr "将内存中的临时数据库提交到持久性数据库目录的间隔时间。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:188
+msgid ""
+"Interval at which traffic counters of still established connections are "
+"refreshed from netlink information."
+msgstr "从 netlink 信息中刷新“已建立连接”的流量计数器的间隔时间。"
+
+#: applications/luci-app-nlbwmon/luasrc/controller/nlbw.lua:197
+msgid "Invalid or empty backup archive"
+msgstr "备份存档无效或为空"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:144
+msgid "JSON dump"
+msgstr "JSON 输出"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:96
+msgid "Length of accounting interval in days."
+msgstr "统计周期（天）。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:110
+msgid "Local interfaces"
+msgstr "本地接口"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:134
+msgid "Local subnets"
+msgstr "本地子网"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:47
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:124
+msgid "MAC"
+msgstr "MAC"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:152
+msgid "Maximum entries"
+msgstr "最大条目"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:171
+msgid ""
+"Maximum number of accounting periods to keep, use zero to keep databases "
+"forever."
+msgstr "保留的统计周期数据库的最大数量，设置 0 表示不限制。"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:13
+msgid "Netlink Bandwidth Monitor"
+msgstr "网络带宽监视器"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/backup.htm:9
+msgid "Netlink Bandwidth Monitor - Backup / Restore"
+msgstr "网络带宽监视器 - 备份 / 恢复"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:12
+msgid "Netlink Bandwidth Monitor - Configuration"
+msgstr "网络带宽监视器 - 配置"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:475
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:533
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:638
+msgid "No data recorded yet."
+msgstr "暂无数据记录。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:111
+msgid "Only conntrack streams from or to any of these networks are counted."
+msgstr "仅统计来自或目标为这些网络接口的连接流量。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:135
+msgid "Only conntrack streams from or to any of these subnets are counted."
+msgstr "仅统计来自或目标为这些子网的连接流量。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:158
+msgid "Preallocate database"
+msgstr "预分配数据库"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:451
+msgid "Protocol"
+msgstr "协议"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:22
+msgid "Protocol Mapping"
+msgstr "协议映射"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:23
+msgid ""
+"Protocol mappings to distinguish traffic types per host, one mapping per "
+"line. The first value specifies the IP protocol, the second value the port "
+"number and the third column is the name of the mapped protocol."
+msgstr ""
+"协议映射用于区分流量类型，每行一条。第一个值指定 IP 协议类型，第二个值是端口"
+"号，第三个值是映射的协议名称。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:187
+msgid "Refresh interval"
+msgstr "刷新间隔"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/backup.htm:17
+msgid "Restore"
+msgstr "恢复"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/backup.htm:12
+msgid "Restore Database Backup"
+msgstr "恢复数据库备份"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:16
+msgid "Select accounting period:"
+msgstr "选择统计周期："
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:446
+msgid "Source IP"
+msgstr "源 IP"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:80
+msgid "Start date"
+msgstr "起始日期"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:81
+msgid "Start date of the first accounting period, e.g. begin of ISP contract."
+msgstr "第一个统计周期的起始日期，例如：ISP 合约的起始日期。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:170
+msgid "Stored periods"
+msgstr "储存周期"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:13
+msgid ""
+"The Netlink Bandwidth Monitor (nlbwmon) is a lightweight, efficient traffic "
+"accounting program keeping track of bandwidth usage per host and protocol."
+msgstr ""
+"网络带宽监视器（nlbwmon）是一个轻量、高效的流量统计程序，可以统计每个主机和协"
+"议的带宽使用情况。"
+
+#: applications/luci-app-nlbwmon/luasrc/controller/nlbw.lua:216
+msgid "The following database files have been restored: %s"
+msgstr "以下数据库文件已恢复：%s"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:153
+msgid ""
+"The maximum amount of entries that should be put into the database, setting "
+"the limit to 0 will allow databases to grow indefinitely."
+msgstr "数据库中的最大条目数量, 设置为 0 将允许数据库无限增长。"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:26
+msgid "Traffic / Host"
+msgstr "流量 / 主机"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:23
+msgid "Traffic Distribution"
+msgstr "流量分布"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:305
+msgid "Up. (Bytes)"
+msgstr "上传量（字节）"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:306
+msgid "Up. (Pkts.)"
+msgstr "上传量（包）"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:289
+msgid "Upload"
+msgstr "上传"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:51
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:89
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:128
+msgid "Upload (Bytes)"
+msgstr "上传量（字节）"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:52
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:90
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:129
+msgid "Upload (Packets)"
+msgstr "上传量（包）"
+
+#: applications/luci-app-nlbwmon/luasrc/view/nlbw/display.htm:70
+msgid "Upload / Application"
+msgstr "上传 / 应用层协议"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:295
+msgid "Vendor: <big id=\"bubble-vendor\">Example Corp.</big>"
+msgstr "供应商：<big id=\"bubble-vendor\">Example Corp.</big>"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:51
+msgid "Warning"
+msgstr "警告"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:165
+msgid ""
+"Whether to gzip compress archive databases. Compressing the database files "
+"makes accessing old data slightly slower but helps to reduce storage "
+"requirements."
+msgstr ""
+"是否使用 gzip 压缩数据库存档。压缩数据库文件会使访问旧数据稍微慢一些，但有助"
+"于减少存储占用空间。"
+
+#: applications/luci-app-nlbwmon/luasrc/model/cbi/nlbw/config.lua:159
+msgid ""
+"Whether to preallocate the maximum possible database size in memory. This is "
+"mainly useful for memory constrained systems which might not be able to "
+"satisfy memory allocation after longer uptime periods."
+msgstr ""
+"是否预先分配数据库最大可能占用的内存大小。这主要适用于内存较小系统，这些系统"
+"在长时间运行之后可能无法满足数据库的内存需求。"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:88
+msgid "no traffic"
+msgstr "无流量数据"
+
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:315
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:327
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:332
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:447
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:504
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:517
+#: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw.js:522
+msgid "other"
+msgstr "其他"

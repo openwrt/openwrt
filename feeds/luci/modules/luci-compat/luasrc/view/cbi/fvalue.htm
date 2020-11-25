@@ -1,0 +1,12 @@
+<%+cbi/valueheader%>
+<div<%=attr("data-ui-widget", luci.util.serialize_json({
+	"Checkbox", self:cfgvalue(section) or self.default, {
+		id = cbid,
+		name = cbid,
+		readonly = self.readonly,
+		hiddenname = "cbi.cbe." .. self.config .. "." .. section .. "." .. self.option,
+		value_enabled = self.enabled or 1,
+		value_disabled = self.disabled or 0
+	}
+}))%>></div>
+<%+cbi/valuefooter%>

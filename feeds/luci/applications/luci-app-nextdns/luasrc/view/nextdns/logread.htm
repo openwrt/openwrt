@@ -1,0 +1,46 @@
+<%+header%>
+
+<style type="text/css">
+	select[readonly],
+	textarea[readonly]
+	{
+		width: 100% !important;
+		height: 450px !important;
+		border: 1px solid #cccccc;
+		padding: 5px;
+		font-size: 12px;
+		font-family: monospace;
+		resize: none;
+		pointer-events: auto;
+		cursor: auto;
+	}
+</style>
+
+<script type="text/javascript">
+//<![CDATA[
+	function log_update()
+	{
+		XHR.poll(-1, '<%=luci.dispatcher.build_url("admin", "services", "nextdns", "logread")%>', null,
+		function(x)
+		{
+			if (!x)
+			{
+				return;
+			}
+			var view       = document.getElementById("view_id");
+			view.value     = x.responseText;
+			view.scrollTop = view.scrollHeight;
+		});
+	}
+	window.onload = log_update();
+//]]>
+</script>
+
+<div class="cbi-map">
+	<div class="cbi-section">
+		<div class="cbi-section-descr"><%:The syslog output, pre-filtered for nextdns related messages only.%></div>
+		<textarea id="view_id" readonly="readonly" wrap="off" value=""></textarea>
+	</div>
+</div>
+
+<%+footer%>

@@ -1,0 +1,1251 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2010-03-30 17:00+0200\n"
+"PO-Revision-Date: 2020-02-22 11:57+0000\n"
+"Last-Translator: INAGAKI Hiroshi <musashino.open@gmail.com>\n"
+"Language-Team: Japanese <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationsfirewall/ja/>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 3.11.1\n"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:47
+msgid ""
+"%{src?%{dest?Forwarded:Incoming}:Outgoing} %{ipv6?%{ipv4?<var>IPv4</var> and "
+"<var>IPv6</var>:<var>IPv6</var>}:<var>IPv4</var>}%{proto?, protocol %{proto#"
+"%{next?, }%{item.types?<var class=\"cbi-tooltip-container\">%{item.name}"
+"<span class=\"cbi-tooltip\">ICMP with types %{item.types#%{next?, }<var>"
+"%{item}</var>}</span></var>:<var>%{item.name}</var>}}}%{mark?, mark <var"
+"%{mark.inv? data-tooltip=\"Match fwmarks except %{mark.num}%{mark.mask? with "
+"mask %{mark.mask}}.\":%{mark.mask? data-tooltip=\"Mask fwmark value with "
+"%{mark.mask} before compare.\"}}>%{mark.val}</var>}%{dscp?, DSCP %{dscp.inv?"
+"<var data-tooltip=\"Match DSCP classifications except %{dscp.num?:%{dscp."
+"name}}\">%{dscp.val}</var>:<var>%{dscp.val}</var>}}%{helper?, helper "
+"%{helper.inv?<var data-tooltip=\"Match any helper except &quot;%{helper.name}"
+"&quot;\">%{helper.val}</var>:<var data-tooltip=\"%{helper.name}\">%{helper."
+"val}</var>}}"
+msgstr ""
+"%{ipv6?%{ipv4?<var>IPv4</var> と <var>IPv6</var>:<var>IPv6</var>}:<var>IPv4</"
+"var>} の %{src?%{dest?転送:受信}:送信}%{proto?, プロトコル %{proto#"
+"%{next?, }%{item.types?<var class=\"cbi-tooltip-container\">%{item.name}"
+"<span class=\"cbi-tooltip\">含まれる ICMP タイプ - %{item.types#%{next?, }"
+"<var>%{item}</var>}</span></var>:<var>%{item.name}</var>}}}%{mark?, マーク "
+"<var%{mark.inv? data-tooltip=\"Match fwmarks except %{mark.num}%{mark.mask? "
+"with mask %{mark.mask}}.\":%{mark.mask? data-tooltip=\"Mask fwmark value "
+"with %{mark.mask} before compare.\"}}>%{mark.val}</var>}%{dscp?, DSCP %{dscp."
+"inv?<var data-tooltip=\"Match DSCP classifications except %{dscp.num?:%{dscp."
+"name}}\">%{dscp.val}</var>:<var>%{dscp.val}</var>}}%{helper?, ヘルパー "
+"%{helper.inv?<var data-tooltip=\"Match any helper except &quot;%{helper.name}"
+"&quot;\">%{helper.val}</var>:<var data-tooltip=\"%{helper.name}\">%{helper."
+"val}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:431
+msgid "-- add IP --"
+msgstr "-- IP を追加 --"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:479
+msgid "-- add MAC --"
+msgstr "-- MAC を追加 --"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:117
+msgid ""
+"<var data-tooltip=\"ACCEPT\">Accept</var> %{src?%{dest?forward:input}:output}"
+msgstr ""
+"%{src?%{dest?転送:受信}:送信} を <var data-tooltip=\"ACCEPT\">許可</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:86
+msgid "<var data-tooltip=\"ACCEPT\">Prevent source rewrite</var>"
+msgstr "<var data-tooltip=\"ACCEPT\">アクセス元の書き換えを防止</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:80
+msgid ""
+"<var data-tooltip=\"DNAT\">Forward</var> to %{dest}%{dest_ip? IP <var>"
+"%{dest_ip}</var>}%{dest_port? port <var>%{dest_port}</var>}"
+msgstr ""
+"%{dest}%{dest_ip? IP <var>%{dest_ip}</var>}%{dest_port? port <var>"
+"%{dest_port}</var>} へ<var data-tooltip=\"DNAT\">転送</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:114
+msgid ""
+"<var data-tooltip=\"DROP\">Drop</var> %{src?%{dest?forward:input}:output}"
+msgstr "%{src?%{dest?転送:受信}:送信} を <var data-tooltip=\"DROP\">破棄</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:132
+msgid ""
+"<var data-tooltip=\"DSCP\">Assign DSCP</var> classification <var>%{set_dscp}"
+"</var>"
+msgstr ""
+"<var data-tooltip=\"DSCP\">DSCP 区分</var>の割り当て - <var>%{set_dscp}</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:126
+msgid ""
+"<var data-tooltip=\"HELPER\">Assign conntrack</var> helper <var"
+"%{helper_name? data-tooltip=\"%{helper_name}\"}>%{set_helper}</var>"
+msgstr ""
+"<var data-tooltip=\"HELPER\">conntrack ヘルパー</var>の割り当て - <var"
+"%{helper_name? data-tooltip=\"%{helper_name}\"}>%{set_helper}</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:129
+msgid ""
+"<var data-tooltip=\"MARK\">%{set_mark?Assign:XOR}</var> firewall mark <var>"
+"%{set_mark?:%{set_xmark}}</var>"
+msgstr ""
+"ファイアウォール マークの<var data-tooltip=\"MARK\">%{set_mark?割り当て:XOR}"
+"</var> - <var>%{set_mark?:%{set_xmark}}</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:83
+msgid "<var data-tooltip=\"MASQUERADE\">Automatically rewrite</var> source IP"
+msgstr ""
+"アクセス元 IP を <var data-tooltip=\"MASQUERADE\">自動的に書き換え</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:123
+msgid ""
+"<var data-tooltip=\"NOTRACK\">Do not track</var> %{src?%{dest?forward:input}:"
+"output}"
+msgstr ""
+"%{src?%{dest?転送:受信}:送信} を<var data-tooltip=\"NOTRACK\">追跡しない</"
+"var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:120
+msgid ""
+"<var data-tooltip=\"REJECT\">Reject</var> %{src?%{dest?forward:input}:output}"
+msgstr ""
+"%{src?%{dest?転送:受信}:送信} を<var data-tooltip=\"REJECT\">拒否</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:80
+msgid ""
+"<var data-tooltip=\"SNAT\">Statically rewrite</var> to source %{snat_ip?IP "
+"<var>%{snat_ip}</var>} %{snat_port?port <var>%{snat_port}</var>}"
+msgstr ""
+"アクセス元 %{snat_ip?IP <var>%{snat_ip}</var>} %{snat_port?ポート <var>"
+"%{snat_port}</var>} への<var data-tooltip=\"SNAT\">静的書き換え</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:224
+msgid "A rewrite IP must be specified!"
+msgstr "書き換え先 IP の指定が必要です！"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:212
+msgid "ACCEPT - Disable address rewriting"
+msgstr "ACCEPT - アドレス書き換えを無効化"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:172
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:228
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:363
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:157
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:207
+msgid "Action"
+msgstr "アクション"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:257
+msgid ""
+"Additional raw <em>iptables</em> arguments to classify zone destination "
+"traffic, e.g. <code>-p tcp --dport 443</code> to only match outbound HTTPS "
+"traffic."
+msgstr ""
+"ゾーンの送信先へのトラフィックを区分するために付加する、生の <em>iptables</"
+"em> 引数です。（例: HTTPS 送信トラフィックのみにマッチさせる <code>-p tcp --"
+"dport 443</code>）"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:247
+msgid ""
+"Additional raw <em>iptables</em> arguments to classify zone source traffic, "
+"e.g. <code>-p tcp --sport 443</code> to only match inbound HTTPS traffic."
+msgstr ""
+"ゾーンを送信元とするトラフィックを区分するために付加する、生の <em>iptables</"
+"em> 引数です。（例: HTTPS 受信トラフィックのみにマッチさせる <code>-p tcp --"
+"sport 443</code>）"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:137
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:181
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:135
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:86
+msgid "Advanced Settings"
+msgstr "詳細設定"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:219
+msgid "Allow \"invalid\" traffic"
+msgstr "\"invalid\" トラフィックの許可"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:319
+msgid "Allow forward from <em>source zones</em>:"
+msgstr "<em>送信元ゾーン</em>からの転送を許可する:"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:278
+msgid "Allow forward to <em>destination zones</em>:"
+msgstr "<em>宛先ゾーン</em>への転送を許可する:"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:506
+msgid "Any"
+msgstr "全て"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:429
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:445
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:257
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:273
+msgid "Any day"
+msgstr "全日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:314
+msgid ""
+"Apply a bitwise XOR of the given value and the existing mark value on "
+"established connections. Format is value[/mask]. If a mask is specified then "
+"those bits set in the mask are zeroed out."
+msgstr ""
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:261
+msgid "Apply the given DSCP class or value to established connections."
+msgstr "指定された DSCP クラスまたは値を確立された接続に適用します。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:391
+msgid "Assign the specified connection tracking helper to matched traffic."
+msgstr "指定された接続追跡ヘルパーを対象のトラフィックに割り当てます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:222
+msgid "Automatic helper assignment"
+msgstr "自動ヘルパー割り当て"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:222
+msgid ""
+"Automatically assign conntrack helpers based on traffic protocol and port"
+msgstr ""
+"トラフィックのプロトコルとポートに基づいて、 conntrack ヘルパーを自動的に割り"
+"当てます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:87
+msgid "Conntrack Settings"
+msgstr "Conntrack 設定"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:226
+msgid "Conntrack helpers"
+msgstr "Conntrack ヘルパー"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/custom.js:15
+msgid "Contents have been saved."
+msgstr "内容が保存されました。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:650
+msgid "Continue"
+msgstr "続行"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:189
+msgid "Covered devices"
+msgstr "カバーされるデバイス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:145
+msgid "Covered networks"
+msgstr "対象ネットワーク"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:194
+msgid "Covered subnets"
+msgstr "カバーされるサブネット"
+
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:21
+msgid "Custom Rules"
+msgstr "手動設定ルール"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/custom.js:25
+msgid ""
+"Custom rules allow you to execute arbitrary iptables commands which are not "
+"otherwise covered by the firewall framework. The commands are executed after "
+"each firewall restart, right after the default ruleset has been loaded."
+msgstr ""
+"手動設定ルールの設定では、ファイアウォールの設定画面ではサポートされていない"
+"ような、任意のiptablesコマンドを実行することが可能です。これらの任意のコマン"
+"ドは、ファイアウォール機能の起動ごとに、標準のルールが読み込まれた後に実行さ"
+"れます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:373
+msgid "DSCP classification"
+msgstr "DSCP 区分"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:260
+msgid "DSCP mark"
+msgstr "DSCP マーク"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:294
+msgid "DSCP mark required"
+msgstr "DSCP マークが必要です"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:354
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:193
+msgid "Destination address"
+msgstr "宛先アドレス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:356
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:198
+msgid "Destination port"
+msgstr "宛先ポート"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:348
+msgid "Destination zone"
+msgstr "宛先ゾーン"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:260
+msgid "Device name"
+msgstr "デバイス名"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:219
+msgid ""
+"Do not install extra rules to reject forwarded traffic with conntrack state "
+"<em>invalid</em>. This may be required for complex asymmetric route setups."
+msgstr ""
+"conntrack ステートが <em>invalid</em> である転送されたトラフィックを拒否する"
+"追加ルールをインストールしません。これは、複雑で非対称なルートのセットアップ"
+"に必要となることがあります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:44
+msgid "Drop invalid packets"
+msgstr "無効なパケットを遮断する"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:180
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:234
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:163
+msgid "Enable"
+msgstr "有効"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:247
+msgid "Enable NAT Loopback"
+msgstr "NATループバックを有効にする"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:43
+msgid "Enable SYN-flood protection"
+msgstr "SYN-Floodプロテクションを有効にする"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:232
+msgid "Enable logging on this zone"
+msgstr "このゾーンのログ記録を有効にする"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:336
+msgid "Expecting: %s"
+msgstr "期待される値: %s"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:62
+msgid "Experimental feature. Not fully compatible with QoS/SQM."
+msgstr "実験的な機能です。 QoS/SQM との完全な互換性はありません。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:226
+msgid "Explicitly choses allowed connection tracking helpers for zone traffic"
+msgstr "ゾーン トラフィックの接続追跡ヘルパーを明示的に選択します。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:214
+msgid "External IP address"
+msgstr "外部IPアドレス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:219
+msgid "External port"
+msgstr "外部ポート"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:283
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:421
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:248
+msgid "Extra arguments"
+msgstr "追加の引数"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:257
+msgid "Extra destination arguments"
+msgstr "追加の送信先引数"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:88
+msgid "Extra iptables arguments"
+msgstr "追加の iptables 引数"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:247
+msgid "Extra source arguments"
+msgstr "追加の送信元引数"
+
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:6
+msgid "Firewall"
+msgstr "ファイアウォール"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/custom.js:24
+msgid "Firewall - Custom Rules"
+msgstr "ファイアウォール - 手動設定ルール"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:126
+msgid "Firewall - NAT Rules"
+msgstr "ファイアウォール - NAT ルール"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:128
+msgid "Firewall - Port Forwards"
+msgstr "ファイアウォール - ポートフォワーディング"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:172
+msgid "Firewall - Traffic Rules"
+msgstr "ファイアウォール - トラフィック・ルール"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:36
+msgid "Firewall - Zone Settings"
+msgstr "ファイアウォール - ゾーン設定"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:643
+msgid "Firewall configuration migration"
+msgstr "ファイアウォール設定マイグレーション"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:49
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:125
+msgid "Forward"
+msgstr "転送"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:29
+msgid ""
+"Forwarded IPv4%{proto?, protocol %{proto#%{next?, }<var>%{item.name}</"
+"var>}}%{mark?, mark <var%{mark.inv? data-tooltip=\"Match fwmarks except "
+"%{mark.num}%{mark.mask? with mask %{mark.mask}}.\":%{mark.mask? data-tooltip="
+"\"Mask fwmark value with %{mark.mask} before compare.\"}}>%{mark.val}</var>}"
+msgstr ""
+"IPv4 の転送%{proto?, プロトコル %{proto#%{next?, }<var>%{item.name}</"
+"var>}}%{mark?, マーク <var%{mark.inv? data-tooltip=\"Match fwmarks except "
+"%{mark.num}%{mark.mask? with mask %{mark.mask}}.\":%{mark.mask? data-tooltip="
+"\"Mask fwmark value with %{mark.mask} before compare.\"}}>%{mark.val}</var>}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:435
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:263
+msgid "Friday"
+msgstr "金曜日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:38
+msgid ""
+"From %{src}%{src_device?, interface <var>%{src_device}</var>}%{src_ip?, IP "
+"%{src_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match IP addresses except "
+"%{item.val}.\"}>%{item.ival}</var>}}%{src_port?, port %{src_port#%{next?, }"
+"<var%{item.inv? data-tooltip=\"Match ports except %{item.val}.\"}>%{item."
+"ival}</var>}}"
+msgstr ""
+"送信元: %{src}%{src_device?, インターフェース <var>%{src_device}</"
+"var>}%{src_ip?, IP %{src_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match "
+"IP addresses except %{item.val}.\"}>%{item.ival}</var>}}%{src_port?, ポート "
+"%{src_port#%{next?, }<var%{item.inv? data-tooltip=\"Match ports except "
+"%{item.val}.\"}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:63
+msgid ""
+"From %{src}%{src_device?, interface <var>%{src_device}</var>}%{src_ip?, IP "
+"%{src_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match IP addresses except "
+"%{item.val}.\"}>%{item.ival}</var>}}%{src_port?, port %{src_port#%{next?, }"
+"<var%{item.inv? data-tooltip=\"Match ports except %{item.val}.\"}>%{item."
+"ival}</var>}}%{src_mac?, MAC %{src_mac#%{next?, }<var%{item.inv? data-"
+"tooltip=\"Match MACs except %{item.val}%{item.hint.name? a.k.a. %{item.hint."
+"name}}.\":%{item.hint.name? data-tooltip=\"%{item.hint.name}\"}}>%{item.ival}"
+"</var>}}"
+msgstr ""
+"送信元: %{src}%{src_device?, インターフェース <var>%{src_device}</"
+"var>}%{src_ip?, IP %{src_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match "
+"IP addresses except %{item.val}.\"}>%{item.ival}</var>}}%{src_port?, ポート "
+"%{src_port#%{next?, }<var%{item.inv? data-tooltip=\"Match ports except "
+"%{item.val}.\"}>%{item.ival}</var>}}%{src_mac?, MAC %{src_mac#%{next?, }<var"
+"%{item.inv? data-tooltip=\"Match MACs except %{item.val}%{item.hint.name? a."
+"k.a. %{item.hint.name}}.\":%{item.hint.name? data-tooltip=\"%{item.hint."
+"name}\"}}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:47
+msgid ""
+"From %{src}%{src_ip?, IP %{src_ip#%{next?, }<var%{item.inv? data-tooltip="
+"\"Match IP addresses except %{item.val}.\"}>%{item.ival}</var>}}%{src_port?, "
+"port %{src_port#%{next?, }<var%{item.inv? data-tooltip=\"Match ports except "
+"%{item.val}.\"}>%{item.ival}</var>}}%{src_mac?, MAC %{src_mac#%{next?, }<var"
+"%{item.inv? data-tooltip=\"Match MACs except %{item.val}%{item.hint.name? a."
+"k.a. %{item.hint.name}}.\":%{item.hint.name? data-tooltip=\"%{item.hint."
+"name}\"}}>%{item.ival}</var>}}"
+msgstr ""
+"送信元: %{src}%{src_ip?, IP %{src_ip#%{next?, }<var%{item.inv? data-tooltip="
+"\"Match IP addresses except %{item.val}.\"}>%{item.ival}</var>}}%{src_port?, "
+"ポート %{src_port#%{next?, }<var%{item.inv? data-tooltip=\"Match ports "
+"except %{item.val}.\"}>%{item.ival}</var>}}%{src_mac?, MAC %{src_mac#"
+"%{next?, }<var%{item.inv? data-tooltip=\"Match MACs except %{item.val}%{item."
+"hint.name? a.k.a. %{item.hint.name}}.\":%{item.hint.name? data-tooltip="
+"\"%{item.hint.name}\"}}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:136
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:180
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:134
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:39
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:85
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:9
+msgid "General Settings"
+msgstr "一般設定"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:73
+msgid "Hardware flow offloading"
+msgstr "ハードウェア フローオフロード"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:271
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:200
+msgid "IPv4 and IPv6"
+msgstr "IPv4及びIPv6"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:272
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:201
+msgid "IPv4 only"
+msgstr "IPv4のみ"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:273
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:202
+msgid "IPv6 only"
+msgstr "IPv6のみ"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:243
+msgid "Inbound device"
+msgstr "受信側デバイス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:37
+msgid ""
+"Incoming IPv4%{proto?, protocol %{proto#%{next?, }%{item.types?<var class="
+"\"cbi-tooltip-container\">%{item.name}<span class=\"cbi-tooltip\">ICMP with "
+"types %{item.types#%{next?, }<var>%{item}</var>}</span></var>:<var>%{item."
+"name}</var>}}}%{mark?, mark <var%{mark.inv? data-tooltip=\"Match fwmarks "
+"except %{mark.num}%{mark.mask? with mask %{mark.mask}}.\":%{mark.mask? data-"
+"tooltip=\"Mask fwmark value with %{mark.mask} before compare.\"}}>%{mark.val}"
+"</var>}%{helper?, helper %{helper.inv?<var data-tooltip=\"Match any helper "
+"except &quot;%{helper.name}&quot;\">%{helper.val}</var>:<var data-tooltip="
+"\"%{helper.name}\">%{helper.val}</var>}}"
+msgstr ""
+"IPv4 の受信%{proto?, プロトコル %{proto#%{next?, }%{item.types?<var class="
+"\"cbi-tooltip-container\">%{item.name}<span class=\"cbi-tooltip\">含まれる "
+"ICMP タイプ - %{item.types#%{next?, }<var>%{item}</var>}</span></var>:<var>"
+"%{item.name}</var>}}}%{mark?, マーク <var%{mark.inv? data-tooltip=\"Match "
+"fwmarks except %{mark.num}%{mark.mask? with mask %{mark.mask}}.\":%{mark."
+"mask? data-tooltip=\"Mask fwmark value with %{mark.mask} before compare.\"}}>"
+"%{mark.val}</var>}%{helper?, ヘルパー %{helper.inv?<var data-tooltip=\"Match "
+"any helper except &quot;%{helper.name}&quot;\">%{helper.val}</var>:<var data-"
+"tooltip=\"%{helper.name}\">%{helper.val}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:47
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:123
+msgid "Input"
+msgstr "受信"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:233
+msgid "Internal IP address"
+msgstr "内部IPアドレス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:238
+msgid "Internal port"
+msgstr "内部ポート"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:227
+msgid "Internal zone"
+msgstr "内部ゾーン"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:302
+msgid "Invalid DSCP mark"
+msgstr "無効な DSCP マーク"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:370
+msgid "Invalid limit value"
+msgstr "無効な制限値"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:380
+msgid "Limit burst"
+msgstr "バースト制限"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:235
+msgid "Limit log messages"
+msgstr "ログメッセージを制限"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:346
+msgid "Limit matching"
+msgstr "一致の制限"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:74
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:95
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:67
+msgid ""
+"Limit matching to <var>%{limit.num}</var> packets per <var>%{limit.unit}</"
+"var>%{limit.burst? burst <var>%{limit.burst}</var>}"
+msgstr ""
+"一致するパケット数を <var>%{limit.unit}</var> あたり <var>%{limit.num}</var> "
+"に制限%{limit.burst?（バースト <var>%{limit.burst}</var>）}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:347
+msgid "Limits traffic matching to the specified rate."
+msgstr "トラフィックを指定されたレートに制限します。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:252
+msgid "Loopback source IP"
+msgstr "ループバック元 IP"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:211
+msgid "MASQUERADE - Automatically rewrite to outbound interface IP"
+msgstr "MASQUERADE - 自動的に送信側インターフェース IP へ書き換え"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:142
+msgid "MSS clamping"
+msgstr "MSSクランプ"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:139
+msgid "Masquerading"
+msgstr "マスカレード"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:161
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:217
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:146
+msgid "Match"
+msgstr "対象"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:260
+msgid "Match DSCP"
+msgstr "DSCP の一致"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:284
+msgid "Match ICMP type"
+msgstr "ICMPタイプの一致"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:240
+msgid "Match device"
+msgstr "デバイスの一致"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:194
+msgid "Match forwarded traffic directed at the given IP address."
+msgstr "指定された IP アドレスに転送されるトラフィックが対象になります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:199
+msgid ""
+"Match forwarded traffic directed at the given destination port or port range."
+msgstr ""
+"指定されたポートまたはポート範囲に転送されるトラフィックが対象になります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:180
+msgid "Match forwarded traffic from this IP or range."
+msgstr "この IP または範囲からのトラフィックが対象になります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:185
+msgid ""
+"Match forwarded traffic originating from the given source port or port range."
+msgstr ""
+"指定された送信元ポートまたはポート範囲から発信されたトラフィックが対象になり"
+"ます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:261
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:398
+msgid "Match helper"
+msgstr "ヘルパーの一致"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:220
+msgid ""
+"Match incoming traffic directed at the given destination port or port range "
+"on this host"
+msgstr ""
+"設定された宛先ポート(またはポート範囲)に一致した受信トラフィックが対象になり"
+"ます"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:313
+msgid "Match mark"
+msgstr "マークの一致"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:261
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:398
+msgid "Match traffic using the specified connection tracking helper."
+msgstr "指定された接続追跡ヘルパーを使用するトラフィックが対象になります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:316
+msgid "Matches a specific firewall mark or a range of different marks."
+msgstr ""
+"特定のファイアウォール マークまたは異なる複数のマークの範囲が対象になります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:239
+msgid "Matches forwarded traffic using the specified outbound network device."
+msgstr ""
+"指定された送信側ネットワーク デバイスを使用して転送されるトラフィックが対象に"
+"なります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:261
+msgid "Matches traffic carrying the specified DSCP marking."
+msgstr "指定された DSCP マークを持っているトラフィックが対象になります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:381
+msgid ""
+"Maximum initial number of packets to match: this number gets recharged by "
+"one every time the limit specified above is not reached, up to this number."
+msgstr ""
+"対象となるパケットの最初の最大数です。この数は、上のレート制限で上限に到達し"
+"なかった場合に、その時間毎にここで指定された数まで1ずつ回復します。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:431
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:259
+msgid "Monday"
+msgstr "月曜日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:441
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:269
+msgid "Month Days"
+msgstr "月間"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:129
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:18
+msgid "NAT Rules"
+msgstr "NAT ルール"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:127
+msgid ""
+"NAT rules allow fine grained control over the source IP to use for outbound "
+"or forwarded traffic."
+msgstr ""
+"NAT ルールは、送信または転送トラフィックのために使用するアクセス元 IP に対し"
+"て、とても細かな制御を可能にします。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:157
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:213
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:142
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:101
+msgid "Name"
+msgstr "名前"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:215
+msgid "Only match incoming traffic directed at the given IP address."
+msgstr "設定された宛先IPアドレスと一致した受信トラフィックが対象になります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:196
+msgid "Only match incoming traffic from these MACs."
+msgstr "設定されたMACアドレスと一致した受信したトラフィックが対象になります。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:201
+msgid "Only match incoming traffic from this IP or range."
+msgstr ""
+"設定されたIPアドレス (または範囲) と一致した受信したトラフィックが対象になり"
+"ます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:206
+msgid ""
+"Only match incoming traffic originating from the given source port or port "
+"range on the client host"
+msgstr ""
+"設定されたクライアントホストの送信元ポート(またはポート範囲)からの受信トラ"
+"フィックと一致したトラフィックのみを対象にします。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:244
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:238
+msgid "Outbound device"
+msgstr "送信側デバイス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:172
+msgid "Outbound zone"
+msgstr "送信側ゾーン"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:48
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:124
+msgid "Output"
+msgstr "送信"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:284
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:422
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:249
+msgid "Passes additional arguments to iptables. Use with care!"
+msgstr ""
+"iptablesにパススルーする追加の引数を設定してください。ただし、注意して設定し"
+"てください！"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:244
+msgid ""
+"Passing raw iptables arguments to source and destination traffic "
+"classification rules allows to match packets based on other criteria than "
+"interfaces or subnets. These options should be used with extreme care as "
+"invalid values could render the firewall ruleset broken, completely exposing "
+"all services."
+msgstr ""
+"送信元と送信先のトラフィックの区分ルールを、インターフェースやサブネット以外"
+"の基準に基づいてマッチすることができるように、生の iptables 引数を渡します。"
+"これらのオプションは、無効な値がファイアウォール ルールセットの破壊を引き起こ"
+"し、全サービスを外部に晒す恐れがあることに、特段の注意を払い使用されなければ"
+"なりません。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:131
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:12
+msgid "Port Forwards"
+msgstr "ポートフォワーディング"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:129
+msgid ""
+"Port forwarding allows remote computers on the Internet to connect to a "
+"specific computer or service within the private LAN."
+msgstr ""
+"ポートフォワーディングは、インターネット上のリモートコンピュータから、プライ"
+"ベートなネットワーク上の、特定のコンピュータやサービスへのアクセスを可能にし"
+"ます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:185
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:280
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:168
+msgid "Protocol"
+msgstr "プロトコル"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:239
+msgid ""
+"Redirect matched incoming traffic to the given port on the internal host"
+msgstr ""
+"ルールに一致した受信トラフィックを、内部ホストの設定されたポートへ転送します"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:234
+msgid "Redirect matched incoming traffic to the specified internal host"
+msgstr "ルールに一致した受信トラフィックを、設定された内部ホストへ転送します"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:74
+msgid "Requires hardware NAT support. Implemented at least for mt7621"
+msgstr ""
+"ハードウェア NAT サポートが必要です。 mt7621 のみにおいて実装されています。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:212
+msgid "Restrict Masquerading to given destination subnets"
+msgstr "設定された宛先サブネットへのマスカレードを制限する"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:205
+msgid "Restrict Masquerading to given source subnets"
+msgstr "設定された送信元サブネットへのマスカレードを制限する"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:268
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:199
+msgid "Restrict to address family"
+msgstr "アドレスファミリの制限"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:214
+msgid "Rewrite IP address"
+msgstr "IP アドレスの書き換え"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:215
+msgid "Rewrite matched traffic to the specified source IP address."
+msgstr "対象のトラフィックを指定されたアクセス元 IP アドレスに書き換えます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:230
+msgid "Rewrite matched traffic to the specified source port or port range."
+msgstr ""
+"対象のトラフィックを指定されたアクセス元ポートまたはポート範囲に書き換えま"
+"す。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:229
+msgid "Rewrite port"
+msgstr "ポートの書き換え"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:61
+msgid "Routing/NAT Offloading"
+msgstr "ルーティング/NAT オフロード"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:210
+msgid "SNAT - Rewrite to specific source IP or port"
+msgstr "SNAT - 特定のアクセス元 IP またはポートへの書き換え"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:436
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:264
+msgid "Saturday"
+msgstr "土曜日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:313
+msgid "Set mark"
+msgstr "マークの設定"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:315
+msgid ""
+"Set the given mark value on established connections. Format is value[/mask]. "
+"If a mask is specified then only those bits set in the mask are modified."
+msgstr ""
+"確立された接続にマーク値を設定します。フォーマットは value[/mask] です。もし"
+"マスクが指定されている場合、マスクによって有効なビットのみ設定されます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:69
+msgid "Software based offloading for routing/NAT"
+msgstr "ルーティング/NAT のための、ソフトウェアベースのオフロードです。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:68
+msgid "Software flow offloading"
+msgstr "ソフトウェア フローオフロード"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:200
+msgid "Source IP address"
+msgstr "送信元IPアドレス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:195
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:338
+msgid "Source MAC address"
+msgstr "送信元MACアドレス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:339
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:179
+msgid "Source address"
+msgstr "送信元アドレス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:205
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:341
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:184
+msgid "Source port"
+msgstr "送信元ポート"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:189
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:332
+msgid "Source zone"
+msgstr "送信元ゾーン"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:261
+msgid ""
+"Specifies whether to tie this traffic rule to a specific inbound or outbound "
+"network device."
+msgstr ""
+"このトラフィック ルールを関連付ける、特定の受信側または送信側ネットワークデバ"
+"イスを指定します。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:252
+msgid ""
+"Specifies whether to use the external or the internal IP address for "
+"reflected traffic."
+msgstr ""
+"反映されるトラフィックに対し、外部または内部 IP アドレスのどちらを使用するか"
+"を指定します。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:460
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:288
+msgid "Start Date (yyyy-mm-dd)"
+msgstr "開始日 (yyyy-mm-dd)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:452
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:280
+msgid "Start Time (hh.mm.ss)"
+msgstr "開始時刻 (hh.mm.ss)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:464
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:292
+msgid "Stop Date (yyyy-mm-dd)"
+msgstr "停止日 (yyyy-mm-dd)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:456
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:284
+msgid "Stop Time (hh.mm.ss)"
+msgstr "停止時刻 (hh.mm.ss)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:430
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:258
+msgid "Sunday"
+msgstr "日曜日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:644
+msgid ""
+"The existing firewall configuration needs to be changed for LuCI to function "
+"properly."
+msgstr ""
+"既存のファイアウォール設定は、 LuCI が正常に機能するように変更する必要があり"
+"ます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:37
+msgid ""
+"The firewall creates zones over your network interfaces to control network "
+"traffic flow."
+msgstr ""
+"ファイアウォール機能は、各ネットワークインターフェース上にゾーンを作成してト"
+"ラフィックの制御を行います。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:185
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:274
+msgid ""
+"The options below control the forwarding policies between this zone (%s) and "
+"other zones. <em>Destination zones</em> cover forwarded traffic "
+"<strong>originating from %q</strong>. <em>Source zones</em> match forwarded "
+"traffic from other zones <strong>targeted at %q</strong>. The forwarding "
+"rule is <em>unidirectional</em>, e.g. a forward from lan to wan does "
+"<em>not</em> imply a permission to forward from wan to lan as well."
+msgstr ""
+"下記の設定は、このゾーン (%s)とその他のゾーン間の転送ポリシーを制御します。"
+"<em>宛先ゾーンへの転送</em> は、<strong>%q から</strong>転送されたトラフィッ"
+"クに対して転送を許可します。 <em>送信元ゾーンからの転送</em> は、別のゾーンか"
+"ら<strong>%qへ</strong> の転送を許可します。トラフィック転送設定は、<em>一方"
+"向</em>であり、例えばlanからwanへの転送設定は、wanからlanへの転送を<em>許可し"
+"ません。</em>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:97
+msgid ""
+"This section defines common properties of %q. The <em>input</em> and "
+"<em>output</em> options set the default policies for traffic entering and "
+"leaving this zone while the <em>forward</em> option describes the policy for "
+"forwarded traffic between different networks within the zone. <em>Covered "
+"networks</em> specifies which available networks are members of this zone."
+msgstr ""
+"このセクションでは、%sの標準的な動作を設定します。<em>受信</em>及び<em>送信</"
+"em>オプションは、このゾーンに対して入出力するトラフィックに対する標準のポリ"
+"シーを設定し、<em>転送</em>オプションは、ゾーン間の転送トラフィックに対する標"
+"準のポリシーになります。<em>対象ネットワーク</em>は、どのネットワーク設定がこ"
+"のゾーンに属するかを設定します。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:434
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:262
+msgid "Thursday"
+msgstr "木曜日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:182
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:136
+msgid "Time Restrictions"
+msgstr "時間制限"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:468
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:296
+msgid "Time in UTC"
+msgstr "UTC時刻を使用"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:76
+msgid ""
+"To %{dest}%{dest_device?, interface <var>%{dest_device}</var>}%{dest_ip?, IP "
+"%{dest_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match IP addresses except "
+"%{item.val}.\"}>%{item.ival}</var>}}%{dest_port?, port %{dest_port#%{next?, }"
+"<var%{item.inv? data-tooltip=\"Match ports except %{item.val}.\"}>%{item."
+"ival}</var>}}"
+msgstr ""
+"送信先: %{dest}%{dest_device?, インターフェース <var>%{dest_device}</"
+"var>}%{dest_ip?, IP %{dest_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match "
+"IP addresses except %{item.val}.\"}>%{item.ival}</var>}}%{dest_port?, ポート "
+"%{dest_port#%{next?, }<var%{item.inv? data-tooltip=\"Match ports except "
+"%{item.val}.\"}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:48
+msgid ""
+"To %{dest}%{dest_device?, via interface <var>%{dest_device}</"
+"var>}%{dest_ip?, IP %{dest_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match "
+"IP addresses except %{item.val}.\"}>%{item.ival}</var>}}%{dest_port?, port "
+"%{dest_port#%{next?, }<var%{item.inv? data-tooltip=\"Match ports except "
+"%{item.val}.\"}>%{item.ival}</var>}}"
+msgstr ""
+"送信先: %{dest}%{dest_device?, 経由インターフェース <var>%{dest_device}</"
+"var>}%{dest_ip?, IP %{dest_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match "
+"IP addresses except %{item.val}.\"}>%{item.ival}</var>}}%{dest_port?, ポート "
+"%{dest_port#%{next?, }<var%{item.inv? data-tooltip=\"Match ports except "
+"%{item.val}.\"}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:56
+msgid ""
+"To %{dest}%{dest_ip?, IP %{dest_ip#%{next?, }<var%{item.inv? data-tooltip="
+"\"Match IP addresses except %{item.val}.\"}>%{item.ival}</"
+"var>}}%{dest_port?, port %{dest_port#%{next?, }<var%{item.inv? data-tooltip="
+"\"Match ports except %{item.val}.\"}>%{item.ival}</var>}}"
+msgstr ""
+"送信先: %{dest}%{dest_ip?, IP %{dest_ip#%{next?, }<var%{item.inv? data-"
+"tooltip=\"Match IP addresses except %{item.val}.\"}>%{item.ival}</"
+"var>}}%{dest_port?, ポート %{dest_port#%{next?, }<var%{item.inv? data-"
+"tooltip=\"Match ports except %{item.val}.\"}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:391
+msgid "Tracking helper"
+msgstr "追跡ヘルパー"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:175
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:15
+msgid "Traffic Rules"
+msgstr "トラフィック・ルール"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:173
+msgid ""
+"Traffic rules define policies for packets traveling between different zones, "
+"for example to reject traffic between certain hosts or to open WAN ports on "
+"the router."
+msgstr ""
+"トラフィック・ルールの設定では、ゾーン間を行き来するパケットのポリシーを設定"
+"します。例えば、特定のホスト間や、ルーターのWANポートへのトラフィックの拒否を"
+"設定することができます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:432
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:260
+msgid "Tuesday"
+msgstr "火曜日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/custom.js:18
+msgid "Unable to save contents: %s"
+msgstr "内容を保存できません: %s"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:276
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:413
+msgid "Unknown or not installed conntrack helper \"%s\""
+msgstr "不明またはインストールされていない conntrack ヘルパー \"%s\""
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:139
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:143
+msgid "Unnamed NAT"
+msgstr "名称未設定の NAT"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:144
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:158
+msgid "Unnamed forward"
+msgstr "名称未設定の転送"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:189
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:214
+msgid "Unnamed rule"
+msgstr "名称未設定のルール"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:102
+msgid "Unnamed zone"
+msgstr "名称未設定のゾーン"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:548
+msgid "Unrecognized protocol"
+msgstr "認識されていないプロトコル"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:645
+msgid ""
+"Upon pressing \"Continue\", \"redirect\" sections with target \"SNAT\" will "
+"be converted to \"nat\" sections and the firewall will be restarted to apply "
+"the updated configuration."
+msgstr ""
+"\"続行\" を押下すると、 \"SNAT\" ターゲットを持つ \"redirect\" セクションは "
+"\"nat\" セクションに変換されたうえで、ファイアウォールは更新された設定を適用"
+"するために再起動されます。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:256
+msgid "Use external IP address"
+msgstr "外部 IP アドレスを使用"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:255
+msgid "Use internal IP address"
+msgstr "内部 IP アドレスを使用"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:189
+msgid ""
+"Use this option to classify zone traffic by raw, non-<em>uci</em> managed "
+"network devices."
+msgstr ""
+"生の、または非 <em>uci</em> 管理下にあるデバイスによるゾーン トラフィックの区"
+"分にこのオプションを使用します。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:194
+msgid ""
+"Use this option to classify zone traffic by source or destination subnet "
+"instead of networks or devices."
+msgstr ""
+"ネットワークまたはデバイスに代わり、アクセス元またはアクセス先サブネットによ"
+"るゾーン トラフィックの区分にこのオプションを使用します。"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:328
+msgid "Valid firewall mark required"
+msgstr "有効なファイアウォール マークが必要です"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:433
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:261
+msgid "Wednesday"
+msgstr "水曜日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:425
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:253
+msgid "Week Days"
+msgstr "曜日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:372
+msgid "XOR firewall mark"
+msgstr "ファイアウォール マークの XOR"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:313
+msgid "XOR mark"
+msgstr "マークの XOR"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:115
+msgid "Zone ⇒ Forwardings"
+msgstr "ゾーン ⇒ 転送"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:80
+msgid "Zones"
+msgstr "ゾーン"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:367
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:55
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:131
+msgid "accept"
+msgstr "許可"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:265
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:431
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:453
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:210
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:242
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:263
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:289
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:344
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:359
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:393
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:400
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:189
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:202
+msgid "any"
+msgstr "全て"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:48
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:81
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:64
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:77
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:39
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:49
+msgid "any zone"
+msgstr "全てのゾーン"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:371
+msgid "apply firewall mark"
+msgstr "ファイアウォール マークの適用"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:370
+msgid "assign conntrack helper"
+msgstr "conntrack ヘルパーの割り当て"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:67
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:88
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:60
+msgid "day"
+msgstr "日"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:233
+msgid "do not rewrite"
+msgstr "書き換えない"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:369
+msgid "don't track"
+msgstr "コネクション追跡を行わない"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:366
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:54
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:130
+msgid "drop"
+msgstr "破棄"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:67
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:88
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:60
+msgid "hour"
+msgstr "時間"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:67
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:88
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:60
+msgid "minute"
+msgstr "分"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:368
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:53
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:129
+msgid "reject"
+msgstr "拒否"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:67
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:88
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:60
+msgid "second"
+msgstr "秒"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:48
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:57
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:81
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:64
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:77
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:49
+msgid "this device"
+msgstr "このデバイス"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:96
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:184
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:273
+msgid "this new zone"
+msgstr "この新しいゾーン"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:351
+msgid "unlimited"
+msgstr "無制限"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:242
+msgid "unspecified"
+msgstr "設定しない"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:336
+msgid "valid firewall mark"
+msgstr "有効なファイアウォール マーク"

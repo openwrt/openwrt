@@ -1,0 +1,144 @@
+version: 2.0
+jobs:
+  build:
+    docker:
+      - image: docker.io/openwrtorg/packages-cci:v1.0.2
+    environment:
+      - SDK_HOST: "downloads.openwrt.org"
+      - SDK_PATH: "snapshots/targets/ath79/generic"
+      - SDK_FILE: "openwrt-sdk-ath79-generic_*.Linux-x86_64.tar.xz"
+      - BRANCH: "master"
+    steps:
+      - checkout:
+          path: ~/openwrt_luci
+
+      - run:
+          name: Check changes / verify commits
+          working_directory: ~/openwrt_luci
+          command: |
+             cat >> $BASH_ENV <<EOF
+             echo_red()   { printf "\033[1;31m\$*\033[m\n"; }
+             echo_green() { printf "\033[1;32m\$*\033[m\n"; }
+             echo_blue()  { printf "\033[1;34m\$*\033[m\n"; }
+             EOF
+             source $BASH_ENV
+
+             RET=0
+             for commit in $(git rev-list HEAD ^origin/$BRANCH); do
+               echo_blue "=== Checking commit '$commit'"
+               if git show --format='%P' -s $commit | grep -qF ' '; then
+                 echo_red "Pull request should not include merge commits"
+                 RET=1
+               fi
+
+               author="$(git show -s --format=%aN $commit)"
+               if echo $author | grep -q '\S\+\s\+\S\+'; then
+                 echo_green "Author name ($author) seems ok"
+               else
+                 echo_red "Author name ($author) need to be your real name 'firstname lastname'"
+                 RET=1
+               fi
+
+               subject="$(git show -s --format=%s $commit)"
+               if echo "$subject" | grep -q -e '^[0-9A-Za-z,+/_-]\+: ' -e '^Revert '; then
+                 echo_green "Commit subject line seems ok ($subject)"
+               else
+                 echo_red "Commit subject line MUST start with '<package name>: ' ($subject)"
+                 RET=1
+               fi
+
+               body="$(git show -s --format=%b $commit)"
+               sob="$(git show -s --format='Signed-off-by: %aN <%aE>' $commit)"
+               if echo "$body" | grep -qF "$sob"; then
+                 echo_green "Signed-off-by match author"
+               else
+                 echo_red "Signed-off-by is missing or doesn't match author (should be '$sob')"
+                 RET=1
+               fi
+             done
+
+             exit $RET
+
+      - run:
+          name: Download the SDK
+          working_directory: ~/sdk
+          command: |
+             curl "https://$SDK_HOST/$SDK_PATH/sha256sums" -sS -o sha256sums
+             curl "https://$SDK_HOST/$SDK_PATH/sha256sums.asc" -sS -o sha256sums.asc
+             gpg --with-fingerprint --verify sha256sums.asc sha256sums
+             rsync -av "$SDK_HOST::downloads/$SDK_PATH/$SDK_FILE" .
+             sha256sum -c --ignore-missing sha256sums
+
+      - run:
+          name: Prepare build_dir
+          working_directory: ~/build_dir
+          command: |
+             tar Jxf ~/sdk/$SDK_FILE --strip=1
+             cat > feeds.conf <<EOF
+             src-git base https://github.com/openwrt/openwrt.git;$BRANCH
+             src-git packages https://github.com/openwrt/packages.git;$BRANCH
+             src-link luci $HOME/openwrt_luci
+             EOF
+             cat feeds.conf
+             ./scripts/feeds update -a > /dev/null
+             make defconfig > /dev/null
+             # enable BUILD_LOG
+             sed -i 's/# CONFIG_BUILD_LOG is not set/CONFIG_BUILD_LOG=y/' .config
+
+      - run:
+          name: Download source, check package, compile
+          working_directory: ~/build_dir
+          command: |
+             set +o pipefail
+             PKGS=$(cd ~/openwrt_luci; git diff --diff-filter=d --name-only "origin/$BRANCH..." | awk -F/ '{ print $2 }' | uniq)
+             if [ -z "$PKGS" ] ; then
+                 echo_blue "WARNING: No new or modified packages found!"
+                 exit 0
+             fi
+
+             echo_blue "=== Found new/modified packages: $PKGS"
+             for PKG in $PKGS ; do
+                 echo_blue "===+ Install: $PKG"
+                 ./scripts/feeds install $PKG
+
+                 echo_blue "===+ Download: $PKG"
+                 make "package/$PKG/download" V=s
+
+                 echo_blue "===+ Check package: $PKG"
+                 make "package/$PKG/check" V=s 2>&1 | tee logtmp
+                 RET=${PIPESTATUS[0]}
+
+                 if [ $RET -ne 0 ]; then
+                     echo_red   "=> Package check failed: $RET)"
+                     exit $RET
+                 fi
+
+                 badhash_msg="HASH does not match "
+                 badhash_msg+="|HASH uses deprecated hash,"
+                 badhash_msg+="|HASH is missing,"
+                 if grep -qE "$badhash_msg" logtmp; then
+                     echo_red   "=> Package HASH check failed"
+                     exit 1
+                 fi
+                 echo_green "=> Package check OK"
+             done
+
+             for PKG in $PKGS ; do
+                 echo_blue "===+ Building: $PKG"
+                 make "package/$PKG/compile" -j$(nproc) || make "package/$PKG/compile" V=s
+             done
+
+      - store_artifacts:
+          path: ~/build_dir/logs
+
+      - store_artifacts:
+          path: ~/build_dir/bin
+
+workflows:
+  version: 2
+  buildpr:
+    jobs:
+      - build:
+          filters:
+            branches:
+              ignore: master

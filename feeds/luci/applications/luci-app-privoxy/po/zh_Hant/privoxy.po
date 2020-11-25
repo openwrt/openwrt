@@ -1,0 +1,616 @@
+#
+# Yangfl <mmyangfl@gmail.com>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-privoxy\n"
+"POT-Creation-Date: 2015-06-10 20:16+0100\n"
+"PO-Revision-Date: 2020-02-25 09:44+0000\n"
+"Last-Translator: Trevor <wowpapa3232@gmail.com>\n"
+"Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
+"openwrt/luciapplicationsprivoxy/zh_Hant/>\n"
+"Language: zh_Hant\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 4.0-dev\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:236
+msgid ""
+"A URL to be displayed in the error page that users will see if access to an "
+"untrusted page is denied."
+msgstr "當用戶試圖訪問不受信任的頁面時，錯誤頁面所顯示的 URL。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:226
+msgid ""
+"A URL to documentation about the local Privoxy setup, configuration or "
+"policies."
+msgstr "指向 Privoxy 安裝、設定和規則說明文件的 URL。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:325
+msgid "A directory where Privoxy can create temporary files."
+msgstr "Privoxy 存放臨時檔案的目錄。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:84
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:87
+msgid "Access Control"
+msgstr "訪問控制"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:337
+msgid "Actions that are applied to all sites and maybe overruled later on."
+msgstr "作用在所有站點上的規則，可能被後面的規則覆蓋。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:308
+msgid "An alternative directory where the templates are loaded from."
+msgstr "可選的目錄，放在裡面的模板會被載入。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:206
+msgid "An email address to reach the Privoxy administrator."
+msgstr "用於聯絡 Privoxy 管理員的郵箱地址。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:691
+msgid ""
+"Assumed server-side keep-alive timeout (in seconds) if not specified by the "
+"server."
+msgstr "當服務端沒有指定超時時間時假定的超時時間（單位：秒）。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:151
+msgid "Boot delay"
+msgstr "啟動延時"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:869
+msgid "CGI user interface"
+msgstr "CGI 使用者介面"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:857
+msgid "Common Log Format"
+msgstr "通用日誌格式"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:92
+msgid ""
+"Configure here the routing of HTTP requests through a chain of multiple "
+"proxies. Note that parent proxies can severely decrease your privacy level. "
+"Also specified here are SOCKS proxies."
+msgstr ""
+"在這裡設定 HTTP 請求所經過的多重代理鏈。注意：父級代理可能嚴重降低您的隱私安"
+"全度。在這裡還可以設定 SOCKS 代理。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:851
+msgid "Debug GIF de-animation"
+msgstr "除錯 GIF 動畫"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:833
+msgid "Debug force feature"
+msgstr "除錯 Force feature"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:845
+msgid "Debug redirects"
+msgstr "除錯重定向"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:839
+msgid "Debug regular expression filters"
+msgstr "除錯正則表示式"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:152
+msgid "Delay (in seconds) during system boot before Privoxy start"
+msgstr "Privoxy 自啟動延遲時間（單位：秒）"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:261
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:298
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:315
+msgid "Directory does not exist!"
+msgstr "目錄不存在！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:557
+msgid "Disabled == Transparent Proxy Mode"
+msgstr "禁用 == 透明代理模式"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:66
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:71
+msgid "Documentation"
+msgstr "記錄資訊"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:154
+msgid "During delay ifup-events are not monitored !"
+msgstr "在延遲期間無法檢測到 ifup 事件！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:599
+msgid "Enable proxy authentication forwarding"
+msgstr "允許轉發代理認證"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:135
+msgid ""
+"Enable/Disable autostart of Privoxy on system startup and interface events"
+msgstr "啟用/禁用 Privoxy 在系統啟動或介面事件時自動啟動"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:555
+msgid "Enable/Disable filtering when Privoxy starts."
+msgstr "Privoxy 啟動時啟用/禁用過濾。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:134
+msgid "Enabled"
+msgstr "啟用"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:602
+msgid ""
+"Enabling this option is NOT recommended if there is no parent proxy that "
+"requires authentication!"
+msgstr "如果沒有需要認證的父級代理時，不推薦開啟這個選項！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:368
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:404
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:442
+msgid "File '%s' not found inside Configuration Directory"
+msgstr "在設定目錄中未找到檔案“%s”"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:915
+#: applications/luci-app-privoxy/luasrc/view/privoxy/detail_logview.htm:12
+msgid "File not found or empty"
+msgstr "檔案不存在或為空"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:75
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:80
+msgid "Files and Directories"
+msgstr "檔案和目錄"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:36
+msgid "For help use link at the relevant option"
+msgstr "點選相應選項的連線可獲取幫助"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:91
+msgid "Forwarding"
+msgstr "轉發"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:589
+msgid ""
+"If enabled, Privoxy hides the 'go there anyway' link. The user obviously "
+"should not be able to bypass any blocks."
+msgstr "如果啟用，Privoxy 會隱藏“go there anyway”連結，使用者就不能繞過遮蔽。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:67
+msgid ""
+"If you intend to operate Privoxy for more users than just yourself, it might "
+"be a good idea to let them know how to reach you, what you block and why you "
+"do that, your policies, etc."
+msgstr ""
+"如果除了您還有其他使用者使用 Privoxy 連線，最好讓他們知道如何聯絡您，您遮蔽什"
+"麼，您為什麼這樣做，您的政策等等。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:215
+msgid "Invalid email address"
+msgstr "郵箱地址無效"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:416
+msgid "It is NOT recommended for the casual user."
+msgstr "不推薦新手使用。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:194
+msgid "Location of the Privoxy User Manual."
+msgstr "Privoxy 使用者手冊位置。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:108
+msgid "Log File Viewer"
+msgstr "日誌檢視器"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:895
+msgid "Log all data read from the network"
+msgstr "記錄所有接收的網路資料"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:827
+msgid "Log all data written to the network"
+msgstr "記錄所有傳送的網路資料"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:901
+msgid "Log the applying actions"
+msgstr "記錄配置儲存動作"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:803
+msgid ""
+"Log the destination for each request Privoxy let through. See also 'Debug "
+"1024'."
+msgstr "記錄 Privoxy 允許的所有請求。另請參考“Debug 1024”。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:863
+msgid ""
+"Log the destination for requests Privoxy didn't let through, and the reason "
+"why."
+msgstr "記錄 Privoxy 拒絕的請求目標以及拒絕原因。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:104
+msgid "Logging"
+msgstr "日誌"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:339
+msgid "Main actions file"
+msgstr "主要規則檔案"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:461
+msgid "Mandatory Input: No Data given!"
+msgstr "必需選項：沒有設定資料！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:259
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:296
+msgid "Mandatory Input: No Directory given!"
+msgstr "必需選項：沒有設定目錄！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:279
+msgid "Mandatory Input: No File given!"
+msgstr "必需選項：沒有設定檔案！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:479
+msgid "Mandatory Input: No Port given!"
+msgstr "必需選項：沒有設定埠！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:345
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:381
+msgid "Mandatory Input: No files given!"
+msgstr "必需選項：沒有設定檔案！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:482
+msgid "Mandatory Input: No valid IPv4 address or host given!"
+msgstr "必需選項：沒有設定有效的 IPv4 地址或者主機！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:470
+msgid "Mandatory Input: No valid IPv6 address given!"
+msgstr "必需選項：沒有設定有效的 IPv6 地址！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:472
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:484
+msgid "Mandatory Input: No valid Port given!"
+msgstr "必需選項：沒有設定有效的埠！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:733
+msgid "Maximum number of client connections that will be served."
+msgstr "客戶端數量上限。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:535
+msgid "Maximum size (in KB) of the buffer for content filtering."
+msgstr "內容過濾的最大緩衝（單位：KB）。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:97
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:100
+msgid "Miscellaneous"
+msgstr "雜項"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:51
+msgid "NOT installed"
+msgstr "未安裝"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:254
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:291
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:310
+msgid "No trailing '/', please."
+msgstr "路徑結尾不要加“/”。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:881
+msgid "Non-fatal errors - *we highly recommended enabling this*"
+msgstr "非致命性錯誤 - *強烈建議啟用*"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:714
+msgid ""
+"Number of seconds after which a socket times out if no data is received."
+msgstr "Socket 連線未收到資料的超時時間。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:668
+msgid ""
+"Number of seconds after which an open connection will no longer be reused."
+msgstr "開放的連線不再重複使用的超時時間。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:327
+msgid ""
+"Only when using 'external filters', Privoxy has to create temporary files."
+msgstr "只有使用外接規則時，Privoxy 才需要建立臨時檔案。"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:81
+msgid "Please install current version !"
+msgstr "請安裝當前版本！"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:913
+msgid "Please press [Read] button"
+msgstr "請點選 [讀取] 按鈕"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:518
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:527
+msgid "Please read Privoxy manual for details!"
+msgstr "請閱讀 Privoxy 手冊以瞭解詳情！"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:92
+msgid "Please update to the current version!"
+msgstr "請升級到當前版本！"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:24
+msgid "Privoxy WEB proxy"
+msgstr "Privoxy 網路代理"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:76
+msgid ""
+"Privoxy can (and normally does) use a number of other files for additional "
+"configuration, help and logging. This section of the configuration file "
+"tells Privoxy where to find those other files."
+msgstr ""
+"Privoxy 可以（而且一般都會）使用其他一些檔案用於附加設定，幫助和日誌。這個區"
+"域用來告訴 Privoxy 從哪裡找到這些檔案。"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:32
+msgid ""
+"Privoxy is a non-caching web proxy with advanced filtering capabilities for "
+"enhancing privacy, modifying web page data and HTTP headers, controlling "
+"access, and removing ads and other obnoxious Internet junk."
+msgstr ""
+"Privoxy 是一個無快取的網路代理，具有高階過濾功能，能夠修改網頁資料和 HTTP 請"
+"求頭、控制訪問、移除廣告等。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:908
+msgid "Read / Reread log file"
+msgstr "讀取/重新整理日誌檔案"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:815
+msgid "Show I/O status"
+msgstr "顯示 I/O 狀態"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:809
+msgid "Show each connection status"
+msgstr "顯示每個連線的狀態"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:821
+msgid "Show header parsing"
+msgstr "顯示請求頭 解析"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:76
+msgid "Software package '%s' is not installed."
+msgstr "軟體包“%s”未安裝。"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:85
+msgid "Software package '%s' is outdated."
+msgstr "軟體包“%s”已過時。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:125
+#: applications/luci-app-privoxy/luasrc/view/privoxy/detail_startstop.htm:10
+msgid "Start"
+msgstr "啟動"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:115
+msgid "Start / Stop"
+msgstr "啟動 / 停止"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:116
+msgid "Start/Stop Privoxy WEB Proxy"
+msgstr "啟動/停止 Privoxy 網路代理"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:875
+msgid "Startup banner and warnings."
+msgstr "啟動標語和警告。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:455
+msgid "Syntax:"
+msgstr "格式："
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:786
+msgid "Syntax: Client header names delimited by spaces."
+msgstr "格式：由空格分隔的客戶端請求頭名稱。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:612
+msgid "Syntax: target_pattern http_parent[:port]"
+msgstr "格式：target_pattern http_parent[:port]"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:620
+msgid "Syntax: target_pattern socks_proxy[:port] http_parent[:port]"
+msgstr "格式：target_pattern socks_proxy[:port] http_parent[:port]"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:59
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:62
+msgid "System"
+msgstr "系統"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:335
+msgid ""
+"The actions file(s) to use. Multiple actionsfile lines are permitted, and "
+"are in fact recommended!"
+msgstr "所使用的規則檔案。允許並且推薦使用多個規則檔案。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:453
+msgid ""
+"The address and TCP port on which Privoxy will listen for client requests."
+msgstr "Privoxy 接收客戶端請求時監聽的地址和 TCP 埠。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:766
+msgid ""
+"The compression level that is passed to the zlib library when compressing "
+"buffered content."
+msgstr "使用 zlib 壓縮緩衝內容時的壓縮級別。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:252
+msgid ""
+"The directory where all logging takes place (i.e. where the logfile is "
+"located)."
+msgstr "所有日誌所在的目錄。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:289
+msgid "The directory where the other configuration files are located."
+msgstr "其他設定檔案所在的目錄。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:377
+msgid ""
+"The filter files contain content modification rules that use regular "
+"expressions."
+msgstr "過濾檔案包含了使用正則表示式編寫的內容修改規則。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:183
+msgid "The hostname shown on the CGI pages."
+msgstr "CGI 頁面顯示的主機名。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:274
+msgid "The log file to use. File name, relative to log directory."
+msgstr "日誌檔名稱，與日誌路徑相對。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:784
+msgid "The order in which client headers are sorted before forwarding them."
+msgstr "轉發資料前，客戶端請求頭的排序。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:751
+msgid ""
+"The status code Privoxy returns for pages blocked with +handle-as-empty-"
+"document."
+msgstr ""
+"當頁面因為 handle-as-empty-document 規則被阻止時返回的狀態碼（選上為 200 OK，"
+"不選上為 403 Forbidden）"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:413
+msgid ""
+"The trust mechanism is an experimental feature for building white-lists and "
+"should be used with care."
+msgstr "信任機制是一個實驗性的白名單特性，使用時應小心。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:238
+msgid ""
+"The value of this option only matters if the experimental trust mechanism "
+"has been activated."
+msgstr "只有開啟了信任機制時這個選項的值才有效。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:796
+msgid ""
+"This option is only there for debugging purposes. It will drastically reduce "
+"performance."
+msgstr "這個選項僅用於除錯，開啟後會極大地降低效能。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:574
+msgid ""
+"This option will be removed in future releases as it has been obsoleted by "
+"the more general header taggers."
+msgstr "這個選項在以後的版本中將被移除，因為它被 header taggers 所取代了。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:85
+msgid ""
+"This tab controls the security-relevant aspects of Privoxy's configuration."
+msgstr "這個標籤用於設定與安全相關的 Privoxy 選項。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:618
+msgid ""
+"Through which SOCKS proxy (and optionally to which parent HTTP proxy) "
+"specific requests should be routed."
+msgstr ""
+"指定的請求應該通過哪一個 SOCKS 代理（並且通過哪一個 HTTP 父代理，可選）。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:610
+msgid "To which parent HTTP proxy specific requests should be routed."
+msgstr "請求應轉發至哪一個父級 HTTP 代理。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:341
+msgid "User customizations"
+msgstr "使用者自定義"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:166
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:543
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:673
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:696
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:720
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:739
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:772
+msgid "Value is not a number"
+msgstr "輸入值不是數字"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:168
+msgid "Value not between 0 and 300"
+msgstr "輸入值不在 0 和 300 之間"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:774
+msgid "Value not between 0 and 9"
+msgstr "輸入值不在 0 和 9 之間"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:545
+msgid "Value not between 1 and 4096"
+msgstr "輸入值不在 1 和 4096 之間"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:675
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:698
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:722
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:741
+msgid "Value not greater 0 or empty"
+msgstr "輸入值為空或者不是大於零"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:537
+msgid "Value range 1 to 4096, no entry defaults to 4096"
+msgstr "輸入值為 1 到 4096，預設為 4096"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:45
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:47
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:50
+msgid "Version"
+msgstr "版本"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:43
+msgid "Version Information"
+msgstr "版本資訊"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:646
+msgid "Whether intercepted requests should be treated as valid."
+msgstr "是否應把被攔截的請求當作是有效的。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:572
+msgid ""
+"Whether or not Privoxy recognizes special HTTP headers to change toggle "
+"state."
+msgstr "是否讓 Privoxy 識別特殊的 HTTP 請求頭以切換狀態。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:758
+msgid "Whether or not buffered content is compressed before delivery."
+msgstr "是否在傳遞之前壓縮緩衝內容。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:706
+msgid ""
+"Whether or not outgoing connections that have been kept alive should be "
+"shared between different incoming connections."
+msgstr "是否應在不同的入站連線之間共享持久出站連線。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:683
+msgid "Whether or not pipelined requests should be served."
+msgstr "是否處理管道化的請求。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:600
+msgid "Whether or not proxy authentication through Privoxy should work."
+msgstr "是否可以通過 Privoxy 進行代理驗證。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:582
+msgid "Whether or not the web-based actions file editor may be used."
+msgstr "是否使用基於網頁的規則編輯器。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:565
+msgid "Whether or not the web-based toggle feature may be used."
+msgstr "是否啟用基於網頁的切換功能。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:653
+msgid "Whether requests to Privoxy's CGI pages can be blocked or redirected."
+msgstr "是否可以被攔截或重定向訪問 Privoxy CGI 頁面的請求。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:660
+msgid ""
+"Whether the CGI interface should stay compatible with broken HTTP clients."
+msgstr "是否讓 CGI 介面相容過時的 HTTP 客戶端。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:794
+msgid "Whether to run only one server thread."
+msgstr "是否只執行一個服務執行緒。"
+
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:516
+#: applications/luci-app-privoxy/luasrc/model/cbi/privoxy.lua:525
+msgid "Who can access what."
+msgstr "誰可以訪問什麼。"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:49
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:87
+msgid "installed"
+msgstr "已安裝"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:48
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:78
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:89
+msgid "or higher"
+msgstr "或更高"
+
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:46
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:78
+#: applications/luci-app-privoxy/luasrc/controller/privoxy.lua:89
+msgid "required"
+msgstr "需要"

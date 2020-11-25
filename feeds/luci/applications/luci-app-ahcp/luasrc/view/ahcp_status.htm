@@ -1,0 +1,45 @@
+<script type="text/javascript">//<![CDATA[
+	XHR.poll(-1, '<%=url('admin/network/ahcpd/status')%>', null,
+		function(x, st)
+		{
+			var tb = document.getElementById('ahcpd_status_table');
+			var tx = document.getElementById('ahcpd_status_text');
+			if (st && tb && tx)
+			{
+				/* clear all rows */
+				while (tb.firstElementChild !== tb.lastElementChild)
+					tb.removeChild(tb.lastElementChild);
+
+				for (var i = 0; i < st.leases.length; i++)
+				{
+					tb.appendChild(E('<div class="tr cbi-section-table-row cbi-rowstyle-%d">'.format((i % 2) + 1), [
+						E('<div class="td">', st.leases[i].addr),
+						E('<div class="td">', '%t'.format(st.leases[i].age))
+					]));
+				}
+
+				if (tb.firstElementChild === tb.lastElementChild)
+					tb.appendChild(E('<div class="tr cbi-section-table-row"><div class="td"><em><br /><%:There are no active leases.%></em></div></div>'));
+
+				if (st.uid == '00:00:00:00:00:00:00:00')
+					tx.innerHTML = '<%:The AHCP Service is not running.%>';
+				else
+					tx.innerHTML = String.format('<%:The AHCP Service is running with ID %s.%>', st.uid);
+			}
+		}
+	);
+//]]></script>
+
+<fieldset class="cbi-section">
+	<legend><%:Active AHCP Leases%></legend>
+	<p id="ahcpd_status_text"></p>
+	<div class="table cbi-section-table" id="ahcpd_status_table">
+		<div class="tr cbi-section-table-titles">
+			<div class="th cbi-section-table-cell"><%:Address%></div>
+			<div class="th cbi-section-table-cell"><%:Age%></div>
+		</div>
+		<div class="tr cbi-section-table-row">
+			<div class="td" colspan="5"><em><br /><%:Collecting data...%></em></div>
+		</div>
+	</div>
+</fieldset>

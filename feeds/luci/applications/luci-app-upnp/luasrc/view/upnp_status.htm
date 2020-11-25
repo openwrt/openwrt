@@ -1,0 +1,54 @@
+<script type="text/javascript">//<![CDATA[
+	function upnp_delete_fwd(idx) {
+		(new XHR()).post('<%=url('admin/services/upnp/delete')%>/' + idx, { token: '<%=token%>' },
+			function(x)
+			{
+				var tb = document.getElementById('upnp_status_table');
+				if (tb && (idx + 1 < tb.childNodes.length))
+					tb.removeChild(tb.childNodes[idx + 1]);
+			}
+		);
+	}
+
+	XHR.poll(-1, '<%=url('admin/services/upnp/status')%>', null,
+		function(x, st)
+		{
+			var tb = document.getElementById('upnp_status_table');
+			if (st && tb)
+			{
+				var rows = [];
+
+				for (var i = 0; i < st.length; i++)
+					rows.push([
+						st[i].proto,
+						st[i].extport,
+						st[i].intaddr,
+						st[i].host_hint || "<%:Unknown%>",
+						st[i].intport,
+						st[i].descr,
+						E('<div><input class="cbi-button cbi-button-remove" type="button" value="<%:Delete%>" onclick="upnp_delete_fwd(%d)" /></div>'.format(st[i].num))
+					]);
+
+				cbi_update_table(tb, rows, '<em><%:There are no active redirects.%></em>');
+			}
+		}
+	);
+//]]></script>
+
+<div class="cbi-section">
+	<h3><%:Active UPnP Redirects%></h3>
+	<div class="table" id="upnp_status_table">
+		<div class="tr table-titles">
+			<div class="th"><%:Protocol%></div>
+			<div class="th"><%:External Port%></div>
+			<div class="th"><%:Client Address%></div>
+			<div class="th"><%:Host%></div>
+			<div class="th"><%:Client Port%></div>
+			<div class="th"><%:Description%></div>
+			<div class="th cbi-section-actions">&#160;</div>
+		</div>
+		<div class="tr placeholder">
+			<div class="td"><em><%:Collecting data...%></em></div>
+		</div>
+	</div>
+</div>

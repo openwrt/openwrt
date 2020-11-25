@@ -1,0 +1,76 @@
+<%#
+   Copyright (C) 2011 Pau Escrich <pau@dabax.net>
+   Contributors Lluis Esquerda <eskerda@gmail.com>
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License along
+   with this program; if not, write to the Free Software Foundation, Inc.,
+   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+   The full GNU General Public License is included in this distribution in
+   the file called "COPYING".
+-%>
+
+
+<%+header%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript" src="<%=resource%>/bmx7/js/polling.js"></script>
+
+<div class="cbi-map">
+<h2>Gateway announcements</h2>
+<div class="cbi-map-descr">Networks announced by mesh nodes</div>
+
+<div class="cbi-section">
+	<legend><%:Announcements%></legend>
+	<div class="cbi-section-node">
+	<div class="table" id="tunnels_div">
+		<div class="tr table-titles">
+			<div class="th"><%:Status%></div>
+			<div class="th"><%:Name%></div>
+			<div class="th"><%:Node%></div>
+			<div class="th"><%:Network%></div>
+			<div class="th"><%:Bandwith%></div>
+			<div class="th"><%:Local net%></div>
+			<div class="th"><%:Path Metric%></div>
+			<div class="th"><%:Tun Metric%></div>
+			<div class="th"><%:Rating%></div>
+		</div>
+	</div>
+	</div>
+</div>
+
+</div>
+
+<script type="text/javascript">//<![CDATA[
+		new TablePooler(5,"/cgi-bin/bmx7-info", {'$tunnels':''}, "tunnels_div", function(st){
+        var tunicon = "<%=resource%>/icons/tunnel.png";
+        var tunicon_dis = "<%=resource%>/icons/tunnel_disabled.png";
+        var applyicon = "<%=resource%>/cbi/apply.gif";
+		    var res = Array();
+        for ( var k in st.tunnels ) {
+          var tunnel = st.tunnels[k];
+          var nodename = tunnel.remoteName;
+			    var advnet = tunnel.advNet;
+          var status = '<img src="'+tunicon_dis+'"/>';
+          if ( tunnel.tunName != "---" ) status = '<img src="'+tunicon+'"/>';
+          if ( advnet == "0.0.0.0/0" ) advnet = "<b>Internet IPv4</b>";
+          if ( advnet == "::/0" ) advnet = "<b>Internet IPv6</b>";
+          if (nodename != "---") {
+            res.push([status, tunnel.tunName, nodename, advnet, tunnel.advBw, tunnel.net,
+              tunnel.pathMtc, tunnel.tunMtc, tunnel.rating]);
+            }
+          }
+		  return res;
+		});
+//]]></script>
+
+<%+footer%>

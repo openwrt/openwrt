@@ -1,0 +1,147 @@
+<%#
+ Copyright 2018 Jo-Philipp Wich <jo@mein.io>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%+header%>
+
+<style type="text/css">
+	.controls {
+		display: flex;
+		margin: .5em 0 1em 0;
+		flex-wrap: wrap;
+		justify-content: space-around;
+	}
+
+	.controls > * {
+		padding: .25em;
+		white-space: nowrap;
+		flex: 1 1 33%;
+		box-sizing: border-box;
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.controls > *:first-child,
+	.controls > * > label {
+		flex-basis: 100%;
+		min-width: 250px;
+	}
+
+	.controls > *:nth-child(2),
+	.controls > *:nth-child(3) {
+		flex-basis: 20%;
+	}
+
+	.controls > * > .btn {
+		flex-basis: 20px;
+		text-align: center;
+	}
+
+	.controls > * > * {
+		flex-grow: 1;
+		align-self: center;
+	}
+
+	.controls > div > input {
+		width: auto;
+	}
+
+	.td.version,
+	.td.size {
+		white-space: nowrap;
+	}
+
+	ul.deps, ul.deps ul, ul.errors {
+		margin-left: 1em;
+	}
+
+	ul.deps li, ul.errors li {
+		list-style: none;
+	}
+
+	ul.deps li:before {
+		content: "↳";
+		display: inline-block;
+		width: 1em;
+		margin-left: -1em;
+	}
+
+	ul.deps li > span {
+		white-space: nowrap;
+	}
+
+	ul.errors li {
+		color: #c44;
+		font-size: 90%;
+		font-weight: bold;
+		padding-left: 1.5em;
+	}
+
+	ul.errors li:before {
+		content: "⚠";
+		display: inline-block;
+		width: 1.5em;
+		margin-left: -1.5em;
+	}
+</style>
+
+<h2><%:Software%></h2>
+
+<div class="controls">
+	<div>
+		<label><%:Free space%>:</label>
+		<div class="cbi-progressbar" title="<%:unknown%>">
+			<div>&#160;</div>
+		</div>
+	</div>
+
+	<div>
+		<label><%:Filter%>:</label>
+		<input type="text" name="filter" placeholder="<%:Type to filter…%>"<%=attr("value", luci.http.formvalue("query") or "")%> /><!--
+		--><button class="btn cbi-button" onclick="handleReset(event)"><%:Clear%></button>
+	</div>
+
+	<div>
+		<label><%:Download and install package%>:</label>
+		<input type="text" name="install" placeholder="<%:Package name or URL…%>" onkeydown="if (event.keyCode === 13) handleManualInstall(event)" /><!--
+		--><button class="btn cbi-button cbi-button-action" onclick="handleManualInstall(event)"><%:OK%></button>
+	</div>
+
+	<div>
+		<label><%:Actions%>:</label>
+		<button class="btn cbi-button-positive" data-command="update" onclick="handleOpkg(event)"><%:Update lists…%></button>
+		&#160;
+		<button class="btn cbi-button-action" onclick="handleUpload(event)"><%:Upload Package…%></button>
+		&#160;
+		<button class="btn cbi-button-neutral" onclick="handleConfig(event)"><%:Configure opkg…%></button>
+	</div>
+</div>
+
+<ul class="cbi-tabmenu mode">
+	<li data-mode="available" class="available cbi-tab"><a href="#"><%:Available%></a></li>
+	<li data-mode="installed" class="installed cbi-tab-disabled"><a href="#"><%:Installed%></a></li>
+	<li data-mode="updates" class="installed cbi-tab-disabled"><a href="#"><%:Updates%></a></li>
+</ul>
+
+<div class="controls" style="display:none">
+	<div id="pager" class="center">
+		<button class="btn cbi-button-neutral prev" aria-label="<%:Previous page%>">«</button>
+		<div class="text">dummy</div>
+		<button class="btn cbi-button-neutral next" aria-label="<%:Next page%>">»</button>
+	</div>
+</div>
+
+<div class="table" id="packages">
+	<div class="tr cbi-section-table-titles">
+		<div class="th col-2 left"><%:Package name%></div>
+		<div class="th col-2 left version"><%:Version%></div>
+		<div class="th col-1 center size"><%:Size (.ipk)%></div>
+		<div class="th col-10 left"><%:Description%></div>
+		<div class="th right">&#160;</div>
+	</div>
+</div>
+
+<script type="text/javascript" src="<%=resource%>/view/opkg.js"></script>
+
+<%+footer%>

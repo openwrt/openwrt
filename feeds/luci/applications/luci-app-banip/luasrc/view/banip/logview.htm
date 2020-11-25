@@ -1,0 +1,36 @@
+<%#
+Copyright 2018 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%+header%>
+<%+banip/banip_css%>
+
+<script type="text/javascript">
+//<![CDATA[
+	function log_update()
+	{
+		XHR.poll(-1, '<%=luci.dispatcher.build_url("admin", "services", "banip", "logview")%>', null,
+		function(x)
+		{
+			if (!x)
+			{
+				return;
+			}
+			var view       = document.getElementById("view_id");
+			view.value     = x.responseText;
+			view.scrollTop = view.scrollHeight;
+		});
+	}
+	window.onload = log_update();
+//]]>
+</script>
+
+<div class="cbi-map">
+	<div class="cbi-section">
+		<div class="cbi-section-descr"><%:The syslog output, pre-filtered for banIP related messages only.%></div>
+		<textarea id="view_id" readonly="readonly" wrap="off" value=""></textarea>
+	</div>
+</div>
+
+<%+footer%>

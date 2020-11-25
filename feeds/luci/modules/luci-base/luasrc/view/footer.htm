@@ -1,0 +1,27 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008-2019 Jo-Philipp Wich <jo@mein.io>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+	local is_rollback_pending, rollback_time_remaining, rollback_session, rollback_token = luci.model.uci:rollback_pending()
+
+	if is_rollback_pending or trigger_apply or trigger_revert then
+%>
+	<script type="text/javascript">
+		document.addEventListener("luci-loaded", function() {
+			<% if trigger_apply then -%>
+				L.ui.changes.apply(true);
+			<%- elseif trigger_revert then -%>
+				L.ui.changes.revert();
+			<%- else -%>
+				L.ui.changes.confirm(true, Date.now() + <%=rollback_time_remaining%> * 1000, <%=luci.http.write_json(rollback_token)%>);
+			<%- end %>
+		});
+	</script>
+<%
+	end
+
+	include("themes/" .. theme .. "/footer")
+%>

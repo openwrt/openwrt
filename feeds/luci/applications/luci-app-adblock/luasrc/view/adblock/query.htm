@@ -1,0 +1,64 @@
+<%#
+Copyright 2017-2018 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%+header%>
+
+<script type="text/javascript">
+//<![CDATA[
+	var stxhr = new XHR();
+
+	function update_status(data)
+	{
+		var domain = data.value || data.placeholder;
+		var input  = document.getElementById('query_input');
+		var output = document.getElementById('query_output');
+
+		if (input && output)
+		{
+			output.innerHTML =
+				'<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" style="vertical-align:middle" /> ' +
+				'<%:Waiting for command to complete...%>'
+			;
+			input.parentNode.style.display = 'block';
+			input.style.display = 'inline';
+			stxhr.post('<%=luci.dispatcher.build_url('admin/services/adblock/advanced/result/')%>' + domain, { token: '<%=token%>' },
+				function(x)
+				{
+					if (x.responseText)
+					{
+						input.style.display = 'none';
+						output.innerHTML = String.format('<pre>%h</pre>', x.responseText);
+					}
+					else
+					{
+						input.style.display = 'none';
+						output.innerHTML = '<span class="error"><%:Blocklist not found!%></span>';
+					}
+				}
+			);
+		}
+	}
+//]]>
+</script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+	<div class="cbi-map">
+		<div class="cbi-section">
+			<div class="cbi-section-descr"><%:This form allows you to query active block lists for certain domains, e.g. for whitelisting.%></div>
+			<div style="width:33%; float:left;">
+				<input type="text" placeholder="google.com" name="input" />
+				<input type="button" value="<%:Query%>" class="cbi-button cbi-button-apply" onclick="update_status(this.form.input)" />
+			</div>
+			<br style="clear:both" />
+			<br />
+		</div>
+	</div>
+	<div class="cbi-section" style="display:none">
+		<h3 id="query_input"><%:Collecting data...%></h3>
+		<span id="query_output"></span>
+	</div>
+</form>
+
+<%+footer%>

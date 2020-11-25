@@ -1,0 +1,223 @@
+<%#
+Copyright 2017-2019 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%+travelmate/travelmate_css%>
+<script type="text/javascript">
+//<![CDATA[
+	function status_update(json)
+	{
+			var btn1  = document.getElementById("btn1");
+			var view  = document.getElementById("value_1");
+			var input = json.data.travelmate_status;
+
+			btn1.value = "<%:Restart%>";
+			btn1.name  = "do_restart";
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_2");
+			input = json.data.travelmate_version;
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_3");
+			input = json.data.station_id;
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_4");
+			input = json.data.station_interface;
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_5");
+			input = json.data.faulty_stations;
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_6");
+			input = json.data.wpa_capabilities;
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_7");
+			input = json.data.last_rundate;
+			view.innerHTML = input || "-";
+	}
+
+	function btn_action(action)
+	{
+		var btn1 = document.getElementById("btn1");
+		var btn1_running = document.getElementById("btn1_running");
+
+		btn1.disabled = true;
+		running(btn1_running, 1);
+
+		new XHR.get('<%=luci.dispatcher.build_url("admin", "services", "travelmate")%>/action/' + action.name, null,
+		function(x)
+		{
+			if (!x)
+			{
+				return;
+			}
+			btn1.disabled = false;
+			running(btn1_running, 0);
+		});
+	}
+
+	function running(element, state)
+	{
+		if (state === 1)
+		{
+			var running_html = '<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" width="16" height="16" style="vertical-align:middle" />';
+			element.innerHTML = running_html;
+		}
+		else
+		{
+			element.innerHTML = '';
+		}
+	}
+
+	function toggle_qrcode() {
+		var view = document.getElementById("qrcode");
+		if (view.style.display === "none") {
+			view.style.display = "block";
+		} else {
+			view.style.display = "none";
+		}
+	}
+
+	XHR.get('<%=luci.dispatcher.build_url("admin", "services", "travelmate", "status")%>', null,
+	function(x, json_info)
+	{
+		if (!x || !json_info)
+		{
+			return;
+		}
+		status_update(json_info)
+	});
+
+	XHR.poll(-1, '<%=luci.dispatcher.build_url("admin", "services", "travelmate", "status")%>', null,
+	function(x, json_info)
+	{
+		if (!x || !json_info)
+		{
+			return;
+		}
+		status_update(json_info)
+	});
+//]]>
+</script>
+
+<h3><%:Runtime Information%></h3>
+<div class="cbi-value" id="status_1">
+	<label class="cbi-value-title" for="status_1"><%:Travelmate Status (Quality)%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_1">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_2">
+	<label class="cbi-value-title" for="status_2"><%:Travelmate Version%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_2">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_3">
+	<label class="cbi-value-title" for="status_3"><%:Station ID (RADIO/SSID/BSSID)%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_3">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_4">
+	<label class="cbi-value-title" for="status_4"><%:Station Interface%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_4">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_5">
+	<label class="cbi-value-title" for="status_5"><%:Faulty Stations%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_5">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_6">
+	<label class="cbi-value-title" for="status_6"><%:WPA Capabilities%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_6">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_7">
+	<label class="cbi-value-title" for="status_7"><%:Last Run%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_7">-</span>
+	</div>
+</div>
+<hr />
+<div class="cbi-value" id="button_1">
+	<label class="cbi-value-title" for="button_1"><%:Restart Travelmate%></label>
+	<div class="cbi-value-field">
+		<input class="cbi-button cbi-button-reset" id="btn1" type="button" name="do_restart" value="<%:Restart%>" onclick="btn_action(this)" />
+		<span id="btn1_running" class="btn_running"></span>
+	</div>
+</div>
+<div class="cbi-value" id="button_2">
+	<label class="cbi-value-title" for="button_2"><%:View AP QR-Codes%></label>
+	<div class="cbi-value-field">
+		<input class="cbi-button cbi-button-apply" type="button" value="<%:Show/Hide QR-Codes%>" onclick="toggle_qrcode()" />
+	</div>
+</div>
+<div class="cbi-value" style="margin-bottom: 0px">
+	<span class="cbi-value" style="display: none" id="qrcode">
+<%-
+		local fs  = require("nixio.fs")
+		local uci = require("luci.model.uci").cursor()
+		local qrcode
+
+		uci:foreach("wireless", "wifi-iface", function(s)
+			local device = s.device or ""
+			local mode = s.mode or ""
+			local ssid = s.ssid or ""
+			local enc = s.encryption or ""
+			local key = s.key or ""
+			local hidden = s.hidden or "false"
+			local disabled = s.disabled or ""
+			local wep_slots = {s.key1 or "", s.key2 or "", s.key3 or "", s.key4 or ""}
+
+			if device and mode == "ap" and disabled ~= "1" then
+				if string.match(enc, '^psk') then
+					enc = "WPA"
+				elseif string.match(enc, '^wep') then
+					enc = "WEP"
+					if tonumber(key) then
+						key = wep_slots[tonumber(key)]
+					end
+				elseif enc == "none" then
+					enc = "nopass"
+					key = "nokey"
+				else
+					enc = ""
+				end
+
+				if hidden == "1" then
+					hidden = "true"
+				end
+
+				if ssid and enc and key then
+					local e_ssid = string.gsub(ssid,"[\"\\';:, ]",[[\\\%1]])
+					local e_key = string.gsub(key,"[\"\\';:, ]",[[\\\%1]])
+
+					if fs.access("/usr/bin/qrencode") then
+						qrcode = luci.sys.exec("/usr/bin/qrencode --inline --8bit --type=SVG --output=- 'WIFI:S:\"'" .. e_ssid .. "'\";T:'" .. enc .. "';P:\"'" .. e_key .. "'\";H:'" .. hidden .. "';'")
+-%>
+		<div class="qr-code">
+			<%=qrcode%>
+		</div>
+		<div class="qr-code">
+			<em><%:AP on %><%=device%><%: with SSID %>"<%=ssid%>"</em>
+			<hr />
+		</div>
+<%-
+					end
+				end
+			end
+		end)
+		if not qrcode then
+-%>
+		<div class="qr-code">
+			<em><%:For QR-Code support please install package 'qrencode'!%></em>
+		</div>
+<%-
+		end
+-%>
+	</span>
+</div>

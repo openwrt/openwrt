@@ -1,0 +1,59 @@
+<%- if firstmap and messages then local msg; for _, msg in ipairs(messages) do -%>
+	<div class="errorbox"><%=pcdata(msg)%></div>
+<%- end end -%>
+
+<div class="cbi-map" id="cbi-<%=self.config%>">
+	<% if self.title and #self.title > 0 then %>
+		<h2 name="content"><%=self.title%></h2>
+	<% end %>
+	<% if self.description and #self.description > 0 then %>
+		<div class="cbi-map-descr"><%=self.description%></div>
+	<% end %>
+	<%- if firstmap and (applymap or confirmmap) then -%>
+		<%+cbi/apply_widget%>
+		<% cbi_apply_widget() %>
+		<div class="alert-message" id="cbi_apply_status" style="display:none"></div>
+		<script type="text/javascript">
+			document.addEventListener("DOMContentLoaded", function() {
+				<% if confirmmap then -%>
+					uci_confirm(true, Date.now() + <%=confirmmap%> * 1000);
+				<%- else -%>
+					uci_apply(true);
+				<%- end %>
+			});
+		</script>
+	<%- end -%>
+
+	<% if self.tabbed then %>
+		<div>
+			<% for i, section in ipairs(self.children) do
+			       tab = section.section or section.sectiontype %>
+				<div class="cbi-tabcontainer"<%=
+					attr("id", "container.m-%s.%s" %{ self.config, tab }) ..
+					attr("data-tab", tab) ..
+					attr("data-tab-title", section.title or tab)
+				%>>
+					<% section:render() %>
+				</div>
+			<% end %>
+		</div>
+
+	<% else %>
+		<%- self:render_children() %>
+	<% end %>
+
+	<% if not self.save then -%>
+		<div class="cbi-section-error">
+			<% for _, section in ipairs(self.children) do %>
+				<% if section.error and section.error[section.section] then -%>
+					<ul><li>
+						<%:One or more missing/invalid fields on tab%>:&nbsp;<%=section.title or section.section or section.sectiontype%>
+					</li></ul>
+				<%- end %>
+			<% end %>
+		</div>
+	<%- end %>
+
+	<br />
+
+</div>

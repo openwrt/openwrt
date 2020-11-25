@@ -1,0 +1,143 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008 Jo-Philipp Wich <jow@openwrt.org>
+ Copyright 2011 Manuel Munz <freifunk at somakoma dot de>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+
+local olsrtools = require "luci.tools.olsr"
+local i = 1
+
+if luci.http.formvalue("status") == "1" then
+	local rv = {}
+	for k, route in ipairs(routes) do
+		local ETX = string.format("%.3f", tonumber(route.etx) or 0)
+		rv[#rv+1] = {
+			hostname = route.hostname,
+	                dest = route.destination,
+			genmask = route.genmask,
+			gw = route.gateway,
+			interface = route.networkInterface,
+			metric = route.metric,
+			etx = ETX,
+			color = olsrtools.etx_color(tonumber(ETX))
+		}
+	end
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(rv)
+	return
+end
+
+%>
+
+<%+header%>
+
+<script type="text/javascript">//<![CDATA[  
+
+XHR.poll(20, '<%=REQUEST_URI%>', { status: 1 },
+		function(x, info)
+		{
+
+		var rt = document.getElementById('olsrd_routes');
+			if (rt)
+			{
+				var s = '<div class="tr cbi-section-table-cell">' +
+				'<div class="th cbi-section-table-cell"><%:Announced network%></div>' +
+				'<div class="th cbi-section-table-cell"><%:OLSR gateway%></div>' +
+				'<div class="th cbi-section-table-cell"><%:Interface%></div>' +
+				'<div class="th cbi-section-table-cell"><%:Metric%></div>' +
+				'<div class="th cbi-section-table-cell">ETX</div>' +
+				'</div>';
+
+				for (var idx = 0; idx < info.length; idx++)
+				{
+					var route = info[idx];
+
+					s += String.format(
+						'<div class="tr cbi-section-table-row cbi-rowstyle-'+(1 + (idx % 2))+' proto-%s">' +
+							'<div class="td cbi-section-table-cell left">%s/%s</div>' +
+							'<div class="td cbi-section-table-cell left">' +
+			                	                '<a href="http://%s/cgi-bin-status.html">%s</a>',
+								route.proto, route.dest, route.genmask, route.gw, route.gw
+						)
+
+					if (route.hostname) {
+						if (route.proto == '6') {
+							s += String.format(
+			                                        ' / <a href="http://[%s]/cgi-bin-status.html">%s</a>',
+								route.hostname, route.hostname || '?'
+								);
+						} else {
+							s += String.format(
+			                                        ' / <a href="http://%s/cgi-bin-status.html">%s</a>',
+								route.hostname, route.hostname || '?'
+								);
+						}
+
+					}
+					s += String.format(
+				                        '</div>' +
+							'<div class="td cbi-section-table-cell left">%s</div>' +
+							'<div class="td cbi-section-table-cell left">%s</div>' +
+							'<div class="td cbi-section-table-cell left" style="background-color:%s">%s</div>' +
+						'</div>',
+						route.interface, route.metric, route.color, route.etx || '?'
+					);
+				}
+                        }
+			 rt.innerHTML = s;
+
+		}
+	);
+//]]></script>
+
+
+
+<h2 name="content"><%:Known OLSR routes%></h2>
+
+<div id="togglebuttons"></div>
+
+<fieldset class="cbi-section">
+<legend><%:Overview of currently known routes to other OLSR nodes%></legend>
+
+<div class="table cbi-section-table" id="olsrd_routes">
+		<div class="tr cbi-section-table-cell">
+			<div class="th cbi-section-table-cell"><%:Announced network%></div>
+			<div class="th cbi-section-table-cell"><%:OLSR gateway%></div>
+			<div class="th cbi-section-table-cell"><%:Interface%></div>
+			<div class="th cbi-section-table-cell"><%:Metric%></div>
+			<div class="th cbi-section-table-cell">ETX</div>
+		</div>
+
+	<% for k, route in ipairs(routes) do
+		ETX = tonumber(route.etx) or '0'
+		color = olsrtools.etx_color(ETX)
+	%>
+
+		<div class="tr cbi-section-table-row cbi-rowstyle-<%=i%> proto-<%=route.proto%>">
+			<div class="td cbi-section-table-cell left"><%=route.destination%>/<%=route.genmask%></div>
+			<div class="td cbi-section-table-cell left">
+				<% if route.proto == '6' then %>
+				<a href="http://[<%=route.gateway%>]/cgi-bin-status.html"><%=route.gateway%></a>
+				<% else  %>
+				<a href="http://<%=route.gateway%>/cgi-bin-status.html"><%=route.gateway%></a>
+				<% end %>
+				<% if route.hostname then %>
+					/ <a href="http://<%=route.Hostname%>/cgi-bin-status.html"><%=route.hostname%></a>  
+				<% end %>
+			</div>
+			<div class="td cbi-section-table-cell left"><%=route.networkInterface%></div>
+			<div class="td cbi-section-table-cell left"><%=route.metric%></div>
+			<div class="td cbi-section-table-cell left" style="background-color:<%=color%>"><%=string.format("%.3f", ETX)%></div>
+		</div>
+	<% 
+		i = ((i % 2) + 1)
+	end %>
+</div>
+
+<%+status-olsr/legend%>
+</fieldset>
+<%+status-olsr/common_js%>
+<%+footer%>

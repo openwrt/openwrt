@@ -1,0 +1,47 @@
+<%#
+Copyright 2018 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%-
+local anonclass  = (not self.anonymous or self.sectiontitle) and "named" or "anonymous"
+-%>
+
+<%+banip/banip_css%>
+
+<div class="cbi-section" id="cbi-<%=self.config%>-<%=self.sectiontype%>">
+	<% if self.title then -%>
+		<h3><%=self.title%></h3>
+	<%- end %>
+	<div class="cbi-section-descr"><%=self.description%></div>
+	<div class="cbi-section-node">
+		<div class="table cbi-section-table">
+			<div class="tr cbi-section-table-titles <%=anonclass%>">
+			<%- for i, k in pairs(self.children) do -%>
+				<div class="th cbi-section-table-cell">
+					<%-=k.title-%>
+				</div>
+			<%- end -%>
+			</div>
+			<%- local section, scope, isempty = true
+				for i, k in ipairs(self:cfgsections()) do
+					section = k
+					local sectionname  = striptags((type(self.sectiontitle) == "function") and self:sectiontitle(section) or k)
+					local sectiontitle = ifattr(sectionname and (not self.anonymous or self.sectiontitle), "data-title", sectionname, true)
+					isempty = false
+					scope = { valueheader = "cbi/cell_valueheader", valuefooter = "cbi/cell_valuefooter" }
+			-%>
+			<div class="tr cbi-section-table-row" id="cbi-<%=self.config%>-<%=section%>"<%=sectiontitle%>>
+				<%-
+					for k, node in ipairs(self.children) do
+						node:render(section, scope or {})
+					end
+					if not scope.cbid:match("ban_src_cat") then
+				-%>
+					<div class="td cbi-value-field">&#160;</div>
+				<%- end -%>
+			</div>
+			<%- end -%>
+		</div>
+	</div>
+</div>

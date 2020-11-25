@@ -1,0 +1,107 @@
+{
+	"unauthenticated": {
+		"description": "Allow system feature probing",
+		"read": {
+			"ubus": {
+				"luci": [ "getFeatures" ]
+			}
+		}
+	},
+
+	"uci-access": {
+		"description": "Grant uci write access to all configurations",
+		"read": {
+			"uci": [ "*" ]
+		},
+		"write": {
+			"uci": [ "*" ]
+		}
+	},
+	"luci-access": {
+		"description": "Grant access to basic LuCI procedures",
+		"read": {
+			"cgi-io": [ "backup", "download" ],
+			"file": {
+				"/": [ "list" ],
+				"/*": [ "list" ],
+				"/dev/mtdblock*": [ "read" ],
+				"/etc/crontabs/root": [ "read" ],
+				"/etc/dropbear/authorized_keys": [ "read" ],
+				"/etc/filesystems": [ "read" ],
+				"/etc/rc.local": [ "read" ],
+				"/etc/sysupgrade.conf": [ "read" ],
+				"/etc/passwd": [ "read" ],
+				"/etc/group": [ "read" ],
+				"/proc/filesystems": [ "read" ],
+				"/proc/mtd": [ "read" ],
+				"/proc/partitions": [ "read" ],
+				"/proc/sys/kernel/hostname": [ "read" ],
+				"/proc/sys/net/netfilter/nf_conntrack_*": [ "read" ],
+				"/proc/mounts": [ "read" ],
+				"/usr/lib/lua/luci/version.lua": [ "read" ]
+			},
+			"ubus": {
+				"file": [ "list", "read", "stat" ],
+				"iwinfo": [ "assoclist", "freqlist", "txpowerlist", "countrylist" ],
+				"luci": [ "getConntrackList", "getInitList", "getLocaltime", "getProcessList", "getRealtimeStats", "getTimezones", "getLEDs", "getUSBDevices", "getSwconfigFeatures", "getSwconfigPortState", "getBlockDevices", "getMountPoints" ],
+				"luci-rpc": [ "getBoardJSON", "getDHCPLeases", "getDSLStatus", "getDUIDHints", "getHostHints", "getNetworkDevices", "getWirelessDevices" ],
+				"network.interface": [ "dump" ],
+				"network.rrdns": [ "lookup" ],
+				"network": [ "get_proto_handlers" ],
+				"system": [ "board", "info", "validate_firmware_image" ],
+				"uci": [ "changes", "get" ]
+			},
+			"uci": [ "*" ]
+		},
+		"write": {
+			"cgi-io": [ "upload" ],
+			"file": {
+				"/etc/crontabs/root": [ "write" ],
+				"/etc/dropbear/authorized_keys": [ "write" ],
+				"/etc/luci-uploads/*": [ "write" ],
+				"/etc/rc.local": [ "write" ],
+				"/etc/sysupgrade.conf": [ "write" ],
+				"/sbin/block": [ "exec" ],
+				"/sbin/firstboot": [ "exec" ],
+				"/sbin/ifdown": [ "exec" ],
+				"/sbin/ifup": [ "exec" ],
+				"/sbin/reboot": [ "exec" ],
+				"/sbin/sysupgrade": [ "exec" ],
+				"/sbin/wifi": [ "exec" ],
+				"/bin/kill": [ "exec" ],
+				"/bin/tar": [ "exec" ],
+				"/bin/umount": [ "exec" ],
+				"/tmp/backup.tar.gz": [ "write" ],
+				"/tmp/firmware.bin": [ "write" ],
+				"/tmp/upload.ipk": [ "write" ]
+			},
+			"ubus": {
+				"file": [ "write", "remove", "exec" ],
+				"hostapd.*": [ "del_client" ],
+				"iwinfo": [ "scan" ],
+				"luci": [ "setInitAction", "setLocaltime", "setPassword", "setBlockDetect" ],
+				"uci": [ "add", "apply", "confirm", "delete", "order", "set", "rename" ]
+			},
+			"uci": [ "*" ]
+		}
+	},
+	"luci-app-firewall": {
+		"description": "Grant access to firewall procedures",
+		"read": {
+			"file": {
+				"/etc/firewall.user": [ "read" ]
+			},
+			"ubus": {
+				"luci": [ "getConntrackHelpers" ]
+			},
+			"uci": [ "firewall" ]
+		},
+		"write": {
+			"file": {
+				"/etc/firewall.user": [ "write" ],
+				"/etc/init.d/firewall": [ "exec" ]
+			},
+			"uci": [ "firewall" ]
+		}
+	}
+}

@@ -1,0 +1,14 @@
+<%+cbi/valueheader%>
+<div<%=attr("data-ui-widget", luci.util.serialize_json({
+	"Select", self:cfgvalue(section) or self.default, self:choices(), {
+		id = cbid,
+		name = cbid,
+		size = self.size,
+		sort = self.keylist,
+		widget = self.widget,
+		datatype = self.datatype,
+		optional = self.optional,
+		placeholder = self.placeholder
+	}
+}))%>></div>
+<%+cbi/valuefooter%>

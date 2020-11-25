@@ -1,0 +1,54 @@
+<%+header%>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.12/d3.min.js"></script>
+<script type="text/javascript" src="<%=resource%>/bmx7/js/netjsongraph.js"></script>
+
+<link href="<%=resource%>/bmx7/css/netjsongraph.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .njg-overlay{
+            width: auto;
+            height: auto;
+            min-width: 200px;
+            max-width: 400px;
+            border: 1px solid #000;
+            border-radius: 2px;
+            background: rgba(0, 0, 0, 0.7);
+            top: 10px;
+            right: 10px;
+            padding: 0 15px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #fff
+        }
+
+        .njg-node {
+            fill: #008000;
+            fill-opacity: 0.8;
+            stroke: #008000;
+            stroke-width: 1px;
+            cursor: pointer;
+        }
+        .njg-node:hover,
+        .njg-node.njg-open{
+            fill-opacity: 1;
+        }
+
+        .njg-link {
+            stroke: #00ff00;
+            stroke-width: 2;
+            stroke-opacity: .5;
+            cursor: pointer;
+        }
+        .njg-link:hover,
+        .njg-link.njg-open{
+            stroke-width: 3;
+            stroke-opacity: 1
+        }
+</style>
+<script>d3.netJsonGraph("/cgi-bin/bmx7-info?netjson/network-graph.json", { defaultStyle: false });</script>
+<%+footer%>                                                                        
+

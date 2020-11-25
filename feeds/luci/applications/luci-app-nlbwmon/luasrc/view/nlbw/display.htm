@@ -1,0 +1,189 @@
+<%#
+ Copyright 2017-2018 Jo-Philipp Wich <jo@mein.io>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%+header%>
+
+<link rel="stylesheet" href="<%=resource%>/view/nlbw.css" />
+
+<script type="text/javascript" src="<%=resource%>/nlbw.chart.min.js"></script>
+<script type="text/javascript" src="<%=resource%>/view/nlbw.js"></script>
+
+<h2 name="content"><%:Netlink Bandwidth Monitor%></h2>
+
+<p>
+	<%:Select accounting period:%>
+	<select id="nlbw.period" style="display:none"></select>
+</p>
+
+<hr />
+
+<div>
+	<div class="cbi-section" data-tab="traffic" data-tab-title="<%:Traffic Distribution%>">
+		<div class="head">
+			<div class="pie">
+				<label><%:Traffic / Host%></label>
+				<canvas id="traf-pie" width="200" height="200"></canvas>
+			</div>
+
+			<div class="pie">
+				<label><%:Connections / Host%></label>
+				<canvas id="conn-pie" width="200" height="200"></canvas>
+			</div>
+
+			<div class="kpi">
+				<ul>
+					<li><%_<big id="host-total">0</big> hosts%></li>
+					<li><%_<big id="rx-total">0</big> download%></li>
+					<li><%_<big id="tx-total">0</big> upload%></li>
+					<li><%_<big id="conn-total">0</big> connections%></li>
+				</ul>
+			</div>
+		</div>
+		<div class="table" id="host-data">
+			<div class="tr table-titles">
+				<div class="th left hostname"><%:Host%></div>
+				<div class="th right"><%:MAC%></div>
+				<div class="th right"><%:Connections%></div>
+				<div class="th right"><%:Download (Bytes)%></div>
+				<div class="th right"><%:Download (Packets)%></div>
+				<div class="th right"><%:Upload (Bytes)%></div>
+				<div class="th right"><%:Upload (Packets)%></div>
+			</div>
+			<div class="tr placeholder">
+				<div class="td">
+					<em class="spinning"><%:Collecting data...%></em>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="cbi-section" data-tab="layer7" data-tab-title="<%:Application Protocols%>">
+		<div class="head">
+			<div class="pie">
+				<label><%:Download / Application%></label>
+				<canvas id="layer7-rx-pie" width="200" height="200"></canvas>
+			</div>
+
+			<div class="pie">
+				<label><%:Upload / Application%></label>
+				<canvas id="layer7-tx-pie" width="200" height="200"></canvas>
+			</div>
+
+			<div class="kpi">
+				<ul>
+					<li><%_<big id="layer7-total">0</big> different application protocols%></li>
+					<li><%_<big id="layer7-most-rx">0</big> cause the most download%></li>
+					<li><%_<big id="layer7-most-tx">0</big> cause the most upload%></li>
+					<li><%_<big id="layer7-most-conn">0</big> cause the most connections%></li>
+				</ul>
+			</div>
+		</div>
+		<div class="table" id="layer7-data">
+			<div class="tr table-titles">
+				<div class="th left"><%:Application%></div>
+				<div class="th right"><%:Connections%></div>
+				<div class="th right"><%:Download (Bytes)%></div>
+				<div class="th right"><%:Download (Packets)%></div>
+				<div class="th right"><%:Upload (Bytes)%></div>
+				<div class="th right"><%:Upload (Packets)%></div>
+			</div>
+			<div class="tr placeholder">
+				<div class="td">
+					<em class="spinning"><%:Collecting data...%></em>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="cbi-section" data-tab="ipv6" data-tab-title="<%:IPv6%>">
+		<div class="head">
+			<div class="pie">
+				<label><%:IPv4 vs. IPv6%></label>
+				<canvas id="ipv6-share-pie" width="200" height="200"></canvas>
+			</div>
+
+			<div class="pie">
+				<label><%:Dualstack enabled hosts%></label>
+				<canvas id="ipv6-hosts-pie" width="200" height="200"></canvas>
+			</div>
+
+			<div class="kpi">
+				<ul>
+					<li><%_<big id="ipv6-hosts">0%</big> IPv6 support rate among hosts%></li>
+					<li><%_<big id="ipv6-share">0%</big> of the total traffic is IPv6%></li>
+					<li><%_<big id="ipv6-rx">0B</big> total IPv6 download%></li>
+					<li><%_<big id="ipv6-tx">0B</big> total IPv6 upload%></li>
+				</ul>
+			</div>
+		</div>
+		<div class="table" id="ipv6-data">
+			<div class="tr table-titles">
+				<div class="th left"><%:Host%></div>
+				<div class="th right"><%:MAC%></div>
+				<div class="th double right hide-xs"><%:Family%></div>
+				<div class="th double right"><%:Download (Bytes)%></div>
+				<div class="th double right"><%:Download (Packets)%></div>
+				<div class="th double right"><%:Upload (Bytes)%></div>
+				<div class="th double right"><%:Upload (Packets)%></div>
+			</div>
+			<div class="tr placeholder">
+				<div class="td">
+					<em class="spinning"><%:Collecting data...%></em>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="cbi-section" data-tab="export" data-tab-title="<%:Export%>">
+		<ul>
+			<li><a href="<%=url('admin/nlbw/data')%>?type=csv&#38;group_by=mac&#38;order_by=-rx,-tx"><%:CSV, grouped by MAC%></a></li>
+			<li><a href="<%=url('admin/nlbw/data')%>?type=csv&#38;group_by=ip&#38;order_by=-rx,-tx"><%:CSV, grouped by IP%></a></li>
+			<li><a href="<%=url('admin/nlbw/data')%>?type=csv&#38;group_by=layer7&#38;order_by=-rx,-tx"><%:CSV, grouped by protocol%></a></li>
+			<li><a href="<%=url('admin/nlbw/data')%>?type=json"><%:JSON dump%></a></li>
+		</ul>
+	</div>
+</div>
+
+<script type="text/javascript">//<![CDATA[
+	var hostInfo = <%=luci.util.serialize_json(luci.sys.net.host_hints())%>;
+
+	XHR.get(L.url('admin/nlbw/list'), null, function(xhr, res) {
+
+		if (res !== null && typeof(res) === 'object' && res.length > 0) {
+			trafficPeriods = res;
+			renderPeriods();
+		}
+
+		xhr.open('GET', 'https://raw.githubusercontent.com/jow-/oui-database/master/oui.json', true);
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState === 4) {
+				try { res = JSON.parse(xhr.responseText); }
+				catch(e) { res = null; }
+
+				if (res !== null && typeof(res) === 'object' && (res.length % 3) === 0)
+					ouiData = res;
+
+				fetchData('');
+			}
+		};
+		xhr.send(null);
+	});
+
+	document.addEventListener('tooltip-open', function(ev) {
+		renderHostDetail.call(ev.detail.target, ev.target);
+	});
+
+	if ('ontouchstart' in window) {
+		document.addEventListener('touchstart', function(ev) {
+			var tooltip = document.querySelector('.cbi-tooltip');
+			if (tooltip === ev.target || tooltip.contains(ev.target))
+				return;
+
+			L.hideTooltip(ev);
+		});
+	}
+//]]></script>
+
+<%+footer%>

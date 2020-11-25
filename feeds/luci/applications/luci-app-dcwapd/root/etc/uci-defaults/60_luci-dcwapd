@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# register commit handler
+uci -q batch <<-EOF >/dev/null
+    delete ucitrack.@dcwapd[-1]
+    add ucitrack dcwapd
+    set ucitrack.@dcwapd[-1].init=dcwapd
+    commit ucitrack
+EOF
+
+exit 0

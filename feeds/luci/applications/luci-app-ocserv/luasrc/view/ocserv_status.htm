@@ -1,0 +1,66 @@
+<script type="text/javascript">//<![CDATA[
+
+	function ocserv_disconnect(idx) {
+		(new XHR()).post('<%=url('admin/vpn/ocserv/disconnect')%>/' + idx, { token: '<%=token%>' },
+			function(x)
+			{
+				var tb = document.getElementById('ocserv_status_table');
+				if (tb && (idx + 1 < tb.childNodes.length))
+					tb.removeChild(tb.childNodes[idx + 1]);
+			}
+		);
+	}
+
+	XHR.poll(-1, '<%=url('admin/vpn/ocserv/status')%>', null,
+		function(x, st)
+		{
+			var tb = document.getElementById('ocserv_status_table');
+			if (st && tb)
+			{
+				var rows = [];
+
+				for (var i = 0; i < st.length; i++)
+				{
+					rows.push([
+						st[i].user,
+						st[i].group,
+						st[i].vpn_ip,
+						st[i].ip,
+						st[i].device,
+						st[i].time,
+						st[i].cipher,
+						st[i].status,
+						E('input', {
+							type: 'button',
+							class: 'cbi-button cbi-button-remove',
+							onclick: 'ocserv_disconnect(%d)'.format(st[i].id)
+						})
+					]);
+				}
+
+				cbi_update_table(tb, rows, '<em><%:There are no active users.%></em>');
+			}
+		}
+	);
+//]]></script>
+
+<fieldset class="cbi-section">
+	<legend><%:Active OpenConnect Users%></legend>
+	<div class="table" id="ocserv_status_table">
+		<div class="tr table-titles">
+			<div class="th"><%:User%></div>
+			<div class="th"><%:Group%></div>
+			<div class="th"><%:IP Address%></div>
+			<div class="th"><%:VPN IP Address%></div>
+			<div class="th"><%:Device%></div>
+			<div class="th"><%:Time%></div>
+			<div class="th"><%:Cipher%></div>
+			<div class="th"><%:Status%></div>
+			<div class="th">&#160;</div>
+		</div>
+		<div class="tr placeholder">
+			<div class="td"><em><%:Collecting data...%></em></div>
+		</div>
+	</div>
+</fieldset>
+

@@ -1,0 +1,6 @@
+# Build/update the docker image
+
+docker pull debian:9
+docker build --rm -t docker.io/openwrtorg/packages-cci:latest .
+docker tag <IMAGE ID> docker.io/openwrtorg/packages-cci:<VERSION-TAG>
+docker push docker.io/openwrtorg/packages-cci

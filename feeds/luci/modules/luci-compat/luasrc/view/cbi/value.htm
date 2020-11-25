@@ -1,0 +1,35 @@
+<%+cbi/valueheader%>
+
+<% local choices = self:choices()
+   if choices then %>
+	<div<%=attr("data-ui-widget", luci.util.serialize_json({
+		"Combobox", self:cfgvalue(section) or self.default, choices, {
+			id = cbid,
+			name = cbid,
+			size = self.size,
+			sort = self.keylist,
+			datatype = self.datatype,
+			optional = self.optional or self.rmempty,
+			readonly = self.readonly,
+			maxlength = self.maxlength,
+			placeholder = self.placeholder,
+			custom_placeholder = self.combobox_manual
+		}
+	}))%>></div>
+<% else %>
+	<div<%=attr("data-ui-widget", luci.util.serialize_json({
+		"Textfield", self:cfgvalue(section) or self.default, {
+			id = cbid,
+			name = cbid,
+			size = self.size,
+			datatype = self.datatype,
+			optional = self.optional or self.rmempty,
+			password = self.password,
+			readonly = self.readonly,
+			maxlength = self.maxlength,
+			placeholder = self.placeholder
+		}
+	}))%>></div>
+<% end %>
+
+<%+cbi/valuefooter%>

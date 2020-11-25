@@ -1,0 +1,11 @@
+<%+header%>
+
+<div id="view">
+	<div class="spinning"><%:Loading view…%></div>
+	<script type="text/javascript">L.require('view.<%=view%>').catch(function(err) {
+		L.dom.content(document.querySelector('#view'), null);
+		L.error(err);
+	});</script>
+</div>
+
+<%+footer%>

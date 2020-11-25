@@ -1,0 +1,154 @@
+<%#
+Copyright 2017-2019 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%-
+	local uci      = require("luci.model.uci").cursor()
+	local trmiface = uci:get("travelmate", "global", "trm_iface") or "trm_wwan"
+-%>
+
+<%+header%>
+
+<script type="text/javascript">
+//<![CDATA[
+	function status_update(json)
+	{
+		var i;
+		var j;
+		var search;
+		var view;
+		var list;
+		var status = json.data.travelmate_status;
+		var faulty = json.data.faulty_stations;
+
+		if (faulty)
+		{
+			var faulty_array = faulty.split(' ');
+			for (i = 0; i < faulty_array.length; i++)
+			{
+				for (j = 1; j <= 5; j++)
+				{
+					search = j + "_" + faulty_array[i];
+					view   = document.getElementById(search);
+					if (view)
+					{
+						view.setAttribute("name", "station_nok");
+						view.setAttribute("style", "text-align: left !important; color: #a22; font-weight: bold");
+					}
+				}
+			}
+		}
+		else
+		{
+			list = document.getElementsByName("station_nok");
+			if (list.length > 0)
+			{
+				for (i = 0; i < list.length; i++)
+				{
+					list[i].removeAttribute("style");
+				}
+			}
+		}
+
+		if (status.startsWith("connected"))
+		{
+			for (i = 1; i <= 5; i++)
+			{
+				search = i + "_" + json.data.station_id;
+				view   = document.getElementById(search);
+				if (view)
+				{
+					view.setAttribute("style", "text-align: left !important; color: #37c; font-weight: bold");
+				}
+			}
+		}
+		else
+		{
+			list = document.getElementsByName("station_ok");
+			if (list.length > 0)
+			{
+				for (i = 0; i < list.length; i++)
+				{
+					list[i].removeAttribute("style");
+				}
+			}
+		}
+	}
+
+	XHR.get('<%=luci.dispatcher.build_url("admin", "services", "travelmate", "status")%>', null,
+	function(x, json_info)
+	{
+		if (!x || !json_info)
+		{
+			return;
+		}
+		status_update(json_info)
+	});
+
+	XHR.poll(-1, '<%=luci.dispatcher.build_url("admin", "services", "travelmate", "status")%>', null,
+	function(x, json_info)
+	{
+		if (!x || !json_info)
+		{
+			return;
+		}
+		status_update(json_info)
+	});
+//]]>
+</script>
+
+<div class="cbi-map">
+	<div class="cbi-map-descr">
+		<%=translatef("Provides an overview of all configured uplinks for the travelmate interface (%s). You can edit, remove or re-order/prioritize existing uplinks or scan for new ones. The currently used uplink is emphasized in blue, faulty stations in red.", trmiface)%>
+	</div>
+
+	<div class="cbi-section">
+		<div class="table cbi-section-table">
+			<div class="tr cbi-section-table-titles">
+				<div class="th left"><%:Device%></div>
+				<div class="th left"><%:SSID%></div>
+				<div class="th left"><%:BSSID%></div>
+				<div class="th left"><%:Encryption%></div>
+				<div class="th center"><%:Action%></div>
+			</div>
+			<%- uci:foreach("wireless", "wifi-iface", function(s)
+					local iface = s.network or ""
+					if iface == trmiface then
+						local section = s['.name'] or ""
+						local device  = s.device or "-"
+						local ssid    = s.ssid or "-"
+						local bssid   = s.bssid or "-"
+						local encr    = s.encryption or "-"
+			-%>
+			<div class="tr cbi-section-table-row cbi-rowstyle-1" name="station_ok" id="1_<%=device%>/<%=ssid%>/<%=bssid%>">
+				<div class="td left" style="text-align: left !important" name="station_ok" id="2_<%=device%>/<%=ssid%>/<%=bssid%>"><%=device%></div>
+				<div class="td left" style="text-align: left !important" name="station_ok" id="3_<%=device%>/<%=ssid%>/<%=bssid%>"><%=ssid%></div>
+				<div class="td left" style="text-align: left !important" name="station_ok" id="4_<%=device%>/<%=ssid%>/<%=bssid%>"><%=bssid%></div>
+				<div class="td left" style="text-align: left !important" name="station_ok" id="5_<%=device%>/<%=ssid%>/<%=bssid%>"><%=encr%></div>
+				<div class="td middle cbi-section-actions">
+					<div>
+						<input class="cbi-button cbi-button-up" type="button" value="<%:Up%>" onclick="location.href='<%=luci.dispatcher.build_url('admin/services/travelmate/wifiorder')%>?cfg=<%=section%>&amp;dir=up'" alt="<%:Move up%>" title="<%:Move up%>" />
+						<input class="cbi-button cbi-button-down" type="button" value="<%:Down%>" onclick="location.href='<%=luci.dispatcher.build_url('admin/services/travelmate/wifiorder')%>?cfg=<%=section%>&amp;dir=down'" alt="<%:Move down%>" title="<%:Move down%>" />
+						<input class="cbi-button cbi-button-edit" type="button" value="<%:Edit%>" onclick="location.href='<%=luci.dispatcher.build_url('admin/services/travelmate/wifiedit')%>?cfg=<%=section%>'" title="<%:Edit this Uplink%>" />
+						<input class="cbi-button cbi-button-remove" type="button" value="<%:Remove%>" onclick="location.href='<%=luci.dispatcher.build_url('admin/services/travelmate/wifidelete')%>?cfg=<%=section%>'" title="<%:Remove this Uplink%>" />
+					</div>
+				</div>
+			</div>
+		<%- end; end) -%>
+		</div>
+	</div>
+	<div class="cbi-page-actions right">
+		<%- uci:foreach("wireless", "wifi-device", function(s)
+			local device = s[".name"]
+			local hwmode = s.hwmode or "-" -%>
+		<form class="inline" action="<%=luci.dispatcher.build_url('admin/services/travelmate/wifiscan')%>" method="post">
+			<input type="hidden" name="device" value="<%=device%>" />
+			<input type="hidden" name="token" value="<%=token%>" />
+			<input type="submit" class="cbi-button cbi-button-action important" title="<%:Find and join network on%> <%=device%>" value="<%:Scan%> <%=device%> (<%=hwmode%>)" />
+		</form>
+		<%- end) -%>
+	</div>
+</div>
+
+<%+footer%>

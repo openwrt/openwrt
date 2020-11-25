@@ -1,0 +1,77 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008-2018 Jo-Philipp Wich <jo@mein.io>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%+header%>
+
+<h2 name="content"><%:Status%></h2>
+
+<div id="view">
+	<div class="spinning"><%:Loading view…%></div>
+</div>
+
+<script type="text/javascript">//<![CDATA[
+function progressbar(query, value, max, byte)
+{
+	var pg = document.querySelector(query),
+	    vn = parseInt(value) || 0,
+	    mn = parseInt(max) || 100,
+	    fv = byte ? String.format('%1024.2mB', value) : value,
+	    fm = byte ? String.format('%1024.2mB', max) : max,
+	    pc = Math.floor((100 / mn) * vn);
+
+	if (pg) {
+		pg.firstElementChild.style.width = pc + '%';
+		pg.setAttribute('title', '%s / %s (%d%%)'.format(fv, fm, pc));
+	}
+}
+
+function renderBox(title, active, childs) {
+	childs = childs || [];
+	childs.unshift(L.itemlist(E('span'), [].slice.call(arguments, 3)));
+
+	return E('div', { class: 'ifacebox' }, [
+		E('div', { class: 'ifacebox-head center ' + (active ? 'active' : '') },
+			E('strong', title)),
+		E('div', { class: 'ifacebox-body left' }, childs)
+	]);
+}
+
+function renderBadge(icon, title) {
+	return E('span', { class: 'ifacebadge' }, [
+		E('img', { src: icon, title: title || '' }),
+		L.itemlist(E('span'), [].slice.call(arguments, 2))
+	]);
+}
+
+//]]></script>
+
+<div class="includes" style="display:none">
+<%-
+	local util = require "luci.util"
+	local fs = require "nixio.fs"
+
+	local incdir = util.libpath() .. "/view/admin_status/index/"
+	if fs.access(incdir) then
+		local _, inc
+		local includes = {}
+		for inc in fs.dir(incdir) do
+			if inc:match("%.htm$") then
+				includes[#includes + 1] = inc:gsub("%.htm$", "")
+			end
+		end
+		for _, inc in luci.util.vspairs(includes) do
+			include("admin_status/index/" .. inc)
+		end
+	end
+-%>
+</div>
+
+<script type="text/javascript">L.require('view.status.index').catch(function(err) {
+	L.dom.content(document.querySelector('#view'), null);
+	L.error(err);
+});</script>
+
+<%+footer%>

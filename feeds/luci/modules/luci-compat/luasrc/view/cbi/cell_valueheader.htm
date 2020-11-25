@@ -1,0 +1,12 @@
+<%-
+	local title = luci.util.trim(striptags(self.title))
+	local descr = luci.util.trim(striptags(self.description))
+	local ftype = self.typename or (self.template and self.template:gsub("^.+/", ""))
+-%>
+<div class="td cbi-value-field<% if self.error and self.error[section] then %> cbi-value-error<% end %><% if self.password then %> nowrap<% end %>"<%=
+	attr("data-name", self.option) ..
+	ifattr(ftype and #ftype > 0, "data-widget", ftype) ..
+	ifattr(title and #title > 0, "data-title", title, true) ..
+	ifattr(descr and #descr > 0, "data-description", descr, true)
+%>>
+<div id="cbi-<%=self.config.."-"..section.."-"..self.option%>" data-index="<%=self.index%>" data-depends="<%=pcdata(self:deplist2json(section))%>">

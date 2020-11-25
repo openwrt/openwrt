@@ -1,0 +1,374 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LuCI: tinyproxy\n"
+"POT-Creation-Date: 2012-08-15 20:24+0300\n"
+"PO-Revision-Date: 2020-02-12 11:01+0000\n"
+"Last-Translator: Alex Ky <esthomolupus@gmail.com>\n"
+"Language-Team: Russian <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationstinyproxy/ru/>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 3.11-dev\n"
+"Project-Info: Это технический перевод, не дословный. Главное-удобный русский "
+"интерфейс, все проверялось в графическом режиме, совместим с другими apps\n"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:219
+msgid ""
+"<em>Via proxy</em> routes requests to the given target via the specified "
+"upstream proxy, <em>Reject access</em> disables any upstream proxy for the "
+"target"
+msgstr ""
+"<em>'Через прокси'</em> перенаправляет запросы на узлы назначения через "
+"указанный внешний прокси-сервер, <em>'Отклонять доступ'</em> отключает "
+"использование внешних прокси-серверов для всех узлов."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:108
+msgid ""
+"Adds an \"X-Tinyproxy\" HTTP header with the client IP address to forwarded "
+"requests"
+msgstr ""
+"Добавляет HTTP-заголовок 'X-Tinyproxy' с IP-адресом клиента для "
+"перенаправленных запросов."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:126
+msgid "Allowed clients"
+msgstr "Разрешённые клиенты"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:133
+msgid "Allowed connect ports"
+msgstr "Разрешенные<br />порты подключения"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:47
+msgid "Bind address"
+msgstr "Привязка адреса"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:149
+msgid ""
+"By default, basic POSIX expressions are used for filtering. Enable this to "
+"activate extended regular expressions"
+msgstr ""
+"По умолчанию для фильтрации используются базовые POSIX-выражения.<br /"
+">Включить эту функцию для активации расширенных регулярных выражений."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:153
+msgid ""
+"By default, filter strings are treated as case-insensitive. Enable this to "
+"make the matching case-sensitive"
+msgstr ""
+"По умолчанию строки фильтрации регистро-независимы.<br />Включите эту опцию, "
+"чтобы сделать сравнение регистро-зависимым."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:145
+msgid ""
+"By default, filtering is done based on domain names. Enable this to match "
+"against URLs instead"
+msgstr ""
+"По умолчанию фильтрация выполняется на основе доменных имен.<br />Включите "
+"это для сопоставления с URL-адресами."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:157
+msgid ""
+"By default, the filter rules act as blacklist. Enable this option to only "
+"allow matched URLs or domain names"
+msgstr ""
+"По умолчанию правила фильтрации действуют как Черный список.<br />Включите "
+"эту опцию, чтобы разрешить только совпадающие URL-адреса или имена доменов."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:226
+msgid ""
+"Can be either an IP address or range, a domain name or \".\" for any host "
+"without domain"
+msgstr ""
+"Может быть IP-адресом, диапазоном, именем домена или '.' для любого хоста "
+"без домена"
+
+#: applications/luci-app-tinyproxy/luasrc/controller/tinyproxy.lua:14
+msgid "Configuration"
+msgstr "Конфигурация"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:164
+msgid "Connection timeout"
+msgstr "Время ожидания соединения"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:156
+msgid "Default deny"
+msgstr "Запретить по умолчанию"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:17
+msgid "Enable Tinyproxy server"
+msgstr "Включить сервер Tinyproxy"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:55
+msgid "Error page"
+msgstr "Страница ошибки"
+
+#: applications/luci-app-tinyproxy/luasrc/view/tinyproxy_status.htm:36
+msgid "Failed to retrieve statistics from url:"
+msgstr "Не удалось получить статистику по URL-адресу:"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:148
+msgid "Filter by RegExp"
+msgstr "Фильтровать по регулярным выражениям (RegExp)"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:144
+msgid "Filter by URLs"
+msgstr "Фильтровать<br /> по URL-адресам"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:152
+msgid "Filter case-sensitive"
+msgstr "Фильтровать<br />с учетом регистра"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:140
+msgid "Filter file"
+msgstr "Файл фильтрации"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:13
+msgid "Filtering and ACLs"
+msgstr "Фильтрация и списки ACL"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:11
+msgid "General settings"
+msgstr "Основные настройки"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:97
+msgid "Group"
+msgstr "Группа"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:63
+msgid "HTML template file to serve for stat host requests"
+msgstr "HTML-файл шаблона для вывода статистики запросов хоста."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:56
+msgid "HTML template file to serve when HTTP errors occur"
+msgstr "HTML-файл шаблона для вывода ошибок HTTP."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:118
+msgid "Header whitelist"
+msgstr "Белый список заголовков"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:127
+msgid ""
+"List of IP addresses or ranges which are allowed to use the proxy server"
+msgstr ""
+"Список или диапазон IP-адресов, которым разрешено использовать прокси-сервер."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:134
+msgid ""
+"List of allowed ports for the CONNECT method. A single value \"0\" allows "
+"all ports"
+msgstr ""
+"Список разрешенных портов для опции 'CONNECT'. Значение '0' разрешает все "
+"порты."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:39
+msgid "Listen address"
+msgstr "Адрес"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:31
+msgid "Listen port"
+msgstr "Порт"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:73
+msgid "Log file"
+msgstr "Файл журнала приложения"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:74
+msgid "Log file to use for dumping messages"
+msgstr "Задайте расположение файла журнала Tinyproxy."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:80
+msgid "Log level"
+msgstr "Записывать в журнал"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:81
+msgid "Logging verbosity of the Tinyproxy process"
+msgstr "Настройка подробной записи в журнал процессов Tinyproxy."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:172
+msgid "Max. clients"
+msgstr "Максимальное кол-во<br />клиентов"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:200
+msgid "Max. requests per server"
+msgstr "Максимальное кол-во<br />запросов на сервер"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:186
+msgid "Max. spare servers"
+msgstr "Максимальное кол-во<br />серверов ожидания"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:173
+msgid "Maximum allowed number of concurrently connected clients"
+msgstr "Максимально допустимое число параллельно подключенных клиентов."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:201
+msgid ""
+"Maximum allowed number of requests per process. If it is exeeded, the "
+"process is restarted. Zero means unlimited."
+msgstr ""
+"Максимальное допустимое число запросов для каждого процесса.<br />Если "
+"превышено, процесс будет перезапущен. Ноль означает неограниченное."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:187
+msgid "Maximum number of prepared idle processes"
+msgstr "Максимальное количество подготовленных бездействующих процессов."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:165
+msgid "Maximum number of seconds an inactive connection is held open"
+msgstr ""
+"Максимальное количество секунд, в течение которых неактивное соединение "
+"удерживается открытым."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:179
+msgid "Min. spare servers"
+msgstr "Минимальное кол-во<br />серверов ожидания"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:180
+msgid "Minimum number of prepared idle processes"
+msgstr "Минимальное количество подготовленных бездействующих процессов."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:194
+msgid "Number of idle processes to start when launching Tinyproxy"
+msgstr ""
+"Количество бездействующих процессов, запускаемых при запуске Tinyproxy."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:141
+msgid "Plaintext file with URLs or domains to filter. One entry per line"
+msgstr ""
+"Текстовый файл с URL-адресами или доменами для фильтрации. Одна запись - "
+"одна строка."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:218
+msgid "Policy"
+msgstr "Политика"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:12
+msgid "Privacy settings"
+msgstr "Настройки конфиденциальности"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:222
+msgid "Reject access"
+msgstr "Отклонять доступ"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:8
+msgid "Server Settings"
+msgstr "Настройки сервера"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:14
+msgid "Server limits"
+msgstr "Ограничения сервера"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:119
+msgid ""
+"Specifies HTTP header names which are allowed to pass-through, all others "
+"are discarded. Leave empty to disable header filtering"
+msgstr ""
+"Задайте имена HTTP-заголовков, которые разрешено передавать, все остальные "
+"отбрасываются.<br />Оставьте пустым, чтобы отключить фильтрацию заголовков."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:32
+msgid "Specifies the HTTP port Tinyproxy is listening on for requests"
+msgstr "Задайте HTTP-порт Tinyproxy для входящих соединений."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:112
+msgid "Specifies the Tinyproxy hostname to use in the Via HTTP header"
+msgstr ""
+"Задайте имя хоста Tinyproxy, которое будет использовано в HTTP-заголовке."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:48
+msgid ""
+"Specifies the address Tinyproxy binds to for outbound forwarded requests"
+msgstr ""
+"Задайте адрес, к которому привязывается Tinyproxy для отправки "
+"перенаправленных исходящих запросов."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:40
+msgid "Specifies the addresses Tinyproxy is listening on for requests"
+msgstr "Задайте адрес на котором Tinyproxy будет ожидать входящие соединения."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:98
+msgid "Specifies the group name the Tinyproxy process is running as"
+msgstr "Задайте имя группы, в которой работает Tinyproxy."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:234
+msgid ""
+"Specifies the upstream proxy to use for accessing the target host. Format is "
+"<code>address:port</code>"
+msgstr ""
+"Задайте внешний прокси-сервер, используемый для доступа к хосту назначения. "
+"В виде <code>'адрес:порт'</code>."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:92
+msgid "Specifies the user name the Tinyproxy process is running as"
+msgstr "Задайте пользователя, от имени которого работает Tinyproxy."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:193
+msgid "Start spare servers"
+msgstr "Запустить запасные сервера"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:62
+msgid "Statistics page"
+msgstr "Страница статистики"
+
+#: applications/luci-app-tinyproxy/luasrc/controller/tinyproxy.lua:13
+msgid "Status"
+msgstr "Состояние"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:225
+msgid "Target host"
+msgstr "Хост назначения"
+
+#: applications/luci-app-tinyproxy/luasrc/controller/tinyproxy.lua:12
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:5
+msgid "Tinyproxy"
+msgstr "Tinyproxy"
+
+#: applications/luci-app-tinyproxy/luasrc/view/tinyproxy_status.htm:51
+msgid "Tinyproxy Status"
+msgstr "Состояние Tinyproxy"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:6
+msgid "Tinyproxy is a small and fast non-caching HTTP(S)-Proxy"
+msgstr "Tinyproxy - небольшой и быстрый HTTP(S)-прокси, не использующий кэш."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:211
+msgid "Upstream Proxies"
+msgstr "Прокси внешней сети"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:212
+msgid ""
+"Upstream proxy rules define proxy servers to use when accessing certain IP "
+"addresses or domains."
+msgstr ""
+"Правила трафика для внешних прокси-серверов, для использования при доступе к "
+"определенным IP-адресам или доменам."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:69
+msgid "Use syslog"
+msgstr "Системный журнал"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:91
+msgid "User"
+msgstr "Пользователь"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:111
+msgid "Via hostname"
+msgstr "Имя хоста"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:221
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:233
+msgid "Via proxy"
+msgstr "Через прокси"
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:70
+msgid "Writes log messages to syslog instead of a log file"
+msgstr ""
+"Записывать сообщения журнала в общий системный журнал.<br />Вместо "
+"отдельного файла журнала Tinyproxy."
+
+#: applications/luci-app-tinyproxy/luasrc/model/cbi/tinyproxy.lua:107
+msgid "X-Tinyproxy header"
+msgstr "Заголовок X-Tinyproxy"

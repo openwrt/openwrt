@@ -1,0 +1,122 @@
+#
+# Yangfl <mmyangfl@gmail.com>, 2018.
+#
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2020-02-19 13:29+0000\n"
+"Last-Translator: xiazhang <xz@xia.plus>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"openwrt/luciapplicationsfwknopd/zh_Hans/>\n"
+"Language: zh_Hans\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 3.11\n"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:48
+msgid ""
+"Allow SPA clients to request access to services through an iptables firewall "
+"instead of just to it."
+msgstr "允许 SPA 客户端请求通过 iptables 防火墙访问服务，而不仅仅是被拦截。"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:49
+msgid "Allow SPA clients to request forwarding destination by DNS name."
+msgstr "允许 SPA 客户端用 DNS 名称请求转发目标。"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:22
+msgid "Base 64 key"
+msgstr "Base64 密钥"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:33
+msgid ""
+"Define a set of ports and protocols (tcp or udp) that will be opened if a "
+"valid knock sequence is seen. If this entry is not set, fwknopd will attempt "
+"to honor any proto/port request specified in the SPA data (unless of it "
+"matches any “RESTRICT_PORTS” entries). Multiple entries are comma-separated."
+msgstr ""
+"定义一组端口和协议（TCP 或 UDP），如果看到有效的敲门（knock）序列，则打开这些"
+"端口和协议。如果未设置此条目，fwknopd 将尝试遵守 SPA 数据中指定的任何协议/端"
+"口请求（除非匹配到了任何“RESTRICT_PORTS”条目）。多个条目以逗号分隔。"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:36
+msgid ""
+"Define the length of time access will be granted by fwknopd through the "
+"firewall after a valid knock sequence from a source IP address. If "
+"“FW_ACCESS_TIMEOUT” is not set then the default timeout of 30 seconds will "
+"automatically be set."
+msgstr ""
+"定义在源 IP 地址的有效敲门序列后，fwknopd 授予其通过防火墙访问的时间长度。如"
+"果未设置“FW_ACCESS_TIMEOUT”，则将自动设置默认超时 30 秒。"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:18
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:20
+msgid ""
+"Define the symmetric key used for decrypting an incoming SPA packet that is "
+"encrypted by the fwknop client with Rijndael."
+msgstr ""
+"定义 Rijndael 对称密钥，将用于解密由 fwknop 客户端传入的加密 SPA 数据包。"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:6
+msgid "Enable Uci/Luci control"
+msgstr "启用 Uci/Luci 控件"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:8
+msgid "Enable config overwrite"
+msgstr "启用配置覆盖"
+
+#: applications/luci-app-fwknopd/luasrc/controller/fwknopd.lua:13
+msgid "Firewall Knock Daemon"
+msgstr "Firewall Knock 守护进程"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:4
+msgid "Firewall Knock Operator"
+msgstr "Firewall Knock 操作者"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:39
+msgid ""
+"Force all SPA packets to contain a real IP address within the encrypted "
+"data. This makes it impossible to use the -s command line argument on the "
+"fwknop client command line, so either -R has to be used to automatically "
+"resolve the external address (if the client behind a NAT) or the client must "
+"know the external IP and set it via the -a argument."
+msgstr ""
+"强制所有 SPA 数据包在加密数据中包含真实 IP 地址。这使得无法在 fwknop 客户端命"
+"令行上使用 -s 命令行参数，因此 -R 必须用于自动解析外部地址（如果 NAT 后面的客"
+"户端），或客户端必须通过 -a 参数知道外部 IP。"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:46
+msgid ""
+"Maximum age in seconds that an SPA packet will be accepted. defaults to 120 "
+"seconds"
+msgstr "SPA 数据包的最大可接受年龄（秒）。默认为 120 秒"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:19
+msgid "Normal Key"
+msgstr "普通密钥"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:47
+msgid "Specify the ethernet interface on which fwknopd will sniff packets."
+msgstr "指定 fwknopd 将要嗅探数据包的以太网接口。"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:28
+msgid "The base64 hmac key"
+msgstr "base64 hmac 密钥"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:17
+msgid "Use ANY for any source ip"
+msgstr "对任何源 IP 使用 ANY"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:8
+msgid ""
+"When unchecked, the config files in /etc/fwknopd will be used as is, "
+"ignoring any settings here."
+msgstr ""
+"取消选中时，/etc/fwknopd 中的配置文件将按原样使用，忽略此处的任何设置。"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:10
+msgid "access.conf stanzas"
+msgstr "access.conf 节"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:44
+msgid "fwknopd.conf config options"
+msgstr "fwknopd.conf 配置选项"

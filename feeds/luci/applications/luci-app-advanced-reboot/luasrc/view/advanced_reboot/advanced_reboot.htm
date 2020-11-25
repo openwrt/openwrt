@@ -1,0 +1,100 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008-2015 Jo-Philipp Wich <jow@openwrt.org>
+ Copyright 2017-2020 Stan Grishin <stangri@melmac.net>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%+header%>
+
+<h2 name="content"><%:Advanced Reboot%></h2>
+<br />
+
+<%- local c = require("luci.model.uci").cursor():changes(); if c and next(c) then -%>
+	<p class="alert-message warning"><%:Warning: There are unsaved changes that will get lost on reboot!%></p>
+<%- end -%>
+
+<%- if errorMessage and errorMessage ~= "" then -%>
+	<p class="alert-message warning"><%:ERROR: %><%=errorMessage%></p>
+<%- end -%>
+
+<%- if device_name then -%>
+<fieldset class="cbi-section">
+	<legend><%=device_name%><%: Partitions%></legend>
+	<div class="table cbi-section-table" id="partitions">
+		<div class="tr cbi-section-table-titles">
+			<div class="th cbi-section-table-cell"><%:Partition%></div>
+			<div class="th cbi-section-table-cell"><%:Status%></div>
+			<div class="th cbi-section-table-cell"><%:Firmware%></div>
+			<div class="th cbi-section-table-cell"><%:Reboot%></div>
+		</div>
+		<div class="tr cbi-section-table-row cbi-rowstyle-<%- if bev1p1 == current_partition then -%><%=1%><%- else -%><%=2%><%- end -%>">
+			<div class="td">
+				<%=string.format("%X", bev1p1)%>
+			</div>
+			<div class="td">
+				<%- if bev1p1 == current_partition then -%><%:Current%><%- else -%><%:Alternative%><%- end -%>
+			</div>
+			<div class="td">
+				<%=p1_os%>
+			</div>
+			<div class="td">
+				<%- if bev1p1 == current_partition then -%>
+				<form method="post" action="<%=url('admin/system/advanced_reboot/reboot')%>">
+					<input type="hidden" name="token" value="<%=token%>" />
+					<input id="reboot-button" type="submit" class="cbi-button cbi-button-apply important" value="<%:Reboot to current partition%>" />
+				</form>
+			<%- else -%>
+			<form method="post" action="<%=url('admin/system/advanced_reboot/alternative_reboot')%>">
+				<input type="hidden" name="token" value="<%=token%>" />
+				<input id="altreboot-button" type="submit" class="cbi-button cbi-button-apply important" value="<%:Reboot to alternative partition...%>" />
+			</form>
+				<%- end -%>
+			</div>
+		</div>
+		<div class="tr cbi-section-table-row cbi-rowstyle-<%- if bev1p2 == current_partition then -%><%=1%><%- else -%><%=2%><%- end -%>">
+			<div class="td">
+				<%=string.format("%X", bev1p2)%>
+			</div>
+			<div class="td">
+				<%- if bev1p2 == current_partition then -%><%:Current%><%- else -%><%:Alternative%><%- end -%>
+			</div>
+			<div class="td">
+				<%=p2_os%>
+			</div>
+			<div class="td">
+				<%- if bev1p2 == current_partition then -%>
+					<form method="post" action="<%=url('admin/system/advanced_reboot/reboot')%>">
+						<input type="hidden" name="token" value="<%=token%>" />
+						<input id="reboot-button" type="submit" class="cbi-button cbi-button-apply important" value="<%:Reboot to current partition%>" />
+					</form>
+				<%- else -%>
+				<form method="post" action="<%=url('admin/system/advanced_reboot/alternative_reboot')%>">
+					<input type="hidden" name="token" value="<%=token%>" />
+					<input id="altreboot-button" type="submit" class="cbi-button cbi-button-apply important" value="<%:Reboot to alternative partition...%>" />
+				</form>
+				<%- end -%>
+			</div>
+		</div>
+	</div>
+</fieldset>
+<%- else -%>
+	<%- if rom_board_name then -%>
+		<p class="alert-message warning"><%=pcdata(translatef("Warning: Device (%s) is unknown or isn't a dual-partition device!", rom_board_name))%></p>
+	<%- else -%>
+		<p class="alert-message warning"><%=pcdata(translatef("Warning: Unable to obtain device information!"))%></p>
+	<%- end -%>
+<%- end -%>
+
+<hr />
+
+<%- if nixio.fs.access("/sbin/poweroff") then -%>
+<form method="post" action="<%=url('admin/system/advanced_reboot/power_off')%>">
+	<input type="hidden" name="token" value="<%=token%>" />
+	<input id="poweroff-button" type="submit" class="cbi-button cbi-button-apply important" value="<%:Perform power off...%>" />
+</form>
+<%- else -%>
+	<p class="alert-message warning"><%:Warning: This system does not support powering off!%></p>
+<%- end -%>
+
+<%+footer%>

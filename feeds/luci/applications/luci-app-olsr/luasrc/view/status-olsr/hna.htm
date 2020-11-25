@@ -1,0 +1,124 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008 Jo-Philipp Wich <jow@openwrt.org>
+ Copyright 2011 Manuel Munz <freifunk at somakoma dot de>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+local i = 1
+
+if luci.http.formvalue("status") == "1" then
+	local rv = {}
+	for k, hna in ipairs(hna) do
+		rv[#rv+1] = {
+			proto = hna["proto"],
+			destination = hna["destination"],
+			genmask = hna["genmask"],
+			gateway = hna["gateway"],
+			hostname = hna["hostname"],
+			validityTime = hna["validityTime"]
+			}
+	end
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(rv)
+	return
+end
+%>
+
+<%+header%>
+
+<script type="text/javascript">//<![CDATA[
+XHR.poll(10, '<%=REQUEST_URI%>', { status: 1 },
+	function(x, info)
+	{
+	var hnadiv = document.getElementById('olsrd_hna');
+	if (hnadiv)
+	{
+		var s = '<div class="tr cbi-section-table-titles">' +
+			'<div class="th cbi-section-table-cell"><%:Announced network%></div>' +
+			'<div class="th cbi-section-table-cell"><%:OLSR gateway%></div>' +
+			'<div class="th cbi-section-table-cell"><%:Validity Time%></div>' +
+			'</div>';
+
+		for (var idx = 0; idx < info.length; idx++)
+		{
+			var hna = info[idx];
+			var linkgw = ''
+			s += '<div class="tr cbi-section-table-row cbi-rowstyle-'+(1 + (idx % 2))+' proto-' + hna.proto + '">'
+			if (hna.proto == '6') {
+				linkgw = '<a href="http://[' + hna.gateway + ']/cgi-bin-status.html">' + hna.gateway + '</a>'
+			} else {
+				linkgw = '<a href="http://' + hna.gateway + '/cgi-bin-status.html">' + hna.gateway + '</a>'
+			}
+
+			var validity;
+			if (hna.validityTime != undefined) {
+				validity = hna.validityTime + 's'
+			} else {
+				validity = '-'
+			}
+
+			var hostname;
+			if (hna.hostname != undefined) {
+				hostname = ' / <a href="http://' + hna.hostname + '/cgi-bin-status.html">' + hna.hostname + '</a>'
+			} else {
+				hostname = ''
+			}
+
+			s += String.format(
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>' +
+                                '<div class="td cbi-section-table-cell left">%s</div>', hna.destination + '/' + hna.genmask, linkgw + hostname, validity
+                                )
+			s += '</div>'
+		}
+		hnadiv.innerHTML = s;
+	}
+}
+);
+//]]></script>
+
+<h2 name="content"><%:Active host net announcements%></h2>
+
+<div id="togglebuttons"></div>
+<fieldset class="cbi-section">
+
+	<legend><%:Overview of currently active OLSR host net announcements%></legend>
+	<div class="table cbi-section-table" id="olsrd_hna">
+		<div class="tr cbi-section-table-titles">
+			<div class="th cbi-section-table-cell"><%:Announced network%></div>
+			<div class="th cbi-section-table-cell"><%:OLSR gateway%></div>
+			<div class="th cbi-section-table-cell"><%:Validity Time%></div>
+		</div>
+
+		<% for k, route in ipairs(hna) do %>
+
+		<div class="tr cbi-section-table-row cbi-rowstyle-<%=i%> proto-<%=hna[k].proto%>">
+			<div class="td cbi-section-table-cell left"><%=hna[k].destination%>/<%=hna[k].genmask%> </div>
+			<div class="td cbi-section-table-cell left">
+				<% if hna[k].proto == '6' then %>
+				<a href="http://[<%=hna[k].gateway%>]/cgi-bin-status.html"><%=hna[k].gateway%></a>
+				<% else %>
+				<a href="http://<%=hna[k].gateway%>/cgi-bin-status.html"><%=hna[k].gateway%></a>
+				<% end %>
+				<% if hna[k].hostname then %>
+				 / <a href="http://<%=hna[k].hostname%>/cgi-bin-status.html"><%=hna[k].hostname%></a>
+				<% end %>
+			</div>
+			<% if hna[k].validityTime then
+				validity = hna[k].validityTime .. 's'
+			else
+				validity = '-'
+			end %>
+
+			<div class="td cbi-section-table-cell left"><%=validity%></div>
+		</div>
+
+		<% i = ((i % 2) + 1)
+		end %>
+	</div>
+</fieldset>
+
+<%+status-olsr/common_js%>
+<%+footer%>

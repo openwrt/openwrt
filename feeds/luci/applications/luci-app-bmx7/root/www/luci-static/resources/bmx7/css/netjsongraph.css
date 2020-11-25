@@ -1,0 +1,62 @@
+.njg-hidden {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+.njg-tooltip{
+    font-family: sans-serif;
+    font-size: 10px;
+    fill: #000;
+    opacity: 0.5;
+    text-anchor: middle;
+}
+
+.njg-overlay{
+    display: none;
+    position: absolute;
+    z-index: 11;
+}
+
+.njg-close{
+    cursor: pointer;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+}
+.njg-close:before { content: "\2716"; }
+
+.njg-metadata{
+    display: none;
+    position: absolute;
+    z-index: 12;
+}
+
+.njg-node{ cursor: pointer }
+.njg-link{ cursor: pointer }
+
+#njg-select-group {
+    text-align: center;
+    box-shadow: 0 0 10px #ccc;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: 50%;
+    margin-top: -7.5em;
+    margin-left: -25%;
+    padding: 5em 2em;
+}
+
+#njg-select-group select {
+    font-size: 2em;
+    padding: 10px 15px;
+    width: 50%;
+    cursor: pointer;
+}
+
+#njg-select-group option {
+    padding: 0.5em;
+}
+
+#njg-select-group option[value=""] {
+    color: #aaa;
+}

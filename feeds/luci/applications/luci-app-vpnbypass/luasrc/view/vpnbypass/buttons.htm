@@ -1,0 +1,53 @@
+<%#
+	Copyright 2019 Stan Grishin <stangri@melmac.net>
+-%>
+
+<%-
+	local packageName = "vpnbypass"
+	local tmpfsStatus = "Stopped"
+	local enabledFlag = luci.model.uci.cursor():get(packageName, "config", "enabled")
+	if luci.sys.call("iptables -t mangle -L | grep -q " .. packageName:upper()) == 0 then
+		tmpfsStatus = "Running"
+	end
+
+	if tmpfsStatus == "Stopped" then
+		btn_start_style = "cbi-button cbi-button-apply important"
+		btn_action_style = "cbi-button cbi-button-apply important"
+		btn_stop_style = "cbi-button cbi-button-reset -disabled"
+	else
+		btn_start_style = "cbi-button cbi-button-apply -disabled"
+		btn_action_style = "cbi-button cbi-button-apply important"
+		btn_stop_style = "cbi-button cbi-button-reset important"
+	end
+	if enabledFlag ~= "1" then
+		btn_start_style = "cbi-button cbi-button-apply -disabled"
+		btn_action_style = "cbi-button cbi-button-apply -disabled"
+		btn_enable_style = "cbi-button cbi-button-apply important"
+		btn_disable_style = "cbi-button cbi-button-reset -disabled"
+	else
+		btn_enable_style = "cbi-button cbi-button-apply -disabled"
+		btn_disable_style = "cbi-button cbi-button-reset important"
+	end
+-%>
+
+<%+vpnbypass/css%>
+<%+vpnbypass/js%>
+
+<div class="cbi-value"><label class="cbi-value-title">Service Control</label>
+	<div class="cbi-value-field">
+		<input type="button" class="<%=btn_start_style%>" id="btn_start" name="start" value="<%:Start%>" onclick="button_action(this)" />
+		<span id="btn_start_spinner" class="btn_spinner"></span>
+		<input type="button" class="<%=btn_action_style%>" id="btn_action" name="action" value="<%:Reload%>" onclick="button_action(this)" />
+		<span id="btn_action_spinner" class="btn_spinner"></span>
+		<input type="button" class="<%=btn_stop_style%>" id="btn_stop" name="stop" value="<%:Stop%>" onclick="button_action(this)"  />
+		<span id="btn_stop_spinner" class="btn_spinner"></span>
+		&nbsp;
+		&nbsp;
+		&nbsp;
+		&nbsp;
+		<input type="button" class="<%=btn_enable_style%>" id="btn_enable" name="enable" value="<%:Enable%>" onclick="button_action(this)"  />
+		<span id="btn_enable_spinner" class="btn_spinner"></span>
+		<input type="button" class="<%=btn_disable_style%>" id="btn_disable" name="disable" value="<%:Disable%>" onclick="button_action(this)"  />
+		<span id="btn_disable_spinner" class="btn_spinner"></span>
+	</div>
+</div>

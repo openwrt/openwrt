@@ -1,0 +1,87 @@
+<%#
+Copyright 2017-2019 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%-
+	local sys = require("luci.sys")
+	local utl = require("luci.util")
+	local dev = luci.http.formvalue("device")
+	local iw  = luci.sys.wifi.getiwinfo(dev)
+
+	if not iw then
+		luci.http.redirect(luci.dispatcher.build_url("admin/services/travelmate/stations"))
+	end
+
+	function percent_wifi_signal(info)
+		local qc = info.quality or 0
+		local qm = info.quality_max or 0
+		if info.bssid and qc > 0 and qm > 0 then
+			return math.floor((100 / qm) * qc)
+		else
+			return 0
+		end
+	end
+-%>
+
+<%+header%>
+
+<div class="cbi-map">
+	<h3><%:Wireless Scan%></h3>
+	<div class="cbi-section">
+		<div class="table cbi-section-table">
+			<div class="tr cbi-section-table-titles">
+				<div class="th left"><%:Uplink SSID%></div>
+				<div class="th left"><%:Uplink BSSID%></div>
+				<div class="th left"><%:Encryption%></div>
+				<div class="th left"><%:Signal strength%></div>
+				<div class="th center"><%:Action%></div>
+			</div>
+			<%- for i, net in ipairs(iw.scanlist or { }) do -%>
+			<div class="tr cbi-section-table-row cbi-rowstyle-1">
+				<div class="td left" style="text-align: left !important">
+					<%=net.ssid and utl.pcdata(net.ssid) or "<em>%s</em>" % translate("hidden")%>
+				</div>
+				<div class="td left" style="text-align: left !important">
+					<%=net.bssid and utl.pcdata(net.bssid)%>
+				</div>
+				<div class="td left" style="text-align: left !important">
+					<%=net.encryption.description%>
+				</div>
+				<div class="td left" style="text-align: left !important">
+					<%=percent_wifi_signal(net)%> %
+				</div>
+				<div class="td cbi-section-actions">
+					<form class="inline" action="<%=luci.dispatcher.build_url('admin/services/travelmate/wifiadd')%>" method="post">
+						<input type="hidden" name="token" value="<%=token%>"/>
+						<input type="hidden" name="device" value="<%=utl.pcdata(dev)%>"/>
+						<input type="hidden" name="ssid" value="<%=utl.pcdata(net.ssid)%>"/>
+						<input type="hidden" name="bssid" value="<%=utl.pcdata(net.bssid)%>"/>
+						<input type="hidden" name="description" value="<%=net.encryption.description%>"/>
+						<input type="hidden" name="wep" value="<%=net.encryption.wep and 1 or 0%>"/>
+						<%- if net.encryption.wpa then -%>
+							<input type="hidden" name="wpa_version" value="<%=net.encryption.wpa%>"/>
+							<%- for _, v in ipairs(net.encryption.auth_suites) do -%>
+								<input type="hidden" name="wpa_suites" value="<%=v%>"/>
+							<%- end -%>
+						<%- end -%>
+						<input class="cbi-button cbi-button-apply" type="submit" value="<%:Add Uplink%>"/>
+					</form>
+				</div>
+			</div>
+			<%- end -%>
+		</div>
+	</div>
+	<div class="cbi-page-actions right">
+		<form class="inline" action="<%=luci.dispatcher.build_url('admin/services/travelmate/stations')%>" method="get">
+			<input class="cbi-button cbi-button-reset" type="submit" value="<%:Back to overview%>"/>
+		</form>
+		<form class="inline" action="<%=luci.dispatcher.build_url('admin/services/travelmate/wifiscan')%>" method="post">
+			<input type="hidden" name="token" value="<%=token%>"/>
+			<input type="hidden" name="device" value="<%=utl.pcdata(dev)%>"/>
+			<input class="cbi-button cbi-input-find" type="submit" value="<%:Repeat scan%>"/>
+		</form>
+	</div>
+</div>
+
+<%+footer%>

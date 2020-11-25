@@ -1,0 +1,164 @@
+<%#
+Copyright 2018-2019 Dirk Brenken (dev@brenken.org)
+This is free software, licensed under the Apache License, Version 2.0
+-%>
+
+<%+banip/banip_css%>
+<script type="text/javascript">
+//<![CDATA[
+	function status_update(json)
+	{
+			var btn1         = document.getElementById("btn1");
+			var btn1_running = document.getElementById("btn1_running");
+			var btn2         = document.getElementById("btn2");
+			var btn2_running = document.getElementById("btn2_running");
+			var view         = document.getElementById("value_1");
+			var input        = json.data.status;
+
+			btn1.value = "<%:Refresh%>";
+			btn1.name  = "do_refresh";
+
+			btn2.value = "<%:Reload%>";
+			btn2.name  = "do_reload";
+			view.innerHTML = input || "-";
+			if (input != "running")
+			{
+				btn1.disabled = false;
+				running(btn1_running, 0);
+				btn2.disabled = false;
+				running(btn2_running, 0);
+			}
+			view = document.getElementById("value_2");
+			input = json.data.version;
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_3");
+			input = json.data.util_info;
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_4");
+			input = json.data.ipset_info;
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_5");
+			input = json.data.backup_dir;
+			view.innerHTML = input || "-";
+			view = document.getElementById("value_6");
+			input = json.data.last_run;
+			view.innerHTML = input || "-";
+	}
+
+function btn_action(action)
+	{
+		var btn1 = document.getElementById("btn1");
+		var btn1_running = document.getElementById("btn1_running");
+		var btn2 = document.getElementById("btn2");
+		var btn2_running = document.getElementById("btn2_running");
+
+		if (action.name === "do_refresh")
+		{
+			btn1.disabled = true;
+			btn2.disabled = true;
+			running(btn1_running, 1);
+		}
+		else if (action.name === "do_reload")
+		{
+			btn1.disabled = true;
+			btn2.disabled = true;
+			running(btn2_running, 1);
+		}
+		new XHR.get('<%=luci.dispatcher.build_url("admin", "services", "banip")%>/action/' + action.name, null,
+		function(x)
+		{
+			if (!x)
+			{
+				return;
+			}
+		});
+	}
+
+	function running(element, state)
+	{
+		if (state === 1)
+		{
+			var running_html = '<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" width="16" height="16" style="vertical-align:middle" />';
+			element.innerHTML = running_html;
+		}
+		else
+		{
+			element.innerHTML = '';
+		}
+	}
+
+	XHR.get('<%=luci.dispatcher.build_url("admin", "services", "banip", "status")%>', null,
+	function(x, json_info)
+	{
+		if (!x || !json_info)
+		{
+			return;
+		}
+		status_update(json_info)
+	});
+
+	XHR.poll(-1, '<%=luci.dispatcher.build_url("admin", "services", "banip", "status")%>', null,
+	function(x, json_info)
+	{
+		if (!x || !json_info)
+		{
+			return;
+		}
+		status_update(json_info)
+	});
+//]]>
+</script>
+
+<h3><%:Runtime Information%></h3>
+<div class="cbi-value" id="status_1">
+	<label class="cbi-value-title" for="status_1"><%:banIP Status%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_1">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_2">
+	<label class="cbi-value-title" for="status_2"><%:banIP Version%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_2">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_3">
+	<label class="cbi-value-title" for="status_3"><%:Download Utility, RT Monitor%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_3">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_4">
+	<label class="cbi-value-title" for="status_4"><%:IPSet Information%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_4">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_5">
+	<label class="cbi-value-title" for="status_5"><%:Backup Directory%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_5">-</span>
+	</div>
+</div>
+<div class="cbi-value" id="status_6">
+	<label class="cbi-value-title" for="status_6"><%:Last Run%></label>
+	<div class="cbi-value-field">
+		<span class="runtime" id="value_6">-</span>
+	</div>
+</div>
+<hr />
+<div class="cbi-value" id="button_1">
+	<label class="cbi-value-title" for="button_1"><%:Refresh IPSets%></label>
+	<div class="cbi-value-field">
+		<input class="cbi-button cbi-button-apply" id="btn1" type="button" name="do_refresh" value="<%:Refresh%>" onclick="btn_action(this)" />
+		<span id="btn1_running" class="btn_running"></span>
+	</div>
+</div>
+<div class="cbi-value" id="button_2">
+	<label class="cbi-value-title" for="button_2"><%:Reload IPSet Sources%></label>
+	<div class="cbi-value-field">
+		<input class="cbi-button cbi-button-reset" id="btn2" type="button" name="do_reload" value="<%:Reload%>" onclick="btn_action(this)" />
+		<span id="btn2_running" class="btn_running"></span>
+	</div>
+</div>
+

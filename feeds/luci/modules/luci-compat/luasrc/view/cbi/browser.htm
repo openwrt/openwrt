@@ -1,0 +1,10 @@
+<%+cbi/valueheader%>
+
+<input class="cbi-input-text" type="text"<%=
+	attr("id", cbid) ..
+	attr("name", cbid) ..
+	attr("value", self:cfgvalue(section) or self.default) ..
+	attr("data-browser", self.default_path or "")
+%> />
+
+<%+cbi/valuefooter%>

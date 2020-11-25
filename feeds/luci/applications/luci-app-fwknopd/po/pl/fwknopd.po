@@ -1,0 +1,134 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"PO-Revision-Date: 2020-01-14 15:22+0000\n"
+"Last-Translator: Marcin Net <marcin.net@linux.pl>\n"
+"Language-Team: Polish <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationsfwknopd/pl/>\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 3.11-dev\n"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:48
+msgid ""
+"Allow SPA clients to request access to services through an iptables firewall "
+"instead of just to it."
+msgstr ""
+"Zezwól klientom SPA na żądanie dostępu do usług za pośrednictwem zapory "
+"iptables zamiast tylko do niego."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:49
+msgid "Allow SPA clients to request forwarding destination by DNS name."
+msgstr ""
+"Zezwól klientom SPA na żądanie przekazywania docelowego przez nazwę DNS."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:22
+msgid "Base 64 key"
+msgstr ""
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:33
+msgid ""
+"Define a set of ports and protocols (tcp or udp) that will be opened if a "
+"valid knock sequence is seen. If this entry is not set, fwknopd will attempt "
+"to honor any proto/port request specified in the SPA data (unless of it "
+"matches any “RESTRICT_PORTS” entries). Multiple entries are comma-separated."
+msgstr ""
+"Zdefiniuj zestaw portów i protokołów (tcp lub udp), które zostaną otwarte, "
+"jeśli pojawi się prawidłowa sekwencja Knock. Jeśli ten wpis nie jest "
+"ustawiony, fwknopd będzie starał się honorować każde żądanie proto/port "
+"określone w danych o SPA (chyba, że pasuje ono do któregokolwiek z wpisów "
+"\"RESTRICT_PORTS\"). Wielokrotne wpisy są oddzielone przecinkami."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:36
+msgid ""
+"Define the length of time access will be granted by fwknopd through the "
+"firewall after a valid knock sequence from a source IP address. If "
+"“FW_ACCESS_TIMEOUT” is not set then the default timeout of 30 seconds will "
+"automatically be set."
+msgstr ""
+"Zdefiniuj czas dostępu, który zostanie udzielony przez fwknopd po "
+"prawidłowej sekwencji knock ze źródłowego adresu IP. Jeśli "
+"\"FW_ACCESS_TIMEOUT\" nie jest ustawiony, to domyślny czas 30 sekund "
+"zostanie ustawiony automatycznie."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:18
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:20
+msgid ""
+"Define the symmetric key used for decrypting an incoming SPA packet that is "
+"encrypted by the fwknop client with Rijndael."
+msgstr ""
+"Zdefiniuj klucz symetryczny używany do odszyfrowywania przychodzącego "
+"pakietu SPA, który jest szyfrowany przez klienta fwknop z Rijndael."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:6
+msgid "Enable Uci/Luci control"
+msgstr "Włącz sterowanie Uci/LuCI"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:8
+msgid "Enable config overwrite"
+msgstr "Włącz nadpisywanie konfiguracji"
+
+#: applications/luci-app-fwknopd/luasrc/controller/fwknopd.lua:13
+msgid "Firewall Knock Daemon"
+msgstr "Knock demon zapory sieciowej"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:4
+msgid "Firewall Knock Operator"
+msgstr "Knock Operator zapory sieciowej"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:39
+msgid ""
+"Force all SPA packets to contain a real IP address within the encrypted "
+"data. This makes it impossible to use the -s command line argument on the "
+"fwknop client command line, so either -R has to be used to automatically "
+"resolve the external address (if the client behind a NAT) or the client must "
+"know the external IP and set it via the -a argument."
+msgstr ""
+"Wymuś, aby wszystkie pakiety SPA zawierały rzeczywisty adres IP w ramach "
+"zaszyfrowanych danych. To uniemożliwia użycie argumentu -s z linii poleceń "
+"klienta fwknop, więc albo -R musi być użyty do automatycznego rozwiązania "
+"adresu zewnętrznego (jeśli klient znajduje się za NAT) albo klient musi znać "
+"zewnętrzny IP i ustawić go za pomocą argumentu -a."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:46
+msgid ""
+"Maximum age in seconds that an SPA packet will be accepted. defaults to 120 "
+"seconds"
+msgstr ""
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:19
+msgid "Normal Key"
+msgstr "Klucz normalny"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:47
+msgid "Specify the ethernet interface on which fwknopd will sniff packets."
+msgstr ""
+"Określ interfejs ethernet, na którym fwknopd będzie podsłuchiwać pakiety."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:28
+msgid "The base64 hmac key"
+msgstr "Klucz HMAC Base64"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:17
+msgid "Use ANY for any source ip"
+msgstr ""
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:8
+msgid ""
+"When unchecked, the config files in /etc/fwknopd will be used as is, "
+"ignoring any settings here."
+msgstr ""
+"Jeśli ta opcja nie jest zaznaczona, pliki konfiguracyjne w /etc/fwknopd będą "
+"używane tak jak jest, ignorując wszelkie ustawienia tutaj."
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:10
+msgid "access.conf stanzas"
+msgstr "sekcje access.conf"
+
+#: applications/luci-app-fwknopd/luasrc/model/cbi/fwknopd.lua:44
+msgid "fwknopd.conf config options"
+msgstr "opcje konfiguracji fwknopd.conf"

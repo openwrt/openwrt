@@ -1,0 +1,11 @@
+{
+	"luci-app-openvpn": {
+		"description": "Grant file upload access to /etc/openvpn",
+		"write": {
+			"cgi-io": [ "upload" ],
+			"file": {
+				"/etc/openvpn/*": [ "write" ]
+			}
+		}
+	}
+}

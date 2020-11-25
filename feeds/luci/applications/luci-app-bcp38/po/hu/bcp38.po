@@ -1,0 +1,79 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2019-12-10 23:15+0000\n"
+"Last-Translator: Balázs Úr <balazs@urbalazs.hu>\n"
+"Language-Team: Hungarian <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationsbcp38/hu/>\n"
+"Language: hu\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 3.10-dev\n"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:61
+msgid "Allowed IP ranges"
+msgstr "Engedélyezett IP-tartományok"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:34
+msgid ""
+"Attempt to automatically detect if the upstream IP will be blocked by the "
+"configuration, and add an exception if it will. If this does not work "
+"correctly, you can add exceptions manually below."
+msgstr ""
+"Kísérlet annak automatikus felismeréséhez, hogy a külső IP-t blokkolni fogja-"
+"e a beállítás, és kivétel hozzáadása, ha blokkolni fogja. Ha ez nem működik "
+"megfelelően, akkor kézzel is hozzáadhat kivételeket alább."
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:33
+msgid "Auto-detect upstream IP"
+msgstr "Külső IP automatikus felismerése"
+
+#: applications/luci-app-bcp38/luasrc/controller/bcp38.lua:6
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:20
+msgid "BCP38"
+msgstr "BCP38"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:27
+msgid "BCP38 config"
+msgstr "BCP38 beállítás"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:56
+msgid "Blocked IP ranges"
+msgstr "Blokkolt IP-tartományok"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:30
+msgid "Enable"
+msgstr "Engedélyezés"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:39
+msgid "Interface name"
+msgstr "Csatoló neve"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:39
+msgid ""
+"Interface to apply the blocking to (should be the upstream WAN interface)."
+msgstr ""
+"Az a csatoló, amelyen a blokkolást alkalmazni kell (a külső WAN csatolónak "
+"kell lennie)."
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:61
+msgid ""
+"Takes precedence over blocked ranges. Use to whitelist your upstream network "
+"if you're behind a double NAT and the auto-detection doesn't work."
+msgstr ""
+"Elsőbbséget élvez a blokkolt tartományokkal szemben. Használja a külső "
+"hálózat fehérlistázásához, ha kettőzött NAT mögött van, és az automatikus "
+"felismerés nem működik."
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:21
+msgid ""
+"This function blocks packets with private address destinations from going "
+"out onto the internet as per <a href=\"http://tools.ietf.org/html/"
+"bcp38\">BCP 38</a>. For IPv6, only source specific default routes are "
+"installed, so no BCP38 firewall routes are needed."
+msgstr ""
+"Ez a funkció blokkolja a személyes címcélokkal rendelkező csomagokat attól, "
+"hogy kijussanak az internetre a <a href=\"http://tools.ietf.org/html/"
+"bcp38\">BCP 38</a> szerint. IPv6 esetén csak a forrásra jellemző "
+"alapértelmezett útvonalak vannak telepítve, így nem szükségesek BCP38 "
+"tűzfalútvonalak."

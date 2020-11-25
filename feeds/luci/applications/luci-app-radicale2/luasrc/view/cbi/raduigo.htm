@@ -1,0 +1,25 @@
+<%
+local uci  = require "luci.model.uci".cursor()
+local http_port = uci:get("radicale2", "server", "host")
+local usessl = uci:get_bool("radicale2", "server", "ssl")
+if type(http_port) == "table" then
+        http_port = http_port[1]
+end
+
+	if http_port then
+	        http_port = http_port:match("(%d+)$")
+	end
+	if not http_port then
+		http_port = "5232"
+	end
+%>
+<script type="text/javascript">
+<%
+if usessl then
+%>
+	var protocol = 'https'
+<% else %>
+	var protocol = 'http'
+<% end %>
+document.write('<a href="' + protocol + '://' + window.location.hostname + ':' + <%=http_port%> + '/"><%=luci.i18n.translate("Go to Radicale 2.x Web UI")%></a>');
+</script>

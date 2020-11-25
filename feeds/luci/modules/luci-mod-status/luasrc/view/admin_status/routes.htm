@@ -1,0 +1,156 @@
+<%#
+ Copyright 2008-2009 Steven Barth <steven@midlink.org>
+ Copyright 2008-2015 Jo-Philipp Wich <jow@openwrt.org>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%-
+	require "luci.tools.webadmin"
+	require "nixio.fs"
+
+	local ip = require "luci.ip"
+	local style = true
+	local _, v
+
+	local rtn = {
+		[255] = "local",
+		[254] = "main",
+		[253] = "default",
+		[0]   = "unspec"
+	}
+
+	if nixio.fs.access("/etc/iproute2/rt_tables") then
+		local ln
+		for ln in io.lines("/etc/iproute2/rt_tables") do
+			local i, n = ln:match("^(%d+)%s+(%S+)")
+			if i and n then
+				rtn[tonumber(i)] = n
+			end
+		end
+	end
+-%>
+
+<%+header%>
+
+
+<div class="cbi-map" id="cbi-network">
+	<h2 name="content"><%:Routes%></h2>
+	<div class="cbi-map-descr"><%:The following rules are currently active on this system.%></div>
+
+	<div class="cbi-section">
+		<legend>ARP</legend>
+		<div class="cbi-section-node">
+			<div class="table">
+				<div class="tr table-titles">
+					<div class="th"><%_<abbr title="Internet Protocol Version 4">IPv4</abbr>-Address%></div>
+					<div class="th"><%_<abbr title="Media Access Control">MAC</abbr>-Address%></div>
+					<div class="th"><%:Interface%></div>
+				</div>
+
+				<%
+					for _, v in ipairs(ip.neighbors({ family = 4 })) do
+						if v.mac then
+				%>
+				<div class="tr cbi-rowstyle-<%=(style and 1 or 2)%>">
+					<div class="td"><%=v.dest%></div>
+					<div class="td"><%=v.mac%></div>
+					<div class="td"><%=luci.tools.webadmin.iface_get_network(v.dev) or '(' .. v.dev .. ')'%></div>
+				</div>
+				<%
+							style = not style
+						end
+					end
+				%>
+			</div>
+		</div>
+	</div>
+
+	<div class="cbi-section">
+		<legend><%_Active <abbr title="Internet Protocol Version 4">IPv4</abbr>-Routes%></legend>
+		<div class="cbi-section-node">
+			<div class="table">
+				<div class="tr table-titles">
+					<div class="th"><%:Network%></div>
+					<div class="th"><%:Target%></div>
+					<div class="th"><%_<abbr title="Internet Protocol Version 4">IPv4</abbr>-Gateway%></div>
+					<div class="th"><%:Metric%></div>
+					<div class="th"><%:Table%></div>
+				</div>
+				<% for _, v in ipairs(ip.routes({ family = 4, type = 1 })) do %>
+				<div class="tr cbi-rowstyle-<%=(style and 1 or 2)%>">
+					<div class="td"><%=luci.tools.webadmin.iface_get_network(v.dev) or v.dev%></div>
+					<div class="td"><%=v.dest%></div>
+					<div class="td"><%=v.gw or "-"%></div>
+					<div class="td"><%=v.metric or 0%></div>
+					<div class="td"><%=rtn[v.table] or v.table%></div>
+				</div>
+				<% style = not style end %>
+			</div>
+		</div>
+	</div>
+
+	<%
+		if nixio.fs.access("/proc/net/ipv6_route") then
+			style = true
+	%>
+	<div class="cbi-section">
+		<legend><%_Active <abbr title="Internet Protocol Version 6">IPv6</abbr>-Routes%></legend>
+		<div class="cbi-section-node">
+			<div class="table">
+				<div class="tr table-titles">
+					<div class="th"><%:Network%></div>
+					<div class="th"><%:Target%></div>
+					<div class="th"><%:Source%></div>
+					<div class="th"><%:Metric%></div>
+					<div class="th"><%:Table%></div>
+				</div>
+				<%
+					for _, v in ipairs(ip.routes({ family = 6, type = 1 })) do
+						if v.dest and not v.dest:is6linklocal() then
+				%>
+				<div class="tr cbi-rowstyle-<%=(style and 1 or 2)%>">
+					<div class="td"><%=luci.tools.webadmin.iface_get_network(v.dev) or '(' .. v.dev .. ')'%></div>
+					<div class="td"><%=v.dest%></div>
+					<div class="td"><%=v.from%></div>
+					<div class="td"><%=v.metric or 0%></div>
+					<div class="td"><%=rtn[v.table] or v.table%></div>
+				</div>
+				<%
+							style = not style
+						end
+					end
+				%>
+			</div>
+		</div>
+	</div>
+
+	<div class="cbi-section">
+		<legend><%:IPv6 Neighbours%></legend>
+		<div class="cbi-section-node">
+			<div class="table">
+				<div class="tr table-titles">
+					<div class="th"><%:IPv6-Address%></div>
+					<div class="th"><%:MAC-Address%></div>
+					<div class="th"><%:Interface%></div>
+				</div>
+				<%
+					for _, v in ipairs(ip.neighbors({ family = 6 })) do
+						if v.dest and not v.dest:is6linklocal() and v.mac then
+				%>
+				<div class="tr cbi-rowstyle-<%=(style and 1 or 2)%>">
+					<div class="td"><%=v.dest%></div>
+					<div class="td"><%=v.mac%></div>
+					<div class="td"><%=luci.tools.webadmin.iface_get_network(v.dev) or '(' .. v.dev .. ')'%></div>
+				</div>
+				<%
+							style = not style
+						end
+					end
+				%>
+			</div>
+		</div>
+	</div>
+	<% end %>
+</div>
+
+<%+footer%>

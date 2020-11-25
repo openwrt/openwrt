@@ -1,0 +1,42 @@
+---[[
+LuCI translation library.
+]]
+module "luci.i18n"
+
+---[[
+Set the context default translation language.
+
+@class function
+@name setlanguage
+@param lang	An IETF/BCP 47 language tag or ISO3166 country code, e.g. "en-US" or "de"
+@return		The effective loaded language, e.g. "en" for "en-US" - or nil on failure
+]]
+
+---[[
+Return the translated value for a specific translation key.
+
+@class function
+@name translate
+@param key	Default translation text
+@return		Translated string
+]]
+
+---[[
+Return the translated value for a specific translation key and use it as sprintf pattern.
+
+@class function
+@name translatef
+@param key		Default translation text
+@param ...		Format parameters
+@return			Translated and formatted string
+]]
+
+---[[
+Return all currently loaded translation strings as a key-value table. The key is the
+hexadecimal representation of the translation key while the value is the translated
+text content.
+
+@class function
+@name dump
+@return			Key-value translation string table.
+]]

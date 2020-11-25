@@ -1,0 +1,506 @@
+<%#
+
+LuCI LXC module
+
+Copyright (C) 2014, Cisco Systems, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Author: Petar Koretic <petar.koretic@sartura.hr>
+
+-%>
+
+<%-
+local nx     = require "nixio"
+local target = nx.uname().machine
+-%>
+
+<div class="cbi-section">
+	<h3><%:Available Containers%></h3>
+	<div class="cbi-section-node">
+		<div class="table cbi-section-table" id="t_lxc_list">
+			<div class="tr cbi-section-table-titles">
+				<div class="th cbi-section-table-cell"><%:Name%></div>
+				<div class="th cbi-section-table-cell"><%:Status%></div>
+				<div class="th cbi-section-table-cell"><%:Actions%></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="cbi-section">
+	<span id="lxc-list-output"></span>
+</div>
+
+<hr />
+<div class="cbi-section">
+	<h3><%:Create New Container%></h3>
+	<div class="cbi-section-node">
+		<div class="table cbi-section-table" id="t_lxc_create">
+			<div class="tr cbi-section-table-titles">
+				<div class="th cbi-section-table-cell"><%:Name%></div>
+				<div class="th cbi-section-table-cell"><%:Template%></div>
+				<div class="th cbi-section-table-cell"><%:Actions%></div>
+			</div>
+			<div class="tr cbi-section-table-row" id="div_create">
+				<div class="td"><input class="cbi-input-text" type="text" id="tx_name" placeholder="<%:Enter new name%>" value='' /></div>
+				<div class="td"><select id="s_template" class="cbi-input-select cbi-button"></select></div>
+				<div class="td">
+					<input type="button" id="bt_create" value="<%:Create%>" onclick="lxc_create()" class="cbi-button cbi-button-add" />
+					<span id="lxc-add-loader" style="display:inline-block; width:16px; height:16px; margin:0 5px"></span>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="cbi-section">
+	<span id="lxc-add-output"></span>
+</div>
+
+<hr />
+
+<script type="text/javascript">
+//<![CDATA[
+	window.img    = { "red" : "<%=resource%>/cbi/red.gif", "green" : "<%=resource%>/cbi/green.gif", "purple" : "<%=resource%>/cbi/purple.gif" };
+	window.states = { "STOPPED" : "red", "RUNNING" : "green", "FROZEN" : "purple" };
+
+	var t_lxc_list  = document.getElementById('t_lxc_list');
+	var loader_html = '<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" width="16" height="16" style="vertical-align:middle" />';
+	var output_list = document.getElementById("lxc-list-output");
+	var output_add  = document.getElementById("lxc-add-output");
+	var loader_add  = document.getElementById("lxc-add-loader");
+	var div_create  = document.getElementById("div_create");
+	var bt_create   = div_create.querySelector("#bt_create");
+
+	bt_create.disabled = true;
+	info_message(output_add, "Template download in progress, please be patient!");
+
+	function lxc_create()
+	{
+		var lxc_name     = div_create.querySelector("#tx_name").value.replace(/[\s!@#$%^&*()+=\[\]{};':"\\|,<>\/?]/g,'');
+		var lxc_template = div_create.querySelector("#s_template").value;
+
+		if (t_lxc_list.querySelector("[data-id='" + lxc_name + "']") != null)
+		{
+			return info_message(output_add, "Container with that name already exists!", 2000);
+		}
+
+		bt_create.disabled = true;
+		output_add.innerHTML = '';
+
+		if (!lxc_template)
+		{
+			return set_no_template();
+		}
+
+		if (!lxc_name || !lxc_name.length)
+		{
+			bt_create.disabled = false;
+			return info_message(output_add, "The 'Name' field must not be empty!", 2000);
+		}
+
+		loading(loader_add);
+
+		new XHR().get('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_create/' + '%h/%h'.format(lxc_name, lxc_template) , null,
+		function(x)
+		{
+			bt_create.disabled = false;
+			loading(loader_add, 0);
+
+			if (!x)
+			{
+				info_message(output_add, "Container creation failed!", 2000);
+			}
+		})
+	}
+
+	function lxc_create_template(lxc_name, lxc_state)
+	{
+		if (document.getElementById(lxc_name))
+		{
+			return;
+		}
+
+		info_message(output_list, "");
+		var actions = '';
+		actions += '<input type="button" onclick="action_handler(this)" data-action="start" value="<%:Start%>" class="cbi-button cbi-button-apply" />';
+		actions += '&#160;<input type="button" onclick="action_handler(this)" data-action="stop" value="<%:Stop%>" class="cbi-button cbi-button-reset" />';
+		actions += '&#160;<input type="button" onclick="action_handler(this)" data-action="destroy" value="<%:Delete%>" class="cbi-button cbi-button-remove" />';
+		actions += '&#160;<select class="cbi-input-select cbi-button" style="width:10em" onchange="action_more_handler(this)">\
+						<option selected="selected" disabled="disabled">more</option>\
+						<option>configure</option>\
+						<option>freeze</option>\
+						<option>unfreeze</option>\
+						<option>reboot</option>\
+					</select>';
+		actions += '<span data-loader="" style="display:inline-block; width:16px; height:16px; margin:0 5px"></span>';
+
+		var div0 = document.createElement("div");
+		div0.className = "tr cbi-section-table-row";
+		div0.id = lxc_name;
+		div0.setAttribute("data-id", lxc_name);
+
+		var div1 = document.createElement("div");
+		div1.className = "td";
+		div1.style.width = "30%";
+		div1.innerHTML = '%q%h%q'.format("<strong>", lxc_name, "</strong>");
+
+		var div2 = document.createElement("div");
+		div2.className = "td";
+		div2.style.width = "20%";
+		div2.innerHTML = "<img src='"+window.img[lxc_state]+"'/>";
+
+		var div3 = document.createElement("div");
+		div3.className = "td";
+		div3.style.width = "50%";
+		div3.innerHTML = actions;
+
+		document.getElementById("t_lxc_list").appendChild(div0);
+		div0.appendChild(div1);
+		div0.appendChild(div2);
+		div0.appendChild(div3);
+	}
+
+	function action_handler(self)
+	{
+		var bt_action  = self;
+		var action     = self.dataset['action'];
+		var lxc_name   = self.parentNode.parentNode.dataset['id'];
+		var status_img = self.parentNode.parentNode.querySelector('img');
+		var loader     = self.parentNode.querySelector('[data-loader]');
+
+		bt_action.disabled = true;
+
+		if (action == "stop")
+		{
+			loading(loader);
+
+			new XHR().get('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_action/' + '%h/%h'.format(action, lxc_name), null,
+			function(x, ec)
+			{
+				loading(loader, 0);
+				bt_action.disabled = false;
+
+				if (!x || ec)
+				{
+					return info_message(output_list,"Action failed!", 2000);
+				}
+				set_status(status_img, "red");
+			});
+		}
+		else if (action == "start")
+		{
+			loading(loader);
+
+			new XHR().get('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_action/' + '%h/%h'.format(action, lxc_name), null,
+			function(x, data)
+			{
+				loading(loader, 0);
+				bt_action.disabled = false;
+
+				if (!x || data)
+				{
+					return info_message(output_list,"Action failed!", 2000);
+				}
+				set_status(status_img, "green");
+			});
+		}
+		else if (action == "destroy")
+		{
+			var div = self.parentNode.parentNode;
+			var img = div.querySelector('img');
+
+			if (img.getAttribute('src') != window.img["red"])
+			{
+				bt_action.disabled = false;
+				return info_message(output_list,"Container is still running!", 2000);
+			}
+
+			if (!confirm("This will completely remove a stopped LXC container from disk. Are you sure?"))
+			{
+				bt_action.disabled = false;
+				return;
+			}
+			loading(loader);
+
+			new XHR().get('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_action/' + '%h/%h'.format(action, lxc_name), null,
+			function(x, ec)
+			{
+				loading(loader, 0);
+				bt_action.disabled = false;
+
+				if (!x || ec)
+				{
+					return info_message(output_list,"Action failed!", 2000);
+				}
+				var div = self.parentNode.parentNode;
+				div.parentNode.removeChild(div);
+			});
+		}
+	}
+
+	function lxc_configure_handler(self)
+	{
+		var div      = self.parentNode;
+		var textarea = div.querySelector('[data-id]');
+		var lxc_name = textarea.dataset['id'];
+		var lxc_conf = textarea.value;
+
+	new XHR().post('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_configuration_set/' + lxc_name, "lxc_conf=" + encodeURIComponent(lxc_conf),
+		function(x)
+		{
+			if (!x || x.responseText != "0")
+			{
+				return info_message(output_list,"Action failed!", 2000);
+			}
+			info_message(output_list,"LXC configuration updated", 2000);
+			var rmdiv = div.parentNode;
+			rmdiv.parentNode.removeChild(rmdiv);
+		})
+	}
+
+	function lxc_configure_template(lxc_name, lxc_conf)
+	{
+		var h = '\
+			<textarea data-id="' + lxc_name + '" rows="20" style="width:600px;font-family:monospace;white-space:pre;overflow-wrap:normal;overflow-x:scroll;">'+ lxc_conf +'</textarea> \
+			<input data-id="bt_confirm" onclick="lxc_configure_handler(this)" type="button" class="cbi-button" value="Confirm" />';
+		return h;
+	}
+
+	function action_more_handler(self)
+	{
+		var lxc_name = self.parentNode.parentNode.dataset['id'];
+		var loader   = self.parentNode.querySelector('[data-loader]');
+		var option   = self.options[self.selectedIndex].text;
+		self.value   = "more";
+
+		switch(option)
+		{
+			case "configure":
+				var div0 = document.createElement('div');
+				var div1 = self.parentNode.parentNode;
+				var next_div = div1.nextSibling;
+
+				if (next_div && next_div.dataset['action'] !== null)
+				{
+					div1.parentNode.removeChild(next_div);
+				}
+
+				new XHR().get('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_configuration_get/' + lxc_name, null,
+				function(x)
+				{
+					div0.innerHTML="<div>" + lxc_configure_template(lxc_name, x.responseText) + "</div>";
+					div0.setAttribute('data-action','');
+					div1.parentNode.insertBefore(div0, div1.nextSibling);
+				})
+			break;
+
+			case "freeze":
+				var img = self.parentNode.parentNode.querySelector('img');
+				if(img.getAttribute('src') != window.img["green"])
+				{
+					return info_message(output_list,"Container is not running!", 2000);
+				}
+
+				loading(loader);
+
+				new XHR().get('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_action/' + '%h/%h'.format(option, lxc_name), null,
+				function(x, ec)
+				{
+					loading(loader, 0)
+					if (!x || ec)
+					{
+						return info_message(output_list,"Action failed!", 2000);
+					}
+					set_status(img, "purple");
+				})
+			break;
+
+			case "unfreeze":
+				var img = self.parentNode.parentNode.querySelector('img');
+				if(img.getAttribute('src') != window.img["purple"])
+				{
+					return info_message(output_list,"Container is not frozen!", 2000);
+				}
+
+				loading(loader);
+
+				new XHR().get('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_action/' + '%h/%h'.format(option, lxc_name), null,
+				function(x, ec)
+				{
+					loading(loader, 0);
+					if (!x || ec)
+					{
+						return info_message(output_list,"Action failed!", 2000);
+					}
+					set_status(img, "green");
+				})
+			break;
+
+			case "reboot":
+				var img = self.parentNode.parentNode.querySelector('img');
+				if(img.getAttribute('src') != window.img["green"])
+				{
+					return info_message(output_list,"Container is not running!", 2000);
+				}
+
+				if (!confirm("Are you sure?"))
+				{
+					return;
+				}
+
+				loading(loader);
+
+				new XHR().get('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_action/' + '%h/%h'.format(option, lxc_name), null,
+				function(x, ec)
+				{
+					loading(loader, 0)
+					if (!x || ec)
+					{
+						return info_message(output_list,"Action failed!", 2000);
+					}
+					info_message(output_list,"LXC container rebooted", 2000);
+				})
+			break;
+		}
+	}
+
+	function set_no_container()
+	{
+		info_message(output_list, "There are no containers available yet.");
+	}
+
+	function set_no_template()
+	{
+		bt_create.disabled = true;
+		info_message(output_add, "There are no templates for your architecture (<%=target%>) available, please select another containers URL.");
+	}
+
+	function lxc_list_update()
+	{
+		XHR.poll(4, '<%=luci.dispatcher.build_url("admin", "services")%>/lxc_action/list', null,
+		function(x, data)
+		{
+			if (!x || !data)
+			{
+				return;
+			}
+
+			var lxc_count = Object.keys(data).length;
+			if (!lxc_count)
+			{
+				return set_no_container();
+			}
+
+			var lxcs = t_lxc_list.querySelectorAll('td[data-id]');
+			var lxc_name_div = {};
+			for (var i = 0, len = lxcs.length; i < len; i++)
+			{
+				var lxc_name = lxcs[i].dataset['id'];
+				if (!(lxc_name in data))
+				{
+					var div = t_lxc_list.querySelector("[data-id='" + lxc_name + "']").parentNode;
+					div.parentNode.removeChild(div);
+					continue;
+				}
+				lxc_name_div[lxc_name] = lxcs[i].parentNode.querySelector('img');
+			}
+
+			for(var key in data)
+			{
+				var lxc_name = key;
+				var state = window.states[data[key]];
+
+				if (!(lxc_name in lxc_name_div))
+				{
+					lxc_create_template(lxc_name, state);
+				}
+				else if (state != get_status(lxc_name_div[lxc_name]))
+				{
+					set_status(lxc_name_div[lxc_name], state);
+				}
+			}
+		})
+	}
+
+	function loading(elem, state)
+	{
+		state = (typeof state === 'undefined') ? 1 : state;
+		if (state === 1)
+		{
+			elem.innerHTML = loader_html;
+		}
+		else
+		{
+			setTimeout(function() { elem.innerHTML = ''}, 2000);
+		}
+	}
+
+	function set_status(elem, state)
+	{
+		state = (typeof state === 'undefined') ? 1 : state;
+		setTimeout(function() { elem.setAttribute('src', window.img[state])}, 300);
+	}
+
+	function get_status(elem)
+	{
+		var src = elem.getAttribute('src');
+		for (var i in img)
+		{
+			if (img[i] == src)
+			{
+				return i;
+			}
+		}
+	}
+
+	function info_message(output, msg, timeout)
+	{
+		timeout = timeout || 0;
+		output.innerHTML = '<em>' + msg + '</em>';
+		if (timeout > 0)
+		{
+			setTimeout(function(){ output.innerHTML=""}, timeout);
+		}
+	}
+
+	new XHR().get('<%=luci.dispatcher.build_url("admin", "services")%>/lxc_get_downloadable', null,
+	function(x, data)
+	{
+		if (!x)
+		{
+			return;
+		}
+
+		if (!data)
+		{
+			return set_no_template();
+		}
+
+		var lxc_count = Object.keys(data).length;
+		if (!lxc_count)
+		{
+			return set_no_template();
+		}
+
+		var select = document.getElementById("s_template");
+		for(var key in data)
+		{
+			var option = document.createElement('option');
+			option.value = data[key];
+			option.text = data[key].replace(/[_:]/g, ' ');
+			select.add(option, -1);
+		}
+
+		info_message(output_add, "");
+		bt_create.disabled = false;
+	})
+
+	lxc_list_update();
+//]]>
+</script>

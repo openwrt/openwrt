@@ -1,0 +1,1279 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LuCI: firewall\n"
+"POT-Creation-Date: 2013-09-05 16:02+0200\n"
+"PO-Revision-Date: 2020-02-12 11:00+0000\n"
+"Last-Translator: Alex Ky <esthomolupus@gmail.com>\n"
+"Language-Team: Russian <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationsfirewall/ru/>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 3.11-dev\n"
+"Project-Info: Это технический перевод, не дословный. Главное-удобный русский "
+"интерфейс, все проверялось в графическом режиме, совместим с другими apps\n"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:47
+msgid ""
+"%{src?%{dest?Forwarded:Incoming}:Outgoing} %{ipv6?%{ipv4?<var>IPv4</var> and "
+"<var>IPv6</var>:<var>IPv6</var>}:<var>IPv4</var>}%{proto?, protocol %{proto#"
+"%{next?, }%{item.types?<var class=\"cbi-tooltip-container\">%{item.name}"
+"<span class=\"cbi-tooltip\">ICMP with types %{item.types#%{next?, }<var>"
+"%{item}</var>}</span></var>:<var>%{item.name}</var>}}}%{mark?, mark <var"
+"%{mark.inv? data-tooltip=\"Match fwmarks except %{mark.num}%{mark.mask? with "
+"mask %{mark.mask}}.\":%{mark.mask? data-tooltip=\"Mask fwmark value with "
+"%{mark.mask} before compare.\"}}>%{mark.val}</var>}%{dscp?, DSCP %{dscp.inv?"
+"<var data-tooltip=\"Match DSCP classifications except %{dscp.num?:%{dscp."
+"name}}\">%{dscp.val}</var>:<var>%{dscp.val}</var>}}%{helper?, helper "
+"%{helper.inv?<var data-tooltip=\"Match any helper except &quot;%{helper.name}"
+"&quot;\">%{helper.val}</var>:<var data-tooltip=\"%{helper.name}\">%{helper."
+"val}</var>}}"
+msgstr ""
+"%{src?%{dest?Перенаправление:Входящий}:Исходящий} %{ipv6?%{ipv4?<var>IPv4</"
+"var> и <var>IPv6</var>:<var>IPv6</var>}:<var>IPv4</var>}%{proto?, протокол "
+"%{proto#%{next?, }%{item.types?<var class=\"cbi-tooltip-container\">%{item."
+"name}<span class=\"cbi-tooltip\">ICMP с типами %{item.types#%{next?, }<var>"
+"%{item}</var>}</span></var>:<var>%{item.name}</var>}}}%{mark?, метка <var"
+"%{mark.inv? data-tooltip=\"Соответствие fwmarks кроме %{mark.num}%{mark."
+"mask? с маской %{mark.mask}}.\":%{mark.mask? data-tooltip=\"Применение маски "
+"%{mark.mask} к значению fwmark перед сравнением.\"}}>%{mark.val}</"
+"var>}%{dscp?, DSCP %{dscp.inv?<var data-tooltip=\"Соответствие DSCP "
+"классификатора кроме {dscp.num?:%{dscp.name}}\">%{dscp.val}</var>:<var>"
+"%{dscp.val}</var>}}%{helper?, помощник %{helper.inv?<var data-tooltip="
+"\"Соответствие любому помощнику кроме &quot;%{helper.name}&quot;\">%{helper."
+"val}</var>:<var data-tooltip=\"%{helper.name}\">%{helper.val}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:431
+msgid "-- add IP --"
+msgstr "-- добавить IP-адрес --"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:479
+msgid "-- add MAC --"
+msgstr "-- добавить MAC-адрес --"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:117
+msgid ""
+"<var data-tooltip=\"ACCEPT\">Accept</var> %{src?%{dest?forward:input}:output}"
+msgstr ""
+"<var data-tooltip=\"ACCEPT\">Разрешить</var> %{src?%{dest?перенаправляемый:"
+"входящий}:исходящий} трафик"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:86
+msgid "<var data-tooltip=\"ACCEPT\">Prevent source rewrite</var>"
+msgstr "<var data-tooltip=\"ACCEPT\">Предотвращать перезапись источника</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:80
+msgid ""
+"<var data-tooltip=\"DNAT\">Forward</var> to %{dest}%{dest_ip? IP <var>"
+"%{dest_ip}</var>}%{dest_port? port <var>%{dest_port}</var>}"
+msgstr ""
+"<var data-tooltip=\"DNAT\">Перенаправлять</var> на %{dest}%{dest_ip? IP-"
+"адрес <var>%{dest_ip}</var>}%{dest_port? порт <var>%{dest_port}</var>}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:114
+msgid ""
+"<var data-tooltip=\"DROP\">Drop</var> %{src?%{dest?forward:input}:output}"
+msgstr ""
+"<var data-tooltip=\"DROP\">Отбрасывать</var> %{src?%{dest?перенаправляемый:"
+"входящий}:исходящий} трафик"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:132
+msgid ""
+"<var data-tooltip=\"DSCP\">Assign DSCP</var> classification <var>%{set_dscp}"
+"</var>"
+msgstr ""
+"<var data-tooltip=\"DSCP\">Назначить DSCP</var> классификатор <var>"
+"%{set_dscp}</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:126
+msgid ""
+"<var data-tooltip=\"HELPER\">Assign conntrack</var> helper <var"
+"%{helper_name? data-tooltip=\"%{helper_name}\"}>%{set_helper}</var>"
+msgstr ""
+"<var data-tooltip=\"HELPER\">Назначить помощника</var> отслеживания "
+"соединений <var%{helper_name? data-tooltip=\"%{helper_name}\"}>%{set_helper}"
+"</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:129
+msgid ""
+"<var data-tooltip=\"MARK\">%{set_mark?Assign:XOR}</var> firewall mark <var>"
+"%{set_mark?:%{set_xmark}}</var>"
+msgstr ""
+"<var data-tooltip=\"MARK\">%{set_mark?Назначить метку:XOR метки}</var> "
+"брандмауэра <var>%{set_mark?:%{set_xmark}}</var>"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:83
+msgid "<var data-tooltip=\"MASQUERADE\">Automatically rewrite</var> source IP"
+msgstr ""
+"<var data-tooltip=\"MASQUERADE\">Автоматически перезаписывать</var> IP-адрес "
+"источника"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:123
+msgid ""
+"<var data-tooltip=\"NOTRACK\">Do not track</var> %{src?%{dest?forward:input}:"
+"output}"
+msgstr ""
+"<var data-tooltip=\"NOTRACK\">Не отслеживать</var> %{src?%{dest?"
+"перенаправляемый:входящий}:исходящий} трафик"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:120
+msgid ""
+"<var data-tooltip=\"REJECT\">Reject</var> %{src?%{dest?forward:input}:output}"
+msgstr ""
+"<var data-tooltip=\"REJECT\">Отклонять</var> %{src?%{dest?перенаправляемый:"
+"входящий}:исходящий} трафик"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:80
+msgid ""
+"<var data-tooltip=\"SNAT\">Statically rewrite</var> to source %{snat_ip?IP "
+"<var>%{snat_ip}</var>} %{snat_port?port <var>%{snat_port}</var>}"
+msgstr ""
+"<var data-tooltip=\"SNAT\">Статически переписывать</var> %{snat_ip?IP-адрес "
+"источника на <var>%{snat_ip}</var>} %{snat_port?порт источника на <var>"
+"%{snat_port}</var>}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:224
+msgid "A rewrite IP must be specified!"
+msgstr "IP-адрес для перезаписи должен быть указан!"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:212
+msgid "ACCEPT - Disable address rewriting"
+msgstr "ACCEPT — отключить перезапись адреса"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:172
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:228
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:363
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:157
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:207
+msgid "Action"
+msgstr "Действие"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:257
+msgid ""
+"Additional raw <em>iptables</em> arguments to classify zone destination "
+"traffic, e.g. <code>-p tcp --dport 443</code> to only match outbound HTTPS "
+"traffic."
+msgstr ""
+"Дополнительные аргументы <em>iptables</em> для классификации трафика зоны "
+"назначения, например <code>-p tcp --dport 443</code> для соответствия только "
+"исходящему HTTPS трафику."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:247
+msgid ""
+"Additional raw <em>iptables</em> arguments to classify zone source traffic, "
+"e.g. <code>-p tcp --sport 443</code> to only match inbound HTTPS traffic."
+msgstr ""
+"Дополнительные аргументы <em>iptables</em> для классификации трафика зоны "
+"источника, например <code>-p tcp --sport 443</code> для соответствия только "
+"входящему HTTPS трафику."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:137
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:181
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:135
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:86
+msgid "Advanced Settings"
+msgstr "Дополнительные настройки"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:219
+msgid "Allow \"invalid\" traffic"
+msgstr "Разрешить «недействительный» трафик"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:319
+msgid "Allow forward from <em>source zones</em>:"
+msgstr "Разрешить перенаправление из <em>'зон источников'</em>:"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:278
+msgid "Allow forward to <em>destination zones</em>:"
+msgstr "Разрешить перенаправление в <em>'зоны назначения'</em>:"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:506
+msgid "Any"
+msgstr "Любой"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:429
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:445
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:257
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:273
+msgid "Any day"
+msgstr "Любой день"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:314
+msgid ""
+"Apply a bitwise XOR of the given value and the existing mark value on "
+"established connections. Format is value[/mask]. If a mask is specified then "
+"those bits set in the mask are zeroed out."
+msgstr ""
+"Применить побитовую операцию XOR заданного значения и существующего значения "
+"метки для уже установленных соединений. Формат — значение[/маска]. Если "
+"задана маска, то биты, заданные в маске, обнуляются."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:261
+msgid "Apply the given DSCP class or value to established connections."
+msgstr ""
+"Применить заданный класс DSCP или значение к установленным соединениям."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:391
+msgid "Assign the specified connection tracking helper to matched traffic."
+msgstr ""
+"Назначить указанного помощника отслеживания соединений для соответствующего "
+"трафика."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:222
+msgid "Automatic helper assignment"
+msgstr "Автоматическое назначение помощников"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:222
+msgid ""
+"Automatically assign conntrack helpers based on traffic protocol and port"
+msgstr ""
+"Автоматическое назначение помощников отслеживания соединений (conntrack) на "
+"основе протокола и порта трафика"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:87
+msgid "Conntrack Settings"
+msgstr "Отслеживание соединений (conntrack)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:226
+msgid "Conntrack helpers"
+msgstr "Помощники отслеживания соединений"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/custom.js:15
+msgid "Contents have been saved."
+msgstr "Содержимое сохранено."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:650
+msgid "Continue"
+msgstr "Продолжить"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:189
+msgid "Covered devices"
+msgstr "Охватываемые устройства"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:145
+msgid "Covered networks"
+msgstr "Охватываемые сети"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:194
+msgid "Covered subnets"
+msgstr "Охватываемые подсети"
+
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:21
+msgid "Custom Rules"
+msgstr "Пользовательские правила"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/custom.js:25
+msgid ""
+"Custom rules allow you to execute arbitrary iptables commands which are not "
+"otherwise covered by the firewall framework. The commands are executed after "
+"each firewall restart, right after the default ruleset has been loaded."
+msgstr ""
+"Пользовательские правила позволяют выполнять произвольные команды iptables, "
+"которые не охвачены рамками межсетевого экрана. Команды выполняются после "
+"каждой перезагрузки межсетевого экрана, сразу после загрузки набора правил "
+"по умолчанию."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:373
+msgid "DSCP classification"
+msgstr "DSCP классификация"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:260
+msgid "DSCP mark"
+msgstr "DSCP метка"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:294
+msgid "DSCP mark required"
+msgstr "Требуется DSCP метка"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:354
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:193
+msgid "Destination address"
+msgstr "Адрес назначения"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:356
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:198
+msgid "Destination port"
+msgstr "Порт назначения"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:348
+msgid "Destination zone"
+msgstr "Зона назначения"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:260
+msgid "Device name"
+msgstr "Имя устройства"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:219
+msgid ""
+"Do not install extra rules to reject forwarded traffic with conntrack state "
+"<em>invalid</em>. This may be required for complex asymmetric route setups."
+msgstr ""
+"Не устанавливать дополнительные правила для отклонения перенаправляемого "
+"трафика с состоянием <em>недействительный</em> (<em>invalid</em>). Это может "
+"потребоваться для сложных настроек асимметричной маршрутизации."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:44
+msgid "Drop invalid packets"
+msgstr "Отбрасывать некорректные пакеты"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:180
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:234
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:163
+msgid "Enable"
+msgstr "Включить"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:247
+msgid "Enable NAT Loopback"
+msgstr "Включить NAT Loopback"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:43
+msgid "Enable SYN-flood protection"
+msgstr "Включить защиту от SYN-flood атак"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:232
+msgid "Enable logging on this zone"
+msgstr "Включить журналирование в этой зоне"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:336
+msgid "Expecting: %s"
+msgstr "Ожидается: %s"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:62
+msgid "Experimental feature. Not fully compatible with QoS/SQM."
+msgstr "Экспериментальный функционал. Не полностью совместим с QoS/SQM."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:226
+msgid "Explicitly choses allowed connection tracking helpers for zone traffic"
+msgstr ""
+"Явно определяет допустимые варианты помощников (helpers) отслеживания "
+"соединений (connection tracking) трафика в зоне"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:214
+msgid "External IP address"
+msgstr "Внешний IP-адрес"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:219
+msgid "External port"
+msgstr "Внешний порт"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:283
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:421
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:248
+msgid "Extra arguments"
+msgstr "Дополнительные аргументы"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:257
+msgid "Extra destination arguments"
+msgstr "Дополнительные аргументы для назначения"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:88
+msgid "Extra iptables arguments"
+msgstr "Дополнительные аргументы iptables"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:247
+msgid "Extra source arguments"
+msgstr "Дополнительные аргументы для источника"
+
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:6
+msgid "Firewall"
+msgstr "Межсетевой экран"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/custom.js:24
+msgid "Firewall - Custom Rules"
+msgstr "Межсетевой экран - Пользовательские правила"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:126
+msgid "Firewall - NAT Rules"
+msgstr "Межсетевой экран - Правила NAT"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:128
+msgid "Firewall - Port Forwards"
+msgstr "Межсетевой экран - Перенаправление портов"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:172
+msgid "Firewall - Traffic Rules"
+msgstr "Межсетевой экран - Правила для трафика"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:36
+msgid "Firewall - Zone Settings"
+msgstr "Межсетевой экран - Настройка зон"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:643
+msgid "Firewall configuration migration"
+msgstr "Миграция конфигурации межсетевого экрана"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:49
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:125
+msgid "Forward"
+msgstr "Перенаправление"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:29
+msgid ""
+"Forwarded IPv4%{proto?, protocol %{proto#%{next?, }<var>%{item.name}</"
+"var>}}%{mark?, mark <var%{mark.inv? data-tooltip=\"Match fwmarks except "
+"%{mark.num}%{mark.mask? with mask %{mark.mask}}.\":%{mark.mask? data-tooltip="
+"\"Mask fwmark value with %{mark.mask} before compare.\"}}>%{mark.val}</var>}"
+msgstr ""
+"Перенаправление IPv4%{proto?, протокол %{proto#%{next?, }<var>%{item.name}</"
+"var>}}%{mark?, метка <var%{mark.inv? data-tooltip=\"Соответствие fwmarks "
+"кроме %{mark.num}%{mark.mask? с маской %{mark.mask}}.\":%{mark.mask? data-"
+"tooltip=\"Применение маски %{mark.mask} к значению fwmark перед сравнением."
+"\"}}>%{mark.val}</var>}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:435
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:263
+msgid "Friday"
+msgstr "Пятница"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:38
+msgid ""
+"From %{src}%{src_device?, interface <var>%{src_device}</var>}%{src_ip?, IP "
+"%{src_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match IP addresses except "
+"%{item.val}.\"}>%{item.ival}</var>}}%{src_port?, port %{src_port#%{next?, }"
+"<var%{item.inv? data-tooltip=\"Match ports except %{item.val}.\"}>%{item."
+"ival}</var>}}"
+msgstr ""
+"Из %{src}%{src_device?, интерфейс <var>%{src_device}</var>}%{src_ip?, IP-"
+"адрес %{src_ip#%{next?, }<var%{item.inv? data-tooltip=\"Соответствие IP-"
+"адресам кроме %{item.val}.\"}>%{item.ival}</var>}}%{src_port?, порт "
+"%{src_port#%{next?, }<var%{item.inv? data-tooltip=\"Соответствие портам "
+"кроме %{item.val}.\"}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:63
+msgid ""
+"From %{src}%{src_device?, interface <var>%{src_device}</var>}%{src_ip?, IP "
+"%{src_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match IP addresses except "
+"%{item.val}.\"}>%{item.ival}</var>}}%{src_port?, port %{src_port#%{next?, }"
+"<var%{item.inv? data-tooltip=\"Match ports except %{item.val}.\"}>%{item."
+"ival}</var>}}%{src_mac?, MAC %{src_mac#%{next?, }<var%{item.inv? data-"
+"tooltip=\"Match MACs except %{item.val}%{item.hint.name? a.k.a. %{item.hint."
+"name}}.\":%{item.hint.name? data-tooltip=\"%{item.hint.name}\"}}>%{item.ival}"
+"</var>}}"
+msgstr ""
+"Из %{src}%{src_device?, интерфейс <var>%{src_device}</var>}%{src_ip?, IP-"
+"адрес %{src_ip#%{next?, }<var%{item.inv? data-tooltip=\"Соответствие IP-"
+"адресам кроме %{item.val}.\"}>%{item.ival}</var>}}%{src_port?, порт "
+"%{src_port#%{next?, }<var%{item.inv? data-tooltip=\"Соответствие портам "
+"кроме %{item.val}.\"}>%{item.ival}</var>}}%{src_mac?, MAC-адрес %{src_mac#"
+"%{next?, }<var%{item.inv? data-tooltip=\"Соответствие MAC-адресов кроме "
+"%{item.val}%{item.hint.name? (%{item.hint.name})}.\":%{item.hint.name? data-"
+"tooltip=\"%{item.hint.name}\"}}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:47
+msgid ""
+"From %{src}%{src_ip?, IP %{src_ip#%{next?, }<var%{item.inv? data-tooltip="
+"\"Match IP addresses except %{item.val}.\"}>%{item.ival}</var>}}%{src_port?, "
+"port %{src_port#%{next?, }<var%{item.inv? data-tooltip=\"Match ports except "
+"%{item.val}.\"}>%{item.ival}</var>}}%{src_mac?, MAC %{src_mac#%{next?, }<var"
+"%{item.inv? data-tooltip=\"Match MACs except %{item.val}%{item.hint.name? a."
+"k.a. %{item.hint.name}}.\":%{item.hint.name? data-tooltip=\"%{item.hint."
+"name}\"}}>%{item.ival}</var>}}"
+msgstr ""
+"Из %{src}%{src_ip?, IP-адрес %{src_ip#%{next?, }<var%{item.inv? data-tooltip="
+"\"Соответствие IP-адресам кроме %{item.val}.\"}>%{item.ival}</"
+"var>}}%{src_port?, порт %{src_port#%{next?, }<var%{item.inv? data-tooltip="
+"\"Соответствие портам кроме %{item.val}.\"}>%{item.ival}</var>}}%{src_mac?, "
+"MAC-адрес %{src_mac#%{next?, }<var%{item.inv? data-tooltip=\"Соответствие "
+"MAC-адресов кроме %{item.val}%{item.hint.name? (%{item.hint.name})}.\":"
+"%{item.hint.name? data-tooltip=\"%{item.hint.name}\"}}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:136
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:180
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:134
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:39
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:85
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:9
+msgid "General Settings"
+msgstr "Основные настройки"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:73
+msgid "Hardware flow offloading"
+msgstr "Аппаратный flow offloading"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:271
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:200
+msgid "IPv4 and IPv6"
+msgstr "IPv4 и IPv6"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:272
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:201
+msgid "IPv4 only"
+msgstr "Только IPv4"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:273
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:202
+msgid "IPv6 only"
+msgstr "Только IPv6"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:243
+msgid "Inbound device"
+msgstr "Входящее устройство"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:37
+msgid ""
+"Incoming IPv4%{proto?, protocol %{proto#%{next?, }%{item.types?<var class="
+"\"cbi-tooltip-container\">%{item.name}<span class=\"cbi-tooltip\">ICMP with "
+"types %{item.types#%{next?, }<var>%{item}</var>}</span></var>:<var>%{item."
+"name}</var>}}}%{mark?, mark <var%{mark.inv? data-tooltip=\"Match fwmarks "
+"except %{mark.num}%{mark.mask? with mask %{mark.mask}}.\":%{mark.mask? data-"
+"tooltip=\"Mask fwmark value with %{mark.mask} before compare.\"}}>%{mark.val}"
+"</var>}%{helper?, helper %{helper.inv?<var data-tooltip=\"Match any helper "
+"except &quot;%{helper.name}&quot;\">%{helper.val}</var>:<var data-tooltip="
+"\"%{helper.name}\">%{helper.val}</var>}}"
+msgstr ""
+"Входящий IPv4%{proto?, протокол %{proto#%{next?, }%{item.types?<var class="
+"\"cbi-tooltip-container\">%{item.name}<span class=\"cbi-tooltip\">ICMP с "
+"типами %{item.types#%{next?, }<var>%{item}</var>}</span></var>:<var>%{item."
+"name}</var>}}}%{mark?, метка <var%{mark.inv? data-tooltip=\"Соответствие "
+"значения fwmarks кроме %{mark.num}%{mark.mask? с маской %{mark.mask}}.\":"
+"%{mark.mask? data-tooltip=\"Применение маски %{mark.mask} к значению fwmark "
+"перед сравнением.\"}}>%{mark.val}</var>}%{helper?, помощник %{helper.inv?"
+"<var data-tooltip=\"Соответствие любому помощнику кроме &quot;%{helper.name}"
+"&quot;\">%{helper.val}</var>:<var data-tooltip=\"%{helper.name}\">%{helper."
+"val}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:47
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:123
+msgid "Input"
+msgstr "Входящий трафик"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:233
+msgid "Internal IP address"
+msgstr "Внутренний IP-адрес"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:238
+msgid "Internal port"
+msgstr "Внутренний порт"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:227
+msgid "Internal zone"
+msgstr "Внутренняя зона"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:302
+msgid "Invalid DSCP mark"
+msgstr "Неверная DSCP метка"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:370
+msgid "Invalid limit value"
+msgstr "Неверное значение ограничения"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:380
+msgid "Limit burst"
+msgstr "Ограничение барста (burst)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:235
+msgid "Limit log messages"
+msgstr "Ограничить журнал сообщений"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:346
+msgid "Limit matching"
+msgstr "Соответствие по ограничениям"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:74
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:95
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:67
+msgid ""
+"Limit matching to <var>%{limit.num}</var> packets per <var>%{limit.unit}</"
+"var>%{limit.burst? burst <var>%{limit.burst}</var>}"
+msgstr ""
+"Ограничение до <var>%{limit.num}</var> пакетов в <var>%{limit.unit}</var>"
+"%{limit.burst? барст (burst) <var>%{limit.burst}</var>}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:347
+msgid "Limits traffic matching to the specified rate."
+msgstr "Ограничивает сопоставление трафика указанной скорости."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:252
+msgid "Loopback source IP"
+msgstr "IP-адрес источника петли (Loopback)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:211
+msgid "MASQUERADE - Automatically rewrite to outbound interface IP"
+msgstr ""
+"MASQUERADE — автоматически переписывать на IP-адрес исходящего интерфейса"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:142
+msgid "MSS clamping"
+msgstr "Ограничение MSS"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:139
+msgid "Masquerading"
+msgstr "Маскарадинг"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:161
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:217
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:146
+msgid "Match"
+msgstr "Соответствие"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:260
+msgid "Match DSCP"
+msgstr "Соответствие DSCP"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:284
+msgid "Match ICMP type"
+msgstr "Соответствие ICMP типу"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:240
+msgid "Match device"
+msgstr "Соответствие устройству"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:194
+msgid "Match forwarded traffic directed at the given IP address."
+msgstr ""
+"Соответствие перенаправляемого трафика, направленного на заданный IP-адрес."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:199
+msgid ""
+"Match forwarded traffic directed at the given destination port or port range."
+msgstr ""
+"Соответствие перенаправляемого трафика, направленного на заданный порт "
+"назначения или диапазон портов."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:180
+msgid "Match forwarded traffic from this IP or range."
+msgstr ""
+"Соответствие перенаправляемого трафика от данного IP-адреса или диапазона."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:185
+msgid ""
+"Match forwarded traffic originating from the given source port or port range."
+msgstr ""
+"Соответствие перенаправляемого трафика, исходящего от заданного порта "
+"источника или диапазона портов."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:261
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:398
+msgid "Match helper"
+msgstr "Соответствие помощнику"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:220
+msgid ""
+"Match incoming traffic directed at the given destination port or port range "
+"on this host"
+msgstr ""
+"Порт или диапазон портов, входящие подключения на который будут "
+"перенаправляться на внутренний порт внутреннего IP-адреса (см. ниже)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:313
+msgid "Match mark"
+msgstr "Соответствие метки"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:261
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:398
+msgid "Match traffic using the specified connection tracking helper."
+msgstr ""
+"Сопоставление трафика с помощью указанного помощника отслеживания соединений."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:316
+msgid "Matches a specific firewall mark or a range of different marks."
+msgstr ""
+"Соответствие определённой метке брандмауэра или диапазона различных меток."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:239
+msgid "Matches forwarded traffic using the specified outbound network device."
+msgstr ""
+"Соответствие перенаправляемого трафика, использующего указанное исходящее "
+"сетевое устройство."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:261
+msgid "Matches traffic carrying the specified DSCP marking."
+msgstr "Сопоставляет трафик с указанной DSCP-маркировкой."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:381
+msgid ""
+"Maximum initial number of packets to match: this number gets recharged by "
+"one every time the limit specified above is not reached, up to this number."
+msgstr ""
+"Максимальное начальное количество совпадающих пакетов: это число будет "
+"пополняться на один каждый раз, когда лимит, указанный выше, не будет "
+"достигнут, вплоть до этого числа."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:431
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:259
+msgid "Monday"
+msgstr "Понедельник"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:441
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:269
+msgid "Month Days"
+msgstr "Дни месяца"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:129
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:18
+msgid "NAT Rules"
+msgstr "Правила NAT"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:127
+msgid ""
+"NAT rules allow fine grained control over the source IP to use for outbound "
+"or forwarded traffic."
+msgstr ""
+"Правила NAT позволяют точно контролировать IP-адрес источника в исходящем "
+"или перенаправляемом трафике."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:157
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:213
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:142
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:101
+msgid "Name"
+msgstr "Имя"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:215
+msgid "Only match incoming traffic directed at the given IP address."
+msgstr ""
+"Применять правило только для входящих подключений на указанный IP-адрес."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:196
+msgid "Only match incoming traffic from these MACs."
+msgstr "Применять правило только для входящего трафика от этих MAC-адресов."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:201
+msgid "Only match incoming traffic from this IP or range."
+msgstr ""
+"Применять правило только для входящего трафика от этого IP-адреса или "
+"диапазона адресов."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:206
+msgid ""
+"Only match incoming traffic originating from the given source port or port "
+"range on the client host"
+msgstr ""
+"Применять правило только для входящего трафика от указанного порта или "
+"диапазона портов клиентского хоста"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:244
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:238
+msgid "Outbound device"
+msgstr "Исходящее устройство"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:172
+msgid "Outbound zone"
+msgstr "Исходящая зона"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:48
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:124
+msgid "Output"
+msgstr "Исходящий трафик"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:284
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:422
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:249
+msgid "Passes additional arguments to iptables. Use with care!"
+msgstr ""
+"Передаёт дополнительные аргументы таблице iptables. Используйте с "
+"осторожностью!"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:244
+msgid ""
+"Passing raw iptables arguments to source and destination traffic "
+"classification rules allows to match packets based on other criteria than "
+"interfaces or subnets. These options should be used with extreme care as "
+"invalid values could render the firewall ruleset broken, completely exposing "
+"all services."
+msgstr ""
+"Передача аргументов iptables в правилах классификации входящего и исходящего "
+"трафика позволяет сопоставлять пакеты, основанные на других критериях, "
+"нежели чем интерфейсы или подсети. Эти опции следует использовать с особой "
+"осторожностью, так как неверные значения могут привести к нарушению работы "
+"правил межсетевого экрана, полностью открывая доступ ко всем службам системы."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:131
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:12
+msgid "Port Forwards"
+msgstr "Перенаправление портов"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:129
+msgid ""
+"Port forwarding allows remote computers on the Internet to connect to a "
+"specific computer or service within the private LAN."
+msgstr ""
+"Перенаправленные портов позволяет удалённым компьютерам из Интернета "
+"соединяться с компьютером или службой внутри частной локальной сети."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:185
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:280
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:168
+msgid "Protocol"
+msgstr "Протокол"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:239
+msgid ""
+"Redirect matched incoming traffic to the given port on the internal host"
+msgstr ""
+"Перенаправлять трафик на указанный порт или диапазон портов внутреннего IP-"
+"адреса"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:234
+msgid "Redirect matched incoming traffic to the specified internal host"
+msgstr "Перенаправлять трафик на указанный IP-адрес"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:74
+msgid "Requires hardware NAT support. Implemented at least for mt7621"
+msgstr ""
+"Требуется аппаратная поддержка NAT. Реализовано, по крайней мере, для mt7621"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:212
+msgid "Restrict Masquerading to given destination subnets"
+msgstr "Использовать маскарадинг только для указанных подсетей-получателей"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:205
+msgid "Restrict Masquerading to given source subnets"
+msgstr "Использовать маскарадинг только для указанных подсетей-отправителей"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:268
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:199
+msgid "Restrict to address family"
+msgstr "Использовать протокол"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:214
+msgid "Rewrite IP address"
+msgstr "IP-адрес для перезаписи"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:215
+msgid "Rewrite matched traffic to the specified source IP address."
+msgstr "Перезаписать соответствующий трафик на указанный IP-адрес источника."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:230
+msgid "Rewrite matched traffic to the specified source port or port range."
+msgstr ""
+"Перезаписать соответствующий трафик на указанный порт источника или диапазон "
+"портов."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:229
+msgid "Rewrite port"
+msgstr "Порт для перезаписи"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:61
+msgid "Routing/NAT Offloading"
+msgstr "Маршрутизация/NAT offloading"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:210
+msgid "SNAT - Rewrite to specific source IP or port"
+msgstr "SNAT — перезаписать на указанный IP-адрес источника или порт"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:436
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:264
+msgid "Saturday"
+msgstr "Суббота"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:313
+msgid "Set mark"
+msgstr "Установить метку"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:315
+msgid ""
+"Set the given mark value on established connections. Format is value[/mask]. "
+"If a mask is specified then only those bits set in the mask are modified."
+msgstr ""
+"Значение метки для уже установленных соединений. Формат — значение[/маска]. "
+"Если указана маска, то изменяются только те биты, которые установлены в "
+"маске."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:69
+msgid "Software based offloading for routing/NAT"
+msgstr "Программная реализация offloading для маршрутизации/NAT"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:68
+msgid "Software flow offloading"
+msgstr "Программный flow offloading"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:200
+msgid "Source IP address"
+msgstr "IP-адрес источника"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:195
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:338
+msgid "Source MAC address"
+msgstr "MAC-адрес источника"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:339
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:179
+msgid "Source address"
+msgstr "Адрес источника"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:205
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:341
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:184
+msgid "Source port"
+msgstr "Порт источника"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:189
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:332
+msgid "Source zone"
+msgstr "Зона источника"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:261
+msgid ""
+"Specifies whether to tie this traffic rule to a specific inbound or outbound "
+"network device."
+msgstr ""
+"Определяет, привязывать ли это правило трафика к конкретному входящему или "
+"исходящему сетевому устройству."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:252
+msgid ""
+"Specifies whether to use the external or the internal IP address for "
+"reflected traffic."
+msgstr ""
+"Определяет, использовать внешний или внутренний IP-адрес для отраженного "
+"трафика."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:460
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:288
+msgid "Start Date (yyyy-mm-dd)"
+msgstr "Дата начала (год-мес-день)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:452
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:280
+msgid "Start Time (hh.mm.ss)"
+msgstr "Время начала (чч.мм.сс)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:464
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:292
+msgid "Stop Date (yyyy-mm-dd)"
+msgstr "Дата окончания (год-мес-день)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:456
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:284
+msgid "Stop Time (hh.mm.ss)"
+msgstr "Время окончания (чч.мм.сс)"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:430
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:258
+msgid "Sunday"
+msgstr "Воскресенье"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:644
+msgid ""
+"The existing firewall configuration needs to be changed for LuCI to function "
+"properly."
+msgstr ""
+"Для правильной работы LuCI необходимо изменить существующую конфигурацию "
+"межсетевого экрана."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:37
+msgid ""
+"The firewall creates zones over your network interfaces to control network "
+"traffic flow."
+msgstr "Межсетевой экран создает зоны в вашей сети для контроля трафика."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:185
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:274
+msgid ""
+"The options below control the forwarding policies between this zone (%s) and "
+"other zones. <em>Destination zones</em> cover forwarded traffic "
+"<strong>originating from %q</strong>. <em>Source zones</em> match forwarded "
+"traffic from other zones <strong>targeted at %q</strong>. The forwarding "
+"rule is <em>unidirectional</em>, e.g. a forward from lan to wan does "
+"<em>not</em> imply a permission to forward from wan to lan as well."
+msgstr ""
+"Данные настройки управляют политиками перенаправления трафика между этой "
+"(%s) и другими зонами. Трафиком <em>'зон-назначения'</em> является "
+"перенаправленный трафик <strong>'исходящий из %q'</strong>. Трафиком "
+"<em>'зон-источников'</em> является трафик <strong>'направленый в %q'</"
+"strong>. Перенаправление является <em>'однонаправленным'</em>, то есть "
+"перенаправление из lan в wan <em>'не'</em> допускает перенаправление трафика "
+"из wan в lan."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:97
+msgid ""
+"This section defines common properties of %q. The <em>input</em> and "
+"<em>output</em> options set the default policies for traffic entering and "
+"leaving this zone while the <em>forward</em> option describes the policy for "
+"forwarded traffic between different networks within the zone. <em>Covered "
+"networks</em> specifies which available networks are members of this zone."
+msgstr ""
+"Страница содержит общие свойства %q. Режимы <em>'Входящий трафик'</em> и "
+"<em>'Исходящий трафик'</em> устанавливают политики по умолчанию для трафика, "
+"поступающего и покидающего эту зону, в то время как режим "
+"<em>'Перенаправление'</em> описывает политику перенаправления трафика между "
+"различными сетями внутри зоны. <em>'Использовать сети'</em> указывает, какие "
+"доступные сети являются членами этой зоны."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:434
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:262
+msgid "Thursday"
+msgstr "Четверг"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:182
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:136
+msgid "Time Restrictions"
+msgstr "Временные ограничения"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:468
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:296
+msgid "Time in UTC"
+msgstr "Время UTC"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:76
+msgid ""
+"To %{dest}%{dest_device?, interface <var>%{dest_device}</var>}%{dest_ip?, IP "
+"%{dest_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match IP addresses except "
+"%{item.val}.\"}>%{item.ival}</var>}}%{dest_port?, port %{dest_port#%{next?, }"
+"<var%{item.inv? data-tooltip=\"Match ports except %{item.val}.\"}>%{item."
+"ival}</var>}}"
+msgstr ""
+"В %{dest}%{dest_device?, интерфейс <var>%{dest_device}</var>}%{dest_ip?, IP-"
+"адрес %{dest_ip#%{next?, }<var%{item.inv? data-tooltip=\"Соответствие IP-"
+"адресам кроме %{item.val}.\"}>%{item.ival}</var>}}%{dest_port?, порт "
+"%{dest_port#%{next?, }<var%{item.inv? data-tooltip=\"Соответствие портам "
+"кроме %{item.val}.\"}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:48
+msgid ""
+"To %{dest}%{dest_device?, via interface <var>%{dest_device}</"
+"var>}%{dest_ip?, IP %{dest_ip#%{next?, }<var%{item.inv? data-tooltip=\"Match "
+"IP addresses except %{item.val}.\"}>%{item.ival}</var>}}%{dest_port?, port "
+"%{dest_port#%{next?, }<var%{item.inv? data-tooltip=\"Match ports except "
+"%{item.val}.\"}>%{item.ival}</var>}}"
+msgstr ""
+"В %{dest}%{dest_device?, через интерфейс <var>%{dest_device}</"
+"var>}%{dest_ip?, IP-адрес %{dest_ip#%{next?, }<var%{item.inv? data-tooltip="
+"\"Соответствие IP-адресам кроме %{item.val}.\"}>%{item.ival}</"
+"var>}}%{dest_port?, порт %{dest_port#%{next?, }<var%{item.inv? data-tooltip="
+"\"Соответствие портам кроме %{item.val}.\"}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:56
+msgid ""
+"To %{dest}%{dest_ip?, IP %{dest_ip#%{next?, }<var%{item.inv? data-tooltip="
+"\"Match IP addresses except %{item.val}.\"}>%{item.ival}</"
+"var>}}%{dest_port?, port %{dest_port#%{next?, }<var%{item.inv? data-tooltip="
+"\"Match ports except %{item.val}.\"}>%{item.ival}</var>}}"
+msgstr ""
+"В %{dest}%{dest_ip?, IP-адрес %{dest_ip#%{next?, }<var%{item.inv? data-"
+"tooltip=\"Соответствие IP-адресам кроме %{item.val}.\"}>%{item.ival}</"
+"var>}}%{dest_port?, порт %{dest_port#%{next?, }<var%{item.inv? data-tooltip="
+"\"Соответствие портам кроме %{item.val}.\"}>%{item.ival}</var>}}"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:391
+msgid "Tracking helper"
+msgstr "Помощник отслеживания"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:175
+#: applications/luci-app-firewall/luasrc/controller/firewall.lua:15
+msgid "Traffic Rules"
+msgstr "Правила для трафика"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:173
+msgid ""
+"Traffic rules define policies for packets traveling between different zones, "
+"for example to reject traffic between certain hosts or to open WAN ports on "
+"the router."
+msgstr ""
+"Правила для трафика определяют политику прохождения пакетов между разными "
+"зонами, например, запрет трафика между некоторыми хостами или открытие WAN-"
+"портов маршрутизатора."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:432
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:260
+msgid "Tuesday"
+msgstr "Вторник"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/custom.js:18
+msgid "Unable to save contents: %s"
+msgstr "Невозможно сохранить содержимое: %s"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:276
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:413
+msgid "Unknown or not installed conntrack helper \"%s\""
+msgstr "Неизвестный или не установленный помощник «‎%s»"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:139
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:143
+msgid "Unnamed NAT"
+msgstr "NAT без имени"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:144
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:158
+msgid "Unnamed forward"
+msgstr "Перенаправление без имени"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:189
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:214
+msgid "Unnamed rule"
+msgstr "Правило без имени"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:102
+msgid "Unnamed zone"
+msgstr "Зона без имени"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:548
+msgid "Unrecognized protocol"
+msgstr "Нераспознанный протокол"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:645
+msgid ""
+"Upon pressing \"Continue\", \"redirect\" sections with target \"SNAT\" will "
+"be converted to \"nat\" sections and the firewall will be restarted to apply "
+"the updated configuration."
+msgstr ""
+"После нажатия кнопки «Продолжить», разделы правил перенаправления «redirect» "
+"типа «SNAT» будут сконвертированы в разделы «nat» и межсетевой экран будет "
+"перезапущен для применения и обновления конфигурации."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:256
+msgid "Use external IP address"
+msgstr "Использовать внешний IP-адрес"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:255
+msgid "Use internal IP address"
+msgstr "Использовать внутренний IP-адрес"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:189
+msgid ""
+"Use this option to classify zone traffic by raw, non-<em>uci</em> managed "
+"network devices."
+msgstr ""
+"Используйте эту опцию для классификации трафика зоны по сетевым устройствам, "
+"управляемым не через <em>uci</em>."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:194
+msgid ""
+"Use this option to classify zone traffic by source or destination subnet "
+"instead of networks or devices."
+msgstr ""
+"Используйте эту опцию для классификации трафика зоны по источнику или "
+"подсети назначения вместо сети или устройств."
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:328
+msgid "Valid firewall mark required"
+msgstr "Требуется верная метка брандмауэра"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:433
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:261
+msgid "Wednesday"
+msgstr "Среда"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:425
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:253
+msgid "Week Days"
+msgstr "Дни недели"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:372
+msgid "XOR firewall mark"
+msgstr "XOR метка брандмауэра"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:313
+msgid "XOR mark"
+msgstr "XOR метка"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:115
+msgid "Zone ⇒ Forwardings"
+msgstr "Зона ⇒ Перенаправления"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:80
+msgid "Zones"
+msgstr "Зоны"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:367
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:55
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:131
+msgid "accept"
+msgstr "принимать"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:265
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:431
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:453
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:210
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:242
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:263
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:289
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:344
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:359
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:393
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:400
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:189
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:202
+msgid "any"
+msgstr "любой"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:48
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:81
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:64
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:77
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:39
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:49
+msgid "any zone"
+msgstr "любая зона"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:371
+msgid "apply firewall mark"
+msgstr "применить метку брандмауэра"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:370
+msgid "assign conntrack helper"
+msgstr "назначить помощника отслеживания соединений"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:67
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:88
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:60
+msgid "day"
+msgstr "день"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:233
+msgid "do not rewrite"
+msgstr "не перезаписывать"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:369
+msgid "don't track"
+msgstr "не отслеживать"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:366
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:54
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:130
+msgid "drop"
+msgstr "не обрабатывать"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:67
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:88
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:60
+msgid "hour"
+msgstr "час"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:67
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:88
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:60
+msgid "minute"
+msgstr "минута"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:368
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:53
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:129
+msgid "reject"
+msgstr "отвергать"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:67
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:88
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:60
+msgid "second"
+msgstr "секунда"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:48
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:57
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:81
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:64
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:77
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:49
+msgid "this device"
+msgstr "это устройство"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:96
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:184
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:273
+msgid "this new zone"
+msgstr "эта новая зона"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:351
+msgid "unlimited"
+msgstr "без ограничений"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:242
+msgid "unspecified"
+msgstr "не определено"
+
+#: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:336
+msgid "valid firewall mark"
+msgstr "верная метка брандмауэра"

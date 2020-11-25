@@ -1,0 +1,86 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LuCI: watchcat\n"
+"POT-Creation-Date: 2013-10-06 11:15+0300\n"
+"PO-Revision-Date: 2018-01-15 16:09+0300\n"
+"Last-Translator: Vladimir aka sunny <picfun@ya.ru>\n"
+"Language-Team: http://cyber-place.ru\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.7.1\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Project-Info: Это технический перевод, не дословный. Главное-удобный русский "
+"интерфейс, все проверялось в графическом режиме, совместим с другими apps\n"
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:21
+msgid "Forced reboot delay"
+msgstr "Задержка<br />принудительной<br />перезагрузки"
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:40
+msgid "Host address to ping"
+msgstr "Адрес хоста для пинг-запроса"
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:47
+msgid ""
+"How often to check internet connection. Default unit is seconds, you can you "
+"use the suffix 'm' for minutes, 'h' for hours or 'd' for days"
+msgstr ""
+"Как часто проверять Интернет соединение. По умолчанию значение в секундах, "
+"вы можете использовать суффикс 'm' для указания минут, 'h' - часов, 'd' - "
+"дней."
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:31
+msgid ""
+"In periodic mode, it defines the reboot period. In internet mode, it defines "
+"the longest period of time without internet access before a reboot is "
+"engaged.Default unit is seconds, you can use the suffix 'm' for minutes, 'h' "
+"for hours or 'd' for days"
+msgstr ""
+"В периодическом режиме, это значение задает период перезагрузки. В режиме "
+"перезагрузки при потере Интернета, данное значение определяет максимальный "
+"период времени без доступа в Интернет, после которого устройство "
+"перезагружается. По умолчанию значение в секундах, вы можете использовать "
+"суффикс 'm' для указания минут, 'h' - часов, 'd' - дней."
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:15
+msgid "Operating mode"
+msgstr "Режим работы"
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:30
+msgid "Period"
+msgstr "Период"
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:39
+msgid "Ping host"
+msgstr "Хост пинг-запроса"
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:46
+msgid "Ping period"
+msgstr "Период пинг-запроса"
+
+#: applications/luci-app-watchcat/luasrc/controller/watchcat.lua:10
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:5
+msgid "Watchcat"
+msgstr "Watchcat"
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:6
+msgid ""
+"Watchcat allows configuring a periodic reboot when the Internet connection "
+"has been lost for a certain period of time."
+msgstr ""
+"Watchcat позволяет настроить периодическую перезагрузку, при потере Интернет "
+"соединения на определенное время."
+
+#: applications/luci-app-watchcat/luasrc/model/cbi/watchcat/watchcat.lua:22
+msgid ""
+"When rebooting the system, the watchcat will trigger a soft reboot. Entering "
+"a non zero value here will trigger a delayed hard reboot if the soft reboot "
+"fails. Enter a number of seconds to enable, use 0 to disable"
+msgstr ""
+"При перезагрузке системы, watchcat вызовет программную перезагрузку. Ввод "
+"ненулевого значения, вызовет отложенную аппаратную перезагрузку, если "
+"программная перезагрузка не удастся. Введите количество секунд, чтобы "
+"включить. Используйте '0', чтобы отключить."

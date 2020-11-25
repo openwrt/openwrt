@@ -1,0 +1,31 @@
+<script type="text/javascript">//<![CDATA[
+XHR.poll(-1, '<%=url('admin/telephony/status')%>', null,
+	function(x, st)
+	{
+		var tb = document.getElementById('telephony_status_table');
+		if (st && tb)
+		{
+			tb.removeChild(tb.firstChild);
+			tb.appendChild(E('<div class="tr cbi-section-table-row cbi-rowstyle-1">', [
+				E('<div class="td">', st.status),
+				E('<div class="td">', st.line1),
+				E('<div class="td">', st.line2)
+			]));
+		}
+	}
+);
+//]]></script>
+
+<fieldset class="cbi-section">
+	<legend><%:Current Telephony State%></legend>
+	<div class="table cbi-section-table" id="telephony_status_table">
+		<div class="tr cbi-section-table-titles">
+			<div class="th cbi-section-table-cell"><%:Uplink%></div>
+			<div class="th cbi-section-table-cell"><%:Port1%></div>
+			<div class="th cbi-section-table-cell"><%:Port2%></div>
+		</div>
+		<div class="tr cbi-section-table-row">
+			<div class="td" colspan="5"><em><br /><%:Collecting data...%></em></div>
+		</div>
+	</div>
+</fieldset>

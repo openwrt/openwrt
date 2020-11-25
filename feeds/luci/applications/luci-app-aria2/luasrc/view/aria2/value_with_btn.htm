@@ -1,0 +1,22 @@
+<%#
+ Copyright 2017-2019 Xingwang Liao <kuoruan@gmail.com>
+ Licensed to the public under the MIT License.
+-%>
+
+<%+cbi/valueheader%>
+		<input data-update="change" type="text" class="cbi-input-text"<%=
+			attr("id", cbid) ..
+			attr("name", cbid) ..
+			attr("value", self:cfgvalue(section) or self.default) ..
+			ifattr(self.size, "size") ..
+			ifattr(self.placeholder, "placeholder") ..
+			ifattr(self.maxlength, "maxlength") ..
+			ifattr(self.datatype, "data-type", self.datatype) ..
+			ifattr(self.onmouseover, "onmouseover")
+		%> />
+		<%- if self.btntext then -%>
+			<div class="cbi-button cbi-button-neutral" title="<%=self.btntext%>" aria-label="<%=self.btntext%>"<%=
+				ifattr(self.btnclick, "onclick", self.btnclick)
+			%>><span style="font-weight: normal;"><%=self.btntext%></span></div>
+		<% end %>
+<%+cbi/valuefooter%>

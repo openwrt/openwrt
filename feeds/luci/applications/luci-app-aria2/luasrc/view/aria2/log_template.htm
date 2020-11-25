@@ -1,0 +1,55 @@
+<%#
+ Copyright 2017-2019 Xingwang Liao <kuoruan@gmail.com>
+ Licensed to the public under the MIT License.
+-%>
+
+<% css = [[
+
+	#log_text {
+		padding: 10px;
+		text-align: left;
+	}
+	#log_text pre {
+		word-break: break-all;
+		margin: 0;
+	}
+	.description {
+		background-color: #33ccff;
+	}
+
+]]
+-%>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+	XHR.poll(10, '<%=url("admin/services/aria2/log/read")%>', null,
+		function(x, data) {
+			var logElm = document.getElementById('log_text');
+			if (logElm) {
+				logElm.innerHTML = data
+					? String.format(
+						'<pre>%s%s%s%s</pre>',
+						'<span class="description"><%:Last 50 lines of log file:%></span><br/><br/>',
+						data.log || '<%:No log data.%>',
+						'<br/><br/><span class="description"><%:Last 50 lines of syslog:%></span><br/><br/>',
+						data.syslog || '<%:No log data.%>'
+					)
+					: '<strong><%:Failed to load log data.%></strong>';
+			}
+		}
+	);
+//]]></script>
+<div class="cbi-map">
+	<h2 name="content"><%:Aria2%> - <%:Log Data%></h2>
+	<fieldset class="cbi-section">
+		<div id="log_text">
+			<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" style="vertical-align:middle" />
+			<%:Collecting data...%>
+		</div>
+		<div style="text-align:right"><small><%:Refresh every 10 seconds.%></small></div>
+	</fieldset>
+</div>
+
+<%+footer%>

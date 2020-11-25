@@ -1,0 +1,52 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008 Jo-Philipp Wich <jow@openwrt.org>
+ Copyright 2011 Manuel Munz <freifunk at somakoma dot de>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+local i = 1
+%>
+
+<%+header%>
+
+<h2 name="content"><%:Interfaces%></h2>
+
+<div id="togglebuttons"></div>
+
+<fieldset class="cbi-section">
+	<legend><%:Overview of interfaces where OLSR is running%></legend>
+
+	<div class="table cbi-section-table">
+		<div class="tr">
+			<div class="th cbi-section-table-cell"><%:Interface%></div>
+			<div class="th cbi-section-table-cell"><%:Device%></div>
+			<div class="th cbi-section-table-cell"><%:State%></div>
+			<div class="th cbi-section-table-cell"><%:MTU%></div>
+			<div class="th cbi-section-table-cell"><%:WLAN%></div>
+			<div class="th cbi-section-table-cell"><%:Source address%></div>
+			<div class="th cbi-section-table-cell"><%:Netmask%></div>
+			<div class="th cbi-section-table-cell"><%:Broadcast address%></div>
+		</div>
+
+		<% for k, iface in ipairs(iface) do %>
+
+		<div class="tr cbi-section-table-row cbi-rowstyle-<%=i%> proto-<%=iface.proto%>">
+			<div class="td cbi-section-table-cell left"><%=iface.interface%></div>
+			<div class="td cbi-section-table-cell left"><%=iface.name%></div>
+			<div class="td cbi-section-table-cell left"><%=iface.olsrInterface.up and luci.i18n.translate('up') or luci.i18n.translate('down')%></div>
+			<div class="td cbi-section-table-cell left"><%=iface.olsrInterface.mtu%></div>
+			<div class="td cbi-section-table-cell left"><%=iface.olsrInterface.wireless and luci.i18n.translate('yes') or luci.i18n.translate('no')%></div>
+			<div class="td cbi-section-table-cell left"><%=iface.olsrInterface.ipAddress%></div>
+			<div class="td cbi-section-table-cell left"><%=iface.olsrInterface.ipv4Address ~= '0.0.0.0' and iface.olsrInterface.ipv4Netmask%></div>
+			<div class="td cbi-section-table-cell left"><%=iface.olsrInterface.ipv4Address ~= '0.0.0.0' and iface.olsrInterface.ipv4Broadcast or iface.olsrInterface.ipv6Multicast%></div>
+		</div>
+		<% i = ((i % 2) + 1)
+		end %>
+	</div>
+</fieldset>
+<%+status-olsr/common_js%>
+<%+footer%>
+
+

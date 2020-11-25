@@ -1,0 +1,260 @@
+---[[
+LuCI Web Framework high-level HTTP functions.
+]]
+module "luci.http"
+
+---[[
+Close the HTTP-Connection.
+
+@class			function
+@name			close
+]]
+
+---[[
+Return the request content if the request was of unknown type.
+
+@class			function
+@name			content
+@return			HTTP request body
+@return			HTTP request body length
+]]
+
+---[[
+Get a certain HTTP input value or a table of all input values.
+
+@class			function
+@name			formvalue
+@param name		Name of the GET or POST variable to fetch
+@param noparse	Don't parse POST data before getting the value
+@return			HTTP input value or table of all input value
+]]
+
+---[[
+Get a table of all HTTP input values with a certain prefix.
+
+@class			function
+@name			formvaluetable
+@param prefix	Prefix
+@return			Table of all HTTP input values with given prefix
+]]
+
+---[[
+Get the value of a certain HTTP-Cookie.
+
+@class			function
+@name			getcookie
+@param name		Cookie Name
+@return			String containing cookie data
+]]
+
+---[[
+Get the value of a certain HTTP environment variable
+or the environment table itself.
+
+@class			function
+@name			getenv
+@param name		Environment variable
+@return			HTTP environment value or environment table
+]]
+
+---[[
+Set a handler function for incoming user file uploads.
+
+@class			function
+@name			setfilehandler
+@param callback	Handler function
+]]
+
+---[[
+Send a HTTP-Header.
+
+@class			function
+@name			header
+@param key		Header key
+@param value	Header value
+]]
+
+---[[
+Set the mime type of following content data.
+
+@class			function
+@name			prepare_content
+@param mime		Mimetype of following content
+]]
+
+---[[
+Get the RAW HTTP input source
+
+@class			function
+@name			source
+@return			HTTP LTN12 source
+]]
+
+---[[
+Set the HTTP status code and status message.
+
+@class			function
+@name			status
+@param code		Status code
+@param message	Status message
+]]
+
+---[[
+Send a chunk of content data to the client.
+
+This function is as a valid LTN12 sink.
+If the content chunk is nil this function will automatically invoke close.
+
+@class			function
+@name			write
+@param content	Content chunk
+@param src_err	Error object from source (optional)
+@see close
+]]
+
+---[[
+Splice data from a filedescriptor to the client.
+
+@class			function
+@name			splice
+@param fp		File descriptor
+@param size		Bytes to splice (optional)
+]]
+
+---[[
+Redirects the client to a new URL and closes the connection.
+
+@class			function
+@name			redirect
+@param url		Target URL
+]]
+
+---[[
+Create a querystring out of a table of key - value pairs.
+
+@class			function
+@name			build_querystring
+@param table	Query string source table
+@return			Encoded HTTP query string
+]]
+
+---[[
+Return the URL-decoded equivalent of a string.
+
+@class			function
+@name			urldecode
+@param str		URL-encoded string
+@param no_plus	Don't decode + to " "
+@return			URL-decoded string
+@see			urlencode
+]]
+
+---[[
+Return the URL-encoded equivalent of a string.
+
+@class			function
+@name			urlencode
+@param str		Source string
+@return			URL-encoded string
+@see			urldecode
+]]
+
+---[[
+Send the given data as JSON encoded string.
+
+@class			function
+@name			write_json
+@param data		Data to send
+]]
+
+---[[
+Extract and split urlencoded data pairs, separated bei either "&" or ";"
+from given url or string. Returns a table with urldecoded values.
+
+Simple parameters are stored as string values associated with the parameter
+name within the table. Parameters with multiple values are stored as array
+containing the corresponding values.
+
+@class			function
+@name			urldecode_params
+@param url		The url or string which contains x-www-urlencoded form data
+@param tbl		Use the given table for storing values (optional)
+@return			Table containing the urldecoded parameters
+@see			urlencode_params
+]]
+
+---[[
+Encode each key-value-pair in given table to x-www-urlencoded format,
+separated by "&".
+
+Tables are encoded as parameters with multiple values by repeating the
+parameter name with each value.
+
+@class			function
+@name			urlencode_params
+@param tbl		Table with the values
+@return			String containing encoded values
+@see			urldecode_params
+]]
+
+---[[
+Decode a mime encoded http message body with multipart/form-data Content-Type.
+
+Stores all extracted data associated with its parameter name
+in the params table within the given message object. Multiple parameter
+values are stored as tables, ordinary ones as strings.
+
+If an optional file callback function is given then it is fed with the
+file contents chunk by chunk and only the extracted file name is stored
+within the params table. The callback function will be called subsequently
+with three arguments:
+ o Table containing decoded (name, file) and raw (headers) mime header data
+ o String value containing a chunk of the file data
+ o Boolean which indicates whether the current chunk is the last one (eof)
+
+@class			function
+@name			mimedecode_message_body
+@param src		Ltn12 source function
+@param msg		HTTP message object
+@param filecb	File callback function (optional)
+@return			Value indicating successful operation (not nil means "ok")
+@return			String containing the error if unsuccessful
+@see			parse_message_header
+]]
+
+---[[
+Decode an urlencoded http message body with application/x-www-urlencoded
+Content-Type.
+
+Stores all extracted data associated with its parameter name in the params
+table within the given message object. Multiple parameter values are stored
+as tables, ordinary ones as strings.
+
+@class			function
+@name			urldecode_message_body
+@param src		Ltn12 source function
+@param msg		HTTP message object
+@return			Value indicating successful operation (not nil means "ok")
+@return			String containing the error if unsuccessful
+@see			parse_message_header
+]]
+
+---[[
+Try to extract and decode a http message body from the given ltn12 source.
+This function will examine the Content-Type within the given message object
+to select the appropriate content decoder.
+
+Currently the application/x-www-urlencoded and application/form-data
+mime types are supported. If the encountered content encoding can't be
+handled then the whole message body will be stored unaltered as "content"
+property within the given message object.
+
+@class			function
+@name			parse_message_body
+@param src		Ltn12 source function
+@param msg		HTTP message object
+@param filecb	File data callback (optional, see mimedecode_message_body())
+@return			Value indicating successful operation (not nil means "ok")
+@return			String containing the error if unsuccessful
+@see			parse_message_header
+]]

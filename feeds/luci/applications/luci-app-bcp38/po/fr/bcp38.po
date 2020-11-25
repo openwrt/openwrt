@@ -1,0 +1,78 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2020-01-11 18:23+0000\n"
+"Last-Translator: Franco Castillo <castillofrancodamian@gmail.com>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationsbcp38/fr/>\n"
+"Language: fr\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 3.10.1\n"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:61
+msgid "Allowed IP ranges"
+msgstr "Plages d'adresses IP autorisées"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:34
+msgid ""
+"Attempt to automatically detect if the upstream IP will be blocked by the "
+"configuration, and add an exception if it will. If this does not work "
+"correctly, you can add exceptions manually below."
+msgstr ""
+"Tente de détecter automatiquement si, à distance, l'adresse IP sera bloquée "
+"par la configuration, et ajoute une exception si elle le sera. Si cela ne "
+"fonctionne pas correctement, vous pouvez ajouter des exceptions manuellement "
+"ci-dessous."
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:33
+msgid "Auto-detect upstream IP"
+msgstr "Détecter automatiquement l'adresse IP distante"
+
+#: applications/luci-app-bcp38/luasrc/controller/bcp38.lua:6
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:20
+msgid "BCP38"
+msgstr "BCP38"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:27
+msgid "BCP38 config"
+msgstr "Configuration de BCP38"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:56
+msgid "Blocked IP ranges"
+msgstr "Plages d'adresses IP bloquées"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:30
+msgid "Enable"
+msgstr "Activer"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:39
+msgid "Interface name"
+msgstr "Nom d'interface"
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:39
+msgid ""
+"Interface to apply the blocking to (should be the upstream WAN interface)."
+msgstr "Interface sur laquelle appliquer le blocage (interface WAN distante)."
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:61
+msgid ""
+"Takes precedence over blocked ranges. Use to whitelist your upstream network "
+"if you're behind a double NAT and the auto-detection doesn't work."
+msgstr ""
+"Prend la priorité sur les plages bloquées. Utilisez la liste blanche de "
+"votre réseau distant si vous êtes derrière un double NAT et que la détection "
+"automatique ne fonctionne pas."
+
+#: applications/luci-app-bcp38/luasrc/model/cbi/bcp38.lua:21
+msgid ""
+"This function blocks packets with private address destinations from going "
+"out onto the internet as per <a href=\"http://tools.ietf.org/html/"
+"bcp38\">BCP 38</a>. For IPv6, only source specific default routes are "
+"installed, so no BCP38 firewall routes are needed."
+msgstr ""
+"Cette fonction empêche les paquets contenant des adresses d’adresses privées "
+"d'être envoyés sur Internet, conformément au <a href=\"http://tools.ietf.org/"
+"html/bcp38\">BCP38</a>. Pour IPv6, seules les routes par défaut spécifiques "
+"à la source sont installées. Aucune route de pare-feu BCP38 n'est donc "
+"nécessaire."

@@ -1,0 +1,274 @@
+<%#
+	Copyright 2016-2017 Dan Luedtke <mail@danrl.com>
+	Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+	local data = { }
+	local last_device = ""
+	local qr_pubkey = { }
+
+	local function qr_clean(qr_type, value)
+		if not value or value == "" or value == "(none)" then
+			return ""
+		end
+		if qr_type == "privkey" then
+			return "PrivateKey = " ..value
+		elseif qr_type == "pubkey" then
+			return "PublicKey = " ..value
+		end
+	end
+
+	local wg_dump = io.popen("wg show all dump 2>/dev/null")
+	if wg_dump then
+		local line
+		for line in wg_dump:lines() do
+			local line = string.split(line, "\t")
+			if not (last_device == line[1]) then
+				last_device = line[1]
+				data[line[1]] = {
+					name		= line[1],
+					public_key	= line[3],
+					listen_port	= line[4],
+					fwmark		= line[5],
+					peers		= { }
+				}
+				qr_pubkey[line[1]] = qr_clean("pubkey", line[3])
+			else
+				local peer = {
+					public_key		= line[2],
+					endpoint		= line[4],
+					allowed_ips		= { },
+					latest_handshake	= line[6],
+					transfer_rx		= line[7],
+					transfer_tx		= line[8],
+					persistent_keepalive	= line[9]
+				}
+				if not (line[4] == '(none)') then
+					local ipkey, ipvalue
+					for ipkey, ipvalue in pairs(string.split(line[5], ",")) do
+						if #ipvalue > 0 then
+							table.insert(peer['allowed_ips'], ipvalue)
+						end
+					end
+				end
+				table.insert(data[line[1]].peers, peer)
+			end
+		end
+	end
+
+	if luci.http.formvalue("status") == "1" then
+		luci.http.prepare_content("application/json")
+		luci.http.write_json(data)
+		return
+	end
+-%>
+
+<%+header%>
+
+<script type="text/javascript">//<![CDATA[
+
+	function bytes_to_str(bytes) {
+		bytes = parseFloat(bytes);
+		if (bytes < 1) { return "0 B"; }
+		var sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+		var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+		return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+	};
+
+	function timestamp_to_str(timestamp) {
+		if (timestamp < 1) {
+			return '<%:Never%>';
+		}
+		var now = new Date();
+		var seconds = (now.getTime() / 1000) - timestamp;
+		var ago = "";
+		if (seconds < 60) {
+			ago = parseInt(seconds) + '<%:s ago%>';
+		} else if (seconds < 3600) {
+			ago = parseInt(seconds / 60) + '<%:m ago%>';
+		} else if (seconds < 86401) {
+			ago = parseInt(seconds / 3600) + '<%:h ago%>';
+		} else {
+			ago = '<%:over a day ago%>';
+		}
+		var t = new Date(timestamp * 1000);
+		return t.toUTCString() + ' (' + ago + ')';
+	}
+
+	function toggle_qrcode(iface) {
+		var view = document.getElementById(iface.name);
+		if (view.style.display === "none") {
+			view.style.display = "block";
+		} else {
+			view.style.display = "none";
+		}
+	}
+
+	XHR.poll(-1, '<%=REQUEST_URI%>', { status: 1 },
+	function(x, data) {
+		for (var key in data) {
+			if (!data.hasOwnProperty(key)) { continue; }
+			var ifname = key;
+			var iface = data[key];
+			var s = "";
+			if (iface.public_key == '(none)') {
+				s += '<em><%:Interface does not have a public key!%></em>';
+			} else {
+				s += String.format(
+					'<strong><%:Public Key%>: </strong>%s',
+					iface.public_key
+				);
+			}
+			if (iface.listen_port > 0) {
+				s += String.format(
+					'<br /><strong><%:Listen Port%>: </strong>%s',
+					iface.listen_port
+				);
+			}
+			if (iface.fwmark != 'off') {
+				s += String.format(
+					'<br /><strong><%:Firewall Mark%>: </strong>%s',
+					iface.fwmark
+				);
+			}
+			document.getElementById(ifname + "_info").innerHTML = s;
+			for (var i = 0, ilen = iface.peers.length; i < ilen; i++) {
+				var peer = iface.peers[i];
+				var s = String.format(
+					'<strong><%:Public Key%>: </strong>%s',
+					peer.public_key
+				);
+				if (peer.endpoint != '(none)') {
+					s += String.format(
+						'<br /><strong><%:Endpoint%>: </strong>%s',
+						peer.endpoint
+					);
+				}
+				if (peer.allowed_ips.length > 0) {
+					s += '<br /><strong><%:Allowed IPs%>:</strong>';
+					for (var k = 0, klen = peer.allowed_ips.length; k < klen; k++) {
+						s += '<br />&#160;&#160;&#8226;&#160;' + peer.allowed_ips[k];
+					}
+				}
+				if (peer.persistent_keepalive != 'off') {
+					s += String.format(
+						'<br /><strong><%:Persistent Keepalive%>: </strong>%ss',
+						peer.persistent_keepalive
+					);
+				}
+				var icon = '<img src="<%=resource%>/icons/tunnel_disabled.png" />';
+				var now = new Date();
+				if (((now.getTime() / 1000) - peer.latest_handshake) < 140) {
+					icon = '<img src="<%=resource%>/icons/tunnel.png" />';
+				}
+				s += String.format(
+					'<br /><strong><%:Latest Handshake%>: </strong>%s',
+					timestamp_to_str(peer.latest_handshake)
+				);
+				s += String.format(
+					'<br /><strong><%:Data Received%>: </strong>%s' +
+					'<br /><strong><%:Data Transmitted%>: </strong>%s',
+					bytes_to_str(peer.transfer_rx),
+					bytes_to_str(peer.transfer_tx),
+				);
+				document.getElementById(ifname + "_" + peer.public_key + "_icon").innerHTML = icon;
+				document.getElementById(ifname + "_" + peer.public_key + "_info").innerHTML = s;
+			}
+		}
+	});
+//]]></script>
+
+<h2>WireGuard Status</h2>
+
+<div class="cbi-section">
+<%-
+local ikey, iface
+for ikey, iface in pairs(data) do
+-%>
+	<h3><%:Interface%> <%=ikey%></h3>
+	<div class="cbi-value" id="button" style="padding: 5px">
+		<input class="cbi-button cbi-button-apply" type="button" name="qrcode_<%=ikey%>" value="<%:Show/Hide QR-Code%>" onclick="toggle_qrcode(this)" />
+	</div>
+<%-
+	local qr_enc
+	local qr_code
+	local qr_privkey
+	if fs.access("/usr/bin/qrencode") then
+		qr_privkey = qr_clean("privkey", luci.sys.exec("wg genkey 2>/dev/null"))
+		if qr_pubkey[ikey] and qr_privkey then
+			qr_enc = "[Interface]\n" ..qr_privkey.. "\n[Peer]\n" ..qr_pubkey[ikey].. "\nAllowedIPs = 0.0.0.0/0, ::/0"
+			qr_code = luci.sys.exec("/usr/bin/qrencode --inline --8bit --type=SVG --output=- '" ..qr_enc.. "' 2>/dev/null")
+		else
+			qr_code = "<em>The QR-Code could not be generated, the wg interface setup is incomplete!</em>"
+		end
+	else
+		qr_code = "<em>For QR-Code support please install the package 'qrencode'!</em>"
+	end
+-%>
+	<div class="cbi-section-node">
+		<span class="cbi-value" style="display: none" id="qrcode_<%=ikey%>">
+			<%:The QR-Code works per wg interface, it will be refreshed with every manual page reload and transfers the following information:%><br />
+			&#8226;&#160;<%:[Interface] A random, on the fly generated 'PrivateKey', the key will not be saved on the router%><br />
+			&#8226;&#160;<%:[Peer] The 'PublicKey' of that wg interface and the 'AllowedIPs' with the default of '0.0.0.0/0, ::/0' to allow sending traffic to any IPv4 and IPv6 address%><br />
+			<hr /><%=qr_code%><br />
+		</span>
+	</div>
+	<div class="cbi-section-node">
+		<div class="table cbi-section-table">
+			<div class="tr cbi-section-table-row" style="text-align: left;">
+				<div class="td" style="text-align: left; vertical-align:top"><%:Configuration%></div>
+				<div class="td" style="flex: 0 1 90%; text-align: left;">
+					<div class="table cbi-section-table" style="border: 0px;">
+						<div class="tr cbi-section-table-row" style="text-align: left; border: 0px;">
+							<div class="td" id="<%=ikey%>_icon" style="width: 22px; text-align: left; border-top: 0px; padding: 3px;">&#160;</div>
+							<div class="td" id="<%=ikey%>_info" style="flex: 0 1 90%; text-align: left; vertical-align:middle; padding: 3px; border-top: 0px;"><em><%:Collecting data...%></em></div>
+						</div>
+					</div>
+				</div>
+			</div>
+	<%-
+	local cur = uci.cursor()
+	local pkey, peer
+	for pkey, peer in pairs(iface.peers) do
+		local desc
+		cur:foreach("network", "wireguard_" .. ikey, function(s)
+			local key, value, tmp_desc, pub_key
+			for key, value in pairs(s) do
+				if key == "description" then
+					tmp_desc = value
+				end
+				if value == peer.public_key then
+					pub_key = value
+				end
+				if pub_key and tmp_desc then
+					desc = ': ' ..tmp_desc
+				end
+			end
+		end)
+	-%>
+			<div class="tr cbi-section-table-row" style="text-align: left;">
+				<div class="td" style="text-align: left; vertical-align:top"><%:Peer%><%=desc%></div>
+				<div class="td" style="flex: 0 1 90%; text-align: left;">
+					<div class="table cbi-section-table" style="border: 0px">
+						<div class="tr cbi-section-table-row" style="border: 0px;">
+							<div class="td" id="<%=ikey%>_<%=peer.public_key%>_icon" style="width:16px; text-align: left; padding: 3px;border-top: 0px;">
+								<img src="<%=resource%>/icons/tunnel_disabled.png" />
+								<small>?</small>
+							</div>
+							<div class="td" id="<%=ikey%>_<%=peer.public_key%>_info" style="flex: 0 1 90%; text-align: left; vertical-align:middle; padding: 3px;border-top: 0px;"><em><%:Collecting data...%></em></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		<%-
+	end
+	-%>
+		</div>
+	</div>
+	<%-
+end
+-%>
+</div>
+
+<%+footer%>

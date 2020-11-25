@@ -1,0 +1,155 @@
+<%#
+   Copyright © 2011 Pau Escrich <pau@dabax.net>
+   Contributors Lluis Esquerda <eskerda@gmail.com>
+                Roger Pueyo Centelles <roger.pueyo@guifi.net>
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License along
+   with this program; if not, write to the Free Software Foundation, Inc.,
+   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+   The full GNU General Public License is included in this distribution in
+   the file called "COPYING".
+-%>
+
+<%+header%>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript" src="<%=resource%>/bmx7/js/polling.js"></script>
+
+
+<style>
+	div.hideme{
+		display: none;
+	}
+	div.info{
+		background: #FFF;
+		border: solid 0px;
+		height: 190px;
+		display: block;
+		overflow: auto;
+	}
+	div.inforow{
+		text-align:left;
+		display:inline-block;
+		margin:10px;
+		vertical-align:top;
+		float: left;
+		white-space:nowrap;
+	}
+	div.inforow.newline{
+		clear: both;
+	}
+	u {
+    text-decoration: underline;
+	}
+#extra-info ul { list-style: none outside none; margin-left: 0em; }
+</style>
+
+<div class="cbi-map">
+
+<h2>Mesh nodes</h2>
+<div class="cbi-map-descr"></div>
+<div id="extra-info" class="info">
+	<br />
+	<center>
+	Tip: click the <img src="<%=resource%>/bmx7/world.png" /> icon to see individual node information.
+	</center>
+</div>
+
+
+<div class="cbi-section">
+	<legend><%:Originators%></legend>
+	<div class="cbi-section-node">
+	<div class="table" id="nodes_div">
+		<div class="tr table-titles">
+			<div class="th"></div>
+			<div class="th"><%:Name%></div>
+			<div class="th"><%:Short ID%></div>
+			<div class="th"><%:S/s/T/t%></div>
+			<div class="th"><%:Primary IPv6%></div>
+			<div class="th"><%:Via Neighbour%></div>
+			<div class="th"><%:Metric%></div>
+			<div class="th"><%:Last Desc%></div>
+			<div class="th"><%:Last Ref%></div>
+			<div class="th"><%: %></div>
+		</div>
+	</div>
+	</div>
+</div>
+
+</div>
+
+<script type="text/javascript">//<![CDATA[
+		var displayExtraInfo = function ( id ) {
+			document.getElementById('extra-info').innerHTML = document.getElementById(id).innerHTML;
+		}
+		new TablePooler(5,"/cgi-bin/bmx7-info", {'$originators':''}, "nodes_div", function(st){
+			var infoicon = "<%=resource%>/bmx7/world_small.png";
+			var originators = st.originators;
+			var res = Array();
+			originators.forEach(function(originator,i){
+				var name =  originator.name;
+				var shortId =  originator.shortId;
+				var nodeId = originator.nodeId;
+				var extensions = originator.name;
+				var SsTt = originator.S+'/'+originator.s+'/'+originator.T+'/'+originator.t;
+				var nodeKey = originator.nodeKey;
+				var descSize = originator.descSize;
+				var primaryIp = originator.primaryIp;
+				var nbName = originator.nbName;
+				var dev = originator.dev;
+				var nbLocalIp = originator.nbLocalIp;
+				var metric = originator.metric;
+				var lastDesc = originator.lastDesc;
+				var lastRef = originator.lastRef;
+
+			var extrainfo = '<a onclick="displayExtraInfo(\'ip-' + i + '\')"><img src="' + infoicon + '" / ></a>';
+			var extrainfo_link = '<a onclick="displayExtraInfo(\'ip-' + i + '\')">' +  '<img src="' + infoicon + '" />' + '</a>';
+
+			extrainfo = '<div id="ip-'+ i +'" class="hideme">'
+			+ "<div class='inforow'>"
+			+ "<h4><u>" + name  + '</u></h4>\n'
+			+ 'Node ID: ' + shortId + "</div>"
+			+ "<div class='inforow'>"
+			+ "<h5>Primary IPv6 address</h5>\n"
+			+ primaryIp + "</div>\n"
+			+ "<div class='inforow'>"
+			+ "<h5>Support & Trust</h5>\n"
+			+ SsTt + "</div>\n"
+			+ "<div class='inforow'>"
+			+ "<h5>Node key</h5>\n"
+			+ nodeKey + "</div>\n"
+			+ "<div class='inforow newline'>"
+			+ "<h5>Via neighbour</h5>\n"
+			+ nbName + "</div>\n"
+			+ "<div class='inforow'>"
+			+ "<h5>Via device</h5>\n"
+			+ dev + "</div>\n"
+			+ "<div class='inforow'>"
+			+ "<h5>Via link-local IPv6</h5>\n"
+			+ nbLocalIp + "</div>\n"
+			+ "<div class='inforow'>"
+			+ "<h5>Route metric</h5>\n"
+			+ metric + "</div>\n"
+			+ "<div class='inforow'>"
+			+ "<h5>Desc. size</h5>\n"
+			+ descSize + "</div>\n"
+			+ "\n</div>";
+
+			res.push([extrainfo_link, name, shortId, SsTt, primaryIp,
+								nbName, metric, lastDesc, lastRef, extrainfo]);
+		  });
+		  return res;
+		});
+//]]></script>
+
+<%+footer%>

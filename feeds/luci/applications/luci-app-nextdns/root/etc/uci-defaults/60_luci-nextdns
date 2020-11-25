@@ -1,0 +1,11 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@nextdns[-1]
+	add ucitrack nextdns
+	set ucitrack.@nextdns[-1].init=nextdns
+	commit ucitrack
+EOF
+
+rm -f /tmp/luci-indexcache
+exit 0
