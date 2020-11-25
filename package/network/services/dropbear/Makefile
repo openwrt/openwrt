@@ -99,43 +99,38 @@ CONFIGURE_ARGS += \
 TARGET_CFLAGS += -DARGTYPE=3 -ffunction-sections -fdata-sections -flto
 TARGET_LDFLAGS += -Wl,--gc-sections -flto=jobserver
 
+db_opt_add     =echo '\#define $(1) $(2)' >> $(PKG_BUILD_DIR)/localoptions.h
+db_opt_replace =$(ESED) 's,^(\#define $(1)) .*$$$$,\1 $(2),g' $(PKG_BUILD_DIR)/sysoptions.h
+
 define Build/Configure
 	: > $(PKG_BUILD_DIR)/localoptions.h
 
 	$(Build/Configure/Default)
 
-	echo '#define DEFAULT_PATH "$(TARGET_INIT_PATH)"' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
+	$(call db_opt_add,DEFAULT_PATH,"$(TARGET_INIT_PATH)")
 
 	# remove protocol idented software version number
-	$(ESED) 's,^(#define LOCAL_IDENT) .*$$$$,\1 "SSH-2.0-dropbear",g' \
-		$(PKG_BUILD_DIR)/sysoptions.h
+	$(call db_opt_replace,LOCAL_IDENT,"SSH-2.0-dropbear")
 
 	# disable legacy/unsafe methods and unused functionality
-	for OPTION in INETD_MODE DROPBEAR_CLI_NETCAT DROPBEAR_DSS DO_MOTD ; do \
-		echo "#define $$$$OPTION 0" >> \
-			$(PKG_BUILD_DIR)/localoptions.h; \
-	done
+	$(foreach opt,INETD_MODE DROPBEAR_CLI_NETCAT DROPBEAR_DSS DO_MOTD, \
+		$(call db_opt_add,$(opt),0) ; \
+	)
 
-	echo '#define DROPBEAR_CURVE25519 $(if $(CONFIG_DROPBEAR_CURVE25519),1,0)' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
+	$(call db_opt_add,DROPBEAR_CURVE25519,$(if $(CONFIG_DROPBEAR_CURVE25519),1,0))
 
-	echo '#define DROPBEAR_ED25519 $(if $(CONFIG_DROPBEAR_ED25519),1,0)' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
+	$(call db_opt_add,DROPBEAR_ED25519,$(if $(CONFIG_DROPBEAR_ED25519),1,0))
 
-	echo '#define DROPBEAR_CHACHA20POLY1305 $(if $(CONFIG_DROPBEAR_CHACHA20POLY1305),1,0)' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
+	$(call db_opt_add,DROPBEAR_CHACHA20POLY1305,$(if $(CONFIG_DROPBEAR_CHACHA20POLY1305),1,0))
 
-	for OPTION in DROPBEAR_ECDSA DROPBEAR_ECDH; do \
-		echo "#define $$$$OPTION $(if $(CONFIG_DROPBEAR_ECC),1,0)" >> \
-			$(PKG_BUILD_DIR)/localoptions.h; \
-	done
+	$(foreach opt,DROPBEAR_ECDSA DROPBEAR_ECDH, \
+		$(call db_opt_add,$(opt),$(if $(CONFIG_DROPBEAR_ECC),1,0)) ; \
+	)
 
 	# enable nistp384 and nistp521 only if full ECC support was requested
-	for OPTION in DROPBEAR_ECC_384 DROPBEAR_ECC_521; do \
-		$(ESED) 's,^(#define '$$$$OPTION') .*$$$$,\1 $(if $(CONFIG_DROPBEAR_ECC_FULL),1,0),g' \
-		$(PKG_BUILD_DIR)/sysoptions.h; \
-	done
+	$(foreach opt,DROPBEAR_ECC_384 DROPBEAR_ECC_521, \
+		$(call db_opt_replace,$(opt),$(if $(CONFIG_DROPBEAR_ECC_FULL),1,0)) ; \
+	)
 
 	# Enforce rebuild of svr-chansession.c
 	rm -f $(PKG_BUILD_DIR)/svr-chansession.o
