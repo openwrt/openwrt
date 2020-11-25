@@ -14,10 +14,7 @@ define Build/tegra-sdcard
 	$(if $(DEVICE_DTS),\
 		$(foreach dtb,$(DEVICE_DTS),$(CP) $(DTS_DIR)/$(dtb).dtb $@.boot), \
 		$(CP) $(DTS_DIR)/*.dtb $@.boot)
-	sed \
-		-e 's#@ROOT@#$(IMG_PART_SIGNATURE)#g' \
-		-e 's#@KERNEL@#$(KERNEL_NAME)#g' \
-		$(BOOT_SCRIPT) > $@-boot.scr
+	sed -e 's#@KERNEL@#$(KERNEL_NAME)#g' $(BOOT_SCRIPT) > $@-boot.scr
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
 		-n '$(DEVICE_TITLE) OpenWrt bootscript' \
 		-d $@-boot.scr \
