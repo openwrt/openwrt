@@ -150,6 +150,10 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary dnidata 0x0)
 		;;
+	netgear,wac510)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary "0:MANUDATA" 0x6)
+		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
 		caldata_extract "ART" 0x1000 0x2f20
@@ -259,6 +263,10 @@ case "$FIRMWARE" in
 	netgear,ex6150v2)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary dnidata 0xc)
+		;;
+	netgear,wac510)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:MANUDATA" 0x6) +16)
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)

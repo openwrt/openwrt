@@ -72,6 +72,7 @@ platform_do_upgrade() {
 	glinet,gl-ap1300 |\
 	luma,wrtq-329acn |\
 	mobipromo,cm520-79f |\
+	netgear,wac510 |\
 	qxwlan,e2600ac-c2)
 		nand_do_upgrade "$1"
 		;;
