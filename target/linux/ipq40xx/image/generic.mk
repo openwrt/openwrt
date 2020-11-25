@@ -62,6 +62,16 @@ define Build/mkmylofw_32m
 	@mv $@.new $@
 endef
 
+define Build/wac5xx-netgear-tar
+	mkdir $@.tmp
+	mv $@ $@.tmp/wac5xx-ubifs-root.img
+	md5sum $@.tmp/wac5xx-ubifs-root.img > $@.tmp/wac5xx-ubifs-root.md5sum
+	echo "WAC505 WAC510" > $@.tmp/metadata.txt
+	echo "WAC505_V9.9.9.9" > $@.tmp/version
+	tar -C $@.tmp/ -cf $@ .
+	rm -rf $@.tmp
+endef
+
 define Build/qsdk-ipq-factory-nand-askey
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its\
 		askey_kernel $(IMAGE_KERNEL) \
@@ -635,6 +645,21 @@ define Device/netgear_ex6150v2
 	DEVICE_VARIANT := v2
 endef
 TARGET_DEVICES += netgear_ex6150v2
+
+define Device/netgear_wac510
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Netgear
+	DEVICE_MODEL := WAC510
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@5
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGES += nand-factory.tar
+	IMAGE/nand-factory.tar := append-ubi | wac5xx-netgear-tar
+	DEVICE_PACKAGES := uboot-envtools
+endef
+TARGET_DEVICES += netgear_wac510
 
 define Device/openmesh_a42
 	$(call Device/FitImageLzma)
