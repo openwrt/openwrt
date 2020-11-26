@@ -186,55 +186,15 @@ static int edma_get_settings(struct net_device *netdev,
 	struct edma_adapter *adapter = netdev_priv(netdev);
 
 	if (adapter->poll_required) {
-		struct phy_device *phydev = NULL;
-		uint16_t phyreg;
-
 		if ((adapter->forced_speed != SPEED_UNKNOWN)
 			&& !(adapter->poll_required))
 			return -EPERM;
 
-		phydev = adapter->phydev;
-
-		linkmode_copy(cmd->link_modes.advertising, phydev->advertising);
-		linkmode_copy(cmd->link_modes.supported, phydev->supported);
-
-		cmd->base.autoneg = phydev->autoneg;
-
-		if (adapter->link_state == __EDMA_LINKDOWN) {
-			cmd->base.speed =  SPEED_UNKNOWN;
-			cmd->base.duplex = DUPLEX_UNKNOWN;
-		} else {
-			cmd->base.speed = phydev->speed;
-			cmd->base.duplex = phydev->duplex;
-		}
-
-		cmd->base.phy_address = adapter->phy_mdio_addr;
-
-		phyreg = (uint16_t)phy_read(adapter->phydev, MII_LPA);
-		if (phyreg & LPA_10HALF)
-			linkmode_set_bit(ETHTOOL_LINK_MODE_10baseT_Half_BIT, 
-								cmd->link_modes.lp_advertising);
-
-		if (phyreg & LPA_10FULL)
-			linkmode_set_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT, 
-								cmd->link_modes.lp_advertising);
-
-		if (phyreg & LPA_100HALF)
-			linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Half_BIT, 
-								cmd->link_modes.lp_advertising);
-
-		if (phyreg & LPA_100FULL)
-			linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, 
-								cmd->link_modes.lp_advertising);
-
-		phyreg = (uint16_t)phy_read(adapter->phydev, MII_STAT1000);
-		if (phyreg & LPA_1000HALF)
-			linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Half_BIT, 
-								cmd->link_modes.lp_advertising);
-
-		if (phyreg & LPA_1000FULL)
-			linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, 
-								cmd->link_modes.lp_advertising);
+		phy_ethtool_ksettings_get(adapter->phydev, cmd);
+		if (linkmode_test_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, adapter->phydev->advertising))
+			cmd->base.port = PORT_FIBRE;
+		else
+			cmd->base.port = PORT_TP;
 	} else {
 		/* If the speed/duplex for this GMAC is forced and we
 		 * are not polling for link state changes, return the
@@ -272,22 +232,12 @@ static int edma_set_settings(struct net_device *netdev,
 			    const struct ethtool_link_ksettings *cmd)
 {
 	struct edma_adapter *adapter = netdev_priv(netdev);
-	struct phy_device *phydev = NULL;
 
 	if ((adapter->forced_speed != SPEED_UNKNOWN) &&
 	     !adapter->poll_required)
 		return -EPERM;
 
-	phydev = adapter->phydev;
-	linkmode_copy(phydev->advertising, cmd->link_modes.advertising);
-	linkmode_copy(phydev->supported, cmd->link_modes.supported);
-	phydev->autoneg = cmd->base.autoneg;
-	phydev->speed = cmd->base.speed;
-	phydev->duplex = cmd->base.duplex;
-
-	genphy_config_aneg(phydev);
-
-	return 0;
+	return phy_ethtool_ksettings_set(adapter->phydev, cmd);
 }
 
 /* edma_get_coalesce
