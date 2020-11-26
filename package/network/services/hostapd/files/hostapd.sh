@@ -657,6 +657,8 @@ hostapd_set_bss_options() {
 	}
 
 	json_get_vars time_advertisement time_zone wnm_sleep_mode bss_transition
+	set_default bss_transition 0
+	set_default wnm_sleep_mode 0
 
 	[ -n "$time_advertisement" ] && append bss_conf "time_advertisement=$time_advertisement" "$N"
 	[ -n "$time_zone" ] && append bss_conf "time_zone=$time_zone" "$N"
@@ -668,13 +670,18 @@ hostapd_set_bss_options() {
 	if [ "$ieee80211k" -eq "1" ]; then
 		set_default rrm_neighbor_report 1
 		set_default rrm_beacon_report 1
+	else
+		set_default rrm_neighbor_report 0
+		set_default rrm_beacon_report 0
 	fi
 
 	[ "$rrm_neighbor_report" -eq "1" ] && append bss_conf "rrm_neighbor_report=1" "$N"
 	[ "$rrm_beacon_report" -eq "1" ] && append bss_conf "rrm_beacon_report=1" "$N"
 
 	json_get_vars ftm_responder stationary_ap lci civic
+	set_default ftm_responder 0
 	if [ "$ftm_responder" -eq "1" ]; then
+		set_default stationary_ap 0
 		iw phy "$phy" info | grep -q "ENABLE_FTM_RESPONDER" && {
 			append bss_conf "ftm_responder=1" "$N"
 			[ "$stationary_ap" -eq "1" ] && append bss_conf "stationary_ap=1" "$N"
