@@ -1,0 +1,129 @@
+From 53f8fdb534d5222a0e852e38afde3f49832ace06 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rapha=C3=ABl=20M=C3=A9lotte?= <raphael.melotte@mind.be>
+Date: Thu, 26 Nov 2020 09:27:40 +0100
+Subject: [PATCH] hostapd: Add an option to notify management frames on
+ ctrl_iface
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In some contexts (e.g. Multi-AP) it can be useful to have access to
+some of the management frames in upper layers (e.g. to be able to
+process the content of association requests externally).
+
+Add 'notify_mgmt_frames'. When enabled, it will notify the ctrl_iface
+when a management frame arrives using 'AP_MGMT_FRAME_RECEIVED'.
+
+Note that to avoid completely flooding the ctrl_iface, not all
+management frames are included (e.g. beacons are excluded).
+
+Signed-off-by: Raphaël Mélotte <raphael.melotte@mind.be>
+---
+ hostapd/config_file.c |  2 ++
+ hostapd/hostapd.conf  |  4 ++++
+ src/ap/ap_config.h    |  2 ++
+ src/ap/ieee802_11.c   | 25 +++++++++++++++++++++++++
+ src/common/wpa_ctrl.h |  3 +++
+ 5 files changed, 36 insertions(+)
+
+diff --git a/hostapd/config_file.c b/hostapd/config_file.c
+index e09e6e141..6b88ecd17 100644
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -4323,6 +4323,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
+ 		bss->multicast_to_unicast = atoi(pos);
+ 	} else if (os_strcmp(buf, "broadcast_deauth") == 0) {
+ 		bss->broadcast_deauth = atoi(pos);
++	} else if (os_strcmp(buf, "notify_mgmt_frames") == 0) {
++		conf->notify_mgmt_frames = atoi(pos);
+ #ifdef CONFIG_DPP
+ 	} else if (os_strcmp(buf, "dpp_connector") == 0) {
+ 		os_free(bss->dpp_connector);
+diff --git a/hostapd/hostapd.conf b/hostapd/hostapd.conf
+index ce3ecdddf..28dcd4f57 100644
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -550,6 +550,10 @@ wmm_ac_vo_acm=0
+ # Default: 1 (enabled)
+ #broadcast_deauth=1
+ 
++# Get notifications for management frames:
++# Default: 0 (disabled)
++#notify_mgmt_frames=0
++
+ ##### IEEE 802.11n related configuration ######################################
+ 
+ # ieee80211n: Whether IEEE 802.11n (HT) is enabled
+diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
+index ea581a822..2f89d6ab9 100644
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -1008,6 +1008,8 @@ struct hostapd_config {
+ 	unsigned int airtime_update_interval;
+ #define AIRTIME_MODE_MAX (__AIRTIME_MODE_MAX - 1)
+ #endif /* CONFIG_AIRTIME_POLICY */
++
++	u8 notify_mgmt_frames;
+ };
+ 
+ 
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index c85a28db4..fc1291024 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4591,6 +4591,28 @@ static int handle_action(struct hostapd_data *hapd,
+ 	return 1;
+ }
+ 
++/**
++ * notify_mgmt_frame - notify of management frames on the control interface.
++ * @hapd: hostapd BSS data structure (the BSS to which the management frame was
++ * sent to)
++ * @buf: management frame data (starting from IEEE 802.11 header)
++ * @len: length of frame data in octets
++ *
++ * Notify the control interface of any management frame.
++ */
++static void notify_mgmt_frame(struct hostapd_data *hapd, const u8 *buf,
++			      size_t len)
++{
++
++	int hex_len = len * 2 + 1;
++	char *hex = os_malloc(hex_len);
++
++	if (hex) {
++		wpa_snprintf_hex(hex, hex_len, buf, len);
++		wpa_msg_ctrl(hapd->msg_ctx, MSG_INFO, AP_MGMT_FRAME_RECEIVED "buf=%s", hex);
++		os_free(hex);
++	}
++}
+ 
+ /**
+  * ieee802_11_mgmt - process incoming IEEE 802.11 management frames
+@@ -4665,6 +4687,9 @@ int ieee802_11_mgmt(struct hostapd_data *hapd, const u8 *buf, size_t len,
+ 	if (hapd->iconf->track_sta_max_num)
+ 		sta_track_add(hapd->iface, mgmt->sa, ssi_signal);
+ 
++	if (hapd->iconf->notify_mgmt_frames)
++		notify_mgmt_frame(hapd, buf, len);
++
+ 	switch (stype) {
+ 	case WLAN_FC_STYPE_AUTH:
+ 		wpa_printf(MSG_DEBUG, "mgmt::auth");
+diff --git a/src/common/wpa_ctrl.h b/src/common/wpa_ctrl.h
+index b24ae63e5..eeff9fcaa 100644
+--- a/src/common/wpa_ctrl.h
++++ b/src/common/wpa_ctrl.h
+@@ -375,6 +375,9 @@ extern "C" {
+ #define WDS_STA_INTERFACE_ADDED "WDS-STA-INTERFACE-ADDED "
+ #define WDS_STA_INTERFACE_REMOVED "WDS-STA-INTERFACE-REMOVED "
+ 
++/* Event triggered for received management frame */
++#define AP_MGMT_FRAME_RECEIVED "AP-MGMT-FRAME-RECEIVED "
++
+ /* BSS command information masks */
+ 
+ #define WPA_BSS_MASK_ALL		0xFFFDFFFF
+-- 
+2.28.0
+
