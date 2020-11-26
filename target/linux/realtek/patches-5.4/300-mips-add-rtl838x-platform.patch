@@ -1,7 +1,5 @@
-Index: linux-5.4.77/arch/mips/Kbuild.platforms
-===================================================================
---- linux-5.4.77.orig/arch/mips/Kbuild.platforms
-+++ linux-5.4.77/arch/mips/Kbuild.platforms
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
 @@ -27,6 +27,7 @@ platforms += pistachio
  platforms += pmcs-msp71xx
  platforms += pnx833x
@@ -10,10 +8,8 @@ Index: linux-5.4.77/arch/mips/Kbuild.platforms
  platforms += rb532
  platforms += sgi-ip22
  platforms += sgi-ip27
-Index: linux-5.4.77/arch/mips/Kconfig
-===================================================================
---- linux-5.4.77.orig/arch/mips/Kconfig
-+++ linux-5.4.77/arch/mips/Kconfig
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
 @@ -630,6 +630,26 @@ config RALINK
  	select ARCH_HAS_RESET_CONTROLLER
  	select RESET_CONTROLLER
