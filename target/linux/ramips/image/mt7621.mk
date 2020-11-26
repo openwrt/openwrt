@@ -758,7 +758,7 @@ define Device/mtc_wr1201
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := MTC
   DEVICE_MODEL := Wireless Router WR1201
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | custom-initramfs-uimage WR1201_8_128
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma -n 'WR1201_8_128'
   DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport
 endef
