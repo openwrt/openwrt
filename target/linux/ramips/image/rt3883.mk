@@ -59,6 +59,20 @@ define Device/edimax_br-6475nd
 endef
 TARGET_DEVICES += edimax_br-6475nd
 
+define Device/engenius_esr600h
+  $(Device/uimage-lzma-loader)
+  SOC := rt3662
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7872k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size | \
+	senao-header -r 0x101 -p 0x44 -t 2
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ESR600H
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 uboot-envtools
+endef
+TARGET_DEVICES += engenius_esr600h
+
 define Device/loewe_wmdr-143n
   SOC := rt3662
   BLOCKSIZE := 64k
