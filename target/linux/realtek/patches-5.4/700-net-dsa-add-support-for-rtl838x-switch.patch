@@ -1,0 +1,22 @@
+Index: linux-5.4.77/drivers/net/dsa/Kconfig
+===================================================================
+--- linux-5.4.77.orig/drivers/net/dsa/Kconfig
++++ linux-5.4.77/drivers/net/dsa/Kconfig
+@@ -63,6 +63,8 @@ config NET_DSA_QCA8K
+ 	  This enables support for the Qualcomm Atheros QCA8K Ethernet
+ 	  switch chips.
+ 
++source "drivers/net/dsa/rtl83xx/Kconfig"
++
+ config NET_DSA_REALTEK_SMI
+ 	tristate "Realtek SMI Ethernet switch family support"
+ 	depends on NET_DSA
+Index: linux-5.4.77/drivers/net/dsa/Makefile
+===================================================================
+--- linux-5.4.77.orig/drivers/net/dsa/Makefile
++++ linux-5.4.77/drivers/net/dsa/Makefile
+@@ -21,3 +21,4 @@ obj-y				+= b53/
+ obj-y				+= microchip/
+ obj-y				+= mv88e6xxx/
+ obj-y				+= sja1105/
++obj-y				+= rtl83xx/
