@@ -1,7 +1,5 @@
-Index: linux-5.4.77/net/dsa/tag_trailer.c
-===================================================================
---- linux-5.4.77.orig/net/dsa/tag_trailer.c
-+++ linux-5.4.77/net/dsa/tag_trailer.c
+--- a/net/dsa/tag_trailer.c
++++ b/net/dsa/tag_trailer.c
 @@ -44,7 +44,12 @@ static struct sk_buff *trailer_xmit(stru
  
  	trailer = skb_put(nskb, 4);
