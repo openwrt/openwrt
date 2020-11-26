@@ -51,9 +51,9 @@
  #define AIRTIME_MODE_MAX (__AIRTIME_MODE_MAX - 1)
  #endif /* CONFIG_AIRTIME_POLICY */
 +	char *config_id;
+ 
+ 	u8 notify_mgmt_frames;
  };
- 
- 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
 @@ -218,6 +218,10 @@ static int hostapd_iface_conf_changed(st
