@@ -504,7 +504,7 @@ ath79_setup_macs()
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		label_mac=$(mtd_get_mac_ascii u-boot-env athaddr)
+		label_mac=$lan_mac
 		;;
 	engenius,enh202-v1|\
 	ubnt,airrouter|\
