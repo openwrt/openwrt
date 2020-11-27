@@ -1350,6 +1350,32 @@ define Device/zbtlink_zbt-wg3526-32m
 endef
 TARGET_DEVICES += zbtlink_zbt-wg3526-32m
 
+define Device/zbtlink_zbt-wg1327-16m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1327
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
+	kmod-usb3 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += zbt-wg1327 zbt-wg1327-16M
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1327-16m
+
+define Device/zbtlink_zbt-wg1327-32m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1327
+  DEVICE_VARIANT := 32M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
+	kmod-usb3 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += zbt-wg1327-32M
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1327-32m
+
 define Device/zio_freezio
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
