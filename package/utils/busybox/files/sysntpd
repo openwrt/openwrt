@@ -55,7 +55,7 @@ start_ntpd_instance() {
 		procd_append_param command -p $peer
 	done
 	procd_set_param respawn
-	[ -x /sbin/ujail ] && {
+	[ -x /sbin/ujail -a -e /etc/capabilities/ntpd.json ] && {
 		procd_add_jail ntpd
 		procd_set_param capabilities /etc/capabilities/ntpd.json
 		procd_set_param user ntp
