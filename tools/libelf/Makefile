@@ -18,7 +18,11 @@ PKG_SOURCE_URL:= \
 	http://distcache.freebsd.org/ports-distfiles/
 HOST_BUILD_PARALLEL:=1
 
+HOST_FIXUP:=autoreconf
+
 include $(INCLUDE_DIR)/host-build.mk
+
+PKG_REMOVE_FILES :=
 
 HOST_CONFIGURE_ARGS += \
 	--disable-shared \

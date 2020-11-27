@@ -1,18 +1,6 @@
-get_magic_at() {
-	local file="$1"
-	local pos="$2"
-	get_image "$file" | dd bs=1 count=2 skip="$pos" 2>/dev/null | hexdump -v -n 2 -e '1/1 "%02x"'
-}
-
 platform_check_image_sdcard() {
 	local file="$1"
-	local magic diskdev partdev diff
-
-	magic=$(get_magic_at "$file" 510)
-	[ "$magic" != "55aa" ] && {
-		echo "Failed to verify MBR boot signature."
-		return 1
-	}
+	local diskdev partdev diff
 
 	export_bootdevice && export_partdevice diskdev 0 || {
 		echo "Unable to determine upgrade device"
@@ -22,7 +10,7 @@ platform_check_image_sdcard() {
 	get_partitions "/dev/$diskdev" bootdisk
 
 	#extract the boot sector from the image
-	get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b 2>/dev/null
+	get_image_dd "$1" of=/tmp/image.bs count=1 bs=512b
 
 	get_partitions /tmp/image.bs image
 
@@ -53,7 +41,7 @@ platform_do_upgrade_sdcard() {
 		get_partitions "/dev/$diskdev" bootdisk
 
 		#extract the boot sector from the image
-		get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b
+		get_image_dd "$1" of=/tmp/image.bs count=1 bs=512b
 
 		get_partitions /tmp/image.bs image
 
@@ -64,7 +52,7 @@ platform_do_upgrade_sdcard() {
 	fi
 
 	if [ -n "$diff" ]; then
-		get_image "$@" | dd of="/dev/$diskdev" bs=4096 conv=fsync
+		get_image_dd "$1" of="/dev/$diskdev" bs=4096 conv=fsync
 
 		# Separate removal and addtion is necessary; otherwise, partition 1
 		# will be missing if it overlaps with the old partition 2
@@ -72,12 +60,12 @@ platform_do_upgrade_sdcard() {
 		partx -a - "/dev/$diskdev"
 	else
 		#write uboot image
-		get_image "$@" | dd of="$diskdev" bs=512 skip=1 seek=1 count=2048 conv=fsync
+		get_image_dd "$1" of="$diskdev" bs=512 skip=1 seek=1 count=2048 conv=fsync
 		#iterate over each partition from the image and write it to the boot disk
 		while read part start size; do
 			if export_partdevice partdev $part; then
 				echo "Writing image to /dev/$partdev..."
-				get_image "$@" | dd of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
+				get_image_dd "$1" of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
 			else
 				echo "Unable to find partition $part device, skipped."
 			fi
@@ -85,17 +73,8 @@ platform_do_upgrade_sdcard() {
 
 		#copy partition uuid
 		echo "Writing new UUID to /dev/$diskdev..."
-		get_image "$@" | dd of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
+		get_image_dd "$1" of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
 	fi
-
-	case "$board" in
-	cznic,turris-omnia)
-		fw_setenv openwrt_bootargs 'earlyprintk console=ttyS0,115200 root=/dev/mmcblk0p2 rootfstype=auto rootwait'
-		fw_setenv openwrt_mmcload 'setenv bootargs "$openwrt_bootargs cfg80211.freg=$regdomain"; fatload mmc 0 0x01000000 zImage; fatload mmc 0 0x02000000 armada-385-turris-omnia.dtb'
-		fw_setenv factory_mmcload 'setenv bootargs "$bootargs cfg80211.freg=$regdomain"; btrload mmc 0 0x01000000 boot/zImage @; btrload mmc 0 0x02000000 boot/dtb @'
-		fw_setenv mmcboot 'run openwrt_mmcload || run factory_mmcload; bootz 0x01000000 - 0x02000000'
-		;;
-	esac
 
 	sleep 1
 }

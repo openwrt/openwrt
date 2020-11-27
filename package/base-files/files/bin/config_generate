@@ -7,6 +7,29 @@ CFG=/etc/board.json
 [ -s $CFG ] || /bin/board_detect || exit 1
 [ -s /etc/config/network -a -s /etc/config/system ] && exit 0
 
+generate_bridge() {
+	local name=$1
+	uci -q batch <<-EOF
+		set network.$name=device
+		set network.$name.name=$name
+		set network.$name.type=bridge
+	EOF
+}
+
+bridge_vlan_id=0
+generate_bridge_vlan() {
+	local name=$1_vlan
+	local device=$2
+	local ports="$3"
+	bridge_vlan_id=$((bridge_vlan_id + 1))
+	uci -q batch <<-EOF
+		set network.$name=bridge-vlan
+		set network.$name.device='$device'
+		set network.$name.vlan='$bridge_vlan_id'
+		set network.$name.ports='$ports'
+	EOF
+}
+
 generate_static_network() {
 	uci -q batch <<-EOF
 		delete network.loopback
@@ -63,6 +86,7 @@ generate_static_network() {
 addr_offset=2
 generate_network() {
 	local ifname macaddr protocol type ipaddr netmask
+	local bridge=$2
 
 	json_select network
 		json_select "$1"
@@ -76,6 +100,12 @@ generate_network() {
 	case "$1:$ifname" in
 		*\ * | lan:*) type="bridge" ;;
 	esac
+
+	[ -n "$bridge" ] && {
+		generate_bridge_vlan $1 $bridge "$ifname"
+		ifname=$bridge.$bridge_vlan_id
+		type=""
+	}
 
 	uci -q batch <<-EOF
 		delete network.$1
@@ -235,7 +265,6 @@ generate_switch() {
 	json_select ..
 	json_select ..
 }
-
 
 generate_static_system() {
 	uci -q batch <<-EOF
@@ -439,8 +468,11 @@ if [ ! -s /etc/config/network ]; then
 	touch /etc/config/network
 	generate_static_network
 
+	json_get_vars bridge
+	[ -n "$bridge" ] && generate_bridge $bridge
+
 	json_get_keys keys network
-	for key in $keys; do generate_network $key; done
+	for key in $keys; do generate_network $key $bridge; done
 
 	json_get_keys keys switch
 	for key in $keys; do generate_switch $key; done

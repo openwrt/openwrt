@@ -93,6 +93,7 @@ $hash_cmd or ($file_hash eq "skip") or die "Cannot find appropriate hash command
 sub download
 {
 	my $mirror = shift;
+	my $download_filename = shift;
 
 	$mirror =~ s!/$!!;
 
@@ -139,7 +140,7 @@ sub download
 			}
 		};
 	} else {
-		my @cmd = download_cmd("$mirror/$url_filename");
+		my @cmd = download_cmd("$mirror/$download_filename");
 		print STDERR "+ ".join(" ",@cmd)."\n";
 		open(FETCH_FD, '-|', @cmd) or die "Cannot launch curl or wget.\n";
 		$hash_cmd and do {
@@ -265,7 +266,10 @@ while (!-f "$target/$filename") {
 	my $mirror = shift @mirrors;
 	$mirror or die "No more mirrors to try - giving up.\n";
 
-	download($mirror);
+	download($mirror, $url_filename);
+	if (!-f "$target/$filename" && $url_filename ne $filename) {
+		download($mirror, $filename);
+	}
 }
 
 $SIG{INT} = \&cleanup;

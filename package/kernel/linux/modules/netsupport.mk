@@ -144,26 +144,6 @@ endef
 $(eval $(call KernelPackage,nsh))
 
 
-define KernelPackage/capi
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=CAPI (ISDN) Support
-  KCONFIG:= \
-	CONFIG_ISDN_CAPI \
-	CONFIG_ISDN_CAPI_CAPI20 \
-	CONFIG_ISDN_CAPIFS \
-	CONFIG_ISDN_CAPI_CAPIFS
-  FILES:= \
-	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.ko \
-	$(LINUX_DIR)/drivers/isdn/capi/capi.ko
-  AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi)
-endef
-
-define KernelPackage/capi/description
- Kernel module for basic CAPI (ISDN) support
-endef
-
-$(eval $(call KernelPackage,capi))
-
 define KernelPackage/misdn
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=mISDN (ISDN) Support
