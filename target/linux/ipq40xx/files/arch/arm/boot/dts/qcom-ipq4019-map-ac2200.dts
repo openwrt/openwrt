@@ -176,6 +176,22 @@
 			bias-pull-down;
 		};
 	};
+	enable_ext_pa_high {
+		gpio-hog;
+		gpios = <44 GPIO_ACTIVE_HIGH>,
+			<46 GPIO_ACTIVE_HIGH>;
+		output-high;
+		bias-pull-down;
+		line-name = "enable external PA output-high";
+	};
+	enable_ext_pa_low {
+		gpio-hog;
+		gpios = <45 GPIO_ACTIVE_HIGH>,
+			<47 GPIO_ACTIVE_HIGH>;
+		output-low;
+		bias-pull-down;
+		line-name = "enable external PA output-low";
+	};
 };
 
 &cryptobam {
