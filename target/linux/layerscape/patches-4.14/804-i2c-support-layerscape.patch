@@ -84,7 +84,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  /*
   * sorted list of clock divider, register value pairs
   * taken from table 26-5, p.26-9, Freescale i.MX
-@@ -210,6 +263,12 @@ struct imx_i2c_struct {
+@@ -211,6 +264,12 @@ struct imx_i2c_struct {
  	struct pinctrl_state *pinctrl_pins_gpio;
  
  	struct imx_i2c_dma	*dma;
@@ -97,7 +97,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  };
  
  static const struct imx_i2c_hwdata imx1_i2c_hwdata = {
-@@ -281,8 +340,8 @@ static inline unsigned char imx_i2c_read
+@@ -282,8 +341,8 @@ static inline unsigned char imx_i2c_read
  }
  
  /* Functions for DMA support */
@@ -108,7 +108,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  {
  	struct imx_i2c_dma *dma;
  	struct dma_slave_config dma_sconfig;
-@@ -291,11 +350,13 @@ static void i2c_imx_dma_request(struct i
+@@ -292,11 +351,13 @@ static void i2c_imx_dma_request(struct i
  
  	dma = devm_kzalloc(dev, sizeof(*dma), GFP_KERNEL);
  	if (!dma)
@@ -126,7 +126,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  		goto fail_al;
  	}
  
-@@ -306,13 +367,15 @@ static void i2c_imx_dma_request(struct i
+@@ -307,13 +368,15 @@ static void i2c_imx_dma_request(struct i
  	dma_sconfig.direction = DMA_MEM_TO_DEV;
  	ret = dmaengine_slave_config(dma->chan_tx, &dma_sconfig);
  	if (ret < 0) {
@@ -146,7 +146,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  		goto fail_tx;
  	}
  
-@@ -323,7 +386,7 @@ static void i2c_imx_dma_request(struct i
+@@ -324,7 +387,7 @@ static void i2c_imx_dma_request(struct i
  	dma_sconfig.direction = DMA_DEV_TO_MEM;
  	ret = dmaengine_slave_config(dma->chan_rx, &dma_sconfig);
  	if (ret < 0) {
@@ -155,7 +155,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  		goto fail_rx;
  	}
  
-@@ -332,7 +395,7 @@ static void i2c_imx_dma_request(struct i
+@@ -333,7 +396,7 @@ static void i2c_imx_dma_request(struct i
  	dev_info(dev, "using %s (tx) and %s (rx) for DMA transfers\n",
  		dma_chan_name(dma->chan_tx), dma_chan_name(dma->chan_rx));
  
@@ -164,7 +164,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  
  fail_rx:
  	dma_release_channel(dma->chan_rx);
-@@ -340,7 +403,8 @@ fail_tx:
+@@ -341,7 +404,8 @@ fail_tx:
  	dma_release_channel(dma->chan_tx);
  fail_al:
  	devm_kfree(dev, dma);
@@ -174,7 +174,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  }
  
  static void i2c_imx_dma_callback(void *arg)
-@@ -878,6 +942,78 @@ static int i2c_imx_read(struct imx_i2c_s
+@@ -890,6 +954,78 @@ static int i2c_imx_read(struct imx_i2c_s
  	return 0;
  }
  
@@ -253,7 +253,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  static int i2c_imx_xfer(struct i2c_adapter *adapter,
  						struct i2c_msg *msgs, int num)
  {
-@@ -888,6 +1024,19 @@ static int i2c_imx_xfer(struct i2c_adapt
+@@ -900,6 +1036,19 @@ static int i2c_imx_xfer(struct i2c_adapt
  
  	dev_dbg(&i2c_imx->adapter.dev, "<%s>\n", __func__);
  
@@ -273,7 +273,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  	result = pm_runtime_get_sync(i2c_imx->adapter.dev.parent);
  	if (result < 0)
  		goto out;
-@@ -1030,6 +1179,50 @@ static int i2c_imx_init_recovery_info(st
+@@ -1042,6 +1191,50 @@ static int i2c_imx_init_recovery_info(st
  	return 0;
  }
  
@@ -324,7 +324,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  static u32 i2c_imx_func(struct i2c_adapter *adapter)
  {
  	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL
-@@ -1085,6 +1278,11 @@ static int i2c_imx_probe(struct platform
+@@ -1097,6 +1290,11 @@ static int i2c_imx_probe(struct platform
  	i2c_imx->adapter.dev.of_node	= pdev->dev.of_node;
  	i2c_imx->base			= base;
  
@@ -336,17 +336,7 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  	/* Get I2C clock */
  	i2c_imx->clk = devm_clk_get(&pdev->dev, NULL);
  	if (IS_ERR(i2c_imx->clk)) {
-@@ -1104,7 +1302,8 @@ static int i2c_imx_probe(struct platform
- 				pdev->name, i2c_imx);
- 	if (ret) {
- 		dev_err(&pdev->dev, "can't claim irq %d\n", irq);
--		goto clk_disable;
-+		clk_disable_unprepare(i2c_imx->clk);
-+		return ret;
- 	}
- 
- 	/* Init queue */
-@@ -1151,25 +1350,31 @@ static int i2c_imx_probe(struct platform
+@@ -1166,17 +1364,25 @@ static int i2c_imx_probe(struct platform
  	pm_runtime_mark_last_busy(&pdev->dev);
  	pm_runtime_put_autosuspend(&pdev->dev);
  
@@ -373,17 +363,9 @@ Signed-off-by: Zhang Ying-22455 <ying.zhang22455@nxp.com>
  
 +del_adapter:
 +	i2c_del_adapter(&i2c_imx->adapter);
- rpm_disable:
- 	pm_runtime_put_noidle(&pdev->dev);
- 	pm_runtime_disable(&pdev->dev);
- 	pm_runtime_set_suspended(&pdev->dev);
- 	pm_runtime_dont_use_autosuspend(&pdev->dev);
- 
--clk_disable:
--	clk_disable_unprepare(i2c_imx->clk);
- 	return ret;
- }
- 
+ clk_notifier_unregister:
+ 	clk_notifier_unregister(i2c_imx->clk, &i2c_imx->clk_change_nb);
+ 	free_irq(irq, i2c_imx);
 --- a/drivers/i2c/muxes/i2c-mux-pca954x.c
 +++ b/drivers/i2c/muxes/i2c-mux-pca954x.c
 @@ -85,6 +85,7 @@ struct pca954x {
