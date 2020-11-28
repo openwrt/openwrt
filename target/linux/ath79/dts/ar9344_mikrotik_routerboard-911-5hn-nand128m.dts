@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_mikrotik_routerboard-sxt-5n.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-911-5hn-nand128m", "qca,ar9344";
+	model = "MikroTik RouterBOARD 911-5Hn NAND 128MB (911 Lite5)";
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			routerboot: partition@0 {
+				label = "RouterBoot";
+				reg = <0x0 0x10000>;
+				read-only;
+				compatible = "mikrotik,routerboot-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "bootloader1";
+					reg = <0x0 0x0>;
+					read-only;
+				};
+
+				hard_config: hard_config {
+					read-only;
+				};
+
+				bios {
+					size = <0x1000>;
+					read-only;
+				};
+
+				soft_config {
+				};
+			};
+		};
+	};
+};
