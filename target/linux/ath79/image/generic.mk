@@ -410,6 +410,14 @@ define Device/belkin_f9j1108-v2
 endef
 TARGET_DEVICES += belkin_f9j1108-v2
 
+define Device/belkin_f9k1115-v2
+  $(Device/belkin_f9x-v2)
+  DEVICE_MODEL := F9K1115 v2 (AC1750 DB Wi-Fi)
+  EDIMAX_HEADER_MAGIC := eDiMaX
+  EDIMAX_HEADER_MODEL := F9K1115V2
+endef
+TARGET_DEVICES += belkin_f9k1115-v2
+
 define Device/buffalo_bhr-4grv
   $(Device/buffalo_common)
   SOC := ar7242
