@@ -17,6 +17,9 @@ engenius,epg5000)
 glinet,gl-mifi)
 	migrate_leds ":net=:3g4g"
 	;;
+meraki,mr12)
+	migrate_leds ":wifi=:link" ":wan=:lan"
+	;;
 openmesh,mr600-v1)
 	migrate_leds ":wlan58=:wifi5g"
 	;;
