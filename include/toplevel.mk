@@ -19,7 +19,6 @@ else
   SOURCE_DATE_EPOCH:=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh)
 endif
 
-HOSTCC ?= $(CC)
 export REVISION
 export SOURCE_DATE_EPOCH
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
@@ -58,13 +57,6 @@ path:=$(subst $(space),:,$(path))
 export PATH:=$(path)
 
 unexport TAR_OPTIONS
-
-ifneq ($(shell $(HOSTCC) 2>&1 | grep clang),)
-  export HOSTCC_REAL?=$(HOSTCC)
-  export HOSTCC_WRAPPER:=$(TOPDIR)/scripts/clang-gcc-wrapper
-else
-  export HOSTCC_WRAPPER:=$(HOSTCC)
-endif
 
 ifeq ($(FORCE),)
   .config scripts/config/conf scripts/config/mconf: staging_dir/host/.prereq-build
@@ -115,7 +107,7 @@ endif
 scripts/config/%onf: CFLAGS+= -O2
 scripts/config/%onf:
 	@$(_SINGLE)$(SUBMAKE) $(if $(findstring s,$(OPENWRT_VERBOSE)),,-s) \
-		-C scripts/config $(notdir $@) CC="$(HOSTCC_WRAPPER)"
+		-C scripts/config $(notdir $@)
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
 
