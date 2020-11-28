@@ -265,6 +265,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:wan" "6@eth1" "4:lan"
 		;;
+	meraki,mr12)
+		ucidef_set_interface_lan "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan"
+		;;
 	mercury,mw4530r-v1|\
 	tplink,archer-a7-v5|\
 	tplink,archer-c6-v2|\
