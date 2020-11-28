@@ -7,6 +7,7 @@ DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX
 DEVICE_VARS += DAP_SIGNATURE ENGENIUS_IMGNAME
+DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
 
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
@@ -381,10 +382,9 @@ define Device/avm_fritzdvbc
 endef
 TARGET_DEVICES += avm_fritzdvbc
 
-define Device/belkin_f9j1108-v2
+define Device/belkin_f9x-v2
   SOC := qca9558
   DEVICE_VENDOR := Belkin
-  DEVICE_MODEL := F9J1108 v2 (AC1750 DB Wi-Fi)
   IMAGE_SIZE := 14464k
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2 \
 	kmod-usb3 kmod-usb-ledtrig-usbport
@@ -398,7 +398,15 @@ define Device/belkin_f9j1108-v2
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size | \
-	edimax-headers F9J1108v1 BR-6679BAC | pad-to $$$$(BLOCKSIZE)
+	edimax-headers $$$$(EDIMAX_HEADER_MAGIC) $$$$(EDIMAX_HEADER_MODEL) | \
+	pad-to $$$$(BLOCKSIZE)
+endef
+
+define Device/belkin_f9j1108-v2
+  $(Device/belkin_f9x-v2)
+  DEVICE_MODEL := F9J1108 v2 (AC1750 DB Wi-Fi)
+  EDIMAX_HEADER_MAGIC := F9J1108v1
+  EDIMAX_HEADER_MODEL := BR-6679BAC
 endef
 TARGET_DEVICES += belkin_f9j1108-v2
 
