@@ -297,6 +297,7 @@ indicate_upgrade() {
 # $(2): (optional) pipe command to extract firmware, e.g. dd bs=n skip=m
 default_do_upgrade() {
 	sync
+	echo 3 > /proc/sys/vm/drop_caches
 	if [ -n "$UPGRADE_BACKUP" ]; then
 		get_image "$1" "$2" | mtd $MTD_ARGS $MTD_CONFIG_ARGS -j "$UPGRADE_BACKUP" write - "${PART_NAME:-image}"
 	else

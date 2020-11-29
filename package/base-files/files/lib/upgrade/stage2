@@ -123,6 +123,7 @@ kill_remaining KILL 1
 
 sleep 1
 
+echo 3 > /proc/sys/vm/drop_caches
 
 if [ -n "$IMAGE" ] && type 'platform_pre_upgrade' >/dev/null 2>/dev/null; then
 	platform_pre_upgrade "$IMAGE"
