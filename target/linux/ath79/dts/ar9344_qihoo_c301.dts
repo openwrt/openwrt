@@ -101,11 +101,10 @@
 };
 
 &spi {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pmx_spi_cs1>;
 	status = "okay";
 
-	num-cs = <2>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmx_spi_cs1>;
 
 	flash@0 {
 		#address-cells = <1>;
