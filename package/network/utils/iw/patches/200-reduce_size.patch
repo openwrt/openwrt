@@ -337,9 +337,9 @@
  SECTION(switch);
  COMMAND(switch, freq,
  	"<freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz] [beacons <count>] [block-tx]\n"
-@@ -956,3 +959,4 @@ COMMAND(set, tidconf, "[peer <MAC addres
- 	"  $ iw dev wlan0 tids 0x3 override ampdu on noack on rtscts on\n"
- 	"  $ iw dev wlan0 peer xx:xx:xx:xx:xx:xx tids 0x1 ampdu off tids 0x3 amsdu off rtscts on\n"
+@@ -990,3 +993,4 @@ COMMAND(set, tidconf, "[peer <MAC addres
+ 	"  $ iw dev wlan0 set tidconf peer xx:xx:xx:xx:xx:xx tids 0x2 bitrates auto\n"
+ 	"  $ iw dev wlan0 set tidconf peer xx:xx:xx:xx:xx:xx tids 0x2 bitrates limit vht-mcs-5 4:9\n"
  	);
 +#endif
 --- a/phy.c
