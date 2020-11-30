@@ -79,6 +79,15 @@ define Build/InstallDev
 	$(LN) ../../usr/bin/pcap-config $(2)/bin/pcap-config
 endef
 
+define Build/InstallDev
+	$(call Build/InstallDev/cmake,$(1))
+	$(SED) \
+		's,^\(prefix\)=.*,\1=$(STAGING_DIR)/usr,g' \
+		$(1)/usr/bin/pcap-config $(1)/usr/lib/pkgconfig/libpcap.pc
+	$(INSTALL_DIR) $(2)/bin
+	$(LN) ../../usr/bin/pcap-config $(2)/bin/
+endef
+
 define Package/libpcap/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcap.so.* $(1)/usr/lib/
