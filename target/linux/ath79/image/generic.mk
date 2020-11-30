@@ -804,6 +804,17 @@ define Device/dlink_dap-2695-a1
 endef
 TARGET_DEVICES += dlink_dap-2695-a1
 
+define Device/dlink_dap-3320-a1
+  $(Device/dlink_dap-2xxx)
+  SOC := qca9533
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-3320
+  DEVICE_VARIANT := A1
+  IMAGE_SIZE := 15296k
+  DAP_SIGNATURE := wapn29_dkbs_dap3320
+endef
+TARGET_DEVICES += dlink_dap-3320-a1
+
 define Device/dlink_dch-g020-a1
   SOC := qca9531
   DEVICE_VENDOR := D-Link
