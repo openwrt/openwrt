@@ -66,6 +66,9 @@ qcom,ipq8064-db149)
 	ucidef_add_switch "switch0" \
 		"1:lan" "2:lan" "3:lan" "4:lan" "6u@eth1" "5:wan" "0u@eth0"
 	;;
+ubnt,unifi-ac-hd)
+	ucidef_set_interface_lan "eth0 eth1"
+	;;
 zyxel,nbg6817)
 	hw_mac_addr=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
 	ucidef_add_switch "switch0" \
