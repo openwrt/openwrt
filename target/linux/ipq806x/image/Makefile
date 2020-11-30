@@ -382,6 +382,18 @@ define Device/tplink_vr2600v
 endef
 TARGET_DEVICES += tplink_vr2600v
 
+define Device/ubnt_unifi-ac-hd
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Ubiquiti
+	DEVICE_MODEL := UniFi AC HD
+	SOC := qcom-ipq8064
+	BLOCKSIZE := 64k
+	IMAGE_SIZE := 14784k
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | check-size
+endef
+TARGET_DEVICES += ubnt_unifi-ac-hd
+
 define Device/zyxel_nbg6817
 	DEVICE_VENDOR := ZyXEL
 	DEVICE_MODEL := NBG6817
