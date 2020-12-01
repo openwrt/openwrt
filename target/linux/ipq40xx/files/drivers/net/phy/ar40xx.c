@@ -1200,11 +1200,7 @@ ar40xx_init_port(struct ar40xx_priv *priv, int port)
 	ar40xx_rmw(priv, AR40XX_REG_PORT_STATUS(port),
 			AR40XX_PORT_AUTO_LINK_EN, 0);
 
-	/* CPU port is setting headers to limit output ports */
-	if (port == 0)
-		ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0x8);
-	else
-		ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0);
+	ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0);
 
 	ar40xx_write(priv, AR40XX_REG_PORT_VLAN0(port), 0);
 
@@ -1247,10 +1243,6 @@ ar40xx_init_globals(struct ar40xx_priv *priv)
 	t = (AR40XX_PORT0_FC_THRESH_ON_DFLT << 16) |
 	      AR40XX_PORT0_FC_THRESH_OFF_DFLT;
 	ar40xx_write(priv, AR40XX_REG_PORT_FLOWCTRL_THRESH(0), t);
-
-	/* set service tag to 802.1q */
-	t = ETH_P_8021Q | AR40XX_ESS_SERVICE_TAG_STAG;
-	ar40xx_write(priv, AR40XX_ESS_SERVICE_TAG, t);
 }
 
 static void
@@ -1576,10 +1568,7 @@ ar40xx_setup_port(struct ar40xx_priv *priv, int port, u32 members)
 	u32 pvid = priv->vlan_id[priv->pvid[port]];
 
 	if (priv->vlan) {
-		if (priv->vlan_tagged & BIT(port))
-			egress = AR40XX_PORT_VLAN1_OUT_MODE_TAG;
-		else
-			egress = AR40XX_PORT_VLAN1_OUT_MODE_UNMOD;
+		egress = AR40XX_PORT_VLAN1_OUT_MODE_UNMOD;
 
 		ingress = AR40XX_IN_SECURE;
 	} else {
@@ -1591,16 +1580,8 @@ ar40xx_setup_port(struct ar40xx_priv *priv, int port, u32 members)
 	t |= pvid << AR40XX_PORT_VLAN0_DEF_CVID_S;
 	ar40xx_write(priv, AR40XX_REG_PORT_VLAN0(port), t);
 
-	t = egress << AR40XX_PORT_VLAN1_OUT_MODE_S;
-
-	/* set CPU port to core port */
-	if (port == 0)
-		t |= AR40XX_PORT_VLAN1_CORE_PORT;
-
-	if (priv->vlan_tagged & BIT(port))
-		t |= AR40XX_PORT_VLAN1_PORT_VLAN_PROP;
-	else
-		t |= AR40XX_PORT_VLAN1_PORT_TLS_MODE;
+	t = AR40XX_PORT_VLAN1_PORT_VLAN_PROP;
+	t |= egress << AR40XX_PORT_VLAN1_OUT_MODE_S;
 
 	ar40xx_write(priv, AR40XX_REG_PORT_VLAN1(port), t);
 
