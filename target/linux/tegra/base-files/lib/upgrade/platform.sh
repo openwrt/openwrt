@@ -12,7 +12,7 @@ platform_check_image() {
 
 	get_partitions "/dev/$diskdev" bootdisk
 
-	#extract the boot sector from the image
+	v "Extract boot sector from the image"
 	get_image_dd "$1" of=/tmp/image.bs count=1 bs=512b
 
 	get_partitions /tmp/image.bs image
@@ -52,7 +52,7 @@ platform_do_upgrade() {
 	if [ "$UPGRADE_OPT_SAVE_PARTITIONS" = "1" ]; then
 		get_partitions "/dev/$diskdev" bootdisk
 
-		#extract the boot sector from the image
+		v "Extract boot sector from the image"
 		get_image_dd "$1" of=/tmp/image.bs count=1 bs=512b
 
 		get_partitions /tmp/image.bs image
@@ -74,7 +74,7 @@ platform_do_upgrade() {
 		return 0
 	fi
 
-	#write uboot image
+	v "Writing bootloader to /dev/$diskdev"
 	get_image_dd "$1" of="$diskdev" bs=512 skip=1 seek=1 count=4097 conv=fsync,notrunc
 	#iterate over each partition from the image and write it to the boot disk
 	while read part start size; do
@@ -86,7 +86,6 @@ platform_do_upgrade() {
 		fi
 	done < /tmp/partmap.image
 
-	#copy partition uuid
 	v "Writing new UUID to /dev/$diskdev..."
 	get_image_dd "$1" of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
 }
