@@ -65,4 +65,12 @@ define Device/netgear_gs110tpp-v1
 endef
 TARGET_DEVICES += netgear_gs110tpp-v1
 
+define Device/zyxel_gs1900-10hp
+  SOC := rtl8380
+  IMAGE_SIZE := 6976k
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := GS1900-10HP
+endef
+TARGET_DEVICES += zyxel_gs1900-10hp
+
 $(eval $(call BuildImage))
