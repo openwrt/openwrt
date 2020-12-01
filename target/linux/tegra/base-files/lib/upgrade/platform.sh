@@ -3,8 +3,6 @@ REQUIRE_IMAGE_METADATA=1
 platform_check_image() {
 	local diskdev partdev diff
 
-	[ "$#" -gt 1 ] && return 1
-
 	export_bootdevice && export_partdevice diskdev 0 || {
 		v "Unable to determine upgrade device"
 		return 1
