@@ -794,6 +794,18 @@ define Device/dlink_dap-3320-a1
 endef
 TARGET_DEVICES += dlink_dap-3320-a1
 
+define Device/dlink_dap-3662-a1
+  $(Device/dlink_dap-2xxx)
+  SOC := qca9558
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-3662
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 15296k
+  DAP_SIGNATURE := wapac11_dkbs_dap3662
+endef
+TARGET_DEVICES += dlink_dap-3662-a1
+
 define Device/dlink_dch-g020-a1
   SOC := qca9531
   DEVICE_VENDOR := D-Link

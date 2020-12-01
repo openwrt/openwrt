@@ -204,6 +204,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:wan" "6@eth1"
 		;;
+	dlink,dap-3662-a1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:2" "2:lan:1" "6@eth1"
+		;;
 	dlink,dch-g020-a1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:2" "2:lan:1"
@@ -502,7 +506,8 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii bdcfg "lanmac")
 		label_mac=$lan_mac
 		;;
-	dlink,dap-2695-a1)
+	dlink,dap-2695-a1|\
+	dlink,dap-3662-a1)
 		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
 	dlink,dir-825-b1)
