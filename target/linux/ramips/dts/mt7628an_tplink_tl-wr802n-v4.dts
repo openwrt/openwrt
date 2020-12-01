@@ -33,6 +33,14 @@
 	};
 };
 
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
 &state_default {
 	gpio {
 		groups = "refclk", "wdt";

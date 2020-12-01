@@ -69,6 +69,14 @@
 	};
 };
 
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
 &wmac {
 	mtd-mac-address-increment = <(-2)>;
 };
