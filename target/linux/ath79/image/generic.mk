@@ -1144,9 +1144,11 @@ define Device/jjplus_ja76pf2
   DEVICE_VENDOR := jjPlus
   DEVICE_MODEL := JA76PF2
   DEVICE_PACKAGES += -kmod-ath9k -swconfig -wpad-basic-wolfssl -uboot-envtools fconfig
-  IMAGES := kernel.bin rootfs.bin
+  IMAGES += kernel.bin rootfs.bin
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | \
+	append-metadata | check-size
   KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
   IMAGE_SIZE := 16000k
