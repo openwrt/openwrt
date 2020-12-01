@@ -9,7 +9,7 @@ platform_check_image_sdcard() {
 
 	get_partitions "/dev/$diskdev" bootdisk
 
-	#extract the boot sector from the image
+	v "Extract boot sector from the image"
 	get_image_dd "$1" of=/tmp/image.bs count=1 bs=512b
 
 	get_partitions /tmp/image.bs image
@@ -40,7 +40,7 @@ platform_do_upgrade_sdcard() {
 	if [ "$UPGRADE_OPT_SAVE_PARTITIONS" = "1" ]; then
 		get_partitions "/dev/$diskdev" bootdisk
 
-		#extract the boot sector from the image
+		v "Extract boot sector from the image"
 		get_image_dd "$1" of=/tmp/image.bs count=1 bs=512b
 
 		get_partitions /tmp/image.bs image
@@ -59,7 +59,7 @@ platform_do_upgrade_sdcard() {
 		partx -d - "/dev/$diskdev"
 		partx -a - "/dev/$diskdev"
 	else
-		#write uboot image
+		v "Writing bootloader to /dev/$diskdev"
 		get_image_dd "$1" of="$diskdev" bs=512 skip=1 seek=1 count=2048 conv=fsync
 		#iterate over each partition from the image and write it to the boot disk
 		while read part start size; do
@@ -71,7 +71,6 @@ platform_do_upgrade_sdcard() {
 			fi
 		done < /tmp/partmap.image
 
-		#copy partition uuid
 		v "Writing new UUID to /dev/$diskdev..."
 		get_image_dd "$1" of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
 	fi
