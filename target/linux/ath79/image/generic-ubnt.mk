@@ -310,9 +310,11 @@ define Device/ubnt_routerstation_common
   DEVICE_VENDOR := Ubiquiti
   SOC := ar7161
   IMAGE_SIZE := 16128k
-  IMAGES := factory.bin
+  IMAGES += factory.bin
   IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | \
 	check-size
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | \
+	append-metadata | check-size
   KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
 endef
