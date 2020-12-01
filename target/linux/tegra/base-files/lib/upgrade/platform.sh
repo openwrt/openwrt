@@ -6,7 +6,7 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	export_bootdevice && export_partdevice diskdev 0 || {
-		echo "Unable to determine upgrade device"
+		v "Unable to determine upgrade device"
 		return 1
 	}
 
@@ -23,7 +23,7 @@ platform_check_image() {
 	rm -f /tmp/image.bs /tmp/partmap.bootdisk /tmp/partmap.image
 
 	if [ -n "$diff" ]; then
-		echo "Partition layout has changed. Full image will be written."
+		v "Partition layout has changed. Full image will be written."
 		ask_bool 0 "Abort" && exit 1
 		return 0
 	fi
@@ -43,7 +43,7 @@ platform_do_upgrade() {
 	local diskdev partdev diff
 
 	export_bootdevice && export_partdevice diskdev 0 || {
-		echo "Unable to determine upgrade device"
+		v "Unable to determine upgrade device"
 		return 1
 	}
 
@@ -79,14 +79,14 @@ platform_do_upgrade() {
 	#iterate over each partition from the image and write it to the boot disk
 	while read part start size; do
 		if export_partdevice partdev $part; then
-			echo "Writing image to /dev/$partdev..."
+			v "Writing image to /dev/$partdev..."
 			get_image_dd "$1" of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
 		else
-			echo "Unable to find partition $part device, skipped."
+			v "Unable to find partition $part device, skipped."
 		fi
 	done < /tmp/partmap.image
 
 	#copy partition uuid
-	echo "Writing new UUID to /dev/$diskdev..."
+	v "Writing new UUID to /dev/$diskdev..."
 	get_image_dd "$1" of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
 }
