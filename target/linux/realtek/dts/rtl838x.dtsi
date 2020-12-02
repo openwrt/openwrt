@@ -35,6 +35,18 @@
 		phy-mode = #m ; \
 	};
 
+#define SWITCH_SFP_PORT(n, s, m) \
+	port@##n { \
+		reg = <##n>; \
+		label = SWITCH_PORT_LABEL(s) ; \
+		phy-handle = <&phy##n>; \
+		phy-mode = #m ; \
+		fixed-link { \
+			speed = <1000>; \
+			full-duplex; \
+		}; \
+	};
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
