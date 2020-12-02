@@ -9,8 +9,6 @@ Signed-off-by: Tony Ambardar <Tony.Ambardar@gmail.com>
  src/misc/nftw.c | 35 ++++++++++++++++++++++++++++++-----
  2 files changed, 38 insertions(+), 5 deletions(-)
 
-diff --git a/include/ftw.h b/include/ftw.h
-index b15c062a..ce85deac 100644
 --- a/include/ftw.h
 +++ b/include/ftw.h
 @@ -21,6 +21,14 @@ extern "C" {
@@ -28,17 +26,15 @@ index b15c062a..ce85deac 100644
  struct FTW {
  	int base;
  	int level;
-diff --git a/src/misc/nftw.c b/src/misc/nftw.c
-index 8dcff7fe..0bb7b601 100644
 --- a/src/misc/nftw.c
 +++ b/src/misc/nftw.c
 @@ -1,3 +1,4 @@
 +#define _GNU_SOURCE
  #include <ftw.h>
  #include <dirent.h>
- #include <fcntl.h>
-@@ -72,8 +73,20 @@ static int do_nftw(char *path, int (*fn)(const char *, const struct stat *, int,
- 		if (!fd_limit) close(dfd);
+ #include <sys/stat.h>
+@@ -63,8 +64,20 @@ static int do_nftw(char *path, int (*fn)
+ 		lev.base = k;
  	}
  
 -	if (!(flags & FTW_DEPTH) && (r=fn(path, &st, type, &lev)))
@@ -60,7 +56,7 @@ index 8dcff7fe..0bb7b601 100644
  
  	for (; h; h = h->chain)
  		if (h->dev == st.st_dev && h->ino == st.st_ino)
-@@ -101,7 +114,10 @@ static int do_nftw(char *path, int (*fn)(const char *, const struct stat *, int,
+@@ -88,7 +101,10 @@ static int do_nftw(char *path, int (*fn)
  				strcpy(path+j+1, de->d_name);
  				if ((r=do_nftw(path, fn, fd_limit-1, flags, &new))) {
  					closedir(d);
@@ -72,7 +68,7 @@ index 8dcff7fe..0bb7b601 100644
  				}
  			}
  			closedir(d);
-@@ -112,8 +128,16 @@ static int do_nftw(char *path, int (*fn)(const char *, const struct stat *, int,
+@@ -98,8 +114,16 @@ static int do_nftw(char *path, int (*fn)
  	}
  
  	path[l] = 0;
@@ -91,12 +87,9 @@ index 8dcff7fe..0bb7b601 100644
  
  	return 0;
  }
-@@ -139,4 +163,5 @@ int nftw(const char *path, int (*fn)(const char *, const struct stat *, int, str
+@@ -125,4 +149,5 @@ int nftw(const char *path, int (*fn)(con
  	return r;
  }
  
 +#undef nftw64
  weak_alias(nftw, nftw64);
--- 
-2.17.1
-
