@@ -258,6 +258,7 @@ static struct mtd_part_parser uimage_generic_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
+#define FW_MAGIC_GS110TPPV1	0x4e474520
 #define FW_MAGIC_WNR2000V1	0x32303031
 #define FW_MAGIC_WNR2000V3	0x32303033
 #define FW_MAGIC_WNR2000V4	0x32303034
@@ -275,6 +276,10 @@ static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len, int *extralen)
 	uint8_t expected_type = IH_TYPE_FILESYSTEM;
 
 	switch (be32_to_cpu(header->ih_magic)) {
+	case FW_MAGIC_GS110TPPV1:
+	case FW_MAGIC_WNR2000V4:
+		expected_type = IH_TYPE_KERNEL;
+		break;
 	case FW_MAGIC_WNR612V2:
 	case FW_MAGIC_WNR1000V2:
 	case FW_MAGIC_WNR1000V2_VC:
@@ -284,9 +289,6 @@ static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len, int *extralen)
 	case FW_MAGIC_WNDR3700:
 	case FW_MAGIC_WNDR3700V2:
 	case FW_MAGIC_WPN824N:
-		break;
-	case FW_MAGIC_WNR2000V4:
-		expected_type = IH_TYPE_KERNEL;
 		break;
 	default:
 		return -EINVAL;

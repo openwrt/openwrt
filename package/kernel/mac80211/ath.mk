@@ -218,6 +218,7 @@ define KernelPackage/ath9k/config
 	config ATH9K_SUPPORT_PCOEM
 		bool "Support chips used in PC OEM cards"
 		depends on PACKAGE_kmod-ath9k
+		default y if (x86_64 || i386)
 
        config ATH9K_TX99
                bool "Enable TX99 support (WARNING: testing only, breaks normal operation!)"

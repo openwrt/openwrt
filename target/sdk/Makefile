@@ -82,7 +82,12 @@ KERNEL_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(
 all: compile
 
 $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
-	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
+	mkdir -p \
+		$(SDK_BUILD_DIR)/dl \
+		$(SDK_BUILD_DIR)/package \
+		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TARGET)/include \
+		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TARGET)/usr/include
+
 	$(CP) -L $(INCLUDE_DIR) $(SCRIPT_DIR) $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) \
 		`cd $(TOPDIR); find $(KDIR_BASE)/ -name \*.ko` \
@@ -129,11 +134,14 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		./files/include/prepare.mk \
 		./files/README.SDK \
 		$(SDK_BUILD_DIR)/
+	mkdir -p $(SDK_BUILD_DIR)/package/kernel
 	$(CP) \
 		$(TOPDIR)/package/Makefile \
 		$(TOPDIR)/package/libs/toolchain \
-		$(TOPDIR)/package/kernel/linux \
 		$(SDK_BUILD_DIR)/package/
+	$(CP) \
+		$(TOPDIR)/package/kernel/linux \
+		$(SDK_BUILD_DIR)/package/kernel/
 
 	-rm -rf $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/.prereq-build
 

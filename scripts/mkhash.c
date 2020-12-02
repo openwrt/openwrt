@@ -79,15 +79,22 @@
 
 
 
+#ifndef __FreeBSD__
 #include <endian.h>
+#else
+#include <sys/endian.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #define ARRAY_SIZE(_n) (sizeof(_n) / sizeof((_n)[0]))
 
+#ifndef __FreeBSD__
 static void
 be32enc(void *buf, uint32_t u)
 {
@@ -98,6 +105,7 @@ be32enc(void *buf, uint32_t u)
 	p[2] = ((uint8_t) ((u >> 8) & 0xff));
 	p[3] = ((uint8_t) (u & 0xff));
 }
+#endif
 
 static void
 be64enc(void *buf, uint64_t u)
@@ -736,7 +744,10 @@ static int usage(const char *progname)
 {
 	int i;
 
-	fprintf(stderr, "Usage: %s <hash type> [<file>...]\n"
+	fprintf(stderr, "Usage: %s <hash type> [options] [<file>...]\n"
+		"Options:\n"
+		"	-n		Print filename(s)\n"
+		"\n"
 		"Supported hash types:", progname);
 
 	for (i = 0; i < ARRAY_SIZE(types); i++)
@@ -767,6 +778,13 @@ static int hash_file(struct hash_type *t, const char *filename, bool add_filenam
 	if (!filename || !strcmp(filename, "-")) {
 		str = t->func(stdin);
 	} else {
+		struct stat path_stat;
+		stat(filename, &path_stat);
+		if (S_ISDIR(path_stat.st_mode)) {
+			fprintf(stderr, "Failed to open '%s': Is a directory\n", filename);
+			return 1;
+		}
+
 		FILE *f = fopen(filename, "r");
 
 		if (!f) {
@@ -820,8 +838,11 @@ int main(int argc, char **argv)
 	if (argc < 2)
 		return hash_file(t, NULL, add_filename);
 
-	for (i = 0; i < argc - 1; i++)
-		hash_file(t, argv[1 + i], add_filename);
+	for (i = 0; i < argc - 1; i++) {
+		int ret = hash_file(t, argv[1 + i], add_filename);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }

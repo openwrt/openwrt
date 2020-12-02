@@ -136,21 +136,6 @@ endef
 $(eval $(call KernelPackage,dma-buf))
 
 
-define KernelPackage/nvmem
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Non Volatile Memory support
-  DEPENDS:=@LINUX_4_19
-  KCONFIG:=CONFIG_NVMEM
-  HIDDEN:=1
-  FILES:=$(LINUX_DIR)/drivers/nvmem/nvmem_core.ko
-endef
-
-define KernelPackage/nvmem/description
-  Support for NVMEM(Non Volatile Memory) devices like EEPROM, EFUSES, etc.
-endef
-
-$(eval $(call KernelPackage,nvmem))
-
 define KernelPackage/eeprom-93cx6
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM 93CX6 support
@@ -170,7 +155,7 @@ define KernelPackage/eeprom-at24
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM AT24 support
   KCONFIG:=CONFIG_EEPROM_AT24
-  DEPENDS:=+kmod-i2c-core +LINUX_4_19:kmod-nvmem +kmod-regmap-i2c
+  DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at24.ko
   AUTOLOAD:=$(call AutoProbe,at24)
 endef
@@ -186,7 +171,6 @@ define KernelPackage/eeprom-at25
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM AT25 support
   KCONFIG:=CONFIG_EEPROM_AT25
-  DEPENDS:=+LINUX_4_19:kmod-nvmem
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at25.ko
   AUTOLOAD:=$(call AutoProbe,at25)
 endef
@@ -265,7 +249,7 @@ $(eval $(call KernelPackage,gpio-nxp-74hc164))
 
 define KernelPackage/gpio-pca953x
   SUBMENU:=$(OTHER_MENU)
-  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +!LINUX_4_19:kmod-regmap-i2c
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +kmod-regmap-i2c
   TITLE:=PCA95xx, TCA64xx, and MAX7310 I/O ports
   KCONFIG:=CONFIG_GPIO_PCA953X
   FILES:=$(LINUX_DIR)/drivers/gpio/gpio-pca953x.ko
@@ -651,7 +635,7 @@ define KernelPackage/rtc-pcf2123
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF2123 RTC support
   DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
-  DEPENDS:=+!LINUX_4_19:kmod-regmap-spi
+  DEPENDS:=+kmod-regmap-spi
   KCONFIG:=CONFIG_RTC_DRV_PCF2123 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2123.ko
@@ -818,7 +802,7 @@ define KernelPackage/serial-8250
 	$(LINUX_DIR)/drivers/tty/serial/8250/8250.ko \
 	$(LINUX_DIR)/drivers/tty/serial/8250/8250_base.ko \
 	$(if $(CONFIG_PCI),$(LINUX_DIR)/drivers/tty/serial/8250/8250_pci.ko) \
-	$(if $(CONFIG_GPIOLIB),$(LINUX_DIR)/drivers/tty/serial/serial_mctrl_gpio.ko@ge5.3)
+	$(if $(CONFIG_GPIOLIB),$(LINUX_DIR)/drivers/tty/serial/serial_mctrl_gpio.ko)
   AUTOLOAD:=$(call AutoProbe,8250 8250_base 8250_pci)
 endef
 

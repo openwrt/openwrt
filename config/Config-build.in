@@ -182,6 +182,14 @@ menu "Global build settings"
 		help
 		  Specifies arguments passed to the strip command when stripping binaries.
 
+	config SSTRIP_ARGS
+		string
+		prompt "Sstrip arguments"
+		depends on USE_SSTRIP
+		default "-z"
+		help
+		  Specifies arguments passed to the sstrip command when stripping binaries.
+
 	config STRIP_KERNEL_EXPORTS
 		bool "Strip unnecessary exports from the kernel image"
 		help
@@ -282,11 +290,11 @@ menu "Global build settings"
 			bool "Strong"
 	endchoice
 
-	config  KERNEL_STACKPROTECTOR
+	config KERNEL_STACKPROTECTOR
 		bool
 		default KERNEL_CC_STACKPROTECTOR_REGULAR || KERNEL_CC_STACKPROTECTOR_STRONG
 
-	config  KERNEL_STACKPROTECTOR_STRONG
+	config KERNEL_STACKPROTECTOR_STRONG
 		bool
 		default KERNEL_CC_STACKPROTECTOR_STRONG
 
@@ -329,27 +337,45 @@ menu "Global build settings"
 	endchoice
 
 	config TARGET_ROOTFS_SECURITY_LABELS
-		bool "Enable rootfs security labels"
+		bool
 		select KERNEL_SQUASHFS_XATTR
 		select KERNEL_EXT4_FS_SECURITY
 		select KERNEL_F2FS_FS_SECURITY
 		select KERNEL_UBIFS_FS_SECURITY
 		select KERNEL_JFFS2_FS_SECURITY
+
+	config SELINUX
+		bool "Enable SELinux"
+		select KERNEL_SECURITY_SELINUX
+		select TARGET_ROOTFS_SECURITY_LABELS
+		select PACKAGE_procd-selinux
+		select PACKAGE_busybox-selinux
 		help
-		  This option enables the usage of SELinux labels
+		  This option enables SELinux kernel features, applies security labels
+		  in squashfs rootfs and selects the selinux-variants of busybox and procd.
+
+		  Selecting this option results in about 0.5MiB of additional flash space
+		  usage accounting for increased kernel and rootfs size.
 
 	choice
 		prompt "default SELinux type"
 		depends on TARGET_ROOTFS_SECURITY_LABELS
 		default SELINUXTYPE_dssp
 		help
-		  Choose SELinux policy to be used for build.
+		  Select SELinux policy to be installed and used for applying rootfs labels.
+
 		config SELINUXTYPE_targeted
 			bool "targeted"
 			select PACKAGE_refpolicy
+			help
+			  SELinux Reference Policy (refpolicy)
+
 		config SELINUXTYPE_dssp
 			bool "dssp"
 			select PACKAGE_selinux-policy
+			help
+			  Defensec SELinux Security Policy -- OpenWrt edition
+
 	endchoice
 
 endmenu

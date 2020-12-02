@@ -29,6 +29,12 @@ export GNU_HOST_NAME:=$(shell $(TOPDIR)/scripts/config.guess)
 export HOST_OS:=$(shell uname)
 export HOST_ARCH:=$(shell uname -m)
 
+ifeq ($(HOST_OS),Darwin)
+  ifneq ($(filter /Applications/Xcode.app/% /Library/Developer/%,$(MAKE)),)
+    $(error Please use a newer version of GNU make. The version shipped by Apple is not supported)
+  endif
+endif
+
 # prevent perforce from messing with the patch utility
 unexport P4PORT P4USER P4CONFIG P4CLIENT
 

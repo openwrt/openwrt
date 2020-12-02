@@ -13,6 +13,7 @@ ath79_setup_interfaces()
 	adtran,bsap1840|\
 	allnet,all-wap02860ac|\
 	alfa-network,ap121f|\
+	alfa-network,pi-wifi4|\
 	arduino,yun|\
 	aruba,ap-105|\
 	avm,fritz1750e|\
@@ -27,6 +28,7 @@ ath79_setup_interfaces()
 	dlink,dap-1330-a1|\
 	dlink,dap-1365-a1|\
 	dlink,dir-505|\
+	engenius,eap300-v2|\
 	engenius,ecb1750|\
 	enterasys,ws-ap3705i|\
 	glinet,gl-ar300m-lite|\
@@ -47,6 +49,9 @@ ath79_setup_interfaces()
 	tplink,cpe510-v3|\
 	tplink,cpe610-v1|\
 	tplink,cpe610-v2|\
+	tplink,eap225-outdoor-v1|\
+	tplink,eap225-v3|\
+	tplink,eap245-v1|\
 	tplink,re350k-v1|\
 	tplink,re355-v1|\
 	tplink,re450-v1|\
@@ -244,6 +249,11 @@ ath79_setup_interfaces()
 			"0@eth0" "2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "1:wan"
 		;;
 	nec,wg1200cr|\
+	qxwlan,e1700ac-v2-8m|\
+	qxwlan,e1700ac-v2-16m|\
+	qxwlan,e750g-v8-8m|\
+	qxwlan,e750g-v8-16m|\
+	ubnt,nanobeam-ac-gen2|\
 	ubnt,nanostation-ac|\
 	yuncore,a782|\
 	yuncore,xd4200)
@@ -282,6 +292,11 @@ ath79_setup_interfaces()
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan"
+		;;
+	qxwlan,e558-v2-8m|\
+	qxwlan,e558-v2-16m)
+		ucidef_add_switch "switch0" \
+			"0@eth1" "4:lan" "5:lan" "6@eth0" "3:wan"
 		;;
 	rosinson,wr818)
 		ucidef_add_switch "switch0" \
@@ -407,7 +422,10 @@ ath79_setup_macs()
 	alfa-network,ap121f|\
 	alfa-network,ap121fe|\
 	alfa-network,n2q|\
+	alfa-network,n5q|\
+	alfa-network,pi-wifi4|\
 	alfa-network,r36a|\
+	engenius,eap300-v2|\
 	engenius,ens202ext-v1)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
@@ -573,6 +591,7 @@ ath79_setup_macs()
 		label_mac=$wan_mac
 		;;
 	ubnt,litebeam-ac-gen2|\
+	ubnt,nanobeam-ac-gen2|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2)
 		label_mac=$(mtd_get_mac_binary art 0x5006)

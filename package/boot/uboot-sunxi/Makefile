@@ -172,6 +172,12 @@ define U-Boot/nanopi_neo
   BUILD_DEVICES:=friendlyarm_nanopi-neo
 endef
 
+define U-Boot/nanopi_r1
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=U-Boot for NanoPi R1 (H3)
+  BUILD_DEVICES:=friendlyarm_nanopi-r1
+endef
+
 define U-Boot/orangepi_r1
   BUILD_SUBTARGET:=cortexa7
   NAME:=Orange Pi R1 (H2+)
@@ -218,6 +224,14 @@ define U-Boot/pangolin
   BUILD_SUBTARGET:=cortexa7
   NAME:=Theobroma A31-yQ7 devboard
   UENV:=pangolin
+endef
+
+define U-Boot/libretech_all_h3_cc_h5
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Libre Computer ALL-H3-CC H5
+  BUILD_DEVICES:=libretech_all-h3-cc-h5
+  DEPENDS:=+PACKAGE_u-boot-libretech_all_h3_cc_h5:arm-trusted-firmware-sunxi
+  UENV:=a64
 endef
 
 define U-Boot/nanopi_neo_plus2
@@ -278,7 +292,7 @@ endef
 define U-Boot/Bananapi_M2_Ultra
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Ultra
-  BUILD_DEVICES:=lemaker_bananapi-m2-ultra
+  BUILD_DEVICES:=sinovoip_bananapi-m2-ultra
 endef
 
 UBOOT_TARGETS := \
@@ -310,6 +324,7 @@ UBOOT_TARGETS := \
 	nanopi_neo_air \
 	nanopi_neo_plus2 \
 	nanopi_neo2 \
+	nanopi_r1 \
 	orangepi_zero \
 	orangepi_r1 \
 	orangepi_one \
@@ -321,7 +336,8 @@ UBOOT_TARGETS := \
 	pangolin \
 	pine64_plus \
 	sopine_baseboard \
-	orangepi_zero_plus
+	orangepi_zero_plus \
+	libretech_all_h3_cc_h5
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 

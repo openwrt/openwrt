@@ -1,0 +1,226 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl838x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "netgear,gs110tpp-v1", "realtek,rtl838x-soc";
+	model = "Netgear GS110TPP";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		mode {
+			label = "reset";
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&gpio0 {
+	indirect-access-bus-id = <0>;
+};
+
+&spi0 {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0000000 0x0e0000>;
+				read-only;
+			};
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0x00e0000 0x010000>;
+			};
+			partition@f0000 {
+				label = "sysinfo";
+				reg = <0x00f0000 0x010000>;
+				read-only;
+			};
+			partition@100000{
+				label = "jffs2_cfg";
+				reg = <0x0100000 0x100000>;
+				read-only;
+			};
+			partition@200000{
+				label = "jffs2_log";
+				reg = <0x0200000 0x100000>;
+			};
+			partition@300000{
+				label = "firmware";
+				compatible = "netgear,uimage";
+				reg = <0x0300000 0x1d00000>;
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	mdio: mdio-bus {
+		compatible = "realtek,rtl838x-mdio";
+		regmap = <&ethernet0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Internal phy */
+		phy8: ethernet-phy@8 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <8>;
+		};
+		phy9: ethernet-phy@9 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <9>;
+		};
+		phy10: ethernet-phy@10 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <10>;
+		};
+		phy11: ethernet-phy@11 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <11>;
+		};
+		phy12: ethernet-phy@12 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <12>;
+		};
+		phy13: ethernet-phy@13 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <13>;
+		};
+		phy14: ethernet-phy@14 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <14>;
+		};
+		phy15: ethernet-phy@15 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <15>;
+		};
+/*		phy10: ethernet-phy@10 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			phy-is-integrated;
+			reg = <10>;
+		};
+		phy11: ethernet-phy@11 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			phy-is-integrated;
+			reg = <11>;
+		};
+		phy12: ethernet-phy@12 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			phy-is-integrated;
+			reg = <12>;
+		};
+		phy13: ethernet-phy@13 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			phy-is-integrated;
+			reg = <13>;
+		};*/
+	};
+};
+
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@8 {
+			reg = <8>;
+			label = "lan1";
+			phy-handle = <&phy8>;
+			phy-mode = "internal";
+		};
+		port@9 {
+			reg = <9>;
+			label = "lan2";
+			phy-handle = <&phy9>;
+			phy-mode = "internal";
+		};
+		port@10 {
+			reg = <10>;
+			label = "lan3";
+			phy-handle = <&phy10>;
+			phy-mode = "internal";
+		};
+		port@11 {
+			reg = <11>;
+			label = "lan4";
+			phy-handle = <&phy11>;
+			phy-mode = "internal";
+		};
+		port@12 {
+			reg = <12>;
+			label = "lan5";
+			phy-handle = <&phy12>;
+			phy-mode = "internal";
+		};
+		port@13 {
+			reg = <13>;
+			label = "lan6";
+			phy-handle = <&phy13>;
+			phy-mode = "internal";
+		};
+		port@14 {
+			reg = <14>;
+			label = "lan7";
+			phy-handle = <&phy14>;
+			phy-mode = "internal";
+		};
+		port@15 {
+			reg = <15>;
+			label = "lan8";
+			phy-handle = <&phy15>;
+			phy-mode = "internal";
+		};
+/*		port@10 {
+			reg = <10>;
+			label = "lan9";
+			phy-mode = "internal";
+			phy-handle = <&phy10>;
+		};
+		port@11 {
+			reg = <11>;
+			label = "lan10";
+			phy-mode = "internal";
+			phy-handle = <&phy11>;
+		};
+		port@12 {
+			reg = <12>;
+			label = "lan11";
+			phy-mode = "internal";
+			phy-handle = <&phy12>;
+		};
+		port@13 {
+			reg = <13>;
+			label = "lan12";
+			phy-mode = "internal";
+			phy-handle = <&phy13>;
+		};*/
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};

@@ -114,3 +114,19 @@
 &eth1 {
 	status = "okay";
 };
+
+&gpio {
+	gpio_ext_lna0 {
+		gpio-hog;
+		gpios = <18 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "tp-link:ext:lna0";
+	};
+
+	gpio_ext_lna1 {
+		gpio-hog;
+		gpios = <19 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "tp-link:ext:lna1";
+	};
+};

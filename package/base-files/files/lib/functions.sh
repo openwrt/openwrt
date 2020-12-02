@@ -108,7 +108,7 @@ config_unset() {
 # config_get <section> <option>
 config_get() {
 	case "$2${3:-$1}" in
-		*[^A-Za-z0-9_]*) : ;;
+		*[!A-Za-z0-9_]*) : ;;
 		*)
 			case "$3" in
 				"") eval echo "\"\${CONFIG_${1}_${2}:-\${4}}\"";;

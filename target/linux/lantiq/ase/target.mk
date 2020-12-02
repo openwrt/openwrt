@@ -7,7 +7,7 @@
 ARCH:=mips
 SUBTARGET:=ase
 BOARDNAME:=Amazon-SE
-FEATURES:=squashfs atm mips16 small_flash
+FEATURES+=atm mips16 small_flash
 CPU_TYPE:=mips32
 
 DEFAULT_PACKAGES+=kmod-leds-gpio kmod-gpio-button-hotplug \
