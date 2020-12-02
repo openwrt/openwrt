@@ -772,6 +772,18 @@ define Device/dlink_dap-2660-a1
 endef
 TARGET_DEVICES += dlink_dap-2660-a1
 
+define Device/dlink_dap-2680-a1
+  $(Device/dlink_dap-2xxx)
+  SOC := qca9558
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-2680
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-ath10k-ct
+  IMAGE_SIZE := 15232k
+  DAP_SIGNATURE := wapac36_dkbs_dap2680
+endef
+TARGET_DEVICES += dlink_dap-2680-a1
+
 define Device/dlink_dap-2695-a1
   SOC := qca9558
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
