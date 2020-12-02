@@ -28,6 +28,7 @@ ath79_setup_interfaces()
 	dlink,dap-1330-a1|\
 	dlink,dap-1365-a1|\
 	dlink,dap-2230-a1|\
+	dlink,dap-2680-a1|\
 	dlink,dir-505|\
 	engenius,eap300-v2|\
 	engenius,eap350-v1|\
@@ -483,7 +484,8 @@ ath79_setup_macs()
 		label_mac=$lan_mac
 		;;
 	dlink,dap-2230-a1|\
-	dlink,dap-2660-a1)
+	dlink,dap-2660-a1|\
+	dlink,dap-2680-a1)
 		lan_mac=$(mtd_get_mac_ascii bdcfg "lanmac")
 		label_mac=$lan_mac
 		;;
