@@ -266,6 +266,40 @@ config KERNEL_FUNCTION_PROFILER
 	depends on KERNEL_FUNCTION_TRACER
 	default n
 
+config KERNEL_IRQSOFF_TRACER
+	bool "Interrupts-off Latency Tracer"
+	depends on KERNEL_FTRACE
+	help
+	  This option measures the time spent in irqs-off critical
+	  sections, with microsecond accuracy.
+
+	  The default measurement method is a maximum search, which is
+	  disabled by default and can be runtime (re-)started
+	  via:
+
+	      echo 0 > /sys/kernel/debug/tracing/tracing_max_latency
+
+	  (Note that kernel size and overhead increase with this option
+	  enabled. This option and the preempt-off timing option can be
+	  used together or separately.)
+
+config KERNEL_PREEMPT_TRACER
+	bool "Preemption-off Latency Tracer"
+	depends on KERNEL_FTRACE
+	help
+	  This option measures the time spent in preemption-off critical
+	  sections, with microsecond accuracy.
+
+	  The default measurement method is a maximum search, which is
+	  disabled by default and can be runtime (re-)started
+	  via:
+
+	      echo 0 > /sys/kernel/debug/tracing/tracing_max_latency
+
+	  (Note that kernel size and overhead increase with this option
+	  enabled. This option and the irqs-off timing option can be
+	  used together or separately.)
+
 config KERNEL_DEBUG_KERNEL
 	bool
 	default n
