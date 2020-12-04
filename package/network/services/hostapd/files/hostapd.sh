@@ -123,7 +123,7 @@ hostapd_prepare_device_config() {
 	set_default country_ie 1
 	set_default spectrum_mgmt_required 0
 	set_default doth 1
-	set_default legacy_rates 1
+	set_default legacy_rates 0
 	set_default airtime_mode 0
 	set_default cell_density 0
 
