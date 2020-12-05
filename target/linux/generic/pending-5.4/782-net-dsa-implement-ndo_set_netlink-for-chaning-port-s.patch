@@ -1,0 +1,90 @@
+From 801d3c1a412e187242bca86daba77c4a6d7a4d21 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
+Date: Tue, 5 May 2020 19:33:39 +0200
+Subject: [PATCH] net: dsa: implement ndo_set_netlink for chaning port's
+ CPU port
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Implement ndo_set_iflink for DSA slave device. In multi-CPU port setup
+this should be used to change to which CPU destination port a given port
+should be connected.
+
+This adds a new operation into the DSA switch operations structure,
+port_change_cpu_port. A driver implementing this function has the
+ability to change CPU destination port of a given port.
+
+Signed-off-by: Marek Behún <marek.behun@nic.cz>
+---
+ include/net/dsa.h |  6 ++++++
+ net/dsa/slave.c   | 36 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 42 insertions(+)
+
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -553,6 +553,12 @@ struct dsa_switch_ops {
+ 	 */
+ 	netdev_tx_t (*port_deferred_xmit)(struct dsa_switch *ds, int port,
+ 					  struct sk_buff *skb);
++
++	/*
++	 * Multi-CPU port support
++	 */
++	int	(*port_change_cpu_port)(struct dsa_switch *ds, int port,
++					struct dsa_port *new_cpu_dp);
+ };
+ 
+ struct dsa_switch_driver {
+--- a/net/dsa/slave.c
++++ b/net/dsa/slave.c
+@@ -68,6 +68,41 @@ static int dsa_slave_get_iflink(const st
+ 	return dsa_slave_to_master(dev)->ifindex;
+ }
+ 
++static int dsa_slave_set_iflink(struct net_device *dev, int iflink)
++{
++	struct dsa_port *dp = dsa_slave_to_port(dev);
++	struct dsa_slave_priv *p = netdev_priv(dev);
++	struct net_device *new_cpu_dev;
++	struct dsa_port *new_cpu_dp;
++	int err;
++
++	if (!dp->ds->ops->port_change_cpu_port)
++		return -EOPNOTSUPP;
++
++	new_cpu_dev = dev_get_by_index(dev_net(dev), iflink);
++	if (!new_cpu_dev)
++		return -ENODEV;
++
++	new_cpu_dp = new_cpu_dev->dsa_ptr;
++	if (!new_cpu_dp)
++		return -EINVAL;
++
++	/* new CPU port has to be on the same switch tree */
++	if (new_cpu_dp->dst != dp->dst)
++		return -EINVAL;
++
++	/* should this be done atomically? should this return to previous cpu_dp
++	 * in case of error? */
++	dp->cpu_dp = new_cpu_dp;
++	p->xmit = new_cpu_dp->tag_ops->xmit;
++
++	err = dp->ds->ops->port_change_cpu_port(dp->ds, dp->index, new_cpu_dp);
++	if (err)
++		return err;
++
++	return 0;
++}
++
+ static int dsa_slave_open(struct net_device *dev)
+ {
+ 	struct net_device *master = dsa_slave_to_master(dev);
+@@ -1258,6 +1293,7 @@ static const struct net_device_ops dsa_s
+ 	.ndo_fdb_dump		= dsa_slave_fdb_dump,
+ 	.ndo_do_ioctl		= dsa_slave_ioctl,
+ 	.ndo_get_iflink		= dsa_slave_get_iflink,
++	.ndo_set_iflink		= dsa_slave_set_iflink,
+ #ifdef CONFIG_NET_POLL_CONTROLLER
+ 	.ndo_netpoll_setup	= dsa_slave_netpoll_setup,
+ 	.ndo_netpoll_cleanup	= dsa_slave_netpoll_cleanup,

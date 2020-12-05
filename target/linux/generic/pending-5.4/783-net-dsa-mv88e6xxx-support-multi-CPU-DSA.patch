@@ -1,0 +1,111 @@
+From a78ac68ff49c14c9ee74782978517e8afc55d942 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
+Date: Tue, 5 May 2020 20:08:08 +0200
+Subject: [PATCH] net: dsa: mv88e6xxx: support multi-CPU DSA
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add support for multi-CPU DSA for mv88e6xxx.
+Currently only works with multiple CPUs when there is only one switch in
+the switch tree.
+
+Signed-off-by: Marek Behún <marek.behun@nic.cz>
+---
+ drivers/net/dsa/mv88e6xxx/chip.c | 48 ++++++++++++++++++++++++++++++--
+ 1 file changed, 46 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -1061,6 +1061,7 @@ static u16 mv88e6xxx_port_vlan(struct mv
+ {
+ 	struct dsa_switch *ds = NULL;
+ 	struct net_device *br;
++	u8 upstream;
+ 	u16 pvlan;
+ 	int i;
+ 
+@@ -1072,17 +1073,36 @@ static u16 mv88e6xxx_port_vlan(struct mv
+ 		return 0;
+ 
+ 	/* Frames from DSA links and CPU ports can egress any local port */
+-	if (dsa_is_cpu_port(ds, port) || dsa_is_dsa_port(ds, port))
++	if (dsa_is_dsa_port(ds, port))
+ 		return mv88e6xxx_port_mask(chip);
+ 
++	if (dsa_is_cpu_port(ds, port)) {
++		u16 pmask = mv88e6xxx_port_mask(chip);
++		pvlan = 0;
++
++		for (i = 0; i < mv88e6xxx_num_ports(chip); ++i) {
++			if (dsa_is_cpu_port(ds, i)) {
++				if (i == port)
++					pvlan |= BIT(i);
++				continue;
++			}
++			if ((pmask & BIT(i)) &&
++			    dsa_upstream_port(chip->ds, i) == port)
++				pvlan |= BIT(i);
++		}
++
++		return pvlan;
++	}
++
+ 	br = ds->ports[port].bridge_dev;
+ 	pvlan = 0;
+ 
+ 	/* Frames from user ports can egress any local DSA links and CPU ports,
+ 	 * as well as any local member of their bridge group.
+ 	 */
++	upstream = dsa_upstream_port(chip->ds, port);
+ 	for (i = 0; i < mv88e6xxx_num_ports(chip); ++i)
+-		if (dsa_is_cpu_port(chip->ds, i) ||
++		if ((dsa_is_cpu_port(chip->ds, i) && i == upstream) ||
+ 		    dsa_is_dsa_port(chip->ds, i) ||
+ 		    (br && dsa_to_port(chip->ds, i)->bridge_dev == br))
+ 			pvlan |= BIT(i);
+@@ -2371,6 +2391,7 @@ static int mv88e6xxx_setup_upstream_port
+ 	}
+ 
+ 	if (port == upstream_port) {
++		dev_info(chip->dev, "Setting CPU port as port %i\n", port);
+ 		if (chip->info->ops->set_cpu_port) {
+ 			err = chip->info->ops->set_cpu_port(chip,
+ 							    upstream_port);
+@@ -2396,6 +2417,28 @@ static int mv88e6xxx_setup_upstream_port
+ 	return 0;
+ }
+ 
++static int mv88e6xxx_port_change_cpu_port(struct dsa_switch *ds, int port,
++					  struct dsa_port *new_cpu_dp)
++{
++	struct mv88e6xxx_chip *chip = ds->priv;
++	int err;
++
++	mv88e6xxx_reg_lock(chip);
++
++	err = mv88e6xxx_setup_upstream_port(chip, port);
++	if (err)
++		goto unlock;
++
++	err = mv88e6xxx_port_vlan_map(chip, port);
++	if (err)
++		goto unlock;
++
++unlock:
++	mv88e6xxx_reg_unlock(chip);
++
++	return err;
++}
++
+ static int mv88e6xxx_setup_port(struct mv88e6xxx_chip *chip, int port)
+ {
+ 	struct dsa_switch *ds = chip->ds;
+@@ -5059,6 +5102,7 @@ static const struct dsa_switch_ops mv88e
+ 	.port_hwtstamp_get	= mv88e6xxx_port_hwtstamp_get,
+ 	.port_txtstamp		= mv88e6xxx_port_txtstamp,
+ 	.port_rxtstamp		= mv88e6xxx_port_rxtstamp,
++	.port_change_cpu_port	= mv88e6xxx_port_change_cpu_port,
+ 	.get_ts_info		= mv88e6xxx_get_ts_info,
+ };
+ 

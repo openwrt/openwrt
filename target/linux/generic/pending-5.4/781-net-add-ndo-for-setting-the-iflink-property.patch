@@ -1,0 +1,92 @@
+From 846d8a31f9cc9048f58358770d20d3153918c93d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
+Date: Tue, 5 May 2020 19:28:53 +0200
+Subject: [PATCH] net: add ndo for setting the iflink property
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In DSA the iflink value is used to report to which CPU port a given
+switch port is connected to. Since we want to support multi-CPU DSA, we
+want the user to be able to change this value.
+
+Add ndo_set_iflink method into the ndo strucutre to be a pair to
+ndo_get_iflink. Also create dev_set_iflink and call this from the
+netlink code, so that userspace can change the iflink value.
+
+Signed-off-by: Marek Behún <marek.behun@nic.cz>
+---
+ include/linux/netdevice.h |  5 +++++
+ net/core/dev.c            | 16 ++++++++++++++++
+ net/core/rtnetlink.c      |  7 +++++++
+ 3 files changed, 28 insertions(+)
+
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -1231,6 +1231,8 @@ enum flow_offload_type {
+  *	TX queue.
+  * int (*ndo_get_iflink)(const struct net_device *dev);
+  *	Called to get the iflink value of this device.
++ * int (*ndo_set_iflink)(struct net_device *dev, int iflink);
++ *	Called to set the iflink value of this device.
+  * void (*ndo_change_proto_down)(struct net_device *dev,
+  *				 bool proto_down);
+  *	This function is used to pass protocol port error state information
+@@ -1455,6 +1457,8 @@ struct net_device_ops {
+ 						      int queue_index,
+ 						      u32 maxrate);
+ 	int			(*ndo_get_iflink)(const struct net_device *dev);
++	int			(*ndo_set_iflink)(struct net_device *dev,
++						  int iflink);
+ 	int			(*ndo_change_proto_down)(struct net_device *dev,
+ 							 bool proto_down);
+ 	int			(*ndo_fill_metadata_dst)(struct net_device *dev,
+@@ -2666,6 +2670,7 @@ void dev_add_offload(struct packet_offlo
+ void dev_remove_offload(struct packet_offload *po);
+ 
+ int dev_get_iflink(const struct net_device *dev);
++int dev_set_iflink(struct net_device *dev, int iflink);
+ int dev_fill_metadata_dst(struct net_device *dev, struct sk_buff *skb);
+ struct net_device *__dev_get_by_flags(struct net *net, unsigned short flags,
+ 				      unsigned short mask);
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -614,6 +614,22 @@ int dev_get_iflink(const struct net_devi
+ EXPORT_SYMBOL(dev_get_iflink);
+ 
+ /**
++ *	dev_set_iflink - set 'iflink' value of an interface
++ *	@dev: target interface
++ *	@iflink: new value
++ *
++ *	Change the interface to which this interface is linked to.
++ */
++int dev_set_iflink(struct net_device *dev, int iflink)
++{
++	if (dev->netdev_ops && dev->netdev_ops->ndo_set_iflink)
++		return dev->netdev_ops->ndo_set_iflink(dev, iflink);
++
++	return -EOPNOTSUPP;
++}
++EXPORT_SYMBOL(dev_set_iflink);
++
++/**
+  *	dev_fill_metadata_dst - Retrieve tunnel egress information.
+  *	@dev: targeted interface
+  *	@skb: The packet.
+--- a/net/core/rtnetlink.c
++++ b/net/core/rtnetlink.c
+@@ -2529,6 +2529,13 @@ static int do_setlink(const struct sk_bu
+ 		status |= DO_SETLINK_MODIFIED;
+ 	}
+ 
++	if (tb[IFLA_LINK]) {
++		err = dev_set_iflink(dev, nla_get_u32(tb[IFLA_LINK]));
++		if (err)
++			goto errout;
++		status |= DO_SETLINK_MODIFIED;
++	}
++
+ 	if (tb[IFLA_CARRIER]) {
+ 		err = dev_change_carrier(dev, nla_get_u8(tb[IFLA_CARRIER]));
+ 		if (err)
