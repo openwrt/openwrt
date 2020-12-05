@@ -64,9 +64,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		/* Sample less often below the 10% chance of success.
  		 * Sample less often above the 95% chance of success. */
-@@ -295,7 +299,8 @@ minstrel_tx_status(void *priv, struct ie
- 	if (mi->sample_deferred > 0)
- 		mi->sample_deferred--;
+@@ -289,7 +293,8 @@ minstrel_tx_status(void *priv, struct ie
+ 			mi->r[ndx].stats.success += success;
+ 	}
  
 -	if (time_after(jiffies, mi->last_stats_update + mp->update_interval))
 +	if (time_after(jiffies, mi->last_stats_update +
@@ -149,7 +149,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* statistis of packet delivery probability
  	 *  prob_ewma - exponential weighted moving average of prob
  	 *  prob_ewmsd - exp. weighted moving standard deviation of prob */
-@@ -114,6 +166,7 @@ struct minstrel_sta_info {
+@@ -113,6 +165,7 @@ struct minstrel_sta_info {
  struct minstrel_priv {
  	struct ieee80211_hw *hw;
  	bool has_mrr;
@@ -157,7 +157,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u32 sample_switch;
  	unsigned int cw_min;
  	unsigned int cw_max;
-@@ -153,7 +206,8 @@ extern const struct rate_control_ops mac
+@@ -152,7 +205,8 @@ extern const struct rate_control_ops mac
  void minstrel_add_sta_debugfs(void *priv, void *priv_sta, struct dentry *dir);
  
  /* Recalculate success probabilities and counters for a given rate using EWMA */

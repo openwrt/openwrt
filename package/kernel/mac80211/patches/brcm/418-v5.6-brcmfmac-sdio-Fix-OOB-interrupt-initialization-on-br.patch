@@ -29,7 +29,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
-@@ -4249,6 +4249,12 @@ static void brcmf_sdio_firmware_callback
+@@ -4253,6 +4253,12 @@ static void brcmf_sdio_firmware_callback
  	}
  
  	if (err == 0) {
@@ -42,7 +42,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		/* Allow full data communication using DPC from now on. */
  		brcmf_sdiod_change_state(bus->sdiodev, BRCMF_SDIOD_DATA);
  
-@@ -4265,12 +4271,6 @@ static void brcmf_sdio_firmware_callback
+@@ -4269,12 +4275,6 @@ static void brcmf_sdio_firmware_callback
  
  	sdio_release_host(sdiod->func1);
  

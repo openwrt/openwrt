@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/rc80211_minstrel.c
 +++ b/net/mac80211/rc80211_minstrel.c
-@@ -689,8 +689,8 @@ minstrel_alloc(struct ieee80211_hw *hw,
+@@ -672,8 +672,8 @@ minstrel_alloc(struct ieee80211_hw *hw,
  
  #ifdef CPTCFG_MAC80211_DEBUGFS
  	mp->fixed_rate_idx = (u32) -1;
@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif
  
  	minstrel_init_cck_rates(mp);
-@@ -701,9 +701,6 @@ minstrel_alloc(struct ieee80211_hw *hw,
+@@ -684,9 +684,6 @@ minstrel_alloc(struct ieee80211_hw *hw,
  static void
  minstrel_free(void *priv)
  {
@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	kfree(priv);
  }
  
-@@ -735,7 +732,6 @@ const struct rate_control_ops mac80211_m
+@@ -718,7 +715,6 @@ const struct rate_control_ops mac80211_m
  	.free_sta = minstrel_free_sta,
  #ifdef CPTCFG_MAC80211_DEBUGFS
  	.add_sta_debugfs = minstrel_add_sta_debugfs,
@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
 --- a/net/mac80211/rc80211_minstrel.h
 +++ b/net/mac80211/rc80211_minstrel.h
-@@ -109,11 +109,6 @@ struct minstrel_sta_info {
+@@ -108,11 +108,6 @@ struct minstrel_sta_info {
  
  	/* sampling table */
  	u8 *sample_table;
@@ -53,7 +53,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  struct minstrel_priv {
-@@ -137,7 +132,6 @@ struct minstrel_priv {
+@@ -136,7 +131,6 @@ struct minstrel_priv {
  	 *   - setting will be applied on next update
  	 */
  	u32 fixed_rate_idx;
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif
  };
  
-@@ -156,7 +150,6 @@ minstrel_get_ewmsd10(struct minstrel_rat
+@@ -155,7 +149,6 @@ minstrel_get_ewmsd10(struct minstrel_rat
  
  extern const struct rate_control_ops mac80211_minstrel;
  void minstrel_add_sta_debugfs(void *priv, void *priv_sta, struct dentry *dir);

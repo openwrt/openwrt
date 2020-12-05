@@ -156,7 +156,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -4709,6 +4710,11 @@ static int nl80211_send_station(struct s
+@@ -4715,6 +4716,11 @@ static int nl80211_send_station(struct s
  	PUT_SINFO(PLID, plid, u16);
  	PUT_SINFO(PLINK_STATE, plink_state, u8);
  	PUT_SINFO_U64(RX_DURATION, rx_duration);
@@ -168,7 +168,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	switch (rdev->wiphy.signal_type) {
  	case CFG80211_SIGNAL_TYPE_MBM:
-@@ -5345,6 +5351,15 @@ static int nl80211_set_station(struct sk
+@@ -5351,6 +5357,15 @@ static int nl80211_set_station(struct sk
  			nla_get_u8(info->attrs[NL80211_ATTR_OPMODE_NOTIF]);
  	}
  
@@ -184,7 +184,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	/* Include parameters for TDLS peer (will check later) */
  	err = nl80211_set_station_tdls(info, &params);
  	if (err)
-@@ -5483,6 +5498,15 @@ static int nl80211_new_station(struct sk
+@@ -5489,6 +5504,15 @@ static int nl80211_new_station(struct sk
  			return -EINVAL;
  	}
  

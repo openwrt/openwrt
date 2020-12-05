@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				tmp_prob_rate = i;
  		}
  	}
-@@ -436,7 +436,7 @@ minstrel_get_rate(void *priv, struct iee
+@@ -418,7 +418,7 @@ minstrel_get_rate(void *priv, struct iee
  	 * has a probability of >95%, we shouldn't be attempting
  	 * to use it, as this only wastes precious airtime */
  	if (!mrr_capable &&
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return;
  
  	mi->prev_sample = true;
-@@ -587,7 +587,7 @@ static u32 minstrel_get_expected_through
+@@ -570,7 +570,7 @@ static u32 minstrel_get_expected_through
  	 * computing cur_tp
  	 */
  	tmp_mrs = &mi->r[idx].stats;
@@ -174,7 +174,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* maximum retry counts */
  	u8 retry_count;
  	u8 retry_count_rtscts;
-@@ -208,7 +205,7 @@ void minstrel_add_sta_debugfs(void *priv
+@@ -207,7 +204,7 @@ void minstrel_add_sta_debugfs(void *priv
  /* Recalculate success probabilities and counters for a given rate using EWMA */
  void minstrel_calc_rate_stats(struct minstrel_priv *mp,
  			      struct minstrel_rate_stats *mrs);

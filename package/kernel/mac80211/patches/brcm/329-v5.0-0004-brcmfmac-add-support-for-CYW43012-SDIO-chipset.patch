@@ -209,7 +209,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	if (err) {
  		brcmf_err("error writing SBSDIO_FUNC1_CHIPCLKCSR\n");
  		return;
-@@ -4067,7 +4114,7 @@ static void brcmf_sdio_firmware_callback
+@@ -4071,7 +4118,7 @@ static void brcmf_sdio_firmware_callback
  	const struct firmware *code;
  	void *nvram;
  	u32 nvram_len;
@@ -218,7 +218,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	u8 devctl;
  
  	brcmf_dbg(TRACE, "Enter: dev=%s, err=%d\n", dev_name(dev), err);
-@@ -4101,8 +4148,11 @@ static void brcmf_sdio_firmware_callback
+@@ -4105,8 +4152,11 @@ static void brcmf_sdio_firmware_callback
  	/* Force clocks on backplane to be sure F2 interrupt propagates */
  	saveclk = brcmf_sdiod_readb(sdiod, SBSDIO_FUNC1_CHIPCLKCSR, &err);
  	if (!err) {
