@@ -26,7 +26,6 @@ define Device/allnet_all-sg8208m
   DEVICE_MODEL := ALL-SG8208M
   UIMAGE_MAGIC := 0x00000006
   UIMAGE_NAME := 2.2.2.0
-  DEVICE_PACKAGES := ip-full ip-bridge kmod-gpio-button-hotplug tc
 endef
 TARGET_DEVICES += allnet_all-sg8208m
 
@@ -34,7 +33,6 @@ define Device/d-link_dgs-1210
   SOC := rtl8382
   IMAGE_SIZE := 13824k
   DEVICE_VENDOR := D-Link
-  DEVICE_PACKAGES := ip-full ip-bridge ethtool tc
 endef
 
 define Device/d-link_dgs-1210-10p
@@ -64,8 +62,15 @@ define Device/netgear_gs110tpp-v1
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := GS110TP
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := ip-full ip-bridge ethtool tc
 endef
 TARGET_DEVICES += netgear_gs110tpp-v1
+
+define Device/zyxel_gs1900-10hp
+  SOC := rtl8380
+  IMAGE_SIZE := 6976k
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := GS1900-10HP
+endef
+TARGET_DEVICES += zyxel_gs1900-10hp
 
 $(eval $(call BuildImage))

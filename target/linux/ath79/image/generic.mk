@@ -1144,9 +1144,11 @@ define Device/jjplus_ja76pf2
   DEVICE_VENDOR := jjPlus
   DEVICE_MODEL := JA76PF2
   DEVICE_PACKAGES += -kmod-ath9k -swconfig -wpad-basic-wolfssl -uboot-envtools fconfig
-  IMAGES := kernel.bin rootfs.bin
+  IMAGES += kernel.bin rootfs.bin
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | \
+	append-metadata | check-size
   KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb
   IMAGE_SIZE := 16000k
@@ -1659,7 +1661,6 @@ define Device/sitecom_wlr-7100
   SOC := ar1022
   DEVICE_VENDOR := Sitecom
   DEVICE_MODEL := WLR-7100
-  DEVICE_VARIANT := v1 002
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct-smallbuffers kmod-usb2
   IMAGES += factory.dlf
   IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \

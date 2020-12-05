@@ -5,6 +5,14 @@ KERNEL_LOADADDR = 0x80060000
 
 DEVICE_VARS += LOADER_FLASH_OFFS LOADER_TYPE
 
+define Build/combined-image
+	sh $(TOPDIR)/scripts/combined-image.sh \
+		"$(IMAGE_KERNEL)" \
+		"$@" \
+		"$@.new"
+	@mv $@.new $@
+endef
+
 define Build/loader-common
 	rm -rf $@.src
 	$(MAKE) -C lzma-loader \
