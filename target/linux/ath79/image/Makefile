@@ -60,6 +60,9 @@ define Build/relocate-kernel
 	rm -rf $@.relocate
 endef
 
+define Build/append-okli-kernel
+	dd if="$(KDIR)/loader-$(word 1,$(1)).uImage" >> "$@"
+endef
 
 define Device/Default
   DEVICE_DTS_DIR := ../dts
