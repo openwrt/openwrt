@@ -286,20 +286,6 @@ endef
 
 $(eval $(call KernelPackage,switch-bcm53xx-mdio))
 
-define KernelPackage/switch-mvsw61xx
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Marvell 88E61xx switch support
-  DEPENDS:=+kmod-swconfig
-  KCONFIG:=CONFIG_MVSW61XX_PHY
-  FILES:=$(LINUX_DIR)/drivers/net/phy/mvsw61xx.ko
-  AUTOLOAD:=$(call AutoLoad,42,mvsw61xx)
-endef
-
-define KernelPackage/switch-mvsw61xx/description
- Marvell 88E61xx switch support
-endef
-
-$(eval $(call KernelPackage,switch-mvsw61xx))
 
 define KernelPackage/switch-ip17xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -1203,3 +1189,41 @@ define KernelPackage/igc/description
 endef
 
 $(eval $(call KernelPackage,igc))
+
+define KernelPackage/sfc
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Solarflare SFC9000/SFC9100/EF100-family support
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-lib-crc32c +kmod-ptp +kmod-hwmon-core
+  KCONFIG:= \
+	CONFIG_SFC \
+	CONFIG_SFC_MTD=y \
+	CONFIG_SFC_MCDI_MON=y \
+	CONFIG_SFC_MCDI_LOGGING=y \
+	CONFIG_SFC_SRIOV=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/sfc/sfc.ko
+  AUTOLOAD:=$(call AutoProbe,sfc)
+endef
+
+define KernelPackage/sfc/description
+  Solarflare SFC9000/SFC9100/EF100-family support
+  Solarflare EF100 support requires at least kernel version 5.9
+endef
+
+$(eval $(call KernelPackage,sfc))
+
+define KernelPackage/sfc-falcon
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Solarflare SFC4000 support
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-lib-crc32c +kmod-i2c-algo-bit
+  KCONFIG:= \
+	CONFIG_SFC_FALCON \
+	CONFIG_SFC_FALCON_MTD=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/sfc/falcon/sfc-falcon.ko
+  AUTOLOAD:=$(call AutoProbe,sfc-falcon)
+endef
+
+define KernelPackage/sfc-falcon/description
+  Solarflare SFC4000 support
+endef
+
+$(eval $(call KernelPackage,sfc-falcon))

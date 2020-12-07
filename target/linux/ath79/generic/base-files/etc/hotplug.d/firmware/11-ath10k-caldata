@@ -24,6 +24,8 @@ case "$FIRMWARE" in
 	devolo,magic-2-wifi|\
 	qxwlan,e1700ac-v2-8m|\
 	qxwlan,e1700ac-v2-16m|\
+	qxwlan,e600gac-v2-8m|\
+	qxwlan,e600gac-v2-16m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-lr|\
 	ubnt,unifiac-mesh|\
@@ -31,6 +33,7 @@ case "$FIRMWARE" in
 	ubnt,lap-120|\
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac|\
+	ubnt,nanobeam-ac-gen2|\
 	ubnt,nanostation-ac|\
 	ubnt,nanostation-ac-loco|\
 	ubnt,powerbeam-5ac-500|\
@@ -106,7 +109,8 @@ case "$FIRMWARE" in
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) -1)
 		;;
 	tplink,archer-c5-v1|\
-	tplink,archer-c7-v2)
+	tplink,archer-c7-v2|\
+	tplink,tl-wdr7500-v3)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary u-boot 0x1fc00) -1)
 		;;
@@ -119,6 +123,12 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary romfs 0xf100) +2)
 		;;
+	tplink,eap245-v1|\
+	tplink,re450-v2|\
+	tplink,re450-v3)
+		caldata_extract "art" 0x5000 0x844
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
+		;;
 	tplink,re350k-v1)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +2)
@@ -127,11 +137,6 @@ case "$FIRMWARE" in
 	tplink,re450-v1)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
-		;;
-	tplink,re450-v2|\
-	tplink,re450-v3)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
 		;;
 	tplink,tl-wpa8630-v1)
 		caldata_extract "art" 0x5000 0x844
@@ -167,7 +172,13 @@ case "$FIRMWARE" in
 		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
-	dlink,dir-842-c3|\
+	dlink,dir-842-c3)
+		caldata_extract "art" 0x5000 0x2f20
+		caldata_valid "202f" || caldata_extract "reserved" 0x15000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		;;
 	nec,wg1200cr)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
@@ -198,6 +209,8 @@ case "$FIRMWARE" in
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
+	tplink,eap225-outdoor-v1|\
+	tplink,eap225-v3|\
 	tplink,eap225-wall-v2|\
 	tplink,tl-wpa8630p-v2-int|\
 	tplink,tl-wpa8630p-v2.0-eu|\

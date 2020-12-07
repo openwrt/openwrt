@@ -1,0 +1,54 @@
+From 79bfb73319098bc4cb701139a6677dcdec99182f Mon Sep 17 00:00:00 2001
+From: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+Date: Tue, 3 Nov 2020 08:14:35 +0800
+Subject: [PATCH 2/2] bcm63xx: support xmit_more in BQL
+
+Support bulking hardware TX queue by using xmit_more.
+
+Signed-off-by: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+---
+ bcm63xx_enet.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -638,14 +638,16 @@ bcm_enet_start_xmit(struct sk_buff *skb,
+ 
+ 	netdev_sent_queue(dev, skb->len);
+ 
+-	/* kick tx dma */
+-	enet_dmac_writel(priv, priv->dma_chan_en_mask,
+-				 ENETDMAC_CHANCFG, priv->tx_chan);
+-
+ 	/* stop queue if no more desc available */
+ 	if (!priv->tx_desc_count)
+ 		netif_stop_queue(dev);
+ 
++	/* kick tx dma */
++	if(!netdev_xmit_more() || !priv->tx_desc_count)
++		enet_dmac_writel(priv, priv->dma_chan_en_mask,
++					ENETDMAC_CHANCFG, priv->tx_chan);
++
++
+ 	dev->stats.tx_bytes += skb->len;
+ 	dev->stats.tx_packets++;
+ 	ret = NETDEV_TX_OK;
+@@ -2713,7 +2715,7 @@ static int bcm_enetsw_probe(struct platf
+ 	priv->irq_rx = irq_rx;
+ 	priv->irq_tx = irq_tx;
+ 	priv->rx_ring_size = BCMENET_DEF_RX_DESC;
+-	priv->tx_ring_size = BCMENET_DEF_TX_DESC;
++	priv->tx_ring_size = BCMENETSW_DEF_TX_DESC;
+ 	priv->dma_maxburst = BCMENETSW_DMA_MAXBURST;
+ 
+ 	pd = dev_get_platdata(&pdev->dev);
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.h
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.h
+@@ -15,6 +15,7 @@
+ /* default number of descriptor */
+ #define BCMENET_DEF_RX_DESC	64
+ #define BCMENET_DEF_TX_DESC	32
++#define BCMENETSW_DEF_TX_DESC	48
+ 
+ /* maximum burst len for dma (4 bytes unit) */
+ #define BCMENET_DMA_MAXBURST	16

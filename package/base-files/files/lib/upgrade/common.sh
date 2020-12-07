@@ -63,8 +63,20 @@ ask_bool() {
 	[ "$answer" -gt 0 ]
 }
 
+_v() {
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$*" >&2
+}
+
+_vn() {
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo -n "$*" >&2
+}
+
 v() {
-	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$@"
+	_v "$(date) upgrade: $@"
+}
+
+vn() {
+	_vn "$(date) upgrade: $@"
 }
 
 json_string() {
@@ -91,7 +103,18 @@ get_image() { # <source> [ <command> ]
 		esac
 	fi
 
-	cat "$from" 2>/dev/null | $cmd
+	$cmd <"$from"
+}
+
+get_image_dd() {
+	local from="$1"; shift
+
+	(
+		exec 3>&2
+		( exec 3>&2; get_image "$from" 2>&1 1>&3 | grep -v -F ' Broken pipe'     ) 2>&1 1>&3 \
+			| ( exec 3>&2; dd "$@" 2>&1 1>&3 | grep -v -E ' records (in|out)') 2>&1 1>&3
+		exec 3>&-
+	)
 }
 
 get_magic_word() {

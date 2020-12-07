@@ -182,6 +182,14 @@ menu "Global build settings"
 		help
 		  Specifies arguments passed to the strip command when stripping binaries.
 
+	config SSTRIP_ARGS
+		string
+		prompt "Sstrip arguments"
+		depends on USE_SSTRIP
+		default "-z"
+		help
+		  Specifies arguments passed to the sstrip command when stripping binaries.
+
 	config STRIP_KERNEL_EXPORTS
 		bool "Strip unnecessary exports from the kernel image"
 		help
@@ -282,11 +290,11 @@ menu "Global build settings"
 			bool "Strong"
 	endchoice
 
-	config  KERNEL_STACKPROTECTOR
+	config KERNEL_STACKPROTECTOR
 		bool
 		default KERNEL_CC_STACKPROTECTOR_REGULAR || KERNEL_CC_STACKPROTECTOR_STRONG
 
-	config  KERNEL_STACKPROTECTOR_STRONG
+	config KERNEL_STACKPROTECTOR_STRONG
 		bool
 		default KERNEL_CC_STACKPROTECTOR_STRONG
 
