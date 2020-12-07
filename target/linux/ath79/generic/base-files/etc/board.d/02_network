@@ -100,6 +100,15 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
 		;;
+	belkin,f9j1108-v2|\
+	tplink,archer-c5-v1|\
+	tplink,archer-c7-v1|\
+	tplink,archer-c7-v2|\
+	tplink,tl-wdr4900-v2|\
+	tplink,tl-wdr7500-v3)
+		ucidef_add_switch "switch0" \
+			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
+		;;
 	buffalo,bhr-4grv|\
 	buffalo,wzr-hp-g450h)
 		ucidef_add_switch "switch0" \
@@ -307,14 +316,6 @@ ath79_setup_interfaces()
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1"
-		;;
-	tplink,archer-c5-v1|\
-	tplink,archer-c7-v1|\
-	tplink,archer-c7-v2|\
-	tplink,tl-wdr4900-v2|\
-	tplink,tl-wdr7500-v3)
-		ucidef_add_switch "switch0" \
-			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
 		;;
 	tplink,archer-d50-v1)
 		ucidef_add_switch "switch0" \
