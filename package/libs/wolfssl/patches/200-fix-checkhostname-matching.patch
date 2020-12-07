@@ -1,0 +1,123 @@
+From ea5c290d605b2af7b10d6e5ce69aa3534f52385f Mon Sep 17 00:00:00 2001
+From: Eric Blankenhorn <eric@wolfssl.com>
+Date: Fri, 17 Jul 2020 08:37:02 -0500
+Subject: [PATCH] Fix CheckHostName matching
+
+---
+ src/internal.c | 18 ++++++++++++------
+ src/ssl.c      |  5 +++++
+ tests/api.c    | 30 ++++++++++++++++++++++++++++++
+ 3 files changed, 47 insertions(+), 6 deletions(-)
+
+diff --git a/src/internal.c b/src/internal.c
+index dc57df0242..cda815d875 100644
+--- a/src/internal.c
++++ b/src/internal.c
+@@ -9346,7 +9346,7 @@ int CheckForAltNames(DecodedCert* dCert, const char* domain, int* checkCN)
+         altName = dCert->altNames;
+ 
+     if (checkCN != NULL) {
+-        *checkCN = altName == NULL;
++        *checkCN = (altName == NULL) ? 1 : 0;
+     }
+ 
+     while (altName) {
+@@ -9415,23 +9415,29 @@ int CheckForAltNames(DecodedCert* dCert, const char* domain, int* checkCN)
+ int CheckHostName(DecodedCert* dCert, const char *domainName, size_t domainNameLen)
+ {
+     int checkCN;
++    int ret = DOMAIN_NAME_MISMATCH;
+ 
+     /* Assume name is NUL terminated. */
+     (void)domainNameLen;
+ 
+     if (CheckForAltNames(dCert, domainName, &checkCN) != 1) {
+-        WOLFSSL_MSG("DomainName match on alt names failed too");
+-        return DOMAIN_NAME_MISMATCH;
++        WOLFSSL_MSG("DomainName match on alt names failed");
+     }
++    else {
++        ret = 0;
++    }
++
+     if (checkCN == 1) {
+         if (MatchDomainName(dCert->subjectCN, dCert->subjectCNLen,
+-                            domainName) == 0) {
++                            domainName) == 1) {
++            ret = 0;
++        }
++        else {
+             WOLFSSL_MSG("DomainName match on common name failed");
+-            return DOMAIN_NAME_MISMATCH;
+         }
+     }
+ 
+-    return 0;
++    return ret;
+ }
+ 
+ int CheckIPAddr(DecodedCert* dCert, const char* ipasc)
+diff --git a/src/ssl.c b/src/ssl.c
+index 11bc08a3cb..59ad9bae60 100644
+--- a/src/ssl.c
++++ b/src/ssl.c
+@@ -43661,6 +43661,11 @@ int wolfSSL_X509_check_host(WOLFSSL_X509 *x, const char *chk, size_t chklen,
+     (void)flags;
+     (void)peername;
+ 
++    if ((x == NULL) || (chk == NULL)) {
++        WOLFSSL_MSG("Invalid parameter");
++        return WOLFSSL_FAILURE;
++    }
++
+     if (flags == WOLFSSL_NO_WILDCARDS) {
+         WOLFSSL_MSG("X509_CHECK_FLAG_NO_WILDCARDS not yet implemented");
+         return WOLFSSL_FAILURE;
+diff --git a/tests/api.c b/tests/api.c
+index 774a332968..db888952d4 100644
+--- a/tests/api.c
++++ b/tests/api.c
+@@ -23875,6 +23875,35 @@ static void test_wolfSSL_X509_issuer_name_hash(void)
+ #endif
+ }
+ 
++static void test_wolfSSL_X509_check_host(void)
++{
++#if defined(OPENSSL_EXTRA) && !defined(NO_CERTS) && !defined(NO_FILESYSTEM) \
++    && !defined(NO_SHA) && !defined(NO_RSA)
++
++    X509* x509;
++    const char altName[] = "example.com";
++
++    printf(testingFmt, "wolfSSL_X509_check_host()");
++
++    AssertNotNull(x509 = wolfSSL_X509_load_certificate_file(cliCertFile,
++                SSL_FILETYPE_PEM));
++
++    AssertIntEQ(X509_check_host(x509, altName, XSTRLEN(altName), 0, NULL),
++            WOLFSSL_SUCCESS);
++
++    AssertIntEQ(X509_check_host(x509, NULL, 0, 0, NULL),
++            WOLFSSL_FAILURE);
++
++    X509_free(x509);
++
++    AssertIntEQ(X509_check_host(NULL, altName, XSTRLEN(altName), 0, NULL),
++            WOLFSSL_FAILURE);
++
++    printf(resultFmt, passed);
++
++#endif
++}
++
+ static void test_wolfSSL_DES(void)
+ {
+     #if defined(OPENSSL_EXTRA) && !defined(NO_DES3)
+@@ -36407,6 +36436,7 @@ void ApiTest(void)
+     test_wolfSSL_X509_INFO();
+     test_wolfSSL_X509_subject_name_hash();
+     test_wolfSSL_X509_issuer_name_hash();
++    test_wolfSSL_X509_check_host();
+     test_wolfSSL_DES();
+     test_wolfSSL_certs();
+     test_wolfSSL_ASN1_TIME_print();
