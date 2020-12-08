@@ -357,7 +357,7 @@ static int rtl838x_gpio_probe(struct platform_device *pdev)
 	}
 
 	if (soc_info.family == RTL8380_FAMILY_ID) {
-		gpios->led_glb_ctrl = gpios->led_glb_ctrl;
+		gpios->led_glb_ctrl = RTL838X_LED_GLB_CTRL;
 		gpios->led_sw_ctrl = RTL838X_LED_SW_CTRL;
 		gpios->led_sw_p_ctrl = rtl838x_led_sw_p_ctrl;
 		gpios->led_sw_p_en_ctrl = rtl838x_led_sw_p_en_ctrl;
