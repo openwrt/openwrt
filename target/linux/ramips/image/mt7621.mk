@@ -1191,13 +1191,7 @@ define Device/xiaomi-ac2100
 	uboot-envtools
 endef
 
-define Device/xiaomi_mi-router-ac2100
-  $(Device/xiaomi-ac2100)
-  DEVICE_MODEL := Mi Router AC2100
-endef
-TARGET_DEVICES += xiaomi_mi-router-ac2100
-
-define Device/xiaomi_mir3g
+define Device/xiaomi_mi-router-3g
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
@@ -1211,14 +1205,13 @@ define Device/xiaomi_mir3g
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3G
-  SUPPORTED_DEVICES += R3G
-  SUPPORTED_DEVICES += mir3g
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport uboot-envtools
+  SUPPORTED_DEVICES += R3G mir3g xiaomi,mir3g
 endef
-TARGET_DEVICES += xiaomi_mir3g
+TARGET_DEVICES += xiaomi_mi-router-3g
 
-define Device/xiaomi_mir3g-v2
+define Device/xiaomi_mi-router-3g-v2
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 14848k
@@ -1226,10 +1219,11 @@ define Device/xiaomi_mir3g-v2
   DEVICE_MODEL := Mi Router 3G
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+  SUPPORTED_DEVICES += xiaomi,mir3g-v2
 endef
-TARGET_DEVICES += xiaomi_mir3g-v2
+TARGET_DEVICES += xiaomi_mi-router-3g-v2
 
-define Device/xiaomi_mir3p
+define Device/xiaomi_mi-router-3-pro
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
@@ -1245,8 +1239,9 @@ define Device/xiaomi_mir3p
 	check-size
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
 	kmod-usb-ledtrig-usbport uboot-envtools
+  SUPPORTED_DEVICES += xiaomi,mir3p
 endef
-TARGET_DEVICES += xiaomi_mir3p
+TARGET_DEVICES += xiaomi_mi-router-3-pro
 
 define Device/xiaomi_mi-router-4a-gigabit
   $(Device/dsa-migration)
@@ -1258,6 +1253,12 @@ define Device/xiaomi_mi-router-4a-gigabit
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += xiaomi_mi-router-4a-gigabit
+
+define Device/xiaomi_mi-router-ac2100
+  $(Device/xiaomi-ac2100)
+  DEVICE_MODEL := Mi Router AC2100
+endef
+TARGET_DEVICES += xiaomi_mi-router-ac2100
 
 define Device/xiaomi_redmi-router-ac2100
   $(Device/xiaomi-ac2100)
