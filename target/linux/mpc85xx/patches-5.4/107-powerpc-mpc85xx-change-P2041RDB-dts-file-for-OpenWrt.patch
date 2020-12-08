@@ -1,0 +1,32 @@
+From 93514afd769c305182beeed1f9c4c46235879ef8 Mon Sep 17 00:00:00 2001
+From: Martin Kennedy <hurricos@gmail.com>
+Date: Sun, 27 Dec 2020 23:24:41 +0100
+Subject: [PATCH] powerpc: mpc85xx: change P2041RDB dts file for OpenWRT
+
+This patch apply chages for OpenWRT in P2041RDB
+dts file.
+
+Signed-off-by: Martin Kennedy <hurricos@gmail.com>
+---
+ arch/powerpc/boot/dts/fsl/p2041rdb.dts | 98 +++++++++++++++++---------
+ 1 file changed, 63 insertions(+), 35 deletions(-)
+
+--- a/arch/powerpc/boot/dts/fsl/p2041rdb.dts
++++ b/arch/powerpc/boot/dts/fsl/p2041rdb.dts
+@@ -32,10 +32,15 @@
+  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++/dts-v1/;
++
+ /include/ "p2041si-pre.dtsi"
+ 
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
+ / {
+-	model = "fsl,P2041RDB";
++	model = "Freescale P2041RDB";
+ 	compatible = "fsl,P2041RDB";
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
