@@ -537,6 +537,7 @@ line_uptime() {
 
 	ccsg=$(dsl_cmd pmccsg 0 0 0)
 	et=$(dsl_val "$ccsg" nElapsedTime)
+	let et=et*1024/1000
 
 	[ -z "$et" ] && et=0
 
