@@ -120,6 +120,18 @@ define Device/ubnt-xw
   UBNT_VERSION := 6.0.4
 endef
 
+define Device/ubnt-unifi-jffs2
+  $(Device/ubnt)
+  KERNEL_SIZE := 3072k
+  IMAGE_SIZE := 15744k
+  UBNT_TYPE := BZ
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | jffs2 kernel0
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs |\
+	pad-rootfs | append-metadata | check-size
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage2
+endef
+
 define Device/ubnt-acb
   $(Device/ubnt)
   IMAGE_SIZE := 15744k
@@ -420,19 +432,19 @@ define Device/ubnt_unifiac-pro
 endef
 TARGET_DEVICES += ubnt_unifiac-pro
 
+define Device/ubnt_unifi-ap-outdoor-plus
+  $(Device/ubnt-bz)
+  $(Device/ubnt-unifi-jffs2)
+  DEVICE_MODEL := UniFi AP Outdoor+
+  SUPPORTED_DEVICES += unifi-outdoor-plus
+endef
+TARGET_DEVICES += ubnt_unifi-ap-outdoor-plus
+
 define Device/ubnt_unifi-ap-pro
+  $(Device/ubnt-unifi-jffs2)
   SOC := ar9344
-  DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi AP Pro
-  UBNT_TYPE := BZ
   UBNT_CHIP := ar934x
-  KERNEL_SIZE := 3072k
-  IMAGE_SIZE := 15744k
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | jffs2 kernel0
-  IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs |\
-	pad-rootfs | append-metadata | check-size
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage2
   SUPPORTED_DEVICES += uap-pro
 endef
 TARGET_DEVICES += ubnt_unifi-ap-pro
