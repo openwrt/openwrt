@@ -35,6 +35,10 @@ config KERNEL_SWAP
 	bool "Support for paging of anonymous memory (swap)"
 	default y if !SMALL_FLASH
 
+config KERNEL_PROC_STRIPPED
+	bool "Strip non-essential /proc functionality to reduce code size"
+	default y if SMALL_FLASH
+
 config KERNEL_DEBUG_FS
 	bool "Compile the kernel with debug filesystem enabled"
 	default y
