@@ -35,6 +35,10 @@ config KERNEL_SWAP
 	bool "Support for paging of anonymous memory (swap)"
 	default y if !SMALL_FLASH
 
+config KERNEL_PROC_STRIPPED
+	bool "Strip non-essential /proc functionality to reduce code size"
+	default y if SMALL_FLASH
+
 config KERNEL_DEBUG_FS
 	bool "Compile the kernel with debug filesystem enabled"
 	default y
@@ -376,7 +380,7 @@ config KERNEL_AIO
 config KERNEL_IO_URING
 	bool "Compile the kernel with io_uring support"
 	default y if !SMALL_FLASH
-	depends on LINUX_5_4 
+	depends on LINUX_5_4
 
 config KERNEL_FHANDLE
 	bool "Compile the kernel with support for fhandle syscalls"
