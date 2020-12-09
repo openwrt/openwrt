@@ -1,0 +1,61 @@
+From 23509dc05b24a28fb46022800e0e271ae0118de2 Mon Sep 17 00:00:00 2001
+From: Jo-Philipp Wich <jo@mein.io>
+Date: Wed, 9 Dec 2020 12:04:04 +0100
+Subject: [PATCH] build: prevent conflict with official AX_LIB_READLINE macro
+
+On systems where the official AX_LIB_READLINE (ax_lib_readline.m4) is
+present in a globally shared autoconf include directory, auto(re)conf
+will prefer including that offical version over the local variant due
+to the offical macro having a higher serial number.
+
+As a consequence, @READLINE_LIBS@ will not be substituted in *.in files,
+eventually failing the compilation with errors similar to:
+
+    gcc: error: READLINE_LIBS@: No such file or directory
+
+Avoid this problem by renaming the incompatible local macro to
+AX_LIB_READLINE_LLDPD which is sufficient to prevent any clashes.
+
+We encountered this problem on OpenWrt which uses GNU autoconf-archive
+to provide commonly used M4 macros through a global include directory,
+which happens to ship AX_LIB_READLINE as well.
+
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
+---
+ configure.ac          | 2 +-
+ m4/ax_lib_readline.m4 | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -273,7 +273,7 @@ AC_ARG_WITH([readline],
+   [],
+   [with_readline=auto])
+ if test x"$with_readline" != x"no"; then
+-   AX_LIB_READLINE
++   AX_LIB_READLINE_LLDPD
+    if test x"$with_readline" != x"check" -a x"$with_readline" != x"auto"; then
+      if test x"$ax_cv_lib_readline" = x"no"; then
+        AC_MSG_FAILURE([*** no readline support found])
+--- a/m4/ax_lib_readline.m4
++++ b/m4/ax_lib_readline.m4
+@@ -4,7 +4,7 @@
+ #
+ # SYNOPSIS
+ #
+-#   AX_LIB_READLINE
++#   AX_LIB_READLINE_LLDPD
+ #
+ # DESCRIPTION
+ #
+@@ -66,8 +66,8 @@
+ 
+ #serial 6
+ 
+-AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE])
+-AC_DEFUN([AX_LIB_READLINE], [
++AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE_LLDPD])
++AC_DEFUN([AX_LIB_READLINE_LLDPD], [
+   AC_CACHE_CHECK([for a readline compatible library],
+                  ax_cv_lib_readline, [
+     _save_LIBS="$LIBS"
