@@ -531,23 +531,23 @@ if KERNEL_DEVTMPFS
 endif
 
 config KERNEL_KEYS
-    bool "Enable kernel access key retention support"
-    default n
+	bool "Enable kernel access key retention support"
+	default n
 
 config KERNEL_PERSISTENT_KEYRINGS
-    bool "Enable kernel persistent keyrings"
-    depends on KERNEL_KEYS
-    default n
+	bool "Enable kernel persistent keyrings"
+	depends on KERNEL_KEYS
+	default n
+
+config KERNEL_KEYS_REQUEST_CACHE
+	bool "Enable temporary caching of the last request_key() result"
+	depends on KERNEL_KEYS
+	default n
 
 config KERNEL_BIG_KEYS
-    bool "Enable large payload keys on kernel keyrings"
-    depends on KERNEL_KEYS
-    default n
-
-config KERNEL_ENCRYPTED_KEYS
-    tristate "Enable keys with encrypted payloads on kernel keyrings"
-    depends on KERNEL_KEYS
-    default n
+	bool "Enable large payload keys on kernel keyrings"
+	depends on KERNEL_KEYS
+	default n
 
 #
 # CGROUP support symbols
