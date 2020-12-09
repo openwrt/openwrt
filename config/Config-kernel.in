@@ -532,7 +532,7 @@ endif
 
 config KERNEL_KEYS
 	bool "Enable kernel access key retention support"
-	default n
+	default !SMALL_FLASH
 
 config KERNEL_PERSISTENT_KEYRINGS
 	bool "Enable kernel persistent keyrings"
