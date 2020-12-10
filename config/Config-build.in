@@ -5,6 +5,20 @@
 # See /LICENSE for more information.
 #
 
+config EXPERIMENTAL
+	bool "Enable experimental features by default"
+	default n
+	help
+	  Set this option to build with latest bleeding edge features
+	  which may or may not work as expected.
+	  If you would like to help the development of OpenWrt, you are
+	  encouraged to set this option and provide feedback (both
+	  positive and negative). But do so only if you know how to
+	  recover your device in case of flashing potentially non-working
+	  firmware.
+	
+	  If you plan to use this build in production, say NO!
+
 menu "Global build settings"
 
 	config JSON_OVERVIEW_IMAGE_INFO
@@ -51,7 +65,7 @@ menu "Global build settings"
 	config TESTING_KERNEL
 		bool "Use the testing kernel version"
 		depends on HAS_TESTING_KERNEL
-		default n
+		default EXPERIMENTAL
 		help
 		  If the target supports a newer kernel version than the default,
 		  you can use this config option to enable it
