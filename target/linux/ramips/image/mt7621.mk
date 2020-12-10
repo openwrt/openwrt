@@ -1207,7 +1207,7 @@ define Device/xiaomi_mi-router-3g
   DEVICE_MODEL := Mi Router 3G
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport uboot-envtools
-  SUPPORTED_DEVICES += R3G mir3g xiaomi,mir3g
+  SUPPORTED_DEVICES += R3G mir3g xiaomi,mir3g xiaomi,mir-3g
 endef
 TARGET_DEVICES += xiaomi_mi-router-3g
 
