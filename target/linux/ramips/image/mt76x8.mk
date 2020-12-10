@@ -475,6 +475,13 @@ define Device/zbtlink_zbt-we1226
 endef
 TARGET_DEVICES += zbtlink_zbt-we1226
 
+define Device/zbtlink_zbt-we2802d
+  DTS := ZBT-WE2802D
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := ZBTlink ZBT-WE2802D
+endef
+TARGET_DEVICES += zbtlink_zbt-we2802d
+
 define Device/zyxel_keenetic-extra-ii
   DTS := ki_rb
   IMAGE_SIZE := 14912k
