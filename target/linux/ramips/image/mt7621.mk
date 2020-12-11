@@ -466,6 +466,20 @@ define Device/elecom_wrc-1900gst
 endef
 TARGET_DEVICES += elecom_wrc-1900gst
 
+define Device/elecom_wrc-2533ghbk-i
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-2533GHBK-I
+  IMAGE_SIZE := 9856k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
+	elx-header 0107002d 8844A2D168B45A2D | \
+	elecom-product-header WRC-2533GHBK-I
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += elecom_wrc-2533ghbk-i
+
 define Device/elecom_wrc-2533gst
   $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 11264k
