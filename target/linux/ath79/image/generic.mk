@@ -19,14 +19,10 @@ define Build/add-elecom-factory-initramfs
 	-f 0x70000 -S 0x01100000 \
 	-i $@ -o $@.factory
 
-  ( \
-	echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
-	echo -n "0.00" | dd bs=16 count=1 conv=sync; \
-	dd if=$@.factory; \
-  ) > $@.factory.new
+  $(call Build/elecom-product-header,$(product) $@.factory)
 
-  if [ "$$(stat -c%s $@.factory.new)" -le $$(($(subst k,* 1024,$(subst m, * 1024k,$(IMAGE_SIZE))))) ]; then \
-	mv $@.factory.new $(BIN_DIR)/$(KERNEL_INITRAMFS_PREFIX)-factory.bin; \
+  if [ "$$(stat -c%s $@.factory)" -le $$(($(subst k,* 1024,$(subst m, * 1024k,$(IMAGE_SIZE))))) ]; then \
+	mv $@.factory $(BIN_DIR)/$(KERNEL_INITRAMFS_PREFIX)-factory.bin; \
   else \
 	echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
   fi
