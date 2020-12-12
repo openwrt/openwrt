@@ -1,0 +1,27 @@
+From dbbcf8b2cb8e321310510179caa12afb30525c17 Mon Sep 17 00:00:00 2001
+From: Marty Jones <mj8263788@gmail.com>
+Date: Sat, 12 Dec 2020 03:54:03 -0500
+Subject: [PATCH] rockchip: add NanoPi R4S 1Gb DDR3
+
+Signed-off-by: Marty Jones <mj8263788@gmail.com>
+---
+ arch/arm64/boot/dts/rockchip/Makefile                 | 1 +
+ arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s-1g.dts | 2 ++
+ 2 files changed, 3 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s-1g.dts
+
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -25,6 +25,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-leez-p710.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopc-t4.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi-m4.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi-r4s.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi-r4s-1g.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi-neo4.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-orangepi.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-puma-haikou.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s-1g.dts
+@@ -0,0 +1,2 @@
++// SPDX-License-Identifier: GPL-2.0
++#include "rk3399-nanopi-r4s.dts"

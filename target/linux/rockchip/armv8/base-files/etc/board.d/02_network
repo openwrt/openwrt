@@ -14,6 +14,9 @@ rockchip_setup_interfaces()
 	friendlyarm,nanopi-r4s)
 		ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
 		;;
+	friendlyarm,nanopi-r4s-1g)
+		ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
+		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
 		;;
