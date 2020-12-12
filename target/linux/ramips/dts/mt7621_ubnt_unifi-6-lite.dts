@@ -3,8 +3,12 @@
 #include "mt7621_ubnt_unifi.dtsi"
 
 / {
-	compatible = "ubnt,unifi-nanohd", "mediatek,mt7621-soc";
-	model = "Ubiquiti UniFi nanoHD";
+	compatible = "ubnt,unifi-6-lite", "mediatek,mt7621-soc";
+	model = "Ubiquiti UniFi 6 Lite";
+
+	chosen {
+		bootargs-override = "console=ttyS0,115200";
+	};
 };
 
 &spi0 {
@@ -34,42 +38,46 @@
 
 			factory: partition@70000 {
 				label = "factory";
-				reg = <0x70000 0x10000>;
+				reg = <0x70000 0x40000>;
 				read-only;
 			};
 
-			eeprom: partition@80000 {
+			eeprom: partition@b0000 {
 				label = "eeprom";
-				reg = <0x80000 0x10000>;
+				reg = <0xb0000 0x10000>;
 				read-only;
 			};
 
-			partition@90000 {
+			partition@c0000 {
 				label = "bs";
-				reg = <0x90000 0x10000>;
+				reg = <0xc0000 0x10000>;
 			};
 
-			partition@a0000 {
+			partition@d0000 {
 				label = "cfg";
-				reg = <0xa0000 0x100000>;
+				reg = <0xd0000 0x100000>;
 				read-only;
 			};
 
-			partition@1a0000 {
-				compatible = "denx,uimage";
+			partition@1d0000 {
+				compatible = "denx,fit";
 				label = "firmware";
-				reg = <0x1a0000 0xf30000>;
+				reg = <0x1d0000 0xf10000>;
 			};
 
-			partition@10d0000 {
+			partition@10e0000 {
 				label = "kernel1";
-				reg = <0x10d0000 0xf30000>;
-				read-only;
+				reg = <0x10e0000 0xf10000>;
 			};
 		};
 	};
 };
 
+&wlan_2g {
+	mtd-mac-address = <&eeprom 0x0>;
+};
+
 &wlan_5g {
-	mediatek,mtd-eeprom = <&factory 0x8000>;
+	mediatek,mtd-eeprom = <&factory 0x20000>;
+	mtd-mac-address = <&eeprom 0x6>;
 };
