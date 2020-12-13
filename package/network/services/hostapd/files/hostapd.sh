@@ -491,7 +491,7 @@ hostapd_set_bss_options() {
 	set_default uapsd 1
 	set_default wpa_disable_eapol_key_retries 0
 	set_default tdls_prohibit 0
-	set_default eapol_version 0
+	set_default eapol_version $((wpa & 1))
 	set_default acct_port 1813
 	set_default bss_load_update_period 60
 	set_default chan_util_avg_period 600
