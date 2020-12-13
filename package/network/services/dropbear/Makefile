@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=2020.81
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -32,7 +32,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_DROPBEAR_CURVE25519 CONFIG_DROPBEAR_ZLIB \
 	CONFIG_DROPBEAR_ED25519 CONFIG_DROPBEAR_CHACHA20POLY1305 \
 	CONFIG_DROPBEAR_UTMP CONFIG_DROPBEAR_PUTUTLINE \
-	CONFIG_DROPBEAR_DBCLIENT CONFIG_DROPBEAR_SCP
+	CONFIG_DROPBEAR_DBCLIENT CONFIG_DROPBEAR_SCP CONFIG_DROPBEAR_ASKPASS
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -96,47 +96,77 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_DROPBEAR_ZLIB),,--disable-zlib) \
 	--enable-bundled-libtom
 
+##############################################################################
+#
+#   option|value - add option to localoptions.h
+# !!option|value - replace option in sysoptions.h
+#
+##############################################################################
+
+# remove protocol idented software version number:
+# - LOCAL_IDENT
+# disable legacy/unsafe methods and unused functionality:
+# - INETD_MODE
+# - DROPBEAR_CLI_NETCAT
+# - DROPBEAR_DSS
+# - DO_MOTD
+DB_OPT_COMMON = \
+	DEFAULT_PATH|"$(TARGET_INIT_PATH)" \
+	!!LOCAL_IDENT|"SSH-2.0-dropbear" \
+	INETD_MODE|0 \
+	DROPBEAR_CLI_NETCAT|0 \
+	DROPBEAR_DSS|0 \
+	DO_MOTD|0 \
+
+
+##############################################################################
+#
+#   option|config|enabled|disabled = add option to localoptions.h
+# !!option|config|enabled|disabled = replace option in sysoptions.h
+#
+#   option := (config) ? enabled : disabled
+#
+##############################################################################
+
+DB_OPT_CONFIG = \
+	DROPBEAR_CURVE25519|CONFIG_DROPBEAR_CURVE25519|1|0 \
+	DROPBEAR_ED25519|CONFIG_DROPBEAR_ED25519|1|0 \
+	DROPBEAR_CHACHA20POLY1305|CONFIG_DROPBEAR_CHACHA20POLY1305|1|0 \
+	DROPBEAR_ECDSA|CONFIG_DROPBEAR_ECC|1|0 \
+	DROPBEAR_ECDH|CONFIG_DROPBEAR_ECC|1|0 \
+	!!DROPBEAR_ECC_384|CONFIG_DROPBEAR_ECC_FULL|1|0 \
+	!!DROPBEAR_ECC_521|CONFIG_DROPBEAR_ECC_FULL|1|0 \
+	DROPBEAR_CLI_ASKPASS_HELPER|CONFIG_DROPBEAR_ASKPASS|1|0 \
+
+
 TARGET_CFLAGS += -DARGTYPE=3 -ffunction-sections -fdata-sections -flto
 TARGET_LDFLAGS += -Wl,--gc-sections -flto=jobserver
+
+db_opt_add     =echo '\#define $(1) $(2)' >> $(PKG_BUILD_DIR)/localoptions.h
+db_opt_replace =$(ESED) 's,^(\#define $(1)) .*$$$$,\1 $(2),g' $(PKG_BUILD_DIR)/sysoptions.h
+
+define Build/Configure/dropbear_headers
+	$(strip $(foreach s,$(DB_OPT_COMMON), \
+	  $(if $(filter !!%,$(word 1,$(subst |, ,$(s)))), \
+	    $(call db_opt_replace,$(patsubst !!%,%,$(word 1,$(subst |, ,$(s)))),$(word 2,$(subst |, ,$(s)))), \
+	    $(call db_opt_add,$(word 1,$(subst |, ,$(s))),$(word 2,$(subst |, ,$(s)))) \
+	  ) ; \
+	))
+
+	$(strip $(foreach s,$(DB_OPT_CONFIG), \
+	  $(if $(filter !!%,$(word 1,$(subst |, ,$(s)))), \
+	    $(call db_opt_replace,$(patsubst !!%,%,$(word 1,$(subst |, ,$(s)))),$(if $($(word 2,$(subst |, ,$(s)))),$(word 3,$(subst |, ,$(s))),$(word 4,$(subst |, ,$(s))))), \
+	    $(call db_opt_add,$(word 1,$(subst |, ,$(s))),$(if $($(word 2,$(subst |, ,$(s)))),$(word 3,$(subst |, ,$(s))),$(word 4,$(subst |, ,$(s))))) \
+	  ) ; \
+	))
+endef
 
 define Build/Configure
 	: > $(PKG_BUILD_DIR)/localoptions.h
 
 	$(Build/Configure/Default)
 
-	echo '#define DEFAULT_PATH "$(TARGET_INIT_PATH)"' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
-
-	echo '#define DROPBEAR_CURVE25519 $(if $(CONFIG_DROPBEAR_CURVE25519),1,0)' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
-
-	for OPTION in DROPBEAR_ECDSA DROPBEAR_ECDH; do \
-		echo "#define $$$$OPTION $(if $(CONFIG_DROPBEAR_ECC),1,0)" >> \
-			$(PKG_BUILD_DIR)/localoptions.h; \
-	done
-
-	echo '#define DROPBEAR_ED25519 $(if $(CONFIG_DROPBEAR_ED25519),1,0)' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
-
-	echo '#define DROPBEAR_CHACHA20POLY1305 $(if $(CONFIG_DROPBEAR_CHACHA20POLY1305),1,0)' >> \
-		$(PKG_BUILD_DIR)/localoptions.h
-
-	# remove protocol idented software version number
-	$(ESED) 's,^(#define LOCAL_IDENT) .*$$$$,\1 "SSH-2.0-dropbear",g' \
-		$(PKG_BUILD_DIR)/sysoptions.h
-
-	# disable legacy/unsafe methods and unused functionality
-	for OPTION in INETD_MODE DROPBEAR_CLI_NETCAT \
-	DROPBEAR_DSS DROPBEAR_USE_PASSWORD_ENV DO_MOTD ; do \
-		echo "#define $$$$OPTION 0" >> \
-			$(PKG_BUILD_DIR)/localoptions.h; \
-	done
-
-	# enable nistp384 and nistp521 only if full ECC support was requested
-	for OPTION in DROPBEAR_ECC_384 DROPBEAR_ECC_521; do \
-		$(ESED) 's,^(#define '$$$$OPTION') .*$$$$,\1 $(if $(CONFIG_DROPBEAR_ECC_FULL),1,0),g' \
-		$(PKG_BUILD_DIR)/sysoptions.h; \
-	done
+	$(Build/Configure/dropbear_headers)
 
 	# Enforce rebuild of svr-chansession.c
 	rm -f $(PKG_BUILD_DIR)/svr-chansession.o

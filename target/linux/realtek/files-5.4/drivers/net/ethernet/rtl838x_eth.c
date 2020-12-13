@@ -986,6 +986,7 @@ static int rtl838x_mac_pcs_get_state(struct phylink_config *config,
 	case 1:
 		state->speed = SPEED_100;
 		break;
+	case 2:
 		state->speed = SPEED_1000;
 		break;
 	default:

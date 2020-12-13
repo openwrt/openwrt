@@ -70,12 +70,22 @@ struct flash_partition_entry {
 	uint32_t size;
 };
 
+/** Partition trailing padding definitions
+ * Values 0x00 to 0xff are reserved to indicate the padding value
+ * Values from 0x100 are reserved to indicate other behaviour */
+enum partition_trail_value {
+	PART_TRAIL_00   = 0x00,
+	PART_TRAIL_FF   = 0xff,
+	PART_TRAIL_MAX  = 0xff,
+	PART_TRAIL_NONE = 0x100
+};
+
 /** Firmware layout description */
 struct device_info {
 	const char *id;
 	const char *vendor;
 	const char *support_list;
-	char support_trail;
+	enum partition_trail_value part_trail;
 	const char *soft_ver;
 	uint32_t soft_ver_compat_level;
 	struct flash_partition_entry partitions[MAX_PARTITIONS+1];
@@ -83,10 +93,13 @@ struct device_info {
 	const char *last_sysupgrade_partition;
 };
 
+struct __attribute__((__packed__)) meta_header {
+	uint32_t length;
+	uint32_t zero;
+};
+
 /** The content of the soft-version structure */
 struct __attribute__((__packed__)) soft_version {
-	uint32_t data_len;
-	uint32_t zero;
 	uint8_t pad1;
 	uint8_t version_major;
 	uint8_t version_minor;
@@ -96,6 +109,7 @@ struct __attribute__((__packed__)) soft_version {
 	uint8_t month;
 	uint8_t day;
 	uint32_t rev;
+	uint32_t compat_level;
 };
 
 
@@ -131,7 +145,7 @@ static struct device_info boards[] = {
 			"CPE220(TP-LINK|UN|N300-2):1.1\r\n"
 			"CPE220(TP-LINK|US|N300-2):1.1\r\n"
 			"CPE220(TP-LINK|EU|N300-2):1.1\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -171,7 +185,7 @@ static struct device_info boards[] = {
 			"CPE210(TP-LINK|UN|N300-2):2.0\r\n"
 			"CPE210(TP-LINK|EU|N300-2):2.0\r\n"
 			"CPE210(TP-LINK|US|N300-2):2.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -213,7 +227,7 @@ static struct device_info boards[] = {
 			"CPE210(TP-LINK|EU|N300-2|45550000):3.20\r\n"
 			"CPE210(TP-LINK|UN|N300-2|00000000):3.20\r\n"
 			"CPE210(TP-LINK|US|N300-2|55530000):3.20\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -254,7 +268,7 @@ static struct device_info boards[] = {
 			"CPE220(TP-LINK|UN|N300-2):2.0\r\n"
 			"CPE220(TP-LINK|EU|N300-2):2.0\r\n"
 			"CPE220(TP-LINK|US|N300-2):2.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -294,7 +308,7 @@ static struct device_info boards[] = {
 			"CPE220(TP-LINK|UN|N300-2):3.0\r\n"
 			"CPE220(TP-LINK|EU|N300-2):3.0\r\n"
 			"CPE220(TP-LINK|US|N300-2):3.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -333,7 +347,7 @@ static struct device_info boards[] = {
 			"CPE520(TP-LINK|UN|N300-5):1.1\r\n"
 			"CPE520(TP-LINK|US|N300-5):1.1\r\n"
 			"CPE520(TP-LINK|EU|N300-5):1.1\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -375,7 +389,7 @@ static struct device_info boards[] = {
 			"CPE510(TP-LINK|UN|N300-5):2.0\r\n"
 			"CPE510(TP-LINK|EU|N300-5):2.0\r\n"
 			"CPE510(TP-LINK|US|N300-5):2.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -417,7 +431,7 @@ static struct device_info boards[] = {
 			"CPE510(TP-LINK|UN|N300-5):3.0\r\n"
 			"CPE510(TP-LINK|EU|N300-5):3.0\r\n"
 			"CPE510(TP-LINK|US|N300-5):3.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -457,7 +471,7 @@ static struct device_info boards[] = {
 			"CPE610(TP-LINK|UN|N300-5):1.0\r\n"
 			"CPE610(TP-LINK|EU|N300-5):1.0\r\n"
 			"CPE610(TP-LINK|US|N300-5):1.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -497,7 +511,7 @@ static struct device_info boards[] = {
 			"CPE610(TP-LINK|UN|N300-5):2.0\r\n"
 			"CPE610(TP-LINK|EU|N300-5):2.0\r\n"
 			"CPE610(TP-LINK|US|N300-5):2.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -529,7 +543,7 @@ static struct device_info boards[] = {
 			"WBS210(TP-LINK|UN|N300-2):1.20\r\n"
 			"WBS210(TP-LINK|US|N300-2):1.20\r\n"
 			"WBS210(TP-LINK|EU|N300-2):1.20\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -561,7 +575,7 @@ static struct device_info boards[] = {
 			"WBS210(TP-LINK|UN|N300-2|00000000):2.0\r\n"
 			"WBS210(TP-LINK|US|N300-2|55530000):2.0\r\n"
 			"WBS210(TP-LINK|EU|N300-2|45550000):2.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -594,7 +608,7 @@ static struct device_info boards[] = {
 			"WBS510(TP-LINK|US|N300-5):1.20\r\n"
 			"WBS510(TP-LINK|EU|N300-5):1.20\r\n"
 			"WBS510(TP-LINK|CA|N300-5):1.20\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -627,7 +641,7 @@ static struct device_info boards[] = {
 			"WBS510(TP-LINK|US|N300-5|55530000):2.0\r\n"
 			"WBS510(TP-LINK|EU|N300-5|45550000):2.0\r\n"
 			"WBS510(TP-LINK|CA|N300-5|43410000):2.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -658,7 +672,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\r\n"
 			"{product_name:Archer C2600,product_ver:1.0.0,special_id:00000000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/**
@@ -709,7 +723,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer A7,product_ver:5.0.0,special_id:43410000}\n"
 			"{product_name:Archer A7,product_ver:5.0.0,special_id:4A500000}\n"
 			"{product_name:Archer A7,product_ver:5.0.0,special_id:54570000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.0.0\n",
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -747,7 +761,7 @@ static struct device_info boards[] = {
 			"{product_name:ArcherC2,product_ver:3.0.0,special_id:00000000}\n"
 			"{product_name:ArcherC2,product_ver:3.0.0,special_id:55530000}\n"
 			"{product_name:ArcherC2,product_ver:3.0.0,special_id:45550000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:3.0.1\n",
 
 		/** We're using a dynamic kernel/rootfs split here */
@@ -785,7 +799,7 @@ static struct device_info boards[] = {
 			"{product_name:ArcherC25,product_ver:1.0.0,special_id:00000000}\n"
 			"{product_name:ArcherC25,product_ver:1.0.0,special_id:55530000}\n"
 			"{product_name:ArcherC25,product_ver:1.0.0,special_id:45550000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.0.0\n",
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -824,7 +838,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C58,product_ver:1.0.0,special_id:00000000}\r\n"
 			"{product_name:Archer C58,product_ver:1.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C58,product_ver:1.0.0,special_id:55530000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.0.0\n",
 
 		.partitions = {
@@ -859,7 +873,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:52550000}\r\n"
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:55530000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.0.0\n",
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -897,7 +911,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C59,product_ver:2.0.0,special_id:00000000}\r\n"
 			"{product_name:Archer C59,product_ver:2.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C59,product_ver:2.0.0,special_id:55530000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:2.0.0 Build 20161206 rel.7303\n",
 
 		/** We're using a dynamic kernel/rootfs split here */
@@ -937,7 +951,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:52550000}\r\n"
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:4A500000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.9.1\n",
 
 		.partitions = {
@@ -972,7 +986,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer A6,product_ver:2.0.0,special_id:55530000}\n"
 			"{product_name:Archer A6,product_ver:2.0.0,special_id:54570000}\n"
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:55530000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.9.1\n",
 
 		.partitions = {
@@ -1007,7 +1021,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:00000000}\r\n"
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:55530000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.0.0\n",
 
 		.partitions = {
@@ -1041,7 +1055,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C60,product_ver:2.0.0,special_id:42520000}\r\n"
 			"{product_name:Archer C60,product_ver:2.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C60,product_ver:2.0.0,special_id:55530000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:2.0.0\n",
 
 		.partitions = {
@@ -1077,7 +1091,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C60,product_ver:3.0.0,special_id:42520000}\r\n"
 			"{product_name:Archer C60,product_ver:3.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C60,product_ver:3.0.0,special_id:55530000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:3.0.0\n",
 
 		.partitions = {
@@ -1113,7 +1127,7 @@ static struct device_info boards[] = {
 			"{product_name:ArcherC5,product_ver:2.0.0,special_id:00000000}\r\n"
 			"{product_name:ArcherC5,product_ver:2.0.0,special_id:55530000}\r\n"
 			"{product_name:ArcherC5,product_ver:2.0.0,special_id:4A500000}\r\n", /* JP version */
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1154,7 +1168,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C7,product_ver:4.0.0,special_id:54570000}\n"
 			"{product_name:Archer C7,product_ver:4.0.0,special_id:55530000}\n"
 			"{product_name:Archer C7,product_ver:4.0.0,special_id:43410000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.0.0\n",
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -1199,7 +1213,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C7,product_ver:5.0.0,special_id:52550000}\n"
 			"{product_name:Archer C7,product_ver:5.0.0,special_id:4B520000}\n",
 
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.0.0\n",
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -1242,7 +1256,7 @@ static struct device_info boards[] = {
 			"{product_name:ArcherC9,"
 			"product_ver:1.0.0,"
 			"special_id:00000000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1275,7 +1289,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\r\n"
 			"EAP120(TP-LINK|UN|N300-2):1.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = 0xff,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1304,7 +1318,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\r\n"
 			"EAP225-Outdoor(TP-Link|UN|AC1200-D):1.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = PART_TRAIL_NONE,
 		.soft_ver = NULL,
 		.soft_ver_compat_level = 1,
 
@@ -1333,7 +1347,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\r\n"
 			"EAP225(TP-Link|UN|AC1350-D):3.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = PART_TRAIL_NONE,
 		.soft_ver = NULL,
 		.soft_ver_compat_level = 1,
 
@@ -1362,7 +1376,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\r\n"
 			"EAP225-Wall(TP-Link|UN|AC1200-D):2.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = PART_TRAIL_NONE,
 		.soft_ver = NULL,
 		.soft_ver_compat_level = 1,
 
@@ -1391,7 +1405,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\r\n"
 			"EAP245(TP-LINK|UN|AC1750-D):1.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = PART_TRAIL_NONE,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1417,7 +1431,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\r\n"
 			"EAP245(TP-Link|UN|AC1750-D):3.0\r\n",
-		.support_trail = '\xff',
+		.part_trail = PART_TRAIL_NONE,
 		.soft_ver = NULL,
 		.soft_ver_compat_level = 1,
 
@@ -1459,7 +1473,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WA850RE,product_ver:2.0.0,special_id:43410000}\n"
 			"{product_name:TL-WA850RE,product_ver:2.0.0,special_id:41550000}\n"
 			"{product_name:TL-WA850RE,product_ver:2.0.0,special_id:52550000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/**
@@ -1501,7 +1515,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:43410000}\n"
 			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:41550000}\n"
 			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:52550000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1532,7 +1546,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\n"
 			"{product_name:TL-WPA8630P,product_ver:2.0.0,special_id:45550000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1569,7 +1583,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WPA8630P,product_ver:2.0.0,special_id:41550000}\n"
 			"{product_name:TL-WPA8630P,product_ver:2.0.0,special_id:44450000}\n"
 			"{product_name:TL-WPA8630P,product_ver:2.1.0,special_id:41550000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1604,7 +1618,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\n"
 			"{product_name:TL-WPA8630P,product_ver:2.1.0,special_id:45550000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1640,7 +1654,7 @@ static struct device_info boards[] = {
 			"SupportList:\n"
 			"{product_name:TL-WR1043N,product_ver:5.0.0,special_id:45550000}\n"
 			"{product_name:TL-WR1043N,product_ver:5.0.0,special_id:55530000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.0.0\n",
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
@@ -1674,7 +1688,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\n"
 			"{product_name:TL-WR1043ND,product_ver:4.0.0,special_id:45550000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -1707,7 +1721,7 @@ static struct device_info boards[] = {
 			"SupportList:\n"
 			"{product_name:TL-WR902AC,product_ver:1.0.0,special_id:45550000}\n"
 			"{product_name:TL-WR902AC,product_ver:1.0.0,special_id:55530000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/**
@@ -1743,7 +1757,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"{product_name:TL-WR942N,product_ver:1.0.0,special_id:00000000}\r\n"
 			"{product_name:TL-WR942N,product_ver:1.0.0,special_id:52550000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1790,7 +1804,7 @@ static struct device_info boards[] = {
 			"{product_name:RE200,product_ver:2.0.0,special_id:52550000}\n"
 			"{product_name:RE200,product_ver:2.0.0,special_id:54570000}\n"
 			"{product_name:RE200,product_ver:2.0.0,special_id:55530000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1834,7 +1848,7 @@ static struct device_info boards[] = {
 			"{product_name:RE200,product_ver:3.0.0,special_id:52550000}\n"
 			"{product_name:RE200,product_ver:3.0.0,special_id:54570000}\n"
 			"{product_name:RE200,product_ver:3.0.0,special_id:55530000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1878,7 +1892,7 @@ static struct device_info boards[] = {
 			"{product_name:RE200,product_ver:4.0.0,special_id:45530000}\n"
 			"{product_name:RE200,product_ver:4.0.0,special_id:49440000}\n"
 			"{product_name:RE200,product_ver:4.0.0,special_id:45470000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = "soft_ver:1.1.0\n",
 
 		.partitions = {
@@ -1921,7 +1935,7 @@ static struct device_info boards[] = {
 			"{product_name:RE220,product_ver:2.0.0,special_id:52550000}\n"
 			"{product_name:RE220,product_ver:2.0.0,special_id:54570000}\n"
 			"{product_name:RE220,product_ver:2.0.0,special_id:55530000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1958,7 +1972,7 @@ static struct device_info boards[] = {
 			"{product_name:RE305,product_ver:1.0.0,special_id:4b520000}\n"
 			"{product_name:RE305,product_ver:1.0.0,special_id:41550000}\n"
 			"{product_name:RE305,product_ver:1.0.0,special_id:43410000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		.partitions = {
@@ -1994,7 +2008,7 @@ static struct device_info boards[] = {
 			"{product_name:RE350,product_ver:1.0.0,special_id:43410000}\n"
 			"{product_name:RE350,product_ver:1.0.0,special_id:4b520000}\n"
 			"{product_name:RE350,product_ver:1.0.0,special_id:4a500000}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/** We're using a dynamic kernel/rootfs split here */
@@ -2025,7 +2039,7 @@ static struct device_info boards[] = {
 		.support_list =
 			"SupportList:\n"
 			"{product_name:RE350K,product_ver:1.0.0,special_id:00000000,product_region:US}\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/** We're using a dynamic kernel/rootfs split here */
@@ -2064,7 +2078,7 @@ static struct device_info boards[] = {
 			"{product_name:RE355,product_ver:1.0.0,special_id:41550000}\r\n"
 			"{product_name:RE355,product_ver:1.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE355,product_ver:1.0.0,special_id:55534100}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -2102,7 +2116,7 @@ static struct device_info boards[] = {
 			"{product_name:RE450,product_ver:1.0.0,special_id:41550000}\r\n"
 			"{product_name:RE450,product_ver:1.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE450,product_ver:1.0.0,special_id:55534100}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/** We're using a dynamic kernel/rootfs split here */
@@ -2141,7 +2155,7 @@ static struct device_info boards[] = {
 			"{product_name:RE450,product_ver:2.0.0,special_id:41530000}\r\n"
 			"{product_name:RE450,product_ver:2.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE450,product_ver:2.0.0,special_id:42520000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -2180,7 +2194,7 @@ static struct device_info boards[] = {
 			"{product_name:RE450,product_ver:3.0.0,special_id:41530000}\r\n"
 			"{product_name:RE450,product_ver:3.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE450,product_ver:3.0.0,special_id:42520000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -2218,7 +2232,7 @@ static struct device_info boards[] = {
 			"{product_name:RE500,product_ver:1.0.0,special_id:43410000}\r\n"
 			"{product_name:RE500,product_ver:1.0.0,special_id:41550000}\r\n"
 			"{product_name:RE500,product_ver:1.0.0,special_id:41530000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -2255,7 +2269,7 @@ static struct device_info boards[] = {
 			"{product_name:RE650,product_ver:1.0.0,special_id:43410000}\r\n"
 			"{product_name:RE650,product_ver:1.0.0,special_id:41550000}\r\n"
 			"{product_name:RE650,product_ver:1.0.0,special_id:41530000}\r\n",
-		.support_trail = '\x00',
+		.part_trail = 0x00,
 		.soft_ver = NULL,
 
 		/* We're using a dynamic kernel/rootfs split here */
@@ -2297,6 +2311,44 @@ static inline void put32(uint8_t *buf, uint32_t val) {
 	buf[1] = val >> 16;
 	buf[2] = val >> 8;
 	buf[3] = val;
+}
+
+static inline bool meta_partition_should_pad(enum partition_trail_value pv)
+{
+	return (pv >= 0) && (pv <= PART_TRAIL_MAX);
+}
+
+/** Allocate a padded meta partition with a correctly initialised header
+ * If the `data` pointer is NULL, then the required space is only allocated,
+ * otherwise `data_len` bytes will be copied from `data` into the partition
+ * entry. */
+static struct image_partition_entry init_meta_partition_entry(
+	const char *name, const void *data, uint32_t data_len,
+	enum partition_trail_value pad_value)
+{
+	uint32_t total_len = sizeof(struct meta_header) + data_len;
+	if (meta_partition_should_pad(pad_value))
+		total_len += 1;
+
+	struct image_partition_entry entry = {
+		.name = name,
+		.size = total_len,
+		.data = malloc(total_len)
+	};
+	if (!entry.data)
+		error(1, errno, "failed to allocate meta partition entry");
+
+	struct meta_header *header = (struct meta_header *)entry.data;
+	header->length = htonl(data_len);
+	header->zero = 0;
+
+	if (data)
+		memcpy(entry.data+sizeof(*header), data, data_len);
+
+	if (meta_partition_should_pad(pad_value))
+		entry.data[total_len - 1] = (uint8_t) pad_value;
+
+	return entry;
 }
 
 /** Allocates a new image partition */
@@ -2364,14 +2416,16 @@ static inline uint8_t bcd(uint8_t v) {
 
 
 /** Generates the soft-version partition */
-static struct image_partition_entry make_soft_version(struct device_info *info, uint32_t rev) {
-	size_t part_len = sizeof(struct soft_version);
-	if (info->soft_ver_compat_level > 0)
-		part_len += sizeof(uint32_t);
-
-	struct image_partition_entry entry =
-	    alloc_image_partition("soft-version", part_len+1);
-	struct soft_version *s = (struct soft_version *)entry.data;
+static struct image_partition_entry make_soft_version(
+	const struct device_info *info, uint32_t rev)
+{
+	/** If an info string is provided, use this instead of
+	 * the structured data, and include the null-termination */
+	if (info->soft_ver) {
+		uint32_t len = strlen(info->soft_ver) + 1;
+		return init_meta_partition_entry("soft-version",
+			info->soft_ver, len, info->part_trail);
+	}
 
 	time_t t;
 
@@ -2382,58 +2436,45 @@ static struct image_partition_entry make_soft_version(struct device_info *info, 
 
 	struct tm *tm = gmtime(&t);
 
-	/* Partition contents size, minus 8 byte header and trailing byte */
-	s->data_len = htonl(entry.size-9);
-	s->zero = 0;
-	s->pad1 = 0xff;
+	struct soft_version s = {
+		.pad1 = 0xff,
 
-	s->version_major = 0;
-	s->version_minor = 0;
-	s->version_patch = 0;
+		.version_major = 0,
+		.version_minor = 0,
+		.version_patch = 0,
 
-	s->year_hi = bcd((1900+tm->tm_year)/100);
-	s->year_lo = bcd(tm->tm_year%100);
-	s->month = bcd(tm->tm_mon+1);
-	s->day = bcd(tm->tm_mday);
-	s->rev = htonl(rev);
+		.year_hi = bcd((1900+tm->tm_year)/100),
+		.year_lo = bcd(tm->tm_year%100),
+		.month = bcd(tm->tm_mon+1),
+		.day = bcd(tm->tm_mday),
 
-	if (info->soft_ver_compat_level > 0)
-		*(uint32_t *)(entry.data + sizeof(struct soft_version)) =
-		    htonl(info->soft_ver_compat_level);
+		.compat_level = htonl(info->soft_ver_compat_level)
+	};
 
-	entry.data[entry.size-1] = 0xff;
-
-	return entry;
-}
-
-static struct image_partition_entry make_soft_version_from_string(const char *soft_ver) {
-	/** String length _including_ the terminating zero byte */
-	uint32_t ver_len = strlen(soft_ver) + 1;
-	/** Partition contains 64 bit header, the version string, and one additional null byte */
-	size_t partition_len = 2*sizeof(uint32_t) + ver_len + 1;
-	struct image_partition_entry entry = alloc_image_partition("soft-version", partition_len);
-
-	uint32_t *len = (uint32_t *)entry.data;
-	len[0] = htonl(ver_len);
-	len[1] = 0;
-	memcpy(&len[2], soft_ver, ver_len);
-
-	entry.data[partition_len - 1] = 0;
-
-	return entry;
+	if (info->soft_ver_compat_level == 0)
+		return init_meta_partition_entry("soft-version", &s,
+			(uint8_t *)(&s.compat_level) - (uint8_t *)(&s),
+			info->part_trail);
+	else
+		return init_meta_partition_entry("soft-version", &s,
+			sizeof(s), info->part_trail);
 }
 
 /** Generates the support-list partition */
-static struct image_partition_entry make_support_list(struct device_info *info) {
-	size_t len = strlen(info->support_list);
-	struct image_partition_entry entry = alloc_image_partition("support-list", len + 9);
+static struct image_partition_entry make_support_list(
+	const struct device_info *info)
+{
+	uint32_t len = strlen(info->support_list);
+	return init_meta_partition_entry("support-list", info->support_list,
+		len, info->part_trail);
+}
 
-	put32(entry.data, len);
-	memset(entry.data+4, 0, 4);
-	memcpy(entry.data+8, info->support_list, len);
-	entry.data[len+8] = info->support_trail;
-
-	return entry;
+/** Partition with extra-para data */
+static struct image_partition_entry make_extra_para(
+	const struct device_info *info, const uint8_t *extra_para, size_t len)
+{
+	return init_meta_partition_entry("extra-para", extra_para, len,
+		info->part_trail);
 }
 
 /** Creates a new image partition with an arbitrary name from a file */
@@ -2469,16 +2510,6 @@ static struct image_partition_entry read_file(const char *part_name, const char 
 	}
 
 	fclose(file);
-
-	return entry;
-}
-
-/** Creates a new image partition from arbitrary data */
-static struct image_partition_entry put_data(const char *part_name, const char *datain, size_t len) {
-
-	struct image_partition_entry entry = alloc_image_partition(part_name, len);
-
-	memcpy(entry.data, datain, len);
 
 	return entry;
 }
@@ -2710,36 +2741,33 @@ static void build_image(const char *output,
 	}
 
 	parts[0] = make_partition_table(info->partitions);
-	if (info->soft_ver)
-		parts[1] = make_soft_version_from_string(info->soft_ver);
-	else
-		parts[1] = make_soft_version(info, rev);
-
+	parts[1] = make_soft_version(info, rev);
 	parts[2] = make_support_list(info);
 	parts[3] = read_file("os-image", kernel_image, false, NULL);
 	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof, file_system_partition);
 
 	/* Some devices need the extra-para partition to accept the firmware */
-	if (strcasecmp(info->id, "ARCHER-C2-V3") == 0 ||
+	if (strcasecmp(info->id, "ARCHER-A7-V5") == 0 ||
+	    strcasecmp(info->id, "ARCHER-C2-V3") == 0 ||
+	    strcasecmp(info->id, "ARCHER-C7-V4") == 0 ||
+	    strcasecmp(info->id, "ARCHER-C7-V5") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C25-V1") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C59-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V3") == 0 ||
 	    strcasecmp(info->id, "TLWR1043NV5") == 0) {
-		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
-		parts[5] = put_data("extra-para", mdat, 11);
-	} else if (strcasecmp(info->id, "ARCHER-A7-V5") == 0 || strcasecmp(info->id, "ARCHER-C7-V4") == 0 || strcasecmp(info->id, "ARCHER-C7-V5") == 0) {
-		const char mdat[11] = {0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0xca, 0x00, 0x01, 0x00, 0x00};
-		parts[5] = put_data("extra-para", mdat, 11);
+		const uint8_t extra_para[2] = {0x01, 0x00};
+		parts[5] = make_extra_para(info, extra_para,
+			sizeof(extra_para));
 	} else if (strcasecmp(info->id, "ARCHER-C6-V2") == 0) {
-		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00};
-		parts[5] = put_data("extra-para", mdat, 11);
-	} else if (strcasecmp(info->id, "ARCHER-C6-V2-US") == 0) {
-		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00};
-		parts[5] = put_data("extra-para", mdat, 11);
-	} else if (strcasecmp(info->id, "EAP245-V3") == 0) {
-		const char mdat[10] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01};
-		parts[5] = put_data("extra-para", mdat, 10);
+		const uint8_t extra_para[2] = {0x00, 0x01};
+		parts[5] = make_extra_para(info, extra_para,
+			sizeof(extra_para));
+	} else if (strcasecmp(info->id, "ARCHER-C6-V2-US") == 0 ||
+		   strcasecmp(info->id, "EAP245-V3") == 0) {
+		const uint8_t extra_para[2] = {0x01, 0x01};
+		parts[5] = make_extra_para(info, extra_para,
+			sizeof(extra_para));
 	}
 
 	size_t len;
