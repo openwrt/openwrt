@@ -1277,6 +1277,14 @@ define Device/xiaomi_mi-router-3-pro
 endef
 TARGET_DEVICES += xiaomi_mi-router-3-pro
 
+define Device/xiaomi_mi-router-4
+  $(Device/xiaomi_nand_separate)
+  DEVICE_MODEL := Mi Router 4
+  IMAGE_SIZE := 124416k
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt76x2
+endef
+TARGET_DEVICES += xiaomi_mi-router-4
+
 define Device/xiaomi_mi-router-4a-gigabit
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
