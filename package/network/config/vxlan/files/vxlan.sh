@@ -114,18 +114,11 @@ proto_vxlan_setup() {
 
 	( proto_add_host_dependency "$cfg" '' "$tunlink" )
 
-	[ -z "$ipaddr" ] && {
-		local wanif="$tunlink"
-		if [ -z "$wanif" ] && ! network_find_wan wanif; then
-			proto_notify_error "$cfg" "NO_WAN_LINK"
-			exit
-		fi
-
-		if ! network_get_ipaddr ipaddr "$wanif"; then
-			proto_notify_error "$cfg" "NO_WAN_LINK"
-			exit
-		fi
-	}
+	case "$ipaddr" in
+		"auto"|"")
+			ipaddr="0.0.0.0"
+			;;
+	esac
 
 	vxlan_generic_setup "$cfg" 'vxlan' "$ipaddr" "$peeraddr"
 }
@@ -138,18 +131,12 @@ proto_vxlan6_setup() {
 
 	( proto_add_host_dependency "$cfg" '' "$tunlink" )
 
-	[ -z "$ip6addr" ] && {
-		local wanif="$tunlink"
-		if [ -z "$wanif" ] && ! network_find_wan6 wanif; then
-			proto_notify_error "$cfg" "NO_WAN_LINK"
-			exit
-		fi
-
-		if ! network_get_ipaddr6 ip6addr "$wanif"; then
-			proto_notify_error "$cfg" "NO_WAN_LINK"
-			exit
-		fi
-	}
+	case "$ip6addr" in
+		"auto"|"")
+			# ensure tunnel via ipv6
+			ip6addr="::"
+			;;
+	esac
 
 	vxlan_generic_setup "$cfg" 'vxlan6' "$ip6addr" "$peer6addr"
 }
