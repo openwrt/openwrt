@@ -430,7 +430,10 @@ static struct device_info boards[] = {
 			"CPE510(TP-LINK|US|N300-5|55530000):3.0\r\n"
 			"CPE510(TP-LINK|UN|N300-5):3.0\r\n"
 			"CPE510(TP-LINK|EU|N300-5):3.0\r\n"
-			"CPE510(TP-LINK|US|N300-5):3.0\r\n",
+			"CPE510(TP-LINK|US|N300-5):3.0\r\n"
+			"CPE510(TP-LINK|UN|N300-5|00000000):3.20\r\n"
+			"CPE510(TP-LINK|US|N300-5|55530000):3.20\r\n"
+			"CPE510(TP-LINK|EU|N300-5|45550000):3.20\r\n",
 		.part_trail = 0xff,
 		.soft_ver = NULL,
 
