@@ -51,6 +51,7 @@ image_info = {
             "images": [
                 {
                     "type": getenv("IMAGE_TYPE"),
+                    "filesystem": getenv("IMAGE_FILESYSTEM"),
                     "name": getenv("IMAGE_NAME"),
                     "sha256": image_hash,
                 }
