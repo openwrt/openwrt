@@ -7,5 +7,7 @@
 
 fw3 -q network "$INTERFACE" >/dev/null || exit 0
 
+lock /var/run/firewall.lock
 logger -t firewall "Reloading firewall due to $ACTION of $INTERFACE ($DEVICE)"
 fw3 -q reload
+lock -u /var/run/firewall.lock
