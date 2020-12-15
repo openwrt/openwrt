@@ -1,0 +1,120 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+
+START=50
+PROG_DEFAULT="/usr/bin/iperf3"
+PROG_REDIRECT="/usr/libexec/iperf3-ubus-redirect"
+
+DIR="/var/run/iperf3"
+PIDFILE="${DIR}/pidfile"
+LOGFILE="${DIR}/logfile"
+
+. $IPKG_INSTROOT/lib/functions/network.sh
+
+start_server() {
+	local cfg="$1"
+
+	local enabled port iface interval proto ip redirect prog
+
+	config_get_bool enabled "$cfg" 'enabled' 1
+	[ $enabled -gt 0 ] || return
+
+	rm -f "${LOGFILE}-${cfg}.log"
+
+	config_get port "$cfg" port '5201'
+	config_get interval "$cfg" interval '1'
+	config_get iface "$cfg" iface
+
+	[ -n "$iface" ] && {
+		config_get proto "$cfg" proto 'ipv4'
+		[ "$proto" = "ipv4" ] && network_get_ipaddr ip "$iface"
+		[ "$proto" = "ipv6" ] && network_get_ipaddr6 ip "$iface"
+	}
+
+	config_get_bool redirect "$cfg" 'redirect' 0
+
+	if [ "$redirect" -eq 1 ]; then
+		prog="$PROG_REDIRECT"
+	else
+		prog="$PROG_DEFAULT"
+	fi
+
+	procd_open_instance "$cfg"
+	procd_set_param command "$prog" --server
+	[ -n "$ip" ] && procd_append_param command --bind "$ip"
+	procd_append_param command --port "$port"
+	procd_append_param command --interval "$interval"
+	[ "$redirect" -eq 0 ] && procd_append_param command --logfile "${LOGFILE}-${cfg}.log"
+	procd_append_param command --forceflush
+	procd_set_param pidfile "${PIDFILE}-${cfg}.pid"
+	procd_set_param respawn
+	procd_set_param stderr 1
+	procd_close_instance
+}
+
+service_triggers() {
+	procd_add_reload_trigger "iperf3"
+}
+
+start_service() {
+	mkdir -p "$DIR"
+	config_load iperf3
+	config_foreach start_server server
+}
+
+start_client() {
+	local cfg="$1"
+
+	local server port duration reverse proto udp
+	local version redirect prog
+
+	config_load iperf3
+	config_get server "$cfg" server
+	config_get port "$cfg" port '5201'
+	config_get duration "$cfg" duration '10'
+	config_get_bool reverse "$cfg" reverse
+	config_get_bool udp "$cfg" udp
+
+	config_get proto "$cfg" proto "ipv4"
+	if [ "$proto" = "ipv6" ]; then
+		version="--version6"
+	else
+		version="--version4"
+	fi
+
+	[ -n "$server" ] || {
+		echo "No server configured" >&2
+		exit 1
+	}
+
+	rm -f "${LOGFILE}-${cfg}.log"
+
+	config_get_bool redirect "$cfg" 'redirect' 0
+
+	if [ "$redirect" -eq 1 ]; then
+		prog="$PROG_REDIRECT"
+	else
+		prog="$PROG_DEFAULT"
+	fi
+
+	procd_open_instance "$cfg"
+	procd_set_param command "$prog"
+	procd_append_param command --client "$server"
+	procd_append_param command --port "$port"
+	procd_append_param command --time "$duration"
+	procd_append_param command "$version"
+	[ "$redirect" -eq 0 ] && procd_append_param command --logfile "${LOGFILE}-${cfg}.log"
+	[ -n "$reverse" ] && procd_append_param command --reverse
+	[ -n "$udp" ] && procd_append_param command --udp
+	procd_append_param command --forceflush
+	procd_close_instance
+}
+
+extra_command "client" "<cfg> Start a client"
+client() {
+	local cfg="$1"
+
+	mkdir -p "$DIR"
+	rc_procd start_client "$cfg"
+}
