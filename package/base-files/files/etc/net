@@ -1,0 +1,3 @@
+#!/bin/bash
+ipaddr=$(ubus call network.interface.lan status | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
+sed -i 's/192.168.192.1/$ipaddr/g' /etc/hosts
