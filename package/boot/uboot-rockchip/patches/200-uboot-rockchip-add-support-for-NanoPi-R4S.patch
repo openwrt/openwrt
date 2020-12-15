@@ -107,6 +107,25 @@ Signed-off-by: Marty Jones <mj8263788@gmail.com>
 +	status = "disabled";
 +};
 +
++&leds {
++	lan_led: led-1 {
++		gpios = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>;
++		label = "nanopi-r4s:green:lan";
++	};
++
++	wan_led: led-2 {
++		gpios = <&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>;
++		label = "nanopi-r4s:green:wan";
++	};
++};
++
++&leds_gpio {
++	rockchip,pins =
++		<0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>,
++		<1 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>,
++		<1 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>;
++};
++
 +&pcie0 {
 +	max-link-speed = <1>;
 +	num-lanes = <1>;
