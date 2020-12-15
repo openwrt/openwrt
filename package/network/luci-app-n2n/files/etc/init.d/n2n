@@ -1,0 +1,52 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008 OpenWrt.org
+START=99
+
+config_cb() {
+	local cfg="$CONFIG_SECTION"
+	config_get configname "$cfg" TYPE
+
+	case "$configname" in
+		edge)
+  		        config_get enabled "$cfg" enabled
+			if [ "$enabled" = "1" ]; then
+				config_get ipaddr "$cfg" ipaddr
+				config_get supernode "$cfg" supernode
+				config_get port "$cfg" port
+				config_get community "$cfg" community
+				config_get key "$cfg" key
+				config_get netmask "$cfg" netmask
+				config_get macaddr "$cfg" macaddr
+				config_get extra "$cfg" extra
+				config_get_bool route "$cfg" route 0
+
+				[ "$route" = "1" ] && args='-r'
+				[ "$netmask" != "" ] && args=${args}' -s '${netmask}
+				[ "$macaddr" != "" ] && args=${args}' -m '${macaddr}
+				[ "$extra" != "" ] && args=${args}' '${extra}
+				
+				if [ "$ipaddr" != "" ]; then
+					#remove -f
+					edge $args -a $ipaddr -c $community -k $key -l ${supernode}:${port} &
+				fi
+			fi
+		;;
+		supernode)
+  		        config_get enabled "$cfg" enabled
+			if [ "$enabled" = "1" ]; then
+				config_get port "$cfg" port
+				if [ "$port" != "" ]; then
+					supernode -l $port &
+				fi
+			fi
+		;;
+	esac
+}
+
+start() {
+	config_load n2n
+}
+stop() {
+	killall -9 edge
+	killall -9 supernode
+}
