@@ -601,6 +601,7 @@ define Device/hootoo_ht-tm02
   DEVICE_MODEL := HT-TM02
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += ht-tm02
+  DEFAULT := n
 endef
 TARGET_DEVICES += hootoo_ht-tm02
 
