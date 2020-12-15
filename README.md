@@ -1,5 +1,6 @@
 
-OpenWrt Project is a Linux operating system targeting embedded devices. Instead
+
+Y-os is based on OpenWrt. OpenWrt Project is a Linux operating system targeting embedded devices. Instead
 of trying to create a single, static firmware, OpenWrt provides a fully
 writable filesystem with package management. This frees you from the
 application selection and configuration provided by the vendor and allows you
