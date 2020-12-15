@@ -1,0 +1,24 @@
+config defaults
+        option syn_flood '1'
+        option input 'ACCEPT'
+        option output 'ACCEPT'
+        option fullcone '1'
+        option flow_offloading '1'
+        option flow_offloading_hw '0'
+        option forward 'ACCEPT'
+
+config zone
+        option name 'lan'
+        option input 'ACCEPT'
+        option output 'ACCEPT'
+        option forward 'ACCEPT'
+        option network 'lan'
+
+config zone
+        option name 'wan'
+        option output 'ACCEPT'
+        option masq '1'
+        option mtu_fix '1'
+        option network 'wan wan6'
+        option input 'ACCEPT'
+        option forward 'ACCEPT'
