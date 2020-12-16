@@ -386,7 +386,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  	qup_i2c_set_blk_data(qup, msg);
  
  	blocks = qup->blk.count;
-@@ -1026,7 +897,7 @@ static int qup_i2c_wait_for_complete(str
+@@ -1027,7 +898,7 @@ static int qup_i2c_wait_for_complete(str
  	unsigned long left;
  	int ret = 0;
  
@@ -395,7 +395,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  	if (!left) {
  		writel(1, qup->base + QUP_SW_RESET);
  		ret = -ETIMEDOUT;
-@@ -1038,65 +909,6 @@ static int qup_i2c_wait_for_complete(str
+@@ -1039,65 +910,6 @@ static int qup_i2c_wait_for_complete(str
  	return ret;
  }
  
@@ -461,7 +461,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  static void qup_i2c_read_rx_fifo_v1(struct qup_i2c_dev *qup)
  {
  	struct qup_i2c_block *blk = &qup->blk;
-@@ -1120,104 +932,6 @@ static void qup_i2c_read_rx_fifo_v1(stru
+@@ -1121,104 +933,6 @@ static void qup_i2c_read_rx_fifo_v1(stru
  		blk->rx_bytes_read = true;
  }
  
@@ -566,7 +566,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  static void qup_i2c_write_rx_tags_v1(struct qup_i2c_dev *qup)
  {
  	struct i2c_msg *msg = qup->msg;
-@@ -1404,13 +1118,434 @@ out:
+@@ -1405,13 +1119,434 @@ out:
  	return ret;
  }
  
@@ -1002,7 +1002,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  
  	qup->bus_err = 0;
  	qup->qup_err = 0;
-@@ -1419,6 +1554,10 @@ static int qup_i2c_xfer_v2(struct i2c_ad
+@@ -1420,6 +1555,10 @@ static int qup_i2c_xfer_v2(struct i2c_ad
  	if (ret < 0)
  		goto out;
  
@@ -1013,7 +1013,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  	writel(1, qup->base + QUP_SW_RESET);
  	ret = qup_i2c_poll_state(qup, QUP_RESET_STATE);
  	if (ret)
-@@ -1428,60 +1567,35 @@ static int qup_i2c_xfer_v2(struct i2c_ad
+@@ -1429,60 +1568,35 @@ static int qup_i2c_xfer_v2(struct i2c_ad
  	writel(I2C_MINI_CORE | I2C_N_VAL_V2, qup->base + QUP_CONFIG);
  	writel(QUP_V2_TAGS_EN, qup->base + QUP_I2C_MASTER_GEN);
  
@@ -1095,7 +1095,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  
  	if (ret == 0)
  		ret = num;
-@@ -1545,6 +1659,7 @@ static int qup_i2c_probe(struct platform
+@@ -1546,6 +1660,7 @@ static int qup_i2c_probe(struct platform
  	u32 src_clk_freq = DEFAULT_SRC_CLK;
  	u32 clk_freq = DEFAULT_CLK_FREQ;
  	int blocks;
@@ -1103,7 +1103,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  
  	qup = devm_kzalloc(&pdev->dev, sizeof(*qup), GFP_KERNEL);
  	if (!qup)
-@@ -1563,12 +1678,10 @@ static int qup_i2c_probe(struct platform
+@@ -1564,12 +1679,10 @@ static int qup_i2c_probe(struct platform
  	if (of_device_is_compatible(pdev->dev.of_node, "qcom,i2c-qup-v1.1.1")) {
  		qup->adap.algo = &qup_i2c_algo;
  		qup->adap.quirks = &qup_i2c_quirks;
@@ -1118,7 +1118,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  		ret = qup_i2c_req_dma(qup);
  
  		if (ret == -EPROBE_DEFER)
-@@ -1694,14 +1807,31 @@ nodma:
+@@ -1695,14 +1808,31 @@ nodma:
  		ret = -EIO;
  		goto fail;
  	}

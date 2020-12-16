@@ -233,7 +233,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  	/* schedule the EOT and FLUSH I2C tags */
  	len = 1;
  	if (rx_cnt) {
-@@ -886,11 +878,19 @@ desc_err:
+@@ -887,11 +879,19 @@ desc_err:
  	return ret;
  }
  
@@ -253,7 +253,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  
  	enable_irq(qup->irq);
  	ret = qup_i2c_req_dma(qup);
-@@ -913,9 +913,34 @@ static int qup_i2c_bam_xfer(struct i2c_a
+@@ -914,9 +914,34 @@ static int qup_i2c_bam_xfer(struct i2c_a
  		goto out;
  
  	writel(qup->clk_ctl, qup->base + QUP_I2C_CLK_CTL);
@@ -290,7 +290,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  out:
  	disable_irq(qup->irq);
  
-@@ -1468,7 +1493,8 @@ static int qup_i2c_probe(struct platform
+@@ -1469,7 +1494,8 @@ static int qup_i2c_probe(struct platform
  		else if (ret != 0)
  			goto nodma;
  
@@ -300,7 +300,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  		qup->btx.sg = devm_kzalloc(&pdev->dev,
  					   sizeof(*qup->btx.sg) * blocks,
  					   GFP_KERNEL);
-@@ -1611,7 +1637,7 @@ nodma:
+@@ -1612,7 +1638,7 @@ nodma:
  	one_bit_t = (USEC_PER_SEC / clk_freq) + 1;
  	qup->one_byte_t = one_bit_t * 9;
  	qup->xfer_timeout = TOUT_MIN * HZ +
