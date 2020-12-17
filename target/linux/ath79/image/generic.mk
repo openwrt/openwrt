@@ -237,6 +237,19 @@ define Device/adtran_bsap1840
 endef
 TARGET_DEVICES += adtran_bsap1840
 
+define Device/airtight_c-75
+  SOC := qca9550
+  DEVICE_VENDOR := AirTight Networks
+  DEVICE_MODEL := C-75
+  DEVICE_ALT0_VENDOR := Mojo Networks
+  DEVICE_ALT0_MODEL := C-75
+  DEVICE_ALT1_VENDOR := WatchGuard
+  DEVICE_ALT1_MODEL := AP320
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += airtight_c-75
+
 define Device/alfa-network_ap121f
   SOC := ar9331
   DEVICE_VENDOR := ALFA Network
