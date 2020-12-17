@@ -41,6 +41,23 @@
 			linux,default-trigger = "phy1tpt";
 		};
 	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&concat0 &concat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "firmware";
+				reg = <0x0 0x1f90000>;
+				compatible = "denx,uimage";
+			};
+		};
+	};
 };
 
 &eth0 {
@@ -118,10 +135,9 @@
 				read-only;
 			};
 
-			partition@60000 {
-				label = "firmware";
+			concat0: partition@60000 {
+				label = "reserved1";
 				reg = <0x060000 0xf90000>;
-				compatible = "denx,uimage";
 			};
 
 			art: partition@ff0000 {
@@ -142,8 +158,8 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@0 {
-				label = "opt";
+			concat1: partition@0 {
+				label = "reserved2";
 				reg = <0x0 0x1000000>;
 			};
 		};
