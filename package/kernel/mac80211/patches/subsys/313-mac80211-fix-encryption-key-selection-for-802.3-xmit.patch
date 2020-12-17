@@ -1,0 +1,53 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 16 Dec 2020 21:23:24 +0100
+Subject: [PATCH] mac80211: fix encryption key selection for 802.3 xmit
+
+When using WEP, the default unicast key needs to be selected, instead of
+the STA PTK.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4262,7 +4262,6 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+ 	struct ethhdr *ehdr = (struct ethhdr *)skb->data;
+ 	struct ieee80211_key *key;
+ 	struct sta_info *sta;
+-	bool offload = true;
+ 
+ 	if (unlikely(skb->len < ETH_HLEN)) {
+ 		kfree_skb(skb);
+@@ -4278,18 +4277,22 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+ 
+ 	if (unlikely(IS_ERR_OR_NULL(sta) || !sta->uploaded ||
+ 	    !test_sta_flag(sta, WLAN_STA_AUTHORIZED) ||
+-		sdata->control_port_protocol == ehdr->h_proto))
+-		offload = false;
+-	else if ((key = rcu_dereference(sta->ptk[sta->ptk_idx])) &&
+-		 (!(key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE) ||
+-		  key->conf.cipher == WLAN_CIPHER_SUITE_TKIP))
+-		offload = false;
++	    sdata->control_port_protocol == ehdr->h_proto))
++		goto skip_offload;
+ 
+-	if (offload)
+-		ieee80211_8023_xmit(sdata, dev, sta, key, skb);
+-	else
+-		ieee80211_subif_start_xmit(skb, dev);
++	key = rcu_dereference(sta->ptk[sta->ptk_idx]);
++	if (!key)
++		key = rcu_dereference(sdata->default_unicast_key);
++
++	if (key && (!(key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE) ||
++		    key->conf.cipher == WLAN_CIPHER_SUITE_TKIP))
++		goto skip_offload;
++
++	ieee80211_8023_xmit(sdata, dev, sta, key, skb);
++	goto out;
+ 
++skip_offload:
++	ieee80211_subif_start_xmit(skb, dev);
+ out:
+ 	rcu_read_unlock();
+ 
