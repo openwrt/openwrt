@@ -246,7 +246,8 @@ define Device/airtight_c-75
   DEVICE_ALT1_VENDOR := WatchGuard
   DEVICE_ALT1_MODEL := AP320
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2
-  IMAGE_SIZE := 15936k
+  IMAGE_SIZE := 32320k
+  KERNEL_SIZE := 15936k
 endef
 TARGET_DEVICES += airtight_c-75
 
