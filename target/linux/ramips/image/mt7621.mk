@@ -12,20 +12,8 @@ DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME
 define Build/elecom-wrc-gs-factory
 	$(eval product=$(word 1,$(1)))
 	$(eval version=$(word 2,$(1)))
-	( $(STAGING_DIR_HOST)/bin/mkhash md5 $@ | tr -d '\n' ) >> $@
-	( \
-		echo -n "ELECOM $(product) v$(version)" | \
-			dd bs=32 count=1 conv=sync; \
-		dd if=$@; \
-	) > $@.new
-	mv $@.new $@
-	echo -n "MT7621_ELECOM_$(product)" >> $@
-endef
-
-define Build/elecom-wrc-factory
-	$(eval product=$(word 1,$(1)))
-	$(eval version=$(word 2,$(1)))
-	$(STAGING_DIR_HOST)/bin/mkhash md5 $@ >> $@
+	$(eval hash_opt=$(word 3,$(1)))
+	$(STAGING_DIR_HOST)/bin/mkhash md5 $(hash_opt) $@ >> $@
 	( \
 		echo -n "ELECOM $(product) v$(version)" | \
 			dd bs=32 count=1 conv=sync; \
@@ -400,7 +388,7 @@ define Device/elecom_wrc-1167ghbk2-s
   DEVICE_MODEL := WRC-1167GHBK2-S
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-wrc-factory WRC-1167GHBK2-S 0.00
+	elecom-wrc-gs-factory WRC-1167GHBK2-S 0.00
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += elecom_wrc-1167ghbk2-s
@@ -411,7 +399,8 @@ define Device/elecom_wrc-gs
   DEVICE_VENDOR := ELECOM
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
-	elecom-wrc-gs-factory $$$$(ELECOM_HWNAME) 0.00
+	elecom-wrc-gs-factory $$$$(ELECOM_HWNAME) 0.00 -N | \
+	append-string MT7621_ELECOM_$$$$(ELECOM_HWNAME)
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
 
