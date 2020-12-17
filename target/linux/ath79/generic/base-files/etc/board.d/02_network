@@ -81,6 +81,10 @@ ath79_setup_interfaces()
 	winchannel,wb2000)
 		ucidef_set_interface_lan "eth0"
 		;;
+	airtight,c-75)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:wan" "3:lan" "6@eth1"
+		;;
 	alfa-network,ap121fe)
 		ucidef_set_interface_lan "eth0 usb0"
 		;;
