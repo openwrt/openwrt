@@ -31,7 +31,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	bool
 --- a/arch/mips/kernel/cevt-r4k.c
 +++ b/arch/mips/kernel/cevt-r4k.c
-@@ -15,6 +15,26 @@
+@@ -16,6 +16,29 @@
  #include <asm/time.h>
  #include <asm/cevt-r4k.h>
  
@@ -39,7 +39,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	if (!cp0_timer_irq_installed) {
 +		cp0_timer_irq_installed = 1;
-+		setup_irq(evt->irq, &c0_compare_irqaction);
++		request_irq(evt->irq, c0_compare_interrupt,
++			    c0_compare_irqaction.flags,
++			    c0_compare_irqaction.name,
++			    c0_compare_interrupt);
 +	}
 +
 +	return 0;
@@ -49,7 +52,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	if (cp0_timer_irq_installed) {
 +		cp0_timer_irq_installed = 0;
-+		remove_irq(evt->irq, &c0_compare_irqaction);
++		free_irq(evt->irq, c0_compare_interrupt);
 +	}
 +
 +	return 0;
@@ -58,7 +61,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int mips_next_event(unsigned long delta,
  			   struct clock_event_device *evt)
  {
-@@ -281,17 +301,21 @@ int r4k_clockevent_init(void)
+@@ -326,11 +349,14 @@ int r4k_clockevent_init(void)
  	cd->rating		= 300;
  	cd->irq			= irq;
  	cd->cpumask		= cpumask_of(cpu);
@@ -73,9 +76,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (cp0_timer_irq_installed)
  		return 0;
  
- 	cp0_timer_irq_installed = 1;
- 
- 	setup_irq(irq, &c0_compare_irqaction);
+@@ -339,6 +365,7 @@ int r4k_clockevent_init(void)
+ 	if (request_irq(irq, c0_compare_interrupt, flags, "timer",
+ 			c0_compare_interrupt))
+ 		pr_err("Failed to request irq %d (timer)\n", irq);
 +#endif
  
  	return 0;
