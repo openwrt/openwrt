@@ -22,7 +22,8 @@ define Device/mikrotik_routerboard-922uags-5hpacd
   $(Device/mikrotik_nand)
   SOC := qca9558
   DEVICE_MODEL := RouterBOARD 922UAGS-5HPacD
-  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2 \
+	kmod-i2c-gpio kmod-sfp
   SUPPORTED_DEVICES += rb-922uags-5hpacd
 endef
 TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
