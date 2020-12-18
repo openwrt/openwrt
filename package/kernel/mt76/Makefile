@@ -8,9 +8,9 @@ PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2021-01-27
-PKG_SOURCE_VERSION:=8696919d9aae9b673f916bca41c5e1671eec5b0e
-PKG_MIRROR_HASH:=82675e11f537eaa2fe2c1029880f7993ed4401d0d59b12faf6dbe96ac3eb8308
+PKG_SOURCE_DATE:=2021-02-14
+PKG_SOURCE_VERSION:=289cd7804587dc48f776d450db9cd3762692a370
+PKG_MIRROR_HASH:=91885feca9d935586c6e33a8e3734bfa61991d869bf42ac0d1c8c3b19bfa9653
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_BUILD_PARALLEL:=1
@@ -143,11 +143,19 @@ define KernelPackage/mt7603
   AUTOLOAD:=$(call AutoProbe,mt7603e)
 endef
 
+define KernelPackage/mt76-connac
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7615/MT79xx wireless driver common code
+  HIDDEN:=1
+  DEPENDS+=+kmod-mt76-core
+  FILES:= $(PKG_BUILD_DIR)/mt76-connac-lib.ko
+endef
+
 define KernelPackage/mt7615-common
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7615 wireless driver common code
   HIDDEN:=1
-  DEPENDS+=@PCI_SUPPORT +kmod-mt76-core
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-core +kmod-mt76-connac
   FILES:= $(PKG_BUILD_DIR)/mt7615/mt7615-common.ko
 endef
 
@@ -210,6 +218,14 @@ define KernelPackage/mt7915e
   AUTOLOAD:=$(call AutoProbe,mt7915e)
 endef
 
+define KernelPackage/mt7921e
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7921e wireless driver
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-connac
+  FILES:= $(PKG_BUILD_DIR)/mt7921/mt7921e.ko
+  AUTOLOAD:=$(call AutoProbe,mt7921e)
+endef
+
 define Package/mt76-test
   SECTION:=devel
   CATEGORY:=Development
@@ -267,6 +283,9 @@ endif
 ifdef CONFIG_PACKAGE_kmod-mt7603
   PKG_MAKE_FLAGS += CONFIG_MT7603E=m
 endif
+ifdef CONFIG_PACKAGE_kmod-mt76-connac
+  PKG_MAKE_FLAGS += CONFIG_MT76_CONNAC_LIB=m
+endif
 ifdef CONFIG_PACKAGE_kmod-mt7615-common
   PKG_MAKE_FLAGS += CONFIG_MT7615_COMMON=m
 endif
@@ -289,6 +308,9 @@ ifdef CONFIG_PACKAGE_kmod-mt7663u
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7915e
   PKG_MAKE_FLAGS += CONFIG_MT7915E=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt7921e
+  PKG_MAKE_FLAGS += CONFIG_MT7921E=m
 endif
 
 define Build/Compile
@@ -400,6 +422,7 @@ $(eval $(call KernelPackage,mt76x2-common))
 $(eval $(call KernelPackage,mt76x2u))
 $(eval $(call KernelPackage,mt76x2))
 $(eval $(call KernelPackage,mt7603))
+$(eval $(call KernelPackage,mt76-connac))
 $(eval $(call KernelPackage,mt7615-common))
 $(eval $(call KernelPackage,mt7615-firmware))
 $(eval $(call KernelPackage,mt7615e))
@@ -409,5 +432,6 @@ $(eval $(call KernelPackage,mt7663-usb-sdio))
 $(eval $(call KernelPackage,mt7663u))
 $(eval $(call KernelPackage,mt7663s))
 $(eval $(call KernelPackage,mt7915e))
+$(eval $(call KernelPackage,mt7921e))
 $(eval $(call KernelPackage,mt76))
 $(eval $(call BuildPackage,mt76-test))
