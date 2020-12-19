@@ -5,6 +5,8 @@ More information in the threads for [3490](https://forum.openwrt.org/t/port-to-a
 Prepare the OpenWrt Build environment on Linux as described [here](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem).
 Make also sure to install bspatch utility (bsdiff package).
 
+The SSIDs for wireless are OpenWrt and OpenWrt-5G and the key is extracted from urlader partition as printed on the sticker on the back of the device.
+
 To create the images:
 1. `git clone https://github.com/kestrel1974/openwrt.git`
 2. `cd openwrt`
@@ -35,6 +37,7 @@ Problems:
 * LAN Switch Ports LAN3 and LAN4 are not working (AR 8035 based), although they work with the 4.x kernels. Maybe missing pll-data or change in the kernel that causes it (playing with rgmii-id, idtx or idrx did not help).
 * When the images are too large, the eva bootloader is stuck. I suspect this is due to the filesystem is embedded as initramfs in the kernel, whereas the freetz or AVM images have the rootfs appended to the kernel when using initramfs or image2ram.
 * I have not tried sysupgrade, so no responsibility from my side, if there is something not working. I have only tested the initramfs so far.
+* Due to size issues, I have placed the vdsl annex b firmware only into the file system for the Lantiq.
 
 For now I cannot put more work or time into it. Use it as is and I will not submit a pull request to Openwrt.
 
