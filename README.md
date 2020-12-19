@@ -1,3 +1,43 @@
+Fritzbox 7490 has two SOCs, similar to 3490, more information [here](http://www.aboehler.at/doku/doku.php/projects:fritz3490). Most credits go to him.
+In the end there will be essentially two Openwrts running on the 7490. One on the Lantiq with access to DSL Modem, USB and Storage and the other one on the SOC with access to the two Wifis.
+More information in the threads for [3490](https://forum.openwrt.org/t/port-to-avm-fritz-box-3490/52692) and [7490](https://forum.openwrt.org/t/support-fritzbox-7490/4112).
+
+Prepare the OpenWrt Build environment on Linux as described [here](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem).
+Make also sure to install bspatch utility (bsdiff package).
+
+To create the images:
+1. `git clone https://github.com/kestrel1974/openwrt.git`
+2. `cd openwrt`
+3. `git checkout fritzbox7490`
+4. `scripts/feeds update`
+5. `scripts/feeds install -a`
+6. `make menuconfig` - first you need to build the wasp image for the SOC with the two wifis. So select ATH79 as target system, subtarget generic and target profile AVM FRITZ!Box 7490 WASP. To enable LUCI web GUI, Enable LUCI->Collections->luci (with Uhttpd), the minimum stuff is preselected.
+7. `make`
+
+Then the WASP image is ready. I then saved the config and started from scratch for the Lantiq image, which will also contain the WASP image plus some firmware files from the orginal AVM software. For that task I copied some code from freetz for the unquashfs-avm-be utility and created a new tool fritzboximage-downloadextractor (in tools). It also installs the vdsl firmware from the AVM image:
+
+8. `cp .config .config_7490wasp`
+9. `make menuconfig` - Select Lantiq as target system, subtarget XRX200 and target profile AVM FRITZ!Box 7490. To enable LUCI web GUI, Enable LUCI->Collections->luci (with Uhttpd), the minimum stuff is preselected.
+10. `make`
+
+Then the images are ready. Please note that if both images are too large, the ramboot process does not work anymore. Its around 11-13MB, when it does not work anymore.
+To flash the image, follow the procedure mentioned [here for the 7362](https://openwrt.org/toh/avm/avm_7362_sl), essentially configure static address (e.g. 192.168.178.2) on a device connected to the 7490, power on the 7490, start ftp to 192.168.178.1 immediately after the initial blink of all leds, logon with adam2/adam2 and exit with bye. EVA-FTP-Client.ps1 from eva-tools will also work.
+
+Run:
+
+11. `scripts/flashing/eva_ramboot.py 192.168.178.1 bin/targets/lantiq/xrx200/openwrt-lantiq-xrx200-avm_fritz7490-initramfs-kernel.bin`
+
+Booting for the Lantiq image is about 90-120s, then there will be additional 60-120 seconds for the WASP image. Then both Openwrt instances will be available at 192.168.1.1 and 192.168.1.2.
+Have fun.
+
+Problems:
+* USB is not working, although the renesas firmware patch is applied. AVM uses self written drivers.
+* LAN Switch Ports LAN3 and LAN4 are not working (AR 8035 based), although they work with the 4.x kernels. Maybe missing pll-data or change in the kernel that causes it (playing with rgmii-id, idtx or idrx did not help).
+* When the images are too large, the eva bootloader is stuck. I suspect this is due to the filesystem is embedded as initramfs in the kernel, whereas the freetz or AVM images have the rootfs appended to the kernel when using initramfs or image2ram.
+* I have not tried sysupgrade, so no responsibility from my side, if there is something not working. I have only tested the initramfs so far.
+
+For now I cannot put more work or time into it. Use it as is and I will not submit a pull request to Openwrt.
+
 ![OpenWrt logo](include/logo.png)
 
 OpenWrt Project is a Linux operating system targeting embedded devices. Instead
