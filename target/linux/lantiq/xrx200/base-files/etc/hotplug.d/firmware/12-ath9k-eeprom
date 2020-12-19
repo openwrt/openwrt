@@ -13,7 +13,8 @@ case "$FIRMWARE" in
 		case "$board" in
 			avm,fritz3370-rev2-hynix|\
 			avm,fritz3370-rev2-micron|\
-			avm,fritz7362sl)
+			avm,fritz7362sl|\
+			avm,fritz7490)
 				caldata_extract_reverse "urlader" 0x1541 0x440
 				;;
 			avm,fritz7360sl|\

@@ -1,0 +1,22 @@
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -5304,7 +5304,7 @@
+ 			ERROR("\t\t\tCompressors available:\n");
+ 			display_compressors("\t\t\t", COMP_DEFAULT);
+ 			ERROR("-b <block_size>\t\tset data block to "
+-				"<block_size>.  Default 128 Kbytes\n");
++				"<block_size>.  Default 64 Kbytes\n");
+ 			ERROR("\t\t\tOptionally a suffix of K or M can be"
+ 				" given to specify\n\t\t\tKbytes or Mbytes"
+ 				" respectively\n");
+--- a/squashfs-tools/squashfs_fs.h
++++ b/squashfs-tools/squashfs_fs.h
+@@ -36,7 +36,7 @@
+ #define SQUASHFS_METADATA_LOG		13
+ 
+ /* default size of data blocks */
+-#define SQUASHFS_FILE_SIZE		131072
++#define SQUASHFS_FILE_SIZE		65536
+ 
+ #define SQUASHFS_FILE_MAX_SIZE		1048576
+ #define SQUASHFS_FILE_MAX_LOG		20

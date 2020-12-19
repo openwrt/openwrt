@@ -14,6 +14,7 @@ platform_do_upgrade() {
 	avm,fritz7362sl|\
 	avm,fritz7412|\
 	avm,fritz7430|\
+	avm,fritz7490|\
 	bt,homehub-v5a|\
 	zyxel,p-2812hnu-f1|\
 	zyxel,p-2812hnu-f3)

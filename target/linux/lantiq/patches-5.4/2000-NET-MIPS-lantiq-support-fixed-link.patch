@@ -1,0 +1,88 @@
+--- a/drivers/net/ethernet/lantiq_xrx200_legacy.c
++++ b/drivers/net/ethernet/lantiq_xrx200_legacy.c
+@@ -1378,32 +1378,43 @@
+ 	struct phy_device *phydev = NULL;
+#ifdef SW_POLLING
+ 	unsigned val;
+#endif
+ 
+-	phydev = mdiobus_get_phy(priv->hw->mii_bus, port->phy_addr);
++	if (of_phy_is_fixed_link(port->phy_node)) {
++		netdev_info(dev, "Connect as fixed link.\n");
++		phydev = of_phy_connect(dev, port->phy_node, &xrx200_mdio_link, 0,
++								port->phy_if);
++
++		if (IS_ERR(phydev)) {
++			netdev_err(dev, "Could not attach to PHY\n");
++			return PTR_ERR(phydev);
++		}
++	} else {
++		phydev = mdiobus_get_phy(priv->hw->mii_bus, port->phy_addr);
+ 
+-	if (!phydev) {
+-		netdev_err(dev, "no PHY found\n");
+-		return -ENODEV;
+-	}
++		if (!phydev) {
++			netdev_err(dev, "no PHY found\n");
++			return -ENODEV;
++		}
+ 
+-	phydev = phy_connect(dev, phydev_name(phydev), &xrx200_mdio_link,
+-				port->phy_if);
++		phydev = phy_connect(dev, phydev_name(phydev), &xrx200_mdio_link,
++					port->phy_if);
+ 
+-	if (IS_ERR(phydev)) {
+-		netdev_err(dev, "Could not attach to PHY\n");
+-		return PTR_ERR(phydev);
+-	}
++		if (IS_ERR(phydev)) {
++			netdev_err(dev, "Could not attach to PHY\n");
++			return PTR_ERR(phydev);
++		}
+ 
+-	linkmode_zero(phydev->supported);
+-	linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, phydev->supported);
+-	linkmode_set_bit(ETHTOOL_LINK_MODE_TP_BIT, phydev->supported);
+-	linkmode_set_bit(ETHTOOL_LINK_MODE_MII_BIT, phydev->supported);
+-	linkmode_set_bit_array(phy_10_100_features_array,
+-			       ARRAY_SIZE(phy_10_100_features_array),
+-			       phydev->supported);
+-	linkmode_set_bit_array(phy_gbit_features_array,
+-			       ARRAY_SIZE(phy_gbit_features_array),
+-			       phydev->supported);
+-	linkmode_copy(phydev->advertising, phydev->supported);
++		linkmode_zero(phydev->supported);
++		linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, phydev->supported);
++		linkmode_set_bit(ETHTOOL_LINK_MODE_TP_BIT, phydev->supported);
++		linkmode_set_bit(ETHTOOL_LINK_MODE_MII_BIT, phydev->supported);
++		linkmode_set_bit_array(phy_10_100_features_array,
++				       ARRAY_SIZE(phy_10_100_features_array),
++				       phydev->supported);
++		linkmode_set_bit_array(phy_gbit_features_array,
++				       ARRAY_SIZE(phy_gbit_features_array),
++				       phydev->supported);
++		linkmode_copy(phydev->advertising, phydev->supported);
++	}
+ 
+ 	port->phydev = phydev;
+ 	phydev->phy_link_change = xrx200_phy_link_change;
+@@ -1691,6 +1702,17 @@
+ 
+ 	memset(p, 0, sizeof(struct xrx200_port));
+ 	p->phy_node = of_parse_phandle(port, "phy-handle", 0);
++
++	if (!p->phy_node && of_phy_is_fixed_link(port)) {
++		pr_info("Static link. Port <%d>!\n", p->num);
++		if (of_phy_register_fixed_link(port)<0){
++			pr_info("invalid fixed-link\n");
++		} else {
++			pr_info("Registered fixed-link\n");
++		}
++		p->phy_node = of_node_get(port);
++	}
++
+ 	addr = of_get_property(p->phy_node, "reg", NULL);
+ 	if (!addr)
+ 		return;

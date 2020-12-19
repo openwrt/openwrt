@@ -167,6 +167,16 @@ define Device/avm_fritz7430
 endef
 TARGET_DEVICES += avm_fritz7430
 
+define Device/avm_fritz7490
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 7490
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs wasp_uploader -kmod-owl-loader -dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+endef
+TARGET_DEVICES += avm_fritz7490
+
 define Device/bt_homehub-v5a
   $(Device/NAND)
   DEVICE_VENDOR := British Telecom

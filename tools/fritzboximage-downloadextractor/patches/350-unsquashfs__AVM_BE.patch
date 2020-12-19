@@ -1,0 +1,66 @@
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -51,7 +51,7 @@
+ squashfs_operations s_ops;
+ struct compressor *comp;
+ 
+-int bytes = 0, swap, file_count = 0, dir_count = 0, sym_count = 0,
++int bytes = 0, swap, swap_block_length, file_count = 0, dir_count = 0, sym_count = 0,
+ 	dev_count = 0, fifo_count = 0;
+ char *inode_table = NULL, *directory_table = NULL;
+ struct hash_table_entry *inode_table_hash[65536], *directory_table_hash[65536];
+@@ -664,13 +664,10 @@
+ 	int offset = 2, res, compressed;
+ 	int outlen = expected ? expected : SQUASHFS_METADATA_SIZE;
+ 	
+-	if(swap) {
+-		if(read_fs_bytes(fd, start, 2, &c_byte) == FALSE)
+-			goto failed;
++	if (read_fs_bytes(fd, start, 2, &c_byte) == FALSE)
++		goto failed;
++	if (swap_block_length)
+ 		c_byte = (c_byte >> 8) | ((c_byte & 0xff) << 8);
+-	} else 
+-		if(read_fs_bytes(fd, start, 2, &c_byte) == FALSE)
+-			goto failed;
+ 
+ 	TRACE("read_block: block @0x%llx, %d %s bytes\n", start,
+ 		SQUASHFS_COMPRESSED_SIZE(c_byte), SQUASHFS_COMPRESSED(c_byte) ?
+@@ -1783,6 +1780,19 @@
+ 	read_fs_bytes(fd, SQUASHFS_START, sizeof(struct squashfs_super_block),
+ 		&sBlk_4);
+ 	swap = sBlk_4.s_magic != SQUASHFS_MAGIC;
++#if TARGET_FORMAT == AVM_BE
++
++	/* block length in AVM-BE format is stored in LE order */
++#if    __BYTE_ORDER == __BIG_ENDIAN
++	swap_block_length = 1; // do swap block length
++#elif  __BYTE_ORDER == __LITTLE_ENDIAN
++	swap_block_length = 0; // do NOT swap block length, already in the right order
++#endif
++
++#else
++	swap_block_length = swap;
++#endif
++	TRACE("swap=%d, swap_block_length=%d\n", swap, swap_block_length);
+ 	SQUASHFS_INSWAP_SUPER_BLOCK(&sBlk_4);
+ 
+ 	if(sBlk_4.s_magic == SQUASHFS_MAGIC && sBlk_4.s_major == 4 &&
+@@ -1812,7 +1822,7 @@
+ 	/*
+ 	 * Check it is a SQUASHFS superblock
+ 	 */
+-	swap = 0;
++	swap = swap_block_length = 0;
+ 	if(sBlk_3.s_magic != SQUASHFS_MAGIC) {
+ 		if(sBlk_3.s_magic == SQUASHFS_MAGIC_SWAP) {
+ 			squashfs_super_block_3 sblk;
+@@ -1820,7 +1830,7 @@
+ 				"on %s\n", source);
+ 			SQUASHFS_SWAP_SUPER_BLOCK_3(&sblk, &sBlk_3);
+ 			memcpy(&sBlk_3, &sblk, sizeof(squashfs_super_block_3));
+-			swap = 1;
++			swap = swap_block_length = 1;
+ 		} else  {
+ 			ERROR("Can't find a SQUASHFS superblock on %s\n",
+ 				source);

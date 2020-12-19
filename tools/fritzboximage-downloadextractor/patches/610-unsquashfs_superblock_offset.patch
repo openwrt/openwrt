@@ -1,0 +1,137 @@
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -77,6 +77,8 @@
+ int inode_number = 1;
+ int no_xattrs = XATTR_DEF;
+ int user_xattrs = FALSE;
++int scan_for_superblock = FALSE;
++off_t superblock_offset = 0;
+ 
+ int exit_on_error = FALSE;
+ 
+@@ -626,10 +628,89 @@
+ 	return -1;
+ }
+ 
++typedef struct sblk_buf {
++	unsigned int magic;
++	char b[256 - sizeof(unsigned int)];
++} sblk_buf;
++
++int is_squashfs4_superblock(const sblk_buf* buf) {
++	struct squashfs_super_block sBlk_4;
++
++	memcpy(&sBlk_4, buf, sizeof(struct squashfs_super_block));
++	SQUASHFS_INSWAP_SUPER_BLOCK(&sBlk_4);
++
++	if (sBlk_4.s_major == 4)
++		return TRUE;
++
++	return FALSE;
++}
++
++#ifdef LEGACY_FORMATS_SUPPORT
++int is_squashfs123_superblock(const sblk_buf* buf) {
++	struct squashfs_super_block_3 sBlk_3;
++
++	memcpy(&sBlk_3, buf, sizeof(squashfs_super_block_3));
++
++	if (sBlk_3.s_magic == SQUASHFS_MAGIC_SWAP) {
++		squashfs_super_block_3 sblk_3;
++		SQUASHFS_SWAP_SUPER_BLOCK_3(&sblk_3, &sBlk_3);
++		memcpy(&sBlk_3, &sblk_3, sizeof(squashfs_super_block_3));
++	}
++
++	{
++		int is_valid_major = (1 <= sBlk_3.s_major) && (sBlk_3.s_major <= 3);
++		int is_valid_minor = (sBlk_3.s_minor <= 1) || (sBlk_3.s_minor == 76);
++		if (is_valid_major && is_valid_minor)
++			return TRUE;
++	}
++
++	return FALSE;
++}
++#endif
++
++off_t find_superblock(int fd) {
++	off_t offset;
++	sblk_buf buf;
++
++	for (offset = 0; /* forever */; offset += 256) {
++		if (lseek(fd, offset, SEEK_SET) == -1) {
++			ERROR("Lseek failed because %s\n", strerror(errno));
++			break;
++		}
++
++		if (read(fd, &buf, sizeof(sblk_buf)) != sizeof(sblk_buf)) {
++			break;
++		}
++
++		if (buf.magic != SQUASHFS_MAGIC && buf.magic != SQUASHFS_MAGIC_SWAP) {
++			continue;
++		}
++
++		TRACE("find_superblock:%s magic 0x%08X found at 0x%08X\n", (buf.magic == SQUASHFS_MAGIC_SWAP ? " swapped" : ""), buf.magic, (unsigned int)offset);
++
++		// do not rely on MAGIC only, check a little bit more
++		if (is_squashfs4_superblock(&buf)) {
++			TRACE("found valid SquashFS-4 superblock\n");
++			return offset;
++		}
++
++#ifdef LEGACY_FORMATS_SUPPORT
++		if (is_squashfs123_superblock(&buf)) {
++			TRACE("found valid SquashFS-1/2/3 superblock\n");
++			return offset;
++		}
++#endif
++
++		// do not look for any further MAGICs, abort after the 1st match
++		break;
++	}
++
++	return (off_t) -1;
++}
+ 
+ int read_fs_bytes(int fd, long long byte, int bytes, void *buff)
+ {
+-	off_t off = byte;
++	off_t off = byte + superblock_offset;
+ 	int res, count;
+ 
+ 	TRACE("read_fs_bytes: reading from position 0x%llx, bytes %d\n", byte,
+@@ -2644,6 +2725,8 @@
+ 			use_regex = TRUE;
+ 		else if(strcmp(argv[i], "-exit-on-error") == 0)
+ 			exit_on_error = TRUE;
++		else if(strcmp(argv[i], "-scan") == 0 || strcmp(argv[i], "-k") == 0)
++			scan_for_superblock = TRUE;
+ 		else
+ 			goto options;
+ 	}
+@@ -2708,6 +2791,8 @@
+ 			ERROR("\t\t\t\trather than use the default shell "
+ 				"wildcard\n\t\t\t\texpansion (globbing)\n");
+ 			ERROR("\t-exit-on-error\t\ttreat normally ignored errors as fatal\n");
++			ERROR("\t-scan or -k\t\ttreat filesystem as a combined image\n");
++			ERROR("\t\t\t\t(kernel+SquashFS) and scan it to locate the superblock\n");
+ 			ERROR("\nDecompressors available:\n");
+ 			display_compressors("", "");
+ 		}
+@@ -2723,6 +2808,16 @@
+ 		exit(1);
+ 	}
+ 
++	if(scan_for_superblock == TRUE) {
++		superblock_offset = find_superblock(fd);
++		if (superblock_offset == (off_t) -1) {
++			ERROR("Unable to find something looking like a SquashFS superblock in %s.\n", argv[i]);
++			exit(2);
++		}
++
++		ERROR("Found a valid superblock at offset 0x%08X while scanning %s.\n", (unsigned int) superblock_offset, argv[i]);
++	}
++
+ 	if(read_super(argv[i]) == FALSE)
+ 		exit(1);
+ 

@@ -1,0 +1,21 @@
+#!/bin/sh
+
+do_wasp_downloader() {
+	echo " - do_wasp_downloader - "
+	# if vlan is used, then use vlan interface
+	if [ -e "/sys/class/net/eth0.1" ] ; then
+		iface="eth0.1"
+	else
+		iface="eth0"
+	fi
+	/usr/bin/wasp_downloader $iface /tmp/overlay.tar.gz
+	cd /
+	if [ -e /tmp/overlay.tar.gz ]; then
+	  tar xzf /tmp/overlay.tar.gz
+	  if [ -e /usr/bin/wasp_script ]; then
+	    /usr/bin/wasp_script
+	  fi
+	fi
+}
+
+boot_hook_add initramfs do_wasp_downloader

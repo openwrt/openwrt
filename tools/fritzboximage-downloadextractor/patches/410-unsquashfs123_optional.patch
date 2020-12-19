@@ -1,0 +1,113 @@
+--- a/squashfs-tools/Makefile
++++ b/squashfs-tools/Makefile
+@@ -102,6 +102,8 @@
+ # default.  Users can enable xattrs by using the -xattrs option.
+ XATTR_DEFAULT = 1
+ 
++LEGACY_FORMATS_SUPPORT = 1
++
+ 
+ ###############################################
+ #        End of BUILD options section         #
+@@ -127,6 +129,10 @@
+ LINK_STATICALLY_POST:=-Wl,-Bdynamic
+ endif
+ 
++ifeq ($(LEGACY_FORMATS_SUPPORT),1)
++CFLAGS += -DLEGACY_FORMATS_SUPPORT
++endif
++
+ LIBS = -lpthread -lm
+ ifeq ($(GZIP_SUPPORT),1)
+ CFLAGS += -DGZIP_SUPPORT
+--- a/squashfs-tools/unsquash-1.c
++++ b/squashfs-tools/unsquash-1.c
+@@ -22,6 +22,8 @@
+  * unsquash-1.c
+  */
+ 
++#ifdef LEGACY_FORMATS_SUPPORT
++
+ #include "unsquashfs.h"
+ #include "squashfs_compat.h"
+ 
+@@ -355,3 +357,5 @@
+ 
+ 	return TRUE;
+ }
++
++#endif
+--- a/squashfs-tools/unsquash-2.c
++++ b/squashfs-tools/unsquash-2.c
+@@ -25,7 +25,9 @@
+ #include "unsquashfs.h"
+ #include "squashfs_compat.h"
+ 
++#ifdef LEGACY_FORMATS_SUPPORT
+ static squashfs_fragment_entry_2 *fragment_table;
++#endif
+ 
+ void read_block_list_2(unsigned int *block_list, char *block_ptr, int blocks)
+ {
+@@ -40,6 +42,7 @@
+ }
+ 
+ 
++#ifdef LEGACY_FORMATS_SUPPORT
+ int read_fragment_table_2(long long *directory_table_end)
+ {
+ 	int res, i;
+@@ -268,3 +271,5 @@
+ 	}
+ 	return &i;
+ }
++
++#endif
+--- a/squashfs-tools/unsquash-3.c
++++ b/squashfs-tools/unsquash-3.c
+@@ -22,6 +22,8 @@
+  * unsquash-3.c
+  */
+ 
++#ifdef LEGACY_FORMATS_SUPPORT
++
+ #include "unsquashfs.h"
+ #include "squashfs_compat.h"
+ 
+@@ -391,3 +393,5 @@
+ 	free(dir);
+ 	return NULL;
+ }
++
++#endif
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -1771,7 +1771,9 @@
+ 
+ int read_super(char *source)
+ {
++#ifdef LEGACY_FORMATS_SUPPORT
+ 	squashfs_super_block_3 sBlk_3;
++#endif
+ 	struct squashfs_super_block sBlk_4;
+ 
+ 	/*
+@@ -1812,6 +1814,7 @@
+ 		return TRUE;
+ 	}
+ 
++#ifdef LEGACY_FORMATS_SUPPORT
+ 	/*
+  	 * Not a Squashfs 4 superblock, try to read a squashfs 3 superblock
+  	 * (compatible with 1 and 2 filesystems)
+@@ -1907,6 +1910,10 @@
+ 
+ failed_mount:
+ 	return FALSE;
++#else /* !LEGACY_FORMATS_SUPPORT */
++	ERROR("Filesystem on %s is (%d:%d), which is not supported by this version of unsquashfs!\n", source, sBlk_4.s_major, sBlk_4.s_minor);
++	return FALSE;
++#endif
+ }
+ 
+ 

@@ -1,0 +1,60 @@
+From 4f24381e7edc0a46cf10278e4597051ac697ec7c Mon Sep 17 00:00:00 2001
+From: Phillip Lougher <phillip@squashfs.org.uk>
+Date: Wed, 3 Sep 2014 02:20:55 +0100
+Subject: [PATCH] mksquashfs: fix cmdline arg free if >1 source dir and one of
+ them is excluded
+
+If you specify multiple sources (directories and/or files) on the command
+line, Mksquashfs will merge those sources into a root directory
+containing all of them.  This is different to the behaviour when
+a single directory is specified, in which case Mksquashfs creates
+a filesystem with the root containing the contents of the source
+directory.
+
+The difference manifests itself in the way the pathname of each
+of the directory entries is stored/obtained.  Normally to reduce
+runtime overhead when the directory entries have all come from the
+same parent directory, the source pathname is not stored in each
+directory entry, but is computed from the source pathname of the
+parent directory.  But in the case of the "dummy" root created
+to merge multiple sources specified on the command line, each
+directory entry does not share the same parent pathname, and so
+the source pathname of each directory entry is stored in the
+nonstandard_pathname field.  This nonstandard_pathname was originally
+filled in using a pointer to the source pathname on the command line.
+
+Now, if you later exclude one of these source directories, Mksquashfs
+will free the storage, and it will try and free the nonstandard_pathname
+field, which leads to a crash as you cannot free a command line argument.
+
+The fix to this is to strdup the command line source and store the
+copy in the directory entry.
+
+This is not considered a serious bug, it has not been reported, and
+the scenario was discovered by chance whilst looking at the code.
+Additionally the trigger scenario is highly artificial and there
+is no use-case where this bug will be triggered.  To trigger it you
+need to specifiy multiple source command arguments, and then you
+need to exclude one of them.  But, if you explicitly specified it
+on the command line why would you later exclude it, and if
+you did want to exclude it the obvious way would be to remove it
+from the command line.
+
+Signed-off-by: Phillip Lougher <phillip@squashfs.org.uk>
+---
+ squashfs-tools/mksquashfs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git squashfs-tools/mksquashfs.c squashfs-tools/mksquashfs.c
+index e81e0b4..7e6289a 100644
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -3269,7 +3269,7 @@ struct dir_ent *scan1_encomp_readdir(struct dir_info *dir)
+ 			ERROR("%s\n", dir_name);
+ 		}
+ 		return create_dir_entry(dir_name, basename,
+-			source_path[index ++], dir);
++			strdup(source_path[index ++]), dir);
+ 	}
+ 	return NULL;
+ }

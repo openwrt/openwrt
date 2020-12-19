@@ -1,0 +1,43 @@
+--- a/drivers/net/ethernet/lantiq_xrx200_legacy.c
++++ b/drivers/net/ethernet/lantiq_xrx200_legacy.c
+@@ -2053,6 +2053,32 @@ static void xrx200_gmac_update(struct xr
+ }
+ #endif
+ 
++static int xrx200_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
++{
++	struct xrx200_priv *priv = netdev_priv(dev);
++	struct mii_ioctl_data *mii = if_mii(ifr);
++	int ret;
++
++	switch(cmd) {
++	case SIOCGMIIREG:
++		ret = xrx200_mdio_rd(priv->hw->mii_bus, mii->phy_id, mii->reg_num);
++		if (ret >= 0) {
++			mii->val_out = ret;
++			ret = 0;
++		}
++		break;
++	case SIOCSMIIREG:
++		ret = xrx200_mdio_wr(priv->hw->mii_bus, mii->phy_id, mii->reg_num,
++							 mii->val_in);
++		break;
++	default:
++		ret = -EOPNOTSUPP;
++		break;
++	}
++
++	return ret;
++}
++
+ static void xrx200_mdio_link(struct net_device *dev)
+ {
+ 	struct xrx200_priv *priv = netdev_priv(dev);
+@@ -2678,6 +2678,7 @@ static const struct net_device_ops xrx20
+ 	.ndo_init		= xrx200_init,
+ 	.ndo_open		= xrx200_open,
+ 	.ndo_stop		= xrx200_close,
++	.ndo_do_ioctl	= xrx200_ioctl,
+ 	.ndo_start_xmit		= xrx200_start_xmit,
+ 	.ndo_set_mac_address	= eth_mac_addr,
+ 	.ndo_validate_addr	= eth_validate_addr,

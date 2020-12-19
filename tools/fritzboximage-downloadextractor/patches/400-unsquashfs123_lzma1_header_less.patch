@@ -1,0 +1,120 @@
+--- a/squashfs-tools/lzma_xz_wrapper.c
++++ b/squashfs-tools/lzma_xz_wrapper.c
+@@ -35,6 +35,8 @@
+ #define LZMA_OPTIONS 5
+ #define MEMLIMIT (32 * 1024 * 1024)
+ 
++extern unsigned short squashfs_major_version;
++
+ static int lzma_compress(void *dummy, void *dest, void *src,  int size,
+ 	int block_size, int *error)
+ {
+@@ -102,6 +104,7 @@
+ 	lzma_stream strm = LZMA_STREAM_INIT;
+ 	int uncompressed_size = 0, res;
+ 	unsigned char lzma_header[LZMA_HEADER_SIZE];
++	int lzmaHeaderLess = (squashfs_major_version < 4);
+ 
+ 	res = lzma_alone_decoder(&strm, MEMLIMIT);
+ 	if(res != LZMA_OK) {
+@@ -109,6 +112,20 @@
+ 		goto failed;
+ 	}
+ 
++if (lzmaHeaderLess) {
++	#define _DICT_SIZE (1 << (9 + 14))
++	#define _LC        3
++	#define _LP        0
++	#define _PB        2
++	int i;
++	unsigned int dictSize = _DICT_SIZE;
++	lzma_header[0] = (unsigned char)((_PB * 5 + _LP) * 9 + _LC);
++	for (i = 1; i<LZMA_PROPS_SIZE; i++) {
++		lzma_header[i] = (unsigned char)(dictSize >> (8 * (i-1)));
++	}
++
++	uncompressed_size = outsize;
++} else {
+ 	memcpy(lzma_header, src, LZMA_HEADER_SIZE);
+ 	uncompressed_size = lzma_header[LZMA_PROPS_SIZE] |
+ 		(lzma_header[LZMA_PROPS_SIZE + 1] << 8) |
+@@ -119,6 +136,7 @@
+ 		res = 0;
+ 		goto failed;
+ 	}
++}
+ 
+ 	memset(lzma_header + LZMA_PROPS_SIZE, 255, LZMA_UNCOMP_SIZE);
+ 
+@@ -134,8 +152,8 @@
+ 		goto failed;
+ 	}
+ 
+-	strm.next_in = src + LZMA_HEADER_SIZE;
+-	strm.avail_in = size - LZMA_HEADER_SIZE;
++	strm.next_in  = src  + (lzmaHeaderLess ? 0 : LZMA_HEADER_SIZE);
++	strm.avail_in = size - (lzmaHeaderLess ? 0 : LZMA_HEADER_SIZE);
+ 
+ 	res = lzma_code(&strm, LZMA_FINISH);
+ 	lzma_end(&strm);
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -89,6 +89,7 @@
+ #endif
+ 
+ int fd;
++unsigned short squashfs_major_version = SQUASHFS_MAJOR;
+ struct squashfs_super_block sBlk;
+ 
+ /* filesystem flags for building */
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -47,6 +47,7 @@
+ /* user options that control parallelisation */
+ int processors = -1;
+ 
++unsigned short squashfs_major_version = SQUASHFS_MAJOR;
+ struct super_block sBlk;
+ squashfs_operations s_ops;
+ struct compressor *comp;
+@@ -1640,9 +1641,8 @@
+ 		sBlk.s.bytes_used / 1024.0, sBlk.s.bytes_used /
+ 		(1024.0 * 1024.0));
+ 
++	printf("Compression %s\n", comp->name);
+ 	if(sBlk.s.s_major == 4) {
+-		printf("Compression %s\n", comp->name);
+-
+ 		if(SQUASHFS_COMP_OPTS(sBlk.s.flags)) {
+ 			char buffer[SQUASHFS_METADATA_SIZE] __attribute__ ((aligned));
+ 			int bytes;
+@@ -1845,7 +1845,7 @@
+ 	sBlk.s.fragments = sBlk_3.fragments;
+ 	sBlk.s.block_log = sBlk_3.block_log;
+ 	sBlk.s.flags = sBlk_3.flags;
+-	sBlk.s.s_major = sBlk_3.s_major;
++	sBlk.s.s_major = squashfs_major_version = sBlk_3.s_major;
+ 	sBlk.s.s_minor = sBlk_3.s_minor;
+ 	sBlk.s.root_inode = sBlk_3.root_inode;
+ 	sBlk.s.bytes_used = sBlk_3.bytes_used;
+@@ -1900,9 +1900,9 @@
+ 	}
+ 
+ 	/*
+-	 * 1.x, 2.x and 3.x filesystems use gzip compression.
++	 * 1.x, 2.x and 3.x filesystems use gzip or lzma1 (superblock.minor==76) compression.
+ 	 */
+-	comp = lookup_compressor("gzip");
++	comp = lookup_compressor((sBlk.s.s_minor == 76) ? "lzma" : "gzip");
+ 	return TRUE;
+ 
+ failed_mount:
+@@ -2706,6 +2706,8 @@
+ 		exit(0);
+ 	}
+ 
++	printf("Filesystem on %s is %s compressed (%d:%d)\n", argv[i], comp->name, sBlk.s.s_major, sBlk.s.s_minor);
++
+ 	if(!check_compression(comp))
+ 		exit(1);
+ 

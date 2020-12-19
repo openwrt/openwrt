@@ -223,6 +223,7 @@
 			compatible = "lantiq,xrx200-pinctrl";
 			#gpio-cells = <2>;
 			gpio-controller;
+			gpio-ranges = <&gpio 0 0 56>;
 			reg = <0xe100b10 0xa0>;
 
 			gphy0_led0_pins: gphy0-led0 {
@@ -490,7 +491,7 @@
 		};
 
 		pci0: pci@e105400 {
-			status = "disabled";
+			#status = "disabled";
 
 			#address-cells = <3>;
 			#size-cells = <2>;

@@ -9,7 +9,7 @@ lantiq_setup_dsl_helper() {
 		ucidef_add_atm_bridge "1" "32" "llc" "bridged" "dsl"
 
 	if lantiq_is_vdsl_system; then
-		ucidef_add_vdsl_modem "$annex" "av"
+		ucidef_add_vdsl_modem "$annex" "bv" "ptm"
 	else
 		ucidef_add_adsl_modem "$annex" "/lib/firmware/adsl.bin"
 	fi

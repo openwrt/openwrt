@@ -1,0 +1,22 @@
+This document summarizes all (so far known) technical details about a non-standard SquashFS format
+(called AVM-BE below) used by AVM since Fritz!OS Labor 6.35.
+
+ - AVM-BE format is a SquashFS4 based SquashFS format
+ - instead of the little-endian data layout (the only layout supported by the original/unmodified
+   code since SquashFS4) it uses the big-endian layout for most of the data stored in the SquashFS
+   image (to be more precise for all file system related data)
+ - the only data field stored in the little-endian format is the block length value at the beginning
+   of each block
+ - compression method is hardcoded to be XZ (aka LZMA2)
+ - it is unknown if any compressor specific option could be set - all original AVM images seen so far
+   have COMP_OPT flag unset
+ - super-block field 'mkfs_time' contains (instead of the filesystem creation time) the same value
+   as the super-block field 'bytes_used'
+
+ - user id table is always stored uncompressed (TODO: needs more investigation, the current
+   implementation ensures that it gets stored uncompressed, this behavior might however also
+   be achieved by the original/non-modified code just because the size of the compressed data
+   would be bigger than the size of the uncompressed one - see mksquashfs::mangle2 for details)
+
+PS. The Freetz developer team is deeply grateful to the IPPF user PeterPawn for analyzing the AVM-BE
+    format and providing the initial implementation of the mk-/unsquashfs utilities supporting it.

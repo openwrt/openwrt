@@ -1,0 +1,140 @@
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -79,6 +79,9 @@
+ int user_xattrs = FALSE;
+ int scan_for_superblock = FALSE;
+ off_t superblock_offset = 0;
++int has_swapped_endianess = FALSE;
++off_t nmi_vector_offset = (off_t)-1;
++unsigned int nmi_vector_size = 0;
+ 
+ int exit_on_error = FALSE;
+ 
+@@ -686,6 +689,8 @@
+ 			continue;
+ 		}
+ 
++		has_swapped_endianess = (buf.magic == SQUASHFS_MAGIC_SWAP);
++
+ 		TRACE("find_superblock:%s magic 0x%08X found at 0x%08X\n", (buf.magic == SQUASHFS_MAGIC_SWAP ? " swapped" : ""), buf.magic, (unsigned int)offset);
+ 
+ 		// do not rely on MAGIC only, check a little bit more
+@@ -708,14 +713,98 @@
+ 	return (off_t) -1;
+ }
+ 
++char nmi_vector_id[] = "NMI Boot Vector";
++typedef struct nmi_vector_buf {
++	unsigned int firmware_length;
++	unsigned int vector_size;
++	char vector_id[32];
++} nmi_vector_buf;
++
++off_t find_nmi_vector_location(int fd, unsigned int *nmi_vector_size) {
++	off_t offset;
++	nmi_vector_buf buf;
++
++	for (offset = 0x40; /* forever */; offset += 256) {
++		if (lseek(fd, offset, SEEK_SET) == -1) {
++			ERROR("Lseek failed because %s\n", strerror(errno));
++			break;
++		}
++
++		if (read(fd, &buf, sizeof(nmi_vector_buf)) != sizeof(nmi_vector_buf)) {
++			break;
++		}
++
++		if (strncmp(buf.vector_id, nmi_vector_id, 1+strlen(nmi_vector_id)) != 0) {
++			continue;
++		}
++
++		if (has_swapped_endianess) {
++			buf.vector_size     = inswap_le32(buf.vector_size);
++			buf.firmware_length = inswap_le32(buf.firmware_length);
++		}
++		TRACE("find_nmi_vector_location: found NMI vector at=0x%08X, size=0x%08X, firmware_length=0x%08X\n", (unsigned int)(offset - 0x40), buf.vector_size, buf.firmware_length);
++
++		*nmi_vector_size = buf.vector_size;
++
++		return offset - 0x40;
++	}
++
++	return (off_t) -1;
++}
++
+ int read_fs_bytes(int fd, long long byte, int bytes, void *buff)
+ {
+ 	off_t off = byte + superblock_offset;
+ 	int res, count;
++#ifdef SQUASHFS_TRACE
++	unsigned char *b;
++#endif
+ 
+ 	TRACE("read_fs_bytes: reading from position 0x%llx, bytes %d\n", byte,
+ 		bytes);
+ 
++	if (nmi_vector_offset != (off_t) -1) {
++		/*
++		- if we're below and the last byte to read doesn't cross the line, there's
++		  nothing to do (case A) - this case needs no handling and so it's the
++		  default path, if none of the others match
++		- if we're above or even at the "magic border", we simply add the gap size
++		  to the requested offset (case B)
++		- the only special case is a read starting before nmi_vector_gap_start and
++		  running into the gap - here we'll split this single read into two
++		  recursive calls to our own function, where the 1st access is shortened
++		  to stop at the last byte before the gap and the 2nd will start over at
++		  the gap offset and read the remaining bytes (it's case B for this
++		  recursive call)
++		*/
++
++		if (off >= nmi_vector_offset) {
++			/* case B */
++			off += nmi_vector_size;
++		} else if ((off < nmi_vector_offset) && ((off + bytes) > nmi_vector_offset)) {
++			/* case C */
++			TRACE("read_fs_bytes: split read needed, abs=0x%08lX, rel=0x%08lX, count=0x%X, to=0x%08X\n", (long) off, (long) byte, bytes, buff);
++
++			TRACE("read_fs_bytes: part 1 from=0x%08lX, size=0x%08lX", (long) byte, (long) (nmi_vector_offset - off));
++			if (read_fs_bytes(fd, byte, nmi_vector_offset - off, buff) == FALSE) {
++				return FALSE;
++			}
++
++#ifdef SQUASHFS_TRACE
++			b = buff + (nmi_vector_offset - off) - 4;
++#endif
++			TRACE("read_fs_bytes: buffer content around the gap: 0x%08lX %02x %02x %02x %02x %02x %02x %02x %02x\n", b, *b, *(b + 1), *(b + 2), *(b + 3), *(b + 4), *(b + 5), *(b + 6), *(b + 7));
++
++			TRACE("read_fs_bytes: part 2 from=0x%08lX, size=0x%08lX", (long) (nmi_vector_offset - superblock_offset), (long) (bytes - (nmi_vector_offset - off)));
++			if (read_fs_bytes(fd, nmi_vector_offset - superblock_offset, bytes - (nmi_vector_offset - off), buff + (nmi_vector_offset - off)) == FALSE) {
++				return FALSE;
++			}
++			TRACE("read_fs_bytes: buffer content around the gap: 0x%08lX %02x %02x %02x %02x %02x %02x %02x %02x\n", b, *b, *(b + 1), *(b + 2), *(b + 3), *(b + 4), *(b + 5), *(b + 6), *(b + 7));
++
++			return TRUE;
++		}
++	}
++
+ 	if(lseek(fd, off, SEEK_SET) == -1) {
+ 		ERROR("Lseek failed because %s\n", strerror(errno));
+ 		return FALSE;
+@@ -2793,6 +2882,7 @@
+ 			ERROR("\t-exit-on-error\t\ttreat normally ignored errors as fatal\n");
+ 			ERROR("\t-scan or -k\t\ttreat filesystem as a combined image\n");
+ 			ERROR("\t\t\t\t(kernel+SquashFS) and scan it to locate the superblock\n");
++			ERROR("\t\t\t\tand the NMI vector gap\n");
+ 			ERROR("\nDecompressors available:\n");
+ 			display_compressors("", "");
+ 		}
+@@ -2816,6 +2906,11 @@
+ 		}
+ 
+ 		ERROR("Found a valid superblock at offset 0x%08X while scanning %s.\n", (unsigned int) superblock_offset, argv[i]);
++
++		nmi_vector_offset = find_nmi_vector_location(fd, &nmi_vector_size);
++		if (nmi_vector_offset != (off_t) -1) {
++			ERROR("NMI vector found at 0x%08X, size=%d\n", (unsigned int) nmi_vector_offset, nmi_vector_size);
++		}
+ 	}
+ 
+ 	if(read_super(argv[i]) == FALSE)

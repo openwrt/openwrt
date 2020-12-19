@@ -1,0 +1,283 @@
+--- /dev/null
++++ b/squashfs-tools/_endian.h
+@@ -0,0 +1,27 @@
++#ifndef SQUASHFS_ENDIAN_H
++#define SQUASHFS_ENDIAN_H
++
++#define SQUASHFS4_LE 0
++#define SQUASHFS4_BE 1
++
++#ifndef linux
++#define __BYTE_ORDER BYTE_ORDER
++#define __BIG_ENDIAN BIG_ENDIAN
++#define __LITTLE_ENDIAN LITTLE_ENDIAN
++#else
++#include <endian.h>
++#endif
++
++#if   defined(TARGET_FORMAT) && TARGET_FORMAT == SQUASHFS4_LE
++#define TARGET_FORMAT_BYTE_ORDER __LITTLE_ENDIAN
++#elif defined(TARGET_FORMAT) && TARGET_FORMAT == SQUASHFS4_BE
++#define TARGET_FORMAT_BYTE_ORDER __BIG_ENDIAN
++#else
++#error "Invalid or no TARGET_FORMAT defined, it's expected to be either SQUASHFS4_LE (for little-endian) or SQUASHFS4_BE (for big-endian)"
++#endif
++
++#if !(defined(TARGET_FORMAT_BYTE_ORDER) && (TARGET_FORMAT_BYTE_ORDER == __LITTLE_ENDIAN || TARGET_FORMAT_BYTE_ORDER == __BIG_ENDIAN))
++#error "Invalid or no TARGET_FORMAT_BYTE_ORDER defined, it's expected to be either __LITTLE_ENDIAN or __BIG_ENDIAN"
++#endif
++
++#endif /* SQUASHFS_ENDIAN_H */
+--- a/squashfs-tools/Makefile
++++ b/squashfs-tools/Makefile
+@@ -304,6 +304,8 @@
+ 
+ unsquashfs_info.o: unsquashfs.h squashfs_fs.h
+ 
++%.o: _endian.h
++
+ .PHONY: clean
+ clean:
+ 	-rm -f *.o mksquashfs unsquashfs
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -51,13 +51,11 @@
+ #include <limits.h>
+ #include <ctype.h>
+ 
++#include "_endian.h"
++
+ #ifndef linux
+-#define __BYTE_ORDER BYTE_ORDER
+-#define __BIG_ENDIAN BIG_ENDIAN
+-#define __LITTLE_ENDIAN LITTLE_ENDIAN
+ #include <sys/sysctl.h>
+ #else
+-#include <endian.h>
+ #include <sys/sysinfo.h>
+ #endif
+ 
+--- a/squashfs-tools/read_fs.c
++++ b/squashfs-tools/read_fs.c
+@@ -35,13 +35,7 @@
+ #include <limits.h>
+ #include <dirent.h>
+ 
+-#ifndef linux
+-#define __BYTE_ORDER BYTE_ORDER
+-#define __BIG_ENDIAN BIG_ENDIAN
+-#define __LITTLE_ENDIAN LITTLE_ENDIAN
+-#else
+-#include <endian.h>
+-#endif
++#include "_endian.h"
+ 
+ #include <stdlib.h>
+ 
+--- a/squashfs-tools/read_xattrs.c
++++ b/squashfs-tools/read_xattrs.c
+@@ -31,13 +31,7 @@
+ #include <stdio.h>
+ #include <string.h>
+ 
+-#ifndef linux
+-#define __BYTE_ORDER BYTE_ORDER
+-#define __BIG_ENDIAN BIG_ENDIAN
+-#define __LITTLE_ENDIAN LITTLE_ENDIAN
+-#else
+-#include <endian.h>
+-#endif
++#include "_endian.h"
+ 
+ #include "squashfs_fs.h"
+ #include "squashfs_swap.h"
+--- a/squashfs-tools/squashfs_compat.h
++++ b/squashfs-tools/squashfs_compat.h
+@@ -797,7 +797,7 @@
+  * macros used to swap each structure entry, taking into account
+  * bitfields and different bitfield placing conventions on differing architectures
+  */
+-#if __BYTE_ORDER == __BIG_ENDIAN
++#if __BYTE_ORDER == __BIG_ENDIAN /* old squashfs formats compatiblity code, no need to replace __BIG_ENDIAN with TARGET_FORMAT_BYTE_ORDER */
+ 	/* convert from big endian to little endian */
+ #define SQUASHFS_SWAP(value, p, pos, tbits) _SQUASHFS_SWAP(value, p, pos, tbits, b_pos)
+ #else
+--- a/squashfs-tools/squashfs_swap.h
++++ b/squashfs-tools/squashfs_swap.h
+@@ -27,8 +27,15 @@
+  * macros to convert each stucture from big endian to little endian
+  */
+ 
+-#if __BYTE_ORDER == __BIG_ENDIAN
++#include "_endian.h"
++
+ #include <stddef.h>
++
++/*
++ * all the *swap_le* functions below should actually be renamed to something like *swap_different_byte_order*
++ * to reduce the number of differences to the original code and thus increase the comprehensibility
++ * of the changes made we intentionally do not do it
++ */
+ extern void swap_le16(void *, void *);
+ extern void swap_le32(void *, void *);
+ extern void swap_le64(void *, void *);
+@@ -42,6 +49,8 @@
+ extern void inswap_le32_num(unsigned int *, int);
+ extern void inswap_le64_num(long long *, int);
+ 
++#if __BYTE_ORDER != TARGET_FORMAT_BYTE_ORDER
++
+ #define _SQUASHFS_SWAP_SUPER_BLOCK(s, d, SWAP_FUNC) {\
+ 	SWAP_FUNC(32, s, d, s_magic, struct squashfs_super_block);\
+ 	SWAP_FUNC(32, s, d, inodes, struct squashfs_super_block);\
+--- a/squashfs-tools/swap.c
++++ b/squashfs-tools/swap.c
+@@ -19,15 +19,8 @@
+  * swap.c
+  */
+ 
+-#ifndef linux
+-#define __BYTE_ORDER BYTE_ORDER
+-#define __BIG_ENDIAN BIG_ENDIAN
+-#define __LITTLE_ENDIAN LITTLE_ENDIAN
+-#else
+-#include <endian.h>
+-#endif
++#include "_endian.h"
+ 
+-#if __BYTE_ORDER == __BIG_ENDIAN
+ void swap_le16(void *src, void *dest)
+ {
+ 	unsigned char *s = src;
+@@ -120,4 +113,3 @@
+ INSWAP_LE_NUM(16, unsigned short)
+ INSWAP_LE_NUM(32, unsigned int)
+ INSWAP_LE_NUM(64, long long)
+-#endif
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -23,6 +23,7 @@
+  * unsquashfs.c
+  */
+ 
++#include "_endian.h"
+ #include "unsquashfs.h"
+ #include "squashfs_swap.h"
+ #include "squashfs_compat.h"
+@@ -1628,15 +1629,13 @@
+ 	time_t mkfs_time = (time_t) sBlk.s.mkfs_time;
+ 	char *mkfs_str = ctime(&mkfs_time);
+ 
+-#if __BYTE_ORDER == __BIG_ENDIAN
+ 	printf("Found a valid %sSQUASHFS %d:%d superblock on %s.\n",
+-		sBlk.s.s_major == 4 ? "" : swap ? "little endian " :
+-		"big endian ", sBlk.s.s_major, sBlk.s.s_minor, source);
++#if __BYTE_ORDER == __BIG_ENDIAN
++		swap ? "little endian " : "big endian ",
+ #else
+-	printf("Found a valid %sSQUASHFS %d:%d superblock on %s.\n",
+-		sBlk.s.s_major == 4 ? "" : swap ? "big endian " :
+-		"little endian ", sBlk.s.s_major, sBlk.s.s_minor, source);
++		swap ? "big endian " : "little endian ",
+ #endif
++		sBlk.s.s_major, sBlk.s.s_minor, source);
+ 
+ 	printf("Creation or last append time %s", mkfs_str ? mkfs_str :
+ 		"failed to get time\n");
+--- a/squashfs-tools/unsquashfs.h
++++ b/squashfs-tools/unsquashfs.h
+@@ -47,13 +47,7 @@
+ #include <sys/ioctl.h>
+ #include <sys/time.h>
+ 
+-#ifndef linux
+-#define __BYTE_ORDER BYTE_ORDER
+-#define __BIG_ENDIAN BIG_ENDIAN
+-#define __LITTLE_ENDIAN LITTLE_ENDIAN
+-#else
+-#include <endian.h>
+-#endif
++#include "_endian.h"
+ 
+ #include "squashfs_fs.h"
+ #include "error.h"
+--- a/squashfs-tools/gzip_wrapper.h
++++ b/squashfs-tools/gzip_wrapper.h
+@@ -24,15 +24,9 @@
+  *
+  */
+ 
+-#ifndef linux
+-#define __BYTE_ORDER BYTE_ORDER
+-#define __BIG_ENDIAN BIG_ENDIAN
+-#define __LITTLE_ENDIAN LITTLE_ENDIAN
+-#else
+-#include <endian.h>
+-#endif
++#include "_endian.h"
+ 
+-#if __BYTE_ORDER == __BIG_ENDIAN
++#if __BYTE_ORDER != TARGET_FORMAT_BYTE_ORDER
+ extern unsigned int inswap_le16(unsigned short);
+ extern unsigned int inswap_le32(unsigned int);
+ 
+--- a/squashfs-tools/lz4_wrapper.h
++++ b/squashfs-tools/lz4_wrapper.h
+@@ -24,15 +24,9 @@
+  *
+  */
+ 
+-#ifndef linux
+-#define __BYTE_ORDER BYTE_ORDER
+-#define __BIG_ENDIAN BIG_ENDIAN
+-#define __LITTLE_ENDIAN LITTLE_ENDIAN
+-#else
+-#include <endian.h>
+-#endif
++#include "_endian.h"
+ 
+-#if __BYTE_ORDER == __BIG_ENDIAN
++#if __BYTE_ORDER != TARGET_FORMAT_BYTE_ORDER
+ extern unsigned int inswap_le32(unsigned int);
+ 
+ #define SQUASHFS_INSWAP_COMP_OPTS(s) { \
+--- a/squashfs-tools/lzo_wrapper.h
++++ b/squashfs-tools/lzo_wrapper.h
+@@ -24,15 +24,9 @@
+  *
+  */
+ 
+-#ifndef linux
+-#define __BYTE_ORDER BYTE_ORDER
+-#define __BIG_ENDIAN BIG_ENDIAN
+-#define __LITTLE_ENDIAN LITTLE_ENDIAN
+-#else
+-#include <endian.h>
+-#endif
++#include "_endian.h"
+ 
+-#if __BYTE_ORDER == __BIG_ENDIAN
++#if __BYTE_ORDER != TARGET_FORMAT_BYTE_ORDER
+ extern unsigned int inswap_le32(unsigned int);
+ 
+ #define SQUASHFS_INSWAP_COMP_OPTS(s) { \
+--- a/squashfs-tools/xz_wrapper.h
++++ b/squashfs-tools/xz_wrapper.h
+@@ -24,15 +24,9 @@
+  *
+  */
+ 
+-#ifndef linux
+-#define __BYTE_ORDER BYTE_ORDER
+-#define __BIG_ENDIAN BIG_ENDIAN
+-#define __LITTLE_ENDIAN LITTLE_ENDIAN
+-#else
+-#include <endian.h>
+-#endif
++#include "_endian.h"
+ 
+-#if __BYTE_ORDER == __BIG_ENDIAN
++#if __BYTE_ORDER != TARGET_FORMAT_BYTE_ORDER
+ extern unsigned int inswap_le32(unsigned int);
+ 
+ #define SQUASHFS_INSWAP_COMP_OPTS(s) { \

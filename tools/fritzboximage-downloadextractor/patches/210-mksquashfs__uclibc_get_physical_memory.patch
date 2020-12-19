@@ -1,0 +1,40 @@
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -4859,15 +4859,37 @@
+ 	return parse_number(arg, res, 0);
+ }
+ 
++#if defined(__UCLIBC__)
++static long int get_proc_meminfo_value(const char *format) {
++	char buffer[8192];
++	long int value = -1;
+ 
++	FILE *meminfo = fopen ("/proc/meminfo", "r");
++	if (meminfo != NULL) {
++		while (fgets(buffer, sizeof(buffer), meminfo) != NULL) {
++			if (sscanf(buffer, format, &value) == 1) {
++				break;
++			}
++		}
++		fclose(meminfo);
++	}
++
++	return value;
++}
++#endif
+ int get_physical_memory()
+ {
+ 	/* Long longs are used here because with PAE, a 32-bit
+ 	  machine can have more than 4GB of physical memory */
+ 
++#if defined(__UCLIBC__)
++	/* UCLIBC doesn't implement sysconf(_SC_PHYS_PAGES) */
++	int phys_mem = get_proc_meminfo_value("MemTotal: %ld kB") >> 10;
++#else
+ 	long long num_pages = sysconf(_SC_PHYS_PAGES);
+ 	long long page_size = sysconf(_SC_PAGESIZE);
+ 	int phys_mem = num_pages * page_size >> 20;
++#endif
+ 
+ 	if(phys_mem < SQUASHFS_LOWMEM)
+ 		BAD_ERROR("Mksquashfs requires more physical memory than is "

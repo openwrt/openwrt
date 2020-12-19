@@ -1,0 +1,40 @@
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -651,7 +651,7 @@
+ 
+ 	TRACE("write_id_table: ids %d, id_bytes %d\n", id_count, id_bytes);
+ 	for(i = 0; i < id_count; i++) {
+-		TRACE("write_id_table: id index %d, id %d", i, id_table[i]->id);
++		TRACE("write_id_table: id index %d, id %d\n", i, id_table[i]->id);
+ 		SQUASHFS_SWAP_INTS(&id_table[i]->id, p + i, 1);
+ 	}
+ 
+@@ -5276,7 +5276,7 @@
+ 			ERROR("%s: invalid option\n\n", argv[0]);
+ printOptions:
+ 			ERROR("SYNTAX:%s source1 source2 ...  dest [options] "
+-				"[-e list of exclude\ndirs/files]\n", argv[0]);
++				"[-e list of exclude dirs/files]\n", argv[0]);
+ 			ERROR("\nFilesystem build options:\n");
+ 			ERROR("-comp <comp>\t\tselect <comp> compression\n");
+ 			ERROR("\t\t\tCompressors available:\n");
+@@ -5487,7 +5487,7 @@
+ 				add_exclude(argv[i++]);
+ 	}
+ 
+-	/* process the sort files - must be done afer the exclude files  */
++	/* process the sort files - must be done after the exclude files  */
+ 	for(i = source + 2; i < argc; i++)
+ 		if(strcmp(argv[i], "-sort") == 0) {
+ 			int res = read_sort_file(argv[++i], source,
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -629,7 +629,7 @@
+ 	off_t off = byte;
+ 	int res, count;
+ 
+-	TRACE("read_bytes: reading from position 0x%llx, bytes %d\n", byte,
++	TRACE("read_fs_bytes: reading from position 0x%llx, bytes %d\n", byte,
+ 		bytes);
+ 
+ 	if(lseek(fd, off, SEEK_SET) == -1) {

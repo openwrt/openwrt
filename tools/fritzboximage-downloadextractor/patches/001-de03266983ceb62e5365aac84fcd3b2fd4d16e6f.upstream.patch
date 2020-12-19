@@ -1,0 +1,57 @@
+From de03266983ceb62e5365aac84fcd3b2fd4d16e6f Mon Sep 17 00:00:00 2001
+From: Phillip Lougher <phillip@squashfs.org.uk>
+Date: Thu, 18 Sep 2014 01:28:11 +0100
+Subject: [PATCH] mksquashfs: fix rare race in fragment waiting in filesystem
+ finalisation
+
+Fix a rare race condition in fragment waiting when finalising the
+filesystem.  This is a race condition that was initially fixed in 2009,
+but inadvertantly re-introduced in the latest release when the code
+was rewritten.
+
+Background:
+
+When finalising the filesystem, the main control thread needs to ensure
+all the in-flight fragments have been queued to the writer thread before
+asking the writer thread to finish, and then writing the metadata.
+
+It does this by waiting on the fragments_outstanding counter.  Once this
+counter reaches 0, it synchronises with the writer thread, waiting until
+the writer thread reports no outstanding data to be written.
+
+However, the main thread can race with the fragment deflator thread(s)
+because the fragment deflator thread(s) decrement the fragments_outstanding
+counter and release the mutex before queueing the compressed fragment
+to the writer thread, i.e. the offending code is:
+
+                        fragments_outstanding --;
+                        pthread_mutex_unlock(&fragment_mutex);
+                        queue_put(to_writer, write_buffer);
+
+In extremely rare circumstances, the main thread may see the
+fragments_outstanding counter is zero before the fragment
+deflator sends the fragment buffer to the writer thread, and synchronise
+with the writer thread, and finalise before the fragment has been written.
+
+The fix is to ensure the fragment is queued to the writer thread
+before releasing the mutex.
+
+Signed-off-by: Phillip Lougher <phillip@squashfs.org.uk>
+---
+ squashfs-tools/mksquashfs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git squashfs-tools/mksquashfs.c squashfs-tools/mksquashfs.c
+index 87b7d86..f1fcff1 100644
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -2445,8 +2445,8 @@ void *frag_deflator(void *arg)
+ 			write_buffer->block = bytes;
+ 			bytes += compressed_size;
+ 			fragments_outstanding --;
+-			pthread_mutex_unlock(&fragment_mutex);
+ 			queue_put(to_writer, write_buffer);
++			pthread_mutex_unlock(&fragment_mutex);
+ 			TRACE("Writing fragment %lld, uncompressed size %d, "
+ 				"compressed size %d\n", file_buffer->block,
+ 				file_buffer->size, compressed_size);

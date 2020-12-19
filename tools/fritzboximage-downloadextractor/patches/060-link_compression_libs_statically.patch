@@ -1,0 +1,57 @@
+--- a/squashfs-tools/Makefile
++++ b/squashfs-tools/Makefile
+@@ -122,12 +122,17 @@
+ 	-D_LARGEFILE_SOURCE -D_GNU_SOURCE -DCOMP_DEFAULT=\"$(COMP_DEFAULT)\" \
+ 	-Wall
+ 
++ifeq ($(LINK_COMPRESSION_LIBS_STATICALLY),1)
++LINK_STATICALLY_PRE:=-Wl,-Bstatic
++LINK_STATICALLY_POST:=-Wl,-Bdynamic
++endif
++
+ LIBS = -lpthread -lm
+ ifeq ($(GZIP_SUPPORT),1)
+ CFLAGS += -DGZIP_SUPPORT
+ MKSQUASHFS_OBJS += gzip_wrapper.o
+ UNSQUASHFS_OBJS += gzip_wrapper.o
+-LIBS += -lz
++LIBS += $(LINK_STATICALLY_PRE) -lz $(LINK_STATICALLY_POST)
+ COMPRESSORS += gzip
+ endif
+ 
+@@ -145,7 +150,7 @@
+ CFLAGS += -DLZMA_SUPPORT
+ MKSQUASHFS_OBJS += lzma_xz_wrapper.o
+ UNSQUASHFS_OBJS += lzma_xz_wrapper.o
+-LIBS += -llzma
++LIBS += $(LINK_STATICALLY_PRE) -llzma $(LINK_STATICALLY_POST)
+ COMPRESSORS += lzma
+ endif
+ 
+@@ -158,7 +163,7 @@
+ CFLAGS += -DXZ_SUPPORT
+ MKSQUASHFS_OBJS += xz_wrapper.o
+ UNSQUASHFS_OBJS += xz_wrapper.o
+-LIBS += -llzma
++LIBS += $(LINK_STATICALLY_PRE) -llzma $(LINK_STATICALLY_POST)
+ COMPRESSORS += xz
+ endif
+ 
+@@ -170,7 +175,7 @@
+ endif
+ MKSQUASHFS_OBJS += lzo_wrapper.o
+ UNSQUASHFS_OBJS += lzo_wrapper.o
+-LIBS += $(LZO_LIBDIR) -llzo2
++LIBS += $(LZO_LIBDIR) $(LINK_STATICALLY_PRE) -llzo2 $(LINK_STATICALLY_POST)
+ COMPRESSORS += lzo
+ endif
+ 
+@@ -178,7 +183,7 @@
+ CFLAGS += -DLZ4_SUPPORT
+ MKSQUASHFS_OBJS += lz4_wrapper.o
+ UNSQUASHFS_OBJS += lz4_wrapper.o
+-LIBS += -llz4
++LIBS += $(LINK_STATICALLY_PRE) -llz4 $(LINK_STATICALLY_POST)
+ COMPRESSORS += lz4
+ endif
+ 

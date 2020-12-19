@@ -1,0 +1,24 @@
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -34,6 +34,9 @@
+ #include <stdio.h>
+ #include <stddef.h>
+ #include <sys/types.h>
++#if defined(__linux__)
++#include <sys/sysmacros.h>
++#endif
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ #include <errno.h>
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -34,6 +34,9 @@
+ 
+ #include <sys/sysinfo.h>
+ #include <sys/types.h>
++#if defined(__linux__)
++#include <sys/sysmacros.h>
++#endif
+ #include <sys/time.h>
+ #include <sys/resource.h>
+ #include <limits.h>

@@ -1,0 +1,80 @@
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -74,6 +74,20 @@
+ #include "read_fs.h"
+ #include "process_fragments.h"
+ 
++#if TARGET_FORMAT == AVM_BE
++
++#if   __BYTE_ORDER == __LITTLE_ENDIAN
++#define _SQUASHFS_SWAP_SHORTS(s, d, n) memcpy(d, s, n * sizeof(short))
++#elif __BYTE_ORDER == __BIG_ENDIAN
++#define _SQUASHFS_SWAP_SHORTS(s, d, n) swap_le16_num(s, d, n)
++#else
++#error "Unexpected/unsupported byte order"
++#endif
++
++#else
++#define _SQUASHFS_SWAP_SHORTS(s, d, n) SQUASHFS_SWAP_SHORTS(s, d, n)
++#endif
++
+ int fd;
+ struct squashfs_super_block sBlk;
+ 
+@@ -374,7 +388,7 @@
+ 			data_cache, SQUASHFS_METADATA_SIZE,
+ 			SQUASHFS_METADATA_SIZE, noI, 0);
+ 		TRACE("Inode block @ 0x%x, size %d\n", inode_bytes, c_byte);
+-		SQUASHFS_SWAP_SHORTS(&c_byte, inode_table + inode_bytes, 1);
++		_SQUASHFS_SWAP_SHORTS(&c_byte, inode_table + inode_bytes, 1);
+ 		inode_bytes += SQUASHFS_COMPRESSED_SIZE(c_byte) + BLOCK_OFFSET;
+ 		total_inode_bytes += SQUASHFS_METADATA_SIZE + BLOCK_OFFSET;
+ 		memmove(data_cache, data_cache + SQUASHFS_METADATA_SIZE,
+@@ -515,7 +529,7 @@
+ 		c_byte = mangle(inode_table + inode_bytes + BLOCK_OFFSET, datap,
+ 			avail_bytes, SQUASHFS_METADATA_SIZE, noI, 0);
+ 		TRACE("Inode block @ 0x%x, size %d\n", inode_bytes, c_byte);
+-		SQUASHFS_SWAP_SHORTS(&c_byte, inode_table + inode_bytes, 1); 
++		_SQUASHFS_SWAP_SHORTS(&c_byte, inode_table + inode_bytes, 1);
+ 		inode_bytes += SQUASHFS_COMPRESSED_SIZE(c_byte) + BLOCK_OFFSET;
+ 		total_inode_bytes += avail_bytes + BLOCK_OFFSET;
+ 		datap += avail_bytes;
+@@ -554,7 +568,7 @@
+ 			SQUASHFS_METADATA_SIZE, noI, 0);
+ 		TRACE("Directory block @ 0x%x, size %d\n", directory_bytes,
+ 			c_byte);
+-		SQUASHFS_SWAP_SHORTS(&c_byte,
++		_SQUASHFS_SWAP_SHORTS(&c_byte,
+ 			directory_table + directory_bytes, 1);
+ 		directory_bytes += SQUASHFS_COMPRESSED_SIZE(c_byte) +
+ 			BLOCK_OFFSET;
+@@ -581,7 +595,11 @@
+ 		SQUASHFS_SWAP_INTS(&id_table[i]->id, p + i, 1);
+ 	}
+ 
++#if TARGET_FORMAT == AVM_BE
++	return generic_write_table(id_bytes, p, 0, NULL, TRUE); /* AVM-BE always uncompressed */
++#else
+ 	return generic_write_table(id_bytes, p, 0, NULL, noI);
++#endif
+ }
+ 
+ 
+@@ -1195,7 +1213,7 @@
+ 				noI, 0);
+ 		TRACE("Directory block @ 0x%x, size %d\n", directory_bytes,
+ 			c_byte);
+-		SQUASHFS_SWAP_SHORTS(&c_byte,
++		_SQUASHFS_SWAP_SHORTS(&c_byte,
+ 			directory_table + directory_bytes, 1);
+ 		directory_bytes += SQUASHFS_COMPRESSED_SIZE(c_byte) +
+ 			BLOCK_OFFSET;
+@@ -1569,7 +1587,7 @@
+ 		c_byte = mangle(cbuffer + BLOCK_OFFSET, buffer + i *
+ 			SQUASHFS_METADATA_SIZE , avail_bytes,
+ 			SQUASHFS_METADATA_SIZE, uncompressed, 0);
+-		SQUASHFS_SWAP_SHORTS(&c_byte, cbuffer, 1);
++		_SQUASHFS_SWAP_SHORTS(&c_byte, cbuffer, 1);
+ 		list[i] = bytes;
+ 		compressed_size = SQUASHFS_COMPRESSED_SIZE(c_byte) +
+ 			BLOCK_OFFSET;

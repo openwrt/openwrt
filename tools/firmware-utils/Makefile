@@ -91,6 +91,7 @@ define Host/Compile
 	$(call cc,trx2edips)
 	$(call cc,trx2usr)
 	$(call cc,uimage_padhdr,-Wall -lz)
+	$(call cc,wasp-checksum, -Wall --std=gnu99)
 	$(call cc,wrt400n cyg_crc32)
 	$(call cc,xorimage)
 	$(call cc,zyimage,-Wall)

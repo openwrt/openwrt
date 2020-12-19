@@ -9,6 +9,27 @@ DEVICE_VARS += KERNEL_INITRAMFS_PREFIX
 DEVICE_VARS += DAP_SIGNATURE ENGENIUS_IMGNAME
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
 
+define Build/loader-wasp-compile
+       rm -rf $@.src
+       $(MAKE) -C lzma-loader \
+               PKG_BUILD_DIR="$@.src" \
+               TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
+               LZMA_TEXT_START=0x81a00000 LOADADDR=0x80020000 \
+               $(1) compile loader.$(LOADER_TYPE)
+       mv "$@.$(LOADER_TYPE)" "$@"
+       rm -rf $@.src
+endef
+
+define Build/wasp-checksum
+       $(STAGING_DIR_HOST)/bin/wasp-checksum \
+               -i "$@" -o "$@.new" -m $(word 1,$(1))
+       mv "$@.new" "$@"
+endef
+
+define Build/loader-kernel-wasp
+       $(call Build/loader-wasp-compile,LOADER_DATA="$@")
+endef
+
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
   $(eval product=$(word 2,$(1)))
@@ -362,6 +383,20 @@ define Device/avm_fritz4020
   SUPPORTED_DEVICES += fritz4020
 endef
 TARGET_DEVICES += avm_fritz4020
+
+define Device/avm_fritz7490_wasp
+  SOC := qca9558
+  DEVICE_VENDOR := AVM
+  DEVICE_MODEL := FRITZ!Box 7490 WASP
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | \
+      loader-kernel-wasp | pad-to 4096 | pad-extra 208 | wasp-checksum 7490
+  LOADER_TYPE := bin
+  KERNEL_INITRAMFS := $$(KERNEL)
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct-full-htt \
+	kmod-owl-loader wasp_downloader wpad -wpad-basic-wolfssl \
+	-uboot-envtools -swconfig -ppp -kmod-ppp
+endef
+TARGET_DEVICES += avm_fritz7490_wasp
 
 define Device/avm_fritz450e
   $(Device/avm)

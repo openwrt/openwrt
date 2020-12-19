@@ -31,6 +31,7 @@ tools-$(BUILD_ISL) += isl
 tools-$(BUILD_TOOLCHAIN) += expat gmp libelf mpc mpfr
 tools-$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini) += genext2fs
 tools-$(CONFIG_TARGET_ath79) += lzma-old squashfs
+tools-$(CONFIG_TARGET_lantiq_xrx200_DEVICE_avm_fritz7490) += fritzboximage-downloadextractor
 tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
 tools-$(CONFIG_TARGET_tegra) += cbootimage cbootimage-configs
 tools-$(CONFIG_TARGET_x86) += qemu
