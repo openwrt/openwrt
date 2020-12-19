@@ -433,7 +433,7 @@ endef
 TARGET_DEVICES += tenda_ac9
 
 define Device/tplink_archer-c5-v2
-  DEVICE_VENDOR := TP-LINK
+  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer C5
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
@@ -445,7 +445,7 @@ endef
 TARGET_DEVICES += tplink_archer-c5-v2
 
 define Device/tplink_archer-c9-v1
-  DEVICE_VENDOR := TP-LINK
+  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer C9
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := $(USB3_PACKAGES)
