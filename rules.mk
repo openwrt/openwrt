@@ -77,7 +77,7 @@ IS_PACKAGE_BUILD := $(if $(filter package/%,$(BUILD_SUBDIR)),1)
 
 OPTIMIZE_FOR_CPU=$(subst i386,i486,$(ARCH))
 
-ifeq ($(ARCH),powerpc)
+ifneq (,$(findstring $(ARCH) , aarch64 aarch64_be powerpc ))
   FPIC:=-fPIC
 else
   FPIC:=-fpic

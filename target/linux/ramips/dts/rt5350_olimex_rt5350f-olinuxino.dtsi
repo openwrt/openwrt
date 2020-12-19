@@ -49,10 +49,6 @@
 	};
 };
 
-&gpio1 {
-	status = "okay";
-};
-
 &state_default {
 	gpio {
 		groups = "jtag";
@@ -76,14 +72,6 @@
 &wmac {
 	ralink,mtd-eeprom = <&factory 0x0>;
 	ralink,led-polarity = <1>;
-};
-
-&ehci {
-	status = "okay";
-};
-
-&ohci {
-	status = "okay";
 };
 
 &i2c {
