@@ -594,6 +594,7 @@ TARGET_DEVICES += mobipromo_cm520-79f
 
 define Device/netgear_ex61x0v2
 	$(call Device/DniImage)
+	DEVICE_VENDOR := NETGEAR
 	DEVICE_DTS_CONFIG := config@4
 	NETGEAR_BOARD_ID := EX6150v2series
 	NETGEAR_HW_ID := 29765285+16+0+128+2x2
@@ -603,7 +604,6 @@ endef
 
 define Device/netgear_ex6100v2
 	$(call Device/netgear_ex61x0v2)
-	DEVICE_VENDOR := Netgear
 	DEVICE_MODEL := EX6100
 	DEVICE_VARIANT := v2
 endef
@@ -611,7 +611,6 @@ TARGET_DEVICES += netgear_ex6100v2
 
 define Device/netgear_ex6150v2
 	$(call Device/netgear_ex61x0v2)
-	DEVICE_VENDOR := Netgear
 	DEVICE_MODEL := EX6150
 	DEVICE_VARIANT := v2
 endef
