@@ -44,7 +44,7 @@
 
 	virtual_flash {
 		compatible = "mtd-concat";
-		devices = <&concat0 &concat1>;
+		devices = <&fwconcat0 &fwconcat1>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -135,8 +135,8 @@
 				read-only;
 			};
 
-			concat0: partition@60000 {
-				label = "reserved1";
+			fwconcat0: partition@60000 {
+				label = "fwconcat0";
 				reg = <0x060000 0xf90000>;
 			};
 
@@ -158,8 +158,8 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			concat1: partition@0 {
-				label = "reserved2";
+			fwconcat1: partition@0 {
+				label = "fwconcat1";
 				reg = <0x0 0x1000000>;
 			};
 		};

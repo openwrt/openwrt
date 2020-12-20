@@ -82,7 +82,7 @@
 
 	ubi-concat {
 		compatible = "mtd-concat";
-		devices = <&ubipart0 &ubipart1>;
+		devices = <&ubiconcat0 &ubiconcat1>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -153,8 +153,8 @@
 			reg = <0x6c0000 0x400000>;
 		};
 
-		ubipart0: partition@ac0000 {
-			label = "ubipart0";
+		ubiconcat0: partition@ac0000 {
+			label = "ubiconcat0";
 			reg = <0xac0000 0x1500000>;
 		};
 
@@ -170,8 +170,8 @@
 			read-only;
 		};
 
-		ubipart1: partition@2000000 {
-			label = "ubipart1";
+		ubiconcat1: partition@2000000 {
+			label = "ubiconcat1";
 			reg = <0x2000000 0x6000000>;
 		};
 	};
