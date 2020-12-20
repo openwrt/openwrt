@@ -216,7 +216,7 @@ include /lib/upgrade
 do_save_conffiles() {
 	local conf_tar="$1"
 
-	[ -z "$(rootfs_type)" ] && {
+	[ "$(rootfs_type)" = "tmpfs" ] && {
 		echo "Cannot save config while running from ramdisk." >&2
 		ask_bool 0 "Abort" && exit
 		rm -f "$conf_tar"
