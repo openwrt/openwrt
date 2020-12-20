@@ -23,13 +23,13 @@ Then the WASP image is ready. I then saved the config and started from scratch f
 10. `make`
 
 Then the images are ready. Please note that if both images are too large, the ramboot process does not work anymore. Its around 11-13MB, when it does not work anymore.
-To flash the image, follow the procedure mentioned [here for the 7362](https://openwrt.org/toh/avm/avm_7362_sl), essentially configure static address (e.g. 192.168.178.2) on a device connected to the 7490, power on the 7490, start ftp to 192.168.178.1 immediately after the initial blink of all leds, logon with adam2/adam2 and exit with bye. EVA-FTP-Client.ps1 from eva-tools will also work.
+To ramboot the image, follow the procedure mentioned [here for the 7362](https://openwrt.org/toh/avm/avm_7362_sl), essentially configure static address (e.g. 192.168.178.2) on a device connected to the 7490, power on the 7490, start ftp to 192.168.178.1 immediately after the initial blink of all leds, logon with adam2/adam2 and exit with bye. EVA-FTP-Client.ps1 from eva-tools will also work.
 
 Run:
 
 11. `scripts/flashing/eva_ramboot.py 192.168.178.1 bin/targets/lantiq/xrx200/openwrt-lantiq-xrx200-avm_fritz7490-initramfs-kernel.bin`
 
-Booting for the Lantiq image is about 90-120s, then there will be additional 60-120 seconds for the WASP image. Then both Openwrt instances will be available at 192.168.1.1 and 192.168.1.2.
+Booting for the Lantiq image is about 90-120s, then there will be additional 60-120 seconds for the WASP image. Then both Openwrt instances will be available at 192.168.1.1 and 192.168.1.2 (WASP). I have tried to automate startup, but in case there are timing issues and the WASP image does not start, then you can start WASP manually using the script /opt/wasp/upload-wasp.sh.
 Have fun.
 
 Problems:
