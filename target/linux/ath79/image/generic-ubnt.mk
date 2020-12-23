@@ -67,6 +67,16 @@ define Device/ubnt-sw
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
 endef
 
+define Device/ubnt-2wa
+  $(Device/ubnt)
+  SOC := ar9342
+  IMAGE_SIZE := 15744k
+  UBNT_BOARD := WA
+  UBNT_CHIP := ar934x
+  UBNT_TYPE := 2WA
+  UBNT_VERSION := 8.5.3
+endef
+
 define Device/ubnt-wa
   $(Device/ubnt)
   SOC := ar9342
@@ -143,6 +153,13 @@ define Device/ubnt_airrouter
   SUPPORTED_DEVICES += airrouter
 endef
 TARGET_DEVICES += ubnt_airrouter
+
+define Device/ubnt_bullet-ac
+  $(Device/ubnt-2wa)
+  DEVICE_MODEL := Bullet AC
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct rssileds
+endef
+TARGET_DEVICES += ubnt_bullet-ac
 
 define Device/ubnt_bullet-m-ar7240
   $(Device/ubnt-xm)
