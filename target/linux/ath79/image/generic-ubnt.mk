@@ -110,15 +110,28 @@ define Device/ubnt-xw
   UBNT_VERSION := 6.0.4
 endef
 
-define Device/ubnt_aircube-isp
+define Device/ubnt-acb
   $(Device/ubnt)
-  SOC := qca9533
-  DEVICE_MODEL := airCube ISP
   IMAGE_SIZE := 15744k
-  UBNT_BOARD := ACB-ISP
-  UBNT_CHIP := qca9533
+  UBNT_BOARD := ACB
   UBNT_TYPE := ACB
   UBNT_VERSION := 2.5.0
+endef
+
+define Device/ubnt_aircube-ac
+  $(Device/ubnt-acb)
+  SOC := ar9342
+  DEVICE_MODEL := airCube AC
+  UBNT_CHIP := ar9342
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += ubnt_aircube-ac
+
+define Device/ubnt_aircube-isp
+  $(Device/ubnt-acb)
+  SOC := qca9533
+  DEVICE_MODEL := airCube ISP
+  UBNT_CHIP := qca9533
   SUPPORTED_DEVICES += ubnt,acb-isp
 endef
 TARGET_DEVICES += ubnt_aircube-isp

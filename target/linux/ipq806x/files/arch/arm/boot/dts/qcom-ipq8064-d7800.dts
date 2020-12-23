@@ -283,13 +283,17 @@
 &gmac1 {
 	status = "okay";
 	phy-mode = "rgmii";
-	phy-handle = <&phy4>;
 	qcom,id = <1>;
 
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
 
 	mtd-mac-address = <&art 6>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &gmac2 {

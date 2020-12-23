@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/version.mk
 include $(INCLUDE_DIR)/feeds.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=240
+PKG_RELEASE:=242
 PKG_FLAGS:=nonshared
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
@@ -202,6 +202,9 @@ define Package/base-files/install
 		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
 	$(if $(CONFIG_IPK_FILES_CHECKSUMS),, \
 		rm -f $(1)/sbin/pkg_check)
+
+	$(if $(CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE), \
+		rm -f $(1)/etc/banner.failsafe,)
 endef
 
 ifneq ($(DUMP),1)

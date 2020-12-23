@@ -317,6 +317,25 @@ define Device/compex_wpj428
 endef
 TARGET_DEVICES += compex_wpj428
 
+define Device/devolo_magic-2-wifi-next
+	$(call Device/FitImage)
+	DEVICE_VENDOR := devolo
+	DEVICE_MODEL := Magic 2 WiFi next
+	SOC := qcom-ipq4018
+	KERNEL_SIZE := 4096k
+
+	# If the bootloader sees 0xDEADC0DE and this trailer at the 64k boundary of a TFTP image
+	# it will bootm it, just like we want for the initramfs.
+	KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to 64k |\
+		append-string -e '\xDE\xAD\xC0\xDE{"fl_initramfs":""}\x00'
+
+	IMAGE_SIZE := 26624k
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-devolo_magic-2-wifi-next uboot-envtools
+endef
+TARGET_DEVICES += devolo_magic-2-wifi-next
+
 define Device/dlink_dap-2610
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := D-Link
@@ -594,6 +613,7 @@ TARGET_DEVICES += mobipromo_cm520-79f
 
 define Device/netgear_ex61x0v2
 	$(call Device/DniImage)
+	DEVICE_VENDOR := NETGEAR
 	DEVICE_DTS_CONFIG := config@4
 	NETGEAR_BOARD_ID := EX6150v2series
 	NETGEAR_HW_ID := 29765285+16+0+128+2x2
@@ -603,7 +623,6 @@ endef
 
 define Device/netgear_ex6100v2
 	$(call Device/netgear_ex61x0v2)
-	DEVICE_VENDOR := Netgear
 	DEVICE_MODEL := EX6100
 	DEVICE_VARIANT := v2
 endef
@@ -611,7 +630,6 @@ TARGET_DEVICES += netgear_ex6100v2
 
 define Device/netgear_ex6150v2
 	$(call Device/netgear_ex61x0v2)
-	DEVICE_VENDOR := Netgear
 	DEVICE_MODEL := EX6150
 	DEVICE_VARIANT := v2
 endef
@@ -648,6 +666,38 @@ define Device/openmesh_a62
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct uboot-envtools
 endef
 TARGET_DEVICES += openmesh_a62
+
+define Device/plasmacloud_pa1200
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Plasma Cloud
+	DEVICE_MODEL := PA1200
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@pc.pa1200
+	BLOCKSIZE := 64k
+	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
+	IMAGE_SIZE := 15616k
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA1200
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := uboot-envtools ipq-wifi-plasmacloud-pa1200
+endef
+TARGET_DEVICES += plasmacloud_pa1200
+
+define Device/plasmacloud_pa2200
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Plasma Cloud
+	DEVICE_MODEL := PA2200
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@pc.pa2200
+	BLOCKSIZE := 64k
+	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
+	IMAGE_SIZE := 15552k
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA2200
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-plasmacloud-pa2200 uboot-envtools
+endef
+TARGET_DEVICES += plasmacloud_pa2200
 
 define Device/qcom_ap-dk01.1-c1
 	DEVICE_VENDOR := Qualcomm Atheros
