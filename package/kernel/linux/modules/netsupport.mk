@@ -947,6 +947,24 @@ endef
 $(eval $(call KernelPackage,tcp-bbr))
 
 
+define KernelPackage/tcp-hybla
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=TCP-Hybla congestion control algorithm
+  KCONFIG:=CONFIG_TCP_CONG_HYBLA
+  FILES:=$(LINUX_DIR)/net/ipv4/tcp_hybla.ko
+  AUTOLOAD:=$(call AutoProbe,tcp_hybla)
+endef
+
+define KernelPackage/tcp-hybla/description
+  TCP-Hybla is a sender-side only change that eliminates penalization of
+  long-RTT, large-bandwidth connections, like when satellite legs are
+  involved, especially when sharing a common bottleneck with normal
+  terrestrial connections.
+endef
+
+$(eval $(call KernelPackage,tcp-hybla))
+
+
 define KernelPackage/ax25
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=AX25 support
