@@ -19,6 +19,8 @@ include $(INCLUDE_DIR)/host-build.mk
 
 unexport PKG_CONFIG
 
+HOSTCC := $(HOSTCC_NOCACHE)
+
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) install
 	mv $(STAGING_DIR_HOST)/bin/pkgconf $(STAGING_DIR_HOST)/bin/pkg-config.real
