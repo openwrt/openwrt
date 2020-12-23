@@ -23,6 +23,7 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOSTCC := $(HOSTCC_NOCACHE)
 HOST_CONFIGURE_ARGS += --enable-static --disable-shared --disable-tests
 HOST_CFLAGS += $(FPIC)
 
