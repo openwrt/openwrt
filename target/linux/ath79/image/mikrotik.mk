@@ -53,3 +53,12 @@ define Device/mikrotik_routerboard-wap-g-5hact2hnd
   SUPPORTED_DEVICES += rb-wapg-5hact2hnd
 endef
 TARGET_DEVICES += mikrotik_routerboard-wap-g-5hact2hnd
+
+define Device/mikrotik_routerboard-wapr-2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := RouterBOARD wAPR-2nD (wAP R)
+  DEVICE_PACKAGES += rssileds
+  IMAGE_SIZE := 16256k
+endef
+TARGET_DEVICES += mikrotik_routerboard-wapr-2nd

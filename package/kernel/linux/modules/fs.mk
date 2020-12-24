@@ -90,19 +90,22 @@ define KernelPackage/fs-cifs
   KCONFIG:= \
 	CONFIG_CIFS \
 	CONFIG_CIFS_DFS_UPCALL=n \
-	CONFIG_CIFS_UPCALL=n \
-	CONFIG_CIFS_SMB311=n
+	CONFIG_CIFS_UPCALL=n
   FILES:=$(LINUX_DIR)/fs/cifs/cifs.ko
   AUTOLOAD:=$(call AutoLoad,30,cifs)
   $(call AddDepends/nls)
   DEPENDS+= \
-    +kmod-crypto-arc4 \
-    +kmod-crypto-hmac \
-    +kmod-crypto-md5 \
     +kmod-crypto-md4 \
-    +kmod-crypto-des \
+    +kmod-crypto-md5 \
+    +kmod-crypto-sha256 \
+    +kmod-crypto-sha512 \
+    +kmod-crypto-cmac \
+    +kmod-crypto-hmac \
+    +kmod-crypto-arc4 \
+    +kmod-crypto-aead \
+    +kmod-crypto-ccm \
     +kmod-crypto-ecb \
-    +kmod-crypto-sha256
+    +kmod-crypto-des
 endef
 
 define KernelPackage/fs-cifs/description

@@ -59,19 +59,12 @@ static void rtl838x_restart(char *command)
 	sw_w32(1, RTL838X_RST_GLB_CTRL_1);
 }
 
-static void rtl838x_halt(void)
-{
-	pr_info("System halted.\n");
-	while(1);
-}
-
 void __init plat_mem_setup(void)
 {
 	void *dtb;
 
 	set_io_port_base(KSEG1);
 	_machine_restart = rtl838x_restart;
-	_machine_halt = rtl838x_halt;
 
 	if (fw_passed_dtb) /* UHI interface */
 		dtb = (void *)fw_passed_dtb;

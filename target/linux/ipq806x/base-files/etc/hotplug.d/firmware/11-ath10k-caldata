@@ -9,6 +9,9 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/pre-cal-pci-0000:01:00.0.bin")
 	case $board in
+	asrock,g10)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		;;
 	buffalo,wxr-2533dhp)
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary ART 0x1e)
@@ -47,6 +50,9 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0001:01:00.0.bin")
 	case $board in
+	asrock,g10)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		;;
 	buffalo,wxr-2533dhp)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary ART 0x18)

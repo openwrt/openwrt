@@ -36,7 +36,8 @@ case "$FIRMWARE" in
 		ath10k_patch_mac $(mtd_get_mac_binary ORGDATA 0x32)
 		;;
 	engenius,eap2200 |\
-	openmesh,a62)
+	openmesh,a62 |\
+	plasmacloud,pa2200)
 		caldata_extract "0:ART" 0x9000 0x2f20
 		;;
 	linksys,ea8300 |\
@@ -101,10 +102,16 @@ case "$FIRMWARE" in
 	luma,wrtq-329acn|\
 	openmesh,a42 |\
 	openmesh,a62 |\
+	plasmacloud,pa1200 |\
+	plasmacloud,pa2200 |\
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2 |\
 	unielec,u4019-32m)
 		caldata_extract "0:ART" 0x1000 0x2f20
+		;;
+	devolo,magic-2-wifi-next)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii APPSBLENV WiFiMacAddress0)
 		;;
 	dlink,dap-2610)
 		caldata_extract "ART" 0x1000 0x2f20
@@ -198,10 +205,16 @@ case "$FIRMWARE" in
 	luma,wrtq-329acn|\
 	openmesh,a42 |\
 	openmesh,a62 |\
+	plasmacloud,pa1200 |\
+	plasmacloud,pa2200 |\
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2 |\
 	unielec,u4019-32m)
 		caldata_extract "0:ART" 0x5000 0x2f20
+		;;
+	devolo,magic-2-wifi-next)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii APPSBLENV WiFiMacAddress1)
 		;;
 	dlink,dap-2610)
 		caldata_extract "ART" 0x5000 0x2f20

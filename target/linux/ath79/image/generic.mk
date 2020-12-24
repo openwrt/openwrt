@@ -75,6 +75,7 @@ endef
 define Build/engenius-tar-gz
 	-[ -f "$@" ] && \
 	mkdir -p $@.tmp && \
+	touch $@.tmp/failsafe.bin && \
 	echo '#!/bin/sh' > $@.tmp/before-upgrade.sh && \
 	echo ': > /tmp/_sys/sysupgrade.tgz' >> $@.tmp/before-upgrade.sh && \
 	$(CP) $(KDIR)/loader-$(DEVICE_NAME).uImage \
@@ -236,6 +237,20 @@ define Device/adtran_bsap1840
   DEVICE_MODEL := BSAP-1840
 endef
 TARGET_DEVICES += adtran_bsap1840
+
+define Device/airtight_c-75
+  SOC := qca9550
+  DEVICE_VENDOR := AirTight Networks
+  DEVICE_MODEL := C-75
+  DEVICE_ALT0_VENDOR := Mojo Networks
+  DEVICE_ALT0_MODEL := C-75
+  DEVICE_ALT1_VENDOR := WatchGuard
+  DEVICE_ALT1_MODEL := AP320
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2
+  IMAGE_SIZE := 32320k
+  KERNEL_SIZE := 15936k
+endef
+TARGET_DEVICES += airtight_c-75
 
 define Device/alfa-network_ap121f
   SOC := ar9331
@@ -724,6 +739,28 @@ define Device/dlink_dap-1365-a1
 endef
 TARGET_DEVICES += dlink_dap-1365-a1
 
+define Device/dlink_dap-2xxx
+  IMAGES += factory.img sysupgrade.bin
+  IMAGE/factory.img := append-kernel | pad-offset 6144k 160 | \
+	append-rootfs | wrgg-pad-rootfs | mkwrggimg | check-size
+  IMAGE/sysupgrade.bin := append-kernel | mkwrggimg | \
+	pad-to $$$$(BLOCKSIZE) | append-rootfs | append-metadata | check-size
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | mkwrggimg
+endef
+
+define Device/dlink_dap-2660-a1
+  $(Device/dlink_dap-2xxx)
+  SOC := qca9557
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-2660
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 15232k
+  DAP_SIGNATURE := wapac09_dkbs_dap2660
+endef
+TARGET_DEVICES += dlink_dap-2660-a1
+
 define Device/dlink_dap-2695-a1
   SOC := qca9558
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
@@ -928,19 +965,42 @@ define Device/engenius_eap300-v2
 endef
 TARGET_DEVICES += engenius_eap300-v2
 
+define Device/engenius_ecb1200
+  SOC := qca9557
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ECB1200
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 15680k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x101 -p 0x6e -t 2
+endef
+TARGET_DEVICES += engenius_ecb1200
+
 define Device/engenius_ecb1750
   SOC := qca9558
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ECB1750
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
   IMAGE_SIZE := 15680k
+  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size | \
 	senao-header -r 0x101 -p 0x6d -t 2
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
-	append-metadata | check-size
 endef
 TARGET_DEVICES += engenius_ecb1750
+
+define Device/engenius_ecb350-v1
+  $(Device/engenius_loader_okli)
+  SOC := ar7242
+  DEVICE_MODEL := ECB350
+  DEVICE_VARIANT := v1
+  IMAGE_SIZE := 4864k
+  LOADER_FLASH_OFFS := 0x1b0000
+  ENGENIUS_IMGNAME := senao-ecb350
+endef
+TARGET_DEVICES += engenius_ecb350-v1
 
 define Device/engenius_enh202-v1
   $(Device/engenius_loader_okli)
@@ -965,6 +1025,18 @@ define Device/engenius_ens202ext-v1
   ENGENIUS_IMGNAME := senao-ens202ext
 endef
 TARGET_DEVICES += engenius_ens202ext-v1
+
+define Device/engenius_enstationac-v1
+  $(Device/engenius_loader_okli)
+  SOC := qca9557
+  DEVICE_MODEL := EnStationAC
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct rssileds
+  IMAGE_SIZE := 11520k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := ar71xx-generic-enstationac
+endef
+TARGET_DEVICES += engenius_enstationac-v1
 
 define Device/engenius_epg5000
   SOC := qca9558
@@ -1084,6 +1156,15 @@ define Device/glinet_gl-mifi
   SUPPORTED_DEVICES += gl-mifi
 endef
 TARGET_DEVICES += glinet_gl-mifi
+
+define Device/glinet_gl-usb150
+  SOC := ar9331
+  DEVICE_VENDOR := GL.iNET
+  DEVICE_MODEL := GL-USB150
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-usb150
+endef
+TARGET_DEVICES += glinet_gl-usb150
 
 define Device/glinet_gl-x750
   SOC := qca9531
@@ -1532,6 +1613,30 @@ define Device/pisen_wmm003n
   TPLINK_HWID := 0x07030101
 endef
 TARGET_DEVICES += pisen_wmm003n
+
+define Device/plasmacloud_pa300-common
+  SOC := qca9533
+  DEVICE_VENDOR := Plasma Cloud
+  DEVICE_PACKAGES := uboot-envtools
+  IMAGE_SIZE := 7168k
+  BLOCKSIZE := 64k
+  IMAGES += factory.bin
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-to $$(BLOCKSIZE)
+  IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA300
+  IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+
+define Device/plasmacloud_pa300
+  $(Device/plasmacloud_pa300-common)
+  DEVICE_MODEL := PA300
+endef
+TARGET_DEVICES += plasmacloud_pa300
+
+define Device/plasmacloud_pa300e
+  $(Device/plasmacloud_pa300-common)
+  DEVICE_MODEL := PA300E
+endef
+TARGET_DEVICES += plasmacloud_pa300e
 
 define Device/qihoo_c301
   $(Device/seama)
