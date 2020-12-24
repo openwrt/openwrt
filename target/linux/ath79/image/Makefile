@@ -67,6 +67,7 @@ define Device/Default
   COMPILE :=
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGES := sysupgrade.bin
+  $$(foreach var,$$(filter IMAGE/%,$$(.VARIABLES)),$$(eval undefine $$(var)))
   IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
