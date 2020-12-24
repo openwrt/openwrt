@@ -928,7 +928,7 @@ define KernelPackage/tcp-bbr
   TITLE:=BBR TCP congestion control
   KCONFIG:=CONFIG_TCP_CONG_BBR
   FILES:=$(LINUX_DIR)/net/ipv4/tcp_bbr.ko
-  AUTOLOAD:=$(call AutoLoad,74,tcp_bbr)
+  AUTOLOAD:=$(call AutoProbe,tcp_bbr)
 endef
 
 define KernelPackage/tcp-bbr/description
