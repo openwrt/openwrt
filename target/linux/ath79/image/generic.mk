@@ -1623,7 +1623,7 @@ define Device/plasmacloud_pa300-common
   IMAGES += factory.bin
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-to $$(BLOCKSIZE)
   IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA300
-  IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 
 define Device/plasmacloud_pa300
