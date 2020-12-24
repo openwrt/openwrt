@@ -240,6 +240,16 @@ define Device/cudy_wr1300
 endef
 TARGET_DEVICES += cudy_wr1300
 
+define Device/cudy_wr2100
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR2100
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R11
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += cudy_wr2100
+
 define Device/dlink_dir-8xx-a1
   $(Device/dsa-migration)
   IMAGE_SIZE := 16000k
