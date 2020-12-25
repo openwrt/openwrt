@@ -1,0 +1,11 @@
+--- a/eoip.c.orig	2013-09-25 22:50:48.272763057 +0200
++++ b/eoip.c	2013-09-25 22:51:03.804762840 +0200
+@@ -430,7 +430,7 @@
+ 	exit(1);
+ 
+     mfd = fopen(pidfile, "w");
+-    fprintf(mfd,"%d", getpid());
++    fprintf(mfd,"%d\n", getpid());
+     fclose(mfd);
+ 
+     /* structure of Mikrotik EoIP:
