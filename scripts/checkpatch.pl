@@ -2355,7 +2355,7 @@ sub process {
 	my $commit_log_possible_stack_dump = 0;
 	my $commit_log_long_line = 0;
 	my $commit_log_has_diff = 0;
-	my $reported_maintainer_file = 0;
+	my $reported_maintainer_file = 1;
 	my $non_utf8_charset = 0;
 
 	my $last_blank_line = 0;

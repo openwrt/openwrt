@@ -10,6 +10,12 @@ case "$board" in
 mikrotik,routerboard-lhg-2nd)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
+mikrotik,routerboard-wapr-2nd)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "rssilow" "green:rssilow" "wlan0" "1" "100"
+	ucidef_set_led_rssi "rssimedium" "rssimedium" "green:rssimedium" "wlan0" "33" "100"
+	ucidef_set_led_rssi "rssihigh" "rssihigh" "green:rssihigh" "wlan0" "66" "100"
+	;;
 mikrotik,routerboard-sxt-5nd-r2)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "rssilow" "green:rssilow" "wlan0" "1" "100"

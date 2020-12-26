@@ -95,7 +95,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	netif_tx_start_all_queues(port->dev);
-@@ -5124,8 +5128,11 @@ static void mvpp2_mac_config(struct phyl
+@@ -5125,8 +5129,11 @@ static void mvpp2_mac_config(struct phyl
  	mvpp2_port_enable(port);
  }
  
@@ -111,7 +111,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct mvpp2_port *port = netdev_priv(dev);
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -448,9 +448,10 @@ static void mtk_mac_link_down(struct phy
+@@ -449,9 +449,10 @@ static void mtk_mac_link_down(struct phy
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
  }
  

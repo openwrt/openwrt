@@ -17,12 +17,12 @@ Signed-off-by: Nick Hainke <vincent@systemli.org>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -1981,7 +1981,7 @@ static int sr2_bit7_quad_enable(struct s
+@@ -1985,7 +1985,7 @@ static int sr2_bit7_quad_enable(struct s
  static int spi_nor_clear_sr_bp(struct spi_nor *nor)
  {
  	int ret;
 -	u8 mask = SR_BP2 | SR_BP1 | SR_BP0;
 +	u8 mask = SR_TB | SR_BP2 | SR_BP1 | SR_BP0;
  
- 	ret = read_sr(nor);
- 	if (ret < 0) {
+ 	if (nor->flags & SNOR_F_HAS_4BIT_BP)
+ 		mask |= SR_BP3;

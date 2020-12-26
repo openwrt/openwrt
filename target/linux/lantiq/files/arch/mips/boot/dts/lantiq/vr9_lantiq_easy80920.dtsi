@@ -96,7 +96,7 @@
 };
 
 &eth0 {
-	lan: interface@0 {
+	interface@0 {
 		compatible = "lantiq,xrx200-pdi";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -129,7 +129,7 @@
 		};
 	};
 
-	wan: interface@1 {
+	interface@1 {
 		compatible = "lantiq,xrx200-pdi";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -262,7 +262,6 @@
 	status = "okay";
 
 	lantiq,shadow = <0xffff>;
-	lantiq,groups = <0x7>;
 	lantiq,dsl = <0x3>;
 	lantiq,phy1 = <0x7>;
 	lantiq,phy2 = <0x7>;

@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+Date: Mon, 30 Nov 2020 11:07:47 +0800
+Subject: [PATCH] bcm63xx: enetsw: switch to netdev_alloc_skb_ip_align
+
+Increases packet processing performance by 30%.
+Tested on BCM6328 320 MHz and iperf3 -M 512 for packet/sec performance.
+
+Before:
+[ ID] Interval           Transfer     Bandwidth       Retr
+[  4]   0.00-30.00  sec   120 MBytes  33.7 Mbits/sec  277             sender
+[  4]   0.00-30.00  sec   120 MBytes  33.5 Mbits/sec                  receiver
+
+After:
+[ ID] Interval           Transfer     Bandwidth       Retr
+[  4]   0.00-30.00  sec   155 MBytes  43.3 Mbits/sec  354             sender
+[  4]   0.00-30.00  sec   154 MBytes  43.1 Mbits/sec                  receiver
+
+Signed-off-by: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+---
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c | 6 +++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -239,7 +239,10 @@ static int bcm_enet_refill_rx(struct net
+ 		desc = &priv->rx_desc_cpu[desc_idx];
+ 
+ 		if (!priv->rx_skb[desc_idx]) {
+-			skb = netdev_alloc_skb(dev, priv->rx_skb_size);
++			if (priv->enet_is_sw)
++				skb = netdev_alloc_skb_ip_align(dev, priv->rx_skb_size);
++			else
++				skb = netdev_alloc_skb(dev, priv->rx_skb_size);
+ 			if (!skb)
+ 				break;
+ 			priv->rx_skb[desc_idx] = skb;

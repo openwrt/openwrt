@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := firmware-utils
-PKG_RELEASE := 5
+PKG_RELEASE := 7
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -84,6 +84,7 @@ define Host/Compile
 	$(call cc,pc1crypt)
 	$(call cc,ptgen cyg_crc32)
 	$(call cc,seama md5)
+	$(call cc,sign_dlink_ru md5,-Wall)
 	$(call cc,spw303v)
 	$(call cc,srec2bin)
 	$(call cc,tplink-safeloader md5,-Wall --std=gnu99)

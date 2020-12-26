@@ -69,6 +69,7 @@ platform_do_upgrade() {
 	edgecore,ecw5211 |\
 	edgecore,oap100 |\
 	engenius,eap2200 |\
+	glinet,gl-ap1300 |\
 	luma,wrtq-329acn |\
 	mobipromo,cm520-79f |\
 	pangubox,pgb-m5 |\
@@ -112,9 +113,11 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	openmesh,a42 |\
-	openmesh,a62)
+	openmesh,a62 |\
+	plasmacloud,pa1200 |\
+	plasmacloud,pa2200)
 		PART_NAME="inactive"
-		platform_do_upgrade_openmesh "$1"
+		platform_do_upgrade_dualboot_datachk "$1"
 		;;
 	zyxel,nbg6617)
 		zyxel_do_upgrade "$1"

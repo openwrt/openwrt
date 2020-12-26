@@ -1,0 +1,53 @@
+From 1606f78dc82e4f311ca5844a0605a62cd141a072 Mon Sep 17 00:00:00 2001
+From: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+Date: Mon, 30 Nov 2020 11:07:47 +0800
+Subject: [PATCH] bcm63xx: batch process RX path
+
+Use netif_receive_skb_list to batch process skb in RX.
+Tested on BCM6328 320 MHz using iperf3 -M 512, increasing performance
+by 12.5%.
+
+Before:
+[ ID] Interval           Transfer     Bandwidth       Retr
+[  4]   0.00-30.00  sec   120 MBytes  33.7 Mbits/sec  277             sender
+[  4]   0.00-30.00  sec   120 MBytes  33.5 Mbits/sec                  receiver
+
+After:
+[ ID] Interval           Transfer     Bandwidth       Retr
+[  4]   0.00-30.00  sec   136 MBytes  37.9 Mbits/sec  203             sender
+[  4]   0.00-30.00  sec   135 MBytes  37.7 Mbits/sec                  receiver
+
+Signed-off-by: Sieng Piaw Liew <liew.s.piaw@gmail.com>
+---
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -301,10 +301,12 @@ static int bcm_enet_receive_queue(struct
+ 	struct bcm_enet_priv *priv;
+ 	struct device *kdev;
+ 	int processed;
++	struct list_head rx_list;
+ 
+ 	priv = netdev_priv(dev);
+ 	kdev = &priv->pdev->dev;
+ 	processed = 0;
++	INIT_LIST_HEAD(&rx_list);
+ 
+ 	/* don't scan ring further than number of refilled
+ 	 * descriptor */
+@@ -393,10 +395,12 @@ static int bcm_enet_receive_queue(struct
+ 		skb->protocol = eth_type_trans(skb, dev);
+ 		dev->stats.rx_packets++;
+ 		dev->stats.rx_bytes += len;
+-		netif_receive_skb(skb);
++		list_add_tail(&skb->list, &rx_list);
+ 
+ 	} while (--budget > 0);
+ 
++	netif_receive_skb_list(&rx_list);
++
+ 	if (processed || !priv->rx_desc_count) {
+ 		bcm_enet_refill_rx(dev);
+ 
