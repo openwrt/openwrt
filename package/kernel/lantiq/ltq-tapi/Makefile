@@ -19,6 +19,7 @@ PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 PKG_CHECK_FORMAT_SECURITY:=0
 PKG_FIXUP:=autoreconf
+PKG_EXTMOD_SUBDIRS:=src
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -38,6 +39,9 @@ endef
 define KernelPackage/ltq-tapi/config
 	source "$(SOURCE)/Config.in"
 endef
+
+MAKE_FLAGS += \
+	$(KERNEL_MAKE_FLAGS)
 
 CONFIGURE_ARGS += \
 	ARCH=$(LINUX_KARCH) \
