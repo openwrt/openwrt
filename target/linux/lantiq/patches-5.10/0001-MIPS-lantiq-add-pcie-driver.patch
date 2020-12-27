@@ -65,7 +65,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  endif
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -51,6 +51,8 @@ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o
+@@ -43,6 +43,8 @@ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o
  obj-$(CONFIG_SOC_MT7620)	+= pci-mt7620.o
  obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
@@ -153,10 +153,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +     ifx_pcie_rc_class_early_fixup);
 --- a/arch/mips/pci/fixup-lantiq.c
 +++ b/arch/mips/pci/fixup-lantiq.c
-@@ -6,12 +6,18 @@
+@@ -6,12 +6,19 @@
  
  #include <linux/of_irq.h>
  #include <linux/of_pci.h>
++#include <linux/pci.h>
 +#include "ifxmips_pci_common.h"
  
  int (*ltq_pci_plat_arch_init)(struct pci_dev *dev) = NULL;
@@ -172,7 +173,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (ltq_pci_plat_arch_init)
  		return ltq_pci_plat_arch_init(dev);
  
-@@ -23,5 +29,10 @@ int pcibios_plat_dev_init(struct pci_dev
+@@ -23,5 +30,10 @@ int pcibios_plat_dev_init(struct pci_dev
  
  int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
  {
@@ -5470,7 +5471,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- a/drivers/pci/pcie/Kconfig
 +++ b/drivers/pci/pcie/Kconfig
-@@ -52,6 +52,7 @@ config PCIEAER_INJECT
+@@ -51,6 +51,7 @@ config PCIEAER_INJECT
  config PCIE_ECRC
  	bool "PCI Express ECRC settings control"
  	depends on PCIEAER
@@ -5480,7 +5481,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	  (transaction layer end-to-end CRC checking).
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1390,6 +1390,8 @@ void pci_walk_bus(struct pci_bus *top, i
+@@ -1416,6 +1416,8 @@ void pci_walk_bus(struct pci_bus *top, i
  		  void *userdata);
  int pci_cfg_space_size(struct pci_dev *dev);
  unsigned char pci_bus_max_busnr(struct pci_bus *bus);

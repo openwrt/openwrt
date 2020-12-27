@@ -171,7 +171,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	int rx_irq;
 +
 +	unsigned char mac[6];
-+	int mii_mode;
++	phy_interface_t mii_mode;
 + 
 + 	spinlock_t lock;
 +
@@ -330,7 +330,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
 -	int i;
-+	int mii_mode = priv->mii_mode;
++	phy_interface_t mii_mode = priv->mii_mode;
  
 -	ltq_pmu_enable(PMU_PPE);
 +	clk_enable(priv->clk_ppe);
@@ -687,7 +687,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	spin_unlock_irqrestore(&priv->lock, flags);
  
  	return 0;
-@@ -563,6 +760,9 @@ ltq_etop_init(struct net_device *dev)
+@@ -556,6 +753,9 @@ ltq_etop_init(struct net_device *dev)
  	if (err)
  		goto err_hw;
  	ltq_etop_change_mtu(dev, 1500);
@@ -697,7 +697,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	memcpy(&mac, &priv->pldata->mac, sizeof(struct sockaddr));
  	if (!is_valid_ether_addr(mac.sa_data)) {
-@@ -580,9 +780,10 @@ ltq_etop_init(struct net_device *dev)
+@@ -573,9 +773,10 @@ ltq_etop_init(struct net_device *dev)
  		dev->addr_assign_type = NET_ADDR_RANDOM;
  
  	ltq_etop_set_multicast_list(dev);
@@ -711,7 +711,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	return 0;
  
  err_netdev:
-@@ -602,6 +803,9 @@ ltq_etop_tx_timeout(struct net_device *d
+@@ -595,6 +796,9 @@ ltq_etop_tx_timeout(struct net_device *d
  	err = ltq_etop_hw_init(dev);
  	if (err)
  		goto err_hw;
@@ -721,7 +721,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	netif_trans_update(dev);
  	netif_wake_queue(dev);
  	return;
-@@ -625,14 +829,19 @@ static const struct net_device_ops ltq_e
+@@ -618,14 +822,19 @@ static const struct net_device_ops ltq_e
  	.ndo_tx_timeout = ltq_etop_tx_timeout,
  };
  
@@ -745,7 +745,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!res) {
-@@ -658,31 +867,62 @@ ltq_etop_probe(struct platform_device *p
+@@ -651,31 +860,64 @@ ltq_etop_probe(struct platform_device *p
  		goto err_out;
  	}
  
@@ -760,7 +760,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +			err = -ENOENT;
 +			goto err_out;
 +		}
-+		ltq_gbit_membase = devm_ioremap_nocache(&pdev->dev,
++		ltq_gbit_membase = devm_ioremap(&pdev->dev,
 +			gbit_res->start, resource_size(gbit_res));
 +		if (!ltq_gbit_membase) {
 +			dev_err(&pdev->dev, "failed to remap gigabit switch %d\n",
@@ -781,7 +781,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	priv->netdev = dev;
 +	priv->tx_irq = irqres[0].start;
 +	priv->rx_irq = irqres[1].start;
-+	priv->mii_mode = of_get_phy_mode(pdev->dev.of_node);
++	err = of_get_phy_mode(pdev->dev.of_node, &priv->mii_mode);
++	if (err)
++		pr_err("Can't find phy-mode for port\n");
 +
 +	mac = of_get_mac_address(pdev->dev.of_node);
 +	if (mac)
@@ -823,7 +825,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	err = register_netdev(dev);
  	if (err)
-@@ -711,31 +951,22 @@ ltq_etop_remove(struct platform_device *
+@@ -704,31 +946,22 @@ ltq_etop_remove(struct platform_device *
  	return 0;
  }
  
