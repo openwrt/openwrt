@@ -46,6 +46,9 @@ IFX_DSL_MAX_DEVICE=1
 IFX_DSL_LINES_PER_DEVICE=1
 IFX_DSL_CHANNELS_PER_LINE=1
 
+MAKE_FLAGS += \
+	$(KERNEL_MAKE_FLAGS)
+
 CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
 	--with-max-device="$(IFX_DSL_MAX_DEVICE)" \
 	--with-lines-per-device="$(IFX_DSL_LINES_PER_DEVICE)" \

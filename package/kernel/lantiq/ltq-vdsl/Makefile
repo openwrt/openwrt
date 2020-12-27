@@ -42,6 +42,7 @@ define Package/ltq-vdsl-vr9/description
 endef
 
 MAKE_FLAGS += \
+	$(KERNEL_MAKE_FLAGS) \
 	SHELL="$(BASH)"
 
 CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
