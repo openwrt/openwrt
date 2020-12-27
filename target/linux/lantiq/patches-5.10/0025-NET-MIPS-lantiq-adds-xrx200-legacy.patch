@@ -16,24 +16,24 @@ Subject: NET: MIPS: lantiq: adds xrx200 ethernet and switch driver
 
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -108,7 +108,13 @@ config LANTIQ_ETOP
+@@ -107,7 +107,13 @@ config LANTIQ_ETOP
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
- 	---help---
+ 	help
 -	  Support for the MII0 inside the Lantiq SoC
 +	  Support for the MII0 inside the Lantiq ADSL SoC
 +
 +config LANTIQ_XRX200_LEGACY
 +	tristate "Lantiq SoC XRX200 driver"
 +	depends on SOC_TYPE_XWAY
-+	---help---
++	help
 +	  Support for the MII0 inside the Lantiq VDSL SoC
  
  config LANTIQ_XRX200
  	tristate "Lantiq / Intel xRX200 PMAC network driver"
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -51,6 +51,7 @@ obj-$(CONFIG_JME) += jme.o
+@@ -50,6 +50,7 @@ obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
  obj-$(CONFIG_LANTIQ_XRX200) += lantiq_xrx200.o
@@ -209,7 +209,7 @@ Subject: NET: MIPS: lantiq: adds xrx200 ethernet and switch driver
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200_legacy.c
-@@ -0,0 +1,1927 @@
+@@ -0,0 +1,1930 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -1281,7 +1281,7 @@ Subject: NET: MIPS: lantiq: adds xrx200 ethernet and switch driver
 +	return &priv->stats;
 +}
 +
-+static void xrx200_tx_timeout(struct net_device *dev)
++static void xrx200_tx_timeout(struct net_device *dev, unsigned int txqueue)
 +{
 +	struct xrx200_priv *priv = netdev_priv(dev);
 +
@@ -1570,16 +1570,14 @@ Subject: NET: MIPS: lantiq: adds xrx200 ethernet and switch driver
 +	return 0;
 +}
 +
-+static void xrx200_phy_link_change(struct phy_device *phydev, bool up, bool do_carrier)
++static void xrx200_phy_link_change(struct phy_device *phydev, bool up)
 +{
 +	struct net_device *netdev = phydev->attached_dev;
 +
-+	if (do_carrier) {
-+		if (up)
-+			netif_carrier_on(netdev);
-+		else if (!xrx200_phy_has_link(netdev))
-+			netif_carrier_off(netdev);
-+	}
++	if (up)
++		netif_carrier_on(netdev);
++	else if (!xrx200_phy_has_link(netdev))
++		netif_carrier_off(netdev);
 +
 +	phydev->adjust_link(netdev);
 +}
@@ -1897,6 +1895,7 @@ Subject: NET: MIPS: lantiq: adds xrx200 ethernet and switch driver
 +{
 +	const __be32 *addr, *id = of_get_property(port, "reg", NULL);
 +	struct xrx200_port *p = &priv->port[priv->num_port];
++	int ret;
 +
 +	if (!id)
 +		return;
@@ -1909,7 +1908,11 @@ Subject: NET: MIPS: lantiq: adds xrx200 ethernet and switch driver
 +
 +	p->num = *id;
 +	p->phy_addr = *addr;
-+	p->phy_if = of_get_phy_mode(port);
++
++	ret = of_get_phy_mode(port, &p->phy_if);
++	if (ret)
++		pr_err("Can't find phy-mode for port\n");
++
 +	if (p->phy_addr > 0x10)
 +		p->flags = XRX200_PORT_TYPE_MAC;
 +	else
