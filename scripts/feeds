@@ -537,7 +537,9 @@ sub install_src {
 	my $override = 0;
 	if (is_core_src($name)) {
 		if (!$force) {
-			warn "Not overriding core package $name; use -f to force\n";
+			if ($name ne "toolchain" && $name ne "linux") {
+				warn "WARNING: Not overriding core package '$name'; use -f to force\n";
+			}
 			return 0;
 		}
 		$override = 1;
