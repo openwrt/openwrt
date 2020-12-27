@@ -175,9 +175,6 @@ define Build/Exports/Default
   $(1) : export CONFIG_SITE:=$$(CONFIG_SITE)
   $(1) : export PKG_CONFIG_PATH:=$$(PKG_CONFIG_PATH)
   $(1) : export PKG_CONFIG_LIBDIR:=$$(PKG_CONFIG_PATH)
-  $(if $(CONFIG_CCACHE),$(1) : export CCACHE_BASEDIR:=$(TOPDIR))
-  $(if $(CONFIG_CCACHE),$(1) : export CCACHE_DIR:=$(if $(call qstrip,$(CONFIG_CCACHE_DIR)),$(call qstrip,$(CONFIG_CCACHE_DIR)),$(TOPDIR)/.ccache))
-  $(if $(CONFIG_CCACHE),$(1) : export CCACHE_COMPILERCHECK:=%compiler% -dumpmachine; %compiler% -dumpversion)
 endef
 Build/Exports=$(Build/Exports/Default)
 
