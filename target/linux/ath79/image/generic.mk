@@ -740,7 +740,7 @@ endef
 TARGET_DEVICES += dlink_dap-1365-a1
 
 define Device/dlink_dap-2xxx
-  IMAGES += factory.img sysupgrade.bin
+  IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-offset 6144k 160 | \
 	append-rootfs | wrgg-pad-rootfs | mkwrggimg | check-size
   IMAGE/sysupgrade.bin := append-kernel | mkwrggimg | \
