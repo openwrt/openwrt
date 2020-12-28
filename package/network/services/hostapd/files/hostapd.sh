@@ -1379,7 +1379,7 @@ wpa_supplicant_run() {
 	[ "$ret" != 0 ] && wireless_setup_vif_failed WPA_SUPPLICANT_FAILED
 
 	local supplicant_pid=$(ubus call service list '{"name": "wpad"}' | jsonfilter -l 1 -e "@['wpad'].instances['supplicant'].pid")
-	wireless_add_process "$supplicant_pid" "/usr/sbin/wpa_supplicant" 1
+	wireless_add_process "$supplicant_pid" "/usr/sbin/wpa_supplicant" 1 1
 
 	return $ret
 }
