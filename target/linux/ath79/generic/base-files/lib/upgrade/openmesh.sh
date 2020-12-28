@@ -30,6 +30,7 @@ platform_do_upgrade_openmesh()
 	local inactive_mtd="$(find_mtd_index $PART_NAME)"
 	local inactive_offset="$(cat /sys/class/mtd/mtd${inactive_mtd}/offset)"
 	local total_size="$(cat /sys/class/mtd/mtd${inactive_mtd}/size)"
+	local total_kbs=$((total_size / 1024))
 	local flash_start_mem=0x9f000000
 	local data_offset=$((64 * 1024))
 
@@ -63,15 +64,16 @@ platform_do_upgrade_openmesh()
 	local primary_kernel_mtd="3"
 	[ "$inactive_mtd" = "$primary_kernel_mtd" ] || next_boot_part="2"
 
-	local cfg_size=$(dd if="$img_path" bs=2 skip=35 count=4 2>/dev/null)
+	local cfg_size=$(dd if="$img_path" bs=8 skip=70 count=1 iflag=skip_bytes 2>/dev/null)
 	local cfg_length=$((0x$cfg_size))
-	local cfg_content=$(dd if="$img_path" bs=1 skip=$data_offset count=$cfg_length 2>/dev/null)
+	local cfg_content=$(dd if="$img_path" bs=$cfg_length skip=$data_offset count=1 iflag=skip_bytes 2>/dev/null)
 
-	local kernel_size=$(dd if="$img_path" bs=2 skip=71 count=4 2>/dev/null)
+	local kernel_size=$(dd if="$img_path" bs=8 skip=142 count=1 iflag=skip_bytes 2>/dev/null)
 	local kernel_length=$((0x$kernel_size))
+	local kernel_kbs=$((kernel_length / 1024))
 	local kernel_md5=$(cfg_value_get "$cfg_content" "vmlinux" "md5sum")
 
-	local rootfs_size=$(dd if="$img_path" bs=2 skip=107 count=4 2>/dev/null)
+	local rootfs_size=$(dd if="$img_path" bs=8 skip=214 count=1 iflag=skip_bytes 2>/dev/null)
 	local rootfs_length=$((0x$rootfs_size))
 	local rootfs_md5=$(cfg_value_get "$cfg_content" "rootfs" "md5sum")
 	local rootfs_checksize=$(cfg_value_get "$cfg_content" "rootfs" "checksize")
@@ -83,7 +85,7 @@ platform_do_upgrade_openmesh()
 	mtd -q erase inactive
 	dd if="$img_path" bs=1 skip=$((data_offset + cfg_length + kernel_length)) count=$rootfs_length 2>&- | \
 		mtd -n -p $kernel_length $restore_backup write - $PART_NAME
-	dd if="$img_path" bs=1 skip=$((data_offset + cfg_length)) count=$kernel_length 2>&- | \
+	dd if="$img_path" bs=1024 skip=$((data_offset + cfg_length)) count=$kernel_kbs iflag=skip_bytes 2>&- | \
 		mtd -n write - $PART_NAME
 
 	# prepare new u-boot env
@@ -93,12 +95,12 @@ platform_do_upgrade_openmesh()
 		echo "bootseq 2,1" > $setenv_script
 	fi
 
-	printf "kernel_size_%i %i\n" $next_boot_part $((kernel_length / 1024)) >> $setenv_script
+	printf "kernel_size_%i %i\n" $next_boot_part $kernel_kbs >> $setenv_script
 	printf "vmlinux_start_addr 0x%08x\n" $((flash_start_mem + inactive_offset)) >> $setenv_script
 	printf "vmlinux_size 0x%08x\n" ${kernel_length} >> $setenv_script
 	printf "vmlinux_checksum %s\n" ${kernel_md5} >> $setenv_script
 
-	printf "rootfs_size_%i %i\n" $next_boot_part $(((total_size-kernel_length) / 1024)) >> $setenv_script
+	printf "rootfs_size_%i %i\n" $next_boot_part $((total_kbs - kernel_kbs)) >> $setenv_script
 	printf "rootfs_start_addr 0x%08x\n" $((flash_start_mem+inactive_offset+kernel_length)) >> $setenv_script
 	printf "rootfs_size %s\n" $rootfs_checksize >> $setenv_script
 	printf "rootfs_checksum %s\n" ${rootfs_md5} >> $setenv_script
