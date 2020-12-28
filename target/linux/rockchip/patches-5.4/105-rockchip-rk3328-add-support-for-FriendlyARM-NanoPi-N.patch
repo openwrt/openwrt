@@ -1,0 +1,75 @@
+From dbb35c0c4a4dddb40bf2b5dcc7a4208896ce6323 Mon Sep 17 00:00:00 2001
+From: Marty Jones <mj8263788@gmail.com>
+Date: Sat, 26 Dec 2020 05:08:15 -0500
+Subject: [PATCH] rockchip:rk3328: add support for FriendlyARM NanoPi NEO3
+
+This patch adds support for FriendlyARM NanoPi NEO3
+
+Specification
+-------------
+Soc:      RockChip RK3328
+RAM:      1GB/2GB DDR4
+LAN:      10/100/1000M Ethernet with unique MAC
+USB Host: 1x USB3.0 Type A and 2x USB2.0 on 2.54mm pin header
+MicroSD:  x 1 for system boot and storage
+LED:      Power LED x 1, System LED x 1
+Key:      User Button x 1
+Fan:      2 Pin JST ZH 1.5mm Connector for 5V Fan
+GPIO:     26 pin-header, include I2C, UART, SPI, I2S, GPIO
+Power:    5V/1A, via Type-C or GPIO
+
+Signed-off-by: Marty Jones <mj8263788@gmail.com>
+---
+ arch/arm64/boot/dts/rockchip/Makefile         |  1 +
+ .../boot/dts/rockchip/rk3328-nanopi-neo3.dts  | 35 +++++++++++++++++++
+ 2 files changed, 36 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3328-nanopi-neo3.dts
+
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += px30-evb.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-evb.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-nanopi-neo3.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-nanopi-r2s.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-rock64.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-roc-cc.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-neo3.dts
+@@ -0,0 +1,35 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2020 Marty Jones <mj8263788@gmail.com>
++ */
++
++/dts-v1/;
++#include "rk3328-nanopi-r2s.dts"
++
++/ {
++	model = "FriendlyElec NanoPi NEO3";
++	compatible = "friendlyarm,nanopi-neo3", "rockchip,rk3328";
++
++	leds {
++		compatible = "gpio-leds";
++		pinctrl-0 = <&lan_led_pin>,  <&sys_led_pin>, <&wan_led_pin>;
++		pinctrl-names = "default";
++
++		lan_led: led-0 {
++			gpios = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>;
++			label = "nanopi-neo3:green:lan";
++			status = "disabled";
++		};
++
++		sys_led: led-1 {
++			gpios = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
++			label = "nanopi-neo3:green:sys";
++		};
++
++		wan_led: led-2 {
++			gpios = <&gpio2 RK_PC2 GPIO_ACTIVE_HIGH>;
++			label = "nanopi-neo3:green:wan";
++			status = "disabled";
++		};
++	};
++};
