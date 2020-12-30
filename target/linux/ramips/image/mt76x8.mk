@@ -63,6 +63,13 @@ define Device/gl-mt300n-v2
 endef
 TARGET_DEVICES += gl-mt300n-v2
 
+define Device/microuter-n300
+  DTS := microuter-N300
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := GL.iNet microuter N300
+endef
+TARGET_DEVICES += microuter-n300
+
 define Device/glinet_vixmini
   DTS := VIXMINI
   IMAGE_SIZE := 7872k
