@@ -35,10 +35,6 @@ menu "GL.iNet packages choice shortcut"
 		select PACKAGE_lighttpd-mod-expire
 		select PACKAGE_lighttpd-mod-fastcgi
 		select PACKAGE_lighttpd-mod-proxy
-		select PACKAGE_luci
-		select PACKAGE_luci-mod-rpc
-		select LUCI_LANG_zh-cn
-		select LUCI_LANG_en
 		select PACKAGE_unzip
 		select PACKAGE_wpa-cli
 		select PACKAGE_bridge
@@ -81,7 +77,6 @@ menu "GL.iNet packages choice shortcut"
 		config GLINET_WIREGUARD
 			bool "Support WireGuard"
 			select PACKAGE_wireguard
-			select PACKAGE_luci-proto-wireguard
 			help
 			  Choose packages to support wireguard.
 
@@ -89,7 +84,6 @@ menu "GL.iNet packages choice shortcut"
 			bool "Support Shadowsocks"
 			select PACKAGE_shadowsocks-libev
 			select PACKAGE_shadowsocks-libev-server
-			select PACKAGE_luci-app-shadowsocks
 			help
 			  Choose packages to support shadowsocks.
 
