@@ -145,20 +145,16 @@
 &eth0 {
 	status = "okay";
 
-	pll-data = <0xae000000 0xa0000101 0xa0001313>;
+	pll-data = <0x82000000 0x80000101 0x80001313>;
 
 	mtd-mac-address = <&art 0x0>;
 
-	phy-mode = "rgmii-rxid";
+	phy-mode = "rgmii-id";
 	phy-handle = <&phy5>;
 
 	gmac-config {
 		device = <&gmac>;
 		rgmii-enabled = <1>;
-		rxd-delay = <3>;
-		rxdv-delay = <3>;
-		txd-delay = <0>;
-		txen-delay = <0>;
 	};
 };
 
