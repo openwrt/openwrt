@@ -291,8 +291,12 @@ endef
 # Convert a raw image into a $1 type image.
 # E.g. | qemu-image vdi
 define Build/qemu-image
-	qemu-img convert -f raw -O $1 $@ $@.new
-	@mv $@.new $@
+	if command -v qemu-img; then \
+		qemu-img convert -f raw -O $1 $@ $@.new; \
+		mv $@.new $@; \
+	else \
+		echo "WARNING: Install qemu-img to create VDI/VMDK images" >&2; exit 1; \
+	fi
 endef
 
 define Build/qsdk-ipq-factory-nand
