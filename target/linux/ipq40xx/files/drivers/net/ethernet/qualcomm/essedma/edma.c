@@ -1310,7 +1310,7 @@ void edma_adjust_link(struct net_device *netdev)
 	status = edma_check_link(adapter);
 
 	if (status == __EDMA_LINKUP && adapter->link_state == __EDMA_LINKDOWN) {
-		dev_info(&adapter->pdev->dev, "%s: GMAC Link is up with phy_speed=%d\n", netdev->name, phydev->speed);
+		phy_print_status(phydev);
 		adapter->link_state = __EDMA_LINKUP;
 		if (adapter->edma_cinfo->is_single_phy) {
 			ess_set_port_status_speed(adapter->edma_cinfo, phydev,
@@ -1320,7 +1320,7 @@ void edma_adjust_link(struct net_device *netdev)
 		if (netif_running(netdev))
 			netif_tx_wake_all_queues(netdev);
 	} else if (status == __EDMA_LINKDOWN && adapter->link_state == __EDMA_LINKUP) {
-		dev_info(&adapter->pdev->dev, "%s: GMAC Link is down\n", netdev->name);
+		phy_print_status(phydev);
 		adapter->link_state = __EDMA_LINKDOWN;
 		netif_carrier_off(netdev);
 		netif_tx_stop_all_queues(netdev);
@@ -2023,6 +2023,10 @@ int edma_open(struct net_device *netdev)
 	 */
 	if (adapter->poll_required) {
 		if (!IS_ERR(adapter->phydev)) {
+			/* AR40xx calibration will leave the PHY in unwanted state,
+			 * so a soft reset is required before phy_start()
+			 */
+			genphy_soft_reset(adapter->phydev);
 			phy_start(adapter->phydev);
 			phy_start_aneg(adapter->phydev);
 			adapter->link_state = __EDMA_LINKDOWN;

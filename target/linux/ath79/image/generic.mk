@@ -775,7 +775,7 @@ endef
 TARGET_DEVICES += dlink_dap-1365-a1
 
 define Device/dlink_dap-2xxx
-  IMAGES += factory.img sysupgrade.bin
+  IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-offset 6144k 160 | \
 	append-rootfs | wrgg-pad-rootfs | mkwrggimg | check-size
   IMAGE/sysupgrade.bin := append-kernel | mkwrggimg | \
@@ -1000,6 +1000,27 @@ define Device/engenius_eap300-v2
 endef
 TARGET_DEVICES += engenius_eap300-v2
 
+define Device/engenius_eap350-v1
+  $(Device/engenius_loader_okli)
+  SOC := ar7242
+  DEVICE_MODEL := EAP350
+  DEVICE_VARIANT := v1
+  IMAGE_SIZE := 4864k
+  LOADER_FLASH_OFFS := 0x1b0000
+  ENGENIUS_IMGNAME := senao-eap350
+endef
+TARGET_DEVICES += engenius_eap350-v1
+
+define Device/engenius_eap600
+  $(Device/engenius_loader_okli)
+  SOC := ar9344
+  DEVICE_MODEL := EAP600
+  IMAGE_SIZE := 12032k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := senao-eap600
+endef
+TARGET_DEVICES += engenius_eap600
+
 define Device/engenius_ecb1200
   SOC := qca9557
   DEVICE_VENDOR := EnGenius
@@ -1036,6 +1057,16 @@ define Device/engenius_ecb350-v1
   ENGENIUS_IMGNAME := senao-ecb350
 endef
 TARGET_DEVICES += engenius_ecb350-v1
+
+define Device/engenius_ecb600
+  $(Device/engenius_loader_okli)
+  SOC := ar9344
+  DEVICE_MODEL := ECB600
+  IMAGE_SIZE := 12032k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := senao-ecb600
+endef
+TARGET_DEVICES += engenius_ecb600
 
 define Device/engenius_enh202-v1
   $(Device/engenius_loader_okli)
@@ -1561,6 +1592,62 @@ define Device/ocedo_ursus
 endef
 TARGET_DEVICES += ocedo_ursus
 
+define Device/openmesh_om2p-common
+  DEVICE_VENDOR := OpenMesh
+  DEVICE_PACKAGES := uboot-envtools
+  IMAGE_SIZE := 7168k
+  BLOCKSIZE := 256k
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
+	pad-to $$(BLOCKSIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+	openmesh-image ce_type=OM2P | append-metadata
+endef
+
+define Device/openmesh_om2p-v4
+  $(Device/openmesh_om2p-common)
+  SOC := qca9533
+  DEVICE_MODEL := OM2P
+  DEVICE_VARIANT := v4
+  SUPPORTED_DEVICES += om2pv4
+endef
+TARGET_DEVICES += openmesh_om2p-v4
+
+define Device/openmesh_om2p-hs-v1
+  $(Device/openmesh_om2p-common)
+  SOC := ar9341
+  DEVICE_MODEL := OM2P-HS
+  DEVICE_VARIANT := v1
+  SUPPORTED_DEVICES += om2p-hs
+endef
+TARGET_DEVICES += openmesh_om2p-hs-v1
+
+define Device/openmesh_om2p-hs-v2
+  $(Device/openmesh_om2p-common)
+  SOC := ar9341
+  DEVICE_MODEL := OM2P-HS
+  DEVICE_VARIANT := v2
+  SUPPORTED_DEVICES += om2p-hsv2
+endef
+TARGET_DEVICES += openmesh_om2p-hs-v2
+
+define Device/openmesh_om2p-hs-v3
+  $(Device/openmesh_om2p-common)
+  SOC := ar9341
+  DEVICE_MODEL := OM2P-HS
+  DEVICE_VARIANT := v3
+  SUPPORTED_DEVICES += om2p-hsv3
+endef
+TARGET_DEVICES += openmesh_om2p-hs-v3
+
+define Device/openmesh_om2p-hs-v4
+  $(Device/openmesh_om2p-common)
+  SOC := qca9533
+  DEVICE_MODEL := OM2P-HS
+  DEVICE_VARIANT := v4
+  SUPPORTED_DEVICES += om2p-hsv4
+endef
+TARGET_DEVICES += openmesh_om2p-hs-v4
+
 define Device/openmesh_om5p-ac-v2
   SOC := qca9558
   DEVICE_VENDOR := OpenMesh
@@ -1658,7 +1745,7 @@ define Device/plasmacloud_pa300-common
   IMAGES += factory.bin
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-to $$(BLOCKSIZE)
   IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA300
-  IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 
 define Device/plasmacloud_pa300

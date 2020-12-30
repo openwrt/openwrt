@@ -17,4 +17,5 @@ define Device/mikrotik_nand
   IMAGE/sysupgrade.bin = append-kernel | kernel2minor -s 2048 -e -c | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
   DEVICE_PACKAGES := nand-utils
+  DEFAULT := n
 endef

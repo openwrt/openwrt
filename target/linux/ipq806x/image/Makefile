@@ -103,6 +103,7 @@ define Device/asrock_g10
 	KERNEL_SIZE := 5332k
 	DEVICE_PACKAGES := kmod-i2c-gpio ath10k-firmware-qca99x0-ct
 	IMAGE/nand-factory.bin := append-ubi | edimax-header RN67
+	BROKEN := y
 endef
 TARGET_DEVICES += asrock_g10
 
@@ -192,6 +193,20 @@ define Device/nec_wg2600hp
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 endef
 TARGET_DEVICES += nec_wg2600hp
+
+define Device/nec_wg2600hp3
+	$(call Device/LegacyImage)
+	DEVICE_VENDOR := NEC Platforms
+	DEVICE_MODEL := Aterm WG2600HP3
+	SOC := qcom-ipq8062
+	BLOCKSIZE := 64k
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform -kmod-usb-ohci -kmod-usb2 \
+		-kmod-usb-ledtrig-usbport -kmod-usb-phy-qcom-dwc3 -kmod-usb3 -kmod-usb-dwc3-qcom \
+		ath10k-firmware-qca9984-ct ipq-wifi-nec_wg2600hp3
+endef
+TARGET_DEVICES += nec_wg2600hp3
 
 define Device/netgear_d7800
 	$(call Device/DniImage)

@@ -19,6 +19,7 @@
 #include <linux/timer.h>
 #include <linux/of_platform.h>
 #include <linux/of_address.h>
+#include <linux/of_mdio.h>
 #include <linux/clk.h>
 #include <linux/string.h>
 #include <linux/reset.h>
@@ -713,9 +714,7 @@ static int edma_axi_probe(struct platform_device *pdev)
 	struct device_node *np = pdev->dev.of_node;
 	struct device_node *pnp;
 	struct device_node *mdio_node = NULL;
-	struct platform_device *mdio_plat = NULL;
 	struct mii_bus *miibus = NULL;
-	struct edma_mdio_data *mdio_data = NULL;
 	int i, j, k, err = 0;
 	int portid_bmp;
 	int idx = 0, idx_mac = 0;
@@ -889,25 +888,9 @@ static int edma_axi_probe(struct platform_device *pdev)
 			goto err_mdiobus_init_fail;
 		}
 
-		mdio_plat = of_find_device_by_node(mdio_node);
-		if (!mdio_plat) {
-			dev_err(&pdev->dev,
-				"cannot find platform device from mdio node");
-			of_node_put(mdio_node);
-			err = -EIO;
-			goto err_mdiobus_init_fail;
-		}
-
-		mdio_data = dev_get_drvdata(&mdio_plat->dev);
-		if (!mdio_data) {
-			dev_err(&pdev->dev,
-				"cannot get mii bus reference from device data");
-			of_node_put(mdio_node);
-			err = -EIO;
-			goto err_mdiobus_init_fail;
-		}
-
-		miibus = mdio_data->mii_bus;
+		miibus = of_mdio_find_bus(mdio_node);
+		if (!miibus)
+			return -EINVAL;
 	}
 
 	if (of_property_read_bool(np, "qcom,single-phy") &&
