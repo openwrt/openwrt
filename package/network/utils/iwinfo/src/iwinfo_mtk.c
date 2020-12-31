@@ -19,6 +19,8 @@
  * iwlist.c and iwconfig.c in particular.
  */
 
+#include <stdbool.h>
+
 #include "iwinfo_wext.h"
 #include "api/mtk.h"
 
@@ -65,35 +67,22 @@ static int mtk_get80211priv(const char *ifname, int op, void *data, size_t len)
 
 static int mtk_isap(const char *ifname)
 {
-	int ret=0;
-
-	if(strlen(ifname) <= 7)
-	{
-		static char wifiname[IFNAMSIZ];
-		snprintf(wifiname, sizeof(wifiname), "%s", ifname);
-		if(!strncmp(wifiname, "ra", 2) || !strncmp(wifiname, "rai", 3)) ret=1;
-	}
-
-	return ret;
+	return !strncmp(ifname, "ra", 2);
 }
 
 static int mtk_iscli(const char *ifname)
 {
-	int ret = 0;
+	return !strncmp(ifname, "apcli", 5);
+}
 
-	if(strlen(ifname) <= 7)
-	{
-		static char wifiname[IFNAMSIZ];
-		snprintf(wifiname, sizeof(wifiname), "%s", ifname);
-		if(!strncmp(wifiname, "apcli", 5) || !strncmp(wifiname, "apclii", 6)) ret = 1;
-	}
-
-	return ret;
+static int mtk_iswds(const char *ifname)
+{
+	return !strncmp(ifname, "wds", 3);
 }
 
 static int mtk_probe(const char *ifname)
 {
-	return ( mtk_isap(ifname) || mtk_iscli(ifname));
+	return mtk_isap(ifname) || mtk_iscli(ifname) || mtk_iswds(ifname);
 }
 
 static void mtk_close(void)
@@ -107,6 +96,8 @@ static int mtk_get_mode(const char *ifname, int *buf)
 		*buf = IWINFO_OPMODE_MASTER;
 	else if(mtk_iscli(ifname))
 		*buf = IWINFO_OPMODE_CLIENT;
+	else if(mtk_iswds(ifname))
+		*buf = IWINFO_OPMODE_WDS;
 	else
 		*buf = IWINFO_OPMODE_UNKNOWN;
 	return 0;
@@ -119,15 +110,6 @@ static int mtk_get_ssid(const char *ifname, char *buf)
 
 static int mtk_get_bssid(const char *ifname, char *buf)
 {
-	char cmd[256];
-	FILE *fp = NULL;
-
-	memset(cmd, 0, sizeof(cmd));
-	sprintf(cmd, "ifconfig %s | grep UP", ifname);
-	fp = popen(cmd, "r");
-	fscanf(fp, "%s\n", buf);
-	pclose(fp);
-
 	return wext_ops.bssid(ifname, buf);
 }
 
@@ -143,7 +125,7 @@ static int mtk_get_channel(const char *ifname, int *buf)
 
 static int mtk_get_frequency(const char *ifname, int *buf)
 {
-	return wext_ops.frequency(ifname, buf);
+	return -1;
 }
 
 static int mtk_get_txpower(const char *ifname, int *buf)
@@ -316,34 +298,38 @@ static void next_field(char **line, char *output, int n) {
 
 static int mtk_get_scan(const char *ifname, struct survey_table *st)
 {
-#ifdef MT7615
-#undef 	IW_SCAN_MAX_DATA
-#define IW_SCAN_MAX_DATA	20480	/* In bytes */
-#endif
-
 	int survey_count = 0;
-	char *s = malloc(IWINFO_BUFSIZE);
+	char *s = calloc(1, IWINFO_BUFSIZE + 1);
 	char ss[64] = "SiteSurvey=1";
 	char *line, *start ,*p;
+	char buf[128];
+
+	if (!s)
+		return -1;
 
 	if(mtk_get80211priv(ifname, RTPRIV_IOCTL_SET, ss, sizeof(ss)) < 0)
 		return -1;
 
 	sleep(5);
-	memset(s, 0x00, IW_SCAN_MAX_DATA);
 
-	if(mtk_get80211priv(ifname, RTPRIV_IOCTL_GSITESURVEY, s, IW_SCAN_MAX_DATA) < 1)
+	if(mtk_get80211priv(ifname, RTPRIV_IOCTL_GSITESURVEY, s, IWINFO_BUFSIZE) < 1) {
+		free(s);
 		return -1;
+	}
 
 	start = s;
-	while (*start == '\n') start++;
-	strtok(start, "\n");
-	line = strtok(NULL, "\n");
-#ifdef MT7615
-	line = strtok(NULL, "\n");
-#endif
 
-	while(line && (survey_count < 64))
+	line = strtok(start, "\n");
+
+	while (true) {
+		line = strtok(NULL, "\n");
+		if (!strncmp("Ch ", line, 3) || !strncmp("No ", line, 3))
+			break;
+	}
+
+	line = strtok(NULL, "\n");
+
+	while (line && (survey_count < 64))
 	{
 		memset(&st[survey_count], 0, sizeof(st[survey_count]));
 
@@ -359,7 +345,9 @@ static int mtk_get_scan(const char *ifname, struct survey_table *st)
 
 		next_field(&line, st[survey_count].channel, sizeof(st->channel));
 		next_field(&line, st[survey_count].ssid, sizeof(st->ssid));
+#ifndef MT7615
 		next_field(&line, st[survey_count].len, sizeof(st->len));
+#endif
 		next_field(&line, st[survey_count].bssid, sizeof(st->bssid));
 		next_field(&line, st[survey_count].security, sizeof(st->security));
 		st[survey_count].crypto = strstr(st[survey_count].security, "/");
@@ -369,6 +357,15 @@ static int mtk_get_scan(const char *ifname, struct survey_table *st)
 			st[survey_count].crypto++;
 		}
 		next_field(&line, st[survey_count].signal, sizeof(st->signal));
+
+		next_field(&line, buf, sizeof(buf));	/* W-Mode */
+		next_field(&line, buf, sizeof(buf));	/* ExtCH */
+		next_field(&line, buf, sizeof(buf));	/* NT */
+
+#ifdef MT7615
+		next_field(&line, st[survey_count].len, sizeof(st->len));
+#endif
+
 		line = strtok(NULL, "\n");
 
 		/* skip hidden ssid */
@@ -526,12 +523,28 @@ static int mtk_get_mbssid_support(const char *ifname, int *buf)
 
 static int mtk_get_hardware_id(const char *ifname, char *buf)
 {
-	return -1;
+	struct iwinfo_hardware_id *id = (struct iwinfo_hardware_id *)buf;
+	char data[10];
+
+	memset(id, 0, sizeof(struct iwinfo_hardware_id));
+
+	return iwinfo_hardware_id_from_mtd(id);
 }
 
 static int mtk_get_hardware_name(const char *ifname, char *buf)
 {
-	sprintf(buf, "Generic Mediatek/Ralink");
+	struct iwinfo_hardware_id id;
+	struct iwinfo_hardware_entry *e;
+
+	if (mtk_get_hardware_id(ifname, (char *)&id))
+		return -1;
+
+	e = iwinfo_hardware(&id);
+	if (!e)
+		return -1;
+
+	strcpy(buf, e->device_name);
+
 	return 0;
 }
 

@@ -83,7 +83,7 @@ IWINFO_BACKENDS := \
 	$(if $(CONFIG_PACKAGE_kmod-mt7620),mtk) \
 	$(if $(CONFIG_PACKAGE_kmod-mt7628),mtk) \
 	$(if $(CONFIG_PACKAGE_kmod-mt76x2e),mtk) \
-	$(if $(CONFIG_PACKAGE_kmod-mt7615),mtk)
+	$(if $(CONFIG_PACKAGE_kmod-mt7615),mtk mt7615)
 
 TARGET_CFLAGS += \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \

@@ -169,3 +169,24 @@
  			format_quality(e->quality),
  			format_quality_max(e->quality_max));
  		printf("          Encryption: %s\n",
+--- a/hardware.txt
++++ b/hardware.txt
+@@ -175,4 +175,8 @@
+ 0x14c3 0x7628 0x14c3 0x0004    0      0  "MediaTek" "MT76x8"
+ 0x14c3 0x7650 0x14c3 0x7650    0      0  "MediaTek" "MT7610E"
+ 0x14c3 0x7662 0x14c3 0x7662    0      0  "MediaTek" "MT76x2E"
++0x1814 0x7615 0x1814 0x0000    0      0  "Mediatek" "MT7615"
++0x1814 0x7615 0x1814 0xffff    0      0  "Mediatek" "MT7615"
++0x1814 0x7615 0x1814 0x7615    0      0  "Mediatek" "MT7615"
++0x14c3 0x7615 0x14c3 0x0000    0      0  "MediaTek" "MT7615E"
+ 0x1ae9 0x0310 0x1ae9 0x0000    0      0  "Wilocity" "Wil6210"
+--- a/iwinfo_utils.c
++++ b/iwinfo_utils.c
+@@ -261,6 +261,7 @@ int iwinfo_hardware_id_from_mtd(struct i
+ 				id->subsystem_device_id = (bc[off + 0x1a] & 0x0f00) >> 8;
+ 			} else if ((bc[off] == 0x7620) || (bc[off] == 0x2076) ||
+ 			           (bc[off] == 0x7628) || (bc[off] == 0x2876) ||
++			           (bc[off] == 0x7615) || (bc[off] == 0x1576) ||
+ 			           (bc[off] == 0x7688) || (bc[off] == 0x8876)) {
+ 				/* vendor: MediaTek */
+ 				id->vendor_id = 0x14c3;
