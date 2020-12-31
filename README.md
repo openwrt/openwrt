@@ -33,6 +33,7 @@ Booting for the Lantiq image is about 90-120s, then there will be additional 60-
 Have fun.
 
 Problems:
+* DECT and ISDN/POTS are not working and probably never will
 * USB is not working, although the renesas firmware patch is applied. AVM uses self written drivers.
 * When the images are too large, the eva bootloader is stuck. I suspect this is due to the filesystem is embedded as initramfs in the kernel, whereas the freetz or AVM images have the rootfs appended to the kernel when using initramfs or image2ram.
 * I have not tried sysupgrade, so no responsibility from my side, if there is something not working. I have only tested the initramfs so far.
