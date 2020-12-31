@@ -103,7 +103,6 @@ define Device/asrock_g10
 	KERNEL_SIZE := 5332k
 	DEVICE_PACKAGES := kmod-i2c-gpio ath10k-firmware-qca99x0-ct
 	IMAGE/nand-factory.bin := append-ubi | edimax-header RN67
-	BROKEN := y
 endef
 TARGET_DEVICES += asrock_g10
 
