@@ -1,6 +1,7 @@
 #!/bin/sh /etc/rc.common
 
 START=99
+STOP=10
 USE_PROCD=1
 
 start_service() {
@@ -9,4 +10,9 @@ start_service() {
     procd_set_param stdout 1
     procd_set_param stderr 1
     procd_close_instance
+}
+
+shutdown() {
+    # save seed from shutdown to boot
+    /sbin/urandom_seed
 }
