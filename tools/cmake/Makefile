@@ -21,21 +21,9 @@ HOST_CONFIGURE_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
-# Workaround for GCC versions below 6.X and ccache
-# Reference: https://github.com/openwrt/openwrt/pull/1929
-GCC_DMPVER_GREPCMD := grep -E '^(4\.[8-9]|[5]\.?)'
-GCC_DMPVER_STRING := $(shell $(HOSTCC_NOCACHE) -dumpversion | $(GCC_DMPVER_GREPCMD))
-ifneq ($(GCC_DMPVER_STRING),)
-  ifeq ($(CONFIG_CCACHE),y)
-    $(info GCC version less than 6.0 detected, disabling CCACHE)
-    HOST_CONFIGURE_VARS:=$(filter-out CC=% gcc%",$(HOST_CONFIGURE_VARS)) CC="$(HOSTCC_NOCACHE)"
-    HOST_CONFIGURE_VARS:=$(filter-out CXX=% g++%",$(HOST_CONFIGURE_VARS)) CXX="$(HOSTCXX_NOCACHE)"
-      else
-    $(info GCC version greater or equal to 6.0 detected, no workaround set for CCACHE)
-  endif
-endif
-
 HOST_CONFIGURE_VARS += \
+	CC="$(HOSTCC_NOCACHE)" \
+	CXX="$(HOSTCXX_NOCACHE)" \
 	MAKEFLAGS="$(HOST_JOBS)" \
 	CXXFLAGS="$(HOST_CFLAGS)"
 
