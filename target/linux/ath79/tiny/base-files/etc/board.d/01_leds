@@ -21,6 +21,14 @@ tplink,tl-wr941-v4)
 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x10"
 	;;
+engenius,enh202-v1)
+	ucidef_set_led_switch "lan" "LAN" "amber:lan" "switch0" "0x10"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "red:rssilow" "wlan0" "1"  "100"
+	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "amber:rssimedium" "wlan0" "33" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan0" "67" "100"
+	;;
 netgear,wnr1000-v2|\
 netgear,wnr2000-v3)
 	ucidef_set_led_netdev "wan-amber" "WAN (amber)" "amber:wan" "eth0"

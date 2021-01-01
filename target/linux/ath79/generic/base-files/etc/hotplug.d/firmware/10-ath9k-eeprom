@@ -74,10 +74,7 @@ case "$FIRMWARE" in
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
-	buffalo,wzr-hp-g302h-a1a0|\
-	engenius,eap350-v1|\
-	engenius,ecb350-v1|\
-	engenius,enh202-v1)
+	buffalo,wzr-hp-g302h-a1a0)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
 	buffalo,wzr-hp-g450h|\
