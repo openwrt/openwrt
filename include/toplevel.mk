@@ -261,8 +261,8 @@ package/symlinks-clean:
 help:
 	cat README.md
 
-distclean: cacheclean
-	rm -rf bin build_dir .config* dl feeds key-build* logs package/feeds package/openwrt-packages staging_dir tmp
+distclean:
+	rm -rf bin build_dir .ccache .config* dl feeds key-build* logs package/feeds package/openwrt-packages staging_dir tmp
 	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)
