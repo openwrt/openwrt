@@ -1,12 +1,12 @@
 include ./common-buffalo.mk
+include ./common-engenius.mk
 include ./common-netgear.mk
 include ./common-tp-link.mk
 include ./common-yuncore.mk
 
 DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
-DEVICE_VARS += KERNEL_INITRAMFS_PREFIX
-DEVICE_VARS += DAP_SIGNATURE ENGENIUS_IMGNAME
+DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
 
 define Build/add-elecom-factory-initramfs
@@ -67,24 +67,6 @@ define Build/edimax-headers
 		-o $@.rootfs
 	cat $@.uImage $@.rootfs > $@
 	rm -rf $@.uImage $@.rootfs
-endef
-
-# This needs to make /tmp/_sys/sysupgrade.tgz an empty file prior to
-# sysupgrade, as otherwise it will implant the old configuration from
-# OEM firmware when writing rootfs from factory.bin
-define Build/engenius-tar-gz
-	-[ -f "$@" ] && \
-	mkdir -p $@.tmp && \
-	touch $@.tmp/failsafe.bin && \
-	echo '#!/bin/sh' > $@.tmp/before-upgrade.sh && \
-	echo ': > /tmp/_sys/sysupgrade.tgz' >> $@.tmp/before-upgrade.sh && \
-	$(CP) $(KDIR)/loader-$(DEVICE_NAME).uImage \
-		$@.tmp/openwrt-$(word 1,$(1))-uImage-lzma.bin && \
-	$(CP) $@ $@.tmp/openwrt-$(word 1,$(1))-root.squashfs && \
-	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-C $@.tmp . | gzip -9n > $@ && \
-	rm -rf $@.tmp
 endef
 
 define Build/mkdapimg2
@@ -974,20 +956,6 @@ define Device/embeddedwireless_dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
-define Device/engenius_loader_okli
-  DEVICE_VENDOR := EnGenius
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
-  LOADER_TYPE := bin
-  COMPILE := loader-$(1).bin loader-$(1).uImage
-  COMPILE/loader-$(1).bin := loader-okli-compile
-  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | \
-	uImage lzma
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-squashfs-fakeroot-be | pad-to $$$$(BLOCKSIZE) | \
-	append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
-	check-size | engenius-tar-gz $$$$(ENGENIUS_IMGNAME)
-endef
-
 define Device/engenius_eap300-v2
   $(Device/engenius_loader_okli)
   SOC := ar9341
@@ -998,17 +966,6 @@ define Device/engenius_eap300-v2
   ENGENIUS_IMGNAME := senao-eap300v2
 endef
 TARGET_DEVICES += engenius_eap300-v2
-
-define Device/engenius_eap350-v1
-  $(Device/engenius_loader_okli)
-  SOC := ar7242
-  DEVICE_MODEL := EAP350
-  DEVICE_VARIANT := v1
-  IMAGE_SIZE := 4864k
-  LOADER_FLASH_OFFS := 0x1b0000
-  ENGENIUS_IMGNAME := senao-eap350
-endef
-TARGET_DEVICES += engenius_eap350-v1
 
 define Device/engenius_eap600
   $(Device/engenius_loader_okli)
@@ -1046,17 +1003,6 @@ define Device/engenius_ecb1750
 endef
 TARGET_DEVICES += engenius_ecb1750
 
-define Device/engenius_ecb350-v1
-  $(Device/engenius_loader_okli)
-  SOC := ar7242
-  DEVICE_MODEL := ECB350
-  DEVICE_VARIANT := v1
-  IMAGE_SIZE := 4864k
-  LOADER_FLASH_OFFS := 0x1b0000
-  ENGENIUS_IMGNAME := senao-ecb350
-endef
-TARGET_DEVICES += engenius_ecb350-v1
-
 define Device/engenius_ecb600
   $(Device/engenius_loader_okli)
   SOC := ar9344
@@ -1066,18 +1012,6 @@ define Device/engenius_ecb600
   ENGENIUS_IMGNAME := senao-ecb600
 endef
 TARGET_DEVICES += engenius_ecb600
-
-define Device/engenius_enh202-v1
-  $(Device/engenius_loader_okli)
-  SOC := ar7240
-  DEVICE_MODEL := ENH202
-  DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := rssileds
-  IMAGE_SIZE := 4864k
-  LOADER_FLASH_OFFS := 0x1b0000
-  ENGENIUS_IMGNAME := senao-enh202
-endef
-TARGET_DEVICES += engenius_enh202-v1
 
 define Device/engenius_ens202ext-v1
   $(Device/engenius_loader_okli)
