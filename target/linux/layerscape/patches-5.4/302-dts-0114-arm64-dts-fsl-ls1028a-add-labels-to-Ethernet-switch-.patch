@@ -13,29 +13,26 @@ Signed-off-by: Alex Marginean <alexandru.marginean@nxp.com>
 
 --- a/arch/arm64/boot/dts/freescale/fsl-ls1028a.dtsi
 +++ b/arch/arm64/boot/dts/freescale/fsl-ls1028a.dtsi
-@@ -788,21 +788,25 @@
+@@ -788,18 +788,22 @@
  					mscc_felix_port0: port@0 {
  						reg = <0>;
  						status = "disabled";
 +						label = "swp0";
  					};
- 
  					mscc_felix_port1: port@1 {
  						reg = <1>;
  						status = "disabled";
 +						label = "swp1";
  					};
- 
  					mscc_felix_port2: port@2 {
  						reg = <2>;
  						status = "disabled";
 +						label = "swp2";
  					};
- 
  					mscc_felix_port3: port@3 {
  						reg = <3>;
  						status = "disabled";
 +						label = "swp3";
  					};
- 
  					/* internal to-cpu ports */
+ 					mscc_felix_port4: port@4 {

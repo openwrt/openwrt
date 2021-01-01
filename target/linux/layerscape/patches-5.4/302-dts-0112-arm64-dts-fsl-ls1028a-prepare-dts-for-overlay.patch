@@ -385,8 +385,8 @@ Signed-off-by: Alex Marginean <alexandru.marginean@nxp.com>
  &sai4 {
 --- a/arch/arm64/boot/dts/freescale/fsl-ls1028a.dtsi
 +++ b/arch/arm64/boot/dts/freescale/fsl-ls1028a.dtsi
-@@ -774,30 +774,39 @@
- 				clocks = <&clockgen 4 0>;
+@@ -774,30 +774,35 @@
+ 				clocks = <&clockgen 2 3>;
  				little-endian;
  			};
 -			switch@0,5 {
@@ -400,7 +400,7 @@ Signed-off-by: Alex Marginean <alexandru.marginean@nxp.com>
 +				mscc_felix_ports: ports {
  					#address-cells = <1>;
  					#size-cells = <0>;
- 
+ 				
  					/* external ports */
 -					switch_port0: port@0 {
 +					mscc_felix_port0: port@0 {
@@ -408,31 +408,27 @@ Signed-off-by: Alex Marginean <alexandru.marginean@nxp.com>
 +						status = "disabled";
  					};
 -					switch_port1: port@1 {
-+
 +					mscc_felix_port1: port@1 {
  						reg = <1>;
 +						status = "disabled";
  					};
 -					switch_port2: port@2 {
-+
 +					mscc_felix_port2: port@2 {
  						reg = <2>;
 +						status = "disabled";
  					};
 -					switch_port3: port@3 {
-+
 +					mscc_felix_port3: port@3 {
  						reg = <3>;
 +						status = "disabled";
  					};
-+
  					/* internal to-cpu ports */
 -					port@4 {
 +					mscc_felix_port4: port@4 {
  						reg = <4>;
  						ethernet = <&enetc_port2>;
  						phy-mode = "gmii";
-@@ -807,7 +816,8 @@
+@@ -807,7 +812,8 @@
  							full-duplex;
  						};
  					};
@@ -442,7 +438,7 @@ Signed-off-by: Alex Marginean <alexandru.marginean@nxp.com>
  						reg = <5>;
  						phy-mode = "gmii";
  						status = "disabled";
-@@ -819,6 +829,7 @@
+@@ -819,6 +825,7 @@
  					};
  				};
  			};
