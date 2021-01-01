@@ -1,0 +1,25 @@
+From 391ecbd647c121300dc7dcf209e412ccb7b8d432 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 1 Jan 2021 21:57:56 +0100
+Subject: [PATCH] Fix linking against hostapd with LTO
+
+When running LTO on wolfssl the ecc_map() function is removed from the
+binary by GCC 8.4.0. This function is used by multiple functions from
+the crypto_wolfssl.c implementation of hostapd master.
+
+Fixes: 780e8a4619b6 ("Fixes for building `--enable-wpas=small` with WPA Supplicant v2.7.")
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ configure.ac | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -947,6 +947,7 @@ then
+     AM_CFLAGS="$AM_CFLAGS -DOPENSSL_EXTRA_X509_SMALL"
+ 
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_PUBLIC_MP"
++    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_PUBLIC_ECC_ADD_DBL"
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DER_LOAD"
+     AM_CFLAGS="$AM_CFLAGS -DATOMIC_USER"
+     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_KEY_GEN"
