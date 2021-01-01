@@ -182,14 +182,6 @@ dlink,dap-1365-a1)
 dlink,dir-859-a1)
 	ucidef_set_led_switch "internet" "WAN" "green:internet" "switch0" "0x20"
 	;;
-engenius,enh202-v1)
-	ucidef_set_led_switch "lan" "LAN" "amber:lan" "switch0" "0x10"
-	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
-	ucidef_set_rssimon "wlan0" "200000" "1"
-	ucidef_set_led_rssi "rssilow" "RSSILOW" "red:rssilow" "wlan0" "1"  "100"
-	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "amber:rssimedium" "wlan0" "33" "100"
-	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan0" "67" "100"
-	;;
 engenius,ens202ext-v1|\
 engenius,enstationac-v1)
 	ucidef_set_rssimon "wlan0" "200000" "1"
