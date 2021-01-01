@@ -64,7 +64,7 @@ dirclean: clean
 
 cacheclean:
 ifneq ($(CONFIG_CCACHE),)
-	rm -rf $(CCACHE_DIR)
+	$(STAGING_DIR_HOST)/bin/ccache -C
 endif
 
 ifndef DUMP_TARGET_DB
