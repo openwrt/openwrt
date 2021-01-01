@@ -64,7 +64,7 @@ dirclean: clean
 
 cacheclean:
 ifneq ($(CONFIG_CCACHE),)
-	rm -rf $(if $(call qstrip,$(CONFIG_CCACHE_DIR)),$(call qstrip,$(CONFIG_CCACHE_DIR)),$(TOPDIR)/.ccache)
+	rm -rf $(CCACHE_DIR)
 endif
 
 ifndef DUMP_TARGET_DB
