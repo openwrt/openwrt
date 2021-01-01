@@ -8,7 +8,7 @@
 -FAKEROOT_BINDIR=@bindir@
 +if [ -n "$STAGING_DIR_HOST" ]; then
 +    USEABSLIBPATH=1
-+    LIB=${STAGING_DIR_HOST}/lib/lib@fakeroot_transformed@@DLSUFFIX@
++    FAKEROOT_LIB=${STAGING_DIR_HOST}/lib/lib@fakeroot_transformed@@DLSUFFIX@
 +    FAKED=${STAGING_DIR_HOST}/bin/faked
 +    PATHS=
 +else
@@ -16,11 +16,11 @@
 +    FAKEROOT_BINDIR=@bindir@
  
 -USEABSLIBPATH=@LDPRELOADABS@
--LIB=lib@fakeroot_transformed@@DLSUFFIX@
+-FAKEROOT_LIB=lib@fakeroot_transformed@@DLSUFFIX@
 -PATHS=@libdir@:${FAKEROOT_PREFIX}/lib64/libfakeroot:${FAKEROOT_PREFIX}/lib32/libfakeroot
 -FAKED=${FAKEROOT_BINDIR}/@faked_transformed@
 +    USEABSLIBPATH=@LDPRELOADABS@
-+    LIB=lib@fakeroot_transformed@@DLSUFFIX@
++    FAKEROOT_LIB=lib@fakeroot_transformed@@DLSUFFIX@
 +    PATHS=@libdir@:${FAKEROOT_PREFIX}/lib64/libfakeroot:${FAKEROOT_PREFIX}/lib32/libfakeroot
 +    FAKED=${FAKEROOT_BINDIR}/@faked_transformed@
 +fi
