@@ -27,6 +27,13 @@ define Device/Default
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 
+define Device/globalscale_sheevaplug
+  DEVICE_TITLE := Globalscale Sheevaplug
+  DEVICE_DTS := kirkwood-sheevaplug
+  BOARD_NAME := sheevaplug
+endef
+TARGET_DEVICES += globalscale_sheevaplug
+
 define Device/cisco_on100
   DEVICE_TITLE := Cisco Systems ON100
   DEVICE_DTS := kirkwood-on100
