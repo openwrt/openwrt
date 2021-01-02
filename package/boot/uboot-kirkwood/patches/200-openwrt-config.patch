@@ -204,3 +204,13 @@
 +#include "openwrt-kirkwood-common.h"
 +
  #endif /* _CONFIG_NSA310S_H */
+--- a/configs/sheevaplug_defconfig
++++ b/configs/sheevaplug_defconfig
+@@ -49,4 +49,7 @@
+ CONFIG_DM_USB=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_STORAGE=y
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
+ CONFIG_LZMA=y
++CONFIG_LZO=y
