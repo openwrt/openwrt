@@ -94,6 +94,11 @@ define U-Boot/pogoplugv4
   BUILD_DEVICES:=cloudengines_pogoplugv4
 endef
 
+define U-Boot/sheevaplug
+  NAME:=SheevaPlug
+  BUILD_DEVICES:=globalscale_sheevaplug
+endef
+
 UBOOT_TARGETS := \
 	dockstar dockstar_second_stage \
 	goflexhome \
@@ -105,7 +110,8 @@ UBOOT_TARGETS := \
 	nsa310s \
 	nsa325 \
 	pogo_e02 pogo_e02_second_stage \
-	pogoplugv4
+	pogoplugv4 \
+	sheevaplug
 
 define Build/Configure
 	$(if $(findstring _second_stage,$(BUILD_VARIANT)),
