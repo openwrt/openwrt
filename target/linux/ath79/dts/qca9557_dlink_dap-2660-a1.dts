@@ -63,8 +63,8 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@4 {
-		reg = <0x4>;
+	phy4: ethernet-phy@4 {
+		reg = <4>;
 	};
 };
 
@@ -73,7 +73,7 @@
 
 	pll-data = <0x82000000 0x80000101 0x80001313>;
 
-	phy-handle = <&phy0>;
+	phy-handle = <&phy4>;
 	phy-mode = "rgmii-id";
 
 	gmac-config {
