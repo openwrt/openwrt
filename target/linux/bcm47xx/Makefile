@@ -22,7 +22,6 @@ endef
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += swconfig nvram otrx \
-	kmod-leds-gpio kmod-gpio-button-hotplug \
-	kmod-ledtrig-default-on kmod-ledtrig-timer kmod-ledtrig-netdev
+	kmod-leds-gpio kmod-gpio-button-hotplug
 
 $(eval $(call BuildTarget))
