@@ -333,6 +333,21 @@ define Device/qcom_ipq8064-db149
 endef
 TARGET_DEVICES += qcom_ipq8064-db149
 
+define Device/tplink_ad7200
+	$(call Device/TpSafeImage)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := Talon AD7200
+	DEVICE_VARIANT := v1
+	SOC := qcom-ipq8064
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := ad7200
+	SUPPORTED_DEVICES += ad7200
+	TPLINK_BOARD_ID := AD7200
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-wil6210
+endef
+TARGET_DEVICES += tplink_ad7200
+
 define Device/tplink_c2600
 	$(call Device/TpSafeImage)
 	DEVICE_VENDOR := TP-Link
