@@ -342,7 +342,7 @@ json_get_var valid "valid"
 }
 
 if [ -n "$CONF_IMAGE" ]; then
-	case "$(get_magic_word $CONF_IMAGE cat)" in
+	case "$(get_magic_word "$CONF_IMAGE" cat)" in
 		# .gz files
 		1f8b) ;;
 		*)
