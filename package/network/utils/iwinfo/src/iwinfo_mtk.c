@@ -197,22 +197,17 @@ static int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 	struct iwinfo_assoclist_entry entry;
 	static RT_802_11_MAC_TABLE mt;
 	MACHTTRANSMIT_SETTING rxrate;
-	char raname[IFNAMSIZ], raidx[IFNAMSIZ], raiidx[IFNAMSIZ];
+	char raname[IFNAMSIZ];
 	int mtlen = sizeof(RT_802_11_MAC_TABLE);
 	int i;
 
-	snprintf(raname, sizeof(raname), "%s", ifname);	
+	snprintf(raname, sizeof(raname), "%s", ifname);
 
 	if (mtk_get80211priv(ifname, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &mt, mtlen) > 0)
 	{
 		*len = 0;
 		for (i = 0; i < mt.Num; i++)
 		{
-			snprintf(raidx, sizeof(raidx), "ra%d", mt.Entry[i].ApIdx);
-			snprintf(raiidx, sizeof(raiidx), "rai%d", mt.Entry[i].ApIdx);
-
-			if(strncmp(raname, raidx, IFNAMSIZ) && strncmp(raname, raiidx, IFNAMSIZ)) continue;
-
 			memset(&entry, 0, sizeof(entry));
 
 			memcpy(entry.mac, &mt.Entry[i].Addr, 6);
