@@ -23,7 +23,11 @@ PKG_CONFIG_DEPENDS := \
 	CONFIG_PACKAGE_kmod-brcm-wl \
 	CONFIG_PACKAGE_kmod-brcm-wl-mini \
 	CONFIG_PACKAGE_kmod-brcm-wl-mimo \
-	CONFIG_PACKAGE_kmod-cfg80211
+	CONFIG_PACKAGE_kmod-cfg80211 \
+	CONFIG_PACKAGE_kmod-mt7620 \
+	CONFIG_PACKAGE_kmod-mt7628 \
+	CONFIG_PACKAGE_kmod-mt76x2e \
+	CONFIG_PACKAGE_kmod-mt7615
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -75,7 +79,11 @@ IWINFO_BACKENDS := \
 	$(if $(CONFIG_PACKAGE_kmod-brcm-wl),wl) \
 	$(if $(CONFIG_PACKAGE_kmod-brcm-wl-mini),wl) \
 	$(if $(CONFIG_PACKAGE_kmod-brcm-wl-mimo),wl) \
-	$(if $(CONFIG_PACKAGE_kmod-cfg80211),nl80211)
+	$(if $(CONFIG_PACKAGE_kmod-cfg80211),nl80211) \
+	$(if $(CONFIG_PACKAGE_kmod-mt7620),mtk) \
+	$(if $(CONFIG_PACKAGE_kmod-mt7628),mtk) \
+	$(if $(CONFIG_PACKAGE_kmod-mt76x2e),mtk) \
+	$(if $(CONFIG_PACKAGE_kmod-mt7615),mtk mt7615)
 
 TARGET_CFLAGS += \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \

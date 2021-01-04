@@ -1,0 +1,13 @@
+--- a/drivers/net/usb/rndis_host.c
++++ b/drivers/net/usb/rndis_host.c
+@@ -435,6 +435,10 @@ generic_rndis_bind(struct usbnet *dev, s
+ 	else
+ 		ether_addr_copy(net->dev_addr, bp);
+ 
++	/* correct samsung S10 zero mac address */
++	if((bp[0] == 0) && (bp[1] == 0) && (bp[2] == 0))
++			eth_hw_addr_random(net);
++
+ 	/* set a nonzero filter to enable data transfers */
+ 	memset(u.set, 0, sizeof *u.set);
+ 	u.set->msg_type = cpu_to_le32(RNDIS_MSG_SET);
