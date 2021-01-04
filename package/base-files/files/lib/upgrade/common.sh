@@ -130,7 +130,7 @@ get_magic_gpt() {
 }
 
 get_magic_vfat() {
-	(get_image "$@" | dd bs=1 count=3 skip=54) 2>/dev/null
+	(get_image "$@" | dd bs=3 count=1 skip=18) 2>/dev/null
 }
 
 get_magic_fat32() {
