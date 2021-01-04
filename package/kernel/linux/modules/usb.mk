@@ -1486,6 +1486,23 @@ endef
 $(eval $(call KernelPackage,usb-hid))
 
 
+define KernelPackage/usb-hid-cp2112
+  SUBMENU:=$(USB_MENU)
+  TITLE:=Silicon Labs CP2112 HID USB to SMBus Master Bridge
+  KCONFIG:=CONFIG_GPIOLIB=y CONFIG_HID_CP2112
+  DEPENDS:=+kmod-usb-hid +kmod-i2c-core
+  FILES:=$(LINUX_DIR)/drivers/hid/hid-cp2112.ko
+  AUTOLOAD:=$(call AutoProbe,hid-cp2112)
+endef
+
+define KernelPackage/usb-hid-cp2112/description
+ HID device driver which registers as an i2c adapter and gpiochip to expose
+ these functions of the CP2112.
+endef
+
+$(eval $(call KernelPackage,usb-hid-cp2112))
+
+
 define KernelPackage/usb-yealink
   TITLE:=USB Yealink VOIP phone
   DEPENDS:=+kmod-input-evdev
