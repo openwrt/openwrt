@@ -27,6 +27,10 @@ ath79_setup_interfaces()
 	devolo,dvl1750x|\
 	dlink,dap-1330-a1|\
 	dlink,dap-1365-a1|\
+	dlink,dap-2230-a1|\
+	dlink,dap-2660-a1|\
+	dlink,dap-2680-a1|\
+	dlink,dap-3320-a1|\
 	dlink,dir-505|\
 	engenius,eap300-v2|\
 	engenius,eap350-v1|\
@@ -481,7 +485,10 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_text "mp" 0x1)
 		label_mac=$lan_mac
 		;;
-	dlink,dap-2660-a1)
+	dlink,dap-2230-a1|\
+	dlink,dap-2660-a1|\
+	dlink,dap-2680-a1|\
+	dlink,dap-3320-a1)
 		lan_mac=$(mtd_get_mac_ascii bdcfg "lanmac")
 		label_mac=$lan_mac
 		;;

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "qca955x.dtsi"
-#include "qca95xx_dlink_dap-2xxx.dtsi"
+#include "qca955x_dlink_dap-2xxx.dtsi"
 
 / {
 	compatible = "dlink,dap-2660-a1", "qca,qca9557";
@@ -63,8 +62,8 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@4 {
-		reg = <0x4>;
+	phy4: ethernet-phy@4 {
+		reg = <4>;
 	};
 };
 
@@ -73,7 +72,7 @@
 
 	pll-data = <0x82000000 0x80000101 0x80001313>;
 
-	phy-handle = <&phy0>;
+	phy-handle = <&phy4>;
 	phy-mode = "rgmii-id";
 
 	gmac-config {
