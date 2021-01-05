@@ -75,8 +75,14 @@ etactica,eg200)
 	ucidef_set_led_default "etactica" "etactica" "$boardname:red:etactica" "ignore"
 	;;
 glinet,gl-ar150)
-	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:green:wlan" "phy0tpt"
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:orange:wlan" "phy0tpt"
 	;;
+gl-mifi)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
+	ucidef_set_led_netdev "3gnet" "3GNET" "$board:green:net" "3g-wan"
+    ;;
 glinet,gl-ar300m-nand|\
 glinet,gl-ar300m-nor)
 	ucidef_set_led_netdev "lan" "LAN" "gl-ar300m:green:lan" "eth0"
