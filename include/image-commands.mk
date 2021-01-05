@@ -224,6 +224,10 @@ define Build/lzma
 	$(call Build/lzma-no-dict,-lc1 -lp2 -pb2 $(1))
 endef
 
+define Build/lzma-no-extra
+	$(call Build/lzma-no-dict,$(1))
+endef
+
 define Build/lzma-no-dict
 	$(STAGING_DIR_HOST)/bin/lzma e $@ $(1) $@.new
 	@mv $@.new $@

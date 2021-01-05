@@ -159,6 +159,7 @@ int main(int argc, char *argv[]) {
 	struct pollfd fd;
 	int ret;
 	int done = 0;
+	int loopcount = 0;
 	ssize_t numbytes;
 	FILE *fp = NULL;
 
@@ -242,7 +243,10 @@ int main(int argc, char *argv[]) {
 				continue;
 				break;
 			case 0:
-				// Timeout 
+				// Timeout
+				loopcount++;
+				// Break loop after 30 seconds to allow boot to continue
+				if (loopcount > 30) done = 1; 
 				continue;
 				break;
 			default:

@@ -403,7 +403,7 @@ define Device/avm_fritz7490_wasp
   SOC := qca9558
   DEVICE_VENDOR := AVM
   DEVICE_MODEL := FRITZ!Box 7490 WASP
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | \
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma-no-extra | \
       loader-kernel-wasp | pad-to 4096 | pad-extra 208 | wasp-checksum 7490
   LOADER_TYPE := bin
   KERNEL_INITRAMFS := $$(KERNEL)
