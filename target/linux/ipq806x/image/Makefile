@@ -342,7 +342,6 @@ define Device/tplink_ad7200
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := ad7200
-	SUPPORTED_DEVICES += ad7200
 	TPLINK_BOARD_ID := AD7200
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-wil6210
 endef
