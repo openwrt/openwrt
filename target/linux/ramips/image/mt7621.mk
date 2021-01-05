@@ -240,7 +240,7 @@ define Device/dlink_dir-8xx-r1
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := D-Link
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
-  KERNEL_INITRAMFS := $$(KERNEL) 
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs |\
 	pad-rootfs | append-metadata | check-size
