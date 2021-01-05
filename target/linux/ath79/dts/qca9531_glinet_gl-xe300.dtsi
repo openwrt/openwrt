@@ -7,8 +7,8 @@
 #include "qca953x.dtsi"
 
 / {
-	compatible = "glinet,gl-x750", "qca,qca9531";
-	model = "GL.iNet GL-X750";
+	compatible = "glinet,gl-xe300", "qca,qca9531";
+	model = "GL.iNet GL-XE300";
 
 	keys {
 		compatible = "gpio-keys-polled";
@@ -27,33 +27,58 @@
 	leds {
 		compatible = "gpio-leds";
 
-		power {
-			label = "gl-x750:green:power";
+		wan {
+			label = "gl-xe300:green:wan";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		lan {
+			label = "gl-xe300:green:lan";
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			label = "gl-xe300:green:wlan";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			default-state = "on";
-		};
-
-		wlan2g {
-			label = "gl-x750:green:wlan2g";
-			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
-		wlan5g {
-			label = "gl-x750:green:wlan5g";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
-		wan {
-			label = "gl-x750:green:wan";
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		lte {
+			label = "gl-xe300:green:lte";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		 };
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_lte_power {
+			gpio-export,name = "lte_power";
+			gpio-export,output = <1>;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
-		lte {
-			label = "gl-x750:green:lte";
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		gpio_sd_detect {
+			gpio-export,name = "sd_detect";
+			gpio-export,output = <0>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
+	 };
+
+	i2c: i2c {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&gpio 14 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 16 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		rtc@32 {
+                        compatible = "rtc-sd2068";
+                        reg = <0x32>;
+		};
+
 	};
 };
 
@@ -137,13 +162,13 @@
 	status = "okay";
 	mtd-mac-address = <&art 0x0>;
 	phy-handle = <&swphy4>;
-	ifname = "eth0";
+	ifname = "eth1";
 };
 
 &eth1 {
 	mtd-mac-address = <&art 0x0>;
 	mtd-mac-address-increment = <1>;
-	ifname = "eth1";
+	ifname = "eth0";
 };
 
 &wmac {
