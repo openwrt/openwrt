@@ -15,10 +15,10 @@
 	aliases {
 		mdio-gpio0 = &mdio0;
 
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
 		label-mac-device = &gmac2;
 	};
 
@@ -45,7 +45,7 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
-		ledgeneral {
+		led_enable {
 			label = "led-enable";
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_LIGHTS_TOGGLE>;
@@ -102,7 +102,7 @@
 			gpios = <&qcom_pinmux 56 GPIO_ACTIVE_HIGH>;
 		};
 
-		power: status {
+		led_status: status {
 			label = "blue:status";
 			gpios = <&qcom_pinmux 66 GPIO_ACTIVE_HIGH>;
 		};
@@ -179,7 +179,7 @@
 	qcom,mode = <GSBI_PROT_SPI>;
 	status = "okay";
 
-	spi4: spi@1a280000 {
+	spi@1a280000 {
 		status = "okay";
 
 		pinctrl-0 = <&spi_pins>;
@@ -187,7 +187,7 @@
 
 		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
 
-		m25p80@0 {
+		flash@0 {
 			compatible = "jedec,spi-nor";
 			#address-cells = <1>;
 			#size-cells = <1>;
