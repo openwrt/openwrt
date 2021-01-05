@@ -1,3 +1,12 @@
+define Device/glinet_gl-ar150
+  ATH_SOC := qca9331
+  DEVICE_TITLE := GL.iNet GL-AR150
+  DEVICE_PACKAGES := kmod-usb2  block-mount
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-ar150 glinet,gl-ar150
+endef
+TARGET_DEVICES += glinet_gl-ar150
+
 define Device/glinet_gl-ar300m-nand
   ATH_SOC := qca9531
   DEVICE_TITLE := GL-AR300M (NAND)

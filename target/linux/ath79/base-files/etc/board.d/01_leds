@@ -74,6 +74,9 @@ etactica,eg200)
 	ucidef_set_led_oneshot "modbus" "Modbus" "$boardname:red:modbus" "100" "33"
 	ucidef_set_led_default "etactica" "etactica" "$boardname:red:etactica" "ignore"
 	;;
+glinet,gl-ar150)
+	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:green:wlan" "phy0tpt"
+	;;
 glinet,gl-ar300m-nand|\
 glinet,gl-ar300m-nor)
 	ucidef_set_led_netdev "lan" "LAN" "gl-ar300m:green:lan" "eth0"
