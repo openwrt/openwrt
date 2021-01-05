@@ -46,7 +46,7 @@
 		};
 
 		ledgeneral {
-			label = "ledswitch";
+			label = "led-enable";
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_LIGHTS_TOGGLE>;
 		};
@@ -63,18 +63,23 @@
 		};
 
 		usb1 {
-			label = "blue:usb_1";
+			label = "blue:usb1";
 			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
 		};
 
+		wlan5g {
+			label = "blue:wlan5g";
+			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_HIGH>;
+		};
+
 		usb3 {
-			label = "blue:usb_3";
+			label = "blue:usb3";
 			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_HIGH>;
 		};
 
-		wps {
-			label = "blue:wps";
-			gpios = <&qcom_pinmux 55 GPIO_ACTIVE_HIGH>;
+		wlan2g {
+			label = "blue:wlan2g";
+			gpios = <&qcom_pinmux 17 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan_orange {
@@ -87,26 +92,19 @@
 			gpios = <&qcom_pinmux 33 GPIO_ACTIVE_LOW>;
 		};
 
-		power: status {
-			label = "blue:status";
-			gpios = <&qcom_pinmux 66 GPIO_ACTIVE_HIGH>;
-		};
-
-		wlan2g {
-			label = "blue:wlan2g";
-			gpios = <&qcom_pinmux 17 GPIO_ACTIVE_HIGH>;
-
-		};
-
-		wlan5g {
-			label = "blue:wlan5g";
-			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_HIGH>;
-
+		wps {
+			label = "blue:wps";
+			gpios = <&qcom_pinmux 55 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan60g {
 			label = "blue:wlan60g";
 			gpios = <&qcom_pinmux 56 GPIO_ACTIVE_HIGH>;
+		};
+
+		power: status {
+			label = "blue:status";
+			gpios = <&qcom_pinmux 66 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -196,155 +194,155 @@
 			spi-max-frequency = <50000000>;
 			reg = <0>;
 
-			SBL1@0 {
+			partition@0 {
 				label = "SBL1";
 				reg = <0x0 0x20000>;
 				read-only;
 			};
 
-			MIBIB@20000 {
+			partition@20000 {
 				label = "MIBIB";
 				reg = <0x20000 0x20000>;
 				read-only;
 			};
 
-			SBL2@40000 {
+			partition@40000 {
 				label = "SBL2";
 				reg = <0x40000 0x20000>;
 				read-only;
 			};
 
-			SBL3@60000 {
+			partition@60000 {
 				label = "SBL3";
 				reg = <0x60000 0x30000>;
 				read-only;
 			};
 
-			DDRCONFIG@90000 {
+			partition@90000 {
 				label = "DDRCONFIG";
 				reg = <0x90000 0x10000>;
 				read-only;
 			};
 
-			SSD@a0000 {
+			partition@a0000 {
 				label = "SSD";
 				reg = <0xa0000 0x10000>;
 				read-only;
 			};
 
-			TZ@b0000 {
+			partition@b0000 {
 				label = "TZ";
 				reg = <0xb0000 0x30000>;
 				read-only;
 			};
 
-			RPM@e0000 {
+			partition@e0000 {
 				label = "RPM";
 				reg = <0xe0000 0x20000>;
 				read-only;
 			};
 
-			fs-uboot@100000 {
+			partition@100000 {
 				label = "fs-uboot";
 				reg = <0x100000 0x70000>;
 				read-only;
 			};
 
-			uboot-env@170000 {
+			partition@170000 {
 				label = "uboot-env";
 				reg = <0x170000 0x40000>;
 				read-only;
 			};
 
-			radio@1b0000 {
+			partition@1b0000 {
 				label = "radio";
 				reg = <0x1b0000 0x40000>;
 				read-only;
 			};
 
-			os-image@1f0000 {
+			partition@1f0000 {
 				label = "os-image";
 				reg = <0x1f0000 0x400000>;
 			};
 
-			rootfs@5f0000 {
+			partition@5f0000 {
 				label = "rootfs";
 				reg = <0x5f0000 0x1900000>;
 			};
 
-			defaultmac: default-mac@1ef0000 {
+			defaultmac: partition@1ef0000 {
 				label = "default-mac";
 				reg = <0x1ef0000 0x00200>;
 				read-only;
 			};
 
-			pin@1ef0200 {
+			partition@1ef0200 {
 				label = "pin";
 				reg = <0x1ef0200 0x00200>;
 				read-only;
 			};
 
-			device-id@1ef0400 {
+			partition@1ef0400 {
 				label = "device-id";
 				reg = <0x1ef0400 0x00200>;
 				read-only;
 			};
 
-			product-info@1ef0600 {
+			partition@1ef0600 {
 				label = "product-info";
 				reg = <0x1ef0600 0x0fa00>;
 				read-only;
 			};
 
-			partition-table@1f00000 {
+			partition@1f00000 {
 				label = "partition-table";
 				reg = <0x1f00000 0x10000>;
 				read-only;
 			};
 
-			soft-version@1f10000 {
+			partition@1f10000 {
 				label = "soft-version";
 				reg = <0x1f10000 0x10000>;
 				read-only;
 			};
 
-			support-list@1f20000 {
+			partition@1f20000 {
 				label = "support-list";
 				reg = <0x1f20000 0x10000>;
 				read-only;
 			};
 
-			profile@1f30000 {
+			partition@1f30000 {
 				label = "profile";
 				reg = <0x1f30000 0x10000>;
 				read-only;
 			};
 
-			default-config@1f40000 {
+			partition@1f40000 {
 				label = "default-config";
 				reg = <0x1f40000 0x10000>;
 				read-only;
 			};
 
-			user-config@1f50000 {
+			partition@1f50000 {
 				label = "user-config";
 				reg = <0x1f50000 0x40000>;
 				read-only;
 			};
 
-			qos-db@1f90000 {
+			partition@1f90000 {
 				label = "qos-db";
 				reg = <0x1f90000 0x40000>;
 				read-only;
 			};
 
-			usb-config@1fd0000 {
+			partition@1fd0000 {
 				label = "usb-config";
 				reg = <0x1fd0000 0x10000>;
 				read-only;
 			};
 
-			log@1fe0000 {
+			partition@1fe0000 {
 				label = "log";
 				reg = <0x1fe0000 0x20000>;
 				read-only;
