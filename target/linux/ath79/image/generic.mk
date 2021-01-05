@@ -414,7 +414,7 @@ define Device/glinet_gl-x750
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-x750
 endef
-TARGET_DEVICES += glinet_gl-x750
+#TARGET_DEVICES += glinet_gl-x750
 
 define Device/iodata_etg3-r
   ATH_SOC := ar9342

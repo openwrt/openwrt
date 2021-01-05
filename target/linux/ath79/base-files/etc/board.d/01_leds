@@ -81,8 +81,10 @@ glinet,gl-ar300m-nor)
 glinet,gl-ar300m-lite)
 	ucidef_set_led_netdev "lan" "LAN" "gl-ar300m-lite:green:lan" "eth0"
 	;;
-glinet,gl-x750)
-	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth1"
+glinet,gl-x750|\
+glinet,gl-x750-nor|\
+glinet,gl-x750-nor-nand)
+	ucidef_set_led_netdev "wan" "WAN" "gl-x750:green:wan" "eth0"
 	;;
 netgear,wnr612-v2|\
 on,n150r)

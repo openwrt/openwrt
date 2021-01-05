@@ -289,7 +289,7 @@ ath79_setup_interfaces()
 			"0@eth0" "3:lan:1" "4:lan:2"
 		;;
 	*)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	esac
 }
