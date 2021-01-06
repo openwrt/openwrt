@@ -14,7 +14,8 @@ preinit_set_mac_address() {
 	enterasys,ws-ap3705i)
 		ip link set dev eth0 address $(mtd_get_mac_ascii u-boot-env0 ethaddr)
 		;;
-	siemens,ws-ap3610)
+	siemens,ws-ap3610|\
+	extreme,ap3805i)
 		ip link set dev eth0 address $(mtd_get_mac_ascii cfg1 ethaddr)
 		;;
 	zyxel,nbg6616)
