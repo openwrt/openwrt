@@ -1,9 +1,9 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -454,6 +454,12 @@
+@@ -540,6 +540,12 @@ config REALTEK_PHY
  	---help---
  	  Supports the Realtek 821x PHY.
-
+ 
 +config REALTEK_SOC_PHY
 +	tristate "Realtek SoC PHYs"
 +	depends on RTL838X
@@ -15,7 +15,7 @@
  	---help---
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -87,6 +87,7 @@
+@@ -102,6 +102,7 @@ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
  obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja11xx.o
  obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
