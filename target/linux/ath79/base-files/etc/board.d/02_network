@@ -16,6 +16,7 @@ ath79_setup_interfaces()
 	devolo,dvl1750i|\
 	devolo,dvl1750x|\
 	engenius,ecb1750|\
+	glinet,gl-usb150|\
 	glinet,gl-ar300m-lite|\
 	netgear,ex6400|\
 	netgear,ex7300|\
@@ -113,6 +114,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "3:lan:4" "4:lan:3" "5:lan:2" "2:wan"
 		;;
+	glinet,gl-ar150|\
+	glinet,gl-mifi|\
 	comfast,cf-e110n-v2|\
 	comfast,cf-e120a-v3|\
 	tplink,cpe220-v3|\
@@ -166,6 +169,11 @@ ath79_setup_interfaces()
         glinet,gl-xe300-nor-nand)
                 ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
+	glinet,gl-ar750)
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan" "2:lan"
+        ;;
 	iodata,etg3-r|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\

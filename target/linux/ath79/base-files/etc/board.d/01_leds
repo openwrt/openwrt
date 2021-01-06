@@ -74,6 +74,19 @@ etactica,eg200)
 	ucidef_set_led_oneshot "modbus" "Modbus" "$boardname:red:modbus" "100" "33"
 	ucidef_set_led_default "etactica" "etactica" "$boardname:red:etactica" "ignore"
 	;;
+glinet,gl-ar150)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:orange:wlan" "phy0tpt"
+	;;
+glinet,gl-usb150)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	ucidef_set_led_default "power" "POWER" "$board:green:power" "1"
+    ;;
+glinet,gl-mifi)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
+	ucidef_set_led_netdev "3gnet" "3GNET" "$board:green:net" "3g-wan"
+    ;;
 glinet,gl-ar300m-nand|\
 glinet,gl-ar300m-nor)
 	ucidef_set_led_netdev "lan" "LAN" "gl-ar300m:green:lan" "eth0"
@@ -93,6 +106,10 @@ glinet,gl-xe300-nor-nand)
         ucidef_set_led_netdev "wan" "WAN" "gl-xe300:green:wan" "eth1"
         ucidef_set_led_netdev "3gnet" "LTE" "gl-xe300:green:lte" "wwan0"
         ;;
+glinet,gl-ar750)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:white:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:white:wlan5g" "phy0tpt"
+    ;;
 netgear,wnr612-v2|\
 on,n150r)
 	ucidef_set_led_netdev "wan" "WAN" "netgear:green:wan" "eth0"

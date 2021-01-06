@@ -197,6 +197,7 @@ static int mtk_get_assoclist(const char *ifname, char *buf, int *len)
 	struct iwinfo_assoclist_entry entry;
 	static RT_802_11_MAC_TABLE mt;
 	MACHTTRANSMIT_SETTING rxrate;
+
 	int mtlen = sizeof(RT_802_11_MAC_TABLE);
 	int i;
 
