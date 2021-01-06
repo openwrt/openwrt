@@ -40,6 +40,7 @@ ath79_setup_interfaces()
 	engenius,ecb350-v1|\
 	engenius,ecb600|\
 	enterasys,ws-ap3705i|\
+	extreme,ap3805i|\
 	glinet,gl-ar300m-lite|\
 	glinet,gl-usb150|\
 	hak5,wifi-pineapple-nano|\
@@ -555,6 +556,9 @@ ath79_setup_macs()
 		;;
 	enterasys,ws-ap3705i)
 		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
+		;;
+	extreme,ap3805i)
+		label_mac=$(mtd_get_mac_ascii cfg1 ethaddr)
 		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
