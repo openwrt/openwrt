@@ -41,6 +41,9 @@ define Device/tplink_archer-c5-v1
   SOC := qca9558
   DEVICE_MODEL := Archer C5
   DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := AC1200
+  DEVICE_ALT0_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
 	ath10k-firmware-qca988x-ct
   TPLINK_HWID := 0xc5000001
@@ -162,6 +165,9 @@ define Device/tplink_archer-c7-v2
   SOC := qca9558
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v2
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := AC1750
+  DEVICE_ALT0_VARIANT := v2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
 	ath10k-firmware-qca988x-ct
   TPLINK_HWID := 0xc7000002
@@ -569,6 +575,9 @@ define Device/tplink_tl-wdr7500-v3
   SOC := qca9558
   DEVICE_MODEL := TL-WDR7500
   DEVICE_VARIANT := v3
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := Archer C7R
+  DEVICE_ALT0_VARIANT := v3
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
 	ath10k-firmware-qca988x-ct
   TPLINK_HWID := 0x75000003
