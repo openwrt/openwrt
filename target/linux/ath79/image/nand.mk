@@ -7,6 +7,15 @@ define Device/glinet_gl-ar150
 endef
 TARGET_DEVICES += glinet_gl-ar150
 
+define Device/glinet_gl-usb150
+  ATH_SOC := qca9331
+  DEVICE_TITLE := GL.iNet GL-USB150
+  DEVICE_PACKAGES := kmod-usb2  block-mount
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-usb150 glinet,gl-usb150
+endef
+TARGET_DEVICES += glinet_gl-usb150
+
 define Device/glinet_gl-mifi
   ATH_SOC := qca9331
   DEVICE_TITLE := GL.iNet GL-MIFI

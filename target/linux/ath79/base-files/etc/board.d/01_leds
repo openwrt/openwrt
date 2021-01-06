@@ -77,7 +77,11 @@ etactica,eg200)
 glinet,gl-ar150)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:orange:wlan" "phy0tpt"
 	;;
-gl-mifi)
+glinet,gl-usb150)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	ucidef_set_led_default "power" "POWER" "$board:green:power" "1"
+    ;;
+glinet,gl-mifi)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth0"
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
