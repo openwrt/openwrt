@@ -111,7 +111,7 @@ static __inline__ unsigned char lzma_get_byte(void)
 static int lzma_init_props(void)
 {
 	unsigned char props[LZMA_PROPERTIES_SIZE];
-	int res;
+	int ret;
 	int i;
 
 	/* read lzma properties */
@@ -128,9 +128,9 @@ static int lzma_init_props(void)
 	for (i = 0; i < 4; i++)
 		lzma_get_byte();
 
-	res = LzmaDecodeProperties(&lzma_state.Properties, props,
+	ret = LzmaDecodeProperties(&lzma_state.Properties, props,
 					LZMA_PROPERTIES_SIZE);
-	return res;
+	return ret;
 }
 
 static int lzma_decompress(unsigned char *outStream)
@@ -171,11 +171,11 @@ static void lzma_init_data(void)
 #else
 static void lzma_init_data(void)
 {
-	struct image_header *hdr = NULL;
+	struct image_header *hdr;
 	unsigned char *flash_base;
 	unsigned long flash_ofs;
 	unsigned long kernel_ofs;
-	unsigned long kernel_size;
+	unsigned long magic;
 
 	flash_base = (unsigned char *) KSEG1ADDR(AR71XX_FLASH_START);
 
@@ -184,72 +184,88 @@ static void lzma_init_data(void)
 	for (flash_ofs = CONFIG_FLASH_OFFS;
 	     flash_ofs <= (CONFIG_FLASH_OFFS + CONFIG_FLASH_MAX);
 	     flash_ofs += CONFIG_FLASH_STEP) {
-		unsigned long magic;
-		unsigned char *p;
 
-		p = flash_base + flash_ofs;
-		magic = get_be32(p);
+		magic = get_be32(flash_base + flash_ofs);
+
 #ifdef CONFIG_KERNEL_MAGIC
 		if (magic == CONFIG_KERNEL_MAGIC) {
 #else
 		if (magic == IH_MAGIC_OKLI) {
 #endif
-			hdr = (struct image_header *) p;
 			break;
 		}
 	}
 
-	if (hdr == NULL) {
+#ifdef CONFIG_KERNEL_MAGIC
+	if (magic != CONFIG_KERNEL_MAGIC) {
+#else
+	if (magic != IH_MAGIC_OKLI) {
+#endif
 		printf("not found!\n");
-		halt();
+		return;
 	}
 
 	printf("found at 0x%08x\n", flash_base + flash_ofs);
 
+	hdr = (struct image_header *) (flash_base + flash_ofs);
+
 	kernel_ofs = sizeof(struct image_header);
-	kernel_size = get_be32(&hdr->ih_size);
 	kernel_la = get_be32(&hdr->ih_load);
 
 	lzma_data = flash_base + flash_ofs + kernel_ofs;
-	lzma_datasize = kernel_size;
+	lzma_datasize = get_be32(&hdr->ih_size);
 }
 #endif /* (LZMA_WRAPPER) */
+
+static int kernel_load(void)
+{
+	int ret;
+
+	lzma_init_data();
+	if (kernel_la == 0) {
+		return 1;
+	}
+
+	ret = lzma_init_props();
+	if (ret != LZMA_RESULT_OK) {
+		printf("Incorrect LZMA stream properties!\n");
+		return 1;
+	}
+
+	printf("Decompressing kernel... ");
+
+	ret = lzma_decompress((unsigned char *) kernel_la);
+	if (ret != LZMA_RESULT_OK) {
+		printf("failed, ");
+		switch (ret) {
+		case LZMA_RESULT_DATA_ERROR:
+			printf("data error!\n");
+			break;
+		default:
+			printf("unknown error %d!\n", ret);
+		}
+		return 1;
+	}
+
+	printf("done!\n");
+	return 0;
+}
 
 void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 		 unsigned long reg_a2, unsigned long reg_a3)
 {
 	void (*kernel_entry) (unsigned long, unsigned long, unsigned long,
 			      unsigned long);
-	int res;
+	int ret;
 
 	board_init();
 
 	printf("\n\nOpenWrt kernel loader for AR7XXX/AR9XXX\n");
 	printf("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
 
-	lzma_init_data();
-
-	res = lzma_init_props();
-	if (res != LZMA_RESULT_OK) {
-		printf("Incorrect LZMA stream properties!\n");
+	ret = kernel_load();
+	if (ret != 0) {
 		halt();
-	}
-
-	printf("Decompressing kernel... ");
-
-	res = lzma_decompress((unsigned char *) kernel_la);
-	if (res != LZMA_RESULT_OK) {
-		printf("failed, ");
-		switch (res) {
-		case LZMA_RESULT_DATA_ERROR:
-			printf("data error!\n");
-			break;
-		default:
-			printf("unknown error %d!\n", res);
-		}
-		halt();
-	} else {
-		printf("done!\n");
 	}
 
 	flush_cache(kernel_la, lzma_outsize);
