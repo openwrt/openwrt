@@ -173,6 +173,26 @@ define Device/netgear_ath79_nand
   UBINIZE_OPTS := -E 5
 endef
 
+define Device/netgear_ath79_nand_128m
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  KERNEL_SIZE := 4096k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 121m
+  KERNEL := kernel-bin | append-dtb | lzma -d20 | \
+	pad-offset $$(KERNEL_SIZE) 129 | uImage lzma | \
+	append-string -e '\xff' | \
+	append-uImage-fakehdr filesystem $$(UIMAGE_MAGIC)
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | uImage lzma
+  IMAGES := sysupgrade.bin factory.img
+  IMAGE/factory.img := append-kernel | append-ubi | netgear-dni | \
+	check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | \
+	check-size
+  UBINIZE_OPTS := -E 5
+endef
+
 define Device/netgear_wndr3700-v4
   SOC := ar9344
   DEVICE_MODEL := WNDR3700
@@ -184,57 +204,15 @@ define Device/netgear_wndr3700-v4
 endef
 TARGET_DEVICES += netgear_wndr3700-v4
 
-define Device/netgear_wndr4300
+define Device/netgear_wndr4300_128m
   SOC := ar9344
   DEVICE_MODEL := WNDR4300
   UIMAGE_MAGIC := 0x33373033
   NETGEAR_BOARD_ID := WNDR4300
   NETGEAR_HW_ID := 29763948+0+128+128+2x2+3x3
-  $(Device/netgear_ath79_nand)
+  $(Device/netgear_ath79_nand_128m)
 endef
-TARGET_DEVICES += netgear_wndr4300
-
-define Device/netgear_wndr4300sw
-  SOC := ar9344
-  DEVICE_MODEL := WNDR4300SW
-  UIMAGE_MAGIC := 0x33373033
-  NETGEAR_BOARD_ID := WNDR4300SW
-  NETGEAR_HW_ID := 29763948+0+128+128+2x2+3x3
-  $(Device/netgear_ath79_nand)
-endef
-TARGET_DEVICES += netgear_wndr4300sw
-
-define Device/netgear_wndr4300tn
-  SOC := ar9344
-  DEVICE_MODEL := WNDR4300TN
-  UIMAGE_MAGIC := 0x33373033
-  NETGEAR_BOARD_ID := WNDR4300TN
-  NETGEAR_HW_ID := 29763948+0+128+128+2x2+3x3
-  $(Device/netgear_ath79_nand)
-endef
-TARGET_DEVICES += netgear_wndr4300tn
-
-define Device/netgear_wndr4300-v2
-  SOC := qca9563
-  DEVICE_MODEL := WNDR4300
-  DEVICE_VARIANT := v2
-  UIMAGE_MAGIC := 0x27051956
-  NETGEAR_BOARD_ID := WNDR4500series
-  NETGEAR_HW_ID := 29764821+2+128+128+3x3+3x3+5508012175
-  $(Device/netgear_ath79_nand)
-endef
-TARGET_DEVICES += netgear_wndr4300-v2
-
-define Device/netgear_wndr4500-v3
-  SOC := qca9563
-  DEVICE_MODEL := WNDR4500
-  DEVICE_VARIANT := v3
-  UIMAGE_MAGIC := 0x27051956
-  NETGEAR_BOARD_ID := WNDR4500series
-  NETGEAR_HW_ID := 29764821+2+128+128+3x3+3x3+5508012173
-  $(Device/netgear_ath79_nand)
-endef
-TARGET_DEVICES += netgear_wndr4500-v3
+TARGET_DEVICES += netgear_wndr4300_128m
 
 define Device/zyxel_nbg6716
   SOC := qca9558
