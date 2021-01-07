@@ -20,24 +20,24 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_power_green: led_power_green {
-			label = "ap3805:green:power";
+		led_power_green: power_green {
+			label = "green:power";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_amber: led_power_amber {
-			label = "ap3805:amber:power";
+		led_power_amber: power_amber {
+			label = "amber:power";
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 		};
 
-		led_wlan5_green {
-			label = "ap3805:green:wlan5";
+		wlan5 {
+			label = "green:wlan5";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};	
 
-		led_wlan2_green {
-			label = "ap3805:green:wlan2";
+		wlan2 {
+			label = "green:wlan2";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
@@ -110,8 +110,9 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
-
+		spi-max-frequency = <50000000>;
+		m25p,fast-read;
+		
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -159,13 +160,31 @@
 			partition@240000 {
 				label = "nvram1";
 				reg = <0x240000 0x40000>;
-			}; 
-
+			};
+			
+			partition@280000 {
+				label = "PriImg";
+				reg = <0x280000 0x1000000>;
+				read-only;
+			};
+			
+			partition@1280000 {
+				label = "SecImg";
+				reg = <0x1280000 0x1000000>;
+				read-only;
+			};
+			
 			partition@2280000 {
 				label = "firmware";
 				compatible = "denx,uimage";
 				reg = <0x2280000 0x1cc0000>;
-			};	
+			};
+
+			partition@3f40000 {
+				label = "cert";
+				reg = <0x3f40000 0x80000>;
+				read-only;
+			}; 
 
 			partition@3fc0000 {
 				label = "art";
