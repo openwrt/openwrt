@@ -1245,6 +1245,16 @@ define Device/etactica_eg200
 endef
 TARGET_DEVICES += etactica_eg200
 
+define Device/extreme-networks_ws-ap3805i
+  SOC := qca9557
+  BLOCKSIZE := 256k
+  DEVICE_VENDOR := Extreme Networks
+  DEVICE_MODEL := WS-AP3805i
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 29440k
+endef
+TARGET_DEVICES += extreme-networks_ws-ap3805i
+
 define Device/glinet_6408
   $(Device/tplink-8mlzma)
   SOC := ar9331
