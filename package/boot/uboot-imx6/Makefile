@@ -24,6 +24,7 @@ define U-Boot/apalis_imx6
   NAME:=Toradex Apalis
   UBOOT_IMAGE:=SPL u-boot.img u-boot-with-spl.imx
   UBOOT_MAKE_FLAGS:=SPL u-boot.img u-boot-with-spl.imx
+  BUILD_DEVICES:=apalis
 endef
 
 define U-Boot/mx6cuboxi
