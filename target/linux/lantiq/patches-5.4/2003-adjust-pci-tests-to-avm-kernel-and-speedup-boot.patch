@@ -1,0 +1,20 @@
+--- a/drivers/usb/host/pci-quirks.c
++++ b/drivers/usb/host/pci-quirks.c
+@@ -1199,7 +1199,7 @@
+ 
+ 		/* Wait for 1 second with 10 microsecond polling interval */
+ 		timeout = handshake(base + ext_cap_offset, XHCI_HC_BIOS_OWNED,
+-				0, 1000000, 10);
++				0, 5000, 10);
+ 
+ 		/* Assume a buggy BIOS and take HC ownership anyway */
+ 		if (timeout) {
+@@ -1228,7 +1228,7 @@
+ 	 * operational or runtime registers.  Wait 5 seconds and no more.
+ 	 */
+ 	timeout = handshake(op_reg_base + XHCI_STS_OFFSET, XHCI_STS_CNR, 0,
+-			5000000, 10);
++			5000, 10);
+ 	/* Assume a buggy HC and start HC initialization anyway */
+ 	if (timeout) {
+ 		val = readl(op_reg_base + XHCI_STS_OFFSET);

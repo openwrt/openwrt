@@ -8,7 +8,7 @@ do_wasp_downloader() {
 	else
 		iface="eth0"
 	fi
-	logger -s -t "WASP Downloader:" -p daemon.warn "Trying to download from $iface"
+	echo "WASP Downloader: Trying to download from $iface" > /dev/kmsg
 	/usr/bin/wasp_downloader $iface /tmp/overlay.tar.gz
 	cd /
 	if [ -e /tmp/overlay.tar.gz ]; then
@@ -17,7 +17,7 @@ do_wasp_downloader() {
 	    /usr/bin/wasp_script
 	  fi
 	else
-	  logger -s -t"WASP Downloader:" -p daemon.warn "No config overlay file received"
+	  echo "WASP Downloader: No config overlay file received" > /dev/kmsg
 	fi
 }
 
