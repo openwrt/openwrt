@@ -557,9 +557,6 @@ ath79_setup_macs()
 	enterasys,ws-ap3705i)
 		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
 		;;
-	extreme,ap3805i)
-		label_mac=$(mtd_get_mac_ascii cfg1 ethaddr)
-		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
 		label_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
