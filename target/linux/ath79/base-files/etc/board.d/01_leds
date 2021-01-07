@@ -94,6 +94,13 @@ glinet,gl-ar300m-nor)
 glinet,gl-ar300m-lite)
 	ucidef_set_led_netdev "lan" "LAN" "gl-ar300m-lite:green:lan" "eth0"
 	;;
+glinet,gl-x300b|\
+glinet,gl-x300b-nor|\
+glinet,gl-x300b-nor-nand)
+    ucidef_set_led_netdev "wlan2g" "WLAN2G" "$board:green:wlan2g" "wlan0"
+    ucidef_set_led_netdev "wan"    "WAN"    "$board:green:wan"    "eth0"
+    ucidef_set_led_netdev "3gnet"  "3GNET"  "$board:green:lte"     "3g-wan"
+	;;
 glinet,gl-x750|\
 glinet,gl-x750-nor|\
 glinet,gl-x750-nor-nand)

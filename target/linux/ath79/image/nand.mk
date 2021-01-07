@@ -129,3 +129,27 @@ define Device/glinet_gl-xe300-nor-nand
   SUPPORTED_DEVICES += gl-xe300 glinet,gl-xe300
 endef
 TARGET_DEVICES += glinet_gl-xe300-nor-nand
+
+define Device/glinet_gl-x300b-nor
+  ATH_SOC := qca9531
+  DEVICE_TITLE := GL.iNet GL-X300B (NOR)
+  DEVICE_PACKAGES := kmod-usb2 block-mount
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-x300b glinet,gl-x300b
+endef
+TARGET_DEVICES += glinet_gl-x300b-nor
+
+define Device/glinet_gl-x300b-nor-nand
+  ATH_SOC := qca9531
+  DEVICE_TITLE := GL.iNet GL-X300B (NOR/NAND)
+  DEVICE_PACKAGES := kmod-usb2 block-mount
+  KERNEL_SIZE := 2048k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  IMAGES := factory.img sysupgrade.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-metadata
+  SUPPORTED_DEVICES += gl-x300b glinet,gl-x300b
+endef
+TARGET_DEVICES += glinet_gl-x300b-nor-nand
