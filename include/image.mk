@@ -475,7 +475,8 @@ endef
 ifndef IB
 define Device/Build/initramfs
   $(call Device/Export,$(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE),$(1))
-  $$(_TARGET): $$(if $$(KERNEL_INITRAMFS),$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE))
+  $$(_TARGET): $$(if $$(KERNEL_INITRAMFS),$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)) \
+	  $$(if $$(CONFIG_JSON_OVERVIEW_IMAGE_INFO), $(BUILD_DIR)/json_info_files/$$(KERNEL_INITRAMFS_IMAGE).json,)
 
   $(KDIR)/$$(KERNEL_INITRAMFS_NAME):: image_prepare
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
@@ -484,6 +485,20 @@ define Device/Build/initramfs
   $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_NAME) $(CURDIR)/Makefile $$(KERNEL_DEPENDS) image_prepare
 	@rm -f $$@
 	$$(call concat_cmd,$$(KERNEL_INITRAMFS))
+
+  $(BUILD_DIR)/json_info_files/$$(KERNEL_INITRAMFS_IMAGE).json: $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
+	@mkdir -p $$(shell dirname $$@)
+	DEVICE_ID="$(1)" \
+	BIN_DIR="$(BIN_DIR)" \
+	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
+	IMAGE_NAME="$$(notdir $$^)" \
+	IMAGE_TYPE="kernel" \
+	IMAGE_FILESYSTEM="initramfs" \
+	TARGET="$(BOARD)" \
+	SUBTARGET="$(if $(SUBTARGET),$(SUBTARGET),generic)" \
+	VERSION_NUMBER="$(VERSION_NUMBER)" \
+	VERSION_CODE="$(VERSION_CODE)" \
+	$(TOPDIR)/scripts/json_add_image_info.py $$@
 endef
 endif
 
