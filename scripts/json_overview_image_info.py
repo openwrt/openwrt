@@ -18,6 +18,10 @@ assert getenv("WORK_DIR"), "$WORK_DIR required"
 def get_output(work_dir):
     output = None
 
+    # preserve existing profiles.json file data
+    if output_path.is_file():
+        output = json.loads(output_path.read_text())
+
     for json_file in work_dir.glob("*.json"):
         image_info = json.loads(json_file.read_text())
 
