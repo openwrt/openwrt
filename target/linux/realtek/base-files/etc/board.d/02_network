@@ -55,6 +55,10 @@ netgear,gs110tpp-v1)
 zyxel,gs1900-10hp)
 	ucidef_set_poe 77 "$lan_list"
 	;;
+zyxel,gs1900-8hp-v1|\
+zyxel,gs1900-8hp-v2)
+	ucidef_set_poe 70 "$lan_list"
+	;;
 esac
 
 board_config_flush
