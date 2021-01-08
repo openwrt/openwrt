@@ -12,14 +12,14 @@
 +
 +	switch(cmd) {
 +	case SIOCGMIIREG:
-+		ret = xrx200_mdio_rd(priv->hw->mii_bus, mii->phy_id, mii->reg_num);
++		ret = xrx200_mdio_rd(priv->mii_bus, mii->phy_id, mii->reg_num);
 +		if (ret >= 0) {
 +			mii->val_out = ret;
 +			ret = 0;
 +		}
 +		break;
 +	case SIOCSMIIREG:
-+		ret = xrx200_mdio_wr(priv->hw->mii_bus, mii->phy_id, mii->reg_num,
++		ret = xrx200_mdio_wr(priv->mii_bus, mii->phy_id, mii->reg_num,
 +							 mii->val_in);
 +		break;
 +	default:
