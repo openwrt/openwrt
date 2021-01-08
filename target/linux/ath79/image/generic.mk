@@ -377,7 +377,7 @@ define Device/glinet_gl-ar150
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-ar150
 endef
-TARGET_DEVICES += glinet_gl-ar150
+#TARGET_DEVICES += glinet_gl-ar150
 
 define Device/glinet_gl-ar300m-common-nor
   ATH_SOC := qca9531
