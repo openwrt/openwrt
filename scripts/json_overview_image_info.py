@@ -14,23 +14,33 @@ output_path = Path(argv[1])
 
 assert getenv("WORK_DIR"), "$WORK_DIR required"
 
-work_dir = Path(getenv("WORK_DIR"))
+# merge profiles
+def get_output(work_dir):
+    output = None
 
-output = {}
+    for json_file in work_dir.glob("*.json"):
+        image_info = json.loads(json_file.read_text())
 
-for json_file in work_dir.glob("*.json"):
-    image_info = json.loads(json_file.read_text())
-    if not output:
-        output.update(image_info)
-    else:
-        # get first (and only) profile in json file
-        device_id = next(iter(image_info["profiles"].keys()))
-        if device_id not in output["profiles"]:
-            output["profiles"].update(image_info["profiles"])
-        else:
-            output["profiles"][device_id]["images"].append(
-                image_info["profiles"][device_id]["images"][0]
-            )
+        # use first json file as template
+        if not output:
+            output = image_info
+
+        # get first (and probably only) profile in json file
+        for device_id, profile in image_info["profiles"].items():
+            output["profiles"][device_id] = {
+                **profile,
+                **output["profiles"].get(device_id, {}),
+            }
+            output["profiles"][device_id]["images"].extend(profile["images"])
+
+    # make image lists unique by name
+    for device_id, profile in output["profiles"].items():
+        profile["images"] = list({e["name"]: e for e in profile["images"]}.values())
+
+    return output
+
+
+output = get_output(Path(getenv("WORK_DIR")))
 
 if output:
     default_packages, output["arch_packages"] = run(

@@ -14,9 +14,15 @@ json_path = Path(argv[1])
 bin_dir = Path(getenv("BIN_DIR"))
 image_file = bin_dir / getenv("IMAGE_NAME")
 
+
 if not image_file.is_file():
-    print("Skip JSON creation for non existing image ", image_file)
+    print("Skip JSON creation for non existing image: {}".format(image_file))
     exit(0)
+
+
+def set(obj, key, value):
+    if value != None and len(value) != 0:
+        obj[key] = value
 
 
 def get_titles():
@@ -24,14 +30,15 @@ def get_titles():
     for prefix in ["", "ALT0_", "ALT1_", "ALT2_"]:
         title = {}
         for var in ["vendor", "model", "variant"]:
-            if getenv("DEVICE_{}{}".format(prefix, var.upper())):
-                title[var] = getenv("DEVICE_{}{}".format(prefix, var.upper()))
+            set(title, var, getenv("DEVICE_{}{}".format(prefix, var.upper())))
 
         if title:
             titles.append(title)
 
     if not titles:
-        titles.append({"title": getenv("DEVICE_TITLE")})
+        title = getenv("DEVICE_TITLE")
+        if title:
+            titles.append({"title": title})
 
     return titles
 
@@ -47,7 +54,6 @@ image_info = {
     "source_date_epoch": getenv("SOURCE_DATE_EPOCH"),
     "profiles": {
         device_id: {
-            "image_prefix": getenv("IMAGE_PREFIX"),
             "images": [
                 {
                     "type": getenv("IMAGE_TYPE"),
@@ -55,12 +61,16 @@ image_info = {
                     "name": getenv("IMAGE_NAME"),
                     "sha256": image_hash,
                 }
-            ],
-            "device_packages": getenv("DEVICE_PACKAGES").split(),
-            "supported_devices": getenv("SUPPORTED_DEVICES").split(),
-            "titles": get_titles(),
+            ]
         }
     },
 }
+
+profile = image_info["profiles"][device_id]
+
+set(profile, "titles", get_titles())
+set(profile, "device_packages", getenv("DEVICE_PACKAGES", "").split())
+set(profile, "supported_devices", getenv("SUPPORTED_DEVICES", "").split())
+set(profile, "image_prefix", getenv("IMAGE_PREFIX"))
 
 json_path.write_text(json.dumps(image_info, separators=(",", ":")))
