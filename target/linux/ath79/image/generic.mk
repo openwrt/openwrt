@@ -799,6 +799,17 @@ define Device/comfast_cf-e314n-v2
 endef
 TARGET_DEVICES += comfast_cf-e314n-v2
 
+define Device/comfast_cf-e355ac-v2
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E355AC
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct \
+	-swconfig -uboot-envtools
+  IMAGE_SIZE := 16192k
+endef
+TARGET_DEVICES += comfast_cf-e355ac-v2
+
 define Device/comfast_cf-e375ac
   SOC := qca9563
   DEVICE_VENDOR := COMFAST
