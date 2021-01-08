@@ -177,8 +177,6 @@ TARGET_DEVICES += ventana
 
 define Device/ventana-large
   $(Device/ventana)
-  DEVICE_VENDOR := Gateworks
-  DEVICE_MODEL := Ventana family
   DEVICE_VARIANT := large NAND flash
   DEVICE_NAME := ventana
   IMAGES := nand.ubi
@@ -199,8 +197,9 @@ define Device/cubox-i
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := CuBox-i
   KERNEL := kernel-bin
+  KERNEL_SUFFIX := -zImage
   UBOOT := mx6cuboxi
-  BOOT_SCRIPT = bootscript-cubox
+  BOOT_SCRIPT := bootscript-cubox
   DEVICE_NAME := cubox
   DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
   DEVICE_DTS := imx6q-cubox-i imx6dl-cubox-i imx6q-hummingboard imx6dl-hummingboard
@@ -216,15 +215,14 @@ define Device/apalis
   DEVICE_MODEL := Apalis family
   SUPPORTED_DEVICES := apalis,ixora apalis,eval
   DEVICE_DTS := \
-	  imx6q-apalis-eval \
-	  imx6q-apalis-ixora \
-	  imx6q-apalis-ixora-v1.1
+	imx6q-apalis-eval \
+	imx6q-apalis-ixora \
+	imx6q-apalis-ixora-v1.1
   DEVICE_PACKAGES := \
 	kmod-can kmod-can-flexcan kmod-can-raw \
 	kmod-leds-gpio kmod-gpio-button-hotplug \
 	kmod-pps-gpio kmod-rtc-ds1307
   BOOT_SCRIPT := bootscript-apalis
-  UBOOT := apalis_imx6
   FILESYSTEMS := squashfs
   IMAGES := combined.bin sysupgrade.bin
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1).$$(2)
