@@ -73,7 +73,7 @@ TARGET_DEVICES += glinet_gl-x750-nor-nand
 define Device/glinet_gl-xe300-nor
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-XE300 (NOR)
-  DEVICE_PACKAGES := kmod-usb2 block-mount
+  DEVICE_PACKAGES := kmod-usb2 block-mount  kmod-usb-serial-ch341
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-xe300 glinet,gl-xe300
 endef
@@ -82,7 +82,7 @@ TARGET_DEVICES += glinet_gl-xe300-nor
 define Device/glinet_gl-xe300-nor-nand
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-XE300 (NOR/NAND)
-  DEVICE_PACKAGES := kmod-usb2 block-mount
+  DEVICE_PACKAGES := kmod-usb2 block-mount kmod-usb-serial-ch341
   KERNEL_SIZE := 2048k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
