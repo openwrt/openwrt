@@ -47,14 +47,14 @@ Signed-off-by: Abhishek Sahu <absahu@codeaurora.org>
  	reset_control_assert(res->axi_reset);
  	reset_control_assert(res->ahb_reset);
 @@ -415,7 +416,6 @@ static void qcom_pcie_deinit_2_1_0(struc
- 	reset_control_assert(res->ext_reset);
+ 	reset_control_assert(res->pci_reset);
  	clk_disable_unprepare(res->iface_clk);
  	clk_disable_unprepare(res->core_clk);
 -	clk_disable_unprepare(res->phy_clk);
  	clk_disable_unprepare(res->aux_clk);
  	clk_disable_unprepare(res->ref_clk);
  	regulator_disable(res->vdda);
-@@ -472,12 +472,6 @@ static int qcom_pcie_init_2_1_0(struct q
+@@ -466,12 +466,6 @@ static int qcom_pcie_init_2_1_0(struct q
  		goto err_clk_core;
  	}
  
