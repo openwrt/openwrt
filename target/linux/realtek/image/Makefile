@@ -25,6 +25,16 @@ define Device/Default
 	append-metadata | check-size
 endef
 
+# "NGE" refers to the uImage magic
+define Device/netgear_nge
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  SOC := rtl8380
+  IMAGE_SIZE := 14848k
+  UIMAGE_MAGIC := 0x4e474520
+  DEVICE_VENDOR := NETGEAR
+endef
+
 define Device/allnet_all-sg8208m
   SOC := rtl8382
   IMAGE_SIZE := 7168k
@@ -61,12 +71,8 @@ endef
 TARGET_DEVICES += d-link_dgs-1210-28
 
 define Device/netgear_gs110tpp-v1
-  $(Device/Default)
-  SOC := rtl8380
-  IMAGE_SIZE := 14848k
-  UIMAGE_MAGIC := 0x4e474520
-  DEVICE_VENDOR := NETGEAR
-  DEVICE_MODEL := GS110TP
+  $(Device/netgear_nge)
+  DEVICE_MODEL := GS110TPP
   DEVICE_VARIANT := v1
 endef
 TARGET_DEVICES += netgear_gs110tpp-v1
