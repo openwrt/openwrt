@@ -40,6 +40,7 @@ define Device/engenius_eap350-v1
   DEVICE_VARIANT := v1
   IMAGE_SIZE := 4928k
   LOADER_FLASH_OFFS := 0x1a0000
+  LOADER_FLASH_ALT := 0x670000
   SENAO_IMGNAME := senao-eap350
 endef
 TARGET_DEVICES += engenius_eap350-v1
@@ -53,6 +54,7 @@ define Device/engenius_ecb350-v1
   DEVICE_VARIANT := v1
   IMAGE_SIZE := 4928k
   LOADER_FLASH_OFFS := 0x1a0000
+  LOADER_FLASH_ALT := 0x670000
   SENAO_IMGNAME := senao-ecb350
 endef
 TARGET_DEVICES += engenius_ecb350-v1
@@ -66,6 +68,7 @@ define Device/engenius_enh202-v1
   DEVICE_PACKAGES := rssileds
   IMAGE_SIZE := 4928k
   LOADER_FLASH_OFFS := 0x1a0000
+  LOADER_FLASH_ALT := 0x670000
   SENAO_IMGNAME := senao-enh202
 endef
 TARGET_DEVICES += engenius_enh202-v1
