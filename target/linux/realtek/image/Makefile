@@ -70,6 +70,13 @@ define Device/d-link_dgs-1210-28
 endef
 TARGET_DEVICES += d-link_dgs-1210-28
 
+define Device/netgear_gs108t-v3
+  $(Device/netgear_nge)
+  DEVICE_MODEL := GS108T
+  DEVICE_VARIANT := v3
+endef
+TARGET_DEVICES += netgear_gs108t-v3
+
 define Device/netgear_gs110tpp-v1
   $(Device/netgear_nge)
   DEVICE_MODEL := GS110TPP
