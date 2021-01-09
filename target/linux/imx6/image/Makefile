@@ -127,10 +127,11 @@ define Device/Default
   IMAGES :=
 endef
 
-define Device/ventana
+define Device/gateworks_ventana
   DEVICE_VENDOR := Gateworks
   DEVICE_MODEL := Ventana family
   DEVICE_VARIANT := normal NAND flash
+  DEVICE_NAME := ventana
   DEVICE_DTS:= \
 	imx6dl-gw51xx \
 	imx6dl-gw52xx \
@@ -165,7 +166,7 @@ define Device/ventana
   KERNEL += | boot-overlay
   IMAGES := nand.ubi bootfs.tar.gz dtb
   UBINIZE_PARTS = boot=$$(KDIR_KERNEL_IMAGE).boot.ubifs=15
-  BOOT_SCRIPT := bootscript-ventana
+  BOOT_SCRIPT := bootscript-gateworks_ventana
   IMAGE/nand.ubi := append-ubi
   IMAGE/bootfs.tar.gz := bootfs.tar.gz
   IMAGE/dtb := install-dtb
@@ -173,33 +174,32 @@ define Device/ventana
   BLOCKSIZE := 128k
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB
 endef
-TARGET_DEVICES += ventana
+TARGET_DEVICES += gateworks_ventana
 
-define Device/ventana-large
-  $(Device/ventana)
+define Device/gateworks_ventana-large
+  $(Device/gateworks_ventana)
   DEVICE_VARIANT := large NAND flash
-  DEVICE_NAME := ventana
   IMAGES := nand.ubi
   PAGESIZE := 4096
   BLOCKSIZE := 256k
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 248KiB
 endef
-TARGET_DEVICES += ventana-large
+TARGET_DEVICES += gateworks_ventana-large
 
-define Device/wandboard
+define Device/wandboard_dual
   DEVICE_VENDOR := Wandboard
   DEVICE_MODEL := Dual
   DEVICE_DTS := imx6dl-wandboard
 endef
-TARGET_DEVICES += wandboard
+TARGET_DEVICES += wandboard_dual
 
-define Device/cubox-i
+define Device/solidrun_cubox-i
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := CuBox-i
   KERNEL := kernel-bin
   KERNEL_SUFFIX := -zImage
   UBOOT := mx6cuboxi
-  BOOT_SCRIPT := bootscript-cubox
+  BOOT_SCRIPT := bootscript-solidrun_cubox
   DEVICE_NAME := cubox
   DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
   DEVICE_DTS := imx6q-cubox-i imx6dl-cubox-i imx6q-hummingboard imx6dl-hummingboard
@@ -208,9 +208,9 @@ define Device/cubox-i
   IMAGE/combined.bin := append-rootfs | pad-extra 128k | imx6-sdcard
   IMAGE/dtb := install-dtb
 endef
-TARGET_DEVICES += cubox-i
+TARGET_DEVICES += solidrun_cubox-i
 
-define Device/apalis
+define Device/toradex_apalis
   DEVICE_VENDOR := Toradex
   DEVICE_MODEL := Apalis family
   SUPPORTED_DEVICES := apalis,ixora apalis,eval
@@ -222,7 +222,7 @@ define Device/apalis
 	kmod-can kmod-can-flexcan kmod-can-raw \
 	kmod-leds-gpio kmod-gpio-button-hotplug \
 	kmod-pps-gpio kmod-rtc-ds1307
-  BOOT_SCRIPT := bootscript-apalis
+  BOOT_SCRIPT := bootscript-toradex_apalis
   FILESYSTEMS := squashfs
   IMAGES := combined.bin sysupgrade.bin
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1).$$(2)
@@ -231,6 +231,6 @@ define Device/apalis
   ARTIFACTS := recovery.scr
   ARTIFACT/recovery.scr := recovery-scr
 endef
-TARGET_DEVICES += apalis
+TARGET_DEVICES += toradex_apalis
 
 $(eval $(call BuildImage))
