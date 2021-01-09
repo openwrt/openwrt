@@ -6,9 +6,6 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	compatible = "allnet,all-sg8208m", "realtek,rtl838x-soc";
-	model = "ALLNET ALL-SG8208M";
-
 	aliases {
 		led-boot = &led_sys;
 		led-failsafe = &led_sys;
@@ -25,13 +22,23 @@
 		reg = <0x0 0x8000000>;
 	};
 
+	gpio1: rtl8231-gpio {
+		status = "okay";
+
+		poe_enable {
+			gpio-hog;
+			gpios = <13 0>;
+			output-high;
+		};
+	};
+
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 67 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -43,12 +50,7 @@
 			label = "green:sys";
 			gpios = <&gpio0 47 GPIO_ACTIVE_HIGH>;
 		};
-		// GPIO 25: power on/off all port leds
 	};
-};
-
-&gpio0 {
-	indirect-access-bus-id = <0>;
 };
 
 &spi0 {
@@ -66,36 +68,35 @@
 
 			partition@0 {
 				label = "u-boot";
-				reg = <0x0 0x80000>;
+				reg = <0x0 0x40000>;
 				read-only;
 			};
-
-			partition@80000 {
+			partition@40000 {
 				label = "u-boot-env";
-				reg = <0x80000 0x10000>;
+				reg = <0x40000 0x10000>;
 				read-only;
 			};
-
-			partition@90000 {
+			partition@50000 {
 				label = "u-boot-env2";
-				reg = <0x90000 0x10000>;
+				reg = <0x50000 0x10000>;
 				read-only;
 			};
-
-			partition@a0000 {
+			partition@60000 {
 				label = "jffs";
-				reg = <0xa0000 0x100000>;
+				reg = <0x60000 0x100000>;
 			};
-
-			partition@1a0000 {
+			partition@160000 {
 				label = "jffs2";
-				reg = <0x1a0000 0x100000>;
+				reg = <0x160000 0x100000>;
 			};
-
-			partition@2a0000 {
+			partition@b260000 {
 				label = "firmware";
-				reg = <0x2a0000 0xd60000>;
-				compatible = "allnet,uimage";
+				reg = <0x260000 0x6d0000>;
+				compatible = "denx,uimage";
+			};
+			partition@930000 {
+				label = "runtime2";
+				reg = <0x930000 0x6d0000>;
 			};
 		};
 	};
@@ -137,6 +138,7 @@
 			ethernet = <&ethernet0>;
 			reg = <28>;
 			phy-mode = "internal";
+
 			fixed-link {
 				speed = <1000>;
 				full-duplex;

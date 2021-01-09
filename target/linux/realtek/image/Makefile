@@ -68,9 +68,29 @@ TARGET_DEVICES += netgear_gs110tpp-v1
 define Device/zyxel_gs1900-10hp
   SOC := rtl8380
   IMAGE_SIZE := 6976k
-  DEVICE_VENDOR := Zyxel
+  DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := GS1900-10HP
 endef
 TARGET_DEVICES += zyxel_gs1900-10hp
+
+define Device/zyxel_gs1900-8hp-v1
+  SOC := rtl8380
+  IMAGE_SIZE := 6976k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := GS1900-8HP
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES += lua-rs232
+endef
+TARGET_DEVICES += zyxel_gs1900-8hp-v1
+
+define Device/zyxel_gs1900-8hp-v2
+  SOC := rtl8380
+  IMAGE_SIZE := 6976k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := GS1900-8HP
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES += lua-rs232
+endef
+TARGET_DEVICES += zyxel_gs1900-8hp-v2
 
 $(eval $(call BuildImage))

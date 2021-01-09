@@ -1,55 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-/dts-v1/;
 
-#include "rtl838x.dtsi"
-
-#include <dt-bindings/input/input.h>
-#include <dt-bindings/gpio/gpio.h>
+#include "rtl8380_zyxel_gs1900.dtsi"
 
 / {
 	compatible = "zyxel,gs1900-10hp", "realtek,rtl838x-soc";
-	model = "Zyxel GS1900-10HP Switch";
-
-	aliases {
-		led-boot = &led_sys;
-		led-failsafe = &led_sys;
-		led-running = &led_sys;
-		led-upgrade = &led_sys;
-	};
-
-	chosen {
-		bootargs = "console=ttyS0,115200";
-	};
-
-	gpio1: rtl8231-gpio {
-		status = "okay";
-
-		poe_enable {
-			gpio-hog;
-			gpios = <13 0>;
-			output-high;
-		};
-	};
-
-	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
-
-		reset {
-			label = "reset";
-			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RESTART>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_sys: sys {
-			label = "gs1900:green:sys";
-			gpios = <&gpio0 47 GPIO_ACTIVE_HIGH>;
-		};
-	};
+	model = "ZyXEL GS1900-10HP Switch";
 
 	/* i2c of the left SFP cage: port 9 */
 	i2c0: i2c-gpio-0 {
@@ -88,161 +43,15 @@
 		mod-def0-gpio = <&gpio1 32 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 29 GPIO_ACTIVE_HIGH>;
 	};
-
 };
 
-&spi0 {
-	status = "okay";
-	flash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-		spi-max-frequency = <10000000>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				label = "u-boot";
-				reg = <0x0 0x40000>;
-				read-only;
-			};
-			partition@40000 {
-				label = "u-boot-env";
-				reg = <0x40000 0x10000>;
-				read-only;
-			};
-			partition@50000 {
-				label = "u-boot-env2";
-				reg = <0x50000 0x10000>;
-				read-only;
-			};
-			partition@60000 {
-				label = "jffs";
-				reg = <0x60000 0x100000>;
-			};
-			partition@160000 {
-				label = "jffs2";
-				reg = <0x160000 0x100000>;
-			};
-			partition@b260000 {
-				label = "firmware";
-				reg = <0x260000 0x6d0000>;
-				compatible = "denx,uimage";
-			};
-			partition@930000 {
-				label = "runtime2";
-				reg = <0x930000 0x6d0000>;
-			};
-		};
-	};
-};
-
-&ethernet0 {
-	mdio: mdio-bus {
-		compatible = "realtek,rtl838x-mdio";
-		regmap = <&ethernet0>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		/* Internal phy */
-		phy8: ethernet-phy@8 {
-			reg = <8>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-		};
-		phy9: ethernet-phy@9 {
-			reg = <9>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-		};
-		phy10: ethernet-phy@10 {
-			reg = <10>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-		};
-		phy11: ethernet-phy@11 {
-			reg = <11>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-		};
-		phy12: ethernet-phy@12 {
-			reg = <12>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-		};
-		phy13: ethernet-phy@13 {
-			reg = <13>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-		};
-		phy14: ethernet-phy@14 {
-			reg = <14>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-		};
-		phy15: ethernet-phy@15 {
-			reg = <15>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-		};
-		phy24: ethernet-phy@24 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <24>;
-		};
-		phy26: ethernet-phy@26 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <26>;
-		};
-	};
+&mdio {
+	INTERNAL_PHY(24)
+	INTERNAL_PHY(26)
 };
 
 &switch0 {
 	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		port@0 {
-			reg = <8>;
-			label = "lan1";
-			phy-handle = <&phy8>;
-			phy-mode = "internal";
-		};
-		port@1 {
-			reg = <9>;
-			label = "lan2";
-			phy-handle = <&phy9>;
-			phy-mode = "internal";
-		};
-		port@2 {
-			reg = <10>;
-			label = "lan3";
-			phy-handle = <&phy10>;
-			phy-mode = "internal";
-		};
-		port@3 {
-			reg = <11>;
-			label = "lan4";
-			phy-handle = <&phy11>;
-			phy-mode = "internal";
-		};
-		port@4 {
-			reg = <12>;
-			label = "lan5";
-			phy-handle = <&phy12>;
-			phy-mode = "internal";
-		};
-		port@5 {
-			reg = <13>;
-			label = "lan6";
-			phy-handle = <&phy13>;
-			phy-mode = "internal";
-		};
-		port@6 {
-			reg = <14>;
-			label = "lan7";
-			phy-handle = <&phy14>;
-			phy-mode = "internal";
-		};
-		port@7 {
-			reg = <15>;
-			label = "lan8";
-			phy-handle = <&phy15>;
-			phy-mode = "internal";
-		};
 		port@24 {
 			reg = <24>;
 			label = "lan9";
@@ -256,6 +65,7 @@
 				pause;
 			};
 		};
+
 		port@26 {
 			reg = <26>;
 			label = "lan10";
@@ -267,15 +77,6 @@
 				speed = <1000>;
 				full-duplex;
 				pause;
-			};
-		};
-		port@28 {
-			ethernet = <&ethernet0>;
-			reg = <28>;
-			phy-mode = "internal";
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
 			};
 		};
 	};
