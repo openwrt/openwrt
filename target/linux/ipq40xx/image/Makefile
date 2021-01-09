@@ -156,6 +156,7 @@ endef
 define Device/aruba_ap-303
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-303
+	DEVICE_PACKAGES += uboot-envtools
 endef
 TARGET_DEVICES += aruba_ap-303
 
@@ -168,7 +169,7 @@ TARGET_DEVICES += aruba_ap-303h
 define Device/aruba_ap-365
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-365
-	DEVICE_PACKAGES += kmod-hwmon-ad7418
+	DEVICE_PACKAGES += kmod-hwmon-ad7418 uboot-envtools
 endef
 TARGET_DEVICES += aruba_ap-365
 
