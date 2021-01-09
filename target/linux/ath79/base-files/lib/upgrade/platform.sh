@@ -3,7 +3,7 @@
 #
 
 PART_NAME=firmware
-REQUIRE_IMAGE_METADATA=1
+REQUIRE_IMAGE_METADATA=0
 
 redboot_fis_do_upgrade() {
 	local append

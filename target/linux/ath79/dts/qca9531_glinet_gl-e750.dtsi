@@ -99,12 +99,12 @@
 		reg = <1>;
 		spi-max-frequency = <25000000>;
 
-		nand_ubi: partitions {
+		nand_partitions: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@0 {
+			nand_ubi: partition@0 {
 				label = "nand_ubi";
 				reg = <0x0 0x8000000>;
 			};
