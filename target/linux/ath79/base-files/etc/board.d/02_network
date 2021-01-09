@@ -126,6 +126,12 @@ ath79_setup_interfaces()
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+    glinet,gl-x1200|\
+    glinet,gl-x1200-nor|\
+    glinet,gl-x1200-nor-nand)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+        ;;
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
 	ocedo,ursus)

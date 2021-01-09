@@ -106,6 +106,12 @@ glinet,gl-x750-nor|\
 glinet,gl-x750-nor-nand)
 	ucidef_set_led_netdev "wan" "WAN" "gl-x750:green:wan" "eth0"
 	;;
+glinet,gl-x1200|\
+glinet,gl-x1200-nor|\
+glinet,gl-x1200-nor-nand)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:green:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:green:wlan5g" "phy0tpt"
+    ;;
 glinet,gl-xe300|\
 glinet,gl-xe300-nor|\
 glinet,gl-xe300-nor-nand)
