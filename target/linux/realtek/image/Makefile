@@ -94,6 +94,16 @@ define Device/zyxel_gs1900-10hp
 endef
 TARGET_DEVICES += zyxel_gs1900-10hp
 
+define Device/zyxel_gs1900-8
+  SOC := rtl8380
+  IMAGE_SIZE := 6976k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := GS1900-8
+  UIMAGE_MAGIC := 0x83800000
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers AAHH | uImage gzip
+endef
+TARGET_DEVICES += zyxel_gs1900-8
+
 define Device/zyxel_gs1900-8hp-v1
   SOC := rtl8380
   IMAGE_SIZE := 6976k
