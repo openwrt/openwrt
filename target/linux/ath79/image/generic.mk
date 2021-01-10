@@ -957,6 +957,17 @@ define Device/embeddedwireless_dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
+define Device/engenius_eap1200h
+  $(Device/engenius_loader_okli)
+  SOC := qca9557
+  DEVICE_MODEL := EAP1200H
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11520k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := ar71xx-generic-eap1200h
+endef
+TARGET_DEVICES += engenius_eap1200h
+
 define Device/engenius_eap300-v2
   $(Device/engenius_loader_okli)
   SOC := ar9341
