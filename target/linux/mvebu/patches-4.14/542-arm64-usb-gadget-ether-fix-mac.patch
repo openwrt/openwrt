@@ -1,0 +1,51 @@
+--- a/drivers/usb/gadget/legacy/ether.c
++++ b/drivers/usb/gadget/legacy/ether.c
+@@ -24,6 +24,8 @@
+ #endif
+ 
+ #include "u_ether.h"
++#include <linux/etherdevice.h>
++#include <linux/mtd/mtd.h>
+ 
+ 
+ /*
+@@ -313,6 +315,11 @@ static int eth_bind(struct usb_composite
+ 	struct f_gether_opts	*geth_opts = NULL;
+ 	struct net_device	*net;
+ 	int			status;
++	struct mtd_info *mtd;
++	int mtd_mac_ok = 1;
++	size_t retlen;
++	u8 mac[ETH_ALEN];
++	char mac_addr[ETH_ALEN];
+ 
+ 	/* set up main config label and device descriptor */
+ 	if (use_eem) {
+@@ -361,6 +368,27 @@ static int eth_bind(struct usb_composite
+ 	}
+ 
+ 	gether_set_qmult(net, qmult);
++
++	mtd = get_mtd_device_nm("art");
++	if (IS_ERR(mtd)){
++		mtd_mac_ok = 0;
++	} else {
++		mtd_read(mtd, 0, 6, &retlen, mac);
++		if (!is_valid_ether_addr(mac))
++			mtd_mac_ok = 0;
++	}
++
++	if(mtd_mac_ok){
++		mac[0] -= 2;
++		sprintf(mac_addr, "%x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
++		if (!gether_set_host_addr(net, mac_addr))
++			pr_info("using host ethernet address from mtd: %s", mac_addr);
++		mac[0] -= 4;
++		sprintf(mac_addr, "%x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
++		if (!gether_set_dev_addr(net, mac_addr))
++			pr_info("using self ethernet address from mtd: %s", mac_addr);
++	}
++
+ 	if (!gether_set_host_addr(net, host_addr))
+ 		pr_info("using host ethernet address: %s", host_addr);
+ 	if (!gether_set_dev_addr(net, dev_addr))

@@ -1,0 +1,106 @@
+--- a/drivers/input/keyboard/keys-glmv1000.c	1969-12-31 16:00:00.000000000 -0800
++++ b/drivers/input/keyboard/keys-glmv1000.c	2019-06-05 05:57:25.645189647 -0700
+@@ -0,0 +1,78 @@
++/*
++ * Keypad device register for GL.inet mv1000.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <linux/input.h>
++#include <linux/slab.h>
++#include <linux/device.h>
++#include <linux/gpio_keys.h>
++
++static struct gpio_keys_button gpio_keys[] = {
++	{
++                .desc = "vpn",
++                .type = EV_KEY,
++                .code = KEY_WPS_BUTTON,
++                .debounce_interval = 60,
++                .gpio = 468,
++                .active_low = 0,
++        },
++        {
++                .desc = "reset",
++                .type = EV_KEY,
++                .code = KEY_RESTART,
++                .debounce_interval = 60,
++                .gpio = 490,
++                .active_low = 1,
++        },
++};
++
++static struct gpio_keys_platform_data gpio_keys_info = {
++	.buttons	= gpio_keys,
++	.nbuttons	= ARRAY_SIZE(gpio_keys),
++	.poll_interval	= 20,
++	.rep 		= 1,
++};
++
++static void key_dev_release(struct device *dev)
++{
++
++}
++
++static struct platform_device keys_gpio = {
++        .name = "gpio-keys-polled",
++        .id = -1,
++        .dev = {
++                .platform_data = &gpio_keys_info,
++                .release = key_dev_release,
++        },
++};
++
++static int __init glmv1000_key_init(void)
++{
++        int ret;
++
++        ret = platform_device_register(&keys_gpio);
++
++        if(ret){
++                pr_err("Error registering mv1000 keys deviecs\n");
++                platform_device_unregister(&keys_gpio);
++        }
++
++        return ret;
++}
++
++static void __exit glmv1000_key_exit(void)
++{
++        platform_device_unregister(&keys_gpio);
++}
++
++module_init(glmv1000_key_init);
++module_exit(glmv1000_key_exit);
++
++MODULE_AUTHOR("li.zhang <li.zhang@gl-inet.com>");
++MODULE_DESCRIPTION("GL.inet MV1000 KEY");
++MODULE_LICENSE("GPL");
+--- a/drivers/input/keyboard/Makefile	2019-06-05 20:11:48.658047482 -0700
++++ b/drivers/input/keyboard/Makefile	2019-06-05 05:57:25.621189647 -0700
+@@ -5,6 +5,7 @@
+ 
+ # Each configuration option enables a list of files.
+ 
++obj-$(CONFIG_KEYBOARD_GLMV1000)		+= keys-glmv1000.o
+ obj-$(CONFIG_KEYBOARD_ADC)		+= adc-keys.o
+ obj-$(CONFIG_KEYBOARD_ADP5520)		+= adp5520-keys.o
+ obj-$(CONFIG_KEYBOARD_ADP5588)		+= adp5588-keys.o
+--- a/drivers/input/keyboard/Kconfig	2019-06-05 20:11:48.658047482 -0700
++++ b/drivers/input/keyboard/Kconfig	2019-06-05 05:57:25.621189647 -0700
+@@ -12,6 +12,12 @@
+ 
+ if INPUT_KEYBOARD
+ 
++config KEYBOARD_GLMV1000
++	tristate "GLMV1000 Buttons"
++	select INPUT_POLLDEV
++	help
++	  This driver implements support for buttons register for gl-mv1000.
++
+ config KEYBOARD_ADC
+ 	tristate "ADC Ladder Buttons"
+ 	depends on IIO
