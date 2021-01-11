@@ -181,7 +181,7 @@ TARGET_DEVICES += glinet_gl-x300b-nor-nand
 define Device/glinet_gl-x1200-nor
   ATH_SOC := qca9563
   DEVICE_TITLE := GL.iNet GL-X1200 (NOR)
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct block-mount
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct-htt block-mount
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-x1200 glinet,gl-x1200
 endef
