@@ -25,7 +25,23 @@
  #ifdef HAVE_SYS_ACL_H
  #include <sys/acl.h>
  #endif /* HAVE_SYS_ACL_H */
-@@ -1911,7 +1918,7 @@ ssize_t fremovexattr(int fd, const char
+@@ -188,6 +195,15 @@ extern int unsetenv (const char *name);
+ #undef __lxstat64
+ #undef _FILE_OFFSET_BITS
+ 
++
++#ifndef AT_EMPTY_PATH
++#define AT_EMPTY_PATH 0
++#endif
++
++#ifndef AT_NO_AUTOMOUNT
++#define AT_NO_AUTOMOUNT 0
++#endif
++
+ /*
+ // next_wrap_st:
+ // this structure is used in next_wrap, which is defined in
+@@ -1911,7 +1927,7 @@ ssize_t fremovexattr(int fd, const char
  }
  #endif /* HAVE_FREMOVEXATTR */
  
@@ -34,7 +50,7 @@
    if (fakeroot_disabled)
      return next_setpriority(which, who, prio);
    next_setpriority(which, who, prio);
-@@ -2520,3 +2527,19 @@ int sysinfo(int command, char *buf, long
+@@ -2520,3 +2536,19 @@ int sysinfo(int command, char *buf, long
      }
  }
  #endif
