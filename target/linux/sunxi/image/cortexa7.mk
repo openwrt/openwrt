@@ -107,6 +107,14 @@ define Device/linksprite_pcduino3
 endef
 TARGET_DEVICES += linksprite_pcduino3
 
+define Device/linksprite_pcduino3-nano
+  DEVICE_VENDOR := LinkSprite
+  DEVICE_MODEL := pcDuino3 Nano
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi
+  SOC := sun7i-a20
+endef
+TARGET_DEVICES += linksprite_pcduino3-nano
+
 define Device/mele_m9
   DEVICE_VENDOR := Mele
   DEVICE_MODEL := M9
