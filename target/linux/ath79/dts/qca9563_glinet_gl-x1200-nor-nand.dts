@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "qca9563_glinet_gl-x1200.dtsi"
+
+/ {
+	compatible = "glinet,gl-x1200-nor-nand", "qca,qca9563";
+	model = "GL.iNet GL-X1200 (NOR/NAND)";
+};
+
+&nor_partitions {
+	partition@60000 {
+		label = "kernel";
+		reg = <0x060000 0x200000>;
+	};
+	parition@260000 {
+		label = "nor_reserved";
+		reg = <0x260000 0xbc0000>;
+	};
+};
+
+&nand_ubi {
+	label = "ubi";
+};
