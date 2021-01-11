@@ -55,6 +55,29 @@
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_pci_power {
+			gpio-export,name = "pci_power";
+			gpio-export,output = <0>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		gpio_usb_power {
+			gpio-export,name = "usb_power";
+			gpio-export,output = <0>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		gpio_ble_reset {
+			//set name as gpio1 to compat 1806 gpio name
+			gpio-export,name = "gpio1";
+			gpio-export,output = <0>;
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+		};
+	 };
 };
 
 &pcie0 {
@@ -131,6 +154,10 @@
 		};
 	};
 
+};
+
+&bootargs {
+	bootargs="";
 };
 
 &eth0 {
