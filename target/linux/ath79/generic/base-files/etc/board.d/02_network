@@ -33,7 +33,6 @@ ath79_setup_interfaces()
 	dlink,dap-3320-a1|\
 	dlink,dir-505|\
 	engenius,eap1200h|\
-	engenius,eap300-v2|\
 	engenius,eap600|\
 	engenius,ecb1200|\
 	engenius,ecb1750|\
@@ -236,6 +235,10 @@ ath79_setup_interfaces()
 	embeddedwireless,dorin)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
+		;;
+	engenius,eap300-v2)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan"
 		;;
 	engenius,ens202ext-v1)
 		ucidef_set_interface_lan "eth1"
