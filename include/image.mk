@@ -642,18 +642,6 @@ $(if $(strip $(DEVICE_ALT2_TITLE)),- $(DEVICE_ALT2_TITLE))
 endef
 
 define Device/Dump
-ifneq ($$(strip $$(DEVICE_ALT0_TITLE)),)
-DEVICE_DISPLAY = $$(DEVICE_ALT0_TITLE) ($$(DEVICE_TITLE))
-$$(info $$(call Device/DumpInfo,$(1)))
-endif
-ifneq ($$(strip $$(DEVICE_ALT1_TITLE)),)
-DEVICE_DISPLAY = $$(DEVICE_ALT1_TITLE) ($$(DEVICE_TITLE))
-$$(info $$(call Device/DumpInfo,$(1)))
-endif
-ifneq ($$(strip $$(DEVICE_ALT2_TITLE)),)
-DEVICE_DISPLAY = $$(DEVICE_ALT2_TITLE) ($$(DEVICE_TITLE))
-$$(info $$(call Device/DumpInfo,$(1)))
-endif
 DEVICE_DISPLAY = $$(DEVICE_TITLE)
 $$(eval $$(if $$(DEVICE_TITLE),$$(info $$(call Device/DumpInfo,$(1)))))
 endef
