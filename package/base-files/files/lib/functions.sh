@@ -313,6 +313,14 @@ find_mtd_part() {
 	echo "${INDEX:+$PREFIX$INDEX}"
 }
 
+find_mmc_part() {
+	local DEVNAME="$(grep "PARTNAME=${1}$" \
+		/sys/block/mmcblk0/mmcblk0p*/uevent 2>/dev/null | \
+		cut -d/ -f5)"
+
+	[ -n "$DEVNAME" ] && echo "/dev/$DEVNAME"
+}
+
 group_add() {
 	local name="$1"
 	local gid="$2"
