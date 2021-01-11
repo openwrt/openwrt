@@ -75,17 +75,17 @@ etactica,eg200)
 	ucidef_set_led_default "etactica" "etactica" "$boardname:red:etactica" "ignore"
 	;;
 glinet,gl-ar150)
-	ucidef_set_led_wlan "wlan" "WLAN" "$board:orange:wlan" "phy0tpt"
+	ucidef_set_led_wlan "wlan" "WLAN" "gl-ar150:orange:wlan" "phy0tpt"
 	;;
 glinet,gl-usb150)
-	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
-	ucidef_set_led_default "power" "POWER" "$board:green:power" "1"
+	ucidef_set_led_wlan "wlan" "WLAN" "gl-usb150:green:wlan" "phy0tpt"
+	ucidef_set_led_default "power" "POWER" "gl-usb150:green:power" "1"
     ;;
 glinet,gl-mifi)
-	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
-	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth0"
-	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
-	ucidef_set_led_netdev "3gnet" "3GNET" "$board:green:net" "3g-wan"
+	ucidef_set_led_wlan "wlan" "WLAN" "gl-mifi:green:wlan" "phy0tpt"
+	ucidef_set_led_netdev "wan" "WAN" "gl-mifi:green:wan" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "gl-mifi:green:lan" "eth1"
+	ucidef_set_led_netdev "3gnet" "3GNET" "gl-mifi:green:net" "3g-wan"
     ;;
 glinet,gl-ar300m-nand|\
 glinet,gl-ar300m-nor)
@@ -97,9 +97,9 @@ glinet,gl-ar300m-lite)
 glinet,gl-x300b|\
 glinet,gl-x300b-nor|\
 glinet,gl-x300b-nor-nand)
-    ucidef_set_led_netdev "wlan2g" "WLAN2G" "$board:green:wlan2g" "wlan0"
-    ucidef_set_led_netdev "wan"    "WAN"    "$board:green:wan"    "eth0"
-    ucidef_set_led_netdev "3gnet"  "3GNET"  "$board:green:lte"     "3g-wan"
+    ucidef_set_led_netdev "wlan2g" "WLAN2G" "gl-x300b:green:wlan2g" "wlan0"
+    ucidef_set_led_netdev "wan"    "WAN"    "gl-x300b:green:wan"    "eth0"
+    ucidef_set_led_netdev "3gnet"  "3GNET"  "gl-x300b:green:lte"     "3g-wan"
 	;;
 glinet,gl-x750|\
 glinet,gl-x750-nor|\
@@ -109,8 +109,8 @@ glinet,gl-x750-nor-nand)
 glinet,gl-x1200|\
 glinet,gl-x1200-nor|\
 glinet,gl-x1200-nor-nand)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:green:wlan2g" "phy1tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:green:wlan5g" "phy0tpt"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "gl-x1200:green:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "gl-x1200:green:wlan5g" "phy0tpt"
     ;;
 glinet,gl-xe300|\
 glinet,gl-xe300-nor|\
@@ -120,8 +120,8 @@ glinet,gl-xe300-nor-nand)
         ucidef_set_led_netdev "3gnet" "LTE" "gl-xe300:green:lte" "wwan0"
         ;;
 glinet,gl-ar750)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:white:wlan2g" "phy1tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:white:wlan5g" "phy0tpt"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "gl-ar750:white:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "gl-ar750:white:wlan5g" "phy0tpt"
     ;;
 netgear,wnr612-v2|\
 on,n150r)
