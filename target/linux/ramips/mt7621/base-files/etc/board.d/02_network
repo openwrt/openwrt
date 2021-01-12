@@ -118,6 +118,9 @@ ramips_setup_interfaces()
 	dlink,covr-x1860-a1)
 		ucidef_set_interfaces_lan_wan "ethernet" "internet"
 		;;
+	dlink,dir-x1860)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
+		;;
 	elecom,wmc-s1267gs2|\
 	linksys,re6500|\
 	netgear,wac104|\
@@ -248,6 +251,11 @@ ramips_setup_macs()
 	dlink,dir-860l-b1)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
 		wan_mac=$(mtd_get_mac_ascii factory wanmac)
+		;;
+	dlink,dir-x1860)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env lanmac)
+		label_mac=$lan_mac
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	edimax,ra21s|\
 	edimax,rg21s)

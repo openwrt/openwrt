@@ -15,6 +15,23 @@ define Image/Prepare
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
 endef
 
+RELOCATE_LOADADDR = 0x81000000
+
+define Build/uImage-relocate
+	mkimage \
+		-A $(LINUX_KARCH) \
+		-O linux \
+		-T kernel \
+		-C $(word 1,$(1)) \
+		-a $(RELOCATE_LOADADDR) \
+		-e $(RELOCATE_LOADADDR) \
+		-n '$(if $(UIMAGE_NAME),$(UIMAGE_NAME),$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION))' \
+		$(if $(UIMAGE_MAGIC),-M $(UIMAGE_MAGIC)) \
+		$(wordlist 2,$(words $(1)),$(1)) \
+		-d $@ $@.new
+	mv $@.new $@
+endef
+
 define Build/append-dlink-covr-metadata
 	echo -ne '{"supported_devices": "$(1)", "firmware": "' > $@metadata.tmp
 	$(MKHASH) md5 "$@" | head -c32 >> $@metadata.tmp
@@ -1053,6 +1070,24 @@ define Device/dlink_dir-882-r1
 	ab0dff19af8842cdb70a86b4b68d23f7
 endef
 TARGET_DEVICES += dlink_dir-882-r1
+
+define Device/dlink_dir-x1860
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-X1860
+  DEVICE_PACKAGES += kmod-mt7915e uboot-envtools
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  UBINIZE_OPTS := -E 5
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage-relocate lzma
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  IMAGE_SIZE := 40960k
+endef
+TARGET_DEVICES += dlink_dir-x1860
 
 define Device/dlink_dra-1360-a1
   $(Device/dlink_dxx-1xx0-x1)

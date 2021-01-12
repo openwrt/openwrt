@@ -1,0 +1,165 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "dlink,dir-x1860", "mediatek,mt7621-soc";
+	model = "DLink DIR-X1860";
+
+	chosen {
+		bootargs-override = "console=ttyS0,115200";
+	};
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_power_orange;
+		led-failsafe = &led_power_white;
+		led-running = &led_power_white;
+		led-upgrade = &led_net_orange;
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_power_white: power_white {
+			label = "white:power";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_net_orange: net_orange {
+			label = "orange:net";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_orange: power_orange {
+			label = "orange:power";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led_net_white {
+			label = "white:net";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&mdio {
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&gmac1 {
+	status = "okay";
+	phy-handle = <&phy4>;
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x00000 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "u-boot-env";
+			reg = <0x80000 0x80000>;
+		};
+
+		factory: partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x80000>;
+		};
+
+		partition@180000 {
+			label = "kernel";
+			reg = <0x180000 0x400000>;
+		};
+
+		partition@580000 {
+			label = "ubi";
+			reg = <0x580000 0x2b00000>;
+		};
+
+		partition@2c80000 {
+			label = "firmware2";
+			reg = <0x2c80000 0x2b00000>;
+		};
+
+		partition@5780000 {
+			label = "Devdata";
+			reg = <0x5780000 0x800000>;
+		};
+
+		partition@5f80000 {
+			label = "User_data";
+			reg = <0x5f80000 0x2000000>;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart3", "jtag", "wdt";
+		function = "gpio";
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0000>;
+	};
+};
