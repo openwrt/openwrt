@@ -390,7 +390,7 @@ metadata_gl_json = \
 		"supported_devices":[$(call metadata_devices,$(1))], \
 		"version": { \
 			"release": "$(shell cat $(TOPDIR)/release)", \
-			"date": "$(shell date '+%Y%m%d%H%M%S')", \
+			"date": "$(shell TZ='Asia/Chongqing' date '+%Y%m%d%H%M%S')", \
 			"dist": "$(call json_quote,$(VERSION_DIST))", \
 			"version": "$(call json_quote,$(VERSION_NUMBER))", \
 			"revision": "$(call json_quote,$(REVISION))", \
