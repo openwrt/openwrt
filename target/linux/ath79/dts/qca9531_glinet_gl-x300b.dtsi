@@ -47,27 +47,23 @@
 		compatible = "gpio-export";
 
 		gpio_lte_power {
-			gpio-export,name = "lte_power";
-			gpio-export,output = <1>;
+			gpio-export,name = "gpio0";
+			gpio-export,output = <0>;
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio_ble_rst {
-			gpio-export,name = "ble_rst";
+			gpio-export,name = "gpio16";
 			gpio-export,output = <0>;
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio_feed_dog {
-			gpio-export,name = "feed_dog";
-			gpio-export,output = <1>;
+			gpio-export,name = "gpio2";
+			gpio-export,output = <0>;
 			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
 		};
 	 };
-};
-
-&pcie0 {
-	status = "okay";
 };
 
 &uart {
@@ -141,6 +137,10 @@
 	};
 
 };
+/*
+&bootargs {
+	bootargs="";
+};*/
 
 &eth0 {
 	status = "okay";

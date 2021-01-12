@@ -47,6 +47,14 @@ platform_do_upgrade() {
 	ubnt,routerstation-pro)
 		redboot_fis_do_upgrade "$1" kernel
 		;;
+	glinet,gl-ar750s-nor-nand|\
+	glinet,gl-e750-nor-nand|\
+	glinet,gl-x1200-nor-nand|\
+	glinet,gl-x300b-nor-nand|\
+	glinet,gl-x750-nor-nand|\
+	glinet,gl-xe300-nor-nand)
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
