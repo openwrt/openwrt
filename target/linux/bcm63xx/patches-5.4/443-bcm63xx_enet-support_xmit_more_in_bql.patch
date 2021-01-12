@@ -7,32 +7,21 @@ Support bulking hardware TX queue by using xmit_more.
 
 Signed-off-by: Sieng Piaw Liew <liew.s.piaw@gmail.com>
 ---
- bcm63xx_enet.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
-@@ -638,14 +638,16 @@ bcm_enet_start_xmit(struct sk_buff *skb,
- 
+@@ -634,7 +634,8 @@ bcm_enet_start_xmit(struct sk_buff *skb, struct net_device *dev)
  	netdev_sent_queue(dev, skb->len);
  
--	/* kick tx dma */
+ 	/* kick tx dma */
 -	enet_dmac_writel(priv, priv->dma_chan_en_mask,
--				 ENETDMAC_CHANCFG, priv->tx_chan);
--
- 	/* stop queue if no more desc available */
- 	if (!priv->tx_desc_count)
- 		netif_stop_queue(dev);
- 
-+	/* kick tx dma */
-+	if(!netdev_xmit_more() || !priv->tx_desc_count)
++	if (!netdev_xmit_more() || !priv->tx_desc_count)
 +		enet_dmac_writel(priv, priv->dma_chan_en_mask,
-+					ENETDMAC_CHANCFG, priv->tx_chan);
-+
-+
- 	dev->stats.tx_bytes += skb->len;
- 	dev->stats.tx_packets++;
- 	ret = NETDEV_TX_OK;
+ 				 ENETDMAC_CHANCFG, priv->tx_chan);
+ 
+ 	/* stop queue if no more desc available */
 @@ -2713,7 +2715,7 @@ static int bcm_enetsw_probe(struct platf
  	priv->irq_rx = irq_rx;
  	priv->irq_tx = irq_tx;
