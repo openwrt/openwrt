@@ -666,7 +666,7 @@ hostapd_set_bss_options() {
 		set_default wps_independent 1
 
 		wps_state=2
-		[ -n "$wps_configured" ] && wps_state=1
+		[ -n "$wps_not_configured" ] && wps_state=1
 
 		[ "$ext_registrar" -gt 0 -a -n "$network_bridge" ] && append bss_conf "upnp_iface=$network_bridge" "$N"
 
