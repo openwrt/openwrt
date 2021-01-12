@@ -1,0 +1,26 @@
+Index: linux-4.14.209/drivers/leds/trigger/ledtrig-netdev.c
+===================================================================
+--- linux-4.14.209.orig/drivers/leds/trigger/ledtrig-netdev.c
++++ linux-4.14.209/drivers/leds/trigger/ledtrig-netdev.c
+@@ -111,6 +111,7 @@ static ssize_t device_name_store(struct
+ {
+ 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+ 	struct led_netdev_data *trigger_data = led_cdev->trigger_data;
++	unsigned int flags;
+ 
+ 	if (size >= IFNAMSIZ)
+ 		return -EINVAL;
+@@ -133,9 +134,11 @@ static ssize_t device_name_store(struct
+ 		    dev_get_by_name(&init_net, trigger_data->device_name);
+ 
+ 	clear_bit(NETDEV_LED_MODE_LINKUP, &trigger_data->mode);
+-	if (trigger_data->net_dev != NULL)
+-		if (netif_carrier_ok(trigger_data->net_dev))
++	if (trigger_data->net_dev != NULL){
++		flags = dev_get_flags(trigger_data->net_dev);
++		if (flags & IFF_LOWER_UP)
+ 			set_bit(NETDEV_LED_MODE_LINKUP, &trigger_data->mode);
++	}
+ 
+ 	trigger_data->last_activity = 0;
+ 
