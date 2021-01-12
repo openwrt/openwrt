@@ -384,6 +384,25 @@ define Build/append-metadata
 	}
 endef
 
+metadata_gl_json = \
+	'{ $(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
+		"metadata_version": "1.0", \
+		"supported_devices":[$(call metadata_devices,$(1))], \
+		"version": { \
+			"release": "$(shell cat $(TOPDIR)/release)", \
+			"date": "$(shell date '+%Y%m%d%H%M%S')", \
+			"dist": "$(call json_quote,$(VERSION_DIST))", \
+			"version": "$(call json_quote,$(VERSION_NUMBER))", \
+			"revision": "$(call json_quote,$(REVISION))", \
+			"target": "$(call json_quote,$(TARGETID))", \
+			"board": "$(call json_quote,$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)))" \
+		} \
+	}'
+
+define Build/append-gl-metadata
+	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_gl_json,$(SUPPORTED_DEVICES)) | fwtool -I - $@)
+endef
+
 define Build/kernel2minor
 	kernel2minor -k $@ -r $@.new $(1)
 	mv $@.new $@

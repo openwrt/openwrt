@@ -43,7 +43,7 @@ define Device/glinet_gl-ar300m-nand
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
   IMAGES += factory.ubi
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-gl-metadata
   IMAGE/factory.ubi := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   SUPPORTED_DEVICES += gl-ar300m glinet,gl-ar300m
 endef
@@ -76,8 +76,8 @@ define Device/glinet_gl-ar750s-nor-nand
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
   IMAGES := factory.img sysupgrade.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-metadata
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-gl-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-gl-metadata
   SUPPORTED_DEVICES += gl-ar750s glinet,gl-ar750s
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor-nand
@@ -100,8 +100,8 @@ define Device/glinet_gl-e750-nor-nand
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
   IMAGES := factory.img sysupgrade.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-metadata
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-metadata
+  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-gl-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-gl-metadata
   SUPPORTED_DEVICES += gl-e750 glinet,gl-e750
 endef
 TARGET_DEVICES += glinet_gl-e750-nor-nand
@@ -124,8 +124,8 @@ define Device/glinet_gl-x750-nor-nand
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
   IMAGES := factory.img sysupgrade.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-metadata
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-gl-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-gl-metadata
   SUPPORTED_DEVICES += gl-x750 glinet,gl-x750
 endef
 TARGET_DEVICES += glinet_gl-x750-nor-nand
@@ -148,8 +148,8 @@ define Device/glinet_gl-xe300-nor-nand
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
   IMAGES := factory.img sysupgrade.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-metadata
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-metadata
+  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-gl-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-gl-metadata
   SUPPORTED_DEVICES += gl-xe300 glinet,gl-xe300
 endef
 TARGET_DEVICES += glinet_gl-xe300-nor-nand
@@ -172,8 +172,8 @@ define Device/glinet_gl-x300b-nor-nand
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
   IMAGES := factory.img sysupgrade.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-metadata
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-metadata
+  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-gl-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-gl-metadata
   SUPPORTED_DEVICES += gl-x300b glinet,gl-x300b
 endef
 TARGET_DEVICES += glinet_gl-x300b-nor-nand
@@ -196,8 +196,8 @@ define Device/glinet_gl-x1200-nor-nand
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
   IMAGES := factory.img sysupgrade.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-metadata
-  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-metadata
+  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-gl-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-gl-metadata
   SUPPORTED_DEVICES += gl-x1200 glinet,gl-x1200
 endef
 TARGET_DEVICES += glinet_gl-x1200-nor-nand
