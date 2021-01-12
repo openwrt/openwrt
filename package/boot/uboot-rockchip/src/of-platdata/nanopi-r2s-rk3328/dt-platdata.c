@@ -79,7 +79,6 @@ U_BOOT_DEVICE(gpio0_at_ff210000) = {
 /* Node /mmc@ff500000 index 3 */
 static struct dtd_rockchip_rk3288_dw_mshc dtv_mmc_at_ff500000 = {
 	.bus_width		= 0x4,
-	.cap_mmc_highspeed	= true,
 	.cap_sd_highspeed	= true,
 	.clocks			= {
 			{0, {317}},
@@ -93,6 +92,10 @@ static struct dtd_rockchip_rk3288_dw_mshc dtv_mmc_at_ff500000 = {
 	.pinctrl_0		= {0x47, 0x48, 0x49, 0x4a},
 	.pinctrl_names		= "default",
 	.reg			= {0xff500000, 0x4000},
+	.sd_uhs_sdr104		= true,
+	.sd_uhs_sdr12		= true,
+	.sd_uhs_sdr25		= true,
+	.sd_uhs_sdr50		= true,
 	.u_boot_spl_fifo_mode	= true,
 	.vmmc_supply		= 0x4b,
 	.vqmmc_supply		= 0x1e,
@@ -118,9 +121,10 @@ U_BOOT_DEVICE(pinctrl) = {
 
 /* Node /sdmmc-regulator index 5 */
 static struct dtd_regulator_fixed dtv_sdmmc_regulator = {
-	.gpio			= {0x60, 0x1e, 0x1},
-	.pinctrl_0		= 0x61,
+	.gpio			= {0x61, 0x1e, 0x1},
+	.pinctrl_0		= 0x67,
 	.pinctrl_names		= "default",
+	.regulator_boot_on	= true,
 	.regulator_max_microvolt = 0x325aa0,
 	.regulator_min_microvolt = 0x325aa0,
 	.regulator_name		= "vcc_sd",
