@@ -779,7 +779,7 @@ hostapd_set_bss_options() {
 		;;
 	esac
 
-	local auth_algs=$((($auth_mode_shared << 1) | $auth_mode_open))
+	local auth_algs="$((($auth_mode_shared << 1) | $auth_mode_open))"
 	append bss_conf "auth_algs=${auth_algs:-1}" "$N"
 	append bss_conf "wpa=$wpa" "$N"
 	[ -n "$wpa_pairwise" ] && append bss_conf "wpa_pairwise=$wpa_pairwise" "$N"
