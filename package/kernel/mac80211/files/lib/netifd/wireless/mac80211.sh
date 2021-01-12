@@ -1019,14 +1019,14 @@ drv_mac80211_setup() {
 		if [ "$no_reload" != "0" ]; then
 			add_ap=1
 			ubus wait_for hostapd
-			local hostapd_pid=$(ubus call hostapd config_add "{\"iface\":\"$primary_ap\", \"config\":\"${hostapd_conf_file}\"}" | jsonfilter -l 1 -e @.pid)
-			wireless_add_process "$hostapd_pid" "/usr/sbin/hostapd" 1 1
+			local hostapd_res="$(ubus call hostapd config_add "{\"iface\":\"$primary_ap\", \"config\":\"${hostapd_conf_file}\"}")"
+			ret="$?"
+			[ "$ret" != 0 -o -z "$hostapd_res" ] && {
+				wireless_setup_failed HOSTAPD_START_FAILED
+				return
+			}
+			wireless_add_process "$(jsonfilter -s "$hostapd_res" -l 1 -e @.pid)" "/usr/sbin/hostapd" 1 1
 		fi
-		ret="$?"
-		[ "$ret" != 0 ] && {
-			wireless_setup_failed HOSTAPD_START_FAILED
-			return
-		}
 	}
 	uci -q -P /var/state set wireless._${phy}.aplist="${NEWAPLIST}"
 	uci -q -P /var/state set wireless._${phy}.md5="${NEW_MD5}"
