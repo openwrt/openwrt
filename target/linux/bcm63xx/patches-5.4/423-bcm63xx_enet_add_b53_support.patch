@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.h
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.h
-@@ -332,6 +332,9 @@ struct bcm_enet_priv {
+@@ -338,6 +338,9 @@ struct bcm_enet_priv {
  	struct bcm63xx_enetsw_port used_ports[ENETSW_MAX_PORT];
  	int sw_port_link[ENETSW_MAX_PORT];
  
@@ -20,7 +20,7 @@
  
  #include <bcm63xx_dev_enet.h>
  #include "bcm63xx_enet.h"
-@@ -1909,7 +1910,8 @@ static int bcm_enet_remove(struct platfo
+@@ -1930,7 +1931,8 @@ static int bcm_enet_remove(struct platfo
  	return 0;
  }
  
@@ -30,7 +30,7 @@
  	.probe	= bcm_enet_probe,
  	.remove	= bcm_enet_remove,
  	.driver	= {
-@@ -1918,6 +1920,42 @@ struct platform_driver bcm63xx_enet_driv
+@@ -1939,6 +1941,42 @@ struct platform_driver bcm63xx_enet_driv
  	},
  };
  
@@ -73,7 +73,7 @@
  /*
   * switch mii access callbacks
   */
-@@ -2174,29 +2212,6 @@ static int bcm_enetsw_open(struct net_de
+@@ -2195,29 +2233,6 @@ static int bcm_enetsw_open(struct net_de
  		enetsw_writeb(priv, rgmii_ctrl, ENETSW_RGMII_CTRL_REG(i));
  	}
  
@@ -103,7 +103,7 @@
  	/* initialize flow control buffer allocation */
  	enet_dma_writel(priv, ENETDMA_BUFALLOC_FORCE_MASK | 0,
  			ENETDMA_BUFALLOC_REG(priv->rx_chan));
-@@ -2652,6 +2667,9 @@ static int bcm_enetsw_probe(struct platf
+@@ -2651,6 +2666,9 @@ static int bcm_enetsw_probe(struct platf
  	struct bcm63xx_enetsw_platform_data *pd;
  	struct resource *res_mem;
  	int ret, irq_rx, irq_tx;
