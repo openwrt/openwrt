@@ -112,7 +112,6 @@ hostapd_prepare_device_config() {
 	local config="$1"
 	local driver="$2"
 
-	local base="${config%%.conf}"
 	local base_cfg=
 
 	json_get_vars country country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
