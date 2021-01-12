@@ -1115,7 +1115,6 @@ wpa_supplicant_add_network() {
 	set_default multi_ap 0
 
 	local key_mgmt='NONE'
-	local enc_str=
 	local network_data=
 	local T="	"
 
