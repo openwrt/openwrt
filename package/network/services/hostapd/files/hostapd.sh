@@ -429,7 +429,7 @@ append_osu_icon() {
 }
 
 append_osu_provider() {
-	local cfgtype osu_server_uri osu_friendly_name osu_nai osu_nai2 osu_method_list 
+	local cfgtype osu_server_uri osu_friendly_name osu_nai osu_nai2 osu_method_list
 
 	config_load wireless
 	config_get cfgtype "$1" TYPE
@@ -743,7 +743,7 @@ hostapd_set_bss_options() {
 
 		if [ "$ieee80211r" -gt "0" ]; then
 			json_get_vars mobility_domain ft_psk_generate_local ft_over_ds reassociation_deadline
-			
+
 			set_default mobility_domain "$(echo "$ssid" | md5sum | head -c 4)"
 			set_default ft_over_ds 1
 			set_default reassociation_deadline 1000
