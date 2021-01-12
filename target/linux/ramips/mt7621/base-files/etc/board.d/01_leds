@@ -50,6 +50,10 @@ dlink,dir-882-a1|\
 dlink,dir-882-r1)
 	ucidef_set_led_netdev "wan" "wan" "green:net" "wan"
 	;;
+dlink,dir-x1860)
+	ucidef_set_led_netdev "lan" "LAN Link" "orange:net" "eth0"
+	ucidef_set_led_netdev "wan" "WAN Link" "white:net" "eth1"
+	;;
 gnubee,gb-pc1|\
 gnubee,gb-pc2)
 	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1"
