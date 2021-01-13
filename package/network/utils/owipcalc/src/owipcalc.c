@@ -361,11 +361,11 @@ static struct cidr * cidr_parse6(const char *s)
 	if (!addr || (strlen(s) >= sizeof(addr->buf.v6)))
 		goto err;
 
-	snprintf(addr->buf.v4, sizeof(addr->buf.v6), "%s", s);
+	snprintf(addr->buf.v6, sizeof(addr->buf.v6), "%s", s);
 
 	addr->family = AF_INET6;
 
-	if ((p = strchr(addr->buf.v4, '/')) != NULL)
+	if ((p = strchr(addr->buf.v6, '/')) != NULL)
 	{
 		*p++ = 0;
 
@@ -379,9 +379,9 @@ static struct cidr * cidr_parse6(const char *s)
 		addr->prefix = 128;
 	}
 
-	if (p == addr->buf.v4+1)
+	if (p == addr->buf.v6+1)
 		memset(&addr->addr.v6, 0, sizeof(addr->addr.v6));
-	else if (inet_pton(AF_INET6, addr->buf.v4, &addr->addr.v6) != 1)
+	else if (inet_pton(AF_INET6, addr->buf.v6, &addr->addr.v6) != 1)
 		goto err;
 
 	return addr;
