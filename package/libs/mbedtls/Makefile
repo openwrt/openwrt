@@ -21,7 +21,9 @@ PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=gpl-2.0.txt
 PKG_CPE_ID:=cpe:/a:arm:mbed_tls
 
-PKG_CONFIG_DEPENDS:=CONFIG_LIBMBEDTLS_DEBUG_C
+PKG_CONFIG_DEPENDS := \
+	CONFIG_LIBMBEDTLS_DEBUG_C \
+	CONFIG_LIBMBEDTLS_HKDF_C
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -57,6 +59,14 @@ config LIBMBEDTLS_DEBUG_C
 	 by around 60 KiB (for an ARMv5 platform).
 
 	 Usually, you don't need this, so don't select this if you're unsure.
+
+config LIBMBEDTLS_HKDF_C
+	depends on PACKAGE_libmbedtls
+	bool "Enable the HKDF algorithm (RFC 5869)"
+	default n
+	help
+	 This option adds support for the Hashed Message Authentication Code
+	 (HMAC)-based key derivation function (HKDF).
 endef
 
 define Package/mbedtls-util
@@ -93,6 +103,13 @@ define Build/Configure
 
 	awk 'BEGIN { rc = 1 } \
 	     /#define MBEDTLS_DEBUG_C/ { $$$$0 = "$(if $(CONFIG_LIBMBEDTLS_DEBUG_C),,// )#define MBEDTLS_DEBUG_C"; rc = 0 } \
+	     { print } \
+	     END { exit(rc) }' $(PKG_BUILD_DIR)/include/mbedtls/config.h \
+	     >$(PKG_BUILD_DIR)/include/mbedtls/config.h.new && \
+	mv $(PKG_BUILD_DIR)/include/mbedtls/config.h.new $(PKG_BUILD_DIR)/include/mbedtls/config.h
+
+	awk 'BEGIN { rc = 1 } \
+	     /#define MBEDTLS_HKDF_C/ { $$$$0 = "$(if $(CONFIG_LIBMBEDTLS_HKDF_C),,// )#define MBEDTLS_HKDF_C"; rc = 0 } \
 	     { print } \
 	     END { exit(rc) }' $(PKG_BUILD_DIR)/include/mbedtls/config.h \
 	     >$(PKG_BUILD_DIR)/include/mbedtls/config.h.new && \
