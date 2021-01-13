@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "qca9531_glinet_gl-xe300.dtsi"
+
+/ {
+	compatible = "glinet,gl-xe300-iot", "qca,qca9531";
+	model = "GL.iNet GL-XE300 (NOR/NAND IOT)";
+};
+
+&nor_partitions {
+	partition@60000 {
+		label = "kernel";
+		reg = <0x060000 0x400000>;
+	};
+	parition@260000 {
+		label = "nor_reserved";
+		reg = <0x460000 0xba0000>;
+	};
+};
+
+&nand_ubi {
+	label = "ubi";
+};
+
+&bootargs {
+	bootargs="";
+};

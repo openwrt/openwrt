@@ -154,6 +154,21 @@ define Device/glinet_gl-xe300-nor-nand
 endef
 TARGET_DEVICES += glinet_gl-xe300-nor-nand
 
+define Device/glinet_gl-xe300-iot
+  ATH_SOC := qca9531
+  DEVICE_TITLE := GL.iNet GL-XE300 (NOR/NAND IOT)
+  DEVICE_PACKAGES := kmod-usb2 block-mount kmod-usb-serial-ch341
+  KERNEL_SIZE := 2048k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  IMAGES := factory.img sysupgrade.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-gl-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-gl-metadata
+  SUPPORTED_DEVICES += gl-xe300 glinet,gl-xe300
+endef
+TARGET_DEVICES += glinet_gl-xe300-iot
+
 define Device/glinet_gl-x300b-nor
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-X300B (NOR)

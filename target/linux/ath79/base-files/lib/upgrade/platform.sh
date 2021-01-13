@@ -52,6 +52,7 @@ platform_do_upgrade() {
 	glinet,gl-x1200-nor-nand|\
 	glinet,gl-x300b-nor-nand|\
 	glinet,gl-x750-nor-nand|\
+	glinet,gl-xe300-iot|\
 	glinet,gl-xe300-nor-nand)
 		nand_do_upgrade "$1"
 		;;
