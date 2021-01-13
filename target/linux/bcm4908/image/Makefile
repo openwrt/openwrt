@@ -8,11 +8,16 @@ define Build/bcm4908lzma
 	mv $@.new $@
 endef
 
+define Build/bcm4908kernel
+	$(STAGING_DIR_HOST)/bin/bcm4908kernel -i $@ -o $@.new
+	mv $@.new $@
+endef
+
 define Device/Default
-  KERNEL := kernel-bin | bcm4908lzma
+  KERNEL := kernel-bin | bcm4908lzma | bcm4908kernel
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_SUFFIX := .bin
-  KERNEL_INITRAMFS := kernel-bin | bcm4908lzma
+  KERNEL_INITRAMFS := kernel-bin | bcm4908lzma | bcm4908kernel
   FILESYSTEMS := squashfs
   KERNEL_NAME := Image
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
