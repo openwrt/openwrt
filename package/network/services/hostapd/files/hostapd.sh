@@ -331,6 +331,8 @@ hostapd_common_add_bss_config() {
 	config_add_array airtime_sta_weight
 	config_add_int airtime_bss_weight airtime_bss_limit
 
+	config_add_boolean multicast_to_unicast per_sta_vif
+
 	config_add_array hostapd_bss_options
 }
 
@@ -480,7 +482,8 @@ hostapd_set_bss_options() {
 		acct_server acct_secret acct_port acct_interval \
 		bss_load_update_period chan_util_avg_period sae_require_mfp \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
-		airtime_bss_weight airtime_bss_limit airtime_sta_weight
+		airtime_bss_weight airtime_bss_limit airtime_sta_weight \
+		multicast_to_unicast per_sta_vif
 
 	set_default isolate 0
 	set_default maxassoc 0
@@ -940,6 +943,16 @@ hostapd_set_bss_options() {
 		json_for_each_item append_hs20_oper_friendly_name hs20_oper_friendly_name
 		json_for_each_item append_osu_provider osu_provider
 		json_for_each_item append_operator_icon operator_icon
+	fi
+
+	set_default multicast_to_unicast 0
+	if [ "$multicast_to_unicast" -gt 0 ]; then
+		append bss_conf "multicast_to_unicast=$multicast_to_unicast" "$N"
+	fi
+
+	set_default per_sta_vif 0
+	if [ "$per_sta_vif" -gt 0 ]; then
+		append bss_conf "per_sta_vif=$per_sta_vif" "$N"
 	fi
 
 	json_get_values opts hostapd_bss_options
