@@ -170,6 +170,8 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw, int mdio_mode)
 		for (i = 0; i <= 4; i++) {
 			val = _mt7620_mii_read(gsw, gsw->ephy_base + i, 0);
 			val &= ~BIT(11);
+			/* configure phy for auto negotiate */
+			val |= BIT(9)|BIT(12)|BIT(13);
 			_mt7620_mii_write(gsw, gsw->ephy_base + i, 0, val);
 		}
 	}
