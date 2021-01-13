@@ -172,7 +172,7 @@ define Device/glinet_gl-x300b-nor-nand
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
   IMAGES := factory.img sysupgrade.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-metadata
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-metadata
   SUPPORTED_DEVICES += gl-x300b glinet,gl-x300b
 endef

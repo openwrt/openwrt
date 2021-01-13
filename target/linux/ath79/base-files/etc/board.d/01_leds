@@ -84,7 +84,7 @@ glinet,gl-usb150)
 glinet,gl-mifi)
 	ucidef_set_led_wlan "wlan" "WLAN" "gl-mifi:green:wlan" "phy0tpt"
 	ucidef_set_led_netdev "wan" "WAN" "gl-mifi:green:wan" "eth0"
-	ucidef_set_led_netdev "lan" "LAN" "gl-mifi:green:lan" "eth1"
+    ucidef_set_led_switch "lan" "LAN" "gl-mifi:green:lan" "switch0" "0x2"
 	ucidef_set_led_netdev "3gnet" "3GNET" "gl-mifi:green:net" "3g-wan"
     ;;
 glinet,gl-ar300m-nand|\
