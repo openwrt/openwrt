@@ -209,8 +209,9 @@ define Device/gl-mt1300
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := GL-iNet GL-MT1300
   DEVICE_PACKAGES := \
-	kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-mt7603 kmod-usb3 \
-	kmod-usb-ledtrig-usbport wpad-basic
+	 kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-mt7603 kmod-usb3 \
+	 kmod-usb-ledtrig-usbport wpad-basic
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-gl-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += gl-mt1300
 
