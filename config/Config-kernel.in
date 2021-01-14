@@ -975,9 +975,10 @@ if KERNEL_IPV6
 		def_bool n
 
 	config KERNEL_IPV6_SEG6_LWTUNNEL
-		def_bool y if !SMALL_FLASH
+		bool "Enable support for lightweight tunnels"
+		default y if !SMALL_FLASH
 		help
-		  Using lwtunnel requires full-ip package.
+		  Using lwtunnel (needed for IPv6 segment routing) requires ip-full package.
 
 	config KERNEL_LWTUNNEL_BPF
 		def_bool n
