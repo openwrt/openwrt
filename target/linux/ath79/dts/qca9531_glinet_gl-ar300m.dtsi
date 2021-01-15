@@ -6,12 +6,6 @@
 #include "qca953x.dtsi"
 
 / {
-	aliases {
-		led-boot = &led_status;
-		led-failsafe = &led_status;
-		led-running = &led_status;
-		led-upgrade = &led_status;
-	};
 
 	keys {
 		compatible = "gpio-keys-polled";
@@ -44,8 +38,9 @@
 		// Colors from non-Lite versions
 
 		led_status: status {
-			label = "gl-ar300m:green:status";
+			label = "gl-ar300m:green:system";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			default-state = "on";
 		};
 
 		led_lan: lan {
@@ -54,11 +49,21 @@
 		};
 
 		led_wlan: wlan {
-			label = "gl-ar300m:red:wlan";
+			label = "gl-ar300m:green:wlan";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_usb_power {
+			gpio-export,name = "usb_power";
+			gpio-export,output = <1>;
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+	 };
 };
 
 &pcie0 {
@@ -85,18 +90,18 @@
 				read-only;
 			};
 
-			partition@1 {
+			partition@40000 {
 				label = "u-boot-env";
 				reg = <0x040000 0x010000>;
 			};
 
-			partition@2 {
+			firmware_nor: partition@50000 {
 				compatible = "denx,uimage";
-				label = "firmware";
+				label = "reserved";
 				reg = <0x050000 0xfa0000>;
 			};
 
-			art: partition@3 {
+			art: partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
@@ -123,11 +128,13 @@
 	status = "okay";
 	mtd-mac-address = <&art 0x0>;
 	phy-handle = <&swphy4>;
+	ifname = "eth0";
 };
 
 &eth1 {
 	mtd-mac-address = <&art 0x0>;
 	mtd-mac-address-increment = <1>;
+	ifname = "eth1";
 };
 
 &wmac {

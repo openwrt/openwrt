@@ -1,6 +1,7 @@
 #!/bin/sh
 # Copyright (C) 2006-2019 OpenWrt.org
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
 
 boot="$(get_dt_led boot)"
@@ -45,6 +46,17 @@ set_led_state() {
 	esac
 }
 
+
 set_state() {
 	[ -n "$boot" -o -n "$failsafe" -o -n "$running" -o -n "$upgrade" ] && set_led_state "$1"
+	[ "$1" = "done" ] && {
+		local board=$(board_name)
+		case $board in
+			glinet,gl-ar300m|\
+			glinet,gl-ar300m-nor|\
+			glinet,gl-ar300m-nand)
+				fw_setenv "bootcount" 0
+			;;
+		esac
+	}
 }

@@ -28,7 +28,7 @@ TARGET_DEVICES += glinet_gl-mifi
 define Device/glinet_gl-ar300m-nor
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-AR300M (NOR)
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct block-mount
+  DEVICE_PACKAGES := kmod-usb2  block-mount
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-ar300m glinet,gl-ar300m
 endef
@@ -42,9 +42,9 @@ define Device/glinet_gl-ar300m-nand
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
-  IMAGES += factory.ubi
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-gl-metadata
-  IMAGE/factory.ubi := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGES := factory.img sysupgrade.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-gl-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-gl-metadata
   SUPPORTED_DEVICES += gl-ar300m glinet,gl-ar300m
 endef
 TARGET_DEVICES += glinet_gl-ar300m-nand
