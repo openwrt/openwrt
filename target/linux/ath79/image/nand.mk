@@ -204,7 +204,7 @@ TARGET_DEVICES += glinet_gl-x1200-nor
 define Device/glinet_gl-x1200-nor-nand
   ATH_SOC := qca9563
   DEVICE_TITLE := GL.iNet GL-X1200 (NOR/NAND)
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct block-mount PCI_SUPPORT
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct-htt block-mount PCI_SUPPORT
   KERNEL_SIZE := 2048k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
