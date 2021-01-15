@@ -29,7 +29,7 @@
 
 		led_power: power {
 			label = "gl-usb150:green:power";
-			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 	};
@@ -44,20 +44,18 @@
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
+    gpio-export {
+        compatible = "gpio-export";
+        gpio_usb_power {
+            gpio-export,name = "gpio7";
+            gpio-export,output = <0>;
+            gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+        };
+    };
 };
 
 &uart {
 	status = "okay";
-};
-
-&usb {
-	dr_mode = "host";
-	status = "okay";
-};
-
-&usb_phy {
-	status = "okay";
-	gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 };
 
 &spi {
@@ -104,6 +102,18 @@
 	status = "okay";
 
 	mtd-mac-address = <&art 0x0>;
+
+	gmac-config {
+		device = <&gmac>;
+
+		switch-phy-addr-swap = <0>;
+		switch-phy-swap = <0>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+	compatible = "syscon", "simple-mfd";
 };
 
 &wmac {

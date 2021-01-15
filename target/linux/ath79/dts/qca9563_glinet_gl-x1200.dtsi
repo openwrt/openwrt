@@ -40,11 +40,6 @@
 			default-state = "keep";
 		};
 
-		usbpower: usbpower {
-			label = "gl-x1200:green:usbpower";
-			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
-		};
-
 		wlan2g {
 			label = "gl-x1200:green:wlan2g";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
@@ -57,19 +52,50 @@
 			linux,default-trigger = "phy0tpt";
 		};
 	};
+	gpio-export {
+		compatible = "gpio-export";
 
-	usb_vbus: regulator-usb-vbus {
-		compatible = "regulator-fixed";
+		gpio_usb_power {
+			gpio-export,name = "gpio7";
+			gpio-export,output = <1>;
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		};
 
-		regulator-name = "USB_VBUS";
+		gpio_lte1_power {
+			gpio-export,name = "gpio5";
+			gpio-export,output = <0>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+		};
 
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		regulator-always-on;
+		gpio_lte2_power {
+			gpio-export,name = "gpio15";
+			gpio-export,output = <0>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
 
-		gpio = <&gpio 7 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
+		gpio_watchdog_en {
+			gpio-export,name = "gpio16";
+			gpio-export,output = <1>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_feed_dog {
+			gpio-export,name = "gpio14";
+			gpio-export,output = <1>;
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		};
+	 };
+
+    usb_vbus: regulator-usb-vbus {
+        compatible = "regulator-fixed";
+
+        regulator-name = "USB_VBUS";
+
+        regulator-min-microvolt = <5000000>;
+        regulator-max-microvolt = <5000000>;
+        regulator-always-on;
+
+    };
 };
 
 &spi {
