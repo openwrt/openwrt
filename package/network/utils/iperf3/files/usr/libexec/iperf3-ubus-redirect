@@ -1,27 +1,33 @@
 #!/bin/sh
 
 trap_with_arg() {
-	func="$1" ; shift
-	pid="$1" ; shift
-	for sig ; do
+	local func="$1"; shift
+	local pid="$1"; shift
+
+	for sig in $@; do
 		# shellcheck disable=SC2064
 		trap "$func $sig $pid" "$sig"
 	done
 }
 
 func_trap() {
-	kill -${1} ${2} 2>/dev/null
+	kill "-${1}" "$2" 2>/dev/null
 }
 
 main() {
 	local args="$@"
+	local child
+
 	sh -c "echo \$\$; exec iperf3 $args" | {
-		read -r iperf3_pid
-		trap_with_arg func_trap "$iperf3_pid" SIGINT SIGTERM SIGKILL
+		local ppid
+
+		read -r ppid
+		trap_with_arg func_trap "$ppid" SIGINT SIGTERM SIGKILL
 		while read -r line; do
 			ubus send luci.iperf3.notify.data '{ "line": "'"$line"'" }'
 		done
 	} &
+
 	child=$!
 	kill -SIGSTOP $child
 	trap_with_arg func_trap "$child" SIGINT SIGTERM SIGKILL
@@ -29,4 +35,4 @@ main() {
 	wait $child
 }
 
-main $@
+main "$@"

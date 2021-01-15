@@ -73,8 +73,8 @@ start_client() {
 	config_get server "$cfg" server
 	config_get port "$cfg" port '5201'
 	config_get duration "$cfg" duration '10'
-	config_get_bool reverse "$cfg" reverse
-	config_get_bool udp "$cfg" udp
+	config_get_bool reverse "$cfg" reverse '0'
+	config_get_bool udp "$cfg" udp '1'
 
 	config_get proto "$cfg" proto "ipv4"
 	if [ "$proto" = "ipv6" ]; then
@@ -83,10 +83,10 @@ start_client() {
 		version="--version4"
 	fi
 
-	[ -n "$server" ] || {
+	if [ -n "$server" ]; then
 		echo "No server configured" >&2
 		exit 1
-	}
+	fi
 
 	rm -f "${LOGFILE}-${cfg}.log"
 
@@ -105,13 +105,14 @@ start_client() {
 	procd_append_param command --time "$duration"
 	procd_append_param command "$version"
 	[ "$redirect" -eq 0 ] && procd_append_param command --logfile "${LOGFILE}-${cfg}.log"
-	[ -n "$reverse" ] && procd_append_param command --reverse
-	[ -n "$udp" ] && procd_append_param command --udp
+	[ "$reverse" -eq 1 ] && procd_append_param command --reverse
+	[ "$udp" -eq 1 ] && procd_append_param command --udp
 	procd_append_param command --forceflush
 	procd_close_instance
 }
 
 extra_command "client" "<cfg> Start a client"
+
 client() {
 	local cfg="$1"
 

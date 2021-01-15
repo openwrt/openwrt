@@ -1,10 +1,16 @@
 
-#config server wan
-#	option enabled '1'
-#	option port '5202'
-#	option iface 'wan'
-#	option redirect '1'
-#
+config server wan
+	option enabled '1'
+	option port '5202'
+	option iface 'wan'
+	option redirect '1'
+	option interval '1'
+
 #config client internet
-#	option server '192.168.0.51'
+#	option server '<IP>'
 #	option port '5202'
+#	option duration '10'
+#	option proto 'ipv4'
+#	option reverse '0'
+#	option udp '1'
+#	option redirect '1'
