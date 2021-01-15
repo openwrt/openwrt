@@ -154,6 +154,7 @@ _proto_mbim_setup() {
 	json_add_string proto "dhcpv6"
 	json_add_string extendprefix 1
 	proto_add_dynamic_defaults
+	json_close_object
 	ubus call network add_dynamic "$(json_dump)"
 }
 
