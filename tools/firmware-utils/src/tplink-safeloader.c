@@ -1329,9 +1329,9 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 	
-	/** Firmware layout for the C900 V1.1 */
+	/** Firmware layout for the C900 V1 */
 	{
-		.id     = "ARCHER-C900-V1.1",
+		.id     = "ARCHER-C900-V1",
 		.support_list =
 			"SupportList:\n"
 			"{product_name:ArcherC900,product_ver:1.0.0,special_id:00000000}\n"
@@ -2840,7 +2840,7 @@ static void build_image(const char *output,
 	    strcasecmp(info->id, "ARCHER-C59-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V3") == 0 ||
-	    strcasecmp(info->id, "ARCHER-C900-V1.1") == 0 ||
+	    strcasecmp(info->id, "ARCHER-C900-V1") == 0 ||
 	    strcasecmp(info->id, "TLWR1043NV5") == 0) {
 		const uint8_t extra_para[2] = {0x01, 0x00};
 		parts[5] = make_extra_para(info, extra_para,
