@@ -1,0 +1,26 @@
+From 73f63c66bf80bebd46d38a2660078dbe3fe11170 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Thu, 14 Jan 2021 12:02:28 +0100
+Subject: [PATCH] phy: phy-brcm-usb: select SOC_BRCMSTB on brcmstb only
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BCM4908 doesn't need brcmstb SoC stuff compiled.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ drivers/phy/broadcom/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/phy/broadcom/Kconfig
++++ b/drivers/phy/broadcom/Kconfig
+@@ -86,7 +86,7 @@ config PHY_BRCM_USB
+ 	depends on ARCH_BCM4908 || ARCH_BRCMSTB
+ 	depends on OF
+ 	select GENERIC_PHY
+-	select SOC_BRCMSTB
++	select SOC_BRCMSTB if ARCH_BRCMSTB
+ 	default ARCH_BCM4908
+ 	default ARCH_BRCMSTB
+ 	help

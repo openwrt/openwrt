@@ -76,7 +76,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool ht_supported = mi->sta->ht_cap.ht_supported;
  
  	mi->sample_mode = MINSTREL_SAMPLE_IDLE;
-@@ -903,9 +913,6 @@ minstrel_ht_update_stats(struct minstrel
+@@ -863,6 +873,7 @@ minstrel_ht_update_stats(struct minstrel
+ 	else
+ 		index = MINSTREL_OFDM_GROUP * MCS_GROUP_RATES;
+ 
++	tmp_max_prob_rate = index;
+ 	for (j = 0; j < ARRAY_SIZE(tmp_mcs_tp_rate); j++)
+ 		tmp_mcs_tp_rate[j] = index;
+ 
+@@ -903,9 +914,6 @@ minstrel_ht_update_stats(struct minstrel
  			/* Find max throughput rate set within a group */
  			minstrel_ht_sort_best_tp_rates(mi, index,
  						       tmp_group_tp_rate);
@@ -86,7 +94,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		}
  
  		memcpy(mg->max_group_tp_rate, tmp_group_tp_rate,
-@@ -917,6 +924,27 @@ minstrel_ht_update_stats(struct minstrel
+@@ -917,6 +925,27 @@ minstrel_ht_update_stats(struct minstrel
  					 tmp_legacy_tp_rate);
  	memcpy(mi->max_tp_rate, tmp_mcs_tp_rate, sizeof(mi->max_tp_rate));
  
