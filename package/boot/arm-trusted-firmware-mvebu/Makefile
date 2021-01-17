@@ -32,7 +32,7 @@ define Trusted-Firmware-A/espressobin-512mb
   BUILD_DEVICES:=globalscale_espressobin
   UBOOT:=espressobin
   DDR_TOPOLOGY:=0
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -42,7 +42,7 @@ define Trusted-Firmware-A/espressobin-v3-v5-1gb-1cs
   BUILD_DEVICES:=globalscale_espressobin
   UBOOT:=espressobin
   DDR_TOPOLOGY:=4
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -52,7 +52,7 @@ define Trusted-Firmware-A/espressobin-v3-v5-1gb-2cs
   BUILD_DEVICES:=globalscale_espressobin
   UBOOT:=espressobin
   DDR_TOPOLOGY:=2
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -62,7 +62,7 @@ define Trusted-Firmware-A/espressobin-v3-v5-2gb
   BUILD_DEVICES:=globalscale_espressobin
   UBOOT:=espressobin
   DDR_TOPOLOGY:=7
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -72,7 +72,7 @@ define Trusted-Firmware-A/espressobin-v7-1gb
   BUILD_DEVICES:=globalscale_espressobin-v7
   UBOOT:=espressobin
   DDR_TOPOLOGY:=5
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -82,7 +82,7 @@ define Trusted-Firmware-A/espressobin-v7-2gb
   BUILD_DEVICES:=globalscale_espressobin-v7
   UBOOT:=espressobin
   DDR_TOPOLOGY:=6
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
