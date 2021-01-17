@@ -442,7 +442,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  /* Global User Control 1 Register */
  #define DWC3_GUCTL1_PARKMODE_DISABLE_SS	BIT(17)
  #define DWC3_GUCTL1_TX_IPGAP_LINECHECK_DIS	BIT(28)
-@@ -478,6 +507,14 @@
+@@ -479,6 +508,14 @@
  #define DWC3_DEV_IMOD_INTERVAL_SHIFT	0
  #define DWC3_DEV_IMOD_INTERVAL_MASK	(0xffff << 0)
  
@@ -457,7 +457,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  /* Structures */
  
  struct dwc3_trb;
-@@ -789,6 +826,7 @@ struct dwc3_scratchpad_array {
+@@ -790,6 +827,7 @@ struct dwc3_scratchpad_array {
   * @regs: base address for our registers
   * @regs_size: address space size
   * @fladj: frame length adjustment
@@ -465,7 +465,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
   * @irq_gadget: peripheral controller's IRQ number
   * @nr_scratch: number of scratch buffers
   * @u1u2: only used on revisions <1.83a for workaround
-@@ -844,6 +882,7 @@ struct dwc3_scratchpad_array {
+@@ -845,6 +883,7 @@ struct dwc3_scratchpad_array {
   * @setup_packet_pending: true when there's a Setup Packet in FIFO. Workaround
   * @three_stage_setup: set if we perform a three phase setup
   * @usb3_lpm_capable: set if hadrware supports Link Power Management
@@ -473,7 +473,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
   * @disable_scramble_quirk: set if we enable the disable scramble quirk
   * @u2exit_lfps_quirk: set if we enable u2exit lfps quirk
   * @u2ss_inp3_quirk: set if we enable P3 OK for U2/SS Inactive quirk
-@@ -925,6 +964,12 @@ struct dwc3 {
+@@ -926,6 +965,12 @@ struct dwc3 {
  	enum usb_phy_interface	hsphy_mode;
  
  	u32			fladj;
@@ -486,7 +486,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	u32			irq_gadget;
  	u32			nr_scratch;
  	u32			u1u2;
-@@ -1009,6 +1054,7 @@ struct dwc3 {
+@@ -1010,6 +1055,7 @@ struct dwc3 {
  	unsigned		setup_packet_pending:1;
  	unsigned		three_stage_setup:1;
  	unsigned		usb3_lpm_capable:1;
@@ -494,7 +494,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  
  	unsigned		disable_scramble_quirk:1;
  	unsigned		u2exit_lfps_quirk:1;
-@@ -1029,6 +1075,11 @@ struct dwc3 {
+@@ -1030,6 +1076,11 @@ struct dwc3 {
  
  	unsigned		tx_de_emphasis_quirk:1;
  	unsigned		tx_de_emphasis:2;
