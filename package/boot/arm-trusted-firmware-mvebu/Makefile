@@ -46,31 +46,11 @@ define Trusted-Firmware-A/espressobin-v3-v5-1gb-1cs
   PLAT:=a3700
 endef
 
-define Trusted-Firmware-A/espressobin-v3-v5-1gb-1cs-emmc
-  NAME:=Marvell ESPRESSObin V3-V5 (1GB 1CS, eMMC)
-  DEPENDS:=+u-boot-espressobin-emmc
-  BUILD_DEVICES:=globalscale_espressobin-emmc
-  UBOOT:=espressobin-emmc
-  DDR_TOPOLOGY:=4
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
 define Trusted-Firmware-A/espressobin-v3-v5-1gb-2cs
   NAME:=Marvell ESPRESSObin V3-V5 (1GB, 2CS)
   DEPENDS:=+u-boot-espressobin
   BUILD_DEVICES:=globalscale_espressobin
   UBOOT:=espressobin
-  DDR_TOPOLOGY:=2
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
-define Trusted-Firmware-A/espressobin-v3-v5-1gb-2cs-emmc
-  NAME:=Marvell ESPRESSObin V3-V5 (1GB 2CS, eMMC)
-  DEPENDS:=+u-boot-espressobin-emmc
-  BUILD_DEVICES:=globalscale_espressobin-emmc
-  UBOOT:=espressobin-emmc
   DDR_TOPOLOGY:=2
   CLOCKSPRESET:=CPU_800_DDR_800
   PLAT:=a3700
@@ -86,16 +66,6 @@ define Trusted-Firmware-A/espressobin-v3-v5-2gb
   PLAT:=a3700
 endef
 
-define Trusted-Firmware-A/espressobin-v3-v5-2gb-emmc
-  NAME:=Marvell ESPRESSObin V3-V5 (2GB, eMMC)
-  DEPENDS:=+u-boot-espressobin-emmc
-  BUILD_DEVICES:=globalscale_espressobin-emmc
-  UBOOT:=espressobin-emmc
-  DDR_TOPOLOGY:=7
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
 define Trusted-Firmware-A/espressobin-v7-1gb
   NAME:=Marvell ESPRESSObin V7 (1GB)
   DEPENDS:=+u-boot-espressobin
@@ -106,31 +76,11 @@ define Trusted-Firmware-A/espressobin-v7-1gb
   PLAT:=a3700
 endef
 
-define Trusted-Firmware-A/espressobin-v7-1gb-emmc
-  NAME:=Marvell ESPRESSObin V7 (1GB, eMMC)
-  DEPENDS:=+u-boot-espressobin
-  BUILD_DEVICES:=globalscale_espressobin-v7-emmc
-  UBOOT:=espressobin-emmc
-  DDR_TOPOLOGY:=5
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
 define Trusted-Firmware-A/espressobin-v7-2gb
   NAME:=Marvell ESPRESSObin V7 (2GB)
   DEPENDS:=+u-boot-espressobin
   BUILD_DEVICES:=globalscale_espressobin-v7
   UBOOT:=espressobin
-  DDR_TOPOLOGY:=6
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
-define Trusted-Firmware-A/espressobin-v7-2gb-emmc
-  NAME:=Marvell ESPRESSObin V7 (2GB, eMMC)
-  DEPENDS:=+u-boot-espressobin
-  BUILD_DEVICES:=globalscale_espressobin-v7-emmc
-  UBOOT:=espressobin-emmc
   DDR_TOPOLOGY:=6
   CLOCKSPRESET:=CPU_800_DDR_800
   PLAT:=a3700
@@ -150,15 +100,10 @@ endef
 TFA_TARGETS:= \
 	espressobin-512mb \
 	espressobin-v3-v5-1gb-1cs \
-	espressobin-v3-v5-1gb-1cs-emmc \
 	espressobin-v3-v5-1gb-2cs \
-	espressobin-v3-v5-1gb-2cs-emmc \
 	espressobin-v3-v5-2gb \
-	espressobin-v3-v5-2gb-emmc \
 	espressobin-v7-1gb \
-	espressobin-v7-1gb-emmc \
 	espressobin-v7-2gb \
-	espressobin-v7-2gb-emmc \
 	udpu
 
 TFA_MAKE_FLAGS += \
