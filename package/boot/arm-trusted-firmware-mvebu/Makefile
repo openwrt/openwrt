@@ -7,9 +7,9 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.3
+PKG_VERSION:=2.4
 PKG_RELEASE:=1
-PKG_HASH:=37f917922bcef181164908c470a2f941006791c0113d738c498d39d95d543b21
+PKG_HASH:=bf3eb3617a74cddd7fb0e0eacbfe38c3258ee07d4c8ed730deef7a175cc3d55b
 
 PKG_MAINTAINER:=Vladimir Vid <vladimir.vid@sartura.hr>
 
@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Trusted-Firmware-A/Default
   BUILD_TARGET:=mvebu
   BUILD_SUBTARGET:=cortexa53
-  TFA_IMAGE:=flash-image.bin uart-images.tgz
+  TFA_IMAGE:=flash-image.bin uart-images.tgz.bin
   UBOOT:=
   DDR_TOPOLOGY:=
   CLOCKSPRESET:=
@@ -114,31 +114,31 @@ TFA_MAKE_FLAGS += \
 		DDR_TOPOLOGY=$(DDR_TOPOLOGY) \
 		CLOCKSPRESET=$(CLOCKSPRESET) \
 		all \
-		fip
+		mrvl_flash
 
 A3700_UTILS_NAME:=a3700-utils
-A3700_UTILS_RELEASE:=09679790
+A3700_UTILS_RELEASE:=5598e150
 A3700_UTILS_SOURCE=$(A3700_UTILS_NAME)-$(A3700_UTILS_RELEASE).tar.bz2
 
 define Download/a3700-utils
   FILE:=$(A3700_UTILS_SOURCE)
   PROTO:=git
   URL:=https://github.com/MarvellEmbeddedProcessors/A3700-utils-marvell.git
-  VERSION:=096797908ddd69a679fd55595c41fc02809829a9
-  MIRROR_HASH:=9276d63d41b2e221c2fd5cceee988ca26eff5005747787f084868b3940173b7a
+  VERSION:=5598e150fa3a1568256c30223fd2b214d729f26a
+  MIRROR_HASH:=4c3a3bed97833d08af4e42995c0c5af6c107f990fd492cd90aa3e79134d2751e
   SUBDIR:=$(A3700_UTILS_NAME)
 endef
 
 MV_DDR_NAME:=mv-ddr-marvell
-MV_DDR_RELEASE:=mainline
+MV_DDR_RELEASE:=6fb99002
 MV_DDR_SOURCE:=$(MV_DDR_NAME)-$(MV_DDR_RELEASE).tar.bz2
 
 define Download/mv-ddr-marvell
   FILE:=$(MV_DDR_SOURCE)
   PROTO:=git
   URL:=https://github.com/MarvellEmbeddedProcessors/mv-ddr-marvell.git
-  VERSION:=a881467ef0f0185e6570dd0483023fde93cbb5f5
-  MIRROR_HASH:=19f34817616c583b2b5f2612705857cf2120f6c2132355217899b1403c3fd336
+  VERSION:=6fb99002be5dec9c7f5375b074f53148dbc0739c
+  MIRROR_HASH:=6836e5ea47618a7ee2f96a1a6bd8218f003789b877e521fdfcb008f2f6475dd6
   SUBDIR:=$(MV_DDR_NAME)
 endef
 
