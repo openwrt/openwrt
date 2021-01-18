@@ -113,6 +113,8 @@ TFA_MAKE_FLAGS += \
 		WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
 		DDR_TOPOLOGY=$(DDR_TOPOLOGY) \
 		CLOCKSPRESET=$(CLOCKSPRESET) \
+		A3700_UTILS_COMMIT_ID=$(A3700_UTILS_RELEASE) \
+		MV_DDR_COMMIT_ID=$(MV_DDR_RELEASE) \
 		all \
 		mrvl_flash
 
@@ -163,7 +165,9 @@ define Build/Prepare
 
 	mkdir -p $(STAGING_DIR_IMAGE)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(A3700_UTILS_SOURCE)
+	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME),./patches-a3700-utils)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(MV_DDR_SOURCE)
+	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME),./patches-mv-ddr-marvell)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(LINARO_SOURCE)
 endef
 
