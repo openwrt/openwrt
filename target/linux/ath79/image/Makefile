@@ -63,7 +63,7 @@ define Device/Default
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+	append-rootfs | pad-rootfs | append-gl-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 
 ifeq ($(SUBTARGET),generic)
