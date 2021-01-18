@@ -3,7 +3,7 @@ ifeq ($(SUBTARGET),cortexa53)
 define Device/gl-mv1000
   KERNEL_NAME := Image
   KERNEL_LOADADDR := 0x000080000
-  KERNEL := kernel-bin | lzma | uImage lzma | pad-dtb
+  KERNEL := kernel-bin | lzma | uImage lzma | pad-dtb | append-gl-metadata
   DEVICE_TITLE := GL.iNet GL-MV1000
   DEVICE_PACKAGES := e2fsprogs ethtool mkf2fs kmod-fs-vfat kmod-usb2 kmod-usb3 kmod-usb-storage
   BLOCKSIZE := 64k

@@ -101,7 +101,7 @@ define Device/Default-arm64-emmc
   BOOT_SCRIPT := generic-arm64-emmc
   DTS_DIR := $(DTS_DIR)/marvell
   IMAGES := emmc.img
-  IMAGE/emmc.img := boot-scr | boot-img-ext4 | sdcard-img-ext4 | append-metadata
+  IMAGE/emmc.img := boot-scr | boot-img-ext4 | sdcard-img-ext4 | append-gl-metadata
   KERNEL_NAME := Image
   KERNEL := kernel-bin
 endef

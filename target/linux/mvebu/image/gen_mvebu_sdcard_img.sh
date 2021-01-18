@@ -54,7 +54,7 @@ done
 model=''
 model=$(echo $OUTFILE | grep "gl-mv1000-emmc")
 [ "$model" != "" ] && {
-	ptgen_args="$ptgen_args -t 83 -p 7093504"
+	ptgen_args="$ptgen_args -t 83 -p 7090176"
 }
 
 head=16
