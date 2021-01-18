@@ -130,7 +130,11 @@ get_magic_gpt() {
 }
 
 get_magic_vfat() {
-	(get_image "$@" | dd bs=1 count=3 skip=54) 2>/dev/null
+	(get_image "$@" | dd bs=3 count=1 skip=18) 2>/dev/null
+}
+
+get_magic_fat32() {
+	(get_image "$@" | dd bs=1 count=5 skip=82) 2>/dev/null
 }
 
 part_magic_efi() {
@@ -140,7 +144,8 @@ part_magic_efi() {
 
 part_magic_fat() {
 	local magic=$(get_magic_vfat "$@")
-	[ "$magic" = "FAT" ]
+	local magic_fat32=$(get_magic_fat32 "$@")
+	[ "$magic" = "FAT" ] || [ "$magic_fat32" = "FAT32" ]
 }
 
 export_bootdevice() {

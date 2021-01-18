@@ -380,7 +380,6 @@ config KERNEL_AIO
 config KERNEL_IO_URING
 	bool "Compile the kernel with io_uring support"
 	default y if !SMALL_FLASH
-	depends on LINUX_5_4
 
 config KERNEL_FHANDLE
 	bool "Compile the kernel with support for fhandle syscalls"
@@ -973,6 +972,15 @@ if KERNEL_IPV6
 		  addition to kernel support.
 
 	config KERNEL_IPV6_PIMSM_V2
+		def_bool n
+
+	config KERNEL_IPV6_SEG6_LWTUNNEL
+		bool "Enable support for lightweight tunnels"
+		default y if !SMALL_FLASH
+		help
+		  Using lwtunnel (needed for IPv6 segment routing) requires ip-full package.
+
+	config KERNEL_LWTUNNEL_BPF
 		def_bool n
 
 endif

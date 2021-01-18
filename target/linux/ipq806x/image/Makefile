@@ -193,6 +193,20 @@ define Device/nec_wg2600hp
 endef
 TARGET_DEVICES += nec_wg2600hp
 
+define Device/nec_wg2600hp3
+	$(call Device/LegacyImage)
+	DEVICE_VENDOR := NEC Platforms
+	DEVICE_MODEL := Aterm WG2600HP3
+	SOC := qcom-ipq8062
+	BLOCKSIZE := 64k
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform -kmod-usb-ohci -kmod-usb2 \
+		-kmod-usb-ledtrig-usbport -kmod-usb-phy-qcom-dwc3 -kmod-usb3 -kmod-usb-dwc3-qcom \
+		ath10k-firmware-qca9984-ct ipq-wifi-nec_wg2600hp3
+endef
+TARGET_DEVICES += nec_wg2600hp3
+
 define Device/netgear_d7800
 	$(call Device/DniImage)
 	DEVICE_VENDOR := NETGEAR
@@ -319,6 +333,22 @@ define Device/qcom_ipq8064-db149
 endef
 TARGET_DEVICES += qcom_ipq8064-db149
 
+define Device/tplink_ad7200
+	$(call Device/TpSafeImage)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := AD7200
+	DEVICE_VARIANT := v1/v2
+	DEVICE_ALT0_VENDOR := TP-Link
+	DEVICE_ALT0_MODEL := Talon AD7200
+	DEVICE_ALT0_VARIANT := v1/v2
+	SOC := qcom-ipq8064
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	TPLINK_BOARD_ID := AD7200
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-wil6210
+endef
+TARGET_DEVICES += tplink_ad7200
+
 define Device/tplink_c2600
 	$(call Device/TpSafeImage)
 	DEVICE_VENDOR := TP-Link
@@ -351,6 +381,18 @@ define Device/tplink_vr2600v
 	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += tplink_vr2600v
+
+define Device/ubnt_unifi-ac-hd
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Ubiquiti
+	DEVICE_MODEL := UniFi AC HD
+	SOC := qcom-ipq8064
+	BLOCKSIZE := 64k
+	IMAGE_SIZE := 14784k
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | check-size
+endef
+TARGET_DEVICES += ubnt_unifi-ac-hd
 
 define Device/zyxel_nbg6817
 	DEVICE_VENDOR := ZyXEL

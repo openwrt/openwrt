@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-/dts-v1/;
 
 #include "rtl838x.dtsi"
 
@@ -12,6 +11,11 @@
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
 	};
 
 	keys {

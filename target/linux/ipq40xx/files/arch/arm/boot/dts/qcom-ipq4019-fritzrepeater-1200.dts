@@ -26,6 +26,12 @@
 			status = "okay";
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
+
+			/delete-node/ ethernet-phy@1;
+			/delete-node/ ethernet-phy@2;
+			/delete-node/ ethernet-phy@3;
+			/delete-node/ ethernet-phy@4;
+			/delete-node/ psgmii-phy@5;
 		};
 
 		tcsr@1949000 {

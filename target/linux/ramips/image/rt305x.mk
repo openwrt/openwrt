@@ -413,7 +413,6 @@ define Device/dlink_dir-610-a1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-610
   DEVICE_VARIANT := A1
-  DEVICE_PACKAGES := kmod-ledtrig-netdev kmod-ledtrig-timer
   SUPPORTED_DEVICES += dir-610-a1
   DEFAULT := n
 endef
@@ -554,7 +553,7 @@ define Device/hame_mpr-a1
   DEVICE_VENDOR := HAME
   DEVICE_MODEL := MPR
   DEVICE_VARIANT := A1
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += mpr-a1
   DEFAULT := n
 endef
@@ -567,7 +566,7 @@ define Device/hame_mpr-a2
   DEVICE_VENDOR := HAME
   DEVICE_MODEL := MPR
   DEVICE_VARIANT := A2
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += mpr-a2
 endef
 TARGET_DEVICES += hame_mpr-a2
@@ -631,8 +630,8 @@ define Device/intenso_memory2move
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_VENDOR := Intenso
   DEVICE_MODEL := Memory 2 Move
-  DEVICE_PACKAGES := kmod-ledtrig-netdev kmod-ledtrig-timer kmod-usb2 \
-	kmod-usb-storage kmod-scsi-core kmod-fs-ext4 kmod-fs-vfat block-mount
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-storage kmod-scsi-core kmod-fs-ext4 \
+	kmod-fs-vfat block-mount
   SUPPORTED_DEVICES += m2m
 endef
 TARGET_DEVICES += intenso_memory2move
@@ -868,7 +867,7 @@ define Device/poray_m3
 	poray-header -B M3 -F 4M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := M3
-  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+  DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += m3
   DEFAULT := n
 endef
@@ -883,7 +882,7 @@ define Device/poray_m4-4m
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := M4
   DEVICE_VARIANT := 4M
-  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+  DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += m4-4M
   DEFAULT := n
 endef
@@ -898,7 +897,7 @@ define Device/poray_m4-8m
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := M4
   DEVICE_VARIANT := 8M
-  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+  DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += m4-8M
 endef
 TARGET_DEVICES += poray_m4-8m
@@ -911,7 +910,7 @@ define Device/poray_x5
 	poray-header -B X5 -F 8M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := X5/X6
-  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+  DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += x5
 endef
 TARGET_DEVICES += poray_x5
@@ -924,7 +923,7 @@ define Device/poray_x8
 	poray-header -B X8 -F 8M
   DEVICE_VENDOR := Poray
   DEVICE_MODEL := X8
-  DEVICE_PACKAGES := kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+  DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += x8
 endef
 TARGET_DEVICES += poray_x8
@@ -1071,7 +1070,7 @@ define Device/unbranded_a5-v11
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	poray-header -B A5-V11 -F 4M
-  DEVICE_VENDOR := 
+  DEVICE_VENDOR :=
   DEVICE_MODEL := A5-V11
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += a5-v11
@@ -1179,7 +1178,7 @@ define Device/zorlik_zl5900v2
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Zorlik
   DEVICE_MODEL := ZL5900V2
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
 endef
 TARGET_DEVICES += zorlik_zl5900v2
 

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.31.1
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -28,6 +28,9 @@ PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=LICENSE archival/libarchive/bz/LICENSE
 PKG_CPE_ID:=cpe:/a:busybox:busybox
 
+BUSYBOX_SYM=$(if $(CONFIG_BUSYBOX_CUSTOM),CONFIG,DEFAULT)
+BUSYBOX_IF_ENABLED=$(if $(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_$(1)),$(2))
+
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SUID),)
   PKG_FILE_MODES:=/bin/busybox:root:root:4755
 endif
@@ -37,9 +40,6 @@ include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
   STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_BUSYBOX_' $(TOPDIR)/.config | mkhash md5)
 endif
-
-BUSYBOX_SYM=$(if $(CONFIG_BUSYBOX_CUSTOM),CONFIG,DEFAULT)
-BUSYBOX_IF_ENABLED=$(if $(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_$(1)),$(2))
 
 # All files provided by busybox will serve as fallback alternatives by opkg.
 # There should be no need to enumerate ALTERNATIVES entries here

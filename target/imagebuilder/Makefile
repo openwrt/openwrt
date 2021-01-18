@@ -19,6 +19,9 @@ IB_LDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(LINUX_DIR))
 IB_DTSDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(LINUX_DIR))/arch/$(LINUX_KARCH)/boot/dts/
 IB_IDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(STAGING_DIR_IMAGE))
 
+BUNDLER_PATH := $(subst $(space),:,$(filter-out $(TOPDIR)/%,$(subst :,$(space),$(PATH))))
+BUNDLER_COMMAND := PATH=$(BUNDLER_PATH) $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host
+
 all: compile
 
 $(BIN_DIR)/$(IB_NAME).tar.xz: clean
@@ -98,7 +101,7 @@ endif
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/staging_dir/host/bin
 	$(CP) $(STAGING_DIR_HOST)/bin/* $(PKG_BUILD_DIR)/staging_dir/host/bin/
 	(cd $(PKG_BUILD_DIR); find staging_dir/host/bin/ $(IB_LDIR)/scripts/dtc/ -type f | \
-		$(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host)
+		$(BUNDLER_COMMAND))
 	$(CP) $(TOPDIR)/staging_dir/host/lib/libfakeroot* $(PKG_BUILD_DIR)/staging_dir/host/lib
 	STRIP=$(STAGING_DIR_HOST)/bin/sstrip $(SCRIPT_DIR)/rstrip.sh $(PKG_BUILD_DIR)/staging_dir/host/bin/
 	(cd $(BUILD_DIR); \

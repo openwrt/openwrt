@@ -33,7 +33,6 @@ tools-$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini) += genext2fs
 tools-$(CONFIG_TARGET_ath79) += lzma-old squashfs
 tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
 tools-$(CONFIG_TARGET_tegra) += cbootimage cbootimage-configs
-tools-$(CONFIG_TARGET_x86) += qemu
 tools-$(CONFIG_USES_MINOR) += kernel2minor
 tools-$(CONFIG_USE_SPARSE) += sparse
 
@@ -47,6 +46,7 @@ $(curdir)/cbootimage/compile += $(curdir)/automake/compile
 $(curdir)/cmake/compile += $(curdir)/libressl/compile
 $(curdir)/dosfstools/compile := $(curdir)/autoconf/compile $(curdir)/automake/compile
 $(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
+$(curdir)/fakeroot/compile := $(curdir)/libtool/compile
 $(curdir)/findutils/compile := $(curdir)/bison/compile
 $(curdir)/firmware-utils/compile += $(curdir)/libressl/compile $(curdir)/zlib/compile
 $(curdir)/flex/compile := $(curdir)/libtool/compile
@@ -67,7 +67,6 @@ $(curdir)/mpfr/compile := $(curdir)/gmp/compile
 $(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/e2fsprogs/compile $(curdir)/zlib/compile
 $(curdir)/padjffs2/compile := $(curdir)/findutils/compile
 $(curdir)/patchelf/compile := $(curdir)/libtool/compile
-$(curdir)/qemu/compile := $(curdir)/e2fsprogs/compile $(curdir)/zlib/compile
 $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
 $(curdir)/sdcc/compile := $(curdir)/bison/compile
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/compile
@@ -80,8 +79,9 @@ ifneq ($(HOST_OS),Linux)
 endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
-$(foreach tool, $(filter-out xz patch,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
+$(foreach tool, $(filter-out xz zstd patch pkgconf libressl cmake,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
 tools-y += ccache
+$(curdir)/ccache/compile := $(curdir)/cmake/compile $(curdir)/zstd/compile
 endif
 
 # in case there is no patch tool on the host we need to make patch tool a
