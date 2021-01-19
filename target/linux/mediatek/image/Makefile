@@ -31,7 +31,6 @@ define Device/Default
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
 	pad-rootfs | append-metadata
-  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 
 include $(SUBTARGET).mk

@@ -38,7 +38,6 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin
   PROFILES := Default
-  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 
 define Device/compulab_trimslice

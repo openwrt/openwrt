@@ -14,7 +14,6 @@ define Device/Default
   KERNEL_LOADADDR := 0x80080000
   KERNEL_ENTRY_POINT := 0x80080000
   DEVICE_DTS = freescale/$(subst _,-,$(1))
-  SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
   IMAGE_SIZE := 64m
   IMAGE/sysupgrade.bin = \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 1M | \
