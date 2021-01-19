@@ -4,8 +4,7 @@ DEVICE_VARS += ENGENIUS_IMGNAME
 # sysupgrade, as otherwise it will implant the old configuration from
 # OEM firmware when writing rootfs from factory.bin
 define Build/engenius-tar-gz
-	-[ -f "$@" ] && \
-	mkdir -p $@.tmp && \
+	if mkdir -p $@.tmp && \
 	touch $@.tmp/failsafe.bin && \
 	echo '#!/bin/sh' > $@.tmp/before-upgrade.sh && \
 	echo ': > /tmp/_sys/sysupgrade.tgz' >> $@.tmp/before-upgrade.sh && \
@@ -15,7 +14,12 @@ define Build/engenius-tar-gz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-C $@.tmp . | gzip -9n > $@ && \
-	rm -rf $@.tmp
+	rm -rf $@.tmp; then \
+		echo 'engenius-tar-gz succeeded'; \
+	else \
+		echo 'engenius-tar-gz failed' && \
+		rm $@; \
+	fi
 endef
 
 define Device/engenius_loader_okli
