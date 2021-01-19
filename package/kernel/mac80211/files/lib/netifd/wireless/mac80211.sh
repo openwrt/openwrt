@@ -346,7 +346,7 @@ mac80211_hostapd_setup_base() {
 		append base_cfg "he_rts_threshold=1023" "$N"
 		append base_cfg "he_su_beamformer=1" "$N"
 		append base_cfg "he_su_beamformee=1" "$N"
-		append base_cfg "he_mu_beamformer=1023" "$N"
+		append base_cfg "he_mu_beamformer=1" "$N"
 	fi
 
 	hostapd_prepare_device_config "$hostapd_conf_file" nl80211
