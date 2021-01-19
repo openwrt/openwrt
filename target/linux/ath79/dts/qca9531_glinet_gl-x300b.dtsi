@@ -43,7 +43,7 @@
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 	};
-	gpio-export {
+    gpio-export {
 		compatible = "gpio-export";
 
 		gpio_lte_power {
@@ -52,22 +52,32 @@
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
+		gpio_rs485tx_en {
+			gpio-export,name = "gpio1";
+			gpio-export,output = <0>;
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+		};
+
 		gpio_ble_rst {
 			gpio-export,name = "gpio16";
 			gpio-export,output = <0>;
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 
-		gpio_feed_dog {
-			gpio-export,name = "gpio2";
-			gpio-export,output = <0>;
-			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
-		};
-	 };
+    };
+    watchdog {
+        compatible = "hw_wdt";
+        dog_en_gpio= <12>;
+        feed_dog_gpio=<2>;
+        feed_dog_interval=<100000000>;
+    };
+
 };
+
 
 &uart {
 	status = "okay";
+    rs485_pin=<1>;
 };
 
 &usb0 {

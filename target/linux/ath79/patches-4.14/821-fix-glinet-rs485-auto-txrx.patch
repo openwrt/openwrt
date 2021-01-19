@@ -1,0 +1,81 @@
+Index: b/drivers/tty/serial/8250/8250.h
+===================================================================
+--- a/drivers/tty/serial/8250/8250.h	2021-01-18 19:25:59.000000000 +0800
++++ b/drivers/tty/serial/8250/8250.h	2021-01-18 19:25:59.000000000 +0800
+@@ -15,6 +15,8 @@
+ #include <linux/serial_reg.h>
+ #include <linux/dmaengine.h>
+ 
++
++extern unsigned int rs485txen_gpio;
+ struct uart_8250_dma {
+ 	int (*tx_dma)(struct uart_8250_port *p);
+ 	int (*rx_dma)(struct uart_8250_port *p);
+Index: b/drivers/tty/serial/8250/8250_port.c
+===================================================================
+--- a/drivers/tty/serial/8250/8250_port.c	2021-01-18 19:25:59.000000000 +0800
++++ b/drivers/tty/serial/8250/8250_port.c	2021-01-18 19:25:59.000000000 +0800
+@@ -38,6 +38,7 @@
+ #include <linux/uaccess.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/ktime.h>
++#include <linux/gpio/consumer.h>
+ 
+ #include <asm/io.h>
+ #include <asm/irq.h>
+@@ -1502,12 +1503,22 @@ static void __stop_tx_rs485(struct uart_
+ 	}
+ }
+ 
++
++static unsigned int serial8250_tx_empty(struct uart_port *port);
+ static inline void __do_stop_tx(struct uart_8250_port *p)
+ {
+ 	if (p->ier & UART_IER_THRI) {
+ 		p->ier &= ~UART_IER_THRI;
+ 		serial_out(p, UART_IER, p->ier);
+ 		serial8250_rpm_put_tx(p);
++        if(0xff != rs485txen_gpio){
++            
++            while(!serial8250_tx_empty(&(p->port))){
++
++                ;
++            }
++            gpiod_set_value(gpio_to_desc(rs485txen_gpio),0);
++        }
+ 	}
+ }
+ 
+@@ -1553,6 +1564,9 @@ static void serial8250_stop_tx(struct ua
+ 
+ static inline void __start_tx(struct uart_port *port)
+ {
++    if(0xff != rs485txen_gpio){
++        gpiod_set_value(gpio_to_desc(rs485txen_gpio),1);
++    }
+ 	struct uart_8250_port *up = up_to_u8250p(port);
+ 
+ 	if (up->dma && !up->dma->tx_dma(up))
+Index: b/drivers/tty/serial/8250/8250_of.c
+===================================================================
+--- a/drivers/tty/serial/8250/8250_of.c	2021-01-18 19:25:59.000000000 +0800
++++ b/drivers/tty/serial/8250/8250_of.c	2021-01-18 19:26:53.000000000 +0800
+@@ -193,6 +193,7 @@ err_pmruntime:
+ /*
+  * Try to register a serial port
+  */
++unsigned int rs485txen_gpio = 0xff;
+ static const struct of_device_id of_platform_serial_table[];
+ static int of_platform_serial_probe(struct platform_device *ofdev)
+ {
+@@ -237,6 +238,10 @@ static int of_platform_serial_probe(stru
+ 			&port8250.overrun_backoff_time_ms) != 0)
+ 		port8250.overrun_backoff_time_ms = 0;
+ 
++    if(!of_property_read_u32(ofdev->dev.of_node,"rs485_pin",&rs485txen_gpio)){
++        pr_info("Serial port to 485 enable,rs485txen_gpio = gpio%d \n",rs485txen_gpio);
++    }
++
+ 	ret = serial8250_register_8250_port(&port8250);
+ 	if (ret < 0)
+ 		goto err_dispose;
