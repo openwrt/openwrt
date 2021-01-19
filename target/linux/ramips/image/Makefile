@@ -187,7 +187,6 @@ define Device/Default
   DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
   COMPILE :=
-  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   sysupgrade_bin := append-kernel | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size
 endef
