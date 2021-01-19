@@ -8,6 +8,7 @@ DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
+DEVICE_VARS += OPENMESH_CE_TYPE
 
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
@@ -1525,148 +1526,144 @@ define Device/ocedo_ursus
 endef
 TARGET_DEVICES += ocedo_ursus
 
-define Device/openmesh_mr600-common
-  SOC := ar9344
+define Device/openmesh_common_64k
   DEVICE_VENDOR := OpenMesh
-  DEVICE_MODEL := MR600
   DEVICE_PACKAGES := uboot-envtools
   IMAGE_SIZE := 7808k
   BLOCKSIZE := 64k
+  OPENMESH_CE_TYPE :=
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
 	pad-to $$(BLOCKSIZE)
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
-	openmesh-image ce_type=MR600 | append-metadata
+	openmesh-image ce_type=$$$$(OPENMESH_CE_TYPE) | append-metadata
+endef
+
+define Device/openmesh_common_256k
+  DEVICE_VENDOR := OpenMesh
+  DEVICE_PACKAGES := uboot-envtools
+  IMAGE_SIZE := 7168k
+  BLOCKSIZE := 256k
+  OPENMESH_CE_TYPE :=
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
+	pad-to $$(BLOCKSIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+	openmesh-image ce_type=$$$$(OPENMESH_CE_TYPE) | append-metadata
 endef
 
 define Device/openmesh_mr600-v1
-  $(Device/openmesh_mr600-common)
+  $(Device/openmesh_common_64k)
+  SOC := ar9344
+  DEVICE_MODEL := MR600
   DEVICE_VARIANT := v1
+  OPENMESH_CE_TYPE := MR600
   SUPPORTED_DEVICES += mr600
 endef
 TARGET_DEVICES += openmesh_mr600-v1
 
 define Device/openmesh_mr600-v2
-  $(Device/openmesh_mr600-common)
+  $(Device/openmesh_common_64k)
+  SOC := ar9344
+  DEVICE_MODEL := MR600
   DEVICE_VARIANT := v2
+  OPENMESH_CE_TYPE := MR600
   SUPPORTED_DEVICES += mr600v2
 endef
 TARGET_DEVICES += openmesh_mr600-v2
 
-define Device/openmesh_mr900-common
-  SOC := qca9558
-  DEVICE_VENDOR := OpenMesh
-  DEVICE_MODEL := MR900
-  DEVICE_PACKAGES := uboot-envtools
-  IMAGE_SIZE := 7808k
-  BLOCKSIZE := 64k
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
-	pad-to $$(BLOCKSIZE)
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
-	openmesh-image ce_type=MR900 | append-metadata
-endef
-
 define Device/openmesh_mr900-v1
-  $(Device/openmesh_mr900-common)
+  $(Device/openmesh_common_64k)
+  SOC := qca9558
+  DEVICE_MODEL := MR900
   DEVICE_VARIANT := v1
+  OPENMESH_CE_TYPE := MR900
   SUPPORTED_DEVICES += mr900
 endef
 TARGET_DEVICES += openmesh_mr900-v1
 
 define Device/openmesh_mr900-v2
-  $(Device/openmesh_mr900-common)
+  $(Device/openmesh_common_64k)
+  SOC := qca9558
+  DEVICE_MODEL := MR900
   DEVICE_VARIANT := v2
+  OPENMESH_CE_TYPE := MR900
   SUPPORTED_DEVICES += mr900v2
 endef
 TARGET_DEVICES += openmesh_mr900-v2
 
-define Device/openmesh_om2p-common
-  DEVICE_VENDOR := OpenMesh
-  DEVICE_PACKAGES := uboot-envtools
-  IMAGE_SIZE := 7168k
-  BLOCKSIZE := 256k
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
-	pad-to $$(BLOCKSIZE)
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
-	openmesh-image ce_type=OM2P | append-metadata
-endef
-
 define Device/openmesh_om2p-v2
-  $(Device/openmesh_om2p-common)
+  $(Device/openmesh_common_256k)
   SOC := ar9330
   DEVICE_MODEL := OM2P
   DEVICE_VARIANT := v2
+  OPENMESH_CE_TYPE := OM2P
   SUPPORTED_DEVICES += om2pv2
 endef
 TARGET_DEVICES += openmesh_om2p-v2
 
 define Device/openmesh_om2p-v4
-  $(Device/openmesh_om2p-common)
+  $(Device/openmesh_common_256k)
   SOC := qca9533
   DEVICE_MODEL := OM2P
   DEVICE_VARIANT := v4
+  OPENMESH_CE_TYPE := OM2P
   SUPPORTED_DEVICES += om2pv4
 endef
 TARGET_DEVICES += openmesh_om2p-v4
 
 define Device/openmesh_om2p-hs-v1
-  $(Device/openmesh_om2p-common)
+  $(Device/openmesh_common_256k)
   SOC := ar9341
   DEVICE_MODEL := OM2P-HS
   DEVICE_VARIANT := v1
+  OPENMESH_CE_TYPE := OM2P
   SUPPORTED_DEVICES += om2p-hs
 endef
 TARGET_DEVICES += openmesh_om2p-hs-v1
 
 define Device/openmesh_om2p-hs-v2
-  $(Device/openmesh_om2p-common)
+  $(Device/openmesh_common_256k)
   SOC := ar9341
   DEVICE_MODEL := OM2P-HS
   DEVICE_VARIANT := v2
+  OPENMESH_CE_TYPE := OM2P
   SUPPORTED_DEVICES += om2p-hsv2
 endef
 TARGET_DEVICES += openmesh_om2p-hs-v2
 
 define Device/openmesh_om2p-hs-v3
-  $(Device/openmesh_om2p-common)
+  $(Device/openmesh_common_256k)
   SOC := ar9341
   DEVICE_MODEL := OM2P-HS
   DEVICE_VARIANT := v3
+  OPENMESH_CE_TYPE := OM2P
   SUPPORTED_DEVICES += om2p-hsv3
 endef
 TARGET_DEVICES += openmesh_om2p-hs-v3
 
 define Device/openmesh_om2p-hs-v4
-  $(Device/openmesh_om2p-common)
+  $(Device/openmesh_common_256k)
   SOC := qca9533
   DEVICE_MODEL := OM2P-HS
   DEVICE_VARIANT := v4
+  OPENMESH_CE_TYPE := OM2P
   SUPPORTED_DEVICES += om2p-hsv4
 endef
 TARGET_DEVICES += openmesh_om2p-hs-v4
 
 define Device/openmesh_om2p-lc
-  $(Device/openmesh_om2p-common)
+  $(Device/openmesh_common_256k)
   SOC := ar9330
   DEVICE_MODEL := OM2P-LC
+  OPENMESH_CE_TYPE := OM2P
   SUPPORTED_DEVICES += om2p-lc
 endef
 TARGET_DEVICES += openmesh_om2p-lc
 
-define Device/openmesh_om5p-common
-  SOC := ar9344
-  DEVICE_VENDOR := OpenMesh
-  DEVICE_PACKAGES := uboot-envtools
-  IMAGE_SIZE := 7808k
-  BLOCKSIZE := 64k
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
-	pad-to $$(BLOCKSIZE)
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
-	openmesh-image ce_type=OM5P | append-metadata
-endef
-
 define Device/openmesh_om5p
-  $(Device/openmesh_om5p-common)
+  $(Device/openmesh_common_64k)
+  SOC := ar9344
   DEVICE_MODEL := OM5P
+  OPENMESH_CE_TYPE := OM5P
   SUPPORTED_DEVICES += om5p
 endef
 TARGET_DEVICES += openmesh_om5p
