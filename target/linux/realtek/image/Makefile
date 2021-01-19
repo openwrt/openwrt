@@ -13,7 +13,6 @@ define Device/Default
   KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(SOC)_$(1)
-  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
 	append-metadata | check-size

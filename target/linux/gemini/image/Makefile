@@ -130,7 +130,6 @@ define Device/Default
 	KERNEL_NAME := zImage
 	KERNEL := kernel-bin | append-dtb
 	BLOCKSIZE := 128k
-	SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 
 # A reasonable set of default packages handling the NAS type

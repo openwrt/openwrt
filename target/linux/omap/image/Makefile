@@ -38,7 +38,6 @@ define Device/Default
   DEVICE_DTS = $(lastword $(subst _, ,$(1)))
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := omap-sdcard | append-metadata | gzip
-  SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
 endef
 
 #uboot-omap-am335x_evm uboot-omap-omap3_beagle uboot-omap-omap3_overo uboot-omap-omap4_panda
