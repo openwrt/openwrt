@@ -115,7 +115,8 @@ case "$FIRMWARE" in
 		;;
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
-	mikrotik,hap-ac3)
+	mikrotik,hap-ac3 |\
+	mikrotik,routerboard-wap-g-5hacd2hnd)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x0 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x0 0x2f20 )
@@ -196,6 +197,7 @@ case "$FIRMWARE" in
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
 	mikrotik,hap-ac3 |\
+	mikrotik,routerboard-wap-g-5hacd2hnd |\
 	mikrotik,sxtsq-5-ac)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x8000 0x2f20 ) || \
