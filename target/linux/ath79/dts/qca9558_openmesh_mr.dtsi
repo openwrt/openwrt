@@ -37,10 +37,9 @@
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi2g_blue {
+		led_wifi2g: wifi2g {
 			label = "blue:wifi2g";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
 		};
 
 		status_green {
@@ -59,10 +58,9 @@
 			default-state = "on";
 		};
 
-		wifi5g_blue {
+		led_wifi5g: wifi5g {
 			label = "blue:wifi5g";
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
 		};
 	};
 
@@ -168,11 +166,4 @@
 
 &pcie0 {
 	status = "okay";
-
-	wifi@0,0 {
-		compatible = "pci168c,0033";
-		reg = <0x0000 0 0 0 0>;
-		mtd-mac-address = <&art 0x0>;
-		mtd-mac-address-increment = <16>;
-	};
 };
