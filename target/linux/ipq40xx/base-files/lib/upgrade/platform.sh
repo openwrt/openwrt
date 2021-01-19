@@ -112,7 +112,8 @@ platform_do_upgrade() {
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
-	mikrotik,hap-ac2|\
+	mikrotik,hap-ac2 |\
+	mikrotik,routerboard-wap-g-5hacd2hnd |\
 	mikrotik,sxtsq-5-ac)
 		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
 		default_do_upgrade "$1"

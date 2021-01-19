@@ -19,6 +19,15 @@ define Device/mikrotik_hap-ac2
 endef
 TARGET_DEVICES += mikrotik_hap-ac2
 
+define Device/mikrotik_routerboard-wap-g-5hacd2hnd
+	$(call Device/mikrotik_nor)
+	DEVICE_MODEL := RouterBOARD wAP G-5HacD2HnD (wAP AC)
+	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := ipq-wifi-mikrotik_routerboard-wap-g-5hacd2hnd \
+		-kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
+endef
+TARGET_DEVICES += mikrotik_routerboard-wap-g-5hacd2hnd
+
 define Device/mikrotik_sxtsq-5-ac
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := SXTsq 5 ac (RBSXTsqG-5acD)
