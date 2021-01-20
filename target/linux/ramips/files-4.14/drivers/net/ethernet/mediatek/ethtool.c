@@ -77,8 +77,6 @@ static void fe_get_drvinfo(struct net_device *dev,
 
 	if (soc->reg_table[FE_REG_FE_COUNTER_BASE])
 		info->n_stats = ARRAY_SIZE(fe_gdma_str);
-
-	mtk_gsw_init(priv);
 }
 
 static u32 fe_get_msglevel(struct net_device *dev)
