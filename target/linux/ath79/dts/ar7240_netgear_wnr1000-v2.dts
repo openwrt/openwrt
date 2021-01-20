@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	compatible = "netgear,wnr1000-v2", "qca,ar7240";
@@ -158,7 +159,9 @@
 			partition@50000 {
 				label = "firmware";
 				reg = <0x50000 0x3a0000>;
-				compatible = "netgear,uimage";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x31303031>;
+				openwrt,ih-type = <IH_TYPE_FILESYSTEM>;
 			};
 
 			art: partition@3f0000 {

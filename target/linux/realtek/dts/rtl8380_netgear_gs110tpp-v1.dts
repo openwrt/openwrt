@@ -70,7 +70,8 @@
 			};
 			partition@300000{
 				label = "firmware";
-				compatible = "netgear,uimage";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x4e474520>;
 				reg = <0x0300000 0x1d00000>;
 			};
 		};
