@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	compatible = "edimax,ew-7478apc", "ralink,mt7620a-soc";
@@ -102,7 +103,9 @@
 			};
 
 			partition@70000 {
-				compatible = "edimax,uimage";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,offset = <FW_EDIMAX_OFFSET>;
+				openwrt,partition-magic = <FW_MAGIC_EDIMAX>;
 				label = "firmware";
 				reg = <0x00070000 0x00790000>;
 			};

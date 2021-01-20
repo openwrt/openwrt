@@ -192,5 +192,7 @@
  * Magic values specific to "openwrt,uimage" partitions
  */
 #define IH_MAGIC_OKLI	0x4f4b4c49	/* 'OKLI'			*/
+#define FW_EDIMAX_OFFSET	20	/* Edimax Firmware Offset	*/
+#define FW_MAGIC_EDIMAX	0x43535953	/* Edimax Firmware Magic Number */
 
 #endif	/* __UIMAGE_H__ */
