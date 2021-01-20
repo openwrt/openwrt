@@ -70,7 +70,8 @@ read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
 }
 
 static void uimage_parse_dt(struct mtd_info *master, int *extralen,
-			    u32 *ih_magic, u32 *ih_type)
+			    u32 *ih_magic, u32 *ih_type,
+			    u32 *header_offset, u32 *part_magic)
 {
 	struct device_node *np = mtd_get_of_node(master);
 
@@ -83,6 +84,10 @@ static void uimage_parse_dt(struct mtd_info *master, int *extralen,
 		pr_debug("got openwrt,ih-magic=%08x from device-tree\n", *ih_magic);
 	if (!of_property_read_u32(np, "openwrt,ih-type", ih_type))
 		pr_debug("got openwrt,ih-type=%08x from device-tree\n", *ih_type);
+	if (!of_property_read_u32(np, "openwrt,offset", header_offset))
+		pr_debug("got ih-start=%u from device-tree\n", *header_offset);
+	if (!of_property_read_u32(np, "openwrt,partition-magic", part_magic))
+		pr_debug("got openwrt,partition-magic=%08x from device-tree\n", *part_magic);
 }
 
 /**
@@ -92,9 +97,9 @@ static void uimage_parse_dt(struct mtd_info *master, int *extralen,
  *      and tail padding length of a valid uImage header if found
  */
 static int __mtdsplit_parse_uimage(struct mtd_info *master,
-		   const struct mtd_partition **pparts,
-		   struct mtd_part_parser_data *data,
-		   ssize_t (*find_header)(u_char *buf, size_t len, u32 ih_magic, u32 ih_type))
+				   const struct mtd_partition **pparts,
+				   struct mtd_part_parser_data *data,
+				   ssize_t (*find_header)(u_char *buf, size_t len, u32 ih_magic, u32 ih_type))
 {
 	struct mtd_partition *parts;
 	u_char *buf;
@@ -104,11 +109,14 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	size_t uimage_size = 0;
 	size_t rootfs_offset;
 	size_t rootfs_size = 0;
+	size_t buflen;
 	int uimage_part, rf_part;
 	int ret;
 	int extralen = 0;
 	u32 ih_magic = IH_MAGIC;
 	u32 ih_type = IH_TYPE_KERNEL;
+	u32 header_offset = 0;
+	u32 part_magic = 0;
 	enum mtdsplit_part_type type;
 
 	nr_parts = 2;
@@ -116,13 +124,13 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	if (!parts)
 		return -ENOMEM;
 
-	buf = vmalloc(MAX_HEADER_LEN);
+	uimage_parse_dt(master, &extralen, &ih_magic, &ih_type, &header_offset, &part_magic);
+	buflen = MAX_HEADER_LEN;
+	buf = vmalloc(buflen);
 	if (!buf) {
 		ret = -ENOMEM;
 		goto err_free_parts;
 	}
-
-	uimage_parse_dt(master, &extralen, &ih_magic, &ih_type);
 
 	/* find uImage on erase block boundaries */
 	for (offset = 0; offset < master->size; offset += master->erasesize) {
@@ -130,20 +138,28 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 		uimage_size = 0;
 
-		ret = read_uimage_header(master, offset, buf, MAX_HEADER_LEN);
+		ret = read_uimage_header(master, offset, buf, buflen);
 		if (ret)
 			continue;
 
-		ret = find_header(buf, MAX_HEADER_LEN, ih_magic, ih_type);
+		/* verify optional partition magic before uimage header */
+		if (header_offset && part_magic && (be32_to_cpu(*(u32 *)buf) != part_magic))
+			continue;
+
+		ret = find_header(buf + header_offset, buflen, ih_magic, ih_type);
 		if (ret < 0) {
 			pr_debug("no valid uImage found in \"%s\" at offset %llx\n",
 				 master->name, (unsigned long long) offset);
 			continue;
 		}
-		header = (struct uimage_header *)(buf + ret);
+
+		/* let uimage_find_edimax override the offset */
+		if (ret > 0)
+			header_offset = ret;
+		header = (struct uimage_header *)(buf + header_offset);
 
 		uimage_size = sizeof(*header) +
-				be32_to_cpu(header->ih_size) + ret + extralen;
+				be32_to_cpu(header->ih_size) + header_offset + extralen;
 
 		if ((offset + uimage_size) > master->size) {
 			pr_debug("uImage exceeds MTD device \"%s\"\n",
@@ -254,7 +270,7 @@ mtdsplit_uimage_parse_generic(struct mtd_info *master,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,
-				      uimage_verify_default);
+				       uimage_verify_default);
 }
 
 static const struct of_device_id mtdsplit_uimage_of_match_table[] = {
