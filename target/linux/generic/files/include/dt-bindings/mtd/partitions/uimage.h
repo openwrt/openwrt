@@ -188,4 +188,9 @@
 #define IH_MAGIC	0x27051956	/* Image Magic Number		*/
 #define IH_NMLEN		32	/* Image Name Length		*/
 
+/*
+ * Magic values specific to "openwrt,uimage" partitions
+ */
+#define IH_MAGIC_OKLI	0x4f4b4c49	/* 'OKLI'			*/
+
 #endif	/* __UIMAGE_H__ */
