@@ -13,6 +13,19 @@ define Build/bcm4908kernel
 	mv $@.new $@
 endef
 
+define Build/bcm4908img
+	rm -fr $@-bootfs
+	mkdir -p $@-bootfs
+	cp -r $(DEVICE_NAME)/* $@-bootfs/
+	touch $@-bootfs/1-dummy
+	cp $(DTS_DIR)/$(firstword $(DEVICE_DTS)).dtb $@-bootfs/94908.dtb
+	cp $(KDIR)/bcm63xx-cfe/$(subst _,$(comma),$(DEVICE_NAME))/cferam.000 $@-bootfs/
+	cp $(IMAGE_KERNEL) $@-bootfs/vmlinux.lz
+
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 --pad --little-endian --squash-uids -v -e 128KiB -o $@-bootfs.jffs2 -d $@-bootfs -m none -n
+	$(STAGING_DIR_HOST)/bin/bcm4908img create $@ -f $@-bootfs.jffs2
+endef
+
 define Device/Default
   KERNEL := kernel-bin | bcm4908lzma | bcm4908kernel
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -30,6 +43,7 @@ define Device/asus_gt-ac5300
   DEVICE_MODEL := GT-AC5300
   DEVICE_DTS := broadcom/bcm4908/bcm4908-asus-gt-ac5300
   IMAGES := bin
+  IMAGE/bin := bcm4908img
 endef
 TARGET_DEVICES += asus_gt-ac5300
 
@@ -38,6 +52,7 @@ define Device/netgear_r8000p
   DEVICE_MODEL := R8000P
   DEVICE_DTS := broadcom/bcm4908/bcm4906-netgear-r8000p
   IMAGES := bin
+  IMAGE/bin := bcm4908img
 endef
 TARGET_DEVICES += netgear_r8000p
 
