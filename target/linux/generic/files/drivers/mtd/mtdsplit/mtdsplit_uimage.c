@@ -87,7 +87,7 @@ static void uimage_parse_dt(struct mtd_info *master, int *extralen)
 static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		   const struct mtd_partition **pparts,
 		   struct mtd_part_parser_data *data,
-		   ssize_t (*find_header)(u_char *buf, size_t len, int *extralen))
+		   ssize_t (*find_header)(u_char *buf, size_t len))
 {
 	struct mtd_partition *parts;
 	u_char *buf;
@@ -125,7 +125,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		if (ret)
 			continue;
 
-		ret = find_header(buf, MAX_HEADER_LEN, &extralen);
+		ret = find_header(buf, MAX_HEADER_LEN);
 		if (ret < 0) {
 			pr_debug("no valid uImage found in \"%s\" at offset %llx\n",
 				 master->name, (unsigned long long) offset);
@@ -213,7 +213,7 @@ err_free_parts:
 	return ret;
 }
 
-static ssize_t uimage_verify_default(u_char *buf, size_t len, int *extralen)
+static ssize_t uimage_verify_default(u_char *buf, size_t len)
 {
 	struct uimage_header *header = (struct uimage_header *)buf;
 
@@ -274,7 +274,7 @@ static struct mtd_part_parser uimage_generic_parser = {
 #define FW_MAGIC_WNDR3700V2	0x33373031
 #define FW_MAGIC_WPN824N	0x31313030
 
-static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len, int *extralen)
+static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len)
 {
 	struct uimage_header *header = (struct uimage_header *)buf;
 	uint8_t expected_type = IH_TYPE_FILESYSTEM;
@@ -336,7 +336,7 @@ static struct mtd_part_parser uimage_netgear_parser = {
 #define FW_MAGIC_SG8208M	0x00000006
 #define FW_MAGIC_SG8310PM	0x83000006
 
-static ssize_t uimage_verify_allnet(u_char *buf, size_t len, int *extralen)
+static ssize_t uimage_verify_allnet(u_char *buf, size_t len)
 {
 	struct uimage_header *header = (struct uimage_header *)buf;
 
@@ -383,7 +383,7 @@ static struct mtd_part_parser uimage_allnet_parser = {
 #define FW_EDIMAX_OFFSET	20
 #define FW_MAGIC_EDIMAX		0x43535953
 
-static ssize_t uimage_find_edimax(u_char *buf, size_t len, int *extralen)
+static ssize_t uimage_find_edimax(u_char *buf, size_t len)
 {
 	u32 *magic;
 
@@ -396,7 +396,7 @@ static ssize_t uimage_find_edimax(u_char *buf, size_t len, int *extralen)
 	if (be32_to_cpu(*magic) != FW_MAGIC_EDIMAX)
 		return -EINVAL;
 
-	if (!uimage_verify_default(buf + FW_EDIMAX_OFFSET, len, extralen))
+	if (!uimage_verify_default(buf + FW_EDIMAX_OFFSET, len))
 		return FW_EDIMAX_OFFSET;
 
 	return -EINVAL;
@@ -424,88 +424,13 @@ static struct mtd_part_parser uimage_edimax_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-
-/**************************************************
- * Fon(Foxconn)
- **************************************************/
-
-#define FONFXC_PAD_LEN		32
-
-static ssize_t uimage_find_fonfxc(u_char *buf, size_t len, int *extralen)
-{
-	if (uimage_verify_default(buf, len, extralen) < 0)
-		return -EINVAL;
-
-	*extralen = FONFXC_PAD_LEN;
-
-	return 0;
-}
-
-static int
-mtdsplit_uimage_parse_fonfxc(struct mtd_info *master,
-			      const struct mtd_partition **pparts,
-			      struct mtd_part_parser_data *data)
-{
-	return __mtdsplit_parse_uimage(master, pparts, data,
-				       uimage_find_fonfxc);
-}
-
-static const struct of_device_id mtdsplit_uimage_fonfxc_of_match_table[] = {
-	{ .compatible = "fonfxc,uimage" },
-	{},
-};
-
-static struct mtd_part_parser uimage_fonfxc_parser = {
-	.owner = THIS_MODULE,
-	.name = "fonfxc-fw",
-	.of_match_table = mtdsplit_uimage_fonfxc_of_match_table,
-	.parse_fn = mtdsplit_uimage_parse_fonfxc,
-};
-
-/**************************************************
- * SGE (T&W) Shenzhen Gongjin Electronics
- **************************************************/
-
-#define SGE_PAD_LEN		96
-
-static ssize_t uimage_find_sge(u_char *buf, size_t len, int *extralen)
-{
-	if (uimage_verify_default(buf, len, extralen) < 0)
-		return -EINVAL;
-
-	*extralen = SGE_PAD_LEN;
-
-	return 0;
-}
-
-static int
-mtdsplit_uimage_parse_sge(struct mtd_info *master,
-			      const struct mtd_partition **pparts,
-			      struct mtd_part_parser_data *data)
-{
-	return __mtdsplit_parse_uimage(master, pparts, data,
-				       uimage_find_sge);
-}
-
-static const struct of_device_id mtdsplit_uimage_sge_of_match_table[] = {
-	{ .compatible = "sge,uimage" },
-	{},
-};
-
-static struct mtd_part_parser uimage_sge_parser = {
-	.owner = THIS_MODULE,
-	.name = "sge-fw",
-	.of_match_table = mtdsplit_uimage_sge_of_match_table,
-	.parse_fn = mtdsplit_uimage_parse_sge,
-};
-
 /**************************************************
  * OKLI (OpenWrt Kernel Loader Image)
  **************************************************/
 
 #define IH_MAGIC_OKLI	0x4f4b4c49
 
-static ssize_t uimage_verify_okli(u_char *buf, size_t len, int *extralen)
+static ssize_t uimage_verify_okli(u_char *buf, size_t len)
 {
 	struct uimage_header *header = (struct uimage_header *)buf;
 
@@ -562,8 +487,6 @@ static int __init mtdsplit_uimage_init(void)
 	register_mtd_parser(&uimage_netgear_parser);
 	register_mtd_parser(&uimage_allnet_parser);
 	register_mtd_parser(&uimage_edimax_parser);
-	register_mtd_parser(&uimage_fonfxc_parser);
-	register_mtd_parser(&uimage_sge_parser);
 	register_mtd_parser(&uimage_okli_parser);
 
 	return 0;

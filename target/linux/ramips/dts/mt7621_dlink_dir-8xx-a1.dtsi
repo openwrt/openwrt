@@ -34,7 +34,8 @@
 			};
 
 			partition@60000 {
-				compatible = "sge,uimage";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,padding = <96>;
 				label = "firmware";
 				reg = <0x60000 0xfa0000>;
 			};
