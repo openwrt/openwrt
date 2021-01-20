@@ -271,72 +271,6 @@ static struct mtd_part_parser uimage_generic_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
-#define FW_MAGIC_GS110TPPV1	0x4e474520
-#define FW_MAGIC_WNR2000V1	0x32303031
-#define FW_MAGIC_WNR2000V3	0x32303033
-#define FW_MAGIC_WNR2000V4	0x32303034
-#define FW_MAGIC_WNR2200	0x32323030
-#define FW_MAGIC_WNR612V2	0x32303631
-#define FW_MAGIC_WNR1000V2	0x31303031
-#define FW_MAGIC_WNR1000V2_VC	0x31303030
-#define FW_MAGIC_WNDR3700	0x33373030
-#define FW_MAGIC_WNDR3700V2	0x33373031
-#define FW_MAGIC_WPN824N	0x31313030
-
-static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len, u32 ih_magic, u32 ih_type)
-{
-	struct uimage_header *header = (struct uimage_header *)buf;
-	uint8_t expected_type = IH_TYPE_FILESYSTEM;
-
-	switch (be32_to_cpu(header->ih_magic)) {
-	case FW_MAGIC_GS110TPPV1:
-	case FW_MAGIC_WNR2000V4:
-		expected_type = IH_TYPE_KERNEL;
-		break;
-	case FW_MAGIC_WNR612V2:
-	case FW_MAGIC_WNR1000V2:
-	case FW_MAGIC_WNR1000V2_VC:
-	case FW_MAGIC_WNR2000V1:
-	case FW_MAGIC_WNR2000V3:
-	case FW_MAGIC_WNR2200:
-	case FW_MAGIC_WNDR3700:
-	case FW_MAGIC_WNDR3700V2:
-	case FW_MAGIC_WPN824N:
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	if (header->ih_os != IH_OS_LINUX ||
-	    header->ih_type != expected_type)
-		return -EINVAL;
-
-	return 0;
-}
-
-static int
-mtdsplit_uimage_parse_netgear(struct mtd_info *master,
-			      const struct mtd_partition **pparts,
-			      struct mtd_part_parser_data *data)
-{
-	return __mtdsplit_parse_uimage(master, pparts, data,
-				      uimage_verify_wndr3700);
-}
-
-static const struct of_device_id mtdsplit_uimage_netgear_of_match_table[] = {
-	{ .compatible = "netgear,uimage" },
-	{},
-};
-
-static struct mtd_part_parser uimage_netgear_parser = {
-	.owner = THIS_MODULE,
-	.name = "netgear-fw",
-	.of_match_table = mtdsplit_uimage_netgear_of_match_table,
-	.parse_fn = mtdsplit_uimage_parse_netgear,
-	.type = MTD_PARSER_TYPE_FIRMWARE,
-
-};
-
 /**************************************************
  * Edimax
  **************************************************/
@@ -393,7 +327,6 @@ static struct mtd_part_parser uimage_edimax_parser = {
 static int __init mtdsplit_uimage_init(void)
 {
 	register_mtd_parser(&uimage_generic_parser);
-	register_mtd_parser(&uimage_netgear_parser);
 	register_mtd_parser(&uimage_edimax_parser);
 
 	return 0;
