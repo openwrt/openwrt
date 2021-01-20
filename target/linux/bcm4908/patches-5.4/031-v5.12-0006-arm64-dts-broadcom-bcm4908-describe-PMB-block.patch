@@ -1,6 +1,6 @@
-From 11a7fb140af5cfa706a8d9c0a309247f020a8d0c Mon Sep 17 00:00:00 2001
+From edcf90801c8e58bd6306d85a4e714a6f09f452df Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Mon, 11 Jan 2021 08:15:35 +0100
+Date: Wed, 13 Jan 2021 12:15:47 +0100
 Subject: [PATCH] arm64: dts: broadcom: bcm4908: describe PMB block
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -10,10 +10,7 @@ PMB (Power Management Bus) controls powering connected devices (e.g.
 PCIe, USB, SATA). In BCM4908 it's a part of the PROCMON block.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
----
-Florian: this patch is based on top of the
-[PATCH] arm64: dts: broadcom: bcm4908: describe internal switch
-one. Both modify "ranges".
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  .../boot/dts/broadcom/bcm4908/bcm4908.dtsi      | 17 ++++++++++++++++-
  1 file changed, 16 insertions(+), 1 deletion(-)
@@ -35,7 +32,7 @@ one. Both modify "ranges".
  		};
 +
 +		procmon: syscon@280000 {
-+			compatible = "simple-mfd";
++			compatible = "simple-bus";
 +			reg = <0x280000 0x1000>;
 +			ranges;
 +

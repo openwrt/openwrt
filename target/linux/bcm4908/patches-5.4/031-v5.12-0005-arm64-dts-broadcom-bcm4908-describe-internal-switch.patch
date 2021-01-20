@@ -1,6 +1,6 @@
-From 12cda92893ea57cdd84a8ccfcc05946d7f3a1cd7 Mon Sep 17 00:00:00 2001
+From 961c38974fa5b34d6232d7485120e4392d279ab4 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Tue, 12 Jan 2021 12:56:58 +0100
+Date: Wed, 13 Jan 2021 12:14:06 +0100
 Subject: [PATCH] arm64: dts: broadcom: bcm4908: describe internal switch
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -15,6 +15,7 @@ internal MDIO.
 CPU port and Ethernet interface remain to be documented.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  .../bcm4908/bcm4908-asus-gt-ac5300.dts        | 51 +++++++++++
  .../boot/dts/broadcom/bcm4908/bcm4908.dtsi    | 85 ++++++++++++++++++-
@@ -97,7 +98,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  		};
 +
 +		switch@80000 {
-+			compatible = "simple-mfd";
++			compatible = "simple-bus";
 +			#size-cells = <1>;
 +			#address-cells = <1>;
 +			ranges = <0 0x80000 0x50000>;
