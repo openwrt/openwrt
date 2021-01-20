@@ -19,6 +19,7 @@
 #include <linux/version.h>
 #include <linux/byteorder/generic.h>
 #include <linux/of.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 #include "mtdsplit.h"
 
@@ -27,14 +28,6 @@
  * Currently the biggest size is for Fon(Foxconn) devices: 64B + 32B
  */
 #define MAX_HEADER_LEN		96
-
-#define IH_MAGIC	0x27051956	/* Image Magic Number		*/
-#define IH_NMLEN		32	/* Image Name Length		*/
-
-#define IH_OS_LINUX		5	/* Linux	*/
-
-#define IH_TYPE_KERNEL		2	/* OS Kernel Image		*/
-#define IH_TYPE_FILESYSTEM	7	/* Filesystem Image		*/
 
 /*
  * Legacy format image header,
@@ -76,6 +69,15 @@ read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
 	return 0;
 }
 
+static void uimage_parse_dt(struct mtd_info *master, int *extralen)
+{
+	struct device_node *np = mtd_get_of_node(master);
+
+	if (!np || !of_device_is_compatible(np, "openwrt,uimage"))
+		return;
+	of_property_read_u32(np, "openwrt,padding", extralen);
+}
+
 /**
  * __mtdsplit_parse_uimage - scan partition and create kernel + rootfs parts
  *
@@ -97,7 +99,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	size_t rootfs_size = 0;
 	int uimage_part, rf_part;
 	int ret;
-	int extralen;
+	int extralen = 0;
 	enum mtdsplit_part_type type;
 
 	nr_parts = 2;
@@ -111,6 +113,8 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		goto err_free_parts;
 	}
 
+	uimage_parse_dt(master, &extralen);
+
 	/* find uImage on erase block boundaries */
 	for (offset = 0; offset < master->size; offset += master->erasesize) {
 		struct uimage_header *header;
@@ -121,7 +125,6 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		if (ret)
 			continue;
 
-		extralen = 0;
 		ret = find_header(buf, MAX_HEADER_LEN, &extralen);
 		if (ret < 0) {
 			pr_debug("no valid uImage found in \"%s\" at offset %llx\n",
@@ -247,6 +250,7 @@ mtdsplit_uimage_parse_generic(struct mtd_info *master,
 
 static const struct of_device_id mtdsplit_uimage_of_match_table[] = {
 	{ .compatible = "denx,uimage" },
+	{ .compatible = "openwrt,uimage" },
 	{},
 };
 
