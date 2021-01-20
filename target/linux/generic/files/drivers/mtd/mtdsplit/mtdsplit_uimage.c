@@ -69,7 +69,8 @@ read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
 	return 0;
 }
 
-static void uimage_parse_dt(struct mtd_info *master, int *extralen, u32 *ih_magic)
+static void uimage_parse_dt(struct mtd_info *master, int *extralen,
+			    u32 *ih_magic, u32 *ih_type)
 {
 	struct device_node *np = mtd_get_of_node(master);
 
@@ -80,6 +81,8 @@ static void uimage_parse_dt(struct mtd_info *master, int *extralen, u32 *ih_magi
 		pr_debug("got openwrt,padding=%d from device-tree\n", *extralen);
 	if (!of_property_read_u32(np, "openwrt,ih-magic", ih_magic))
 		pr_debug("got openwrt,ih-magic=%08x from device-tree\n", *ih_magic);
+	if (!of_property_read_u32(np, "openwrt,ih-type", ih_type))
+		pr_debug("got openwrt,ih-type=%08x from device-tree\n", *ih_type);
 }
 
 /**
@@ -91,7 +94,7 @@ static void uimage_parse_dt(struct mtd_info *master, int *extralen, u32 *ih_magi
 static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		   const struct mtd_partition **pparts,
 		   struct mtd_part_parser_data *data,
-		   ssize_t (*find_header)(u_char *buf, size_t len, u32 ih_magic))
+		   ssize_t (*find_header)(u_char *buf, size_t len, u32 ih_magic, u32 ih_type))
 {
 	struct mtd_partition *parts;
 	u_char *buf;
@@ -105,6 +108,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	int ret;
 	int extralen = 0;
 	u32 ih_magic = IH_MAGIC;
+	u32 ih_type = IH_TYPE_KERNEL;
 	enum mtdsplit_part_type type;
 
 	nr_parts = 2;
@@ -118,7 +122,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		goto err_free_parts;
 	}
 
-	uimage_parse_dt(master, &extralen, &ih_magic);
+	uimage_parse_dt(master, &extralen, &ih_magic, &ih_type);
 
 	/* find uImage on erase block boundaries */
 	for (offset = 0; offset < master->size; offset += master->erasesize) {
@@ -130,7 +134,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		if (ret)
 			continue;
 
-		ret = find_header(buf, MAX_HEADER_LEN, ih_magic);
+		ret = find_header(buf, MAX_HEADER_LEN, ih_magic, ih_type);
 		if (ret < 0) {
 			pr_debug("no valid uImage found in \"%s\" at offset %llx\n",
 				 master->name, (unsigned long long) offset);
@@ -218,7 +222,7 @@ err_free_parts:
 	return ret;
 }
 
-static ssize_t uimage_verify_default(u_char *buf, size_t len, u32 ih_magic)
+static ssize_t uimage_verify_default(u_char *buf, size_t len, u32 ih_magic, u32 ih_type)
 {
 	struct uimage_header *header = (struct uimage_header *)buf;
 
@@ -235,9 +239,9 @@ static ssize_t uimage_verify_default(u_char *buf, size_t len, u32 ih_magic)
 		return -EINVAL;
 	}
 
-	if (header->ih_type != IH_TYPE_KERNEL) {
+	if (header->ih_type != ih_type) {
 		pr_debug("invalid uImage type: %08x != %08x\n",
-			 be32_to_cpu(header->ih_type), IH_TYPE_KERNEL);
+			 be32_to_cpu(header->ih_type), ih_type);
 		return -EINVAL;
 	}
 
@@ -279,7 +283,7 @@ static struct mtd_part_parser uimage_generic_parser = {
 #define FW_MAGIC_WNDR3700V2	0x33373031
 #define FW_MAGIC_WPN824N	0x31313030
 
-static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len, u32 ih_magic)
+static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len, u32 ih_magic, u32 ih_type)
 {
 	struct uimage_header *header = (struct uimage_header *)buf;
 	uint8_t expected_type = IH_TYPE_FILESYSTEM;
@@ -340,7 +344,7 @@ static struct mtd_part_parser uimage_netgear_parser = {
 #define FW_EDIMAX_OFFSET	20
 #define FW_MAGIC_EDIMAX		0x43535953
 
-static ssize_t uimage_find_edimax(u_char *buf, size_t len, u32 ih_magic)
+static ssize_t uimage_find_edimax(u_char *buf, size_t len, u32 ih_magic, u32 ih_type)
 {
 	u32 *magic;
 
@@ -353,7 +357,7 @@ static ssize_t uimage_find_edimax(u_char *buf, size_t len, u32 ih_magic)
 	if (be32_to_cpu(*magic) != FW_MAGIC_EDIMAX)
 		return -EINVAL;
 
-	if (!uimage_verify_default(buf + FW_EDIMAX_OFFSET, len, ih_magic))
+	if (!uimage_verify_default(buf + FW_EDIMAX_OFFSET, len, ih_magic, ih_type))
 		return FW_EDIMAX_OFFSET;
 
 	return -EINVAL;
