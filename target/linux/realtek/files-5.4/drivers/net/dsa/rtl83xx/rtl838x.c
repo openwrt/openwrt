@@ -5,25 +5,17 @@
 
 extern struct mutex smi_lock;
 
-
-static inline void rtl838x_mask_port_reg(u64 clear, u64 set, int reg)
+void rtl838x_print_matrix(void)
 {
-	sw_w32_mask((u32)clear, (u32)set, reg);
-}
+	unsigned volatile int *ptr8;
+	int i;
 
-static inline void rtl838x_set_port_reg(u64 set, int reg)
-{
-	sw_w32(set, reg);
-}
-
-static inline u64 rtl838x_get_port_reg(int reg)
-{
-	return ((u64) sw_r32(reg));
-}
-
-static inline int rtl838x_stat_port_std_mib(int p)
-{
-	return RTL838X_STAT_PORT_STD_MIB + (p << 8);
+	ptr8 = RTL838X_SW_BASE + RTL838X_PORT_ISO_CTRL(0);
+	for (i = 0; i < 28; i += 8)
+		pr_info("> %8x %8x %8x %8x %8x %8x %8x %8x\n",
+			ptr8[i + 0], ptr8[i + 1], ptr8[i + 2], ptr8[i + 3],
+			ptr8[i + 4], ptr8[i + 5], ptr8[i + 6], ptr8[i + 7]);
+	pr_info("CPU_PORT> %8x\n", ptr8[28]);
 }
 
 static inline int rtl838x_port_iso_ctrl(int p)
@@ -122,24 +114,14 @@ static inline int rtl838x_l2_port_new_sa_fwd(int p)
 	return RTL838X_L2_PORT_NEW_SA_FWD(p);
 }
 
-static inline int rtl838x_mir_ctrl(int group)
-{
-	return RTL838X_MIR_CTRL(group);
-}
-
-static inline int rtl838x_mir_dpm(int group)
-{
-	return RTL838X_MIR_DPM_CTRL(group);
-}
-
-static inline int rtl838x_mir_spm(int group)
-{
-	return RTL838X_MIR_SPM_CTRL(group);
-}
-
 static inline int rtl838x_mac_link_spd_sts(int p)
 {
 	return RTL838X_MAC_LINK_SPD_STS(p);
+}
+
+inline static int rtl838x_trk_mbr_ctr(int group)
+{
+	return RTL838X_TRK_MBR_CTR + (group << 2);
 }
 
 static u64 rtl838x_read_l2_entry_using_hash(u32 hash, u32 position, struct rtl838x_l2_entry *e)
@@ -235,14 +217,50 @@ static inline int rtl838x_vlan_port_igr_filter(int port)
 	return RTL838X_VLAN_PORT_IGR_FLTR(port);
 }
 
-static inline int rtl838x_vlan_port_pb(int port)
+static void rtl838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	return RTL838X_VLAN_PORT_PB_VLAN(port);
+	int i;
+	u32 cmd = 1 << 15 /* Execute cmd */
+		| 1 << 14 /* Read */
+		| 2 << 12 /* Table type 0b10 */
+		| (msti & 0xfff);
+	priv->r->exec_tbl0_cmd(cmd);
+
+	for (i = 0; i < 2; i++)
+		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
 }
 
-static inline int rtl838x_vlan_port_tag_sts_ctrl(int port)
+static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	return RTL838X_VLAN_PORT_TAG_STS_CTRL(port);
+	int i;
+	u32 cmd = 1 << 15 /* Execute cmd */
+		| 0 << 14 /* Write */
+		| 2 << 12 /* Table type 0b10 */
+		| (msti & 0xfff);
+
+	for (i = 0; i < 2; i++)
+		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
+	priv->r->exec_tbl0_cmd(cmd);
+}
+
+u64 rtl838x_traffic_get(int source)
+{
+	return rtl838x_get_port_reg(rtl838x_port_iso_ctrl(source));
+}
+
+void rtl838x_traffic_set(int source, u64 dest_matrix)
+{
+	rtl838x_set_port_reg(dest_matrix, rtl838x_port_iso_ctrl(source));
+}
+
+void rtl838x_traffic_enable(int source, int dest)
+{
+	rtl838x_mask_port_reg(0, BIT(dest), rtl838x_port_iso_ctrl(source));
+}
+
+void rtl838x_traffic_disable(int source, int dest)
+{
+	rtl838x_mask_port_reg(BIT(dest), 0, rtl838x_port_iso_ctrl(source));
 }
 
 const struct rtl838x_reg rtl838x_reg = {
@@ -254,8 +272,12 @@ const struct rtl838x_reg rtl838x_reg = {
 	.get_port_reg_le = rtl838x_get_port_reg,
 	.stat_port_rst = RTL838X_STAT_PORT_RST,
 	.stat_rst = RTL838X_STAT_RST,
-	.stat_port_std_mib = rtl838x_stat_port_std_mib,
+	.stat_port_std_mib = RTL838X_STAT_PORT_STD_MIB,
 	.port_iso_ctrl = rtl838x_port_iso_ctrl,
+	.traffic_enable = rtl838x_traffic_enable,
+	.traffic_disable = rtl838x_traffic_disable,
+	.traffic_get = rtl838x_traffic_get,
+	.traffic_set = rtl838x_traffic_set,
 	.l2_ctrl_0 = RTL838X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL838X_L2_CTRL_1,
 	.l2_port_aging_out = RTL838X_L2_PORT_AGING_OUT,
@@ -272,12 +294,15 @@ const struct rtl838x_reg rtl838x_reg = {
 	.vlan_set_tagged = rtl838x_vlan_set_tagged,
 	.vlan_set_untagged = rtl838x_vlan_set_untagged,
 	.mac_force_mode_ctrl = rtl838x_mac_force_mode_ctrl,
+	.vlan_profile_dump = rtl838x_vlan_profile_dump,
+	.stp_get = rtl838x_stp_get,
+	.stp_set = rtl838x_stp_set,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl838x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl838x_l2_port_new_sa_fwd,
-	.mir_ctrl = rtl838x_mir_ctrl,
-	.mir_dpm = rtl838x_mir_dpm,
-	.mir_spm = rtl838x_mir_spm,
+	.mir_ctrl = RTL838X_MIR_CTRL,
+	.mir_dpm = RTL838X_MIR_DPM_CTRL,
+	.mir_spm = RTL838X_MIR_SPM_CTRL,
 	.mac_link_sts = RTL838X_MAC_LINK_STS,
 	.mac_link_dup_sts = RTL838X_MAC_LINK_DUP_STS,
 	.mac_link_spd_sts = rtl838x_mac_link_spd_sts,
@@ -285,11 +310,13 @@ const struct rtl838x_reg rtl838x_reg = {
 	.mac_tx_pause_sts = RTL838X_MAC_TX_PAUSE_STS,
 	.read_l2_entry_using_hash = rtl838x_read_l2_entry_using_hash,
 	.read_cam = rtl838x_read_cam,
-	.vlan_profile = rtl838x_vlan_profile,
-	.vlan_port_egr_filter = rtl838x_vlan_port_egr_filter,
-	.vlan_port_igr_filter = rtl838x_vlan_port_igr_filter,
-	.vlan_port_pb = rtl838x_vlan_port_pb,
-	.vlan_port_tag_sts_ctrl = rtl838x_vlan_port_tag_sts_ctrl,
+	.vlan_port_egr_filter = RTL838X_VLAN_PORT_EGR_FLTR,
+	.vlan_port_igr_filter = RTL838X_VLAN_PORT_IGR_FLTR(0),
+	.vlan_port_pb = RTL838X_VLAN_PORT_PB_VLAN,
+	.vlan_port_tag_sts_ctrl = RTL838X_VLAN_PORT_TAG_STS_CTRL,
+	.trk_mbr_ctr = rtl838x_trk_mbr_ctr,
+	.rma_bpdu_fld_pmask = RTL838X_RMA_BPDU_FLD_PMSK,
+	.spcl_trap_eapol_ctrl = RTL838X_SPCL_TRAP_EAPOL_CTRL,
 };
 
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
@@ -302,7 +329,7 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 
 	/* Clear status */
 	sw_w32(ports, RTL838X_ISR_PORT_LINK_STS_CHG);
-	pr_debug("RTL8380 Link change: status: %x, ports %x\n", status, ports);
+	pr_info("RTL8380 Link change: status: %x, ports %x\n", status, ports);
 
 	for (i = 0; i < 28; i++) {
 		if (ports & BIT(i)) {
@@ -469,8 +496,37 @@ void rtl838x_vlan_profile_dump(int index)
 
 	profile = sw_r32(RTL838X_VLAN_PROFILE(index));
 
-	pr_debug("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %x, \
+	pr_info("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %x, \
 		IPv4 Unknown MultiCast Field %x, IPv6 Unknown MultiCast Field: %x",
 		index, profile & 1, (profile >> 1) & 0x1ff, (profile >> 10) & 0x1ff,
 		(profile >> 19) & 0x1ff);
+}
+
+void rtl8380_sds_rst(int mac)
+{
+	u32 offset = (mac == 24) ? 0 : 0x100;
+
+	sw_w32_mask(1 << 11, 0, RTL838X_SDS4_FIB_REG0 + offset);
+	sw_w32_mask(0x3, 0, RTL838X_SDS4_REG28 + offset);
+	sw_w32_mask(0x3, 0x3, RTL838X_SDS4_REG28 + offset);
+	sw_w32_mask(0, 0x1 << 6, RTL838X_SDS4_DUMMY0 + offset);
+	sw_w32_mask(0x1 << 6, 0, RTL838X_SDS4_DUMMY0 + offset);
+	pr_debug("SERDES reset: %d\n", mac);
+}
+
+int rtl8380_sds_power(int mac, int val)
+{
+	u32 mode = (val == 1) ? 0x4 : 0x9;
+	u32 offset = (mac == 24) ? 5 : 0;
+
+	if ((mac != 24) && (mac != 26)) {
+		pr_err("%s: not a fibre port: %d\n", __func__, mac);
+		return -1;
+	}
+
+	sw_w32_mask(0x1f << offset, mode << offset, RTL838X_SDS_MODE_SEL);
+
+	rtl8380_sds_rst(mac);
+
+	return 0;
 }
