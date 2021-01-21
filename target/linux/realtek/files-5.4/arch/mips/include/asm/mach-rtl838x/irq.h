@@ -34,6 +34,9 @@
 #define UART1_CASCADE		1
 #define TC0_CASCADE		5
 #define TC1_CASCADE		1
+#define TC2_CASCADE		1
+#define TC3_CASCADE		1
+#define TC4_CASCADE		1
 #define OCPTO_CASCADE		1
 #define HLXTO_CASCADE		1
 #define SLXTO_CASCADE		1
@@ -44,6 +47,7 @@
 #define	SWCORE_CASCADE		3
 #define WDT_IP1_CASCADE		4
 #define WDT_IP2_CASCADE		5
+#define USB_H2_CASCADE		1
 
 /* Pack cascade map into interrupt routing registers */
 #define RTL83XX_IRR0_SETTING (\
@@ -62,5 +66,28 @@
 	(SWCORE_CASCADE		<< 16))
 #define RTL83XX_IRR2_SETTING	0
 #define RTL83XX_IRR3_SETTING	0
+
+/* On the RTL8390 there is no GPIO_EFGH and RTC IRQ */
+#define RTL8390_IRR1_SETTING (\
+	(GPIO_ABCD_CASCADE	<< 28) | \
+	(SWCORE_CASCADE		<< 16))
+
+/* The RTL9300 has a different external IRQ numbering scheme */
+#define RTL9300_IRR0_SETTING (\
+	(UART1_CASCADE		<< 28) | \
+	(UART0_CASCADE		<< 24) | \
+	(USB_H2_CASCADE		<< 16) | \
+	(NIC_CASCADE		<< 0))
+#define RTL9300_IRR1_SETTING (\
+	(SWCORE_CASCADE		<< 28))
+#define RTL9300_IRR2_SETTING (\
+	(GPIO_ABCD_CASCADE	<< 20) | \
+	(TC4_CASCADE		<< 12) | \
+	(TC3_CASCADE		<< 8) | \
+	(TC2_CASCADE		<< 4) | \
+	(TC1_CASCADE		<< 0))
+#define RTL9300_IRR3_SETTING (\
+	(TC0_CASCADE		<< 28) | \
+	(WDT_IP1_CASCADE	<< 20))
 
 #endif /* _RTL83XX_IRQ_H_ */

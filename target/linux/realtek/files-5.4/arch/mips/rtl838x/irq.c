@@ -85,7 +85,8 @@ static const struct irq_domain_ops irq_domain_ops = {
 
 static void rtl838x_irq_dispatch(struct irq_desc *desc)
 {
-	unsigned int pending = rtl83xx_r32(REG(RTL83XX_ICTL_GIMR)) & rtl83xx_r32(REG(RTL83XX_ICTL_GISR));
+	unsigned int pending = rtl83xx_r32(REG(RTL83XX_ICTL_GIMR)) &
+				rtl83xx_r32(REG(RTL83XX_ICTL_GISR));
 
 	if (pending) {
 		struct irq_domain *domain = irq_desc_get_handler_data(desc);
@@ -95,7 +96,7 @@ static void rtl838x_irq_dispatch(struct irq_desc *desc)
 	}
 }
 
-asmlinkage void plat_irq_dispatch(void)
+asmlinkage void plat_rtl83xx_irq_dispatch(void)
 {
 	unsigned int pending;
 
@@ -123,17 +124,27 @@ asmlinkage void plat_irq_dispatch(void)
 		spurious_interrupt();
 }
 
-static void __init icu_of_init(struct device_node *node, struct device_node *parent)
+static int icu_setup_domain(struct device_node *node)
 {
 	struct irq_domain *domain;
 
 	domain = irq_domain_add_simple(node, 32, 0,
 				       &irq_domain_ops, NULL);
-        irq_set_chained_handler_and_data(2, rtl838x_irq_dispatch, domain);
-        irq_set_chained_handler_and_data(5, rtl838x_irq_dispatch, domain);
+	irq_set_chained_handler_and_data(2, rtl838x_irq_dispatch, domain);
+	irq_set_chained_handler_and_data(3, rtl838x_irq_dispatch, domain);
+	irq_set_chained_handler_and_data(4, rtl838x_irq_dispatch, domain);
+	irq_set_chained_handler_and_data(5, rtl838x_irq_dispatch, domain);
 
 	rtl83xx_ictl_base = of_iomap(node, 0);
 	if (!rtl83xx_ictl_base)
+		return -EINVAL;
+
+	return 0;
+}
+
+static void __init rtl8380_icu_of_init(struct device_node *node, struct device_node *parent)
+{
+	if (icu_setup_domain(node))
 		return;
 
 	/* Disable all cascaded interrupts */
@@ -155,9 +166,57 @@ static void __init icu_of_init(struct device_node *node, struct device_node *par
 	rtl83xx_w32(BIT(RTL83XX_IRQ_TC0) | BIT(RTL83XX_IRQ_UART0), REG(RTL83XX_ICTL_GIMR));
 }
 
+static void __init rtl8390_icu_of_init(struct device_node *node, struct device_node *parent)
+{
+	if (icu_setup_domain(node))
+		return;
+
+	/* Disable all cascaded interrupts */
+	rtl83xx_w32(0, REG(RTL83XX_ICTL_GIMR));
+
+	/* Set up interrupt routing */
+	rtl83xx_w32(RTL83XX_IRR0_SETTING, REG(RTL83XX_IRR0));
+	rtl83xx_w32(RTL8390_IRR1_SETTING, REG(RTL83XX_IRR1));
+	rtl83xx_w32(RTL83XX_IRR2_SETTING, REG(RTL83XX_IRR2));
+	rtl83xx_w32(RTL83XX_IRR3_SETTING, REG(RTL83XX_IRR3));
+
+	/* Clear timer interrupt */
+	write_c0_compare(0);
+
+	/* Enable all CPU interrupts */
+	write_c0_status(read_c0_status() | ST0_IM);
+
+	/* Enable timer0 and uart0 interrupts */
+	rtl83xx_w32(BIT(RTL83XX_IRQ_TC0) | BIT(RTL83XX_IRQ_UART0), REG(RTL83XX_ICTL_GIMR));
+}
+
+static void __init rtl9300_icu_of_init(struct device_node *node, struct device_node *parent)
+{
+	pr_info("RTL9300: Setting up IRQs\n");
+	if (icu_setup_domain(node))
+		return;
+
+	/* Disable all cascaded interrupts */
+	rtl83xx_w32(0, REG(RTL83XX_ICTL_GIMR));
+
+	/* Set up interrupt routing */
+	rtl83xx_w32(RTL9300_IRR0_SETTING, REG(RTL83XX_IRR0));
+	rtl83xx_w32(RTL9300_IRR1_SETTING, REG(RTL83XX_IRR1));
+	rtl83xx_w32(RTL9300_IRR2_SETTING, REG(RTL83XX_IRR2));
+	rtl83xx_w32(RTL9300_IRR3_SETTING, REG(RTL83XX_IRR3));
+
+	/* Clear timer interrupt */
+	write_c0_compare(0);
+
+	/* Enable all CPU interrupts */
+	write_c0_status(read_c0_status() | ST0_IM);
+}
+
 static struct of_device_id __initdata of_irq_ids[] = {
 	{ .compatible = "mti,cpu-interrupt-controller", .data = mips_cpu_irq_of_init },
-	{ .compatible = "realtek,rt8380-intc", .data = icu_of_init },
+	{ .compatible = "realtek,rt8380-intc", .data = rtl8380_icu_of_init },
+	{ .compatible = "realtek,rt8390-intc", .data = rtl8390_icu_of_init },
+	{ .compatible = "realtek,rt9300-intc", .data = rtl9300_icu_of_init },
 	{},
 };
 
