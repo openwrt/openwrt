@@ -23,7 +23,8 @@ define Build/bcm4908img
 	cp $(IMAGE_KERNEL) $@-bootfs/vmlinux.lz
 
 	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 --pad --little-endian --squash-uids -v -e 128KiB -o $@-bootfs.jffs2 -d $@-bootfs -m none -n
-	$(STAGING_DIR_HOST)/bin/bcm4908img create $@ -f $@-bootfs.jffs2
+	$(STAGING_DIR_HOST)/bin/bcm4908img create $@.new -f $@-bootfs.jffs2 -a 0x20000 -f $@
+	mv $@.new $@
 endef
 
 define Device/Default
@@ -43,7 +44,7 @@ define Device/asus_gt-ac5300
   DEVICE_MODEL := GT-AC5300
   DEVICE_DTS := broadcom/bcm4908/bcm4908-asus-gt-ac5300
   IMAGES := bin
-  IMAGE/bin := bcm4908img
+  IMAGE/bin := append-ubi | bcm4908img
 endef
 TARGET_DEVICES += asus_gt-ac5300
 
@@ -52,7 +53,7 @@ define Device/netgear_r8000p
   DEVICE_MODEL := R8000P
   DEVICE_DTS := broadcom/bcm4908/bcm4906-netgear-r8000p
   IMAGES := bin
-  IMAGE/bin := bcm4908img
+  IMAGE/bin := append-ubi | bcm4908img
 endef
 TARGET_DEVICES += netgear_r8000p
 
