@@ -9,21 +9,24 @@
 +	trailer[1] = dp->index;
 +#else
  	trailer[1] = 1 << dp->index;
-+#endif /* CONFIG_NET_DSA_RTL83XX */
++#endif /* CONFIG_NET_DSA_RTL838X */
  	trailer[2] = 0x10;
  	trailer[3] = 0x00;
  
-@@ -61,12 +66,20 @@ static struct sk_buff *trailer_rcv(struc
+@@ -61,12 +69,23 @@ static struct sk_buff *trailer_rcv(struc
  		return NULL;
  
  	trailer = skb_tail_pointer(skb) - 4;
 +
 +#ifdef CONFIG_NET_DSA_RTL83XX
-+	if (trailer[0] != 0x80 || (trailer[1] & 0xe0) != 0x00 ||
++	if (trailer[0] != 0x80 || (trailer[1] & 0x80) != 0x00 ||
 +	    (trailer[2] & 0xef) != 0x00 || trailer[3] != 0x00)
 +		return NULL;
 +
-+	source_port = trailer[1] & 0x1f;
++	if (trailer[1] & 0x40)
++		skb->offload_fwd_mark = 1;
++
++	source_port = trailer[1] & 0x3f;
 +#else
  	if (trailer[0] != 0x80 || (trailer[1] & 0xf8) != 0x00 ||
  	    (trailer[2] & 0xef) != 0x00 || trailer[3] != 0x00)
