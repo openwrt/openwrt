@@ -1,12 +1,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zstd
-PKG_VERSION:=1.4.4
+PKG_VERSION:=1.4.8
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL_FILE:=v$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/facebook/zstd/archive/
-PKG_HASH:=a364f5162c7d1a455cc915e8e3cf5f4bd8b75d09bc0f53965b0c9ca1383c52c8
+PKG_SOURCE_URL:=https://github.com/facebook/zstd/releases/download/v$(PKG_VERSION)
+PKG_HASH:=32478297ca1500211008d596276f5367c54198495cf677e9439f4791a4c69f24
 
 PKG_LICENSE:=BSD-3-Clause
 PKG_LICENSE_FILES:=LICENSE
