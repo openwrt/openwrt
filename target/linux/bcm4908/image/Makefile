@@ -27,6 +27,12 @@ define Build/bcm4908img
 	mv $@.new $@
 endef
 
+define Build/bcm4908asus
+	$(STAGING_DIR_HOST)/bin/bcm4908asus create -i $@ -p $(ASUS_PRODUCTID) -b $(ASUS_BUILD_NO) -f $(ASUS_FW_REV) -e $(ASUS_EXT_NO)
+endef
+
+DEVICE_VARS += ASUS_PRODUCTID ASUS_BUILD_NO ASUS_FW_REV ASUS_EXT_NO
+
 define Device/Default
   KERNEL := kernel-bin | bcm4908lzma | bcm4908kernel
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -44,7 +50,11 @@ define Device/asus_gt-ac5300
   DEVICE_MODEL := GT-AC5300
   DEVICE_DTS := broadcom/bcm4908/bcm4908-asus-gt-ac5300
   IMAGES := bin
-  IMAGE/bin := append-ubi | bcm4908img
+  IMAGE/bin := append-ubi | bcm4908img | bcm4908asus
+  ASUS_PRODUCTID := GT-AC5300
+  ASUS_BUILD_NO := 384
+  ASUS_FW_REV := 3.0.0.4
+  ASUS_EXT_NO := 21140
 endef
 TARGET_DEVICES += asus_gt-ac5300
 
