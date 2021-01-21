@@ -93,4 +93,12 @@ define Device/zyxel_gs1900-8hp-v2
 endef
 TARGET_DEVICES += zyxel_gs1900-8hp-v2
 
+define Device/zyxel_xgs1210-12
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93001210
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XGS1210-12
+endef
+TARGET_DEVICES += zyxel_xgs1210-12
+
 $(eval $(call BuildImage))
