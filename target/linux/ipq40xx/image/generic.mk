@@ -805,5 +805,3 @@ define Device/zyxel_wre6606
 	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
 endef
 TARGET_DEVICES += zyxel_wre6606
-
-$(eval $(call BuildImage))
