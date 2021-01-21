@@ -5,6 +5,10 @@ KERNEL_LOADADDR = 0x80060000
 
 DEVICE_VARS += LOADER_FLASH_OFFS LOADER_TYPE
 
+define Build/force-build-wasp_uploader
+	touch $(TOPDIR)/package/utils/wasp_uploader/Makefile
+endef
+
 define Build/combined-image
 	sh $(TOPDIR)/scripts/combined-image.sh \
 		"$(IMAGE_KERNEL)" \

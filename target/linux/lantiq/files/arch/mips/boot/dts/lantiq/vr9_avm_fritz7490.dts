@@ -206,16 +206,16 @@
 		output-low;
 	};
 
-	usb0-vbus {
+	wasp-wakeup {
 		gpio-hog;
-		line-name = "usb0-vbus";
+		line-name = "wasp-wakeup";
 		gpios = <5 GPIO_ACTIVE_HIGH>;
 		output-high;
 	};
 
-	usb1-vbus {
+	usb0-vbus {
 		gpio-hog;
-		line-name = "usb1-vbus";
+		line-name = "usb0-vbus";
 		gpios = <14 GPIO_ACTIVE_HIGH>;
 		output-high;
 	};
@@ -291,3 +291,12 @@
 		device_type = "pci";
 	};
 };
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
