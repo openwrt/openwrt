@@ -73,6 +73,7 @@ define Build/Compile/Trusted-Firmware-A
 		CROSS_COMPILE=$(TARGET_CROSS) \
 		OPENSSL_DIR=$(STAGING_DIR_HOST) \
 		PLAT=$(PLAT) \
+		BUILD_STRING="OpenWRT v$(PKG_VERSION)-$(PKG_RELEASE) ($(VARIANT))" \
 		$(TFA_MAKE_FLAGS)
 endef
 
