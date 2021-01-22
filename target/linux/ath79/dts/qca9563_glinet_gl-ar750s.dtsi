@@ -10,13 +10,6 @@
 	compatible = "glinet,gl-ar750s", "qca,qca9563";
 	model = "GL.iNet GL-AR750S";
 
-	aliases {
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
