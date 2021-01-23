@@ -1,0 +1,20 @@
+From 3f535da79e7a42104543ef5c7b5fa2bed819a78b Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 22 Jan 2021 22:26:25 +0000
+Subject: Fix for 12af2b171de0d678d98583e2190789e544440e02
+
+---
+ src/forward.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -370,7 +370,7 @@ static int forward_query(int udpfd, unio
+ 	      new->dest = *dst_addr;
+ 	      new->log_id = daemon->log_id;
+ 	      new->iface = dst_iface;
+-	      forward->frec_src.fd = udpfd;
++	      new->fd = udpfd;
+ 	    }
+ 	  
+ 	  return 1;
