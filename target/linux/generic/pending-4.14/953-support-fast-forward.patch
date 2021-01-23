@@ -129,8 +129,11 @@ Index: linux-4.14.209/include/net/netfilter/nf_conntrack_ecache.h
  
  void nf_ct_deliver_cached_events(struct nf_conn *ct);
  int nf_conntrack_eventmask_report(unsigned int eventmask, struct nf_conn *ct,
-@@ -90,8 +95,12 @@ nf_conntrack_event_cache(enum ip_conntra
- 	struct net *net = nf_ct_net(ct);
+@@ -87,11 +92,14 @@ int nf_conntrack_eventmask_report(unsign
+ static inline void
+ nf_conntrack_event_cache(enum ip_conntrack_events event, struct nf_conn *ct)
+ {
+-	struct net *net = nf_ct_net(ct);
  	struct nf_conntrack_ecache *e;
  
 +	#ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
@@ -142,7 +145,7 @@ Index: linux-4.14.209/include/net/netfilter/nf_conntrack_ecache.h
  
  	e = nf_ct_ecache_find(ct);
  	if (e == NULL)
-@@ -104,21 +113,24 @@ static inline int
+@@ -104,21 +112,24 @@ static inline int
  nf_conntrack_event_report(enum ip_conntrack_events event, struct nf_conn *ct,
  			  u32 portid, int report)
  {
@@ -345,14 +348,30 @@ Index: linux-4.14.209/net/netfilter/nf_conntrack_ecache.c
  int nf_conntrack_register_notifier(struct net *net,
  				   struct nf_ct_event_notifier *new)
  {
-@@ -277,6 +362,7 @@ out_unlock:
+@@ -277,8 +362,15 @@ out_unlock:
  	mutex_unlock(&nf_ct_ecache_mutex);
  	return ret;
  }
 +#endif
  EXPORT_SYMBOL_GPL(nf_conntrack_register_notifier);
  
++#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
++int nf_conntrack_unregister_notifier(struct net *net, struct notifier_block *nb)
++{
++       return atomic_notifier_chain_unregister(&net->ct.nf_conntrack_chain, nb);
++}
++#else
  void nf_conntrack_unregister_notifier(struct net *net,
+ 				      struct nf_ct_event_notifier *new)
+ {
+@@ -292,6 +384,7 @@ void nf_conntrack_unregister_notifier(st
+ 	mutex_unlock(&nf_ct_ecache_mutex);
+ 	/* synchronize_rcu() is called from ctnetlink_exit. */
+ }
++#endif
+ EXPORT_SYMBOL_GPL(nf_conntrack_unregister_notifier);
+ 
+ int nf_ct_expect_register_notifier(struct net *net,
 Index: linux-4.14.209/net/netfilter/nf_conntrack_netlink.c
 ===================================================================
 --- linux-4.14.209.orig/net/netfilter/nf_conntrack_netlink.c
