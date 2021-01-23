@@ -144,6 +144,7 @@ define Device/Default
   endif
   IMAGES := $$(IMAGES-y)
   ARTIFACTS := $$(ARTIFACTS-y)
+  SUPPORTED_DEVICES :=
 endef
 
 include $(SUBTARGET).mk
