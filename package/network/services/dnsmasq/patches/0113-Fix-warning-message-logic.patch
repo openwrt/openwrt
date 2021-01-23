@@ -1,0 +1,20 @@
+From 503f68dbc437df20a45aab440e6fad92062af229 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 15 Jan 2021 21:53:29 +0000
+Subject: Fix warning message logic.
+
+---
+ src/hash_questions.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/hash_questions.c
++++ b/src/hash_questions.c
+@@ -43,7 +43,7 @@ unsigned char *hash_questions(struct dns
+       static unsigned char dummy[HASH_SIZE];
+       static int warned = 0;
+ 
+-      if (warned)
++      if (!warned)
+ 	my_syslog(LOG_ERR, _("Failed to create SHA-256 hash object"));
+       warned = 1;
+      

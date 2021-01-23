@@ -15,7 +15,7 @@ Signed-off-by: Hans Dedecker <dedeckeh@gmail.com>
 
 --- a/src/crypto.c
 +++ b/src/crypto.c
-@@ -294,7 +294,7 @@ static int dnsmasq_ecdsa_verify(struct b
+@@ -301,7 +301,7 @@ static int dnsmasq_ecdsa_verify(struct b
  	  if (!(key_256 = whine_malloc(sizeof(struct ecc_point))))
  	    return 0;
  	  
@@ -24,7 +24,7 @@ Signed-off-by: Hans Dedecker <dedeckeh@gmail.com>
  	}
        
        key = key_256;
-@@ -307,7 +307,7 @@ static int dnsmasq_ecdsa_verify(struct b
+@@ -314,7 +314,7 @@ static int dnsmasq_ecdsa_verify(struct b
  	  if (!(key_384 = whine_malloc(sizeof(struct ecc_point))))
  	    return 0;
  	  
