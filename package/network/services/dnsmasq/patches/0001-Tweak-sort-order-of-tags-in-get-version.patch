@@ -1,0 +1,45 @@
+From f1204a875e0f16fd645df965db346fc56d2ab1dd Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 29 Jan 2021 23:20:06 +0000
+Subject: [PATCH 1/2] Tweak sort order of tags in get-version.
+
+We want to sort such that the most recent/relevant tag is first
+and gets used to set the compiled-in version.
+
+The solution is far from general, but works for the tag formats
+used by dnsmasq. v2.84 sorts before v2.83, but v2.83 sorts
+before v2.83rc1 and 2.83rc1 sorts before v2.83test1
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ bld/get-version | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/bld/get-version b/bld/get-version
+index e472aab..1d7e7f0 100755
+--- a/bld/get-version
++++ b/bld/get-version
+@@ -9,7 +9,10 @@
+ # If we can find one which matches $v[0-9].* then we assume it's
+ # a version-number tag, else we just use the whole string.
+ # If there is more than one v[0-9].* tag, sort them and use the
+-# first. This favours, eg v2.63 over 2.63rc6.
++# first. The insane arguments to the sort command are to ensure
++# that, eg v2.64 comes before v2.63, but v2.63 comes before v2.63rc1
++# and v2.63rc1 comes before v2.63test1
++
+ 
+ # Change directory to the toplevel source directory.
+ if test -z "$1" || ! test -d "$1" || ! cd "$1"; then
+@@ -28,7 +31,7 @@ else
+      vers=`cat $1/VERSION | sed 's/[(), ]/,/ g' | tr ',' '\n' | grep ^v[0-9]`
+ 
+      if [ $? -eq 0 ]; then
+-         echo "${vers}" | sort -r | head -n 1 | sed 's/^v//'
++         echo "${vers}" | sort -k1.2,1.5r -k 1.6,1.6 -k1.8,1.9r -k1.10,1.11r | head -n 1 | sed 's/^v//'
+      else
+          cat $1/VERSION
+      fi
+-- 
+2.24.3 (Apple Git-128)
+
