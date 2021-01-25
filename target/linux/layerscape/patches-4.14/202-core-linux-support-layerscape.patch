@@ -580,7 +580,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  void  __kfree_skb(struct sk_buff *skb);
  extern struct kmem_cache *skbuff_head_cache;
  
-@@ -3328,6 +3329,7 @@ static inline void skb_free_datagram_loc
+@@ -3344,6 +3345,7 @@ static inline void skb_free_datagram_loc
  }
  int skb_kill_datagram(struct sock *sk, struct sk_buff *skb, unsigned int flags);
  int skb_copy_bits(const struct sk_buff *skb, int offset, void *to, int len);
@@ -837,7 +837,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -803,6 +803,32 @@ void napi_consume_skb(struct sk_buff *sk
+@@ -808,6 +808,32 @@ void napi_consume_skb(struct sk_buff *sk
  }
  EXPORT_SYMBOL(napi_consume_skb);
  
@@ -870,7 +870,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  /* Make sure a field is enclosed inside headers_start/headers_end section */
  #define CHECK_SKB_FIELD(field) \
  	BUILD_BUG_ON(offsetof(struct sk_buff, field) <		\
-@@ -1322,7 +1348,7 @@ static void skb_headers_offset_update(st
+@@ -1327,7 +1353,7 @@ static void skb_headers_offset_update(st
  	skb->inner_mac_header += off;
  }
  
@@ -879,7 +879,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  {
  	__copy_skb_header(new, old);
  
-@@ -1330,6 +1356,7 @@ static void copy_skb_header(struct sk_bu
+@@ -1335,6 +1361,7 @@ static void copy_skb_header(struct sk_bu
  	skb_shinfo(new)->gso_segs = skb_shinfo(old)->gso_segs;
  	skb_shinfo(new)->gso_type = skb_shinfo(old)->gso_type;
  }
