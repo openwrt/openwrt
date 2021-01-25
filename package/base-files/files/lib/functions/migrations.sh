@@ -1,5 +1,3 @@
-#!/bin/sh
-
 . /lib/functions.sh
 
 migrate_led_sysfs() {
