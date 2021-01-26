@@ -618,6 +618,15 @@ define Device/iodata_wn-dx1167r
 endef
 TARGET_DEVICES += iodata_wn-dx1167r
 
+define Device/iodata_wn-dx1200gr
+  $(Device/iodata_nand)
+  DEVICE_MODEL := WN-DX1200GR
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
+	uImage lzma -M 0x434f4d43 -n '3.10(XIQ.0)b20' | iodata-mstc-header
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += iodata_wn-dx1200gr
+
 define Device/iodata_wn-gx300gr
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
