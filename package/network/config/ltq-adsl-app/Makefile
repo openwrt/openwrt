@@ -35,7 +35,7 @@ define Package/ltq-adsl-app
   CATEGORY:=Network
   TITLE:=Lantiq DSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy||TARGET_lantiq_ase) +libpthread +ltq-dsl-base
+  DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy||TARGET_lantiq_ase) +libpthread +ltq-dsl-base +libubox +libubus
   MENU:=1
 endef
 
@@ -74,6 +74,11 @@ CONFIGURE_ARGS += \
 	--enable-dsl-pm-optional-parameters
 
 TARGET_CFLAGS += -I$(LINUX_DIR)/include
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) ../ltq-vdsl-app/src/src/dsl_cpe_ubus.c $(PKG_BUILD_DIR)/src/
+endef
 
 define Package/ltq-adsl-app/install
 	$(INSTALL_DIR) $(1)/etc/init.d $(1)/sbin $(1)/etc/hotplug.d/dsl
