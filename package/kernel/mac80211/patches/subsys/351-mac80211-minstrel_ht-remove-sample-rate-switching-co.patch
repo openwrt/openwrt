@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (mi->ampdu_packets > 0) {
  		if (!ieee80211_hw_check(mp->hw, TX_STATUS_NO_AMPDU_LEN))
  			mi->avg_ampdu_len = minstrel_ewma(mi->avg_ampdu_len,
-@@ -1149,16 +1115,12 @@ minstrel_ht_update_stats(struct minstrel
+@@ -1148,16 +1114,12 @@ minstrel_ht_update_stats(struct minstrel
  	minstrel_ht_prob_rate_reduce_streams(mi);
  	minstrel_ht_refill_sample_rates(mi);
  
@@ -87,7 +87,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  #endif
  
-@@ -1248,11 +1210,10 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1247,11 +1209,10 @@ minstrel_ht_tx_status(void *priv, struct
  	struct ieee80211_tx_info *info = st->info;
  	struct minstrel_ht_sta *mi = priv_sta;
  	struct ieee80211_tx_rate *ar = info->status.rates;
@@ -100,7 +100,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int i;
  
  	/* This packet was aggregated but doesn't carry status info */
-@@ -1279,49 +1240,18 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1278,49 +1239,18 @@ minstrel_ht_tx_status(void *priv, struct
  	mi->ampdu_packets++;
  	mi->ampdu_len += info->status.ampdu_len;
  
@@ -150,7 +150,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (mp->hw->max_rates > 1) {
  		/*
  		 * check for sudden death of spatial multiplexing,
-@@ -1344,7 +1274,7 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1343,7 +1273,7 @@ minstrel_ht_tx_status(void *priv, struct
  
  	if (time_after(jiffies, mi->last_stats_update + update_interval)) {
  		update = true;
@@ -159,7 +159,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	if (update)
-@@ -1523,18 +1453,14 @@ static void
+@@ -1522,18 +1452,14 @@ static void
  minstrel_ht_update_rates(struct minstrel_priv *mp, struct minstrel_ht_sta *mi)
  {
  	struct ieee80211_sta_rates *rates;
@@ -179,7 +179,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (mp->hw->max_rates >= 3) {
  		/* At least 3 tx rates supported, use max_tp_rate[1] next */
-@@ -1593,11 +1519,6 @@ minstrel_ht_get_rate(void *priv, struct
+@@ -1592,11 +1518,6 @@ minstrel_ht_get_rate(void *priv, struct
  	    (info->control.flags & IEEE80211_TX_CTRL_PORT_CTRL_PROTO))
  		return;
  
@@ -191,7 +191,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (time_is_before_jiffies(mi->sample_time))
  		return;
  
-@@ -1811,7 +1732,7 @@ minstrel_ht_update_caps(void *priv, stru
+@@ -1810,7 +1731,7 @@ minstrel_ht_update_caps(void *priv, stru
  	minstrel_ht_update_ofdm(mp, mi, sband, sta);
  
  	/* create an initial rate table with the lowest supported rates */
@@ -200,7 +200,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	minstrel_ht_update_rates(mp, mi);
  }
  
-@@ -1927,8 +1848,6 @@ minstrel_ht_alloc(struct ieee80211_hw *h
+@@ -1926,8 +1847,6 @@ minstrel_ht_alloc(struct ieee80211_hw *h
  	if (!mp)
  		return NULL;
  
@@ -209,7 +209,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* contention window settings
  	 * Just an approximation. Using the per-queue values would complicate
  	 * the calculations and is probably unnecessary */
-@@ -1948,7 +1867,7 @@ minstrel_ht_alloc(struct ieee80211_hw *h
+@@ -1947,7 +1866,7 @@ minstrel_ht_alloc(struct ieee80211_hw *h
  		mp->has_mrr = true;
  
  	mp->hw = hw;
@@ -218,7 +218,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	minstrel_ht_init_cck_rates(mp);
  	for (i = 0; i < ARRAY_SIZE(mp->hw->wiphy->bands); i++)
-@@ -1966,8 +1885,6 @@ static void minstrel_ht_add_debugfs(stru
+@@ -1965,8 +1884,6 @@ static void minstrel_ht_add_debugfs(stru
  	mp->fixed_rate_idx = (u32) -1;
  	debugfs_create_u32("fixed_rate_idx", S_IRUGO | S_IWUGO, debugfsdir,
  			   &mp->fixed_rate_idx);
