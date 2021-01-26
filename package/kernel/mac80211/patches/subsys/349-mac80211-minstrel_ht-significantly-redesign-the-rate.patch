@@ -474,10 +474,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 -	mi->sample_count = 0;
 -
- 	memset(tmp_mcs_tp_rate, 0, sizeof(tmp_mcs_tp_rate));
- 	memset(tmp_legacy_tp_rate, 0, sizeof(tmp_legacy_tp_rate));
- 
-@@ -885,8 +1081,6 @@ minstrel_ht_update_stats(struct minstrel
+ 	if (mi->supported[MINSTREL_CCK_GROUP])
+ 		group = MINSTREL_CCK_GROUP;
+ 	else if (mi->supported[MINSTREL_OFDM_GROUP])
+@@ -884,8 +1080,6 @@ minstrel_ht_update_stats(struct minstrel
  		if (!mi->supported[group])
  			continue;
  
@@ -486,7 +486,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		/* (re)Initialize group rate indexes */
  		for(j = 0; j < MAX_THR_RATES; j++)
  			tmp_group_tp_rate[j] = MI_RATE(group, 0);
-@@ -953,9 +1147,7 @@ minstrel_ht_update_stats(struct minstrel
+@@ -952,9 +1146,7 @@ minstrel_ht_update_stats(struct minstrel
  
  	/* Try to increase robustness of max_prob_rate*/
  	minstrel_ht_prob_rate_reduce_streams(mi);
@@ -497,7 +497,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (sample)
  		minstrel_ht_rate_sample_switch(mp, mi);
-@@ -972,6 +1164,7 @@ minstrel_ht_update_stats(struct minstrel
+@@ -971,6 +1163,7 @@ minstrel_ht_update_stats(struct minstrel
  
  	/* Reset update timer */
  	mi->last_stats_update = jiffies;
@@ -505,7 +505,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static bool
-@@ -1002,28 +1195,6 @@ minstrel_ht_txstat_valid(struct minstrel
+@@ -1001,28 +1194,6 @@ minstrel_ht_txstat_valid(struct minstrel
  }
  
  static void
@@ -534,7 +534,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  minstrel_downgrade_rate(struct minstrel_ht_sta *mi, u16 *idx, bool primary)
  {
  	int group, orig_group;
-@@ -1108,14 +1279,6 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1107,14 +1278,6 @@ minstrel_ht_tx_status(void *priv, struct
  	mi->ampdu_packets++;
  	mi->ampdu_len += info->status.ampdu_len;
  
@@ -549,7 +549,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (mi->sample_mode != MINSTREL_SAMPLE_IDLE)
  		rate_sample = minstrel_get_ratestats(mi, mi->sample_rate);
  
-@@ -1387,97 +1550,20 @@ minstrel_ht_update_rates(struct minstrel
+@@ -1386,97 +1549,20 @@ minstrel_ht_update_rates(struct minstrel
  	rate_control_set_rates(mp->hw, mi->sta, rates);
  }
  
@@ -656,7 +656,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void
-@@ -1489,7 +1575,7 @@ minstrel_ht_get_rate(void *priv, struct
+@@ -1488,7 +1574,7 @@ minstrel_ht_get_rate(void *priv, struct
  	struct ieee80211_tx_rate *rate = &info->status.rates[0];
  	struct minstrel_ht_sta *mi = priv_sta;
  	struct minstrel_priv *mp = priv;
@@ -665,7 +665,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (!(info->flags & IEEE80211_TX_CTL_AMPDU) &&
  	    !minstrel_ht_is_legacy_group(MI_RATE_GROUP(mi->max_prob_rate)))
-@@ -1505,11 +1591,19 @@ minstrel_ht_get_rate(void *priv, struct
+@@ -1504,11 +1590,19 @@ minstrel_ht_get_rate(void *priv, struct
  	/* Don't use EAPOL frames for sampling on non-mrr hw */
  	if (mp->hw->max_rates == 1 &&
  	    (info->control.flags & IEEE80211_TX_CTRL_PORT_CTRL_PROTO))
@@ -689,7 +689,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return;
  
  	sample_group = &minstrel_mcs_groups[MI_RATE_GROUP(sample_idx)];
-@@ -1630,16 +1724,6 @@ minstrel_ht_update_caps(void *priv, stru
+@@ -1629,16 +1723,6 @@ minstrel_ht_update_caps(void *priv, stru
  
  	mi->avg_ampdu_len = MINSTREL_FRAC(1, 1);
  
