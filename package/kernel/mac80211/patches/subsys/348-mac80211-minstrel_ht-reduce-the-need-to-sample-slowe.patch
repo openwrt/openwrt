@@ -37,8 +37,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	mi->sample_slow = 0;
  	mi->sample_count = 0;
  
- 	memset(tmp_mcs_tp_rate, 0, sizeof(tmp_mcs_tp_rate));
-@@ -883,6 +879,7 @@ minstrel_ht_update_stats(struct minstrel
+ 	if (mi->supported[MINSTREL_CCK_GROUP])
+@@ -882,6 +878,7 @@ minstrel_ht_update_stats(struct minstrel
  	/* Find best rate sets within all MCS groups*/
  	for (group = 0; group < ARRAY_SIZE(minstrel_mcs_groups); group++) {
  		u16 *tp_rate = tmp_mcs_tp_rate;
@@ -46,7 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		mg = &mi->groups[group];
  		if (!mi->supported[group])
-@@ -897,7 +894,7 @@ minstrel_ht_update_stats(struct minstrel
+@@ -896,7 +893,7 @@ minstrel_ht_update_stats(struct minstrel
  		if (group == MINSTREL_CCK_GROUP && ht_supported)
  			tp_rate = tmp_legacy_tp_rate;
  
@@ -55,7 +55,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			if (!(mi->supported[group] & BIT(i)))
  				continue;
  
-@@ -906,6 +903,11 @@ minstrel_ht_update_stats(struct minstrel
+@@ -905,6 +902,11 @@ minstrel_ht_update_stats(struct minstrel
  			mrs = &mg->rates[i];
  			mrs->retry_updated = false;
  			minstrel_ht_calc_rate_stats(mp, mrs);
@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			cur_prob = mrs->prob_avg;
  
  			if (minstrel_ht_get_tp_avg(mi, group, i, cur_prob) == 0)
-@@ -1470,13 +1472,9 @@ minstrel_get_sample_rate(struct minstrel
+@@ -1469,13 +1471,9 @@ minstrel_get_sample_rate(struct minstrel
  	if (sample_dur >= minstrel_get_duration(tp_rate2) &&
  	    (cur_max_tp_streams - 1 <
  	     minstrel_mcs_groups[sample_group].streams ||
