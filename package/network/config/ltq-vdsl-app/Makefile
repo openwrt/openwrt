@@ -20,6 +20,7 @@ PKG_LICENSE:=BSD-2-Clause
 PKG_BUILD_DEPENDS:=ltq-vdsl
 
 PKG_FLAGS:=nonshared
+PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -28,7 +29,7 @@ define Package/ltq-vdsl-app
   CATEGORY:=Network
   TITLE:=Lantiq VDSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_xrx200 +libpthread +librt +ltq-dsl-base
+  DEPENDS:=@TARGET_lantiq_xrx200 +libpthread +librt +ltq-dsl-base +libubox +libubus
 endef
 
 define Package/ltq-vdsl-app/description
