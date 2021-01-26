@@ -47,9 +47,14 @@ redboot_fis_do_upgrade() {
 nand_check_support_device()                                                                                 
 {                                                                                                           
         local model=""                                                                                      
-        json_load "$(cat /tmp/sysupgrade.meta)" || return 1                                                 
-        json_select supported_devices || return 1                                                           
-        json_get_keys dev_keys                                                                              
+        json_load "$(cat /tmp/sysupgrade.meta)" || return 1
+        json_select supported_devices || {
+                #glinet openwrt 18.06 device                      
+                model=`awk -F': ' '/machine/ {print tolower($NF)}' /proc/cpuinfo |cut -d  ' ' -f2`
+                nand_do_platform_check "$model"  "$1"
+                return $?
+	}
+        json_get_keys dev_keys                                                 
         for k in $dev_keys; do                                                                              
                 json_get_var dev "$k"                                                                       
                 model=${dev/,/_}                                                                            
