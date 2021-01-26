@@ -307,8 +307,6 @@ start_service() {
 }
 
 stop_service() {
-	# do not use dsl_cmd to not block when this is locked up by some other proess
-	echo quit > /tmp/pipe/dsl_cpe0_cmd
 	DSL_NOTIFICATION_TYPE="DSL_INTERFACE_STATUS" \
 	DSL_INTERFACE_STATUS="DOWN" \
 		/sbin/dsl_notify.sh
