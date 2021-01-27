@@ -100,6 +100,13 @@ define Device/zyxel_gs1900-10hp
 endef
 TARGET_DEVICES += zyxel_gs1900-10hp
 
+define Device/zyxel_gs1900-8
+  $(Device/zyxel_gs1900)
+  DEVICE_MODEL := GS1900-8
+  ZYXEL_VERS := AAHH
+endef
+TARGET_DEVICES += zyxel_gs1900-8
+
 define Device/zyxel_gs1900-8hp-v1
   $(Device/zyxel_gs1900)
   DEVICE_MODEL := GS1900-8HP
