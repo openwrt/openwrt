@@ -13,7 +13,7 @@
  	trailer[2] = 0x10;
  	trailer[3] = 0x00;
  
-@@ -61,12 +69,23 @@ static struct sk_buff *trailer_rcv(struc
+@@ -61,12 +66,23 @@ static struct sk_buff *trailer_rcv(struc
  		return NULL;
  
  	trailer = skb_tail_pointer(skb) - 4;
