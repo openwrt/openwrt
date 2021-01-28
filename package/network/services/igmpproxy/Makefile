@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=igmpproxy
-PKG_VERSION:=0.2.1
-PKG_RELEASE:=4
+PKG_VERSION:=0.3
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/pali/igmpproxy/releases/download/${PKG_VERSION}/
-PKG_HASH:=d351e623037390f575c1203d9cbb7ba33a8bdef85a3c5e1d2901c5a2a38449a1
+PKG_HASH:=d1fc244cb2fbbf99f720bda3e841fe59ece9b6919073790b4b892739b1b844eb
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 include $(INCLUDE_DIR)/package.mk
@@ -37,14 +37,6 @@ endef
 
 define Package/igmpproxy/conffiles
 /etc/config/igmpproxy
-endef
-
-TARGET_CFLAGS += -Dlog=igmpproxy_log
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)/src \
-		CC="$(TARGET_CC)" \
-		CFLAGS="$(TARGET_CFLAGS) -std=gnu99"
 endef
 
 define Package/igmpproxy/install
