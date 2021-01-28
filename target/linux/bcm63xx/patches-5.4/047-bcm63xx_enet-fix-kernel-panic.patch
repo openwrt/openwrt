@@ -1,0 +1,35 @@
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -1105,6 +1105,8 @@ static int bcm_enet_open(struct net_devi
+ 	else
+ 		bcm_enet_adjust_link(dev);
+ 
++	netdev_reset_queue(dev);
++
+ 	netif_start_queue(dev);
+ 	return 0;
+ 
+@@ -1193,7 +1195,6 @@ static int bcm_enet_stop(struct net_devi
+ 	kdev = &priv->pdev->dev;
+ 
+ 	netif_stop_queue(dev);
+-	netdev_reset_queue(dev);
+ 	napi_disable(&priv->napi);
+ 	if (priv->has_phy)
+ 		phy_stop(dev->phydev);
+@@ -2267,6 +2268,7 @@ static int bcm_enetsw_open(struct net_de
+ 	enet_dmac_writel(priv, ENETDMAC_IR_PKTDONE_MASK,
+ 			 ENETDMAC_IRMASK, priv->tx_chan);
+ 
++	netdev_reset_queue(dev);
+ 	netif_carrier_on(dev);
+ 	netif_start_queue(dev);
+ 
+@@ -2348,7 +2350,6 @@ static int bcm_enetsw_stop(struct net_de
+ 
+ 	del_timer_sync(&priv->swphy_poll);
+ 	netif_stop_queue(dev);
+-	netdev_reset_queue(dev);
+ 	napi_disable(&priv->napi);
+ 	del_timer_sync(&priv->rx_timeout);
+ 
