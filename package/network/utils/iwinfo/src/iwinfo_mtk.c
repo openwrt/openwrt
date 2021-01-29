@@ -404,19 +404,18 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 
 		if (strcmp(stl[i].security,"NONE")) {
 			sce.crypto.enabled = 1;
-			
-			if (strstr(stl[i].security,"WPA2PSKWPA3PSK")) {
-				sce.crypto.wpa_version = 6;
-				sce.crypto.auth_suites = IWINFO_KMGMT_PSK;
-			} else if (strstr(stl[i].security,"WPA3")) {
-				sce.crypto.wpa_version = 4;
-			} else if (strstr(stl[i].security,"WPA2")) {
-				sce.crypto.wpa_version = 2;
-				sce.crypto.auth_suites = IWINFO_KMGMT_PSK;
-			} else if (strstr(stl[i].security,"WPA")) {
-				sce.crypto.wpa_version = 1;
-				sce.crypto.auth_suites = IWINFO_KMGMT_PSK;
-			}
+
+			if (strstr(stl[i].security,"WPA3"))
+				sce.crypto.wpa_version |= 1 << 2;
+
+			if (strstr(stl[i].security,"WPA2"))
+				sce.crypto.wpa_version |= 1 << 1;
+
+			if (strstr(stl[i].security,"WPAPSK") || strstr(stl[i].security,"WPA1PSK"))
+				sce.crypto.wpa_version |= 1 << 0;
+
+			if (strstr(stl[i].security,"PSK"))
+				sce.crypto.auth_suites |= IWINFO_KMGMT_PSK;
 
 			if (!strcmp(stl[i].crypto,"AES"))
 				sce.crypto.pair_ciphers = IWINFO_CIPHER_CCMP;
