@@ -1,0 +1,64 @@
+From 824461192ca5098043f9ca4ddeba7df1f65b30ba Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sun, 15 Nov 2020 22:13:25 +0000
+Subject: Add missing check for NULL return from allocate_rfd().
+
+---
+ src/forward.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -815,7 +815,6 @@ void reply_query(int fd, int family, tim
+       int is_sign;
+ 
+ #ifdef HAVE_DNSSEC
+-      /* For DNSSEC originated queries, just retry the query to the same server. */
+       if (forward->flags & (FREC_DNSKEY_QUERY | FREC_DS_QUERY))
+ 	{
+ 	  struct server *start;
+@@ -841,6 +840,8 @@ void reply_query(int fd, int family, tim
+ 	      }
+ 	    
+ 	  
++	  fd = -1;
++
+ 	  if (start->sfd)
+ 	    fd = start->sfd->fd;
+ 	  else
+@@ -848,19 +849,21 @@ void reply_query(int fd, int family, tim
+ 	      if (start->addr.sa.sa_family == AF_INET6)
+ 		{
+ 		  /* may have changed family */
+-		  if (!forward->rfd6)
+-		    forward->rfd6 = allocate_rfd(AF_INET6);
+-		  fd = forward->rfd6->fd;
++		  if (forward->rfd6 || (forward->rfd6 = allocate_rfd(AF_INET6)))
++		    fd = forward->rfd6->fd;
+ 		}
+ 	      else
+ 		{
+ 		  /* may have changed family */
+-		  if (!forward->rfd4)
+-		    forward->rfd4 = allocate_rfd(AF_INET);
+-		  fd = forward->rfd4->fd;
++		  if (forward->rfd4 || (forward->rfd4 = allocate_rfd(AF_INET)))
++		    fd = forward->rfd4->fd;
+ 		}
+ 	    }
+ 	
++	  /* Can't get socket. */
++	  if (fd == -1)
++	    return;
++	  
+ 	  while (retry_send(sendto(fd, (char *)header, plen, 0,
+ 				   &start->addr.sa,
+ 				   sa_len(&start->addr))));
+@@ -2261,7 +2264,6 @@ struct frec *get_new_frec(time_t now, in
+   return f; /* OK if malloc fails and this is NULL */
+ }
+ 
+-/* crc is all-ones if not known. */
+ static struct frec *lookup_frec(unsigned short id, int fd, int family, void *hash)
+ {
+   struct frec *f;

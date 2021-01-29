@@ -5,6 +5,18 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=0
 
+glinet_led_indicator()          
+{                    
+        while true;do          
+                for i in 1 0;do         
+                        for led in $@;do                                  
+                                echo $i > /sys/class/leds/$led/brightness;
+                                sleep 0.1;
+                        done
+                done
+        done
+}
+
 redboot_fis_do_upgrade() {
 	local append
 	local sysup_file="$1"
@@ -32,8 +44,44 @@ redboot_fis_do_upgrade() {
 	fi
 }
 
+nand_check_support_device()                                                                                 
+{                                                                                                           
+        local model=""                                                                                      
+        json_load "$(cat /tmp/sysupgrade.meta)" || return 1
+        json_select supported_devices || {
+                #glinet openwrt 18.06 device                      
+                model=`awk -F': ' '/machine/ {print tolower($NF)}' /proc/cpuinfo |cut -d  ' ' -f2`
+                nand_do_platform_check "$model"  "$1"
+                return $?
+	}
+        json_get_keys dev_keys                                                 
+        for k in $dev_keys; do                                                                              
+                json_get_var dev "$k"                                                                       
+                model=${dev/,/_}                                                                            
+                nand_do_platform_check "$model"  "$1" && return 0                                           
+        done                                                                                                
+        return 1                                                                                            
+}
+
 platform_check_image() {
-	return 0
+        local board=$(board_name)
+
+        case "$board" in
+        glinet,gl-ar300m-nand|\
+        glinet,gl-ar750s-nor-nand|\
+        glinet,gl-e750-nor-nand|\
+        glinet,gl-x1200-nor-nand|\
+        glinet,gl-x300b-nor-nand|\
+        glinet,gl-x750-nor-nand|\
+        glinet,gl-xe300-iot|\
+        glinet,gl-xe300-nor-nand)
+                nand_check_support_device  "$1"
+                return $?
+                ;;
+        *)
+                return 0
+                ;;
+        esac
 }
 
 platform_do_upgrade() {
@@ -52,9 +100,12 @@ platform_do_upgrade() {
 	glinet,gl-e750-nor-nand|\
 	glinet,gl-x1200-nor-nand|\
 	glinet,gl-x300b-nor-nand|\
-	glinet,gl-x750-nor-nand|\
+	glinet,gl-x750-nor-nand)
+		nand_do_upgrade "$1"
+		;;
 	glinet,gl-xe300-iot|\
 	glinet,gl-xe300-nor-nand)
+		glinet_led_indicator gl-xe300:green:wan gl-xe300:green:lan gl-xe300:green:wlan gl-xe300:green:lte &
 		nand_do_upgrade "$1"
 		;;
 	*)

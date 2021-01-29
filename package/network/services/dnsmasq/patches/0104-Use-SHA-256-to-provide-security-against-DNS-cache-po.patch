@@ -1,0 +1,581 @@
+From 2d765867c597db18be9d876c9c17e2c0fe1953cd Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Thu, 12 Nov 2020 22:06:07 +0000
+Subject: Use SHA-256 to provide security against DNS cache poisoning.
+
+Use the SHA-256 hash function to verify that DNS answers
+received are for the questions originally asked. This replaces
+the slightly insecure SHA-1 (when compiled with DNSSEC) or
+the very insecure CRC32 (otherwise). Refer: CERT VU#434904.
+---
+ CHANGELOG            |   5 +
+ Makefile             |   3 +-
+ bld/Android.mk       |   2 +-
+ src/dnsmasq.h        |  11 +-
+ src/dnssec.c         |  31 -----
+ src/forward.c        |  43 ++-----
+ src/hash_questions.c | 281 +++++++++++++++++++++++++++++++++++++++++++
+ src/rfc1035.c        |  49 --------
+ 8 files changed, 301 insertions(+), 124 deletions(-)
+ create mode 100644 src/hash_questions.c
+
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -7,6 +7,11 @@
+ 	in the {query-ID, random-port} tuple as possible, help defeat
+ 	cache poisoning attacks. Refer: CERT VU#434904.
+ 
++	Use the SHA-256 hash function to verify that DNS answers
++	received are for the questions originally asked. This replaces
++	the slightly insecure SHA-1 (when compiled with DNSSEC) or
++	the very insecure CRC32 (otherwise). Refer: CERT VU#434904.
++	
+ 
+ version 2.81
+ 	Impove cache behaviour for TCP connections. For ease of
+--- a/Makefile
++++ b/Makefile
+@@ -77,7 +77,8 @@ objs = cache.o rfc1035.o util.o option.o
+        helper.o tftp.o log.o conntrack.o dhcp6.o rfc3315.o \
+        dhcp-common.o outpacket.o radv.o slaac.o auth.o ipset.o \
+        domain.o dnssec.o blockdata.o tables.o loop.o inotify.o \
+-       poll.o rrfilter.o edns0.o arp.o crypto.o dump.o ubus.o metrics.o
++       poll.o rrfilter.o edns0.o arp.o crypto.o dump.o ubus.o \
++       metrics.o hash_questions.o
+ 
+ hdrs = dnsmasq.h config.h dhcp-protocol.h dhcp6-protocol.h \
+        dns-protocol.h radv-protocol.h ip6addr.h metrics.h
+--- a/bld/Android.mk
++++ b/bld/Android.mk
+@@ -11,7 +11,7 @@ LOCAL_SRC_FILES :=  bpf.c cache.c dbus.c
+ 		    radv.c slaac.c auth.c ipset.c domain.c \
+ 	            dnssec.c dnssec-openssl.c blockdata.c tables.c \
+ 		    loop.c inotify.c poll.c rrfilter.c edns0.c arp.c \
+-		    crypto.c dump.c ubus.c
++		    crypto.c dump.c ubus.c metrics.c hash_questions.c
+ 
+ LOCAL_MODULE := dnsmasq
+ 
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -644,11 +644,7 @@ struct hostsfile {
+ #define FREC_TEST_PKTSZ       256
+ #define FREC_HAS_EXTRADATA    512        
+ 
+-#ifdef HAVE_DNSSEC
+-#define HASH_SIZE 20 /* SHA-1 digest size */
+-#else
+-#define HASH_SIZE sizeof(int)
+-#endif
++#define HASH_SIZE 32 /* SHA-256 digest size */
+ 
+ struct frec {
+   union mysockaddr source;
+@@ -1199,7 +1195,6 @@ int check_for_bogus_wildcard(struct dns_
+ 			     struct bogus_addr *baddr, time_t now);
+ int check_for_ignored_address(struct dns_header *header, size_t qlen, struct bogus_addr *baddr);
+ int check_for_local_domain(char *name, time_t now);
+-unsigned int questions_crc(struct dns_header *header, size_t plen, char *name);
+ size_t resize_packet(struct dns_header *header, size_t plen, 
+ 		  unsigned char *pheader, size_t hlen);
+ int add_resource_record(struct dns_header *header, char *limit, int *truncp,
+@@ -1227,9 +1222,11 @@ int dnssec_validate_reply(time_t now, st
+ 			  int check_unsigned, int *neganswer, int *nons);
+ int dnskey_keytag(int alg, int flags, unsigned char *key, int keylen);
+ size_t filter_rrsigs(struct dns_header *header, size_t plen);
+-unsigned char* hash_questions(struct dns_header *header, size_t plen, char *name);
+ int setup_timestamp(void);
+ 
++/* hash_questions.c */
++unsigned char *hash_questions(struct dns_header *header, size_t plen, char *name);
++
+ /* crypto.c */
+ const struct nettle_hash *hash_find(char *name);
+ int hash_init(const struct nettle_hash *hash, void **ctxp, unsigned char **digestp);
+--- a/src/dnssec.c
++++ b/src/dnssec.c
+@@ -2082,35 +2082,4 @@ size_t dnssec_generate_query(struct dns_
+   return ret;
+ }
+ 
+-unsigned char* hash_questions(struct dns_header *header, size_t plen, char *name)
+-{
+-  int q;
+-  unsigned int len;
+-  unsigned char *p = (unsigned char *)(header+1);
+-  const struct nettle_hash *hash;
+-  void *ctx;
+-  unsigned char *digest;
+-  
+-  if (!(hash = hash_find("sha1")) || !hash_init(hash, &ctx, &digest))
+-    return NULL;
+-  
+-  for (q = ntohs(header->qdcount); q != 0; q--) 
+-    {
+-      if (!extract_name(header, plen, &p, name, 1, 4))
+-	break; /* bad packet */
+-      
+-      len = to_wire(name);
+-      hash->update(ctx, len, (unsigned char *)name);
+-      /* CRC the class and type as well */
+-      hash->update(ctx, 4, p);
+-
+-      p += 4;
+-      if (!CHECK_LEN(header, p, plen, 0))
+-	break; /* bad packet */
+-    }
+-  
+-  hash->digest(ctx, hash->digest_size, digest);
+-  return digest;
+-}
+-
+ #endif /* HAVE_DNSSEC */
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -248,19 +248,16 @@ static int forward_query(int udpfd, unio
+   union all_addr *addrp = NULL;
+   unsigned int flags = 0;
+   struct server *start = NULL;
+-#ifdef HAVE_DNSSEC
+   void *hash = hash_questions(header, plen, daemon->namebuff);
++#ifdef HAVE_DNSSEC
+   int do_dnssec = 0;
+-#else
+-  unsigned int crc = questions_crc(header, plen, daemon->namebuff);
+-  void *hash = &crc;
+ #endif
+   unsigned int gotname = extract_request(header, plen, daemon->namebuff, NULL);
+   unsigned char *oph = find_pseudoheader(header, plen, NULL, NULL, NULL, NULL);
+   (void)do_bit;
+ 
+   /* may be no servers available. */
+-  if (forward || (hash && (forward = lookup_frec_by_sender(ntohs(header->id), udpaddr, hash))))
++  if (forward || (forward = lookup_frec_by_sender(ntohs(header->id), udpaddr, hash)))
+     {
+       /* If we didn't get an answer advertising a maximal packet in EDNS,
+ 	 fall back to 1280, which should work everywhere on IPv6.
+@@ -761,9 +758,6 @@ void reply_query(int fd, int family, tim
+   size_t nn;
+   struct server *server;
+   void *hash;
+-#ifndef HAVE_DNSSEC
+-  unsigned int crc;
+-#endif
+ 
+   /* packet buffer overwritten */
+   daemon->srv_save = NULL;
+@@ -790,12 +784,7 @@ void reply_query(int fd, int family, tim
+   if (difftime(now, server->pktsz_reduced) > UDP_TEST_TIME)
+     server->edns_pktsz = daemon->edns_pktsz;
+ 
+-#ifdef HAVE_DNSSEC
+   hash = hash_questions(header, n, daemon->namebuff);
+-#else
+-  hash = &crc;
+-  crc = questions_crc(header, n, daemon->namebuff);
+-#endif
+   
+   if (!(forward = lookup_frec(ntohs(header->id), fd, family, hash)))
+     return;
+@@ -1100,8 +1089,7 @@ void reply_query(int fd, int family, tim
+ 			log_query(F_NOEXTRA | F_DNSSEC | F_IPV6, daemon->keyname, (union all_addr *)&(server->addr.in6.sin6_addr),
+ 				  querystr("dnssec-query", querytype));
+   
+-		      if ((hash = hash_questions(header, nn, daemon->namebuff)))
+-			memcpy(new->hash, hash, HASH_SIZE);
++		      memcpy(new->hash, hash_questions(header, nn, daemon->namebuff), HASH_SIZE);
+ 		      new->new_id = get_id();
+ 		      header->id = htons(new->new_id);
+ 		      /* Save query for retransmission */
+@@ -1937,15 +1925,9 @@ unsigned char *tcp_request(int confd, ti
+ 	      if (!flags && last_server)
+ 		{
+ 		  struct server *firstsendto = NULL;
+-#ifdef HAVE_DNSSEC
+-		  unsigned char *newhash, hash[HASH_SIZE];
+-		  if ((newhash = hash_questions(header, (unsigned int)size, daemon->namebuff)))
+-		    memcpy(hash, newhash, HASH_SIZE);
+-		  else
+-		    memset(hash, 0, HASH_SIZE);
+-#else
+-		  unsigned int crc = questions_crc(header, (unsigned int)size, daemon->namebuff);
+-#endif		  
++		  unsigned char hash[HASH_SIZE];
++		  memcpy(hash, hash_questions(header, (unsigned int)size, daemon->namebuff), HASH_SIZE);
++
+ 		  /* Loop round available servers until we succeed in connecting to one.
+ 		     Note that this code subtly ensures that consecutive queries on this connection
+ 		     which can go to the same server, do so. */
+@@ -2068,20 +2050,11 @@ unsigned char *tcp_request(int confd, ti
+ 		      /* If the crc of the question section doesn't match the crc we sent, then
+ 			 someone might be attempting to insert bogus values into the cache by 
+ 			 sending replies containing questions and bogus answers. */
+-#ifdef HAVE_DNSSEC
+-		      newhash = hash_questions(header, (unsigned int)m, daemon->namebuff);
+-		      if (!newhash || memcmp(hash, newhash, HASH_SIZE) != 0)
++		      if (memcmp(hash, hash_questions(header, (unsigned int)m, daemon->namebuff), HASH_SIZE) != 0)
+ 			{ 
+ 			  m = 0;
+ 			  break;
+ 			}
+-#else			  
+-		      if (crc != questions_crc(header, (unsigned int)m, daemon->namebuff))
+-			{
+-			  m = 0;
+-			  break;
+-			}
+-#endif
+ 
+ 		      m = process_reply(header, now, last_server, (unsigned int)m, 
+ 					option_bool(OPT_NO_REBIND) && !norebind, no_cache_dnssec, cache_secure, bogusanswer,
+@@ -2295,7 +2268,7 @@ static struct frec *lookup_frec(unsigned
+ 
+   for(f = daemon->frec_list; f; f = f->next)
+     if (f->sentto && f->new_id == id && 
+-	(!hash || memcmp(hash, f->hash, HASH_SIZE) == 0))
++	(memcmp(hash, f->hash, HASH_SIZE) == 0))
+       {
+ 	/* sent from random port */
+ 	if (family == AF_INET && f->rfd4 && f->rfd4->fd == fd)
+--- /dev/null
++++ b/src/hash_questions.c
+@@ -0,0 +1,281 @@
++/* Copyright (c) 2012-2020 Simon Kelley
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; version 2 dated June, 1991, or
++   (at your option) version 3 dated 29 June, 2007.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <http://www.gnu.org/licenses/>.
++*/
++
++
++/* Hash the question section. This is used to safely detect query 
++   retransmission and to detect answers to questions we didn't ask, which 
++   might be poisoning attacks. Note that we decode the name rather 
++   than CRC the raw bytes, since replies might be compressed differently. 
++   We ignore case in the names for the same reason. 
++
++   The hash used is SHA-256. If we're building with DNSSEC support,
++   we use the Nettle cypto library. If not, we prefer not to
++   add a dependency on Nettle, and use a stand-alone implementaion. 
++*/
++
++#include "dnsmasq.h"
++
++#ifdef HAVE_DNSSEC
++unsigned char *hash_questions(struct dns_header *header, size_t plen, char *name)
++{
++  int q;
++  unsigned char *p = (unsigned char *)(header+1);
++  const struct nettle_hash *hash;
++  void *ctx;
++  unsigned char *digest;
++  
++  if (!(hash = hash_find("sha256")) || !hash_init(hash, &ctx, &digest))
++    {
++      /* don't think this can ever happen. */
++      static unsigned char dummy[HASH_SIZE];
++      static int warned = 0;
++
++      if (warned)
++	my_syslog(LOG_ERR, _("Failed to create SHA-256 hash object"));
++      warned = 1;
++     
++      return dummy;
++    }
++  
++  for (q = ntohs(header->qdcount); q != 0; q--) 
++    {
++      char *cp, c;
++
++      if (!extract_name(header, plen, &p, name, 1, 4))
++	break; /* bad packet */
++
++      for (cp = name; (c = *cp); cp++)
++	 if (c >= 'A' && c <= 'Z')
++	   *cp += 'a' - 'A';
++
++      hash->update(ctx, cp - name, (unsigned char *)name);
++      /* CRC the class and type as well */
++      hash->update(ctx, 4, p);
++
++      p += 4;
++      if (!CHECK_LEN(header, p, plen, 0))
++	break; /* bad packet */
++    }
++  
++  hash->digest(ctx, hash->digest_size, digest);
++  return digest;
++}
++
++#else /* HAVE_DNSSEC */
++
++#define SHA256_BLOCK_SIZE 32            // SHA256 outputs a 32 byte digest
++typedef unsigned char BYTE;             // 8-bit byte
++typedef unsigned int  WORD;             // 32-bit word, change to "long" for 16-bit machines
++
++typedef struct {
++  BYTE data[64];
++  WORD datalen;
++  unsigned long long bitlen;
++  WORD state[8];
++} SHA256_CTX;
++
++static void sha256_init(SHA256_CTX *ctx);
++static void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len);
++static void sha256_final(SHA256_CTX *ctx, BYTE hash[]);
++
++
++unsigned char *hash_questions(struct dns_header *header, size_t plen, char *name)
++{
++  int q;
++  unsigned char *p = (unsigned char *)(header+1);
++  SHA256_CTX ctx;
++  static BYTE digest[SHA256_BLOCK_SIZE];
++  
++  sha256_init(&ctx);
++    
++  for (q = ntohs(header->qdcount); q != 0; q--) 
++    {
++      char *cp, c;
++
++      if (!extract_name(header, plen, &p, name, 1, 4))
++	break; /* bad packet */
++
++      for (cp = name; (c = *cp); cp++)
++	 if (c >= 'A' && c <= 'Z')
++	   *cp += 'a' - 'A';
++
++      sha256_update(&ctx, (BYTE *)name, cp - name);
++      /* CRC the class and type as well */
++      sha256_update(&ctx, (BYTE *)p, 4);
++
++      p += 4;
++      if (!CHECK_LEN(header, p, plen, 0))
++	break; /* bad packet */
++    }
++  
++  sha256_final(&ctx, digest);
++  return (unsigned char *)digest;
++}
++
++/* Code from here onwards comes from https://github.com/B-Con/crypto-algorithms
++   and was written by Brad Conte (brad@bradconte.com), to whom all credit is given.
++
++   This code is in the public domain, and the copyright notice at the head of this 
++   file does not apply to it.
++*/
++
++
++/****************************** MACROS ******************************/
++#define ROTLEFT(a,b) (((a) << (b)) | ((a) >> (32-(b))))
++#define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
++
++#define CH(x,y,z) (((x) & (y)) ^ (~(x) & (z)))
++#define MAJ(x,y,z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
++#define EP0(x) (ROTRIGHT(x,2) ^ ROTRIGHT(x,13) ^ ROTRIGHT(x,22))
++#define EP1(x) (ROTRIGHT(x,6) ^ ROTRIGHT(x,11) ^ ROTRIGHT(x,25))
++#define SIG0(x) (ROTRIGHT(x,7) ^ ROTRIGHT(x,18) ^ ((x) >> 3))
++#define SIG1(x) (ROTRIGHT(x,17) ^ ROTRIGHT(x,19) ^ ((x) >> 10))
++
++/**************************** VARIABLES *****************************/
++static const WORD k[64] = {
++			   0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
++			   0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
++			   0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
++			   0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
++			   0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
++			   0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
++			   0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
++			   0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
++};
++
++/*********************** FUNCTION DEFINITIONS ***********************/
++static void sha256_transform(SHA256_CTX *ctx, const BYTE data[])
++{
++  WORD a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
++  
++  for (i = 0, j = 0; i < 16; ++i, j += 4)
++    m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
++  for ( ; i < 64; ++i)
++    m[i] = SIG1(m[i - 2]) + m[i - 7] + SIG0(m[i - 15]) + m[i - 16];
++
++  a = ctx->state[0];
++  b = ctx->state[1];
++  c = ctx->state[2];
++  d = ctx->state[3];
++  e = ctx->state[4];
++  f = ctx->state[5];
++  g = ctx->state[6];
++  h = ctx->state[7];
++
++  for (i = 0; i < 64; ++i)
++    {
++      t1 = h + EP1(e) + CH(e,f,g) + k[i] + m[i];
++      t2 = EP0(a) + MAJ(a,b,c);
++      h = g;
++      g = f;
++      f = e;
++      e = d + t1;
++      d = c;
++      c = b;
++      b = a;
++      a = t1 + t2;
++    }
++  
++  ctx->state[0] += a;
++  ctx->state[1] += b;
++  ctx->state[2] += c;
++  ctx->state[3] += d;
++  ctx->state[4] += e;
++  ctx->state[5] += f;
++  ctx->state[6] += g;
++  ctx->state[7] += h;
++}
++
++static void sha256_init(SHA256_CTX *ctx)
++{
++  ctx->datalen = 0;
++  ctx->bitlen = 0;
++  ctx->state[0] = 0x6a09e667;
++  ctx->state[1] = 0xbb67ae85;
++  ctx->state[2] = 0x3c6ef372;
++  ctx->state[3] = 0xa54ff53a;
++  ctx->state[4] = 0x510e527f;
++  ctx->state[5] = 0x9b05688c;
++  ctx->state[6] = 0x1f83d9ab;
++  ctx->state[7] = 0x5be0cd19;
++}
++
++static void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)
++{
++  WORD i;
++  
++  for (i = 0; i < len; ++i)
++    {
++      ctx->data[ctx->datalen] = data[i];
++      ctx->datalen++;
++      if (ctx->datalen == 64) {
++	sha256_transform(ctx, ctx->data);
++	ctx->bitlen += 512;
++	ctx->datalen = 0;
++      }
++    }
++}
++
++static void sha256_final(SHA256_CTX *ctx, BYTE hash[])
++{
++  WORD i;
++  
++  i = ctx->datalen;
++
++  // Pad whatever data is left in the buffer.
++  if (ctx->datalen < 56)
++    {
++      ctx->data[i++] = 0x80;
++      while (i < 56)
++	ctx->data[i++] = 0x00;
++    }
++  else
++    {
++      ctx->data[i++] = 0x80;
++      while (i < 64)
++	ctx->data[i++] = 0x00;
++      sha256_transform(ctx, ctx->data);
++      memset(ctx->data, 0, 56);
++    }
++  
++  // Append to the padding the total message's length in bits and transform.
++  ctx->bitlen += ctx->datalen * 8;
++  ctx->data[63] = ctx->bitlen;
++  ctx->data[62] = ctx->bitlen >> 8;
++  ctx->data[61] = ctx->bitlen >> 16;
++  ctx->data[60] = ctx->bitlen >> 24;
++  ctx->data[59] = ctx->bitlen >> 32;
++  ctx->data[58] = ctx->bitlen >> 40;
++  ctx->data[57] = ctx->bitlen >> 48;
++  ctx->data[56] = ctx->bitlen >> 56;
++  sha256_transform(ctx, ctx->data);
++  
++  // Since this implementation uses little endian byte ordering and SHA uses big endian,
++  // reverse all the bytes when copying the final state to the output hash.
++  for (i = 0; i < 4; ++i)
++    {
++      hash[i]      = (ctx->state[0] >> (24 - i * 8)) & 0x000000ff;
++      hash[i + 4]  = (ctx->state[1] >> (24 - i * 8)) & 0x000000ff;
++      hash[i + 8]  = (ctx->state[2] >> (24 - i * 8)) & 0x000000ff;
++      hash[i + 12] = (ctx->state[3] >> (24 - i * 8)) & 0x000000ff;
++      hash[i + 16] = (ctx->state[4] >> (24 - i * 8)) & 0x000000ff;
++      hash[i + 20] = (ctx->state[5] >> (24 - i * 8)) & 0x000000ff;
++      hash[i + 24] = (ctx->state[6] >> (24 - i * 8)) & 0x000000ff;
++      hash[i + 28] = (ctx->state[7] >> (24 - i * 8)) & 0x000000ff;
++    }
++}
++
++#endif
+--- a/src/rfc1035.c
++++ b/src/rfc1035.c
+@@ -333,55 +333,6 @@ unsigned char *skip_section(unsigned cha
+   return ansp;
+ }
+ 
+-/* CRC the question section. This is used to safely detect query 
+-   retransmission and to detect answers to questions we didn't ask, which 
+-   might be poisoning attacks. Note that we decode the name rather 
+-   than CRC the raw bytes, since replies might be compressed differently. 
+-   We ignore case in the names for the same reason. Return all-ones
+-   if there is not question section. */
+-#ifndef HAVE_DNSSEC
+-unsigned int questions_crc(struct dns_header *header, size_t plen, char *name)
+-{
+-  int q;
+-  unsigned int crc = 0xffffffff;
+-  unsigned char *p1, *p = (unsigned char *)(header+1);
+-
+-  for (q = ntohs(header->qdcount); q != 0; q--) 
+-    {
+-      if (!extract_name(header, plen, &p, name, 1, 4))
+-	return crc; /* bad packet */
+-      
+-      for (p1 = (unsigned char *)name; *p1; p1++)
+-	{
+-	  int i = 8;
+-	  char c = *p1;
+-
+-	  if (c >= 'A' && c <= 'Z')
+-	    c += 'a' - 'A';
+-
+-	  crc ^= c << 24;
+-	  while (i--)
+-	    crc = crc & 0x80000000 ? (crc << 1) ^ 0x04c11db7 : crc << 1;
+-	}
+-      
+-      /* CRC the class and type as well */
+-      for (p1 = p; p1 < p+4; p1++)
+-	{
+-	  int i = 8;
+-	  crc ^= *p1 << 24;
+-	  while (i--)
+-	    crc = crc & 0x80000000 ? (crc << 1) ^ 0x04c11db7 : crc << 1;
+-	}
+-
+-      p += 4;
+-      if (!CHECK_LEN(header, p, plen, 0))
+-	return crc; /* bad packet */
+-    }
+-
+-  return crc;
+-}
+-#endif
+-
+ size_t resize_packet(struct dns_header *header, size_t plen, unsigned char *pheader, size_t hlen)
+ {
+   unsigned char *ansp = skip_questions(header, plen);
