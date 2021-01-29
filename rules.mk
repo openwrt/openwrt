@@ -431,8 +431,8 @@ $(shell \
 )
 endef
 
-COMMITCOUNT = $(if $(DUMP),,$(call commitcount))
-AUTORELEASE = $(if $(DUMP),,$(call commitcount,1))
+COMMITCOUNT = $(if $(DUMP),0,$(call commitcount))
+AUTORELEASE = $(if $(DUMP),0,$(call commitcount,1))
 
 all:
 FORCE: ;
