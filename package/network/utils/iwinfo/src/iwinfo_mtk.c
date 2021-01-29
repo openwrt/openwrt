@@ -314,11 +314,15 @@ static int mtk_get_scan(const char *ifname, struct survey_table *st)
 
 	line = strtok(start, "\n");
 
-	while (true) {
-		line = strtok(NULL, "\n");
+	while (line) {
 		if (!strncmp("Ch ", line, 3) || !strncmp("No ", line, 3))
 			break;
+
+		line = strtok(NULL, "\n");
 	}
+
+	if (!line)
+		return -1;
 
 	line = strtok(NULL, "\n");
 
