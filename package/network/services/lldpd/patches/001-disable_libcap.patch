@@ -1,17 +1,33 @@
---- a/configure.ac
-+++ b/configure.ac
-@@ -246,7 +246,13 @@ PKG_CHECK_MODULES([check], [check >= 0.9
+--- a/configure	2021-01-30 14:35:52.953083799 +0200
++++ b/configure	2021-01-30 14:39:59.552883364 +0200
+@@ -20141,7 +20139,7 @@
+       libcap_LIBS=
+       libcap_CFLAGS=
+       _save_libs="$LIBS"
+-      LIBS="$LIBS ${libcap_LIBS}"
++      LIBS="$LIBS"
+       { $as_echo "$as_me:${as_lineno-$LINENO}: checking libcap (without pkg-config)" >&5
+ $as_echo_n "checking libcap (without pkg-config)... " >&6; }
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+@@ -20182,8 +20180,8 @@
+       LIBS="$_save_libs"
  
- # Third-party libraries
- lldp_CHECK_LIBEVENT
--lldp_CHECK_LIBCAP
-+
-+#libcap is not a core package so disable this capability
-+#lldp_CHECK_LIBCAP
-+libcap_LIBS=
-+libcap_CFLAGS=
-+AC_SUBST([libcap_LIBS])
-+AC_SUBST([libcap_CFLAGS])
+ else
+-	libcap_CFLAGS=$pkg_cv_libcap_CFLAGS
+-	libcap_LIBS=$pkg_cv_libcap_LIBS
++	libcap_CFLAGS=
++	libcap_LIBS=
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+ $as_echo "yes" >&6; }
  
- # Compatibility with pkg.m4 < 0.27
- m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR],
+--- a/src/daemon/priv.c	2021-01-30 15:00:16.436154902 +0200
++++ b/src/daemon/priv.c	2021-01-30 15:00:28.836560084 +0200
+@@ -38,6 +38,8 @@
+ #include <sys/ioctl.h>
+ #include <netinet/if_ether.h>
+ 
++/*libcap is not a core package so disable this capability*/
++#undef HAVE_LINUX_CAPABILITIES
+ #ifdef HAVE_LINUX_CAPABILITIES
+ #include <sys/capability.h>
+ #include <sys/prctl.h>
