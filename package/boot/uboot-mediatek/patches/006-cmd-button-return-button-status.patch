@@ -1,0 +1,38 @@
+From a6bfd71a96201127836d59736abcb54dc2d5e1a5 Mon Sep 17 00:00:00 2001
+From: Heinrich Schuchardt <xypron.glpk@gmx.de>
+Date: Mon, 14 Sep 2020 12:50:56 +0200
+Subject: [PATCH] cmd/button: return button status
+
+To make the button command useful in a shell script it should return the
+status of the button:
+
+* 0 (true) - pressed, on
+* 1 (false) - not pressed, off
+
+The button command takes only one argument. Correct maxargs.
+
+Adjust the Python unit test.
+
+Signed-off-by: Heinrich Schuchardt <xypron.glpk@gmx.de>
+Reviewed-by: Philippe Reynes <philippe.reynes@softathome.com>
+---
+ cmd/button.c                 |  4 ++--
+ test/py/tests/test_button.py | 34 ++++++++++++++++++++++++++--------
+ 2 files changed, 28 insertions(+), 10 deletions(-)
+
+--- a/cmd/button.c
++++ b/cmd/button.c
+@@ -75,11 +75,11 @@ int do_button(struct cmd_tbl *cmdtp, int
+ 
+ 	ret = show_button_state(dev);
+ 
+-	return 0;
++	return !ret;
+ }
+ 
+ U_BOOT_CMD(
+-	button, 4, 1, do_button,
++	button, 2, 1, do_button,
+ 	"manage buttons",
+ 	"<button_label> \tGet button state\n"
+ 	"button list\t\tShow a list of buttons"
