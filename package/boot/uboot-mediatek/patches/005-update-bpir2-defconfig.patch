@@ -1,10 +1,9 @@
-diff --git a/configs/mt7623n_bpir2_defconfig b/configs/mt7623n_bpir2_defconfig
-index 6b9fbd7e22..fb2a004803 100644
 --- a/configs/mt7623n_bpir2_defconfig
 +++ b/configs/mt7623n_bpir2_defconfig
-@@ -52,3 +52,13 @@ CONFIG_TIMER=y
- CONFIG_WDT_MTK=y
- CONFIG_LZMA=y
+@@ -51,5 +51,15 @@ CONFIG_SYSRESET=y
+ CONFIG_SYSRESET_WATCHDOG=y
+ CONFIG_TIMER=y
+ CONFIG_MTK_TIMER=y
 +CONFIG_CMD_BOOTZ=y
 +CONFIG_OF_LIBFDT_OVERLAY=y
 +#enables savenenv-command
@@ -15,3 +14,5 @@ index 6b9fbd7e22..fb2a004803 100644
 +CONFIG_CMD_ASKENV=y
 +CONFIG_ENV_SIZE=0x2000
 +CONFIG_CMD_SETEXPR=y
+ CONFIG_WDT_MTK=y
+ CONFIG_LZMA=y
