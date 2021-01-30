@@ -194,6 +194,8 @@ foreach my $mirror (@ARGV) {
 		for (1 .. 5) {
 			push @mirrors, "https://downloads.sourceforge.net/$1";
 		}
+	} elsif ($mirror =~ /^\@OPENWRT$/) {
+		# use OpenWrt source server directly
 	} elsif ($mirror =~ /^\@APACHE\/(.+)$/) {
 		push @mirrors, "https://mirror.netcologne.de/apache.org/$1";
 		push @mirrors, "https://mirror.aarnet.edu.au/pub/apache/$1";
