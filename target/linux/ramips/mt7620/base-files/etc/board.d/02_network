@@ -215,6 +215,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
 		;;
+	wavlink,wl-wn579x3)
+		ucidef_add_switch "switch0" \
+			"5:lan" "4:wan" "6@eth0"
+		;;
 	youku,yk-l1|\
 	youku,yk-l1c)
 		ucidef_add_switch "switch0" \
