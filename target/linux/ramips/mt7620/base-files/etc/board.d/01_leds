@@ -194,6 +194,10 @@ tplink,archer-mr200)
 tplink,re200-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
+wavlink,wl-wn579x3)
+	ucidef_set_led_switch "lan" "lan" "blue:lan" "switch0" "0x20"
+	ucidef_set_led_switch "wan" "wan" "blue:wan" "switch0" "0x10"
+	;;
 zbtlink,zbt-ape522ii)
 	ucidef_set_led_netdev "wlan2g4" "wlan1-link" "green:wlan2g4" "wlan1"
 	ucidef_set_led_netdev "sys1" "wlan1" "green:sys1" "wlan1" "tx rx"
