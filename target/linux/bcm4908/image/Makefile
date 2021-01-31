@@ -3,14 +3,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/bcm4908lzma
-	$(STAGING_DIR_HOST)/bin/lzma e -lc1 -lp2 -pb2 -d22 $@ $@.new
-	mv $@.new $@
-endef
+DEVICE_VARS += ASUS_PRODUCTID ASUS_BUILD_NO ASUS_FW_REV ASUS_EXT_NO
 
-define Build/bcm4908kernel
-	$(STAGING_DIR_HOST)/bin/bcm4908kernel -i $@ -o $@.new
-	mv $@.new $@
+define Build/bcm4908asus
+	$(STAGING_DIR_HOST)/bin/bcm4908asus create -i $@ \
+		-p $(ASUS_PRODUCTID) -b $(ASUS_BUILD_NO) -f $(ASUS_FW_REV) \
+		-e $(ASUS_EXT_NO)
 endef
 
 define Build/bcm4908img
@@ -22,8 +20,20 @@ define Build/bcm4908img
 	cp $(KDIR)/bcm63xx-cfe/$(subst _,$(comma),$(DEVICE_NAME))/cferam.000 $@-bootfs/
 	cp $(IMAGE_KERNEL) $@-bootfs/vmlinux.lz
 
-	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 --pad --little-endian --squash-uids -v -e 128KiB -o $@-bootfs.jffs2 -d $@-bootfs -m none -n
-	$(STAGING_DIR_HOST)/bin/bcm4908img create $@.new -f $@-bootfs.jffs2 -a 0x20000 -f $@
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 --pad --little-endian --squash-uids \
+		-v -e 128KiB -o $@-bootfs.jffs2 -d $@-bootfs -m none -n
+	$(STAGING_DIR_HOST)/bin/bcm4908img create $@.new -f $@-bootfs.jffs2 \
+		-a 0x20000 -f $@
+	mv $@.new $@
+endef
+
+define Build/bcm4908kernel
+	$(STAGING_DIR_HOST)/bin/bcm4908kernel -i $@ -o $@.new
+	mv $@.new $@
+endef
+
+define Build/bcm4908lzma
+	$(STAGING_DIR_HOST)/bin/lzma e -lc1 -lp2 -pb2 -d22 $@ $@.new
 	mv $@.new $@
 endef
 
@@ -44,7 +54,11 @@ define Device/asus_gt-ac5300
   DEVICE_MODEL := GT-AC5300
   DEVICE_DTS := broadcom/bcm4908/bcm4908-asus-gt-ac5300
   IMAGES := bin
-  IMAGE/bin := append-ubi | bcm4908img
+  IMAGE/bin := append-ubi | bcm4908img | bcm4908asus
+  ASUS_PRODUCTID := GT-AC5300
+  ASUS_BUILD_NO := 384
+  ASUS_FW_REV := 3.0.0.4
+  ASUS_EXT_NO := 21140
 endef
 TARGET_DEVICES += asus_gt-ac5300
 

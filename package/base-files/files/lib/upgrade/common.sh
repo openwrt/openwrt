@@ -1,5 +1,3 @@
-#!/bin/sh
-
 RAM_ROOT=/tmp/root
 
 export BACKUP_FILE=sysupgrade.tgz	# file extracted by preinit

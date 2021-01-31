@@ -47,20 +47,32 @@
 #define RTL838X_IRQ_ICTL_BASE	(RTL838X_IRQ_CPU_BASE + RTL838X_IRQ_CPU_NUM)
 #define RTL838X_IRQ_ICTL_NUM	32
 
-#define RTL83XX_IRQ_UART0               31
-#define RTL83XX_IRQ_UART1               30
-#define RTL83XX_IRQ_TC0                 29
-#define RTL83XX_IRQ_TC1                 28
-#define RTL83XX_IRQ_OCPTO               27
-#define RTL83XX_IRQ_HLXTO               26
-#define RTL83XX_IRQ_SLXTO               25
-#define RTL83XX_IRQ_NIC                 24
-#define RTL83XX_IRQ_GPIO_ABCD           23
-#define RTL83XX_IRQ_GPIO_EFGH           22
-#define RTL83XX_IRQ_RTC                 21
-#define RTL83XX_IRQ_SWCORE              20
-#define RTL83XX_IRQ_WDT_IP1             19
-#define RTL83XX_IRQ_WDT_IP2             18
+#define RTL83XX_IRQ_UART0		31
+#define RTL83XX_IRQ_UART1		30
+#define RTL83XX_IRQ_TC0			29
+#define RTL83XX_IRQ_TC1			28
+#define RTL83XX_IRQ_OCPTO		27
+#define RTL83XX_IRQ_HLXTO		26
+#define RTL83XX_IRQ_SLXTO		25
+#define RTL83XX_IRQ_NIC			24
+#define RTL83XX_IRQ_GPIO_ABCD		23
+#define RTL83XX_IRQ_GPIO_EFGH		22
+#define RTL83XX_IRQ_RTC			21
+#define RTL83XX_IRQ_SWCORE		20
+#define RTL83XX_IRQ_WDT_IP1		19
+#define RTL83XX_IRQ_WDT_IP2		18
+
+#define RTL9300_UART1_IRQ		31
+#define RTL9300_UART0_IRQ		30
+#define RTL9300_USB_H2_IRQ		28
+#define RTL9300_NIC_IRQ			24
+#define RTL9300_SWCORE_IRQ		23
+#define RTL9300_GPIO_ABC_IRQ		13
+#define RTL9300_TC4_IRQ			11
+#define RTL9300_TC3_IRQ			10
+#define RTL9300_TC2_IRQ			 9
+#define RTL9300_TC1_IRQ			 8
+#define RTL9300_TC0_IRQ			 7
 
 
 /*
@@ -108,32 +120,6 @@
 #define WDT_IP1_IP		(1 << 19)
 #define WDT_IP2_IP		(1 << 18)
 
-#define IRR0			(0x08)
-#define IRR0_SETTING		((UART0_RS  << 28) | \
-				 (UART1_RS  << 24) | \
-				 (TC0_RS    << 20) | \
-				 (TC1_RS    << 16) | \
-				 (OCPTO_RS  << 12) | \
-				 (HLXTO_RS  << 8)  | \
-				 (SLXTO_RS  << 4)  | \
-				 (NIC_RS    << 0)    \
-				)
-
-#define IRR1			(0x0c)
-#define IRR1_SETTING_RTL838X	((GPIO_ABCD_RS << 28) | \
-				 (GPIO_EFGH_RS << 24) | \
-				 (RTC_RS       << 20) | \
-				 (SWCORE_RS    << 16)   \
-				)
-#define IRR1_SETTING_RTL839X	((GPIO_ABCD_RS << 28) | \
-				 (SWCORE_RS    << 16)   \
-				)
-
-#define IRR2			(0x10)
-#define IRR2_SETTING		0
-
-#define IRR3			(0x14)
-#define IRR3_SETTING		0
 
 /* Interrupt Routing Selection */
 #define UART0_RS		2
@@ -200,107 +186,9 @@
 #define UART1_DLM		(RTL838X_UART1_BASE + 0x004)
 #define UART1_IIR		(RTL838X_UART1_BASE + 0x008)
 #define UART1_FCR		(RTL838X_UART1_BASE + 0x008)
-   #define FCR_EN		0x01
-   #define FCR_RXRST		0x02
-   #define XRST			0x02
-   #define FCR_TXRST		0x04
-   #define TXRST		0x04
-   #define FCR_DMA		0x08
-   #define FCR_RTRG		0xC0
-   #define CHAR_TRIGGER_01	0x00
-   #define CHAR_TRIGGER_04	0x40
-   #define CHAR_TRIGGER_08	0x80
-   #define CHAR_TRIGGER_14	0xC0
 #define UART1_LCR		(RTL838X_UART1_BASE + 0x00C)
-   #define LCR_WLN		0x03
-   #define CHAR_LEN_5		0x00
-   #define CHAR_LEN_6		0x01
-   #define CHAR_LEN_7		0x02
-   #define CHAR_LEN_8		0x03
-   #define LCR_STB		0x04
-   #define ONE_STOP		0x00
-   #define TWO_STOP		0x04
-   #define LCR_PEN		0x08
-   #define PARITY_ENABLE	0x01
-   #define PARITY_DISABLE	0x00
-   #define LCR_EPS		0x30
-   #define PARITY_ODD		0x00
-   #define PARITY_EVEN		0x10
-   #define PARITY_MARK		0x20
-   #define PARITY_SPACE		0x30
-   #define LCR_BRK		0x40
-   #define LCR_DLAB		0x80
-   #define DLAB			0x80
 #define UART1_MCR		(RTL838X_UART1_BASE + 0x010)
 #define UART1_LSR		(RTL838X_UART1_BASE + 0x014)
-   #define LSR_DR		0x01
-   #define RxCHAR_AVAIL		0x01
-   #define LSR_OE		0x02
-   #define LSR_PE		0x04
-   #define LSR_FE		0x08
-   #define LSR_BI		0x10
-   #define LSR_THRE		0x20
-   #define TxCHAR_AVAIL		0x00
-   #define TxCHAR_EMPTY		0x20
-   #define LSR_TEMT		0x40
-   #define LSR_RFE		0x80
-
-/*
- *  Timer/counter for 8390/80/28 TC & MP chip
- */
-#define RTL838X_TIMER0_BASE	((volatile void *)(0xb8003100UL))
-#define RTL838X_TIMER0_IRQ	RTL838X_TC0_EXT_IRQ
-
-#define RTL8390TC_TC1DATA	(RTL838X_TIMER0_BASE + 0x04)
-#define RTL8390TC_TCD_OFFSET	8
-#define RTL8390TC_TC0CNT	(RTL838X_TIMER0_BASE + 0x08)
-#define RTL8390TC_TC1CNT	(RTL838X_TIMER0_BASE + 0x0C)
-#define RTL8390TC_TCCNR		(RTL838X_TIMER0_BASE + 0x10)
-#define RTL8390TC_TC0EN		(1 << 31)
-#define RTL8390TC_TC0MODE_TIMER	(1 << 30)
-#define RTL8390TC_TC1EN		(1 << 29)
-#define RTL8390TC_TC1MODE_TIMER	(1 << 28)
-#define RTL8390TC_TCIR		(RTL838X_TIMER0_BASE + 0x14)
-#define RTL8390TC_TC0IE		(1 << 31)
-#define RTL8390TC_TC1IE		(1 << 30)
-#define RTL8390TC_TC0IP		(1 << 29)
-#define RTL8390TC_TC1IP		(1 << 28)
-#define RTL8390TC_CDBR		(RTL838X_TIMER0_BASE + 0x18)
-#define RTL8390TC_DIVF_OFFSET	16
-#define RTL8390TC_WDTCNR	(RTL838X_TIMER0_BASE + 0x1C)
-
-#define RTL8390MP_TC1DATA	(RTL838X_TIMER0_BASE + 0x10)
-#define RTL8390MP_TC0CNT	(RTL838X_TIMER0_BASE + 0x04)
-#define RTL8390MP_TC1CNT	(RTL838X_TIMER0_BASE + 0x14)
-#define RTL8390MP_TC0CTL	(RTL838X_TIMER0_BASE + 0x08)
-#define RTL8390MP_TC1CTL	(RTL838X_TIMER0_BASE + 0x18)
-#define RTL8390MP_TCEN		(1 << 28)
-#define RTL8390MP_TCMODE_TIMER	(1 << 24)
-#define RTL8390MP_TCDIV_FACTOR	(0xFFFF << 0)
-#define RTL8390MP_TC0INT	(RTL838X_TIMER0_BASE + 0xC)
-#define RTL8390MP_TC1INT	(RTL838X_TIMER0_BASE + 0x1C)
-#define RTL8390MP_TCIE		(1 << 20)
-#define RTL8390MP_TCIP		(1 << 16)
-#define RTL8390MP_WDTCNR	(RTL838X_TIMER0_BASE + 0x50)
-
-#define RTL8380MP_TC0DATA	(RTL838X_TIMER0_BASE + 0x00)
-#define RTL8380MP_TC1DATA	(RTL838X_TIMER0_BASE + 0x10)
-#define RTL8380MP_TC0CNT	(RTL838X_TIMER0_BASE + 0x04)
-#define RTL8380MP_TC1CNT	(RTL838X_TIMER0_BASE + 0x14)
-#define RTL8380MP_TC0CTL	(RTL838X_TIMER0_BASE + 0x08)
-#define RTL8380MP_TC1CTL	(RTL838X_TIMER0_BASE + 0x18)
-#define RTL8380MP_TCEN		(1 << 28)
-#define RTL8380MP_TCMODE_TIMER	(1 << 24)
-#define RTL8380MP_TCDIV_FACTOR	(0xFFFF << 0)
-#define RTL8380MP_TC0INT	(RTL838X_TIMER0_BASE + 0xC)
-#define RTL8380MP_TC1INT	(RTL838X_TIMER0_BASE + 0x1C)
-#define RTL8380MP_TCIE		(1 << 20)
-#define RTL8380MP_TCIP		(1 << 16)
-#define RTL8380MP_WDTCNR	(RTL838X_TIMER0_BASE + 0x50)
-
-#define DIVISOR_RTL8390		55
-#define DIVISOR_RTL8380		2500
-#define DIVISOR_MAX		16834
 
 /*
  * Memory Controller
@@ -328,8 +216,14 @@
 
 #define RTL838X_MODEL_NAME_INFO		(0x00D4)
 #define RTL839X_MODEL_NAME_INFO		(0x0FF0)
+#define RTL93XX_MODEL_NAME_INFO		(0x0004)
+
 #define RTL838X_LED_GLB_CTRL		(0xA000)
 #define RTL839X_LED_GLB_CTRL		(0x00E4)
+#define RTL9302_LED_GLB_CTRL		(0xcc00)
+#define RTL930X_LED_GLB_CTRL		(0xC400)
+#define RTL931X_LED_GLB_CTRL		(0x0600)
+
 #define RTL838X_EXT_GPIO_DIR		(0xA08C)
 #define RTL839X_EXT_GPIO_DIR		(0x0214)
 #define RTL838X_EXT_GPIO_DATA		(0xA094)
@@ -377,8 +271,11 @@
  * Reset
  */
 #define	RGCR				(0x1E70)
-#define RTL839X_RST_GLB_CTRL		(0x0014)
+#define RTL838X_RST_GLB_CTRL_0		(0x003c)
 #define RTL838X_RST_GLB_CTRL_1		(0x0040)
+#define RTL839X_RST_GLB_CTRL		(0x0014)
+#define RTL930X_RST_GLB_CTRL_0		(0x000c)
+#define RTL931X_RST_GLB_CTRL		(0x0400)
 
 /* LED control by switch */
 #define RTL838X_LED_MODE_SEL		(0x1004)
@@ -419,6 +316,24 @@
 #define RTL839X_PHYREG_PORT_CTRL(p)	(0x03E4 + ((p >> 5) << 2))
 #define RTL839X_PHYREG_DATA_CTRL	(0x03F0)
 
+#define RTL930X_SMI_GLB_CTRL		(0xCA00)
+#define RTL930X_SMI_POLL_CTRL		(0xca90)
+#define RTL930X_SMI_PORT0_15_POLLING_SEL (0xCA08)
+#define RTL930X_SMI_PORT16_27_POLLING_SEL (0xCA0C)
+#define RTL930X_SMI_PORT0_5_ADDR	(0xCB80)
+#define RTL930X_SMI_ACCESS_PHY_CTRL_0	(0xCB70)
+#define RTL930X_SMI_ACCESS_PHY_CTRL_1	(0xCB74)
+#define RTL930X_SMI_ACCESS_PHY_CTRL_2	(0xCB78)
+#define RTL930X_SMI_ACCESS_PHY_CTRL_3	(0xCB7C)
+
+#define RTL931X_SMI_GLB_CTRL1		(0x0CBC)
+#define RTL931X_SMI_GLB_CTRL0		(0x0CC0)
+#define RTL931X_SMI_PORT_POLLING_CTRL	(0x0CCC)
+#define RTL931X_SMI_INDRT_ACCESS_CTRL_0	(0x0C00)
+#define RTL931X_SMI_INDRT_ACCESS_CTRL_1	(0x0C04)
+#define RTL931X_SMI_INDRT_ACCESS_CTRL_2	(0x0C08)
+#define RTL931X_SMI_INDRT_ACCESS_CTRL_3	(0x0C10)
+
 /*
  * Switch interrupts
  */
@@ -426,10 +341,21 @@
 #define RTL838X_IMR_PORT_LINK_STS_CHG	(0x1104)
 #define RTL838X_ISR_GLB_SRC		(0x1148)
 #define RTL838X_ISR_PORT_LINK_STS_CHG	(0x114C)
+
 #define RTL839X_IMR_GLB			(0x0064)
 #define RTL839X_IMR_PORT_LINK_STS_CHG	(0x0068)
 #define RTL839X_ISR_GLB_SRC		(0x009c)
 #define RTL839X_ISR_PORT_LINK_STS_CHG	(0x00a0)
+
+#define RTL930X_IMR_GLB			(0xC628)
+#define RTL930X_IMR_PORT_LINK_STS_CHG	(0xC62C)
+#define RTL930X_ISR_GLB			(0xC658)
+#define RTL930X_ISR_PORT_LINK_STS_CHG	(0xC660)
+
+// IMR_GLB does not exit on RTL931X
+#define RTL931X_IMR_PORT_LINK_STS_CHG	(0x126C)
+#define RTL931X_ISR_GLB_SRC		(0x12B4)
+#define RTL931X_ISR_PORT_LINK_STS_CHG	(0x12B8)
 
 /* Definition of family IDs */
 #define RTL8389_FAMILY_ID   (0x8389)
@@ -438,6 +364,14 @@
 #define RTL8350_FAMILY_ID   (0x8350)
 #define RTL8380_FAMILY_ID   (0x8380)
 #define RTL8330_FAMILY_ID   (0x8330)
+#define RTL9300_FAMILY_ID   (0x9300)
+#define RTL9310_FAMILY_ID   (0x9310)
+
+/* Basic SoC Features */
+#define RTL838X_CPU_PORT			28
+#define RTL839X_CPU_PORT			52
+#define RTL930X_CPU_PORT			28
+#define RTL931X_CPU_PORT			56
 
 struct rtl83xx_soc_info {
 	unsigned char *name;
@@ -446,6 +380,7 @@ struct rtl83xx_soc_info {
 	unsigned char *compatible;
 	volatile void *sw_base;
 	volatile void *icu_base;
+	int cpu_port;
 };
 
 /* rtl83xx-related functions used across subsystems */
@@ -454,5 +389,9 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
 int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
 int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
 int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val);
+int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
+int rtl930x_write_phy(u32 port, u32 page, u32 reg, u32 val);
+int rtl931x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
+int rtl931x_write_phy(u32 port, u32 page, u32 reg, u32 val);
 
 #endif   /* _MACH_RTL838X_H_ */

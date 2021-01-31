@@ -155,6 +155,18 @@ define Build/check-size
 	}
 endef
 
+define Build/elecom-product-header
+	$(eval product=$(word 1,$(1)))
+	$(eval fw=$(if $(word 2,$(1)),$(word 2,$(1)),$@))
+
+	( \
+		echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
+		echo -n "0.00" | dd bs=16 count=1 conv=sync; \
+		dd if=$(fw); \
+	) > $(fw).new
+	mv $(fw).new $(fw)
+endef
+
 define Build/eva-image
 	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_LOADADDR) $(KERNEL_LOADADDR) $@ $@.new
 	mv $@.new $@

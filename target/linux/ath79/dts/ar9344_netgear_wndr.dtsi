@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	chosen {
@@ -161,7 +162,9 @@
 		partition@6c0000 {
 			label = "firmware";
 			reg = <0x6c0000 0x1900000>;
-			compatible = "netgear,uimage";
+			compatible = "openwrt,uimage", "denx,uimage";
+			openwrt,ih-magic = <0x33373033>;
+			openwrt,ih-type = <IH_TYPE_FILESYSTEM>;
 		};
 
 		partition@1fc0000 {

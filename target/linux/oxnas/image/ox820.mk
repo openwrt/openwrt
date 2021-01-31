@@ -10,7 +10,6 @@ define Device/Default
   SUBPAGESIZE := 512
   FILESYSTEMS := squashfs ubifs
   PROFILES := Default
-  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   DEVICE_DTS := ox820-$(subst _,-,$(1))
   KERNEL := kernel-bin | append-dtb | uImage none
   IMAGES := ubinized.bin sysupgrade.tar

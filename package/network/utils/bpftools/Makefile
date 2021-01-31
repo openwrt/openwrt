@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bpftools
-PKG_VERSION:=5.8.9
+PKG_VERSION:=5.10.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=linux-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/v5.x
-PKG_HASH:=99d8bc1b82f17d7d79f9af4a94af4c0e3772159e9e6e278761bde8569f93e15f
+PKG_HASH:=60ed866fa951522a5255ea37ec3ac2006d3f3427d4783a13ef478464f37cdb19
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 

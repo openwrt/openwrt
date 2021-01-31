@@ -25,6 +25,18 @@ config MTD_SPLIT_BCM_WFI_FW
 	depends on MTD_SPLIT_SUPPORT
 	select MTD_SPLIT
 
+config MTD_SPLIT_CFE_BOOTFS
+	bool "Parser finding rootfs appended to the CFE bootfs"
+	depends on MTD_SPLIT_SUPPORT && ARCH_BCM4908
+	select MTD_SPLIT
+	help
+	  cferom on BCM4908 (and bcm63xx) uses JFFS2 bootfs partition
+	  for storing kernel, cferam and some device specific files.
+	  There isn't any straight way of storing rootfs so it gets
+	  appended to the JFFS2 bootfs partition. Kernel needs to find
+	  it and run init from it. This parser is responsible for
+	  finding appended rootfs.
+
 config MTD_SPLIT_SEAMA_FW
 	bool "Seama firmware parser"
 	depends on MTD_SPLIT_SUPPORT

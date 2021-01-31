@@ -7,9 +7,9 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.3
+PKG_VERSION:=2.4
 PKG_RELEASE:=1
-PKG_HASH:=37f917922bcef181164908c470a2f941006791c0113d738c498d39d95d543b21
+PKG_HASH:=bf3eb3617a74cddd7fb0e0eacbfe38c3258ee07d4c8ed730deef7a175cc3d55b
 
 PKG_MAINTAINER:=Vladimir Vid <vladimir.vid@sartura.hr>
 
@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Trusted-Firmware-A/Default
   BUILD_TARGET:=mvebu
   BUILD_SUBTARGET:=cortexa53
-  TFA_IMAGE:=flash-image.bin uart-images.tgz
+  TFA_IMAGE:=flash-image.bin uart-images.tgz.bin
   UBOOT:=
   DDR_TOPOLOGY:=
   CLOCKSPRESET:=
@@ -32,7 +32,7 @@ define Trusted-Firmware-A/espressobin-512mb
   BUILD_DEVICES:=globalscale_espressobin
   UBOOT:=espressobin
   DDR_TOPOLOGY:=0
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -42,17 +42,7 @@ define Trusted-Firmware-A/espressobin-v3-v5-1gb-1cs
   BUILD_DEVICES:=globalscale_espressobin
   UBOOT:=espressobin
   DDR_TOPOLOGY:=4
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
-define Trusted-Firmware-A/espressobin-v3-v5-1gb-1cs-emmc
-  NAME:=Marvell ESPRESSObin V3-V5 (1GB 1CS, eMMC)
-  DEPENDS:=+u-boot-espressobin-emmc
-  BUILD_DEVICES:=globalscale_espressobin-emmc
-  UBOOT:=espressobin-emmc
-  DDR_TOPOLOGY:=4
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -62,17 +52,7 @@ define Trusted-Firmware-A/espressobin-v3-v5-1gb-2cs
   BUILD_DEVICES:=globalscale_espressobin
   UBOOT:=espressobin
   DDR_TOPOLOGY:=2
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
-define Trusted-Firmware-A/espressobin-v3-v5-1gb-2cs-emmc
-  NAME:=Marvell ESPRESSObin V3-V5 (1GB 2CS, eMMC)
-  DEPENDS:=+u-boot-espressobin-emmc
-  BUILD_DEVICES:=globalscale_espressobin-emmc
-  UBOOT:=espressobin-emmc
-  DDR_TOPOLOGY:=2
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -82,17 +62,7 @@ define Trusted-Firmware-A/espressobin-v3-v5-2gb
   BUILD_DEVICES:=globalscale_espressobin
   UBOOT:=espressobin
   DDR_TOPOLOGY:=7
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
-define Trusted-Firmware-A/espressobin-v3-v5-2gb-emmc
-  NAME:=Marvell ESPRESSObin V3-V5 (2GB, eMMC)
-  DEPENDS:=+u-boot-espressobin-emmc
-  BUILD_DEVICES:=globalscale_espressobin-emmc
-  UBOOT:=espressobin-emmc
-  DDR_TOPOLOGY:=7
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -102,17 +72,7 @@ define Trusted-Firmware-A/espressobin-v7-1gb
   BUILD_DEVICES:=globalscale_espressobin-v7
   UBOOT:=espressobin
   DDR_TOPOLOGY:=5
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
-define Trusted-Firmware-A/espressobin-v7-1gb-emmc
-  NAME:=Marvell ESPRESSObin V7 (1GB, eMMC)
-  DEPENDS:=+u-boot-espressobin
-  BUILD_DEVICES:=globalscale_espressobin-v7-emmc
-  UBOOT:=espressobin-emmc
-  DDR_TOPOLOGY:=5
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -122,17 +82,7 @@ define Trusted-Firmware-A/espressobin-v7-2gb
   BUILD_DEVICES:=globalscale_espressobin-v7
   UBOOT:=espressobin
   DDR_TOPOLOGY:=6
-  CLOCKSPRESET:=CPU_800_DDR_800
-  PLAT:=a3700
-endef
-
-define Trusted-Firmware-A/espressobin-v7-2gb-emmc
-  NAME:=Marvell ESPRESSObin V7 (2GB, eMMC)
-  DEPENDS:=+u-boot-espressobin
-  BUILD_DEVICES:=globalscale_espressobin-v7-emmc
-  UBOOT:=espressobin-emmc
-  DDR_TOPOLOGY:=6
-  CLOCKSPRESET:=CPU_800_DDR_800
+  CLOCKSPRESET:=CPU_1000_DDR_800
   PLAT:=a3700
 endef
 
@@ -150,15 +100,10 @@ endef
 TFA_TARGETS:= \
 	espressobin-512mb \
 	espressobin-v3-v5-1gb-1cs \
-	espressobin-v3-v5-1gb-1cs-emmc \
 	espressobin-v3-v5-1gb-2cs \
-	espressobin-v3-v5-1gb-2cs-emmc \
 	espressobin-v3-v5-2gb \
-	espressobin-v3-v5-2gb-emmc \
 	espressobin-v7-1gb \
-	espressobin-v7-1gb-emmc \
 	espressobin-v7-2gb \
-	espressobin-v7-2gb-emmc \
 	udpu
 
 TFA_MAKE_FLAGS += \
@@ -168,32 +113,34 @@ TFA_MAKE_FLAGS += \
 		WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
 		DDR_TOPOLOGY=$(DDR_TOPOLOGY) \
 		CLOCKSPRESET=$(CLOCKSPRESET) \
+		A3700_UTILS_COMMIT_ID=$(A3700_UTILS_RELEASE) \
+		MV_DDR_COMMIT_ID=$(MV_DDR_RELEASE) \
 		all \
-		fip
+		mrvl_flash
 
 A3700_UTILS_NAME:=a3700-utils
-A3700_UTILS_RELEASE:=09679790
+A3700_UTILS_RELEASE:=5598e150
 A3700_UTILS_SOURCE=$(A3700_UTILS_NAME)-$(A3700_UTILS_RELEASE).tar.bz2
 
 define Download/a3700-utils
   FILE:=$(A3700_UTILS_SOURCE)
   PROTO:=git
   URL:=https://github.com/MarvellEmbeddedProcessors/A3700-utils-marvell.git
-  VERSION:=096797908ddd69a679fd55595c41fc02809829a9
-  MIRROR_HASH:=9276d63d41b2e221c2fd5cceee988ca26eff5005747787f084868b3940173b7a
+  VERSION:=5598e150fa3a1568256c30223fd2b214d729f26a
+  MIRROR_HASH:=4c3a3bed97833d08af4e42995c0c5af6c107f990fd492cd90aa3e79134d2751e
   SUBDIR:=$(A3700_UTILS_NAME)
 endef
 
 MV_DDR_NAME:=mv-ddr-marvell
-MV_DDR_RELEASE:=mainline
+MV_DDR_RELEASE:=6fb99002
 MV_DDR_SOURCE:=$(MV_DDR_NAME)-$(MV_DDR_RELEASE).tar.bz2
 
 define Download/mv-ddr-marvell
   FILE:=$(MV_DDR_SOURCE)
   PROTO:=git
   URL:=https://github.com/MarvellEmbeddedProcessors/mv-ddr-marvell.git
-  VERSION:=a881467ef0f0185e6570dd0483023fde93cbb5f5
-  MIRROR_HASH:=19f34817616c583b2b5f2612705857cf2120f6c2132355217899b1403c3fd336
+  VERSION:=6fb99002be5dec9c7f5375b074f53148dbc0739c
+  MIRROR_HASH:=6836e5ea47618a7ee2f96a1a6bd8218f003789b877e521fdfcb008f2f6475dd6
   SUBDIR:=$(MV_DDR_NAME)
 endef
 
@@ -218,7 +165,9 @@ define Build/Prepare
 
 	mkdir -p $(STAGING_DIR_IMAGE)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(A3700_UTILS_SOURCE)
+	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME),./patches-a3700-utils)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(MV_DDR_SOURCE)
+	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME),./patches-mv-ddr-marvell)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(LINARO_SOURCE)
 endef
 

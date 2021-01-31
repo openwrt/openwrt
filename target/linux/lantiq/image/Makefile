@@ -65,7 +65,6 @@ define Device/Default
   FILESYSTEMS := squashfs
   SOC := $(DEFAULT_SOC)
   DEVICE_DTS = $$(SOC)_$(1)
-  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size
 endef
