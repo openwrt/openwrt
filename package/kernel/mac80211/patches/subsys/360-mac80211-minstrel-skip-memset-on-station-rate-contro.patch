@@ -1,0 +1,23 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 1 Feb 2021 10:44:04 +0100
+Subject: [PATCH] mac80211: minstrel: skip memset on station rate control
+ data
+
+With legacy minstrel support gone, there is no need to clear the data on
+capability updates anymore. The supported flags are fully re-initialized,
+and previous rate table statistics can be preserved.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/rc80211_minstrel_ht.c
++++ b/net/mac80211/rc80211_minstrel_ht.c
+@@ -1558,8 +1558,6 @@ minstrel_ht_update_caps(void *priv, stru
+ 	else
+ 		use_vht = 0;
+ 
+-	memset(mi, 0, sizeof(*mi));
+-
+ 	mi->sta = sta;
+ 	mi->band = sband->band;
+ 	mi->last_stats_update = jiffies;
