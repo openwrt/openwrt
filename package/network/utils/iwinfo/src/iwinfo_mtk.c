@@ -391,6 +391,9 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 	for (i = 0; i < sc; i++) {
 		memset(&sce, 0, sizeof(sce));
 
+		if (strstr(stl[i].security,"UNKNOW"))
+			continue;
+
 		for (h = 0; h < 6; h++)
 			sce.mac[h] = (uint8_t)(ascii2num(stl[i].bssid[h * 3]) * 16 + ascii2num(stl[i].bssid[h * 3 + 1]));
 
