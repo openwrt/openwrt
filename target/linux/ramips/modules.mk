@@ -99,10 +99,11 @@ define KernelPackage/hsdma-mtk
 	CONFIG_DMADEVICES=y \
 	CONFIG_DW_DMAC_PCI=n \
 	CONFIG_MTK_HSDMA
+  MODNAME:=$(if $(CONFIG_LINUX_5_4),mtk-hsdma,hsdma-mt7621)
   FILES:= \
 	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
-	$(LINUX_DIR)/drivers/staging/mt7621-dma/mtk-hsdma.ko
-  AUTOLOAD:=$(call AutoLoad,53,mtk-hsdma)
+	$(LINUX_DIR)/drivers/staging/mt7621-dma/$(MODNAME).ko
+  AUTOLOAD:=$(call AutoLoad,53,$(MODNAME))
 endef
 
 define KernelPackage/hsdma-mtk/description

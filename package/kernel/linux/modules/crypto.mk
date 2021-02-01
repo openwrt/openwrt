@@ -49,7 +49,9 @@ $(eval $(call KernelPackage,crypto-aead))
 define KernelPackage/crypto-arc4
   TITLE:=ARC4 cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_ARC4
-  FILES:=$(LINUX_DIR)/crypto/arc4.ko
+  FILES:= \
+	  $(LINUX_DIR)/crypto/arc4.ko \
+	  $(LINUX_DIR)/lib/crypto/libarc4.ko
   AUTOLOAD:=$(call AutoLoad,09,arc4)
   $(call AddDepends/crypto)
 endef
@@ -838,4 +840,122 @@ define KernelPackage/crypto-xts
 endef
 
 $(eval $(call KernelPackage,crypto-xts))
+
+define KernelPackage/crypto-curve25519
+  TITLE:=Curve 25519 CryptoAPI module
+  KCONFIG:= \
+	CONFIG_CRYPTO_CURVE25519 \
+	CONFIG_CRYPTO_CURVE25519_X86 \
+	CONFIG_CRYPTO_CURVE25519_NEON
+  FILES:= \
+	$(LINUX_DIR)/crypto/curve25519-generic.ko \
+	$(LINUX_DIR)/lib/crypto/libcurve25519-generic.ko
+  AUTOLOAD:=$(call AutoLoad,09,curve25519-generic)
+  $(call AddDepends/crypto, +kmod-crypto-kpp @!LINUX_5_4)
+endef
+
+define KernelPackage/crypto-curve25519/x86/64
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/curve25519-x86_64.ko
+  AUTOLOAD+=$(call AutoLoad,09,curve25519-x86_64)
+endef
+
+define KernelPackage/crypto-curve25519/arm-neon
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/curve25519-neon.ko
+  AUTOLOAD+=$(call AutoLoad,09,curve25519-neon)
+endef
+
+KernelPackage/crypto-curve25519/imx6=$(KernelPackage/crypto-curve25519/arm-neon)
+KernelPackage/crypto-curve25519/ipq40xx=$(KernelPackage/crypto-curve25519/arm-neon)
+KernelPackage/crypto-curve25519/mvebu/cortexa9=$(KernelPackage/crypto-curve25519/arm-neon)
+
+$(eval $(call KernelPackage,crypto-curve25519))
+
+define KernelPackage/crypto-chacha20poly1305
+  TITLE:=ChaCha20 and Poly1305 CryptoAPI modules
+  KCONFIG:= \
+	CONFIG_CRYPTO_CHACHA20POLY1305 \
+	CONFIG_CRYPTO_CHACHA20_X86_64 \
+	CONFIG_CRYPTO_POLY1305_X86_64 \
+	CONFIG_CRYPTO_CHAHA20_NEON \
+	CONFIG_CRYPTO_POLY1305_NEON \
+	CONFIG_CRYPTO_POLY1305_ARM \
+	CONFIG_CRYPTO_CHACHA_MIPS \
+	CONFIG_CRYPTO_POLY1305_MIPS
+  FILES:= \
+  	$(LINUX_DIR)/crypto/chacha20poly1305.ko \
+	$(LINUX_DIR)/lib/crypto/libchacha20poly1305.ko
+  AUTOLOAD:=$(call AutoLoad,09,rfc7539)
+  $(call AddDepends/crypto, @!LINUX_5_4)
+endef
+
+define KernelPackage/crypto-chacha20poly1305/x86/64
+  FILES+= \
+	$(LINUX_DIR)/arch/x86/crypto/poly1305-x86_64.ko \
+	$(LINUX_DIR)/arch/x86/crypto/chacha-x86_64.ko
+  AUTOLOAD+= \
+	$(call AutoLoad,09,poly1305-x86_64) \
+	$(call AutoLoad,09,chacha-x86_64)
+endef
+
+define KernelPackage/crypto-chacha20poly1305/arm
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/poly1305-arm.ko
+  AUTOLOAD+=$(call AutoLoad,09,poly1305-arm)
+endef
+
+define KernelPackage/crypto-chacha20poly1305/arm-neon
+  $(call KernelPackage/crypto-chacha20poly1305/arm)
+  FILES+= \
+	$(LINUX_DIR)/arch/arm/crypto/nhpoly1305-neon.ko \
+	$(LINUX_DIR)/arch/arm/crypto/chacha-neon.ko
+  AUTOLOAD+= \
+	$(call AutoLoad,09,nhpoly1305-neon) \
+	$(call AutoLoad,09,chacha-neon)
+endef
+
+KernelPackage/crypto-chacha20poly1305/imx6=$(KernelPackage/crypto-chacha20poly1305/arm-neon)
+KernelPackage/crypto-chacha20poly1305/ipq40xx=$(KernelPackage/crypto-chacha20poly1305/arm-neon)
+KernelPackage/crypto-chacha20poly1305/mvebu/cortexa9=$(KernelPackage/crypto-chacha20poly1305/arm-neon)
+
+define KernelPackage/crypto-chacha20poly1305/mips
+  FILES+= \
+	$(LINUX_DIR)/arch/mips/crypto/poly1305-mips.ko \
+	$(LINUX_DIR)/arch/mips/crypto/chacha-mips.ko
+  AUTOLOAD+= \
+	$(call AutoLoad,09,poly1305-mips) \
+	$(call AutoLoad,09,chacha-mips)
+endef
+
+KernelPackage/crypto-chacha20poly1305/ramips=$(KernelPackage/crypto-chacha20poly1305/mips)
+
+$(eval $(call KernelPackage,crypto-chacha20poly1305))
+
+define KernelPackage/crypto-blake2s
+  TITLE:=BLAKE2s digest algorithm CryptoAPI module
+  KCONFIG:= \
+	CONFIG_CRYPTO_BLAKE2S \
+	CONFIG_CRYPTO_BLAKE2S_X86 \
+	CONFIG_CRYPTO_BLAKE2S_ARM
+  FILES:= \
+  	$(LINUX_DIR)/crypto/blake2s_generic.ko \
+	$(LINUX_DIR)/lib/crypto/libblake2s-generic.ko \
+	$(LINUX_DIR)/lib/crypto/libblake2s.ko
+  AUTOLOAD:=$(call AutoLoad,09,blake2s-generic)
+  $(call AddDepends/crypto, @!LINUX_5_4)
+endef
+
+define KernelPackage/crypto-blake2s/x86/64
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/blake2s-x86_64.ko
+  AUTOLOAD+=$(call AutoLoad,09,blake2s-x86_64)
+endef
+
+define KernelPackage/crypto-blake2s/arm
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/blake2s-arm.ko
+  AUTOLOAD+=$(call AutoLoad,09,blake2s-arm)
+endef
+
+KernelPackage/crypto-blake2s/imx6=$(KernelPackage/crypto-blake2s/arm)
+KernelPackage/crypto-blake2s/ipq40xx=$(KernelPackage/crypto-blake2s/arm)
+KernelPackage/crypto-blake2s/mvebu/cortexa9=$(KernelPackage/crypto-blake2s/arm)
+
+$(eval $(call KernelPackage,crypto-blake2s))
 

@@ -5,25 +5,42 @@
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
+#
+# When Linux 5.4 support is removed, kmod-wireguard should be moved to
+# package/kernel/linux/modules/netsupport.mk and this package removed.
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=wireguard
 
-PKG_VERSION:=1.0.20201112
-PKG_RELEASE:=1
+PKG_CONFIG_DEPENDS:=CONFIG_LINUX_5_10
 
-PKG_SOURCE:=wireguard-linux-compat-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=https://git.zx2c4.com/wireguard-linux-compat/snapshot/
-PKG_HASH:=89eae7f0c0bd6c8df3ba2e090984974ff68741a9f26aa0922890f8ca727897e1
+PKG_VERSION-:=1.0.20201112
+PKG_VERSION:=$(PKG_VERSION-$(CONFIG_LINUX_5_10))
+PKG_RELEASE-:=1
+PKG_RELEASE:=$(PKG_RELEASE-$(CONFIG_LINUX_5_10))
+
+
+PKG_SOURCE-:=wireguard-linux-compat-$(PKG_VERSION).tar.xz
+PKG_SOURCE:=$(PKG_SOURCE-$(CONFIG_LINUX_5_10))
+PKG_SOURCE_URL-:=https://git.zx2c4.com/wireguard-linux-compat/snapshot/
+PKG_SOURCE_URL:=$(PKG_SOURCE_URL-$(CONFIG_LINUX_5_10))
+PKG_HASH-:=89eae7f0c0bd6c8df3ba2e090984974ff68741a9f26aa0922890f8ca727897e1
+PKG_HASH:=$(PKG_HASH-$(CONFIG_LINUX_5_10))
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/wireguard-linux-compat-$(PKG_VERSION)
+WG_VERSION-:=$(PKG_VERSION)
+WG_VERSION-y:=$(LINUX_VERSION)
+WG_VERSION:=$(WG_VERSION-$(CONFIG_LINUX_5_10))
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/wireguard-linux-compat-$(WG_VERSION)
 PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
+
+WG_BUILD_DIR-="$(PKG_BUILD_DIR)/src"
+WG_BUILD_DIR-y="$(LINUX_DIR)/drivers/net/wireguard"
 
 # WireGuard's makefile needs this to know where to build the kernel module
 export KERNELDIR:=$(LINUX_DIR)
@@ -50,6 +67,7 @@ endef
 define Package/wireguard
   $(call Package/wireguard/Default)
   TITLE:=WireGuard meta-package
+  VERSION:=$(WG_VERSION)
   DEPENDS:=+wireguard-tools +kmod-wireguard
 endef
 
@@ -57,7 +75,7 @@ include $(INCLUDE_DIR)/kernel-defaults.mk
 include $(INCLUDE_DIR)/package-defaults.mk
 
 define Build/Compile
-	$(MAKE) $(KERNEL_MAKEOPTS) M="$(PKG_BUILD_DIR)/src" modules
+	$(MAKE) $(KERNEL_MAKEOPTS) M=$(WG_BUILD_DIR-$(CONFIG_LINUX_5_10)) modules
 endef
 
 define Package/wireguard/install
@@ -73,8 +91,17 @@ define KernelPackage/wireguard
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
   TITLE:=WireGuard kernel module
-  DEPENDS:=+IPV6:kmod-udptunnel6 +kmod-udptunnel4
-  FILES:= $(PKG_BUILD_DIR)/src/wireguard.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:= \
+	CONFIG_WIREGUARD \
+	CONFIG_WIREGUARD_DEBUG=n
+  DEPENDS:= \
+	+IPV6:kmod-udptunnel6 \
+	+kmod-udptunnel4 \
+	+@!LINUX_5_4:kmod-crypto-curve25519 \
+	+@!LINUX_5_4:kmod-crypto-chacha20poly1305 \
+	+@!LINUX_5_4:kmod-crypto-blake2s \
+
+  FILES:=$(WG_BUILD_DIR-$(CONFIG_LINUX_5_10))/wireguard.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoProbe,wireguard)
 endef
 

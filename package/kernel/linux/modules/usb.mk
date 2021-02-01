@@ -412,7 +412,7 @@ $(eval $(call KernelPackage,usb2-pci))
 
 define KernelPackage/usb-dwc2
   TITLE:=DWC2 USB controller driver
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget +kmod-usb-roles
   KCONFIG:= \
 	CONFIG_USB_PCI=y \
 	CONFIG_USB_DWC2 \
@@ -1587,10 +1587,23 @@ endef
 
 $(eval $(call KernelPackage,usbip-server))
 
+define KernelPackage/usb-roles
+  TITLE:=USB Role Switch Library Module
+  KCONFIG:=CONFIG_USB_ROLE_SWITCH
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/usb/roles/roles.ko
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-roles/description
+  Support for USB Role Switch
+endef
+
+$(eval $(call KernelPackage,usb-roles))
 
 define KernelPackage/usb-chipidea
   TITLE:=Host and device support for Chipidea controllers
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ath79 +kmod-usb-ehci +kmod-usb-phy-nop
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ath79 +kmod-usb-ehci +kmod-usb-phy-nop +kmod-usb-roles
   KCONFIG:= \
 	CONFIG_EXTCON \
 	CONFIG_USB_CHIPIDEA \
@@ -1600,8 +1613,7 @@ define KernelPackage/usb-chipidea
   FILES:= \
 	$(LINUX_DIR)/drivers/extcon/extcon-core.ko \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
-	$(LINUX_DIR)/drivers/usb/common/ulpi.ko \
-	$(LINUX_DIR)/drivers/usb/roles/roles.ko
+	$(LINUX_DIR)/drivers/usb/common/ulpi.ko
   AUTOLOAD:=$(call AutoLoad,39,ci_hdrc,1)
   $(call AddDepends/usb)
 endef
