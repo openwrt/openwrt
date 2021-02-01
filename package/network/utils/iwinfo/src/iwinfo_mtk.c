@@ -405,7 +405,9 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 		sce.signal = atoi(stl[i].signal);
 		sce.mode = IWINFO_OPMODE_MASTER;
 
-		if (strcmp(stl[i].security,"NONE")) {
+		if (!strcmp(stl[i].security, "NONE") || !strcmp(stl[i].security, "OPEN")) {
+			sce.crypto.enabled = 0;
+		} else {
 			sce.crypto.enabled = 1;
 
 			if (strstr(stl[i].security,"WPA3"))
@@ -424,8 +426,6 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 				sce.crypto.pair_ciphers = IWINFO_CIPHER_CCMP;
 			else if (!strcmp(stl[i].crypto,"TKIP"))
 				sce.crypto.pair_ciphers = IWINFO_CIPHER_TKIP;
-		} else {
-			sce.crypto.enabled = 0;
 		}
 		
 		memcpy(buf + *len, &sce, sizeof(struct iwinfo_scanlist_entry));
