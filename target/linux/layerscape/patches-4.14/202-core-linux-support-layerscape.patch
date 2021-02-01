@@ -837,7 +837,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -808,6 +808,32 @@ void napi_consume_skb(struct sk_buff *sk
+@@ -812,6 +812,32 @@ void napi_consume_skb(struct sk_buff *sk
  }
  EXPORT_SYMBOL(napi_consume_skb);
  
@@ -870,7 +870,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  /* Make sure a field is enclosed inside headers_start/headers_end section */
  #define CHECK_SKB_FIELD(field) \
  	BUILD_BUG_ON(offsetof(struct sk_buff, field) <		\
-@@ -1327,7 +1353,7 @@ static void skb_headers_offset_update(st
+@@ -1331,7 +1357,7 @@ static void skb_headers_offset_update(st
  	skb->inner_mac_header += off;
  }
  
@@ -879,7 +879,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  {
  	__copy_skb_header(new, old);
  
-@@ -1335,6 +1361,7 @@ static void copy_skb_header(struct sk_bu
+@@ -1339,6 +1365,7 @@ static void copy_skb_header(struct sk_bu
  	skb_shinfo(new)->gso_segs = skb_shinfo(old)->gso_segs;
  	skb_shinfo(new)->gso_type = skb_shinfo(old)->gso_type;
  }
