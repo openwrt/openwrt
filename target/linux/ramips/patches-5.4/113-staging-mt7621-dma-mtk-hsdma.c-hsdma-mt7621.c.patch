@@ -1,0 +1,53 @@
+From 1552889ea32038d489dfac1c978b879c4fa72e29 Mon Sep 17 00:00:00 2001
+From: Ilya Lipnitskiy <ilya.lipnitskiy@gmail.com>
+Date: Fri, 29 Jan 2021 18:39:02 -0800
+Subject: [PATCH] staging/mt7621-dma: mtk-hsdma.c->hsdma-mt7621.c
+
+Also use KBUILD_MODNAME for module name.
+
+This driver is only used by RALINK MIPS MT7621 SoCs. Tested by building
+against that target using OpenWrt with Linux 5.10.10.
+
+Fixes the following error:
+error: the following would cause module name conflict:
+  drivers/dma/mediatek/mtk-hsdma.ko
+  drivers/staging/mt7621-dma/mtk-hsdma.ko
+
+Cc: stable@vger.kernel.org
+Cc: Masahiro Yamada <masahiroy@kernel.org>
+Signed-off-by: Ilya Lipnitskiy <ilya.lipnitskiy@gmail.com>
+---
+ drivers/staging/mt7621-dma/Makefile                        | 2 +-
+ drivers/staging/mt7621-dma/{mtk-hsdma.c => hsdma-mt7621.c} | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ rename drivers/staging/mt7621-dma/{mtk-hsdma.c => hsdma-mt7621.c} (99%)
+
+diff --git a/drivers/staging/mt7621-dma/Makefile b/drivers/staging/mt7621-dma/Makefile
+index 66da1bf10c32..23256d1286f3 100644
+--- a/drivers/staging/mt7621-dma/Makefile
++++ b/drivers/staging/mt7621-dma/Makefile
+@@ -1,4 +1,4 @@
+ # SPDX-License-Identifier: GPL-2.0
+-obj-$(CONFIG_MTK_HSDMA) += mtk-hsdma.o
++obj-$(CONFIG_MTK_HSDMA) += hsdma-mt7621.o
+ 
+ ccflags-y += -I$(srctree)/drivers/dma
+diff --git a/drivers/staging/mt7621-dma/mtk-hsdma.c b/drivers/staging/mt7621-dma/hsdma-mt7621.c
+similarity index 99%
+rename from drivers/staging/mt7621-dma/mtk-hsdma.c
+rename to drivers/staging/mt7621-dma/hsdma-mt7621.c
+index bc4bb4374313..b0ed935de7ac 100644
+--- a/drivers/staging/mt7621-dma/mtk-hsdma.c
++++ b/drivers/staging/mt7621-dma/hsdma-mt7621.c
+@@ -749,7 +749,7 @@ static struct platform_driver mtk_hsdma_driver = {
+ 	.probe = mtk_hsdma_probe,
+ 	.remove = mtk_hsdma_remove,
+ 	.driver = {
+-		.name = "hsdma-mt7621",
++		.name = KBUILD_MODNAME,
+ 		.of_match_table = mtk_hsdma_of_match,
+ 	},
+ };
+-- 
+2.30.0
+
