@@ -1176,6 +1176,16 @@ config KERNEL_SECURITY_SELINUX_DEVELOP
 	depends on KERNEL_SECURITY_SELINUX
 	default y
 
+config KERNEL_SECURITY_SELINUX_SIDTAB_HASH_BITS
+	int
+	depends on KERNEL_SECURITY_SELINUX
+	default 9
+
+config KERNEL_SECURITY_SELINUX_SID2STR_CACHE_SIZE
+	int
+	depends on KERNEL_SECURITY_SELINUX
+	default 256
+
 config KERNEL_LSM
 	string
 	default "lockdown,yama,loadpin,safesetid,integrity,selinux"
