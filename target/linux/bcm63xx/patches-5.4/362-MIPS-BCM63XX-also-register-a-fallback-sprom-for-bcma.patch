@@ -84,7 +84,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  /* FIXME: use lib_sprom after submission upstream */
  
-@@ -654,10 +671,11 @@ int __init bcm63xx_register_fallback_spr
+@@ -718,10 +735,11 @@ int __init bcm63xx_register_fallback_spr
  {
  	int ret = 0;
  
@@ -97,7 +97,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	case SPROM_BCM4306:
  		memcpy(&template_sprom, &bcm4306_sprom, sizeof(bcm4306_sprom));
  		size = ARRAY_SIZE(bcm4306_sprom);
-@@ -678,6 +696,7 @@ int __init bcm63xx_register_fallback_spr
+@@ -742,6 +760,7 @@ int __init bcm63xx_register_fallback_spr
  		memcpy(&template_sprom, &bcm43222_sprom, sizeof(bcm43222_sprom));
  		size = ARRAY_SIZE(bcm43222_sprom);
  		break;
@@ -105,7 +105,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	case SPROM_DEFAULT:
  		memcpy(&bcm63xx_sprom, &bcm63xx_default_sprom,
  		       sizeof(bcm63xx_sprom));
-@@ -692,8 +711,19 @@ int __init bcm63xx_register_fallback_spr
+@@ -756,8 +775,19 @@ int __init bcm63xx_register_fallback_spr
  	memcpy(bcm63xx_sprom.il0mac, data->mac_addr, ETH_ALEN);
  	memcpy(bcm63xx_sprom.et0mac, data->mac_addr, ETH_ALEN);
  	memcpy(bcm63xx_sprom.et1mac, data->mac_addr, ETH_ALEN);

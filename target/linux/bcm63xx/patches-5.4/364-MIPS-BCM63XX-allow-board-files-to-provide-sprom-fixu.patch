@@ -16,7 +16,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/sprom.c
 +++ b/arch/mips/bcm63xx/sprom.c
-@@ -883,6 +883,14 @@ static int sprom_extract(struct ssb_spro
+@@ -947,6 +947,14 @@ static int sprom_extract(struct ssb_spro
  	return 0;
  }
  
@@ -31,7 +31,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static __initdata u16 template_sprom[220];
  #endif
  
-@@ -961,8 +969,12 @@ int __init bcm63xx_register_fallback_spr
+@@ -1025,8 +1033,12 @@ int __init bcm63xx_register_fallback_spr
  		return -EINVAL;
  	}
  
