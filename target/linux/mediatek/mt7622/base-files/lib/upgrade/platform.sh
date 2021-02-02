@@ -10,6 +10,14 @@ platform_do_upgrade() {
 	mediatek,mt7622,ubi)
 		nand_do_upgrade "$1"
 		;;
+	linksys,e8450)
+		if grep -q mtdparts=slave /proc/cmdline; then
+			PART_NAME=firmware2
+		else
+			PART_NAME=firmware1
+		fi
+		default_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
