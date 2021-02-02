@@ -1,0 +1,26 @@
+diff --git a/drivers/staging/mt7621-dma/Makefile b/drivers/staging/mt7621-dma/Makefile
+index 66da1bf10c32..23256d1286f3 100644
+--- a/drivers/staging/mt7621-dma/Makefile
++++ b/drivers/staging/mt7621-dma/Makefile
+@@ -1,4 +1,4 @@
+ # SPDX-License-Identifier: GPL-2.0
+-obj-$(CONFIG_MTK_HSDMA) += mtk-hsdma.o
++obj-$(CONFIG_MTK_HSDMA) += hsdma-mt7621.o
+ 
+ ccflags-y += -I$(srctree)/drivers/dma
+diff --git a/drivers/staging/mt7621-dma/mtk-hsdma.c b/drivers/staging/mt7621-dma/hsdma-mt7621.c
+similarity index 99%
+rename from drivers/staging/mt7621-dma/mtk-hsdma.c
+rename to drivers/staging/mt7621-dma/hsdma-mt7621.c
+index bc4bb4374313..b0ed935de7ac 100644
+--- a/drivers/staging/mt7621-dma/mtk-hsdma.c
++++ b/drivers/staging/mt7621-dma/hsdma-mt7621.c
+@@ -749,7 +749,7 @@ static struct platform_driver mtk_hsdma_driver = {
+ 	.probe = mtk_hsdma_probe,
+ 	.remove = mtk_hsdma_remove,
+ 	.driver = {
+-		.name = "hsdma-mt7621",
++		.name = KBUILD_MODNAME,
+ 		.of_match_table = mtk_hsdma_of_match,
+ 	},
+ };
