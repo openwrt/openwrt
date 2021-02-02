@@ -38,6 +38,18 @@ define Device/elecom_wrc-2533gent
 endef
 TARGET_DEVICES += elecom_wrc-2533gent
 
+define Device/linksys_e8450
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := E8450
+  DEVICE_ALT0_VENDOR := Belkin
+  DEVICE_ALT0_MODEL := RT3200
+  DEVICE_DTS := mt7622-linksys-e8450
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk \
+		     kmod-mt7615e kmod-mt7615-firmware kmod-mt7915e
+endef
+TARGET_DEVICES += linksys_e8450
+
 define Device/mediatek_mt7622-rfb1
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MTK7622 rfb1 AP
