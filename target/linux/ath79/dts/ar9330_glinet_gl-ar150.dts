@@ -10,6 +10,9 @@
 	model = "GL.iNet GL-AR150";
 	compatible = "glinet,gl-ar150", "qca,ar9330";
 
+	aliases {
+		serial0 = &uart;
+       };
 
 	leds {
 		compatible = "gpio-leds";
