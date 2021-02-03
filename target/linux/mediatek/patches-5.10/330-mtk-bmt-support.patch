@@ -23,7 +23,7 @@
  obj-y	+= raw/
 --- /dev/null
 +++ b/drivers/mtd/nand/mtk_bmt.c
-@@ -0,0 +1,766 @@
+@@ -0,0 +1,781 @@
 +/*
 + * Copyright (c) 2017 MediaTek Inc.
 + * Author: Xiangsheng Hou <xiangsheng.hou@mediatek.com>
@@ -56,7 +56,7 @@
 +#define BBT_LOG(fmt, ...) pr_debug("[BBT][%s|%d] "fmt"\n", __func__, __LINE__, ##__VA_ARGS__)
 +
 +/* Maximum 8k blocks */
-+#define BB_TABLE_MAX	0x2000U
++#define BB_TABLE_MAX	bmtd.table_size
 +#define BMT_TABLE_MAX	(BB_TABLE_MAX * BBPOOL_RATIO / 100)
 +#define BMT_TBL_DEF_VAL	0x0
 +
@@ -71,14 +71,15 @@
 +#define BBMT_VERSION		2
 +	unsigned char version;
 +	/* Below 2 tables will be written in SLC */
-+	u16 bb_tbl[BB_TABLE_MAX];
-+	struct bbmt {
-+		u16 block;
++	u16 bb_tbl[];
++};
++
++struct bbmt {
++	u16 block;
 +#define NO_MAPPED		0
 +#define NORMAL_MAPPED	1
 +#define BMT_MAPPED		2
-+		u16 mapped;
-+	} bmt_tbl[BMT_TABLE_MAX];
++	u16 mapped;
 +};
 +
 +static struct bmt_desc {
@@ -94,6 +95,7 @@
 +
 +	struct dentry *debugfs_dir;
 +
++	u32 table_size;
 +	u32 pg_size;
 +	u32 blk_size;
 +	u16 pg_shift;
@@ -152,6 +154,11 @@
 +}
 +
 +/* -------- Bad Blocks Management -------- */
++static inline struct bbmt *bmt_tbl(struct bbbt *bbbt)
++{
++	return (struct bbmt *)&bbbt->bb_tbl[bmtd.table_size];
++}
++
 +static int
 +read_bmt(u16 block, unsigned char *dat, unsigned char *fdm, int fdm_len)
 +{
@@ -269,8 +276,8 @@
 +	 *		BMT always in the last valid block in pool
 +	 */
 +	while ((block = find_valid_block(block)) != 0) {
-+		bbt->bmt_tbl[i].block = block;
-+		bbt->bmt_tbl[i].mapped = NO_MAPPED;
++		bmt_tbl(bbt)[i].block = block;
++		bmt_tbl(bbt)[i].mapped = NO_MAPPED;
 +		BBT_LOG("bmt_tbl[%d].block = 0x%x", i, block);
 +		block++;
 +		i++;
@@ -280,7 +287,7 @@
 +	 * bmtd.bmt_blk_idx - bmt_tbl[bmtd.bmt_blk_idx].block => the BMT block
 +	 */
 +	bmtd.bmt_blk_idx = i - 1;
-+	bbt->bmt_tbl[bmtd.bmt_blk_idx].mapped = BMT_MAPPED;
++	bmt_tbl(bbt)[bmtd.bmt_blk_idx].mapped = BMT_MAPPED;
 +
 +	if (i < 1) {
 +		pr_info("nand: FATAL ERR: no space to store BMT!!\n");
@@ -332,7 +339,7 @@
 +		return scan_bmt(block - 1);
 +
 +	if (is_valid_bmt(nand_bbt_buf, fdm)) {
-+		bmtd.bmt_blk_idx = get_bmt_index(((struct bbbt *)nand_bbt_buf)->bmt_tbl);
++		bmtd.bmt_blk_idx = get_bmt_index(bmt_tbl((struct bbbt *)nand_bbt_buf));
 +		if (bmtd.bmt_blk_idx == 0) {
 +			pr_info("[BBT] FATAL ERR: bmt block index is wrong!\n");
 +			return NULL;
@@ -351,15 +358,15 @@
 +	u16 block;
 +
 +retry:
-+	if (n < 0 || bbt->bmt_tbl[n].mapped == NORMAL_MAPPED) {
++	if (n < 0 || bmt_tbl(bbt)[n].mapped == NORMAL_MAPPED) {
 +		pr_info("nand: FATAL ERR: no space to store BMT!\n");
 +		return (u16)-1;
 +	}
 +
-+	block = bbt->bmt_tbl[n].block;
++	block = bmt_tbl(bbt)[n].block;
 +	BBT_LOG("n = 0x%x, block = 0x%x", n, block);
 +	if (bbt_nand_erase(block)) {
-+		bbt->bmt_tbl[n].block = 0;
++		bmt_tbl(bbt)[n].block = 0;
 +		/* erase failed, try the previous block: bmt_tbl[n - 1].block */
 +		n--;
 +		goto retry;
@@ -372,7 +379,7 @@
 +	bbt->version = BBMT_VERSION;
 +
 +	if (write_bmt(block, (unsigned char *)bbt)) {
-+		bbt->bmt_tbl[n].block = 0;
++		bmt_tbl(bbt)[n].block = 0;
 +
 +		/* write failed, try the previous block in bmt_tbl[n - 1] */
 +		n--;
@@ -391,9 +398,9 @@
 +		goto error;
 +
 +	for (i = 0; i < bmtd.bmt_blk_idx; i++) {
-+		if (bbt->bmt_tbl[i].block != 0 && bbt->bmt_tbl[i].mapped == NO_MAPPED) {
-+			bbt->bmt_tbl[i].mapped = NORMAL_MAPPED;
-+			return bbt->bmt_tbl[i].block;
++		if (bmt_tbl(bbt)[i].block != 0 && bmt_tbl(bbt)[i].mapped == NO_MAPPED) {
++			bmt_tbl(bbt)[i].mapped = NORMAL_MAPPED;
++			return bmt_tbl(bbt)[i].block;
 +		}
 +	}
 +
@@ -471,6 +478,7 @@
 +		ops->retlen += cur_ops.retlen;
 +		ops->oobretlen += cur_ops.oobretlen;
 +
++		cur_ops.ooboffs = 0;
 +		cur_ops.datbuf += cur_ops.retlen;
 +		cur_ops.oobbuf += cur_ops.oobretlen;
 +		cur_ops.ooblen -= cur_ops.oobretlen;
@@ -521,6 +529,7 @@
 +		ops->retlen += cur_ops.retlen;
 +		ops->oobretlen += cur_ops.oobretlen;
 +
++		cur_ops.ooboffs = 0;
 +		cur_ops.datbuf += cur_ops.retlen;
 +		cur_ops.oobbuf += cur_ops.oobretlen;
 +		cur_ops.ooblen -= cur_ops.oobretlen;
@@ -673,7 +682,7 @@
 +	u32 block;
 +	u16 total_blocks, pmt_block;
 +	int ret = 0;
-+	u32 bmt_pool_size;
++	u32 bmt_pool_size, bmt_table_size;
 +
 +	if (bmtd.mtd)
 +		return -ENOSPC;
@@ -693,9 +702,14 @@
 +				 &bmtd.oob_offset) != 0)
 +		bmtd.oob_offset = 8;
 +
++	if (of_property_read_u32(np, "mediatek,bmt-table-size",
++				 &bmt_table_size) != 0)
++		bmt_table_size = 0x2000U;
++
 +	bmtd.mtd = mtd;
 +	mtk_bmt_replace_ops(mtd);
 +
++	bmtd.table_size = bmt_table_size;
 +	bmtd.blk_size = mtd->erasesize;
 +	bmtd.blk_shift = ffs(bmtd.blk_size) - 1;
 +	bmtd.pg_size = mtd->writesize;
@@ -723,7 +737,8 @@
 +	bmtd.bb_max = bmtd.total_blks * BBPOOL_RATIO / 100;
 +
 +	/* 3 buffers we need */
-+	bufsz = round_up(sizeof(struct bbbt), bmtd.pg_size);
++	bufsz = round_up(sizeof(struct bbbt) +
++			 bmt_table_size * sizeof(struct bbmt), bmtd.pg_size);
 +	bmtd.bmt_pgs = bufsz >> bmtd.pg_shift;
 +
 +	nand_bbt_buf = kzalloc(bufsz, GFP_KERNEL);
@@ -756,7 +771,7 @@
 +		}
 +
 +		bbt = (struct bbbt *)nand_bbt_buf;
-+		memset(bbt->bmt_tbl, BMT_TBL_DEF_VAL, sizeof(bbt->bmt_tbl));
++		memset(bmt_tbl(bbt), BMT_TBL_DEF_VAL, bmtd.table_size * sizeof(struct bbmt));
 +
 +		if (scan_bad_blocks(bbt)) {
 +			ret = -1;
@@ -765,7 +780,7 @@
 +
 +		/* BMT always in the last valid block in pool */
 +		bmtd.bmt_blk_idx = upload_bmt(bbt, bmtd.bmt_blk_idx);
-+		block = bbt->bmt_tbl[bmtd.bmt_blk_idx].block;
++		block = bmt_tbl(bbt)[bmtd.bmt_blk_idx].block;
 +		pr_notice("[BBT] BMT.v2 is written into PBA:0x%x\n", block);
 +
 +		if (bmtd.bmt_blk_idx == 0)
