@@ -10,19 +10,12 @@
 	model = "GL.iNet GL-AR150";
 	compatible = "glinet,gl-ar150", "qca,ar9330";
 
-	aliases {
-		serial0 = &uart;
-		led-boot = &led_power;
-		led-failsafe = &led_power;
-		led-running = &led_power;
-		led-upgrade = &led_power;
-	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "gl-ar150:orange:wlan";
+			label = "gl-ar150:red:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};

@@ -64,6 +64,16 @@
 		gpio = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_usb_power {
+			gpio-export,name = "usb_power";
+			gpio-export,output = <1>;
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 &spi {
