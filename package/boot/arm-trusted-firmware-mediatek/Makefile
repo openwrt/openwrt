@@ -17,11 +17,9 @@ PKG_SOURCE_DATE:=2020-11-09
 PKG_SOURCE_VERSION:=03017334ccd8c0fac12e7db36749b95b9a7d745f
 PKG_MIRROR_HASH:=b211b2f9143d4debc7ad8dc959cb606888af20af790855dd66c87e451b6a1bc7
 
-PKG_LICENSE:=BSD-3-Clause
-PKG_LICENSE_FILES:=docs/license.rst
-
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
+include $(INCLUDE_DIR)/trusted-firmware-a.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Download/mt7622-header-emmc
@@ -65,8 +63,6 @@ define Package/arm-trusted-firmware-mt7622-sdmmc
   VARIANT:=sdmmc
 endef
 
-export GCC_HONOUR_COPTS=s
-
 MAKE_VARS = \
 	CROSS_COMPILE="$(TARGET_CROSS)"
 
@@ -87,15 +83,15 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/build/mt7622/release/bl2.bin $(STAGING_DIR_IMAGE)/bl2-$(BUILD_VARIANT).bin
-	$(CP) $(PKG_BUILD_DIR)/build/mt7622/release/bl2.img $(STAGING_DIR_IMAGE)/bl2-$(BUILD_VARIANT).img
+	$(CP) $(PKG_BUILD_DIR)/build/mt7622/release/bl2.bin $(STAGING_DIR_IMAGE)/mt7622-bl2-$(BUILD_VARIANT).bin
+	$(CP) $(PKG_BUILD_DIR)/build/mt7622/release/bl2.img $(STAGING_DIR_IMAGE)/mt7622-bl2-$(BUILD_VARIANT).img
 # bl31.bin turns out to be identical for all build variants
-	$(CP) $(PKG_BUILD_DIR)/build/mt7622/release/bl31.bin $(STAGING_DIR_IMAGE)/bl31.bin
+	$(CP) $(PKG_BUILD_DIR)/build/mt7622/release/bl31.bin $(STAGING_DIR_IMAGE)/mt7622-bl31.bin
 ifeq ($(BUILD_VARIANT),emmc)
-	$(CP) $(DL_DIR)/mt7622-header_emmc.bin $(STAGING_DIR_IMAGE)/header-emmc.bin
+	$(CP) $(DL_DIR)/mt7622-header_emmc.bin $(STAGING_DIR_IMAGE)
 endif
 ifeq ($(BUILD_VARIANT),sdmmc)
-	$(CP) $(DL_DIR)/mt7622-header_sdmmc.bin $(STAGING_DIR_IMAGE)/header-sdmmc.bin
+	$(CP) $(DL_DIR)/mt7622-header_sdmmc.bin $(STAGING_DIR_IMAGE)
 endif
 endef
 
