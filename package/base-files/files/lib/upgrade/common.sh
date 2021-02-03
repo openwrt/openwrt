@@ -65,17 +65,9 @@ _v() {
 	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$*" >&2
 }
 
-_vn() {
-	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo -n "$*" >&2
-}
-
 v() {
 	_v "$(date) upgrade: $@"
 	logger -p info -t upgrade "$@"
-}
-
-vn() {
-	_vn "$(date) upgrade: $@"
 }
 
 json_string() {
