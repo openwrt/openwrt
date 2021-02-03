@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tfa-layerscape
 PKG_VERSION:=LSDK-20.04-update-290520
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/atf
 PKG_SOURCE_VERSION:=7d748e6f0ec652ba7c43733dc67a3d0b0217390a
 PKG_MIRROR_HASH:=d209c9ad18aac9f18375450b98b8dab00f0382ccb485df14623bf9b72ea1dd9b
-PKG_BUILD_DEPENDS:=tfa-layerscape/host
+PKG_BUILD_DEPENDS:=arm-trusted-firmware-tools/host tfa-layerscape/host
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
@@ -23,16 +23,11 @@ include $(INCLUDE_DIR)/package.mk
 HOST_CFLAGS += -Wall -Werror -pedantic -std=c99
 define Host/Compile
 	$(MAKE) -C \
-		$(HOST_BUILD_DIR)/tools/fiptool \
-		CFLAGS="$(HOST_CFLAGS)" \
-		LDFLAGS="$(HOST_LDFLAGS)"
-	$(MAKE) -C \
 		$(HOST_BUILD_DIR)/plat/nxp/tools \
 		CFLAGS="$(HOST_CFLAGS)"
 endef
 
 define Host/Install
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/fiptool/fiptool $(STAGING_DIR_HOST)/bin/tfa-fiptool
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/plat/nxp/tools/create_pbl $(STAGING_DIR_HOST)/bin/tfa-create-pbl
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/plat/nxp/tools/byte_swap $(STAGING_DIR_HOST)/bin/tfa-byte-swap
 endef
@@ -128,7 +123,7 @@ define Build/Compile
 		fip pbl PLAT=$(PLAT) BOOT_MODE=$(BOOT_MODE) \
 		RCW=$(STAGING_DIR_IMAGE)/fsl_$(BUILD_VARIANT)-rcw.bin \
 		BL33=$(STAGING_DIR_IMAGE)/fsl_$(BUILD_VARIANT)-uboot.bin \
-		FIPTOOL=$(STAGING_DIR_HOST)/bin/tfa-fiptool \
+		FIPTOOL=$(STAGING_DIR_HOST)/bin/fiptool \
 		CREATE_PBL=$(STAGING_DIR_HOST)/bin/tfa-create-pbl \
 		BYTE_SWAP=$(STAGING_DIR_HOST)/bin/tfa-byte-swap
 endef
