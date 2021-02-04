@@ -14,6 +14,7 @@ FIND="$(command -v find)"
 FIND="${FIND:-$(command -v gfind)}"
 TAR="${TAR:-$(command -v tar)}"
 GZIP="$(command -v gzip)"
+REALPATH="$(command -v realpath)"
 
 # try to use fixed source epoch
 if [ -n "$PKG_SOURCE_DATE_EPOCH" ]; then
@@ -125,7 +126,7 @@ case $# in
 	;;
 esac
 
-pkg_dir=$1
+pkg_dir=`$REALPATH $1`
 
 if [ ! -d $pkg_dir ]; then
 	echo "*** Error: Directory $pkg_dir does not exist" >&2
