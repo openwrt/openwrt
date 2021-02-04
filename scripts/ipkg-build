@@ -124,7 +124,7 @@ case $# in
 	;;
 esac
 
-pkg_dir="$1"
+pkg_dir="$(realpath "$1")"
 
 if [ ! -d "$pkg_dir" ]; then
 	echo "*** Error: Directory $pkg_dir does not exist" >&2
