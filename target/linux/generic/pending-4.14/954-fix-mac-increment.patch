@@ -1,0 +1,66 @@
+--- a/drivers/of/of_net.c
++++ b/drivers/of/of_net.c
+@@ -12,6 +12,41 @@
+ #include <linux/export.h>
+ #include <linux/mtd/mtd.h>
+ 
++#ifndef CHAR_BIT
++	#define CHAR_BIT 8
++#endif
++
++/** Convert hex mac address to uint64_t
++ *  @param[in] hwaddr hex mac address
++ *  @return mac address as uint64_t
++ */
++static uint64_t mac2int(const uint8_t hwaddr[])
++{
++    int8_t i;
++    uint64_t ret = 0;
++    const uint8_t *p = hwaddr;
++
++    for (i = 5; i >= 0; i--) {
++        ret |= (uint64_t) *p++ << (CHAR_BIT * i);
++    }
++
++    return ret;
++}
++
++/** Convert uint64_t mac address to hex
++ * @param[in] mac uint64_t mac address
++ * @param[out] hwaddr hex mac address
++ */
++static void int2mac(const uint64_t mac, uint8_t *hwaddr)
++{
++    int8_t i;
++    uint8_t *p = hwaddr;
++
++    for (i = 5; i >= 0; i--) {
++        *p++ = mac >> (CHAR_BIT * i);
++    }
++}
++
+ /**
+  * of_get_phy_mode - Get phy mode for given device_node
+  * @np:	Pointer to the given device_node
+@@ -60,6 +95,7 @@ static const void *of_get_mac_address_mt
+ 	const __be32 *list;
+ 	phandle phandle;
+ 	u32 mac_inc = 0;
++	uint64_t mac_int = 0;
+ 	u8 mac[ETH_ALEN];
+ 	void *addr;
+ 	u32 inc_idx;
+@@ -91,8 +127,11 @@ static const void *of_get_mac_address_mt
+ 	if (inc_idx > 5)
+ 		return NULL;
+ 
+-	if (!of_property_read_u32(np, "mtd-mac-address-increment", &mac_inc))
+-		mac[inc_idx] += mac_inc;
++	if (!of_property_read_u32(np, "mtd-mac-address-increment", &mac_inc)){
++		mac_int = mac2int(mac);
++		mac_int += mac_inc << ((5-inc_idx) * CHAR_BIT);
++		int2mac(mac_int,mac);
++	}
+ 
+ 	if (!is_valid_ether_addr(mac))
+ 		return NULL;
