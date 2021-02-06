@@ -1,7 +1,8 @@
 . /lib/functions.sh
 
 case "$(board_name)" in
-	linksys,wrt1900ac-v1)
+	linksys,wrt1900ac-v1|\
+        linksys,wrt32x)
 		uci set system.@system[0].compat_version="2.0"
 		uci commit system
 		;;
