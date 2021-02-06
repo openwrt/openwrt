@@ -94,6 +94,10 @@ vocore,vocore-16m)
 zorlik,zl5900v2)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
+zte,mf283plus)
+	ucidef_set_led_wlan "wifi" "wifi" "rt2800soc-phy0::radio" "phy0tpt"
+	ucidef_set_led_netdev "wwan" "wwan" "blue:wwan" "wwan0"
+	;;
 esac
 
 board_config_flush
