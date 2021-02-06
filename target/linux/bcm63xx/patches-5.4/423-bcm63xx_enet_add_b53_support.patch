@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/broadcom/bcm63xx_enet.h
 +++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.h
-@@ -332,6 +332,9 @@ struct bcm_enet_priv {
+@@ -338,6 +338,9 @@ struct bcm_enet_priv {
  	struct bcm63xx_enetsw_port used_ports[ENETSW_MAX_PORT];
  	int sw_port_link[ENETSW_MAX_PORT];
  
@@ -20,7 +20,7 @@
  
  #include <bcm63xx_dev_enet.h>
  #include "bcm63xx_enet.h"
-@@ -1909,7 +1910,8 @@ static int bcm_enet_remove(struct platfo
+@@ -1931,7 +1932,8 @@ static int bcm_enet_remove(struct platfo
  	return 0;
  }
  
@@ -30,7 +30,7 @@
  	.probe	= bcm_enet_probe,
  	.remove	= bcm_enet_remove,
  	.driver	= {
-@@ -1918,6 +1920,42 @@ struct platform_driver bcm63xx_enet_driv
+@@ -1940,6 +1942,42 @@ struct platform_driver bcm63xx_enet_driv
  	},
  };
  
@@ -73,7 +73,7 @@
  /*
   * switch mii access callbacks
   */
-@@ -2174,29 +2212,6 @@ static int bcm_enetsw_open(struct net_de
+@@ -2196,29 +2234,6 @@ static int bcm_enetsw_open(struct net_de
  		enetsw_writeb(priv, rgmii_ctrl, ENETSW_RGMII_CTRL_REG(i));
  	}
  
@@ -113,7 +113,7 @@
  
  	if (!bcm_enet_shared_base[0])
  		return -EPROBE_DEFER;
-@@ -2731,6 +2749,43 @@ static int bcm_enetsw_probe(struct platf
+@@ -2732,6 +2750,43 @@ static int bcm_enetsw_probe(struct platf
  	priv->pdev = pdev;
  	priv->net_dev = dev;
  
@@ -157,7 +157,7 @@
  	return 0;
  
  out_disable_clk:
-@@ -2752,6 +2807,9 @@ static int bcm_enetsw_remove(struct plat
+@@ -2753,6 +2808,9 @@ static int bcm_enetsw_remove(struct plat
  	priv = netdev_priv(dev);
  	unregister_netdev(dev);
  

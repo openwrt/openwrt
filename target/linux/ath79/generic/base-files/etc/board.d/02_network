@@ -32,6 +32,7 @@ ath79_setup_interfaces()
 	dlink,dap-2680-a1|\
 	dlink,dap-3320-a1|\
 	dlink,dir-505|\
+	engenius,eap1200h|\
 	engenius,eap300-v2|\
 	engenius,eap600|\
 	engenius,ecb1200|\
@@ -107,7 +108,8 @@ ath79_setup_interfaces()
 	alfa-network,n5q|\
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
-	ocedo,ursus)
+	ocedo,ursus|\
+	ubnt,unifi-ap-outdoor-plus)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	avm,fritz4020|\
@@ -198,7 +200,8 @@ ath79_setup_interfaces()
 			"0@eth0" "2:wan" "3:lan" "4:lan"
 		;;
 	dlink,dap-2695-a1)
-		ucidef_add_switch "switch0" "0@eth0" "2:lan" "3:wan" "6@eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:wan" "6@eth1"
 		;;
 	dlink,dch-g020-a1)
 		ucidef_add_switch "switch0" \
@@ -262,6 +265,11 @@ ath79_setup_interfaces()
 	librerouter,librerouter-v1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:wan" "6@eth1" "4:lan"
+		;;
+	meraki,mr12)
+		ucidef_set_interface_lan "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan"
 		;;
 	mercury,mw4530r-v1|\
 	tplink,archer-a7-v5|\

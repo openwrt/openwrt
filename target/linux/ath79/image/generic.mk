@@ -19,14 +19,10 @@ define Build/add-elecom-factory-initramfs
 	-f 0x70000 -S 0x01100000 \
 	-i $@ -o $@.factory
 
-  ( \
-	echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
-	echo -n "0.00" | dd bs=16 count=1 conv=sync; \
-	dd if=$@.factory; \
-  ) > $@.factory.new
+  $(call Build/elecom-product-header,$(product) $@.factory)
 
-  if [ "$$(stat -c%s $@.factory.new)" -le $$(($(subst k,* 1024,$(subst m, * 1024k,$(IMAGE_SIZE))))) ]; then \
-	mv $@.factory.new $(BIN_DIR)/$(KERNEL_INITRAMFS_PREFIX)-factory.bin; \
+  if [ "$$(stat -c%s $@.factory)" -le $$(($(subst k,* 1024,$(subst m, * 1024k,$(IMAGE_SIZE))))) ]; then \
+	mv $@.factory $(BIN_DIR)/$(KERNEL_INITRAMFS_PREFIX)-factory.bin; \
   else \
 	echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
   fi
@@ -957,6 +953,17 @@ define Device/embeddedwireless_dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
+define Device/engenius_eap1200h
+  $(Device/engenius_loader_okli)
+  SOC := qca9557
+  DEVICE_MODEL := EAP1200H
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11520k
+  LOADER_FLASH_OFFS := 0x230000
+  ENGENIUS_IMGNAME := ar71xx-generic-eap1200h
+endef
+TARGET_DEVICES += engenius_eap1200h
+
 define Device/engenius_eap300-v2
   $(Device/engenius_loader_okli)
   SOC := ar9341
@@ -1301,6 +1308,23 @@ define Device/librerouter_librerouter-v1
   DEVICE_PACKAGES := kmod-usb2
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
+
+define Device/meraki_mr12
+  SOC := ar7242
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := MR12
+  IMAGE_SIZE := 15616k
+  DEVICE_PACKAGES := kmod-owl-loader rssileds
+  SUPPORTED_DEVICES += mr12
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partitions differ from ar71xx version of MR12. Image format is incompatible. \
+	To use sysupgrade, you must change /lib/update/common.sh::get_image to prepend 128K zeroes to this image, \
+	and change the bootcmd in u-boot to "bootm 0xbf0a0000". After that, you can use "sysupgrade -F -n". \
+	Make sure you do not keep your old config, as ethernet setup is not compatible either. \
+	For more details, see the OpenWrt Wiki: https://openwrt.org/toh/meraki/MR12, \
+	or the commit message of the MR12 ath79 port on git.openwrt.org.
+endef
+TARGET_DEVICES += meraki_mr12
 
 define Device/meraki_mr16
   SOC := ar7161

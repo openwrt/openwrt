@@ -101,8 +101,8 @@
 
 		clock-frequency = <200000000>;
 
-		interrupt-parent = <&cpuintc>;
-		interrupts = <3>;
+		interrupt-parent = <&intc>;
+		interrupts = <31>;
 
 		reg-io-width = <1>;
 		reg-shift = <2>;
@@ -180,9 +180,8 @@
 	switch0: switch@bb000000 {
 		status = "okay";
 
-		interrupt-parent = <&cpuintc>;
-		interrupts = <4>;
-
+		interrupt-parent = <&intc>;
+		interrupts = <20>;
 
 		compatible = "realtek,rtl83xx-switch";
 	};

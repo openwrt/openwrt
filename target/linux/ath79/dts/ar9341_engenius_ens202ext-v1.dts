@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	model = "Engenius ENS202EXT v1";
@@ -70,7 +71,8 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				compatible = "openwrt,okli";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <IH_MAGIC_OKLI>;
 				label = "firmware";
 				reg = <0x0 0x0>;
 			};

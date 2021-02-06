@@ -1,9 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2006-2010 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2006-2020 OpenWrt.org
 
 override TARGET_BUILD=
 include $(INCLUDE_DIR)/prereq.mk
@@ -404,7 +401,7 @@ define Device/Init
   UIMAGE_NAME :=
   DEVICE_COMPAT_VERSION := 1.0
   DEVICE_COMPAT_MESSAGE :=
-  SUPPORTED_DEVICES :=
+  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGE_METADATA :=
 
   FILESYSTEMS := $(TARGET_FILESYSTEMS)

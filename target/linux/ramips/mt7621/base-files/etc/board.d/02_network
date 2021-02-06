@@ -19,6 +19,7 @@ ramips_setup_interfaces()
 	mikrotik,routerboard-m33g|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3g-v2|\
+	xiaomi,mi-router-4|\
 	xiaomi,mi-router-4a-gigabit)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
@@ -96,6 +97,11 @@ ramips_setup_macs()
 	edimax,rg21s)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		;;
+	elecom,wrc-2533ghbk-i)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		label_mac=$wan_mac
 		;;
 	hiwifi,hc5962)
 		lan_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")

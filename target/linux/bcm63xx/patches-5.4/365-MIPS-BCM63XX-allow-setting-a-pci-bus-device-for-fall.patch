@@ -57,7 +57,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		return 0;
  	} else {
  		printk(KERN_ERR PFX "unable to fill SPROM for given bustype.\n");
-@@ -962,8 +980,8 @@ int __init bcm63xx_register_fallback_spr
+@@ -1026,8 +1044,8 @@ int __init bcm63xx_register_fallback_spr
  		break;
  #endif
  	case SPROM_DEFAULT:
@@ -68,7 +68,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		break;
  	default:
  		return -EINVAL;
-@@ -973,12 +991,15 @@ int __init bcm63xx_register_fallback_spr
+@@ -1037,12 +1055,15 @@ int __init bcm63xx_register_fallback_spr
  		sprom_apply_fixups(template_sprom, data->board_fixups,
  				   data->num_board_fixups);
  

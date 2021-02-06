@@ -88,7 +88,6 @@ define Device/Default
   KERNEL_LOADADDR := 0x00000000
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $(subst _,-,$(1))
-  SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
 endef
 
 include $(SUBTARGET).mk

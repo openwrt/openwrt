@@ -117,7 +117,9 @@ GCC_CONFIGURE:= \
 		--with-mpc=$(TOPDIR)/staging_dir/host \
 		--disable-decimal-float \
 		--with-diagnostics-color=auto-if-env \
-		--enable-__cxa_atexit
+		--enable-__cxa_atexit \
+		--disable-libstdcxx-dual-abi \
+		--with-default-libstdcxx-abi=new
 ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
   GCC_CONFIGURE += --with-mips-plt
 endif

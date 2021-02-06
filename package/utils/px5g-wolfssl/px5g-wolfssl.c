@@ -232,8 +232,10 @@ int selfsigned(WC_RNG *rng, char **arg) {
           subject, fstr, tstr);
 
   if (type == EC_KEY_TYPE) {
+    newCert.sigType = CTC_SHA256wECDSA;
     ret = wc_MakeCert(&newCert, derBuf, sizeof(derBuf), NULL, &ecKey, rng);
   } else {
+    newCert.sigType = CTC_SHA256wRSA;
     ret = wc_MakeCert(&newCert, derBuf, sizeof(derBuf), &rsaKey, NULL, rng);
   }
   if (ret <= 0) {
@@ -242,11 +244,9 @@ int selfsigned(WC_RNG *rng, char **arg) {
   }
 
   if (type == EC_KEY_TYPE) {
-    newCert.sigType = CTC_SHA256wECDSA;
     ret = wc_SignCert(newCert.bodySz, newCert.sigType, derBuf, sizeof(derBuf),
                       NULL, &ecKey, rng);
   } else {
-    newCert.sigType = CTC_SHA256wRSA;
     ret = wc_SignCert(newCert.bodySz, newCert.sigType, derBuf, sizeof(derBuf),
                       &rsaKey, NULL, rng);
   }

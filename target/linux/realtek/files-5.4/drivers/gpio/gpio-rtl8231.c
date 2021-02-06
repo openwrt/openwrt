@@ -12,6 +12,8 @@
 #define RTL8231_GPIO_DIR(gpio)			((0x0005) + ((gpio) >> 4))
 #define RTL8231_GPIO_DATA(gpio)			((0x001C) + ((gpio) >> 4))
 
+#define USEC_TIMEOUT 5000
+
 struct rtl8231_gpios {
 	struct gpio_chip gc;
 	struct device *dev;
@@ -27,7 +29,7 @@ extern struct rtl83xx_soc_info soc_info;
 
 static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
 {
-	u32 t = 0;
+	u32 t = 0, n = 0;
 	u8 bus_id = gpios->smi_bus_id;
 
 	reg &= 0x1f;
@@ -38,10 +40,18 @@ static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
 
 	/* Set execution bit: cleared when operation completed */
 	t |= 1;
+
+	// Start execution
 	sw_w32(t, gpios->ext_gpio_indrt_access);
-	do {	/* TODO: Return 0x80000000 if timeout */
+	do {
+		udelay(1);
 		t = sw_r32(gpios->ext_gpio_indrt_access);
-	} while (t & 1);
+		n++;
+	} while ((t & 1) && (n < USEC_TIMEOUT));
+
+	if (n >= USEC_TIMEOUT)
+		return 0x80000000;
+	
 	pr_debug("%s: %x, %x, %x\n", __func__, bus_id, reg, (t & 0xffff0000) >> 16);
 
 	return (t & 0xffff0000) >> 16;
@@ -49,7 +59,7 @@ static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
 
 static int rtl8231_write(struct rtl8231_gpios *gpios, u32 reg, u32 data)
 {
-	u32 t = 0;
+	u32 t = 0, n = 0;
 	u8 bus_id = gpios->smi_bus_id;
 
 	pr_debug("%s: %x, %x, %x\n", __func__, bus_id, reg, data);
@@ -62,10 +72,16 @@ static int rtl8231_write(struct rtl8231_gpios *gpios, u32 reg, u32 data)
 
 	/* Set execution bit: cleared when operation completed */
 	t |= 1;
+
+	// Start execution
 	sw_w32(t, gpios->ext_gpio_indrt_access);
-	do {	/* TODO: Return -1 if timeout */
+	do {
+		udelay(1);
 		t = sw_r32(gpios->ext_gpio_indrt_access);
-	} while (t & 1);
+	} while ((t & 1) && (n < USEC_TIMEOUT));
+
+	if (n >= USEC_TIMEOUT)
+		return -1;
 
 	return 0;
 }
@@ -94,7 +110,7 @@ static int rtl8231_pin_dir(struct rtl8231_gpios *gpios, u32 gpio, u32 dir)
 	int dpin = pin;
 
 	if (gpio > 31) {
-		pr_info("WARNING: HIGH pin\n");
+		pr_debug("WARNING: HIGH pin\n");
 		dpin = pin << 5;
 		pin_dir_addr = pin_sel_addr;
 	}
@@ -226,25 +242,20 @@ int rtl8231_init(struct rtl8231_gpios *gpios)
 {
 	pr_info("%s called, MDIO bus ID: %d\n", __func__, gpios->smi_bus_id);
 
+	gpios->reg_cached = 0;
+
 	if (soc_info.family == RTL8390_FAMILY_ID) {
+		// RTL8390: Enable external gpio in global led control register
 		sw_w32_mask(0x7 << 18, 0x4 << 18, RTL839X_LED_GLB_CTRL);
-		return 0;
+	} else if (soc_info.family == RTL8380_FAMILY_ID) {
+		// RTL8380: Enable RTL8231 indirect access mode
+		sw_w32_mask(0, 1, RTL838X_EXTRA_GPIO_CTRL);
+		sw_w32_mask(3, 1, RTL838X_DMY_REG5);
 	}
-
-	/* Enable RTL8231 indirect access mode */
-	sw_w32_mask(0, 1, RTL838X_EXTRA_GPIO_CTRL);
-	sw_w32_mask(3, 1, RTL838X_DMY_REG5);
-
-	/* Enable RTL8231 via GPIO_A1 line
-	rtl838x_w32_mask(0, 1 << RTL838X_GPIO_A1, RTL838X_GPIO_PABC_DIR);
-	rtl838x_w32_mask(0, 1 << RTL838X_GPIO_A1, RTL838X_GPIO_PABC_DATA); */
-	mdelay(50); /* wait 50ms for reset */
 
 	/*Select GPIO functionality for pins 0-15, 16-31 and 32-37 */
 	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(0), 0xffff);
 	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(16), 0xffff);
-
-	gpios->reg_cached = 0;
 
 	return 0;
 }
@@ -262,7 +273,7 @@ static int rtl8231_gpio_probe(struct platform_device *pdev)
 	struct device_node *np = dev->of_node;
 	struct rtl8231_gpios *gpios;
 	int err;
-	u8 indirect_bus_id;
+	u32 indirect_bus_id;
 
 	pr_info("Probing RTL8231 GPIOs\n");
 
@@ -284,10 +295,15 @@ static int rtl8231_gpio_probe(struct platform_device *pdev)
 		gpios->ext_gpio_indrt_access = RTL839X_EXT_GPIO_INDRT_ACCESS;
 	}
 
-	if (!of_property_read_u8(np, "indirect-access-bus-id", &indirect_bus_id)) {
-		gpios->smi_bus_id = indirect_bus_id;
-		rtl8231_init(gpios);
-	}
+	/*
+	 * We use a default MDIO bus ID for the 8231 of 0, which can be overriden
+	 * by the indirect-access-bus-id property in the dts.
+	 */
+	gpios->smi_bus_id = 0;
+	of_property_read_u32(np, "indirect-access-bus-id", &indirect_bus_id);
+	gpios->smi_bus_id = indirect_bus_id;
+
+	rtl8231_init(gpios);
 
 	gpios->dev = dev;
 	gpios->gc.base = 160;
