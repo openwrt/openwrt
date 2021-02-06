@@ -4,6 +4,23 @@
 # This is free software, licensed under the GNU General Public License v2.
 #
 
+define KernelPackage/amazon-ena
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Elastic Network Adapter (for Amazon AWS T3)
+  DEPENDS:=@TARGET_x86_64
+  KCONFIG:=CONFIG_ENA_ETHERNET
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/amazon/ena/ena.ko
+  AUTOLOAD:=$(call AutoLoad,12,ena)
+endef
+
+define KernelPackage/amazon-ena/description
+  This driver supports Elastic Network Adapter (ENA)
+  used by Amazon AWS T3 instances.
+endef
+
+$(eval $(call KernelPackage,amazon-ena))
+
+
 define KernelPackage/sound-cs5535audio
   TITLE:=CS5535/CS5536 Audio Controller
   DEPENDS:=@TARGET_x86_geode +kmod-ac97
