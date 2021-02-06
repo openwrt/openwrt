@@ -1183,6 +1183,16 @@ define Device/zorlik_zl5900v2
 endef
 TARGET_DEVICES += zorlik_zl5900v2
 
+define Device/zte_mf283plus
+  SOC := rt3352
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := ZTE
+  DEVICE_MODEL := MF283+
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-net-qmi-wwan uqmi \
+	kmod-usb-serial kmod-usb-serial-option
+endef
+TARGET_DEVICES += zte_mf283plus
+
 define Device/zyxel_keenetic
   SOC := rt3052
   BLOCKSIZE := 64k
