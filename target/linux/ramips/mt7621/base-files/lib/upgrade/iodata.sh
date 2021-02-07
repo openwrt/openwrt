@@ -29,7 +29,7 @@ iodata_mstc_upgrade_prepare() {
 		iodata_mstc_prepare_fail
 	fi
 
-	if [ -z "$persist_mtd" -o -z "$factory_mtd" ]; then
+	if [ -z "$persist_mtd" ] || [ -z "$factory_mtd" ]; then
 		echo 'cannot find mtd partition(s), "factory" or "persist"'
 		iodata_mstc_prepare_fail
 	fi
@@ -37,11 +37,11 @@ iodata_mstc_upgrade_prepare() {
 	local bootnum=$(hexdump -s 4 -n 1 -e '"%x"' ${persist_mtd})
 	local debugflag=$(hexdump -s $((dflag_offset)) -n 1 -e '"%x"' ${factory_mtd})
 
-	if [ "$bootnum" != "1" -a "$bootnum" != "2" ]; then
+	if [ "$bootnum" != "1" ] && [ "$bootnum" != "2" ]; then
 		echo "failed to get bootnum, please check the value at 0x4 in ${persist_mtd}"
 		iodata_mstc_prepare_fail
 	fi
-	if [ "$debugflag" != "0" -a "$debugflag" != "1" ]; then
+	if [ "$debugflag" != "0" ] && [ "$debugflag" != "1" ]; then
 		echo "failed to get debugflag, please check the value at ${dflag_offset} in ${factory_mtd}"
 		iodata_mstc_prepare_fail
 	fi
