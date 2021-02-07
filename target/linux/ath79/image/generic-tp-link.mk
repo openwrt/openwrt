@@ -1,5 +1,17 @@
 include ./common-tp-link.mk
 
+define Device/tplink_archer-a6-v2
+  $(Device/tplink-safeloader-uimage)
+  SOC := qca9563
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := Archer A6
+  DEVICE_VARIANT := v2 (EU/RU)
+  TPLINK_BOARD_ID := ARCHER-A6-V2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+endef
+TARGET_DEVICES += tplink_archer-a6-v2
+
+
 define Device/tplink_archer-a7-v5
   $(Device/tplink-safeloader-uimage)
   SOC := qca9563

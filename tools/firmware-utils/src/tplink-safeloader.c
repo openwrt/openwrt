@@ -760,6 +760,39 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the Archer A6 v2 (EU/RU) */
+	{
+		.id	 = "ARCHER-A6-V2",
+		.vendor = "",
+		.support_list =
+			"SupportList:\r\n"
+			"{product_name:Archer A6,product_ver:2.0.0,special_id:45550000}\r\n",
+		.part_trail = 0x00,
+		.soft_ver = "soft_ver:1.9.1\n",
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"default-mac", 0x20000, 0x00200},
+			{"pin", 0x20200, 0x00100},
+			{"product-info", 0x20300, 0x00200},
+			{"device-id", 0x20500, 0x0fb00},
+			{"firmware", 0x30000, 0x7a9400},
+			{"soft-version", 0x7d9400, 0x00100},
+			{"extra-para", 0x7d9500, 0x00100},
+			{"support-list", 0x7d9600, 0x00200},
+			{"profile", 0x7d9800, 0x03000},
+			{"default-config", 0x7dc800, 0x03000},
+			{"partition-table", 0x7df800, 0x00800},
+			{"user-config", 0x7e0000, 0x0c000},
+			{"certificate", 0x7ec000, 0x04000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the A7-V5 */
 	{
 		.id     = "ARCHER-A7-V5",
