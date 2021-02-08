@@ -113,6 +113,14 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
+	jcg,y2|\
+	wavlink,wl-wn531a6|\
+	winstars,ws-wn583a6|\
+	zbtlink,zbt-we1326|\
+	zbtlink,zbt-wg3526-16m|\
+	zbtlink,zbt-wg3526-32m)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
 	linksys,ea7500-v2)
@@ -127,13 +135,6 @@ ramips_setup_macs()
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add $label_mac 1)
-		;;
-	wavlink,wl-wn531a6|\
-	winstars,ws-wn583a6|\
-	zbtlink,zbt-we1326|\
-	zbtlink,zbt-wg3526-16m|\
-	zbtlink,zbt-wg3526-32m)
-		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	esac
 
