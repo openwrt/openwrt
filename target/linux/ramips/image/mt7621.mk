@@ -684,6 +684,19 @@ define Device/jcg_jhr-ac876m
 endef
 TARGET_DEVICES += jcg_jhr-ac876m
 
+define Device/jcg_y2
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | jcg-header 95.1
+  JCG_MAXSIZE := 16064k
+  DEVICE_VENDOR := JCG
+  DEVICE_MODEL := Y2
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+endef
+TARGET_DEVICES += jcg_y2
+
 define Device/lenovo_newifi-d1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
