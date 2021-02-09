@@ -6,6 +6,14 @@ else
   KERNEL_LOADADDR := 0x44000000
 endif
 
+define Build/bl2
+	$(CP) $(STAGING_DIR_IMAGE)/mt7622-$1-bl2.img $@
+endef
+
+define Build/bl31-uboot
+	$(CP) $(STAGING_DIR_IMAGE)/mt7622_$1-u-boot.fip $@
+endef
+
 define Device/bpi_bananapi-r64
   DEVICE_VENDOR := Bpi
   DEVICE_MODEL := Banana Pi R64
@@ -49,6 +57,36 @@ define Device/linksys_e8450
 		     kmod-mt7615e kmod-mt7615-firmware kmod-mt7915e
 endef
 TARGET_DEVICES += linksys_e8450
+
+define Device/linksys_e8450-ubi
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := E8450
+  DEVICE_VARIANT := UBI
+  DEVICE_ALT0_VENDOR := Belkin
+  DEVICE_ALT0_MODEL := RT3200
+  DEVICE_ALT0_VARIANT := UBI
+  DEVICE_DTS := mt7622-linksys-e8450-ubi
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBOOTENV_IN_UBI := 1
+  KERNEL_IN_UBI := 1
+  KERNEL := kernel-bin | gzip
+# recovery can also be used with stock firmware web-ui, hence the padding...
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk \
+		     kmod-mt7615e kmod-mt7615-firmware kmod-mt7915e \
+		     u-boot-mt7622_linksys_e8450 uboot-envtools
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := bl2 snand-1ddr
+  ARTIFACT/bl31-uboot.fip := bl31-uboot linksys_e8450
+endef
+TARGET_DEVICES += linksys_e8450-ubi
 
 define Device/mediatek_mt7622-rfb1
   DEVICE_VENDOR := MediaTek
