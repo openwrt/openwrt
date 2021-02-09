@@ -26,24 +26,20 @@ Signed-off-by: Raphaël Mélotte <raphael.melotte@mind.be>
  src/common/wpa_ctrl.h |  3 +++
  5 files changed, 36 insertions(+)
 
-diff --git a/hostapd/config_file.c b/hostapd/config_file.c
-index e09e6e141..6b88ecd17 100644
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4323,6 +4323,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
+@@ -4456,6 +4456,8 @@ static int hostapd_config_fill(struct ho
  		bss->multicast_to_unicast = atoi(pos);
  	} else if (os_strcmp(buf, "broadcast_deauth") == 0) {
  		bss->broadcast_deauth = atoi(pos);
 +	} else if (os_strcmp(buf, "notify_mgmt_frames") == 0) {
 +		conf->notify_mgmt_frames = atoi(pos);
  #ifdef CONFIG_DPP
- 	} else if (os_strcmp(buf, "dpp_connector") == 0) {
- 		os_free(bss->dpp_connector);
-diff --git a/hostapd/hostapd.conf b/hostapd/hostapd.conf
-index ce3ecdddf..28dcd4f57 100644
+ 	} else if (os_strcmp(buf, "dpp_name") == 0) {
+ 		os_free(bss->dpp_name);
 --- a/hostapd/hostapd.conf
 +++ b/hostapd/hostapd.conf
-@@ -550,6 +550,10 @@ wmm_ac_vo_acm=0
+@@ -571,6 +571,10 @@ wmm_ac_vo_acm=0
  # Default: 1 (enabled)
  #broadcast_deauth=1
  
@@ -54,11 +50,9 @@ index ce3ecdddf..28dcd4f57 100644
  ##### IEEE 802.11n related configuration ######################################
  
  # ieee80211n: Whether IEEE 802.11n (HT) is enabled
-diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
-index ea581a822..2f89d6ab9 100644
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1008,6 +1008,8 @@ struct hostapd_config {
+@@ -1060,6 +1060,8 @@ struct hostapd_config {
  	unsigned int airtime_update_interval;
  #define AIRTIME_MODE_MAX (__AIRTIME_MODE_MAX - 1)
  #endif /* CONFIG_AIRTIME_POLICY */
@@ -67,11 +61,9 @@ index ea581a822..2f89d6ab9 100644
  };
  
  
-diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
-index c85a28db4..fc1291024 100644
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -4591,6 +4591,28 @@ static int handle_action(struct hostapd_data *hapd,
+@@ -4878,6 +4878,28 @@ static int handle_action(struct hostapd_
  	return 1;
  }
  
@@ -100,7 +92,7 @@ index c85a28db4..fc1291024 100644
  
  /**
   * ieee802_11_mgmt - process incoming IEEE 802.11 management frames
-@@ -4665,6 +4687,9 @@ int ieee802_11_mgmt(struct hostapd_data *hapd, const u8 *buf, size_t len,
+@@ -4969,6 +4991,9 @@ int ieee802_11_mgmt(struct hostapd_data
  	if (hapd->iconf->track_sta_max_num)
  		sta_track_add(hapd->iface, mgmt->sa, ssi_signal);
  
@@ -110,13 +102,11 @@ index c85a28db4..fc1291024 100644
  	switch (stype) {
  	case WLAN_FC_STYPE_AUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::auth");
-diff --git a/src/common/wpa_ctrl.h b/src/common/wpa_ctrl.h
-index b24ae63e5..eeff9fcaa 100644
 --- a/src/common/wpa_ctrl.h
 +++ b/src/common/wpa_ctrl.h
-@@ -375,6 +375,9 @@ extern "C" {
- #define WDS_STA_INTERFACE_ADDED "WDS-STA-INTERFACE-ADDED "
- #define WDS_STA_INTERFACE_REMOVED "WDS-STA-INTERFACE-REMOVED "
+@@ -396,6 +396,9 @@ extern "C" {
+ #define BIT(x) (1U << (x))
+ #endif
  
 +/* Event triggered for received management frame */
 +#define AP_MGMT_FRAME_RECEIVED "AP-MGMT-FRAME-RECEIVED "
@@ -124,6 +114,3 @@ index b24ae63e5..eeff9fcaa 100644
  /* BSS command information masks */
  
  #define WPA_BSS_MASK_ALL		0xFFFDFFFF
--- 
-2.28.0
-
