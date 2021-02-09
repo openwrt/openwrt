@@ -32,14 +32,6 @@ endef
 HOST_CFLAGS += -Wall -Werror -pedantic -std=c99
 define Host/Compile
 	$(MAKE) -C \
-		$(HOST_BUILD_DIR)/tools/cert_create \
-		CFLAGS="$(HOST_CFLAGS)" \
-		LDFLAGS="$(HOST_LDFLAGS)"
-	$(MAKE) -C \
-		$(HOST_BUILD_DIR)/tools/encrypt_fw \
-		CFLAGS="$(HOST_CFLAGS)" \
-		LDFLAGS="$(HOST_LDFLAGS)"
-	$(MAKE) -C \
 		$(HOST_BUILD_DIR)/tools/fiptool \
 		CFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)"
@@ -52,16 +44,12 @@ endef
 define Host/Install
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin/
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/fiptool/fiptool $(STAGING_DIR_HOST)/bin/
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/cert_create/cert_create $(STAGING_DIR_HOST)/bin/
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/encrypt_fw/encrypt_fw $(STAGING_DIR_HOST)/bin/
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/sptool/sptool $(STAGING_DIR_HOST)/bin/
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/sptool/sp_mk_generator.py $(STAGING_DIR_HOST)/bin/
 endef
 
 define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/bin/fiptool
-	rm -f $(STAGING_DIR_HOST)/bin/cert_create
-	rm -f $(STAGING_DIR_HOST)/bin/encrypt_fw
 	rm -f $(STAGING_DIR_HOST)/bin/sptool
 	rm -f $(STAGING_DIR_HOST)/bin/sp_mk_generator.py
 endef
