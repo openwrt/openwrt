@@ -21,6 +21,11 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += mkf2fs e2fsprogs
+DEFAULT_PACKAGES += \
+	e2fsprogs \
+	kmod-usb3 \
+	kmod-usb-dwc3 \
+	kmod-usb-storage-uas \
+	mkf2fs
 
 $(eval $(call BuildTarget))

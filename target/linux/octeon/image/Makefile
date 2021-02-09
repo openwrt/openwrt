@@ -58,7 +58,7 @@ define Device/ubnt_edgerouter-4
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := EdgeRouter 4
   DEVICE_DTS := cn7130_ubnt_edgerouter-4
-  DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio kmod-of-mdio kmod-sfp kmod-usb3 kmod-usb-dwc3 kmod-usb-storage-uas
+  DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio kmod-of-mdio kmod-sfp
   KERNEL := kernel-bin | patch-cmdline | append-dtb-to-elf
   KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
   CMDLINE := root=/dev/mmcblk0p2 rootfstype=squashfs,ext4 rootwait
