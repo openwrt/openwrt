@@ -7,7 +7,7 @@
 	model = "Netgear R6220";
 
 	aliases {
-		label-mac-device = &gmac0;
+		label-mac-device = &ethernet;
 	};
 };
 
@@ -55,15 +55,10 @@
 	};
 };
 
-&gmac0 {
+&ethernet {
+	mtd-mac-address = <&factory 0x4>;
 	nvmem-cells = <&macaddr_factory_4>;
 	nvmem-cell-names = "mac-address";
-};
-
-&wan {
-	nvmem-cells = <&macaddr_factory_4>;
-	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &factory {
