@@ -274,7 +274,7 @@
  	if (ieee802_11_build_ap_params(hapd, &params) < 0)
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -4579,6 +4579,60 @@ static void wpas_event_unprot_beacon(str
+@@ -4581,6 +4581,60 @@ static void wpas_event_unprot_beacon(str
  }
  
  
@@ -335,7 +335,7 @@
  void supplicant_event(void *ctx, enum wpa_event_type event,
  		      union wpa_event_data *data)
  {
-@@ -4881,8 +4935,10 @@ void supplicant_event(void *ctx, enum wp
+@@ -4883,8 +4937,10 @@ void supplicant_event(void *ctx, enum wp
  			channel_width_to_string(data->ch_switch.ch_width),
  			data->ch_switch.cf1,
  			data->ch_switch.cf2);
