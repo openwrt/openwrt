@@ -123,7 +123,6 @@ define Device/linksys_wrt1900ac-v1
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864
   KERNEL_SIZE := 4096k
   SUPPORTED_DEVICES += armada-xp-linksys-mamba linksys,mamba
-  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt1900ac-v1
 
@@ -163,7 +162,6 @@ define Device/linksys_wrt32x
   KERNEL_SIZE := 6144k
   KERNEL := kernel-bin | append-dtb
   SUPPORTED_DEVICES += armada-385-linksys-venom linksys,venom
-  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt32x
 
