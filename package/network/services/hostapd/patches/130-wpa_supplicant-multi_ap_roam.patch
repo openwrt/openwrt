@@ -1,0 +1,37 @@
+From 8a4893dd06eb236460db4937f3c54e246739ad28 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rapha=C3=ABl=20M=C3=A9lotte?= <raphael.melotte@mind.be>
+Date: Wed, 3 Feb 2021 14:23:17 +0100
+Subject: [PATCH] wpa_supplicant: multi_ap: only enable 4addr mode if not
+ already enabled
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If 4addr mode is already enabled, the call to enable it a second time
+may fail. If this happens when roaming, it leads to deauthentication.
+
+Signed-off-by: Raphaël Mélotte <raphael.melotte@mind.be>
+---
+ wpa_supplicant/events.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -2589,11 +2589,13 @@ static void multi_ap_set_4addr_mode(stru
+ 		goto fail;
+ 	}
+ 
+-	if (wpa_drv_set_4addr_mode(wpa_s, 1) < 0) {
+-		wpa_printf(MSG_ERROR, "Failed to set 4addr mode");
+-		goto fail;
++	if (wpa_s->enabled_4addr_mode == 0) {
++		if (wpa_drv_set_4addr_mode(wpa_s, 1) < 0) {
++			wpa_printf(MSG_ERROR, "Failed to set 4addr mode");
++			goto fail;
++		}
++		wpa_s->enabled_4addr_mode = 1;
+ 	}
+-	wpa_s->enabled_4addr_mode = 1;
+ 	return;
+ 
+ fail:
