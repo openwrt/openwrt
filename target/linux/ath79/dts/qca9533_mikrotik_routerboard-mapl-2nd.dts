@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9533_mikrotik_routerboard-16m.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-mapl-2nd", "qca,qca9533";
+	model = "MikroTik RouterBOARD mAPL-2nD (mAP lite)";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		serial0 = &uart;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+
+		led_power: power {
+			label = "green:power";
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		eth {
+			label = "green:eth";
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan {
+			label = "green:wlan";
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		user {
+			label = "green:user";
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpio {
+	// gpios 4,11,14,17
+	mask = <0x00024810>;
+};
