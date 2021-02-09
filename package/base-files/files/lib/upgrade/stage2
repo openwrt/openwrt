@@ -137,9 +137,9 @@ for service in /etc/init.d/*; do
 	ubus call service delete '{ "name": "'"$service"'" }' 2>/dev/null
 done
 
-killall -9 telnetd
-killall -9 dropbear
-killall -9 ash
+killall -9 telnetd 2>/dev/null
+killall -9 dropbear 2>/dev/null
+killall -9 ash 2>/dev/null
 
 kill_remaining TERM
 sleep 4
