@@ -532,7 +532,12 @@ static void g997_channel_status(int fd, DSL_AccessDir_t direction) {
 	IOCTL_DIR(DSL_G997_ChannelStatus_t, DSL_FIO_G997_CHANNEL_STATUS_GET, direction);
 
 	m_u32("interleave_delay", out.data.ActualInterleaveDelay * 10);
+#ifndef INCLUDE_DSL_CPE_API_DANUBE
+	// prefer ACTNDR, see comments in drv_dsl_cpe_api_g997.h
+	m_u32("data_rate", out.data.ActualNetDataRate);
+#else
 	m_u32("data_rate", out.data.ActualDataRate);
+#endif
 }
 
 static void g997_line_status(int fd, DSL_AccessDir_t direction) {
