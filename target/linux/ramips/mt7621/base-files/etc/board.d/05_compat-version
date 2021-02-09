@@ -8,7 +8,22 @@
 board_config_update
 
 case "$(board_name)" in
-	xiaomi,mi-router-cr660x)
+	d-team,newifi-d2|\
+	gehua,ghl-r-001|\
+	jcg,y2|\
+	netgear,r6220|\
+	netgear,wndr3700-v5|\
+	phicomm,k2p|\
+	xiaomi_mi-router-3g-nor|\
+	xiaomi,mi-router-3g|\
+	xiaomi_mi-router-4|\
+	xiaomi,mi-router-ac2100|\
+	xiaomi,mi-router-cr660x|\
+	xiaomi,redmi-router-ac2100|\
+	xwrt,nxc200p|\
+	xwrt,puppies|\
+	xwrt,t-cpe1201k-v01|\
+	xwrt,t-cpe1200k-v01)
 		ucidef_set_compat_version "1.0"
 		;;
 	*)
