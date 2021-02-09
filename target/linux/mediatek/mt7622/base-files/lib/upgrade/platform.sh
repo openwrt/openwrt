@@ -1,5 +1,9 @@
+RAMFS_COPY_BIN='fw_printenv fw_setenv'
+RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
+
 platform_do_upgrade() {
 	local board=$(board_name)
+	local file_type=$(identify $1)
 
 	case "$board" in
 	bananapi,bpi-r64-rootdisk)
@@ -7,7 +11,9 @@ platform_do_upgrade() {
 		#of eMMC and to the location of the kernel
 		get_image "$1" | dd of=/dev/mmcblk0 bs=2097152 seek=1 conv=fsync
 		;;
+	linksys,e8450-ubi|\
 	mediatek,mt7622,ubi)
+		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
 		;;
 	linksys,e8450)

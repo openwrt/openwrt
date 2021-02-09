@@ -12,6 +12,7 @@ mediatek_setup_interfaces()
 	bananapi,bpi-r64-rootdisk|\
 	bananapi,bpi-r64|\
 	linksys,e8450|\
+	linksys,e8450-ubi|\
 	mediatek,mt7622-rfb1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" wan
 		;;
@@ -25,26 +26,9 @@ mediatek_setup_interfaces()
 	esac
 }
 
-mediatek_setup_macs()
-{
-	local board="$1"
-
-	case $board in
-	linksys,e8450)
-		wan_mac=$(mtd_get_mac_ascii devinfo wan_mac_addr)
-		lan_mac=$(mtd_get_mac_ascii devinfo lan_mac_addr)
-		label_mac=$wan_mac
-		;;
-	esac
-	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
-	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
-	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
-}
-
 board_config_update
 board=$(board_name)
 mediatek_setup_interfaces $board
-mediatek_setup_macs $board
 board_config_flush
 
 exit 0
