@@ -40,7 +40,9 @@ define Package/arm-trusted-firmware-mt7622/Default
   SECTION:=boot
   CATEGORY:=Boot Loaders
   TITLE:=ARM Trusted Firmware for MT7622
-  DEPENDS:=@TARGET_mediatek_mt7622
+  DEPENDS:=@TARGET_mediatek_mt7622 @BROKEN
+# wait until bromimage gets replace by static build
+# libcrypto.so.1.1: version `OPENSSL_1_1_1' not found (required by tools/mediatek/bromimage/bromimage)
 endef
 
 define Package/arm-trusted-firmware-mt7622-nor
