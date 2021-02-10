@@ -29,15 +29,14 @@ define Package/arm-trusted-firmware-tools
   BUILDONLY:=1
 endef
 
-HOST_CFLAGS += -Wall -Werror -pedantic -std=c99
 define Host/Compile
 	$(MAKE) -C \
 		$(HOST_BUILD_DIR)/tools/fiptool \
-		CFLAGS="$(HOST_CFLAGS)" \
+		CPPFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)"
 	$(MAKE) -C \
 		$(HOST_BUILD_DIR)/tools/sptool \
-		CFLAGS="$(HOST_CFLAGS)" \
+		CPPFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)"
 endef
 
