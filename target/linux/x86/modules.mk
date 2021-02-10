@@ -1,8 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2017 Cezary Jackiewicz <cezary@eko.one.pll>
-#
-# This is free software, licensed under the GNU General Public License v2.
-#
 
 define KernelPackage/sound-cs5535audio
   TITLE:=CS5535/CS5536 Audio Controller
