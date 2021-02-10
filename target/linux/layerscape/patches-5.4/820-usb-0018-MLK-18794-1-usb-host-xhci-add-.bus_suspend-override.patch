@@ -29,17 +29,17 @@ Signed-off-by: Peter Chen <peter.chen@nxp.com>
  		if (over->start)
  			drv->start = over->start;
 +		if (over->bus_suspend)
-+			drv->bus_suspend = over->bus_suspend;
- 	}
- }
- EXPORT_SYMBOL_GPL(xhci_init_driver);
++			drv->->bus_suspend = over->bus_suspend;
+ 		if (over->check_bandwidth)
+ 			drv->check_bandwidth = over->check_bandwidth;
+ 		if (over->reset_bandwidth)
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1912,6 +1912,7 @@ struct xhci_driver_overrides {
+@@ -1913,6 +1913,7 @@ struct xhci_driver_overrides {
  	size_t extra_priv_size;
  	int (*reset)(struct usb_hcd *hcd);
  	int (*start)(struct usb_hcd *hcd);
 +	int (*bus_suspend)(struct usb_hcd *hcd);
+ 	int (*check_bandwidth)(struct usb_hcd *, struct usb_device *);
+ 	void (*reset_bandwidth)(struct usb_hcd *, struct usb_device *);
  };
- 
- #define	XHCI_CFC_DELAY		10
