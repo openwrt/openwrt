@@ -19,6 +19,8 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_BUILD_PARALLEL:=1
 
+TARGET_CONFIGURE_OPTS += CHECK_RUN_DIR=0
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/mdadm
@@ -50,8 +52,6 @@ TARGET_CFLAGS += \
 	-DFAILED_SLOTS_DIR='\"/var/run/mdadm/failed-slots\"'
 
 TARGET_LDFLAGS += -Wl,--gc-sections
-
-MAKE_VARS += CHECK_RUN_DIR=0
 
 define Build/Compile
 	$(call Build/Compile/Default,mdadm)
