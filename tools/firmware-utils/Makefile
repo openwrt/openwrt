@@ -74,6 +74,7 @@ define Host/Compile
 	$(call cc,mktitanimg)
 	$(call cc,mktplinkfw mktplinkfw-lib md5,-Wall -fgnu89-inline)
 	$(call cc,mktplinkfw2 mktplinkfw-lib md5,-fgnu89-inline)
+	$(call cc,mktbsfw)
 	$(call cc,mkwrggimg md5,-Wall)
 	$(call cc,mkwrgimg md5,-Wall)
 	$(call cc,mkzcfw cyg_crc32)
