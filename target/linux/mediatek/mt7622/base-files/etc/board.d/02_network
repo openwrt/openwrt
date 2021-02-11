@@ -16,6 +16,9 @@ mediatek_setup_interfaces()
 	mediatek,mt7622-rfb1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" wan
 		;;
+	ubnt,unifi-6-lr)
+		ucidef_set_interfaces_lan "eth0"
+		;;
 	*)
 		ucidef_add_switch "switch0" \
 				  "0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6u@eth0" "5u@eth1"
