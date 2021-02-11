@@ -15,7 +15,8 @@ case "$FIRMWARE" in
 	araknis,an-700-ap-i-ac|\
 	engenius,eap1200h|\
 	engenius,enstationac-v1|\
-	glinet,gl-x750)
+	glinet,gl-x750|\
+	watchguard,ap300)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) 2)
 		;;
