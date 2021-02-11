@@ -17,6 +17,10 @@ define Build/elecom-header
 		--owner=0 --group=0 -f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
+define Build/tbsfw
+  $(STAGING_DIR_HOST)/bin/mktbsfw $(1) $@
+endef
+
 define Device/aigale_ai-br100
   SOC := mt7620a
   IMAGE_SIZE := 7936k
@@ -1239,6 +1243,19 @@ define Device/zte_q7
   SUPPORTED_DEVICES += zte-q7
 endef
 TARGET_DEVICES += zte_q7
+
+define Device/zyxel_emg1702-t10a
+  SOC := mt7620a
+  IMAGE_SIZE := 6720k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := EMG1702-T10A
+  BLOCKSIZE := 64k
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | pad-to $$(BLOCKSIZE)
+  IMAGES += factory.bin
+  IMAGE/factory.bin :=  $$(sysupgrade_bin) | tbsfw -p EMG1702-T10A
+  DEVICE_PACKAGES := kmod-mt76x0e
+endef
+TARGET_DEVICES += zyxel_emg1702-t10a
 
 define Device/zyxel_keenetic-omni
   SOC := mt7620n
