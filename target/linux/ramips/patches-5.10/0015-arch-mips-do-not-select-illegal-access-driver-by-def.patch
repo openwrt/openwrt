@@ -11,8 +11,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
-@@ -9,9 +9,9 @@ config CLKEVT_RT3352
- 	select CLKSRC_MMIO
+@@ -14,9 +14,9 @@ config CLKEVT_RT3352
+ 	select CEVT_SYSTICK_QUIRK
  
  config RALINK_ILL_ACC
 -	bool
