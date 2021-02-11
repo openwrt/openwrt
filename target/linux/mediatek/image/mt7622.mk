@@ -58,3 +58,12 @@ define Device/mediatek_mt7622-ubi
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
 endef
 TARGET_DEVICES += mediatek_mt7622-ubi
+
+define Device/ubnt_unifi-6-lr
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi 6 LR
+  DEVICE_DTS := mt7622-ubnt-unifi-6-lr
+  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += ubnt_unifi-6-lr
