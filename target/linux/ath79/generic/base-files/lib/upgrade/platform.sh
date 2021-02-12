@@ -47,6 +47,7 @@ platform_do_upgrade() {
 	adtran,bsap1840)
 		redboot_fis_do_upgrade "$1" vmlinux_2
 		;;
+	allnet,all-wap02860ac|\
 	engenius,eap1200h|\
 	engenius,eap300-v2|\
 	engenius,eap600|\
