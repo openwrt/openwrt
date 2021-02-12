@@ -1,9 +1,9 @@
-DEVICE_VARS += ENGENIUS_IMGNAME
+DEVICE_VARS += SENAO_IMGNAME
 
 # This needs to make /tmp/_sys/sysupgrade.tgz an empty file prior to
 # sysupgrade, as otherwise it will implant the old configuration from
 # OEM firmware when writing rootfs from factory.bin
-define Build/engenius-tar-gz
+define Build/senao-tar-gz
 	-[ -f "$@" ] && \
 	mkdir -p $@.tmp && \
 	touch $@.tmp/failsafe.bin && \
@@ -18,8 +18,7 @@ define Build/engenius-tar-gz
 	rm -rf $@.tmp
 endef
 
-define Device/engenius_loader_okli
-  DEVICE_VENDOR := EnGenius
+define Device/senao_loader_okli
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
   LOADER_TYPE := bin
   COMPILE := loader-$(1).bin loader-$(1).uImage
@@ -29,5 +28,5 @@ define Device/engenius_loader_okli
   IMAGES += factory.bin
   IMAGE/factory.bin := append-squashfs-fakeroot-be | pad-to $$$$(BLOCKSIZE) | \
 	append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
-	check-size | engenius-tar-gz $$$$(ENGENIUS_IMGNAME)
+	check-size | senao-tar-gz $$$$(SENAO_IMGNAME)
 endef

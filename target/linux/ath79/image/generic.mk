@@ -1,6 +1,6 @@
 include ./common-buffalo.mk
-include ./common-engenius.mk
 include ./common-netgear.mk
+include ./common-senao.mk
 include ./common-tp-link.mk
 include ./common-yuncore.mk
 
@@ -989,34 +989,37 @@ endef
 TARGET_DEVICES += embeddedwireless_dorin
 
 define Device/engenius_eap1200h
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := qca9557
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP1200H
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
   IMAGE_SIZE := 11520k
   LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := ar71xx-generic-eap1200h
+  SENAO_IMGNAME := ar71xx-generic-eap1200h
 endef
 TARGET_DEVICES += engenius_eap1200h
 
 define Device/engenius_eap300-v2
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := ar9341
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP300
   DEVICE_VARIANT := v2
   IMAGE_SIZE := 12032k
   LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := senao-eap300v2
+  SENAO_IMGNAME := senao-eap300v2
 endef
 TARGET_DEVICES += engenius_eap300-v2
 
 define Device/engenius_eap600
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := ar9344
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP600
   IMAGE_SIZE := 12032k
   LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := senao-eap600
+  SENAO_IMGNAME := senao-eap600
 endef
 TARGET_DEVICES += engenius_eap600
 
@@ -1047,36 +1050,39 @@ endef
 TARGET_DEVICES += engenius_ecb1750
 
 define Device/engenius_ecb600
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := ar9344
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ECB600
   IMAGE_SIZE := 12032k
   LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := senao-ecb600
+  SENAO_IMGNAME := senao-ecb600
 endef
 TARGET_DEVICES += engenius_ecb600
 
 define Device/engenius_ens202ext-v1
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := ar9341
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ENS202EXT
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := rssileds
   IMAGE_SIZE := 12032k
   LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := senao-ens202ext
+  SENAO_IMGNAME := senao-ens202ext
 endef
 TARGET_DEVICES += engenius_ens202ext-v1
 
 define Device/engenius_enstationac-v1
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := qca9557
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EnStationAC
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct rssileds
   IMAGE_SIZE := 11520k
   LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := ar71xx-generic-enstationac
+  SENAO_IMGNAME := ar71xx-generic-enstationac
 endef
 TARGET_DEVICES += engenius_enstationac-v1
 
