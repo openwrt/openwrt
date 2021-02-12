@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	model = "ALLNET ALL-WAP02860AC";
@@ -51,6 +52,25 @@
 		wps {
 			label = "blue:wps";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x73714f4b>;
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
 		};
 	};
 };
@@ -119,9 +139,18 @@
 			};
 
 			partition@a0000 {
-				compatible = "denx,uimage";
-				label = "firmware";
-				reg = <0x0a0000 0xcd0000>;
+				label = "loader";
+				reg = <0x0a0000 0x010000>;
+			};
+
+			fwconcat1: partition@b0000 {
+				label = "fwconcat1";
+				reg = <0x0b0000 0x170000>;
+			};
+
+			fwconcat0: partition@220000 {
+				label = "fwconcat0";
+				reg = <0x220000 0xb50000>;
 			};
 
 			partition@d70000 {
