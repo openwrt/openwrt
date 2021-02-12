@@ -36,4 +36,5 @@ define Device/senao_loader_okli
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
 	check-size | senao-tar-gz $$$$(SENAO_IMGNAME)
+  IMAGE/sysupgrade.bin := $$(IMAGE/factory.bin) | append-metadata
 endef
