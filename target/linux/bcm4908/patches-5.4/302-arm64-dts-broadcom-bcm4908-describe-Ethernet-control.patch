@@ -12,7 +12,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908.dtsi
-@@ -112,6 +112,13 @@
+@@ -112,6 +112,14 @@
  		#size-cells = <1>;
  		ranges = <0x00 0x00 0x80000000 0x281000>;
  
@@ -21,12 +21,13 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +			reg = <0x2000 0x1000>;
 +
 +			interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "rx";
 +		};
 +
  		usb_phy: usb-phy@c200 {
  			compatible = "brcm,bcm4908-usb-phy";
  			reg = <0xc200 0x100>;
-@@ -199,6 +206,18 @@
+@@ -199,6 +207,18 @@
  						phy-mode = "internal";
  						phy-handle = <&phy11>;
  					};
