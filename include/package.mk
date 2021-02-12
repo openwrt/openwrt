@@ -178,6 +178,7 @@ Build/Exports=$(Build/Exports/Default)
 define Build/CoreTargets
   STAMP_PREPARED:=$$(STAMP_PREPARED)
   STAMP_CONFIGURED:=$$(STAMP_CONFIGURED)
+  PKG_ABI_VERSION:=$$(PKG_ABI_VERSION)
 
   $(if $(QUILT),$(Build/Quilt))
   $(call Build/Autoclean)
@@ -236,6 +237,7 @@ define Build/CoreTargets
 			"$(STAGING_DIR)/packages/$(STAGING_FILES_LIST)" \
 			"$(STAGING_DIR)"; \
 	fi
+	$(if $(PKG_ABI_VERSION),$(SET_ABI_VERSION) "$(PKG_ABI_VERSION)" $(TMP_DIR)/stage-$(PKG_DIR_NAME))
 	if [ -d $(TMP_DIR)/stage-$(PKG_DIR_NAME) ]; then \
 		(cd $(TMP_DIR)/stage-$(PKG_DIR_NAME); find ./ > $(TMP_DIR)/stage-$(PKG_DIR_NAME).files); \
 		$(call locked, \

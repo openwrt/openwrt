@@ -339,6 +339,10 @@ else
     $(SCRIPT_DIR)/rstrip.sh
 endif
 
+SET_ABI_VERSION= \
+    PATCHELF="$(STAGING_DIR_HOST)/bin/patchelf" \
+	$(SCRIPT_DIR)/set-abi-version.sh
+
 ifeq ($(CONFIG_IPV6),y)
   DISABLE_IPV6:=
 else
@@ -427,6 +431,8 @@ $(shell \
   fi; \
 )
 endef
+
+abi_version_str = $(subst -,,$(subst _,,$(subst .,,$(1))))
 
 COMMITCOUNT = $(if $(DUMP),0,$(call commitcount))
 AUTORELEASE = $(if $(DUMP),0,$(call commitcount,1))
