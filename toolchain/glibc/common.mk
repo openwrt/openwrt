@@ -5,10 +5,11 @@
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=glibc
 PKG_VERSION:=2.33
-PKG_RELEASE:=2
+PKG_RELEASE:=$(LINUX_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
@@ -63,7 +64,7 @@ GLIBC_CONFIGURE:= \
 		--$(if $(CONFIG_SOFT_FLOAT),without,with)-fp \
 		  $(if $(CONFIG_PKG_CC_STACKPROTECTOR_REGULAR),--enable-stack-protector=yes) \
 		  $(if $(CONFIG_PKG_CC_STACKPROTECTOR_STRONG),--enable-stack-protector=strong) \
-		--enable-kernel=4.14.0
+		--enable-kernel=$(LINUX_VERSION)
 
 export libc_cv_ssp=no
 export libc_cv_ssp_strong=no
