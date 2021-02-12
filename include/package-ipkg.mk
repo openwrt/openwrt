@@ -152,6 +152,7 @@ ifeq ($(DUMP),)
 	mkdir -p $(PKG_BUILD_DIR)/.pkgdir/$(1)
 	$(call Package/$(1)/install,$(PKG_BUILD_DIR)/.pkgdir/$(1))
 	$(call Package/$(1)/install_lib,$(PKG_BUILD_DIR)/.pkgdir/$(1))
+	$(if $(PKG_ABI_VERSION),$(SET_ABI_VERSION) "$(PKG_ABI_VERSION)" "$(PKG_BUILD_DIR)/.pkgdir/$(1)" "$(STAGING_DIR)/packages/$(STAGING_FILES_LIST)")
 	touch $$@
 
     $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
@@ -191,11 +192,15 @@ $(_endef)
     $$(IPKG_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
     $$(IPKG_$(1)) : export PATH=$$(TARGET_PATH_PKG)
     $$(IPKG_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
+    ifdef Build/InstallDev
+      $$(IPKG_$(1)): $(STAMP_INSTALLED)
+    endif
     $(PKG_INFO_DIR)/$(1).provides $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
 	@rm -rf $$(IDIR_$(1)); \
 		$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
+	$(if $(PKG_ABI_VERSION),$(SET_ABI_VERSION) "$(PKG_ABI_VERSION)" "$$(IDIR_$(1))" "$(STAGING_DIR)/packages/$(STAGING_FILES_LIST)")
 	$(if $(Package/$(1)/install-overlay),mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/rootfs-overlay)
 	$(call Package/$(1)/install-overlay,$$(IDIR_$(1))/rootfs-overlay)
 	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' -o -name '*~'| $(XARGS) rm -rf
