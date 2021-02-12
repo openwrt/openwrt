@@ -20,7 +20,6 @@ define Device/Default
 endef
 
 define Device/fsl-sdboot
-  $(Device/rework-sdcard-images)
   KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES := sdcard.img.gz sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -76,6 +75,7 @@ endef
 TARGET_DEVICES += fsl_ls1012a-rdb
 
 define Device/fsl_ls1012a-frwy-sdboot
+  $(Device/rework-sdcard-images)
   $(Device/fsl-sdboot)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := FRWY-LS1012A
@@ -126,6 +126,7 @@ endef
 TARGET_DEVICES += fsl_ls1043a-rdb
 
 define Device/fsl_ls1043a-rdb-sdboot
+  $(Device/rework-sdcard-images)
   $(Device/fsl-sdboot)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1043A-RDB
@@ -176,6 +177,7 @@ endef
 TARGET_DEVICES += fsl_ls1046a-rdb
 
 define Device/fsl_ls1046a-rdb-sdboot
+  $(Device/rework-sdcard-images)
   $(Device/fsl-sdboot)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1046A-RDB
@@ -228,6 +230,7 @@ endef
 TARGET_DEVICES += fsl_ls1088a-rdb
 
 define Device/fsl_ls1088a-rdb-sdboot
+  $(Device/rework-sdcard-images)
   $(Device/fsl-sdboot)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1088A-RDB
