@@ -1,0 +1,28 @@
+diff -Nuar openssl-1.0.2d/crypto/asn1/a_mbstr.c openssl-work/crypto/asn1/a_mbstr.c
+--- openssl-1.0.2d/crypto/asn1/a_mbstr.c	2015-07-09 15:53:21.000000000 +0400
++++ openssl-work/crypto/asn1/a_mbstr.c	2015-03-26 13:00:21.000000000 +0400
+@@ -173,6 +173,8 @@
+         str_type = V_ASN1_PRINTABLESTRING;
+     else if (mask & B_ASN1_IA5STRING)
+         str_type = V_ASN1_IA5STRING;
++    else if (mask & B_ASN1_NUMERICSTRING)
++        str_type = V_ASN1_NUMERICSTRING;
+     else if (mask & B_ASN1_T61STRING)
+         str_type = V_ASN1_T61STRING;
+     else if (mask & B_ASN1_BMPSTRING) {
+diff -Nuar openssl-1.0.2d/crypto/asn1/a_strnid.c openssl-work/crypto/asn1/a_strnid.c
+--- openssl-1.0.2d/crypto/asn1/a_strnid.c	2015-07-09 15:53:21.000000000 +0400
++++ openssl-work/crypto/asn1/a_strnid.c	2015-03-26 13:00:21.000000000 +0400
+@@ -192,7 +192,10 @@
+     {NID_name, 1, ub_name, DIRSTRING_TYPE, 0},
+     {NID_dnQualifier, -1, -1, B_ASN1_PRINTABLESTRING, STABLE_NO_MASK},
+     {NID_domainComponent, 1, -1, B_ASN1_IA5STRING, STABLE_NO_MASK},
+-    {NID_ms_csp_name, -1, -1, B_ASN1_BMPSTRING, STABLE_NO_MASK}
++    {NID_ms_csp_name, -1, -1, B_ASN1_BMPSTRING, STABLE_NO_MASK},
++    {NID_INN, 1, 12, B_ASN1_NUMERICSTRING, STABLE_NO_MASK},
++    {NID_OGRN, 1, 13, B_ASN1_NUMERICSTRING, STABLE_NO_MASK},
++    {NID_SNILS, 1, 11, B_ASN1_NUMERICSTRING, STABLE_NO_MASK}
+ };
+ 
+ static int sk_table_cmp(const ASN1_STRING_TABLE *const *a,
+

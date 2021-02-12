@@ -1,0 +1,688 @@
+diff -Nuar openssl-1.0.2d/crypto/objects/obj_dat.h openssl-work/crypto/objects/obj_dat.h
+--- openssl-1.0.2d/crypto/objects/obj_dat.h	2015-07-09 15:58:05.000000000 +0400
++++ openssl-work/crypto/objects/obj_dat.h	2015-02-25 12:49:45.000000000 +0400
+@@ -62,12 +62,12 @@
+  * [including the GNU Public Licence.]
+  */
+ 
+-#define NUM_NID 958
+-#define NUM_SN 951
+-#define NUM_LN 951
+-#define NUM_OBJ 890
++#define NUM_NID 991
++#define NUM_SN 984
++#define NUM_LN 984
++#define NUM_OBJ 921
+ 
+-static const unsigned char lvalues[6255]={
++static const unsigned char lvalues[6485]={
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,               /* [  0] OBJ_rsadsi */
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,          /* [  6] OBJ_pkcs */
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x02,     /* [ 13] OBJ_md2 */
+@@ -952,6 +952,37 @@
+ 0x2B,0x06,0x01,0x04,0x01,0x82,0x37,0x3C,0x02,0x01,0x01,/* [6221] OBJ_jurisdictionLocalityName */
+ 0x2B,0x06,0x01,0x04,0x01,0x82,0x37,0x3C,0x02,0x01,0x02,/* [6232] OBJ_jurisdictionStateOrProvinceName */
+ 0x2B,0x06,0x01,0x04,0x01,0x82,0x37,0x3C,0x02,0x01,0x03,/* [6243] OBJ_jurisdictionCountryName */
++0x2A,0x85,0x03,0x07,0x01,                    /* [6254] OBJ_id_tc26 */
++0x2A,0x85,0x03,0x07,0x01,0x01,               /* [6259] OBJ_id_tc26_algorithms */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x01,          /* [6265] OBJ_id_tc26_sign */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x01,0x01,     /* [6272] OBJ_id_GostR3410_2012_256 */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x01,0x02,     /* [6280] OBJ_id_GostR3410_2012_512 */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x02,          /* [6288] OBJ_id_tc26_digest */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x02,0x02,     /* [6295] OBJ_id_GostR3411_2012_256 */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x02,0x03,     /* [6303] OBJ_id_GostR3411_2012_512 */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x03,          /* [6311] OBJ_id_tc26_signwithdigest */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x03,0x02,     /* [6318] OBJ_id_tc26_signwithdigest_gost3410_2012_256 */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x03,0x03,     /* [6326] OBJ_id_tc26_signwithdigest_gost3410_2012_512 */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x04,          /* [6334] OBJ_id_tc26_mac */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x04,0x01,     /* [6341] OBJ_id_tc26_hmac_gost_3411_2012_256 */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x04,0x02,     /* [6349] OBJ_id_tc26_hmac_gost_3411_2012_512 */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x05,          /* [6357] OBJ_id_tc26_cipher */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x06,          /* [6364] OBJ_id_tc26_agreement */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x06,0x01,     /* [6371] OBJ_id_tc26_agreement_gost_3410_2012_256 */
++0x2A,0x85,0x03,0x07,0x01,0x01,0x06,0x02,     /* [6379] OBJ_id_tc26_agreement_gost_3410_2012_512 */
++0x2A,0x85,0x03,0x07,0x01,0x02,               /* [6387] OBJ_id_tc26_constants */
++0x2A,0x85,0x03,0x07,0x01,0x02,0x01,          /* [6393] OBJ_id_tc26_sign_constants */
++0x2A,0x85,0x03,0x07,0x01,0x02,0x01,0x02,     /* [6400] OBJ_id_tc26_gost_3410_2012_512_constants */
++0x2A,0x85,0x03,0x07,0x01,0x02,0x01,0x02,0x00,/* [6408] OBJ_id_tc26_gost_3410_2012_512_paramSetTest */
++0x2A,0x85,0x03,0x07,0x01,0x02,0x01,0x02,0x01,/* [6417] OBJ_id_tc26_gost_3410_2012_512_paramSetA */
++0x2A,0x85,0x03,0x07,0x01,0x02,0x01,0x02,0x02,/* [6426] OBJ_id_tc26_gost_3410_2012_512_paramSetB */
++0x2A,0x85,0x03,0x07,0x01,0x02,0x02,          /* [6435] OBJ_id_tc26_digest_constants */
++0x2A,0x85,0x03,0x07,0x01,0x02,0x05,          /* [6442] OBJ_id_tc26_cipher_constants */
++0x2A,0x85,0x03,0x07,0x01,0x02,0x05,0x01,     /* [6449] OBJ_id_tc26_gost_28147_constants */
++0x2A,0x85,0x03,0x07,0x01,0x02,0x05,0x01,0x01,/* [6457] OBJ_id_tc26_gost_28147_param_Z */
++0x2A,0x85,0x03,0x03,0x81,0x03,0x01,0x01,     /* [6466] OBJ_INN */
++0x2A,0x85,0x03,0x64,0x01,                    /* [6474] OBJ_OGRN */
++0x2A,0x85,0x03,0x64,0x03,                    /* [6479] OBJ_SNILS */
+ };
+ 
+ static const ASN1_OBJECT nid_objs[NUM_NID]={
+@@ -2514,6 +2545,72 @@
+ 	NID_jurisdictionStateOrProvinceName,11,&(lvalues[6232]),0},
+ {"jurisdictionC","jurisdictionCountryName",
+ 	NID_jurisdictionCountryName,11,&(lvalues[6243]),0},
++{"id-tc26","id-tc26",NID_id_tc26,5,&(lvalues[6254]),0},
++{"gost89-cnt-12","gost89-cnt-12",NID_gost89_cnt_12,0,NULL,0},
++{"gost-mac-12","gost-mac-12",NID_gost_mac_12,0,NULL,0},
++{"id-tc26-algorithms","id-tc26-algorithms",NID_id_tc26_algorithms,6,
++	&(lvalues[6259]),0},
++{"id-tc26-sign","id-tc26-sign",NID_id_tc26_sign,7,&(lvalues[6265]),0},
++{"gost2012_256","GOST R 34.10-2012 with 256 bit modulus",
++	NID_id_GostR3410_2012_256,8,&(lvalues[6272]),0},
++{"gost2012_512","GOST R 34.10-2012 with 512 bit modulus",
++	NID_id_GostR3410_2012_512,8,&(lvalues[6280]),0},
++{"id-tc26-digest","id-tc26-digest",NID_id_tc26_digest,7,
++	&(lvalues[6288]),0},
++{"md_gost12_256","GOST R 34.11-2012 with 256 bit hash",
++	NID_id_GostR3411_2012_256,8,&(lvalues[6295]),0},
++{"md_gost12_512","GOST R 34.11-2012 with 512 bit hash",
++	NID_id_GostR3411_2012_512,8,&(lvalues[6303]),0},
++{"id-tc26-signwithdigest","id-tc26-signwithdigest",
++	NID_id_tc26_signwithdigest,7,&(lvalues[6311]),0},
++{"id-tc26-signwithdigest-gost3410-2012-256",
++	"GOST R 34.10-2012 with GOST R 34.11-2012 (256 bit)",
++	NID_id_tc26_signwithdigest_gost3410_2012_256,8,&(lvalues[6318]),0},
++{"id-tc26-signwithdigest-gost3410-2012-512",
++	"GOST R 34.10-2012 with GOST R 34.11-2012 (512 bit)",
++	NID_id_tc26_signwithdigest_gost3410_2012_512,8,&(lvalues[6326]),0},
++{"id-tc26-mac","id-tc26-mac",NID_id_tc26_mac,7,&(lvalues[6334]),0},
++{"id-tc26-hmac-gost-3411-2012-256","HMAC GOST 34.11-2012 256 bit",
++	NID_id_tc26_hmac_gost_3411_2012_256,8,&(lvalues[6341]),0},
++{"id-tc26-hmac-gost-3411-2012-512","HMAC GOST 34.11-2012 512 bit",
++	NID_id_tc26_hmac_gost_3411_2012_512,8,&(lvalues[6349]),0},
++{"id-tc26-cipher","id-tc26-cipher",NID_id_tc26_cipher,7,
++	&(lvalues[6357]),0},
++{"id-tc26-agreement","id-tc26-agreement",NID_id_tc26_agreement,7,
++	&(lvalues[6364]),0},
++{"id-tc26-agreement-gost-3410-2012-256",
++	"id-tc26-agreement-gost-3410-2012-256",
++	NID_id_tc26_agreement_gost_3410_2012_256,8,&(lvalues[6371]),0},
++{"id-tc26-agreement-gost-3410-2012-512",
++	"id-tc26-agreement-gost-3410-2012-512",
++	NID_id_tc26_agreement_gost_3410_2012_512,8,&(lvalues[6379]),0},
++{"id-tc26-constants","id-tc26-constants",NID_id_tc26_constants,6,
++	&(lvalues[6387]),0},
++{"id-tc26-sign-constants","id-tc26-sign-constants",
++	NID_id_tc26_sign_constants,7,&(lvalues[6393]),0},
++{"id-tc26-gost-3410-2012-512-constants",
++	"id-tc26-gost-3410-2012-512-constants",
++	NID_id_tc26_gost_3410_2012_512_constants,8,&(lvalues[6400]),0},
++{"id-tc26-gost-3410-2012-512-paramSetTest",
++	"GOST R 34.10-2012 (512 bit) testing parameter set",
++	NID_id_tc26_gost_3410_2012_512_paramSetTest,9,&(lvalues[6408]),0},
++{"id-tc26-gost-3410-2012-512-paramSetA",
++	"GOST R 34.10-2012 (512 bit) ParamSet A",
++	NID_id_tc26_gost_3410_2012_512_paramSetA,9,&(lvalues[6417]),0},
++{"id-tc26-gost-3410-2012-512-paramSetB",
++	"GOST R 34.10-2012 (512 bit) ParamSet B",
++	NID_id_tc26_gost_3410_2012_512_paramSetB,9,&(lvalues[6426]),0},
++{"id-tc26-digest-constants","id-tc26-digest-constants",
++	NID_id_tc26_digest_constants,7,&(lvalues[6435]),0},
++{"id-tc26-cipher-constants","id-tc26-cipher-constants",
++	NID_id_tc26_cipher_constants,7,&(lvalues[6442]),0},
++{"id-tc26-gost-28147-constants","id-tc26-gost-28147-constants",
++	NID_id_tc26_gost_28147_constants,8,&(lvalues[6449]),0},
++{"id-tc26-gost-28147-param-Z","GOST 28147-89 TC26 parameter set",
++	NID_id_tc26_gost_28147_param_Z,9,&(lvalues[6457]),0},
++{"INN","INN",NID_INN,8,&(lvalues[6466]),0},
++{"OGRN","OGRN",NID_OGRN,5,&(lvalues[6474]),0},
++{"SNILS","SNILS",NID_SNILS,5,&(lvalues[6479]),0},
+ };
+ 
+ static const unsigned int sn_objs[NUM_SN]={
+@@ -2614,6 +2711,7 @@
+ 35,	/* "IDEA-CFB" */
+ 36,	/* "IDEA-ECB" */
+ 46,	/* "IDEA-OFB" */
++988,	/* "INN" */
+ 181,	/* "ISO" */
+ 183,	/* "ISO-US" */
+ 645,	/* "ITU-T" */
+@@ -2635,6 +2733,7 @@
+ 17,	/* "O" */
+ 178,	/* "OCSP" */
+ 180,	/* "OCSPSigning" */
++989,	/* "OGRN" */
+ 379,	/* "ORG" */
+ 18,	/* "OU" */
+ 749,	/* "Oakley-EC2N-3" */
+@@ -2700,6 +2799,7 @@
+ 188,	/* "SMIME" */
+ 167,	/* "SMIME-CAPS" */
+ 100,	/* "SN" */
++990,	/* "SNILS" */
+ 16,	/* "ST" */
+ 143,	/* "SXNetID" */
+ 458,	/* "UID" */
+@@ -2858,10 +2958,14 @@
+ 156,	/* "friendlyName" */
+ 509,	/* "generationQualifier" */
+ 815,	/* "gost-mac" */
++960,	/* "gost-mac-12" */
+ 811,	/* "gost2001" */
+ 851,	/* "gost2001cc" */
++963,	/* "gost2012_256" */
++964,	/* "gost2012_512" */
+ 813,	/* "gost89" */
+ 814,	/* "gost89-cnt" */
++959,	/* "gost89-cnt-12" */
+ 812,	/* "gost94" */
+ 850,	/* "gost94cc" */
+ 797,	/* "hmacWithMD5" */
+@@ -3115,6 +3219,30 @@
+ 194,	/* "id-smime-spq" */
+ 250,	/* "id-smime-spq-ets-sqt-unotice" */
+ 249,	/* "id-smime-spq-ets-sqt-uri" */
++958,	/* "id-tc26" */
++975,	/* "id-tc26-agreement" */
++976,	/* "id-tc26-agreement-gost-3410-2012-256" */
++977,	/* "id-tc26-agreement-gost-3410-2012-512" */
++961,	/* "id-tc26-algorithms" */
++974,	/* "id-tc26-cipher" */
++985,	/* "id-tc26-cipher-constants" */
++978,	/* "id-tc26-constants" */
++965,	/* "id-tc26-digest" */
++984,	/* "id-tc26-digest-constants" */
++986,	/* "id-tc26-gost-28147-constants" */
++987,	/* "id-tc26-gost-28147-param-Z" */
++980,	/* "id-tc26-gost-3410-2012-512-constants" */
++982,	/* "id-tc26-gost-3410-2012-512-paramSetA" */
++983,	/* "id-tc26-gost-3410-2012-512-paramSetB" */
++981,	/* "id-tc26-gost-3410-2012-512-paramSetTest" */
++972,	/* "id-tc26-hmac-gost-3411-2012-256" */
++973,	/* "id-tc26-hmac-gost-3411-2012-512" */
++971,	/* "id-tc26-mac" */
++962,	/* "id-tc26-sign" */
++979,	/* "id-tc26-sign-constants" */
++968,	/* "id-tc26-signwithdigest" */
++969,	/* "id-tc26-signwithdigest-gost3410-2012-256" */
++970,	/* "id-tc26-signwithdigest-gost3410-2012-512" */
+ 676,	/* "identified-organization" */
+ 461,	/* "info" */
+ 748,	/* "inhibitAnyPolicy" */
+@@ -3140,6 +3268,8 @@
+ 460,	/* "mail" */
+ 493,	/* "mailPreferenceOption" */
+ 467,	/* "manager" */
++966,	/* "md_gost12_256" */
++967,	/* "md_gost12_512" */
+ 809,	/* "md_gost94" */
+ 875,	/* "member" */
+ 182,	/* "member-body" */
+@@ -3497,12 +3627,22 @@
+ 813,	/* "GOST 28147-89" */
+ 849,	/* "GOST 28147-89 Cryptocom ParamSet" */
+ 815,	/* "GOST 28147-89 MAC" */
++987,	/* "GOST 28147-89 TC26 parameter set" */
+ 851,	/* "GOST 34.10-2001 Cryptocom" */
+ 850,	/* "GOST 34.10-94 Cryptocom" */
+ 811,	/* "GOST R 34.10-2001" */
+ 817,	/* "GOST R 34.10-2001 DH" */
++982,	/* "GOST R 34.10-2012 (512 bit) ParamSet A" */
++983,	/* "GOST R 34.10-2012 (512 bit) ParamSet B" */
++981,	/* "GOST R 34.10-2012 (512 bit) testing parameter set" */
++963,	/* "GOST R 34.10-2012 with 256 bit modulus" */
++964,	/* "GOST R 34.10-2012 with 512 bit modulus" */
++969,	/* "GOST R 34.10-2012 with GOST R 34.11-2012 (256 bit)" */
++970,	/* "GOST R 34.10-2012 with GOST R 34.11-2012 (512 bit)" */
+ 812,	/* "GOST R 34.10-94" */
+ 818,	/* "GOST R 34.10-94 DH" */
++966,	/* "GOST R 34.11-2012 with 256 bit hash" */
++967,	/* "GOST R 34.11-2012 with 512 bit hash" */
+ 809,	/* "GOST R 34.11-94" */
+ 816,	/* "GOST R 34.11-94 PRF" */
+ 807,	/* "GOST R 34.11-94 with GOST R 34.10-2001" */
+@@ -3510,12 +3650,15 @@
+ 808,	/* "GOST R 34.11-94 with GOST R 34.10-94" */
+ 852,	/* "GOST R 34.11-94 with GOST R 34.10-94 Cryptocom" */
+ 854,	/* "GOST R 3410-2001 Parameter Set Cryptocom" */
++972,	/* "HMAC GOST 34.11-2012 256 bit" */
++973,	/* "HMAC GOST 34.11-2012 512 bit" */
+ 810,	/* "HMAC GOST 34.11-94" */
+ 432,	/* "Hold Instruction Call Issuer" */
+ 430,	/* "Hold Instruction Code" */
+ 431,	/* "Hold Instruction None" */
+ 433,	/* "Hold Instruction Reject" */
+ 634,	/* "ICC or token signature" */
++988,	/* "INN" */
+ 294,	/* "IPSec End System" */
+ 295,	/* "IPSec Tunnel" */
+ 296,	/* "IPSec User" */
+@@ -3560,6 +3703,7 @@
+ 366,	/* "OCSP Nonce" */
+ 371,	/* "OCSP Service Locator" */
+ 180,	/* "OCSP Signing" */
++989,	/* "OGRN" */
+ 161,	/* "PBES2" */
+ 69,	/* "PBKDF2" */
+ 162,	/* "PBMAC1" */
+@@ -3573,6 +3717,7 @@
+  2,	/* "RSA Data Security, Inc. PKCS" */
+ 188,	/* "S/MIME" */
+ 167,	/* "S/MIME Capabilities" */
++990,	/* "SNILS" */
+ 387,	/* "SNMPv2" */
+ 512,	/* "Secure Electronic Transactions" */
+ 386,	/* "Security" */
+@@ -3825,7 +3970,9 @@
+ 509,	/* "generationQualifier" */
+ 601,	/* "generic cryptogram" */
+ 99,	/* "givenName" */
++960,	/* "gost-mac-12" */
+ 814,	/* "gost89-cnt" */
++959,	/* "gost89-cnt-12" */
+ 855,	/* "hmac" */
+ 780,	/* "hmac-md5" */
+ 781,	/* "hmac-sha1" */
+@@ -4053,6 +4200,22 @@
+ 194,	/* "id-smime-spq" */
+ 250,	/* "id-smime-spq-ets-sqt-unotice" */
+ 249,	/* "id-smime-spq-ets-sqt-uri" */
++958,	/* "id-tc26" */
++975,	/* "id-tc26-agreement" */
++976,	/* "id-tc26-agreement-gost-3410-2012-256" */
++977,	/* "id-tc26-agreement-gost-3410-2012-512" */
++961,	/* "id-tc26-algorithms" */
++974,	/* "id-tc26-cipher" */
++985,	/* "id-tc26-cipher-constants" */
++978,	/* "id-tc26-constants" */
++965,	/* "id-tc26-digest" */
++984,	/* "id-tc26-digest-constants" */
++986,	/* "id-tc26-gost-28147-constants" */
++980,	/* "id-tc26-gost-3410-2012-512-constants" */
++971,	/* "id-tc26-mac" */
++962,	/* "id-tc26-sign" */
++979,	/* "id-tc26-sign-constants" */
++968,	/* "id-tc26-signwithdigest" */
+ 34,	/* "idea-cbc" */
+ 35,	/* "idea-cfb" */
+ 36,	/* "idea-ecb" */
+@@ -4661,6 +4824,9 @@
+ 639,	/* OBJ_set_brand_JCB                2 23 42 8 35 */
+ 805,	/* OBJ_cryptopro                    1 2 643 2 2 */
+ 806,	/* OBJ_cryptocom                    1 2 643 2 9 */
++958,	/* OBJ_id_tc26                      1 2 643 7 1 */
++989,	/* OBJ_OGRN                         1 2 643 100 1 */
++990,	/* OBJ_SNILS                        1 2 643 100 3 */
+ 184,	/* OBJ_X9_57                        1 2 840 10040 */
+ 405,	/* OBJ_ansi_X9_62                   1 2 840 10045 */
+ 389,	/* OBJ_Enterprises                  1 3 6 1 4 1 */
+@@ -4745,6 +4911,8 @@
+ 816,	/* OBJ_id_GostR3411_94_prf          1 2 643 2 2 23 */
+ 817,	/* OBJ_id_GostR3410_2001DH          1 2 643 2 2 98 */
+ 818,	/* OBJ_id_GostR3410_94DH            1 2 643 2 2 99 */
++961,	/* OBJ_id_tc26_algorithms           1 2 643 7 1 1 */
++978,	/* OBJ_id_tc26_constants            1 2 643 7 1 2 */
+  1,	/* OBJ_rsadsi                       1 2 840 113549 */
+ 185,	/* OBJ_X9cm                         1 2 840 10040 4 */
+ 127,	/* OBJ_id_pkix                      1 3 6 1 5 5 7 */
+@@ -4795,6 +4963,15 @@
+ 842,	/* OBJ_id_GostR3410_2001_CryptoPro_C_ParamSet 1 2 643 2 2 35 3 */
+ 843,	/* OBJ_id_GostR3410_2001_CryptoPro_XchA_ParamSet 1 2 643 2 2 36 0 */
+ 844,	/* OBJ_id_GostR3410_2001_CryptoPro_XchB_ParamSet 1 2 643 2 2 36 1 */
++962,	/* OBJ_id_tc26_sign                 1 2 643 7 1 1 1 */
++965,	/* OBJ_id_tc26_digest               1 2 643 7 1 1 2 */
++968,	/* OBJ_id_tc26_signwithdigest       1 2 643 7 1 1 3 */
++971,	/* OBJ_id_tc26_mac                  1 2 643 7 1 1 4 */
++974,	/* OBJ_id_tc26_cipher               1 2 643 7 1 1 5 */
++975,	/* OBJ_id_tc26_agreement            1 2 643 7 1 1 6 */
++979,	/* OBJ_id_tc26_sign_constants       1 2 643 7 1 2 1 */
++984,	/* OBJ_id_tc26_digest_constants     1 2 643 7 1 2 2 */
++985,	/* OBJ_id_tc26_cipher_constants     1 2 643 7 1 2 5 */
+  2,	/* OBJ_pkcs                         1 2 840 113549 1 */
+ 431,	/* OBJ_hold_instruction_none        1 2 840 10040 2 1 */
+ 432,	/* OBJ_hold_instruction_call_issuer 1 2 840 10040 2 2 */
+@@ -4846,6 +5023,19 @@
+ 851,	/* OBJ_id_GostR3410_2001_cc         1 2 643 2 9 1 5 4 */
+ 849,	/* OBJ_id_Gost28147_89_cc           1 2 643 2 9 1 6 1 */
+ 854,	/* OBJ_id_GostR3410_2001_ParamSet_cc 1 2 643 2 9 1 8 1 */
++988,	/* OBJ_INN                          1 2 643 3 131 1 1 */
++963,	/* OBJ_id_GostR3410_2012_256        1 2 643 7 1 1 1 1 */
++964,	/* OBJ_id_GostR3410_2012_512        1 2 643 7 1 1 1 2 */
++966,	/* OBJ_id_GostR3411_2012_256        1 2 643 7 1 1 2 2 */
++967,	/* OBJ_id_GostR3411_2012_512        1 2 643 7 1 1 2 3 */
++969,	/* OBJ_id_tc26_signwithdigest_gost3410_2012_256 1 2 643 7 1 1 3 2 */
++970,	/* OBJ_id_tc26_signwithdigest_gost3410_2012_512 1 2 643 7 1 1 3 3 */
++972,	/* OBJ_id_tc26_hmac_gost_3411_2012_256 1 2 643 7 1 1 4 1 */
++973,	/* OBJ_id_tc26_hmac_gost_3411_2012_512 1 2 643 7 1 1 4 2 */
++976,	/* OBJ_id_tc26_agreement_gost_3410_2012_256 1 2 643 7 1 1 6 1 */
++977,	/* OBJ_id_tc26_agreement_gost_3410_2012_512 1 2 643 7 1 1 6 2 */
++980,	/* OBJ_id_tc26_gost_3410_2012_512_constants 1 2 643 7 1 2 1 2 */
++986,	/* OBJ_id_tc26_gost_28147_constants 1 2 643 7 1 2 5 1 */
+ 186,	/* OBJ_pkcs1                        1 2 840 113549 1 1 */
+ 27,	/* OBJ_pkcs3                        1 2 840 113549 1 3 */
+ 187,	/* OBJ_pkcs5                        1 2 840 113549 1 5 */
+@@ -5013,6 +5203,10 @@
+ 439,	/* OBJ_pilotAttributeSyntax         0 9 2342 19200300 100 3 */
+ 440,	/* OBJ_pilotObjectClass             0 9 2342 19200300 100 4 */
+ 441,	/* OBJ_pilotGroups                  0 9 2342 19200300 100 10 */
++981,	/* OBJ_id_tc26_gost_3410_2012_512_paramSetTest 1 2 643 7 1 2 1 2 0 */
++982,	/* OBJ_id_tc26_gost_3410_2012_512_paramSetA 1 2 643 7 1 2 1 2 1 */
++983,	/* OBJ_id_tc26_gost_3410_2012_512_paramSetB 1 2 643 7 1 2 1 2 2 */
++987,	/* OBJ_id_tc26_gost_28147_param_Z   1 2 643 7 1 2 5 1 1 */
+ 108,	/* OBJ_cast5_cbc                    1 2 840 113533 7 66 10 */
+ 112,	/* OBJ_pbeWithMD5AndCast5_CBC       1 2 840 113533 7 66 12 */
+ 782,	/* OBJ_id_PasswordBasedMAC          1 2 840 113533 7 66 13 */
+diff -Nuar openssl-1.0.2d/crypto/objects/objects.txt openssl-work/crypto/objects/objects.txt
+--- openssl-1.0.2d/crypto/objects/objects.txt	2015-07-09 15:57:15.000000000 +0400
++++ openssl-work/crypto/objects/objects.txt	2015-02-25 12:45:41.000000000 +0400
+@@ -1156,6 +1156,7 @@
+ 
+ member-body 643 2 2	: cryptopro
+ member-body 643 2 9	: cryptocom
++member-body 643 7 1	: id-tc26
+ 
+ cryptopro 3		: id-GostR3411-94-with-GostR3410-2001 : GOST R 34.11-94 with GOST R 34.10-2001
+ cryptopro 4		: id-GostR3411-94-with-GostR3410-94 : GOST R 34.11-94 with GOST R 34.10-94
+@@ -1169,8 +1170,10 @@
+ !Cname id-Gost28147-89
+ cryptopro 21		: gost89 		: GOST 28147-89
+ 			: gost89-cnt
++			: gost89-cnt-12
+ !Cname id-Gost28147-89-MAC
+ cryptopro 22		: gost-mac	: GOST 28147-89 MAC
++			: gost-mac-12
+ !Cname id-GostR3411-94-prf
+ cryptopro 23		: prf-gostr3411-94	: GOST R 34.11-94 PRF
+ cryptopro 98		: id-GostR3410-2001DH	: GOST R 34.10-2001 DH
+@@ -1229,6 +1232,52 @@
+ 
+ cryptocom 1 8 1		: id-GostR3410-2001-ParamSet-cc : GOST R 3410-2001 Parameter Set Cryptocom
+ 
++# TC26 GOST OIDs
++
++id-tc26 1 		: id-tc26-algorithms
++id-tc26-algorithms 1	: id-tc26-sign
++!Cname id-GostR3410-2012-256
++id-tc26-sign 1		: gost2012_256: GOST R 34.10-2012 with 256 bit modulus
++!Cname id-GostR3410-2012-512
++id-tc26-sign 2		: gost2012_512: GOST R 34.10-2012 with 512 bit modulus
++
++id-tc26-algorithms 2	: id-tc26-digest
++!Cname id-GostR3411-2012-256
++id-tc26-digest 2	: md_gost12_256: GOST R 34.11-2012 with 256 bit hash
++!Cname id-GostR3411-2012-512
++id-tc26-digest 3	: md_gost12_512: GOST R 34.11-2012 with 512 bit hash
++
++id-tc26-algorithms 3	: id-tc26-signwithdigest
++id-tc26-signwithdigest 2: id-tc26-signwithdigest-gost3410-2012-256: GOST R 34.10-2012 with GOST R 34.11-2012 (256 bit)
++id-tc26-signwithdigest 3: id-tc26-signwithdigest-gost3410-2012-512: GOST R 34.10-2012 with GOST R 34.11-2012 (512 bit)
++
++id-tc26-algorithms 4	: id-tc26-mac
++id-tc26-mac 1		: id-tc26-hmac-gost-3411-2012-256 : HMAC GOST 34.11-2012 256 bit
++id-tc26-mac 2		: id-tc26-hmac-gost-3411-2012-512 : HMAC GOST 34.11-2012 512 bit
++
++id-tc26-algorithms 5	: id-tc26-cipher
++
++id-tc26-algorithms 6	: id-tc26-agreement
++id-tc26-agreement 1	: id-tc26-agreement-gost-3410-2012-256
++id-tc26-agreement 2	: id-tc26-agreement-gost-3410-2012-512
++
++id-tc26 2 		: id-tc26-constants
++
++id-tc26-constants 1	: id-tc26-sign-constants
++id-tc26-sign-constants 2: id-tc26-gost-3410-2012-512-constants
++id-tc26-gost-3410-2012-512-constants 0	: id-tc26-gost-3410-2012-512-paramSetTest: GOST R 34.10-2012 (512 bit) testing parameter set
++id-tc26-gost-3410-2012-512-constants 1	: id-tc26-gost-3410-2012-512-paramSetA: GOST R 34.10-2012 (512 bit) ParamSet A
++id-tc26-gost-3410-2012-512-constants 2	: id-tc26-gost-3410-2012-512-paramSetB: GOST R 34.10-2012 (512 bit) ParamSet B
++
++id-tc26-constants 2     : id-tc26-digest-constants
++id-tc26-constants 5     : id-tc26-cipher-constants
++id-tc26-cipher-constants 1	: id-tc26-gost-28147-constants
++id-tc26-gost-28147-constants 1	: id-tc26-gost-28147-param-Z : GOST 28147-89 TC26 parameter set
++
++member-body 643 3 131 1 1	: INN	: INN
++member-body 643 100 1		: OGRN	: OGRN
++member-body 643 100 3		: SNILS	: SNILS
++
+ # Definitions for Camellia cipher - CBC MODE
+ 
+ 1 2 392 200011 61 1 1 1 2 : CAMELLIA-128-CBC		: camellia-128-cbc
+diff -Nuar openssl-1.0.2d/crypto/objects/obj_mac.h openssl-work/crypto/objects/obj_mac.h
+--- openssl-1.0.2d/crypto/objects/obj_mac.h	2015-07-09 15:58:04.000000000 +0400
++++ openssl-work/crypto/objects/obj_mac.h	2015-03-26 13:00:22.000000000 +0400
+@@ -3678,6 +3678,10 @@
+ #define NID_cryptocom           806
+ #define OBJ_cryptocom           OBJ_member_body,643L,2L,9L
+ 
++#define SN_id_tc26              "id-tc26"
++#define NID_id_tc26             958
++#define OBJ_id_tc26             OBJ_member_body,643L,7L,1L
++
+ #define SN_id_GostR3411_94_with_GostR3410_2001          "id-GostR3411-94-with-GostR3410-2001"
+ #define LN_id_GostR3411_94_with_GostR3410_2001          "GOST R 34.11-94 with GOST R 34.10-2001"
+ #define NID_id_GostR3411_94_with_GostR3410_2001         807
+@@ -3716,11 +3720,17 @@
+ #define SN_gost89_cnt           "gost89-cnt"
+ #define NID_gost89_cnt          814
+ 
++#define SN_gost89_cnt_12                "gost89-cnt-12"
++#define NID_gost89_cnt_12               959
++
+ #define SN_id_Gost28147_89_MAC          "gost-mac"
+ #define LN_id_Gost28147_89_MAC          "GOST 28147-89 MAC"
+ #define NID_id_Gost28147_89_MAC         815
+ #define OBJ_id_Gost28147_89_MAC         OBJ_cryptopro,22L
+ 
++#define SN_gost_mac_12          "gost-mac-12"
++#define NID_gost_mac_12         960
++
+ #define SN_id_GostR3411_94_prf          "prf-gostr3411-94"
+ #define LN_id_GostR3411_94_prf          "GOST R 34.11-94 PRF"
+ #define NID_id_GostR3411_94_prf         816
+@@ -3886,6 +3896,141 @@
+ #define NID_id_GostR3410_2001_ParamSet_cc               854
+ #define OBJ_id_GostR3410_2001_ParamSet_cc               OBJ_cryptocom,1L,8L,1L
+ 
++#define SN_id_tc26_algorithms           "id-tc26-algorithms"
++#define NID_id_tc26_algorithms          961
++#define OBJ_id_tc26_algorithms          OBJ_id_tc26,1L
++
++#define SN_id_tc26_sign         "id-tc26-sign"
++#define NID_id_tc26_sign                962
++#define OBJ_id_tc26_sign                OBJ_id_tc26_algorithms,1L
++
++#define SN_id_GostR3410_2012_256                "gost2012_256"
++#define LN_id_GostR3410_2012_256                "GOST R 34.10-2012 with 256 bit modulus"
++#define NID_id_GostR3410_2012_256               963
++#define OBJ_id_GostR3410_2012_256               OBJ_id_tc26_sign,1L
++
++#define SN_id_GostR3410_2012_512                "gost2012_512"
++#define LN_id_GostR3410_2012_512                "GOST R 34.10-2012 with 512 bit modulus"
++#define NID_id_GostR3410_2012_512               964
++#define OBJ_id_GostR3410_2012_512               OBJ_id_tc26_sign,2L
++
++#define SN_id_tc26_digest               "id-tc26-digest"
++#define NID_id_tc26_digest              965
++#define OBJ_id_tc26_digest              OBJ_id_tc26_algorithms,2L
++
++#define SN_id_GostR3411_2012_256                "md_gost12_256"
++#define LN_id_GostR3411_2012_256                "GOST R 34.11-2012 with 256 bit hash"
++#define NID_id_GostR3411_2012_256               966
++#define OBJ_id_GostR3411_2012_256               OBJ_id_tc26_digest,2L
++
++#define SN_id_GostR3411_2012_512                "md_gost12_512"
++#define LN_id_GostR3411_2012_512                "GOST R 34.11-2012 with 512 bit hash"
++#define NID_id_GostR3411_2012_512               967
++#define OBJ_id_GostR3411_2012_512               OBJ_id_tc26_digest,3L
++
++#define SN_id_tc26_signwithdigest               "id-tc26-signwithdigest"
++#define NID_id_tc26_signwithdigest              968
++#define OBJ_id_tc26_signwithdigest              OBJ_id_tc26_algorithms,3L
++
++#define SN_id_tc26_signwithdigest_gost3410_2012_256             "id-tc26-signwithdigest-gost3410-2012-256"
++#define LN_id_tc26_signwithdigest_gost3410_2012_256             "GOST R 34.10-2012 with GOST R 34.11-2012 (256 bit)"
++#define NID_id_tc26_signwithdigest_gost3410_2012_256            969
++#define OBJ_id_tc26_signwithdigest_gost3410_2012_256            OBJ_id_tc26_signwithdigest,2L
++
++#define SN_id_tc26_signwithdigest_gost3410_2012_512             "id-tc26-signwithdigest-gost3410-2012-512"
++#define LN_id_tc26_signwithdigest_gost3410_2012_512             "GOST R 34.10-2012 with GOST R 34.11-2012 (512 bit)"
++#define NID_id_tc26_signwithdigest_gost3410_2012_512            970
++#define OBJ_id_tc26_signwithdigest_gost3410_2012_512            OBJ_id_tc26_signwithdigest,3L
++
++#define SN_id_tc26_mac          "id-tc26-mac"
++#define NID_id_tc26_mac         971
++#define OBJ_id_tc26_mac         OBJ_id_tc26_algorithms,4L
++
++#define SN_id_tc26_hmac_gost_3411_2012_256              "id-tc26-hmac-gost-3411-2012-256"
++#define LN_id_tc26_hmac_gost_3411_2012_256              "HMAC GOST 34.11-2012 256 bit"
++#define NID_id_tc26_hmac_gost_3411_2012_256             972
++#define OBJ_id_tc26_hmac_gost_3411_2012_256             OBJ_id_tc26_mac,1L
++
++#define SN_id_tc26_hmac_gost_3411_2012_512              "id-tc26-hmac-gost-3411-2012-512"
++#define LN_id_tc26_hmac_gost_3411_2012_512              "HMAC GOST 34.11-2012 512 bit"
++#define NID_id_tc26_hmac_gost_3411_2012_512             973
++#define OBJ_id_tc26_hmac_gost_3411_2012_512             OBJ_id_tc26_mac,2L
++
++#define SN_id_tc26_cipher               "id-tc26-cipher"
++#define NID_id_tc26_cipher              974
++#define OBJ_id_tc26_cipher              OBJ_id_tc26_algorithms,5L
++
++#define SN_id_tc26_agreement            "id-tc26-agreement"
++#define NID_id_tc26_agreement           975
++#define OBJ_id_tc26_agreement           OBJ_id_tc26_algorithms,6L
++
++#define SN_id_tc26_agreement_gost_3410_2012_256         "id-tc26-agreement-gost-3410-2012-256"
++#define NID_id_tc26_agreement_gost_3410_2012_256                976
++#define OBJ_id_tc26_agreement_gost_3410_2012_256                OBJ_id_tc26_agreement,1L
++
++#define SN_id_tc26_agreement_gost_3410_2012_512         "id-tc26-agreement-gost-3410-2012-512"
++#define NID_id_tc26_agreement_gost_3410_2012_512                977
++#define OBJ_id_tc26_agreement_gost_3410_2012_512                OBJ_id_tc26_agreement,2L
++
++#define SN_id_tc26_constants            "id-tc26-constants"
++#define NID_id_tc26_constants           978
++#define OBJ_id_tc26_constants           OBJ_id_tc26,2L
++
++#define SN_id_tc26_sign_constants               "id-tc26-sign-constants"
++#define NID_id_tc26_sign_constants              979
++#define OBJ_id_tc26_sign_constants              OBJ_id_tc26_constants,1L
++
++#define SN_id_tc26_gost_3410_2012_512_constants         "id-tc26-gost-3410-2012-512-constants"
++#define NID_id_tc26_gost_3410_2012_512_constants                980
++#define OBJ_id_tc26_gost_3410_2012_512_constants                OBJ_id_tc26_sign_constants,2L
++
++#define SN_id_tc26_gost_3410_2012_512_paramSetTest              "id-tc26-gost-3410-2012-512-paramSetTest"
++#define LN_id_tc26_gost_3410_2012_512_paramSetTest              "GOST R 34.10-2012 (512 bit) testing parameter set"
++#define NID_id_tc26_gost_3410_2012_512_paramSetTest             981
++#define OBJ_id_tc26_gost_3410_2012_512_paramSetTest             OBJ_id_tc26_gost_3410_2012_512_constants,0L
++
++#define SN_id_tc26_gost_3410_2012_512_paramSetA         "id-tc26-gost-3410-2012-512-paramSetA"
++#define LN_id_tc26_gost_3410_2012_512_paramSetA         "GOST R 34.10-2012 (512 bit) ParamSet A"
++#define NID_id_tc26_gost_3410_2012_512_paramSetA                982
++#define OBJ_id_tc26_gost_3410_2012_512_paramSetA                OBJ_id_tc26_gost_3410_2012_512_constants,1L
++
++#define SN_id_tc26_gost_3410_2012_512_paramSetB         "id-tc26-gost-3410-2012-512-paramSetB"
++#define LN_id_tc26_gost_3410_2012_512_paramSetB         "GOST R 34.10-2012 (512 bit) ParamSet B"
++#define NID_id_tc26_gost_3410_2012_512_paramSetB                983
++#define OBJ_id_tc26_gost_3410_2012_512_paramSetB                OBJ_id_tc26_gost_3410_2012_512_constants,2L
++
++#define SN_id_tc26_digest_constants             "id-tc26-digest-constants"
++#define NID_id_tc26_digest_constants            984
++#define OBJ_id_tc26_digest_constants            OBJ_id_tc26_constants,2L
++
++#define SN_id_tc26_cipher_constants             "id-tc26-cipher-constants"
++#define NID_id_tc26_cipher_constants            985
++#define OBJ_id_tc26_cipher_constants            OBJ_id_tc26_constants,5L
++
++#define SN_id_tc26_gost_28147_constants         "id-tc26-gost-28147-constants"
++#define NID_id_tc26_gost_28147_constants                986
++#define OBJ_id_tc26_gost_28147_constants                OBJ_id_tc26_cipher_constants,1L
++
++#define SN_id_tc26_gost_28147_param_Z           "id-tc26-gost-28147-param-Z"
++#define LN_id_tc26_gost_28147_param_Z           "GOST 28147-89 TC26 parameter set"
++#define NID_id_tc26_gost_28147_param_Z          987
++#define OBJ_id_tc26_gost_28147_param_Z          OBJ_id_tc26_gost_28147_constants,1L
++
++#define SN_INN          "INN"
++#define LN_INN          "INN"
++#define NID_INN         988
++#define OBJ_INN         OBJ_member_body,643L,3L,131L,1L,1L
++
++#define SN_OGRN         "OGRN"
++#define LN_OGRN         "OGRN"
++#define NID_OGRN                989
++#define OBJ_OGRN                OBJ_member_body,643L,100L,1L
++
++#define SN_SNILS                "SNILS"
++#define LN_SNILS                "SNILS"
++#define NID_SNILS               990
++#define OBJ_SNILS               OBJ_member_body,643L,100L,3L
++
+ #define SN_camellia_128_cbc             "CAMELLIA-128-CBC"
+ #define LN_camellia_128_cbc             "camellia-128-cbc"
+ #define NID_camellia_128_cbc            751
+diff -Nuar openssl-1.0.2d/crypto/objects/obj_mac.num openssl-work/crypto/objects/obj_mac.num
+--- openssl-1.0.2d/crypto/objects/obj_mac.num	2015-07-09 15:58:03.000000000 +0400
++++ openssl-work/crypto/objects/obj_mac.num	2015-02-25 12:49:43.000000000 +0400
+@@ -955,3 +955,36 @@
+ jurisdictionLocalityName		955
+ jurisdictionStateOrProvinceName		956
+ jurisdictionCountryName		957
++id_tc26		958
++gost89_cnt_12		959
++gost_mac_12		960
++id_tc26_algorithms		961
++id_tc26_sign		962
++id_GostR3410_2012_256		963
++id_GostR3410_2012_512		964
++id_tc26_digest		965
++id_GostR3411_2012_256		966
++id_GostR3411_2012_512		967
++id_tc26_signwithdigest		968
++id_tc26_signwithdigest_gost3410_2012_256		969
++id_tc26_signwithdigest_gost3410_2012_512		970
++id_tc26_mac		971
++id_tc26_hmac_gost_3411_2012_256		972
++id_tc26_hmac_gost_3411_2012_512		973
++id_tc26_cipher		974
++id_tc26_agreement		975
++id_tc26_agreement_gost_3410_2012_256		976
++id_tc26_agreement_gost_3410_2012_512		977
++id_tc26_constants		978
++id_tc26_sign_constants		979
++id_tc26_gost_3410_2012_512_constants		980
++id_tc26_gost_3410_2012_512_paramSetTest		981
++id_tc26_gost_3410_2012_512_paramSetA		982
++id_tc26_gost_3410_2012_512_paramSetB		983
++id_tc26_digest_constants		984
++id_tc26_cipher_constants		985
++id_tc26_gost_28147_constants		986
++id_tc26_gost_28147_param_Z		987
++INN		988
++OGRN		989
++SNILS		990
+diff -Nuar openssl-1.0.2d/crypto/objects/obj_xref.h openssl-work/crypto/objects/obj_xref.h
+--- openssl-1.0.2d/crypto/objects/obj_xref.h	2015-07-09 16:02:55.000000000 +0400
++++ openssl-work/crypto/objects/obj_xref.h	2015-03-26 13:00:21.000000000 +0400
+@@ -56,6 +56,10 @@
+      NID_dh_cofactor_kdf},
+     {NID_dhSinglePass_cofactorDH_sha512kdf_scheme, NID_sha512,
+      NID_dh_cofactor_kdf},
++    {NID_id_tc26_signwithdigest_gost3410_2012_256, NID_id_GostR3411_2012_256,
++     NID_id_GostR3410_2012_256},
++    {NID_id_tc26_signwithdigest_gost3410_2012_512, NID_id_GostR3411_2012_512,
++     NID_id_GostR3410_2012_512},
+ };
+ 
+ static const nid_triple *const sigoid_srt_xref[] = {
+@@ -96,4 +100,6 @@
+     &sigoid_srt[26],
+     &sigoid_srt[27],
+     &sigoid_srt[28],
++    &sigoid_srt[40],
++    &sigoid_srt[41],
+ };
+diff -Nuar openssl-1.0.2d/crypto/objects/obj_xref.txt openssl-work/crypto/objects/obj_xref.txt
+--- openssl-1.0.2d/crypto/objects/obj_xref.txt	2015-07-09 15:57:15.000000000 +0400
++++ openssl-work/crypto/objects/obj_xref.txt	2015-02-24 15:22:17.000000000 +0400
+@@ -44,6 +44,8 @@
+ id_GostR3411_94_with_GostR3410_94	id_GostR3411_94 id_GostR3410_94
+ id_GostR3411_94_with_GostR3410_94_cc	id_GostR3411_94 id_GostR3410_94_cc
+ id_GostR3411_94_with_GostR3410_2001_cc	id_GostR3411_94 id_GostR3410_2001_cc
++id_tc26_signwithdigest_gost3410_2012_256 id_GostR3411_2012_256 id_GostR3410_2012_256
++id_tc26_signwithdigest_gost3410_2012_512 id_GostR3411_2012_512 id_GostR3410_2012_512
+ # ECDH KDFs and their corresponding message digests and schemes
+ dhSinglePass_stdDH_sha1kdf_scheme		sha1	dh_std_kdf
+ dhSinglePass_stdDH_sha224kdf_scheme		sha224	dh_std_kdf
+

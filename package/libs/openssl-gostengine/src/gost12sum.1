@@ -1,0 +1,84 @@
+.\" Hey, Emacs!  This is an -*- nroff -*- source file.
+.TH GOST12SUM 1 "02 Aug 2016" "Openssl" "Debian GNU/Linux"
+.SH NAME
+gost12sum \- generates or checks GOST R34.11-2012 message digests
+
+.SH SYNOPSIS
+.B gost12sum
+[\-bvl] [\-c [file]] | [file...]
+
+.SH DESCRIPTION
+.B gost12sum
+generates or checks GOST hash sums. The algorithm to generate the
+is reasonably fast and strong enough for most cases. Exact
+specification of the algorithm is in
+.I GOST R34.11-2012.
+
+Normally
+.B gost12sum
+generates checksums of all files given to it as a parameter and prints
+the checksums followed by the filenames. If, however,
+.B \-c
+is specified, only one filename parameter is allowed. This file should
+contain checksums and filenames to which these checksums refer to, and
+the files listed in that file are checked against the checksums listed
+there. See option
+.B \-c
+for more information.
+
+.SS OPTIONS
+.TP
+.B \-b
+Use binary mode. In unix environment, only difference between this and
+the normal mode is an asterisk preceding the filename in the output.
+.TP
+.B \-c
+Check gost hashes of all files listed in
+.I file
+against the checksum listed in the same file. The actual format of that
+file is the same as output of
+.B md5sum.
+That is, each line in the file describes a file. A line looks like:
+
+.B <hashsum>  <filename>
+
+So, for example, if a file was created and its message digest calculated
+like so:
+
+.B echo foo > hash\-test\-file; gost12sum hash\-test\-file
+
+.B gost12sum
+would report:
+
+3d4a51ee7713e6467442facefe06f153a303e7bdefbe7f9bdf2edb4ae9c866ff hash\-test\-file
+
+When invoked with \-c option
+.B gost12sum 
+normally works silently unless error found. Use \-v if you want to see
+list of successfully checked files
+
+.TP
+.B \-v
+Be more verbose. Print filenames when checking (with \-c).
+
+.TP
+.B -l 
+Use long (512-bit) hash instead of short (256-bit).
+
+.SH BUGS
+
+This manpage is not quite accurate and has formatting inconsistent
+with other manpages.
+
+.B gost12sum
+does not accept standard options like
+.BR \-\-help .
+
+.SH AUTHOR
+
+.B gost12sum
+utility written by Cryptocom LTD
+
+This manual page is written by Victor Wagner <vitus@wagner.pp.ru> for
+Debian GNU/Linux
+

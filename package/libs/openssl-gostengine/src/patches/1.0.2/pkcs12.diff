@@ -1,0 +1,78 @@
+diff -Nuar openssl-1.0.2d/crypto/evp/evp_pbe.c openssl-work/crypto/evp/evp_pbe.c
+--- openssl-1.0.2d/crypto/evp/evp_pbe.c	2015-07-09 15:53:21.000000000 +0400
++++ openssl-work/crypto/evp/evp_pbe.c	2015-03-26 13:00:21.000000000 +0400
+@@ -121,6 +121,10 @@
+     {EVP_PBE_TYPE_PRF, NID_hmacWithSHA384, -1, NID_sha384, 0},
+     {EVP_PBE_TYPE_PRF, NID_hmacWithSHA512, -1, NID_sha512, 0},
+     {EVP_PBE_TYPE_PRF, NID_id_HMACGostR3411_94, -1, NID_id_GostR3411_94, 0},
++    {EVP_PBE_TYPE_PRF, NID_id_tc26_hmac_gost_3411_2012_256, -1,
++     NID_id_GostR3411_2012_256, 0},
++    {EVP_PBE_TYPE_PRF, NID_id_tc26_hmac_gost_3411_2012_512, -1,
++     NID_id_GostR3411_2012_512, 0},
+ };
+ 
+ #ifdef TEST
+diff -Nuar openssl-1.0.2d/crypto/pkcs12/p12_mutl.c openssl-work/crypto/pkcs12/p12_mutl.c
+--- openssl-1.0.2d/crypto/pkcs12/p12_mutl.c	2015-07-09 15:53:21.000000000 +0400
++++ openssl-work/crypto/pkcs12/p12_mutl.c	2015-06-17 14:48:18.000000000 +0400
+@@ -65,6 +65,28 @@
+ # include <openssl/rand.h>
+ # include <openssl/pkcs12.h>
+ 
++# define TK26_MAC_KEY_LEN 32
++
++static int PKCS12_gen_gost_mac_key(const char *pass, int passlen,
++                                   const unsigned char *salt, int saltlen,
++                                   int iter, const EVP_MD *digest, int keylen,
++                                   unsigned char *key)
++{
++    unsigned char out[96];
++
++    if (keylen != TK26_MAC_KEY_LEN) {
++        return 0;
++    }
++
++    if (!PKCS5_PBKDF2_HMAC(pass, passlen, salt, saltlen, iter,
++                           digest, 96, out)) {
++        return 0;
++    }
++    memcpy(key, out + 64, TK26_MAC_KEY_LEN);
++    OPENSSL_cleanse(out, 96);
++    return 1;
++}
++
+ /* Generate a MAC */
+ int PKCS12_gen_mac(PKCS12 *p12, const char *pass, int passlen,
+                    unsigned char *mac, unsigned int *maclen)
+@@ -73,7 +95,7 @@
+     HMAC_CTX hmac;
+     unsigned char key[EVP_MAX_MD_SIZE], *salt;
+     int saltlen, iter;
+-    int md_size;
++    int md_size = 0;
+ 
+     if (!PKCS7_type_is_data(p12->authsafes)) {
+         PKCS12err(PKCS12_F_PKCS12_GEN_MAC, PKCS12_R_CONTENT_TYPE_NOT_DATA);
+@@ -93,8 +115,19 @@
+     md_size = EVP_MD_size(md_type);
+     if (md_size < 0)
+         return 0;
+-    if (!PKCS12_key_gen(pass, passlen, salt, saltlen, PKCS12_MAC_ID, iter,
+-                        md_size, key, md_type)) {
++    if ((md_type->type == NID_id_GostR3411_94
++         || md_type->type == NID_id_GostR3411_2012_256
++         || md_type->type == NID_id_GostR3411_2012_512)
++        && !getenv("LEGACY_GOST_PKCS12")) {
++        md_size = TK26_MAC_KEY_LEN;
++        if (!PKCS12_gen_gost_mac_key(pass, passlen, salt, saltlen, iter,
++                                     md_type, md_size, key)) {
++            PKCS12err(PKCS12_F_PKCS12_GEN_MAC, PKCS12_R_KEY_GEN_ERROR);
++            return 0;
++        }
++    } else
++        if (!PKCS12_key_gen(pass, passlen, salt, saltlen, PKCS12_MAC_ID, iter,
++                            md_size, key, md_type)) {
+         PKCS12err(PKCS12_F_PKCS12_GEN_MAC, PKCS12_R_KEY_GEN_ERROR);
+         return 0;
+     }
+

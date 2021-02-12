@@ -1,0 +1,158 @@
+diff -uNr crypto/objects_orig/obj_dat.h crypto/objects/obj_dat.h
+--- crypto/objects_orig/obj_dat.h	2015-10-06 20:43:14.000000000 +0300
++++ crypto/objects/obj_dat.h	2015-10-06 20:45:53.000000000 +0300
+@@ -62,9 +62,9 @@
+  * [including the GNU Public Licence.]
+  */
+ 
+-#define NUM_NID 991
+-#define NUM_SN 984
+-#define NUM_LN 984
++#define NUM_NID 1000
++#define NUM_SN 993
++#define NUM_LN 993
+ #define NUM_OBJ 921
+ 
+ static const unsigned char lvalues[6485]={
+@@ -2611,6 +2611,15 @@
+ {"INN","INN",NID_INN,8,&(lvalues[6466]),0},
+ {"OGRN","OGRN",NID_OGRN,5,&(lvalues[6474]),0},
+ {"SNILS","SNILS",NID_SNILS,5,&(lvalues[6479]),0},
++{"gost89-cbc","gost89-cbc",NID_gost89_cbc,0,NULL,0},
++{"gost89-ecb","gost89-ecb",NID_gost89_ecb,0,NULL,0},
++{"gost89-ctr","gost89-ctr",NID_gost89_ctr,0,NULL,0},
++{"grasshopper-ecb","grasshopper-ecb",NID_grasshopper_ecb,0,NULL,0},
++{"grasshopper-ctr","grasshopper-ctr",NID_grasshopper_ctr,0,NULL,0},
++{"grasshopper-ofb","grasshopper-ofb",NID_grasshopper_ofb,0,NULL,0},
++{"grasshopper-cbc","grasshopper-cbc",NID_grasshopper_cbc,0,NULL,0},
++{"grasshopper-cfb","grasshopper-cfb",NID_grasshopper_cfb,0,NULL,0},
++{"grasshopper-mac","grasshopper-mac",NID_grasshopper_mac,0,NULL,0},
+ };
+ 
+ static const unsigned int sn_objs[NUM_SN]={
+@@ -2964,10 +2973,19 @@
+ 963,	/* "gost2012_256" */
+ 964,	/* "gost2012_512" */
+ 813,	/* "gost89" */
++991,	/* "gost89-cbc" */
+ 814,	/* "gost89-cnt" */
+ 959,	/* "gost89-cnt-12" */
++993,	/* "gost89-ctr" */
++992,	/* "gost89-ecb" */
+ 812,	/* "gost94" */
+ 850,	/* "gost94cc" */
++997,	/* "grasshopper-cbc" */
++998,	/* "grasshopper-cfb" */
++995,	/* "grasshopper-ctr" */
++994,	/* "grasshopper-ecb" */
++999,	/* "grasshopper-mac" */
++996,	/* "grasshopper-ofb" */
+ 797,	/* "hmacWithMD5" */
+ 163,	/* "hmacWithSHA1" */
+ 798,	/* "hmacWithSHA224" */
+@@ -3971,8 +3989,17 @@
+ 601,	/* "generic cryptogram" */
+ 99,	/* "givenName" */
+ 960,	/* "gost-mac-12" */
++991,	/* "gost89-cbc" */
+ 814,	/* "gost89-cnt" */
+ 959,	/* "gost89-cnt-12" */
++993,	/* "gost89-ctr" */
++992,	/* "gost89-ecb" */
++997,	/* "grasshopper-cbc" */
++998,	/* "grasshopper-cfb" */
++995,	/* "grasshopper-ctr" */
++994,	/* "grasshopper-ecb" */
++999,	/* "grasshopper-mac" */
++996,	/* "grasshopper-ofb" */
+ 855,	/* "hmac" */
+ 780,	/* "hmac-md5" */
+ 781,	/* "hmac-sha1" */
+diff -uNr crypto/objects_orig/objects.txt crypto/objects/objects.txt
+--- crypto/objects_orig/objects.txt	2015-10-06 20:43:14.000000000 +0300
++++ crypto/objects/objects.txt	2015-10-06 20:45:45.000000000 +0300
+@@ -1171,6 +1171,9 @@
+ cryptopro 21		: gost89 		: GOST 28147-89
+ 			: gost89-cnt
+ 			: gost89-cnt-12
++			: gost89-cbc
++			: gost89-ecb
++			: gost89-ctr
+ !Cname id-Gost28147-89-MAC
+ cryptopro 22		: gost-mac	: GOST 28147-89 MAC
+ 			: gost-mac-12
+@@ -1278,6 +1281,14 @@
+ member-body 643 100 1		: OGRN	: OGRN
+ member-body 643 100 3		: SNILS	: SNILS
+ 
++#GOST R34.13-2015 Grasshopper "Kuznechik"
++			: grasshopper-ecb
++			: grasshopper-ctr
++			: grasshopper-ofb
++			: grasshopper-cbc
++			: grasshopper-cfb
++			: grasshopper-mac
++
+ # Definitions for Camellia cipher - CBC MODE
+ 
+ 1 2 392 200011 61 1 1 1 2 : CAMELLIA-128-CBC		: camellia-128-cbc
+diff -uNr crypto/objects_orig/obj_mac.h crypto/objects/obj_mac.h
+--- crypto/objects_orig/obj_mac.h	2015-10-06 20:43:14.000000000 +0300
++++ crypto/objects/obj_mac.h	2015-10-06 20:45:52.000000000 +0300
+@@ -3723,6 +3723,15 @@
+ #define SN_gost89_cnt_12                "gost89-cnt-12"
+ #define NID_gost89_cnt_12               959
+ 
++#define SN_gost89_cbc           "gost89-cbc"
++#define NID_gost89_cbc          991
++
++#define SN_gost89_ecb           "gost89-ecb"
++#define NID_gost89_ecb          992
++
++#define SN_gost89_ctr           "gost89-ctr"
++#define NID_gost89_ctr          993
++
+ #define SN_id_Gost28147_89_MAC          "gost-mac"
+ #define LN_id_Gost28147_89_MAC          "GOST 28147-89 MAC"
+ #define NID_id_Gost28147_89_MAC         815
+@@ -4031,6 +4040,24 @@
+ #define NID_SNILS               990
+ #define OBJ_SNILS               OBJ_member_body,643L,100L,3L
+ 
++#define SN_grasshopper_ecb              "grasshopper-ecb"
++#define NID_grasshopper_ecb             994
++
++#define SN_grasshopper_ctr              "grasshopper-ctr"
++#define NID_grasshopper_ctr             995
++
++#define SN_grasshopper_ofb              "grasshopper-ofb"
++#define NID_grasshopper_ofb             996
++
++#define SN_grasshopper_cbc              "grasshopper-cbc"
++#define NID_grasshopper_cbc             997
++
++#define SN_grasshopper_cfb              "grasshopper-cfb"
++#define NID_grasshopper_cfb             998
++
++#define SN_grasshopper_mac              "grasshopper-mac"
++#define NID_grasshopper_mac             999
++
+ #define SN_camellia_128_cbc             "CAMELLIA-128-CBC"
+ #define LN_camellia_128_cbc             "camellia-128-cbc"
+ #define NID_camellia_128_cbc            751
+diff -uNr crypto/objects_orig/obj_mac.num crypto/objects/obj_mac.num
+--- crypto/objects_orig/obj_mac.num	2015-10-06 20:43:14.000000000 +0300
++++ crypto/objects/obj_mac.num	2015-10-06 20:45:51.000000000 +0300
+@@ -988,3 +988,12 @@
+ INN		988
+ OGRN		989
+ SNILS		990
++gost89_cbc		991
++gost89_ecb		992
++gost89_ctr		993
++grasshopper_ecb		994
++grasshopper_ctr		995
++grasshopper_ofb		996
++grasshopper_cbc		997
++grasshopper_cfb		998
++grasshopper_mac		999
