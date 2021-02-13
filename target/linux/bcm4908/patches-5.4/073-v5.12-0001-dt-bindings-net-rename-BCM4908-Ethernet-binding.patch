@@ -19,45 +19,105 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  2 files changed, 4 insertions(+), 4 deletions(-)
  rename Documentation/devicetree/bindings/net/{brcm,bcm4908enet.yaml => brcm,bcm4908-enet.yaml} (85%)
 
-diff --git a/Documentation/devicetree/bindings/net/brcm,bcm4908enet.yaml b/Documentation/devicetree/bindings/net/brcm,bcm4908-enet.yaml
-similarity index 85%
-rename from Documentation/devicetree/bindings/net/brcm,bcm4908enet.yaml
-rename to Documentation/devicetree/bindings/net/brcm,bcm4908-enet.yaml
-index 5f12f51c5b19..c70f222365c0 100644
 --- a/Documentation/devicetree/bindings/net/brcm,bcm4908enet.yaml
-+++ b/Documentation/devicetree/bindings/net/brcm,bcm4908-enet.yaml
-@@ -1,7 +1,7 @@
- # SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
- %YAML 1.2
- ---
++++ /dev/null
+@@ -1,45 +0,0 @@
+-# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+-%YAML 1.2
+----
 -$id: http://devicetree.org/schemas/net/brcm,bcm4908enet.yaml#
-+$id: http://devicetree.org/schemas/net/brcm,bcm4908-enet.yaml#
- $schema: http://devicetree.org/meta-schemas/core.yaml#
- 
- title: Broadcom BCM4908 Ethernet controller
-@@ -13,7 +13,7 @@ maintainers:
- 
- properties:
-   compatible:
+-$schema: http://devicetree.org/meta-schemas/core.yaml#
+-
+-title: Broadcom BCM4908 Ethernet controller
+-
+-description: Broadcom's Ethernet controller integrated into BCM4908 family SoCs
+-
+-maintainers:
+-  - Rafał Miłecki <rafal@milecki.pl>
+-
+-properties:
+-  compatible:
 -    const: brcm,bcm4908enet
-+    const: brcm,bcm4908-enet
- 
-   reg:
-     maxItems: 1
-@@ -37,7 +37,7 @@ examples:
-     #include <dt-bindings/interrupt-controller/arm-gic.h>
- 
-     ethernet@80002000 {
+-
+-  reg:
+-    maxItems: 1
+-
+-  interrupts:
+-    description: RX interrupt
+-
+-  interrupt-names:
+-    const: rx
+-
+-required:
+-  - reg
+-  - interrupts
+-  - interrupt-names
+-
+-additionalProperties: false
+-
+-examples:
+-  - |
+-    #include <dt-bindings/interrupt-controller/irq.h>
+-    #include <dt-bindings/interrupt-controller/arm-gic.h>
+-
+-    ethernet@80002000 {
 -        compatible = "brcm,bcm4908enet";
+-        reg = <0x80002000 0x1000>;
+-
+-        interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>;
+-        interrupt-names = "rx";
+-    };
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/brcm,bcm4908-enet.yaml
+@@ -0,0 +1,45 @@
++# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/net/brcm,bcm4908-enet.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Broadcom BCM4908 Ethernet controller
++
++description: Broadcom's Ethernet controller integrated into BCM4908 family SoCs
++
++maintainers:
++  - Rafał Miłecki <rafal@milecki.pl>
++
++properties:
++  compatible:
++    const: brcm,bcm4908-enet
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    description: RX interrupt
++
++  interrupt-names:
++    const: rx
++
++required:
++  - reg
++  - interrupts
++  - interrupt-names
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/irq.h>
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
++
++    ethernet@80002000 {
 +        compatible = "brcm,bcm4908-enet";
-         reg = <0x80002000 0x1000>;
- 
-         interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>;
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 3914691fb4a6..68fcd0a6416b 100644
++        reg = <0x80002000 0x1000>;
++
++        interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>;
++        interrupt-names = "rx";
++    };
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -3450,7 +3450,7 @@ M:	Rafał Miłecki <rafal@milecki.pl>
+@@ -3212,7 +3212,7 @@ M:	Rafał Miłecki <rafal@milecki.pl>
  M:	bcm-kernel-feedback-list@broadcom.com
  L:	netdev@vger.kernel.org
  S:	Maintained
