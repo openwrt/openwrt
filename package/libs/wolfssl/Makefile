@@ -33,8 +33,6 @@ PKG_CONFIG_DEPENDS:=\
 	CONFIG_WOLFSSL_HAS_SESSION_TICKET CONFIG_WOLFSSL_HAS_TLSV10 \
 	CONFIG_WOLFSSL_HAS_TLSV13 CONFIG_WOLFSSL_HAS_WPAS CONFIG_WOLFSSL_HAS_CERTGEN
 
-PKG_ABI_VERSION=$(patsubst %-stable,%,$(PKG_VERSION)).$(call version_abbrev,$(call confvar,$(PKG_CONFIG_DEPENDS)))
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libwolfssl
@@ -46,7 +44,7 @@ define Package/libwolfssl
   MENU:=1
   PROVIDES:=libcyassl
   DEPENDS:=+WOLFSSL_HAS_DEVCRYPTO:kmod-cryptodev +WOLFSSL_HAS_AFALG:kmod-crypto-user
-  ABI_VERSION:=$(PKG_ABI_VERSION)
+  ABI_VERSION:=24
 endef
 
 define Package/libwolfssl/description
