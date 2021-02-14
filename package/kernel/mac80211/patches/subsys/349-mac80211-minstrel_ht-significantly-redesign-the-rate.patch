@@ -179,14 +179,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!rate)
  		return;
 -	}
--
+ 
 -	i = 0;
 -	if (n_rates > 1) {
 -		random = prandom_u32();
 -		i = random % n_rates;
 -	}
 -	probe_rate = rates[i];
- 
+-
 -out:
 -	mi->sample_rate = probe_rate;
 +	mi->sample_rate = rate;
@@ -584,13 +584,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -
 -	if (!(mi->supported[sample_group] & BIT(sample_idx)))
 -		return -1;
-+	u8 seq;
- 
+-
 -	mrs = &mg->rates[sample_idx];
 -	sample_idx += MI_RATE(sample_group, 0);
 -
 -	tp_rate1 = mi->max_tp_rate[0];
--
++	u8 seq;
+ 
 -	/* Set tp_rate2 to the second highest max_tp_rate */
 -	if (minstrel_get_duration(mi->max_tp_rate[0]) >
 -	    minstrel_get_duration(mi->max_tp_rate[1])) {
@@ -673,7 +673,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	else
 -		sample_idx = minstrel_get_sample_rate(mp, mi);
 +		return;
-+
+ 
+-	if (sample_idx < 0)
 +	if (mp->hw->max_rates == 1 && mp->sample_switch &&
 +	    (mi->total_packets_cur >= SAMPLE_SWITCH_THR ||
 +	     mp->sample_switch == 1))
@@ -681,8 +682,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	if (time_is_before_jiffies(mi->sample_time))
 +		return;
- 
--	if (sample_idx < 0)
++
 +	mi->sample_time = jiffies + MINSTREL_SAMPLE_INTERVAL;
 +	sample_idx = minstrel_ht_get_sample_rate(mp, mi);
 +	if (!sample_idx)
