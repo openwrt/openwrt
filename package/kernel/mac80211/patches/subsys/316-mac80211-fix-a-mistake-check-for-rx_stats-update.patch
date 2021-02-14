@@ -1,0 +1,28 @@
+From: Wen Gong <wgong@codeaurora.org>
+Date: Wed, 9 Dec 2020 11:06:29 +0800
+Subject: [PATCH] mac80211: fix a mistake check for rx_stats update
+
+It should be !is_multicast_ether_addr() in ieee80211_rx_h_sta_process()
+for the rx_stats update, below commit remove the !, this patch is to
+change it back.
+
+It lead the rx rate "iw wlan0 station dump" become invalid for some
+scenario when IEEE80211_HW_USES_RSS is set.
+
+Fixes: 09a740ce352e ("mac80211: receive and process S1G beacons")
+Signed-off-by: Wen Gong <wgong@codeaurora.org>
+Link: https://lore.kernel.org/r/1607483189-3891-1-git-send-email-wgong@codeaurora.org
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1758,7 +1758,7 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 	} else if (rx->sdata->vif.type == NL80211_IFTYPE_OCB) {
+ 		sta->rx_stats.last_rx = jiffies;
+ 	} else if (!ieee80211_is_s1g_beacon(hdr->frame_control) &&
+-		   is_multicast_ether_addr(hdr->addr1)) {
++		   !is_multicast_ether_addr(hdr->addr1)) {
+ 		/*
+ 		 * Mesh beacons will update last_rx when if they are found to
+ 		 * match the current local configuration when processed.
