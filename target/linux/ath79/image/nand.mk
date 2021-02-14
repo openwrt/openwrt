@@ -1,5 +1,3 @@
-DEVICE_VARS += RAS_ROOTFS_SIZE RAS_BOARD RAS_VERSION
-
 # attention: only zlib compression is allowed for the boot fs
 define Build/zyxel-buildkerneljffs
 	rm -rf  $(KDIR_TMP)/zyxelnbg6716
