@@ -62,6 +62,12 @@ define patch_libtool
 	);
 endef
 
+define set_libtool_abiver
+	sed -i \
+		-e 's,^soname_spec=.*,soname_spec="\\$$$${libname}\\$$$${shared_ext}.$(PKG_ABI_VERSION)",' \
+		-e 's,^library_names_spec=.*,library_names_spec="\\$$$${libname}\\$$$${shared_ext}.$(PKG_ABI_VERSION) \\$$$${libname}\\$$$${shared_ext}",' \
+		$(PKG_BUILD_DIR)/libtool
+endef
 
 PKG_LIBTOOL_PATHS?=$(CONFIGURE_PATH)
 PKG_AUTOMAKE_PATHS?=$(CONFIGURE_PATH)
@@ -108,6 +114,10 @@ ifneq ($(filter libtool,$(PKG_FIXUP)),)
  ifeq ($(filter no-autoreconf,$(PKG_FIXUP)),)
   Hooks/Configure/Pre += autoreconf_target
  endif
+endif
+
+ifneq ($(filter libtool-abiver,$(PKG_FIXUP)),)
+  Hooks/Configure/Post += set_libtool_abiver
 endif
 
 ifneq ($(filter libtool-ucxx,$(PKG_FIXUP)),)
