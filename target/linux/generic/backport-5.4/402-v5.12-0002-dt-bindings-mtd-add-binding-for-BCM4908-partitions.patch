@@ -1,24 +1,25 @@
-From 4f740351484e88bcea3776578288b6ec400829c8 Mon Sep 17 00:00:00 2001
+From 6e9dff6fe3fbc452f16566e4a7e293b0decefdba Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Fri, 15 Jan 2021 16:01:04 +0100
-Subject: [PATCH 2/3] dt-bindings: mtd: add binding from BCM4908 partitions
+Date: Thu, 11 Feb 2021 23:04:26 +0100
+Subject: [PATCH] dt-bindings: mtd: add binding for BCM4908 partitions
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 BCM4908 uses fixed partitions layout but function of some partitions may
-vary. Some devices use multiple firmware partitions and those should be
-marked to let system discover their purpose.
+vary. Some devices use multiple firmware partitions and those partitions
+should be marked to let system discover their purpose.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
- .../partitions/brcm,bcm4908-partitions.yaml   | 68 +++++++++++++++++++
- 1 file changed, 68 insertions(+)
+ .../partitions/brcm,bcm4908-partitions.yaml   | 70 +++++++++++++++++++
+ 1 file changed, 70 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/mtd/partitions/brcm,bcm4908-partitions.yaml
 
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/mtd/partitions/brcm,bcm4908-partitions.yaml
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,70 @@
 +# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
 +%YAML 1.2
 +---
@@ -42,17 +43,19 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +  compatible:
 +    const: brcm,bcm4908-partitions
 +
-+  "#address-cells": true
++  "#address-cells":
++    enum: [ 1, 2 ]
 +
-+  "#size-cells": true
++  "#size-cells":
++    enum: [ 1, 2 ]
 +
 +patternProperties:
-+  "@[0-9a-f]+$":
-+    allOf:
-+      - $ref: "partition.yaml#"
-+      - properties:
-+          compatible:
-+            const: brcm,bcm4908-firmware
++  "^partition@[0-9a-f]+$":
++    $ref: "partition.yaml#"
++    properties:
++      compatible:
++        const: brcm,bcm4908-firmware
++    unevaluatedProperties: false
 +
 +required:
 +  - "#address-cells"

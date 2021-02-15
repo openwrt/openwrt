@@ -1,0 +1,40 @@
+From bc6dcf44da2bea215ae3edbdac5d350e96de3996 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Mon, 15 Feb 2021 08:28:44 +0100
+Subject: [PATCH] mtd: parsers: ofpart: fix building as module
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes:
+ERROR: modpost: missing MODULE_LICENSE() in drivers/mtd/parsers/bcm4908-partitions.o
+ERROR: modpost: "bcm4908_partitions_post_parse" [drivers/mtd/parsers/ofpart.ko] undefined!
+
+Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
+Fixes: 09cf6ee6d21c ("mtd: parsers: ofpart: support BCM4908 fixed partitions")
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Richard Weinberger <richard@nod.at>
+---
+ drivers/mtd/parsers/Makefile             | 2 +-
+ drivers/mtd/parsers/bcm4908-partitions.c | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/parsers/Makefile
++++ b/drivers/mtd/parsers/Makefile
+@@ -4,7 +4,7 @@ obj-$(CONFIG_MTD_BCM47XX_PARTS)		+= bcm4
+ obj-$(CONFIG_MTD_BCM63XX_PARTS)		+= bcm63xxpart.o
+ obj-$(CONFIG_MTD_CMDLINE_PARTS)		+= cmdlinepart.o
+ obj-$(CONFIG_MTD_OF_PARTS)		+= ofpart.o
+-obj-$(CONFIG_MTD_OF_PARTS)		+= bcm4908-partitions.o
++ofpart-objs				:= bcm4908-partitions.o
+ obj-$(CONFIG_MTD_PARSER_IMAGETAG)	+= parser_imagetag.o
+ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
+ obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
+--- a/drivers/mtd/parsers/bcm4908-partitions.c
++++ b/drivers/mtd/parsers/bcm4908-partitions.c
+@@ -62,3 +62,5 @@ int bcm4908_partitions_post_parse(struct
+ 
+ 	return 0;
+ }
++
++MODULE_LICENSE("GPL");
