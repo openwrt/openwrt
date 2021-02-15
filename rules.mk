@@ -339,10 +339,6 @@ else
     $(SCRIPT_DIR)/rstrip.sh
 endif
 
-SET_ABI_VERSION= \
-    PATCHELF="$(STAGING_DIR_HOST)/bin/patchelf" \
-	$(SCRIPT_DIR)/set-abi-version.sh
-
 ifeq ($(CONFIG_IPV6),y)
   DISABLE_IPV6:=
 else
