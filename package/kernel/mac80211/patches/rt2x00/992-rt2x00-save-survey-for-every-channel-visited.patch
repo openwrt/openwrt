@@ -53,20 +53,22 @@
 -	idle = rt2800_register_read(rt2x00dev, CH_IDLE_STA);
 -	busy = rt2800_register_read(rt2x00dev, CH_BUSY_STA);
 -	busy_ext = rt2800_register_read(rt2x00dev, CH_BUSY_STA_SEC);
-+	survey->channel = &rt2x00dev->bands[band].channels[idx];
- 
+-
 -	if (idle || busy) {
 -		survey->filled = SURVEY_INFO_TIME |
 -				 SURVEY_INFO_TIME_BUSY |
 -				 SURVEY_INFO_TIME_EXT_BUSY;
-+	survey->filled = SURVEY_INFO_TIME |
-+			 SURVEY_INFO_TIME_BUSY |
-+			 SURVEY_INFO_TIME_EXT_BUSY;
- 
+-
 -		survey->time = (idle + busy) / 1000;
 -		survey->time_busy = busy / 1000;
 -		survey->time_ext_busy = busy_ext / 1000;
 -	}
++	survey->channel = &rt2x00dev->bands[band].channels[idx];
++
++	survey->filled = SURVEY_INFO_TIME |
++			 SURVEY_INFO_TIME_BUSY |
++			 SURVEY_INFO_TIME_EXT_BUSY;
++
 +	survey->time = div_u64(chan_survey->time_idle + chan_survey->time_busy, 1000);
 +	survey->time_busy = div_u64(chan_survey->time_busy, 1000);
 +	survey->time_ext_busy = div_u64(chan_survey->time_ext_busy, 1000);

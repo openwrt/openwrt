@@ -133,34 +133,37 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -static void fq_recalc_backlog(struct fq *fq,
 -			      struct fq_tin *tin,
 -			      struct fq_flow *flow)
-+static struct fq_flow *fq_find_fattest_flow(struct fq *fq)
- {
+-{
 -	struct fq_flow *i;
-+	struct fq_tin *tin;
-+	struct fq_flow *flow = NULL;
-+	u32 len = 0;
-+	int i;
- 
+-
 -	if (list_empty(&flow->backlogchain))
 -		list_add_tail(&flow->backlogchain, &fq->backlogs);
-+	for_each_set_bit(i, fq->flows_bitmap, fq->flows_cnt) {
-+		struct fq_flow *cur = &fq->flows[i];
-+		unsigned int cur_len;
- 
+-
 -	i = flow;
 -	list_for_each_entry_continue_reverse(i, &fq->backlogs,
 -					     backlogchain)
 -		if (i->backlog > flow->backlog)
 -			break;
++static struct fq_flow *fq_find_fattest_flow(struct fq *fq)
++{
++	struct fq_tin *tin;
++	struct fq_flow *flow = NULL;
++	u32 len = 0;
++	int i;
++
++	for_each_set_bit(i, fq->flows_bitmap, fq->flows_cnt) {
++		struct fq_flow *cur = &fq->flows[i];
++		unsigned int cur_len;
++
 +		cur_len = cur->backlog;
 +		if (cur_len <= len)
 +			continue;
- 
--	list_move(&flow->backlogchain, &i->backlogchain);
++
 +		flow = cur;
 +		len = cur_len;
 +	}
-+
+ 
+-	list_move(&flow->backlogchain, &i->backlogchain);
 +	list_for_each_entry(tin, &fq->tin_backlog, tin_list) {
 +		unsigned int cur_len = tin->default_flow.backlog;
 +
