@@ -69,5 +69,5 @@ define Package/libipset/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipset*.so.* $(1)/usr/lib/
 endef
 
-$(eval $(call BuildPackage,ipset))
 $(eval $(call BuildPackage,libipset))
+$(eval $(call BuildPackage,ipset))
