@@ -315,10 +315,10 @@ define Package/lsattr/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/lsattr $(1)/usr/bin/
 endef
 
-$(eval $(call BuildPackage,e2fsprogs))
 $(eval $(call BuildPackage,libcomerr))
 $(eval $(call BuildPackage,libss))
 $(eval $(call BuildPackage,libext2fs))
+$(eval $(call BuildPackage,e2fsprogs))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
 $(eval $(call BuildPackage,badblocks))

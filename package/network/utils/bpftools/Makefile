@@ -162,6 +162,6 @@ define Package/libbpf/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib$(LIB_SUFFIX)/libbpf.so.* $(1)/usr/lib/
 endef
 
+$(eval $(call BuildPackage,libbpf))
 $(eval $(call BuildPackage,bpftool-full))
 $(eval $(call BuildPackage,bpftool-minimal))
-$(eval $(call BuildPackage,libbpf))
