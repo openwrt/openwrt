@@ -791,11 +791,13 @@ define Package/wipefs/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/wipefs $(1)/usr/sbin/
 endef
 
+# these lines need to be ordered by dependency because of ABI versioning
+$(eval $(call BuildPackage,libuuid))
 $(eval $(call BuildPackage,libblkid))
 $(eval $(call BuildPackage,libfdisk))
+
 $(eval $(call BuildPackage,libmount))
 $(eval $(call BuildPackage,libsmartcols))
-$(eval $(call BuildPackage,libuuid))
 $(eval $(call BuildPackage,agetty))
 $(eval $(call BuildPackage,blkdiscard))
 $(eval $(call BuildPackage,blkid))
