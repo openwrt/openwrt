@@ -58,7 +58,7 @@ include $(INCLUDE_DIR)/quilt.mk
 
 find_library_dependencies = \
 	$(wildcard $(patsubst %,$(STAGING_DIR)/pkginfo/%.version, \
-		$(sort $(foreach dep4, \
+		$(filter-out $(BUILD_PACKAGES), $(sort $(foreach dep4, \
 			$(sort $(foreach dep3, \
 				$(sort $(foreach dep2, \
 					$(sort $(foreach dep1, \
@@ -73,7 +73,7 @@ find_library_dependencies = \
 				$(Package/$(dep3)/depends) $(dep3) \
 			)), \
 			$(Package/$(dep4)/depends) $(dep4) \
-		)) \
+		))) \
 	))
 
 
