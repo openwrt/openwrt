@@ -1,0 +1,78 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Mon, 15 Feb 2021 20:05:41 +0100
+Subject: [PATCH] arm64: dts: broadcom: bcm4908: add remaining Netgear R8000P
+ LEDs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+There are a few more GPIO connected LEDs there didn't get described
+initially.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ .../bcm4908/bcm4906-netgear-r8000p.dts        | 48 +++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+--- a/arch/arm64/boot/dts/broadcom/bcm4908/bcm4906-netgear-r8000p.dts
++++ b/arch/arm64/boot/dts/broadcom/bcm4908/bcm4906-netgear-r8000p.dts
+@@ -18,11 +18,59 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
++		power-white {
++			function = LED_FUNCTION_POWER;
++			color = <LED_COLOR_ID_WHITE>;
++			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
++		};
++
++		power-amber {
++			function = LED_FUNCTION_POWER;
++			color = <LED_COLOR_ID_AMBER>;
++			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
++		};
++
+ 		wps {
+ 			function = LED_FUNCTION_WPS;
+ 			color = <LED_COLOR_ID_WHITE>;
+ 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+ 		};
++
++		2ghz {
++			function = "2ghz";
++			color = <LED_COLOR_ID_WHITE>;
++			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
++		};
++
++		5ghz-1 {
++			function = "5ghz-1";
++			color = <LED_COLOR_ID_WHITE>;
++			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
++		};
++
++		5ghz-2 {
++			function = "5ghz-2";
++			color = <LED_COLOR_ID_WHITE>;
++			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
++		};
++
++		usb2 {
++			function = "usb2";
++			color = <LED_COLOR_ID_WHITE>;
++			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
++		};
++
++		usb3 {
++			function = "usb3";
++			color = <LED_COLOR_ID_WHITE>;
++			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
++		};
++
++		wifi {
++			function = "wifi";
++			color = <LED_COLOR_ID_WHITE>;
++			gpios = <&gpio0 56 GPIO_ACTIVE_LOW>;
++		};
+ 	};
+ };
+ 
