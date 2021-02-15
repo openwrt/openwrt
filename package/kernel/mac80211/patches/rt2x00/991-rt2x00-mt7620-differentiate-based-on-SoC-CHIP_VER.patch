@@ -22,15 +22,16 @@
 -	rfcsr = rt2800_rfcsr_read(rt2x00dev, 16);
 -	rt2x00_set_field8(&rfcsr, RFCSR16_SDM_MODE_MT7620, 0x80);
 -	rt2800_rfcsr_write(rt2x00dev, 16, rfcsr);
+-
+-	rfcsr = rt2800_rfcsr_read(rt2x00dev, 21);
+-	rt2x00_set_field8(&rfcsr, RFCSR21_BIT8, 1);
+-	rt2800_rfcsr_write(rt2x00dev, 21, rfcsr);
 +	if (rt2800_hw_get_chipver(rt2x00dev) > 1) {
 +		/* Default: XO=20MHz , SDM mode */
 +		rfcsr = rt2800_rfcsr_read(rt2x00dev, 16);
 +		rt2x00_set_field8(&rfcsr, RFCSR16_SDM_MODE_MT7620, 0x80);
 +		rt2800_rfcsr_write(rt2x00dev, 16, rfcsr);
- 
--	rfcsr = rt2800_rfcsr_read(rt2x00dev, 21);
--	rt2x00_set_field8(&rfcsr, RFCSR21_BIT8, 1);
--	rt2800_rfcsr_write(rt2x00dev, 21, rfcsr);
++
 +		rfcsr = rt2800_rfcsr_read(rt2x00dev, 21);
 +		rt2x00_set_field8(&rfcsr, RFCSR21_BIT8, 1);
 +		rt2800_rfcsr_write(rt2x00dev, 21, rfcsr);
@@ -216,6 +217,10 @@
 -	rt2800_rfcsr_write(rt2x00dev, 28, 0x61);
 -	rt2800_rfcsr_write(rt2x00dev, 29, 0xB5);
 -	rt2800_rfcsr_write(rt2x00dev, 43, 0x02);
+-
+-	rt2800_rfcsr_write(rt2x00dev, 28, 0x62);
+-	rt2800_rfcsr_write(rt2x00dev, 29, 0xAD);
+-	rt2800_rfcsr_write(rt2x00dev, 39, 0x80);
 +	if (rt2800_hw_get_chipver(rt2x00dev) > 1) {
 +		rt2800_rfcsr_write(rt2x00dev, 11, 0x21);
 +		if (rt2800_clk_is_20mhz(rt2x00dev))
@@ -239,10 +244,7 @@
 +		rt2800_rfcsr_write(rt2x00dev, 29, 0xB5);
 +		rt2800_rfcsr_write(rt2x00dev, 43, 0x02);
 +	}
- 
--	rt2800_rfcsr_write(rt2x00dev, 28, 0x62);
--	rt2800_rfcsr_write(rt2x00dev, 29, 0xAD);
--	rt2800_rfcsr_write(rt2x00dev, 39, 0x80);
++
 +	if (rt2800_hw_get_chipver(rt2x00dev) > 1 &&
 +	    rt2800_hw_get_chipeco(rt2x00dev) >= 2) {
 +		rt2800_rfcsr_write(rt2x00dev, 28, 0x62);
@@ -286,6 +288,33 @@
 -	rt2800_rfcsr_write_chanreg(rt2x00dev, 59, 0x6B);
 -	rt2800_rfcsr_write_chanreg(rt2x00dev, 60, 0xF7);
 -	rt2800_rfcsr_write_chanreg(rt2x00dev, 61, 0x09);
+-
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 10, 0x51);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x06);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 19, 0xA7);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 28, 0x2C);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 55, 0x64);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 8, 0x51);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 9, 0x36);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 11, 0x53);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x16);
+-
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 47, 0x6C);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 48, 0xFC);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 49, 0x1F);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 54, 0x27);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 55, 0x66);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 59, 0x6B);
+-
+-	/* Initialize RF channel register for DRQFN */
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 43, 0xD3);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 44, 0xE3);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 45, 0xE5);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 47, 0x28);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 55, 0x68);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 56, 0xF7);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 58, 0x02);
+-	rt2800_rfcsr_write_chanreg(rt2x00dev, 60, 0xC7);
 +	if (rt2800_hw_get_chipver(rt2x00dev) > 1) {
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 9, 0x47);
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 10, 0x71);
@@ -318,16 +347,7 @@
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 60, 0xF7);
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 61, 0x09);
 +	}
- 
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 10, 0x51);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x06);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 19, 0xA7);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 28, 0x2C);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 55, 0x64);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 8, 0x51);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 9, 0x36);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 11, 0x53);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x16);
++
 +	if (rt2800_hw_get_chipver(rt2x00dev) > 1 &&
 +	    rt2800_hw_get_chipeco(rt2x00dev) >= 2) {
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 10, 0x51);
@@ -339,13 +359,7 @@
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 9, 0x36);
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 11, 0x53);
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x16);
- 
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 47, 0x6C);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 48, 0xFC);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 49, 0x1F);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 54, 0x27);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 55, 0x66);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 59, 0x6B);
++
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 47, 0x6C);
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 48, 0xFC);
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 49, 0x1F);
@@ -353,16 +367,7 @@
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 55, 0x66);
 +		rt2800_rfcsr_write_chanreg(rt2x00dev, 59, 0x6B);
 +	}
- 
--	/* Initialize RF channel register for DRQFN */
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 43, 0xD3);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 44, 0xE3);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 45, 0xE5);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 47, 0x28);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 55, 0x68);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 56, 0xF7);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 58, 0x02);
--	rt2800_rfcsr_write_chanreg(rt2x00dev, 60, 0xC7);
++
 +	if (rt2800_hw_get_chippkg(rt2x00dev) == 0 &&
 +	    rt2800_hw_get_chipver(rt2x00dev) == 1) {
 +		/* Initialize RF channel register for DRQFN */
