@@ -1,5 +1,5 @@
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Mon, 8 Feb 2021 09:11:36 +0100
+Date: Mon, 15 Feb 2021 19:51:26 +0100
 Subject: [PATCH] arm64: dts: broadcom: bcm4908: describe Ethernet controller
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -9,6 +9,8 @@ BCM4908 SoCs have an integrated Ethernet controller.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
+ .../boot/dts/broadcom/bcm4908/bcm4908.dtsi    | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
 --- a/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908.dtsi
@@ -35,8 +37,8 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +					port@8 {
 +						reg = <8>;
 +						phy-mode = "internal";
-+						brcm,use-bcm-hdr;
 +						ethernet = <&enet>;
++						brcm,use-bcm-hdr;
 +
 +						fixed-link {
 +							speed = <1000>;
