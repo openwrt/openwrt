@@ -1,6 +1,5 @@
-From 28d11220a92e9fc4d7d1b8e52dc1c48980e336a1 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Wed, 20 Jan 2021 20:34:00 +0100
+Date: Mon, 15 Feb 2021 19:46:54 +0100
 Subject: [PATCH] arm64: dts: broadcom: bcm4908: describe USB PHY
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -12,9 +11,9 @@ and XHCI. It requires powering up using the PMB.
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
  .../bcm4908/bcm4906-netgear-r8000p.dts        | 17 +++++++++++++
- .../bcm4908/bcm4908-asus-gt-ac5300.dts        | 16 ++++++++++++
+ .../bcm4908/bcm4908-asus-gt-ac5300.dts        | 17 +++++++++++++
  .../boot/dts/broadcom/bcm4908/bcm4908.dtsi    | 25 ++++++++++++++++---
- 3 files changed, 54 insertions(+), 4 deletions(-)
+ 3 files changed, 55 insertions(+), 4 deletions(-)
 
 --- a/arch/arm64/boot/dts/broadcom/bcm4908/bcm4906-netgear-r8000p.dts
 +++ b/arch/arm64/boot/dts/broadcom/bcm4908/bcm4906-netgear-r8000p.dts
@@ -44,11 +43,12 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	nand-ecc-step-size = <512>;
 --- a/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908-asus-gt-ac5300.dts
 +++ b/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908-asus-gt-ac5300.dts
-@@ -44,6 +44,22 @@
+@@ -44,6 +44,23 @@
  	};
  };
  
 +&usb_phy {
++	brcm,ioc = <1>;
 +	status = "okay";
 +};
 +
