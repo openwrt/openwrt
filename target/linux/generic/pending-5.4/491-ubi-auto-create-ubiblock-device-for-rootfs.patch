@@ -8,7 +8,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -652,6 +652,44 @@ static void __init ubiblock_create_from_
+@@ -652,6 +652,47 @@ static void __init ubiblock_create_from_
  	}
  }
  
@@ -32,6 +32,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	for (ubi_num = 0; ubi_num < UBI_MAX_DEVICES; ubi_num++) {
 +		desc = ubi_open_volume_nm(ubi_num, "rootfs", UBI_READONLY);
++		if (IS_ERR(desc))
++			desc = ubi_open_volume_nm(ubi_num, "fit", UBI_READONLY);;
++
 +		if (IS_ERR(desc))
 +			continue;
 +
