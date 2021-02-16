@@ -891,7 +891,7 @@ ar8216_phy_write(struct ar8xxx_priv *priv, int addr, int regnum, u16 val)
 static int
 ar8229_hw_init(struct ar8xxx_priv *priv)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
 	phy_interface_t phy_if_mode;
 #else
 	int phy_if_mode;
@@ -903,7 +903,7 @@ ar8229_hw_init(struct ar8xxx_priv *priv)
 	ar8xxx_write(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET);
 	ar8xxx_reg_wait(priv, AR8216_REG_CTRL, AR8216_CTRL_RESET, 0, 1000);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
 	of_get_phy_mode(priv->pdev->of_node, &phy_if_mode);
 #else
 	phy_if_mode = of_get_phy_mode(priv->pdev->of_node);
