@@ -85,12 +85,14 @@ tag to the driver.
 -	n = dst_neigh_lookup(dst_cache, daddr);
 -	if (!n)
 -		return -ENOENT;
-+	this_tuple = &flow->tuplehash[dir].tuple;
- 
+-
 -	read_lock_bh(&n->lock);
 -	nud_state = n->nud_state;
 -	ether_addr_copy(ha, n->ha);
 -	read_unlock_bh(&n->lock);
++	this_tuple = &flow->tuplehash[dir].tuple;
+ 
+-	if (!(nud_state & NUD_VALID)) {
 +	switch (this_tuple->xmit_type) {
 +	case FLOW_OFFLOAD_XMIT_DIRECT:
 +		ether_addr_copy(ha, this_tuple->out.h_dest);
@@ -102,8 +104,7 @@ tag to the driver.
 +		n = dst_neigh_lookup(dst_cache, daddr);
 +		if (!n)
 +			return -ENOENT;
- 
--	if (!(nud_state & NUD_VALID)) {
++
 +		read_lock_bh(&n->lock);
 +		nud_state = n->nud_state;
 +		ether_addr_copy(ha, n->ha);
@@ -143,8 +144,7 @@ tag to the driver.
 +	struct flow_action_entry *entry;
 +	struct net_device *dev;
 +	int ifindex;
- 
--	rt = (struct rtable *)flow->tuplehash[dir].tuple.dst_cache;
++
 +	this_tuple = &flow->tuplehash[dir].tuple;
 +	switch (this_tuple->xmit_type) {
 +	case FLOW_OFFLOAD_XMIT_DIRECT:
@@ -158,7 +158,8 @@ tag to the driver.
 +	default:
 +		return;
 +	}
-+
+ 
+-	rt = (struct rtable *)flow->tuplehash[dir].tuple.dst_cache;
 +	dev = dev_get_by_index(net, ifindex);
 +	if (!dev)
 +		return;

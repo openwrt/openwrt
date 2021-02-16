@@ -214,7 +214,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	napi_hash_del(napi);
  	list_del_rcu(&napi->dev_list);
  	napi_free_frags(napi);
-@@ -6788,52 +6881,18 @@ EXPORT_SYMBOL(__netif_napi_del);
+@@ -6788,53 +6881,19 @@ EXPORT_SYMBOL(__netif_napi_del);
  
  static int napi_poll(struct napi_struct *n, struct list_head *repoll)
  {
@@ -228,7 +228,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	have = netpoll_poll_lock(n);
  
 -	weight = n->weight;
--
++	work = __napi_poll(n, &do_repoll);
+ 
 -	/* This NAPI_STATE_SCHED test is for avoiding a race
 -	 * with netpoll's poll_napi().  Only the entity which
 -	 * obtains the lock and sees NAPI_STATE_SCHED set will
@@ -246,8 +247,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -			    n->poll, work, weight);
 -
 -	if (likely(work < weight))
--		goto out_unlock;
-+	work = __napi_poll(n, &do_repoll);
++	if (!do_repoll)
+ 		goto out_unlock;
  
 -	/* Drivers must not modify the NAPI state if they
 -	 * consume the entire weight.  In such cases this code
@@ -256,8 +257,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	 */
 -	if (unlikely(napi_disable_pending(n))) {
 -		napi_complete(n);
-+	if (!do_repoll)
- 		goto out_unlock;
+-		goto out_unlock;
 -	}
 -
 -	if (n->gro_bitmask) {
@@ -268,9 +268,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	}
 -
 -	gro_normal_list(n);
- 
+-
  	/* Some drivers may have called napi_schedule
  	 * prior to exhausting their budget.
+ 	 */
 @@ -11288,6 +11347,10 @@ static int __init net_dev_init(void)
  		sd->backlog.weight = weight_p;
  	}

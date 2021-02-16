@@ -106,11 +106,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	for (i = 0; i < host->n_ports; i++) {
 +		if (unlikely(!host->ports[i]->ledtrig))
 +			continue;
-+
+ 
 +		snprintf(host->ports[i]->ledtrig_name,
 +			sizeof(host->ports[i]->ledtrig_name), "ata%u",
 +			host->ports[i]->print_id);
- 
++
 +		host->ports[i]->ledtrig->name = host->ports[i]->ledtrig_name;
 +
 +		if (led_trigger_register(host->ports[i]->ledtrig)) {
