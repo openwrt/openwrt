@@ -771,6 +771,26 @@ define Device/linksys_re6500
 endef
 TARGET_DEVICES += linksys_re6500
 
+define Device/linksys_e5600
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 26624k
+  DEVICE_MODEL := E5600
+  LINKSYS_HWNAME := E5600
+  DEVICE_VENDOR := Linksys
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware \
+  uboot-envtools
+  UBINIZE_OPTS := -E 5
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+  append-ubi | check-size | linksys-image type=$$$$(LINKSYS_HWNAME)
+endef
+TARGET_DEVICES += linksys_e5600
+
 define Device/mediatek_ap-mt7621a-v60
   $(Device/dsa-migration)
   IMAGE_SIZE := 7872k
