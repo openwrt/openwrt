@@ -49,6 +49,9 @@ done
 [ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 
 case $board in
+d-link,dgs-1210-10p)
+	ucidef_set_poe 65 "$lan_list"
+	;;
 netgear,gs110tpp-v1)
 	ucidef_set_poe 130 "$lan_list"
 	;;

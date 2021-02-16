@@ -54,7 +54,7 @@ endef
 define Device/d-link_dgs-1210-10p
   $(Device/d-link_dgs-1210)
   DEVICE_MODEL := DGS-1210-10P
-  DEVICE_PACKAGES += lua-rs232
+  DEVICE_PACKAGES += lua-rs232 rtl83xx-poe
 endef
 TARGET_DEVICES += d-link_dgs-1210-10p
 
