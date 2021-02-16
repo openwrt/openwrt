@@ -36,6 +36,18 @@ define Package/ltq-vdsl-app/description
   Userland tool needed to control Lantiq VDSL CPE
 endef
 
+# ltq-vdsl-app uses a header provided by the MEI driver which has some
+# conditionals.
+#
+# Define them here with the default values they would get in the MEI driver,
+# have the same view on both sides.
+#
+# If you change them, you need to change them for the ltq-vdsl-app as well
+VDSL_APP_CFLAGS = \
+	-DMAX_CLI_PIPES=1 \
+	-DMEI_SUPPORT_DEBUG_STREAMS=1 \
+	-DMEI_SUPPORT_OPTIMIZED_FW_DL=1
+
 CONFIGURE_ARGS += \
 	--enable-vrx \
 	--enable-vrx-device=vr9 \
@@ -44,10 +56,10 @@ CONFIGURE_ARGS += \
 	--enable-ifxos \
 	--enable-ifxos-include="-I$(STAGING_DIR)/usr/include/ifxos" \
 	--enable-ifxos-library="-I$(STAGING_DIR)/usr/lib" \
-	--enable-add-appl-cflags="-DMAX_CLI_PIPES=1"  \
+	--enable-add-appl-cflags="$(VDSL_APP_CFLAGS)"  \
 	--enable-debug \
 	--disable-dti \
-	--with-channels-per-line="1" \
+	--with-channels-per-line="1"
 
 #CONFIGURE_ARGS += --enable-model=full
 #CONFIGURE_ARGS += --enable-model=lite

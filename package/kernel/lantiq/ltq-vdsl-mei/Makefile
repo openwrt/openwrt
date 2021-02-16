@@ -56,6 +56,15 @@ MAKE_FLAGS += \
 	$(KERNEL_MAKE_FLAGS) \
 	SHELL="$(BASH)"
 
+# ltq-vdsl-app uses a header provided by the MEI driver which has some
+# conditionals.
+# Define the conditionals here to have the same view on both sides. If you
+# change them, you need to change them for the ltq-vdsl-app as well
+MEI_DRV_CFLAGS = \
+	-DMEI_DRV_ATM_PTM_INTERFACE_ENABLE=1 \
+	-DMEI_SUPPORT_DEBUG_STREAMS=1 \
+	-DMEI_SUPPORT_OPTIMIZED_FW_DL=1
+
 CONFIGURE_ARGS += \
 	--enable-kernelincl="$(LINUX_DIR)/include" \
 	--enable-device=vr9 \
@@ -65,7 +74,7 @@ CONFIGURE_ARGS += \
 	--enable-error_print \
 	--enable-ifxos-include="-I$(STAGING_DIR)/usr/include/ifxos/" \
 	--enable-ifxos-library="-L$(STAGING_DIR)/usr/lib" \
-	--enable-add_drv_cflags="-DMEI_DRV_ATM_PTM_INTERFACE_ENABLE=1" \
+	--enable-add_drv_cflags="$(MEI_DRV_CFLAGS)" \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
 	--enable-drv_test_appl=yes \
