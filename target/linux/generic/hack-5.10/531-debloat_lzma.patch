@@ -710,26 +710,26 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
    UInt32 dicSize;
    Byte d;
-@@ -935,33 +883,11 @@ static SRes LzmaDec_AllocateProbs2(CLzma
+@@ -935,7 +883,7 @@ static SRes LzmaDec_AllocateProbs2(CLzma
    return SZ_OK;
  }
  
 -SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
--{
--  CLzmaProps propNew;
--  RINOK(LzmaProps_Decode(&propNew, props, propsSize));
--  RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
--  p->prop = propNew;
--  return SZ_OK;
--}
--
--SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
 +static SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
  {
    CLzmaProps propNew;
--  SizeT dicBufSize;
    RINOK(LzmaProps_Decode(&propNew, props, propsSize));
-   RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
+@@ -943,28 +891,6 @@ SRes LzmaDec_AllocateProbs(CLzmaDec *p,
+   p->prop = propNew;
+   return SZ_OK;
+ }
+-
+-SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
+-{
+-  CLzmaProps propNew;
+-  SizeT dicBufSize;
+-  RINOK(LzmaProps_Decode(&propNew, props, propsSize));
+-  RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
 -  dicBufSize = propNew.dicSize;
 -  if (p->dic == 0 || dicBufSize != p->dicBufSize)
 -  {
@@ -742,9 +742,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -    }
 -  }
 -  p->dicBufSize = dicBufSize;
-   p->prop = propNew;
-   return SZ_OK;
- }
+-  p->prop = propNew;
+-  return SZ_OK;
+-}
+ 
+ SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
+     const Byte *propData, unsigned propSize, ELzmaFinishMode finishMode,
 --- a/lib/lzma/LzmaEnc.c
 +++ b/lib/lzma/LzmaEnc.c
 @@ -53,7 +53,7 @@ void LzmaEncProps_Init(CLzmaEncProps *p)
