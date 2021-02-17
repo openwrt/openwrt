@@ -409,6 +409,8 @@
 		};
 
 		usb0: usb@e101000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 			compatible = "lantiq,xrx200-usb";
 			reg = <0xe101000 0x1000
@@ -418,9 +420,16 @@
 			dr_mode = "host";
 			phys = <&usb_phy0>;
 			phy-names = "usb2-phy";
+
+			ehci_port1: port@1 {
+				reg = <1>;
+				#trigger-source-cells = <0>;
+			};
 		};
 
 		usb1: usb@e106000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 			compatible = "lantiq,xrx200-usb";
 			reg = <0xe106000 0x1000>;
@@ -429,6 +438,11 @@
 			dr_mode = "host";
 			phys = <&usb_phy1>;
 			phy-names = "usb2-phy";
+
+			ehci_port2: port@1 {
+				reg = <1>;
+				#trigger-source-cells = <0>;
+			};
 		};
 
 		eth0: eth@e108000 {
