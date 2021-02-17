@@ -1,0 +1,21 @@
+From: David Bauer <mail@david-bauer.net>
+Date: Wed, 17 Feb 2021 02:44:55 +0100
+Subject: [PATCH] spi: ath79: always call chipselect function
+
+api-bitbang has to call the chipselect function on the ath79 SPI driver
+in order to communicate with the SPI slave device.
+
+Fixes commit 4a07b8bcd503 ("spi: bitbang: Make chipselect callback optional")
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -152,6 +152,7 @@ static int ath79_spi_probe(struct platfo
+ 
+ 	master->use_gpio_descriptors = true;
+ 	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(1, 32);
++	master->flags = SPI_MASTER_GPIO_SS;
+ 
+ 	sp->bitbang.master = master;
+ 	sp->bitbang.chipselect = ath79_spi_chipselect;

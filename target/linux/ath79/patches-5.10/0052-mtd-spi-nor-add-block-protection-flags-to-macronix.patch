@@ -1,0 +1,26 @@
+From 158f9796335b393980afb8e9796eb8d44106652a Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Mon, 26 Oct 2020 15:10:47 +0100
+Subject: [PATCH 1/2] mtd: spi-nor: add block protection flags to macronix
+
+Macronix flash chips support block protection by using BP bits in the
+read status register. Add the corresponding flag to indicate block
+protection support.
+
+Otherwise, locked blocks are not unlocked when requested.
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+---
+ drivers/mtd/spi-nor/macronix.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mtd/spi-nor/macronix.c
++++ b/drivers/mtd/spi-nor/macronix.c
+@@ -94,6 +94,7 @@ static const struct flash_info macronix_
+ 
+ static void macronix_default_init(struct spi_nor *nor)
+ {
++	nor->flags |= SNOR_F_HAS_LOCK;
+ 	nor->params->quad_enable = spi_nor_sr1_bit6_quad_enable;
+ 	nor->params->set_4byte_addr_mode = spi_nor_set_4byte_addr_mode;
+ 	nor->flags |= SNOR_F_HAS_LOCK;
