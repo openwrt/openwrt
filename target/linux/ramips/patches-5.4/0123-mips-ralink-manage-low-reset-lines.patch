@@ -23,11 +23,9 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  arch/mips/ralink/reset.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/ralink/reset.c b/arch/mips/ralink/reset.c
-index 8126f12604071..274d33078c5eb 100644
 --- a/arch/mips/ralink/reset.c
 +++ b/arch/mips/ralink/reset.c
-@@ -27,7 +27,7 @@ static int ralink_assert_device(struct reset_controller_dev *rcdev,
+@@ -27,7 +27,7 @@ static int ralink_assert_device(struct r
  {
  	u32 val;
  
@@ -36,7 +34,7 @@ index 8126f12604071..274d33078c5eb 100644
  		return -1;
  
  	val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
-@@ -42,7 +42,7 @@ static int ralink_deassert_device(struct reset_controller_dev *rcdev,
+@@ -42,7 +42,7 @@ static int ralink_deassert_device(struct
  {
  	u32 val;
  
