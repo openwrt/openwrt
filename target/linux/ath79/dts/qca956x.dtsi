@@ -172,6 +172,8 @@
 			interrupt-parent = <&intc3>;
 			interrupts = <0>;
 
+			device_type = "pci";
+
 			resets = <&rst 6>, <&rst 7>;
 			reset-names = "hc", "phy";
 
