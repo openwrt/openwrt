@@ -210,6 +210,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan" "2:wan"
 		;;
+	devolo,dlan-pro-1200plus-ac|\
 	devolo,magic-2-wifi)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:wan" "3:lan" "4:lan"
@@ -502,6 +503,7 @@ ath79_setup_macs()
 	compex,wpj563)
 		wan_mac=$(mtd_get_mac_binary u-boot 0x2e018)
 		;;
+	devolo,dlan-pro-1200plus-ac|\
 	devolo,magic-2-wifi)
 		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
 		;;

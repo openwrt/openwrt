@@ -664,6 +664,15 @@ define Device/compex_wpj563
 endef
 TARGET_DEVICES += compex_wpj563
 
+define Device/devolo_dlan-pro-1200plus-ac
+  SOC := ar9344
+  DEVICE_VENDOR := Devolo
+  DEVICE_MODEL := dLAN pro 1200+ WiFi ac
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15872k
+endef
+TARGET_DEVICES += devolo_dlan-pro-1200plus-ac
+
 define Device/devolo_dvl1200e
   SOC := qca9558
   DEVICE_VENDOR := devolo
