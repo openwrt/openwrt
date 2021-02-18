@@ -31,6 +31,9 @@ telco,t1)
 	ucidef_add_gpio_switch "lte_poweroff" "LTE Poweroff" "1" "1"
 	ucidef_add_gpio_switch "lte_reset" "LTE Reset" "12" "1"
 	;;
+devolo,dlan-pro-1200plus-ac)
+	ucidef_add_gpio_switch "plc_enable" "PLC enable" "13" "0"
+	;;
 devolo,magic-2-wifi)
 	ucidef_add_gpio_switch "plc_pairing" "PLC pairing" "11" "1"
 	ucidef_add_gpio_switch "plc_enable" "PLC enable" "13" "1"
