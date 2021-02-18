@@ -1194,7 +1194,11 @@ static void ag71xx_oom_timer_handler(struct timer_list *t)
 	napi_schedule(&ag->napi);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0)
 static void ag71xx_tx_timeout(struct net_device *dev)
+#else
+static void ag71xx_tx_timeout(struct net_device *dev, unsigned int txqueue)
+#endif
 {
 	struct ag71xx *ag = netdev_priv(dev);
 
