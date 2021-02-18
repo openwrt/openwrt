@@ -1114,6 +1114,19 @@ define Device/totolink_x5000r
 endef
 TARGET_DEVICES += totolink_x5000r
 
+define Device/tplink_eap235-wall-v1
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := EAP235-Wall
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  TPLINK_BOARD_ID := EAP235-WALL-V1
+  IMAGE_SIZE := 13440k
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory | \
+	pad-extra 128
+endef
+TARGET_DEVICES += tplink_eap235-wall-v1
+
 define Device/tplink_re350-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
