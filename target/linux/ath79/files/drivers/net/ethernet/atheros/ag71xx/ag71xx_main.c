@@ -15,6 +15,7 @@
 #include <linux/of_net.h>
 #include <linux/of_address.h>
 #include <linux/of_platform.h>
+#include <linux/version.h>
 #include "ag71xx.h"
 
 #define AG71XX_DEFAULT_MSG_ENABLE	\
@@ -1667,10 +1668,20 @@ static int ag71xx_probe(struct platform_device *pdev)
 		memcpy(dev->dev_addr, mac_addr, ETH_ALEN);
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,5,0)
 	ag->phy_if_mode = of_get_phy_mode(np);
 	if (ag->phy_if_mode < 0) {
+#else
+	err = of_get_phy_mode(np, (phy_interface_t*) &(ag->phy_if_mode));
+	if (err) {
+#endif
 		dev_err(&pdev->dev, "missing phy-mode property in DT\n");
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,5,0)
 		return ag->phy_if_mode;
+#else
+		return -EINVAL;
+#endif
 	}
 
 	if (of_device_is_compatible(np, "qca,qca9560-eth") &&
