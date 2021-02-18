@@ -50,10 +50,10 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	mikrotik,routerboard-750gr3)
-		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
+		ucidef_set_interfaces_lan_wan "eth2 eth3 eth4 eth5" "eth1"
 		;;
 	mikrotik,routerboard-760igs)
-		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
+		ucidef_set_interfaces_lan_wan "eth2 eth3 eth4 eth5" "eth1 sfp"
 		;;
 	ubnt,edgerouter-x)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
