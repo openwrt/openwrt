@@ -643,7 +643,6 @@ define Device/tplink_c20-v1
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 0x44
   TPLINK_HWREVADD := 0x1
-  IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC20 v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef
