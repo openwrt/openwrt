@@ -293,15 +293,4 @@ config OPENSSL_WITH_ASYNC
 		initiate crypto operations asynchronously. In order to work
 		this will require the presence of an async capable engine.
 
-config OPENSSL_WITH_GOST
-	bool
-	prompt "Prepare library for GOST engine"
-	depends on OPENSSL_ENGINE
-	help
-		This option prepares the library to accept engine support
-		for Russian GOST crypto algorithms.
-		The gost engine is not included in standard openwrt feeds.
-		To build such engine yourself, see:
-		https://github.com/gost-engine/engine
-
 endif
