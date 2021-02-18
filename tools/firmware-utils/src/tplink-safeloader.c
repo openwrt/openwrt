@@ -1447,6 +1447,35 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the EAP235-Wall v1 */
+	{
+		.id     = "EAP235-WALL-V1",
+		.support_list =
+			"SupportList:\r\n"
+			"EAP235-Wall(TP-Link|UN|AC1200-D):1.0\r\n",
+		.part_trail = PART_TRAIL_NONE,
+		.soft_ver = NULL,
+		.soft_ver_compat_level = 1,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x80000},
+			{"partition-table", 0x80000, 0x02000},
+			{"default-mac", 0x90000, 0x01000},
+			{"support-list", 0x91000, 0x00100},
+			{"product-info", 0x91100, 0x00400},
+			{"soft-version", 0x92000, 0x00100},
+			{"firmware", 0xa0000, 0xd20000},
+			{"user-config", 0xdc0000, 0x30000},
+			{"mutil-log", 0xf30000, 0x80000},
+			{"oops", 0xfb0000, 0x40000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the EAP245 v1 */
 	{
 		.id     = "EAP245-V1",
