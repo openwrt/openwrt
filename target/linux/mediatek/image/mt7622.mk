@@ -1,10 +1,10 @@
+DTS_VENDOR := mediatek
 KERNEL_LOADADDR := 0x44080000
 
 define Device/bpi_bananapi-r64
   DEVICE_VENDOR := Bpi
   DEVICE_MODEL := Banana Pi R64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
-  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
   SUPPORTED_DEVICES := bananapi,bpi-r64
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
 endef
@@ -14,7 +14,7 @@ define Device/bpi_bananapi-r64-rootdisk
   DEVICE_VENDOR := Bpi
   DEVICE_MODEL := Banana Pi R64 (rootdisk)
   DEVICE_DTS := mt7622-bananapi-bpi-r64-rootdisk
-  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES := bananapi,bpi-r64
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
   IMAGES := sysupgrade-emmc.bin.gz
@@ -26,7 +26,7 @@ define Device/elecom_wrc-2533gent
   DEVICE_VENDOR := Elecom
   DEVICE_MODEL := WRC-2533GENT
   DEVICE_DTS := mt7622-elecom-wrc-2533gent
-  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-mt7615e \
 	kmod-mt7615-firmware kmod-btmtkuart swconfig
 endef
@@ -36,7 +36,6 @@ define Device/mediatek_mt7622-rfb1
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MTK7622 rfb1 AP
   DEVICE_DTS := mt7622-rfb1
-  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1
@@ -45,7 +44,7 @@ define Device/mediatek_mt7622-ubi
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MTK7622 AP (UBI)
   DEVICE_DTS := mt7622-rfb1-ubi
-  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  DEVICE_DTS_DIR := ../dts
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -63,7 +62,7 @@ define Device/ubnt_unifi-6-lr
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi 6 LR
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr
-  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr
