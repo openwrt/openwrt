@@ -19,7 +19,7 @@ if [ ! -d "${patchdir}" ] ; then
     exit 1
 fi
     
-for i in ${patchdir}/${patchpattern} ; do 
+for i in $(find "${patchdir}" -type f -name "${patchpattern}" -print | sort); do
     case "$i" in
 	*.gz)
 	type="gzip"; uncomp="gunzip -dc"; ;; 
@@ -34,7 +34,6 @@ for i in ${patchdir}/${patchpattern} ; do
 	*)
 	type="plaintext"; uncomp="cat"; ;; 
     esac
-    [ -d "${i}" ] && echo "Ignoring subdirectory ${i}" && continue	
     echo ""
     echo "Applying ${i} using ${type}: " 
     ${uncomp} ${i} | ${PATCH:-patch} -f -p1 -d ${targetdir}
