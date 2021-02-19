@@ -146,8 +146,10 @@ define KernelPackage/mdio-gpio
 	CONFIG_MDIO_BITBANG \
 	CONFIG_MDIO_GPIO
   FILES:= \
-	$(LINUX_DIR)/drivers/net/phy/mdio-gpio.ko \
-	$(LINUX_DIR)/drivers/net/phy/mdio-bitbang.ko
+	$(LINUX_DIR)/drivers/net/phy/mdio-gpio.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/phy/mdio-bitbang.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-gpio.ko@ge5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-bitbang.ko@ge5.10
   AUTOLOAD:=$(call AutoProbe,mdio-gpio)
 endef
 
@@ -990,7 +992,8 @@ define KernelPackage/of-mdio
   KCONFIG:=CONFIG_OF_MDIO
   FILES:= \
 	$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko \
-	$(LINUX_DIR)/drivers/of/of_mdio.ko
+	$(LINUX_DIR)/drivers/of/of_mdio.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/of_mdio.ko@ge5.10
   AUTOLOAD:=$(call AutoLoad,41,of_mdio)
 endef
 
@@ -1165,7 +1168,8 @@ define KernelPackage/sfp
 	CONFIG_MDIO_I2C
   FILES:= \
 	$(LINUX_DIR)/drivers/net/phy/sfp.ko \
-	$(LINUX_DIR)/drivers/net/phy/mdio-i2c.ko
+	$(LINUX_DIR)/drivers/net/phy/mdio-i2c.ko@lt5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-i2c.ko@ge5.10
   AUTOLOAD:=$(call AutoProbe,mdio-i2c sfp)
 endef
 
