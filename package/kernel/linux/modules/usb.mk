@@ -1621,7 +1621,7 @@ define KernelPackage/usb-chipidea2
 	CONFIG_USB_CHIPIDEA \
 	CONFIG_USB_CHIPIDEA_HOST=y \
 	CONFIG_USB_CHIPIDEA_UDC=y \
-	CONFIG_USB_CHIPIDEA_DEBUG=y
+	CONFIG_USB_CHIPIDEA_GENERIC=y
   FILES:= \
 	$(LINUX_DIR)/drivers/extcon/extcon-core.ko \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc_usb2.ko
