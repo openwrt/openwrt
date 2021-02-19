@@ -66,7 +66,7 @@ endef
 define Device/rpi
   DEVICE_MODEL := B/B+/CM/Zero/ZeroW
   DEVICE_DTS := \
-	bcm2708-rpi-b bcm2708-rpi-b-plus \
+	bcm2708-rpi-b bcm2708-rpi-b-rev1 bcm2708-rpi-b-plus \
 	bcm2708-rpi-cm \
 	bcm2708-rpi-zero bcm2708-rpi-zero-w
   SUPPORTED_DEVICES := \
