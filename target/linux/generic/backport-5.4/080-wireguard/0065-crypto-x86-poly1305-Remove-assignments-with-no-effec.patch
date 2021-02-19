@@ -1,0 +1,35 @@
+From 0e34182e0d4048914e5611be971393793ca08396 Mon Sep 17 00:00:00 2001
+From: Herbert Xu <herbert@gondor.apana.org.au>
+Date: Thu, 24 Sep 2020 13:29:04 +1000
+Subject: [PATCH 065/115] crypto: x86/poly1305 - Remove assignments with no
+ effect
+
+commit 4a0c1de64bf9d9027a6f19adfba89fc27893db23 upstream.
+
+This patch removes a few ineffectual assignments from the function
+crypto_poly1305_setdctxkey.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+Signed-off-by: Jason A. Donenfeld <Jason@zx2c4.com>
+---
+ arch/x86/crypto/poly1305_glue.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/arch/x86/crypto/poly1305_glue.c b/arch/x86/crypto/poly1305_glue.c
+index 61b2bc8b6986..7de5046fe583 100644
+--- a/arch/x86/crypto/poly1305_glue.c
++++ b/arch/x86/crypto/poly1305_glue.c
+@@ -157,9 +157,6 @@ static unsigned int crypto_poly1305_setdctxkey(struct poly1305_desc_ctx *dctx,
+ 			dctx->s[1] = get_unaligned_le32(&inp[4]);
+ 			dctx->s[2] = get_unaligned_le32(&inp[8]);
+ 			dctx->s[3] = get_unaligned_le32(&inp[12]);
+-			inp += POLY1305_BLOCK_SIZE;
+-			len -= POLY1305_BLOCK_SIZE;
+-			acc += POLY1305_BLOCK_SIZE;
+ 			dctx->sset = true;
+ 		}
+ 	}
+-- 
+2.30.1
+
