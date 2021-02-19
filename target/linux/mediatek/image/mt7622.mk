@@ -1,4 +1,4 @@
-DTS_VENDOR := mediatek
+DTS_DIR := $(DTS_DIR)/mediatek
 KERNEL_LOADADDR := 0x44080000
 
 define Device/bpi_bananapi-r64
