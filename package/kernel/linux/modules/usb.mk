@@ -412,7 +412,7 @@ $(eval $(call KernelPackage,usb2-pci))
 
 define KernelPackage/usb-dwc2
   TITLE:=DWC2 USB controller driver
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget +kmod-usb-roles
   KCONFIG:= \
 	CONFIG_USB_PCI=y \
 	CONFIG_USB_DWC2 \
@@ -1325,7 +1325,7 @@ define KernelPackage/usb-net-rtl8152
   KCONFIG:=CONFIG_USB_RTL8152
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/r8152.ko
   AUTOLOAD:=$(call AutoProbe,r8152)
-  $(call AddDepends/usb-net)
+  $(call AddDepends/usb-net, +LINUX_5_10:kmod-crypto-hash)
 endef
 
 define KernelPackage/usb-net-rtl8152/description
@@ -1587,21 +1587,20 @@ endef
 
 $(eval $(call KernelPackage,usbip-server))
 
-
 define KernelPackage/usb-chipidea
   TITLE:=Host and device support for Chipidea controllers
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ath79 +kmod-usb-ehci +kmod-usb-phy-nop
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ath79 +kmod-usb-ehci +kmod-usb-phy-nop +kmod-usb-roles
   KCONFIG:= \
 	CONFIG_EXTCON \
 	CONFIG_USB_CHIPIDEA \
+	CONFIG_USB_CHIPIDEA_GENERIC \
 	CONFIG_USB_CHIPIDEA_HOST=y \
 	CONFIG_USB_CHIPIDEA_UDC=y \
 	CONFIG_USB_CHIPIDEA_DEBUG=y
   FILES:= \
 	$(LINUX_DIR)/drivers/extcon/extcon-core.ko \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
-	$(LINUX_DIR)/drivers/usb/common/ulpi.ko \
-	$(LINUX_DIR)/drivers/usb/roles/roles.ko
+	$(LINUX_DIR)/drivers/usb/common/ulpi.ko
   AUTOLOAD:=$(call AutoLoad,39,ci_hdrc,1)
   $(call AddDepends/usb)
 endef
@@ -1698,6 +1697,21 @@ define KernelPackage/usb-net2280/description
 endef
 
 $(eval $(call KernelPackage,usb-net2280))
+
+define KernelPackage/usb-roles
+  TITLE:=USB Role Switch Library Module
+  KCONFIG:=CONFIG_USB_ROLE_SWITCH
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/usb/roles/roles.ko
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-roles/description
+  Support for USB Role Switch
+endef
+
+$(eval $(call KernelPackage,usb-roles))
+
 
 define KernelPackage/chaoskey
   SUBMENU:=$(USB_MENU)
