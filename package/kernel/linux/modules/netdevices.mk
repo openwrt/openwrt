@@ -539,7 +539,6 @@ endef
 
 $(eval $(call KernelPackage,8139cp))
 
-
 define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
@@ -547,7 +546,8 @@ define KernelPackage/r8169
   KCONFIG:=CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
     CONFIG_R8169_VLAN=n
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/r8169.ko
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/r8169.ko \
+	  $(LINUX_DIR)/drivers/net/phy/mdio_devres.ko
   AUTOLOAD:=$(call AutoProbe,r8169)
 endef
 
