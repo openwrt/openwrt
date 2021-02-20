@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/media/usb/uvc/uvc_driver.c
 +++ b/drivers/media/usb/uvc/uvc_driver.c
-@@ -2908,6 +2908,18 @@ static const struct usb_device_id uvc_id
+@@ -2969,6 +2969,18 @@ static const struct usb_device_id uvc_id
  	  .bInterfaceSubClass	= 1,
  	  .bInterfaceProtocol	= 0,
  	  .driver_info		= UVC_INFO_META(V4L2_META_FMT_D4XX) },
@@ -225,7 +225,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	for_each_uvc_urb(uvc_urb, stream) {
 --- a/drivers/media/usb/uvc/uvcvideo.h
 +++ b/drivers/media/usb/uvc/uvcvideo.h
-@@ -199,7 +199,9 @@
+@@ -203,7 +203,9 @@
  #define UVC_QUIRK_RESTORE_CTRLS_ON_INIT	0x00000400
  #define UVC_QUIRK_FORCE_Y8		0x00000800
  #define UVC_QUIRK_FORCE_BPP		0x00001000
@@ -236,7 +236,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  /* Format flags */
  #define UVC_FMT_FLAG_COMPRESSED		0x00000001
  #define UVC_FMT_FLAG_STREAM		0x00000002
-@@ -666,6 +668,7 @@ struct uvc_device {
+@@ -672,6 +674,7 @@ struct uvc_device {
  	u8 *status;
  	struct input_dev *input;
  	char input_phys[64];

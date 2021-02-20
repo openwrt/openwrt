@@ -16,7 +16,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -605,6 +605,12 @@ config SPI_QCOM_GENI
+@@ -689,6 +689,12 @@ config SPI_QCOM_GENI
  	  This driver can also be built as a module.  If so, the module
  	  will be called spi-geni-qcom.
  
@@ -31,14 +31,14 @@ Acked-by: John Crispin <blogic@openwrt.org>
  	depends on ARCH_S3C24XX
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -87,6 +87,7 @@ obj-$(CONFIG_SPI_QUP)			+= spi-qup.o
- obj-$(CONFIG_SPI_ROCKCHIP)		+= spi-rockchip.o
+@@ -96,6 +96,7 @@ obj-$(CONFIG_SPI_ROCKCHIP)		+= spi-rockc
  obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
+ obj-$(CONFIG_SPI_RPCIF)			+= spi-rpc-if.o
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
 +obj-$(CONFIG_SPI_RT2880)		+= spi-rt2880.o
  obj-$(CONFIG_SPI_S3C24XX)		+= spi-s3c24xx-hw.o
  spi-s3c24xx-hw-y			:= spi-s3c24xx.o
- spi-s3c24xx-hw-$(CONFIG_SPI_S3C24XX_FIQ) += spi-s3c24xx-fiq.o
+ obj-$(CONFIG_SPI_S3C64XX)		+= spi-s3c64xx.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
 @@ -0,0 +1,530 @@

@@ -25,10 +25,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -1019,3 +1019,5 @@ config MMC_SDHCI_AM654
- 	  If you have a controller with this interface, say Y or M here.
+@@ -1101,3 +1101,5 @@ config MMC_OWL
  
- 	  If unsure, say N.
+ config MMC_SDHCI_EXTERNAL_DMA
+ 	bool
 +
 +source "drivers/mmc/host/mtk-mmc/Kconfig"
 --- a/drivers/mmc/host/Makefile

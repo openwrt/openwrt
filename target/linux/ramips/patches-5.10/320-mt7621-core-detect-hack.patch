@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			if (c > 0)
 --- a/arch/mips/ralink/mt7621.c
 +++ b/arch/mips/ralink/mt7621.c
-@@ -13,6 +13,7 @@
+@@ -15,6 +15,7 @@
  #include <asm/mips-cps.h>
  #include <asm/mach-ralink/ralink_regs.h>
  #include <asm/mach-ralink/mt7621.h>
@@ -38,8 +38,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  #include <pinmux.h>
  
-@@ -160,6 +161,20 @@ void __init ralink_of_remap(void)
- 		panic("Failed to remap core resources");
+@@ -146,6 +147,20 @@ static void soc_dev_init(struct ralink_s
+ 	}
  }
  
 +bool plat_cpu_core_present(int core)
