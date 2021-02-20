@@ -9,7 +9,7 @@ PKG_VERSION:=1.25.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
-PKG_SOURCE_URL:=http://deb.debian.org/debian/pool/main/f/fakeroot
+PKG_SOURCE_URL:=@DEBIAN/pool/main/f/fakeroot
 PKG_HASH:=8e903683357f7f5bcc31b879fd743391ad47691d4be33d24a76be3b6c21e956c
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=COPYING
