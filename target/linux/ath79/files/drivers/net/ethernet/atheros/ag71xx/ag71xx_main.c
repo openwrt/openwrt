@@ -936,11 +936,7 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 		 * The wr, rr functions cannot be used since this hidden register
 		 * is outside of the normal ag71xx register block.
 		 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
 		void __iomem *dam = ioremap(0xb90001bc, 0x4);
-#else
-		void __iomem *dam = ioremap_nocache(0xb90001bc, 0x4);
-#endif
 		if (dam) {
 			__raw_writel(__raw_readl(dam) & ~BIT(27), dam);
 			(void)__raw_readl(dam);
@@ -1587,25 +1583,15 @@ static int ag71xx_probe(struct platform_device *pdev)
 		ag->pllregmap = NULL;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
 	ag->mac_base = devm_ioremap(&pdev->dev, res->start,
 				    res->end - res->start + 1);
-#else
-	ag->mac_base = devm_ioremap_nocache(&pdev->dev, res->start,
-					    res->end - res->start + 1);
-#endif
 	if (!ag->mac_base)
 		return -ENOMEM;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 	if (res) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
 		ag->mii_base = devm_ioremap(&pdev->dev, res->start,
 					    res->end - res->start + 1);
-#else
-		ag->mii_base = devm_ioremap_nocache(&pdev->dev, res->start,
-						    res->end - res->start + 1);
-#endif
 		if (!ag->mii_base)
 			return -ENOMEM;
 	}
