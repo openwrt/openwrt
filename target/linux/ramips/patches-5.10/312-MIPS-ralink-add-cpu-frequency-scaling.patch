@@ -117,12 +117,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		.features		= CLOCK_EVT_FEAT_ONESHOT,
  		.set_next_event		= systick_next_event,
  		.set_state_shutdown	= systick_shutdown,
-@@ -95,9 +136,15 @@ static int systick_shutdown(struct clock
- 	sdev = container_of(evt, struct systick_device, dev);
- 
+@@ -91,7 +132,13 @@ static int systick_shutdown(struct clock
  	if (sdev->irq_requested)
--		free_irq(systick.dev.irq, &systick_irqaction);
-+		remove_irq(systick.dev.irq, &systick_irqaction);
+ 		free_irq(systick.dev.irq, &systick.dev);
  	sdev->irq_requested = 0;
 -	iowrite32(0, systick.membase + SYSTICK_CONFIG);
 +	iowrite32(CFG_CNT_EN, systick.membase + SYSTICK_CONFIG);
@@ -135,7 +132,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return 0;
  }
-@@ -117,34 +164,48 @@ static int systick_set_oneshot(struct cl
+@@ -116,33 +163,46 @@ static int systick_set_oneshot(struct cl
  	return 0;
  }
  
@@ -146,15 +143,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
  static int __init ralink_systick_init(struct device_node *np)
  {
+-	int ret;
 +	const struct of_device_id *match;
 +	int rating = 200;
- 	int ret;
  
  	systick.membase = of_iomap(np, 0);
  	if (!systick.membase)
  		return -ENXIO;
  
--	systick_irqaction.name = np->name;
 -	systick.dev.name = np->name;
 -	clockevents_calc_mult_shift(&systick.dev, SYSTICK_FREQ, 60);
 -	systick.dev.max_delta_ns = clockevent_delta2ns(0x7fff, &systick.dev);
@@ -190,7 +186,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -		return ret;
 -
 -	clockevents_register_device(&systick.dev);
-+	systick_irqaction.name = np->name;
 +	systick.dev.name = np->name;
 +	systick.dev.rating = rating;
 +	systick.dev.cpumask = cpumask_of(0);
