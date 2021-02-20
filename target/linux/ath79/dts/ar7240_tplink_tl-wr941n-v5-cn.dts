@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "ar7240_tplink.dtsi"
+
+/ {
+	compatible = "tplink,tl-wr941n-v5-cn", "qca,ar7240";
+	model = "TP-Link TL-WR941N v4/v5";
+};
+
+&leds {
+	lan1 {
+		label = "green:lan1";
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+	};
+
+	lan2 {
+		label = "green:lan2";
+		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+	};
+
+	lan3 {
+		label = "green:lan3";
+		gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+	};
+
+	lan4 {
+		label = "green:lan4";
+		gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+	};
+
+	wan {
+		label = "green:wan";
+		gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&ath9k {
+	compatible = "pci168c,002a";
+};
+
+&eth0 {
+	mtd-mac-address = <&uboot 0x1fc00>;
+	mtd-mac-address-increment = <1>;
+};
+
+&eth1 {
+	status = "okay";
+
+	mtd-mac-address = <&uboot 0x1fc00>;
+};
