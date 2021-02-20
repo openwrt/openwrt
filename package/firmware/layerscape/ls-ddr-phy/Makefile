@@ -29,7 +29,7 @@ endef
 
 define Build/Compile
 	cd $(PKG_BUILD_DIR)/lx2160a/ && \
-	tfa-fiptool create \
+	fiptool-layerscape create \
 		--ddr-immem-udimm-1d ddr4_pmu_train_imem.bin \
 		--ddr-immem-udimm-2d ddr4_2d_pmu_train_imem.bin \
 		--ddr-dmmem-udimm-1d ddr4_pmu_train_dmem.bin \
