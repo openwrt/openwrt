@@ -8,7 +8,7 @@
  	};
  
  	memory@40000000 {
-@@ -27,6 +29,42 @@
+@@ -27,6 +28,42 @@
  		reg = <0x40000000 0x40000000>;
  	};
  
@@ -51,30 +51,7 @@
  	reg_1p8v: regulator-1p8v {
  		compatible = "regulator-fixed";
  		regulator-name = "fixed-1.8V";
-@@ -139,11 +177,12 @@
- 
- 	};
- 
--	mmc1_pins_default: mmc1default {
-+	sd0_pins_default: sd0-pins-default {
- 		mux {
- 			function = "sd";
--			groups =  "sd_0";
-+			groups = "sd_0";
- 		};
-+
- 		/* "I2S2_OUT, "I2S4_IN"", "I2S3_IN", "I2S2_IN",
- 		 *  "I2S4_OUT", "I2S3_OUT" are used as DAT0, DAT1,
- 		 *  DAT2, DAT3, CMD, CLK for SD respectively.
-@@ -164,7 +203,6 @@
- 			pins = "TXD3";
- 			bias-pull-up;
- 		};
--
- 	};
- };
- 
-@@ -199,7 +237,7 @@
+@@ -199,7 +236,7 @@
  	status = "okay";
  	bus-width = <8>;
  	max-frequency = <50000000>;
@@ -83,21 +60,12 @@
  	vmmc-supply = <&reg_3p3v>;
  	vqmmc-supply = <&reg_3p3v>;
  	non-removable;
-@@ -207,14 +245,15 @@
- 
- &mmc1 {
- 	pinctrl-names = "default";
--	pinctrl-0 = <&mmc1_pins_default>;
-+	pinctrl-0 = <&sd0_pins_default>;
+@@ -210,7 +247,7 @@
+ 	pinctrl-0 = <&mmc1_pins_default>;
  	status = "okay";
  	bus-width = <4>;
 -	max-frequency = <50000000>;
-+	max-frequency = <20000000>;
++	max-frequency = <12000000>;
  	cap-sd-highspeed;
  	r_smpl = <1>;
  	vmmc-supply = <&reg_3p3v>;
- 	vqmmc-supply = <&reg_3p3v>;
-+	cd-gpios = <&gpio 81 GPIO_ACTIVE_LOW>;
- };
- 
- &watchdog {

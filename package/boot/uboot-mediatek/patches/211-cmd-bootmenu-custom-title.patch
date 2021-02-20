@@ -1,14 +1,14 @@
 --- a/cmd/bootmenu.c
 +++ b/cmd/bootmenu.c
-@@ -38,6 +38,7 @@ struct bootmenu_data {
+@@ -39,6 +39,7 @@ struct bootmenu_data {
  	int active;			/* active menu entry */
  	int count;			/* total count of menu entries */
  	struct bootmenu_entry *first;	/* first menu entry */
 +	char *mtitle;			/* custom menu title */
+ 	bool last_choiced;
  };
  
- enum bootmenu_key {
-@@ -380,7 +381,12 @@ static void menu_display_statusline(stru
+@@ -471,7 +472,12 @@ static void menu_display_statusline(stru
  	printf(ANSI_CURSOR_POSITION, 1, 1);
  	puts(ANSI_CLEAR_LINE);
  	printf(ANSI_CURSOR_POSITION, 2, 1);
@@ -22,7 +22,7 @@
  	puts(ANSI_CLEAR_LINE_TO_END);
  	printf(ANSI_CURSOR_POSITION, 3, 1);
  	puts(ANSI_CLEAR_LINE);
-@@ -434,6 +440,7 @@ static void bootmenu_show(int delay)
+@@ -525,6 +531,7 @@ static void bootmenu_show(int delay)
  		return;
  	}
  
