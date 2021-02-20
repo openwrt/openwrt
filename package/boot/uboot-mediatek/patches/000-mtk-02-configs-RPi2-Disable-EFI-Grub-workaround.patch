@@ -1,0 +1,21 @@
+From 04815ef5a49a9996acacfcb5e18924569f5e1bf5 Mon Sep 17 00:00:00 2001
+From: Matthias Brugger <mbrugger@suse.com>
+Date: Tue, 16 Feb 2021 20:54:08 +0100
+Subject: [PATCH 02/21] configs: RPi2: Disable EFI Grub workaround
+
+The EFI Grub workaround isn't needed with Grub version 2.04 or higher.
+This version was published over a year ago, so disable the workaround
+to reduce boot time.
+
+Signed-off-by: Matthias Brugger <mbrugger@suse.com>
+---
+ configs/rpi_2_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/configs/rpi_2_defconfig
++++ b/configs/rpi_2_defconfig
+@@ -42,3 +42,4 @@ CONFIG_SYS_WHITE_ON_BLACK=y
+ CONFIG_CONSOLE_SCROLL_LINES=10
+ CONFIG_PHYS_TO_BUS=y
+ CONFIG_OF_LIBFDT_OVERLAY=y
++# CONFIG_EFI_GRUB_ARM32_WORKAROUND is not set

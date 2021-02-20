@@ -1,0 +1,31 @@
+From 4bdab0ea008113dda4e001ab8d6863945000c1b2 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 11 Mar 2021 14:58:26 +0000
+Subject: [PATCH 21/21] mmc: mtk-sd: don't ignore max-frequency from device
+ tree
+
+commit e58e68d9 ("mmc: mtk-sd: assign plat->cfg.f_max with a correct value")
+wrongly assumed that plat->cfg.f_max is always unset at the time
+mscd_drv_probe() is run. This is not true in case max-frequency being
+defined in device tree, as it is then already set by mmc_of_parser()
+in msdc_of_to_plat().
+Only set plat->cfg.f_max to the default maximum value in case it is
+not already set to a sane value.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/mmc/mtk-sd.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/mmc/mtk-sd.c
++++ b/drivers/mmc/mtk-sd.c
+@@ -1644,7 +1644,8 @@ static int msdc_drv_probe(struct udevice
+ 	if (cfg->f_min < MIN_BUS_CLK)
+ 		cfg->f_min = MIN_BUS_CLK;
+ 
+-	cfg->f_max = host->src_clk_freq;
++	if (cfg->f_max < cfg->f_min || cfg->f_max > host->src_clk_freq)
++		cfg->f_max = host->src_clk_freq;
+ 
+ 	cfg->b_max = 1024;
+ 	cfg->voltages = MMC_VDD_32_33 | MMC_VDD_33_34;
