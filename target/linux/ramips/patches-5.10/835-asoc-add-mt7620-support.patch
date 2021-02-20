@@ -382,7 +382,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
 +
-+	if (dai->active)
++	if (snd_soc_dai_active(dai))
 +		return 0;
 +
 +	/* setup status interrupt */
@@ -408,7 +408,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
 +
 +	/* If both streams are stopped, disable module and clock */
-+	if (dai->active)
++	if (snd_soc_dai_active(dai))
 +		return;
 +
 +	/*
