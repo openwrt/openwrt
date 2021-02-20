@@ -468,6 +468,16 @@ define Device/tplink_tl-wr941-v4
 endef
 TARGET_DEVICES += tplink_tl-wr941-v4
 
+define Device/tplink_tl-wr941n-v5-cn
+  $(Device/tplink-4m)
+  SOC := ar7240
+  DEVICE_MODEL := TL-WR941N
+  DEVICE_VARIANT := v4/v5 (CN)
+  TPLINK_HWID := 0x09410004
+  SUPPORTED_DEVICES += tl-wr941n-v5-cn
+endef
+TARGET_DEVICES += tplink_tl-wr941n-v5-cn
+
 define Device/tplink_tl-wr941nd-v6
   $(Device/tplink-4mlzma)
   SOC := tp9343
