@@ -31,15 +31,19 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	bool
 --- a/arch/mips/kernel/cevt-r4k.c
 +++ b/arch/mips/kernel/cevt-r4k.c
-@@ -15,6 +15,26 @@
+@@ -16,6 +16,31 @@
  #include <asm/time.h>
  #include <asm/cevt-r4k.h>
  
++#ifdef CONFIG_CEVT_SYSTICK_QUIRK
 +static int mips_state_oneshot(struct clock_event_device *evt)
 +{
++	unsigned long flags = IRQF_PERCPU | IRQF_TIMER | IRQF_SHARED;
 +	if (!cp0_timer_irq_installed) {
 +		cp0_timer_irq_installed = 1;
-+		setup_irq(evt->irq, &c0_compare_irqaction);
++		if (request_irq(evt->irq, c0_compare_interrupt, flags, "timer",
++					c0_compare_interrupt))
++			pr_err("Failed to request irq %d (timer)\n", evt->irq);
 +	}
 +
 +	return 0;
@@ -49,21 +53,34 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	if (cp0_timer_irq_installed) {
 +		cp0_timer_irq_installed = 0;
-+		remove_irq(evt->irq, &c0_compare_irqaction);
++		free_irq(evt->irq, NULL);
 +	}
 +
 +	return 0;
 +}
++#endif
 +
  static int mips_next_event(unsigned long delta,
  			   struct clock_event_device *evt)
  {
-@@ -281,17 +301,21 @@ int r4k_clockevent_init(void)
+@@ -296,7 +321,9 @@ core_initcall(r4k_register_cpufreq_notif
+ 
+ int r4k_clockevent_init(void)
+ {
++#ifndef CONFIG_CEVT_SYSTICK_QUIRK
+ 	unsigned long flags = IRQF_PERCPU | IRQF_TIMER | IRQF_SHARED;
++#endif
+ 	unsigned int cpu = smp_processor_id();
+ 	struct clock_event_device *cd;
+ 	unsigned int irq, min_delta;
+@@ -326,11 +353,16 @@ int r4k_clockevent_init(void)
  	cd->rating		= 300;
  	cd->irq			= irq;
  	cd->cpumask		= cpumask_of(cpu);
++#ifdef CONFIG_CEVT_SYSTICK_QUIRK
 +	cd->set_state_shutdown	= mips_state_shutdown;
 +	cd->set_state_oneshot	= mips_state_oneshot;
++#endif
  	cd->set_next_event	= mips_next_event;
  	cd->event_handler	= mips_event_handler;
  
@@ -73,9 +90,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (cp0_timer_irq_installed)
  		return 0;
  
- 	cp0_timer_irq_installed = 1;
- 
- 	setup_irq(irq, &c0_compare_irqaction);
+@@ -339,6 +371,7 @@ int r4k_clockevent_init(void)
+ 	if (request_irq(irq, c0_compare_interrupt, flags, "timer",
+ 			c0_compare_interrupt))
+ 		pr_err("Failed to request irq %d (timer)\n", irq);
 +#endif
  
  	return 0;

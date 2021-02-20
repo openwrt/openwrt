@@ -45,7 +45,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -922,6 +922,11 @@ config I2C_RK3X
+@@ -954,6 +954,11 @@ config I2C_RK3X
  	  This driver can also be built as a module. If so, the module will
  	  be called i2c-rk3x.
  
@@ -59,14 +59,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	help
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -91,6 +91,7 @@ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
- obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
+@@ -90,6 +90,7 @@ obj-$(CONFIG_I2C_PMCMSP)	+= i2c-pmcmsp.o
+ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
  obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
  obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
 +obj-$(CONFIG_I2C_RALINK)	+= i2c-ralink.o
+ obj-$(CONFIG_I2C_QCOM_CCI)	+= i2c-qcom-cci.o
  obj-$(CONFIG_I2C_QCOM_GENI)	+= i2c-qcom-geni.o
  obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
- obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-ralink.c
 @@ -0,0 +1,435 @@

@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -316,6 +316,15 @@ config PWM_MEDIATEK
+@@ -339,6 +339,15 @@ config PWM_MEDIATEK
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-mediatek.
  
@@ -28,10 +28,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
  config PWM_MXS
  	tristate "Freescale MXS PWM support"
- 	depends on ARCH_MXS && OF
+ 	depends on OF
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -29,6 +29,7 @@ obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-p
+@@ -30,6 +30,7 @@ obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-p
  obj-$(CONFIG_PWM_LPSS_PLATFORM)	+= pwm-lpss-platform.o
  obj-$(CONFIG_PWM_MESON)		+= pwm-meson.o
  obj-$(CONFIG_PWM_MEDIATEK)	+= pwm-mediatek.o

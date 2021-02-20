@@ -14,16 +14,16 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
 
 --- a/drivers/net/phy/at803x.c
 +++ b/drivers/net/phy/at803x.c
-@@ -14,6 +14,8 @@
- #include <linux/etherdevice.h>
- #include <linux/of_gpio.h>
- #include <linux/gpio/consumer.h>
+@@ -20,6 +20,8 @@
+ #include <linux/regulator/driver.h>
+ #include <linux/regulator/consumer.h>
+ #include <dt-bindings/net/qca-ar803x.h>
 +#include <linux/sfp.h>
 +#include <linux/phylink.h>
  
- #define AT803X_SPECIFIC_STATUS			0x11
- #define AT803X_SS_SPEED_MASK			(3 << 14)
-@@ -53,9 +55,18 @@
+ #define AT803X_SPECIFIC_FUNCTION_CONTROL	0x10
+ #define AT803X_SFC_ASSERT_CRS			BIT(11)
+@@ -83,9 +85,18 @@
  
  #define AT803X_MODE_CFG_MASK			0x0F
  #define AT803X_MODE_CFG_SGMII			0x01
@@ -42,8 +42,8 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  
  #define AT803X_DEBUG_REG_0			0x00
  #define AT803X_DEBUG_RX_CLK_DLY_EN		BIT(15)
-@@ -243,10 +254,72 @@ static int at803x_resume(struct phy_devi
- 	return phy_modify(phydev, MII_BMCR, BMCR_PDOWN | BMCR_ISOLATE, 0);
+@@ -505,10 +516,72 @@ static int at803x_parse_dt(struct phy_de
+ 	return 0;
  }
  
 +static int at803x_mode(struct phy_device *phydev)
@@ -115,7 +115,7 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  
  	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
  	if (!priv)
-@@ -394,6 +467,10 @@ static int at803x_read_status(struct phy
+@@ -709,6 +782,10 @@ static int at803x_read_status(struct phy
  {
  	int ss, err, old_link = phydev->link;
  
@@ -126,27 +126,20 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  	/* Update the link, but return if there was an error */
  	err = genphy_update_link(phydev);
  	if (err)
-@@ -448,6 +525,19 @@ static int at803x_read_status(struct phy
- 	return 0;
- }
+@@ -809,6 +886,12 @@ static int at803x_config_aneg(struct phy
+ {
+ 	int ret;
  
-+static int at803x_config_aneg(struct phy_device *phydev)
-+{
 +	/* Handle (Fiber) SerDes to RGMII mode */
 +	if (at803x_mode(phydev) == AT803X_MODE_FIBER) {
 +		pr_warn("%s: fiber\n", __func__);
 +		return genphy_c37_config_aneg(phydev);
 +	}
 +
-+	pr_warn("%s: enter\n", __func__);
-+
-+	return genphy_config_aneg(phydev);
-+}
-+
- static struct phy_driver at803x_driver[] = {
- {
- 	/* ATHEROS 8035 */
-@@ -491,6 +581,7 @@ static struct phy_driver at803x_driver[]
+ 	ret = at803x_config_mdix(phydev, phydev->mdix_ctrl);
+ 	if (ret < 0)
+ 		return ret;
+@@ -1120,6 +1203,7 @@ static struct phy_driver at803x_driver[]
  	.suspend		= at803x_suspend,
  	.resume			= at803x_resume,
  	/* PHY_GBIT_FEATURES */
