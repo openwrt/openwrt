@@ -1653,6 +1653,11 @@ XHCI_MODULES := xhci-hcd xhci-pci xhci-plat-hcd
 ifdef CONFIG_TARGET_ramips_mt7621
   XHCI_MODULES += xhci-mtk
 endif
+ifndef CONFIG_LINUX_5_4
+  ifdef CONFIG_TARGET_apm821xx_nand
+    XHCI_MODULES += xhci-pci-renesas
+  endif
+endif
 XHCI_FILES := $(wildcard $(patsubst %,$(LINUX_DIR)/drivers/usb/host/%.ko,$(XHCI_MODULES)))
 XHCI_AUTOLOAD := $(patsubst $(LINUX_DIR)/drivers/usb/host/%.ko,%,$(XHCI_FILES))
 
@@ -1667,6 +1672,7 @@ define KernelPackage/usb3
 	CONFIG_USB_XHCI_PCI \
 	CONFIG_USB_XHCI_PLATFORM \
 	CONFIG_USB_XHCI_MTK \
+	CONFIG_USB_XHCI_PCI_RENESAS \
 	CONFIG_USB_XHCI_HCD_DEBUGGING=n
   FILES:= \
 	$(XHCI_FILES)
