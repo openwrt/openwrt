@@ -118,6 +118,8 @@
 				ranges = <0x2000000 0 0x10000000 0x10000000 0 0x07000000	/* pci memory */
 					  0x1000000 0 0x00000000 0x0000000 0 0x000001>;		/* io space */
 
+				device_type = "pci";
+
 				interrupt-parent = <&pci_intc>;
 				interrupts = <4>;
 

@@ -1114,6 +1114,19 @@ define Device/totolink_x5000r
 endef
 TARGET_DEVICES += totolink_x5000r
 
+define Device/tplink_eap235-wall-v1
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := EAP235-Wall
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  TPLINK_BOARD_ID := EAP235-WALL-V1
+  IMAGE_SIZE := 13440k
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory | \
+	pad-extra 128
+endef
+TARGET_DEVICES += tplink_eap235-wall-v1
+
 define Device/tplink_re350-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
@@ -1241,6 +1254,7 @@ TARGET_DEVICES += wavlink_wl-wn531a6
 
 define Device/wevo_11acnas
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   UIMAGE_NAME := 11AC-NAS-Router(0.0.0)
   DEVICE_VENDOR := WeVO
@@ -1253,6 +1267,7 @@ TARGET_DEVICES += wevo_11acnas
 
 define Device/wevo_w2914ns-v2
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   UIMAGE_NAME := W2914NS-V2(0.0.0)
   DEVICE_VENDOR := WeVO
