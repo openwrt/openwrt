@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_linksys_e8450_defconfig
-@@ -0,0 +1,130 @@
+@@ -0,0 +1,128 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -11,7 +11,10 @@
 +CONFIG_BOOTP_SEND_HOSTNAME=y
 +CONFIG_DEFAULT_ENV_FILE="linksys_e8450_env"
 +CONFIG_NR_DRAM_BANKS=1
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=25000000
 +CONFIG_DEFAULT_DEVICE_TREE="mt7622-linksys-e8450-ubi"
++CONFIG_DEBUG_UART=y
 +CONFIG_SMBIOS_PRODUCT_NAME=""
 +CONFIG_AUTOBOOT_KEYED=y
 +CONFIG_BOOTDELAY=30
@@ -49,10 +52,9 @@
 +CONFIG_CMD_LED=y
 +CONFIG_CMD_LICENSE=y
 +CONFIG_CMD_LINK_LOCAL=y
-+CONFIG_CMD_MBR=y
++# CONFIG_CMD_MBR is not set
 +CONFIG_CMD_MTD=y
 +CONFIG_CMD_MTDPART=y
-+CONFIG_CMD_NAND=y
 +CONFIG_CMD_PCI=y
 +CONFIG_CMD_SF_TEST=y
 +CONFIG_CMD_PING=y
@@ -65,7 +67,7 @@
 +CONFIG_CMD_UBIFS=y
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_PART=y
-+CONFIG_CMD_PSTORE=y
++# CONFIG_CMD_PSTORE is not set
 +CONFIG_CMD_RARP=y
 +CONFIG_CMD_SETEXPR=y
 +CONFIG_CMD_SLEEP=y
@@ -98,7 +100,6 @@
 +CONFIG_MEDIATEK_ETH=y
 +CONFIG_PCI=y
 +CONFIG_MTD=y
-+CONFIG_MTD_RAW_NAND=y
 +CONFIG_MTD_UBI_FASTMAP=y
 +CONFIG_DM_PCI=y
 +CONFIG_PCIE_MEDIATEK=y
@@ -114,12 +115,9 @@
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
-+CONFIG_MTK_SNFI_SPI=y
 +CONFIG_MTK_SPI_NAND=y
-+CONFIG_NAND_SUPPORT=y
++CONFIG_MTK_SPI_NAND_MTD=y
 +CONFIG_SYSRESET_WATCHDOG=y
-+CONFIG_TIMER=y
-+CONFIG_MTK_TIMER=y
 +CONFIG_WDT_MTK=y
 +CONFIG_LZO=y
 +CONFIG_ZSTD=y
@@ -133,7 +131,7 @@
 +CONFIG_USB_STORAGE=y
 --- /dev/null
 +++ b/arch/arm/dts/mt7622-linksys-e8450-ubi.dts
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,195 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 MediaTek Inc.
@@ -155,7 +153,7 @@
 +	};
 +
 +	aliases {
-+		spi0 = &snfi;
++		spi0 = &snand;
 +	};
 +
 +	gpio-keys {
@@ -288,22 +286,11 @@
 +	};
 +};
 +
-+&snfi {
++&snand {
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&snfi_pins>;
 +	status = "okay";
-+
-+	mediatek,bmt-v2;
-+
-+	spi-flash@0{
-+		compatible = "jedec,spi-nor";
-+		reg = <0>;
-+		u-boot,dm-pre-reloc;
-+	};
-+};
-+
-+&nandc {
-+	status = "okay";
++	quad-spi;
 +};
 +
 +&uart0 {
@@ -342,7 +329,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -963,6 +963,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -996,6 +996,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-rfb.dtb \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
@@ -350,35 +337,11 @@
  	mt7623n-bananapi-bpi-r2.dtb \
  	mt7629-rfb.dtb \
  	mt8512-bm1-emmc.dtb \
---- a/drivers/mtd/nandx/core/nand/device_spi.c
-+++ b/drivers/mtd/nandx/core/nand/device_spi.c
-@@ -150,6 +150,21 @@ static struct device_spi spi_nand[] = {
- 		&spi_extend_cmds, 0xff, 0xff
- 	},
- 	{
-+		NAND_DEVICE("FM35X1GA",
-+			    NAND_PACK_ID(0xe5, 0x71, 0, 0, 0, 0, 0, 0),
-+			    2, 0, 3, 3,
-+			    1, 1, 1, 1024, KB(128), KB(2), 64, 1,
-+			    &spi_cmds, &spi_addressing, &spi_status[0],
-+			    &spi_endurance, &spi_array_timing),
-+		{
-+			NAND_SPI_PROTECT(0xa0, 1, 2, 6),
-+			NAND_SPI_CONFIG(0xb0, 4, 6, 1),
-+			NAND_SPI_STATUS(0xc0, 4, 5),
-+			NAND_SPI_CHARACTER(0xff, 0xff, 0xff, 0xff)
-+		},
-+		&spi_extend_cmds, 0xff, 0xff
-+	},
-+	{
- 		NAND_DEVICE("NO-DEVICE",
- 			    NAND_PACK_ID(0, 0, 0, 0, 0, 0, 0, 0), 0, 0, 0, 0,
- 			    0, 0, 0, 0, 0, 0, 0, 1,
 --- /dev/null
 +++ b/linksys_e8450_env
 @@ -0,0 +1,57 @@
-+mtdparts=nand0:512k(bl2),1280k(fip),1024k(factory),256k(reserved),-(ubi)
-+ethaddr_factory=nand read 0x40080000 0x220000 0x20000 && env readmem -b ethaddr 0x4009fff4 0x6 ; setenv ethaddr_factory
++mtdparts=spi-nand0:512k(bl2),1280k(fip),1024k(factory),256k(reserved),-(ubi)
++ethaddr_factory=mtd read spi-nand0 0x40080000 0x220000 0x20000 && env readmem -b ethaddr 0x4009fff4 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x4007ff28
@@ -388,21 +351,21 @@
 +bootfile_bl2=openwrt-mediatek-mt7622-linksys_e8450-ubi-preloader.bin
 +bootfile_fip=openwrt-mediatek-mt7622-linksys_e8450-ubi-bl31-uboot.fip
 +bootfile_upg=openwrt-mediatek-mt7622-linksys_e8450-ubi-squashfs-sysupgrade.itb
-+bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
 +bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )[0m
-+bootmenu_0=0. Initialize environment.=run _firstboot
-+bootmenu_0d=0. Run default boot command.=run boot_default
-+bootmenu_1=1. Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
-+bootmenu_3=2. Boot production system from flash.=run boot_production ; run bootmenu_confirm_return
-+bootmenu_2=3. Boot recovery system from flash.=run boot_recovery ; run bootmenu_confirm_return
-+bootmenu_5=4. Load production system via TFTP then write to flash.=setenv noboot 1 ; run boot_tftp_production ; setenv noboot ; run bootmenu_confirm_return
-+bootmenu_4=5. Load recovery system via TFTP then write to flash.=setenv noboot 1 ; run boot_tftp_recovery ; setenv noboot ; run bootmenu_confirm_return
-+bootmenu_6=[31m6. Load BL31+U-Boot FIP via TFTP then write to flash.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
-+bootmenu_7=[31m7. Load BL2 preloader via TFTP then write to flash.[0m=run boot_tftp_write_preloader ; run bootmenu_confirm_return
-+bootmenu_8=8. Reboot.=reset
-+bootmenu_9=9. Reset all settings to factory defaults.=run reset_factory ; reset
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Boot production system from flash.=run boot_production ; run bootmenu_confirm_return
++bootmenu_3=Boot recovery system from flash.=run boot_recovery ; run bootmenu_confirm_return
++bootmenu_4=Load production system via TFTP then write to flash.=setenv noboot 1 ; run boot_tftp_production ; setenv noboot ; run bootmenu_confirm_return
++bootmenu_5=Load recovery system via TFTP then write to flash.=setenv noboot 1 ; run boot_tftp_recovery ; setenv noboot ; run bootmenu_confirm_return
++bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to flash.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_7=[31mLoad BL2 preloader via TFTP then write to flash.[0m=run boot_tftp_write_preloader ; run bootmenu_confirm_return
++bootmenu_8=Reboot.=reset
++bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then run boot_tftp_forever ; fi ; setenv flag_recover 1 ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; run boot_tftp_forever
 +boot_production=led power:blue on ; run ubi_read_production && bootm $loadaddr
@@ -417,18 +380,18 @@
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run boot_write_fip
 +boot_tftp_write_preloader=tftpboot $loadaddr $bootfile_bl2 && run boot_write_preloader
 +boot_ubi=ubi part ubi && run boot_production_or_recovery
-+boot_write_fip=nand erase 0x80000 0x140000 && nand write $loadaddr 0x80000 0x140000
-+boot_write_preloader=nand erase 0x0 0x80000 && nand write $loadaddr 0x0 0x20000 && nand write $loadaddr 0x20000 0x20000 && nand write $loadaddr 0x40000 0x20000 && nand write $loadaddr 0x60000 0x20000
++boot_write_fip=mtd erase spi-nand0 0x80000 0x140000 && mtd write spi-nand0 $loadaddr 0x80000 0x140000
++boot_write_preloader=mtd erase spi-nand0 0x0 0x80000 && mtd write spi-nand0 $loadaddr 0x0 0x20000 && mtd write spi-nand0 $loadaddr 0x20000 0x20000 && mtd write spi-nand0 $loadaddr 0x40000 0x20000 && mtd write spi-nand0 $loadaddr 0x60000 0x20000
 +check_recovery=run ubi_read_recovery ; if iminfo $loadaddr ; then bootm $loadaddr ; else ubi remove recovery ; fi
 +check_ubi=ubi part ubi || run ubi_format
 +reset_factory=ubi part ubi ; ubi write 0x0 ubootenv 0x0 ; ubi write 0x0 ubootenv2 0x0 ; ubi remove rootfs_data
-+ubi_format=ubi detach ; nand erase 0x300000 0x7D00000 && ubi part ubi ; reset
++ubi_format=ubi detach ; mtd erase spi-nand0 0x300000 0x7D00000 && ubi part ubi ; reset
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
 +ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs
 +ubi_read_recovery=ubi check recovery && ubi read $loadaddr recovery
 +ubi_remove_rootfs=ubi check rootfs_data && ubi remove rootfs_data
-+ubi_write_production=run ubi_remove_rootfs ; ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize
-+ubi_write_recovery=run ubi_remove_rootfs ; ubi check recovery && ubi remove recovery; ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize
++ubi_write_production=ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize
++ubi_write_recovery=ubi check recovery && ubi remove recovery ; run ubi_remove_rootfs ; ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize
 +_create_env=ubi create ubootenv 0x100000 dynamic ; ubi create ubootenv2 0x100000 dynamic
 +_init_env=setenv _init_env ; if ubi check ubootenv && ubi check ubootenv2 ; then else run _create_env ; fi ; setenv _create_env ; saveenv || run ubi_format ; saveenv || run ubi_format
 +_firstboot=setenv _firstboot ; led power:orange on ; run _switch_to_menu ; run ethaddr_factory ; run check_ubi ; run _init_env ; run boot_first

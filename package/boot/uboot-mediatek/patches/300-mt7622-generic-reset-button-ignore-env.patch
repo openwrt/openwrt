@@ -1,13 +1,15 @@
 --- a/board/mediatek/mt7622/mt7622_rfb.c
 +++ b/board/mediatek/mt7622/mt7622_rfb.c
-@@ -6,9 +6,15 @@
+@@ -6,10 +6,17 @@
  
  #include <common.h>
  #include <config.h>
 +#include <dm.h>
 +#include <button.h>
++
  #include <env.h>
  #include <init.h>
+ #include <asm/global_data.h>
  
 +#ifndef CONFIG_RESET_BUTTON_LABEL
 +#define CONFIG_RESET_BUTTON_LABEL "reset"
@@ -16,7 +18,7 @@
  DECLARE_GLOBAL_DATA_PTR;
  
  int board_init(void)
-@@ -19,7 +25,15 @@ int board_init(void)
+@@ -20,7 +27,15 @@ int board_init(void)
  
  int board_late_init(void)
  {
