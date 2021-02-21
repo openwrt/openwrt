@@ -1,0 +1,8 @@
+--- a/arch/mips/bmips/setup.c
++++ b/arch/mips/bmips/setup.c
+@@ -201,4 +201,4 @@ static int __init plat_dev_init(void)
+ 	return 0;
+ }
+ 
+-device_initcall(plat_dev_init);
++arch_initcall(plat_dev_init);
