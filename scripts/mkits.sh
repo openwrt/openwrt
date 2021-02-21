@@ -24,6 +24,7 @@ usage() {
 	printf "\n\t-a ==> set load address to 'addr' (hex)"
 	printf "\n\t-e ==> set entry point to 'entry' (hex)"
 	printf "\n\t-f ==> set device tree compatible string"
+	printf "\n\t-i ==> include initrd Blob 'initrd'"
 	printf "\n\t-v ==> set kernel version to 'version'"
 	printf "\n\t-k ==> include kernel image 'kernel'"
 	printf "\n\t-D ==> human friendly Device Tree Blob 'name'"
@@ -37,10 +38,11 @@ usage() {
 
 FDTNUM=1
 ROOTFSNUM=1
+INITRDNUM=1
 HASH=sha1
 LOADABLES=
 
-while getopts ":A:a:c:C:D:d:e:f:k:n:o:v:r:S" OPTION
+while getopts ":A:a:c:C:D:d:e:f:i:k:n:o:v:r:S" OPTION
 do
 	case $OPTION in
 		A ) ARCH=$OPTARG;;
@@ -51,6 +53,7 @@ do
 		d ) DTB=$OPTARG;;
 		e ) ENTRY_ADDR=$OPTARG;;
 		f ) COMPATIBLE=$OPTARG;;
+		i ) INITRD=$OPTARG;;
 		k ) KERNEL=$OPTARG;;
 		n ) FDTNUM=$OPTARG;;
 		o ) OUTPUT=$OPTARG;;
@@ -95,6 +98,27 @@ if [ -n "${DTB}" ]; then
 "
 	FDT_PROP="fdt = \"fdt@$FDTNUM\";"
 fi
+
+if [ -n "${INITRD}" ]; then
+	INITRD_NODE="
+		initrd@$INITRDNUM {
+			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} initrd\";
+			${COMPATIBLE_PROP}
+			data = /incbin/(\"${INITRD}\");
+			type = \"ramdisk\";
+			arch = \"${ARCH}\";
+			os = \"linux\";
+			hash@1 {
+				algo = \"crc32\";
+			};
+			hash@2 {
+				algo = \"${HASH}\";
+			};
+		};
+"
+	INITRD_PROP="ramdisk=\"initrd@${INITRDNUM}\";"
+fi
+
 
 if [ -n "${ROOTFS}" ]; then
 	dd if="${ROOTFS}" of="${ROOTFS}.pagesync" bs=4096 conv=sync
@@ -141,6 +165,7 @@ DATA="/dts-v1/;
 				algo = \"$HASH\";
 			};
 		};
+${INITRD_NODE}
 ${FDT_NODE}
 ${ROOTFS_NODE}
 	};
@@ -153,6 +178,7 @@ ${ROOTFS_NODE}
 			${FDT_PROP}
 			${LOADABLES:+loadables = ${LOADABLES};}
 			${COMPATIBLE_PROP}
+			${INITRD_PROP}
 		};
 	};
 };"
