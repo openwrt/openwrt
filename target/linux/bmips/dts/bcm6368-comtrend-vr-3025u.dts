@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6368.dtsi"
+
+/ {
+	model = "Comtrend VR-3025u";
+	compatible = "comtrend,vr-3025u", "brcm,bcm6368";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x04000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led@2 {
+			label = "green:dsl";
+			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led@5 {
+			label = "green:internet";
+			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_green: led@22 {
+			label = "green:power";
+			gpios = <&pinctrl 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_red: led@24 {
+			label = "red:power";
+			gpios = <&pinctrl 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		led@31 {
+			label = "red:internet";
+			gpios = <&pinctrl 31 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pflash {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cfe: partition@0 {
+			label = "CFE";
+			reg = <0x0000000 0x0020000>;
+			read-only;
+		};
+
+		partition@20000 {
+			compatible = "brcm,bcm963xx-imagetag";
+			label = "firmware";
+			reg = <0x0020000 0x1fc0000>;
+		};
+
+		partition@1fe0000 {
+			label = "nvram";
+			reg = <0x1fe0000 0x020000>;
+		};
+	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci &pinctrl_ephy0_led &pinctrl_ephy1_led
+		     &pinctrl_ephy2_led &pinctrl_ephy3_led>;
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};
