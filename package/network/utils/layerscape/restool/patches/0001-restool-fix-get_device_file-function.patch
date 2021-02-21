@@ -16,11 +16,9 @@ Signed-off-by: Ioana Ciornei <ioana.ciornei@nxp.com>
  restool.c | 44 ++++++++++++++++++++++++++++----------------
  1 file changed, 28 insertions(+), 16 deletions(-)
 
-diff --git a/restool.c b/restool.c
-index 7553659..78fd1bf 100644
 --- a/restool.c
 +++ b/restool.c
-@@ -1185,8 +1185,13 @@ out:
+@@ -1193,8 +1193,13 @@ out:
  
  static int get_device_file(void)
  {
@@ -34,7 +32,7 @@ index 7553659..78fd1bf 100644
  
  	memset(restool.device_file, '\0', DEV_FILE_SIZE);
  
-@@ -1214,10 +1219,6 @@ static int get_device_file(void)
+@@ -1222,10 +1227,6 @@ static int get_device_file(void)
  			goto out;
  		}
  	} else {
@@ -45,7 +43,7 @@ index 7553659..78fd1bf 100644
  
  		d = opendir("/dev");
  		if (!d) {
-@@ -1227,26 +1228,34 @@ static int get_device_file(void)
+@@ -1235,26 +1236,34 @@ static int get_device_file(void)
  		}
  		while ((dir = readdir(d)) != NULL) {
  			if (strncmp(dir->d_name, "dprc.", 5) == 0) {
@@ -92,7 +90,7 @@ index 7553659..78fd1bf 100644
  		} else {
  			error = -1;
  			if (num_dev_files == 0)
-@@ -1255,6 +1264,9 @@ static int get_device_file(void)
+@@ -1263,6 +1272,9 @@ static int get_device_file(void)
  				ERROR_PRINTF("error: multiple root containers\n");
  		}
  	}
@@ -102,6 +100,3 @@ index 7553659..78fd1bf 100644
  out:
  	return error;
  }
--- 
-2.17.1
-

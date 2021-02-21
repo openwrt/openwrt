@@ -12,8 +12,6 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@bootlin.com>
  src/ausearch-lol.c  | 12 +++++++++++-
  4 files changed, 43 insertions(+), 4 deletions(-)
 
-diff --git a/auparse/auparse.c b/auparse/auparse.c
-index 650db02..2e1c737 100644
 --- a/auparse/auparse.c
 +++ b/auparse/auparse.c
 @@ -1,5 +1,5 @@
@@ -23,7 +21,7 @@ index 650db02..2e1c737 100644
   * All Rights Reserved.
   *
   * This library is free software; you can redistribute it and/or
-@@ -1118,6 +1118,16 @@ static int str2event(char *s, au_event_t *e)
+@@ -1118,6 +1118,16 @@ static int str2event(char *s, au_event_t
  	return 0;
  }
  
@@ -40,8 +38,6 @@ index 650db02..2e1c737 100644
  /* Returns 0 on success and 1 on error */
  static int extract_timestamp(const char *b, au_event_t *e)
  {
-diff --git a/auparse/interpret.c b/auparse/interpret.c
-index 51c4a5e..67b7b77 100644
 --- a/auparse/interpret.c
 +++ b/auparse/interpret.c
 @@ -853,6 +853,13 @@ err_out:
@@ -58,7 +54,7 @@ index 51c4a5e..67b7b77 100644
  static const char *print_proctitle(const char *val)
  {
  	char *out = (char *)print_escaped(val);
-@@ -863,7 +870,7 @@ static const char *print_proctitle(const char *val)
+@@ -863,7 +870,7 @@ static const char *print_proctitle(const
  		// Proctitle has arguments separated by NUL bytes
  		// We need to write over the NUL bytes with a space
  		// so that we can see the arguments
@@ -67,8 +63,6 @@ index 51c4a5e..67b7b77 100644
  			if (ptr >= end)
  				break;
  			*ptr = ' ';
-diff --git a/configure.ac b/configure.ac
-index 6e345f1..6f3007e 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -1,7 +1,7 @@
@@ -80,7 +74,7 @@ index 6e345f1..6f3007e 100644
  ###
  ### Permission is hereby granted, free of charge, to any person obtaining a
  ### copy of this software and associated documentation files (the "Software"),
-@@ -72,6 +72,18 @@ dnl; posix_fallocate is used in audisp-remote
+@@ -72,6 +72,18 @@ dnl; posix_fallocate is used in audisp-r
  AC_CHECK_FUNCS([posix_fallocate])
  dnl; signalfd is needed for libev
  AC_CHECK_FUNC([signalfd], [], [ AC_MSG_ERROR([The signalfd system call is necessary for auditd]) ])
@@ -99,8 +93,6 @@ index 6e345f1..6f3007e 100644
  
  ALLWARNS=""
  ALLDEBUG="-g"
-diff --git a/src/ausearch-lol.c b/src/ausearch-lol.c
-index 5d17a72..758c33e 100644
 --- a/src/ausearch-lol.c
 +++ b/src/ausearch-lol.c
 @@ -1,6 +1,6 @@
@@ -111,7 +103,7 @@ index 5d17a72..758c33e 100644
  * All Rights Reserved. 
  *
  * This software may be freely redistributed and/or modified under the
-@@ -152,6 +152,16 @@ static int compare_event_time(event *e1, event *e2)
+@@ -152,6 +152,16 @@ static int compare_event_time(event *e1,
  	return 0;
  }
  
@@ -128,6 +120,3 @@ index 5d17a72..758c33e 100644
  /*
   * This function will look at the line and pick out pieces of it.
   */
--- 
-2.21.0
-

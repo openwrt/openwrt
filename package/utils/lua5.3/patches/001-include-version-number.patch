@@ -8,7 +8,6 @@ Including it allows multiple lua versions to coexist.
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
 
-diff --git a/Makefile b/Makefile
 --- a/Makefile
 +++ b/Makefile
 @@ -12,7 +12,7 @@ PLAT= none
@@ -43,13 +42,6 @@ diff --git a/Makefile b/Makefile
  
  test:	dummy
  	src/lua -v
-diff --git a/doc/lua.1 b/doc/lua5.3.1
-rename from doc/lua.1
-rename to doc/lua5.3.1
-diff --git a/doc/luac.1 b/doc/luac5.3.1
-rename from doc/luac.1
-rename to doc/luac5.3.1
-diff --git a/src/Makefile b/src/Makefile
 --- a/src/Makefile
 +++ b/src/Makefile
 @@ -28,7 +28,7 @@ MYOBJS=
@@ -74,3 +66,475 @@ diff --git a/src/Makefile b/src/Makefile
  LUAC_O=	luac.o
  
  ALL_O= $(BASE_O) $(LUA_O) $(LUAC_O)
+--- a/doc/lua.1
++++ /dev/null
+@@ -1,112 +0,0 @@
+-.\" $Id: lua.man,v 1.14 2016/10/17 15:43:50 lhf Exp $
+-.TH LUA 1 "$Date: 2016/10/17 15:43:50 $"
+-.SH NAME
+-lua \- Lua interpreter
+-.SH SYNOPSIS
+-.B lua
+-[
+-.I options
+-]
+-[
+-.I script
+-[
+-.I args
+-]
+-]
+-.SH DESCRIPTION
+-.B lua
+-is the standalone Lua interpreter.
+-It loads and executes Lua programs,
+-either in textual source form or
+-in precompiled binary form.
+-(Precompiled binaries are output by
+-.BR luac ,
+-the Lua compiler.)
+-.B lua
+-can be used as a batch interpreter and also interactively.
+-.LP
+-The given
+-.I options
+-are handled in order and then
+-the Lua program in file
+-.I script
+-is loaded and executed.
+-The given
+-.I args
+-are available to
+-.I script
+-as strings in a global table named
+-.BR arg .
+-If no options or arguments are given,
+-then
+-.B "\-v \-i"
+-is assumed when the standard input is a terminal;
+-otherwise,
+-.B "\-"
+-is assumed.
+-.LP
+-In interactive mode,
+-.B lua
+-prompts the user,
+-reads lines from the standard input,
+-and executes them as they are read.
+-If the line contains an expression or list of expressions,
+-then the line is evaluated and the results are printed.
+-If a line does not contain a complete statement,
+-then a secondary prompt is displayed and
+-lines are read until a complete statement is formed or
+-a syntax error is found.
+-.LP
+-At the very start,
+-before even handling the command line,
+-.B lua
+-checks the contents of the environment variables
+-.B LUA_INIT_5_3
+-or
+-.BR LUA_INIT ,
+-in that order.
+-If the contents is of the form
+-.RI '@ filename ',
+-then
+-.I filename
+-is executed.
+-Otherwise, the string is assumed to be a Lua statement and is executed.
+-.SH OPTIONS
+-.TP
+-.BI \-e " stat"
+-execute statement
+-.IR stat .
+-.TP
+-.B \-i
+-enter interactive mode after executing
+-.IR script .
+-.TP
+-.BI \-l " name"
+-execute the equivalent of
+-.IB name =require(' name ')
+-before executing
+-.IR script .
+-.TP
+-.B \-v
+-show version information.
+-.TP
+-.B \-E
+-ignore environment variables.
+-.TP
+-.B \-\-
+-stop handling options.
+-.TP
+-.B \-
+-stop handling options and execute the standard input as a file.
+-.SH "SEE ALSO"
+-.BR luac (1)
+-.br
+-The documentation at lua.org,
+-especially section 7 of the reference manual.
+-.SH DIAGNOSTICS
+-Error messages should be self explanatory.
+-.SH AUTHORS
+-R. Ierusalimschy,
+-L. H. de Figueiredo,
+-W. Celes
+-.\" EOF
+--- /dev/null
++++ b/doc/lua5.3.1
+@@ -0,0 +1,112 @@
++.\" $Id: lua.man,v 1.14 2016/10/17 15:43:50 lhf Exp $
++.TH LUA 1 "$Date: 2016/10/17 15:43:50 $"
++.SH NAME
++lua \- Lua interpreter
++.SH SYNOPSIS
++.B lua
++[
++.I options
++]
++[
++.I script
++[
++.I args
++]
++]
++.SH DESCRIPTION
++.B lua
++is the standalone Lua interpreter.
++It loads and executes Lua programs,
++either in textual source form or
++in precompiled binary form.
++(Precompiled binaries are output by
++.BR luac ,
++the Lua compiler.)
++.B lua
++can be used as a batch interpreter and also interactively.
++.LP
++The given
++.I options
++are handled in order and then
++the Lua program in file
++.I script
++is loaded and executed.
++The given
++.I args
++are available to
++.I script
++as strings in a global table named
++.BR arg .
++If no options or arguments are given,
++then
++.B "\-v \-i"
++is assumed when the standard input is a terminal;
++otherwise,
++.B "\-"
++is assumed.
++.LP
++In interactive mode,
++.B lua
++prompts the user,
++reads lines from the standard input,
++and executes them as they are read.
++If the line contains an expression or list of expressions,
++then the line is evaluated and the results are printed.
++If a line does not contain a complete statement,
++then a secondary prompt is displayed and
++lines are read until a complete statement is formed or
++a syntax error is found.
++.LP
++At the very start,
++before even handling the command line,
++.B lua
++checks the contents of the environment variables
++.B LUA_INIT_5_3
++or
++.BR LUA_INIT ,
++in that order.
++If the contents is of the form
++.RI '@ filename ',
++then
++.I filename
++is executed.
++Otherwise, the string is assumed to be a Lua statement and is executed.
++.SH OPTIONS
++.TP
++.BI \-e " stat"
++execute statement
++.IR stat .
++.TP
++.B \-i
++enter interactive mode after executing
++.IR script .
++.TP
++.BI \-l " name"
++execute the equivalent of
++.IB name =require(' name ')
++before executing
++.IR script .
++.TP
++.B \-v
++show version information.
++.TP
++.B \-E
++ignore environment variables.
++.TP
++.B \-\-
++stop handling options.
++.TP
++.B \-
++stop handling options and execute the standard input as a file.
++.SH "SEE ALSO"
++.BR luac (1)
++.br
++The documentation at lua.org,
++especially section 7 of the reference manual.
++.SH DIAGNOSTICS
++Error messages should be self explanatory.
++.SH AUTHORS
++R. Ierusalimschy,
++L. H. de Figueiredo,
++W. Celes
++.\" EOF
+--- a/doc/luac.1
++++ /dev/null
+@@ -1,118 +0,0 @@
+-.\" $Id: luac.man,v 1.29 2011/11/16 13:53:40 lhf Exp $
+-.TH LUAC 1 "$Date: 2011/11/16 13:53:40 $"
+-.SH NAME
+-luac \- Lua compiler
+-.SH SYNOPSIS
+-.B luac
+-[
+-.I options
+-] [
+-.I filenames
+-]
+-.SH DESCRIPTION
+-.B luac
+-is the Lua compiler.
+-It translates programs written in the Lua programming language
+-into binary files containing precompiled chunks
+-that can be later loaded and executed.
+-.LP
+-The main advantages of precompiling chunks are:
+-faster loading,
+-protecting source code from accidental user changes,
+-and
+-off-line syntax checking.
+-Precompiling does not imply faster execution
+-because in Lua chunks are always compiled into bytecodes before being executed.
+-.B luac
+-simply allows those bytecodes to be saved in a file for later execution.
+-Precompiled chunks are not necessarily smaller than the corresponding source.
+-The main goal in precompiling is faster loading.
+-.LP
+-In the command line,
+-you can mix
+-text files containing Lua source and
+-binary files containing precompiled chunks.
+-.B luac
+-produces a single output file containing the combined bytecodes
+-for all files given.
+-Executing the combined file is equivalent to executing the given files.
+-By default,
+-the output file is named
+-.BR luac.out ,
+-but you can change this with the
+-.B \-o
+-option.
+-.LP
+-Precompiled chunks are
+-.I not
+-portable across different architectures.
+-Moreover,
+-the internal format of precompiled chunks
+-is likely to change when a new version of Lua is released.
+-Make sure you save the source files of all Lua programs that you precompile.
+-.LP
+-.SH OPTIONS
+-.TP
+-.B \-l
+-produce a listing of the compiled bytecode for Lua's virtual machine.
+-Listing bytecodes is useful to learn about Lua's virtual machine.
+-If no files are given, then
+-.B luac
+-loads
+-.B luac.out
+-and lists its contents.
+-Use
+-.B \-l \-l
+-for a full listing.
+-.TP
+-.BI \-o " file"
+-output to
+-.IR file ,
+-instead of the default
+-.BR luac.out .
+-(You can use
+-.B "'\-'"
+-for standard output,
+-but not on platforms that open standard output in text mode.)
+-The output file may be one of the given files because
+-all files are loaded before the output file is written.
+-Be careful not to overwrite precious files.
+-.TP
+-.B \-p
+-load files but do not generate any output file.
+-Used mainly for syntax checking and for testing precompiled chunks:
+-corrupted files will probably generate errors when loaded.
+-If no files are given, then
+-.B luac
+-loads
+-.B luac.out
+-and tests its contents.
+-No messages are displayed if the file loads without errors.
+-.TP
+-.B \-s
+-strip debug information before writing the output file.
+-This saves some space in very large chunks,
+-but if errors occur when running a stripped chunk,
+-then the error messages may not contain the full information they usually do.
+-In particular,
+-line numbers and names of local variables are lost.
+-.TP
+-.B \-v
+-show version information.
+-.TP
+-.B \-\-
+-stop handling options.
+-.TP
+-.B \-
+-stop handling options and process standard input.
+-.SH "SEE ALSO"
+-.BR lua (1)
+-.br
+-The documentation at lua.org.
+-.SH DIAGNOSTICS
+-Error messages should be self explanatory.
+-.SH AUTHORS
+-R. Ierusalimschy,
+-L. H. de Figueiredo,
+-W. Celes
+-.\" EOF
+--- /dev/null
++++ b/doc/luac5.3.1
+@@ -0,0 +1,118 @@
++.\" $Id: luac.man,v 1.29 2011/11/16 13:53:40 lhf Exp $
++.TH LUAC 1 "$Date: 2011/11/16 13:53:40 $"
++.SH NAME
++luac \- Lua compiler
++.SH SYNOPSIS
++.B luac
++[
++.I options
++] [
++.I filenames
++]
++.SH DESCRIPTION
++.B luac
++is the Lua compiler.
++It translates programs written in the Lua programming language
++into binary files containing precompiled chunks
++that can be later loaded and executed.
++.LP
++The main advantages of precompiling chunks are:
++faster loading,
++protecting source code from accidental user changes,
++and
++off-line syntax checking.
++Precompiling does not imply faster execution
++because in Lua chunks are always compiled into bytecodes before being executed.
++.B luac
++simply allows those bytecodes to be saved in a file for later execution.
++Precompiled chunks are not necessarily smaller than the corresponding source.
++The main goal in precompiling is faster loading.
++.LP
++In the command line,
++you can mix
++text files containing Lua source and
++binary files containing precompiled chunks.
++.B luac
++produces a single output file containing the combined bytecodes
++for all files given.
++Executing the combined file is equivalent to executing the given files.
++By default,
++the output file is named
++.BR luac.out ,
++but you can change this with the
++.B \-o
++option.
++.LP
++Precompiled chunks are
++.I not
++portable across different architectures.
++Moreover,
++the internal format of precompiled chunks
++is likely to change when a new version of Lua is released.
++Make sure you save the source files of all Lua programs that you precompile.
++.LP
++.SH OPTIONS
++.TP
++.B \-l
++produce a listing of the compiled bytecode for Lua's virtual machine.
++Listing bytecodes is useful to learn about Lua's virtual machine.
++If no files are given, then
++.B luac
++loads
++.B luac.out
++and lists its contents.
++Use
++.B \-l \-l
++for a full listing.
++.TP
++.BI \-o " file"
++output to
++.IR file ,
++instead of the default
++.BR luac.out .
++(You can use
++.B "'\-'"
++for standard output,
++but not on platforms that open standard output in text mode.)
++The output file may be one of the given files because
++all files are loaded before the output file is written.
++Be careful not to overwrite precious files.
++.TP
++.B \-p
++load files but do not generate any output file.
++Used mainly for syntax checking and for testing precompiled chunks:
++corrupted files will probably generate errors when loaded.
++If no files are given, then
++.B luac
++loads
++.B luac.out
++and tests its contents.
++No messages are displayed if the file loads without errors.
++.TP
++.B \-s
++strip debug information before writing the output file.
++This saves some space in very large chunks,
++but if errors occur when running a stripped chunk,
++then the error messages may not contain the full information they usually do.
++In particular,
++line numbers and names of local variables are lost.
++.TP
++.B \-v
++show version information.
++.TP
++.B \-\-
++stop handling options.
++.TP
++.B \-
++stop handling options and process standard input.
++.SH "SEE ALSO"
++.BR lua (1)
++.br
++The documentation at lua.org.
++.SH DIAGNOSTICS
++Error messages should be self explanatory.
++.SH AUTHORS
++R. Ierusalimschy,
++L. H. de Figueiredo,
++W. Celes
++.\" EOF

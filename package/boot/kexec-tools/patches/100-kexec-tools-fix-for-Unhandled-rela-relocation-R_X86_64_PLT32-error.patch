@@ -1,8 +1,6 @@
-diff --git a/kexec/arch/x86_64/kexec-elf-rel-x86_64.c b/kexec/arch/x86_64/kexec-elf-rel-x86_64.c
-index 7fdde73..af33689 100644
 --- a/kexec/arch/x86_64/kexec-elf-rel-x86_64.c
 +++ b/kexec/arch/x86_64/kexec-elf-rel-x86_64.c
-@@ -78,7 +78,8 @@ void machine_apply_elf_rel(struct mem_ehdr *UNUSED(ehdr),
+@@ -78,7 +78,8 @@ void machine_apply_elf_rel(struct mem_eh
  		if ((int64_t)value != *(int32_t *)location)
  			goto overflow;
  		break;

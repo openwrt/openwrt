@@ -21,8 +21,6 @@ https://bugs.chromium.org/p/chromium/issues/detail?id=688601
  4 files changed, 166 insertions(+), 8 deletions(-)
  create mode 100644 contrib/arm/neon_adler32.c
 
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0fe939df..8e75f664 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -7,6 +7,7 @@ set(VERSION "1.2.11")
@@ -77,8 +75,6 @@ index 0fe939df..8e75f664 100644
  set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
  set_target_properties(zlib PROPERTIES SOVERSION 1)
  
-diff --git a/adler32.c b/adler32.c
-index d0be4380..45ebaa4b 100644
 --- a/adler32.c
 +++ b/adler32.c
 @@ -136,7 +136,12 @@ uLong ZEXPORT adler32(adler, buf, len)
@@ -94,11 +90,9 @@ index d0be4380..45ebaa4b 100644
  }
  
  /* ========================================================================= */
-diff --git a/contrib/README.contrib b/contrib/README.contrib
-index a411d5c3..3fd1d202 100644
 --- a/contrib/README.contrib
 +++ b/contrib/README.contrib
-@@ -12,6 +12,9 @@ amd64/      by Mikhail Teterin <mi@ALDAN.algebra.com>
+@@ -12,6 +12,9 @@ amd64/      by Mikhail Teterin <mi@ALDAN
          asm code for AMD64
          See patch at http://www.freebsd.org/cgi/query-pr.cgi?pr=bin/96393
  
@@ -108,9 +102,6 @@ index a411d5c3..3fd1d202 100644
  asm686/     by Brian Raiter <breadbox@muppetlabs.com>
          asm code for Pentium and PPro/PII, using the AT&T (GNU as) syntax
          See http://www.muppetlabs.com/~breadbox/software/assembly.html
-diff --git a/contrib/arm/neon_adler32.c b/contrib/arm/neon_adler32.c
-new file mode 100644
-index 00000000..f173a74f
 --- /dev/null
 +++ b/contrib/arm/neon_adler32.c
 @@ -0,0 +1,137 @@
