@@ -2,6 +2,9 @@
 #
 # Copyright (C) 2007-2020 OpenWrt.org
 
+ifneq ($(__autotools_inc),1)
+__autotools_inc=1
+
 autoconf_bool = $(patsubst %,$(if $($(1)),--enable,--disable)-%,$(2))
 
 # delete *.la-files from staging_dir - we can not yet remove respective lines within all package
@@ -152,12 +155,8 @@ define patch_libtool_host
     $(HOST_BUILD_DIR)))
 endef
 
-ifneq ($(filter patch-libtool,$(PKG_FIXUP)),)
-  Hooks/HostConfigure/Pre += patch_libtool_host
-endif
-
 ifneq ($(filter patch-libtool,$(HOST_FIXUP)),)
-  Hooks/HostConfigure/Pre += $(strip $(call patch_libtool,$(HOST_BUILD_DIR)))
+  Hooks/HostConfigure/Pre += patch_libtool_host
 endif
 
 ifneq ($(filter libtool,$(HOST_FIXUP)),)
@@ -177,3 +176,5 @@ ifneq ($(filter autoreconf,$(HOST_FIXUP)),)
     Hooks/HostConfigure/Pre += autoreconf_host
   endif
 endif
+
+endif #__autotools_inc
