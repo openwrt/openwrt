@@ -35,9 +35,11 @@ menu "Target Images"
 				bool "lzma"
 
 			config TARGET_INITRAMFS_COMPRESSION_LZO
+				depends on !TARGET_ROOTFS_INITRAMFS_SEPERATE
 				bool "lzo"
 
 			config TARGET_INITRAMFS_COMPRESSION_LZ4
+				depends on !TARGET_ROOTFS_INITRAMFS_SEPERATE
 				bool "lz4"
 
 			config TARGET_INITRAMFS_COMPRESSION_XZ
@@ -56,11 +58,20 @@ menu "Target Images"
 			  Kernel uses specified external cpio as INITRAMFS_SOURCE.
 
 		config TARGET_INITRAMFS_FORCE
-                        bool "Force"
-                        depends on TARGET_ROOTFS_INITRAMFS
-                        default n
-                        help
-                          Ignore the initramfs passed by the bootloader.
+			bool "Force"
+			depends on TARGET_ROOTFS_INITRAMFS
+			default n
+			help
+			  Ignore the initramfs passed by the bootloader.
+
+		config TARGET_ROOTFS_INITRAMFS_SEPERATE
+			bool "seperate ramdisk"
+			depends on TARGET_ROOTFS_INITRAMFS && !TARGET_INITRAMFS_FORCE
+			default y if USES_SEPERATE_INITRAMFS
+			help
+			  Generate seperate initrd.cpio instead of embedding it.
+			  This is useful for generating images with a dedicated
+			  ramdisk e.g. in U-Boot's uImage and uImage.FIT formats.
 
 	comment "Root filesystem archives"
 
