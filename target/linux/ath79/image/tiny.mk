@@ -33,6 +33,7 @@ TARGET_DEVICES += dlink_dir-615-e4
 
 define Device/engenius_eap350-v1
   $(Device/senao_loader_okli)
+  BLOCKSIZE := 4k
   SOC := ar7242
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP350
@@ -45,6 +46,7 @@ TARGET_DEVICES += engenius_eap350-v1
 
 define Device/engenius_ecb350-v1
   $(Device/senao_loader_okli)
+  BLOCKSIZE := 4k
   SOC := ar7242
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ECB350
