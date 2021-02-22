@@ -1,7 +1,7 @@
 --- a/arch/arm/mach-mvebu/Kconfig
 +++ b/arch/arm/mach-mvebu/Kconfig
-@@ -69,6 +69,7 @@ config MACH_ARMADA_38X
- 	select HAVE_SMP
+@@ -67,6 +67,7 @@ config MACH_ARMADA_38X
+ 	select HAVE_ARM_TWD if SMP
  	select MACH_MVEBU_V7
  	select PINCTRL_ARMADA_38X
 +	select ARCH_WANT_LIBATA_LEDS

@@ -28,7 +28,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1827,6 +1827,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+@@ -1780,6 +1780,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
  	  The command-line arguments provided by the boot loader will be
  	  appended to the the device tree bootargs property.
  
@@ -48,7 +48,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  config CMDLINE
 --- a/arch/arm/boot/compressed/atags_to_fdt.c
 +++ b/arch/arm/boot/compressed/atags_to_fdt.c
-@@ -4,6 +4,8 @@
+@@ -5,6 +5,8 @@
  
  #if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND)
  #define do_extend_cmdline 1
@@ -57,7 +57,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  #else
  #define do_extend_cmdline 0
  #endif
-@@ -67,6 +69,72 @@ static uint32_t get_cell_size(const void
+@@ -69,6 +71,72 @@ static uint32_t get_cell_size(const void
  	return cell_size;
  }
  
@@ -130,7 +130,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
  {
  	char cmdline[COMMAND_LINE_SIZE];
-@@ -86,12 +154,21 @@ static void merge_fdt_bootargs(void *fdt
+@@ -88,12 +156,21 @@ static void merge_fdt_bootargs(void *fdt
  
  	/* and append the ATAG_CMDLINE */
  	if (fdt_cmdline) {
@@ -152,7 +152,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  	}
  	*ptr = '\0';
  
-@@ -166,7 +243,9 @@ int atags_to_fdt(void *atag_list, void *
+@@ -168,7 +245,9 @@ int atags_to_fdt(void *atag_list, void *
  			else
  				setprop_string(fdt, "/chosen", "bootargs",
  					       atag->u.cmdline.cmdline);
@@ -163,7 +163,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  			if (memcount >= sizeof(mem_reg_property)/4)
  				continue;
  			if (!atag->u.mem.size)
-@@ -210,6 +289,10 @@ int atags_to_fdt(void *atag_list, void *
+@@ -212,6 +291,10 @@ int atags_to_fdt(void *atag_list, void *
  		setprop(fdt, "/memory", "reg", mem_reg_property,
  			4 * memcount * memsize);
  	}
@@ -176,9 +176,9 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  }
 --- a/init/main.c
 +++ b/init/main.c
-@@ -104,6 +104,10 @@
- #define CREATE_TRACE_POINTS
- #include <trace/events/initcall.h>
+@@ -110,6 +110,10 @@
+ 
+ #include <kunit/test.h>
  
 +#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
 +#include <linux/of.h>
@@ -187,10 +187,10 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  static int kernel_init(void *);
  
  extern void init_IRQ(void);
-@@ -631,6 +635,18 @@ asmlinkage __visible void __init start_k
+@@ -903,6 +907,18 @@ asmlinkage __visible void __init __no_sa
  	page_alloc_init();
  
- 	pr_notice("Kernel command line: %s\n", boot_command_line);
+ 	pr_notice("Kernel command line: %s\n", saved_command_line);
 +
 +#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
 +	//Show bootloader's original command line for reference
