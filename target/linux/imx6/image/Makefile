@@ -227,7 +227,7 @@ define Device/apalis
   UBOOT := apalis_imx6
   FILESYSTEMS := squashfs
   IMAGES := combined.bin sysupgrade.bin
-  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
+  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1).$$(2)
   IMAGE/combined.bin := append-rootfs | pad-extra 128k | apalis-emmc
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   ARTIFACTS := recovery.scr
