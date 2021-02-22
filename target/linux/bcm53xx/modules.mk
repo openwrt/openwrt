@@ -1,8 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2016 Rafał Miłecki <rafal@milecki.pl>
-#
-# This is free software, licensed under the GNU General Public License v2.
-#
 
 define KernelPackage/phy-bcm-ns-usb2
   TITLE:=Broadcom Northstar USB 2.0 PHY Driver

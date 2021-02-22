@@ -1,9 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright 2018-2020 NXP
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 define Device/Default
   PROFILES := Default
@@ -24,7 +21,6 @@ define Device/Default
 endef
 
 define Device/fsl-sdboot
-  $(Device/rework-sdcard-images)
   KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES := sdcard.img.gz sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -48,6 +44,7 @@ endef
 TARGET_DEVICES += fsl_ls1021a-twr
 
 define Device/fsl_ls1021a-twr-sdboot
+  $(Device/rework-sdcard-images)
   $(Device/fsl-sdboot)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := TWR-LS1021A
@@ -64,6 +61,7 @@ endef
 TARGET_DEVICES += fsl_ls1021a-twr-sdboot
 
 define Device/fsl_ls1021a-iot-sdboot
+  $(Device/rework-sdcard-images)
   $(Device/fsl-sdboot)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1021A-IoT

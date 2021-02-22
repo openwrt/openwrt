@@ -194,6 +194,8 @@ foreach my $mirror (@ARGV) {
 		for (1 .. 5) {
 			push @mirrors, "https://downloads.sourceforge.net/$1";
 		}
+	} elsif ($mirror =~ /^\@OPENWRT$/) {
+		# use OpenWrt source server directly
 	} elsif ($mirror =~ /^\@APACHE\/(.+)$/) {
 		push @mirrors, "https://mirror.netcologne.de/apache.org/$1";
 		push @mirrors, "https://mirror.aarnet.edu.au/pub/apache/$1";
@@ -224,7 +226,6 @@ foreach my $mirror (@ARGV) {
 		push @mirrors, "http://ftp.acc.umu.se/mirror/gnu.org/savannah/$1";
 		push @mirrors, "http://nongnu.uib.no/$1";
 		push @mirrors, "http://ftp.igh.cnrs.fr/pub/nongnu/$1";
-		push @mirrors, "http://public.p-knowledge.co.jp/Savannah-nongnu-mirror/$1";
 		push @mirrors, "ftp://cdimage.debian.org/mirror/gnu.org/savannah/$1";
 		push @mirrors, "ftp://ftp.acc.umu.se/mirror/gnu.org/savannah/$1";
 	} elsif ($mirror =~ /^\@KERNEL\/(.+)$/) {
@@ -236,7 +237,6 @@ foreach my $mirror (@ARGV) {
 		}
 		foreach my $dir (@extra) {
 			push @mirrors, "https://cdn.kernel.org/pub/$dir";
-			push @mirrors, "https://mirror.rackspace.com/kernel.org/pub/$dir";
 			push @mirrors, "https://download.xs4all.nl/ftp.kernel.org/pub/$dir";
 			push @mirrors, "https://mirrors.mit.edu/kernel/$dir";
 			push @mirrors, "http://ftp.nara.wide.ad.jp/pub/kernel.org/$dir";

@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
 PKG_VERSION:=4.6.0-stable
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/wolfSSL/wolfssl/archive/v$(PKG_VERSION)
 PKG_HASH:=053aefbb02d0b06b27c5e2df6875b4b587318755b7db9d6aa8d72206b310a848
 
-PKG_FIXUP:=libtool
+PKG_FIXUP:=libtool libtool-abiver
 PKG_INSTALL:=1
 PKG_USE_MIPS16:=0
 PKG_BUILD_PARALLEL:=1
@@ -33,6 +33,8 @@ PKG_CONFIG_DEPENDS:=\
 	CONFIG_WOLFSSL_HAS_SESSION_TICKET CONFIG_WOLFSSL_HAS_TLSV10 \
 	CONFIG_WOLFSSL_HAS_TLSV13 CONFIG_WOLFSSL_HAS_WPAS CONFIG_WOLFSSL_HAS_CERTGEN
 
+PKG_ABI_VERSION=$(patsubst %-stable,%,$(PKG_VERSION)).$(call version_abbrev,$(call confvar,$(PKG_CONFIG_DEPENDS)))
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libwolfssl
@@ -44,7 +46,7 @@ define Package/libwolfssl
   MENU:=1
   PROVIDES:=libcyassl
   DEPENDS:=+WOLFSSL_HAS_DEVCRYPTO:kmod-cryptodev +WOLFSSL_HAS_AFALG:kmod-crypto-user
-  ABI_VERSION:=24
+  ABI_VERSION:=$(PKG_ABI_VERSION)
 endef
 
 define Package/libwolfssl/description

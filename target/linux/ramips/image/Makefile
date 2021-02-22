@@ -1,9 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2008-2011 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -33,26 +31,6 @@ KERNEL_DTB = kernel-bin | append-dtb | lzma
 define Build/edimax-header
 	$(STAGING_DIR_HOST)/bin/mkedimaximg -i $@ -o $@.new $(1)
 	@mv $@.new $@
-endef
-
-define Build/elx-header
-	$(eval hw_id=$(word 1,$(1)))
-	$(eval xor_pattern=$(word 2,$(1)))
-	( \
-		echo -ne "\x00\x00\x00\x00\x00\x00\x00\x03" | \
-			dd bs=42 count=1 conv=sync; \
-		hw_id="$(hw_id)"; \
-		echo -ne "\x$${hw_id:0:2}\x$${hw_id:2:2}\x$${hw_id:4:2}\x$${hw_id:6:2}" | \
-			dd bs=20 count=1 conv=sync; \
-		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-			dd bs=8 count=1 conv=sync; \
-		echo -ne "$$($(STAGING_DIR_HOST)/bin/mkhash md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
-			dd bs=58 count=1 conv=sync; \
-	) > $(KDIR)/tmp/$(DEVICE_NAME).header
-	$(call Build/xor-image,-p $(xor_pattern) -x)
-	cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new
-	mv $@.new $@
-	rm -rf $(KDIR)/tmp/$(DEVICE_NAME).header
 endef
 
 define Build/jcg-header

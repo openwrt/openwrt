@@ -1,4 +1,5 @@
 PKG_NAME ?= trusted-firmware-a
+PKG_CPE_ID ?= cpe:/a:arm:arm_trusted_firmware
 
 ifndef PKG_SOURCE_PROTO
 PKG_SOURCE = trusted-firmware-a-$(PKG_VERSION).tar.gz
@@ -73,7 +74,7 @@ define Build/Compile/Trusted-Firmware-A
 		CROSS_COMPILE=$(TARGET_CROSS) \
 		OPENSSL_DIR=$(STAGING_DIR_HOST) \
 		PLAT=$(PLAT) \
-		BUILD_STRING="OpenWRT v$(PKG_VERSION)-$(PKG_RELEASE) ($(VARIANT))" \
+		BUILD_STRING="OpenWrt v$(PKG_VERSION)-$(PKG_RELEASE) ($(VARIANT))" \
 		$(TFA_MAKE_FLAGS)
 endef
 

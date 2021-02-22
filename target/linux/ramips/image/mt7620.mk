@@ -981,6 +981,7 @@ define Device/tplink_archer-c20-v1
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 0x44
   TPLINK_HWREVADD := 0x1
+  IMAGES := sysupgrade.bin
   DEVICE_MODEL := Archer C20
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
@@ -996,6 +997,7 @@ define Device/tplink_archer-c2-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc7500001
   TPLINK_HWREV := 50
+  IMAGES := sysupgrade.bin
   DEVICE_MODEL := Archer C2
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \

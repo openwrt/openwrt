@@ -621,12 +621,15 @@ static void do_swap_desc_tasklet(unsigned long arg)
 static inline int ifx_ptm_version(char *buf)
 {
     int len = 0;
-    unsigned int major, minor;
+    unsigned int major, mid, minor;
 
-    ifx_ptm_get_fw_ver(&major, &minor);
+    ifx_ptm_get_fw_ver(&major, &mid, &minor);
 
-    len += sprintf(buf + len, "PTM %d.%d.%d", IFX_PTM_VER_MAJOR, IFX_PTM_VER_MID, IFX_PTM_VER_MINOR);
-    len += sprintf(buf + len, "    PTM (E1) firmware version %d.%d\n", major, minor);
+    len += ifx_drv_ver(buf + len, "PTM", IFX_PTM_VER_MAJOR, IFX_PTM_VER_MID, IFX_PTM_VER_MINOR);
+    if ( mid == ~0 )
+        len += sprintf(buf + len, "    PTM (E1) firmware version %u.%u\n", major, minor);
+    else
+        len += sprintf(buf + len, "    PTM (E1) firmware version %u.%u.%u\n", major, mid, minor);
 
     return len;
 }
@@ -963,7 +966,7 @@ static int ltq_ptm_probe(struct platform_device *pdev)
 {
     int ret;
     int i;
-    char ver_str[128];
+    char ver_str[256];
     struct port_cell_info port_cell = {0};
 
     ret = init_priv_data();

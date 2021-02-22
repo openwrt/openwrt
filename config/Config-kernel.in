@@ -1,8 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
 # Copyright (C) 2006-2014 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 config KERNEL_BUILD_USER
 	string "Custom Kernel Build User Name"
@@ -1175,6 +1173,16 @@ config KERNEL_SECURITY_SELINUX_DEVELOP
 	bool "NSA SELinux Development Support"
 	depends on KERNEL_SECURITY_SELINUX
 	default y
+
+config KERNEL_SECURITY_SELINUX_SIDTAB_HASH_BITS
+	int
+	depends on KERNEL_SECURITY_SELINUX
+	default 9
+
+config KERNEL_SECURITY_SELINUX_SID2STR_CACHE_SIZE
+	int
+	depends on KERNEL_SECURITY_SELINUX
+	default 256
 
 config KERNEL_LSM
 	string

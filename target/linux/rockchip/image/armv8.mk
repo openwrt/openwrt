@@ -1,9 +1,6 @@
-# 
+# SPDX-License-Identifier: GPL-2.0-only
+#
 # Copyright (C) 2020 Tobias Maedel
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 define Device/friendlyarm_nanopi-r2s
   DEVICE_VENDOR := FriendlyARM

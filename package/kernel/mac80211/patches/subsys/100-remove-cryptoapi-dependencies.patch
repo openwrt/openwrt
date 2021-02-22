@@ -8,7 +8,7 @@
  	wpa.o \
  	scan.o offchannel.o \
  	ht.o agg-tx.o agg-rx.o \
-@@ -18,8 +17,8 @@ mac80211-y := \
+@@ -19,8 +18,8 @@ mac80211-y := \
  	rate.o \
  	michael.o \
  	tkip.o \
@@ -64,7 +64,7 @@
 -	aead_request_set_ad(aead_req, sg[0].length);
 -
 -	crypto_aead_encrypt(aead_req);
--	kzfree(aead_req);
+-	kfree_sensitive(aead_req);
 -
 -	return 0;
 -}
@@ -99,7 +99,7 @@
 -	aead_request_set_ad(aead_req, sg[0].length);
 -
 -	err = crypto_aead_decrypt(aead_req);
--	kzfree(aead_req);
+-	kfree_sensitive(aead_req);
 -
 -	return err;
 -}

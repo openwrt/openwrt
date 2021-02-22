@@ -74,7 +74,8 @@ case "$FIRMWARE" in
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
-	buffalo,wzr-hp-g302h-a1a0)
+	buffalo,wzr-hp-g302h-a1a0|\
+	ubnt,unifi-ap-outdoor-plus)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
 	buffalo,wzr-hp-g450h|\
@@ -103,6 +104,9 @@ case "$FIRMWARE" in
 	enterasys,ws-ap3705i)
 		caldata_extract "calibrate" 0x5000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env0 RADIOADDR0)
+		;;
+	meraki,mr12)
+		caldata_extract "art" 0x11000 0xeb8
 		;;
 	netgear,wnr2200-8m|\
 	netgear,wnr2200-16m|\

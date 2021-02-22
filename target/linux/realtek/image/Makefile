@@ -1,6 +1,5 @@
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# SPDX-License-Identifier: GPL-2.0-only
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -24,6 +23,16 @@ define Device/Default
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
 	append-metadata | check-size
+endef
+
+# "NGE" refers to the uImage magic
+define Device/netgear_nge
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  SOC := rtl8380
+  IMAGE_SIZE := 14848k
+  UIMAGE_MAGIC := 0x4e474520
+  DEVICE_VENDOR := NETGEAR
 endef
 
 define Device/allnet_all-sg8208m
@@ -61,13 +70,16 @@ define Device/d-link_dgs-1210-28
 endef
 TARGET_DEVICES += d-link_dgs-1210-28
 
+define Device/netgear_gs108t-v3
+  $(Device/netgear_nge)
+  DEVICE_MODEL := GS108T
+  DEVICE_VARIANT := v3
+endef
+TARGET_DEVICES += netgear_gs108t-v3
+
 define Device/netgear_gs110tpp-v1
-  $(Device/Default)
-  SOC := rtl8380
-  IMAGE_SIZE := 14848k
-  UIMAGE_MAGIC := 0x4e474520
-  DEVICE_VENDOR := NETGEAR
-  DEVICE_MODEL := GS110TP
+  $(Device/netgear_nge)
+  DEVICE_MODEL := GS110TPP
   DEVICE_VARIANT := v1
 endef
 TARGET_DEVICES += netgear_gs110tpp-v1

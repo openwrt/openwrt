@@ -14,13 +14,14 @@ PKG_RELEASE:=4
 PKG_BASE_NAME:=drv_mei_cpe
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
+PKG_SOURCE_URL:=@OPENWRT
 PKG_HASH:=94f6904364348b7f74087e721968abc28b2564fb9bd8899aa930d36490387662
 PKG_FIXUP:=autoreconf
 PKG_FLAGS:=nonshared
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_LICENSE:=GPL-2.0 BSD-2-Clause
 PKG_LICENSE_FILES:=LICENSE
+PKG_EXTMOD_SUBDIRS:=src
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -52,6 +53,7 @@ define Package/ltq-vdsl-mei-test/description
 endef
 
 MAKE_FLAGS += \
+	$(KERNEL_MAKE_FLAGS) \
 	SHELL="$(BASH)"
 
 CONFIGURE_ARGS += \

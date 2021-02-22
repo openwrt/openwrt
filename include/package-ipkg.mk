@@ -1,9 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2006-2014 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2006-2020 OpenWrt.org
 
 ifndef DUMP
   include $(INCLUDE_DIR)/feeds.mk
@@ -102,7 +99,7 @@ _endef=endef
 
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
-    ABIV_$(1):=$(call GetABISuffix,$(1))
+    ABIV_$(1):=$(if $(filter-out kmod-%,$(1)),$(ABI_VERSION))
     PDIR_$(1):=$(call FeedPackageDir,$(1))
     IPKG_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).ipk
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
@@ -159,7 +156,12 @@ ifeq ($(DUMP),)
 
     $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
 	mkdir -p $(STAGING_DIR_ROOT)/stamp
-	$(if $(ABI_VERSION),echo '$(ABI_VERSION)' | cmp -s - $(PKG_INFO_DIR)/$(1).version || echo '$(ABI_VERSION)' > $(PKG_INFO_DIR)/$(1).version)
+	$(if $(ABI_VERSION),echo '$(ABI_VERSION)' | cmp -s - $(PKG_INFO_DIR)/$(1).version || { \
+		echo '$(ABI_VERSION)' > $(PKG_INFO_DIR)/$(1).version; \
+		$(foreach pkg,$(filter-out $(1),$(PROVIDES)), \
+			cp $(PKG_INFO_DIR)/$(1).version $(PKG_INFO_DIR)/$(pkg).version; \
+		) \
+	} )
 	$(call locked,$(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(STAGING_DIR_ROOT)/,root-copy)
 	touch $$@
 
@@ -173,7 +175,7 @@ Package: $(1)$$(ABIV_$(1))
 Version: $(VERSION)
 $$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
 )$$(call addfield,Conflicts,$$(call mergelist,$(CONFLICTS))
-)$$(call addfield,Provides,$$(call mergelist,$$(filter-out $(1)$$(ABIV_$(1)),$(PROVIDES)$$(if $$(ABIV_$(1)), $(1) $(foreach provide,$(PROVIDES),$(provide)$$(call GetABISuffix,$(provide))))))
+)$$(call addfield,Provides,$$(call mergelist,$$(filter-out $(1)$$(ABIV_$(1)),$(PROVIDES)$$(if $$(ABIV_$(1)), $(1) $(foreach provide,$(PROVIDES),$(provide)$$(ABIV_$(1))))))
 )$$(call addfield,Alternatives,$$(call mergelist,$(ALTERNATIVES))
 )$$(call addfield,Source,$(SOURCE)
 )$$(call addfield,SourceName,$(1)

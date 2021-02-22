@@ -829,6 +829,18 @@ define Device/dlink_dap-3320-a1
 endef
 TARGET_DEVICES += dlink_dap-3320-a1
 
+define Device/dlink_dap-3662-a1
+  $(Device/dlink_dap-2xxx)
+  SOC := qca9558
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-3662
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 15296k
+  DAP_SIGNATURE := wapac11_dkbs_dap3662
+endef
+TARGET_DEVICES += dlink_dap-3662-a1
+
 define Device/dlink_dch-g020-a1
   SOC := qca9531
   DEVICE_VENDOR := D-Link
@@ -1343,6 +1355,23 @@ define Device/librerouter_librerouter-v1
   DEVICE_PACKAGES := kmod-usb2
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
+
+define Device/meraki_mr12
+  SOC := ar7242
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := MR12
+  IMAGE_SIZE := 15616k
+  DEVICE_PACKAGES := kmod-owl-loader rssileds
+  SUPPORTED_DEVICES += mr12
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partitions differ from ar71xx version of MR12. Image format is incompatible. \
+	To use sysupgrade, you must change /lib/update/common.sh::get_image to prepend 128K zeroes to this image, \
+	and change the bootcmd in u-boot to "bootm 0xbf0a0000". After that, you can use "sysupgrade -F -n". \
+	Make sure you do not keep your old config, as ethernet setup is not compatible either. \
+	For more details, see the OpenWrt Wiki: https://openwrt.org/toh/meraki/MR12, \
+	or the commit message of the MR12 ath79 port on git.openwrt.org.
+endef
+TARGET_DEVICES += meraki_mr12
 
 define Device/meraki_mr16
   SOC := ar7161

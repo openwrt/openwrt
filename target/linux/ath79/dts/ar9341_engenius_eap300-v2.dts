@@ -43,11 +43,6 @@
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
-
-		lan {
-			label = "blue:lan";
-			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
-		};
 	};
 
 	virtual_flash {
@@ -145,21 +140,8 @@
 	};
 };
 
-&eth0 {
-	status = "okay";
-
-	mtd-mac-address = <&art 0x0>;
-
-	phy-handle = <&swphy0>;
-
-	gmac-config {
-		device = <&gmac>;
-		switch-phy-swap = <1>;
-	};
-};
-
 &eth1 {
-	compatible = "syscon", "simple-mfd";
+	mtd-mac-address = <&art 0x0>;
 };
 
 &wmac {

@@ -1,9 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2006-2012 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2006-2020 OpenWrt.org
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/prereq.mk
@@ -14,8 +11,8 @@ PKG_NAME:=Build dependency
 
 # Required for the toolchain
 $(eval $(call TestHostCommand,working-make, \
-	Please install GNU make v3.82 or later. (This version has bugs), \
-	$(MAKE) -v | grep -E 'Make (3\.8[2-9]|3\.9[0-9]|[4-9]\.)'))
+	Please install GNU make v4.1 or later., \
+	$(MAKE) -v | grep -E 'Make (4\.[1-9]|[5-9]\.)'))
 
 $(eval $(call TestHostCommand,case-sensitive-fs, \
 	OpenWrt can only be built on a case-sensitive filesystem, \

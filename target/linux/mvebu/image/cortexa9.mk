@@ -1,10 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2012-2016 OpenWrt.org
 # Copyright (C) 2016 LEDE-project.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
@@ -32,8 +29,9 @@ define Device/cznic_turris-omnia
   DEVICE_VENDOR := CZ.NIC
   DEVICE_MODEL := Turris Omnia
   KERNEL_INSTALL := 1
+  SOC := armada-385
   KERNEL := kernel-bin
-  KERNEL_INITRAMFS := kernel-bin
+  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   DEVICE_PACKAGES :=  \
     mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
     wpad-basic-wolfssl kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
@@ -42,7 +40,6 @@ define Device/cznic_turris-omnia
   IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
   IMAGE/omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
   IMAGE_NAME = $$(2)
-  SOC := armada-385
   SUPPORTED_DEVICES += armada-385-turris-omnia
   BOOT_SCRIPT := turris-omnia
 endef
