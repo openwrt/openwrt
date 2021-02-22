@@ -26,8 +26,6 @@ endef
 define Device/Default
 	PROFILES := Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
-	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
-	KERNEL_PREFIX := $$(IMAGE_PREFIX)
 	KERNEL_LOADADDR = 0x42208000
 	DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
 	IMAGES := sysupgrade.bin
