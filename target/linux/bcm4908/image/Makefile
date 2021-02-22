@@ -44,7 +44,7 @@ define Device/Default
   KERNEL_INITRAMFS := kernel-bin | bcm4908lzma | bcm4908kernel
   FILESYSTEMS := squashfs
   KERNEL_NAME := Image
-  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
+  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1).$$(2)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
 endef
