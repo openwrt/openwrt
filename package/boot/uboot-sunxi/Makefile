@@ -29,7 +29,7 @@ define U-Boot/a64-olinuxino
   BUILD_SUBTARGET:=cortexa53
   NAME:=Olimex A64-OLinuXino
   BUILD_DEVICES:=olimex_a64-olinuxino
-  DEPENDS:=+PACKAGE_u-boot-olimex_a64-olinuxino:arm-trusted-firmware-sunxi
+  DEPENDS:=+PACKAGE_u-boot-olimex_a64-olinuxino:arm-trusted-firmware-sunxi-a64
   UENV:=a64
   ATF:=a64
 endef
@@ -38,7 +38,7 @@ define U-Boot/a64-olinuxino-emmc
   BUILD_SUBTARGET:=cortexa53
   NAME:=Olimex A64-OLinuXino eMMC
   BUILD_DEVICES:=olimex_a64-olinuxino-emmc
-  DEPENDS:=+PACKAGE_u-boot-olimex_a64-olinuxino-emmc:arm-trusted-firmware-sunxi
+  DEPENDS:=+PACKAGE_u-boot-olimex_a64-olinuxino-emmc:arm-trusted-firmware-sunxi-a64
   UENV:=a64
   ATF:=a64
 endef
@@ -238,7 +238,7 @@ define U-Boot/libretech_all_h3_cc_h5
   BUILD_SUBTARGET:=cortexa53
   NAME:=Libre Computer ALL-H3-CC H5
   BUILD_DEVICES:=libretech_all-h3-cc-h5
-  DEPENDS:=+PACKAGE_u-boot-libretech_all_h3_cc_h5:arm-trusted-firmware-sunxi
+  DEPENDS:=+PACKAGE_u-boot-libretech_all_h3_cc_h5:arm-trusted-firmware-sunxi-a64
   UENV:=a64
   ATF:=a64
 endef
@@ -280,7 +280,7 @@ define U-Boot/sopine_baseboard
   BUILD_SUBTARGET:=cortexa53
   NAME:=Sopine Baseboard
   BUILD_DEVICES:=pine64_sopine-baseboard
-  DEPENDS:=+PACKAGE_u-boot-sopine_baseboard:arm-trusted-firmware-sunxi
+  DEPENDS:=+PACKAGE_u-boot-sopine_baseboard:arm-trusted-firmware-sunxi-a64
   UENV:=a64
   ATF:=a64
 endef
@@ -290,7 +290,7 @@ define U-Boot/orangepi_zero_plus
   BUILD_SUBTARGET:=cortexa53
   NAME:=Xunlong Orange Pi Zero Plus
   BUILD_DEVICES:=xunlong_orangepi-zero-plus
-  DEPENDS:=+PACKAGE_u-boot-orangepi_zero_plus:arm-trusted-firmware-sunxi
+  DEPENDS:=+PACKAGE_u-boot-orangepi_zero_plus:arm-trusted-firmware-sunxi-a64
   UENV:=a64
   ATF:=a64
 endef
@@ -299,7 +299,7 @@ define U-Boot/orangepi_pc2
   BUILD_SUBTARGET:=cortexa53
   NAME:=Xunlong Orange Pi PC2
   BUILD_DEVICES:=xunlong_orangepi-pc2
-  DEPENDS:=+PACKAGE_u-boot-orangepi_pc2:arm-trusted-firmware-sunxi
+  DEPENDS:=+PACKAGE_u-boot-orangepi_pc2:arm-trusted-firmware-sunxi-a64
   UENV:=a64
   ATF:=a64
 endef
@@ -358,7 +358,7 @@ UBOOT_TARGETS := \
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
 UBOOT_MAKE_FLAGS += \
-	BL31=$(STAGING_DIR_IMAGE)/bl31_$(ATF).bin
+	BL31=$(STAGING_DIR_IMAGE)/bl31_sun50i_$(ATF).bin
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
