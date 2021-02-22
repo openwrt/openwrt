@@ -164,13 +164,11 @@ define Device/ventana
 	kobs-ng
   KERNEL += | boot-overlay
   IMAGES := nand.ubi bootfs.tar.gz dtb
-  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
   UBINIZE_PARTS = boot=$$(KDIR_KERNEL_IMAGE).boot.ubifs=15
   BOOT_SCRIPT := bootscript-ventana
   IMAGE/nand.ubi := append-ubi
   IMAGE/bootfs.tar.gz := bootfs.tar.gz
   IMAGE/dtb := install-dtb
-  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1)-$$(2)
   PAGESIZE := 2048
   BLOCKSIZE := 128k
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB
