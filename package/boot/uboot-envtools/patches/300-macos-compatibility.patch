@@ -1,0 +1,24 @@
+--- a/Makefile
++++ b/Makefile
+@@ -327,7 +327,9 @@ KBUILD_HOSTLDFLAGS += $(call os_x_before
+ # since Lion (10.7) ASLR is on by default, but we use linker generated lists
+ # in some host tools which is a problem then ... so disable ASLR for these
+ # tools
+-KBUILD_HOSTLDFLAGS += $(call os_x_before, 10, 7, "", "-Xlinker -no_pie")
++# since Big Sur (11.0) -Xlinker -no_pie cause build errors ld: cannot find -lgcc_s
++MACOS10_7_HOSTLDFLAGS = $(call os_x_before, 10, 7, "", "-Xlinker -no_pie")
++KBUILD_HOSTLDFLAGS += $(call os_x_after, 11, 0, "", $(MACOS10_7_HOSTLDFLAGS))
+ 
+ # macOS Mojave (10.14.X) 
+ # Undefined symbols for architecture x86_64: "_PyArg_ParseTuple"
+--- a/scripts/Makefile.host
++++ b/scripts/Makefile.host
+@@ -67,7 +67,7 @@ host-shared	:= $(addprefix $(obj)/,$(hos
+ #####
+ # Handle options to gcc. Support building with separate output directory
+ 
+-_hostc_flags   = $(KBUILD_HOSTCFLAGS)   $(HOST_EXTRACFLAGS)   \
++_hostc_flags   = $(HOSTCFLAGS) $(KBUILD_HOSTCFLAGS) $(HOST_EXTRACFLAGS) \
+                  $(HOSTCFLAGS_$(basetarget).o)
+ _hostcxx_flags = $(KBUILD_HOSTCXXFLAGS) $(HOST_EXTRACXXFLAGS) \
+                  $(HOSTCXXFLAGS_$(basetarget).o)
