@@ -9,6 +9,10 @@
 	#size-cells = <1>;
 	compatible = "mediatek,mt7621-soc";
 
+	aliases {
+		serial0 = &uartlite;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -31,10 +35,6 @@
 		#interrupt-cells = <1>;
 		interrupt-controller;
 		compatible = "mti,cpu-interrupt-controller";
-	};
-
-	aliases {
-		serial0 = &uartlite;
 	};
 
 	chosen {
