@@ -45,15 +45,12 @@ cfe_jffs2_nand_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-		comtrend,ar-5315u|\
-		comtrend,ar-5387un|\
-		comtrend,vr-3025u|\
-		huawei,hg556a-b)
-			default_do_upgrade "$1"
-			;;
 		comtrend,vr-3032u|\
 		netgear,dgnd3700-v2)
 			cfe_jffs2_nand_upgrade "$1"
+			;;
+		*)
+			nand_do_upgrade "$1"
 			;;
 	esac
 }
