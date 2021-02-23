@@ -54,9 +54,9 @@ Please let me know how should I handle this.
 
 --- a/arch/arm/boot/dts/armada-385-turris-omnia.dts
 +++ b/arch/arm/boot/dts/armada-385-turris-omnia.dts
-@@ -390,6 +390,7 @@
- 	phy1: ethernet-phy@1 {
- 		compatible = "ethernet-phy-ieee802.3-c22";
+@@ -254,6 +254,7 @@
+ 		status = "okay";
+ 		compatible = "ethernet-phy-id0141.0DD1", "ethernet-phy-ieee802.3-c22";
  		reg = <1>;
 +		marvell,reg-init = <3 18 0 0x4985>;
  
