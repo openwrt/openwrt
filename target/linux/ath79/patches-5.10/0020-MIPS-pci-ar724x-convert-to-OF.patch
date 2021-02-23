@@ -154,7 +154,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	irq_set_chained_handler_and_data(apc->irq, ar724x_pci_irq_handler,
  					 apc);
  }
-@@ -391,29 +399,11 @@ static int ar724x_pci_probe(struct platf
+@@ -388,29 +396,11 @@ static int ar724x_pci_probe(struct platf
  	if (apc->irq < 0)
  		return -EINVAL;
  
@@ -186,7 +186,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  	/*
  	 * Do the full PCIE Root Complex Initialization Sequence if the PCIe
-@@ -435,10 +425,16 @@ static int ar724x_pci_probe(struct platf
+@@ -432,10 +422,16 @@ static int ar724x_pci_probe(struct platf
  	return 0;
  }
  

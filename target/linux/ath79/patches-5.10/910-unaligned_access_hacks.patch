@@ -1,6 +1,6 @@
 --- a/arch/mips/include/asm/checksum.h
 +++ b/arch/mips/include/asm/checksum.h
-@@ -134,26 +134,30 @@ static inline __sum16 ip_fast_csum(const
+@@ -100,26 +100,30 @@ static inline __sum16 ip_fast_csum(const
  	const unsigned int *stop = word + ihl;
  	unsigned int csum;
  	int carry;
@@ -42,7 +42,7 @@
  	} while (word != stop);
  
  	return csum_fold(csum);
-@@ -214,73 +218,6 @@ static inline __sum16 ip_compute_csum(co
+@@ -180,73 +184,6 @@ static inline __sum16 ip_compute_csum(co
  	return csum_fold(csum_partial(buff, len, 0));
  }
  
@@ -129,7 +129,7 @@
  struct ip_auth_hdr {
 --- a/include/uapi/linux/ipv6.h
 +++ b/include/uapi/linux/ipv6.h
-@@ -131,7 +131,7 @@ struct ipv6hdr {
+@@ -132,7 +132,7 @@ struct ipv6hdr {
  
  	struct	in6_addr	saddr;
  	struct	in6_addr	daddr;
@@ -171,7 +171,7 @@
  #define UDP_CORK	1	/* Never send partially complete segments */
 --- a/net/netfilter/nf_conntrack_core.c
 +++ b/net/netfilter/nf_conntrack_core.c
-@@ -271,8 +271,8 @@ nf_ct_get_tuple(const struct sk_buff *sk
+@@ -273,8 +273,8 @@ nf_ct_get_tuple(const struct sk_buff *sk
  
  	switch (l3num) {
  	case NFPROTO_IPV4:
@@ -184,7 +184,7 @@
  		memcpy(tuple->src.u3.ip6, ap, sizeof(tuple->src.u3.ip6));
 --- a/include/uapi/linux/icmp.h
 +++ b/include/uapi/linux/icmp.h
-@@ -82,7 +82,7 @@ struct icmphdr {
+@@ -83,7 +83,7 @@ struct icmphdr {
  	} frag;
  	__u8	reserved[4];
    } un;
@@ -214,7 +214,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -849,10 +850,10 @@ static void tcp_v6_send_response(const s
+@@ -909,10 +910,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -241,7 +241,7 @@
   */
 --- a/net/ipv6/datagram.c
 +++ b/net/ipv6/datagram.c
-@@ -476,7 +476,7 @@ int ipv6_recv_error(struct sock *sk, str
+@@ -492,7 +492,7 @@ int ipv6_recv_error(struct sock *sk, str
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
  		} else {
@@ -250,7 +250,7 @@
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -830,12 +830,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -846,12 +846,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -267,7 +267,7 @@
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -752,7 +752,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -949,7 +949,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  
@@ -278,9 +278,9 @@
  		icmpv6_param_prob(skb, ICMPV6_HDR_FIELD, optoff+2);
 --- a/include/linux/types.h
 +++ b/include/linux/types.h
-@@ -225,5 +225,11 @@ struct callback_head {
- typedef void (*rcu_callback_t)(struct rcu_head *head);
- typedef void (*call_rcu_func_t)(struct rcu_head *head, rcu_callback_t func);
+@@ -227,5 +227,11 @@ typedef void (*swap_func_t)(void *a, voi
+ typedef int (*cmp_r_func_t)(const void *a, const void *b, const void *priv);
+ typedef int (*cmp_func_t)(const void *a, const void *b);
  
 +struct net_hdr_word {
 +       u32 words[1];
@@ -292,7 +292,7 @@
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1441,8 +1441,8 @@ struct sk_buff *inet_gro_receive(struct
+@@ -1467,8 +1467,8 @@ struct sk_buff *inet_gro_receive(struct
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out_unlock;
  
@@ -305,7 +305,7 @@
  	list_for_each_entry(p, head, list) {
 --- a/net/ipv4/tcp_output.c
 +++ b/net/ipv4/tcp_output.c
-@@ -460,48 +460,53 @@ static void tcp_options_write(__be32 *pt
+@@ -611,48 +611,53 @@ static void tcp_options_write(__be32 *pt
  	u16 options = opts->options;	/* mungable copy */
  
  	if (unlikely(OPTION_MD5 & options)) {
@@ -382,7 +382,7 @@
  	}
  
  	if (unlikely(opts->num_sack_blocks)) {
-@@ -509,16 +514,17 @@ static void tcp_options_write(__be32 *pt
+@@ -660,16 +665,17 @@ static void tcp_options_write(__be32 *pt
  			tp->duplicate_sack : tp->selective_acks;
  		int this_sack;
  
@@ -406,7 +406,7 @@
  		}
  
  		tp->rx_opt.dsack = 0;
-@@ -531,13 +537,14 @@ static void tcp_options_write(__be32 *pt
+@@ -682,13 +688,14 @@ static void tcp_options_write(__be32 *pt
  
  		if (foc->exp) {
  			len = TCPOLEN_EXP_FASTOPEN_BASE + foc->len;
@@ -464,7 +464,7 @@
  #define IGMP_HOST_MEMBERSHIP_REPORT	0x12	/* Ditto */
 --- a/net/core/flow_dissector.c
 +++ b/net/core/flow_dissector.c
-@@ -212,7 +212,7 @@ __be32 __skb_flow_get_ports(const struct
+@@ -128,7 +128,7 @@ __be32 __skb_flow_get_ports(const struct
  		ports = __skb_header_pointer(skb, thoff + poff,
  					     sizeof(_ports), data, hlen, &_ports);
  		if (ports)
@@ -475,7 +475,7 @@
  	return 0;
 --- a/include/uapi/linux/icmpv6.h
 +++ b/include/uapi/linux/icmpv6.h
-@@ -77,7 +77,7 @@ struct icmp6hdr {
+@@ -78,7 +78,7 @@ struct icmp6hdr {
  #define icmp6_addrconf_other	icmp6_dataun.u_nd_ra.other
  #define icmp6_rt_lifetime	icmp6_dataun.u_nd_ra.rt_lifetime
  #define icmp6_router_pref	icmp6_dataun.u_nd_ra.router_pref
@@ -486,7 +486,7 @@
  #define ICMPV6_ROUTER_PREF_LOW		0x3
 --- a/include/net/ndisc.h
 +++ b/include/net/ndisc.h
-@@ -92,7 +92,7 @@ struct ra_msg {
+@@ -93,7 +93,7 @@ struct ra_msg {
          struct icmp6hdr		icmph;
  	__be32			reachable_time;
  	__be32			retrans_timer;
@@ -495,7 +495,7 @@
  
  struct rd_msg {
  	struct icmp6hdr icmph;
-@@ -371,10 +371,10 @@ static inline u32 ndisc_hashfn(const voi
+@@ -372,10 +372,10 @@ static inline u32 ndisc_hashfn(const voi
  {
  	const u32 *p32 = pkey;
  
@@ -534,7 +534,7 @@
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -240,7 +240,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
+@@ -238,7 +238,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
@@ -545,7 +545,7 @@
  		 * XXX skbs on the gro_list have all been parsed and pulled
 --- a/include/net/addrconf.h
 +++ b/include/net/addrconf.h
-@@ -47,7 +47,7 @@ struct prefix_info {
+@@ -45,7 +45,7 @@ struct prefix_info {
  	__be32			reserved2;
  
  	struct in6_addr		prefix;
@@ -610,7 +610,7 @@
  		return false;
  
  	return true;
-@@ -741,13 +745,13 @@ static inline void ipv6_addr_set_v4mappe
+@@ -746,13 +750,13 @@ static inline void ipv6_addr_set_v4mappe
   */
  static inline int __ipv6_addr_diff32(const void *token1, const void *token2, int addrlen)
  {
@@ -626,7 +626,7 @@
  		if (xb)
  			return i * 32 + 31 - __fls(ntohl(xb));
  	}
-@@ -934,17 +938,18 @@ static inline int ip6_multipath_hash_pol
+@@ -938,17 +942,18 @@ static inline int ip6_multipath_hash_pol
  static inline void ip6_flow_hdr(struct ipv6hdr *hdr, unsigned int tclass,
  				__be32 flowlabel)
  {
@@ -660,7 +660,7 @@
  u32 secure_ipv6_port_ephemeral(const __be32 *saddr, const __be32 *daddr,
 --- a/include/uapi/linux/in.h
 +++ b/include/uapi/linux/in.h
-@@ -84,7 +84,7 @@ enum {
+@@ -88,7 +88,7 @@ enum {
  /* Internet address. */
  struct in_addr {
  	__be32	s_addr;
@@ -693,7 +693,7 @@
  				       | TCPOLEN_TIMESTAMP))
 --- a/net/xfrm/xfrm_input.c
 +++ b/net/xfrm/xfrm_input.c
-@@ -162,8 +162,8 @@ int xfrm_parse_spi(struct sk_buff *skb,
+@@ -165,8 +165,8 @@ int xfrm_parse_spi(struct sk_buff *skb,
  	if (!pskb_may_pull(skb, hlen))
  		return -EINVAL;
  
@@ -706,7 +706,7 @@
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3976,14 +3976,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4074,14 +4074,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -799,7 +799,7 @@
  		*sum = csum_fold(csum_partial(diff, sizeof(diff),
 --- a/include/linux/etherdevice.h
 +++ b/include/linux/etherdevice.h
-@@ -489,7 +489,7 @@ static inline bool is_etherdev_addr(cons
+@@ -500,7 +500,7 @@ static inline bool is_etherdev_addr(cons
   * @b: Pointer to Ethernet header
   *
   * Compare two Ethernet headers, returns 0 if equal.
@@ -808,7 +808,7 @@
   * aligned OR the platform can handle unaligned access.  This is the
   * case for all packets coming into netif_receive_skb or similar
   * entry points.
-@@ -512,11 +512,12 @@ static inline unsigned long compare_ethe
+@@ -523,11 +523,12 @@ static inline unsigned long compare_ethe
  	fold |= *(unsigned long *)(a + 6) ^ *(unsigned long *)(b + 6);
  	return fold;
  #else
