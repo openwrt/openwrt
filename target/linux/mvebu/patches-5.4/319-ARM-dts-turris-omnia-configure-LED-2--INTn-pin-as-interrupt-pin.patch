@@ -1,0 +1,64 @@
+From: "Marek Behún" <kabel@kernel.org>
+To: Gregory CLEMENT <gregory.clement@bootlin.com>
+Cc: "Marek Behún" <kabel@kernel.org>, Rui Salvaterra <rsalvaterra@gmail.com>, "Uwe Kleine-König" <uwe@kleine-koenig.org>, linux-arm-kernel@lists.infradead.org, Andrew Lunn <andrew@lunn.ch>, stable@vger.kernel.org
+Subject: [PATCH mvebu-dt] ARM: dts: turris-omnia: configure LED[2]/INTn pin as interrupt pin
+Date: Sun, 21 Feb 2021 00:11:44 +0100
+Message-Id: <20210220231144.32325-1-kabel@kernel.org>
+X-Mailer: git-send-email 2.26.2
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Use the `marvell,reg-init` DT property to configure the LED[2]/INTn pin
+of the Marvell 88E1514 ethernet PHY on Turris Omnia into interrupt mode.
+
+Without this the pin is by default in LED[2] mode, and the Marvell PHY
+driver configures LED[2] into "On - Link, Blink - Activity" mode.
+
+This fixes the issue where the pca9538 GPIO/interrupt controller (which
+can't mask interrupts in HW) received too many interrupts and after a
+time started ignoring the interrupt with error message:
+  IRQ 71: nobody cared
+
+There is a work in progress to have the Marvell PHY driver support
+parsing PHY LED nodes from OF and registering the LEDs as Linux LED
+class devices. Once this is done the PHY driver can also automatically
+set the pin into INTn mode if it does not find LED[2] in OF.
+
+Until then, though, we fix this via `marvell,reg-init` DT property.
+
+Signed-off-by: Marek Behún <kabel@kernel.org>
+Reported-by: Rui Salvaterra <rsalvaterra@gmail.com>
+Fixes: 26ca8b52d6e1 ("ARM: dts: add support for Turris Omnia")
+Cc: Uwe Kleine-König <uwe@kleine-koenig.org>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: Andrew Lunn <andrew@lunn.ch>
+Cc: Gregory CLEMENT <gregory.clement@bootlin.com>
+Cc: <stable@vger.kernel.org>
+
+---
+
+This patch fixes bug introduced with the commit that added Turris
+Omnia's DTS (26ca8b52d6e1), but will not apply cleanly because there is
+commit 8ee4a5f4f40d which changed node name and node compatible
+property and this commit did not go into stable.
+
+So either commit 8ee4a5f4f40d has also to go into stable before this, or
+this patch has to be fixed a little in order to apply to 4.14+.
+
+Please let me know how should I handle this.
+
+---
+ arch/arm/boot/dts/armada-385-turris-omnia.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/armada-385-turris-omnia.dts
++++ b/arch/arm/boot/dts/armada-385-turris-omnia.dts
+@@ -254,6 +254,7 @@
+ 		status = "okay";
+ 		compatible = "ethernet-phy-id0141.0DD1", "ethernet-phy-ieee802.3-c22";
+ 		reg = <1>;
++		marvell,reg-init = <3 18 0 0x4985>;
+ 
+ 		/* irq is connected to &pcawan pin 7 */
+ 	};
