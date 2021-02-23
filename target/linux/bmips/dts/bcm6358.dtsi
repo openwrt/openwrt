@@ -149,6 +149,15 @@
 			#reset-cells = <1>;
 		};
 
+		wdt: watchdog@fffe005c {
+			compatible = "brcm,bcm7038-wdt";
+			reg = <0xfffe005c 0xc>;
+
+			clocks = <&periph_osc>;
+
+			timeout-sec = <30>;
+		};
+
 		pinctrl: pin-controller@fffe0080 {
 			compatible = "brcm,bcm6358-pinctrl";
 			reg = <0xfffe0080 0x8>,
