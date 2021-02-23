@@ -22,7 +22,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  #include "gpiolib-of.h"
-@@ -915,3 +917,68 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -1039,3 +1041,68 @@ void of_gpiochip_remove(struct gpio_chip
  {
  	of_node_put(chip->of_node);
  }
@@ -93,7 +93,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +module_platform_driver(gpio_export_driver);
 --- a/drivers/gpio/gpiolib-sysfs.c
 +++ b/drivers/gpio/gpiolib-sysfs.c
-@@ -563,7 +563,7 @@ static struct class gpio_class = {
+@@ -564,7 +564,7 @@ static struct class gpio_class = {
   *
   * Returns zero on success, else an error.
   */
@@ -102,7 +102,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	struct gpio_chip	*chip;
  	struct gpio_device	*gdev;
-@@ -625,6 +625,8 @@ int gpiod_export(struct gpio_desc *desc,
+@@ -626,6 +626,8 @@ int gpiod_export(struct gpio_desc *desc,
  	offset = gpio_chip_hwgpio(desc);
  	if (chip->names && chip->names[offset])
  		ioname = chip->names[offset];
@@ -111,7 +111,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	dev = device_create_with_groups(&gpio_class, &gdev->dev,
  					MKDEV(0, 0), data, gpio_groups,
-@@ -646,6 +648,12 @@ err_unlock:
+@@ -647,6 +649,12 @@ err_unlock:
  	gpiod_dbg(desc, "%s: status %d\n", __func__, status);
  	return status;
  }
@@ -126,7 +126,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int match_export(struct device *dev, const void *desc)
 --- a/include/asm-generic/gpio.h
 +++ b/include/asm-generic/gpio.h
-@@ -127,6 +127,12 @@ static inline int gpio_export(unsigned g
+@@ -125,6 +125,12 @@ static inline int gpio_export(unsigned g
  	return gpiod_export(gpio_to_desc(gpio), direction_may_change);
  }
  
@@ -141,7 +141,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
 --- a/include/linux/gpio/consumer.h
 +++ b/include/linux/gpio/consumer.h
-@@ -668,6 +668,7 @@ static inline void devm_acpi_dev_remove_
+@@ -713,6 +713,7 @@ static inline void devm_acpi_dev_remove_
  
  #if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
  
@@ -149,7 +149,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  int gpiod_export(struct gpio_desc *desc, bool direction_may_change);
  int gpiod_export_link(struct device *dev, const char *name,
  		      struct gpio_desc *desc);
-@@ -675,6 +676,13 @@ void gpiod_unexport(struct gpio_desc *de
+@@ -720,6 +721,13 @@ void gpiod_unexport(struct gpio_desc *de
  
  #else  /* CONFIG_GPIOLIB && CONFIG_GPIO_SYSFS */
  

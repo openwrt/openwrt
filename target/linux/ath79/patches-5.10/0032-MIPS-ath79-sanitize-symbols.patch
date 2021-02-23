@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -217,6 +217,8 @@ config ATH79
+@@ -242,6 +242,8 @@ config ATH79
  	select SYS_SUPPORTS_BIG_ENDIAN
  	select SYS_SUPPORTS_MIPS16
  	select SYS_SUPPORTS_ZBOOT_UART_PROM
@@ -82,12 +82,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
  endif
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -23,7 +23,7 @@ obj-$(CONFIG_BCM63XX)		+= pci-bcm63xx.o
+@@ -21,7 +21,7 @@ obj-$(CONFIG_BCM63XX)		+= pci-bcm63xx.o
  					ops-bcm63xx.o
  obj-$(CONFIG_MIPS_ALCHEMY)	+= pci-alchemy.o
  obj-$(CONFIG_PCI_AR2315)	+= pci-ar2315.o
 -obj-$(CONFIG_SOC_AR71XX)	+= pci-ar71xx.o
 +obj-$(CONFIG_PCI_AR71XX)	+= pci-ar71xx.o
  obj-$(CONFIG_PCI_AR724X)	+= pci-ar724x.o
- obj-$(CONFIG_MIPS_PCI_VIRTIO)	+= pci-virtio-guest.o
  obj-$(CONFIG_PCI_XTALK_BRIDGE)	+= pci-xtalk-bridge.o
+ #
