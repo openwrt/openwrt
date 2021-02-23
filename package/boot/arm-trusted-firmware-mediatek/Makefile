@@ -29,7 +29,7 @@ include $(INCLUDE_DIR)/trusted-firmware-a.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Download/tfa-files
-  URL:=https://codeload.github.com/openwrt/arm-trusted-firmware-mediatek-files/tar.gz/for-2020-11-09?
+  URL:=@OPENWRT
   URL_FILE:=$(BLOBS_TARBALL)
   FILE:=$(BLOBS_TARBALL)
   HASH:=689b097e4531d3eeca0c477675ab3dc3cace6ba4ed8a339116a9ede6537839d7
