@@ -103,7 +103,15 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  			};
  		};
  
-@@ -140,13 +135,43 @@
+@@ -85,6 +80,7 @@
+                        compatible = "fsl,p2020-fcm-nand",
+                                     "fsl,elbc-fcm-nand";
+                        reg = <0x1 0x0 0x40000>;
++                       nand-ecc-mode = "none";
+
+                        partition@0 {
+                                /* This location must not be altered  */
+@@ -140,13 +136,43 @@
  	soc: soc@ffe00000 {
  		ranges = <0x0 0x0 0xffe00000 0x100000>;
  
