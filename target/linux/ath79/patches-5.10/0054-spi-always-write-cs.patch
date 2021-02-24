@@ -1,0 +1,31 @@
+Upstream commit d40f0b6f2e21 ("spi: Avoid settingthe chip select if
+we don't need to") causes the SPI CS only to be asserted once and not
+if it's state stays the same.
+
+This seems to cause problems with the SPI on the AR724x and the AR913x
+(but not the AR71xx). AR934x and subsequent chips do not look affected.
+
+ToDo:
+ - Analyze if this is a hardware bug or a bug in the software.
+ - Send a cleaned up patch upstream.
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -791,6 +791,7 @@ static void spi_set_cs(struct spi_device
+ {
+ 	bool enable1 = enable;
+ 
++#if 0
+ 	/*
+ 	 * Avoid calling into the driver (or doing delays) if the chip select
+ 	 * isn't actually changing from the last time this was called.
+@@ -801,6 +802,7 @@ static void spi_set_cs(struct spi_device
+ 
+ 	spi->controller->last_cs_enable = enable;
+ 	spi->controller->last_cs_mode_high = spi->mode & SPI_CS_HIGH;
++#endif
+ 
+ 	if (!spi->controller->set_cs_timing) {
+ 		if (enable1)

@@ -9,7 +9,6 @@ SUBTARGETS:=generic mikrotik nand tiny
 FEATURES:=ramdisk squashfs usbgadget
 
 KERNEL_PATCHVER:=5.4
-KERNEL_TESTING_PATCHVER:=5.4
 
 include $(INCLUDE_DIR)/target.mk
 

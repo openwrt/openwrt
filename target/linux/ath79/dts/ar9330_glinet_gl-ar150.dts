@@ -10,7 +10,6 @@
 	compatible = "glinet,gl-ar150", "qca,ar9330";
 
 	aliases {
-		serial0 = &uart;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -60,10 +59,6 @@
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &usb {

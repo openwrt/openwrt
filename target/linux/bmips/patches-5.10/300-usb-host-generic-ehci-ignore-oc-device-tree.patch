@@ -1,0 +1,12 @@
+--- a/drivers/usb/host/ehci-platform.c
++++ b/drivers/usb/host/ehci-platform.c
+@@ -286,6 +286,9 @@ static int ehci_platform_probe(struct pl
+ 		if (of_property_read_bool(dev->dev.of_node, "big-endian"))
+ 			ehci->big_endian_mmio = ehci->big_endian_desc = 1;
+ 
++		if (of_property_read_bool(dev->dev.of_node, "ignore-oc"))
++			ehci->ignore_oc = 1;
++
+ 		if (of_property_read_bool(dev->dev.of_node,
+ 					  "needs-reset-on-resume"))
+ 			priv->reset_on_resume = true;

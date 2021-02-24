@@ -10,7 +10,6 @@
 	model = "TP-Link TL-WR741N/ND v4";
 
 	aliases {
-		serial0 = &uart;
 		led-boot = &led_system;
 		led-failsafe = &led_system;
 		led-running = &led_system;
@@ -138,10 +137,6 @@
 
 	mtd-mac-address = <&uboot 0x1fc00>;
 	mtd-mac-address-increment = <(-1)>;
-};
-
-&uart {
-	status = "okay";
 };
 
 &wmac {

@@ -10,7 +10,6 @@
 	compatible = "pcs,cr5000", "qca,ar9344";
 
 	aliases {
-		serial0 = &uart;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -63,10 +62,6 @@
 
 &ref {
 	clock-frequency = <25000000>;
-};
-
-&uart {
-	status = "okay";
 };
 
 &spi {

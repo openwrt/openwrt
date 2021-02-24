@@ -5,6 +5,12 @@
 	#size-cells = <1>;
 	compatible = "ralink,mt7620a-soc";
 
+	aliases {
+		spi0 = &spi0;
+		spi1 = &spi1;
+		serial0 = &uartlite;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -24,12 +30,6 @@
 		#interrupt-cells = <1>;
 		interrupt-controller;
 		compatible = "mti,cpu-interrupt-controller";
-	};
-
-	aliases {
-		spi0 = &spi0;
-		spi1 = &spi1;
-		serial0 = &uartlite;
 	};
 
 	palmbus: palmbus@10000000 {
