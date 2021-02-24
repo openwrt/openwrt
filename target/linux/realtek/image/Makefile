@@ -84,37 +84,37 @@ define Device/netgear_gs110tpp-v1
 endef
 TARGET_DEVICES += netgear_gs110tpp-v1
 
-define Device/zyxel_gs1900-10hp
+define Device/zyxel_gs1900
   SOC := rtl8380
   IMAGE_SIZE := 6976k
   DEVICE_VENDOR := ZyXEL
-  DEVICE_MODEL := GS1900-10HP
   UIMAGE_MAGIC := 0x83800000
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers AAZI | uImage gzip
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers $$$$(ZYXEL_VERS) | \
+	uImage gzip
+endef
+
+define Device/zyxel_gs1900-10hp
+  $(Device/zyxel_gs1900)
+  DEVICE_MODEL := GS1900-10HP
+  ZYXEL_VERS := AAZI
 endef
 TARGET_DEVICES += zyxel_gs1900-10hp
 
 define Device/zyxel_gs1900-8hp-v1
-  SOC := rtl8380
-  IMAGE_SIZE := 6976k
-  DEVICE_VENDOR := ZyXEL
+  $(Device/zyxel_gs1900)
   DEVICE_MODEL := GS1900-8HP
   DEVICE_VARIANT := v1
+  ZYXEL_VERS := AAHI
   DEVICE_PACKAGES += lua-rs232
-  UIMAGE_MAGIC := 0x83800000
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers AAHI | uImage gzip
 endef
 TARGET_DEVICES += zyxel_gs1900-8hp-v1
 
 define Device/zyxel_gs1900-8hp-v2
-  SOC := rtl8380
-  IMAGE_SIZE := 6976k
-  DEVICE_VENDOR := ZyXEL
+  $(Device/zyxel_gs1900)
   DEVICE_MODEL := GS1900-8HP
   DEVICE_VARIANT := v2
+  ZYXEL_VERS := AAHI
   DEVICE_PACKAGES += lua-rs232
-  UIMAGE_MAGIC := 0x83800000
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers AAHI | uImage gzip
 endef
 TARGET_DEVICES += zyxel_gs1900-8hp-v2
 
