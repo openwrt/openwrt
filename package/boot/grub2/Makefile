@@ -30,14 +30,15 @@ include $(INCLUDE_DIR)/package.mk
 define Package/grub2/Default
   CATEGORY:=Boot Loaders
   SECTION:=boot
-  TITLE:=GRand Unified Bootloader ($(1))
+  TITLE:=GRand Unified Bootloader ($(2))
   URL:=http://www.gnu.org/software/grub/
-  DEPENDS:=@TARGET_x86
-  VARIANT:=$(1)
+  DEPENDS:=@TARGET_$(1)
+  VARIANT:=$(2)
 endef
 
-Package/grub2=$(call Package/grub2/Default,pc)
-Package/grub2-efi=$(call Package/grub2/Default,efi)
+Package/grub2=$(call Package/grub2/Default,x86,pc)
+Package/grub2-efi=$(call Package/grub2/Default,x86,efi)
+Package/grub2-efi-arm64=$(call Package/grub2/Default,arm64,efi)
 
 define Package/grub2-editenv
   CATEGORY:=Utilities
@@ -159,8 +160,28 @@ define Package/grub2-efi/install
 		-O $(CONFIG_ARCH)-efi \
 		-c ./files/grub-early.cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/iso-boot$(if $(CONFIG_x86_64),x64,ia32).efi \
-		at_keyboard boot chain configfile fat iso9660 linux ls part_msdos part_gpt reboot serial test efi_gop efi_uga
+		boot chain configfile fat iso9660 linux ls part_msdos part_gpt reboot serial test efi_gop efi_uga
 endef
+
+define Package/grub2-efi-arm64/install
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/grub2
+	sed 's#msdos1#gpt1#g' ./files/grub-early.cfg >$(PKG_BUILD_DIR)/grub-early.cfg
+	$(STAGING_DIR_HOST)/bin/grub-mkimage \
+		-d $(PKG_BUILD_DIR)/grub-core \
+		-p /boot/grub \
+		-O arm64-efi \
+		-c $(PKG_BUILD_DIR)/grub-early.cfg \
+		-o $(STAGING_DIR_IMAGE)/grub2/bootaa64.efi \
+		boot chain configfile fat linux ls part_gpt reboot search search_fs_uuid search_label serial efi_gop
+	$(STAGING_DIR_HOST)/bin/grub-mkimage \
+		-d $(PKG_BUILD_DIR)/grub-core \
+		-p /boot/grub \
+		-O arm64-efi \
+		-c ./files/grub-early.cfg \
+		-o $(STAGING_DIR_IMAGE)/grub2/iso-bootaa64.efi \
+		boot chain configfile fat iso9660 linux ls part_msdos part_gpt reboot serial test efi_gop
+endef
+
 
 define Package/grub2-editenv/install
 	$(INSTALL_DIR) $(1)/usr/sbin
@@ -175,5 +196,6 @@ endef
 $(eval $(call HostBuild))
 $(eval $(call BuildPackage,grub2))
 $(eval $(call BuildPackage,grub2-efi))
+$(eval $(call BuildPackage,grub2-efi-arm64))
 $(eval $(call BuildPackage,grub2-editenv))
 $(eval $(call BuildPackage,grub2-bios-setup))
