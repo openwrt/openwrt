@@ -1,7 +1,10 @@
-From fb00ef462f3f8b70ea8902151cc72810fe90b999 Mon Sep 17 00:00:00 2001
-From: Jonas Gorski <jonas.gorski@gmail.com>
+From b0e1ebc79a6d7f84f71a758f5a504c8cf954e2e0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
 Date: Fri, 24 Jun 2016 22:16:01 +0200
-Subject: [PATCH 07/16] pinctrl: add a pincontrol driver for BCM6358
+Subject: [PATCH 04/12] pinctrl: add a pincontrol driver for BCM6358
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 Add a pincotrol driver for BCM6358. BCM6358 allow overlaying different
 functions onto the GPIO pins. It does not support configuring individual
@@ -9,71 +12,85 @@ pins but only whole groups. These groups may overlap, and still require
 the directions to be set correctly in the GPIO register. In addition the
 functions register controls other, not directly mux related functions.
 
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 ---
- drivers/pinctrl/bcm63xx/Kconfig           |   8 +
- drivers/pinctrl/bcm63xx/Makefile          |   1 +
- drivers/pinctrl/bcm63xx/pinctrl-bcm6358.c | 393 ++++++++++++++++++++++++++++++
- 3 files changed, 402 insertions(+)
- create mode 100644 drivers/pinctrl/bcm63xx/pinctrl-bcm6358.c
+ drivers/pinctrl/bcm/Kconfig           |  11 +
+ drivers/pinctrl/bcm/Makefile          |   1 +
+ drivers/pinctrl/bcm/pinctrl-bcm6358.c | 526 ++++++++++++++++++++++++++
+ 3 files changed, 538 insertions(+)
+ create mode 100644 drivers/pinctrl/bcm/pinctrl-bcm6358.c
 
---- a/drivers/pinctrl/bcm63xx/Kconfig
-+++ b/drivers/pinctrl/bcm63xx/Kconfig
-@@ -8,3 +8,11 @@ config PINCTRL_BCM6328
- 	select PINCONF
- 	select PINCTRL_BCM63XX
- 	select GENERIC_PINCONF
-+
+--- a/drivers/pinctrl/bcm/Kconfig
++++ b/drivers/pinctrl/bcm/Kconfig
+@@ -40,6 +40,17 @@ config PINCTRL_BCM6328
+ 	help
+ 	   Say Y here to enable the Broadcom BCM6328 GPIO driver.
+ 
 +config PINCTRL_BCM6358
-+	bool "BCM6358 pincontrol driver"
++	bool "Broadcom BCM6358 GPIO driver"
++	depends on OF_GPIO && (BMIPS_GENERIC || COMPILE_TEST)
 +	select PINMUX
 +	select PINCONF
-+	select PINCTRL_BCM63XX
 +	select GENERIC_PINCONF
 +	select MFD_SYSCON
---- a/drivers/pinctrl/bcm63xx/Makefile
-+++ b/drivers/pinctrl/bcm63xx/Makefile
-@@ -1,2 +1,3 @@
- obj-$(CONFIG_PINCTRL_BCM63XX)	+= pinctrl-bcm63xx.o
- obj-$(CONFIG_PINCTRL_BCM6328)	+= pinctrl-bcm6328.o
-+obj-$(CONFIG_PINCTRL_BCM6358)	+= pinctrl-bcm6358.o
++	default BMIPS_GENERIC
++	help
++	   Say Y here to enable the Broadcom BCM6358 GPIO driver.
++
+ config PINCTRL_IPROC_GPIO
+ 	bool "Broadcom iProc GPIO (with PINCONF) driver"
+ 	depends on OF_GPIO && (ARCH_BCM_IPROC || COMPILE_TEST)
+--- a/drivers/pinctrl/bcm/Makefile
++++ b/drivers/pinctrl/bcm/Makefile
+@@ -4,6 +4,7 @@
+ obj-$(CONFIG_PINCTRL_BCM281XX)		+= pinctrl-bcm281xx.o
+ obj-$(CONFIG_PINCTRL_BCM2835)		+= pinctrl-bcm2835.o
+ obj-$(CONFIG_PINCTRL_BCM6328)		+= pinctrl-bcm6328.o
++obj-$(CONFIG_PINCTRL_BCM6358)		+= pinctrl-bcm6358.o
+ obj-$(CONFIG_PINCTRL_IPROC_GPIO)	+= pinctrl-iproc-gpio.o
+ obj-$(CONFIG_PINCTRL_CYGNUS_MUX)	+= pinctrl-cygnus-mux.o
+ obj-$(CONFIG_PINCTRL_NS)		+= pinctrl-ns.o
 --- /dev/null
-+++ b/drivers/pinctrl/bcm63xx/pinctrl-bcm6358.c
-@@ -0,0 +1,390 @@
++++ b/drivers/pinctrl/bcm/pinctrl-bcm6358.c
+@@ -0,0 +1,526 @@
++// SPDX-License-Identifier: GPL-2.0+
 +/*
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
++ * Driver for BCM6358 GPIO unit (pinctrl + GPIO)
 + *
++ * Copyright (C) 2021 Álvaro Fernández Rojas <noltari@gmail.com>
 + * Copyright (C) 2016 Jonas Gorski <jonas.gorski@gmail.com>
 + */
 +
-+#include <linux/kernel.h>
 +#include <linux/bitops.h>
 +#include <linux/gpio.h>
-+#include <linux/gpio/driver.h>
++#include <linux/kernel.h>
 +#include <linux/mfd/syscon.h>
 +#include <linux/of.h>
 +#include <linux/of_gpio.h>
-+#include <linux/of_address.h>
-+#include <linux/slab.h>
-+#include <linux/regmap.h>
++#include <linux/of_irq.h>
 +#include <linux/platform_device.h>
++#include <linux/regmap.h>
 +
++#include <linux/pinctrl/machine.h>
 +#include <linux/pinctrl/pinconf.h>
 +#include <linux/pinctrl/pinconf-generic.h>
 +#include <linux/pinctrl/pinmux.h>
-+#include <linux/pinctrl/machine.h>
 +
 +#include "../core.h"
 +#include "../pinctrl-utils.h"
 +
-+#include "pinctrl-bcm63xx.h"
++#define MODULE_NAME		"bcm6358-pinctrl"
++#define BCM6358_NUM_GPIOS	40
 +
-+/* GPIO_MODE register */
++#define BANK_SIZE		sizeof(uint32_t)
++#define PINS_PER_BANK		(BANK_SIZE * BITS_PER_BYTE)
++
++#define BCM6358_DIROUT_REG	0x04
++#define BCM6358_DATA_REG	0x0c
++#define BCM6358_MODE_REG	0x18
++
 +#define BCM6358_MODE_MUX_NONE		0
-+
-+/* overlays on gpio pins */
 +#define BCM6358_MODE_MUX_EBI_CS		BIT(5)
 +#define BCM6358_MODE_MUX_UART1		BIT(6)
 +#define BCM6358_MODE_MUX_SPI_CS		BIT(7)
@@ -86,17 +103,15 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +#define BCM6358_MODE_MUX_PWM_SYN_CLK	BIT(14)
 +#define BCM6358_MODE_MUX_SYS_IRQ	BIT(15)
 +
-+#define BCM6358_NGPIO			40
-+
 +struct bcm6358_pingroup {
 +	const char *name;
 +	const unsigned * const pins;
 +	const unsigned num_pins;
 +
-+	const u16 mode_val;
++	const uint16_t mode_val;
 +
 +	/* non-GPIO function muxes require the gpio direction to be set */
-+	const u16 direction;
++	const uint16_t direction;
 +};
 +
 +struct bcm6358_function {
@@ -107,12 +122,13 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +
 +struct bcm6358_pinctrl {
 +	struct device *dev;
-+	struct pinctrl_dev *pctldev;
-+	struct pinctrl_desc desc;
-+
++	struct regmap *regs;
 +	struct regmap_field *overlays;
 +
-+	struct gpio_chip gpio[2];
++	struct pinctrl_dev *pctl_dev;
++	struct gpio_chip gpio_chip;
++	struct pinctrl_desc pctl_desc;
++	struct pinctrl_gpio_range gpio_range;
 +};
 +
 +#define BCM6358_GPIO_PIN(a, b, bit1, bit2, bit3)		\
@@ -271,6 +287,108 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +	BCM6358_FUN(sys_irq),
 +};
 +
++static inline unsigned int bcm6358_bank_pin(unsigned int pin)
++{
++	return pin % PINS_PER_BANK;
++}
++
++static inline unsigned int bcm6358_reg_off(unsigned int reg, unsigned int pin)
++{
++	return reg - (pin / PINS_PER_BANK) * BANK_SIZE;
++}
++
++static int bcm6358_gpio_direction_input(struct gpio_chip *chip,
++					unsigned int pin)
++{
++	struct bcm6358_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int dirout = bcm6358_reg_off(BCM6358_DIROUT_REG, pin);
++	unsigned int bank_pin = bcm6358_bank_pin(pin);
++	int ret;
++
++	/*
++	 * Check with the pinctrl driver whether this pin is usable as
++	 * an input GPIO
++	 */
++	ret = pinctrl_gpio_direction_input(chip->base + pin);
++	if (ret)
++		return ret;
++
++	regmap_update_bits(pc->regs, dirout, BIT(bank_pin), 0);
++
++	return 0;
++}
++
++static int bcm6358_gpio_direction_output(struct gpio_chip *chip,
++					 unsigned int pin, int value)
++{
++	struct bcm6358_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int data = bcm6358_reg_off(BCM6358_DATA_REG, pin);
++	unsigned int dirout = bcm6358_reg_off(BCM6358_DIROUT_REG, pin);
++	unsigned int bank_pin = bcm6358_bank_pin(pin);
++	unsigned int val = value ? BIT(bank_pin) : 0;
++	int ret;
++
++	/*
++	 * Check with the pinctrl driver whether this pin is usable as
++	 * an output GPIO
++	 */
++	ret = pinctrl_gpio_direction_output(chip->base + pin);
++	if (ret)
++		return ret;
++
++	regmap_update_bits(pc->regs, dirout, BIT(bank_pin), BIT(bank_pin));
++	regmap_update_bits(pc->regs, data, BIT(bank_pin), val);
++
++	return 0;
++}
++
++static int bcm6358_gpio_get(struct gpio_chip *chip, unsigned int pin)
++{
++	struct bcm6358_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int data = bcm6358_reg_off(BCM6358_DATA_REG, pin);
++	unsigned int bank_pin = bcm6358_bank_pin(pin);
++	unsigned int val;
++
++	regmap_read(pc->regs, data, &val);
++
++	return !!(val & BIT(bank_pin));
++}
++
++static int bcm6358_gpio_get_direction(struct gpio_chip *chip, unsigned int pin)
++{
++	struct bcm6358_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int dirout = bcm6358_reg_off(BCM6358_DIROUT_REG, pin);
++	unsigned int bank_pin = bcm6358_bank_pin(pin);
++	unsigned int val;
++
++	regmap_read(pc->regs, dirout, &val);
++
++	if (val & BIT(bank_pin))
++		return GPIO_LINE_DIRECTION_OUT;
++
++	return GPIO_LINE_DIRECTION_IN;
++}
++
++static void bcm6358_gpio_set(struct gpio_chip *chip, unsigned int pin,
++			     int value)
++{
++	struct bcm6358_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int data = bcm6358_reg_off(BCM6358_DATA_REG, pin);
++	unsigned int bank_pin = bcm6358_bank_pin(pin);
++	unsigned int val = value ? BIT(bank_pin) : 0;
++
++	regmap_update_bits(pc->regs, data, BIT(bank_pin), val);
++}
++
++static int bcm6358_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
++{
++	char irq_name[7];
++
++	sprintf(irq_name, "gpio%d", gpio);
++
++	return of_irq_get_byname(chip->of_node, irq_name);
++}
++
 +static int bcm6358_pinctrl_get_group_count(struct pinctrl_dev *pctldev)
 +{
 +	return ARRAY_SIZE(bcm6358_groups);
@@ -317,25 +435,25 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +static int bcm6358_pinctrl_set_mux(struct pinctrl_dev *pctldev,
 +				   unsigned selector, unsigned group)
 +{
-+	struct bcm6358_pinctrl *pctl = pinctrl_dev_get_drvdata(pctldev);
-+	const struct bcm6358_pingroup *grp = &bcm6358_groups[group];
-+	u32 val = grp->mode_val;
-+	u32 mask = val;
++	struct bcm6358_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
++	const struct bcm6358_pingroup *pg = &bcm6358_groups[group];
++	unsigned int val = pg->mode_val;
++	unsigned int mask = val;
 +	unsigned pin;
 +
-+	for (pin = 0; pin < grp->num_pins; pin++)
++	for (pin = 0; pin < pg->num_pins; pin++)
 +		mask |= (unsigned long)bcm6358_pins[pin].drv_data;
 +
-+	regmap_field_update_bits(pctl->overlays, mask, val);
++	regmap_field_update_bits(pc->overlays, mask, val);
 +
-+	for (pin = 0; pin < grp->num_pins; pin++) {
++	for (pin = 0; pin < pg->num_pins; pin++) {
 +		int hw_gpio = bcm6358_pins[pin].number;
-+		struct gpio_chip *gc = &pctl->gpio[hw_gpio / 32];
++		struct gpio_chip *gc = &pc->gpio_chip;
 +
-+		if (grp->direction & BIT(pin))
-+			gc->direction_output(gc, hw_gpio % 32, 0);
++		if (pg->direction & BIT(pin))
++			gc->direction_output(gc, hw_gpio, 0);
 +		else
-+			gc->direction_input(gc, hw_gpio % 32);
++			gc->direction_input(gc, hw_gpio);
 +	}
 +
 +	return 0;
@@ -345,73 +463,105 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +				       struct pinctrl_gpio_range *range,
 +				       unsigned offset)
 +{
-+	struct bcm6358_pinctrl *pctl = pinctrl_dev_get_drvdata(pctldev);
-+	u32 mask;
++	struct bcm6358_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
++	unsigned int mask;
 +
-+	mask = (unsigned long)bcm6358_pins[offset].drv_data;
++	mask = (unsigned long) bcm6358_pins[offset].drv_data;
 +	if (!mask)
 +		return 0;
 +
 +	/* disable all functions using this pin */
-+	return regmap_field_update_bits(pctl->overlays, mask, 0);
++	return regmap_field_update_bits(pc->overlays, mask, 0);
 +}
 +
 +static struct pinctrl_ops bcm6358_pctl_ops = {
-+	.get_groups_count	= bcm6358_pinctrl_get_group_count,
-+	.get_group_name		= bcm6358_pinctrl_get_group_name,
-+	.get_group_pins		= bcm6358_pinctrl_get_group_pins,
-+#ifdef CONFIG_OF
-+	.dt_node_to_map		= pinconf_generic_dt_node_to_map_pin,
-+	.dt_free_map		= pinctrl_utils_free_map,
-+#endif
++	.get_groups_count = bcm6358_pinctrl_get_group_count,
++	.get_group_name = bcm6358_pinctrl_get_group_name,
++	.get_group_pins = bcm6358_pinctrl_get_group_pins,
++	.dt_node_to_map = pinconf_generic_dt_node_to_map_pin,
++	.dt_free_map = pinctrl_utils_free_map,
 +};
 +
 +static struct pinmux_ops bcm6358_pmx_ops = {
-+	.get_functions_count	= bcm6358_pinctrl_get_func_count,
-+	.get_function_name	= bcm6358_pinctrl_get_func_name,
-+	.get_function_groups	= bcm6358_pinctrl_get_groups,
-+	.set_mux		= bcm6358_pinctrl_set_mux,
-+	.gpio_request_enable	= bcm6358_gpio_request_enable,
-+	.strict			= true,
++	.get_functions_count = bcm6358_pinctrl_get_func_count,
++	.get_function_name = bcm6358_pinctrl_get_func_name,
++	.get_function_groups = bcm6358_pinctrl_get_groups,
++	.set_mux = bcm6358_pinctrl_set_mux,
++	.gpio_request_enable = bcm6358_gpio_request_enable,
++	.strict = true,
 +};
 +
 +static int bcm6358_pinctrl_probe(struct platform_device *pdev)
 +{
-+	struct bcm6358_pinctrl *pctl;
-+	struct regmap *mode;
-+	struct reg_field overlays = REG_FIELD(0, 0, 15);
++	struct reg_field overlays = REG_FIELD(BCM6358_MODE_REG, 0, 15);
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct bcm6358_pinctrl *pc;
++	int err;
 +
-+	mode = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
-+					       "brcm,gpiomode");
-+
-+	if (IS_ERR(mode))
-+		return PTR_ERR(mode);
-+
-+	pctl = devm_kzalloc(&pdev->dev, sizeof(*pctl), GFP_KERNEL);
-+	if (!pctl)
++	pc = devm_kzalloc(dev, sizeof(*pc), GFP_KERNEL);
++	if (!pc)
 +		return -ENOMEM;
 +
-+	pctl->overlays = devm_regmap_field_alloc(&pdev->dev, mode, overlays);
-+	if (IS_ERR(pctl->overlays))
-+		return PTR_ERR(pctl->overlays);
++	platform_set_drvdata(pdev, pc);
++	pc->dev = dev;
++
++	pc->regs = syscon_node_to_regmap(dev->parent->of_node);
++	if (IS_ERR(pc->regs))
++		return PTR_ERR(pc->regs);
++
++	pc->overlays = devm_regmap_field_alloc(&pdev->dev, pc->regs, overlays);
++	if (IS_ERR(pc->overlays))
++		return PTR_ERR(pc->overlays);
 +
 +	/* disable all muxes by default */
-+	regmap_field_write(pctl->overlays, 0);
++	regmap_field_write(pc->overlays, 0);
 +
-+	pctl->desc.name = dev_name(&pdev->dev);
-+	pctl->desc.owner = THIS_MODULE;
-+	pctl->desc.pctlops = &bcm6358_pctl_ops;
-+	pctl->desc.pmxops = &bcm6358_pmx_ops;
++	pc->gpio_chip.label = MODULE_NAME;
++	pc->gpio_chip.owner = THIS_MODULE;
++	pc->gpio_chip.request = gpiochip_generic_request;
++	pc->gpio_chip.free = gpiochip_generic_free;
++	pc->gpio_chip.direction_input = bcm6358_gpio_direction_input;
++	pc->gpio_chip.direction_output = bcm6358_gpio_direction_output;
++	pc->gpio_chip.get_direction = bcm6358_gpio_get_direction;
++	pc->gpio_chip.get = bcm6358_gpio_get;
++	pc->gpio_chip.set = bcm6358_gpio_set;
++	pc->gpio_chip.set_config = gpiochip_generic_config;
++	pc->gpio_chip.base = -1;
++	pc->gpio_chip.ngpio = BCM6358_NUM_GPIOS;
++	pc->gpio_chip.can_sleep = false;
++	pc->gpio_chip.parent = dev;
++	pc->gpio_chip.of_node = np;
 +
-+	pctl->desc.npins = ARRAY_SIZE(bcm6358_pins);
-+	pctl->desc.pins = bcm6358_pins;
++	if (of_get_property(np, "interrupt-names", NULL))
++		pc->gpio_chip.to_irq = bcm6358_gpio_to_irq;
 +
-+	platform_set_drvdata(pdev, pctl);
++	err = gpiochip_add_data(&pc->gpio_chip, pc);
++	if (err) {
++		dev_err(dev, "could not add GPIO chip\n");
++		return err;
++	}
 +
-+	pctl->pctldev = bcm63xx_pinctrl_register(pdev, &pctl->desc, pctl,
-+						 pctl->gpio, BCM6358_NGPIO);
-+	if (IS_ERR(pctl->pctldev))
-+		return PTR_ERR(pctl->pctldev);
++	pc->pctl_desc.name = MODULE_NAME,
++	pc->pctl_desc.pins = bcm6358_pins,
++	pc->pctl_desc.npins = ARRAY_SIZE(bcm6358_pins),
++	pc->pctl_desc.pctlops = &bcm6358_pctl_ops,
++	pc->pctl_desc.pmxops = &bcm6358_pmx_ops,
++	pc->pctl_desc.owner = THIS_MODULE,
++
++	pc->pctl_dev = devm_pinctrl_register(dev, &pc->pctl_desc, pc);
++	if (IS_ERR(pc->pctl_dev)) {
++		gpiochip_remove(&pc->gpio_chip);
++		return PTR_ERR(pc->pctl_dev);
++	}
++
++	pc->gpio_range.name = MODULE_NAME;
++	pc->gpio_range.npins = BCM6358_NUM_GPIOS;
++	pc->gpio_range.base = pc->gpio_chip.base;
++	pc->gpio_range.gc = &pc->gpio_chip;
++	pinctrl_add_gpio_range(pc->pctl_dev, &pc->gpio_range);
++
++	dev_info(dev, "registered\n");
 +
 +	return 0;
 +}
@@ -424,7 +574,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +static struct platform_driver bcm6358_pinctrl_driver = {
 +	.probe = bcm6358_pinctrl_probe,
 +	.driver = {
-+		.name = "bcm6358-pinctrl",
++		.name = MODULE_NAME,
 +		.of_match_table = bcm6358_pinctrl_match,
 +	},
 +};
