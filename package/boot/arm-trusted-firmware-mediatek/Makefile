@@ -19,7 +19,6 @@ PKG_MIRROR_HASH:=b211b2f9143d4debc7ad8dc959cb606888af20af790855dd66c87e451b6a1bc
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
-PKG_LICENSE+=proprietary
 PKG_LICENSE_FILES:=LICENCE.mediatek
 
 BLOBS_TARBALL:=tfa-mtk-files-for-2020-11-09.tgz
@@ -27,6 +26,8 @@ BROMIMAGE_EXEC:=bromimage-x64
 
 include $(INCLUDE_DIR)/trusted-firmware-a.mk
 include $(INCLUDE_DIR)/package.mk
+
+PKG_LICENSE+=proprietary
 
 define Download/tfa-files
   URL:=@OPENWRT
