@@ -1,0 +1,447 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR MIT)
+/*
+ * Copyright (c) 2017 MediaTek Inc.
+ * Author: Ming Huang <ming.huang@mediatek.com>
+ *	   Sean Wang <sean.wang@mediatek.com>
+ */
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "mt7622.dtsi"
+#include "mt6380.dtsi"
+
+/ {
+	model = "XWRT, WR2300K V1";
+	compatible = "xwrt,wr3200k-v1", "mediatek,mt7622";
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 swiotlb=512 console=ttyS0,115200n8";
+	};
+
+	cpus {
+		cpu@0 {
+			proc-supply = <&mt6380_vcpu_reg>;
+			sram-supply = <&mt6380_vm_reg>;
+		};
+
+		cpu@1 {
+			proc-supply = <&mt6380_vcpu_reg>;
+			sram-supply = <&mt6380_vm_reg>;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 102 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_usb_vbus: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&pio 22 GPIO_ACTIVE_LOW>;
+		enable-active-high;
+	};
+
+	memory {
+		reg = <0 0x40000000 0 0x3F000000>;
+	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_pins>;
+	status = "okay";
+};
+
+&slot0 {
+	wifi@0,0 {
+		reg = <0x0 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x05000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&pio {
+	i2c1_pins: i2c1-pins {
+		mux {
+			function = "i2c";
+			groups =  "i2c1_0";
+		};
+	};
+
+	i2c2_pins: i2c2-pins {
+		mux {
+			function = "i2c";
+			groups =  "i2c2_0";
+		};
+	};
+
+	irrx_pins: irrx-pins {
+		mux {
+			function = "ir";
+			groups =  "ir_1_rx";
+		};
+	};
+
+	irtx_pins: irtx-pins {
+		mux {
+			function = "ir";
+			groups =  "ir_1_tx";
+		};
+	};
+
+	pcie0_pins: pcie0-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie0_pad_perst",
+				 "pcie0_1_waken",
+				 "pcie0_1_clkreq";
+		};
+	};
+
+	pcie1_pins: pcie1-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie1_pad_perst",
+				 "pcie1_0_waken",
+				 "pcie1_0_clkreq";
+		};
+	};
+
+	wled_pins: wled-pins {
+		mux {
+			function = "led";
+			groups = "wled";
+		};
+	};
+
+	pmic_bus_pins: pmic-bus-pins {
+		mux {
+			function = "pmic";
+			groups = "pmic_bus";
+		};
+	};
+
+	pwm7_pins: pwm1-2-pins {
+		mux {
+			function = "pwm";
+			groups = "pwm_ch7_2";
+		};
+	};
+
+	spic0_pins: spic0-pins {
+		mux {
+			function = "spi";
+			groups = "spic0_0";
+		};
+	};
+
+	spic1_pins: spic1-pins {
+		mux {
+			function = "spi";
+			groups = "spic1_0";
+		};
+	};
+
+	/* SPI-NOR is shared pin with serial NAND */
+	spi_nor_pins: spi-nor-pins {
+		mux {
+			function = "flash";
+			groups = "spi_nor";
+		};
+	};
+
+	uart0_pins: uart0-pins {
+		mux {
+			function = "uart";
+			groups = "uart0_0_tx_rx" ;
+		};
+	};
+
+	uart2_pins: uart2-pins {
+		mux {
+			function = "uart";
+			groups = "uart2_1_tx_rx" ;
+		};
+	};
+
+	watchdog_pins: watchdog-pins {
+		mux {
+			function = "watchdog";
+			groups = "watchdog";
+		};
+	};
+};
+
+&bch {
+	status = "okay";
+};
+
+&btif {
+	status = "okay";
+};
+
+&cir {
+	pinctrl-names = "default";
+	pinctrl-0 = <&irrx_pins>;
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cell-names = "mac-address";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		switch@1f {
+			compatible = "mediatek,mt7531";
+			reg = <0x1f>;
+			reset-gpios = <&pio 54 0>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				wan: port@0 {
+					reg = <0>;
+					label = "wan";
+					nvmem-cells = <&macaddr_factory_4>;
+					nvmem-cell-names = "mac-address";
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan1";
+					nvmem-cells = <&macaddr_factory_4>;
+					nvmem-cell-names = "mac-address";
+					mac-address-increment = <1>;
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan2";
+					nvmem-cells = <&macaddr_factory_4>;
+					nvmem-cell-names = "mac-address";
+					mac-address-increment = <2>;
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan3";
+					nvmem-cells = <&macaddr_factory_4>;
+					nvmem-cell-names = "mac-address";
+					mac-address-increment = <3>;
+				};
+
+				port@4 {
+					reg = <4>;
+					label = "lan4";
+					nvmem-cells = <&macaddr_factory_4>;
+					nvmem-cell-names = "mac-address";
+					mac-address-increment = <4>;
+				};
+
+				port@6 {
+					reg = <6>;
+					label = "cpu";
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+		};
+
+	};
+};
+
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pins>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2_pins>;
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm7_pins>;
+	status = "okay";
+};
+
+&pwrap {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmic_bus_pins>;
+
+	status = "okay";
+};
+
+&sata {
+	status = "disabled";
+};
+
+&sata_phy {
+	status = "disabled";
+};
+
+&nor_flash {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_nor_pins>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+		reg = <0>;
+		spi-rx-bus-width = <2>;
+		spi-tx-bus-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		partition@0 {
+			label = "Preloader";
+			reg = <0x00000 0x40000>;
+		};
+		partition@40000 {
+			label = "ATF";
+			reg = <0x40000 0x20000>;
+		};
+		partition@60000 {
+			label = "Bootloader";
+			reg = <0x60000 0x40000>;
+		};
+		partition@a0000 {
+			label = "Config";
+			reg = <0xa0000 0x20000>;
+		};
+		factory: partition@c0000 {
+			label = "factory";
+			reg = <0xc0000 0x80000>;
+		};
+		partition@140000 {
+			label = "firmware";
+			reg = <0x140000 0x1ec0000>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spic0_pins>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spic1_pins>;
+	status = "okay";
+};
+
+&ssusb {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_usb_vbus>;
+	status = "okay";
+};
+
+&u3phy {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
+	status = "okay";
+};
+
+&watchdog {
+	pinctrl-names = "default";
+	pinctrl-0 = <&watchdog_pins>;
+	status = "okay";
+};
+
+&wmac {
+	mediatek,mtd-eeprom = <&factory 0x0000>;
+	status = "okay";
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_4: macaddr@4 {
+		reg = <0x4 0x6>;
+	};
+};

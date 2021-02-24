@@ -239,3 +239,12 @@ define Device/ubnt_unifi-6-lr-ubootmod
   ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr-ubootmod
+
+define Device/xwrt_wr3200k-v1
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := WR3200K V1
+  DEVICE_DTS := mt7622-xwrt-wr3200k-v1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e
+endef
+TARGET_DEVICES += xwrt_wr3200k-v1
