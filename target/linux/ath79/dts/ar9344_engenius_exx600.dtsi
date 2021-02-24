@@ -13,7 +13,6 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
-		serial0 = &uart;
 	};
 
 	keys {
@@ -59,10 +58,6 @@
 
 &ref {
 	clock-frequency = <40000000>;
-};
-
-&uart {
-	status = "okay";
 };
 
 &spi {

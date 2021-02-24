@@ -7,7 +7,6 @@
 
 / {
 	aliases {
-		serial0 = &uart;
 		label-mac-device = &wmac;
 	};
 };
@@ -48,10 +47,6 @@
 			};
 		};
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &eth0 {

@@ -10,7 +10,6 @@
 	model = "GL.iNet GL-USB150";
 
 	aliases {
-		serial0 = &uart;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -111,6 +110,10 @@
 			};
 		};
 	};
+};
+
+&uart {
+	status = "disabled";
 };
 
 &wmac {

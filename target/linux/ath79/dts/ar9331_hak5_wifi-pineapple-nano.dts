@@ -14,7 +14,6 @@
 		led-boot = &led_system;
 		led-failsafe = &led_system;
 		led-upgrade = &led_system;
-		serial0 = &uart;
 	};
 
 	gpio-export {
@@ -105,10 +104,6 @@
 			};
 		};
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &usb {
