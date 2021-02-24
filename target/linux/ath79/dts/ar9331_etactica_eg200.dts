@@ -13,7 +13,6 @@
 		led-boot = &led_etactica;
 		led-failsafe = &led_etactica;
 		led-upgrade = &led_etactica;
-		serial0 = &uart;
 	};
 
 	keys {
@@ -51,10 +50,6 @@
 			linux,default-trigger = "phy0tpt";
 		};
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &usb {

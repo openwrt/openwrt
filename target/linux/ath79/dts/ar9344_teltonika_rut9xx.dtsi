@@ -9,7 +9,6 @@
 	compatible = "teltonika,rut9xx", "qca,ar9344";
 
 	aliases {
-		serial0 = &uart;
 		serial1 = &hs_uart;
 		label-mac-device = &eth1;
 	};
@@ -41,10 +40,6 @@
 
 &ref {
 	clock-frequency = <40000000>;
-};
-
-&uart {
-	status = "okay";
 };
 
 &hs_uart {
