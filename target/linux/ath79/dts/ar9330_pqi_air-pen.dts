@@ -10,7 +10,6 @@
 	compatible = "pqi,air-pen", "qca,ar9330";
 
 	aliases {
-		serial0 = &uart;
 		led-boot = &led_wlan;
 		led-failsafe = &led_wlan;
 		led-upgrade = &led_wlan;
@@ -48,10 +47,6 @@
 			debounce-interval = <60>;
 		};
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &usb {

@@ -7,7 +7,6 @@
 
 / {
 	aliases {
-		serial0 = &uart;
 		label-mac-device = &wmac;
 	};
 
@@ -63,10 +62,6 @@
 	status = "okay";
 
 	mtd-mac-address = <&uboot 0x1fc00>;
-};
-
-&uart {
-	status = "okay";
 };
 
 &usb {

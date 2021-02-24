@@ -14,7 +14,6 @@
 		led-failsafe = &led_status;
 		led-running = &led_status;
 		led-upgrade = &led_status;
-		serial0 = &uart;
 	};
 
 	leds {
@@ -41,10 +40,6 @@
 			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
 		};
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &usb {
