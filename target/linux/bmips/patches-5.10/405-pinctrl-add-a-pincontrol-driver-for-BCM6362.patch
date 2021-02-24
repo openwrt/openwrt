@@ -1,75 +1,98 @@
-From eea6b96701d734095e2f823f3a82d9b063f553ae Mon Sep 17 00:00:00 2001
-From: Jonas Gorski <jonas.gorski@gmail.com>
+From 2872fcb5eac02d3a74d696e6350410a9e66281b4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
 Date: Fri, 24 Jun 2016 22:17:20 +0200
-Subject: [PATCH 09/16] pinctrl: add a pincontrol driver for BCM6362
+Subject: [PATCH 06/12] pinctrl: add a pincontrol driver for BCM6362
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 Add a pincotrol driver for BCM6362. BCM6362 allows muxing individual
 GPIO pins to the LED controller, to be available by the integrated
 wifi, or other functions. It also supports overlay groups, of which
 only NAND is documented.
 
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 ---
- drivers/pinctrl/bcm63xx/Kconfig           |   7 +
- drivers/pinctrl/bcm63xx/Makefile          |   1 +
- drivers/pinctrl/bcm63xx/pinctrl-bcm6362.c | 692 ++++++++++++++++++++++++++++++
- 3 files changed, 700 insertions(+)
- create mode 100644 drivers/pinctrl/bcm63xx/pinctrl-bcm6362.c
+ drivers/pinctrl/bcm/Kconfig           |  11 +
+ drivers/pinctrl/bcm/Makefile          |   1 +
+ drivers/pinctrl/bcm/pinctrl-bcm6362.c | 794 ++++++++++++++++++++++++++
+ 3 files changed, 806 insertions(+)
+ create mode 100644 drivers/pinctrl/bcm/pinctrl-bcm6362.c
 
---- a/drivers/pinctrl/bcm63xx/Kconfig
-+++ b/drivers/pinctrl/bcm63xx/Kconfig
-@@ -16,3 +16,10 @@ config PINCTRL_BCM6358
- 	select PINCTRL_BCM63XX
- 	select GENERIC_PINCONF
- 	select MFD_SYSCON
-+
+--- a/drivers/pinctrl/bcm/Kconfig
++++ b/drivers/pinctrl/bcm/Kconfig
+@@ -51,6 +51,17 @@ config PINCTRL_BCM6358
+ 	help
+ 	   Say Y here to enable the Broadcom BCM6358 GPIO driver.
+ 
 +config PINCTRL_BCM6362
-+	bool "BCM6362 pincontrol driver"
++	bool "Broadcom BCM6362 GPIO driver"
++	depends on OF_GPIO && (BMIPS_GENERIC || COMPILE_TEST)
 +	select PINMUX
 +	select PINCONF
-+	select PINCTRL_BCM63XX
 +	select GENERIC_PINCONF
---- a/drivers/pinctrl/bcm63xx/Makefile
-+++ b/drivers/pinctrl/bcm63xx/Makefile
-@@ -1,3 +1,4 @@
- obj-$(CONFIG_PINCTRL_BCM63XX)	+= pinctrl-bcm63xx.o
- obj-$(CONFIG_PINCTRL_BCM6328)	+= pinctrl-bcm6328.o
- obj-$(CONFIG_PINCTRL_BCM6358)	+= pinctrl-bcm6358.o
-+obj-$(CONFIG_PINCTRL_BCM6362)	+= pinctrl-bcm6362.o
++	select MFD_SYSCON
++	default BMIPS_GENERIC
++	help
++	   Say Y here to enable the Broadcom BCM6362 GPIO driver.
++
+ config PINCTRL_IPROC_GPIO
+ 	bool "Broadcom iProc GPIO (with PINCONF) driver"
+ 	depends on OF_GPIO && (ARCH_BCM_IPROC || COMPILE_TEST)
+--- a/drivers/pinctrl/bcm/Makefile
++++ b/drivers/pinctrl/bcm/Makefile
+@@ -5,6 +5,7 @@ obj-$(CONFIG_PINCTRL_BCM281XX)		+= pinct
+ obj-$(CONFIG_PINCTRL_BCM2835)		+= pinctrl-bcm2835.o
+ obj-$(CONFIG_PINCTRL_BCM6328)		+= pinctrl-bcm6328.o
+ obj-$(CONFIG_PINCTRL_BCM6358)		+= pinctrl-bcm6358.o
++obj-$(CONFIG_PINCTRL_BCM6362)		+= pinctrl-bcm6362.o
+ obj-$(CONFIG_PINCTRL_IPROC_GPIO)	+= pinctrl-iproc-gpio.o
+ obj-$(CONFIG_PINCTRL_CYGNUS_MUX)	+= pinctrl-cygnus-mux.o
+ obj-$(CONFIG_PINCTRL_NS)		+= pinctrl-ns.o
 --- /dev/null
-+++ b/drivers/pinctrl/bcm63xx/pinctrl-bcm6362.c
-@@ -0,0 +1,692 @@
++++ b/drivers/pinctrl/bcm/pinctrl-bcm6362.c
+@@ -0,0 +1,794 @@
++// SPDX-License-Identifier: GPL-2.0+
 +/*
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
++ * Driver for BCM6362 GPIO unit (pinctrl + GPIO)
 + *
++ * Copyright (C) 2021 Álvaro Fernández Rojas <noltari@gmail.com>
 + * Copyright (C) 2016 Jonas Gorski <jonas.gorski@gmail.com>
 + */
 +
-+#include <linux/kernel.h>
-+#include <linux/spinlock.h>
 +#include <linux/bitops.h>
 +#include <linux/gpio.h>
++#include <linux/kernel.h>
++#include <linux/mfd/syscon.h>
 +#include <linux/of.h>
 +#include <linux/of_gpio.h>
-+#include <linux/slab.h>
++#include <linux/of_irq.h>
 +#include <linux/platform_device.h>
++#include <linux/regmap.h>
 +
++#include <linux/pinctrl/machine.h>
 +#include <linux/pinctrl/pinconf.h>
 +#include <linux/pinctrl/pinconf-generic.h>
 +#include <linux/pinctrl/pinmux.h>
-+#include <linux/pinctrl/machine.h>
 +
 +#include "../core.h"
 +#include "../pinctrl-utils.h"
 +
-+#include "pinctrl-bcm63xx.h"
++#define MODULE_NAME		"bcm6362-pinctrl"
++#define BCM6362_NUM_GPIOS	48
++#define BCM6362_NUM_LEDS	24
 +
-+#define BCM6362_NGPIO	48
++#define BANK_SIZE		sizeof(uint32_t)
++#define PINS_PER_BANK		(BANK_SIZE * BITS_PER_BYTE)
 +
-+/* GPIO_BASEMODE register */
-+#define BASEMODE_NAND	BIT(2)
++#define BCM6362_DIROUT_REG	0x04
++#define BCM6362_DATA_REG	0x0c
++#define BCM6362_LED_REG		0x10
++#define BCM6362_MODE_REG	0x18
++#define BCM6362_CTRL_REG	0x1c
++#define BCM6362_BASEMODE_REG	0x38
++#define  BASEMODE_NAND		BIT(2)
 +
 +enum bcm6362_pinctrl_reg {
 +	BCM6362_LEDCTRL,
@@ -90,22 +113,17 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +	const unsigned num_groups;
 +
 +	enum bcm6362_pinctrl_reg reg;
-+	u32 basemode_mask;
++	uint32_t basemode_mask;
 +};
 +
 +struct bcm6362_pinctrl {
-+	struct pinctrl_dev *pctldev;
-+	struct pinctrl_desc desc;
++	struct device *dev;
++	struct regmap *regs;
 +
-+	void __iomem *led;
-+	void __iomem *mode;
-+	void __iomem *ctrl;
-+	void __iomem *basemode;
-+
-+	/* register access lock */
-+	spinlock_t lock;
-+
-+	struct gpio_chip gpio[2];
++	struct pinctrl_dev *pctl_dev;
++	struct gpio_chip gpio_chip;
++	struct pinctrl_desc pctl_desc;
++	struct pinctrl_gpio_range gpio_range;
 +};
 +
 +#define BCM6362_PIN(a, b, mask)			\
@@ -508,6 +526,108 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +	BCM6362_BASEMODE_FUN(nand, BASEMODE_NAND),
 +};
 +
++static inline unsigned int bcm6362_bank_pin(unsigned int pin)
++{
++	return pin % PINS_PER_BANK;
++}
++
++static inline unsigned int bcm6362_reg_off(unsigned int reg, unsigned int pin)
++{
++	return reg - (pin / PINS_PER_BANK) * BANK_SIZE;
++}
++
++static int bcm6362_gpio_direction_input(struct gpio_chip *chip,
++					unsigned int pin)
++{
++	struct bcm6362_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int dirout = bcm6362_reg_off(BCM6362_DIROUT_REG, pin);
++	unsigned int bank_pin = bcm6362_bank_pin(pin);
++	int ret;
++
++	/*
++	 * Check with the pinctrl driver whether this pin is usable as
++	 * an input GPIO
++	 */
++	ret = pinctrl_gpio_direction_input(chip->base + pin);
++	if (ret)
++		return ret;
++
++	regmap_update_bits(pc->regs, dirout, BIT(bank_pin), 0);
++
++	return 0;
++}
++
++static int bcm6362_gpio_direction_output(struct gpio_chip *chip,
++					 unsigned int pin, int value)
++{
++	struct bcm6362_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int data = bcm6362_reg_off(BCM6362_DATA_REG, pin);
++	unsigned int dirout = bcm6362_reg_off(BCM6362_DIROUT_REG, pin);
++	unsigned int bank_pin = bcm6362_bank_pin(pin);
++	unsigned int val = value ? BIT(bank_pin) : 0;
++	int ret;
++
++	/*
++	 * Check with the pinctrl driver whether this pin is usable as
++	 * an output GPIO
++	 */
++	ret = pinctrl_gpio_direction_output(chip->base + pin);
++	if (ret)
++		return ret;
++
++	regmap_update_bits(pc->regs, dirout, BIT(bank_pin), BIT(bank_pin));
++	regmap_update_bits(pc->regs, data, BIT(bank_pin), val);
++
++	return 0;
++}
++
++static int bcm6362_gpio_get(struct gpio_chip *chip, unsigned int pin)
++{
++	struct bcm6362_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int data = bcm6362_reg_off(BCM6362_DATA_REG, pin);
++	unsigned int bank_pin = bcm6362_bank_pin(pin);
++	unsigned int val;
++
++	regmap_read(pc->regs, data, &val);
++
++	return !!(val & BIT(bank_pin));
++}
++
++static int bcm6362_gpio_get_direction(struct gpio_chip *chip, unsigned int pin)
++{
++	struct bcm6362_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int dirout = bcm6362_reg_off(BCM6362_DIROUT_REG, pin);
++	unsigned int bank_pin = bcm6362_bank_pin(pin);
++	unsigned int val;
++
++	regmap_read(pc->regs, dirout, &val);
++
++	if (val & BIT(bank_pin))
++		return GPIO_LINE_DIRECTION_OUT;
++
++	return GPIO_LINE_DIRECTION_IN;
++}
++
++static void bcm6362_gpio_set(struct gpio_chip *chip, unsigned int pin,
++			     int value)
++{
++	struct bcm6362_pinctrl *pc = gpiochip_get_data(chip);
++	unsigned int data = bcm6362_reg_off(BCM6362_DATA_REG, pin);
++	unsigned int bank_pin = bcm6362_bank_pin(pin);
++	unsigned int val = value ? BIT(bank_pin) : 0;
++
++	regmap_update_bits(pc->regs, data, BIT(bank_pin), val);
++}
++
++static int bcm6362_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
++{
++	char irq_name[7];
++
++	sprintf(irq_name, "gpio%d", gpio);
++
++	return of_irq_get_byname(chip->of_node, irq_name);
++}
++
 +static int bcm6362_pinctrl_get_group_count(struct pinctrl_dev *pctldev)
 +{
 +	return ARRAY_SIZE(bcm6362_groups);
@@ -551,73 +671,59 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +	return 0;
 +}
 +
-+static void bcm6362_rmw_mux(struct bcm6362_pinctrl *pctl, void __iomem *reg,
-+			    u32 mask, u32 val)
-+{
-+	unsigned long flags;
-+	u32 tmp;
-+
-+	spin_lock_irqsave(&pctl->lock, flags);
-+	tmp = __raw_readl(reg);
-+	tmp &= ~mask;
-+	tmp |= val & mask;
-+	__raw_writel(tmp, reg);
-+
-+	spin_unlock_irqrestore(&pctl->lock, flags);
-+}
-+
-+static void bcm6362_set_gpio(struct bcm6362_pinctrl *pctl, unsigned pin)
++static void bcm6362_set_gpio(struct bcm6362_pinctrl *pc, unsigned pin)
 +{
 +	const struct pinctrl_pin_desc *desc = &bcm6362_pins[pin];
-+	u32 mask = BIT(pin % 32);
++	unsigned int mask = bcm6362_bank_pin(pin);
 +
 +	if (desc->drv_data)
-+		bcm6362_rmw_mux(pctl, pctl->basemode, (u32)desc->drv_data, 0);
++		regmap_update_bits(pc->regs, BCM6362_BASEMODE_REG,
++				   (uint32_t) desc->drv_data, 0);
 +
-+	if (pin < 32) {
++	if (pin < PINS_PER_BANK) {
 +		/* base mode 0 => gpio 1 => mux function */
-+		bcm6362_rmw_mux(pctl, pctl->mode, mask, 0);
++		regmap_update_bits(pc->regs, BCM6362_MODE_REG, mask, 0);
 +
 +		/* pins 0-23 might be muxed to led */
-+		if (pin < 24)
-+			bcm6362_rmw_mux(pctl, pctl->led, mask, 0);
++		if (pin < BCM6362_NUM_LEDS)
++			regmap_update_bits(pc->regs, BCM6362_LED_REG, mask, 0);
 +	} else {
 +		/* ctrl reg 0 => wifi function 1 => gpio */
-+		bcm6362_rmw_mux(pctl, pctl->ctrl, mask, mask);
++		regmap_update_bits(pc->regs, BCM6362_CTRL_REG, mask, mask);
 +	}
 +}
 +
 +static int bcm6362_pinctrl_set_mux(struct pinctrl_dev *pctldev,
 +				   unsigned selector, unsigned group)
 +{
-+	struct bcm6362_pinctrl *pctl = pinctrl_dev_get_drvdata(pctldev);
-+	const struct bcm6362_pingroup *grp = &bcm6362_groups[group];
++	struct bcm6362_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
++	const struct bcm6362_pingroup *pg = &bcm6362_groups[group];
 +	const struct bcm6362_function *f = &bcm6362_funcs[selector];
 +	unsigned i;
-+	void __iomem *reg;
-+	u32 val, mask;
++	unsigned int reg;
++	unsigned int val, mask;
 +
-+	for (i = 0; i < grp->num_pins; i++)
-+		bcm6362_set_gpio(pctl, grp->pins[i]);
++	for (i = 0; i < pg->num_pins; i++)
++		bcm6362_set_gpio(pc, pg->pins[i]);
 +
 +	switch (f->reg) {
 +	case BCM6362_LEDCTRL:
-+		reg = pctl->led;
-+		mask = BIT(grp->pins[0]);
-+		val = BIT(grp->pins[0]);
++		reg = BCM6362_LED_REG;
++		mask = BIT(pg->pins[0]);
++		val = BIT(pg->pins[0]);
 +		break;
 +	case BCM6362_MODE:
-+		reg = pctl->mode;
-+		mask = BIT(grp->pins[0]);
-+		val = BIT(grp->pins[0]);
++		reg = BCM6362_MODE_REG;
++		mask = BIT(pg->pins[0]);
++		val = BIT(pg->pins[0]);
 +		break;
 +	case BCM6362_CTRL:
-+		reg = pctl->ctrl;
-+		mask = BIT(grp->pins[0]);
++		reg = BCM6362_CTRL_REG;
++		mask = BIT(pg->pins[0]);
 +		val = 0;
 +		break;
 +	case BCM6362_BASEMODE:
-+		reg = pctl->basemode;
++		reg = BCM6362_BASEMODE_REG;
 +		mask = f->basemode_mask;
 +		val = f->basemode_mask;
 +		break;
@@ -626,7 +732,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +		return -EINVAL;
 +	}
 +
-+	bcm6362_rmw_mux(pctl, reg, mask, val);
++	regmap_update_bits(pc->regs, reg, mask, val);
 +
 +	return 0;
 +}
@@ -635,84 +741,94 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +				       struct pinctrl_gpio_range *range,
 +				       unsigned offset)
 +{
-+	struct bcm6362_pinctrl *pctl = pinctrl_dev_get_drvdata(pctldev);
++	struct bcm6362_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
 +
 +	/* disable all functions using this pin */
-+	bcm6362_set_gpio(pctl, offset);
++	bcm6362_set_gpio(pc, offset);
 +
 +	return 0;
 +}
 +
 +static struct pinctrl_ops bcm6362_pctl_ops = {
-+	.get_groups_count	= bcm6362_pinctrl_get_group_count,
-+	.get_group_name		= bcm6362_pinctrl_get_group_name,
-+	.get_group_pins		= bcm6362_pinctrl_get_group_pins,
-+#ifdef CONFIG_OF
-+	.dt_node_to_map		= pinconf_generic_dt_node_to_map_pin,
-+	.dt_free_map		= pinctrl_utils_free_map,
-+#endif
++	.get_groups_count = bcm6362_pinctrl_get_group_count,
++	.get_group_name = bcm6362_pinctrl_get_group_name,
++	.get_group_pins = bcm6362_pinctrl_get_group_pins,
++	.dt_node_to_map = pinconf_generic_dt_node_to_map_pin,
++	.dt_free_map = pinctrl_utils_free_map,
 +};
 +
 +static struct pinmux_ops bcm6362_pmx_ops = {
-+	.get_functions_count	= bcm6362_pinctrl_get_func_count,
-+	.get_function_name	= bcm6362_pinctrl_get_func_name,
-+	.get_function_groups	= bcm6362_pinctrl_get_groups,
-+	.set_mux		= bcm6362_pinctrl_set_mux,
-+	.gpio_request_enable	= bcm6362_gpio_request_enable,
-+	.strict			= true,
++	.get_functions_count = bcm6362_pinctrl_get_func_count,
++	.get_function_name = bcm6362_pinctrl_get_func_name,
++	.get_function_groups = bcm6362_pinctrl_get_groups,
++	.set_mux = bcm6362_pinctrl_set_mux,
++	.gpio_request_enable = bcm6362_gpio_request_enable,
++	.strict = true,
 +};
 +
 +static int bcm6362_pinctrl_probe(struct platform_device *pdev)
 +{
-+	struct bcm6362_pinctrl *pctl;
-+	struct resource *res;
-+	void __iomem *led, *mode, *ctrl, *basemode;
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct bcm6362_pinctrl *pc;
++	int err;
 +
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "led");
-+	led = devm_ioremap_resource(&pdev->dev, res);
-+	if (IS_ERR(led))
-+		return PTR_ERR(led);
-+
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mode");
-+	mode = devm_ioremap_resource(&pdev->dev, res);
-+	if (IS_ERR(mode))
-+		return PTR_ERR(mode);
-+
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "ctrl");
-+	ctrl = devm_ioremap_resource(&pdev->dev, res);
-+	if (IS_ERR(ctrl))
-+		return PTR_ERR(ctrl);
-+
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "basemode");
-+	basemode = devm_ioremap_resource(&pdev->dev, res);
-+	if (IS_ERR(basemode))
-+		return PTR_ERR(basemode);
-+
-+	pctl = devm_kzalloc(&pdev->dev, sizeof(*pctl), GFP_KERNEL);
-+	if (!pctl)
++	pc = devm_kzalloc(dev, sizeof(*pc), GFP_KERNEL);
++	if (!pc)
 +		return -ENOMEM;
 +
-+	spin_lock_init(&pctl->lock);
++	platform_set_drvdata(pdev, pc);
++	pc->dev = dev;
 +
-+	pctl->led = led;
-+	pctl->mode = mode;
-+	pctl->ctrl = ctrl;
-+	pctl->basemode = basemode;
++	pc->regs = syscon_node_to_regmap(dev->parent->of_node);
++	if (IS_ERR(pc->regs))
++		return PTR_ERR(pc->regs);
 +
-+	pctl->desc.name = dev_name(&pdev->dev);
-+	pctl->desc.owner = THIS_MODULE;
-+	pctl->desc.pctlops = &bcm6362_pctl_ops;
-+	pctl->desc.pmxops = &bcm6362_pmx_ops;
++	pc->gpio_chip.label = MODULE_NAME;
++	pc->gpio_chip.owner = THIS_MODULE;
++	pc->gpio_chip.request = gpiochip_generic_request;
++	pc->gpio_chip.free = gpiochip_generic_free;
++	pc->gpio_chip.direction_input = bcm6362_gpio_direction_input;
++	pc->gpio_chip.direction_output = bcm6362_gpio_direction_output;
++	pc->gpio_chip.get_direction = bcm6362_gpio_get_direction;
++	pc->gpio_chip.get = bcm6362_gpio_get;
++	pc->gpio_chip.set = bcm6362_gpio_set;
++	pc->gpio_chip.set_config = gpiochip_generic_config;
++	pc->gpio_chip.base = -1;
++	pc->gpio_chip.ngpio = BCM6362_NUM_GPIOS;
++	pc->gpio_chip.can_sleep = false;
++	pc->gpio_chip.parent = dev;
++	pc->gpio_chip.of_node = np;
 +
-+	pctl->desc.npins = ARRAY_SIZE(bcm6362_pins);
-+	pctl->desc.pins = bcm6362_pins;
++	if (of_get_property(np, "interrupt-names", NULL))
++		pc->gpio_chip.to_irq = bcm6362_gpio_to_irq;
 +
-+	platform_set_drvdata(pdev, pctl);
++	err = gpiochip_add_data(&pc->gpio_chip, pc);
++	if (err) {
++		dev_err(dev, "could not add GPIO chip\n");
++		return err;
++	}
 +
-+	pctl->pctldev = bcm63xx_pinctrl_register(pdev, &pctl->desc, pctl,
-+						 pctl->gpio, BCM6362_NGPIO);
-+	if (IS_ERR(pctl->pctldev))
-+		return PTR_ERR(pctl->pctldev);
++	pc->pctl_desc.name = MODULE_NAME,
++	pc->pctl_desc.pins = bcm6362_pins,
++	pc->pctl_desc.npins = ARRAY_SIZE(bcm6362_pins),
++	pc->pctl_desc.pctlops = &bcm6362_pctl_ops,
++	pc->pctl_desc.pmxops = &bcm6362_pmx_ops,
++	pc->pctl_desc.owner = THIS_MODULE,
++
++	pc->pctl_dev = devm_pinctrl_register(dev, &pc->pctl_desc, pc);
++	if (IS_ERR(pc->pctl_dev)) {
++		gpiochip_remove(&pc->gpio_chip);
++		return PTR_ERR(pc->pctl_dev);
++	}
++
++	pc->gpio_range.name = MODULE_NAME;
++	pc->gpio_range.npins = BCM6362_NUM_GPIOS;
++	pc->gpio_range.base = pc->gpio_chip.base;
++	pc->gpio_range.gc = &pc->gpio_chip;
++	pinctrl_add_gpio_range(pc->pctl_dev, &pc->gpio_range);
++
++	dev_info(dev, "registered\n");
 +
 +	return 0;
 +}
@@ -725,7 +841,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +static struct platform_driver bcm6362_pinctrl_driver = {
 +	.probe = bcm6362_pinctrl_probe,
 +	.driver = {
-+		.name = "bcm6362-pinctrl",
++		.name = MODULE_NAME,
 +		.of_match_table = bcm6362_pinctrl_match,
 +	},
 +};
