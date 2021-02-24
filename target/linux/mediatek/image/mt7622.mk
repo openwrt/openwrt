@@ -16,7 +16,8 @@ define Device/bpi_bananapi-r64-rootdisk
   DEVICE_DTS := mt7622-bananapi-bpi-r64-rootdisk
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES := bananapi,bpi-r64
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
+  DEVICE_PACKAGES := kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
+	mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
   IMAGES := sysupgrade-emmc.bin.gz
   IMAGE/sysupgrade-emmc.bin.gz := sysupgrade-emmc | gzip | append-metadata
 endef
