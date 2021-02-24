@@ -204,11 +204,12 @@ menu "Target Images"
 
 	config GRUB_EFI_IMAGES
 		bool "Build GRUB EFI images (Linux x86 or x86_64 host only)"
-		depends on TARGET_x86
+		depends on TARGET_x86 || TARGET_armvirt
 		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
-		select PACKAGE_grub2
-		select PACKAGE_grub2-efi
-		select PACKAGE_grub2-bios-setup
+		select PACKAGE_grub2 if TARGET_x86
+		select PACKAGE_grub2-efi if TARGET_x86
+		select PACKAGE_grub2-bios-setup if TARGET_x86
+		select PACKAGE_grub2-efi-arm if TARGET_armvirt
 		select PACKAGE_kmod-fs-vfat
 		default y
 
