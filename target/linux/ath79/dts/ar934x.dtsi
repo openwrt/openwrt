@@ -8,6 +8,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	aliases {
+		serial0 = &uart;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -70,8 +74,6 @@
 				reg-io-width = <4>;
 				reg-shift = <2>;
 				no-loopback-test;
-
-				status = "disabled";
 			};
 
 			gpio: gpio@18040000 {

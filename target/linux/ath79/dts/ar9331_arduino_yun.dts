@@ -9,10 +9,6 @@
 	model = "Arduino Yun";
 	compatible = "arduino,yun", "qca,ar9331";
 
-	aliases {
-		serial0 = &uart;
-	};
-
 	chosen {
 		bootargs = "console=ttyATH0,250000";
 	};
@@ -105,14 +101,6 @@
 		regulator-max-microvolt = <5000000>;
 		enable-active-high;
 	};
-};
-
-&uart {
-	status = "okay";
-};
-
-&gpio {
-	status = "okay";
 };
 
 &pinmux {

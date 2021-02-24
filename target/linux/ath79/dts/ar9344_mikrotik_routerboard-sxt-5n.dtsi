@@ -14,7 +14,6 @@
 		led-failsafe = &led_user;
 		led-running = &led_user;
 		led-upgrade = &led_user;
-		serial0 = &uart;
 	};
 
 	leds {
@@ -161,10 +160,6 @@
 			reg = <0x0400000 0x7c00000>;
 		};
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &eth0 {

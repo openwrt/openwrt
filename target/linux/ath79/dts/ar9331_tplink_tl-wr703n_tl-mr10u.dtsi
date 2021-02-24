@@ -7,7 +7,6 @@
 
 / {
 	aliases {
-		serial0 = &uart;
 		led-boot = &led_system;
 		led-failsafe = &led_system;
 		led-running = &led_system;
@@ -95,10 +94,6 @@
 	status = "okay";
 
 	compatible = "syscon", "simple-mfd";
-};
-
-&uart {
-	status = "okay";
 };
 
 &usb {
