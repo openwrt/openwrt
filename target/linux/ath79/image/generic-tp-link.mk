@@ -492,7 +492,7 @@ define Device/tplink_tl-mr6400-v1
   DEVICE_MODEL := TL-MR6400
   DEVICE_VARIANT := v1
   TPLINK_HWID := 0x64000001
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-net-rndis kmod-usb-serial \
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-net-rndis \
 	kmod-usb-serial-option adb-enablemodem
   SUPPORTED_DEVICES += tl-mr6400
 endef
