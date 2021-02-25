@@ -92,16 +92,15 @@
 		};
 
 		pll_cntl: syscon@fffe0008 {
-			compatible = "syscon";
+			compatible = "syscon", "simple-mfd";
 			reg = <0xfffe0008 0x4>;
 			native-endian;
-		};
 
-		syscon-reboot {
-			compatible = "syscon-reboot";
-			regmap = <&pll_cntl>;
-			offset = <0x0>;
-			mask = <0x1>;
+			syscon-reboot {
+				compatible = "syscon-reboot";
+				offset = <0x0>;
+				mask = <0x1>;
+			};
 		};
 
 		periph_intc: interrupt-controller@fffe000c {
