@@ -15,7 +15,7 @@
 
 			partition@0 {
 				compatible = "openwrt,uimage", "denx,uimage";
-				openwrt,ih-magic = <IH_MAGIC_OKLI>;
+				openwrt,ih-magic = <0x73714f4b>;
 				label = "firmware";
 				reg = <0x0 0x0>;
 			};
@@ -68,15 +68,9 @@
 				reg = <0x0b0000 0x170000>;
 			};
 
-			partition@220000 {
-				label = "fakeroot";
-				reg = <0x220000 0x010000>;
-				read-only;
-			};
-
-			fwconcat0: partition@230000 {
+			fwconcat0: partition@220000 {
 				label = "fwconcat0";
-				reg = <0x230000 0xbc0000>;
+				reg = <0x220000 0xbd0000>;
 			};
 
 			partition@df0000 {
