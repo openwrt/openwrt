@@ -147,6 +147,13 @@
 			timeout-sec = <30>;
 		};
 
+		timer_clk: clock-controller@100000ac {
+			compatible = "brcm,bcm63268-timer-clocks";
+			reg = <0x100000ac 0x4>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+		};
+
 		gpio: syscon@100000c0 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x100000c0 0x80>;
@@ -416,10 +423,10 @@
 
 			#phy-cells = <1>;
 
-			clocks = <&periph_clk BCM63268_CLK_USBH>;
-			/* FIXME! <&timer_clk BCM63268_TCLK_USB_REF> */
-			clock-names = "usbh";
-			/* FIXME! usb_ref */
+			clocks = <&periph_clk BCM63268_CLK_USBH>,
+				 <&timer_clk BCM63268_TCLK_USB_REF>;
+			clock-names = "usbh",
+				      "usb_ref";
 
 			power-domains = <&periph_pwr BCM63268_POWER_DOMAIN_USBH>;
 			resets = <&periph_rst BCM63268_RST_USBH>;
