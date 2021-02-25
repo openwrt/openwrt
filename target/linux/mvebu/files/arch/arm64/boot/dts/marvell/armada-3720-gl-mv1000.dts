@@ -29,6 +29,26 @@
 			3300000 0x0>;
 		enable-active-high;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		vpn {
+			label = "green:vpn";
+			gpios = <&gpionb 11 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			label = "green:wan";
+			gpios = <&gpionb 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power: power {
+			label = "green:power";
+			gpios = <&gpionb 13 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
 };
 
 &spi0 {
