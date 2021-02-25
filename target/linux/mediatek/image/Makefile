@@ -23,7 +23,7 @@ define Device/Default
   KERNEL = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS = kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
   FILESYSTEMS := squashfs
   DEVICE_DTS_DIR := $(DTS_DIR)
   IMAGES := sysupgrade.bin
