@@ -34,7 +34,7 @@ endef
 
 define Package/uhttpd
   $(Package/uhttpd/default)
-  DEPENDS:=+libubox +libblobmsg-json +libjson-script +libjson-c
+  DEPENDS:=+libubox +libblobmsg-json +libjson-script +libjson-c +luci-proto-3g +luci-proto-qmi +luci-proto-relay +luci-proto-ncm +luci-proto-wireguard
 endef
 
 define Package/uhttpd/description
@@ -94,6 +94,10 @@ define Package/uhttpd/install
 	$(VERSION_SED_SCRIPT) $(1)/etc/config/uhttpd
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd $(1)/usr/sbin/uhttpd
+	$(INSTALL_DIR) $(1)/www/luci-static/resources/protocol
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/callip.js $(1)/www/luci-static/resources/protocol/callip.js
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/directip.js $(1)/www/luci-static/resources/protocol/directip.js
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wwan.js $(1)/www/luci-static/resources/protocol/wwan.js
 endef
 
 define Package/uhttpd-mod-lua/install
