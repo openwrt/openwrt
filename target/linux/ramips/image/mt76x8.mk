@@ -589,6 +589,35 @@ define Device/tplink_tl-wr840n-v4
 endef
 TARGET_DEVICES += tplink_tl-wr840n-v4
 
+define Device/tplink_tl-wr840n-v4-8m
+  $(Device/tplink-v2)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := TL-WR840N (8M | kopikonfig.com)
+  DEVICE_VARIANT := v4
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x08400004
+  TPLINK_HWREVADD := 0x4
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  SUPPORTED_DEVICES += tl-wr840n-v4-8m
+endef
+TARGET_DEVICES += tplink_tl-wr840n-v4-8m
+
+
+define Device/tplink_tl-wr840n-v4-16m
+  $(Device/tplink-v2)
+  IMAGE_SIZE := 16064k
+  DEVICE_MODEL := TL-WR840N (16M | kopikonfig.com)
+  DEVICE_VARIANT := v4
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x08400004
+  TPLINK_HWREVADD := 0x4
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  SUPPORTED_DEVICES += tl-wr840n-v4-16m
+endef
+TARGET_DEVICES += tplink_tl-wr840n-v4-16m
+
 define Device/tplink_tl-wr840n-v5
   $(Device/tplink-v2)
   IMAGE_SIZE := 3904k
