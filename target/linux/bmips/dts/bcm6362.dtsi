@@ -93,16 +93,15 @@
 		};
 
 		pll_cntl: syscon@10000008 {
-			compatible = "syscon";
+			compatible = "syscon", "simple-mfd";
 			reg = <0x10000008 0x4>;
 			native-endian;
-		};
 
-		syscon-reboot {
-			compatible = "syscon-reboot";
-			regmap = <&pll_cntl>;
-			offset = <0x0>;
-			mask = <0x1>;
+			syscon-reboot {
+				compatible = "syscon-reboot";
+				offset = <0x0>;
+				mask = <0x1>;
+			};
 		};
 
 		periph_rst: reset-controller@10000010 {
