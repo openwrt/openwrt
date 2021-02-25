@@ -15,15 +15,19 @@ PKG_SOURCE:=libiconv-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/libiconv
 PKG_HASH:=e6a1b1b589654277ee790cce3734f07876ac4ccfaecbee8afa0b649cf529cc04
 PKG_BUILD_DIR:=$(BUILD_DIR)/libiconv-$(PKG_VERSION)
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/libiconv-$(PKG_VERSION)
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=LGPL-2.1-or-later
 PKG_LICENSE_FILES:=COPYING.LIB
 
 PKG_FIXUP:=patch-libtool
+HOST_FIXUP:=
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
+HOST_BUILD_PARALLEL:=1
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libiconv-full/Default
@@ -88,3 +92,4 @@ endef
 $(eval $(call BuildPackage,libcharset))
 $(eval $(call BuildPackage,libiconv-full))
 $(eval $(call BuildPackage,iconv))
+$(eval $(call HostBuild))
