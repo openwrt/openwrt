@@ -17,6 +17,7 @@ menu "Target Images"
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_lantiq
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_mpc85xx
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
+			default TARGET_INITRAMFS_COMPRESSION_XZ if USES_SEPERATE_INITRAMFS
 			default TARGET_INITRAMFS_COMPRESSION_NONE
 			depends on TARGET_ROOTFS_INITRAMFS
 			help
@@ -66,7 +67,7 @@ menu "Target Images"
 
 		config TARGET_ROOTFS_INITRAMFS_SEPERATE
 			bool "seperate ramdisk"
-			depends on TARGET_ROOTFS_INITRAMFS && !TARGET_INITRAMFS_FORCE
+			depends on USES_SEPERATE_INITRAMFS && TARGET_ROOTFS_INITRAMFS && !TARGET_INITRAMFS_FORCE
 			default y if USES_SEPERATE_INITRAMFS
 			help
 			  Generate seperate initrd.cpio instead of embedding it.
