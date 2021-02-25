@@ -24,6 +24,7 @@ PKG_CPE_ID:=cpe:/a:gnu:gettext
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 PKG_BUILD_DEPENDS:=gettext-full/host
+HOST_BUILD_DEPENDS:=libiconv-full/host
 PKG_BUILD_PARALLEL:=1
 HOST_BUILD_PARALLEL:=1
 
@@ -61,17 +62,15 @@ HOST_CONFIGURE_ARGS += \
 	--disable-shared \
 	--enable-static \
 	--disable-libasprintf \
-	--disable-rpath \
+	--enable-rpath \
 	--disable-java \
 	--disable-openmp \
+	--with-libiconv-prefix=$(STAGING_DIR_HOSTPKG) \
 	--without-emacs \
 	--without-libxml2-prefix
 
 HOST_CONFIGURE_VARS += \
-	EMACS="no" \
-	am_cv_lib_iconv=no \
-	am_cv_func_iconv=no \
-	ac_cv_header_iconv_h=no \
+	EMACS="no"
 
 HOST_CFLAGS += $(HOST_FPIC)
 
