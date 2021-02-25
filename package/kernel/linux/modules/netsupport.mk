@@ -1253,10 +1253,8 @@ $(eval $(call KernelPackage,netlink-diag))
 
 
 define KernelPackage/wireguard
-  SECTION:=kernel
-  CATEGORY:=Kernel modules
-  SUBMENU:=Network Support
-  TITLE:=WireGuard kernel module
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=WireGuard secure network tunnel
   DEPENDS:= \
 	  +kmod-crypto-lib-blake2s \
 	  +kmod-crypto-lib-chacha20poly1305 \
