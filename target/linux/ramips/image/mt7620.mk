@@ -442,7 +442,7 @@ define Device/head-weblink_hdrm200
   DEVICE_VENDOR := Head Weblink
   DEVICE_MODEL := HDRM2000
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
-	uqmi kmod-usb-serial kmod-usb-serial-option
+	uqmi kmod-usb-serial-option
 endef
 TARGET_DEVICES += head-weblink_hdrm200
 
@@ -1031,7 +1031,7 @@ define Device/tplink_archer-mr200
   TPLINK_HWREV := 0x4a
   IMAGES := sysupgrade.bin
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net-rndis \
-	kmod-usb-serial kmod-usb-serial-option adb-enablemodem
+	kmod-usb-serial-option adb-enablemodem
   DEVICE_MODEL := Archer MR200
   SUPPORTED_DEVICES += mr200
 endef
@@ -1218,7 +1218,7 @@ define Device/zbtlink_zbt-we826-e
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE826-E
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 uqmi \
-	kmod-usb-serial kmod-usb-serial-option
+	kmod-usb-serial-option
 endef
 TARGET_DEVICES += zbtlink_zbt-we826-e
 
