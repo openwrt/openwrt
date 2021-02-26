@@ -417,9 +417,9 @@ static struct phy_driver b53_phy_driver_id2 = {
 
 /* BCM5365 */
 static struct phy_driver b53_phy_driver_id3 = {
-	.phy_id		= 0x00406000,
+	.phy_id		= 0x00406300,
 	.name		= "Broadcom B53 (3)",
-	.phy_id_mask	= 0x1ffffc00,
+	.phy_id_mask	= 0x1fffff00,
 	.features	= 0,
 	.probe		= b53_phy_probe,
 	.remove		= b53_phy_remove,
