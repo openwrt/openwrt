@@ -1,6 +1,6 @@
 --- a/scripts/Makefile.lib
 +++ b/scripts/Makefile.lib
-@@ -328,7 +328,7 @@ quiet_cmd_bzip2 = BZIP2   $@
+@@ -370,7 +370,7 @@ quiet_cmd_bzip2 = BZIP2   $@
  # ---------------------------------------------------------------------------
  
  quiet_cmd_lzma = LZMA    $@
@@ -15,8 +15,8 @@
  # error "Invalid value for CONFIG_PHYSICAL_ALIGN"
  #endif
  
--#ifdef CONFIG_KERNEL_BZIP2
+-#if defined(CONFIG_KERNEL_BZIP2)
 +#if defined(CONFIG_KERNEL_BZIP2) || defined(CONFIG_KERNEL_LZMA)
  # define BOOT_HEAP_SIZE		0x400000
- #else /* !CONFIG_KERNEL_BZIP2 */
- # define BOOT_HEAP_SIZE		 0x10000
+ #elif defined(CONFIG_KERNEL_ZSTD)
+ /*

@@ -549,7 +549,9 @@ define KernelPackage/r8169
   KCONFIG:=CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
     CONFIG_R8169_VLAN=n
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/r8169.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/ethernet/realtek/r8169.ko \
+	$(LINUX_DIR)/drivers/net/phy/mdio_devres.ko@ge5.10
   AUTOLOAD:=$(call AutoProbe,r8169)
 endef
 
