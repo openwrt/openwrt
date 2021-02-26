@@ -43,7 +43,9 @@ else
 		rmdir $(LINUX_DIR); \
 	fi
 	ln -s $(CONFIG_EXTERNAL_KERNEL_TREE) $(LINUX_DIR)
-	$(_SINGLE) [ -d $(LINUX_DIR)/user_headers ] && rm -rf $(LINUX_DIR)/user_headers
+	if [ -d $(LINUX_DIR)/user_headers ]; then \
+		rm -rf $(LINUX_DIR)/user_headers; \
+	fi
   endef
 endif
 
