@@ -485,12 +485,15 @@ define KernelPackage/crypto-lib-chacha20/aarch64
   FILES+=$(LINUX_DIR)/arch/arm64/crypto/chacha-neon.ko
 endef
 
-define KernelPackage/crypto-lib-chacha20/mips
+define KernelPackage/crypto-lib-chacha20/mips32r2
   KCONFIG+=CONFIG_CRYPTO_CHACHA_MIPS
   FILES:=$(LINUX_DIR)/arch/mips/crypto/chacha-mips.ko
 endef
 
-KernelPackage/crypto-lib-chacha20/mipsel=$(KernelPackage/crypto-lib-chacha20/mips)
+ifeq ($(CONFIG_CPU_MIPS32_R2),y)
+  KernelPackage/crypto-lib-chacha20/$(ARCH)=\
+	  $(KernelPackage/crypto-lib-chacha20/mips32r2)
+endif
 
 ifdef KernelPackage/crypto-lib-chacha20/$(ARCH)
   KernelPackage/crypto-lib-chacha20/$(CRYPTO_TARGET)=\
