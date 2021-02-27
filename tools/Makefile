@@ -28,7 +28,7 @@ tools-y += mklibs mm-macros mtd-utils mtools padjffs2 patch-image
 tools-y += patchelf pkgconf quilt squashfskit4 sstrip zip zlib zstd
 tools-$(BUILD_B43_TOOLS) += b43-tools
 tools-$(BUILD_ISL) += isl
-tools-$(BUILD_TOOLCHAIN) += expat gmp libelf mpc mpfr
+tools-$(BUILD_TOOLCHAIN) += expat gmp mpc mpfr
 tools-$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini) += genext2fs
 tools-$(CONFIG_TARGET_ath79) += lzma-old squashfs
 tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
@@ -77,6 +77,16 @@ $(curdir)/zstd/compile := $(curdir)/cmake/compile
 ifneq ($(HOST_OS),Linux)
   $(curdir)/squashfskit4/compile += $(curdir)/coreutils/compile
   tools-y += coreutils
+endif
+
+ifneq ($(HOST_OS),Linux)
+  $(curdir)/libelf/compile := $(curdir)/libtool/compile
+  tools-$(BUILD_TOOLCHAIN) += libelf
+else
+  $(curdir)/elfutils/compile := $(curdir)/m4/compile
+  $(curdir)/elfutils/compile := $(curdir)/zlib/compile
+  $(curdir)/elfutils/compile := $(curdir)/lzma/compile
+  tools-$(BUILD_TOOLCHAIN) += elfutils
 endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
