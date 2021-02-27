@@ -85,15 +85,15 @@ mtk_w32(struct mtk_eth *eth, u32 val, u32 reg)
 
 #define MTK_REG_PPE_BND_AGE0			0xe3c
 #define   MTK_PPE_BND_AGE0_NTU_DLTA_MASK	(0xffff << 16)
-#define   MTK_PPE_BND_AGE0_NTU_DLTA		(5 << 16)
+#define   MTK_PPE_BND_AGE0_NTU_DLTA		(2 << 16)
 #define   MTK_PPE_BND_AGE0_UDP_DLTA_MASK	0xffff
-#define   MTK_PPE_BND_AGE0_UDP_DLTA		5
+#define   MTK_PPE_BND_AGE0_UDP_DLTA		15
 
 #define MTK_REG_PPE_BND_AGE1			0xe40
 #define   MTK_PPE_BND_AGE1_FIN_DLTA_MASK	(0xffff << 16)
-#define   MTK_PPE_BND_AGE1_FIN_DLTA		(5 << 16)
+#define   MTK_PPE_BND_AGE1_FIN_DLTA		(2 << 16)
 #define   MTK_PPE_BND_AGE1_TCP_DLTA_MASK	0xffff
-#define   MTK_PPE_BND_AGE1_TCP_DLTA		5
+#define   MTK_PPE_BND_AGE1_TCP_DLTA		15
 
 #define MTK_REG_PPE_DFT_CPORT			0xe48
 
