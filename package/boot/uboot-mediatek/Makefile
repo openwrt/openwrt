@@ -15,8 +15,8 @@ define U-Boot/Default
   DEFAULT:=y
 endef
 
-define U-Boot/mt7622
-  NAME:=MT7622
+define U-Boot/mt7622_rfb1
+  NAME:=MT7622 Reference Board 1
   BUILD_SUBTARGET:=mt7622
   UBOOT_CONFIG:=mt7622_rfb
 endef
@@ -29,6 +29,26 @@ define U-Boot/mt7622_linksys_e8450
   BL2_BOOTDEV:=snand
   BL2_DDRBLOB:=1
   DEPENDS:=+trusted-firmware-a-mt7622-snand-1ddr
+endef
+
+define U-Boot/mt7622_bananapi_bpi-r64-emmc
+  NAME:=BananaPi R64 (eMMC)
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_CONFIG:=mt7622_bananapi_bpi-r64-emmc
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_DDRBLOB:=2
+  DEPENDS:=+trusted-firmware-a-mt7622-emmc-2ddr
+endef
+
+define U-Boot/mt7622_bananapi_bpi-r64-sdmmc
+  NAME:=BananaPi R64 (SDMMC)
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_CONFIG:=mt7622_bananapi_bpi-r64-sdmmc
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=sdmmc
+  BL2_DDRBLOB:=2
+  DEPENDS:=+trusted-firmware-a-mt7622-sdmmc-2ddr
 endef
 
 define U-Boot/mt7623a_unielec_u7623
@@ -50,7 +70,14 @@ define U-Boot/mt7629
   UBOOT_CONFIG:=mt7629_rfb
 endef
 
-UBOOT_TARGETS := mt7629 mt7622 mt7622_linksys_e8450 mt7623n_bpir2 mt7623a_unielec_u7623
+UBOOT_TARGETS := \
+	mt7629 \
+	mt7622_bananapi_bpi-r64-emmc \
+	mt7622_bananapi_bpi-r64-sdmmc \
+	mt7622_linksys_e8450 \
+	mt7622_rfb1 \
+	mt7623n_bpir2 \
+	mt7623a_unielec_u7623
 
 UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE:.fip=.bin)
 
