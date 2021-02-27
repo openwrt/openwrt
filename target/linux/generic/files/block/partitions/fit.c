@@ -67,17 +67,20 @@
 
 #define FIT_MAX_HASH_LEN	HASH_MAX_DIGEST_SIZE
 
-int fit_partition(struct parsed_partitions *state)
+#define MIN_FREE_SECT		16
+#define REMAIN_VOLNAME		"rootfs_data"
+
+int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, u64 sectors, int *slot, int add_remain)
 {
 	struct address_space *mapping = state->bdev->bd_inode->i_mapping;
-	struct page *page = read_mapping_page(mapping, 0, NULL);
+	struct page *page;
 	void *fit, *init_fit;
 	struct partition_meta_info *info;
 	char tmp[sizeof(info->volname)];
-	u64 dsize, dsectors;
+	u64 dsize, dsectors, imgmaxsect = 0;
 	u32 size, image_pos, image_len;
 	const u32 *image_offset_be, *image_len_be, *image_pos_be;
-	int ret = 1, node, images, config, slot;
+	int ret = 1, node, images, config;
 	const char *image_name, *image_type, *image_description, *config_default,
 		*config_description, *config_loadables;
 	int image_name_len, image_type_len, image_description_len, config_default_len,
@@ -85,6 +88,10 @@ int fit_partition(struct parsed_partitions *state)
 	sector_t start_sect, nr_sects;
 	size_t label_min;
 
+	if (fit_start_sector % (1<<(PAGE_SHIFT - SECTOR_SHIFT)))
+		return -ERANGE;
+
+	page = read_mapping_page(mapping, fit_start_sector >> (PAGE_SHIFT - SECTOR_SHIFT), NULL);
 	if (!page)
 		return -ENOMEM;
 
@@ -101,6 +108,9 @@ int fit_partition(struct parsed_partitions *state)
 	}
 
 	dsectors = get_capacity(state->bdev->bd_disk);
+	if (sectors)
+		dsectors = (dsectors>sectors)?sectors:dsectors;
+
 	dsize = dsectors << SECTOR_SHIFT;
 	printk(KERN_DEBUG "FIT: volume size: %llu sectors (%llu bytes)\n", dsectors, dsize);
 
@@ -158,7 +168,6 @@ int fit_partition(struct parsed_partitions *state)
 		goto ret_out;
 	}
 
-	slot = 1;
 	fdt_for_each_subnode(node, fit, images) {
 		image_name = fdt_get_name(fit, node, &image_name_len);
 		image_type = fdt_getprop(fit, node, FIT_TYPE_PROP, &image_type_len);
@@ -200,15 +209,16 @@ int fit_partition(struct parsed_partitions *state)
 
 		start_sect = image_pos >> SECTOR_SHIFT;
 		nr_sects = image_len >> SECTOR_SHIFT;
+		imgmaxsect = (imgmaxsect < (start_sect + nr_sects))?(start_sect + nr_sects):imgmaxsect;
 
 		if (start_sect + nr_sects > dsectors) {
 			state->access_beyond_eod = 1;
 			continue;
 		}
 
-		put_partition(state, slot, start_sect, nr_sects);
-		state->parts[slot].flags = 0;
-		info = &state->parts[slot].info;
+		put_partition(state, ++(*slot), fit_start_sector + start_sect, nr_sects);
+		state->parts[*slot].flags = 0;
+		info = &state->parts[*slot].info;
 
 		label_min = min_t(int, sizeof(info->volname) - 1, image_name_len);
 		strncpy(info->volname, image_name, label_min);
@@ -217,17 +227,28 @@ int fit_partition(struct parsed_partitions *state)
 		snprintf(tmp, sizeof(tmp), "(%s)", info->volname);
 		strlcat(state->pp_buf, tmp, PAGE_SIZE);
 
-		state->parts[slot].has_info = true;
+		state->parts[*slot].has_info = true;
 
 		if (config_loadables && !strcmp(image_name, config_loadables)) {
 			printk(KERN_DEBUG "FIT: selecting configured loadable %s to be root filesystem\n", image_name);
-			state->parts[slot].flags |= ADDPART_FLAG_ROOTDEV;
+			state->parts[*slot].flags |= ADDPART_FLAG_ROOTDEV;
 		}
-
-		++slot;
 	}
 
+	if (add_remain && (imgmaxsect + MIN_FREE_SECT) < dsectors) {
+		put_partition(state, ++(*slot), fit_start_sector + imgmaxsect, dsectors - imgmaxsect);
+		state->parts[*slot].flags = 0;
+		info = &state->parts[*slot].info;
+		strcpy(info->volname, REMAIN_VOLNAME);
+		snprintf(tmp, sizeof(tmp), "(%s)", REMAIN_VOLNAME);
+		strlcat(state->pp_buf, tmp, PAGE_SIZE);
+	}
 ret_out:
 	kfree(fit);
 	return ret;
+}
+
+int fit_partition(struct parsed_partitions *state) {
+	int slot = 0;
+	return parse_fit_partitions(state, 0, 0, &slot, 0);
 }
