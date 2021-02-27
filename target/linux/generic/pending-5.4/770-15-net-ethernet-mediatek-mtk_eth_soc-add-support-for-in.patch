@@ -134,7 +134,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
-@@ -0,0 +1,497 @@
+@@ -0,0 +1,502 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* Copyright (C) 2020 Felix Fietkau <nbd@nbd.name> */
 +
@@ -583,6 +583,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	val = FIELD_PREP(MTK_PPE_BIND_AGE1_DELTA_TCP_FIN, 1) |
 +	      FIELD_PREP(MTK_PPE_BIND_AGE1_DELTA_TCP, 7);
 +	ppe_w32(ppe, MTK_PPE_BIND_AGE1, val);
++
++	val = FIELD_PREP(MTK_PPE_KEEPALIVE_TIME, 1) |
++	      FIELD_PREP(MTK_PPE_KEEPALIVE_TIME_TCP, 1) |
++	      FIELD_PREP(MTK_PPE_KEEPALIVE_TIME_UDP, 1);
++	ppe_w32(ppe, MTK_PPE_KEEPALIVE, val);
 +
 +	val = MTK_PPE_BIND_LIMIT0_QUARTER | MTK_PPE_BIND_LIMIT0_HALF;
 +	ppe_w32(ppe, MTK_PPE_BIND_LIMIT0, val);
