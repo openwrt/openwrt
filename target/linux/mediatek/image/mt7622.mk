@@ -6,35 +6,58 @@ else
   KERNEL_LOADADDR := 0x44000000
 endif
 
+define Build/mmc-header
+	dd if=$(STAGING_DIR_IMAGE)/mt7622-header_$1.bin bs=512 count=1 of=$@ conv=notrunc
+endef
+
 define Build/bl2
-	$(CP) $(STAGING_DIR_IMAGE)/mt7622-$1-bl2.img $@
+	cat $(STAGING_DIR_IMAGE)/mt7622-$1-bl2.img >> $@
 endef
 
 define Build/bl31-uboot
-	$(CP) $(STAGING_DIR_IMAGE)/mt7622_$1-u-boot.fip $@
+	cat $(STAGING_DIR_IMAGE)/mt7622_$1-u-boot.fip >> $@
 endef
 
-define Device/bpi_bananapi-r64
-  DEVICE_VENDOR := Bpi
-  DEVICE_MODEL := Banana Pi R64
+define Build/mt7622-gpt
+	ptgen -g -o $@ -h 4 -s 31 -a 1 -l 1024 -g \
+		-t 0xef \
+		$(if $(findstring sdmmc,$1), \
+			-N bl2		-r	-p 512k@512k \
+		) \
+			-N fip		-r	-p 1M@2M \
+			-N ubootenv	-r	-p 1M@4M \
+			-N recovery	-r	-p 32M@6M \
+		$(if $(findstring sdmmc,$1), \
+			-t 0x2e -N production	-p 216M@40M \
+		) \
+		$(if $(findstring emmc,$1), \
+			-t 0x2e -N production	-p 980M@40M \
+		)
+endef
+
+define Device/bananapi_bpi-r64
+  DEVICE_VENDOR := Bananapi
+  DEVICE_MODEL := BPi-R64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
-  SUPPORTED_DEVICES := bananapi,bpi-r64
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk \
+		     kmod-mt7615e kmod-mt7615-firmware \
+		     uboot-mt7622_bananapi_bpi-r64-emmc \
+		     uboot-mt7622_bananapi_bpi-r64-sdmmc \
+		     e2fsprogs mkf2fs f2fsck \
+		     kmod-nls-cp437 kmod-nls-iso8859-1 kmod-vfat blockd
+  ARTIFACTS := boot-sdcard.img boot-emmc.img bl2-emmc.bin bl31-emmc.bin header-emmc.bin
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  ARTIFACT/boot-sdcard.img	:= mt7622-gpt sdmmc | mmc-header sdmmc | pad-to 512k | bl2 sdmmc-2ddr | pad-to 2M | bl31-uboot bananapi_bpi-r64-sdmmc | pad-to 6M
+  ARTIFACT/boot-emmc.img	:= mt7622-gpt  emmc | mmc-header  emmc |                                pad-to 2M | bl31-uboot bananapi_bpi-r64-emmc  | pad-to 6M
+  ARTIFACT/header-emmc.bin	:= mt7622-gpt  emmc | mmc-header  emmc
+  ARTIFACT/bl31-emmc.bin	:= bl31-uboot bananapi_bpi-r64-emmc
+  ARTIFACT/bl2-emmc.bin		:= bl2 emmc-2ddr
+  KERNEL			:= kernel-bin | gzip
+  KERNEL_INITRAMFS		:= kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
+  IMAGE/sysupgrade.itb		:= append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
 endef
-TARGET_DEVICES += bpi_bananapi-r64
-
-define Device/bpi_bananapi-r64-rootdisk
-  DEVICE_VENDOR := Bpi
-  DEVICE_MODEL := Banana Pi R64 (rootdisk)
-  DEVICE_DTS := mt7622-bananapi-bpi-r64-rootdisk
-  DEVICE_DTS_DIR := ../dts
-  SUPPORTED_DEVICES := bananapi,bpi-r64
-  DEVICE_PACKAGES := kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
-	mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
-  IMAGES := sysupgrade-emmc.bin.gz
-  IMAGE/sysupgrade-emmc.bin.gz := sysupgrade-emmc | gzip | append-metadata
-endef
-TARGET_DEVICES += bpi_bananapi-r64-rootdisk
+TARGET_DEVICES += bananapi_bpi-r64
 
 define Device/elecom_wrc-2533gent
   DEVICE_VENDOR := Elecom
