@@ -45,20 +45,60 @@
  	dev->gd = gd;
 --- a/block/partition-generic.c
 +++ b/block/partition-generic.c
-@@ -18,6 +18,7 @@
+@@ -18,6 +18,10 @@
  #include <linux/ctype.h>
  #include <linux/genhd.h>
  #include <linux/blktrace_api.h>
++#ifdef CONFIG_FIT_PARTITION
 +#include <linux/root_dev.h>
++#endif
++
  
  #include "partitions/check.h"
  
-@@ -634,6 +635,8 @@ rescan:
+@@ -180,6 +184,18 @@ ssize_t part_fail_store(struct device *d
+ }
+ #endif
+ 
++static ssize_t part_name_show(struct device *dev,
++			      struct device_attribute *attr, char *buf)
++{
++	struct hd_struct *p = dev_to_part(dev);
++
++	if (p->info && p->info->volname)
++		return sprintf(buf, "%s\n", p->info->volname);
++
++	buf[0] = '\0';
++	return 0;
++}
++
+ static DEVICE_ATTR(partition, 0444, part_partition_show, NULL);
+ static DEVICE_ATTR(start, 0444, part_start_show, NULL);
+ static DEVICE_ATTR(size, 0444, part_size_show, NULL);
+@@ -188,6 +204,7 @@ static DEVICE_ATTR(alignment_offset, 044
+ static DEVICE_ATTR(discard_alignment, 0444, part_discard_alignment_show, NULL);
+ static DEVICE_ATTR(stat, 0444, part_stat_show, NULL);
+ static DEVICE_ATTR(inflight, 0444, part_inflight_show, NULL);
++static DEVICE_ATTR(name, 0444, part_name_show, NULL);
+ #ifdef CONFIG_FAIL_MAKE_REQUEST
+ static struct device_attribute dev_attr_fail =
+ 	__ATTR(make-it-fail, 0644, part_fail_show, part_fail_store);
+@@ -202,6 +219,7 @@ static struct attribute *part_attrs[] =
+ 	&dev_attr_discard_alignment.attr,
+ 	&dev_attr_stat.attr,
+ 	&dev_attr_inflight.attr,
++	&dev_attr_name.attr,
+ #ifdef CONFIG_FAIL_MAKE_REQUEST
+ 	&dev_attr_fail.attr,
+ #endif
+@@ -634,6 +652,10 @@ rescan:
  		if (state->parts[p].flags & ADDPART_FLAG_RAID)
  			md_autodetect_dev(part_to_dev(part)->devt);
  #endif
++#ifdef CONFIG_FIT_PARTITION
 +		if ((state->parts[p].flags & ADDPART_FLAG_ROOTDEV) && ROOT_DEV == 0)
 +			ROOT_DEV = part_to_dev(part)->devt;
++#endif
  	}
  	free_partitions(state);
  	return 0;
@@ -94,6 +134,67 @@
  extern void blk_free_devt(dev_t devt);
 --- /dev/null
 +++ b/block/partitions/fit.h
-@@ -0,0 +1,2 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
+@@ -0,0 +1,3 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
 +int fit_partition(struct parsed_partitions *);
++int parse_fit_partitions(struct parsed_partitions *state, u64 start_sector, u64 nr_sectors, int *slot, int add_remain);
+--- a/block/partitions/efi.c
++++ b/block/partitions/efi.c
+@@ -679,7 +679,7 @@ int efi_partition(struct parsed_partitio
+ {
+ 	gpt_header *gpt = NULL;
+ 	gpt_entry *ptes = NULL;
+-	u32 i;
++	u32 i, slot = 0;
+ 	unsigned ssz = bdev_logical_block_size(state->bdev) / 512;
+ 
+ 	if (!find_valid_gpt(state, &gpt, &ptes) || !gpt || !ptes) {
+@@ -698,16 +698,18 @@ int efi_partition(struct parsed_partitio
+ 		u64 size = le64_to_cpu(ptes[i].ending_lba) -
+ 			   le64_to_cpu(ptes[i].starting_lba) + 1ULL;
+ 
+-		if (!is_pte_valid(&ptes[i], last_lba(state->bdev)))
++		if (!is_pte_valid(&ptes[i], last_lba(state->bdev))) {
++			++slot;
+ 			continue;
++		}
+ 
+-		put_partition(state, i+1, start * ssz, size * ssz);
++		put_partition(state, ++slot, start * ssz, size * ssz);
+ 
+ 		/* If this is a RAID volume, tell md */
+ 		if (!efi_guidcmp(ptes[i].partition_type_guid, PARTITION_LINUX_RAID_GUID))
+-			state->parts[i + 1].flags = ADDPART_FLAG_RAID;
++			state->parts[slot].flags = ADDPART_FLAG_RAID;
+ 
+-		info = &state->parts[i + 1].info;
++		info = &state->parts[slot].info;
+ 		efi_guid_to_str(&ptes[i].unique_partition_guid, info->uuid);
+ 
+ 		/* Naively convert UTF16-LE to 7 bits. */
+@@ -721,7 +723,12 @@ int efi_partition(struct parsed_partitio
+ 			info->volname[label_count] = c;
+ 			label_count++;
+ 		}
+-		state->parts[i + 1].has_info = true;
++		state->parts[slot].has_info = true;
++#ifdef CONFIG_FIT_PARTITION
++		/* If this is a U-Boot FIT volume it may have subpartitions */
++		if (!efi_guidcmp(ptes[i].partition_type_guid, PARTITION_LINUX_FIT_GUID))
++			(void) parse_fit_partitions(state, start * ssz, size * ssz, &slot, 1);
++#endif
+ 	}
+ 	kfree(ptes);
+ 	kfree(gpt);
+--- a/block/partitions/efi.h
++++ b/block/partitions/efi.h
+@@ -52,6 +52,9 @@
+ #define PARTITION_LINUX_LVM_GUID \
+     EFI_GUID( 0xe6d6d379, 0xf507, 0x44c2, \
+               0xa2, 0x3c, 0x23, 0x8f, 0x2a, 0x3d, 0xf9, 0x28)
++#define PARTITION_LINUX_FIT_GUID \
++    EFI_GUID( 0xcae9be83, 0xb15f, 0x49cc, \
++              0x86, 0x3f, 0x08, 0x1b, 0x74, 0x4a, 0x2d, 0x93)
+ 
+ typedef struct _gpt_header {
+ 	__le64 signature;
