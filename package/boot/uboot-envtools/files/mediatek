@@ -17,6 +17,13 @@ case "$board" in
 	ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x1f000" "0x1f000" "1"
 	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x1f000" "0x1f000" "1"
 	;;
+"bananapi,bpi-r64")
+	. /lib/upgrade/platform.sh
+	local rootdev=$(get_rootdev)
+	local envdev=/dev/$(get_partition $rootdev ubootenv)
+	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
+	ubootenv_add_uci_config "$envdev" "0x80000" "0x80000" "0x80000" "1"
+	;;
 esac
 
 config_load ubootenv
