@@ -48,7 +48,7 @@ else
 endif
 
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-  ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPERATE),y)
+  ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
     define Kernel/SetInitramfs/PreConfigure
 	grep -v -e CONFIG_BLK_DEV_INITRD $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
 	echo 'CONFIG_BLK_DEV_INITRD=y' >> $(LINUX_DIR)/.config
@@ -73,7 +73,7 @@ endif
 	rm -f $(LINUX_DIR)/.config.prev
 	mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
 	$(call Kernel/SetInitramfs/PreConfigure)
-  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPERATE),y)
+  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
 	echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
 	echo 'CONFIG_INITRAMFS_ROOT_GID=$(shell id -g)' >> $(LINUX_DIR)/.config
 	echo "$(if $(CONFIG_TARGET_INITRAMFS_FORCE),CONFIG_INITRAMFS_FORCE=y,# CONFIG_INITRAMFS_FORCE is not set)" >> $(LINUX_DIR)/.config
@@ -159,7 +159,7 @@ define Kernel/CompileImage/Initramfs
 	$(CP) $(GENERIC_PLATFORM_DIR)/other-files/init $(TARGET_DIR)/init
 	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(TARGET_DIR)/init)
 	rm -rf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
-ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPERATE),y)
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
 ifeq ($(CONFIG_EXTERNAL_CPIO),y)
 	$(CP) $(CONFIG_EXTERNAL_CPIO) $(KERNEL_BUILD_DIR)/initrd.cpio
 else
