@@ -17,7 +17,7 @@ menu "Target Images"
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_lantiq
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_mpc85xx
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
-			default TARGET_INITRAMFS_COMPRESSION_XZ if USES_SEPERATE_INITRAMFS
+			default TARGET_INITRAMFS_COMPRESSION_XZ if USES_SEPARATE_INITRAMFS
 			default TARGET_INITRAMFS_COMPRESSION_NONE
 			depends on TARGET_ROOTFS_INITRAMFS
 			help
@@ -36,11 +36,11 @@ menu "Target Images"
 				bool "lzma"
 
 			config TARGET_INITRAMFS_COMPRESSION_LZO
-				depends on !TARGET_ROOTFS_INITRAMFS_SEPERATE
+				depends on !TARGET_ROOTFS_INITRAMFS_SEPARATE
 				bool "lzo"
 
 			config TARGET_INITRAMFS_COMPRESSION_LZ4
-				depends on !TARGET_ROOTFS_INITRAMFS_SEPERATE
+				depends on !TARGET_ROOTFS_INITRAMFS_SEPARATE
 				bool "lz4"
 
 			config TARGET_INITRAMFS_COMPRESSION_XZ
@@ -65,12 +65,12 @@ menu "Target Images"
 			help
 			  Ignore the initramfs passed by the bootloader.
 
-		config TARGET_ROOTFS_INITRAMFS_SEPERATE
-			bool "seperate ramdisk"
-			depends on USES_SEPERATE_INITRAMFS && TARGET_ROOTFS_INITRAMFS && !TARGET_INITRAMFS_FORCE
-			default y if USES_SEPERATE_INITRAMFS
+		config TARGET_ROOTFS_INITRAMFS_SEPARATE
+			bool "separate ramdisk"
+			depends on USES_SEPARATE_INITRAMFS && TARGET_ROOTFS_INITRAMFS && !TARGET_INITRAMFS_FORCE
+			default y if USES_SEPARATE_INITRAMFS
 			help
-			  Generate seperate initrd.cpio instead of embedding it.
+			  Generate separate initrd.cpio instead of embedding it.
 			  This is useful for generating images with a dedicated
 			  ramdisk e.g. in U-Boot's uImage and uImage.FIT formats.
 
