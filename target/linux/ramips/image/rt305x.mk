@@ -1184,6 +1184,7 @@ endef
 TARGET_DEVICES += zorlik_zl5900v2
 
 define Device/zte_mf283plus
+  $(Device/uimage-lzma-loader)
   SOC := rt3352
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := ZTE
