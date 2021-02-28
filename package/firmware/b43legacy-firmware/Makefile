@@ -42,7 +42,7 @@ define Package/b43legacy-firmware/config
 		depends on B43LEGACY_FW_SQUASH
 		default "1,2,3,4"
 		help
-		  This is a comma seperated list of core revision numbers.
+		  This is a comma separated list of core revision numbers.
 
 		  Example (keep files for rev4 only):
 		    4
