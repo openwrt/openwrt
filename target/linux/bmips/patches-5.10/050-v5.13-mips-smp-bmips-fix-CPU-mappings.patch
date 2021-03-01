@@ -1,6 +1,6 @@
-From 56e3adab09cbadb30045893c10ec2ff0d629bc6f Mon Sep 17 00:00:00 2001
+From c0f41a0dac1f3db6c40aabc0f3ac8868709ba6a6 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Tue, 23 Feb 2021 13:41:12 +0100
+Date: Wed, 24 Feb 2021 08:33:36 +0100
 Subject: [PATCH] mips: smp-bmips: fix CPU mappings
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -9,13 +9,15 @@ Content-Transfer-Encoding: 8bit
 When booting bmips with SMP enabled on a BCM6358 running on CPU #1 instead of
 CPU #0, the current CPU mapping code produces the following:
 - smp_processor_id(): 0
-- cpu_logical_map(): 1
-- cpu_number_map(): 1
+- cpu_logical_map(0): 1
+- cpu_number_map(0): 1
 
 This is because SMP isn't supported on BCM6358 since it has a shared TLB, so
 it is disabled and max_cpus is decreased from 2 to 1.
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 ---
  arch/mips/kernel/smp-bmips.c | 27 +++++++++++++++++----------
  1 file changed, 17 insertions(+), 10 deletions(-)
@@ -52,7 +54,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +		__cpu_number_map[0] = boot_cpu;
 +		__cpu_logical_map[0] = 0;
 +		set_cpu_possible(0, 1);
-+		set_cpu_possible(0, 1);
++		set_cpu_present(0, 1);
  	}
  }
  
