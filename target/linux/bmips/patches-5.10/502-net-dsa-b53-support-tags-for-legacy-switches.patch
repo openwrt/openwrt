@@ -1,0 +1,209 @@
+From 3bc3d79efdff6e29b80bf35f7a56baaa36e4d8fe Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Fri, 12 Mar 2021 12:35:39 +0100
+Subject: [PATCH] net: dsa: b53: support tags for legacy switches
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/net/dsa/b53/Kconfig      |  1 +
+ drivers/net/dsa/b53/b53_common.c |  6 +++
+ include/net/dsa.h                |  2 +
+ net/dsa/Kconfig                  |  7 +++
+ net/dsa/tag_brcm.c               | 93 ++++++++++++++++++++++++++++++++
+ 5 files changed, 109 insertions(+)
+
+--- a/drivers/net/dsa/b53/Kconfig
++++ b/drivers/net/dsa/b53/Kconfig
+@@ -3,6 +3,7 @@ menuconfig B53
+ 	tristate "Broadcom BCM53xx managed switch support"
+ 	depends on NET_DSA
+ 	select NET_DSA_TAG_BRCM
++	select NET_DSA_TAG_BRCM_LEGACY
+ 	select NET_DSA_TAG_BRCM_PREPEND
+ 	help
+ 	  This driver adds support for Broadcom managed switch chips. It supports
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1992,6 +1992,7 @@ static bool b53_can_enable_brcm_tags(str
+ 
+ 	switch (tag_protocol) {
+ 	case DSA_TAG_PROTO_BRCM:
++	case DSA_TAG_PROTO_BRCM_LEGACY:
+ 	case DSA_TAG_PROTO_BRCM_PREPEND:
+ 		dev_warn(ds->dev,
+ 			 "Port %d is stacked to Broadcom tag switch\n", port);
+@@ -2013,12 +2014,16 @@ enum dsa_tag_protocol b53_get_tag_protoc
+ 	/* Older models (5325, 5365) support a different tag format that we do
+ 	 * not support in net/dsa/tag_brcm.c yet.
+ 	 */
+-	if (is5325(dev) || is5365(dev) ||
+-	    !b53_can_enable_brcm_tags(ds, port, mprot)) {
++	if (!b53_can_enable_brcm_tags(ds, port, mprot)) {
+ 		dev->tag_protocol = DSA_TAG_PROTO_NONE;
+ 		goto out;
+ 	}
+ 
++	if (is5325(dev) || is5365(dev) || is63xx(dev)) {
++		dev->tag_protocol = DSA_TAG_PROTO_BRCM_LEGACY;
++		goto out;
++	}
++
+ 	/* Broadcom BCM58xx chips have a flow accelerator on Port 8
+ 	 * which requires us to use the prepended Broadcom tag type
+ 	 */
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -45,10 +45,12 @@ struct phylink_link_state;
+ #define DSA_TAG_PROTO_OCELOT_VALUE		15
+ #define DSA_TAG_PROTO_AR9331_VALUE		16
+ #define DSA_TAG_PROTO_RTL4_A_VALUE		17
++#define DSA_TAG_PROTO_BRCM_LEGACY_VALUE		22
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+ 	DSA_TAG_PROTO_BRCM		= DSA_TAG_PROTO_BRCM_VALUE,
++	DSA_TAG_PROTO_BRCM_LEGACY	= DSA_TAG_PROTO_BRCM_LEGACY_VALUE,
+ 	DSA_TAG_PROTO_BRCM_PREPEND	= DSA_TAG_PROTO_BRCM_PREPEND_VALUE,
+ 	DSA_TAG_PROTO_DSA		= DSA_TAG_PROTO_DSA_VALUE,
+ 	DSA_TAG_PROTO_EDSA		= DSA_TAG_PROTO_EDSA_VALUE,
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -47,6 +47,13 @@ config NET_DSA_TAG_BRCM
+ 	  Say Y if you want to enable support for tagging frames for the
+ 	  Broadcom switches which place the tag after the MAC source address.
+ 
++config NET_DSA_TAG_BRCM_LEGACY
++	tristate "Tag driver for Broadcom legacy switches using in-frame headers"
++	select NET_DSA_TAG_BRCM_COMMON
++	help
++	  Say Y if you want to enable support for tagging frames for the
++	  Broadcom legacy switches which place the tag after the MAC source
++	  address.
+ 
+ config NET_DSA_TAG_BRCM_PREPEND
+ 	tristate "Tag driver for Broadcom switches using prepended headers"
+--- a/net/dsa/tag_brcm.c
++++ b/net/dsa/tag_brcm.c
+@@ -8,9 +8,23 @@
+ #include <linux/etherdevice.h>
+ #include <linux/list.h>
+ #include <linux/slab.h>
++#include <linux/types.h>
+ 
+ #include "dsa_priv.h"
+ 
++struct bcm_legacy_tag {
++	uint16_t type;
++#define BRCM_LEG_TYPE	0x8874
++
++	uint32_t tag;
++#define BRCM_LEG_TAG_PORT_ID	(0xf)
++#define BRCM_LEG_TAG_MULTICAST	(1 << 29)
++#define BRCM_LEG_TAG_EGRESS	(2 << 29)
++#define BRCM_LEG_TAG_INGRESS	(3 << 29)
++} __attribute__((packed));
++
++#define BRCM_LEG_TAG_LEN	sizeof(struct bcm_legacy_tag)
++
+ /* This tag length is 4 bytes, older ones were 6 bytes, we do not
+  * handle them
+  */
+@@ -197,6 +211,85 @@ DSA_TAG_DRIVER(brcm_netdev_ops);
+ MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_BRCM);
+ #endif
+ 
++#if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM_LEGACY)
++static struct sk_buff *brcm_leg_tag_xmit(struct sk_buff *skb,
++					 struct net_device *dev)
++{
++	struct dsa_port *dp = dsa_slave_to_port(dev);
++	struct bcm_legacy_tag *brcm_tag;
++
++	if (skb_cow_head(skb, BRCM_LEG_TAG_LEN) < 0)
++		return NULL;
++
++	/* The Ethernet switch we are interfaced with needs packets to be at
++	 * least 64 bytes (including FCS) otherwise they will be discarded when
++	 * they enter the switch port logic. When Broadcom tags are enabled, we
++	 * need to make sure that packets are at least 70 bytes
++	 * (including FCS and tag) because the length verification is done after
++	 * the Broadcom tag is stripped off the ingress packet.
++	 *
++	 * Let dsa_slave_xmit() free the SKB
++	 */
++	if (__skb_put_padto(skb, ETH_ZLEN + BRCM_LEG_TAG_LEN, false))
++		return NULL;
++
++	skb_push(skb, BRCM_LEG_TAG_LEN);
++
++	memmove(skb->data, skb->data + BRCM_LEG_TAG_LEN, 2 * ETH_ALEN);
++
++	brcm_tag = (struct bcm_legacy_tag *) (skb->data + 2 * ETH_ALEN);
++
++	brcm_tag->type = BRCM_LEG_TYPE;
++	brcm_tag->tag = BRCM_LEG_TAG_EGRESS;
++	brcm_tag->tag |= dp->index & BRCM_LEG_TAG_PORT_ID;
++
++	return skb;
++}
++
++
++static struct sk_buff *brcm_leg_tag_rcv(struct sk_buff *skb,
++					struct net_device *dev,
++					struct packet_type *pt)
++{
++	int source_port;
++	struct bcm_legacy_tag *brcm_tag;
++
++	if (unlikely(!pskb_may_pull(skb, BRCM_LEG_TAG_LEN)))
++		return NULL;
++
++	brcm_tag = (struct bcm_legacy_tag *) (skb->data - 2);
++
++	source_port = brcm_tag->tag & BRCM_LEG_TAG_PORT_ID;
++
++	skb->dev = dsa_master_find_slave(dev, 0, source_port);
++	if (!skb->dev)
++		return NULL;
++
++	/* Remove Broadcom tag and update checksum */
++	skb_pull_rcsum(skb, BRCM_LEG_TAG_LEN);
++
++	skb->offload_fwd_mark = 1;
++
++	/* Move the Ethernet DA and SA */
++	memmove(skb->data - ETH_HLEN,
++		skb->data - ETH_HLEN - BRCM_LEG_TAG_LEN,
++		2 * ETH_ALEN);
++
++	return skb;
++}
++
++static const struct dsa_device_ops brcm_legacy_netdev_ops = {
++	.name	= "brcm-legacy",
++	.proto	= DSA_TAG_PROTO_BRCM_LEGACY,
++	.xmit	= brcm_leg_tag_xmit,
++	.rcv	= brcm_leg_tag_rcv,
++	.overhead = BRCM_LEG_TAG_LEN,
++};
++
++DSA_TAG_DRIVER(brcm_legacy_netdev_ops);
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_BRCM_LEGACY);
++#endif /* CONFIG_NET_DSA_TAG_BRCM_LEGACY */
++
+ #if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM_PREPEND)
+ static struct sk_buff *brcm_tag_xmit_prepend(struct sk_buff *skb,
+ 					     struct net_device *dev)
+@@ -229,6 +322,9 @@ static struct dsa_tag_driver *dsa_tag_dr
+ #if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM)
+ 	&DSA_TAG_DRIVER_NAME(brcm_netdev_ops),
+ #endif
++#if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM_LEGACY)
++	&DSA_TAG_DRIVER_NAME(brcm_legacy_netdev_ops),
++#endif
+ #if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM_PREPEND)
+ 	&DSA_TAG_DRIVER_NAME(brcm_prepend_netdev_ops),
+ #endif

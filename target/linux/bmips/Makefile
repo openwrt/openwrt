@@ -18,6 +18,6 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += kmod-gpio-button-hotplug
+DEFAULT_PACKAGES += ethtool kmod-gpio-button-hotplug
 
 $(eval $(call BuildTarget))

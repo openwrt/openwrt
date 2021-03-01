@@ -432,5 +432,105 @@
 
 			status = "disabled";
 		};
+
+		ethernet: ethernet@1000d800 {
+			compatible = "brcm,bcm63268-enetsw";
+			reg = <0x1000d800 0x80>,
+			      <0x1000da00 0x80>,
+			      <0x1000dc00 0x80>;
+			reg-names = "dma",
+				    "dma-channels",
+				    "dma-sram";
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM63268_IRQ_ENETSW_RX_DMA0>,
+				     <BCM63268_IRQ_ENETSW_TX_DMA0>;
+			interrupt-names = "rx",
+					  "tx";
+
+			clocks = <&periph_clk BCM63268_CLK_GMAC>,
+				 <&periph_clk BCM63268_CLK_ROBOSW>,
+				 <&periph_clk BCM63268_CLK_ROBOSW250>,
+				 <&timer_clk BCM63268_TCLK_EPHY1>,
+				 <&timer_clk BCM63268_TCLK_EPHY2>,
+				 <&timer_clk BCM63268_TCLK_EPHY3>,
+				 <&timer_clk BCM63268_TCLK_GPHY1>;
+
+			resets = <&periph_rst BCM63268_RST_ENETSW>,
+				 <&periph_rst BCM63268_RST_EPHY>,
+				 <&periph_rst BCM63268_RST_GPHY>;
+
+			power-domains = <&periph_pwr BCM63268_POWER_DOMAIN_ROBOSW>;
+
+			dma-rx = <0>;
+			dma-tx = <1>;
+
+			status = "disabled";
+		};
+
+		switch0: switch@10700000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6328-switch";
+			reg = <0x10700000 0x8000>;
+			big-endian;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@8 {
+					reg = <8>;
+					label = "cpu";
+
+					phy-mode = "internal";
+					ethernet = <&ethernet>;
+
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+				};
+			};
+		};
+
+		mdio: mdio@107000b0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6368-mdio-mux";
+			reg = <0x107000b0 0x8>;
+
+			mdio_int: mdio@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+
+				phy1: ethernet-phy@1 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <1>;
+				};
+
+				phy2: ethernet-phy@2 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <2>;
+				};
+
+				phy3: ethernet-phy@3 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <3>;
+				};
+
+				phy4: ethernet-phy@4 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <4>;
+				};
+			};
+
+			mdio_ext: mdio@1 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <1>;
+			};
+		};
 	};
 };
