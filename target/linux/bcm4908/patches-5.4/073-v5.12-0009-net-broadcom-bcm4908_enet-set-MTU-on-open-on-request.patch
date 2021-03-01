@@ -1,7 +1,10 @@
-From d7dfbcba0437955ccbe4c6db736526d528f27720 Mon Sep 17 00:00:00 2001
+From 14b3b46a67f78ade99eafcbf320105615e948569 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Fri, 12 Feb 2021 16:06:00 +0100
+Date: Fri, 12 Feb 2021 16:21:35 +0100
 Subject: [PATCH] net: broadcom: bcm4908_enet: set MTU on open & on request
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 Hardware comes up with default max frame size set to 1518. When using it
 with switch it results in actual Ethernet MTU 1492:
@@ -13,6 +16,9 @@ traffic (MTU 1500).
 Define maximum possible Ethernet overhead and always set MAC max frame
 length accordingly. This change fixes handling Ethernet frames of length
 1506 - 1514.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/broadcom/bcm4908_enet.c | 31 ++++++++++++++++----
  1 file changed, 25 insertions(+), 6 deletions(-)
