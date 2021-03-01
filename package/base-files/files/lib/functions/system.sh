@@ -1,7 +1,5 @@
 # Copyright (C) 2006-2013 OpenWrt.org
 
-. /lib/functions.sh
-
 get_mac_binary() {
 	local path="$1"
 	local offset="$2"
