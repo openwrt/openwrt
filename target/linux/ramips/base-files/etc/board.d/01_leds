@@ -189,6 +189,9 @@ gl-mt300n-v2)
 	set_wifi_led "$boardname:red:wlan"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x1"
 	;;
+microuter-n300)
+	set_wifi_led "$boardname:white:wlan" "ra0"
+	;;
 hc5661|\
 hc5661a)
 	ucidef_set_led_netdev "internet" "internet" "$boardname:blue:internet" "eth0.2"

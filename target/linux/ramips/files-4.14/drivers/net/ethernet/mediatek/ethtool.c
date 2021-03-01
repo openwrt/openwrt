@@ -13,6 +13,7 @@
  */
 
 #include "mtk_eth_soc.h"
+#include "gsw_mt7620.h"
 
 static const char fe_gdma_str[][ETH_GSTRING_LEN] = {
 #define _FE(x...)	# x,

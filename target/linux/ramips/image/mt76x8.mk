@@ -60,8 +60,17 @@ define Device/gl-mt300n-v2
   IMAGE_SIZE := 16064k
   DEVICE_TITLE := GL-iNet GL-MT300N-V2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-gl-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += gl-mt300n-v2
+
+define Device/microuter-n300
+  DTS := microuter-N300
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := GL.iNet microuter N300
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-gl-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += microuter-n300
 
 define Device/glinet_vixmini
   DTS := VIXMINI

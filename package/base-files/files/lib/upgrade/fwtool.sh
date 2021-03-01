@@ -44,13 +44,14 @@ fwtool_check_image() {
 	}
 
 	device="$(cat /tmp/sysinfo/board_name)"
+    	device_old=`awk -F': ' '/machine/ {print tolower($NF)}' /proc/cpuinfo |cut -d  ' ' -f2`
 
 	json_select supported_devices || return 1
 
 	json_get_keys dev_keys
 	for k in $dev_keys; do
 		json_get_var dev "$k"
-		[ "$dev" = "$device" ] && return 0
+		[ "$dev" = "$device" -o "$dev" = "$device_old" -o "$dev" = glinet,"$device_old" ] && return 0
 	done
 
 	echo "Device $device not supported by this image"

@@ -1,0 +1,25 @@
+--- a/arch/arm64/boot/dts/marvell/armada-37xx.dtsi
++++ b/arch/arm64/boot/dts/marvell/armada-37xx.dtsi
+@@ -299,6 +299,22 @@
+ 				status = "disabled";
+ 			};
+ 
++			u3d@50000 {
++				compatible = "marvell,armada3700-u3d";
++				/* 0: 0x50000: USB 3.0 Device port 0: DEV_INFO_REG(0:15 - version_id) */
++				reg = <0x50000 0x2000>;
++				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&sb_periph_clk 12>;
++				status = "okay";
++			};
++			udc@54100 {
++				compatible = "marvell,mv-udc";
++				reg = <0x54100 0x2000>;
++				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&sb_periph_clk 12>;
++				status = "okay";
++			};
++
+ 			xor@60900 {
+ 				compatible = "marvell,armada-3700-xor";
+ 				reg = <0x60900 0x100>,

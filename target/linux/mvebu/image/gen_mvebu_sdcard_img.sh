@@ -51,6 +51,12 @@ while [ "$#" -ge 3 ]; do
 	shift; shift; shift
 done
 
+model=''
+model=$(echo $OUTFILE | grep "gl-mv1000-emmc")
+[ "$model" != "" ] && {
+	ptgen_args="$ptgen_args -t 83 -p 7093504"
+}
+
 head=16
 sect=63
 

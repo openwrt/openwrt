@@ -68,6 +68,11 @@ define Build/omnia-medkit-initramfs
 		--file=$@ -C $(dir $(IMAGE_KERNEL))boot/ .
 endef
 
+define Build/pad-dtb
+  (dd if=$(KDIR)/image-$(DEVICE_DTS).dtb bs=64k conv=sync;dd if=$@) > $@.new 
+  mv $@.new $@
+endef
+
 define Device/Default
   PROFILES := Default
   BOARD_NAME = $$(DEVICE_DTS)
@@ -92,6 +97,15 @@ define Device/Default-arm64
   KERNEL := kernel-bin
 endef
 
+define Device/Default-arm64-emmc
+  BOOT_SCRIPT := generic-arm64-emmc
+  DTS_DIR := $(DTS_DIR)/marvell
+  IMAGES := emmc.img
+  IMAGE/emmc.img := boot-scr | boot-img-ext4 | sdcard-img-ext4 | append-gl-metadata
+  KERNEL_NAME := Image
+  KERNEL := kernel-bin
+endef
+
 define Device/NAND-128K
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -112,5 +126,6 @@ endef
 include cortex-a9.mk
 include cortex-a53.mk
 include cortex-a72.mk
+include gl-mv1000.mk
 
 $(eval $(call BuildImage))

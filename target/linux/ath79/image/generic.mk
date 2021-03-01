@@ -377,7 +377,7 @@ define Device/glinet_gl-ar150
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-ar150
 endef
-TARGET_DEVICES += glinet_gl-ar150
+#TARGET_DEVICES += glinet_gl-ar150
 
 define Device/glinet_gl-ar300m-common-nor
   ATH_SOC := qca9531
@@ -398,13 +398,13 @@ define Device/glinet_gl-ar300m-nor
 endef
 #TARGET_DEVICES += glinet_gl-ar300m-nor
 
-define Device/glinet_gl-ar750s
-  ATH_SOC := qca9563
-  DEVICE_TITLE := GL.iNet GL-AR750S
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct block-mount
-  IMAGE_SIZE := 16000k
-  SUPPORTED_DEVICES += gl-ar750s
-endef
+#define Device/glinet_gl-ar750s
+#  ATH_SOC := qca9563
+#  DEVICE_TITLE := GL.iNet GL-AR750S
+#  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct block-mount
+#  IMAGE_SIZE := 16000k
+#  SUPPORTED_DEVICES += gl-ar750s
+#endef
 #TARGET_DEVICES += glinet_gl-ar750s
 
 define Device/glinet_gl-x750
@@ -412,8 +412,9 @@ define Device/glinet_gl-x750
   DEVICE_TITLE := GL.iNet GL-X750
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct
   IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-x750
 endef
-TARGET_DEVICES += glinet_gl-x750
+#TARGET_DEVICES += glinet_gl-x750
 
 define Device/iodata_etg3-r
   ATH_SOC := ar9342

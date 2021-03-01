@@ -1,0 +1,4376 @@
+--- a/drivers/usb/gadget/udc/Kconfig
++++ b/drivers/usb/gadget/udc/Kconfig
+@@ -255,6 +255,12 @@ config USB_MV_U3D
+ 	  MARVELL PXA2128 Processor series include a super speed USB3.0 device
+ 	  controller, which support super speed USB peripheral.
+ 
++config USB_MVEBU_U3D
++	tristate "Marvell Armada 38X/3700/8K USB 3.0 controller"
++	help
++	  MARVELL Armada 38X/3700/8K Processors series include a super speed
++	  USB3.0 device controller, which support super speed USB peripheral.
++
+ config USB_SNP_CORE
+ 	depends on (USB_AMD5536UDC || USB_SNP_UDC_PLAT)
+ 	depends on HAS_DMA
+--- a/drivers/usb/gadget/udc/Makefile
++++ b/drivers/usb/gadget/udc/Makefile
+@@ -36,6 +36,7 @@ mv_udc-y			:= mv_udc_core.o
+ obj-$(CONFIG_USB_FUSB300)	+= fusb300_udc.o
+ obj-$(CONFIG_USB_FOTG210_UDC)	+= fotg210-udc.o
+ obj-$(CONFIG_USB_MV_U3D)	+= mv_u3d_core.o
++obj-$(CONFIG_USB_MVEBU_U3D)	+= mvebu_glue.o mvebu_u3d.o
+ obj-$(CONFIG_USB_GR_UDC)	+= gr_udc.o
+ obj-$(CONFIG_USB_GADGET_XILINX)	+= udc-xilinx.o
+ obj-$(CONFIG_USB_SNP_UDC_PLAT) += snps_udc_plat.o
+--- a/drivers/usb/gadget/udc/core.c
++++ b/drivers/usb/gadget/udc/core.c
+@@ -32,26 +32,6 @@
+ 
+ #include "trace.h"
+ 
+-/**
+- * struct usb_udc - describes one usb device controller
+- * @driver - the gadget driver pointer. For use by the class code
+- * @dev - the child device to the actual controller
+- * @gadget - the gadget. For use by the class code
+- * @list - for use by the udc class driver
+- * @vbus - for udcs who care about vbus status, this value is real vbus status;
+- * for udcs who do not care about vbus status, this value is always true
+- *
+- * This represents the internal data structure which is used by the UDC-class
+- * to hold information about udc driver and gadget together.
+- */
+-struct usb_udc {
+-	struct usb_gadget_driver	*driver;
+-	struct usb_gadget		*gadget;
+-	struct device			dev;
+-	struct list_head		list;
+-	bool				vbus;
+-};
+-
+ static struct class *udc_class;
+ static LIST_HEAD(udc_list);
+ static LIST_HEAD(gadget_driver_pending_list);
+@@ -1358,35 +1338,14 @@ int usb_gadget_probe_driver(struct usb_g
+ 		return -EINVAL;
+ 
+ 	mutex_lock(&udc_lock);
+-	if (driver->udc_name) {
+-		list_for_each_entry(udc, &udc_list, list) {
+-			ret = strcmp(driver->udc_name, dev_name(&udc->dev));
+-			if (!ret)
+-				break;
+-		}
+-		if (ret)
+-			ret = -ENODEV;
+-		else if (udc->driver)
+-			ret = -EBUSY;
+-		else
+-			goto found;
+-	} else {
+-		list_for_each_entry(udc, &udc_list, list) {
+-			/* For now we take the first one */
+-			if (!udc->driver)
+-				goto found;
+-		}
+-	}
+ 
+-	if (!driver->match_existing_only) {
+-		list_add_tail(&driver->pending, &gadget_driver_pending_list);
+-		pr_info("udc-core: couldn't find an available UDC - added [%s] to list of pending drivers\n",
+-			driver->function);
+-		ret = 0;
+-	}
++	udc = udc_detect(&udc_list, driver);
++	if (udc)
++		goto found;
+ 
++	pr_debug("couldn't find an available UDC\n");
+ 	mutex_unlock(&udc_lock);
+-	return ret;
++	return -ENODEV;
+ found:
+ 	ret = udc_bind_to_driver(udc, driver);
+ 	mutex_unlock(&udc_lock);
+--- a/drivers/usb/gadget/udc/mv_udc.h
++++ b/drivers/usb/gadget/udc/mv_udc.h
+@@ -196,6 +196,8 @@ struct mv_udc {
+ 	struct mv_req			*status_req;
+ 	struct usb_ctrlrequest		local_setup_buff;
+ 
++	struct phy			*utmi_phy;
++
+ 	unsigned int		resume_state;	/* USB state to resume */
+ 	unsigned int		usb_state;	/* USB current state */
+ 	unsigned int		ep0_state;	/* Endpoint zero state */
+@@ -214,6 +216,8 @@ struct mv_udc {
+ 				active:1,
+ 				stopped:1;      /* stop bit is setted */
+ 
++
++	int vbus_pin;
+ 	struct work_struct	vbus_work;
+ 	struct workqueue_struct *qwork;
+ 
+--- a/drivers/usb/gadget/udc/mv_udc_core.c
++++ b/drivers/usb/gadget/udc/mv_udc_core.c
+@@ -33,12 +33,16 @@
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
+ #include <linux/clk.h>
++#include <linux/of.h>
++#include <linux/of_gpio.h>
+ #include <linux/platform_data/mv_usb.h>
+ #include <asm/unaligned.h>
++#include <linux/gpio.h>
+ 
+ #include "mv_udc.h"
+ 
+ #define DRIVER_DESC		"Marvell PXA USB Device Controller driver"
++#define DRIVER_VERSION		"8 Nov 2010"
+ 
+ #define ep_dir(ep)	(((ep)->ep_num == 0) ? \
+ 				((ep)->udc->ep0_dir) : ((ep)->direction))
+@@ -68,7 +72,7 @@ static const struct usb_endpoint_descrip
+ 	.bDescriptorType =	USB_DT_ENDPOINT,
+ 	.bEndpointAddress =	0,
+ 	.bmAttributes =		USB_ENDPOINT_XFER_CONTROL,
+-	.wMaxPacketSize =	EP0_MAX_PKT_SIZE,
++	.wMaxPacketSize =	cpu_to_le16(EP0_MAX_PKT_SIZE),
+ };
+ 
+ static void ep0_reset(struct mv_udc *udc)
+@@ -86,11 +90,11 @@ static void ep0_reset(struct mv_udc *udc
+ 		ep->dqh = &udc->ep_dqh[i];
+ 
+ 		/* configure ep0 endpoint capabilities in dQH */
+-		ep->dqh->max_packet_length =
++		ep->dqh->max_packet_length = cpu_to_le32(
+ 			(EP0_MAX_PKT_SIZE << EP_QUEUE_HEAD_MAX_PKT_LEN_POS)
+-			| EP_QUEUE_HEAD_IOS;
++			| EP_QUEUE_HEAD_IOS);
+ 
+-		ep->dqh->next_dtd_ptr = EP_QUEUE_HEAD_NEXT_TERMINATE;
++		ep->dqh->next_dtd_ptr = cpu_to_le32(EP_QUEUE_HEAD_NEXT_TERMINATE);
+ 
+ 		epctrlx = readl(&udc->op_regs->epctrlx[0]);
+ 		if (i) {	/* TX */
+@@ -128,7 +132,7 @@ static int process_ep_req(struct mv_udc
+ {
+ 	struct mv_dtd	*curr_dtd;
+ 	struct mv_dqh	*curr_dqh;
+-	int actual, remaining_length;
++	int td_complete, actual, remaining_length;
+ 	int i, direction;
+ 	int retval = 0;
+ 	u32 errors;
+@@ -138,19 +142,20 @@ static int process_ep_req(struct mv_udc
+ 	direction = index % 2;
+ 
+ 	curr_dtd = curr_req->head;
++	td_complete = 0;
+ 	actual = curr_req->req.length;
+ 
+ 	for (i = 0; i < curr_req->dtd_count; i++) {
+-		if (curr_dtd->size_ioc_sts & DTD_STATUS_ACTIVE) {
++		if (le32_to_cpu(curr_dtd->size_ioc_sts) & DTD_STATUS_ACTIVE) {
+ 			dev_dbg(&udc->dev->dev, "%s, dTD not completed\n",
+ 				udc->eps[index].name);
+ 			return 1;
+ 		}
+ 
+-		errors = curr_dtd->size_ioc_sts & DTD_ERROR_MASK;
++		errors = le32_to_cpu(curr_dtd->size_ioc_sts) & DTD_ERROR_MASK;
+ 		if (!errors) {
+ 			remaining_length =
+-				(curr_dtd->size_ioc_sts	& DTD_PACKET_SIZE)
++				(le32_to_cpu(curr_dtd->size_ioc_sts)	& DTD_PACKET_SIZE)
+ 					>> DTD_LENGTH_BIT_POS;
+ 			actual -= remaining_length;
+ 
+@@ -170,7 +175,8 @@ static int process_ep_req(struct mv_udc
+ 				errors);
+ 			if (errors & DTD_STATUS_HALTED) {
+ 				/* Clear the errors and Halt condition */
+-				curr_dqh->size_ioc_int_sts &= ~errors;
++				curr_dqh->size_ioc_int_sts =
++					cpu_to_le32(le32_to_cpu(curr_dqh->size_ioc_int_sts) & (~errors));
+ 				retval = -EPIPE;
+ 			} else if (errors & DTD_STATUS_DATA_BUFF_ERR) {
+ 				retval = -EPROTO;
+@@ -189,8 +195,8 @@ static int process_ep_req(struct mv_udc
+ 	else
+ 		bit_pos = 1 << (16 + curr_req->ep->ep_num);
+ 
+-	while ((curr_dqh->curr_dtd_ptr == curr_dtd->td_dma)) {
+-		if (curr_dtd->dtd_next == EP_QUEUE_HEAD_NEXT_TERMINATE) {
++	while ((curr_dqh->curr_dtd_ptr == cpu_to_le32(curr_dtd->td_dma))) {
++		if (curr_dtd->dtd_next == cpu_to_le32(EP_QUEUE_HEAD_NEXT_TERMINATE)) {
+ 			while (readl(&udc->op_regs->epstatus) & bit_pos)
+ 				udelay(1);
+ 			break;
+@@ -247,7 +253,8 @@ static void done(struct mv_ep *ep, struc
+ 
+ 	spin_unlock(&ep->udc->lock);
+ 
+-	usb_gadget_giveback_request(&ep->ep, &req->req);
++	if (req->req.complete)
++		usb_gadget_giveback_request(&ep->ep, &req->req);
+ 
+ 	spin_lock(&ep->udc->lock);
+ 	ep->stopped = stopped;
+@@ -272,7 +279,7 @@ static int queue_dtd(struct mv_ep *ep, s
+ 		struct mv_req *lastreq;
+ 		lastreq = list_entry(ep->queue.prev, struct mv_req, queue);
+ 		lastreq->tail->dtd_next =
+-			req->head->td_dma & EP_QUEUE_HEAD_NEXT_POINTER_MASK;
++			cpu_to_le32(req->head->td_dma & EP_QUEUE_HEAD_NEXT_POINTER_MASK);
+ 
+ 		wmb();
+ 
+@@ -320,11 +327,12 @@ static int queue_dtd(struct mv_ep *ep, s
+ 	}
+ 
+ 	/* Write dQH next pointer and terminate bit to 0 */
+-	dqh->next_dtd_ptr = req->head->td_dma
+-				& EP_QUEUE_HEAD_NEXT_POINTER_MASK;
++	dqh->next_dtd_ptr = cpu_to_le32(req->head->td_dma
++				& EP_QUEUE_HEAD_NEXT_POINTER_MASK);
+ 
+ 	/* clear active and halt bit, in case set from a previous error */
+-	dqh->size_ioc_int_sts &= ~(DTD_STATUS_ACTIVE | DTD_STATUS_HALTED);
++	dqh->size_ioc_int_sts =
++		cpu_to_le32(le32_to_cpu(dqh->size_ioc_int_sts) & (~(DTD_STATUS_ACTIVE | DTD_STATUS_HALTED)));
+ 
+ 	/* Ensure that updates to the QH will occur before priming. */
+ 	wmb();
+@@ -347,7 +355,7 @@ static struct mv_dtd *build_dtd(struct m
+ 	/* how big will this transfer be? */
+ 	if (usb_endpoint_xfer_isoc(req->ep->ep.desc)) {
+ 		dqh = req->ep->dqh;
+-		mult = (dqh->max_packet_length >> EP_QUEUE_HEAD_MULT_POS)
++		mult = (le32_to_cpu(dqh->max_packet_length) >> EP_QUEUE_HEAD_MULT_POS)
+ 				& 0x3;
+ 		*length = min(req->req.length - req->req.actual,
+ 				(unsigned)(mult * req->ep->ep.maxpacket));
+@@ -397,7 +405,7 @@ static struct mv_dtd *build_dtd(struct m
+ 
+ 	temp |= mult << 10;
+ 
+-	dtd->size_ioc_sts = temp;
++	dtd->size_ioc_sts = cpu_to_le32(temp);
+ 
+ 	mb();
+ 
+@@ -410,8 +418,11 @@ static int req_to_dtd(struct mv_req *req
+ 	unsigned count;
+ 	int is_last, is_first = 1;
+ 	struct mv_dtd *dtd, *last_dtd = NULL;
++	struct mv_udc *udc;
+ 	dma_addr_t dma;
+ 
++	udc = req->ep->udc;
++
+ 	do {
+ 		dtd = build_dtd(req, &count, &dma, &is_last);
+ 		if (dtd == NULL)
+@@ -421,7 +432,7 @@ static int req_to_dtd(struct mv_req *req
+ 			is_first = 0;
+ 			req->head = dtd;
+ 		} else {
+-			last_dtd->dtd_next = dma;
++			last_dtd->dtd_next = cpu_to_le32(dma);
+ 			last_dtd->next_dtd_virt = dtd;
+ 		}
+ 		last_dtd = dtd;
+@@ -429,8 +440,7 @@ static int req_to_dtd(struct mv_req *req
+ 	} while (!is_last);
+ 
+ 	/* set terminate bit to 1 for the last dTD */
+-	dtd->dtd_next = DTD_NEXT_TERMINATE;
+-
++	dtd->dtd_next = cpu_to_le32(DTD_NEXT_TERMINATE);
+ 	req->tail = dtd;
+ 
+ 	return 0;
+@@ -444,8 +454,7 @@ static int mv_ep_enable(struct usb_ep *_
+ 	struct mv_dqh *dqh;
+ 	u16 max = 0;
+ 	u32 bit_pos, epctrlx, direction;
+-	const unsigned char zlt = 1;
+-	unsigned char ios, mult;
++	unsigned char zlt = 0, ios = 0, mult = 0;
+ 	unsigned long flags;
+ 
+ 	ep = container_of(_ep, struct mv_ep, ep);
+@@ -465,6 +474,8 @@ static int mv_ep_enable(struct usb_ep *_
+ 	 * disable HW zero length termination select
+ 	 * driver handles zero length packet through req->req.zero
+ 	 */
++	zlt = 1;
++
+ 	bit_pos = 1 << ((direction == EP_DIR_OUT ? 0 : 16) + ep->ep_num);
+ 
+ 	/* Check if the Endpoint is Primed */
+@@ -479,20 +490,21 @@ static int mv_ep_enable(struct usb_ep *_
+ 			(unsigned)bit_pos);
+ 		goto en_done;
+ 	}
+-
+ 	/* Set the max packet length, interrupt on Setup and Mult fields */
+-	ios = 0;
+-	mult = 0;
+ 	switch (desc->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) {
+ 	case USB_ENDPOINT_XFER_BULK:
+-	case USB_ENDPOINT_XFER_INT:
++		zlt = 1;
++		mult = 0;
+ 		break;
+ 	case USB_ENDPOINT_XFER_CONTROL:
+ 		ios = 1;
++	case USB_ENDPOINT_XFER_INT:
++		mult = 0;
+ 		break;
+ 	case USB_ENDPOINT_XFER_ISOC:
+ 		/* Calculate transactions needed for high bandwidth iso */
+-		mult = usb_endpoint_maxp_mult(desc);
++		mult = (unsigned char)(1 + ((max >> 11) & 0x03));
++		max = max & 0x7ff;	/* bit 0~10 */
+ 		/* 3 transactions at most */
+ 		if (mult > 3)
+ 			goto en_done;
+@@ -504,12 +516,12 @@ static int mv_ep_enable(struct usb_ep *_
+ 	spin_lock_irqsave(&udc->lock, flags);
+ 	/* Get the endpoint queue head address */
+ 	dqh = ep->dqh;
+-	dqh->max_packet_length = (max << EP_QUEUE_HEAD_MAX_PKT_LEN_POS)
++	dqh->max_packet_length = cpu_to_le32((max << EP_QUEUE_HEAD_MAX_PKT_LEN_POS)
+ 		| (mult << EP_QUEUE_HEAD_MULT_POS)
+ 		| (zlt ? EP_QUEUE_HEAD_ZLT_SEL : 0)
+-		| (ios ? EP_QUEUE_HEAD_IOS : 0);
+-	dqh->next_dtd_ptr = 1;
+-	dqh->size_ioc_int_sts = 0;
++		| (ios ? EP_QUEUE_HEAD_IOS : 0));
++	dqh->next_dtd_ptr = cpu_to_le32(1);
++	dqh->size_ioc_int_sts = cpu_to_le32(0);
+ 
+ 	ep->ep.maxpacket = max;
+ 	ep->ep.desc = desc;
+@@ -560,7 +572,7 @@ static int  mv_ep_disable(struct usb_ep
+ 	struct mv_udc *udc;
+ 	struct mv_ep *ep;
+ 	struct mv_dqh *dqh;
+-	u32 epctrlx, direction;
++	u32 bit_pos, epctrlx, direction;
+ 	unsigned long flags;
+ 
+ 	ep = container_of(_ep, struct mv_ep, ep);
+@@ -575,9 +587,10 @@ static int  mv_ep_disable(struct usb_ep
+ 	spin_lock_irqsave(&udc->lock, flags);
+ 
+ 	direction = ep_dir(ep);
++	bit_pos = 1 << ((direction == EP_DIR_OUT ? 0 : 16) + ep->ep_num);
+ 
+ 	/* Reset the max packet length and the interrupt on Setup */
+-	dqh->max_packet_length = 0;
++	dqh->max_packet_length = cpu_to_le32(0);
+ 
+ 	/* Disable the endpoint for Rx or Tx and reset the endpoint type */
+ 	epctrlx = readl(&udc->op_regs->epctrlx[ep->ep_num]);
+@@ -757,11 +770,12 @@ static void mv_prime_ep(struct mv_ep *ep
+ 	u32 bit_pos;
+ 
+ 	/* Write dQH next pointer and terminate bit to 0 */
+-	dqh->next_dtd_ptr = req->head->td_dma
+-		& EP_QUEUE_HEAD_NEXT_POINTER_MASK;
++	dqh->next_dtd_ptr = cpu_to_le32(req->head->td_dma
++		& EP_QUEUE_HEAD_NEXT_POINTER_MASK);
+ 
+ 	/* clear active and halt bit, in case set from a previous error */
+-	dqh->size_ioc_int_sts &= ~(DTD_STATUS_ACTIVE | DTD_STATUS_HALTED);
++	dqh->size_ioc_int_sts =
++		cpu_to_le32(le32_to_cpu(dqh->size_ioc_int_sts) & (~(DTD_STATUS_ACTIVE | DTD_STATUS_HALTED)));
+ 
+ 	/* Ensure that updates to the QH will occure before priming. */
+ 	wmb();
+@@ -825,8 +839,8 @@ static int mv_ep_dequeue(struct usb_ep *
+ 			struct mv_dqh *qh;
+ 
+ 			qh = ep->dqh;
+-			qh->next_dtd_ptr = 1;
+-			qh->size_ioc_int_sts = 0;
++			qh->next_dtd_ptr = cpu_to_le32(1);
++			qh->size_ioc_int_sts = cpu_to_le32(0);
+ 		}
+ 
+ 		/* The request hasn't been processed, patch up the TD chain */
+@@ -836,7 +850,6 @@ static int mv_ep_dequeue(struct usb_ep *
+ 		prev_req = list_entry(req->queue.prev, struct mv_req, queue);
+ 		writel(readl(&req->tail->dtd_next),
+ 				&prev_req->tail->dtd_next);
+-
+ 	}
+ 
+ 	done(ep, req, -ECONNRESET);
+@@ -944,7 +957,7 @@ static int mv_ep_set_wedge(struct usb_ep
+ 	return mv_ep_set_halt_wedge(_ep, 1, 1);
+ }
+ 
+-static const struct usb_ep_ops mv_ep_ops = {
++static struct usb_ep_ops mv_ep_ops = {
+ 	.enable		= mv_ep_enable,
+ 	.disable	= mv_ep_disable,
+ 
+@@ -959,9 +972,9 @@ static const struct usb_ep_ops mv_ep_ops
+ 	.fifo_flush	= mv_ep_fifo_flush,	/* flush fifo */
+ };
+ 
+-static int udc_clock_enable(struct mv_udc *udc)
++static void udc_clock_enable(struct mv_udc *udc)
+ {
+-	return clk_prepare_enable(udc->clk);
++	clk_prepare_enable(udc->clk);
+ }
+ 
+ static void udc_clock_disable(struct mv_udc *udc)
+@@ -1069,11 +1082,8 @@ static int mv_udc_enable_internal(struct
+ 		return 0;
+ 
+ 	dev_dbg(&udc->dev->dev, "enable udc\n");
+-	retval = udc_clock_enable(udc);
+-	if (retval)
+-		return retval;
+-
+-	if (udc->pdata->phy_init) {
++	udc_clock_enable(udc);
++	if (udc->pdata && udc->pdata->phy_init) {
+ 		retval = udc->pdata->phy_init(udc->phy_regs);
+ 		if (retval) {
+ 			dev_err(&udc->dev->dev,
+@@ -1099,7 +1109,7 @@ static void mv_udc_disable_internal(stru
+ {
+ 	if (udc->active) {
+ 		dev_dbg(&udc->dev->dev, "disable udc\n");
+-		if (udc->pdata->phy_deinit)
++		if (udc->pdata && udc->pdata->phy_deinit)
+ 			udc->pdata->phy_deinit(udc->phy_regs);
+ 		udc_clock_disable(udc);
+ 		udc->active = 0;
+@@ -1369,6 +1379,9 @@ static int mv_udc_start(struct usb_gadge
+ 	udc->ep0_state = WAIT_FOR_SETUP;
+ 	udc->ep0_dir = EP_DIR_OUT;
+ 
++	if (gpio_is_valid(udc->vbus_pin))
++		enable_irq(gpio_to_irq(udc->vbus_pin));
++
+ 	spin_unlock_irqrestore(&udc->lock, flags);
+ 
+ 	if (udc->transceiver) {
+@@ -1396,6 +1409,9 @@ static int mv_udc_stop(struct usb_gadget
+ 
+ 	udc = container_of(gadget, struct mv_udc, gadget);
+ 
++	if (gpio_is_valid(udc->vbus_pin))
++		disable_irq(gpio_to_irq(udc->vbus_pin));
++
+ 	spin_lock_irqsave(&udc->lock, flags);
+ 
+ 	mv_udc_enable(udc);
+@@ -1517,7 +1533,7 @@ static void mv_udc_testmode(struct mv_ud
+ 
+ static void ch9setaddress(struct mv_udc *udc, struct usb_ctrlrequest *setup)
+ {
+-	udc->dev_addr = (u8)setup->wValue;
++	udc->dev_addr = le16_to_cpu(setup->wValue);
+ 
+ 	/* update usb state */
+ 	udc->usb_state = USB_STATE_ADDRESS;
+@@ -1547,8 +1563,8 @@ static void ch9getstatus(struct mv_udc *
+ 			== USB_RECIP_ENDPOINT) {
+ 		u8 ep_num, direction;
+ 
+-		ep_num = setup->wIndex & USB_ENDPOINT_NUMBER_MASK;
+-		direction = (setup->wIndex & USB_ENDPOINT_DIR_MASK)
++		ep_num = le16_to_cpu(setup->wIndex) & USB_ENDPOINT_NUMBER_MASK;
++		direction = (le16_to_cpu(setup->wIndex) & USB_ENDPOINT_DIR_MASK)
+ 				? EP_DIR_IN : EP_DIR_OUT;
+ 		status = ep_is_stall(udc, ep_num, direction)
+ 				<< USB_ENDPOINT_HALT;
+@@ -1569,7 +1585,7 @@ static void ch9clearfeature(struct mv_ud
+ 
+ 	if ((setup->bRequestType & (USB_TYPE_MASK | USB_RECIP_MASK))
+ 		== ((USB_TYPE_STANDARD | USB_RECIP_DEVICE))) {
+-		switch (setup->wValue) {
++		switch (le16_to_cpu(setup->wValue)) {
+ 		case USB_DEVICE_REMOTE_WAKEUP:
+ 			udc->remote_wakeup = 0;
+ 			break;
+@@ -1578,12 +1594,12 @@ static void ch9clearfeature(struct mv_ud
+ 		}
+ 	} else if ((setup->bRequestType & (USB_TYPE_MASK | USB_RECIP_MASK))
+ 		== ((USB_TYPE_STANDARD | USB_RECIP_ENDPOINT))) {
+-		switch (setup->wValue) {
++		switch (le16_to_cpu(setup->wValue)) {
+ 		case USB_ENDPOINT_HALT:
+-			ep_num = setup->wIndex & USB_ENDPOINT_NUMBER_MASK;
+-			direction = (setup->wIndex & USB_ENDPOINT_DIR_MASK)
++			ep_num = le16_to_cpu(setup->wIndex) & USB_ENDPOINT_NUMBER_MASK;
++			direction = (le16_to_cpu(setup->wIndex) & USB_ENDPOINT_DIR_MASK)
+ 				? EP_DIR_IN : EP_DIR_OUT;
+-			if (setup->wValue != 0 || setup->wLength != 0
++			if (le16_to_cpu(setup->wValue) != 0 || le16_to_cpu(setup->wLength) != 0
+ 				|| ep_num > udc->max_eps)
+ 				goto out;
+ 			ep = &udc->eps[ep_num * 2 + direction];
+@@ -1612,12 +1628,12 @@ static void ch9setfeature(struct mv_udc
+ 
+ 	if ((setup->bRequestType & (USB_TYPE_MASK | USB_RECIP_MASK))
+ 		== ((USB_TYPE_STANDARD | USB_RECIP_DEVICE))) {
+-		switch (setup->wValue) {
++		switch (le16_to_cpu(setup->wValue)) {
+ 		case USB_DEVICE_REMOTE_WAKEUP:
+ 			udc->remote_wakeup = 1;
+ 			break;
+ 		case USB_DEVICE_TEST_MODE:
+-			if (setup->wIndex & 0xFF
++			if (le16_to_cpu(setup->wIndex) & 0xFF
+ 				||  udc->gadget.speed != USB_SPEED_HIGH)
+ 				ep0_stall(udc);
+ 
+@@ -1626,19 +1642,19 @@ static void ch9setfeature(struct mv_udc
+ 				&& udc->usb_state != USB_STATE_DEFAULT)
+ 				ep0_stall(udc);
+ 
+-			mv_udc_testmode(udc, (setup->wIndex >> 8));
++			mv_udc_testmode(udc, (le16_to_cpu(setup->wIndex) >> 8));
+ 			goto out;
+ 		default:
+ 			goto out;
+ 		}
+ 	} else if ((setup->bRequestType & (USB_TYPE_MASK | USB_RECIP_MASK))
+ 		== ((USB_TYPE_STANDARD | USB_RECIP_ENDPOINT))) {
+-		switch (setup->wValue) {
++		switch (le16_to_cpu(setup->wValue)) {
+ 		case USB_ENDPOINT_HALT:
+-			ep_num = setup->wIndex & USB_ENDPOINT_NUMBER_MASK;
+-			direction = (setup->wIndex & USB_ENDPOINT_DIR_MASK)
++			ep_num = le16_to_cpu(setup->wIndex) & USB_ENDPOINT_NUMBER_MASK;
++			direction = (le16_to_cpu(setup->wIndex) & USB_ENDPOINT_DIR_MASK)
+ 				? EP_DIR_IN : EP_DIR_OUT;
+-			if (setup->wValue != 0 || setup->wLength != 0
++			if (le16_to_cpu(setup->wValue) != 0 || le16_to_cpu(setup->wLength) != 0
+ 				|| ep_num > udc->max_eps)
+ 				goto out;
+ 			spin_unlock(&udc->lock);
+@@ -1697,7 +1713,7 @@ static void handle_setup_packet(struct m
+ 	/* delegate USB standard requests to the gadget driver */
+ 	if (delegate == true) {
+ 		/* USB requests handled by gadget */
+-		if (setup->wLength) {
++		if (le16_to_cpu(setup->wLength)) {
+ 			/* DATA phase from gadget, STATUS phase from udc */
+ 			udc->ep0_dir = (setup->bRequestType & USB_DIR_IN)
+ 					?  EP_DIR_IN : EP_DIR_OUT;
+@@ -1999,6 +2015,32 @@ static void irq_process_error(struct mv_
+ 	udc->errors++;
+ }
+ 
++static ATOMIC_NOTIFIER_HEAD(mv_udc_status_list);
++
++int mv_udc_register_status_notify(struct notifier_block *nb)
++{
++	int ret = 0;
++
++	ret = atomic_notifier_chain_register(&mv_udc_status_list, nb);
++	if (ret)
++		return ret;
++
++	return 0;
++
++}
++EXPORT_SYMBOL(mv_udc_register_status_notify);
++
++int mv_udc_unregister_status_notify(struct notifier_block *nb)
++{
++	return atomic_notifier_chain_unregister(&mv_udc_status_list, nb);
++}
++EXPORT_SYMBOL(mv_udc_unregister_status_notify);
++
++static void status_change(struct mv_udc *udc, int event)
++{
++	atomic_notifier_call_chain(&mv_udc_status_list, event, NULL);
++}
++
+ static irqreturn_t mv_udc_irq(int irq, void *dev)
+ {
+ 	struct mv_udc *udc = (struct mv_udc *)dev;
+@@ -2012,6 +2054,7 @@ static irqreturn_t mv_udc_irq(int irq, v
+ 
+ 	status = readl(&udc->op_regs->usbsts);
+ 	intr = readl(&udc->op_regs->usbintr);
++
+ 	status &= intr;
+ 
+ 	if (status == 0) {
+@@ -2025,8 +2068,10 @@ static irqreturn_t mv_udc_irq(int irq, v
+ 	if (status & USBSTS_ERR)
+ 		irq_process_error(udc);
+ 
+-	if (status & USBSTS_RESET)
++	if (status & USBSTS_RESET) {
+ 		irq_process_reset(udc);
++		status_change(udc, 1);
++	}
+ 
+ 	if (status & USBSTS_PORT_CHANGE)
+ 		irq_process_port_change(udc);
+@@ -2034,8 +2079,10 @@ static irqreturn_t mv_udc_irq(int irq, v
+ 	if (status & USBSTS_INT)
+ 		irq_process_tr_complete(udc);
+ 
+-	if (status & USBSTS_SUSPEND)
++	if (status & USBSTS_SUSPEND) {
+ 		irq_process_suspend(udc);
++		status_change(udc, 1);
++	}
+ 
+ 	spin_unlock(&udc->lock);
+ 
+@@ -2059,10 +2106,13 @@ static void mv_udc_vbus_work(struct work
+ 	unsigned int vbus;
+ 
+ 	udc = container_of(work, struct mv_udc, vbus_work);
+-	if (!udc->pdata->vbus)
++	if (udc->pdata && udc->pdata->vbus)
++		vbus = udc->pdata->vbus->poll();
++	else if (gpio_is_valid(udc->vbus_pin))
++		vbus = gpio_get_value(udc->vbus_pin);
++	else
+ 		return;
+ 
+-	vbus = udc->pdata->vbus->poll();
+ 	dev_info(&udc->dev->dev, "vbus is %d\n", vbus);
+ 
+ 	if (vbus == VBUS_HIGH)
+@@ -2106,6 +2156,12 @@ static int mv_udc_remove(struct platform
+ 	/* free dev, wait for the release() finished */
+ 	wait_for_completion(udc->done);
+ 
++	/* Power off PHY and exit */
++	if (udc->utmi_phy) {
++		phy_power_off(udc->utmi_phy);
++		phy_exit(udc->utmi_phy);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -2114,69 +2170,103 @@ static int mv_udc_probe(struct platform_
+ 	struct mv_usb_platform_data *pdata = dev_get_platdata(&pdev->dev);
+ 	struct mv_udc *udc;
+ 	int retval = 0;
+-	struct resource *r;
++	struct resource *capregs, *phyregs, *irq;
+ 	size_t size;
+-
+-	if (pdata == NULL) {
+-		dev_err(&pdev->dev, "missing platform_data\n");
+-		return -ENODEV;
+-	}
++	struct clk *clk;
++	int err;
+ 
+ 	udc = devm_kzalloc(&pdev->dev, sizeof(*udc), GFP_KERNEL);
+-	if (udc == NULL)
++	if (!udc)
+ 		return -ENOMEM;
+ 
+-	udc->done = &release_done;
+-	udc->pdata = dev_get_platdata(&pdev->dev);
+-	spin_lock_init(&udc->lock);
+-
+-	udc->dev = pdev;
++	/* udc only have one sysclk. */
++	clk = devm_clk_get(&pdev->dev, NULL);
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
++
++	if (pdev->dev.of_node) {
++		udc->pdata = NULL;
++
++		capregs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++		/* no phyregs for mvebu platform */
++		phyregs = NULL;
++
++		/* VBUS pin via GPIO */
++		udc->vbus_pin = of_get_named_gpio(pdev->dev.of_node, "vbus-gpio", 0);
++		if (udc->vbus_pin < 0)
++			udc->vbus_pin = -ENODEV;
++
++		/* Get comphy and init if there is */
++		udc->utmi_phy = devm_of_phy_get(&pdev->dev, pdev->dev.of_node, "usb");
++		if (!IS_ERR(udc->utmi_phy)) {
++			err = phy_init(udc->utmi_phy);
++			if (err)
++				goto disable_phys;
++
++			err = phy_power_on(udc->utmi_phy);
++			if (err) {
++				phy_exit(udc->utmi_phy);
++				goto disable_phys;
++			}
++		}
+ 
+-	if (pdata->mode == MV_USB_MODE_OTG) {
+-		udc->transceiver = devm_usb_get_phy(&pdev->dev,
+-					USB_PHY_TYPE_USB2);
+-		if (IS_ERR(udc->transceiver)) {
+-			retval = PTR_ERR(udc->transceiver);
++	} else if (pdata) {
++		udc->pdata = pdev->dev.platform_data;
++		if (pdata->mode == MV_USB_MODE_OTG) {
++			udc->transceiver = devm_usb_get_phy(&pdev->dev,
++							    USB_PHY_TYPE_USB2);
++			if (IS_ERR(udc->transceiver)) {
++				retval = PTR_ERR(udc->transceiver);
++				if (retval == -ENXIO)
++					return retval;
+ 
+-			if (retval == -ENXIO)
+-				return retval;
++				udc->transceiver = NULL;
++				return -EPROBE_DEFER;
++			}
++		}
+ 
+-			udc->transceiver = NULL;
+-			return -EPROBE_DEFER;
++		capregs = platform_get_resource_byname(pdev, IORESOURCE_MEM, "capregs");
++		phyregs = platform_get_resource_byname(pdev, IORESOURCE_MEM, "phyregs");
++		if (!phyregs) {
++			dev_err(&pdev->dev, "no phy I/O memory resource defined\n");
++			return -ENODEV;
+ 		}
+-	}
+ 
+-	/* udc only have one sysclk. */
+-	udc->clk = devm_clk_get(&pdev->dev, NULL);
+-	if (IS_ERR(udc->clk))
+-		return PTR_ERR(udc->clk);
+-
+-	r = platform_get_resource_byname(udc->dev, IORESOURCE_MEM, "capregs");
+-	if (r == NULL) {
+-		dev_err(&pdev->dev, "no I/O memory resource defined\n");
++		/* platform data registration doesn't use the VBUS GPIO subsystem */
++		udc->vbus_pin = -ENODEV;
++
++	} else {
++		dev_err(&pdev->dev, "missing platform_data or of_node\n");
+ 		return -ENODEV;
+ 	}
+ 
++	/* set udc struct*/
++	udc->done = &release_done;
++	udc->clk = clk;
++	udc->dev = pdev;
++	spin_lock_init(&udc->lock);
++
++	if (!capregs) {
++		dev_err(&pdev->dev, "no capregs I/O memory resource defined\n");
++		return -ENXIO;
++	}
++
+ 	udc->cap_regs = (struct mv_cap_regs __iomem *)
+-		devm_ioremap(&pdev->dev, r->start, resource_size(r));
+-	if (udc->cap_regs == NULL) {
++		devm_ioremap(&pdev->dev, capregs->start, resource_size(capregs));
++	if (!udc->cap_regs) {
+ 		dev_err(&pdev->dev, "failed to map I/O memory\n");
+ 		return -EBUSY;
+ 	}
+ 
+-	r = platform_get_resource_byname(udc->dev, IORESOURCE_MEM, "phyregs");
+-	if (r == NULL) {
+-		dev_err(&pdev->dev, "no phy I/O memory resource defined\n");
+-		return -ENODEV;
+-	}
+-
+-	udc->phy_regs = devm_ioremap(&pdev->dev, r->start, resource_size(r));
+-	if (udc->phy_regs == NULL) {
+-		dev_err(&pdev->dev, "failed to map phy I/O memory\n");
+-		return -EBUSY;
++	if (phyregs) {
++		udc->phy_regs = ioremap(phyregs->start, resource_size(capregs));
++		if (!udc->phy_regs) {
++			dev_err(&pdev->dev, "failed to map phy I/O memory\n");
++			return -EBUSY;
++		}
+ 	}
+ 
+-	/* we will acces controller register, so enable the clk */
++	/* we will access controller register, so enable the clk */
+ 	retval = mv_udc_enable_internal(udc);
+ 	if (retval)
+ 		return retval;
+@@ -2243,13 +2333,14 @@ static int mv_udc_probe(struct platform_
+ 	udc->ep0_dir = EP_DIR_OUT;
+ 	udc->remote_wakeup = 0;
+ 
+-	r = platform_get_resource(udc->dev, IORESOURCE_IRQ, 0);
+-	if (r == NULL) {
++	/* request irq */
++	irq = platform_get_resource(udc->dev, IORESOURCE_IRQ, 0);
++	if (irq == NULL) {
+ 		dev_err(&pdev->dev, "no IRQ resource defined\n");
+ 		retval = -ENODEV;
+ 		goto err_destroy_dma;
+ 	}
+-	udc->irq = r->start;
++	udc->irq = irq->start;
+ 	if (devm_request_irq(&pdev->dev, udc->irq, mv_udc_irq,
+ 		IRQF_SHARED, driver_name, udc)) {
+ 		dev_err(&pdev->dev, "Request irq %d for UDC failed\n",
+@@ -2273,7 +2364,7 @@ static int mv_udc_probe(struct platform_
+ 	/* VBUS detect: we can disable/enable clock on demand.*/
+ 	if (udc->transceiver)
+ 		udc->clock_gating = 1;
+-	else if (pdata->vbus) {
++	else if (pdata && pdata->vbus) {
+ 		udc->clock_gating = 1;
+ 		retval = devm_request_threaded_irq(&pdev->dev,
+ 				pdata->vbus->irq, NULL,
+@@ -2285,6 +2376,28 @@ static int mv_udc_probe(struct platform_
+ 			udc->clock_gating = 0;
+ 		}
+ 
++	} else if (gpio_is_valid(udc->vbus_pin)) {
++		udc->clock_gating = 1;
++		if (!devm_gpio_request(&pdev->dev, udc->vbus_pin, "mv-udc")) {
++			retval = devm_request_irq(&pdev->dev,
++					       gpio_to_irq(udc->vbus_pin),
++					       mv_udc_vbus_irq, IRQ_TYPE_EDGE_BOTH,
++					       "mv-udc", udc);
++			if (retval) {
++				udc->vbus_pin = -ENODEV;
++				dev_warn(&pdev->dev,
++					 "failed to request vbus irq; "
++					 "assuming always on\n");
++			} else
++				disable_irq(gpio_to_irq(udc->vbus_pin));
++		} else {
++			/* gpio_request fail so use -EINVAL for gpio_is_valid */
++			udc->vbus_pin = -EINVAL;
++		}
++	}
++
++	/* if using VBUS interrupt, initialize work queue */
++	if ((pdata && pdata->vbus) || gpio_is_valid(udc->vbus_pin)) {
+ 		udc->qwork = create_singlethread_workqueue("mv_udc_queue");
+ 		if (!udc->qwork) {
+ 			dev_err(&pdev->dev, "cannot create workqueue\n");
+@@ -2325,6 +2438,11 @@ err_free_dma:
+ 			udc->ep_dqh, udc->ep_dqh_dma);
+ err_disable_clock:
+ 	mv_udc_disable_internal(udc);
++disable_phys:
++	if (udc->utmi_phy) {
++		phy_power_off(udc->utmi_phy);
++		phy_exit(udc->utmi_phy);
++	}
+ 
+ 	return retval;
+ }
+@@ -2340,7 +2458,7 @@ static int mv_udc_suspend(struct device
+ 	if (udc->transceiver)
+ 		return 0;
+ 
+-	if (udc->pdata->vbus && udc->pdata->vbus->poll)
++	if (udc->pdata && udc->pdata->vbus && udc->pdata->vbus->poll)
+ 		if (udc->pdata->vbus->poll() == VBUS_HIGH) {
+ 			dev_info(&udc->dev->dev, "USB cable is connected!\n");
+ 			return -EAGAIN;
+@@ -2361,6 +2479,12 @@ static int mv_udc_suspend(struct device
+ 		mv_udc_disable_internal(udc);
+ 	}
+ 
++	/* PHY exit if there is */
++	if (udc->utmi_phy) {
++		phy_power_off(udc->utmi_phy);
++		phy_exit(udc->utmi_phy);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -2375,6 +2499,20 @@ static int mv_udc_resume(struct device *
+ 	if (udc->transceiver)
+ 		return 0;
+ 
++	/* PHY init if there is */
++	if (udc->utmi_phy) {
++		retval = phy_init(udc->utmi_phy);
++		if (retval)
++			return retval;
++
++		retval = phy_power_on(udc->utmi_phy);
++		if (retval) {
++			phy_power_off(udc->utmi_phy);
++			phy_exit(udc->utmi_phy);
++			return retval;
++		}
++	}
++
+ 	if (!udc->clock_gating) {
+ 		retval = mv_udc_enable_internal(udc);
+ 		if (retval)
+@@ -2410,12 +2548,19 @@ static void mv_udc_shutdown(struct platf
+ 	mv_udc_disable(udc);
+ }
+ 
++static const struct of_device_id mv_udc_dt_match[] = {
++	{ .compatible = "marvell,mv-udc" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, mv_udc_dt_match);
++
+ static struct platform_driver udc_driver = {
+ 	.probe		= mv_udc_probe,
+ 	.remove		= mv_udc_remove,
+ 	.shutdown	= mv_udc_shutdown,
+ 	.driver		= {
+ 		.name	= "mv-udc",
++		.of_match_table = of_match_ptr(mv_udc_dt_match),
+ #ifdef CONFIG_PM
+ 		.pm	= &mv_udc_pm_ops,
+ #endif
+@@ -2426,4 +2571,5 @@ module_platform_driver(udc_driver);
+ MODULE_ALIAS("platform:mv-udc");
+ MODULE_DESCRIPTION(DRIVER_DESC);
+ MODULE_AUTHOR("Chao Xie <chao.xie@marvell.com>");
++MODULE_VERSION(DRIVER_VERSION);
+ MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/drivers/usb/gadget/udc/mvebu_glue.c
+@@ -0,0 +1,189 @@
++/*
++ * Copyright (C) 2013 Marvell International Ltd. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/irq.h>
++#include <linux/err.h>
++#include <linux/io.h>
++#include <linux/interrupt.h>
++#include <linux/usb/gadget.h>
++#include <linux/pm.h>
++#include <linux/pm_qos.h>
++#include <linux/usb/composite.h>
++
++#include "mvebu_u3d.h"
++
++#define CONNECTION_MAX_NUM    3
++
++struct mvc2_glue glue;
++static struct work_struct glue_work;
++static DEFINE_MUTEX(work_lock);
++struct usb_udc *udc_detect(struct list_head *udc_list,
++			   struct usb_gadget_driver *driver)
++{
++	struct usb_udc *udc20, *udc30, *udc;
++	struct mvc2 *cp;
++
++	udc20 = udc30 = NULL;
++	list_for_each_entry(udc, udc_list, list) {
++		if (strncmp(udc->gadget->name, "mv_udc", 6) == 0)
++			udc20 = udc;
++
++		if (strncmp(udc->gadget->name, "mvebu-u3d", 9) == 0)
++			udc30 = udc;
++	}
++
++	/* We need at least 3.0 controller driver being installed! */
++	if (!udc30) {
++		pr_err("Failed to detect usb3 device!\n");
++		return NULL;
++	}
++
++	cp = container_of(udc30->gadget, struct mvc2, gadget);
++	cp->work = &glue_work;
++	glue.u20 = udc20;
++	glue.u30 = udc30;
++
++	if (glue.usb2_connect)
++		return udc20;
++	else
++		return udc30;
++}
++
++void mvc2_usb2_connect(void)
++{
++	struct mvc2 *cp;
++	struct usb_udc *u30 = glue.u30;
++	struct usb_gadget_driver *driver = u30->driver;
++	struct usb_gadget *u3d = u30->gadget;
++
++	cp = container_of(u3d, struct mvc2, gadget);
++	pr_info("USB device: USB2.0 connected\n");
++	/*
++	 * add de-bounce for usb cable plug
++	 */
++	msleep(200);
++	if (mvc2_checkvbus(cp) == 0) {
++		pr_info("USB device: power off\n");
++		return;
++	}
++
++	/*
++	 * The de-bounce time added before just can filter
++	 * most cases but not all.
++	 * The power off interrupt still has chance to break
++	 * this workqueue.
++	 * So we disable the USB3 irq here to guarantee this
++	 * workqueue will not be interrupted by USB3 interrupt anymore,
++	 * such as the power off interrupt, until all of the works have
++	 * been done.
++	 * The power off interrupt may happen when
++	 * the USB3 irq was disabled.
++	 * We hope this interrupt still there once
++	 * we enabled USB3 irq again.
++	 * To achieve this, need to keep the corresponding
++	 * interrupt status(refer to mvc2_pullup,
++	 * don't clear the ref int status register).
++	 * Note, during the USB3 irq disabled, there may be
++	 * may times plug/unplug, thus, the power on/off interrupt
++	 * may co-exisit once enable the irq again.
++	 * To avoid this, we need to check the VBUS of the final state,
++	 * please refer to mvc2_irq.
++	 */
++
++	disable_irq(cp->irq);
++
++	glue.usb2_connect = 1;
++	usb_gadget_unregister_driver(driver);
++	usb_gadget_probe_driver(driver);
++
++	enable_irq(cp->irq);
++
++}
++
++void mvc2_usb2_disconnect(void)
++{
++	struct mvc2 *cp;
++	struct usb_udc *u30 = glue.u30;
++	struct usb_gadget *u3d = u30->gadget;
++	struct usb_udc *u20 = glue.u20;
++	struct usb_gadget_driver *driver = u20->driver;
++	int has_setup = 0;
++
++	cp = container_of(u3d, struct mvc2, gadget);
++
++	if (u20->driver)
++		driver = u20->driver;
++	else if (u30->driver) {
++		driver = u30->driver;
++		return;
++	}
++
++	pr_info("USB device: USB2.0 disconnected\n");
++	glue.usb2_connect = 0;
++	usb_gadget_unregister_driver(driver);
++	disable_irq(cp->irq);
++	usb3_disconnect = false;
++
++	if (ioread32(cp->base + MVCP_SS_CORE_INT) & MVCP_SS_CORE_INT_SETUP)
++		has_setup = 1;
++	usb_gadget_probe_driver(driver);
++	usb3_disconnect = true;
++	enable_irq(cp->irq);
++	if (has_setup)
++		mvc2_handle_setup(cp);
++
++}
++
++static int
++u20_status_change(struct notifier_block *this, unsigned long event, void *ptr)
++{
++	struct mvc2 *cp;
++	struct usb_gadget *u30 = glue.u30->gadget;
++
++	cp = container_of(u30, struct mvc2, gadget);
++
++	mvc2_usb2_operation(cp, event);
++
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block u20_status = {
++	.notifier_call = u20_status_change,
++};
++
++void mv_connect_work(struct work_struct *work)
++{
++	struct mvc2 *cp;
++	struct usb_gadget *u30 = glue.u30->gadget;
++
++	cp = container_of(u30, struct mvc2, gadget);
++
++	mutex_lock(&work_lock);
++
++	if (glue.status & MVCP_STATUS_USB2)
++		mvc2_usb2_connect();
++	else
++		mvc2_usb2_disconnect();
++
++	mutex_unlock(&work_lock);
++}
++
++static int __init mvc2_glue_init(void)
++{
++	glue.u20 = glue.u30 = NULL;
++	glue.usb2_connect = 0;
++	mv_udc_register_status_notify(&u20_status);
++	INIT_WORK(&glue_work, mv_connect_work);
++	return 0;
++}
++
++device_initcall(mvc2_glue_init);
+--- /dev/null
++++ b/drivers/usb/gadget/udc/mvebu_u3d.c
+@@ -0,0 +1,2626 @@
++/*
++ * Copyright (C) 2013 Marvell International Ltd. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/module.h>
++#include <linux/dma-mapping.h>
++#include <linux/kernel.h>
++#include <linux/delay.h>
++#include <linux/ioport.h>
++#include <linux/sched.h>
++#include <linux/slab.h>
++#include <linux/errno.h>
++#include <linux/init.h>
++#include <linux/timer.h>
++#include <linux/list.h>
++#include <linux/notifier.h>
++#include <linux/interrupt.h>
++#include <linux/moduleparam.h>
++#include <linux/device.h>
++#include <linux/usb/ch9.h>
++#include <linux/usb/gadget.h>
++#include <linux/usb/phy.h>
++#include <linux/pm.h>
++#include <linux/io.h>
++#include <linux/irq.h>
++#include <linux/platform_device.h>
++#include <linux/platform_data/mv_usb.h>
++#include <linux/clk.h>
++#include <asm/unaligned.h>
++#include <asm/byteorder.h>
++#include <linux/proc_fs.h>
++#include <linux/seq_file.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/pm_qos.h>
++#include <linux/time.h>
++#include <asm/cputype.h>
++#include <linux/highmem.h>
++#include <linux/of_gpio.h>
++#include <linux/gpio.h>
++#include <linux/phy/phy.h>
++#include <linux/usb/composite.h>
++
++#include "mvebu_u3d.h"
++
++#define DRIVER_DESC    "Marvell Central IP USB3.0 Device Controller driver"
++
++static unsigned int u1u2;
++module_param(u1u2, uint, S_IRUGO | S_IWUSR);
++MODULE_PARM_DESC(u1u2, "u1u2 enable");
++
++static const char driver_desc[] = DRIVER_DESC;
++
++unsigned int u1u2_enabled(void)
++{
++	return u1u2;
++}
++
++#define EP0_MAX_PKT_SIZE    512
++
++/* for endpoint 0 operations */
++static const struct usb_endpoint_descriptor mvc2_ep0_out_desc = {
++	.bLength = USB_DT_ENDPOINT_SIZE,
++	.bDescriptorType = USB_DT_ENDPOINT,
++	.bEndpointAddress = USB_DIR_OUT,
++	.bmAttributes = USB_ENDPOINT_XFER_CONTROL,
++	.wMaxPacketSize = EP0_MAX_PKT_SIZE,
++};
++
++static const struct usb_endpoint_descriptor mvc2_ep0_in_desc = {
++	.bLength = USB_DT_ENDPOINT_SIZE,
++	.bDescriptorType = USB_DT_ENDPOINT,
++	.bEndpointAddress = USB_DIR_IN,
++	.bmAttributes = USB_ENDPOINT_XFER_CONTROL,
++	.wMaxPacketSize = EP0_MAX_PKT_SIZE,
++};
++
++static struct usb_ss_ep_comp_descriptor ep0_comp = {
++	.bLength = sizeof(ep0_comp),
++	.bDescriptorType = USB_DT_SS_ENDPOINT_COMP,
++};
++
++static int mvc2_ep0_handle_status(struct mvc2 *cp, struct usb_ctrlrequest *ctrl)
++{
++	unsigned int recip;
++	u16 usb_status = 0, lowpower;
++	__le16 *response_pkt;
++	int num, dir;
++	struct mvc2_ep *ep;
++
++	recip = ctrl->bRequestType & USB_RECIP_MASK;
++	switch (recip) {
++	case USB_RECIP_DEVICE:
++		/*
++		 * LTM will be set once we know how to set this in HW.
++		 */
++		if (cp->status & MVCP_STATUS_SELF_POWERED)
++			usb_status |= USB_DEVICE_SELF_POWERED;
++
++		lowpower = MV_CP_READ(MVCP_LOWPOWER);
++		if (lowpower & MVCP_LOWPOWER_U1_EN)
++			usb_status |= 1 << USB_DEV_STAT_U1_ENABLED;
++
++		if (lowpower & MVCP_LOWPOWER_U2_EN)
++			usb_status |= 1 << USB_DEV_STAT_U2_ENABLED;
++
++		break;
++
++	case USB_RECIP_INTERFACE:
++		/*
++		 * Function Remote Wake Capable    D0
++		 * Function Remote Wakeup    D1
++		 */
++		break;
++
++	case USB_RECIP_ENDPOINT:
++
++		num = ctrl->wIndex & USB_ENDPOINT_NUMBER_MASK;
++		dir = ctrl->wIndex & USB_DIR_IN;
++		ep = &cp->eps[2 * num + !!dir];
++
++		if (ep->state & MV_CP_EP_STALL)
++			usb_status = 1 << USB_ENDPOINT_HALT;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	response_pkt = (__le16 *) cp->setup_buf;
++	*response_pkt = cpu_to_le16(usb_status);
++
++	return sizeof(*response_pkt);
++}
++
++static void enable_lowpower(struct mvc2 *cp, unsigned int lowpower, int on)
++{
++	unsigned int val, state;
++
++	val = MV_CP_READ(MVCP_LOWPOWER);
++	if (lowpower == USB_DEVICE_U1_ENABLE)
++		state = MVCP_LOWPOWER_U1_EN;
++	else
++		state = MVCP_LOWPOWER_U2_EN;
++
++	if (on)
++		val |= state;
++	else
++		val &= ~state;
++
++	if (u1u2_enabled())
++		MV_CP_WRITE(val, MVCP_LOWPOWER);
++}
++
++static int mvc2_ep0_handle_feature(struct mvc2 *cp,
++				   struct usb_ctrlrequest *ctrl, int set)
++{
++	u32 wValue, wIndex, recip;
++	int ret = -EINVAL;
++	int num, dir;
++	struct mvc2_ep *ep;
++	unsigned long flags;
++
++	wValue = le16_to_cpu(ctrl->wValue);
++	wIndex = le16_to_cpu(ctrl->wIndex);
++	recip = ctrl->bRequestType & USB_RECIP_MASK;
++
++	switch (recip) {
++	case USB_RECIP_DEVICE:
++		switch (wValue) {
++		case USB_DEVICE_REMOTE_WAKEUP:
++			ret = 0;
++			break;
++
++		case USB_DEVICE_U1_ENABLE:
++		case USB_DEVICE_U2_ENABLE:
++			if (cp->dev_state != MVCP_CONFIGURED_STATE) {
++				ret = -EINVAL;
++				break;
++			}
++
++			ret = 0;
++
++			enable_lowpower(cp, wValue, set);
++			break;
++		case USB_DEVICE_TEST_MODE:
++			if (set && (wIndex & 0xff))
++				cp->status |= MVCP_STATUS_TEST(wIndex >> 8);
++			break;
++		}
++		break;
++	case USB_RECIP_INTERFACE:
++		switch (wValue) {
++		case USB_INTRF_FUNC_SUSPEND:
++			ret = 0;
++		}
++		break;
++	case USB_RECIP_ENDPOINT:
++		switch (wValue) {
++		case USB_ENDPOINT_HALT:
++			num = wIndex & USB_ENDPOINT_NUMBER_MASK;
++			dir = wIndex & USB_DIR_IN;
++			ep = &cp->eps[2 * num + !!dir];
++			if (!set) {
++				spin_lock_irqsave(&ep->lock, flags);
++				reset_seqencenum(ep, num, dir);
++				spin_unlock_irqrestore(&ep->lock, flags);
++				if (!(ep->state & MV_CP_EP_WEDGE))
++					usb_ep_clear_halt(&ep->ep);
++			} else
++				usb_ep_set_halt(&ep->ep);
++			ret = 0;
++		}
++	}
++
++	return ret;
++}
++
++static void mvcp_ep0_set_sel_cmpl(struct usb_ep *ep, struct usb_request *req)
++{
++	struct mvc2_ep *_ep = container_of(ep, struct mvc2_ep, ep);
++	struct mvc2 *cp = _ep->cp;
++	struct timing {
++		u8 u1sel;
++		u8 u1pel;
++		u16 u2sel;
++		u16 u2pel;
++	} __packed timing;
++
++	memcpy(&timing, req->buf, sizeof(timing));
++	cp->u1sel = timing.u1sel;
++	cp->u1pel = timing.u1pel;
++	cp->u2sel = le16_to_cpu(timing.u2sel);
++	cp->u2pel = le16_to_cpu(timing.u2pel);
++}
++
++int mvc2_std_request(struct mvc2 *cp, struct usb_ctrlrequest *r,
++		     bool *delegate)
++{
++	int ret = 0;
++	struct usb_request *req;
++	u16 wLength = le16_to_cpu(r->wLength);
++	u16 wValue = le16_to_cpu(r->wValue);
++	u16 wIndex = le16_to_cpu(r->wIndex);
++
++	*delegate = true;
++	req = &cp->ep0_req.req;
++	switch (r->bRequest) {
++	case USB_REQ_SET_ADDRESS:
++		if (r->bRequestType != (USB_DIR_OUT | USB_RECIP_DEVICE))
++			break;
++
++		*delegate = false;
++		if (wValue > 127) {
++			dev_dbg(cp->dev, "invalid device address %d\n", wValue);
++			break;
++		}
++
++		if (cp->dev_state == MVCP_CONFIGURED_STATE) {
++			dev_dbg(cp->dev,
++				"trying to set address when configured\n");
++			break;
++		}
++
++		if (wValue)
++			cp->dev_state = MVCP_ADDRESS_STATE;
++		else
++			cp->dev_state = MVCP_DEFAULT_STATE;
++		break;
++	case USB_REQ_GET_STATUS:
++		if (r->bRequestType != (USB_DIR_IN | USB_RECIP_DEVICE) &&
++		    r->bRequestType != (USB_DIR_IN | USB_RECIP_ENDPOINT) &&
++		    r->bRequestType != (USB_DIR_IN | USB_RECIP_INTERFACE))
++			break;
++
++		ret = mvc2_ep0_handle_status(cp, r);
++		*delegate = false;
++
++		break;
++	case USB_REQ_CLEAR_FEATURE:
++	case USB_REQ_SET_FEATURE:
++		if (r->bRequestType != (USB_DIR_OUT | USB_RECIP_DEVICE) &&
++		    r->bRequestType != (USB_DIR_OUT | USB_RECIP_ENDPOINT) &&
++		    r->bRequestType != (USB_DIR_OUT | USB_RECIP_INTERFACE))
++			break;
++
++		ret = mvc2_ep0_handle_feature(cp, r,
++					      r->bRequest ==
++					      USB_REQ_SET_FEATURE);
++		*delegate = false;
++		break;
++	case USB_REQ_SET_CONFIGURATION:
++		switch (cp->dev_state) {
++		case MVCP_DEFAULT_STATE:
++			break;
++		case MVCP_ADDRESS_STATE:
++			if (wValue) {
++				enable_lowpower(cp, USB_DEVICE_U1_ENABLE, 0);
++				enable_lowpower(cp, USB_DEVICE_U2_ENABLE, 0);
++				cp->dev_state = MVCP_CONFIGURED_STATE;
++			}
++			break;
++		case MVCP_CONFIGURED_STATE:
++			if (!wValue)
++				cp->dev_state = MVCP_ADDRESS_STATE;
++			break;
++		}
++		break;
++	case USB_REQ_SET_SEL:
++		*delegate = false;
++		if (cp->dev_state == MVCP_DEFAULT_STATE)
++			break;
++
++		if (wLength == 6) {
++			ret = wLength;
++			req->complete = mvcp_ep0_set_sel_cmpl;
++		}
++		break;
++	case USB_REQ_SET_ISOCH_DELAY:
++		*delegate = false;
++		if (!wIndex && !wLength) {
++			ret = 0;
++			cp->isoch_delay = wValue;
++		}
++		break;
++	}
++
++	if (ret > 0) {
++		req->length = ret;
++		req->zero = ret < wLength;
++		req->buf = cp->setup_buf;
++		ret = usb_ep_queue(cp->gadget.ep0, req, GFP_ATOMIC);
++	}
++
++	if (ret < 0)
++		*delegate = false;
++
++	return ret;
++}
++
++int eps_init(struct mvc2 *cp)
++{
++	struct mvc2_ep *ep;
++	int i, j, ret;
++	struct bd *bd;
++	unsigned int phys, bd_interval;
++
++	bd_interval = sizeof(struct bd);
++
++	/* initialize endpoints */
++	for (i = 0; i < cp->epnum * 2; i++) {
++		ep = &cp->eps[i];
++		ep->ep.name = ep->name;
++		ep->cp = cp;
++		INIT_LIST_HEAD(&ep->queue);
++		INIT_LIST_HEAD(&ep->wait);
++		INIT_LIST_HEAD(&ep->tmp);
++		spin_lock_init(&ep->lock);
++
++		if (i < 2) {
++
++			strncpy(ep->name, "ep0", MAXNAME);
++			usb_ep_set_maxpacket_limit(&ep->ep, EP0_MAX_PKT_SIZE);
++			ep->ep.desc = (i) ? &mvc2_ep0_in_desc :
++			    &mvc2_ep0_out_desc;
++			ep->ep.comp_desc = &ep0_comp;
++			ep->bd_sz = MAX_QUEUE_SLOT;
++			ep->left_bds = MAX_QUEUE_SLOT;
++			ep->dir = i ? 1 : 0;
++			if (ep->dir == 1)
++				ep->ep.caps.dir_in = true;
++			else
++				ep->ep.caps.dir_out = true;
++			ep->ep.caps.type_control = true;
++
++		} else {
++			if (i & 0x1) {
++				ep->dir = 1;
++				snprintf(ep->name, MAXNAME, "ep%din", i >> 1);
++				ep->ep.caps.dir_in = true;
++			} else {
++				ep->dir = 0;
++				snprintf(ep->name, MAXNAME, "ep%dout", i >> 1);
++				ep->ep.caps.dir_out = true;
++			}
++			usb_ep_set_maxpacket_limit(&ep->ep, (unsigned short) ~0);
++			ep->bd_sz = MAX_QUEUE_SLOT;
++			ep->left_bds = MAX_QUEUE_SLOT;
++			ep->ep.caps.type_iso = true;
++			ep->ep.caps.type_bulk = true;
++			ep->ep.caps.type_int = true;
++		}
++
++		ep->ep_num = i / 2;
++
++		ep->doneq_start = dma_alloc_coherent(cp->dev,
++						     sizeof(struct doneq) *
++						     ep->bd_sz,
++						     &ep->doneq_start_phys,
++						     GFP_KERNEL);
++		if (ep->doneq_start == NULL) {
++			dev_err(cp->dev, "failed to allocate doneq buffer!\n");
++			return -ENOMEM;
++		}
++
++		ep->bd_ring = dma_alloc_coherent(cp->dev,
++						 sizeof(struct bd) * ep->bd_sz,
++						 &ep->bd_ring_phys, GFP_KERNEL);
++		if (ep->bd_ring == NULL) {
++			dev_err(cp->dev, "failed to allocate bd buffer!\n");
++			return -ENOMEM;
++		}
++		bd = (struct bd *)ep->bd_ring;
++		phys = ep->bd_ring_phys;
++		/* Generate the TransferQ ring */
++		for (j = 0; j < ep->bd_sz - 1; j++) {
++			phys += bd_interval;
++			bd->phys_next = phys;
++			bd->cmd = 0;
++			if (ip_ver(cp) < USB3_IP_VER_A0)
++				bd->cmd = BD_NXT_PTR_JUMP;
++			bd++;
++		}
++		bd->cmd = 0;
++		if (ip_ver(cp) < USB3_IP_VER_A0)
++			bd->cmd = BD_NXT_PTR_JUMP;
++		bd->phys_next = ep->bd_ring_phys;
++	}
++
++	cp->setup_buf = kzalloc(EP0_MAX_PKT_SIZE, GFP_KERNEL);
++	if (!cp->setup_buf)
++		ret = -ENOMEM;
++
++	return 0;
++}
++
++#define CREATE_TRACE_POINTS
++/* #define ASSEMBLE_REQ */
++
++static const char driver_name[] = "mvebu-u3d";
++
++#define ep_dir(ep)    (((ep)->dir))
++
++static bool irq_enabled;
++bool usb3_disconnect = true;
++
++/* return the actual ep number   */
++static int ip_ep_num(struct mvc2 *cp)
++{
++	return MVCP_EP_COUNT;
++}
++
++static void done(struct mvc2_ep *ep, struct mvc2_req *req, int status);
++static void nuke(struct mvc2_ep *ep, int status);
++static void stop_activity(struct mvc2 *udc, struct usb_gadget_driver *driver);
++
++static void set_top_int(struct mvc2 *cp, unsigned int val)
++{
++	if (ip_ver(cp) >= USB3_IP_VER_Z2)
++		MV_CP_WRITE(val, MVCP_TOP_INT_EN);
++}
++
++static void ep_dma_enable(struct mvc2 *cp, int num, int dir, int enable)
++{
++	unsigned int tmp, val, reg;
++
++	if (ip_ver(cp) <= USB3_IP_VER_Z2) {
++		tmp = (dir) ? 0x10000 : 0x1;
++		tmp = tmp << num;
++		reg = MVCP_DMA_ENABLE;
++	} else {
++		tmp = DONEQ_CONFIG;
++		if (dir)
++			reg = SS_IN_DMA_CONTROL_REG(num);
++		else
++			reg = SS_OUT_DMA_CONTROL_REG(num);
++	}
++
++	val = MV_CP_READ(reg);
++	if (enable)
++		MV_CP_WRITE(val | tmp, reg);
++	else
++		MV_CP_WRITE(val & ~tmp, reg);
++}
++
++static void ep_dma_struct_init(struct mvc2 *cp,
++			       struct mvc2_ep *ep, int num, int dir)
++{
++	dma_addr_t addr;
++
++	addr = ep->doneq_start_phys + sizeof(struct doneq) * (ep->bd_sz - 1);
++	MV_CP_WRITE(ep->bd_ring_phys, ep_dma_addr(num, dir));
++
++	ep_dma_enable(cp, num, dir, 0);
++	MV_CP_WRITE(ep->doneq_start_phys, ep_doneq_start(num, dir));
++	MV_CP_WRITE(ep->doneq_start_phys, ep_doneq_read(num, dir));
++	MV_CP_WRITE(addr, ep_doneq_end(num, dir));
++	ep_dma_enable(cp, num, dir, 1);
++}
++
++/* Need to be included in ep lock protection */
++static void mvc2_dma_reset(struct mvc2 *cp,
++			   struct mvc2_ep *ep, int num, int dir)
++{
++	unsigned int epbit, val, creg, sreg;
++	int timeout = 10000;
++	struct mvc2_req *req, *tmp;
++	unsigned long flags;
++
++	spin_lock_irqsave(&ep->lock, flags);
++	if (ip_ver(cp) <= USB3_IP_VER_Z2) {
++		epbit = EPBIT(num, dir);
++		MV_CP_WRITE(epbit, MVCP_DMA_HALT);
++		while ((!(MV_CP_READ(MVCP_DMA_HALT_DONE) &
++			  epbit)) && timeout-- > 0)
++			cpu_relax();
++		MV_CP_WRITE(epbit, MVCP_DMA_HALT_DONE);
++	} else {
++		if (dir) {
++			creg = SS_IN_DMA_CONTROL_REG(num);
++			sreg = SS_IN_EP_INT_STATUS_REG(num);
++		} else {
++			creg = SS_OUT_DMA_CONTROL_REG(num);
++			sreg = SS_OUT_EP_INT_STATUS_REG(num);
++		}
++		val = MV_CP_READ(creg);
++		val |= DMA_HALT;
++		MV_CP_WRITE(val, creg);
++		while ((!(MV_CP_READ(sreg) & DMA_HALT_DONE)) && timeout-- > 0)
++			cpu_relax();
++		MV_CP_WRITE(DMA_HALT_DONE, sreg);
++	}
++
++	if (timeout <= 0) {
++		pr_info("### dma reset timeout, num = %d, dir = %d\n", num,
++			dir);
++		WARN_ON(1);
++	}
++
++	list_for_each_entry_safe(req, tmp, &ep->queue, queue)
++		done(ep, req, -ESHUTDOWN);
++
++	ep->bd_cur = ep->doneq_cur = 0;
++	ep_dma_struct_init(cp, &cp->eps[2 * num + !!dir], num, dir);
++	spin_unlock_irqrestore(&ep->lock, flags);
++}
++
++static struct usb_request *mvc2_alloc_request(struct usb_ep *_ep,
++					      gfp_t gfp_flags)
++{
++	struct mvc2_req *req = NULL;
++
++	req = kzalloc(sizeof(*req), gfp_flags);
++	if (!req)
++		return NULL;
++
++	memset(req, 0, sizeof(*req));
++	INIT_LIST_HEAD(&req->queue);
++	return &req->req;
++}
++
++static void mvc2_free_request(struct usb_ep *_ep, struct usb_request *_req)
++{
++	struct mvc2_ep *ep = container_of(_ep, struct mvc2_ep, ep);
++	struct mvc2_req *req = container_of(_req, struct mvc2_req, req);
++	unsigned long flags;
++
++	spin_lock_irqsave(&ep->lock, flags);
++	list_del_init(&req->queue);
++	spin_unlock_irqrestore(&ep->lock, flags);
++	kfree(req);
++}
++
++static int
++alloc_one_bd_chain(struct mvc2 *cp, struct mvc2_ep *ep, struct mvc2_req *req,
++		   int num, int dir, dma_addr_t dma, unsigned length,
++		   unsigned offset, unsigned *last)
++{
++	unsigned int bd_num, remain, bd_cur, len, buf;
++	struct bd *bd;
++	int left_bds, cur_bd;
++
++	remain = length - offset;
++
++	/* In the zero length packet case, we still need one BD to make it happen */
++	if (remain)
++		bd_num = (remain + BD_MAX_SIZE - 1) >> BD_SEGMENT_SHIFT;
++	else
++		bd_num = 1;
++
++	bd_cur = ep->bd_cur;
++	left_bds = ep->left_bds;
++	if (left_bds == 0)
++		goto no_bds;
++	if (bd_num > left_bds)
++		goto no_bds;
++	ep->left_bds -= bd_num;
++	WARN_ON(ep->left_bds > ep->bd_sz);
++
++	ep->bd_cur += bd_num;
++	if (ep->bd_cur >= ep->bd_sz)
++		ep->bd_cur -= ep->bd_sz;
++
++	ep->state |= MV_CP_EP_TRANSERING;
++	req->bd_total += bd_num;
++	buf = (unsigned int)dma;
++	/*
++	 * format BD chains:
++	 * BD_NXT_RDY make a BD chain segment, and
++	 * one BD chain segment is natually one usb_request.
++	 * But with exception that if current number of BD
++	 * cannot fulfill usb_request, so that we may divide
++	 * one request into several segments, so that it could
++	 * complete gradually.
++	 * DMA engine would never cache across two segments
++	 * without MVCP_EPDMA_START being set, which indicate
++	 * new BD segment is coming.
++	 */
++	cur_bd = bd_num;
++	do {
++		if (remain > BD_MAX_SIZE)
++			len = BD_MAX_SIZE;
++		else {
++			/*
++			 * HW require out ep's BD length is 1024 aligned,
++			 * or there is problem in receiving the compelte interrupt
++			 */
++			len = remain;
++			if (!dir && (len & 0x3ff))
++				len = ((len + 0x3ff) >> 10) << 10;
++		}
++		remain -= len;
++
++		bd = ep->bd_ring + bd_cur;
++
++		bd_cur++;
++		if (bd_cur == ep->bd_sz)
++			bd_cur = 0;
++
++		if (!offset)
++			req->bd = bd;
++
++		/*
++		 * There are three method to indicate one bd is finished
++		 * 1. Receive the short packet which is less than 1024
++		 * 2. Receive the zero length packet
++		 * 3. Receive the data length equal to size set by BD
++		 */
++		bd->cmd = BD_NXT_RDY | BD_BUF_RDY | BD_BUF_SZ(len);
++		if (ip_ver(cp) < USB3_IP_VER_A0)
++			bd->cmd |= BD_NXT_PTR_JUMP;
++		bd->buf = (unsigned int)dma + offset;
++
++		offset += len;
++	} while (--cur_bd > 0);
++
++	if (*last) {
++		/* Only raise the interrupt at the last bd */
++#ifndef ASSEMBLE_REQ
++#if 0
++		/* due to usb2 rx interrupt optimization, no_interrupt is
++		 * is always 1. Due to HW bug, this is currently irrelevant for
++		 * our case since an interrupt will be returned regardless of
++		 * BD_INT_EN.
++		 */
++		if (!req->req.no_interrupt)
++#endif
++#endif
++			bd->cmd |= BD_INT_EN;
++		/* At the end of one segment, clear the BD_NXT_RDY */
++		bd->cmd &= ~BD_NXT_RDY;
++	}
++	*last = left_bds;
++
++	return bd_num;
++no_bds:
++	WARN_ON(ep->ep_num == 0);
++	return 0;
++}
++
++static int alloc_bds(struct mvc2 *cp, struct mvc2_ep *ep, struct mvc2_req *req)
++{
++	dma_addr_t dma;
++	unsigned length, bd_num, actual;
++	struct usb_request *request = &req->req;
++	int num, dir, last;
++
++	bd_num = 0;
++	actual = req->req.actual;
++	num = ep->ep.desc->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
++	dir = ep->ep.desc->bEndpointAddress & USB_DIR_IN;
++
++	req->bd_total = 0;
++	last = 1;
++	if (req->req.num_mapped_sgs > 0) {
++		struct scatterlist *sg = request->sg;
++		struct scatterlist *s;
++		int i;
++
++		last = 0;
++		for_each_sg(sg, s, request->num_mapped_sgs, i) {
++			length = sg_dma_len(s);
++			if (actual >= length) {
++				actual -= length;
++				continue;
++			}
++
++			actual += sg->offset;
++			dma = sg_dma_address(s);
++			if (sg_is_last(s))
++				last = 1;
++
++			bd_num = alloc_one_bd_chain(cp, ep, req, num, dir,
++						    dma, length, actual, &last);
++			if (last > 1)
++				last = 0;
++			if (!bd_num)
++				break;
++		}
++	} else {
++		dma = req->req.dma;
++		length = req->req.length;
++
++		bd_num = alloc_one_bd_chain(cp, ep, req, num, dir,
++					    dma, length, actual, &last);
++	}
++
++	if (bd_num)
++		list_add_tail(&req->queue, &ep->queue);
++
++	return bd_num;
++}
++
++#ifdef ASSEMBLE_REQ
++static int
++alloc_in_bds(struct mvc2 *cp, struct mvc2_ep *ep, struct mvc2_req *req,
++	     int *last)
++{
++	dma_addr_t dma;
++	unsigned length, bd_num, actual;
++	struct usb_request *request = &req->req;
++	int num, dir;
++
++	bd_num = 0;
++	actual = req->req.actual;
++	num = ep->ep.desc->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
++	dir = ep->ep.desc->bEndpointAddress & USB_DIR_IN;
++
++	req->bd_total = 0;
++
++	dma = req->req.dma;
++	length = req->req.length;
++
++	bd_num = alloc_one_bd_chain(cp, ep, req, num, dir,
++				    dma, length, actual, last);
++
++	list_add_tail(&req->queue, &ep->queue);
++
++	return bd_num;
++}
++#endif
++
++static inline void
++mvc2_ring_incoming(struct mvc2 *cp, unsigned int num, unsigned dir)
++{
++	unsigned int reg;
++
++	/* Ensure that updates to the EP Context will occur before Ring Bell */
++	wmb();
++
++	/* Ring the data incoming bell to ask hw to reload the bd chain */
++	if (ip_ver(cp) <= USB3_IP_VER_Z2) {
++		MV_CP_WRITE(MVCP_EPDMA_START, ep_dma_config(num, dir));
++	} else {
++		if (dir)
++			reg = SS_IN_DMA_CONTROL_REG(num);
++		else
++			reg = SS_OUT_DMA_CONTROL_REG(num);
++		MV_CP_WRITE(MV_CP_READ(reg) | DMA_START, reg);
++	}
++}
++
++static void ep_enable(struct mvc2_ep *ep, int num, int in, int type)
++{
++	struct mvc2 *cp = ep->cp;
++	struct usb_ep *_ep = &ep->ep;
++	unsigned int config, val, config_base;
++	struct mvc2_req *req, *tmp;
++	unsigned long flags, ring, reg;
++
++	/* We suppose there is no item in run queue here */
++	WARN_ON(!list_empty(&ep->queue));
++
++	ring = ep->state = 0;
++	config_base = epcon(num, in);
++	config = MVCP_EP_MAX_PKT(_ep->desc->wMaxPacketSize);
++	if (_ep->comp_desc)
++		config |= MVCP_EP_BURST(_ep->comp_desc->bMaxBurst);
++
++	if (num) {
++		config |= MVCP_EP_ENABLE | MVCP_EP_NUM(num);
++		switch (type) {
++		case USB_ENDPOINT_XFER_BULK:
++			if (_ep->comp_desc &&
++			    _ep->comp_desc->bmAttributes & 0x1f)
++				ep->state |= MV_CP_EP_BULK_STREAM;
++			else
++				ep->state &= ~MV_CP_EP_BULK_STREAM;
++
++			config |= MVCP_EP_TYPE_BLK;
++
++			/* Enable bulk stream if need */
++			spin_lock_irqsave(&cp->lock, flags);
++			if (ip_ver(cp) <= USB3_IP_VER_Z2) {
++				val = MV_CP_READ(MVCP_BULK_STREAMING_ENABLE);
++				if (ep->state & MV_CP_EP_BULK_STREAM)
++					val |= EPBIT(num, in);
++				else
++					val &= ~EPBIT(num, in);
++				MV_CP_WRITE(val, MVCP_BULK_STREAMING_ENABLE);
++			} else {
++				if (ep->state & MV_CP_EP_BULK_STREAM)
++					config |= MVCP_EP_BULK_STREAM_EN;
++				else
++					config &= ~MVCP_EP_BULK_STREAM_EN;
++			}
++			spin_unlock_irqrestore(&cp->lock, flags);
++			break;
++		case USB_ENDPOINT_XFER_ISOC:
++			config |= MVCP_EP_TYPE_ISO;
++			if (ip_ver(cp) <= USB3_IP_VER_Z2) {
++				if (in)
++					reg = EP_IN_BINTERVAL_REG_1_2_3 +
++					    4 * (num / 4);
++				else
++					reg = EP_OUT_BINTERVAL_REG_1_2_3 +
++					    4 * (num / 4);
++				val = MV_CP_READ(reg);
++				val |= (_ep->desc->bInterval) << (num % 4) * 8;
++				MV_CP_WRITE(val, reg);
++			} else {
++				if (in)
++					reg = EP_IN_BINTERVAL_REG(num);
++				else
++					reg = EP_OUT_BINTERVAL_REG(num);
++				MV_CP_WRITE(_ep->desc->bInterval, reg);
++			}
++			break;
++		case USB_ENDPOINT_XFER_INT:
++			config |= MVCP_EP_TYPE_INT;
++			break;
++		}
++	}
++
++	MV_CP_WRITE(config, config_base);
++	spin_unlock(&ep->lock);
++	mvc2_dma_reset(cp, ep, num, in);
++	spin_lock(&ep->lock);
++	/* Reset sequence number */
++	if (num != 0)
++		reset_seqencenum(ep, num, in);
++
++	/* Requeue the bd */
++	list_for_each_entry_safe(req, tmp, &ep->wait, queue) {
++		list_del_init(&req->queue);
++		val = alloc_bds(cp, ep, req);
++		/* Current all bds have been allocated, just wait for previous complete */
++		if (val)
++			ring = 1;
++		else {
++			dev_dbg(cp->dev, "%s %d\n", __func__, __LINE__);
++			list_add(&req->queue, &ep->wait);
++			break;
++		}
++	}
++
++	if (ring)
++		mvc2_ring_incoming(cp, num, in);
++}
++
++static int mvc2_ep_enable(struct usb_ep *_ep,
++			  const struct usb_endpoint_descriptor *desc)
++{
++	struct mvc2_ep *ep = container_of(_ep, struct mvc2_ep, ep);
++	int n = desc->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
++	int in = (desc->bEndpointAddress & USB_DIR_IN) != 0;
++	unsigned int state;
++	unsigned long flags;
++
++	_ep->maxpacket = le16_to_cpu(desc->wMaxPacketSize);
++	_ep->desc = desc;
++
++	spin_lock_irqsave(&ep->lock, flags);
++	ep_enable(ep, n, in, desc->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK);
++
++	state = (ep->state & MV_CP_EP_WEDGE) | MV_CP_EP_NUM(n);
++	state |= in ? MV_CP_EP_DIRIN : 0;
++	ep->state = state;
++	spin_unlock_irqrestore(&ep->lock, flags);
++
++	return 0;
++}
++
++static void ep_disable(struct mvc2 *cp, int num, int dir)
++{
++	unsigned int config;
++	struct mvc2_ep *ep = &cp->eps[2 * num + !!dir];
++
++	config = MV_CP_READ(epcon(num, dir));
++	config &= ~MVCP_EP_ENABLE;
++	MV_CP_WRITE(config, epcon(num, dir));
++
++	spin_unlock(&ep->lock);
++	/* nuke all pending requests (does flush) */
++	nuke(ep, -ESHUTDOWN);
++	spin_lock(&ep->lock);
++}
++
++static int mvc2_ep_disable(struct usb_ep *_ep)
++{
++	struct mvc2_ep *ep = container_of(_ep, struct mvc2_ep, ep);
++	struct mvc2 *cp = ep->cp;
++	unsigned long flags;
++
++	if (!(ep->state & MV_CP_EP_NUM_MASK))
++		return 0;
++
++	spin_lock_irqsave(&ep->lock, flags);
++	ep_disable(cp, ep->state & MV_CP_EP_NUM_MASK,
++		   ep->state & MV_CP_EP_DIRIN);
++	spin_unlock_irqrestore(&ep->lock, flags);
++
++	return 0;
++}
++
++static inline void mvc2_send_erdy(struct mvc2 *cp)
++{
++	/* ep0 erdy should be smp safe, and no lock is needed */
++	MV_CP_WRITE(MV_CP_READ(MVCP_ENDPOINT_0_CONFIG) |
++		    MVCP_ENDPOINT_0_CONFIG_CHG_STATE, MVCP_ENDPOINT_0_CONFIG);
++}
++
++#ifndef ASSEMBLE_REQ
++/* queues (submits) an I/O request to an endpoint */
++static int
++mvc2_ep_queue(struct usb_ep *_ep, struct usb_request *_req, gfp_t gfp_flags)
++{
++	struct mvc2_ep *ep = container_of(_ep, struct mvc2_ep, ep);
++	struct mvc2_req *req = container_of(_req, struct mvc2_req, req);
++	struct mvc2 *cp = ep->cp;
++	unsigned int dir, num;
++	unsigned long flags;
++	int ret;
++
++	if (_ep == NULL || _req == NULL)
++		return -EINVAL;
++
++	num = _ep->desc->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
++	/* Reset the endpoint 0 to prevent previous left data */
++	if (num == 0) {
++		/*
++		 * After USB_GADGET_DELAYED_STATUS is set and the USB upper layer in USB function thread
++		 * finishes the handling, the USB compsite layer will send request to continue with the
++		 * control transfer, within this request, the request length is set 0.
++		 * Since the request length will not be 0 for normal transfer, once it is 0, it means
++		 * that to continue the transfer after USB_GADGET_DELAYED_STATUS. Thus the erdy is set
++		 * here to notify the host that device is ready for latter transfer.
++		 */
++		if (!req->req.length) {
++			mvc2_send_erdy(cp);
++			return 0;
++		}
++
++		if (cp->ep0_dir == USB_DIR_IN)
++			ep = &cp->eps[1];
++		else
++			ep = &cp->eps[0];
++
++		dir = cp->ep0_dir;
++
++		spin_lock_irqsave(&ep->lock, flags);
++
++		MV_CP_WRITE(ep->doneq_cur * 8 + ep->doneq_start_phys,
++			    ep_doneq_read(num, dir));
++		ep->doneq_cur++;
++		if (ep->doneq_cur == ep->bd_sz)
++			ep->doneq_cur = 0;
++
++		spin_unlock_irqrestore(&ep->lock, flags);
++	} else
++		dir = _ep->desc->bEndpointAddress & USB_DIR_IN;
++
++	ret = usb_gadget_map_request(&cp->gadget, &req->req, dir);
++	if (ret)
++		return ret;
++
++	_req->actual = 0;
++	_req->status = -EINPROGRESS;
++	spin_lock_irqsave(&ep->lock, flags);
++
++	ret = alloc_bds(cp, ep, req);
++	/* Current all bds have been allocated, just wait for previous complete */
++	if (!ret) {
++		dev_dbg(cp->dev, "%s %d\n", __func__, __LINE__);
++		list_add_tail(&req->queue, &ep->wait);
++	} else
++		mvc2_ring_incoming(cp, num, dir);
++
++	spin_unlock_irqrestore(&ep->lock, flags);
++
++	return 0;
++}
++#else
++static int
++mvc2_ep_queue(struct usb_ep *_ep, struct usb_request *_req, gfp_t gfp_flags)
++{
++	struct mvc2_ep *ep = container_of(_ep, struct mvc2_ep, ep);
++	struct mvc2_req *req = container_of(_req, struct mvc2_req, req), *tmp;
++	struct mvc2 *cp = ep->cp;
++	unsigned int dir, num;
++	unsigned long flags;
++	int ret, last, reqcnt;
++	static int cnt;
++#define CNT 10
++	if (_ep == NULL || _req == NULL)
++		return -EINVAL;
++
++	num = _ep->desc->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
++	/* Reset the endpoint 0 to prevent previous left data */
++	if (num == 0) {
++		/*
++		 * After USB_GADGET_DELAYED_STATUS is set and the USB upper layer in USB function thread
++		 * finishes the handling, the USB compsite layer will send request to continue with the
++		 * control transfer. Within this request, the request length is set 0.
++		 * Since the request length will not be 0 for normal transfer, once it is 0, it means
++		 * that to continue the transfer after USB_GADGET_DELAYED_STATUS. Thus the erdy is set
++		 * here to notify the host that device is ready for latter transfer.
++		 */
++		if (!req->req.length) {
++			mvc2_send_erdy(cp);
++			return 0;
++		}
++
++		if (cp->ep0_dir == USB_DIR_IN)
++			ep = &cp->eps[1];
++		else
++			ep = &cp->eps[0];
++
++		dir = cp->ep0_dir;
++
++		spin_lock_irqsave(&ep->lock, flags);
++		mvc2_dma_reset(cp, ep, num, dir);
++		MV_CP_WRITE(ep->doneq_cur + ep->doneq_start_phys,
++			    ep_doneq_read(num, dir));
++		spin_unlock_irqrestore(&ep->lock, flags);
++	} else
++		dir = _ep->desc->bEndpointAddress & USB_DIR_IN;
++
++	ret = usb_gadget_map_request(&cp->gadget, &req->req, dir);
++	if (ret)
++		return ret;
++
++	_req->actual = 0;
++	_req->status = -EINPROGRESS;
++	spin_lock_irqsave(&ep->lock, flags);
++
++	if (dir == USB_DIR_OUT) {
++		ret = alloc_bds(cp, ep, req);
++		/* Current all bds have been allocated, just wait for previous complete */
++		if (!ret)
++			list_add_tail(&req->queue, &ep->wait);
++		else
++			mvc2_ring_incoming(cp, num, dir);
++	} else {
++		list_add_tail(&req->queue, &ep->tmp);
++		cnt++;
++
++		if (req->req.length > 1000 && cnt < CNT)
++			goto out;
++		if (cnt == CNT || req->req.length < 1000) {
++			list_for_each_entry_safe(req, tmp, &ep->tmp, queue) {
++				list_del_init(&req->queue);
++				cnt--;
++				if (cnt)
++					last = 0;
++				else
++					last = 1;
++#if 1
++				ret = alloc_in_bds(cp, ep, req, &last);
++#else
++				ret = alloc_bds(cp, ep, req);
++				/* Current all bds have been allocated, just wait for previous complete */
++				if (!ret)
++					list_add_tail(&req->queue, &ep->wait);
++#endif
++			}
++			mvc2_ring_incoming(cp, num, dir);
++		}
++	}
++out:
++	spin_unlock_irqrestore(&ep->lock, flags);
++
++	return 0;
++}
++#endif
++
++/*
++ * done() - retire a request; caller blocked irqs
++ * @status : request status to be set, only works when
++ * request is still in progress.
++ */
++static void done(struct mvc2_ep *ep, struct mvc2_req *req, int status)
++{
++	struct mvc2 *cp = NULL;
++
++	cp = (struct mvc2 *)ep->cp;
++	/* Removed the req from fsl_ep->queue */
++	list_del_init(&req->queue);
++
++	ep->left_bds += req->bd_total;
++	WARN_ON(ep->left_bds > ep->bd_sz);
++
++	/* req.status should be set as -EINPROGRESS in ep_queue() */
++	if (req->req.status == -EINPROGRESS)
++		req->req.status = status;
++	else
++		status = req->req.status;
++
++	usb_gadget_unmap_request(&cp->gadget, &req->req, ep_dir(ep));
++
++	if (status && (status != -ESHUTDOWN))
++		dev_info(cp->dev, "complete %s req %p stat %d len %u/%u",
++			 ep->ep.name, &req->req, status,
++			 req->req.actual, req->req.length);
++
++	spin_unlock(&ep->lock);
++	/*
++	 * complete() is from gadget layer,
++	 * eg fsg->bulk_in_complete()
++	 */
++	if (req->req.complete)
++		req->req.complete(&ep->ep, &req->req);
++
++	spin_lock(&ep->lock);
++}
++
++static void ep_fifo_flush(struct mvc2 *cp, int num, int dir, int all)
++{
++	struct mvc2_ep *ep;
++
++	ep = &cp->eps[2 * num + !!dir];
++	/*
++	 * Only current transferring bd would be transferred out,
++	 * for those bd still chained after would be left untouched
++	 */
++	mvc2_dma_reset(cp, ep, num, dir);
++}
++
++/* dequeues (cancels, unlinks) an I/O request from an endpoint */
++static int mvc2_ep_dequeue(struct usb_ep *_ep, struct usb_request *_req)
++{
++	struct mvc2_ep *ep = container_of(_ep, struct mvc2_ep, ep);
++	struct mvc2 *cp = ep->cp;
++	struct mvc2_req *req = container_of(_req, struct mvc2_req, req), *tmp;
++	int num = _ep->desc->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
++	int dir = _ep->desc->bEndpointAddress & USB_DIR_IN;
++	int type = _ep->desc->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK;
++	unsigned long flags;
++	int ret, ring;
++
++	ring = ret = 0;
++	if (_ep == NULL || _req == NULL || list_empty(&req->queue))
++		return -EINVAL;
++
++	spin_lock_irqsave(&ep->lock, flags);
++	ep_disable(cp, num, dir);
++
++	list_for_each_entry(tmp, &ep->wait, queue)
++	if (tmp == req)
++		break;
++
++	/* If don't find the request in both run/wait queue, quit */
++	if (tmp != req) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	list_del_init(&req->queue);
++	if (req->req.length)
++		usb_gadget_unmap_request(&ep->cp->gadget, _req, dir);
++	spin_unlock_irqrestore(&ep->lock, flags);
++	if (req->req.complete) {
++		req->req.status = -ECONNRESET;
++		req->req.complete(&ep->ep, &req->req);
++	}
++
++	spin_lock_irqsave(&ep->lock, flags);
++out:
++	ep_enable(ep, num, dir, type);
++	spin_unlock_irqrestore(&ep->lock, flags);
++
++	return ret;
++}
++
++static int ep_set_halt(struct mvc2 *cp, int n, int in, int halt)
++{
++	unsigned int config, config_base;
++	struct mvc2_ep *ep = &cp->eps[2 * n + !!in];
++	unsigned long flags;
++	int bulk;
++
++	config_base = epcon(n, in);
++	bulk = ep->ep.desc->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK;
++
++	spin_lock_irqsave(&ep->lock, flags);
++
++	if (halt && (bulk == USB_ENDPOINT_XFER_BULK) && in
++	    && !list_empty(&ep->queue)) {
++		spin_unlock_irqrestore(&ep->lock, flags);
++		return -EAGAIN;
++	}
++
++	config = MV_CP_READ(config_base);
++	if (halt) {
++		config |= MVCP_EP_STALL;
++		if (n)
++			ep->state |= MV_CP_EP_STALL;
++	} else {
++		config &= ~MVCP_EP_STALL;
++		ep->state &= ~MV_CP_EP_STALL;
++	}
++	MV_CP_WRITE(config, config_base);
++	spin_unlock_irqrestore(&ep->lock, flags);
++
++	return 0;
++}
++
++static int mvc2_ep_set_halt(struct usb_ep *_ep, int halt)
++{
++	struct mvc2_ep *ep = container_of(_ep, struct mvc2_ep, ep);
++	struct mvc2 *cp = ep->cp;
++	unsigned int n, in;
++
++	if (_ep == NULL || _ep->desc == NULL)
++		return -EINVAL;
++
++	if (usb_endpoint_xfer_isoc(_ep->desc))
++		return -EOPNOTSUPP;
++
++	if (!halt)
++		ep->state &= ~MV_CP_EP_WEDGE;
++
++	n = _ep->desc->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
++	in = _ep->desc->bEndpointAddress & USB_DIR_IN;
++
++	return ep_set_halt(cp, n, in, halt);
++}
++
++static int mvc2_ep_set_wedge(struct usb_ep *_ep)
++{
++	struct mvc2_ep *ep = container_of(_ep, struct mvc2_ep, ep);
++
++	ep->state |= MV_CP_EP_WEDGE;
++	return mvc2_ep_set_halt(_ep, 1);
++}
++
++static void mvc2_ep_fifo_flush(struct usb_ep *_ep)
++{
++	struct mvc2_ep *ep = container_of(_ep, struct mvc2_ep, ep);
++	struct mvc2 *cp = ep->cp;
++
++	ep_fifo_flush(cp, ep->ep_num, ep_dir(ep), 1);
++}
++
++static struct usb_ep_ops mvc2_ep_ops = {
++	.enable = mvc2_ep_enable,
++	.disable = mvc2_ep_disable,
++
++	.alloc_request = mvc2_alloc_request,
++	.free_request = mvc2_free_request,
++
++	.queue = mvc2_ep_queue,
++	.dequeue = mvc2_ep_dequeue,
++
++	.set_wedge = mvc2_ep_set_wedge,
++	.set_halt = mvc2_ep_set_halt,
++	.fifo_flush = mvc2_ep_fifo_flush,
++};
++
++/* delete all endpoint requests, called with spinlock held */
++static void nuke(struct mvc2_ep *ep, int status)
++{
++	struct mvc2_req *req, *tmp;
++	unsigned long flags;
++	/* called with spinlock held */
++	ep->stopped = 1;
++
++	/* endpoint fifo flush */
++	mvc2_ep_fifo_flush(&ep->ep);
++	spin_lock_irqsave(&ep->lock, flags);
++	list_for_each_entry_safe(req, tmp, &ep->queue, queue)
++		done(ep, req, status);
++	list_for_each_entry_safe(req, tmp, &ep->wait, queue)
++		done(ep, req, status);
++	spin_unlock_irqrestore(&ep->lock, flags);
++}
++
++/* stop all USB activities */
++static void stop_activity(struct mvc2 *udc, struct usb_gadget_driver *driver)
++{
++	struct mvc2_ep *ep;
++
++	nuke(&udc->eps[0], -ESHUTDOWN);
++	nuke(&udc->eps[1], -ESHUTDOWN);
++
++	list_for_each_entry(ep, &udc->gadget.ep_list, ep.ep_list) {
++		if (ep->ep_num <= ip_ep_num(udc))
++			nuke(ep, -ESHUTDOWN);
++	}
++
++	/* report disconnect; the driver is already quiesced */
++	if (driver)
++		driver->disconnect(&udc->gadget);
++}
++
++static void mvc2_init_interrupt(struct mvc2 *cp)
++{
++	int i;
++
++	if (ip_ver(cp) <= USB3_IP_VER_Z2) {
++		MV_CP_WRITE(~0, MVCP_DMA_COMPLETE_SUCCESS);
++		MV_CP_WRITE(~0, MVCP_DMA_COMPLETE_ERROR);
++		MV_CP_WRITE(~0, MVCP_SS_CORE_INT);
++		MV_CP_WRITE(~0, MVCP_SS_SYS_INT);
++		/*
++		 * Don't clear the ref int status.
++		 * Refer to the comments in mvc2_usb2_connect for details.
++		 * val = MV_CP_READ(cp->reg->ref_int);
++		 * MV_CP_WRITE(val, cp->reg->ref_int);
++		 */
++		MV_CP_WRITE(MVCP_SS_CORE_INTEN_SETUP
++			    | MVCP_SS_CORE_INTEN_HOT_RESET
++			    | MVCP_SS_CORE_INTEN_LTSSM_CHG, MVCP_SS_CORE_INTEN);
++		MV_CP_WRITE(MVCP_SS_SYS_INTEN_DMA, MVCP_SS_SYS_INTEN);
++		MV_CP_WRITE(MVCP_REF_INTEN_USB2_CNT
++			    | MVCP_REF_INTEN_USB2_DISCNT
++			    | MVCP_REF_INTEN_RESET
++			    | MVCP_REF_INTEN_POWERON
++			    | MVCP_REF_INTEN_POWEROFF
++			    | MVCP_REF_INTEN_SUSPEND
++			    | MVCP_REF_INTEN_RESUME, cp->reg->ref_inten);
++
++		set_top_int(cp, 0xf);
++	} else {
++		MV_CP_WRITE(~0, MVCP_SS_CORE_INT);
++		MV_CP_WRITE(~0, MVCP_TOP_INT_STATUS);
++		MV_CP_WRITE(~0, SS_EP_TOP_INT_STATUS_REG);
++		MV_CP_WRITE(~0, SS_EP_TOP_INT_ENABLE_REG);
++		MV_CP_WRITE(~0, SS_AXI_INT_STATUS_REG);
++		MV_CP_WRITE(~0, SS_AXI_INT_ENABLE_REG);
++
++		/* enbale all interrupts of endpoints
++		 * except doneq_full interrupt
++		 */
++		for (i = 0; i < cp->epnum; i++) {
++			MV_CP_WRITE(~0, SS_IN_EP_INT_STATUS_REG(i));
++			MV_CP_WRITE(~DONEQ_FULL, SS_IN_EP_INT_ENABLE_REG(i));
++			MV_CP_WRITE(~0, SS_OUT_EP_INT_STATUS_REG(i));
++			MV_CP_WRITE(~DONEQ_FULL, SS_OUT_EP_INT_ENABLE_REG(i));
++		}
++		/*
++		 * Don't clear the ref int status.
++		 * Refer to the comments in mvc2_usb2_connect for details.
++		 * val = MV_CP_READ(cp->reg->ref_int);
++		 * MV_CP_WRITE(val, cp->reg->ref_int);
++		 */
++		/* Since decode_err_8_10b & disparity_err will
++		 * generate very frequenlty when enable U1/U2,
++		 * we disable these two error interrupt
++		 */
++		MV_CP_WRITE(MVCP_SS_CORE_INTEN_SETUP
++			    | MVCP_SS_CORE_INTEN_HOT_RESET
++			    | MVCP_SS_CORE_INTEN_LTSSM_CHG
++			    /*| 0x3F */, MVCP_SS_CORE_INTEN);
++		MV_CP_WRITE(MVCP_REF_INTEN_USB2_CNT
++			    | MVCP_REF_INTEN_USB2_DISCNT
++			    | MVCP_REF_INTEN_RESET
++			    | MVCP_REF_INTEN_POWERON
++			    | MVCP_REF_INTEN_POWEROFF
++			    | MVCP_REF_INTEN_SUSPEND
++			    | MVCP_REF_INTEN_RESUME, cp->reg->ref_inten);
++
++		set_top_int(cp, 0x4f);
++	}
++}
++
++static int mvc2_pullup(struct usb_gadget *gadget, int is_on)
++{
++	struct mvc2 *cp = container_of(gadget, struct mvc2, gadget);
++	unsigned int val;
++
++	/*
++	 * For every switch from 2.0 to 3.0, this dma global config
++	 * and interrupt enable register would get reset
++	 */
++	if (is_on && !irq_enabled) {
++		irq_enabled = true;
++		enable_irq(cp->irq);
++	}
++
++	if (!usb3_disconnect)
++		is_on = 1;
++
++	mvc2_connect(cp, is_on);
++	mvc2_config_mac(cp);
++	val = MV_CP_READ(MVCP_DMA_GLOBAL_CONFIG);
++	val |= MVCP_DMA_GLOBAL_CONFIG_RUN | MVCP_DMA_GLOBAL_CONFIG_INTCLR;
++	MV_CP_WRITE(val, MVCP_DMA_GLOBAL_CONFIG);
++
++	mvc2_init_interrupt(cp);
++
++	if (is_on == 0)
++		stop_activity(cp, cp->driver);
++	return 0;
++}
++
++static int mvc2_start(struct usb_gadget *gadget,
++		      struct usb_gadget_driver *driver)
++{
++	struct mvc2 *cp = container_of(gadget, struct mvc2, gadget);
++	unsigned long flags;
++	struct mvc2_ep *ep;
++
++	cp->driver = driver;
++
++	/* enable ep0, dma int */
++	ep = &cp->eps[0];
++	spin_lock_irqsave(&ep->lock, flags);
++	ep_enable(ep, 0, 0, 0);
++	spin_unlock_irqrestore(&ep->lock, flags);
++
++	ep = &cp->eps[1];
++	spin_lock_irqsave(&ep->lock, flags);
++	ep_enable(ep, 0, 1, 0);
++
++	spin_unlock_irqrestore(&ep->lock, flags);
++
++	/* pullup is always on */
++	mvc2_pullup(gadget, 1);
++
++	return 0;
++}
++
++static int mvc2_first_start(struct usb_gadget *gadget,
++			    struct usb_gadget_driver *driver)
++{
++	struct mvc2 *cp = container_of(gadget, struct mvc2, gadget);
++
++	mvc2_start(gadget, driver);
++
++	/* When boot with cable attached, there will be no vbus irq occurred */
++	if (cp->qwork)
++		queue_work(cp->qwork, &cp->vbus_work);
++
++	return 0;
++}
++
++static int mvc2_stop(struct usb_gadget *gadget)
++{
++	struct mvc2 *cp = container_of(gadget, struct mvc2, gadget);
++
++	cp->driver = NULL;
++	return 0;
++}
++
++int mvc2_checkvbus(struct mvc2 *cp)
++{
++	int tmp;
++
++	tmp = MV_CP_READ(cp->reg->global_control);
++	return tmp & MVCP_GLOBAL_CONTROL_POWERPRESENT;
++}
++
++static int mvc2_vbus_session(struct usb_gadget *gadget, int is_active)
++{
++	struct mvc2 *cp = container_of(gadget, struct mvc2, gadget);
++	unsigned int val;
++
++	/* We only do real work when gadget driver is ready */
++	if (!cp->driver)
++		return -ENODEV;
++
++	val = MV_CP_READ(MVCP_DMA_GLOBAL_CONFIG);
++	if (is_active) {
++		/* For Armada 3700, need to skip PHY HW reset */
++		if (cp->phy_hw_reset)
++			mvc2_hw_reset(cp);
++		pm_stay_awake(cp->dev);
++		/* turn on dma int */
++		val |= MVCP_DMA_GLOBAL_CONFIG_RUN
++		    | MVCP_DMA_GLOBAL_CONFIG_INTCLR;
++		MV_CP_WRITE(val, MVCP_DMA_GLOBAL_CONFIG);
++		usb_gadget_connect(&cp->gadget);
++		mvc2_start(gadget, cp->driver);
++
++	} else {
++		/* need to stop activity before disable dma engine.
++		 * stop_activity will call mvc2_dma_reset,
++		 * if disable dma before mvc2_dma_reset, then dma reset
++		 * timeout issue will happen.
++		 */
++		stop_activity(cp, cp->driver);
++
++		/* disable dma engine */
++		val &= ~MVCP_DMA_GLOBAL_CONFIG_RUN;
++		MV_CP_WRITE(val, MVCP_DMA_GLOBAL_CONFIG);
++	}
++
++	return 0;
++}
++
++static irqreturn_t mvc2_vbus_irq(int irq, void *dev)
++{
++	struct mvc2 *cp = (struct mvc2 *)dev;
++
++	/* polling VBUS and init phy may cause too much time */
++	if (cp->qwork)
++		queue_work(cp->qwork, &cp->vbus_work);
++
++	return IRQ_HANDLED;
++}
++
++static void mvc2_vbus_work(struct work_struct *work)
++{
++	struct mvc2 *cp;
++	unsigned int vbus;
++	unsigned int reg;
++
++	cp = container_of(work, struct mvc2, vbus_work);
++
++	if (gpio_is_valid(cp->vbus_pin))
++		vbus = gpio_get_value_cansleep(cp->vbus_pin);
++	else {
++		dev_err(cp->dev, "VBUS interrupt status is missing\n");
++		return;
++	}
++
++	if (cp->prev_vbus != vbus)
++		cp->prev_vbus = vbus;
++	else
++		return;
++
++	if (!cp->phy_base) {
++		dev_err(cp->dev, "PHY register is missing\n");
++		return;
++	}
++
++	if (vbus == VBUS_HIGH) {
++		reg = readl(cp->phy_base);
++		reg |= 0x8000;
++		writel(reg, cp->phy_base);
++	} else if (vbus == VBUS_LOW) {
++		reg = readl(cp->phy_base);
++		reg &= ~0x8000;
++		writel(reg, cp->phy_base);
++	}
++}
++
++static int mvc2_vbus_draw(struct usb_gadget *gadget, unsigned mA)
++{
++	return -ENOTSUPP;
++}
++
++static int mvc2_set_selfpowered(struct usb_gadget *gadget, int is_selfpowered)
++{
++	struct mvc2 *cp = container_of(gadget, struct mvc2, gadget);
++
++	if (is_selfpowered)
++		cp->status |= MVCP_STATUS_SELF_POWERED;
++	else
++		cp->status &= ~MVCP_STATUS_SELF_POWERED;
++
++	return 0;
++}
++
++#ifdef CONFIG_USB_REMOTE_WAKEUP
++
++#define MVCP_GLOBAL_CONTROL_STATUS  0x2c
++#define MVCP_GLOBAL_CONTROL_STATUS_LPFS_EXIT (1<<7)
++static int mvc2_wakeup(struct usb_gadget *gadget)
++{
++	struct mvc2 *cp = container_of(gadget, struct mvc2, gadget);
++	unsigned int phy, val;
++
++	phy = MV_CP_READ(MVCP_PHY);
++	if ((phy & MVCP_PHY_LTSSM_MASK) == LTSSM_U3) {
++		dev_info(cp->dev, "usb3 is enter u3 , can be wakeup now\n");
++		val = MV_CP_READ(MVCP_GLOBAL_CONTROL_STATUS);
++		val |= MVCP_GLOBAL_CONTROL_STATUS_LPFS_EXIT;
++		MV_CP_WRITE(val, MVCP_GLOBAL_CONTROL_STATUS);
++	}
++
++	return 0;
++}
++#endif
++
++/* device controller usb_gadget_ops structure */
++static const struct usb_gadget_ops mvc2_ops = {
++	/* notify controller that VBUS is powered or not */
++	.vbus_session = mvc2_vbus_session,
++
++	/* constrain controller's VBUS power usage */
++	.vbus_draw = mvc2_vbus_draw,
++	.set_selfpowered = mvc2_set_selfpowered,
++
++	.pullup = mvc2_pullup,
++	.udc_start = mvc2_first_start,
++	.udc_stop = mvc2_stop,
++#ifdef CONFIG_USB_REMOTE_WAKEUP
++	.wakeup = mvc2_wakeup,
++#endif
++};
++
++void mvc2_handle_setup(struct mvc2 *cp)
++{
++	struct usb_ctrlrequest *r;
++	unsigned int tmp[2];
++	int ret = -EINVAL;
++	bool delegate;
++
++	tmp[0] = MV_CP_READ(MVCP_SETUP_DP_LOW);
++	tmp[1] = MV_CP_READ(MVCP_SETUP_DP_HIGH);
++	MV_CP_WRITE(MVCP_SETUP_CONTROL_FETCHED, MVCP_SETUP_CONTROL);
++
++	r = (struct usb_ctrlrequest *)tmp;
++
++	if (r->wLength) {
++		if (r->bRequestType & USB_DIR_IN)
++			cp->ep0_dir = USB_DIR_IN;
++		else
++			cp->ep0_dir = USB_DIR_OUT;
++	} else
++		cp->ep0_dir = USB_DIR_IN;
++
++	ret = mvc2_std_request(cp, r, &delegate);
++	if (delegate)
++		ret = cp->driver->setup(&cp->gadget, r);
++	/* indicate setup pharse already complete */
++	mvc2_send_erdy(cp);
++
++	/* Stall the endpoint if protocol not support */
++	if (ret < 0)
++		ep_set_halt(cp, 0, 0, 1);
++	/*
++	 * If current setup has no data pharse or failed, we would directly
++	 * jump to status pharse.
++	 * If the USB_GADGET_DELAYED_STATUS is set, the USB interface requests
++	 * delay for it to handle the setup, thus here should not send erdy to
++	 * continue the transfer. Instead, the erdy will be sent from mvc2_ep_queue,
++	 * once a request with length 0 is issued.
++	 */
++	 if ((ret < 0) || (r->wLength == 0 && ret != USB_GADGET_DELAYED_STATUS))
++		mvc2_send_erdy(cp);
++}
++
++static void mvc2_dma_complete(struct mvc2 *cp)
++{
++	unsigned int val, i, n, in, short_packet, finish, ret;
++	struct doneq *done;
++	struct mvc2_ep *ep;
++	struct mvc2_req *req, *tmp;
++	struct bd *bd;
++	unsigned int writeq, len, doneq, ring;
++	unsigned int sreg, ep_status;
++
++	if (ip_ver(cp) <= USB3_IP_VER_Z2)
++		sreg = MVCP_DMA_COMPLETE_SUCCESS;
++	else
++		sreg = SS_EP_TOP_INT_STATUS_REG;
++	val = MV_CP_READ(sreg);
++	if (!val)
++		return;
++	MV_CP_WRITE(val, sreg);
++
++	for (i = 0; i < (cp->epnum << 1); i++) {
++		if (!(val & (1 << i)))
++			continue;
++
++		if (i < cp->epnum) {
++			n = i;
++			in = 0;
++		} else {
++			n = i - cp->epnum;
++			in = 1;
++		}
++
++		if (ip_ver(cp) >= USB3_IP_VER_Z3) {
++			in = in ? 0 : 1;
++			if (in)
++				sreg = SS_IN_EP_INT_STATUS_REG(n);
++			else
++				sreg = SS_OUT_EP_INT_STATUS_REG(n);
++			ep_status = MV_CP_READ(sreg);
++			/* clear interrupt status */
++			MV_CP_WRITE(ep_status, sreg);
++
++			if (ep_status & COMPLETION_SUCCESS)
++				goto success;
++
++			/* some error may happen */
++			pr_warn("### %s %d: num %d, dir %d, status 0x%x\n",
++				__func__, __LINE__, n, in, ep_status);
++			continue;
++		}
++
++success:
++		ep = &cp->eps[(n << 1) + in];
++
++		/*
++		 * info hw that sw has prepared data
++		 * hw would auto send erdy after data stage complete
++		 */
++		if (n == 0) {
++			mvc2_send_erdy(cp);
++			ep->state &= ~MV_CP_EP_TRANSERING;
++			if (!list_empty(&ep->queue)) {
++				req = list_first_entry(&ep->queue,
++						       struct mvc2_req, queue);
++
++				if (req->req.complete) {
++					req->req.status = 0;
++					req->req.complete(&ep->ep, &req->req);
++				}
++				ep->left_bds++;
++				WARN_ON(req->bd_total > 1);
++				WARN_ON(ep->left_bds > ep->bd_sz);
++				spin_lock(&ep->lock);
++				INIT_LIST_HEAD(&ep->queue);
++				INIT_LIST_HEAD(&ep->wait);
++				spin_unlock(&ep->lock);
++			}
++
++			continue;
++		}
++
++		writeq = MV_CP_READ(ep_doneq_write(n, in));
++		if (!writeq)
++			continue;
++
++		/* Get the DoneQ write pointer relative position */
++		writeq -= ep->doneq_start_phys;
++		writeq /= sizeof(struct doneq);
++		if (writeq == ep->bd_sz)
++			writeq = 0;
++
++		doneq = ep->doneq_cur;
++		short_packet = 0;
++		ring = 0;
++		spin_lock(&ep->lock);
++		while (doneq != writeq) {
++			len = 0;
++			req = list_first_entry_or_null(&ep->queue,
++						       struct mvc2_req, queue);
++			if (!req) {
++				pr_info("req null, doneq = %d,writeq = %d\n",
++					doneq, writeq);
++				break;
++			}
++			bd = req->bd;
++			finish = 1;
++			do {
++				done = (struct doneq *)(ep->doneq_start
++							+ doneq);
++
++				if (done->status & DONE_AXI_ERROR) {
++					req->req.status = -EPROTO;
++					break;
++				}
++
++				/*
++				 * Note: for the short packet, if originally
++				 * there are several BDs chained, but host
++				 * only send short packet for the first BD,
++				 * then doneq would be updated accordingly.
++				 * And later BDs in the chain would be used
++				 * for storing data that host send in another
++				 * transfer.
++				 *
++				 * But if the first BD is not set as INT_EN,
++				 * there would be no interrupt be generated.
++				 */
++				if (done->status & DONE_SHORT_PKT)
++					short_packet = 1;
++
++				len += DONE_LEN(done->status);
++				doneq++;
++				if (doneq == ep->bd_sz)
++					doneq = 0;
++
++				WARN_ON(doneq == (writeq + 1));
++				bd->cmd = 0;
++				bd++;
++				ep->left_bds++;
++				WARN_ON(ep->left_bds > ep->bd_sz);
++
++			} while (--req->bd_total > 0);
++
++			/*
++			 * Ring the finish data handle bell
++			 * to kick hardware to continue
++			 */
++			MV_CP_WRITE(doneq * 8 + ep->doneq_start_phys,
++				    ep_doneq_read(n, in));
++			ep->doneq_cur = doneq;
++
++			req->req.actual += len;
++			list_del_init(&req->queue);
++			ep->state &= ~MV_CP_EP_TRANSERING;
++
++			ret = UINT_MAX;
++			/* There still something left not being transferred */
++			if ((req->req.actual < req->req.length)
++			    && !short_packet) {
++				dev_dbg(cp->dev, "%s %d\n", __func__, __LINE__);
++				ret = alloc_bds(cp, ep, req);
++				finish = 0;
++			}
++
++			/*
++			 * Refill BD if there is any request
++			 * following in the chain
++			 */
++			while (!list_empty(&ep->wait) && ret) {
++				tmp = list_first_entry(&ep->wait,
++						       struct mvc2_req, queue);
++				list_del_init(&tmp->queue);
++				ret = alloc_bds(cp, ep, tmp);
++				if (!ret)
++					list_add(&tmp->queue, &ep->wait);
++			}
++
++			if (finish) {
++				spin_unlock(&ep->lock);
++				if (req->req.length)
++					usb_gadget_unmap_request(&cp->gadget,
++								 &req->req, in);
++
++				if (req->req.complete) {
++					req->req.status = 0;
++					req->req.complete(&ep->ep, &req->req);
++				}
++				spin_lock(&ep->lock);
++			}
++
++			if (ret != UINT_MAX)
++				ring = 1;
++		}
++
++		if (ring)
++			mvc2_ring_incoming(cp, n, in);
++		spin_unlock(&ep->lock);
++	}
++}
++
++static void mvc2_process_link_change(struct mvc2 *cp)
++{
++	unsigned int val;
++
++	cp->status &= ~MVCP_STATUS_POWER_MASK;
++	val = MV_CP_READ(MVCP_PHY);
++	switch (val & MVCP_PHY_LTSSM_MASK) {
++	case LTSSM_U0:
++		cp->gadget.speed = USB_SPEED_SUPER;
++		cp->status |= MVCP_STATUS_U0;
++		cp->status |= MVCP_STATUS_CONNECTED;
++		break;
++	case LTSSM_U1:
++		cp->status |= MVCP_STATUS_U1;
++		break;
++	case LTSSM_U2:
++		cp->status |= MVCP_STATUS_U2;
++		break;
++	case LTSSM_U3:
++		cp->status |= MVCP_STATUS_U3;
++		break;
++	}
++}
++
++static irqreturn_t mvc2_irq(int irq, void *devid)
++{
++	struct mvc2 *cp = devid;
++	unsigned int topint, coreint, sysint, refint, val;
++
++	topint = MV_CP_READ(MVCP_TOP_INT_STATUS);
++
++	if (topint == 0)
++		return IRQ_HANDLED;
++
++	MV_CP_WRITE(topint, MVCP_TOP_INT_STATUS);
++
++	if (ip_ver(cp) <= USB3_IP_VER_Z2) {
++		if (topint & MVCP_TOP_INT_SS_SYS) {
++			sysint = MV_CP_READ(MVCP_SS_SYS_INT);
++			MV_CP_WRITE(sysint, MVCP_SS_SYS_INT);
++
++			if (sysint & MVCP_SS_SYS_INT_DMA)
++				mvc2_dma_complete(cp);
++		}
++	} else {
++		if (topint & MVCP_TOP_INT_SS_EP)
++			mvc2_dma_complete(cp);
++
++		if (topint & MVCP_TOP_INT_SS_AXI) {
++			val = MV_CP_READ(SS_AXI_INT_STATUS_REG);
++			MV_CP_WRITE(val, SS_AXI_INT_STATUS_REG);
++			pr_warn("### %s %d: SS_AXI_INT_STATUS_REG = 0x%x\r\n",
++				__func__, __LINE__, val);
++		}
++	}
++
++	if (topint & MVCP_TOP_INT_SS_CORE) {
++		coreint = MV_CP_READ(MVCP_SS_CORE_INT);
++		MV_CP_WRITE(coreint, MVCP_SS_CORE_INT);
++
++		if (coreint & MVCP_SS_CORE_INT_HOT_RESET) {
++			pr_info("USB device: hot reset\n");
++			stop_activity(cp, cp->driver);
++		}
++
++		if (coreint & MVCP_SS_CORE_INT_SETUP)
++			mvc2_handle_setup(cp);
++
++		if (coreint & MVCP_SS_CORE_INT_LTSSM_CHG)
++			mvc2_process_link_change(cp);
++
++		/* We enabled error interrupt from Z3,
++		 * need to check the error here.
++		 */
++#if 0
++		if (ip_ver(cp) >= USB3_IP_VER_Z3) {
++			if (coreint & 0x3F)
++				pr_warn("### coreint = 0x%x\n", coreint);
++		}
++#endif
++	}
++
++	if (topint & MVCP_TOP_INT_REF) {
++		refint = MV_CP_READ(cp->reg->ref_int);
++		MV_CP_WRITE(refint, cp->reg->ref_int);
++
++		if (refint & MVCP_REF_INTEN_POWERON) {
++			/*
++			 * Note, during the USB3 irq disabled, there may be
++			 * may times plug/unplug,
++			 * thus, the power on/off interrupt
++			 * may co-exisit once enable the irq again.
++			 * To avoid this, we need to check
++			 * the VBUS of the final state.
++			 * Refer to mvc2_usb2_connect.
++			 */
++			if (mvc2_checkvbus(cp)) {
++				pr_info("USB device: connected\n");
++				usb_gadget_vbus_connect(&cp->gadget);
++				cp->status |= MVCP_STATUS_CONNECTED;
++			}
++		}
++
++		if (refint & MVCP_REF_INTEN_POWEROFF) {
++			/*
++			 * Note, during the USB3 irq disabled, there may be
++			 * may times plug/unplug,
++			 * thus, the power on/off interrupt
++			 * may co-exisit once enable the irq again.
++			 * To avoid this, we need to check
++			 * the VBUS of the final state.
++			 * Refer to mvc2_usb2_connect.
++			 */
++			if (!mvc2_checkvbus(cp)) {
++				pr_info("USB device: disconnected\n");
++				usb3_disconnect = true;
++				usb_gadget_vbus_disconnect(&cp->gadget);
++				cp->status &= ~MVCP_STATUS_CONNECTED;
++
++				cp->gadget.speed = USB_SPEED_UNKNOWN;
++
++				cp->status &= ~MVCP_STATUS_USB2;
++				glue.status = cp->status;
++				if (cp->work)
++					schedule_work(cp->work);
++			}
++		}
++
++		if (refint & MVCP_REF_INTEN_RESET) {
++			pr_info("USB device: warm reset\n");
++			/*
++			 * The doneq write point will be set to 0 when warm/hot reset occurred.
++			 * This will cause device abnormal, one example is CV test can't pass
++			 * at this situation.
++			 * Add dma reset here will set doneq write point to doneq start point.
++			 */
++			stop_activity(cp, cp->driver);
++		}
++
++		if ((refint & MVCP_REF_INTEN_USB2_CNT) &&
++		    (MV_CP_READ(cp->reg->ref_inten) &
++		     MVCP_REF_INTEN_USB2_CNT)) {
++			usb3_disconnect = false;
++			stop_activity(cp, cp->driver);
++
++			cp->status |= MVCP_STATUS_USB2;
++			glue.status = cp->status;
++			if (cp->work)
++				schedule_work(cp->work);
++		}
++
++		if ((refint & MVCP_REF_INTEN_USB2_DISCNT) &&
++		    (MV_CP_READ(cp->reg->ref_inten) &
++		     MVCP_REF_INTEN_USB2_DISCNT)) {
++			usb3_disconnect = true;
++			if (mvc2_checkvbus(cp)) {
++				cp->status &= ~MVCP_STATUS_USB2;
++				glue.status = cp->status;
++				if (cp->work)
++					schedule_work(cp->work);
++			}
++		}
++
++		if (refint & MVCP_REF_INTEN_RESUME)
++			pr_info("USB device: resume\n");
++
++		if (refint & MVCP_REF_INTEN_SUSPEND)
++			pr_info("USB device: suspend\n");
++	}
++
++	if (topint & MVCP_TOP_INT_USB2)
++		return IRQ_NONE;
++
++	return IRQ_HANDLED;
++}
++
++int mvc2_gadget_init(struct mvc2 *cp)
++{
++	int ret, i, irq;
++	struct mvc2_ep *ep;
++
++	irq = platform_get_irq(to_platform_device(cp->dev), 0);
++	ret = request_irq(irq, mvc2_irq, IRQF_SHARED, "mvcp_usb3", cp);
++	if (ret) {
++		dev_err(cp->dev, "can't request irq %i, err: %d\n", irq, ret);
++		return -EINVAL;
++	}
++
++	/* initialize gadget structure */
++	cp->gadget.ops = &mvc2_ops;
++	cp->gadget.ep0 = &cp->eps[0].ep;
++	INIT_LIST_HEAD(&cp->gadget.ep_list);
++	cp->gadget.speed = USB_SPEED_UNKNOWN;
++	cp->gadget.max_speed = USB_SPEED_SUPER;
++	cp->gadget.is_otg = 0;
++	cp->gadget.name = driver_name;
++	cp->gadget.dev.parent = cp->dev;
++	cp->gadget.dev.dma_mask = cp->dev->dma_mask;
++	cp->irq = irq;
++	disable_irq(cp->irq);
++
++	for (i = 0; i < cp->epnum * 2; i++) {
++		ep = &cp->eps[i];
++		ep->ep.ops = &mvc2_ep_ops;
++		if (i > 1) {
++			INIT_LIST_HEAD(&ep->ep.ep_list);
++			list_add_tail(&ep->ep.ep_list, &cp->gadget.ep_list);
++		}
++	}
++
++	ret = usb_add_gadget_udc(cp->dev, &cp->gadget);
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++void mvc2_config_mac(struct mvc2 *cp)
++{
++	unsigned int val;
++
++	/* NOTE: this setting is related to reference clock,
++	 * it indicates number of ref clock pulses for 100 ns,
++	 * refer to Q&A adjust 100ns timer
++	 */
++	val = MV_CP_READ(cp->reg->counter_pulse);
++	val &= ~(0xff << 24);
++	/* The formula is 2*100ns/(ref clcok speed) */
++	val |= (5 << 24);
++	MV_CP_WRITE(val, cp->reg->counter_pulse);
++
++	/* set min value for transceiver side U1 tx_t12_t10 to 600ns
++	 * set max value for transceiver side  U1 tx_t12_t11 to 900ns
++	 * set LFPS Receive side t13 - t11 duration for U2  to 600us
++	 * Receive side t13 - t11 duration for u3, set to 200us
++	 */
++	val = MV_CP_READ(lfps_signal(cp, 1));
++	val &= ~(0x0f00000);
++	val |= (0x0900000);
++	MV_CP_WRITE(val, lfps_signal(cp, 1));
++#if 0
++	val = MV_CP_READ(lfps_signal(cp, 1));
++	val &= ~(0xf8);
++	val |= (0x30);
++	MV_CP_WRITE(val, lfps_signal(cp, 1));
++#endif
++	val = MV_CP_READ(lfps_signal(cp, 1));
++	val &= ~(0xff << 16);
++	val |= (0x2 << 16);
++	MV_CP_WRITE(val, lfps_signal(cp, 1));
++
++	if (ip_ver(cp) < USB3_IP_VER_Z2) {
++		/* IP version 2.04, 2.05 */
++		val = MV_CP_READ(lfps_signal(cp, 1));
++		val &= ~(0x7);
++		val |= (0x3);
++		MV_CP_WRITE(val, lfps_signal(cp, 1));
++
++		val = MV_CP_READ(lfps_signal(cp, 2));
++		val &= ~(0x7fff);
++		val |= (0x4e20);
++		MV_CP_WRITE(val, lfps_signal(cp, 2));
++
++		val = MV_CP_READ(lfps_signal(cp, 4));
++		val &= ~(0x7fff);
++		val |= (0x7d0);
++		MV_CP_WRITE(val, lfps_signal(cp, 4));
++
++		MV_CP_WRITE(0x1388000d, lfps_signal(cp, 5));
++	} else {
++		/* IP version 2.06 above */
++		/* Transmit side t11 - t10 duration for u2, max value set to 2ms  */
++		val = MV_CP_READ(lfps_signal(cp, 2));
++		val &= ~0xf;
++		val |= 0x3;
++		MV_CP_WRITE(val, lfps_signal(cp, 2));
++
++		val = MV_CP_READ(lfps_signal(cp, 2));
++		val &= ~(0xff << 16);
++		val |= (0x6 << 16);
++		MV_CP_WRITE(val, lfps_signal(cp, 2));
++
++		/*Transmit side min value of t12 - t11 duration for u2, set to 100us */
++		val = MV_CP_READ(lfps_signal(cp, 3));
++		val &= ~0x7fff;
++		val |= 0x4e20;
++		MV_CP_WRITE(val, lfps_signal(cp, 3));
++
++		val = MV_CP_READ(lfps_signal(cp, 3));
++		val &= ~0x7fff;
++		val |= 0x7d0;
++		MV_CP_WRITE(val, lfps_signal(cp, 3));
++
++		/*
++		 * if U2 is disabled set U1 rx t13 - t11 to 900ns, if U2 is enabled,
++		 * set U1 rx t13-t11 to 500us
++		 */
++		MV_CP_WRITE(0x13880009, lfps_signal(cp, 6));
++	}
++
++	/*reconfig LFPS length for PING to 70ns */
++	val = MV_CP_READ(MVCP_TIMER_TIMEOUT(2));
++	val &= ~0xff;
++	val |= 0x50;
++	MV_CP_WRITE(val, MVCP_TIMER_TIMEOUT(2));
++
++	val = MV_CP_READ(MVCP_LFPS_TX_CONFIG);
++	val &= ~0xf;
++	val |= 0x3;
++	MV_CP_WRITE(val, MVCP_LFPS_TX_CONFIG);
++
++#ifdef ELECTRICAL_TEST
++	/*set min_num_tx_ts1 to 131us, set min_num_tx_ts2 to 2us */
++	val = MV_CP_READ(MVCP_TX_TSI_NUM);
++	val |= 0x1000 << 16;
++	MV_CP_WRITE(val, MVCP_TX_TSI_NUM);
++#else
++	/* for normal usage, 1us ts1 would be enough */
++	val = MV_CP_READ(MVCP_TX_TSI_NUM);
++	val |= 0x8 << 16;
++	MV_CP_WRITE(val, MVCP_TX_TSI_NUM);
++#endif
++	val = MV_CP_READ(MVCP_START_STATE_DELAY);
++	val |= 0x3e << 16;
++	MV_CP_WRITE(val, MVCP_START_STATE_DELAY);
++
++	val = MV_CP_READ(MVCP_TX_TSI_NUM);
++	val |= 0xfff0;
++	MV_CP_WRITE(val, MVCP_TX_TSI_NUM);
++
++	if (u1u2_enabled()) {
++		val = MV_CP_READ(MVCP_LOWPOWER);
++		val &= ~0x3;
++		MV_CP_WRITE(val, MVCP_LOWPOWER);
++	}
++
++	val = MV_CP_READ(MVCP_COUNTER_DELAY_TX);
++	val |= 4 << 16;
++	MV_CP_WRITE(val, MVCP_COUNTER_DELAY_TX);
++
++	val = MV_CP_READ(MVCP_COUNTER_DELAY_TX);
++	if (ip_ver(cp) <= USB3_IP_VER_Z3) {
++		/*
++		 * Jira NEZHA3-152/153
++		 * Set the U2 Timeout Value bigger than the Max value(65024).
++		 * This will make device never send LFPS.Exit, thus can
++		 * avoid NEZHA3-152/153.
++		 */
++		val |= (65024 + 100);
++	} else
++		val |= 5;
++	MV_CP_WRITE(val, MVCP_COUNTER_DELAY_TX);
++}
++
++/* Need to be included in ep lock protection */
++void reset_seqencenum(struct mvc2_ep *ep, int num, int in)
++{
++	struct mvc2 *cp = ep->cp;
++	unsigned int config;
++
++	config = MV_CP_READ(epcon(num, in));
++	config |= MVCP_EP_RESETSEQ;
++	MV_CP_WRITE(config, epcon(num, in));
++}
++
++void mvc2_hw_reset(struct mvc2 *cp)
++{
++	unsigned int val, timeout = 5000;
++
++	if (ip_ver(cp) < USB3_IP_VER_Z2) {
++		val = MV_CP_READ(cp->reg->global_control);
++		val |= MVCP_GLOBAL_CONTROL_SOFT_RESET;
++		MV_CP_WRITE(val, cp->reg->global_control);
++		/* wait controller reset complete */
++		while (timeout-- > 0) {
++			val = MV_CP_READ(cp->reg->global_control);
++			if (!(val & MVCP_GLOBAL_CONTROL_SOFT_RESET))
++				break;
++			cpu_relax();
++		}
++	} else {
++		val = MV_CP_READ(cp->reg->global_control);
++		val |= MVCP_GLOBAL_CONTROL_PHYRESET;
++		MV_CP_WRITE(val, cp->reg->global_control);
++
++		val = MV_CP_READ(MVCP_SOFTWARE_RESET);
++		val |= 1;
++		MV_CP_WRITE(val, MVCP_SOFTWARE_RESET);
++		while (timeout-- > 0) {
++			val = MV_CP_READ(MVCP_SOFTWARE_RESET);
++			if (!(val & 1))
++				break;
++			cpu_relax();
++		}
++	}
++
++	/* delay before mac config */
++	mdelay(100);
++	mvc2_config_mac(cp);
++}
++
++void mvc2_usb2_operation(struct mvc2 *cp, int op)
++{
++	unsigned int val;
++
++	if (op) {
++		val = MV_CP_READ(cp->reg->global_control);
++		val |= MVCP_GLOBAL_CONTROL_USB2_BUS_RESET;
++		MV_CP_WRITE(val, cp->reg->global_control);
++		udelay(10);
++		val &= ~MVCP_GLOBAL_CONTROL_USB2_BUS_RESET;
++		MV_CP_WRITE(val, cp->reg->global_control);
++	}
++}
++
++void mvc2_connect(struct mvc2 *cp, int is_on)
++{
++	unsigned int val;
++
++	if (is_on) {
++		val = MV_CP_READ(cp->reg->global_control);
++		/* bypass lowpower mode */
++		val |= MVCP_GLOBAL_CONTROL_SAFE |
++		    MVCP_GLOBAL_CONTROL_SOFT_CONNECT;
++		MV_CP_WRITE(val, cp->reg->global_control);
++	} else {
++		val = MV_CP_READ(cp->reg->ref_inten);
++		val &= ~MVCP_REF_INTEN_USB2_CNT;
++		MV_CP_WRITE(val, cp->reg->ref_inten);
++
++		val = MV_CP_READ(cp->reg->global_control);
++		val &= ~MVCP_GLOBAL_CONTROL_SOFT_CONNECT;
++		MV_CP_WRITE(val, cp->reg->global_control);
++	}
++}
++
++static int mvc2_probe(struct platform_device *pdev)
++{
++	struct mvc2 *cp = NULL;
++	struct resource *res;
++	unsigned int ver;
++	int ret = 0;
++	void __iomem *base;
++	void __iomem *phy_base = NULL;
++	struct clk *clk;
++
++	/* disable U1/U2 mode, as part of the detection WA */
++	u1u2 = 0;
++
++	/* private struct */
++	cp = devm_kzalloc(&pdev->dev, sizeof(*cp), GFP_KERNEL);
++	if (!cp)
++		return -ENOMEM;
++
++	/* a38x specific initializations */
++	/* ungate unit clocks */
++	clk = devm_clk_get(&pdev->dev, NULL);
++	if (IS_ERR(clk)) {
++		ret = PTR_ERR(clk);
++		goto err_mem;
++	}
++
++	ret = clk_prepare_enable(clk);
++	if (ret < 0)
++		goto err_mem;
++
++	/* phy address for VBUS toggling */
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (res) {
++		phy_base = devm_ioremap(&pdev->dev, res->start, resource_size(res));
++		if (!phy_base) {
++			dev_err(&pdev->dev, "%s: register mapping failed\n", __func__);
++			ret = -ENXIO;
++			goto err_clk;
++		}
++	}
++
++	/* general USB3 device initializations */
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "missing mem resource\n");
++		ret = -ENODEV;
++		goto err_clk;
++	}
++
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (!base) {
++		dev_err(&pdev->dev, "%s: register mapping failed\n", __func__);
++		ret = -ENXIO;
++		goto err_clk;
++	}
++
++	ver = ioread32(base);
++	if (ver == 0) {
++		dev_err(&pdev->dev, "IP version error!\n");
++		ret = -ENXIO;
++		goto err_clk;
++	}
++
++	cp->mvc2_version = ver & 0xFFFF;
++
++	/* setup vbus gpio */
++	cp->vbus_pin = of_get_named_gpio(pdev->dev.of_node, "vbus-gpio", 0);
++	if ((cp->vbus_pin == -ENODEV) || (cp->vbus_pin == -EPROBE_DEFER)) {
++		ret = -EPROBE_DEFER;
++		goto err_clk;
++	}
++
++	if (cp->vbus_pin < 0)
++		cp->vbus_pin = -ENODEV;
++
++	if (gpio_is_valid(cp->vbus_pin)) {
++		cp->prev_vbus = 0;
++		if (!devm_gpio_request(&pdev->dev, cp->vbus_pin, "mvebu-u3d")) {
++			/* Use the 'any_context' version of function to allow
++			 * requesting both direct GPIO interrupt (hardirq) and
++			 * IO-expander's GPIO (nested interrupt)
++			 */
++			ret = devm_request_any_context_irq(&pdev->dev,
++					       gpio_to_irq(cp->vbus_pin),
++					       mvc2_vbus_irq,
++					       IRQ_TYPE_EDGE_BOTH | IRQF_ONESHOT,
++					       "mvebu-u3d", cp);
++			if (ret < 0) {
++				cp->vbus_pin = -ENODEV;
++				dev_warn(&pdev->dev,
++					 "failed to request vbus irq; "
++					 "assuming always on\n");
++			}
++		}
++
++		/* setup work queue */
++		cp->qwork = create_singlethread_workqueue("mvc2_queue");
++		if (!cp->qwork) {
++			dev_err(&pdev->dev, "cannot create workqueue\n");
++			ret = -ENOMEM;
++			goto err_clk;
++		}
++
++		INIT_WORK(&cp->vbus_work, mvc2_vbus_work);
++	}
++
++	cp->reg = devm_kzalloc(&pdev->dev, sizeof(struct mvc2_register),
++			       GFP_KERNEL);
++	if (!cp->reg) {
++		ret = -ENOMEM;
++		goto err_qwork;
++	}
++
++	cp->dev = &pdev->dev;
++	cp->base = base;
++	cp->epnum = 16;
++	if (phy_base)
++		cp->phy_base = phy_base;
++
++	if (cp->mvc2_version >= USB3_IP_VER_Z2) {
++		cp->reg->lfps_signal = 0x8;
++		cp->reg->counter_pulse = 0x20;
++		cp->reg->ref_int = 0x24;
++		cp->reg->ref_inten = 0x28;
++		cp->reg->global_control = 0x2c;
++	} else {
++		cp->reg->lfps_signal = 0x4;
++		cp->reg->counter_pulse = 0x18;
++		cp->reg->ref_int = 0x1c;
++		cp->reg->ref_inten = 0x20;
++		cp->reg->global_control = 0x24;
++	}
++
++	/* For Armada 3700, need to skip PHY HW reset */
++	if (of_device_is_compatible(pdev->dev.of_node,
++				    "marvell,armada3700-u3d"))
++		cp->phy_hw_reset = false;
++	else
++		cp->phy_hw_reset = true;
++
++	/* Get comphy and init if there is */
++	cp->comphy = devm_of_phy_get(&pdev->dev, pdev->dev.of_node, "usb");
++	if (!IS_ERR(cp->comphy)) {
++		ret = phy_init(cp->comphy);
++		if (ret)
++			goto disable_phy;
++
++		ret = phy_power_on(cp->comphy);
++		if (ret) {
++			phy_exit(cp->comphy);
++			goto disable_phy;
++		}
++	}
++
++	spin_lock_init(&cp->lock);
++
++	/* init irq status */
++	irq_enabled = false;
++
++	cp->eps = kzalloc(cp->epnum * sizeof(struct mvc2_ep) * 2, GFP_KERNEL);
++	if (!cp->eps) {
++		ret = -ENOMEM;
++		goto err_qwork;
++	}
++
++	ret = mvc2_gadget_init(cp);
++	if (ret < 0)
++		goto err_alloc_eps;
++
++	eps_init(cp);
++
++	if (cp->phy_hw_reset)
++		mvc2_hw_reset(cp);
++
++	dev_set_drvdata(cp->dev, cp);
++	dev_info(cp->dev, "Detected ver %x from Marvell Central IP.\n", ver);
++
++	return 0;
++
++err_alloc_eps:
++	kfree(cp->eps);
++err_qwork:
++	if (cp->qwork)
++		destroy_workqueue(cp->qwork);
++disable_phy:
++	if (cp->comphy) {
++		phy_power_off(cp->comphy);
++		phy_exit(cp->comphy);
++	}
++err_clk:
++	clk_disable_unprepare(cp->clk);
++err_mem:
++	devm_kfree(&pdev->dev, cp);
++	return ret;
++}
++
++#ifdef CONFIG_PM
++static int mvc2_suspend(struct device *dev)
++{
++	struct mvc2 *cp = (struct mvc2 *)dev_get_drvdata(dev);
++
++	/* Stop the current activities */
++	if (cp->driver)
++		stop_activity(cp, cp->driver);
++
++	/* PHY exit if there is */
++	if (cp->comphy) {
++		phy_power_off(cp->comphy);
++		phy_exit(cp->comphy);
++	}
++
++	return 0;
++}
++
++static int mvc2_resume(struct device *dev)
++{
++	struct mvc2 *cp = (struct mvc2 *)dev_get_drvdata(dev);
++	int ret;
++
++	/* PHY init if there is */
++	if (cp->comphy) {
++		ret = phy_init(cp->comphy);
++		if (ret)
++			return ret;
++
++		ret = phy_power_on(cp->comphy);
++		if (ret) {
++			phy_power_off(cp->comphy);
++			phy_exit(cp->comphy);
++			return ret;
++		}
++	}
++
++	/*
++	 * USB device will be started only in mvc2_complete, once all other
++	 * required device drivers have been resumed.
++	 * This is done to avoid a state which U3D driver is resumed too early
++	 * before mass storage thread has been resumed, which will lead to USB
++	 * transfer time out.
++	*/
++
++	return 0;
++}
++
++/*
++ * The PM core executes complete() callbacks after it has executed
++ * the appropriate resume callbacks for all device drivers.
++ * This routine enables USB3 irq in device mode, later on the USB device will be started
++ * once it receives VBUS on interrupt, which starts USB device by enabling EP, and starts
++ * the USB transfer between host and device.
++ * Later on the USB mass storage function thread will be resumed, which will finish the
++ * USB transfer to let the USB device continue to work after resume.
++ * If start the USB device in "resume" operation, some device resuming after USB device
++ * resuming might take long time, which leads to USB transfer time out.
++ */
++static void mvc2_complete(struct device *dev)
++{
++	struct mvc2 *cp = (struct mvc2 *)dev_get_drvdata(dev);
++
++	/* Re-enable USB3 device irq */
++	mvc2_init_interrupt(cp);
++}
++
++static const struct dev_pm_ops mvc2_pm_ops = {
++	.suspend = mvc2_suspend,
++	.resume = mvc2_resume,
++	.complete = mvc2_complete
++};
++#endif
++
++static int mvc2_remove(struct platform_device *dev)
++{
++	struct mvc2 *cp;
++
++	cp = (struct mvc2 *)platform_get_drvdata(dev);
++	mvc2_connect(cp, 0);
++
++	if (cp->qwork) {
++		flush_workqueue(cp->qwork);
++		destroy_workqueue(cp->qwork);
++	}
++
++	/* PHY exit if there is */
++	if (cp->comphy) {
++		phy_power_off(cp->comphy);
++		phy_exit(cp->comphy);
++	}
++
++	return 0;
++}
++
++static void mvc2_shutdown(struct platform_device *dev)
++{
++}
++
++static const struct of_device_id mv_usb3_dt_match[] = {
++	{.compatible = "marvell,mvebu-u3d"},
++	{.compatible = "marvell,armada3700-u3d"},
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, mv_usb3_dt_match);
++
++static struct platform_driver mvc2_driver = {
++	.probe = mvc2_probe,
++	.remove = mvc2_remove,
++	.shutdown = mvc2_shutdown,
++	.driver = {
++		   .name = "mvebu-u3d",
++#ifdef CONFIG_OF
++		   .of_match_table = of_match_ptr(mv_usb3_dt_match),
++#endif
++#ifdef CONFIG_PM
++		   .pm = &mvc2_pm_ops,
++#endif
++		   },
++};
++
++module_platform_driver(mvc2_driver);
++MODULE_ALIAS("platform:mvc2");
++MODULE_DESCRIPTION(DRIVER_DESC);
++MODULE_AUTHOR("Lei Wen <leiwen@marvell.com>");
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/drivers/usb/gadget/udc/mvebu_u3d.h
+@@ -0,0 +1,572 @@
++/**
++ * core.h - Marvell Central IP usb3 core header
++ *
++ * Copyright (C) 2013 Marvell Inc.
++ *
++ * Authors: Lei Wen <leiwen@marvell.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, and the following disclaimer,
++ *    without modification.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. The names of the above-listed copyright holders may not be used
++ *    to endorse or promote products derived from this software without
++ *    specific prior written permission.
++ *
++ * ALTERNATIVELY, this software may be distributed under the terms of the
++ * GNU General Public License ("GPL") version 2, as published by the Free
++ * Software Foundation.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
++ * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
++ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++#ifndef __DRIVERS_USB_MVC2_H
++#define __DRIVERS_USB_MVC2_H
++
++#define USB3_IP_VER_Z2	0x215
++#define USB3_IP_VER_Z3	0x220
++#define USB3_IP_VER_A0	0x221
++
++#define MVCP_DEV_INFO   0x0
++
++#define MVCP_EP_COUNT	2
++
++#define MVCP_LFPS_SIGNAL(n)     (0x8 + ((n-1) << 2))
++#define MVCP_COUNTER_PULSE      0x20
++#define MVCP_REF_INT            0x24
++#define MVCP_REF_INTEN          0x28
++	#define MVCP_REF_INTEN_USB2_CNT     (1 << 31)
++	#define MVCP_REF_INTEN_USB2_DISCNT  (1 << 30)
++	#define MVCP_REF_INTEN_RESUME       (1 << 29)
++	#define MVCP_REF_INTEN_SUSPEND      (1 << 28)
++	#define MVCP_REF_INTEN_RESET        (1 << 27)
++	#define MVCP_REF_INTEN_POWERON      (1 << 26)
++	#define MVCP_REF_INTEN_POWEROFF     (1 << 25)
++
++#define MVCP_GLOBAL_CONTROL     0x2C
++	#define MVCP_GLOBAL_CONTROL_SOFT_CONNECT    (1 << 31)
++	#define MVCP_GLOBAL_CONTROL_SOFT_RESET      (1 << 30)
++	#define MVCP_GLOBAL_CONTROL_SAFE            (1 << 29)
++	#define MVCP_GLOBAL_CONTROL_PHYRESET        (1 << 28)
++	#define MVCP_GLOBAL_CONTROL_SOCACCESS       (1 << 27)
++	#define MVCP_GLOBAL_CONTROL_SS_VBUS         (1 << 3)
++	#define MVCP_GLOBAL_CONTROL_POWERPRESENT    (1 << 2)
++	#define MVCP_GLOBAL_CONTROL_USB2_BUS_RESET  (1 << 0)
++
++#define MVCP_SYSTEM_DEBUG       0x30
++
++#define MVCP_POWER_MANAGEMENT_DEVICE    0xC8
++#define MVCP_POWER_MANAGEMENT_SOC       0xCC
++#define MVCP_LOW_POWER_STATUS           0xD0
++#define MVCP_SOFTWARE_RESET             0xD4
++
++#define MVCP_TOP_INT_STATUS		0xD8
++	#define MVCP_TOP_INT_SS_EP		(0x1<<6)
++	#define MVCP_TOP_INT_VBUS		(0x1<<5)
++	#define MVCP_TOP_INT_PME		(0x1<<4)
++	#define MVCP_TOP_INT_REF		(0x1<<3)
++	#define MVCP_TOP_INT_SS_CORE		(0x1<<2)
++	#define MVCP_TOP_INT_SS_SYS		(0x1<<1)
++	#define MVCP_TOP_INT_SS_AXI		(0x1<<1)
++	#define MVCP_TOP_INT_USB2		(0x1<<0)
++
++#define MVCP_TOP_INT_EN                 0xDC
++
++#define MVCP_TIMER_TIMEOUT(n)           (0x194 + ((n-1) << 2))
++#define MVCP_LFPS_TX_CONFIG             0x19C
++#define MVCP_LFPS_RX_CONFIG             0x1A0
++#define MVCP_LFPS_WR_TRESET             0x1A4
++#define MVCP_COUNTER_DELAY_TX           0x1A8
++#define MVCP_DEV_USB_ADDRESS            0x320
++#define MVCP_FUNCTION_WAKEUP            0x324
++
++#define MVCP_ENDPOINT_0_CONFIG          0x328
++	#define MVCP_ENDPOINT_0_CONFIG_CHG_STATE    (1 << 7)
++
++#define MVCP_OUT_ENDPOINT_CONFIG_BASE   0x32C
++
++#define MVCP_IN_ENDPOINT_CONFIG_BASE    0x368
++	#define MVCP_EP_BURST(x)            ((x + 1) << 24)
++	#define MVCP_EP_MAX_PKT(x)          ((((x >> 8) & 0x7)  \
++											<< 8) | ((x & 0xff) \
++											<< 16))
++	#define MVCP_EP_RESETSEQ            (1 << 14)
++	#define MVCP_EP_STALL               (1 << 11)
++	#define MVCP_EP_BULK_STREAM_EN      (1 << 7)
++	#define MVCP_EP_ENABLE              (1 << 6)
++	#define MVCP_EP_TYPE_INT            (0x3 << 4)
++	#define MVCP_EP_TYPE_BLK            (0x2 << 4)
++	#define MVCP_EP_TYPE_ISO            (0x1 << 4)
++	#define MVCP_EP_TYPE_CTL            (0x0 << 4)
++	#define MVCP_EP_TYPE(x)             ((x & 0x3) << 4)
++	#define MVCP_EP_NUM(x)              (x & 0xf)
++
++static inline unsigned int epcon(int n, int in)
++{
++	if (n == 0)
++		return MVCP_ENDPOINT_0_CONFIG;
++
++	if (in)
++		return MVCP_IN_ENDPOINT_CONFIG_BASE + ((n - 1) << 2);
++	else
++		return MVCP_OUT_ENDPOINT_CONFIG_BASE + ((n - 1) << 2);
++}
++
++#define MVCP_PHY        0x3A4
++	#define MVCP_PHY_LTSSM_MASK 0x1f
++		#define LTSSM_DISABLED  0x1
++		#define LTSSM_U0        0xc
++		#define LTSSM_U1        0xd
++		#define LTSSM_U2        0xe
++		#define LTSSM_U3        0xf
++
++#define MVCP_SS_CORE_INT        0x3B8
++	#define MVCP_SS_CORE_INT_SETUP      (1 << 14)
++	#define MVCP_SS_CORE_INT_HOT_RESET  (1 << 11)
++	#define MVCP_SS_CORE_INT_LTSSM_CHG  (1 << 8)
++
++#define MVCP_SS_CORE_INTEN      0x3BC
++	#define MVCP_SS_CORE_INTEN_SETUP        (1 << 14)
++	#define MVCP_SS_CORE_INTEN_HOT_RESET    (1 << 11)
++	#define MVCP_SS_CORE_INTEN_LTSSM_CHG    (1 << 8)
++
++/* IP_VERSION <= USB3_IP_VER_Z2 */
++#define EP_IN_BINTERVAL_REG_1_2_3         0x03C0
++#define EP_IN_BINTERVAL_REG_4_5_6_7       0x03C4
++#define EP_IN_BINTERVAL_REG_8_9_10_11     0x03C8
++#define EP_IN_BINTERVAL_REG_12_13_14_15   0x03CC
++#define EP_OUT_BINTERVAL_REG_1_2_3        0x03D0
++#define EP_OUT_BINTERVAL_REG_4_5_6_7      0x03D4
++#define EP_OUT_BINTERVAL_REG_8_9_10_11    0x03D8
++#define EP_OUT_BINTERVAL_REG_12_13_14_15  0x03DC
++
++#define MVCP_TX_TSI_NUM         0x3EC
++#define MVCP_START_STATE_DELAY  0x3F0
++
++#define MVCP_LOWPOWER           0x3F4
++	#define MVCP_LOWPOWER_U2_EN     (1 << 3)
++	#define MVCP_LOWPOWER_U1_EN     (1 << 2)
++	#define MVCP_LOWPOWER_U2_REJ    (1 << 1)
++	#define MVCP_LOWPOWER_U1_REJ    (1 << 0)
++
++#define MVCP_SETUP_DP_LOW   0x3F8
++#define MVCP_SETUP_DP_HIGH  0x3FC
++
++#define MVCP_SETUP_CONTROL  0x400
++	#define MVCP_SETUP_CONTROL_FETCHED  (1 << 0)
++
++#define MVCP_DMA_GLOBAL_CONFIG  0x7D0
++	#define MVCP_DMA_GLOBAL_CONFIG_INTCLR       (1 << 3)
++	#define MVCP_DMA_GLOBAL_CONFIG_RESETDONE    (1 << 2)
++	#define MVCP_DMA_GLOBAL_CONFIG_RUN          (1 << 1)
++	#define MVCP_DMA_GLOBAL_CONFIG_RESET        (1 << 0)
++
++#define MVCP_BULK_STREAMING_ENABLE      0x7D4
++#define MVCP_EP_OUT_REC_STREAM_ID_BASE  0x7D8
++#define MVCP_EP_IN_REC_STREAM_ID_BASE   0x814
++static inline int streamid(int n, int i)
++{
++	if (n)
++		return MVCP_EP_IN_REC_STREAM_ID_BASE + ((n - 1) << 2);
++	else
++		return MVCP_EP_OUT_REC_STREAM_ID_BASE + ((n - 1) << 2);
++}
++
++#define MVCP_DMA_COMPLETE_SUCCESS       0x850
++#define MVCP_DMA_COMPLETE_ERROR         0x854
++#define MVCP_DMA_BD_FETCH_ERROR         0x858
++#define MVCP_DMA_BD_FETCH_ERROR_EN      0x85C
++#define MVCP_DMA_DATA_ERROR             0x860
++#define MVCP_DMA_DATA_ERROR_EN          0x864
++#define MVCP_DMA_ERROR_HANDLING         0x868
++#define MVCP_EP_OUT_RX_DMA_CONFIG_BASE  0x86C
++
++#define MVCP_EP_IN_TX_DMA_CONFIG_BASE   0x8AC
++	#define MVCP_EPDMA_START            (1 << 6)
++
++static inline int ep_dma_config(int num, int dir)
++{
++	if (dir)
++		return MVCP_EP_IN_TX_DMA_CONFIG_BASE + (num << 2);
++	else
++		return MVCP_EP_OUT_RX_DMA_CONFIG_BASE + (num << 2);
++}
++
++#define MVCP_EP_OUT_RX_DMA_START_BASE   0x8EC
++#define MVCP_EP_IN_TX_DMA_START_BASE    0x92C
++
++static inline int ep_dma_addr(int num, int dir)
++{
++	if (dir)
++		return MVCP_EP_IN_TX_DMA_START_BASE + (num << 2);
++	else
++		return MVCP_EP_OUT_RX_DMA_START_BASE + (num << 2);
++}
++
++#define MVCP_DMA_SUSPEND        0x9EC
++#define MVCP_DMA_SUSPEND_DONE   0x9F0
++#define MVCP_DMA_HALT           0x9F4
++#define MVCP_DMA_HALT_DONE      0x9F8
++
++#define MVCP_SS_SYS_INT         0xA0C
++	#define MVCP_SS_AXI_DATA_ERR    (1 << 29)
++	#define MVCP_SS_AXI_BDF_ERR     (1 << 28)
++	#define MVCP_SS_DONEQ_FULL_ERR  (1 << 27)
++	#define MVCP_SS_SYS_INT_DMA     (1 << 25)
++
++#define MVCP_SS_SYS_INTEN       0xA10
++	#define MVCP_SS_SYS_INTEN_DMA   (1 << 25)
++
++#define MVCP_DMA_STATE(n)       (0xA24 + ((n-1) << 2))
++	#define MVCP_DMA_STATE_DBG_CACHE(x) ((x & 0x3) << 16)
++
++#define MVCP_SEGMENT_COUNTER(n) (0xA38 + ((n-1) << 2))
++
++#define MVCP_EP_IN_DONEQ_START_BASE     0xA78
++#define MVCP_EP_IN_DONEQ_END_BASE       0xAB8
++#define MVCP_EP_OUT_DONEQ_START_BASE    0xAF8
++#define MVCP_EP_OUT_DONEQ_END_BASE      0xB38
++#define MVCP_EP_IN_DONEQ_WRITE_BASE     0xB78
++#define MVCP_EP_IN_DONEQ_READ_BASE      0xBB8
++#define MVCP_EP_OUT_DONEQ_WRITE_BASE    0xBF8
++#define MVCP_EP_OUT_DONEQ_READ_BASE     0xC38
++#define MVCP_DONEQ_FULL_STATUS          0xC78
++
++static inline int ep_doneq_start(int num, int dir)
++{
++	if (dir)
++		return MVCP_EP_IN_DONEQ_START_BASE + (num << 2);
++	else
++		return MVCP_EP_OUT_DONEQ_START_BASE + (num << 2);
++}
++
++static inline int ep_doneq_end(int num, int dir)
++{
++	if (dir)
++		return MVCP_EP_IN_DONEQ_END_BASE + (num << 2);
++	else
++		return MVCP_EP_OUT_DONEQ_END_BASE + (num << 2);
++}
++
++static inline int ep_doneq_write(int num, int dir)
++{
++	if (dir)
++		return MVCP_EP_IN_DONEQ_WRITE_BASE + (num << 2);
++	else
++		return MVCP_EP_OUT_DONEQ_WRITE_BASE + (num << 2);
++}
++
++static inline int ep_doneq_read(int num, int dir)
++{
++	if (dir)
++		return MVCP_EP_IN_DONEQ_READ_BASE + (num << 2);
++	else
++		return MVCP_EP_OUT_DONEQ_READ_BASE + (num << 2);
++}
++
++#define MVCP_BD_MEM_IN      0x123C
++#define MVCP_PL_DEBUG(n)    (0x1264 + ((n-1) << 2))
++#define MVCP_DMA_DBG_IN(n)  (0x1274 + ((n-1) << 2))
++#define MVCP_DMA_DBG_OUT(n) (0x127C + ((n-1) << 2))
++
++#define MVCP_DMA_ENABLE     0x1284
++
++/* IP_VERSION >= 0X218 */
++#define SS_IN_DMA_CONTROL_REG(x)  (0x1300 + 4 * (x))
++#define SS_OUT_DMA_CONTROL_REG(x) (0x1340 + 4 * (x))
++#define DMA_START     (1 << 0)
++#define DMA_HALT      (1 << 1)
++#define DMA_SUSPEND   (1 << 2)
++#define DONEQ_CONFIG  (1 << 3)
++#define ABORT_REQ     (1 << 4)
++#define ABORT_DONE    (1 << 5)
++
++#define SS_IN_EP_INT_STATUS_REG(x)  (0x1380 + 4 * (x))
++#define SS_OUT_EP_INT_STATUS_REG(x) (0x13C0 + 4 * (x))
++#define SS_IN_EP_INT_ENABLE_REG(x)  (0x1400 + 4 * (x))
++#define SS_OUT_EP_INT_ENABLE_REG(x) (0x1440 + 4 * (x))
++
++#define COMPLETION_SUCCESS   (1 << 0)
++#define COMPLETION_WITH_ERR  (1 << 1)
++#define BD_FETCH_ERROR       (1 << 2)
++#define DMA_DATA_ERROR       (1 << 3)
++#define DONEQ_FULL           (1 << 4)
++#define DMA_SUSPEND_DONE     (1 << 5)
++#define DMA_HALT_DONE        (1 << 6)
++#define PRIME_REC            (1 << 16)
++#define HIMD_REC             (1 << 17)
++#define STREAM_REJ           (1 << 18)
++#define HOST_FLOW_CTRL       (1 << 19)
++
++#define SS_EP_TOP_INT_STATUS_REG 0x1480
++#define SS_EP_TOP_INT_ENABLE_REG 0x1484
++#define SS_AXI_INT_STATUS_REG 0x1488
++#define SS_AXI_INT_ENABLE_REG 0x148C
++
++#define EP_IN_BINTERVAL_REG(x)  (0x1490 + 4 * ((x)-1))
++#define EP_OUT_BINTERVAL_REG(x) (0x14CC + 4 * ((x)-1))
++/* END IP_VERSION >= 0X218 */
++
++struct mvc2_ep;
++
++struct mvc2_req {
++	struct usb_request  req;
++	int bd_total;
++	struct bd   *bd;
++	struct list_head    queue;
++};
++
++enum mvc2_dev_state {
++	MVCP_DEFAULT_STATE,
++	MVCP_ADDRESS_STATE,
++	MVCP_CONFIGURED_STATE,
++};
++
++struct mvc2_register {
++	unsigned int lfps_signal;
++	unsigned int counter_pulse;
++	unsigned int ref_int;
++	unsigned int ref_inten;
++	unsigned int global_control;
++};
++
++struct mvc2 {
++	struct usb_gadget   gadget;
++	struct usb_gadget_driver    *driver;
++	struct device   *dev;
++	struct clk  *clk;
++	struct usb_phy *phy;
++	struct phy *comphy;
++	int irq;
++	void    __iomem *base;
++	void    __iomem *win_base;
++	void    __iomem *phy_base;
++	#define MVCP_STATUS_USB2        (1 << 10)
++	#define MVCP_STATUS_CONNECTED   (1 << 9)
++	#define MVCP_STATUS_TEST_MASK   (0x7 << 5)
++	#define MVCP_STATUS_TEST(x)     (((x) & 0x7) << 5)
++	#define MVCP_STATUS_U3          (1 << 4)
++	#define MVCP_STATUS_U2          (1 << 3)
++	#define MVCP_STATUS_U1          (1 << 2)
++	#define MVCP_STATUS_U0          (1 << 1)
++	#define MVCP_STATUS_POWER_MASK  (0xf << 1)
++	#define MVCP_STATUS_SELF_POWERED    (1 << 0)
++	unsigned int    status;
++	enum mvc2_dev_state dev_state;
++	spinlock_t  lock;
++
++	struct mvc2_req ep0_req;
++	int ep0_dir;
++	void    *setup_buf;
++
++	struct dma_pool *bd_pool;
++	struct mvc2_ep  *eps;
++
++	unsigned int    epnum;
++	unsigned int    dma_status;
++
++	struct work_struct  *work;
++	struct pm_qos_request   qos_idle;
++	s32                     lpm_qos;
++
++	unsigned int    isoch_delay;
++	unsigned int    u1sel;
++	unsigned int    u1pel;
++	unsigned int    u2sel;
++	unsigned int    u2pel;
++	struct mvc2_register *reg;
++	unsigned int	mvc2_version;
++	int vbus_pin;
++	int prev_vbus;
++	struct work_struct	vbus_work;
++	struct workqueue_struct *qwork;
++	/* Flags for HW reset. false: no need reset; true: need reset */
++	bool phy_hw_reset;
++};
++
++extern void mvc2_usb2_connect(void);
++extern void mvc2_usb2_disconnect(void);
++extern int eps_init(struct mvc2 *cp);
++extern void reset_seqencenum(struct mvc2_ep *ep, int num, int in);
++extern void mvc2_config_mac(struct mvc2 *cp);
++extern void mvc2_hw_reset(struct mvc2 *cp);
++extern int mvc2_std_request(struct mvc2 *cp, struct usb_ctrlrequest *r,
++		bool *delegate);
++extern int mvc2_gadget_init(struct mvc2 *cp);
++extern void mvc2_usb2_operation(struct mvc2 *cp, int op);
++extern void mvc2_connect(struct mvc2 *cp, int is_on);
++extern unsigned int u1u2_enabled(void);
++
++#define BD_DMA_BOUNDARY 4096
++#define BD_ADDR_ALIGN   4
++/*
++ * Although one BD could transfer 64k-1 bytes data,
++ * for calculation efficiency, we short it for 32k
++ */
++#define BD_SEGMENT_SHIFT    (15)
++#define BD_MAX_SIZE         (1 << BD_SEGMENT_SHIFT)
++struct bd {
++	#define BD_BUF_RDY          (1 << 31)
++	#define BD_INT_EN           (1 << 30)
++	#define BD_NXT_RDY          (1 << 29)
++	#define BD_NXT_PTR_JUMP     (1 << 28)
++	#define BD_FLUSH_BIT        (1 << 27)
++	#define BD_ABORT_BIT        (1 << 26)
++	#define BD_ZLP              (1 << 25)
++	#define BD_CHAIN_BIT        (1 << 24)
++	#define BD_ENCODED_STREAM_ID(x) ((x & 0xff) << 16)
++	#define BD_BUF_SZ(x)        (x & 0xffff)
++	unsigned int    cmd;
++	unsigned int    buf;
++
++	/* This field should be next bd's physical addr */
++	unsigned int    phys_next;
++#define BD_STREAM_ID(x)     ((x & 0xffff) << 16)
++#define BD_STREAM_LEN(x)    (x & 0xffff)
++	unsigned int    stream;
++};
++
++/*
++ * Since each BD would transfer BD_MAX_SIZE, so for each endpoint, it allow to
++ * hold (MAX_QUEUE_SLOT-1)*BD_MAX_SIZE in pending status to be transferred
++ */
++#define MAX_QUEUE_SLOT  256
++struct doneq {
++	unsigned int    addr;
++	#define DONE_LEN(x)     ((x >> 16) & 0xffff)
++	#define DONE_AXI_ERROR  (1 << 4)
++	#define DONE_SHORT_PKT  (1 << 3)
++	#define DONE_FLUSH      (1 << 2)
++	#define DONE_ABORT      (1 << 1)
++	#define DONE_CYCLE  (1 << 0)
++	unsigned int    status;
++};
++
++#define MAXNAME 14
++/*
++ * For one ep, it would pending for several req,
++ * while hardware would handle only one req for one time.
++ * Other req is pending over queue list.
++ *
++ * For the transferring req, we would separate it into several bd to info
++ * hw to transfer. And dma engine would auto feature those chained bd, and
++ * send them out. When each bd finish, its BD_BUF_RDY flag would be cleared.
++ * If BD_INT_EN flag is set, interrupt would be raised correspondingly.
++ * ep --
++ *      \--req->req->
++ *          \     \--bd->bd->null
++ *           \--bd->bd->null
++ */
++struct mvc2_ep {
++	struct usb_ep   ep;
++	struct mvc2 *cp;
++
++	#define MV_CP_EP_TRANSERING     (1 << 8)
++	#define MV_CP_EP_STALL          (1 << 7)
++	#define MV_CP_EP_BULK_STREAM    (1 << 6)
++	#define MV_CP_EP_WEDGE          (1 << 5)
++	#define MV_CP_EP_DIRIN          (1 << 4)
++	#define MV_CP_EP_NUM_MASK       (0xf)
++	#define MV_CP_EP_NUM(x)         (x & MV_CP_EP_NUM_MASK)
++	unsigned int    state;
++
++	/*
++	 * Actually in current hw solution,
++	 * TransferQ and DoneQ size should be equal
++	 */
++	/*
++	 * TransferQ:
++	 *        doneq_cur    bd_cur
++	 *        |            |
++	 *        v            v
++	 * |-------0============------|
++	 *         ^
++	 *         |
++	 *         not ready bd
++	 *
++	 * In above diagram, "-" shows current available bd could be allocated,
++	 * while "=" shows bd cannot be touched by the sw.
++	 * When we need to do enqueue operation, we need to allocate bd
++	 * from "-" pool.
++	 *
++	 * Note: we need ensure at least one bd in the ring as not ready
++	 */
++	struct bd   *bd_ring;
++	dma_addr_t  bd_ring_phys;
++	unsigned int    bd_cur;
++	unsigned int    bd_sz;
++
++	/* DoneQ */
++	struct doneq    *doneq_start;
++	dma_addr_t  doneq_start_phys;
++	unsigned int    doneq_cur;
++
++	char    name[MAXNAME];
++	struct list_head    queue;
++	struct list_head    wait, tmp;
++	unsigned int dir;
++	unsigned    stopped:1,
++				wedge:1,
++				ep_type:2,
++				ep_num:8;
++	unsigned int left_bds;
++	/* Lock to keep queue is safe operated */
++	spinlock_t  lock;
++};
++
++#define EPBIT(epnum, dir)    ({unsigned int tmp;        \
++		tmp = (dir) ? (0x10000 << epnum) : (1 << epnum); tmp; })
++
++#define MV_CP_READ(reg)        ({unsigned int val;        \
++			val = ioread32(cp->base + reg); val; })
++#define MV_CP_WRITE(val, reg)    ({iowrite32(val, cp->base + reg); })
++
++struct mvc2;
++
++static inline unsigned int ip_ver(struct mvc2 *cp)
++{
++	return cp->mvc2_version;
++}
++
++static inline unsigned int lfps_signal(struct mvc2 *cp, unsigned int n)
++{
++	return cp->reg->lfps_signal + ((n - 1) << 2);
++}
++
++/*
++ * struct mvc2_glue - glue structure to combine 2.0/3.0 udc together
++ * @u20: 2.0 driver udc
++ * @u30: 3.0 driver udc
++ * @usb2_connect: whether usb2.0 is in connection
++ * @connect_num: how many usb3 has been tried
++ */
++struct mvc2_glue {
++	struct usb_udc  *u20;
++	struct usb_udc  *u30;
++
++	int usb2_connect;
++	unsigned int status;
++};
++
++extern struct mvc2_glue glue;
++extern bool usb3_disconnect;
++
++int mvc2_checkvbus(struct mvc2 *cp);
++void mvc2_handle_setup(struct mvc2 *cp);
++int mv_udc_register_status_notify(struct notifier_block *nb);
++
++#endif
+--- a/include/linux/usb/gadget.h
++++ b/include/linux/usb/gadget.h
+@@ -863,4 +863,25 @@ extern void usb_ep_autoconfig_release(st
+ 
+ extern void usb_ep_autoconfig_reset(struct usb_gadget *);
+ 
++
++/**
++ * struct usb_udc - describes one usb device controller
++ * @driver - the gadget driver pointer. For use by the class code
++ * @dev - the child device to the actual controller
++ * @gadget - the gadget. For use by the class code
++ * @list - for use by the udc class driver
++ *
++ * This represents the internal data structure which is used by the UDC-class
++ * to hold information about udc driver and gadget together.
++ */
++struct usb_udc {
++	struct usb_gadget_driver	*driver;
++	struct usb_gadget		*gadget;
++	struct device			dev;
++	struct list_head		list;
++	bool				vbus;
++};
++
++extern struct usb_udc *udc_detect(struct list_head *udc_list, struct usb_gadget_driver *driver);
++
+ #endif /* __LINUX_USB_GADGET_H */

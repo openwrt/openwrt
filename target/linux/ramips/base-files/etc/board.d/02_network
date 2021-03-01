@@ -93,6 +93,7 @@ ramips_setup_interfaces()
 	dlink,dwr-922-e2|\
 	ew1200|\
 	firewrt|\
+	gl-mt1300|\
 	hc5661a|\
 	hlk-rm04|\
 	k2p|\
@@ -287,6 +288,9 @@ ramips_setup_interfaces()
 	gl-mt300n-v2)
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
+		;;
+	microuter-n300)
+		ucidef_set_interface_lan "eth0"
 		;;
 	awapn2403)
 		ucidef_add_switch "switch0" \

@@ -1,0 +1,12 @@
+setenv bootargs "root=/dev/mmcblk0p2 rw rootwait"
+
+if test -n "${console}"; then
+	setenv bootargs "${bootargs} ${console}"
+fi
+
+setenv mmcdev 0
+
+load mmc ${mmcdev}:1 ${fdt_addr} @DTB@.dtb
+load mmc ${mmcdev}:1 ${kernel_addr} Image
+
+booti ${kernel_addr} - ${fdt_addr}

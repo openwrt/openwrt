@@ -117,13 +117,18 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
-	glinet,gl-ar750s)
+	glinet,gl-ar750|\
+	glinet,gl-ar750s|\
+	glinet,gl-ar750s-nor|\
+	glinet,gl-ar750s-nor-nand)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0) +1)
 		;;
-	glinet,gl-x750)
+	glinet,gl-x750|\
+	glinet,gl-x750-nor|\
+	glinet,gl-x750-nor-nand)
 		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0) +2)
+		ath10kcal_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0) +3)
 		;;
 	nec,wg800hp)
 		ath10kcal_extract "art" 20480 2116
@@ -191,6 +196,14 @@ case "$FIRMWARE" in
 	netgear,ex7300)
 		ath10kcal_extract "caldata" 20480 12064
 		ath10kcal_patch_mac $(mtd_get_mac_binary caldata 12)
+		;;
+	glinet,gl-x1200|\
+	glinet,gl-x1200-nor|\
+	glinet,gl-x1200-nor-nand)
+		ath10kcal_extract "art" 20480 12064
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		#ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
 	phicomm,k2t)
 		ath10kcal_extract "art" 20480 12064

@@ -507,6 +507,8 @@ define Package/ath10k-firmware-qca9888-ct-htt/install
 	$(INSTALL_DATA) \
 		$(DL_DIR)/$(call CT_FIRMWARE_FILE_HTT,QCA9888) \
 		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/ct-firmware-5.bin
+		$(INSTALL_DIR) $(1)/lib/firmware/ath10k
+	$(INSTALL_DATA) ./fwcfg-pci-0000:00:00.0.txt $(1)/lib/firmware/ath10k/fwcfg-pci-0000:00:00.0.txt
 endef
 
 

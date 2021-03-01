@@ -1,0 +1,16 @@
+Index: linux-4.14.209/drivers/net/ethernet/atheros/ag71xx/ag71xx_ar7240.c
+===================================================================
+--- linux-4.14.209.orig/drivers/net/ethernet/atheros/ag71xx/ag71xx_ar7240.c
++++ linux-4.14.209/drivers/net/ethernet/atheros/ag71xx/ag71xx_ar7240.c
+@@ -955,6 +955,11 @@ ar7240_reset_switch(struct switch_dev *d
+ {
+ 	struct ar7240sw *as = sw_to_ar7240(dev);
+ 	ar7240sw_reset(as);
++
++	/* ar7240 reapply hardware settings*/
++	if (sw_is_ar7240(as))
++		ar7240_hw_apply(dev);
++	
+ 	return 0;
+ }
+ 

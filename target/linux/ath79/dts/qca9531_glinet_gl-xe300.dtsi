@@ -1,0 +1,178 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "qca953x.dtsi"
+
+/ {
+	compatible = "glinet,gl-xe300", "qca,qca9531";
+	model = "GL.iNet GL-XE300";
+
+	keys {
+		compatible = "gpio-keys-polled";
+
+		poll-interval = <20>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&jtag_disable_pins>;
+
+		button0 {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wan {
+			label = "gl-xe300:green:wan";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		lan {
+			label = "gl-xe300:green:lan";
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			label = "gl-xe300:green:wlan";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		lte {
+			label = "gl-xe300:green:lte";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		 };
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_lte_power {
+			gpio-export,name = "lte_power";
+			gpio-export,output = <1>;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_sd_detect {
+			gpio-export,name = "sd_detect";
+			gpio-export,output = <0>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+	 };
+
+	i2c: i2c {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&gpio 14 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 16 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		rtc@32 {
+                        compatible = "rtc-sd2068";
+                        reg = <0x32>;
+		};
+
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&uart {
+	status = "okay";
+};
+
+&usb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	hub_port: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+	num-cs = <2>;
+	cs-gpios = <0>, <0>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		nor_partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x040000 0x010000>;
+			};
+
+			art: partition@50000 {
+				label = "art";
+				reg = <0x050000 0x010000>;
+				read-only;
+			};
+		};
+	};
+
+	flash_nand: flash@1 {
+		compatible = "spinand,glinet";
+		reg = <1>;
+		spi-max-frequency = <25000000>;
+
+		nand_partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			nand_ubi: partition@0 {
+				label = "nand_ubi";
+				reg = <0x000000 0x8000000>;
+			};
+		};
+	};
+
+};
+
+&eth0 {
+	status = "okay";
+	mtd-mac-address = <&art 0x0>;
+	phy-handle = <&swphy4>;
+	ifname = "eth1";
+};
+
+&eth1 {
+	mtd-mac-address = <&art 0x0>;
+	mtd-mac-address-increment = <1>;
+	ifname = "eth0";
+};
+
+&wmac {
+	status = "okay";
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&art 0x1002>;
+};

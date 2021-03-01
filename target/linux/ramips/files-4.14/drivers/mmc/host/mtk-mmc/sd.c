@@ -63,11 +63,7 @@
 
 #define DRV_NAME            "mtk-sd"
 
-#if defined(CONFIG_SOC_MT7620)
-#define HOST_MAX_MCLK       (48000000) /* +/- by chhung */
-#elif defined(CONFIG_SOC_MT7621)
-#define HOST_MAX_MCLK       (50000000) /* +/- by chhung */
-#endif
+#define HOST_MAX_MCLK       (40000000) /* +/- by chhung */
 #define HOST_MIN_MCLK       (260000)
 
 #define HOST_MAX_BLKSZ      (2048)

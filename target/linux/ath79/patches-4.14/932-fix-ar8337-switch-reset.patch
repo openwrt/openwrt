@@ -1,0 +1,67 @@
+Index: linux-4.14.209/drivers/net/phy/ar8216.c
+===================================================================
+--- linux-4.14.209.orig/drivers/net/phy/ar8216.c
++++ linux-4.14.209/drivers/net/phy/ar8216.c
+@@ -1445,6 +1445,36 @@ ar8xxx_sw_reset_switch(struct switch_dev
+ 	return chip->sw_hw_apply(dev);
+ }
+ 
++ar8337_sw_reset_switch(struct switch_dev *dev)
++{
++	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
++	const struct ar8xxx_chip *chip = priv->chip;
++	int i;
++
++	mutex_lock(&priv->reg_mutex);
++
++	for (i = 0; i < dev->vlans; i++)
++		priv->vlan_id[i] = i;
++
++	/* Configure all ports */
++	for (i = 0; i < dev->ports; i++)
++		chip->init_port(priv, i);
++
++	priv->mirror_rx = false;
++	priv->mirror_tx = false;
++	priv->source_port = 0;
++	priv->monitor_port = 0;
++	priv->arl_age_time = AR8XXX_DEFAULT_ARL_AGE_TIME;
++
++	chip->init_globals(priv);
++	chip->atu_flush(priv);
++	chip->hw_init(priv);
++
++	mutex_unlock(&priv->reg_mutex);
++
++	return chip->sw_hw_apply(dev);
++}
++
+ int
+ ar8xxx_sw_set_reset_mibs(struct switch_dev *dev,
+ 			 const struct switch_attr *attr,
+Index: linux-4.14.209/drivers/net/phy/ar8216.h
+===================================================================
+--- linux-4.14.209.orig/drivers/net/phy/ar8216.h
++++ linux-4.14.209/drivers/net/phy/ar8216.h
+@@ -612,6 +612,8 @@ ar8xxx_sw_hw_apply(struct switch_dev *de
+ int
+ ar8xxx_sw_reset_switch(struct switch_dev *dev);
+ int
++ar8337_sw_reset_switch(struct switch_dev *dev);
++int
+ ar8xxx_sw_get_port_link(struct switch_dev *dev, int port,
+ 			struct switch_port_link *link);
+ int
+Index: linux-4.14.209/drivers/net/phy/ar8327.c
+===================================================================
+--- linux-4.14.209.orig/drivers/net/phy/ar8327.c
++++ linux-4.14.209/drivers/net/phy/ar8327.c
+@@ -1469,7 +1469,7 @@ static const struct switch_dev_ops ar832
+ 	.get_vlan_ports = ar8327_sw_get_ports,
+ 	.set_vlan_ports = ar8327_sw_set_ports,
+ 	.apply_config = ar8327_sw_hw_apply,
+-	.reset_switch = ar8xxx_sw_reset_switch,
++	.reset_switch = ar8337_sw_reset_switch,
+ 	.get_port_link = ar8xxx_sw_get_port_link,
+ 	.get_port_stats = ar8xxx_sw_get_port_stats,
+ };

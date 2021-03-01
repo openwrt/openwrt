@@ -1,0 +1,20 @@
+--- a/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c
++++ b/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c
+@@ -1303,6 +1303,7 @@ static int ag71xx_probe(struct platform_
+ 	struct resource *res;
+ 	struct ag71xx *ag;
+ 	const void *mac_addr;
++	const char *ifname = NULL;
+ 	u32 max_frame_len;
+ 	int tx_size, err;
+ 
+@@ -1514,6 +1515,9 @@ static int ag71xx_probe(struct platform_
+ 
+ 	platform_set_drvdata(pdev, dev);
+ 
++	if(!of_property_read_string(np, "ifname",&ifname))
++		 memcpy(dev->name,ifname,strlen(ifname)+1);
++
+ 	err = register_netdev(dev);
+ 	if (err) {
+ 		dev_err(&pdev->dev, "unable to register net device\n");

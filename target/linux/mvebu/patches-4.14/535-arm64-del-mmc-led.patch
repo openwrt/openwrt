@@ -1,0 +1,19 @@
+--- a/drivers/mmc/host/sdhci.c	2019-07-08 22:26:53.542096346 +0800
++++ b/drivers/mmc/host/sdhci.c	2019-07-08 22:27:47.426457950 +0800
+@@ -3967,14 +3967,14 @@
+ 		       mmc_hostname(mmc), host->irq, ret);
+ 		goto untasklet;
+ 	}
+-
++#if 0
+ 	ret = sdhci_led_register(host);
+ 	if (ret) {
+ 		pr_err("%s: Failed to register LED device: %d\n",
+ 		       mmc_hostname(mmc), ret);
+ 		goto unirq;
+ 	}
+-
++#endif
+ 	mmiowb();
+ 
+ 	ret = mmc_add_host(mmc);
