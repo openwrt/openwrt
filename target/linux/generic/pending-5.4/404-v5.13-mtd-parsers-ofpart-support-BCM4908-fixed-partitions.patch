@@ -1,4 +1,4 @@
-From 3924b0384a0cd20245e2ffb55c45c2ace737a061 Mon Sep 17 00:00:00 2001
+From afbef8efb591792579c633a7c545f914c6165f82 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
 Date: Thu, 11 Feb 2021 23:04:27 +0100
 Subject: [PATCH] mtd: parsers: ofpart: support BCM4908 fixed partitions
@@ -22,17 +22,17 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
  drivers/mtd/parsers/Kconfig                   |  9 +++
  drivers/mtd/parsers/Makefile                  |  2 +
- drivers/mtd/parsers/ofpart_bcm4908.c          | 66 +++++++++++++++++++
+ drivers/mtd/parsers/ofpart_bcm4908.c          | 64 +++++++++++++++++++
  drivers/mtd/parsers/ofpart_bcm4908.h          | 15 +++++
  .../mtd/parsers/{ofpart.c => ofpart_core.c}   | 28 +++++++-
- 5 files changed, 118 insertions(+), 2 deletions(-)
+ 5 files changed, 116 insertions(+), 2 deletions(-)
  create mode 100644 drivers/mtd/parsers/ofpart_bcm4908.c
  create mode 100644 drivers/mtd/parsers/ofpart_bcm4908.h
  rename drivers/mtd/parsers/{ofpart.c => ofpart_core.c} (88%)
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -83,6 +83,15 @@ config MTD_OF_PARTS
+@@ -67,6 +67,15 @@ config MTD_OF_PARTS
  	  flash memory node, as described in
  	  Documentation/devicetree/bindings/mtd/partition.txt.
  
@@ -50,9 +50,9 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	depends on BCM63XX || BMIPS_GENERIC || COMPILE_TEST
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -5,6 +5,8 @@ obj-$(CONFIG_MTD_BCM63XX_PARTS)		+= bcm6
+@@ -4,6 +4,8 @@ obj-$(CONFIG_MTD_BCM47XX_PARTS)		+= bcm4
+ obj-$(CONFIG_MTD_BCM63XX_PARTS)		+= bcm63xxpart.o
  obj-$(CONFIG_MTD_CMDLINE_PARTS)		+= cmdlinepart.o
- obj-$(CONFIG_MTD_MYLOADER_PARTS)		+= myloader.o
  obj-$(CONFIG_MTD_OF_PARTS)		+= ofpart.o
 +ofpart-y				+= ofpart_core.o
 +ofpart-$(CONFIG_MTD_OF_PARTS_BCM4908)	+= ofpart_bcm4908.o
@@ -61,7 +61,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
 --- /dev/null
 +++ b/drivers/mtd/parsers/ofpart_bcm4908.c
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,64 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2021 Rafał Miłecki <rafal@milecki.pl>
@@ -126,8 +126,6 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +	return 0;
 +}
-+
-+MODULE_LICENSE("GPL");
 --- /dev/null
 +++ b/drivers/mtd/parsers/ofpart_bcm4908.h
 @@ -0,0 +1,15 @@
