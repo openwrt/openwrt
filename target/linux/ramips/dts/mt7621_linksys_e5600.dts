@@ -100,19 +100,22 @@
 		};
 
 		partition@180000 {
-			label = "firmware";
-			compatible = "denx,uimage";
-			reg = <0x180000 0x1e00000>;
+			label = "kernel";
+			reg = <0x180000 0x400000>;
 		};
+
+		partition@580000 {
+			label = "ubi";
+			reg = <0x580000 0x1a00000>;
+		};
+
 		partition@1f80000 {
 			label = "alt_firmware";
-			compatible = "denx,uimage";
 			reg = <0x1f80000 0x1e00000>;
-			read-only;
 		};
+
 		partition@3d80000 {
 			label = "gdata";
-			compatible = "denx,uimage";
 			reg = <0x3d80000 0x4200000>;
 		};
 	};
