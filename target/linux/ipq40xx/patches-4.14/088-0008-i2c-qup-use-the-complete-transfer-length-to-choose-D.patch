@@ -22,7 +22,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
 
 --- a/drivers/i2c/busses/i2c-qup.c
 +++ b/drivers/i2c/busses/i2c-qup.c
-@@ -1300,7 +1300,8 @@ static int qup_i2c_xfer_v2(struct i2c_ad
+@@ -1301,7 +1301,8 @@ static int qup_i2c_xfer_v2(struct i2c_ad
  			   int num)
  {
  	struct qup_i2c_dev *qup = i2c_get_adapdata(adap);
@@ -32,7 +32,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  
  	qup->bus_err = 0;
  	qup->qup_err = 0;
-@@ -1326,14 +1327,14 @@ static int qup_i2c_xfer_v2(struct i2c_ad
+@@ -1327,14 +1328,14 @@ static int qup_i2c_xfer_v2(struct i2c_ad
  				goto out;
  			}
  

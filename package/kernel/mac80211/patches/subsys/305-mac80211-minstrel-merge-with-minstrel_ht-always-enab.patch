@@ -117,7 +117,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* IEEE80211_RATE_H */
 --- a/net/mac80211/rc80211_minstrel.c
 +++ b/net/mac80211/rc80211_minstrel.c
-@@ -572,138 +572,6 @@ minstrel_rate_init(void *priv, struct ie
+@@ -555,138 +555,6 @@ minstrel_rate_init(void *priv, struct ie
  	minstrel_update_rates(mp, mi);
  }
  
@@ -256,7 +256,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static u32 minstrel_get_expected_throughput(void *priv_sta)
  {
  	struct minstrel_sta_info *mi = priv_sta;
-@@ -722,28 +590,8 @@ static u32 minstrel_get_expected_through
+@@ -705,28 +573,8 @@ static u32 minstrel_get_expected_through
  }
  
  const struct rate_control_ops mac80211_minstrel = {
@@ -287,7 +287,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -}
 --- a/net/mac80211/rc80211_minstrel.h
 +++ b/net/mac80211/rc80211_minstrel.h
-@@ -158,7 +158,5 @@ int minstrel_get_tp_avg(struct minstrel_
+@@ -157,7 +157,5 @@ int minstrel_get_tp_avg(struct minstrel_
  /* debugfs */
  int minstrel_stats_open(struct inode *inode, struct file *file);
  int minstrel_stats_csv_open(struct inode *inode, struct file *file);

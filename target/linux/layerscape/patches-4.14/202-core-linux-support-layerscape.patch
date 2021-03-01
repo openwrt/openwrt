@@ -62,7 +62,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 
 --- a/drivers/base/core.c
 +++ b/drivers/base/core.c
-@@ -162,10 +162,10 @@ static int device_reorder_to_tail(struct
+@@ -177,10 +177,10 @@ static int device_reorder_to_tail(struct
   * of the link.  If DL_FLAG_PM_RUNTIME is not set, DL_FLAG_RPM_ACTIVE will be
   * ignored.
   *
@@ -77,7 +77,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   *
   * A side effect of the link creation is re-ordering of dpm_list and the
   * devices_kset list by moving the consumer device and all devices depending
-@@ -183,7 +183,8 @@ struct device_link *device_link_add(stru
+@@ -198,7 +198,8 @@ struct device_link *device_link_add(stru
  	bool rpm_put_supplier = false;
  
  	if (!consumer || !supplier ||
@@ -87,7 +87,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return NULL;
  
  	if (flags & DL_FLAG_PM_RUNTIME && flags & DL_FLAG_RPM_ACTIVE) {
-@@ -209,8 +210,10 @@ struct device_link *device_link_add(stru
+@@ -224,8 +225,10 @@ struct device_link *device_link_add(stru
  	}
  
  	list_for_each_entry(link, &supplier->links.consumers, s_node)
@@ -99,7 +99,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	link = kzalloc(sizeof(*link), GFP_KERNEL);
  	if (!link)
-@@ -237,6 +240,7 @@ struct device_link *device_link_add(stru
+@@ -252,6 +255,7 @@ struct device_link *device_link_add(stru
  	link->consumer = consumer;
  	INIT_LIST_HEAD(&link->c_node);
  	link->flags = flags;
@@ -107,7 +107,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/* Determine the initial link state. */
  	if (flags & DL_FLAG_STATELESS) {
-@@ -311,8 +315,10 @@ static void __device_link_free_srcu(stru
+@@ -326,8 +330,10 @@ static void __device_link_free_srcu(stru
  	device_link_free(container_of(rhead, struct device_link, rcu_head));
  }
  
@@ -119,7 +119,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	dev_info(link->consumer, "Dropping the link to %s\n",
  		 dev_name(link->supplier));
  
-@@ -324,8 +330,10 @@ static void __device_link_del(struct dev
+@@ -339,8 +345,10 @@ static void __device_link_del(struct dev
  	call_srcu(&device_links_srcu, &link->rcu_head, __device_link_free_srcu);
  }
  #else /* !CONFIG_SRCU */
@@ -131,7 +131,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	dev_info(link->consumer, "Dropping the link to %s\n",
  		 dev_name(link->supplier));
  
-@@ -343,18 +351,50 @@ static void __device_link_del(struct dev
+@@ -358,18 +366,50 @@ static void __device_link_del(struct dev
   * @link: Device link to delete.
   *
   * The caller must ensure proper synchronization of this function with runtime
@@ -184,7 +184,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static void device_links_missing_supplier(struct device *dev)
  {
  	struct device_link *link;
-@@ -462,8 +502,8 @@ static void __device_links_no_driver(str
+@@ -477,8 +517,8 @@ static void __device_links_no_driver(str
  		if (link->flags & DL_FLAG_STATELESS)
  			continue;
  
@@ -195,7 +195,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		else if (link->status != DL_STATE_SUPPLIER_UNBIND)
  			WRITE_ONCE(link->status, DL_STATE_AVAILABLE);
  	}
-@@ -498,8 +538,18 @@ void device_links_driver_cleanup(struct
+@@ -513,8 +553,18 @@ void device_links_driver_cleanup(struct
  		if (link->flags & DL_FLAG_STATELESS)
  			continue;
  
@@ -215,7 +215,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		WRITE_ONCE(link->status, DL_STATE_DORMANT);
  	}
  
-@@ -616,13 +666,13 @@ static void device_links_purge(struct de
+@@ -631,13 +681,13 @@ static void device_links_purge(struct de
  
  	list_for_each_entry_safe_reverse(link, ln, &dev->links.suppliers, c_node) {
  		WARN_ON(link->status == DL_STATE_ACTIVE);
@@ -231,7 +231,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	device_links_write_unlock();
-@@ -1044,6 +1094,34 @@ static ssize_t online_store(struct devic
+@@ -1059,6 +1109,34 @@ static ssize_t online_store(struct devic
  }
  static DEVICE_ATTR_RW(online);
  
@@ -266,7 +266,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  int device_add_groups(struct device *dev, const struct attribute_group **groups)
  {
  	return sysfs_create_groups(&dev->kobj, groups);
-@@ -1215,8 +1293,20 @@ static int device_add_attrs(struct devic
+@@ -1230,8 +1308,20 @@ static int device_add_attrs(struct devic
  			goto err_remove_dev_groups;
  	}
  
@@ -287,7 +287,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   err_remove_dev_groups:
  	device_remove_groups(dev, dev->groups);
   err_remove_type_groups:
-@@ -1234,6 +1324,8 @@ static void device_remove_attrs(struct d
+@@ -1249,6 +1339,8 @@ static void device_remove_attrs(struct d
  	struct class *class = dev->class;
  	const struct device_type *type = dev->type;
  
@@ -580,7 +580,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  void  __kfree_skb(struct sk_buff *skb);
  extern struct kmem_cache *skbuff_head_cache;
  
-@@ -3328,6 +3329,7 @@ static inline void skb_free_datagram_loc
+@@ -3344,6 +3345,7 @@ static inline void skb_free_datagram_loc
  }
  int skb_kill_datagram(struct sock *sk, struct sk_buff *skb, unsigned int flags);
  int skb_copy_bits(const struct sk_buff *skb, int offset, void *to, int len);
@@ -837,7 +837,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -803,6 +803,32 @@ void napi_consume_skb(struct sk_buff *sk
+@@ -812,6 +812,32 @@ void napi_consume_skb(struct sk_buff *sk
  }
  EXPORT_SYMBOL(napi_consume_skb);
  
@@ -870,7 +870,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  /* Make sure a field is enclosed inside headers_start/headers_end section */
  #define CHECK_SKB_FIELD(field) \
  	BUILD_BUG_ON(offsetof(struct sk_buff, field) <		\
-@@ -1322,7 +1348,7 @@ static void skb_headers_offset_update(st
+@@ -1331,7 +1357,7 @@ static void skb_headers_offset_update(st
  	skb->inner_mac_header += off;
  }
  
@@ -879,7 +879,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  {
  	__copy_skb_header(new, old);
  
-@@ -1330,6 +1356,7 @@ static void copy_skb_header(struct sk_bu
+@@ -1339,6 +1365,7 @@ static void copy_skb_header(struct sk_bu
  	skb_shinfo(new)->gso_segs = skb_shinfo(old)->gso_segs;
  	skb_shinfo(new)->gso_type = skb_shinfo(old)->gso_type;
  }

@@ -534,6 +534,7 @@ define Device/Build/image
 	BIN_DIR="$(BIN_DIR)" \
 	IMAGE_NAME="$(IMAGE_NAME)" \
 	IMAGE_TYPE=$(word 1,$(subst ., ,$(2))) \
+	IMAGE_FILESYSTEM="$(1)" \
 	IMAGE_PREFIX="$(IMAGE_PREFIX)" \
 	DEVICE_TITLE="$(DEVICE_TITLE)" \
 	DEVICE_PACKAGES="$(DEVICE_PACKAGES)" \

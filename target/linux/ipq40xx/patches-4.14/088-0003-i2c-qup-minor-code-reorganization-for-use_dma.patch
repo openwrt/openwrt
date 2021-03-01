@@ -27,7 +27,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  	struct			dma_pool *dpool;
  	struct			qup_i2c_tag start_tag;
  	struct			qup_i2c_bam brx;
-@@ -1288,7 +1290,7 @@ static int qup_i2c_xfer_v2(struct i2c_ad
+@@ -1289,7 +1291,7 @@ static int qup_i2c_xfer_v2(struct i2c_ad
  			   int num)
  {
  	struct qup_i2c_dev *qup = i2c_get_adapdata(adap);
@@ -36,7 +36,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  
  	qup->bus_err = 0;
  	qup->qup_err = 0;
-@@ -1317,13 +1319,12 @@ static int qup_i2c_xfer_v2(struct i2c_ad
+@@ -1318,13 +1320,12 @@ static int qup_i2c_xfer_v2(struct i2c_ad
  			len = (msgs[idx].len > qup->out_fifo_sz) ||
  			      (msgs[idx].len > qup->in_fifo_sz);
  
@@ -54,7 +54,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  	}
  
  	idx = 0;
-@@ -1347,15 +1348,17 @@ static int qup_i2c_xfer_v2(struct i2c_ad
+@@ -1348,15 +1349,17 @@ static int qup_i2c_xfer_v2(struct i2c_ad
  
  		reinit_completion(&qup->xfer);
  

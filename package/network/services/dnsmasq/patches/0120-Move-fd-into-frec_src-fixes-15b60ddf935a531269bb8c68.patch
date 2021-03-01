@@ -1,0 +1,57 @@
+From 04490bf622ac84891aad6f2dd2edf83725decdee Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 22 Jan 2021 16:49:12 +0000
+Subject: Move fd into frec_src, fixes 15b60ddf935a531269bb8c68198de012a4967156
+
+If identical queries from IPv4 and IPv6 sources are combined by the
+new code added in 15b60ddf935a531269bb8c68198de012a4967156 then replies
+can end up being sent via the wrong family of socket. The ->fd
+should be per query, not per-question.
+
+In bind-interfaces mode, this could also result in replies being sent
+via the wrong socket even when IPv4/IPV6 issues are not in play.
+---
+ src/dnsmasq.h | 3 ++-
+ src/forward.c | 4 ++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -653,6 +653,7 @@ struct frec {
+     union mysockaddr source;
+     union all_addr dest;
+     unsigned int iface, log_id;
++    int fd;
+     unsigned short orig_id;
+     struct frec_src *next;
+   } frec_src;
+@@ -660,7 +661,7 @@ struct frec {
+   struct randfd *rfd4;
+   struct randfd *rfd6;
+   unsigned short new_id;
+-  int fd, forwardall, flags;
++  int forwardall, flags;
+   time_t time;
+   unsigned char *hash[HASH_SIZE];
+ #ifdef HAVE_DNSSEC 
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -394,8 +394,8 @@ static int forward_query(int udpfd, unio
+ 	  forward->frec_src.dest = *dst_addr;
+ 	  forward->frec_src.iface = dst_iface;
+ 	  forward->frec_src.next = NULL;
++	  forward->frec_src.fd = udpfd;
+ 	  forward->new_id = get_id();
+-	  forward->fd = udpfd;
+ 	  memcpy(forward->hash, hash, HASH_SIZE);
+ 	  forward->forwardall = 0;
+ 	  forward->flags = fwd_flags;
+@@ -1284,7 +1284,7 @@ void reply_query(int fd, int family, tim
+ 	      dump_packet(DUMP_REPLY, daemon->packet, (size_t)nn, NULL, &src->source);
+ #endif
+ 	      
+-	      send_from(forward->fd, option_bool(OPT_NOWILD) || option_bool (OPT_CLEVERBIND), daemon->packet, nn, 
++	      send_from(src->fd, option_bool(OPT_NOWILD) || option_bool (OPT_CLEVERBIND), daemon->packet, nn, 
+ 			&src->source, &src->dest, src->iface);
+ 
+ 	      if (option_bool(OPT_EXTRALOG) && src != &forward->frec_src)

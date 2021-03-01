@@ -690,7 +690,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		  ifp->bsscfgidx, name, len);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
-@@ -1259,6 +1259,7 @@ static int brcmf_fws_enq(struct brcmf_fw
+@@ -1263,6 +1263,7 @@ static int brcmf_fws_enq(struct brcmf_fw
  			 enum brcmf_fws_skb_state state, int fifo,
  			 struct sk_buff *p)
  {
@@ -698,7 +698,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	int prec = 2 * fifo;
  	u32 *qfull_stat = &fws->stats.delayq_full_error;
  	struct brcmf_fws_mac_descriptor *entry;
-@@ -1271,7 +1272,7 @@ static int brcmf_fws_enq(struct brcmf_fw
+@@ -1275,7 +1276,7 @@ static int brcmf_fws_enq(struct brcmf_fw
  
  	entry = brcmf_skbcb(p)->mac;
  	if (entry == NULL) {
@@ -707,7 +707,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return -ENOENT;
  	}
  
-@@ -1461,6 +1462,7 @@ static int
+@@ -1465,6 +1466,7 @@ static int
  brcmf_fws_txs_process(struct brcmf_fws_info *fws, u8 flags, u32 hslot,
  		      u32 genbit, u16 seq, u8 compcnt)
  {
@@ -715,7 +715,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	u32 fifo;
  	u8 cnt = 0;
  	int ret;
-@@ -1485,14 +1487,14 @@ brcmf_fws_txs_process(struct brcmf_fws_i
+@@ -1489,14 +1491,14 @@ brcmf_fws_txs_process(struct brcmf_fws_i
  	else if (flags == BRCMF_FWS_TXSTATUS_HOST_TOSSED)
  		fws->stats.txs_host_tossed += compcnt;
  	else
@@ -733,7 +733,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			goto cont;
  		}
  
-@@ -1616,12 +1618,13 @@ static int brcmf_fws_notify_credit_map(s
+@@ -1620,12 +1622,13 @@ static int brcmf_fws_notify_credit_map(s
  				       const struct brcmf_event_msg *e,
  				       void *data)
  {
@@ -749,7 +749,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return -EINVAL;
  	}
  
-@@ -1685,6 +1688,7 @@ static void brcmf_rxreorder_get_skb_list
+@@ -1689,6 +1692,7 @@ static void brcmf_rxreorder_get_skb_list
  
  void brcmf_fws_rxreorder(struct brcmf_if *ifp, struct sk_buff *pkt)
  {
@@ -757,7 +757,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	u8 *reorder_data;
  	u8 flow_id, max_idx, cur_idx, exp_idx, end_idx;
  	struct brcmf_ampdu_rx_reorder *rfi;
-@@ -1699,7 +1703,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
+@@ -1703,7 +1707,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
  
  	/* validate flags and flow id */
  	if (flags == 0xFF) {
@@ -766,7 +766,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		brcmf_netif_rx(ifp, pkt);
  		return;
  	}
-@@ -1736,7 +1740,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
+@@ -1740,7 +1744,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
  			  flow_id, max_idx);
  		rfi = kzalloc(buf_size, GFP_ATOMIC);
  		if (rfi == NULL) {
@@ -775,7 +775,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			brcmf_netif_rx(ifp, pkt);
  			return;
  		}
-@@ -2000,6 +2004,7 @@ static u8 brcmf_fws_precommit_skb(struct
+@@ -2004,6 +2008,7 @@ static u8 brcmf_fws_precommit_skb(struct
  static void brcmf_fws_rollback_toq(struct brcmf_fws_info *fws,
  				   struct sk_buff *skb, int fifo)
  {
@@ -783,7 +783,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct brcmf_fws_mac_descriptor *entry;
  	struct sk_buff *pktout;
  	int qidx, hslot;
-@@ -2013,11 +2018,11 @@ static void brcmf_fws_rollback_toq(struc
+@@ -2017,11 +2022,11 @@ static void brcmf_fws_rollback_toq(struc
  
  		pktout = brcmu_pktq_penq_head(&entry->psq, qidx, skb);
  		if (pktout == NULL) {
@@ -797,7 +797,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		rc = -ENOENT;
  	}
  
-@@ -2122,7 +2127,8 @@ static int brcmf_fws_assign_htod(struct
+@@ -2126,7 +2131,8 @@ static int brcmf_fws_assign_htod(struct
  
  int brcmf_fws_process_skb(struct brcmf_if *ifp, struct sk_buff *skb)
  {
@@ -807,7 +807,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct brcmf_skbuff_cb *skcb = brcmf_skbcb(skb);
  	struct ethhdr *eh = (struct ethhdr *)(skb->data);
  	int fifo = BRCMF_FWS_FIFO_BCMC;
-@@ -2150,7 +2156,7 @@ int brcmf_fws_process_skb(struct brcmf_i
+@@ -2154,7 +2160,7 @@ int brcmf_fws_process_skb(struct brcmf_i
  		brcmf_fws_enq(fws, BRCMF_FWS_SKBSTATE_DELAYED, fifo, skb);
  		brcmf_fws_schedule_deq(fws);
  	} else {
@@ -816,7 +816,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		brcmf_txfinalize(ifp, skb, false);
  		rc = -ENOMEM;
  	}
-@@ -2371,7 +2377,7 @@ struct brcmf_fws_info *brcmf_fws_attach(
+@@ -2375,7 +2381,7 @@ struct brcmf_fws_info *brcmf_fws_attach(
  
  	fws->fws_wq = create_singlethread_workqueue("brcmf_fws_wq");
  	if (fws->fws_wq == NULL) {
@@ -825,7 +825,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		rc = -EBADF;
  		goto fail;
  	}
-@@ -2387,13 +2393,13 @@ struct brcmf_fws_info *brcmf_fws_attach(
+@@ -2391,13 +2397,13 @@ struct brcmf_fws_info *brcmf_fws_attach(
  	rc = brcmf_fweh_register(drvr, BRCMF_E_FIFO_CREDIT_MAP,
  				 brcmf_fws_notify_credit_map);
  	if (rc < 0) {
@@ -841,7 +841,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		brcmf_fweh_unregister(drvr, BRCMF_E_FIFO_CREDIT_MAP);
  		goto fail;
  	}
-@@ -2405,7 +2411,7 @@ struct brcmf_fws_info *brcmf_fws_attach(
+@@ -2409,7 +2415,7 @@ struct brcmf_fws_info *brcmf_fws_attach(
  	fws->fw_signals = true;
  	ifp = brcmf_get_ifp(drvr, 0);
  	if (brcmf_fil_iovar_int_set(ifp, "tlv", tlv)) {

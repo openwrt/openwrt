@@ -53,17 +53,6 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
-
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		enable-leds {
-			gpio-export,name = "enable-leds";
-			gpio-export,output = <1>;
-			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
 &spi0 {
@@ -112,6 +101,15 @@
 
 &ohci {
 	status = "okay";
+};
+
+&gpio0 {
+	enable-leds {
+		gpio-hog;
+		line-name = "enable-leds";
+		output-low;
+		gpios = <10 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &gpio3 {

@@ -11,9 +11,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/rc80211_minstrel.c
 +++ b/net/mac80211/rc80211_minstrel.c
-@@ -295,8 +295,7 @@ minstrel_tx_status(void *priv, struct ie
- 	if (mi->sample_deferred > 0)
- 		mi->sample_deferred--;
+@@ -289,8 +289,7 @@ minstrel_tx_status(void *priv, struct ie
+ 			mi->r[ndx].stats.success += success;
+ 	}
  
 -	if (time_after(jiffies, mi->last_stats_update +
 -				(mp->update_interval * HZ) / 1000))

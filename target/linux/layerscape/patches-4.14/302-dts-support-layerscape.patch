@@ -4662,15 +4662,6 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		scfg: scfg@1570000 {
  			compatible = "fsl,ls1046a-scfg", "syscon";
  			reg = <0x0 0x1570000 0x0 0x10000>;
-@@ -304,7 +311,7 @@
- 
- 		dcfg: dcfg@1ee0000 {
- 			compatible = "fsl,ls1046a-dcfg", "syscon";
--			reg = <0x0 0x1ee0000 0x0 0x10000>;
-+			reg = <0x0 0x1ee0000 0x0 0x1000>;
- 			big-endian;
- 		};
- 
 @@ -362,36 +369,7 @@
  			#thermal-sensor-cells = <1>;
  		};

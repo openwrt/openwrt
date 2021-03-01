@@ -87,7 +87,7 @@ Signed-off-by: Sham Muthayyan <smuthayy@codeaurora.org>
 -	u32 val;
  	int ret;
  
- 	ret = reset_control_assert(res->ahb_reset);
+ 	ret = regulator_enable(res->vdda);
 @@ -378,15 +410,26 @@ static int qcom_pcie_init_2_1_0(struct q
  		goto err_deassert_ahb;
  	}

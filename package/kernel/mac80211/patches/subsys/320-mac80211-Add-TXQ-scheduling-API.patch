@@ -191,7 +191,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -1249,7 +1249,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
+@@ -1261,7 +1261,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
  			if (!txq_has_queue(sta->sta.txq[i]))
  				continue;
  
@@ -229,7 +229,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	return true;
  }
-@@ -3620,6 +3624,60 @@ out:
+@@ -3631,6 +3635,60 @@ out:
  }
  EXPORT_SYMBOL(ieee80211_tx_dequeue);
  
