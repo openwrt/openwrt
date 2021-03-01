@@ -1,0 +1,30 @@
+From 9a894b0e5d3e6ed3c435b89fe96794ec9ddf5925 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sun, 28 Feb 2021 15:22:24 +0100
+Subject: [PATCH] arm: Enlarge IO_SPACE_LIMIT needed for some SoC
+
+Ipq8064 SoC requires larger IO_SPACE_LIMIT or second and third pci port
+fails to register the IO addresses and connected device doesn't work.
+
+Cc: <stable@vger.kernel.org> # 4.9+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ arch/arm/include/asm/io.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/io.h b/arch/arm/include/asm/io.h
+index fc748122f1e0..6f3e89f08bd8 100644
+--- a/arch/arm/include/asm/io.h
++++ b/arch/arm/include/asm/io.h
+@@ -197,7 +197,7 @@ void __iomem *pci_remap_cfgspace(resource_size_t res_cookie, size_t size);
+ #ifdef CONFIG_NEED_MACH_IO_H
+ #include <mach/io.h>
+ #elif defined(CONFIG_PCI)
+-#define IO_SPACE_LIMIT	((resource_size_t)0xfffff)
++#define IO_SPACE_LIMIT	((resource_size_t)0xffffff)
+ #define __io(a)		__typesafe_io(PCI_IO_VIRT_BASE + ((a) & IO_SPACE_LIMIT))
+ #else
+ #define __io(a)		__typesafe_io((a) & IO_SPACE_LIMIT)
+-- 
+2.30.0
+
