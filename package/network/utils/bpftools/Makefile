@@ -145,6 +145,10 @@ define Build/InstallDev/libbpf
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib$(LIB_SUFFIX)/pkgconfig/libbpf.pc \
 		$(1)/usr/lib/pkgconfig/
+	$(SED) 's,/usr/include,$$$${prefix}/include,g' \
+		$(1)/usr/lib/pkgconfig/libbpf.pc
+	$(SED) 's,/usr/lib,$$$${exec_prefix}/lib,g' \
+		$(1)/usr/lib/pkgconfig/libbpf.pc
 endef
 
 ifeq ($(BUILD_VARIANT),lib)
