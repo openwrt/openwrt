@@ -62,6 +62,12 @@
 	status = "okay";
 };
 
+&ethernet {
+	status = "okay";
+
+	mtd-mac-address = <&cferom 0x6a0>;
+};
+
 &leds {
 	status = "okay";
 
