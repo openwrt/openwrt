@@ -148,7 +148,7 @@
 +bootmenu_3=3. Boot recovery system from SD card.=run boot_recovery ; run bootmenu_confirm_return
 +bootmenu_4=4. Load production system via TFTP then write to SD card.=setenv noboot 1 ; run boot_tftp_production ; setenv noboot ; run bootmenu_confirm_return
 +bootmenu_5=5. Load recovery system via TFTP then write to SD card.=setenv noboot 1 ; run boot_tftp_recovery ; setenv noboot ; run bootmenu_confirm_return
-+bootmenu_6=[31m6. Load bootloader via TFTP then write to eMMC.[0m=run emmc_init ; run bootmenu_confirm_return
++bootmenu_6=[31m6. Install bootloader and recovery to eMMC.[0m=run emmc_init ; run bootmenu_confirm_return
 +bootmenu_7=7. Reboot.=reset
 +bootmenu_8=8. Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; run boot_tftp_forever
