@@ -16,6 +16,13 @@ get_rootdev() {
 	local rootvol rootdev
 	rootvol=$(get_cmdline_var root)
 	rootvol=$(basename $rootvol)
+	[ -e /sys/class/block/$rootvol ] || {
+		rootvol=${rootvol%%[0-9]}
+		[ -e /sys/class/block/$rootvol ] && echo $rootvol
+		rootvol=${rootvol%%p}
+		[ -e /sys/class/block/$rootvol ] && echo $rootvol
+		return
+	}
 	[ -e /sys/class/block/$rootvol/partition ] || {
 		echo $rootvol
 		return
@@ -89,13 +96,13 @@ platform_check_image() {
 }
 
 platform_copy_config_mmc() {
+	[ -e "$UPGRADE_BACKUP" ] || return
 	local rootdev=$(cat /tmp/sysupgrade.rootdev)
 	blockdev --rereadpt /dev/$rootdev
 	local datadev=$(get_partition $rootdev rootfs_data)
 	[ "$datadev" ] || echo "no rootfs_data partition, cannot keep configuration." >&2
 	dd if="$UPGRADE_BACKUP" of=/dev/$datadev
 	sync
-	sleep 4
 }
 
 platform_copy_config() {
