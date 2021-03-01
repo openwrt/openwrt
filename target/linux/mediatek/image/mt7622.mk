@@ -119,9 +119,9 @@ define Device/mediatek_mt7622-rfb1
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1
 
-define Device/mediatek_mt7622-ubi
+define Device/mediatek_mt7622-rfb1-ubi
   DEVICE_VENDOR := MediaTek
-  DEVICE_MODEL := MTK7622 AP (UBI)
+  DEVICE_MODEL := MTK7622 rfb1 AP (UBI)
   DEVICE_DTS := mt7622-rfb1-ubi
   DEVICE_DTS_DIR := ../dts
   UBINIZE_OPTS := -E 5
@@ -135,7 +135,7 @@ define Device/mediatek_mt7622-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
 endef
-TARGET_DEVICES += mediatek_mt7622-ubi
+TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
 define Device/ubnt_unifi-6-lr
   DEVICE_VENDOR := Ubiquiti
