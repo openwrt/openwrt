@@ -29,7 +29,7 @@
  
  # Checks for typedefs, structures, and compiler characteristics.
  AC_TYPE_GETGROUPS
-@@ -217,6 +222,16 @@ AC_FUNC_STRTOLD
+@@ -217,6 +222,17 @@ AC_FUNC_STRTOLD
  AC_FUNC_UTIME_NULL
  AC_FUNC_VPRINTF
  
@@ -42,6 +42,7 @@
 +AC_CHECK_SIZEOF(unsigned long long)
 +AC_CHECK_SIZEOF(off_t)
 +AC_CHECK_SIZEOF(size_t)
++AC_CHECK_SIZEOF(ssize_t)
 +
  # Functions list scraped from musl 0.9.4 x86_64
  AC_CHECK_FUNCS([ \
