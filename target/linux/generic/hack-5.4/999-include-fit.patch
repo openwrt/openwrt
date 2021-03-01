@@ -1,0 +1,12 @@
+--- a/block/partitions/efi.c
++++ b/block/partitions/efi.c
+@@ -89,6 +89,9 @@
+ #include <linux/slab.h>
+ #include "check.h"
+ #include "efi.h"
++#ifdef CONFIG_FIT_PARTITION
++#include "fit.h"
++#endif
+ 
+ /* This allows a kernel command line option 'gpt' to override
+  * the test for invalid PMBR.  Not __initdata because reloading
