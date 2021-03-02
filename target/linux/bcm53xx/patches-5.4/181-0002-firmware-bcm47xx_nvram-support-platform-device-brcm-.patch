@@ -1,0 +1,85 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 2 Mar 2021 08:33:13 +0100
+Subject: [PATCH] firmware: bcm47xx_nvram: support platform device "brcm,nvram"
+
+Add support for platform device providing mapping resource. This allows
+reading NVRAM based on DT mapping binding. It's required for devices
+that boot depending on NVRAM stored setup and provides early access to
+NVRAM data.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ drivers/firmware/broadcom/bcm47xx_nvram.c | 55 +++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+
+--- a/drivers/firmware/broadcom/bcm47xx_nvram.c
++++ b/drivers/firmware/broadcom/bcm47xx_nvram.c
+@@ -13,6 +13,7 @@
+ #include <linux/kernel.h>
+ #include <linux/string.h>
+ #include <linux/mtd/mtd.h>
++#include <linux/platform_device.h>
+ #include <linux/bcm47xx_nvram.h>
+ 
+ #define NVRAM_MAGIC			0x48534C46	/* 'FLSH' */
+@@ -162,6 +163,60 @@ static int nvram_init(void)
+ 	return -ENXIO;
+ }
+ 
++static int brcm_nvram_probe(struct platform_device *pdev)
++{
++	struct nvram_header __iomem *header;
++	struct device *dev = &pdev->dev;
++	struct resource *res;
++	void __iomem *mmio;
++	size_t copy_len;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(dev, "Failed to get resource\n");
++		return -ENODEV;
++	}
++
++	mmio = ioremap(res->start, resource_size(res));
++	if (!mmio)
++		return -ENOMEM;
++
++	header = (struct nvram_header *)mmio;
++	copy_len = DIV_ROUND_UP(sizeof(*header) + header->len, 4);
++	if (header->magic != NVRAM_MAGIC) {
++		dev_err(dev, "No NVRAM found at %pR\n", res);
++		return -EPROTO;
++	} else if (copy_len > resource_size(res)) {
++		dev_err(dev, "NVRAM size exceeds %pR\n", res);
++		return -ERANGE;
++	} else if (copy_len >= NVRAM_SPACE) {
++		dev_err(dev, "NVRAM size exceeds buffer size %d\n", NVRAM_SPACE);
++		return -ENOMEM;
++	}
++
++	__ioread32_copy(nvram_buf, mmio, copy_len);
++	nvram_buf[NVRAM_SPACE - 1] = '\0';
++
++	iounmap(mmio);
++
++	return 0;
++}
++
++static const struct of_device_id brcm_nvram_of_match[] = {
++	{ .compatible = "brcm,nvram "},
++	{},
++};
++
++static struct platform_driver brcm_nvram_driver = {
++	.driver = {
++		.name = "brcm_nvram",
++		.of_match_table = brcm_nvram_of_match,
++	},
++	.probe	= brcm_nvram_probe,
++};
++
++module_platform_driver(brcm_nvram_driver);
++
+ int bcm47xx_nvram_getenv(const char *name, char *val, size_t val_len)
+ {
+ 	char *var, *value, *end, *eq;
