@@ -19,7 +19,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 		};
@@ -30,27 +30,27 @@
 
 		led@2 {
 			label = "green:dsl";
-			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
 		led@5 {
 			label = "green:internet";
-			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_green: led@22 {
 			label = "green:power";
-			gpios = <&pinctrl 22 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_red: led@24 {
 			label = "red:power";
-			gpios = <&pinctrl 24 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
 		};
 
 		led@31 {
 			label = "red:internet";
-			gpios = <&pinctrl 31 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
