@@ -123,6 +123,7 @@ struct partinfo {
 	unsigned long start;
 	unsigned long size;
 	int type;
+	int hybrid;
 	char *name;
 	short int required;
 	guid_t guid;
@@ -369,7 +370,7 @@ fail:
 /* check the partition sizes and write the guid partition table */
 static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 {
-	struct pte pte;
+	struct pte pte[MBR_ENTRY_MAX];
 	struct gpth gpth = {
 		.signature = cpu_to_le64(GPT_SIGNATURE),
 		.revision = cpu_to_le32(GPT_REVISION),
@@ -384,8 +385,9 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 	struct gpte  gpte[GPT_ENTRY_MAX];
 	uint64_t start, end, sect = 0;
 	int fd, ret = -1;
-	unsigned i;
+	unsigned i, pmbr = 1;
 
+	memset(pte, 0, sizeof(struct pte) * MBR_ENTRY_MAX);
 	memset(gpte, 0, GPT_ENTRY_SIZE * GPT_ENTRY_MAX);
 	for (i = 0; i < nr; i++) {
 		if (!parts[i].size) {
@@ -415,6 +417,16 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 		gpte[i].guid.b[sizeof(guid_t) -1] += i + 1;
 		gpte[i].type = parts[i].guid;
 
+		if (parts[i].hybrid && pmbr < MBR_ENTRY_MAX) {
+			pte[pmbr].active = ((i + 1) == active) ? 0x80 : 0;
+			pte[pmbr].type = parts[i].type;
+			pte[pmbr].start = cpu_to_le32(start);
+			pte[pmbr].length = cpu_to_le32(sect - start);
+			to_chs(start, pte[1].chs_start);
+			to_chs(sect - 1, pte[1].chs_end);
+			pmbr++;
+		}
+
 		if (parts[i].name)
 			init_utf16(parts[i].name, (uint16_t *)gpte[i].name, GPT_ENTRY_NAME_SIZE / sizeof(uint16_t));
 
@@ -441,11 +453,11 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 
 	end = sect + sectors - 1;
 
-	pte.type = 0xEE;
-	pte.start = cpu_to_le32(GPT_HEADER_SECTOR);
-	pte.length = cpu_to_le32(end);
-	to_chs(GPT_HEADER_SECTOR, pte.chs_start);
-	to_chs(end, pte.chs_end);
+	pte[0].type = 0xEE;
+	pte[0].start = cpu_to_le32(GPT_HEADER_SECTOR);
+	pte[0].length = cpu_to_le32(end - GPT_HEADER_SECTOR);
+	to_chs(GPT_HEADER_SECTOR, pte[0].chs_start);
+	to_chs(end, pte[0].chs_end);
 
 	gpth.last_usable = cpu_to_le64(end - GPT_ENTRY_SIZE * GPT_ENTRY_MAX / DISK_SECTOR_SIZE - 1);
 	gpth.alternate = cpu_to_le64(end);
@@ -464,7 +476,7 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 	}
 
 	lseek(fd, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
-	if (write(fd, &pte, sizeof(struct pte)) != sizeof(struct pte)) {
+	if (write(fd, pte, sizeof(struct pte) * MBR_ENTRY_MAX) != sizeof(struct pte) * MBR_ENTRY_MAX) {
 		fputs("write failed.\n", stderr);
 		goto fail;
 	}
@@ -551,13 +563,13 @@ int main (int argc, char **argv)
 	int ch;
 	int part = 0;
 	char *name = NULL;
-	unsigned short int required = 0;
+	unsigned short int hybrid = 0, required = 0;
 	uint32_t signature = 0x5452574F; /* 'OWRT' */
 	guid_t guid = GUID_INIT( signature, 0x2211, 0x4433, \
 			0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0x00);
 	guid_t part_guid = GUID_PARTITION_BASIC_DATA;
 
-	while ((ch = getopt(argc, argv, "h:s:p:a:t:o:vnN:gl:rS:G:")) != -1) {
+	while ((ch = getopt(argc, argv, "h:s:p:a:t:o:vnHN:gl:rS:G:")) != -1) {
 		switch (ch) {
 		case 'o':
 			filename = optarg;
@@ -570,6 +582,9 @@ int main (int argc, char **argv)
 			break;
 		case 'g':
 			use_guid_partition_table = 1;
+			break;
+		case 'H':
+			hybrid = 1;
 			break;
 		case 'h':
 			heads = (int)strtoul(optarg, NULL, 0);
@@ -591,15 +606,17 @@ int main (int argc, char **argv)
 			parts[part].size = to_kbytes(optarg);
 			parts[part].required = required;
 			parts[part].name = name;
+			parts[part].hybrid = hybrid;
 			parts[part].guid = part_guid;
 			fprintf(stderr, "part %ld %ld\n", parts[part].start, parts[part].size);
 			parts[part++].type = type;
 			/*
-			 * reset 'name' and 'required'
+			 * reset 'name','required' and 'hybrid'
 			 * 'type' is deliberately inherited from the previous delcaration
 			 */
 			name = NULL;
 			required = 0;
+			hybrid = 0;
 			break;
 		case 'N':
 			name = optarg;
