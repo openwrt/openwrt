@@ -164,7 +164,7 @@
 +emmc_write_hdr=mmc dev 0 0 && mmc erase 0x0 0x40 && mmc write $loadaddr 0x0 0x40
 +emmc_write_bl3=mmc dev 0 0 && mmc erase 0x1000 0x800 && mmc write $loadaddr 0x1000 0x800
 +emmc_write_recovery=iminfo $loadaddr && mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
-+emmc_init=run sdmmc_read_emmc_hdr && run emmc_write_hdr && run sdmmc_read_emmc_bl3 && run emmc_write_bl3 && run sdmmc_read_recovery && run emmc_write_recovery && run sdmmc_read_emmc_bl2 && run emmc_write_bl2
++emmc_init=run sdmmc_read_emmc_hdr && run emmc_write_hdr && run sdmmc_read_emmc_bl3 && run emmc_write_bl3 && run sdmmc_read_recovery && run emmc_write_recovery && run sdmmc_read_emmc_bl2 && run emmc_write_bl2 ; env default bootcmd ; saveenv ; saveenv
 +sdmmc_write_production=iminfo $fileaddr && mmc dev 1 && part start mmc 1 $part_default part_addr && part size mmc 1 $part_default part_size && run mmc_write_vol
 +sdmmc_write_recovery=iminfo $fileaddr && mmc dev 1 && part start mmc 1 $part_recovery part_addr && part size mmc 1 $part_recovery part_size && run mmc_write_vol
 +sdmmc_read_production=mmc dev 1 && part start mmc 1 $part_default part_addr && part size mmc 1 $part_default part_size && run mmc_read_vol
@@ -176,7 +176,7 @@
 +mmc_read_vol=mmc read $loadaddr $part_addr 0x8 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size
 +part_default=production
 +part_recovery=recovery
-+reset_factory=mmc dev 1 && mmc erase 0x2000 0x800 && reset
++reset_factory=eraseenv && reset
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
 +_firstboot=setenv _firstboot ; led bpi-r64:pio:blue on ; run _switch_to_menu ; run _init_env ; run boot_first
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
@@ -348,7 +348,7 @@
 +mmc_read_vol=mmc read $loadaddr $part_addr 0x8 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size
 +part_default=production
 +part_recovery=recovery
-+reset_factory=mmc dev 0 && mmc erase 0x2000 0x800 && reset
++reset_factory=eraseenv && reset
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
 +_firstboot=setenv _firstboot ; led bpi-r64:pio:blue on ; run _switch_to_menu ; run _init_env ; run boot_first
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
