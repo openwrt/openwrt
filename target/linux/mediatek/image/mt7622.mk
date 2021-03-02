@@ -6,10 +6,6 @@ else
   KERNEL_LOADADDR := 0x44000000
 endif
 
-define Build/mmc-header
-	dd if=$(STAGING_DIR_IMAGE)/mt7622-header_$1.bin bs=512 count=1 of=$@ conv=notrunc
-endef
-
 define Build/bl2
 	cat $(STAGING_DIR_IMAGE)/mt7622-$1-bl2.img >> $@
 endef
@@ -19,7 +15,8 @@ define Build/bl31-uboot
 endef
 
 define Build/mt7622-gpt
-	ptgen -g -o $@ -h 4 -s 31 -a 1 -l 1024 -g \
+	cp $@ $@.tmp || true
+	ptgen -g -o $@.tmp -h 4 -s 31 -a 1 -l 1024 -g \
 		-t 0xef \
 		$(if $(findstring sdmmc,$1), \
 			-N bl2		-r	-p 512k@512k \
@@ -33,6 +30,9 @@ define Build/mt7622-gpt
 		$(if $(findstring emmc,$1), \
 			-t 0x2e -N production	-p 980M@40M \
 		)
+	dd if=$(STAGING_DIR_IMAGE)/mt7622-header_$1.bin bs=512 count=1 of=$@.tmp conv=notrunc
+	cat $@.tmp >> $@
+	rm $@.tmp
 endef
 
 define Device/bananapi_bpi-r64
@@ -45,11 +45,10 @@ define Device/bananapi_bpi-r64
 		     uboot-mt7622_bananapi_bpi-r64-sdmmc \
 		     e2fsprogs mkf2fs f2fsck \
 		     kmod-nls-cp437 kmod-nls-iso8859-1 kmod-vfat blockd
-  ARTIFACTS := header-emmc.bin sdcard.img
+  ARTIFACTS := sdcard.img
   IMAGES := sysupgrade.itb
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
-  ARTIFACT/header-emmc.bin	:= mt7622-gpt  emmc | mmc-header  emmc
-  ARTIFACT/sdcard.img		:= mt7622-gpt sdmmc | mmc-header sdmmc | pad-to 128k | append-image header-emmc.bin | pad-to 256k |\
+  ARTIFACT/sdcard.img		:= mt7622-gpt sdmmc | pad-to 128k | mt7622-gpt emmc | pad-to 256k |\
 				   bl2 emmc-2ddr | pad-to 512k | bl2 sdmmc-2ddr | pad-to 1M | bl31-uboot bananapi_bpi-r64-emmc | pad-to 2M |\
 				   bl31-uboot bananapi_bpi-r64-sdmmc | pad-to 6M
   KERNEL			:= kernel-bin | gzip
