@@ -529,7 +529,8 @@ static guid_t type_to_guid_and_name(unsigned char type, char **name)
 
 	switch (type) {
 		case 0xef:
-			*name = "EFI System Partition";
+			if(*name == NULL)
+				*name = "EFI System Partition";
 			guid = GUID_PARTITION_SYSTEM;
 			break;
 		case 0x83:
@@ -586,6 +587,7 @@ int main (int argc, char **argv)
 				*(p++) = 0;
 				parts[part].start = to_kbytes(p);
 			}
+			part_guid = type_to_guid_and_name(type, &name);
 			parts[part].size = to_kbytes(optarg);
 			parts[part].required = required;
 			parts[part].name = name;
@@ -598,7 +600,6 @@ int main (int argc, char **argv)
 			 */
 			name = NULL;
 			required = 0;
-			part_guid = type_to_guid_and_name(type, &name);
 			break;
 		case 'N':
 			name = optarg;
