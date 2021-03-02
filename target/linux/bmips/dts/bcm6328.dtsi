@@ -145,99 +145,100 @@
 			};
 		};
 
-		gpio: syscon@10000080 {
-			compatible = "syscon", "simple-mfd";
+		gpio_cntl: syscon@10000080 {
+			compatible = "brcm,bcm6328-gpio-sysctl",
+				     "syscon", "simple-mfd";
 			reg = <0x10000080 0x80>;
+			ranges = <0 0x10000080 0x80>;
 			native-endian;
 
-			pinctrl: pin-controller {
-				compatible = "brcm,bcm6328-pinctrl";
+			gpio: gpio@0 {
+				compatible = "brcm,bcm6328-gpio";
+				reg-names = "dirout", "dat";
+				reg = <0x0 0x8>, <0x8 0x8>;
 
 				gpio-controller;
+				gpio-ranges = <&pinctrl 0 0 32>;
 				#gpio-cells = <2>;
+			};
 
-				interrupts-extended = <&ext_intc 3 0>,
-						      <&ext_intc 2 0>,
-						      <&ext_intc 1 0>,
-						      <&ext_intc 0 0>;
-				interrupt-names = "gpio12",
-						  "gpio15",
-						  "gpio23",
-						  "gpio24";
+			pinctrl: pinctrl@18 {
+				compatible = "brcm,bcm6328-pinctrl";
+				reg = <0x18 0x10>;
 
-				pinctrl_serial_led: serial_led {
-					pinctrl_serial_led_data: serial_led_data {
+				pinctrl_serial_led: serial_led-pins {
+					pinctrl_serial_led_data: serial_led_data-pins {
 						function = "serial_led_data";
 						pins = "gpio6";
 					};
 
-					pinctrl_serial_led_clk: serial_led_clk {
+					pinctrl_serial_led_clk: serial_led_clk-pins {
 						function = "serial_led_clk";
 						pins = "gpio7";
 					};
 				};
 
-				pinctrl_inet_act_led: inet_act_led {
+				pinctrl_inet_act_led: inet_act_led-pins {
 					function = "inet_act_led";
 					pins = "gpio11";
 				};
 
-				pinctrl_pcie_clkreq: pcie_clkreq {
+				pinctrl_pcie_clkreq: pcie_clkreq-pins {
 					function = "pcie_clkreq";
 					pins = "gpio16";
 				};
 
-				pinctrl_ephy0_spd_led: ephy0_spd_led {
+				pinctrl_ephy0_spd_led: ephy0_spd_led-pins {
 					function = "led";
 					pins = "gpio17";
 				};
 
-				pinctrl_ephy1_spd_led: ephy1_spd_led {
+				pinctrl_ephy1_spd_led: ephy1_spd_led-pins {
 					function = "led";
 					pins = "gpio18";
 				};
 
-				pinctrl_ephy2_spd_led: ephy2_spd_led {
+				pinctrl_ephy2_spd_led: ephy2_spd_led-pins {
 					function = "led";
 					pins = "gpio19";
 				};
 
-				pinctrl_ephy3_spd_led: ephy3_spd_led {
+				pinctrl_ephy3_spd_led: ephy3_spd_led-pins {
 					function = "led";
 					pins = "gpio20";
 				};
 
-				pinctrl_ephy0_act_led: ephy0_act_led {
+				pinctrl_ephy0_act_led: ephy0_act_led-pins {
 					function = "ephy0_act_led";
 					pins = "gpio25";
 				};
 
-				pinctrl_ephy1_act_led: ephy1_act_led {
+				pinctrl_ephy1_act_led: ephy1_act_led-pins {
 					function = "ephy1_act_led";
 					pins = "gpio26";
 				};
 
-				pinctrl_ephy2_act_led: ephy2_act_led {
+				pinctrl_ephy2_act_led: ephy2_act_led-pins {
 					function = "ephy2_act_led";
 					pins = "gpio27";
 				};
 
-				pinctrl_ephy3_act_led: ephy3_act_led {
+				pinctrl_ephy3_act_led: ephy3_act_led-pins {
 					function = "ephy3_act_led";
 					pins = "gpio28";
 				};
 
-				pinctrl_hsspi_cs1: hsspi_cs1 {
+				pinctrl_hsspi_cs1: hsspi_cs1-pins {
 					function = "hsspi_cs1";
 					pins = "hsspi_cs1";
 				};
 
-				pinctrl_usb_port1_device: usb_port1_device {
+				pinctrl_usb_port1_device: usb_port1_device-pins {
 					function = "usb_device_port";
 					pins = "usb_port1";
 				};
 
-				pinctrl_usb_port1_host: usb_port1_host {
+				pinctrl_usb_port1_host: usb_port1_host-pins {
 					function = "usb_host_port";
 					pins = "usb_port1";
 				};

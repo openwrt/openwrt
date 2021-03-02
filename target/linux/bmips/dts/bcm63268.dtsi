@@ -153,131 +153,132 @@
 			#reset-cells = <1>;
 		};
 
-		gpio: syscon@100000c0 {
-			compatible = "syscon", "simple-mfd";
+		gpio_cntl: syscon@100000c0 {
+			compatible = "brcm,bcm63268-gpio-sysctl",
+				     "syscon", "simple-mfd";
 			reg = <0x100000c0 0x80>;
+			ranges = <0 0x100000c0 0x80>;
 			native-endian;
 
-			pinctrl: pin-controller {
-				compatible = "brcm,bcm63268-pinctrl";
+			gpio: gpio@0 {
+				compatible = "brcm,bcm63268-gpio";
+				reg-names = "dirout", "dat";
+				reg = <0x0 0x8>, <0x8 0x8>;
 
 				gpio-controller;
+				gpio-ranges = <&pinctrl 0 0 52>;
 				#gpio-cells = <2>;
+			};
 
-				interrupts-extended = <&ext_intc 0 0>,
-						      <&ext_intc 1 0>,
-						      <&ext_intc 2 0>,
-						      <&ext_intc 3 0>;
-				interrupt-names = "gpio32",
-						  "gpio33",
-						  "gpio34",
-						  "gpio35";
+			pinctrl: pinctrl@10 {
+				compatible = "brcm,bcm63268-pinctrl";
+				reg = <0x10 0x4>, <0x18 0x8>, <0x38 0x4>;
 
-				pinctrl_serial_led: serial_led {
-					pinctrl_serial_led_clk: serial_led_clk {
+				pinctrl_serial_led: serial_led-pins {
+					pinctrl_serial_led_clk: serial_led_clk-pins {
 						function = "serial_led_clk";
 						pins = "gpio0";
 					};
 
-					pinctrl_serial_led_data: serial_led_data {
+					pinctrl_serial_led_data: serial_led_data-pins {
 						function = "serial_led_data";
 						pins = "gpio1";
 					};
 				};
 
-				pinctrl_hsspi_cs4: hsspi_cs4 {
+				pinctrl_hsspi_cs4: hsspi_cs4-pins {
 					function = "hsspi_cs4";
 					pins = "gpio16";
 				};
 
-				pinctrl_hsspi_cs5: hsspi_cs5 {
+				pinctrl_hsspi_cs5: hsspi_cs5-pins {
 					function = "hsspi_cs5";
 					pins = "gpio17";
 				};
 
-				pinctrl_hsspi_cs6: hsspi_cs6 {
+				pinctrl_hsspi_cs6: hsspi_cs6-pins {
 					function = "hsspi_cs6";
 					pins = "gpio8";
 				};
 
-				pinctrl_hsspi_cs7: hsspi_cs7 {
+				pinctrl_hsspi_cs7: hsspi_cs7-pins {
 					function = "hsspi_cs7";
 					pins = "gpio9";
 				};
 
 				pinctrl_adsl_spi: adsl_spi {
-					pinctrl_adsl_spi_miso: adsl_spi_miso {
+					pinctrl_adsl_spi_miso: adsl_spi_miso-pins {
 						function = "adsl_spi_miso";
 						pins = "gpio18";
 					};
 
-					pinctrl_adsl_spi_mosi: adsl_spi_mosi {
+					pinctrl_adsl_spi_mosi: adsl_spi_mosi-pins {
 						function = "adsl_spi_mosi";
 						pins = "gpio19";
 					};
 				};
 
-				pinctrl_vreq_clk: vreq_clk {
+				pinctrl_vreq_clk: vreq_clk-pins {
 					function = "vreq_clk";
 					pins = "gpio22";
 				};
 
-				pinctrl_pcie_clkreq_b: pcie_clkreq_b {
+				pinctrl_pcie_clkreq_b: pcie_clkreq_b-pins {
 					function = "pcie_clkreq_b";
 					pins = "gpio23";
 				};
 
-				pinctrl_robosw_led_clk: robosw_led_clk {
+				pinctrl_robosw_led_clk: robosw_led_clk-pins {
 					function = "robosw_led_clk";
 					pins = "gpio30";
 				};
 
-				pinctrl_robosw_led_data: robosw_led_data {
+				pinctrl_robosw_led_data: robosw_led_data-pins {
 					function = "robosw_led_data";
 					pins = "gpio31";
 				};
 
-				pinctrl_nand: nand {
+				pinctrl_nand: nand-pins {
 					function = "nand";
 					group = "nand_grp";
 				};
 
-				pinctrl_gpio35_alt: gpio35_alt {
+				pinctrl_gpio35_alt: gpio35_alt-pins {
 					function = "gpio35_alt";
 					pin = "gpio35";
 				};
 
-				pinctrl_dectpd: dectpd {
+				pinctrl_dectpd: dectpd-pins {
 					function = "dectpd";
 					group = "dectpd_grp";
 				};
 
-				pinctrl_vdsl_phy_override_0: vdsl_phy_override_0 {
+				pinctrl_vdsl_phy_override_0: vdsl_phy_override_0-pins {
 					function = "vdsl_phy_override_0";
 					group = "vdsl_phy_override_0_grp";
 				};
 
-				pinctrl_vdsl_phy_override_1: vdsl_phy_override_1 {
+				pinctrl_vdsl_phy_override_1: vdsl_phy_override_1-pins {
 					function = "vdsl_phy_override_1";
 					group = "vdsl_phy_override_1_grp";
 				};
 
-				pinctrl_vdsl_phy_override_2: vdsl_phy_override_2 {
+				pinctrl_vdsl_phy_override_2: vdsl_phy_override_2-pins {
 					function = "vdsl_phy_override_2";
 					group = "vdsl_phy_override_2_grp";
 				};
 
-				pinctrl_vdsl_phy_override_3: vdsl_phy_override_3 {
+				pinctrl_vdsl_phy_override_3: vdsl_phy_override_3-pins {
 					function = "vdsl_phy_override_3";
 					group = "vdsl_phy_override_3_grp";
 				};
 
-				pinctrl_dsl_gpio8: dsl_gpio8 {
+				pinctrl_dsl_gpio8: dsl_gpio8-pins {
 					function = "dsl_gpio8";
 					group = "dsl_gpio8";
 				};
 
-				pinctrl_dsl_gpio9: dsl_gpio9 {
+				pinctrl_dsl_gpio9: dsl_gpio9-pins {
 					function = "dsl_gpio9";
 					group = "dsl_gpio9";
 				};
