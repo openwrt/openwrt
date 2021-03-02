@@ -311,7 +311,7 @@ static int gen_ptable(uint32_t signature, int nr)
 		if (parts[i].start != 0) {
 			if (parts[i].start * 2 < start) {
 				fprintf(stderr, "Invalid start %ld for partition %d!\n",
-					parts[i].start, i, start);
+					parts[i].start, i);
 				return ret;
 			}
 			start = parts[i].start * 2;
@@ -398,7 +398,7 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 		if (parts[i].start != 0) {
 			if (parts[i].start * 2 < start) {
 				fprintf(stderr, "Invalid start %ld for partition %d!\n",
-					parts[i].start, i, start);
+					parts[i].start, i);
 				return ret;
 			}
 			start = parts[i].start * 2;
