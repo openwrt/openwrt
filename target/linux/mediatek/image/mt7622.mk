@@ -16,9 +16,10 @@ endef
 
 define Build/mt7622-gpt
 	cp $@ $@.tmp || true
-	ptgen -g -o $@.tmp -h 4 -s 31 -a 1 -l 1024 -g \
+	ptgen -g -o $@.tmp -a 1 -l 1024 \
 		-t 0xef \
 		$(if $(findstring sdmmc,$1), \
+			-H \
 			-N bl2		-r	-p 512k@512k \
 		) \
 			-N fip		-r	-p 1M@2M \
@@ -30,7 +31,6 @@ define Build/mt7622-gpt
 		$(if $(findstring emmc,$1), \
 			-t 0x2e -N production	-p 980M@40M \
 		)
-	dd if=$(STAGING_DIR_IMAGE)/mt7622-header_$1.bin bs=512 count=1 of=$@.tmp conv=notrunc
 	cat $@.tmp >> $@
 	rm $@.tmp
 endef
