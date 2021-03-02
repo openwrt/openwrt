@@ -916,6 +916,13 @@ define KernelPackage/sched/description
  Extra kernel schedulers modules for IP traffic
 endef
 
+SCHED_TEQL_HOTPLUG:=hotplug-sched-teql.sh
+
+define KernelPackage/sched/install
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_DATA) ./files/$(SCHED_TEQL_HOTPLUG) $(1)/etc/hotplug.d/iface/15-teql
+endef
+
 $(eval $(call KernelPackage,sched))
 
 
