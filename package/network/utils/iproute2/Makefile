@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
 PKG_VERSION:=5.11.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/net/iproute2
@@ -33,29 +33,46 @@ endef
 
 define Package/ip-tiny
 $(call Package/iproute2/Default)
- TITLE:=Routing control utility (Minimal)
- VARIANT:=tiny
- DEFAULT_VARIANT:=1
- PROVIDES:=ip
- ALTERNATIVES:=200:/sbin/ip:/usr/libexec/ip-tiny
- DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  TITLE:=Routing control utility (minimal)
+  VARIANT:=iptiny
+  DEFAULT_VARIANT:=1
+  PROVIDES:=ip
+  ALTERNATIVES:=200:/sbin/ip:/usr/libexec/ip-tiny
+  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl
 endef
 
 define Package/ip-full
 $(call Package/iproute2/Default)
- TITLE:=Routing control utility (Full)
- VARIANT:=full
- PROVIDES:=ip
- ALTERNATIVES:=300:/sbin/ip:/usr/libexec/ip-full
- DEPENDS:=+libnl-tiny +libbpf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  TITLE:=Routing control utility (full)
+  VARIANT:=ipfull
+  PROVIDES:=ip
+  ALTERNATIVES:=300:/sbin/ip:/usr/libexec/ip-full
+  DEPENDS:=+libnl-tiny +libbpf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
 endef
 
-define Package/tc
+define Package/tc-tiny
 $(call Package/iproute2/Default)
-  TITLE:=Traffic control utility
-  VARIANT:=tc
+  TITLE:=Traffic control utility (minimal)
+  VARIANT:=tctiny
+  DEFAULT_VARIANT:=1
   PROVIDES:=tc
-  DEPENDS:=+kmod-sched-core +libxtables +libbpf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  ALTERNATIVES:=200:/sbin/tc:/usr/libexec/tc-tiny
+  DEPENDS:=+kmod-sched-core +libxtables +tc-mod-iptables +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+endef
+
+define Package/tc-full
+$(call Package/iproute2/Default)
+  TITLE:=Traffic control utility (full)
+  VARIANT:=tcfull
+  PROVIDES:=tc
+  ALTERNATIVES:=300:/sbin/tc:/usr/libexec/tc-full
+  DEPENDS:=+kmod-sched-core +libxtables +tc-mod-iptables +libbpf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+endef
+
+define Package/tc-mod-iptables
+$(call Package/iproute2/Default)
+  TITLE:=Traffic control module - iptables action
+  DEPENDS:=+libxtables
 endef
 
 define Package/genl
@@ -94,18 +111,22 @@ $(call Package/iproute2/Default)
   DEPENDS:=+libmnl
 endef
 
-ifeq ($(BUILD_VARIANT),tiny)
+ifeq ($(BUILD_VARIANT),iptiny)
   IP_CONFIG_TINY:=y
   LIBBPF_FORCE:=off
 endif
 
-ifeq ($(BUILD_VARIANT),full)
+ifeq ($(BUILD_VARIANT),ipfull)
   HAVE_ELF:=y
   LIBBPF_FORCE:=on
-  HAVE_CAP:=n
 endif
 
-ifeq ($(BUILD_VARIANT),tc)
+ifeq ($(BUILD_VARIANT),tctiny)
+  LIBBPF_FORCE:=off
+  SHARED_LIBS:=y
+endif
+
+ifeq ($(BUILD_VARIANT),tcfull)
   HAVE_ELF:=y
   LIBBPF_FORCE:=on
   SHARED_LIBS:=y
@@ -163,13 +184,19 @@ define Package/ip-full/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ip/ip $(1)/usr/libexec/ip-full
 endef
 
-define Package/tc/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tc/tc $(1)/usr/sbin/
-ifeq ($(SHARED_LIBS),y)
+define Package/tc-tiny/install
+	$(INSTALL_DIR) $(1)/usr/libexec
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tc/tc $(1)/usr/libexec/tc-tiny
+endef
+
+define Package/tc-full/install
+	$(INSTALL_DIR) $(1)/usr/libexec
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tc/tc $(1)/usr/libexec/tc-full
+endef
+
+define Package/tc-mod-iptables/install
 	$(INSTALL_DIR) $(1)/usr/lib/tc
-	$(CP) $(PKG_BUILD_DIR)/tc/*.so $(1)/usr/lib/tc
-endif
+	$(CP) $(PKG_BUILD_DIR)/tc/m_xt.so $(1)/usr/lib/tc
 endef
 
 define Package/genl/install
@@ -204,7 +231,9 @@ endef
 
 $(eval $(call BuildPackage,ip-tiny))
 $(eval $(call BuildPackage,ip-full))
-$(eval $(call BuildPackage,tc))
+$(eval $(call BuildPackage,tc-tiny))
+$(eval $(call BuildPackage,tc-full))
+$(eval $(call BuildPackage,tc-mod-iptables))
 $(eval $(call BuildPackage,genl))
 $(eval $(call BuildPackage,ip-bridge))
 $(eval $(call BuildPackage,ss))
