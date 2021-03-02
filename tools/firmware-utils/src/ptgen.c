@@ -94,6 +94,7 @@ typedef struct {
 #define GPT_ENTRY_SIZE          128
 #define GPT_ENTRY_MAX           128
 #define GPT_ENTRY_NAME_SIZE     72
+#define GPT_SIZE		GPT_ENTRY_SIZE * GPT_ENTRY_MAX / DISK_SECTOR_SIZE
 
 #define GPT_ATTR_PLAT_REQUIRED  BIT(0)
 #define GPT_ATTR_EFI_IGNORE     BIT(1)
@@ -120,6 +121,7 @@ struct pte {
 };
 
 struct partinfo {
+	unsigned long actual_start;
 	unsigned long start;
 	unsigned long size;
 	int type;
@@ -383,7 +385,8 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 		.entry_size = cpu_to_le32(GPT_ENTRY_SIZE),
 	};
 	struct gpte  gpte[GPT_ENTRY_MAX];
-	uint64_t start, end, sect = 0;
+	uint64_t start, end;
+	uint64_t sect = GPT_SIZE + GPT_FIRST_ENTRY_SECTOR;
 	int fd, ret = -1;
 	unsigned i, pmbr = 1;
 
@@ -396,7 +399,7 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 			fprintf(stderr, "Invalid size in partition %d!\n", i);
 			return ret;
 		}
-		start = sect + sectors;
+		start = sect;
 		if (parts[i].start != 0) {
 			if (parts[i].start * 2 < start) {
 				fprintf(stderr, "Invalid start %ld for partition %d!\n",
@@ -407,11 +410,10 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 		} else if (kb_align != 0) {
 			start = round_to_kb(start);
 		}
+		parts[i].actual_start = start;
 		gpte[i].start = cpu_to_le64(start);
 
 		sect = start + parts[i].size * 2;
-		if (kb_align == 0)
-			sect = round_to_cyl(sect);
 		gpte[i].end = cpu_to_le64(sect -1);
 		gpte[i].guid = guid;
 		gpte[i].guid.b[sizeof(guid_t) -1] += i + 1;
@@ -445,13 +447,15 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 		printf("%" PRIu64 "\n", (sect - start) * DISK_SECTOR_SIZE);
 	}
 
-	gpte[GPT_ENTRY_MAX - 1].start = cpu_to_le64(GPT_FIRST_ENTRY_SECTOR + GPT_ENTRY_SIZE * GPT_ENTRY_MAX / DISK_SECTOR_SIZE);
-	gpte[GPT_ENTRY_MAX - 1].end = cpu_to_le64((kb_align ? round_to_kb(sectors) : (unsigned long)sectors) - 1);
-	gpte[GPT_ENTRY_MAX - 1].type = GUID_PARTITION_BIOS_BOOT;
-	gpte[GPT_ENTRY_MAX - 1].guid = guid;
-	gpte[GPT_ENTRY_MAX - 1].guid.b[sizeof(guid_t) -1] += GPT_ENTRY_MAX;
+	if (parts[0].actual_start > GPT_FIRST_ENTRY_SECTOR + GPT_SIZE) {
+		gpte[GPT_ENTRY_MAX - 1].start = cpu_to_le64(GPT_FIRST_ENTRY_SECTOR + GPT_SIZE);
+		gpte[GPT_ENTRY_MAX - 1].end = cpu_to_le64(parts[0].actual_start - 1);
+		gpte[GPT_ENTRY_MAX - 1].type = GUID_PARTITION_BIOS_BOOT;
+		gpte[GPT_ENTRY_MAX - 1].guid = guid;
+		gpte[GPT_ENTRY_MAX - 1].guid.b[sizeof(guid_t) -1] += GPT_ENTRY_MAX;
+	}
 
-	end = sect + sectors - 1;
+	end = sect + GPT_SIZE;
 
 	pte[0].type = 0xEE;
 	pte[0].start = cpu_to_le32(GPT_HEADER_SECTOR);
@@ -459,7 +463,7 @@ static int gen_gptable(uint32_t signature, guid_t guid, unsigned nr)
 	to_chs(GPT_HEADER_SECTOR, pte[0].chs_start);
 	to_chs(end, pte[0].chs_end);
 
-	gpth.last_usable = cpu_to_le64(end - GPT_ENTRY_SIZE * GPT_ENTRY_MAX / DISK_SECTOR_SIZE - 1);
+	gpth.last_usable = cpu_to_le64(end - GPT_SIZE - 1);
 	gpth.alternate = cpu_to_le64(end);
 	gpth.entry_crc32 = cpu_to_le32(gpt_crc32(gpte, GPT_ENTRY_SIZE * GPT_ENTRY_MAX));
 	gpth.crc32 = cpu_to_le32(gpt_crc32((char *)&gpth, GPT_HEADER_SIZE));
@@ -651,11 +655,14 @@ int main (int argc, char **argv)
 		}
 	}
 	argc -= optind;
-	if (argc || (heads <= 0) || (sectors <= 0) || !filename)
+	if (argc || (!use_guid_partition_table && ((heads <= 0) || (sectors <= 0))) || !filename)
 		usage(argv[0]);
 
-	if (use_guid_partition_table)
+	if (use_guid_partition_table) {
+		heads = 254;
+		sectors = 63;
 		return gen_gptable(signature, guid, part) ? EXIT_FAILURE : EXIT_SUCCESS;
+	}
 
 	return gen_ptable(signature, part) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
