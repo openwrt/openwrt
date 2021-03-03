@@ -26,16 +26,10 @@
  		};
  
  		cpu1: cpu@1 {
-@@ -47,17 +47,350 @@
- 			enable-method = "qcom,kpss-acc-v1";
- 			device_type = "cpu";
- 			reg = <1>;
--			next-level-cache = <&L2>;
--			qcom,acc = <&acc1>;
--			qcom,saw = <&saw1>;
-+			next-level-cache = <&L2>;
-+			qcom,acc = <&acc1>;
-+			qcom,saw = <&saw1>;
+@@ -38,14 +50,347 @@
+ 			next-level-cache = <&L2>;
+ 			qcom,acc = <&acc1>;
+ 			qcom,saw = <&saw1>;
 +			clocks = <&kraitcc 1>, <&kraitcc 4>;
 +			clock-names = "cpu", "l2";
 +			clock-latency = <100000>;
@@ -84,9 +78,9 @@
 +			opp-microvolt = <1150000>;
 +			clock-latency-ns = <100000>;
 +			opp-level = <2>;
-+		};
-+	};
-+
+ 		};
+ 	};
+ 
 +	opp_table0: opp_table0 {
 +		compatible = "operating-points-v2-kryo-cpu";
 +		nvmem-cells = <&speedbin_efuse>;
@@ -155,9 +149,9 @@
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
 +			opp-level = <2>;
- 		};
- 	};
- 
++		};
++	};
++
 +	thermal-zones {
 +		tsens_tz_sensor0 {
 +			polling-delay-passive = <0>;
@@ -383,7 +377,7 @@
  	memory {
  		device_type = "memory";
  		reg = <0x0 0x0>;
-@@ -93,6 +552,15 @@
+@@ -93,6 +438,15 @@
  		};
  	};
  
@@ -399,7 +393,7 @@
  	firmware {
  		scm {
  			compatible = "qcom,scm-ipq806x", "qcom,scm";
-@@ -120,6 +588,78 @@
+@@ -120,6 +474,78 @@
  			reg-names = "lpass-lpaif";
  		};
  
@@ -478,7 +472,7 @@
  		qcom_pinmux: pinmux@800000 {
  			compatible = "qcom,ipq8064-pinctrl";
  			reg = <0x800000 0x4000>;
-@@ -159,6 +705,15 @@
+@@ -160,6 +586,15 @@
  				};
  			};
  
@@ -494,7 +488,7 @@
  			spi_pins: spi_pins {
  				mux {
  					pins = "gpio18", "gpio19", "gpio21";
-@@ -168,6 +723,53 @@
+@@ -169,6 +604,53 @@
  				};
  			};
  
@@ -548,7 +542,7 @@
  			leds_pins: leds_pins {
  				mux {
  					pins = "gpio7", "gpio8", "gpio9",
-@@ -229,6 +831,17 @@
+@@ -231,6 +713,17 @@
  			clock-output-names = "acpu1_aux";
  		};
  
@@ -566,7 +560,7 @@
  		saw0: regulator@2089000 {
  			compatible = "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
  			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;
-@@ -241,6 +854,17 @@
+@@ -243,6 +736,17 @@
  			regulator;
  		};
  
@@ -584,7 +578,7 @@
  		gsbi2: gsbi@12480000 {
  			compatible = "qcom,gsbi-v1.0.0";
  			cell-index = <2>;
-@@ -448,6 +1081,95 @@
+@@ -478,6 +982,95 @@
  			#reset-cells = <1>;
  		};
  
@@ -680,8 +674,8 @@
  		pcie0: pci@1b500000 {
  			compatible = "qcom,pcie-ipq8064";
  			reg = <0x1b500000 0x1000
-@@ -601,6 +1323,59 @@
- 			perst-gpio = <&qcom_pinmux 63 GPIO_ACTIVE_LOW>;
+@@ -739,6 +1332,59 @@
+ 			status = "disabled";
  		};
  
 +		adm_dma: dma@18300000 {
@@ -740,7 +734,7 @@
  		vsdcc_fixed: vsdcc-regulator {
  			compatible = "regulator-fixed";
  			regulator-name = "SDCC Power";
-@@ -676,4 +1559,17 @@
+@@ -814,4 +1460,17 @@
  			};
  		};
  	};

@@ -33,8 +33,8 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -318,7 +318,7 @@ config ARCH_MULTIPLATFORM
- 	depends on MMU
+@@ -321,7 +321,7 @@ config ARCH_MULTIPLATFORM
+ 	select ARCH_SELECT_MEMORY_MODEL
  	select ARM_HAS_SG_CHAIN
  	select ARM_PATCH_PHYS_VIRT
 -	select AUTO_ZRELADDR
@@ -44,7 +44,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  	select GENERIC_CLOCKEVENTS
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -258,9 +258,11 @@ MACHINE  := arch/arm/mach-$(word 1,$(mac
+@@ -251,9 +251,11 @@ MACHINE  := arch/arm/mach-$(word 1,$(mac
  else
  MACHINE  :=
  endif

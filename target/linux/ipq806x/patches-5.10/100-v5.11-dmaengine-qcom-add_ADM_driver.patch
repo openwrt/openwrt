@@ -31,8 +31,6 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  3 files changed, 915 insertions(+)
  create mode 100644 drivers/dma/qcom/qcom_adm.c
 
-diff --git a/drivers/dma/qcom/Kconfig b/drivers/dma/qcom/Kconfig
-index 3bcb689162c67..0389d60d2604a 100644
 --- a/drivers/dma/qcom/Kconfig
 +++ b/drivers/dma/qcom/Kconfig
 @@ -1,4 +1,15 @@
@@ -51,8 +49,6 @@ index 3bcb689162c67..0389d60d2604a 100644
  config QCOM_BAM_DMA
  	tristate "QCOM BAM DMA support"
  	depends on ARCH_QCOM || (COMPILE_TEST && OF && ARM)
-diff --git a/drivers/dma/qcom/Makefile b/drivers/dma/qcom/Makefile
-index 1ae92da88b0c9..346e643fbb6db 100644
 --- a/drivers/dma/qcom/Makefile
 +++ b/drivers/dma/qcom/Makefile
 @@ -1,4 +1,5 @@
@@ -61,9 +57,6 @@ index 1ae92da88b0c9..346e643fbb6db 100644
  obj-$(CONFIG_QCOM_BAM_DMA) += bam_dma.o
  obj-$(CONFIG_QCOM_HIDMA_MGMT) += hdma_mgmt.o
  hdma_mgmt-objs	 := hidma_mgmt.o hidma_mgmt_sys.o
-diff --git a/drivers/dma/qcom/qcom_adm.c b/drivers/dma/qcom/qcom_adm.c
-new file mode 100644
-index 0000000000000..9b6f8e050ecce
 --- /dev/null
 +++ b/drivers/dma/qcom/qcom_adm.c
 @@ -0,0 +1,903 @@
@@ -970,6 +963,3 @@ index 0000000000000..9b6f8e050ecce
 +MODULE_AUTHOR("Andy Gross <agross@codeaurora.org>");
 +MODULE_DESCRIPTION("QCOM ADM DMA engine driver");
 +MODULE_LICENSE("GPL v2");
--- 
-cgit 1.2.3-1.el7
-
