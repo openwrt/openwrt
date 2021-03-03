@@ -258,40 +258,40 @@
 	};
 };
 
-&soc {
-	nand@1ac00000 {
-		status = "okay";
+&nand_controller {
+	status = "okay";
 
-		pinctrl-0 = <&nand_pins>;
-		pinctrl-names = "default";
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
 
-		nand@0 {
-			compatible = "qcom,nandcs";
+	nand@0 {
+		compatible = "qcom,nandcs";
 
-			reg = <0>;
+		reg = <0>;
 
-			nand-ecc-strength = <4>;
-			nand-bus-width = <8>;
-			nand-ecc-step-size = <512>;
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
 
-			partitions {
-				compatible = "fixed-partitions";
-				#address-cells = <1>;
-				#size-cells = <1>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-				rootfs1@0 {
-					label = "rootfs1";
-					reg = <0x0000000 0x4000000>;
-				};
+			rootfs1@0 {
+				label = "rootfs1";
+				reg = <0x0000000 0x4000000>;
+			};
 
-				rootfs2@4000000 {
-					label = "rootfs2";
-					reg = <0x4000000 0x4000000>;
-				};
+			rootfs2@4000000 {
+				label = "rootfs2";
+				reg = <0x4000000 0x4000000>;
 			};
 		};
 	};
+};
 
+&soc {
 	mdio1: mdio {
 		compatible = "virtual,mdio-gpio";
 		#address-cells = <1>;
