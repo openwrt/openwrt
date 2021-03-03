@@ -12,11 +12,9 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  arch/arm/include/asm/io.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/include/asm/io.h b/arch/arm/include/asm/io.h
-index fc748122f1e0..6f3e89f08bd8 100644
 --- a/arch/arm/include/asm/io.h
 +++ b/arch/arm/include/asm/io.h
-@@ -197,7 +197,7 @@ void __iomem *pci_remap_cfgspace(resource_size_t res_cookie, size_t size);
+@@ -197,7 +197,7 @@ void __iomem *pci_remap_cfgspace(resourc
  #ifdef CONFIG_NEED_MACH_IO_H
  #include <mach/io.h>
  #elif defined(CONFIG_PCI)
@@ -25,6 +23,3 @@ index fc748122f1e0..6f3e89f08bd8 100644
  #define __io(a)		__typesafe_io(PCI_IO_VIRT_BASE + ((a) & IO_SPACE_LIMIT))
  #else
  #define __io(a)		__typesafe_io((a) & IO_SPACE_LIMIT)
--- 
-2.30.0
-

@@ -15,8 +15,6 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  drivers/clk/qcom/gcc-ipq806x.c | 19 +++++++++++++------
  1 file changed, 13 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/clk/qcom/gcc-ipq806x.c b/drivers/clk/qcom/gcc-ipq806x.c
-index d6b7adb4be38..fbb8644c4a43 100644
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
 @@ -65,6 +65,7 @@ static struct clk_pll pll3 = {
@@ -36,7 +34,7 @@ index d6b7adb4be38..fbb8644c4a43 100644
  		},
  	},
  };
-@@ -798,7 +799,7 @@ static struct clk_branch gsbi4_qup_clk = {
+@@ -798,7 +799,7 @@ static struct clk_branch gsbi4_qup_clk =
  			.parent_names = (const char *[]){ "gsbi4_qup_src" },
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
@@ -54,7 +52,7 @@ index d6b7adb4be38..fbb8644c4a43 100644
  		},
  	},
  };
-@@ -945,7 +946,7 @@ static struct clk_branch gsbi7_qup_clk = {
+@@ -945,7 +946,7 @@ static struct clk_branch gsbi7_qup_clk =
  			.parent_names = (const char *[]){ "gsbi7_qup_src" },
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
@@ -95,7 +93,7 @@ index d6b7adb4be38..fbb8644c4a43 100644
  		},
  	}
  };
-@@ -2694,7 +2699,8 @@ static struct clk_dyn_rcg ubi32_core1_src_clk = {
+@@ -2694,7 +2699,8 @@ static struct clk_dyn_rcg ubi32_core1_sr
  			.parent_names = gcc_pxo_pll8_pll14_pll18_pll0,
  			.num_parents = 5,
  			.ops = &clk_dyn_rcg_ops,
@@ -105,7 +103,7 @@ index d6b7adb4be38..fbb8644c4a43 100644
  		},
  	},
  };
-@@ -2747,7 +2753,8 @@ static struct clk_dyn_rcg ubi32_core2_src_clk = {
+@@ -2747,7 +2753,8 @@ static struct clk_dyn_rcg ubi32_core2_sr
  			.parent_names = gcc_pxo_pll8_pll14_pll18_pll0,
  			.num_parents = 5,
  			.ops = &clk_dyn_rcg_ops,
@@ -115,6 +113,3 @@ index d6b7adb4be38..fbb8644c4a43 100644
  		},
  	},
  };
--- 
-2.29.2
-
