@@ -36,20 +36,6 @@ define Download/tfa-files
   HASH:=689b097e4531d3eeca0c477675ab3dc3cace6ba4ed8a339116a9ede6537839d7
 endef
 
-define Download/mt7622-header-emmc
-  URL:=https://raw.githubusercontent.com/frank-w/BPI-R64-ATF/a36efa5f7435b8079479d13b562fedc0aa0d42f0
-  URL_FILE:=header_emmc.bin
-  FILE:=mt7622-header_emmc.bin
-  HASH:=0a09c55d90c5fc375c59468a4331555f77cbc3e1dd107ca83b5b8c9625f38d8c
-endef
-
-define Download/mt7622-header-sdmmc
-  URL:=https://raw.githubusercontent.com/frank-w/BPI-R64-ATF/a36efa5f7435b8079479d13b562fedc0aa0d42f0
-  URL_FILE:=header_sdmmc.bin
-  FILE:=mt7622-header_sdmmc.bin
-  HASH:=242908c04e25289d25ba9fab61a1930425af173051c43d275d1ac9877d6accb1
-endef
-
 define Trusted-Firmware-A/Default
   BUILD_TARGET:=mediatek
   BUILD_SUBTARGET:=mt7622
@@ -121,12 +107,6 @@ TFA_MAKE_FLAGS += BOOT_DEVICE=$(BOOT_DEVICE) all
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-ifeq ($(BOOT_DEVICE),emmc)
-	$(eval $(call Download,mt7622-header-emmc))
-endif
-ifeq ($(BOOT_DEVICE),sdmmc)
-	$(eval $(call Download,mt7622-header-sdmmc))
-endif
 	$(eval $(call Download,tfa-files))
 # replace 'bromimage' tool by static version
 	$(TAR) -vxzf $(DL_DIR)/$(BLOBS_TARBALL) --wildcards \
