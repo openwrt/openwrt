@@ -11,11 +11,9 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  drivers/clk/qcom/clk-krait.c | 27 +++++++++++++++++++++++++--
  1 file changed, 25 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/qcom/clk-krait.c b/drivers/clk/qcom/clk-krait.c
-index 59f1af415b58..ba796b621669 100644
 --- a/drivers/clk/qcom/clk-krait.c
 +++ b/drivers/clk/qcom/clk-krait.c
-@@ -68,7 +68,25 @@ static u8 krait_mux_get_parent(struct clk_hw *hw)
+@@ -68,7 +68,25 @@ static u8 krait_mux_get_parent(struct cl
  	return clk_mux_val_to_index(hw, mux->parent_map, 0, sel);
  }
  
@@ -57,6 +55,3 @@ index 59f1af415b58..ba796b621669 100644
  }
  
  static int krait_div2_set_rate(struct clk_hw *hw, unsigned long rate,
--- 
-2.29.2
-

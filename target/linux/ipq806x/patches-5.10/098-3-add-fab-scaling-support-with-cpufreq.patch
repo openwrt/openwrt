@@ -227,7 +227,7 @@
  
  #include "cpufreq-dt.h"
  
-@@ -58,6 +59,13 @@ static int set_target(struct cpufreq_policy *policy, unsigned int index)
+@@ -54,6 +55,13 @@ static int set_target(struct cpufreq_pol
  		level = dev_pm_opp_get_level(opp);
  		dev_pm_opp_put(opp);
  

@@ -12,11 +12,9 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  Documentation/devicetree/bindings/mtd/qcom_nandc.txt | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/mtd/qcom_nandc.txt b/Documentation/devicetree/bindings/mtd/qcom_nandc.txt
-index 5647913d8837..3cf1dd5ebad2 100644
 --- a/Documentation/devicetree/bindings/mtd/qcom_nandc.txt
 +++ b/Documentation/devicetree/bindings/mtd/qcom_nandc.txt
-@@ -56,6 +56,15 @@ Optional properties:
+@@ -52,6 +52,15 @@ Optional properties:
  			be used according to chip requirement and available
  			OOB size.
  
@@ -32,7 +30,7 @@ index 5647913d8837..3cf1dd5ebad2 100644
  Each nandcs device node may optionally contain a 'partitions' sub-node, which
  further contains sub-nodes describing the flash partition mapping. See
  partition.txt for more detail.
-@@ -84,6 +93,9 @@ nand-controller@1ac00000 {
+@@ -80,6 +89,9 @@ nand-controller@1ac00000 {
  		nand-ecc-strength = <4>;
  		nand-bus-width = <8>;
  
@@ -42,6 +40,3 @@ index 5647913d8837..3cf1dd5ebad2 100644
  		partitions {
  			compatible = "fixed-partitions";
  			#address-cells = <1>;
--- 
-2.29.2
-

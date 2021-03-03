@@ -11,8 +11,6 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  include/dt-bindings/clock/qcom,lcc-ipq806x.h | 1 +
  2 files changed, 9 insertions(+)
 
-diff --git a/drivers/clk/qcom/lcc-ipq806x.c b/drivers/clk/qcom/lcc-ipq806x.c
-index 1a2be4aeb31d..ee48642bb872 100644
 --- a/drivers/clk/qcom/lcc-ipq806x.c
 +++ b/drivers/clk/qcom/lcc-ipq806x.c
 @@ -12,6 +12,7 @@
@@ -42,7 +40,7 @@ index 1a2be4aeb31d..ee48642bb872 100644
  static const struct pll_config pll4_config = {
  	.l = 0xf,
  	.m = 0x91,
-@@ -417,6 +423,8 @@ static const struct qcom_cc_desc lcc_ipq806x_desc = {
+@@ -417,6 +423,8 @@ static const struct qcom_cc_desc lcc_ipq
  	.config = &lcc_ipq806x_regmap_config,
  	.clks = lcc_ipq806x_clks,
  	.num_clks = ARRAY_SIZE(lcc_ipq806x_clks),
@@ -51,8 +49,6 @@ index 1a2be4aeb31d..ee48642bb872 100644
  };
  
  static const struct of_device_id lcc_ipq806x_match_table[] = {
-diff --git a/include/dt-bindings/clock/qcom,lcc-ipq806x.h b/include/dt-bindings/clock/qcom,lcc-ipq806x.h
-index 25b92bbf0ab4..73318b1ce29e 100644
 --- a/include/dt-bindings/clock/qcom,lcc-ipq806x.h
 +++ b/include/dt-bindings/clock/qcom,lcc-ipq806x.h
 @@ -19,4 +19,5 @@
@@ -61,6 +57,3 @@ index 25b92bbf0ab4..73318b1ce29e 100644
  
 +#define LCC_PCM_RESET			0
  #endif
--- 
-2.29.2
-
