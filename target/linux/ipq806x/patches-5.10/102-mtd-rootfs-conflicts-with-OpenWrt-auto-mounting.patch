@@ -10,7 +10,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/mtd/parsers/qcomsmempart.c
 +++ b/drivers/mtd/parsers/qcomsmempart.c
-@@ -189,6 +189,11 @@ static int parse_qcomsmem_part(st
+@@ -132,6 +132,11 @@ static int parse_qcomsmem_part(struct mt
  		parts[i].offset = le32_to_cpu(pentry->offset) * mtd->erasesize;
  		parts[i].mask_flags = pentry->attr;
  		parts[i].size = le32_to_cpu(pentry->length) * mtd->erasesize;

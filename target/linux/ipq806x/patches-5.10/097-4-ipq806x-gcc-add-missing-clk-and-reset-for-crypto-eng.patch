@@ -13,8 +13,6 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  include/dt-bindings/reset/qcom,gcc-ipq806x.h |   5 +
  3 files changed, 259 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/qcom/gcc-ipq806x.c b/drivers/clk/qcom/gcc-ipq806x.c
-index fbb8644c4a43..c36bcdf013d0 100644
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
 @@ -223,7 +223,9 @@ static struct clk_regmap pll14_vote = {
@@ -58,7 +56,7 @@ index fbb8644c4a43..c36bcdf013d0 100644
  };
  
  static const struct parent_map gcc_pxo_pll8_map[] = {
-@@ -320,6 +339,42 @@ static const char * const gcc_pxo_pll8_pll14_pll18_pll0[] = {
+@@ -320,6 +339,42 @@ static const char * const gcc_pxo_pll8_p
  	"pll18",
  };
  
@@ -101,7 +99,7 @@ index fbb8644c4a43..c36bcdf013d0 100644
  static struct freq_tbl clk_tbl_gsbi_uart[] = {
  	{  1843200, P_PLL8, 2,  6, 625 },
  	{  3686400, P_PLL8, 2, 12, 625 },
-@@ -1261,6 +1316,7 @@ static const struct freq_tbl clk_tbl_sdc[] = {
+@@ -1261,6 +1316,7 @@ static const struct freq_tbl clk_tbl_sdc
  	{  20210000, P_PLL8,  1, 1,  19 },
  	{  24000000, P_PLL8,  4, 1,   4 },
  	{  48000000, P_PLL8,  4, 1,   2 },
@@ -109,7 +107,7 @@ index fbb8644c4a43..c36bcdf013d0 100644
  	{  64000000, P_PLL8,  3, 1,   2 },
  	{  96000000, P_PLL8,  4, 0,   0 },
  	{ 192000000, P_PLL8,  2, 0,   0 },
-@@ -2647,7 +2703,9 @@ static const struct freq_tbl clk_tbl_nss[] = {
+@@ -2647,7 +2703,9 @@ static const struct freq_tbl clk_tbl_nss
  	{ 110000000, P_PLL18, 1, 1, 5 },
  	{ 275000000, P_PLL18, 2, 0, 0 },
  	{ 550000000, P_PLL18, 1, 0, 0 },
@@ -119,7 +117,7 @@ index fbb8644c4a43..c36bcdf013d0 100644
  	{ }
  };
  
-@@ -2759,6 +2817,186 @@ static struct clk_dyn_rcg ubi32_core2_src_clk = {
+@@ -2759,6 +2817,186 @@ static struct clk_dyn_rcg ubi32_core2_sr
  	},
  };
  
@@ -306,7 +304,7 @@ index fbb8644c4a43..c36bcdf013d0 100644
  static struct clk_regmap *gcc_ipq806x_clks[] = {
  	[PLL0] = &pll0.clkr,
  	[PLL0_VOTE] = &pll0_vote,
-@@ -2766,6 +3004,7 @@ static struct clk_regmap *gcc_ipq806x_clks[] = {
+@@ -2766,6 +3004,7 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[PLL4_VOTE] = &pll4_vote,
  	[PLL8] = &pll8.clkr,
  	[PLL8_VOTE] = &pll8_vote,
@@ -314,7 +312,7 @@ index fbb8644c4a43..c36bcdf013d0 100644
  	[PLL14] = &pll14.clkr,
  	[PLL14_VOTE] = &pll14_vote,
  	[PLL18] = &pll18.clkr,
-@@ -2880,6 +3119,12 @@ static struct clk_regmap *gcc_ipq806x_clks[] = {
+@@ -2880,6 +3119,12 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[PLL9] = &hfpll0.clkr,
  	[PLL10] = &hfpll1.clkr,
  	[PLL12] = &hfpll_l2.clkr,
@@ -327,7 +325,7 @@ index fbb8644c4a43..c36bcdf013d0 100644
  };
  
  static const struct qcom_reset_map gcc_ipq806x_resets[] = {
-@@ -3011,6 +3256,11 @@ static const struct qcom_reset_map gcc_ipq806x_resets[] = {
+@@ -3011,6 +3256,11 @@ static const struct qcom_reset_map gcc_i
  	[GMAC_CORE3_RESET] = { 0x3cfc, 0 },
  	[GMAC_CORE4_RESET] = { 0x3d1c, 0 },
  	[GMAC_AHB_RESET] = { 0x3e24, 0 },
@@ -339,8 +337,6 @@ index fbb8644c4a43..c36bcdf013d0 100644
  	[NSS_CH0_RST_RX_CLK_N_RESET] = { 0x3b60, 0 },
  	[NSS_CH0_RST_TX_CLK_N_RESET] = { 0x3b60, 1 },
  	[NSS_CH0_RST_RX_125M_N_RESET] = { 0x3b60, 2 },
-diff --git a/include/dt-bindings/clock/qcom,gcc-ipq806x.h b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
-index 7deec14a6dee..02262d2ac899 100644
 --- a/include/dt-bindings/clock/qcom,gcc-ipq806x.h
 +++ b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
 @@ -240,7 +240,7 @@
@@ -361,8 +357,6 @@ index 7deec14a6dee..02262d2ac899 100644
 +#define CE5_CORE_CLK_SRC			287
  
  #endif
-diff --git a/include/dt-bindings/reset/qcom,gcc-ipq806x.h b/include/dt-bindings/reset/qcom,gcc-ipq806x.h
-index 26b6f9200620..020c9cf18751 100644
 --- a/include/dt-bindings/reset/qcom,gcc-ipq806x.h
 +++ b/include/dt-bindings/reset/qcom,gcc-ipq806x.h
 @@ -163,5 +163,10 @@
@@ -376,6 +370,3 @@ index 26b6f9200620..020c9cf18751 100644
 +#define CRYPTO_AHB_RESET				161
  
  #endif
--- 
-2.29.2
-

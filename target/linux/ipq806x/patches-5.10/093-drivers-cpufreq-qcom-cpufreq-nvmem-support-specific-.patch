@@ -11,8 +11,6 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  drivers/cpufreq/qcom-cpufreq-nvmem.c | 15 +++++++++++++++
  1 file changed, 15 insertions(+)
 
-diff --git a/drivers/cpufreq/qcom-cpufreq-nvmem.c b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-index d1744b5d9619..4866c74ead0f 100644
 --- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
 +++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
 @@ -52,6 +52,7 @@ struct qcom_cpufreq_match_data {
@@ -23,7 +21,7 @@ index d1744b5d9619..4866c74ead0f 100644
  };
  
  struct qcom_cpufreq_drv {
-@@ -250,6 +251,7 @@ static const struct qcom_cpufreq_match_data match_data_kryo = {
+@@ -250,6 +251,7 @@ static const struct qcom_cpufreq_match_d
  
  static const struct qcom_cpufreq_match_data match_data_krait = {
  	.get_version = qcom_cpufreq_krait_name_version,
@@ -31,7 +29,7 @@ index d1744b5d9619..4866c74ead0f 100644
  };
  
  static const char *qcs404_genpd_names[] = { "cpr", NULL };
-@@ -385,6 +387,19 @@ static int qcom_cpufreq_probe(struct platform_device *pdev)
+@@ -385,6 +387,19 @@ static int qcom_cpufreq_probe(struct pla
  		}
  	}
  
@@ -51,6 +49,3 @@ index d1744b5d9619..4866c74ead0f 100644
  	cpufreq_dt_pdev = platform_device_register_simple("cpufreq-dt", -1,
  							  NULL, 0);
  	if (!IS_ERR(cpufreq_dt_pdev)) {
--- 
-2.29.2
-
