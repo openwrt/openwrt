@@ -1,0 +1,89 @@
+From 4b7d7f85abac1e7ad9e8b745694e470f0729f527 Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Wed, 3 Mar 2021 17:11:34 +0100
+Subject: [PATCH] spi: sync up initial chipselect state
+
+When initially probing the SPI slave device, the call for disabling an
+SPI device without the SPI_CS_HIGH flag is not applied, as the
+condition for checking whether or not the state to be applied equals the
+one currently set evaluates to true.
+
+This however might not necessarily be the case, as the chipselect might
+be active.
+
+Add a force flag to spi_set_cs which allows to override this
+early access condition. Set it to false everywhere except when called
+from spi_setup to sync up the initial CS state.
+
+Fixes commit d40f0b6f2e21 ("spi: Avoid setting the chip select if we don't
+need to")
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+---
+ drivers/spi/spi.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -787,7 +787,7 @@ int spi_register_board_info(struct spi_b
+ 
+ /*-------------------------------------------------------------------------*/
+ 
+-static void spi_set_cs(struct spi_device *spi, bool enable)
++static void spi_set_cs(struct spi_device *spi, bool enable, bool force)
+ {
+ 	bool enable1 = enable;
+ 
+@@ -795,7 +795,7 @@ static void spi_set_cs(struct spi_device
+ 	 * Avoid calling into the driver (or doing delays) if the chip select
+ 	 * isn't actually changing from the last time this was called.
+ 	 */
+-	if ((spi->controller->last_cs_enable == enable) &&
++	if (!force && (spi->controller->last_cs_enable == enable) &&
+ 	    (spi->controller->last_cs_mode_high == (spi->mode & SPI_CS_HIGH)))
+ 		return;
+ 
+@@ -1243,7 +1243,7 @@ static int spi_transfer_one_message(stru
+ 	struct spi_statistics *statm = &ctlr->statistics;
+ 	struct spi_statistics *stats = &msg->spi->statistics;
+ 
+-	spi_set_cs(msg->spi, true);
++	spi_set_cs(msg->spi, true, false);
+ 
+ 	SPI_STATISTICS_INCREMENT_FIELD(statm, messages);
+ 	SPI_STATISTICS_INCREMENT_FIELD(stats, messages);
+@@ -1311,9 +1311,9 @@ fallback_pio:
+ 					 &msg->transfers)) {
+ 				keep_cs = true;
+ 			} else {
+-				spi_set_cs(msg->spi, false);
++				spi_set_cs(msg->spi, false, false);
+ 				_spi_transfer_cs_change_delay(msg, xfer);
+-				spi_set_cs(msg->spi, true);
++				spi_set_cs(msg->spi, true, false);
+ 			}
+ 		}
+ 
+@@ -1322,7 +1322,7 @@ fallback_pio:
+ 
+ out:
+ 	if (ret != 0 || !keep_cs)
+-		spi_set_cs(msg->spi, false);
++		spi_set_cs(msg->spi, false, false);
+ 
+ 	if (msg->status == -EINPROGRESS)
+ 		msg->status = ret;
+@@ -3400,11 +3400,11 @@ int spi_setup(struct spi_device *spi)
+ 		 */
+ 		status = 0;
+ 
+-		spi_set_cs(spi, false);
++		spi_set_cs(spi, false, true);
+ 		pm_runtime_mark_last_busy(spi->controller->dev.parent);
+ 		pm_runtime_put_autosuspend(spi->controller->dev.parent);
+ 	} else {
+-		spi_set_cs(spi, false);
++		spi_set_cs(spi, false, true);
+ 	}
+ 
+ 	mutex_unlock(&spi->controller->io_mutex);
