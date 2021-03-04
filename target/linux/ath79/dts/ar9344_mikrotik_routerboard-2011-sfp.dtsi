@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/ {
+	gpio-export {
+		compatible = "gpio-export";
+
+		sfp_los: gpio_sfp_los {
+			gpio-export,name = "sfp:los";
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	i2c: i2c {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio 11 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 21 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp: sfp {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c>;
+		los-gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&eth0 {
+	port@6 {
+		compatible = "swconfig,port";
+		phy-handle = <&sfp_phy>;
+		reg = <6>;
+		swconfig,segment = "sfp";
+		swconfig,portmap = <7 7>;
+	};
+};
+
+&mdio0 {
+	sfp_phy: ethernet-phy@6 {
+		reg = <6>;
+		sfp = <&sfp>;
+	};
+};

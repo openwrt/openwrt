@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/ {
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_usb_power {
+			gpio-export,name = "usb:power";
+			gpio-export,output = <1>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
