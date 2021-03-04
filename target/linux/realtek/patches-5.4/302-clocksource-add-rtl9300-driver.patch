@@ -1,6 +1,6 @@
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
-@@ -126,6 +126,15 @@ config RDA_TIMER
+@@ -127,6 +127,15 @@ config RDA_TIMER
  	help
  	  Enables the support for the RDA Micro timer driver.
  
@@ -16,7 +16,7 @@
  config SUN4I_TIMER
  	bool "Sun4i timer driver" if COMPILE_TEST
  	depends on HAS_IOMEM
-@@ -695,5 +704,4 @@ config INGENIC_TIMER
+@@ -696,5 +705,4 @@ config INGENIC_TIMER
  	select IRQ_DOMAIN
  	help
  	  Support for the timer/counter unit of the Ingenic JZ SoCs.
