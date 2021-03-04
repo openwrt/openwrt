@@ -22,7 +22,7 @@ Signed-off-by: Jason A. Donenfeld <Jason@zx2c4.com>
 --- a/drivers/net/wireguard/peer.h
 +++ b/drivers/net/wireguard/peer.h
 @@ -39,6 +39,7 @@ struct wg_peer {
- 	struct crypt_queue tx_queue, rx_queue;
+ 	struct prev_queue tx_queue, rx_queue;
  	struct sk_buff_head staged_packet_queue;
  	int serial_work_cpu;
 +	bool is_dead;
