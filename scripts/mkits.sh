@@ -81,7 +81,7 @@ fi
 # Conditionally create fdt information
 if [ -n "${DTB}" ]; then
 	FDT_NODE="
-		fdt@$FDTNUM {
+		fdt-$FDTNUM {
 			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} device tree blob\";
 			${COMPATIBLE_PROP}
 			data = /incbin/(\"${DTB}\");
@@ -96,12 +96,12 @@ if [ -n "${DTB}" ]; then
 			};
 		};
 "
-	FDT_PROP="fdt = \"fdt@$FDTNUM\";"
+	FDT_PROP="fdt = \"fdt-$FDTNUM\";"
 fi
 
 if [ -n "${INITRD}" ]; then
 	INITRD_NODE="
-		initrd@$INITRDNUM {
+		initrd-$INITRDNUM {
 			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} initrd\";
 			${COMPATIBLE_PROP}
 			data = /incbin/(\"${INITRD}\");
@@ -116,14 +116,14 @@ if [ -n "${INITRD}" ]; then
 			};
 		};
 "
-	INITRD_PROP="ramdisk=\"initrd@${INITRDNUM}\";"
+	INITRD_PROP="ramdisk=\"initrd-${INITRDNUM}\";"
 fi
 
 
 if [ -n "${ROOTFS}" ]; then
 	dd if="${ROOTFS}" of="${ROOTFS}.pagesync" bs=4096 conv=sync
 	ROOTFS_NODE="
-		rootfs@$ROOTFSNUM {
+		rootfs-$ROOTFSNUM {
 			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} rootfs\";
 			${COMPATIBLE_PROP}
 			data = /incbin/(\"${ROOTFS}.pagesync\");
@@ -138,7 +138,7 @@ if [ -n "${ROOTFS}" ]; then
 			};
 		};
 "
-	LOADABLES="${LOADABLES:+$LOADABLES, }\"rootfs@${ROOTFSNUM}\""
+	LOADABLES="${LOADABLES:+$LOADABLES, }\"rootfs-${ROOTFSNUM}\""
 fi
 
 # Create a default, fully populated DTS file
@@ -149,7 +149,7 @@ DATA="/dts-v1/;
 	#address-cells = <1>;
 
 	images {
-		kernel@1 {
+		kernel-1 {
 			description = \"${ARCH_UPPER} OpenWrt Linux-${VERSION}\";
 			data = /incbin/(\"${KERNEL}\");
 			type = \"kernel\";
@@ -174,7 +174,7 @@ ${ROOTFS_NODE}
 		default = \"${CONFIG}\";
 		${CONFIG} {
 			description = \"OpenWrt ${DEVICE}\";
-			kernel = \"kernel@1\";
+			kernel = \"kernel-1\";
 			${FDT_PROP}
 			${LOADABLES:+loadables = ${LOADABLES};}
 			${COMPATIBLE_PROP}
