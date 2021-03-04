@@ -130,12 +130,6 @@ define Package/trusted-firmware-a/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/build/mt7622/release/bl2.img $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-bl2.img
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/build/mt7622/release/bl31.bin $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-bl31.bin
-ifeq ($(BOOT_DEVICE),emmc)
-	$(INSTALL_DATA) $(DL_DIR)/mt7622-header_emmc.bin $(STAGING_DIR_IMAGE)/
-endif
-ifeq ($(BOOT_DEVICE),sdmmc)
-	$(INSTALL_DATA) $(DL_DIR)/mt7622-header_sdmmc.bin $(STAGING_DIR_IMAGE)/
-endif
 endef
 
 $(eval $(call BuildPackage/Trusted-Firmware-A))
