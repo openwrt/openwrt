@@ -11,7 +11,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.prpl.dev/intel/dsl-vr11-firmware-xdsl.git
+PKG_SOURCE_URL:=https://gitlab.com/prpl-foundation/intel/dsl-vr11-firmware-xdsl.git
 PKG_SOURCE_DATE:=2019-10-27
 PKG_SOURCE_VERSION:=4d8f55f4e13f8a795e68716153ef68d42487b06f
 PKG_HASH:=b56669b6ce15dc538342ac2a620d16d8a89e5013ad6573cb4a06bf6b0c9b7730

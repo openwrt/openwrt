@@ -11,7 +11,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.prpl.dev/intel/vrx518_ppe_fw.git
+PKG_SOURCE_URL:=https://gitlab.com/prpl-foundation/intel/vrx518_ppe_fw.git
 PKG_SOURCE_DATE:=2019-10-27
 PKG_SOURCE_VERSION:=0537848df78f7bb091fb5dc0f32bc7a16aaace98
 PKG_HASH:=da6e8df6648f7e0cc159aa4408382eff666adba3ea95a3c8af054e21a969da4f
