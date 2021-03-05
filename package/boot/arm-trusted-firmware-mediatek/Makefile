@@ -35,55 +35,51 @@ define Trusted-Firmware-A/Default
   PLAT:=mt7622
   TFA_IMAGE:=bl2.img bl31.bin
   BOOT_DEVICE:=
-  DDR_BLOB:=
+  DDR3_FLYBY:=
 endef
 
 define Trusted-Firmware-A/mt7622-nor-1ddr
   NAME:=MediaTek MT7622 (SPI-NOR, 1x DDR3)
   BOOT_DEVICE:=nor
-  DDR_BLOB:=1
 endef
 
 define Trusted-Firmware-A/mt7622-nor-2ddr
   NAME:=MediaTek MT7622 (SPI-NOR, 2x DDR3)
   BOOT_DEVICE:=nor
-  DDR_BLOB:=2
+  DDR3_FLYBY:=1
 endef
 
 define Trusted-Firmware-A/mt7622-snand-1ddr
   NAME:=MediaTek MT7622 (SPI-NAND, 1x DDR3)
   BOOT_DEVICE:=snand
-  DDR_BLOB:=1
 endef
 
 define Trusted-Firmware-A/mt7622-snand-2ddr
   NAME:=MediaTek MT7622 (SPI-SNAND, 2x DDR3)
   BOOT_DEVICE:=snand
-  DDR_BLOB:=2
+  DDR3_FLYBY:=1
 endef
 
 define Trusted-Firmware-A/mt7622-emmc-1ddr
   NAME:=MediaTek MT7622 (eMMC, 1x DDR3)
   BOOT_DEVICE:=emmc
-  DDR_BLOB:=1
 endef
 
 define Trusted-Firmware-A/mt7622-emmc-2ddr
   NAME:=MediaTek MT7622 (eMMC, 2x DDR3)
   BOOT_DEVICE:=emmc
-  DDR_BLOB:=2
+  DDR3_FLYBY:=1
 endef
 
 define Trusted-Firmware-A/mt7622-sdmmc-1ddr
   NAME:=MediaTek MT7622 (SDcard, 1x DDR3)
   BOOT_DEVICE:=sdmmc
-  DDR_BLOB:=1
 endef
 
 define Trusted-Firmware-A/mt7622-sdmmc-2ddr
   NAME:=MediaTek MT7622 (SDcard, 2x DDR3)
   BOOT_DEVICE:=sdmmc
-  DDR_BLOB:=2
+  DDR3_FLYBY:=1
 endef
 
 TFA_TARGETS:= \
@@ -96,7 +92,7 @@ TFA_TARGETS:= \
 	mt7622-sdmmc-1ddr \
 	mt7622-sdmmc-2ddr
 
-TFA_MAKE_FLAGS += BOOT_DEVICE=$(BOOT_DEVICE) $(if eq($(DDR_BLOB),2),DDR3_FLYBY=1) all
+TFA_MAKE_FLAGS += BOOT_DEVICE=$(BOOT_DEVICE) $(if $(DDR3_FLYBY),DDR3_FLYBY=1) all
 
 define Build/Configure
 	$(call Build/Configure/Default)
