@@ -251,7 +251,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	}
  
  	/* Release Tx descriptors */
-@@ -3060,7 +3019,6 @@ static int mvneta_setup_txqs(struct mvne
+@@ -3062,7 +3021,6 @@ static int mvneta_setup_txqs(struct mvne
  static void mvneta_start_dev(struct mvneta_port *pp)
  {
  	int cpu;
@@ -259,7 +259,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  	mvneta_max_rx_size_set(pp, pp->pkt_size);
  	mvneta_txq_max_tx_size_set(pp, pp->pkt_size);
-@@ -3088,16 +3046,15 @@ static void mvneta_start_dev(struct mvne
+@@ -3090,16 +3048,15 @@ static void mvneta_start_dev(struct mvne
  		    MVNETA_CAUSE_LINK_CHANGE |
  		    MVNETA_CAUSE_PSC_SYNC_CHANGE);
  
@@ -278,7 +278,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  	if (!pp->neta_armada3700) {
  		for_each_online_cpu(cpu) {
-@@ -3250,103 +3207,232 @@ static int mvneta_set_mac_addr(struct ne
+@@ -3252,103 +3209,232 @@ static int mvneta_set_mac_addr(struct ne
  	return 0;
  }
  
@@ -585,7 +585,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  /* Electing a CPU must be done in an atomic way: it should be done
-@@ -3625,10 +3711,9 @@ static int mvneta_stop(struct net_device
+@@ -3632,10 +3718,9 @@ static int mvneta_stop(struct net_device
  
  static int mvneta_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
  {
@@ -598,7 +598,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  /* Ethtool methods */
-@@ -3639,44 +3724,25 @@ mvneta_ethtool_set_link_ksettings(struct
+@@ -3646,44 +3731,25 @@ mvneta_ethtool_set_link_ksettings(struct
  				  const struct ethtool_link_ksettings *cmd)
  {
  	struct mvneta_port *pp = netdev_priv(ndev);
@@ -657,7 +657,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  /* Set interrupt coalescing for ethtools */
-@@ -3768,6 +3834,22 @@ static int mvneta_ethtool_set_ringparam(
+@@ -3775,6 +3841,22 @@ static int mvneta_ethtool_set_ringparam(
  	return 0;
  }
  
@@ -680,7 +680,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  static void mvneta_ethtool_get_strings(struct net_device *netdev, u32 sset,
  				       u8 *data)
  {
-@@ -3784,26 +3866,35 @@ static void mvneta_ethtool_update_stats(
+@@ -3791,26 +3873,35 @@ static void mvneta_ethtool_update_stats(
  {
  	const struct mvneta_statistic *s;
  	void __iomem *base = pp->base;
@@ -721,7 +721,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	}
  }
  
-@@ -3938,28 +4029,65 @@ static int mvneta_ethtool_get_rxfh(struc
+@@ -3945,28 +4036,65 @@ static int mvneta_ethtool_get_rxfh(struc
  static void mvneta_ethtool_get_wol(struct net_device *dev,
  				   struct ethtool_wolinfo *wol)
  {
@@ -795,7 +795,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  static u16 mvneta_select_queue(struct net_device *dev, struct sk_buff *skb,
  			       void *accel_priv,
  			       select_queue_fallback_t fallback)
-@@ -3983,13 +4111,15 @@ static const struct net_device_ops mvnet
+@@ -3990,13 +4118,15 @@ static const struct net_device_ops mvnet
  };
  
  static const struct ethtool_ops mvneta_eth_tool_ops = {
@@ -812,7 +812,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	.get_strings	= mvneta_ethtool_get_strings,
  	.get_ethtool_stats = mvneta_ethtool_get_stats,
  	.get_sset_count	= mvneta_ethtool_get_sset_count,
-@@ -3997,10 +4127,12 @@ static const struct ethtool_ops mvneta_e
+@@ -4004,10 +4134,12 @@ static const struct ethtool_ops mvneta_e
  	.get_rxnfc	= mvneta_ethtool_get_rxnfc,
  	.get_rxfh	= mvneta_ethtool_get_rxfh,
  	.set_rxfh	= mvneta_ethtool_set_rxfh,
@@ -826,7 +826,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  };
  
  /* Initialize hw */
-@@ -4145,14 +4277,13 @@ static int mvneta_probe(struct platform_
+@@ -4152,14 +4284,13 @@ static int mvneta_probe(struct platform_
  {
  	struct resource *res;
  	struct device_node *dn = pdev->dev.of_node;
@@ -842,7 +842,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	int tx_csum_limit;
  	int phy_mode;
  	int err;
-@@ -4168,31 +4299,11 @@ static int mvneta_probe(struct platform_
+@@ -4175,31 +4306,11 @@ static int mvneta_probe(struct platform_
  		goto err_free_netdev;
  	}
  
@@ -875,7 +875,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	}
  
  	dev->tx_queue_len = MVNETA_MAX_TXD;
-@@ -4203,12 +4314,7 @@ static int mvneta_probe(struct platform_
+@@ -4210,12 +4321,7 @@ static int mvneta_probe(struct platform_
  
  	pp = netdev_priv(dev);
  	spin_lock_init(&pp->lock);
@@ -889,7 +889,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  	pp->rxq_def = rxq_def;
  
-@@ -4230,7 +4336,7 @@ static int mvneta_probe(struct platform_
+@@ -4237,7 +4343,7 @@ static int mvneta_probe(struct platform_
  		pp->clk = devm_clk_get(&pdev->dev, NULL);
  	if (IS_ERR(pp->clk)) {
  		err = PTR_ERR(pp->clk);
@@ -898,7 +898,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	}
  
  	clk_prepare_enable(pp->clk);
-@@ -4356,6 +4462,14 @@ static int mvneta_probe(struct platform_
+@@ -4363,6 +4469,14 @@ static int mvneta_probe(struct platform_
  	/* 9676 == 9700 - 20 and rounding to 8 */
  	dev->max_mtu = 9676;
  
@@ -913,7 +913,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	err = register_netdev(dev);
  	if (err < 0) {
  		dev_err(&pdev->dev, "failed to register\n");
-@@ -4367,14 +4481,6 @@ static int mvneta_probe(struct platform_
+@@ -4374,14 +4488,6 @@ static int mvneta_probe(struct platform_
  
  	platform_set_drvdata(pdev, pp->dev);
  
@@ -928,7 +928,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	return 0;
  
  err_netdev:
-@@ -4383,16 +4489,14 @@ err_netdev:
+@@ -4390,16 +4496,14 @@ err_netdev:
  		mvneta_bm_pool_destroy(pp->bm_priv, pp->pool_short,
  				       1 << pp->id);
  	}
@@ -947,7 +947,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  err_free_irq:
  	irq_dispose_mapping(dev->irq);
  err_free_netdev:
-@@ -4404,7 +4508,6 @@ err_free_netdev:
+@@ -4411,7 +4515,6 @@ err_free_netdev:
  static int mvneta_remove(struct platform_device *pdev)
  {
  	struct net_device  *dev = platform_get_drvdata(pdev);
@@ -955,7 +955,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	struct mvneta_port *pp = netdev_priv(dev);
  
  	unregister_netdev(dev);
-@@ -4412,10 +4515,8 @@ static int mvneta_remove(struct platform
+@@ -4419,10 +4522,8 @@ static int mvneta_remove(struct platform
  	clk_disable_unprepare(pp->clk);
  	free_percpu(pp->ports);
  	free_percpu(pp->stats);
@@ -967,7 +967,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	free_netdev(dev);
  
  	if (pp->bm_priv) {
-@@ -4467,9 +4568,6 @@ static int mvneta_resume(struct device *
+@@ -4474,9 +4575,6 @@ static int mvneta_resume(struct device *
  		return err;
  	}
  
