@@ -1,6 +1,14 @@
 --- a/arch/arm/dts/mt7622-bananapi-bpi-r64.dts
 +++ b/arch/arm/dts/mt7622-bananapi-bpi-r64.dts
-@@ -27,6 +27,42 @@
+@@ -20,6 +20,7 @@
+ 
+ 	aliases {
+ 		spi0 = &snfi;
++		ethernet0 = &eth;
+ 	};
+ 
+ 	memory@40000000 {
+@@ -27,6 +29,42 @@
  		reg = <0x40000000 0x40000000>;
  	};
  
@@ -43,7 +51,7 @@
  	reg_1p8v: regulator-1p8v {
  		compatible = "regulator-fixed";
  		regulator-name = "fixed-1.8V";
-@@ -139,11 +163,12 @@
+@@ -139,11 +177,12 @@
  
  	};
  
@@ -58,7 +66,7 @@
  		/* "I2S2_OUT, "I2S4_IN"", "I2S3_IN", "I2S2_IN",
  		 *  "I2S4_OUT", "I2S3_OUT" are used as DAT0, DAT1,
  		 *  DAT2, DAT3, CMD, CLK for SD respectively.
-@@ -164,7 +189,6 @@
+@@ -164,7 +203,6 @@
  			pins = "TXD3";
  			bias-pull-up;
  		};
@@ -66,7 +74,7 @@
  	};
  };
  
-@@ -199,7 +223,7 @@
+@@ -199,7 +237,7 @@
  	status = "okay";
  	bus-width = <8>;
  	max-frequency = <50000000>;
@@ -75,7 +83,7 @@
  	vmmc-supply = <&reg_3p3v>;
  	vqmmc-supply = <&reg_3p3v>;
  	non-removable;
-@@ -207,14 +231,15 @@
+@@ -207,14 +245,15 @@
  
  &mmc1 {
  	pinctrl-names = "default";
