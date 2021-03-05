@@ -1,0 +1,105 @@
+--- a/net/atm/Kconfig
++++ b/net/atm/Kconfig
+@@ -55,6 +55,12 @@ config ATM_MPOA
+ 	  subnetwork boundaries. These shortcut connections bypass routers
+ 	  enhancing overall network performance.
+ 
++config ATM_MPOA_INTEL_DSL_PHY_SUPPORT
++	bool "Intel DSL Phy MPOA support"
++	depends on ATM && INET && ATM_MPOA!=n
++	help
++	  Add support for Intel DSL Phy ATM MPOA
++
+ config ATM_BR2684
+ 	tristate "RFC1483/2684 Bridged protocols"
+ 	depends on ATM && INET
+--- a/net/atm/br2684.c
++++ b/net/atm/br2684.c
+@@ -595,6 +595,11 @@ static int br2684_regvcc(struct atm_vcc
+ 	atmvcc->push = br2684_push;
+ 	atmvcc->pop = br2684_pop;
+ 	atmvcc->release_cb = br2684_release_cb;
++#if (ATM_MPOA_INTEL_DSL_PHY_SUPPORT == 1)
++	if (atm_hook_mpoa_setup) /* IPoA or EoA w/o FCS */
++		atm_hook_mpoa_setup(atmvcc, brdev->payload == p_routed ? 3 : 0,
++			brvcc->encaps == BR2684_ENCAPS_LLC ? 1 : 0, net_dev);
++#endif
+ 	atmvcc->owner = THIS_MODULE;
+ 
+ 	/* initialize netdev carrier state */
+--- a/net/atm/common.c
++++ b/net/atm/common.c
+@@ -136,6 +136,11 @@ static struct proto vcc_proto = {
+ 	.release_cb = vcc_release_cb,
+ };
+ 
++#if (ATM_MPOA_INTEL_DSL_PHY_SUPPORT == 1)
++void (*atm_hook_mpoa_setup)(struct atm_vcc *, int, int, struct net_device *) = NULL;
++EXPORT_SYMBOL(atm_hook_mpoa_setup);
++#endif
++
+ int vcc_create(struct net *net, struct socket *sock, int protocol, int family, int kern)
+ {
+ 	struct sock *sk;
+--- a/net/atm/common.h
++++ b/net/atm/common.h
+@@ -10,6 +10,14 @@
+ #include <linux/net.h>
+ #include <linux/poll.h> /* for poll_table */
+ 
++#if defined(ATM_MPOA_INTEL_DSL_PHY_SUPPORT)
++#	undef ATM_MPOA_INTEL_DSL_PHY_SUPPORT
++#endif
++#if IS_ENABLED(CONFIG_ATM_MPOA_INTEL_DSL_PHY_SUPPORT)
++#	define ATM_MPOA_INTEL_DSL_PHY_SUPPORT 1
++#else
++#	define ATM_MPOA_INTEL_DSL_PHY_SUPPORT 0
++#endif
+ 
+ int vcc_create(struct net *net, struct socket *sock, int protocol, int family, int kern);
+ int vcc_release(struct socket *sock);
+@@ -53,4 +62,8 @@ int svc_change_qos(struct atm_vcc *vcc,s
+ 
+ void atm_dev_release_vccs(struct atm_dev *dev);
+ 
++#if (ATM_MPOA_INTEL_DSL_PHY_SUPPORT == 1)
++extern void (*atm_hook_mpoa_setup)(struct atm_vcc *, int, int, struct net_device *);
++#endif
++
+ #endif
+--- a/net/atm/mpc.c
++++ b/net/atm/mpc.c
+@@ -30,6 +30,7 @@
+ /* Modular too */
+ #include <linux/module.h>
+ 
++#include "common.h"
+ #include "lec.h"
+ #include "mpc.h"
+ #include "resources.h"
+@@ -644,6 +645,10 @@ static int atm_mpoa_vcc_attach(struct at
+ 	vcc->proto_data = mpc->dev;
+ 	vcc->push = mpc_push;
+ 
++#if (ATM_MPOA_INTEL_DSL_PHY_SUPPORT == 1)
++	if (atm_hook_mpoa_setup) /* IPoA, LLC */
++       	atm_hook_mpoa_setup(vcc, 3, 1, mpc->dev);
++#endif
+ 	return 0;
+ }
+ 
+--- a/net/atm/pppoatm.c
++++ b/net/atm/pppoatm.c
+@@ -430,6 +430,12 @@ static int pppoatm_assign_vcc(struct atm
+ 	atmvcc->user_back = pvcc;
+ 	atmvcc->push = pppoatm_push;
+ 	atmvcc->pop = pppoatm_pop;
++#if (ATM_MPOA_INTEL_DSL_PHY_SUPPORT == 1)
++	if (atm_hook_mpoa_setup) /* PPPoA */
++		atm_hook_mpoa_setup(atmvcc, 2,
++			pvcc->encaps == e_llc ? 1 : 0,
++			ppp_device(&pvcc->chan));
++#endif
+ 	atmvcc->release_cb = pppoatm_release_cb;
+ 	__module_get(THIS_MODULE);
+ 	atmvcc->owner = THIS_MODULE;

@@ -9,6 +9,29 @@
  subdir = src
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/configure.in
+--- a/src/common/drv_dsl_cpe_os_linux.c
++++ b/src/common/drv_dsl_cpe_os_linux.c
+@@ -1012,12 +1012,19 @@ DSL_int32_t DSL_DRV_ThreadShutdown(
+ 
+ DSL_uint32_t DSL_DRV_SysTimeGet(DSL_uint32_t nOffset)
+ {
+-   struct timeval tv;
+    DSL_uint32_t nTime = 0;
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0))
++   struct timeval tv;
+ 
+    memset(&tv, 0, sizeof(tv));
+    do_gettimeofday(&tv);
+    nTime = (DSL_uint32_t)tv.tv_sec;
++#else
++   struct timespec64 now;
++
++   ktime_get_real_ts64(&now);
++   nTime = (DSL_uint32_t)now.tv_sec;
++#endif
+ 
+    if ( (nOffset == 0) || (nOffset > nTime) )
+    {
 --- a/src/device/drv_dsl_cpe_device_vrx.c
 +++ b/src/device/drv_dsl_cpe_device_vrx.c
 @@ -23,9 +23,11 @@

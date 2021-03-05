@@ -12,6 +12,15 @@
  #include <net/dc_ep.h>
  #include<linux/sched.h>
  #include<linux/kthread.h>
+@@ -743,7 +743,7 @@
+ 	}
+ 	nsec = timespec_to_ns(datetime);
+ 	tv = ns_to_timeval(nsec);
+-	time_to_tm(tv.tv_sec, 0, &nowtm);
++	time64_to_tm(tv.tv_sec, 0, &nowtm);
+ 	memset(tmbuf, 0, 64);
+ 
+ 	snprintf(tmbuf, sizeof(tmbuf), "%ld-%d-%d %d:%d:%d",
 @@ -1313,7 +1313,7 @@ static int ppe_send(struct atm_vcc *vcc,
  	/* assume LLC header + Ethernet ID: 6+2 */
      if ((priv->conn[conn].mpoa_type == MPOA_TYPE_EOA_WO_FCS) ||
@@ -70,6 +79,15 @@
  		priv->stats.oam_tx_pkts++;
  		priv->stats.oam_tx_bytes += skb->len;
  		priv->conn[conn].stats.oam_tx_pkts++;
+@@ -1604,7 +1064,7 @@
+ 		 		conn = -1; /* invalid */
+ 	if (conn_valid(conn) && priv->conn[conn].vcc != NULL) {
+ 		vcc = priv->conn[conn].vcc;
+-		priv->conn[conn].access_time = current_kernel_time();
++		struct timespec64 ktime_ts64; struct timespec ktime_ts; ktime_get_coarse_ts64(&ktime_ts64); ktime_ts = timespec64_to_timespec(ktime_ts64); priv->conn[conn].access_time = ktime_ts;
+ 
+ 		tc_dbg(priv->tc_priv, MSG_OAM_RX, "conn=%d, vpi: %d, vci:%d\n",
+ 			conn, header->vpi, header->vci);
 @@ -2547,30 +2547,29 @@ static void ppe_atm_fw_hw_init(struct at
  static int atm_dev_init(struct atm_priv *atm_priv, int ep_id)
  {
@@ -129,6 +147,15 @@
  }
  
  static int atm_get_qid_by_vcc(struct net_device *dev, struct sk_buff *skb,
+@@ -3292,7 +3291,7 @@
+  					+= skb->len;
+ 			} else
+ 				priv->stats.aal5_rx_errors++;
+-			priv->conn[conn].access_time = current_kernel_time();
++			struct timespec64 ktime_ts64; struct timespec ktime_ts; ktime_get_coarse_ts64(&ktime_ts64); ktime_ts = timespec64_to_timespec(ktime_ts64); priv->conn[conn].access_time = ktime_ts;
+ 			spin_unlock_bh(&priv->atm_lock);
+ 
+ 			vcc->push(vcc, skb);
 --- a/dcdp/inc/tc_api.h
 +++ b/dcdp/inc/tc_api.h
 @@ -196,19 +196,6 @@ static inline void aca_ring_addr_init(st
@@ -283,6 +310,15 @@
  
  	return buf;
  }
+@@ -933,7 +930,7 @@
+ 	}
+ 
+ 	desc->tfm = md5;
+-	desc->flags = 0;
++	//desc->flags = 0;
+ 
+ 	ret = crypto_shash_init(desc);
+ 	if (ret) {
 --- a/dcdp/tc_proc.c
 +++ b/dcdp/tc_proc.c
 @@ -22,7 +22,9 @@
@@ -296,6 +332,15 @@
  #include <net/genetlink.h>
  #include <linux/time.h>
  #include "inc/tc_main.h"
+@@ -352,7 +354,7 @@
+ 	}
+ 	addr = set_val = repeat_cnt = 0;
+ 
+-	if (!access_ok(VERIFY_READ, buf, count))
++	if (!access_ok(buf, count))
+ 		return -EFAULT;
+ 
+ 	len = count < sizeof(str) ? count : sizeof(str) - 1;
 @@ -1123,20 +1125,18 @@ static int proc_read_soc(struct seq_file
  
  	tcpriv = (struct tc_priv *)seq->private;
@@ -325,6 +370,24 @@
  
  	return 0;
  }
+@@ -1276,7 +1276,7 @@
+ 		return -EINVAL;
+ 	}
+ 
+-	if (!access_ok(VERIFY_READ, buf, count))
++	if (!access_ok(buf, count))
+ 		return -EFAULT;
+ 
+ 	len = count < sizeof(str) ? count : sizeof(str) - 1;
+@@ -2046,7 +2046,7 @@
+ 	const int clk_list[] = {36, 576, 494, 432, 288};
+ 	priv = (struct atm_priv *)PDE_DATA(file_inode(file));
+ 
+-	if (!access_ok(VERIFY_READ, buf, count))
++	if (!access_ok(buf, count))
+ 		return -EFAULT;
+ 
+ 	len = count < sizeof(str) ? count : sizeof(str) - 1;
 --- a/dcdp/platform/sw_plat.c
 +++ b/dcdp/platform/sw_plat.c
 @@ -36,10 +36,11 @@

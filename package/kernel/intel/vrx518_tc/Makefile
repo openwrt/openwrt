@@ -25,6 +25,7 @@ PKG_HASH:=9afbc45890aaf9aefc9231eb868a9970289c3d337bb8a899eb19716085f6a0b9
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
 
+
 include $(INCLUDE_DIR)/package.mk
 
 
@@ -35,6 +36,8 @@ include $(INCLUDE_DIR)/package.mk
 # else
     PLAT_DIR:=dcdp
 # endif
+
+PKG_EXTMOD_SUBDIRS:=$(PLAT_DIR)
 
 define KernelPackage/$(PKG_NAME)
   SECTION:=sys
@@ -80,7 +83,7 @@ EXTRA_CFLAGS:= \
 
 MAKE_OPTS:= \
 	$(KERNEL_MAKE_FLAGS) \
-	SUBDIRS="$(PKG_BUILD_DIR)/$(PLAT_DIR)" \
+	M="$(PKG_BUILD_DIR)/$(PLAT_DIR)" \
 	EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 	"FEATURE_VRX518_CPU=y"
 
