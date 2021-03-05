@@ -13,16 +13,18 @@ RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 platform_do_upgrade_mikrotik_nand() {
 	CI_KERNPART=none
 
-	local fw_mtd=$(find_mtd_part kernel)
-	fw_mtd="${fw_mtd/block/}"
-	[ -n "$fw_mtd" ] || return
+	local fw_mtdblock=$(find_mtd_part kernel)
+	[ -n "$fw_mtdblock" ] || return
 
 	local board_dir=$(tar tf "$1" | grep -m 1 '^sysupgrade-.*/$')
 	board_dir=${board_dir%/}
 	[ -n "$board_dir" ] || return
 
-	mtd erase kernel
-	tar xf "$1" ${board_dir}/kernel -O | nandwrite -o "$fw_mtd" -
+	local kernel_mount="kernel_partition"
+	mkdir $kernel_mount
+	mount -t yaffs2 $fw_mtdblock $kernel_mount
+	tar xf "$1" ${board_dir}/kernel -O > $kernel_mount/kernel
+	umount $kernel_mount
 
 	nand_do_upgrade "$1"
 }
