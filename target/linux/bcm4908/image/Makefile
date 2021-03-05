@@ -71,4 +71,14 @@ define Device/netgear_r8000p
 endef
 TARGET_DEVICES += netgear_r8000p
 
+define Device/tplink_archer-c2300-v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Archer C2300
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := broadcom/bcm4908/bcm4906-tplink-archer-c2300-v1
+  IMAGES := bin
+  IMAGE/bin := append-ubi | bcm4908img
+endef
+TARGET_DEVICES += tplink_archer-c2300-v1
+
 $(eval $(call BuildImage))
