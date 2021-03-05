@@ -1,0 +1,14 @@
+Index: b/src/utils/wpa_debug.c
+===================================================================
+--- a/src/utils/wpa_debug.c	2019-08-07 21:25:25.000000000 +0800
++++ b/src/utils/wpa_debug.c	2021-03-05 19:19:50.000000000 +0800
+@@ -666,7 +666,8 @@ void wpa_msg(void *ctx, int level, const
+ 	}
+ 	len = vsnprintf(buf, buflen, fmt, ap);
+ 	va_end(ap);
+-	wpa_printf(level, "%s%s", prefix, buf);
++    if(!strstr(buf,"SMPS-MODE-CHANGED"))
++        wpa_printf(level, "%s%s", prefix, buf);
+ 	if (wpa_msg_cb)
+ 		wpa_msg_cb(ctx, level, WPA_MSG_PER_INTERFACE, buf, len);
+ 	bin_clear_free(buf, buflen);
