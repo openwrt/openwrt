@@ -677,11 +677,13 @@ static int metrics(struct ubus_context *ctx, struct ubus_object *obj,
 	profile_t profile = PROFILE_UNKNOWN;
 	vector_t vector = VECTOR_UNKNOWN;
 
-#ifndef INCLUDE_DSL_CPE_API_DANUBE
-	fd = open(DSL_CPE_DEVICE_NAME "0", O_RDWR, 0644);
-#else
-	fd = open(DSL_CPE_DEVICE_NAME, O_RDWR, 0644);
-#endif
+// #ifndef INCLUDE_DSL_CPE_API_DANUBE
+// 	fd = open(DSL_CPE_DEVICE_NAME "0", O_RDWR, 0644);
+// #else
+// 	fd = open(DSL_CPE_DEVICE_NAME, O_RDWR, 0644);
+// #endif
+//TODO FIX THIS
+fd = open("/dev/dsl_cpe_api/0", O_RDWR, 0644);
 	if (fd < 0)
 		return UBUS_STATUS_UNKNOWN_ERROR;
 

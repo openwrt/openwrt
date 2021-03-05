@@ -72,15 +72,17 @@ VDSL_APP_CFLAGS = \
 	
 ifeq ($(PKG_VERSION),4.17.18.6)
 CONFIGURE_ARGS += \
-	--enable-add-appl-cflags="-DMAX_CLI_PIPES=1"  \
 	--with-channels-per-line="1"
+	
+VDSL_APP_CFLAGS += \
+	-DMEI_SUPPORT_DEBUG_STREAMS=1
 endif
 
 ifeq ($(PKG_VERSION),4.21.3)
 CONFIGURE_ARGS += \
 	--enable-debug-logger-support=no
 
-VDSL_APP_CFLAGS = \
+VDSL_APP_CFLAGS += \
 	-DMEI_SUPPORT_DEBUG_STREAMS=0
 endif
 
