@@ -1,9 +1,9 @@
 --- a/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
-@@ -18,6 +18,10 @@
- 
+@@ -20,6 +20,10 @@
  	aliases {
  		serial0 = &uart0;
+ 		ethernet0 = &gmac0;
 +		led-boot = &led_system_green;
 +		led-failsafe = &led_system_blue;
 +		led-running = &led_system_green;
@@ -11,7 +11,7 @@
  	};
  
  	chosen {
-@@ -41,8 +45,8 @@
+@@ -43,8 +47,8 @@
  		compatible = "gpio-keys";
  
  		factory {
@@ -22,7 +22,7 @@
  			gpios = <&pio 0 GPIO_ACTIVE_HIGH>;
  		};
  
-@@ -56,17 +60,25 @@
+@@ -58,17 +62,25 @@
  	leds {
  		compatible = "gpio-leds";
  
