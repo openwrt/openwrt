@@ -1649,6 +1649,10 @@ endef
 
 $(eval $(call KernelPackage,usbmon))
 
+XHCI_MODULES := xhci-pci xhci-plat-hcd
+XHCI_FILES := $(wildcard $(patsubst %,$(LINUX_DIR)/drivers/usb/host/%.ko,$(XHCI_MODULES)))
+XHCI_AUTOLOAD := $(patsubst $(LINUX_DIR)/drivers/usb/host/%.ko,%,$(XHCI_FILES))
+
 define KernelPackage/usb3
   TITLE:=Support for USB3 controllers
   DEPENDS:= \
@@ -1662,9 +1666,8 @@ define KernelPackage/usb3
 	CONFIG_USB_XHCI_PCI \
 	CONFIG_USB_XHCI_PLATFORM
   FILES:= \
-	$(LINUX_DIR)/drivers/usb/host/xhci-pci.ko \
-	$(LINUX_DIR)/drivers/usb/host/xhci-plat-hcd.ko
-  AUTOLOAD:=$(call AutoLoad,54,xhci-pci xhci-plat-hcd,1)
+	$(XHCI_FILES)
+  AUTOLOAD:=$(call AutoLoad,54,$(XHCI_AUTOLOAD),1)
   $(call AddDepends/usb)
 endef
 
