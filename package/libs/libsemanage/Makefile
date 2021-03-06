@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libsemanage
-PKG_VERSION:=3.1
+PKG_VERSION:=3.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/20200710
-PKG_HASH:=22d6c75526e40d1781c30bcf29abf97171bdfe6780923f11c8e1c76a75a21ff8
+PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/3.2
+PKG_HASH:=d722a55ca4fe2d4e2b30527720db657e6238b28079e69e2e4affeb8e733ee511
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 PKG_LICENSE:=LGPL-2.1
 PKG_LICENSE_FILES:=COPYING
