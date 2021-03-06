@@ -1649,34 +1649,22 @@ endef
 
 $(eval $(call KernelPackage,usbmon))
 
-XHCI_MODULES := xhci-hcd xhci-pci xhci-plat-hcd
-ifdef CONFIG_TARGET_ramips_mt7621
-  XHCI_MODULES += xhci-mtk
-endif
-ifndef CONFIG_LINUX_5_4
-  ifdef CONFIG_TARGET_apm821xx_nand
-    XHCI_MODULES += xhci-pci-renesas
-  endif
-endif
-XHCI_FILES := $(wildcard $(patsubst %,$(LINUX_DIR)/drivers/usb/host/%.ko,$(XHCI_MODULES)))
-XHCI_AUTOLOAD := $(patsubst $(LINUX_DIR)/drivers/usb/host/%.ko,%,$(XHCI_FILES))
-
 define KernelPackage/usb3
   TITLE:=Support for USB3 controllers
   DEPENDS:= \
+	+kmod-usb-xhci-hcd \
 	+TARGET_bcm53xx:kmod-usb-bcma \
-	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3
+	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3 \
+	+TARGET_ramips_mt7621:kmod-usb-xhci-mtk \
+	+(TARGET_apm821xx_nand&&LINUX_5_10):kmod-usb-xhci-pci-renesas
   KCONFIG:= \
 	CONFIG_USB_PCI=y \
-	CONFIG_USB_XHCI_HCD \
 	CONFIG_USB_XHCI_PCI \
-	CONFIG_USB_XHCI_PLATFORM \
-	CONFIG_USB_XHCI_MTK \
-	CONFIG_USB_XHCI_PCI_RENESAS \
-	CONFIG_USB_XHCI_HCD_DEBUGGING=n
+	CONFIG_USB_XHCI_PLATFORM
   FILES:= \
-	$(XHCI_FILES)
-  AUTOLOAD:=$(call AutoLoad,54,$(XHCI_AUTOLOAD),1)
+	$(LINUX_DIR)/drivers/usb/host/xhci-pci.ko \
+	$(LINUX_DIR)/drivers/usb/host/xhci-plat-hcd.ko
+  AUTOLOAD:=$(call AutoLoad,54,xhci-pci xhci-plat-hcd,1)
   $(call AddDepends/usb)
 endef
 
@@ -1717,6 +1705,60 @@ define KernelPackage/usb-roles/description
 endef
 
 $(eval $(call KernelPackage,usb-roles))
+
+
+define KernelPackage/usb-xhci-hcd
+  TITLE:=xHCI HCD (USB 3.0) support
+  KCONFIG:= \
+	  CONFIG_USB_XHCI_HCD \
+	  CONFIG_USB_XHCI_HCD_DEBUGGING=n
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/usb/host/xhci-hcd.ko
+  AUTOLOAD:=$(call AutoLoad,54,xhci-hcd,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-xhci-hcd/description
+  The eXtensible Host Controller Interface (xHCI) is standard for USB 3.0
+  "SuperSpeed" host controller hardware.
+endef
+
+$(eval $(call KernelPackage,usb-xhci-hcd))
+
+
+define KernelPackage/usb-xhci-mtk
+  TITLE:=xHCI support for MediaTek SoCs
+  DEPENDS:=+kmod-usb-xhci-hcd
+  KCONFIG:=CONFIG_USB_XHCI_MTK
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/usb/host/xhci-mtk.ko
+  AUTOLOAD:=$(call AutoLoad,54,xhci-mtk,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-xhci-mtk/description
+  Kernel support for the xHCI host controller found in MediaTek SoCs.
+endef
+
+$(eval $(call KernelPackage,usb-xhci-mtk))
+
+
+define KernelPackage/usb-xhci-pci-renesas
+  TITLE:=Support for additional Renesas xHCI controller with firmware
+  DEPENDS:=@LINUX_5_10
+  KCONFIG:=CONFIG_USB_XHCI_PCI_RENESAS
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/usb/host/xhci-pci-renesas.ko
+  AUTOLOAD:=$(call AutoLoad,54,xhci-pci-renesas,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-xhci-pci-renesas/description
+  Kernel support for the Renesas xHCI controller with firmware. Make sure you have
+  the firwmare for the device and installed on your system for this device to work.
+endef
+
+$(eval $(call KernelPackage,usb-xhci-pci-renesas))
 
 
 define KernelPackage/chaoskey
