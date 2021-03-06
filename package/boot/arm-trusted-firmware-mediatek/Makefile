@@ -19,15 +19,8 @@ PKG_MIRROR_HASH:=f2ca44b9b8acfbd3a6be30aba316c765f73bad6231a821f524c9f21a845e50a
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
-PKG_LICENSE_FILES:=LICENCE.mediatek
-
-BLOBS_TARBALL:=tfa-mtk-files-for-2020-11-09.tgz
-BROMIMAGE_EXEC:=bromimage-x64
-
 include $(INCLUDE_DIR)/trusted-firmware-a.mk
 include $(INCLUDE_DIR)/package.mk
-
-PKG_LICENSE+=proprietary
 
 define Trusted-Firmware-A/Default
   BUILD_TARGET:=mediatek
