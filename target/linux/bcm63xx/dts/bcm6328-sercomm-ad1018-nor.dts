@@ -146,6 +146,30 @@
 	};
 };
 
+&nflash {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <15>;
+		nand-on-flash-bbt;
+		brcm,nand-oob-sector-size = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "storage";
+				reg = <0 0>; /* autodetected size */
+			};
+		};
+	};
+};
+
 &uart0 {
 	status = "okay";
 };
