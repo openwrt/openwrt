@@ -88,6 +88,13 @@ zyxel,nbg6817)
 	ucidef_set_interface_macaddr "lan" "$(macaddr_add $hw_mac_addr 2)"
 	ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 3)"
 	;;
+ruijie,rg-mtfi-m520)
+	hw_mac_addr=$(mtd_get_mac_ascii PRODUCTINFO ethaddr)
+	ucidef_add_switch "switch0" \
+		"1:lan" "6@eth1" "5:wan" "0@eth0"
+	ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
+	ucidef_set_interface_macaddr "lan" "$(macaddr_add $hw_mac_addr 1)"
+	;;
 *)
 	echo "Unsupported hardware. Network interfaces not intialized"
 	;;
