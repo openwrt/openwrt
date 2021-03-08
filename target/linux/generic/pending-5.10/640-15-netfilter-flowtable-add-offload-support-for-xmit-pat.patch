@@ -229,12 +229,12 @@ tag to the driver.
  
 +	other_tuple = &flow->tuplehash[!dir].tuple;
 +
-+	for (i = 0; i < other_tuple->in_vlan_num; i++) {
++	for (i = 0; i < other_tuple->encap_num; i++) {
 +		struct flow_action_entry *entry = flow_action_entry_next(flow_rule);
 +
 +		entry->id = FLOW_ACTION_VLAN_PUSH;
-+		entry->vlan.vid = other_tuple->in_vlan[i].id;
-+		entry->vlan.proto = other_tuple->in_vlan[i].proto;
++		entry->vlan.vid = other_tuple->encap[i].id;
++		entry->vlan.proto = other_tuple->encap[i].proto;
 +	}
 +
 +	return 0;

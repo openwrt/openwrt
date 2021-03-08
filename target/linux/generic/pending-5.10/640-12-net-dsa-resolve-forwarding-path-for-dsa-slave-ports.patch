@@ -1,23 +1,21 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Mon, 7 Dec 2020 20:31:48 +0100
+Date: Thu, 4 Mar 2021 23:19:06 +0100
 Subject: [PATCH] net: dsa: resolve forwarding path for dsa slave ports
 
 Add .ndo_fill_forward_path for dsa slave port devices
-
-Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -837,6 +837,7 @@ enum net_device_path_type {
- 	DEV_PATH_ETHERNET = 0,
+@@ -838,6 +838,7 @@ enum net_device_path_type {
  	DEV_PATH_VLAN,
  	DEV_PATH_BRIDGE,
+ 	DEV_PATH_PPPOE,
 +	DEV_PATH_DSA,
  };
  
  struct net_device_path {
-@@ -856,6 +857,10 @@ struct net_device_path {
+@@ -857,6 +858,10 @@ struct net_device_path {
  			u16		vlan_id;
  			__be16		vlan_proto;
  		} bridge;

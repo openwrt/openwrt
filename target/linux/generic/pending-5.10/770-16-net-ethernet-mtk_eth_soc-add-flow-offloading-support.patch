@@ -80,7 +80,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #endif /* MTK_ETH_H */
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -0,0 +1,478 @@
+@@ -0,0 +1,491 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + *  Copyright (C) 2020 Felix Fietkau <nbd@nbd.name>
@@ -113,6 +113,10 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +		__be16 proto;
 +		u8 num;
 +	} vlan;
++	struct {
++		u16 sid;
++		u8 num;
++	} pppoe;
 +};
 +
 +struct mtk_flow_entry {
@@ -311,12 +315,19 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +			break;
 +		case FLOW_ACTION_VLAN_PUSH:
 +			if (data.vlan.num == 1 ||
-+			    data.vlan.proto != ETH_P_8021Q)
++			    act->vlan.proto != htons(ETH_P_8021Q))
 +				return -EOPNOTSUPP;
 +
 +			data.vlan.id = act->vlan.vid;
 +			data.vlan.proto = act->vlan.proto;
 +			data.vlan.num++;
++			break;
++		case FLOW_ACTION_PPPOE_PUSH:
++			if (data.pppoe.num == 1)
++				return -EOPNOTSUPP;
++
++			data.pppoe.sid = act->pppoe.sid;
++			data.pppoe.num++;
 +			break;
 +		default:
 +			return -EOPNOTSUPP;
@@ -392,11 +403,13 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +	}
 +
 +	if (data.vlan.num == 1) {
-+		if (data.vlan.proto != ETH_P_8021Q)
++		if (data.vlan.proto != htons(ETH_P_8021Q))
 +			return -EOPNOTSUPP;
 +
 +		mtk_foe_entry_set_vlan(&foe, data.vlan.id);
 +	}
++	if (data.pppoe.num == 1)
++		mtk_foe_entry_set_pppoe(&foe, data.pppoe.sid);
 +
 +	err = mtk_flow_set_output_device(eth, &foe, odev);
 +	if (err)

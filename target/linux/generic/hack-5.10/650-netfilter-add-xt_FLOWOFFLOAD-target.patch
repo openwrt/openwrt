@@ -1,6 +1,6 @@
 From: Felix Fietkau <nbd@nbd.name>
 Date: Tue, 20 Feb 2018 15:56:02 +0100
-Subject: [PATCH] netfilter: add xt_OFFLOAD target
+Subject: [PATCH] netfilter: add xt_FLOWOFFLOAD target
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,660 @@
+@@ -0,0 +1,658 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -265,20 +265,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +xt_flowoffload_check_hook(struct flow_offload *flow, void *data)
 +{
 +	struct xt_flowoffload_table *table = data;
-+	struct flow_offload_tuple *tuple = &flow->tuplehash[0].tuple;
++	struct flow_offload_tuple *tuple0 = &flow->tuplehash[0].tuple;
++	struct flow_offload_tuple *tuple1 = &flow->tuplehash[1].tuple;
 +	struct xt_flowoffload_hook *hook;
 +
 +	spin_lock_bh(&hooks_lock);
 +	hlist_for_each_entry(hook, &table->hooks, list) {
-+		int ifindex;
-+
-+		if (tuple->xmit_type == FLOW_OFFLOAD_XMIT_DIRECT)
-+			ifindex = tuple->out.ifidx;
-+		else
-+			ifindex = tuple->dst_cache->dev->ifindex;
-+
-+		if (hook->ops.dev->ifindex != tuple->iifidx &&
-+		    hook->ops.dev->ifindex != ifindex)
++		if (hook->ops.dev->ifindex != tuple0->iifidx &&
++		    hook->ops.dev->ifindex != tuple1->iifidx)
 +			continue;
 +
 +		hook->used = true;
@@ -357,6 +351,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	int i;
 +
 +	route->tuple[!dir].in.ifindex = dev->ifindex;
++	route->tuple[dir].out.ifindex = dev->ifindex;
 +
 +	if (route->tuple[dir].xmit_type == FLOW_OFFLOAD_XMIT_XFRM)
 +		return;
@@ -386,52 +381,54 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	prev_type = DEV_PATH_ETHERNET;
 +	for (i = 0; i <= stack.num_paths; i++) {
 +		const struct net_device_path *path = &stack.path[i];
-+		int n_vlans = route->tuple[!dir].in.num_vlans;
++		int n_encaps = route->tuple[!dir].in.num_encaps;
 +
 +		dev = (struct net_device *)path->dev;
 +		if (flow_is_valid_ether_device(dev)) {
-+			if (route->tuple[dir].xmit_type != FLOW_OFFLOAD_XMIT_DIRECT)
++			if (route->tuple[dir].xmit_type != FLOW_OFFLOAD_XMIT_DIRECT) {
 +				memcpy(route->tuple[dir].out.h_source,
 +				       dev->dev_addr, ETH_ALEN);
++				route->tuple[dir].out.ifindex = dev->ifindex;
++			}
 +			route->tuple[dir].xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
-+			route->tuple[dir].out.ifindex = dev->ifindex;
 +		}
 +
 +		switch (path->type) {
++		case DEV_PATH_PPPOE:
 +		case DEV_PATH_VLAN:
-+			if (n_vlans >= NF_FLOW_TABLE_VLAN_MAX ||
++			if (n_encaps >= NF_FLOW_TABLE_ENCAP_MAX ||
 +			    i == stack.num_paths) {
 +				last = true;
 +				break;
 +			}
 +
-+			route->tuple[!dir].in.num_vlans++;
-+			route->tuple[!dir].in.vid[n_vlans] = path->vlan.id;
-+			route->tuple[!dir].in.vproto[n_vlans] = path->vlan.proto;
++			route->tuple[!dir].in.num_encaps++;
++			route->tuple[!dir].in.encap[n_encaps].id = path->encap.id;
++			route->tuple[!dir].in.encap[n_encaps].proto = path->encap.proto;
++			if (path->type == DEV_PATH_PPPOE)
++				memcpy(route->tuple[dir].out.h_dest,
++				       path->encap.h_dest, ETH_ALEN);
 +			break;
 +		case DEV_PATH_BRIDGE:
 +			switch (path->bridge.vlan_mode) {
 +			case DEV_PATH_BR_VLAN_TAG:
-+				if (n_vlans >= NF_FLOW_TABLE_VLAN_MAX ||
++				if (n_encaps >= NF_FLOW_TABLE_ENCAP_MAX ||
 +				    i == stack.num_paths) {
 +					last = true;
 +					break;
 +				}
 +
-+				route->tuple[!dir].in.num_vlans++;
-+				route->tuple[!dir].in.vid[n_vlans] =
++				route->tuple[!dir].in.num_encaps++;
++				route->tuple[!dir].in.encap[n_encaps].id =
 +					path->bridge.vlan_id;
-+				route->tuple[!dir].in.vproto[n_vlans] =
++				route->tuple[!dir].in.encap[n_encaps].proto =
 +					path->bridge.vlan_proto;
 +				break;
-+			case DEV_PATH_BR_VLAN_UNTAG_HW:
-+				route->tuple[!dir].in.pvid.id =
-+					route->tuple[!dir].in.vid[n_vlans - 1];
-+				route->tuple[!dir].in.pvid.proto =
-+					route->tuple[!dir].in.vproto[n_vlans - 1];
-+				fallthrough;
 +			case DEV_PATH_BR_VLAN_UNTAG:
-+				route->tuple[!dir].in.num_vlans--;
++				route->tuple[!dir].in.num_encaps--;
++				break;
++			case DEV_PATH_BR_VLAN_UNTAG_HW:
++				route->tuple[!dir].in.ingress_vlans |= BIT(n_encaps - 1);
 +				break;
 +			case DEV_PATH_BR_VLAN_KEEP:
 +				break;
@@ -447,6 +444,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	}
 +
 +	*out_dev = dev;
++	route->tuple[dir].out.hw_ifindex = dev->ifindex;
 +	route->tuple[!dir].in.ifindex = dev->ifindex;
 +}
 +
@@ -769,7 +767,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/netfilter/nf_flow_table.h>
  #include <net/netfilter/nf_conntrack.h>
  #include <net/netfilter/nf_conntrack_core.h>
-@@ -355,8 +354,7 @@ flow_offload_lookup(struct nf_flowtable
+@@ -356,8 +355,7 @@ flow_offload_lookup(struct nf_flowtable
  }
  EXPORT_SYMBOL_GPL(flow_offload_lookup);
  
@@ -779,7 +777,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		      void (*iter)(struct flow_offload *flow, void *data),
  		      void *data)
  {
-@@ -388,6 +386,7 @@ nf_flow_table_iterate(struct nf_flowtabl
+@@ -389,6 +387,7 @@ nf_flow_table_iterate(struct nf_flowtabl
  
  	return err;
  }
@@ -809,7 +807,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif /* _XT_FLOWOFFLOAD_H */
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -265,6 +265,10 @@ void nf_flow_table_free(struct nf_flowta
+@@ -266,6 +266,10 @@ void nf_flow_table_free(struct nf_flowta
  
  void flow_offload_teardown(struct flow_offload *flow);
  
