@@ -371,10 +371,10 @@
 		};
 
 		lsspi: spi@10000800 {
-			compatible = "brcm,bcm6358-spi";
-			reg = <0x10000800 0x70c>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			compatible = "brcm,bcm6358-spi";
+			reg = <0x10000800 0x70c>;
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6362_IRQ_LSSPI>;
@@ -388,10 +388,10 @@
 		};
 
 		hsspi: spi@10001000 {
-			compatible = "brcm,bcm6328-hsspi";
-			reg = <0x10001000 0x600>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			compatible = "brcm,bcm6328-hsspi";
+			reg = <0x10001000 0x600>;
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6362_IRQ_HSSPI>;
