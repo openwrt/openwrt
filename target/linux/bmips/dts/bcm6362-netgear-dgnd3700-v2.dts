@@ -17,11 +17,6 @@
 		led-usb2 = &led_usb2_green;
 	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x00000000 0x04000000>;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
