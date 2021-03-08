@@ -1,7 +1,7 @@
-From 38d5e4b3bcc25db14a2d5f428acf56dff862c97e Mon Sep 17 00:00:00 2001
+From 0377ad93031d3e51c2afe44231241185f684b6af Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
 Date: Fri, 5 Mar 2021 15:14:32 +0100
-Subject: [PATCH] bmips: automatically detect CPU frequency
+Subject: [PATCH 1/2] mips: bmips: automatically detect CPU frequency
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -10,10 +10,8 @@ Some BCM63xx SoCs support multiple CPU frequencies depending on HW config.
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
- arch/mips/bmips/setup.c                   | 197 +++++++++++++++++++++-
- arch/mips/configs/bmips_bcm63xx_defconfig |  91 ++++++++++
- 2 files changed, 281 insertions(+), 7 deletions(-)
- create mode 100644 arch/mips/configs/bmips_bcm63xx_defconfig
+ arch/mips/bmips/setup.c | 198 ++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 191 insertions(+), 7 deletions(-)
 
 --- a/arch/mips/bmips/setup.c
 +++ b/arch/mips/bmips/setup.c
@@ -31,7 +29,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +#define BCM6328_FCVO_SHIFT	7
 +#define BCM6328_FCVO_MASK	(0x1f << BCM6328_FCVO_SHIFT)
 +
-+#define REG_BCM6358_DDR_PLLC	((void __iomem *)CKSEG1ADDR(0x100012b8))
++#define REG_BCM6358_DDR_PLLC	((void __iomem *)0xfffe12b8)
 +#define BCM6358_PLLC_M1_SHIFT	0
 +#define BCM6358_PLLC_M1_MASK	(0xff << BCM6358_PLLC_M1_SHIFT)
 +#define BCM6358_PLLC_N1_SHIFT	23
@@ -69,7 +67,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  struct bmips_quirk {
  	const char		*compatible;
  	void			(*quirk_fn)(void);
-@@ -138,17 +178,160 @@ const char *get_system_type(void)
+@@ -138,17 +178,161 @@ const char *get_system_type(void)
  	return "Generic BMIPS kernel";
  }
  
@@ -119,7 +117,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +	u32 val, n1, n2, m1;
 +
 +	val = __raw_readl(REG_BCM6358_DDR_PLLC);
-+	n1 = (val & BCM6358_PLLC_M1_MASK) >> BCM6358_PLLC_N1_SHIFT;
++	n1 = (val & BCM6358_PLLC_N1_MASK) >> BCM6358_PLLC_N1_SHIFT;
 +	n2 = (val & BCM6358_PLLC_N2_MASK) >> BCM6358_PLLC_N2_SHIFT;
 +	m1 = (val & BCM6358_PLLC_M1_MASK) >> BCM6358_PLLC_M1_SHIFT;
 +
@@ -162,7 +160,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +
 +static u32 bcm6368_cpufreq(void)
 +{
-+	unsigned int val, p1, p2, ndiv, m1;
++	u32 val, p1, p2, ndiv, m1;
 +
 +	val = __raw_readl(REG_BCM6368_DDR_PLLC);
 +	p1 = (val & BCM6368_PLLC_P1_MASK) >> BCM6368_PLLC_P1_SHIFT;
@@ -223,6 +221,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +					     cf->compatible)) {
 +			freq = cf->cpu_freq() / 2;
 +			printk("%s detected @ %u MHz\n", cf->compatible, freq / 500000);
++			break;
 +		}
 +	}
 +
