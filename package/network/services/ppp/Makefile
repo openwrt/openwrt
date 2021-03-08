@@ -23,8 +23,6 @@ PKG_CPE_ID:=cpe:/a:samba:ppp
 PKG_RELEASE_VERSION:=2.4.9
 PKG_VERSION:=$(PKG_RELEASE_VERSION).git-$(PKG_SOURCE_DATE)
 
-PKG_BUILD_DEPENDS:=libpcap
-
 PKG_ASLR_PIE_REGULAR:=1
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -39,14 +37,14 @@ endef
 
 define Package/ppp
 $(call Package/ppp/Default)
-  DEPENDS:=+kmod-ppp
+  DEPENDS:=+kmod-ppp +libpcap
   TITLE:=PPP daemon
   VARIANT:=default
 endef
 
 define Package/ppp-multilink
 $(call Package/ppp/Default)
-  DEPENDS:=+kmod-ppp
+  DEPENDS:=+kmod-ppp +libpcap
   TITLE:=PPP daemon (with multilink support)
   VARIANT:=multilink
 endef
