@@ -1,0 +1,6 @@
+config RESTOOL_BUSYBOX_SUPPORT
+	bool
+	depends on PACKAGE_restool
+	select BUSYBOX_CUSTOM
+	select BUSYBOX_CONFIG_USLEEP
+	default y

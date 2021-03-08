@@ -12,6 +12,7 @@ users can bring up the board without difficulty.
   LS1012ARDB        (QSPI NOR boot)
   LS1012AFRDM       (QSPI NOR boot)
   LS1012AFRWY       (QSPI NOR boot)
+  LS1028ARDB        (FlexSPI NOR boot | SD card boot)
   LS1043ARDB        (NOR boot         | SD card boot)
   LS1046ARDB        (QSPI NOR boot    | SD card boot)
   LS1046AFRWY       (QSPI NOR boot    | SD card boot)
@@ -125,7 +126,7 @@ from SD card. (sdcard.img images are gz-iped to save space. Please extract them 
   => cp.b a0000000 584000000 $filesize
   => qix altbank
 
-* LS1012FRDM/LS1046AFRWY
+* LS1012FRDM/LS1028ARDB/LS1046AFRWY
   Board has only one bank. Those commands will replace stock bootloader
   and firmware.
 

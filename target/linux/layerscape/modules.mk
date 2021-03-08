@@ -33,3 +33,40 @@ define KernelPackage/ppfe/description
 endef
 
 $(eval $(call KernelPackage,ppfe))
+
+define KernelPackage/crypto-hw-caam
+  SUBMENU:=$(CRYPTO_MENU)
+  TITLE:=Freescale CAAM
+  DEPENDS:=@TARGET_layerscape_armv8_64b +kmod-crypto-aead +kmod-crypto-authenc +kmod-crypto-hash \
+           +kmod-crypto-rsa +kmod-crypto-rng +kmod-crypto-des +kmod-random-core
+  KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
+	CONFIG_CRYPTO_DEV_FSL_CAAM \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_DEBUG=n \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_JR \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_RINGSIZE=9 \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_INTC=n \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_CRYPTO_API=y \
+	CONFIG_CRYPTO_BLKCIPHER=y \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_CRYPTO_API_QI=y \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_AHASH_API=y \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_PKC_API=y \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_RNG_API=y \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_TK_API=n \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_RNG_TEST=n \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_SM=n \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_SECVIO=n \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_JR_UIO=n \
+	CONFIG_CRYPTO_DEV_FSL_CAAM_DMA=n \
+	CONFIG_CRYPTO_DEV_FSL_DPAA2_CAAM
+  FILES:= \
+	$(LINUX_DIR)/drivers/crypto/caam/error.ko \
+	$(LINUX_DIR)/drivers/crypto/caam/caam.ko \
+	$(LINUX_DIR)/drivers/crypto/caam/caam_jr.ko \
+	$(LINUX_DIR)/drivers/crypto/caam/caamalg_desc.ko \
+	$(LINUX_DIR)/drivers/crypto/caam/caamhash_desc.ko \
+	$(LINUX_DIR)/drivers/crypto/caam/dpaa2_caam.ko
+  AUTOLOAD:=$(call AutoLoad,09,error caam caam_jr caamalg_desc caamhash_desc dpaa2_caam)
+endef
+
+$(eval $(call KernelPackage,crypto-hw-caam))

@@ -65,6 +65,20 @@ define Package/tfa-ls1012a-frwy-sdboot
   BOOT_MODE:=qspi
 endef
 
+define Package/tfa-ls1028a-rdb
+  $(Package/tfa-generic)
+  TITLE:=NXP LS1028ARDB Trusted Firmware
+  PLAT:=ls1028ardb
+  BOOT_MODE:=flexspi_nor
+endef
+
+define Package/tfa-ls1028a-rdb-sdboot
+  $(Package/tfa-generic)
+  TITLE:=NXP LS1028ARDB SD Boot Trusted Firmware
+  PLAT:=ls1028ardb
+  BOOT_MODE:=sd
+endef
+
 define Package/tfa-ls1043a-rdb
   $(Package/tfa-generic)
   TITLE:=NXP LS1043ARDB Trusted Firmware
@@ -165,6 +179,8 @@ TFAS := \
   ls1012a-frdm \
   ls1012a-rdb \
   ls1012a-frwy-sdboot \
+  ls1028a-rdb \
+  ls1028a-rdb-sdboot \
   ls1043a-rdb \
   ls1043a-rdb-sdboot \
   ls1046a-frwy \
