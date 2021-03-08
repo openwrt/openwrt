@@ -1,5 +1,5 @@
 From: Pablo Neira Ayuso <pablo@netfilter.org>
-Date: Fri, 20 Nov 2020 13:49:19 +0100
+Date: Thu, 4 Mar 2021 03:26:35 +0100
 Subject: [PATCH] netfilter: flowtable: use dev_fill_forward_path() to
  obtain egress device
 
@@ -271,10 +271,11 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	struct neighbour *n;
  	u8 nud_state;
  
-@@ -66,22 +65,35 @@ static int nft_dev_fill_forward_path(con
+@@ -66,27 +65,43 @@ static int nft_dev_fill_forward_path(con
  
  struct nft_forward_info {
- 	const struct net_device *dev;
+ 	const struct net_device *indev;
++	const struct net_device *outdev;
 +	u8 h_source[ETH_ALEN];
 +	u8 h_dest[ETH_ALEN];
 +	enum flow_offload_xmit_type xmit_type;
@@ -294,7 +295,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		path = &stack->path[i];
  		switch (path->type) {
  		case DEV_PATH_ETHERNET:
- 			info->dev = path->dev;
+ 			info->indev = path->dev;
 +			if (is_zero_ether_addr(info->h_source))
 +				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
  			break;
@@ -307,9 +308,16 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +			break;
 +		case DEV_PATH_VLAN:
  		default:
- 			info->dev = NULL;
+ 			info->indev = NULL;
  			break;
-@@ -114,14 +126,22 @@ static void nft_dev_forward_path(struct
+ 		}
+ 	}
++	if (!info->outdev)
++		info->outdev = info->indev;
+ }
+ 
+ static bool nft_flowtable_find_dev(const struct net_device *dev,
+@@ -114,14 +129,22 @@ static void nft_dev_forward_path(struct
  	const struct dst_entry *dst = route->tuple[dir].dst;
  	struct net_device_path_stack stack;
  	struct nft_forward_info info = {};
@@ -320,15 +328,15 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +	if (nft_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0)
 +		nft_dev_path_info(&stack, &info, ha);
  
- 	if (!info.dev || !nft_flowtable_find_dev(info.dev, ft))
+ 	if (!info.indev || !nft_flowtable_find_dev(info.indev, ft))
  		return;
  
- 	route->tuple[!dir].in.ifindex = info.dev->ifindex;
+ 	route->tuple[!dir].in.ifindex = info.indev->ifindex;
 +
 +	if (info.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT) {
 +		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
 +		memcpy(route->tuple[dir].out.h_dest, info.h_dest, ETH_ALEN);
-+		route->tuple[dir].out.ifindex = info.dev->ifindex;
++		route->tuple[dir].out.ifindex = info.outdev->ifindex;
 +		route->tuple[dir].xmit_type = info.xmit_type;
 +	}
  }
