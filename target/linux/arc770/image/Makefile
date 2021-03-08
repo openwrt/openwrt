@@ -24,6 +24,8 @@ endef
 
 define Device/nsim
 	$(call Device/vmlinux)
+	DEVICE_VENDOR := Synopsys
+	DEVICE_MODEL := nSIM
 	DEVICE_PROFILE := nsim
 	DEVICE_DTS := nsim_700
 endef
