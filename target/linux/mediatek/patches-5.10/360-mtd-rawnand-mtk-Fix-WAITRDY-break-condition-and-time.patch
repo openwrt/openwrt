@@ -1,0 +1,36 @@
+From 4a4854761c9dedeedbf72c25d1317ab2e7600d4f Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Mon, 8 Mar 2021 23:16:17 +0100
+Subject: [PATCH] mtd: rawnand: mtk: Fix WAITRDY break condition and timeout
+
+This fixes NAND_OP_WAITRDY_INSTR operation in the driver. Without this
+change the driver waits till the system is busy, but we should wait till
+the busy flag is cleared. The readl_poll_timeout() function gets a break
+condition, not a wait condition.
+
+In addition fix the timeout. The timeout_ms is given in ms, but the
+readl_poll_timeout() function takes the timeout in us. Multiple the
+given timeout by 1000 to convert it.
+
+Without this change, the driver does not work at all, it doesn't even
+identify the NAND chip.
+
+Fixes: 5197360f9e09 ("mtd: rawnand: mtk: Convert the driver to exec_op()")
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/mtd/nand/raw/mtk_nand.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/mtd/nand/raw/mtk_nand.c
++++ b/drivers/mtd/nand/raw/mtk_nand.c
+@@ -488,8 +488,8 @@ static int mtk_nfc_exec_instr(struct nan
+ 		return 0;
+ 	case NAND_OP_WAITRDY_INSTR:
+ 		return readl_poll_timeout(nfc->regs + NFI_STA, status,
+-					  status & STA_BUSY, 20,
+-					  instr->ctx.waitrdy.timeout_ms);
++					  !(status & STA_BUSY), 20,
++					  instr->ctx.waitrdy.timeout_ms * 1000);
+ 	default:
+ 		break;
+ 	}
