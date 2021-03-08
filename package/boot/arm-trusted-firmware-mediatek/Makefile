@@ -48,7 +48,7 @@ define Trusted-Firmware-A/mt7622-snand-1ddr
 endef
 
 define Trusted-Firmware-A/mt7622-snand-2ddr
-  NAME:=MediaTek MT7622 (SPI-SNAND, 2x DDR3)
+  NAME:=MediaTek MT7622 (SPI-NAND, 2x DDR3)
   BOOT_DEVICE:=snand
   DDR3_FLYBY:=1
 endef
