@@ -282,10 +282,10 @@
 		};
 
 		hsspi: spi@10003000 {
-			compatible = "brcm,bcm6328-hsspi";
-			reg = <0x10003000 0x600>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			compatible = "brcm,bcm6328-hsspi";
+			reg = <0x10003000 0x600>;
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6318_IRQ_HSSPI>;
