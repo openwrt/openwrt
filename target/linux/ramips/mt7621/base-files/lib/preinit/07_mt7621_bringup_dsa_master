@@ -8,6 +8,8 @@ mt7621_bringup_dsa_master() {
     ubnt,edgerouter-x|\
     ubnt,edgerouter-x-sfp)
         masterif="dsa"
+        ip link set eth0 name $masterif
+        ip link set wan name eth0
         ;;
     *)
         masterif="eth0"
