@@ -18,7 +18,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 @@ -847,10 +847,20 @@ struct net_device_path {
  			u16		id;
  			__be16		proto;
- 		} vlan;
+ 		} encap;
 +		struct {
 +			enum {
 +				DEV_PATH_BR_VLAN_KEEP,
@@ -52,7 +52,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 --- a/net/8021q/vlan_dev.c
 +++ b/net/8021q/vlan_dev.c
 @@ -777,6 +777,12 @@ static int vlan_dev_fill_forward_path(st
- 	path->vlan.proto = vlan->vlan_proto;
+ 	path->encap.proto = vlan->vlan_proto;
  	path->dev = ctx->dev;
  	ctx->dev = vlan->real_dev;
 +	if (ctx->num_vlans >= ARRAY_SIZE(ctx->vlan))

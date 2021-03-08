@@ -1,5 +1,5 @@
 From: Pablo Neira Ayuso <pablo@netfilter.org>
-Date: Sun, 10 Jan 2021 15:53:58 +0100
+Date: Thu, 4 Mar 2021 23:18:11 +0100
 Subject: [PATCH] net: resolve forwarding path from virtual netdevice and
  HW destination address
 
@@ -91,7 +91,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
   *	If a device is paired with a peer device, return the peer instance.
   *	The caller must be under RCU read context.
 + * int (*ndo_fill_forward_path)(struct net_device_path_ctx *ctx, struct net_device_path *path);
-+ *	Get the forwarding path to reach the real device from the HW destination address
++ *     Get the forwarding path to reach the real device from the HW destination address
   */
  struct net_device_ops {
  	int			(*ndo_init)(struct net_device *dev);
@@ -99,8 +99,8 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	int			(*ndo_tunnel_ctl)(struct net_device *dev,
  						  struct ip_tunnel_parm *p, int cmd);
  	struct net_device *	(*ndo_get_peer_dev)(struct net_device *dev);
-+	int			(*ndo_fill_forward_path)(struct net_device_path_ctx *ctx,
-+							 struct net_device_path *path);
++	int                     (*ndo_fill_forward_path)(struct net_device_path_ctx *ctx,
++                                                         struct net_device_path *path);
  };
  
  /**

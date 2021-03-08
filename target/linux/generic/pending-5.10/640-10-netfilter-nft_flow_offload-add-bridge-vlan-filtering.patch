@@ -10,18 +10,18 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -112,6 +112,18 @@ static void nft_dev_path_info(const stru
+@@ -111,6 +111,18 @@ static void nft_dev_path_info(const stru
  			if (is_zero_ether_addr(info->h_source))
  				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
  
 +			switch (path->bridge.vlan_mode) {
 +			case DEV_PATH_BR_VLAN_TAG:
-+				info->vid[info->num_vlans] = path->vlan.id;
-+				info->vproto[info->num_vlans] = path->vlan.proto;
-+				info->num_vlans++;
++				info->encap[info->num_encaps].id = path->bridge.vlan_id;
++				info->encap[info->num_encaps].proto = path->bridge.vlan_proto;
++				info->num_encaps++;
 +				break;
 +			case DEV_PATH_BR_VLAN_UNTAG:
-+				info->num_vlans--;
++				info->num_encaps--;
 +				break;
 +			case DEV_PATH_BR_VLAN_KEEP:
 +				break;

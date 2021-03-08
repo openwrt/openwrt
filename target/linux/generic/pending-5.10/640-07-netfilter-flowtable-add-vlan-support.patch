@@ -16,7 +16,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	FLOW_OFFLOAD_XMIT_DIRECT,
  };
  
-+#define NF_FLOW_TABLE_VLAN_MAX	2
++#define NF_FLOW_TABLE_ENCAP_MAX		2
 +
  struct flow_offload_tuple {
  	union {
@@ -28,7 +28,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +	struct {
 +		u16			id;
 +		__be16			proto;
-+	} in_vlan[NF_FLOW_TABLE_VLAN_MAX];
++	} encap[NF_FLOW_TABLE_ENCAP_MAX];
  
  	/* All members above are keys for lookups, see flow_offload_hash(). */
  	struct { }			__hash;
@@ -38,17 +38,19 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 -
 +	u8				dir:4,
 +					xmit_type:2,
-+					in_vlan_num:2;
++					encap_num:2;
  	u16				mtu;
  	union {
  		struct dst_entry	*dst_cache;
-@@ -174,6 +180,9 @@ struct nf_flow_route {
+@@ -174,6 +180,11 @@ struct nf_flow_route {
  		struct dst_entry		*dst;
  		struct {
  			u32			ifindex;
-+			u16			vid[NF_FLOW_TABLE_VLAN_MAX];
-+			__be16			vproto[NF_FLOW_TABLE_VLAN_MAX];
-+			u8			num_vlans;
++			struct {
++				u16		id;
++				__be16		proto;
++			} encap[NF_FLOW_TABLE_ENCAP_MAX];
++			u8			num_encaps;
  		} in;
  		struct {
  			u32			ifindex;
@@ -66,33 +68,36 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	}
  
  	flow_tuple->iifidx = route->tuple[dir].in.ifindex;
-+	for (i = route->tuple[dir].in.num_vlans - 1; i >= 0; i--) {
-+		flow_tuple->in_vlan[j].id = route->tuple[dir].in.vid[i];
-+		flow_tuple->in_vlan[j].proto = route->tuple[dir].in.vproto[i];
++	for (i = route->tuple[dir].in.num_encaps - 1; i >= 0; i--) {
++		flow_tuple->encap[j].id = route->tuple[dir].in.encap[i].id;
++		flow_tuple->encap[j].proto = route->tuple[dir].in.encap[i].proto;
 +		j++;
 +	}
-+	flow_tuple->in_vlan_num = route->tuple[dir].in.num_vlans;
++	flow_tuple->encap_num = route->tuple[dir].in.num_encaps;
  
  	switch (route->tuple[dir].xmit_type) {
  	case FLOW_OFFLOAD_XMIT_DIRECT:
 --- a/net/netfilter/nf_flow_table_ip.c
 +++ b/net/netfilter/nf_flow_table_ip.c
-@@ -159,17 +159,35 @@ static bool ip_has_options(unsigned int
+@@ -159,17 +159,38 @@ static bool ip_has_options(unsigned int
  	return thoff != sizeof(struct iphdr);
  }
  
-+static void nf_flow_tuple_vlan(struct sk_buff *skb,
-+			       struct flow_offload_tuple *tuple)
++static void nf_flow_tuple_encap(struct sk_buff *skb,
++				struct flow_offload_tuple *tuple)
 +{
++	int i = 0;
++
 +	if (skb_vlan_tag_present(skb)) {
-+		tuple->in_vlan[0].id = skb_vlan_tag_get(skb);
-+		tuple->in_vlan[0].proto = skb->vlan_proto;
++		tuple->encap[i].id = skb_vlan_tag_get(skb);
++		tuple->encap[i].proto = skb->vlan_proto;
++		i++;
 +	}
 +	if (skb->protocol == htons(ETH_P_8021Q)) {
 +		struct vlan_ethhdr *veth = (struct vlan_ethhdr *)skb_mac_header(skb);
 +
-+		tuple->in_vlan[1].id = ntohs(veth->h_vlan_TCI);
-+		tuple->in_vlan[1].proto = skb->protocol;
++		tuple->encap[i].id = ntohs(veth->h_vlan_TCI);
++		tuple->encap[i].proto = skb->protocol;
 +	}
 +}
 +
@@ -116,7 +121,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	thoff = iph->ihl * 4;
  
  	if (ip_is_fragment(iph) ||
-@@ -191,11 +209,11 @@ static int nf_flow_tuple_ip(struct sk_bu
+@@ -191,11 +212,11 @@ static int nf_flow_tuple_ip(struct sk_bu
  		return -1;
  
  	thoff = iph->ihl * 4;
@@ -131,19 +136,19 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	tuple->src_v4.s_addr	= iph->saddr;
  	tuple->dst_v4.s_addr	= iph->daddr;
-@@ -204,6 +222,7 @@ static int nf_flow_tuple_ip(struct sk_bu
+@@ -204,6 +225,7 @@ static int nf_flow_tuple_ip(struct sk_bu
  	tuple->l3proto		= AF_INET;
  	tuple->l4proto		= iph->protocol;
  	tuple->iifidx		= dev->ifindex;
-+	nf_flow_tuple_vlan(skb, tuple);
++	nf_flow_tuple_encap(skb, tuple);
  
  	return 0;
  }
-@@ -248,6 +267,37 @@ static unsigned int nf_flow_xmit_xfrm(st
+@@ -248,6 +270,40 @@ static unsigned int nf_flow_xmit_xfrm(st
  	return NF_STOLEN;
  }
  
-+static bool nf_flow_skb_vlan_protocol(const struct sk_buff *skb, __be16 proto)
++static bool nf_flow_skb_encap_protocol(const struct sk_buff *skb, __be16 proto)
 +{
 +	if (skb->protocol == htons(ETH_P_8021Q)) {
 +		struct vlan_ethhdr *veth;
@@ -156,29 +161,37 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +	return false;
 +}
 +
-+static void nf_flow_vlan_pop(struct sk_buff *skb,
-+			     struct flow_offload_tuple_rhash *tuplehash)
++static void nf_flow_encap_pop(struct sk_buff *skb,
++			      struct flow_offload_tuple_rhash *tuplehash)
 +{
 +	struct vlan_hdr *vlan_hdr;
 +	int i;
 +
-+	for (i = 0; i < tuplehash->tuple.in_vlan_num; i++) {
++	for (i = 0; i < tuplehash->tuple.encap_num; i++) {
 +		if (skb_vlan_tag_present(skb)) {
 +			__vlan_hwaccel_clear_tag(skb);
 +			continue;
 +		}
-+		vlan_hdr = (struct vlan_hdr *)skb->data;
-+		__skb_pull(skb, VLAN_HLEN);
-+		vlan_set_encap_proto(skb, vlan_hdr);
-+		skb_reset_network_header(skb);
++		if (skb->protocol == htons(ETH_P_8021Q)) {
++			vlan_hdr = (struct vlan_hdr *)skb->data;
++			__skb_pull(skb, VLAN_HLEN);
++			vlan_set_encap_proto(skb, vlan_hdr);
++			skb_reset_network_header(skb);
++			break;
++		}
 +	}
 +}
 +
  static unsigned int nf_flow_queue_xmit(struct net *net, struct sk_buff *skb,
  				       const struct flow_offload_tuple_rhash *tuplehash,
  				       unsigned short type)
-@@ -280,9 +330,11 @@ nf_flow_offload_ip_hook(void *priv, stru
- 	unsigned int thoff;
+@@ -276,13 +332,15 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 	enum flow_offload_tuple_dir dir;
+ 	struct flow_offload *flow;
+ 	struct net_device *outdev;
++	unsigned int thoff, mtu;
+ 	struct rtable *rt;
+-	unsigned int thoff;
  	struct iphdr *iph;
  	__be32 nexthop;
 +	u32 offset = 0;
@@ -186,12 +199,17 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 -	if (skb->protocol != htons(ETH_P_IP))
 +	if (skb->protocol != htons(ETH_P_IP) &&
-+	    !nf_flow_skb_vlan_protocol(skb, htons(ETH_P_IP)))
++	    !nf_flow_skb_encap_protocol(skb, htons(ETH_P_IP)))
  		return NF_ACCEPT;
  
  	if (nf_flow_tuple_ip(skb, state->in, &tuple) < 0)
-@@ -298,11 +350,15 @@ nf_flow_offload_ip_hook(void *priv, stru
- 	if (unlikely(nf_flow_exceeds_mtu(skb, flow->tuplehash[dir].tuple.mtu)))
+@@ -295,14 +353,19 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 	dir = tuplehash->tuple.dir;
+ 	flow = container_of(tuplehash, struct flow_offload, tuplehash[dir]);
+ 
+-	if (unlikely(nf_flow_exceeds_mtu(skb, flow->tuplehash[dir].tuple.mtu)))
++	mtu = flow->tuplehash[dir].tuple.mtu + offset;
++	if (unlikely(nf_flow_exceeds_mtu(skb, mtu)))
  		return NF_ACCEPT;
  
 -	if (skb_try_make_writable(skb, sizeof(*iph)))
@@ -209,17 +227,17 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		return NF_ACCEPT;
  
  	flow_offload_refresh(flow_table, flow);
-@@ -312,6 +368,9 @@ nf_flow_offload_ip_hook(void *priv, stru
+@@ -312,6 +375,9 @@ nf_flow_offload_ip_hook(void *priv, stru
  		return NF_ACCEPT;
  	}
  
-+	nf_flow_vlan_pop(skb, tuplehash);
++	nf_flow_encap_pop(skb, tuplehash);
 +	thoff -= offset;
 +
  	if (nf_flow_nat_ip(flow, skb, thoff, dir) < 0)
  		return NF_DROP;
  
-@@ -479,14 +538,17 @@ static int nf_flow_nat_ipv6(const struct
+@@ -479,14 +545,17 @@ static int nf_flow_nat_ipv6(const struct
  static int nf_flow_tuple_ipv6(struct sk_buff *skb, const struct net_device *dev,
  			      struct flow_offload_tuple *tuple)
  {
@@ -240,7 +258,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	switch (ip6h->nexthdr) {
  	case IPPROTO_TCP:
-@@ -503,11 +565,11 @@ static int nf_flow_tuple_ipv6(struct sk_
+@@ -503,11 +572,11 @@ static int nf_flow_tuple_ipv6(struct sk_
  		return -1;
  
  	thoff = sizeof(*ip6h);
@@ -255,29 +273,35 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	tuple->src_v6		= ip6h->saddr;
  	tuple->dst_v6		= ip6h->daddr;
-@@ -516,6 +578,7 @@ static int nf_flow_tuple_ipv6(struct sk_
+@@ -516,6 +585,7 @@ static int nf_flow_tuple_ipv6(struct sk_
  	tuple->l3proto		= AF_INET6;
  	tuple->l4proto		= ip6h->nexthdr;
  	tuple->iifidx		= dev->ifindex;
-+	nf_flow_tuple_vlan(skb, tuple);
++	nf_flow_tuple_encap(skb, tuple);
  
  	return 0;
  }
-@@ -533,9 +596,11 @@ nf_flow_offload_ipv6_hook(void *priv, st
+@@ -533,9 +603,12 @@ nf_flow_offload_ipv6_hook(void *priv, st
  	struct net_device *outdev;
  	struct ipv6hdr *ip6h;
  	struct rt6_info *rt;
++	unsigned int mtu;
 +	u32 offset = 0;
  	int ret;
  
 -	if (skb->protocol != htons(ETH_P_IPV6))
 +	if (skb->protocol != htons(ETH_P_IPV6) &&
-+	    !nf_flow_skb_vlan_protocol(skb, htons(ETH_P_IPV6)))
++	    !nf_flow_skb_encap_protocol(skb, htons(ETH_P_IPV6)))
  		return NF_ACCEPT;
  
  	if (nf_flow_tuple_ipv6(skb, state->in, &tuple) < 0)
-@@ -551,8 +616,11 @@ nf_flow_offload_ipv6_hook(void *priv, st
- 	if (unlikely(nf_flow_exceeds_mtu(skb, flow->tuplehash[dir].tuple.mtu)))
+@@ -548,11 +621,15 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 	dir = tuplehash->tuple.dir;
+ 	flow = container_of(tuplehash, struct flow_offload, tuplehash[dir]);
+ 
+-	if (unlikely(nf_flow_exceeds_mtu(skb, flow->tuplehash[dir].tuple.mtu)))
++	mtu = flow->tuplehash[dir].tuple.mtu + offset;
++	if (unlikely(nf_flow_exceeds_mtu(skb, mtu)))
  		return NF_ACCEPT;
  
 -	if (nf_flow_state_check(flow, ipv6_hdr(skb)->nexthdr, skb,
@@ -290,33 +314,35 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		return NF_ACCEPT;
  
  	flow_offload_refresh(flow_table, flow);
-@@ -562,6 +630,8 @@ nf_flow_offload_ipv6_hook(void *priv, st
+@@ -562,6 +639,8 @@ nf_flow_offload_ipv6_hook(void *priv, st
  		return NF_ACCEPT;
  	}
  
-+	nf_flow_vlan_pop(skb, tuplehash);
++	nf_flow_encap_pop(skb, tuplehash);
 +
  	if (skb_try_make_writable(skb, sizeof(*ip6h)))
  		return NF_DROP;
  
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -65,6 +65,9 @@ static int nft_dev_fill_forward_path(con
- 
+@@ -66,6 +66,11 @@ static int nft_dev_fill_forward_path(con
  struct nft_forward_info {
- 	const struct net_device *dev;
-+	__u16 vid[NF_FLOW_TABLE_VLAN_MAX];
-+	__be16 vproto[NF_FLOW_TABLE_VLAN_MAX];
-+	u8 num_vlans;
+ 	const struct net_device *indev;
+ 	const struct net_device *outdev;
++	struct id {
++		__u16	id;
++		__be16	proto;
++	} encap[NF_FLOW_TABLE_ENCAP_MAX];
++	u8 num_encaps;
  	u8 h_source[ETH_ALEN];
  	u8 h_dest[ETH_ALEN];
  	enum flow_offload_xmit_type xmit_type;
-@@ -83,9 +86,22 @@ static void nft_dev_path_info(const stru
+@@ -84,9 +89,23 @@ static void nft_dev_path_info(const stru
  		path = &stack->path[i];
  		switch (path->type) {
  		case DEV_PATH_ETHERNET:
 +		case DEV_PATH_VLAN:
- 			info->dev = path->dev;
+ 			info->indev = path->dev;
  			if (is_zero_ether_addr(info->h_source))
  				memcpy(info->h_source, path->dev->dev_addr, ETH_ALEN);
 +
@@ -324,25 +350,26 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +				break;
 +
 +			/* DEV_PATH_VLAN */
-+			if (info->num_vlans >= NF_FLOW_TABLE_VLAN_MAX) {
-+				info->dev = NULL;
++			if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
++				info->indev = NULL;
 +				break;
 +			}
-+			info->vid[info->num_vlans] = path->vlan.id;
-+			info->vproto[info->num_vlans] = path->vlan.proto;
-+			info->num_vlans++;
++			info->outdev = path->dev;
++			info->encap[info->num_encaps].id = path->encap.id;
++			info->encap[info->num_encaps].proto = path->encap.proto;
++			info->num_encaps++;
  			break;
  		case DEV_PATH_BRIDGE:
  			if (is_zero_ether_addr(info->h_source))
-@@ -93,7 +109,6 @@ static void nft_dev_path_info(const stru
+@@ -94,7 +113,6 @@ static void nft_dev_path_info(const stru
  
  			info->xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
  			break;
 -		case DEV_PATH_VLAN:
  		default:
- 			info->dev = NULL;
+ 			info->indev = NULL;
  			break;
-@@ -127,6 +142,7 @@ static void nft_dev_forward_path(struct
+@@ -130,6 +148,7 @@ static void nft_dev_forward_path(struct
  	struct net_device_path_stack stack;
  	struct nft_forward_info info = {};
  	unsigned char ha[ETH_ALEN];
@@ -350,15 +377,15 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	if (nft_dev_fill_forward_path(route, dst, ct, dir, ha, &stack) >= 0)
  		nft_dev_path_info(&stack, &info, ha);
-@@ -135,6 +151,11 @@ static void nft_dev_forward_path(struct
+@@ -138,6 +157,11 @@ static void nft_dev_forward_path(struct
  		return;
  
- 	route->tuple[!dir].in.ifindex = info.dev->ifindex;
-+	for (i = 0; i < info.num_vlans; i++) {
-+		route->tuple[!dir].in.vid[i] = info.vid[i];
-+		route->tuple[!dir].in.vproto[i] = info.vproto[i];
+ 	route->tuple[!dir].in.ifindex = info.indev->ifindex;
++	for (i = 0; i < info.num_encaps; i++) {
++		route->tuple[!dir].in.encap[i].id = info.encap[i].id;
++		route->tuple[!dir].in.encap[i].proto = info.encap[i].proto;
 +	}
-+	route->tuple[!dir].in.num_vlans = info.num_vlans;
++	route->tuple[!dir].in.num_encaps = info.num_encaps;
  
  	if (info.xmit_type == FLOW_OFFLOAD_XMIT_DIRECT) {
  		memcpy(route->tuple[dir].out.h_source, info.h_source, ETH_ALEN);
