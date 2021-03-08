@@ -264,10 +264,10 @@
 		};
 
 		lsspi: spi@fffe0800 {
-			compatible = "brcm,bcm6358-spi";
-			reg = <0xfffe0800 0x70c>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			compatible = "brcm,bcm6358-spi";
+			reg = <0xfffe0800 0x70c>;
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6358_IRQ_SPI>;

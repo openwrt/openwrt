@@ -311,11 +311,11 @@
 		};
 
 		nflash: nand@10000200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			compatible = "brcm,nand-bcm6368",
 				     "brcm,brcmnand-v4.0",
 				     "brcm,brcmnand";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0x10000200 0x180>,
 			      <0x10000600 0x200>,
 			      <0x100000b0 0x10>;
@@ -336,10 +336,10 @@
 		};
 
 		lsspi: spi@10000800 {
-			compatible = "brcm,bcm6358-spi";
-			reg = <0x10000800 0x70c>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			compatible = "brcm,bcm6358-spi";
+			reg = <0x10000800 0x70c>;
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM63268_IRQ_LSSPI>;
@@ -353,10 +353,10 @@
 		};
 
 		hsspi: spi@10001000 {
-			compatible = "brcm,bcm6328-hsspi";
-			reg = <0x10001000 0x600>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			compatible = "brcm,bcm6328-hsspi";
+			reg = <0x10001000 0x600>;
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM63268_IRQ_HSSPI>;
