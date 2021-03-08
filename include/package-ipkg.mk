@@ -184,6 +184,7 @@ $$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
 )$$(call addfield,Section,$(SECTION)
 )$$(call addfield,Require-User,$(USERID)
 )$$(call addfield,SourceDateEpoch,$(PKG_SOURCE_DATE_EPOCH)
+)$$(if $$(ABIV_$(1)),ABIVersion: $$(ABIV_$(1))
 )$(if $(PKG_CPE_ID),CPE-ID: $(PKG_CPE_ID)
 )$(if $(filter hold,$(PKG_FLAGS)),Status: unknown hold not-installed
 )$(if $(filter essential,$(PKG_FLAGS)),Essential: yes
