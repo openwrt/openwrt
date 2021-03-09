@@ -11,7 +11,9 @@ FEEDS_AVAILABLE:=$(sort $(FEEDS_INSTALLED) $(shell $(SCRIPT_DIR)/feeds list -n 2
 PACKAGE_SUBDIRS=$(PACKAGE_DIR)
 ifneq ($(CONFIG_PER_FEED_REPO),)
   PACKAGE_SUBDIRS += $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES)/base
+  PACKAGE_SUBDIRS += $(OUTPUT_DIR)/packages/noarch/base
   PACKAGE_SUBDIRS += $(foreach FEED,$(FEEDS_AVAILABLE),$(OUTPUT_DIR)/packages/$(ARCH_PACKAGES)/$(FEED))
+  PACKAGE_SUBDIRS += $(foreach FEED,$(FEEDS_AVAILABLE),$(OUTPUT_DIR)/packages/noarch/$(FEED))
 endif
 
 opkg_package_files = $(wildcard \
@@ -19,10 +21,13 @@ opkg_package_files = $(wildcard \
 	  $(foreach pkg,$(1), $(dir)/$(pkg)_*.ipk)))
 
 # 1: package name
+# 2: package arch
 define FeedPackageDir
 $(strip $(if $(CONFIG_PER_FEED_REPO), \
   $(if $(Package/$(1)/subdir), \
-    $(abspath $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES)/$(Package/$(1)/subdir)), \
+    $(if $(filter all,$(2)), \
+      $(abspath $(OUTPUT_DIR)/packages/noarch/$(Package/$(1)/subdir)), \
+      $(abspath $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES)/$(Package/$(1)/subdir))), \
     $(PACKAGE_DIR)), \
   $(PACKAGE_DIR)))
 endef
@@ -37,6 +42,7 @@ define FeedSourcesAppend
 		echo 'src/gz %d_kmods %U/targets/%S/kmods/$(LINUX_VERSION)-$(LINUX_RELEASE)-$(LINUX_VERMAGIC)';) \
 	$(foreach feed,$(FEEDS_AVAILABLE), \
 		$(if $(CONFIG_FEED_$(feed)), \
+			echo '$(if $(filter m,$(CONFIG_FEED_$(feed))),# )src/gz %d_$(feed)_noarch %U/packages/noarch/$(feed)'; \
 			echo '$(if $(filter m,$(CONFIG_FEED_$(feed))),# )src/gz %d_$(feed) %U/packages/%A/$(feed)';)))) \
 ) >> $(1)
 endef

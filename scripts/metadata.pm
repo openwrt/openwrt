@@ -237,6 +237,7 @@ sub parse_package_metadata($) {
 			$pkg->{mdepends} = [];
 			$pkg->{provides} = [$1];
 			$pkg->{tristate} = 1;
+			$pkg->{noarch} = 0;
 			$pkg->{override} = $override;
 			$package{$1} = $pkg;
 			push @{$src->{packages}}, $pkg;
@@ -251,6 +252,7 @@ sub parse_package_metadata($) {
 		/^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
 		/^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
 		/^Menu: \s*(.+)\s*$/ and $pkg->{menu} = $1;
+		/^No-Arch: \s*(.+)\s*$/ and $pkg->{noarch} = 1;
 		/^Submenu: \s*(.+)\s*$/ and $pkg->{submenu} = $1;
 		/^Submenu-Depends: \s*(.+)\s*$/ and $pkg->{submenudep} = $1;
 		/^Source: \s*(.+)\s*$/ and $pkg->{source} = $1;
