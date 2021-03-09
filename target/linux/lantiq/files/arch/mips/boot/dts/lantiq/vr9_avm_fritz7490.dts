@@ -213,9 +213,9 @@
 		output-high;
 	};
 
-	usb0-vbus {
+	usb-power {
 		gpio-hog;
-		line-name = "usb0-vbus";
+		line-name = "usb-power";
 		gpios = <14 GPIO_ACTIVE_HIGH>;
 		output-high;
 	};
@@ -285,18 +285,4 @@
 	status = "okay";
 
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_LOW>;
-
-	pcie@0 {
-		reg = <0 0 0 0 0>;
-		device_type = "pci";
-	};
 };
-
-&usb_phy0 {
-	status = "okay";
-};
-
-&usb0 {
-	status = "okay";
-};
-

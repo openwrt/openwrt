@@ -50,7 +50,7 @@
  
  static inline int pcie_ltssm_enable(int pcie_port)
  {
-@@ -988,10 +1015,22 @@ int  ifx_pcie_bios_plat_dev_init(struct
+@@ -988,10 +1015,24 @@ int  ifx_pcie_bios_plat_dev_init(struct
  static int
  pcie_rc_initialize(int pcie_port)
  {
@@ -65,6 +65,8 @@
 +#ifdef CONFIG_IFX_PCIE_HW_SWAP
 +	regmap_update_bits(ltq_rcu_regmap, 0x4c, IFX_RCU_AHB_BE_PCIE_S,
 +			   IFX_RCU_AHB_BE_PCIE_S);
++	regmap_update_bits(ltq_rcu_regmap, 0x4c, IFX_RCU_AHB_BE_XBAR_S,
++			   IFX_RCU_AHB_BE_XBAR_S);
 +#else
 +	regmap_update_bits(ltq_rcu_regmap, 0x4c, IFX_RCU_AHB_BE_PCIE_S,
 +			   0x0);
