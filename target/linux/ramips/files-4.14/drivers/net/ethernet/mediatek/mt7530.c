@@ -197,6 +197,7 @@ struct mt7530_priv {
 	struct switch_dev	swdev;
 
 	bool			global_vlan_enable;
+	bool 			reset;
 	struct mt7530_vlan_entry	vlan_entries[MT7530_NUM_VLANS];
 	struct mt7530_port_entry	port_entries[MT7530_NUM_PORTS];
 };
@@ -275,6 +276,8 @@ mt7530_reset_switch(struct switch_dev *dev)
 	for (i = 0; i < MT7530_NUM_VLANS; i++) {
 		priv->vlan_entries[i].vid = i;
 	}
+
+	priv->reset = 1;
 
 	return 0;
 }
@@ -635,6 +638,26 @@ mt7530_apply_config(struct switch_dev *dev)
 		val &= ~0xfff;
 		val |= pvid;
 		mt7530_w32(priv, REG_ESW_PORT_PPBV1(i), val);
+	}
+
+	if (priv->reset) {
+		priv->reset = 0;
+
+		/* turn off all PHYs */
+		for (i = 0; i <= 4; i++) {
+			u32 val = mdiobus_read(priv->bus, i, 0x0);
+			val |= BIT(11);
+			mdiobus_write(priv->bus, i, 0x0, val);
+		}
+
+		usleep_range(10, 20);
+
+		/* turn on all PHYs */
+		for (i = 0; i <= 4; i++) {
+			u32 val = mdiobus_read(priv->bus, i, 0);
+			val &= ~BIT(11);
+			mdiobus_write(priv->bus, i, 0, val);
+		}
 	}
 
 	return 0;
