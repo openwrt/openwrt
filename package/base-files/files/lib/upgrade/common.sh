@@ -95,7 +95,7 @@ get_image() { # <source> [ <command> ]
 	if [ -z "$cmd" ]; then
 		local magic="$(dd if="$from" bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"')"
 		case "$magic" in
-			1f8b) cmd="zcat";;
+			1f8b) cmd="busybox zcat";;
 			*) cmd="cat";;
 		esac
 	fi
