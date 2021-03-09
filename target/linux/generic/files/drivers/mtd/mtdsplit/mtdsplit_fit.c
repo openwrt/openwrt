@@ -49,6 +49,8 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 		   const struct mtd_partition **pparts,
 	           struct mtd_part_parser_data *data)
 {
+	struct device_node *np = mtd_get_of_node(mtd);
+	const char *cmdline_match = NULL;
 	struct fdt_header hdr;
 	size_t hdr_len, retlen;
 	size_t offset;
@@ -56,6 +58,10 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	size_t rootfs_offset, rootfs_size;
 	struct mtd_partition *parts;
 	int ret;
+
+	of_property_read_string(np, "openwrt,cmdline-match", &cmdline_match);
+	if (cmdline_match && !strstr(saved_command_line, cmdline_match))
+		return -ENODEV;
 
 	hdr_len = sizeof(struct fdt_header);
 

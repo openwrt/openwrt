@@ -919,7 +919,6 @@ define KernelPackage/zram
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
 	CONFIG_ZRAM_DEBUG=n \
-	CONFIG_PGTABLE_MAPPING=n \
 	CONFIG_ZRAM_WRITEBACK=n \
 	CONFIG_ZSMALLOC_STAT=n
   FILES:= \
@@ -1126,7 +1125,9 @@ define KernelPackage/keys-trusted
   TITLE:=TPM trusted keys on kernel keyring
   DEPENDS:=@KERNEL_KEYS +kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha1 +kmod-tpm
   KCONFIG:=CONFIG_TRUSTED_KEYS
-  FILES:=$(LINUX_DIR)/security/keys/trusted.ko
+  FILES:= \
+	  $(LINUX_DIR)/security/keys/trusted.ko@lt5.10 \
+	  $(LINUX_DIR)/security/keys/trusted-keys/trusted.ko@ge5.10
   AUTOLOAD:=$(call AutoLoad,01,trusted-keys,1)
 endef
 

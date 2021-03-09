@@ -8,7 +8,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -652,6 +652,44 @@ static void __init ubiblock_create_from_
+@@ -652,6 +652,47 @@ static void __init ubiblock_create_from_
  	}
  }
  
@@ -33,6 +33,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	for (ubi_num = 0; ubi_num < UBI_MAX_DEVICES; ubi_num++) {
 +		desc = ubi_open_volume_nm(ubi_num, "rootfs", UBI_READONLY);
 +		if (IS_ERR(desc))
++			desc = ubi_open_volume_nm(ubi_num, "fit", UBI_READONLY);;
++
++		if (IS_ERR(desc))
 +			continue;
 +
 +		ubi_get_volume_info(desc, &vi);
@@ -53,7 +56,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void ubiblock_remove_all(void)
  {
  	struct ubiblock *next;
-@@ -684,6 +722,10 @@ int __init ubiblock_init(void)
+@@ -684,6 +725,10 @@ int __init ubiblock_init(void)
  	 */
  	ubiblock_create_from_param();
  

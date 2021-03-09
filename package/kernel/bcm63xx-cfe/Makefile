@@ -2,13 +2,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=bcm63xx-cfe
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=https://github.com/openwrt/bcm63xx-cfe.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2020-12-27
-PKG_SOURCE_VERSION:=c0b36917ea565c4ffac2e723f77c9d27d0691c33
-PKG_MIRROR_HASH:=75262534b1fbeba2299621ec3112d9d22b3e3de4cb73e8d7cac1e0b7e5eece77
+PKG_SOURCE_DATE:=2021-03-05
+PKG_SOURCE_VERSION:=d03501629fc8b1ba8f9b0961d543c256a3d0098f
+PKG_MIRROR_HASH:=b32a6f68d59c8f4534def7ec2568ad7da7a612a605b9406328309c78115ee88d
 
 PKG_FLAGS:=nonshared
 
@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/bcm63xx-cfe
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@(TARGET_bcm4908||TARGET_bcm63xx)
+  DEPENDS:=@(TARGET_bcm4908||TARGET_bcm63xx||TARGET_bmips)
   TITLE:=bcm63xx-cfe
   DEFAULT:=y
 endef

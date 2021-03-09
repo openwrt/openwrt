@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 # Copyright (C) 2011-2015 OpenWrt.org
 #
@@ -10,12 +9,6 @@ board_config_update
 
 led_wifi="$(get_dt_led wifi)"
 [ -n "$led_wifi" ] && ucidef_set_led_wlan "wifi" "wifi" "$led_wifi" "phy0tpt"
-
-led_usb="$(get_dt_led usb)"
-[ -n "$led_usb" ] && ucidef_set_led_usbdev "usb" "usb" "$led_usb" "1-1"
-
-led_usb2="$(get_dt_led usb2)"
-[ -n "$led_usb2" ] && ucidef_set_led_usbdev "usb2" "usb2" "$led_usb2" "2-1"
 
 led_dsl="$(get_dt_led dsl)"
 [ -n "$led_dsl" ] && {

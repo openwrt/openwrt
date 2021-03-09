@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Copyright (C) 2021 OpenWrt.org
+#
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+"linksys,e8450-ubi")
+	ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x1f000" "0x1f000" "1"
+	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x1f000" "0x1f000" "1"
+	;;
+"bananapi,bpi-r64")
+	. /lib/upgrade/platform.sh
+	local rootdev=$(get_rootdev)
+	local envdev=/dev/$(get_partition $rootdev ubootenv)
+	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
+	ubootenv_add_uci_config "$envdev" "0x80000" "0x80000" "0x80000" "1"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0

@@ -11,7 +11,6 @@
 	};
 
 	aliases {
-		serial0 = &uart;
 		label-mac-device = &eth0;
 	};
 
@@ -28,10 +27,6 @@
 
 &ref {
 	clock-frequency = <40000000>;
-};
-
-&uart {
-	status = "okay";
 };
 
 &spi {

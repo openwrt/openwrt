@@ -4,19 +4,18 @@
 	compatible = "zyxel,p-2812hnu-f1", "zyxel,p-2812hnu", "lantiq,xway", "lantiq,vr9";
 	model = "ZyXEL P-2812HNU-F1";
 
-	aliases {
-		led-usb = &led_usb1;
-		led-usb2 = &led_usb2;
-	};
-
 	leds {
-		led_usb1: usb1 {
+		usb1 {
 			label = "green:usb1";
 			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ehci_port1>;
+			linux,default-trigger = "usbport";
 		};
-		led_usb2: usb2 {
+		usb2 {
 			label = "green:usb2";
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ehci_port2>;
+			linux,default-trigger = "usbport";
 		};
 	};
 };

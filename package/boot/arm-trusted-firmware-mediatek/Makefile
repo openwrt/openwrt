@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2017 Hauke Mehrtens
-# Copyright (C) 2020 Daniel Golle
+# Copyright (C) 2021 Daniel Golle
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,97 +13,88 @@ PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/mtk-openwrt/arm-trusted-firmware.git
-PKG_SOURCE_DATE:=2020-11-09
-PKG_SOURCE_VERSION:=03017334ccd8c0fac12e7db36749b95b9a7d745f
-PKG_MIRROR_HASH:=b211b2f9143d4debc7ad8dc959cb606888af20af790855dd66c87e451b6a1bc7
+PKG_SOURCE_DATE:=2021-02-25
+PKG_SOURCE_VERSION:=1220acb044a9db9a201aba3be0bb4ce0c9ed3702
+PKG_MIRROR_HASH:=f2ca44b9b8acfbd3a6be30aba316c765f73bad6231a821f524c9f21a845e50a3
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
 include $(INCLUDE_DIR)/trusted-firmware-a.mk
 include $(INCLUDE_DIR)/package.mk
 
-define Download/mt7622-header-emmc
-  URL:=https://raw.githubusercontent.com/frank-w/BPI-R64-ATF/a36efa5f7435b8079479d13b562fedc0aa0d42f0
-  URL_FILE:=header_emmc.bin
-  FILE:=mt7622-header_emmc.bin
-  HASH:=0a09c55d90c5fc375c59468a4331555f77cbc3e1dd107ca83b5b8c9625f38d8c
+define Trusted-Firmware-A/Default
+  BUILD_TARGET:=mediatek
+  BUILD_SUBTARGET:=mt7622
+  PLAT:=mt7622
+  TFA_IMAGE:=bl2.img bl31.bin
+  BOOT_DEVICE:=
+  DDR3_FLYBY:=
 endef
 
-define Download/mt7622-header-sdmmc
-  URL:=https://raw.githubusercontent.com/frank-w/BPI-R64-ATF/a36efa5f7435b8079479d13b562fedc0aa0d42f0
-  URL_FILE:=header_sdmmc.bin
-  FILE:=mt7622-header_sdmmc.bin
-  HASH:=242908c04e25289d25ba9fab61a1930425af173051c43d275d1ac9877d6accb1
+define Trusted-Firmware-A/mt7622-nor-1ddr
+  NAME:=MediaTek MT7622 (SPI-NOR, 1x DDR3)
+  BOOT_DEVICE:=nor
 endef
 
-define Package/arm-trusted-firmware-mt7622/Default
-  SECTION:=boot
-  CATEGORY:=Boot Loaders
-  TITLE:=ARM Trusted Firmware for MT7622
-  DEPENDS:=@TARGET_mediatek_mt7622 @BROKEN
-# wait until bromimage gets replace by static build
-# libcrypto.so.1.1: version `OPENSSL_1_1_1' not found (required by tools/mediatek/bromimage/bromimage)
+define Trusted-Firmware-A/mt7622-nor-2ddr
+  NAME:=MediaTek MT7622 (SPI-NOR, 2x DDR3)
+  BOOT_DEVICE:=nor
+  DDR3_FLYBY:=1
 endef
 
-define Package/arm-trusted-firmware-mt7622-nor
-  $(call Package/arm-trusted-firmware-mt7622/Default)
-  VARIANT:=nor
+define Trusted-Firmware-A/mt7622-snand-1ddr
+  NAME:=MediaTek MT7622 (SPI-NAND, 1x DDR3)
+  BOOT_DEVICE:=snand
 endef
 
-define Package/arm-trusted-firmware-mt7622-snand
-  $(call Package/arm-trusted-firmware-mt7622/Default)
-  VARIANT:=snand
+define Trusted-Firmware-A/mt7622-snand-2ddr
+  NAME:=MediaTek MT7622 (SPI-NAND, 2x DDR3)
+  BOOT_DEVICE:=snand
+  DDR3_FLYBY:=1
 endef
 
-define Package/arm-trusted-firmware-mt7622-emmc
-  $(call Package/arm-trusted-firmware-mt7622/Default)
-  VARIANT:=emmc
+define Trusted-Firmware-A/mt7622-emmc-1ddr
+  NAME:=MediaTek MT7622 (eMMC, 1x DDR3)
+  BOOT_DEVICE:=emmc
 endef
 
-define Package/arm-trusted-firmware-mt7622-sdmmc
-  $(call Package/arm-trusted-firmware-mt7622/Default)
-  VARIANT:=sdmmc
+define Trusted-Firmware-A/mt7622-emmc-2ddr
+  NAME:=MediaTek MT7622 (eMMC, 2x DDR3)
+  BOOT_DEVICE:=emmc
+  DDR3_FLYBY:=1
 endef
 
-MAKE_VARS = \
-	CROSS_COMPILE="$(TARGET_CROSS)"
-
-MAKE_FLAGS += \
-	PLAT=mt7622 \
-	BOOT_DEVICE=$(BUILD_VARIANT) \
-	all
-
-define Build/Prepare
-	$(call Build/Prepare/Default)
-ifeq ($(BUILD_VARIANT),emmc)
-	$(eval $(call Download,mt7622-header-emmc))
-endif
-ifeq ($(BUILD_VARIANT),sdmmc)
-	$(eval $(call Download,mt7622-header-sdmmc))
-endif
+define Trusted-Firmware-A/mt7622-sdmmc-1ddr
+  NAME:=MediaTek MT7622 (SDcard, 1x DDR3)
+  BOOT_DEVICE:=sdmmc
 endef
 
-define Build/InstallDev
+define Trusted-Firmware-A/mt7622-sdmmc-2ddr
+  NAME:=MediaTek MT7622 (SDcard, 2x DDR3)
+  BOOT_DEVICE:=sdmmc
+  DDR3_FLYBY:=1
+endef
+
+TFA_TARGETS:= \
+	mt7622-nor-1ddr \
+	mt7622-nor-2ddr \
+	mt7622-snand-1ddr \
+	mt7622-snand-2ddr \
+	mt7622-emmc-1ddr \
+	mt7622-emmc-2ddr \
+	mt7622-sdmmc-1ddr \
+	mt7622-sdmmc-2ddr
+
+TFA_MAKE_FLAGS += BOOT_DEVICE=$(BOOT_DEVICE) $(if $(DDR3_FLYBY),DDR3_FLYBY=1) all
+
+define Build/Configure
+	$(call Build/Configure/Default)
+endef
+
+define Package/trusted-firmware-a/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/build/mt7622/release/bl2.bin $(STAGING_DIR_IMAGE)/mt7622-bl2-$(BUILD_VARIANT).bin
-	$(CP) $(PKG_BUILD_DIR)/build/mt7622/release/bl2.img $(STAGING_DIR_IMAGE)/mt7622-bl2-$(BUILD_VARIANT).img
-# bl31.bin turns out to be identical for all build variants
-	$(CP) $(PKG_BUILD_DIR)/build/mt7622/release/bl31.bin $(STAGING_DIR_IMAGE)/mt7622-bl31.bin
-ifeq ($(BUILD_VARIANT),emmc)
-	$(CP) $(DL_DIR)/mt7622-header_emmc.bin $(STAGING_DIR_IMAGE)
-endif
-ifeq ($(BUILD_VARIANT),sdmmc)
-	$(CP) $(DL_DIR)/mt7622-header_sdmmc.bin $(STAGING_DIR_IMAGE)
-endif
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/build/mt7622/release/bl2.img $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-bl2.img
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/build/mt7622/release/bl31.bin $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-bl31.bin
 endef
 
-define Package/arm-trusted-firmware-mt7622-nor/install
-endef
-Package/arm-trusted-firmware-mt7622-snand/install = $(Package/arm-trusted-firmware-mt7622-nor/install)
-Package/arm-trusted-firmware-mt7622-emmc/install = $(Package/arm-trusted-firmware-mt7622-nor/install)
-Package/arm-trusted-firmware-mt7622-sdmmc/install = $(Package/arm-trusted-firmware-mt7622-nor/install)
-
-$(eval $(call BuildPackage,arm-trusted-firmware-mt7622-nor))
-$(eval $(call BuildPackage,arm-trusted-firmware-mt7622-snand))
-$(eval $(call BuildPackage,arm-trusted-firmware-mt7622-emmc))
-$(eval $(call BuildPackage,arm-trusted-firmware-mt7622-sdmmc))
+$(eval $(call BuildPackage/Trusted-Firmware-A))

@@ -44,7 +44,7 @@ define Device/Default
   KERNEL_INITRAMFS := kernel-bin | bcm4908lzma | bcm4908kernel
   FILESYSTEMS := squashfs
   KERNEL_NAME := Image
-  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
+  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1).$$(2)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
 endef
@@ -70,5 +70,15 @@ define Device/netgear_r8000p
   IMAGE/bin := append-ubi | bcm4908img
 endef
 TARGET_DEVICES += netgear_r8000p
+
+define Device/tplink_archer-c2300-v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Archer C2300
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := broadcom/bcm4908/bcm4906-tplink-archer-c2300-v1
+  IMAGES := bin
+  IMAGE/bin := append-ubi | bcm4908img
+endef
+TARGET_DEVICES += tplink_archer-c2300-v1
 
 $(eval $(call BuildImage))
