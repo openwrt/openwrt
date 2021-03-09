@@ -1,0 +1,26 @@
+From 89358a7131d3e75c74af834bb117b4fad7914983 Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Tue, 2 Feb 2021 13:48:21 +0100
+Subject: traceroute: fix option parsing
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ networking/traceroute.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/networking/traceroute.c b/networking/traceroute.c
+index 3f1a9ab46..29f5e480b 100644
+--- a/networking/traceroute.c
++++ b/networking/traceroute.c
+@@ -896,7 +896,7 @@ traceroute_init(int op, char **argv)
+ 
+ 	op |= getopt32(argv, "^"
+ 		OPT_STRING
+-		"\0" "-1:x-x" /* minimum 1 arg */
++		"\0" "-1" /* minimum 1 arg */
+ 		, &tos_str, &device, &max_ttl_str, &port_str, &nprobes_str
+ 		, &source, &waittime_str, &pausemsecs_str, &first_ttl_str
+ 	);
+-- 
+cgit v1.2.1
+
