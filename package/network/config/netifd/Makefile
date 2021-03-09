@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=netifd
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/netifd.git
@@ -23,6 +23,10 @@ define Package/netifd
   CATEGORY:=Base system
   DEPENDS:=+libuci +libnl-tiny +libubus +ubus +ubusd +jshn +libubox
   TITLE:=OpenWrt Network Interface Configuration Daemon
+endef
+
+define Package/netifd/conffiles
+/etc/udhcpc.user
 endef
 
 TARGET_CFLAGS += \
