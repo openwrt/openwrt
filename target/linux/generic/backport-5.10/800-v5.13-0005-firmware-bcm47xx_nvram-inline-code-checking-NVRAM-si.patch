@@ -19,11 +19,9 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  drivers/firmware/broadcom/bcm47xx_nvram.c | 25 +++++++----------------
  1 file changed, 7 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/firmware/broadcom/bcm47xx_nvram.c b/drivers/firmware/broadcom/bcm47xx_nvram.c
-index 1d2271b1e07a..bd235833b687 100644
 --- a/drivers/firmware/broadcom/bcm47xx_nvram.c
 +++ b/drivers/firmware/broadcom/bcm47xx_nvram.c
-@@ -42,18 +42,6 @@ static bool bcm47xx_nvram_is_valid(void __iomem *nvram)
+@@ -42,18 +42,6 @@ static bool bcm47xx_nvram_is_valid(void
  	return ((struct nvram_header *)nvram)->magic == NVRAM_MAGIC;
  }
  
@@ -42,7 +40,7 @@ index 1d2271b1e07a..bd235833b687 100644
  /**
   * bcm47xx_nvram_copy - copy NVRAM to internal buffer
   */
-@@ -85,7 +73,7 @@ static int bcm47xx_nvram_find_and_copy(void __iomem *flash_start, size_t res_siz
+@@ -85,7 +73,7 @@ static int bcm47xx_nvram_find_and_copy(v
  {
  	size_t flash_size;
  	size_t offset;
@@ -51,7 +49,7 @@ index 1d2271b1e07a..bd235833b687 100644
  
  	if (nvram_len) {
  		pr_warn("nvram already initialized\n");
-@@ -93,12 +81,13 @@ static int bcm47xx_nvram_find_and_copy(void __iomem *flash_start, size_t res_siz
+@@ -93,12 +81,13 @@ static int bcm47xx_nvram_find_and_copy(v
  	}
  
  	/* TODO: when nvram is on nand flash check for bad blocks first. */
@@ -70,6 +68,3 @@ index 1d2271b1e07a..bd235833b687 100644
  		}
  	}
  
--- 
-2.26.2
-
