@@ -605,7 +605,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	      MTK_PPE_GLO_CFG_IP4_L4_CS_DROP |
 +	      MTK_PPE_GLO_CFG_IP4_CS_DROP |
 +	      MTK_PPE_GLO_CFG_FLOW_DROP_UPDATE;
-+	ppe_w32(ppe, MTK_PPE_GLO_CFG, val);
++	ppe_m32(ppe, MTK_PPE_GLO_CFG, val | MTK_PPE_GLO_CFG_TTL0_DROP, val);
 +
 +	ppe_w32(ppe, MTK_PPE_DEFAULT_CPU_PORT, 0);
 +
