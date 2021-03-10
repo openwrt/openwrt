@@ -15,15 +15,12 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  drivers/firmware/broadcom/bcm47xx_nvram.c | 43 +++++++++++++----------
  1 file changed, 25 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/firmware/broadcom/bcm47xx_nvram.c b/drivers/firmware/broadcom/bcm47xx_nvram.c
-index 99f3ec180be6..09f51b95849e 100644
 --- a/drivers/firmware/broadcom/bcm47xx_nvram.c
 +++ b/drivers/firmware/broadcom/bcm47xx_nvram.c
-@@ -54,12 +54,35 @@ static u32 find_nvram_size(void __iomem *end)
- 	return 0;
+@@ -55,11 +55,34 @@ static u32 find_nvram_size(void __iomem
  }
  
-+/**
+ /**
 + * bcm47xx_nvram_copy - copy NVRAM to internal buffer
 + */
 +static void bcm47xx_nvram_copy(void __iomem *nvram_start, size_t res_size)
@@ -47,7 +44,7 @@ index 99f3ec180be6..09f51b95849e 100644
 +	nvram_len = copy_size;
 +}
 +
- /**
++/**
   * bcm47xx_nvram_find_and_copy - find NVRAM on flash mapping & copy it
   */
  static int bcm47xx_nvram_find_and_copy(void __iomem *flash_start, size_t res_size)
@@ -56,7 +53,7 @@ index 99f3ec180be6..09f51b95849e 100644
  	size_t flash_size;
  	size_t offset;
  	u32 size;
-@@ -95,23 +118,7 @@ static int bcm47xx_nvram_find_and_copy(void __iomem *flash_start, size_t res_siz
+@@ -95,23 +118,7 @@ static int bcm47xx_nvram_find_and_copy(v
  	return -ENXIO;
  
  found:
@@ -81,6 +78,3 @@ index 99f3ec180be6..09f51b95849e 100644
  
  	return 0;
  }
--- 
-2.26.2
-
