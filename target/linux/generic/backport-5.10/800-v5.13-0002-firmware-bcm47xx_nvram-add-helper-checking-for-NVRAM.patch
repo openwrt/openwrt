@@ -14,8 +14,6 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  drivers/firmware/broadcom/bcm47xx_nvram.c | 30 ++++++++++++++---------
  1 file changed, 18 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/firmware/broadcom/bcm47xx_nvram.c b/drivers/firmware/broadcom/bcm47xx_nvram.c
-index b04007adc79f..99f3ec180be6 100644
 --- a/drivers/firmware/broadcom/bcm47xx_nvram.c
 +++ b/drivers/firmware/broadcom/bcm47xx_nvram.c
 @@ -34,14 +34,20 @@ static char nvram_buf[NVRAM_SPACE];
@@ -42,7 +40,7 @@ index b04007adc79f..99f3ec180be6 100644
  			return nvram_sizes[i];
  	}
  
-@@ -55,6 +61,7 @@ static int bcm47xx_nvram_find_and_copy(void __iomem *flash_start, size_t res_siz
+@@ -55,6 +61,7 @@ static int bcm47xx_nvram_find_and_copy(v
  {
  	struct nvram_header __iomem *header;
  	size_t flash_size;
@@ -50,7 +48,7 @@ index b04007adc79f..99f3ec180be6 100644
  	u32 size;
  
  	if (nvram_len) {
-@@ -68,31 +75,30 @@ static int bcm47xx_nvram_find_and_copy(void __iomem *flash_start, size_t res_siz
+@@ -68,31 +75,30 @@ static int bcm47xx_nvram_find_and_copy(v
  		/* Windowed flash access */
  		size = find_nvram_size(flash_start + flash_size);
  		if (size) {
@@ -90,6 +88,3 @@ index b04007adc79f..99f3ec180be6 100644
  	if (nvram_len > size) {
  		pr_err("The nvram size according to the header seems to be bigger than the partition on flash\n");
  		nvram_len = size;
--- 
-2.26.2
-

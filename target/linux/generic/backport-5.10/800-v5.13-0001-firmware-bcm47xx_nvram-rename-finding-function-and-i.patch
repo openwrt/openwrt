@@ -17,11 +17,9 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  drivers/firmware/broadcom/bcm47xx_nvram.c | 24 ++++++++++++-----------
  1 file changed, 13 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/firmware/broadcom/bcm47xx_nvram.c b/drivers/firmware/broadcom/bcm47xx_nvram.c
-index 835ece9c00f1..b04007adc79f 100644
 --- a/drivers/firmware/broadcom/bcm47xx_nvram.c
 +++ b/drivers/firmware/broadcom/bcm47xx_nvram.c
-@@ -48,11 +48,13 @@ static u32 find_nvram_size(void __iomem *end)
+@@ -48,11 +48,13 @@ static u32 find_nvram_size(void __iomem
  	return 0;
  }
  
@@ -38,7 +36,7 @@ index 835ece9c00f1..b04007adc79f 100644
  	u32 size;
  
  	if (nvram_len) {
-@@ -61,25 +63,25 @@ static int nvram_find_and_copy(void __iomem *iobase, u32 lim)
+@@ -61,25 +63,25 @@ static int nvram_find_and_copy(void __io
  	}
  
  	/* TODO: when nvram is on nand flash check for bad blocks first. */
@@ -71,7 +69,7 @@ index 835ece9c00f1..b04007adc79f 100644
  	if (header->magic == NVRAM_MAGIC) {
  		size = NVRAM_SPACE;
  		goto found;
-@@ -124,7 +126,7 @@ int bcm47xx_nvram_init_from_mem(u32 base, u32 lim)
+@@ -124,7 +126,7 @@ int bcm47xx_nvram_init_from_mem(u32 base
  	if (!iobase)
  		return -ENOMEM;
  
@@ -80,6 +78,3 @@ index 835ece9c00f1..b04007adc79f 100644
  
  	iounmap(iobase);
  
--- 
-2.26.2
-
