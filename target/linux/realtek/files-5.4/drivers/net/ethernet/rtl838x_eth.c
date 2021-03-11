@@ -855,7 +855,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	struct ring_b *ring = priv->membase;
 	int i, err;
 
-	pr_info("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
+	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
 		__func__, priv->rxrings, priv->rxringlen, TXRINGS, TXRINGLEN);
 
 	spin_lock_irqsave(&priv->lock, flags);
@@ -1342,7 +1342,7 @@ static void rtl838x_validate(struct phylink_config *config,
 {
 	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
 
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 
 	if (!phy_interface_mode_is_rgmii(state->interface) &&
 	    state->interface != PHY_INTERFACE_MODE_1000BASEX &&
@@ -1404,7 +1404,7 @@ static void rtl838x_mac_an_restart(struct phylink_config *config)
 	if (priv->family_id != RTL8380_FAMILY_ID)
 		return;
 
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 	/* Restart by disabling and re-enabling link */
 	sw_w32(0x6192D, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 	mdelay(20);
@@ -1419,7 +1419,7 @@ static int rtl838x_mac_pcs_get_state(struct phylink_config *config,
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	int port = priv->cpu_port;
 
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 
 	state->link = priv->r->get_mac_link_sts(port) ? 1 : 0;
 	state->duplex = priv->r->get_mac_link_dup_sts(port) ? 1 : 0;
@@ -1456,7 +1456,7 @@ static void rtl838x_mac_link_down(struct phylink_config *config,
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 	/* Stop TX/RX to port */
 	sw_w32_mask(0x03, 0, priv->r->mac_port_ctrl(priv->cpu_port));
 }
@@ -1468,7 +1468,7 @@ static void rtl838x_mac_link_up(struct phylink_config *config, unsigned int mode
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x03, priv->r->mac_port_ctrl(priv->cpu_port));
 }
@@ -1479,7 +1479,7 @@ static void rtl838x_set_mac_hw(struct net_device *dev, u8 *mac)
 	unsigned long flags;
 
 	spin_lock_irqsave(&priv->lock, flags);
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 	sw_w32((mac[0] << 8) | mac[1], priv->r->mac);
 	sw_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5], priv->r->mac + 4);
 
@@ -1547,7 +1547,7 @@ static int rtl838x_get_link_ksettings(struct net_device *ndev,
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
-	pr_info("%s called\n", __func__);
+	pr_debug("%s called\n", __func__);
 	return phylink_ethtool_ksettings_get(priv->phylink, cmd);
 }
 
@@ -1556,7 +1556,7 @@ static int rtl838x_set_link_ksettings(struct net_device *ndev,
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
-	pr_info("%s called\n", __func__);
+	pr_debug("%s called\n", __func__);
 	return phylink_ethtool_ksettings_set(priv->phylink, cmd);
 }
 
@@ -1678,7 +1678,7 @@ static int rtl931x_mdio_write(struct mii_bus *bus, int mii_id,
 
 static int rtl838x_mdio_reset(struct mii_bus *bus)
 {
-	pr_info("%s called\n", __func__);
+	pr_debug("%s called\n", __func__);
 	/* Disable MAC polling the PHY so that we can start configuration */
 	sw_w32(0x00000000, RTL838X_SMI_POLL_CTRL);
 
@@ -1693,7 +1693,7 @@ static int rtl839x_mdio_reset(struct mii_bus *bus)
 {
 	return 0;
 
-	pr_info("%s called\n", __func__);
+	pr_debug("%s called\n", __func__);
 	/* BUG: The following does not work, but should! */
 	/* Disable MAC polling the PHY so that we can start configuration */
 	sw_w32(0x00000000, RTL839X_SMI_PORT_POLLING_CTRL);
@@ -1710,7 +1710,7 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 	sw_w32(0x00000000, RTL931X_SMI_PORT_POLLING_CTRL);
 	sw_w32(0x00000000, RTL931X_SMI_PORT_POLLING_CTRL + 4);
 
-	pr_info("%s called\n", __func__);
+	pr_debug("%s called\n", __func__);
 
 	return 0;
 }
@@ -1767,7 +1767,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	struct device_node *mii_np;
 	int ret;
 
-	pr_info("%s called\n", __func__);
+	pr_debug("%s called\n", __func__);
 	mii_np = of_get_child_by_name(priv->pdev->dev.of_node, "mdio-bus");
 
 	if (!mii_np) {
@@ -1827,7 +1827,7 @@ err_put_node:
 
 static int rtl838x_mdio_remove(struct rtl838x_eth_priv *priv)
 {
-	pr_info("%s called\n", __func__);
+	pr_debug("%s called\n", __func__);
 	if (!priv->mii_bus)
 		return 0;
 
