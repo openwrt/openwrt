@@ -13,9 +13,9 @@ PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/mtk-openwrt/arm-trusted-firmware.git
-PKG_SOURCE_DATE:=2021-02-25
-PKG_SOURCE_VERSION:=1220acb044a9db9a201aba3be0bb4ce0c9ed3702
-PKG_MIRROR_HASH:=f2ca44b9b8acfbd3a6be30aba316c765f73bad6231a821f524c9f21a845e50a3
+PKG_SOURCE_DATE:=2021-03-10
+PKG_SOURCE_VERSION:=8b635f61091f2e5bce88269468c53fc30bb4cd64
+PKG_MIRROR_HASH:=ffe233a19b51504f605a90a88c7a1bb74303e4a7173a59b24a4dfa572ce99139
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
@@ -85,7 +85,11 @@ TFA_TARGETS:= \
 	mt7622-sdmmc-1ddr \
 	mt7622-sdmmc-2ddr
 
-TFA_MAKE_FLAGS += BOOT_DEVICE=$(BOOT_DEVICE) $(if $(DDR3_FLYBY),DDR3_FLYBY=1) all
+TFA_MAKE_FLAGS += \
+	BOOT_DEVICE=$(BOOT_DEVICE) \
+	USE_MKIMAGE=1 MKIMAGE=$(STAGING_DIR_HOST)/bin/mkimage \
+	$(if $(DDR3_FLYBY),DDR3_FLYBY=1) \
+	all
 
 define Build/Configure
 	$(call Build/Configure/Default)
