@@ -1838,6 +1838,17 @@ define Device/xwrt_x-sdwan-1200
 endef
 TARGET_DEVICES += xwrt_x-sdwan-1200
 
+define Device/xwrt_ms1201k
+  $(Device/uimage-lzma-loader)
+  SOC := mt7621
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := MS1201K
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += xwrt_ms1201k
+
 define Device/youhua_wr1200js
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
