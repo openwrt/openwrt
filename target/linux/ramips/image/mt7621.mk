@@ -531,9 +531,9 @@ TARGET_DEVICES += gnubee_gb-pc2
 
 define Device/hilink_hlk-7621a
   $(Device/dsa-migration)
-  IMAGE_SIZE := 32448k
   DEVICE_VENDOR := HiLink
   DEVICE_MODEL := HLK-7621A
+  IMAGE_SIZE := 32448k
 endef
 TARGET_DEVICES += hilink_hlk-7621a
 
