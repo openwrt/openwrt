@@ -2,6 +2,40 @@
 
 START=99
 
+mmc_resetbc() {
+	local part_label="$1"
+	local part_device magic_number last_count
+	
+	. /lib/functions.sh
+
+	part_device=$(find_mmc_part "$part_label")
+	[ -z "$part_device" ] && {
+		echo "Unable to find partition for name ${part_label}"
+		return
+	}
+
+	magic_number=$(hexdump -e '"0x%02x\n"' -n 4 "$part_device")
+	[ "0x20110811" != "$magic_number" ] && {
+		echo "Magic number doesn't match expect number"
+		return
+	}
+	
+	last_count=$(hexdump -e '"0x%02x\n"' -n 4 -s 4 "$part_device")
+	[ "0x00" = "$last_count" ] && {
+		return
+	}
+	
+	printf "\x00" | dd of="$part_device" bs=4 seek=1 count=1 conv=notrunc 2>/dev/null
+
+	last_count=$(hexdump -e '"0x%02x\n"' -n 4 -s 4 "$part_device")
+	[ "0x00" != "$last_count" ] && {
+		echo "Unable to reset boot counter."
+		return
+	}
+	
+	return
+}
+
 boot() {
 	case $(board_name) in
 	alfa-network,ap120c-ac)
@@ -14,6 +48,9 @@ boot() {
 	linksys,whw01|\
 	linksys,whw03v2)
 		mtd resetbc s_env || true
+		;;
+	linksys,whw03)
+		mmc_resetbc s_env || true
 		;;
 	netgear,wac510)
 		fw_setenv boot_cnt=0
