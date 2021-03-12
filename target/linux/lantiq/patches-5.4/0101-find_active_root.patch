@@ -48,7 +48,7 @@
  
  	/* Pull of_node from the master device node */
  	mtd_node = mtd_get_of_node(master);
-@@ -86,7 +120,9 @@ static int parse_fixed_partitions(struct
+@@ -88,7 +122,9 @@ static int parse_fixed_partitions(struct
  		return 0;
  
  	parts = kcalloc(nr_parts, sizeof(*parts), GFP_KERNEL);
@@ -59,7 +59,7 @@
  		return -ENOMEM;
  
  	i = 0;
-@@ -135,6 +171,11 @@ static int parse_fixed_partitions(struct
+@@ -137,6 +173,11 @@ static int parse_fixed_partitions(struct
  		if (of_get_property(pp, "lock", &len))
  			parts[i].mask_flags |= MTD_POWERUP_LOCK;
  
@@ -71,7 +71,7 @@
  		i++;
  	}
  
-@@ -144,6 +185,11 @@ static int parse_fixed_partitions(struct
+@@ -146,6 +187,11 @@ static int parse_fixed_partitions(struct
  	if (quirks && quirks->post_parse)
  		quirks->post_parse(master, parts, nr_parts);
  
@@ -83,7 +83,7 @@
  	*pparts = parts;
  	return nr_parts;
  
-@@ -154,6 +200,7 @@ ofpart_fail:
+@@ -156,6 +202,7 @@ ofpart_fail:
  ofpart_none:
  	of_node_put(pp);
  	kfree(parts);
