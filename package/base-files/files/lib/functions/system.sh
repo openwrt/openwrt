@@ -72,6 +72,24 @@ get_mac_ascii() {
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
 }
 
+mmc_get_mac_ascii() {
+	local partname="$1"
+	local key="$2"
+	local part
+	local mac_dirty
+
+	part=$(find_mmc_part "$partname")
+	if [ -z "$part" ]; then
+		echo "mmc_get_mac_ascii: partition $partname not found!" >&2
+		return
+	fi
+
+	mac_dirty=$(strings "$part" | sed -n 's/^'"$key"'=//p')
+
+	# "canonicalize" mac
+	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
+}
+
 mtd_get_mac_ascii() {
 	local mtdname="$1"
 	local key="$2"

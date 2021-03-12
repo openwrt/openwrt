@@ -34,8 +34,9 @@ ALLWIFIBOARDS:= \
 	dynalink_dl-wrx36 \
 	edgecore_eap102 \
 	edimax_cax1800 \
-        linksys_mx4200 \
+  linksys_mx4200 \
 	netgear_rax120v2 \
+	linksys_whw03 \
 	netgear_wax218 \
 	netgear_wax620 \
 	netgear_wax630 \
@@ -114,7 +115,7 @@ Do not install it for any other device!
   endef
 
   define Package/ipq-wifi-$(1)/install-overlay
-    $$$$(foreach IPQ_WIFI_BOARD_FILE,$$$$(wildcard $(PKG_BUILD_DIR)/board-$(1).*),\
+    $$$$(foreach IPQ_WIFI_BOARD_FILE,$$$$(wildcard $(PKG_BUILD_DIR)/board-$(1).*) $$$$(wildcard board-$(1).*),\
       $$$$(call ipq-wifi-install-one,$$$$(IPQ_WIFI_BOARD_FILE),$$(1)))
   endef
 
@@ -147,6 +148,7 @@ $(eval $(call generate-ipq-wifi-package,edgecore_eap102,Edgecore EAP102))
 $(eval $(call generate-ipq-wifi-package,edimax_cax1800,Edimax CAX1800))
 $(eval $(call generate-ipq-wifi-package,linksys_mx4200,Linksys MX4200))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
+$(eval $(call generate-ipq-wifi-package,linksys_whw03,Linksys WHW03))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
 $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))

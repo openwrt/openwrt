@@ -123,3 +123,38 @@ platform_do_upgrade_linksys() {
 		get_image "$1" | mtd -e "$part_label" write - "$part_label"
 	}
 }
+
+linksys_get_rootfs() {
+	local rootfsdev
+	
+    if read cmdline < /proc/cmdline; then
+        case "$cmdline" in
+        *root=*)
+            rootfsdev="${cmdline##*root=}"
+            rootfsdev="${rootfsdev%% *}"
+            ;;
+        esac
+        
+        echo "${rootfsdev}"
+    fi
+}
+
+linksys_set_boot_part() {
+		if [ "/dev/mmcblk0p15" != "$(linksys_get_rootfs)" ]; then
+			CI_KERNPART="kernel"
+			CI_ROOTPART="rootfs"
+			fw_setenv -s - <<-EOF
+				boot_part 1
+				auto_recovery yes
+			EOF
+		else
+			CI_KERNPART="alt_kernel"
+			CI_ROOTPART="alt_rootfs"
+			fw_setenv -s - <<-EOF
+				boot_part 2
+				auto_recovery yes
+			EOF
+		fi
+
+		touch /var/lock/fw_printenv.lock
+}
