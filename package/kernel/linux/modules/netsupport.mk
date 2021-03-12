@@ -375,7 +375,7 @@ $(eval $(call KernelPackage,ip6-vti))
 define KernelPackage/xfrm-interface
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec XFRM Interface
-  DEPENDS:=+kmod-ipsec4 +IPV6:kmod-ipsec6
+  DEPENDS:=@IPV6 +kmod-ipsec4 +kmod-ipsec6
   KCONFIG:=CONFIG_XFRM_INTERFACE
   FILES:=$(LINUX_DIR)/net/xfrm/xfrm_interface.ko
   AUTOLOAD:=$(call AutoProbe,xfrm_interface)
