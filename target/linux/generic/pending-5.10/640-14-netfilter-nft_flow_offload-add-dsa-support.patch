@@ -1,0 +1,30 @@
+From: Pablo Neira Ayuso <pablo@netfilter.org>
+Date: Thu, 4 Mar 2021 19:22:55 +0100
+Subject: [PATCH] netfilter: nft_flow_offload: add dsa support
+
+Replace the master ethernet device by the dsa slave port.
+
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+---
+
+--- a/net/netfilter/nft_flow_offload.c
++++ b/net/netfilter/nft_flow_offload.c
+@@ -89,6 +89,7 @@ static void nft_dev_path_info(const stru
+ 		path = &stack->path[i];
+ 		switch (path->type) {
+ 		case DEV_PATH_ETHERNET:
++		case DEV_PATH_DSA:
+ 		case DEV_PATH_VLAN:
+ 		case DEV_PATH_PPPOE:
+ 			info->indev = path->dev;
+@@ -97,6 +98,10 @@ static void nft_dev_path_info(const stru
+ 
+ 			if (path->type == DEV_PATH_ETHERNET)
+ 				break;
++			if (path->type == DEV_PATH_DSA) {
++				i = stack->num_paths;
++				break;
++			}
+ 
+ 			/* DEV_PATH_VLAN and DEV_PATH_PPPOE */
+ 			if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
