@@ -1,12 +1,14 @@
-From 846cd2c9eee7a99de29c743911cc047fdd56db02 Mon Sep 17 00:00:00 2001
+From e5f9f41d5e62004c913bfd4ddf06abe032f5ce1c Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Mon, 22 Feb 2021 20:41:04 +0100
-Subject: [PATCH] hwrng: bcm2835: add reset support
+Date: Fri, 5 Mar 2021 08:01:32 +0100
+Subject: [PATCH 3/3] hwrng: bcm2835 - add reset support
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-BCM6368 devices need to reset the in order to generate true random numbers.
+BCM6368 devices need to reset the IPSEC controller in order to generate true
+random numbers.
+
 This is what BCM6368 produces without a reset:
 root@OpenWrt:/# cat /dev/hwrng | rngtest -c 1000
 rngtest 6.10
@@ -25,9 +27,11 @@ rngtest: FIPS 140-2(2001-10-10) Continuous run: 0
 rngtest: input channel speed: (min=37.253; avg=320.827; max=635.783)Mibits/s
 rngtest: FIPS tests speed: (min=12.141; avg=15.034; max=16.428)Mibits/s
 rngtest: Program run time: 1336176 microseconds
-cat: write error: Broken pipe
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Reviewed-by: Philipp Zabel <p.zabel@pengutronix.de>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 ---
  drivers/char/hw_random/bcm2835-rng.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
