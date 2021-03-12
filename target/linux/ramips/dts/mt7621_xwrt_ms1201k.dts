@@ -1,0 +1,186 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "xwrt,ms1201k", "mediatek,mt7621-soc";
+	model = "MS1201K";
+
+	aliases {
+		led-boot = &eth_led;
+		led-failsafe = &eth_led;
+		led-upgrade = &eth_led;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wifi_5g_led: wifi_5g_led {
+			label = "wifi_5g:status";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_led: eth_led {
+			label = "eth:status";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi_2g_led: wifi_2g_led {
+			label = "wifi_2g:status";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x0 0x30000>;
+			};
+
+			partition@30000 {
+				label = "Config";
+				reg = <0x30000 0x10000>;
+			};
+
+			partition@40000 {
+				label = "Product";
+				reg = <0x40000 0x10000>;
+			};
+
+			factory: partition@50000 {
+				label = "factory";
+				reg = <0x50000 0x40000>;
+			};
+
+			partition@90000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x90000 0xf70000>;
+			};
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0>;
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&gmac0 {
+        mtd-mac-address = <&factory 0xe000>;
+        nvmem-cells = <&macaddr_factory_e000>;
+        nvmem-cell-names = "mac-address";
+};
+
+&ethernet {
+	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
+};
+
+&switch0 {
+	/* must delete compatible property */
+	/delete-property/ compatible;
+	phy-mode = "rgmii";
+};
+
+&gsw {
+        compatible = "mediatek,mt753x";
+        status = "okay";
+
+        mediatek,mdio = <&mdio>;
+        mediatek,portmap = "llllw";
+        mt7530,direct-phy-access;
+        resets = <&rstctrl 2>;
+        reset-names = "mcm";
+        mediatek,mcm;
+
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        /*
+        port5: port@5 {
+                compatible = "mediatek,mt753x-port";
+                reg = <5>;
+                phy-mode = "rgmii";
+                fixed-link {
+                        speed = <1000>;
+                        full-duplex;
+                };
+        };
+        */
+
+        port6: port@6 {
+                compatible = "mediatek,mt753x-port";
+                reg = <6>;
+                phy-mode = "rgmii";
+                fixed-link {
+                        speed = <1000>;
+                        full-duplex;
+                };
+        };
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "wdt", "uart2";
+		function = "gpio";
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_e000: macaddr@e000 {
+		reg = <0xe000 0x6>;
+	};
+};
