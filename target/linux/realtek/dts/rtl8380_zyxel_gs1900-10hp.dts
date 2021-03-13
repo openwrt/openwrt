@@ -17,7 +17,7 @@
 	};
 
 	sfp0: sfp-p9 {
-		compatible = "_sff,sfp";
+		compatible = "sff,sfp";
 		i2c-bus = <&i2c0>;
 		los-gpio = <&gpio1 27 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio1 22 GPIO_ACTIVE_HIGH>;
@@ -36,7 +36,7 @@
 	};
 
 	sfp1: sfp-p10 {
-		compatible = "_sff,sfp";
+		compatible = "sff,sfp";
 		i2c-bus = <&i2c1>;
 		los-gpio = <&gpio1 33 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio1 28 GPIO_ACTIVE_HIGH>;
@@ -55,29 +55,17 @@
 		port@24 {
 			reg = <24>;
 			label = "lan9";
-			phy-mode = "rgmii-id";
-			phy-handle = <&phy24>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
 			sfp = <&sfp0>;
-
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-				pause;
-			};
 		};
 
 		port@26 {
 			reg = <26>;
 			label = "lan10";
-			phy-mode = "rgmii-id";
-			phy-handle = <&phy26>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
 			sfp = <&sfp1>;
-
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-				pause;
-			};
 		};
 	};
 };
