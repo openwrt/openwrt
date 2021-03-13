@@ -245,6 +245,7 @@ static void rtl83xx_phylink_validate(struct dsa_switch *ds, int port,
 	pr_debug("In %s port %d", __func__, port);
 
 	if (!phy_interface_mode_is_rgmii(state->interface) &&
+	    state->interface != PHY_INTERFACE_MODE_NA &&
 	    state->interface != PHY_INTERFACE_MODE_1000BASEX &&
 	    state->interface != PHY_INTERFACE_MODE_MII &&
 	    state->interface != PHY_INTERFACE_MODE_REVMII &&
