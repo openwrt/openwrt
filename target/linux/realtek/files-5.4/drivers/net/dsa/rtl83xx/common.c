@@ -555,7 +555,6 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	int err = 0, i;
 	struct rtl838x_switch_priv *priv;
 	struct device *dev = &pdev->dev;
-	u64 irq_mask;
 	u64 bpdu_mask;
 
 	pr_debug("Probing RTL838X switch device\n");
@@ -650,9 +649,9 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
 	sw_w32_mask(0, 3, priv->r->isr_glb_src);
-	
-	priv->r->set_port_reg_le(irq_mask, priv->r->isr_port_link_sts_chg);
-	priv->r->set_port_reg_le(irq_mask, priv->r->imr_port_link_sts_chg);
+
+	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
+	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
