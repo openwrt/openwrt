@@ -216,6 +216,22 @@
 	};
 };
 
+&switch0 {
+	ports {
+		port@4 {
+			reg = <4>;
+			label = "extsw";
+
+			phy-mode = "rgmii";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
 &uart0 {
 	status = "okay";
 };
