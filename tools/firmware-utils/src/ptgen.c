@@ -630,7 +630,6 @@ int main (int argc, char **argv)
 			break;
 		case 't':
 			type = (char)strtoul(optarg, NULL, 16);
-			part_guid = type_to_guid_and_name(type, &name);
 			break;
 		case 'a':
 			active = (int)strtoul(optarg, NULL, 0);
