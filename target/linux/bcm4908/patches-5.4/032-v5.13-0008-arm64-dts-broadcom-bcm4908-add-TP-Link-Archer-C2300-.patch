@@ -1,12 +1,17 @@
+From 6a30934a5470a0ce7ea32b0c6b600accfae94b1a Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Fri, 5 Mar 2021 13:36:25 +0100
+Date: Wed, 10 Mar 2021 08:46:03 +0100
 Subject: [PATCH] arm64: dts: broadcom: bcm4908: add TP-Link Archer C2300 V1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 Archer C2300 V1 is a home router based on the BCM4906 (2 CPU cores). It
 has 512 MiB of RAM, NAND flash, USB 2.0 and USB 3.0 ports, 4 LAN ports,
 1 WAN port.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  arch/arm64/boot/dts/broadcom/bcm4908/Makefile |   1 +
  .../bcm4906-tplink-archer-c2300-v1.dts        | 182 ++++++++++++++++++
@@ -43,61 +48,61 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +	leds {
 +		compatible = "gpio-leds";
 +
-+		power-white {
++		led-power {
 +			function = LED_FUNCTION_POWER;
 +			color = <LED_COLOR_ID_BLUE>;
 +			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		2ghz {
++		led-2ghz {
 +			function = "2ghz";
 +			color = <LED_COLOR_ID_BLUE>;
 +			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		5ghz {
++		led-5ghz {
 +			function = "5ghz";
 +			color = <LED_COLOR_ID_BLUE>;
 +			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		wan-amber {
++		led-wan-amber {
 +			function = LED_FUNCTION_WAN;
 +			color = <LED_COLOR_ID_AMBER>;
 +			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		wan-blue {
++		led-wan-blue {
 +			function = LED_FUNCTION_WAN;
 +			color = <LED_COLOR_ID_BLUE>;
 +			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		lan {
++		led-lan {
 +			function = LED_FUNCTION_LAN;
 +			color = <LED_COLOR_ID_BLUE>;
 +			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		wps {
++		led-wps {
 +			function = LED_FUNCTION_WPS;
 +			color = <LED_COLOR_ID_BLUE>;
 +			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		usb-high-white {
-+			function = "usbup";
++		led-usb2 {
++			function = "usb2";
 +			color = <LED_COLOR_ID_BLUE>;
 +			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		usb-low-white {
-+			function = "usbdown";
++		led-usb3 {
++			function = "usbd3";
 +			color = <LED_COLOR_ID_BLUE>;
 +			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 +		};
 +
-+		brightness {
++		led-brightness {
 +			function = LED_FUNCTION_BACKLIGHT;
 +			color = <LED_COLOR_ID_WHITE>;
 +			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
