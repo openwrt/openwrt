@@ -536,7 +536,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
-@@ -2740,7 +2740,7 @@ DEFINE_EVENT(local_sdata_addr_evt, drv_u
+@@ -2761,7 +2761,7 @@ DEFINE_EVENT(local_sdata_addr_evt, drv_u
  	TP_ARGS(local, sdata)
  );
  
@@ -545,7 +545,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	TP_PROTO(struct ieee80211_local *local,
  		 struct ieee80211_sub_if_data *sdata,
  		 struct ieee80211_sta *sta, bool enabled),
-@@ -2767,6 +2767,22 @@ TRACE_EVENT(drv_sta_set_4addr,
+@@ -2788,6 +2788,22 @@ TRACE_EVENT(drv_sta_set_4addr,
  	)
  );
  
