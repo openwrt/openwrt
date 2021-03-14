@@ -102,7 +102,7 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 		done
 
 		let loop_limit--
-		[ $loop_limit -eq 0 ] && {
+		[ $loop_limit -eq 0 ] && [ $sig = "KILL" ] && {
 			echo
 			echo "Failed to kill all processes."
 			exit 1
