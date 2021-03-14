@@ -8,9 +8,9 @@ PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2021-02-14
-PKG_SOURCE_VERSION:=289cd7804587dc48f776d450db9cd3762692a370
-PKG_MIRROR_HASH:=91885feca9d935586c6e33a8e3734bfa61991d869bf42ac0d1c8c3b19bfa9653
+PKG_SOURCE_DATE:=2021-04-11
+PKG_SOURCE_VERSION:=bf45b30d891961dd7c4139dddb58b909ea2c2b5a
+PKG_MIRROR_HASH:=431cecf80dafa986e805f809522721c2bb26289867d6770695d49baf8b471bea
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_BUILD_PARALLEL:=1
@@ -404,6 +404,14 @@ define KernelPackage/mt7915e/install
 		$(PKG_BUILD_DIR)/firmware/mt7915_wa.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7915_wm.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7915_rom_patch.bin \
+		$(1)/lib/firmware/mediatek
+endef
+
+define KernelPackage/mt7921e/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
+	cp \
+		$(PKG_BUILD_DIR)/firmware/WIFI_MT7961_patch_mcu_1_2_hdr.bin \
+		$(PKG_BUILD_DIR)/firmware/WIFI_RAM_CODE_MT7961_1.bin \
 		$(1)/lib/firmware/mediatek
 endef
 
