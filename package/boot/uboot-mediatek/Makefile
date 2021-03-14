@@ -12,19 +12,20 @@ include $(INCLUDE_DIR)/host-build.mk
 define U-Boot/Default
   BUILD_TARGET:=mediatek
   UBOOT_IMAGE:=u-boot-mtk.bin
-  DEFAULT:=y
 endef
 
 define U-Boot/mt7622_rfb1
   NAME:=MT7622 Reference Board 1
-  BUILD_SUBTARGET:=mt7622
   UBOOT_CONFIG:=mt7622_rfb
+  BUILD_DEVICES:=mediatek_mt7622-rfb1 mediatek_mt7622-rfb1-ubi
+  BUILD_SUBTARGET:=mt7622
 endef
 
 define U-Boot/mt7622_linksys_e8450
   NAME:=Linksys E8450
-  BUILD_SUBTARGET:=mt7622
   UBOOT_CONFIG:=mt7622_linksys_e8450
+  BUILD_DEVICES:=linksys_e8450-ubi
+  BUILD_SUBTARGET:=mt7622
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=snand
   BL2_DDRBLOB:=1
@@ -33,8 +34,9 @@ endef
 
 define U-Boot/mt7622_bananapi_bpi-r64-emmc
   NAME:=BananaPi R64 (eMMC)
-  BUILD_SUBTARGET:=mt7622
   UBOOT_CONFIG:=mt7622_bananapi_bpi-r64-emmc
+  BUILD_DEVICES:=bananapi_bpi-r64
+  BUILD_SUBTARGET:=mt7622
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=emmc
   BL2_DDRBLOB:=2
@@ -43,8 +45,9 @@ endef
 
 define U-Boot/mt7622_bananapi_bpi-r64-sdmmc
   NAME:=BananaPi R64 (SDMMC)
-  BUILD_SUBTARGET:=mt7622
   UBOOT_CONFIG:=mt7622_bananapi_bpi-r64-sdmmc
+  BUILD_DEVICES:=bananapi_bpi-r64
+  BUILD_SUBTARGET:=mt7622
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=sdmmc
   BL2_DDRBLOB:=2
@@ -53,31 +56,34 @@ endef
 
 define U-Boot/mt7623a_unielec_u7623
   NAME:=UniElec U7623 (mt7623)
+  BUILD_DEVICES:=unielec_u7623-emmc unielec_u7623-02-emmc-512m-legacy
   BUILD_SUBTARGET:=mt7623
   UBOOT_CONFIG:=mt7623a_unielec_u7623_02
 endef
 
 define U-Boot/mt7623n_bpir2
   NAME:=Banana Pi R2 (mt7623)
+  BUILD_DEVICES:=bpi_bananapi-r2
   BUILD_SUBTARGET:=mt7623
   UBOOT_IMAGE:=u-boot.bin
   UBOOT_CONFIG:=mt7623n_bpir2
 endef
 
-define U-Boot/mt7629
-  NAME:=MT7629
+define U-Boot/mt7629_rfb
+  NAME:=MT7629 Reference Board
   BUILD_SUBTARGET:=mt7629
+  BUILD_DEVICES:=mediatek_mt7629-rfb
   UBOOT_CONFIG:=mt7629_rfb
 endef
 
 UBOOT_TARGETS := \
-	mt7629 \
 	mt7622_bananapi_bpi-r64-emmc \
 	mt7622_bananapi_bpi-r64-sdmmc \
 	mt7622_linksys_e8450 \
 	mt7622_rfb1 \
 	mt7623n_bpir2 \
-	mt7623a_unielec_u7623
+	mt7623a_unielec_u7623 \
+	mt7629_rfb
 
 UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE:.fip=.bin)
 
