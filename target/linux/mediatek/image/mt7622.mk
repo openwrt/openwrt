@@ -15,20 +15,20 @@ define Build/bl31-uboot
 endef
 
 define Build/mt7622-gpt
-	cp $@ $@.tmp || true
+	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -g -o $@.tmp -a 1 -l 1024 \
 		$(if $(findstring sdmmc,$1), \
 			-H \
-			-t 0x83	-N bl2       -r	-p 512k@512k \
+			-t 0x83	-N bl2		-r	-p 512k@512k \
 		) \
-			-t 0xef	-N fip	     -r	-p 1M@2M \
-			-t 0x83	-N ubootenv  -r	-p 1M@4M \
-				-N recovery  -r	-p 32M@6M \
+			-t 0xef	-N fip		-r	-p 1M@2M \
+			-t 0x83	-N ubootenv	-r	-p 1M@4M \
+				-N recovery	-r	-p 32M@6M \
 		$(if $(findstring sdmmc,$1), \
-			-t 0x2e -N production	-p 216M@40M \
+			-t 0x2e -N production		-p 216M@40M \
 		) \
 		$(if $(findstring emmc,$1), \
-			-t 0x2e -N production	-p 980M@40M \
+			-t 0x2e -N production		-p 980M@40M \
 		)
 	cat $@.tmp >> $@
 	rm $@.tmp
@@ -38,12 +38,7 @@ define Device/bananapi_bpi-r64
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk \
-		     kmod-mt7615e kmod-mt7615-firmware \
-		     uboot-mt7622_bananapi_bpi-r64-emmc \
-		     uboot-mt7622_bananapi_bpi-r64-sdmmc \
-		     e2fsprogs mkf2fs f2fsck \
-		     kmod-nls-cp437 kmod-nls-iso8859-1 kmod-vfat blockd
+  DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
   ARTIFACTS := sdcard.img
   IMAGES := sysupgrade.itb
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
@@ -61,8 +56,7 @@ define Device/elecom_wrc-2533gent
   DEVICE_MODEL := WRC-2533GENT
   DEVICE_DTS := mt7622-elecom-wrc-2533gent
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-mt7615e \
-	kmod-mt7615-firmware kmod-btmtkuart swconfig
+  DEVICE_PACKAGES := kmod-btmtkuart kmod-usb3 swconfig
 endef
 TARGET_DEVICES += elecom_wrc-2533gent
 
@@ -73,8 +67,7 @@ define Device/linksys_e8450
   DEVICE_ALT0_MODEL := RT3200
   DEVICE_DTS := mt7622-linksys-e8450
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk \
-		     kmod-mt7615e kmod-mt7615-firmware kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
 endef
 TARGET_DEVICES += linksys_e8450
 
@@ -87,6 +80,7 @@ define Device/linksys_e8450-ubi
   DEVICE_ALT0_VARIANT := UBI
   DEVICE_DTS := mt7622-linksys-e8450-ubi
   DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -99,9 +93,6 @@ define Device/linksys_e8450-ubi
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   IMAGES := sysupgrade.itb
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk \
-		     kmod-mt7615e kmod-mt7615-firmware kmod-mt7915e \
-		     u-boot-mt7622_linksys_e8450 uboot-envtools
   ARTIFACTS := preloader.bin bl31-uboot.fip
   ARTIFACT/preloader.bin := bl2 snand-1ddr
   ARTIFACT/bl31-uboot.fip := bl31-uboot linksys_e8450
@@ -112,7 +103,7 @@ define Device/mediatek_mt7622-rfb1
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MTK7622 rfb1 AP
   DEVICE_DTS := mt7622-rfb1
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
+  DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1
 
@@ -121,6 +112,7 @@ define Device/mediatek_mt7622-rfb1-ubi
   DEVICE_MODEL := MTK7622 rfb1 AP (UBI)
   DEVICE_DTS := mt7622-rfb1-ubi
   DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -130,7 +122,6 @@ define Device/mediatek_mt7622-rfb1-ubi
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
                 check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
