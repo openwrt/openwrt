@@ -7,7 +7,7 @@ Add .ndo_fill_forward_path for dsa slave port devices
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -838,6 +838,7 @@ enum net_device_path_type {
+@@ -832,6 +832,7 @@ enum net_device_path_type {
  	DEV_PATH_VLAN,
  	DEV_PATH_BRIDGE,
  	DEV_PATH_PPPOE,
@@ -15,7 +15,7 @@ Add .ndo_fill_forward_path for dsa slave port devices
  };
  
  struct net_device_path {
-@@ -857,6 +858,10 @@ struct net_device_path {
+@@ -851,6 +852,10 @@ struct net_device_path {
  			u16		vlan_id;
  			__be16		vlan_proto;
  		} bridge;
