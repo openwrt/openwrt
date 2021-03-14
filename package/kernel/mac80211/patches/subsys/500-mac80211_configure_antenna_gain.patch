@@ -36,9 +36,9 @@
  	u8 ps_dtim_period;
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -2527,6 +2527,9 @@ enum nl80211_commands {
-  *	override mask. Used with NL80211_ATTR_S1G_CAPABILITY in
-  *	NL80211_CMD_ASSOCIATE or NL80211_CMD_CONNECT.
+@@ -2531,6 +2531,9 @@ enum nl80211_commands {
+  *	disassoc events to indicate that an immediate reconnect to the AP
+  *	is desired.
   *
 + * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
 + *	transmit power to stay within regulatory limits. u32, dBi.
@@ -46,9 +46,9 @@
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3016,6 +3019,8 @@ enum nl80211_attrs {
- 	NL80211_ATTR_S1G_CAPABILITY,
- 	NL80211_ATTR_S1G_CAPABILITY_MASK,
+@@ -3022,6 +3025,8 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_RECONNECT_REQUESTED,
  
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
 +
@@ -87,7 +87,7 @@
  	CFG80211_TESTMODE_CMD(ieee80211_testmode_cmd)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1401,6 +1401,7 @@ struct ieee80211_local {
+@@ -1403,6 +1403,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */
@@ -129,15 +129,15 @@
  	local->hw.max_mtu = IEEE80211_MAX_DATA_LEN;
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -732,6 +732,7 @@ static const struct nla_policy nl80211_p
- 		NLA_POLICY_EXACT_LEN(IEEE80211_S1G_CAPABILITY_LEN),
+@@ -733,6 +733,7 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_S1G_CAPABILITY_MASK] =
  		NLA_POLICY_EXACT_LEN(IEEE80211_S1G_CAPABILITY_LEN),
+ 	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
 +	[NL80211_ATTR_WIPHY_ANTENNA_GAIN] = { .type = NLA_U32 },
  };
  
  /* policy for the key attributes */
-@@ -3240,6 +3241,20 @@ static int nl80211_set_wiphy(struct sk_b
+@@ -3241,6 +3242,20 @@ static int nl80211_set_wiphy(struct sk_b
  		if (result)
  			return result;
  	}
