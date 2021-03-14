@@ -452,4 +452,14 @@ define Device/tplink_archer-c9-v1
 endef
 TARGET_DEVICES += tplink_archer-c9-v1
 
+define Device/iptime_a5004ns
+  DEFICE_VENDOR = ipTIME
+  DEVICE_MODEL := A5004NS
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  DEVICE_DTS := bcm4708-iptime-a5004ns
+  IMAGES := bin
+  IMAGE/bin := append-rootfs | trx-serial
+endef
+TARGET_DEVICES += iptime_a5004ns
+
 $(eval $(call BuildImage))

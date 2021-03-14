@@ -49,6 +49,10 @@ bcm53xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:wan" "5@eth0"
 		;;
+	iptime,a5004ns)
+		ucidef_add_switch "switch0" \
+			"0:wan" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5@eth0"
+                ;;
 	*)
 		# NVRAM entries may contain unsorted ports, e.g. Netgear R6250 uses
 		# vlan1ports=3 2 1 0 5*
