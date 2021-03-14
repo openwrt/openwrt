@@ -38,7 +38,7 @@
 #define DMA_CHAN_WIDTH			0x10
 
 /* Controller Configuration Register */
-#define DMA_CFG_REG			(0x0)
+#define DMA_CFG_REG			0x0
 #define DMA_CFG_EN_SHIFT		0
 #define DMA_CFG_EN_MASK			(1 << DMA_CFG_EN_SHIFT)
 #define DMA_CFG_FLOWCH_MASK(x)		(1 << ((x >> 1) + 1))
@@ -55,7 +55,7 @@
 #define DMA_BUFALLOC_FORCE_MASK		(1 << DMA_BUFALLOC_FORCE_SHIFT)
 
 /* Channel Configuration register */
-#define DMAC_CHANCFG_REG		(0x0)
+#define DMAC_CHANCFG_REG		0x0
 #define DMAC_CHANCFG_EN_SHIFT		0
 #define DMAC_CHANCFG_EN_MASK		(1 << DMAC_CHANCFG_EN_SHIFT)
 #define DMAC_CHANCFG_PKTHALT_SHIFT	1
@@ -70,28 +70,28 @@
 #define DMAC_CHANCFG_FLOWC_EN_MASK	(1 << DMAC_CHANCFG_FLOWC_EN_SHIFT)
 
 /* Interrupt Control/Status register */
-#define DMAC_IR_REG			(0x4)
+#define DMAC_IR_REG			0x4
 #define DMAC_IR_BUFDONE_MASK		(1 << 0)
 #define DMAC_IR_PKTDONE_MASK		(1 << 1)
 #define DMAC_IR_NOTOWNER_MASK		(1 << 2)
 
 /* Interrupt Mask register */
-#define DMAC_IRMASK_REG			(0x8)
+#define DMAC_IRMASK_REG			0x8
 
 /* Maximum Burst Length */
-#define DMAC_MAXBURST_REG		(0xc)
+#define DMAC_MAXBURST_REG		0xc
 
 /* Ring Start Address register */
-#define DMAS_RSTART_REG			(0x0)
+#define DMAS_RSTART_REG			0x0
 
 /* State Ram Word 2 */
-#define DMAS_SRAM2_REG			(0x4)
+#define DMAS_SRAM2_REG			0x4
 
 /* State Ram Word 3 */
-#define DMAS_SRAM3_REG			(0x8)
+#define DMAS_SRAM3_REG			0x8
 
 /* State Ram Word 4 */
-#define DMAS_SRAM4_REG			(0xc)
+#define DMAS_SRAM4_REG			0xc
 
 struct bcm6368_enetsw_desc {
 	u32 len_stat;
@@ -224,9 +224,6 @@ struct bcm6368_enetsw {
 
 	/* dma channel width */
 	unsigned int dma_chan_width;
-
-	/* dma descriptor shift value */
-	unsigned int dma_desc_shift;
 };
 
 static inline void dma_writel(struct bcm6368_enetsw *priv, u32 val, u32 off)
@@ -256,9 +253,7 @@ static inline void dmas_writel(struct bcm6368_enetsw *priv, u32 val,
  */
 static int bcm6368_enetsw_refill_rx(struct net_device *dev)
 {
-	struct bcm6368_enetsw *priv;
-
-	priv = netdev_priv(dev);
+	struct bcm6368_enetsw *priv = netdev_priv(dev);
 
 	while (priv->rx_desc_count < priv->rx_ring_size) {
 		struct bcm6368_enetsw_desc *desc;
@@ -284,8 +279,7 @@ static int bcm6368_enetsw_refill_rx(struct net_device *dev)
 		len_stat = priv->rx_skb_size << DMADESC_LENGTH_SHIFT;
 		len_stat |= DMADESC_OWNER_MASK;
 		if (priv->rx_dirty_desc == priv->rx_ring_size - 1) {
-			len_stat |= (DMADESC_WRAP_MASK >>
-				     priv->dma_desc_shift);
+			len_stat |= DMADESC_WRAP_MASK;
 			priv->rx_dirty_desc = 0;
 		} else {
 			priv->rx_dirty_desc++;
@@ -328,13 +322,9 @@ static void bcm6368_enetsw_refill_rx_timer(struct timer_list *t)
  */
 static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 {
-	struct bcm6368_enetsw *priv;
-	struct device *kdev;
-	int processed;
-
-	priv = netdev_priv(dev);
-	kdev = &priv->pdev->dev;
-	processed = 0;
+	struct bcm6368_enetsw *priv = netdev_priv(dev);
+	struct device *kdev = &priv->pdev->dev;
+	int processed = 0;
 
 	/* don't scan ring further than number of refilled
 	 * descriptor */
@@ -369,8 +359,7 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 
 		/* if the packet does not have start of packet _and_
 		 * end of packet flag set, then just recycle it */
-		if ((len_stat & (DMADESC_ESOP_MASK >> priv->dma_desc_shift))
-		    != (DMADESC_ESOP_MASK >> priv->dma_desc_shift)) {
+		if ((len_stat & DMADESC_ESOP_MASK) != DMADESC_ESOP_MASK) {
 			dev->stats.rx_dropped++;
 			continue;
 		}
@@ -427,11 +416,8 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
  */
 static int bcm6368_enetsw_tx_reclaim(struct net_device *dev, int force)
 {
-	struct bcm6368_enetsw *priv;
-	int released;
-
-	priv = netdev_priv(dev);
-	released = 0;
+	struct bcm6368_enetsw *priv = netdev_priv(dev);
+	int released = 0;
 
 	while (priv->tx_desc_count < priv->tx_ring_size) {
 		struct bcm6368_enetsw_desc *desc;
@@ -482,12 +468,9 @@ static int bcm6368_enetsw_tx_reclaim(struct net_device *dev, int force)
  */
 static int bcm6368_enetsw_poll(struct napi_struct *napi, int budget)
 {
-	struct bcm6368_enetsw *priv;
-	struct net_device *dev;
+	struct bcm6368_enetsw *priv = container_of(napi, struct bcm6368_enetsw, napi);
+	struct net_device *dev = priv->net_dev;
 	int rx_work_done;
-
-	priv = container_of(napi, struct bcm6368_enetsw, napi);
-	dev = priv->net_dev;
 
 	/* ack interrupts */
 	dmac_writel(priv, priv->dma_chan_int_mask,
@@ -525,11 +508,8 @@ static int bcm6368_enetsw_poll(struct napi_struct *napi, int budget)
  */
 static irqreturn_t bcm6368_enetsw_isr_dma(int irq, void *dev_id)
 {
-	struct net_device *dev;
-	struct bcm6368_enetsw *priv;
-
-	dev = dev_id;
-	priv = netdev_priv(dev);
+	struct net_device *dev = dev_id;
+	struct bcm6368_enetsw *priv = netdev_priv(dev);
 
 	/* mask rx/tx interrupts */
 	dmac_writel(priv, 0, DMAC_IRMASK_REG, priv->rx_chan);
@@ -546,12 +526,10 @@ static irqreturn_t bcm6368_enetsw_isr_dma(int irq, void *dev_id)
 static netdev_tx_t
 bcm6368_enetsw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct bcm6368_enetsw *priv;
+	struct bcm6368_enetsw *priv = netdev_priv(dev);
 	struct bcm6368_enetsw_desc *desc;
 	u32 len_stat;
 	netdev_tx_t ret;
-
-	priv = netdev_priv(dev);
 
 	/* lock against tx reclaim */
 	spin_lock(&priv->tx_lock);
@@ -567,8 +545,8 @@ bcm6368_enetsw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	/* pad small packets */
-	if (skb->len < 64) {
-		int needed = 64 - skb->len;
+	if (skb->len < (ETH_ZLEN + ETH_FCS_LEN)) {
+		int needed = (ETH_ZLEN + ETH_FCS_LEN) - skb->len;
 		char *data;
 
 		if (unlikely(skb_tailroom(skb) < needed)) {
@@ -579,6 +557,7 @@ bcm6368_enetsw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 				ret = NETDEV_TX_BUSY;
 				goto out_unlock;
 			}
+
 			dev_kfree_skb(skb);
 			skb = nskb;
 		}
@@ -594,13 +573,13 @@ bcm6368_enetsw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 				       DMA_TO_DEVICE);
 
 	len_stat = (skb->len << DMADESC_LENGTH_SHIFT) & DMADESC_LENGTH_MASK;
-	len_stat |= (DMADESC_ESOP_MASK >> priv->dma_desc_shift) |
-		    DMADESC_APPEND_CRC | DMADESC_OWNER_MASK;
+	len_stat |= DMADESC_ESOP_MASK | DMADESC_APPEND_CRC |
+		    DMADESC_OWNER_MASK;
 
 	priv->tx_curr_desc++;
 	if (priv->tx_curr_desc == priv->tx_ring_size) {
 		priv->tx_curr_desc = 0;
-		len_stat |= (DMADESC_WRAP_MASK >> priv->dma_desc_shift);
+		len_stat |= DMADESC_WRAP_MASK;
 	}
 	priv->tx_desc_count--;
 
@@ -632,32 +611,29 @@ out_unlock:
  */
 static void bcm6368_enetsw_disable_dma(struct bcm6368_enetsw *priv, int chan)
 {
-	int limit;
+	int limit = 1000;
 
 	dmac_writel(priv, 0, DMAC_CHANCFG_REG, chan);
 
-	limit = 1000;
 	do {
 		u32 val;
 
 		val = dma_readl(priv, DMAC_CHANCFG_REG, chan);
 		if (!(val & DMAC_CHANCFG_EN_MASK))
 			break;
+
 		udelay(1);
 	} while (limit--);
 }
 
 static int bcm6368_enetsw_open(struct net_device *dev)
 {
-	struct bcm6368_enetsw *priv;
-	struct device *kdev;
+	struct bcm6368_enetsw *priv = netdev_priv(dev);
+	struct device *kdev = &priv->pdev->dev;
 	int i, ret;
 	unsigned int size;
 	void *p;
 	u32 val;
-
-	priv = netdev_priv(dev);
-	kdev = &priv->pdev->dev;
 
 	/* mask all interrupts and request them */
 	dmac_writel(priv, 0, DMAC_IRMASK_REG, priv->rx_chan);
@@ -828,12 +804,9 @@ out_freeirq:
 
 static int bcm6368_enetsw_stop(struct net_device *dev)
 {
-	struct bcm6368_enetsw *priv;
-	struct device *kdev;
+	struct bcm6368_enetsw *priv = netdev_priv(dev);
+	struct device *kdev = &priv->pdev->dev;
 	int i;
-
-	priv = netdev_priv(dev);
-	kdev = &priv->pdev->dev;
 
 	netif_stop_queue(dev);
 	napi_disable(&priv->napi);
@@ -1103,7 +1076,7 @@ static const struct of_device_id bcm6368_enetsw_of_match[] = {
 	{ .compatible = "brcm,bcm63268-enetsw", },
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, bcm6368_mdio_ids);
+MODULE_DEVICE_TABLE(of, bcm6368_enetsw_of_match);
 
 static struct platform_driver bcm6368_enetsw_driver = {
 	.driver = {
