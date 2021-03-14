@@ -1,5 +1,6 @@
+From 3c321ba794ca6383a4aa68ea803e18cc6ad44412 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Mon, 15 Feb 2021 19:46:54 +0100
+Date: Fri, 19 Feb 2021 06:50:26 +0100
 Subject: [PATCH] arm64: dts: broadcom: bcm4908: describe USB PHY
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -9,6 +10,7 @@ BCM4908 uses slightly modified STB family USB PHY. It handles OHCI/EHCI
 and XHCI. It requires powering up using the PMB.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  .../bcm4908/bcm4906-netgear-r8000p.dts        | 17 +++++++++++++
  .../bcm4908/bcm4908-asus-gt-ac5300.dts        | 17 +++++++++++++
@@ -86,7 +88,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		usb_phy: usb-phy@c200 {
 +			compatible = "brcm,bcm4908-usb-phy";
 +			reg = <0xc200 0x100>;
-+			reg-names = "crtl";
++			reg-names = "ctrl";
 +			power-domains = <&pmb BCM_PMB_HOST_USB>;
 +			dr_mode = "host";
 +			brcm,has-xhci;
