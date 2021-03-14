@@ -147,7 +147,7 @@
 +CONFIG_USB_STORAGE=y
 --- /dev/null
 +++ b/bananapi_bpi-r64-sdmmc_env
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,57 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x4007ff28
@@ -184,8 +184,11 @@
 +emmc_write_bl2=mmc dev 0 1 && mmc partconf 0 1 1 1 && mmc erase 0x0 0x400 && mmc write $loadaddr 0x0 0x100 ; mmc partconf 0 1 1 0
 +emmc_write_hdr=mmc dev 0 0 && mmc erase 0x0 0x40 && mmc write $loadaddr 0x0 0x40
 +emmc_write_bl3=mmc dev 0 0 && mmc erase 0x1000 0x800 && mmc write $loadaddr 0x1000 0x800
++emmc_write_production=iminfo $loadaddr && mmc dev 0 && part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=iminfo $loadaddr && mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
-+emmc_init=run sdmmc_read_emmc_bl2 && run emmc_write_bl2 && run sdmmc_read_emmc_hdr && run emmc_write_hdr && run sdmmc_read_emmc_bl3 && run emmc_write_bl3 && run sdmmc_read_recovery && run emmc_write_recovery ; env default bootcmd ; saveenv ; saveenv
++emmc_init_bl=run sdmmc_read_emmc_bl2 && run emmc_write_bl2 && run sdmmc_read_emmc_hdr && run emmc_write_hdr && run sdmmc_read_emmc_bl3 && run emmc_write_bl3
++emmc_init_openwrt=run sdmmc_read_recovery && run emmc_write_recovery ; run sdmmc_read_production && run emmc_write_production
++emmc_init=run emmc_init_bl && run emmc_init_openwrt ; env default bootcmd ; saveenv ; saveenv
 +sdmmc_write_production=iminfo $fileaddr && mmc dev 1 && part start mmc 1 $part_default part_addr && part size mmc 1 $part_default part_size && run mmc_write_vol
 +sdmmc_write_recovery=iminfo $fileaddr && mmc dev 1 && part start mmc 1 $part_recovery part_addr && part size mmc 1 $part_recovery part_size && run mmc_write_vol
 +sdmmc_read_production=mmc dev 1 && part start mmc 1 $part_default part_addr && part size mmc 1 $part_default part_size && run mmc_read_vol
