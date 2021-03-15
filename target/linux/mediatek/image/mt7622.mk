@@ -111,7 +111,7 @@ define Device/buffalo_wsr-2533dhp2
   IMAGE/sysupgrade.bin := append-kernel | \
 	buffalo-kernel-trx 0x32504844 $(KDIR)/tmp/$$(DEVICE_NAME).null | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware swconfig uboot-envtools
+  DEVICE_PACKAGES := swconfig
 endef
 TARGET_DEVICES += buffalo_wsr-2533dhp2
 
