@@ -1,7 +1,7 @@
-From b6ecb2bca2b8ff80ae4b1b15f09dcf071f4ceaf4 Mon Sep 17 00:00:00 2001
+From e239756717b5c866958823a1609e2ccf268435be Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Mon, 1 Mar 2021 16:42:12 +0100
-Subject: [PATCH] net: mdio: Add BCM6368 MDIO mux bus controller
+Date: Mon, 15 Mar 2021 16:45:28 +0100
+Subject: [PATCH 2/2] net: mdio: Add BCM6368 MDIO mux bus controller
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -10,11 +10,12 @@ This controller is present on BCM6318, BCM6328, BCM6362, BCM6368 and BCM63268
 SoCs.
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/mdio/Kconfig            |  11 ++
  drivers/net/mdio/Makefile           |   1 +
- drivers/net/mdio/mdio-mux-bcm6368.c | 179 ++++++++++++++++++++++++++++
- 3 files changed, 191 insertions(+)
+ drivers/net/mdio/mdio-mux-bcm6368.c | 184 ++++++++++++++++++++++++++++
+ 3 files changed, 196 insertions(+)
  create mode 100644 drivers/net/mdio/mdio-mux-bcm6368.c
 
 --- a/drivers/net/mdio/Kconfig
@@ -49,7 +50,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  obj-$(CONFIG_MDIO_BUS_MUX_MESON_G12A)	+= mdio-mux-meson-g12a.o
 --- /dev/null
 +++ b/drivers/net/mdio/mdio-mux-bcm6368.c
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,184 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Broadcom BCM6368 mdiomux bus controller driver
@@ -154,7 +155,8 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +	if (!res)
 +		return -EINVAL;
 +
-+	/* Just ioremap, as this MDIO block is usually integrated into an
++	/*
++	 * Just ioremap, as this MDIO block is usually integrated into an
 +	 * Ethernet MAC controller register range
 +	 */
 +	md->base = devm_ioremap(&pdev->dev, res->start, resource_size(res));
@@ -229,3 +231,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +	.remove	= bcm6368_mdiomux_remove,
 +};
 +module_platform_driver(bcm6368_mdiomux_driver);
++
++MODULE_AUTHOR("Álvaro Fernández Rojas <noltari@gmail.com>");
++MODULE_DESCRIPTION("BCM6368 mdiomux bus controller driver");
++MODULE_LICENSE("GPL v2");
