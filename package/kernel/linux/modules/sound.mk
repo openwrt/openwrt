@@ -312,6 +312,7 @@ define KernelPackage/sound-hda-core
 	CONFIG_SND_HDA_PATCH_LOADER=n \
 	CONFIG_SND_HDA_GENERIC
   FILES:= \
+	$(if $(CONFIG_LINUX_5_10),$(LINUX_DIR)/drivers/leds/trigger/ledtrig-audio.ko) \
 	$(LINUX_DIR)/sound/hda/snd-hda-core.ko \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec.ko \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-generic.ko
@@ -522,7 +523,8 @@ define KernelPackage/sound-hda-intel
 	CONFIG_SND_HDA_INTEL
   FILES:= \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-intel.ko \
-	$(LINUX_DIR)/sound/hda/snd-intel-nhlt.ko
+	$(if $(CONFIG_LINUX_5_10),$(LINUX_DIR)/sound/hda/snd-intel-dspcfg.ko) \
+	$(if $(CONFIG_LINUX_5_4),$(LINUX_DIR)/sound/hda/snd-intel-nhlt.ko)
   AUTOLOAD:=$(call AutoProbe,snd-hda-intel)
   $(call AddDepends/sound,kmod-sound-hda-core)
 endef
