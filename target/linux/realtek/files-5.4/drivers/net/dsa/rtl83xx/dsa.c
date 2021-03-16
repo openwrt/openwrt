@@ -310,7 +310,7 @@ static int rtl83xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
 	if (link & BIT_ULL(port))
 		state->link = 1;
-	pr_info("%s: link state: %llx\n", __func__, link & BIT_ULL(port));
+	pr_debug("%s: link state: %llx\n", __func__, link & BIT_ULL(port));
 
 	state->duplex = 0;
 	if (priv->r->get_port_reg_le(priv->r->mac_link_dup_sts) & BIT_ULL(port))

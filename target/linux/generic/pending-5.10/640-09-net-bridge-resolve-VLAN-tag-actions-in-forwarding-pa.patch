@@ -15,10 +15,10 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -847,10 +847,20 @@ struct net_device_path {
+@@ -841,10 +841,20 @@ struct net_device_path {
  			u16		id;
  			__be16		proto;
- 		} vlan;
+ 		} encap;
 +		struct {
 +			enum {
 +				DEV_PATH_BR_VLAN_KEEP,
@@ -36,7 +36,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  struct net_device_path_stack {
  	int			num_paths;
-@@ -860,6 +870,12 @@ struct net_device_path_stack {
+@@ -854,6 +864,12 @@ struct net_device_path_stack {
  struct net_device_path_ctx {
  	const struct net_device *dev;
  	const u8		*daddr;
@@ -52,7 +52,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 --- a/net/8021q/vlan_dev.c
 +++ b/net/8021q/vlan_dev.c
 @@ -777,6 +777,12 @@ static int vlan_dev_fill_forward_path(st
- 	path->vlan.proto = vlan->vlan_proto;
+ 	path->encap.proto = vlan->vlan_proto;
  	path->dev = ctx->dev;
  	ctx->dev = vlan->real_dev;
 +	if (ctx->num_vlans >= ARRAY_SIZE(ctx->vlan))

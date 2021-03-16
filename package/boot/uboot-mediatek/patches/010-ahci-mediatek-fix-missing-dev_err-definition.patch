@@ -1,0 +1,24 @@
+From 7089c413216f1c0e374d71187030fe41ae4b3071 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Tue, 3 Nov 2020 19:45:30 +0100
+Subject: [PATCH] ahci: mediatek: fix missing dev_err definition
+
+---
+ drivers/ata/mtk_ahci.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/ata/mtk_ahci.c b/drivers/ata/mtk_ahci.c
+index 554175bc00..2c5227df30 100644
+--- a/drivers/ata/mtk_ahci.c
++++ b/drivers/ata/mtk_ahci.c
+@@ -21,6 +21,7 @@
+ #include <sata.h>
+ #include <scsi.h>
+ #include <syscon.h>
++#include <dm/device_compat.h>
+ 
+ #define SYS_CFG			0x14
+ #define SYS_CFG_SATA_MSK	GENMASK(31, 30)
+-- 
+2.30.2
+

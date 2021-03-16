@@ -56,6 +56,18 @@ platform_do_upgrade() {
 		get_image "$1" | dd of=/dev/$fitpart
 		echo $rootdev > /tmp/sysupgrade.rootdev
 		;;
+	buffalo,wsr-2533dhp2)
+		local magic="$(get_magic_long "$1")"
+
+		# use "mtd write" if the magic is "DHP2 (0x44485032)"
+		# or "DHP3 (0x44485033)"
+		if [ "$magic" = "44485032" -o "$magic" = "44485033" ]; then
+			buffalo_upgrade_ubinized "$1"
+		else
+			CI_KERNPART="firmware"
+			nand_do_upgrade "$1"
+		fi
+		;;
 	linksys,e8450-ubi|\
 	mediatek,mt7622,ubi)
 		CI_KERNPART="fit"
@@ -84,6 +96,9 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
+	buffalo,wsr-2533dhp2)
+		buffalo_check_image "$board" "$magic" "$1" || return 1
+		;;
 	*)
 		[ "$magic" != "d00dfeed" ] && {
 			echo "Invalid image type."
