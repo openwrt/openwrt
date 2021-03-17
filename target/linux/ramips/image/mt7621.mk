@@ -460,6 +460,14 @@ define Device/elecom_wrc-1750gs
 endef
 TARGET_DEVICES += elecom_wrc-1750gs
 
+define Device/elecom_wrc-1750gst2
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 24576k
+  DEVICE_MODEL := WRC-1750GST2
+  ELECOM_HWNAME := WRC-1750GST2
+endef
+TARGET_DEVICES += elecom_wrc-1750gst2
+
 define Device/elecom_wrc-1750gsv
   $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 11264k
