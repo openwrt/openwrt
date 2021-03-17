@@ -304,6 +304,10 @@ $(eval $(call KernelPackage,sound-dummy))
 define KernelPackage/sound-hda-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=HD Audio Sound Core Support
+  DEPENDS:= \
+	+LINUX_5_10&&PACKAGE_kmod-sound-hda-codec-realtek:kmod-ledtrig-audio \
+	+LINUX_5_10&&PACKAGE_kmod-sound-hda-codec-conexant:kmod-ledtrig-audio \
+	+LINUX_5_10&&PACKAGE_kmod-sound-hda-codec-idt:kmod-ledtrig-audio
   KCONFIG:= \
 	CONFIG_SND_HDA_CORE \
 	CONFIG_SND_HDA_HWDEP=y \
@@ -522,7 +526,8 @@ define KernelPackage/sound-hda-intel
 	CONFIG_SND_HDA_INTEL
   FILES:= \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-intel.ko \
-	$(LINUX_DIR)/sound/hda/snd-intel-nhlt.ko
+	$(LINUX_DIR)/sound/hda/snd-intel-nhlt.ko@lt5.5 \
+	$(LINUX_DIR)/sound/hda/snd-intel-dspcfg.ko@ge5.5
   AUTOLOAD:=$(call AutoProbe,snd-hda-intel)
   $(call AddDepends/sound,kmod-sound-hda-core)
 endef
