@@ -16,7 +16,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/drivers/net/dsa/bcm_sf2.c
 +++ b/drivers/net/dsa/bcm_sf2.c
-@@ -543,10 +543,19 @@ static void bcm_sf2_sw_mac_config(struct
+@@ -592,10 +592,19 @@ static void bcm_sf2_sw_mac_config(struct
  	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
  	u32 id_mode_dis = 0, port_mode;
  	u32 reg, offset;
@@ -36,7 +36,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	if (priv->type == BCM4908_DEVICE_ID ||
  	    priv->type == BCM7445_DEVICE_ID)
  		offset = CORE_STS_OVERRIDE_GMIIP_PORT(port);
-@@ -574,7 +583,7 @@ static void bcm_sf2_sw_mac_config(struct
+@@ -623,7 +632,7 @@ static void bcm_sf2_sw_mac_config(struct
  	/* Clear id_mode_dis bit, and the existing port mode, let
  	 * RGMII_MODE_EN bet set by mac_link_{up,down}
  	 */
@@ -45,7 +45,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	reg &= ~ID_MODE_DIS;
  	reg &= ~(PORT_MODE_MASK << PORT_MODE_SHIFT);
  	reg &= ~(RX_PAUSE_EN | TX_PAUSE_EN);
-@@ -589,7 +598,7 @@ static void bcm_sf2_sw_mac_config(struct
+@@ -638,7 +647,7 @@ static void bcm_sf2_sw_mac_config(struct
  		reg |= RX_PAUSE_EN;
  	}
  
@@ -54,7 +54,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
  force_link:
  	/* Force link settings detected from the PHY */
-@@ -615,6 +624,7 @@ static void bcm_sf2_sw_mac_link_set(stru
+@@ -664,6 +673,7 @@ static void bcm_sf2_sw_mac_link_set(stru
  				    phy_interface_t interface, bool link)
  {
  	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
@@ -62,7 +62,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	u32 reg;
  
  	if (!phy_interface_mode_is_rgmii(interface) &&
-@@ -622,13 +632,21 @@ static void bcm_sf2_sw_mac_link_set(stru
+@@ -671,13 +681,21 @@ static void bcm_sf2_sw_mac_link_set(stru
  	    interface != PHY_INTERFACE_MODE_REVMII)
  		return;
  
@@ -86,7 +86,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  }
  
  static void bcm_sf2_sw_mac_link_down(struct dsa_switch *ds, int port,
-@@ -999,9 +1017,7 @@ static const u16 bcm_sf2_4908_reg_offset
+@@ -1051,9 +1069,7 @@ static const u16 bcm_sf2_4908_reg_offset
  	[REG_PHY_REVISION]	= 0x14,
  	[REG_SPHY_CNTRL]	= 0x24,
  	[REG_CROSSBAR]		= 0xc8,
