@@ -2,6 +2,7 @@
 #define __mtd_h
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #if defined(target_bcm47xx) || defined(target_bcm53xx)
 #define target_brcm 1
