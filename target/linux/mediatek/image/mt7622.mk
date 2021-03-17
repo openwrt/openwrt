@@ -193,6 +193,7 @@ TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 define Device/ubnt_unifi-6-lr
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi 6 LR
+  DEVICE_DTS_CONFIG := config@1
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e
