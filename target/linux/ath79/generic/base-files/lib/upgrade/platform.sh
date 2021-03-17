@@ -49,6 +49,7 @@ platform_do_upgrade() {
 		;;
 	allnet,all-wap02860ac|\
 	araknis,an-300-ap-i-n|\
+	araknis,an-500-ap-i-ac|\
 	engenius,eap1200h|\
 	engenius,eap300-v2|\
 	engenius,eap600|\
