@@ -118,6 +118,9 @@ KERNEL_MAKE_FLAGS = \
 	cmd_syscalls= \
 	$(if $(__package_mk),KBUILD_EXTRA_SYMBOLS="$(wildcard $(PKG_SYMVERS_DIR)/*.symvers)")
 
+KERNEL_NOSTDINC_FLAGS = \
+	-nostdinc $(if $(DUMP),, -isystem $(shell $(TARGET_CC) -print-file-name=include))
+
 ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
   KERNEL_MAKE_FLAGS += \
 	KERNELRELEASE=$(LINUX_VERSION)

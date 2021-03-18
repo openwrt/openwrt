@@ -31,7 +31,8 @@ define KernelPackage/rtl8812au-ct
   PROVIDES:=kmod-rtl8812au
 endef
 
-NOSTDINC_FLAGS = \
+NOSTDINC_FLAGS := \
+	$(KERNEL_NOSTDINC_FLAGS) \
 	-I$(PKG_BUILD_DIR) \
 	-I$(PKG_BUILD_DIR)/include \
 	-I$(STAGING_DIR)/usr/include/mac80211-backport \
