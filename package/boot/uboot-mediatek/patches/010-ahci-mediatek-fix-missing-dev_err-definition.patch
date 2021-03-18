@@ -7,8 +7,6 @@ Subject: [PATCH] ahci: mediatek: fix missing dev_err definition
  drivers/ata/mtk_ahci.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/ata/mtk_ahci.c b/drivers/ata/mtk_ahci.c
-index 554175bc00..2c5227df30 100644
 --- a/drivers/ata/mtk_ahci.c
 +++ b/drivers/ata/mtk_ahci.c
 @@ -21,6 +21,7 @@
@@ -19,6 +17,3 @@ index 554175bc00..2c5227df30 100644
  
  #define SYS_CFG			0x14
  #define SYS_CFG_SATA_MSK	GENMASK(31, 30)
--- 
-2.30.2
-
