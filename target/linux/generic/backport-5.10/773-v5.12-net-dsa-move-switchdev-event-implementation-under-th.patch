@@ -20,7 +20,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -2077,31 +2077,29 @@ static int dsa_slave_switchdev_event(str
+@@ -2122,31 +2122,29 @@ static int dsa_slave_switchdev_event(str
  	struct dsa_port *dp;
  	int err;
  
@@ -68,7 +68,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		fdb_info = ptr;
  
  		if (!fdb_info->added_by_user) {
-@@ -2114,13 +2112,12 @@ static int dsa_slave_switchdev_event(str
+@@ -2159,13 +2157,12 @@ static int dsa_slave_switchdev_event(str
  		switchdev_work->vid = fdb_info->vid;
  
  		dev_hold(dev);
