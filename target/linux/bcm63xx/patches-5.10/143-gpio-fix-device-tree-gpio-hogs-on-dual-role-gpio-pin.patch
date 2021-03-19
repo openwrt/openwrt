@@ -116,7 +116,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  }
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -1886,7 +1886,8 @@ int gpiochip_add_pingroup_range(struct g
+@@ -1890,7 +1890,8 @@ int gpiochip_add_pingroup_range(struct g
  
  	list_add_tail(&pin_range->node, &gdev->pin_ranges);
  
@@ -126,7 +126,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  }
  EXPORT_SYMBOL_GPL(gpiochip_add_pingroup_range);
  
-@@ -1943,7 +1944,7 @@ int gpiochip_add_pin_range(struct gpio_c
+@@ -1947,7 +1948,7 @@ int gpiochip_add_pin_range(struct gpio_c
  
  	list_add_tail(&pin_range->node, &gdev->pin_ranges);
  
