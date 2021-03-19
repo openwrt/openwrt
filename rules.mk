@@ -75,12 +75,12 @@ IS_PACKAGE_BUILD := $(if $(filter package/%,$(BUILD_SUBDIR)),1)
 OPTIMIZE_FOR_CPU=$(subst i386,i486,$(ARCH))
 
 ifneq (,$(findstring $(ARCH) , aarch64 aarch64_be powerpc ))
-  FPIC:=-fPIC
+  FPIC:=-DPIC -fPIC
 else
-  FPIC:=-fpic
+  FPIC:=-DPIC -fpic
 endif
 
-HOST_FPIC:=-fPIC
+HOST_FPIC:=-DPIC -fPIC
 
 ARCH_SUFFIX:=$(call qstrip,$(CONFIG_CPU_TYPE))
 GCC_ARCH:=
