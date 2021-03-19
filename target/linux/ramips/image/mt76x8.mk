@@ -512,6 +512,16 @@ define Device/tplink_re305-v1
 endef
 TARGET_DEVICES += tplink_re305-v1
 
+define Device/tplink_re305-v3
+  $(Device/tplink-safeloader)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := RE305
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-mt76x2
+  TPLINK_BOARD_ID := RE305-V3
+endef
+TARGET_DEVICES += tplink_re305-v3
+
 define Device/tplink_tl-mr3020-v3
   $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
