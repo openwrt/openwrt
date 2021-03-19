@@ -1,0 +1,59 @@
+
+# disable default init wifi for x-wrt
+/etc/init.d/wifi-init disable
+
+#enable switch_ports_status and work mode 'kmsg'
+/etc/init.d/switch_ports_status enable
+uci set system.@system[0].switch_ports_status_mode="kmsg"
+uci commit system
+
+#we just init firt flash boot
+test -f /etc/config/independent && exit 0
+
+. /lib/wifi/wifi-init.sh
+
+SSID="X-WRT" SSID_PASSWD="88888888" wifi_first_init
+
+uci -q batch <<-EOT
+	# remove firewall wan zone/network
+	delete network.wan6
+	delete network.wan
+	delete firewall.@zone[1].network
+
+	# disable dhcp on lan
+	set dhcp.lan.ignore='1'
+
+	#drop ipv6 in lan
+	delete network.lan.ip6assign
+
+	# delete vlan2 and set port 0,4 vlan1
+	delete network.@switch_vlan[1]
+	set network.@switch_vlan[0].vid='1'
+	set network.@switch_vlan[0].ports='6t 0 4'
+
+	#default lan dhcp client
+	delete network.lan.ipaddr
+	delete network.lan.netmask
+	set network.lan.type='bridge'
+	set network.lan.proto='dhcp'
+	set network.lan.hostname=AP_$(uci get base_config.@status[0].SSID)
+
+	commit wireless
+	commit network
+	commit dhcp
+	commit firewall
+EOT
+
+touch /etc/dropbear/authorized_keys && chmod 600 /etc/dropbear/authorized_keys
+if test -f /etc/sdwan.id.rsa.pub; then
+	cat /etc/sdwan.id.rsa.pub >>/etc/dropbear/authorized_keys
+else
+	#for now we enable ssh login
+	uci set dropbear.@dropbear[0].PasswordAuth='on'
+	uci set dropbear.@dropbear[0].RootPasswordAuth='on'
+	uci commit dropbear
+fi
+
+touch /etc/config/independent
+
+exit 0

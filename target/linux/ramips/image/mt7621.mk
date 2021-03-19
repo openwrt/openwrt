@@ -1845,7 +1845,7 @@ define Device/xwrt_ms1201k
   DEVICE_VENDOR := XWRT
   DEVICE_MODEL := MS1201K
   DEVICE_PACKAGES := \
-	kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+	kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap base-settings-xwrt-ms1201k
 endef
 TARGET_DEVICES += xwrt_ms1201k
 
