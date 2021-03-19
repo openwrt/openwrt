@@ -1,7 +1,7 @@
-From f5419e7f362ae1c462baf28a2da7360267f8e4f9 Mon Sep 17 00:00:00 2001
+From a5538a777b73b35750ed1ffff8c1ef539e861624 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Mon, 1 Mar 2021 07:32:32 +0100
-Subject: [PATCH 2/3] net: dsa: b53: mmap: Add device tree support
+Date: Wed, 17 Mar 2021 10:23:17 +0100
+Subject: [PATCH] net: dsa: b53: mmap: Add device tree support
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -9,22 +9,31 @@ Content-Transfer-Encoding: 8bit
 Add device tree support to b53_mmap.c while keeping platform devices support.
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
- drivers/net/dsa/b53/b53_mmap.c | 36 ++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ drivers/net/dsa/b53/b53_mmap.c | 55 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
 
 --- a/drivers/net/dsa/b53/b53_mmap.c
 +++ b/drivers/net/dsa/b53/b53_mmap.c
-@@ -228,12 +228,64 @@ static const struct b53_io_ops b53_mmap_
+@@ -16,6 +16,7 @@
+  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
++#include <linux/bits.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/io.h>
+@@ -228,11 +229,65 @@ static const struct b53_io_ops b53_mmap_
  	.write64 = b53_mmap_write64,
  };
  
 +static int b53_mmap_probe_of(struct platform_device *pdev,
 +			     struct b53_platform_data **ppdata)
 +{
-+	struct device *dev = &pdev->dev;
-+	struct device_node *np = dev->of_node;
++	struct device_node *np = pdev->dev.of_node;
 +	struct device_node *of_ports, *of_port;
++	struct device *dev = &pdev->dev;
 +	struct b53_platform_data *pdata;
 +	void __iomem *mem;
 +
@@ -57,6 +66,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +			pdata->enabled_ports |= BIT(reg);
 +	}
 +
++	of_node_put(of_ports);
 +	*ppdata = pdata;
 +
 +	return 0;
@@ -68,15 +78,15 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	struct b53_platform_data *pdata = pdev->dev.platform_data;
  	struct b53_mmap_priv *priv;
  	struct b53_device *dev;
- 
-+	if (np) {
-+		int ret = b53_mmap_probe_of(pdev, &pdata);
++	int ret;
++
++	if (!pdata && np) {
++		ret = b53_mmap_probe_of(pdev, &pdata);
 +		if (ret) {
 +			dev_err(&pdev->dev, "OF probe error\n");
 +			return ret;
 +		}
 +	}
-+
+ 
  	if (!pdata)
  		return -EINVAL;
- 
