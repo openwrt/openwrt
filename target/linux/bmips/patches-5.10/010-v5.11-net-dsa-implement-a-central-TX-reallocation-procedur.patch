@@ -1,0 +1,104 @@
+From a3b0b6479700a5b0af2c631cb2ec0fb7a0d978f2 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Sun, 1 Nov 2020 21:16:09 +0200
+Subject: [PATCH] net: dsa: implement a central TX reallocation procedure
+
+At the moment, taggers are left with the task of ensuring that the skb
+headers are writable (which they aren't, if the frames were cloned for
+TX timestamping, for flooding by the bridge, etc), and that there is
+enough space in the skb data area for the DSA tag to be pushed.
+
+Moreover, the life of tail taggers is even harder, because they need to
+ensure that short frames have enough padding, a problem that normal
+taggers don't have.
+
+The principle of the DSA framework is that everything except for the
+most intimate hardware specifics (like in this case, the actual packing
+of the DSA tag bits) should be done inside the core, to avoid having
+code paths that are very rarely tested.
+
+So provide a TX reallocation procedure that should cover the known needs
+of DSA today.
+
+Note that this patch also gives the network stack a good hint about the
+headroom/tailroom it's going to need. Up till now it wasn't doing that.
+So the reallocation procedure should really be there only for the
+exceptional cases, and for cloned packets which need to be unshared.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Tested-by: Christian Eggers <ceggers@arri.de> # For tail taggers only
+Tested-by: Kurt Kanzenbach <kurt@linutronix.de>
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ net/dsa/slave.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+--- a/net/dsa/slave.c
++++ b/net/dsa/slave.c
+@@ -548,6 +548,30 @@ netdev_tx_t dsa_enqueue_skb(struct sk_bu
+ }
+ EXPORT_SYMBOL_GPL(dsa_enqueue_skb);
+ 
++static int dsa_realloc_skb(struct sk_buff *skb, struct net_device *dev)
++{
++	int needed_headroom = dev->needed_headroom;
++	int needed_tailroom = dev->needed_tailroom;
++
++	/* For tail taggers, we need to pad short frames ourselves, to ensure
++	 * that the tail tag does not fail at its role of being at the end of
++	 * the packet, once the master interface pads the frame. Account for
++	 * that pad length here, and pad later.
++	 */
++	if (unlikely(needed_tailroom && skb->len < ETH_ZLEN))
++		needed_tailroom += ETH_ZLEN - skb->len;
++	/* skb_headroom() returns unsigned int... */
++	needed_headroom = max_t(int, needed_headroom - skb_headroom(skb), 0);
++	needed_tailroom = max_t(int, needed_tailroom - skb_tailroom(skb), 0);
++
++	if (likely(!needed_headroom && !needed_tailroom && !skb_cloned(skb)))
++		/* No reallocation needed, yay! */
++		return 0;
++
++	return pskb_expand_head(skb, needed_headroom, needed_tailroom,
++				GFP_ATOMIC);
++}
++
+ static netdev_tx_t dsa_slave_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct dsa_slave_priv *p = netdev_priv(dev);
+@@ -567,6 +591,17 @@ static netdev_tx_t dsa_slave_xmit(struct
+ 	 */
+ 	dsa_skb_tx_timestamp(p, skb);
+ 
++	if (dsa_realloc_skb(skb, dev)) {
++		dev_kfree_skb_any(skb);
++		return NETDEV_TX_OK;
++	}
++
++	/* needed_tailroom should still be 'warm' in the cache line from
++	 * dsa_realloc_skb(), which has also ensured that padding is safe.
++	 */
++	if (dev->needed_tailroom)
++		eth_skb_pad(skb);
++
+ 	/* Transmit function may have to reallocate the original SKB,
+ 	 * in which case it must have freed it. Only free it here on error.
+ 	 */
+@@ -1825,6 +1860,16 @@ int dsa_slave_create(struct dsa_port *po
+ 	slave_dev->netdev_ops = &dsa_slave_netdev_ops;
+ 	if (ds->ops->port_max_mtu)
+ 		slave_dev->max_mtu = ds->ops->port_max_mtu(ds, port->index);
++	if (cpu_dp->tag_ops->tail_tag)
++		slave_dev->needed_tailroom = cpu_dp->tag_ops->overhead;
++	else
++		slave_dev->needed_headroom = cpu_dp->tag_ops->overhead;
++	/* Try to save one extra realloc later in the TX path (in the master)
++	 * by also inheriting the master's needed headroom and tailroom.
++	 * The 8021q driver also does this.
++	 */
++	slave_dev->needed_headroom += master->needed_headroom;
++	slave_dev->needed_tailroom += master->needed_tailroom;
+ 	SET_NETDEV_DEVTYPE(slave_dev, &dsa_type);
+ 
+ 	netdev_for_each_tx_queue(slave_dev, dsa_slave_set_lockdep_class_one,
