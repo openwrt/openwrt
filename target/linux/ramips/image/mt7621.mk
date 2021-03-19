@@ -845,6 +845,7 @@ TARGET_DEVICES += mikrotik_routerboard-m33g
 
 define Device/mqmaker_witi
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := MQmaker
   DEVICE_MODEL := WiTi
