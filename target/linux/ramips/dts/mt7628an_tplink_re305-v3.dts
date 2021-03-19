@@ -3,8 +3,8 @@
 #include "mt7628an_tplink_re305.dtsi"
 
 / {
-	compatible = "tplink,re305-v1", "tplink,re305", "mediatek,mt7628an-soc";
-	model = "TP-Link RE305 v1";
+	compatible = "tplink,re305-v3", "tplink,re305", "mediatek,mt7628an-soc";
+	model = "TP-Link RE305 v3";
 };
 
 &spi0 {
@@ -29,19 +29,14 @@
 			partition@20000 {
 				compatible = "tplink,firmware";
 				label = "firmware";
-				reg = <0x20000 0x5e0000>;
+				reg = <0x20000 0x7a0000>;
 			};
 
-			config: partition@600000 {
+			config: partition@7c0000 {
 				label = "config";
-				reg = <0x600000 0x50000>;
+				reg = <0x7c0000 0x30000>;
 				read-only;
 			};
-
-			/*
-				The flash space between 0x650000 and 0x7f0000 is blank in the
-				stock firmware so it is left out as well.
-			*/
 
 			radio: partition@7f0000 {
 				label = "radio";
@@ -53,15 +48,13 @@
 };
 
 &wifi5 {
-	mtd-mac-address = <&config 0x10008>;
-	mtd-mac-address-increment = <2>;
+	mtd-mac-address = <&config 0x2008>;
 };
 
 &wmac {
-	mtd-mac-address = <&config 0x10008>;
-	mtd-mac-address-increment = <1>;
+	mtd-mac-address = <&config 0x2008>;
 };
 
 &ethernet {
-	mtd-mac-address = <&config 0x10008>;
+	mtd-mac-address = <&config 0x2008>;
 };
