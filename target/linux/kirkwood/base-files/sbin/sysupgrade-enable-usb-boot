@@ -1,0 +1,45 @@
+#!/bin/sh
+
+set_u_boot_vars() {
+    varfile=/tmp/u-boot.vars-$$
+
+    cat << EOF > $varfile
+         nandboot          run openwrt_usb_boot; $(fw_printenv -n nandboot | sed -e 's#run openwrt_usb_boot; ##g')
+         altnandboot       run openwrt_usb_boot
+         boot_part         1
+         openwrt_usb_boot  usb start; mw \${loadaddr} 0 8; ext2load usb 0:1 \${loadaddr} /boot/kernel; setenv bootargs \${console} \${mtdparts} \${usb_fs_bootargs_root} rootdelay=10; bootm \${loadaddr}; usb stop
+EOF
+
+    echo "Enable OpenWrt USB boot.  Changing the following u-boot varilables:"
+    echo "    nandboot  $(fw_printenv -n nandboot 2>/dev/null)"
+    echo "    altnandboot  $(fw_printenv -n altnandboot 2>/dev/null)"
+    echo "    boot_part  $(fw_printenv -n boot_part 2>/dev/null)"
+    echo "    openwrt_usb_boot  $(fw_printenv -n openwrt_usb_boot 2>/dev/null)"
+    echo "To:"
+    cat $varfile
+
+    echo -n "Continue? (y/N) "; read -n1 answer; echo ""
+    if [ "$answer" = 'y' ]; then
+            fw_setenv -s /tmp/u-boot.vars-$$
+            [ $? = 0 ] && echo "Done."
+    else
+        echo "Aborted."
+    fi
+
+    rm $varfile
+}
+
+board="$(cat /tmp/sysinfo/board_name)"
+
+case "$board" in
+    linksys,ea3500|\
+    linksys,audi|\
+    linksys,e4200-v2|\
+    linksys,ea4500|\
+    linksys,viper)
+        set_u_boot_vars
+    ;;
+    *)
+        echo "$board is not supported (yet)."
+    ;;
+esac

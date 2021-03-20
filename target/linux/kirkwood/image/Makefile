@@ -45,7 +45,6 @@ define Device/cisco_on100
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
-  DEVICE_PACKAGES := kmod-mvsdio
   SUPPORTED_DEVICES += on100
 endef
 TARGET_DEVICES += cisco_on100
@@ -62,8 +61,7 @@ define Device/cloudengines_pogoplugv4
   DEVICE_VENDOR := Cloud Engines
   DEVICE_MODEL := Pogoplug V4
   DEVICE_DTS := kirkwood-pogoplug-series-4
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 kmod-mvsdio kmod-usb3 \
-	kmod-gpio-button-hotplug
+  DEVICE_PACKAGES := kmod-usb3 kmod-gpio-button-hotplug
 endef
 TARGET_DEVICES += cloudengines_pogoplugv4
 
@@ -79,8 +77,7 @@ define Device/iom_ix2-200
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := StorCenter ix2-200
   DEVICE_DTS := kirkwood-iomega_ix2_200
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
-	kmod-gpio-button-hotplug kmod-hwmon-lm63
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-hwmon-lm63
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
@@ -94,11 +91,17 @@ endef
 TARGET_DEVICES += iom_ix2-200
 
 define Device/linksys
+  # To grow KERNEL_SIZE, also duplicate the increase in the u-boot variable
+  # nandboot in file base-files/sbin/sysupgrade-enable-usb-boot:
+  #   "nand read.e 0x2000000 0x200000 0x300000", the last value in bytes.
+  #
+  # Note: The support for USB booting is needed for sysupgrade to 21.02.
   DEVICE_VENDOR := Linksys
   DEVICE_PACKAGES := kmod-mwl8k wpad-basic-wolfssl kmod-gpio-button-hotplug
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  KERNEL_SIZE := 3072k
+  IMAGES := sysupgrade.bin
 endef
 
 define Device/linksys_e4200-v2
@@ -106,7 +109,6 @@ define Device/linksys_e4200-v2
   $(Device/dsa-migration)
   DEVICE_MODEL := E4200
   DEVICE_VARIANT := v2
-  KERNEL_SIZE := 2688k
   SUPPORTED_DEVICES += linksys,viper linksys-viper
 endef
 TARGET_DEVICES += linksys_e4200-v2
@@ -118,7 +120,6 @@ define Device/linksys_ea3500
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
-  KERNEL_SIZE := 2624k
   SUPPORTED_DEVICES += linksys,audi linksys-audi
 endef
 TARGET_DEVICES += linksys_ea3500
@@ -127,7 +128,6 @@ define Device/linksys_ea4500
   $(Device/linksys)
   $(Device/dsa-migration)
   DEVICE_MODEL := EA4500
-  KERNEL_SIZE := 2688k
   SUPPORTED_DEVICES += linksys,viper linksys-viper
 endef
 TARGET_DEVICES += linksys_ea4500
@@ -136,7 +136,6 @@ define Device/raidsonic_ib-nas62x0
   DEVICE_VENDOR := RaidSonic
   DEVICE_MODEL := ICY BOX IB-NAS62x0
   DEVICE_DTS := kirkwood-ib62x0
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4
   SUPPORTED_DEVICES += ib62x0
 endef
 TARGET_DEVICES += raidsonic_ib-nas62x0
@@ -144,8 +143,7 @@ TARGET_DEVICES += raidsonic_ib-nas62x0
 define Device/seagate_blackarmor-nas220
   DEVICE_VENDOR := Seagate
   DEVICE_MODEL := Blackarmor NAS220
-  DEVICE_PACKAGES := kmod-hwmon-adt7475 kmod-fs-ext4 kmod-ata-marvell-sata \
-	mdadm kmod-gpio-button-hotplug
+  DEVICE_PACKAGES := kmod-hwmon-adt7475 mdadm kmod-gpio-button-hotplug
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
@@ -163,7 +161,6 @@ TARGET_DEVICES += seagate_dockstar
 define Device/seagate_goflexnet
   DEVICE_VENDOR := Seagate
   DEVICE_MODEL := GoFlexNet
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4
   SUPPORTED_DEVICES += goflexnet
 endef
 TARGET_DEVICES += seagate_goflexnet
@@ -171,7 +168,6 @@ TARGET_DEVICES += seagate_goflexnet
 define Device/seagate_goflexhome
   DEVICE_VENDOR := Seagate
   DEVICE_MODEL := GoFlexHome
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4
   SUPPORTED_DEVICES += goflexhome
 endef
 TARGET_DEVICES += seagate_goflexhome
@@ -179,8 +175,7 @@ TARGET_DEVICES += seagate_goflexhome
 define Device/zyxel_nsa310b
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA310b
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-r8169 kmod-fs-ext4 \
-	kmod-gpio-button-hotplug kmod-hwmon-lm85
+  DEVICE_PACKAGES := kmod-r8169 kmod-gpio-button-hotplug kmod-hwmon-lm85
   SUPPORTED_DEVICES += nsa310b
 endef
 TARGET_DEVICES += zyxel_nsa310b
@@ -188,7 +183,7 @@ TARGET_DEVICES += zyxel_nsa310b
 define Device/zyxel_nsa310s
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA310S
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 kmod-gpio-button-hotplug
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug
 endef
 TARGET_DEVICES += zyxel_nsa310s
 
@@ -196,8 +191,7 @@ define Device/zyxel_nsa325
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA325
   DEVICE_VARIANT := v1/v2
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
-	kmod-gpio-button-hotplug kmod-rtc-pcf8563 kmod-usb3
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-rtc-pcf8563 kmod-usb3
   SUPPORTED_DEVICES += nsa325
 endef
 TARGET_DEVICES += zyxel_nsa325
