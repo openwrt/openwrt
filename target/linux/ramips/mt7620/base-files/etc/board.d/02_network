@@ -23,7 +23,6 @@ ramips_setup_interfaces()
 	ralink,mt7620a-mt7610e-evb|\
 	ralink,mt7620a-v22sg-evb|\
 	sanlinking,d240|\
-	youku,yk1|\
 	zbtlink,zbt-ape522ii|\
 	zbtlink,zbt-we826-16m|\
 	zbtlink,zbt-we826-32m|\
@@ -215,6 +214,10 @@ ramips_setup_interfaces()
 	vonets,var11n-300)
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
+		;;
+	youku,yk1)
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "4:wan" "6@eth0"
 		;;
 	zbtlink,zbt-we1026-5g-16m)
 		ucidef_add_switch "switch0" \
