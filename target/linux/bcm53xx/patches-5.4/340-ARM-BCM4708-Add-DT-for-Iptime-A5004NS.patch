@@ -1,0 +1,118 @@
+From 2cd008901274924620bd974e985679dcc2514986 Mon Sep 17 00:00:00 2001
+From: Lee Jisoo <djdisodo@gmail.com>
+Date: Sat, 3 Apr 2021 18:30:33 +0900
+Subject: [PATCH] ARM: BCM4708: Add DT for Iptime A5004NS
+
+Signed-off-by: Lee Jisoo <djdisodo@gmail.com>
+---
+ arch/arm/boot/dts/Makefile                   |  1 +
+ arch/arm/boot/dts/bcm4708-iptime-a5004ns.dts | 85 ++++++++++++++++++++
+ 2 files changed, 86 insertions(+)
+ create mode 100644 arch/arm/boot/dts/bcm4708-iptime-a5004ns.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 8e5d4ab4e..650227653 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -95,6 +95,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm4708-asus-rt-ac56u.dtb \
+ 	bcm4708-asus-rt-ac68u.dtb \
+ 	bcm4708-buffalo-wzr-1750dhp.dtb \
++	bcm4708-iptime-a5004ns.dtb \
+ 	bcm4708-linksys-ea6300-v1.dtb \
+ 	bcm4708-linksys-ea6500-v2.dtb \
+ 	bcm4708-luxul-xap-1510.dtb \
+diff --git a/arch/arm/boot/dts/bcm4708-iptime-a5004ns.dts b/arch/arm/boot/dts/bcm4708-iptime-a5004ns.dts
+new file mode 100644
+index 000000000..f3b42c70b
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm4708-iptime-a5004ns.dts
+@@ -0,0 +1,85 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * Broadcom BCM470X / BCM5301X ARM platform code.
++ * DTS for Iptime a5004ns
++ *
++ * Copyright (C) 2021 Lee Jisoo <djdisodo@gmail.com>
++ */
++
++/dts-v1/;
++
++#include "bcm4708.dtsi"
++
++/ {
++	compatible = "iptime,a5004ns", "brcm,bcm4708";
++	model = "ipTIME A5004NS";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		// though it is cpu led, set to power for diag.sh
++		power {	
++			label = "blue:power";
++			gpios = <&chipcommon 6 GPIO_ACTIVE_HIGH>;
++		};
++
++		usb {
++			label = "blue:usb";
++			gpios = <&chipcommon 4 GPIO_ACTIVE_HIGH>;
++			trigger-sources = <&ohci_port1>, <&ehci_port1>, <&xhci_port1>;
++			linux,default-trigger = "usbport";
++		};
++
++		wlan2g {
++			label = "blue:wlan2g";
++			gpios = <&chipcommon 3 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "phyltpt";
++		};
++
++		wlan5g {
++			label = "blue:wlan5g";
++			gpios = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "phy1tpt";
++		};
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&chipcommon 7 GPIO_ACTIVE_LOW>;
++		};
++
++		reset {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
++
++&spi_nor {
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <40000000>;
++	};
++};
++
++&usb3 {
++	vcc-gpio = <&chipcommon 10 GPIO_ACTIVE_HIGH>;
++};
+-- 
+2.20.1
+

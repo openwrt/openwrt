@@ -242,6 +242,16 @@ define Device/dlink_dir-885l
 endef
 TARGET_DEVICES += dlink_dir-885l
 
+define Device/iptime_a5004ns
+  $(Device/Default)
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A5004NS
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  IMAGES := bin
+  IMAGE/bin := append-rootfs | trx-serial
+endef
+TARGET_DEVICES += iptime_a5004ns
+
 # Linksys devices are disabled due to problem with 2 TRX partitions
 define Device/linksys_ea6300-v1
   DEVICE_VENDOR := Linksys
