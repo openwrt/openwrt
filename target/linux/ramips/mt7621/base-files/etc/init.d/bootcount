@@ -22,6 +22,7 @@ boot() {
 	linksys,ea8100-v2)
 		mtd resetbc s_env || true
 		;;
+	belkin,rt1800|\
 	samknows,whitebox-v8)
 		fw_setenv bootcount 0
 		;;
