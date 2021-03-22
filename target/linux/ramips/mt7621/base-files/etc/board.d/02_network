@@ -205,7 +205,8 @@ ramips_setup_macs()
 		wan_mac=$lan_mac
 		label_mac=$lan_mac
 		;;
-	belkin,rt1800)
+	belkin,rt1800|\
+	linksys,e7350)
 		lan_mac=$(mtd_get_mac_ascii Config lan_hwaddr)
 		wan_mac=$(mtd_get_mac_ascii Config wan_hwaddr)
 		label_mac=$lan_mac
