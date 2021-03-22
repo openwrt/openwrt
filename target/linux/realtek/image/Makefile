@@ -6,6 +6,8 @@ include $(INCLUDE_DIR)/image.mk
 KERNEL_LOADADDR = 0x80000000
 KERNEL_ENTRY = 0x80000400
 
+DEVICE_VARS += ZYXEL_VERS
+
 define Build/zyxel-vers
        ( echo VERS;\
        for hw in $(1); do\
