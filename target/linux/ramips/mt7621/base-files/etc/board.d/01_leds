@@ -75,6 +75,13 @@ gnubee,gb-pc2)
 linksys,e5600)
 	ucidef_set_led_netdev "wan" "wan link" "blue:wan" "wan" "link"
 	;;
+linksys,e7350)
+	ucidef_set_led_netdev "lan1" "lan1" "blue:lan-1" "lan1"
+	ucidef_set_led_netdev "lan2" "lan2" "blue:lan-2" "lan2"
+	ucidef_set_led_netdev "lan3" "lan4" "blue:lan-3" "lan3"
+	ucidef_set_led_netdev "lan4" "lan4" "blue:lan-4" "lan4"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
+	;;
 linksys,ea6350-v4|\
 linksys,ea7300-v1|\
 linksys,ea7300-v2|\

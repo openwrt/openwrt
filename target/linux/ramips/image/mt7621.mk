@@ -1192,6 +1192,15 @@ define Device/linksys_e5600
 endef
 TARGET_DEVICES += linksys_e5600
 
+define Device/linksys_e7350
+  $(Device/belkin_rt1800)
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := E7350
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | check-size | belkin-header GOLF 1 9.9.9
+endef
+TARGET_DEVICES += linksys_e7350
+
 define Device/linksys_ea7xxx
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)

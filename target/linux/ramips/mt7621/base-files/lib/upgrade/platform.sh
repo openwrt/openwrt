@@ -71,6 +71,7 @@ platform_do_upgrade() {
 	iptime,t5004|\
 	jcg,q20|\
 	linksys,e5600|\
+	linksys,e7350|\
 	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
