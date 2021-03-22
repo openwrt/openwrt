@@ -1,5 +1,6 @@
 #include <linux/uaccess.h>
 #include <linux/trace_seq.h>
+#include <linux/version.h>
 #include <linux/seq_file.h>
 #include <linux/proc_fs.h>
 #include <linux/u64_stats_sync.h>
@@ -533,6 +534,70 @@ static int igmp_open(struct inode *inode, struct file *file)
 	return single_open(file, igmp_show, 0);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0)
+
+static const struct file_operations switch_count_fops = {
+	.owner = THIS_MODULE,
+	.open = switch_count_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release
+};
+
+static const struct file_operations switch_vlan_fops = {
+	.owner = THIS_MODULE,
+	.open = switch_vlan_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release
+};
+
+static const struct file_operations mac_tbl_fops = {
+        .owner = THIS_MODULE,
+        .open = mac_tbl_open,
+        .read = seq_read,
+        .llseek = seq_lseek,
+        .write = mac_tbl_write,
+        .release = single_release
+};
+
+static const struct file_operations reg_fops = {
+        .owner = THIS_MODULE,
+        .open = reg_open,
+        .read = seq_read,
+        .llseek = seq_lseek,
+        .write = reg_ops,
+        .release = single_release
+};
+
+static const struct file_operations phyreg_fops = {
+        .owner = THIS_MODULE,
+        .open = phyreg_open,
+        .read = seq_read,
+        .llseek = seq_lseek,
+        .write = phyreg_ops,
+        .release = single_release
+};
+
+static const struct file_operations mirror_fops = {
+        .owner = THIS_MODULE,
+        .open = mirror_open,
+        .read = seq_read,
+        .llseek = seq_lseek,
+        .write = mirror_ops,
+        .release = single_release
+};
+
+static const struct file_operations igmp_fops = {
+        .owner = THIS_MODULE,
+        .open = igmp_open,
+        .read = seq_read,
+        .llseek = seq_lseek,
+        .write = igmp_ops,
+        .release = single_release
+};
+
+#else
 
 static const struct proc_ops switch_count_fops = {
 	.proc_open = switch_count_open,
@@ -587,6 +652,8 @@ static const struct proc_ops igmp_fops = {
 	.proc_write = igmp_ops,
 	.proc_release = single_release
 };
+
+#endif
 
 int gsw_debug_proc_init(void)
 {
