@@ -84,6 +84,7 @@ platform_do_upgrade() {
 	netis,wf2881|\
 	raisecom,msg1500-x-00|\
 	sercomm,na502|\
+	sercomm,na502s|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\

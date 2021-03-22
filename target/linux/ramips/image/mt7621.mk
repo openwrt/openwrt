@@ -1485,6 +1485,21 @@ define Device/sercomm_na502
 endef
 TARGET_DEVICES += sercomm_na502
 
+define Device/sercomm_na502s
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 20971520
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  UBINIZE_OPTS := -E 5
+  KERNEL_SIZE := 4096k
+  DEVICE_VENDOR := SERCOMM
+  DEVICE_MODEL := NA502S
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-mt7603 kmod-usb3 kmod-usb-serial \
+  		kmod-usb-serial-xr_usb_serial_common
+endef
+TARGET_DEVICES += sercomm_na502s
+
 define Device/storylink_sap-g3200u3
   $(Device/dsa-migration)
   IMAGE_SIZE := 7872k
