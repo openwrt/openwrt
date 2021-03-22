@@ -7,11 +7,6 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR:=0x8000
 
-define Device/dsa-migration
-  DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
-endef
-
 define Device/Default
   PROFILES := Default
   DEVICE_DTS = kirkwood-$(lastword $(subst _, ,$(1)))
@@ -102,11 +97,19 @@ define Device/linksys
   UBINIZE_OPTS := -E 5
   KERNEL_SIZE := 3072k
   IMAGES := sysupgrade.bin
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA. \
+	Partition layout has changed compared with older versions (up to \
+	19.07) due to kernel size restrictions. Sysupgrade needs to be done \
+	in a later version than 19.07, which can be booted from a USB drive. \
+	Alternatively, perform a new installation via TFTP in the U-Boot. \
+	For instructions, see your device's page on https://openwrt.org/toh. \
+	Warning: Force upgrade (sysupgrade -F | --force) will likely brick \
+	this device!
 endef
 
 define Device/linksys_e4200-v2
   $(Device/linksys)
-  $(Device/dsa-migration)
   DEVICE_MODEL := E4200
   DEVICE_VARIANT := v2
   SUPPORTED_DEVICES += linksys,viper linksys-viper
@@ -115,7 +118,6 @@ TARGET_DEVICES += linksys_e4200-v2
 
 define Device/linksys_ea3500
   $(Device/linksys)
-  $(Device/dsa-migration)
   DEVICE_MODEL := EA3500
   PAGESIZE := 512
   SUBPAGESIZE := 256
@@ -126,7 +128,6 @@ TARGET_DEVICES += linksys_ea3500
 
 define Device/linksys_ea4500
   $(Device/linksys)
-  $(Device/dsa-migration)
   DEVICE_MODEL := EA4500
   SUPPORTED_DEVICES += linksys,viper linksys-viper
 endef
