@@ -217,4 +217,13 @@ endef
 
 TARGET_DEVICES += sun7i-a20-pcduino3
 
+define Device/sun7i-a20-pcduino3-nano
+  DEVICE_TITLE:=LinkSprite pcDuino3 Nano
+  DEVICE_PACKAGES:=kmod-ata-core kmod-ata-sunxi kmod-rtc-sunxi kmod-usb-hid
+  SUPPORTED_DEVICES:=linksprite,pcduino3-nano
+  SUNXI_DTS:=sun7i-a20-pcduino3-nano
+endef
+
+TARGET_DEVICES += sun7i-a20-pcduino3-nano
+
 endif

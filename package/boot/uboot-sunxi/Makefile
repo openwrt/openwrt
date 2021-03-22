@@ -126,6 +126,12 @@ define U-Boot/Linksprite_pcDuino3
   BUILD_DEVICES:=sun7i-a20-pcduino3
 endef
 
+define U-Boot/Linksprite_pcDuino3_Nano
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Linksprite pcDuino3 nano
+  BUILD_DEVICES:=sun7i-a20-pcduino3-nano
+endef
+
 define U-Boot/Lamobo_R1
   BUILD_SUBTARGET:=cortexa7
   NAME:=Lamobo R1
@@ -265,6 +271,7 @@ UBOOT_TARGETS := \
 	OLIMEX_A13_SOM \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
+	Linksprite_pcDuino3_Nano \
 	Lamobo_R1 \
 	nanopi_m1_plus \
 	nanopi_neo \
