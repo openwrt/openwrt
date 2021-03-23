@@ -31,6 +31,28 @@
 			debounce-interval = <60>;
 		};
 	};
+
+	bcm43217-sprom {
+		compatible = "brcm,bcm43217-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		mtd-mac-address = <&cfe 0x6a0>;
+		mtd-mac-address-increment = <1>;
+
+		brcm,sprom-fixups = <6 0x1c00>,
+				    <65 0x1255>,
+				    <97 0xfe55>,
+				    <98 0x171d>,
+				    <99 0xfa42>,
+				    <113 0xfeb7>,
+				    <114 0x18cd>,
+				    <115 0xfa4f>,
+				    <162 0x6444>,
+				    <170 0x6444>,
+				    <172 0x6444>;
+	};
 };
 
 &ehci {

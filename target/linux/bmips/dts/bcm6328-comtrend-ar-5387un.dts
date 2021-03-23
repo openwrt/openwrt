@@ -24,6 +24,41 @@
 			debounce-interval = <60>;
 		};
 	};
+
+	bcm43225-sprom {
+		compatible = "brcm,bcm43225-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		mtd-mac-address = <&cfe 0x6a0>;
+		mtd-mac-address-increment = <1>;
+
+		brcm,sprom-fixups = <2 0x05bb>,
+				    <65 0x1204>,
+				    <78 0x0303>,
+				    <79 0x0202>,
+				    <80 0xff02>,
+				    <87 0x0315>,
+				    <88 0x0315>,
+				    <96 0x2048>,
+				    <97 0xff11>,
+				    <98 0x1567>,
+				    <99 0xfb24>,
+				    <100 0x3e3c>,
+				    <101 0x4038>,
+				    <102 0xfe7f>,
+				    <103 0x1279>,
+				    <112 0x2048>,
+				    <113 0xff03>,
+				    <114 0x154c>,
+				    <115 0xfb27>,
+				    <116 0x3e3c>,
+				    <117 0x4038>,
+				    <118 0xfe87>,
+				    <119 0x1233>,
+				    <203 0x2226>;
+	};
 };
 
 &ehci {

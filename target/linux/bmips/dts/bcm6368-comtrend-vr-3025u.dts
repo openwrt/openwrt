@@ -53,6 +53,23 @@
 			gpios = <&pinctrl 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	bcm43222-sprom {
+		compatible = "brcm,bcm43222-sprom";
+
+		pci-bus = <0>;
+		pci-dev = <1>;
+
+		mtd-mac-address = <&cfe 0x6a0>;
+		mtd-mac-address-increment = <1>;
+
+		brcm,sprom-fixups = <97 0xfeb3>,
+				    <98 0x1618>,
+				    <99 0xfab0>,
+				    <113 0xfed1>,
+				    <114 0x1609>,
+				    <115 0xfad9>;
+	};
 };
 
 &ehci {
@@ -102,7 +119,7 @@
 
 &pinctrl {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pci &pinctrl_ephy0_led &pinctrl_ephy1_led
+	pinctrl-0 = <&pinctrl_ephy0_led &pinctrl_ephy1_led
 		     &pinctrl_ephy2_led &pinctrl_ephy3_led>;
 };
 
