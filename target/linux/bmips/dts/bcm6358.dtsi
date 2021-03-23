@@ -280,6 +280,31 @@
 			status = "disabled";
 		};
 
+		pci: pci@fffe1000 {
+			compatible = "brcm,bcm6348-pci";
+			reg = <0xfffe1000 0x200>,
+			      <0x08000000 0x10000>;
+			reg-names = "pci",
+				    "pci-io";
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			device_type = "pci";
+			bus-range = <0x00 0x01>;
+			ranges = <0x2000000 0 0x30000000 0x30000000 0 0x8000000>;
+			linux,pci-probe-only = <1>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM6358_IRQ_MPI>;
+
+			resets = <&periph_rst BCM6358_RST_MPI>;
+			reset-names = "pci";
+
+			brcm,remap;
+
+			status = "disabled";
+		};
+
 		ehci: usb@fffe1300 {
 			compatible = "brcm,bcm6358-ehci", "generic-ehci";
 			reg = <0xfffe1300 0x100>;
