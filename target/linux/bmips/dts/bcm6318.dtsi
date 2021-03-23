@@ -347,6 +347,41 @@
 			status = "disabled";
 		};
 
+		pcie: pcie@10010000 {
+			compatible = "brcm,bcm6318-pcie";
+			reg = <0x10010000 0x10000>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			device_type = "pci";
+			bus-range = <0x00 0x01>;
+			ranges = <0x2000000 0 0x10200000 0x10200000 0 0x100000>;
+			linux,pci-probe-only = <1>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM6318_IRQ_PCIE_RC>;
+
+			clocks = <&periph_clk BCM6318_CLK_PCIE>,
+				 <&periph_clk BCM6318_CLK_PCIE25>,
+				 <&ubus_clk BCM6318_UCLK_PCIE>;
+			clock-names = "pcie",
+				      "pcie25",
+				      "pcie-ubus";
+
+			resets = <&periph_rst BCM6318_RST_PCIE>,
+				 <&periph_rst BCM6318_RST_PCIE_EXT>,
+				 <&periph_rst BCM6318_RST_PCIE_CORE>,
+				 <&periph_rst BCM6318_RST_PCIE_HARD>;
+			reset-names = "pcie",
+				      "pcie-ext",
+				      "pcie-core",
+				      "pcie-hard";
+
+			power-domains = <&periph_pwr BCM6318_POWER_DOMAIN_PCIE>;
+
+			status = "disabled";
+		};
+
 		switch0: switch@10080000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
