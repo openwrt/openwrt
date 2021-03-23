@@ -406,6 +406,12 @@
 			status = "disabled";
 		};
 
+		serdes_cntl: syscon@10001804 {
+			compatible = "syscon";
+			reg = <0x10001804 0x4>;
+			native-endian;
+		};
+
 		periph_pwr: power-controller@10001848 {
 			compatible = "brcm,bcm6362-power-controller";
 			reg = <0x10001848 0x4>;
@@ -558,6 +564,37 @@
 				#size-cells = <0>;
 				reg = <1>;
 			};
+		};
+
+		pcie: pcie@10e40000 {
+			compatible = "brcm,bcm6328-pcie";
+			reg = <0x10e40000 0x10000>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			device_type = "pci";
+			bus-range = <0x00 0x01>;
+			ranges = <0x2000000 0 0x10f00000 0x10f00000 0 0x100000>;
+			linux,pci-probe-only = <1>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM6362_IRQ_PCIE_RC>;
+
+			clocks = <&periph_clk BCM6362_CLK_PCIE>;
+			clock-names = "pcie";
+
+			resets = <&periph_rst BCM6362_RST_PCIE>,
+				 <&periph_rst BCM6362_RST_PCIE_EXT>,
+				 <&periph_rst BCM6362_RST_PCIE_CORE>;
+			reset-names = "pcie",
+				      "pcie-ext",
+				      "pcie-core";
+
+			power-domains = <&periph_pwr BCM6362_POWER_DOMAIN_PCIE>;
+
+			brcm,serdes = <&serdes_cntl>;
+
+			status = "disabled";
 		};
 	};
 };
