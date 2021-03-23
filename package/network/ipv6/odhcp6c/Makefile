@@ -44,6 +44,7 @@ endef
 
 define Package/odhcp6c/conffiles
 /etc/odhcp6c.user
+/etc/odhcp6c.user.d/
 endef
 
 define Package/odhcp6c/install
@@ -52,7 +53,7 @@ define Package/odhcp6c/install
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/dhcpv6.sh $(1)/lib/netifd/proto/dhcpv6.sh
 	$(INSTALL_BIN) ./files/dhcpv6.script $(1)/lib/netifd/
-	$(INSTALL_DIR) $(1)/etc/
+	$(INSTALL_DIR) $(1)/etc/odhcp6c.user.d/
 	$(INSTALL_CONF) ./files/odhcp6c.user $(1)/etc/
 endef
 
