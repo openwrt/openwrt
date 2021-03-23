@@ -25,6 +25,7 @@ DEFAULT_PACKAGES:=\
 	uci \
 	uclient-fetch \
 	urandom-seed \
+	luci luci-compat wget-ssl curl default-settings luci-app-ssr-plus \
 	urngd
 
 ifneq ($(CONFIG_SELINUX),)
