@@ -11,6 +11,9 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
 	};
 
 	keys {
@@ -28,12 +31,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led@2 {
+		led_dsl_green: led@2 {
 			label = "green:dsl";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		led@5 {
+		led_internet_green: led@5 {
 			label = "green:internet";
 			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 		};

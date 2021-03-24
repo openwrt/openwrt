@@ -8,9 +8,13 @@
 
 	aliases {
 		led-boot = &led_power_green;
-		led-failsafe = &led_power_green;
+		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
+		led-usb = &led_usb_green;
 	};
 
 	keys {
@@ -123,7 +127,7 @@
 		label = "green:power";
 	};
 
-	led@2 {
+	led_usb_green: led@2 {
 		reg = <2>;
 		active-low;
 		label = "green:usb";
@@ -157,7 +161,7 @@
 		/* EPHY3 Act */
 	};
 
-	led@8 {
+	led_internet_green: led@8 {
 		reg = <8>;
 		active-low;
 		label = "green:internet";
@@ -169,13 +173,13 @@
 		label = "red:internet";
 	};
 
-	led@10 {
+	led_dsl_green: led@10 {
 		reg = <10>;
 		active-low;
 		label = "green:dsl";
 	};
 
-	led@11 {
+	led_power_red: led@11 {
 		reg = <11>;
 		active-low;
 		label = "red:power";

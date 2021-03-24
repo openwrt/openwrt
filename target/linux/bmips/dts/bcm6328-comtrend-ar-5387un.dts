@@ -8,9 +8,12 @@
 
 	aliases {
 		led-boot = &led_power_green;
-		led-failsafe = &led_power_green;
+		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
 	};
 
 	keys {
@@ -120,12 +123,12 @@
 		label = "red:internet";
 	};
 
-	led@4 {
+	led_power_red: led@4 {
 		reg = <4>;
 		label = "red:power";
 	};
 
-	led@7 {
+	led_internet_green: led@7 {
 		reg = <7>;
 		label = "green:internet";
 	};
@@ -135,7 +138,7 @@
 		label = "green:power";
 	};
 
-	led@11 {
+	led_dsl_green: led@11 {
 		reg = <11>;
 		active-low;
 		label = "green:dsl";
