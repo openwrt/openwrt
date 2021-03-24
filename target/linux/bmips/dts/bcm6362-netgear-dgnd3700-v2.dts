@@ -8,11 +8,13 @@
 
 	aliases {
 		led-boot = &led_power_green;
-		led-failsafe = &led_power_green;
+		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
 
+		led-dsl = &led_dsl_green;
 		led-ethernet = &led_ethernet_green;
+		led-internet = &led_internet_green;
 		led-usb = &led_usb1_green;
 		led-usb2 = &led_usb2_green;
 	};
@@ -46,12 +48,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led@28 {
+		led_dsl_green: led@28 {
 			label = "green:dsl";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 
-		led@34 {
+		led_power_red: led@34 {
 			label = "red:power";
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 		};
@@ -79,7 +81,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_leds &pinctrl_serial_led>;
 
-	led@1 {
+	led_internet_green: led@1 {
 		reg = <1>;
 		active-low;
 		label = "green:internet";
@@ -96,13 +98,13 @@
 		label = "green:wps";
 	};
 
-	led@10 {
+	led_usb1_green: led@10 {
 		reg = <10>;
 		active-low;
 		label = "green:usb1";
 	};
 
-	led@11 {
+	led_usb2_green: led@11 {
 		reg = <11>;
 		active-low;
 		label = "green:usb2";
@@ -126,13 +128,13 @@
 		label = "amber:dsl";
 	};
 
-	led_usb1_green: led@16 {
+	led@16 {
 		reg = <16>;
 		active-low;
 		label = "amber:usb1";
 	};
 
-	led_usb2_green: led@17 {
+	led@17 {
 		reg = <17>;
 		active-low;
 		label = "amber:usb2";
