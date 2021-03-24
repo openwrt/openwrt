@@ -1417,20 +1417,37 @@ define Device/mercury_mw4530r-v1
 endef
 TARGET_DEVICES += mercury_mw4530r-v1
 
-define Device/nec_wg1200cr
-  SOC := qca9563
+define Device/nec_wx1200cr
   DEVICE_VENDOR := NEC
+  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | seama | pad-rootfs | \
+	append-metadata | check-size
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+endef
+
+define Device/nec_wf1200cr
+  $(Device/nec_wx1200cr)
+  SOC := qca9561
+  DEVICE_MODEL := Aterm WF1200CR
+  IMAGE_SIZE := 7680k
+  SEAMA_MTDBLOCK := 5
+  SEAMA_SIGNATURE := wrgac62_necpf.2016gui_wf1200cr
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/default) | pad-rootfs -x 64 | seama | \
+	seama-seal | nec-enc ryztfyutcrqqo69d | check-size
+endef
+TARGET_DEVICES += nec_wf1200cr
+
+define Device/nec_wg1200cr
+  $(Device/nec_wx1200cr)
+  SOC := qca9563
   DEVICE_MODEL := Aterm WG1200CR
   IMAGE_SIZE := 7616k
   SEAMA_MTDBLOCK := 6
   SEAMA_SIGNATURE := wrgac72_necpf.2016gui_wg1200cr
   IMAGES += factory.bin
-  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | seama | pad-rootfs | \
-	append-metadata | check-size
   IMAGE/factory.bin := $$(IMAGE/default) | pad-rootfs -x 64 | seama | \
 	seama-seal | nec-enc 9gsiy9nzep452pad | check-size
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
 endef
 TARGET_DEVICES += nec_wg1200cr
 
