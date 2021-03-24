@@ -309,7 +309,7 @@
 			compatible = "brcm,bcm6358-ehci", "generic-ehci";
 			reg = <0xfffe1300 0x100>;
 			big-endian;
-			ignore-oc;
+			spurious-oc;
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6358_IRQ_EHCI>;
