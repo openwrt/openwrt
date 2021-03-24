@@ -33,14 +33,13 @@ for json_file in work_dir.glob("*.json"):
             )
 
 if output:
-    default_packages, output["arch_packages"] = run(
+    output["default_packages"] = run(
         [
             "make",
             "--no-print-directory",
             "-C",
             "target/linux/{}".format(output["target"].split("/")[0]),
             "val.DEFAULT_PACKAGES",
-            "val.ARCH_PACKAGES",
             "DUMP=1",
         ],
         stdout=PIPE,
@@ -48,9 +47,21 @@ if output:
         check=True,
         env=environ.copy().update({"TOPDIR": Path().cwd()}),
         universal_newlines=True,
-    ).stdout.splitlines()
+    ).stdout.split()
 
-    output["default_packages"] = default_packages.split()
+    output["arch_packages"] = run(
+        [
+            "make",
+            "--no-print-directory",
+            "val.ARCH_PACKAGES",
+        ],
+        stdout=PIPE,
+        stderr=PIPE,
+        check=True,
+        env=environ.copy().update({"TOPDIR": Path().cwd()}),
+        universal_newlines=True,
+    ).stdout.strip()
+
     output_path.write_text(json.dumps(output, sort_keys=True, separators=(",", ":")))
 else:
     print("JSON info file script could not find any JSON files for target")
