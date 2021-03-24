@@ -525,8 +525,7 @@ ath79_setup_macs()
 		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
-	dlink,dir-842-c3|\
-	nec,wg1200cr)
+	dlink,dir-842-c3)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		label_mac=$lan_mac
@@ -586,6 +585,11 @@ ath79_setup_macs()
 	tplink,tl-wdr4300-v1-il)
 		base_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
 		wan_mac=$(macaddr_add "$base_mac" 1)
+		;;
+	nec,wg1200cr)
+		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
+		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
+		label_mac=$wan_mac
 		;;
 	nec,wg800hp)
 		lan_mac=$(mtd_get_mac_text board_data 0x280)
