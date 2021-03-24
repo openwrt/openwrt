@@ -37,7 +37,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/bcm_sf2.c
 +++ b/drivers/net/dsa/bcm_sf2.c
-@@ -374,6 +374,44 @@ static int bcm_sf2_sw_rst(struct bcm_sf2
+@@ -369,6 +369,44 @@ static int bcm_sf2_sw_rst(struct bcm_sf2
  	return 0;
  }
  
@@ -82,7 +82,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static void bcm_sf2_intr_disable(struct bcm_sf2_priv *priv)
  {
  	intrl2_0_mask_set(priv, 0xffffffff);
-@@ -737,6 +775,8 @@ static int bcm_sf2_sw_resume(struct dsa_
+@@ -732,6 +770,8 @@ static int bcm_sf2_sw_resume(struct dsa_
  		return ret;
  	}
  
@@ -91,7 +91,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	ret = bcm_sf2_cfp_resume(ds);
  	if (ret)
  		return ret;
-@@ -999,6 +1039,7 @@ struct bcm_sf2_of_data {
+@@ -994,6 +1034,7 @@ struct bcm_sf2_of_data {
  	const u16 *reg_offsets;
  	unsigned int core_reg_align;
  	unsigned int num_cfp_rules;
@@ -99,7 +99,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const u16 bcm_sf2_4908_reg_offsets[] = {
-@@ -1023,6 +1064,7 @@ static const struct bcm_sf2_of_data bcm_
+@@ -1018,6 +1059,7 @@ static const struct bcm_sf2_of_data bcm_
  	.core_reg_align	= 0,
  	.reg_offsets	= bcm_sf2_4908_reg_offsets,
  	.num_cfp_rules	= 0, /* FIXME */
@@ -107,7 +107,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  /* Register offsets for the SWITCH_REG_* block */
-@@ -1133,6 +1175,7 @@ static int bcm_sf2_sw_probe(struct platf
+@@ -1128,6 +1170,7 @@ static int bcm_sf2_sw_probe(struct platf
  	priv->reg_offsets = data->reg_offsets;
  	priv->core_reg_align = data->core_reg_align;
  	priv->num_cfp_rules = data->num_cfp_rules;
@@ -115,7 +115,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* Auto-detection using standard registers will not work, so
  	 * provide an indication of what kind of device we are for
-@@ -1187,6 +1230,8 @@ static int bcm_sf2_sw_probe(struct platf
+@@ -1182,6 +1225,8 @@ static int bcm_sf2_sw_probe(struct platf
  		return ret;
  	}
  

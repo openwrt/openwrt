@@ -36,11 +36,9 @@ Signed-off-by: Mauri Sandberg <sandberg@mailfence.com>
  drivers/mtd/chips/cfi_cmdset_0002.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/mtd/chips/cfi_cmdset_0002.c b/drivers/mtd/chips/cfi_cmdset_0002.c
-index a1f3e1031c3d..28b6f3583f8a 100644
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -272,6 +272,10 @@ static void fixup_use_write_buffers(struct mtd_info *mtd)
+@@ -272,6 +272,10 @@ static void fixup_use_write_buffers(stru
  {
  	struct map_info *map = mtd->priv;
  	struct cfi_private *cfi = map->fldrv_priv;
@@ -51,8 +49,3 @@ index a1f3e1031c3d..28b6f3583f8a 100644
  	if (cfi->cfiq->BufWriteTimeoutTyp) {
  		pr_debug("Using buffer write method\n");
  		mtd->_write = cfi_amdstd_write_buffers;
-
-base-commit: 5de15b610f785f0e188fefb707f0b19de156968a
--- 
-2.25.1
-
