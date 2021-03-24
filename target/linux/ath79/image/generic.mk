@@ -1172,6 +1172,18 @@ define Device/engenius_eap1200h
 endef
 TARGET_DEVICES += engenius_eap1200h
 
+define Device/engenius_eap1750h
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := EAP1750H
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := ar71xx-generic-eap1750h
+endef
+TARGET_DEVICES += engenius_eap1750h
+
 define Device/engenius_eap300-v2
   $(Device/senao_loader_okli)
   SOC := ar9341
