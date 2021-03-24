@@ -27,12 +27,26 @@
 #error "Unsupported endianness"
 #endif
 
+#define WFI_VERSION			0x00005732
+#define WFI_VERSION_NAND_1MB_DATA	0x00005731
+
+#define WFI_NOR_FLASH			1
+#define WFI_NAND16_FLASH		2
+#define WFI_NAND128_FLASH		3
+#define WFI_NAND256_FLASH		4
+#define WFI_NAND512_FLASH		5
+#define WFI_NAND1024_FLASH		6
+#define WFI_NAND2048_FLASH		7
+
+#define WFI_FLAG_HAS_PMC		0x1
+#define WFI_FLAG_SUPPORTS_BTRM		0x2
+
 struct bcm4908img_tail {
 	uint32_t crc32;
-	uint32_t unk1;
-	uint32_t family;
-	uint32_t unk2;
-	uint32_t unk3;
+	uint32_t version;
+	uint32_t chip_id;
+	uint32_t flash_type;
+	uint32_t flags;
 };
 
 char *pathname;
@@ -272,10 +286,10 @@ static ssize_t bcm4908img_create_align(FILE *trx, size_t cur_offset, size_t alig
 
 static int bcm4908img_create(int argc, char **argv) {
 	struct bcm4908img_tail tail = {
-		.unk1 = cpu_to_le32(0x5732),
-		.family = cpu_to_le32(0x4908),
-		.unk2 = cpu_to_le32(0x03),
-		.unk3 = cpu_to_le32(0x02),
+		.version = cpu_to_le32(WFI_VERSION),
+		.chip_id = cpu_to_le32(0x4908),
+		.flash_type = cpu_to_le32(WFI_NAND128_FLASH),
+		.flags = cpu_to_le32(WFI_FLAG_SUPPORTS_BTRM),
 	};
 	uint32_t crc32 = 0xffffffff;
 	size_t cur_offset = 0;
