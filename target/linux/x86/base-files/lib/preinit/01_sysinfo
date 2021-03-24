@@ -22,6 +22,14 @@ do_sysinfo_x86() {
 			product="apu1"
 			break
 			;;
+		"Sophos:SG"|"Sophos:XG")
+			case "$(cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null)" in
+			105*)
+				product="${product}-105"
+				break
+				;;
+			esac
+			;;
 		"Supermicro:Super Server")
 			continue
 			;;
