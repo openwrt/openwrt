@@ -53,6 +53,8 @@ if output:
         [
             "make",
             "--no-print-directory",
+            "-C",
+            "target/linux/{}".format(output["target"].split("/")[0]),
             "val.ARCH_PACKAGES",
         ],
         stdout=PIPE,
