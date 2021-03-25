@@ -168,12 +168,16 @@
 				reg = <2>;
 				label = "lan0";
 				phy-handle = <&switch0phy1>;
+
+				mtd-mac-address = <&factory 0x6>;
 			};
 
 			port@3 {
 				reg = <3>;
 				label = "lan1";
 				phy-handle = <&switch0phy2>;
+
+				mtd-mac-address = <&factory 0x6>;
 			};
 		};
 
