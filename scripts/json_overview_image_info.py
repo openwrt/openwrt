@@ -33,28 +33,13 @@ for json_file in work_dir.glob("*.json"):
             )
 
 if output:
-    output["default_packages"] = run(
+    default_packages, output["arch_packages"] = run(
         [
             "make",
             "--no-print-directory",
             "-C",
-            "target/linux/{}".format(output["target"].split("/")[0]),
+            "target/linux/",
             "val.DEFAULT_PACKAGES",
-            "DUMP=1",
-        ],
-        stdout=PIPE,
-        stderr=PIPE,
-        check=True,
-        env=environ.copy().update({"TOPDIR": Path().cwd()}),
-        universal_newlines=True,
-    ).stdout.split()
-
-    output["arch_packages"] = run(
-        [
-            "make",
-            "--no-print-directory",
-            "-C",
-            "target/linux/{}".format(output["target"].split("/")[0]),
             "val.ARCH_PACKAGES",
         ],
         stdout=PIPE,
@@ -62,7 +47,9 @@ if output:
         check=True,
         env=environ.copy().update({"TOPDIR": Path().cwd()}),
         universal_newlines=True,
-    ).stdout.strip()
+    ).stdout.splitlines()
+
+    output["default_packages"] = sorted(default_packages.split())
 
     output_path.write_text(json.dumps(output, sort_keys=True, separators=(",", ":")))
 else:
