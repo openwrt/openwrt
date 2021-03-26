@@ -13,11 +13,9 @@ Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
  shell/ash.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/shell/ash.c b/shell/ash.c
-index f16d7fb6a..ecbfbf091 100644
 --- a/shell/ash.c
 +++ b/shell/ash.c
-@@ -14499,7 +14499,7 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
+@@ -14499,7 +14499,7 @@ int ash_main(int argc UNUSED_PARAM, char
  
  	if (sflag || minusc == NULL) {
  #if MAX_HISTORY > 0 && ENABLE_FEATURE_EDITING_SAVEHISTORY
@@ -26,7 +24,7 @@ index f16d7fb6a..ecbfbf091 100644
  			const char *hp = lookupvar("HISTFILE");
  			if (!hp) {
  				hp = lookupvar("HOME");
-@@ -14513,7 +14513,7 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
+@@ -14513,7 +14513,7 @@ int ash_main(int argc UNUSED_PARAM, char
  				}
  			}
  			if (hp)
@@ -35,6 +33,3 @@ index f16d7fb6a..ecbfbf091 100644
  # if ENABLE_FEATURE_SH_HISTFILESIZE
  			hp = lookupvar("HISTFILESIZE");
  			line_input_state->max_history = size_from_HISTFILESIZE(hp);
--- 
-cgit v1.2.1
-

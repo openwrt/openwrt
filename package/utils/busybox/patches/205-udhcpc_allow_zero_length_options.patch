@@ -24,11 +24,9 @@ Signed-off-by: Russell Senior <russell@personaltelco.net>
  networking/udhcp/common.c | 9 +++++++--
  1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/networking/udhcp/common.c b/networking/udhcp/common.c
-index 4bc719001..a16fd85d0 100644
 --- a/networking/udhcp/common.c
 +++ b/networking/udhcp/common.c
-@@ -277,8 +277,13 @@ uint8_t* FAST_FUNC udhcp_scan_options(struct dhcp_packet *packet, struct dhcp_sc
+@@ -277,8 +277,13 @@ uint8_t* FAST_FUNC udhcp_scan_options(st
  			goto complain; /* complain and return NULL */
  		len = 2 + scan_state->optionptr[OPT_LEN];
  		scan_state->rem -= len;
@@ -44,6 +42,3 @@ index 4bc719001..a16fd85d0 100644
  			goto complain; /* complain and return NULL */
  
  		if (scan_state->optionptr[OPT_CODE] == DHCP_OPTION_OVERLOAD) {
--- 
-2.30.1
-

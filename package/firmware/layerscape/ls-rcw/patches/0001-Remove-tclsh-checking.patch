@@ -10,8 +10,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  Makefile | 6 ------
  1 file changed, 6 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 9183e19..2832ab2 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -12,15 +12,9 @@ BOARDS = b4420qds b4860qds \
@@ -30,6 +28,3 @@ index 9183e19..2832ab2 100644
  	@for board in $(BOARDS); do \
  		$(MAKE) -C $$board $@ DESTDIR=$(DESTDIR)/$$board; \
  	done
--- 
-2.7.4
-
