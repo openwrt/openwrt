@@ -8,9 +8,11 @@ OpenSSL_version(OPENSSL_CFLAGS), or running openssl version -a
 
 Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
 
+diff --git a/crypto/build.info b/crypto/build.info
+index 2c619c62e8..893128345a 100644
 --- a/crypto/build.info
 +++ b/crypto/build.info
-@@ -10,7 +10,7 @@ EXTRA=  ../ms/uplink-x86.pl ../ms/uplink
+@@ -10,7 +10,7 @@ EXTRA=  ../ms/uplink-x86.pl ../ms/uplink.c ../ms/applink.c \
          ppccpuid.pl pariscid.pl alphacpuid.pl arm64cpuid.pl armv4cpuid.pl
  
  DEPEND[cversion.o]=buildinf.h
