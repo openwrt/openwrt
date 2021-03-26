@@ -8,8 +8,6 @@ engines/e_devcrypto.c.
 
 Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
 
-diff --git a/crypto/engine/build.info b/crypto/engine/build.info
-index e00802a3fd..47fe948966 100644
 --- a/crypto/engine/build.info
 +++ b/crypto/engine/build.info
 @@ -6,6 +6,3 @@ SOURCE[../../libcrypto]=\
@@ -19,11 +17,9 @@ index e00802a3fd..47fe948966 100644
 -IF[{- !$disabled{devcryptoeng} -}]
 -  SOURCE[../../libcrypto]=eng_devcrypto.c
 -ENDIF
-diff --git a/crypto/init.c b/crypto/init.c
-index 1b0d523bea..ee3e2eb075 100644
 --- a/crypto/init.c
 +++ b/crypto/init.c
-@@ -329,18 +329,6 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_engine_openssl)
+@@ -329,18 +329,6 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_engine_
      engine_load_openssl_int();
      return 1;
  }
@@ -42,7 +38,7 @@ index 1b0d523bea..ee3e2eb075 100644
  
  # ifndef OPENSSL_NO_RDRAND
  static CRYPTO_ONCE engine_rdrand = CRYPTO_ONCE_STATIC_INIT;
-@@ -365,6 +353,18 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_engine_dynamic)
+@@ -365,6 +353,18 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_engine_
      return 1;
  }
  # ifndef OPENSSL_NO_STATIC_ENGINE
@@ -61,7 +57,7 @@ index 1b0d523bea..ee3e2eb075 100644
  #  if !defined(OPENSSL_NO_HW) && !defined(OPENSSL_NO_HW_PADLOCK)
  static CRYPTO_ONCE engine_padlock = CRYPTO_ONCE_STATIC_INIT;
  DEFINE_RUN_ONCE_STATIC(ossl_init_engine_padlock)
-@@ -713,11 +713,6 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
+@@ -713,11 +713,6 @@ int OPENSSL_init_crypto(uint64_t opts, c
      if ((opts & OPENSSL_INIT_ENGINE_OPENSSL)
              && !RUN_ONCE(&engine_openssl, ossl_init_engine_openssl))
          return 0;
@@ -73,7 +69,7 @@ index 1b0d523bea..ee3e2eb075 100644
  # ifndef OPENSSL_NO_RDRAND
      if ((opts & OPENSSL_INIT_ENGINE_RDRAND)
              && !RUN_ONCE(&engine_rdrand, ossl_init_engine_rdrand))
-@@ -727,6 +722,11 @@ int OPENSSL_init_crypto(uint64_t opts, const OPENSSL_INIT_SETTINGS *settings)
+@@ -727,6 +722,11 @@ int OPENSSL_init_crypto(uint64_t opts, c
              && !RUN_ONCE(&engine_dynamic, ossl_init_engine_dynamic))
          return 0;
  # ifndef OPENSSL_NO_STATIC_ENGINE
@@ -85,8 +81,6 @@ index 1b0d523bea..ee3e2eb075 100644
  #  if !defined(OPENSSL_NO_HW) && !defined(OPENSSL_NO_HW_PADLOCK)
      if ((opts & OPENSSL_INIT_ENGINE_PADLOCK)
              && !RUN_ONCE(&engine_padlock, ossl_init_engine_padlock))
-diff --git a/engines/build.info b/engines/build.info
-index 1db771971c..33a25d7004 100644
 --- a/engines/build.info
 +++ b/engines/build.info
 @@ -11,6 +11,9 @@ IF[{- !$disabled{"engine"} -}]
@@ -116,7 +110,6 @@ diff --git a/crypto/engine/eng_devcrypto.c b/engines/e_devcrypto.c
 similarity index 95%
 rename from crypto/engine/eng_devcrypto.c
 rename to engines/e_devcrypto.c
-index 2c1b52d572..eff1ed3a7d 100644
 --- a/crypto/engine/eng_devcrypto.c
 +++ b/engines/e_devcrypto.c
 @@ -7,7 +7,7 @@
@@ -152,7 +145,7 @@ index 2c1b52d572..eff1ed3a7d 100644
  
  /*
   * cipher/digest status & acceleration definitions
-@@ -1058,7 +1060,7 @@ static const ENGINE_CMD_DEFN devcrypto_cmds[] = {
+@@ -1058,7 +1060,7 @@ static const ENGINE_CMD_DEFN devcrypto_c
          OPENSSL_MSTR(DEVCRYPTO_USE_SOFTWARE) "=allow all drivers, "
          OPENSSL_MSTR(DEVCRYPTO_REJECT_SOFTWARE)
          "=use if acceleration can't be determined) [default="
@@ -161,7 +154,7 @@ index 2c1b52d572..eff1ed3a7d 100644
      ENGINE_CMD_FLAG_NUMERIC},
  #endif
  
-@@ -1166,32 +1168,22 @@ static int devcrypto_ctrl(ENGINE *e, int cmd, long i, void *p, void (*f) (void))
+@@ -1166,32 +1168,22 @@ static int devcrypto_ctrl(ENGINE *e, int
   *
   *****/
  
