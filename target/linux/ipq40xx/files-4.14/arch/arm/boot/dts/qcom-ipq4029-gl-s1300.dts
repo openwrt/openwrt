@@ -253,6 +253,7 @@
 &blsp1_spi2 {
 	pinctrl-0 = <&spi_1_pins>;
 	pinctrl-names = "default";
+	cs-gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
 	status = "ok";
 
 	spidev1: spi@1 {
