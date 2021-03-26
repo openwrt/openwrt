@@ -8,9 +8,11 @@ version to disable building the AFALG engine on openwrt targets.
 
 Signed-off-by: Eneas U de Queiroz <cote2004-github@yahoo.com>
 
+diff --git a/Configure b/Configure
+index 5a699836f3..74d057c219 100755
 --- a/Configure
 +++ b/Configure
-@@ -1545,7 +1545,9 @@ unless ($disabled{"crypto-mdebug-backtra
+@@ -1545,7 +1545,9 @@ unless ($disabled{"crypto-mdebug-backtrace"})
  
  unless ($disabled{afalgeng}) {
      $config{afalgeng}="";
