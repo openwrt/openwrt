@@ -53,6 +53,18 @@ $(eval $(call TestHostCommand,ncurses, \
 	Please install ncurses. (Missing libncurses.so or ncurses.h), \
 	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
 		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses))
+
+$(eval $(call TestHostCommand,libelf-dev, \
+	Please install ELF dev libs and headers. (Missing libelf.so or libelf.h), \
+	echo 'int main(int argc, char **argv) { return 0; }' | \
+		gcc -include libelf.h -x c -o $(TMP_DIR)/a.out - -lelf))
+
+ifeq ($(CONFIG_DWARVES),y)
+$(eval $(call TestHostCommand,libdw-dev, \
+	Please install DWARF dev libs and headers. (Missing libdw.so or dwarf.h), \
+	echo 'int main(int argc, char **argv) { return 0; }' | \
+		gcc -include dwarf.h -x c -o $(TMP_DIR)/a.out - -ldw))
+endif
 endif # IB
 
 ifeq ($(HOST_OS),Linux)
