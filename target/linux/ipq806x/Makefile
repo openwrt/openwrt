@@ -6,7 +6,7 @@ ARCH:=arm
 BOARD:=ipq806x
 BOARDNAME:=Qualcomm Atheros IPQ806X
 FEATURES:=squashfs nand fpu ramdisk
-CPU_TYPE:=cortex-a15
+CPU_TYPE:=generic-armv7-a
 CPU_SUBTYPE:=neon-vfpv4
 SUBTARGETS:=generic
 
