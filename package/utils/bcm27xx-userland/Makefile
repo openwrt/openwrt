@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bcm27xx-userland
 PKG_VERSION:=4a0a19b88b43e48c6b51b526b9378289fb712a4c
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/raspberrypi/userland/tar.gz/$(PKG_VERSION)?
@@ -46,6 +46,19 @@ define Package/bcm27xx-userland/description
   BCM27xx userland tools including vcgencmd and tvservice.
 endef
 
+define Package/bcm27xx-userland-dev
+  SECTION:=devel
+  CATEGORY:=Development
+  SUBMENU:=Libraries
+  DEPENDS:=@TARGET_bcm27xx +bcm27xx-userland
+  TITLE:=Development files of BCM27xx userland tools
+endef
+
+define Package/bcm27xx-userland-dev/description
+  This package contains the header and static libraries of
+  the BCM27xx userland tools.
+endef
+
 define Package/bcm27xx-userland/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/dtmerge $(1)/usr/bin
@@ -61,11 +74,22 @@ endif
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/vcgencmd $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/vcmailbox $(1)/usr/bin
 
+	$(INSTALL_DIR) $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/*.so $(1)/usr/lib/
+ifneq ($(ARCH),aarch64)
+	$(INSTALL_DIR) $(1)/usr/lib/plugins
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/plugins/ $(1)/usr/lib/
+endif
+endef
+
+define Package/bcm27xx-userland-dev/install
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/ $(1)/usr/
 
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/ $(1)/usr/
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/*.a $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,bcm27xx-userland))
+$(eval $(call BuildPackage,bcm27xx-userland-dev))
