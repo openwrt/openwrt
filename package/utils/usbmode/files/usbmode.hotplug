@@ -1,2 +1,11 @@
 pidof ubusd >/dev/null 2>&1 || exit 0
+
+[ "$PRODUCT" = "12d1/15c1/102" ] && [ "$DEVTYPE" = "usb_device" ] && [ "$ACTION" = "bind" ] && {
+	#Huawei ME909s-821 change MBIM fixup
+	[ "$(cat /sys/bus/usb/devices/${DEVICENAME}/bConfigurationValue)" = "2" ] && {
+		echo "0" > /sys/bus/usb/devices/${DEVICENAME}/bConfigurationValue
+		sleep 1
+	}
+}
+
 /etc/init.d/usbmode start
