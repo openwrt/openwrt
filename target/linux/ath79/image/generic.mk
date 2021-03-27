@@ -2716,6 +2716,14 @@ define Device/zyxel_nwa1121-ni
 endef
 TARGET_DEVICES += zyxel_nwa1121-ni
 
+define Device/zyxel_nwa1123-ni
+  $(Device/zyxel_nwa11xx)
+  DEVICE_MODEL := NWA1123
+  DEVICE_VARIANT := NI
+  ZYXEL_MODEL_STRING := AAEO
+endef
+TARGET_DEVICES += zyxel_nwa1123-ni
+
 define Device/zyxel_nbg6616
   SOC := qca9557
   DEVICE_VENDOR := ZyXEL
