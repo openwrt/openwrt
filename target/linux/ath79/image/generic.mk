@@ -2716,6 +2716,16 @@ define Device/zyxel_nwa1121-ni
 endef
 TARGET_DEVICES += zyxel_nwa1121-ni
 
+define Device/zyxel_nwa1123-ac
+  $(Device/zyxel_nwa11xx)
+  DEVICE_MODEL := NWA1123
+  DEVICE_VARIANT := AC
+  ZYXEL_MODEL_STRING := AAOX
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers \
+	ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += zyxel_nwa1123-ac
+
 define Device/zyxel_nwa1123-ni
   $(Device/zyxel_nwa11xx)
   DEVICE_MODEL := NWA1123
