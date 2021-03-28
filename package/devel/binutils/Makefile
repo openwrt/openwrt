@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
 PKG_VERSION:=2.35.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=@GNU/binutils
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -34,7 +34,7 @@ define Package/libbfd
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=libbfd
-  DEPENDS:=+zlib $(ICONV_DEPENDS) $(INTL_DEPENDS)
+  DEPENDS:=+zlib $(INTL_DEPENDS)
 endef
 
 define Package/libctf
@@ -78,6 +78,8 @@ define Package/binutils/description
 endef
 
 TARGET_CFLAGS += $(FPIC) -Wno-unused-value
+
+TARGET_LDFLAGS += $(if $(INTL_FULL),-lintl)
 
 CONFIGURE_ARGS += \
 	--host=$(REAL_GNU_TARGET_NAME) \
