@@ -158,18 +158,16 @@ define Device/gateworks_ventana
 	imx6q-gw5910 \
 	imx6q-gw5912 \
 	imx6q-gw5913
-  DEVICE_PACKAGES := kmod-sky2 kmod-sound-core kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
-	kmod-can kmod-can-flexcan kmod-can-raw \
-	kmod-hwmon-gsc \
-	kmod-leds-gpio kmod-pps-gpio \
-	kobs-ng
+  DEVICE_PACKAGES := kmod-sky2 kmod-sound-core kmod-sound-soc-imx \
+	kmod-sound-soc-imx-sgtl5000 kmod-can kmod-can-flexcan kmod-can-raw \
+	kmod-hwmon-gsc kmod-leds-gpio kmod-pps-gpio kobs-ng
+  BOOT_SCRIPT := bootscript-gateworks_ventana
   KERNEL += | boot-overlay
   IMAGES := nand.ubi bootfs.tar.gz dtb
-  UBINIZE_PARTS = boot=$$(KDIR_KERNEL_IMAGE).boot.ubifs=15
-  BOOT_SCRIPT := bootscript-gateworks_ventana
   IMAGE/nand.ubi := append-ubi
   IMAGE/bootfs.tar.gz := bootfs.tar.gz
   IMAGE/dtb := install-dtb
+  UBINIZE_PARTS = boot=$$(KDIR_KERNEL_IMAGE).boot.ubifs=15
   PAGESIZE := 2048
   BLOCKSIZE := 128k
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB
@@ -189,15 +187,19 @@ TARGET_DEVICES += gateworks_ventana-large
 define Device/solidrun_cubox-i
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := CuBox-i
+  DEVICE_NAME := cubox
+  DEVICE_DTS := \
+	imx6q-cubox-i \
+	imx6dl-cubox-i \
+	imx6q-hummingboard \
+	imx6dl-hummingboard
+  DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
+  BOOT_SCRIPT := bootscript-solidrun_cubox
+  UBOOT := mx6cuboxi
   KERNEL := kernel-bin
   KERNEL_SUFFIX := -zImage
-  UBOOT := mx6cuboxi
-  BOOT_SCRIPT := bootscript-solidrun_cubox
-  DEVICE_NAME := cubox
-  DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
-  DEVICE_DTS := imx6q-cubox-i imx6dl-cubox-i imx6q-hummingboard imx6dl-hummingboard
-  IMAGES := combined.bin dtb
   FILESYSTEMS := squashfs
+  IMAGES := combined.bin dtb
   IMAGE/combined.bin := append-rootfs | pad-extra 128k | imx6-sdcard
   IMAGE/dtb := install-dtb
 endef
