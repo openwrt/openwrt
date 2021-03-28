@@ -186,13 +186,6 @@ define Device/gateworks_ventana-large
 endef
 TARGET_DEVICES += gateworks_ventana-large
 
-define Device/wandboard_dual
-  DEVICE_VENDOR := Wandboard
-  DEVICE_MODEL := Dual
-  DEVICE_DTS := imx6dl-wandboard
-endef
-TARGET_DEVICES += wandboard_dual
-
 define Device/solidrun_cubox-i
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := CuBox-i
@@ -232,5 +225,12 @@ define Device/toradex_apalis
   ARTIFACT/recovery.scr := recovery-scr
 endef
 TARGET_DEVICES += toradex_apalis
+
+define Device/wandboard_dual
+  DEVICE_VENDOR := Wandboard
+  DEVICE_MODEL := Dual
+  DEVICE_DTS := imx6dl-wandboard
+endef
+TARGET_DEVICES += wandboard_dual
 
 $(eval $(call BuildImage))
