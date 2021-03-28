@@ -32,7 +32,6 @@ define U-Boot/mx6cuboxi
   UBOOT_IMAGE:=SPL u-boot.img
   UBOOT_MAKE_FLAGS:=SPL u-boot.img
   BUILD_DEVICES:=cubox-i
-  HIDDEN:=1
 endef
 
 define U-Boot/wandboard
