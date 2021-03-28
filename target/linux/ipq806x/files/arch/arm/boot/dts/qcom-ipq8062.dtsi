@@ -14,14 +14,6 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	cpus {
-		qcom,l2 {
-			qcom,l2-rates = <384000000 1000000000 1000000000>;
-			qcom,l2-cpufreq = <384000000 600000000 1000000000>;
-			qcom,l2-volt = <1100000 1100000 1100000>;
-		};
-	};
-
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -54,31 +46,31 @@
 	/delete-node/opp-1400000000;
 
 	opp-384000000 {
-		opp-microvolt-speed0-pvs0-v0 = <950000>;
-		opp-microvolt-speed0-pvs1-v0 = <900000>;
-		opp-microvolt-speed0-pvs2-v0 = <850000>;
-		opp-microvolt-speed0-pvs3-v0 = <800000>;
+		opp-microvolt-speed0-pvs0-v0 = <945000 950000 955000>;
+		opp-microvolt-speed0-pvs1-v0 = <985000 900000 905000>;
+		opp-microvolt-speed0-pvs2-v0 = <845000 850000 855000>;
+		opp-microvolt-speed0-pvs3-v0 = <795000 800000 805000>;
 	};
 
 	opp-600000000 {
-		opp-microvolt-speed0-pvs0-v0 = <1000000>;
-		opp-microvolt-speed0-pvs1-v0 = <950000>;
-		opp-microvolt-speed0-pvs2-v0 = <900000>;
-		opp-microvolt-speed0-pvs3-v0 = <850000>;
+		opp-microvolt-speed0-pvs0-v0 = <995000 1000000 1005000>;
+		opp-microvolt-speed0-pvs1-v0 = <945000  950000  955000>;
+		opp-microvolt-speed0-pvs2-v0 = <895000  900000  905000>;
+		opp-microvolt-speed0-pvs3-v0 = <845000  850000  855000>;
 	};
 
 	opp-800000000 {
-		opp-microvolt-speed0-pvs0-v0 = <1050000>;
-		opp-microvolt-speed0-pvs1-v0 = <1000000>;
-		opp-microvolt-speed0-pvs2-v0 = <950000>;
-		opp-microvolt-speed0-pvs3-v0 = <900000>;
+		opp-microvolt-speed0-pvs0-v0 = <1045000 1050000 1055000>;
+		opp-microvolt-speed0-pvs1-v0 = < 995000 1000000 1005000>;
+		opp-microvolt-speed0-pvs2-v0 = < 945000  950000  955000>;
+		opp-microvolt-speed0-pvs3-v0 = < 895000  900000  905000>;
 	};
 
 	opp-1000000000 {
-		opp-microvolt-speed0-pvs0-v0 = <1100000>;
-		opp-microvolt-speed0-pvs1-v0 = <1050000>;
-		opp-microvolt-speed0-pvs2-v0 = <1000000>;
-		opp-microvolt-speed0-pvs3-v0 = <950000>;
+		opp-microvolt-speed0-pvs0-v0 = <1095000 1100000 1105000>;
+		opp-microvolt-speed0-pvs1-v0 = <1045000 1050000 1055000>;
+		opp-microvolt-speed0-pvs2-v0 = < 995000 1000000 1005000>;
+		opp-microvolt-speed0-pvs3-v0 = < 945000  950000  955000>;
 	};
 };
 
