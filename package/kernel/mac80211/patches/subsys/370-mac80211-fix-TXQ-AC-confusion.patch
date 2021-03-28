@@ -1,0 +1,61 @@
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Tue, 23 Mar 2021 21:05:01 +0100
+Subject: [PATCH] mac80211: fix TXQ AC confusion
+
+Normally, TXQs have
+
+  txq->tid = tid;
+  txq->ac = ieee80211_ac_from_tid(tid);
+
+However, the special management TXQ actually has
+
+  txq->tid = IEEE80211_NUM_TIDS; // 16
+  txq->ac = IEEE80211_AC_VO;
+
+This makes sense, but ieee80211_ac_from_tid(16) is the same
+as ieee80211_ac_from_tid(0) which is just IEEE80211_AC_BE.
+
+Now, normally this is fine. However, if the netdev queues
+were stopped, then the code in ieee80211_tx_dequeue() will
+propagate the stop from the interface (vif->txqs_stopped[])
+if the AC 2 (ieee80211_ac_from_tid(txq->tid)) is marked as
+stopped. On wake, however, __ieee80211_wake_txqs() will wake
+the TXQ if AC 0 (txq->ac) is woken up.
+
+If a driver stops all queues with ieee80211_stop_tx_queues()
+and then wakes them again with ieee80211_wake_tx_queues(),
+the ieee80211_wake_txqs() tasklet will run to resync queue
+and TXQ state. If all queues were woken, then what'll happen
+is that _ieee80211_wake_txqs() will run in order of HW queues
+0-3, typically (and certainly for iwlwifi) corresponding to
+ACs 0-3, so it'll call __ieee80211_wake_txqs() for each AC in
+order 0-3.
+
+When __ieee80211_wake_txqs() is called for AC 0 (VO) that'll
+wake up the management TXQ (remember its tid is 16), and the
+driver's wake_tx_queue() will be called. That tries to get a
+frame, which will immediately *stop* the TXQ again, because
+now we check against AC 2, and AC 2 hasn't yet been marked as
+woken up again in sdata->vif.txqs_stopped[] since we're only
+in the __ieee80211_wake_txqs() call for AC 0.
+
+Thus, the management TXQ will never be started again.
+
+Fix this by checking txq->ac directly instead of calculating
+the AC as ieee80211_ac_from_tid(txq->tid).
+
+Fixes: adf8ed01e4fd ("mac80211: add an optional TXQ for other PS-buffered frames")
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -3589,7 +3589,7 @@ begin:
+ 	    test_bit(IEEE80211_TXQ_STOP_NETIF_TX, &txqi->flags))
+ 		goto out;
+ 
+-	if (vif->txqs_stopped[ieee80211_ac_from_tid(txq->tid)]) {
++	if (vif->txqs_stopped[txq->ac]) {
+ 		set_bit(IEEE80211_TXQ_STOP_NETIF_TX, &txqi->flags);
+ 		goto out;
+ 	}
