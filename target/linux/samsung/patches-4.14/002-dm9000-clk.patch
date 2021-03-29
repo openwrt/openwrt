@@ -8,7 +8,7 @@
  
  #include <asm/delay.h>
  #include <asm/irq.h>
-@@ -1436,6 +1437,7 @@ dm9000_probe(struct platform_device *pde
+@@ -1438,6 +1439,7 @@ dm9000_probe(struct platform_device *pde
  	enum of_gpio_flags flags;
  	struct regulator *power;
  	bool inv_mac_addr = false;
@@ -16,7 +16,7 @@
  
  	power = devm_regulator_get(dev, "vcc");
  	if (IS_ERR(power)) {
-@@ -1573,6 +1575,18 @@ dm9000_probe(struct platform_device *pde
+@@ -1579,6 +1581,18 @@ dm9000_probe(struct platform_device *pde
  		goto out;
  	}
  

@@ -56,7 +56,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  };
  
  static const struct of_device_id msdc_of_ids[] = {
-@@ -1277,6 +1282,8 @@ static void msdc_init_hw(struct msdc_hos
+@@ -1279,6 +1284,8 @@ static void msdc_init_hw(struct msdc_hos
  	sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
  	writel(0xffff4089, host->base + MSDC_PATCH_BIT1);
  	sdr_set_bits(host->base + EMMC50_CFG0, EMMC50_CFG_CFCSTS_SEL);

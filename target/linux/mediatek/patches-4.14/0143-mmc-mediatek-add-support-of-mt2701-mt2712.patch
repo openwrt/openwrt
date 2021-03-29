@@ -137,7 +137,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	sdr_set_bits(host->base + MSDC_CFG, MSDC_CFG_CKPDN);
  	while (!(readl(host->base + MSDC_CFG) & MSDC_CFG_CKSTB))
  		cpu_relax();
-@@ -1620,12 +1673,17 @@ static int msdc_drv_probe(struct platfor
+@@ -1622,12 +1675,17 @@ static int msdc_drv_probe(struct platfor
  	struct mmc_host *mmc;
  	struct msdc_host *host;
  	struct resource *res;
@@ -155,7 +155,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	/* Allocate MMC host for this device */
  	mmc = mmc_alloc_host(sizeof(struct msdc_host), &pdev->dev);
  	if (!mmc)
-@@ -1689,11 +1747,15 @@ static int msdc_drv_probe(struct platfor
+@@ -1691,11 +1749,15 @@ static int msdc_drv_probe(struct platfor
  	msdc_of_property_parse(pdev, host);
  
  	host->dev = &pdev->dev;
@@ -172,7 +172,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  
  	mmc->caps |= MMC_CAP_ERASE | MMC_CAP_CMD23;
  	/* MMC core transfer sizes tunable parameters */
-@@ -1842,12 +1904,6 @@ static const struct dev_pm_ops msdc_dev_
+@@ -1844,12 +1906,6 @@ static const struct dev_pm_ops msdc_dev_
  	SET_RUNTIME_PM_OPS(msdc_runtime_suspend, msdc_runtime_resume, NULL)
  };
  

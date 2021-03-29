@@ -161,7 +161,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  
 -	reg = flexcan_read(&regs->mcr);
 +	reg = priv->read(&regs->mcr);
- 	reg |= FLEXCAN_MCR_HALT;
+ 	reg |= FLEXCAN_MCR_FRZ | FLEXCAN_MCR_HALT;
 -	flexcan_write(reg, &regs->mcr);
 +	priv->write(reg, &regs->mcr);
  
@@ -527,7 +527,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  
  	flexcan_transceiver_disable(priv);
  	priv->can.state = CAN_STATE_STOPPED;
-@@ -1209,26 +1226,26 @@ static int register_flexcandev(struct ne
+@@ -1209,9 +1226,9 @@ static int register_flexcandev(struct ne
  	err = flexcan_chip_disable(priv);
  	if (err)
  		goto out_disable_per;
@@ -539,13 +539,13 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  
  	err = flexcan_chip_enable(priv);
  	if (err)
+@@ -1223,16 +1240,16 @@ static int register_flexcandev(struct ne
  		goto out_chip_disable;
  
- 	/* set freeze, halt and activate FIFO, restrict register access */
+ 	/* activate FIFO, restrict register access */
 -	reg = flexcan_read(&regs->mcr);
 +	reg = priv->read(&regs->mcr);
- 	reg |= FLEXCAN_MCR_FRZ | FLEXCAN_MCR_HALT |
- 		FLEXCAN_MCR_FEN | FLEXCAN_MCR_SUPV;
+ 	reg |=  FLEXCAN_MCR_FEN | FLEXCAN_MCR_SUPV;
 -	flexcan_write(reg, &regs->mcr);
 +	priv->write(reg, &regs->mcr);
  
@@ -559,7 +559,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  	if (!(reg & FLEXCAN_MCR_FEN)) {
  		netdev_err(dev, "Could not enable RX FIFO, unsupported core\n");
  		err = -ENODEV;
-@@ -1256,8 +1273,12 @@ static void unregister_flexcandev(struct
+@@ -1260,8 +1277,12 @@ static void unregister_flexcandev(struct
  static const struct of_device_id flexcan_of_match[] = {
  	{ .compatible = "fsl,imx6q-flexcan", .data = &fsl_imx6q_devtype_data, },
  	{ .compatible = "fsl,imx28-flexcan", .data = &fsl_imx28_devtype_data, },
@@ -572,7 +572,7 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  	{ /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(of, flexcan_of_match);
-@@ -1337,6 +1358,21 @@ static int flexcan_probe(struct platform
+@@ -1341,6 +1362,21 @@ static int flexcan_probe(struct platform
  	dev->flags |= IFF_ECHO;
  
  	priv = netdev_priv(dev);

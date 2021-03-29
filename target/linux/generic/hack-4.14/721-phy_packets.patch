@@ -15,7 +15,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1412,6 +1412,7 @@ enum netdev_priv_flags {
+@@ -1413,6 +1413,7 @@ enum netdev_priv_flags {
  	IFF_PHONY_HEADROOM		= 1<<26,
  	IFF_MACSEC			= 1<<27,
  	IFF_L3MDEV_RX_HANDLER		= 1<<28,
@@ -23,7 +23,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
-@@ -1442,6 +1443,7 @@ enum netdev_priv_flags {
+@@ -1443,6 +1444,7 @@ enum netdev_priv_flags {
  #define IFF_RXFH_CONFIGURED		IFF_RXFH_CONFIGURED
  #define IFF_MACSEC			IFF_MACSEC
  #define IFF_L3MDEV_RX_HANDLER		IFF_L3MDEV_RX_HANDLER
@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /**
   *	struct net_device - The DEVICE structure.
-@@ -1728,6 +1730,11 @@ struct net_device {
+@@ -1729,6 +1731,11 @@ struct net_device {
  	const struct xfrmdev_ops *xfrmdev_ops;
  #endif
  
@@ -43,7 +43,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const struct header_ops *header_ops;
  
  	unsigned int		flags;
-@@ -1802,6 +1809,10 @@ struct net_device {
+@@ -1803,6 +1810,10 @@ struct net_device {
  	struct mpls_dev __rcu	*mpls_ptr;
  #endif
  

@@ -23,7 +23,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -826,6 +826,13 @@ struct xfrmdev_ops {
+@@ -827,6 +827,13 @@ struct xfrmdev_ops {
  };
  #endif
  
@@ -37,7 +37,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  /*
   * This structure defines the management hooks for network devices.
   * The following hooks can be defined; unless noted otherwise, they are
-@@ -1057,6 +1064,10 @@ struct xfrmdev_ops {
+@@ -1058,6 +1065,10 @@ struct xfrmdev_ops {
   * int (*ndo_bridge_dellink)(struct net_device *dev, struct nlmsghdr *nlh,
   *			     u16 flags);
   *
@@ -48,7 +48,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
   * int (*ndo_change_carrier)(struct net_device *dev, bool new_carrier);
   *	Called to change device carrier. Soft-devices (like dummy, team, etc)
   *	which do not represent real hardware may define this to allow their
-@@ -1281,6 +1292,8 @@ struct net_device_ops {
+@@ -1282,6 +1293,8 @@ struct net_device_ops {
  	int			(*ndo_bridge_dellink)(struct net_device *dev,
  						      struct nlmsghdr *nlh,
  						      u16 flags);

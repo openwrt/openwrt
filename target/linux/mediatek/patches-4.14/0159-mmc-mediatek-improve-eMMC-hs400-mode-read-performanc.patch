@@ -40,7 +40,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	u32 sdc_fifo_cfg;
  };
  
-@@ -1750,6 +1754,9 @@ static int msdc_prepare_hs400_tuning(str
+@@ -1752,6 +1756,9 @@ static int msdc_prepare_hs400_tuning(str
  	writel(host->hs400_ds_delay, host->base + PAD_DS_TUNE);
  	/* hs400 mode must set it to 0 */
  	sdr_clr_bits(host->base + MSDC_PATCH_BIT2, MSDC_PATCH_BIT2_CFGCRCSTS);
@@ -50,7 +50,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	return 0;
  }
  
-@@ -2000,6 +2007,7 @@ static void msdc_save_reg(struct msdc_ho
+@@ -2002,6 +2009,7 @@ static void msdc_save_reg(struct msdc_ho
  	host->save_para.pad_ds_tune = readl(host->base + PAD_DS_TUNE);
  	host->save_para.pad_cmd_tune = readl(host->base + PAD_CMD_TUNE);
  	host->save_para.emmc50_cfg0 = readl(host->base + EMMC50_CFG0);
@@ -58,7 +58,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	host->save_para.sdc_fifo_cfg = readl(host->base + SDC_FIFO_CFG);
  }
  
-@@ -2017,6 +2025,7 @@ static void msdc_restore_reg(struct msdc
+@@ -2019,6 +2027,7 @@ static void msdc_restore_reg(struct msdc
  	writel(host->save_para.pad_ds_tune, host->base + PAD_DS_TUNE);
  	writel(host->save_para.pad_cmd_tune, host->base + PAD_CMD_TUNE);
  	writel(host->save_para.emmc50_cfg0, host->base + EMMC50_CFG0);
