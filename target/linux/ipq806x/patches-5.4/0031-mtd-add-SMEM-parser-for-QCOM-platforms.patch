@@ -18,7 +18,7 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -128,6 +128,13 @@ config MTD_PARSER_TRX
+@@ -138,6 +138,13 @@ config MTD_PARSER_TRX
  	  This driver will parse TRX header and report at least two partitions:
  	  kernel and rootfs.
  
@@ -34,7 +34,7 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
  	depends on MTD_NAND_SHARPSL || MTD_NAND_TMIO || COMPILE_TEST
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -10,6 +10,7 @@ ofpart-$(CONFIG_MTD_OF_PARTS_BCM4908)	+=
+@@ -11,6 +11,7 @@ ofpart-$(CONFIG_MTD_OF_PARTS_LINKSYS_NS)
  obj-$(CONFIG_MTD_PARSER_IMAGETAG)	+= parser_imagetag.o
  obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
  obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
