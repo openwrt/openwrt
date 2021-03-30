@@ -71,7 +71,7 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
  		break;
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -935,14 +935,16 @@ struct phy_device *phy_find_first(struct
+@@ -936,14 +936,16 @@ struct phy_device *phy_find_first(struct
  }
  EXPORT_SYMBOL(phy_find_first);
  
@@ -107,7 +107,7 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
  	bool tx_pause, rx_pause;
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -636,7 +636,7 @@ struct phy_device {
+@@ -638,7 +638,7 @@ struct phy_device {
  	u8 mdix;
  	u8 mdix_ctrl;
  
