@@ -15,7 +15,7 @@ Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
 
 --- a/net/bridge/br_switchdev.c
 +++ b/net/bridge/br_switchdev.c
-@@ -102,46 +102,27 @@ int br_switchdev_set_port_flag(struct ne
+@@ -102,25 +102,16 @@ int br_switchdev_set_port_flag(struct ne
  	return 0;
  }
  
@@ -47,6 +47,8 @@ Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
 +
  	if (!fdb->dst)
  		return;
+ 	if (test_bit(BR_FDB_LOCAL, &fdb->flags))
+@@ -128,22 +119,12 @@ br_switchdev_fdb_notify(const struct net
  
  	switch (type) {
  	case RTM_DELNEIGH:
