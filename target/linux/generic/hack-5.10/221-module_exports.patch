@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Align . to a 8 byte boundary equals to maximum function alignment. */
  #define ALIGN_FUNCTION()  . = ALIGN(8)
  
-@@ -470,14 +480,14 @@
+@@ -473,14 +483,14 @@
  	/* Kernel symbol table: Normal symbols */			\
  	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
  		__start___ksymtab = .;					\
@@ -47,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		__stop___ksymtab_gpl = .;				\
  	}								\
  									\
-@@ -539,7 +549,7 @@
+@@ -542,7 +552,7 @@
  									\
  	/* Kernel symbol table: strings */				\
          __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}								\
  									\
  	/* __*init sections */						\
-@@ -1014,6 +1024,8 @@
+@@ -1017,6 +1027,8 @@
  
  #define COMMON_DISCARDS							\
  	SANITIZER_DISCARDS						\
