@@ -77,10 +77,10 @@
  	void __iomem *sysc = (void __iomem *) KSEG1ADDR(MT7621_SYSC_BASE);
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
-@@ -63,6 +63,7 @@ choice
+@@ -62,6 +62,7 @@ choice
+ 		select CLKSRC_MIPS_GIC
  		select HAVE_PCI if PCI_MT7621
  		select SOC_BUS
- 		select WEAK_REORDERING_BEYOND_LLSC
 +		select GENERIC_CLOCKEVENTS_BROADCAST
  endchoice
  
