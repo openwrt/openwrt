@@ -8,7 +8,7 @@ ARCH:=arm
 BOARD:=imx
 BOARDNAME:=NXP i.MX
 FEATURES:=audio display fpu gpio pcie rtc usb usbgadget squashfs targz nand ubifs boot-part rootfs-part
-SUBTARGETS:=cortexa9
+SUBTARGETS:=cortexa7 cortexa9
 
 KERNEL_PATCHVER:=5.4
 KERNEL_TESTING_PATCHVER:=5.10
