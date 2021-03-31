@@ -88,16 +88,11 @@ enum {
 	GSW_ATTR_PORT_UNTAG,
 };
 
-enum {
-	PORT4_EPHY = 0,
-	PORT4_EXT,
-};
-
 struct mt7620_gsw {
 	struct device		*dev;
 	void __iomem		*base;
 	int			irq;
-	int			port4;
+	bool			port4_ephy;
 	unsigned long int	autopoll;
 	u16			ephy_base;
 };
