@@ -40,7 +40,7 @@ static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 	struct fe_priv *priv = (struct fe_priv *)_priv;
 	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	u32 status;
-	int i, max = (gsw->port4 == PORT4_EPHY) ? (4) : (3);
+	int i, max = (gsw->port4_ephy) ? (4) : (3);
 
 	status = mtk_switch_r32(gsw, GSW_REG_ISR);
 	if (status & PORT_IRQ_ST_CHG)
@@ -202,8 +202,8 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw, int mdio_mode)
 	mtk_switch_w32(gsw, 0x7f7f7fe0, 0x0010);
 
 	/* setup port 4 */
-	if (gsw->port4 == PORT4_EPHY) {
-		u32 val = rt_sysc_r32(SYSC_REG_CFG1);
+	if (gsw->port4_ephy) {
+		val = rt_sysc_r32(SYSC_REG_CFG1);
 
 		val |= 3 << 14;
 		rt_sysc_w32(val, SYSC_REG_CFG1);
@@ -255,7 +255,6 @@ int mtk_gsw_init(struct fe_priv *priv)
 static int mt7620_gsw_probe(struct platform_device *pdev)
 {
 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	const char *port4 = NULL;
 	struct mt7620_gsw *gsw;
 	struct device_node *np = pdev->dev.of_node;
 	u16 val;
@@ -270,13 +269,7 @@ static int mt7620_gsw_probe(struct platform_device *pdev)
 
 	gsw->dev = &pdev->dev;
 
-	of_property_read_string(np, "mediatek,port4", &port4);
-	if (port4 && !strcmp(port4, "ephy"))
-		gsw->port4 = PORT4_EPHY;
-	else if (port4 && !strcmp(port4, "gmac"))
-		gsw->port4 = PORT4_EXT;
-	else
-		gsw->port4 = PORT4_EPHY;
+	gsw->port4_ephy = !of_property_read_bool(np, "mediatek,port4-gmac");
 
 	if (of_property_read_u16(np, "mediatek,ephy-base-address", &val) == 0)
 		gsw->ephy_base = val;
