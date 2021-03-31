@@ -141,7 +141,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	u32 val, mask = 0;
 	u32 val_delay = 0;
 	u32 mask_delay = GSW_REG_GPCx_TXDELAY | GSW_REG_GPCx_RXDELAY;
-	int min = (gsw->port4 == PORT4_EPHY) ? (5) : (4);
+	int min = (gsw->port4_ephy) ? (5) : (4);
 
 	if (!_id || (be32_to_cpu(*_id) < min) || (be32_to_cpu(*_id) > 5)) {
 		if (_id)
