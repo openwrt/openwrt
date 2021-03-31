@@ -141,47 +141,24 @@
  	dev->gd = gd;
 --- a/block/partitions/efi.c
 +++ b/block/partitions/efi.c
-@@ -704,7 +704,7 @@ int efi_partition(struct parsed_partitio
- {
- 	gpt_header *gpt = NULL;
+@@ -706,6 +706,9 @@ int efi_partition(struct parsed_partitio
  	gpt_entry *ptes = NULL;
--	u32 i;
-+	u32 i, slot = 0;
+ 	u32 i;
  	unsigned ssz = bdev_logical_block_size(state->bdev) / 512;
++#ifdef CONFIG_FIT_PARTITION
++	u32 extra_slot = 64;
++#endif
  
  	if (!find_valid_gpt(state, &gpt, &ptes) || !gpt || !ptes) {
-@@ -722,23 +722,30 @@ int efi_partition(struct parsed_partitio
- 		u64 size = le64_to_cpu(ptes[i].ending_lba) -
- 			   le64_to_cpu(ptes[i].starting_lba) + 1ULL;
- 
--		if (!is_pte_valid(&ptes[i], last_lba(state->bdev)))
-+		if (!is_pte_valid(&ptes[i], last_lba(state->bdev))) {
-+			++slot;
- 			continue;
-+		}
- 
--		put_partition(state, i+1, start * ssz, size * ssz);
-+		put_partition(state, ++slot, start * ssz, size * ssz);
- 
- 		/* If this is a RAID volume, tell md */
- 		if (!efi_guidcmp(ptes[i].partition_type_guid, PARTITION_LINUX_RAID_GUID))
--			state->parts[i + 1].flags = ADDPART_FLAG_RAID;
-+			state->parts[slot].flags = ADDPART_FLAG_RAID;
- 
--		info = &state->parts[i + 1].info;
-+		info = &state->parts[slot].info;
- 		efi_guid_to_str(&ptes[i].unique_partition_guid, info->uuid);
- 
- 		/* Naively convert UTF16-LE to 7 bits. */
- 		label_max = min(ARRAY_SIZE(info->volname) - 1,
+ 		kfree(gpt);
+@@ -739,6 +742,11 @@ int efi_partition(struct parsed_partitio
  				ARRAY_SIZE(ptes[i].partition_name));
  		utf16_le_to_7bit(ptes[i].partition_name, label_max, info->volname);
--		state->parts[i + 1].has_info = true;
-+		state->parts[slot].has_info = true;
+ 		state->parts[i + 1].has_info = true;
 +#ifdef CONFIG_FIT_PARTITION
 +		/* If this is a U-Boot FIT volume it may have subpartitions */
 +		if (!efi_guidcmp(ptes[i].partition_type_guid, PARTITION_LINUX_FIT_GUID))
-+			(void) parse_fit_partitions(state, start * ssz, size * ssz, &slot, 1);
++			(void) parse_fit_partitions(state, start * ssz, size * ssz, &extra_slot, 1);
 +#endif
  	}
  	kfree(ptes);
