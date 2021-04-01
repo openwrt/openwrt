@@ -17,14 +17,20 @@ include $(INCLUDE_DIR)/package.mk
 define Package/zram-swap
   SECTION:=utils
   CATEGORY:=Base system
-  DEPENDS:=+kmod-zram +@BUSYBOX_CONFIG_MKSWAP +@BUSYBOX_CONFIG_SWAPON +@BUSYBOX_CONFIG_FEATURE_SWAPON_DISCARD +@BUSYBOX_CONFIG_FEATURE_SWAPON_PRI +@BUSYBOX_CONFIG_SWAPOFF
+  DEPENDS:= \
+	+@BUSYBOX_CONFIG_FEATURE_SWAPON_DISCARD \
+	+@BUSYBOX_CONFIG_FEATURE_SWAPON_PRI \
+	+@BUSYBOX_CONFIG_MKSWAP \
+	+@BUSYBOX_CONFIG_SWAPOFF \
+	+@BUSYBOX_CONFIG_SWAPON \
+	+kmod-zram
   TITLE:=ZRAM swap scripts
   PKGARCH:=all
 endef
 
 define Package/zram-swap/description
- A script to activate swaping on a compressed zram partition. This 
- could be used to increase the available memory, by using compressed 
+ A script to activate swaping on a compressed zram partition. This
+ could be used to increase the available memory, by using compressed
  memory.
 endef
 
