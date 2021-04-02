@@ -22,11 +22,19 @@
 #define le32_to_cpu(x)	bswap_32(x)
 #define cpu_to_be32(x)	(x)
 #define be32_to_cpu(x)	(x)
+#define cpu_to_le16(x)	bswap_16(x)
+#define le16_to_cpu(x)	bswap_16(x)
+#define cpu_to_be16(x)	(x)
+#define be16_to_cpu(x)	(x)
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
 #define cpu_to_le32(x)	(x)
 #define le32_to_cpu(x)	(x)
 #define cpu_to_be32(x)	bswap_32(x)
 #define be32_to_cpu(x)	bswap_32(x)
+#define cpu_to_le16(x)	(x)
+#define le16_to_cpu(x)	(x)
+#define cpu_to_be16(x)	bswap_16(x)
+#define be16_to_cpu(x)	bswap_16(x)
 #else
 #error "Unsupported endianness"
 #endif
@@ -57,6 +65,7 @@ struct bcm4908img_tail {
 struct bcm4908img_info {
 	size_t file_size;
 	size_t vendor_header_size;	/* Vendor header size */
+	size_t cferom_size;
 	uint32_t crc32;			/* Calculated checksum */
 	struct bcm4908img_tail tail;
 };
@@ -203,6 +212,7 @@ static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 	struct chk_header *chk;
 	struct stat st;
 	uint8_t buf[1024];
+	uint16_t tmp16;
 	size_t length;
 	size_t bytes;
 	int err = 0;
@@ -228,6 +238,26 @@ static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 	chk = (void *)buf;
 	if (be32_to_cpu(chk->magic) == 0x2a23245e)
 		info->vendor_header_size = be32_to_cpu(chk->header_len);
+
+	/* Sizes */
+
+	for (; info->vendor_header_size + info->cferom_size <= info->file_size; info->cferom_size += 0x20000) {
+		if (fseek(fp, info->vendor_header_size + info->cferom_size, SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek to the 0x%zx\n", info->cferom_size);
+			return err;
+		}
+		if (fread(&tmp16, 1, sizeof(tmp16), fp) != sizeof(tmp16)) {
+			fprintf(stderr, "Failed to read while looking for JFFS2\n");
+			return -EIO;
+		}
+		if (be16_to_cpu(tmp16) == 0x8519)
+			break;
+	}
+	if (info->vendor_header_size + info->cferom_size >= info->file_size) {
+		fprintf(stderr, "Failed to find cferom size (no bootfs found)\n");
+		return -EPROTO;
+	}
 
 	/* CRC32 */
 
@@ -294,6 +324,7 @@ static int bcm4908img_info(int argc, char **argv) {
 	}
 
 	printf("Vendor header length:\t%zu\n", info.vendor_header_size);
+	printf("cferom size:\t0x%zx\n", info.cferom_size);
 	printf("Checksum:\t0x%08x\n", info.crc32);
 
 err_close:
