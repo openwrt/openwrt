@@ -188,7 +188,8 @@
 	status = "disabled";
 
 	phy-mode = "rgmii";
-	mtd-mac-address = <&art 0x1120c>;
+	nvmem-cells = <&macaddr_art_1120c>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <1000>;
@@ -215,7 +216,8 @@
 	resets = <&rst 13>;
 	reset-names = "mac";
 	qca,mac-idx = <1>;
-	mtd-mac-address = <&art 0x1120c>;
+	nvmem-cells = <&macaddr_art_1120c>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
@@ -246,4 +248,14 @@
 
 &usb_phy {
 	status = "okay";
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_art_1120c: macaddr@1120c {
+		reg = <0x1120c 0x6>;
+	};
 };

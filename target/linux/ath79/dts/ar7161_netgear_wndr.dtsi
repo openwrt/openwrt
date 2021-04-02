@@ -153,7 +153,8 @@
 	ath9k0: wifi@0,11 {
 		compatible = "pci168c,0029";
 		reg = <0x8800 0 0 0 0>;
-		mtd-mac-address = <&art 0x0>;
+		nvmem-cells = <&macaddr_art_0>;
+		nvmem-cell-names = "mac-address";
 		qca,no-eeprom;
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -181,7 +182,8 @@
 	ath9k1: wifi@0,12 {
 		compatible = "pci168c,0029";
 		reg = <0x9000 0 0 0 0>;
-		mtd-mac-address = <&art 0xc>;
+		nvmem-cells = <&macaddr_art_c>;
+		nvmem-cell-names = "mac-address";
 		qca,no-eeprom;
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -209,7 +211,8 @@
 
 	pll-data = <0x11110000 0x00001099 0x00991099>;
 
-	mtd-mac-address = <&art 0x00>;
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <1000>;
@@ -222,7 +225,26 @@
 
 	pll-data = <0x11110000 0x00001099 0x00991099>;
 
-	mtd-mac-address = <&art 0x06>;
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
 
 	phy-handle = <&phy4>;
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_art_0: macaddr@0 {
+		reg = <0x0 0x6>;
+	};
+
+	macaddr_art_6: macaddr@6 {
+		reg = <0x6 0x6>;
+	};
+
+	macaddr_art_c: macaddr@c {
+		reg = <0xc 0x6>;
+	};
 };
