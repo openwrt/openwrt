@@ -262,32 +262,39 @@ static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 }
 
 /**************************************************
- * Check
+ * Info
  **************************************************/
 
-static int bcm4908img_check(int argc, char **argv) {
+static int bcm4908img_info(int argc, char **argv) {
 	struct bcm4908img_info info;
 	const char *pathname = NULL;
 	FILE *fp;
+	int c;
 	int err = 0;
 
-	if (argc >= 3)
-		pathname = argv[2];
+	while ((c = getopt(argc, argv, "i:")) != -1) {
+		switch (c) {
+		case 'i':
+			pathname = optarg;
+			break;
+		}
+	}
 
 	fp = bcm4908img_open(pathname, "r");
 	if (!fp) {
-		fprintf(stderr, "Failed to open %s\n", pathname);
+		fprintf(stderr, "Failed to open BCM4908 image\n");
 		err = -EACCES;
 		goto out;
 	}
 
 	err = bcm4908img_parse(fp, &info);
 	if (err) {
-		fprintf(stderr, "Failed to parse %s\n", pathname);
+		fprintf(stderr, "Failed to parse BCM4908 image\n");
 		goto err_close;
 	}
 
-	printf("Found a valid BCM4908 image (crc: 0x%08x)\n", info.crc32);
+	printf("Vendor header length:\t%zu\n", info.vendor_header_size);
+	printf("Checksum:\t0x%08x\n", info.crc32);
 
 err_close:
 	bcm4908img_close(fp);
@@ -438,8 +445,9 @@ out:
 static void usage() {
 	printf("Usage:\n");
 	printf("\n");
-	printf("Checking a BCM4908 image:\n");
-	printf("\tbcm4908img check <file>\t\t\tcheck if images is valid\n");
+	printf("Info about a BCM4908 image:\n");
+	printf("\tbcm4908img info <options>\n");
+	printf("\t-i <file>\t\t\t\tinput BCM490 image\n");
 	printf("\n");
 	printf("Creating a new BCM4908 image:\n");
 	printf("\tbcm4908img create <file> [options]\n");
@@ -450,8 +458,9 @@ static void usage() {
 
 int main(int argc, char **argv) {
 	if (argc > 1) {
-		if (!strcmp(argv[1], "check"))
-			return bcm4908img_check(argc, argv);
+		optind++;
+		if (!strcmp(argv[1], "info"))
+			return bcm4908img_info(argc, argv);
 		else if (!strcmp(argv[1], "create"))
 			return bcm4908img_create(argc, argv);
 	}
