@@ -144,7 +144,8 @@
 };
 
 &gmac0 {
-	mtd-mac-address = <&factory 0x3fff4>;
+	nvmem-cells = <&macaddr_factory_3fff4>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch0 {
@@ -152,7 +153,8 @@
 		port@0 {
 			status = "okay";
 			label = "wan";
-			mtd-mac-address = <&factory 0x3fffa>;
+			nvmem-cells = <&macaddr_factory_3fffa>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port@1 {
@@ -171,5 +173,19 @@
 	gpio {
 		groups = "jtag", "wdt";
 		function = "gpio";
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_3fff4: macaddr@3fff4 {
+		reg = <0x3fff4 0x6>;
+	};
+
+	macaddr_factory_3fffa: macaddr@3fffa {
+		reg = <0x3fffa 0x6>;
 	};
 };
