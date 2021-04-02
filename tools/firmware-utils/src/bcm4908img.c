@@ -6,6 +6,7 @@
 #include <byteswap.h>
 #include <endian.h>
 #include <errno.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,6 +53,8 @@
 
 #define WFI_FLAG_HAS_PMC		0x1
 #define WFI_FLAG_SUPPORTS_BTRM		0x2
+
+static int debug;
 
 struct bcm4908img_tail {
 	uint32_t crc32;
@@ -147,10 +150,12 @@ static const uint32_t crc32_tbl[] = {
 	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d,
 };
 
-uint32_t bcm4908img_crc32(uint32_t crc, uint8_t *buf, size_t len) {
+uint32_t bcm4908img_crc32(uint32_t crc, const void *buf, size_t len) {
+	const uint8_t *in = buf;
+
 	while (len) {
-		crc = crc32_tbl[(crc ^ *buf) & 0xff] ^ (crc >> 8);
-		buf++;
+		crc = crc32_tbl[(crc ^ *in) & 0xff] ^ (crc >> 8);
+		in++;
 		len--;
 	}
 
@@ -188,6 +193,27 @@ static FILE *bcm4908img_open(const char *pathname, const char *mode) {
 static void bcm4908img_close(FILE *fp) {
 	if (fp != stdin)
 		fclose(fp);
+}
+
+static int bcm4908img_calc_crc32(FILE *fp, struct bcm4908img_info *info) {
+	uint8_t buf[1024];
+	size_t length;
+	size_t bytes;
+
+	fseek(fp, info->vendor_header_size, SEEK_SET);
+
+	info->crc32 = 0xffffffff;
+	length = info->file_size - info->vendor_header_size - sizeof(struct bcm4908img_tail);
+	while (length && (bytes = fread(buf, 1, bcm4908img_min(sizeof(buf), length), fp)) > 0) {
+		info->crc32 = bcm4908img_crc32(info->crc32, buf, bytes);
+		length -= bytes;
+	}
+	if (length) {
+		fprintf(stderr, "Failed to read last %zd B of data\n", length);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 /**************************************************
@@ -550,6 +576,306 @@ err_out:
 }
 
 /**************************************************
+ * bootfs
+ **************************************************/
+
+#define JFFS2_MAGIC_BITMASK 0x1985
+
+#define JFFS2_COMPR_NONE	0x00
+#define JFFS2_COMPR_ZERO	0x01
+#define JFFS2_COMPR_RTIME	0x02
+#define JFFS2_COMPR_RUBINMIPS	0x03
+#define JFFS2_COMPR_COPY	0x04
+#define JFFS2_COMPR_DYNRUBIN	0x05
+#define JFFS2_COMPR_ZLIB	0x06
+#define JFFS2_COMPR_LZO		0x07
+/* Compatibility flags. */
+#define JFFS2_COMPAT_MASK 0xc000      /* What do to if an unknown nodetype is found */
+#define JFFS2_NODE_ACCURATE 0x2000
+/* INCOMPAT: Fail to mount the filesystem */
+#define JFFS2_FEATURE_INCOMPAT 0xc000
+/* ROCOMPAT: Mount read-only */
+#define JFFS2_FEATURE_ROCOMPAT 0x8000
+/* RWCOMPAT_COPY: Mount read/write, and copy the node when it's GC'd */
+#define JFFS2_FEATURE_RWCOMPAT_COPY 0x4000
+/* RWCOMPAT_DELETE: Mount read/write, and delete the node when it's GC'd */
+#define JFFS2_FEATURE_RWCOMPAT_DELETE 0x0000
+
+#define JFFS2_NODETYPE_DIRENT (JFFS2_FEATURE_INCOMPAT | JFFS2_NODE_ACCURATE | 1)
+
+typedef struct {
+	uint32_t v32;
+} __attribute__((packed)) jint32_t;
+
+typedef struct {
+	uint16_t v16;
+} __attribute__((packed)) jint16_t;
+
+struct jffs2_unknown_node
+{
+	/* All start like this */
+	jint16_t magic;
+	jint16_t nodetype;
+	jint32_t totlen; /* So we can skip over nodes we don't grok */
+	jint32_t hdr_crc;
+};
+
+struct jffs2_raw_dirent
+{
+	jint16_t magic;
+	jint16_t nodetype;	/* == JFFS2_NODETYPE_DIRENT */
+	jint32_t totlen;
+	jint32_t hdr_crc;
+	jint32_t pino;
+	jint32_t version;
+	jint32_t ino; /* == zero for unlink */
+	jint32_t mctime;
+	uint8_t nsize;
+	uint8_t type;
+	uint8_t unused[2];
+	jint32_t node_crc;
+	jint32_t name_crc;
+	uint8_t name[0];
+};
+
+#define je16_to_cpu(x) ((x).v16)
+#define je32_to_cpu(x) ((x).v32)
+
+static int bcm4908img_bootfs_ls(FILE *fp, struct bcm4908img_info *info) {
+	struct jffs2_unknown_node node;
+	struct jffs2_raw_dirent dirent;
+	size_t offset;
+	size_t bytes;
+	int err = 0;
+
+	for (offset = info->vendor_header_size + info->cferom_size; ; offset += (je32_to_cpu(node.totlen) + 0x03) & ~0x03) {
+		char name[FILENAME_MAX + 1];
+
+		if (fseek(fp, offset, SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+
+		bytes = fread(&node, 1, sizeof(node), fp);
+		if (bytes != sizeof(node)) {
+			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(node));
+			return -EIO;
+		}
+
+		if (je16_to_cpu(node.magic) != JFFS2_MAGIC_BITMASK) {
+			break;
+		}
+
+		if (je16_to_cpu(node.nodetype) != JFFS2_NODETYPE_DIRENT) {
+			continue;
+		}
+
+		memcpy(&dirent, &node, sizeof(node));
+		bytes += fread((uint8_t *)&dirent + sizeof(node), 1, sizeof(dirent) - sizeof(node), fp);
+		if (bytes != sizeof(dirent)) {
+			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(node));
+			return -EIO;
+		}
+
+		if (dirent.nsize + 1 > sizeof(name)) {
+			/* Keep reading & printing BUT exit with error code */
+			fprintf(stderr, "Too long filename\n");
+			err = -ENOMEM;
+			continue;
+		}
+
+		bytes = fread(name, 1, dirent.nsize, fp);
+		if (bytes != dirent.nsize) {
+			fprintf(stderr, "Failed to read filename\n");
+			return -EIO;
+		}
+		name[bytes] = '\0';
+
+		printf("%s\n", name);
+	}
+
+	return err;
+}
+
+static int bcm4908img_bootfs_mv(FILE *fp, struct bcm4908img_info *info, int argc, char **argv) {
+	struct jffs2_unknown_node node;
+	struct jffs2_raw_dirent dirent;
+	const char *oldname;
+	const char *newname;
+	size_t offset;
+	size_t bytes;
+	int err = -ENOENT;
+
+	if (argc - optind < 2) {
+		fprintf(stderr, "No enough arguments passed\n");
+		return -EINVAL;
+	}
+	oldname = argv[optind++];
+	newname = argv[optind++];
+
+	if (strlen(newname) != strlen(oldname)) {
+		fprintf(stderr, "New filename must have the same length as the old one\n");
+		return -EINVAL;
+	}
+
+	for (offset = info->vendor_header_size + info->cferom_size; ; offset += (je32_to_cpu(node.totlen) + 0x03) & ~0x03) {
+		char name[FILENAME_MAX];
+		uint32_t crc32;
+
+		if (fseek(fp, offset, SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+
+		bytes = fread(&node, 1, sizeof(node), fp);
+		if (bytes != sizeof(node)) {
+			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(node));
+			return -EIO;
+		}
+
+		if (je16_to_cpu(node.magic) != JFFS2_MAGIC_BITMASK) {
+			break;
+		}
+
+		if (je16_to_cpu(node.nodetype) != JFFS2_NODETYPE_DIRENT) {
+			continue;
+		}
+
+		bytes += fread((uint8_t *)&dirent + sizeof(node), 1, sizeof(dirent) - sizeof(node), fp);
+		if (bytes != sizeof(dirent)) {
+			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(node));
+			return -EIO;
+		}
+
+		if (dirent.nsize + 1 > sizeof(name)) {
+			fprintf(stderr, "Too long filename\n");
+			err = -ENOMEM;
+			continue;
+		}
+
+		bytes = fread(name, 1, dirent.nsize, fp);
+		if (bytes != dirent.nsize) {
+			fprintf(stderr, "Failed to read filename\n");
+			return -EIO;
+		}
+		name[bytes] = '\0';
+
+		if (debug)
+			printf("offset:%08zx name_crc:%04x filename:%s\n", offset, je32_to_cpu(dirent.name_crc), name);
+
+		if (strcmp(name, oldname)) {
+			continue;
+		}
+
+		if (fseek(fp, offset + offsetof(struct jffs2_raw_dirent, name_crc), SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+		crc32 = bcm4908img_crc32(0, newname, dirent.nsize);
+		bytes = fwrite(&crc32, 1, sizeof(crc32), fp);
+		if (bytes != sizeof(crc32)) {
+			fprintf(stderr, "Failed to write new CRC32\n");
+			return -EIO;
+		}
+
+		if (fseek(fp, offset + offsetof(struct jffs2_raw_dirent, name), SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+		bytes = fwrite(newname, 1, dirent.nsize, fp);
+		if (bytes != dirent.nsize) {
+			fprintf(stderr, "Failed to write new filename\n");
+			return -EIO;
+		}
+
+		/* Calculate new BCM4908 image checksum */
+
+		err = bcm4908img_calc_crc32(fp, info);
+		if (err) {
+			fprintf(stderr, "Failed to write new filename\n");
+			return err;
+		}
+
+		info->tail.crc32 = cpu_to_le32(info->crc32);
+		if (fseek(fp, -sizeof(struct bcm4908img_tail), SEEK_END)) {
+			err = -errno;
+			fprintf(stderr, "Failed to write new filename\n");
+			return err;
+		}
+
+		if (fwrite(&info->tail, 1, sizeof(struct bcm4908img_tail), fp) != sizeof(struct bcm4908img_tail)) {
+			fprintf(stderr, "Failed to write updated tail\n");
+			return -EIO;
+		}
+
+		printf("Successfully renamed %s to the %s\n", oldname, newname);
+
+		return 0;
+	}
+
+	fprintf(stderr, "Failed to find %s\n", oldname);
+
+	return -ENOENT;
+}
+
+static int bcm4908img_bootfs(int argc, char **argv) {
+	struct bcm4908img_info info;
+	const char *pathname = NULL;
+	const char *mode;
+	const char *cmd;
+	FILE *fp;
+	int c;
+	int err = 0;
+
+	while ((c = getopt(argc, argv, "i:")) != -1) {
+		switch (c) {
+		case 'i':
+			pathname = optarg;
+			break;
+		}
+	}
+
+	if (argc - optind < 1) {
+		fprintf(stderr, "No bootfs command specified\n");
+		err = -EINVAL;
+		goto out;
+	}
+	cmd = argv[optind++];
+
+	mode = strcmp(cmd, "mv") ? "r" : "r+";
+	fp = bcm4908img_open(pathname, mode);
+	if (!fp) {
+		fprintf(stderr, "Failed to open BCM4908 image\n");
+		err = -EACCES;
+		goto out;
+	}
+
+	err = bcm4908img_parse(fp, &info);
+	if (err) {
+		fprintf(stderr, "Failed to parse BCM4908 image\n");
+		goto err_close;
+	}
+
+	if (!strcmp(cmd, "ls")) {
+		err = bcm4908img_bootfs_ls(fp, &info);
+	} else if (!strcmp(cmd, "mv")) {
+		err = bcm4908img_bootfs_mv(fp, &info, argc, argv);
+	} else {
+		err = -EINVAL;
+		fprintf(stderr, "Unsupported bootfs command: %s\n", cmd);
+	}
+
+err_close:
+	bcm4908img_close(fp);
+out:
+	return err;
+}
+
+/**************************************************
  * Start
  **************************************************/
 
@@ -570,6 +896,12 @@ static void usage() {
 	printf("\tbcm4908img extract <options>\n");
 	printf("\t-i <file>\t\t\t\tinput BCM490 image\n");
 	printf("\t-t <type>\t\t\t\tone of: cferom, bootfs, rootfs, firmware\n");
+	printf("\n");
+	printf("Access bootfs in a BCM4908 image:\n");
+	printf("\tbcm4908img bootfs <options> <command> <arguments>\n");
+	printf("\t-i <file>\t\t\t\tinput BCM490 image\n");
+	printf("\tls\t\t\t\t\tlist bootfs files\n");
+	printf("\tmv <source> <dest>\t\t\trename bootfs file\n");
 }
 
 int main(int argc, char **argv) {
@@ -581,6 +913,8 @@ int main(int argc, char **argv) {
 			return bcm4908img_create(argc, argv);
 		else if (!strcmp(argv[1], "extract"))
 			return bcm4908img_extract(argc, argv);
+		else if (!strcmp(argv[1], "bootfs"))
+			return bcm4908img_bootfs(argc, argv);
 	}
 
 	usage();
