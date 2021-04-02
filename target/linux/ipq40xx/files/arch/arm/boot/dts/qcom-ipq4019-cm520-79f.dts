@@ -197,11 +197,13 @@
 };
 
 &gmac0 {
-	mtd-mac-address = <&art 0x1006>;
+	nvmem-cells = <&macaddr_art_1006>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gmac1 {
-	mtd-mac-address = <&art 0x5006>;
+	nvmem-cells = <&macaddr_art_5006>;
+	nvmem-cell-names = "mac-address";
 };
 
 &nand {
@@ -351,4 +353,18 @@
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "CM520-79F";
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_art_1006: macaddr@1006 {
+		reg = <0x1006 0x6>;
+	};
+
+	macaddr_art_5006: macaddr@5006 {
+		reg = <0x5006 0x6>;
+	};
 };
