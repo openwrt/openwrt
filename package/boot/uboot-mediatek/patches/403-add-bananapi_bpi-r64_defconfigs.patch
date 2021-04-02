@@ -175,8 +175,8 @@
 +bootmenu_6=[31mInstall bootloader and recovery to eMMC.[0m=run emmc_init ; run bootmenu_confirm_return
 +bootmenu_7=Reboot.=reset
 +bootmenu_8=Reset all settings to factory defaults.=run reset_factory ; reset
-+boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; run boot_tftp_forever
-+boot_first=if button reset ; then run boot_tftp_forever ; fi ; setenv flag_recover 1 ; bootmenu
++boot_default=run bootcmd ; run boot_recovery ; run boot_tftp_forever
++boot_first=if button reset ; then run boot_tftp_forever ; fi ; bootmenu
 +boot_production=led bpi-r64:pio:green on ; run sdmmc_read_production && bootm $loadaddr#$bootconf
 +boot_recovery=led bpi-r64:pio:green off ; run sdmmc_read_recovery && bootm $loadaddr#$bootconf
 +boot_sdmmc=run boot_production ; run boot_recovery
@@ -382,8 +382,8 @@
 +bootmenu_5=Load recovery system via TFTP then write to eMMC.=setenv noboot 1 ; run boot_tftp_recovery ; setenv noboot ; run bootmenu_confirm_return
 +bootmenu_6=Reboot.=reset
 +bootmenu_7=Reset all settings to factory defaults.=run reset_factory ; reset
-+boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; run boot_tftp_forever
-+boot_first=if button reset ; then run boot_tftp_forever ; fi ; setenv flag_recover 1 ; bootmenu
++boot_default=run bootcmd ; run boot_recovery ; run boot_tftp_forever
++boot_first=if button reset ; then run boot_tftp_forever ; fi ; bootmenu
 +boot_production=led bpi-r64:pio:green on ; run emmc_read_production && bootm $loadaddr#$bootconf
 +boot_recovery=led bpi-r64:pio:green off ; run emmc_read_recovery && bootm $loadaddr#$bootconf
 +boot_emmc=run boot_production ; run boot_recovery
