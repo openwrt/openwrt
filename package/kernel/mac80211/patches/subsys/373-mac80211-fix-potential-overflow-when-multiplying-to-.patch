@@ -1,0 +1,34 @@
+From 2a4b99ffcda9f6739d4deb7bd7d2e0ed8444dda7 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Fri, 5 Feb 2021 17:53:52 +0000
+Subject: [PATCH] mac80211: fix potential overflow when multiplying to u32
+ integers
+
+[ Upstream commit 6194f7e6473be78acdc5d03edd116944bdbb2c4e ]
+
+The multiplication of the u32 variables tx_time and estimated_retx is
+performed using a 32 bit multiplication and the result is stored in
+a u64 result. This has a potential u32 overflow issue, so avoid this
+by casting tx_time to a u64 to force a 64 bit multiply.
+
+Addresses-Coverity: ("Unintentional integer overflow")
+Fixes: 050ac52cbe1f ("mac80211: code for on-demand Hybrid Wireless Mesh Protocol")
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Link: https://lore.kernel.org/r/20210205175352.208841-1-colin.king@canonical.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ net/mac80211/mesh_hwmp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/mac80211/mesh_hwmp.c
++++ b/net/mac80211/mesh_hwmp.c
+@@ -355,7 +355,7 @@ static u32 airtime_link_metric_get(struc
+ 	 */
+ 	tx_time = (device_constant + 10 * test_frame_len / rate);
+ 	estimated_retx = ((1 << (2 * ARITH_SHIFT)) / (s_unit - err));
+-	result = (tx_time * estimated_retx) >> (2 * ARITH_SHIFT);
++	result = ((u64)tx_time * estimated_retx) >> (2 * ARITH_SHIFT);
+ 	return (u32)result;
+ }
+ 
