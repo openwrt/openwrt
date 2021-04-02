@@ -251,7 +251,8 @@
 	phy-mode = "rgmii";
 	qcom,id = <0>;
 
-	mtd-mac-address = <&ART 0x0>;
+	nvmem-cells = <&macaddr_ART_0>;
+	nvmem-cell-names = "mac-address";
 
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
@@ -267,7 +268,8 @@
 	phy-mode = "sgmii";
 	qcom,id = <1>;
 
-	mtd-mac-address = <&ART 0x6>;
+	nvmem-cells = <&macaddr_ART_6>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <1000>;
@@ -300,4 +302,18 @@
 	reset-gpio = <&qcom_pinmux 48 GPIO_ACTIVE_HIGH>;
 	/delete-property/ perst-gpios;
 	force_gen1 = <1>;
+};
+
+&ART {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_ART_0: macaddr@0 {
+		reg = <0x0 0x6>;
+	};
+
+	macaddr_ART_6: macaddr@6 {
+		reg = <0x6 0x6>;
+	};
 };
