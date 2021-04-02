@@ -49,6 +49,13 @@ struct bcm4908img_tail {
 	uint32_t flags;
 };
 
+/* Info about BCM4908 image */
+struct bcm4908img_info {
+	size_t file_size;
+	uint32_t crc32;			/* Calculated checksum */
+	struct bcm4908img_tail tail;
+};
+
 char *pathname;
 static size_t prefix_len;
 static size_t suffix_len;
@@ -139,6 +146,61 @@ uint32_t bcm4908img_crc32(uint32_t crc, uint8_t *buf, size_t len) {
 }
 
 /**************************************************
+ * Existing firmware parser
+ **************************************************/
+
+static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
+	struct bcm4908img_tail *tail = &info->tail;
+	struct stat st;
+	uint8_t buf[1024];
+	size_t length;
+	size_t bytes;
+	int err = 0;
+
+	memset(info, 0, sizeof(*info));
+
+	/* File size */
+
+	if (fstat(fileno(fp), &st)) {
+		err = -errno;
+		fprintf(stderr, "Failed to fstat: %d\n", err);
+		return err;
+	}
+	info->file_size = st.st_size;
+
+	/* CRC32 */
+
+	fseek(fp, prefix_len, SEEK_SET);
+
+	info->crc32 = 0xffffffff;
+	length = info->file_size - prefix_len - sizeof(*tail) - suffix_len;
+	while (length && (bytes = fread(buf, 1, bcm4908img_min(sizeof(buf), length), fp)) > 0) {
+		info->crc32 = bcm4908img_crc32(info->crc32, buf, bytes);
+		length -= bytes;
+	}
+	if (length) {
+		fprintf(stderr, "Failed to read last %zd B of data\n", length);
+		return -EIO;
+	}
+
+	/* Tail */
+
+	if (fread(tail, 1, sizeof(*tail), fp) != sizeof(*tail)) {
+		fprintf(stderr, "Failed to read BCM4908 image tail\n");
+		return -EIO;
+	}
+
+	/* Standard validation */
+
+	if (info->crc32 != le32_to_cpu(tail->crc32)) {
+		fprintf(stderr, "Invalid data crc32: 0x%08x instead of 0x%08x\n", info->crc32, le32_to_cpu(tail->crc32));
+		return -EPROTO;
+	}
+
+	return 0;
+}
+
+/**************************************************
  * Check
  **************************************************/
 
@@ -158,12 +220,7 @@ static void bcm4908img_check_parse_options(int argc, char **argv) {
 }
 
 static int bcm4908img_check(int argc, char **argv) {
-	struct bcm4908img_tail tail;
-	struct stat st;
-	uint8_t buf[1024];
-	uint32_t crc32;
-	size_t length;
-	size_t bytes;
+	struct bcm4908img_info info;
 	FILE *fp;
 	int err = 0;
 
@@ -177,12 +234,6 @@ static int bcm4908img_check(int argc, char **argv) {
 	optind = 3;
 	bcm4908img_check_parse_options(argc, argv);
 
-	if (stat(pathname, &st)) {
-		fprintf(stderr, "Failed to stat %s\n", pathname);
-		err = -EIO;
-		goto out;
-	}
-
 	fp = fopen(pathname, "r");
 	if (!fp) {
 		fprintf(stderr, "Failed to open %s\n", pathname);
@@ -190,34 +241,13 @@ static int bcm4908img_check(int argc, char **argv) {
 		goto out;
 	}
 
-	fseek(fp, prefix_len, SEEK_SET);
-
-	crc32 = 0xffffffff;
-	length = st.st_size - prefix_len - sizeof(tail) - suffix_len;
-	while (length && (bytes = fread(buf, 1, bcm4908img_min(sizeof(buf), length), fp)) > 0) {
-		crc32 = bcm4908img_crc32(crc32, buf, bytes);
-		length -= bytes;
-	}
-
-	if (length) {
-		fprintf(stderr, "Failed to read last %zd B of data from %s\n", length, pathname);
-		err = -EIO;
+	err = bcm4908img_parse(fp, &info);
+	if (err) {
+		fprintf(stderr, "Failed to parse %s\n", pathname);
 		goto err_close;
 	}
 
-	if (fread(&tail, 1, sizeof(tail), fp) != sizeof(tail)) {
-		fprintf(stderr, "Failed to read BCM4908 image tail\n");
-		err = -EIO;
-		goto err_close;
-	}
-
-	if (crc32 != le32_to_cpu(tail.crc32)) {
-		fprintf(stderr, "Invalid data crc32: 0x%08x instead of 0x%08x\n", crc32, le32_to_cpu(tail.crc32));
-		err =  -EPROTO;
-		goto err_close;
-	}
-
-	printf("Found a valid BCM4908 image (crc: 0x%08x)\n", crc32);
+	printf("Found a valid BCM4908 image (crc: 0x%08x)\n", info.crc32);
 
 err_close:
 	fclose(fp);
