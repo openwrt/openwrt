@@ -94,7 +94,8 @@
 };
 
 &eth0 {
-	mtd-mac-address = <&boardconfig 0x16>;
+	nvmem-cells = <&macaddr_boardconfig_16>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gphy0 {
@@ -232,4 +233,14 @@
 &usb1 {
 	status = "okay";
 	vbus-supply = <&usb_vbus>;
+};
+
+&boardconfig {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_boardconfig_16: macaddr@16 {
+		reg = <0x16 0x6>;
+	};
 };
