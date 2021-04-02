@@ -20,9 +20,13 @@
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define cpu_to_le32(x)	bswap_32(x)
 #define le32_to_cpu(x)	bswap_32(x)
+#define cpu_to_be32(x)	(x)
+#define be32_to_cpu(x)	(x)
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
 #define cpu_to_le32(x)	(x)
 #define le32_to_cpu(x)	(x)
+#define cpu_to_be32(x)	bswap_32(x)
+#define be32_to_cpu(x)	bswap_32(x)
 #else
 #error "Unsupported endianness"
 #endif
@@ -52,13 +56,12 @@ struct bcm4908img_tail {
 /* Info about BCM4908 image */
 struct bcm4908img_info {
 	size_t file_size;
+	size_t vendor_header_size;	/* Vendor header size */
 	uint32_t crc32;			/* Calculated checksum */
 	struct bcm4908img_tail tail;
 };
 
 char *pathname;
-static size_t prefix_len;
-static size_t suffix_len;
 
 static inline size_t bcm4908img_min(size_t x, size_t y) {
 	return x < y ? x : y;
@@ -149,8 +152,22 @@ uint32_t bcm4908img_crc32(uint32_t crc, uint8_t *buf, size_t len) {
  * Existing firmware parser
  **************************************************/
 
+struct chk_header {
+	uint32_t magic;
+	uint32_t header_len;
+	uint8_t  reserved[8];
+	uint32_t kernel_chksum;
+	uint32_t rootfs_chksum;
+	uint32_t kernel_len;
+	uint32_t rootfs_len;
+	uint32_t image_chksum;
+	uint32_t header_chksum;
+	char board_id[0];
+};
+
 static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 	struct bcm4908img_tail *tail = &info->tail;
+	struct chk_header *chk;
 	struct stat st;
 	uint8_t buf[1024];
 	size_t length;
@@ -168,12 +185,23 @@ static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 	}
 	info->file_size = st.st_size;
 
+	/* Vendor formats */
+
+	rewind(fp);
+	if (fread(buf, 1, sizeof(buf), fp) != sizeof(buf)) {
+		fprintf(stderr, "Failed to read file header\n");
+		return -EIO;
+	}
+	chk = (void *)buf;
+	if (be32_to_cpu(chk->magic) == 0x2a23245e)
+		info->vendor_header_size = be32_to_cpu(chk->header_len);
+
 	/* CRC32 */
 
-	fseek(fp, prefix_len, SEEK_SET);
+	fseek(fp, info->vendor_header_size, SEEK_SET);
 
 	info->crc32 = 0xffffffff;
-	length = info->file_size - prefix_len - sizeof(*tail) - suffix_len;
+	length = info->file_size - info->vendor_header_size - sizeof(*tail);
 	while (length && (bytes = fread(buf, 1, bcm4908img_min(sizeof(buf), length), fp)) > 0) {
 		info->crc32 = bcm4908img_crc32(info->crc32, buf, bytes);
 		length -= bytes;
@@ -204,21 +232,6 @@ static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
  * Check
  **************************************************/
 
-static void bcm4908img_check_parse_options(int argc, char **argv) {
-	int c;
-
-	while ((c = getopt(argc, argv, "p:s:")) != -1) {
-		switch (c) {
-		case 'p':
-			prefix_len = atoi(optarg);
-			break;
-		case 's':
-			suffix_len = atoi(optarg);
-			break;
-		}
-	}
-}
-
 static int bcm4908img_check(int argc, char **argv) {
 	struct bcm4908img_info info;
 	FILE *fp;
@@ -230,9 +243,6 @@ static int bcm4908img_check(int argc, char **argv) {
 		goto out;
 	}
 	pathname = argv[2];
-
-	optind = 3;
-	bcm4908img_check_parse_options(argc, argv);
 
 	fp = fopen(pathname, "r");
 	if (!fp) {
@@ -399,9 +409,7 @@ static void usage() {
 	printf("Usage:\n");
 	printf("\n");
 	printf("Checking a BCM4908 image:\n");
-	printf("\tbcm4908img check <file> [options]\tcheck if images is valid\n");
-	printf("\t-p prefix\t\t\tlength of custom header to skip (default: 0)\n");
-	printf("\t-s suffix\t\t\tlength of custom tail to skip (default: 0)\n");
+	printf("\tbcm4908img check <file>\t\t\tcheck if images is valid\n");
 	printf("\n");
 	printf("Creating a new BCM4908 image:\n");
 	printf("\tbcm4908img create <file> [options]\n");
