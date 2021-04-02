@@ -470,6 +470,86 @@ out:
 }
 
 /**************************************************
+ * Extract
+ **************************************************/
+
+static int bcm4908img_extract(int argc, char **argv) {
+	struct bcm4908img_info info;
+	const char *pathname = NULL;
+	uint8_t buf[1024];
+	const char *type;
+	size_t offset;
+	size_t length;
+	size_t bytes;
+	FILE *fp;
+	int c;
+	int err = 0;
+
+	while ((c = getopt(argc, argv, "i:t:")) != -1) {
+		switch (c) {
+		case 'i':
+			pathname = optarg;
+			break;
+		case 't':
+			type = optarg;
+			break;
+		}
+	}
+
+	fp = bcm4908img_open(pathname, "r");
+	if (!fp) {
+		fprintf(stderr, "Failed to open BCM4908 image\n");
+		err = -EACCES;
+		goto err_out;
+	}
+
+	err = bcm4908img_parse(fp, &info);
+	if (err) {
+		fprintf(stderr, "Failed to parse BCM4908 image\n");
+		goto err_close;
+	}
+
+	if (!strcmp(type, "cferom")) {
+		offset = 0;
+		length = info.cferom_size;
+		if (!length) {
+			err = -ENOENT;
+			fprintf(stderr, "This BCM4908 image doesn't contain cferom\n");
+			goto err_close;
+		}
+	} else if (!strcmp(type, "firmware")) {
+		offset = info.vendor_header_size + info.cferom_size;
+		length = info.file_size - offset - sizeof(struct bcm4908img_tail);
+	} else {
+		err = -EINVAL;
+		fprintf(stderr, "Unsupported extract type: %s\n", type);
+		goto err_close;
+	}
+
+	if (!length) {
+		err = -EINVAL;
+		fprintf(stderr, "No data to extract specified\n");
+		goto err_close;
+	}
+
+	fseek(fp, offset, SEEK_SET);
+	while (length && (bytes = fread(buf, 1, bcm4908img_min(sizeof(buf), length), fp)) > 0) {
+		fwrite(buf, bytes, 1, stdout);
+		length -= bytes;
+	}
+	if (length) {
+		err = -EIO;
+		fprintf(stderr, "Failed to read last %zd B of data\n", length);
+		goto err_close;
+	}
+
+err_close:
+	bcm4908img_close(fp);
+err_out:
+	return err;
+}
+
+/**************************************************
  * Start
  **************************************************/
 
@@ -485,6 +565,11 @@ static void usage() {
 	printf("\t-f file\t\t\t\tadd data from specified file\n");
 	printf("\t-a alignment\t\t\tpad image with zeros to specified alignment\n");
 	printf("\t-A offset\t\t\t\tappend zeros until reaching specified offset\n");
+	printf("\n");
+	printf("Extracting from a BCM4908 image:\n");
+	printf("\tbcm4908img extract <options>\n");
+	printf("\t-i <file>\t\t\t\tinput BCM490 image\n");
+	printf("\t-t <type>\t\t\t\tone of: cferom, bootfs, rootfs, firmware\n");
 }
 
 int main(int argc, char **argv) {
@@ -494,6 +579,8 @@ int main(int argc, char **argv) {
 			return bcm4908img_info(argc, argv);
 		else if (!strcmp(argv[1], "create"))
 			return bcm4908img_create(argc, argv);
+		else if (!strcmp(argv[1], "extract"))
+			return bcm4908img_extract(argc, argv);
 	}
 
 	usage();
