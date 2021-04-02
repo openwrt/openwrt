@@ -113,7 +113,8 @@
 };
 
 &gmac0 {
-	mtd-mac-address = <&factory 0x5>;
+	nvmem-cells = <&macaddr_factory_5>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch0 {
@@ -141,7 +142,8 @@
 		port@4 {
 			status = "okay";
 			label = "wan";
-			mtd-mac-address = <&factory 0x5>;
+			nvmem-cells = <&macaddr_factory_5>;
+			nvmem-cell-names = "mac-address";
 			mac-address-increment = <1>;
 		};
 	};
@@ -149,4 +151,14 @@
 
 &pcie {
 	status = "okay";
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_5: macaddr@5 {
+		reg = <0x5 0x6>;
+	};
 };
