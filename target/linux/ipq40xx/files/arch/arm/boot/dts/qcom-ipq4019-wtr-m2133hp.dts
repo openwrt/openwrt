@@ -403,11 +403,13 @@
 };
 
 &gmac0 {
-	mtd-mac-address = <&orgdata 0x20>;
+	nvmem-cells = <&macaddr_orgdata_20>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gmac1 {
-	mtd-mac-address = <&orgdata 0x20>;
+	nvmem-cells = <&macaddr_orgdata_20>;
+	nvmem-cell-names = "mac-address";
 };
 
 &usb3_ss_phy {
@@ -416,4 +418,14 @@
 
 &usb3_hs_phy {
 	status = "okay";
+};
+
+&orgdata {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_orgdata_20: macaddr@20 {
+		reg = <0x20 0x6>;
+	};
 };
