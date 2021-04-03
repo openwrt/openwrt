@@ -98,9 +98,6 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw, int mdio_mode)
 	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_MIB_CNT_EN) | (1 << 1), GSW_REG_MIB_CNT_EN);
 
 	if (mdio_mode) {
-		if (!gsw->ephy_base)
-			gsw->ephy_base = 12;
-
 		/* set MT7530 central align */
 		val = mt7530_mdio_r32(gsw, 0x7830);
 		val &= ~BIT(0);
@@ -115,11 +112,12 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw, int mdio_mode)
 	}
 
 	if (gsw->ephy_base) {
-		/* set phy base addr to ephy_base */
 		mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_GPC1) |
 			(gsw->ephy_base << 16),
 			GSW_REG_GPC1);
 		fe_reset(BIT(24)); /* Resets the Ethernet PHY block. */
+
+		pr_info("gsw: ephy base address: %d\n", gsw->ephy_base);
 	}
 
 	/* global page 4 */
@@ -246,7 +244,7 @@ static int mt7620_gsw_probe(struct platform_device *pdev)
 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	struct mt7620_gsw *gsw;
 	struct device_node *np = pdev->dev.of_node;
-	u16 val;
+	u8 val;
 
 	gsw = devm_kzalloc(&pdev->dev, sizeof(struct mt7620_gsw), GFP_KERNEL);
 	if (!gsw)
@@ -260,7 +258,7 @@ static int mt7620_gsw_probe(struct platform_device *pdev)
 
 	gsw->port4_ephy = !of_property_read_bool(np, "mediatek,port4-gmac");
 
-	if (of_property_read_u16(np, "mediatek,ephy-base-address", &val) == 0)
+	if (of_property_read_u8(np, "mediatek,ephy-base", &val) == 0)
 		gsw->ephy_base = val;
 	else
 		gsw->ephy_base = 0;
