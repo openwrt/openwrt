@@ -149,6 +149,39 @@ uint32_t bcm4908img_crc32(uint32_t crc, uint8_t *buf, size_t len) {
 }
 
 /**************************************************
+ * Helpers
+ **************************************************/
+
+static FILE *bcm4908img_open(const char *pathname, const char *mode) {
+	struct stat st;
+
+	if (pathname)
+		return fopen(pathname, mode);
+
+	if (isatty(fileno(stdin))) {
+		fprintf(stderr, "Reading from TTY stdin is unsupported\n");
+		return NULL;
+	}
+
+	if (fstat(fileno(stdin), &st)) {
+		fprintf(stderr, "Failed to fstat stdin: %d\n", -errno);
+		return NULL;
+	}
+
+	if (S_ISFIFO(st.st_mode)) {
+		fprintf(stderr, "Reading from pipe stdin is unsupported\n");
+		return NULL;
+	}
+
+	return stdin;
+}
+
+static void bcm4908img_close(FILE *fp) {
+	if (fp != stdin)
+		fclose(fp);
+}
+
+/**************************************************
  * Existing firmware parser
  **************************************************/
 
@@ -234,17 +267,14 @@ static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 
 static int bcm4908img_check(int argc, char **argv) {
 	struct bcm4908img_info info;
+	const char *pathname = NULL;
 	FILE *fp;
 	int err = 0;
 
-	if (argc < 3) {
-		fprintf(stderr, "No BCM4908 image pathname passed\n");
-		err = -EINVAL;
-		goto out;
-	}
-	pathname = argv[2];
+	if (argc >= 3)
+		pathname = argv[2];
 
-	fp = fopen(pathname, "r");
+	fp = bcm4908img_open(pathname, "r");
 	if (!fp) {
 		fprintf(stderr, "Failed to open %s\n", pathname);
 		err = -EACCES;
@@ -260,7 +290,7 @@ static int bcm4908img_check(int argc, char **argv) {
 	printf("Found a valid BCM4908 image (crc: 0x%08x)\n", info.crc32);
 
 err_close:
-	fclose(fp);
+	bcm4908img_close(fp);
 out:
 	return err;
 }
