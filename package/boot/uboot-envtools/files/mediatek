@@ -13,11 +13,11 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
-"linksys,e8450-ubi")
+linksys,e8450-ubi)
 	ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x1f000" "0x1f000" "1"
 	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x1f000" "0x1f000" "1"
 	;;
-"bananapi,bpi-r64")
+bananapi,bpi-r64)
 	. /lib/upgrade/platform.sh
 	local rootdev=$(get_rootdev)
 	local envdev=/dev/$(get_partition $rootdev ubootenv)
@@ -26,6 +26,9 @@ case "$board" in
 	;;
 buffalo,wsr-2533dhp2)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x1000" "0x20000"
+	;;
+ubnt,unifi-6-lr-ubootmod)
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x1000" "0x10000"
 	;;
 esac
 
