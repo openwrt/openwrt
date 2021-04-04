@@ -17,14 +17,10 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wan {
-			label = "blue:wan";
-			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
-		};
-
-		air {
-			label = "blue:air";
+		wlan {
+			label = "blue:wlan";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		usb {
@@ -52,10 +48,6 @@
 };
 
 &gpio1 {
-	status = "okay";
-};
-
-&gpio2 {
 	status = "okay";
 };
 
@@ -106,7 +98,7 @@
 
 &state_default {
 	default {
-		groups = "i2c", "rgmii1", "ephy", "wled";
+		groups = "i2c", "rgmii1", "wled";
 		function = "gpio";
 	};
 };
