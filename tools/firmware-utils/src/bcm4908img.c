@@ -54,6 +54,8 @@
 #define WFI_FLAG_HAS_PMC		0x1
 #define WFI_FLAG_SUPPORTS_BTRM		0x2
 
+#define UBI_EC_HDR_MAGIC		0x55424923
+
 static int debug;
 
 struct bcm4908img_tail {
@@ -79,6 +81,7 @@ struct bcm4908img_info {
 	size_t file_size;
 	size_t cferom_offset;
 	size_t bootfs_offset;
+	size_t rootfs_offset;
 	uint32_t crc32;			/* Calculated checksum */
 	struct bcm4908img_tail tail;
 };
@@ -298,6 +301,31 @@ static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 		return -EPROTO;
 	}
 
+	for (info->rootfs_offset = info->bootfs_offset;
+	     info->rootfs_offset < info->file_size;
+	     info->rootfs_offset += 0x20000) {
+		uint32_t magic;
+
+		if (fseek(fp, info->rootfs_offset, SEEK_SET)) {
+			err = -errno;
+			fprintf(stderr, "Failed to fseek: %d\n", err);
+			return err;
+		}
+
+		bytes = fread(&magic, 1, sizeof(magic), fp);
+		if (bytes != sizeof(magic)) {
+			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(magic));
+			return -EIO;
+		}
+
+		if (be32_to_cpu(magic) == UBI_EC_HDR_MAGIC)
+			break;
+	}
+	if (info->rootfs_offset >= info->file_size) {
+		fprintf(stderr, "Failed to find rootfs offset\n");
+		return -EPROTO;
+	}
+
 	/* CRC32 */
 
 	/* Start with cferom (or bootfs) - skip vendor header */
@@ -366,6 +394,7 @@ static int bcm4908img_info(int argc, char **argv) {
 	if (info.bootfs_offset != info.cferom_offset)
 		printf("cferom offset:\t%zu\n", info.cferom_offset);
 	printf("bootfs offset:\t0x%zx\n", info.bootfs_offset);
+	printf("rootfs offset:\t0x%zx\n", info.rootfs_offset);
 	printf("Checksum:\t0x%08x\n", info.crc32);
 
 err_close:
@@ -558,6 +587,12 @@ static int bcm4908img_extract(int argc, char **argv) {
 			fprintf(stderr, "This BCM4908 image doesn't contain cferom\n");
 			goto err_close;
 		}
+	} else if (!strcmp(type, "bootfs")) {
+		offset = info.bootfs_offset;
+		length = info.rootfs_offset - offset;
+	} else if (!strcmp(type, "rootfs")) {
+		offset = info.rootfs_offset;
+		length = info.file_size - offset - sizeof(struct bcm4908img_tail);
 	} else if (!strcmp(type, "firmware")) {
 		offset = info.bootfs_offset;
 		length = info.file_size - offset - sizeof(struct bcm4908img_tail);
