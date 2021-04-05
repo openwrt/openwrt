@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2021.04-rc3
-PKG_HASH:=7c418e07f6065c8761eb2df890bb524d7109864325d8850ddb0c93eb345734f9
+PKG_VERSION:=2021.04
+PKG_HASH:=0d438b1bb5cceb57a18ea2de4a0d51f7be5b05b98717df05938636e0aadfe11a
 PKG_BUILD_DEPENDS:=arm-trusted-firmware-tools/host
 
 include $(INCLUDE_DIR)/u-boot.mk

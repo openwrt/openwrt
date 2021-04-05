@@ -33,6 +33,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	if (cfg->f_min < MIN_BUS_CLK)
 +		cfg->f_min = MIN_BUS_CLK;
 +
- 	cfg->f_max = host->src_clk_freq;
+ 	if (cfg->f_max < cfg->f_min || cfg->f_max > host->src_clk_freq)
+ 		cfg->f_max = host->src_clk_freq;
  
- 	cfg->b_max = 1024;
