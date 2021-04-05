@@ -15,7 +15,7 @@ define Build/bcm4908img
 	rm -fr $@-bootfs
 	mkdir -p $@-bootfs
 	cp -r $(DEVICE_NAME)/* $@-bootfs/
-	touch $@-bootfs/1-dummy
+	touch $@-bootfs/1-openwrt
 	cp $(DTS_DIR)/$(firstword $(DEVICE_DTS)).dtb $@-bootfs/94908.dtb
 	cp $(KDIR)/bcm63xx-cfe/$(subst _,$(comma),$(DEVICE_NAME))/cferam.000 $@-bootfs/
 	cp $(IMAGE_KERNEL) $@-bootfs/vmlinux.lz
