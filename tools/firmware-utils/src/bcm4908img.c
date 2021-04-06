@@ -580,7 +580,7 @@ static int bcm4908img_extract(int argc, char **argv) {
 	}
 
 	if (!strcmp(type, "cferom")) {
-		offset = 0;
+		offset = info.cferom_offset;
 		length = info.bootfs_offset - offset;
 		if (!length) {
 			err = -ENOENT;
