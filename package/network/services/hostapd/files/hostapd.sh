@@ -350,6 +350,9 @@ hostapd_common_add_bss_config() {
 	config_add_boolean request_cui
 	config_add_array radius_auth_req_attr
 	config_add_array radius_acct_req_attr
+
+	config_add_int eap_server
+	config_add_string eap_user_file ca_cert server_cert private_key private_key_passwd server_id
 }
 
 hostapd_set_vlan_file() {
@@ -520,7 +523,8 @@ hostapd_set_bss_options() {
 		bss_load_update_period chan_util_avg_period sae_require_mfp \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
 		airtime_bss_weight airtime_bss_limit airtime_sta_weight \
-		multicast_to_unicast proxy_arp per_sta_vif
+		multicast_to_unicast proxy_arp per_sta_vif \
+		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id
 
 	set_default isolate 0
 	set_default maxassoc 0
@@ -541,6 +545,7 @@ hostapd_set_bss_options() {
 	set_default multi_ap 0
 	set_default airtime_bss_weight 0
 	set_default airtime_bss_limit 0
+	set_default eap_server 0
 
 	append bss_conf "ctrl_interface=/var/run/hostapd"
 	if [ "$isolate" -gt 0 ]; then
@@ -654,9 +659,11 @@ hostapd_set_bss_options() {
 			set_default dae_port 3799
 			set_default request_cui 0
 
-			append bss_conf "auth_server_addr=$auth_server" "$N"
-			append bss_conf "auth_server_port=$auth_port" "$N"
-			append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+			[ "$eap_server" -eq 0 ] && {
+				append bss_conf "auth_server_addr=$auth_server" "$N"
+				append bss_conf "auth_server_port=$auth_port" "$N"
+				append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+			}
 
 			[ "$request_cui" -gt 0 ] && append bss_conf "radius_request_cui=$request_cui" "$N"
 			[ -n "$eap_reauth_period" ] && append bss_conf "eap_reauth_period=$eap_reauth_period" "$N"
@@ -1000,6 +1007,16 @@ hostapd_set_bss_options() {
 		json_for_each_item append_hs20_conn_capab hs20_conn_capab
 		json_for_each_item append_osu_provider osu_provider
 		json_for_each_item append_operator_icon operator_icon
+	fi
+
+	if [ "$eap_server" = "1" ]; then
+		append bss_conf "eap_server=1" "$N"
+		[ -n "$eap_user_file" ] && append bss_conf "eap_user_file=$eap_user_file" "$N"
+		[ -n "$ca_cert" ] && append bss_conf "ca_cert=$ca_cert" "$N"
+		[ -n "$server_cert" ] && append bss_conf "server_cert=$server_cert" "$N"
+		[ -n "$private_key" ] && append bss_conf "private_key=$private_key" "$N"
+		[ -n "$private_key_passwd" ] && append bss_conf "private_key_passwd=$private_key_passwd" "$N"
+		[ -n "$server_id" ] && append bss_conf "server_id=$server_id" "$N"
 	fi
 
 	set_default multicast_to_unicast 0
