@@ -733,7 +733,7 @@ hostapd_set_bss_options() {
 			append bss_conf "ftm_responder=1" "$N"
 			[ "$stationary_ap" -eq "1" ] && append bss_conf "stationary_ap=1" "$N"
 			[ -n "$lci" ] && append bss_conf "lci=$lci" "$N"
-			[ -n "$civic" ] && append bss_conf "lci=$civic" "$N"
+			[ -n "$civic" ] && append bss_conf "civic=$civic" "$N"
 		}
 	fi
 
