@@ -50,6 +50,10 @@ ipq40xx_setup_interfaces()
 	openmesh,a62)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	mikrotik,cap-ac)
+		ucidef_add_switch "switch0" \
+			"0t@eth0" "4:lan" "5:wan"
+		;;
 	asus,rt-ac42u|\
 	asus,rt-ac58u|\
 	mikrotik,hap-ac2|\
@@ -190,6 +194,7 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
+	mikrotik,cap-ac |\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3)
 		wan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)

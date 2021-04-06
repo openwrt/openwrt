@@ -138,6 +138,7 @@ platform_do_upgrade() {
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
+	mikrotik,cap-ac|\
 	mikrotik,hap-ac2|\
 	mikrotik,lhgg-60ad|\
 	mikrotik,sxtsq-5-ac)
