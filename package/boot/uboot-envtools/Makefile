@@ -68,6 +68,8 @@ define Package/uboot-envtools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/env/fw_printenv $(1)/usr/sbin
 	$(LN) fw_printenv $(1)/usr/sbin/fw_setenv
+	$(INSTALL_BIN) ./files/fw_printsys $(1)/usr/sbin
+	$(INSTALL_BIN) ./files/fw_setsys $(1)/usr/sbin
 	$(INSTALL_DIR) $(1)/lib
 	$(INSTALL_DATA) ./files/uboot-envtools.sh $(1)/lib
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
