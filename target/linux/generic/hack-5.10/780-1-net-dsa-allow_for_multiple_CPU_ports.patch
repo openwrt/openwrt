@@ -1,0 +1,216 @@
+From mboxrd@z Thu Jan  1 00:00:00 1970
+Return-Path: <SRS0=lHAO=WU=vger.kernel.org=netdev-owner@kernel.org>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+X-Spam-Level: 
+X-Spam-Status: No, score=-9.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
+Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98EBDC3A5A2
+	for <netdev@archiver.kernel.org>; Sat, 24 Aug 2019 02:43:07 +0000 (UTC)
+Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
+	by mail.kernel.org (Postfix) with ESMTP id 6168A2173B
+	for <netdev@archiver.kernel.org>; Sat, 24 Aug 2019 02:43:07 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="Kl8qU9Mx"
+Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
+        id S1726888AbfHXCnF (ORCPT <rfc822;netdev@archiver.kernel.org>);
+        Fri, 23 Aug 2019 22:43:05 -0400
+Received: from mail.nic.cz ([217.31.204.67]:37268 "EHLO mail.nic.cz"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725807AbfHXCnD (ORCPT <rfc822;netdev@vger.kernel.org>);
+        Fri, 23 Aug 2019 22:43:03 -0400
+Received: from dellmb.labs.office.nic.cz (unknown [IPv6:2001:1488:fffe:6:cac7:3539:7f1f:463])
+        by mail.nic.cz (Postfix) with ESMTP id 94D1E140D1E;
+        Sat, 24 Aug 2019 04:42:59 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nic.cz; s=default;
+        t=1566614579; bh=jPa21EsnWy9WksW68HSx/O+la2qm4ImIACY+K2cEnLY=;
+        h=From:To:Date;
+        b=Kl8qU9MxZdC3EQnTetDA7VbGXYIuwCO2zS6HinOo7XykIKQDlvB7jIUcH0FQLgG6T
+         BNf/aIsDASIL1PBSAlNynoTMSDf8m6I2Xo8auxQr4L6sslF683w8hY9PN7f+pYyL2R
+         FQs93FIJYSp5I2NCSktTxGFNumTvYPxA8lEqBaZo=
+From:   =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
+To:     netdev@vger.kernel.org
+Cc:     Andrew Lunn <andrew@lunn.ch>,
+        Vivien Didelot <vivien.didelot@gmail.com>,
+        Florian Fainelli <f.fainelli@gmail.com>,
+        David Ahern <dsahern@gmail.com>,
+        Stephen Hemminger <stephen@networkplumber.org>,
+        =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
+Subject: [PATCH RFC net-next 1/3] net: dsa: allow for multiple CPU ports
+Date:   Sat, 24 Aug 2019 04:42:48 +0200
+Message-Id: <20190824024251.4542-2-marek.behun@nic.cz>
+X-Mailer: git-send-email 2.21.0
+In-Reply-To: <20190824024251.4542-1-marek.behun@nic.cz>
+References: <20190824024251.4542-1-marek.behun@nic.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+X-Virus-Scanned: clamav-milter 0.100.3 at mail.nic.cz
+X-Virus-Status: Clean
+Sender: netdev-owner@vger.kernel.org
+Precedence: bulk
+List-ID: <netdev.vger.kernel.org>
+X-Mailing-List: netdev@vger.kernel.org
+Archived-At: <https://lore.kernel.org/netdev/20190824024251.4542-2-marek.behun@nic.cz/>
+List-Archive: <https://lore.kernel.org/netdev/>
+List-Post: <mailto:netdev@vger.kernel.org>
+
+Allow for multiple CPU ports in a DSA switch tree. By default assign the
+CPU ports to user ports in a round robin way, ie. if there are two CPU
+ports connected to eth0 and eth1, and five user ports (lan1..lan5),
+assign them as:
+  lan1 <-> eth0
+  lan2 <-> eth1
+  lan3 <-> eth0
+  lan4 <-> eth1
+  lan5 <-> eth0
+
+Signed-off-by: Marek Behún <marek.behun@nic.cz>
+---
+ include/net/dsa.h |  5 +--
+ net/dsa/dsa2.c    | 84 +++++++++++++++++++++++++++++++----------------
+ 2 files changed, 58 insertions(+), 31 deletions(-)
+
+diff --git a/net/dsa/dsa2.c b/net/dsa/dsa2.c
+index 8c4eccb0cfe6..c5af89079a6b 100644
+@@ -211,36 +212,43 @@ static bool dsa_tree_setup_routing_table(struct dsa_switch_tree *dst)
+ 	return complete;
+ }
+ 
+-static struct dsa_port *dsa_tree_find_first_cpu(struct dsa_switch_tree *dst)
++static int dsa_tree_setup_default_cpus(struct dsa_switch_tree *dst)
+ {
+-	struct dsa_port *dp;
+-
++	struct dsa_port *cpu_dp, *dp, *first_cpu_dp = NULL, *last_cpu_dp = NULL;
++	
++	/* Find first and last CPU port */
+ 	list_for_each_entry(dp, &dst->ports, list)
+-		if (dsa_port_is_cpu(dp))
+-			return dp;
+-
+-	return NULL;
+-}
++		if (dsa_port_is_cpu(dp)) {
++			if (first_cpu_dp == NULL)
++				first_cpu_dp = dp;
+ 
+-static int dsa_tree_setup_default_cpu(struct dsa_switch_tree *dst)
+-{
+-	struct dsa_port *cpu_dp, *dp;
++			last_cpu_dp = dp;
++		}
+ 
+-	cpu_dp = dsa_tree_find_first_cpu(dst);
+-	if (!cpu_dp) {
++	if (first_cpu_dp == NULL) {
+ 		pr_err("DSA: tree %d has no CPU port\n", dst->index);
+ 		return -EINVAL;
+ 	}
+ 
+-	/* Assign the default CPU port to all ports of the fabric */
++	cpu_dp = first_cpu_dp;
++
++	/* Assign the CPU ports in round-robbin way to all ports of the fabric */
+ 	list_for_each_entry(dp, &dst->ports, list)
+-		if (dsa_port_is_user(dp) || dsa_port_is_dsa(dp))
++		if (dsa_port_is_user(dp) || dsa_port_is_dsa(dp)) {
+ 			dp->cpu_dp = cpu_dp;
+ 
++			if (cpu_dp == last_cpu_dp)
++				cpu_dp = first_cpu_dp;
++			else
++				while((cpu_dp = list_next_entry(cpu_dp, list)) != 0)
++					if (dsa_port_is_cpu(cpu_dp))
++						break;
++		}
++
+ 	return 0;
+ }
+ 
+-static void dsa_tree_teardown_default_cpu(struct dsa_switch_tree *dst)
++static void dsa_tree_teardown_default_cpus(struct dsa_switch_tree *dst)
+ {
+ 	struct dsa_port *dp;
+ 
+@@ -560,7 +577,7 @@ static void dsa_tree_teardown_switches(struct dsa_switch_tree *dst)
+ 		dsa_switch_teardown(dp->ds);
+ }
+ 
+-static int dsa_tree_setup_master(struct dsa_switch_tree *dst)
++static int dsa_tree_setup_masters(struct dsa_switch_tree *dst)
+ {
+ 	struct dsa_port *dp;
+ 	int err;
+@@ -569,14 +586,20 @@ static int dsa_tree_setup_master(struct dsa_switch_tree *dst)
+ 		if (dsa_port_is_cpu(dp)) {
+ 			err = dsa_master_setup(dp->master, dp);
+ 			if (err)
+-				return err;
++				goto teardown;
+ 		}
+ 	}
+ 
+ 	return 0;
++teardown:
++	list_for_each_entry(dp, &dst->ports, list)
++		if (dsa_port_is_cpu(dp))
++			dsa_master_teardown(dp->master);
++
++	return err;
+ }
+ 
+-static void dsa_tree_teardown_master(struct dsa_switch_tree *dst)
++static void dsa_tree_teardown_masters(struct dsa_switch_tree *dst)
+ {
+ 	struct dsa_port *dp;
+ 
+@@ -600,7 +623,7 @@ static int dsa_tree_setup(struct dsa_switch_tree *dst)
+ 	if (!complete)
+ 		return 0;
+ 
+-	err = dsa_tree_setup_default_cpu(dst);
++	err = dsa_tree_setup_default_cpus(dst);
+ 	if (err)
+ 		return err;
+ 
+@@ -608,7 +631,7 @@ static int dsa_tree_setup(struct dsa_switch_tree *dst)
+ 	if (err)
+ 		goto teardown_default_cpu;
+ 
+-	err = dsa_tree_setup_master(dst);
++	err = dsa_tree_setup_masters(dst);
+ 	if (err)
+ 		goto teardown_switches;
+ 
+@@ -621,7 +644,7 @@ static int dsa_tree_setup(struct dsa_switch_tree *dst)
+ teardown_switches:
+ 	dsa_tree_teardown_switches(dst);
+ teardown_default_cpu:
+-	dsa_tree_teardown_default_cpu(dst);
++	dsa_tree_teardown_default_cpus(dst);
+ 
+ 	return err;
+ }
+@@ -633,11 +656,11 @@ static void dsa_tree_teardown(struct dsa_switch_tree *dst)
+ 	if (!dst->setup)
+ 		return;
+ 
+-	dsa_tree_teardown_master(dst);
++	dsa_tree_teardown_masters(dst);
+ 
+ 	dsa_tree_teardown_switches(dst);
+ 
+-	dsa_tree_teardown_default_cpu(dst);
++	dsa_tree_teardown_default_cpus(dst);
+ 
+ 	list_for_each_entry_safe(dl, next, &dst->rtable, list) {
+ 		list_del(&dl->list);
+
+-- 
+2.21.0
+
+
