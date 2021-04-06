@@ -1341,7 +1341,7 @@ static int ar934x_nfc_attach_chip(struct nand_chip *nand)
 		if (ret)
 			return ret;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
-	} else if (nand->ecc.engine_type == NAND_ECC_ENGINE_TYPE_SOFT) {
+	} else if (nand->ecc.engine_type != NAND_ECC_ENGINE_TYPE_SOFT) {
 		dev_err(dev, "unknown ECC mode %d\n", nand->ecc.engine_type);
 #else
 	} else if (nand->ecc.mode != NAND_ECC_SOFT) {
