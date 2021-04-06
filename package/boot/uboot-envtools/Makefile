@@ -61,6 +61,7 @@ MAKE_FLAGS += \
 define Package/uboot-envtools/conffiles
 /etc/config/ubootenv
 /etc/fw_env.config
+/etc/fw_sys.config
 endef
 
 define Package/uboot-envtools/install
