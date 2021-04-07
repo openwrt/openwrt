@@ -6,6 +6,7 @@
 #include <byteswap.h>
 #include <endian.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -81,6 +82,7 @@ struct bcm4908img_info {
 	size_t file_size;
 	size_t cferom_offset;
 	size_t bootfs_offset;
+	size_t padding_offset;
 	size_t rootfs_offset;
 	uint32_t crc32;			/* Calculated checksum */
 	struct bcm4908img_tail tail;
@@ -247,6 +249,19 @@ struct chk_header {
 	char board_id[0];
 };
 
+static bool bcm4908img_is_all_ff(const void *buf, size_t length)
+{
+	const uint8_t *in = buf;
+	int i;
+
+	for (i = 0; i < length; i++) {
+		if (in[i] != 0xff)
+			return false;
+	}
+
+	return true;
+}
+
 static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 	struct bcm4908img_tail *tail = &info->tail;
 	struct chk_header *chk;
@@ -304,7 +319,7 @@ static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 	for (info->rootfs_offset = info->bootfs_offset;
 	     info->rootfs_offset < info->file_size;
 	     info->rootfs_offset += 0x20000) {
-		uint32_t magic;
+		uint32_t *magic = (uint32_t *)&buf[0];
 
 		if (fseek(fp, info->rootfs_offset, SEEK_SET)) {
 			err = -errno;
@@ -312,13 +327,17 @@ static int bcm4908img_parse(FILE *fp, struct bcm4908img_info *info) {
 			return err;
 		}
 
-		bytes = fread(&magic, 1, sizeof(magic), fp);
-		if (bytes != sizeof(magic)) {
-			fprintf(stderr, "Failed to read %zu bytes\n", sizeof(magic));
+		length = info->padding_offset ? sizeof(*magic) : 256;
+		bytes = fread(buf, 1, length, fp);
+		if (bytes != length) {
+			fprintf(stderr, "Failed to read %zu bytes\n", length);
 			return -EIO;
 		}
 
-		if (be32_to_cpu(magic) == UBI_EC_HDR_MAGIC)
+		if (!info->padding_offset && bcm4908img_is_all_ff(buf, length))
+			info->padding_offset = info->rootfs_offset;
+
+		if (be32_to_cpu(*magic) == UBI_EC_HDR_MAGIC)
 			break;
 	}
 	if (info->rootfs_offset >= info->file_size) {
@@ -394,6 +413,8 @@ static int bcm4908img_info(int argc, char **argv) {
 	if (info.bootfs_offset != info.cferom_offset)
 		printf("cferom offset:\t%zu\n", info.cferom_offset);
 	printf("bootfs offset:\t0x%zx\n", info.bootfs_offset);
+	if (info.padding_offset)
+		printf("padding offset:\t0x%zx\n", info.padding_offset);
 	printf("rootfs offset:\t0x%zx\n", info.rootfs_offset);
 	printf("Checksum:\t0x%08x\n", info.crc32);
 
@@ -589,7 +610,7 @@ static int bcm4908img_extract(int argc, char **argv) {
 		}
 	} else if (!strcmp(type, "bootfs")) {
 		offset = info.bootfs_offset;
-		length = info.rootfs_offset - offset;
+		length = (info.padding_offset ? info.padding_offset : info.rootfs_offset) - offset;
 	} else if (!strcmp(type, "rootfs")) {
 		offset = info.rootfs_offset;
 		length = info.file_size - offset - sizeof(struct bcm4908img_tail);
