@@ -4,6 +4,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 DEVICE_VARS += ASUS_PRODUCTID ASUS_BUILD_NO ASUS_FW_REV ASUS_EXT_NO
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
 
 define Build/bcm4908asus
 	$(STAGING_DIR_HOST)/bin/bcm4908asus create -i $@ \
@@ -66,8 +67,10 @@ define Device/netgear_r8000p
   DEVICE_VENDOR := Netgear
   DEVICE_MODEL := R8000P
   DEVICE_DTS := broadcom/bcm4908/bcm4906-netgear-r8000p
-  IMAGES := bin
-  IMAGE/bin := append-ubi | bcm4908img
+  IMAGES := chk
+  IMAGE/chk := append-ubi | bcm4908img | netgear-chk
+  NETGEAR_BOARD_ID := U12H359T00_NETGEAR
+  NETGEAR_REGION := 1
 endef
 TARGET_DEVICES += netgear_r8000p
 
