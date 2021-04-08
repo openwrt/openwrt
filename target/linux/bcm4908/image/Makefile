@@ -48,6 +48,7 @@ define Device/Default
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1).$$(2)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
+  IMAGE/bin := append-ubi | bcm4908img
 endef
 
 define Device/asus_gt-ac5300
@@ -67,11 +68,10 @@ define Device/netgear_r8000p
   DEVICE_VENDOR := Netgear
   DEVICE_MODEL := R8000P
   DEVICE_DTS := broadcom/bcm4908/bcm4906-netgear-r8000p
-  IMAGES := chk
+  IMAGES := bin
   IMAGE/chk := append-ubi | bcm4908img | netgear-chk
   NETGEAR_BOARD_ID := U12H359T00_NETGEAR
   NETGEAR_REGION := 1
-  BROKEN := y
 endef
 TARGET_DEVICES += netgear_r8000p
 
