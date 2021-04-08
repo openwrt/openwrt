@@ -86,24 +86,32 @@
 			label = "ir-remote";
 			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		wps5g {
 			label = "wps5g";
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		wps2g {
 			label = "wps2g";
 			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 	};
 };
