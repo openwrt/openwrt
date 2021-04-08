@@ -217,9 +217,9 @@
 +int scale_fabrics(unsigned long max_cpu_freq);
 +
 +#endif
---- a/drivers/cpufreq/cpufreq-dt.c
-+++ b/drivers/cpufreq/cpufreq-dt.c
-@@ -20,6 +20,7 @@
+--- a/drivers/cpufreq/qcom-cpufreq-krait.c
++++ b/drivers/cpufreq/qcom-cpufreq-krait.c
+@@ -15,6 +15,7 @@
  #include <linux/regulator/consumer.h>
  #include <linux/slab.h>
  #include <linux/thermal.h>
@@ -227,17 +227,17 @@
  
  #include "cpufreq-dt.h"
  
-@@ -111,6 +112,13 @@ static int set_target(struct cpufreq_pol
- 					}
- 				}
- 			}
+@@ -54,6 +55,13 @@ static int set_target(struct cpufreq_pol
+ 		level = dev_pm_opp_get_level(opp);
+ 		dev_pm_opp_put(opp);
+ 
++		/*
++		 * Scale fabrics with max freq across all cores
++		 */
++		ret = scale_fabrics(target_freq);
++		if (ret)
++			return ret;
 +
-+			/*
-+			 * Scale fabrics with max freq across all cores
-+			 */
-+			ret = scale_fabrics(target_freq);
-+			if (ret)
-+				goto exit;
- 		}
- 		priv->opp_freq = freq * 1000;
- 		arch_set_freq_scale(policy->related_cpus, freq,
+ 		opp = dev_pm_opp_find_level_exact(&l2_pdev->dev, level);
+ 		if (IS_ERR(opp)) {
+ 			dev_err(&l2_pdev->dev,
