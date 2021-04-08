@@ -91,30 +91,40 @@
 			label = "power";
 			gpios = <&qcom_pinmux 58 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_POWER>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		wps {
 			label = "wps";
 			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		eject {
 			label = "eject";
 			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_EJECTCD>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		guest {
 			label = "guest";
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		ap {
@@ -122,6 +132,8 @@
 			gpios = <&qcom_pinmux 55 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
 			linux,input-type = <EV_SW>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		router {
@@ -129,6 +141,8 @@
 			gpios = <&qcom_pinmux 56 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
 			linux,input-type = <EV_SW>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		auto {
@@ -136,6 +150,8 @@
 			gpios = <&qcom_pinmux 57 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
 			linux,input-type = <EV_SW>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 	};
 };
