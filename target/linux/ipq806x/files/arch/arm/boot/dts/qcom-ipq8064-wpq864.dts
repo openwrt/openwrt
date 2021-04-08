@@ -83,6 +83,8 @@
 			label = "reset";
 			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 	};
 
