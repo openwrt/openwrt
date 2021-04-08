@@ -567,8 +567,8 @@ out:
 static int bcm4908img_extract(int argc, char **argv) {
 	struct bcm4908img_info info;
 	const char *pathname = NULL;
+	const char *type = NULL;
 	uint8_t buf[1024];
-	const char *type;
 	size_t offset;
 	size_t length;
 	size_t bytes;
@@ -600,7 +600,11 @@ static int bcm4908img_extract(int argc, char **argv) {
 		goto err_close;
 	}
 
-	if (!strcmp(type, "cferom")) {
+	if (!type) {
+		err = -EINVAL;
+		fprintf(stderr, "No data to extract specified\n");
+		goto err_close;
+	} else if (!strcmp(type, "cferom")) {
 		offset = info.cferom_offset;
 		length = info.bootfs_offset - offset;
 		if (!length) {
@@ -625,7 +629,7 @@ static int bcm4908img_extract(int argc, char **argv) {
 
 	if (!length) {
 		err = -EINVAL;
-		fprintf(stderr, "No data to extract specified\n");
+		fprintf(stderr, "Failed to find requested data in input image\n");
 		goto err_close;
 	}
 
