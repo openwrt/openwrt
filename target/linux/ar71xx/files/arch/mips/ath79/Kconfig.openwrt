@@ -184,6 +184,17 @@ config ATH79_MACH_AP143
 	select ATH79_DEV_ETH
 	select ATH79_DEV_M25P80
 
+config ATH79_MACH_TD-O3V2
+	bool "TenDa TD-O3V2 board"
+	select SOC_QCA953X
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_SPI
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+	select ATH79_DEV_ETH
+	select ATH79_DEV_M25P80
+
 config ATH79_MACH_AP147
 	bool "Atheros AP147 reference board"
 	select SOC_QCA953X
