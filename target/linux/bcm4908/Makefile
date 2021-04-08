@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=aarch64
 BOARD:=bcm4908
 BOARDNAME:=Broadcom BCM4908 (ARMv8A CPUs Brahma-B53)
-FEATURES:=squashfs nand usb pci pcie gpio source-only
+FEATURES:=squashfs nand usb pci pcie gpio
 CPU_TYPE:=cortex-a53
 SUBTARGETS:=generic
 

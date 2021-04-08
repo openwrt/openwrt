@@ -71,6 +71,7 @@ define Device/netgear_r8000p
   IMAGE/chk := append-ubi | bcm4908img | netgear-chk
   NETGEAR_BOARD_ID := U12H359T00_NETGEAR
   NETGEAR_REGION := 1
+  BROKEN := y
 endef
 TARGET_DEVICES += netgear_r8000p
 
@@ -81,6 +82,7 @@ define Device/tplink_archer-c2300-v1
   DEVICE_DTS := broadcom/bcm4908/bcm4906-tplink-archer-c2300-v1
   IMAGES := bin
   IMAGE/bin := append-ubi | bcm4908img
+  BROKEN := y
 endef
 TARGET_DEVICES += tplink_archer-c2300-v1
 
