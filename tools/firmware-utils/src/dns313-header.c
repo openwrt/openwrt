@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 	/* File + extended header size */
 	bufsize = filesize + HEADER_SIZE;
 
-	printf("Allocate %08x bytes\n", bufsize);
+	printf("Allocate %08zx bytes\n", bufsize);
 	buffer = malloc(bufsize);
 	if (!buffer) {
 		printf("OOM: could not allocate buffer\n");
@@ -223,7 +223,7 @@ int main(int argc, char **argv)
 	be_wr(buffer + OFFSET_HCRC, sum);
 	printf("header checksum: 0x%08x\n", sum);
 
-	printf("OUTFILE: %s, size: %08x bytes\n", pathout, bufsize);
+	printf("OUTFILE: %s, size: %08zx bytes\n", pathout, bufsize);
 	fdout = open(pathout, O_RDWR|O_CREAT|O_TRUNC,S_IRWXU|S_IRGRP);
 	if (!fdout) {
 		printf("ERROR: could not open output file\n");
