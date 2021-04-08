@@ -17,6 +17,17 @@ define Device/lantiqTpLink
 	check-size | append-metadata
 endef
 
+define Device/tplink_archer-d2
+  $(Device/lantiqTpLink)
+  DEVICE_MODEL := Archer D2
+  DEVICE_VARIANT := v1
+  SOC := ar10
+  TPLINK_FLASHLAYOUT := 16Mltq
+  IMAGE_SIZE := 15808k
+  DEVICE_PACKAGES:= kmod-mt76x0e wpad-basic-wolfssl kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += tplink_archer-d2
+
 define Device/tplink_tdw8970
   $(Device/dsa-migration)
   $(Device/lantiqTpLink)

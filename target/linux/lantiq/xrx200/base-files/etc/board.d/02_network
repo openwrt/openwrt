@@ -37,6 +37,7 @@ lantiq_setup_interfaces()
 	avm,fritz7362sl|\
 	avm,fritz7430|\
 	buffalo,wbmr-300hpd|\
+	tplink,archer-d2|\
 	tplink,tdw8970|\
 	tplink,tdw8980|\
 	tplink,vr200|\
@@ -136,13 +137,14 @@ lantiq_setup_macs()
 		lan_mac=$(mtd_get_mac_binary ART 0x0)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
-	tplink,tdw8970|\
-	tplink,tdw8980)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0xf100)" 1)
-		;;
+	tplink,archer-d2|\
 	tplink,vr200|\
 	tplink,vr200v)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary romfile 0xf100)" 1)
+		;;
+	tplink,tdw8970|\
+	tplink,tdw8980)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0xf100)" 1)
 		;;
 	esac
 
