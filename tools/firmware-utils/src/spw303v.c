@@ -167,7 +167,6 @@ int main(int argc, char **argv)
 	char *ifn = NULL;
 	char *ofn = NULL;
 	int c;
-	int v0, v1, v2;
 	size_t n;
 	int first_block = 1;
 

@@ -763,8 +763,7 @@ write_out_header(FILE *outfile)
 int
 write_out_images(FILE *outfile)
 {
-	struct image_desc *desc;
-	int i, res;
+	int res;
 
 	res = image_writeout(outfile, &kernel_image);
 	if (res)
@@ -839,7 +838,6 @@ parse_opt_image(char ch, char *arg)
 {
 	char buf[MAX_ARG_LEN];
 	char *argv[MAX_ARG_COUNT];
-	int argc;
 	char *p;
 	struct image_desc *desc = NULL;
 	int i;
@@ -864,7 +862,7 @@ parse_opt_image(char ch, char *arg)
 	if (!desc)
 		return ERR_FATAL;
 
-	argc = parse_arg(arg, buf, argv);
+	parse_arg(arg, buf, argv);
 
 	i = 0;
 	p = argv[i++];
@@ -886,9 +884,6 @@ parse_opt_image(char ch, char *arg)
 int
 process_images(void)
 {
-	struct image_desc *desc;
-	uint32_t offs = 0;
-	int i;
 	int res;
 
 	kernel_image.out_size = board->max_kernel_size;

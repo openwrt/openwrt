@@ -126,16 +126,13 @@ int main(int argc, char **argv)
 	int fdout;
 	struct stat sb;
 	uint32_t filesize;
-	uint32_t padding;
 	int ret = 0;
 	const char *pathin;
 	const char *pathout;
 	unsigned char *buffer;
-	unsigned char *infop;
 	uint32_t sum;
 	size_t bufsize;
 	size_t bytes;
-	int i;
 
 	if (argc < 3) {
 		printf("Too few arguments.\n");
@@ -150,7 +147,6 @@ int main(int argc, char **argv)
 		return ret;
 
 	filesize = sb.st_size;
-	padding = filesize % 4;
 	printf("INFILE: %s, size: %08x bytes\n", pathin, filesize);
 	/* File + extended header size */
 	bufsize = filesize + HEADER_SIZE;
@@ -179,9 +175,6 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	close(fdin);
-
-	/* PREP HEADER AND FOOTER */
-	infop = buffer;
 
 	be_wr(buffer + OFFSET_MAGIC, IH_MAGIC);
 
