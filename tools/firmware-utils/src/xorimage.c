@@ -61,7 +61,6 @@ int main(int argc, char **argv)
 	char hex_pattern[128];
 	unsigned int hex_buf;
 	int c;
-	int v0, v1, v2;
 	size_t n;
 	int p_len, p_off = 0;
 

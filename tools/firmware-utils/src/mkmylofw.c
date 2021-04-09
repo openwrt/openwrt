@@ -848,14 +848,13 @@ parse_opt_id(char ch, char *arg)
 {
 	char buf[MAX_ARG_LEN];
 	char *argv[MAX_ARG_COUNT];
-	int argc;
 	char *p;
 
 	if (required_arg(ch, arg)) {
 		goto err_out;
 	}
 
-	argc = parse_arg(arg, buf, argv);
+	parse_arg(arg, buf, argv);
 
 	/* processing vendor ID*/
 	p = argv[0];
@@ -1011,7 +1010,6 @@ parse_opt_partition(char ch, char *arg)
 {
 	char buf[MAX_ARG_LEN];
 	char *argv[MAX_ARG_COUNT];
-	int argc;
 	char *p;
 	struct mylo_partition *part;
 	struct fw_part *fp;
@@ -1028,7 +1026,7 @@ parse_opt_partition(char ch, char *arg)
 	fp = &fw_parts[fw_num_partitions++];
 	part = &fp->mylo;
 
-	argc = parse_arg(arg, buf, argv);
+	parse_arg(arg, buf, argv);
 
 	/* processing partition address */
 	p = argv[0];

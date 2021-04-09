@@ -792,7 +792,6 @@ parse_opt_block(char ch, char *arg)
 {
 	char buf[MAX_ARG_LEN];
 	char *argv[MAX_ARG_COUNT];
-	int argc;
 	char *p;
 	struct csys_block *block;
 	int i;
@@ -854,7 +853,7 @@ parse_opt_block(char ch, char *arg)
 		return ERR_FATAL;
 	}
 
-	argc = parse_arg(arg, buf, argv);
+	parse_arg(arg, buf, argv);
 
 	i = 0;
 	p = argv[i++];
