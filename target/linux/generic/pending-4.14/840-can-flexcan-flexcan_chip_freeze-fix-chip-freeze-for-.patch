@@ -1,0 +1,50 @@
+From 47c5e474bc1e1061fb037d13b5000b38967eb070 Mon Sep 17 00:00:00 2001
+From: Angelo Dureghello <angelo@kernel-space.org>
+Date: Tue, 16 Mar 2021 00:15:10 +0100
+Subject: can: flexcan: flexcan_chip_freeze(): fix chip freeze for missing bitrate
+
+From: Angelo Dureghello <angelo@kernel-space.org>
+
+commit 47c5e474bc1e1061fb037d13b5000b38967eb070 upstream.
+
+For cases when flexcan is built-in, bitrate is still not set at
+registering. So flexcan_chip_freeze() generates:
+
+[    1.860000] *** ZERO DIVIDE ***   FORMAT=4
+[    1.860000] Current process id is 1
+[    1.860000] BAD KERNEL TRAP: 00000000
+[    1.860000] PC: [<402e70c8>] flexcan_chip_freeze+0x1a/0xa8
+
+To allow chip freeze, using an hardcoded timeout when bitrate is still
+not set.
+
+Fixes: ec15e27cc890 ("can: flexcan: enable RX FIFO after FRZ/HALT valid")
+Link: https://lore.kernel.org/r/20210315231510.650593-1-angelo@kernel-space.org
+Signed-off-by: Angelo Dureghello <angelo@kernel-space.org>
+[mkl: use if instead of ? operator]
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
+Cc: Koen Vandeputte <koen.vandeputte@citymesh.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/net/can/flexcan.c |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/can/flexcan.c
++++ b/drivers/net/can/flexcan.c
+@@ -413,9 +413,15 @@ static int flexcan_chip_disable(struct f
+ static int flexcan_chip_freeze(struct flexcan_priv *priv)
+ {
+ 	struct flexcan_regs __iomem *regs = priv->regs;
+-	unsigned int timeout = 1000 * 1000 * 10 / priv->can.bittiming.bitrate;
++	unsigned int timeout;
++	u32 bitrate = priv->can.bittiming.bitrate;
+ 	u32 reg;
+ 
++	if (bitrate)
++		timeout = 1000 * 1000 * 10 / bitrate;
++	else
++		timeout = FLEXCAN_TIMEOUT_US / 10;
++
+ 	reg = flexcan_read(&regs->mcr);
+ 	reg |= FLEXCAN_MCR_FRZ | FLEXCAN_MCR_HALT;
+ 	flexcan_write(reg, &regs->mcr);
