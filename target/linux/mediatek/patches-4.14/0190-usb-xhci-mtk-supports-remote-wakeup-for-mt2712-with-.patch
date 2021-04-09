@@ -217,7 +217,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  }
  
  static int xhci_mtk_setup(struct usb_hcd *hcd);
-@@ -595,8 +536,10 @@ static int xhci_mtk_probe(struct platfor
+@@ -602,8 +543,10 @@ static int xhci_mtk_probe(struct platfor
  			     &mtk->u3p_dis_msk);
  
  	ret = usb_wakeup_of_property_parse(mtk, node);
@@ -229,7 +229,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	mtk->num_phys = of_count_phandle_with_args(node,
  			"phys", "#phy-cells");
-@@ -783,7 +726,7 @@ static int __maybe_unused xhci_mtk_suspe
+@@ -791,7 +734,7 @@ static int __maybe_unused xhci_mtk_suspe
  	xhci_mtk_host_disable(mtk);
  	xhci_mtk_phy_power_off(mtk);
  	xhci_mtk_clks_disable(mtk);
@@ -238,7 +238,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	return 0;
  }
  
-@@ -793,7 +736,7 @@ static int __maybe_unused xhci_mtk_resum
+@@ -801,7 +744,7 @@ static int __maybe_unused xhci_mtk_resum
  	struct usb_hcd *hcd = mtk->hcd;
  	struct xhci_hcd *xhci = hcd_to_xhci(hcd);
  

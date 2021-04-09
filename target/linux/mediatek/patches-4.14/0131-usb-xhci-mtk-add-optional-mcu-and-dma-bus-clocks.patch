@@ -98,7 +98,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	clk_disable_unprepare(mtk->sys_clk);
  	clk_disable_unprepare(mtk->ref_clk);
  }
-@@ -529,24 +585,9 @@ static int xhci_mtk_probe(struct platfor
+@@ -536,24 +592,9 @@ static int xhci_mtk_probe(struct platfor
  		return PTR_ERR(mtk->vusb33);
  	}
  

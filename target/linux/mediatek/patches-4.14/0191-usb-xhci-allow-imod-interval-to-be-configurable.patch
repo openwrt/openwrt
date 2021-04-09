@@ -68,7 +68,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	usb@f0931000 {
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
-@@ -629,6 +629,15 @@ static int xhci_mtk_probe(struct platfor
+@@ -636,6 +636,15 @@ static int xhci_mtk_probe(struct platfor
  
  	xhci = hcd_to_xhci(hcd);
  	xhci->main_hcd = hcd;
