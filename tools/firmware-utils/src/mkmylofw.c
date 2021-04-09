@@ -98,7 +98,7 @@ struct cpx_board {
 #define CPX_BOARD_AR23XX(_did, _flash, _mod, _name, _desc) \
 	CPX_BOARD(_did, _flash, _mod, _name, _desc, 0x10000, 0x10000)
 
-#define ALIGN(x,y)	((x)+((y)-1)) & ~((y)-1)
+#define ALIGN(x,y)	(((x)+((y)-1)) & ~((y)-1))
 
 char	*progname;
 char	*ofname = NULL;
