@@ -478,18 +478,20 @@ process_partitions(void)
  * routines to write data to the output file
  */
 int
-write_out_data(FILE *outfile, uint8_t *data, size_t len, uint32_t *crc)
+write_out_data(FILE *outfile, void *data, size_t len, uint32_t *crc)
 {
+	uint8_t *ptr = data;
+
 	errno = 0;
 
-	fwrite(data, len, 1, outfile);
+	fwrite(ptr, len, 1, outfile);
 	if (errno) {
 		errmsg(1,"unable to write output file");
 		return -1;
 	}
 
 	if (crc) {
-		update_crc(data, len, crc);
+		update_crc(ptr, len, crc);
 	}
 
 	return 0;
