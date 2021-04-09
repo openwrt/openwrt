@@ -233,6 +233,18 @@ define Device/tplink_tl-wr703n
 endef
 TARGET_DEVICES += tplink_tl-wr703n
 
+define Device/tplink_tl-wr710n-v2.0
+  $(Device/tplink-4mlzma)
+  SOC := ar9331
+  DEVICE_MODEL := TL-WR710N
+  DEVICE_VARIANT := v2.0
+  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-ledtrig-usbport
+  TPLINK_HWID := 0x07100002
+  TPLINK_HWREV := 0x1
+  SUPPORTED_DEVICES += tl-wr710n
+endef
+TARGET_DEVICES += tplink_tl-wr710n-v2.0
+
 define Device/tplink_tl-wr740n-v1
   $(Device/tplink-4m)
   SOC := ar7240
