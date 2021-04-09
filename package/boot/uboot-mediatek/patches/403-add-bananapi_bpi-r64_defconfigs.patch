@@ -186,7 +186,7 @@
 +boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr
 +emmc_write_bl2=mmc dev 0 1 && mmc partconf 0 1 1 1 && mmc erase 0x0 0x400 && mmc write $loadaddr 0x0 0x100 ; mmc partconf 0 1 1 0
 +emmc_write_hdr=mmc dev 0 0 && mmc erase 0x0 0x40 && mmc write $loadaddr 0x0 0x40
-+emmc_write_bl3=mmc dev 0 0 && mmc erase 0x1000 0x800 && mmc write $loadaddr 0x1000 0x800
++emmc_write_bl3=mmc dev 0 0 && mmc erase 0x1000 0x800 && mmc write $loadaddr 0x1000 0x800 && mmc erase 0x2000 0x800
 +emmc_write_production=iminfo $loadaddr && mmc dev 0 && part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=iminfo $loadaddr && mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +emmc_init_bl=run sdmmc_read_emmc_bl2 && run emmc_write_bl2 && run sdmmc_read_emmc_hdr && run emmc_write_hdr && run sdmmc_read_emmc_bl3 && run emmc_write_bl3
