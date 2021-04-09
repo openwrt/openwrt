@@ -284,7 +284,7 @@ int main(int argc, char* argv[], char* env[])
 			else
 				padding = align - ((section->raw_size+ section->offset) % align);
 
-				section->total_size=section->raw_size + padding;
+			section->total_size=section->raw_size + padding;
 		}
 		else{
 			#define EXTRA_BLOCK 0x10000
