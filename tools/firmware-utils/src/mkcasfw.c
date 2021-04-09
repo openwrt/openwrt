@@ -554,6 +554,10 @@ csum_get(struct csum_state *css)
 		break;
 	case CSUM_TYPE_32:
 		ret = csum32_get(css);
+		break;
+	default:
+		ERR("invalid checksum size\n");
+		return 0;
 	}
 
 	return ret;
@@ -755,6 +759,9 @@ write_out_header(FILE *outfile)
 		res = write_out_data(outfile, (uint8_t *)&tmp.nfs,
 					sizeof(tmp.nfs), NULL);
 		break;
+	default:
+		ERR("invalid header type\n");
+		return -EINVAL;
 	}
 
 	return res;

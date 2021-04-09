@@ -150,7 +150,8 @@ static void usage() {
 int main(int argc, char **argv) {
 	struct trx_header hdr;
 	struct asustrx_tail tail = { };
-	FILE *in, *out;
+	FILE *out = NULL;
+	FILE *in = NULL;
 	uint8_t buf[1024];
 	size_t bytes;
 	size_t length = 0;
