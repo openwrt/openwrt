@@ -493,6 +493,9 @@ csum_get(struct csum_state *css)
 	case CSUM_SIZE_16:
 		ret = csum16_get(css);
 		break;
+	default:
+		ERR("invalid checksum size\n");
+		return 0;
 	}
 
 	return ret;
