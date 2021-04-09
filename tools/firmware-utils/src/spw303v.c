@@ -117,10 +117,12 @@ static char fake_data[] = {
 };
 
 
-uint32_t crc32(uint32_t crc, uint8_t *data, size_t len)
+uint32_t crc32(uint32_t crc, const void *data, size_t len)
 {
+	const uint8_t *in = data;
+
 	while (len--)
-		crc = (crc >> 8) ^ crc32tab[(crc ^ *data++) & 0xFF];
+		crc = (crc >> 8) ^ crc32tab[(crc ^ *in++) & 0xFF];
 
 	return crc;
 }

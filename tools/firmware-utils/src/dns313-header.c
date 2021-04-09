@@ -102,9 +102,11 @@ static const uint32_t crc32_table[256] = {
 };
 
 static uint32_t crc32(uint32_t crc,
-		      const unsigned char *buf,
+		      const void *data,
 		      unsigned int len)
 {
+	const uint8_t *buf = data;
+
 	crc = crc ^ 0xffffffffUL;
 	do {
 		crc = crc32_table[((int)crc ^ (*buf++)) & 0xff] ^ (crc >> 8);
@@ -112,7 +114,7 @@ static uint32_t crc32(uint32_t crc,
 	return crc ^ 0xffffffffUL;
 }
 
-static void be_wr(unsigned char *buf, uint32_t val)
+static void be_wr(char *buf, uint32_t val)
 {
 	buf[0] = (val >> 24) & 0xFFU;
 	buf[1] = (val >> 16) & 0xFFU;
@@ -129,7 +131,7 @@ int main(int argc, char **argv)
 	int ret = 0;
 	const char *pathin;
 	const char *pathout;
-	unsigned char *buffer;
+	char *buffer;
 	uint32_t sum;
 	size_t bufsize;
 	size_t bytes;
