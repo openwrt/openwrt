@@ -355,6 +355,7 @@ platform_check_image() {
 	mr16|\
 	zbt-we1526|\
 	zcn-1523h-2|\
+	TD-O3V2|\
 	zcn-1523h-5)
 		[ "$magic_long" != "68737173" -a "$magic_long" != "19852003" ] && {
 			echo "Invalid image type."

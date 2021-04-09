@@ -37,6 +37,7 @@ enum ath79_mach_type {
 	ATH79_MACH_AP136_010,			/* Atheros AP136-010 reference board */
 	ATH79_MACH_AP136_020,			/* Atheros AP136-020 reference board */
 	ATH79_MACH_AP143,			/* Atheros AP143 reference board */
+	ATH79_MACH_TD_O3V2,			/* Atheros TD_O3V2 reference board */
 	ATH79_MACH_AP147_010,			/* Atheros AP147-010 reference board */
 	ATH79_MACH_AP152,			/* Atheros AP152 reference board */
 	ATH79_MACH_AP531B0,			/* Rockeetech AP531B0 */

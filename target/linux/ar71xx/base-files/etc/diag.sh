@@ -20,6 +20,9 @@ get_status_led() {
 	all0305)
 		status_led="eap7660d:green:ds4"
 		;;
+	td-o3v2)
+		status_led="$board:green:lan1"
+		;;
 	antminer-s1|\
 	antminer-s3|\
 	antminer-r1|\
