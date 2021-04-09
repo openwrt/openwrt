@@ -19,11 +19,9 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  drivers/mtd/spi-nor/macronix.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/spi-nor/macronix.c b/drivers/mtd/spi-nor/macronix.c
-index 2d39dd32a64e..ed8b56a0102f 100644
 --- a/drivers/mtd/spi-nor/macronix.c
 +++ b/drivers/mtd/spi-nor/macronix.c
-@@ -50,7 +50,8 @@ static const struct flash_info macronix_parts[] = {
+@@ -50,7 +50,8 @@ static const struct flash_info macronix_
  	{ "mx25u4035",   INFO(0xc22533, 0, 64 * 1024,   8, SECT_4K) },
  	{ "mx25u8035",   INFO(0xc22534, 0, 64 * 1024,  16, SECT_4K) },
  	{ "mx25u6435f",  INFO(0xc22537, 0, 64 * 1024, 128, SECT_4K) },
@@ -33,6 +31,3 @@ index 2d39dd32a64e..ed8b56a0102f 100644
  	{ "mx25l12855e", INFO(0xc22618, 0, 64 * 1024, 256, 0) },
  	{ "mx25r1635f",  INFO(0xc22815, 0, 64 * 1024,  32,
  			      SECT_4K | SPI_NOR_DUAL_READ |
--- 
-2.31.1
-
