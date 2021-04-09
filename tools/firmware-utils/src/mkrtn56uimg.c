@@ -67,7 +67,7 @@ typedef struct image_header {
 	uint8_t		ih_type;
 	uint8_t		ih_comp;
 	union {
-		uint8_t	ih_name[IH_NMLEN];
+		char	ih_name[IH_NMLEN];
 		asus_t	asus;
 	} tail;
 } image_header_t;
