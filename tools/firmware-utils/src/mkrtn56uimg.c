@@ -251,7 +251,8 @@ int
 main(int argc, char **argv)
 {
 	int 		opt;
-	char 		*filename, *progname;
+	char 		*filename = NULL;
+	char		*progname;
 	op_mode_t	opmode = NONE;
 
 	progname = argv[0];
