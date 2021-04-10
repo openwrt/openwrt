@@ -1,7 +1,11 @@
 From: Pablo Neira Ayuso <pablo@netfilter.org>
-Date: Tue, 2 Mar 2021 00:51:31 +0100
+Date: Wed, 24 Mar 2021 02:30:49 +0100
 Subject: [PATCH] net: flow_offload: add FLOW_ACTION_PPPOE_PUSH
 
+Add an action to represent the PPPoE hardware offload support that
+includes the session ID.
+
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 ---
 
 --- a/include/net/flow_offload.h

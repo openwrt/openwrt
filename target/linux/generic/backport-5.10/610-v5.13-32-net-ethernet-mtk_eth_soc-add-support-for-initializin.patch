@@ -1,6 +1,6 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sun, 11 Oct 2020 22:23:08 +0200
-Subject: [PATCH] ethernet: mediatek: mtk_eth_soc: add support for
+Date: Wed, 24 Mar 2021 02:30:53 +0100
+Subject: [PATCH] net: ethernet: mtk_eth_soc: add support for
  initializing the PPE
 
 The PPE (packet processing engine) is used to offload NAT/routed or even
@@ -9,6 +9,7 @@ hash. It also contains some functionality that will be used to bring up
 flow offloading.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 ---
  create mode 100644 drivers/net/ethernet/mediatek/mtk_ppe.c
  create mode 100644 drivers/net/ethernet/mediatek/mtk_ppe.h
@@ -26,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NET_MEDIATEK_STAR_EMAC) += mtk_star_emac.o
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -2284,12 +2284,17 @@ static int mtk_open(struct net_device *d
+@@ -2258,12 +2258,17 @@ static int mtk_open(struct net_device *d
  
  	/* we run 2 netdevs on the same dma ring so we only bring it up once */
  	if (!refcount_read(&eth->dma_refcnt)) {
@@ -46,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		napi_enable(&eth->tx_napi);
  		napi_enable(&eth->rx_napi);
-@@ -2359,6 +2364,9 @@ static int mtk_stop(struct net_device *d
+@@ -2330,6 +2335,9 @@ static int mtk_stop(struct net_device *d
  
  	mtk_dma_free(eth);
  
@@ -56,7 +57,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
  }
  
-@@ -3148,6 +3156,13 @@ static int mtk_probe(struct platform_dev
+@@ -3058,6 +3066,13 @@ static int mtk_probe(struct platform_dev
  			goto err_free_dev;
  	}
  
@@ -70,7 +71,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	for (i = 0; i < MTK_MAX_DEVS; i++) {
  		if (!eth->netdev[i])
  			continue;
-@@ -3222,6 +3237,7 @@ static const struct mtk_soc_data mt7621_
+@@ -3132,6 +3147,7 @@ static const struct mtk_soc_data mt7621_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7621_CLKS_BITMAP,
  	.required_pctl = false,
@@ -78,7 +79,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  static const struct mtk_soc_data mt7622_data = {
-@@ -3230,6 +3246,7 @@ static const struct mtk_soc_data mt7622_
+@@ -3140,6 +3156,7 @@ static const struct mtk_soc_data mt7622_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7622_CLKS_BITMAP,
  	.required_pctl = false,
@@ -88,15 +89,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static const struct mtk_soc_data mt7623_data = {
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -16,6 +16,7 @@
+@@ -15,6 +15,7 @@
+ #include <linux/u64_stats_sync.h>
  #include <linux/refcount.h>
  #include <linux/phylink.h>
- #include <linux/dim.h>
 +#include "mtk_ppe.h"
  
  #define MTK_QDMA_PAGE_SIZE	2048
  #define	MTK_MAX_RX_LENGTH	1536
-@@ -87,6 +88,7 @@
+@@ -86,6 +87,7 @@
  #define MTK_GDMA_TCS_EN		BIT(21)
  #define MTK_GDMA_UCS_EN		BIT(20)
  #define MTK_GDMA_TO_PDMA	0x0
@@ -104,7 +105,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define MTK_GDMA_DROP_ALL       0x7777
  
  /* Unicast Filter MAC Address Register - Low */
-@@ -308,6 +310,12 @@
+@@ -301,6 +303,12 @@
  #define RX_DMA_VID(_x)		((_x) & 0xfff)
  
  /* QDMA descriptor rxd4 */
@@ -117,7 +118,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define RX_DMA_L4_VALID		BIT(24)
  #define RX_DMA_L4_VALID_PDMA	BIT(30)		/* when PDMA is used */
  #define RX_DMA_FPORT_SHIFT	19
-@@ -807,6 +815,7 @@ struct mtk_soc_data {
+@@ -798,6 +806,7 @@ struct mtk_soc_data {
  	u32		caps;
  	u32		required_clks;
  	bool		required_pctl;
@@ -125,7 +126,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	netdev_features_t hw_features;
  };
  
-@@ -918,6 +927,8 @@ struct mtk_eth {
+@@ -897,6 +906,8 @@ struct mtk_eth {
  	u32				tx_int_status_reg;
  	u32				rx_dma_l4_valid;
  	int				ip_align;
@@ -185,7 +186,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +{
 +	unsigned long timeout = jiffies + HZ;
 +
-+	while (time_is_after_jiffies(timeout)) {
++	while (time_is_before_jiffies(timeout)) {
 +		if (!(ppe_r32(ppe, MTK_PPE_GLO_CFG) & MTK_PPE_GLO_CFG_BUSY))
 +			return 0;
 +
