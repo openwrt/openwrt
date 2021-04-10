@@ -20,7 +20,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  #include <linux/nvmem-provider.h>
  
  #include <linux/mtd/mtd.h>
-@@ -693,6 +694,15 @@ int add_mtd_device(struct mtd_info *mtd)
+@@ -694,6 +695,19 @@ int add_mtd_device(struct mtd_info *mtd)
  	   of this try_ nonsense, and no bitching about it
  	   either. :) */
  	__module_get(THIS_MODULE);
@@ -28,9 +28,13 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +	if (!strcmp(mtd->name, "rootfs") &&
 +	    IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
 +	    ROOT_DEV == 0) {
++		unsigned int index = mtd->index;
 +		pr_notice("mtd: device %d (%s) set to be root filesystem\n",
 +			  mtd->index, mtd->name);
-+		ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, mtd->index);
++#ifdef CONFIG_FIT_PARTITION
++		index <<= 1;
++#endif
++		ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, index);
 +	}
 +
  	return 0;
