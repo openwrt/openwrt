@@ -1,14 +1,14 @@
 From: Pablo Neira Ayuso <pablo@netfilter.org>
-Date: Fri, 20 Nov 2020 13:49:21 +0100
-Subject: [PATCH] selftests: netfilter: flowtable bridge and VLAN support
+Date: Wed, 24 Mar 2021 02:30:45 +0100
+Subject: [PATCH] selftests: netfilter: flowtable bridge and vlan support
 
-This patch adds two new tests to cover bridge and VLAN support:
+This patch adds two new tests to cover bridge and vlan support:
 
 - Add a bridge device to the Router1 (nsr1) container and attach the
   veth0 device to the bridge. Set the IP address to the bridge device
   to exercise the bridge forwarding path.
 
-- Add VLAN encapsulation between to the bridge device in the Router1 and
+- Add vlan encapsulation between to the bridge device in the Router1 and
   one of the sender containers (ns1).
 
 Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>

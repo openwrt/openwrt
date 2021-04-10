@@ -1,11 +1,15 @@
 From: Pablo Neira Ayuso <pablo@netfilter.org>
-Date: Fri, 20 Nov 2020 13:49:20 +0100
+Date: Wed, 24 Mar 2021 02:30:41 +0100
 Subject: [PATCH] netfilter: flowtable: add vlan support
 
 Add the vlan id and protocol to the flow tuple to uniquely identify
 flows from the receive path. For the transmit path, dev_hard_header() on
 the vlan device push the headers. This patch includes support for two
-VLAN headers (QinQ) from the ingress path.
+vlan headers (QinQ) from the ingress path.
+
+Add a generic encap field to the flowtable entry which stores the
+protocol and the tag id. This allows to reuse these fields in the PPPoE
+support coming in a later patch.
 
 Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 ---
@@ -79,7 +83,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	case FLOW_OFFLOAD_XMIT_DIRECT:
 --- a/net/netfilter/nf_flow_table_ip.c
 +++ b/net/netfilter/nf_flow_table_ip.c
-@@ -159,17 +159,38 @@ static bool ip_has_options(unsigned int
+@@ -136,23 +136,44 @@ static bool ip_has_options(unsigned int
  	return thoff != sizeof(struct iphdr);
  }
  
@@ -102,41 +106,46 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +}
 +
  static int nf_flow_tuple_ip(struct sk_buff *skb, const struct net_device *dev,
- 			    struct flow_offload_tuple *tuple)
+-			    struct flow_offload_tuple *tuple, u32 *hdrsize)
++			    struct flow_offload_tuple *tuple, u32 *hdrsize,
++			    u32 offset)
  {
--	unsigned int thoff, hdrsize;
-+	unsigned int thoff, hdrsize, offset = 0;
  	struct flow_ports *ports;
+ 	unsigned int thoff;
  	struct iphdr *iph;
  
 -	if (!pskb_may_pull(skb, sizeof(*iph)))
-+	if (skb->protocol == htons(ETH_P_8021Q))
-+		offset += VLAN_HLEN;
-+
 +	if (!pskb_may_pull(skb, sizeof(*iph) + offset))
  		return -1;
  
 -	iph = ip_hdr(skb);
+-	thoff = iph->ihl * 4;
 +	iph = (struct iphdr *)(skb_network_header(skb) + offset);
- 	thoff = iph->ihl * 4;
++	thoff = (iph->ihl * 4);
  
  	if (ip_is_fragment(iph) ||
-@@ -191,11 +212,11 @@ static int nf_flow_tuple_ip(struct sk_bu
+ 	    unlikely(ip_has_options(thoff)))
  		return -1;
  
- 	thoff = iph->ihl * 4;
--	if (!pskb_may_pull(skb, thoff + hdrsize))
-+	if (!pskb_may_pull(skb, thoff + hdrsize + offset))
++	thoff += offset;
++
+ 	switch (iph->protocol) {
+ 	case IPPROTO_TCP:
+ 		*hdrsize = sizeof(struct tcphdr);
+@@ -167,11 +188,10 @@ static int nf_flow_tuple_ip(struct sk_bu
+ 	if (iph->ttl <= 1)
+ 		return -1;
+ 
+-	thoff = iph->ihl * 4;
+ 	if (!pskb_may_pull(skb, thoff + *hdrsize))
  		return -1;
  
 -	iph = ip_hdr(skb);
--	ports = (struct flow_ports *)(skb_network_header(skb) + thoff);
 +	iph = (struct iphdr *)(skb_network_header(skb) + offset);
-+	ports = (struct flow_ports *)(skb_network_header(skb) + thoff + offset);
+ 	ports = (struct flow_ports *)(skb_network_header(skb) + thoff);
  
  	tuple->src_v4.s_addr	= iph->saddr;
- 	tuple->dst_v4.s_addr	= iph->daddr;
-@@ -204,6 +225,7 @@ static int nf_flow_tuple_ip(struct sk_bu
+@@ -181,6 +201,7 @@ static int nf_flow_tuple_ip(struct sk_bu
  	tuple->l3proto		= AF_INET;
  	tuple->l4proto		= iph->protocol;
  	tuple->iifidx		= dev->ifindex;
@@ -144,18 +153,21 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	return 0;
  }
-@@ -248,6 +270,40 @@ static unsigned int nf_flow_xmit_xfrm(st
+@@ -207,6 +228,43 @@ static unsigned int nf_flow_xmit_xfrm(st
  	return NF_STOLEN;
  }
  
-+static bool nf_flow_skb_encap_protocol(const struct sk_buff *skb, __be16 proto)
++static bool nf_flow_skb_encap_protocol(const struct sk_buff *skb, __be16 proto,
++				       u32 *offset)
 +{
 +	if (skb->protocol == htons(ETH_P_8021Q)) {
 +		struct vlan_ethhdr *veth;
 +
 +		veth = (struct vlan_ethhdr *)skb_mac_header(skb);
-+		if (veth->h_vlan_encapsulated_proto == proto)
++		if (veth->h_vlan_encapsulated_proto == proto) {
++			*offset += VLAN_HLEN;
 +			return true;
++		}
 +	}
 +
 +	return false;
@@ -185,25 +197,30 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static unsigned int nf_flow_queue_xmit(struct net *net, struct sk_buff *skb,
  				       const struct flow_offload_tuple_rhash *tuplehash,
  				       unsigned short type)
-@@ -276,13 +332,15 @@ nf_flow_offload_ip_hook(void *priv, stru
+@@ -235,17 +293,18 @@ nf_flow_offload_ip_hook(void *priv, stru
  	enum flow_offload_tuple_dir dir;
  	struct flow_offload *flow;
  	struct net_device *outdev;
++	u32 hdrsize, offset = 0;
 +	unsigned int thoff, mtu;
  	struct rtable *rt;
 -	unsigned int thoff;
  	struct iphdr *iph;
  	__be32 nexthop;
-+	u32 offset = 0;
+-	u32 hdrsize;
  	int ret;
  
 -	if (skb->protocol != htons(ETH_P_IP))
 +	if (skb->protocol != htons(ETH_P_IP) &&
-+	    !nf_flow_skb_encap_protocol(skb, htons(ETH_P_IP)))
++	    !nf_flow_skb_encap_protocol(skb, htons(ETH_P_IP), &offset))
  		return NF_ACCEPT;
  
- 	if (nf_flow_tuple_ip(skb, state->in, &tuple) < 0)
-@@ -295,14 +353,19 @@ nf_flow_offload_ip_hook(void *priv, stru
+-	if (nf_flow_tuple_ip(skb, state->in, &tuple, &hdrsize) < 0)
++	if (nf_flow_tuple_ip(skb, state->in, &tuple, &hdrsize, offset) < 0)
+ 		return NF_ACCEPT;
+ 
+ 	tuplehash = flow_offload_lookup(flow_table, &tuple);
+@@ -255,11 +314,12 @@ nf_flow_offload_ip_hook(void *priv, stru
  	dir = tuplehash->tuple.dir;
  	flow = container_of(tuplehash, struct flow_offload, tuplehash[dir]);
  
@@ -212,45 +229,38 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +	if (unlikely(nf_flow_exceeds_mtu(skb, mtu)))
  		return NF_ACCEPT;
  
--	if (skb_try_make_writable(skb, sizeof(*iph)))
-+	if (skb->protocol == htons(ETH_P_8021Q))
-+		offset += VLAN_HLEN;
-+
-+	if (skb_try_make_writable(skb, sizeof(*iph) + offset))
- 		return NF_DROP;
- 
--	thoff = ip_hdr(skb)->ihl * 4;
--	if (nf_flow_state_check(flow, ip_hdr(skb)->protocol, skb, thoff))
+-	iph = ip_hdr(skb);
+-	thoff = iph->ihl * 4;
 +	iph = (struct iphdr *)(skb_network_header(skb) + offset);
 +	thoff = (iph->ihl * 4) + offset;
-+	if (nf_flow_state_check(flow, iph->protocol, skb, thoff))
+ 	if (nf_flow_state_check(flow, iph->protocol, skb, thoff))
  		return NF_ACCEPT;
  
+@@ -277,6 +337,9 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 
  	flow_offload_refresh(flow_table, flow);
-@@ -312,6 +375,9 @@ nf_flow_offload_ip_hook(void *priv, stru
- 		return NF_ACCEPT;
- 	}
  
 +	nf_flow_encap_pop(skb, tuplehash);
 +	thoff -= offset;
 +
- 	if (nf_flow_nat_ip(flow, skb, thoff, dir) < 0)
- 		return NF_DROP;
+ 	iph = ip_hdr(skb);
+ 	nf_flow_nat_ip(flow, skb, thoff, dir, iph);
  
-@@ -479,14 +545,17 @@ static int nf_flow_nat_ipv6(const struct
+@@ -418,16 +481,18 @@ static void nf_flow_nat_ipv6(const struc
+ }
+ 
  static int nf_flow_tuple_ipv6(struct sk_buff *skb, const struct net_device *dev,
- 			      struct flow_offload_tuple *tuple)
+-			      struct flow_offload_tuple *tuple, u32 *hdrsize)
++			      struct flow_offload_tuple *tuple, u32 *hdrsize,
++			      u32 offset)
  {
--	unsigned int thoff, hdrsize;
-+	unsigned int thoff, hdrsize, offset = 0;
  	struct flow_ports *ports;
  	struct ipv6hdr *ip6h;
+ 	unsigned int thoff;
  
 -	if (!pskb_may_pull(skb, sizeof(*ip6h)))
-+	if (skb->protocol == htons(ETH_P_8021Q))
-+		offset += VLAN_HLEN;
-+
-+	if (!pskb_may_pull(skb, sizeof(*ip6h) + offset))
++	thoff = sizeof(*ip6h) + offset;
++	if (!pskb_may_pull(skb, thoff))
  		return -1;
  
 -	ip6h = ipv6_hdr(skb);
@@ -258,22 +268,20 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	switch (ip6h->nexthdr) {
  	case IPPROTO_TCP:
-@@ -503,11 +572,11 @@ static int nf_flow_tuple_ipv6(struct sk_
+@@ -443,11 +508,10 @@ static int nf_flow_tuple_ipv6(struct sk_
+ 	if (ip6h->hop_limit <= 1)
  		return -1;
  
- 	thoff = sizeof(*ip6h);
--	if (!pskb_may_pull(skb, thoff + hdrsize))
-+	if (!pskb_may_pull(skb, thoff + hdrsize + offset))
+-	thoff = sizeof(*ip6h);
+ 	if (!pskb_may_pull(skb, thoff + *hdrsize))
  		return -1;
  
 -	ip6h = ipv6_hdr(skb);
--	ports = (struct flow_ports *)(skb_network_header(skb) + thoff);
 +	ip6h = (struct ipv6hdr *)(skb_network_header(skb) + offset);
-+	ports = (struct flow_ports *)(skb_network_header(skb) + thoff + offset);
+ 	ports = (struct flow_ports *)(skb_network_header(skb) + thoff);
  
  	tuple->src_v6		= ip6h->saddr;
- 	tuple->dst_v6		= ip6h->daddr;
-@@ -516,6 +585,7 @@ static int nf_flow_tuple_ipv6(struct sk_
+@@ -457,6 +521,7 @@ static int nf_flow_tuple_ipv6(struct sk_
  	tuple->l3proto		= AF_INET6;
  	tuple->l4proto		= ip6h->nexthdr;
  	tuple->iifidx		= dev->ifindex;
@@ -281,21 +289,28 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	return 0;
  }
-@@ -533,9 +603,12 @@ nf_flow_offload_ipv6_hook(void *priv, st
+@@ -472,15 +537,17 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 	const struct in6_addr *nexthop;
+ 	struct flow_offload *flow;
  	struct net_device *outdev;
++	unsigned int thoff, mtu;
++	u32 hdrsize, offset = 0;
  	struct ipv6hdr *ip6h;
  	struct rt6_info *rt;
-+	unsigned int mtu;
-+	u32 offset = 0;
+-	u32 hdrsize;
  	int ret;
  
 -	if (skb->protocol != htons(ETH_P_IPV6))
 +	if (skb->protocol != htons(ETH_P_IPV6) &&
-+	    !nf_flow_skb_encap_protocol(skb, htons(ETH_P_IPV6)))
++	    !nf_flow_skb_encap_protocol(skb, htons(ETH_P_IPV6), &offset))
  		return NF_ACCEPT;
  
- 	if (nf_flow_tuple_ipv6(skb, state->in, &tuple) < 0)
-@@ -548,11 +621,15 @@ nf_flow_offload_ipv6_hook(void *priv, st
+-	if (nf_flow_tuple_ipv6(skb, state->in, &tuple, &hdrsize) < 0)
++	if (nf_flow_tuple_ipv6(skb, state->in, &tuple, &hdrsize, offset) < 0)
+ 		return NF_ACCEPT;
+ 
+ 	tuplehash = flow_offload_lookup(flow_table, &tuple);
+@@ -490,11 +557,13 @@ nf_flow_offload_ipv6_hook(void *priv, st
  	dir = tuplehash->tuple.dir;
  	flow = container_of(tuplehash, struct flow_offload, tuplehash[dir]);
  
@@ -306,22 +321,26 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 -	if (nf_flow_state_check(flow, ipv6_hdr(skb)->nexthdr, skb,
 -				sizeof(*ip6h)))
-+	if (skb->protocol == htons(ETH_P_8021Q))
-+		offset += VLAN_HLEN;
-+
 +	ip6h = (struct ipv6hdr *)(skb_network_header(skb) + offset);
-+	if (nf_flow_state_check(flow, ip6h->nexthdr, skb, sizeof(*ip6h)))
++	thoff = sizeof(*ip6h) + offset;
++	if (nf_flow_state_check(flow, ip6h->nexthdr, skb, thoff))
  		return NF_ACCEPT;
  
- 	flow_offload_refresh(flow_table, flow);
-@@ -562,6 +639,8 @@ nf_flow_offload_ipv6_hook(void *priv, st
- 		return NF_ACCEPT;
+ 	if (tuplehash->tuple.xmit_type == FLOW_OFFLOAD_XMIT_NEIGH ||
+@@ -506,11 +575,13 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 		}
  	}
+ 
+-	if (skb_try_make_writable(skb, sizeof(*ip6h) + hdrsize))
++	if (skb_try_make_writable(skb, thoff + hdrsize))
+ 		return NF_DROP;
+ 
+ 	flow_offload_refresh(flow_table, flow);
  
 +	nf_flow_encap_pop(skb, tuplehash);
 +
- 	if (skb_try_make_writable(skb, sizeof(*ip6h)))
- 		return NF_DROP;
+ 	ip6h = ipv6_hdr(skb);
+ 	nf_flow_nat_ipv6(flow, skb, dir, ip6h);
  
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c

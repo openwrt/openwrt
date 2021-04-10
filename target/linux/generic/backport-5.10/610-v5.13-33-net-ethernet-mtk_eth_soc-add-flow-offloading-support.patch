@@ -1,9 +1,9 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Thu, 10 Dec 2020 12:19:18 +0100
+Date: Wed, 24 Mar 2021 02:30:54 +0100
 Subject: [PATCH] net: ethernet: mtk_eth_soc: add flow offloading support
 
 This adds support for offloading IPv4 routed flows, including SNAT/DNAT,
-one VLAN, and DSA.
+one VLAN, PPPoE and DSA.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
@@ -21,7 +21,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  obj-$(CONFIG_NET_MEDIATEK_STAR_EMAC) += mtk_star_emac.o
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -2896,6 +2896,7 @@ static const struct net_device_ops mtk_n
+@@ -2813,6 +2813,7 @@ static const struct net_device_ops mtk_n
  #ifdef CONFIG_NET_POLL_CONTROLLER
  	.ndo_poll_controller	= mtk_poll_controller,
  #endif
@@ -29,7 +29,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  };
  
  static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
-@@ -3161,6 +3162,10 @@ static int mtk_probe(struct platform_dev
+@@ -3071,6 +3072,10 @@ static int mtk_probe(struct platform_dev
  				   eth->base + MTK_ETH_PPE_BASE, 2);
  		if (err)
  			goto err_free_dev;
@@ -42,15 +42,15 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	for (i = 0; i < MTK_MAX_DEVS; i++) {
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -16,6 +16,7 @@
+@@ -15,6 +15,7 @@
+ #include <linux/u64_stats_sync.h>
  #include <linux/refcount.h>
  #include <linux/phylink.h>
- #include <linux/dim.h>
 +#include <linux/rhashtable.h>
  #include "mtk_ppe.h"
  
  #define MTK_QDMA_PAGE_SIZE	2048
-@@ -41,7 +42,8 @@
+@@ -40,7 +41,8 @@
  				 NETIF_F_HW_VLAN_CTAG_RX | \
  				 NETIF_F_SG | NETIF_F_TSO | \
  				 NETIF_F_TSO6 | \
@@ -60,7 +60,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #define MTK_HW_FEATURES_MT7628	(NETIF_F_SG | NETIF_F_RXCSUM)
  #define NEXT_DESP_IDX(X, Y)	(((X) + 1) & ((Y) - 1))
  
-@@ -929,6 +931,7 @@ struct mtk_eth {
+@@ -908,6 +910,7 @@ struct mtk_eth {
  	int				ip_align;
  
  	struct mtk_ppe			ppe;
@@ -68,7 +68,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  };
  
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
-@@ -973,4 +976,9 @@ int mtk_gmac_sgmii_path_setup(struct mtk
+@@ -952,4 +955,9 @@ int mtk_gmac_sgmii_path_setup(struct mtk
  int mtk_gmac_gephy_path_setup(struct mtk_eth *eth, int mac_id);
  int mtk_gmac_rgmii_path_setup(struct mtk_eth *eth, int mac_id);
  
@@ -80,7 +80,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #endif /* MTK_ETH_H */
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -0,0 +1,491 @@
+@@ -0,0 +1,485 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + *  Copyright (C) 2020 Felix Fietkau <nbd@nbd.name>
@@ -218,12 +218,6 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +
 +	dp = dsa_port_from_netdev(*dev);
 +	if (IS_ERR(dp))
-+		return -ENODEV;
-+
-+	if (!dp->cpu_dp)
-+		return -ENODEV;
-+
-+	if (!dp->cpu_dp->tag_ops)
 +		return -ENODEV;
 +
 +	if (dp->cpu_dp->tag_ops->proto != DSA_TAG_PROTO_MTK)

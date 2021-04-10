@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	  MediaTek SoC family.
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1232,12 +1232,13 @@ static void mtk_update_rx_cpu_idx(struct
+@@ -1233,12 +1233,13 @@ static void mtk_update_rx_cpu_idx(struct
  static int mtk_poll_rx(struct napi_struct *napi, int budget,
  		       struct mtk_eth *eth)
  {
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (likely(napi_schedule_prep(&eth->tx_napi))) {
  		__napi_schedule(&eth->tx_napi);
  		mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
-@@ -2315,6 +2332,9 @@ static int mtk_stop(struct net_device *d
+@@ -2323,6 +2340,9 @@ static int mtk_stop(struct net_device *d
  	napi_disable(&eth->tx_napi);
  	napi_disable(&eth->rx_napi);
  
@@ -105,7 +105,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA))
  		mtk_stop_dma(eth, MTK_QDMA_GLO_CFG);
  	mtk_stop_dma(eth, MTK_PDMA_GLO_CFG);
-@@ -2364,6 +2384,64 @@ err_disable_clks:
+@@ -2375,6 +2395,64 @@ err_disable_clks:
  	return ret;
  }
  
@@ -170,7 +170,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int mtk_hw_init(struct mtk_eth *eth)
  {
  	int i, val, ret;
-@@ -2385,9 +2463,6 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -2396,9 +2474,6 @@ static int mtk_hw_init(struct mtk_eth *e
  			goto err_disable_pm;
  		}
  
@@ -180,7 +180,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		/* disable delay and normal interrupt */
  		mtk_tx_irq_disable(eth, ~0);
  		mtk_rx_irq_disable(eth, ~0);
-@@ -2426,11 +2501,10 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -2437,11 +2512,10 @@ static int mtk_hw_init(struct mtk_eth *e
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
  
@@ -194,7 +194,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	mtk_tx_irq_disable(eth, ~0);
  	mtk_rx_irq_disable(eth, ~0);
  
-@@ -2934,6 +3008,13 @@ static int mtk_probe(struct platform_dev
+@@ -2946,6 +3020,13 @@ static int mtk_probe(struct platform_dev
  	spin_lock_init(&eth->page_lock);
  	spin_lock_init(&eth->tx_irq_lock);
  	spin_lock_init(&eth->rx_irq_lock);
@@ -210,15 +210,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		eth->ethsys = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -15,6 +15,7 @@
- #include <linux/u64_stats_sync.h>
+@@ -16,6 +16,7 @@
  #include <linux/refcount.h>
  #include <linux/phylink.h>
+ #include <linux/rhashtable.h>
 +#include <linux/dim.h>
+ #include "mtk_ppe.h"
  
  #define MTK_QDMA_PAGE_SIZE	2048
- #define	MTK_MAX_RX_LENGTH	1536
-@@ -131,13 +132,18 @@
+@@ -136,13 +137,18 @@
  
  /* PDMA Delay Interrupt Register */
  #define MTK_PDMA_DELAY_INT		0xa0c
@@ -242,7 +242,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* PDMA Interrupt Status Register */
  #define MTK_PDMA_INT_STATUS	0xa20
-@@ -219,6 +225,7 @@
+@@ -224,6 +230,7 @@
  /* QDMA Interrupt Status Register */
  #define MTK_QDMA_INT_STATUS	0x1A18
  #define MTK_RX_DONE_DLY		BIT(30)
@@ -250,7 +250,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define MTK_RX_DONE_INT3	BIT(19)
  #define MTK_RX_DONE_INT2	BIT(18)
  #define MTK_RX_DONE_INT1	BIT(17)
-@@ -228,8 +235,7 @@
+@@ -233,8 +240,7 @@
  #define MTK_TX_DONE_INT1	BIT(1)
  #define MTK_TX_DONE_INT0	BIT(0)
  #define MTK_RX_DONE_INT		MTK_RX_DONE_DLY
@@ -260,7 +260,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* QDMA Interrupt grouping registers */
  #define MTK_QDMA_INT_GRP1	0x1a20
-@@ -892,6 +898,18 @@ struct mtk_eth {
+@@ -905,6 +911,18 @@ struct mtk_eth {
  
  	const struct mtk_soc_data	*soc;
  

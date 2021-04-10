@@ -1,9 +1,13 @@
-From: Pablo Neira Ayuso <pablo@netfilter.org>
-Date: Tue, 2 Mar 2021 21:45:16 +0100
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 24 Mar 2021 02:30:36 +0100
 Subject: [PATCH] net: ppp: resolve forwarding path for bridge pppoe
  devices
 
-Pass on the PPPoE session ID and the real device.
+Pass on the PPPoE session ID, destination hardware address and the real
+device.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 ---
 
 --- a/drivers/net/ppp/ppp_generic.c
@@ -15,7 +19,7 @@ Pass on the PPPoE session ID and the real device.
 +static int ppp_fill_forward_path(struct net_device_path_ctx *ctx,
 +				 struct net_device_path *path)
 +{
-+	struct ppp *ppp = netdev_priv(path->dev);
++	struct ppp *ppp = netdev_priv(ctx->dev);
 +	struct ppp_channel *chan;
 +	struct channel *pch;
 +
@@ -45,7 +49,7 @@ Pass on the PPPoE session ID and the real device.
  static struct device_type ppp_type = {
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
-@@ -972,8 +972,30 @@ static int pppoe_xmit(struct ppp_channel
+@@ -972,8 +972,31 @@ static int pppoe_xmit(struct ppp_channel
  	return __pppoe_xmit(sk, skb);
  }
  
@@ -64,6 +68,7 @@ Pass on the PPPoE session ID and the real device.
 +	path->type = DEV_PATH_PPPOE;
 +	path->encap.proto = htons(ETH_P_PPP_SES);
 +	path->encap.id = be16_to_cpu(po->num);
++	memcpy(path->encap.h_dest, po->pppoe_pa.remote, ETH_ALEN);
 +	path->dev = ctx->dev;
 +	ctx->dev = dev;
 +
@@ -86,6 +91,14 @@ Pass on the PPPoE session ID and the real device.
  };
  
  struct net_device_path {
+@@ -840,6 +841,7 @@ struct net_device_path {
+ 		struct {
+ 			u16		id;
+ 			__be16		proto;
++			u8		h_dest[ETH_ALEN];
+ 		} encap;
+ 		struct {
+ 			enum {
 --- a/include/linux/ppp_channel.h
 +++ b/include/linux/ppp_channel.h
 @@ -28,6 +28,9 @@ struct ppp_channel_ops {

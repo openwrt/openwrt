@@ -15,7 +15,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -85,7 +85,7 @@ static int mtk_mdio_busy_wait(struct mtk
+@@ -86,7 +86,7 @@ static int mtk_mdio_busy_wait(struct mtk
  			return 0;
  		if (time_after(jiffies, t_start + PHY_IAC_TIMEOUT))
  			break;
