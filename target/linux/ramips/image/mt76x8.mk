@@ -194,6 +194,17 @@ define Device/hiwifi_hc5861b
 endef
 TARGET_DEVICES += hiwifi_hc5861b
 
+define Device/hooolink_hl-mf908-v3
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Hooolink
+  DEVICE_MODEL := HL-MF908
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
+	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi
+  SUPPORTED_DEVICES += hl-mf908-v3
+endef
+TARGET_DEVICES += hooolink_hl-mf908-v3
+
 define Device/iptime_a3
   IMAGE_SIZE := 7936k
   UIMAGE_NAME := a3
