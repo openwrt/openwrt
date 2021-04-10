@@ -102,7 +102,7 @@ Date:   Tue Jul 31 00:52:27 2007 +0000
  Assume normal C execution environment.
 --- a/gcc/common.opt
 +++ b/gcc/common.opt
-@@ -1657,6 +1657,9 @@ fguess-branch-probability
+@@ -1660,6 +1660,9 @@ fguess-branch-probability
  Common Report Var(flag_guess_branch_prob) Optimization
  Enable guessing of branch probabilities.
  
@@ -114,7 +114,7 @@ Date:   Tue Jul 31 00:52:27 2007 +0000
  ; On SVR4 targets, it also controls whether or not to emit a
 --- a/gcc/doc/invoke.texi
 +++ b/gcc/doc/invoke.texi
-@@ -8169,6 +8169,17 @@ This option is only supported for C and
+@@ -8171,6 +8171,17 @@ This option is only supported for C and
  @option{-Wall} and by @option{-Wpedantic}, which can be disabled with
  @option{-Wno-pointer-sign}.
  
@@ -134,7 +134,7 @@ Date:   Tue Jul 31 00:52:27 2007 +0000
  @opindex Wno-stack-protector
 --- a/gcc/opts.c
 +++ b/gcc/opts.c
-@@ -2308,6 +2308,9 @@ common_handle_option (struct gcc_options
+@@ -2318,6 +2318,9 @@ common_handle_option (struct gcc_options
        /* Currently handled in a prescan.  */
        break;
  
