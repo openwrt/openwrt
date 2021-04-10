@@ -186,7 +186,7 @@
 +boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr
 +emmc_write_bl2=mmc dev 0 1 && mmc partconf 0 1 1 1 && mmc erase 0x0 0x400 && mmc write $loadaddr 0x0 0x100 ; mmc partconf 0 1 1 0
 +emmc_write_hdr=mmc dev 0 0 && mmc erase 0x0 0x40 && mmc write $loadaddr 0x0 0x40
-+emmc_write_bl3=mmc dev 0 0 && mmc erase 0x1000 0x800 && mmc write $loadaddr 0x1000 0x800 && mmc erase 0x2000 0x800
++emmc_write_bl3=mmc dev 0 0 && mmc erase 0x1000 0x1000 && mmc write $loadaddr 0x1000 0x1000 && mmc erase 0x2000 0x800
 +emmc_write_production=iminfo $loadaddr && mmc dev 0 && part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=iminfo $loadaddr && mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +emmc_init_bl=run sdmmc_read_emmc_bl2 && run emmc_write_bl2 && run sdmmc_read_emmc_hdr && run emmc_write_hdr && run sdmmc_read_emmc_bl3 && run emmc_write_bl3
@@ -196,9 +196,9 @@
 +sdmmc_write_recovery=iminfo $fileaddr && mmc dev 1 && part start mmc 1 $part_recovery part_addr && part size mmc 1 $part_recovery part_size && run mmc_write_vol
 +sdmmc_read_production=mmc dev 1 && part start mmc 1 $part_default part_addr && part size mmc 1 $part_default part_size && run mmc_read_vol
 +sdmmc_read_recovery=mmc dev 1 && part start mmc 1 $part_recovery part_addr && part size mmc 1 $part_recovery part_size && run mmc_read_vol
-+sdmmc_read_emmc_hdr=mmc dev 1 && mmc read $loadaddr 0x100 0x40
-+sdmmc_read_emmc_bl2=mmc dev 1 && mmc read $loadaddr 0x200 0x100
-+sdmmc_read_emmc_bl3=mmc dev 1 && mmc read $loadaddr 0x800 0x800
++sdmmc_read_emmc_hdr=mmc dev 1 && part start mmc 1 install part_addr && mmc read $loadaddr $part_addr 0x40
++sdmmc_read_emmc_bl2=mmc dev 1 && part start mmc 1 install part_addr && setexpr offset $part_addr + 0x400 && mmc read $loadaddr $offset 0x400
++sdmmc_read_emmc_bl3=mmc dev 1 && part start mmc 1 install part_addr && setexpr offset $part_addr + 0x1000 && mmc read $loadaddr $offset 0x1000
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$part_size && mmc write $loadaddr 0x$part_addr 0x$image_size
 +mmc_read_vol=mmc read $loadaddr $part_addr 0x8 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size
 +part_default=production

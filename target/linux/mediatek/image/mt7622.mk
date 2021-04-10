@@ -43,11 +43,12 @@ define Build/mt7622-gpt
 			-H \
 			-t 0x83	-N bl2		-r	-p 512k@512k \
 		) \
-			-t 0xef	-N fip		-r	-p 1M@2M \
+			-t 0xef	-N fip		-r	-p 2M@2M \
 			-t 0x83	-N ubootenv	-r	-p 1M@4M \
 				-N recovery	-r	-p 32M@6M \
 		$(if $(findstring sdmmc,$1), \
-			-t 0x2e -N production		-p 216M@40M \
+				-N install	-r	-p 7M@38M \
+			-t 0x2e -N production		-p 211M@45M \
 		) \
 		$(if $(findstring emmc,$1), \
 			-t 0x2e -N production		-p 980M@40M \
@@ -79,13 +80,13 @@ define Device/bananapi_bpi-r64
   IMAGES := sysupgrade.itb
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   ARTIFACT/sdcard.img.gz	:= mt7622-gpt sdmmc |\
-				   pad-to 128k | mt7622-gpt emmc |\
-				   pad-to 256k | bl2 emmc-2ddr |\
 				   pad-to 512k | bl2 sdmmc-2ddr |\
-				   pad-to 1024k | bl31-uboot bananapi_bpi-r64-emmc |\
 				   pad-to 2048k | bl31-uboot bananapi_bpi-r64-sdmmc |\
 				   pad-to 6144k | append-image initramfs-recovery.itb |\
-				   pad-to 40960k | append-image squashfs-sysupgrade.itb | gzip
+				   pad-to 38912k | mt7622-gpt emmc |\
+				   pad-to 39424k | bl2 emmc-2ddr |\
+				   pad-to 40960k | bl31-uboot bananapi_bpi-r64-emmc |\
+				   pad-to 46080k | append-image squashfs-sysupgrade.itb | gzip
   KERNEL			:= kernel-bin | gzip
   KERNEL_INITRAMFS		:= kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd | pad-to 128k
   IMAGE/sysupgrade.itb		:= append-kernel | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb external-static-with-rootfs | append-metadata
