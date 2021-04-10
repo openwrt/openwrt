@@ -1,5 +1,5 @@
 From: Pablo Neira Ayuso <pablo@netfilter.org>
-Date: Thu, 4 Mar 2021 03:26:35 +0100
+Date: Wed, 24 Mar 2021 02:30:40 +0100
 Subject: [PATCH] netfilter: flowtable: use dev_fill_forward_path() to
  obtain egress device
 
@@ -133,7 +133,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  void flow_offload_free(struct flow_offload *flow)
 --- a/net/netfilter/nf_flow_table_ip.c
 +++ b/net/netfilter/nf_flow_table_ip.c
-@@ -248,6 +248,24 @@ static unsigned int nf_flow_xmit_xfrm(st
+@@ -207,6 +207,24 @@ static unsigned int nf_flow_xmit_xfrm(st
  	return NF_STOLEN;
  }
  
@@ -158,25 +158,41 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  unsigned int
  nf_flow_offload_ip_hook(void *priv, struct sk_buff *skb,
  			const struct nf_hook_state *state)
-@@ -262,6 +280,7 @@ nf_flow_offload_ip_hook(void *priv, stru
- 	unsigned int thoff;
+@@ -222,6 +240,7 @@ nf_flow_offload_ip_hook(void *priv, stru
  	struct iphdr *iph;
  	__be32 nexthop;
+ 	u32 hdrsize;
 +	int ret;
  
  	if (skb->protocol != htons(ETH_P_IP))
  		return NF_ACCEPT;
-@@ -303,22 +322,32 @@ nf_flow_offload_ip_hook(void *priv, stru
+@@ -244,9 +263,13 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 	if (nf_flow_state_check(flow, iph->protocol, skb, thoff))
+ 		return NF_ACCEPT;
+ 
+-	if (!dst_check(&rt->dst, 0)) {
+-		flow_offload_teardown(flow);
+-		return NF_ACCEPT;
++	if (tuplehash->tuple.xmit_type == FLOW_OFFLOAD_XMIT_NEIGH ||
++	    tuplehash->tuple.xmit_type == FLOW_OFFLOAD_XMIT_XFRM) {
++		rt = (struct rtable *)tuplehash->tuple.dst_cache;
++		if (!dst_check(&rt->dst, 0)) {
++			flow_offload_teardown(flow);
++			return NF_ACCEPT;
++		}
+ 	}
+ 
+ 	if (skb_try_make_writable(skb, thoff + hdrsize))
+@@ -263,8 +286,6 @@ nf_flow_offload_ip_hook(void *priv, stru
  	if (flow_table->flags & NF_FLOWTABLE_COUNTER)
  		nf_ct_acct_update(flow->ct, tuplehash->tuple.dir, skb->len);
  
 -	rt = (struct rtable *)tuplehash->tuple.dst_cache;
 -
  	if (unlikely(tuplehash->tuple.xmit_type == FLOW_OFFLOAD_XMIT_XFRM)) {
-+		rt = (struct rtable *)tuplehash->tuple.dst_cache;
  		memset(skb->cb, 0, sizeof(struct inet_skb_parm));
  		IPCB(skb)->iif = skb->dev->ifindex;
- 		IPCB(skb)->flags = IPSKB_FORWARDED;
+@@ -272,13 +293,23 @@ nf_flow_offload_ip_hook(void *priv, stru
  		return nf_flow_xmit_xfrm(skb, state, &rt->dst);
  	}
  
@@ -187,7 +203,6 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 -	neigh_xmit(NEIGH_ARP_TABLE, outdev, &nexthop, skb);
 +	switch (tuplehash->tuple.xmit_type) {
 +	case FLOW_OFFLOAD_XMIT_NEIGH:
-+		rt = (struct rtable *)tuplehash->tuple.dst_cache;
 +		outdev = rt->dst.dev;
 +		skb->dev = outdev;
 +		nexthop = rt_nexthop(rt, flow->tuplehash[!dir].tuple.src_v4.s_addr);
@@ -207,25 +222,41 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  }
  EXPORT_SYMBOL_GPL(nf_flow_offload_ip_hook);
  
-@@ -504,6 +533,7 @@ nf_flow_offload_ipv6_hook(void *priv, st
- 	struct net_device *outdev;
+@@ -444,6 +475,7 @@ nf_flow_offload_ipv6_hook(void *priv, st
  	struct ipv6hdr *ip6h;
  	struct rt6_info *rt;
+ 	u32 hdrsize;
 +	int ret;
  
  	if (skb->protocol != htons(ETH_P_IPV6))
  		return NF_ACCEPT;
-@@ -545,21 +575,31 @@ nf_flow_offload_ipv6_hook(void *priv, st
+@@ -465,9 +497,13 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 				sizeof(*ip6h)))
+ 		return NF_ACCEPT;
+ 
+-	if (!dst_check(&rt->dst, 0)) {
+-		flow_offload_teardown(flow);
+-		return NF_ACCEPT;
++	if (tuplehash->tuple.xmit_type == FLOW_OFFLOAD_XMIT_NEIGH ||
++	    tuplehash->tuple.xmit_type == FLOW_OFFLOAD_XMIT_XFRM) {
++		rt = (struct rt6_info *)tuplehash->tuple.dst_cache;
++		if (!dst_check(&rt->dst, 0)) {
++			flow_offload_teardown(flow);
++			return NF_ACCEPT;
++		}
+ 	}
+ 
+ 	if (skb_try_make_writable(skb, sizeof(*ip6h) + hdrsize))
+@@ -484,8 +520,6 @@ nf_flow_offload_ipv6_hook(void *priv, st
  	if (flow_table->flags & NF_FLOWTABLE_COUNTER)
  		nf_ct_acct_update(flow->ct, tuplehash->tuple.dir, skb->len);
  
 -	rt = (struct rt6_info *)tuplehash->tuple.dst_cache;
 -
  	if (unlikely(tuplehash->tuple.xmit_type == FLOW_OFFLOAD_XMIT_XFRM)) {
-+		rt = (struct rt6_info *)tuplehash->tuple.dst_cache;
  		memset(skb->cb, 0, sizeof(struct inet6_skb_parm));
  		IP6CB(skb)->iif = skb->dev->ifindex;
- 		IP6CB(skb)->flags = IP6SKB_FORWARDED;
+@@ -493,12 +527,22 @@ nf_flow_offload_ipv6_hook(void *priv, st
  		return nf_flow_xmit_xfrm(skb, state, &rt->dst);
  	}
  
@@ -236,7 +267,6 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 -	neigh_xmit(NEIGH_ND_TABLE, outdev, nexthop, skb);
 +	switch (tuplehash->tuple.xmit_type) {
 +	case FLOW_OFFLOAD_XMIT_NEIGH:
-+		rt = (struct rt6_info *)tuplehash->tuple.dst_cache;
 +		outdev = rt->dst.dev;
 +		skb->dev = outdev;
 +		nexthop = rt6_nexthop(rt, &flow->tuplehash[!dir].tuple.src_v6);

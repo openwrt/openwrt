@@ -1,12 +1,13 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Mon, 8 Mar 2021 12:06:44 +0100
-Subject: [PATCH] netfilter: nf_flow_table: fix untagging with
- hardware-offloaded bridge vlan_filtering
+Date: Wed, 24 Mar 2021 02:30:48 +0100
+Subject: [PATCH] netfilter: flowtable: bridge vlan hardware offload and
+ switchdev
 
-When switchdev offloading is enabled, treat an untagged VLAN as tagged for
-ingress only
+The switch might have already added the VLAN tag through PVID hardware
+offload. Keep this extra VLAN in the flowtable but skip it on egress.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 ---
 
 --- a/include/linux/netdevice.h
@@ -78,7 +79,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	flow_tuple->encap_num = route->tuple[dir].in.num_encaps;
 --- a/net/netfilter/nf_flow_table_offload.c
 +++ b/net/netfilter/nf_flow_table_offload.c
-@@ -592,8 +592,12 @@ nf_flow_rule_route_common(struct net *ne
+@@ -594,8 +594,12 @@ nf_flow_rule_route_common(struct net *ne
  	other_tuple = &flow->tuplehash[!dir].tuple;
  
  	for (i = 0; i < other_tuple->encap_num; i++) {

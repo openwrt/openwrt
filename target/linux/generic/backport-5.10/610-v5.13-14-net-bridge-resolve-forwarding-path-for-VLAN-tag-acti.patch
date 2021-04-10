@@ -1,7 +1,7 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Mon, 7 Dec 2020 20:31:45 +0100
-Subject: [PATCH] net: bridge: resolve VLAN tag actions in forwarding
- path for bridge devices
+Date: Wed, 24 Mar 2021 02:30:35 +0100
+Subject: [PATCH] net: bridge: resolve forwarding path for VLAN tag
+ actions in bridge devices
 
 Depending on the VLAN settings of the bridge and the port, the bridge can
 either add or remove a tag. When vlan filtering is enabled, the fdb lookup

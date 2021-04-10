@@ -1,8 +1,10 @@
 From: Pablo Neira Ayuso <pablo@netfilter.org>
-Date: Thu, 4 Mar 2021 19:22:55 +0100
-Subject: [PATCH] netfilter: nft_flow_offload: add dsa support
+Date: Wed, 24 Mar 2021 02:30:44 +0100
+Subject: [PATCH] netfilter: flowtable: add dsa support
 
-Replace the master ethernet device by the dsa slave port.
+Replace the master ethernet device by the dsa slave port. Packets coming
+in from the software ingress path use the dsa slave port as input
+device.
 
 Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 ---

@@ -1,10 +1,16 @@
 From: Pablo Neira Ayuso <pablo@netfilter.org>
-Date: Thu, 4 Mar 2021 19:24:11 +0100
+Date: Wed, 24 Mar 2021 02:30:47 +0100
 Subject: [PATCH] netfilter: nft_flow_offload: use direct xmit if
  hardware offload is enabled
 
 If there is a forward path to reach an ethernet device and hardware
 offload is enabled, then use the direct xmit path.
+
+Moreover, store the real device in the direct xmit path info since
+software datapath uses dev_hard_header() to push the layer encapsulation
+headers while hardware offload refers to the real device.
+
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 ---
 
 --- a/include/net/netfilter/nf_flow_table.h
@@ -37,7 +43,7 @@ offload is enabled, then use the direct xmit path.
  	case FLOW_OFFLOAD_XMIT_NEIGH:
 --- a/net/netfilter/nf_flow_table_offload.c
 +++ b/net/netfilter/nf_flow_table_offload.c
-@@ -506,7 +506,7 @@ static void flow_offload_redirect(struct
+@@ -508,7 +508,7 @@ static void flow_offload_redirect(struct
  	switch (this_tuple->xmit_type) {
  	case FLOW_OFFLOAD_XMIT_DIRECT:
  		this_tuple = &flow->tuplehash[dir].tuple;
