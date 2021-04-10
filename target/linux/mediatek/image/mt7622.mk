@@ -76,9 +76,11 @@ define Device/bananapi_bpi-r64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
   DEVICE_DTS_OVERLAY := mt7622-bananapi-bpi-r64-pcie1 mt7622-bananapi-bpi-r64-sata
   DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
-  ARTIFACTS := sdcard.img.gz
+  ARTIFACTS := sdcard.img.gz snand-preloader.bin snand-bl31-uboot.fip
   IMAGES := sysupgrade.itb
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  ARTIFACT/snand-preloader.bin	:= bl2 snand-2ddr
+  ARTIFACT/snand-bl31-uboot.fip	:= bl31-uboot bananapi_bpi-r64-snand
   ARTIFACT/sdcard.img.gz	:= mt7622-gpt sdmmc |\
 				   pad-to 512k | bl2 sdmmc-2ddr |\
 				   pad-to 2048k | bl31-uboot bananapi_bpi-r64-sdmmc |\
@@ -86,6 +88,8 @@ define Device/bananapi_bpi-r64
 				   pad-to 38912k | mt7622-gpt emmc |\
 				   pad-to 39424k | bl2 emmc-2ddr |\
 				   pad-to 40960k | bl31-uboot bananapi_bpi-r64-emmc |\
+				   pad-to 43008k | bl2 snand-2ddr |\
+				   pad-to 43520k | bl31-uboot bananapi_bpi-r64-snand |\
 				   pad-to 46080k | append-image squashfs-sysupgrade.itb | gzip
   KERNEL			:= kernel-bin | gzip
   KERNEL_INITRAMFS		:= kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd | pad-to 128k
