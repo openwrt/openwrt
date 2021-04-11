@@ -13,8 +13,8 @@ Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
  include/linux/can/rx-offload.h | 1 -
  2 files changed, 8 deletions(-)
 
---- a/drivers/net/can/rx-offload.c
-+++ b/drivers/net/can/rx-offload.c
+--- a/drivers/net/can/dev/rx-offload.c
++++ b/drivers/net/can/dev/rx-offload.c
 @@ -348,7 +348,6 @@ static int can_rx_offload_init_queue(str
  	offload->skb_queue_len_max *= 4;
  	skb_queue_head_init(&offload->skb_queue);
