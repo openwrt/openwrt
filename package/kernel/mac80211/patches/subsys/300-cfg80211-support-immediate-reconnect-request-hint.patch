@@ -167,12 +167,12 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
 @@ -736,6 +736,7 @@ static const struct nla_policy nl80211_p
- 		NLA_POLICY_EXACT_LEN(IEEE80211_S1G_CAPABILITY_LEN),
- 	[NL80211_ATTR_S1G_CAPABILITY_MASK] =
- 		NLA_POLICY_EXACT_LEN(IEEE80211_S1G_CAPABILITY_LEN),
+ 	[NL80211_ATTR_SAE_PWE] =
+ 		NLA_POLICY_RANGE(NLA_U8, NL80211_SAE_PWE_HUNT_AND_PECK,
+ 				 NL80211_SAE_PWE_BOTH),
 +	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
  };
- 
+
  /* policy for the key attributes */
 @@ -15903,7 +15904,7 @@ static void nl80211_send_mlme_event(stru
  				    const u8 *buf, size_t len,
