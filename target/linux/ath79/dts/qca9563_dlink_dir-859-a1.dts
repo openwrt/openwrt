@@ -57,16 +57,6 @@
 		};
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		gpio_switch_reset {
-			gpio-export,name = "dir-859-a1:reset:switch";
-			gpio-export,output = <1>;
-			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
 &pcie {
@@ -79,7 +69,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <30000000>;
+		spi-max-frequency = <50000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -134,7 +124,9 @@
 		reg = <0>;
 		phy-mode = "sgmii";
 		qca,mib-poll-interval = <500>;
-
+		
+		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		
 		qca,ar8327-initvals = <
 			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
 			0x10 0x81000080 /* POWER_ON_STRAP */
