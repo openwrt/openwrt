@@ -11,6 +11,7 @@ define Device/alphanetworks_asl56026
   DEVICE_MODEL := ASL56026
   DEVICE_ALT0_VENDOR := BT Openreach
   DEVICE_ALT0_MODEL := ECI VDSL Modem V-2FUb/I
+  SOC := vr9
   IMAGE_SIZE := 7488k
 endef
 TARGET_DEVICES += alphanetworks_asl56026
@@ -24,6 +25,7 @@ define Device/arcadyan_arv7519rw22
   DEVICE_ALT0_VARIANT := 2.1
   DEVICE_ALT1_VENDOR := Astoria Networks
   DEVICE_ALT1_MODEL := ARV7519RW22
+  SOC := vr9
   KERNEL_SIZE := 2048k
   IMAGE_SIZE := 31232k
   DEVICE_PACKAGES := kmod-usb-dwc2
@@ -36,6 +38,7 @@ define Device/arcadyan_vg3503j
   $(Device/dsa-migration)
   DEVICE_VENDOR := BT Openreach
   DEVICE_MODEL := ECI VDSL Modem V-2FUb/R
+  SOC := vr9
   IMAGE_SIZE := 8000k
   SUPPORTED_DEVICES += VG3503J
 endef
@@ -50,6 +53,7 @@ define Device/arcadyan_vgv7510kw22-brn
   DEVICE_ALT0_VENDOR := o2
   DEVICE_ALT0_MODEL := Box 6431
   DEVICE_ALT0_VARIANT := BRN
+  SOC := vr9
   IMAGE_SIZE := 7168k
   SIGNATURE := BRNDA6431
   MAGIC := 0x12345678
@@ -67,6 +71,7 @@ define Device/arcadyan_vgv7510kw22-nor
   DEVICE_ALT0_VENDOR := o2
   DEVICE_ALT0_MODEL := Box 6431
   DEVICE_ALT0_VARIANT := NOR
+  SOC := vr9
   IMAGE_SIZE := 15232k
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic-wolfssl kmod-usb-dwc2 kmod-ltq-tapi kmod-ltq-vmmc
   SUPPORTED_DEVICES += VGV7510KW22NOR
@@ -82,6 +87,7 @@ define Device/arcadyan_vgv7519-brn
   DEVICE_ALT0_VENDOR := KPN
   DEVICE_ALT0_MODEL := Experiabox 8
   DEVICE_ALT0_VARIANT := BRN
+  SOC := vr9
   IMAGE_SIZE := 7168k
   SIGNATURE := 5D00008000
   MAGIC := 0x12345678
@@ -99,6 +105,7 @@ define Device/arcadyan_vgv7519-nor
   DEVICE_ALT0_VENDOR := KPN
   DEVICE_ALT0_MODEL := Experiabox 8
   DEVICE_ALT0_VARIANT := NOR
+  SOC := vr9
   IMAGE_SIZE := 15360k
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic-wolfssl kmod-usb-dwc2 kmod-ltq-tapi kmod-ltq-vmmc
   SUPPORTED_DEVICES += VGV7519NOR
@@ -111,6 +118,7 @@ define Device/avm_fritz3370
   $(Device/NAND)
   DEVICE_MODEL := FRITZ!Box 3370
   DEVICE_VARIANT := Rev. 2
+  SOC := vr9
   KERNEL_SIZE := 4096k
   UBINIZE_OPTS := -E 5
   IMAGES += eva-kernel.bin eva-filesystem.bin
@@ -124,6 +132,7 @@ define Device/avm_fritz3370-rev2-hynix
   $(Device/avm_fritz3370)
   DEVICE_MODEL := FRITZ!Box 3370
   DEVICE_VARIANT := Rev. 2 (Hynix NAND)
+  SOC := vr9
 endef
 TARGET_DEVICES += avm_fritz3370-rev2-hynix
 
@@ -132,6 +141,7 @@ define Device/avm_fritz3370-rev2-micron
   $(Device/avm_fritz3370)
   DEVICE_MODEL := FRITZ!Box 3370
   DEVICE_VARIANT := Rev. 2 (Micron NAND)
+  SOC := vr9
 endef
 TARGET_DEVICES += avm_fritz3370-rev2-micron
 
@@ -142,6 +152,7 @@ define Device/avm_fritz3390
   DEVICE_MODEL := FRITZ!Box 3390
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
+  SOC := vr9
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl \
 	kmod-usb-dwc2 fritz-tffs
 endef
@@ -151,6 +162,7 @@ define Device/avm_fritz7360sl
   $(Device/dsa-migration)
   $(Device/AVM)
   DEVICE_MODEL := FRITZ!Box 7360 SL
+  SOC := vr9
   IMAGE_SIZE := 15744k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl kmod-usb-dwc2
   SUPPORTED_DEVICES += FRITZ7360SL
@@ -162,6 +174,7 @@ define Device/avm_fritz7360-v2
   $(Device/AVM)
   DEVICE_MODEL := FRITZ!Box 7360
   DEVICE_VARIANT := v2
+  SOC := vr9
   IMAGE_SIZE := 32128k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl kmod-usb-dwc2
 endef
@@ -172,6 +185,7 @@ define Device/avm_fritz7362sl
   $(Device/AVM)
   $(Device/NAND)
   DEVICE_MODEL := FRITZ!Box 7362 SL
+  SOC := vr9
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl kmod-usb-dwc2 fritz-tffs
@@ -184,6 +198,7 @@ define Device/avm_fritz7412
   $(Device/NAND)
   DEVICE_MODEL := FRITZ!Box 7412
   BOARD_NAME := FRITZ7412
+  SOC := vr9
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl fritz-tffs-nand fritz-caldata
@@ -195,6 +210,7 @@ define Device/avm_fritz7430
   $(Device/AVM)
   $(Device/NAND)
   DEVICE_MODEL := FRITZ!Box 7430
+  SOC := vr9
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl fritz-tffs-nand fritz-caldata
@@ -208,6 +224,7 @@ define Device/bt_homehub-v5a
   DEVICE_MODEL := Home Hub 5
   DEVICE_VARIANT := Type A
   BOARD_NAME := BTHOMEHUBV5A
+  SOC := vr9
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader \
 	kmod-ath10k-ct ath10k-firmware-qca988x-ct wpad-basic-wolfssl kmod-usb-dwc2
   SUPPORTED_DEVICES += BTHOMEHUBV5A
@@ -218,6 +235,7 @@ define Device/buffalo_wbmr-300hpd
   $(Device/dsa-migration)
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WBMR-300HPD
+  SOC := vr9
   IMAGE_SIZE := 15616k
   DEVICE_PACKAGES := kmod-mt7603 wpad-basic-wolfssl kmod-usb-dwc2
   SUPPORTED_DEVICES += WBMR300
@@ -230,6 +248,7 @@ define Device/lantiq_easy80920-nand
   DEVICE_VENDOR := Lantiq
   DEVICE_MODEL := VR9 EASY80920
   DEVICE_VARIANT := NAND
+  SOC := vr9
   IMAGE_SIZE := 64512k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
@@ -240,6 +259,7 @@ define Device/lantiq_easy80920-nor
   DEVICE_VENDOR := Lantiq
   DEVICE_MODEL := VR9 EASY80920
   DEVICE_VARIANT := NOR
+  SOC := vr9
   IMAGE_SIZE := 7936k
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
@@ -255,6 +275,7 @@ define Device/netgear_dm200
 	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
 	append-rootfs | pad-rootfs | append-metadata | check-size
   IMAGE/factory.img := $$(IMAGE/sysupgrade.bin) | netgear-dni
+  SOC := vr9
   IMAGE_SIZE := 7872k
   NETGEAR_BOARD_ID := DM200
   NETGEAR_HW_ID := 29765233+8+0+64+0+0
@@ -268,6 +289,7 @@ define Device/zyxel_p-2812hnu-f1
   DEVICE_MODEL := P-2812HNU
   DEVICE_VARIANT := F1
   BOARD_NAME := P2812HNUF1
+  SOC := vr9
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic-wolfssl kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   KERNEL_SIZE := 3072k
   SUPPORTED_DEVICES += P2812HNUF1
@@ -281,6 +303,7 @@ define Device/zyxel_p-2812hnu-f3
   DEVICE_MODEL := P-2812HNU
   DEVICE_VARIANT := F3
   BOARD_NAME := P2812HNUF3
+  SOC := vr9
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic-wolfssl kmod-usb-dwc2
   SUPPORTED_DEVICES += P2812HNUF3
 endef
