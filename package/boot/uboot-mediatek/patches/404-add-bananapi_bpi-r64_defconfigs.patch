@@ -230,7 +230,7 @@
 +ubi_create_env=ubi create ubootenv 0x100000 dynamic 0 ; ubi create ubootenv2 0x100000 dynamic 1 ; ubi create fit 0x100000 dynamic 2 ; ubi create recovery 0x100000 dynamic 3
 +ubi_format=ubi detach ; mtd erase ubi && ubi part ubi ; reset
 +ubi_init=run ubi_init_bl && ubi detach && mtd erase ubi && ubi part ubi && run ubi_create_env && run ubi_init_openwrt
-+ubi_init_openwrt=run sdmmc_read_recovery && run ubi_write_recovery ; run sdmmc_read_production && run ubi_write_production
++ubi_init_openwrt=run sdmmc_read_recovery && iminfo $loadaddr && run ubi_write_recovery ; run sdmmc_read_production && iminfo $loadaddr && run ubi_write_production
 +ubi_init_bl=run sdmmc_read_snand_bl2 && run snand_write_bl2 && run sdmmc_read_snand_fip && run snand_write_fip
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
 +ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs
@@ -581,7 +581,7 @@
 +CONFIG_USB_STORAGE=y
 --- /dev/null
 +++ b/bananapi_bpi-r64-snand_env
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,57 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x4007ff28
@@ -608,9 +608,8 @@
 +bootmenu_5=Load recovery system via TFTP then write to NAND.=setenv noboot 1 ; run boot_tftp_recovery ; setenv noboot ; run bootmenu_confirm_return
 +bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
 +bootmenu_7=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
-+bootmenu_8=Get IP address from DHCP.=dhcp ; run bootmenu_confirm_return
-+bootmenu_9=Reboot.=reset
-+bootmenu_a=Reset all settings to factory defaults.=run reset_factory ; reset
++bootmenu_8=Reboot.=reset
++bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_default=run bootcmd ; run boot_recovery ; run boot_tftp_forever
 +boot_first=if button reset ; then run boot_tftp_forever ; fi ; bootmenu
 +boot_production=led bpi-r64:pio:green on ; run ubi_read_production && bootm $loadaddr#$bootconf
