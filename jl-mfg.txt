@@ -1,0 +1,257 @@
+
+$ ./wl4343WA1.exe --serial 9 iscan_s depiks
+
+$ ./wl4343WA1.exe --serial 9 iscanresults
+iscanresults returned unknown status 1633907561
+query_info_fe: remote cdc header return error code 1
+Sorry, your driver has bss_info_version 1937009781 but this program supports only version 109.
+
+$ ./wl4343WA1.exe --serial 9 cur_etheraddr
+cur_etheraddr A0:C9:A0:5B:A0:6B
+
+$ ./wl4343WA1.exe --serial 9 join depiks
+
+$ ./wl4343WA1.exe --serial 9 status
+query_info_fe: remote cdc header return error code 1
+Sorry, your driver has bss_info_version 0 but this program supports only version 109.
+
+$ ./wl4343WA1.exe --serial 9 rssi
+-42
+
+$ ./wl4343WA1.exe --serial 9 disassoc
+
+$ ./wl4343WA1.exe --serial 9 rssi
+0
+
+$ ./wl4343WA1.exe --serial 9 join depiks
+
+$ ./wl4343WA1.exe --serial 9 rssi
+-42
+
+$ ./wl4343WA1.exe --serial 9 rssi
+-43
+
+
+$ ./wl4343WA1.exe --serial 9 disassoc
+
+$
+
+$ ./wl4343WA1.exe --serial 9 rssi
+0
+
+$ ./wl4343WA1.exe --serial 9 txpwr1 -d 15
+
+$ ./wl4343WA1.exe --serial 9 nvram_dump
+nvram_dumpquery_info_fe: remote cdc header return error code 1
+query_info_fe: remote cdc header return error code 1
+Error getting the last error
+
+
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>tx09b.bat
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 down
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 country ALL
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 band b
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 chanspec -c 1 -b 2 -w 20 -s 0
+Chanspec set to 0x1001
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 mpc 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 ampdu 1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 bi 65000
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 frameburst 1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 rateset 11b
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 up
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 txant 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 antdiv 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 nrate -r 11
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 phy_watchdog 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 disassoc
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 txpwr1 -1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>timeout 5
+
+Waiting for 0 seconds, press a key to continue ...
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 pkteng_start 00:90:4c:aa:bb:cc tx 40 1000 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 pkteng_stop tx
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>
+
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>tx09g.bat
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 down
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 country ALL
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 band b
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 chanspec -c 6 -b 2 -w 20 -s 0
+Chanspec set to 0x1006
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 mpc 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 ampdu 1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 bi 65000
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 frameburst 1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 rateset 11b
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 up
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 txant 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 antdiv 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 nrate -r 54
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 phy_watchdog 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 disassoc
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 txpwr1 -1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>timeout 3
+
+Waiting for 0 seconds, press a key to continue ...
+\WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 pkteng_start 00:90:4c:aa:bb:cc tx 40 1000 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 pkteng_stop tx
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>
+
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>tx09n.bat
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 down
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 country ALL
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 band b
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 chanspec -c 11 -b 2 -w 20 -s 0
+Chanspec set to 0x100b
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 mpc 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 ampdu 1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 bi 65000
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 frameburst 1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 rateset 11b
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 up
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 txant 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 antdiv 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 nrate -m 7 -s 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 phy_watchdog 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 disassoc
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 txpwr1 -1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>timeout 3
+
+Waiting for 0 seconds, press a key to continue ...
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 pkteng_start 00:90:4c:aa:bb:cc tx 40 1000 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 pkteng_stop tx
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>
+
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>rx09.bat
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 down
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 mpc 0
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 country ALL
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 scansuppress 1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 channel 1
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 bi 65535
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 up
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>timeout 10
+
+Waiting for  0 seconds, press a key to continue ...
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>wl4343WA1.exe --serial 9 counters
+txframe 0 txbyte 0 txretrans 0 txerror 0 rxframe 0 rxbyte 0 rxerror 65
+txprshort 2 txdmawar 0 txnobuf 0 txnoassoc 0 txchit 0 txcmiss 0
+reset 11 txserr 4 txphyerr 0 txphycrs 0 txfail 0 tbtt 3105
+d11_txfrag 174 d11_txmulti 164 d11_txretry 0 d11_txretrie 0
+d11_txrts 0 d11_txnocts 0 d11_txnoack 0 d11_txfrmsnt 174
+rxcrc 589025 rxnobuf 0 rxnondata 0 rxbadds 0 rxbadcm 0 rxdup 2 rxrtry 8 rxfragerr 0
+rxrunt 0 rxgiant 0 rxnoscb 0 rxbadproto 0 rxbadsrcmac 65
+d11_rxfrag 3122 d11_rxmulti 0 d11_rxundec 0
+rxctl 3094 rxbadda 23 rxfilter 0
+rxuflo: 0 0 0 0 0 0
+txallfrm 2850 txrtsfrm 0 txctsfrm 91 txackfrm 23
+txdnlfrm 0 txbcnfrm 0 txtplunfl 0 txphyerr 0
+txfunfl: 0 0 0 0 0 0
+
+tkipmicfaill 0 tkipicverr 0 tkipcntrmsr 0
+tkipreplay 0 ccmpfmterr 0 ccmpreplay 0
+ccmpundec 0 fourwayfail 0 wepundec 0
+wepicverr 0 decsuccess 0 rxundec 0
+
+rxfrmtoolong 37841 rxfrmtooshrt 61869 rxinvmachdr 89245 rxbadfcs 589025
+rxbadplcp 1089270 rxcrsglitch 3368117 rxstrt 1102864 rxdfrmucastmbss 5
+rxmfrmucastmbss 18 rxcfrmucast 10 rxrtsucast 0 rxctsucast 0
+rxackucast 10 rxdfrmocast 33879 rxmfrmocast 39911 rxcfrmocast 204047
+rxrtsocast 122953 rxctsocast 13703 rxdfrmmcast 12233 rxmfrmmcast 93431
+rxcfrmmcast 98 rxbeaconmbss 3070 rxdfrmucastobss 0 rxbeaconobss 80347
+rxrsptmout 2562 bcntxcancl 0 rxf0ovfl 0 rxf1ovfl 0
+rxf2ovfl 0 txsfovfl 0 pmqovfl 0
+rxcgprqfrm 0 rxcgprsqovfl 0 txcgprsfail 0 txcgprssuc 0
+prs_timeout 0 rxnack 22 frmscons 2572 txnack 0 txphyerror 0
+txchanrej 4
+rx1mbps 5 rx2mbps 0 rx5mbps5 0
+rx6mbps 0 rx9mbps 0 rx11mbps 0
+rx12mbps 0 rx18mbps 0 rx24mbps 0
+rx36mbps 0 rx48mbps 0 rx54mbps 0
+pktengrxducast 0 pktengrxdmcast 0
+txmpdu_sgi 0 rxmpdu_sgi 0 txmpdu_stbc 0 rxmpdu_stbc 0
+reinit 0
+cso_normal 0 cso_passthrough 0
+chained 0 chainedsz1 0 unchained 3187 maxchainsz 0 currchainsz 0
+pciereset 0 cfgrestore 0
+reinitreason counts:   0(0)   1(0)   2(0)   3(0)   4(0)   5(0)   6(0)   7(0)
+
+
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>
+WICED-Studio-6.0\43xxx_Wi-Fi\libraries\test\wl_tool>
+
+
