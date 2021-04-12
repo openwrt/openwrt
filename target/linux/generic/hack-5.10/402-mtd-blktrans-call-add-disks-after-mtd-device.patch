@@ -39,24 +39,19 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return 0;
  error4:
  	kfree(new->tag_set);
-@@ -475,6 +468,32 @@ error1:
+@@ -475,6 +468,27 @@ error1:
  	return ret;
  }
  
-+void register_mtd_blktrans_devs(struct mtd_info *mtd)
++void register_mtd_blktrans_devs(void)
 +{
 +	struct mtd_blktrans_ops *tr;
 +	struct mtd_blktrans_dev *dev, *next;
-+	struct mtd_info *top_mtd;
 +	int ret;
 +
 +	list_for_each_entry(tr, &blktrans_majors, list) {
 +		list_for_each_entry_safe(dev, next, &tr->devs, list) {
-+			top_mtd = dev->mtd;
-+			while (top_mtd->parent)
-+				top_mtd = top_mtd->parent;
-+
-+			if (mtd->index != top_mtd->index)
++			if (dev->disk->flags & GENHD_FL_UP)
 +				continue;
 +
 +			device_add_disk(&dev->mtd->dev, dev->disk, NULL);
@@ -86,18 +81,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		register_reboot_notifier(&mtd->reboot_notifier);
  	}
  
-+	register_mtd_blktrans_devs(mtd);
++	register_mtd_blktrans_devs();
 +
  out:
  	if (ret && device_is_registered(&mtd->dev))
  		del_mtd_device(mtd);
 --- a/include/linux/mtd/blktrans.h
 +++ b/include/linux/mtd/blktrans.h
-@@ -76,6 +76,7 @@ extern int deregister_mtd_blktrans(struc
+@@ -76,6 +76,6 @@ extern int deregister_mtd_blktrans(struc
  extern int add_mtd_blktrans_dev(struct mtd_blktrans_dev *dev);
  extern int del_mtd_blktrans_dev(struct mtd_blktrans_dev *dev);
  extern int mtd_blktrans_cease_background(struct mtd_blktrans_dev *dev);
-+extern void register_mtd_blktrans_devs(struct mtd_info *mtd);
- 
+-
++extern void register_mtd_blktrans_devs(void);
  
  #endif /* __MTD_TRANS_H__ */
