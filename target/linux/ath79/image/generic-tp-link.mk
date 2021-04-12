@@ -362,6 +362,17 @@ define Device/tplink_cpe610-v2
 endef
 TARGET_DEVICES += tplink_cpe610-v2
 
+define Device/tplink_cpe710-v1
+  $(Device/tplink-safeloader-uimage)
+  SOC := qca9563
+  IMAGE_SIZE := 15680k
+  DEVICE_MODEL := CPE710
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  TPLINK_BOARD_ID := CPE710V1
+endef
+TARGET_DEVICES += tplink_cpe710-v1
+
 define Device/tplink-eap2x5
   $(Device/tplink-safeloader)
   LOADER_TYPE := elf
