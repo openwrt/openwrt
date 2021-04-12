@@ -534,6 +534,43 @@ static struct device_info boards[] = {
 		.first_sysupgrade_partition = "os-image",
 		.last_sysupgrade_partition = "support-list",
 	},
+	/** Firmware layout for the CPE710 V1 */
+	{
+		.id     = "CPE710V1",
+		.vendor = "CPE710(TP-LINK|UN|AC866-5|00000000):1.0\r\n",
+		.support_list =
+			"SupportList:\r\n"
+			"CPE710(TP-LINK|UN|AC866-5|00000000):1.0\r\n"
+			"CPE710(TP-LINK|EU|AC866-5|45550000):1.0\r\n"
+			"CPE710(TP-LINK|US|AC866-5|55530000):1.0\r\n"
+			"CPE710(TP-LINK|UN|AC866-5):1.0\r\n"
+			"CPE710(TP-LINK|EU|AC866-5):1.0\r\n"
+			"CPE710(TP-LINK|US|AC866-5):1.0\r\n",
+		.part_trail = 0xff,
+		.soft_ver = SOFT_VER_DEFAULT,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x50000},
+			{"partition-table", 0x50000, 0x02000},
+			{"default-mac", 0x60000, 0x00020},
+			{"serial-number", 0x60100, 0x00020},
+			{"product-info", 0x61100, 0x00100},
+			{"device-info", 0x61400, 0x00400},
+			{"signature", 0x62000, 0x00400},
+			{"device-id", 0x63000, 0x00100},
+			{"firmware", 0x70000, 0xf40000},
+			{"soft-version", 0xfb0000, 0x00100},
+			{"support-list", 0xfb1000, 0x01000},
+			{"user-config", 0xfc0000, 0x10000},
+			{"default-config", 0xfd0000, 0x10000},
+			{"log", 0xfe0000, 0x10000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "support-list",
+	},
 
 	{
 		.id     = "WBS210",
