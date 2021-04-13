@@ -34,6 +34,12 @@
 		str = text; \
 		break;
 
+#define STR_CASE_MAP(id, text, number) \
+	case id: \
+		str = text; \
+		map = number; \
+		break;
+
 #define IOCTL(type, request) \
 	type out; \
 	memset(&out, 0, sizeof(type)); \
@@ -98,6 +104,34 @@ typedef enum {
 	PROFILE_30A,
 	PROFILE_35B,
 } profile_t;
+
+/* These values are exported via ubus and backwards compability
+ * needs to be kept!
+ */
+enum {
+	LSTATE_MAP_UNKNOWN = -1,
+	LSTATE_MAP_NOT_INITIALIZED,
+	LSTATE_MAP_EXCEPTION,
+	LSTATE_MAP_IDLE,
+	LSTATE_MAP_SILENT,
+	LSTATE_MAP_HANDSHAKE,
+	LSTATE_MAP_FULL_INIT,
+	LSTATE_MAP_SHOWTIME_NO_SYNC,
+	LSTATE_MAP_SHOWTIME_TC_SYNC,
+	LSTATE_MAP_RESYNC,
+};
+
+/* These values are exported via ubus and backwards compability
+ * needs to be kept!
+ */
+enum {
+	PSTATE_MAP_UNKNOWN = -2,
+	PSTATE_MAP_NA,
+	PSTATE_MAP_L0,
+	PSTATE_MAP_L1,
+	PSTATE_MAP_L2,
+	PSTATE_MAP_L3,
+};
 
 static DSL_CPE_ThreadCtrl_t thread;
 static struct ubus_context *ctx;
@@ -306,32 +340,33 @@ static void version_information(int fd) {
 static void line_state(int fd) {
 	IOCTL(DSL_LineState_t, DSL_FIO_LINE_STATE_GET)
 
+	int map = LSTATE_MAP_UNKNOWN;
 	const char *str;
 	switch (out.data.nLineState) {
-	STR_CASE(DSL_LINESTATE_NOT_INITIALIZED, "Not initialized")
-	STR_CASE(DSL_LINESTATE_EXCEPTION, "Exception")
+	STR_CASE_MAP(DSL_LINESTATE_NOT_INITIALIZED, "Not initialized", LSTATE_MAP_NOT_INITIALIZED)
+	STR_CASE_MAP(DSL_LINESTATE_EXCEPTION, "Exception", LSTATE_MAP_EXCEPTION)
 	STR_CASE(DSL_LINESTATE_NOT_UPDATED, "Not updated")
 	STR_CASE(DSL_LINESTATE_IDLE_REQUEST, "Idle request")
-	STR_CASE(DSL_LINESTATE_IDLE, "Idle")
+	STR_CASE_MAP(DSL_LINESTATE_IDLE, "Idle", LSTATE_MAP_IDLE)
 	STR_CASE(DSL_LINESTATE_SILENT_REQUEST, "Silent request")
-	STR_CASE(DSL_LINESTATE_SILENT, "Silent")
-	STR_CASE(DSL_LINESTATE_HANDSHAKE, "Handshake")
+	STR_CASE_MAP(DSL_LINESTATE_SILENT, "Silent", LSTATE_MAP_SILENT)
+	STR_CASE_MAP(DSL_LINESTATE_HANDSHAKE, "Handshake", LSTATE_MAP_HANDSHAKE)
 	STR_CASE(DSL_LINESTATE_BONDING_CLR, "Bonding CLR")
-	STR_CASE(DSL_LINESTATE_FULL_INIT, "Full init")
+	STR_CASE_MAP(DSL_LINESTATE_FULL_INIT, "Full init", LSTATE_MAP_FULL_INIT)
 	STR_CASE(DSL_LINESTATE_SHORT_INIT_ENTRY, "Short init entry")
 	STR_CASE(DSL_LINESTATE_DISCOVERY, "Discovery")
 	STR_CASE(DSL_LINESTATE_TRAINING, "Training")
 	STR_CASE(DSL_LINESTATE_ANALYSIS, "Analysis")
 	STR_CASE(DSL_LINESTATE_EXCHANGE, "Exchange")
-	STR_CASE(DSL_LINESTATE_SHOWTIME_NO_SYNC, "Showtime without TC-Layer sync")
-	STR_CASE(DSL_LINESTATE_SHOWTIME_TC_SYNC, "Showtime with TC-Layer sync")
+	STR_CASE_MAP(DSL_LINESTATE_SHOWTIME_NO_SYNC, "Showtime without TC-Layer sync", LSTATE_MAP_SHOWTIME_NO_SYNC)
+	STR_CASE_MAP(DSL_LINESTATE_SHOWTIME_TC_SYNC, "Showtime with TC-Layer sync", LSTATE_MAP_SHOWTIME_TC_SYNC)
 	STR_CASE(DSL_LINESTATE_FASTRETRAIN, "Fastretrain")
 	STR_CASE(DSL_LINESTATE_LOWPOWER_L2, "Lowpower L2")
 	STR_CASE(DSL_LINESTATE_LOOPDIAGNOSTIC_ACTIVE, "Loopdiagnostic active")
 	STR_CASE(DSL_LINESTATE_LOOPDIAGNOSTIC_DATA_EXCHANGE, "Loopdiagnostic data exchange")
 	STR_CASE(DSL_LINESTATE_LOOPDIAGNOSTIC_DATA_REQUEST, "Loopdiagnostic data request")
 	STR_CASE(DSL_LINESTATE_LOOPDIAGNOSTIC_COMPLETE, "Loopdiagnostic complete")
-	STR_CASE(DSL_LINESTATE_RESYNC, "Resync")
+	STR_CASE_MAP(DSL_LINESTATE_RESYNC, "Resync", LSTATE_MAP_RESYNC)
 	STR_CASE(DSL_LINESTATE_TEST, "Test")
 	STR_CASE(DSL_LINESTATE_TEST_LOOP, "Test loop")
 	STR_CASE(DSL_LINESTATE_TEST_REVERB, "Test reverb")
@@ -351,8 +386,12 @@ static void line_state(int fd) {
 		str = NULL;
 		break;
 	};
+
 	if (str)
 		m_str("state", str);
+
+	if (map != LSTATE_MAP_UNKNOWN )
+		m_u32("state_num", map);
 
 	m_bool("up", out.data.nLineState == DSL_LINESTATE_SHOWTIME_TC_SYNC);
 }
@@ -377,19 +416,24 @@ static void g997_line_inventory(int fd) {
 static void g997_power_management_status(int fd) {
 	IOCTL(DSL_G997_PowerManagementStatus_t, DSL_FIO_G997_POWER_MANAGEMENT_STATUS_GET)
 
+	int map = PSTATE_MAP_UNKNOWN;
 	const char *str;
 	switch (out.data.nPowerManagementStatus) {
-	STR_CASE(DSL_G997_PMS_NA, "Power management state is not available")
-	STR_CASE(DSL_G997_PMS_L0, "L0 - Synchronized")
-	STR_CASE(DSL_G997_PMS_L1, "L1 - Power Down Data transmission (G.992.2)")
-	STR_CASE(DSL_G997_PMS_L2, "L2 - Power Down Data transmission (G.992.3 and G.992.4)")
-	STR_CASE(DSL_G997_PMS_L3, "L3 - No power")
+	STR_CASE_MAP(DSL_G997_PMS_NA, "Power management state is not available", PSTATE_MAP_NA)
+	STR_CASE_MAP(DSL_G997_PMS_L0, "L0 - Synchronized", PSTATE_MAP_L0)
+	STR_CASE_MAP(DSL_G997_PMS_L1, "L1 - Power Down Data transmission (G.992.2)", PSTATE_MAP_L1)
+	STR_CASE_MAP(DSL_G997_PMS_L2, "L2 - Power Down Data transmission (G.992.3 and G.992.4)", PSTATE_MAP_L2)
+	STR_CASE_MAP(DSL_G997_PMS_L3, "L3 - No power", PSTATE_MAP_L3)
 	default:
 		str = NULL;
 		break;
 	};
+
 	if (str)
 		m_str("power_state", str);
+
+	if (map != PSTATE_MAP_UNKNOWN)
+		m_u32("power_state_num", map);
 }
 
 static void g997_xtu_system_enabling(int fd, standard_t *standard) {
