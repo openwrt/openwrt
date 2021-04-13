@@ -319,7 +319,14 @@ $(eval $(call KernelPackage,crypto-hmac))
 
 define KernelPackage/crypto-hw-ccp
   TITLE:=AMD Cryptographic Coprocessor
-  DEPENDS:=+kmod-crypto-authenc +kmod-crypto-hash +kmod-crypto-manager +kmod-random-core +kmod-crypto-sha1 +kmod-crypto-sha256 +kmod-crypto-rsa
+  DEPENDS:= \
+	+kmod-crypto-authenc \
+	+kmod-crypto-hash \
+	+kmod-crypto-manager \
+	+kmod-crypto-rsa \
+	+kmod-crypto-sha1 \
+	+kmod-crypto-sha256 \
+	+kmod-random-core
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_CCP=y \
