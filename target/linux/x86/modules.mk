@@ -19,6 +19,22 @@ endef
 $(eval $(call KernelPackage,amazon-ena))
 
 
+define KernelPackage/amd-xgbe
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=AMD Ethernet on SoC support
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86_64 +kmod-lib-crc32c +kmod-ptp +kmod-libphy
+  KCONFIG:=CONFIG_AMD_XGBE
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/amd/xgbe/amd-xgbe.ko
+  AUTOLOAD:=$(call AutoLoad,35,amd-xgbe)
+endef
+
+define KernelPackage/amd-xgbe/description
+ Kernel modules for AMD 10GbE Ethernet device on an AMD SoC.
+endef
+
+$(eval $(call KernelPackage,amd-xgbe))
+
+
 define KernelPackage/sound-cs5535audio
   TITLE:=CS5535/CS5536 Audio Controller
   DEPENDS:=@TARGET_x86_geode +kmod-ac97
