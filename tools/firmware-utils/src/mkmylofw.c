@@ -583,7 +583,7 @@ write_out_file(FILE *outfile, struct fw_block *block, uint32_t *crc)
 	fclose(f);
 
 	/* align next block on a 4 byte boundary */
-	len = ALIGN(len,4) - block->size;
+	len = block->size % 4;
 	if (write_out_padding(outfile, len, 0xFF, crc))
 		return -1;
 
