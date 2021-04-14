@@ -58,7 +58,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  #include <asm/mipsregs.h>
  #include <asm/smp-ops.h>
  #include <asm/mips-cps.h>
-@@ -55,6 +57,8 @@
+@@ -54,6 +56,8 @@
  #define MT7621_GPIO_MODE_SDHCI_SHIFT	18
  #define MT7621_GPIO_MODE_SDHCI_GPIO	1
  
@@ -67,7 +67,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  static struct rt2880_pmx_func uart1_grp[] =  { FUNC("uart1", 0, 1, 2) };
  static struct rt2880_pmx_func i2c_grp[] =  { FUNC("i2c", 0, 3, 2) };
  static struct rt2880_pmx_func uart3_grp[] = {
-@@ -139,6 +143,26 @@ static struct clk *__init mt7621_add_sys
+@@ -138,6 +142,26 @@ static struct clk *__init mt7621_add_sys
  	return clk;
  }
  
@@ -94,7 +94,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  void __init ralink_clk_init(void)
  {
  	u32 syscfg, xtal_sel, clkcfg, clk_sel, curclk, ffiv, ffrac;
-@@ -292,10 +316,7 @@ void prom_soc_init(struct ralink_soc_inf
+@@ -277,10 +301,7 @@ void prom_soc_init(struct ralink_soc_inf
  		(rev >> CHIP_REV_VER_SHIFT) & CHIP_REV_VER_MASK,
  		(rev & CHIP_REV_ECO_MASK));
  

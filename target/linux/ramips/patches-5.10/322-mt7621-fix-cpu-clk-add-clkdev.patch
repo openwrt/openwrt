@@ -36,7 +36,7 @@
  #define MT7621_DDR2_SIZE_MAX		256
 --- a/arch/mips/ralink/mt7621.c
 +++ b/arch/mips/ralink/mt7621.c
-@@ -9,6 +9,10 @@
+@@ -9,12 +9,17 @@
  #include <linux/init.h>
  #include <linux/slab.h>
  #include <linux/sys_soc.h>
@@ -47,15 +47,14 @@
  
  #include <asm/mipsregs.h>
  #include <asm/smp-ops.h>
-@@ -16,6 +20,7 @@
+ #include <asm/mips-cps.h>
  #include <asm/mach-ralink/ralink_regs.h>
  #include <asm/mach-ralink/mt7621.h>
- #include <asm/mips-boards/launch.h>
 +#include <asm/time.h>
  
  #include <pinmux.h>
  
-@@ -106,11 +111,89 @@ static struct rt2880_pmx_group mt7621_pi
+@@ -105,11 +110,89 @@ static struct rt2880_pmx_group mt7621_pi
  	{ 0 }
  };
  
