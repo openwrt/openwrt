@@ -256,7 +256,7 @@ define U-Boot/nanopi_neo_plus2
   BUILD_SUBTARGET:=cortexa53
   NAME:=NanoPi NEO Plus2 (H5)
   BUILD_DEVICES:=friendlyarm_nanopi-neo-plus2
-  DEPENDS:=+PACKAGE_u-boot-nanopi_neo_plus2:arm-trusted-firmware-sunxi
+  DEPENDS:=+PACKAGE_u-boot-nanopi_neo_plus2:arm-trusted-firmware-sunxi-a64
   UENV:=a64
   ATF:=a64
 endef
@@ -265,7 +265,7 @@ define U-Boot/nanopi_neo2
   BUILD_SUBTARGET:=cortexa53
   NAME:=NanoPi NEO2 (H5)
   BUILD_DEVICES:=friendlyarm_nanopi-neo2
-  DEPENDS:=+PACKAGE_u-boot-nanopi_neo2:arm-trusted-firmware-sunxi
+  DEPENDS:=+PACKAGE_u-boot-nanopi_neo2:arm-trusted-firmware-sunxi-a64
   UENV:=a64
   ATF:=a64
 endef
@@ -274,7 +274,7 @@ define U-Boot/pine64_plus
   BUILD_SUBTARGET:=cortexa53
   NAME:=Pine64 Plus A64
   BUILD_DEVICES:=pine64_pine64-plus
-  DEPENDS:=+PACKAGE_u-boot-pine64_plus:arm-trusted-firmware-sunxi
+  DEPENDS:=+PACKAGE_u-boot-pine64_plus:arm-trusted-firmware-sunxi-a64
   UENV:=a64
   ATF:=a64
 endef
