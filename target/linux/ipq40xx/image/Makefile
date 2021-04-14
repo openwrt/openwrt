@@ -211,6 +211,18 @@ define Device/engenius_ens620ext
 endef
 TARGET_DEVICES += engenius_ens620ext
 
+define Device/glinet_gl-b1300th
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_DTS := qcom-ipq4018-gl-b1300th
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_TITLE := GL.iNet GL-B1300TH
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	IMAGE_SIZE := 131072k
+endef
+TARGET_DEVICES += glinet_gl-b1300th
+
 define Device/glinet_gl-b1300
 	$(call Device/FitImage)
 	DEVICE_TITLE := GL.iNet GL-B1300
