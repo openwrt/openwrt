@@ -1,0 +1,73 @@
+--- a/grub-core/kern/main.c
++++ b/grub-core/kern/main.c
+@@ -130,6 +130,8 @@ grub_set_prefix_and_root (void)
+ 
+   if (fwdevice)
+     {
++      char *comma;
++      char *fwdrive;
+       char *cmdpath;
+ 
+       cmdpath = grub_xasprintf ("(%s)%s", fwdevice, fwpath ? : "");
+@@ -139,6 +141,25 @@ grub_set_prefix_and_root (void)
+ 	  grub_env_export ("cmdpath");
+ 	  grub_free (cmdpath);
+ 	}
++      for (comma = fwdevice; *comma; )
++      {
++        if (comma[0] == '\\' && comma[1] == ',')
++        {
++          comma += 2;
++          continue;
++        }
++        if (*comma == ',')
++          break;
++        comma++;
++      }
++      if (*comma)
++        fwdrive = grub_strndup (fwdevice, comma - fwdevice);
++      else
++        fwdrive = grub_strdup (fwdevice);
++
++      grub_env_set ("fwdrive", fwdrive);
++      grub_env_export ("fwdrive");
++      grub_free (fwdrive);
+     }
+ 
+   if (prefix)
+@@ -207,6 +228,8 @@ grub_set_prefix_and_root (void)
+     grub_free (fwpath);
+   if (device)
+     {
++      char *comma;
++      char *drive;
+       char *prefix_set;
+     
+       prefix_set = grub_xasprintf ("(%s)%s", device, path ? : "");
+@@ -216,6 +239,26 @@ grub_set_prefix_and_root (void)
+ 	  grub_free (prefix_set);
+ 	}
+       grub_env_set ("root", device);
++
++      for (comma = device; *comma; )
++      {
++        if (comma[0] == '\\' && comma[1] == ',')
++        {
++          comma += 2;
++          continue;
++        }
++        if (*comma == ',')
++          break;
++        comma++;
++      }
++      if (*comma)
++        drive = grub_strndup (device, comma - device);
++      else
++        drive = grub_strdup (device);
++
++      grub_env_set ("drive", drive);
++      grub_env_export ("drive");
++      grub_free (drive);
+     }
+ 
+   grub_free (device);
