@@ -706,6 +706,19 @@ define Device/wn3000rpv3
 endef
 TARGET_DEVICES += wn3000rpv3
 
+define Device/wlr-4100v1002
+  DTS := WLR-4100v1002
+  $(Device/dsa-migration)
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7244k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	senao-header -r 0x0222 -p 0x104A -t 2
+  DEVICE_TITLE := Sitecom WLR-4100 v1 002
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += wlr-4100v1002
+
 define Device/wrh-300cr
   DTS := WRH-300CR
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

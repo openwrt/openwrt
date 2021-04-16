@@ -419,6 +419,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
 		;;
+	sitecom,wlr-4100v1002)
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "0t@eth0"
+		;;
 	tplink,tl-wr902ac-v3)
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"

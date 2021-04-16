@@ -390,6 +390,10 @@ wrh-300cr)
 	set_wifi_led "$boardname:green:wlan"
 	ucidef_set_led_netdev "lan" "lan" "$boardname:green:ethernet" "eth0"
 	;;
+sitecom,wlr-4100v1002)
+	set_wifi_led "$boardname:blue:wifi2g"
+	ucidef_set_led_netdev "lan" "lan" "$boardname:white:wps" "eth0"
+	;;
 xiaomi,mir3g)
 	ucidef_set_led_switch "wan-amber"  "WAN (amber)"  "$boardname:amber:wan"  "switch0" "0x02" "0x08"
 	ucidef_set_led_switch "lan1-amber" "LAN1 (amber)" "$boardname:amber:lan1" "switch0" "0x08" "0x08"
