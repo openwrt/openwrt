@@ -1006,7 +1006,7 @@ $(eval $(call KernelPackage,forcedeth))
 define KernelPackage/of-mdio
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=OpenFirmware MDIO support
-  DEPENDS:=+kmod-libphy
+  DEPENDS:=+kmod-libphy @!TARGET_x86
   KCONFIG:=CONFIG_OF_MDIO
   FILES:= \
 	$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko \
