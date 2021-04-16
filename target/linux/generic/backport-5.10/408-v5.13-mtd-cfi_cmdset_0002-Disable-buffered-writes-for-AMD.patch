@@ -1,7 +1,8 @@
-From f1f811410af297c848e9ec17eaa280d190fdce10 Mon Sep 17 00:00:00 2001
+From 7e4404113686868858a34210c28ae122e967aa64 Mon Sep 17 00:00:00 2001
 From: Mauri Sandberg <sandberg@mailfence.com>
-Date: Tue, 23 Feb 2021 18:09:31 +0200
-Subject: [PATCH] mtd: cfi_cmdset_0002: AMD chip 0x2201 - write words
+Date: Tue, 9 Mar 2021 19:48:59 +0200
+Subject: [PATCH] mtd: cfi_cmdset_0002: Disable buffered writes for AMD chip
+ 0x2201
 
 Buffer writes do not work with AMD chip 0x2201. The chip in question
 is a AMD/Spansion/Cypress Semiconductor S29GL256N and datasheet [1]
@@ -32,20 +33,27 @@ Tested on a Buffalo wzr-hp-g300nh running kernel 5.10.16.
 or  https://datasheetspdf.com/pdf-file/565708/SPANSION/S29GL256N/1
 
 Signed-off-by: Mauri Sandberg <sandberg@mailfence.com>
+Signed-off-by: Vignesh Raghavendra <vigneshr@ti.com>
+Link: https://lore.kernel.org/r/20210309174859.362060-1-sandberg@mailfence.com
 ---
  drivers/mtd/chips/cfi_cmdset_0002.c | 4 ++++
  1 file changed, 4 insertions(+)
 
+diff --git a/drivers/mtd/chips/cfi_cmdset_0002.c b/drivers/mtd/chips/cfi_cmdset_0002.c
+index a1f3e1031c3d..0bd8b5af28c6 100644
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -272,6 +272,10 @@ static void fixup_use_write_buffers(stru
+@@ -272,6 +272,10 @@ static void fixup_use_write_buffers(struct mtd_info *mtd)
  {
  	struct map_info *map = mtd->priv;
  	struct cfi_private *cfi = map->fldrv_priv;
 +
-+	if ((cfi->mfr == CFI_MFR_AMD) && (cfi->id == 0x2201))
++	if (cfi->mfr == CFI_MFR_AMD && cfi->id == 0x2201)
 +		return;
 +
  	if (cfi->cfiq->BufWriteTimeoutTyp) {
  		pr_debug("Using buffer write method\n");
  		mtd->_write = cfi_amdstd_write_buffers;
+-- 
+2.25.1
+
