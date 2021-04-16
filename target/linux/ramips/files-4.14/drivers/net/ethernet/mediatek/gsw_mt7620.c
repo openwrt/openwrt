@@ -163,26 +163,26 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw, int mdio_mode)
 			val &= ~BIT(11);
 			_mt7620_mii_write(gsw, i, 0, val);
 		}
+
+		/* global page 0 */
+		_mt7620_mii_write(gsw, 1, 31, 0x8000);
+		_mt7620_mii_write(gsw, 0, 30, 0xa000);
+		_mt7620_mii_write(gsw, 1, 30, 0xa000);
+		_mt7620_mii_write(gsw, 2, 30, 0xa000);
+		_mt7620_mii_write(gsw, 3, 30, 0xa000);
+
+		_mt7620_mii_write(gsw, 0, 4, 0x05e1);
+		_mt7620_mii_write(gsw, 1, 4, 0x05e1);
+		_mt7620_mii_write(gsw, 2, 4, 0x05e1);
+		_mt7620_mii_write(gsw, 3, 4, 0x05e1);
+
+		/* global page 2 */
+		_mt7620_mii_write(gsw, 1, 31, 0xa000);
+		_mt7620_mii_write(gsw, 0, 16, 0x1111);
+		_mt7620_mii_write(gsw, 1, 16, 0x1010);
+		_mt7620_mii_write(gsw, 2, 16, 0x1515);
+		_mt7620_mii_write(gsw, 3, 16, 0x0f0f);
 	}
-
-	/* global page 0 */
-	_mt7620_mii_write(gsw, 1, 31, 0x8000);
-	_mt7620_mii_write(gsw, 0, 30, 0xa000);
-	_mt7620_mii_write(gsw, 1, 30, 0xa000);
-	_mt7620_mii_write(gsw, 2, 30, 0xa000);
-	_mt7620_mii_write(gsw, 3, 30, 0xa000);
-
-	_mt7620_mii_write(gsw, 0, 4, 0x05e1);
-	_mt7620_mii_write(gsw, 1, 4, 0x05e1);
-	_mt7620_mii_write(gsw, 2, 4, 0x05e1);
-	_mt7620_mii_write(gsw, 3, 4, 0x05e1);
-
-	/* global page 2 */
-	_mt7620_mii_write(gsw, 1, 31, 0xa000);
-	_mt7620_mii_write(gsw, 0, 16, 0x1111);
-	_mt7620_mii_write(gsw, 1, 16, 0x1010);
-	_mt7620_mii_write(gsw, 2, 16, 0x1515);
-	_mt7620_mii_write(gsw, 3, 16, 0x0f0f);
 
 	/* CPU Port6 Force Link 1G, FC ON */
 	mtk_switch_w32(gsw, 0x5e33b, GSW_REG_PORT_PMCR(6));
