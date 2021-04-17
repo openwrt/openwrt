@@ -45,6 +45,15 @@ define Device/inaba_aml2-17gp
 endef
 TARGET_DEVICES += inaba_aml2-17gp
 
+define Device/iodata_bsh-g24mb
+  SOC := rtl8382
+  IMAGE_SIZE := 13696k
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := BSH-G24MB
+  UIMAGE_MAGIC := 0x83800013
+endef
+TARGET_DEVICES += iodata_bsh-g24mb
+
 define Device/netgear_gs108t-v3
   $(Device/netgear_nge)
   DEVICE_MODEL := GS108T
