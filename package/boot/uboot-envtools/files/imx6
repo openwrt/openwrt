@@ -56,6 +56,9 @@ toradex,apalis_imx6q-ixora-v1.1)
 wand,imx6dl-wandboard)
 	ubootenv_add_uci_config "/dev/mmcblk0" "0x60000" "0x2000" "0x2000"
 	;;
+xiaomi,dgnwg05lm)
+	ubootenv_add_uci_config "/dev/mtd0" "0x2e0000" "0x20000" "0x20000" "4"
+	;;
 esac
 
 config_load ubootenv
