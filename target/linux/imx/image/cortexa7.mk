@@ -40,6 +40,7 @@ define Device/xiaomi_gateway-lumi
 	kmod-sound-soc-tfa9882 alsa-utils \
 	wpa-supplicant ca-certificates hostapd \
 	nand-utils kobs-ng
+  UBOOT := xiaomi_dgnwg05lm
 
   KERNEL_INSTALL := 0
   KERNEL_NAME := zImage
