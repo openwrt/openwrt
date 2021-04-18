@@ -251,23 +251,25 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 
     /* To handle all non-aligned bytes (not aligned to 16B size) */
     if (byte_cnt) {
-        aes->ID3R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 0));
-        aes->ID2R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 1));
-        aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 2));
-        aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 3));    /* start crypto */
+        u8 *input[16];
+        u8 *output[16];
+
+        memcpy(input, ((u32 *) in_arg + (i * 4)), byte_cnt);
+
+        aes->ID3R = INPUT_ENDIAN_SWAP(*((u32 *) input + (i * 4) + 0));
+        aes->ID2R = INPUT_ENDIAN_SWAP(*((u32 *) input + (i * 4) + 1));
+        aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) input + (i * 4) + 2));
+        aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) input + (i * 4) + 3));    /* start crypto */
 
         while (aes->controlr.BUS) {
         }
 
-        *((volatile u32 *) out_arg + (i * 4) + 0) = aes->OD3R;
-        *((volatile u32 *) out_arg + (i * 4) + 1) = aes->OD2R;
-        *((volatile u32 *) out_arg + (i * 4) + 2) = aes->OD1R;
-        *((volatile u32 *) out_arg + (i * 4) + 3) = aes->OD0R;
+        *((volatile u32 *) output + (i * 4) + 0) = aes->OD3R;
+        *((volatile u32 *) output + (i * 4) + 1) = aes->OD2R;
+        *((volatile u32 *) output + (i * 4) + 2) = aes->OD1R;
+        *((volatile u32 *) output + (i * 4) + 3) = aes->OD0R;
 
-        /* to ensure that the extended pages are clean */
-        memset (out_arg + (i * 16) + (nbytes % AES_BLOCK_SIZE), 0,
-                (AES_BLOCK_SIZE - (nbytes % AES_BLOCK_SIZE)));
-
+        memcpy(((u32 *) out_arg + (i * 4)), output, byte_cnt);
     }
 
     //tc.chen : copy iv_arg back
