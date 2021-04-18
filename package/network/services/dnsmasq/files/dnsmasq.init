@@ -1012,7 +1012,12 @@ dnsmasq_start()
 
 	xappend "--dhcp-broadcast=tag:needs-broadcast"
 
-	xappend "--addn-hosts=$(dirname $HOSTFILE)"
+	config_get_bool ignore_hosts_dir "$cfg" ignore_hosts_dir 0
+	if [ "$ignore_hosts_dir" = "1" ]; then
+		xappend "--addn-hosts=$HOSTFILE"
+	else
+		xappend "--addn-hosts=$(dirname $HOSTFILE)"
+	fi
 
 	config_get dnsmasqconfdir "$cfg" confdir "/tmp/dnsmasq.d"
 	xappend "--conf-dir=$dnsmasqconfdir"
