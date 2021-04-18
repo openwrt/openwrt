@@ -1,7 +1,7 @@
 From 0600e3d81628002a5cd80cf83ee454851b0063c0 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 7 Mar 2021 18:19:26 +0100
-Subject: mtd: parsers: trx: Allow to specify trx-magic in DT
+Subject: mtd: parsers: trx: Allow to specify brcm,trx-magic in DT
 
 Buffalo uses a different TRX magic for every device, to be able to use
 this trx parser, make it possible to specify the TRX magic in device
@@ -23,7 +23,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 +Optional properties:
 +
-+- trx-magic: TRX magic, if it is different from the default magic
++- brcm,trx-magic: TRX magic, if it is different from the default magic
 +	     0x30524448 as a u32.
 +
  Example:
@@ -46,9 +46,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		return trx_magic;
 +
 +	/* Get different magic from device tree if specified */
-+	err = of_property_read_u32(np, "trx-magic", &trx_magic);
++	err = of_property_read_u32(np, "brcm,trx-magic", &trx_magic);
 +	if (err != 0 && err != -EINVAL)
-+		pr_err("failed to parse \"trx-magic\" DT attribute, use default: %d\n", err);
++		pr_err("failed to parse \"brcm,trx-magic\" DT attribute, use default: %d\n", err);
 +
 +	return trx_magic;
 +}
