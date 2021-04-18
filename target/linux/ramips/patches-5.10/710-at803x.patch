@@ -139,11 +139,11 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  	ret = at803x_config_mdix(phydev, phydev->mdix_ctrl);
  	if (ret < 0)
  		return ret;
-@@ -1083,6 +1166,7 @@ static struct phy_driver at803x_driver[]
- 	.suspend		= at803x_suspend,
- 	.resume			= at803x_resume,
- 	/* PHY_GBIT_FEATURES */
+@@ -1110,6 +1193,7 @@ static struct phy_driver at803x_driver[]
+ 	/* Qualcomm Atheros AR8031/AR8033 */
+ 	PHY_ID_MATCH_EXACT(ATH8031_PHY_ID),
+ 	.name			= "Qualcomm Atheros AR8031/AR8033",
 +	.config_aneg		= at803x_config_aneg,
- 	.read_status		= at803x_read_status,
- 	.ack_interrupt		= at803x_ack_interrupt,
- 	.config_intr		= at803x_config_intr,
+ 	.flags			= PHY_POLL_CABLE_TEST,
+ 	.probe			= at803x_probe,
+ 	.remove			= at803x_remove,
