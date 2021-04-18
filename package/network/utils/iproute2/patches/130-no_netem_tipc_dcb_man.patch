@@ -5,7 +5,7 @@
  YACCFLAGS = -d -t -v
  
 -SUBDIRS=lib ip tc bridge misc netem genl tipc devlink rdma dcb man
-+SUBDIRS=lib ip tc bridge misc genl tipc devlink rdma dcb man
++SUBDIRS=lib ip tc bridge misc genl devlink rdma
  
  LIBNETLINK=../lib/libutil.a ../lib/libnetlink.a
  LDLIBS += $(LIBNETLINK)
