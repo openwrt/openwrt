@@ -27,13 +27,6 @@ case "${BOARD}" in
         ;;
 esac
 
-	if [ -e "/sys/class/net/eth0.1" ] ; then
-		iface="eth0.1"
-	else
-		iface="eth0"
-	fi
-
-
 do_extract_eeprom_reverse() {
   local offset=$(($2))
   local count=$(($3))
@@ -231,7 +224,7 @@ fi
 reset_wasp
 n=0
 until [ $n -ge 5 ]; do
-  wasp_uploader_stage1 -f "${WASP}/ath_tgt_fw1.fw" -i $iface -m ${MODEL} && break
+  wasp_uploader_stage1 -f "${WASP}/ath_tgt_fw1.fw" -i lan2 -m ${MODEL} && break
   n=$(($n+1))
 done
 if [ $n -ge 5 ]; then
@@ -241,6 +234,6 @@ fi
 
 n=0
 until [ $n -ge 5 ]; do
-  wasp_uploader_stage2 -f "${WASP}/openwrt-ath79-generic-avm_fritz${MODEL}_wasp-initramfs-kernel.bin" -i $iface -c "${WASP}/config.tar.gz" && break
+  wasp_uploader_stage2 -f "${WASP}/openwrt-ath79-generic-avm_fritz${MODEL}_wasp-initramfs-kernel.bin" -i lan5 -c "${WASP}/config.tar.gz" && break
   n=$(($n+1))
 done

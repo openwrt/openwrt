@@ -48,8 +48,7 @@ lantiq_setup_interfaces()
 			"2:lan:3" "3:lan:4" "4:lan:1" "5:lan:2" "6t@eth0"
 		;;
 	avm,fritz7490)
-		ucidef_add_switch "switch0" \
-			"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "5:lan:5" "6t@eth0"
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
 	bt,homehub-v5a)
 		ucidef_add_switch "switch0" \
