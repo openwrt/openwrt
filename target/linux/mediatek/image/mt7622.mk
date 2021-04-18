@@ -43,11 +43,12 @@ define Build/mt7622-gpt
 			-H \
 			-t 0x83	-N bl2		-r	-p 512k@512k \
 		) \
-			-t 0xef	-N fip		-r	-p 1M@2M \
+			-t 0xef	-N fip		-r	-p 2M@2M \
 			-t 0x83	-N ubootenv	-r	-p 1M@4M \
 				-N recovery	-r	-p 32M@6M \
 		$(if $(findstring sdmmc,$1), \
-			-t 0x2e -N production		-p 216M@40M \
+				-N install	-r	-p 7M@38M \
+			-t 0x2e -N production		-p 211M@45M \
 		) \
 		$(if $(findstring emmc,$1), \
 			-t 0x2e -N production		-p 980M@40M \
@@ -73,13 +74,23 @@ define Device/bananapi_bpi-r64
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
+  DEVICE_DTS_OVERLAY := mt7622-bananapi-bpi-r64-pcie1 mt7622-bananapi-bpi-r64-sata
   DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
-  ARTIFACTS := sdcard.img
+  ARTIFACTS := sdcard.img.gz snand-preloader.bin snand-bl31-uboot.fip
   IMAGES := sysupgrade.itb
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
-  ARTIFACT/sdcard.img		:= mt7622-gpt sdmmc | pad-to 128k | mt7622-gpt emmc | pad-to 256k |\
-				   bl2 emmc-2ddr | pad-to 512k | bl2 sdmmc-2ddr | pad-to 1024k | bl31-uboot bananapi_bpi-r64-emmc | pad-to 2048k |\
-				   bl31-uboot bananapi_bpi-r64-sdmmc | pad-to 6144k
+  ARTIFACT/snand-preloader.bin	:= bl2 snand-2ddr
+  ARTIFACT/snand-bl31-uboot.fip	:= bl31-uboot bananapi_bpi-r64-snand
+  ARTIFACT/sdcard.img.gz	:= mt7622-gpt sdmmc |\
+				   pad-to 512k | bl2 sdmmc-2ddr |\
+				   pad-to 2048k | bl31-uboot bananapi_bpi-r64-sdmmc |\
+				   pad-to 6144k | append-image initramfs-recovery.itb |\
+				   pad-to 38912k | mt7622-gpt emmc |\
+				   pad-to 39424k | bl2 emmc-2ddr |\
+				   pad-to 40960k | bl31-uboot bananapi_bpi-r64-emmc |\
+				   pad-to 43008k | bl2 snand-2ddr |\
+				   pad-to 43520k | bl31-uboot bananapi_bpi-r64-snand |\
+				   pad-to 46080k | append-image squashfs-sysupgrade.itb | gzip
   KERNEL			:= kernel-bin | gzip
   KERNEL_INITRAMFS		:= kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd | pad-to 128k
   IMAGE/sysupgrade.itb		:= append-kernel | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb external-static-with-rootfs | append-metadata
@@ -192,8 +203,27 @@ TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 define Device/ubnt_unifi-6-lr
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi 6 LR
+  DEVICE_DTS_CONFIG := config@1
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr
+
+define Device/ubnt_unifi-6-lr-ubootmod
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi 6 LR
+  DEVICE_VARIANT := U-Boot mod
+  DEVICE_DTS := mt7622-ubnt-unifi-6-lr-ubootmod
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e
+  KERNEL := kernel-bin | lzma
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := bl2 nor-2ddr
+  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr
+endef
+TARGET_DEVICES += ubnt_unifi-6-lr-ubootmod

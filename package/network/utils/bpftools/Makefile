@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bpftools
 PKG_VERSION:=5.11.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=linux-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/v5.x
@@ -91,10 +91,6 @@ endef
 ifneq ($(BUILD_VARIANT),lib)
   TARGET_CFLAGS += -ffunction-sections -fdata-sections -flto
   TARGET_LDFLAGS += -Wl,--gc-sections
-endif
-
-ifneq ($(INTL_FULL),)
-  TARGET_LDFLAGS += -Wl,-lintl
 endif
 
 MAKE_FLAGS += \

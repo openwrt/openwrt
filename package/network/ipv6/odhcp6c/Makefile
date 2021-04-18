@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=odhcp6c
-PKG_RELEASE:=17
+PKG_RELEASE:=18
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/odhcp6c.git
@@ -44,6 +44,7 @@ endef
 
 define Package/odhcp6c/conffiles
 /etc/odhcp6c.user
+/etc/odhcp6c.user.d/
 endef
 
 define Package/odhcp6c/install
@@ -52,7 +53,7 @@ define Package/odhcp6c/install
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/dhcpv6.sh $(1)/lib/netifd/proto/dhcpv6.sh
 	$(INSTALL_BIN) ./files/dhcpv6.script $(1)/lib/netifd/
-	$(INSTALL_DIR) $(1)/etc/
+	$(INSTALL_DIR) $(1)/etc/odhcp6c.user.d/
 	$(INSTALL_CONF) ./files/odhcp6c.user $(1)/etc/
 endef
 

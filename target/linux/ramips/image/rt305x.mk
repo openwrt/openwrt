@@ -1184,6 +1184,7 @@ endef
 TARGET_DEVICES += zorlik_zl5900v2
 
 define Device/zte_mf283plus
+  $(Device/uimage-lzma-loader)
   SOC := rt3352
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := ZTE
@@ -1206,6 +1207,7 @@ endef
 TARGET_DEVICES += zyxel_keenetic
 
 define Device/zyxel_keenetic-lite-b
+  $(Device/uimage-lzma-loader)
   SOC := rt5350
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ZyXEL

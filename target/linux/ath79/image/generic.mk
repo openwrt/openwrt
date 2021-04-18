@@ -311,11 +311,14 @@ endef
 TARGET_DEVICES += alfa-network_r36a
 
 define Device/allnet_all-wap02860ac
+  $(Device/senao_loader_okli)
   SOC := qca9558
   DEVICE_VENDOR := ALLNET
   DEVICE_MODEL := ALL-WAP02860AC
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
-  IMAGE_SIZE := 13120k
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-allwap02860ac
 endef
 TARGET_DEVICES += allnet_all-wap02860ac
 
@@ -487,6 +490,29 @@ define Device/buffalo_wzr-hp-ag300h
   DEVICE_MODEL := WZR-HP-AG300H
 endef
 TARGET_DEVICES += buffalo_wzr-hp-ag300h
+
+define Device/buffalo_wzr-hp-g300nh
+  $(Device/buffalo_common)
+  SOC := ar9132
+  BUFFALO_PRODUCT := WZR-HP-G300NH
+  BUFFALO_HWVER := 1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-gpio-nxp-74hc153
+  BLOCKSIZE := 128k
+  IMAGE_SIZE := 32128k
+  SUPPORTED_DEVICES += wzr-hp-g300nh
+endef
+
+define Device/buffalo_wzr-hp-g300nh-rb
+  $(Device/buffalo_wzr-hp-g300nh)
+  DEVICE_MODEL := WZR-HP-G300NH (RTL8366RB switch)
+endef
+TARGET_DEVICES += buffalo_wzr-hp-g300nh-rb
+
+define Device/buffalo_wzr-hp-g300nh-s
+  $(Device/buffalo_wzr-hp-g300nh)
+  DEVICE_MODEL := WZR-HP-G300NH (RTL8366S switch)
+endef
+TARGET_DEVICES += buffalo_wzr-hp-g300nh-s
 
 define Device/buffalo_wzr-hp-g302h-a1a0
   $(Device/buffalo_common)
@@ -1006,8 +1032,8 @@ define Device/engenius_eap1200h
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP1200H
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
-  IMAGE_SIZE := 11520k
-  LOADER_FLASH_OFFS := 0x230000
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
   SENAO_IMGNAME := ar71xx-generic-eap1200h
 endef
 TARGET_DEVICES += engenius_eap1200h
@@ -1018,8 +1044,8 @@ define Device/engenius_eap300-v2
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP300
   DEVICE_VARIANT := v2
-  IMAGE_SIZE := 12032k
-  LOADER_FLASH_OFFS := 0x230000
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
   SENAO_IMGNAME := senao-eap300v2
 endef
 TARGET_DEVICES += engenius_eap300-v2
@@ -1029,8 +1055,8 @@ define Device/engenius_eap600
   SOC := ar9344
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP600
-  IMAGE_SIZE := 12032k
-  LOADER_FLASH_OFFS := 0x230000
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
   SENAO_IMGNAME := senao-eap600
 endef
 TARGET_DEVICES += engenius_eap600
@@ -1066,8 +1092,8 @@ define Device/engenius_ecb600
   SOC := ar9344
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ECB600
-  IMAGE_SIZE := 12032k
-  LOADER_FLASH_OFFS := 0x230000
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
   SENAO_IMGNAME := senao-ecb600
 endef
 TARGET_DEVICES += engenius_ecb600
@@ -1079,8 +1105,8 @@ define Device/engenius_ens202ext-v1
   DEVICE_MODEL := ENS202EXT
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := rssileds
-  IMAGE_SIZE := 12032k
-  LOADER_FLASH_OFFS := 0x230000
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
   SENAO_IMGNAME := senao-ens202ext
 endef
 TARGET_DEVICES += engenius_ens202ext-v1
@@ -1092,8 +1118,8 @@ define Device/engenius_enstationac-v1
   DEVICE_MODEL := EnStationAC
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct rssileds
-  IMAGE_SIZE := 11520k
-  LOADER_FLASH_OFFS := 0x230000
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
   SENAO_IMGNAME := ar71xx-generic-enstationac
 endef
 TARGET_DEVICES += engenius_enstationac-v1

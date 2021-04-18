@@ -11,6 +11,9 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
 	};
 
 	keys {
@@ -19,7 +22,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 		};
@@ -28,30 +31,47 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led@2 {
+		led_dsl_green: led@2 {
 			label = "green:dsl";
-			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		led@5 {
+		led_internet_green: led@5 {
 			label = "green:internet";
-			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_green: led@22 {
 			label = "green:power";
-			gpios = <&pinctrl 22 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_red: led@24 {
 			label = "red:power";
-			gpios = <&pinctrl 24 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
 		};
 
 		led@31 {
 			label = "red:internet";
-			gpios = <&pinctrl 31 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	bcm43222-sprom {
+		compatible = "brcm,bcm43222-sprom";
+
+		pci-bus = <0>;
+		pci-dev = <1>;
+
+		mtd-mac-address = <&cfe 0x6a0>;
+		mtd-mac-address-increment = <1>;
+
+		brcm,sprom-fixups = <97 0xfeb3>,
+				    <98 0x1618>,
+				    <99 0xfab0>,
+				    <113 0xfed1>,
+				    <114 0x1609>,
+				    <115 0xfad9>;
 	};
 };
 
@@ -66,6 +86,10 @@
 };
 
 &ohci {
+	status = "okay";
+};
+
+&pci {
 	status = "okay";
 };
 
@@ -98,7 +122,7 @@
 
 &pinctrl {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pci &pinctrl_ephy0_led &pinctrl_ephy1_led
+	pinctrl-0 = <&pinctrl_ephy0_led &pinctrl_ephy1_led
 		     &pinctrl_ephy2_led &pinctrl_ephy3_led>;
 };
 

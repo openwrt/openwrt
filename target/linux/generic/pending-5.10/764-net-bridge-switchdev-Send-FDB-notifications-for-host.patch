@@ -70,14 +70,16 @@ Signed-off-by: Tobias Waldekranz <tobias@waldekranz.com>
  {
  	struct switchdev_notifier_fdb_info info = {
  		.addr = fdb->key.addr.addr,
-@@ -112,18 +113,16 @@ br_switchdev_fdb_notify(const struct net
+@@ -112,20 +113,19 @@ br_switchdev_fdb_notify(const struct net
  		.local = test_bit(BR_FDB_LOCAL, &fdb->flags),
  		.offloaded = test_bit(BR_FDB_OFFLOADED, &fdb->flags),
  	};
--
++	struct net_device *dev = fdb->dst ? fdb->dst->dev : br->dev;
+ 
 -	if (!fdb->dst)
 -		return;
-+	struct net_device *dev = fdb->dst ? fdb->dst->dev : br->dev;
+ 	if (test_bit(BR_FDB_LOCAL, &fdb->flags))
+ 		return;
  
  	switch (type) {
  	case RTM_DELNEIGH:

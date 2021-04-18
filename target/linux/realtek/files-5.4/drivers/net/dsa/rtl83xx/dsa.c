@@ -245,6 +245,7 @@ static void rtl83xx_phylink_validate(struct dsa_switch *ds, int port,
 	pr_debug("In %s port %d", __func__, port);
 
 	if (!phy_interface_mode_is_rgmii(state->interface) &&
+	    state->interface != PHY_INTERFACE_MODE_NA &&
 	    state->interface != PHY_INTERFACE_MODE_1000BASEX &&
 	    state->interface != PHY_INTERFACE_MODE_MII &&
 	    state->interface != PHY_INTERFACE_MODE_REVMII &&
@@ -343,6 +344,44 @@ static int rtl83xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	return 1;
 }
 
+
+static void rtl83xx_config_interface(int port, phy_interface_t interface)
+{
+	u32 old, int_shift, sds_shift;
+
+	switch (port) {
+	case 24:
+		int_shift = 0;
+		sds_shift = 5;
+		break;
+	case 26:
+		int_shift = 3;
+		sds_shift = 0;
+		break;
+	default:
+		return;
+	}
+
+	old = sw_r32(RTL838X_SDS_MODE_SEL);
+	switch (interface) {
+	case PHY_INTERFACE_MODE_1000BASEX:
+		if ((old >> sds_shift & 0x1f) == 4)
+			return;
+		sw_w32_mask(0x7 << int_shift, 1 << int_shift, RTL838X_INT_MODE_CTRL);
+		sw_w32_mask(0x1f << sds_shift, 4 << sds_shift, RTL838X_SDS_MODE_SEL);
+		break;
+	case PHY_INTERFACE_MODE_SGMII:
+		if ((old >> sds_shift & 0x1f) == 2)
+			return;
+		sw_w32_mask(0x7 << int_shift, 2 << int_shift, RTL838X_INT_MODE_CTRL);
+		sw_w32_mask(0x1f << sds_shift, 2 << sds_shift, RTL838X_SDS_MODE_SEL);
+		break;
+	default:
+		return;
+	}
+	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
+}
+
 static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 					unsigned int mode,
 					const struct phylink_link_state *state)
@@ -376,10 +415,11 @@ static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	/* Auto-Negotiation does not work for MAC in RTL8390 */
 	if (priv->family_id == RTL8380_FAMILY_ID) {
-		if (mode == MLO_AN_PHY) {
+		if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
 			pr_debug("PHY autonegotiates\n");
 			reg |= BIT(2);
 			sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
+			rtl83xx_config_interface(port, state->interface);
 			return;
 		}
 	}

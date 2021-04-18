@@ -22,6 +22,7 @@ HOST_BUILD_PARALLEL:=1
 include $(INCLUDE_DIR)/toolchain-build.mk
 
 HOST_CONFIGURE_VARS += \
+	acx_cv_cc_gcc_supports_ada=false \
 	gdb_cv_func_sigsetjmp=yes
 
 HOST_CONFIGURE_ARGS = \

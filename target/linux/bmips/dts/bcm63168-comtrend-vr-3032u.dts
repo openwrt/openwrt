@@ -12,6 +12,8 @@
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
 
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
 		led-usb = &led_usb_green;
 	};
 
@@ -21,14 +23,14 @@
 
 		reset {
 			label = "reset";
-			gpios = <&pinctrl 33 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 			debounce-interval = <60>;
 		};
@@ -75,7 +77,7 @@
 		label = "red:internet";
 	};
 
-	led@3 {
+	led_dsl_green: led@3 {
 		reg = <3>;
 		active-low;
 		label = "green:dsl";
@@ -93,7 +95,7 @@
 		label = "green:wps";
 	};
 
-	led@8 {
+	led_internet_green: led@8 {
 		reg = <8>;
 		active-low;
 		label = "green:internet";

@@ -602,6 +602,11 @@ static void ag71xx_sgmii_serdes_init_qca956x(struct device_node *np)
 		goto err_iomap;
 	}
 
+	t = __raw_readl(gmac_base + QCA956X_GMAC_REG_SGMII_CONFIG);
+	t &= ~(QCA956X_SGMII_CONFIG_MODE_CTRL_MASK << QCA956X_SGMII_CONFIG_MODE_CTRL_SHIFT);
+	t |= QCA956X_SGMII_CONFIG_MODE_CTRL_SGMII_MAC;
+	__raw_writel(t, gmac_base + QCA956X_GMAC_REG_SGMII_CONFIG);
+
 	pr_debug("%pOF: fixup SERDES calibration to value %i\n",
 		np_dev, serdes_cal);
 	t = __raw_readl(gmac_base + QCA956X_GMAC_REG_SGMII_SERDES);

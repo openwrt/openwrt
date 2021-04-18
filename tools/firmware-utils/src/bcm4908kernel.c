@@ -27,11 +27,11 @@
 #endif
 
 struct bcm4908kernel_header {
-	uint32_t unk1;
-	uint32_t unk2;
-	uint32_t length;
+	uint32_t boot_load_addr;	/* AKA la_address */
+	uint32_t boot_addr;		/* AKA la_entrypt */
+	uint32_t data_len;
 	uint8_t magic[4];
-	uint32_t unused;
+	uint32_t uncomplen;		/* Empty for LZMA, used for LZ4 */
 };
 
 static void usage() {
@@ -103,14 +103,14 @@ int main(int argc, char **argv) {
 		length += bytes;
 	}
 
-	header.unk1 = cpu_to_le32(0x00080000);
-	header.unk2 = cpu_to_le32(0x00080000);
-	header.length = cpu_to_le32(length);
+	header.boot_load_addr = cpu_to_le32(0x00080000);
+	header.boot_addr = cpu_to_le32(0x00080000);
+	header.data_len = cpu_to_le32(length);
 	header.magic[0] = 'B';
 	header.magic[1] = 'R';
 	header.magic[2] = 'C';
 	header.magic[3] = 'M';
-	header.unused = 0;
+	header.uncomplen = 0;
 
 	fseek(out, 0, SEEK_SET);
 
