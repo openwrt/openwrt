@@ -251,25 +251,24 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 
     /* To handle all non-aligned bytes (not aligned to 16B size) */
     if (byte_cnt) {
-        u8 *input[16];
-        u8 *output[16];
+        u8 temparea[16] = {0,};
 
-        memcpy(input, ((u32 *) in_arg + (i * 4)), byte_cnt);
+        memcpy(temparea, ((u32 *) in_arg + (i * 4)), byte_cnt);
 
-        aes->ID3R = INPUT_ENDIAN_SWAP(*((u32 *) input + (i * 4) + 0));
-        aes->ID2R = INPUT_ENDIAN_SWAP(*((u32 *) input + (i * 4) + 1));
-        aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) input + (i * 4) + 2));
-        aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) input + (i * 4) + 3));    /* start crypto */
+        aes->ID3R = INPUT_ENDIAN_SWAP(*((u32 *) temparea + 0));
+        aes->ID2R = INPUT_ENDIAN_SWAP(*((u32 *) temparea + 1));
+        aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) temparea + 2));
+        aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) temparea + 3));    /* start crypto */
 
         while (aes->controlr.BUS) {
         }
 
-        *((volatile u32 *) output + (i * 4) + 0) = aes->OD3R;
-        *((volatile u32 *) output + (i * 4) + 1) = aes->OD2R;
-        *((volatile u32 *) output + (i * 4) + 2) = aes->OD1R;
-        *((volatile u32 *) output + (i * 4) + 3) = aes->OD0R;
+        *((volatile u32 *) temparea + 0) = aes->OD3R;
+        *((volatile u32 *) temparea + 1) = aes->OD2R;
+        *((volatile u32 *) temparea + 2) = aes->OD1R;
+        *((volatile u32 *) temparea + 3) = aes->OD0R;
 
-        memcpy(((u32 *) out_arg + (i * 4)), output, byte_cnt);
+        memcpy(((u32 *) out_arg + (i * 4)), temparea, byte_cnt);
     }
 
     //tc.chen : copy iv_arg back
@@ -671,20 +670,15 @@ int ctr_basic_aes_encrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
-    unsigned int enc_bytes;
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = enc_bytes = walk.nbytes)) {
-            u8 *iv = walk.iv;
-            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
-            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
-        nbytes &= AES_BLOCK_SIZE - 1;
-        err = blkcipher_walk_done(desc, &walk, nbytes);
+    while ((nbytes = walk.nbytes)) {
+        ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+                        walk.iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+        err = blkcipher_walk_done(desc, &walk, 0);
     }
-
     return err;
 }
 
@@ -704,18 +698,14 @@ int ctr_basic_aes_decrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
-    unsigned int dec_bytes;
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = dec_bytes = walk.nbytes)) {
-        u8 *iv = walk.iv;
-            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
-            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
-        nbytes &= AES_BLOCK_SIZE - 1;
-        err = blkcipher_walk_done(desc, &walk, nbytes);
+    while ((nbytes = walk.nbytes)) {
+        ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+                        walk.iv, nbytes, CRYPTO_DIR_DECRYPT, 0);
+        err = blkcipher_walk_done(desc, &walk, 0);
     }
 
     return err;
@@ -729,7 +719,7 @@ struct crypto_alg ifxdeu_ctr_basic_aes_alg = {
     .cra_driver_name    =   "ifxdeu-ctr(aes)",
     .cra_priority   =   400,
     .cra_flags      =   CRYPTO_ALG_TYPE_BLKCIPHER,
-    .cra_blocksize      =   AES_BLOCK_SIZE,
+    .cra_blocksize      =   1,
     .cra_ctxsize        =   sizeof(struct aes_ctx),
     .cra_type       =   &crypto_blkcipher_type,
     .cra_module     =   THIS_MODULE,
@@ -869,7 +859,7 @@ struct crypto_alg ifxdeu_ctr_rfc3686_aes_alg = {
     .cra_driver_name    =   "ifxdeu-ctr-rfc3686(aes)",
     .cra_priority       =   400,
     .cra_flags      	=   CRYPTO_ALG_TYPE_BLKCIPHER,
-    .cra_blocksize      =   AES_BLOCK_SIZE,
+    .cra_blocksize      =   1,
     .cra_ctxsize        =   sizeof(struct aes_ctx),
     .cra_type       	=   &crypto_blkcipher_type,
     .cra_module     	=   THIS_MODULE,
