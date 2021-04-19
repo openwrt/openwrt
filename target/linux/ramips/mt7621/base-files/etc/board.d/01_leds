@@ -78,6 +78,10 @@ netgear,r6800)
 	ucidef_set_led_netdev "lan3" "LAN3" "white:lan3" "lan3"
 	ucidef_set_led_netdev "lan4" "LAN4" "white:lan4" "lan4"
 	;;
+tplink,archer-a6-v3)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	;;
 tplink,re350-v1)
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "blue:wifi2G" "wlan0"
 	ucidef_set_led_netdev "wifi5g" "Wifi 5G" "blue:wifi5G" "wlan1"
