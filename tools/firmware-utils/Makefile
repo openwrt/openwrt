@@ -97,6 +97,7 @@ define Host/Compile
 	$(call cc,wrt400n cyg_crc32,-Wall)
 	$(call cc,xorimage,-Wall)
 	$(call cc,zyimage,-Wall)
+	$(call cc,zytrx,-Wall)
 	$(call cc,zyxbcm,-Wall)
 endef
 
