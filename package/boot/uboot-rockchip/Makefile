@@ -38,6 +38,26 @@ endef
 
 # RK3399 boards
 
+define U-Boot/nanopi-m4-2gb-rk3399
+  BUILD_SUBTARGET:=armv8
+  NAME:=NanoPi M4 2GB
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-m4-2gb
+  DEPENDS:=+PACKAGE_u-boot-nanopi-m4-2gb-rk3399:arm-trusted-firmware-rockchip
+  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
+  ATF:=rk3399_bl31.elf
+endef
+
+define U-Boot/nanopi-m4-rk3399
+  BUILD_SUBTARGET:=armv8
+  NAME:=NanoPi M4
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-m4
+  DEPENDS:=+PACKAGE_u-boot-nanopi-m4-rk3399:arm-trusted-firmware-rockchip
+  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
+  ATF:=rk3399_bl31.elf
+endef
+
 define U-Boot/nanopi-r4s-rk3399
   BUILD_SUBTARGET:=armv8
   NAME:=NanoPi R4S
@@ -69,6 +89,8 @@ define U-Boot/rockpro64-rk3399
 endef
 
 UBOOT_TARGETS := \
+  nanopi-m4-2gb-rk3399 \
+  nanopi-m4-rk3399 \
   nanopi-r4s-rk3399 \
   rock-pi-4-rk3399 \
   rockpro64-rk3399 \
