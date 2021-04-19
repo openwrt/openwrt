@@ -68,10 +68,21 @@ $(eval $(call TestHostCommand,perl-data-dumper, \
 	Please install the Perl Data::Dumper module, \
 	perl -MData::Dumper -e 1))
 
+$(eval $(call TestHostCommand,perl-findbin, \
+	Please install the Perl FindBin module, \
+	perl -MFindBin -e 1))
+
+$(eval $(call TestHostCommand,perl-file-copy, \
+	Please install the Perl File::Copy module, \
+	perl -MFile::Copy -e 1))
+
+$(eval $(call TestHostCommand,perl-file-compare, \
+	Please install the Perl File::Compare module, \
+	perl -MFile::Compare -e 1))
+
 $(eval $(call TestHostCommand,perl-thread-queue, \
 	Please install the Perl Thread::Queue module, \
 	perl -MThread::Queue -e 1))
-
 
 $(eval $(call SetupHostCommand,tar,Please install GNU 'tar', \
 	gtar --version 2>&1 | grep GNU, \
