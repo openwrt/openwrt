@@ -82,6 +82,12 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
 		;;
+	zyxel,nr7101)
+		fw_setenv CheckBypass 0
+		fw_setenv Image1Stable 0
+		CI_KERNPART="Kernel"
+		nand_do_upgrade "$1"
+		;;
 	zyxel,wap6805)
 		local kernel2_mtd="$(find_mtd_part Kernel2)"
 		[ "$(hexdump -n 4 -e '"%x"' $kernel2_mtd)" = "56190527" ] &&\
