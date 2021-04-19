@@ -894,6 +894,7 @@ int ifxdeu_init_aes (void)
 {
     int ret = -ENOSYS;
 
+    aes_chip_init();
 
     if ((ret = crypto_register_alg(&ifxdeu_aes_alg)))
         goto aes_err;
@@ -909,8 +910,6 @@ int ifxdeu_init_aes (void)
 
     if ((ret = crypto_register_alg(&ifxdeu_ctr_rfc3686_aes_alg)))
         goto ctr_rfc3686_aes_err;
-
-    aes_chip_init ();
 
     CRTCL_SECT_INIT;
 

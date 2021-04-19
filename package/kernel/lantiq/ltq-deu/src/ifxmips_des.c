@@ -690,6 +690,7 @@ int ifxdeu_init_des (void)
 {
     int ret = -ENOSYS;
 
+        des_chip_init();
 
         ret = crypto_register_alg(&ifxdeu_des_alg);
         if (ret < 0)
@@ -715,7 +716,6 @@ int ifxdeu_init_des (void)
         if (ret < 0)
                 goto cbc_des3_ede_err;
 
-        des_chip_init();
         CRTCL_SECT_INIT;
 
 
