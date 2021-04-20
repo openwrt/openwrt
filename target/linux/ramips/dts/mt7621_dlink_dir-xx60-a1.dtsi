@@ -97,13 +97,10 @@
 		partition@2980000 {
 			label = "private";
 			reg = <0x2980000 0x2000000>;
-			read-only;
 		};
 
 		partition@4980000 {
 			label = "firmware2";
-			compatible = "openwrt,uimage", "denx,uimage";
-			openwrt,padding = <96>;
 			reg = <0x4980000 0x2800000>;
 		};
 
@@ -116,7 +113,6 @@
 		partition@7780000 {
 			label = "reserved";
 			reg = <0x7780000 0x880000>;
-			read-only;
 		};
 	};
 };

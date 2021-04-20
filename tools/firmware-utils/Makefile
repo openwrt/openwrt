@@ -94,6 +94,7 @@ define Host/Compile
 	$(call cc,trx2edips,-Wall)
 	$(call cc,trx2usr,-Wall)
 	$(call cc,uimage_padhdr,-Wall -lz)
+	$(call cc,uimage_sgehdr,-Wall -lz)
 	$(call cc,wrt400n cyg_crc32,-Wall)
 	$(call cc,xorimage,-Wall)
 	$(call cc,zyimage,-Wall)
