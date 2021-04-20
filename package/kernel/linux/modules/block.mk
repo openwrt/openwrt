@@ -587,3 +587,20 @@ define KernelPackage/iosched-bfq
 endef
 
 $(eval $(call KernelPackage,iosched-bfq))
+
+
+define KernelPackage/virtio-blk
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=VirtIO block device
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_VIRTIO_BLK
+  FILES:=$(LINUX_DIR)/drivers/block/virtio_blk.ko
+  AUTOLOAD:=$(call AutoProbe,virtio-blk,1)
+endef
+
+define KernelPackage/virtio-blk/description
+  This is the virtual block driver for virtio.  It can be used with
+  QEMU based VMMs (like KVM or Xen).
+endef
+
+$(eval $(call KernelPackage,virtio-blk))

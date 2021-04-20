@@ -1249,3 +1249,20 @@ define KernelPackage/sfc-falcon/description
 endef
 
 $(eval $(call KernelPackage,sfc-falcon))
+
+
+define KernelPackage/virtio-net
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=VirtIO network device
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_VIRTIO_NET
+  FILES:=$(LINUX_DIR)/drivers/net/virtio_net.ko
+  AUTOLOAD:=$(call AutoProbe,virtio-net,1)
+endef
+
+define KernelPackage/virtio-net/description
+  This is the virtual network driver for virtio.  It can be used with
+  QEMU based VMMs (like KVM or Xen).
+endef
+
+$(eval $(call KernelPackage,virtio-net))
