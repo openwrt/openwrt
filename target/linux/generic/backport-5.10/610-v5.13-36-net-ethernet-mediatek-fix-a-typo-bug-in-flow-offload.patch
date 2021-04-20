@@ -1,12 +1,17 @@
-From ec21551331bc071ed43c814265f014029fa5f95f Mon Sep 17 00:00:00 2001
+From 6ecaf81d4ac6365f9284f9d68d74f7c209e74f98 Mon Sep 17 00:00:00 2001
 From: DENG Qingfang <dqfext@gmail.com>
-Date: Thu, 15 Apr 2021 17:40:05 +0800
-Subject: [PATCH] net: ethernet: mediatek: fix typo in offload code
+Date: Sat, 17 Apr 2021 15:29:04 +0800
+Subject: [PATCH] net: ethernet: mediatek: fix a typo bug in flow offloading
 
-.key_offset was assigned to .head_offset instead. Fix the typo.
+Issue was traffic problems after a while with increased ping times if
+flow offload is active. It turns out that key_offset with cookie is
+needed in rhashtable_params but was re-assigned to head_offset.
+Fix the assignment.
 
 Fixes: 502e84e2382d ("net: ethernet: mtk_eth_soc: add flow offloading support")
 Signed-off-by: DENG Qingfang <dqfext@gmail.com>
+Tested-by: Frank Wunderlich <frank-w@public-files.de>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/mediatek/mtk_ppe_offload.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
