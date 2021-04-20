@@ -1,0 +1,1459 @@
+diff -ruN a/ifxmips_aes.c b/ifxmips_aes.c
+--- a/ifxmips_aes.c
++++ b/ifxmips_aes.c
+@@ -38,7 +38,6 @@
+  \brief IFX AES driver Functions 
+ */
+ 
+-
+ /* Project Header Files */
+ #if defined(CONFIG_MODVERSIONS)
+ #define MODVERSIONS
+@@ -57,6 +56,7 @@
+ #include <linux/delay.h>
+ #include <asm/byteorder.h>
+ #include <crypto/algapi.h>
++#include <crypto/internal/skcipher.h>
+ 
+ #include "ifxmips_deu.h"
+ 
+@@ -130,14 +130,12 @@
+ int aes_set_key (struct crypto_tfm *tfm, const u8 *in_key, unsigned int key_len)
+ {
+     struct aes_ctx *ctx = crypto_tfm_ctx(tfm);
+-    unsigned long *flags = (unsigned long *) &tfm->crt_flags;
+ 
+     //printk("set_key in %s\n", __FILE__);
+ 
+     //aes_chip_init();
+ 
+     if (key_len != 16 && key_len != 24 && key_len != 32) {
+-        *flags |= CRYPTO_TFM_RES_BAD_KEY_LEN;
+         return -EINVAL;
+     }
+ 
+@@ -148,6 +146,19 @@
+     return 0;
+ }
+ 
++/*! \fn int aes_set_key (struct crypto_tfm *tfm, const uint8_t *in_key, unsigned int key_len)
++ *  \ingroup IFX_AES_FUNCTIONS 
++ *  \brief sets the AES keys    
++ *  \param tfm linux crypto algo transform  
++ *  \param in_key input key  
++ *  \param key_len key lengths of 16, 24 and 32 bytes supported  
++ *  \return -EINVAL - bad key length, 0 - SUCCESS
++*/                                 
++int aes_set_key_skcipher (struct crypto_skcipher *tfm, const u8 *in_key, unsigned int key_len)
++{
++    return aes_set_key(crypto_skcipher_tfm(tfm), in_key, key_len);
++}
++
+ 
+ /*! \fn void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, size_t nbytes, int encdec, int mode)
+  *  \ingroup IFX_AES_FUNCTIONS
+@@ -236,14 +247,16 @@
+         aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 2));
+         aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 3));    /* start crypto */
+         
++	aes->controlr.GO = 1;
++
+         while (aes->controlr.BUS) {
+             // this will not take long
+         }
+ 
+-        *((volatile u32 *) out_arg + (i * 4) + 0) = aes->OD3R;
+-        *((volatile u32 *) out_arg + (i * 4) + 1) = aes->OD2R;
+-        *((volatile u32 *) out_arg + (i * 4) + 2) = aes->OD1R;
+-        *((volatile u32 *) out_arg + (i * 4) + 3) = aes->OD0R;
++        *((volatile u32 *) out_arg + (i * 4) + 0) = DEU_ENDIAN_SWAP(aes->OD3R);
++        *((volatile u32 *) out_arg + (i * 4) + 1) = DEU_ENDIAN_SWAP(aes->OD2R);
++        *((volatile u32 *) out_arg + (i * 4) + 2) = DEU_ENDIAN_SWAP(aes->OD1R);
++        *((volatile u32 *) out_arg + (i * 4) + 3) = DEU_ENDIAN_SWAP(aes->OD0R);
+ 
+         i++;
+         byte_cnt -= 16;
+@@ -256,13 +269,15 @@
+         aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 2));
+         aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 3));    /* start crypto */
+ 
++	aes->controlr.GO = 1;
++
+         while (aes->controlr.BUS) {
+         }
+ 
+-        *((volatile u32 *) out_arg + (i * 4) + 0) = aes->OD3R;
+-        *((volatile u32 *) out_arg + (i * 4) + 1) = aes->OD2R;
+-        *((volatile u32 *) out_arg + (i * 4) + 2) = aes->OD1R;
+-        *((volatile u32 *) out_arg + (i * 4) + 3) = aes->OD0R;
++        *((volatile u32 *) out_arg + (i * 4) + 0) = DEU_ENDIAN_SWAP(aes->OD3R);
++        *((volatile u32 *) out_arg + (i * 4) + 1) = DEU_ENDIAN_SWAP(aes->OD2R);
++        *((volatile u32 *) out_arg + (i * 4) + 2) = DEU_ENDIAN_SWAP(aes->OD1R);
++        *((volatile u32 *) out_arg + (i * 4) + 3) = DEU_ENDIAN_SWAP(aes->OD0R);
+ 
+         /* to ensure that the extended pages are clean */
+         memset (out_arg + (i * 16) + (nbytes % AES_BLOCK_SIZE), 0,
+@@ -294,7 +309,6 @@
+ int ctr_rfc3686_aes_set_key (struct crypto_tfm *tfm, const uint8_t *in_key, unsigned int key_len)
+ {
+     struct aes_ctx *ctx = crypto_tfm_ctx(tfm);
+-    unsigned long *flags = (unsigned long *)&tfm->crt_flags;
+ 
+     //printk("ctr_rfc3686_aes_set_key in %s\n", __FILE__);
+ 
+@@ -304,7 +318,6 @@
+     key_len -= CTR_RFC3686_NONCE_SIZE; // remove 4 bytes of nonce
+ 
+     if (key_len != 16 && key_len != 24 && key_len != 32) {
+-        *flags |= CRYPTO_TFM_RES_BAD_KEY_LEN;
+         return -EINVAL;
+     }
+ 
+@@ -315,6 +328,22 @@
+     return 0;
+ }
+ 
++/*!
++ *  \fn int ctr_rfc3686_aes_set_key (struct crypto_tfm *tfm, const uint8_t *in_key, unsigned int key_len)
++ *  \ingroup IFX_AES_FUNCTIONS
++ *  \brief sets RFC3686 key   
++ *  \param tfm linux crypto algo transform  
++ *  \param in_key input key  
++ *  \param key_len key lengths of 20, 28 and 36 bytes supported; last 4 bytes is nonce 
++ *  \return 0 - SUCCESS
++ *          -EINVAL - bad key length
++*/                                 
++int ctr_rfc3686_aes_set_key_skcipher (struct crypto_skcipher *tfm, const uint8_t *in_key, unsigned int key_len)
++{
++    return ctr_rfc3686_aes_set_key(crypto_skcipher_tfm(tfm), in_key, key_len);
++}
++
++
+ /*! \fn void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, u32 nbytes, int encdec, int mode)
+  *  \ingroup IFX_AES_FUNCTIONS
+  *  \brief main interface with deu hardware in DMA mode
+@@ -456,7 +485,7 @@
+     .cra_name       =   "aes",
+     .cra_driver_name    =   "ifxdeu-aes",
+     .cra_priority   =   300,
+-    .cra_flags      =   CRYPTO_ALG_TYPE_CIPHER,
++    .cra_flags      =   CRYPTO_ALG_TYPE_CIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
+     .cra_blocksize      =   AES_BLOCK_SIZE,
+     .cra_ctxsize        =   sizeof(struct aes_ctx),
+     .cra_module     =   THIS_MODULE,
+@@ -481,24 +510,20 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int ecb_aes_encrypt(struct blkcipher_desc *desc,
+-               struct scatterlist *dst, struct scatterlist *src,
+-               unsigned int nbytes)
++int ecb_aes_encrypt(struct skcipher_request *req)
+ {
+-    struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-    struct blkcipher_walk walk;
++    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++    struct skcipher_walk walk;
+     int err;
+     unsigned int enc_bytes;
+     
+-    blkcipher_walk_init(&walk, dst, src, nbytes);
+-    err = blkcipher_walk_virt(desc, &walk);
++    err = skcipher_walk_virt(&walk, req, false);
+ 
+-    while ((nbytes = enc_bytes = walk.nbytes)) {
+-            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
++    while ((enc_bytes = walk.nbytes)) {
+         ifx_deu_aes_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                        NULL, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+-                nbytes &= AES_BLOCK_SIZE - 1;
+-        err = blkcipher_walk_done(desc, &walk, nbytes);
++        enc_bytes &= AES_BLOCK_SIZE - 1;
++        err = skcipher_walk_done(&walk, enc_bytes);
+     }
+ 
+     return err;
+@@ -513,24 +538,20 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int ecb_aes_decrypt(struct blkcipher_desc *desc,
+-               struct scatterlist *dst, struct scatterlist *src,
+-               unsigned int nbytes)
++int ecb_aes_decrypt(struct skcipher_request *req)
+ {
+-    struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-    struct blkcipher_walk walk;
++    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++    struct skcipher_walk walk;
+     int err;
+     unsigned int dec_bytes;
++    
++    err = skcipher_walk_virt(&walk, req, false);
+ 
+-    blkcipher_walk_init(&walk, dst, src, nbytes);
+-    err = blkcipher_walk_virt(desc, &walk);
+-
+-    while ((nbytes = dec_bytes = walk.nbytes)) {
+-            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
++    while ((dec_bytes = walk.nbytes)) {
+         ifx_deu_aes_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                        NULL, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+-        nbytes &= AES_BLOCK_SIZE - 1;
+-        err = blkcipher_walk_done(desc, &walk, nbytes);
++        dec_bytes &= AES_BLOCK_SIZE - 1;
++        err = skcipher_walk_done(&walk, dec_bytes);
+     }
+ 
+     return err;
+@@ -539,25 +560,20 @@
+ /* 
+  * \brief AES function mappings
+ */
+-struct crypto_alg ifxdeu_ecb_aes_alg = {
+-    .cra_name       =   "ecb(aes)",
+-    .cra_driver_name    =   "ifxdeu-ecb(aes)",
+-    .cra_priority   =   400,
+-    .cra_flags      =   CRYPTO_ALG_TYPE_BLKCIPHER,
+-    .cra_blocksize      =   AES_BLOCK_SIZE,
+-    .cra_ctxsize        =   sizeof(struct aes_ctx),
+-    .cra_type       =   &crypto_blkcipher_type,
+-    .cra_module     =   THIS_MODULE,
+-    .cra_list       =   LIST_HEAD_INIT(ifxdeu_ecb_aes_alg.cra_list),
+-    .cra_u          =   {
+-        .blkcipher = {
+-            .min_keysize        =   AES_MIN_KEY_SIZE,
+-            .max_keysize        =   AES_MAX_KEY_SIZE,
+-            .setkey         =   aes_set_key,
+-            .encrypt        =   ecb_aes_encrypt,
+-            .decrypt        =   ecb_aes_decrypt,
+-        }
+-    }
++struct skcipher_alg ifxdeu_ecb_aes_alg = {
++    .base.cra_name       =   "ecb(aes)",
++    .base.cra_driver_name    =   "ifxdeu-ecb(aes)",
++    .base.cra_priority   =   400,
++    .base.cra_flags      =   CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
++    .base.cra_blocksize      =   AES_BLOCK_SIZE,
++    .base.cra_ctxsize        =   sizeof(struct aes_ctx),
++    .base.cra_module     =   THIS_MODULE,
++    .base.cra_list       =   LIST_HEAD_INIT(ifxdeu_ecb_aes_alg.base.cra_list),
++    .min_keysize        =   AES_MIN_KEY_SIZE,
++    .max_keysize        =   AES_MAX_KEY_SIZE,
++    .setkey         =   aes_set_key_skcipher,
++    .encrypt        =   ecb_aes_encrypt,
++    .decrypt        =   ecb_aes_decrypt,
+ };
+ 
+ 
+@@ -570,25 +586,21 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int cbc_aes_encrypt(struct blkcipher_desc *desc,
+-               struct scatterlist *dst, struct scatterlist *src,
+-               unsigned int nbytes)
++int cbc_aes_encrypt(struct skcipher_request *req)
+ {
+-    struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-    struct blkcipher_walk walk;
++    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++    struct skcipher_walk walk;
+     int err;
+     unsigned int enc_bytes;
++    
++    err = skcipher_walk_virt(&walk, req, false);
+ 
+-    blkcipher_walk_init(&walk, dst, src, nbytes);
+-    err = blkcipher_walk_virt(desc, &walk);
+-
+-    while ((nbytes = enc_bytes = walk.nbytes)) {
++    while ((enc_bytes = walk.nbytes)) {
+             u8 *iv = walk.iv;
+-            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
+             ifx_deu_aes_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                        iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+-        nbytes &= AES_BLOCK_SIZE - 1;
+-        err = blkcipher_walk_done(desc, &walk, nbytes);
++        enc_bytes &= AES_BLOCK_SIZE - 1;
++        err = skcipher_walk_done(&walk, enc_bytes);
+     }
+ 
+     return err;
+@@ -603,25 +615,21 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int cbc_aes_decrypt(struct blkcipher_desc *desc,
+-               struct scatterlist *dst, struct scatterlist *src,
+-               unsigned int nbytes)
++int cbc_aes_decrypt(struct skcipher_request *req)
+ {
+-    struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-    struct blkcipher_walk walk;
++    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++    struct skcipher_walk walk;
+     int err;
+     unsigned int dec_bytes;
++    
++    err = skcipher_walk_virt(&walk, req, false);
+ 
+-    blkcipher_walk_init(&walk, dst, src, nbytes);
+-    err = blkcipher_walk_virt(desc, &walk);
+-
+-    while ((nbytes = dec_bytes = walk.nbytes)) {
++    while ((dec_bytes = walk.nbytes)) {
+         u8 *iv = walk.iv;
+-            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
+             ifx_deu_aes_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                        iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+-        nbytes &= AES_BLOCK_SIZE - 1;
+-        err = blkcipher_walk_done(desc, &walk, nbytes);
++        dec_bytes &= AES_BLOCK_SIZE - 1;
++        err = skcipher_walk_done(&walk, dec_bytes);
+     }
+ 
+     return err;
+@@ -630,26 +638,21 @@
+ /*
+  * \brief AES function mappings
+ */
+-struct crypto_alg ifxdeu_cbc_aes_alg = {
+-    .cra_name       =   "cbc(aes)",
+-    .cra_driver_name    =   "ifxdeu-cbc(aes)",
+-    .cra_priority   =   400,
+-    .cra_flags      =   CRYPTO_ALG_TYPE_BLKCIPHER,
+-    .cra_blocksize      =   AES_BLOCK_SIZE,
+-    .cra_ctxsize        =   sizeof(struct aes_ctx),
+-    .cra_type       =   &crypto_blkcipher_type,
+-    .cra_module     =   THIS_MODULE,
+-    .cra_list       =   LIST_HEAD_INIT(ifxdeu_cbc_aes_alg.cra_list),
+-    .cra_u          =   {
+-        .blkcipher = {
+-            .min_keysize        =   AES_MIN_KEY_SIZE,
+-            .max_keysize        =   AES_MAX_KEY_SIZE,
+-            .ivsize         =   AES_BLOCK_SIZE,
+-            .setkey         =   aes_set_key,
+-            .encrypt        =   cbc_aes_encrypt,
+-            .decrypt        =   cbc_aes_decrypt,
+-        }
+-    }
++struct skcipher_alg ifxdeu_cbc_aes_alg = {
++    .base.cra_name       =   "cbc(aes)",
++    .base.cra_driver_name    =   "ifxdeu-cbc(aes)",
++    .base.cra_priority   =   400,
++    .base.cra_flags      =   CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
++    .base.cra_blocksize      =   AES_BLOCK_SIZE,
++    .base.cra_ctxsize        =   sizeof(struct aes_ctx),
++    .base.cra_module     =   THIS_MODULE,
++    .base.cra_list       =   LIST_HEAD_INIT(ifxdeu_cbc_aes_alg.base.cra_list),
++    .min_keysize        =   AES_MIN_KEY_SIZE,
++    .max_keysize        =   AES_MAX_KEY_SIZE,
++    .ivsize         =   AES_BLOCK_SIZE,
++    .setkey         =   aes_set_key_skcipher,
++    .encrypt        =   cbc_aes_encrypt,
++    .decrypt        =   cbc_aes_decrypt,
+ };
+ 
+ 
+@@ -662,25 +665,21 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int ctr_basic_aes_encrypt(struct blkcipher_desc *desc,
+-               struct scatterlist *dst, struct scatterlist *src,
+-               unsigned int nbytes)
++int ctr_basic_aes_encrypt(struct skcipher_request *req)
+ {
+-    struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-    struct blkcipher_walk walk;
++    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++    struct skcipher_walk walk;
+     int err;
+     unsigned int enc_bytes;
++    
++    err = skcipher_walk_virt(&walk, req, false);
+ 
+-    blkcipher_walk_init(&walk, dst, src, nbytes);
+-    err = blkcipher_walk_virt(desc, &walk);
+-
+-    while ((nbytes = enc_bytes = walk.nbytes)) {
++    while ((enc_bytes = walk.nbytes)) {
+             u8 *iv = walk.iv;
+-            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
+             ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                        iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+-        nbytes &= AES_BLOCK_SIZE - 1;
+-        err = blkcipher_walk_done(desc, &walk, nbytes);
++        enc_bytes &= AES_BLOCK_SIZE - 1;
++        err = skcipher_walk_done(&walk, enc_bytes);
+     }
+ 
+     return err;
+@@ -695,25 +694,21 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int ctr_basic_aes_decrypt(struct blkcipher_desc *desc,
+-               struct scatterlist *dst, struct scatterlist *src,
+-               unsigned int nbytes)
++int ctr_basic_aes_decrypt(struct skcipher_request *req)
+ {
+-    struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-    struct blkcipher_walk walk;
++    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++    struct skcipher_walk walk;
+     int err;
+     unsigned int dec_bytes;
++    
++    err = skcipher_walk_virt(&walk, req, false);
+ 
+-    blkcipher_walk_init(&walk, dst, src, nbytes);
+-    err = blkcipher_walk_virt(desc, &walk);
+-
+-    while ((nbytes = dec_bytes = walk.nbytes)) {
++    while ((dec_bytes = walk.nbytes)) {
+         u8 *iv = walk.iv;
+-            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
+             ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                        iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+-        nbytes &= AES_BLOCK_SIZE - 1;
+-        err = blkcipher_walk_done(desc, &walk, nbytes);
++        dec_bytes &= AES_BLOCK_SIZE - 1;
++        err = skcipher_walk_done(&walk, dec_bytes);
+     }
+ 
+     return err;
+@@ -722,26 +717,21 @@
+ /* 
+  * \brief AES function mappings
+ */
+-struct crypto_alg ifxdeu_ctr_basic_aes_alg = {
+-    .cra_name       =   "ctr(aes)",
+-    .cra_driver_name    =   "ifxdeu-ctr(aes)",
+-    .cra_priority   =   400,
+-    .cra_flags      =   CRYPTO_ALG_TYPE_BLKCIPHER,
+-    .cra_blocksize      =   AES_BLOCK_SIZE,
+-    .cra_ctxsize        =   sizeof(struct aes_ctx),
+-    .cra_type       =   &crypto_blkcipher_type,
+-    .cra_module     =   THIS_MODULE,
+-    .cra_list       =   LIST_HEAD_INIT(ifxdeu_ctr_basic_aes_alg.cra_list),
+-    .cra_u          =   {
+-        .blkcipher = {
+-            .min_keysize        =   AES_MIN_KEY_SIZE,
+-            .max_keysize        =   AES_MAX_KEY_SIZE,
+-            .ivsize         =   AES_BLOCK_SIZE,
+-            .setkey         =   aes_set_key,
+-            .encrypt        =   ctr_basic_aes_encrypt,
+-            .decrypt        =   ctr_basic_aes_decrypt,
+-        }
+-    }
++struct skcipher_alg ifxdeu_ctr_basic_aes_alg = {
++    .base.cra_name       =   "ctr(aes)",
++    .base.cra_driver_name    =   "ifxdeu-ctr(aes)",
++    .base.cra_priority   =   400,
++    .base.cra_flags      =   CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
++    .base.cra_blocksize      =   AES_BLOCK_SIZE,
++    .base.cra_ctxsize        =   sizeof(struct aes_ctx),
++    .base.cra_module     =   THIS_MODULE,
++    .base.cra_list       =   LIST_HEAD_INIT(ifxdeu_ctr_basic_aes_alg.base.cra_list),
++    .min_keysize        =   AES_MIN_KEY_SIZE,
++    .max_keysize        =   AES_MAX_KEY_SIZE,
++    .ivsize         =   AES_BLOCK_SIZE,
++    .setkey         =   aes_set_key_skcipher,
++    .encrypt        =   ctr_basic_aes_encrypt,
++    .decrypt        =   ctr_basic_aes_decrypt,
+ };
+ 
+ 
+@@ -754,17 +744,17 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int ctr_rfc3686_aes_encrypt(struct blkcipher_desc *desc,
+-               struct scatterlist *dst, struct scatterlist *src,
+-               unsigned int nbytes)
+-{
+-    struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-    struct blkcipher_walk walk;
+-    int err, bsize = nbytes;
++int ctr_rfc3686_aes_encrypt(struct skcipher_request *req)
++{
++    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++    struct skcipher_walk walk;
++    unsigned int nbytes;
++    int err, bsize;
+     u8 rfc3686_iv[16];
+-
+-    blkcipher_walk_init(&walk, dst, src, nbytes);
+-    err = blkcipher_walk_virt(desc, &walk);
++    
++    err = skcipher_walk_virt(&walk, req, false);
++    nbytes = walk.nbytes;
++    bsize = nbytes;
+     
+     /* set up counter block */
+     memcpy(rfc3686_iv, ctx->nonce, CTR_RFC3686_NONCE_SIZE); 
+@@ -779,7 +769,7 @@
+ 	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+ 			rfc3686_iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+ 	nbytes -= walk.nbytes;
+-	err = blkcipher_walk_done(desc, &walk, nbytes);
++	err = skcipher_walk_done(&walk, nbytes);
+ 	return err;
+     }
+ 
+@@ -789,14 +779,14 @@
+ 
+ 	nbytes -= walk.nbytes;
+ 	bsize -= walk.nbytes;
+-	err = blkcipher_walk_done(desc, &walk, nbytes);
++	err = skcipher_walk_done(&walk, nbytes);
+     }
+ 
+     /* to handle remaining bytes < AES_BLOCK_SIZE */
+     if (walk.nbytes) {
+ 	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+ 			rfc3686_iv, walk.nbytes, CRYPTO_DIR_ENCRYPT, 0);
+-	err = blkcipher_walk_done(desc, &walk, 0);
++	err = skcipher_walk_done(&walk, 0);
+     }
+    
+     return err;
+@@ -811,17 +801,17 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int ctr_rfc3686_aes_decrypt(struct blkcipher_desc *desc,
+-               struct scatterlist *dst, struct scatterlist *src,
+-               unsigned int nbytes)
+-{
+-    struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-    struct blkcipher_walk walk;
+-    int err, bsize = nbytes;
++int ctr_rfc3686_aes_decrypt(struct skcipher_request *req)
++{
++    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++    struct skcipher_walk walk;
++    unsigned int nbytes;
++    int err, bsize;
+     u8 rfc3686_iv[16];
+-
+-    blkcipher_walk_init(&walk, dst, src, nbytes);
+-    err = blkcipher_walk_virt(desc, &walk);
++    
++    err = skcipher_walk_virt(&walk, req, false);
++    nbytes = walk.nbytes;
++    bsize = nbytes;
+ 
+     /* set up counter block */
+     memcpy(rfc3686_iv, ctx->nonce, CTR_RFC3686_NONCE_SIZE); 
+@@ -836,7 +826,7 @@
+ 	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+ 			rfc3686_iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+ 	nbytes -= walk.nbytes;
+-	err = blkcipher_walk_done(desc, &walk, nbytes);
++	err = skcipher_walk_done(&walk, nbytes);
+ 	return err;
+     }
+ 
+@@ -846,14 +836,14 @@
+ 
+ 	nbytes -= walk.nbytes;
+ 	bsize -= walk.nbytes;
+-	err = blkcipher_walk_done(desc, &walk, nbytes);
++	err = skcipher_walk_done(&walk, nbytes);
+     }
+ 
+     /* to handle remaining bytes < AES_BLOCK_SIZE */
+     if (walk.nbytes) {
+ 	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+ 			rfc3686_iv, walk.nbytes, CRYPTO_DIR_ENCRYPT, 0);
+-	err = blkcipher_walk_done(desc, &walk, 0);
++	err = skcipher_walk_done(&walk, 0);
+     }
+ 
+     return err;
+@@ -862,26 +852,21 @@
+ /* 
+  * \brief AES function mappings
+ */
+-struct crypto_alg ifxdeu_ctr_rfc3686_aes_alg = {
+-    .cra_name       	=   "rfc3686(ctr(aes))",
+-    .cra_driver_name    =   "ifxdeu-ctr-rfc3686(aes)",
+-    .cra_priority       =   400,
+-    .cra_flags      	=   CRYPTO_ALG_TYPE_BLKCIPHER,
+-    .cra_blocksize      =   AES_BLOCK_SIZE,
+-    .cra_ctxsize        =   sizeof(struct aes_ctx),
+-    .cra_type       	=   &crypto_blkcipher_type,
+-    .cra_module     	=   THIS_MODULE,
+-    .cra_list       	=   LIST_HEAD_INIT(ifxdeu_ctr_rfc3686_aes_alg.cra_list),
+-    .cra_u          =   {
+-        .blkcipher = {
+-            .min_keysize        =   AES_MIN_KEY_SIZE,
+-            .max_keysize        =   CTR_RFC3686_MAX_KEY_SIZE,
+-            .ivsize         =   CTR_RFC3686_IV_SIZE,
+-            .setkey         =   ctr_rfc3686_aes_set_key,
+-            .encrypt        =   ctr_rfc3686_aes_encrypt,
+-            .decrypt        =   ctr_rfc3686_aes_decrypt,
+-        }
+-    }
++struct skcipher_alg ifxdeu_ctr_rfc3686_aes_alg = {
++    .base.cra_name       	=   "rfc3686(ctr(aes))",
++    .base.cra_driver_name    =   "ifxdeu-ctr-rfc3686(aes)",
++    .base.cra_priority       =   400,
++    .base.cra_flags      	=   CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
++    .base.cra_blocksize      =   AES_BLOCK_SIZE,
++    .base.cra_ctxsize        =   sizeof(struct aes_ctx),
++    .base.cra_module     	=   THIS_MODULE,
++    .base.cra_list       	=   LIST_HEAD_INIT(ifxdeu_ctr_rfc3686_aes_alg.base.cra_list),
++    .min_keysize        =   AES_MIN_KEY_SIZE,
++    .max_keysize        =   CTR_RFC3686_MAX_KEY_SIZE,
++    .ivsize         =   CTR_RFC3686_IV_SIZE,
++    .setkey         =   ctr_rfc3686_aes_set_key_skcipher,
++    .encrypt        =   ctr_rfc3686_aes_encrypt,
++    .decrypt        =   ctr_rfc3686_aes_decrypt,
+ };
+ 
+ 
+@@ -898,16 +883,16 @@
+     if ((ret = crypto_register_alg(&ifxdeu_aes_alg)))
+         goto aes_err;
+ 
+-    if ((ret = crypto_register_alg(&ifxdeu_ecb_aes_alg)))
++    if ((ret = crypto_register_skcipher(&ifxdeu_ecb_aes_alg)))
+         goto ecb_aes_err;
+ 
+-    if ((ret = crypto_register_alg(&ifxdeu_cbc_aes_alg)))
++    if ((ret = crypto_register_skcipher(&ifxdeu_cbc_aes_alg)))
+         goto cbc_aes_err;
+ 
+-    if ((ret = crypto_register_alg(&ifxdeu_ctr_basic_aes_alg)))
++    if ((ret = crypto_register_skcipher(&ifxdeu_ctr_basic_aes_alg)))
+         goto ctr_basic_aes_err;
+ 
+-    if ((ret = crypto_register_alg(&ifxdeu_ctr_rfc3686_aes_alg)))
++    if ((ret = crypto_register_skcipher(&ifxdeu_ctr_rfc3686_aes_alg)))
+         goto ctr_rfc3686_aes_err;
+ 
+     aes_chip_init ();
+@@ -919,19 +904,19 @@
+     return ret;
+ 
+ ctr_rfc3686_aes_err:
+-    crypto_unregister_alg(&ifxdeu_ctr_rfc3686_aes_alg);
++    crypto_unregister_skcipher(&ifxdeu_ctr_rfc3686_aes_alg);
+     printk (KERN_ERR "IFX ctr_rfc3686_aes initialization failed!\n");
+     return ret;
+ ctr_basic_aes_err:
+-    crypto_unregister_alg(&ifxdeu_ctr_basic_aes_alg);
++    crypto_unregister_skcipher(&ifxdeu_ctr_basic_aes_alg);
+     printk (KERN_ERR "IFX ctr_basic_aes initialization failed!\n");
+     return ret;
+ cbc_aes_err:
+-    crypto_unregister_alg(&ifxdeu_cbc_aes_alg);
++    crypto_unregister_skcipher(&ifxdeu_cbc_aes_alg);
+     printk (KERN_ERR "IFX cbc_aes initialization failed!\n");
+     return ret;
+ ecb_aes_err:
+-    crypto_unregister_alg(&ifxdeu_ecb_aes_alg);
++    crypto_unregister_skcipher(&ifxdeu_ecb_aes_alg);
+     printk (KERN_ERR "IFX aes initialization failed!\n");
+     return ret;
+ aes_err:
+@@ -947,10 +932,10 @@
+ void ifxdeu_fini_aes (void)
+ {
+     crypto_unregister_alg (&ifxdeu_aes_alg);
+-    crypto_unregister_alg (&ifxdeu_ecb_aes_alg);
+-    crypto_unregister_alg (&ifxdeu_cbc_aes_alg);
+-    crypto_unregister_alg (&ifxdeu_ctr_basic_aes_alg);
+-    crypto_unregister_alg (&ifxdeu_ctr_rfc3686_aes_alg);
++    crypto_unregister_skcipher (&ifxdeu_ecb_aes_alg);
++    crypto_unregister_skcipher (&ifxdeu_cbc_aes_alg);
++    crypto_unregister_skcipher (&ifxdeu_ctr_basic_aes_alg);
++    crypto_unregister_skcipher (&ifxdeu_ctr_rfc3686_aes_alg);
+ 
+ }
+ 
+diff -ruN a/ifxmips_arc4.c b/ifxmips_arc4.c
+--- a/ifxmips_arc4.c
++++ b/ifxmips_arc4.c
+@@ -47,6 +47,7 @@
+ #include <linux/errno.h>
+ #include <linux/crypto.h>
+ #include <crypto/algapi.h>
++#include <crypto/internal/skcipher.h>
+ #include <linux/interrupt.h>
+ #include <asm/byteorder.h>
+ #include <linux/delay.h>
+@@ -70,6 +71,7 @@
+ #define ARC4_MAX_KEY_SIZE       16
+ #define ARC4_BLOCK_SIZE         1
+ #define ARC4_START   IFX_ARC4_CON
++
+ #ifdef CRYPTO_DEBUG
+ extern char debug_level;
+ #define DPRINTF(level, format, args...) if (level < debug_level) printk(KERN_INFO "[%s %s %d]: " format, __FILE__, __func__, __LINE__, ##args);
+@@ -180,7 +182,7 @@
+ static int arc4_set_key(struct crypto_tfm *tfm, const u8 *inkey,
+                        unsigned int key_len)
+ {
+-        //struct arc4_ctx *ctx = crypto_tfm_ctx(tfm);
++        struct arc4_ctx *ctx = crypto_tfm_ctx(tfm);
+         volatile struct arc4_t *arc4 = (struct arc4_t *) ARC4_START;
+         u32 *in_key = (u32 *)inkey;
+                 
+@@ -203,6 +205,19 @@
+         return 0;
+ }
+ 
++/*! \fn static int arc4_set_key(struct crypto_tfm *tfm, const u8 *in_key, unsigned int key_len)
++    \ingroup IFX_ARC4_FUNCTIONS
++    \brief sets ARC4 key    
++    \param tfm linux crypto algo transform  
++    \param in_key input key  
++    \param key_len key lengths less than or equal to 16 bytes supported  
++*/    
++static int arc4_set_key_skcipher(struct crypto_skcipher *tfm, const u8 *inkey,
++                       unsigned int key_len)
++{
++        return arc4_set_key(crypto_skcipher_ctx(tfm), inkey, key_len);
++}
++
+ /*! \fn static void _deu_arc4_ecb(void *ctx, uint8_t *dst, const uint8_t *src, uint8_t *iv, size_t nbytes, int encdec, int inplace)
+     \ingroup IFX_ARC4_FUNCTIONS
+     \brief sets ARC4 hardware to ECB mode   
+@@ -243,7 +258,7 @@
+         .cra_name               =       "arc4",
+         .cra_driver_name        =       "ifxdeu-arc4",
+         .cra_priority           =       300,
+-        .cra_flags              =       CRYPTO_ALG_TYPE_CIPHER,
++        .cra_flags              =       CRYPTO_ALG_TYPE_CIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
+         .cra_blocksize          =       ARC4_BLOCK_SIZE,
+         .cra_ctxsize            =       sizeof(struct arc4_ctx),
+         .cra_module             =       THIS_MODULE,
+@@ -267,23 +282,21 @@
+     \param src input scatterlist  
+     \param nbytes data size in bytes  
+ */                                     
+-static int ecb_arc4_encrypt(struct blkcipher_desc *desc,
+-                           struct scatterlist *dst, struct scatterlist *src,
+-                           unsigned int nbytes)
++static int ecb_arc4_encrypt(struct skcipher_request *req)
+ {
+-        struct arc4_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-        struct blkcipher_walk walk;
++        struct arc4_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++        struct skcipher_walk walk;
++	unsigned int nbytes;
+         int err;
+ 
+         DPRINTF(1, "\n");
+-        blkcipher_walk_init(&walk, dst, src, nbytes);
+-        err = blkcipher_walk_virt(desc, &walk);
++        err = skcipher_walk_virt(&walk, req, false);
+ 
+         while ((nbytes = walk.nbytes)) {
+                 _deu_arc4_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                                NULL, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+                 nbytes &= ARC4_BLOCK_SIZE - 1;
+-                err = blkcipher_walk_done(desc, &walk, nbytes);
++                err = skcipher_walk_done(&walk, nbytes);
+         }
+ 
+         return err;
+@@ -297,23 +310,21 @@
+     \param src input scatterlist  
+     \param nbytes data size in bytes  
+ */                                     
+-static int ecb_arc4_decrypt(struct blkcipher_desc *desc,
+-                           struct scatterlist *dst, struct scatterlist *src,
+-                           unsigned int nbytes)
++static int ecb_arc4_decrypt(struct skcipher_request *req)
+ {
+-        struct arc4_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-        struct blkcipher_walk walk;
++        struct arc4_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++        struct skcipher_walk walk;
++	unsigned int nbytes;
+         int err;
+ 
+         DPRINTF(1, "\n");
+-        blkcipher_walk_init(&walk, dst, src, nbytes);
+-        err = blkcipher_walk_virt(desc, &walk);
++        err = skcipher_walk_virt(&walk, req, false);
+ 
+         while ((nbytes = walk.nbytes)) {
+                 _deu_arc4_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                                NULL, nbytes, CRYPTO_DIR_DECRYPT, 0);
+                 nbytes &= ARC4_BLOCK_SIZE - 1;
+-                err = blkcipher_walk_done(desc, &walk, nbytes);
++                err = skcipher_walk_done(&walk, nbytes);
+         }
+ 
+         return err;
+@@ -322,25 +333,20 @@
+ /*
+  * \brief ARC4 function mappings
+ */
+-static struct crypto_alg ifxdeu_ecb_arc4_alg = {
+-        .cra_name               =       "ecb(arc4)",
+-        .cra_driver_name        =       "ifxdeu-ecb(arc4)",
+-        .cra_priority           =       400,
+-        .cra_flags              =       CRYPTO_ALG_TYPE_BLKCIPHER,
+-        .cra_blocksize          =       ARC4_BLOCK_SIZE,
+-        .cra_ctxsize            =       sizeof(struct arc4_ctx),
+-        .cra_type               =       &crypto_blkcipher_type,
+-        .cra_module             =       THIS_MODULE,
+-        .cra_list               =       LIST_HEAD_INIT(ifxdeu_ecb_arc4_alg.cra_list),
+-        .cra_u                  =       {
+-                .blkcipher = {
+-                        .min_keysize            =       ARC4_MIN_KEY_SIZE,
+-                        .max_keysize            =       ARC4_MAX_KEY_SIZE,
+-                        .setkey                 =       arc4_set_key,
+-                        .encrypt                =       ecb_arc4_encrypt,
+-                        .decrypt                =       ecb_arc4_decrypt,
+-                }
+-        }
++static struct skcipher_alg ifxdeu_ecb_arc4_alg = {
++        .base.cra_name               =       "ecb(arc4)",
++        .base.cra_driver_name        =       "ifxdeu-ecb(arc4)",
++        .base.cra_priority           =       400,
++        .base.cra_flags              =       CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
++        .base.cra_blocksize          =       ARC4_BLOCK_SIZE,
++        .base.cra_ctxsize            =       sizeof(struct arc4_ctx),
++        .base.cra_module             =       THIS_MODULE,
++        .base.cra_list               =       LIST_HEAD_INIT(ifxdeu_ecb_arc4_alg.base.cra_list),
++        .min_keysize            =       ARC4_MIN_KEY_SIZE,
++        .max_keysize            =       ARC4_MAX_KEY_SIZE,
++        .setkey                 =       arc4_set_key_skcipher,
++        .encrypt                =       ecb_arc4_encrypt,
++        .decrypt                =       ecb_arc4_decrypt,
+ };
+ 
+ /*! \fn int ifxdeu_init_arc4(void)
+@@ -355,7 +361,7 @@
+         if ((ret = crypto_register_alg(&ifxdeu_arc4_alg)))
+                 goto arc4_err;
+ 
+-        if ((ret = crypto_register_alg(&ifxdeu_ecb_arc4_alg)))
++        if ((ret = crypto_register_skcipher(&ifxdeu_ecb_arc4_alg)))
+                 goto ecb_arc4_err;
+ 
+         arc4_chip_init ();
+@@ -370,7 +376,7 @@
+         printk(KERN_ERR "IFX arc4 initialization failed!\n");
+         return ret;
+ ecb_arc4_err:
+-        crypto_unregister_alg(&ifxdeu_ecb_arc4_alg);
++        crypto_unregister_skcipher(&ifxdeu_ecb_arc4_alg);
+         printk (KERN_ERR "IFX ecb_arc4 initialization failed!\n");
+         return ret;
+ 
+@@ -383,7 +389,7 @@
+ void ifxdeu_fini_arc4(void)
+ {
+         crypto_unregister_alg (&ifxdeu_arc4_alg);
+-        crypto_unregister_alg (&ifxdeu_ecb_arc4_alg);
++        crypto_unregister_skcipher (&ifxdeu_ecb_arc4_alg);
+ 
+ 
+ }
+diff -ruN a/ifxmips_des.c b/ifxmips_des.c
+--- a/ifxmips_des.c
++++ b/ifxmips_des.c
+@@ -50,6 +50,7 @@
+ #include <linux/delay.h>
+ #include <asm/byteorder.h>
+ #include <crypto/algapi.h>
++#include <crypto/internal/skcipher.h>
+ #include "ifxmips_deu.h"
+ 
+ #if defined(CONFIG_DANUBE) 
+@@ -138,6 +139,19 @@
+         return 0;
+ }
+ 
++/*! \fn	int des_setkey(struct crypto_skcipher *tfm, const u8 *key, unsigned int keylen)
++ *  \ingroup IFX_DES_FUNCTIONS
++ *  \brief sets DES key   
++ *  \param tfm linux crypto skcipher transform  
++ *  \param key input key  
++ *  \param keylen key length  
++*/                                 
++int des_setkey_skcipher(struct crypto_skcipher *tfm, const u8 *key,
++                      unsigned int keylen)
++{
++        return des_setkey(crypto_skcipher_tfm(tfm), key, keylen);
++}
++
+ 
+ /*! \fn void ifx_deu_des(void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, u32 nbytes, int encdec, int mode)
+  *  \ingroup IFX_DES_FUNCTIONS
+@@ -218,12 +232,14 @@
+                 des->IHR = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + i));
+                 des->ILR = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + 1 + i)); /* start crypto */
+                 
++	        des->controlr.GO = 1;
++
+                 while (des->controlr.BUS) {
+                         // this will not take long
+                 }
+ 
+-                *((u32 *) out_arg + 0 + i) = des->OHR;
+-                *((u32 *) out_arg + 1 + i) = des->OLR;
++                *((u32 *) out_arg + 0 + i) = DEU_ENDIAN_SWAP(des->OHR);
++                *((u32 *) out_arg + 1 + i) = DEU_ENDIAN_SWAP(des->OLR);
+ 
+         }
+ 
+@@ -410,6 +426,19 @@
+         return 0;
+ }
+ 
++/*! \fn int des3_ede_setkey(struct crypto_skcipher *tfm, const u8 *key, unsigned int keylen)
++ *  \ingroup IFX_DES_FUNCTIONS
++ *  \brief sets 3DES key   
++ *  \param tfm linux crypto skcipher transform  
++ *  \param key input key  
++ *  \param keylen key length  
++*/                                 
++int des3_ede_setkey_skcipher(struct crypto_skcipher *tfm, const u8 *key,
++                    unsigned int keylen)
++{
++        return des3_ede_setkey(crypto_skcipher_tfm(tfm), key, keylen);
++}
++
+ /*
+  * \brief DES function mappings
+ */ 
+@@ -417,7 +446,7 @@
+         .cra_name               =       "des",
+         .cra_driver_name        =       "ifxdeu-des",
+         .cra_priority           =       300,
+-        .cra_flags              =       CRYPTO_ALG_TYPE_CIPHER,
++        .cra_flags              =       CRYPTO_ALG_TYPE_CIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
+         .cra_blocksize          =       DES_BLOCK_SIZE,
+         .cra_ctxsize            =       sizeof(struct des_ctx),
+         .cra_module             =       THIS_MODULE,
+@@ -438,15 +467,15 @@
+         .cra_name               =       "des3_ede",
+         .cra_driver_name        =       "ifxdeu-des3_ede",
+         .cra_priority           =       300,
+-        .cra_flags              =       CRYPTO_ALG_TYPE_CIPHER,
++        .cra_flags              =       CRYPTO_ALG_TYPE_CIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
+         .cra_blocksize          =       DES_BLOCK_SIZE,
+         .cra_ctxsize            =       sizeof(struct des_ctx),
+         .cra_module             =       THIS_MODULE,
+         .cra_alignmask          =       3,
+         .cra_list               =       LIST_HEAD_INIT(ifxdeu_des3_ede_alg.cra_list),
+         .cra_u                  =       { .cipher = {
+-        .cia_min_keysize        =       DES_KEY_SIZE,
+-        .cia_max_keysize        =       DES_KEY_SIZE,
++        .cia_min_keysize        =       DES3_EDE_KEY_SIZE,
++        .cia_max_keysize        =       DES3_EDE_KEY_SIZE,
+         .cia_setkey             =       des3_ede_setkey,
+         .cia_encrypt            =       des_encrypt,
+         .cia_decrypt            =       des_decrypt } }
+@@ -460,24 +489,20 @@
+  *  \param src input scatterlist  
+  *  \param nbytes data size in bytes  
+ */                                 
+-int ecb_des_encrypt(struct blkcipher_desc *desc,
+-                    struct scatterlist *dst, struct scatterlist *src,
+-                    unsigned int nbytes)
++int ecb_des_encrypt(struct skcipher_request *req)
+ {
+-        struct des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-        struct blkcipher_walk walk;
++        struct des_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++        struct skcipher_walk walk;
+         int err;
+         unsigned int enc_bytes;
+ 
+-        blkcipher_walk_init(&walk, dst, src, nbytes);
+-        err = blkcipher_walk_virt(desc, &walk);
++        err = skcipher_walk_virt(&walk, req, false);
+ 
+-        while ((nbytes = enc_bytes = walk.nbytes)) {
+-                enc_bytes -= (nbytes % DES_BLOCK_SIZE);
++        while ((enc_bytes = walk.nbytes)) {
+                 ifx_deu_des_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                                NULL, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+-                nbytes &= DES_BLOCK_SIZE - 1;
+-                err = blkcipher_walk_done(desc, &walk, nbytes);
++                enc_bytes &= DES_BLOCK_SIZE - 1;
++                err = skcipher_walk_done(&walk, enc_bytes);
+         }
+ 
+         return err;
+@@ -492,25 +517,21 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int ecb_des_decrypt(struct blkcipher_desc *desc,
+-                    struct scatterlist *dst, struct scatterlist *src,
+-                    unsigned int nbytes)
++int ecb_des_decrypt(struct skcipher_request *req)
+ {
+-        struct des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-        struct blkcipher_walk walk;
++        struct des_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++        struct skcipher_walk walk;
+         int err;
+         unsigned int dec_bytes;
+ 
+         DPRINTF(1, "\n");
+-        blkcipher_walk_init(&walk, dst, src, nbytes);
+-        err = blkcipher_walk_virt(desc, &walk);
++        err = skcipher_walk_virt(&walk, req, false);
+ 
+-        while ((nbytes = dec_bytes = walk.nbytes)) {
+-                dec_bytes -= (nbytes % DES_BLOCK_SIZE);
++        while ((dec_bytes = walk.nbytes)) {
+                 ifx_deu_des_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                                NULL, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+-                nbytes &= DES_BLOCK_SIZE - 1;
+-                err = blkcipher_walk_done(desc, &walk, nbytes);
++                dec_bytes &= DES_BLOCK_SIZE - 1;
++                err = skcipher_walk_done(&walk, dec_bytes);
+         }
+ 
+         return err;
+@@ -519,49 +540,39 @@
+ /*
+  * \brief DES function mappings
+ */ 
+-struct crypto_alg ifxdeu_ecb_des_alg = {
+-        .cra_name               =       "ecb(des)",
+-        .cra_driver_name        =       "ifxdeu-ecb(des)",
+-        .cra_priority           =       400,
+-        .cra_flags              =       CRYPTO_ALG_TYPE_BLKCIPHER,
+-        .cra_blocksize          =       DES_BLOCK_SIZE,
+-        .cra_ctxsize            =       sizeof(struct des_ctx),
+-        .cra_type               =       &crypto_blkcipher_type,
+-        .cra_module             =       THIS_MODULE,
+-        .cra_list               =       LIST_HEAD_INIT(ifxdeu_ecb_des_alg.cra_list),
+-        .cra_u                  =       {
+-                .blkcipher = {
+-                        .min_keysize            =       DES_KEY_SIZE,
+-                        .max_keysize            =       DES_KEY_SIZE,
+-                        .setkey                 =       des_setkey,
+-                        .encrypt                =       ecb_des_encrypt,
+-                        .decrypt                =       ecb_des_decrypt,
+-                }
+-        }
++struct skcipher_alg ifxdeu_ecb_des_alg = {
++        .base.cra_name               =       "ecb(des)",
++        .base.cra_driver_name        =       "ifxdeu-ecb(des)",
++        .base.cra_priority           =       400,
++        .base.cra_flags              =       CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
++        .base.cra_blocksize          =       DES_BLOCK_SIZE,
++        .base.cra_ctxsize            =       sizeof(struct des_ctx),
++        .base.cra_module             =       THIS_MODULE,
++        .base.cra_list               =       LIST_HEAD_INIT(ifxdeu_ecb_des_alg.base.cra_list),
++        .min_keysize            =       DES_KEY_SIZE,
++        .max_keysize            =       DES_KEY_SIZE,
++        .setkey                 =       des_setkey_skcipher,
++        .encrypt                =       ecb_des_encrypt,
++        .decrypt                =       ecb_des_decrypt,
+ };
+ 
+ /*
+  * \brief DES function mappings
+ */ 
+-struct crypto_alg ifxdeu_ecb_des3_ede_alg = {
+-        .cra_name               =       "ecb(des3_ede)",
+-        .cra_driver_name        =       "ifxdeu-ecb(des3_ede)",
+-        .cra_priority           =       400,
+-        .cra_flags              =       CRYPTO_ALG_TYPE_BLKCIPHER,
+-        .cra_blocksize          =       DES3_EDE_BLOCK_SIZE,
+-        .cra_ctxsize            =       sizeof(struct des_ctx),
+-        .cra_type               =       &crypto_blkcipher_type,
+-        .cra_module             =       THIS_MODULE,
+-        .cra_list               =       LIST_HEAD_INIT(ifxdeu_ecb_des3_ede_alg.cra_list),
+-        .cra_u                  =       {
+-                .blkcipher = {
+-                        .min_keysize            =       DES3_EDE_KEY_SIZE,
+-                        .max_keysize            =       DES3_EDE_KEY_SIZE,
+-                        .setkey                 =       des3_ede_setkey,
+-                        .encrypt                =       ecb_des_encrypt,
+-                        .decrypt                =       ecb_des_decrypt,
+-                }
+-        }
++struct skcipher_alg ifxdeu_ecb_des3_ede_alg = {
++        .base.cra_name               =       "ecb(des3_ede)",
++        .base.cra_driver_name        =       "ifxdeu-ecb(des3_ede)",
++        .base.cra_priority           =       400,
++        .base.cra_flags              =       CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
++        .base.cra_blocksize          =       DES3_EDE_BLOCK_SIZE,
++        .base.cra_ctxsize            =       sizeof(struct des_ctx),
++        .base.cra_module             =       THIS_MODULE,
++        .base.cra_list               =       LIST_HEAD_INIT(ifxdeu_ecb_des3_ede_alg.base.cra_list),
++        .min_keysize            =       DES3_EDE_KEY_SIZE,
++        .max_keysize            =       DES3_EDE_KEY_SIZE,
++        .setkey                 =       des3_ede_setkey_skcipher,
++        .encrypt                =       ecb_des_encrypt,
++        .decrypt                =       ecb_des_decrypt,
+ };
+ 
+ /*! \fn int cbc_des_encrypt(struct blkcipher_desc *desc, struct scatterlist *dst, struct scatterlist *src, unsigned int nbytes)
+@@ -573,26 +584,22 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int cbc_des_encrypt(struct blkcipher_desc *desc,
+-                    struct scatterlist *dst, struct scatterlist *src,
+-                    unsigned int nbytes)
++int cbc_des_encrypt(struct skcipher_request *req)
+ {
+-        struct des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-        struct blkcipher_walk walk;
++        struct des_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++        struct skcipher_walk walk;
+         int err;
+         unsigned int enc_bytes;
+ 
+         DPRINTF(1, "\n");
+-        blkcipher_walk_init(&walk, dst, src, nbytes);
+-        err = blkcipher_walk_virt(desc, &walk);
++        err = skcipher_walk_virt(&walk, req, false);
+ 
+-        while ((nbytes = enc_bytes = walk.nbytes)) {
++        while ((enc_bytes = walk.nbytes)) {
+                 u8 *iv = walk.iv;
+-                enc_bytes -= (nbytes % DES_BLOCK_SIZE);
+                 ifx_deu_des_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                                iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+-                nbytes &= DES_BLOCK_SIZE - 1;
+-                err = blkcipher_walk_done(desc, &walk, nbytes);
++                enc_bytes &= DES_BLOCK_SIZE - 1;
++                err = skcipher_walk_done(&walk, enc_bytes);
+         }
+ 
+         return err;
+@@ -607,26 +614,22 @@
+  *  \param nbytes data size in bytes  
+  *  \return err
+ */                                 
+-int cbc_des_decrypt(struct blkcipher_desc *desc,
+-                    struct scatterlist *dst, struct scatterlist *src,
+-                    unsigned int nbytes)
++int cbc_des_decrypt(struct skcipher_request *req)
+ {
+-        struct des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
+-        struct blkcipher_walk walk;
++        struct des_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
++        struct skcipher_walk walk;
+         int err;
+         unsigned int dec_bytes;
+ 
+         DPRINTF(1, "\n");
+-        blkcipher_walk_init(&walk, dst, src, nbytes);
+-        err = blkcipher_walk_virt(desc, &walk);
++        err = skcipher_walk_virt(&walk, req, false);
+ 
+-        while ((nbytes = dec_bytes = walk.nbytes)) {
++        while ((dec_bytes = walk.nbytes)) {
+                 u8 *iv = walk.iv;
+-                dec_bytes -= (nbytes % DES_BLOCK_SIZE);
+                 ifx_deu_des_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                                iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+-                nbytes &= DES_BLOCK_SIZE - 1;
+-                err = blkcipher_walk_done(desc, &walk, nbytes);
++                dec_bytes &= DES_BLOCK_SIZE - 1;
++                err = skcipher_walk_done(&walk, dec_bytes);
+         }
+ 
+         return err;
+@@ -635,51 +638,41 @@
+ /*
+  * \brief DES function mappings
+ */ 
+-struct crypto_alg ifxdeu_cbc_des_alg = {
+-        .cra_name               =       "cbc(des)",
+-        .cra_driver_name        =       "ifxdeu-cbc(des)",
+-        .cra_priority           =       400,
+-        .cra_flags              =       CRYPTO_ALG_TYPE_BLKCIPHER,
+-        .cra_blocksize          =       DES_BLOCK_SIZE,
+-        .cra_ctxsize            =       sizeof(struct des_ctx),
+-        .cra_type               =       &crypto_blkcipher_type,
+-        .cra_module             =       THIS_MODULE,
+-        .cra_list               =       LIST_HEAD_INIT(ifxdeu_cbc_des_alg.cra_list),
+-        .cra_u                  =       {
+-                .blkcipher = {
+-                        .min_keysize            =       DES_KEY_SIZE,
+-                        .max_keysize            =       DES_KEY_SIZE,
+-                        .ivsize                 =       DES_BLOCK_SIZE,
+-                        .setkey                 =       des_setkey,
+-                        .encrypt                =       cbc_des_encrypt,
+-                        .decrypt                =       cbc_des_decrypt,
+-                }
+-        }
++struct skcipher_alg ifxdeu_cbc_des_alg = {
++        .base.cra_name               =       "cbc(des)",
++        .base.cra_driver_name        =       "ifxdeu-cbc(des)",
++        .base.cra_priority           =       400,
++        .base.cra_flags              =       CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
++        .base.cra_blocksize          =       DES_BLOCK_SIZE,
++        .base.cra_ctxsize            =       sizeof(struct des_ctx),
++        .base.cra_module             =       THIS_MODULE,
++        .base.cra_list               =       LIST_HEAD_INIT(ifxdeu_cbc_des_alg.base.cra_list),
++        .min_keysize            =       DES_KEY_SIZE,
++        .max_keysize            =       DES_KEY_SIZE,
++        .ivsize                 =       DES_BLOCK_SIZE,
++        .setkey                 =       des_setkey_skcipher,
++        .encrypt                =       cbc_des_encrypt,
++        .decrypt                =       cbc_des_decrypt,
+ };
+ 
+ /*
+  * \brief DES function mappings
+ */ 
+-struct crypto_alg ifxdeu_cbc_des3_ede_alg = {
+-        .cra_name               =       "cbc(des3_ede)",
+-        .cra_driver_name        =       "ifxdeu-cbc(des3_ede)",
+-        .cra_priority           =       400,
+-        .cra_flags              =       CRYPTO_ALG_TYPE_BLKCIPHER,
+-        .cra_blocksize          =       DES3_EDE_BLOCK_SIZE,
+-        .cra_ctxsize            =       sizeof(struct des_ctx),
+-        .cra_type               =       &crypto_blkcipher_type,
+-        .cra_module             =       THIS_MODULE,
+-        .cra_list               =       LIST_HEAD_INIT(ifxdeu_cbc_des3_ede_alg.cra_list),
+-        .cra_u                  =       {
+-                .blkcipher = {
+-                        .min_keysize            =       DES3_EDE_KEY_SIZE,
+-                        .max_keysize            =       DES3_EDE_KEY_SIZE,
+-                        .ivsize                 =       DES_BLOCK_SIZE,
+-                        .setkey                 =       des3_ede_setkey,
+-                        .encrypt                =       cbc_des_encrypt,
+-                        .decrypt                =       cbc_des_decrypt,
+-                }
+-        }
++struct skcipher_alg ifxdeu_cbc_des3_ede_alg = {
++        .base.cra_name               =       "cbc(des3_ede)",
++        .base.cra_driver_name        =       "ifxdeu-cbc(des3_ede)",
++        .base.cra_priority           =       400,
++        .base.cra_flags              =       CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
++        .base.cra_blocksize          =       DES3_EDE_BLOCK_SIZE,
++        .base.cra_ctxsize            =       sizeof(struct des_ctx),
++        .base.cra_module             =       THIS_MODULE,
++        .base.cra_list               =       LIST_HEAD_INIT(ifxdeu_cbc_des3_ede_alg.base.cra_list),
++        .min_keysize            =       DES3_EDE_KEY_SIZE,
++        .max_keysize            =       DES3_EDE_KEY_SIZE,
++        .ivsize                 =       DES_BLOCK_SIZE,
++        .setkey                 =       des3_ede_setkey_skcipher,
++        .encrypt                =       cbc_des_encrypt,
++        .decrypt                =       cbc_des_decrypt,
+ };
+ 
+ /*! \fn int ifxdeu_init_des (void)
+@@ -695,11 +688,11 @@
+         if (ret < 0)
+                 goto des_err;
+ 
+-        ret = crypto_register_alg(&ifxdeu_ecb_des_alg);
++        ret = crypto_register_skcipher(&ifxdeu_ecb_des_alg);
+         if (ret < 0)
+                 goto ecb_des_err;
+ 
+-        ret = crypto_register_alg(&ifxdeu_cbc_des_alg);
++        ret = crypto_register_skcipher(&ifxdeu_cbc_des_alg);
+         if (ret < 0)
+                 goto cbc_des_err;
+ 
+@@ -707,11 +700,11 @@
+         if (ret < 0)
+                 goto des3_ede_err;
+ 
+-        ret = crypto_register_alg(&ifxdeu_ecb_des3_ede_alg);
++        ret = crypto_register_skcipher(&ifxdeu_ecb_des3_ede_alg);
+         if (ret < 0)
+                 goto ecb_des3_ede_err;
+ 
+-        ret = crypto_register_alg(&ifxdeu_cbc_des3_ede_alg);
++        ret = crypto_register_skcipher(&ifxdeu_cbc_des3_ede_alg);
+         if (ret < 0)
+                 goto cbc_des3_ede_err;
+ 
+@@ -728,11 +721,11 @@
+         printk(KERN_ERR "IFX des initialization failed!\n");
+         return ret;
+ ecb_des_err:
+-        crypto_unregister_alg(&ifxdeu_ecb_des_alg);
++        crypto_unregister_skcipher(&ifxdeu_ecb_des_alg);
+         printk (KERN_ERR "IFX ecb_des initialization failed!\n");
+         return ret;
+ cbc_des_err:
+-        crypto_unregister_alg(&ifxdeu_cbc_des_alg);
++        crypto_unregister_skcipher(&ifxdeu_cbc_des_alg);
+         printk (KERN_ERR "IFX cbc_des initialization failed!\n");
+         return ret;
+ des3_ede_err:
+@@ -740,11 +733,11 @@
+         printk(KERN_ERR "IFX des3_ede initialization failed!\n");
+         return ret;
+ ecb_des3_ede_err:
+-        crypto_unregister_alg(&ifxdeu_ecb_des3_ede_alg);
++        crypto_unregister_skcipher(&ifxdeu_ecb_des3_ede_alg);
+         printk (KERN_ERR "IFX ecb_des3_ede initialization failed!\n");
+         return ret;
+ cbc_des3_ede_err:
+-        crypto_unregister_alg(&ifxdeu_cbc_des3_ede_alg);
++        crypto_unregister_skcipher(&ifxdeu_cbc_des3_ede_alg);
+         printk (KERN_ERR "IFX cbc_des3_ede initialization failed!\n");
+         return ret;
+ 
+@@ -757,11 +750,11 @@
+ void ifxdeu_fini_des (void)
+ {
+         crypto_unregister_alg (&ifxdeu_des_alg);
+-        crypto_unregister_alg (&ifxdeu_ecb_des_alg);
+-        crypto_unregister_alg (&ifxdeu_cbc_des_alg);
++        crypto_unregister_skcipher (&ifxdeu_ecb_des_alg);
++        crypto_unregister_skcipher (&ifxdeu_cbc_des_alg);
+         crypto_unregister_alg (&ifxdeu_des3_ede_alg);
+-        crypto_unregister_alg (&ifxdeu_ecb_des3_ede_alg);
+-        crypto_unregister_alg (&ifxdeu_cbc_des3_ede_alg);
++        crypto_unregister_skcipher (&ifxdeu_ecb_des3_ede_alg);
++        crypto_unregister_skcipher (&ifxdeu_cbc_des3_ede_alg);
+ 
+ }
+ 
+diff -ruN a/ifxmips_deu_vr9.c b/ifxmips_deu_vr9.c
+--- a/ifxmips_deu_vr9.c
++++ b/ifxmips_deu_vr9.c
+@@ -82,7 +82,8 @@
+ 
+ u32 endian_swap(u32 input)
+ {
+-    return input;
++    u8 *ptr = (u8 *)&input;
++    return (ptr[3] << 24) | (ptr[2] << 16) | (ptr[1] << 8) | (ptr[0]);
+ }
+ 
+ /*! \fn u32 input_swap(u32 input)
+@@ -93,7 +94,8 @@
+ 
+ u32 input_swap(u32 input)
+ {
+-    return input;
++    u8 *ptr = (u8 *)&input;
++    return (ptr[3] << 24) | (ptr[2] << 16) | (ptr[1] << 8) | (ptr[0]);
+ }
+ 
+ /*! \fn void aes_chip_init (void)
+diff -ruN a/ifxmips_md5.c b/ifxmips_md5.c
+--- a/ifxmips_md5.c
++++ b/ifxmips_md5.c
+@@ -270,7 +270,7 @@
+                 .cra_name       =       "md5",
+                 .cra_driver_name=       "ifxdeu-md5",
+                 .cra_priority   =       300,
+-                .cra_flags      =       CRYPTO_ALG_TYPE_HASH,
++                .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
+                 .cra_blocksize  =       MD5_HMAC_BLOCK_SIZE,
+                 .cra_module     =       THIS_MODULE,
+     }
+diff -ruN a/ifxmips_md5_hmac.c b/ifxmips_md5_hmac.c
+--- a/ifxmips_md5_hmac.c
++++ b/ifxmips_md5_hmac.c
+@@ -346,7 +346,7 @@
+         .cra_driver_name=       "ifxdeu-md5_hmac",
+         .cra_priority   =       400,
+         .cra_ctxsize    =	sizeof(struct md5_hmac_ctx),
+-        .cra_flags      =       CRYPTO_ALG_TYPE_HASH,
++        .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
+         .cra_blocksize  =       MD5_HMAC_BLOCK_SIZE,
+         .cra_module     =       THIS_MODULE,
+         }
+diff -ruN a/ifxmips_sha1.c b/ifxmips_sha1.c
+--- a/ifxmips_sha1.c
++++ b/ifxmips_sha1.c
+@@ -44,8 +44,8 @@
+ #include <linux/module.h>
+ #include <linux/mm.h>
+ #include <linux/crypto.h>
+-#include <linux/cryptohash.h>
+ #include <crypto/sha.h>
++#include <crypto/hash.h>
+ #include <crypto/internal/hash.h>
+ #include <linux/types.h>
+ #include <linux/scatterlist.h>
+@@ -92,13 +92,13 @@
+ extern int disable_deudma;
+ 
+ 
+-/*! \fn static void sha1_transform (u32 *state, const u32 *in)
++/*! \fn static void sha1_transform1 (u32 *state, const u32 *in)
+  *  \ingroup IFX_SHA1_FUNCTIONS
+  *  \brief main interface to sha1 hardware   
+  *  \param state current state 
+  *  \param in 64-byte block of input  
+ */                                 
+-static void sha1_transform (struct sha1_ctx *sctx, u32 *state, const u32 *in)
++static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
+ {
+     int i = 0;
+     volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
+@@ -145,7 +145,7 @@
+  *  \brief initialize sha1 hardware   
+  *  \param tfm linux crypto algo transform  
+ */                                 
+-static int sha1_init(struct shash_desc *desc)
++static int sha1_init1(struct shash_desc *desc)
+ {
+     struct sha1_ctx *sctx = shash_desc_ctx(desc);
+     
+@@ -174,9 +174,9 @@
+ 
+     if ((j + len) > 63) {
+         memcpy (&sctx->buffer[j], data, (i = 64 - j));
+-        sha1_transform (sctx, sctx->state, (const u32 *)sctx->buffer);
++        sha1_transform1 (sctx, sctx->state, (const u32 *)sctx->buffer);
+         for (; i + 63 < len; i += 64) {
+-            sha1_transform (sctx, sctx->state, (const u32 *)&data[i]);
++            sha1_transform1 (sctx, sctx->state, (const u32 *)&data[i]);
+         }
+ 
+         j = 0;
+@@ -250,7 +250,7 @@
+ */
+ static struct shash_alg ifxdeu_sha1_alg = {
+         .digestsize     =       SHA1_DIGEST_SIZE,
+-        .init           =       sha1_init,
++        .init           =       sha1_init1,
+         .update         =       sha1_update,
+         .final          =       sha1_final,
+         .descsize       =       sizeof(struct sha1_ctx),
+@@ -259,7 +259,7 @@
+                 .cra_name       =       "sha1",
+                 .cra_driver_name=       "ifxdeu-sha1",
+                 .cra_priority   =       300,
+-                .cra_flags      =       CRYPTO_ALG_TYPE_HASH,
++                .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
+                 .cra_blocksize  =       SHA1_HMAC_BLOCK_SIZE,
+                 .cra_module     =       THIS_MODULE,
+         }
+diff -ruN a/ifxmips_sha1_hmac.c b/ifxmips_sha1_hmac.c
+--- a/ifxmips_sha1_hmac.c
++++ b/ifxmips_sha1_hmac.c
+@@ -44,7 +44,7 @@
+ #include <linux/module.h>
+ #include <linux/mm.h>
+ #include <linux/crypto.h>
+-#include <linux/cryptohash.h>
++#include <crypto/sha.h>
+ #include <crypto/internal/hash.h>
+ #include <linux/types.h>
+ #include <linux/scatterlist.h>
+@@ -334,7 +334,7 @@
+                 .cra_driver_name=       "ifxdeu-sha1_hmac",
+                 .cra_priority   =       400,
+ 		.cra_ctxsize    =	sizeof(struct sha1_hmac_ctx),
+-                .cra_flags      =       CRYPTO_ALG_TYPE_HASH,
++                .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
+                 .cra_blocksize  =       SHA1_HMAC_BLOCK_SIZE,
+                 .cra_module     =       THIS_MODULE,
+         }

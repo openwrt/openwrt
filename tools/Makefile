@@ -31,7 +31,15 @@ tools-$(BUILD_ISL) += isl
 tools-$(BUILD_TOOLCHAIN) += expat gmp mpc mpfr
 tools-$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini) += genext2fs
 tools-$(CONFIG_TARGET_ath79) += lzma-old squashfs
+ifneq ($(CONFIG_TARGET_lantiq_xrx200_DEVICE_avm_fritz3490),)
+tools-$(CONFIG_TARGET_lantiq_xrx200_DEVICE_avm_fritz3490) += fritzboximage-downloadextractor
+endif
+ifneq ($(CONFIG_TARGET_lantiq_xrx200_DEVICE_avm_fritz5490),)
+tools-$(CONFIG_TARGET_lantiq_xrx200_DEVICE_avm_fritz5490) += fritzboximage-downloadextractor
+endif
+ifneq ($(CONFIG_TARGET_lantiq_xrx200_DEVICE_avm_fritz7490),)
 tools-$(CONFIG_TARGET_lantiq_xrx200_DEVICE_avm_fritz7490) += fritzboximage-downloadextractor
+endif
 tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
 tools-$(CONFIG_TARGET_tegra) += cbootimage cbootimage-configs
 tools-$(CONFIG_USES_MINOR) += kernel2minor

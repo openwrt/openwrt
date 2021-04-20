@@ -34,13 +34,13 @@ define Package/wasp_uploader/install
 	$(INSTALL_DIR) $(1)/opt/wasp
 	$(CP) $(STAGING_DIR_HOST)/squashfs-root/lib/firmware/ath_tgt_fw1.fw $(1)/opt/wasp/
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(CP) $(STAGING_DIR_HOST)/squashfs-root/lib/firmware/xhcifw.mem $(1)/lib/firmware/K2026090.mem
-	$(CP) $(STAGING_DIR_HOST)/squashfs-root/lib/modules/dsp_vr9/vr9-B-dsl.bin $(1)/lib/firmware/vr9_dsl_fw_annex_b.bin
+	$(CP) $(STAGING_DIR_HOST)/squashfs-root/lib/firmware/xhcifw.mem $(1)/lib/firmware/renesas_usb_fw.mem
+	#$(CP) $(STAGING_DIR_HOST)/squashfs-root/lib/modules/dsp_vr9/vr9-B-dsl.bin $(1)/lib/firmware/vr9_dsl_fw_annex_b.bin
 	bspatch $(STAGING_DIR_HOST)/squashfs-root/lib/modules/dsp_vr9/vr9-B-dsl.bin \
 		$(STAGING_DIR_HOST)/squashfs-root/lib/modules/dsp_vr9/vr9-A-dsl.bin \
 		$(STAGING_DIR_HOST)/squashfs-root/lib/modules/dsp_vr9/vr9-A-dsl.bin.bsdiff
 	#$(CP) $(STAGING_DIR_HOST)/squashfs-root/lib/modules/dsp_vr9/vr9-A-dsl.bin $(1)/lib/firmware/vr9_dsl_fw_annex_a.bin
-	$(CP) $(BIN_DIR)/../../ath79/generic/openwrt-ath79-generic-avm_fritz7490_wasp-initramfs-kernel.bin $(1)/opt/wasp
+	$(CP) $(BIN_DIR)/../../ath79/generic/openwrt-ath79-generic-avm_fritzx490_wasp-initramfs-kernel.bin $(1)/opt/wasp
 endef
 
 $(eval $(call BuildPackage,wasp_uploader))

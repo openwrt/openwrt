@@ -131,6 +131,28 @@ define Device/avm_fritz3390
 endef
 TARGET_DEVICES += avm_fritz3390
 
+define Device/avm_fritz3490
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 3490
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs wasp_uploader \
+	-kmod-owl-loader -dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+endef
+TARGET_DEVICES += avm_fritz3490
+
+define Device/avm_fritz5490
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 5490
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs wasp_uploader \
+	-kmod-owl-loader -dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+endef
+TARGET_DEVICES += avm_fritz5490
+
 define Device/avm_fritz7360sl
   $(Device/AVM)
   DEVICE_MODEL := FRITZ!Box 7360 SL
@@ -186,7 +208,8 @@ define Device/avm_fritz7490
   DEVICE_MODEL := FRITZ!Box 7490
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
-  DEVICE_PACKAGES := kmod-usb3 fritz-tffs wasp_uploader -kmod-owl-loader -dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs wasp_uploader \
+	-kmod-owl-loader -dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
 endef
 TARGET_DEVICES += avm_fritz7490
 

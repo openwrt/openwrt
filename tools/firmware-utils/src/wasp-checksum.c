@@ -18,8 +18,7 @@
 
 typedef enum {
 	MODEL_3390,
-	MODEL_3490,
-	MODEL_7490
+	MODEL_X490
 } t_model;
 
 char *infile = NULL;
@@ -52,7 +51,7 @@ static void usage(int status)
 "Options:\n"
 "  -i              input file name\n"
 "  -o              output file name\n"
-"  -m              model (3390, 3490, 7490)\n"
+"  -m              model (3390, x490 for 3490/5490/7490)\n"
 "  -h              show this screen\n"
 	);
 
@@ -85,10 +84,8 @@ int main(int argc, char *argv[]) {
 		case 'm':
 			if(strcmp(optarg, "3390") == 0) {
 				model = MODEL_3390;
-			} else if(strcmp(optarg, "3490") == 0) {
-				model = MODEL_3490;
-			} else if(strcmp(optarg, "7490") == 0) {
-				model = MODEL_7490;
+			} else if(strcmp(optarg, "x490") == 0) {
+				model = MODEL_X490;
 			} else {
 				usage(EXIT_FAILURE);
 			}
@@ -126,19 +123,14 @@ int main(int argc, char *argv[]) {
 			}
 			fwrite(buf, sizeof(uint32_t), read, out_fp);
 			break;
-		case MODEL_3490:
-			read = fread(buf, 1, sizeof(uint32_t) * CHUNK_SIZE, in_fp);
-			crc32(buf, read, &crc);
-			fwrite(buf, 1, read, out_fp);
-			break;
-		case MODEL_7490:
+		case MODEL_X490:
 			read = fread(buf, 1, sizeof(uint32_t) * CHUNK_SIZE, in_fp);
 			crc32(buf, read, &crc);
 			fwrite(buf, 1, read, out_fp);
 			break;
 		}
 	}
-	if(model == MODEL_3490 || model == MODEL_7490)
+	if(model == MODEL_X490)
 		crc = __bswap_32(crc);
 	fwrite(&crc, sizeof(uint32_t), 1, out_fp);
 	fclose(in_fp);

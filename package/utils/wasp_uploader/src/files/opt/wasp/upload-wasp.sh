@@ -15,11 +15,15 @@ case "${BOARD}" in
 	;;
 	avm,fritz3490)
 		echo "Working on AVM FRITZ!Box 3490"
-		MODEL=3490
+		MODEL=x490
+		;;
+	avm,fritz5490)
+		echo "Working on AVM FRITZ!Box 5490"
+		MODEL=x490
 		;;
 	avm,fritz7490)
 		echo "Working on AVM FRITZ!Box 7490"
-		MODEL=7490
+		MODEL=x490
 		;;
 	*)
 		echo "Unknown board detected, aborting."
@@ -70,13 +74,14 @@ extract_eeprom() {
 	avm,fritz3390)
 		do_extract_eeprom_reverse ${mtd} 0x1541 0x440 "${WASP}/files/lib/firmware/ath9k-eeprom-pci-0000:00:00.0.bin"
 	;;
-	avm,fritz7490)
-		do_extract_eeprom_reverse ${mtd} 0x1541 0x440 "${WASP}/files/lib/firmware/ath9k-eeprom-ahb-18100000.wmac.bin"
-		do_extract_eeprom ${mtd} 0x199F 0x844 "${WASP}/files/lib/firmware/ath10k/cal-pci-0000:00:00.0.bin"
-	;;
 	avm,fritz3490)
 		do_extract_eeprom_reverse ${mtd} 0x1541 0x440 "${WASP}/files/lib/firmware/ath9k-eeprom-ahb-18100000.wmac.bin"
 		do_extract_eeprom ${mtd} 0x198A 0x844 "${WASP}/files/lib/firmware/ath10k/cal-pci-0000:00:00.0.bin"
+	;;
+	avm,fritz5490|\
+	avm,fritz7490)
+		do_extract_eeprom_reverse ${mtd} 0x1541 0x440 "${WASP}/files/lib/firmware/ath9k-eeprom-ahb-18100000.wmac.bin"
+		do_extract_eeprom ${mtd} 0x199F 0x844 "${WASP}/files/lib/firmware/ath10k/cal-pci-0000:00:00.0.bin"
 	;;
   esac
 

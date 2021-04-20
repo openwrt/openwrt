@@ -381,19 +381,31 @@ define Device/avm_fritz4020
 endef
 TARGET_DEVICES += avm_fritz4020
 
-define Device/avm_fritz7490_wasp
+define Device/avm_fritz3390_wasp
+  SOC := ar9342
+  DEVICE_VENDOR := AVM
+  DEVICE_MODEL := FRITZ!Box 3390 WASP (Wireless Assist)
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma-no-dict | \
+      avm-wasp-loader-kernel | pad-to 4096 | pad-extra 208 | avm-wasp-checksum 3390
+  LOADER_TYPE := bin
+  KERNEL_INITRAMFS := $$(KERNEL)
+  DEVICE_PACKAGES := kmod-owl-loader -uboot-envtools -swconfig -ppp -kmod-ppp
+endef
+TARGET_DEVICES += avm_fritz3390_wasp
+
+define Device/avm_fritzx490_wasp
   SOC := qca9558
   DEVICE_VENDOR := AVM
-  DEVICE_MODEL := FRITZ!Box 7490 WASP
+  DEVICE_MODEL := FRITZ!Box 3490/5490/7490 WASP (Wireless Assist)
   KERNEL := force-build-wasp_uploader | kernel-bin | append-dtb | relocate-kernel | lzma-no-extra | \
-      loader-kernel-wasp | pad-to 4096 | pad-extra 208 | wasp-checksum 7490
+      loader-kernel-wasp | pad-to 4096 | pad-extra 208 | wasp-checksum x490
   LOADER_TYPE := bin
   KERNEL_INITRAMFS := $$(KERNEL)
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct-full-htt \
 	kmod-owl-loader wasp_downloader wpad -wpad-basic-wolfssl \
 	-uboot-envtools -swconfig -ppp -kmod-ppp
 endef
-TARGET_DEVICES += avm_fritz7490_wasp
+TARGET_DEVICES += avm_fritzx490_wasp
 
 define Device/avm_fritz450e
   $(Device/avm)

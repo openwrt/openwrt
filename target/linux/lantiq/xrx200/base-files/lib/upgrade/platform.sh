@@ -12,6 +12,8 @@ platform_do_upgrade() {
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
 	avm,fritz3390|\
+	avm,fritz3490|\
+	avm,fritz5490|\
 	avm,fritz7362sl|\
 	avm,fritz7412|\
 	avm,fritz7430|\

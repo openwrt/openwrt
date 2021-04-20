@@ -51,11 +51,11 @@
 
 #define CMD_SET_PARAMS				0x0c01
 #define CMD_SET_CHECKSUM_3390		0x0801
-#define CMD_SET_CHECKSUM_3490		0x0401
+#define CMD_SET_CHECKSUM_X490		0x0401
 #define CMD_SET_DATA				0x0e01
 #define CMD_START_FIRMWARE_3390		0x0201
-#define CMD_START_FIRMWARE_3490		0x0001
-#define CMD_START_FIRMWARE2_3490	0x0101
+#define CMD_START_FIRMWARE_X490		0x0001
+#define CMD_START_FIRMWARE2_X490	0x0101
 
 static const uint32_t start_addr = 0xbd003000;
 static const uint32_t exec_addr = 0xbd003000;
@@ -83,8 +83,7 @@ static const char mac_data[CHUNK_SIZE] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0x
 
 typedef enum {
 	MODEL_3390,
-	MODEL_3490,
-	MODEL_7490,
+	MODEL_X490,
 	MODEL_UNKNOWN
 } t_model;
 
@@ -179,8 +178,8 @@ static int write_checksum(const uint32_t checksum) {
 		mdio_write(m_reg_data3, 0x0000);
 		mdio_write(m_reg_data4, 0x0000);
 		mdio_write(m_reg_status, CMD_SET_CHECKSUM_3390);
-	} else if(m_model == MODEL_3490 || m_model == MODEL_7490) {
-		mdio_write(m_reg_status, CMD_SET_CHECKSUM_3490);
+	} else if(m_model == MODEL_X490) {
+		mdio_write(m_reg_status, CMD_SET_CHECKSUM_X490);
 	}
 
 	if(m_model == MODEL_3390) {
@@ -336,19 +335,8 @@ static int check_options(void) {
 		m_reg_data5 = 0x70a;
 		m_reg_data6 = 0x70c;
 		m_reg_data7 = 0x70e;
-	} else if(strcmp(opt_model, "3490") == 0 ) {
-		m_model = MODEL_3490;
-		m_reg_zero = 0x0;
-		m_reg_status = 0x0;
-		m_reg_data1 = 0x2;
-		m_reg_data2 = 0x4;
-		m_reg_data3 = 0x6;
-		m_reg_data4 = 0x8;
-		m_reg_data5 = 0xa;
-		m_reg_data6 = 0xc;
-		m_reg_data7 = 0xe;
-	} else if(strcmp(opt_model, "7490") == 0 ) {
-		m_model = MODEL_7490;
+	} else if(strcmp(opt_model, "x490") == 0 ) {
+		m_model = MODEL_X490;
 		m_reg_zero = 0x0;
 		m_reg_status = 0x0;
 		m_reg_data1 = 0x2;
@@ -372,7 +360,7 @@ static void usage(int status)
 	fprintf(stderr,
 "\n"
 "Options:\n"
-"  -m <model>      use the specified FRITZ!Box Model (3390, 3490, 7490)\n"
+"  -m <model>      use the specified FRITZ!Box Model (3390, x490 for models 3490/5490/7490)\n"
 "  -i <interface>  use the specified Ethernet interface\n"
 "  -f <file>       upload the specified firmware file\n"
 "  -v              verbose output\n"
@@ -494,8 +482,8 @@ int main(int argc, char *argv[]) {
 	
 	printf("Done uploading firmware.\n");
 	
-	if(m_model == MODEL_3490 || m_model == MODEL_7490) {
-		mdio_write(m_reg_status, CMD_START_FIRMWARE_3490);
+	if(m_model == MODEL_X490) {
+		mdio_write(m_reg_status, CMD_START_FIRMWARE_X490);
 	} else if(m_model == MODEL_3390) {
 		//usleep(15 * 100 * 1000); // 1.5 seconds
 		mdio_write(m_reg_status, CMD_START_FIRMWARE_3390);
@@ -521,14 +509,14 @@ int main(int argc, char *argv[]) {
 
 	if(m_model == MODEL_3390) {
 		mdio_write(m_reg_status, CMD_START_FIRMWARE_3390);
-	} else if(m_model == MODEL_3490 || m_model == MODEL_7490) {
-		mdio_write(m_reg_status, CMD_SET_CHECKSUM_3490);
+	} else if(m_model == MODEL_X490) {
+		mdio_write(m_reg_status, CMD_SET_CHECKSUM_X490);
 	}
 
 	printf("Firmware start command sent.\n");	
 	usleep(WRITE_SLEEP_US);
 
-	if(m_model == MODEL_3490 || m_model == MODEL_7490) {
+	if(m_model == MODEL_X490) {
 		cont = 1;
 		while(cont) {
 			count = 0;
@@ -544,7 +532,7 @@ int main(int argc, char *argv[]) {
 			}
 			mdio_read(m_reg_data1, &regval);
 			mdio_read(m_reg_data2, &regval2);
-			mdio_write(m_reg_status, CMD_SET_CHECKSUM_3490);
+			mdio_write(m_reg_status, CMD_SET_CHECKSUM_X490);
 			if(regval == 0 && regval2 != 0)
 				cont = regval2;
 			else
@@ -564,7 +552,7 @@ int main(int argc, char *argv[]) {
 		}
 		
 		mdio_write(m_reg_data1, 0x00);
-		mdio_write(m_reg_status, CMD_START_FIRMWARE2_3490);
+		mdio_write(m_reg_status, CMD_START_FIRMWARE2_X490);
 		
 		mdio_read(m_reg_status, &regval);
 		if(regval != RESP_OK) {

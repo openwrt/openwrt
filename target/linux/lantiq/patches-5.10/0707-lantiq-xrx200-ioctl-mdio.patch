@@ -1,0 +1,127 @@
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -19,6 +19,9 @@
+ 
+ #include <xway_dma.h>
+ 
++#include <linux/of_mdio.h>
++#include <lantiq_soc.h>
++
+ /* DMA */
+ #define XRX200_DMA_DATA_LEN	0x600
+ #define XRX200_DMA_RX		0
+@@ -52,6 +55,25 @@
+ /* Enable reaction to Pause frames in the PMAC */
+ #define PMAC_HD_CTL_FC		BIT(10)
+ 
++/* MDIO */
++#define MDIO_CTRL		0x0020
++#define MDIO_READ		0x0024
++#define MDIO_WRITE		0x0028
++
++#define MDIO_BUSY		BIT(12)
++#define MDIO_RD			BIT(11)
++#define MDIO_WR			BIT(10)
++#define MDIO_MASK		0x1f
++#define MDIO_ADDRSHIFT		5
++
++static __iomem void *xrx200_mdio_membase;
++
++#define ltq_mdio_r32(x)		ltq_r32(xrx200_mdio_membase + (x))
++#define ltq_mdio_w32(x, y)	ltq_w32(x, xrx200_mdio_membase + (y))
++#define ltq_mdio_w32_mask(x, y, z) \
++			ltq_w32_mask(x, y, xrx200_mdio_membase + (z))
++
++
+ struct xrx200_chan {
+ 	int tx_free;
+ 
+@@ -335,10 +357,78 @@
+ 	return NETDEV_TX_OK;
+ }
+ 
++static inline int xrx200_mdio_poll(void)
++{
++	unsigned cnt = 10000;
++
++	while (likely(cnt--)) {
++		unsigned ctrl = ltq_mdio_r32(MDIO_CTRL);
++		if ((ctrl & MDIO_BUSY) == 0)
++			return 0;
++	}
++
++	return 1;
++}
++
++static int xrx200_mdio_wr(int addr, int reg, u16 val)
++{
++	if (xrx200_mdio_poll())
++		return 1;
++
++	ltq_mdio_w32(val, MDIO_WRITE);
++	ltq_mdio_w32(MDIO_BUSY | MDIO_WR |
++		((addr & MDIO_MASK) << MDIO_ADDRSHIFT) |
++		(reg & MDIO_MASK),
++		MDIO_CTRL);
++
++	return 0;
++}
++
++static int xrx200_mdio_rd(int addr, int reg)
++{
++	if (xrx200_mdio_poll())
++		return -1;
++
++	ltq_mdio_w32(MDIO_BUSY | MDIO_RD |
++		((addr & MDIO_MASK) << MDIO_ADDRSHIFT) |
++		(reg & MDIO_MASK),
++		MDIO_CTRL);
++
++	if (xrx200_mdio_poll())
++		return -1;
++
++	return ltq_mdio_r32(MDIO_READ);
++}
++
++static int xrx200_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
++{
++	struct mii_ioctl_data *mii = if_mii(ifr);
++	int ret;
++
++	switch(cmd) {
++	case SIOCGMIIREG:
++		ret = xrx200_mdio_rd(mii->phy_id, mii->reg_num);
++		if (ret >= 0) {
++			mii->val_out = ret;
++			ret = 0;
++		}
++		break;
++	case SIOCSMIIREG:
++		ret = xrx200_mdio_wr(mii->phy_id, mii->reg_num, mii->val_in);
++		break;
++	default:
++		ret = -EOPNOTSUPP;
++		break;
++	}
++
++	return ret;
++}
++
+ static const struct net_device_ops xrx200_netdev_ops = {
+ 	.ndo_open		= xrx200_open,
+ 	.ndo_stop		= xrx200_close,
+ 	.ndo_start_xmit		= xrx200_start_xmit,
++	.ndo_do_ioctl		= xrx200_ioctl,
+ 	.ndo_set_mac_address	= eth_mac_addr,
+ 	.ndo_validate_addr	= eth_validate_addr,
+ };
+@@ -465,6 +555,9 @@
+ 		return PTR_ERR(priv->pmac_reg);
+ 	}
+ 
++	xrx200_mdio_membase = devm_ioremap(dev, 0xe10b100, 0x70);
++	printk(KERN_INFO "membase: %x\n", (unsigned int)xrx200_mdio_membase);
++
+ 	priv->chan_rx.dma.irq = platform_get_irq_byname(pdev, "rx");
+ 	if (priv->chan_rx.dma.irq < 0)
+ 		return -ENOENT;

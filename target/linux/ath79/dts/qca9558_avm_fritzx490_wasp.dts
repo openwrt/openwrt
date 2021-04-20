@@ -7,8 +7,8 @@
 #include "qca955x.dtsi"
 
 / {
-	compatible = "avm,fritz7490-wasp", "qca,qca9558";
-	model = "AVM FRITZ!Box 7490 WASP Board";
+	compatible = "avm,fritzx490-wasp", "qca,qca9558";
+	model = "AVM FRITZ!Box x490 WASP (Wireless Assist)";
 
 	chosen {
 		bootargs = "console=ttyS0,115200n8";
@@ -47,7 +47,6 @@
 	qca,no-eeprom;
 };
 
-// This node is required for the Ethernet ports to work correctly.
 &gpio {
 	status = "okay";
 };

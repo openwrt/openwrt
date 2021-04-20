@@ -1176,7 +1176,6 @@ endef
 
 $(eval $(call KernelPackage,mlx5-core))
 
-
 define KernelPackage/sfp
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SFP cage support
