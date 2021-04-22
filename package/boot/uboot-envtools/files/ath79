@@ -67,6 +67,10 @@ zyxel,nbg6616)
 buffalo,wzr-hp-ag300h)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
 	;;
+buffalo,wzr-hp-g300nh-rb|\
+buffalo,wzr-hp-g300nh-s)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	;;
 domywifi,dw33d)
 	ubootenv_add_uci_config "/dev/mtd4" "0x0" "0x10000" "0x10000"
 	;;
