@@ -1250,15 +1250,15 @@ ar40xx_init_globals(struct ar40xx_priv *priv)
 {
 	u32 t;
 
-	/* enable CPU port and disable mirror port */
-	t = AR40XX_FWD_CTRL0_CPU_PORT_EN |
-	    AR40XX_FWD_CTRL0_MIRROR_PORT;
+	/* disable mirror port */
+	t = AR40XX_FWD_CTRL0_MIRROR_PORT;
 	ar40xx_write(priv, AR40XX_REG_FWD_CTRL0, t);
 
 	/* forward multicast and broadcast frames to CPU */
 	t = (AR40XX_PORTS_ALL << AR40XX_FWD_CTRL1_UC_FLOOD_S) |
 	    (AR40XX_PORTS_ALL << AR40XX_FWD_CTRL1_MC_FLOOD_S) |
-	    (AR40XX_PORTS_ALL << AR40XX_FWD_CTRL1_BC_FLOOD_S);
+	    (AR40XX_PORTS_ALL << AR40XX_FWD_CTRL1_BC_FLOOD_S) |
+	    (AR40XX_PORTS_ALL << AR40XX_FWD_CTRL1_IGMP_S);
 	ar40xx_write(priv, AR40XX_REG_FWD_CTRL1, t);
 
 	/* enable jumbo frames */
