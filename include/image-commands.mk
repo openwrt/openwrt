@@ -31,6 +31,18 @@ define Build/append-image
 	dd if=$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1) >> $@
 endef
 
+ifdef IB
+define Build/append-image-stage
+	dd if=$(STAGING_DIR_IMAGE)/$(DEVICE_IMG_PREFIX)-$(1) >> $@
+endef
+else
+define Build/append-image-stage
+	dd if=$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1) of=$(STAGING_DIR_IMAGE)/$(DEVICE_IMG_PREFIX)-$(1)
+	dd if=$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1) >> $@
+endef
+endif
+
+
 compat_version=$(if $(DEVICE_COMPAT_VERSION),$(DEVICE_COMPAT_VERSION),1.0)
 json_quote=$(subst ','\'',$(subst ",\",$(1)))
 #")')
