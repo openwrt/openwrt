@@ -129,6 +129,16 @@ wavlink,wl-wn575a3)
 	ucidef_set_led_rssi "wifi-med" "wifi-med" "green:wifi-med" "wlan1" "50" "84"
 	ucidef_set_led_rssi "wifi-high" "wifi-high" "green:wifi-high" "wlan1" "85" "100"
 	;;
+wavlink,wl-wn576a2)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "wifi-low" "wifi-low" "blue:wifi-low" "wlan0" "1" "29"
+	ucidef_set_led_rssi "wifi-mediumlow" "wifi-mediumlow" "blue:wifi-mediumlow" "wlan0" "30" "49"
+	ucidef_set_led_rssi "wifi-medium" "wifi-medium" "blue:wifi-medium" "wlan0" 50" "69"
+	ucidef_set_led_rssi "wifi-mediumhigh" "wifi-mediumhigh" "blue:wifi-mediumhigh" "wlan0" "70" "84"
+	ucidef_set_led_rssi "wifi-high" "wifi-high" "blue:wifi-high" "wlan0" "85" "100"
+	ucidef_set_led_switch "wps" "wps" "blue:wps" "switch0" "0x8"
+	ucidef_set_led_switch "wan" "wan" "blue:wan" "switch0" "0x10"
+	;;
 wavlink,wl-wn577a2|\
 wavlink,wl-wn578a2)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x8"

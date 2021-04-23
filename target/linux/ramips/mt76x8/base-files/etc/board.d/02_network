@@ -122,6 +122,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:wan" "6@eth0"
 		;;
+	wavlink,wl-wn576a2|\
 	tplink,tl-wr902ac-v3)
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
@@ -170,6 +171,7 @@ ramips_setup_macs()
 	cudy,wr1000|\
 	hilink,hlk-7628n|\
 	hilink,hlk-7688a|\
+	wavlink,wl-wn576a2|\
 	wavlink,wl-wn577a2|\
 	wavlink,wl-wn578a2)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
