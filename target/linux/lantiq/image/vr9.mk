@@ -149,7 +149,10 @@ define Device/avm_fritz5490
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
   DEVICE_PACKAGES := kmod-usb3 fritz-tffs wasp_uploader \
-	-kmod-owl-loader -dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+	-ltq-vdsl-vr9-vectoring-fw-installer -kmod-ltq-vdsl-vr9-mei \
+	-kmod-ltq-vdsl-vr9 -kmod-ltq-atm-vr9 -kmod-ltq-ptm-vr9 \
+	-kmod-ltq-deu-vr9 -ltq-vdsl-app -kmod-owl-loader \
+	-dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
 endef
 TARGET_DEVICES += avm_fritz5490
 
