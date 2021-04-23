@@ -9,19 +9,6 @@ DEFAULT_SOC := mt7621
 KERNEL_DTB += -d21
 DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME
 
-define Build/elecom-wrc-gs-factory
-	$(eval product=$(word 1,$(1)))
-	$(eval version=$(word 2,$(1)))
-	$(eval hash_opt=$(word 3,$(1)))
-	$(MKHASH) md5 $(hash_opt) $@ >> $@
-	( \
-		echo -n "ELECOM $(product) v$(version)" | \
-			dd bs=32 count=1 conv=sync; \
-		dd if=$@; \
-	) > $@.new
-	mv $@.new $@
-endef
-
 define Build/gemtek-trailer
 	printf "%s%08X" ".GEMTEK." "$$(cksum $@ | cut -d ' ' -f1)" >> $@
 endef
