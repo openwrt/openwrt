@@ -49,9 +49,6 @@ platform_do_upgrade() {
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
 	hiwifi,hc5962|\
-	linksys,ea7300-v1|\
-	linksys,ea7300-v2|\
-	linksys,ea7500-v2|\
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
@@ -77,6 +74,11 @@ platform_do_upgrade() {
 	iodata,wn-dx1200gr)
 		iodata_mstc_upgrade_prepare "0x1fe75"
 		nand_do_upgrade "$1"
+		;;
+	linksys,ea7300-v1|\
+	linksys,ea7300-v2|\
+	linksys,ea7500-v2)
+		platform_do_upgrade_linksys "$1"
 		;;
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
