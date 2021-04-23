@@ -137,6 +137,26 @@ define Device/elecom_wrc-2533gent
 endef
 TARGET_DEVICES += elecom_wrc-2533gent
 
+define Device/elecom_wrc-x3200gst3
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-X3200GST3
+  DEVICE_DTS := mt7622-elecom-wrc-x3200gst3
+  DEVICE_DTS_DIR := ../dts
+  IMAGE_SIZE := 25600k
+  KERNEL_SIZE := 6144k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | \
+	elecom-wrc-gs-factory WRC-X3200GST3 0.00 -N | \
+	append-string MT7622_ELECOM_WRC-X3200GST3
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += elecom_wrc-x3200gst3
+
 define Device/linksys_e8450
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := E8450
