@@ -1,13 +1,18 @@
+From 816ac3e6e67bdd78d86226c6eb53619780750e92 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Thu, 27 Aug 2020 09:24:25 +0200
-Subject: [PATCH] net: ethernet: mtk_eth_soc: only read the full rx
- descriptor if DMA is done
+Date: Thu, 22 Apr 2021 22:21:04 -0700
+Subject: [PATCH] net: ethernet: mtk_eth_soc: only read the full RX descriptor
+ if DMA is done
 
 Uncached memory access is expensive, and there is no need to access all
 descriptor words if we can't process them anyway
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Ilya Lipnitskiy <ilya.lipnitskiy@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
