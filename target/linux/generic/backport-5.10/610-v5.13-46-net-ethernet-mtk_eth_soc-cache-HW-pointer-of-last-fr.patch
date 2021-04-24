@@ -1,17 +1,23 @@
+From 4e6bf609569c59b6bd6acf4a607c096cbd820d79 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Thu, 27 Aug 2020 06:32:03 +0200
-Subject: [PATCH] net: ethernet: mtk_eth_soc: cache hardware pointer of last
- freed tx descriptor
+Date: Thu, 22 Apr 2021 22:21:03 -0700
+Subject: [PATCH] net: ethernet: mtk_eth_soc: cache HW pointer of last freed TX
+ descriptor
 
-The value is only updated by the CPU, so it is cheaper to access from the ring
-data structure than from a hardware register
+The value is only updated by the CPU, so it is cheaper to access from the
+ring data structure than from a hardware register.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Ilya Lipnitskiy <ilya.lipnitskiy@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 8 ++++----
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h | 2 ++
+ 2 files changed, 6 insertions(+), 4 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1362,7 +1362,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
+@@ -1364,7 +1364,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
  	struct mtk_tx_buf *tx_buf;
  	u32 cpu, dma;
  
@@ -20,7 +26,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	dma = mtk_r32(eth, MTK_QTX_DRX_PTR);
  
  	desc = mtk_qdma_phys_to_virt(ring, cpu);
-@@ -1396,6 +1396,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
+@@ -1398,6 +1398,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
  		cpu = next_cpu;
  	}
  
@@ -28,7 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	mtk_w32(eth, cpu, MTK_QTX_CRX_PTR);
  
  	return budget;
-@@ -1596,6 +1597,7 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -1598,6 +1599,7 @@ static int mtk_tx_alloc(struct mtk_eth *
  	atomic_set(&ring->free_count, MTK_DMA_SIZE - 2);
  	ring->next_free = &ring->dma[0];
  	ring->last_free = &ring->dma[MTK_DMA_SIZE - 1];
@@ -36,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ring->thresh = MAX_SKB_FRAGS;
  
  	/* make sure that all changes to the dma ring are flushed before we
-@@ -1609,9 +1611,7 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -1611,9 +1613,7 @@ static int mtk_tx_alloc(struct mtk_eth *
  		mtk_w32(eth,
  			ring->phys + ((MTK_DMA_SIZE - 1) * sz),
  			MTK_QTX_CRX_PTR);
