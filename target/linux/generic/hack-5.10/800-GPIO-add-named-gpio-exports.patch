@@ -4,13 +4,6 @@ Date: Tue, 12 Aug 2014 20:49:27 +0200
 Subject: [PATCH 30/36] GPIO: add named gpio exports
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
----
- drivers/gpio/gpiolib-of.c     |   68 +++++++++++++++++++++++++++++++++++++++++
- drivers/gpio/gpiolib.c        |   11 +++++--
- include/asm-generic/gpio.h    |    5 +++
- include/linux/gpio/consumer.h |    8 +++++
- 4 files changed, 90 insertions(+), 2 deletions(-)
-
 --- a/drivers/gpio/gpiolib-of.c
 +++ b/drivers/gpio/gpiolib-of.c
 @@ -19,6 +19,8 @@
