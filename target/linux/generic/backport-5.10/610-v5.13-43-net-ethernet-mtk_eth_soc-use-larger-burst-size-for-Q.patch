@@ -1,16 +1,21 @@
+From 59555a8d0dd39bf60b7ca1ba5e7393d293f7398d Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Wed, 26 Aug 2020 16:58:55 +0200
-Subject: [PATCH] net: ethernet: mtk_eth_soc: use larger burst size for
- qdma tx
+Date: Thu, 22 Apr 2021 22:21:00 -0700
+Subject: [PATCH] net: ethernet: mtk_eth_soc: use larger burst size for QDMA TX
 
 Improves tx performance
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Ilya Lipnitskiy <ilya.lipnitskiy@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 2 +-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -2191,7 +2191,7 @@ static int mtk_start_dma(struct mtk_eth
+@@ -2193,7 +2193,7 @@ static int mtk_start_dma(struct mtk_eth
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA)) {
  		mtk_w32(eth,
  			MTK_TX_WB_DDONE | MTK_TX_DMA_EN |
