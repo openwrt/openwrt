@@ -1,6 +1,17 @@
+From 15bdaf92ca0986471abd8ee96419b40b20068319 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:23 +0000
+Subject: [PATCH] 340-reload_freq_change.patch
+
+---
+ src/ap/hostapd.c | 49 +++++++++++++++++++++++++++++++++---------------
+ 1 file changed, 34 insertions(+), 15 deletions(-)
+
+diff --git a/src/ap/hostapd.c b/src/ap/hostapd.c
+index e9aae6dcf..8e55216f5 100644
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -114,6 +114,28 @@ static void hostapd_reload_bss(struct ho
+@@ -115,6 +115,28 @@ static void hostapd_reload_bss(struct hostapd_data *hapd)
  #endif /* CONFIG_NO_RADIUS */
  
  	ssid = &hapd->conf->ssid;
@@ -29,7 +40,7 @@
  	if (!ssid->wpa_psk_set && ssid->wpa_psk && !ssid->wpa_psk->next &&
  	    ssid->wpa_passphrase_set && ssid->wpa_passphrase) {
  		/*
-@@ -215,6 +237,7 @@ int hostapd_reload_config(struct hostapd
+@@ -216,6 +238,7 @@ int hostapd_reload_config(struct hostapd_iface *iface)
  	struct hostapd_data *hapd = iface->bss[0];
  	struct hostapd_config *newconf, *oldconf;
  	size_t j;
@@ -37,7 +48,7 @@
  
  	if (iface->config_fname == NULL) {
  		/* Only in-memory config in use - assume it has been updated */
-@@ -265,24 +288,20 @@ int hostapd_reload_config(struct hostapd
+@@ -266,24 +289,20 @@ int hostapd_reload_config(struct hostapd_iface *iface)
  	}
  	iface->conf = newconf;
  
@@ -73,3 +84,6 @@
  		hapd->conf = newconf->bss[j];
  		hostapd_reload_bss(hapd);
  	}
+-- 
+2.25.1
+

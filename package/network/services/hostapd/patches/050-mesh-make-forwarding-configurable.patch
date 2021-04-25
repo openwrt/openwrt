@@ -1,7 +1,7 @@
-From 90fe6429624fc48bc0e5d2d7eeecb7498708b5e3 Mon Sep 17 00:00:00 2001
+From 5e6f7204e1d218d69a0d0fae34dc6d0b2eb205de Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Wed, 18 Apr 2018 19:24:31 +0200
-Subject: [PATCH 18/18] mesh: make forwarding configurable
+Subject: [PATCH] mesh: make forwarding configurable
 
 Allow mesh_fwding to be specified in a mesh bss config, pass that
 to the driver (only nl80211 implemented for now) and announce
@@ -21,6 +21,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  wpa_supplicant/wpa_supplicant.conf | 3 +++
  10 files changed, 40 insertions(+), 2 deletions(-)
 
+diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
+index 95bd79873..ef5c32c2d 100644
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
 @@ -51,6 +51,7 @@ struct mesh_conf {
@@ -31,7 +33,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  #define MAX_STA_COUNT 2007
-@@ -701,6 +702,7 @@ struct hostapd_bss_config {
+@@ -696,6 +697,7 @@ struct hostapd_bss_config {
  
  #define MESH_ENABLED BIT(0)
  	int mesh;
@@ -39,9 +41,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	u8 radio_measurements[RRM_CAPABILITIES_IE_LEN];
  
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index 561882d0d..d7f16fdf0 100644
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -1515,6 +1515,7 @@ struct wpa_driver_mesh_bss_params {
+@@ -1584,6 +1584,7 @@ struct wpa_driver_mesh_bss_params {
  #define WPA_DRIVER_MESH_CONF_FLAG_MAX_PEER_LINKS	0x00000004
  #define WPA_DRIVER_MESH_CONF_FLAG_HT_OP_MODE		0x00000008
  #define WPA_DRIVER_MESH_CONF_FLAG_RSSI_THRESHOLD	0x00000010
@@ -49,7 +53,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	/*
  	 * TODO: Other mesh configuration parameters would go here.
  	 * See NL80211_MESHCONF_* for all the mesh config parameters.
-@@ -1524,6 +1525,7 @@ struct wpa_driver_mesh_bss_params {
+@@ -1593,6 +1594,7 @@ struct wpa_driver_mesh_bss_params {
  	int peer_link_timeout;
  	int max_peer_links;
  	int rssi_threshold;
@@ -57,9 +61,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	u16 ht_opmode;
  };
  
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index aa46b2677..42f14db50 100644
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -10023,6 +10023,9 @@ static int nl80211_put_mesh_config(struc
+@@ -10456,6 +10456,9 @@ static int nl80211_put_mesh_config(struct nl_msg *msg,
  	if (((params->flags & WPA_DRIVER_MESH_CONF_FLAG_AUTO_PLINKS) &&
  	     nla_put_u8(msg, NL80211_MESHCONF_AUTO_OPEN_PLINKS,
  			params->auto_plinks)) ||
@@ -69,9 +75,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	    ((params->flags & WPA_DRIVER_MESH_CONF_FLAG_MAX_PEER_LINKS) &&
  	     nla_put_u16(msg, NL80211_MESHCONF_MAX_PEER_LINKS,
  			 params->max_peer_links)) ||
+diff --git a/wpa_supplicant/config.c b/wpa_supplicant/config.c
+index e8e9fd432..bec114a98 100644
 --- a/wpa_supplicant/config.c
 +++ b/wpa_supplicant/config.c
-@@ -2473,6 +2473,7 @@ static const struct parse_data ssid_fiel
+@@ -2527,6 +2527,7 @@ static const struct parse_data ssid_fields[] = {
  #ifdef CONFIG_MESH
  	{ INT_RANGE(mode, 0, 5) },
  	{ INT_RANGE(no_auto_peer, 0, 1) },
@@ -79,7 +87,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	{ INT_RANGE(mesh_rssi_threshold, -255, 1) },
  #else /* CONFIG_MESH */
  	{ INT_RANGE(mode, 0, 4) },
-@@ -3049,6 +3050,7 @@ void wpa_config_set_network_defaults(str
+@@ -3106,6 +3107,7 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid)
  	ssid->dot11MeshRetryTimeout = DEFAULT_MESH_RETRY_TIMEOUT;
  	ssid->dot11MeshConfirmTimeout = DEFAULT_MESH_CONFIRM_TIMEOUT;
  	ssid->dot11MeshHoldingTimeout = DEFAULT_MESH_HOLDING_TIMEOUT;
@@ -87,7 +95,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ssid->mesh_rssi_threshold = DEFAULT_MESH_RSSI_THRESHOLD;
  #endif /* CONFIG_MESH */
  #ifdef CONFIG_HT_OVERRIDES
-@@ -4276,6 +4278,7 @@ struct wpa_config * wpa_config_alloc_emp
+@@ -4347,6 +4349,7 @@ struct wpa_config * wpa_config_alloc_empty(const char *ctrl_interface,
  	config->user_mpm = DEFAULT_USER_MPM;
  	config->max_peer_links = DEFAULT_MAX_PEER_LINKS;
  	config->mesh_max_inactivity = DEFAULT_MESH_MAX_INACTIVITY;
@@ -95,7 +103,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	config->dot11RSNASAERetransPeriod =
  		DEFAULT_DOT11_RSNA_SAE_RETRANS_PERIOD;
  	config->fast_reauth = DEFAULT_FAST_REAUTH;
-@@ -4914,6 +4917,7 @@ static const struct global_parse_data gl
+@@ -5047,6 +5050,7 @@ static const struct global_parse_data global_fields[] = {
  	{ INT(user_mpm), 0 },
  	{ INT_RANGE(max_peer_links, 0, 255), 0 },
  	{ INT(mesh_max_inactivity), 0 },
@@ -103,6 +111,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	{ INT(dot11RSNASAERetransPeriod), 0 },
  #endif /* CONFIG_MESH */
  	{ INT(disable_scan_offload), 0 },
+diff --git a/wpa_supplicant/config.h b/wpa_supplicant/config.h
+index 68679c6e3..fc3da8c08 100644
 --- a/wpa_supplicant/config.h
 +++ b/wpa_supplicant/config.h
 @@ -18,6 +18,7 @@
@@ -113,10 +123,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /*
   * The default dot11RSNASAERetransPeriod is defined as 40 ms in the standard,
   * but use 1000 ms in practice to avoid issues on low power CPUs.
-@@ -1351,6 +1352,14 @@ struct wpa_config {
+@@ -1377,6 +1378,14 @@ struct wpa_config {
+ 	 */
  	int mesh_max_inactivity;
  
- 	/**
++	/**
 +	 * mesh_fwding - Mesh network layer-2 forwarding
 +	 *
 +	 * This controls whether to enable layer-2 forwarding.
@@ -124,13 +135,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	 */
 +	int mesh_fwding;
 +
-+	/**
+ 	/**
  	 * dot11RSNASAERetransPeriod - Timeout to retransmit SAE Auth frame
  	 *
- 	 * This timeout value is used in mesh STA to retransmit
+diff --git a/wpa_supplicant/config_file.c b/wpa_supplicant/config_file.c
+index a535e3f08..48164fcfb 100644
 --- a/wpa_supplicant/config_file.c
 +++ b/wpa_supplicant/config_file.c
-@@ -866,6 +866,7 @@ static void wpa_config_write_network(FIL
+@@ -768,6 +768,7 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
  #endif /* IEEE8021X_EAPOL */
  	INT(mode);
  	INT(no_auto_peer);
@@ -138,7 +150,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	INT(frequency);
  	INT(enable_edmg);
  	INT(edmg_channel);
-@@ -1527,6 +1528,9 @@ static void wpa_config_write_global(FILE
+@@ -1449,6 +1450,9 @@ static void wpa_config_write_global(FILE *f, struct wpa_config *config)
  		fprintf(f, "mesh_max_inactivity=%d\n",
  			config->mesh_max_inactivity);
  
@@ -148,6 +160,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (config->dot11RSNASAERetransPeriod !=
  	    DEFAULT_DOT11_RSNA_SAE_RETRANS_PERIOD)
  		fprintf(f, "dot11RSNASAERetransPeriod=%d\n",
+diff --git a/wpa_supplicant/config_ssid.h b/wpa_supplicant/config_ssid.h
+index 3f7b31480..e5dd3e657 100644
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
 @@ -546,6 +546,11 @@ struct wpa_ssid {
@@ -162,9 +176,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	int ht;
  	int ht40;
  
+diff --git a/wpa_supplicant/mesh.c b/wpa_supplicant/mesh.c
+index 901b49b4d..35f469f71 100644
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -137,6 +137,7 @@ static struct mesh_conf * mesh_config_cr
+@@ -140,6 +140,7 @@ static struct mesh_conf * mesh_config_create(struct wpa_supplicant *wpa_s,
  	conf->mesh_cc_id = 0;
  	conf->mesh_sp_id = MESH_SYNC_METHOD_NEIGHBOR_OFFSET;
  	conf->mesh_auth_id = (conf->security & MESH_CONF_SEC_AUTH) ? 1 : 0;
@@ -172,7 +188,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	conf->dot11MeshMaxRetries = ssid->dot11MeshMaxRetries;
  	conf->dot11MeshRetryTimeout = ssid->dot11MeshRetryTimeout;
  	conf->dot11MeshConfirmTimeout = ssid->dot11MeshConfirmTimeout;
-@@ -434,6 +435,7 @@ static int wpa_supplicant_mesh_init(stru
+@@ -441,6 +442,7 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
  	bss->conf->start_disabled = 1;
  	bss->conf->mesh = MESH_ENABLED;
  	bss->conf->ap_max_inactivity = wpa_s->conf->mesh_max_inactivity;
@@ -180,7 +196,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	if (ieee80211_is_dfs(ssid->frequency, wpa_s->hw.modes,
  			     wpa_s->hw.num_modes) && wpa_s->conf->country[0]) {
-@@ -647,6 +649,10 @@ int wpa_supplicant_join_mesh(struct wpa_
+@@ -655,6 +657,10 @@ int wpa_supplicant_join_mesh(struct wpa_supplicant *wpa_s,
  	}
  	params->conf.peer_link_timeout = wpa_s->conf->mesh_max_inactivity;
  
@@ -191,9 +207,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	os_free(wpa_s->mesh_params);
  	wpa_s->mesh_params = params;
  	if (wpa_supplicant_mesh_init(wpa_s, ssid, &params->freq)) {
+diff --git a/wpa_supplicant/mesh_mpm.c b/wpa_supplicant/mesh_mpm.c
+index b6a5e8857..9a7a5d804 100644
 --- a/wpa_supplicant/mesh_mpm.c
 +++ b/wpa_supplicant/mesh_mpm.c
-@@ -303,9 +303,9 @@ static void mesh_mpm_send_plink_action(s
+@@ -303,9 +303,9 @@ static void mesh_mpm_send_plink_action(struct wpa_supplicant *wpa_s,
  		info = (bss->num_plinks > 63 ? 63 : bss->num_plinks) << 1;
  		/* TODO: Add Connected to Mesh Gate/AS subfields */
  		wpabuf_put_u8(buf, info);
@@ -205,6 +223,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	} else {	/* Peer closing frame */
  		/* IE: Mesh ID */
  		wpabuf_put_u8(buf, WLAN_EID_MESH_ID);
+diff --git a/wpa_supplicant/wpa_supplicant.conf b/wpa_supplicant/wpa_supplicant.conf
+index e3ae77114..72a052d82 100644
 --- a/wpa_supplicant/wpa_supplicant.conf
 +++ b/wpa_supplicant/wpa_supplicant.conf
 @@ -150,6 +150,9 @@ ap_scan=1
@@ -217,3 +237,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  # cert_in_cb - Whether to include a peer certificate dump in events
  # This controls whether peer certificates for authentication server and
  # its certificate chain are included in EAP peer certificate events. This is
+-- 
+2.25.1
+

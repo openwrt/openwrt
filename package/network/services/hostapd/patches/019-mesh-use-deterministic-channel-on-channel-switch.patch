@@ -1,7 +1,7 @@
-From fc8ea40f6130ac18d9c66797de2cf1d5af55d496 Mon Sep 17 00:00:00 2001
+From 669abb37f8caea06c9fa6b05716ab2dd835f3959 Mon Sep 17 00:00:00 2001
 From: Markus Theil <markus.theil@tu-ilmenau.de>
 Date: Tue, 30 Jun 2020 14:19:07 +0200
-Subject: [PATCH 19/19] mesh: use deterministic channel on channel switch
+Subject: [PATCH] mesh: use deterministic channel on channel switch
 
 This patch uses a deterministic channel on DFS channel switch
 in mesh networks. Otherwise, when switching to a usable but not
@@ -19,6 +19,8 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  src/drivers/driver_nl80211.c |  4 ++++
  2 files changed, 23 insertions(+), 1 deletion(-)
 
+diff --git a/src/ap/dfs.c b/src/ap/dfs.c
+index b990fb342..df1e4174b 100644
 --- a/src/ap/dfs.c
 +++ b/src/ap/dfs.c
 @@ -17,6 +17,7 @@
@@ -29,7 +31,7 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  
  
  static int dfs_get_used_n_chans(struct hostapd_iface *iface, int *seg1)
-@@ -480,9 +481,14 @@ dfs_get_valid_channel(struct hostapd_ifa
+@@ -480,9 +481,14 @@ dfs_get_valid_channel(struct hostapd_iface *iface,
  	int num_available_chandefs;
  	int chan_idx, chan_idx2;
  	int sec_chan_idx_80p80 = -1;
@@ -44,7 +46,7 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  	wpa_printf(MSG_DEBUG, "DFS: Selecting random channel");
  	*secondary_channel = 0;
  	*oper_centr_freq_seg0_idx = 0;
-@@ -502,8 +508,20 @@ dfs_get_valid_channel(struct hostapd_ifa
+@@ -502,8 +508,20 @@ dfs_get_valid_channel(struct hostapd_iface *iface,
  	if (num_available_chandefs == 0)
  		return NULL;
  
@@ -66,9 +68,11 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  	chan_idx = _rand % num_available_chandefs;
  	dfs_find_channel(iface, &chan, chan_idx, skip_radar);
  	if (!chan) {
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index c05058680..aa46b2677 100644
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -9473,6 +9473,10 @@ static int nl80211_switch_channel(void *
+@@ -9872,6 +9872,10 @@ static int nl80211_switch_channel(void *priv, struct csa_settings *settings)
  	if (ret)
  		goto error;
  
@@ -79,3 +83,6 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  	/* beacon_csa params */
  	beacon_csa = nla_nest_start(msg, NL80211_ATTR_CSA_IES);
  	if (!beacon_csa)
+-- 
+2.25.1
+

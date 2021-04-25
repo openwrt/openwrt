@@ -1,3 +1,14 @@
+From 32a7f9d61114ccc4b394685d69f0e770df84555e Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:24 +0000
+Subject: [PATCH] 599-wpa_supplicant-fix-warnings.patch
+
+---
+ wpa_supplicant/wps_supplicant.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/wpa_supplicant/wps_supplicant.h b/wpa_supplicant/wps_supplicant.h
+index c55936cee..52fb13bc1 100644
 --- a/wpa_supplicant/wps_supplicant.h
 +++ b/wpa_supplicant/wps_supplicant.h
 @@ -9,6 +9,7 @@
@@ -17,3 +28,6 @@
  struct wps_new_ap_settings {
  	const char *ssid_hex;
  	const char *auth;
+-- 
+2.25.1
+

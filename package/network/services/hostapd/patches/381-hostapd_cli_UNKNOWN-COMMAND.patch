@@ -1,6 +1,17 @@
+From b7a646a2593ed9cb400d194cec8afb05d4bca482 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:24 +0000
+Subject: [PATCH] 381-hostapd_cli_UNKNOWN-COMMAND.patch
+
+---
+ hostapd/hostapd_cli.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/hostapd/hostapd_cli.c b/hostapd/hostapd_cli.c
+index eaa628ad0..437c87d84 100644
 --- a/hostapd/hostapd_cli.c
 +++ b/hostapd/hostapd_cli.c
-@@ -744,7 +744,7 @@ static int wpa_ctrl_command_sta(struct w
+@@ -744,7 +744,7 @@ static int wpa_ctrl_command_sta(struct wpa_ctrl *ctrl, const char *cmd,
  	}
  
  	buf[len] = '\0';
@@ -9,3 +20,6 @@
  		return -1;
  	if (print)
  		printf("%s", buf);
+-- 
+2.25.1
+

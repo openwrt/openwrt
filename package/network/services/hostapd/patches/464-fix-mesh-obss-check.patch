@@ -1,6 +1,17 @@
+From 7b52aaa9dda6c7d71cde42e2260dc15d268b5e69 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:24 +0000
+Subject: [PATCH] 464-fix-mesh-obss-check.patch
+
+---
+ wpa_supplicant/wpa_supplicant.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index 2e8918988..adb162808 100644
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2407,11 +2407,13 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2457,11 +2457,13 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
  	for (j = 0; j < wpa_s->last_scan_res_used; j++) {
  		struct wpa_bss *bss = wpa_s->last_scan_res[j];
  
@@ -17,3 +28,6 @@
  			break;
  
  		if (!bss_is_ibss(bss))
+-- 
+2.25.1
+

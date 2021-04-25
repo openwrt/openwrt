@@ -1,3 +1,14 @@
+From 7b5fc0330ee3ac9dbe7dba5eeea70d0189c60e6e Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:24 +0000
+Subject: [PATCH] 450-scan_wait.patch
+
+---
+ hostapd/main.c | 29 +++++++++++++----------------
+ 1 file changed, 13 insertions(+), 16 deletions(-)
+
+diff --git a/hostapd/main.c b/hostapd/main.c
+index c86be00cc..9c092a8e9 100644
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
 @@ -39,6 +39,8 @@ struct hapd_global {
@@ -9,7 +20,7 @@
  
  
  #ifndef CONFIG_NO_HOSTAPD_LOGGER
-@@ -146,6 +148,14 @@ static void hostapd_logger_cb(void *ctx,
+@@ -146,6 +148,14 @@ static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
  }
  #endif /* CONFIG_NO_HOSTAPD_LOGGER */
  
@@ -24,7 +35,7 @@
  
  /**
   * hostapd_driver_init - Preparate driver interface
-@@ -164,6 +174,8 @@ static int hostapd_driver_init(struct ho
+@@ -164,6 +174,8 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
  		return -1;
  	}
  
@@ -33,7 +44,7 @@
  	/* Initialize the driver interface */
  	if (!(b[0] | b[1] | b[2] | b[3] | b[4] | b[5]))
  		b = NULL;
-@@ -404,8 +416,6 @@ static void hostapd_global_deinit(const
+@@ -404,8 +416,6 @@ static void hostapd_global_deinit(const char *pid_file, int eloop_initialized)
  #endif /* CONFIG_NATIVE_WINDOWS */
  
  	eap_server_unregister_methods();
@@ -42,7 +53,7 @@
  }
  
  
-@@ -431,18 +441,6 @@ static int hostapd_global_run(struct hap
+@@ -431,18 +441,6 @@ static int hostapd_global_run(struct hapd_interfaces *ifaces, int daemonize,
  	}
  #endif /* EAP_SERVER_TNC */
  
@@ -71,3 +82,6 @@
  	const char *log_file = NULL;
  	const char *entropy_file = NULL;
  	char **bss_config = NULL, **tmp_bss;
+-- 
+2.25.1
+

@@ -1,3 +1,15 @@
+From a98353db86eabd0fab353d3bd92a82ebb8e9ba93 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:24 +0000
+Subject: [PATCH] 420-indicate-features.patch
+
+---
+ hostapd/main.c        |  5 ++++-
+ wpa_supplicant/main.c | 11 ++++++++---
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/hostapd/main.c b/hostapd/main.c
+index 435c005a7..c86be00cc 100644
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
 @@ -15,6 +15,7 @@
@@ -8,7 +20,7 @@
  #include "crypto/random.h"
  #include "crypto/tls.h"
  #include "common/version.h"
-@@ -692,7 +693,7 @@ int main(int argc, char *argv[])
+@@ -691,7 +692,7 @@ int main(int argc, char *argv[])
  	wpa_supplicant_event = hostapd_wpa_event;
  	wpa_supplicant_event_global = hostapd_wpa_event_global;
  	for (;;) {
@@ -17,7 +29,7 @@
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -729,6 +730,8 @@ int main(int argc, char *argv[])
+@@ -728,6 +729,8 @@ int main(int argc, char *argv[])
  			break;
  #endif /* CONFIG_DEBUG_LINUX_TRACING */
  		case 'v':
@@ -26,6 +38,8 @@
  			show_version();
  			exit(1);
  			break;
+diff --git a/wpa_supplicant/main.c b/wpa_supplicant/main.c
+index 669f5b0b6..3d7f1ba6e 100644
 --- a/wpa_supplicant/main.c
 +++ b/wpa_supplicant/main.c
 @@ -12,6 +12,7 @@
@@ -60,3 +74,6 @@
  			goto out;
  		case 'W':
  			params.wait_for_monitor++;
+-- 
+2.25.1
+

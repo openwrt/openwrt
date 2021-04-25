@@ -1,8 +1,7 @@
-From 8de8cd8380af0c43d4fde67a668d79ef73b26b26 Mon Sep 17 00:00:00 2001
+From 4ae1a4e2ae86da1805e8409e71b86ff1d609ec1f Mon Sep 17 00:00:00 2001
 From: Peter Oh <peter.oh@bowerswilkins.com>
 Date: Tue, 30 Jun 2020 14:18:58 +0200
-Subject: [PATCH 10/19] mesh: Allow DFS channels to be selected if dfs is
- enabled
+Subject: [PATCH] mesh: Allow DFS channels to be selected if dfs is enabled
 
 Note: DFS is assumed to be usable if a country code has been set
 
@@ -12,9 +11,11 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  wpa_supplicant/wpa_supplicant.c | 25 +++++++++++++++++++------
  1 file changed, 19 insertions(+), 6 deletions(-)
 
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index 835b33575..b809d9650 100644
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2349,6 +2349,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2395,6 +2395,8 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
  	int chwidth, seg0, seg1;
  	u32 vht_caps = 0;
  	int is_24ghz;
@@ -23,7 +24,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	freq->freq = ssid->frequency;
  
-@@ -2436,8 +2438,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2484,8 +2486,11 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
  		return;
  
  	/* Check primary channel flags */
@@ -36,7 +37,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	freq->channel = pri_chan->chan;
  
-@@ -2470,8 +2475,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2518,8 +2523,11 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
  		return;
  
  	/* Check secondary channel flags */
@@ -49,7 +50,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	if (ht40 == -1) {
  		if (!(pri_chan->flag & HOSTAPD_CHAN_HT40MINUS))
-@@ -2564,8 +2572,11 @@ skip_ht40:
+@@ -2612,8 +2620,11 @@ skip_ht40:
  			return;
  
  		/* Back to HT configuration if channel not usable */
@@ -62,7 +63,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	}
  
  	chwidth = CHANWIDTH_80MHZ;
-@@ -2585,10 +2596,12 @@ skip_ht40:
+@@ -2633,10 +2644,12 @@ skip_ht40:
  				if (!chan)
  					continue;
  
@@ -78,3 +79,6 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  				/* Found a suitable second segment for 80+80 */
  				chwidth = CHANWIDTH_80P80MHZ;
+-- 
+2.25.1
+

@@ -1,3 +1,14 @@
+From 422862608263c379fa96df2afd61803b2b16d1a9 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:24 +0000
+Subject: [PATCH] 432-missing-typedef.patch
+
+---
+ src/drivers/linux_wext.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/drivers/linux_wext.h b/src/drivers/linux_wext.h
+index e7c7001e1..1cb890974 100644
 --- a/src/drivers/linux_wext.h
 +++ b/src/drivers/linux_wext.h
 @@ -26,6 +26,7 @@ typedef int32_t __s32;
@@ -8,3 +19,6 @@
  #ifndef __user
  #define __user
  #endif /* __user */
+-- 
+2.25.1
+

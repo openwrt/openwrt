@@ -1,6 +1,17 @@
+From 10e66db18baef39c3bce024d994fd0545fbf4823 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:23 +0000
+Subject: [PATCH] 310-rescan_immediately.patch
+
+---
+ wpa_supplicant/wpa_supplicant.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index d061bdc72..fdc8a1abc 100644
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -4949,7 +4949,7 @@ wpa_supplicant_alloc(struct wpa_supplica
+@@ -5152,7 +5152,7 @@ wpa_supplicant_alloc(struct wpa_supplicant *parent)
  	if (wpa_s == NULL)
  		return NULL;
  	wpa_s->scan_req = INITIAL_SCAN_REQ;
@@ -9,3 +20,6 @@
  	wpa_s->new_connection = 1;
  	wpa_s->parent = parent ? parent : wpa_s;
  	wpa_s->p2pdev = wpa_s->parent;
+-- 
+2.25.1
+

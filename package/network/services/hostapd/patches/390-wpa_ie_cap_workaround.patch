@@ -1,6 +1,17 @@
+From 5859bb0e4d81603cca287f5a4a4c8932b53d1545 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:24 +0000
+Subject: [PATCH] 390-wpa_ie_cap_workaround.patch
+
+---
+ src/common/wpa_common.c | 40 ++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 38 insertions(+), 2 deletions(-)
+
+diff --git a/src/common/wpa_common.c b/src/common/wpa_common.c
+index 04461516f..c388dd27d 100644
 --- a/src/common/wpa_common.c
 +++ b/src/common/wpa_common.c
-@@ -2121,6 +2121,31 @@ u32 wpa_akm_to_suite(int akm)
+@@ -2444,6 +2444,31 @@ u32 wpa_akm_to_suite(int akm)
  }
  
  
@@ -32,7 +43,7 @@
  int wpa_compare_rsn_ie(int ft_initial_assoc,
  		       const u8 *ie1, size_t ie1len,
  		       const u8 *ie2, size_t ie2len)
-@@ -2128,8 +2153,19 @@ int wpa_compare_rsn_ie(int ft_initial_as
+@@ -2451,8 +2476,19 @@ int wpa_compare_rsn_ie(int ft_initial_assoc,
  	if (ie1 == NULL || ie2 == NULL)
  		return -1;
  
@@ -54,3 +65,6 @@
  
  #ifdef CONFIG_IEEE80211R
  	if (ft_initial_assoc) {
+-- 
+2.25.1
+

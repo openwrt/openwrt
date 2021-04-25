@@ -1,17 +1,19 @@
-From 4bb69d15477e0f2b00e166845341dc933de47c58 Mon Sep 17 00:00:00 2001
+From 5d97224811f82b42d72eeafc4c3dc4f9246b7c42 Mon Sep 17 00:00:00 2001
 From: Antonio Quartulli <ordex@autistici.org>
 Date: Sun, 3 Jun 2012 18:22:56 +0200
-Subject: [PATCHv2 601/602] wpa_supplicant: add new config params to be used
- with the ibss join command
+Subject: [PATCH] wpa_supplicant: add new config params to be used with the
+ ibss join command
 
 Signed-hostap: Antonio Quartulli <ordex@autistici.org>
 ---
- src/drivers/driver.h            |    6 +++
- wpa_supplicant/config.c         |   96 +++++++++++++++++++++++++++++++++++++++
- wpa_supplicant/config_ssid.h    |    6 +++
- wpa_supplicant/wpa_supplicant.c |   23 +++++++---
- 4 files changed, 124 insertions(+), 7 deletions(-)
+ src/drivers/driver.h            |  4 ++
+ wpa_supplicant/config.c         | 94 +++++++++++++++++++++++++++++++++
+ wpa_supplicant/config_ssid.h    |  5 ++
+ wpa_supplicant/wpa_supplicant.c |  6 +++
+ 4 files changed, 109 insertions(+)
 
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index ac2faf8ea..dd87cab2b 100644
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
 @@ -19,6 +19,7 @@
@@ -22,7 +24,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "common/defs.h"
  #include "common/ieee802_11_defs.h"
  #include "common/wpa_common.h"
-@@ -850,6 +851,9 @@ struct wpa_driver_associate_params {
+@@ -851,6 +852,9 @@ struct wpa_driver_associate_params {
  	 * responsible for selecting with which BSS to associate. */
  	const u8 *bssid;
  
@@ -32,6 +34,8 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	/**
  	 * bssid_hint - BSSID of a proposed AP
  	 *
+diff --git a/wpa_supplicant/config.c b/wpa_supplicant/config.c
+index 091f49354..2bbf4080b 100644
 --- a/wpa_supplicant/config.c
 +++ b/wpa_supplicant/config.c
 @@ -18,6 +18,7 @@
@@ -42,7 +46,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "config.h"
  
  
-@@ -2269,6 +2270,97 @@ static char * wpa_config_write_peerkey(c
+@@ -2321,6 +2322,97 @@ static char * wpa_config_write_peerkey(const struct parse_data *data,
  #endif /* NO_CONFIG_WRITE */
  
  
@@ -140,7 +144,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  /* Helper macros for network block parser */
  
  #ifdef OFFSET
-@@ -2552,6 +2644,8 @@ static const struct parse_data ssid_fiel
+@@ -2606,6 +2698,8 @@ static const struct parse_data ssid_fields[] = {
  	{ INT(ap_max_inactivity) },
  	{ INT(dtim_period) },
  	{ INT(beacon_int) },
@@ -149,6 +153,8 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #ifdef CONFIG_MACSEC
  	{ INT_RANGE(macsec_policy, 0, 1) },
  	{ INT_RANGE(macsec_integ_only, 0, 1) },
+diff --git a/wpa_supplicant/config_ssid.h b/wpa_supplicant/config_ssid.h
+index 50fed2ed4..7f78712bd 100644
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
 @@ -10,8 +10,10 @@
@@ -172,9 +178,11 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #ifdef CONFIG_MACSEC
  	/**
  	 * macsec_policy - Determines the policy for MACsec secure session
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index 9d9eb406d..2e8918988 100644
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -3638,6 +3638,12 @@ static void wpas_start_assoc_cb(struct w
+@@ -3726,6 +3726,12 @@ static void wpas_start_assoc_cb(struct wpa_radio_work *work, int deinit)
  			params.beacon_int = ssid->beacon_int;
  		else
  			params.beacon_int = wpa_s->conf->beacon_int;
@@ -187,3 +195,6 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	}
  
  	if (bss && ssid->enable_edmg)
+-- 
+2.25.1
+

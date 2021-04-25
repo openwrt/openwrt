@@ -1,3 +1,14 @@
+From 17d9cc124622b710227c57f1bd99289e1e3ab039 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:24 +0000
+Subject: [PATCH] 431-wpa_cli_ifdef.patch
+
+---
+ wpa_supplicant/wpa_cli.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/wpa_supplicant/wpa_cli.c b/wpa_supplicant/wpa_cli.c
+index fea7b85e0..3755be68e 100644
 --- a/wpa_supplicant/wpa_cli.c
 +++ b/wpa_supplicant/wpa_cli.c
 @@ -26,6 +26,15 @@
@@ -16,3 +27,6 @@
  
  static const char *const wpa_cli_version =
  "wpa_cli v" VERSION_STR "\n"
+-- 
+2.25.1
+

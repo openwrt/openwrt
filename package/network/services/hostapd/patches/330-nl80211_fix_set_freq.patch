@@ -1,6 +1,17 @@
+From 04e406197674fa015aa351b4670885b93331bcd7 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:23 +0000
+Subject: [PATCH] 330-nl80211_fix_set_freq.patch
+
+---
+ src/drivers/driver_nl80211.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 42f14db50..60f793206 100644
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4646,7 +4646,7 @@ static int nl80211_set_channel(struct i8
+@@ -4973,7 +4973,7 @@ static int nl80211_set_channel(struct i802_bss *bss,
  		   freq->freq, freq->ht_enabled, freq->vht_enabled, freq->he_enabled,
  		   freq->bandwidth, freq->center_freq1, freq->center_freq2);
  
@@ -9,3 +20,6 @@
  			      NL80211_CMD_SET_WIPHY);
  	if (!msg || nl80211_put_freq_params(msg, freq) < 0) {
  		nlmsg_free(msg);
+-- 
+2.25.1
+

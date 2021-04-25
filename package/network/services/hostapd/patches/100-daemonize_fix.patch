@@ -1,3 +1,14 @@
+From fcb16376f288d89d2eff55567b51e6e9a6f8c24e Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:22 +0000
+Subject: [PATCH] 100-daemonize_fix.patch
+
+---
+ src/utils/os_unix.c | 68 +++++++++++++++++++--------------------------
+ 1 file changed, 28 insertions(+), 40 deletions(-)
+
+diff --git a/src/utils/os_unix.c b/src/utils/os_unix.c
+index 1de37204d..2519a3a15 100644
 --- a/src/utils/os_unix.c
 +++ b/src/utils/os_unix.c
 @@ -10,6 +10,7 @@
@@ -8,7 +19,7 @@
  
  #ifdef ANDROID
  #include <sys/capability.h>
-@@ -188,59 +189,46 @@ int os_gmtime(os_time_t t, struct os_tm
+@@ -188,59 +189,46 @@ int os_gmtime(os_time_t t, struct os_tm *tm)
  	return 0;
  }
  
@@ -66,8 +77,8 @@
 -#else /* __APPLE__ */
 -#define os_daemon daemon
 -#endif /* __APPLE__ */
- 
 -
+ 
 -int os_daemonize(const char *pid_file)
 -{
 -#if defined(__uClinux__) || defined(__sun__)
@@ -95,3 +106,6 @@
  
  	return -0;
  #endif /* defined(__uClinux__) || defined(__sun__) */
+-- 
+2.25.1
+

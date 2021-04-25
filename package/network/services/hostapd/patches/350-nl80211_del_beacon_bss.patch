@@ -1,6 +1,17 @@
+From 7d9c8deec281b0fc782e363ddcb6dede11b3b74c Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:23 +0000
+Subject: [PATCH] 350-nl80211_del_beacon_bss.patch
+
+---
+ src/drivers/driver_nl80211.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 60f793206..80b8b99cb 100644
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -2788,10 +2788,15 @@ static int wpa_driver_nl80211_del_beacon
+@@ -2918,10 +2918,15 @@ static int wpa_driver_nl80211_del_beacon(struct i802_bss *bss)
  	struct nl_msg *msg;
  	struct wpa_driver_nl80211_data *drv = bss->drv;
  
@@ -15,10 +26,10 @@
  	nl80211_put_wiphy_data_ap(bss);
 -	msg = nl80211_drv_msg(drv, 0, NL80211_CMD_DEL_BEACON);
 +	msg = nl80211_bss_msg(bss, 0, NL80211_CMD_DEL_BEACON);
- 	return send_and_recv_msgs(drv, msg, NULL, NULL);
+ 	return send_and_recv_msgs(drv, msg, NULL, NULL, NULL, NULL);
  }
  
-@@ -5261,7 +5266,7 @@ static void nl80211_teardown_ap(struct i
+@@ -5602,7 +5607,7 @@ static void nl80211_teardown_ap(struct i802_bss *bss)
  		nl80211_mgmt_unsubscribe(bss, "AP teardown");
  
  	nl80211_put_wiphy_data_ap(bss);
@@ -27,7 +38,7 @@
  }
  
  
-@@ -7679,8 +7684,6 @@ static int wpa_driver_nl80211_if_remove(
+@@ -8051,8 +8056,6 @@ static int wpa_driver_nl80211_if_remove(struct i802_bss *bss,
  	} else {
  		wpa_printf(MSG_DEBUG, "nl80211: First BSS - reassign context");
  		nl80211_teardown_ap(bss);
@@ -36,7 +47,7 @@
  		nl80211_destroy_bss(bss);
  		if (!bss->added_if)
  			i802_set_iface_flags(bss, 0);
-@@ -8074,7 +8077,6 @@ static int wpa_driver_nl80211_deinit_ap(
+@@ -8449,7 +8452,6 @@ static int wpa_driver_nl80211_deinit_ap(void *priv)
  	if (!is_ap_interface(drv->nlmode))
  		return -1;
  	wpa_driver_nl80211_del_beacon(bss);
@@ -44,7 +55,7 @@
  
  	/*
  	 * If the P2P GO interface was dynamically added, then it is
-@@ -8094,7 +8096,6 @@ static int wpa_driver_nl80211_stop_ap(vo
+@@ -8469,7 +8471,6 @@ static int wpa_driver_nl80211_stop_ap(void *priv)
  	if (!is_ap_interface(drv->nlmode))
  		return -1;
  	wpa_driver_nl80211_del_beacon(bss);
@@ -52,3 +63,6 @@
  	return 0;
  }
  
+-- 
+2.25.1
+

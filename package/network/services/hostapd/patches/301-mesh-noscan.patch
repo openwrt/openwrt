@@ -1,6 +1,21 @@
+From cb06d386c35094591970406e457dcac3a778620d Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sat, 1 May 2021 16:27:23 +0000
+Subject: [PATCH] 301-mesh-noscan.patch
+
+---
+ wpa_supplicant/config.c         | 1 +
+ wpa_supplicant/config_file.c    | 1 +
+ wpa_supplicant/config_ssid.h    | 2 ++
+ wpa_supplicant/mesh.c           | 2 ++
+ wpa_supplicant/wpa_supplicant.c | 6 +++---
+ 5 files changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/wpa_supplicant/config.c b/wpa_supplicant/config.c
+index bec114a98..091f49354 100644
 --- a/wpa_supplicant/config.c
 +++ b/wpa_supplicant/config.c
-@@ -2478,6 +2478,7 @@ static const struct parse_data ssid_fiel
+@@ -2532,6 +2532,7 @@ static const struct parse_data ssid_fields[] = {
  #else /* CONFIG_MESH */
  	{ INT_RANGE(mode, 0, 4) },
  #endif /* CONFIG_MESH */
@@ -8,9 +23,11 @@
  	{ INT_RANGE(proactive_key_caching, 0, 1) },
  	{ INT_RANGE(disabled, 0, 2) },
  	{ STR(id_str) },
+diff --git a/wpa_supplicant/config_file.c b/wpa_supplicant/config_file.c
+index 48164fcfb..a863abf8f 100644
 --- a/wpa_supplicant/config_file.c
 +++ b/wpa_supplicant/config_file.c
-@@ -866,6 +866,7 @@ static void wpa_config_write_network(FIL
+@@ -768,6 +768,7 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
  #endif /* IEEE8021X_EAPOL */
  	INT(mode);
  	INT(no_auto_peer);
@@ -18,9 +35,24 @@
  	INT(mesh_fwding);
  	INT(frequency);
  	INT(enable_edmg);
+diff --git a/wpa_supplicant/config_ssid.h b/wpa_supplicant/config_ssid.h
+index e5dd3e657..50fed2ed4 100644
+--- a/wpa_supplicant/config_ssid.h
++++ b/wpa_supplicant/config_ssid.h
+@@ -971,6 +971,8 @@ struct wpa_ssid {
+ 	 */
+ 	int no_auto_peer;
+ 
++	int noscan;
++
+ 	/**
+ 	 * mesh_rssi_threshold - Set mesh parameter mesh_rssi_threshold (dBm)
+ 	 *
+diff --git a/wpa_supplicant/mesh.c b/wpa_supplicant/mesh.c
+index 35f469f71..d9c3c509f 100644
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -467,6 +467,8 @@ static int wpa_supplicant_mesh_init(stru
+@@ -474,6 +474,8 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
  			   frequency);
  		goto out_free;
  	}
@@ -29,9 +61,11 @@
  
  	if (ssid->mesh_basic_rates == NULL) {
  		/*
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index 5ada518a2..d061bdc72 100644
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2334,12 +2334,12 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2384,12 +2384,12 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
  	int ieee80211_mode = wpas_mode_to_ieee80211_mode(ssid->mode);
  	enum hostapd_hw_mode hw_mode;
  	struct hostapd_hw_modes *mode = NULL;
@@ -46,7 +80,7 @@
  	unsigned int j, k;
  	struct hostapd_freq_params vht_freq;
  	int chwidth, seg0, seg1;
-@@ -2421,7 +2421,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -2473,7 +2473,7 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
  #endif /* CONFIG_HE_OVERRIDES */
  
  	/* Setup higher BW only for 5 GHz */
@@ -55,14 +89,6 @@
  		return;
  
  	for (chan_idx = 0; chan_idx < mode->num_channels; chan_idx++) {
---- a/wpa_supplicant/config_ssid.h
-+++ b/wpa_supplicant/config_ssid.h
-@@ -971,6 +971,8 @@ struct wpa_ssid {
- 	 */
- 	int no_auto_peer;
- 
-+	int noscan;
-+
- 	/**
- 	 * mesh_rssi_threshold - Set mesh parameter mesh_rssi_threshold (dBm)
- 	 *
+-- 
+2.25.1
+

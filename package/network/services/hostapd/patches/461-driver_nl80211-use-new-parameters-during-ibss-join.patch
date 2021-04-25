@@ -1,16 +1,18 @@
-From ffc4445958a3ed4064f2e1bf73fa478a61c5cf7b Mon Sep 17 00:00:00 2001
+From 965343e7e730f537277b10c554202c887ffed048 Mon Sep 17 00:00:00 2001
 From: Antonio Quartulli <ordex@autistici.org>
 Date: Sun, 3 Jun 2012 18:42:25 +0200
-Subject: [PATCHv2 602/602] driver_nl80211: use new parameters during ibss join
+Subject: [PATCH] driver_nl80211: use new parameters during ibss join
 
 Signed-hostap: Antonio Quartulli <ordex@autistici.org>
 ---
- src/drivers/driver_nl80211.c |   33 ++++++++++++++++++++++++++++++++-
+ src/drivers/driver_nl80211.c | 33 ++++++++++++++++++++++++++++++++-
  1 file changed, 32 insertions(+), 1 deletion(-)
 
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 80b8b99cb..b0309484f 100644
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -5584,7 +5584,7 @@ static int wpa_driver_nl80211_ibss(struc
+@@ -5951,7 +5951,7 @@ static int wpa_driver_nl80211_ibss(struct wpa_driver_nl80211_data *drv,
  				   struct wpa_driver_associate_params *params)
  {
  	struct nl_msg *msg;
@@ -19,7 +21,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	int count = 0;
  
  	wpa_printf(MSG_DEBUG, "nl80211: Join IBSS (ifindex=%d)", drv->ifindex);
-@@ -5611,6 +5611,37 @@ retry:
+@@ -5978,6 +5978,37 @@ retry:
  	    nl80211_put_beacon_int(msg, params->beacon_int))
  		goto fail;
  
@@ -57,3 +59,6 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	ret = nl80211_set_conn_keys(params, msg);
  	if (ret)
  		goto fail;
+-- 
+2.25.1
+
