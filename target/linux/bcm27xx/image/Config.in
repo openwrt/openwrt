@@ -1,0 +1,6 @@
+config BCM27XX_CONFIG_EXTRA
+	string "Extra contents for /boot/config.txt"
+	depends on TARGET_bcm27xx
+	help
+	  Added to the end of /boot/config.txt. C-style \X escapes are interpreted,
+	  so lines should be seperated by \n.

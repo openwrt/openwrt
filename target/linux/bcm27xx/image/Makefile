@@ -20,7 +20,8 @@ define Build/boot-common
 	mcopy -i $@.boot $(KDIR)/COPYING.linux ::
 	mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::
 	mcopy -i $@.boot cmdline.txt ::
-	mcopy -i $@.boot config.txt ::
+	(cat config.txt; printf "%b\n" "$(CONFIG_BCM27XX_CONFIG_EXTRA)") > $@.config.txt
+	mcopy -i $@.boot $@.config.txt ::/config.txt
 	mcopy -i $@.boot distroconfig.txt ::
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(KERNEL_IMG)
 	$(foreach dts,$(shell echo $(DEVICE_DTS)),mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::;)
