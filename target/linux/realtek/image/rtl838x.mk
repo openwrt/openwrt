@@ -148,6 +148,16 @@ define Device/panasonic_m16eg-pn28160k
 endef
 TARGET_DEVICES += panasonic_m16eg-pn28160k
 
+define Device/panasonic_m24eg-pn28240k
+  SOC := rtl8382
+  IMAGE_SIZE := 16384k
+  DEVICE_VENDOR := Panasonic
+  DEVICE_MODEL := Switch-M24eG
+  DEVICE_VARIANT := PN28240K
+  DEVICE_PACKAGES := kmod-i2c-mux-pca954x
+endef
+TARGET_DEVICES += panasonic_m24eg-pn28240k
+
 define Device/panasonic_m8eg-pn28080k
   SOC := rtl8380
   IMAGE_SIZE := 16384k
