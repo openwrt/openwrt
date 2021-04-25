@@ -337,6 +337,15 @@ define Device/ubnt_powerbridge-m
 endef
 TARGET_DEVICES += ubnt_powerbridge-m
 
+define Device/ubnt_rocket-5ac-lite
+  $(Device/ubnt-xc)
+  SOC := qca9558
+  DEVICE_MODEL := Rocket 5AC
+  DEVICE_VARIANT := Lite
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += ubnt_rocket-5ac-lite
+
 define Device/ubnt_rocket-m
   $(Device/ubnt-xm)
   SOC := ar7241
