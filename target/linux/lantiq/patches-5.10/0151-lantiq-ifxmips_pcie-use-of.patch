@@ -16,7 +16,7 @@
  #include "ifxmips_pcie.h"
  #include "ifxmips_pcie_reg.h"
  
-@@ -40,6 +47,10 @@
+@@ -40,6 +47,11 @@
  static DEFINE_SPINLOCK(ifx_pcie_lock);
  
  u32 g_pcie_debug_flag = PCIE_MSG_ANY & (~PCIE_MSG_CFG);
@@ -24,6 +24,7 @@
 +static struct phy *ltq_pcie_phy;
 +static struct reset_control *ltq_pcie_reset;
 +static struct regmap *ltq_rcu_regmap;
++static bool switch_pcie_endianess;
  
  static ifx_pcie_irq_t pcie_irqs[IFX_PCIE_CORE_NR] = {
      {
@@ -50,7 +51,7 @@
  
  static inline int pcie_ltssm_enable(int pcie_port)
  {
-@@ -988,10 +1015,24 @@ int  ifx_pcie_bios_plat_dev_init(struct
+@@ -988,10 +1015,26 @@ int  ifx_pcie_bios_plat_dev_init(struct
  static int
  pcie_rc_initialize(int pcie_port)
  {
@@ -65,8 +66,10 @@
 +#ifdef CONFIG_IFX_PCIE_HW_SWAP
 +	regmap_update_bits(ltq_rcu_regmap, 0x4c, IFX_RCU_AHB_BE_PCIE_S,
 +			   IFX_RCU_AHB_BE_PCIE_S);
-+	regmap_update_bits(ltq_rcu_regmap, 0x4c, IFX_RCU_AHB_BE_XBAR_S,
-+			   IFX_RCU_AHB_BE_XBAR_S);
++       if (switch_pcie_endianess) {
++	        regmap_update_bits(ltq_rcu_regmap, 0x4c, IFX_RCU_AHB_BE_XBAR_S,
++			           IFX_RCU_AHB_BE_XBAR_S);
++       }
 +#else
 +	regmap_update_bits(ltq_rcu_regmap, 0x4c, IFX_RCU_AHB_BE_PCIE_S,
 +			   0x0);
@@ -125,7 +128,7 @@
  	}
  	if (i >= IFX_PCIE_PHY_LOOP_CNT) {
  		printk(KERN_ERR "%s link up failed!!!!!\n", __func__);
-@@ -1045,17 +1083,67 @@ pcie_rc_initialize(int pcie_port)
+@@ -1045,17 +1083,73 @@ pcie_rc_initialize(int pcie_port)
  	return 0;
  }
  
@@ -165,11 +168,17 @@
  
      startup_port = IFX_PCIE_PORT0;
 -    
-+
 +    ltq_pcie_phy = devm_phy_get(&pdev->dev, "pcie");
 +    if (IS_ERR(ltq_pcie_phy)) {
 +        dev_err(&pdev->dev, "failed to get the PCIe PHY\n");
 +        return PTR_ERR(ltq_pcie_phy);
++    }
++
++    if(of_property_read_bool(node, "lantiq,switch-pcie-endianess")) {
++        switch_pcie_endianess = true;
++        dev_info(&pdev->dev, "switch pcie endianess requested\n");
++    } else {
++        switch_pcie_endianess = false;
 +    }
 +
 +    ltq_pcie_reset = devm_reset_control_get_shared(&pdev->dev, NULL);

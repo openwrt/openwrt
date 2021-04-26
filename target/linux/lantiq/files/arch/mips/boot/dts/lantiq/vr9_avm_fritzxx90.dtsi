@@ -243,8 +243,14 @@
 	};
 };
 
+
+&pci0 {
+	status = "okay";
+};
+
 &pcie0 {
 	status = "okay";
 
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_LOW>;
+	lantiq,switch-pcie-endianess;
 };
