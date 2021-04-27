@@ -402,8 +402,8 @@
 +reset_factory=mtd erase nor0 0xc0000 0x10000 && reset
 +nor_read_production=mtd read nor0 $loadaddr 0x1000000 0x1000 && imsz $loadaddr image_size && mtd read nor0 $loadaddr 0x1000000 $image_size
 +nor_read_recovery=mtd read nor0 $loadaddr 0x120000 0x1000 && imsz $loadaddr image_size && mtd read nor0 $loadaddr 0x120000 $image_size
-+nor_write_production=mtd write nor0 $loadaddr 0x1000000 $filesize
-+nor_write_recovery=mtd write nor0 $loadaddr 0x120000 $filesize
++nor_write_production=mtd erase nor0 0x1000000 $filesize && mtd write nor0 $loadaddr 0x1000000 $filesize
++nor_write_recovery=mtd erase nor0 0x120000 0xee0000 && mtd write nor0 $loadaddr 0x120000 $filesize
 +_init_env=setenv _init_env ; saveenv
 +_firstboot=setenv _firstboot ; run _switch_to_menu ; run ethaddr_factory ; run _init_env ; run boot_first
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
