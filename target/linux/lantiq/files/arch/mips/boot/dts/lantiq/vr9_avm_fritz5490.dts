@@ -19,56 +19,11 @@
 
 &gswip_mdio {
 	phy0: ethernet-phy@0 {
-		reg = <0x00>;
-		reset-gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
-		qca,ar8327-initvals = <
-			0x0004 0x06c00000
-			0x0010 0x10000080
-			0x0008 0x01000000
-			0x00e4 0x00040000
-			0x0020 0x00500000
-			0x0024 0x00500000
-			0x0614 0x80000001
-			0x0100 0x00001550
-			0x0098 0x00000000
-			0x0808 0x00000040
-			0x0048 0x00028100
-			0x007c 0x0000004e
-			0x0620 0x02800400
-			0x0624 0x3f3f3f3f
-			0x009c 0x00000000
-			0x0970 0x2a666666
-			0x0974 0x000000c6
-			0x0660 0x0014023e
-			0x0420 0x00000001
-			0x0424 0x00002240
-			0x00a4 0x00000000
-			0x0980 0x2a008888
-			0x0984 0x000000c6
-			0x0678 0x0014023b
-			0x0430 0x00000002
-			0x0434 0x00000080
-			0x0020 0x00100000
-			0x0610 0x001bfde0
-			0x00a8 0x00000000
-			0x0988 0x2a008888
-			0x098c 0x000000c6
-			0x0684 0x00140237
-			0x0438 0x00000003
-			0x043c 0x00000080
-			0x0020 0x00100000
-			0x0610 0x001bf7e0
-			0x060c 0x80000001
-			0x0030 0x00000003
-		>;
+		status = "disabled";
 	};
 
 	phy1: ethernet-phy@1 {
-		reg = <0x01>;
-	};
-
-	phy2: ethernet-phy@2 {
-		reg = <0x02>;
+		status = "disabled";
 	};
 
 	phy5: ethernet-phy@5 {
@@ -85,9 +40,11 @@
 	};
 
 	phy11: ethernet-phy@11 {
+		status = "disabled";
 	};
 
 	phy13: ethernet-phy@13 {
+		status = "disabled";
 	};
 };
 
@@ -114,14 +71,14 @@
 		reg = <2>;
 		label = "lan2";
 		phy-mode = "internal";
-		phy-handle = <&phy9>;
+		phy-handle = <&phy5>;
 	};
 
 	port@4 {
 		reg = <4>;
 		label = "lan1";
 		phy-mode = "internal";
-		phy-handle = <&phy5>;
+		phy-handle = <&phy9>;
 	};
 };
 
