@@ -734,6 +734,16 @@ define Device/wavlink_wl-wn577a2
 endef
 TARGET_DEVICES += wavlink_wl-wn577a2
 
+define Device/wavlink_wl-wn578a2
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN578A2
+  DEVICE_ALT0_VENDOR := SilverCrest
+  DEVICE_ALT0_MODEL := SWV 733 A2
+  DEVICE_PACKAGES := kmod-mt76x0e
+endef
+TARGET_DEVICES += wavlink_wl-wn578a2
+
 define Device/widora_neo-16m
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Widora
