@@ -266,15 +266,19 @@
 
 	ethphy0: ethernet-phy@0 { /* Marvell 88E1518 */
 		reg = <0>;
-		marvell,reg-init = <0x3 0x10 0x1 0x1991>, /* LED function */
-				   <0x3 0x11 0x1 0x4401>, /* LED polarity */
-				   <0x3 0x12 0x1 0x4905>; /* LED timer */
+		marvell,reg-init = <0x2 0x10 0xffff 0x0006>, /* disable CLK125 */
+				   <0x3 0x10 0x0000 0x1991>, /* LED function */
+				   <0x3 0x11 0x0000 0x4401>, /* LED polarity */
+				   <0x3 0x12 0x0000 0x4905>; /* LED timer */
 		#thermal-sensor-cells = <0>;
 	};
 };
 
 &pciec {
 	status = "okay";
+	pinctrl-0 = <&pmx_pcie>;
+	pinctrl-names = "default";
+
 	/* Connected to uPD720202 USB 3.0 Host */
 	pcie@1,0 {
 		status = "okay";
@@ -435,5 +439,10 @@
 	pmx_leds2: pmx-leds {
 		marvell,pins = "mpp55", "mpp57", "mpp62";
 		marvell,function = "gpio";
+	};
+
+	pmx_pcie: pmx-pcie {
+		marvell,pins = "mpp56", "mpp60";
+		marvell,function = "pcie";
 	};
 };
