@@ -897,28 +897,30 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	switch (priv->family_id) {
 	case RTL8380_FAMILY_ID:
 		rtl838x_hw_en_rxtx(priv);
-		/* Trap IGMP traffic to CPU-Port */
+		/* Trap IGMP/MLD traffic to CPU-Port */
 		sw_w32(0x3, RTL838X_SPCL_TRAP_IGMP_CTRL);
 		/* Flush learned FDB entries on link down of a port */
 		sw_w32_mask(0, BIT(7), RTL838X_L2_CTRL_0);
 		break;
+
 	case RTL8390_FAMILY_ID:
 		rtl839x_hw_en_rxtx(priv);
+		// Trap MLD and IGMP messages to CPU_PORT
 		sw_w32(0x3, RTL839X_SPCL_TRAP_IGMP_CTRL);
 		/* Flush learned FDB entries on link down of a port */
 		sw_w32_mask(0, BIT(7), RTL839X_L2_CTRL_0);
 		break;
+
 	case RTL9300_FAMILY_ID:
 		rtl93xx_hw_en_rxtx(priv);
 		/* Flush learned FDB entries on link down of a port */
 		sw_w32_mask(0, BIT(7), RTL930X_L2_CTRL);
-		sw_w32_mask(BIT(28), 0, RTL930X_L2_PORT_SABLK_CTRL);
-		sw_w32_mask(BIT(28), 0, RTL930X_L2_PORT_DABLK_CTRL);
+		// Trap MLD and IGMP messages to CPU_PORT
+		sw_w32((0x2 << 3) | 0x2,  RTL930X_VLAN_APP_PKT_CTRL);
 		break;
 
 	case RTL9310_FAMILY_ID:
 		rtl93xx_hw_en_rxtx(priv);
-//		TODO: Add trapping of IGMP frames to CPU-port
 		break;
 	}
 
