@@ -1,0 +1,27 @@
+From 55e2fff639d4297ffeb478113aef6d3e26c2c4c2 Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Wed, 17 Feb 2021 02:44:55 +0100
+Subject: [PATCH 1/2] spi: ath79: add SPI_MASTER_GPIO_SS flag
+
+Add the SPI_MASTER_GPIO_SS flag for the spi-ath79 driver. Otherwise,
+the custom chipselect function is never called. This breaks hardware,
+where the three dedicated chipselect lines are used instead of generic
+GPIO pins.
+
+Fixes commit 4a07b8bcd503 ("spi: bitbang: Make chipselect callback optional")
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+---
+ drivers/spi/spi-ath79.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -186,6 +186,7 @@ static int ath79_spi_probe(struct platfo
+ 
+ 	master->use_gpio_descriptors = true;
+ 	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(1, 32);
++	master->flags = SPI_MASTER_GPIO_SS;
+ 
+ 	sp->bitbang.master = master;
+ 	sp->bitbang.chipselect = ath79_spi_chipselect;
