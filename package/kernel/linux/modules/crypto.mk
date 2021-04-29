@@ -346,7 +346,7 @@ $(eval $(call KernelPackage,crypto-hw-ccp))
 
 define KernelPackage/crypto-hw-geode
   TITLE:=AMD Geode hardware crypto module
-  DEPENDS:=+kmod-crypto-manager
+  DEPENDS:=@TARGET_x86_geode +kmod-crypto-manager
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_GEODE
