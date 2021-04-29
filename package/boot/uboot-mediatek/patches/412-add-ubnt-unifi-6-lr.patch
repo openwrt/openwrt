@@ -10,12 +10,12 @@
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_ENV_IS_IN_MTD=y
 +CONFIG_ENV_MTD_NAME="nor0"
-+CONFIG_ENV_SIZE_REDUND=0x0
-+CONFIG_ENV_SIZE=0x1000
++CONFIG_ENV_SIZE_REDUND=0x4000
++CONFIG_ENV_SIZE=0x4000
 +CONFIG_ENV_OFFSET=0xc0000
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_BOARD_LATE_INIT=y
-+CONFIG_RESET_BUTTON_SETTLE_DELAY=200
++CONFIG_RESET_BUTTON_SETTLE_DELAY=400
 +CONFIG_BOOTP_SEND_HOSTNAME=y
 +CONFIG_DEFAULT_ENV_FILE="ubnt_unifi-6-lr_env"
 +CONFIG_DEBUG_UART_BASE=0x11002000
@@ -356,7 +356,7 @@
  	mt8512-bm1-emmc.dtb \
 --- /dev/null
 +++ b/ubnt_unifi-6-lr_env
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,52 @@
 +mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)
 +ethaddr_factory=mtd read nor0 $loadaddr 0x110000 0x10000 && env readmem -b ethaddr $loadaddr 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
@@ -402,8 +402,9 @@
 +reset_factory=mtd erase nor0 0xc0000 0x10000 && reset
 +nor_read_production=mtd read nor0 $loadaddr 0x1000000 0x1000 && imsz $loadaddr image_size && mtd read nor0 $loadaddr 0x1000000 $image_size
 +nor_read_recovery=mtd read nor0 $loadaddr 0x120000 0x1000 && imsz $loadaddr image_size && mtd read nor0 $loadaddr 0x120000 $image_size
-+nor_write_production=mtd erase nor0 0x1000000 $filesize && mtd write nor0 $loadaddr 0x1000000 $filesize
-+nor_write_recovery=mtd erase nor0 0x120000 0xee0000 && mtd write nor0 $loadaddr 0x120000 $filesize
++nor_pad_size=imsz $loadaddr image_size ; setexpr image_eb $image_size / 0x1000 ; setexpr tmp1 image_size % 0x1000 ; test 0x$tmp1 -gt 0 && setexpr image_eb $image_eb + 1 ; setexpr image_eb $image_eb * 0x1000
++nor_write_production=run nor_pad_size ; test 0x$image_eb -le 0x3000000 && mtd erase nor0 0x1000000 0x$image_eb && mtd write nor0 $loadaddr 0x1000000 $filesize
++nor_write_recovery=run nor_pad_size ; test 0x$image_eb -le 0xee0000 && mtd erase nor0 0x120000 0x$image_eb && mtd write nor0 $loadaddr 0x120000 $filesize
 +_init_env=setenv _init_env ; saveenv
 +_firstboot=setenv _firstboot ; run _switch_to_menu ; run ethaddr_factory ; run _init_env ; run boot_first
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
