@@ -45,6 +45,14 @@ engenius,ens620ext)
 	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "eth0"
 	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "eth1"
 	;;
+mikrotik,sxtsq-5-ac)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "rssilow" "green:rssilow" "wlan0" "1" "100"
+	ucidef_set_led_rssi "rssimediumlow" "rssimediumlow" "green:rssimediumlow" "wlan0" "21" "100"
+	ucidef_set_led_rssi "rssimedium" "rssimedium" "green:rssimedium" "wlan0" "41" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "rssimediumhigh" "green:rssimediumhigh" "wlan0" "61" "100"
+	ucidef_set_led_rssi "rssihigh" "rssihigh" "green:rssihigh" "wlan0" "81" "100"
+	;;
 mobipromo,cm520-79f)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "blue:lan1" "switch0" "0x10"

@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -776,13 +776,18 @@ static inline int mtk_max_buf_size(int f
+@@ -777,13 +777,18 @@ static inline int mtk_max_buf_size(int f
  	return buf_size;
  }
  
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  /* the qdma core needs scratch memory to be setup */
-@@ -1254,8 +1259,7 @@ static int mtk_poll_rx(struct napi_struc
+@@ -1255,8 +1260,7 @@ static int mtk_poll_rx(struct napi_struc
  		rxd = &ring->dma[idx];
  		data = ring->data[idx];
  

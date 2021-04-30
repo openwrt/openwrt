@@ -4,6 +4,7 @@ include $(INCLUDE_DIR)/image.mk
 KERNEL_LOADADDR = 0x80060000
 
 DEVICE_VARS += LOADER_FLASH_OFFS LOADER_TYPE
+DEVICE_VARS += LOADER_FLASH_MAX LOADER_KERNEL_MAGIC
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 
@@ -30,7 +31,10 @@ define Build/loader-kernel
 endef
 
 define Build/loader-okli-compile
-	$(call Build/loader-common,FLASH_OFFS=$(LOADER_FLASH_OFFS) FLASH_MAX=0)
+	$(call Build/loader-common, \
+		FLASH_OFFS=$(LOADER_FLASH_OFFS) \
+		FLASH_MAX=$(LOADER_FLASH_MAX) \
+		KERNEL_MAGIC=$(LOADER_KERNEL_MAGIC) )
 endef
 
 # Arguments: <output name> <kernel offset>

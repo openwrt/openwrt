@@ -78,7 +78,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SND_RALINK_SOC_I2S) += snd-soc-ralink-i2s.o
 --- /dev/null
 +++ b/sound/soc/ralink/ralink-i2s.c
-@@ -0,0 +1,965 @@
+@@ -0,0 +1,966 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
@@ -881,6 +881,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		.data = (void *)&mt7621_i2s_data },
 +	{ .compatible = "mediatek,mt7628-i2s",
 +		.data = (void *)&mt7628_i2s_data },
++	{},
 +};
 +MODULE_DEVICE_TABLE(of, ralink_i2s_match_table);
 +

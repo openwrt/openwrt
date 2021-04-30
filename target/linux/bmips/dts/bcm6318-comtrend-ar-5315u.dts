@@ -8,9 +8,13 @@
 
 	aliases {
 		led-boot = &led_power_green;
-		led-failsafe = &led_power_green;
+		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
+		led-usb = &led_usb_green;
 	};
 
 	keys {
@@ -30,6 +34,28 @@
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 		};
+	};
+
+	bcm43217-sprom {
+		compatible = "brcm,bcm43217-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		mtd-mac-address = <&cfe 0x6a0>;
+		mtd-mac-address-increment = <1>;
+
+		brcm,sprom-fixups = <6 0x1c00>,
+				    <65 0x1255>,
+				    <97 0xfe55>,
+				    <98 0x171d>,
+				    <99 0xfa42>,
+				    <113 0xfeb7>,
+				    <114 0x18cd>,
+				    <115 0xfa4f>,
+				    <162 0x6444>,
+				    <170 0x6444>,
+				    <172 0x6444>;
 	};
 };
 
@@ -101,7 +127,7 @@
 		label = "green:power";
 	};
 
-	led@2 {
+	led_usb_green: led@2 {
 		reg = <2>;
 		active-low;
 		label = "green:usb";
@@ -135,7 +161,7 @@
 		/* EPHY3 Act */
 	};
 
-	led@8 {
+	led_internet_green: led@8 {
 		reg = <8>;
 		active-low;
 		label = "green:internet";
@@ -147,13 +173,13 @@
 		label = "red:internet";
 	};
 
-	led@10 {
+	led_dsl_green: led@10 {
 		reg = <10>;
 		active-low;
 		label = "green:dsl";
 	};
 
-	led@11 {
+	led_power_red: led@11 {
 		reg = <11>;
 		active-low;
 		label = "red:power";
@@ -161,6 +187,10 @@
 };
 
 &ohci {
+	status = "okay";
+};
+
+&pcie {
 	status = "okay";
 };
 

@@ -8,9 +8,12 @@
 
 	aliases {
 		led-boot = &led_power_green;
-		led-failsafe = &led_power_green;
+		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
 	};
 
 	keys {
@@ -19,10 +22,45 @@
 
 		reset {
 			label = "reset";
-			gpios = <&pinctrl 23 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 		};
+	};
+
+	bcm43225-sprom {
+		compatible = "brcm,bcm43225-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		mtd-mac-address = <&cfe 0x6a0>;
+		mtd-mac-address-increment = <1>;
+
+		brcm,sprom-fixups = <2 0x05bb>,
+				    <65 0x1204>,
+				    <78 0x0303>,
+				    <79 0x0202>,
+				    <80 0xff02>,
+				    <87 0x0315>,
+				    <88 0x0315>,
+				    <96 0x2048>,
+				    <97 0xff11>,
+				    <98 0x1567>,
+				    <99 0xfb24>,
+				    <100 0x3e3c>,
+				    <101 0x4038>,
+				    <102 0xfe7f>,
+				    <103 0x1279>,
+				    <112 0x2048>,
+				    <113 0xff03>,
+				    <114 0x154c>,
+				    <115 0xfb27>,
+				    <116 0x3e3c>,
+				    <117 0x4038>,
+				    <118 0xfe87>,
+				    <119 0x1233>,
+				    <203 0x2226>;
 	};
 };
 
@@ -85,12 +123,12 @@
 		label = "red:internet";
 	};
 
-	led@4 {
+	led_power_red: led@4 {
 		reg = <4>;
 		label = "red:power";
 	};
 
-	led@7 {
+	led_internet_green: led@7 {
 		reg = <7>;
 		label = "green:internet";
 	};
@@ -100,7 +138,7 @@
 		label = "green:power";
 	};
 
-	led@11 {
+	led_dsl_green: led@11 {
 		reg = <11>;
 		active-low;
 		label = "green:dsl";
@@ -108,6 +146,10 @@
 };
 
 &ohci {
+	status = "okay";
+};
+
+&pcie {
 	status = "okay";
 };
 

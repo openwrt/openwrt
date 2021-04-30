@@ -11,6 +11,9 @@ case "$(board_name)" in
 pc-engines-apu1|pc-engines-apu2|pc-engines-apu3)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
 	;;
+sophos-sg-105|sophos-xg-105)
+	ucidef_set_interfaces_lan_wan "eth0 eth2 eth3" "eth1"
+	;;
 traverse-technologies-geos)
 	ucidef_set_interface_lan "eth0 eth1"
 	ucidef_add_atm_bridge "0" "35" "llc" "bridged"

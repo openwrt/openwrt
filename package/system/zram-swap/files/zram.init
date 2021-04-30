@@ -150,6 +150,11 @@ zram_compact()
 
 start()
 {
+	[ -e /proc/swaps ] || {
+		logger -s -t zram_start -p daemon.crit "kernel doesn't support swap"
+		return 1
+	}
+
 	if [ $( grep -cs zram /proc/swaps ) -ne 0 ]; then
 		logger -s -t zram_start -p daemon.notice "[OK] zram swap is already mounted"
 		return 1

@@ -17,14 +17,10 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wan {
-			label = "blue:wan";
-			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
-		};
-
-		air {
-			label = "blue:air";
+		wlan {
+			label = "blue:wlan";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		usb {
@@ -55,10 +51,6 @@
 	status = "okay";
 };
 
-&gpio2 {
-	status = "okay";
-};
-
 &gpio3 {
 	status = "okay";
 };
@@ -69,7 +61,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <25000000>;
+		spi-max-frequency = <80000000>;
 		m25p,fast-read;
 
 		partitions {
@@ -106,7 +98,7 @@
 
 &state_default {
 	default {
-		groups = "i2c", "rgmii1", "ephy", "wled";
+		groups = "i2c", "rgmii1", "wled";
 		function = "gpio";
 	};
 };

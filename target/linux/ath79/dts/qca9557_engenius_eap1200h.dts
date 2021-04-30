@@ -85,16 +85,6 @@
 	pll-data = <0x82000000 0x80000101 0x80001313>;
 };
 
-&pcie0 {
-	status = "okay";
-
-	wifi@0,0,0 {
-		compatible = "qcom,ath10k";
-		reg = <0x0 0 0 0 0>;
-		qca,no-eeprom;
-	};
-};
-
 &wmac {
 	status = "okay";
 

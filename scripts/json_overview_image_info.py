@@ -38,7 +38,7 @@ if output:
             "make",
             "--no-print-directory",
             "-C",
-            "target/linux/{}".format(output['target'].split('/')[0]),
+            "target/linux/",
             "val.DEFAULT_PACKAGES",
             "val.ARCH_PACKAGES",
         ],
@@ -49,7 +49,8 @@ if output:
         universal_newlines=True,
     ).stdout.splitlines()
 
-    output["default_packages"] = default_packages.split()
+    output["default_packages"] = sorted(default_packages.split())
+
     output_path.write_text(json.dumps(output, sort_keys=True, separators=(",", ":")))
 else:
     print("JSON info file script could not find any JSON files for target")

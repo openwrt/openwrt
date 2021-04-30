@@ -1,0 +1,45 @@
+From 9c7d24693d864f90b27aad5d15fbfe226c02898b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Wed, 24 Mar 2021 09:19:02 +0100
+Subject: [PATCH 01/22] gpio: guard gpiochip_irqchip_add_domain() with
+ GPIOLIB_IRQCHIP
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The current code doesn't check if GPIOLIB_IRQCHIP is enabled, which results in
+a compilation error when trying to build gpio-regmap if CONFIG_GPIOLIB_IRQCHIP
+isn't enabled.
+
+Fixes: 6a45b0e2589f ("gpiolib: Introduce gpiochip_irqchip_add_domain()")
+Suggested-by: Michael Walle <michael@walle.cc>
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Reviewed-by: Michael Walle <michael@walle.cc>
+Acked-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+Link: https://lore.kernel.org/r/20210324081923.20379-2-noltari@gmail.com
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ include/linux/gpio/driver.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/include/linux/gpio/driver.h
++++ b/include/linux/gpio/driver.h
+@@ -637,8 +637,17 @@ int gpiochip_irqchip_add_key(struct gpio
+ bool gpiochip_irqchip_irq_valid(const struct gpio_chip *gc,
+ 				unsigned int offset);
+ 
++#ifdef CONFIG_GPIOLIB_IRQCHIP
+ int gpiochip_irqchip_add_domain(struct gpio_chip *gc,
+ 				struct irq_domain *domain);
++#else
++static inline int gpiochip_irqchip_add_domain(struct gpio_chip *gc,
++					      struct irq_domain *domain)
++{
++	WARN_ON(1);
++	return -EINVAL;
++}
++#endif
+ 
+ #ifdef CONFIG_LOCKDEP
+ 

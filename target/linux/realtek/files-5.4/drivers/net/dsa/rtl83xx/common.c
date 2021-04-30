@@ -368,8 +368,8 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 	/* Enable PHY control via SoC */
 	if (priv->family_id == RTL8380_FAMILY_ID) {
-		/* Enable PHY control via SoC */
-		sw_w32_mask(0, BIT(15), RTL838X_SMI_GLB_CTRL);
+		/* Enable SerDes NWAY and PHY control via SoC */
+		sw_w32_mask(BIT(7), BIT(15), RTL838X_SMI_GLB_CTRL);
 	} else {
 		/* Disable PHY polling via SoC */
 		sw_w32_mask(BIT(7), 0, RTL839X_SMI_GLB_CTRL);
@@ -555,7 +555,6 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	int err = 0, i;
 	struct rtl838x_switch_priv *priv;
 	struct device *dev = &pdev->dev;
-	u64 irq_mask;
 	u64 bpdu_mask;
 
 	pr_debug("Probing RTL838X switch device\n");
@@ -650,9 +649,9 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
 	sw_w32_mask(0, 3, priv->r->isr_glb_src);
-	
-	priv->r->set_port_reg_le(irq_mask, priv->r->isr_port_link_sts_chg);
-	priv->r->set_port_reg_le(irq_mask, priv->r->imr_port_link_sts_chg);
+
+	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
+	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
