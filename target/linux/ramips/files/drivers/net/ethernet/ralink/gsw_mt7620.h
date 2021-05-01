@@ -55,7 +55,7 @@
 
 #define SYSC_REG_CHIP_REV_ID	0x0c
 #define SYSC_REG_CFG1		0x14
-#define RST_CTRL_MCM		BIT(2)
+#define PCIE_RC_MODE		BIT(8)
 #define SYSC_PAD_RGMII2_MDIO	0x58
 #define SYSC_GPIO_MODE		0x60
 
