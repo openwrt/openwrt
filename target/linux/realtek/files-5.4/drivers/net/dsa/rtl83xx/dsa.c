@@ -577,58 +577,55 @@ static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
 	priv->ports[port].enable = false;
 }
 
-static int rtl83xx_get_mac_eee(struct dsa_switch *ds, int port,
-			       struct ethtool_eee *e)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	pr_debug("%s: port %d", __func__, port);
-	e->supported = SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full;
-	if (sw_r32(priv->r->mac_force_mode_ctrl(port)) & BIT(9))
-		e->advertised |= ADVERTISED_100baseT_Full;
-
-	if (sw_r32(priv->r->mac_force_mode_ctrl(port)) & BIT(10))
-		e->advertised |= ADVERTISED_1000baseT_Full;
-
-	e->eee_enabled = priv->ports[port].eee_enabled;
-	pr_debug("enabled: %d, active %x\n", e->eee_enabled, e->advertised);
-
-	if (sw_r32(RTL838X_MAC_EEE_ABLTY) & BIT(port)) {
-		e->lp_advertised = ADVERTISED_100baseT_Full;
-		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-	}
-
-	e->eee_active = !!(e->advertised & e->lp_advertised);
-	pr_debug("active: %d, lp %x\n", e->eee_active, e->lp_advertised);
-
-	return 0;
-}
-
 static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port,
 			       struct ethtool_eee *e)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	pr_debug("%s: port %d", __func__, port);
-	if (e->eee_enabled) {
-		pr_debug("Globally enabling EEE\n");
-		sw_w32_mask(0x4, 0, RTL838X_SMI_GLB_CTRL);
+	if (e->eee_enabled && !priv->eee_enabled) {
+		pr_info("Globally enabling EEE\n");
+		priv->r->init_eee(priv, true);
 	}
-	if (e->eee_enabled) {
-		pr_debug("Enabling EEE for MAC %d\n", port);
-		sw_w32_mask(0, 3 << 9, priv->r->mac_force_mode_ctrl(port));
-		sw_w32_mask(0, BIT(port), RTL838X_EEE_PORT_TX_EN);
-		sw_w32_mask(0, BIT(port), RTL838X_EEE_PORT_RX_EN);
-		priv->ports[port].eee_enabled = true;
-		e->eee_enabled = true;
-	} else {
-		pr_debug("Disabling EEE for MAC %d\n", port);
-		sw_w32_mask(3 << 9, 0, priv->r->mac_force_mode_ctrl(port));
-		sw_w32_mask(BIT(port), 0, RTL838X_EEE_PORT_TX_EN);
-		sw_w32_mask(BIT(port), 0, RTL838X_EEE_PORT_RX_EN);
-		priv->ports[port].eee_enabled = false;
-		e->eee_enabled = false;
-	}
+
+	priv->r->port_eee_set(priv, port, e->eee_enabled);
+
+	if (e->eee_enabled)
+		pr_info("Enabled EEE for port %d\n", port);
+	else
+		pr_info("Disabled EEE for port %d\n", port);
+	return 0;
+}
+
+static int rtl83xx_get_mac_eee(struct dsa_switch *ds, int port,
+			       struct ethtool_eee *e)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	e->supported = SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full;
+
+	priv->r->eee_port_ability(priv, e, port);
+
+	e->eee_enabled = priv->ports[port].eee_enabled;
+
+	e->eee_active = !!(e->advertised & e->lp_advertised);
+
+	return 0;
+}
+
+static int rtl93xx_get_mac_eee(struct dsa_switch *ds, int port,
+			       struct ethtool_eee *e)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	e->supported = SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full
+			| SUPPORTED_2500baseX_Full;
+
+	priv->r->eee_port_ability(priv, e, port);
+
+	e->eee_enabled = priv->ports[port].eee_enabled;
+
+	e->eee_active = !!(e->advertised & e->lp_advertised);
+
 	return 0;
 }
 
@@ -1331,6 +1328,9 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 
 	.port_enable		= rtl83xx_port_enable,
 	.port_disable		= rtl83xx_port_disable,
+
+	.get_mac_eee		= rtl93xx_get_mac_eee,
+	.set_mac_eee		= rtl83xx_set_mac_eee,
 
 	.set_ageing_time	= rtl83xx_set_l2aging,
 	.port_bridge_join	= rtl83xx_port_bridge_join,
