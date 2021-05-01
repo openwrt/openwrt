@@ -551,6 +551,95 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 
 	return h;
 }
+/*
+ * Enables or disables the EEE/EEEP capability of a port
+ */
+void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+{
+	u32 v;
+
+	// This works only for Ethernet ports, and on the RTL930X, ports from 26 are SFP
+	if (port >= 26)
+		return;
+
+	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+	v = enable ? 0x3f : 0x0;
+
+	// Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit
+	sw_w32_mask(0, v << 10, rtl930x_mac_force_mode_ctrl(port));
+
+	// Set TX/RX EEE state
+	v = enable ? 0x3 : 0x0;
+	sw_w32(v, RTL930X_EEE_CTRL(port));
+
+	priv->ports[port].eee_enabled = enable;
+}
+
+/*
+ * Get EEE own capabilities and negotiation result
+ */
+int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
+{
+	u32 link, a;
+
+	if (port >= 26)
+		return -ENOTSUPP;
+
+	pr_info("In %s, port %d\n", __func__, port);
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	if (!(link & BIT(port)))
+		return 0;
+
+	pr_info("Setting advertised\n");
+	if (sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(10))
+		e->advertised |= ADVERTISED_100baseT_Full;
+
+	if (sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(12))
+		e->advertised |= ADVERTISED_1000baseT_Full;
+
+	if (priv->ports[port].is2G5 && sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(13)) {
+		pr_info("ADVERTISING 2.5G EEE\n");
+		e->advertised |= ADVERTISED_2500baseX_Full;
+	}
+
+	if (priv->ports[port].is10G && sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(15))
+		e->advertised |= ADVERTISED_10000baseT_Full;
+
+	a = sw_r32(RTL930X_MAC_EEE_ABLTY);
+	a = sw_r32(RTL930X_MAC_EEE_ABLTY);
+	pr_info("Link partner: %08x\n", a);
+	if (a & BIT(port)) {
+		e->lp_advertised = ADVERTISED_100baseT_Full;
+		e->lp_advertised |= ADVERTISED_1000baseT_Full;
+		if (priv->ports[port].is2G5)
+			e->lp_advertised |= ADVERTISED_2500baseX_Full;
+		if (priv->ports[port].is10G)
+			e->lp_advertised |= ADVERTISED_10000baseT_Full;
+	}
+
+	// Read 2x to clear latched state
+	a = sw_r32(RTL930X_EEEP_PORT_CTRL(port));
+	a = sw_r32(RTL930X_EEEP_PORT_CTRL(port));
+	pr_info("%s RTL930X_EEEP_PORT_CTRL: %08x\n", __func__, a);
+
+	return 0;
+}
+
+static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+{
+	int i;
+
+	pr_info("Setting up EEE, state: %d\n", enable);
+
+	// Setup EEE on all ports
+	for (i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy)
+			rtl930x_port_eee_set(priv, i, enable);
+	}
+
+	priv->eee_enabled = enable;
+}
 
 const struct rtl838x_reg rtl930x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
@@ -604,4 +693,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.vlan_port_tag_sts_ctrl = RTL930X_VLAN_PORT_TAG_STS_CTRL,
 	.trk_mbr_ctr = rtl930x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL930X_RMA_BPDU_FLD_PMSK,
+	.init_eee = rtl930x_init_eee,
+	.port_eee_set = rtl930x_port_eee_set,
+	.eee_port_ability = rtl930x_eee_port_ability,
 };

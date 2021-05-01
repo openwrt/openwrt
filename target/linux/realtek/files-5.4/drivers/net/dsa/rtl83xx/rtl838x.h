@@ -162,6 +162,16 @@
 #define RTL838X_EEE_TX_TIMER_GIGA_CTRL		(0xaa04)
 #define RTL838X_EEE_TX_TIMER_GELITE_CTRL	(0xaa08)
 
+#define RTL839X_EEE_TX_TIMER_GELITE_CTRL	(0x042C)
+#define RTL839X_EEE_TX_TIMER_GIGA_CTRL		(0x0430)
+#define RTL839X_EEE_TX_TIMER_10G_CTRL		(0x0434)
+#define RTL839X_EEE_CTRL(p)			(0x8008 + ((p) << 7))
+#define RTL839X_MAC_EEE_ABLTY			(0x03C8)
+
+#define RTL930X_MAC_EEE_ABLTY			(0xCB34)
+#define RTL930X_EEE_CTRL(p)			(0x3274 + ((p) << 6))
+#define RTL930X_EEEP_PORT_CTRL(p)		(0x3278 + ((p) << 6))
+
 /* L2 functionality */
 #define RTL838X_L2_CTRL_0			(0x3200)
 #define RTL839X_L2_CTRL_0			(0x3800)
@@ -440,6 +450,10 @@ struct rtl838x_reg {
 	int (*trk_mbr_ctr)(int group);
 	int rma_bpdu_fld_pmask;
 	int spcl_trap_eapol_ctrl;
+	void (*init_eee)(struct rtl838x_switch_priv *priv, bool enable);
+	void (*port_eee_set)(struct rtl838x_switch_priv *priv, int port, bool enable);
+	int (*eee_port_ability)(struct rtl838x_switch_priv *priv,
+				struct ethtool_eee *e, int port);
 };
 
 struct rtl838x_switch_priv {
@@ -466,6 +480,7 @@ struct rtl838x_switch_priv {
 	u64 lags_port_members[MAX_LAGS];
 	struct net_device *lag_devs[MAX_LAGS];
 	struct notifier_block nb;
+	bool eee_enabled;
 };
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
