@@ -216,6 +216,12 @@
 #define RTL931X_RMA_BPDU_FLD_PMSK		(0x8950)
 #define RTL839X_RMA_BPDU_FLD_PMSK		(0x125C)
 
+#define RTL838X_L2_PORT_LM_ACT(p)		(0x3208 + ((p) << 2))
+#define RTL838X_VLAN_PORT_FWD			(0x3A78)
+#define RTL839X_VLAN_PORT_FWD			(0x27AC)
+#define RTL930X_VLAN_PORT_FWD			(0x834C)
+#define RTL838X_VLAN_FID_CTRL			(0x3aa8)
+
 /* Port Mirroring */
 #define RTL838X_MIR_CTRL			(0x5D00)
 #define RTL838X_MIR_DPM_CTRL			(0x5D20)
@@ -460,6 +466,7 @@ struct rtl838x_reg {
 				struct ethtool_eee *e, int port);
 	u64 (*read_mcast_pmask)(int idx);
 	void (*write_mcast_pmask)(int idx, u64 portmask);
+	void (*vlan_fwd_on_inner)(int port, bool is_set);
 };
 
 struct rtl838x_switch_priv {
