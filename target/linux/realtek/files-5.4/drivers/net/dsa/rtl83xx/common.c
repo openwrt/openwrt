@@ -18,27 +18,6 @@ extern const struct dsa_switch_ops rtl930x_switch_ops;
 
 DEFINE_MUTEX(smi_lock);
 
-// TODO: unused
-static void dump_fdb(struct rtl838x_switch_priv *priv)
-{
-	struct rtl838x_l2_entry e;
-	int i;
-
-	mutex_lock(&priv->reg_mutex);
-
-	for (i = 0; i < priv->fib_entries; i++) {
-		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
-
-		if (!e.valid) /* Check for invalid entry */
-			continue;
-
-		pr_debug("-> port %02d: mac %pM, vid: %d, rvid: %d, MC: %d, %d\n",
-			e.port, &e.mac[0], e.vid, e.rvid, e.is_ip_mc, e.is_ipv6_mc);
-	}
-
-	mutex_unlock(&priv->reg_mutex);
-}
-
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {
 	u32 msti = 0;
