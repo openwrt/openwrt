@@ -12,10 +12,10 @@ void rtl838x_print_matrix(void)
 
 	ptr8 = RTL838X_SW_BASE + RTL838X_PORT_ISO_CTRL(0);
 	for (i = 0; i < 28; i += 8)
-		pr_info("> %8x %8x %8x %8x %8x %8x %8x %8x\n",
+		pr_debug("> %8x %8x %8x %8x %8x %8x %8x %8x\n",
 			ptr8[i + 0], ptr8[i + 1], ptr8[i + 2], ptr8[i + 3],
 			ptr8[i + 4], ptr8[i + 5], ptr8[i + 6], ptr8[i + 7]);
-	pr_info("CPU_PORT> %8x\n", ptr8[28]);
+	pr_debug("CPU_PORT> %8x\n", ptr8[28]);
 }
 
 static inline int rtl838x_port_iso_ctrl(int p)
@@ -42,56 +42,54 @@ static inline int rtl838x_tbl_access_data_0(int i)
 
 static void rtl838x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 {
-	u32 cmd, v;
+	u32 v;
+	// Read VLAN table (0) via register 0
+	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 0);
 
-	cmd = BIT(15) /* Execute cmd */
-		| BIT(14) /* Read */
-		| 0 << 12 /* Table type 0b00 */
-		| (vlan & 0xfff);
-	rtl838x_exec_tbl0_cmd(cmd);
-	info->tagged_ports = sw_r32(RTL838X_TBL_ACCESS_DATA_0(0));
-	v = sw_r32(RTL838X_TBL_ACCESS_DATA_0(1));
+	rtl_table_read(r, vlan);
+	info->tagged_ports = sw_r32(rtl_table_data(r, 0));
+	v = sw_r32(rtl_table_data(r, 1));
+	pr_debug("VLAN_READ %d: %016llx %08x\n", vlan, info->tagged_ports, v);
+	rtl_table_release(r);
+
 	info->profile_id = v & 0x7;
 	info->hash_mc_fid = !!(v & 0x8);
 	info->hash_uc_fid = !!(v & 0x10);
 	info->fid = (v >> 5) & 0x3f;
 
-
-	cmd = BIT(15) /* Execute cmd */
-		| BIT(14) /* Read */
-		| 0 << 12 /* Table type 0b00 */
-		| (vlan & 0xfff);
-	rtl838x_exec_tbl1_cmd(cmd);
-	info->untagged_ports = sw_r32(RTL838X_TBL_ACCESS_DATA_1(0));
+	// Read UNTAG table (0) via table register 1
+	r = rtl_table_get(RTL8380_TBL_1, 0);
+	rtl_table_read(r, vlan);
+	info->untagged_ports = sw_r32(rtl_table_data(r, 0));
+	rtl_table_release(r);
 }
 
 static void rtl838x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 {
-	u32 cmd = BIT(15) /* Execute cmd */
-		| 0 << 14 /* Write */
-		| 0 << 12 /* Table type 0b00 */
-		| (vlan & 0xfff);
 	u32 v;
+	// Access VLAN table (0) via register 0
+	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 0);
 
-	sw_w32(info->tagged_ports, RTL838X_TBL_ACCESS_DATA_0(0));
+	sw_w32(info->tagged_ports, rtl_table_data(r, 0));
 
 	v = info->profile_id;
 	v |= info->hash_mc_fid ? 0x8 : 0;
 	v |= info->hash_uc_fid ? 0x10 : 0;
 	v |= ((u32)info->fid) << 5;
+	sw_w32(v, rtl_table_data(r, 1));
 
-	sw_w32(v, RTL838X_TBL_ACCESS_DATA_0(1));
-	rtl838x_exec_tbl0_cmd(cmd);
+	rtl_table_write(r, vlan);
+	rtl_table_release(r);
 }
 
 static void rtl838x_vlan_set_untagged(u32 vlan, u64 portmask)
 {
-	u32 cmd = BIT(15) /* Execute cmd */
-		| 0 << 14 /* Write */
-		| 0 << 12 /* Table type 0b00 */
-		| (vlan & 0xfff);
-	sw_w32(portmask & 0x1fffffff, RTL838X_TBL_ACCESS_DATA_1(0));
-	rtl838x_exec_tbl1_cmd(cmd);
+	// Access UNTAG table (0) via register 1
+	struct table_reg *r = rtl_table_get(RTL8380_TBL_1, 0);
+
+	sw_w32(portmask & 0x1fffffff, rtl_table_data(r, 0));
+	rtl_table_write(r, vlan);
+	rtl_table_release(r);
 }
 
 static inline int rtl838x_mac_force_mode_ctrl(int p)
@@ -202,9 +200,43 @@ static u64 rtl838x_read_cam(int idx, struct rtl838x_l2_entry *e)
 	return entry;
 }
 
-static inline int rtl838x_vlan_profile(int profile)
+static u64 rtl838x_read_mcast_pmask(int idx)
 {
-	return RTL838X_VLAN_PROFILE(profile);
+	u32 portmask;
+	// Read MC_PMSK (2) via register RTL8380_TBL_L2
+	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 2);
+
+	rtl_table_read(q, idx);
+	portmask = sw_r32(rtl_table_data(q, 0));
+	rtl_table_release(q);
+
+	return portmask;
+}
+
+static void rtl838x_write_mcast_pmask(int idx, u64 portmask)
+{
+	// Access MC_PMSK (2) via register RTL8380_TBL_L2
+	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 2);
+
+	sw_w32(((u32)portmask) & 0x1fffffff, rtl_table_data(q, 0));
+	rtl_table_write(q, idx);
+	rtl_table_release(q);
+}
+
+static void rtl838x_vlan_profile_setup(int profile)
+{
+	u32 pmask_id = UNKNOWN_MC_PMASK;
+	// Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for unknown MC traffic flooding
+	u32 p = 1 | pmask_id << 1 | pmask_id << 10 | pmask_id << 19;
+
+	sw_w32(p, RTL838X_VLAN_PROFILE(profile));
+
+	/* RTL8380 and RTL8390 use an index into the portmask table to set the
+	 * unknown multicast portmask, setup a default at a safe location
+	 * On RTL93XX, the portmask is directly set in the profile,
+	 * see e.g. rtl9300_vlan_profile_setup
+	 */
+	rtl838x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0xfffffff);
 }
 
 static inline int rtl838x_vlan_port_egr_filter(int port)
@@ -373,6 +405,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.vlan_set_untagged = rtl838x_vlan_set_untagged,
 	.mac_force_mode_ctrl = rtl838x_mac_force_mode_ctrl,
 	.vlan_profile_dump = rtl838x_vlan_profile_dump,
+	.vlan_profile_setup = rtl838x_vlan_profile_setup,
 	.stp_get = rtl838x_stp_get,
 	.stp_set = rtl838x_stp_set,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
@@ -398,6 +431,8 @@ const struct rtl838x_reg rtl838x_reg = {
 	.init_eee = rtl838x_init_eee,
 	.port_eee_set = rtl838x_port_eee_set,
 	.eee_port_ability = rtl838x_eee_port_ability,
+	.read_mcast_pmask = rtl838x_read_mcast_pmask,
+	.write_mcast_pmask = rtl838x_write_mcast_pmask,
 };
 
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
@@ -641,19 +676,18 @@ u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 	return h;
 }
 
-void rtl838x_vlan_profile_dump(int index)
+void rtl838x_vlan_profile_dump(int profile)
 {
-	u32 profile;
+	u32 p;
 
-	if (index < 0 || index > 7)
+	if (profile < 0 || profile > 7)
 		return;
 
-	profile = sw_r32(RTL838X_VLAN_PROFILE(index));
+	p = sw_r32(RTL838X_VLAN_PROFILE(profile));
 
-	pr_info("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %x, \
-		IPv4 Unknown MultiCast Field %x, IPv6 Unknown MultiCast Field: %x",
-		index, profile & 1, (profile >> 1) & 0x1ff, (profile >> 10) & 0x1ff,
-		(profile >> 19) & 0x1ff);
+	pr_info("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
+		UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d",
+		profile, p & 1, (p >> 1) & 0x1ff, (p >> 10) & 0x1ff, (p >> 19) & 0x1ff);
 }
 
 void rtl8380_sds_rst(int mac)
