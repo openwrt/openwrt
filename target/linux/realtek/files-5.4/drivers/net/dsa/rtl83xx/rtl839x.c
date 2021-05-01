@@ -115,6 +115,16 @@ static void rtl839x_vlan_set_untagged(u32 vlan, u64 portmask)
 	rtl_table_release(r);
 }
 
+/* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer
+ */
+static void rtl839x_vlan_fwd_on_inner(int port, bool is_set)
+{
+	if (is_set)
+		rtl839x_mask_port_reg_be(BIT_ULL(port), 0ULL, RTL839X_VLAN_PORT_FWD);
+	else
+		rtl839x_mask_port_reg_be(0ULL, BIT_ULL(port), RTL839X_VLAN_PORT_FWD);
+}
+
 static inline int rtl839x_mac_force_mode_ctrl(int p)
 {
 	return RTL839X_MAC_FORCE_MODE_CTRL + (p << 2);
@@ -669,6 +679,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.vlan_set_untagged = rtl839x_vlan_set_untagged,
 	.vlan_profile_dump = rtl839x_vlan_profile_dump,
 	.vlan_profile_setup = rtl839x_vlan_profile_setup,
+	.vlan_fwd_on_inner = rtl839x_vlan_fwd_on_inner,
 	.stp_get = rtl839x_stp_get,
 	.stp_set = rtl839x_stp_set,
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
