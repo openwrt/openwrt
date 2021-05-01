@@ -263,6 +263,84 @@ void rtl838x_traffic_disable(int source, int dest)
 	rtl838x_mask_port_reg(BIT(dest), 0, rtl838x_port_iso_ctrl(source));
 }
 
+/*
+ * Enables or disables the EEE/EEEP capability of a port
+ */
+static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+{
+	u32 v;
+
+	// This works only for Ethernet ports, and on the RTL838X, ports from 24 are SFP
+	if (port >= 24)
+		return;
+
+	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+	v = enable ? 0x3 : 0x0;
+
+	// Set EEE state for 100 (bit 9) & 1000MBit (bit 10)
+	sw_w32_mask(0x3 << 9, v << 9, priv->r->mac_force_mode_ctrl(port));
+
+	// Set TX/RX EEE state
+	if (enable) {
+		sw_w32_mask(0, BIT(port), RTL838X_EEE_PORT_TX_EN);
+		sw_w32_mask(0, BIT(port), RTL838X_EEE_PORT_RX_EN);
+	} else {
+		sw_w32_mask(BIT(port), 0, RTL838X_EEE_PORT_TX_EN);
+		sw_w32_mask(BIT(port), 0, RTL838X_EEE_PORT_RX_EN);
+	}
+	priv->ports[port].eee_enabled = enable;
+}
+
+
+/*
+ * Get EEE own capabilities and negotiation result
+ */
+static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
+				    struct ethtool_eee *e, int port)
+{
+	u64 link;
+
+	if (port >= 24)
+		return 0;
+
+	link = rtl839x_get_port_reg_le(RTL838X_MAC_LINK_STS);
+	if (!(link & BIT(port)))
+		return 0;
+
+	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(9))
+		e->advertised |= ADVERTISED_100baseT_Full;
+
+	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(10))
+		e->advertised |= ADVERTISED_1000baseT_Full;
+
+	if (sw_r32(RTL838X_MAC_EEE_ABLTY) & BIT(port)) {
+		e->lp_advertised = ADVERTISED_100baseT_Full;
+		e->lp_advertised |= ADVERTISED_1000baseT_Full;
+		return 1;
+	}
+
+	return 0;
+}
+
+static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+{
+	int i;
+
+	pr_info("Setting up EEE, state: %d\n", enable);
+	sw_w32_mask(0x4, 0, RTL838X_SMI_GLB_CTRL);
+
+	/* Set timers for EEE */
+	sw_w32(0x5001411, RTL838X_EEE_TX_TIMER_GIGA_CTRL);
+	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
+
+	// Enable EEE MAC support on ports
+	for (i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy)
+			rtl838x_port_eee_set(priv, i, enable);
+	}
+	priv->eee_enabled = enable;
+}
+
 const struct rtl838x_reg rtl838x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -317,6 +395,9 @@ const struct rtl838x_reg rtl838x_reg = {
 	.trk_mbr_ctr = rtl838x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL838X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL838X_SPCL_TRAP_EAPOL_CTRL,
+	.init_eee = rtl838x_init_eee,
+	.port_eee_set = rtl838x_port_eee_set,
+	.eee_port_ability = rtl838x_eee_port_ability,
 };
 
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
