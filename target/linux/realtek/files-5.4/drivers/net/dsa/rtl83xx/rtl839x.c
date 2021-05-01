@@ -125,6 +125,45 @@ static void rtl839x_vlan_fwd_on_inner(int port, bool is_set)
 		rtl839x_mask_port_reg_be(0ULL, BIT_ULL(port), RTL839X_VLAN_PORT_FWD);
 }
 
+/*
+ * Hash seed is vid (actually rvid) concatenated with the MAC address
+ */
+static u64 rtl839x_l2_hash_seed(u64 mac, u32 vid)
+{
+	u64 v = vid;
+
+	v <<= 48;
+	v |= mac;
+
+	return v;
+}
+
+/*
+ * Applies the same hash algorithm as the one used currently by the ASIC to the seed
+ * and returns a key into the L2 hash table
+ */
+static u32 rtl839x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
+{
+	u32 h1, h2, h;
+
+	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
+		h1 = (u32) (((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f)
+				^ ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f)
+				^ ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
+		h2 = (u32) (((seed >> 48) & 0x3f) ^ ((seed >> 42) & 0x3f)
+				^ ((seed >> 24) & 0x3f) ^ ((seed >> 18) & 0x3f)
+				^ (seed & 0x3f));
+		h = (h1 << 6) | h2;
+	} else {
+		h = (seed >> 60)
+			^ ((((seed >> 48) & 0x3f) << 6) | ((seed >> 54) & 0x3f))
+			^ ((seed >> 36) & 0xfff) ^ ((seed >> 24) & 0xfff)
+			^ ((seed >> 12) & 0xfff) ^ (seed & 0xfff);
+	}
+
+	return h;
+}
+
 static inline int rtl839x_mac_force_mode_ctrl(int p)
 {
 	return RTL839X_MAC_FORCE_MODE_CTRL + (p << 2);
@@ -205,55 +244,131 @@ static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 	}
 }
 
-static u64 rtl839x_read_l2_entry_using_hash(u32 hash, u32 position, struct rtl838x_l2_entry *e)
+/*
+ * Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry
+ */
+static void rtl839x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 {
-	u64 entry;
+	if (!e->valid) {
+		r[0] = r[1] = r[2] = 0;
+		return;
+	}
+
+	r[2] = e->is_ip_mc ? BIT(31) : 0;
+	r[2] |= e->is_ipv6_mc ? BIT(30) : 0;
+
+	if (!e->is_ip_mc  && !e->is_ipv6_mc) {
+		r[0] = ((u32)e->mac[0]) << 12;
+		r[0] |= ((u32)e->mac[1]) << 4;
+		r[0] |= ((u32)e->mac[2]) >> 4;
+		r[1] = ((u32)e->mac[2]) << 28;
+		r[1] |= ((u32)e->mac[3]) << 20;
+		r[1] |= ((u32)e->mac[4]) << 12;
+		r[1] |= ((u32)e->mac[5]) << 4;
+
+		if (!(e->mac[0] & 1)) { // Not multicast
+			r[2] |= e->is_static ? BIT(18) : 0;
+			r[2] |= e->vid << 4;
+			r[0] |= ((u32)e->rvid) << 20;
+			r[2] |= e->port << 24;
+			r[2] |= e->block_da ? BIT(19) : 0;
+			r[2] |= e->block_sa ? BIT(20) : 0;
+			r[2] |= e->suspended ? BIT(17) : 0;
+			if (e->next_hop) {
+				r[2] |= BIT(16);
+				r[2] |= e->nh_vlan_target ? BIT(15) : 0;
+				r[2] |= (e->nh_route_id & 0x7ff) << 4;
+			}
+			r[2] |= ((u32)e->age) << 21;
+		} else {  // L2 Multicast
+			r[0] |= ((u32)e->rvid) << 20;
+			r[2] |= ((u32)e->mc_portmask_index) << 6;
+			pr_debug("Write L2 MC entry: %08x %08x %08x\n", r[0], r[1], r[2]);
+		}
+	} else { // IPv4 or IPv6 MC entry
+		r[0] = ((u32)e->rvid) << 20;
+		r[2] |= ((u32)e->mc_portmask_index) << 6;
+		r[1] = e->mc_gip;
+	}
+}
+
+/*
+ * Read an L2 UC or MC entry out of a hash bucket of the L2 forwarding table
+ * hash is the id of the bucket and pos is the position of the entry in that bucket
+ * The data read from the SoC is filled into rtl838x_l2_entry
+ */
+static u64 rtl839x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+{
 	u32 r[3];
+	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 0);
+	u32 idx = (0 << 14) | (hash << 2) | pos; // Search SRAM, with hash and at pos in bucket
+	int i;
 
-	/* Search in SRAM, with hash and at position in hash bucket (0-3) */
-	u32 idx = (0 << 14) | (hash << 2) | position;
+	rtl_table_read(q, idx);
+	for (i= 0; i < 3; i++)
+		r[i] = sw_r32(rtl_table_data(q, i));
 
-	u32 cmd = 1 << 17 /* Execute cmd */
-		| 0 << 16 /* Read */
-		| 0 << 14 /* Table type 0b00 */
-		| (idx & 0x3fff);
-
-	sw_w32(cmd, RTL839X_TBL_ACCESS_L2_CTRL);
-	do { }  while (sw_r32(RTL839X_TBL_ACCESS_L2_CTRL) & (1 << 17));
-	r[0] = sw_r32(RTL839X_TBL_ACCESS_L2_DATA(0));
-	r[1] = sw_r32(RTL839X_TBL_ACCESS_L2_DATA(1));
-	r[2] = sw_r32(RTL839X_TBL_ACCESS_L2_DATA(2));
+	rtl_table_release(q);
 
 	rtl839x_fill_l2_entry(r, e);
+	if (!e->valid)
+		return 0;
 
-	entry = (((u64) r[0]) << 12) | ((r[1] & 0xfffffff0) << 12) | ((r[2] >> 4) & 0xfff);
-	return entry;
+	return rtl839x_l2_hash_seed(ether_addr_to_u64(&e->mac[0]), e->rvid);
+}
+
+static void rtl839x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
+{
+	u32 r[3];
+	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 0);
+	int i;
+
+	u32 idx = (0 << 14) | (hash << 2) | pos; // Access SRAM, with hash and at pos in bucket
+
+	rtl839x_fill_l2_row(r, e);
+
+	for (i= 0; i < 3; i++)
+		sw_w32(r[i], rtl_table_data(q, i));
+
+	rtl_table_write(q, idx);
+	rtl_table_release(q);
 }
 
 static u64 rtl839x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
-	u64 entry;
 	u32 r[3];
+	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 1); // Access L2 Table 1
+	int i;
 
-	u32 cmd = 1 << 17 /* Execute cmd */
-		| 0 << 16 /* Read */
-		| 1 << 14 /* Table type 0b01 */
-		| (idx & 0x3f);
-	sw_w32(cmd, RTL839X_TBL_ACCESS_L2_CTRL);
-	do { }  while (sw_r32(RTL839X_TBL_ACCESS_L2_CTRL) & (1 << 17));
-	r[0] = sw_r32(RTL839X_TBL_ACCESS_L2_DATA(0));
-	r[1] = sw_r32(RTL839X_TBL_ACCESS_L2_DATA(1));
-	r[2] = sw_r32(RTL839X_TBL_ACCESS_L2_DATA(2));
+	rtl_table_read(q, idx);
+	for (i= 0; i < 3; i++)
+		r[i] = sw_r32(rtl_table_data(q, i));
 
+	rtl_table_release(q);
 
 	rtl839x_fill_l2_entry(r, e);
-	if (e->valid)
-		pr_info("Found in CAM: R1 %x R2 %x R3 %x\n", r[0], r[1], r[2]);
-	else
+	if (!e->valid)
 		return 0;
 
-	entry = (((u64) r[0]) << 12) | ((r[1] & 0xfffffff0) << 12) | ((r[2] >> 4) & 0xfff);
-	return entry;
+	pr_debug("Found in CAM: R1 %x R2 %x R3 %x\n", r[0], r[1], r[2]);
+
+	// Return MAC with concatenated VID ac concatenated ID
+	return rtl839x_l2_hash_seed(ether_addr_to_u64(&e->mac[0]), e->rvid);
+}
+
+static void rtl839x_write_cam(int idx, struct rtl838x_l2_entry *e)
+{
+	u32 r[3];
+	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 1); // Access L2 Table 1
+	int i;
+
+	rtl839x_fill_l2_row(r, e);
+
+	for (i= 0; i < 3; i++)
+		sw_w32(r[i], rtl_table_data(q, i));
+
+	rtl_table_write(q, idx);
+	rtl_table_release(q);
 }
 
 static u64 rtl839x_read_mcast_pmask(int idx)
@@ -326,7 +441,7 @@ void rtl839x_traffic_enable(int source, int dest)
 
 void rtl839x_traffic_disable(int source, int dest)
 {
-	rtl839x_mask_port_reg_be(BIT(dest), 0, rtl839x_port_iso_ctrl(source));
+	rtl839x_mask_port_reg_be(BIT_ULL(dest), 0, rtl839x_port_iso_ctrl(source));
 }
 
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
@@ -341,10 +456,10 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	rtl839x_set_port_reg_le(ports, RTL839X_ISR_PORT_LINK_STS_CHG);
 	pr_debug("RTL8390 Link change: status: %x, ports %llx\n", status, ports);
 
-	for (i = 0; i < 52; i++) {
-		if (ports & (1ULL << i)) {
+	for (i = 0; i < RTL839X_CPU_PORT; i++) {
+		if (ports & BIT_ULL(i)) {
 			link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
-			if (link & (1ULL << i))
+			if (link & BIT_ULL(i))
 				dsa_port_phylink_mac_change(ds, i, true);
 			else
 				dsa_port_phylink_mac_change(ds, i, false);
@@ -371,7 +486,6 @@ int rtl8390_sds_power(int mac, int val)
 
 	return 0;
 }
-
 
 int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
@@ -504,28 +618,6 @@ void rtl8390_get_version(struct rtl838x_switch_priv *priv)
 	info = sw_r32(RTL839X_CHIP_INFO);
 	pr_debug("Chip-Info: %x\n", info);
 	priv->version = RTL8390_VERSION_A;
-}
-
-u32 rtl839x_hash(struct rtl838x_switch_priv *priv, u64 seed)
-{
-	u32 h1, h2, h;
-
-	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
-		h1 = (u32) (((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f)
-				^ ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f)
-				^ ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
-		h2 = (u32) (((seed >> 48) & 0x3f) ^ ((seed >> 42) & 0x3f)
-				^ ((seed >> 24) & 0x3f) ^ ((seed >> 18) & 0x3f)
-				^ (seed & 0x3f));
-		h = (h1 << 6) | h2;
-	} else {
-		h = (seed >> 60)
-			^ ((((seed >> 48) & 0x3f) << 6) | ((seed >> 54) & 0x3f))
-			^ ((seed >> 36) & 0xfff) ^ ((seed >> 24) & 0xfff)
-			^ ((seed >> 12) & 0xfff) ^ (seed & 0xfff);
-	}
-
-	return h;
 }
 
 void rtl839x_vlan_profile_dump(int profile)
@@ -695,7 +787,9 @@ const struct rtl838x_reg rtl839x_reg = {
 	.mac_rx_pause_sts = RTL839X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts = RTL839X_MAC_TX_PAUSE_STS,
 	.read_l2_entry_using_hash = rtl839x_read_l2_entry_using_hash,
+	.write_l2_entry_using_hash = rtl839x_write_l2_entry_using_hash,
 	.read_cam = rtl839x_read_cam,
+	.write_cam = rtl839x_write_cam,
 	.vlan_port_egr_filter = RTL839X_VLAN_PORT_EGR_FLTR(0),
 	.vlan_port_igr_filter = RTL839X_VLAN_PORT_IGR_FLTR(0),
 	.vlan_port_pb = RTL839X_VLAN_PORT_PB_VLAN,
@@ -706,6 +800,8 @@ const struct rtl838x_reg rtl839x_reg = {
 	.init_eee = rtl839x_init_eee,
 	.port_eee_set = rtl839x_port_eee_set,
 	.eee_port_ability = rtl839x_eee_port_ability,
+	.l2_hash_seed = rtl839x_l2_hash_seed, 
+	.l2_hash_key = rtl839x_l2_hash_key,
 	.read_mcast_pmask = rtl839x_read_mcast_pmask,
 	.write_mcast_pmask = rtl839x_write_mcast_pmask,
 };
