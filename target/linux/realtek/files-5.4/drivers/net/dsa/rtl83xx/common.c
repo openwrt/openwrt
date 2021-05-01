@@ -123,7 +123,6 @@ void rtl_table_read(struct table_reg *r, int idx)
 
 	cmd |= BIT(r->c_bit + 1) | (r->tbl << r->t_bit) | (idx & (BIT(r->t_bit) - 1));
 	sw_w32(cmd, r->addr);
-	pr_debug("Writing %08x to %x for read\n", cmd, r->addr);
 	do { } while (sw_r32(r->addr) & BIT(r->c_bit + 1));
 }
 
@@ -135,8 +134,6 @@ void rtl_table_write(struct table_reg *r, int idx)
 	u32 cmd = r->rmode ? 0 : BIT(r->c_bit);
 
 	cmd |= BIT(r->c_bit + 1) | (r->tbl << r->t_bit) | (idx & (BIT(r->t_bit) - 1));
-	pr_debug("Writing %08x to %x for write, value %08x\n",
-		cmd, r->addr, sw_r32(0xb344));
 	sw_w32(cmd, r->addr);
 	do { } while (sw_r32(r->addr) & BIT(r->c_bit + 1));
 }
@@ -572,6 +569,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->fib_entries = 8192;
 		rtl8380_get_version(priv);
 		priv->n_lags = 8;
+		priv->l2_bucket_size = 4;
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->ds->ops = &rtl83xx_switch_ops;
@@ -584,6 +582,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->fib_entries = 16384;
 		rtl8390_get_version(priv);
 		priv->n_lags = 16;
+		priv->l2_bucket_size = 4;
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->ds->ops = &rtl930x_switch_ops;
@@ -597,6 +596,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->version = RTL8390_VERSION_A;
 		priv->n_lags = 16;
 		sw_w32(1, RTL930X_ST_CTRL);
+		priv->l2_bucket_size = 8;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->ds->ops = &rtl930x_switch_ops;
@@ -609,6 +609,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->fib_entries = 16384;
 		priv->version = RTL8390_VERSION_A;
 		priv->n_lags = 16;
+		priv->l2_bucket_size = 8;
 		break;
 	}
 	pr_debug("Chip version %c\n", priv->version);
