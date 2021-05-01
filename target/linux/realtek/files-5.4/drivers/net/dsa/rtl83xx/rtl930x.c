@@ -382,7 +382,6 @@ int rtl9300_sds_power(int mac, int val)
 	return 0;
 }
 
-
 int rtl930x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
 	u32 v;
@@ -444,7 +443,6 @@ int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 	return err;
 }
-
 
 /*
  * Write to an mmd register of the PHY
