@@ -332,8 +332,11 @@
 /* Debug features */
 #define RTL930X_STAT_PRVTE_DROP_COUNTER0	(0xB5B8)
 
+#define MAX_VLANS 4096
 #define MAX_LAGS 16
 #define MAX_PRIOS 8
+#define MAX_MC_GROUPS 512
+#define UNKNOWN_MC_PMASK (MAX_MC_GROUPS - 1)
 
 enum phy_type {
 	PHY_NONE = 0,
@@ -426,6 +429,7 @@ struct rtl838x_reg {
 	void (*vlan_set_tagged)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	void (*vlan_profile_dump)(int index);
+	void (*vlan_profile_setup)(int profile);
 	void (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	int  (*mac_force_mode_ctrl)(int port);
@@ -454,6 +458,8 @@ struct rtl838x_reg {
 	void (*port_eee_set)(struct rtl838x_switch_priv *priv, int port, bool enable);
 	int (*eee_port_ability)(struct rtl838x_switch_priv *priv,
 				struct ethtool_eee *e, int port);
+	u64 (*read_mcast_pmask)(int idx);
+	void (*write_mcast_pmask)(int idx, u64 portmask);
 };
 
 struct rtl838x_switch_priv {
