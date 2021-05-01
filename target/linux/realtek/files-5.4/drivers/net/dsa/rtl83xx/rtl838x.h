@@ -341,6 +341,7 @@
 #define MAX_VLANS 4096
 #define MAX_LAGS 16
 #define MAX_PRIOS 8
+#define RTL930X_PORT_IGNORE 0x3f
 #define MAX_MC_GROUPS 512
 #define UNKNOWN_MC_PMASK (MAX_MC_GROUPS - 1)
 
@@ -398,8 +399,27 @@ struct rtl838x_l2_entry {
 	bool next_hop;
 	int age;
 	u8 trunk;
-	u8 stackDev;
+	bool is_trunk;
+	u8 stack_dev;
 	u16 mc_portmask_index;
+	u32 mc_gip;
+	u32 mc_sip;
+	u16 mc_mac_index;
+	u16 nh_route_id;
+	bool nh_vlan_target;  // Only RTL83xx: VLAN used for next hop
+};
+
+struct rtl838x_nexthop {
+	u16 id;		// ID in HW Nexthop table
+	u32 ip;		// IP Addres of nexthop
+	u32 dev_id;
+	u16 port;
+	u16 vid;
+	u16 fid;
+	u64 mac;
+	u16 mac_id;
+	u16 l2_id;	// Index of this next hop forwarding entry in L2 FIB table
+	u16 if_id;
 };
 
 struct rtl838x_switch_priv;
@@ -451,7 +471,9 @@ struct rtl838x_reg {
 	int mac_rx_pause_sts;
 	int mac_tx_pause_sts;
 	u64 (*read_l2_entry_using_hash)(u32 hash, u32 position, struct rtl838x_l2_entry *e);
+	void (*write_l2_entry_using_hash)(u32 hash, u32 pos, struct rtl838x_l2_entry *e);
 	u64 (*read_cam)(int idx, struct rtl838x_l2_entry *e);
+	void (*write_cam)(int idx, struct rtl838x_l2_entry *e);
 	int vlan_port_egr_filter;
 	int vlan_port_igr_filter;
 	int vlan_port_pb;
@@ -464,6 +486,8 @@ struct rtl838x_reg {
 	void (*port_eee_set)(struct rtl838x_switch_priv *priv, int port, bool enable);
 	int (*eee_port_ability)(struct rtl838x_switch_priv *priv,
 				struct ethtool_eee *e, int port);
+	u64 (*l2_hash_seed)(u64 mac, u32 vid);
+	u32 (*l2_hash_key)(struct rtl838x_switch_priv *priv, u64 seed);
 	u64 (*read_mcast_pmask)(int idx);
 	void (*write_mcast_pmask)(int idx, u64 portmask);
 	void (*vlan_fwd_on_inner)(int port, bool is_set);
@@ -494,6 +518,7 @@ struct rtl838x_switch_priv {
 	struct net_device *lag_devs[MAX_LAGS];
 	struct notifier_block nb;
 	bool eee_enabled;
+	unsigned long int mc_group_bm[MAX_MC_GROUPS >> 5];
 };
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
