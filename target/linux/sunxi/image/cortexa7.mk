@@ -81,7 +81,7 @@ define Device/sinovoip_bananapi-m2-berry
   DEVICE_VENDOR := Sinovoip
   DEVICE_MODEL := Banana Pi M2 Berry
   DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi kmod-brcmfmac \
-	brcmfmac-firmware-43430-sdio wpad-basic-wolfssl
+	cypress-firmware-43430-sdio wpad-basic-wolfssl
   SUPPORTED_DEVICES:=lemaker,bananapi-m2-berry
   SOC := sun8i-v40
 endef
