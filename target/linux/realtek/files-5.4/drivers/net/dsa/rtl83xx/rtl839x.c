@@ -48,68 +48,71 @@ static inline int rtl839x_tbl_access_data_0(int i)
 
 static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 {
-	u32 cmd;
-	u64 v;
-	u32 u, w;
+	u32 u, v, w;
+	// Read VLAN table (0) via register 0
+	struct table_reg *r = rtl_table_get(RTL8390_TBL_0, 0);
 
-	cmd = 1 << 16 /* Execute cmd */
-		| 0 << 15 /* Read */
-		| 0 << 12 /* Table type 0b000 */
-		| (vlan & 0xfff);
-	rtl839x_exec_tbl0_cmd(cmd);
+	rtl_table_read(r, vlan);
+	u = sw_r32(rtl_table_data(r, 0));
+	v = sw_r32(rtl_table_data(r, 1));
+	w = sw_r32(rtl_table_data(r, 2));
+	rtl_table_release(r);
 
-	v = sw_r32(RTL839X_TBL_ACCESS_DATA_0(0));
-	v <<= 32;
-	u = sw_r32(RTL839X_TBL_ACCESS_DATA_0(1));
-	v |= u;
-	info->tagged_ports = v >> 11;
+	info->tagged_ports = u;
+	info->tagged_ports = (info->tagged_ports << 21) | ((v >> 11) & 0x1fffff);
+	info->profile_id = w >> 30 | ((v & 1) << 2);
+	info->hash_mc_fid = !!(w & BIT(2));
+	info->hash_uc_fid = !!(w & BIT(3));
+	info->fid = (v >> 3) & 0xff;
 
-	w = sw_r32(RTL839X_TBL_ACCESS_DATA_0(2));
+	// Read UNTAG table (0) via table register 1
+	r = rtl_table_get(RTL8390_TBL_1, 0);
+	rtl_table_read(r, vlan);
+	u = sw_r32(rtl_table_data(r, 0));
+	v = sw_r32(rtl_table_data(r, 1));
+	rtl_table_release(r);
 
-	info->profile_id = w >> 30 | ((u & 1) << 2);
-	info->hash_mc_fid = !!(u & 2);
-	info->hash_uc_fid = !!(u & 4);
-	info->fid = (u >> 3) & 0xff;
-
-	cmd = 1 << 15 /* Execute cmd */
-		| 0 << 14 /* Read */
-		| 0 << 12 /* Table type 0b00 */
-		| (vlan & 0xfff);
-	rtl839x_exec_tbl1_cmd(cmd);
-	v = sw_r32(RTL839X_TBL_ACCESS_DATA_1(0));
-	v <<= 32;
-	v |= sw_r32(RTL839X_TBL_ACCESS_DATA_1(1));
-	info->untagged_ports = v >> 11;
+	info->untagged_ports = u;
+	info->untagged_ports = (info->untagged_ports << 21) | ((v >> 11) & 0x1fffff);
 }
 
 static void rtl839x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 {
-	u32 cmd = BIT(16) /* Execute cmd */
-		| BIT(15) /* Write */
-		| 0 << 12 /* Table type 0b00 */
-		| (vlan & 0xfff);
-	u32 w;
-	u64 v = info->tagged_ports << 11;
+	u32 u, v, w;
+	// Access VLAN table (0) via register 0
+	struct table_reg *r = rtl_table_get(RTL8390_TBL_0, 0);
 
-	v |= info->profile_id >> 2;
-	v |= info->hash_mc_fid ? 2 : 0;
-	v |= info->hash_uc_fid ? 4 : 0;
+	u = info->tagged_ports >> 21;
+	v = info->tagged_ports << 11;
 	v |= ((u32)info->fid) << 3;
-	rtl839x_set_port_reg_be(v, RTL838X_TBL_ACCESS_DATA_0(0));
+	v |= info->hash_uc_fid ? BIT(2) : 0;
+	v |= info->hash_mc_fid ? BIT(1) : 0;
+	v |= (info->profile_id & 0x4) ? 1 : 0;
+	w = ((u32)(info->profile_id & 3)) << 30;
 
-	w = info->profile_id;
-	sw_w32(w << 30, RTL838X_TBL_ACCESS_DATA_0(2));
-	rtl839x_exec_tbl0_cmd(cmd);
+	sw_w32(u, rtl_table_data(r, 0));
+	sw_w32(v, rtl_table_data(r, 1));
+	sw_w32(w, rtl_table_data(r, 2));
+
+	rtl_table_write(r, vlan);
+	rtl_table_release(r);
 }
 
 static void rtl839x_vlan_set_untagged(u32 vlan, u64 portmask)
 {
-	u32 cmd = BIT(16) /* Execute cmd */
-		| BIT(15) /* Write */
-		| 0 << 12 /* Table type 0b00 */
-		| (vlan & 0xfff);
-	rtl839x_set_port_reg_be(portmask << 11, RTL838X_TBL_ACCESS_DATA_1(0));
-	rtl839x_exec_tbl1_cmd(cmd);
+	u32 u, v;
+
+	// Access UNTAG table (0) via table register 1
+	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 0);
+
+	u = portmask >> 21;
+	v = portmask << 11;
+
+	sw_w32(u, rtl_table_data(r, 0));
+	sw_w32(v, rtl_table_data(r, 1));
+	rtl_table_write(r, vlan);
+
+	rtl_table_release(r);
 }
 
 static inline int rtl839x_mac_force_mode_ctrl(int p)
@@ -243,9 +246,47 @@ static u64 rtl839x_read_cam(int idx, struct rtl838x_l2_entry *e)
 	return entry;
 }
 
-static inline int rtl839x_vlan_profile(int profile)
+static u64 rtl839x_read_mcast_pmask(int idx)
 {
-	return RTL839X_VLAN_PROFILE(profile);
+	u64 portmask;
+	// Read MC_PMSK (2) via register RTL8390_TBL_L2
+	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 2);
+
+	rtl_table_read(q, idx);
+	portmask = sw_r32(rtl_table_data(q, 0));
+	portmask <<= 32;
+	portmask |= sw_r32(rtl_table_data(q, 1));
+	portmask >>= 11;  // LSB is bit 11 in data registers
+	rtl_table_release(q);
+
+	return portmask;
+}
+
+static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
+{
+	// Access MC_PMSK (2) via register RTL8380_TBL_L2
+	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 2);
+
+	portmask <<= 11; // LSB is bit 11 in data registers
+	sw_w32((u32)(portmask >> 32), rtl_table_data(q, 0));
+	sw_w32((u32)((portmask & 0xfffff800)), rtl_table_data(q, 1));
+	rtl_table_write(q, idx);
+	rtl_table_release(q);
+}
+
+static void rtl839x_vlan_profile_setup(int profile)
+{
+	u32 p[2];
+	u32 pmask_id = UNKNOWN_MC_PMASK;
+
+	p[0] = pmask_id; // Use portmaks 0xfff for unknown IPv6 MC flooding
+	// Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for IP/L2-MC traffic flooding
+	p[1] = 1 | pmask_id << 1 | pmask_id << 13;
+
+	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
+	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
+
+	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x000fffffffffffff);
 }
 
 static inline int rtl839x_vlan_port_egr_filter(int port)
@@ -477,20 +518,21 @@ u32 rtl839x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 	return h;
 }
 
-void rtl839x_vlan_profile_dump(int index)
+void rtl839x_vlan_profile_dump(int profile)
 {
-	u32 profile, profile1;
+	u32 p[2];
 
-	if (index < 0 || index > 7)
+	if (profile < 0 || profile > 7)
 		return;
 
-	profile1 = sw_r32(RTL839X_VLAN_PROFILE(index) + 4);
-	profile = sw_r32(RTL839X_VLAN_PROFILE(index));
+	p[0] = sw_r32(RTL839X_VLAN_PROFILE(profile));
+	p[1] = sw_r32(RTL839X_VLAN_PROFILE(profile) + 4);
 
-	pr_debug("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %x, \
-		IPv4 Unknown MultiCast Field %x, IPv6 Unknown MultiCast Field: %x",
-		index, profile & 1, (profile >> 1) & 0xfff, (profile >> 13) & 0xfff,
-		(profile1) & 0xfff);
+	pr_info("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
+		UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d",
+		profile, p[1] & 1, (p[1] >> 1) & 0xfff, (p[1] >> 13) & 0xfff,
+		(p[0]) & 0xfff);
+	pr_info("VLAN profile %d: raw %08x, %08x\n", profile, p[0], p[1]);
 }
 
 static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -626,6 +668,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.vlan_set_tagged = rtl839x_vlan_set_tagged,
 	.vlan_set_untagged = rtl839x_vlan_set_untagged,
 	.vlan_profile_dump = rtl839x_vlan_profile_dump,
+	.vlan_profile_setup = rtl839x_vlan_profile_setup,
 	.stp_get = rtl839x_stp_get,
 	.stp_set = rtl839x_stp_set,
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
@@ -652,4 +695,6 @@ const struct rtl838x_reg rtl839x_reg = {
 	.init_eee = rtl839x_init_eee,
 	.port_eee_set = rtl839x_port_eee_set,
 	.eee_port_ability = rtl839x_eee_port_ability,
+	.read_mcast_pmask = rtl839x_read_mcast_pmask,
+	.write_mcast_pmask = rtl839x_write_mcast_pmask,
 };
