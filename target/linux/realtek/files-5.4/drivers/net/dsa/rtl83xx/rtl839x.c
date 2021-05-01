@@ -456,6 +456,83 @@ static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 	priv->r->exec_tbl0_cmd(cmd);
 }
 
+/*
+ * Enables or disables the EEE/EEEP capability of a port
+ */
+void rtl839x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+{
+	u32 v;
+
+	// This works only for Ethernet ports, and on the RTL839X, ports above 47 are SFP
+	if (port >= 48)
+		return;
+
+	enable = true;
+	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+	v = enable ? 0xf : 0x0;
+
+	// Set EEE for 100, 500, 1000MBit and 10GBit
+	sw_w32_mask(0xf << 8, v << 8, rtl839x_mac_force_mode_ctrl(port));
+
+	// Set TX/RX EEE state
+	v = enable ? 0x3 : 0x0;
+	sw_w32(v, RTL839X_EEE_CTRL(port));
+
+	priv->ports[port].eee_enabled = enable;
+}
+
+/*
+ * Get EEE own capabilities and negotiation result
+ */
+int rtl839x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
+{
+	u64 link, a;
+
+	if (port >= 48)
+		return 0;
+
+	link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
+	if (!(link & BIT_ULL(port)))
+		return 0;
+
+	if (sw_r32(rtl839x_mac_force_mode_ctrl(port)) & BIT(8))
+		e->advertised |= ADVERTISED_100baseT_Full;
+
+	if (sw_r32(rtl839x_mac_force_mode_ctrl(port)) & BIT(10))
+		e->advertised |= ADVERTISED_1000baseT_Full;
+
+	a = rtl839x_get_port_reg_le(RTL839X_MAC_EEE_ABLTY);
+	pr_info("Link partner: %016llx\n", a);
+	if (rtl839x_get_port_reg_le(RTL839X_MAC_EEE_ABLTY) & BIT_ULL(port)) {
+		e->lp_advertised = ADVERTISED_100baseT_Full;
+		e->lp_advertised |= ADVERTISED_1000baseT_Full;
+		return 1;
+	}
+
+	return 0;
+}
+
+static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+{
+	int i;
+
+	pr_info("Setting up EEE, state: %d\n", enable);
+
+	// Set wake timer for TX and pause timer both to 0x21
+	sw_w32_mask(0xff << 20| 0xff, 0x21 << 20| 0x21, RTL839X_EEE_TX_TIMER_GELITE_CTRL);
+	// Set pause wake timer for GIGA-EEE to 0x11
+	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_GIGA_CTRL);
+	// Set pause wake timer for 10GBit ports to 0x11
+	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_10G_CTRL);
+
+	// Setup EEE on all ports
+	for (i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy)
+			rtl839x_port_eee_set(priv, i, enable);
+	}
+	priv->eee_enabled = enable;
+}
+
 const struct rtl838x_reg rtl839x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -510,4 +587,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.trk_mbr_ctr = rtl839x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL839X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL839X_SPCL_TRAP_EAPOL_CTRL,
+	.init_eee = rtl839x_init_eee,
+	.port_eee_set = rtl839x_port_eee_set,
+	.eee_port_ability = rtl839x_eee_port_ability,
 };
