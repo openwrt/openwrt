@@ -1204,7 +1204,7 @@ define KernelPackage/qlcnic
   AUTOLOAD:=$(call AutoProbe,qlcnic)
 endef
 
-define KernelPackage/macvlan/description
+define KernelPackage/qlcnic/description
   This driver supports QLogic QLE8240 and QLE8242 Converged Ethernet
   devices.
 endef
