@@ -205,7 +205,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		break;
 	case PHY_INTERFACE_MODE_RGMII_TXID:
 		mask = 0;
-		val_delay &= ~GSW_REG_GPCx_TXDELAY;
+		val_delay |= GSW_REG_GPCx_TXDELAY;
 		val_delay |= GSW_REG_GPCx_RXDELAY;
 		break;
 	case PHY_INTERFACE_MODE_MII:
