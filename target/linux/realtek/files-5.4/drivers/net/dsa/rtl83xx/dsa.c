@@ -153,6 +153,36 @@ static enum dsa_tag_protocol rtl83xx_get_tag_protocol(struct dsa_switch *ds, int
 	return DSA_TAG_PROTO_TRAILER;
 }
 
+/*
+ * Initialize all VLANS
+ */
+static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
+{
+	struct rtl838x_vlan_info info;
+	int i;
+
+	pr_info("In %s\n", __func__);
+
+	priv->r->vlan_profile_setup(0);
+	priv->r->vlan_profile_setup(1);
+	pr_info("UNKNOWN_MC_PMASK: %016llx\n", priv->r->read_mcast_pmask(UNKNOWN_MC_PMASK));
+	priv->r->vlan_profile_dump(0);
+
+	info.fid = 0;			// Default Forwarding ID / MSTI
+	info.hash_uc_fid = false;	// Do not build the L2 lookup hash with FID, but VID
+	info.hash_mc_fid = false;	// Do the same for Multicast packets
+	info.profile_id = 0;		// Use default Vlan Profile 0
+	info.tagged_ports = 0;		// Initially no port members
+
+	// Initialize all vlans 0-4095
+	for (i = 0; i < MAX_VLANS; i ++)
+		priv->r->vlan_set_tagged(i, &info);
+
+	// Set forwarding action based on inner VLAN tag
+	for (i = 0; i < priv->cpu_port; i++)
+		priv->r->vlan_fwd_on_inner(i, true);
+}
+
 static int rtl83xx_setup(struct dsa_switch *ds)
 {
 	int i;
@@ -187,6 +217,8 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 		rtl839x_print_matrix();
 
 	rtl83xx_init_stats(priv);
+
+	rtl83xx_vlan_setup(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
 
@@ -227,6 +259,8 @@ static int rtl930x_setup(struct dsa_switch *ds)
 	rtl930x_print_matrix();
 
 	// TODO: Initialize statistics
+
+	rtl83xx_vlan_setup(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
 
