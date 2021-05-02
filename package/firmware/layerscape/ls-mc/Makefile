@@ -16,6 +16,8 @@ PKG_SOURCE_URL:=https://github.com/NXP/qoriq-mc-binary.git
 PKG_SOURCE_VERSION:=f73683596a7b72124d67b62e64f3dc2bb36b9321
 PKG_MIRROR_HASH:=1cba30c2a6814763c3e155c1cc5fa21998bb6ad5814fcb09e99f98bf36f65d9e
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/layerscape-mc

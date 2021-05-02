@@ -24,6 +24,8 @@ else
 	MICROCODE:="intel-microcode"
 endif
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/intel-microcode
