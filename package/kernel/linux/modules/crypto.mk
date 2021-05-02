@@ -986,16 +986,6 @@ endef
 $(eval $(call KernelPackage,crypto-user))
 
 
-define KernelPackage/crypto-wq
-  TITLE:=CryptoAPI work queue handling
-  KCONFIG:=CONFIG_CRYPTO_WORKQUEUE
-  FILES:=$(LINUX_DIR)/crypto/crypto_wq.ko
-  AUTOLOAD:=$(call AutoLoad,09,crypto_wq)
-  $(call AddDepends/crypto)
-endef
-$(eval $(call KernelPackage,crypto-wq))
-
-
 define KernelPackage/crypto-xts
   TITLE:=XTS cipher CryptoAPI module
   DEPENDS:=+kmod-crypto-gf128 +kmod-crypto-manager
