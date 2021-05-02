@@ -58,6 +58,37 @@ define Build/iodata-mstc-header
 	)
 endef
 
+define Build/iodata-mstc-header2
+	$(eval model=$(word 1,$(1)))
+	$(eval model_id=$(word 2,$(1)))
+
+	( \
+		fw_len_crc=$$(gzip -c $@ | tail -c 8 | \
+			od -An -tx8 --endian little); \
+		printf "\x03\x1d\x61\x29\x07$(model)" | \
+			dd bs=21 count=1 conv=sync 2>/dev/null; \
+		printf "0.00.000" | dd bs=16 count=1 conv=sync 2>/dev/null; \
+		printf "$$(echo $(REVISION) | cut -d- -f1 | head -c8)" | \
+			dd bs=9 count=1 conv=sync 2>/dev/null; \
+		printf "$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)" | \
+			dd bs=33 count=1 conv=sync 2>/dev/null; \
+		date -d "@$(SOURCE_DATE_EPOCH)" "+%F" | tr -d "\n" | \
+			dd bs=15 count=1 conv=sync 2>/dev/null; \
+		printf "$$(echo $(model_id) | sed 's/../\\x&/g')" | \
+			dd bs=8 count=1 conv=sync 2>/dev/null; \
+		printf "$$(echo $$fw_len_crc | sed 's/../\\x&/g')" | \
+			dd bs=14 count=1 conv=sync 2>/dev/null; \
+		cat $@; \
+	) > $@.new
+	( \
+		header_crc="$$(head -c116 $@.new | gzip -c | tail -c8 | \
+			od -An -tx4 -N4 --endian little)"; \
+		printf "$$(echo $$header_crc | sed 's/../\\x&/g')"; \
+	) | dd of=$@.new bs=4 oflag=seek_bytes seek=110 conv=notrunc
+
+	mv $@.new $@
+endef
+
 define Build/znet-header
 	$(eval version=$(word 1,$(1)))
 	( \
@@ -1194,6 +1225,27 @@ define Device/iodata_wn-ax2033gr
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-ax2033gr
+
+define Device/iodata_wn-deax1800gr
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := WN-DEAX1800GR
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 6144k
+  IMAGE_SIZE := 47104k
+  UBINIZE_OPTS := -E 5
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size | xor-image -p 29944a25120984c2 -x | \
+	iodata-mstc-header2 WN-DEAX1800GR 00021003
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+endef
+TARGET_DEVICES += iodata_wn-deax1800gr
 
 define Device/iodata_wn-dx1167r
   $(Device/iodata_nand)
