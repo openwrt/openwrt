@@ -5,6 +5,8 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=bcm4908img
 PKG_RELEASE:=1
 
+PKG_FLAGS:=nonshared
+
 PKG_BUILD_DEPENDS := bcm4908img/host
 
 include $(INCLUDE_DIR)/package.mk
