@@ -256,5 +256,6 @@ define Device/zyxel_nbg6716
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 	zyxel-factory
   UBINIZE_OPTS := -E 5
+  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_nbg6716
