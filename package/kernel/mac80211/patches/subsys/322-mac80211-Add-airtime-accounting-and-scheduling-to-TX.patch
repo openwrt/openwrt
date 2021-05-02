@@ -240,7 +240,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				   sta->debugfs_dir,
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1136,6 +1136,8 @@ struct ieee80211_local {
+@@ -1137,6 +1137,8 @@ struct ieee80211_local {
  	struct list_head active_txqs[IEEE80211_NUM_ACS];
  	u16 schedule_round[IEEE80211_NUM_ACS];
  
@@ -259,7 +259,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	INIT_LIST_HEAD(&local->chanctx_list);
  	mutex_init(&local->chanctx_mtx);
-@@ -1142,6 +1143,9 @@ int ieee80211_register_hw(struct ieee802
+@@ -1153,6 +1154,9 @@ int ieee80211_register_hw(struct ieee802
  	if (!local->hw.max_nan_de_entries)
  		local->hw.max_nan_de_entries = IEEE80211_MAX_NAN_INSTANCE_ID;
  

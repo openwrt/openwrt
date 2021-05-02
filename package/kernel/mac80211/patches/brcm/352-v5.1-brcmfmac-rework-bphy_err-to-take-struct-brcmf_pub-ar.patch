@@ -1864,7 +1864,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	return ret;
  }
-@@ -5381,7 +5425,7 @@ static void brcmf_clear_assoc_ies(struct
+@@ -5384,7 +5428,7 @@ static void brcmf_clear_assoc_ies(struct
  static s32 brcmf_get_assoc_ies(struct brcmf_cfg80211_info *cfg,
  			       struct brcmf_if *ifp)
  {
@@ -1873,7 +1873,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct brcmf_cfg80211_assoc_ielen_le *assoc_info;
  	struct brcmf_cfg80211_connect_info *conn_info = cfg_to_conn(cfg);
  	u32 req_len;
-@@ -5393,7 +5437,7 @@ static s32 brcmf_get_assoc_ies(struct br
+@@ -5396,7 +5440,7 @@ static s32 brcmf_get_assoc_ies(struct br
  	err = brcmf_fil_iovar_data_get(ifp, "assoc_info",
  				       cfg->extra_buf, WL_ASSOC_INFO_MAX);
  	if (err) {
@@ -1882,7 +1882,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return err;
  	}
  	assoc_info =
-@@ -5405,7 +5449,7 @@ static s32 brcmf_get_assoc_ies(struct br
+@@ -5408,7 +5452,7 @@ static s32 brcmf_get_assoc_ies(struct br
  					       cfg->extra_buf,
  					       WL_ASSOC_INFO_MAX);
  		if (err) {
@@ -1891,7 +1891,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			return err;
  		}
  		conn_info->req_ie_len = req_len;
-@@ -5423,7 +5467,7 @@ static s32 brcmf_get_assoc_ies(struct br
+@@ -5426,7 +5470,7 @@ static s32 brcmf_get_assoc_ies(struct br
  					       cfg->extra_buf,
  					       WL_ASSOC_INFO_MAX);
  		if (err) {
@@ -1900,7 +1900,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			return err;
  		}
  		conn_info->resp_ie_len = resp_len;
-@@ -5552,7 +5596,7 @@ brcmf_notify_connect_status_ap(struct br
+@@ -5555,7 +5599,7 @@ brcmf_notify_connect_status_ap(struct br
  			       struct net_device *ndev,
  			       const struct brcmf_event_msg *e, void *data)
  {
@@ -1909,7 +1909,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	static int generation;
  	u32 event = e->event_code;
  	u32 reason = e->reason;
-@@ -5570,7 +5614,7 @@ brcmf_notify_connect_status_ap(struct br
+@@ -5573,7 +5617,7 @@ brcmf_notify_connect_status_ap(struct br
  	if (((event == BRCMF_E_ASSOC_IND) || (event == BRCMF_E_REASSOC_IND)) &&
  	    (reason == BRCMF_E_STATUS_SUCCESS)) {
  		if (!data) {
@@ -1918,7 +1918,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			return -EINVAL;
  		}
  
-@@ -5862,7 +5906,7 @@ static void init_vif_event(struct brcmf_
+@@ -5865,7 +5909,7 @@ static void init_vif_event(struct brcmf_
  
  static s32 brcmf_dongle_roam(struct brcmf_if *ifp)
  {
@@ -1927,7 +1927,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	s32 err;
  	u32 bcn_timeout;
  	__le32 roamtrigger[2];
-@@ -5875,7 +5919,7 @@ static s32 brcmf_dongle_roam(struct brcm
+@@ -5878,7 +5922,7 @@ static s32 brcmf_dongle_roam(struct brcm
  		bcn_timeout = BRCMF_DEFAULT_BCN_TIMEOUT_ROAM_ON;
  	err = brcmf_fil_iovar_int_set(ifp, "bcn_timeout", bcn_timeout);
  	if (err) {
@@ -1936,7 +1936,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto roam_setup_done;
  	}
  
-@@ -5887,7 +5931,7 @@ static s32 brcmf_dongle_roam(struct brcm
+@@ -5890,7 +5934,7 @@ static s32 brcmf_dongle_roam(struct brcm
  	err = brcmf_fil_iovar_int_set(ifp, "roam_off",
  				      ifp->drvr->settings->roamoff);
  	if (err) {
@@ -1945,7 +1945,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto roam_setup_done;
  	}
  
-@@ -5896,7 +5940,7 @@ static s32 brcmf_dongle_roam(struct brcm
+@@ -5899,7 +5943,7 @@ static s32 brcmf_dongle_roam(struct brcm
  	err = brcmf_fil_cmd_data_set(ifp, BRCMF_C_SET_ROAM_TRIGGER,
  				     (void *)roamtrigger, sizeof(roamtrigger));
  	if (err) {
@@ -1954,7 +1954,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto roam_setup_done;
  	}
  
-@@ -5905,7 +5949,7 @@ static s32 brcmf_dongle_roam(struct brcm
+@@ -5908,7 +5952,7 @@ static s32 brcmf_dongle_roam(struct brcm
  	err = brcmf_fil_cmd_data_set(ifp, BRCMF_C_SET_ROAM_DELTA,
  				     (void *)roam_delta, sizeof(roam_delta));
  	if (err) {
@@ -1963,7 +1963,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto roam_setup_done;
  	}
  
-@@ -5916,26 +5960,26 @@ roam_setup_done:
+@@ -5919,26 +5963,26 @@ roam_setup_done:
  static s32
  brcmf_dongle_scantime(struct brcmf_if *ifp)
  {
@@ -1994,7 +1994,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto dongle_scantime_out;
  	}
  
-@@ -5968,7 +6012,8 @@ static int brcmf_construct_chaninfo(stru
+@@ -5971,7 +6015,8 @@ static int brcmf_construct_chaninfo(stru
  				    u32 bw_cap[])
  {
  	struct wiphy *wiphy = cfg_to_wiphy(cfg);
@@ -2004,7 +2004,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct ieee80211_supported_band *band;
  	struct ieee80211_channel *channel;
  	struct brcmf_chanspec_list *list;
-@@ -5989,7 +6034,7 @@ static int brcmf_construct_chaninfo(stru
+@@ -5992,7 +6037,7 @@ static int brcmf_construct_chaninfo(stru
  	err = brcmf_fil_iovar_data_get(ifp, "chanspecs", pbuf,
  				       BRCMF_DCMD_MEDLEN);
  	if (err) {
@@ -2013,7 +2013,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto fail_pbuf;
  	}
  
-@@ -6012,7 +6057,7 @@ static int brcmf_construct_chaninfo(stru
+@@ -6015,7 +6060,7 @@ static int brcmf_construct_chaninfo(stru
  		} else if (ch.band == BRCMU_CHAN_BAND_5G) {
  			band = wiphy->bands[NL80211_BAND_5GHZ];
  		} else {
@@ -2022,7 +2022,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  				 ch.chspec);
  			continue;
  		}
-@@ -6036,7 +6081,7 @@ static int brcmf_construct_chaninfo(stru
+@@ -6039,7 +6084,7 @@ static int brcmf_construct_chaninfo(stru
  			/* It seems firmware supports some channel we never
  			 * considered. Something new in IEEE standard?
  			 */
@@ -2031,7 +2031,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  				 ch.control_ch_num);
  			continue;
  		}
-@@ -6093,8 +6138,8 @@ fail_pbuf:
+@@ -6096,8 +6141,8 @@ fail_pbuf:
  
  static int brcmf_enable_bw40_2g(struct brcmf_cfg80211_info *cfg)
  {
@@ -2042,7 +2042,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct ieee80211_supported_band *band;
  	struct brcmf_fil_bwcap_le band_bwcap;
  	struct brcmf_chanspec_list *list;
-@@ -6140,7 +6185,7 @@ static int brcmf_enable_bw40_2g(struct b
+@@ -6143,7 +6188,7 @@ static int brcmf_enable_bw40_2g(struct b
  		err = brcmf_fil_iovar_data_get(ifp, "chanspecs", pbuf,
  					       BRCMF_DCMD_MEDLEN);
  		if (err) {
@@ -2051,7 +2051,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			kfree(pbuf);
  			return err;
  		}
-@@ -6171,7 +6216,7 @@ static int brcmf_enable_bw40_2g(struct b
+@@ -6174,7 +6219,7 @@ static int brcmf_enable_bw40_2g(struct b
  
  static void brcmf_get_bwcap(struct brcmf_if *ifp, u32 bw_cap[])
  {
@@ -2060,7 +2060,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	u32 band, mimo_bwcap;
  	int err;
  
-@@ -6207,7 +6252,7 @@ static void brcmf_get_bwcap(struct brcmf
+@@ -6210,7 +6255,7 @@ static void brcmf_get_bwcap(struct brcmf
  		bw_cap[NL80211_BAND_5GHZ] |= WLC_BW_20MHZ_BIT;
  		break;
  	default:
@@ -2069,7 +2069,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	}
  }
  
-@@ -6282,7 +6327,8 @@ static void brcmf_update_vht_cap(struct
+@@ -6285,7 +6330,8 @@ static void brcmf_update_vht_cap(struct
  
  static int brcmf_setup_wiphybands(struct brcmf_cfg80211_info *cfg)
  {
@@ -2079,7 +2079,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct wiphy *wiphy = cfg_to_wiphy(cfg);
  	u32 nmode = 0;
  	u32 vhtmode = 0;
-@@ -6299,7 +6345,7 @@ static int brcmf_setup_wiphybands(struct
+@@ -6302,7 +6348,7 @@ static int brcmf_setup_wiphybands(struct
  	(void)brcmf_fil_iovar_int_get(ifp, "vhtmode", &vhtmode);
  	err = brcmf_fil_iovar_int_get(ifp, "nmode", &nmode);
  	if (err) {
@@ -2088,7 +2088,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	} else {
  		brcmf_get_bwcap(ifp, bw_cap);
  	}
-@@ -6309,7 +6355,7 @@ static int brcmf_setup_wiphybands(struct
+@@ -6312,7 +6358,7 @@ static int brcmf_setup_wiphybands(struct
  
  	err = brcmf_fil_iovar_int_get(ifp, "rxchain", &rxchain);
  	if (err) {
@@ -2097,7 +2097,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		nchain = 1;
  	} else {
  		for (nchain = 0; rxchain; nchain++)
-@@ -6319,7 +6365,7 @@ static int brcmf_setup_wiphybands(struct
+@@ -6322,7 +6368,7 @@ static int brcmf_setup_wiphybands(struct
  
  	err = brcmf_construct_chaninfo(cfg, bw_cap);
  	if (err) {
@@ -2106,7 +2106,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return err;
  	}
  
-@@ -6526,12 +6572,13 @@ static void brcmf_wiphy_wowl_params(stru
+@@ -6529,12 +6575,13 @@ static void brcmf_wiphy_wowl_params(stru
  {
  #ifdef CONFIG_PM
  	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
@@ -2121,7 +2121,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		wiphy->wowlan = &brcmf_wowlan_support;
  		return;
  	}
-@@ -6628,7 +6675,7 @@ static int brcmf_setup_wiphy(struct wiph
+@@ -6631,7 +6678,7 @@ static int brcmf_setup_wiphy(struct wiph
  	err = brcmf_fil_cmd_data_get(ifp, BRCMF_C_GET_BANDLIST, &bandlist,
  				     sizeof(bandlist));
  	if (err) {
@@ -2130,7 +2130,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return err;
  	}
  	/* first entry in bandlist is number of bands */
-@@ -6677,7 +6724,7 @@ static int brcmf_setup_wiphy(struct wiph
+@@ -6680,7 +6727,7 @@ static int brcmf_setup_wiphy(struct wiph
  
  static s32 brcmf_config_dongle(struct brcmf_cfg80211_info *cfg)
  {
@@ -2139,7 +2139,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct net_device *ndev;
  	struct wireless_dev *wdev;
  	struct brcmf_if *ifp;
-@@ -6715,7 +6762,7 @@ static s32 brcmf_config_dongle(struct br
+@@ -6718,7 +6765,7 @@ static s32 brcmf_config_dongle(struct br
  
  	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_FAKEFRAG, 1);
  	if (err) {
@@ -2148,7 +2148,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto default_conf_out;
  	}
  
-@@ -6896,6 +6943,7 @@ static void brcmf_cfg80211_reg_notifier(
+@@ -6899,6 +6946,7 @@ static void brcmf_cfg80211_reg_notifier(
  {
  	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
  	struct brcmf_if *ifp = brcmf_get_ifp(cfg->pub, 0);
@@ -2156,7 +2156,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	struct brcmf_fil_country_le ccreq;
  	s32 err;
  	int i;
-@@ -6907,7 +6955,7 @@ static void brcmf_cfg80211_reg_notifier(
+@@ -6910,7 +6958,7 @@ static void brcmf_cfg80211_reg_notifier(
  	/* ignore non-ISO3166 country codes */
  	for (i = 0; i < 2; i++)
  		if (req->alpha2[i] < 'A' || req->alpha2[i] > 'Z') {
@@ -2165,7 +2165,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  				 req->alpha2[0], req->alpha2[1]);
  			return;
  		}
-@@ -6917,7 +6965,7 @@ static void brcmf_cfg80211_reg_notifier(
+@@ -6920,7 +6968,7 @@ static void brcmf_cfg80211_reg_notifier(
  
  	err = brcmf_fil_iovar_data_get(ifp, "country", &ccreq, sizeof(ccreq));
  	if (err) {
@@ -2174,7 +2174,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return;
  	}
  
-@@ -6927,7 +6975,7 @@ static void brcmf_cfg80211_reg_notifier(
+@@ -6930,7 +6978,7 @@ static void brcmf_cfg80211_reg_notifier(
  
  	err = brcmf_fil_iovar_data_set(ifp, "country", &ccreq, sizeof(ccreq));
  	if (err) {
@@ -2183,7 +2183,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return;
  	}
  	brcmf_setup_wiphybands(cfg);
-@@ -6973,13 +7021,13 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+@@ -6976,13 +7024,13 @@ struct brcmf_cfg80211_info *brcmf_cfg802
  	u16 *cap = NULL;
  
  	if (!ndev) {
@@ -2199,7 +2199,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return NULL;
  	}
  
-@@ -7000,7 +7048,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+@@ -7003,7 +7051,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
  
  	err = wl_init_priv(cfg);
  	if (err) {
@@ -2208,7 +2208,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		brcmf_free_vif(vif);
  		goto wiphy_out;
  	}
-@@ -7009,7 +7057,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+@@ -7012,7 +7060,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
  	/* determine d11 io type before wiphy setup */
  	err = brcmf_fil_cmd_int_get(ifp, BRCMF_C_GET_VERSION, &io_type);
  	if (err) {
@@ -2217,7 +2217,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto priv_out;
  	}
  	cfg->d11inf.io_type = (u8)io_type;
-@@ -7043,13 +7091,13 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+@@ -7046,13 +7094,13 @@ struct brcmf_cfg80211_info *brcmf_cfg802
  #endif
  	err = wiphy_register(wiphy);
  	if (err < 0) {
@@ -2233,7 +2233,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		goto wiphy_unreg_out;
  	}
  
-@@ -7067,24 +7115,24 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+@@ -7070,24 +7118,24 @@ struct brcmf_cfg80211_info *brcmf_cfg802
  
  	err = brcmf_fweh_activate_events(ifp);
  	if (err) {
@@ -2262,7 +2262,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		brcmf_btcoex_detach(cfg);
  		brcmf_p2p_detach(&cfg->p2p);
  		goto wiphy_unreg_out;
-@@ -7104,7 +7152,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+@@ -7107,7 +7155,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
  	/* (re-) activate FWEH event handling */
  	err = brcmf_fweh_activate_events(ifp);
  	if (err) {

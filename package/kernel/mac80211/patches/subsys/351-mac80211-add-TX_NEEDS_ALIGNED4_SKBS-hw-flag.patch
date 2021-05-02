@@ -81,7 +81,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * mac80211 is capable of taking advantage of many hardware
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -1871,6 +1871,10 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -1877,6 +1877,10 @@ int ieee80211_if_add(struct ieee80211_lo
  					+ 8 /* rfc1042/bridge tunnel */
  					- ETH_HLEN /* ethernet hard_header_len */
  					+ IEEE80211_ENCRYPT_HEADROOM;
@@ -94,7 +94,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		ret = dev_alloc_name(ndev, ndev->name);
 --- a/net/mac80211/mesh_pathtbl.c
 +++ b/net/mac80211/mesh_pathtbl.c
-@@ -105,13 +105,15 @@ void mesh_path_assign_nexthop(struct mes
+@@ -106,13 +106,15 @@ void mesh_path_assign_nexthop(struct mes
  static void prepare_for_gate(struct sk_buff *skb, char *dst_addr,
  			     struct mesh_path *gate_mpath)
  {

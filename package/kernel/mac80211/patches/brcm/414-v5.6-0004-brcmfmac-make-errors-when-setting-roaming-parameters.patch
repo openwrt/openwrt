@@ -16,7 +16,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -5936,19 +5936,17 @@ static s32 brcmf_dongle_roam(struct brcm
+@@ -5939,19 +5939,17 @@ static s32 brcmf_dongle_roam(struct brcm
  	roamtrigger[1] = cpu_to_le32(BRCM_BAND_ALL);
  	err = brcmf_fil_cmd_data_set(ifp, BRCMF_C_SET_ROAM_TRIGGER,
  				     (void *)roamtrigger, sizeof(roamtrigger));

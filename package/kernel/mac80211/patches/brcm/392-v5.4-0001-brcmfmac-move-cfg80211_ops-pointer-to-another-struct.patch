@@ -24,7 +24,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -7194,7 +7194,6 @@ void brcmf_cfg80211_detach(struct brcmf_
+@@ -7197,7 +7197,6 @@ void brcmf_cfg80211_detach(struct brcmf_
  	brcmf_pno_detach(cfg);
  	brcmf_btcoex_detach(cfg);
  	wiphy_unregister(cfg->wiphy);

@@ -20,7 +20,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -6444,6 +6444,9 @@ brcmf_txrx_stypes[NUM_NL80211_IFTYPES] =
+@@ -6447,6 +6447,9 @@ brcmf_txrx_stypes[NUM_NL80211_IFTYPES] =
   *	#STA <= 1, #AP <= 1, channels = 1, 2 total
   *	#AP <= 4, matching BI, channels = 1, 4 total
   *
@@ -30,7 +30,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
   * p2p, no mchan, and mbss:
   *
   *	#STA <= 1, #P2P-DEV <= 1, #{P2P-CL, P2P-GO} <= 1, channels = 1, 3 total
-@@ -6455,6 +6458,10 @@ brcmf_txrx_stypes[NUM_NL80211_IFTYPES] =
+@@ -6458,6 +6461,10 @@ brcmf_txrx_stypes[NUM_NL80211_IFTYPES] =
   *	#STA <= 1, #P2P-DEV <= 1, #{P2P-CL, P2P-GO} <= 1, channels = 2, 3 total
   *	#STA <= 1, #P2P-DEV <= 1, #AP <= 1, #P2P-CL <= 1, channels = 1, 4 total
   *	#AP <= 4, matching BI, channels = 1, 4 total
@@ -41,7 +41,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
   */
  static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
  {
-@@ -6462,13 +6469,14 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6465,13 +6472,14 @@ static int brcmf_setup_ifmodes(struct wi
  	struct ieee80211_iface_limit *c0_limits = NULL;
  	struct ieee80211_iface_limit *p2p_limits = NULL;
  	struct ieee80211_iface_limit *mbss_limits = NULL;
@@ -58,7 +58,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	combo = kcalloc(n_combos, sizeof(*combo), GFP_KERNEL);
  	if (!combo)
  		goto err;
-@@ -6479,16 +6487,36 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6482,16 +6490,36 @@ static int brcmf_setup_ifmodes(struct wi
  
  	c = 0;
  	i = 0;
@@ -99,7 +99,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		wiphy->interface_modes |= BIT(NL80211_IFTYPE_P2P_CLIENT) |
  					  BIT(NL80211_IFTYPE_P2P_GO) |
  					  BIT(NL80211_IFTYPE_P2P_DEVICE);
-@@ -6497,16 +6525,26 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6500,16 +6528,26 @@ static int brcmf_setup_ifmodes(struct wi
  		c0_limits[i].max = 1;
  		c0_limits[i++].types = BIT(NL80211_IFTYPE_P2P_CLIENT) |
  				       BIT(NL80211_IFTYPE_P2P_GO);
