@@ -16,6 +16,8 @@ PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/rc
 PKG_SOURCE_VERSION:=e0fab6d9b61003caef577f7474c2fac61e6ba2ff
 PKG_MIRROR_HASH:=b6bc66e27b7c6db31101fdc2e6be7255181861bd38d8f25eb5eb80c468983eb2
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/layerscape-rcw
