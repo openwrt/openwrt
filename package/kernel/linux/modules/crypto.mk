@@ -600,7 +600,7 @@ $(eval $(call KernelPackage,crypto-lib-poly1305))
 
 define KernelPackage/crypto-manager
   TITLE:=CryptoAPI algorithm manager
-  DEPENDS:=+kmod-crypto-aead +kmod-crypto-hash +kmod-crypto-pcompress
+  DEPENDS:=+kmod-crypto-aead +kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_MANAGER \
 	CONFIG_CRYPTO_MANAGER2
@@ -768,19 +768,6 @@ define KernelPackage/crypto-pcbc
 endef
 
 $(eval $(call KernelPackage,crypto-pcbc))
-
-
-define KernelPackage/crypto-pcompress
-  TITLE:=CryptoAPI Partial (de)compression operations
-  KCONFIG:= \
-	CONFIG_CRYPTO_PCOMP=y \
-	CONFIG_CRYPTO_PCOMP2
-  FILES:=$(LINUX_DIR)/crypto/pcompress.ko
-  AUTOLOAD:=$(call AutoLoad,09,pcompress)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-pcompress))
 
 
 define KernelPackage/crypto-rsa
