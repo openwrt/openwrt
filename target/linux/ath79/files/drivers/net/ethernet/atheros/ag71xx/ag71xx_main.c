@@ -1677,12 +1677,12 @@ static int ag71xx_probe(struct platform_device *pdev)
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,10,0)
-	of_get_phy_mode(np, &ag->phy_if_mode);
+	err = of_get_phy_mode(np, &ag->phy_if_mode);
+	if (err < 0) {
 #else
 	ag->phy_if_mode = of_get_phy_mode(np);
-#endif
-
 	if (ag->phy_if_mode < 0) {
+#endif
 		dev_err(&pdev->dev, "missing phy-mode property in DT\n");
 		return ag->phy_if_mode;
 	}
