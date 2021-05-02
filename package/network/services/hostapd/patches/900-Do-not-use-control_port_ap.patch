@@ -1,0 +1,34 @@
+From ce4cddd0cb3b0f600f61428aa75108675114d054 Mon Sep 17 00:00:00 2001
+From: Manuel Giganto <mgigantoregistros@gmail.com>
+Date: Sun, 2 May 2021 21:29:50 +0000
+Subject: [PATCH] Do not use control_port_ap
+
+Control_port_ap causes connection problems to some devices when using EAP
+Right now there seems to be no way to disable or avoid control_port_ap
+This patch prevents the activation by default.
+
+Signed-off-by: Manuel Giganto <mgigantoregistros@gmail.com>
+---
+ src/drivers/driver_nl80211.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index db1cf9835..d6c365102 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -2218,10 +2218,12 @@ static void * wpa_driver_nl80211_drv_init(void *ctx, const char *ifname,
+ 	if (wpa_driver_nl80211_finish_drv_init(drv, set_addr, 1, driver_params))
+ 		goto failed;
+ 
++/*Disabled to prevent some compatibility issues with some devices using EAP
+ 	if (drv->capa.flags2 & WPA_DRIVER_FLAGS2_CONTROL_PORT_TX_STATUS) {
+ 		drv->control_port_ap = 1;
+ 		goto skip_wifi_status;
+ 	}
++*/
+ 
+ 	drv->eapol_tx_sock = socket(PF_PACKET, SOCK_DGRAM, 0);
+ 	if (drv->eapol_tx_sock < 0)
+-- 
+2.25.1
+
