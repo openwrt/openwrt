@@ -1,8 +1,8 @@
 --- a/net/dsa/tag_trailer.c
 +++ b/net/dsa/tag_trailer.c
-@@ -44,7 +44,12 @@ static struct sk_buff *trailer_xmit(stru
+@@ -17,7 +17,12 @@ static struct sk_buff *trailer_xmit(stru
  
- 	trailer = skb_put(nskb, 4);
+ 	trailer = skb_put(skb, 4);
  	trailer[0] = 0x80;
 +
 +#ifdef CONFIG_NET_DSA_RTL83XX
@@ -13,7 +13,7 @@
  	trailer[2] = 0x10;
  	trailer[3] = 0x00;
  
-@@ -61,12 +66,23 @@ static struct sk_buff *trailer_rcv(struc
+@@ -34,12 +39,23 @@ static struct sk_buff *trailer_rcv(struc
  		return NULL;
  
  	trailer = skb_tail_pointer(skb) - 4;
