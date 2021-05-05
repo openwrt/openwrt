@@ -1,6 +1,6 @@
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -441,6 +441,12 @@ config GPIO_REG
+@@ -508,6 +508,12 @@ config GPIO_REG
  	  A 32-bit single register GPIO fixed in/out implementation.  This
  	  can be used to represent any register as a set of GPIO signals.
  
@@ -15,9 +15,9 @@
  	depends on MFD_SYSCON
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -117,6 +117,7 @@ obj-$(CONFIG_GPIO_RC5T583)		+= gpio-rc5t
- obj-$(CONFIG_GPIO_RCAR)			+= gpio-rcar.o
+@@ -126,6 +126,7 @@ obj-$(CONFIG_GPIO_RDA)			+= gpio-rda.o
  obj-$(CONFIG_GPIO_RDC321X)		+= gpio-rdc321x.o
+ obj-$(CONFIG_GPIO_REALTEK_OTTO)		+= gpio-realtek-otto.o
  obj-$(CONFIG_GPIO_REG)			+= gpio-reg.o
 +obj-$(CONFIG_GPIO_RTL8231)		+= gpio-rtl8231.o
  obj-$(CONFIG_ARCH_SA1100)		+= gpio-sa1100.o

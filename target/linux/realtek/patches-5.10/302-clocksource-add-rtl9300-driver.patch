@@ -1,6 +1,6 @@
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
-@@ -127,6 +127,15 @@ config RDA_TIMER
+@@ -126,6 +126,15 @@ config RDA_TIMER
  	help
  	  Enables the support for the RDA Micro timer driver.
  
@@ -16,15 +16,9 @@
  config SUN4I_TIMER
  	bool "Sun4i timer driver" if COMPILE_TEST
  	depends on HAS_IOMEM
-@@ -696,5 +705,4 @@ config INGENIC_TIMER
- 	select IRQ_DOMAIN
- 	help
- 	  Support for the timer/counter unit of the Ingenic JZ SoCs.
--
- endmenu
 --- a/drivers/clocksource/Makefile
 +++ b/drivers/clocksource/Makefile
-@@ -61,6 +61,7 @@ obj-$(CONFIG_MILBEAUT_TIMER)	+= timer-mi
+@@ -63,6 +63,7 @@ obj-$(CONFIG_MILBEAUT_TIMER)	+= timer-mi
  obj-$(CONFIG_SPRD_TIMER)	+= timer-sprd.o
  obj-$(CONFIG_NPCM7XX_TIMER)	+= timer-npcm7xx.o
  obj-$(CONFIG_RDA_TIMER)		+= timer-rda.o

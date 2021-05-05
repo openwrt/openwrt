@@ -1,6 +1,6 @@
 --- a/drivers/net/dsa/Kconfig
 +++ b/drivers/net/dsa/Kconfig
-@@ -63,6 +63,8 @@ config NET_DSA_QCA8K
+@@ -67,6 +67,8 @@ config NET_DSA_QCA8K
  	  This enables support for the Qualcomm Atheros QCA8K Ethernet
  	  switch chips.
  
@@ -11,8 +11,8 @@
  	depends on NET_DSA
 --- a/drivers/net/dsa/Makefile
 +++ b/drivers/net/dsa/Makefile
-@@ -21,3 +21,4 @@ obj-y				+= b53/
- obj-y				+= microchip/
- obj-y				+= mv88e6xxx/
+@@ -23,3 +23,4 @@ obj-y				+= mv88e6xxx/
+ obj-y				+= ocelot/
+ obj-y				+= qca/
  obj-y				+= sja1105/
 +obj-y				+= rtl83xx/

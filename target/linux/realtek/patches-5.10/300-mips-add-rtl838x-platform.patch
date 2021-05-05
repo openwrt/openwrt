@@ -1,16 +1,16 @@
 --- a/arch/mips/Kbuild.platforms
 +++ b/arch/mips/Kbuild.platforms
-@@ -27,6 +27,7 @@ platforms += pistachio
- platforms += pmcs-msp71xx
- platforms += pnx833x
- platforms += ralink
-+platforms += rtl838x
- platforms += rb532
- platforms += sgi-ip22
- platforms += sgi-ip27
+@@ -23,6 +23,7 @@ platform-$(CONFIG_PIC32MZDA)		+= pic32/
+ platform-$(CONFIG_MACH_PISTACHIO)	+= pistachio/
+ platform-$(CONFIG_RALINK)		+= ralink/
+ platform-$(CONFIG_MIKROTIK_RB532)	+= rb532/
++platform-$(CONFIG_RTL838X)		+= rtl838x/
+ platform-$(CONFIG_SGI_IP22)		+= sgi-ip22/
+ platform-$(CONFIG_SGI_IP27)		+= sgi-ip27/
+ platform-$(CONFIG_SGI_IP28)		+= sgi-ip22/
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -631,6 +631,26 @@ config RALINK
+@@ -627,6 +627,26 @@ config RALINK
  	select ARCH_HAS_RESET_CONTROLLER
  	select RESET_CONTROLLER
  
@@ -36,4 +36,4 @@
 +
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
- 	select FW_ARC
+ 	select ARC_MEMORY

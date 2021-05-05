@@ -1,9 +1,9 @@
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -645,6 +645,10 @@ struct phy_driver {
- 			    struct ethtool_tunable *tuna,
- 			    const void *data);
- 	int (*set_loopback)(struct phy_device *dev, bool enable);
+@@ -881,6 +881,10 @@ struct phy_driver {
+ 	int (*get_sqi)(struct phy_device *dev);
+ 	/** @get_sqi_max: Get the maximum signal quality indication */
+ 	int (*get_sqi_max)(struct phy_device *dev);
 +	int (*get_port)(struct phy_device *dev);
 +	int (*set_port)(struct phy_device *dev, int port);
 +	int (*get_eee)(struct phy_device *dev, struct ethtool_eee *e);
