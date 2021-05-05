@@ -2,11 +2,6 @@
 #ifndef RTL838X_IOREMAP_H_
 #define RTL838X_IOREMAP_H_
 
-static inline phys_addr_t fixup_bigphys_addr(phys_addr_t phys_addr, phys_addr_t size)
-{
-	return phys_addr;
-}
-
 static inline int is_rtl838x_internal_registers(phys_addr_t offset)
 {
 	/* IO-Block */
