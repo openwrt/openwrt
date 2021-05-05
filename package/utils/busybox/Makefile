@@ -73,13 +73,24 @@ define Package/busybox/config
 	source "$(SOURCE)/Config.in"
 endef
 
-ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_SYSLOG
-define Package/busybox/conffiles
+ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOG)$(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOGD_CFG),)
+define Package/busybox/conffiles/syslog
 /etc/syslog.conf
+endef
+endif
+
+ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_CROND),)
+define Package/busybox/conffiles/crond
+/etc/crontabs/
+endef
+endif
+
+define Package/busybox/conffiles
+$(Package/busybox/conffiles/syslog)
+$(Package/busybox/conffiles/crond)
 endef
 
 Package/busybox-selinux/conffiles = $(Package/busybox/conffiles)
-endif
 
 ifndef CONFIG_USE_MUSL
 LDLIBS:=m crypt
@@ -129,8 +140,12 @@ define Package/busybox/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
+ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOG)$(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOGD_CFG),)
+	touch $(1)/etc/syslog.conf
+endif
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_CROND),)
 	$(INSTALL_BIN) ./files/cron $(1)/etc/init.d/cron
+	$(INSTALL_DIR) $(1)/etc/crontabs
 endif
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_NTPD),)
 	$(INSTALL_BIN) ./files/sysntpd $(1)/etc/init.d/sysntpd
