@@ -86,6 +86,23 @@ define Device/netgear_gs110tpp-v1
 endef
 TARGET_DEVICES += netgear_gs110tpp-v1
 
+define Device/netgear_gs308t-v1
+  $(Device/netgear_nge)
+  DEVICE_MODEL := GS308T
+  DEVICE_VARIANT := v1
+  UIMAGE_MAGIC := 0x4e474335
+endef
+TARGET_DEVICES += netgear_gs308t-v1
+
+define Device/netgear_gs310tp-v1
+  $(Device/netgear_nge)
+  DEVICE_MODEL := GS310TP
+  DEVICE_VARIANT := v1
+  UIMAGE_MAGIC := 0x4e474335
+  DEVICE_PACKAGES += lua-rs232
+endef
+TARGET_DEVICES += netgear_gs310tp-v1
+
 define Device/zyxel_gs1900
   SOC := rtl8380
   IMAGE_SIZE := 6976k
