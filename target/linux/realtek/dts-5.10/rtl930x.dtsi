@@ -80,26 +80,6 @@
 		interrupt-controller;
 	};
 
-	intc: rtlintc {
-		compatible = "realtek,rtl-intc";
-		reg = <0xb8003000 0x20>;
-		#address-cells = <0>;
-		#interrupt-cells = <1>;
-		interrupt-controller;
-		interrupt-map =
-			<31 &cpuintc 1>, /* UART1 */
-			<30 &cpuintc 2>, /* UART0 */
-			<28 &cpuintc 1>, /* USB_H2 */
-			<24 &cpuintc 4>, /* NIC */
-			<23 &cpuintc 3>, /* SWCORE */
-			<13 &cpuintc 4>, /* GPIO_ABCD */
-			<11 &cpuintc 1>, /* TC4 */
-			<10 &cpuintc 1>, /* TC3 */
-			<9 &cpuintc 1>,  /* TC2 */
-			<8 &cpuintc 1>,  /* TC1 */
-			<7 &cpuintc 5>;  /* TC0 */
-	};
-
 	osc: oscillator {
 		compatible = "fixed-clock";
 		#clock-cells = <1>;
@@ -107,67 +87,96 @@
 		clock-output-names = "osc";
 	};
 
-	timer: timer@b8003200 {
-		compatible = "realtek,rtl9300-timer";
-		reg = <0xb8003200 0x60>;
-		interrupt-parent = <&intc>;
-		interrupts = <8>;
-		interrupt-names = "ostimer";
-		clocks = <&osc 0>;
-	};
-
-	spi0: spi@b8001200 {
-		compatible = "realtek,rtl8380-spi";
-		reg = <0xb8001200 0x100>;
-
+	soc: soc {
+		compatible = "simple-bus";
 		#address-cells = <1>;
-		#size-cells = <0>;
-	};
+		#size-cells = <1>;
+		ranges = <0x0 0xb8000000 0x10000>;
 
-	uart0: uart@b8002000 {
-		compatible = "ns16550a";
-		reg = <0xb8002000 0x100>;
+		intc: rtlintc@3000 {
+			compatible = "realtek,rtl-intc";
+			reg = <0x3000 0x20>;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+			interrupt-controller;
+			interrupt-map =
+				<31 &cpuintc 1>, /* UART1 */
+				<30 &cpuintc 2>, /* UART0 */
+				<28 &cpuintc 1>, /* USB_H2 */
+				<24 &cpuintc 4>, /* NIC */
+				<23 &cpuintc 3>, /* SWCORE */
+				<13 &cpuintc 4>, /* GPIO_ABCD */
+				<11 &cpuintc 1>, /* TC4 */
+				<10 &cpuintc 1>, /* TC3 */
+				<9 &cpuintc 1>,  /* TC2 */
+				<8 &cpuintc 1>,  /* TC1 */
+				<7 &cpuintc 5>;  /* TC0 */
+		};
 
-		clock-frequency = <175000000>;
+		timer: timer@3200 {
+			compatible = "realtek,rtl9300-timer";
+			reg = <0x3200 0x60>;
+			interrupt-parent = <&intc>;
+			interrupts = <8>;
+			interrupt-names = "ostimer";
+			clocks = <&osc 0>;
+		};
 
-		interrupt-parent = <&intc>;
-		interrupts = <30>;
+		spi0: spi@1200 {
+			compatible = "realtek,rtl8380-spi";
+			reg = <0x1200 0x100>;
 
-		reg-io-width = <1>;
-		reg-shift = <2>;
-		fifo-size = <1>;
-		no-loopback-test;
-	};
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 
-	uart1: uart@b8002100 {
-		compatible = "ns16550a";
-		reg = <0xb8002100 0x100>;
+		uart0: uart@2000 {
+			compatible = "ns16550a";
+			reg = <0x2000 0x100>;
 
-		clock-frequency = <175000000>;
+			clock-frequency = <175000000>;
 
-		interrupt-parent = <&intc>;
-		interrupts = <31>;
+			interrupt-parent = <&intc>;
+			interrupts = <30>;
 
-		reg-io-width = <1>;
-		reg-shift = <2>;
-		fifo-size = <1>;
-		no-loopback-test;
-	};
+			reg-io-width = <1>;
+			reg-shift = <2>;
+			fifo-size = <1>;
+			no-loopback-test;
+		};
 
-	gpio0: gpio-controller@b8003500 {
-		compatible = "realtek,rtl8380-gpio", "realtek,otto-gpio";
-		reg = <0xb8003500 0x20>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		ngpios = <32>;
-		interrupt-parent = <&intc>;
-		interrupts = <31>;
+		uart1: uart@2100 {
+			compatible = "ns16550a";
+			reg = <0x2100 0x100>;
 
-		/*
-		 * currently, RTL930x GPIO is not supported in
-		 * upstreamed driver (gpio-realtek-otto)
-		 */
-		status = "disabled";
+			clock-frequency = <175000000>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <31>;
+
+			reg-io-width = <1>;
+			reg-shift = <2>;
+			fifo-size = <1>;
+			no-loopback-test;
+
+			status = "disabled";
+		};
+
+		gpio0: gpio-controller@3500 {
+			compatible = "realtek,rtl8380-gpio", "realtek,otto-gpio";
+			reg = <0x3500 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			interrupt-parent = <&intc>;
+			interrupts = <31>;
+
+			/*
+			 * currently, RTL930x GPIO is not supported in
+			 * upstreamed driver (gpio-realtek-otto)
+			 */
+			status = "disabled";
+		};
 	};
 
 	ethernet0: ethernet@bb00a300 {
