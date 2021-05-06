@@ -76,15 +76,30 @@
 	};
 
 	intc: rtlintc {
-		compatible = "realtek,rt8380-intc";
+		compatible = "realtek,rtl-intc";
 		reg = <0xb8003000 0x20>;
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
 		interrupt-controller;
+		interrupt-map =
+			<31 &cpuintc 2>, /* UART0 */
+			<30 &cpuintc 1>, /* UART1 */
+			<29 &cpuintc 5>, /* TC0 */
+			<28 &cpuintc 1>, /* TC1 */
+			<27 &cpuintc 1>, /* OCPTO */
+			<26 &cpuintc 1>, /* HLXTO */
+			<25 &cpuintc 1>, /* SLXTO */
+			<24 &cpuintc 4>, /* NIC */
+			<23 &cpuintc 4>, /* GPIO_ABCD */
+			<22 &cpuintc 4>, /* GPIO_EFGH */
+			<21 &cpuintc 4>, /* RTC */
+			<20 &cpuintc 3>, /* SWCORE */
+			<19 &cpuintc 4>, /* WDT_IP1 */
+			<18 &cpuintc 5>; /* WDT_IP2 */
 	};
 
 	spi0: spi@b8001200 {
-		compatible = "realtek,rtl838x-nor";
+		compatible = "realtek,rtl8380-spi";
 		reg = <0xb8001200 0x100>;
 
 		#address-cells = <1>;
@@ -125,10 +140,11 @@
 	};
 
 	gpio0: gpio-controller@b8003500 {
-		compatible = "realtek,rtl838x-gpio";
+		compatible = "realtek,rtl8380-gpio", "realtek,otto-gpio";
 		reg = <0xb8003500 0x20>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		ngpios = <24>;
 		interrupt-parent = <&intc>;
 		interrupts = <23>;
 	};
