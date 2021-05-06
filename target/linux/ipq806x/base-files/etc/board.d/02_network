@@ -69,7 +69,10 @@ ubnt,unifi-ac-hd)
 	ucidef_set_interface_lan "eth0 eth1"
 	;;
 zyxel,nbg6817)
-	hw_mac_addr=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
+	hw_mac_addr=$(mtd_get_mac_ascii 0:appsblenv ethaddr)
+	# XXX: drop upper case after kernel v5.4 is gone (qcom-smem)
+	[ -n "$hw_mac_addr" ] || \
+		hw_mac_addr=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
 	ucidef_add_switch "switch0" \
 		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
 	ucidef_set_interface_macaddr "lan" "$(macaddr_add $hw_mac_addr 2)"
