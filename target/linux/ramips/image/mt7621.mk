@@ -1200,6 +1200,18 @@ define Device/telco-electronics_x1
 endef
 TARGET_DEVICES += telco-electronics_x1
 
+define Device/tenbay_t-mb5eu-v01
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Tenbay
+  DEVICE_MODEL := T-MB5EU-V01
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES += kmod-mt7915e kmod-usb3
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 15808k
+  SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
+endef
+TARGET_DEVICES += tenbay_t-mb5eu-v01
+
 define Device/thunder_timecloud
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
