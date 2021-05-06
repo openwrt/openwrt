@@ -19,6 +19,15 @@ define Device/mikrotik_hap-ac2
 endef
 TARGET_DEVICES += mikrotik_hap-ac2
 
+define Device/mikrotik_ldf-5-ac
+	$(call Device/mikrotik_nor)
+	DEVICE_MODEL := LDF 5 ac (RBLDFG-5acD)
+	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := ipq-wifi-mikrotik_ldf-5-ac -kmod-ath10k-ct \
+		kmod-ath10k-ct-smallbuffers rssileds -kmod-usb2 -kmod-usb3
+endef
+TARGET_DEVICES += mikrotik_ldf-5-ac
+
 define Device/mikrotik_sxtsq-5-ac
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := SXTsq 5 ac (RBSXTsqG-5acD)
