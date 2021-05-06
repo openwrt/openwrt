@@ -1094,7 +1094,7 @@ static void rtl931x_eth_set_multicast_list(struct net_device *ndev)
 	}
 }
 
-static void rtl838x_eth_tx_timeout(struct net_device *ndev)
+static void rtl838x_eth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 {
 	unsigned long flags;
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
@@ -1436,7 +1436,7 @@ static void rtl838x_mac_an_restart(struct phylink_config *config)
 	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 }
 
-static int rtl838x_mac_pcs_get_state(struct phylink_config *config,
+static void rtl838x_mac_pcs_get_state(struct phylink_config *config,
 				  struct phylink_link_state *state)
 {
 	u32 speed;
@@ -1470,8 +1470,6 @@ static int rtl838x_mac_pcs_get_state(struct phylink_config *config,
 		state->pause |= MLO_PAUSE_RX;
 	if (priv->r->get_mac_tx_pause_sts(port))
 		state->pause |= MLO_PAUSE_TX;
-
-	return 1;
 }
 
 static void rtl838x_mac_link_down(struct phylink_config *config,
@@ -1486,9 +1484,10 @@ static void rtl838x_mac_link_down(struct phylink_config *config,
 	sw_w32_mask(0x03, 0, priv->r->mac_port_ctrl(priv->cpu_port));
 }
 
-static void rtl838x_mac_link_up(struct phylink_config *config, unsigned int mode,
-			    phy_interface_t interface,
-			    struct phy_device *phy)
+static void rtl838x_mac_link_up(struct phylink_config *config,
+			    struct phy_device *phy, unsigned int mode,
+			    phy_interface_t interface, int speed, int duplex,
+			    bool tx_pause, bool rx_pause)
 {
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -1950,7 +1949,7 @@ static const struct net_device_ops rtl931x_eth_netdev_ops = {
 
 static const struct phylink_mac_ops rtl838x_phylink_ops = {
 	.validate = rtl838x_validate,
-	.mac_link_state = rtl838x_mac_pcs_get_state,
+	.mac_pcs_get_state = rtl838x_mac_pcs_get_state,
 	.mac_an_restart = rtl838x_mac_an_restart,
 	.mac_config = rtl838x_mac_config,
 	.mac_link_down = rtl838x_mac_link_down,
@@ -2131,8 +2130,9 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, dev);
 
-	phy_mode = of_get_phy_mode(dn);
-	if (phy_mode < 0) {
+	phy_mode = PHY_INTERFACE_MODE_NA;
+	err = of_get_phy_mode(dn, &phy_mode);
+	if (err < 0) {
 		dev_err(&pdev->dev, "incorrect phy-mode\n");
 		err = -EINVAL;
 		goto err_free;
