@@ -28,8 +28,14 @@ tplink,vr2600v)
 	;;
 edgecore,ecw5410)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
-	ucidef_set_interface_macaddr "lan" "$(mtd_get_mac_binary "0:ART" 0x6)"
-	ucidef_set_interface_macaddr "wan" "$(mtd_get_mac_binary "0:ART" 0x0)"
+	if [ -b "$(find_mtd_part 0:art)" ]; then
+		ucidef_set_interface_macaddr "lan" "$(mtd_get_mac_binary "0:art" 0x6)"
+		ucidef_set_interface_macaddr "wan" "$(mtd_get_mac_binary "0:art" 0x0)"
+	else
+		# XXX: drop upper case after kernel v5.4 is gone (qcom-smem)
+		ucidef_set_interface_macaddr "lan" "$(mtd_get_mac_binary "0:ART" 0x6)"
+		ucidef_set_interface_macaddr "wan" "$(mtd_get_mac_binary "0:ART" 0x0)"
+	fi
 	;;
 linksys,ea7500-v1)
 	hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
