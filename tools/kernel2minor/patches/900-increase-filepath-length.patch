@@ -1,0 +1,21 @@
+--- a/kernel2minor.c
++++ b/kernel2minor.c
+@@ -15,6 +15,7 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <assert.h>
++#include <linux/limits.h>
+ 
+ /* прикидываемся yaffs_utils
+ все нужные файлы yaffs2 бери из его транка из папки utils! там есть различия.
+@@ -42,8 +43,8 @@ static int info_block_size = 0;
+ #define ECC_BLOCK_SIZE 256
+ 
+ char *info_block_buf = NULL;
+-char kernel_file[255];
+-char res_file[255];
++char kernel_file[PATH_MAX];
++char res_file[PATH_MAX];
+ struct stat kernel_file_stats;
+ nand_ecclayout_t ecc_layout;
+ //имя платформы. параметр -p. для инфо блока.
