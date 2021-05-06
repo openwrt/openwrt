@@ -546,7 +546,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	if (!priv)
 		return -ENOMEM;
 
-	priv->ds = dsa_switch_alloc(dev, DSA_MAX_PORTS);
+	priv->ds = devm_kzalloc(dev, sizeof(*priv->ds), GFP_KERNEL);
 
 	if (!priv->ds)
 		return -ENOMEM;
