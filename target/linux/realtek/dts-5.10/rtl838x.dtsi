@@ -181,6 +181,22 @@
 		};
 	};
 
+	/* LED_GLB_CTRL */
+	pinmux_led: pinmux@bb00a000 {
+		compatible = "pinctrl-single";
+		reg = <0xbb00a000 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		/* enable GPIO 0 */
+		pinmux_disable_sys_led: disable_sys_led {
+			pinctrl-single,bits = <0x0 0x0 0x8000>;
+		};
+	};
+
 	ethernet0: ethernet@bb00a300 {
 		compatible = "realtek,rtl838x-eth";
 		reg = <0xbb00a300 0x100>;
