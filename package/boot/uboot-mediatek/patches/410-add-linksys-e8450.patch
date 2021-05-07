@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_linksys_e8450_defconfig
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,134 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -69,7 +69,8 @@
 +CONFIG_CMD_UBIFS=y
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_PART=y
-+# CONFIG_CMD_PSTORE is not set
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
 +CONFIG_CMD_RARP=y
 +CONFIG_CMD_SETEXPR=y
 +CONFIG_CMD_SLEEP=y
@@ -350,7 +351,7 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x4007ff28
-+bootcmd=run boot_ubi
++bootcmd=if pstore check ; then run boot_recovery ; else run boot_ubi ; fi
 +bootdelay=0
 +bootfile=openwrt-mediatek-mt7622-linksys_e8450-ubi-initramfs-recovery.itb
 +bootfile_bl2=openwrt-mediatek-mt7622-linksys_e8450-ubi-preloader.bin

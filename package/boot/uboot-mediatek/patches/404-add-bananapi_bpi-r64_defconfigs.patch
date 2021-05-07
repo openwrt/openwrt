@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-sdmmc_defconfig
-@@ -0,0 +1,157 @@
+@@ -0,0 +1,158 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -74,7 +74,8 @@
 +CONFIG_CMD_UBIFS=y
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_PART=y
-+# CONFIG_CMD_PSTORE is not set
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
 +CONFIG_CMD_RARP=y
 +CONFIG_CMD_SETEXPR=y
 +CONFIG_CMD_SLEEP=y
@@ -165,7 +166,7 @@
 +serverip=192.168.1.254
 +loadaddr=0x4007ff28
 +bootargs=root=/dev/mmcblk1p65
-+bootcmd=run boot_sdmmc
++bootcmd=if pstore check ; then run boot_recovery ; else run boot_sdmmc ; fi
 +bootconf=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_pcie=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_sata=config-mt7622-bananapi-bpi-r64-sata
@@ -244,7 +245,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-emmc_defconfig
-@@ -0,0 +1,144 @@
+@@ -0,0 +1,145 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -313,7 +314,8 @@
 +CONFIG_CMD_TFTPSRV=y
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_PART=y
-+# CONFIG_CMD_PSTORE is not set
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
 +CONFIG_CMD_RARP=y
 +CONFIG_CMD_SETEXPR=y
 +CONFIG_CMD_SLEEP=y
@@ -395,7 +397,7 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x4007ff28
-+bootcmd=run boot_emmc
++bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
 +bootargs=root=/dev/mmcblk0p65
 +bootconf=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_pcie=config-mt7622-bananapi-bpi-r64-pcie1
@@ -448,7 +450,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-snand_defconfig
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,139 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -519,7 +521,8 @@
 +CONFIG_CMD_UBIFS=y
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_PART=y
-+# CONFIG_CMD_PSTORE is not set
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
 +CONFIG_CMD_RARP=y
 +CONFIG_CMD_SETEXPR=y
 +CONFIG_CMD_SLEEP=y
@@ -594,7 +597,7 @@
 +serverip=192.168.1.254
 +loadaddr=0x4007ff28
 +bootargs=root=/dev/ubiblock0_2p1
-+bootcmd=run boot_ubi
++bootcmd=if pstore check ; then run boot_recovery ; else run boot_ubi ; fi
 +bootconf=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_pcie=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_sata=config-mt7622-bananapi-bpi-r64-sata
