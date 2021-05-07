@@ -16,8 +16,6 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  drivers/thermal/qcom/tsens.h |   4 +-
  2 files changed, 124 insertions(+), 30 deletions(-)
 
-diff --git a/drivers/thermal/qcom/tsens.c b/drivers/thermal/qcom/tsens.c
-index d8ce3a687b80..9a7e991d4bd2 100644
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
 @@ -12,6 +12,7 @@
@@ -28,7 +26,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  #include <linux/platform_device.h>
  #include <linux/pm.h>
  #include <linux/regmap.h>
-@@ -515,6 +516,15 @@ static irqreturn_t tsens_irq_thread(int irq, void *data)
+@@ -515,6 +516,15 @@ static irqreturn_t tsens_irq_thread(int
  			dev_dbg(priv->dev, "[%u] %s: no violation:  %d\n",
  				hw_id, __func__, temp);
  		}
@@ -44,7 +42,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  	}
  
  	return IRQ_HANDLED;
-@@ -530,6 +540,13 @@ static int tsens_set_trips(void *_sensor, int low, int high)
+@@ -530,6 +540,13 @@ static int tsens_set_trips(void *_sensor
  	int high_val, low_val, cl_high, cl_low;
  	u32 hw_id = s->hw_id;
  
@@ -58,7 +56,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  	dev_dbg(dev, "[%u] %s: proposed thresholds: (%d:%d)\n",
  		hw_id, __func__, low, high);
  
-@@ -584,18 +601,21 @@ int get_temp_tsens_valid(const struct tsens_sensor *s, int *temp)
+@@ -584,18 +601,21 @@ int get_temp_tsens_valid(const struct ts
  	u32 valid;
  	int ret;
  
@@ -89,7 +87,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  	}
  
  	/* Valid bit is set, OK to read the temperature */
-@@ -608,15 +628,29 @@ int get_temp_common(const struct tsens_sensor *s, int *temp)
+@@ -608,15 +628,29 @@ int get_temp_common(const struct tsens_s
  {
  	struct tsens_priv *priv = s->priv;
  	int hw_id = s->hw_id;
@@ -125,7 +123,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  }
  
  #ifdef CONFIG_DEBUG_FS
-@@ -738,19 +772,34 @@ int __init init_common(struct tsens_priv *priv)
+@@ -738,19 +772,34 @@ int __init init_common(struct tsens_priv
  		priv->tm_offset = 0x1000;
  	}
  
@@ -168,7 +166,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  	if (tsens_version(priv) > VER_0_1) {
  		for (i = VER_MAJOR; i <= VER_STEP; i++) {
  			priv->rf[i] = devm_regmap_field_alloc(dev, priv->srot_map,
-@@ -769,6 +818,10 @@ int __init init_common(struct tsens_priv *priv)
+@@ -769,6 +818,10 @@ int __init init_common(struct tsens_priv
  		ret = PTR_ERR(priv->rf[TSENS_EN]);
  		goto err_put_device;
  	}
@@ -179,7 +177,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  	ret = regmap_field_read(priv->rf[TSENS_EN], &enabled);
  	if (ret)
  		goto err_put_device;
-@@ -791,6 +844,19 @@ int __init init_common(struct tsens_priv *priv)
+@@ -791,6 +844,19 @@ int __init init_common(struct tsens_priv
  		goto err_put_device;
  	}
  
@@ -199,7 +197,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  	/* This loop might need changes if enum regfield_ids is reordered */
  	for (j = LAST_TEMP_0; j <= UP_THRESH_15; j += 16) {
  		for (i = 0; i < priv->feat->max_sensors; i++) {
-@@ -806,7 +872,7 @@ int __init init_common(struct tsens_priv *priv)
+@@ -806,7 +872,7 @@ int __init init_common(struct tsens_priv
  		}
  	}
  
@@ -208,7 +206,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  		/* Loop might need changes if enum regfield_ids is reordered */
  		for (j = CRITICAL_STATUS_0; j <= CRIT_THRESH_15; j += 16) {
  			for (i = 0; i < priv->feat->max_sensors; i++) {
-@@ -844,7 +910,11 @@ int __init init_common(struct tsens_priv *priv)
+@@ -844,7 +910,11 @@ int __init init_common(struct tsens_priv
  	}
  
  	spin_lock_init(&priv->ul_lock);
@@ -221,7 +219,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  	tsens_debug_init(op);
  
  err_put_device:
-@@ -943,10 +1013,19 @@ static int tsens_register_irq(struct tsens_priv *priv, char *irqname,
+@@ -943,10 +1013,19 @@ static int tsens_register_irq(struct tse
  		if (irq == -ENXIO)
  			ret = 0;
  	} else {
@@ -245,7 +243,7 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  		if (ret)
  			dev_err(&pdev->dev, "%s: failed to get irq\n",
  				__func__);
-@@ -975,6 +1054,19 @@ static int tsens_register(struct tsens_priv *priv)
+@@ -975,6 +1054,19 @@ static int tsens_register(struct tsens_p
  			priv->ops->enable(priv, i);
  	}
  
@@ -265,8 +263,6 @@ index d8ce3a687b80..9a7e991d4bd2 100644
  	ret = tsens_register_irq(priv, "uplow", tsens_irq_thread);
  	if (ret < 0)
  		return ret;
-diff --git a/drivers/thermal/qcom/tsens.h b/drivers/thermal/qcom/tsens.h
-index f40b625f897e..8e6c1fd3ccf5 100644
 --- a/drivers/thermal/qcom/tsens.h
 +++ b/drivers/thermal/qcom/tsens.h
 @@ -13,6 +13,7 @@
@@ -287,6 +283,3 @@ index f40b625f897e..8e6c1fd3ccf5 100644
  	VER_1_X,
  	VER_2_X,
  };
--- 
-2.30.2
-

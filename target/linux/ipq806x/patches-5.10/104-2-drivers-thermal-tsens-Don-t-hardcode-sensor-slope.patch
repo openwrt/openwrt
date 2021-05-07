@@ -14,11 +14,9 @@ Reviewed-by: Thara Gopinath <thara.gopinath@linaro.org>
  drivers/thermal/qcom/tsens.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/thermal/qcom/tsens.c b/drivers/thermal/qcom/tsens.c
-index 9a7e991d4bd2..38b9936def1a 100644
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -86,7 +86,8 @@ void compute_intercept_slope(struct tsens_priv *priv, u32 *p1,
+@@ -86,7 +86,8 @@ void compute_intercept_slope(struct tsen
  			"%s: sensor%d - data_point1:%#x data_point2:%#x\n",
  			__func__, i, p1[i], p2[i]);
  
@@ -28,6 +26,3 @@ index 9a7e991d4bd2..38b9936def1a 100644
  		if (mode == TWO_PT_CALIB) {
  			/*
  			 * slope (m) = adc_code2 - adc_code1 (y2 - y1)/
--- 
-2.30.2
-

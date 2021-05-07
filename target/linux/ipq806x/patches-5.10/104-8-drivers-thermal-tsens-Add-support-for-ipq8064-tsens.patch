@@ -12,11 +12,9 @@ Reviewed-by: Thara Gopinath <thara.gopinath@linaro.org>
  drivers/thermal/qcom/tsens.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/thermal/qcom/tsens.c b/drivers/thermal/qcom/tsens.c
-index 38b9936def1a..58073dc5d30b 100644
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -966,6 +966,9 @@ static SIMPLE_DEV_PM_OPS(tsens_pm_ops, tsens_suspend, tsens_resume);
+@@ -966,6 +966,9 @@ static SIMPLE_DEV_PM_OPS(tsens_pm_ops, t
  
  static const struct of_device_id tsens_table[] = {
  	{
@@ -26,6 +24,3 @@ index 38b9936def1a..58073dc5d30b 100644
  		.compatible = "qcom,msm8916-tsens",
  		.data = &data_8916,
  	}, {
--- 
-2.30.2
-
