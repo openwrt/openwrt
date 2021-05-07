@@ -9,7 +9,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
-@@ -357,7 +357,7 @@
+@@ -364,7 +364,7 @@
  		};
  
  		cci_control2: slave-if@5000 {
@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			interface-type = "ace";
  			reg = <0x5000 0x1000>;
  		};
-@@ -969,6 +969,8 @@
+@@ -976,6 +976,8 @@
  		power-domains = <&scpsys MT7622_POWER_DOMAIN_ETHSYS>;
  		mediatek,ethsys = <&ethsys>;
  		mediatek,sgmiisys = <&sgmiisys>;
