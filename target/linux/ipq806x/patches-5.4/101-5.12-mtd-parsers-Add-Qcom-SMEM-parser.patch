@@ -17,15 +17,12 @@ Link: https://lore.kernel.org/linux-mtd/20210104041137.113075-3-manivannan.sadha
  3 files changed, 179 insertions(+)
  create mode 100644 drivers/mtd/parsers/qcomsmempart.c
 
-diff --git a/drivers/mtd/parsers/Kconfig b/drivers/mtd/parsers/Kconfig
-index e72354322f628..d90c302290522 100644
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -160,6 +160,14 @@ config MTD_REDBOOT_PARTS_READONLY
- 	  'FIS directory' images, enable this option.
+@@ -196,6 +196,14 @@ config MTD_REDBOOT_PARTS_READONLY
  
  endif # MTD_REDBOOT_PARTS
-+
+ 
 +config MTD_QCOMSMEM_PARTS
 +	tristate "Qualcomm SMEM NAND flash partition parser"
 +	depends on MTD_NAND_QCOM || COMPILE_TEST
@@ -33,22 +30,18 @@ index e72354322f628..d90c302290522 100644
 +	help
 +	  This provides support for parsing partitions from Shared Memory (SMEM)
 +	  for NAND flash on Qualcomm platforms.
- 
++
  config MTD_ROUTERBOOT_PARTS
  	tristate "RouterBoot flash partition parser"
-diff --git a/drivers/mtd/parsers/Makefile b/drivers/mtd/parsers/Makefile
-index b0c5f62f9e858..50eb0b0a22105 100644
+ 	depends on MTD && OF
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -9,4 +9,5 @@ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
+@@ -13,4 +13,5 @@ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
  obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
  obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o
 +obj-$(CONFIG_MTD_QCOMSMEM_PARTS)	+= qcomsmempart.o
  obj-$(CONFIG_MTD_ROUTERBOOT_PARTS)		+= routerbootpart.o
-diff --git a/drivers/mtd/parsers/qcomsmempart.c b/drivers/mtd/parsers/qcomsmempart.c
-new file mode 100644
-index 0000000000000..808cb33d71f8e
 --- /dev/null
 +++ b/drivers/mtd/parsers/qcomsmempart.c
 @@ -0,0 +1,170 @@
@@ -222,6 +215,3 @@ index 0000000000000..808cb33d71f8e
 +MODULE_LICENSE("GPL v2");
 +MODULE_AUTHOR("Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>");
 +MODULE_DESCRIPTION("Qualcomm SMEM NAND flash partition parser");
--- 
-cgit 1.2.3-1.el7
-
