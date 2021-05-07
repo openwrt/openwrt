@@ -272,8 +272,11 @@ define Build/jffs2
 endef
 
 define Build/kernel2minor
-	kernel2minor -k $@ -r $@.new $(1)
-	mv $@.new $@
+	$(eval temp_file := $(shell mktemp))
+	cp $@ $(temp_file)
+	kernel2minor -k $(temp_file) -r $(temp_file).new $(1)
+	mv $(temp_file).new $@
+	rm -f $(temp_file)
 endef
 
 define Build/kernel-bin
