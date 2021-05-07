@@ -2,15 +2,12 @@
 
 START=99
 
-. /lib/upgrade/asrock.sh
+. "$IPKG_INSTROOT/lib/upgrade/asrock.sh"
 
 boot() {
 	case $(board_name) in
 	asrock,g10)
-		asrock_bootconfig_mangle "bootcheck"
-		if [ $? -eq 0 ]; then
-			reboot
-		fi
+		asrock_bootconfig_mangle "bootcheck" && reboot
 		;;
 	edgecore,ecw5410)
 		fw_setenv bootcount 0
