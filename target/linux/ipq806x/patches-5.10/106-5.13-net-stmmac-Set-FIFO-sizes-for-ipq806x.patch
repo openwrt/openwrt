@@ -86,11 +86,9 @@ Signed-off-by: Jonathan McDowell <noodles@earth.li>
  drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.c b/drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.c
-index bf3250e0e59c..749585fe6fc9 100644
 --- a/drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.c
-@@ -352,6 +352,8 @@ static int ipq806x_gmac_probe(struct platform_device *pdev)
+@@ -352,6 +352,8 @@ static int ipq806x_gmac_probe(struct pla
  	plat_dat->bsp_priv = gmac;
  	plat_dat->fix_mac_speed = ipq806x_gmac_fix_mac_speed;
  	plat_dat->multicast_filter_bins = 0;

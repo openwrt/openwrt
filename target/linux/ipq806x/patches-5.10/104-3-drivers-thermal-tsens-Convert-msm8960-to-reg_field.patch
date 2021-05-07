@@ -12,8 +12,6 @@ Acked-by: Thara Gopinath <thara.gopinath@linaro.org>
  drivers/thermal/qcom/tsens-8960.c | 80 ++++++++++++++++++++++++++++++-
  1 file changed, 79 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/thermal/qcom/tsens-8960.c b/drivers/thermal/qcom/tsens-8960.c
-index 2a28a5af209e..3f4fc1ffe679 100644
 --- a/drivers/thermal/qcom/tsens-8960.c
 +++ b/drivers/thermal/qcom/tsens-8960.c
 @@ -51,11 +51,22 @@
@@ -40,7 +38,7 @@ index 2a28a5af209e..3f4fc1ffe679 100644
  static int suspend_8960(struct tsens_priv *priv)
  {
  	int ret;
-@@ -269,6 +280,71 @@ static int get_temp_8960(const struct tsens_sensor *s, int *temp)
+@@ -269,6 +280,71 @@ static int get_temp_8960(const struct ts
  	return -ETIMEDOUT;
  }
  
@@ -112,13 +110,10 @@ index 2a28a5af209e..3f4fc1ffe679 100644
  static const struct tsens_ops ops_8960 = {
  	.init		= init_8960,
  	.calibrate	= calibrate_8960,
-@@ -282,4 +358,6 @@ static const struct tsens_ops ops_8960 = {
+@@ -282,4 +358,6 @@ static const struct tsens_ops ops_8960 =
  struct tsens_plat_data data_8960 = {
  	.num_sensors	= 11,
  	.ops		= &ops_8960,
 +	.feat		= &tsens_8960_feat,
 +	.fields		= tsens_8960_regfields,
  };
--- 
-2.30.2
-
