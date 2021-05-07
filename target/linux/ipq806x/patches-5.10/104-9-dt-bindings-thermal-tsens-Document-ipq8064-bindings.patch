@@ -12,8 +12,6 @@ Reviewed-by: Rob Herring <robh@kernel.org>
  .../bindings/thermal/qcom-tsens.yaml          | 56 ++++++++++++++++---
  1 file changed, 48 insertions(+), 8 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/thermal/qcom-tsens.yaml b/Documentation/devicetree/bindings/thermal/qcom-tsens.yaml
-index 95462e071ab4..1785b1c75a3c 100644
 --- a/Documentation/devicetree/bindings/thermal/qcom-tsens.yaml
 +++ b/Documentation/devicetree/bindings/thermal/qcom-tsens.yaml
 @@ -19,6 +19,11 @@ description: |
@@ -60,7 +58,7 @@ index 95462e071ab4..1785b1c75a3c 100644
                - qcom,msm8916-tsens
                - qcom,msm8974-tsens
                - qcom,msm8976-tsens
-@@ -114,17 +129,42 @@ allOf:
+@@ -114,19 +129,44 @@ allOf:
          interrupt-names:
            minItems: 2
  
@@ -87,8 +85,8 @@ index 95462e071ab4..1785b1c75a3c 100644
  additionalProperties: false
  
  examples:
-+  - |
-+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+   - |
+     #include <dt-bindings/interrupt-controller/arm-gic.h>
 +    // Example msm9860 based SoC (ipq8064):
 +    gcc: clock-controller {
 +
@@ -107,9 +105,8 @@ index 95462e071ab4..1785b1c75a3c 100644
 +          };
 +    };
 +
-   - |
-     #include <dt-bindings/interrupt-controller/arm-gic.h>
++  - |
++    #include <dt-bindings/interrupt-controller/arm-gic.h>
      // Example 1 (legacy: for pre v1 IP):
--- 
-2.30.2
-
+     tsens1: thermal-sensor@900000 {
+            compatible = "qcom,msm8916-tsens", "qcom,tsens-v0_1";
