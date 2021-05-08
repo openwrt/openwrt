@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "rtl8380_netgear_gigabit_1xx.dtsi"
+
+/ {
+	compatible = "netgear,gs110tp-v3", "realtek,rtl838x-soc";
+	model = "Netgear GS110TP v3";
+
+	/* i2c of the left SFP cage: port 9 */
+	i2c0: i2c-gpio-0 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio1 28 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio1 36 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp0: sfp-p9 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		los-gpio = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 14 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* i2c of the right SFP cage: port 10 */
+	i2c1: i2c-gpio-1 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio1 27 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio1 36 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp1: sfp-p10 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1>;
+		los-gpio = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&mdio {
+	INTERNAL_PHY(24)
+	INTERNAL_PHY(26)
+};
+
+&switch0 {
+	ports {
+		port@24 {
+			reg = <24>;
+			label = "lan9";
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp0>;
+		};
+
+		port@26 {
+			reg = <26>;
+			label = "lan10";
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp1>;
+		};
+	};
+};

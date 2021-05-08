@@ -95,6 +95,14 @@ define Device/netgear_gs110tpp-v1
 endef
 TARGET_DEVICES += netgear_gs110tpp-v1
 
+define Device/netgear_gs110tp-v3
+  $(Device/netgear_nge)
+  DEVICE_MODEL := GS110TP
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES += lua-rs232
+endef
+TARGET_DEVICES += netgear_gs110tp-v3
+
 define Device/netgear_gs308t-v1
   $(Device/netgear_nge)
   DEVICE_MODEL := GS308T
