@@ -302,8 +302,6 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
-		priv->ports[pn].dp = dsa_to_port(priv->ds, pn);
-
 		// Check for the integrated SerDes of the RTL8380M first
 		if (of_property_read_bool(dn, "phy-is-integrated")
 			&& priv->id == 0x8380 && pn >= 24) {
@@ -626,6 +624,14 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		dev_err(dev, "Error registering switch: %d\n", err);
 		return err;
 	}
+
+	/*
+	 * dsa_to_port returns dsa_port from the port list in
+	 * dsa_switch_tree, the tree is built when the switch
+	 * is registered by dsa_register_switch
+	 */
+	for (i = 0; i <= priv->cpu_port; i++)
+		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
 	sw_w32_mask(0, 3, priv->r->isr_glb_src);
