@@ -26,12 +26,14 @@
 	};
 
 	leds {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_sys_led>;
 		compatible = "gpio-leds";
 
 		led_power: power {
-			// GPIO 24 seems to provide power to the leds
+			// GPIO 0 seems to provide power to the leds
 			label = "green:power";
-			gpios = <&gpio0 47 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -39,18 +41,15 @@
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
-		mode {
+		/* is this pin 30 on the external RTL8231 (&gpio1)? */
+		/*mode {
 			label = "reset";
 			gpios = <&gpio0 94 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-		};
+		};*/
 	};
 };
 
-
-&gpio0 {
-	indirect-access-bus-id = <0>;
-};
 
 &spi0 {
 	status = "okay";
