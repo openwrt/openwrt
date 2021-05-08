@@ -70,6 +70,10 @@ define Device/Default
   BLOCKSIZE := 64k
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  LOADER_KERNEL_MAGIC :=
+  LOADER_FLASH_MAX :=
+  LOADER_FLASH_OFFS :=
+  LOADER_TYPE :=
   COMPILE :=
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
