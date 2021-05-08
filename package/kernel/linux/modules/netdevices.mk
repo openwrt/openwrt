@@ -885,6 +885,22 @@ endef
 $(eval $(call KernelPackage,macvlan))
 
 
+define KernelPackage/ipvlan
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=IP-VLAN support
+  KCONFIG:=CONFIG_IPVLAN
+  FILES:=$(LINUX_DIR)/drivers/net/ipvlan/ipvlan.ko
+  AUTOLOAD:=$(call AutoProbe,ipvlan)
+endef
+
+define KernelPackage/ipvlan/description
+ A kernel module which allows one to create virtual interfaces that
+ map packets to or from specific IP addresses to a particular interface
+endef
+
+$(eval $(call KernelPackage,ipvlan))
+
+
 define KernelPackage/tulip
   TITLE:=Tulip family network device support
   DEPENDS:=@PCI_SUPPORT +kmod-mii
@@ -1175,6 +1191,25 @@ define KernelPackage/mlx5-core/description
 endef
 
 $(eval $(call KernelPackage,mlx5-core))
+
+
+define KernelPackage/qlcnic
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=@PCI_SUPPORT +kmod-hwmon-core
+  TITLE:=QLogic QLE8240 and QLE8242 device support
+  KCONFIG:= \
+	CONFIG_QLCNIC \
+	CONFIG_QLCNIC_HWMON=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/qlogic/qlcnic/qlcnic.ko
+  AUTOLOAD:=$(call AutoProbe,qlcnic)
+endef
+
+define KernelPackage/qlcnic/description
+  This driver supports QLogic QLE8240 and QLE8242 Converged Ethernet
+  devices.
+endef
+
+$(eval $(call KernelPackage,qlcnic))
 
 
 define KernelPackage/sfp
