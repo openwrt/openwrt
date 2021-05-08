@@ -1,22 +1,37 @@
 --- a/libfakeroot.c
 +++ b/libfakeroot.c
-@@ -112,8 +112,16 @@
+@@ -81,12 +81,14 @@
+ #define SEND_STAT64(a,b,c) send_stat64(a,b,c)
+ #define SEND_GET_STAT(a,b) send_get_stat(a,b)
+ #define SEND_GET_STAT64(a,b) send_get_stat64(a,b)
++#define SEND_GET_XATTR(a,b,c) send_get_xattr(a,b,c)
+ #define SEND_GET_XATTR64(a,b,c) send_get_xattr64(a,b,c)
+ #else
+ #define SEND_STAT(a,b,c) send_stat(a,b)
+ #define SEND_STAT64(a,b,c) send_stat64(a,b)
+ #define SEND_GET_STAT(a,b) send_get_stat(a)
+ #define SEND_GET_STAT64(a,b) send_get_stat64(a)
++#define SEND_GET_XATTR(a,b,c) send_get_xattr(a,b)
+ #define SEND_GET_XATTR64(a,b,c) send_get_xattr64(a,b)
+ #endif
+
+@@ -112,6 +114,16 @@
  #define INT_SEND_STAT(a,b) SEND_STAT(a,b,_STAT_VER)
  #define INT_SEND_GET_XATTR(a,b) SEND_GET_XATTR(a,b,_STAT_VER)
  #define INT_SEND_GET_STAT(a,b) SEND_GET_STAT(a,b)
 +
 +/* 10.10 uses id_t in getpriority/setpriority calls, so pretend
-+   id_t is used everywhere, just happens to be int on some OSes */
-+#ifndef _ID_T
++   id_t is used everywhere, just happens to be int on some OSes.
++   glibc and musl use different macros to define id_t type. musl
++   uses __DEFINED_id_t */
++#if !defined(_ID_T) && !defined(__DEFINED_id_t)
 +#define _ID_T
++#define __DEFINED_id_t
 +typedef int id_t;
 +#endif
  #endif
- 
-+#include <sys/types.h>
+
  #include <stdlib.h>
- #include <sys/ipc.h>
- #include <sys/msg.h>
 @@ -125,7 +133,6 @@
  #include <unistd.h>
  #include <dirent.h>
