@@ -198,7 +198,7 @@ define Build/elx-header
 			dd bs=20 count=1 conv=sync; \
 		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
 			dd bs=8 count=1 conv=sync; \
-		echo -ne "$$($(STAGING_DIR_HOST)/bin/mkhash md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
+		echo -ne "$$($(MKHASH) md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
 			dd bs=58 count=1 conv=sync; \
 	) > $(KDIR)/tmp/$(DEVICE_NAME).header
 	$(call Build/xor-image,-p $(xor_pattern) -x)

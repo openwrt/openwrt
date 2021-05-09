@@ -35,7 +35,7 @@ define Build/addpattern
 endef
 
 define Build/append-md5sum-bin
-	$(STAGING_DIR_HOST)/bin/mkhash md5 $@ | sed 's/../\\\\x&/g' |\
+	$(MKHASH) md5 $@ | sed 's/../\\\\x&/g' |\
 		xargs echo -ne >> $@
 endef
 

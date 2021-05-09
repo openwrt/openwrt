@@ -221,7 +221,7 @@ $(_endef)
     ifneq ($$(CONFIG_IPK_FILES_CHECKSUMS),)
 	(cd $$(IDIR_$(1)); \
 		( \
-			find . -type f \! -path ./CONTROL/\* -exec mkhash sha256 -n \{\} \; 2> /dev/null | \
+			find . -type f \! -path ./CONTROL/\* -exec $(MKHASH) sha256 -n \{\} \; 2> /dev/null | \
 			sed 's|\([[:blank:]]\)\./| \1/|' > $$(IDIR_$(1))/CONTROL/files-sha256sum \
 		) || true \
 	)
