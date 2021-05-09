@@ -91,7 +91,7 @@ endef
 
 define Build/netis-tail
 	echo -n $(1) >> $@
-	echo -n $(UIMAGE_NAME)-yun | $(STAGING_DIR_HOST)/bin/mkhash md5 | \
+	echo -n $(UIMAGE_NAME)-yun | $(MKHASH) md5 | \
 		sed 's/../\\\\x&/g' | xargs echo -ne >> $@
 endef
 
