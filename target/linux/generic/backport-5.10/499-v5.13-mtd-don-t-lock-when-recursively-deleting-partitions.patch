@@ -13,7 +13,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -474,7 +474,7 @@ static int __del_mtd_partitions(struct m
+@@ -331,7 +331,7 @@ static int __del_mtd_partitions(struct m
  
  	list_for_each_entry_safe(child, next, &mtd->partitions, part.node) {
  		if (mtd_has_partitions(child))
