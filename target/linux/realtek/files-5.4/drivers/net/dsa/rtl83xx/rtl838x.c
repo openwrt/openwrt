@@ -398,7 +398,7 @@ static void rtl838x_vlan_profile_setup(int profile)
 	 * On RTL93XX, the portmask is directly set in the profile,
 	 * see e.g. rtl9300_vlan_profile_setup
 	 */
-	rtl838x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0xfffffff);
+	rtl838x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x1fffffff);
 }
 
 static inline int rtl838x_vlan_port_egr_filter(int port)

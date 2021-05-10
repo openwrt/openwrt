@@ -15,8 +15,6 @@ Acked-by: Thara Gopinath <thara.gopinath@linaro.org>
  drivers/thermal/qcom/tsens-8960.c | 56 +++++++++----------------------
  1 file changed, 15 insertions(+), 41 deletions(-)
 
-diff --git a/drivers/thermal/qcom/tsens-8960.c b/drivers/thermal/qcom/tsens-8960.c
-index 95fcccafae14..9cc8a7dd23ae 100644
 --- a/drivers/thermal/qcom/tsens-8960.c
 +++ b/drivers/thermal/qcom/tsens-8960.c
 @@ -67,6 +67,13 @@
@@ -33,7 +31,7 @@ index 95fcccafae14..9cc8a7dd23ae 100644
  static int suspend_8960(struct tsens_priv *priv)
  {
  	int ret;
-@@ -194,9 +201,7 @@ static int calibrate_8960(struct tsens_priv *priv)
+@@ -194,9 +201,7 @@ static int calibrate_8960(struct tsens_p
  {
  	int i;
  	char *data;
@@ -44,7 +42,7 @@ index 95fcccafae14..9cc8a7dd23ae 100644
  
  	data = qfprom_read(priv->dev, "calib");
  	if (IS_ERR(data))
-@@ -204,49 +209,18 @@ static int calibrate_8960(struct tsens_priv *priv)
+@@ -204,49 +209,18 @@ static int calibrate_8960(struct tsens_p
  	if (IS_ERR(data))
  		return PTR_ERR(data);
  
@@ -100,7 +98,7 @@ index 95fcccafae14..9cc8a7dd23ae 100644
  static struct tsens_features tsens_8960_feat = {
  	.ver_major	= VER_0,
  	.crit_int	= 0,
-@@ -315,7 +289,7 @@ static const struct reg_field tsens_8960_regfields[MAX_REGFIELDS] = {
+@@ -315,7 +289,7 @@ static const struct reg_field tsens_8960
  static const struct tsens_ops ops_8960 = {
  	.init		= init_common,
  	.calibrate	= calibrate_8960,
@@ -109,6 +107,3 @@ index 95fcccafae14..9cc8a7dd23ae 100644
  	.enable		= enable_8960,
  	.disable	= disable_8960,
  	.suspend	= suspend_8960,
--- 
-2.30.2
-

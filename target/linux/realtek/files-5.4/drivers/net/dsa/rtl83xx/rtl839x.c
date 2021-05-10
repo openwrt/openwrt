@@ -411,7 +411,7 @@ static void rtl839x_vlan_profile_setup(int profile)
 	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
 	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
 
-	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x000fffffffffffff);
+	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x001fffffffffffff);
 }
 
 static inline int rtl839x_vlan_port_egr_filter(int port)
