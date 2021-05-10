@@ -1,0 +1,17 @@
+--- a/libfakeroot.c
++++ b/libfakeroot.c
+@@ -83,2 +83,3 @@
+ #define SEND_GET_STAT64(a,b) send_get_stat64(a,b)
++#define SEND_GET_XATTR(a,b,c) send_get_xattr(a,b,c)
+ #define SEND_GET_XATTR64(a,b,c) send_get_xattr64(a,b,c)
+@@ -89,2 +90,3 @@
+ #define SEND_GET_STAT64(a,b) send_get_stat64(a)
++#define SEND_GET_XATTR(a,b,c) send_get_xattr(a,b)
+ #define SEND_GET_XATTR64(a,b,c) send_get_xattr64(a,b)
+@@ -127,4 +129,5 @@
+    id_t is used everywhere, just happens to be int on some OSes */
+-#ifndef _ID_T
++#if !defined(_ID_T) && !defined(__DEFINED_id_t)
+ #define _ID_T
++#define __DEFINED_id_t
+ typedef int id_t;
