@@ -16,7 +16,7 @@
  
  	power = devm_regulator_get(dev, "vcc");
  	if (IS_ERR(power)) {
-@@ -1579,6 +1581,18 @@ dm9000_probe(struct platform_device *pde
+@@ -1581,6 +1583,18 @@ dm9000_probe(struct platform_device *pde
  		goto out;
  	}
  

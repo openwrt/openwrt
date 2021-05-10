@@ -140,7 +140,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #endif
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -309,10 +309,12 @@ static int ct_seq_show(struct seq_file *
+@@ -310,10 +310,12 @@ static int ct_seq_show(struct seq_file *
  	WARN_ON(!l4proto);
  
  	ret = -ENOSPC;
@@ -156,7 +156,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	if (l4proto->print_conntrack)
  		l4proto->print_conntrack(s, ct);
-@@ -339,7 +341,9 @@ static int ct_seq_show(struct seq_file *
+@@ -340,7 +342,9 @@ static int ct_seq_show(struct seq_file *
  	if (seq_print_acct(s, ct, IP_CT_DIR_REPLY))
  		goto release;
  
