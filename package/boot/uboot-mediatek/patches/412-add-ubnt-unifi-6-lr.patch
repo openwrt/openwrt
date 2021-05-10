@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr_defconfig
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,139 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -72,7 +72,8 @@
 +CONFIG_CMD_TFTPSRV=y
 +# CONFIG_CMD_UNLZ4 is not set
 +CONFIG_CMD_ASKENV=y
-+# CONFIG_CMD_PSTORE is not set
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
 +CONFIG_CMD_RARP=y
 +CONFIG_CMD_SETEXPR=y
 +CONFIG_CMD_SLEEP=y
@@ -362,7 +363,7 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x40080000
-+bootcmd=run boot_nor
++bootcmd=if pstore check ; then run boot_recovery ; else run boot_nor ; fi
 +bootdelay=0
 +bootfile=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-ubootmod-initramfs-recovery.itb
 +bootfile_bl2=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-ubootmod-preloader.bin
