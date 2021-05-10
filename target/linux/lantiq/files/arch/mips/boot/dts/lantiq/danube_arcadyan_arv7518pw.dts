@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -48,62 +46,74 @@
 	leds {
 		compatible = "gpio-leds";
 		power_green: power {
-			label = "arv7518pw:green:power";
+			label = "green:power";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		dsl: dsl {
-			label = "arv7518pw:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		online_green: online {
-			label = "arv7518pw:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "arv7518pw:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power2 {
-			label = "arv7518pw:red:power";
+			label = "red:power";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 		online2 {
-			label = "arv7518pw:red:internet";
+			label = "red:internet";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		led_usb: usb {
-			label = "arv7518pw:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 		voice {
-			label = "arv7518pw:green:voip";
+			label = "green:voip";
 			gpios = <&gpiomm 0 GPIO_ACTIVE_LOW>;
 		};
 		fxs1 {
-			label = "arv7518pw:green:phone1";
+			label = "green:phone1";
 			gpios = <&gpiomm 1 GPIO_ACTIVE_LOW>;
 		};
 		fxs2 {
-			label = "arv7518pw:green:phone2";
+			label = "green:phone2";
 			gpios = <&gpiomm 2 GPIO_ACTIVE_LOW>;
 		};
 		unlabeled {
-			label = "arv7518pw:amber:unlabeled";
+			label = "amber:unlabeled";
 			gpios = <&gpiomm 3 GPIO_ACTIVE_LOW>;
 		};
 		wps {
-			label = "arv7518pw:amber:wps";
+			label = "amber:wps";
 			gpios = <&gpiomm 4 GPIO_ACTIVE_LOW>;
 		};
 		wps2 {
-			label = "arv7518pw:green:wps";
+			label = "green:wps";
 			gpios = <&gpiomm 5 GPIO_ACTIVE_LOW>;
 		};
 		wps3 {
-			label = "arv7518pw:red:wps";
+			label = "red:wps";
 			gpios = <&gpiomm 6 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 };
 
@@ -131,18 +141,6 @@
 			lantiq,pull = <2>;
 			lantiq,open-drain = <1>;
 		};
-	};
-
-	usb_vbus: regulator-usb-vbus {
-		compatible = "regulator-fixed";
-
-		regulator-name = "USB_VBUS";
-
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-
-		gpio = <&gpio 14 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
 	};
 };
 
@@ -172,7 +170,7 @@
 			};
 
 			partition@10000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x10000 0x10000>;
 			};
 
@@ -181,7 +179,7 @@
 				reg = <0x20000 0x7d0000>;
 			};
 
-			boardconfig: partition@400000 {
+			boardconfig: partition@7f0000 {
 				label = "boardconfig";
 				reg = <0x7f0000 0x10000>;
 				read-only;

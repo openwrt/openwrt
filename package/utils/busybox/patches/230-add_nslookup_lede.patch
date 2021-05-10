@@ -19,9 +19,9 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/Makefile.flags
 +++ b/Makefile.flags
-@@ -134,6 +134,12 @@ else
- LDLIBS += m
- endif
+@@ -158,6 +158,12 @@ endif
+ # libm may be needed for dc, awk, ntpd
+ # librt may be needed for clock_gettime()
  
 +# nslookup_lede might need the resolv library
 +RESOLV_AVAILABLE := $(shell echo 'int main(void){res_init();return 0;}' >resolvtest.c; $(CC) $(CFLAGS) -include resolv.h -lresolv -o /dev/null resolvtest.c >/dev/null 2>&1 && echo "y"; rm resolvtest.c)

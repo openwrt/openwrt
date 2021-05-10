@@ -21,8 +21,6 @@ linksys_get_target_firmware() {
 			"${cur_boot_part}" "${mtd_ubi0}"
 	fi
 
-	cur_boot_part=$(/usr/sbin/fw_printenv -n boot_part)
-
 	case $cur_boot_part in
 	1)
 		fw_setenv -s - <<-EOF

@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2019.04
+PKG_VERSION:=2020.04
 PKG_RELEASE:=1
 
-PKG_HASH:=76b7772d156b3ddd7644c8a1736081e55b78828537ff714065d21dbade229bef
+PKG_HASH:=fe732aaf037d9cc3c0909bad8362af366ae964bbdac6913a34081ff4ad565372
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -24,6 +24,7 @@ define U-Boot/apalis_imx6
   NAME:=Toradex Apalis
   UBOOT_IMAGE:=SPL u-boot.img u-boot-with-spl.imx
   UBOOT_MAKE_FLAGS:=SPL u-boot.img u-boot-with-spl.imx
+  BUILD_DEVICES:=apalis
 endef
 
 define U-Boot/mx6cuboxi

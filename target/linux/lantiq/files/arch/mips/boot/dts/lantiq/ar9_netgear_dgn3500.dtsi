@@ -67,40 +67,40 @@
 	leds {
 		compatible = "gpio-leds";
 		internet: internet {
-			label = "dgn3500:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		internet2 {
-			label = "dgn3500:red:internet";
+			label = "red:internet";
 			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
-			label = "dgn3500:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		led_usb: usb {
-			label = "dgn3500:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power {
-			label = "dgn3500:green:power";
+			label = "green:power";
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power2 {
-			label = "dgn3500:red:power";
+			label = "red:power";
 			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
 		};
 		wifi_green: wifi {
-			label = "dgn3500:green:wireless";
+			label = "green:wireless";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 		wifi2 {
-			label = "dgn3500:amber:wireless";
+			label = "amber:wireless";
 			gpios = <&gpio 51 GPIO_ACTIVE_LOW>;
 		};
 		wps {
-			label = "dgn3500:green:wps";
+			label = "green:wps";
 			gpios = <&gpio 52 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -158,7 +158,7 @@
 
 			partition@10000 {
 				reg = <0x10000 0x10000>;
-				label = "uboot-env";
+				label = "u-boot-env";
 				read-only;
 			};
 

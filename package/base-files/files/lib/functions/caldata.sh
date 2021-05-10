@@ -3,6 +3,16 @@
 . /lib/functions.sh
 . /lib/functions/system.sh
 
+caldata_dd() {
+	local source=$1
+	local target=$2
+	local count=$(($3))
+	local offset=$(($4))
+
+	dd if=$source of=$target iflag=skip_bytes,fullblock bs=$count skip=$offset count=1 2>/dev/null
+	return $?
+}
+
 caldata_die() {
 	echo "caldata: " "$*"
 	exit 1
@@ -17,7 +27,7 @@ caldata_extract() {
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || caldata_die "no mtd device found for partition $part"
 
-	dd if=$mtd of=/lib/firmware/$FIRMWARE iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null || \
+	caldata_dd $mtd /lib/firmware/$FIRMWARE $count $offset || \
 		caldata_die "failed to extract calibration data from $mtd"
 }
 
@@ -34,7 +44,7 @@ caldata_extract_ubi() {
 	ubi=$(nand_find_volume $ubidev $part)
 	[ -n "$ubi" ] || caldata_die "no UBI volume found for $part"
 
-	dd if=/dev/$ubi of=/lib/firmware/$FIRMWARE iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null || \
+	caldata_dd /dev/$ubi /lib/firmware/$FIRMWARE $count $offset || \
 		caldata_die "failed to extract calibration data from $ubi"
 }
 
@@ -60,16 +70,42 @@ caldata_from_file() {
 	local source=$1
 	local offset=$(($2))
 	local count=$(($3))
+	local target=$4
 
-	dd if=$source of=/lib/firmware/$FIRMWARE iflag=skip_bytes bs=$count skip=$offset count=1 2>/dev/null || \
+	[ -n "$target" ] || target=/lib/firmware/$FIRMWARE
+
+	caldata_dd $source $target $count $offset || \
 		caldata_die "failed to extract calibration data from $source"
+}
+
+caldata_sysfsload_from_file() {
+	local source=$1
+	local offset=$(($2))
+	local count=$(($3))
+	local target_dir="/sys/$DEVPATH"
+	local target="$target_dir/data"
+
+	[ -d "$target_dir" ] || \
+		caldata_die "no sysfs dir to write: $target"
+
+	echo 1 > "$target_dir/loading"
+	caldata_dd $source $target $count $offset
+	if [ $? != 0 ]; then
+		echo 1 > "$target_dir/loading"
+		caldata_die "failed to extract calibration data from $source"
+	else
+		echo 0 > "$target_dir/loading"
+	fi
 }
 
 caldata_valid() {
 	local expected="$1"
+	local target=$2
 
-	magic=$(hexdump -v -n 2 -e '1/1 "%02x"' /lib/firmware/$FIRMWARE)
-	[[ "$magic" == "$expected" ]]
+	[ -n "$target" ] || target=/lib/firmware/$FIRMWARE
+
+	magic=$(hexdump -v -n 2 -e '1/1 "%02x"' $target)
+	[ "$magic" = "$expected" ]
 	return $?
 }
 
@@ -77,6 +113,7 @@ caldata_patch_chksum() {
 	local mac=$1
 	local mac_offset=$(($2))
 	local chksum_offset=$(($3))
+	local target=$4
 	local xor_mac
 	local xor_fw_mac
 	local xor_fw_chksum
@@ -91,38 +128,44 @@ caldata_patch_chksum() {
 	xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
 
 	printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
-		dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$chksum_offset count=2
+		dd of=$target conv=notrunc bs=1 seek=$chksum_offset count=2
 }
 
 caldata_patch_mac() {
 	local mac=$1
 	local mac_offset=$(($2))
 	local chksum_offset=$3
+	local target=$4
 
 	[ -z "$mac" -o -z "$mac_offset" ] && return
 
-	[ -n "$chksum_offset" ] && caldata_patch_chksum "$mac" "$mac_offset" "$chksum_offset"
+	[ -n "$target" ] || target=/lib/firmware/$FIRMWARE
 
-	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1 || \
+	[ -n "$chksum_offset" ] && caldata_patch_chksum "$mac" "$mac_offset" "$chksum_offset" "$target"
+
+	macaddr_2bin $mac | dd of=$target conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1 || \
 		caldata_die "failed to write MAC address to eeprom file"
 }
 
 ath9k_patch_mac() {
 	local mac=$1
+	local target=$2
 
-	caldata_patch_mac "$mac" 0x2
+	caldata_patch_mac "$mac" 0x2 "" "$target"
 }
 
 ath9k_patch_mac_crc() {
 	local mac=$1
 	local mac_offset=$2
 	local chksum_offset=$((mac_offset - 10))
+	local target=$4
 
-	caldata_patch_mac "$mac" "$mac_offset" "$chksum_offset"
+	caldata_patch_mac "$mac" "$mac_offset" "$chksum_offset" "$target"
 }
 
 ath10k_patch_mac() {
 	local mac=$1
+	local target=$2
 
-	caldata_patch_mac "$mac" 0x6 0x2
+	caldata_patch_mac "$mac" 0x6 0x2 "$target"
 }

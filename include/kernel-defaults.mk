@@ -1,9 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2006-2015 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2006-2020 OpenWrt.org
 
 ifdef CONFIG_STRIP_KERNEL_EXPORTS
   KERNEL_MAKEOPTS += \
@@ -24,7 +21,7 @@ Kernel/Patch:=$(Kernel/Patch/Default)
 ifneq (,$(findstring .xz,$(LINUX_SOURCE)))
   LINUX_CAT:=xzcat
 else
-  LINUX_CAT:=zcat
+  LINUX_CAT:=gzip -dc
 endif
 
 ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
@@ -46,6 +43,7 @@ else
 		rmdir $(LINUX_DIR); \
 	fi
 	ln -s $(CONFIG_EXTERNAL_KERNEL_TREE) $(LINUX_DIR)
+	$(_SINGLE) [ -d $(LINUX_DIR)/user_headers ] && rm -rf $(LINUX_DIR)/user_headers
   endef
 endif
 
@@ -77,6 +75,7 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO),CONFIG_INITRAMFS_COMPRESSION_LZO=y\nCONFIG_RD_LZO=y,# CONFIG_INITRAMFS_COMPRESSION_LZO is not set\n# CONFIG_RD_LZO is not set)" >> $(LINUX_DIR)/.config
 	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ),CONFIG_INITRAMFS_COMPRESSION_XZ=y\nCONFIG_RD_XZ=y,# CONFIG_INITRAMFS_COMPRESSION_XZ is not set\n# CONFIG_RD_XZ is not set)" >> $(LINUX_DIR)/.config
 	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZ4),CONFIG_INITRAMFS_COMPRESSION_LZ4=y\nCONFIG_RD_LZ4=y,# CONFIG_INITRAMFS_COMPRESSION_LZ4 is not set\n# CONFIG_RD_LZ4 is not set)" >> $(LINUX_DIR)/.config
+	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD),CONFIG_INITRAMFS_COMPRESSION_ZSTD=y\nCONFIG_RD_STD=y,# CONFIG_INITRAMFS_COMPRESSION_ZSTD is not set\n# CONFIG_RD_ZSTD is not set)" >> $(LINUX_DIR)/.config
   endef
 else
 endif

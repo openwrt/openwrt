@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -47,28 +45,28 @@
 	leds {
 		compatible = "gpio-leds";
 		power_green: power {
-			label = "arv7525pw:green:power";
+			label = "green:power";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power1 {
-			label = "arv7525pw:red:power";
+			label = "red:power";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		online: online {
-			label = "arv7525pw:green:online";
+			label = "green:online";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		voice {
-			label = "arv7525pw:green:telefonie";
+			label = "green:telefonie";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		voice2 {
-			label = "arv7525pw:red:telefonie";
+			label = "red:telefonie";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "arv7525pw:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -109,7 +107,7 @@
 			};
 
 			partition@10000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x10000 0x10000>;
 				read-only;
 			};
@@ -119,7 +117,7 @@
 				reg = <0x20000 0x3d0000>;
 			};
 
-			boardconfig: partition@400000 {
+			boardconfig: partition@3f0000 {
 				label = "board_config";
 				reg = <0x3f0000 0x10000>;
 				read-only;

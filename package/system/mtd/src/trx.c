@@ -110,7 +110,6 @@ err:
 	return -1;
 }
 
-#ifndef target_ar71xx
 int
 trx_check(int imagefd, const char *mtd, char *buf, int *len)
 {
@@ -153,7 +152,6 @@ trx_check(int imagefd, const char *mtd, char *buf, int *len)
 	close(fd);
 	return 1;
 }
-#endif
 
 int
 mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)

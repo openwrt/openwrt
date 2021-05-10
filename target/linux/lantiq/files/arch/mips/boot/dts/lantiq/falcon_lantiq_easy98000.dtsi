@@ -1,7 +1,7 @@
+#include "falcon.dtsi"
+
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/gpio/gpio.h>
-
-#include "falcon.dtsi"
 
 / {
 	compatible = "lantiq,easy98000", "lantiq,falcon";
@@ -17,32 +17,32 @@
 		pinctrl-0 = <&bootled_pins>;
 
 		LED_0 {
-			label = "easy98000:green:gpon";
+			label = "green:gpon";
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		LED_1 {
-			label = "easy98000:red:gpon";
+			label = "red:gpon";
 			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		LED_2 {
-			label = "easy98000:green:gpon_tx";
+			label = "green:gpon_tx";
 			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		LED_3 {
-			label = "easy98000:green:gpon_rx";
+			label = "green:gpon_rx";
 			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		LED_4 {
-			label = "easy98000:green:voice";
+			label = "green:voice";
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		LED_5 {
-			label = "easy98000:green:status";
+			label = "green:status";
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};

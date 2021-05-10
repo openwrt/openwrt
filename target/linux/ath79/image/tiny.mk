@@ -1,17 +1,14 @@
 include ./common-buffalo.mk
+include ./common-engenius.mk
 
 define Device/buffalo_whr-g301n
+  $(Device/buffalo_common)
   SOC := ar7240
-  DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WHR-G301N
+  BUFFALO_PRODUCT := WHR-G301N
   IMAGE_SIZE := 3712k
-  IMAGES += factory.bin tftp.bin
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := $$(IMAGE/default) | buffalo-enc WHR-G301N 1.99 | \
-	buffalo-tag WHR-G301N 3
-  IMAGE/tftp.bin := $$(IMAGE/default) | buffalo-tftp-header
   SUPPORTED_DEVICES += whr-g301n
+  DEFAULT := n
 endef
 TARGET_DEVICES += buffalo_whr-g301n
 
@@ -25,7 +22,7 @@ define Device/dlink_dir-615-e4
   IMAGES += factory.bin
   IMAGE/default := append-kernel | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | \
-	check-size $$$$(IMAGE_SIZE)
+	check-size
   IMAGE/factory.bin := $$(IMAGE/default) | \
 	check-size $$$$(FACTORY_IMAGE_SIZE) | pad-to $$$$(FACTORY_IMAGE_SIZE) | \
 	append-string "AP99-AR7240-RT-091105-05"
@@ -33,6 +30,40 @@ define Device/dlink_dir-615-e4
   DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-615-e4
+
+define Device/engenius_eap350-v1
+  $(Device/engenius_loader_okli)
+  SOC := ar7242
+  DEVICE_MODEL := EAP350
+  DEVICE_VARIANT := v1
+  IMAGE_SIZE := 4864k
+  LOADER_FLASH_OFFS := 0x1b0000
+  ENGENIUS_IMGNAME := senao-eap350
+endef
+TARGET_DEVICES += engenius_eap350-v1
+
+define Device/engenius_ecb350-v1
+  $(Device/engenius_loader_okli)
+  SOC := ar7242
+  DEVICE_MODEL := ECB350
+  DEVICE_VARIANT := v1
+  IMAGE_SIZE := 4864k
+  LOADER_FLASH_OFFS := 0x1b0000
+  ENGENIUS_IMGNAME := senao-ecb350
+endef
+TARGET_DEVICES += engenius_ecb350-v1
+
+define Device/engenius_enh202-v1
+  $(Device/engenius_loader_okli)
+  SOC := ar7240
+  DEVICE_MODEL := ENH202
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := rssileds
+  IMAGE_SIZE := 4864k
+  LOADER_FLASH_OFFS := 0x1b0000
+  ENGENIUS_IMGNAME := senao-enh202
+endef
+TARGET_DEVICES += engenius_enh202-v1
 
 define Device/pqi_air-pen
   SOC := ar9330

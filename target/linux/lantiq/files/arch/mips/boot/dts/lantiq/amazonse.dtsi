@@ -1,3 +1,5 @@
+/dts-v1/;
+
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -42,11 +44,7 @@
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			compatible = "lantiq,icu";
-			reg = <0x80200 0x28
-				0x80228 0x28
-				0x80250 0x28
-				0x80278 0x28
-				0x802a0 0x28>;
+			reg = <0x80200 0xc8>;
 		};
 
 		watchdog@803f0 {

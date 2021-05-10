@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "amazonse.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -51,27 +49,27 @@
 	leds {
 		compatible = "gpio-leds";
 		dsl: dsl {
-			label = "dgn1000b:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		online_green: online {
-			label = "dgn1000b:green:online";
+			label = "green:online";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		online2 {
-			label = "dgn1000b:red:online";
+			label = "red:online";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		wps {
-			label = "dgn1000b:green:wps";
+			label = "green:wps";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		power: power {
-			label = "dgn1000b:green:power";
+			label = "green:power";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
@@ -136,8 +134,8 @@
 				read-only;
 			};
 
-			partition@500000 {
-				reg = <0x50000 0x003a0000>;
+			partition@50000 {
+				reg = <0x50000 0x3a0000>;
 				label = "kernel";
 			};
 		};

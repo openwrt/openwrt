@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "falcon_lantiq_easy98000.dtsi"
 
 / {
@@ -18,7 +16,6 @@
 		reg = <0x0 0x40000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		linux,mtd-name = "gen_nand";
 		bbt-use-flash;
 
 		partition@0 {
@@ -27,7 +24,7 @@
 		};
 
 		partition@10000 {
-			label = "uboot_env";
+			label = "u-boot-env";
 			reg = <0x40000 0x40000>;
 		};
 

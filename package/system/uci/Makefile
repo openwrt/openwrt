@@ -9,14 +9,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uci
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
-#PKG_SOURCE_URL=$(PROJECT_GIT)/project/uci.git
-PKG_SOURCE_URL=https://gitlab.com/ynezz/openwrt-uci.git
+PKG_SOURCE_URL=$(PROJECT_GIT)/project/uci.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE=2019-12-12
-PKG_SOURCE_VERSION:=165b444131453d63fc78c1d86f23c3ca36a2ffd7
-PKG_MIRROR_HASH:=d4baa6454523ee11ecbfc49188e949a76c07deebf4d048049847b3d1d5e5e40c
+PKG_SOURCE_DATE=2020-10-06
+PKG_SOURCE_VERSION:=52bbc99f69ea6f67b6fe264f424dac91bde5016c
+PKG_MIRROR_HASH:=39f2225d1b8f62d7133f708fc73f1f841b6113ae4634485fc0dfdf226041c3c4
 
 PKG_LICENSE:=LGPL-2.1
 PKG_LICENSE_FILES:=
@@ -85,6 +84,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/libucimap.a $(1)/usr/lib
 endef
 
-$(eval $(call BuildPackage,uci))
 $(eval $(call BuildPackage,libuci))
 $(eval $(call BuildPackage,libuci-lua))
+$(eval $(call BuildPackage,uci))

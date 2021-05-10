@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -59,56 +57,56 @@
 	leds {
 		compatible = "gpio-leds";
 		power_blue: power0 {
-			label = "arv452cqw:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		dsl_blue: dsl {
-			label = "arv452cqw:blue:dsl";
+			label = "blue:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		isdn {
-			label = "arv452cqw:blue:isdn";
+			label = "blue:isdn";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power1 {
-			label = "arv452cqw:red:power";
+			label = "red:power";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		wps {
-			label = "arv452cqw:blue:wps";
+			label = "blue:wps";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 		wps1 {
-			label = "arv452cqw:yellow:wps";
+			label = "yellow:wps";
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 		fxs1 {
-			label = "arv452cqw:blue:telefon1";
+			label = "blue:telefon1";
 			gpios = <&gpiomm 0 GPIO_ACTIVE_LOW>;
 		};
 		fxs2 {
-			label = "arv452cqw:blue:telefon2";
+			label = "blue:telefon2";
 			gpios = <&gpiomm 1 GPIO_ACTIVE_LOW>;
 		};
 		wps2 {
-			label = "arv452cqw:red:wps";
+			label = "red:wps";
 			gpios = <&gpiomm 2 GPIO_ACTIVE_LOW>;
 		};
 		fxo {
-			label = "arv452cqw:blue:line";
+			label = "blue:line";
 			gpios = <&gpiomm 3 GPIO_ACTIVE_LOW>;
 		};
 		voice {
-			label = "arv452cqw:blue:sprache";
+			label = "blue:sprache";
 			gpios = <&gpiomm 4 1>;
 		};
 		led_usb: usb {
-			label = "arv452cqw:blue:usb";
+			label = "blue:usb";
 			gpios = <&gpiomm 5 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "arv452cqw:blue:wlan";
+			label = "blue:wlan";
 			gpios = <&gpiomm 6 GPIO_ACTIVE_LOW>;
 		};
 		/*
@@ -116,11 +114,11 @@
 			dsl2 and dsl3 are not referenced in manual
 		*/
 		dsl2 {
-			label = "arv452cqw:yellow:dsl";
+			label = "yellow:dsl";
 			gpios = <&gpiomm 8 GPIO_ACTIVE_LOW>;
 		};
 		dsl3 {
-			label = "arv452cqw:red:dsl";
+			label = "red:dsl";
 			gpios = <&gpiomm 9 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -185,7 +183,7 @@
 			};
 
 			partition@10000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x10000 0x10000>;
 				read-only;
 			};

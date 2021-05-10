@@ -75,7 +75,7 @@ proto_6in4_setup() {
 	[ -n "$ip6addr" ] && {
 		local local6="${ip6addr%%/*}"
 		local mask6="${ip6addr##*/}"
-		[[ "$local6" = "$mask6" ]] && mask6=
+		[ "$local6" = "$mask6" ] && mask6=
 		proto_add_ipv6_address "$local6" "$mask6"
 		proto_add_ipv6_route "::" 0 "" "" "" "$local6/$mask6"
 	}

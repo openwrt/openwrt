@@ -294,7 +294,6 @@ static int b53_phy_probe(struct phy_device *phydev)
 	if (ret)
 		return ret;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
 	linkmode_zero(phydev->supported);
 	if (is5325(dev) || is5365(dev))
 		linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, phydev->supported);
@@ -302,14 +301,6 @@ static int b53_phy_probe(struct phy_device *phydev)
 		linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->supported);
 
 	linkmode_copy(phydev->advertising, phydev->supported);
-#else
-	if (is5325(dev) || is5365(dev))
-		phydev->supported = SUPPORTED_100baseT_Full;
-	else
-		phydev->supported = SUPPORTED_1000baseT_Full;
-
-	phydev->advertising = phydev->supported;
-#endif
 
 	ret = b53_switch_register(dev);
 	if (ret) {
@@ -370,6 +361,26 @@ static int b53_phy_read_status(struct phy_device *phydev)
 	return 0;
 }
 
+static const struct of_device_id b53_of_match_1[] = {
+	{ .compatible = "brcm,bcm5325" },
+	{ .compatible = "brcm,bcm5395" },
+	{ .compatible = "brcm,bcm5397" },
+	{ .compatible = "brcm,bcm5398" },
+	{ /* sentinel */ },
+};
+
+static const struct of_device_id b53_of_match_2[] = {
+	{ .compatible = "brcm,bcm53115" },
+	{ .compatible = "brcm,bcm53125" },
+	{ .compatible = "brcm,bcm53128" },
+	{ /* sentinel */ },
+};
+
+static const struct of_device_id b53_of_match_3[] = {
+	{ .compatible = "brcm,bcm5365" },
+	{ /* sentinel */ },
+};
+
 /* BCM5325, BCM539x */
 static struct phy_driver b53_phy_driver_id1 = {
 	.phy_id		= 0x0143bc00,
@@ -381,6 +392,10 @@ static struct phy_driver b53_phy_driver_id1 = {
 	.config_aneg	= b53_phy_config_aneg,
 	.config_init	= b53_phy_config_init,
 	.read_status	= b53_phy_read_status,
+	.mdiodrv.driver = {
+		.name = "bcm539x",
+		.of_match_table = b53_of_match_1,
+	},
 };
 
 /* BCM53125, BCM53128 */
@@ -394,19 +409,27 @@ static struct phy_driver b53_phy_driver_id2 = {
 	.config_aneg	= b53_phy_config_aneg,
 	.config_init	= b53_phy_config_init,
 	.read_status	= b53_phy_read_status,
+	.mdiodrv.driver = {
+		.name = "bcm531xx",
+		.of_match_table = b53_of_match_2,
+	},
 };
 
 /* BCM5365 */
 static struct phy_driver b53_phy_driver_id3 = {
-	.phy_id		= 0x00406000,
+	.phy_id		= 0x00406300,
 	.name		= "Broadcom B53 (3)",
-	.phy_id_mask	= 0x1ffffc00,
+	.phy_id_mask	= 0x1fffff00,
 	.features	= 0,
 	.probe		= b53_phy_probe,
 	.remove		= b53_phy_remove,
 	.config_aneg	= b53_phy_config_aneg,
 	.config_init	= b53_phy_config_init,
 	.read_status	= b53_phy_read_status,
+	.mdiodrv.driver = {
+		.name = "bcm5365",
+		.of_match_table = b53_of_match_3,
+	},
 };
 
 int __init b53_phy_driver_register(void)

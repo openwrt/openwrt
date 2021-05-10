@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -167,7 +165,7 @@
 			};
 
 			partition@40000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x40000 0x20000>;
 			};
 

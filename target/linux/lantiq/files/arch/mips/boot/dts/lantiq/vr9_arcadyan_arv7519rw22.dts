@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -52,32 +50,32 @@
 		compatible = "gpio-leds";
 
 		lan_green {
-			label = "arv7519rw22:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		internet_red {
-			label = "arv7519rw22:red:internet";
+			label = "red:internet";
 			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power_green {
-			label = "arv7519rw22:green:power";
+			label = "green:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		alarm_blue {
-			label = "arv7519rw22:blue:alarm";
+			label = "blue:alarm";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 		internet_orange {
-			label = "arv7519rw22:orange:internet";
+			label = "orange:internet";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 		internet_green: internet_green {
-			label = "arv7519rw22:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 		voice_green {
-			label = "arv7519rw22:green:voice";
+			label = "green:voice";
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -96,7 +94,7 @@
 };
 
 &eth0 {
-	lan: interface@0 {
+	interface@0 {
 		compatible = "lantiq,xrx200-pdi";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -110,29 +108,29 @@
 			phy-mode = "rgmii";
 			phy-handle = <&phy0>;
 		};
-		ethernet@1 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <4>;
-			phy-mode = "mii";
-			phy-handle = <&phy13>;
-		};
 		ethernet@2 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <5>;
-			phy-mode = "mii";
-			phy-handle = <&phy14>;
-		};
-		ethernet@3 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <2>;
 			phy-mode = "mii";
 			phy-handle = <&phy11>;
 		};
-		ethernet@4 {
+		ethernet@3 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <3>;
 			phy-mode = "mii";
 			phy-handle = <&phy12>;
+		};
+		ethernet@4 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "mii";
+			phy-handle = <&phy13>;
+		};
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "mii";
+			phy-handle = <&phy14>;
 		};
 	};
 
@@ -203,7 +201,7 @@
 			};
 
 			partition@60000 {
-				label = "uboot-env";
+				label = "u-boot-env";
 				reg = <0x60000 0x20000>;
 				read-only;
 			};

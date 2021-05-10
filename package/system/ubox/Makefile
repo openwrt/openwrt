@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ubox
-PKG_RELEASE:=3
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/ubox.git
-PKG_SOURCE_DATE:=2019-12-31
-PKG_SOURCE_VERSION:=0e34af143373126fc62b43612233a158694ec643
-PKG_MIRROR_HASH:=8ad36b252419a88d1018addec84900f9601ef5aece39bd0171c918d0817688c9
+PKG_SOURCE_DATE:=2020-10-25
+PKG_SOURCE_VERSION:=9ef886819dd48303d8ced4cdbc9afbf32682535c
+PKG_MIRROR_HASH:=e2d93b798b91de98cb003f7b3be97d3d8a2413c8612b527d096c86ac5365cbdd
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -25,6 +25,12 @@ define Package/ubox
   CATEGORY:=Base system
   DEPENDS:=+libubox +ubusd +ubus +libubus +libuci +USE_GLIBC:librt
   TITLE:=OpenWrt system helper toolbox
+  ALTERNATIVES:=\
+    100:/sbin/rmmod:/sbin/kmodloader \
+    100:/sbin/insmod:/sbin/kmodloader \
+    100:/sbin/lsmod:/sbin/kmodloader \
+    100:/sbin/modinfo:/sbin/kmodloader \
+    100:/sbin/modprobe:/sbin/kmodloader
 endef
 
 define Package/getrandom
@@ -38,6 +44,7 @@ define Package/logd
   CATEGORY:=Base system
   DEPENDS:=+libubox +libubus +libblobmsg-json +USE_GLIBC:librt
   TITLE:=OpenWrt system log implementation
+  USERID:=logd=514:logd=514
 endef
 
 define Package/getrandom/install
@@ -50,12 +57,6 @@ define Package/ubox/install
 
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{kmodloader,validate_data} $(1)/sbin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libvalidate.so $(1)/lib
-
-	$(LN) kmodloader $(1)/sbin/rmmod
-	$(LN) kmodloader $(1)/sbin/insmod
-	$(LN) kmodloader $(1)/sbin/lsmod
-	$(LN) kmodloader $(1)/sbin/modinfo
-	$(LN) kmodloader $(1)/sbin/modprobe
 endef
 
 define Package/logd/install

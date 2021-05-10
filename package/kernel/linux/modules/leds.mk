@@ -24,20 +24,19 @@ $(eval $(call KernelPackage,leds-gpio))
 
 LED_TRIGGER_DIR=$(LINUX_DIR)/drivers/leds/trigger
 
-define KernelPackage/ledtrig-heartbeat
+define KernelPackage/ledtrig-activity
   SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Heartbeat Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_HEARTBEAT
-  FILES:=$(LED_TRIGGER_DIR)/ledtrig-heartbeat.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-heartbeat)
+  TITLE:=LED Activity Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_ACTIVITY
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-activity.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-activity)
 endef
 
-define KernelPackage/ledtrig-heartbeat/description
- Kernel module that allows LEDs to blink like heart beat
+define KernelPackage/ledtrig-activity/description
+ Kernel module that allows LEDs to blink based on system load
 endef
 
-$(eval $(call KernelPackage,ledtrig-heartbeat))
-
+$(eval $(call KernelPackage,ledtrig-activity))
 
 define KernelPackage/ledtrig-gpio
   SUBMENU:=$(LEDS_MENU)
@@ -52,52 +51,6 @@ define KernelPackage/ledtrig-gpio/description
 endef
 
 $(eval $(call KernelPackage,ledtrig-gpio))
-
-
-define KernelPackage/ledtrig-netdev
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED NETDEV Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_NETDEV
-  FILES:=$(LINUX_DIR)/drivers/leds/trigger/ledtrig-netdev.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-netdev)
-endef
-
-define KernelPackage/ledtrig-netdev/description
- Kernel module to drive LEDs based on network activity
-endef
-
-$(eval $(call KernelPackage,ledtrig-netdev))
-
-
-define KernelPackage/ledtrig-default-on
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Default ON Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_DEFAULT_ON
-  FILES:=$(LED_TRIGGER_DIR)/ledtrig-default-on.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-default-on,1)
-endef
-
-define KernelPackage/ledtrig-default-on/description
- Kernel module that allows LEDs to be initialised in the ON state
-endef
-
-$(eval $(call KernelPackage,ledtrig-default-on))
-
-
-define KernelPackage/ledtrig-timer
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Timer Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_TIMER
-  FILES:=$(LED_TRIGGER_DIR)/ledtrig-timer.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-timer,1)
-endef
-
-define KernelPackage/ledtrig-timer/description
- Kernel module that allows LEDs to be controlled by a programmable timer
- via sysfs
-endef
-
-$(eval $(call KernelPackage,ledtrig-timer))
 
 
 define KernelPackage/ledtrig-transient
@@ -145,3 +98,19 @@ define KernelPackage/leds-pca963x/description
 endef
 
 $(eval $(call KernelPackage,leds-pca963x))
+
+
+define KernelPackage/leds-pwm
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=PWM driven LED Support
+  KCONFIG:=CONFIG_LEDS_PWM
+  DEPENDS:= @PWM_SUPPORT
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-pwm.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-pwm,1)
+endef
+
+define KernelPackage/leds-pwm/description
+ This option enables support for pwm driven LEDs
+endef
+
+$(eval $(call KernelPackage,leds-pwm))

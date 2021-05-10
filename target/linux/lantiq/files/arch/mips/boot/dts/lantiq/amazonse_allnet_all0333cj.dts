@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "amazonse.dtsi"
 
 / {
@@ -30,27 +28,27 @@
 
 		/* power led: red=off, green=on */
 		power: power {
-			label = "all0333cj:green:power";
+			label = "green:power";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
 		lan: lan {
-			label = "all0333cj:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
 		dsl: dsl {
-			label = "all0333cj:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
 		online_green: online {
-			label = "all0333cj:green:online";
+			label = "green:online";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 		online_red {
-			label = "all0333cj:red:online";
+			label = "red:online";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -96,7 +94,7 @@
 			};
 
 			partition@3ff200 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x3ff200 0xc00>;
 				read-only;
 			};

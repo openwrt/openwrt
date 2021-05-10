@@ -11,6 +11,7 @@ include $(INCLUDE_DIR)/feeds.mk
 include $(INCLUDE_DIR)/rootfs.mk
 
 -include $(TMP_DIR)/.packagedeps
+package-y += kernel/linux
 $(curdir)/autoremove:=1
 $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
 $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
@@ -84,7 +85,7 @@ $(curdir)/index: FORCE
 		mkdir -p $$d; \
 		cd $$d || continue; \
 		$(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages.manifest; \
-		grep -vE '^(Maintainer|LicenseFiles|Source|SourceName|Require)' Packages.manifest > Packages; \
+		grep -vE '^(Maintainer|LicenseFiles|Source|SourceName|Require|SourceDateEpoch)' Packages.manifest > Packages; \
 		case "$$(((64 + $$(stat -L -c%s Packages)) % 128))" in 110|111) \
 			$(call ERROR_MESSAGE,WARNING: Applying padding in $$d/Packages to workaround usign SHA-512 bug!); \
 			{ echo ""; echo ""; } >> Packages;; \

@@ -9,16 +9,17 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
-PKG_VERSION:=2019.07
-PKG_RELEASE:=2
+PKG_VERSION:=2021.01
+PKG_RELEASE:=$(AUTORELEASE)
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:= \
+    https://ftp.denx.de/pub/u-boot \
+    https://mirror.cyberbits.eu/u-boot \
+    ftp://ftp.denx.de/pub/u-boot
+PKG_HASH:=b407e1510a74e863b8b5cb42a24625344f0e0c2fc7582d8c866bd899367d0454
 PKG_SOURCE_SUBDIR:=$(PKG_DISTNAME)-$(PKG_VERSION)
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_DISTNAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=https://git.denx.de/u-boot.git
-PKG_SOURCE_VERSION:=e5aee22e4be75e75a854ab64503fc80598bc2004
-PKG_MIRROR_HASH:=58c1ecaf901b6bf65c5e872b5449b642694ae5acebf61f91f0d4bc20b4c654b7
 
 PKG_BUILD_DEPENDS:=fstools
 

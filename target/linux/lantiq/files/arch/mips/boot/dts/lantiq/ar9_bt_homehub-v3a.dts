@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "ar9.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -51,42 +49,42 @@
 		compatible = "gpio-leds";
 
 		wireless-red {
-			label = "bthomehubv3a:red:wireless";
+			label = "red:wireless";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		wireless-orange {
-			label = "bthomehubv3a:orange:wireless";
+			label = "orange:wireless";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		wireless_blue: wireless-blue {
-			label = "bthomehubv3a:blue:wireless";
+			label = "blue:wireless";
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 
 		broadband-red {
-			label = "bthomehubv3a:red:broadband";
+			label = "red:broadband";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 		broadband-orange {
-			label = "bthomehubv3a:orange:broadband";
+			label = "orange:broadband";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 		broadband_blue: broadband-blue {
-			label = "bthomehubv3a:blue:broadband";
+			label = "blue:broadband";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		power_red: power-red {
-			label = "bthomehubv3a:red:power";
+			label = "red:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 		power_orange: power-orange {
-			label = "bthomehubv3a:orange:power";
+			label = "orange:power";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_blue: power-blue {
-			label = "bthomehubv3a:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -148,7 +146,7 @@
 				read-only;
 			};
 			partition@64000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x64000 0x004000>;
 			};
 			ath9k_cal: partition@68000 {

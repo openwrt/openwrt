@@ -1,7 +1,7 @@
 PKG_DRIVERS += \
 	rtl8180 rtl8187 \
 	rtlwifi rtlwifi-pci rtlwifi-btcoexist rtlwifi-usb rtl8192c-common \
-	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8821ae \
+	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8723bs rtl8821ae \
 	rtl8xxxu rtw88
 
 config-$(call config_package,rtl8180) += RTL8180
@@ -22,8 +22,11 @@ config-$(CONFIG_PACKAGE_RTLWIFI_DEBUG) += RTLWIFI_DEBUG
 config-$(call config_package,rtl8xxxu) += RTL8XXXU
 config-y += RTL8XXXU_UNTESTED
 
+config-$(call config_package,rtl8723bs) += RTL8723BS
+config-y += STAGING
+
 config-$(call config_package,rtw88) += RTW88 RTW88_CORE RTW88_PCI
-config-y += RTW88_8822BE RTW88_8822CE
+config-y += RTW88_8822BE RTW88_8822CE RTW88_8723DE
 
 define KernelPackage/rtl818x/Default
   $(call KernelPackage/mac80211/Default)
@@ -60,7 +63,7 @@ endef
 define KernelPackage/rtlwifi
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek common driver part
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +@DRIVER_11N_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtlwifi.ko
   HIDDEN:=1
 endef
@@ -174,9 +177,30 @@ endef
 
 define KernelPackage/rtw88
   $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek RTL8822BE/RTL8822CE
-  DEPENDS+= @(PCI_SUPPORT) +kmod-mac80211 +@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88.ko	\
-	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtwpci.ko
-  AUTOLOAD:=$(call AutoProbe,rtwpci)
+  TITLE:=Realtek RTL8822BE/RTL8822CE/RTL8723DE
+  DEPENDS+= @(PCI_SUPPORT) +kmod-mac80211 +@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT
+  FILES:=\
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8822be.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8822b.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8822ce.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8822c.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8723de.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8723d.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_core.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_pci.ko
+  AUTOLOAD:=$(call AutoProbe,rtw88_8822be rtw88_8822ce rtw88_8723de)
+endef
+
+define KernelPackage/rtl8723bs
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8723BS SDIO Wireless LAN NIC driver (staging)
+  DEPENDS+=+kmod-mmc +kmod-mac80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/staging/rtl8723bs/r8723bs.ko
+  AUTOLOAD:=$(call AutoProbe,r8723bs)
+endef
+
+define KernelPackage/rtl8723bs/description
+ This option enables support for RTL8723BS SDIO drivers, such as the wifi found
+ on the 1st gen Intel Compute Stick, the CHIP and many other Intel Atom and ARM
+ based devices.
 endef

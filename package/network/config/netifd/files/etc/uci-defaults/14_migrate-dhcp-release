@@ -18,6 +18,6 @@ migrate_release() {
 
 config_load network
 config_foreach migrate_release interface
-commit network
+uci commit network
 
 exit 0

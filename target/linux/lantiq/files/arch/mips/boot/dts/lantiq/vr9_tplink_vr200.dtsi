@@ -4,9 +4,87 @@
 #include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+
+		led-dsl = &led_dsl;
+		led-internet = &led_internet;
+		led-wifi = &led_wlan5g;
+
+		led-usb = &led_usb;
+		led-usb2 = &led_usb;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x7f00000>;
+	};
+
+	keys: keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wifi {
+			label = "wifi";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RFKILL>;
+			linux,input-type = <EV_SW>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "blue:power";
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+			default-state = "keep";
+		};
+
+		led_dsl: dsl {
+			label = "blue:dsl";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_internet: internet {
+			label = "blue:internet";
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_usb: usb {
+			label = "blue:usb";
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
+		};
+
+		eth {
+			label = "blue:lan";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			label = "blue:wlan";
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan5g: wifi {
+			label = "blue:wlan5g";
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
 	};
 
 	usb_vbus: regulator-usb-vbus {
@@ -41,23 +119,23 @@
 			phy-handle = <&phy0>;
 			// gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
-		ethernet@5 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <5>;
-			phy-mode = "rgmii";
-			phy-handle = <&phy5>;
-		};
 		ethernet@2 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <2>;
 			phy-mode = "gmii";
 			phy-handle = <&phy11>;
 		};
-		ethernet@3 {
+		ethernet@4 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <4>;
 			phy-mode = "gmii";
 			phy-handle = <&phy13>;
+		};
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy5>;
 		};
 	};
 

@@ -60,7 +60,6 @@
 
 static inline void vr9_reset_ppe(struct platform_device *pdev)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
 	struct device *dev = &pdev->dev;
 	struct reset_control *dsp;
 	struct reset_control *dfe;
@@ -97,7 +96,6 @@ static inline void vr9_reset_ppe(struct platform_device *pdev)
 	udelay(1000);
 	*PP32_SRST |= 0x000303CF;
 	udelay(1000);
-#endif
 }
 
 static inline int vr9_pp32_download_code(int pp32, u32 *code_src, unsigned int code_dword_len, u32 *data_src, unsigned int data_dword_len)

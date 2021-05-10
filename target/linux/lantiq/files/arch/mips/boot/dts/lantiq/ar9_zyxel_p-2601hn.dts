@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "ar9.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -48,40 +46,40 @@
 		compatible = "gpio-leds";
 
 		power_green: power {
-			label = "p2601hnfx:green:power";
+			label = "green:power";
 			gpios = <&stp 11 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power2 {
-			label = "p2601hnfx:red:power";
+			label = "red:power";
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 		online: online {
-			label = "p2601hnfx:green:internet";
+			label = "green:internet";
 			gpios = <&stp 13 GPIO_ACTIVE_LOW>;
 		};
 		online2 {
-			label = "p2601hnfx:red:internet";
+			label = "red:internet";
 			gpios = <&stp 12 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
-			label = "p2601hnfx:green:dsl";
+			label = "green:dsl";
 			gpios = <&stp 14 GPIO_ACTIVE_LOW>;
 		};
 		phone {
-			label = "p2601hnfx:green:phone";
+			label = "green:phone";
 			gpios = <&stp 9 GPIO_ACTIVE_LOW>;
 		};
 		phone2 {
-			label = "p2601hnfx:orange:phone";
+			label = "orange:phone";
 			gpios = <&stp 8 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "p2601hnfx:green:wireless";
+			label = "green:wireless";
 			gpios = <&stp 15 GPIO_ACTIVE_LOW>;
 		};
 		wifi2 {
-			label = "p2601hnfx:orange:wireless";
+			label = "orange:wireless";
 			gpios = <&stp 10 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -96,18 +94,6 @@
 			gpios = <&gpio 50 GPIO_ACTIVE_HIGH>;
 		};
 	};
-};
-
-&gpio {
-	pinctrl-names = "default";
-	pinctrl-0 = <&state_default>;
-
-	state_default: pinmux {
-		exin {
-			lantiq,groups = "exin1";
-			lantiq,function = "exin";
-		};
-	};
 
 	usb_vbus: regulator-usb-vbus {
 		compatible = "regulator-fixed";
@@ -119,6 +105,18 @@
 
 		gpio = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
+	};
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		exin {
+			lantiq,groups = "exin1";
+			lantiq,function = "exin";
+		};
 	};
 };
 
@@ -144,7 +142,7 @@
 			};
 
 			partition@40000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x40000 0x20000>;
 				read-only;
 			};

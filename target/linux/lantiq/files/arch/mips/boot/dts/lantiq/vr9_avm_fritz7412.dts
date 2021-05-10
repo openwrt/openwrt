@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "vr9.dtsi"
 
@@ -32,13 +31,13 @@
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
-		
+
 		wps {
 			label = "wps";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
-		
+
 		dect {
 			label = "dect";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
@@ -50,33 +49,33 @@
 		compatible = "gpio-leds";
 
 		power_green: power_green {
-			label = "fritz7412:green:power";
+			label = "green:power";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
-		
+
 		power_red: power_red {
-			label = "fritz7412:red:power";
+			label = "red:power";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		fon {
-			label = "fritz7412:green:fon";
+			label = "green:fon";
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		dect {
-			label = "fritz7412:green:dect";
+			label = "green:dect";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		wifi: wifi {
-			label = "fritz7412:green:wifi";
+			label = "green:wifi";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		info: info {
-			label = "fritz7412:green:info";
+			label = "green:info";
 			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -179,7 +178,7 @@
 };
 
 &gphy0 {
-       lantiq,gphy-mode = <GPHY_MODE_FE>;
+	lantiq,gphy-mode = <GPHY_MODE_FE>;
 };
 
 &eth0 {
@@ -196,7 +195,7 @@
 		ethernet@2 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <2>;
-			phy-mode = "gmii";
+			phy-mode = "mii";
 			phy-handle = <&phy11>;
 		};
 	};
@@ -205,14 +204,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "lantiq,xrx200-mdio";
-		
+
 		phy11: ethernet-phy@11 {
 			reg = <0x11>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
-};
-
-&vmmc {
-	status = "okay";
 };

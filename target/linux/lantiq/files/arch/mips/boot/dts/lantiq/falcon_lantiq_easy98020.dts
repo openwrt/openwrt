@@ -1,9 +1,7 @@
-/dts-v1/;
-
-#include <dt-bindings/gpio/gpio.h>
-
 #include "falcon.dtsi"
 #include "falcon_sflash-16m.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Lantiq Falcon Reference Board";
@@ -40,45 +38,45 @@
 		pinctrl-0 = <&bootled_pins>, <&led_pins>;
 
 		GPON {
-			label = "easy98020:green:gpon";
+			label = "green:gpon";
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		TEST {
-			label = "easy98020:green:test";
+			label = "green:test";
 			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		ETH {
-			label = "easy98020:green:status";
+			label = "green:status";
 			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		VOICE {
-			label = "easy98020:green:voice";
+			label = "green:voice";
 			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		VIDEO {
-			label = "easy98020:green:video";
+			label = "green:video";
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 
 		GE0_ACT {
-			label = "easy98020:ge0_act";
+			label = "ge0_act";
 			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		};
 		GE0_LINK {
-			label = "easy98020:ge0_link";
+			label = "ge0_link";
 			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		};
 		GE1_ACT {
-			label = "easy98020:ge1_act";
+			label = "ge1_act";
 			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 		};
 		GE1_LINK {
-			label = "easy98020:ge1_link";
+			label = "ge1_link";
 			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 		};
 	};

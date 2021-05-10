@@ -1,9 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2006-2016 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 OTHER_MENU:=Other modules
 
@@ -20,7 +17,7 @@ define KernelPackage/pwm-mediatek-ramips
   AUTOLOAD:=$(call AutoProbe,pwm-mediatek-ramips)
 endef
 
-define KernelPackage/pwm-mediatek/description
+define KernelPackage/pwm-mediatek-ramips/description
   Kernel modules for MediaTek Pulse Width Modulator
 endef
 
@@ -47,7 +44,7 @@ I2C_RALINK_MODULES:= \
 define KernelPackage/i2c-ralink
   $(call i2c_defaults,$(I2C_RALINK_MODULES),59)
   TITLE:=Ralink I2C Controller
-  DEPENDS:=kmod-i2c-core @TARGET_ramips \
+  DEPENDS:=+kmod-i2c-core @TARGET_ramips \
 	@!(TARGET_ramips_mt7621||TARGET_ramips_mt76x8)
 endef
 
@@ -64,7 +61,7 @@ I2C_MT7621_MODULES:= \
 define KernelPackage/i2c-mt7628
   $(call i2c_defaults,$(I2C_MT7621_MODULES),59)
   TITLE:=MT7628/88 I2C Controller
-  DEPENDS:=kmod-i2c-core \
+  DEPENDS:=+kmod-i2c-core \
 	@(TARGET_ramips_mt76x8)
 endef
 
@@ -84,7 +81,7 @@ define KernelPackage/dma-ralink
 	CONFIG_DMA_RALINK
   FILES:= \
 	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
-	$(LINUX_DIR)/drivers/dma/ralink-gdma.ko
+	$(LINUX_DIR)/drivers/staging/ralink-gdma/ralink-gdma.ko
   AUTOLOAD:=$(call AutoLoad,52,ralink-gdma)
 endef
 
@@ -104,8 +101,8 @@ define KernelPackage/hsdma-mtk
 	CONFIG_MTK_HSDMA
   FILES:= \
 	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
-	$(LINUX_DIR)/drivers/dma/mtk-hsdma.ko
-  AUTOLOAD:=$(call AutoLoad,53,mtk-hsdma)
+	$(LINUX_DIR)/drivers/staging/mt7621-dma/hsdma-mt7621.ko
+  AUTOLOAD:=$(call AutoLoad,53,hsdma-mt7621)
 endef
 
 define KernelPackage/hsdma-mtk/description

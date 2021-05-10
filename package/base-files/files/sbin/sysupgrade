@@ -127,16 +127,23 @@ list_changed_conffiles() {
 	list_conffiles | while read file csum; do
 		[ -r "$file" ] || continue
 
-		echo "${csum}  ${file}" | sha256sum -sc - || echo "$file"
+		echo "${csum}  ${file}" | busybox sha256sum -sc - || echo "$file"
 	done
+}
+
+list_static_conffiles() {
+	local filter=$1
+
+	find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
+		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
+		\( -type f -o -type l \) $filter 2>/dev/null
 }
 
 add_conffiles() {
 	local file="$1"
-	( find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
-		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
-		\( -type f -o -type l \) $find_filter 2>/dev/null;
-	  list_changed_conffiles ) | sort -u > "$file"
+
+	( list_static_conffiles "$find_filter"; list_changed_conffiles ) |
+		sort -u > "$file"
 	return 0
 }
 
@@ -154,9 +161,7 @@ add_overlayfiles() {
 
 		# backup files from /etc/sysupgrade.conf and /lib/upgrade/keep.d, but
 		# ignore those aready controlled by opkg conffiles
-		find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
-			/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
-			\( -type f -o -type l \) 2>/dev/null | sort -u |
+		list_static_conffiles | sort -u |
 			grep -h -v -x -F -f $conffiles > "$keepfiles"
 
 		# backup conffiles, but only those changed if '-u'
@@ -216,7 +221,7 @@ include /lib/upgrade
 do_save_conffiles() {
 	local conf_tar="$1"
 
-	[ -z "$(rootfs_type)" ] && {
+	[ "$(rootfs_type)" = "tmpfs" ] && {
 		echo "Cannot save config while running from ramdisk." >&2
 		ask_bool 0 "Abort" && exit
 		rm -f "$conf_tar"
@@ -282,6 +287,7 @@ if [ -n "$CONF_RESTORE" ]; then
 	fi
 
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
+	v "Restoring config files..."
 	tar -C / -x${TAR_V}zf "$CONF_RESTORE"
 	exit $?
 fi
@@ -360,18 +366,15 @@ if [ -n "$FAILSAFE" ]; then
 	printf '%s\x00%s\x00%s' "$RAM_ROOT" "$IMAGE" "$COMMAND" >/tmp/sysupgrade
 	lock -u /tmp/.failsafe
 else
-	force_attr=""
-	[ $FORCE -eq 1 ] && force_attr="\"force\": true,"
-	backup_attr=""
-	[ $SAVE_CONFIG -eq 1 ] && backup_attr="\"backup\": $(json_string $CONF_TAR),"
-	ubus call system sysupgrade "{
-		\"prefix\": $(json_string "$RAM_ROOT"),
-		\"path\": $(json_string "$IMAGE"),
-		$force_attr
-		$backup_attr
-		\"command\": $(json_string "$COMMAND"),
-		\"options\": {
-			\"save_partitions\": $SAVE_PARTITIONS
-		}
-	}"
+	json_init
+	json_add_string prefix "$RAM_ROOT"
+	json_add_string path "$IMAGE"
+	[ $FORCE -eq 1 ] && json_add_boolean force 1
+	[ $SAVE_CONFIG -eq 1 ] && json_add_string backup "$CONF_TAR"
+	json_add_string command "$COMMAND"
+	json_add_object options
+	json_add_int save_partitions "$SAVE_PARTITIONS"
+	json_close_object
+
+	ubus call system sysupgrade "$(json_dump)"
 fi

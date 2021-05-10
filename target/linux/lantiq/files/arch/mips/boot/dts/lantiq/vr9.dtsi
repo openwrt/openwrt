@@ -1,4 +1,7 @@
+/dts-v1/;
+
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/phy/phy-lantiq-vrx200-pcie.h>
 
 / {
 	#address-cells = <1>;
@@ -46,11 +49,8 @@
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			compatible = "lantiq,icu";
-			reg = <0x80200 0x28
-				0x80228 0x28
-				0x80250 0x28
-				0x80278 0x28
-				0x802a0 0x28>;
+			reg = <0x80200 0xc8	/* icu0 */
+			       0x80300 0xc8>;	/* icu1 */
 		};
 
 		watchdog@803f0 {
@@ -98,6 +98,18 @@
 			reg = <0x107000 0x300>;
 			interrupt-parent = <&icu0>;
 			interrupts = <150 151 152 153 154 155>;
+		};
+
+		pcie0_phy: phy@106800 {
+			compatible = "lantiq,vrx200-pcie-phy";
+			reg = <0x106800 0x100>;
+			lantiq,rcu = <&rcu0>;
+			lantiq,rcu-endian-offset = <0x4c>;
+			lantiq,rcu-big-endian-mask = <0x80>; /* bit 7 */
+			big-endian;
+			resets = <&reset0 12 24>, <&reset0 22 22>;
+			reset-names = "phy", "pcie";
+			#phy-cells = <1>;
 		};
 
 		rcu0: rcu@203000 {
@@ -214,51 +226,63 @@
 			reg = <0xe100b10 0xa0>;
 
 			gphy0_led0_pins: gphy0-led0 {
-				lantiq,groups = "gphy0 led0";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy0 led0";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy0_led1_pins: gphy0-led1 {
-				lantiq,groups = "gphy0 led1";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy0 led1";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy0_led2_pins: gphy0-led2 {
-				lantiq,groups = "gphy0 led2";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy0 led2";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy1_led0_pins: gphy1-led0 {
-				lantiq,groups = "gphy1 led0";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy1 led0";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy1_led1_pins: gphy1-led1 {
-				lantiq,groups = "gphy1 led1";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy1 led1";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			gphy1_led2_pins: gphy1-led2 {
-				lantiq,groups = "gphy1 led2";
-				lantiq,function = "gphy";
-				lantiq,open-drain = <0>;
-				lantiq,pull = <2>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "gphy1 led2";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
 			};
 
 			mdio_pins: mdio {
@@ -295,19 +319,23 @@
 			};
 
 			pci_gnt1_pins: pci-gnt1 {
-				lantiq,groups = "gnt1";
-				lantiq,function = "pci";
-				lantiq,output = <1>;
-				lantiq,open-drain = <0>;
-				lantiq,pull = <0>;
+				mux {
+					lantiq,groups = "gnt1";
+					lantiq,function = "pci";
+					lantiq,output = <1>;
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+				};
 			};
 
 			pci_req1_pins: pci-req1 {
-				lantiq,groups = "req1";
-				lantiq,function = "pci";
-				lantiq,output = <0>;
-				lantiq,open-drain = <1>;
-				lantiq,pull = <2>;
+				mux {
+					lantiq,groups = "req1";
+					lantiq,function = "pci";
+					lantiq,output = <0>;
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+				};
 			};
 
 			spi_pins: spi {
@@ -331,11 +359,13 @@
 			};
 
 			stp_pins: stp {
-				lantiq,groups = "stp";
-				lantiq,function = "stp";
-				lantiq,pull = <0>;
-				lantiq,open-drain = <0>;
-				lantiq,output = <1>;
+				mux {
+					lantiq,groups = "stp";
+					lantiq,function = "stp";
+					lantiq,pull = <0>;
+					lantiq,open-drain = <0>;
+					lantiq,output = <1>;
+				};
 			};
 		};
 
@@ -446,6 +476,13 @@
 
 			interrupt-parent = <&icu0>;
 			interrupts = <161 144>;
+
+			phys = <&pcie0_phy LANTIQ_PCIE_PHY_MODE_36MHZ>;
+			phy-names = "pcie";
+
+			resets = <&reset0 22 22>;
+
+			lantiq,rcu = <&rcu0>;
 
 			device_type = "pci";
 

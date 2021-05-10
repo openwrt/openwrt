@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -49,63 +47,63 @@
 		compatible = "gpio-leds";
 
 		power_blue: power {
-			label = "arv4520pw:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		dsl: dsl {
-			label = "arv4520pw:blue:dsl";
+			label = "blue:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		internet_blue: internet {
-			label = "arv4520pw:blue:internet";
+			label = "blue:internet";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power2 {
-			label = "arv4520pw:red:power";
+			label = "red:power";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		wps {
-			label = "arv4520pw:yellow:wps";
+			label = "yellow:wps";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 		wps2 {
-			label = "arv4520pw:red:wps";
+			label = "red:wps";
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 		/*
 			wps green is missing
 		*/
 		fxs1 {
-			label = "arv4520pw:blue:telefon1";
+			label = "blue:telefon1";
 			gpios = <&gpiomm 0 GPIO_ACTIVE_LOW>;
 		};
 		fxs2 {
-			label = "arv4520pw:blue:telefon2";
+			label = "blue:telefon2";
 			gpios = <&gpiomm 1 GPIO_ACTIVE_LOW>;
 		};
 		isdn {
-			label = "arv4520pw:blue:isdn";
+			label = "blue:isdn";
 			gpios = <&gpiomm 2 GPIO_ACTIVE_LOW>;
 		};
 		fxo {
-			label = "arv4520pw:blue:line";
+			label = "blue:line";
 			gpios = <&gpiomm 3 GPIO_ACTIVE_LOW>;
 		};
 		voice {
-			label = "arv4520pw:blue:sprache";
+			label = "blue:sprache";
 			gpios = <&gpiomm 4 GPIO_ACTIVE_LOW>;
 		};
 		led_usb: usb {
-			label = "arv4520pw:blue:usb";
+			label = "blue:usb";
 			gpios = <&gpiomm 5 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "arv4520pw:blue:wifi";
+			label = "blue:wifi";
 			gpios = <&gpiomm 6 GPIO_ACTIVE_LOW>;
 		};
 		internet2 {
-			label = "arv4520pw:red:internet";
+			label = "red:internet";
 			gpios = <&gpiomm 9 GPIO_ACTIVE_LOW>;
 		};
 		/*
@@ -167,7 +165,7 @@
 			};
 
 			partition@20000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x20000 0x10000>;
 				read-only;
 			};

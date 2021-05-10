@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -47,40 +45,40 @@
 	leds {
 		compatible = "gpio-leds";
 		wlan: wlan {
-			label = "arv7506pw11:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		power: power {
-			label = "arv7506pw11:green:power";
+			label = "green:power";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		dsl: dsl {
-			label = "arv7506pw11:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		internet: internet {
-			label = "arv7506pw11:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power_red {
-			label = "arv7506pw11:red:power";
+			label = "red:power";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		internet_red {
-			label = "arv7506pw11:red:internet";
+			label = "red:internet";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 		info {
-			label = "arv7506pw11:green:info";
+			label = "green:info";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		telefon {
-			label = "arv7506pw11:green:telefon";
+			label = "green:telefon";
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 		info_red {
-			label = "arv7506pw11:red:info";
+			label = "red:info";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -123,7 +121,7 @@
 			};
 
 			partition@40000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x40000 0x10000>;
 				read-only;
 			};

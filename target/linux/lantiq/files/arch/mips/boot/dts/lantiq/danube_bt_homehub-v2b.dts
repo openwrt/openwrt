@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -52,52 +50,52 @@
 		compatible = "gpio-leds";
 
 		upgrading-orange {
-			label = "bthomehubv2b:orange:upgrading";
+			label = "orange:upgrading";
 			gpios = <&gpios 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		phone-orange {
-			label = "bthomehubv2b:orange:phone";
+			label = "orange:phone";
 			gpios = <&gpios 6 GPIO_ACTIVE_HIGH>;
 		};
 		phone-blue {
-			label = "bthomehubv2b:blue:phone";
+			label = "blue:phone";
 			gpios = <&gpios 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		wireless-orange {
-			label = "bthomehubv2b:orange:wireless";
+			label = "orange:wireless";
 			gpios = <&gpios 8 GPIO_ACTIVE_HIGH>;
 		};
 		wireless_blue: wireless-blue {
-			label = "bthomehubv2b:blue:wireless";
+			label = "blue:wireless";
 			gpios = <&gpios 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		broadband-red {
-			label = "bthomehubv2b:red:broadband";
+			label = "red:broadband";
 			gpios = <&gpios 10 GPIO_ACTIVE_HIGH>;
 		};
 		broadband-orange {
-			label = "bthomehubv2b:orange:broadband";
+			label = "orange:broadband";
 			gpios = <&gpios 11 GPIO_ACTIVE_HIGH>;
 		};
 		broadband_blue: broadband-blue {
-			label = "bthomehubv2b:blue:broadband";
+			label = "blue:broadband";
 			gpios = <&gpios 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_red: power-red {
-			label = "bthomehubv2b:red:power";
+			label = "red:power";
 			gpios = <&gpios 13 GPIO_ACTIVE_HIGH>;
 		};
 		power_orange: power-orange {
-			label = "bthomehubv2b:orange:power";
+			label = "orange:power";
 			gpios = <&gpios 14 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		power_blue: power-blue {
-			label = "bthomehubv2b:blue:power";
+			label = "blue:power";
 			gpios = <&gpios 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -154,7 +152,7 @@
 			};
 
 			partition@40000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x40000 0x10000>; /* 64KB */
 			};
 

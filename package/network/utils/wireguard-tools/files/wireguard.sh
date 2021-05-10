@@ -42,6 +42,11 @@ proto_wireguard_setup_peer() {
 	config_get endpoint_port "${peer_config}" "endpoint_port"
 	config_get persistent_keepalive "${peer_config}" "persistent_keepalive"
 
+	if [ -z "$public_key" ]; then
+		echo "Skipping peer config $peer_config because public key is not defined."
+		return 0
+	fi
+
 	echo "[Peer]" >> "${wg_cfg}"
 	echo "PublicKey=${public_key}" >> "${wg_cfg}"
 	if [ "${preshared_key}" ]; then
@@ -107,6 +112,7 @@ proto_wireguard_setup() {
 	config_get fwmark "${config}" "fwmark"
 	config_get ip6prefix "${config}" "ip6prefix"
 	config_get nohostroute "${config}" "nohostroute"
+	config_get tunlink "${config}" "tunlink"
 
 	ip link del dev "${config}" 2>/dev/null
 	ip link add dev "${config}" type wireguard
@@ -168,7 +174,7 @@ proto_wireguard_setup() {
 		sed -E 's/\[?([0-9.:a-f]+)\]?:([0-9]+)/\1 \2/' | \
 		while IFS=$'\t ' read -r key address port; do
 			[ -n "${port}" ] || continue
-			proto_add_host_dependency "${config}" "${address}"
+			proto_add_host_dependency "${config}" "${address}" "${tunlink}"
 		done
 	fi
 

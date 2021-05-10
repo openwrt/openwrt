@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "ar9.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -59,40 +57,40 @@
 		compatible = "gpio-leds";
 
 		power_green: power {
-			label = "wbmr:green:power";
+			label = "green:power";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power2 {
-			label = "wbmr:red:power";
+			label = "red:power";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		security {
-			label = "wbmr:yellow:security";
+			label = "yellow:security";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "wbmr:green:wireless";
+			label = "green:wireless";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
-			label = "wbmr:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 		online_green: online {
-			label = "wbmr:green:internet";
+			label = "green:internet";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 		online2 {
-			label = "wbmr:red:internet";
+			label = "red:internet";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 		movie {
-			label = "wbmr:blue:movie";
+			label = "blue:movie";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 		led_usb: usb {
-			label = "wbmr:green:usb";
+			label = "green:usb";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -162,7 +160,7 @@
 			};
 
 			partition@40000 {
-				label = "uboot_env";
+				label = "u-boot-env";
 				reg = <0x40000 0x20000>;
 				read-only;
 			};

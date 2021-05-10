@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 PKG_NAME:=toolchain
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-3.0-with-GCC-exception
@@ -83,33 +83,6 @@ define Package/libatomic/config
 	endmenu
 endef
 
-define Package/libssp
-$(call Package/gcc/Default)
-  DEPENDS+=@GCC_LIBSSP
-  TITLE:=GCC support library
-endef
-
-define Package/libssp/config
-	menu "Configuration"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libssp
-
-	config LIBSSP_ROOT_DIR
-		string
-		prompt "libssp shared library base directory"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libssp
-		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
-		default "/"  if NATIVE_TOOLCHAIN
-
-	config LIBSSP_FILE_SPEC
-		string
-		prompt "libssp shared library files (use wildcards)"
-		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libssp
-		default "./lib/libssp.so.*"
-
-	endmenu
-endef
-
-
 define Package/libstdcpp
 $(call Package/gcc/Default)
   NAME:=libstdc++
@@ -142,7 +115,7 @@ define Package/libasan
 $(call Package/gcc/Default)
   NAME:=libasan
   TITLE:=Runtime library for AddressSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips @!mipsel @!mips64 @!mips64el @!arc
   ABI_VERSION:=5
 endef
 
@@ -171,7 +144,7 @@ define Package/libtsan
 $(call Package/gcc/Default)
   NAME:=libtsan
   TITLE:=Runtime library for ThreadSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips @!mipsel @!mips64 @!mips64el @!arc
   ABI_VERSION:=0
 endef
 
@@ -200,7 +173,7 @@ define Package/liblsan
 $(call Package/gcc/Default)
   NAME:=liblsan
   TITLE:=Runtime library for LeakSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips @!mipsel @!mips64 @!mips64el @!arc
   ABI_VERSION:=0
 endef
 
@@ -229,7 +202,7 @@ define Package/libubsan
 $(call Package/gcc/Default)
   NAME:=libubsan
   TITLE:=Runtime library for UndefinedBehaviorSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips @!mipsel @!mips64 @!mips64el @!arc
   ABI_VERSION:=1
 endef
 
@@ -485,11 +458,6 @@ LIBGCC_A=$(lastword $(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc_pic.a))
 LIBGCC_MAP=$(lastword $(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.map))
 LIBGCC_SO=$(lastword $(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so.*))
 
-define Build/Compile/uClibc
-	$(CP) \
-		$(TOOLCHAIN_DIR)/lib/libuClibc-*.so \
-		$(PKG_BUILD_DIR)/
-endef
 ifneq ($(LIBGCC_SO),)
     define Build/Compile/libgcc
 	$(CP) $(LIBGCC_SO) $(PKG_BUILD_DIR)/
@@ -517,11 +485,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/libgfortran/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/libgfortran.so.* $(1)/usr/lib/
-  endef
-
-  define Package/libssp/install
-	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(TOOLCHAIN_DIR)/lib/libssp.so.* $(1)/lib/
   endef
 
   define Package/libstdcpp/install
@@ -567,21 +530,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	done
   endef
 
-  define Package/uClibc/install
-	$(INSTALL_DIR) $(1)/lib
-	$(CP) \
-		$(TOOLCHAIN_DIR)/lib/ld*-uClibc.so.* \
-		$(TOOLCHAIN_DIR)/lib/ld*-uClibc-$(LIBC_SO_VERSION).so \
-		$(1)/lib/
-	$(CP) \
-		$(TOOLCHAIN_DIR)/lib/libc.so.* \
-		$(TOOLCHAIN_DIR)/lib/libuClibc-$(LIBC_SO_VERSION).so \
-		$(1)/lib/
-	$(CP) \
-		$(PKG_BUILD_DIR)/libuClibc-* \
-		$(1)/lib/
-  endef
-
   LD_MUSL_NAME = $(notdir $(firstword $(wildcard $(TOOLCHAIN_DIR)/lib/libc.so*)))
 
   define Package/musl/install
@@ -610,7 +558,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
-  ifneq ($(CONFIG_USE_MUSL)$(CONFIG_USE_UCLIBC),y)
+  ifneq ($(CONFIG_USE_MUSL),y)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libpthread.so.* \
 		$(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_SO_VERSION).so \
@@ -622,11 +570,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libthread_db.so.* $(1)/lib
-  ifeq ($(CONFIG_USE_UCLIBC),y)
-	$(CP) \
-		$(TOOLCHAIN_DIR)/lib/libthread_db-$(LIBC_SO_VERSION).so \
-		$(1)/lib/
-  endif
   endef
 
   define Package/libpthread/install_lib
@@ -635,7 +578,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/librt/install
 	$(INSTALL_DIR) $(1)/lib
-  ifneq ($(CONFIG_USE_MUSL)$(CONFIG_USE_UCLIBC),y)
+  ifneq ($(CONFIG_USE_MUSL),y)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/librt.so.* \
 		$(TOOLCHAIN_DIR)/lib/librt-$(LIBC_SO_VERSION).so \
@@ -646,6 +589,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/ldd/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(CP) $(TOOLCHAIN_DIR)/bin/ldd $(1)/usr/bin/
+	sed -i 's,^#!.*,#!/bin/sh,' $(1)/usr/bin/ldd
   endef
 
   define Package/ldconfig/install
@@ -668,14 +612,6 @@ else
 		$(INSTALL_DIR) $(1)/lib ; \
 		$(CP) $(call qstrip,$(CONFIG_LIBGFORTRAN_ROOT_DIR))/$$$$file $(1)/lib/ ; \
 	done
-  endef
-
-  define Package/libssp/install
-	for file in $(call qstrip,$(CONFIG_LIBSSP_FILE_SPEC)); do \
-		$(INSTALL_DIR) $(1)/lib ; \
-		$(CP) $(call qstrip,$(CONFIG_LIBSSP_ROOT_DIR))/$$$$file $(1)/lib/ ; \
-	done ; \
-	exit 0
   endef
 
   define Package/libstdcpp/install
@@ -789,7 +725,6 @@ endif
 $(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,libatomic))
-$(eval $(call BuildPackage,libssp))
 $(eval $(call BuildPackage,libstdcpp))
 $(eval $(call BuildPackage,libasan))
 $(eval $(call BuildPackage,libtsan))

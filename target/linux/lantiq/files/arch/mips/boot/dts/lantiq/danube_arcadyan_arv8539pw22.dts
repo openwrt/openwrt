@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -49,27 +47,27 @@
 		compatible = "gpio-leds";
 
 		power_green: power-green {
-			label = "arv8539pw22:green:power";
+			label = "green:power";
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power-red {
-			label = "arv8539pw22:red:power";
+			label = "red:power";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		dsl_green: dsl-green {
-			label = "arv8539pw22:green:dsl";
+			label = "green:dsl";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		online_green: online-green {
-			label = "arv8539pw22:green:online";
+			label = "green:online";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
 		wireless_green: wireless-green {
-			label = "arv8539pw22:green:wlan";
+			label = "green:wlan";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		/*

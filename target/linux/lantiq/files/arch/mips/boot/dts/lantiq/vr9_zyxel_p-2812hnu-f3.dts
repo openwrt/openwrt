@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "vr9_zyxel_p-2812hnu-fx.dtsi"
 
 / {
@@ -35,7 +33,7 @@
 				read-only;
 			};
 			partition@50000 {
-				label = "uboot-env";
+				label = "u-boot-env";
 				reg = <0x50000 0x10000>;
 			};
 			partition@60000 {

@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
-PKG_VERSION:=0.177
-PKG_RELEASE:=2
+PKG_VERSION:=0.180
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION)
-PKG_HASH:=fa489deccbcae7d8c920f60d85906124c1989c591196d90e0fd668e3dc05042e
+PKG_HASH:=b827b6e35c59d188ba97d7cf148fa8dc6f5c68eb6c5981888dfdbb758c0b569d
 
 PKG_MAINTAINER:=Luiz Angelo Daros de Luca <luizluca@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
@@ -63,6 +63,7 @@ endif
 
 CONFIGURE_ARGS += \
 	--program-prefix=eu- \
+	--disable-debuginfod \
 	--without-lzma
 
 TARGET_CFLAGS += -D_GNU_SOURCE -Wno-unused-result -Wno-format-nonliteral
@@ -94,7 +95,8 @@ define Package/libelf/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libelf{-*.so,*.so.*} $(1)/usr/lib/
 endef
 
-$(eval $(call BuildPackage,libasm))
-$(eval $(call BuildPackage,libdw))
+# these lines need to be ordered by dependency because of ABI versioning
 $(eval $(call BuildPackage,libelf))
+$(eval $(call BuildPackage,libdw))
+$(eval $(call BuildPackage,libasm))
 $(eval $(call HostBuild))
