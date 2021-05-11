@@ -11,5 +11,7 @@ SUBTARGETS:=generic
 KERNEL_PATCHVER:=5.10
 
 include $(INCLUDE_DIR)/target.mk
+DEFAULT_PACKAGES += \
+	kmod-usb3 kmod-usb-dwc3 kmod-usb-dwc3-qcom
 
 $(eval $(call BuildTarget))
