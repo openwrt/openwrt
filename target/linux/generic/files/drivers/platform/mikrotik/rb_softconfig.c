@@ -686,6 +686,8 @@ static ssize_t sc_commit_store(struct kobject *kobj, struct kobj_attribute *attr
 	}
 	write_unlock(&sc_bufrwl);
 
+	put_mtd_device(mtd);
+
 	if (ret)
 		goto mtdfail;
 
@@ -721,10 +723,13 @@ int __init rb_softconfig_init(struct kobject *rb_kobj)
 
 	sc_buflen = mtd->size;
 	sc_buf = kmalloc(sc_buflen, GFP_KERNEL);
-	if (!sc_buf)
+	if (!sc_buf) {
+		put_mtd_device(mtd);
 		return -ENOMEM;
+	}
 
 	ret = mtd_read(mtd, 0, sc_buflen, &bytes_read, sc_buf);
+	put_mtd_device(mtd);
 
 	if (ret)
 		goto fail;
