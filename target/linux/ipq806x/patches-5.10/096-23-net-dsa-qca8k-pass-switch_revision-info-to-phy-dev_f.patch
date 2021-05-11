@@ -1,0 +1,53 @@
+From 5d6c57309ab0011dcee9630ec8439e142832b677 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Fri, 30 Apr 2021 00:50:55 +0200
+Subject: [PATCH 23/33] net: dsa: qca8k: pass switch_revision info to phy
+ dev_flags
+
+Define get_phy_flags to pass switch_Revision needed to tweak the
+internal PHY with debug values based on the revision.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index 920cdb1ff2b9..9da7eccfa558 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -1732,6 +1732,22 @@ qca8k_port_vlan_del(struct dsa_switch *ds, int port,
+ 	return ret;
+ }
+ 
++static u32 qca8k_get_phy_flags(struct dsa_switch *ds, int port)
++{
++	struct qca8k_priv *priv = ds->priv;
++
++	/* Communicate to the phy internal driver the switch revision.
++	 * Based on the switch revision different values needs to be
++	 * set to the dbg and mmd reg on the phy.
++	 * The first 2 bit are used to communicate the switch revision
++	 * to the phy driver.
++	 */
++	if (port > 0 && port < 6)
++		return priv->switch_revision;
++
++	return 0;
++}
++
+ static enum dsa_tag_protocol
+ qca8k_get_tag_protocol(struct dsa_switch *ds, int port,
+ 		       enum dsa_tag_protocol mp)
+@@ -1765,6 +1781,7 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.phylink_mac_config	= qca8k_phylink_mac_config,
+ 	.phylink_mac_link_down	= qca8k_phylink_mac_link_down,
+ 	.phylink_mac_link_up	= qca8k_phylink_mac_link_up,
++	.get_phy_flags		= qca8k_get_phy_flags,
+ };
+ 
+ static int qca8k_read_switch_id(struct qca8k_priv *priv)
+-- 
+2.30.2
+

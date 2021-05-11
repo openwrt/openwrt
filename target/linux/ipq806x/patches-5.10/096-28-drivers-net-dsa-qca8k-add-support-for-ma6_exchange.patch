@@ -1,0 +1,52 @@
+From dc7950eaeedcf29b093ef9f077b0989fdd00fddb Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Mon, 1 Mar 2021 12:17:15 +0100
+Subject: [PATCH 28/33] drivers: net: dsa: qca8k: add support for ma6_exchange
+
+Some device set the switch to exchange the mac0 port with mac6 port. Add
+support for this in the qca8k driver.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 5 +++++
+ drivers/net/dsa/qca8k.h | 1 +
+ 2 files changed, 6 insertions(+)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index 6d748eae9894..c6b8c9836e71 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -971,6 +971,7 @@ static int
+ qca8k_setup(struct dsa_switch *ds)
+ {
+ 	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
++	struct device_node *node = priv->dev->of_node;
+ 	int ret, i;
+ 	u32 mask;
+ 
+@@ -1000,6 +1001,10 @@ qca8k_setup(struct dsa_switch *ds)
+ 	if (ret)
+ 		return ret;
+ 
++	if (of_property_read_bool(node, "qca8k,mac6_exchange"))
++		qca8k_reg_set(priv, QCA8K_REG_PORT0_PAD_CTRL,
++			      QCA8K_PORT_PAD0_MAC6_EXCHANGE_EN);
++
+ 	/* Enable CPU Port */
+ 	ret = qca8k_reg_set(priv, QCA8K_REG_GLOBAL_FW_CTRL0,
+ 			    QCA8K_GLOBAL_FW_CTRL0_CPU_PORT_EN);
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index fc7db94cc0c9..37c730e6d08c 100644
+--- a/drivers/net/dsa/qca8k.h
++++ b/drivers/net/dsa/qca8k.h
+@@ -35,6 +35,7 @@
+ #define   QCA8K_MASK_CTRL_DEVICE_ID_MASK		GENMASK(15, 8)
+ #define   QCA8K_MASK_CTRL_DEVICE_ID(x)			((x) >> 8)
+ #define QCA8K_REG_PORT0_PAD_CTRL			0x004
++#define   QCA8K_PORT_PAD0_MAC6_EXCHANGE_EN		BIT(31)
+ #define QCA8K_REG_PORT5_PAD_CTRL			0x008
+ #define QCA8K_REG_PORT6_PAD_CTRL			0x00c
+ #define   QCA8K_PORT_PAD_RGMII_EN			BIT(26)
+-- 
+2.30.2
+

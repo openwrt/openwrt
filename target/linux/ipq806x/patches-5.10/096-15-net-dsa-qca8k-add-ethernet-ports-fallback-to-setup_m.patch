@@ -1,0 +1,32 @@
+From 7bdffe0a1d6c84bf4f26cbe50b4b6be279cef927 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Fri, 7 May 2021 01:51:56 +0200
+Subject: [PATCH 15/33] net: dsa: qca8k: add ethernet-ports fallback to
+ setup_mdio_bus
+
+Dsa now also supports ethernet-ports. Add this new binding as a fallback
+if the ports node can't be found.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+---
+ drivers/net/dsa/qca8k.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index 35ff4cf08786..cc9ab35f8b17 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -718,6 +718,9 @@ qca8k_setup_mdio_bus(struct qca8k_priv *priv)
+ 	int err;
+ 
+ 	ports = of_get_child_by_name(priv->dev->of_node, "ports");
++	if (!ports)
++		ports = of_get_child_by_name(priv->dev->of_node, "ethernet-ports");
++
+ 	if (!ports)
+ 		return -EINVAL;
+ 
+-- 
+2.30.2
+
