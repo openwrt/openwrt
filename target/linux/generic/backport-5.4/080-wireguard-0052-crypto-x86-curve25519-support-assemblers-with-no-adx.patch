@@ -24,7 +24,7 @@ Signed-off-by: Jason A. Donenfeld <Jason@zx2c4.com>
 
 --- a/arch/x86/Makefile
 +++ b/arch/x86/Makefile
-@@ -197,9 +197,10 @@ avx2_instr :=$(call as-instr,vpbroadcast
+@@ -198,9 +198,10 @@ avx2_instr :=$(call as-instr,vpbroadcast
  avx512_instr :=$(call as-instr,vpmovm2b %k1$(comma)%zmm5,-DCONFIG_AS_AVX512=1)
  sha1_ni_instr :=$(call as-instr,sha1msg1 %xmm0$(comma)%xmm1,-DCONFIG_AS_SHA1_NI=1)
  sha256_ni_instr :=$(call as-instr,sha256msg1 %xmm0$(comma)%xmm1,-DCONFIG_AS_SHA256_NI=1)
