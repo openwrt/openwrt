@@ -1,0 +1,91 @@
+--- a/src/drivers/linux_ioctl.c
++++ b/src/drivers/linux_ioctl.c
+@@ -15,6 +15,58 @@
+ #include "common/linux_bridge.h"
+ #include "linux_ioctl.h"
+ 
++#include <sys/wait.h>
++
++#define run_prog(p, ...) ({ \
++        int rc = -1, status; \
++        pid_t pid = fork(); \
++        if (!pid) \
++                exit(execl(p, p, ##__VA_ARGS__, NULL)); \
++        if (pid < 0) {\
++                rc = -1;\
++        } else {\
++                while ((rc = waitpid(pid, &status, 0)) == -1 && errno == EINTR); \
++		rc = (rc == pid && WIFEXITED(status)) ? WEXITSTATUS(status) : -1; \
++        }\
++        rc;\
++})
++
++int ovs_br_get(char *brname, const char *ifname)
++{
++	FILE *f;
++	char cmd[64];
++	char *c;
++
++	brname[0] = '\0';
++
++	sprintf(cmd, "/usr/bin/ovs-vsctl iface-to-br %s", ifname);
++	f = popen(cmd, "r");
++	if (!f)
++		return -1;
++	c = fgets(brname, IFNAMSIZ, f);
++	pclose(f);
++	if (c && strlen(brname)) {
++		/* Ignore newline */
++		if ((c = strchr(brname, '\n')))
++			*c = '\0';
++		return 0;
++	}
++	return -1;
++}
++
++int ovs_br_add_if(const char *brname, const char *ifname)
++{
++	if (run_prog("/usr/bin/ovs-vsctl", "add-port", brname, ifname))
++		return -1;
++	return 0;
++}
++
++int ovs_br_del_if(const char *brname, const char *ifname)
++{
++	if (run_prog("/usr/bin/ovs-vsctl", "del-port", brname, ifname))
++		return -1;
++	return 0;
++}
+ 
+ int linux_set_iface_flags(int sock, const char *ifname, int dev_up)
+ {
+@@ -152,6 +204,9 @@ int linux_br_add_if(int sock, const char
+ 	struct ifreq ifr;
+ 	int ifindex;
+ 
++	if (!ovs_br_add_if(brname, ifname))
++		return 0;
++
+ 	ifindex = if_nametoindex(ifname);
+ 	if (ifindex == 0)
+ 		return -1;
+@@ -177,6 +232,9 @@ int linux_br_del_if(int sock, const char
+ 	struct ifreq ifr;
+ 	int ifindex;
+ 
++	if (!ovs_br_del_if(brname, ifname))
++		return 0;
++
+ 	ifindex = if_nametoindex(ifname);
+ 	if (ifindex == 0)
+ 		return -1;
+@@ -199,6 +257,9 @@ int linux_br_get(char *brname, const cha
+ 	char path[128], brlink[128], *pos;
+ 	ssize_t res;
+ 
++	if (!ovs_br_get(brname, ifname))
++		return 0;
++
+ 	os_snprintf(path, sizeof(path), "/sys/class/net/%s/brport/bridge",
+ 		    ifname);
+ 	res = readlink(path, brlink, sizeof(brlink));
