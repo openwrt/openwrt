@@ -1,0 +1,30 @@
+--- a/device.c
++++ b/device.c
+@@ -58,6 +58,7 @@ static const struct blobmsg_policy dev_a
+ 	[DEV_ATTR_SENDREDIRECTS] = { .name = "sendredirects", .type = BLOBMSG_TYPE_BOOL },
+ 	[DEV_ATTR_NEIGHLOCKTIME] = { .name = "neighlocktime", .type = BLOBMSG_TYPE_INT32 },
+ 	[DEV_ATTR_ISOLATE] = { .name = "isolate", .type = BLOBMSG_TYPE_BOOL },
++	[DEV_ATTR_OVS] = { .name = "ovs", .type = BLOBMSG_TYPE_BOOL }
+ };
+ 
+ const struct uci_blob_param_list device_attr_list = {
+@@ -368,6 +369,9 @@ device_init_settings(struct device *dev,
+ 		s->flags |= DEV_OPT_ISOLATE;
+ 	}
+ 
++	if ((cur = tb[DEV_ATTR_OVS]))
++		dev->type->bridge_capability = blobmsg_get_bool(cur);
++
+ 	device_set_disabled(dev, disabled);
+ }
+ 
+--- a/device.h
++++ b/device.h
+@@ -51,6 +51,7 @@ enum {
+ 	DEV_ATTR_SENDREDIRECTS,
+ 	DEV_ATTR_NEIGHLOCKTIME,
+ 	DEV_ATTR_ISOLATE,
++	DEV_ATTR_OVS,
+ 	__DEV_ATTR_MAX,
+ };
+ 
