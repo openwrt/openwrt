@@ -6,6 +6,7 @@ BOARDNAME:=Qualcomm IPQ807x
 FEATURES:=squashfs ramdisk fpu nand source-only
 KERNELNAME:=Image dtbs
 CPU_TYPE:=cortex-a53
+SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=5.4
 

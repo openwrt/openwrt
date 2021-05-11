@@ -13,4 +13,6 @@ define Device/Default
 	IMAGE/sysupgrade.bin/squashfs :=
 endef
 
+include $(SUBTARGET).mk
+
 $(eval $(call BuildImage))
