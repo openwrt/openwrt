@@ -155,7 +155,7 @@ define KernelPackage/leds-uleds
 endef
 
 define KernelPackage/leds-uleds/description
- The options enables support for userspace LEDs.
+ The option enables support for userspace LEDs.
 endef
 
 $(eval $(call KernelPackage,leds-uleds))
