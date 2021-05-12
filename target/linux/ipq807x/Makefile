@@ -8,7 +8,7 @@ KERNELNAME:=Image dtbs
 CPU_TYPE:=cortex-a53
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=5.4
+KERNEL_PATCHVER:=5.10
 
 include $(INCLUDE_DIR)/target.mk
 
