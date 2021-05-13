@@ -18,7 +18,7 @@
  #define QSGMII_PCS_CAL_LCKDT_CTL		0x120
  #define QSGMII_PCS_CAL_LCKDT_CTL_RST		BIT(19)
  
-@@ -241,6 +252,36 @@ static void ipq806x_gmac_fix_mac_speed(v
+@@ -242,6 +253,36 @@ static void ipq806x_gmac_fix_mac_speed(v
  	ipq806x_gmac_set_speed(gmac, speed);
  }
  
@@ -55,7 +55,7 @@
  static int ipq806x_gmac_probe(struct platform_device *pdev)
  {
  	struct plat_stmmacenet_data *plat_dat;
-@@ -249,6 +290,7 @@ static int ipq806x_gmac_probe(struct pla
+@@ -250,6 +291,7 @@ static int ipq806x_gmac_probe(struct pla
  	struct ipq806x_gmac *gmac;
  	int val;
  	int err;
@@ -63,7 +63,7 @@
  
  	val = stmmac_get_platform_resources(pdev, &stmmac_res);
  	if (val)
-@@ -345,6 +387,17 @@ static int ipq806x_gmac_probe(struct pla
+@@ -346,6 +388,17 @@ static int ipq806x_gmac_probe(struct pla
  			     0x1ul << QSGMII_PHY_RX_INPUT_EQU_OFFSET |
  			     0x2ul << QSGMII_PHY_CDR_PI_SLEW_OFFSET |
  			     0xCul << QSGMII_PHY_TX_DRV_AMP_OFFSET);
