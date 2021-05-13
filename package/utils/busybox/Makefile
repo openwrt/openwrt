@@ -81,10 +81,6 @@ endef
 Package/busybox-selinux/conffiles = $(Package/busybox/conffiles)
 endif
 
-# don't create a version string containing the actual timestamp
-export KCONFIG_NOTIMESTAMP=1
-
-
 ifndef CONFIG_USE_MUSL
 LDLIBS:=m crypt
 endif
