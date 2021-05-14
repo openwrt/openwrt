@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.31.1
-PKG_RELEASE:=6
+PKG_VERSION:=1.33.1
+PKG_RELEASE:=1
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://www.busybox.net/downloads \
 		http://sources.buildroot.net
-PKG_HASH:=d0f940a72f648943c1f2211e0e3117387c31d765137d92bd8284a3fb9752a998
+PKG_HASH:=12cec6bd2b16d8a9446dd16130f2b92982f1819f6e1c5f5887b6db03f5660d28
 
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam
 PKG_BUILD_PARALLEL:=1
@@ -28,6 +28,9 @@ PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=LICENSE archival/libarchive/bz/LICENSE
 PKG_CPE_ID:=cpe:/a:busybox:busybox
 
+BUSYBOX_SYM=$(if $(CONFIG_BUSYBOX_CUSTOM),CONFIG,DEFAULT)
+BUSYBOX_IF_ENABLED=$(if $(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_$(1)),$(2))
+
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SUID),)
   PKG_FILE_MODES:=/bin/busybox:root:root:4755
 endif
@@ -35,11 +38,8 @@ endif
 include $(INCLUDE_DIR)/package.mk
 
 ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_BUSYBOX_' $(TOPDIR)/.config | mkhash md5)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_BUSYBOX_' $(TOPDIR)/.config | $(MKHASH) md5)
 endif
-
-BUSYBOX_SYM=$(if $(CONFIG_BUSYBOX_CUSTOM),CONFIG,DEFAULT)
-BUSYBOX_IF_ENABLED=$(if $(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_$(1)),$(2))
 
 # All files provided by busybox will serve as fallback alternatives by opkg.
 # There should be no need to enumerate ALTERNATIVES entries here
@@ -145,8 +145,9 @@ endif
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_NTPD),)
 	$(INSTALL_BIN) ./files/sysntpd $(1)/etc/init.d/sysntpd
 	$(INSTALL_BIN) ./files/ntpd-hotplug $(1)/usr/sbin/ntpd-hotplug
-	$(INSTALL_DIR) $(1)/etc/capabilities/
+	$(INSTALL_DIR) $(1)/etc/capabilities $(1)/usr/share/acl.d
 	$(INSTALL_DATA) ./files/ntpd.capabilities $(1)/etc/capabilities/ntpd.json
+	$(INSTALL_DATA) ./files/ntpd_acl.json $(1)/usr/share/acl.d/ntpd.json
 endif
 	-rm -rf $(1)/lib64
 endef

@@ -55,7 +55,6 @@
 
 &spi {
 	status = "okay";
-	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -66,10 +65,6 @@
 			compatible = "ecoscentric,redboot-fis-partitions";
 		};
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &usb_phy {

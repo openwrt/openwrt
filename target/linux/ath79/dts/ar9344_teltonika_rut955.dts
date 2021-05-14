@@ -141,7 +141,6 @@
 &spi {
 	status = "okay";
 
-	num-cs = <3>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pmx_spi>, <&pmx_spi_ext>;
 
@@ -157,10 +156,6 @@
 			"DOUT1", "DOUT2", "modem_vbus", "modem_rst",
 			"DOUT3", "RS485_R", "SDCS", "HWRST";
 	};
-};
-
-&hs_uart {
-	dtr-gpios = <&gpio_ext 13 GPIO_ACTIVE_HIGH>;
 };
 
 &eth0 {

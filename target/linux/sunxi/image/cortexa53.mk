@@ -1,10 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2013-2016 OpenWrt.org
 # Copyright (C) 2016 Yousong Zhou
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 define Device/sun50i
   SUNXI_DTS_DIR := allwinner/
@@ -12,13 +9,18 @@ define Device/sun50i
   KERNEL := kernel-bin
 endef
 
+define Device/sun50i-a64
+  SOC := sun50i-a64
+  $(Device/sun50i)
+endef
+
 define Device/sun50i-h5
   SOC := sun50i-h5
   $(Device/sun50i)
 endef
 
-define Device/sun50i-a64
-  SOC := sun50i-a64
+define Device/sun50i-h6
+  SOC := sun50i-h6
   $(Device/sun50i)
 endef
 
@@ -69,6 +71,7 @@ TARGET_DEVICES += olimex_a64-olinuxino-emmc
 define Device/pine64_pine64-plus
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := Pine64+
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
   $(Device/sun50i-a64)
 endef
 TARGET_DEVICES += pine64_pine64-plus
@@ -76,9 +79,18 @@ TARGET_DEVICES += pine64_pine64-plus
 define Device/pine64_sopine-baseboard
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := SoPine
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
   $(Device/sun50i-a64)
 endef
 TARGET_DEVICES += pine64_sopine-baseboard
+
+define Device/xunlong_orangepi-one-plus
+  $(Device/sun50i-h6)
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi One Plus
+  SUNXI_DTS_DIR := allwinner/
+endef
+TARGET_DEVICES += xunlong_orangepi-one-plus
 
 define Device/xunlong_orangepi-pc2
   DEVICE_VENDOR := Xunlong

@@ -62,18 +62,12 @@
 	};
 };
 
-&uart {
-	status = "okay";
-};
-
 &pll {
 	clocks = <&extosc>;
 };
 
 &spi {
 	status = "okay";
-
-	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";

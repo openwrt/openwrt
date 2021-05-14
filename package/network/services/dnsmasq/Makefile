@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_UPSTREAM_VERSION:=2.82
+PKG_UPSTREAM_VERSION:=2.85
 PKG_VERSION:=$(subst test,~~test,$(subst rc,~rc,$(PKG_UPSTREAM_VERSION)))
-PKG_RELEASE:=10
+PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_UPSTREAM_VERSION).tar.xz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_HASH:=84523646f3116bb5e1151efb66e645030f6e6a8256f29aab444777a343ebc132
+PKG_HASH:=ad98d3803df687e5b938080f3d25c628fe41c878752d03fbc6199787fee312fa
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
@@ -180,7 +180,6 @@ define Package/dnsmasq/install
 	$(INSTALL_BIN) ./files/dhcp-script.sh $(1)/usr/lib/dnsmasq/dhcp-script.sh
 	$(INSTALL_DIR) $(1)/usr/share/acl.d
 	$(INSTALL_DATA) ./files/dnsmasq_acl.json $(1)/usr/share/acl.d/
-	$(INSTALL_DATA) ./files/dnsmasqsec_hotplug_acl.json $(1)/usr/share/acl.d/
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/50-dnsmasq-migrate-resolv-conf-auto.sh $(1)/etc/uci-defaults
 endef

@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bpftools
-PKG_VERSION:=5.8.9
+PKG_VERSION:=5.11.16
 PKG_RELEASE:=1
 
 PKG_SOURCE:=linux-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/v5.x
-PKG_HASH:=99d8bc1b82f17d7d79f9af4a94af4c0e3772159e9e6e278761bde8569f93e15f
+PKG_HASH:=21163681d130cbce5a6be39019e2c69e44f284855ddd70b1a3bd039249540f43
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 
@@ -93,13 +93,11 @@ ifneq ($(BUILD_VARIANT),lib)
   TARGET_LDFLAGS += -Wl,--gc-sections
 endif
 
-ifneq ($(INTL_FULL),)
-  TARGET_LDFLAGS += -Wl,-lintl
-endif
+MAKE_VARS = \
+	EXTRA_CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
+	LDFLAGS="$(TARGET_LDFLAGS)"
 
 MAKE_FLAGS += \
-	EXTRA_CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
-	LDFLAGS="$(TARGET_LDFLAGS)" \
 	BPFTOOL_VERSION="$(LINUX_VERSION)" \
 	FEATURES_DUMP="$(PKG_BUILD_DIR)/FEATURE-DUMP.openwrt" \
 	OUTPUT="$(PKG_BUILD_DIR)/" \
@@ -132,7 +130,7 @@ define Build/Configure
 		| sort | uniq > FEATURE-DUMP.openwrt)
 	$(SED) 's/feature-libbfd=1/feature-libbfd=$(HAVE_LIBBFD)/' \
 		-e 's/feature-libcap=1/feature-libcap=$(HAVE_LIBCAP)/' \
-		-e 's/feature-clang-bpf-global-var=1/feature-clang-bpf-global-var=$(HAVE_CLANG)/' \
+		-e 's/feature-clang-bpf-co-re=1/feature-clang-bpf-co-re=$(HAVE_CLANG)/' \
 		$(PKG_BUILD_DIR)/FEATURE-DUMP.openwrt
 endef
 
@@ -145,6 +143,10 @@ define Build/InstallDev/libbpf
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib$(LIB_SUFFIX)/pkgconfig/libbpf.pc \
 		$(1)/usr/lib/pkgconfig/
+	$(SED) 's,/usr/include,$$$${prefix}/include,g' \
+		$(1)/usr/lib/pkgconfig/libbpf.pc
+	$(SED) 's,/usr/lib,$$$${exec_prefix}/lib,g' \
+		$(1)/usr/lib/pkgconfig/libbpf.pc
 endef
 
 ifeq ($(BUILD_VARIANT),lib)
@@ -162,6 +164,6 @@ define Package/libbpf/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib$(LIB_SUFFIX)/libbpf.so.* $(1)/usr/lib/
 endef
 
+$(eval $(call BuildPackage,libbpf))
 $(eval $(call BuildPackage,bpftool-full))
 $(eval $(call BuildPackage,bpftool-minimal))
-$(eval $(call BuildPackage,libbpf))

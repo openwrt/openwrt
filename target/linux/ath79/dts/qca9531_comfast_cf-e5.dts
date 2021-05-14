@@ -61,10 +61,6 @@
 	};
 };
 
-&uart {
-	status = "okay";
-};
-
 &usb0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -82,7 +78,6 @@
 
 &spi {
 	status = "okay";
-	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";

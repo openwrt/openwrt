@@ -1,20 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright 2018-2020 NXP
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 define Device/Default
   PROFILES := Default
   FILESYSTEMS := squashfs
   IMAGES := firmware.bin sysupgrade.bin
   KERNEL := kernel-bin | uImage none
+  KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage
   KERNEL_LOADADDR := 0x80008000
   KERNEL_ENTRY_POINT := 0x80008000
   DEVICE_DTS = $(lastword $(subst _, ,$(1)))
-  SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
   IMAGE_SIZE := 64m
   IMAGE/sysupgrade.bin = \
     ls-append-dtb $$(DEVICE_DTS) | pad-to 1M | \
@@ -24,7 +21,6 @@ define Device/Default
 endef
 
 define Device/fsl-sdboot
-  $(Device/rework-sdcard-images)
   KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES := sdcard.img.gz sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -48,6 +44,7 @@ endef
 TARGET_DEVICES += fsl_ls1021a-twr
 
 define Device/fsl_ls1021a-twr-sdboot
+  $(Device/rework-sdcard-images)
   $(Device/fsl-sdboot)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := TWR-LS1021A
@@ -64,6 +61,7 @@ endef
 TARGET_DEVICES += fsl_ls1021a-twr-sdboot
 
 define Device/fsl_ls1021a-iot-sdboot
+  $(Device/rework-sdcard-images)
   $(Device/fsl-sdboot)
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := LS1021A-IoT

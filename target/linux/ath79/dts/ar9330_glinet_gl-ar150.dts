@@ -10,7 +10,6 @@
 	compatible = "glinet,gl-ar150", "qca,ar9330";
 
 	aliases {
-		serial0 = &uart;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -62,10 +61,6 @@
 	};
 };
 
-&uart {
-	status = "okay";
-};
-
 &usb {
 	dr_mode = "host";
 	status = "okay";
@@ -78,8 +73,6 @@
 
 &spi {
 	status = "okay";
-
-	num-chipselects = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";

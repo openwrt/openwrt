@@ -1,8 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
 # Copyright (C) 2006-2014 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 config KERNEL_BUILD_USER
 	string "Custom Kernel Build User Name"
@@ -34,6 +32,10 @@ config KERNEL_CRASHLOG
 config KERNEL_SWAP
 	bool "Support for paging of anonymous memory (swap)"
 	default y if !SMALL_FLASH
+
+config KERNEL_PROC_STRIPPED
+	bool "Strip non-essential /proc functionality to reduce code size"
+	default y if SMALL_FLASH
 
 config KERNEL_DEBUG_FS
 	bool "Compile the kernel with debug filesystem enabled"
@@ -266,6 +268,40 @@ config KERNEL_FUNCTION_PROFILER
 	depends on KERNEL_FUNCTION_TRACER
 	default n
 
+config KERNEL_IRQSOFF_TRACER
+	bool "Interrupts-off Latency Tracer"
+	depends on KERNEL_FTRACE
+	help
+	  This option measures the time spent in irqs-off critical
+	  sections, with microsecond accuracy.
+
+	  The default measurement method is a maximum search, which is
+	  disabled by default and can be runtime (re-)started
+	  via:
+
+	      echo 0 > /sys/kernel/debug/tracing/tracing_max_latency
+
+	  (Note that kernel size and overhead increase with this option
+	  enabled. This option and the preempt-off timing option can be
+	  used together or separately.)
+
+config KERNEL_PREEMPT_TRACER
+	bool "Preemption-off Latency Tracer"
+	depends on KERNEL_FTRACE
+	help
+	  This option measures the time spent in preemption-off critical
+	  sections, with microsecond accuracy.
+
+	  The default measurement method is a maximum search, which is
+	  disabled by default and can be runtime (re-)started
+	  via:
+
+	      echo 0 > /sys/kernel/debug/tracing/tracing_max_latency
+
+	  (Note that kernel size and overhead increase with this option
+	  enabled. This option and the irqs-off timing option can be
+	  used together or separately.)
+
 config KERNEL_DEBUG_KERNEL
 	bool
 	default n
@@ -327,16 +363,16 @@ config KERNEL_KPROBES
 	  instrumentation and testing.
 	  If in doubt, say "N".
 
-config KERNEL_KPROBE_EVENT
-	bool
-	default y if KERNEL_KPROBES
-
 config KERNEL_KPROBE_EVENTS
 	bool
 	default y if KERNEL_KPROBES
 
 config KERNEL_AIO
 	bool "Compile the kernel with asynchronous IO support"
+	default y if !SMALL_FLASH
+
+config KERNEL_IO_URING
+	bool "Compile the kernel with io_uring support"
 	default y if !SMALL_FLASH
 
 config KERNEL_FHANDLE
@@ -531,23 +567,23 @@ if KERNEL_DEVTMPFS
 endif
 
 config KERNEL_KEYS
-    bool "Enable kernel access key retention support"
-    default n
+	bool "Enable kernel access key retention support"
+	default !SMALL_FLASH
 
 config KERNEL_PERSISTENT_KEYRINGS
-    bool "Enable kernel persistent keyrings"
-    depends on KERNEL_KEYS
-    default n
+	bool "Enable kernel persistent keyrings"
+	depends on KERNEL_KEYS
+	default n
+
+config KERNEL_KEYS_REQUEST_CACHE
+	bool "Enable temporary caching of the last request_key() result"
+	depends on KERNEL_KEYS
+	default n
 
 config KERNEL_BIG_KEYS
-    bool "Enable large payload keys on kernel keyrings"
-    depends on KERNEL_KEYS
-    default n
-
-config KERNEL_ENCRYPTED_KEYS
-    tristate "Enable keys with encrypted payloads on kernel keyrings"
-    depends on KERNEL_KEYS
-    default n
+	bool "Enable large payload keys on kernel keyrings"
+	depends on KERNEL_KEYS
+	default n
 
 #
 # CGROUP support symbols
@@ -932,6 +968,15 @@ if KERNEL_IPV6
 	config KERNEL_IPV6_PIMSM_V2
 		def_bool n
 
+	config KERNEL_IPV6_SEG6_LWTUNNEL
+		bool "Enable support for lightweight tunnels"
+		default y if !SMALL_FLASH
+		help
+		  Using lwtunnel (needed for IPv6 segment routing) requires ip-full package.
+
+	config KERNEL_LWTUNNEL_BPF
+		def_bool n
+
 endif
 
 #
@@ -1128,6 +1173,16 @@ config KERNEL_SECURITY_SELINUX_DEVELOP
 	bool "NSA SELinux Development Support"
 	depends on KERNEL_SECURITY_SELINUX
 	default y
+
+config KERNEL_SECURITY_SELINUX_SIDTAB_HASH_BITS
+	int
+	depends on KERNEL_SECURITY_SELINUX
+	default 9
+
+config KERNEL_SECURITY_SELINUX_SID2STR_CACHE_SIZE
+	int
+	depends on KERNEL_SECURITY_SELINUX
+	default 256
 
 config KERNEL_LSM
 	string

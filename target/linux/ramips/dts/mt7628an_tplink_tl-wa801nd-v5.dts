@@ -58,6 +58,14 @@
 	};
 };
 
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
 &state_default {
 	gpio {
 		groups = "p0led_an", "p1led_an", "perst", "refclk",

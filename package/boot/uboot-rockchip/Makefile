@@ -5,10 +5,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2020.07
-PKG_RELEASE:=3
+PKG_VERSION:=2021.04
+PKG_RELEASE:=1
 
-PKG_HASH:=c1f5bf9ee6bb6e648edbf19ce2ca9452f614b08a9f886f1a566aa42e8cf05f6a
+PKG_HASH:=0d438b1bb5cceb57a18ea2de4a0d51f7be5b05b98717df05938636e0aadfe11a
 
 PKG_MAINTAINER:=Tobias Maedel <openwrt@tbspace.de>
 
@@ -75,7 +75,7 @@ ifneq ($(OF_PLATDATA),)
 	mkdir -p $(PKG_BUILD_DIR)/tpl/dts
 	mkdir -p $(PKG_BUILD_DIR)/include/generated
 
-	$(CP) $(PKG_BUILD_DIR)/of-platdata/$(OF_PLATDATA)/dt-platdata.c $(PKG_BUILD_DIR)/tpl/dts/dt-platdata.c
+	$(CP) $(PKG_BUILD_DIR)/of-platdata/$(OF_PLATDATA)/dt-plat.c $(PKG_BUILD_DIR)/tpl/dts/dt-plat.c
 	$(CP) $(PKG_BUILD_DIR)/of-platdata/$(OF_PLATDATA)/dt-structs-gen.h $(PKG_BUILD_DIR)/include/generated/dt-structs-gen.h
 endif
 

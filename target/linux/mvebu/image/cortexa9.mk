@@ -1,14 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2012-2016 OpenWrt.org
 # Copyright (C) 2016 LEDE-project.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
+endef
+
+define Device/kernel-size-migration
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition design has changed compared to older versions (up to 19.07) due to kernel size restrictions. \
+	Upgrade via sysupgrade mechanism is not possible, so new installation via factory style image is required.
 endef
 
 define Device/buffalo_ls421de
@@ -32,18 +35,19 @@ define Device/cznic_turris-omnia
   DEVICE_VENDOR := CZ.NIC
   DEVICE_MODEL := Turris Omnia
   KERNEL_INSTALL := 1
+  SOC := armada-385
   KERNEL := kernel-bin
-  KERNEL_INITRAMFS := kernel-bin
+  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   DEVICE_PACKAGES :=  \
     mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
     wpad-basic-wolfssl kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
     partx-utils kmod-i2c-mux-pca954x
-  IMAGES := $$(IMAGE_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz
-  IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-img | sdcard-img | gzip | append-metadata
-  IMAGE/omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
-  IMAGE_NAME = $$(2)
-  SOC := armada-385
+  IMAGES := $$(DEVICE_IMG_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(DEVICE_IMG_PREFIX)-initramfs.tar.gz
+  IMAGE/$$(DEVICE_IMG_PREFIX)-sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/omnia-medkit-$$(DEVICE_IMG_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
+  DEVICE_IMG_NAME = $$(2)
   SUPPORTED_DEVICES += armada-385-turris-omnia
+  BOOT_SCRIPT := turris-omnia
 endef
 TARGET_DEVICES += cznic_turris-omnia
 
@@ -110,16 +114,15 @@ TARGET_DEVICES += linksys_wrt1900acs
 
 define Device/linksys_wrt1900ac-v1
   $(call Device/linksys)
-  $(Device/dsa-migration)
+  $(Device/kernel-size-migration)
   DEVICE_MODEL := WRT1900AC
   DEVICE_VARIANT := v1
   DEVICE_ALT0_VENDOR := Linksys
   DEVICE_ALT0_MODEL := Mamba
   DEVICE_DTS := armada-xp-linksys-mamba
   DEVICE_PACKAGES += mwlwifi-firmware-88w8864
-  KERNEL_SIZE := 3072k
+  KERNEL_SIZE := 4096k
   SUPPORTED_DEVICES += armada-xp-linksys-mamba linksys,mamba
-  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt1900ac-v1
 
@@ -150,16 +153,15 @@ TARGET_DEVICES += linksys_wrt3200acm
 
 define Device/linksys_wrt32x
   $(call Device/linksys)
-  $(Device/dsa-migration)
+  $(Device/kernel-size-migration)
   DEVICE_MODEL := WRT32X
   DEVICE_ALT0_VENDOR := Linksys
   DEVICE_ALT0_MODEL := Venom
   DEVICE_DTS := armada-385-linksys-venom
   DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964
-  KERNEL_SIZE := 3072k
+  KERNEL_SIZE := 6144k
   KERNEL := kernel-bin | append-dtb
   SUPPORTED_DEVICES += armada-385-linksys-venom linksys,venom
-  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt32x
 

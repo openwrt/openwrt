@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	aliases {
@@ -23,7 +24,7 @@
 	virtual_flash {
 		compatible = "mtd-concat";
 
-		devices = <&firmware1 &firmware2 &firmware3>;
+		devices = <&fwconcat0 &fwconcat1 &fwconcat2>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -31,7 +32,8 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				compatible = "openwrt,okli";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <IH_MAGIC_OKLI>;
 				label = "firmware";
 				reg = <0x0 0x0>;
 			};
@@ -89,8 +91,8 @@
 				read-only;
 			};
 
-			firmware2: partition@60000 {
-				label = "firmware2";
+			fwconcat1: partition@60000 {
+				label = "fwconcat1";
 				reg = <0x60000 0x170000>;
 			};
 
@@ -99,13 +101,13 @@
 				reg = <0x1d0000 0x10000>;
 			};
 
-			firmware3: partition@1e0000 {
-				label = "firmware3";
+			fwconcat2: partition@1e0000 {
+				label = "fwconcat2";
 				reg = <0x1e0000 0x20000>;
 			};
 
-			firmware1: partition@200000 {
-				label = "firmware1";
+			fwconcat0: partition@200000 {
+				label = "fwconcat0";
 				reg = <0x200000 0x600000>;
 			};
 		};

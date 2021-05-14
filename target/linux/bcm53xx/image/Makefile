@@ -1,9 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2013 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -132,7 +130,7 @@ define Device/Default
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma-d16 | trx
   FILESYSTEMS := squashfs
   KERNEL_NAME := zImage
-  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
+  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1).$$(2)
   IMAGES := trx
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -276,7 +274,6 @@ define Device/linksys_ea9500
   DEVICE_MODEL := EA9500
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
   DEVICE_DTS := bcm47094-linksys-panamera
-  BROKEN := y
 endef
 TARGET_DEVICES += linksys_ea9500
 
@@ -321,7 +318,7 @@ endef
 TARGET_DEVICES += luxul_xwr-3150
 
 define Device/meraki_mr32
-  DEVICE_VENODR := Meraki
+  DEVICE_VENDOR := Meraki
   DEVICE_MODEL := MR32
   DEVICE_PACKAGES := $(B43) kmod-i2c-bcm-iproc kmod-i2c-gpio kmod-eeprom-at24 \
 	kmod-leds-pwm kmod-hwmon-ina2xx kmod-bluetooth
@@ -335,10 +332,8 @@ define Device/meraki_mr32
 	pad-to 10362880
   KERNEL := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-
 # Currently the only device that uses the new image check
-  SUPPORTED_DEVICES := meraki,mr32
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 
 # The loader is specifically looking for fdt@2:
 # [    3.190000] find_itb_subimage: error finding fdt@2: FDT_ERR_NOTFOUND
@@ -433,7 +428,7 @@ endef
 TARGET_DEVICES += tenda_ac9
 
 define Device/tplink_archer-c5-v2
-  DEVICE_VENDOR := TP-LINK
+  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer C5
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
@@ -445,7 +440,7 @@ endef
 TARGET_DEVICES += tplink_archer-c5-v2
 
 define Device/tplink_archer-c9-v1
-  DEVICE_VENDOR := TP-LINK
+  DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer C9
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := $(USB3_PACKAGES)

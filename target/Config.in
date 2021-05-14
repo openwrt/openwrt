@@ -13,6 +13,9 @@ config HAS_SPE_FPU
 config HAS_FPU
 	bool
 
+config HAS_DT_OVERLAY_SUPPORT
+	bool
+
 config AUDIO_SUPPORT
 	bool
 
@@ -49,6 +52,9 @@ config USES_DEVICETREE
 	bool
 
 config USES_INITRAMFS
+	bool
+
+config USES_SEPARATE_INITRAMFS
 	bool
 
 config USES_SQUASHFS

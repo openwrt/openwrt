@@ -10,7 +10,6 @@
 	compatible = "pcs,cap324", "qca,ar9344";
 
 	aliases {
-		serial0 = &uart;
 		led-boot = &led_power_amber;
 		led-failsafe = &led_power_amber;
 		led-running = &led_power_green;
@@ -73,14 +72,8 @@
 	clock-frequency = <25000000>;
 };
 
-&uart {
-	status = "okay";
-};
-
 &spi {
 	status = "okay";
-
-	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";

@@ -919,7 +919,6 @@ define KernelPackage/zram
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
 	CONFIG_ZRAM_DEBUG=n \
-	CONFIG_PGTABLE_MAPPING=n \
 	CONFIG_ZRAM_WRITEBACK=n \
 	CONFIG_ZSMALLOC_STAT=n
   FILES:= \
@@ -1039,11 +1038,11 @@ $(eval $(call KernelPackage,random-core))
 
 define KernelPackage/thermal
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=Generic Thermal sysfs driver
+  TITLE:=Thermal driver
   DEPENDS:=+kmod-hwmon-core
   HIDDEN:=1
   KCONFIG:= \
-	CONFIG_THERMAL \
+	CONFIG_THERMAL=y \
 	CONFIG_THERMAL_OF=y \
 	CONFIG_CPU_THERMAL=y \
 	CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y \
@@ -1055,14 +1054,11 @@ define KernelPackage/thermal
 	CONFIG_THERMAL_GOV_USER_SPACE=n \
 	CONFIG_THERMAL_HWMON=y \
 	CONFIG_THERMAL_EMULATION=n
-  FILES:=$(LINUX_DIR)/drivers/thermal/thermal_sys.ko
-  AUTOLOAD:=$(call AutoProbe,thermal_sys)
 endef
 
 define KernelPackage/thermal/description
- Generic Thermal Sysfs driver offers a generic mechanism for thermal
- management. Usually it's made up of one or more thermal zone and cooling
- device.
+ Thermal driver offers a generic mechanism for thermal management.
+ Usually it's made up of one or more thermal zone and cooling device.
 endef
 
 $(eval $(call KernelPackage,thermal))
@@ -1101,6 +1097,49 @@ define KernelPackage/echo/description
 endef
 
 $(eval $(call KernelPackage,echo))
+
+
+define KernelPackage/keys-encrypted
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=encrypted keys on kernel keyring
+  DEPENDS:=@KERNEL_KEYS +kmod-crypto-cbc +kmod-crypto-hmac +kmod-crypto-rng \
+           +kmod-crypto-sha256 +kmod-keys-trusted
+  KCONFIG:=CONFIG_ENCRYPTED_KEYS
+  FILES:=$(LINUX_DIR)/security/keys/encrypted-keys/encrypted-keys.ko
+  AUTOLOAD:=$(call AutoLoad,01,encrypted-keys,1)
+endef
+
+define KernelPackage/keys-encrypted/description
+	This module provides support for create/encrypting/decrypting keys
+	in the kernel.  Encrypted keys are kernel generated random numbers,
+	which are encrypted/decrypted with a 'master' symmetric key. The
+	'master' key can be either a trusted-key or user-key type.
+	Userspace only ever sees/stores encrypted blobs.
+endef
+
+$(eval $(call KernelPackage,keys-encrypted))
+
+
+define KernelPackage/keys-trusted
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=TPM trusted keys on kernel keyring
+  DEPENDS:=@KERNEL_KEYS +kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha1 +kmod-tpm
+  KCONFIG:=CONFIG_TRUSTED_KEYS
+  FILES:= \
+	  $(LINUX_DIR)/security/keys/trusted.ko@lt5.10 \
+	  $(LINUX_DIR)/security/keys/trusted-keys/trusted.ko@ge5.10
+  AUTOLOAD:=$(call AutoLoad,01,trusted-keys,1)
+endef
+
+define KernelPackage/keys-trusted/description
+	This module provides support for creating, sealing, and unsealing
+	keys in the kernel. Trusted keys are random number symmetric keys,
+	generated and RSA-sealed by the TPM. The TPM only unseals the keys,
+	if the boot PCRs and other criteria match.  Userspace will only ever
+	see encrypted blobs.
+endef
+
+$(eval $(call KernelPackage,keys-trusted))
 
 
 define KernelPackage/tpm

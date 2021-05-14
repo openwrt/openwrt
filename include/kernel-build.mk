@@ -1,9 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2006-2007 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2006-2020 OpenWrt.org
+
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/depends.mk
 
@@ -105,7 +103,7 @@ define BuildKernel
 		xargs $(TARGET_CROSS)nm | \
 		awk '$$$$1 == "U" { print $$$$2 } ' | \
 		sort -u > $(KERNEL_BUILD_DIR)/mod_symtab.txt
-	$(TARGET_CROSS)nm -n $(LINUX_DIR)/vmlinux.o | grep ' [rR] __ksymtab' | sed -e 's,........ [rR] __ksymtab_,,' > $(KERNEL_BUILD_DIR)/kernel_symtab.txt
+	$(TARGET_CROSS)nm -n $(LINUX_DIR)/vmlinux.o | awk '/^[0-9a-f]+ [rR] __ksymtab_/ {print substr($$$$3,11)}' > $(KERNEL_BUILD_DIR)/kernel_symtab.txt
 	grep -Ff $(KERNEL_BUILD_DIR)/mod_symtab.txt $(KERNEL_BUILD_DIR)/kernel_symtab.txt > $(KERNEL_BUILD_DIR)/sym_include.txt
 	grep -Fvf $(KERNEL_BUILD_DIR)/mod_symtab.txt $(KERNEL_BUILD_DIR)/kernel_symtab.txt > $(KERNEL_BUILD_DIR)/sym_exclude.txt
 	( \
@@ -136,7 +134,6 @@ define BuildKernel
   $(LINUX_DIR)/.modules: export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(LINUX_DIR)/.modules: $(STAMP_CONFIGURED) $(LINUX_DIR)/.config FORCE
 	$(Kernel/CompileModules)
-	mkdir -p $(PKG_SYMVERS_DIR)
 	touch $$@
 
   $(LINUX_DIR)/.image: export STAGING_PREFIX=$$(STAGING_DIR_HOST)

@@ -107,9 +107,6 @@
 &spi {
 	status = "okay";
 
-	cs-gpios = <0>, <0>;
-	num-cs = <2>;
-
 	flash0: flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -143,10 +140,6 @@
 
 &pll {
 	clocks = <&extosc>;
-};
-
-&uart {
-	status = "okay";
 };
 
 &usb_phy {

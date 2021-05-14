@@ -75,10 +75,6 @@
 	};
 };
 
-&uart {
-	status = "okay";
-};
-
 &usb_phy0 {
 	status = "okay";
 };
@@ -101,8 +97,6 @@
 
 &spi {
 	status = "okay";
-
-	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -181,7 +175,6 @@
 &eth1 {
 	status = "okay";
 
-	phy-mode = "sgmii";
 	pll-data = <0x03000101 0x00000101 0x00001616>;
 	mtd-mac-address = <&art 0x6>;
 

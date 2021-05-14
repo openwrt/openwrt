@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 # Copyright (C) 2013-2015 OpenWrt.org
 #
@@ -14,8 +13,10 @@ actiontec,r1000h)
 	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
 	;;
 adb,a4001n|\
+adb,pdg-a4101n-a-000-1a1-ae|\
 comtrend,ar-5315u|\
 comtrend,vr-3032u|\
+d-link,dsl-2750u-c1|\
 huawei,hg253s-v2|\
 nucom,r5010un-v2|\
 sagem,fast-2704-v2)
@@ -25,11 +26,11 @@ adb,a4001n1)
 	ucidef_set_led_netdev "lan" "LAN" "green:eth" "eth0"
 	ucidef_set_led_usbdev "usb" "USB" "green:3g" "1-1"
 	;;
-adb,pdg-a4001n-a-000-1a1-ax)
-	ucidef_set_led_netdev "lan" "LAN" "green:internet" "eth0.1"
-	ucidef_set_led_netdev "wan" "WAN" "green:adsl" "eth0.2"
+adb,pdg-a4001n-a-000-1a1-ax|\
+technicolor,tg582n-telecom-italia)
 	ucidef_set_led_netdev "wlan0" "WIFI" "green:wifi" "wlan0"
-	ucidef_set_led_usbdev "usb" "USB" "green:service" "1-1"
+	ucidef_set_led_usbdev "usb1" "USB1" "green:service" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB2" "red:service" "2-1"
 	;;
 adb,av4202n)
 	ucidef_set_led_netdev "wlan0" "WLAN" "blue:wifi" "wlan0"
@@ -90,6 +91,10 @@ sercomm,ad1018-nor)
 sercomm,h500-s-lowi|\
 sercomm,h500-s-vfes)
 	ucidef_set_led_netdev "wan" "WAN" "green:internet" "eth0.2"
+	;;
+technicolor,tg582n)
+	ucidef_set_led_netdev "wlan0" "WIFI" "green:wifi" "wlan0"
+	ucidef_set_led_usbdev "usb" "USB" "red:power" "1-1"
 	;;
 telsey,cpva502plus)
 	ucidef_set_led_netdev "lan" "LAN" "amber:link" "eth0"

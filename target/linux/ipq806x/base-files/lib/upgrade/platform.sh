@@ -10,6 +10,10 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	asrock,g10)
+		asrock_upgrade_prepare
+		nand_do_upgrade "$1"
+		;;
 	buffalo,wxr-2533dhp)
 		buffalo_upgrade_prepare_ubi
 		CI_ROOTPART="ubi_rootfs"
@@ -39,6 +43,7 @@ platform_do_upgrade() {
 	linksys,ea8500)
 		platform_do_upgrade_linksys "$1"
 		;;
+	tplink,ad7200 |\
 	tplink,c2600)
 		PART_NAME="os-image:rootfs"
 		MTD_CONFIG_ARGS="-s 0x200000"

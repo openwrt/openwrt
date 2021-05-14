@@ -9,10 +9,6 @@
 	model = "Arduino Yun";
 	compatible = "arduino,yun", "qca,ar9331";
 
-	aliases {
-		serial0 = &uart;
-	};
-
 	chosen {
 		bootargs = "console=ttyATH0,250000";
 	};
@@ -107,14 +103,6 @@
 	};
 };
 
-&uart {
-	status = "okay";
-};
-
-&gpio {
-	status = "okay";
-};
-
 &pinmux {
 	pinctrl-names = "default";
 	pinctrl-0 = <&jtag_disable_pins &switch_led_disable_pins>;
@@ -161,8 +149,6 @@
 
 &spi {
 	status = "okay";
-
-	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";

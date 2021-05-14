@@ -1,9 +1,6 @@
-# 
+# SPDX-License-Identifier: GPL-2.0-only
+#
 # Copyright (C) 2020 Tobias Maedel
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 define Device/friendlyarm_nanopi-r2s
   DEVICE_VENDOR := FriendlyARM
@@ -26,8 +23,9 @@ TARGET_DEVICES += pine64_rockpro64
 
 define Device/radxa_rock-pi-4
   DEVICE_VENDOR := Radxa
-  DEVICE_MODEL := Rock Pi 4
+  DEVICE_MODEL := ROCK Pi 4
   SOC := rk3399
+  SUPPORTED_DEVICES := radxa,rockpi4
   UBOOT_DEVICE_NAME := rock-pi-4-rk3399
   IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
 endef

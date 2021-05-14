@@ -63,8 +63,6 @@
 &spi {
 	status = "okay";
 
-	num-cs = <1>;
-
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -116,8 +114,4 @@
 	pinmux_switch_led_pins: switch_led_pins {
 		pinctrl-single,bits = <0x0 0x0 0xf8>;
 	};
-};
-
-&uart {
-	status = "okay";
 };

@@ -1,4 +1,3 @@
-#!/bin/sh
 
 . /lib/functions/leds.sh
 . /lib/functions/uci-defaults.sh
@@ -25,6 +24,10 @@ cudy,wr1000)
 	ucidef_set_led_switch "lan1" "lan1" "blue:lan1" "switch0" "0x08"
 	ucidef_set_led_switch "lan2" "lan2" "blue:lan2" "switch0" "0x04"
 	;;
+elecom,wrc-1167fs)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x8"
+	ucidef_set_led_switch "internet" "internet" "green:internet" "switch0" "0x10"
+	;;
 glinet,gl-mt300n-v2)
 	ucidef_set_led_netdev "wifi_led" "wifi" "red:wlan" "wlan0"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x1"
@@ -32,6 +35,9 @@ glinet,gl-mt300n-v2)
 hilink,hlk-7628n|\
 skylab,skw92a)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan" "wlan0"
+	;;
+hilink,hlk-7688a)
+	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
 hiwifi,hc5661a|\
 hiwifi,hc5761a)
@@ -74,6 +80,14 @@ tplink,tl-wr842n-v5)
 	ucidef_set_led_wlan "wlan2g" "wlan2g" "green:wlan" "phy0tpt"
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
+	;;
+tplink,tl-mr6400-v4)
+	ucidef_set_led_switch "lan" "lan" "white:lan" "switch0" "0x0e"
+	ucidef_set_led_switch "wan" "wan" "white:wan" "switch0" "0x10"
+	;;
+tplink,tl-mr6400-v5)
+	ucidef_set_led_switch "lan" "lan" "white:lan" "switch0" "0x07"
+	ucidef_set_led_switch "wan" "wan" "white:wan" "switch0" "0x08"
 	;;
 tplink,tl-wr841n-v13)
 	ucidef_set_led_wlan "wlan2g" "wlan2g" "green:wlan" "phy0tpt"

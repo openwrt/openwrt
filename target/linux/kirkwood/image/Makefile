@@ -1,9 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2009-2013 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
@@ -30,7 +27,6 @@ define Device/Default
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-ubi
-  SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
 endef
 
 define Device/checkpoint_l-50
@@ -144,6 +140,18 @@ define Device/raidsonic_ib-nas62x0
   SUPPORTED_DEVICES += ib62x0
 endef
 TARGET_DEVICES += raidsonic_ib-nas62x0
+
+define Device/seagate_blackarmor-nas220
+  DEVICE_VENDOR := Seagate
+  DEVICE_MODEL := Blackarmor NAS220
+  DEVICE_PACKAGES := kmod-hwmon-adt7475 kmod-fs-ext4 kmod-ata-marvell-sata \
+	mdadm kmod-gpio-button-hotplug
+  PAGESIZE := 512
+  SUBPAGESIZE := 256
+  BLOCKSIZE := 16k
+  UBINIZE_OPTS := -e 1
+endef
+TARGET_DEVICES += seagate_blackarmor-nas220
 
 define Device/seagate_dockstar
   DEVICE_VENDOR := Seagate

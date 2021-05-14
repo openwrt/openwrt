@@ -9,9 +9,9 @@ DEVICE_VARS += DLINK_ROM_ID DLINK_FAMILY_MEMBER DLINK_FIRMWARE_SIZE DLINK_IMAGE_
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
 	( \
-		mkhash md5 $(KDIR)/v_0.0.0.bin && \
+		$(MKHASH) md5 $(KDIR)/v_0.0.0.bin && \
 		echo 458 \
-	) | mkhash md5 > $(KDIR)/v_0.0.0.md5
+	) | $(MKHASH) md5 > $(KDIR)/v_0.0.0.md5
 	$(STAGING_DIR_HOST)/bin/tar -c \
 		$(if $(SOURCE_DATE_EPOCH),--mtime=@$(SOURCE_DATE_EPOCH)) \
 		--owner=0 --group=0 -f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
@@ -442,13 +442,13 @@ define Device/head-weblink_hdrm200
   DEVICE_VENDOR := Head Weblink
   DEVICE_MODEL := HDRM2000
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
-	uqmi kmod-usb-serial kmod-usb-serial-option
+	uqmi kmod-usb-serial-option
 endef
 TARGET_DEVICES += head-weblink_hdrm200
 
 define Device/hiwifi_hc5661
   SOC := mt7620a
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5661
   DEVICE_PACKAGES := kmod-sdhci-mt7620
@@ -458,7 +458,7 @@ TARGET_DEVICES += hiwifi_hc5661
 
 define Device/hiwifi_hc5761
   SOC := mt7620a
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5761
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
@@ -469,7 +469,7 @@ TARGET_DEVICES += hiwifi_hc5761
 
 define Device/hiwifi_hc5861
   SOC := mt7620a
-  IMAGE_SIZE := 15872k
+  IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5861
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
@@ -981,6 +981,7 @@ define Device/tplink_archer-c20-v1
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 0x44
   TPLINK_HWREVADD := 0x1
+  IMAGES := sysupgrade.bin
   DEVICE_MODEL := Archer C20
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
@@ -996,6 +997,7 @@ define Device/tplink_archer-c2-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc7500001
   TPLINK_HWREV := 50
+  IMAGES := sysupgrade.bin
   DEVICE_MODEL := Archer C2
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
@@ -1029,7 +1031,7 @@ define Device/tplink_archer-mr200
   TPLINK_HWREV := 0x4a
   IMAGES := sysupgrade.bin
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net-rndis \
-	kmod-usb-serial kmod-usb-serial-option adb-enablemodem
+	kmod-usb-serial-option adb-enablemodem
   DEVICE_MODEL := Archer MR200
   SUPPORTED_DEVICES += mr200
 endef
@@ -1175,8 +1177,7 @@ define Device/zbtlink_zbt-we1026-h-32m
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1026-H
   DEVICE_VARIANT := 32M
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
-	kmod-ledtrig-netdev
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
 endef
 TARGET_DEVICES += zbtlink_zbt-we1026-h-32m
 
@@ -1217,7 +1218,7 @@ define Device/zbtlink_zbt-we826-e
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE826-E
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 uqmi \
-	kmod-usb-serial kmod-usb-serial-option
+	kmod-usb-serial-option
 endef
 TARGET_DEVICES += zbtlink_zbt-we826-e
 

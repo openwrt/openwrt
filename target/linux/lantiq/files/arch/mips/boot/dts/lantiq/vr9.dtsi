@@ -223,6 +223,7 @@
 			compatible = "lantiq,xrx200-pinctrl";
 			#gpio-cells = <2>;
 			gpio-controller;
+			gpio-ranges = <&gpio 0 0 50>;
 			reg = <0xe100b10 0xa0>;
 
 			gphy0_led0_pins: gphy0-led0 {
@@ -409,6 +410,8 @@
 		};
 
 		usb0: usb@e101000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 			compatible = "lantiq,xrx200-usb";
 			reg = <0xe101000 0x1000
@@ -418,9 +421,16 @@
 			dr_mode = "host";
 			phys = <&usb_phy0>;
 			phy-names = "usb2-phy";
+
+			ehci_port1: port@1 {
+				reg = <1>;
+				#trigger-source-cells = <0>;
+			};
 		};
 
 		usb1: usb@e106000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 			compatible = "lantiq,xrx200-usb";
 			reg = <0xe106000 0x1000>;
@@ -429,6 +439,11 @@
 			dr_mode = "host";
 			phys = <&usb_phy1>;
 			phy-names = "usb2-phy";
+
+			ehci_port2: port@1 {
+				reg = <1>;
+				#trigger-source-cells = <0>;
+			};
 		};
 
 		eth0: eth@e108000 {
@@ -505,6 +520,8 @@
 			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
 			interrupt-map = <0x7000 0 0 1 &icu0 30 1>; /* slot 14, irq 30 */
 			req-mask = <0x1>; /* GNT1 */
+
+			device_type = "pci";
 		};
 	};
 

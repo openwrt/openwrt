@@ -31,7 +31,7 @@ platform_do_upgrade() {
 	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
 	mikrotik,routerboard-m33g)
-		[ -z "$(rootfs_type)" ] && mtd erase firmware
+		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
 		;;
 	asus,rt-ac65p|\
 	asus,rt-ac85p)
@@ -61,21 +61,32 @@ platform_do_upgrade() {
 	netgear,wac104|\
 	netgear,wac124|\
 	netis,wf2881|\
+	xiaomi,mi-router-3g|\
+	xiaomi,mi-router-3-pro|\
+	xiaomi,mi-router-4|\
 	xiaomi,mi-router-ac2100|\
-	xiaomi,mir3g|\
-	xiaomi,mir3p|\
 	xiaomi,redmi-router-ac2100)
 		nand_do_upgrade "$1"
 		;;
 	iodata,wn-ax1167gr2|\
 	iodata,wn-ax2033gr|\
 	iodata,wn-dx1167r)
-		iodata_mstc_upgrade_prepare
+		iodata_mstc_upgrade_prepare "0xfe75"
+		nand_do_upgrade "$1"
+		;;
+	iodata,wn-dx1200gr)
+		iodata_mstc_upgrade_prepare "0x1fe75"
 		nand_do_upgrade "$1"
 		;;
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
+		;;
+	zyxel,nr7101)
+		fw_setenv CheckBypass 0
+		fw_setenv Image1Stable 0
+		CI_KERNPART="Kernel"
+		nand_do_upgrade "$1"
 		;;
 	zyxel,wap6805)
 		local kernel2_mtd="$(find_mtd_part Kernel2)"

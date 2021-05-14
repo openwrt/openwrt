@@ -13,7 +13,6 @@
 		led-boot = &led_etactica;
 		led-failsafe = &led_etactica;
 		led-upgrade = &led_etactica;
-		serial0 = &uart;
 	};
 
 	keys {
@@ -53,10 +52,6 @@
 	};
 };
 
-&uart {
-	status = "okay";
-};
-
 &usb {
 	dr_mode = "host";
 	status = "okay";
@@ -83,7 +78,6 @@
 };
 
 &spi {
-	num-chipselects = <1>;
 	status = "okay";
 
 	flash@0 {

@@ -44,22 +44,6 @@
 	};
 };
 
-&gpio {
-	gpio_ext_lna0 {
-		gpio-hog;
-		gpios = <18 0>;
-		output-high;
-		line-name = "tp-link:ext:lna0";
-	};
-
-	gpio_ext_lna1 {
-		gpio-hog;
-		gpios = <19 0>;
-		output-high;
-		line-name = "tp-link:ext:lna1";
-	};
-};
-
 &eth1 {
 	mtd-mac-address = <&info 0x8>;
 

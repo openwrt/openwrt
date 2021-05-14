@@ -1,10 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2014 OpenWrt.org
 # Copyright (C) 2016 LEDE Project
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 -include $(TMP_DIR)/.packageauxvars
 
@@ -46,5 +43,5 @@ endef
 
 # 1: package name
 define GetABISuffix
-$(if $(filter-out kmod-%,$(1)),$(if $(Package/$(1)/abiversion),$(if $(filter %0 %1 %2 %3 %4 %5 %6 %7 %8 %9,$(1)),-)$(Package/$(1)/abiversion)))
+$(if $(filter-out kmod-%,$(1)),$(if $(ABIV_$(1)),$(ABIV_$(1)),$(foreach v,$(wildcard $(STAGING_DIR)/pkginfo/$(1).version),$(shell cat $(v)))))
 endef

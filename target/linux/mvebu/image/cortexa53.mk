@@ -32,6 +32,17 @@ define Device/globalscale_espressobin-emmc
 endef
 TARGET_DEVICES += globalscale_espressobin-emmc
 
+define Device/globalscale_espressobin-ultra
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := Marvell
+  DEVICE_MODEL := ESPRESSObin
+  DEVICE_VARIANT := Ultra
+  DEVICE_PACKAGES += kmod-i2c-pxa kmod-rtc-pcf8563
+  SOC := armada-3720
+  BOOT_SCRIPT := espressobin
+endef
+TARGET_DEVICES += globalscale_espressobin-ultra
+
 define Device/globalscale_espressobin-v7
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Marvell
@@ -75,7 +86,7 @@ define Device/methode_udpu
   KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   KERNEL_INITRAMFS_SUFFIX := .itb
   DEVICE_PACKAGES += f2fs-tools fdisk kmod-i2c-pxa
-  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
+  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
   IMAGES := firmware.tgz
   IMAGE/firmware.tgz := boot-scr | boot-img-ext4 | uDPU-firmware | append-metadata
   BOOT_SCRIPT := udpu

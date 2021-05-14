@@ -33,6 +33,7 @@ sub target_config_features(@) {
 		/^fpu$/ and $ret .= "\tselect HAS_FPU\n";
 		/^spe_fpu$/ and $ret .= "\tselect HAS_SPE_FPU\n";
 		/^ramdisk$/ and $ret .= "\tselect USES_INITRAMFS\n";
+		/^separate_ramdisk$/ and $ret .= "\tselect USES_INITRAMFS\n\tselect USES_SEPARATE_INITRAMFS\n";
 		/^powerpc64$/ and $ret .= "\tselect powerpc64\n";
 		/^nommu$/ and $ret .= "\tselect NOMMU\n";
 		/^mips16$/ and $ret .= "\tselect HAS_MIPS16\n";
@@ -44,6 +45,7 @@ sub target_config_features(@) {
 		/^rootfs-part$/ and $ret .= "\tselect USES_ROOTFS_PART\n";
 		/^boot-part$/ and $ret .= "\tselect USES_BOOT_PART\n";
 		/^testing-kernel$/ and $ret .= "\tselect HAS_TESTING_KERNEL\n";
+		/^dt-overlay$/ and $ret .= "\tselect HAS_DT_OVERLAY_SUPPORT\n";
 	}
 	return $ret;
 }
@@ -429,7 +431,8 @@ sub gen_profile_mk() {
 	my @targets = parse_target_metadata($file);
 	foreach my $cur (@targets) {
 		next unless $cur->{id} eq $target;
-		print "PROFILE_NAMES = ".join(" ", map { $_->{id} } @{$cur->{profiles}})."\n";
+		my @profile_ids_unique =  do { my %seen; grep { !$seen{$_}++} map { $_->{id} } @{$cur->{profiles}}};
+		print "PROFILE_NAMES = ".join(" ", @profile_ids_unique)."\n";
 		foreach my $profile (@{$cur->{profiles}}) {
 			print $profile->{id}.'_NAME:='.$profile->{name}."\n";
 			print $profile->{id}.'_HAS_IMAGE_METADATA:='.$profile->{has_image_metadata}."\n";

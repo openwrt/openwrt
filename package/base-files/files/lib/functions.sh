@@ -1,4 +1,3 @@
-#!/bin/sh
 # Copyright (C) 2006-2014 OpenWrt.org
 # Copyright (C) 2006 Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
 # Copyright (C) 2010 Vertical Communications
@@ -108,7 +107,7 @@ config_unset() {
 # config_get <section> <option>
 config_get() {
 	case "$2${3:-$1}" in
-		*[^A-Za-z0-9_]*) : ;;
+		*[!A-Za-z0-9_]*) : ;;
 		*)
 			case "$3" in
 				"") eval echo "\"\${CONFIG_${1}_${2}:-\${4}}\"";;
@@ -118,15 +117,22 @@ config_get() {
 	esac
 }
 
+# get_bool <value> [<default>]
+get_bool() {
+	local _tmp="$1"
+	case "$_tmp" in
+		1|on|true|yes|enabled) _tmp=1;;
+		0|off|false|no|disabled) _tmp=0;;
+		*) _tmp="$2";;
+	esac
+	echo -n "$_tmp"
+}
+
 # config_get_bool <variable> <section> <option> [<default>]
 config_get_bool() {
 	local _tmp
 	config_get _tmp "$2" "$3" "$4"
-	case "$_tmp" in
-		1|on|true|yes|enabled) _tmp=1;;
-		0|off|false|no|disabled) _tmp=0;;
-		*) _tmp="$4";;
-	esac
+	_tmp="$(get_bool "$_tmp" "$4")"
 	export ${NO_EXPORT:+-n} "$1=$_tmp"
 }
 
@@ -376,6 +382,16 @@ user_exists() {
 
 board_name() {
 	[ -e /tmp/sysinfo/board_name ] && cat /tmp/sysinfo/board_name || echo "generic"
+}
+
+cmdline_get_var() {
+	local var=$1
+	local cmdlinevar tmp
+
+	for cmdlinevar in $(cat /proc/cmdline); do
+		tmp=${cmdlinevar##${var}}
+		[ "=" = "${tmp:0:1}" ] && echo ${tmp:1}
+	done
 }
 
 [ -z "$IPKG_INSTROOT" ] && [ -f /lib/config/uci.sh ] && . /lib/config/uci.sh

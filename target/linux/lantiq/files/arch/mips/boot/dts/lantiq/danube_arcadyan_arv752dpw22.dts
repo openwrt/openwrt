@@ -17,7 +17,6 @@
 		led-upgrade = &power_red;
 
 		led-dsl = &internet_red;
-		led-usb = &umts;
 		led-wifi = &wifi;
 	};
 
@@ -78,6 +77,9 @@
 		umts: umts {
 			label = "red:umts";
 			gpios = <&gpiomm 3 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ehci_port1>,
+					  <&ehci_port2>, <&uhci_port2>;
+			linux,default-trigger = "usbport";
 		};
 		wifi: wifi {
 			label = "red:wifi";
@@ -241,6 +243,30 @@
 		ralink,mtd-eeprom = <&boardconfig 0x410>;
 		ralink,mtd-eeprom-swap;
 		mtd-mac-address = <&boardconfig 0x16>;
+	};
+
+	usb@0f,0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "pci1106,3038";
+		reg = <0x7800 0 0 0 0>; /* 0000:00:0f.0: UHCI Host Controller */
+
+		uhci_port2: port@2 {
+			reg = <2>;
+			#trigger-source-cells = <0>;
+		};
+	};
+
+	usb@0f,2 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "pci1106,3038";
+		reg = <0x7a00 0 0 0 0>; /* 0000:00:0f.2: EHCI Host Controller*/
+
+		ehci_port2: port@2 {
+			reg = <2>;
+			#trigger-source-cells = <0>;
+		};
 	};
 };
 

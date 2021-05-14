@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=5.8-1
-PKG_RELEASE:=2
-PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.8/
-PKG_HASH:=19b4174d89bf11ee221458e11f1e8dace26558498774b823051156f522d2036b
+PKG_VERSION:=5.10.34-1
+PKG_RELEASE:=1
+PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.10.34/
+PKG_HASH:=03c4ca6bf47d4e50b91b61bc2943a98c788439e56ce2b4080bc4c94141c2c15b
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)
@@ -265,7 +265,7 @@ endef
 define KernelPackage/mac80211-hwsim
   $(call KernelPackage/mac80211/Default)
   TITLE:=mac80211 HW simulation device
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
+  DEPENDS+= +kmod-mac80211 +@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mac80211_hwsim.ko
   AUTOLOAD:=$(call AutoProbe,mac80211_hwsim)
 endef
@@ -274,7 +274,7 @@ endef
 define KernelPackage/mt7601u
   $(call KernelPackage/mac80211/Default)
   TITLE:=MT7601U-based USB dongles Wireless Driver
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT @USB_SUPPORT +kmod-usb-core +mt7601u-firmware
+  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT @USB_SUPPORT +kmod-usb-core +mt7601u-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mediatek/mt7601u/mt7601u.ko
   AUTOLOAD:=$(call AutoProbe,mt7601u)
 endef
@@ -290,7 +290,7 @@ endef
 
 define KernelPackage/p54-common
   $(call KernelPackage/p54/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +kmod-lib-crc-ccitt +@DRIVER_11W_SUPPORT
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +kmod-lib-crc-ccitt
   TITLE+= (COMMON)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/intersil/p54/p54common.ko
 endef
@@ -388,7 +388,7 @@ $(eval $(call Download,zd1211rw))
 define KernelPackage/zd1211rw
   $(call KernelPackage/mac80211/Default)
   TITLE:=Zydas ZD1211 support
-  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-mac80211 +@DRIVER_11W_SUPPORT
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/zydas/zd1211rw/zd1211rw.ko
   AUTOLOAD:=$(call AutoProbe,zd1211rw)
 endef
@@ -504,6 +504,7 @@ define Build/Patch
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rt2x00,rt2x00/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mwl,mwl/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/brcm,brcm/)
+	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rtl,rtl/)
 	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
 endef
 
@@ -514,6 +515,7 @@ define Quilt/Refresh/Package
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rt2x00,rt2x00/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mwl,mwl/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/brcm,brcm/)
+	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rtl,rtl/)
 endef
 
 define Build/Compile

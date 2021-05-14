@@ -95,8 +95,6 @@
 &spi {
 	status = "okay";
 
-	num-cs = <2>;
-
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -244,8 +242,4 @@
 		reg = <1>;
 		#trigger-source-cells = <0>;
 	};
-};
-
-&uart {
-	status = "okay";
 };

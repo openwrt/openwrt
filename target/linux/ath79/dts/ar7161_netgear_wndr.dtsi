@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	aliases {
@@ -187,14 +188,8 @@
 	};
 };
 
-&uart {
-	status = "okay";
-};
-
 &spi {
 	status = "okay";
-
-	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";

@@ -155,7 +155,7 @@ define KernelPackage/nf-flow
   DEPENDS:=+kmod-nf-conntrack
   FILES:= \
 	$(LINUX_DIR)/net/netfilter/nf_flow_table.ko \
-	$(LINUX_DIR)/net/netfilter/nf_flow_table_hw.ko
+	$(if $(CONFIG_LINUX_5_4),$(LINUX_DIR)/net/netfilter/nf_flow_table_hw.ko)
   AUTOLOAD:=$(call AutoProbe,nf_flow_table nf_flow_table_hw)
 endef
 
@@ -1002,7 +1002,7 @@ $(eval $(call KernelPackage,nfnetlink-queue))
 define KernelPackage/nf-conntrack-netlink
   TITLE:=Connection tracking netlink interface
   FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.ko
-  KCONFIG:=CONFIG_NF_CT_NETLINK CONFIG_NF_CONNTRACK_EVENTS=y
+  KCONFIG:=CONFIG_NF_CT_NETLINK CONFIG_NF_CONNTRACK_EVENTS=y CONFIG_NETFILTER_NETLINK_GLUE_CT=y
   AUTOLOAD:=$(call AutoProbe,nf_conntrack_netlink)
   $(call AddDepends/nfnetlink,+kmod-ipt-conntrack)
 endef
@@ -1052,7 +1052,7 @@ $(eval $(call KernelPackage,ipt-rpfilter))
 define KernelPackage/nft-core
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables support
-  DEPENDS:=+kmod-nfnetlink +kmod-nf-reject +IPV6:kmod-nf-reject6 +IPV6:kmod-nf-conntrack6 +kmod-nf-nat
+  DEPENDS:=+kmod-nfnetlink +kmod-nf-reject +IPV6:kmod-nf-reject6 +IPV6:kmod-nf-conntrack6 +kmod-nf-nat +kmod-lib-crc32c
   FILES:=$(foreach mod,$(NFT_CORE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_CORE-m)))
   KCONFIG:= \
