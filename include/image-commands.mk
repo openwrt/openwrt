@@ -23,6 +23,10 @@ define Build/append-dtb-elf
 		.appended_dtb=$(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@
 endef
 
+define Build/append-file
+	dd if=$(1) >> $@
+endef
+
 define Build/append-kernel
 	dd if=$(IMAGE_KERNEL) >> $@
 endef
