@@ -28,6 +28,41 @@ Branches Introduction
 
 **For example, if you want to use openwrt-19.07.7 to compile the production firmware, you need to use *```git checkout openwrt-19.07.7```* command to switch openwrt-19.07.7 branch.**
 
+Product Branch Relationship Table
+=======
+**Support Branch:** Branches that support this product
+
+**Official OpenWrt :** Official OpenWrt supports this product from the current release
+| Product | Support Branch | Official OpenWrt | Remark |
+| :-----| :----- | :---- | :---- |
+| AR150 | openwrt-18.06<br>openwrt-18.06.5<br>openwrt-19.07.7 | >17.01 |  |
+| MIFI | openwrt-18.06<br>openwrt-18.06.5<br>openwrt-19.07.7 | >17.01 |  |
+| AR300M | openwrt-18.06<br>openwrt-18.06.5<br>openwrt-19.07.7 | 17.01~19.07(nor)^<br>>21.02(nor+nand)^ | |
+| MT300N-V2 | openwrt-18.06<br>openwrt-18.06.5<br>openwrt-19.07.7 | >18.06 | GL fireware wifi drivers are closed source, we do not guarantee that OpenWrt drivers are stable |
+| B1300 | openwrt-18.06<br>openwrt-18.06.5<br>openwrt-19.07.7 | >18.06 | GL fireware use QSDK, if you use openwrt to compile firmware, there isn't mesh function|
+| USB150 | openwrt-18.06<br>openwrt-18.06.5<br>openwrt-19.07.7 | >18.06 |  |
+| AR750 | openwrt-18.06<br>openwrt-18.06.5<br>openwrt-19.07.7 | >18.06 |  |
+| AR750S | openwrt-18.06<br>openwrt-18.06.5<br>openwrt-19.07.7 | 19.07(nor)^<br>>21.02(nor+nand)^ | |
+| X750 | openwrt-18.06<br>openwrt-19.07.7 | >19.07 |  |
+| S1300 | openwrt-19.07.7(nor)^<br>openwrt-trunk(emmc)^ | >21.02(nor)^ | |
+| N300 | openwrt-18.06<br>openwrt-19.07.7 | >21.02 | GL fireware wifi drivers are closed source, we do not guarantee that OpenWrt drivers are stable |
+| X1200 | openwrt-18.06<br>openwrt-19.07.7 | N | Must choose ath10k-firmware-qca9888-ct-htt and kmod-ath10k-ct packages |
+| MV1000 | openwrt-19.07.7 | >21.02 |  |
+| E750 | openwrt-18.06<br>openwrt-19.07.7 | >21.02 |  |
+| AP1300 | We don't make patch for this project, so you must use the official OpenWrt | >21.02 |  |
+| B2200 |  |  |  |
+| MT1300 | openwrt-19.07.7 | >21.02 | GL fireware wifi drivers are closed source, we do not guarantee that OpenWrt drivers are stable |
+| XE300 | openwrt-19.07.7 | N |  |
+| X300B | openwrt-18.06.5<br>openwrt-19.07.7 | N |  |
+| SF1200 |  |  |  |
+| AX1800 |  |  |  |
+
+^nor: Compiled firmware can only run on nor flash
+
+^nor+nand: Can compile the firmware that runs on nor flash and nand flash
+
+^nor+emmc: Can compile the firmware that runs on nor flash and emmc
+
 Prerequisites
 =============
 
