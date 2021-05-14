@@ -34,6 +34,7 @@ define Host/Compile
 	$(call cc,buffalo-tftp buffalo-lib,-Wall)
 	$(call cc,dgfirmware,-Wall)
 	$(call cc,dgn3500sum,-Wall)
+	$(call cc,dlink-sge-image,-lcrypto -pthread -Wall)
 	$(call cc,dns313-header,-Wall)
 	$(call cc,edimax_fw_header,-Wall)
 	$(call cc,encode_crc,-Wall)

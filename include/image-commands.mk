@@ -175,6 +175,11 @@ define Build/check-size
 	}
 endef
 
+define Build/dlink-sge-image
+	$(STAGING_DIR_HOST)/bin/dlink-sge-image $@ $@.enc
+	mv $@.enc $@
+endef
+
 define Build/elecom-product-header
 	$(eval product=$(word 1,$(1)))
 	$(eval fw=$(if $(word 2,$(1)),$(word 2,$(1)),$@))
