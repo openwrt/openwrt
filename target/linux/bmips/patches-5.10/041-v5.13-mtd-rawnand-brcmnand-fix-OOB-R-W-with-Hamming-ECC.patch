@@ -23,9 +23,9 @@ Link: https://lore.kernel.org/linux-mtd/20210224080210.23686-1-noltari@gmail.com
 
 --- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-@@ -2688,6 +2688,12 @@ static int brcmnand_attach_chip(struct n
- 
- 	ret = brcmstb_choose_ecc_layout(host);
+@@ -2694,6 +2694,12 @@ static int brcmnand_attach_chip(struct n
+ 		chip->ecc.read_oob = brcmnand_read_oob_raw;
+ 	}
  
 +	/* If OOB is written with ECC enabled it will cause ECC errors */
 +	if (is_hamming_ecc(host->ctrl, &host->hwcfg)) {
