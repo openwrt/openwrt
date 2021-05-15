@@ -1,0 +1,119 @@
+From 662f172a947799725ecf07f7e64907ca66ece708 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sat, 16 Oct 2021 00:20:35 +0200
+Subject: [PATCH] net: dsa: qca8k: add support for multiple-cpu port
+
+Add support for multiple-cpu port.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 65 +++++++++++++++++++++++++++++++++++++++--
+ drivers/net/dsa/qca8k.h |  1 +
+ 2 files changed, 63 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index ea7f12778922..e1d3b1084ba5 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -1152,9 +1152,9 @@ qca8k_setup(struct dsa_switch *ds)
+ 	 */
+ 	ret = qca8k_write(priv, QCA8K_REG_GLOBAL_FW_CTRL1,
+ 			  BIT(cpu_port) << QCA8K_GLOBAL_FW_CTRL1_IGMP_DP_S |
+-			  BIT(cpu_port) << QCA8K_GLOBAL_FW_CTRL1_BC_DP_S |
+-			  BIT(cpu_port) << QCA8K_GLOBAL_FW_CTRL1_MC_DP_S |
+-			  BIT(cpu_port) << QCA8K_GLOBAL_FW_CTRL1_UC_DP_S);
++			  dsa_cpu_ports(ds) << QCA8K_GLOBAL_FW_CTRL1_BC_DP_S |
++			  dsa_cpu_ports(ds) << QCA8K_GLOBAL_FW_CTRL1_MC_DP_S |
++			  dsa_cpu_ports(ds) << QCA8K_GLOBAL_FW_CTRL1_UC_DP_S);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1162,6 +1162,8 @@ qca8k_setup(struct dsa_switch *ds)
+ 	 * Configure specific switch configuration for ports
+ 	 */
+ 	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
++		struct dsa_port *dp = dsa_to_port(ds, i);
++
+ 		/* CPU port gets connected to all user ports of the switch */
+ 		if (dsa_is_cpu_port(ds, i)) {
+ 			ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(i),
+@@ -1172,6 +1172,8 @@ qca8k_setup(struct dsa_switch *ds)
+ 
+ 		/* Individual user ports get connected to CPU port only */
+ 		if (dsa_is_user_port(ds, i)) {
++			cpu_port = dp->cpu_dp->index;
++
+ 			ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(i),
+ 					QCA8K_PORT_LOOKUP_MEMBER,
+ 					BIT(cpu_port));
+@@ -1984,6 +1984,47 @@ qca8k_get_tag_protocol(struct dsa_switch *ds, int port,
+ 	return DSA_TAG_PROTO_QCA;
+ }
+ 
++static int qca8k_port_change_cpu_port(struct dsa_switch *ds, int port,
++				      struct dsa_port *new_cpu_do)
++{
++	struct qca8k_priv *priv = ds->priv;
++	u32 val;
++	int ret;
++
++	if (!dsa_is_user_port(ds, port))
++		return -EINVAL;
++
++	if (new_cpu_do->type != DSA_PORT_TYPE_CPU)
++		return -EINVAL;
++	
++	/* Disable port */
++	qca8k_port_set_status(priv, port, 0);
++
++	/* Connect it to new cpu port */
++	ret = qca8k_read(priv, QCA8K_PORT_LOOKUP_CTRL(port), &val);
++	if (ret)
++		return ret;
++
++	/* Reset connected CPU port in LOOKUP MEMBER */
++	val &= QCA8K_PORT_USER_LOOKUP_MEMBER;
++	/* Assign the new CPU port in LOOKUP MEMBER */
++	val |= BIT(new_cpu_do->index);
++
++	ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
++			QCA8K_PORT_LOOKUP_MEMBER,
++			val);
++	if (ret)
++		return ret;
++
++	/* Fast Age the port to flush FDB table */
++	qca8k_port_fast_age(ds, port);
++
++	/* Reenable port */
++	qca8k_port_set_status(priv, port, 1);
++
++	return 0;
++}
++
+ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.get_tag_protocol	= qca8k_get_tag_protocol,
+ 	.setup			= qca8k_setup,
+@@ -2011,6 +2068,7 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.phylink_mac_link_down	= qca8k_phylink_mac_link_down,
+ 	.phylink_mac_link_up	= qca8k_phylink_mac_link_up,
+ 	.get_phy_flags		= qca8k_get_phy_flags,
++	.port_change_cpu_port	= qca8k_port_change_cpu_port,
+ };
+ 
+ static int qca8k_read_switch_id(struct qca8k_priv *priv)
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index e10571a398c9..618238f143a7 100644
+--- a/drivers/net/dsa/qca8k.h
++++ b/drivers/net/dsa/qca8k.h
+@@ -169,6 +169,7 @@
+ #define   QCA8K_GLOBAL_FW_CTRL1_UC_DP_S			0
+ #define QCA8K_PORT_LOOKUP_CTRL(_i)			(0x660 + (_i) * 0xc)
+ #define   QCA8K_PORT_LOOKUP_MEMBER			GENMASK(6, 0)
++#define   QCA8K_PORT_USER_LOOKUP_MEMBER			GENMASK(5, 1)
+ #define   QCA8K_PORT_LOOKUP_VLAN_MODE			GENMASK(9, 8)
+ #define   QCA8K_PORT_LOOKUP_VLAN_MODE_NONE		(0 << 8)
+ #define   QCA8K_PORT_LOOKUP_VLAN_MODE_FALLBACK		(1 << 8)
+-- 
+2.32.0
+
