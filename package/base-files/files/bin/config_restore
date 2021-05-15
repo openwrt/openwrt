@@ -1,0 +1,38 @@
+#!/bin/sh
+
+FILE="$1"
+TAR_OPT="${2:-xzf}"
+
+missing_lines() {
+        local file1 file2 line
+        file1="$1"
+        file2="$2"
+        oIFS="$IFS"
+        IFS=":"
+        while read line; do
+                set -- $line
+                grep -q "^$1:" "$file2" || echo "$*"
+        done < "$file1"
+        IFS="$oIFS"
+}
+
+do_config_restore() {
+	echo "- config restore -"
+
+	cd /
+
+	cp /etc/passwd /etc/group /etc/shadow /tmp
+
+	tar $TAR_OPT $FILE
+
+	missing_lines /tmp/passwd /etc/passwd >> /etc/passwd
+	missing_lines /tmp/group /etc/group >> /etc/group
+	missing_lines /tmp/shadow /etc/shadow >> /etc/shadow
+
+	rm /tmp/passwd /tmp/group /tmp/shadow
+}
+
+do_config_restore
+
+# Prevent configuration corruption from power loss
+sync
