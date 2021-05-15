@@ -1,12 +1,27 @@
 # Copyright (C) 2006 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 
-do_mount_root() {
-	mount_root
-	boot_run_hook preinit_mount_root
+config_restore_verify() {
+	cd /
+
+	[ -f /sysupgrade.tgz ] && \
+		tar xzf /sysupgrade.tgz etc/sysupgrade_version && \
+		[ $(cat /etc/openwrt_version) = $(cat /etc/sysupgrade_version) ] && \
+			echo "- config restore verified -"
+
+	[ -f /tmp/sysupgrade.tar ] && \
+		tar xf /tmp/sysupgrade.tar etc/sysupgrade_version && \
+		[ $(cat /etc/openwrt_version) = $(cat /etc/sysupgrade_version) ] && \
+			echo "- config restore verified -"
 
 	[ -f /sysupgrade.tgz ] && config_restore /sysupgrade.tgz xzf
 	[ -f /tmp/sysupgrade.tar ] && config_restore /tmp/sysupgrade.tar xf
+}
+
+do_mount_root() {
+	mount_root
+	boot_run_hook preinit_mount_root
+	config_restore_verify
 }
 
 [ "$INITRAMFS" = "1" ] || boot_hook_add preinit_main do_mount_root
