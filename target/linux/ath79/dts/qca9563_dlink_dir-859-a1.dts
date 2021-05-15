@@ -56,17 +56,6 @@
 			debounce-interval = <60>;
 		};
 	};
-
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		gpio_switch_reset {
-			gpio-export,name = "dir-859-a1:reset:switch";
-			gpio-export,output = <1>;
-			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
 &pcie {
@@ -132,6 +121,8 @@
 		reg = <0>;
 		phy-mode = "sgmii";
 		qca,mib-poll-interval = <500>;
+
+		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 
 		qca,ar8327-initvals = <
 			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
