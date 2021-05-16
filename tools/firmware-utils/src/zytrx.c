@@ -150,8 +150,10 @@ static void *map_input(const char *name, size_t *len)
 	}
 	*len = stat.st_size;
 	mapped = mmap(NULL, stat.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (close(fd) < 0)
+	if (close(fd) < 0) {
+		(void) munmap(mapped, stat.st_size);
 		return NULL;
+	}
 	return mapped;
 }
 
