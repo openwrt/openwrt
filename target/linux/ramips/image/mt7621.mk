@@ -118,6 +118,7 @@ define Device/alfa-network_quad-e4g
   DEVICE_MODEL := Quad-E4G
   DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 uboot-envtools \
 	-wpad-basic-wolfssl
+  SUPPORTED_DEVICES += quad-e4g
 endef
 TARGET_DEVICES += alfa-network_quad-e4g
 
