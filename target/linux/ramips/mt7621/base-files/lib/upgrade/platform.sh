@@ -49,6 +49,7 @@ platform_do_upgrade() {
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
 	hiwifi,hc5962|\
+	jcg,q20|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
 	linksys,ea7500-v2|\
