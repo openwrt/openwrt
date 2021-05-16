@@ -1112,16 +1112,26 @@ define Device/xiaomi_miwifi-mini
 endef
 TARGET_DEVICES += xiaomi_miwifi-mini
 
-define Device/youku_yk1
+define Device/youku_yk-l1
   SOC := mt7620a
   IMAGE_SIZE := 32448k
-  DEVICE_VENDOR := YOUKU
-  DEVICE_MODEL := YK1
+  DEVICE_VENDOR := Youku
+  DEVICE_MODEL := YK-L1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
 	kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += youku-yk1
+  SUPPORTED_DEVICES += youku-yk1 youku,yk1
 endef
-TARGET_DEVICES += youku_yk1
+TARGET_DEVICES += youku_yk-l1
+
+define Device/youku_yk-l1c
+  SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Youku
+  DEVICE_MODEL := YK-L1c
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
+	kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += youku_yk-l1c
 
 define Device/yukai_bocco
   SOC := mt7620a
