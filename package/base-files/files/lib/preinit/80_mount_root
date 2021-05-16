@@ -7,15 +7,12 @@ config_restore_verify() {
 	[ -f /sysupgrade.tgz ] && \
 		tar xzf /sysupgrade.tgz etc/sysupgrade_version && \
 		[ $(cat /etc/openwrt_version) = $(cat /etc/sysupgrade_version) ] && \
-			echo "- config restore verified -"
+			config_restore /sysupgrade.tgz xzf
 
 	[ -f /tmp/sysupgrade.tar ] && \
 		tar xf /tmp/sysupgrade.tar etc/sysupgrade_version && \
 		[ $(cat /etc/openwrt_version) = $(cat /etc/sysupgrade_version) ] && \
-			echo "- config restore verified -"
-
-	[ -f /sysupgrade.tgz ] && config_restore /sysupgrade.tgz xzf
-	[ -f /tmp/sysupgrade.tar ] && config_restore /tmp/sysupgrade.tar xf
+			config_restore /tmp/sysupgrade.tar xf
 }
 
 do_mount_root() {
