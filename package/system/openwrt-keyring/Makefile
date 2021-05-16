@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openwrt-keyring
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/keyring.git
@@ -32,7 +32,10 @@ Build/Compile=
 
 define Package/openwrt-keyring/install
 	$(INSTALL_DIR) $(1)/etc/opkg/keys/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/usign/* $(1)/etc/opkg/keys/
+	# Public usign key for 19.07 release builds
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/usign/f94b9dd6febac963 $(1)/etc/opkg/keys/
+	# Public usign key for 21.02 release builds
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/usign/2f8b0b98e08306bf $(1)/etc/opkg/keys/
 endef
 
 $(eval $(call BuildPackage,openwrt-keyring))
