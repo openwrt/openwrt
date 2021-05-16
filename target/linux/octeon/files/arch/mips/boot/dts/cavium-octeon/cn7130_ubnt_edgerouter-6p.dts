@@ -29,6 +29,10 @@
 	interface@0 {
 		ethernet@0 {
 			label = "lan5";
+			status = "okay";
+			phy-mode = "sgmii";
+			phy-handle = <&phy4>;
+			mtd-mac-address = <&eeprom 0>;
 		};
 	};
 

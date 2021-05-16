@@ -175,14 +175,6 @@
 	interface@0 {
 		status = "okay";
 
-		ethernet@0 {
-			label = "lan3";
-			status = "okay";
-			phy-mode = "sgmii";
-			phy-handle = <&phy4>;
-			mtd-mac-address = <&eeprom 0>;
-		};
-
 		ethernet@1 {
 			label = "lan0";
 			status = "okay";
