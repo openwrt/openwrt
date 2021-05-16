@@ -4,9 +4,6 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "youku,yk1", "ralink,mt7620a-soc";
-	model = "YOUKU YK1";
-
 	aliases {
 		led-boot = &led_power;
 		led-failsafe = &led_power;
@@ -88,10 +85,10 @@
 				read-only;
 			};
 
-			partition@50000 {
+			firmware: partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0x1fb0000>;
+				/* reg property is set based on flash size in DTS files */
 			};
 		};
 	};
