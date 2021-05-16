@@ -34,6 +34,7 @@ define Device/alfa-network_awusfree1
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := AWUSFREE1
   DEVICE_PACKAGES := uboot-envtools
+  SUPPORTED_DEVICES += awusfree1
 endef
 TARGET_DEVICES += alfa-network_awusfree1
 
