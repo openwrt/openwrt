@@ -422,10 +422,12 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 			if (strstr(stl[i].security,"PSK"))
 				sce.crypto.auth_suites |= IWINFO_KMGMT_PSK;
 
-			if (!strcmp(stl[i].crypto,"AES"))
-				sce.crypto.pair_ciphers = IWINFO_CIPHER_CCMP;
-			else if (!strcmp(stl[i].crypto,"TKIP"))
-				sce.crypto.pair_ciphers = IWINFO_CIPHER_TKIP;
+			if (stl[i].crypto) {
+				if (!strcmp(stl[i].crypto,"AES"))
+					sce.crypto.pair_ciphers = IWINFO_CIPHER_CCMP;
+				else if (!strcmp(stl[i].crypto,"TKIP"))
+					sce.crypto.pair_ciphers = IWINFO_CIPHER_TKIP;
+			}
 		}
 		
 		memcpy(buf + *len, &sce, sizeof(struct iwinfo_scanlist_entry));
