@@ -318,6 +318,16 @@ define Build/netgear-dni
 	mv $@.new $@
 endef
 
+define Build/netgear-tar
+	mkdir $@.tmp
+	mv $@ $@.tmp/wac5xx-ubifs-root.img
+	md5sum $@.tmp/wac5xx-ubifs-root.img > $@.tmp/wac5xx-ubifs-root.md5sum
+	echo "WAC505 WAC510" > $@.tmp/metadata.txt
+	echo "WAC505_V9.9.9.9" > $@.tmp/version
+	tar -C $@.tmp/ -cf $@ .
+	rm -rf $@.tmp
+endef
+
 define Build/openmesh-image
 	$(TOPDIR)/scripts/om-fwupgradecfg-gen.sh \
 		"$(call param_get_default,ce_type,$(1),$(DEVICE_NAME))" \
