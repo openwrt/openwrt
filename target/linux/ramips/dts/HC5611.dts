@@ -21,14 +21,20 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_system: system {
-			label = "hc5611:green:system";
-			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		system {
+			label = "hc5611:blue:system";
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
-		
-		led_run: run {
-			label = "hc5611:blue:run";
-			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		power-led {
+			gpio-export,name = "power-led";
+			gpio-export,output = <1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -124,3 +130,16 @@
 
 &wmac {
 	status = "okay";
+};
+© 2021 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Docs
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
