@@ -242,6 +242,9 @@ define Device/netgear_d7800
 	BOARD_NAME := d7800
 	SUPPORTED_DEVICES += d7800
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+	DEVICE_COMPAT_VERSION := 2.0
+	DEVICE_COMPAT_MESSAGE := Sysupgrade does not work due to rootfs ubi partition size change. \
+		Use factory image with the TFTP recovery flash routine.
 endef
 TARGET_DEVICES += netgear_d7800
 
