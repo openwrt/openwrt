@@ -854,6 +854,14 @@ define Device/linksys_ea7500-v2
 endef
 TARGET_DEVICES += linksys_ea7500-v2
 
+define Device/linksys_ea8100-v1
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA8100
+  DEVICE_VARIANT := v1
+  LINKSYS_HWNAME := EA8100
+endef
+TARGET_DEVICES += linksys_ea8100-v1
+
 define Device/linksys_re6500
   $(Device/dsa-migration)
   IMAGE_SIZE := 7872k
