@@ -266,7 +266,7 @@ hostapd_common_add_bss_config() {
 	config_add_array domain_match domain_match2 domain_suffix_match domain_suffix_match2
 	config_add_string ieee80211w_mgmt_cipher
 
-	config_add_int dynamic_vlan vlan_naming
+	config_add_int dynamic_vlan vlan_naming vlan_no_bridge
 	config_add_string vlan_tagged_interface vlan_bridge
 	config_add_string vlan_file
 
@@ -856,13 +856,17 @@ hostapd_set_bss_options() {
 	}
 
 	[ -n "$vlan_possible" -a -n "$dynamic_vlan" ] && {
-		json_get_vars vlan_naming vlan_tagged_interface vlan_bridge vlan_file
+		json_get_vars vlan_naming vlan_tagged_interface vlan_bridge vlan_file vlan_no_bridge
 		set_default vlan_naming 1
 		[ -z "$vlan_file" ] && set_default vlan_file /var/run/hostapd-$ifname.vlan
 		append bss_conf "dynamic_vlan=$dynamic_vlan" "$N"
 		append bss_conf "vlan_naming=$vlan_naming" "$N"
-		[ -n "$vlan_bridge" ] && \
+		if [ -n "$vlan_bridge" ]; then
 			append bss_conf "vlan_bridge=$vlan_bridge" "$N"
+		else
+			set_default vlan_no_bridge 1
+		fi
+		append bss_conf "vlan_no_bridge=$vlan_no_bridge" "$N"
 		[ -n "$vlan_tagged_interface" ] && \
 			append bss_conf "vlan_tagged_interface=$vlan_tagged_interface" "$N"
 		[ -n "$vlan_file" ] && {
