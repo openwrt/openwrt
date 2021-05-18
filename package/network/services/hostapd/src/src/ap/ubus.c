@@ -1364,6 +1364,43 @@ void hostapd_ubus_free_bss(struct hostapd_data *hapd)
 	free(name);
 }
 
+static void
+hostapd_ubus_vlan_action(struct hostapd_data *hapd, struct hostapd_vlan *vlan,
+			 const char *action)
+{
+	struct vlan_description *desc = &vlan->vlan_desc;
+	void *c;
+	int i;
+
+	if (!hapd->ubus.obj.has_subscribers)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "ifname", vlan->ifname);
+	blobmsg_add_string(&b, "bridge", vlan->bridge);
+	blobmsg_add_u32(&b, "vlan_id", vlan->vlan_id);
+
+	if (desc->notempty) {
+		blobmsg_add_u32(&b, "untagged", desc->untagged);
+		c = blobmsg_open_array(&b, "tagged");
+		for (i = 0; i < ARRAY_SIZE(desc->tagged) && desc->tagged[i]; i++)
+			blobmsg_add_u32(&b, "", desc->tagged[i]);
+		blobmsg_close_array(&b, c);
+	}
+
+	ubus_notify(ctx, &hapd->ubus.obj, action, b.head, -1);
+}
+
+void hostapd_ubus_add_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
+{
+	hostapd_ubus_vlan_action(hapd, vlan, "vlan_add");
+}
+
+void hostapd_ubus_remove_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
+{
+	hostapd_ubus_vlan_action(hapd, vlan, "vlan_remove");
+}
+
 static const struct ubus_method daemon_methods[] = {
 	UBUS_METHOD("config_add", hostapd_config_add, config_add_policy),
 	UBUS_METHOD("config_remove", hostapd_config_remove, config_remove_policy),
