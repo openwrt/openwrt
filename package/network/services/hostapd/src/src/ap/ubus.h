@@ -43,6 +43,8 @@ void hostapd_ubus_add_iface(struct hostapd_iface *iface);
 void hostapd_ubus_free_iface(struct hostapd_iface *iface);
 void hostapd_ubus_add_bss(struct hostapd_data *hapd);
 void hostapd_ubus_free_bss(struct hostapd_data *hapd);
+void hostapd_ubus_add_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan);
+void hostapd_ubus_remove_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan);
 
 int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req);
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac);
