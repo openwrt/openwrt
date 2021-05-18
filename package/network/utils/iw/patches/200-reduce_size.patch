@@ -1,6 +1,6 @@
 --- a/event.c
 +++ b/event.c
-@@ -944,6 +944,7 @@ static int print_event(struct nl_msg *ms
+@@ -956,6 +956,7 @@ static int print_event(struct nl_msg *ms
  	}
  
  	switch (gnlh->cmd) {
@@ -8,7 +8,7 @@
  	case NL80211_CMD_NEW_WIPHY:
  		printf("renamed to %s\n", nla_get_string(tb[NL80211_ATTR_WIPHY_NAME]));
  		break;
-@@ -979,6 +980,7 @@ static int print_event(struct nl_msg *ms
+@@ -991,6 +992,7 @@ static int print_event(struct nl_msg *ms
  	case NL80211_CMD_SCHED_SCAN_RESULTS:
  		printf("got scheduled scan results\n");
  		break;
@@ -16,7 +16,7 @@
  	case NL80211_CMD_WIPHY_REG_CHANGE:
  	case NL80211_CMD_REG_CHANGE:
  		if (gnlh->cmd == NL80211_CMD_WIPHY_REG_CHANGE)
-@@ -1061,6 +1063,7 @@ static int print_event(struct nl_msg *ms
+@@ -1073,6 +1075,7 @@ static int print_event(struct nl_msg *ms
  		mac_addr_n2a(macbuf, nla_data(tb[NL80211_ATTR_MAC]));
  		printf("del station %s\n", macbuf);
  		break;
@@ -24,7 +24,7 @@
  	case NL80211_CMD_JOIN_IBSS:
  		mac_addr_n2a(macbuf, nla_data(tb[NL80211_ATTR_MAC]));
  		printf("IBSS %s joined\n", macbuf);
-@@ -1254,9 +1257,9 @@ static int print_event(struct nl_msg *ms
+@@ -1271,9 +1274,9 @@ static int print_event(struct nl_msg *ms
  	case NL80211_CMD_CH_SWITCH_NOTIFY:
  		parse_ch_switch_notify(tb, gnlh->cmd);
  		break;
@@ -134,7 +134,7 @@
  {
 --- a/scan.c
 +++ b/scan.c
-@@ -1297,6 +1297,9 @@ static void print_ht_op(const uint8_t ty
+@@ -1306,6 +1306,9 @@ static void print_ht_op(const uint8_t ty
  	printf("\t\t * secondary channel offset: %s\n",
  		ht_secondary_offset[data[1] & 0x3]);
  	printf("\t\t * STA channel width: %s\n", sta_chan_width[(data[1] & 0x4)>>2]);
@@ -144,7 +144,7 @@
  	printf("\t\t * RIFS: %d\n", (data[1] & 0x8)>>3);
  	printf("\t\t * HT protection: %s\n", protection[data[2] & 0x3]);
  	printf("\t\t * non-GF present: %d\n", (data[2] & 0x4) >> 2);
-@@ -1707,6 +1710,14 @@ static void print_ie(const struct ie_pri
+@@ -1716,6 +1719,14 @@ static void print_ie(const struct ie_pri
  
  static const struct ie_print ieprinters[] = {
  	[0] = { "SSID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
@@ -159,7 +159,7 @@
  	[1] = { "Supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
  	[3] = { "DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN), },
  	[5] = { "TIM", print_tim, 4, 255, BIT(PRINT_SCAN), },
-@@ -1716,26 +1727,20 @@ static const struct ie_print ieprinters[
+@@ -1725,26 +1736,20 @@ static const struct ie_print ieprinters[
  	[32] = { "Power constraint", print_powerconstraint, 1, 1, BIT(PRINT_SCAN), },
  	[35] = { "TPC report", print_tpcreport, 2, 2, BIT(PRINT_SCAN), },
  	[42] = { "ERP", print_erp, 1, 255, BIT(PRINT_SCAN), },
@@ -187,15 +187,15 @@
  };
  
  static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data,
-@@ -2279,6 +2284,7 @@ void print_ies(unsigned char *ie, int ie
+@@ -2326,6 +2331,7 @@ void print_ies(unsigned char *ie, int ie
  		    ieprinters[ie[0]].flags & BIT(ptype)) {
  			print_ie(&ieprinters[ie[0]],
  				 ie[0], ie[1], ie + 2, &ie_buffer);
 +#ifdef IW_FULL
  		} else if (ie[0] == 221 /* vendor */) {
  			print_vendor(ie[1], ie + 2, unknown, ptype);
- 		} else if (unknown) {
-@@ -2288,6 +2294,7 @@ void print_ies(unsigned char *ie, int ie
+ 		} else if (ie[0] == 255 /* extension */) {
+@@ -2337,6 +2343,7 @@ void print_ies(unsigned char *ie, int ie
  			for (i=0; i<ie[1]; i++)
  				printf(" %.2x", ie[2+i]);
  			printf("\n");
@@ -203,7 +203,7 @@
  		}
  		ielen -= ie[1] + 2;
  		ie += ie[1] + 2;
-@@ -2328,6 +2335,7 @@ static void print_capa_non_dmg(__u16 cap
+@@ -2377,6 +2384,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" ESS");
  	if (capa & WLAN_CAPABILITY_IBSS)
  		printf(" IBSS");
@@ -211,7 +211,7 @@
  	if (capa & WLAN_CAPABILITY_CF_POLLABLE)
  		printf(" CfPollable");
  	if (capa & WLAN_CAPABILITY_CF_POLL_REQUEST)
-@@ -2356,6 +2364,7 @@ static void print_capa_non_dmg(__u16 cap
+@@ -2405,6 +2413,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" DelayedBACK");
  	if (capa & WLAN_CAPABILITY_IMM_BACK)
  		printf(" ImmediateBACK");
@@ -219,7 +219,7 @@
  }
  
  static int print_bss_handler(struct nl_msg *msg, void *arg)
-@@ -2440,8 +2449,10 @@ static int print_bss_handler(struct nl_m
+@@ -2489,8 +2498,10 @@ static int print_bss_handler(struct nl_m
  	if (bss[NL80211_BSS_FREQUENCY]) {
  		int freq = nla_get_u32(bss[NL80211_BSS_FREQUENCY]);
  		printf("\tfreq: %d\n", freq);
@@ -230,7 +230,7 @@
  	}
  	if (bss[NL80211_BSS_BEACON_INTERVAL])
  		printf("\tbeacon interval: %d TUs\n",
-@@ -2635,6 +2646,7 @@ static int handle_stop_sched_scan(struct
+@@ -2684,6 +2695,7 @@ static int handle_stop_sched_scan(struct
  	return 0;
  }
  
@@ -238,7 +238,7 @@
  COMMAND(scan, sched_start,
  	SCHED_SCAN_OPTIONS,
  	NL80211_CMD_START_SCHED_SCAN, 0, CIB_NETDEV, handle_start_sched_scan,
-@@ -2645,3 +2657,4 @@ COMMAND(scan, sched_start,
+@@ -2694,3 +2706,4 @@ COMMAND(scan, sched_start,
  COMMAND(scan, sched_stop, "",
  	NL80211_CMD_STOP_SCHED_SCAN, 0, CIB_NETDEV, handle_stop_sched_scan,
  	"Stop an ongoing scheduled scan.");
