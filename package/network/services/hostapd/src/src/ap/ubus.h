@@ -76,6 +76,14 @@ static inline void hostapd_ubus_free_bss(struct hostapd_data *hapd)
 {
 }
 
+static inline void hostapd_ubus_add_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
+{
+}
+
+static inline void hostapd_ubus_remove_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
+{
+}
+
 static inline int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req)
 {
 	return 0;
