@@ -56,6 +56,9 @@ VERSION_PRODUCT:=$(if $(VERSION_PRODUCT),$(VERSION_PRODUCT),Generic)
 VERSION_HWREV:=$(call qstrip,$(CONFIG_VERSION_HWREV))
 VERSION_HWREV:=$(if $(VERSION_HWREV),$(VERSION_HWREV),v0)
 
+PROFILE:=$(call qstrip,$(CONFIG_TARGET_PROFILE))
+PROFILE_SANITIZED:=$(call tolower,$(subst DEVICE_,,$(subst $(space),-,$(PROFILE))))
+
 define taint2sym
 $(CONFIG_$(firstword $(subst :, ,$(subst +,,$(subst -,,$(1))))))
 endef
@@ -96,6 +99,7 @@ VERSION_SED_SCRIPT:=$(SED) 's,%U,$(call sed_escape,$(VERSION_REPO)),g' \
 	-e 's,%R,$(call sed_escape,$(REVISION)),g' \
 	-e 's,%T,$(call sed_escape,$(BOARD)),g' \
 	-e 's,%S,$(call sed_escape,$(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic)),g' \
+	-e 's,%p,$(call sed_escape,$(PROFILE_SANITIZED)),g' \
 	-e 's,%A,$(call sed_escape,$(ARCH_PACKAGES)),g' \
 	-e 's,%t,$(call sed_escape,$(VERSION_TAINTS)),g' \
 	-e 's,%M,$(call sed_escape,$(VERSION_MANUFACTURER)),g' \
