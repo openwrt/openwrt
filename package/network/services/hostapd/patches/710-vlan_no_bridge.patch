@@ -1,0 +1,33 @@
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -115,6 +115,7 @@ struct hostapd_ssid {
+ #define DYNAMIC_VLAN_OPTIONAL 1
+ #define DYNAMIC_VLAN_REQUIRED 2
+ 	int dynamic_vlan;
++	int vlan_no_bridge;
+ #define DYNAMIC_VLAN_NAMING_WITHOUT_DEVICE 0
+ #define DYNAMIC_VLAN_NAMING_WITH_DEVICE 1
+ #define DYNAMIC_VLAN_NAMING_END 2
+--- a/src/ap/vlan_full.c
++++ b/src/ap/vlan_full.c
+@@ -466,6 +466,9 @@ void vlan_newlink(const char *ifname, st
+ 
+ 	wpa_printf(MSG_DEBUG, "VLAN: vlan_newlink(%s)", ifname);
+ 
++	if (hapd->conf->ssid.vlan_no_bridge)
++		return;
++
+ 	for (vlan = hapd->conf->vlan; vlan; vlan = vlan->next) {
+ 		if (vlan->configured ||
+ 		    os_strcmp(ifname, vlan->ifname) != 0)
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -3400,6 +3400,8 @@ static int hostapd_config_fill(struct ho
+ #ifndef CONFIG_NO_VLAN
+ 	} else if (os_strcmp(buf, "dynamic_vlan") == 0) {
+ 		bss->ssid.dynamic_vlan = atoi(pos);
++	} else if (os_strcmp(buf, "vlan_no_bridge") == 0) {
++		bss->ssid.vlan_no_bridge = atoi(pos);
+ 	} else if (os_strcmp(buf, "per_sta_vif") == 0) {
+ 		bss->ssid.per_sta_vif = atoi(pos);
+ 	} else if (os_strcmp(buf, "vlan_file") == 0) {
