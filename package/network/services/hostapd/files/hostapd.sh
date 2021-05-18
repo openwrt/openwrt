@@ -316,7 +316,7 @@ hostapd_common_add_bss_config() {
 	config_add_int iw_ipaddr_type_availability iw_gas_address3
 	config_add_string iw_hessid iw_network_auth_type iw_qos_map_set
 	config_add_array iw_roaming_consortium iw_domain_name iw_anqp_3gpp_cell_net iw_nai_realm
-	config_add_array iw_anqp_elem
+	config_add_array iw_anqp_elem iw_venue_name iw_venue_url
 
 	config_add_boolean hs20 disable_dgaf osen
 	config_add_int anqp_domain_id
@@ -326,6 +326,8 @@ hostapd_common_add_bss_config() {
 	config_add_array operator_icon
 	config_add_array hs20_conn_capab
 	config_add_string osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
+
+	config_add_string hs20_t_c_server_url
 
 	config_add_array airtime_sta_weight
 	config_add_int airtime_bss_weight airtime_bss_limit
@@ -396,8 +398,20 @@ append_iw_nai_realm() {
 	[ -n "$1" ] && append bss_conf "nai_realm=$1" "$N"
 }
 
+append_iw_venue_name() {
+	append bss_conf "venue_name=$1" "$N"
+}
+
+append_iw_venue_url() {
+	append bss_conf "venue_url=$1" "$N"
+}
+
 append_hs20_oper_friendly_name() {
 	append bss_conf "hs20_oper_friendly_name=$1" "$N"
+}
+
+append_osu_provider_friendly_name() {
+	append bss_conf "osu_friendly_name=$1" "$N"
 }
 
 append_osu_provider_service_desc() {
@@ -447,6 +461,7 @@ append_osu_provider() {
 	append bss_conf "osu_method_list=$osu_method_list" "$N"
 
 	config_list_foreach "$1" osu_service_desc append_osu_provider_service_desc
+	config_list_foreach "$1" osu_friendly_name append_osu_friendly_name
 	config_list_foreach "$1" osu_icon append_osu_icon
 
 	append bss_conf "$N"
@@ -879,6 +894,7 @@ hostapd_set_bss_options() {
 	json_get_vars iw_hessid iw_venue_group iw_venue_type iw_network_auth_type
 	json_get_vars iw_roaming_consortium iw_domain_name iw_anqp_3gpp_cell_net iw_nai_realm
 	json_get_vars iw_anqp_elem iw_qos_map_set iw_ipaddr_type_availability iw_gas_address3
+	json_get_vars iw_venue_name iw_venue_url
 
 	set_default iw_enabled 0
 	if [ "$iw_enabled" = "1" ]; then
@@ -907,6 +923,8 @@ hostapd_set_bss_options() {
 		json_for_each_item append_iw_roaming_consortium iw_roaming_consortium
 		json_for_each_item append_iw_anqp_elem iw_anqp_elem
 		json_for_each_item append_iw_nai_realm iw_nai_realm
+		json_for_each_item append_iw_venue_name iw_venue_name
+		json_for_each_item append_iw_venue_url iw_venue_url
 
 		iw_domain_name_conf=
 		json_for_each_item append_iw_domain_name iw_domain_name
@@ -921,9 +939,11 @@ hostapd_set_bss_options() {
 
 
 	local hs20 disable_dgaf osen anqp_domain_id hs20_deauth_req_timeout \
-		osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
+		osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp \
+		hs20_t_c_server_url
 	json_get_vars hs20 disable_dgaf osen anqp_domain_id hs20_deauth_req_timeout \
-		osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp
+		osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp \
+		hs20_t_c_server_url
 
 	set_default hs20 0
 	set_default disable_dgaf $hs20
@@ -942,8 +962,9 @@ hostapd_set_bss_options() {
 		[ -n "$hs20_operating_class" ] && append bss_conf "hs20_operating_class=$hs20_operating_class" "$N"
 		[ -n "$hs20_t_c_filename" ] && append bss_conf "hs20_t_c_filename=$hs20_t_c_filename" "$N"
 		[ -n "$hs20_t_c_timestamp" ] && append bss_conf "hs20_t_c_timestamp=$hs20_t_c_timestamp" "$N"
-		json_for_each_item append_hs20_conn_capab hs20_conn_capab
+		[ -n "$hs20_t_c_server_url" ] && append bss_conf "hs20_t_c_server_url=$hs20_t_c_server_url" "$N"
 		json_for_each_item append_hs20_oper_friendly_name hs20_oper_friendly_name
+		json_for_each_item append_hs20_conn_capab hs20_conn_capab
 		json_for_each_item append_osu_provider osu_provider
 		json_for_each_item append_operator_icon operator_icon
 	fi
