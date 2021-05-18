@@ -1593,3 +1593,24 @@ void hostapd_ubus_notify_beacon_report(
 
 	ubus_notify(ctx, &hapd->ubus.obj, "beacon-report", b.head, -1);
 }
+
+void hostapd_ubus_notify_radar_detected(struct hostapd_iface *iface, int frequency,
+					int chan_width, int cf1, int cf2)
+{
+	struct hostapd_data *hapd;
+	int i;
+
+	if (!hapd->ubus.obj.has_subscribers)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_u16(&b, "frequency", frequency);
+	blobmsg_add_u16(&b, "width", chan_width);
+	blobmsg_add_u16(&b, "center1", cf1);
+	blobmsg_add_u16(&b, "center2", cf2);
+
+	for (i = 0; i < iface->num_bss; i++) {
+		hapd = iface->bss[i];
+		ubus_notify(ctx, &hapd->ubus.obj, "radar-detected", b.head, -1);
+	}
+}
