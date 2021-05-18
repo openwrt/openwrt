@@ -728,6 +728,8 @@ hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 	struct blob_attr *tb[__CSA_MAX];
 	struct hostapd_data *hapd = get_hapd_from_object(obj);
 	struct csa_settings css;
+	int ret = UBUS_STATUS_OK;
+	int i;
 
 	blobmsg_parse(csa_policy, __CSA_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -752,10 +754,14 @@ hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 	SET_CSA_SETTING(CSA_VHT, freq_params.vht_enabled, bool);
 	SET_CSA_SETTING(CSA_BLOCK_TX, block_tx, bool);
 
+	for (i = 0; i < hapd->iface->num_bss; i++) {
+		struct hostapd_data *bss = hapd->iface->bss[i];
 
-	if (hostapd_switch_channel(hapd, &css) != 0)
-		return UBUS_STATUS_NOT_SUPPORTED;
-	return UBUS_STATUS_OK;
+		if (hostapd_switch_channel(bss, &css) != 0)
+			ret = UBUS_STATUS_NOT_SUPPORTED;
+	}
+
+	return ret;
 #undef SET_CSA_SETTING
 }
 #endif
