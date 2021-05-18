@@ -335,6 +335,10 @@ hostapd_common_add_bss_config() {
 	config_add_boolean multicast_to_unicast per_sta_vif
 
 	config_add_array hostapd_bss_options
+
+	config_add_boolean request_cui
+	config_add_array radius_auth_req_attr
+	config_add_array radius_acct_req_attr
 }
 
 hostapd_set_vlan_file() {
@@ -471,6 +475,14 @@ append_hs20_conn_capab() {
 	[ -n "$1" ] && append bss_conf "hs20_conn_capab=$1" "$N"
 }
 
+append_radius_acct_req_attr() {
+	append bss_conf "radius_acct_req_attr=$1" "$N"
+}
+
+append_radius_auth_req_attr() {
+	append bss_conf "radius_auth_req_attr=$1" "$N"
+}
+
 append_airtime_sta_weight() {
 	[ -n "$1" ] && append bss_conf "airtime_sta_weight=$1" "$N"
 }
@@ -562,6 +574,7 @@ hostapd_set_bss_options() {
 			append bss_conf "acct_server_shared_secret=$acct_secret" "$N"
 		[ -n "$acct_interval" ] && \
 			append bss_conf "radius_acct_interim_interval=$acct_interval" "$N"
+		json_for_each_item append_radius_acct_req_attr radius_acct_req_attr
 	}
 
 	case "$auth_type" in
@@ -616,7 +629,7 @@ hostapd_set_bss_options() {
 				auth_server auth_secret auth_port \
 				dae_client dae_secret dae_port \
 				ownip radius_client_addr \
-				eap_reauth_period
+				eap_reauth_period request_cui
 
 			# radius can provide VLAN ID for clients
 			vlan_possible=1
@@ -628,18 +641,20 @@ hostapd_set_bss_options() {
 
 			set_default auth_port 1812
 			set_default dae_port 3799
-
+			set_default request_cui 0
 
 			append bss_conf "auth_server_addr=$auth_server" "$N"
 			append bss_conf "auth_server_port=$auth_port" "$N"
 			append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
 
+			[ "$request_cui" -gt 0 ] && append bss_conf "radius_request_cui=$request_cui" "$N"
 			[ -n "$eap_reauth_period" ] && append bss_conf "eap_reauth_period=$eap_reauth_period" "$N"
 
 			[ -n "$dae_client" -a -n "$dae_secret" ] && {
 				append bss_conf "radius_das_port=$dae_port" "$N"
 				append bss_conf "radius_das_client=$dae_client $dae_secret" "$N"
 			}
+			json_for_each_item append_radius_auth_req_attr radius_auth_req_attr
 
 			[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
 			[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
