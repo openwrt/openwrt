@@ -1,0 +1,18 @@
+. /etc/os-release
+
+config_restore_verify() {
+	cd /
+
+	echo $UPGRADE_META > ${KEEP_DIR}/sysupgrade-config-verify
+
+	[ -f /$BACKUP_FILE ] && \
+		tar xzf /$BACKUP_FILE ${UPGRADE_META:1} &>/dev/null
+
+	[ -f $BACKUP_FILE_TAR ] && \
+		tar xf $BACKUP_FILE_TAR ${UPGRADE_META:1} &>/dev/null
+
+	(grep -qs "sysupgrade" $UPGRADE_META && grep -qs $BUILD_ID $UPGRADE_META) || \
+		mv -f /$BACKUP_FILE $BACKUP_FILE_TAR /etc &>/dev/null
+}
+
+boot_hook_add preinit_mount_root config_restore_verify
