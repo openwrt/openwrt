@@ -5,10 +5,10 @@ START=99
 boot() {
 	case $(board_name) in
 	xiaomi,ax3600)
+		# OTA handling should not be used. Reset it just in case.
 		fw_setenv flag_ota_reboot 0
+		# Not strictly needed but useful to handle partition crash condition
 		fw_setenv flag_boot_success 1
-		fw_setenv flag_try_sys1_failed 0
-		fw_setenv flag_try_sys2_failed 0
 	;;
 	esac
 }
