@@ -166,7 +166,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  	if (tsens_version(priv) > VER_0_1) {
  		for (i = VER_MAJOR; i <= VER_STEP; i++) {
  			priv->rf[i] = devm_regmap_field_alloc(dev, priv->srot_map,
-@@ -769,6 +818,10 @@ int __init init_common(struct tsens_priv
+@@ -771,6 +820,10 @@ int __init init_common(struct tsens_priv
  		ret = PTR_ERR(priv->rf[TSENS_EN]);
  		goto err_put_device;
  	}
@@ -177,7 +177,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  	ret = regmap_field_read(priv->rf[TSENS_EN], &enabled);
  	if (ret)
  		goto err_put_device;
-@@ -791,6 +844,19 @@ int __init init_common(struct tsens_priv
+@@ -793,6 +846,19 @@ int __init init_common(struct tsens_priv
  		goto err_put_device;
  	}
  
@@ -197,7 +197,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  	/* This loop might need changes if enum regfield_ids is reordered */
  	for (j = LAST_TEMP_0; j <= UP_THRESH_15; j += 16) {
  		for (i = 0; i < priv->feat->max_sensors; i++) {
-@@ -806,7 +872,7 @@ int __init init_common(struct tsens_priv
+@@ -808,7 +874,7 @@ int __init init_common(struct tsens_priv
  		}
  	}
  
@@ -206,7 +206,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  		/* Loop might need changes if enum regfield_ids is reordered */
  		for (j = CRITICAL_STATUS_0; j <= CRIT_THRESH_15; j += 16) {
  			for (i = 0; i < priv->feat->max_sensors; i++) {
-@@ -844,7 +910,11 @@ int __init init_common(struct tsens_priv
+@@ -846,7 +912,11 @@ int __init init_common(struct tsens_priv
  	}
  
  	spin_lock_init(&priv->ul_lock);
@@ -219,7 +219,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  	tsens_debug_init(op);
  
  err_put_device:
-@@ -943,10 +1013,19 @@ static int tsens_register_irq(struct tse
+@@ -945,10 +1015,19 @@ static int tsens_register_irq(struct tse
  		if (irq == -ENXIO)
  			ret = 0;
  	} else {
@@ -243,7 +243,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  		if (ret)
  			dev_err(&pdev->dev, "%s: failed to get irq\n",
  				__func__);
-@@ -975,6 +1054,19 @@ static int tsens_register(struct tsens_p
+@@ -977,6 +1056,19 @@ static int tsens_register(struct tsens_p
  			priv->ops->enable(priv, i);
  	}
  

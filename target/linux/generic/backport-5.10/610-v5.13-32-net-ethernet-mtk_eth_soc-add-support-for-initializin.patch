@@ -105,7 +105,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #define MTK_GDMA_DROP_ALL       0x7777
  
  /* Unicast Filter MAC Address Register - Low */
-@@ -301,6 +303,12 @@
+@@ -302,6 +304,12 @@
  #define RX_DMA_VID(_x)		((_x) & 0xfff)
  
  /* QDMA descriptor rxd4 */
@@ -118,7 +118,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #define RX_DMA_L4_VALID		BIT(24)
  #define RX_DMA_L4_VALID_PDMA	BIT(30)		/* when PDMA is used */
  #define RX_DMA_FPORT_SHIFT	19
-@@ -798,6 +806,7 @@ struct mtk_soc_data {
+@@ -799,6 +807,7 @@ struct mtk_soc_data {
  	u32		caps;
  	u32		required_clks;
  	bool		required_pctl;
@@ -126,7 +126,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	netdev_features_t hw_features;
  };
  
-@@ -897,6 +906,8 @@ struct mtk_eth {
+@@ -898,6 +907,8 @@ struct mtk_eth {
  	u32				tx_int_status_reg;
  	u32				rx_dma_l4_valid;
  	int				ip_align;
