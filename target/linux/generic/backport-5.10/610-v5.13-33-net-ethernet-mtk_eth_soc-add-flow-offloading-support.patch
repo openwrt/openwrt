@@ -60,7 +60,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #define MTK_HW_FEATURES_MT7628	(NETIF_F_SG | NETIF_F_RXCSUM)
  #define NEXT_DESP_IDX(X, Y)	(((X) + 1) & ((Y) - 1))
  
-@@ -908,6 +910,7 @@ struct mtk_eth {
+@@ -909,6 +911,7 @@ struct mtk_eth {
  	int				ip_align;
  
  	struct mtk_ppe			ppe;
@@ -68,7 +68,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  };
  
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
-@@ -952,4 +955,9 @@ int mtk_gmac_sgmii_path_setup(struct mtk
+@@ -953,4 +956,9 @@ int mtk_gmac_sgmii_path_setup(struct mtk
  int mtk_gmac_gephy_path_setup(struct mtk_eth *eth, int mac_id);
  int mtk_gmac_rgmii_path_setup(struct mtk_eth *eth, int mac_id);
  

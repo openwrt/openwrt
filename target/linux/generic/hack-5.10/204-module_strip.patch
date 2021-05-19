@@ -184,7 +184,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void write_buf(struct buffer *b, const char *fname)
-@@ -2643,7 +2653,9 @@ int main(int argc, char **argv)
+@@ -2630,7 +2640,9 @@ int main(int argc, char **argv)
  		add_staging_flag(&buf, mod->name);
  		err |= add_versions(&buf, mod);
  		add_depends(&buf, mod);
