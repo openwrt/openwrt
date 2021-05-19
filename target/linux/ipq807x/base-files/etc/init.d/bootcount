@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+boot() {
+	case $(board_name) in
+	xiaomi,ax3600)
+		fw_setenv flag_ota_reboot 0
+		fw_setenv flag_boot_success 1
+		fw_setenv flag_try_sys1_failed 0
+		fw_setenv flag_try_sys2_failed 0
+	;;
+	esac
+}
