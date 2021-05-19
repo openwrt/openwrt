@@ -61,6 +61,7 @@ metadata_json = \
 			[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma) \
 			"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
 		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma)) \
+		$(if $(1),"$(call json_quote,$(1))": "$(if $(2),$(call json_quote,$(2)),1)"$(comma)) \
 		"version": { \
 			"dist": "$(call json_quote,$(VERSION_DIST))", \
 			"version": "$(call json_quote,$(VERSION_NUMBER))", \
@@ -71,7 +72,7 @@ metadata_json = \
 	}'
 
 define Build/append-metadata
-	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_json) | fwtool -I - $@)
+	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_json,$(word 1,$(1)),$(word 2,$(1))) | fwtool -I - $@)
 	[ ! -s "$(BUILD_KEY)" -o ! -s "$(BUILD_KEY).ucert" -o ! -s "$@" ] || { \
 		cp "$(BUILD_KEY).ucert" "$@.ucert" ;\
 		usign -S -m "$@" -s "$(BUILD_KEY)" -x "$@.sig" ;\
