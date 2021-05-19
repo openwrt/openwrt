@@ -22,3 +22,16 @@ define Device/UbiFit
 	IMAGE/nand-factory.ubi := append-ubi
 	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
+
+define Device/xiaomi_ax3600
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Xiaomi
+	DEVICE_MODEL := AX3600
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ac04
+	SOC := ipq8071
+	DEVICE_PACKAGES := ipq-wifi-xiaomi_ax3600 kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct
+endef
+TARGET_DEVICES += xiaomi_ax3600
