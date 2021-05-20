@@ -1619,6 +1619,48 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the TL-WA1201 v2 */
+	{
+		.id     = "TL-WA1201-V2",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:TL-WA1201,product_ver:2.0.0,special_id:45550000}\n"
+			"{product_name:TL-WA1201,product_ver:2.0.0,special_id:55530000}\n",
+		.part_trail = 0x00,
+		.soft_ver = "soft_ver:1.0.1 Build 20200709 rel.66244\n",
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"default-mac", 0x20000, 0x00200},
+			{"pin", 0x20200, 0x00100},
+			{"product-info", 0x20300, 0x00200},
+			{"device-id", 0x20500, 0x0fb00},
+			{"firmware", 0x30000, 0xce0000},
+			{"portal-logo", 0xd10000, 0x20000},
+			{"portal-back", 0xd30000, 0x200000},
+			{"soft-version", 0xf30000, 0x00200},
+			{"extra-para", 0xf30200, 0x00200},
+			{"support-list", 0xf30400, 0x00200},
+			{"profile", 0xf30600, 0x0fa00},
+			{"apdef-config", 0xf40000, 0x10000},
+			{"ap-config", 0xf50000, 0x10000},
+			{"redef-config", 0xf60000, 0x10000},
+			{"re-config", 0xf70000, 0x10000},
+			{"multidef-config", 0xf80000, 0x10000},
+			{"multi-config", 0xf90000, 0x10000},
+			{"clientdef-config", 0xfa0000, 0x10000},
+			{"client-config", 0xfb0000, 0x10000},
+			{"partition-table", 0xfc0000, 0x10000},
+			{"user-config", 0xfd0000, 0x10000},
+			{"certificate", 0xfe0000, 0x10000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the TL-WA850RE v2 */
 	{
 		.id     = "TLWA850REV2",
@@ -2995,7 +3037,8 @@ static void build_image(const char *output,
 		const uint8_t extra_para[2] = {0x01, 0x00};
 		parts[5] = make_extra_para(info, extra_para,
 			sizeof(extra_para));
-	} else if (strcasecmp(info->id, "ARCHER-C6-V2") == 0) {
+	} else if (strcasecmp(info->id, "ARCHER-C6-V2") == 0 ||
+		   strcasecmp(info->id, "TL-WA1201-V2") == 0) {
 		const uint8_t extra_para[2] = {0x00, 0x01};
 		parts[5] = make_extra_para(info, extra_para,
 			sizeof(extra_para));
