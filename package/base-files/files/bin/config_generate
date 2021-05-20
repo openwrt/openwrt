@@ -112,11 +112,11 @@ generate_network() {
 	[ -n "$ports" ] && {
 		uci -q batch <<-EOF
 			add network device
-			set network.@device[-1].name='$1'
+			set network.@device[-1].name='br-$1'
 			set network.@device[-1].type='bridge'
 		EOF
 		for port in $ports; do uci add_list network.@device[-1].ports="$port"; done
-		ifname=$1
+		ifname=br-$1
 		type=
 	}
 
