@@ -98,6 +98,10 @@ endif
 
 LDLIBS += $(call BUSYBOX_IF_ENABLED,PAM,pam pam_misc pthread)
 
+ifeq ($(CONFIG_USE_GLIBC),y)
+  LDLIBS += $(call BUSYBOX_IF_ENABLED,NSLOOKUP,resolv)
+endif
+
 ifeq ($(BUILD_VARIANT),selinux)
   LDLIBS += selinux sepol
 endif
