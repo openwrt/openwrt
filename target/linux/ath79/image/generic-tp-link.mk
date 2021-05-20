@@ -592,7 +592,7 @@ define Device/tplink_tl-wpa8630p-v2
   SOC := qca9563
   DEVICE_MODEL := TL-WPA8630P
   IMAGE_SIZE := 6016k
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct -ppp -ppp-mod-pppoe -uboot-envtools
 endef
 
 define Device/tplink_tl-wpa8630p-v2-int
