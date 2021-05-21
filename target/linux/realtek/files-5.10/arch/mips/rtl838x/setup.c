@@ -15,6 +15,7 @@
 #include <linux/clk-provider.h>
 #include <linux/delay.h>
 #include <linux/of_fdt.h>
+#include <linux/irqchip.h>
 
 #include <asm/addrspace.h>
 #include <asm/io.h>
@@ -192,4 +193,9 @@ void __init plat_time_init(void)
 	}
 
 	mips_hpt_frequency = freq / 2;
+}
+
+void __init arch_init_irq(void)
+{
+	irqchip_init();
 }
