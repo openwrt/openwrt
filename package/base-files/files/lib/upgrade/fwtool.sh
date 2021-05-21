@@ -1,3 +1,5 @@
+. /lib/upgrade/common.sh
+
 fwtool_check_signature() {
 	[ $# -gt 1 ] && return 1
 
@@ -9,7 +11,7 @@ fwtool_check_signature() {
 		fi
 	}
 
-	if ! fwtool -q -s /tmp/sysupgrade.ucert "$1"; then
+	if ! fwtool -q -s $UPGRADE_CERT "$1"; then
 		v "Image signature not present"
 		[ "$REQUIRE_IMAGE_SIGNATURE" = 1 -a "$FORCE" != 1 ] && {
 			v "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
@@ -19,7 +21,7 @@ fwtool_check_signature() {
 	fi
 
 	fwtool -q -T -s /dev/null "$1" | \
-		ucert -V -m - -c "/tmp/sysupgrade.ucert" -P /etc/opkg/keys
+		ucert -V -m - -c "$UPGRADE_CERT" -P /etc/opkg/keys
 
 	return $?
 }
@@ -29,7 +31,7 @@ fwtool_check_image() {
 
 	. /usr/share/libubox/jshn.sh
 
-	if ! fwtool -q -i /tmp/sysupgrade.meta "$1"; then
+	if ! fwtool -q -i $UPGRADE_META "$1"; then
 		v "Image metadata not present"
 		[ "$REQUIRE_IMAGE_METADATA" = 1 -a "$FORCE" != 1 ] && {
 			v "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
@@ -38,7 +40,7 @@ fwtool_check_image() {
 		return 0
 	fi
 
-	json_load "$(cat /tmp/sysupgrade.meta)" || {
+	json_load "$(cat $UPGRADE_META)" || {
 		v "Invalid image metadata"
 		return 1
 	}

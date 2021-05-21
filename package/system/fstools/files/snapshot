@@ -65,7 +65,7 @@ do_convert() {
 	. /lib/functions.sh
 	. /lib/upgrade/common.sh
 
-	cd /overlay/upper
+	cd ${OVERLAY_DIR}
 	tar czf /tmp/snapshot.tar.gz *
 
 	install_bin /sbin/upgraded

@@ -1,6 +1,16 @@
-RAM_ROOT=/tmp/root
-
-export BACKUP_FILE=sysupgrade.tgz	# file extracted by preinit
+export BACKUP_FILE=sysupgrade.tgz		# file extracted by preinit
+export BACKUP_FILE_TAR=/tmp/sysupgrade.tar	# file extracted by preinit
+export CONF_TAR=/tmp/$BACKUP_FILE		# equal to $UPGRADE_BACKUP set by procd
+export ETCBACKUP_DIR=/etc/backup
+export IMAGE_FILE=/tmp/sysupgrade.img
+export INSTALLED_PACKAGES=${ETCBACKUP_DIR}/installed_packages.txt
+export KEEP_DIR=/lib/upgrade/keep.d
+export CONFFILES=/tmp/sysupgrade.conffiles
+export OVERLAY_DIR=/overlay/upper
+export UPGRADE_META=/tmp/sysupgrade.meta
+export UPGRADE_CERT=/tmp/sysupgrade.ucert
+export UPGRADE_CONF=/etc/sysupgrade.conf
+export RAM_ROOT=/tmp/root
 
 [ -x /usr/bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
 libs() { ldd $* 2>/dev/null | sed -E 's/(.* => )?(.*) .*/\2/'; }

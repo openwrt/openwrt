@@ -2,6 +2,7 @@
 #
 
 . /lib/functions.sh
+. /lib/upgrade/common.sh
 
 # 'kernel' partition or UBI volume on NAND contains the kernel
 CI_KERNPART="${CI_KERNPART:-kernel}"
@@ -212,10 +213,8 @@ nand_upgrade_prepare_ubi() {
 }
 
 nand_do_upgrade_success() {
-	local conf_tar="/tmp/sysupgrade.tgz"
-
 	sync
-	[ -f "$conf_tar" ] && nand_restore_config "$conf_tar"
+	[ -f "$CONF_TAR" ] && nand_restore_config "$CONF_TAR"
 	echo "sysupgrade successful"
 	umount -a
 	reboot -f

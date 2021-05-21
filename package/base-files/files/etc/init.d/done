@@ -3,8 +3,10 @@
 
 START=95
 boot() {
+	. /lib/upgrade/common.sh
+
 	mount_root done
-	rm -f /sysupgrade.tgz && sync
+	rm -f /$BACKUP_FILE && sync
 
 	# process user commands
 	[ -f /etc/rc.local ] && {
