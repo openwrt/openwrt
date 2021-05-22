@@ -387,6 +387,8 @@
 			interrupts = <73 72>;
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
+			lantiq,tx-burst-length = <8>;
+			lantiq,rx-burst-length = <8>;
 		};
 
 		ppe@e234000 {
