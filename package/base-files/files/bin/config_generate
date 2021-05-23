@@ -109,7 +109,7 @@ generate_network() {
 		ports="$ifname"
 	}
 
-	[ -n "$ports" ] && {
+	[ -n "$ports" -a -z "$bridge" ] && {
 		uci -q batch <<-EOF
 			add network device
 			set network.@device[-1].name='br-$1'
@@ -123,11 +123,12 @@ generate_network() {
 	}
 
 	[ -n "$bridge" ] && {
+		[ -z "$ports" ] && ports="$ifname"
 		if [ -z "$vlan" ]; then
 			bridge_vlan_id=$((bridge_vlan_id + 1))
 			vlan=$bridge_vlan_id
 		fi
-		generate_bridge_vlan $1 $bridge "$ifname" $vlan
+		generate_bridge_vlan $1 $bridge "$ports" $vlan
 		ifname=$bridge.$vlan
 		type=""
 	}
