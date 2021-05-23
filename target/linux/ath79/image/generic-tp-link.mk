@@ -742,6 +742,15 @@ define Device/tplink_tl-wr810n-v2
 endef
 TARGET_DEVICES += tplink_tl-wr810n-v2
 
+define Device/tplink_tl-wr841hp-v3
+  $(Device/tplink-8mlzma)
+  SOC := qca9533
+  DEVICE_MODEL := TL-WR841HP
+  DEVICE_VARIANT := v3
+  TPLINK_HWID := 0x08411003
+endef
+TARGET_DEVICES += tplink_tl-wr841hp-v3
+
 define Device/tplink_tl-wr842n-v1
   $(Device/tplink-8m)
   SOC := ar7241
