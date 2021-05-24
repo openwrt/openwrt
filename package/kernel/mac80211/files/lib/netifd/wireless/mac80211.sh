@@ -26,7 +26,6 @@ drv_mac80211_init_device_config() {
 	hostapd_common_add_device_config
 
 	config_add_string path phy 'macaddr:macaddr'
-	config_add_string hwmode
 	config_add_string tx_burst
 	config_add_string distance
 	config_add_int beacon_int chanbw frag rts
@@ -689,14 +688,8 @@ mac80211_prepare_iw_htmode() {
 	case "$htmode" in
 		VHT20|HT20) iw_htmode=HT20;;
 		HT40*|VHT40|VHT160)
-			case "$hwmode" in
-				a)
-					case "$(( ($channel / 4) % 2 ))" in
-						1) iw_htmode="HT40+" ;;
-						0) iw_htmode="HT40-";;
-					esac
-				;;
-				*)
+			case "$band" in
+				2g)
 					case "$htmode" in
 						HT40+) iw_htmode="HT40+";;
 						HT40-) iw_htmode="HT40-";;
@@ -707,6 +700,12 @@ mac80211_prepare_iw_htmode() {
 								iw_htmode="HT40-"
 							fi
 						;;
+					esac
+				;;
+				*)
+					case "$(( ($channel / 4) % 2 ))" in
+						1) iw_htmode="HT40+" ;;
+						0) iw_htmode="HT40-";;
 					esac
 				;;
 			esac
@@ -818,7 +817,6 @@ mac80211_setup_vif() {
 		mesh)
 			wireless_vif_parse_encryption
 			[ -z "$htmode" ] && htmode="NOHT";
-			freq="$(get_freq "$phy" "$channel")"
 			if [ "$wpa" -gt 0 -o "$auto_channel" -gt 0 ] || chan_is_dfs "$phy" "$channel"; then
 				mac80211_setup_supplicant $vif_enable || failed=1
 			else
@@ -832,7 +830,6 @@ mac80211_setup_vif() {
 		adhoc)
 			wireless_vif_parse_encryption
 			if [ "$wpa" -gt 0 -o "$auto_channel" -gt 0 ]; then
-				freq="$(get_freq "$phy" "$channel")"
 				mac80211_setup_supplicant_noctl $vif_enable || failed=1
 			else
 				mac80211_setup_adhoc $vif_enable
@@ -849,9 +846,29 @@ mac80211_setup_vif() {
 
 get_freq() {
 	local phy="$1"
-	local chan="$2"
-	iw "$phy" info | grep -E -m1 "(\* ${chan:-....} MHz${chan:+|\\[$chan\\]})" | grep MHz | awk '{print $2}'
+	local channel="$2"
+	local band="$3"
+
+	case "$band" in
+		2g) band="1:";;
+		5g) band="2:";;
+		60g) band="3:";;
+		6g) band="4:";;
+	esac
+
+	iw "$phy" info | awk -v band="$band" -v channel="[$channel]" '
+
+$1 ~ /Band/ {
+	band_match = band == $2
 }
+
+band_match && $3 == "MHz" && $4 == channel {
+	print $2
+	exit
+}
+'
+}
+
 
 chan_is_dfs() {
 	local phy="$1"
@@ -935,7 +952,7 @@ drv_mac80211_setup() {
 	done
 
 	# convert channel to frequency
-	[ "$auto_channel" -gt 0 ] || freq="$(get_freq "$phy" "$channel")"
+	[ "$auto_channel" -gt 0 ] || freq="$(get_freq "$phy" "$channel" "$band")"
 
 	[ -n "$country" ] && {
 		iw reg get | grep -q "^country $country:" || {
