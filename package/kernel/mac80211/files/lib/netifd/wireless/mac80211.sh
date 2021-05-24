@@ -227,6 +227,14 @@ mac80211_hostapd_setup_base() {
 			vht_center_seg0=$idx
 		;;
 	esac
+	[ "$band" = "6g" ] && {
+		op_class=
+		case "$htmode" in
+			HE20) op_class=131;;
+			HE*) op_class=$((132 + $vht_oper_chwidth))
+		esac
+		[ -n "$op_class" ] && append base_cfg "op_class=$op_class" "$N"
+	}
 	[ "$hwmode" = "a" ] || enable_ac=0
 
 	if [ "$enable_ac" != "0" ]; then
