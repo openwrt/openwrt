@@ -151,7 +151,7 @@ define KernelPackage/leds-uleds
   TITLE:=Userspace LEDs
   KCONFIG:=CONFIG_LEDS_USER
   FILES:=$(LINUX_DIR)/drivers/leds/uleds.ko
-  AUTOLOAD:=$(call AutoLoad,60,leds-uleds,1)
+  AUTOLOAD:=$(call AutoLoad,60,uleds,1)
 endef
 
 define KernelPackage/leds-uleds/description
