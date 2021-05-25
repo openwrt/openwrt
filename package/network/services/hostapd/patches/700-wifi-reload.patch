@@ -47,14 +47,14 @@
  	enum hostapd_logger_level logger_syslog_level, logger_stdout_level;
  
  	unsigned int logger_syslog; /* module bitfield */
-@@ -782,6 +784,7 @@ struct hostapd_bss_config {
- 	int airtime_limit;
- 	struct airtime_sta_weight *airtime_weight_list;
- #endif /* CONFIG_AIRTIME_POLICY */
+@@ -938,6 +940,7 @@ struct spatial_reuse {
+ struct hostapd_config {
+ 	struct hostapd_bss_config **bss, *last_bss;
+ 	size_t num_bss;
 +	char *config_id;
  
- #ifdef CONFIG_MACSEC
- 	/**
+ 	u16 beacon_int;
+ 	int rts_threshold;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
 @@ -219,6 +219,10 @@ static int hostapd_iface_conf_changed(st
