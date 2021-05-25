@@ -194,12 +194,14 @@ mac80211_hostapd_setup_base() {
 	enable_ac=0
 	vht_oper_chwidth=0
 	vht_center_seg0=
+	chan_ofs=0
+	[ "$band" = "6g" ] && chan_ofs=1
 
 	idx="$channel"
 	case "$htmode" in
 		VHT20|HE20) enable_ac=1;;
 		VHT40|HE40)
-			case "$(( ($channel / 4) % 2 ))" in
+			case "$(( (($channel / 4) + $chan_ofs) % 2 ))" in
 				1) idx=$(($channel + 2));;
 				0) idx=$(($channel - 2));;
 			esac
@@ -207,7 +209,7 @@ mac80211_hostapd_setup_base() {
 			vht_center_seg0=$idx
 		;;
 		VHT80|HE80)
-			case "$(( ($channel / 4) % 4 ))" in
+			case "$(( (($channel / 4) + $chan_ofs) % 4 ))" in
 				1) idx=$(($channel + 6));;
 				2) idx=$(($channel + 2));;
 				3) idx=$(($channel - 2));;
@@ -218,10 +220,22 @@ mac80211_hostapd_setup_base() {
 			vht_center_seg0=$idx
 		;;
 		VHT160|HE160)
-			case "$channel" in
-				36|40|44|48|52|56|60|64) idx=50;;
-				100|104|108|112|116|120|124|128) idx=114;;
-			esac
+			if [ "$band" = "6g" ]; then
+				case "$channel" in
+					1|5|9|13|17|21|25|29) idx=15;;
+					33|37|41|45|49|53|57|61) idx=47;;
+					65|69|73|77|81|85|89|93) idx=79;;
+					97|101|105|109|113|117|121|125) idx=111;;
+					129|133|137|141|145|149|153|157) idx=143;;
+					161|165|169|173|177|181|185|189) idx=175;;
+					193|197|201|205|209|213|217|221) idx=207;;
+				esac
+			else
+				case "$channel" in
+					36|40|44|48|52|56|60|64) idx=50;;
+					100|104|108|112|116|120|124|128) idx=114;;
+				esac
+			fi
 			enable_ac=1
 			vht_oper_chwidth=2
 			vht_center_seg0=$idx
