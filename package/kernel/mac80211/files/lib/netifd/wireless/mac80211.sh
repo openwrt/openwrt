@@ -43,11 +43,24 @@ drv_mac80211_init_device_config() {
 		su_beamformee \
 		mu_beamformer \
 		mu_beamformee \
+		he_su_beamformer \
+		he_su_beamformee \
+		he_mu_beamformer \
 		vht_txop_ps \
 		htc_vht \
 		rx_antenna_pattern \
-		tx_antenna_pattern
-	config_add_int vht_max_a_mpdu_len_exp vht_max_mpdu vht_link_adapt vht160 rx_stbc tx_stbc
+		tx_antenna_pattern \
+		he_spr_sr_control \
+		he_twt_required
+	config_add_int \
+		vht_max_a_mpdu_len_exp \
+		vht_max_mpdu \
+		vht_link_adapt \
+		vht160 \
+		rx_stbc \
+		tx_stbc \
+		he_bss_color \
+		he_spr_non_srg_obss_pd_max_offset
 	config_add_boolean \
 		ldpc \
 		greenfield \
@@ -93,6 +106,23 @@ mac80211_add_capabilities() {
 	IFS="$oifs"
 
 	export -n -- "$__var=$__out"
+}
+
+mac80211_add_he_capabilities() {
+	local __out= oifs
+
+	oifs="$IFS"
+	IFS=:
+	for capab in "$@"; do
+		set -- $capab
+		[ "$(($4))" -gt 0 ] || continue
+		[ "$(((0x$2) & $3))" -gt 0 ] || {
+			eval "$4=0"
+			continue
+		}
+		append base_cfg "$1=1" "$N"
+	done
+	IFS="$oifs"
 }
 
 mac80211_hostapd_setup_base() {
@@ -358,16 +388,62 @@ mac80211_hostapd_setup_base() {
 	esac
 
 	if [ "$enable_ax" != "0" ]; then
+		json_get_vars \
+			he_su_beamformer:1 \
+			he_su_beamformee:0 \
+			he_mu_beamformer:1 \
+			he_twt_required:0 \
+			he_spr_sr_control:0 \
+			he_spr_non_srg_obss_pd_max_offset:1 \
+			he_bss_color
+
+		he_phy_cap=$(iw phy "$phy" info | awk -F "[()]" '/HE PHY Capabilities/ { print $2 }' | head -1)
+		he_phy_cap=${he_phy_cap:2}
+		he_mac_cap=$(iw phy "$phy" info | awk -F "[()]" '/HE MAC Capabilities/ { print $2 }' | head -1)
+		he_mac_cap=${he_mac_cap:2}
+
 		append base_cfg "ieee80211ax=1" "$N"
+		[ -n "$he_bss_color" ] && append base_cfg "he_bss_color=$he_bss_color" "$N"
 		[ "$hwmode" = "a" ] && {
 			append base_cfg "he_oper_chwidth=$vht_oper_chwidth" "$N"
 			append base_cfg "he_oper_centr_freq_seg0_idx=$vht_center_seg0" "$N"
 		}
+
+		mac80211_add_he_capabilities \
+			he_su_beamformer:${he_phy_cap:6:2}:0x80:$he_su_beamformer \
+			he_su_beamformee:${he_phy_cap:8:2}:0x1:$he_su_beamformee \
+			he_mu_beamformer:${he_phy_cap:8:2}:0x2:$he_mu_beamformer \
+			he_spr_sr_control:${he_phy_cap:14:2}:0x1:$he_spr_sr_control \
+			he_twt_required:${he_mac_cap:0:2}:0x6:$he_twt_required
+
+		[ "$he_spr_sr_control" -gt 0 ] && append base_cfg "he_spr_non_srg_obss_pd_max_offset=$he_spr_non_srg_obss_pd_max_offset" "$N"
+
 		append base_cfg "he_default_pe_duration=4" "$N"
 		append base_cfg "he_rts_threshold=1023" "$N"
-		append base_cfg "he_su_beamformer=1" "$N"
-		append base_cfg "he_su_beamformee=1" "$N"
-		append base_cfg "he_mu_beamformer=1" "$N"
+		append base_cfg "he_mu_edca_qos_info_param_count=0" "$N"
+		append base_cfg "he_mu_edca_qos_info_q_ack=0" "$N"
+		append base_cfg "he_mu_edca_qos_info_queue_request=0" "$N"
+		append base_cfg "he_mu_edca_qos_info_txop_request=0" "$N"
+		append base_cfg "he_mu_edca_ac_be_aifsn=8" "$N"
+		append base_cfg "he_mu_edca_ac_be_aci=0" "$N"
+		append base_cfg "he_mu_edca_ac_be_ecwmin=9" "$N"
+		append base_cfg "he_mu_edca_ac_be_ecwmax=10" "$N"
+		append base_cfg "he_mu_edca_ac_be_timer=255" "$N"
+		append base_cfg "he_mu_edca_ac_bk_aifsn=15" "$N"
+		append base_cfg "he_mu_edca_ac_bk_aci=1" "$N"
+		append base_cfg "he_mu_edca_ac_bk_ecwmin=9" "$N"
+		append base_cfg "he_mu_edca_ac_bk_ecwmax=10" "$N"
+		append base_cfg "he_mu_edca_ac_bk_timer=255" "$N"
+		append base_cfg "he_mu_edca_ac_vi_ecwmin=5" "$N"
+		append base_cfg "he_mu_edca_ac_vi_ecwmax=7" "$N"
+		append base_cfg "he_mu_edca_ac_vi_aifsn=5" "$N"
+		append base_cfg "he_mu_edca_ac_vi_aci=2" "$N"
+		append base_cfg "he_mu_edca_ac_vi_timer=255" "$N"
+		append base_cfg "he_mu_edca_ac_vo_aifsn=5" "$N"
+		append base_cfg "he_mu_edca_ac_vo_aci=3" "$N"
+		append base_cfg "he_mu_edca_ac_vo_ecwmin=5" "$N"
+		append base_cfg "he_mu_edca_ac_vo_ecwmax=7" "$N"
+		append base_cfg "he_mu_edca_ac_vo_timer=255" "$N"
 	fi
 
 	hostapd_prepare_device_config "$hostapd_conf_file" nl80211
