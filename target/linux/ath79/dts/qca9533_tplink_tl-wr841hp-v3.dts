@@ -11,10 +11,10 @@
 
 	aliases {
 		label-mac-device = &wmac;
-		led-boot = &led_pwr;
-		led-failsafe = &led_pwr;
-		led-running = &led_pwr;
-		led-upgrade = &led_pwr;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	leds {
@@ -26,8 +26,8 @@
 			linux,default-trigger = "phy0tpt";
 		};
 
-		led_pwr: pwr {
-			label = "green:pwr";
+		led_power: power {
+			label = "green:power";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
