@@ -126,7 +126,7 @@
  	if (res == HOSTAPD_ACL_PENDING)
  		return;
  
-@@ -5446,7 +5458,7 @@ static void handle_assoc(struct hostapd_
+@@ -5454,7 +5466,7 @@ static void handle_assoc(struct hostapd_
  	int resp = WLAN_STATUS_SUCCESS;
  	u16 reply_res = WLAN_STATUS_UNSPECIFIED_FAILURE;
  	const u8 *pos;
@@ -135,7 +135,7 @@
  	struct sta_info *sta;
  	u8 *tmp = NULL;
  #ifdef CONFIG_FILS
-@@ -5659,6 +5671,11 @@ static void handle_assoc(struct hostapd_
+@@ -5667,6 +5679,11 @@ static void handle_assoc(struct hostapd_
  		left = res;
  	}
  #endif /* CONFIG_FILS */
@@ -147,7 +147,7 @@
  
  	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
  	 * is used */
-@@ -5823,6 +5840,14 @@ static void handle_assoc(struct hostapd_
+@@ -5831,6 +5848,14 @@ static void handle_assoc(struct hostapd_
  					    pos, left, rssi, omit_rsnxe);
  	os_free(tmp);
  
@@ -162,7 +162,7 @@
  	/*
  	 * Remove the station in case transmission of a success response fails
  	 * (the STA was added associated to the driver) or if the station was
-@@ -5850,6 +5875,7 @@ static void handle_disassoc(struct hosta
+@@ -5858,6 +5883,7 @@ static void handle_disassoc(struct hosta
  	wpa_printf(MSG_DEBUG, "disassocation: STA=" MACSTR " reason_code=%d",
  		   MAC2STR(mgmt->sa),
  		   le_to_host16(mgmt->u.disassoc.reason_code));
@@ -170,7 +170,7 @@
  
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (sta == NULL) {
-@@ -5919,6 +5945,8 @@ static void handle_deauth(struct hostapd
+@@ -5927,6 +5953,8 @@ static void handle_deauth(struct hostapd
  	/* Clear the PTKSA cache entries for PASN */
  	ptksa_cache_flush(hapd->ptksa, mgmt->sa, WPA_CIPHER_NONE);
  
