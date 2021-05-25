@@ -42,19 +42,9 @@
 +			cpu-idle-states = <&CPU_SPC>;
  		};
  
- 		L2: l2-cache {
- 			compatible = "cache";
- 			cache-level = <2>;
-+			qcom,saw = <&saw_l2>;
-+		};
-+
-+		qcom,l2 {
-+			qcom,l2-rates = <384000000 1000000000 1200000000>;
-+			qcom,l2-cpufreq = <384000000 600000000 1200000000>;
-+			qcom,l2-volt = <1100000 1100000 1150000>;
-+			qcom,l2-supply = <&smb208_s1a>;
-+		};
-+
+-		L2: l2-cache {
+-			compatible = "cache";
+-			cache-level = <2>;
 +		idle-states {
 +			CPU_SPC: spc {
 +				compatible = "qcom,idle-state-spc", "arm,idle-state";
@@ -66,6 +56,31 @@
 +		};
 +	};
 +
++	opp_table_l2: opp_table_l2 {
++		compatible = "operating-points-v2";
++
++		opp-384000000 {
++			opp-hz = /bits/ 64 <384000000>;
++			opp-microvolt = <1100000>;
++			clock-latency-ns = <100000>;
++			opp-level = <0>;
++		};
++
++		opp-1000000000 {
++			opp-hz = /bits/ 64 <1000000000>;
++			opp-microvolt = <1100000>;
++			clock-latency-ns = <100000>;
++			opp-level = <1>;
++		};
++
++		opp-1200000000 {
++			opp-hz = /bits/ 64 <1200000000>;
++			opp-microvolt = <1150000>;
++			clock-latency-ns = <100000>;
++			opp-level = <2>;
++ 		};
++ 	};
++ 
 +	opp_table0: opp_table0 {
 +		compatible = "operating-points-v2-kryo-cpu";
 +		nvmem-cells = <&speedbin_efuse>;
@@ -78,6 +93,7 @@
 +			opp-microvolt-speed0-pvs3-v0 = <800000>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
++			opp-level = <0>;
 +		};
 +
 +		opp-600000000 {
@@ -88,6 +104,7 @@
 +			opp-microvolt-speed0-pvs3-v0 = <850000>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
++			opp-level = <1>;
 +		};
 +
 +		opp-800000000 {
@@ -98,6 +115,7 @@
 +			opp-microvolt-speed0-pvs3-v0 = <900000>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
++			opp-level = <1>;
 +		};
 +
 +		opp-1000000000 {
@@ -108,6 +126,7 @@
 +			opp-microvolt-speed0-pvs3-v0 = <950000>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
++			opp-level = <1>;
 +		};
 +
 +		opp-1200000000 {
@@ -118,6 +137,7 @@
 +			opp-microvolt-speed0-pvs3-v0 = <1000000>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
++			opp-level = <1>;
 +		};
 +
 +		opp-1400000000 {
@@ -128,6 +148,7 @@
 +			opp-microvolt-speed0-pvs3-v0 = <1050000>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
++			opp-level = <2>;
 +		};
 +	};
 +
@@ -501,10 +522,21 @@
  	firmware {
  		scm {
  			compatible = "qcom,scm-ipq806x", "qcom,scm";
-@@ -120,6 +588,84 @@
+@@ -120,6 +588,95 @@
  			reg-names = "lpass-lpaif";
  		};
  
++		L2: l2-cache {
++			compatible = "qcom,krait-cache", "cache";
++			cache-level = <2>;
++			qcom,saw = <&saw_l2>;
++
++			clocks = <&kraitcc 4>;
++			clock-names = "l2";
++			l2-supply = <&smb208_s1a>;
++			operating-points-v2 = <&opp_table_l2>;
++		};
++
 +		qfprom: qfprom@700000 {
 +			compatible = "qcom,qfprom", "syscon";
 +			reg = <0x700000 0x1000>;
