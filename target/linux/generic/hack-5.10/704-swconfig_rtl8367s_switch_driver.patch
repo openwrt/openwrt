@@ -1,0 +1,23 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -327,6 +327,10 @@ config RTL8367B_PHY
+ 	tristate "Driver fot the Realtek RTL8367R-VB switch"
+ 	select SWCONFIG
+ 
++config RTL8367S_PHY
++	tristate "Driver for the Realtek RTL8367S switch"
++	select SWCONFIG
++
+ endif # RTL8366_SMI
+ 
+ comment "MII PHY device drivers"
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -35,6 +35,7 @@ obj-$(CONFIG_RTL8366S_PHY)	+= rtl8366s.o
+ obj-$(CONFIG_RTL8366RB_PHY)	+= rtl8366rb.o
+ obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
+ obj-$(CONFIG_RTL8367B_PHY)	+= rtl8367b.o
++obj-$(CONFIG_RTL8367S_PHY)	+= rtl8367s/
+ 
+ obj-$(CONFIG_MDIO_ASPEED)	+= mdio-aspeed.o
+ obj-$(CONFIG_MDIO_BCM_IPROC)	+= mdio-bcm-iproc.o
