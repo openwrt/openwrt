@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/image.mk
 # Images
 #################################################
 
-DEVICE_VARS += MKUBIFS_OPTS UBOOT BOOT_SCRIPT
+DEVICE_VARS += MKUBIFS_OPTS UBOOT
 
 define Build/boot-overlay
 	rm -rf $@.boot
@@ -49,13 +49,6 @@ define Build/bootfs.tar.gz
 		-czvf $@ .
 endef
 
-define Build/boot-scr
-	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
-	-n '$(DEVICE_ID) OpenWrt bootscript' \
-	-d ./bootscript-$(DEVICE_NAME) \
-	$(BIN_DIR)/boot.scr
-endef
-
 define Build/recovery-scr
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
 	-n '$(DEVICE_ID) OpenWrt recovery bootscript' \
@@ -82,7 +75,7 @@ define Build/imx6-combined-image
 
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
 		-n '$(DEVICE_ID) OpenWrt bootscript' \
-		-d $(BOOT_SCRIPT) \
+		-d bootscript-$(DEVICE_NAME) \
 		$@.boot/boot.scr
 
 	cp $@ $@.fs
@@ -131,7 +124,7 @@ define Device/gateworks_ventana
   DEVICE_VENDOR := Gateworks
   DEVICE_MODEL := Ventana family
   DEVICE_VARIANT := normal NAND flash
-  DEVICE_NAME := ventana
+  DEVICE_NAME := gateworks_ventana
   DEVICE_DTS:= \
 	imx6dl-gw51xx \
 	imx6dl-gw52xx \
@@ -161,7 +154,6 @@ define Device/gateworks_ventana
   DEVICE_PACKAGES := kmod-sky2 kmod-sound-core kmod-sound-soc-imx \
 	kmod-sound-soc-imx-sgtl5000 kmod-can kmod-can-flexcan kmod-can-raw \
 	kmod-hwmon-gsc kmod-leds-gpio kmod-pps-gpio kobs-ng
-  BOOT_SCRIPT := bootscript-gateworks_ventana
   KERNEL += | boot-overlay
   IMAGES := nand.ubi bootfs.tar.gz dtb
   IMAGE/nand.ubi := append-ubi
@@ -187,14 +179,12 @@ TARGET_DEVICES += gateworks_ventana-large
 define Device/solidrun_cubox-i
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := CuBox-i
-  DEVICE_NAME := cubox
   DEVICE_DTS := \
 	imx6q-cubox-i \
 	imx6dl-cubox-i \
 	imx6q-hummingboard \
 	imx6dl-hummingboard
   DEVICE_PACKAGES := kmod-drm-imx kmod-drm-imx-hdmi kmod-usb-hid
-  BOOT_SCRIPT := bootscript-solidrun_cubox
   UBOOT := mx6cuboxi
   KERNEL := kernel-bin
   KERNEL_SUFFIX := -zImage
@@ -217,7 +207,6 @@ define Device/toradex_apalis
 	kmod-can kmod-can-flexcan kmod-can-raw \
 	kmod-leds-gpio kmod-gpio-button-hotplug \
 	kmod-pps-gpio kmod-rtc-ds1307
-  BOOT_SCRIPT := bootscript-toradex_apalis
   FILESYSTEMS := squashfs
   IMAGES := combined.bin sysupgrade.bin
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1).$$(2)
