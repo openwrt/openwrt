@@ -103,6 +103,7 @@ hostapd_common_add_device_config() {
 	config_add_int rts_threshold
 	config_add_int rssi_reject_assoc_rssi
 	config_add_int rssi_ignore_probe_request
+	config_add_int maxassoc
 
 	config_add_string acs_chan_bias
 	config_add_array hostapd_options
@@ -120,7 +121,7 @@ hostapd_prepare_device_config() {
 
 	json_get_vars country country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
 		acs_chan_bias local_pwr_constraint spectrum_mgmt_required airtime_mode cell_density \
-		rts_threshold beacon_rate rssi_reject_assoc_rssi rssi_ignore_probe_request
+		rts_threshold beacon_rate rssi_reject_assoc_rssi rssi_ignore_probe_request maxassoc
 
 	hostapd_set_log_options base_cfg
 
@@ -220,6 +221,7 @@ hostapd_prepare_device_config() {
 	[ -n "$rts_threshold" ] && append base_cfg "rts_threshold=$rts_threshold" "$N"
 	append base_cfg "dtim_period=$dtim_period" "$N"
 	[ "$airtime_mode" -gt 0 ] && append base_cfg "airtime_mode=$airtime_mode" "$N"
+	[ -n "$maxassoc" ] && append base_cfg "iface_max_num_sta=$maxassoc" "$N"
 
 	json_get_values opts hostapd_options
 	for val in $opts; do
