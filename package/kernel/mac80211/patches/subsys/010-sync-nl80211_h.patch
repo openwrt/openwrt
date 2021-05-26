@@ -1,5 +1,5 @@
---- a/nl80211.h
-+++ b/nl80211.h
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
 @@ -655,6 +655,9 @@
   *	When a security association was established on an 802.1X network using
   *	fast transition, this event should be followed by an
@@ -80,7 +80,7 @@
   * @NL80211_ATTR_CSA_IES: Nested set of attributes containing the IE information
   *	for the time while performing a channel switch.
   * @NL80211_ATTR_CNTDWN_OFFS_BEACON: An array of offsets (u16) to the channel
-@@ -2527,6 +2546,23 @@ enum nl80211_commands {
+@@ -2527,6 +2546,20 @@ enum nl80211_commands {
   *	override mask. Used with NL80211_ATTR_S1G_CAPABILITY in
   *	NL80211_CMD_ASSOCIATE or NL80211_CMD_CONNECT.
   *
@@ -98,13 +98,10 @@
 + *	disassoc events to indicate that an immediate reconnect to the AP
 + *	is desired.
 + *
-+ * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
-+ *	transmit power to stay within regulatory limits. u32, dBi.
-+ *
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3016,6 +3052,16 @@ enum nl80211_attrs {
+@@ -3016,6 +3049,14 @@ enum nl80211_attrs {
  	NL80211_ATTR_S1G_CAPABILITY,
  	NL80211_ATTR_S1G_CAPABILITY_MASK,
  
@@ -116,12 +113,10 @@
 +
 +	NL80211_ATTR_DISABLE_HE,
 +
-+	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
-+
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -5896,6 +5942,19 @@ enum nl80211_feature_flags {
+@@ -5896,6 +5937,19 @@ enum nl80211_feature_flags {
   * @NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP: Driver/device supports
   *	unsolicited broadcast probe response transmission
   *
@@ -141,7 +136,7 @@
   * @NUM_NL80211_EXT_FEATURES: number of extended features.
   * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
   */
-@@ -5956,6 +6015,10 @@ enum nl80211_ext_feature_index {
+@@ -5956,6 +6010,10 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_SAE_OFFLOAD_AP,
  	NL80211_EXT_FEATURE_FILS_DISCOVERY,
  	NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP,
@@ -152,7 +147,7 @@
  
  	/* add new features before the definition below */
  	NUM_NL80211_EXT_FEATURES,
-@@ -6253,11 +6316,13 @@ struct nl80211_vendor_cmd_info {
+@@ -6253,11 +6311,13 @@ struct nl80211_vendor_cmd_info {
   * @NL80211_TDLS_PEER_HT: TDLS peer is HT capable.
   * @NL80211_TDLS_PEER_VHT: TDLS peer is VHT capable.
   * @NL80211_TDLS_PEER_WMM: TDLS peer is WMM capable.
@@ -166,7 +161,7 @@
  };
  
  /**
-@@ -6849,6 +6914,9 @@ enum nl80211_peer_measurement_ftm_capa {
+@@ -6849,6 +6909,9 @@ enum nl80211_peer_measurement_ftm_capa {
   *      if neither %NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED nor
   *	%NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED is set, EDCA based
   *	ranging will be used.
@@ -176,7 +171,7 @@
   *
   * @NUM_NL80211_PMSR_FTM_REQ_ATTR: internal
   * @NL80211_PMSR_FTM_REQ_ATTR_MAX: highest attribute number
-@@ -6867,6 +6935,7 @@ enum nl80211_peer_measurement_ftm_req {
+@@ -6867,6 +6930,7 @@ enum nl80211_peer_measurement_ftm_req {
  	NL80211_PMSR_FTM_REQ_ATTR_REQUEST_CIVICLOC,
  	NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED,
  	NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED,
@@ -184,7 +179,7 @@
  
  	/* keep last */
  	NUM_NL80211_PMSR_FTM_REQ_ATTR,
-@@ -7124,4 +7193,115 @@ enum nl80211_unsol_bcast_probe_resp_attr
+@@ -7124,4 +7188,115 @@ enum nl80211_unsol_bcast_probe_resp_attr
  	NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX =
  		__NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST - 1
  };
