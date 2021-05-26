@@ -31,28 +31,6 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  /**
   * cfg80211_rx_unprot_mlme_mgmt - notification of unprotected mlme mgmt frame
---- a/include/uapi/linux/nl80211.h
-+++ b/include/uapi/linux/nl80211.h
-@@ -2527,6 +2527,10 @@ enum nl80211_commands {
-  *	override mask. Used with NL80211_ATTR_S1G_CAPABILITY in
-  *	NL80211_CMD_ASSOCIATE or NL80211_CMD_CONNECT.
-  *
-+ * @NL80211_ATTR_RECONNECT_REQUESTED: flag attribute, used with deauth and
-+ *	disassoc events to indicate that an immediate reconnect to the AP
-+ *	is desired.
-+ *
-  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
-  * @NL80211_ATTR_MAX: highest attribute number currently defined
-  * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3016,6 +3020,8 @@ enum nl80211_attrs {
- 	NL80211_ATTR_S1G_CAPABILITY,
- 	NL80211_ATTR_S1G_CAPABILITY_MASK,
- 
-+	NL80211_ATTR_RECONNECT_REQUESTED,
-+
- 	/* add attributes here, update the policy in nl80211.c */
- 
- 	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
 @@ -2729,7 +2729,7 @@ static void ieee80211_report_disconnect(
