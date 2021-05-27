@@ -812,6 +812,13 @@ hostapd_set_bss_options() {
 				set_default r0_key_lifetime 10000
 				set_default pmk_r1_push 0
 
+				[ -n "$r0kh" -a -n "$r1kh" ] || {
+					key=`echo -n "$mobility_domain/$auth_secret" | md5sum | awk '{print $1}'`
+
+					set_default r0kh "ff:ff:ff:ff:ff:ff,*,$key"
+					set_default r1kh "00:00:00:00:00:00,00:00:00:00:00:00,$key"
+				}
+
 				[ -n "$r1_key_holder" ] && append bss_conf "r1_key_holder=$r1_key_holder" "$N"
 				append bss_conf "r0_key_lifetime=$r0_key_lifetime" "$N"
 				append bss_conf "pmk_r1_push=$pmk_r1_push" "$N"
