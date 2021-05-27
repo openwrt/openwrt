@@ -21,6 +21,10 @@
 	model = "Wallys DR4029";
 	compatible = "Wallys,DR4029", "qcom,ipq4019";
 
+	chosen {
+		bootargs-append = "ubi.mtd=ubi root=/dev/ubiblock0_1";
+	};
+
 	soc {
 		pinctrl@1000000 {
 			serial_0_pins: serial_pinmux {
