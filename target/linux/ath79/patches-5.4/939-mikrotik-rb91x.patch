@@ -1,0 +1,23 @@
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -130,6 +130,10 @@ config GPIO_ATH79
+ 	  Select this option to enable GPIO driver for
+ 	  Atheros AR71XX/AR724X/AR913X SoC devices.
+ 
++config GPIO_LATCH
++	tristate "MikroTik RouterBOARD GPIO latch support"
++	depends on ATH79
++
+ config GPIO_RASPBERRYPI_EXP
+ 	tristate "Raspberry Pi 3 GPIO Expander"
+ 	default RASPBERRYPI_FIRMWARE
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -67,6 +67,7 @@ obj-$(CONFIG_GPIO_IT87)			+= gpio-it87.o
+ obj-$(CONFIG_GPIO_IXP4XX)		+= gpio-ixp4xx.o
+ obj-$(CONFIG_GPIO_JANZ_TTL)		+= gpio-janz-ttl.o
+ obj-$(CONFIG_GPIO_KEMPLD)		+= gpio-kempld.o
++obj-$(CONFIG_GPIO_LATCH)		+= gpio-latch.o
+ obj-$(CONFIG_GPIO_LOONGSON1)		+= gpio-loongson1.o
+ obj-$(CONFIG_GPIO_LOONGSON)		+= gpio-loongson.o
+ obj-$(CONFIG_GPIO_LP3943)		+= gpio-lp3943.o
