@@ -1150,10 +1150,23 @@ define Device/dlink_dir-859-a1
   DEVICE_MODEL := DIR-859
   DEVICE_VARIANT := A1
   IMAGE_SIZE := 15872k
-  DEVICE_PACKAGES :=  kmod-usb2 kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
   SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
 endef
 TARGET_DEVICES += dlink_dir-859-a1
+
+define Device/dlink_dir-869-a1
+  $(Device/seama)
+  SOC := qca9563
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-869
+  DEVICE_VARIANT := A1
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  SEAMA_SIGNATURE := wrgac54_dlink.2015_dir869
+  SUPPORTED_DEVICES += dir-869-a1
+endef
+TARGET_DEVICES += dlink_dir-869-a1
 
 define Device/elecom_wrc-1750ghbk2-i
   SOC := qca9563
