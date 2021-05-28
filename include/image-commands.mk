@@ -198,7 +198,7 @@ define Build/elx-header
 			dd bs=20 count=1 conv=sync; \
 		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
 			dd bs=8 count=1 conv=sync; \
-		echo -ne "$$($(STAGING_DIR_HOST)/bin/mkhash md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
+		echo -ne "$$($(MKHASH) md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
 			dd bs=58 count=1 conv=sync; \
 	) > $(KDIR)/tmp/$(DEVICE_NAME).header
 	$(call Build/xor-image,-p $(xor_pattern) -x)
@@ -272,8 +272,11 @@ define Build/jffs2
 endef
 
 define Build/kernel2minor
-	kernel2minor -k $@ -r $@.new $(1)
-	mv $@.new $@
+	$(eval temp_file := $(shell mktemp))
+	cp $@ $(temp_file)
+	kernel2minor -k $(temp_file) -r $(temp_file).new $(1)
+	mv $(temp_file).new $@
+	rm -f $(temp_file)
 endef
 
 define Build/kernel-bin

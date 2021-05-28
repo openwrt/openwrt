@@ -85,8 +85,8 @@ avm,fritzdvbc)
 	;;
 buffalo,wzr-hp-g300nh-rb|\
 buffalo,wzr-hp-g300nh-s)
-        ucidef_set_led_netdev "router" "Router" "green:router" "eth1"
-        ;;
+	ucidef_set_led_netdev "router" "Router" "green:router" "eth1"
+	;;
 comfast,cf-e110n-v2)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth1"
 	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x02"
@@ -131,6 +131,10 @@ comfast,cf-e314n-v2)
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "red:rssimediumlow" "wlan0" "26" "100"
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimediumhigh" "wlan0" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan0" "76" "100"
+	;;
+comfast,cf-e375ac)
+	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x04"
+	ucidef_set_led_switch "wan" "WAN" "red:wan" "switch0" "0x02"
 	;;
 comfast,cf-e5)
 	ucidef_set_led_switch "lan" "LAN" "blue:lan" "switch0" "0x02"

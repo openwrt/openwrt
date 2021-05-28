@@ -9,9 +9,9 @@ DEVICE_VARS += DLINK_ROM_ID DLINK_FAMILY_MEMBER DLINK_FIRMWARE_SIZE DLINK_IMAGE_
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
 	( \
-		mkhash md5 $(KDIR)/v_0.0.0.bin && \
+		$(MKHASH) md5 $(KDIR)/v_0.0.0.bin && \
 		echo 458 \
-	) | mkhash md5 > $(KDIR)/v_0.0.0.md5
+	) | $(MKHASH) md5 > $(KDIR)/v_0.0.0.md5
 	$(STAGING_DIR_HOST)/bin/tar -c \
 		$(if $(SOURCE_DATE_EPOCH),--mtime=@$(SOURCE_DATE_EPOCH)) \
 		--owner=0 --group=0 -f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
@@ -33,6 +33,7 @@ define Device/alfa-network_ac1200rm
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := AC1200RM
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci uboot-envtools
+  SUPPORTED_DEVICES += ac1200rm
 endef
 TARGET_DEVICES += alfa-network_ac1200rm
 
@@ -43,6 +44,7 @@ define Device/alfa-network_r36m-e4g
   DEVICE_MODEL := R36M-E4G
   DEVICE_PACKAGES := kmod-i2c-ralink kmod-usb2 kmod-usb-ohci uboot-envtools \
 	uqmi
+  SUPPORTED_DEVICES += r36m-e4g
 endef
 TARGET_DEVICES += alfa-network_r36m-e4g
 
@@ -53,6 +55,7 @@ define Device/alfa-network_tube-e4g
   DEVICE_MODEL := Tube-E4G
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci uboot-envtools uqmi -iwinfo \
 	-kmod-rt2800-soc -wpad-basic-wolfssl
+  SUPPORTED_DEVICES += tube-e4g
 endef
 TARGET_DEVICES += alfa-network_tube-e4g
 

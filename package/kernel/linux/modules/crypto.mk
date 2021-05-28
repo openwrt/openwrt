@@ -346,7 +346,7 @@ $(eval $(call KernelPackage,crypto-hw-ccp))
 
 define KernelPackage/crypto-hw-geode
   TITLE:=AMD Geode hardware crypto module
-  DEPENDS:=+kmod-crypto-manager
+  DEPENDS:=@TARGET_x86_geode +kmod-crypto-manager
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_GEODE
@@ -420,7 +420,8 @@ $(eval $(call KernelPackage,crypto-hw-safexcel))
 
 define KernelPackage/crypto-hw-talitos
   TITLE:=Freescale integrated security engine (SEC) driver
-  DEPENDS:=+kmod-crypto-manager +kmod-crypto-hash +kmod-random-core +kmod-crypto-authenc +kmod-crypto-des
+  DEPENDS:=@(TARGET_mpc85xx||TARGET_layerscape) +kmod-crypto-manager \
+	+kmod-crypto-hash +kmod-random-core +kmod-crypto-authenc +kmod-crypto-des
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_TALITOS \
@@ -600,7 +601,7 @@ $(eval $(call KernelPackage,crypto-lib-poly1305))
 
 define KernelPackage/crypto-manager
   TITLE:=CryptoAPI algorithm manager
-  DEPENDS:=+kmod-crypto-aead +kmod-crypto-hash +kmod-crypto-pcompress
+  DEPENDS:=+kmod-crypto-aead +kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_MANAGER \
 	CONFIG_CRYPTO_MANAGER2
@@ -768,19 +769,6 @@ define KernelPackage/crypto-pcbc
 endef
 
 $(eval $(call KernelPackage,crypto-pcbc))
-
-
-define KernelPackage/crypto-pcompress
-  TITLE:=CryptoAPI Partial (de)compression operations
-  KCONFIG:= \
-	CONFIG_CRYPTO_PCOMP=y \
-	CONFIG_CRYPTO_PCOMP2
-  FILES:=$(LINUX_DIR)/crypto/pcompress.ko
-  AUTOLOAD:=$(call AutoLoad,09,pcompress)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-pcompress))
 
 
 define KernelPackage/crypto-rsa
@@ -984,16 +972,6 @@ define KernelPackage/crypto-user
 endef
 
 $(eval $(call KernelPackage,crypto-user))
-
-
-define KernelPackage/crypto-wq
-  TITLE:=CryptoAPI work queue handling
-  KCONFIG:=CONFIG_CRYPTO_WORKQUEUE
-  FILES:=$(LINUX_DIR)/crypto/crypto_wq.ko
-  AUTOLOAD:=$(call AutoLoad,09,crypto_wq)
-  $(call AddDepends/crypto)
-endef
-$(eval $(call KernelPackage,crypto-wq))
 
 
 define KernelPackage/crypto-xts

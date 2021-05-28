@@ -145,3 +145,34 @@ define KernelPackage/leds-pwm/description
 endef
 
 $(eval $(call KernelPackage,leds-pwm))
+
+define KernelPackage/leds-uleds
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=Userspace LEDs
+  KCONFIG:=CONFIG_LEDS_USER
+  FILES:=$(LINUX_DIR)/drivers/leds/uleds.ko
+  AUTOLOAD:=$(call AutoLoad,60,uleds,1)
+endef
+
+define KernelPackage/leds-uleds/description
+ This option enables support for userspace LEDs.
+endef
+
+$(eval $(call KernelPackage,leds-uleds))
+
+
+define KernelPackage/input-leds
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=Input device LED support
+  DEPENDS:=+kmod-input-core
+  KCONFIG:=CONFIG_INPUT_LEDS
+  FILES:=$(LINUX_DIR)/drivers/input/input-leds.ko
+  AUTOLOAD:=$(call AutoLoad,50,input-leds,1)
+endef
+
+define KernelPackage/input-leds/description
+ Provides support for LEDs on input devices- for example,
+ keyboard num/caps/scroll lock.
+endef
+
+$(eval $(call KernelPackage,input-leds))
