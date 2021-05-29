@@ -123,15 +123,31 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 
 indicate_upgrade
 
+while read -r a b c; do
+	case "$a" in
+		MemT*) mem="$b" ;; esac
+done < /proc/meminfo
+
+[ "$mem" -gt 32768 ] && \
+	skip_services="dnsmasq log network"
+for service in /etc/init.d/*; do
+	service=${service##*/}
+
+	case " $skip_services " in
+		*" $service "*) continue ;; esac
+
+	ubus call service delete '{ "name": "'"$service"'" }' 2>/dev/null
+done
+
 killall -9 telnetd
 killall -9 dropbear
 killall -9 ash
 
 kill_remaining TERM
-sleep 3
+sleep 4
 kill_remaining KILL 1
 
-sleep 1
+sleep 6
 
 echo 3 > /proc/sys/vm/drop_caches
 
