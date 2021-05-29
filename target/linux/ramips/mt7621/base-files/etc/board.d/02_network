@@ -135,11 +135,27 @@ ramips_setup_macs()
 		label_mac=$lan_mac
 		;;
 	mikrotik,routerboard-750gr3|\
-	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m33g)
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add $label_mac 1)
+		;;
+	mikrotik,routerboard-760igs)
+		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
+
+		ucidef_set_network_device_mac "wan" $label_mac
+
+		ucidef_set_network_device_mac "lan2" \
+			$(macaddr_add $label_mac 1)
+		ucidef_set_network_device_mac "lan3" \
+			$(macaddr_add $label_mac 2)
+		ucidef_set_network_device_mac "lan4" \
+			$(macaddr_add $label_mac 3)
+		ucidef_set_network_device_mac "lan5" \
+			$(macaddr_add $label_mac 4)
+
+		ucidef_set_network_device_mac "sfp" \
+			$(macaddr_add $label_mac 5)
 		;;
 	mikrotik,routerboard-m11g)
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
