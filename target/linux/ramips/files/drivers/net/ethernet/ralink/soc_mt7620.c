@@ -82,11 +82,26 @@ static const u16 mt7620_reg_table[FE_REG_COUNT] = {
 static int mt7620_gsw_config(struct fe_priv *priv)
 {
 	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+	u32 val;
 
 	/* is the mt7530 internal or external */
 	if (priv->mii_bus && mdiobus_get_phy(priv->mii_bus, 0x1f)) {
 		mt7530_probe(priv->dev, gsw->base, NULL, 0);
 		mt7530_probe(priv->dev, NULL, priv->mii_bus, 1);
+
+		/* magic values from original SDK */
+		val = mt7530_mdio_r32(gsw, 0x7830);
+		val &= ~BIT(0);
+		val |= BIT(1);
+		mt7530_mdio_w32(gsw, 0x7830, val);
+
+		val = mt7530_mdio_r32(gsw, 0x7a40);
+		val &= ~BIT(30);
+		mt7530_mdio_w32(gsw, 0x7a40, val);
+
+		mt7530_mdio_w32(gsw, 0x7a78, 0x855);
+
+		pr_info("mt7530: mdio central align\n");
 	} else {
 		mt7530_probe(priv->dev, gsw->base, NULL, 1);
 	}
