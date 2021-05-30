@@ -515,6 +515,11 @@ define Build/tplink-safeloader
 		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && mv $@.new $@ || rm -f $@
 endef
 
+define Build/tplink-plc-header
+	$(STAGING_DIR_HOST)/bin/mktplinkplcfw -i $@ -o $@.new
+	@mv $@.new $@
+endef
+
 define Build/tplink-v1-header
 	$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-c -H $(TPLINK_HWID) -W $(TPLINK_HWREV) -L $(KERNEL_LOADADDR) \
