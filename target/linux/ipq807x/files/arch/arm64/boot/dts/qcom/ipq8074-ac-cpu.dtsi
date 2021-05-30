@@ -246,6 +246,31 @@
 		qcom,max-frequency = <1497600000>;
 		npu-supply = <&dummy_reg>;
 		mx-supply = <&dummy_reg>;
+		qcom,bridge-enabled;
+		qcom,ipv4-enabled;
+		qcom,ipv4-reasm-enabled;
+		qcom,ipv6-enabled;
+		qcom,ipv6-reasm-enabled;
+		qcom,wlanredirect-enabled;
+		qcom,tun6rd-enabled;
+		qcom,l2tpv2-enabled;
+		qcom,gre-enabled;
+		qcom,gre-redir-enabled;
+		qcom,gre-redir-mark-enabled;
+		qcom,map-t-enabled;
+		qcom,portid-enabled;
+		qcom,ppe-enabled;
+		qcom,pppoe-enabled;
+		qcom,pptp-enabled;
+		qcom,tunipip6-enabled;
+		qcom,shaping-enabled;
+		qcom,wlan-dataplane-offload-enabled;
+		qcom,vlan-enabled;
+		qcom,igs-enabled;
+		qcom,vxlan-enabled;
+		qcom,match-enabled;
+		qcom,mirror-enabled;
+		qcom,udp-st-enabled;
 	};
 
 	nss1: nss@40800000 {
@@ -300,5 +325,14 @@
 		qcom,num-irq = <9>;
 		qcom,num-pri = <4>;
 		qcom,load-addr = <0x40800000>;
+		qcom,capwap-enabled;
+		qcom,dtls-enabled;
+		qcom,tls-enabled;
+		qcom,crypto-enabled;
+		qcom,ipsec-enabled;
+		qcom,qvpn-enabled;
+		qcom,pvxlan-enabled;
+		qcom,clmap-enabled;
+		qcom,rmnet_rx-enabled;
 	};
 };
