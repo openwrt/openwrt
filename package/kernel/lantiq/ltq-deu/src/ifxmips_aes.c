@@ -647,6 +647,184 @@ struct skcipher_alg ifxdeu_cbc_aes_alg = {
 };
 
 
+/*! \fn int ofb_aes_encrypt(struct skcipher_req *req)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief OFB AES encrypt using linux crypto skcipher
+ *  \param req skcipher request
+ *  \return err
+*/
+int ofb_aes_encrypt(struct skcipher_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    int err;
+    unsigned int enc_bytes, nbytes;
+
+    err = skcipher_walk_virt(&walk, req, false);
+
+    while ((nbytes = enc_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
+            ifx_deu_aes_ofb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                       walk.iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
+    }
+
+    /* to handle remaining bytes < AES_BLOCK_SIZE */
+    if (walk.nbytes) {
+	ifx_deu_aes_ofb(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			walk.iv, walk.nbytes, CRYPTO_DIR_ENCRYPT, 0);
+	err = skcipher_walk_done(&walk, 0);
+    }
+
+    return err;
+}
+
+/*! \fn int ofb_aes_decrypt(struct skcipher_req *req)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief OFB AES decrypt using linux crypto skcipher
+ *  \param req skcipher request
+ *  \return err
+*/
+int ofb_aes_decrypt(struct skcipher_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    int err;
+    unsigned int dec_bytes, nbytes;
+
+    err = skcipher_walk_virt(&walk, req, false);
+
+    while ((nbytes = dec_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
+            ifx_deu_aes_ofb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                       walk.iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
+    }
+
+    /* to handle remaining bytes < AES_BLOCK_SIZE */
+    if (walk.nbytes) {
+	ifx_deu_aes_ofb(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			walk.iv, walk.nbytes, CRYPTO_DIR_DECRYPT, 0);
+	err = skcipher_walk_done(&walk, 0);
+    }
+
+    return err;
+}
+
+/*
+ * \brief AES function mappings
+*/
+struct skcipher_alg ifxdeu_ofb_aes_alg = {
+    .base.cra_name           =   "ofb(aes)",
+    .base.cra_driver_name    =   "ifxdeu-ofb(aes)",
+    .base.cra_priority       =   400,
+    .base.cra_flags          =   CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
+    .base.cra_blocksize      =   1,
+    .base.cra_ctxsize        =   sizeof(struct aes_ctx),
+    .base.cra_module         =   THIS_MODULE,
+    .base.cra_list           =   LIST_HEAD_INIT(ifxdeu_ofb_aes_alg.base.cra_list),
+    .min_keysize             =   AES_MIN_KEY_SIZE,
+    .max_keysize             =   AES_MAX_KEY_SIZE,
+    .ivsize                  =   AES_BLOCK_SIZE,
+    .chunksize               =   AES_BLOCK_SIZE,
+    .walksize                =   AES_BLOCK_SIZE,
+    .setkey                  =   aes_set_key_skcipher,
+    .encrypt                 =   ofb_aes_encrypt,
+    .decrypt                 =   ofb_aes_decrypt,
+};
+
+
+/*! \fn int cfb_aes_encrypt(struct skcipher_req *req)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief CFB AES encrypt using linux crypto skcipher
+ *  \param req skcipher request
+ *  \return err
+*/
+int cfb_aes_encrypt(struct skcipher_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    int err;
+    unsigned int enc_bytes, nbytes;
+
+    err = skcipher_walk_virt(&walk, req, false);
+
+    while ((nbytes = enc_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
+            ifx_deu_aes_cfb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                       walk.iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
+    }
+
+    /* to handle remaining bytes < AES_BLOCK_SIZE */
+    if (walk.nbytes) {
+	ifx_deu_aes_cfb(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			walk.iv, walk.nbytes, CRYPTO_DIR_ENCRYPT, 0);
+	err = skcipher_walk_done(&walk, 0);
+    }
+
+    return err;
+}
+
+/*! \fn int cfb_aes_decrypt(struct skcipher_req *req)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief CFB AES decrypt using linux crypto skcipher
+ *  \param req skcipher request
+ *  \return err
+*/
+int cfb_aes_decrypt(struct skcipher_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    int err;
+    unsigned int dec_bytes, nbytes;
+
+    err = skcipher_walk_virt(&walk, req, false);
+
+    while ((nbytes = dec_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
+            ifx_deu_aes_cfb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                       walk.iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
+    }
+
+    /* to handle remaining bytes < AES_BLOCK_SIZE */
+    if (walk.nbytes) {
+	ifx_deu_aes_cfb(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			walk.iv, walk.nbytes, CRYPTO_DIR_DECRYPT, 0);
+	err = skcipher_walk_done(&walk, 0);
+    }
+
+    return err;
+}
+
+/*
+ * \brief AES function mappings
+*/
+struct skcipher_alg ifxdeu_cfb_aes_alg = {
+    .base.cra_name           =   "cfb(aes)",
+    .base.cra_driver_name    =   "ifxdeu-cfb(aes)",
+    .base.cra_priority       =   400,
+    .base.cra_flags          =   CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
+    .base.cra_blocksize      =   1,
+    .base.cra_ctxsize        =   sizeof(struct aes_ctx),
+    .base.cra_module         =   THIS_MODULE,
+    .base.cra_list           =   LIST_HEAD_INIT(ifxdeu_cfb_aes_alg.base.cra_list),
+    .min_keysize             =   AES_MIN_KEY_SIZE,
+    .max_keysize             =   AES_MAX_KEY_SIZE,
+    .ivsize                  =   AES_BLOCK_SIZE,
+    .chunksize               =   AES_BLOCK_SIZE,
+    .walksize                =   AES_BLOCK_SIZE,
+    .setkey                  =   aes_set_key_skcipher,
+    .encrypt                 =   cfb_aes_encrypt,
+    .decrypt                 =   cfb_aes_decrypt,
+};
+
+
 /*! \fn int ctr_basic_aes_encrypt(struct skcipher_req *req)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief Counter mode AES encrypt using linux crypto skcipher
@@ -863,6 +1041,12 @@ int ifxdeu_init_aes (void)
     if ((ret = crypto_register_skcipher(&ifxdeu_cbc_aes_alg)))
         goto cbc_aes_err;
 
+    if ((ret = crypto_register_skcipher(&ifxdeu_ofb_aes_alg)))
+        goto ofb_aes_err;
+
+    if ((ret = crypto_register_skcipher(&ifxdeu_cfb_aes_alg)))
+        goto cfb_aes_err;
+
     if ((ret = crypto_register_skcipher(&ifxdeu_ctr_basic_aes_alg)))
         goto ctr_basic_aes_err;
 
@@ -882,6 +1066,14 @@ ctr_rfc3686_aes_err:
 ctr_basic_aes_err:
     crypto_unregister_skcipher(&ifxdeu_ctr_basic_aes_alg);
     printk (KERN_ERR "IFX ctr_basic_aes initialization failed!\n");
+    return ret;
+cfb_aes_err:
+    crypto_unregister_skcipher(&ifxdeu_cfb_aes_alg);
+    printk (KERN_ERR "IFX cfb_aes initialization failed!\n");
+    return ret;
+ofb_aes_err:
+    crypto_unregister_skcipher(&ifxdeu_ofb_aes_alg);
+    printk (KERN_ERR "IFX ofb_aes initialization failed!\n");
     return ret;
 cbc_aes_err:
     crypto_unregister_skcipher(&ifxdeu_cbc_aes_alg);
@@ -906,6 +1098,8 @@ void ifxdeu_fini_aes (void)
     crypto_unregister_alg (&ifxdeu_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_ecb_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_cbc_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_ofb_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_cfb_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_ctr_basic_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_ctr_rfc3686_aes_alg);
 
