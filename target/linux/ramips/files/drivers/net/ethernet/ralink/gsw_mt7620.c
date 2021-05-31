@@ -73,7 +73,13 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw)
 	/* Enable MIB stats */
 	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_MIB_CNT_EN) | (1 << 1), GSW_REG_MIB_CNT_EN);
 
-	if (gsw->ephy_base) {
+	if (gsw->ephy_disable) {
+		mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_GPC1) |
+			(gsw->ephy_base << 16) | (0x1f << 24),
+			GSW_REG_GPC1);
+
+		pr_info("gsw: internal ephy disabled\n");
+	} else if (gsw->ephy_base) {
 		mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_GPC1) |
 			(gsw->ephy_base << 16),
 			GSW_REG_GPC1);
@@ -194,13 +200,17 @@ int mtk_gsw_init(struct fe_priv *priv)
 	gsw = platform_get_drvdata(pdev);
 	priv->soc->swpriv = gsw;
 
+	gsw->ephy_disable = of_property_read_bool(np, "mediatek,ephy-disable");
+
 	mdiobus_node = of_get_child_by_name(eth_node, "mdio-bus");
 	if (mdiobus_node) {
 		for_each_child_of_node(mdiobus_node, phy_node) {
 			id = of_get_property(phy_node, "reg", NULL);
 			if (id && (be32_to_cpu(*id) == 0x1f))
-				of_node_put(mdiobus_node);
+				gsw->ephy_disable = true;
 		}
+
+		of_node_put(mdiobus_node);
 	}
 
 	gsw->port4_ephy = !of_property_read_bool(np, "mediatek,port4-gmac");
