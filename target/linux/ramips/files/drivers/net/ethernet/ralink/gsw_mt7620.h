@@ -92,6 +92,7 @@ struct mt7620_gsw {
 	struct device		*dev;
 	void __iomem		*base;
 	int			irq;
+	bool			ephy_disable;
 	bool			port4_ephy;
 	unsigned long int	autopoll;
 	u16			ephy_base;
