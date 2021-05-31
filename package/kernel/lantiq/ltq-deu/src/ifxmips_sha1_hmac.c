@@ -44,8 +44,8 @@
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <linux/crypto.h>
-#include <linux/cryptohash.h>
 #include <crypto/internal/hash.h>
+#include <crypto/sha.h>
 #include <linux/types.h>
 #include <linux/scatterlist.h>
 #include <asm/byteorder.h>
