@@ -1,0 +1,30 @@
+From d6d4ea9e5a275540eb1d941bb21ba35708b0ba54 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Tue, 9 Feb 2021 09:55:17 +0100
+Subject: [PATCH 27/33] Documentation: devicetree: net: dsa: qca8k: document
+ rgmii_1_8v bindings
+
+Document new qca8k,rgmii0_1_8v and qca8k,rgmii56_1_8v needed to setup
+mac_pwr_sel register for ar8327 switch.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ Documentation/devicetree/bindings/net/dsa/qca8k.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/net/dsa/qca8k.txt b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+index 3973a9d3e426..329617d7f81c 100644
+--- a/Documentation/devicetree/bindings/net/dsa/qca8k.txt
++++ b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+@@ -13,6 +13,8 @@ Required properties:
+ Optional properties:
+ 
+ - reset-gpios: GPIO to be used to reset the whole device
++- qca8k,rgmii0_1_8v: Set the internal regulator to supply 1.8v for MAC0 port
++- qca8k,rgmii56_1_8v: Set the internal regulator to supply 1.8v for MAC5/6 port
+ 
+ Subnodes:
+ 
+-- 
+2.30.2
+

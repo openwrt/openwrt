@@ -1,0 +1,117 @@
+From 2bc095a9d03fb11701ecabe9313962aa9ce42aea Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sun, 4 Apr 2021 13:04:38 +0200
+Subject: [PATCH 34/34] drivers: net: dsa: qca8k: add support for multi-cpu
+ support
+
+Add support to qca8k for support of multiple cpu port.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 26 +++++++++++++-------------
+ drivers/net/dsa/qca8k.h |  2 --
+ 2 files changed, 13 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index c15e588ee81d..67483e67cb53 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -1083,15 +1083,6 @@ qca8k_setup(struct dsa_switch *ds)
+ 	if (ret)
+ 		dev_warn(priv->dev, "mib init failed");
+ 
+-	/* Enable QCA header mode on the cpu port */
+-	ret = qca8k_write(priv, QCA8K_REG_PORT_HDR_CTRL(QCA8K_CPU_PORT),
+-			  QCA8K_PORT_HDR_CTRL_ALL << QCA8K_PORT_HDR_CTRL_TX_S |
+-			  QCA8K_PORT_HDR_CTRL_ALL << QCA8K_PORT_HDR_CTRL_RX_S);
+-	if (ret) {
+-		dev_err(priv->dev, "failed enabling QCA header mode");
+-		return ret;
+-	}
+-
+ 	/* Disable forwarding by default on all ports */
+ 	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
+ 		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(i),
+@@ -1117,7 +1108,16 @@ qca8k_setup(struct dsa_switch *ds)
+ 	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
+ 		/* CPU port gets connected to all user ports of the switch */
+ 		if (dsa_is_cpu_port(ds, i)) {
+-			ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(QCA8K_CPU_PORT),
++			/* Enable QCA header mode on the cpu port */
++			ret = qca8k_write(priv, QCA8K_REG_PORT_HDR_CTRL(i),
++					  QCA8K_PORT_HDR_CTRL_ALL << QCA8K_PORT_HDR_CTRL_TX_S |
++					  QCA8K_PORT_HDR_CTRL_ALL << QCA8K_PORT_HDR_CTRL_RX_S);
++			if (ret) {
++				dev_err(priv->dev, "Failed to enable QCA Header mode for cpu %d", i);
++				return ret;
++			}
++
++			ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(i),
+ 					QCA8K_PORT_LOOKUP_MEMBER, dsa_user_ports(ds));
+ 			if (ret)
+ 				return ret;
+@@ -1129,7 +1129,7 @@ qca8k_setup(struct dsa_switch *ds)
+ 
+ 			ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(i),
+ 					QCA8K_PORT_LOOKUP_MEMBER,
+-					BIT(QCA8K_CPU_PORT));
++					dsa_cpu_ports(ds));
+ 			if (ret)
+ 				return ret;
+ 
+@@ -1608,7 +1608,7 @@ static int
+ qca8k_port_bridge_join(struct dsa_switch *ds, int port, struct net_device *br)
+ {
+ 	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
+-	int port_mask = BIT(QCA8K_CPU_PORT);
++	int port_mask = dsa_cpu_ports(ds);
+ 	int i, ret;
+ 
+ 	for (i = 1; i < QCA8K_NUM_PORTS; i++) {
+@@ -1654,7 +1654,7 @@ qca8k_port_bridge_leave(struct dsa_switch *ds, int port, struct net_device *br)
+ 	 * this port
+ 	 */
+ 	qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
+-		  QCA8K_PORT_LOOKUP_MEMBER, BIT(QCA8K_CPU_PORT));
++		  QCA8K_PORT_LOOKUP_MEMBER, dsa_cpu_ports(ds));
+ }
+ 
+ static int
+@@ -1859,6 +1859,13 @@ qca8k_get_tag_protocol(struct dsa_switch *ds, int port,
+ 	return DSA_TAG_PROTO_QCA;
+ }
+ 
++static int
++qca8k_port_change_cpu_port(struct dsa_switch *ds, int port,
++				  struct dsa_port *new_cpu_dp)
++{
++	return 0;
++}
++
+ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.get_tag_protocol	= qca8k_get_tag_protocol,
+ 	.setup			= qca8k_setup,
+@@ -1887,6 +1894,7 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.phylink_mac_link_down	= qca8k_phylink_mac_link_down,
+ 	.phylink_mac_link_up	= qca8k_phylink_mac_link_up,
+ 	.get_phy_flags		= qca8k_get_phy_flags,
++	.port_change_cpu_port	= qca8k_port_change_cpu_port,
+ };
+ 
+ static int qca8k_read_switch_id(struct qca8k_priv *priv)
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index 24a8ec514636..651635bf53fa 100644
+--- a/drivers/net/dsa/qca8k.h
++++ b/drivers/net/dsa/qca8k.h
+@@ -24,8 +24,6 @@
+ 
+ #define QCA8K_NUM_FDB_RECORDS				2048
+ 
+-#define QCA8K_CPU_PORT					0
+-
+ #define QCA8K_PORT_VID_DEF				1
+ 
+ /* Global control registers */
+-- 
+2.30.2
+

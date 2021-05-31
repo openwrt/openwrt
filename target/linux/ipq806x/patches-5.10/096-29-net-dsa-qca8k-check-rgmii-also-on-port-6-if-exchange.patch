@@ -1,0 +1,43 @@
+From 4c1ae4f5204783ac2160cf46f909e4758c3e2a57 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Tue, 11 May 2021 23:22:02 +0200
+Subject: [PATCH 29/34] net: dsa: qca8k: check rgmii also on port 6 if
+ exchanged
+
+Port 0 can be exchanged with port6. Handle this special case by also
+checking the port6 if present.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index c6b8c9836e71..a90f2c8e9fa7 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -901,7 +901,20 @@ qca8k_setup_of_rgmii_delay(struct qca8k_priv *priv)
+ 	if (mode != PHY_INTERFACE_MODE_RGMII_ID &&
+ 	    mode != PHY_INTERFACE_MODE_RGMII_RXID &&
+ 	    mode != PHY_INTERFACE_MODE_RGMII_TXID) {
+-		return 0;
++		/* Port 0 can be exchanged with port 6 */
++		dp = dsa_to_port(priv->ds, 6);
++		if (!dp)
++			return 0;
++
++		port_dn = dp->dn;
++
++		/* Check if port 6 is set to the correct type */
++		of_get_phy_mode(port_dn, &mode);
++		if (mode != PHY_INTERFACE_MODE_RGMII_ID &&
++		    mode != PHY_INTERFACE_MODE_RGMII_RXID &&
++		    mode != PHY_INTERFACE_MODE_RGMII_TXID) {
++			return 0;
++		}
+ 	}
+ 
+ 	switch (mode) {
+-- 
+2.30.2
+

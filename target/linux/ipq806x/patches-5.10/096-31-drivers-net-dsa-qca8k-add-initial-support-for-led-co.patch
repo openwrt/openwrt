@@ -1,0 +1,110 @@
+From 289cd92a3776a558b9978a804d7a20450929a0c6 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Thu, 4 Mar 2021 10:03:32 +0100
+Subject: [PATCH 31/34] drivers: net: dsa: qca8k: add initial support for led
+ config
+
+Some device use a non standard configuration for the LED blink freq.
+Add support for this specific configuration. If needed other LED
+configuration can be added later.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 52 +++++++++++++++++++++++++++++++++++++++++
+ drivers/net/dsa/qca8k.h | 10 ++++++++
+ 2 files changed, 62 insertions(+)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index a90f2c8e9fa7..c15e588ee81d 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -980,6 +980,54 @@ qca8k_setup_mac_pwr_sel(struct qca8k_priv *priv)
+ 	return ret;
+ }
+ 
++static int
++qca8k_setup_led_ctrl(struct qca8k_priv *priv)
++{
++	struct device_node *node = priv->dev->of_node;
++	int rule, ret = 0;
++	u32 val, reg;
++	u8 led_hz;
++
++	if (!of_property_read_u8(node, "qca8k,led_blink_freq", &led_hz)) {
++		switch (led_hz) {
++		case 8: /* 8 Hz */
++			val = 0x2;
++			break;
++		case 4: /* 4 Hz */
++			val = 0x1;
++			break;
++		case 2: /* 2 Hz */
++			val = 0x0;
++			break;
++		case 0: /* auto (1000mbps 8Hz, 100mbps 4Hz, 10mbps 2Hz) */
++			val = 0x3;
++			break;
++		default:
++			dev_err(priv->dev, "Unsupported led blink freq");
++			return -EINVAL;
++		}
++
++		for (rule = 0; rule < QCA8K_LED_RULE_COUNT; rule++) {
++			if (rule < 2) /* RULE 0-1 CTRL 0 */
++				reg = QCA8K_LED_CTRL0_REG;
++			else if (rule < 4) /* RULE 2-3 CTRL 1 */
++				reg = QCA8K_LED_CTRL1_REG;
++			else /* RULE 4-5 CTRL 2 */
++				reg = QCA8K_LED_CTRL2_REG;
++
++			if (rule % 2 == 0)
++				ret = qca8k_rmw(priv, reg, QCA8K_LED_BLINK_FREQ_MASK,
++						val);
++			else /* RULE 1, 3, 5 requires an offset */
++				ret = qca8k_rmw(priv, reg,
++						QCA8K_LED_BLINK_FREQ_MASK << 16,
++						val << 16);
++		}
++	}
++
++	return ret;
++}
++
+ static int
+ qca8k_setup(struct dsa_switch *ds)
+ {
+@@ -1018,6 +1066,10 @@ qca8k_setup(struct dsa_switch *ds)
+ 		qca8k_reg_set(priv, QCA8K_REG_PORT0_PAD_CTRL,
+ 			      QCA8K_PORT_PAD0_MAC6_EXCHANGE_EN);
+ 
++	ret = qca8k_setup_led_ctrl(priv);
++	if (ret)
++		return ret;
++
+ 	/* Enable CPU Port */
+ 	ret = qca8k_reg_set(priv, QCA8K_REG_GLOBAL_FW_CTRL0,
+ 			    QCA8K_GLOBAL_FW_CTRL0_CPU_PORT_EN);
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index 37c730e6d08c..24a8ec514636 100644
+--- a/drivers/net/dsa/qca8k.h
++++ b/drivers/net/dsa/qca8k.h
+@@ -65,6 +65,16 @@
+ #define   QCA8K_MDIO_MASTER_DATA_MASK			GENMASK(15, 0)
+ #define   QCA8K_MDIO_MASTER_MAX_PORTS			5
+ #define   QCA8K_MDIO_MASTER_MAX_REG			32
++
++/* LED control register */
++#define QCA8K_LED_RULE_COUNT				6
++#define QCA8K_LED_CTRL0_REG				0x50
++#define QCA8K_LED_CTRL1_REG				0x54
++#define QCA8K_LED_CTRL2_REG				0x58
++#define   QCA8K_LED_BLINK_FREQ_MASK			GENMASK(1, 0)
++#define QCA8K_LED_CTRL3_REG				0x5C
++
++
+ #define QCA8K_GOL_MAC_ADDR0				0x60
+ #define QCA8K_GOL_MAC_ADDR1				0x64
+ #define QCA8K_MAX_FRAME_SIZE				0x78
+-- 
+2.30.2
+

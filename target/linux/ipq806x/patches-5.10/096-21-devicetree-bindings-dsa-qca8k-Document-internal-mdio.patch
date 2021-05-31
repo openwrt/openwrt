@@ -1,0 +1,96 @@
+From 7be27594ddf762c2bda68e8a25431bb8542bbc82 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Tue, 11 May 2021 02:44:37 +0200
+Subject: [PATCH 21/33] devicetree: bindings: dsa: qca8k: Document internal
+ mdio definition
+
+Document new way of declare mapping of internal PHY to port.
+The new implementation directly declare the PHY connected to the port
+by adding a node in the switch node. The driver detect this and register
+an internal mdiobus using the mapping defined in the mdio node.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ .../devicetree/bindings/net/dsa/qca8k.txt     | 39 +++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/net/dsa/qca8k.txt b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+index 1daf68e7ae19..3973a9d3e426 100644
+--- a/Documentation/devicetree/bindings/net/dsa/qca8k.txt
++++ b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+@@ -21,6 +21,10 @@ described in dsa/dsa.txt. If the QCA8K switch is connect to a SoC's external
+ mdio-bus each subnode describing a port needs to have a valid phandle
+ referencing the internal PHY it is connected to. This is because there's no
+ N:N mapping of port and PHY id.
++To declare the internal mdio-bus configuration, declare a mdio node in the
++switch node and declare the phandle for the port referencing the internal
++PHY is connected to. In this config a internal mdio-bus is registred and
++the mdio MASTER is used as communication.
+ 
+ Don't use mixed external and internal mdio-bus configurations, as this is
+ not supported by the hardware.
+@@ -150,26 +154,61 @@ for the internal master mdio-bus configuration:
+ 				port@1 {
+ 					reg = <1>;
+ 					label = "lan1";
++					phy-mode = "internal";
++					phy-handle = <&phy_port1>;
+ 				};
+ 
+ 				port@2 {
+ 					reg = <2>;
+ 					label = "lan2";
++					phy-mode = "internal";
++					phy-handle = <&phy_port2>;
+ 				};
+ 
+ 				port@3 {
+ 					reg = <3>;
+ 					label = "lan3";
++					phy-mode = "internal";
++					phy-handle = <&phy_port3>;
+ 				};
+ 
+ 				port@4 {
+ 					reg = <4>;
+ 					label = "lan4";
++					phy-mode = "internal";
++					phy-handle = <&phy_port4>;
+ 				};
+ 
+ 				port@5 {
+ 					reg = <5>;
+ 					label = "wan";
++					phy-mode = "internal";
++					phy-handle = <&phy_port5>;
++				};
++			};
++
++			mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				phy_port1: phy@0 {
++					reg = <0>;
++				};
++
++				phy_port2: phy@1 {
++					reg = <1>;
++				};
++
++				phy_port3: phy@2 {
++					reg = <2>;
++				};
++
++				phy_port4: phy@3 {
++					reg = <3>;
++				};
++
++				phy_port5: phy@4 {
++					reg = <4>;
+ 				};
+ 			};
+ 		};
+-- 
+2.30.2
+

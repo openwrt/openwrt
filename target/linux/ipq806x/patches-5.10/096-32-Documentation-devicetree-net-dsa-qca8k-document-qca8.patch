@@ -1,0 +1,33 @@
+From fb48e2e07cd1fc6d97b0b67be9a926946c339395 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Thu, 4 Mar 2021 10:08:59 +0100
+Subject: [PATCH 32/34] Documentation: devicetree: net: dsa: qca8k: document
+ qca8k,led_blink_freq
+
+Document binding qca8k,led_blink_freq to set LED switch blink Hz
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ Documentation/devicetree/bindings/net/dsa/qca8k.txt | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/net/dsa/qca8k.txt b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+index 6e73e2bfbce2..730f540bf763 100644
+--- a/Documentation/devicetree/bindings/net/dsa/qca8k.txt
++++ b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+@@ -14,6 +14,12 @@ Optional properties:
+ 
+ - reset-gpios: GPIO to be used to reset the whole device
+ - qca8k,mac6_exchange: Exchange mac0 port with mac6 port
++- qca8k,led_blink_freq: Set the LED blink freq of the switch leds.
++                        Supported values are:
++                        - 0 for 1000mbps set to 8Hz, 100mbps 4Hz and 10mbps 2Hz
++                        - 2 for 2Hz
++                        - 4 for 4Hz
++                        - 8 for 8Hz
+ - qca8k,rgmii0_1_8v: Set the internal regulator to supply 1.8v for MAC0 port
+ - qca8k,rgmii56_1_8v: Set the internal regulator to supply 1.8v for MAC5/6 port
+ 
+-- 
+2.30.2
+

@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+
+START=15
+
+boot() {
+  # Restore original implementation where the eth1 (port 6) was used for the lan port
+  # and the eth0 (port 0) was used for the wan port
+  ip link set lan1 link eth1
+  ip link set lan2 link eth1
+  ip link set lan3 link eth1
+  ip link set lan4 link eth1
+  ip link set wan link eth0
+}

@@ -1,0 +1,39 @@
+From 2bf13a906ce96f67eb292c8e519c6d2215501d82 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sun, 4 Apr 2021 12:58:50 +0200
+Subject: [PATCH 1/2] include: net: add dsa_cpu_ports function
+
+dsa_cpu_ports can be useful for switch that has multiple cpu port to
+retrieve the cpu mask for ACL and bridge table.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ include/net/dsa.h | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/include/net/dsa.h b/include/net/dsa.h
+index 4e60d2610f20..9b34273b29c2 100644
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -382,6 +382,18 @@ static inline u32 dsa_user_ports(struct dsa_switch *ds)
+ 	return mask;
+ }
+ 
++static inline u32 dsa_cpu_ports(struct dsa_switch *ds)
++{
++	u32 mask = 0;
++	int p;
++
++	for (p = 0; p < ds->num_ports; p++)
++		if (dsa_is_cpu_port(ds, p))
++			mask |= BIT(p);
++
++	return mask;
++}
++
+ /* Return the local port used to reach an arbitrary switch device */
+ static inline unsigned int dsa_routing_port(struct dsa_switch *ds, int device)
+ {
+-- 
+2.30.2
+

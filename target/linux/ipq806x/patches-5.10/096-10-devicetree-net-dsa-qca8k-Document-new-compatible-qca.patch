@@ -1,0 +1,31 @@
+From 3b1867e8bebc6967cb70fc498df82d1470e50a5e Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Fri, 23 Apr 2021 03:02:44 +0200
+Subject: [PATCH 10/33] devicetree: net: dsa: qca8k: Document new compatible
+ qca8327
+
+Add support for qca8327 in the compatible list.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Acked-by: Rob Herring <robh@kernel.org>
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ Documentation/devicetree/bindings/net/dsa/qca8k.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/net/dsa/qca8k.txt b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+index ccbc6d89325d..1daf68e7ae19 100644
+--- a/Documentation/devicetree/bindings/net/dsa/qca8k.txt
++++ b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+@@ -3,6 +3,7 @@
+ Required properties:
+ 
+ - compatible: should be one of:
++    "qca,qca8327"
+     "qca,qca8334"
+     "qca,qca8337"
+ 
+-- 
+2.30.2
+
