@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (netif_elide_gro(skb->dev))
  		goto normal;
  
-@@ -7986,6 +7989,48 @@ static void __netdev_adjacent_dev_unlink
+@@ -7987,6 +7990,48 @@ static void __netdev_adjacent_dev_unlink
  					   &upper_dev->adj_list.lower);
  }
  
@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int __netdev_upper_dev_link(struct net_device *dev,
  				   struct net_device *upper_dev, bool master,
  				   void *upper_priv, void *upper_info,
-@@ -8037,6 +8082,7 @@ static int __netdev_upper_dev_link(struc
+@@ -8038,6 +8083,7 @@ static int __netdev_upper_dev_link(struc
  	if (ret)
  		return ret;
  
@@ -99,7 +99,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ret = call_netdevice_notifiers_info(NETDEV_CHANGEUPPER,
  					    &changeupper_info.info);
  	ret = notifier_to_errno(ret);
-@@ -8133,6 +8179,7 @@ static void __netdev_upper_dev_unlink(st
+@@ -8134,6 +8180,7 @@ static void __netdev_upper_dev_unlink(st
  
  	__netdev_adjacent_dev_unlink_neighbour(dev, upper_dev);
  
@@ -107,7 +107,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER,
  				      &changeupper_info.info);
  
-@@ -8919,6 +8966,7 @@ int dev_set_mac_address(struct net_devic
+@@ -8920,6 +8967,7 @@ int dev_set_mac_address(struct net_devic
  	if (err)
  		return err;
  	dev->addr_assign_type = NET_ADDR_SET;
