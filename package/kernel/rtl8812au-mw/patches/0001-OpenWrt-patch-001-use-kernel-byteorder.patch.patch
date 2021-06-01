@@ -1,0 +1,25 @@
+From dce84c6518090efae57f8357e67642f4f21b6c36 Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <gh2020@plntyk.name>
+Date: Tue, 1 Jun 2021 14:34:01 +0200
+Subject: [PATCH 01/12] OpenWrt patch 001-use-kernel-byteorder.patch
+
+---
+ include/drv_types.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/drv_types.h b/include/drv_types.h
+index 86c569f0..086b6bf9 100644
+--- a/include/drv_types.h
++++ b/include/drv_types.h
+@@ -25,7 +25,7 @@
+ #include <drv_conf.h>
+ #include <basic_types.h>
+ #include <osdep_service.h>
+-#include <rtw_byteorder.h>
++#include <asm/byteorder.h>
+ #include <wlan_bssdef.h>
+ #include <wifi.h>
+ #include <ieee80211.h>
+-- 
+2.31.1
+

@@ -1,0 +1,45 @@
+From c76473b28ee700ffe68b20ab5f134525bf098ec4 Mon Sep 17 00:00:00 2001
+From: Ben Greear <greearb@candelatech.com>
+Date: Fri, 9 Nov 2018 16:21:43 -0800
+Subject: [PATCH 09/12] Fix build against openwrt backports tree.
+
+Like breaks builds elsewhere, can fix it up later.
+
+Signed-off-by: Ben Greear <greearb@candelatech.com>
+
+modified for rtl8812au-mw by
+Signed-off-by: Dirk Neukirchen <gh2020@plntyk.name>
+---
+ include/drv_conf.h                                      | 4 +++-
+ include/linux/{wireless.h => old_unused_rtl_wireless.h} | 0
+ include/{autoconf.h => rtl_autoconf.h}                  | 0
+ 3 files changed, 3 insertions(+), 1 deletion(-)
+ rename include/linux/{wireless.h => old_unused_rtl_wireless.h} (100%)
+ rename include/{autoconf.h => rtl_autoconf.h} (100%)
+
+diff --git a/include/drv_conf.h b/include/drv_conf.h
+index b0f856b8..7195df1a 100644
+--- a/include/drv_conf.h
++++ b/include/drv_conf.h
+@@ -14,7 +14,9 @@
+  *****************************************************************************/
+ #ifndef __DRV_CONF_H__
+ #define __DRV_CONF_H__
+-#include "autoconf.h"
++#include <generated/autoconf.h>
++#include "rtl_autoconf.h"
++
+ #include "hal_ic_cfg.h"
+ 
+ #define CONFIG_RSSI_PRIORITY
+diff --git a/include/linux/wireless.h b/include/linux/old_unused_rtl_wireless.h
+similarity index 100%
+rename from include/linux/wireless.h
+rename to include/linux/old_unused_rtl_wireless.h
+diff --git a/include/autoconf.h b/include/rtl_autoconf.h
+similarity index 100%
+rename from include/autoconf.h
+rename to include/rtl_autoconf.h
+-- 
+2.31.1
+

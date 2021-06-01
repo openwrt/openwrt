@@ -1,0 +1,25 @@
+From e899fe276469c90b2702d472eac4142ae48afbc3 Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <gh2020@plntyk.name>
+Date: Tue, 1 Jun 2021 14:46:17 +0200
+Subject: [PATCH 04/12] fix misleading indentation
+
+---
+ core/rtw_mlme.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/rtw_mlme.c b/core/rtw_mlme.c
+index 0629a4e0..ce1046d2 100644
+--- a/core/rtw_mlme.c
++++ b/core/rtw_mlme.c
+@@ -3157,7 +3157,7 @@ void rtw_drv_scan_by_self(_adapter *padapter, u8 reason)
+ 		else
+ 		#endif
+ 			RTW_INFO(FUNC_ADPT_FMT" exit BusyTraffic\n", FUNC_ADPT_ARG(padapter));
+-			goto exit;
++		goto exit;
+ 	}
+ 	else if (ssc_chk != SS_ALLOW)
+ 		goto exit;
+-- 
+2.31.1
+

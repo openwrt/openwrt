@@ -1,0 +1,39 @@
+From c09c95bce8f1be53982c42beeed4d8682a0f95d6 Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <gh2020@plntyk.name>
+Date: Tue, 1 Jun 2021 15:31:46 +0200
+Subject: [PATCH 07/12] port allow cross compile on cmdline from Ben Grear
+
+---
+ Makefile | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index 3f41c79b..c3a8921a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1324,11 +1324,22 @@ EXTRA_CFLAGS += -DCONFIG_GTK_OL
+ endif
+ 
+ ifeq ($(CONFIG_PLATFORM_I386_PC), y)
++
++ifdef EXT_EXTRA_CFLAGS
++EXTRA_CFLAGS += $(EXT_EXTRA_CFLAGS)
++else
+ EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
+ EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
++endif
++
++ifndef ARCH
+ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/armv.l/arm/ -e s/aarch64/arm64/)
+ ARCH ?= $(SUBARCH)
++endif
++
++ifndef CROSS_COMPILE
+ CROSS_COMPILE ?=
++endif
+ KVER  := $(shell uname -r)
+ KSRC := /lib/modules/$(KVER)/build
+ MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/
+-- 
+2.31.1
+

@@ -1,0 +1,24 @@
+From 5ffeee5bdfc0a69dd9fd0cbf9e532e9d36d169ed Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <gh2020@plntyk.name>
+Date: Tue, 1 Jun 2021 17:30:11 +0200
+Subject: [PATCH 11/12] cosmetic Kconfig change
+
+---
+ Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Kconfig b/Kconfig
+index 846a4f62..f87653d5 100644
+--- a/Kconfig
++++ b/Kconfig
+@@ -1,6 +1,6 @@
+ config RTL8812AU
+ 	tristate "Realtek 8812A USB WiFi"
+ 	depends on USB
+-	help
++	---help---
+ 	  Help message of RTL8812AU
+ 
+-- 
+2.31.1
+
