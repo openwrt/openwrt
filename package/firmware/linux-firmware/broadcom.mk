@@ -38,7 +38,7 @@ Package/brcmfmac-firmware-43362-sdio = $(call Package/firmware-default,Broadcom 
 define Package/brcmfmac-firmware-43362-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/brcm/brcmfmac43362-sdio.bin \
+		$(PKG_BUILD_DIR)/cypress/cyfmac43362-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43362-sdio.bin
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-43362-sdio))
@@ -47,8 +47,11 @@ Package/brcmfmac-firmware-43430-sdio = $(call Package/firmware-default,Broadcom 
 define Package/brcmfmac-firmware-43430-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/brcm/brcmfmac43430-sdio.bin \
+		$(PKG_BUILD_DIR)/cypress/cyfmac43430-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.bin
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac43430-sdio.clm_blob \
+		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.clm_blob
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-43430-sdio))
 
@@ -83,8 +86,11 @@ Package/brcmfmac-firmware-43455-sdio = $(call Package/firmware-default,Broadcom 
 define Package/brcmfmac-firmware-43455-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/brcm/brcmfmac43455-sdio.bin \
+		$(PKG_BUILD_DIR)/cypress/cyfmac43455-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.bin
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac43455-sdio.clm_blob \
+		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.clm_blob
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-43455-sdio))
 
