@@ -163,7 +163,6 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	    (size != (4 * sizeof(*priv->phy->phy_fixed[id])))) {
 		pr_err("%s: invalid fixed link property\n", np->name);
 		priv->phy->phy_fixed[id] = NULL;
-		return;
 	}
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
@@ -205,10 +204,6 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		return;
 	}
 
-	priv->phy->phy_node[id] = of_parse_phandle(np, "phy-handle", 0);
-	if (!priv->phy->phy_node[id] && !priv->phy->phy_fixed[id])
-		return;
-
 	val = rt_sysc_r32(SYSC_REG_CFG1);
 	val &= ~(3 << shift);
 	val |= mask << shift;
@@ -249,8 +244,8 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 			val = 2;
 			break;
 		default:
-			dev_err(priv->dev, "invalid link speed: %d\n",
-				priv->phy->speed[id]);
+			dev_err(priv->dev, "port %d - invalid link speed: %d\n",
+				id, priv->phy->speed[id]);
 			priv->phy->phy_fixed[id] = 0;
 			return;
 		}
@@ -264,7 +259,13 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		if (priv->phy->duplex[id])
 			val |= PMCR_DUPLEX;
 		mtk_switch_w32(gsw, val, GSW_REG_PORT_PMCR(id));
-		dev_info(priv->dev, "using fixed link parameters\n");
+		dev_info(priv->dev, "port %d - using fixed link parameters\n", id);
+		return;
+	}
+
+	priv->phy->phy_node[id] = of_parse_phandle(np, "phy-handle", 0);
+	if (!priv->phy->phy_node[id]) {
+		dev_err(priv->dev, "port %d - missing phy handle\n", id);
 		return;
 	}
 
@@ -277,7 +278,6 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		fe_connect_phy_node(priv, priv->phy->phy_node[id], id);
 		gsw->autopoll |= BIT(be32_to_cpup(phy_addr));
 		mt7620_auto_poll(gsw,id);
-		return;
 	}
 }
 
