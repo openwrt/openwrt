@@ -1376,11 +1376,16 @@ static int __init fe_init(struct net_device *dev)
 	else
 		fe_reset_fe(priv);
 
-	if (priv->soc->switch_init)
-		if (priv->soc->switch_init(priv)) {
+	if (priv->soc->switch_init) {
+		err = priv->soc->switch_init(priv);
+		if (err) {
+			if (err == -EPROBE_DEFER)
+				return err;
+
 			netdev_err(dev, "failed to initialize switch core\n");
 			return -ENODEV;
 		}
+	}
 
 	fe_reset_phy(priv);
 
