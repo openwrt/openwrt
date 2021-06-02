@@ -70,7 +70,7 @@ BEGIN {
         if (channel) {
 		mode="NOHT"
 		if (ht) mode="HT20"
-		if (vht) mode="VHT80"
+		if (vht && band != "1:")) mode="VHT80"
 		if (he) mode="HE80"
 		if (he && band == "1:") mode="HE20"
                 sub("\\[", "", channel)
