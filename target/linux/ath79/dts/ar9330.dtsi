@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-#include <dt-bindings/clock/ath79-clk.h>
+
 #include "ath79.dtsi"
 
 / {
@@ -7,6 +7,10 @@
 
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	aliases {
+		serial0 = &uart;
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -41,8 +45,6 @@
 
 				clocks = <&pll ATH79_CLK_REF>;
 				clock-names = "uart";
-
-				status = "disabled";
 			};
 
 			gpio: gpio@18040000 {

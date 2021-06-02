@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7621.dtsi"
 
@@ -22,7 +21,7 @@
 		compatible = "gpio-leds";
 
 		led_sys: sys {
-			label = "g7:blue:sys";
+			label = "blue:sys";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 	};

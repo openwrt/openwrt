@@ -103,24 +103,24 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "habanero-dvk:green:status";
+			label = "green:status";
 			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};
 
 		led_upgrade: upgrade {
-			label = "habanero-dvk:green:upgrade";
+			label = "green:upgrade";
 			gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan2g {
-			label = "habanero-dvk:green:wlan2g";
+			label = "green:wlan2g";
 			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g {
-			label = "habanero-dvk:green:wlan5g";
+			label = "green:wlan5g";
 			gpios = <&tlmm 48 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy1tpt";
 		};

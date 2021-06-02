@@ -50,6 +50,8 @@
 	ndfc@1,0 {
 		status = "okay";
 		nand {
+			nand-is-boot-medium;
+
 			partition@0 {
 				label = "u-boot";
 				reg = <0x00000000 0x00100000>;
@@ -189,6 +191,7 @@
 			/* Atheros AR9380 2.4/5GHz */
 			compatible = "pci168c,0030";
 			reg = <0x00410000 0 0 0 0>;
+			interrupts = <1>; /* INTA */
 		};
 	};
 };

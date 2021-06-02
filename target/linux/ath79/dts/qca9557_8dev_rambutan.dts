@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
+
+#include "qca955x.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-
-#include "qca955x.dtsi"
 
 / {
 	compatible = "8dev,rambutan", "qca,qca9557";
@@ -88,7 +87,6 @@
 
 	pll-data = <0x17000000 0x101 0x1313>;
 	phy-handle = <&phy1>;
-	phy-mode = "sgmii";
 	qca955x-sgmii-fixup;
 	mtd-mac-address = <&art 0x6>;
 };
@@ -124,8 +122,4 @@
 
 	#address-cells = <1>;
 	#size-cells = <0>;
-};
-
-&uart {
-	status = "okay";
 };

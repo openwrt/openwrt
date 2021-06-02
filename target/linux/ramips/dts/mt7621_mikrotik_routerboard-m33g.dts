@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "mt7621_mikrotik.dtsi"
 
 / {
@@ -17,7 +15,7 @@
 		compatible = "gpio-leds";
 
 		led_usr: usr {
-			label = "routerboard-m33g:green:usr";
+			label = "green:usr";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 	};

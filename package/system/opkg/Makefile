@@ -1,22 +1,20 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
-# Copyright (C) 2006-2015 OpenWrt.org
-# Copyright (C) 2016-2017 LEDE Project
+# Copyright (C) 2006-2021 OpenWrt.org
 #
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=opkg
-PKG_RELEASE:=1
+PKG_RELEASE:=$(AUTORELEASE)
 PKG_FLAGS:=essential
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.openwrt.org/project/opkg-lede.git
-PKG_SOURCE_DATE:=2020-08-31
-PKG_SOURCE_VERSION:=cf44c2feb606b60ba3f35392e102c281ef6ea0da
-PKG_MIRROR_HASH:=0d7be9f8f86864e2a9999145210ecaa286fb85cfae131ec502609a6d1e435871
+PKG_SOURCE_URL:=$(PROJECT_GIT)/project/opkg-lede.git
+PKG_SOURCE_DATE:=2021-03-15
+PKG_SOURCE_VERSION:=5936c4f9660248284e8a9b040ea3153d3ea888de
+PKG_MIRROR_HASH:=b873c209baaf4f150c89646d58e4a0072f807d24b02c320ab8c7ae9180c13240
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING

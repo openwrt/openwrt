@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7628an.dtsi"
 
@@ -25,29 +24,29 @@
 		compatible = "gpio-leds";
 
 		led_globe: globe {
-			label = "rp-wd009:white:globe";
+			label = "white:globe";
 			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan2 {
-			label = "rp-wd009:white:wlan2";
+			label = "white:wlan2";
 			gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5 {
-			label = "rp-wd009:white:wlan5";
+			label = "white:wlan5";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
 		sd_white {
-			label = "rp-wd009:white:sd";
+			label = "white:sd";
 			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 		};
 
 		sd_red {
-			label = "rp-wd009:red:sd";
+			label = "red:sd";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -92,14 +91,6 @@
 				"p4led_an", "uart2", "pwm0", "i2s";
 		function = "gpio";
 	};
-};
-
-&ehci {
-	status = "okay";
-};
-
-&ohci {
-	status = "okay";
 };
 
 &sdhci {

@@ -26,18 +26,12 @@
 		label = "firmware";
 		reg = <0x040000 0x5e0000>;
 	};
-
-	partition@620000 {
-		label = "partition-table";
-		reg = <0x620000 0x010000>;
-		read-only;
-	};
 };
 
 &eth0 {
-	mtd-mac-address = <&mac 0x8>;
+	mtd-mac-address = <&info 0x8>;
 };
 
 &wmac {
-	mtd-mac-address = <&mac 0x8>;
+	mtd-mac-address = <&info 0x8>;
 };

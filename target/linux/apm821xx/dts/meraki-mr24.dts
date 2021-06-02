@@ -47,6 +47,8 @@
 		status = "okay";
 		/* 32 MiB NAND Flash */
 		nand {
+			nand-is-boot-medium;
+
 			partition@0 {
 				label = "u-boot";
 				reg = <0x00000000 0x00150000>;
@@ -212,6 +214,7 @@
 					/* Atheros AR9380 2.4GHz */
 					compatible = "pci168c,0030";
 					reg = <0x00430000 0 0 0 0>;
+					interrupts = <3>; /* INTC 4.1.1 */
 				};
 			};
 
@@ -226,6 +229,7 @@
 					/* Atheros AR9380 5GHz */
 					compatible = "pci168c,0030";
 					reg = <0x00440000 0 0 0 0>;
+					interrupts = <4>; /* INTD 4.1.1 */
 				};
 			};
 		};

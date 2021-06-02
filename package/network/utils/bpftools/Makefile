@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bpftools
-PKG_VERSION:=5.8.3
+PKG_VERSION:=5.11.16
 PKG_RELEASE:=1
 
 PKG_SOURCE:=linux-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/v5.x
-PKG_HASH:=8ea27e1ed38981f772cc6d5f16ab8dbb8052c3800ba0494bd798fbb95dcc1779
+PKG_HASH:=21163681d130cbce5a6be39019e2c69e44f284855ddd70b1a3bd039249540f43
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 
@@ -32,6 +32,7 @@ TAR_OPTIONS+= \
 	$(addprefix $(LINUX_TLD)/,$(BPF_FILES))
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/nls.mk
 
 define Package/bpftool/Default
   SECTION:=net
@@ -92,9 +93,11 @@ ifneq ($(BUILD_VARIANT),lib)
   TARGET_LDFLAGS += -Wl,--gc-sections
 endif
 
-MAKE_FLAGS += \
+MAKE_VARS = \
 	EXTRA_CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
-	LDFLAGS="$(TARGET_LDFLAGS)" \
+	LDFLAGS="$(TARGET_LDFLAGS)"
+
+MAKE_FLAGS += \
 	BPFTOOL_VERSION="$(LINUX_VERSION)" \
 	FEATURES_DUMP="$(PKG_BUILD_DIR)/FEATURE-DUMP.openwrt" \
 	OUTPUT="$(PKG_BUILD_DIR)/" \
@@ -125,9 +128,9 @@ define Build/Configure
 		$(MAKE_FLAGS) FEATURES_DUMP= $(PKG_BUILD_DIR)//libbpf/libbpf.a
 	(cd $(PKG_BUILD_DIR); cat FEATURE-DUMP.bpftool libbpf/FEATURE-DUMP.libbpf \
 		| sort | uniq > FEATURE-DUMP.openwrt)
-	$(SED) 's/feature-libbfd=[01]/feature-libbfd=$(HAVE_LIBBFD)/' \
-		-e 's/feature-libcap=[01]/feature-libcap=$(HAVE_LIBCAP)/' \
-		-e 's/feature-clang-bpf-global-var=[01]/feature-clang-bpf-global-var=$(HAVE_CLANG)/' \
+	$(SED) 's/feature-libbfd=1/feature-libbfd=$(HAVE_LIBBFD)/' \
+		-e 's/feature-libcap=1/feature-libcap=$(HAVE_LIBCAP)/' \
+		-e 's/feature-clang-bpf-co-re=1/feature-clang-bpf-co-re=$(HAVE_CLANG)/' \
 		$(PKG_BUILD_DIR)/FEATURE-DUMP.openwrt
 endef
 
@@ -140,6 +143,10 @@ define Build/InstallDev/libbpf
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib$(LIB_SUFFIX)/pkgconfig/libbpf.pc \
 		$(1)/usr/lib/pkgconfig/
+	$(SED) 's,/usr/include,$$$${prefix}/include,g' \
+		$(1)/usr/lib/pkgconfig/libbpf.pc
+	$(SED) 's,/usr/lib,$$$${exec_prefix}/lib,g' \
+		$(1)/usr/lib/pkgconfig/libbpf.pc
 endef
 
 ifeq ($(BUILD_VARIANT),lib)
@@ -157,6 +164,6 @@ define Package/libbpf/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib$(LIB_SUFFIX)/libbpf.so.* $(1)/usr/lib/
 endef
 
+$(eval $(call BuildPackage,libbpf))
 $(eval $(call BuildPackage,bpftool-full))
 $(eval $(call BuildPackage,bpftool-minimal))
-$(eval $(call BuildPackage,libbpf))

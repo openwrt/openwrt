@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: GPL-2.0
-#include <dt-bindings/clock/ath79-clk.h>
+// SPDX-License-Identifier: GPL-2.0-only
+
 #include "ath79.dtsi"
 
 / {
@@ -72,8 +72,6 @@
 				reg-io-width = <4>;
 				reg-shift = <2>;
 				no-loopback-test;
-
-				status = "disabled";
 			};
 
 			gpio: gpio@18040000 {
