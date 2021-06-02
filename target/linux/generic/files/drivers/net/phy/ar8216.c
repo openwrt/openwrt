@@ -2731,13 +2731,6 @@ ar8xxx_phy_remove(struct phy_device *phydev)
 	ar8xxx_free(priv);
 }
 
-static int
-ar8xxx_phy_soft_reset(struct phy_device *phydev)
-{
-	/* we don't need an extra reset */
-	return 0;
-}
-
 static struct phy_driver ar8xxx_phy_driver[] = {
 	{
 		.phy_id		= 0x004d0000,
@@ -2749,7 +2742,6 @@ static struct phy_driver ar8xxx_phy_driver[] = {
 		.config_init	= ar8xxx_phy_config_init,
 		.config_aneg	= ar8xxx_phy_config_aneg,
 		.read_status	= ar8xxx_phy_read_status,
-		.soft_reset	= ar8xxx_phy_soft_reset,
 		.get_features	= ar8xxx_get_features,
 	}
 };
