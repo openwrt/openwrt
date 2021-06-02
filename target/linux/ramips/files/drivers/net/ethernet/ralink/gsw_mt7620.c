@@ -211,12 +211,6 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw, int mdio_mode)
 		_mt7620_mii_write(gsw, gsw->ephy_base + 4, 4, 0x05e1);
 		_mt7620_mii_write(gsw, gsw->ephy_base + 4, 16, 0x1313);
 		pr_info("gsw: setting port4 to ephy mode\n");
-	} else if (!mdio_mode) {
-		u32 val = rt_sysc_r32(SYSC_REG_CFG1);
-
-		val &= ~(3 << 14);
-		rt_sysc_w32(val, SYSC_REG_CFG1);
-		pr_info("gsw: setting port4 to gmac mode\n");
 	}
 }
 
