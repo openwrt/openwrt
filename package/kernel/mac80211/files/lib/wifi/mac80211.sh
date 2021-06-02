@@ -92,7 +92,7 @@ $0 ~ "Capabilities:" {
 	ht=1
 }
 
-$0 ~ "VHT Capabilities:" {
+$0 ~ "VHT Capabilities" {
 	vht=1
 }
 
