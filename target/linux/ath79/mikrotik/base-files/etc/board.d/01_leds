@@ -6,6 +6,13 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+mikrotik,routerboard-750r2)
+	ucidef_set_led_netdev "led1" "1" "green:led1" "eth1"
+	ucidef_set_led_switch "led2" "2" "green:led2" "switch0" "0x10"
+	ucidef_set_led_switch "led3" "3" "green:led3" "switch0" "0x08"
+	ucidef_set_led_switch "led4" "4" "green:led4" "switch0" "0x04"
+	ucidef_set_led_switch "led5" "5" "green:led5" "switch0" "0x02"
+	;;
 mikrotik,routerboard-lhg-2nd)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
