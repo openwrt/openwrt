@@ -1,5 +1,4 @@
-//SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include "mt7628an.dtsi"
 
@@ -27,22 +26,22 @@
 		compatible = "gpio-leds";
 
 		led_run: run {
-			label = "wizfi630s:green:run";
+			label = "green:run";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		ledwps {
-			label = "wizfi630s:green:wps";
+			label = "green:wps";
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
 
 		leduart1 {
-			label = "wizfi630s:green:uart1";
+			label = "green:uart1";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
 		leduart2 {
-			label = "wizfi630s:green:uart2";
+			label = "green:uart2";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 	};

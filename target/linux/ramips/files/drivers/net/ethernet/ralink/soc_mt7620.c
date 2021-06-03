@@ -27,16 +27,11 @@
 
 #define MT7620A_CDMA_CSG_CFG	0x400
 #define MT7620_DMA_VID		(MT7620A_CDMA_CSG_CFG | 0x30)
-#define MT7621_CDMP_IG_CTRL	(MT7620A_CDMA_CSG_CFG + 0x00)
-#define MT7621_CDMP_EG_CTRL	(MT7620A_CDMA_CSG_CFG + 0x04)
 #define MT7620A_RESET_FE	BIT(21)
-#define MT7621_RESET_FE		BIT(6)
 #define MT7620A_RESET_ESW	BIT(23)
 #define MT7620_L4_VALID		BIT(23)
-#define MT7621_L4_VALID		BIT(24)
 
 #define MT7620_TX_DMA_UDF	BIT(15)
-#define MT7621_TX_DMA_UDF	BIT(19)
 #define TX_DMA_FP_BMAP		((0xff) << 19)
 
 #define CDMA_ICS_EN		BIT(2)
@@ -53,11 +48,6 @@
 #define MT7620_GDM1_TX_GBCNT	(MT7620_REG_MIB_OFFSET + 0x300)
 #define MT7620_GDM2_TX_GBCNT	(MT7620_GDM1_TX_GBCNT + 0x40)
 
-#define MT7621_REG_MIB_OFFSET	0x2000
-#define MT7621_PPE_AC_BCNT0	(MT7621_REG_MIB_OFFSET + 0x00)
-#define MT7621_GDM1_TX_GBCNT	(MT7621_REG_MIB_OFFSET + 0x400)
-#define MT7621_GDM2_TX_GBCNT	(MT7621_GDM1_TX_GBCNT + 0x40)
-
 #define GSW_REG_GDMA1_MAC_ADRL	0x508
 #define GSW_REG_GDMA1_MAC_ADRH	0x50C
 
@@ -68,8 +58,6 @@
  * but after test it should be BIT(13).
  */
 #define MT7620_FE_GDM1_AF	BIT(13)
-#define MT7621_FE_GDM1_AF	BIT(28)
-#define MT7621_FE_GDM2_AF	BIT(29)
 
 static const u16 mt7620_reg_table[FE_REG_COUNT] = {
 	[FE_REG_PDMA_GLO_CFG] = RT5350_PDMA_GLO_CFG,
@@ -143,7 +131,12 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	const __be32 *_id = of_get_property(np, "reg", NULL);
 	const __be32 *phy_addr;
-	int phy_mode, size, id;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
+	int phy_mode;
+#else
+	phy_interface_t phy_mode = PHY_INTERFACE_MODE_NA;
+#endif
+	int size, id;
 	int shift = 12;
 	u32 val, mask = 0;
 	u32 val_delay = 0;
@@ -173,7 +166,11 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		return;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
 	phy_mode = of_get_phy_mode(np);
+#else
+	of_get_phy_mode(np, &phy_mode);
+#endif
 	switch (phy_mode) {
 	case PHY_INTERFACE_MODE_RGMII:
 		mask = 0;

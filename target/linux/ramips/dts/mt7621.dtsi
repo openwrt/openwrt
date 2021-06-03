@@ -1,3 +1,5 @@
+/dts-v1/;
+
 #include <dt-bindings/interrupt-controller/mips-gic.h>
 #include <dt-bindings/clock/mt7621-clk.h>
 #include <dt-bindings/gpio/gpio.h>
@@ -6,6 +8,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 	compatible = "mediatek,mt7621-soc";
+
+	aliases {
+		serial0 = &uartlite;
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -29,10 +35,6 @@
 		#interrupt-cells = <1>;
 		interrupt-controller;
 		compatible = "mti,cpu-interrupt-controller";
-	};
-
-	aliases {
-		serial0 = &uartlite;
 	};
 
 	chosen {
@@ -369,7 +371,6 @@
 	xhci: xhci@1E1C0000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		status = "okay";
 
 		compatible = "mediatek,mt8173-xhci";
 		reg = <0x1e1c0000 0x1000

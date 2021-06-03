@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include "qca956x.dtsi"
+
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-
-#include "qca956x.dtsi"
 
 / {
 	aliases {
@@ -13,7 +13,7 @@
 		led-upgrade = &led_power;
 	};
 
-	keys: keys {
+	keys {
 		compatible = "gpio-keys";
 
 		reset {
@@ -25,7 +25,7 @@
 
 		leds {
 			label = "LED control button";
-			linux,code = <BTN_0>;
+			linux,code = <KEY_LIGHTS_TOGGLE>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
@@ -36,39 +36,54 @@
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
+
+		wifi {
+			label = "WiFi button";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "tp-link:green:power";
+			label = "green:power";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
-			label = "tp-link:green:lan";
+			label = "green:lan";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi2g {
-			label = "tp-link:green:wifi2g";
+			label = "green:wifi2g";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
 		wifi5g {
-			label = "tp-link:green:wifi5g";
+			label = "green:wifi5g";
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		led_control {
+			gpio-export,name = "tp-link:led:control";
+			gpio-export,output = <0>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
 
 &spi {
 	status = "okay";
-
-	num-cs = <1>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -84,10 +99,6 @@
 };
 
 &pcie {
-	status = "okay";
-};
-
-&uart {
 	status = "okay";
 };
 

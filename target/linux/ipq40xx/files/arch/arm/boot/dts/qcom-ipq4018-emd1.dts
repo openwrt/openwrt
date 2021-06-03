@@ -81,24 +81,24 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "emd1:white:power";
+			label = "white:power";
 			gpios = <&tlmm 58 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan2g {
-			label = "emd1:red:wlan2g";
+			label = "red:wlan2g";
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g {
-			label = "emd1:blue:wlan5g";
+			label = "blue:wlan5g";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy1tpt";
 		};
 
 		mesh {
-			label = "emd1:orange:mesh";
+			label = "orange:mesh";
 			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
 		};
 	};

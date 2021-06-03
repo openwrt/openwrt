@@ -1,9 +1,9 @@
 --- a/libfakeroot.c
 +++ b/libfakeroot.c
-@@ -110,8 +110,16 @@
- #define INT_NEXT_FSTATAT(a,b,c,d) NEXT_FSTATAT(_STAT_VER,a,b,c,d)
+@@ -112,8 +112,16 @@
  #define INT_SEND_STAT(a,b) SEND_STAT(a,b,_STAT_VER)
  #define INT_SEND_GET_XATTR(a,b) SEND_GET_XATTR(a,b,_STAT_VER)
+ #define INT_SEND_GET_STAT(a,b) SEND_GET_STAT(a,b)
 +
 +/* 10.10 uses id_t in getpriority/setpriority calls, so pretend
 +   id_t is used everywhere, just happens to be int on some OSes */
@@ -17,7 +17,7 @@
  #include <stdlib.h>
  #include <sys/ipc.h>
  #include <sys/msg.h>
-@@ -123,7 +131,6 @@
+@@ -125,7 +133,6 @@
  #include <unistd.h>
  #include <dirent.h>
  #include <errno.h>
@@ -25,7 +25,23 @@
  #ifdef HAVE_SYS_ACL_H
  #include <sys/acl.h>
  #endif /* HAVE_SYS_ACL_H */
-@@ -1894,7 +1901,7 @@ ssize_t fremovexattr(int fd, const char
+@@ -188,6 +195,15 @@ extern int unsetenv (const char *name);
+ #undef __lxstat64
+ #undef _FILE_OFFSET_BITS
+ 
++
++#ifndef AT_EMPTY_PATH
++#define AT_EMPTY_PATH 0
++#endif
++
++#ifndef AT_NO_AUTOMOUNT
++#define AT_NO_AUTOMOUNT 0
++#endif
++
+ /*
+ // next_wrap_st:
+ // this structure is used in next_wrap, which is defined in
+@@ -1911,7 +1927,7 @@ ssize_t fremovexattr(int fd, const char
  }
  #endif /* HAVE_FREMOVEXATTR */
  
@@ -34,7 +50,7 @@
    if (fakeroot_disabled)
      return next_setpriority(which, who, prio);
    next_setpriority(which, who, prio);
-@@ -2426,3 +2433,19 @@ int sysinfo(int command, char *buf, long
+@@ -2520,3 +2536,19 @@ int sysinfo(int command, char *buf, long
      }
  }
  #endif
@@ -56,16 +72,16 @@
 +#endif
 --- a/wrapfunc.inp
 +++ b/wrapfunc.inp
-@@ -145,7 +145,7 @@ setfsgid;gid_t;(gid_t fsgid);(fsgid)
- #endif /* HAVE_SETFSGID */
+@@ -146,7 +146,7 @@ setfsgid;gid_t;(gid_t fsgid);(fsgid)
  initgroups;int;(const char *user, INITGROUPS_SECOND_ARG group);(user, group)
+ getgroups;int;(int size, gid_t list[]);(size, list)
  setgroups;int;(SETGROUPS_SIZE_TYPE size, const gid_t *list);(size, list)
 -setpriority;int;(int which, int who, int prio);(which, who, prio)
 +setpriority;int;(int which, id_t who, int prio);(which, who, prio)
  #ifdef HAVE_CAPSET
  capset;int;(cap_user_header_t hdrp, const cap_user_data_t datap);(hdrp, datap)
  #endif /* HAVE_CAPSET */
-@@ -197,7 +197,7 @@ fchownat;int;(int dir_fd, const char *pa
+@@ -198,7 +198,7 @@ fchownat;int;(int dir_fd, const char *pa
  mkdirat;int;(int dir_fd, const char *pathname, mode_t mode);(dir_fd, pathname, mode)
  #endif /* HAVE_MKDIRAT */
  #ifdef HAVE_OPENAT
@@ -110,3 +126,13 @@
      if(argname){
          print "static __inline__ " ret " next_" name, argtype " __attribute__((always_inline));" > tmpffile;
          print "static __inline__ " ret " next_" name, argtype " {" > tmpffile;
+--- a/configure.ac
++++ b/configure.ac
+@@ -146,6 +146,7 @@ for first in size_t int; do
+ #include <sys/types.h>
+ #endif
+ #include <unistd.h>
++#include <stdio.h>
+ #ifdef HAVE_GRP_H
+ #include <grp.h>
+ #endif

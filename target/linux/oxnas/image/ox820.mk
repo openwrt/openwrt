@@ -10,7 +10,6 @@ define Device/Default
   SUBPAGESIZE := 512
   FILESYSTEMS := squashfs ubifs
   PROFILES := Default
-  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   DEVICE_DTS := ox820-$(subst _,-,$(1))
   KERNEL := kernel-bin | append-dtb | uImage none
   IMAGES := ubinized.bin sysupgrade.tar
@@ -51,7 +50,7 @@ define Device/cloudengines_pogoplugpro
   DEVICE_MODEL := PogoPlug Pro (with mPCIe)
   SUPPORTED_DEVICES += pogoplug-pro
   DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport \
-	kmod-ata-oxnas-sata kmod-rt2800-pci wpad-basic
+	kmod-ata-oxnas-sata kmod-rt2800-pci wpad-basic-wolfssl
 endef
 TARGET_DEVICES += cloudengines_pogoplugpro
 

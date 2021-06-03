@@ -1,9 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
 # Copyright (C) 2009-2013 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
@@ -12,8 +9,7 @@ KERNEL_LOADADDR:=0x8000
 
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA \
-	(early adopters with DSA already set up may just force-flash keeping existing config)
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 
 define Device/Default
@@ -31,14 +27,13 @@ define Device/Default
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-ubi
-  SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
 endef
 
 define Device/checkpoint_l-50
   DEVICE_VENDOR := Check Point
   DEVICE_MODEL := L-50
   DEVICE_PACKAGES := kmod-ath9k kmod-gpio-button-hotplug kmod-mvsdio \
-	kmod-rtc-s35390a kmod-usb-ledtrig-usbport wpad-basic
+	kmod-rtc-s35390a kmod-usb-ledtrig-usbport wpad-basic-wolfssl
   IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += checkpoint_l-50
@@ -100,7 +95,7 @@ TARGET_DEVICES += iom_ix2-200
 
 define Device/linksys
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-mwl8k wpad-basic kmod-gpio-button-hotplug
+  DEVICE_PACKAGES := kmod-mwl8k wpad-basic-wolfssl kmod-gpio-button-hotplug
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
@@ -145,6 +140,18 @@ define Device/raidsonic_ib-nas62x0
   SUPPORTED_DEVICES += ib62x0
 endef
 TARGET_DEVICES += raidsonic_ib-nas62x0
+
+define Device/seagate_blackarmor-nas220
+  DEVICE_VENDOR := Seagate
+  DEVICE_MODEL := Blackarmor NAS220
+  DEVICE_PACKAGES := kmod-hwmon-adt7475 kmod-fs-ext4 kmod-ata-marvell-sata \
+	mdadm kmod-gpio-button-hotplug
+  PAGESIZE := 512
+  SUBPAGESIZE := 256
+  BLOCKSIZE := 16k
+  UBINIZE_OPTS := -e 1
+endef
+TARGET_DEVICES += seagate_blackarmor-nas220
 
 define Device/seagate_dockstar
   DEVICE_VENDOR := Seagate

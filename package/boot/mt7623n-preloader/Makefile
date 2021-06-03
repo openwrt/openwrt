@@ -30,6 +30,14 @@ define Download/BPI-R2-preloader-2k.img.gz
 endef
 $(eval $(call Download,BPI-R2-preloader-2k.img.gz))
 
+define Download/BPI-R64-preloader-2k.img.gz
+  FILE:=$(BPI_PRELOADER_PREFIX)-BPI-R64-preloader-2k.img.gz
+  URL:=$(BPI_PRELOADER_URL)
+  URL_FILE:=BPI-R64-preloader-2k.img.gz
+  HASH:=1a4b55da1717190aa4e790ce93850605e9b15aae4c3248bcf8734aac020ab0e4
+endef
+$(eval $(call Download,BPI-R64-preloader-2k.img.gz))
+
 
 define Package/mt7623n-preloader
   SECTION:=boot

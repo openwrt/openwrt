@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-only
 
 #include "mt7621.dtsi"
 
@@ -14,26 +14,26 @@
 		label-mac-device = &wan;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			label = "wrc-gst:green:power";
+			label = "green:power";
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_blue {
-			label = "wrc-gst:blue:power";
+			label = "blue:power";
 			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps {
-			label = "wrc-gst:red:wps";
+			label = "red:wps";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_red {
-			label = "wrc-gst:red:power";
+			label = "red:power";
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -83,16 +83,11 @@
 	};
 };
 
-&gmac0 {
-	mtd-mac-address = <&factory 0xe000>;
-};
-
 &switch0 {
 	ports {
 		wan: port@0 {
 			status = "okay";
 			label = "wan";
-			mtd-mac-address = <&factory 0xe006>;
 		};
 
 		port@1 {
@@ -151,43 +146,8 @@
 	};
 };
 
-&state_default {
-	gpio {
-		groups = "uart3", "jtag", "wdt", "sdhci";
-		function = "gpio";
-	};
-};
-
 &pcie {
 	status = "okay";
-};
-
-&pcie0 {
-	wifi@0,0 {
-		compatible = "mediatek,mt76";
-		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0000>;
-		ieee80211-freq-limit = <2400000 2500000>;
-
-		led {
-			led-sources = <0>;
-			led-active-low;
-		};
-	};
-};
-
-&pcie1 {
-	wifi@0,0 {
-		compatible = "mediatek,mt76";
-		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
-		ieee80211-freq-limit = <5000000 6000000>;
-
-		led {
-			led-sources = <0>;
-			led-active-low;
-		};
-	};
 };
 
 &xhci {

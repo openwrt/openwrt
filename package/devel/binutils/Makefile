@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
-PKG_VERSION:=2.34
+PKG_VERSION:=2.35.2
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=@GNU/binutils
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_VERSION:=$(PKG_VERSION)
-PKG_HASH:=f00b0e8803dc9bab1e2165bd568528135be734df3fabf8d0161828cd56028952
+PKG_HASH:=dcd5b0416e7b0a9b24bed76cd8c6c132526805761863150a26d016415b8bdc7b
 
 PKG_FIXUP:=autoreconf
 PKG_LIBTOOL_PATHS:=. gas bfd opcodes gprof binutils ld libiberty gold intl
@@ -34,7 +34,7 @@ define Package/libbfd
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=libbfd
-  DEPENDS:=+zlib $(ICONV_DEPENDS) $(INTL_DEPENDS)
+  DEPENDS:=+zlib $(INTL_DEPENDS)
 endef
 
 define Package/libctf
@@ -78,6 +78,8 @@ define Package/binutils/description
 endef
 
 TARGET_CFLAGS += $(FPIC) -Wno-unused-value
+
+TARGET_LDFLAGS += $(if $(INTL_FULL),-lintl)
 
 CONFIGURE_ARGS += \
 	--host=$(REAL_GNU_TARGET_NAME) \

@@ -23,12 +23,12 @@
 		compatible = "gpio-leds";
 
 		led_system: system {
-			label = "js76x8:green:system";
+			label = "green:system";
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi {
-			label = "js76x8:green:wifi";
+			label = "green:wifi";
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

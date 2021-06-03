@@ -1,55 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
 
 #include "mt7621_linksys_ea7xxx.dtsi"
 
 / {
 	compatible = "linksys,ea7500-v2", "mediatek,mt7621-soc";
 	model = "Linksys EA7500 v2";
-
-	aliases {
-		led-boot = &led_power;
-		led-failsafe = &led_power;
-		led-running = &led_power;
-		led-upgrade = &led_power;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		wan_green {
-			label = "ea7500-v2:green:wan";
-			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
-		};
-
-		lan1_green {
-			label = "ea7500-v2:green:lan1";
-			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
-		};
-
-		lan2_green {
-			label = "ea7500-v2:green:lan2";
-			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
-		};
-
-		lan3_green {
-			label = "ea7500-v2:green:lan3";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-		};
-
-		lan4_green {
-			label = "ea7500-v2:green:lan4";
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
-		};
-
-		led_power: power {
-			label = "ea7500-v2:white:power";
-			gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
-		};
-
-		wps {
-			label = "ea7500-v2:green:wps";
-			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };

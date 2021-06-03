@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include "qca955x.dtsi"
+
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-
-#include "qca955x.dtsi"
 
 / {
 	keys: keys {
@@ -39,10 +39,6 @@
 		gpios = <16 0>;
 		output-high;
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &mdio0 {

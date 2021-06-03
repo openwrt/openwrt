@@ -78,27 +78,27 @@
 		compatible = "gpio-leds";
 
 		power: orange {
-			label = "eap1300:orange:power";
+			label = "orange:power";
 			gpios = <&tlmm 58 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
-			label = "eap1300:blue:lan";
+			label = "blue:lan";
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 		};
 
 		mesh {
-			label = "eap1300:blue:mesh";
+			label = "blue:mesh";
 			gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan2g {
-			label = "eap1300:blue:wlan2g";
+			label = "blue:wlan2g";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan5g {
-			label = "eap1300:yellow:wlan5g";
+			label = "yellow:wlan5g";
 			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
 		};
 	};

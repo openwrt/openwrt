@@ -8,11 +8,13 @@ set_preinit_iface() {
 	ezviz,cs-w3-wd1200g-eup| \
 	glinet,gl-b1300| \
 	linksys,ea8300| \
+	linksys,mr8300| \
 	meraki,mr33| \
 	zyxel,nbg6617)
 		ifname=eth0
 		;;
-	*)
+	devolo,magic-2-wifi-next)
+		ifname=eth1
 		;;
 	esac
 }
