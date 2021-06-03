@@ -37,7 +37,10 @@ IMG_PREFIX_EXTRA:=$(if $(EXTRA_IMAGE_NAME),$(call sanitize,$(EXTRA_IMAGE_NAME))-
 IMG_PREFIX_VERNUM:=$(if $(CONFIG_VERSION_FILENAMES),$(call sanitize,$(VERSION_NUMBER))-)
 IMG_PREFIX_VERCODE:=$(if $(CONFIG_VERSION_CODE_FILENAMES),$(call sanitize,$(VERSION_CODE))-)
 
-IMG_PREFIX:=$(VERSION_DIST_SANITIZED)-$(IMG_PREFIX_VERNUM)$(IMG_PREFIX_VERCODE)$(IMG_PREFIX_EXTRA)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
+PROFILE_SANITIZED := $(call tolower,$(subst DEVICE_,,$(subst $(space),-,$(PROFILE))))
+
+IMG_PREFIX_PROFILELESS:=$(VERSION_DIST_SANITIZED)-$(IMG_PREFIX_VERNUM)$(IMG_PREFIX_VERCODE)$(IMG_PREFIX_EXTRA)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
+IMG_PREFIX:=$(IMG_PREFIX_PROFILELESS)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))
 IMG_ROOTFS:=$(IMG_PREFIX)-rootfs
 IMG_COMBINED:=$(IMG_PREFIX)-combined
 IMG_PART_SIGNATURE:=$(shell echo $(SOURCE_DATE_EPOCH)$(LINUX_VERMAGIC) | $(MKHASH) md5 | cut -b1-8)
@@ -102,8 +105,6 @@ FS_256K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-256k
 define add_jffs2_mark
 	echo -ne '\xde\xad\xc0\xde' >> $(1)
 endef
-
-PROFILE_SANITIZED := $(call tolower,$(subst DEVICE_,,$(subst $(space),-,$(PROFILE))))
 
 define split_args
 $(foreach data, \
@@ -272,7 +273,7 @@ endef
 
 define Image/Manifest
 	$(call opkg,$(TARGET_DIR_ORIG)) list-installed > \
-		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest
+		$(BIN_DIR)/$(IMG_PREFIX).manifest
 endef
 
 define Image/gzip-ext4-padded-squashfs
@@ -296,7 +297,7 @@ ifdef CONFIG_TARGET_ROOTFS_TARGZ
   define Image/Build/targz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-C $(TARGET_DIR)/ . | gzip -9n > $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED))-rootfs.tar.gz
+		-C $(TARGET_DIR)/ . | gzip -9n > $(BIN_DIR)/$(IMG_ROOTFS).tar.gz
   endef
 endif
 
@@ -364,7 +365,7 @@ define Device/Init
 
   IMAGES :=
   ARTIFACTS :=
-  DEVICE_IMG_PREFIX := $(IMG_PREFIX)-$(1)
+  DEVICE_IMG_PREFIX := $(IMG_PREFIX_PROFILELESS)-$(1)
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1)-$$(2)
   IMAGE_SIZE :=
   KERNEL_PREFIX = $$(DEVICE_IMG_PREFIX)
