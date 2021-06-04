@@ -1,0 +1,32 @@
+From: Paul Cercueil <paul@xxxxxxxxxxxxxxx>
+
+commit 8e029eb0bcd6a7fab6dc9191152c085784c31ee6 upstream.
+
+The CONFIG_MIPS_CMDLINE_DTB_EXTEND option is used so that the kernel
+arguments provided in the 'bootargs' property in devicetree are extended
+with the kernel arguments provided by the bootloader.
+
+The code was broken, as it didn't actually take any of the kernel
+arguments provided in devicetree when that option was set.
+
+Fixes: 7784cac69735 ("MIPS: cmdline: Clean up boot_command_line initialization")
+Cc: stable@xxxxxxxxxxxxxxx
+Signed-off-by: Paul Cercueil <paul@xxxxxxxxxxxxxxx>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@xxxxxxxxxxxxxxxx>
+Signed-off-by: Greg Kroah-Hartman <gregkh@xxxxxxxxxxxxxxxxxxx>
+
+---
+arch/mips/kernel/setup.c | 3 ++-
+1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/mips/kernel/setup.c
++++ b/arch/mips/kernel/setup.c
+@@ -606,7 +606,8 @@ static void __init bootcmdline_init(char
+	 * If we're configured to take boot arguments from DT, look for those
+	 * now.
+	 */
+-	if (IS_ENABLED(CONFIG_MIPS_CMDLINE_FROM_DTB))
++	if (IS_ENABLED(CONFIG_MIPS_CMDLINE_FROM_DTB) ||
++	    IS_ENABLED(CONFIG_MIPS_CMDLINE_DTB_EXTEND))
+		of_scan_flat_dt(bootcmdline_scan_chosen, &dt_bootargs);
+
