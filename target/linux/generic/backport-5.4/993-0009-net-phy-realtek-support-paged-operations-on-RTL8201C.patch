@@ -1,0 +1,30 @@
+From 14e6a6d29ca2b9165a61f5ce7bdcdf1477b3749a Mon Sep 17 00:00:00 2001
+From: Heiner Kallweit <hkallweit1@gmail.com>
+Date: Sun, 8 Nov 2020 22:44:02 +0100
+Subject: [PATCH 09/10] net: phy: realtek: support paged operations on
+ RTL8201CP
+
+The RTL8401-internal PHY identifies as RTL8201CP, and the init
+sequence in r8169, copied from vendor driver r8168, uses paged
+operations. Therefore set the same paged operation callbacks as
+for the other Realtek PHY's.
+
+Fixes: cdafdc29ef75 ("r8169: sync support for RTL8401 with vendor driver")
+Signed-off-by: Heiner Kallweit <hkallweit1@gmail.com>
+Link: https://lore.kernel.org/r/69882f7a-ca2f-e0c7-ae83-c9b6937282cd@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/realtek.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -551,6 +551,8 @@ static struct phy_driver realtek_drvs[]
+ 	{
+ 		PHY_ID_MATCH_EXACT(0x00008201),
+ 		.name           = "RTL8201CP Ethernet",
++		.read_page	= rtl821x_read_page,
++		.write_page	= rtl821x_write_page,
+ 	}, {
+ 		PHY_ID_MATCH_EXACT(0x001cc816),
+ 		.name		= "RTL8201F Fast Ethernet",

@@ -1,0 +1,48 @@
+From e2351572431d236e840103483241d8a7bf406f3d Mon Sep 17 00:00:00 2001
+From: Jisheng Zhang <Jisheng.Zhang@synaptics.com>
+Date: Mon, 21 Sep 2020 09:13:54 +0800
+Subject: [PATCH 05/10] net: phy: realtek: enable ALDPS to save power for
+ RTL8211F
+
+Enable ALDPS(Advanced Link Down Power Saving) to save power when
+link down.
+
+Signed-off-by: Jisheng Zhang <Jisheng.Zhang@synaptics.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/phy/realtek.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -27,11 +27,16 @@
+ #define RTL821x_EXT_PAGE_SELECT			0x1e
+ #define RTL821x_PAGE_SELECT			0x1f
+ 
++#define RTL8211F_PHYCR1				0x18
+ #define RTL8211F_INSR				0x1d
+ 
+ #define RTL8211F_TX_DELAY			BIT(8)
+ #define RTL8211F_RX_DELAY			BIT(3)
+ 
++#define RTL8211F_ALDPS_PLL_OFF			BIT(1)
++#define RTL8211F_ALDPS_ENABLE			BIT(2)
++#define RTL8211F_ALDPS_XTAL_OFF			BIT(12)
++
+ #define RTL8211E_TX_DELAY			BIT(1)
+ #define RTL8211E_RX_DELAY			BIT(2)
+ #define RTL8211E_MODE_MII_GMII			BIT(3)
+@@ -178,8 +183,12 @@ static int rtl8211f_config_init(struct p
+ {
+ 	struct device *dev = &phydev->mdio.dev;
+ 	u16 val_txdly, val_rxdly;
++	u16 val;
+ 	int ret;
+ 
++	val = RTL8211F_ALDPS_ENABLE | RTL8211F_ALDPS_PLL_OFF | RTL8211F_ALDPS_XTAL_OFF;
++	phy_modify_paged_changed(phydev, 0xa43, RTL8211F_PHYCR1, val, val);
++
+ 	switch (phydev->interface) {
+ 	case PHY_INTERFACE_MODE_RGMII:
+ 		val_txdly = 0;
