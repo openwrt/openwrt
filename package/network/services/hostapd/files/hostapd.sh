@@ -805,6 +805,7 @@ hostapd_set_bss_options() {
 				;;
 			esac
 
+			[ -n "$network_ifname" ] && append bss_conf "ft_iface=$network_ifname" "$N"
 			append bss_conf "mobility_domain=$mobility_domain" "$N"
 			append bss_conf "ft_psk_generate_local=$ft_psk_generate_local" "$N"
 			append bss_conf "ft_over_ds=$ft_over_ds" "$N"
