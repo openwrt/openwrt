@@ -26,7 +26,7 @@
  obj-$(CONFIG_SPI_DLN2)			+= spi-dln2.o
 --- a/include/linux/spi/spi.h
 +++ b/include/linux/spi/spi.h
-@@ -818,6 +818,10 @@ struct spi_transfer {
+@@ -821,6 +821,10 @@ struct spi_transfer {
  	u32		speed_hz;
  
  	struct list_head transfer_list;

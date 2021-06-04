@@ -276,7 +276,7 @@
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/ip6_gre.c
 +++ b/net/ipv6/ip6_gre.c
-@@ -400,7 +400,7 @@ static void ip6gre_err(struct sk_buff *s
+@@ -399,7 +399,7 @@ static void ip6gre_err(struct sk_buff *s
  		return;
  	ipv6h = (const struct ipv6hdr *)skb->data;
  	greh = (const struct gre_base_hdr *)(skb->data + offset);

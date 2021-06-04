@@ -21,7 +21,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
 
 --- a/drivers/usb/dwc2/core.h
 +++ b/drivers/usb/dwc2/core.h
-@@ -777,6 +777,7 @@ struct dwc2_hregs_backup {
+@@ -779,6 +779,7 @@ struct dwc2_hregs_backup {
   * @plat:               The platform specific configuration data. This can be
   *                      removed once all SoCs support usb transceiver.
   * @supplies:           Definition of USB power supplies
@@ -29,7 +29,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
   * @phyif:              PHY interface width
   * @lock:		Spinlock that protects all the driver data structures
   * @priv:		Stores a pointer to the struct usb_hcd
-@@ -914,6 +915,7 @@ struct dwc2_hsotg {
+@@ -916,6 +917,7 @@ struct dwc2_hsotg {
  	struct usb_phy *uphy;
  	struct dwc2_hsotg_plat *plat;
  	struct regulator_bulk_data supplies[DWC2_NUM_SUPPLIES];
