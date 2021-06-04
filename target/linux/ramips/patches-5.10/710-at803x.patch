@@ -23,7 +23,7 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  
  #define AT803X_SPECIFIC_FUNCTION_CONTROL	0x10
  #define AT803X_SFC_ASSERT_CRS			BIT(11)
-@@ -83,9 +85,18 @@
+@@ -82,9 +84,18 @@
  
  #define AT803X_MODE_CFG_MASK			0x0F
  #define AT803X_MODE_CFG_SGMII			0x01
@@ -42,7 +42,7 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  
  #define AT803X_DEBUG_REG_0			0x00
  #define AT803X_DEBUG_RX_CLK_DLY_EN		BIT(15)
-@@ -505,10 +516,72 @@ static int at803x_parse_dt(struct phy_de
+@@ -532,12 +543,75 @@ static int at803x_parse_dt(struct phy_de
  	return 0;
  }
  
@@ -101,21 +101,24 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
 +	.module_insert = at803x_sfp_insert,
 +};
 +
++
  static int at803x_probe(struct phy_device *phydev)
  {
  	struct device *dev = &phydev->mdio.dev;
  	struct at803x_priv *priv;
-+	int ret;
+ 	int ret;
+ 
 +
 +	if (at803x_mode(phydev) == AT803X_MODE_FIBER) {
 +		ret = phy_sfp_probe(phydev, &at803x_sfp_ops);
 +		if (ret < 0)
 +			return ret;
 +	}
- 
++
  	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
  	if (!priv)
-@@ -709,6 +782,10 @@ static int at803x_read_status(struct phy
+ 		return -ENOMEM;
+@@ -744,6 +818,10 @@ static int at803x_read_status(struct phy
  {
  	int ss, err, old_link = phydev->link;
  
@@ -126,7 +129,7 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  	/* Update the link, but return if there was an error */
  	err = genphy_update_link(phydev);
  	if (err)
-@@ -809,6 +886,12 @@ static int at803x_config_aneg(struct phy
+@@ -844,6 +922,12 @@ static int at803x_config_aneg(struct phy
  {
  	int ret;
  
@@ -139,7 +142,7 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  	ret = at803x_config_mdix(phydev, phydev->mdix_ctrl);
  	if (ret < 0)
  		return ret;
-@@ -1110,6 +1193,7 @@ static struct phy_driver at803x_driver[]
+@@ -1145,6 +1229,7 @@ static struct phy_driver at803x_driver[]
  	/* Qualcomm Atheros AR8031/AR8033 */
  	PHY_ID_MATCH_EXACT(ATH8031_PHY_ID),
  	.name			= "Qualcomm Atheros AR8031/AR8033",
