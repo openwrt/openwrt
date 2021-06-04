@@ -1,0 +1,36 @@
+From bff99328e34b0df0f907d5a151fe191145368ba1 Mon Sep 17 00:00:00 2001
+From: Heiner Kallweit <hkallweit1@gmail.com>
+Date: Tue, 14 Jul 2020 17:45:03 +0200
+Subject: [PATCH 04/10] net: phy: realtek: add support for RTL8125B-internal
+ PHY
+
+Realtek assigned a new PHY ID for the RTL8125B-internal PHY.
+It's however compatible with the RTL8125A-internal PHY.
+
+Signed-off-by: Heiner Kallweit <hkallweit1@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/phy/realtek.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -638,6 +638,18 @@ static struct phy_driver realtek_drvs[]
+ 		.read_mmd	= rtl8125_read_mmd,
+ 		.write_mmd	= rtl8125_write_mmd,
+ 	}, {
++		PHY_ID_MATCH_EXACT(0x001cc840),
++		.name		= "RTL8125B 2.5Gbps internal",
++		.get_features	= rtl8125_get_features,
++		.config_aneg	= rtl8125_config_aneg,
++		.read_status	= rtl8125_read_status,
++		.suspend	= genphy_suspend,
++		.resume		= rtlgen_resume,
++		.read_page	= rtl821x_read_page,
++		.write_page	= rtl821x_write_page,
++		.read_mmd	= rtl8125_read_mmd,
++		.write_mmd	= rtl8125_write_mmd,
++	}, {
+ 		PHY_ID_MATCH_EXACT(0x001cc961),
+ 		.name		= "RTL8366RB Gigabit Ethernet",
+ 		.config_init	= &rtl8366rb_config_init,

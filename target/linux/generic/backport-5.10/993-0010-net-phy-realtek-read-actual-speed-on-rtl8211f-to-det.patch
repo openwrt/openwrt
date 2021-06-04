@@ -1,0 +1,37 @@
+From 65d5abe221a03cbc5c228001a7410f2d5343932c Mon Sep 17 00:00:00 2001
+From: Antonio Borneo <antonio.borneo@st.com>
+Date: Wed, 25 Nov 2020 00:07:56 +0100
+Subject: [PATCH 10/10] net: phy: realtek: read actual speed on rtl8211f to
+ detect downshift
+
+The rtl8211f supports downshift and before commit 5502b218e001
+("net: phy: use phy_resolve_aneg_linkmode in genphy_read_status")
+the read-back of register MII_CTRL1000 was used to detect the
+negotiated link speed.
+The code added in commit d445dff2df60 ("net: phy: realtek: read
+actual speed to detect downshift") is working fine also for this
+phy and it's trivial re-using it to restore the downshift
+detection on rtl8211f.
+
+Add the phy specific read_status() pointing to the existing
+function rtlgen_read_status().
+
+Signed-off-by: Antonio Borneo <antonio.borneo@st.com>
+Link: https://lore.kernel.org/r/478f871a-583d-01f1-9cc5-2eea56d8c2a7@huawei.com
+Tested-by: Yonglong Liu <liuyonglong@huawei.com>
+Link: https://lore.kernel.org/r/20201124230756.887925-1-antonio.borneo@st.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/realtek.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -675,6 +675,7 @@ static struct phy_driver realtek_drvs[]
+ 		.probe		= rtl821x_probe,
+ 		.config_init	= &rtl8211f_config_init,
+ 		.ack_interrupt	= &rtl8211f_ack_interrupt,
++		.read_status	= rtlgen_read_status,
+ 		.config_intr	= &rtl8211f_config_intr,
+ 		.suspend	= genphy_suspend,
+ 		.resume		= rtl821x_resume,
