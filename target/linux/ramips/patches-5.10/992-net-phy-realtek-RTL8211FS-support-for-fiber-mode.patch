@@ -1,0 +1,150 @@
+From 8e0293b985892f5e996bb35e2265551844d17621 Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Tue, 28 Jun 2022 11:06:34 +0800
+Subject: [PATCH] net: phy: realtek: RTL8211FS support for fiber mode
+
+---
+ drivers/net/phy/realtek.c | 100 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 100 insertions(+)
+
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -10,6 +10,8 @@
+ #include <linux/bitops.h>
+ #include <linux/of.h>
+ #include <linux/phy.h>
++#include <linux/sfp.h>
++#include <linux/phylink.h>
+ #include <linux/module.h>
+ #include <linux/delay.h>
+ 
+@@ -68,6 +70,7 @@ MODULE_LICENSE("GPL");
+ 
+ struct rtl821x_priv {
+ 	u16 phycr2;
++	bool mode_fiber;
+ };
+ 
+ static int rtl821x_read_page(struct phy_device *phydev)
+@@ -80,10 +83,67 @@ static int rtl821x_write_page(struct phy
+ 	return __phy_write(phydev, RTL821x_PAGE_SELECT, page);
+ }
+ 
++static int rtl8211f_read_status(struct phy_device *phydev)
++{
++	struct rtl821x_priv *priv = phydev->priv;
++
++	if (priv->mode_fiber) {
++		/* Handle (Fiber) SGMII to RGMII mode */
++		return genphy_c37_read_status(phydev);
++	}
++
++	return rtlgen_read_status(phydev);
++}
++
++static int rtl8211f_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
++{
++	__ETHTOOL_DECLARE_LINK_MODE_MASK(rtl8211f_support) = { 0, };
++	__ETHTOOL_DECLARE_LINK_MODE_MASK(support) = { 0, };
++	struct phy_device *phydev = upstream;
++	phy_interface_t iface;
++
++	phylink_set(rtl8211f_support, 1000baseX_Full);
++	/* AT803x only support 1000baseX but SGMII works fine when module runs
++	 * at 1Gbit.
++	 */
++	phylink_set(rtl8211f_support, 1000baseT_Full);
++
++	sfp_parse_support(phydev->sfp_bus, id, support);
++
++	// Limit to interfaces that both sides support
++	linkmode_and(support, support, rtl8211f_support);
++
++	if (linkmode_empty(support))
++		goto unsupported_mode;
++
++	iface = sfp_select_interface(phydev->sfp_bus, support);
++
++	if (iface != PHY_INTERFACE_MODE_SGMII &&
++	    iface != PHY_INTERFACE_MODE_1000BASEX)
++		goto unsupported_mode;
++
++	dev_info(&phydev->mdio.dev, "SFP interface %s", phy_modes(iface));
++
++	return 0;
++
++unsupported_mode:
++	dev_info(&phydev->mdio.dev, "incompatible SFP module inserted;"
++		 "Only SGMII at 1Gbit/1000BASEX are supported!\n");
++	return -EINVAL;
++}
++
++static const struct sfp_upstream_ops rtl8211f_sfp_ops = {
++	.attach = phy_sfp_attach,
++	.detach = phy_sfp_detach,
++	.module_insert = rtl8211f_sfp_insert,
++};
++
+ static int rtl821x_probe(struct phy_device *phydev)
+ {
+ 	struct device *dev = &phydev->mdio.dev;
+ 	struct rtl821x_priv *priv;
++	bool mode_fiber = false;
++	int ret;
+ 
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+@@ -97,6 +157,17 @@ static int rtl821x_probe(struct phy_devi
+ 	if (of_property_read_bool(dev->of_node, "realtek,clkout-disable"))
+ 		priv->phycr2 &= ~RTL8211F_CLKOUT_EN;
+ 
++	mode_fiber = of_property_read_bool(np, "mode-fiber");
++	if (mode_fiber) {
++		ret = phy_sfp_probe(phydev, &rtl8211f_sfp_ops);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* disable response to mdio phy0 commnad */
++	phy_modify_paged_changed(phydev, 0xa43, 24, BIT(13), 0);
++
++	priv->mode_fiber = mode_fiber;
+ 	phydev->priv = priv;
+ 
+ 	return 0;
+@@ -599,6 +670,35 @@ static int rtlgen_resume(struct phy_devi
+ 	return ret;
+ }
+ 
++static int rtl8211f_config_aneg(struct phy_device *phydev)
++{
++	struct rtl821x_priv *priv = phydev->priv;
++	int ret;
++
++	if (priv->mode_fiber) {
++		ret = genphy_c37_config_aneg(phydev);
++		if (ret < 0)
++			return ret;
++	} else {
++		ret = genphy_config_aneg(phydev);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* Quirk was copied from vendor driver. Unfortunately it includes no
++	 * description of the magic numbers.
++	 */
++	if (phydev->speed == SPEED_100 && phydev->autoneg == AUTONEG_DISABLE) {
++		phy_write(phydev, 0x17, 0x2138);
++		phy_write(phydev, 0x0e, 0x0260);
++	} else {
++		phy_write(phydev, 0x17, 0x2108);
++		phy_write(phydev, 0x0e, 0x0000);
++	}
++
++	return 0;
++}
++
+ static struct phy_driver realtek_drvs[] = {
+ 	{
+ 		PHY_ID_MATCH_EXACT(0x00008201),
