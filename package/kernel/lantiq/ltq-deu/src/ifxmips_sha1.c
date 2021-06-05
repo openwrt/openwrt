@@ -101,6 +101,8 @@ static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
 
     CRTCL_SECT_HASH_START;
 
+    SHA_HASH_INIT;
+
     /* For context switching purposes, the previous hash output
      * is loaded back into the output register 
     */
@@ -144,8 +146,6 @@ static int sha1_init1(struct shash_desc *desc)
 {
     struct sha1_ctx *sctx = shash_desc_ctx(desc);
     
-    SHA_HASH_INIT;
-
     sctx->started = 0;
     sctx->count = 0;
     return 0;
@@ -224,15 +224,7 @@ static int sha1_final(struct shash_desc *desc, u8 *out)
     /* Append length */
     sha1_update (desc, bits, sizeof bits);
 
-    CRTCL_SECT_HASH_START;
-
-    *((u32 *) out + 0) = hashs->D1R;
-    *((u32 *) out + 1) = hashs->D2R;
-    *((u32 *) out + 2) = hashs->D3R;
-    *((u32 *) out + 3) = hashs->D4R;
-    *((u32 *) out + 4) = hashs->D5R;
-
-    CRTCL_SECT_HASH_END;
+    memcpy(out, sctx->hash, SHA1_DIGEST_SIZE);
 
     // Wipe context
     memset (sctx, 0, sizeof *sctx);

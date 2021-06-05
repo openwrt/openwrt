@@ -81,18 +81,6 @@ struct md5_ctx {
 
 extern int disable_deudma;
 
-/*! \fn static u32 endian_swap(u32 input)
- *  \ingroup IFX_MD5_FUNCTIONS
- *  \brief perform dword level endian swap   
- *  \param input value of dword that requires to be swapped  
-*/ 
-static u32 endian_swap(u32 input)
-{
-    u8 *ptr = (u8 *)&input;
-    
-    return ((ptr[3] << 24) | (ptr[2] << 16) | (ptr[1] << 8) | ptr[0]);     
-}
-
 /*! \fn static void md5_transform(u32 *hash, u32 const *in)
  *  \ingroup IFX_MD5_FUNCTIONS
  *  \brief main interface to md5 hardware   
@@ -107,16 +95,18 @@ static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
 
     CRTCL_SECT_HASH_START;
 
+    MD5_HASH_INIT;
+
     if (mctx->started) { 
-        hashs->D1R = endian_swap(*((u32 *) hash + 0));
-    	hashs->D2R = endian_swap(*((u32 *) hash + 1));
-        hashs->D3R = endian_swap(*((u32 *) hash + 2));
-        hashs->D4R = endian_swap(*((u32 *) hash + 3));
+        hashs->D1R = *((u32 *) hash + 0);
+        hashs->D2R = *((u32 *) hash + 1);
+        hashs->D3R = *((u32 *) hash + 2);
+        hashs->D4R = *((u32 *) hash + 3);
     }
 
     for (i = 0; i < 16; i++) {
-        hashs->MR = endian_swap(in[i]);
-//	printk("in[%d]: %08x\n", i, endian_swap(in[i]));
+        hashs->MR = in[i];
+//      printk("in[%d]: %08x\n", i, in[i]);
     };
 
     //wait for processing
@@ -124,10 +114,10 @@ static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
         // this will not take long
     }
 
-    *((u32 *) hash + 0) = endian_swap (hashs->D1R);
-    *((u32 *) hash + 1) = endian_swap (hashs->D2R);
-    *((u32 *) hash + 2) = endian_swap (hashs->D3R);
-    *((u32 *) hash + 3) = endian_swap (hashs->D4R);
+    *((u32 *) hash + 0) = hashs->D1R;
+    *((u32 *) hash + 1) = hashs->D2R;
+    *((u32 *) hash + 2) = hashs->D3R;
+    *((u32 *) hash + 3) = hashs->D4R;
 
     mctx->started = 1; 
 
@@ -154,11 +144,6 @@ static int md5_init(struct shash_desc *desc)
 {
     struct md5_ctx *mctx = shash_desc_ctx(desc);
     volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
-
-    hash->controlr.ENDI = 0;
-    hash->controlr.SM = 1;
-    hash->controlr.ALGO = 1;    // 1 = md5  0 = sha1
-    hash->controlr.INIT = 1;    // Initialize the hash operation by writing a '1' to the INIT bit.
 
     mctx->byte_count = 0;
     mctx->started = 0;
@@ -227,24 +212,12 @@ static int md5_final(struct shash_desc *desc, u8 *out)
     }
 
     memset(p, 0, padding);
-    mctx->block[14] = endian_swap(mctx->byte_count << 3);
-    mctx->block[15] = endian_swap(mctx->byte_count >> 29);
-
-#if 0
-    le32_to_cpu_array(mctx->block, (sizeof(mctx->block) -
-                      sizeof(u64)) / sizeof(u32));
-#endif
+    mctx->block[14] = le32_to_cpu(mctx->byte_count << 3);
+    mctx->block[15] = le32_to_cpu(mctx->byte_count >> 29);
 
     md5_transform(mctx, mctx->hash, mctx->block);                                                 
 
-    CRTCL_SECT_HASH_START;
-
-    *((u32 *) out + 0) = endian_swap (hashs->D1R);
-    *((u32 *) out + 1) = endian_swap (hashs->D2R);
-    *((u32 *) out + 2) = endian_swap (hashs->D3R);
-    *((u32 *) out + 3) = endian_swap (hashs->D4R);
-
-    CRTCL_SECT_HASH_END;
+    memcpy(out, mctx->hash, MD5_DIGEST_SIZE);
 
     // Wipe context
     memset(mctx, 0, sizeof(*mctx));

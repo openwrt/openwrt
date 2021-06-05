@@ -86,18 +86,6 @@ static u32 temp[MD5_HMAC_DBN_TEMP_SIZE];
 
 extern int disable_deudma;
 
-/*! \fn static u32 endian_swap(u32 input)
- *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief perform dword level endian swap   
- *  \param input value of dword that requires to be swapped  
-*/                                 
-static u32 endian_swap(u32 input)
-{
-    u8 *ptr = (u8 *)&input;
-    
-    return ((ptr[3] << 24) | (ptr[2] << 16) | (ptr[1] << 8) | ptr[0]);     
-}
-
 /*! \fn static void md5_hmac_transform(struct crypto_tfm *tfm, u32 const *in)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
  *  \brief save input block to context   
@@ -128,7 +116,6 @@ static void md5_hmac_transform(struct shash_desc *desc, u32 const *in)
 static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen) 
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(tfm);
-    volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
     //printk("copying keys to context with length %d\n", keylen);
 
     if (keylen > MAX_HASH_KEYLEN) {
@@ -137,7 +124,6 @@ static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int
     }
  
 
-    hash->KIDX |= 0x80000000; // reset all 16 words of the key to '0'
     memcpy(&mctx->key, key, keylen);
     mctx->keylen = keylen;
 
@@ -156,13 +142,12 @@ static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int
 static int md5_hmac_setkey_hw(const u8 *key, unsigned int keylen)
 {
     volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
-    unsigned long flag;
     int i, j;
     u32 *in_key = (u32 *)key;        
 
     //printk("\nsetkey keylen: %d\n key: ", keylen);
     
-    CRTCL_SECT_HASH_START;
+    hash->KIDX |= 0x80000000; // reset all 16 words of the key to '0'
     j = 0;
     for (i = 0; i < keylen; i+=4)
     {
@@ -172,7 +157,6 @@ static int md5_hmac_setkey_hw(const u8 *key, unsigned int keylen)
          asm("sync");
          j++;
     }
-    CRTCL_SECT_HASH_END;
 
     return 0;
 }
@@ -189,7 +173,6 @@ static int md5_hmac_init(struct shash_desc *desc)
     
 
     mctx->dbn = 0; //dbn workaround
-    md5_hmac_setkey_hw(mctx->key, mctx->keylen);
 
     return 0;
 }
@@ -260,12 +243,16 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
     }
 
     memset(p, 0, padding);
-    mctx->block[14] = endian_swap((mctx->byte_count + 64) << 3); // need to add 512 bit of the IPAD operation 
+    mctx->block[14] = le32_to_cpu((mctx->byte_count + 64) << 3); // need to add 512 bit of the IPAD operation 
     mctx->block[15] = 0x00000000;
 
     md5_hmac_transform(desc, mctx->block);
 
     CRTCL_SECT_HASH_START;
+
+    MD5_HASH_INIT;
+
+    md5_hmac_setkey_hw(mctx->key, mctx->keylen);
 
     //printk("\ndbn = %d\n", mctx->dbn); 
     hashs->DBN = mctx->dbn;
@@ -307,7 +294,6 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
     *((u32 *) out + 1) = hashs->D2R;
     *((u32 *) out + 2) = hashs->D3R;
     *((u32 *) out + 3) = hashs->D4R;
-    *((u32 *) out + 4) = hashs->D5R;
 
     /* reset the context after we finish with the hash */
     mctx->byte_count = 0;
