@@ -63,11 +63,6 @@
 #define MD5_HMAC_DBN_TEMP_SIZE  1024 // size in dword, needed for dbn workaround 
 #define HASH_START   IFX_HASH_CON
 
-static spinlock_t lock;
-#define CRTCL_SECT_INIT        spin_lock_init(&lock)
-#define CRTCL_SECT_START       spin_lock_irqsave(&lock, flag)
-#define CRTCL_SECT_END         spin_unlock_irqrestore(&lock, flag)
-
 //#define CRYPTO_DEBUG
 #ifdef CRYPTO_DEBUG
 extern char debug_level;
@@ -167,7 +162,7 @@ static int md5_hmac_setkey_hw(const u8 *key, unsigned int keylen)
 
     //printk("\nsetkey keylen: %d\n key: ", keylen);
     
-    CRTCL_SECT_START;
+    CRTCL_SECT_HASH_START;
     j = 0;
     for (i = 0; i < keylen; i+=4)
     {
@@ -177,7 +172,7 @@ static int md5_hmac_setkey_hw(const u8 *key, unsigned int keylen)
          asm("sync");
          j++;
     }
-    CRTCL_SECT_END;
+    CRTCL_SECT_HASH_END;
 
     return 0;
 }
@@ -198,7 +193,6 @@ static int md5_hmac_init(struct shash_desc *desc)
 
     return 0;
 }
-EXPORT_SYMBOL(md5_hmac_init);
     
 /*! \fn void md5_hmac_update(struct crypto_tfm *tfm, const u8 *data, unsigned int len)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
@@ -237,7 +231,6 @@ static int md5_hmac_update(struct shash_desc *desc, const u8 *data, unsigned int
     memcpy(mctx->block, data, len);
     return 0;    
 }
-EXPORT_SYMBOL(md5_hmac_update);
 
 /*! \fn void md5_hmac_final(struct crypto_tfm *tfm, u8 *out)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
@@ -272,7 +265,7 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
 
     md5_hmac_transform(desc, mctx->block);
 
-    CRTCL_SECT_START;
+    CRTCL_SECT_HASH_START;
 
     //printk("\ndbn = %d\n", mctx->dbn); 
     hashs->DBN = mctx->dbn;
@@ -322,13 +315,11 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
     memset(&mctx->block[0], 0, sizeof(MD5_BLOCK_WORDS));
     memset(&temp[0], 0, MD5_HMAC_DBN_TEMP_SIZE);
 
-    CRTCL_SECT_END;
+    CRTCL_SECT_HASH_END;
 
 
    return 0;
 }
-
-EXPORT_SYMBOL(md5_hmac_final);
 
 /* 
  * \brief MD5_HMAC function mappings
@@ -364,8 +355,6 @@ int ifxdeu_init_md5_hmac (void)
 
     if ((ret = crypto_register_shash(&ifxdeu_md5_hmac_alg)))
         goto md5_hmac_err;
-
-    CRTCL_SECT_INIT;
 
     printk (KERN_NOTICE "IFX DEU MD5_HMAC initialized%s.\n", disable_deudma ? "" : " (DMA)");
     return ret;

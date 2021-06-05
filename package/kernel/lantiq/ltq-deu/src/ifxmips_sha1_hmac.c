@@ -66,11 +66,6 @@
 
 #define SHA1_HMAC_MAX_KEYLEN 64
 
-static spinlock_t lock;
-#define CRTCL_SECT_INIT        spin_lock_init(&lock)
-#define CRTCL_SECT_START       spin_lock_irqsave(&lock, flag)
-#define CRTCL_SECT_END         spin_unlock_irqrestore(&lock, flag)
-
 #ifdef CRYPTO_DEBUG
 extern char debug_level;
 #define DPRINTF(level, format, args...) if (level < debug_level) printk(KERN_INFO "[%s %s %d]: " format, __FILE__, __func__, __LINE__, ##args);
@@ -158,7 +153,7 @@ static int sha1_hmac_setkey_hw(const u8 *key, unsigned int keylen)
 
     j = 0;
 
-    CRTCL_SECT_START;
+    CRTCL_SECT_HASH_START;
     for (i = 0; i < keylen; i+=4)
     {
          hash->KIDX = j;
@@ -167,7 +162,7 @@ static int sha1_hmac_setkey_hw(const u8 *key, unsigned int keylen)
          j++;
     }
 
-    CRTCL_SECT_END;
+    CRTCL_SECT_HASH_END;
     return 0;
 }
 
@@ -265,7 +260,7 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
     /* Append length */
     sha1_hmac_update (desc, bits, sizeof bits);
 
-    CRTCL_SECT_START;
+    CRTCL_SECT_HASH_START;
     
     hashs->DBN = sctx->dbn;
     
@@ -312,7 +307,7 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
     sctx->count = 0; 
  
     //printk("debug ln: %d, fn: %s\n", __LINE__, __func__);
-    CRTCL_SECT_END;
+    CRTCL_SECT_HASH_END;
 
 
     return 0;
@@ -354,8 +349,6 @@ int ifxdeu_init_sha1_hmac (void)
 
     if ((ret = crypto_register_shash(&ifxdeu_sha1_hmac_alg)))
         goto sha1_err;
-
-    CRTCL_SECT_INIT;
 
     printk (KERN_NOTICE "IFX DEU SHA1_HMAC initialized%s.\n", disable_deudma ? "" : " (DMA)");
     return ret;

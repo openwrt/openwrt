@@ -64,11 +64,6 @@
 #define MD5_HASH_WORDS      4
 #define HASH_START   IFX_HASH_CON
 
-static spinlock_t lock;
-#define CRTCL_SECT_INIT        spin_lock_init(&lock)
-#define CRTCL_SECT_START       spin_lock_irqsave(&lock, flag)
-#define CRTCL_SECT_END         spin_unlock_irqrestore(&lock, flag)
-
 //#define CRYPTO_DEBUG
 #ifdef CRYPTO_DEBUG
 extern char debug_level;
@@ -110,7 +105,7 @@ static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
     volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
     unsigned long flag;
 
-    CRTCL_SECT_START;
+    CRTCL_SECT_HASH_START;
 
     if (mctx->started) { 
         hashs->D1R = endian_swap(*((u32 *) hash + 0));
@@ -136,7 +131,7 @@ static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
 
     mctx->started = 1; 
 
-    CRTCL_SECT_END;
+    CRTCL_SECT_HASH_END;
 }
 
 /*! \fn static inline void md5_transform_helper(struct md5_ctx *ctx)
@@ -242,14 +237,14 @@ static int md5_final(struct shash_desc *desc, u8 *out)
 
     md5_transform(mctx, mctx->hash, mctx->block);                                                 
 
-    CRTCL_SECT_START;
+    CRTCL_SECT_HASH_START;
 
     *((u32 *) out + 0) = endian_swap (hashs->D1R);
     *((u32 *) out + 1) = endian_swap (hashs->D2R);
     *((u32 *) out + 2) = endian_swap (hashs->D3R);
     *((u32 *) out + 3) = endian_swap (hashs->D4R);
 
-    CRTCL_SECT_END;
+    CRTCL_SECT_HASH_END;
 
     // Wipe context
     memset(mctx, 0, sizeof(*mctx));
@@ -287,8 +282,6 @@ int ifxdeu_init_md5 (void)
 
     if ((ret = crypto_register_shash(&ifxdeu_md5_alg)))
         goto md5_err;
-
-    CRTCL_SECT_INIT;
 
     printk (KERN_NOTICE "IFX DEU MD5 initialized%s.\n", disable_deudma ? "" : " (DMA)");
     return ret;

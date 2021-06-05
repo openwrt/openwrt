@@ -65,11 +65,6 @@
 #define SHA1_HMAC_BLOCK_SIZE    64
 #define HASH_START   IFX_HASH_CON
 
-static spinlock_t lock;
-#define CRTCL_SECT_INIT        spin_lock_init(&lock)
-#define CRTCL_SECT_START       spin_lock_irqsave(&lock, flag)
-#define CRTCL_SECT_END         spin_unlock_irqrestore(&lock, flag)
-
 //#define CRYPTO_DEBUG
 #ifdef CRYPTO_DEBUG
 extern char debug_level;
@@ -104,7 +99,7 @@ static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
     volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
     unsigned long flag;
 
-    CRTCL_SECT_START;
+    CRTCL_SECT_HASH_START;
 
     /* For context switching purposes, the previous hash output
      * is loaded back into the output register 
@@ -137,7 +132,7 @@ static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
 
     sctx->started = 1;
 
-    CRTCL_SECT_END;
+    CRTCL_SECT_HASH_END;
 }
 
 /*! \fn static void sha1_init1(struct crypto_tfm *tfm)
@@ -229,7 +224,7 @@ static int sha1_final(struct shash_desc *desc, u8 *out)
     /* Append length */
     sha1_update (desc, bits, sizeof bits);
 
-    CRTCL_SECT_START;
+    CRTCL_SECT_HASH_START;
 
     *((u32 *) out + 0) = hashs->D1R;
     *((u32 *) out + 1) = hashs->D2R;
@@ -237,7 +232,7 @@ static int sha1_final(struct shash_desc *desc, u8 *out)
     *((u32 *) out + 3) = hashs->D4R;
     *((u32 *) out + 4) = hashs->D5R;
 
-    CRTCL_SECT_END;
+    CRTCL_SECT_HASH_END;
 
     // Wipe context
     memset (sctx, 0, sizeof *sctx);
@@ -277,8 +272,6 @@ int ifxdeu_init_sha1 (void)
 
     if ((ret = crypto_register_shash(&ifxdeu_sha1_alg)))
         goto sha1_err;
-
-    CRTCL_SECT_INIT;
 
     printk (KERN_NOTICE "IFX DEU SHA1 initialized%s.\n", disable_deudma ? "" : " (DMA)");
     return ret;
