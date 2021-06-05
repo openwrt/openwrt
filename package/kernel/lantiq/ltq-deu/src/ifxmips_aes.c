@@ -86,6 +86,7 @@ spinlock_t aes_lock;
 #define AES_BLOCK_SIZE      16
 #define CTR_RFC3686_NONCE_SIZE    4
 #define CTR_RFC3686_IV_SIZE       8
+#define CTR_RFC3686_MIN_KEY_SIZE  (AES_MIN_KEY_SIZE + CTR_RFC3686_NONCE_SIZE)
 #define CTR_RFC3686_MAX_KEY_SIZE  (AES_MAX_KEY_SIZE + CTR_RFC3686_NONCE_SIZE)
 
 #ifdef CRYPTO_DEBUG
@@ -1011,7 +1012,7 @@ struct skcipher_alg ifxdeu_ctr_rfc3686_aes_alg = {
     .base.cra_ctxsize        =   sizeof(struct aes_ctx),
     .base.cra_module         =   THIS_MODULE,
     .base.cra_list           =   LIST_HEAD_INIT(ifxdeu_ctr_rfc3686_aes_alg.base.cra_list),
-    .min_keysize             =   AES_MIN_KEY_SIZE,
+    .min_keysize             =   CTR_RFC3686_MIN_KEY_SIZE,
     .max_keysize             =   CTR_RFC3686_MAX_KEY_SIZE,
     .ivsize                  =   CTR_RFC3686_IV_SIZE,
     .walksize                =   AES_BLOCK_SIZE,
