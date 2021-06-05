@@ -114,7 +114,7 @@ v13:
  ath10k_core-$(CONFIG_DEV_COREDUMP) += coredump.o
 --- a/local-symbols
 +++ b/local-symbols
-@@ -146,6 +146,7 @@ ATH10K_DEBUG=
+@@ -145,6 +145,7 @@ ATH10K_DEBUG=
  ATH10K_DEBUGFS=
  ATH10K_SPECTRAL=
  ATH10K_THERMAL=
@@ -456,7 +456,7 @@ v13:
  {
 --- a/drivers/net/wireless/ath/ath10k/wmi-tlv.c
 +++ b/drivers/net/wireless/ath/ath10k/wmi-tlv.c
-@@ -4591,6 +4591,8 @@ static const struct wmi_ops wmi_tlv_ops
+@@ -4594,6 +4594,8 @@ static const struct wmi_ops wmi_tlv_ops
  	.gen_echo = ath10k_wmi_tlv_op_gen_echo,
  	.gen_vdev_spectral_conf = ath10k_wmi_tlv_op_gen_vdev_spectral_conf,
  	.gen_vdev_spectral_enable = ath10k_wmi_tlv_op_gen_vdev_spectral_enable,
