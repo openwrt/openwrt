@@ -1244,6 +1244,19 @@ define Device/tplink_archer-a6-v3
 endef
 TARGET_DEVICES += tplink_archer-a6-v3
 
+define Device/tplink_archer-c6-v3
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := Archer C6
+  DEVICE_VARIANT := V3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
+	kmod-mt7663-firmware-ap kmod-mt7663-firmware-sta
+  TPLINK_BOARD_ID := ARCHER-C6-V3
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_archer-c6-v3
+
 define Device/tplink_archer-c6u-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
