@@ -55,7 +55,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -2729,7 +2729,7 @@ static void ieee80211_report_disconnect(
+@@ -2734,7 +2734,7 @@ static void ieee80211_report_disconnect(
  	};
  
  	if (tx)
@@ -64,7 +64,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	else
  		cfg80211_rx_mlme_mgmt(sdata->dev, buf, len);
  
-@@ -4719,7 +4719,8 @@ void ieee80211_mgd_quiesce(struct ieee80
+@@ -4724,7 +4724,8 @@ void ieee80211_mgd_quiesce(struct ieee80
  		if (ifmgd->auth_data)
  			ieee80211_destroy_auth_data(sdata, false);
  		cfg80211_tx_mlme_mgmt(sdata->dev, frame_buf,
