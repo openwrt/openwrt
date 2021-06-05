@@ -27,6 +27,12 @@ platform_do_upgrade() {
 			fi
 		}
 		;;
+	ampedwireless,ally-00x19k|\
+	ampedwireless,ally-r1900k)
+		if [ "$(fw_printenv --lock / -n bootImage 2>/dev/null)" != "0" ]; then
+			fw_setenv --lock / bootImage 0 || exit 1
+		fi
+		;;
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
@@ -43,6 +49,8 @@ platform_do_upgrade() {
 	esac
 
 	case "$board" in
+	ampedwireless,ally-00x19k|\
+	ampedwireless,ally-r1900k|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	dlink,dir-1960-a1|\
