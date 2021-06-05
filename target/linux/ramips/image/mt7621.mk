@@ -126,6 +126,33 @@ define Device/alfa-network_quad-e4g
 endef
 TARGET_DEVICES += alfa-network_quad-e4g
 
+define Device/ampedwireless_ally_common
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Amped Wireless
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware uboot-envtools
+  IMAGE_SIZE := 32768k
+  KERNEL_SIZE := 4096k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma -n 'flashable-initramfs' |\
+	edimax-header -s CSYS -m RN68 -f 0x001c0000 -S 0x01100000
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/ampedwireless_ally-r1900k
+  $(Device/ampedwireless_ally_common)
+  DEVICE_MODEL := ALLY-R1900K
+  DEVICE_PACKAGES += kmod-usb3
+endef
+TARGET_DEVICES += ampedwireless_ally-r1900k
+
+define Device/ampedwireless_ally-00x19k
+  $(Device/ampedwireless_ally_common)
+  DEVICE_MODEL := ALLY-00X19K
+endef
+TARGET_DEVICES += ampedwireless_ally-00x19k
+
 define Device/asiarf_ap7621-001
   $(Device/dsa-migration)
   IMAGE_SIZE := 16000k
