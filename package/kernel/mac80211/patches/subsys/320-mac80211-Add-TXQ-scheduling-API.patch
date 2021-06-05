@@ -145,7 +145,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				struct cfg80211_nan_conf *conf)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -829,6 +829,8 @@ enum txq_info_flags {
+@@ -818,6 +818,8 @@ enum txq_info_flags {
   *	a fq_flow which is already owned by a different tin
   * @def_cvars: codel vars for @def_flow
   * @frags: used to keep fragments created after dequeue
@@ -154,7 +154,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  struct txq_info {
  	struct fq_tin tin;
-@@ -836,6 +838,8 @@ struct txq_info {
+@@ -825,6 +827,8 @@ struct txq_info {
  	struct codel_vars def_cvars;
  	struct codel_stats cstats;
  	struct sk_buff_head frags;
@@ -163,7 +163,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	unsigned long flags;
  
  	/* keep last! */
-@@ -1128,6 +1132,11 @@ struct ieee80211_local {
+@@ -1115,6 +1119,11 @@ struct ieee80211_local {
  	struct codel_vars *cvars;
  	struct codel_params cparams;
  
@@ -191,7 +191,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -1261,7 +1261,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
+@@ -1265,7 +1265,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
  			if (!txq_has_queue(sta->sta.txq[i]))
  				continue;
  

@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -179,6 +179,7 @@ struct ieee80211_tx_data {
+@@ -161,6 +161,7 @@ struct ieee80211_tx_data {
  	struct ieee80211_tx_rate rate;
  
  	unsigned int flags;
@@ -164,7 +164,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			       size_t klen, u8 *data, size_t data_len);
 --- a/net/mac80211/wpa.c
 +++ b/net/mac80211/wpa.c
-@@ -44,7 +44,7 @@ ieee80211_tx_h_michael_mic_add(struct ie
+@@ -45,7 +45,7 @@ ieee80211_tx_h_michael_mic_add(struct ie
  	    skb->len < 24 || !ieee80211_is_data_present(hdr->frame_control))
  		return TX_CONTINUE;
  
@@ -173,7 +173,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (skb->len < hdrlen)
  		return TX_DROP;
  
-@@ -195,7 +195,6 @@ mic_fail_no_key:
+@@ -196,7 +196,6 @@ mic_fail_no_key:
  
  static int tkip_encrypt_skb(struct ieee80211_tx_data *tx, struct sk_buff *skb)
  {
@@ -181,7 +181,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_key *key = tx->key;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	unsigned int hdrlen;
-@@ -210,7 +209,7 @@ static int tkip_encrypt_skb(struct ieee8
+@@ -211,7 +210,7 @@ static int tkip_encrypt_skb(struct ieee8
  		return 0;
  	}
  
@@ -190,7 +190,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	len = skb->len - hdrlen;
  
  	if (info->control.hw_key)
-@@ -428,7 +427,7 @@ static int ccmp_encrypt_skb(struct ieee8
+@@ -429,7 +428,7 @@ static int ccmp_encrypt_skb(struct ieee8
  		return 0;
  	}
  
@@ -199,7 +199,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	len = skb->len - hdrlen;
  
  	if (info->control.hw_key)
-@@ -660,7 +659,7 @@ static int gcmp_encrypt_skb(struct ieee8
+@@ -663,7 +662,7 @@ static int gcmp_encrypt_skb(struct ieee8
  		return 0;
  	}
  
@@ -208,7 +208,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	len = skb->len - hdrlen;
  
  	if (info->control.hw_key)
-@@ -800,7 +799,6 @@ static ieee80211_tx_result
+@@ -805,7 +804,6 @@ static ieee80211_tx_result
  ieee80211_crypto_cs_encrypt(struct ieee80211_tx_data *tx,
  			    struct sk_buff *skb)
  {
@@ -216,7 +216,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_key *key = tx->key;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	int hdrlen;
-@@ -816,8 +814,7 @@ ieee80211_crypto_cs_encrypt(struct ieee8
+@@ -821,8 +819,7 @@ ieee80211_crypto_cs_encrypt(struct ieee8
  		     pskb_expand_head(skb, iv_len, 0, GFP_ATOMIC)))
  		return TX_DROP;
  

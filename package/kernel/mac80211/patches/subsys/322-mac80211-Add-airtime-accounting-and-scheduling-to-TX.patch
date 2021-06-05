@@ -240,7 +240,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				   sta->debugfs_dir,
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1137,6 +1137,8 @@ struct ieee80211_local {
+@@ -1124,6 +1124,8 @@ struct ieee80211_local {
  	struct list_head active_txqs[IEEE80211_NUM_ACS];
  	u16 schedule_round[IEEE80211_NUM_ACS];
  
@@ -259,7 +259,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	INIT_LIST_HEAD(&local->chanctx_list);
  	mutex_init(&local->chanctx_mtx);
-@@ -1153,6 +1154,9 @@ int ieee80211_register_hw(struct ieee802
+@@ -1156,6 +1157,9 @@ int ieee80211_register_hw(struct ieee802
  	if (!local->hw.max_nan_de_entries)
  		local->hw.max_nan_de_entries = IEEE80211_MAX_NAN_INSTANCE_ID;
  
@@ -289,7 +289,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		}
  	}
  
-@@ -399,9 +396,12 @@ struct sta_info *sta_info_alloc(struct i
+@@ -401,9 +398,12 @@ struct sta_info *sta_info_alloc(struct i
  	if (sta_prepare_rate_control(local, sta, gfp))
  		goto free_txq;
  
@@ -302,7 +302,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	for (i = 0; i < IEEE80211_NUM_TIDS; i++)
-@@ -1838,6 +1838,27 @@ void ieee80211_sta_set_buffered(struct i
+@@ -1842,6 +1842,27 @@ void ieee80211_sta_set_buffered(struct i
  }
  EXPORT_SYMBOL(ieee80211_sta_set_buffered);
  
@@ -330,7 +330,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  int sta_info_move_state(struct sta_info *sta,
  			enum ieee80211_sta_state new_state)
  {
-@@ -2208,6 +2229,23 @@ void sta_set_sinfo(struct sta_info *sta,
+@@ -2212,6 +2233,23 @@ void sta_set_sinfo(struct sta_info *sta,
  		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_TX_FAILED);
  	}
  
@@ -356,7 +356,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		for_each_possible_cpu(cpu) {
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -127,6 +127,16 @@ enum ieee80211_agg_stop_reason {
+@@ -128,6 +128,16 @@ enum ieee80211_agg_stop_reason {
  	AGG_STOP_DESTROY_STA,
  };
  
@@ -373,7 +373,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  struct sta_info;
  
  /**
-@@ -563,6 +573,9 @@ struct sta_info {
+@@ -593,6 +603,9 @@ struct sta_info {
  	} tx_stats;
  	u16 tid_seq[IEEE80211_QOS_CTL_TID_MASK + 1];
  

@@ -81,7 +81,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * mac80211 is capable of taking advantage of many hardware
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -1877,6 +1877,10 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -1873,6 +1873,10 @@ int ieee80211_if_add(struct ieee80211_lo
  					+ 8 /* rfc1042/bridge tunnel */
  					- ETH_HLEN /* ethernet hard_header_len */
  					+ IEEE80211_ENCRYPT_HEADROOM;
@@ -113,7 +113,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!(mshdr->flags & MESH_FLAGS_AE)) {
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2621,7 +2621,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2705,7 +2705,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	struct ieee80211_local *local = rx->local;
  	struct ieee80211_sub_if_data *sdata = rx->sdata;
  	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
@@ -122,7 +122,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int tailroom = 0;
  
  	hdr = (struct ieee80211_hdr *) skb->data;
-@@ -2714,7 +2714,9 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2798,7 +2798,9 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	if (sdata->crypto_tx_tailroom_needed_cnt)
  		tailroom = IEEE80211_ENCRYPT_TAILROOM;
  
@@ -133,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				       sdata->encrypt_headroom,
  				  tailroom, GFP_ATOMIC);
  	if (!fwd_skb)
-@@ -2746,6 +2748,12 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2830,6 +2832,12 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  		return RX_DROP_MONITOR;
  	}
  
@@ -148,7 +148,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   out:
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -311,7 +311,7 @@ struct ieee80211_fast_tx {
+@@ -312,7 +312,7 @@ struct ieee80211_fast_tx {
  	u8 hdr_len;
  	u8 sa_offs, da_offs, pn_offs;
  	u8 band;

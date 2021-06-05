@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=4.19.189-1
+PKG_VERSION:=4.19.193-1
 PKG_RELEASE:=1
-PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v4.19.189/
-PKG_HASH:=34a53f743b43cbb25c8e665c3932d8cdd79aa3c081b9e573fae63b5a7407422c
+PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v4.19.193/
+PKG_HASH:=560c0ce9e4079fd26d046e188453e008a5e766e5409d950c4749a23da53d6d0a
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)

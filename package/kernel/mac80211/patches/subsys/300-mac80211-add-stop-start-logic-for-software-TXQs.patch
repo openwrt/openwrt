@@ -61,7 +61,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -818,6 +818,7 @@ enum txq_info_flags {
+@@ -807,6 +807,7 @@ enum txq_info_flags {
  	IEEE80211_TXQ_STOP,
  	IEEE80211_TXQ_AMPDU,
  	IEEE80211_TXQ_NO_AMSDU,
@@ -69,7 +69,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /**
-@@ -1227,6 +1228,7 @@ struct ieee80211_local {
+@@ -1214,6 +1215,7 @@ struct ieee80211_local {
  
  	struct sk_buff_head pending[IEEE80211_MAX_QUEUES];
  	struct tasklet_struct tx_pending_tasklet;
@@ -77,7 +77,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	atomic_t agg_queue_stop[IEEE80211_MAX_QUEUES];
  
-@@ -2048,6 +2050,7 @@ void ieee80211_txq_remove_vlan(struct ie
+@@ -2035,6 +2037,7 @@ void ieee80211_txq_remove_vlan(struct ie
  			       struct ieee80211_sub_if_data *sdata);
  void ieee80211_fill_txq_stats(struct cfg80211_txq_stats *txqstats,
  			      struct txq_info *txqi);
