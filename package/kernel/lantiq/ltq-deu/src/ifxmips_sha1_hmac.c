@@ -119,7 +119,6 @@ static int sha1_hmac_transform(struct shash_desc *desc, u32 const *in)
 static int sha1_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
 {
     struct sha1_hmac_ctx *sctx = crypto_shash_ctx(tfm);
-    volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
     
     if (keylen > SHA1_HMAC_MAX_KEYLEN) {
 	printk("Key length exceeds maximum key length\n");
@@ -128,7 +127,6 @@ static int sha1_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned in
 
     //printk("Setting keys of len: %d\n", keylen);
      
-    hashs->KIDX |= 0x80000000; //reset keys back to 0
     memcpy(&sctx->key, key, keylen);
     sctx->keylen = keylen;
 
@@ -148,12 +146,11 @@ static int sha1_hmac_setkey_hw(const u8 *key, unsigned int keylen)
 {
     volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
     int i, j;
-    unsigned long flag;
     u32 *in_key = (u32 *)key;        
 
     j = 0;
 
-    CRTCL_SECT_HASH_START;
+    hash->KIDX |= 0x80000000; //reset keys back to 0
     for (i = 0; i < keylen; i+=4)
     {
          hash->KIDX = j;
@@ -162,7 +159,6 @@ static int sha1_hmac_setkey_hw(const u8 *key, unsigned int keylen)
          j++;
     }
 
-    CRTCL_SECT_HASH_END;
     return 0;
 }
 
@@ -177,7 +173,6 @@ static int sha1_hmac_init(struct shash_desc *desc)
 
     //printk("debug ln: %d, fn: %s\n", __LINE__, __func__);
     sctx->dbn = 0; //dbn workaround
-    sha1_hmac_setkey_hw(sctx->key, sctx->keylen);
 
     return 0;
 }
@@ -261,6 +256,10 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
     sha1_hmac_update (desc, bits, sizeof bits);
 
     CRTCL_SECT_HASH_START;
+
+    SHA_HASH_INIT;
+
+    sha1_hmac_setkey_hw(sctx->key, sctx->keylen);
     
     hashs->DBN = sctx->dbn;
     
