@@ -60,6 +60,7 @@
 #endif
 
 #define SHA1_DIGEST_SIZE    20
+#define SHA1_BLOCK_WORDS    16
 #define SHA1_HMAC_BLOCK_SIZE    64
 #define SHA1_HMAC_DBN_TEMP_SIZE 1024 // size in dword, needed for dbn workaround 
 #define HASH_START   IFX_HASH_CON
@@ -82,9 +83,9 @@ struct sha1_hmac_ctx {
     u32 dbn;
     u64 count;
 
+    struct shash_desc *desc;
+    u32 (*temp)[SHA1_BLOCK_WORDS];
 };
-
-static u32 temp[SHA1_HMAC_DBN_TEMP_SIZE];  
 
 extern int disable_deudma;
 
@@ -98,7 +99,7 @@ static int sha1_hmac_transform(struct shash_desc *desc, u32 const *in)
 {
     struct sha1_hmac_ctx *sctx =  crypto_shash_ctx(desc->tfm);
 
-    memcpy(&temp[sctx->dbn<<4], in, 64); //dbn workaround
+    memcpy(&sctx->temp[sctx->dbn], in, 64); //dbn workaround
     sctx->dbn += 1;
     
     if ( (sctx->dbn<<4) > SHA1_HMAC_DBN_TEMP_SIZE )
@@ -119,19 +120,31 @@ static int sha1_hmac_transform(struct shash_desc *desc, u32 const *in)
 static int sha1_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
 {
     struct sha1_hmac_ctx *sctx = crypto_shash_ctx(tfm);
-    
+    volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
+    int err;
+
     if (keylen > SHA1_HMAC_MAX_KEYLEN) {
-	printk("Key length exceeds maximum key length\n");
-	return -EINVAL;
+        char *hash_alg_name = "sha1";
+
+        sctx->desc->tfm = crypto_alloc_shash(hash_alg_name, 0, 0);
+        if (IS_ERR(sctx->desc->tfm)) return PTR_ERR(sctx->desc->tfm);
+
+        memset(sctx->key, 0, SHA1_HMAC_MAX_KEYLEN);
+        err = crypto_shash_digest(sctx->desc, key, keylen, sctx->key);
+        if (err) return err;
+
+        sctx->keylen = SHA1_DIGEST_SIZE;
+
+        crypto_free_shash(sctx->desc->tfm);
+    } else {
+        memcpy(sctx->key, key, keylen);
+        sctx->keylen = keylen;
     }
+    memset(sctx->key + sctx->keylen, 0, SHA1_HMAC_MAX_KEYLEN - sctx->keylen);
 
     //printk("Setting keys of len: %d\n", keylen);
-     
-    memcpy(&sctx->key, key, keylen);
-    sctx->keylen = keylen;
 
     return 0;
-         
 }
 
 
@@ -218,7 +231,6 @@ static int sha1_hmac_update(struct shash_desc *desc, const u8 *data,
 */                                 
 static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
 {
-    //struct sha1_hmac_ctx *sctx = shash_desc_ctx(desc);
     struct sha1_hmac_ctx *sctx =  crypto_shash_ctx(desc->tfm);
     u32 index, padlen;
     u64 t;
@@ -228,7 +240,7 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
     unsigned long flag;
     int i = 0;
     int dbn;
-    u32 *in = &temp[0];
+    u32 *in = sctx->temp[0];
         
     t = sctx->count + 512; // need to add 512 bit of the IPAD operation
     bits[7] = 0xff & t;
@@ -273,20 +285,20 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
 
     for (dbn = 0; dbn < sctx->dbn; dbn++)
     {
-    for (i = 0; i < 16; i++) {
-        hashs->MR = in[i];
-    };
+        for (i = 0; i < 16; i++) {
+            hashs->MR = in[i];
+        };
 
-    hashs->controlr.GO = 1;
-    asm("sync");
+        hashs->controlr.GO = 1;
+        asm("sync");
 
-    //wait for processing
-    while (hashs->controlr.BSY) {
+        //wait for processing
+        while (hashs->controlr.BSY) {
             // this will not take long
-    }
+        }
     
-    in += 16;
-}
+        in += 16;
+    }
 
 
 #if 1
@@ -313,26 +325,57 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
 
 }
 
-/*
- * \brief SHA1-HMAC function mappings
+/*! \fn void sha1_hmac_init_tfm(struct crypto_tfm *tfm)
+ *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
+ *  \brief initialize pointers in sha1_hmac_ctx
+ *  \param tfm linux crypto algo transform
 */
-static struct shash_alg ifxdeu_sha1_hmac_alg = {
-        .digestsize     =       SHA1_DIGEST_SIZE,
-        .init           =       sha1_hmac_init,
-        .update         =       sha1_hmac_update,
-        .final          =       sha1_hmac_final,
-        .setkey         =       sha1_hmac_setkey,
-        .descsize       =       sizeof(struct sha1_hmac_ctx),
-        .base           =       {
-                .cra_name       =       "hmac(sha1)",
-                .cra_driver_name=       "ifxdeu-sha1_hmac",
-                .cra_priority   =       400,
-		.cra_ctxsize    =	sizeof(struct sha1_hmac_ctx),
-                .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
-                .cra_blocksize  =       SHA1_HMAC_BLOCK_SIZE,
-                .cra_module     =       THIS_MODULE,
-        }
+static int sha1_hmac_init_tfm(struct crypto_tfm *tfm)
+{
+    struct sha1_hmac_ctx *sctx = crypto_tfm_ctx(tfm);
+    sctx->temp = kzalloc(4 * SHA1_HMAC_DBN_TEMP_SIZE, GFP_KERNEL);
+    if (IS_ERR(sctx->temp)) return PTR_ERR(sctx->temp);
+    sctx->desc = kzalloc(sizeof(struct shash_desc), GFP_KERNEL);
+    if (IS_ERR(sctx->desc)) return PTR_ERR(sctx->desc);
 
+    return 0;
+}
+
+/*! \fn void sha1_hmac_exit_tfm(struct crypto_tfm *tfm)
+ *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
+ *  \brief free pointers in sha1_hmac_ctx
+ *  \param tfm linux crypto algo transform
+*/
+static void sha1_hmac_exit_tfm(struct crypto_tfm *tfm)
+{
+    struct sha1_hmac_ctx *sctx = crypto_tfm_ctx(tfm);
+    kfree(sctx->temp);
+    kfree(sctx->desc);
+}
+
+
+/* 
+ * \brief SHA1_HMAC function mappings
+*/
+
+static struct shash_alg ifxdeu_sha1_hmac_alg = {
+    .digestsize         =       SHA1_DIGEST_SIZE,
+    .init               =       sha1_hmac_init,
+    .update             =       sha1_hmac_update,
+    .final              =       sha1_hmac_final,
+    .setkey             =       sha1_hmac_setkey,
+    .descsize           =       sizeof(struct sha1_hmac_ctx),
+    .base               =       {
+        .cra_name       =       "hmac(sha1)",
+        .cra_driver_name=       "ifxdeu-sha1_hmac",
+        .cra_priority   =       400,
+        .cra_ctxsize    =       sizeof(struct sha1_hmac_ctx),
+        .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
+        .cra_blocksize  =       SHA1_HMAC_BLOCK_SIZE,
+        .cra_module     =       THIS_MODULE,
+        .cra_init       =       sha1_hmac_init_tfm,
+        .cra_exit       =       sha1_hmac_exit_tfm,
+        }
 };
 
 
