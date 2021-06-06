@@ -147,11 +147,11 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  static struct phy_driver at803x_driver[] = {
  {
  	/* ATHEROS 8035 */
-@@ -482,6 +571,7 @@ static struct phy_driver at803x_driver[]
- 	.suspend		= at803x_suspend,
- 	.resume			= at803x_resume,
- 	/* PHY_GBIT_FEATURES */
+@@ -504,6 +593,7 @@ static struct phy_driver at803x_driver[]
+ 	/* ATHEROS 8031 */
+ 	.phy_id			= ATH8031_PHY_ID,
+ 	.name			= "Atheros 8031 ethernet",
 +	.config_aneg		= at803x_config_aneg,
- 	.read_status		= at803x_read_status,
- 	.ack_interrupt		= at803x_ack_interrupt,
- 	.config_intr		= at803x_config_intr,
+ 	.phy_id_mask		= AT803X_PHY_ID_MASK,
+ 	.probe			= at803x_probe,
+ 	.config_init		= at803x_config_init,
