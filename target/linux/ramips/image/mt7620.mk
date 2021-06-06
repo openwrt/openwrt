@@ -729,6 +729,16 @@ define Device/microduino_microwrt
 endef
 TARGET_DEVICES += microduino_microwrt
 
+define Device/netcore_nw5212
+  SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  BLOCKSIZE := 4k
+  DEVICE_VENDOR := Netcore
+  DEVICE_MODEL := NW5212
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += netcore_nw5212
+
 define Device/netgear_ex2700
   SOC := mt7620a
   NETGEAR_HW_ID := 29764623+4+0+32+2x2+0
