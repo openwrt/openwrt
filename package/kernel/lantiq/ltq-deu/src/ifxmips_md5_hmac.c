@@ -80,9 +80,9 @@ struct md5_hmac_ctx {
     u64 byte_count;
     u32 dbn;
     unsigned int keylen;
+    struct shash_desc *desc;
+    u32 (*temp)[MD5_BLOCK_WORDS];
 };
-
-static u32 temp[MD5_HMAC_DBN_TEMP_SIZE];
 
 extern int disable_deudma;
 
@@ -96,7 +96,7 @@ static void md5_hmac_transform(struct shash_desc *desc, u32 const *in)
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(desc->tfm);
 
-    memcpy(&temp[mctx->dbn<<4], in, 64); //dbn workaround
+    memcpy(&mctx->temp[mctx->dbn], in, 64); //dbn workaround
     mctx->dbn += 1;
     
     if ( (mctx->dbn<<4) > MD5_HMAC_DBN_TEMP_SIZE )
@@ -116,19 +116,30 @@ static void md5_hmac_transform(struct shash_desc *desc, u32 const *in)
 static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen) 
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(tfm);
+    volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
+    int err;
     //printk("copying keys to context with length %d\n", keylen);
 
     if (keylen > MAX_HASH_KEYLEN) {
-	printk("Key length more than what DEU hash can handle\n");
-	return -EINVAL;
-    }
- 
+        char *hash_alg_name = "md5";
 
-    memcpy(&mctx->key, key, keylen);
-    mctx->keylen = keylen;
+        mctx->desc->tfm = crypto_alloc_shash(hash_alg_name, 0, 0);
+        if (IS_ERR(mctx->desc->tfm)) return PTR_ERR(mctx->desc->tfm);
+
+        memset(mctx->key, 0, MAX_HASH_KEYLEN);
+        err = crypto_shash_digest(mctx->desc, key, keylen, mctx->key);
+        if (err) return err;
+
+        mctx->keylen = MD5_DIGEST_SIZE;
+
+        crypto_free_shash(mctx->desc->tfm);
+    } else {
+        memcpy(mctx->key, key, keylen);
+        mctx->keylen = keylen;
+    }
+    memset(mctx->key + mctx->keylen, 0, MAX_HASH_KEYLEN - mctx->keylen);
 
     return 0;
-
 }
 
 
@@ -231,7 +242,7 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
     unsigned long flag;
     int i = 0;
     int dbn;
-    u32 *in = &temp[0];
+    u32 *in = mctx->temp[0];
 
 
     *p++ = 0x80;
@@ -299,13 +310,42 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
     mctx->byte_count = 0;
     memset(&mctx->hash[0], 0, sizeof(MD5_HASH_WORDS));
     memset(&mctx->block[0], 0, sizeof(MD5_BLOCK_WORDS));
-    memset(&temp[0], 0, MD5_HMAC_DBN_TEMP_SIZE);
+    memset(&mctx->temp[0], 0, MD5_HMAC_DBN_TEMP_SIZE);
 
     CRTCL_SECT_HASH_END;
 
 
    return 0;
 }
+
+/*! \fn void md5_hmac_init_tfm(struct crypto_tfm *tfm)
+ *  \ingroup IFX_MD5_HMAC_FUNCTIONS
+ *  \brief initialize pointers in md5_hmac_ctx
+ *  \param tfm linux crypto algo transform
+*/
+static int md5_hmac_init_tfm(struct crypto_tfm *tfm)
+{
+    struct md5_hmac_ctx *mctx = crypto_tfm_ctx(tfm);
+    mctx->temp = kzalloc(4 * MD5_HMAC_DBN_TEMP_SIZE, GFP_KERNEL);
+    if (IS_ERR(mctx->temp)) return PTR_ERR(mctx->temp);
+    mctx->desc = kzalloc(sizeof(struct shash_desc), GFP_KERNEL);
+    if (IS_ERR(mctx->desc)) return PTR_ERR(mctx->desc);
+
+    return 0;
+}
+
+/*! \fn void md5_hmac_exit_tfm(struct crypto_tfm *tfm)
+ *  \ingroup IFX_MD5_HMAC_FUNCTIONS
+ *  \brief free pointers in md5_hmac_ctx
+ *  \param tfm linux crypto algo transform
+*/
+static void md5_hmac_exit_tfm(struct crypto_tfm *tfm)
+{
+    struct md5_hmac_ctx *mctx = crypto_tfm_ctx(tfm);
+    kfree(mctx->temp);
+    kfree(mctx->desc);
+}
+
 
 /* 
  * \brief MD5_HMAC function mappings
@@ -322,10 +362,12 @@ static struct shash_alg ifxdeu_md5_hmac_alg = {
         .cra_name       =       "hmac(md5)",
         .cra_driver_name=       "ifxdeu-md5_hmac",
         .cra_priority   =       400,
-        .cra_ctxsize    =	sizeof(struct md5_hmac_ctx),
+        .cra_ctxsize    =       sizeof(struct md5_hmac_ctx),
         .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
         .cra_blocksize  =       MD5_HMAC_BLOCK_SIZE,
         .cra_module     =       THIS_MODULE,
+        .cra_init       =       md5_hmac_init_tfm,
+        .cra_exit       =       md5_hmac_exit_tfm,
         }
 };
 
