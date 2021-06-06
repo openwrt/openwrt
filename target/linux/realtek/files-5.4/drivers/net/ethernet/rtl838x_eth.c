@@ -1129,22 +1129,15 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 
 	/* Check for DSA tagging at the end of the buffer */
 	if (netdev_uses_dsa(dev) && skb->data[len-4] == 0x80 && skb->data[len-3] > 0
-			&& skb->data[len-3] < 28 &&  skb->data[len-2] == 0x10
+			&& skb->data[len-3] < priv->cpu_port &&  skb->data[len-2] == 0x10
 			&&  skb->data[len-1] == 0x00) {
 		/* Reuse tag space for CRC if possible */
 		dest_port = skb->data[len-3];
+		skb->data[len-4] = skb->data[len-3] = skb->data[len-2] = skb->data[len-1] = 0x00;
 		len -= 4;
 	}
 
 	len += 4; // Add space for CRC
-
-	// On RTL8380 SoCs, the packet needs extra padding
-	if (priv->family_id == RTL8380_FAMILY_ID) {
-		if (len < ETH_ZLEN)
-			len = ETH_ZLEN; // SoC not automatically padding to ETH_ZLEN
-		else
-			len += 4;
-	}
 
 	if (skb_padto(skb, len)) {
 		ret = NETDEV_TX_OK;
@@ -1158,6 +1151,11 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 		h = &ring->tx_header[q][ring->c_tx[q]];
 		h->size = len;
 		h->len = len;
+		// On RTL8380 SoCs, small packet lengths being sent need adjustments
+		if (priv->family_id == RTL8380_FAMILY_ID) {
+			if (len < ETH_ZLEN - 4)
+				h->len -= 4;
+		}
 
 		priv->r->create_tx_header(h, dest_port, skb->priority >> 1);
 
