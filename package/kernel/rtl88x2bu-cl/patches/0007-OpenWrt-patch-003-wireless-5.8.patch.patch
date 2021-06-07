@@ -1,0 +1,44 @@
+From fc0e90868cea94c9334dfb53396f3130380f265d Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <gh2020@plntyk.name>
+Date: Tue, 1 Jun 2021 14:37:35 +0200
+Subject: [PATCH 03/12] OpenWrt 003-wireless-5.8.patch
+
+---
+ os_dep/linux/ioctl_cfg80211.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/os_dep/linux/ioctl_cfg80211.c b/os_dep/linux/ioctl_cfg80211.c
+index 7719b728..ed6bb53a 100644
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -8024,6 +8024,15 @@ exit:
+ }
+ #endif
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)) || defined(BUILD_OPENWRT)
++static void cfg80211_rtw_update_mgmt_frame_registrations(struct wiphy *wiphy,
++						   struct wireless_dev *wdev,
++						   struct mgmt_frame_regs *upd)
++{
++
++}
++#endif
++
+ #if defined(CONFIG_TDLS) && (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0))
+ static int cfg80211_rtw_tdls_mgmt(struct wiphy *wiphy,
+ 	struct net_device *ndev,
+@@ -10419,7 +10428,10 @@ static struct cfg80211_ops rtw_cfg80211_ops = {
+ 	.update_ft_ies = cfg80211_rtw_update_ft_ies,
+ #endif
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)) || defined(BUILD_OPENWRT)
++	.mgmt_tx = cfg80211_rtw_mgmt_tx,
++	.update_mgmt_frame_registrations = cfg80211_rtw_update_mgmt_frame_registrations,
++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)) || defined(COMPAT_KERNEL_RELEASE)
+ 	.mgmt_tx = cfg80211_rtw_mgmt_tx,
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
+ 	.mgmt_frame_register = cfg80211_rtw_mgmt_frame_register,
+-- 
+2.31.1
+

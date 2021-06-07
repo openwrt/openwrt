@@ -1,0 +1,39 @@
+From 09db068278522e5a3b457dc06b7b1e9e2e342fd5 Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <dirkneukirchen@web.de>
+Date: Mon, 7 Jun 2021 10:57:51 +0200
+Subject: [PATCH 6/6] include/drv_conf.h: fix OpenWrt build against backports
+
+from Ben Greearb 8812au-ct: 9b2b0ec1bc2d31ddf93ed74d63fdfa6044e329a4
+---
+ include/drv_conf.h                                  | 3 ++-
+ include/linux/{wireless.h => old_unused_wireless.h} | 0
+ include/{autoconf.h => rtl_autoconf.h}              | 0
+ 3 files changed, 2 insertions(+), 1 deletion(-)
+ rename include/linux/{wireless.h => old_unused_wireless.h} (100%)
+ rename include/{autoconf.h => rtl_autoconf.h} (100%)
+
+diff --git a/include/drv_conf.h b/include/drv_conf.h
+index 8d6a040..52c9506 100755
+--- a/include/drv_conf.h
++++ b/include/drv_conf.h
+@@ -14,7 +14,8 @@
+  *****************************************************************************/
+ #ifndef __DRV_CONF_H__
+ #define __DRV_CONF_H__
+-#include "autoconf.h"
++#include <generated/autoconf.h>
++#include "rtl_autoconf.h"
+ #include "hal_ic_cfg.h"
+ #if defined(PLATFORM_LINUX) && defined (PLATFORM_WINDOWS)
+ 
+diff --git a/include/linux/wireless.h b/include/linux/old_unused_wireless.h
+similarity index 100%
+rename from include/linux/wireless.h
+rename to include/linux/old_unused_wireless.h
+diff --git a/include/autoconf.h b/include/rtl_autoconf.h
+similarity index 100%
+rename from include/autoconf.h
+rename to include/rtl_autoconf.h
+-- 
+2.31.1
+

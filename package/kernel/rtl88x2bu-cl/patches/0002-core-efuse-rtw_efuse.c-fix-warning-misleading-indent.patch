@@ -1,0 +1,33 @@
+From 0bfd7037f402e1b9cc58fdfb708bee8d78d50994 Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <gh2020@plntyk.name>
+Date: Tue, 1 Jun 2021 14:58:04 +0200
+Subject: [PATCH 2/6] core/efuse/rtw_efuse.c: fix warning: misleading
+ indentation
+
+Signed-off-by: Dirk Neukirchen <gh2020@plntyk.name>
+---
+ core/efuse/rtw_efuse.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/core/efuse/rtw_efuse.c b/core/efuse/rtw_efuse.c
+index 59b3464..27788c1 100644
+--- a/core/efuse/rtw_efuse.c
++++ b/core/efuse/rtw_efuse.c
+@@ -780,10 +780,10 @@ void rtw_efuse_analyze(PADAPTER	padapter, u8 Type, u8 Fake)
+ 	for (i = 0; i < mapLen; i++) {
+ 		if (i % 16 == 0)
+ 			RTW_PRINT_SEL(RTW_DBGDUMP, "0x%03x: ", i);
+-			_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
+-				, pEfuseHal->fakeEfuseInitMap[i]
+-				, ((i + 1) % 16 == 0) ? "\n" : (((i + 1) % 8 == 0) ? "	  " : " ")
+-			);
++		_RTW_PRINT_SEL(RTW_DBGDUMP, "%02X%s"
++		, pEfuseHal->fakeEfuseInitMap[i]
++		, ((i + 1) % 16 == 0) ? "\n" : (((i + 1) % 8 == 0) ? "	  " : " ")
++		);
+ 		}
+ 	_RTW_PRINT_SEL(RTW_DBGDUMP, "\n");
+ 
+-- 
+2.31.1
+

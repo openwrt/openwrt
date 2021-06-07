@@ -1,0 +1,33 @@
+From 10e1c67490a3f80b30b37e2a5ae73594ed858814 Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <dirkneukirchen@web.de>
+Date: Mon, 7 Jun 2021 10:45:15 +0200
+Subject: [PATCH 4/6] os_dep/linux/recv_linux: fix Kernel 5.12 deprecated
+ GRO_DROP
+
+patch taken from 8812au-mw morrownr:
+commit-id fcb0343c52daa647150f027258958194824e2ace
+---
+ os_dep/linux/recv_linux.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/os_dep/linux/recv_linux.c b/os_dep/linux/recv_linux.c
+index 6bd2e09..95703c6 100644
+--- a/os_dep/linux/recv_linux.c
++++ b/os_dep/linux/recv_linux.c
+@@ -355,8 +355,13 @@ static int napi_recv(_adapter *padapter, int budget)
+ 
+ #ifdef CONFIG_RTW_GRO
+ 		if (pregistrypriv->en_gro) {
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0))
+ 			if (rtw_napi_gro_receive(&padapter->napi, pskb) != GRO_DROP)
+ 				rx_ok = _TRUE;
++#else
++			rtw_napi_gro_receive(&padapter->napi, pskb);
++			rx_ok = _TRUE;
++#endif
+ 			goto next;
+ 		}
+ #endif /* CONFIG_RTW_GRO */
+-- 
+2.31.1
+

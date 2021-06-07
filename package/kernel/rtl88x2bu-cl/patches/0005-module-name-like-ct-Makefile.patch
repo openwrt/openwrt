@@ -1,0 +1,25 @@
+From 1c554abe0f3521c8fbaf3160b4d01ee2535f150c Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <gh2020@plntyk.name>
+Date: Tue, 1 Jun 2021 17:48:07 +0200
+Subject: [PATCH 5/6] module name like -ct Makefile
+
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 66c88b0..4805b8e 100755
+--- a/Makefile
++++ b/Makefile
+@@ -2193,7 +2193,7 @@ endif
+ 
+ endif
+ 
+-USER_MODULE_NAME ?=
++USER_MODULE_NAME ?= rtl$(MODULE_NAME)
+ ifneq ($(USER_MODULE_NAME),)
+ MODULE_NAME := $(USER_MODULE_NAME)
+ endif
+-- 
+2.31.1
+
