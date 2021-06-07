@@ -30,6 +30,7 @@ ipq40xx_setup_interfaces()
 	engenius,emd1|\
 	meraki,mr33|\
 	mikrotik,ldf-5-ac|\
+	mikrotik,lhg-5-ac|\
 	mikrotik,sxtsq-5-ac|\
 	netgear,ex6100v2|\
 	netgear,ex6150v2|\
@@ -179,6 +180,7 @@ ipq40xx_setup_macs()
 		label_mac="$wan_mac"
 		;;
 	mikrotik,ldf-5-ac|\
+	mikrotik,lhg-5-ac|\
 	mikrotik,sxtsq-5-ac)
 		lan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
 		label_mac="$lan_mac"

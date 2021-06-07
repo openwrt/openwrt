@@ -114,6 +114,7 @@ platform_do_upgrade() {
 		;;
 	mikrotik,hap-ac2 |\
 	mikrotik,ldf-5-ac |\
+	mikrotik,lhg-5-ac |\
 	mikrotik,sxtsq-5-ac)
 		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
 		default_do_upgrade "$1"
