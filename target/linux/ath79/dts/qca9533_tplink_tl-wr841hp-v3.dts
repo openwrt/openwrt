@@ -32,7 +32,7 @@
 			default-state = "on";
 		};
 
-		wan {
+		wan_green {
 			label = "green:wan";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
@@ -84,7 +84,6 @@
 
 		re {
 			label = "RE button";
-			linux,input-type = <EV_SW>;
 			linux,code = <BTN_0>;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
