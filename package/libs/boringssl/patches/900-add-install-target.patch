@@ -1,0 +1,20 @@
+From 5db83d6e9601aabd32c7c1719ec838b89f1e1355 Mon Sep 17 00:00:00 2001
+From: Martin Schneider <martschneider@google.com>
+Date: Tue, 8 Jun 2021 18:43:37 +0800
+Subject: [PATCH] Add install target to CMakeLists.txt
+
+Copy ssl and crypto to lib.
+
+Signed-off-by: Martin Schneider <martschneider@google.com>
+---
+ CMakeLists.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -649,3 +649,5 @@ add_custom_target(
+     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+     DEPENDS all_tests bssl_shim handshaker fips_specific_tests_if_any
+     USES_TERMINAL)
++
++install(TARGETS ssl crypto DESTINATION bin)
