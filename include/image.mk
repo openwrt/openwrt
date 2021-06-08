@@ -478,7 +478,7 @@ define Device/Build/initramfs
 	  $$(if $$(CONFIG_JSON_OVERVIEW_IMAGE_INFO), $(BUILD_DIR)/json_info_files/$$(KERNEL_INITRAMFS_IMAGE).json,))
 
   $(KDIR)/$$(KERNEL_INITRAMFS_NAME):: image_prepare
-  $(1)-images: $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
+  $(1)-images: $$(if $$(KERNEL_INITRAMFS),$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE))
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
 	cp $$^ $$@
 
