@@ -1245,6 +1245,15 @@ define Device/glinet_gl-x750
 endef
 TARGET_DEVICES += glinet_gl-x750
 
+define Device/glinet_gl-xe300
+  SOC := qca9531
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-XE300
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-serial-ch341
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += glinet_gl-xe300
+
 define Device/hak5_lan-turtle
   $(Device/tplink-16mlzma)
   SOC := ar9331
