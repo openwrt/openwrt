@@ -682,6 +682,20 @@ define Device/compex_wpj531-16m
 endef
 TARGET_DEVICES += compex_wpj531-16m
 
+define Device/compex_wpj558-16m
+  SOC := qca9558
+  IMAGE_SIZE := 16128k
+  DEVICE_VENDOR := Compex
+  DEVICE_MODEL := WPJ558
+  DEVICE_VARIANT := 16M
+  SUPPORTED_DEVICES += wpj558
+  IMAGES += cpximg-6a07.bin
+  IMAGE/cpximg-6a07.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | mkmylofw_16m 0x691 3
+  DEVICE_PACKAGES := kmod-gpio-beeper
+endef
+TARGET_DEVICES += compex_wpj558-16m
+
 define Device/compex_wpj563
   SOC := qca9563
   DEVICE_PACKAGES := kmod-usb2 kmod-usb3
