@@ -7,9 +7,9 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.4
-PKG_RELEASE:=1
-PKG_HASH:=bf3eb3617a74cddd7fb0e0eacbfe38c3258ee07d4c8ed730deef7a175cc3d55b
+PKG_VERSION:=2.5
+PKG_RELEASE:=$(AUTORELEASE)
+PKG_HASH:=ad8a2ffcbcd12d919723da07630fc0840c3c2fba7656d1462e45488e42995d7c
 
 PKG_MAINTAINER:=Vladimir Vid <vladimir.vid@sartura.hr>
 
@@ -111,12 +111,15 @@ TFA_MAKE_FLAGS += \
 		BL33=$(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.bin \
 		MV_DDR_PATH=$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
 		WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
+		USE_COHERENT_MEM=0 \
+		FIP_ALIGN=0x100 \
 		DDR_TOPOLOGY=$(DDR_TOPOLOGY) \
 		CLOCKSPRESET=$(CLOCKSPRESET) \
 		A3700_UTILS_COMMIT_ID=$(A3700_UTILS_RELEASE) \
 		MV_DDR_COMMIT_ID=$(MV_DDR_RELEASE) \
 		all \
-		mrvl_flash
+		mrvl_flash \
+		mrvl_uart
 
 A3700_UTILS_NAME:=a3700-utils
 A3700_UTILS_RELEASE:=5598e150
@@ -172,8 +175,10 @@ define Build/Prepare
 
 	mkdir -p $(STAGING_DIR_IMAGE)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(A3700_UTILS_SOURCE)
+	echo "master" > $(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME)/branch.txt
 	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME),./patches-a3700-utils)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(MV_DDR_SOURCE)
+	echo "master" > $(STAGING_DIR_IMAGE)/$(MV_DDR_NAME)/branch.txt
 	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME),./patches-mv-ddr-marvell)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(LINARO_SOURCE)
 endef
