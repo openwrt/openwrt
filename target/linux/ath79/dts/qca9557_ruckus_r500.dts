@@ -1,0 +1,183 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "ruckus,r500", "qca,qca9557";
+	model = "Ruckus R500";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "red:power";
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		// DIR (Zone Director) LED - Indicates Zone director connection status
+		dir {
+			label = "green:dir";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		// AIR (Signal/Air Quality) LED - Indicates uplink status and the quality of the wireless signal to the uplink AP
+		air {
+			label = "green:air";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5g_green {
+			label = "green:wlan5g";
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan5g_orange {
+			label = "orange:wlan5g";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+	};
+
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0000000 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x0100000 0x40000>;
+			};
+
+			art: partition@140000 {
+				label = "art";
+				reg = <0x0140000 0x80000>;
+				read-only;
+			};
+
+			partition@1c0000 {
+				label = "config-data";
+				reg = <0x01c0000 0x640000>;
+				read-only;
+			};
+
+			partition@800000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				openwrt,offset = <0xA0>;
+				openwrt,partition-magic = <0x52434B53>;
+				reg = <0x0800000 0x1800000>;
+			};
+			
+			partition@2000000 {
+				label = "firmware-backup";
+				reg = <0x2000000 0x1800000>;
+			};
+			
+			partition@3800000 {
+				label = "backup-config-data";
+				reg = <0x3800000 0x300000>;
+				read-only;
+			};
+			
+			partition@3B00000 {
+				label = "reserved-space";
+				reg = <0x3B00000 0x500000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+
+		qca,ar8327-initvals = <
+		    0x04 0x00080080 /* PORT0 PAD MODE CTRL */
+		    0x0c 0x07600000 /* PORT6 PAD MODE CTRL */
+		    0x7c 0x0000007e /* PORT0_STATUS */
+		    0x94 0x0000007e /* PORT6 STATUS */
+		>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	mtd-mac-address = <&art 0x66>;
+	pll-data = <0x96000000 0x00000101 0x00001616>;
+
+	phy-handle = <&phy0>;
+};
+
+&eth1 {
+	status = "okay";
+
+	mtd-mac-address = <&art 0x6c>;
+	pll-data = <0x03000101 0x00000101 0x00001616>;
+	
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "pci168c,003c";
+		reg = <0x0000 0 0 0 0>;
+	};
+};
+
+&wmac {
+	status = "okay";
+	qca,no-eeprom;
+};
