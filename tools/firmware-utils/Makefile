@@ -85,6 +85,7 @@ define Host/Compile
 	$(call cc,otrx,-Wall)
 	$(call cc,pc1crypt)
 	$(call cc,ptgen cyg_crc32,-Wall)
+	$(call cc,ruckus_fw_header md5,-Wall)
 	$(call cc,seama md5,-Wall)
 	$(call cc,sign_dlink_ru md5,-Wall)
 	$(call cc,spw303v,-Wall)

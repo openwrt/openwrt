@@ -65,6 +65,10 @@ case "$FIRMWARE" in
 		caldata_extract "radiocfg" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan24mac")
 		;;
+	ruckus,r500)
+		caldata_extract "art" 0x41000 0x440
+		ath9k_patch_mac $(mtd_get_mac_binary "art" 0x60)
+		;;
 	*)
 		caldata_die "board $board is not supported yet"
 		;;

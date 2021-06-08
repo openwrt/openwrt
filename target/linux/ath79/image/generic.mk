@@ -136,6 +136,11 @@ define Build/pisen_wmb001n-factory
   rm -rf "$@.tmp"
 endef
 
+define Build/ruckus_fw_header
+	$(STAGING_DIR_HOST)/bin/ruckus_fw_header -i $@ -o $@.out
+	mv -f $@.out $@
+endef
+
 define Build/teltonika-fw-fake-checksum
 	# Teltonika U-Boot web based firmware upgrade/recovery routine compares
 	# 16 bytes from md5sum1[16] field in TP-Link v1 header (offset: 76 bytes
@@ -2116,6 +2121,17 @@ define Device/rosinson_wr818
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += rosinson_wr818
+
+define Device/ruckus_r500
+  SOC := qca9557
+  DEVICE_VENDOR := Ruckus
+  DEVICE_MODEL := R500
+  IMAGE_SIZE := 25165k
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  KERNEL := kernel-bin | append-dtb | lzma-no-dict | uImage lzma | ruckus_fw_header
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+endef
+TARGET_DEVICES += ruckus_r500
 
 define Device/samsung_wam250
   SOC := ar9344
