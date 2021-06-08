@@ -802,6 +802,21 @@ define Device/netgear_jwnr2010-v5
 endef
 TARGET_DEVICES += netgear_jwnr2010-v5
 
+define Device/netgear_pr2000
+  $(Device/netgear_sercomm_nor)
+  SOC := mt7620n
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 15488k
+  DEVICE_MODEL := PR2000
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SERCOMM_HWNAME := PR2000
+  SERCOMM_HWID := AQ7
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0000
+  SERCOMM_PAD := 640k
+endef
+TARGET_DEVICES += netgear_pr2000
+
 define Device/netgear_wn3000rp-v3
   SOC := mt7620a
   IMAGE_SIZE := 7872k
