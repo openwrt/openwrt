@@ -1,0 +1,66 @@
+From fb5e436843614f93b30aec0a2a00e5e59a133aab Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
+Date: Sat, 15 May 2021 17:44:24 +0200
+Subject: [PATCH] wtmi: uart: fix UART baudrate divisor calculation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The UART code uses the xtal clock as parent for UART baudrate
+generation, but it assumes that xtal runs at 25 MHz, which isn't
+necessarily the case for all A3720 boards.
+
+Use get_ref_clk() to determine xtal clock rate.
+
+Use rounding division to compute the divisor value.
+
+Signed-off-by: Marek Behún <marek.behun@nic.cz>
+Suggested-by: Pali Rohár <pali@kernel.org>
+---
+ wtmi/types.h | 5 +++++
+ wtmi/uart.c  | 7 ++++---
+ 2 files changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/wtmi/types.h b/wtmi/types.h
+index 7a6c6c6..ea873fc 100644
+--- a/wtmi/types.h
++++ b/wtmi/types.h
+@@ -47,4 +47,9 @@ typedef u32			size_t;
+ 
+ #define maybe_unused __attribute__((unused))
+ 
++static inline u32 div_round_closest_u32(u32 x, u32 d)
++{
++	return (x + d / 2) / d;
++}
++
+ #endif /* __TYPES_H */
+diff --git a/wtmi/uart.c b/wtmi/uart.c
+index d40633d..75864b5 100644
+--- a/wtmi/uart.c
++++ b/wtmi/uart.c
+@@ -40,8 +40,6 @@
+ #include "stdio.h"
+ #include "debug.h"
+ 
+-#define UART_CLOCK_FREQ		25804800
+-
+ const struct uart_info uart1_info = {
+ 	.rx	= 0xc0012000,
+ 	.tx	= 0xc0012004,
+@@ -76,8 +74,11 @@ void uart_set_stdio(const struct uart_info *info)
+ 
+ void uart_reset(const struct uart_info *info, unsigned int baudrate)
+ {
++	u32 parent_rate = get_ref_clk() * 1000000;
++
+ 	/* set baudrate */
+-	writel((UART_CLOCK_FREQ / baudrate / 16), info->baud);
++	writel(div_round_closest_u32(parent_rate, baudrate * 16), info->baud);
++
+ 	/* set Programmable Oversampling Stack to 0, UART defaults to 16X scheme */
+ 	writel(0, info->possr);
+ 
+-- 
+2.30.2
+
