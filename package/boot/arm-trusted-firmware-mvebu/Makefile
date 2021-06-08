@@ -155,6 +155,13 @@ define Download/gcc-linaro
   HASH:=2d4a92d6c8b384ae404b2e02c1c412e3ec18f9b714135acf046b2b1b510e9ace
 endef
 
+define Build/Clean
+	rm -rf \
+		$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
+		$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
+		$(STAGING_DIR_IMAGE)/$(LINARO_NAME)-$(LINARO_RELEASE).$(LINARO_VERSION)
+endef
+
 define Build/Prepare
 	# Download sources
 	$(eval $(call Download,a3700-utils))
