@@ -135,15 +135,15 @@ define Download/a3700-utils
 endef
 
 MV_DDR_NAME:=mv-ddr-marvell
-MV_DDR_RELEASE:=6fb99002
+MV_DDR_RELEASE:=02e23dbc
 MV_DDR_SOURCE:=$(MV_DDR_NAME)-$(MV_DDR_RELEASE).tar.bz2
 
 define Download/mv-ddr-marvell
   FILE:=$(MV_DDR_SOURCE)
   PROTO:=git
   URL:=https://github.com/MarvellEmbeddedProcessors/mv-ddr-marvell.git
-  VERSION:=6fb99002be5dec9c7f5375b074f53148dbc0739c
-  MIRROR_HASH:=6836e5ea47618a7ee2f96a1a6bd8218f003789b877e521fdfcb008f2f6475dd6
+  VERSION:=02e23dbcf8dd22e038986052d99319a0eba8f25f
+  MIRROR_HASH:=d87dcc288b3895d1a1a78908fc607976d500b317ef81edfe667035579df0b440
   SUBDIR:=$(MV_DDR_NAME)
 endef
 
