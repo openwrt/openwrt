@@ -111,6 +111,7 @@ TFA_MAKE_FLAGS += \
 		BL33=$(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.bin \
 		MV_DDR_PATH=$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
 		WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
+		WTMI_IMG=$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE)/wtmi_app.bin \
 		USE_COHERENT_MEM=0 \
 		FIP_ALIGN=0x100 \
 		DDR_TOPOLOGY=$(DDR_TOPOLOGY) \
@@ -147,6 +148,16 @@ define Download/mv-ddr-marvell
   SUBDIR:=$(MV_DDR_NAME)
 endef
 
+MOX_BB_NAME:=mox-boot-builder
+MOX_BB_RELEASE:=v2021.04.09
+MOX_BB_SOURCE:=$(MOX_BB_NAME)-$(MOX_BB_RELEASE).tar.bz2
+
+define Download/mox-boot-builder
+  FILE:=$(MOX_BB_SOURCE)
+  URL:=https://gitlab.nic.cz/turris/mox-boot-builder/-/archive/$(MOX_BB_RELEASE)
+  HASH:=f0ed4fa25006e36a07d4256f633e3f25d6f8898dbe2e081e578251a182885520
+endef
+
 CM3_GCC_NAME:=gcc-arm
 CM3_GCC_RELEASE:=10.2-2020.11
 CM3_GCC_VERSION:=$(HOST_ARCH)-arm-none-eabi
@@ -162,6 +173,7 @@ define Build/Clean
 	rm -rf \
 		$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
 		$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
+		$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
 		$(STAGING_DIR_IMAGE)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)
 endef
 
@@ -169,6 +181,7 @@ define Build/Prepare
 	# Download sources
 	$(eval $(call Download,a3700-utils))
 	$(eval $(call Download,mv-ddr-marvell))
+	$(eval $(call Download,mox-boot-builder))
 	$(eval $(call Download,cm3-gcc))
 
 	$(call Build/Prepare/Default,)
@@ -180,7 +193,18 @@ define Build/Prepare
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(MV_DDR_SOURCE)
 	echo "master" > $(STAGING_DIR_IMAGE)/$(MV_DDR_NAME)/branch.txt
 	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME),./patches-mv-ddr-marvell)
+	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(MOX_BB_SOURCE)
+	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE),./patches-mox-boot-builder)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(CM3_GCC_SOURCE)
+endef
+
+define Build/Compile
+	+$(MAKE) \
+		CROSS_CM3=$(STAGING_DIR_IMAGE)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
+		WTMI_VERSION=$(MOX_BB_RELEASE) \
+		-C $(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
+		wtmi_app.bin
+	$(call Build/Compile/Default)
 endef
 
 $(eval $(call BuildPackage/Trusted-Firmware-A))
