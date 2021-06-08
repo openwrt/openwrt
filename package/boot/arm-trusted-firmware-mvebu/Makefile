@@ -107,7 +107,7 @@ TFA_TARGETS:= \
 	udpu
 
 TFA_MAKE_FLAGS += \
-		CROSS_CM3=$(STAGING_DIR_IMAGE)/$(LINARO_NAME)-$(LINARO_RELEASE).$(LINARO_VERSION)/bin/arm-linux-gnueabi- \
+		CROSS_CM3=$(STAGING_DIR_IMAGE)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
 		BL33=$(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.bin \
 		MV_DDR_PATH=$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
 		WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
@@ -147,29 +147,29 @@ define Download/mv-ddr-marvell
   SUBDIR:=$(MV_DDR_NAME)
 endef
 
-LINARO_NAME:=gcc-linaro
-LINARO_RELEASE:=6
-LINARO_VERSION:=5.0-2018.12-$(HOST_ARCH)_arm-linux-gnueabi
-LINARO_SOURCE=$(LINARO_NAME)-$(LINARO_RELEASE).$(LINARO_VERSION).tar.xz
+CM3_GCC_NAME:=gcc-arm
+CM3_GCC_RELEASE:=10.2-2020.11
+CM3_GCC_VERSION:=$(HOST_ARCH)-arm-none-eabi
+CM3_GCC_SOURCE=$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION).tar.xz
 
-define Download/gcc-linaro
-  FILE:=$(LINARO_SOURCE)
-  URL:=https://releases.linaro.org/components/toolchain/binaries/latest-$(LINARO_RELEASE)/arm-linux-gnueabi/
-  HASH:=2d4a92d6c8b384ae404b2e02c1c412e3ec18f9b714135acf046b2b1b510e9ace
+define Download/cm3-gcc
+  FILE:=$(CM3_GCC_SOURCE)
+  URL:=https://developer.arm.com/-/media/Files/downloads/gnu-a/$(CM3_GCC_RELEASE)/binrel
+  HASH:=bf7ee185936d22d787b80c8da573f72ead5675695331fb8b590f0133ef1f6bb9
 endef
 
 define Build/Clean
 	rm -rf \
 		$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
 		$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
-		$(STAGING_DIR_IMAGE)/$(LINARO_NAME)-$(LINARO_RELEASE).$(LINARO_VERSION)
+		$(STAGING_DIR_IMAGE)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)
 endef
 
 define Build/Prepare
 	# Download sources
 	$(eval $(call Download,a3700-utils))
 	$(eval $(call Download,mv-ddr-marvell))
-	$(eval $(call Download,gcc-linaro))
+	$(eval $(call Download,cm3-gcc))
 
 	$(call Build/Prepare/Default,)
 
@@ -180,7 +180,7 @@ define Build/Prepare
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(MV_DDR_SOURCE)
 	echo "master" > $(STAGING_DIR_IMAGE)/$(MV_DDR_NAME)/branch.txt
 	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME),./patches-mv-ddr-marvell)
-	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(LINARO_SOURCE)
+	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(CM3_GCC_SOURCE)
 endef
 
 $(eval $(call BuildPackage/Trusted-Firmware-A))
