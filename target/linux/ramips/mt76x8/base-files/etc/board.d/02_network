@@ -168,6 +168,7 @@ ramips_setup_macs()
 		lan_mac=$wan_mac
 		;;
 	cudy,wr1000|\
+	hilink,hlk-7628n|\
 	hilink,hlk-7688a|\
 	wavlink,wl-wn577a2|\
 	wavlink,wl-wn578a2)
@@ -186,10 +187,6 @@ ramips_setup_macs()
 	elecom,wrc-1167fs)
 		wan_mac=$(mtd_get_mac_binary factory 0x22)
 		label_mac=$wan_mac
-		;;
-	hilink,hlk-7628n)
-		lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
-		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	hiwifi,hc5661a|\
 	hiwifi,hc5761a|\

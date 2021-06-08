@@ -80,6 +80,10 @@
 	};
 };
 
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+};
+
 &wmac {
 	status = "okay";
 };
