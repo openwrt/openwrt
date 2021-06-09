@@ -1360,7 +1360,7 @@ static int __init fe_init(struct net_device *dev)
 	const char *mac_addr;
 	int err;
 
-	priv->soc->reset_fe();
+	priv->soc->reset_fe(priv);
 
 	if (priv->soc->switch_init)
 		if (priv->soc->switch_init(priv)) {
