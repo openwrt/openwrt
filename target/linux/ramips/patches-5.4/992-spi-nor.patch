@@ -1,0 +1,12 @@
+--- a/drivers/mtd/spi-nor/spi-nor.c	2021-06-09 15:36:32.996926358 +0800
++++ b/drivers/mtd/spi-nor/spi-nor.c	2021-06-09 15:39:26.853063029 +0800
+@@ -4840,8 +4840,7 @@
+ void spi_nor_restore(struct spi_nor *nor)
+ {
+ 	/* restore the addressing mode */
+-	if (nor->addr_width == 4 && !(nor->flags & SNOR_F_4B_OPCODES) &&
+-	    nor->flags & SNOR_F_BROKEN_RESET)
++	if (nor->addr_width == 4 && !(nor->flags & SNOR_F_4B_OPCODES))
+ 		nor->params.set_4byte(nor, false);
+ }
+ EXPORT_SYMBOL_GPL(spi_nor_restore);
