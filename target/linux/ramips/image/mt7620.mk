@@ -62,6 +62,7 @@ TARGET_DEVICES += alfa-network_tube-e4g
 define Device/amit_jboot
   DLINK_IMAGE_OFFSET := 0x10000
   KERNEL := $(KERNEL_DTB)
+  KERNEL_SIZE := 2048k
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
   IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
