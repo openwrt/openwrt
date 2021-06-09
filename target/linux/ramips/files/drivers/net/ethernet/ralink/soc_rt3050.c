@@ -69,7 +69,7 @@ static int rt3050_fwd_config(struct fe_priv *priv)
 	return 0;
 }
 
-static void rt305x_fe_reset(void)
+static void rt305x_fe_reset(struct fe_priv *priv)
 {
 	fe_reset(RT305X_RESET_FE);
 }
@@ -120,7 +120,7 @@ static void rt5350_tx_dma(struct fe_tx_dma *txd)
 	txd->txd4 = 0;
 }
 
-static void rt5350_fe_reset(void)
+static void rt5350_fe_reset(struct fe_priv *priv)
 {
 	fe_reset(RT305X_RESET_FE | RT305X_RESET_ESW);
 }
