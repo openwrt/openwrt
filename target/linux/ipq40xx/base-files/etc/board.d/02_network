@@ -82,7 +82,8 @@ ipq40xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
-	avm,fritzrepeater-3000)
+	avm,fritzrepeater-3000|\
+	linksys,whw01-v1)
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "4:lan:1" "5:lan:2"
 		;;

@@ -662,6 +662,25 @@ define Device/linksys_mr8300
 endef
 TARGET_DEVICES += linksys_mr8300
 
+define Device/linksys_whw01-v1
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := WHW01
+	DEVICE_VARIANT := v1
+	KERNEL_SIZE := 6144k
+	IMAGE_SIZE := 28704512  # 28032k minus linksys signature (256-bytes).
+	SOC := qcom-ipq4018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+		append-ubi | linksys-image type=WHW01 | pad-to $$$$(PAGESIZE) | \
+		check-size
+	DEVICE_PACKAGES := uboot-envtools kmod-leds-pca963x
+endef
+TARGET_DEVICES += linksys_whw01-v1
+
 define Device/luma_wrtq-329acn
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Luma Home
