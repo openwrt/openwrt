@@ -33,7 +33,7 @@ static void rt2880_init_data(struct fe_soc_data *data,
 	/* netdev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM; */
 }
 
-void rt2880_fe_reset(void)
+void rt2880_fe_reset(struct fe_priv *priv)
 {
 	fe_reset(RT2880_RESET_FE);
 }

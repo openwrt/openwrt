@@ -294,7 +294,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	}
 }
 
-static void mt7620_fe_reset(void)
+static void mt7620_fe_reset(struct fe_priv *priv)
 {
 	fe_reset(MT7620A_RESET_FE | MT7620A_RESET_ESW);
 }
