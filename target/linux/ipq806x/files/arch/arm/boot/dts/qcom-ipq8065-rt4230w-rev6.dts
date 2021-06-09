@@ -96,6 +96,35 @@
 			input-disable;
 		};
 	};
+
+	spi_pins: spi_pins {
+		cs {
+			pins = "gpio20";
+			drive-strength = <12>;
+		};
+	};
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi@1a280000 {
+		status = "okay";
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
+
+		flash@0 {
+			compatible = "everspin,mr25h256";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			spi-max-frequency = <40000000>;
+			reg = <0>;
+		};
+	};
 };
 
 &nand {
