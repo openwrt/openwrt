@@ -67,6 +67,7 @@ define Device/amit_jboot
   IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
   IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
   DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-ohci
+  DEFAULT := n
 endef
 
 define Device/asus_rp-n53
