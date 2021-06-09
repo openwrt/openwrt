@@ -335,4 +335,94 @@
 		qcom,clmap-enabled;
 		qcom,rmnet_rx-enabled;
 	};
+
+	nss_crypto: qcom,nss_crypto {
+		compatible = "qcom,nss-crypto";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		qcom,max-contexts = <64>;
+		qcom,max-context-size = <32>;
+		ranges;
+
+		eip197_node {
+			compatible = "qcom,eip197";
+			reg-names = "crypto_pbase";
+			reg = <0x39800000 0x7ffff>;
+			clocks = <&gcc GCC_NSS_CRYPTO_CLK>,
+				 <&gcc GCC_NSSNOC_CRYPTO_CLK>,
+				 <&gcc GCC_CRYPTO_PPE_CLK>;
+			clock-names = "crypto_clk",
+				      "crypto_nocclk",
+				      "crypto_ppeclk";
+			clock-frequency = /bits/ 64 <600000000 600000000 300000000>;
+			qcom,dma-mask = <0xff>;
+			qcom,transform-enabled;
+			qcom,aes128-cbc;
+			qcom,aes192-cbc;
+			qcom,aes256-cbc;
+			qcom,aes128-ctr;
+			qcom,aes192-ctr;
+			qcom,aes256-ctr;
+			qcom,aes128-ecb;
+			qcom,aes192-ecb;
+			qcom,aes256-ecb;
+			qcom,3des-cbc;
+			qcom,md5-hash;
+			qcom,sha160-hash;
+			qcom,sha224-hash;
+			qcom,sha384-hash;
+			qcom,sha512-hash;
+			qcom,sha256-hash;
+			qcom,md5-hmac;
+			qcom,sha160-hmac;
+			qcom,sha224-hmac;
+			qcom,sha256-hmac;
+			qcom,sha384-hmac;
+			qcom,sha512-hmac;
+			qcom,aes128-gcm-gmac;
+			qcom,aes192-gcm-gmac;
+			qcom,aes256-gcm-gmac;
+			qcom,aes128-cbc-md5-hmac;
+			qcom,aes128-cbc-sha160-hmac;
+			qcom,aes192-cbc-md5-hmac;
+			qcom,aes192-cbc-sha160-hmac;
+			qcom,aes256-cbc-md5-hmac;
+			qcom,aes256-cbc-sha160-hmac;
+			qcom,aes128-ctr-sha160-hmac;
+			qcom,aes192-ctr-sha160-hmac;
+			qcom,aes256-ctr-sha160-hmac;
+			qcom,aes128-ctr-md5-hmac;
+			qcom,aes192-ctr-md5-hmac;
+			qcom,aes256-ctr-md5-hmac;
+			qcom,3des-cbc-md5-hmac;
+			qcom,3des-cbc-sha160-hmac;
+			qcom,aes128-cbc-sha256-hmac;
+			qcom,aes192-cbc-sha256-hmac;
+			qcom,aes256-cbc-sha256-hmac;
+			qcom,aes128-ctr-sha256-hmac;
+			qcom,aes192-ctr-sha256-hmac;
+			qcom,aes256-ctr-sha256-hmac;
+			qcom,3des-cbc-sha256-hmac;
+			qcom,aes128-cbc-sha384-hmac;
+			qcom,aes192-cbc-sha384-hmac;
+			qcom,aes256-cbc-sha384-hmac;
+			qcom,aes128-ctr-sha384-hmac;
+			qcom,aes192-ctr-sha384-hmac;
+			qcom,aes256-ctr-sha384-hmac;
+			qcom,aes128-cbc-sha512-hmac;
+			qcom,aes192-cbc-sha512-hmac;
+			qcom,aes256-cbc-sha512-hmac;
+			qcom,aes128-ctr-sha512-hmac;
+			qcom,aes192-ctr-sha512-hmac;
+			qcom,aes256-ctr-sha512-hmac;
+
+			engine0 {
+				reg_offset = <0x80000>;
+				qcom,ifpp-enabled;
+				qcom,ipue-enabled;
+				qcom,ofpp-enabled;
+				qcom,opue-enabled;
+			};
+		};
+	};
 };
