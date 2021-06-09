@@ -21,7 +21,7 @@
 
 #define RT3883_RSTCTRL_FE		BIT(21)
 
-static void rt3883_fe_reset(void)
+static void rt3883_fe_reset(struct fe_priv *priv)
 {
 	fe_reset(RT3883_RSTCTRL_FE);
 }
