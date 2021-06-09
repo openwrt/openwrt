@@ -69,11 +69,6 @@ static int rt3050_fwd_config(struct fe_priv *priv)
 	return 0;
 }
 
-static void rt305x_fe_reset(struct fe_priv *priv)
-{
-	fe_reset(RT305X_RESET_FE);
-}
-
 static void rt5350_init_data(struct fe_soc_data *data,
 			     struct net_device *netdev)
 {
@@ -127,7 +122,6 @@ static void rt5350_fe_reset(struct fe_priv *priv)
 
 static struct fe_soc_data rt3050_data = {
 	.init_data = rt305x_init_data,
-	.reset_fe = rt305x_fe_reset,
 	.fwd_config = rt3050_fwd_config,
 	.pdma_glo_cfg = FE_PDMA_SIZE_8DWORDS,
 	.checksum_bit = RX_DMA_L4VALID,
