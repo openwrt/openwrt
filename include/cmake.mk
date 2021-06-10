@@ -1,5 +1,7 @@
 cmake_bool = $(patsubst %,-D%:BOOL=$(if $($(1)),ON,OFF),$(2))
 
+PKG_USE_NINJA ?= 1
+HOST_USE_NINJA ?= 1
 ifeq ($(PKG_USE_NINJA),1)
   PKG_BUILD_PARALLEL ?= 1
 endif
