@@ -1,0 +1,122 @@
+From 0ffedfcf50a57dce3f8757c2547a2f591764691d Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Wed, 7 Apr 2021 21:04:39 +0200
+Subject: [PATCH] MIPS: lantiq: dma: fix burst length for DEU
+
+The current definition of 2W burst length is invalid.
+This patch fixes it. Current downstream DEU driver doesn't
+use DMA. An incorrect burst length value doesn't cause any
+errors. This patch also adds other burst length values.
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ arch/mips/lantiq/xway/dma.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/lantiq/xway/dma.c b/arch/mips/lantiq/xway/dma.c
+index 74289e7a482cb7..88f25d4656fd95 100644
+--- a/arch/mips/lantiq/xway/dma.c
++++ b/arch/mips/lantiq/xway/dma.c
+@@ -38,7 +38,12 @@
+ #define DMA_IRQ_ACK		0x7e		/* IRQ status register */
+ #define DMA_POLL		BIT(31)		/* turn on channel polling */
+ #define DMA_CLK_DIV4		BIT(6)		/* polling clock divider */
+-#define DMA_2W_BURST		BIT(1)		/* 2 word burst length */
++#define DMA_PCTRL_1W_BURST	0x0		/* 1 word burst length */
++#define DMA_PCTRL_2W_BURST	0x1		/* 2 word burst length */
++#define DMA_PCTRL_4W_BURST	0x2		/* 4 word burst length */
++#define DMA_PCTRL_8W_BURST	0x3		/* 8 word burst length */
++#define DMA_TX_BURST_SHIFT	4		/* tx burst shift */
++#define DMA_RX_BURST_SHIFT	2		/* rx burst shift */
+ #define DMA_MAX_CHANNEL		20		/* the soc has 20 channels */
+ #define DMA_ETOP_ENDIANNESS	(0xf << 8) /* endianness swap etop channels */
+ #define DMA_WEIGHT	(BIT(17) | BIT(16))	/* default channel wheight */
+@@ -190,7 +195,8 @@ ltq_dma_init_port(int p)
+ 		break;
+ 
+ 	case DMA_PORT_DEU:
+-		ltq_dma_w32((DMA_2W_BURST << 4) | (DMA_2W_BURST << 2),
++		ltq_dma_w32((DMA_PCTRL_2W_BURST << DMA_TX_BURST_SHIFT) |
++			(DMA_PCTRL_2W_BURST << DMA_RX_BURST_SHIFT),
+ 			LTQ_DMA_PCTRL);
+ 		break;
+
+From 6480b1a0dae41999f0a6ff064d5806d13eeb0f29 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Fri, 14 May 2021 21:25:08 +0200
+Subject: [PATCH] MIPS: lantiq: dma: increase burst length for ethernet
+
+Increase the burst length for Ethernet. This improves Ethernet
+performance by 25%.
+
+The NAT benchmark results on xRX200:
+* 1W: 332 Mb/s
+* 2W: 330 Mb/s
+* 4W: 432 Mb/s    372 Mb/s
+* 8W: 520 Mb/s    389 Mb/s
+
+Tested on xRX200 and xRX330.
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ arch/mips/lantiq/xway/dma.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/lantiq/xway/dma.c b/arch/mips/lantiq/xway/dma.c
+index 88f25d4656fd95..293a277a65d477 100644
+--- a/arch/mips/lantiq/xway/dma.c
++++ b/arch/mips/lantiq/xway/dma.c
+@@ -190,8 +190,9 @@ ltq_dma_init_port(int p)
+ 		 * Tell the DMA engine to swap the endianness of data frames and
+ 		 * drop packets if the channel arbitration fails.
+ 		 */
+-		ltq_dma_w32_mask(0, DMA_ETOP_ENDIANNESS | DMA_PDEN,
+-			LTQ_DMA_PCTRL);
++		ltq_dma_w32_mask(0x3c, ((DMA_PCTRL_8W_BURST << DMA_TX_BURST_SHIFT) |
++			(DMA_PCTRL_8W_BURST << DMA_RX_BURST_SHIFT) | DMA_ETOP_ENDIANNESS |
++			DMA_PDEN), LTQ_DMA_PCTRL);
+ 		break;
+ 
+ 	case DMA_PORT_DEU:
+
+From 032f0a98241df9c908e897ae5ce826765dfa889d Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <A.Bajkowski@stud.elka.pw.edu.pl>
+Date: Sun, 16 May 2021 15:52:06 +0200
+Subject: [PATCH] net: lantiq: increase align to 32 bytes
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ drivers/net/ethernet/lantiq_etop.c   | 4 ++--
+ drivers/net/ethernet/lantiq_xrx200.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/lantiq_etop.c b/drivers/net/ethernet/lantiq_etop.c
+index 2d0c52f7106bc0..4793eaabc8ce68 100644
+--- a/drivers/net/ethernet/lantiq_etop.c
++++ b/drivers/net/ethernet/lantiq_etop.c
+@@ -677,8 +677,8 @@ ltq_etop_tx(struct sk_buff *skb, struct net_device *dev)
+ 		return NETDEV_TX_BUSY;
+ 	}
+ 
+-	/* dma needs to start on a 16 byte aligned address */
+-	byte_offset = CPHYSADDR(skb->data) % 16;
++	/* dma needs to start on a 32 byte aligned address */
++	byte_offset = CPHYSADDR(skb->data) % 32;
+ 	priv->txch.skb[priv->txch.dma.desc] = skb;
+ 
+ 	netif_trans_update(dev);
+diff --git a/drivers/net/ethernet/lantiq_xrx200.c b/drivers/net/ethernet/lantiq_xrx200.c
+index 36dc3e5f621897..18e80e2293fe31 100644
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -337,8 +337,8 @@ static netdev_tx_t xrx200_start_xmit(struct sk_buff *skb,
+ 	if (unlikely(dma_mapping_error(priv->dev, mapping)))
+ 		goto err_drop;
+ 
+-	/* dma needs to start on a 16 byte aligned address */
+-	byte_offset = mapping % 16;
++	/* dma needs to start on a 32 byte aligned address */
++	byte_offset = mapping % 32;
+ 
+ 	desc->addr = mapping - byte_offset;
+ 	/* Make sure the address is written before we give it to HW */

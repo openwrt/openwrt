@@ -36,7 +36,7 @@
  struct xrx200_chan {
  	int tx_free;
  
-@@ -335,10 +357,78 @@
+@@ -339,10 +361,78 @@
  	return NETDEV_TX_OK;
  }
  
@@ -115,7 +115,7 @@
  	.ndo_set_mac_address	= eth_mac_addr,
  	.ndo_validate_addr	= eth_validate_addr,
  };
-@@ -465,6 +555,9 @@
+@@ -469,6 +559,9 @@
  		return PTR_ERR(priv->pmac_reg);
  	}
  
