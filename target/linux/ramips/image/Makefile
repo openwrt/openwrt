@@ -89,6 +89,16 @@ define Build/mkdlinkfw-factory
 	mv $@.new $@
 endef
 
+define Build/mkdlinkfw-loader
+	-$(STAGING_DIR_HOST)/bin/mkdlinkfw \
+		-k $(KDIR)/loader-$(DEVICE_NAME).bin \
+		-r $@ \
+		-o $@.new \
+		$(if $(DLINK_IMAGE_OFFSET), -O $(DLINK_IMAGE_OFFSET)) \
+		-s $(DLINK_FIRMWARE_SIZE)
+	mv $@.new $@
+endef
+
 define Build/netis-tail
 	echo -n $(1) >> $@
 	echo -n $(UIMAGE_NAME)-yun | $(MKHASH) md5 | \
