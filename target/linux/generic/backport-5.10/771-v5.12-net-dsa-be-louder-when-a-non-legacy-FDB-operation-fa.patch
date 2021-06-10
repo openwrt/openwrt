@@ -25,7 +25,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -2109,7 +2109,9 @@ static void dsa_slave_switchdev_event_wo
+@@ -2111,7 +2111,9 @@ static void dsa_slave_switchdev_event_wo
  
  		err = dsa_port_fdb_add(dp, fdb_info->addr, fdb_info->vid);
  		if (err) {
@@ -36,7 +36,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			break;
  		}
  		fdb_info->offloaded = true;
-@@ -2124,9 +2126,11 @@ static void dsa_slave_switchdev_event_wo
+@@ -2126,9 +2128,11 @@ static void dsa_slave_switchdev_event_wo
  
  		err = dsa_port_fdb_del(dp, fdb_info->addr, fdb_info->vid);
  		if (err) {

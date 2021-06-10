@@ -67,6 +67,13 @@ define Device/cloudengines_pogoplugv4
 endef
 TARGET_DEVICES += cloudengines_pogoplugv4
 
+define Device/globalscale_sheevaplug
+  DEVICE_VENDOR := Globalscale
+  DEVICE_MODEL := Sheevaplug
+  DEVICE_PACKAGES := kmod-mvsdio
+endef
+TARGET_DEVICES += globalscale_sheevaplug
+
 define Device/iom_iconnect-1.1
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := Iconnect

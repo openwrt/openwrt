@@ -29,12 +29,16 @@
 			label = "wps";
 			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		bridge {
@@ -42,6 +46,8 @@
 			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
 			linux,input-type = <EV_SW>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		converter {
@@ -49,6 +55,8 @@
 			gpios = <&qcom_pinmux 25 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
 			linux,input-type = <EV_SW>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 	};
 

@@ -156,8 +156,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -279,8 +278,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -358,8 +356,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -400,8 +397,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -445,8 +441,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -485,8 +480,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -525,8 +519,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -557,8 +550,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -589,8 +581,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -622,8 +613,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -655,8 +645,7 @@ static struct device_info boards[] = {
 			{"default-mac", 0x30000, 0x00020},
 			{"product-info", 0x31100, 0x00100},
 			{"signature", 0x32000, 0x00400},
-			{"os-image", 0x40000, 0x300000},
-			{"file-system", 0x340000, 0x470000},
+			{"firmware", 0x40000, 0x770000},
 			{"soft-version", 0x7b0000, 0x00100},
 			{"support-list", 0x7b1000, 0x00400},
 			{"user-config", 0x7c0000, 0x10000},
@@ -676,7 +665,7 @@ static struct device_info boards[] = {
 		.vendor = "",
 		.support_list =
 			"SupportList:\r\n"
-			"{product_name:Talon AD7200,product_ver:1.0.0,special_id:00000000}\r\n",
+			"{product_name:AD7200,product_ver:1.0.0,special_id:00000000}\r\n",
 		.part_trail = 0x00,
 		.soft_ver = NULL,
 
@@ -1061,7 +1050,78 @@ static struct device_info boards[] = {
 		.first_sysupgrade_partition = "os-image",
 		.last_sysupgrade_partition = "file-system",
 	},
+	/** Firmware layout for the Archer A6 v3  */
+	{
+		.id     = "ARCHER-A6-V3",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:Archer A6,product_ver:3.0.0,special_id:55530000}\n"
+			"{product_name:Archer A6,product_ver:3.0.0,special_id:54570000}\n",
+		.part_trail = 0x00,
+		.soft_ver = "soft_ver:1.0.5\n",
 
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x40000},
+			{"firmware", 0x40000, 0xf60000},
+			{"default-mac", 0xfa0000, 0x00200},
+			{"pin", 0xfa0200, 0x00100},
+			{"device-id", 0xfa0300, 0x00100},
+			{"product-info", 0xfa0400, 0x0fc00},
+			{"default-config", 0xfb0000, 0x08000},
+			{"ap-def-config", 0xfb8000, 0x08000},
+			{"user-config", 0xfc0000, 0x0a000},
+			{"ag-config", 0xfca000, 0x04000},
+			{"certificate", 0xfce000, 0x02000},
+			{"ap-config", 0xfd0000, 0x06000},
+			{"router-config", 0xfd6000, 0x06000},
+			{"favicon", 0xfdc000, 0x02000},
+			{"logo", 0xfde000, 0x02000},
+			{"partition-table", 0xfe0000, 0x00800},
+			{"soft-version", 0xfe0800, 0x00100},
+			{"support-list", 0xfe0900, 0x00200},
+			{"profile", 0xfe0b00, 0x03000},
+			{"extra-para", 0xfe3b00, 0x00100},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+	/** Firmware layout for the Archer C6U v1 */
+	{
+		.id     = "ARCHER-C6U-V1",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:Archer C6U,product_ver:1.0.0,special_id:45550000}\n",
+		.part_trail = 0x00,
+		.soft_ver = "soft_ver:1.0.2\n",
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x40000},
+			{"firmware", 0x40000, 0xf60000},
+			{"default-mac", 0xfa0000, 0x00200},
+			{"pin", 0xfa0200, 0x00100},
+			{"device-id", 0xfa0300, 0x00100},
+			{"product-info", 0xfa0400, 0x0fc00},
+			{"default-config", 0xfb0000, 0x08000},
+			{"ap-def-config", 0xfb8000, 0x08000},
+			{"user-config", 0xfc0000, 0x0c000},
+			{"certificate", 0xfcc000, 0x04000},
+			{"ap-config", 0xfd0000, 0x08000},
+			{"router-config", 0xfd8000, 0x08000},
+			{"partition-table", 0xfe0000, 0x00800},
+			{"soft-version", 0xfe0800, 0x00100},
+			{"support-list", 0xfe0900, 0x00200},
+			{"profile", 0xfe0b00, 0x03000},
+			{"extra-para", 0xfe3b00, 0x00100},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
 	/** Firmware layout for the C60v1 */
 	{
 		.id     = "ARCHER-C60-V1",
@@ -2826,7 +2886,8 @@ static void build_image(const char *output,
 	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof, file_system_partition);
 
 	/* Some devices need the extra-para partition to accept the firmware */
-	if (strcasecmp(info->id, "ARCHER-A7-V5") == 0 ||
+	if (strcasecmp(info->id, "ARCHER-A6-V3") == 0 ||
+	    strcasecmp(info->id, "ARCHER-A7-V5") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C2-V3") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C7-V4") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C7-V5") == 0 ||
@@ -2834,6 +2895,7 @@ static void build_image(const char *output,
 	    strcasecmp(info->id, "ARCHER-C59-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V2") == 0 ||
 	    strcasecmp(info->id, "ARCHER-C60-V3") == 0 ||
+	    strcasecmp(info->id, "ARCHER-C6U-V1") == 0 ||
 	    strcasecmp(info->id, "TLWR1043NV5") == 0) {
 		const uint8_t extra_para[2] = {0x01, 0x00};
 		parts[5] = make_extra_para(info, extra_para,
