@@ -41,16 +41,17 @@ struct ubnt_ledbar {
 	struct gpio_desc *enable_gpio;
 };
 
-static int ubnt_ledbar_perform_transaction(struct ubnt_ledbar *ledbar,
-					   char *transaction)
+static void ubnt_ledbar_perform_transaction(struct ubnt_ledbar *ledbar,
+					   const char *transaction, int len,
+					   char *result, int result_len)
 {
-	int ret;
 	int i;
 
-	for (i = 0; i < UBNT_LEDBAR_TRANSACTION_LENGTH; i++)
+	for (i = 0; i < len; i++)
 		i2c_smbus_write_byte(ledbar->client, transaction[i]);
 
-	return i2c_smbus_read_byte(ledbar->client);
+	for (i = 0; i < result_len; i++)
+		result[i] = i2c_smbus_read_byte(ledbar->client);
 }
 
 static int ubnt_ledbar_apply_state(struct ubnt_ledbar *ledbar)
@@ -72,14 +73,14 @@ static int ubnt_ledbar_apply_state(struct ubnt_ledbar *ledbar)
 
 	msleep(10);
 
-	i2c_response = ubnt_ledbar_perform_transaction(ledbar, setup_msg);
+	ubnt_ledbar_perform_transaction(ledbar, setup_msg, sizeof(setup_msg), &i2c_response, sizeof(i2c_response));
 	if (i2c_response != UBNT_LEDBAR_TRANSACTION_SUCCESS) {
 		dev_err(&ledbar->client->dev, "Error initializing LED transaction: %02hhx\n", i2c_response);
 		ret = -EINVAL;
 		goto out_gpio;
 	}
 
-	i2c_response = ubnt_ledbar_perform_transaction(ledbar, led_msg);
+	ubnt_ledbar_perform_transaction(ledbar, led_msg, sizeof(led_msg), &i2c_response, sizeof(i2c_response));
 	if (i2c_response != UBNT_LEDBAR_TRANSACTION_SUCCESS) {
 		dev_err(&ledbar->client->dev, "Failed LED transaction: %02hhx\n", i2c_response);
 		ret = -EINVAL;
