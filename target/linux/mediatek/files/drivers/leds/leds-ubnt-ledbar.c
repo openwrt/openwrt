@@ -99,6 +99,12 @@ out_gpio:
 
 static void ubnt_ledbar_reset(struct ubnt_ledbar *ledbar)
 {
+	static const char init_msg[16] = {0x02, 0x81, 0xfd, 0x7e,
+					  0x00, 0x00, 0x00, 0x00,
+					  0x00, 0x00, 0x00, 0x00,
+					  0x00, 0x00, 0x00, 0x00};
+	char init_response[4];
+
 	if (!ledbar->reset_gpio)
 		return;
 
@@ -107,6 +113,14 @@ static void ubnt_ledbar_reset(struct ubnt_ledbar *ledbar)
 	gpiod_set_value(ledbar->reset_gpio, 1);
 	msleep(10);
 	gpiod_set_value(ledbar->reset_gpio, 0);
+
+	msleep(10);
+
+	gpiod_set_value(ledbar->enable_gpio, 1);
+	msleep(10);
+	ubnt_ledbar_perform_transaction(ledbar, init_msg, sizeof(init_msg), init_response, sizeof(init_response));
+	msleep(10);
+	gpiod_set_value(ledbar->enable_gpio, 0);
 
 	mutex_unlock(&ledbar->lock);
 }
