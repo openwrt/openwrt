@@ -153,8 +153,6 @@ static int ubnt_ledbar_probe(struct i2c_client *client,
 		return ret;
 	}
 
-	gpiod_direction_output(ledbar->enable_gpio, 0);
-
 	ledbar->client = client;
 
 	mutex_init(&ledbar->lock);
