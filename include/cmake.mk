@@ -60,11 +60,11 @@ ifeq ($(HOST_USE_NINJA),1)
   endef
 
   define Host/Install/Default
-	+DESTDIR="$(HOST_INSTALL_DIR)" $(NINJA) -C $(HOST_BUILD_DIR) install
+	+$(NINJA) -C $(HOST_BUILD_DIR) install
   endef
 
   define Host/Uninstall/Default
-	+DESTDIR="$(HOST_INSTALL_DIR)" $(NINJA) -C $(HOST_BUILD_DIR) uninstall
+	+$(NINJA) -C $(HOST_BUILD_DIR) uninstall
   endef
 endif
 
