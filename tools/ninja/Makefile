@@ -20,7 +20,7 @@ endef
 
 define Host/Compile
 	cd $(HOST_BUILD_DIR) && \
-		CXX="$(HOSTCXX)" \
+		CXX="$(HOSTCXX_NOCACHE)" \
 		CXXFLAGS="$(HOST_CXXFLAGS) $(HOST_CPPFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)" \
 		$(STAGING_DIR_HOST)/bin/$(PYTHON) configure.py --bootstrap $(CONFIGURE_ARGS)
