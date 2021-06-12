@@ -31,9 +31,11 @@
 #define UBNT_LEDBAR_TRANSACTION_BLUE_IDX	2
 #define UBNT_LEDBAR_TRANSACTION_GREEN_IDX	3
 #define UBNT_LEDBAR_TRANSACTION_RED_IDX		4
+#define UBNT_LEDBAR_TRANSACTION_LED_COUNT_IDX	6
 
 struct ubnt_ledbar {
 	struct mutex lock;
+	u32 led_count;
 	struct i2c_client *client;
 	struct led_classdev led_red;
 	struct led_classdev led_green;
@@ -60,7 +62,7 @@ static int ubnt_ledbar_apply_state(struct ubnt_ledbar *ledbar)
 	char setup_msg[UBNT_LEDBAR_TRANSACTION_LENGTH] = {0x40, 0x10, 0x00, 0x00,
 							  0x00, 0x00, 0x00, 0x11};
 	char led_msg[UBNT_LEDBAR_TRANSACTION_LENGTH] = {0x40, 0x00, 0x00, 0x00,
-							0x00, 0x00, 0x01, 0x00};
+							0x00, 0x00, 0x00, 0x00};
 	char i2c_response;
 	int ret = 0;
 
@@ -69,6 +71,7 @@ static int ubnt_ledbar_apply_state(struct ubnt_ledbar *ledbar)
 	led_msg[UBNT_LEDBAR_TRANSACTION_BLUE_IDX] = ledbar->led_blue.brightness;
 	led_msg[UBNT_LEDBAR_TRANSACTION_GREEN_IDX] = ledbar->led_green.brightness;
 	led_msg[UBNT_LEDBAR_TRANSACTION_RED_IDX] = ledbar->led_red.brightness;
+	led_msg[UBNT_LEDBAR_TRANSACTION_LED_COUNT_IDX] = ledbar->led_count;
 
 	gpiod_set_value(ledbar->enable_gpio, 1);
 
@@ -190,6 +193,9 @@ static int ubnt_ledbar_probe(struct i2c_client *client,
 		dev_err(&client->dev, "Failed to get reset gpio: %d\n", ret);
 		return ret;
 	}
+
+	ledbar->led_count = 1;
+	of_property_read_u32(np, "led-count", &ledbar->led_count);
 
 	ledbar->client = client;
 
