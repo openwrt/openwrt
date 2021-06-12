@@ -1,0 +1,93 @@
+diff --git a/src/apk_pathbuilder.h b/src/apk_pathbuilder.h
+index 34181db..d70e400 100644
+--- a/src/apk_pathbuilder.h
++++ b/src/apk_pathbuilder.h
+@@ -10,6 +10,7 @@
+ #define APK_PATHBUILDER_H
+ 
+ #include "apk_blob.h"
++#include <limits.h>
+ 
+ struct apk_pathbuilder {
+ 	uint16_t namelen;
+diff --git a/src/app_mkpkg.c b/src/app_mkpkg.c
+index 3c3972b..26e3838 100644
+--- a/src/app_mkpkg.c
++++ b/src/app_mkpkg.c
+@@ -14,6 +14,7 @@
+ #include <assert.h>
+ #include <unistd.h>
+ #include <sys/stat.h>
++#include <limits.h>
+ 
+ #include "apk_defines.h"
+ #include "apk_adb.h"
+@@ -146,6 +147,8 @@ static int mkpkg_process_dirent(void *pctx, int dirfd, const char *entry)
+ 
+ 		adb_wa_append_obj(ctx->files, &fio);
+ 		break;
++	case S_IFLNK:
++		break;
+ 	default:
+ 		apk_pathbuilder_push(&ctx->pb, entry);
+ 		apk_err(out, "special file '%s' not supported",
+diff --git a/src/crypto_openssl.c b/src/crypto_openssl.c
+index 5512a49..4bb31c2 100644
+--- a/src/crypto_openssl.c
++++ b/src/crypto_openssl.c
+@@ -101,7 +101,7 @@ int apk_pkey_load(struct apk_pkey *pkey, int dirfd, const char *fn)
+ 
+ 	key = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
+ 	if (!key) {
+-		BIO_reset(bio);
++		(void ) BIO_reset(bio);
+ 		key = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
+ 	}
+ 	ERR_clear_error();
+@@ -115,7 +115,7 @@ int apk_pkey_load(struct apk_pkey *pkey, int dirfd, const char *fn)
+ 
+ int apk_sign_start(struct apk_digest_ctx *dctx, struct apk_pkey *pkey)
+ {
+-	EVP_MD_CTX_set_pkey_ctx(dctx->mdctx, NULL);
++	//EVP_MD_CTX_set_pkey_ctx(dctx->mdctx, NULL);
+ 	if (EVP_DigestSignInit(dctx->mdctx, NULL, EVP_sha512(), NULL, pkey->key) != 1)
+ 		return -EIO;
+ 	return 0;
+@@ -130,7 +130,7 @@ int apk_sign(struct apk_digest_ctx *dctx, void *sig, size_t *len)
+ 
+ int apk_verify_start(struct apk_digest_ctx *dctx, struct apk_pkey *pkey)
+ {
+-	EVP_MD_CTX_set_pkey_ctx(dctx->mdctx, NULL);
++	//EVP_MD_CTX_set_pkey_ctx(dctx->mdctx, NULL);
+ 	if (EVP_DigestVerifyInit(dctx->mdctx, NULL, EVP_sha512(), NULL, pkey->key) != 1)
+ 		return -EIO;
+ 	return 0;
+diff --git a/src/database.c b/src/database.c
+index 0c5cd43..ac1ea19 100644
+--- a/src/database.c
++++ b/src/database.c
+@@ -1958,9 +1958,9 @@ static int update_permissions(apk_hash_item item, void *ctx)
+ 
+ 	r = fstatat(db->root_fd, dir->name, &st, AT_SYMLINK_NOFOLLOW);
+ 	if (r < 0 || (st.st_mode & 07777) != (dir->mode & 07777))
+-		fchmodat(db->root_fd, dir->name, dir->mode, 0);
++		return fchmodat(db->root_fd, dir->name, dir->mode, 0);
+ 	if (r < 0 || st.st_uid != dir->uid || st.st_gid != dir->gid)
+-		fchownat(db->root_fd, dir->name, dir->uid, dir->gid, 0);
++		return fchownat(db->root_fd, dir->name, dir->uid, dir->gid, 0);
+ 
+ 	return 0;
+ }
+diff --git a/src/print.c b/src/print.c
+index 26e31e2..ad60807 100644
+--- a/src/print.c
++++ b/src/print.c
+@@ -187,7 +187,7 @@ void apk_print_progress(struct apk_progress *p, size_t done, size_t total)
+ 	if (p->last_done == done && (!p->out || p->last_out_change == p->out->last_change)) return;
+ 	if (p->fd != 0) {
+ 		i = snprintf(buf, sizeof(buf), "%zu/%zu\n", done, total);
+-		write(p->fd, buf, i);
++		printf("%ld\n", write(p->fd, buf, i));
+ 	}
+ 	p->last_done = done;
+ 
