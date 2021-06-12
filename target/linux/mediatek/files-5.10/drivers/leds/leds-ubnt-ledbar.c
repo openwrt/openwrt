@@ -68,7 +68,7 @@ static int ubnt_ledbar_apply_state(struct ubnt_ledbar *ledbar)
 	led_msg[UBNT_LEDBAR_TRANSACTION_GREEN_IDX] = ledbar->led_green.brightness;
 	led_msg[UBNT_LEDBAR_TRANSACTION_RED_IDX] = ledbar->led_red.brightness;
 
-	gpiod_set_raw_value(ledbar->enable_gpio, 1);
+	gpiod_set_value(ledbar->enable_gpio, 1);
 
 	msleep(10);
 
@@ -88,7 +88,7 @@ static int ubnt_ledbar_apply_state(struct ubnt_ledbar *ledbar)
 
 	msleep(10);
 out_gpio:
-	gpiod_set_raw_value(ledbar->enable_gpio, 0);
+	gpiod_set_value(ledbar->enable_gpio, 0);
 
 	mutex_unlock(&ledbar->lock);
 
