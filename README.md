@@ -57,8 +57,8 @@ packages to OpenWrt, please find the fitting repository below.
 * [OpenWrt Packages](https://github.com/openwrt/packages): Community repository
   of ported packages.
 
-* [OpenWrt Routing](https://github.com/openwrt-routing/packages): Packages
-  specifically focused on (mesh) routing.
+* [OpenWrt Routing](https://github.com/openwrt/routing): Packages specifically
+  focused on (mesh) routing.
 
 ## Support Information
 
