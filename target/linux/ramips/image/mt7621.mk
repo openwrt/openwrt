@@ -342,6 +342,14 @@ define Device/dlink_dir-2660-a1
 endef
 TARGET_DEVICES += dlink_dir-2660-a1
 
+define Device/dlink_dir-853-r1
+  $(Device/dlink_dir-8xx-r1)
+  DEVICE_MODEL := DIR-853
+  DEVICE_VARIANT := R1
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += dlink_dir-853-r1
+
 define Device/dlink_dir-860l-b1
   $(Device/dsa-migration)
   $(Device/seama)
