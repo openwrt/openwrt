@@ -41,6 +41,7 @@ platform_do_upgrade() {
 	engenius,ecb600|\
 	engenius,ens202ext-v1|\
 	engenius,enstationac-v1|\
+	watchguard,ap200|\
 	watchguard,ap300)
 		IMAGE_LIST="tar tzf $1"
 		IMAGE_CMD="tar xzOf $1"

@@ -2589,6 +2589,20 @@ define Device/wallys_dr531
 endef
 TARGET_DEVICES += wallys_dr531
 
+define Device/watchguard_ap200
+  $(Device/senao_loader_okli)
+  SOC := ar9344
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := AP200
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-ap200
+  WATCHGUARD_MAGIC := 82kdlzk2
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	check-size | senao-tar-gz $$$$(SENAO_IMGNAME) | watchguard-cksum $$$$(WATCHGUARD_MAGIC)
+endef
+TARGET_DEVICES += watchguard_ap200
+
 define Device/watchguard_ap300
   $(Device/senao_loader_okli)
   SOC := qca9558
