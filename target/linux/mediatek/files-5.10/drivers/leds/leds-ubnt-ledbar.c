@@ -39,6 +39,7 @@ struct ubnt_ledbar {
 	struct led_classdev led_green;
 	struct led_classdev led_blue;
 	struct gpio_desc *enable_gpio;
+	struct gpio_desc *reset_gpio;
 };
 
 static void ubnt_ledbar_perform_transaction(struct ubnt_ledbar *ledbar,
@@ -94,6 +95,20 @@ out_gpio:
 	mutex_unlock(&ledbar->lock);
 
 	return ret;
+}
+
+static void ubnt_ledbar_reset(struct ubnt_ledbar *ledbar)
+{
+	if (!ledbar->reset_gpio)
+		return;
+
+	mutex_lock(&ledbar->lock);
+
+	gpiod_set_value(ledbar->reset_gpio, 1);
+	msleep(10);
+	gpiod_set_value(ledbar->reset_gpio, 0);
+
+	mutex_unlock(&ledbar->lock);
 }
 
 #define UBNT_LEDBAR_CONTROL_RGBS(name)				\
@@ -154,11 +169,22 @@ static int ubnt_ledbar_probe(struct i2c_client *client,
 		return ret;
 	}
 
+	ledbar->reset_gpio = devm_gpiod_get_optional(&client->dev, "reset", GPIOD_OUT_LOW);
+
+	if (IS_ERR(ledbar->reset_gpio)) {
+		ret = PTR_ERR(ledbar->reset_gpio);
+		dev_err(&client->dev, "Failed to get reset gpio: %d\n", ret);
+		return ret;
+	}
+
 	ledbar->client = client;
 
 	mutex_init(&ledbar->lock);
 
 	i2c_set_clientdata(client, ledbar);
+
+	// Reset and initialize the MCU
+	ubnt_ledbar_reset(ledbar);
 
 	ledbar->led_red.brightness_set_blocking = ubnt_ledbar_set_red_brightness;
 	ubnt_ledbar_init_led(of_get_child_by_name(np, "red"), ledbar, &ledbar->led_red);
