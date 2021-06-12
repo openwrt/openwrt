@@ -74,13 +74,13 @@ For a list of supported devices see the [OpenWrt Hardware Database](https://open
 ### Support Community
 
 * [Forum](https://forum.openwrt.org): For usage, projects, discussions and hardware advise.
-* [Support Chat](https://webchat.freenode.net/#openwrt): Channel `#openwrt` on freenode.net.
+* [Support Chat](https://webchat.oftc.net/#openwrt): Channel `#openwrt` on **oftc.net**.
 
 ### Developer Community
 
 * [Bug Reports](https://bugs.openwrt.org): Report bugs in OpenWrt
 * [Dev Mailing List](https://lists.openwrt.org/mailman/listinfo/openwrt-devel): Send patches
-* [Dev Chat](https://webchat.freenode.net/#openwrt-devel): Channel `#openwrt-devel` on freenode.net.
+* [Dev Chat](https://webchat.oftc.net/#openwrt-devel): Channel `#openwrt-devel` on **oftc.net**.
 
 ## License
 
