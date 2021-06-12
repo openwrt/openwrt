@@ -74,14 +74,14 @@ static int ubnt_ledbar_apply_state(struct ubnt_ledbar *ledbar)
 
 	i2c_response = ubnt_ledbar_perform_transaction(ledbar, setup_msg);
 	if (i2c_response != UBNT_LEDBAR_TRANSACTION_SUCCESS) {
-		dev_err(&ledbar->client->dev, "Error initializing LED transaction: %02x\n", ret);
+		dev_err(&ledbar->client->dev, "Error initializing LED transaction: %02hhx\n", i2c_response);
 		ret = -EINVAL;
 		goto out_gpio;
 	}
 
 	i2c_response = ubnt_ledbar_perform_transaction(ledbar, led_msg);
 	if (i2c_response != UBNT_LEDBAR_TRANSACTION_SUCCESS) {
-		dev_err(&ledbar->client->dev, "Failed LED transaction: %02x\n", ret);
+		dev_err(&ledbar->client->dev, "Failed LED transaction: %02hhx\n", i2c_response);
 		ret = -EINVAL;
 		goto out_gpio;
 	}
