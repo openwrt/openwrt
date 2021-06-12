@@ -51,16 +51,9 @@
 	status = "okay";
 
 	phy-handle = <&phy0>;
-	phy-mode = "rgmii-id";
+	phy-mode = "rgmii-txid";
 
 	pll-data = <0x02000000 0x00000101 0x00001313>;
-
-	gmac-config {
-		device = <&gmac>;
-		rgmii-gmac0 = <1>;
-		rxdv-delay = <3>;
-		rxd-delay = <3>;
-	};
 };
 
 &pcie {
