@@ -71,7 +71,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  {
  	struct device *dev = &phydev->mdio.dev;
  	struct at803x_priv *priv;
-+	int ret;
++	int ret = 0;
  
  	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
  	if (!priv)
