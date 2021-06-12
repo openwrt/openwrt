@@ -1,0 +1,32 @@
+From 188042cd129f3c05873a0d4255348cf8867db624 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Mon, 7 Jun 2021 23:02:01 +0200
+Subject: [PATCH] net: lantiq: disable interrupt before sheduling NAPI
+
+This fixes TX hangs with threaded NAPI enabled. It seems that after NAPI
+scheduling it is executed by the second thread in parallel with the
+interrupt. Sometimes it happens that ltq_dma_disable_irq() is executed
+after xrx200_tx_housekeeping(). The symptom is that TX interrupts are
+disabled. As a result, the TX hangs after a few seconds of the iperf
+test.
+
+Tested on Lantiq xRX200 (BT Home Hub 5A).
+
+Fixes: 9423361da523 ("net: lantiq: Disable IRQs only if NAPI gets scheduled ")
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ drivers/net/ethernet/lantiq_xrx200.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -352,8 +352,8 @@ static irqreturn_t xrx200_dma_irq(int ir
+ 	struct xrx200_chan *ch = ptr;
+ 
+ 	if (napi_schedule_prep(&ch->napi)) {
+-		__napi_schedule(&ch->napi);
+ 		ltq_dma_disable_irq(&ch->dma);
++		__napi_schedule(&ch->napi);
+ 	}
+ 
+ 	ltq_dma_ack_irq(&ch->dma);
