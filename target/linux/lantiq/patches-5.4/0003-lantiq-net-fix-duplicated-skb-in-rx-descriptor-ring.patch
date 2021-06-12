@@ -1,0 +1,44 @@
+From 7ea6cd16f1599c1eac6018751eadbc5fc736b99a Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Tue, 15 Jun 2021 22:42:57 +0200
+Subject: lantiq: net: fix duplicated skb in rx descriptor ring
+
+The previous commit didn't fix the bug properly. By mistake, it replaces
+the pointer of the next skb in the descriptor ring instead of the current
+one. As a result, the two descriptors are assigned the same SKB. The error
+is seen during the iperf test when skb_put tries to insert a second packet
+and exceeds the available buffer.
+
+Fixes: c7718ee96dbc ("net: lantiq: fix memory corruption in RX ring ")
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/lantiq_xrx200.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -154,6 +154,7 @@ static int xrx200_close(struct net_devic
+ 
+ static int xrx200_alloc_skb(struct xrx200_chan *ch)
+ {
++	struct sk_buff *skb = ch->skb[ch->dma.desc];
+ 	dma_addr_t mapping;
+ 	int ret = 0;
+ 
+@@ -168,6 +169,7 @@ static int xrx200_alloc_skb(struct xrx20
+ 				 XRX200_DMA_DATA_LEN, DMA_FROM_DEVICE);
+ 	if (unlikely(dma_mapping_error(ch->priv->dev, mapping))) {
+ 		dev_kfree_skb_any(ch->skb[ch->dma.desc]);
++		ch->skb[ch->dma.desc] = skb;
+ 		ret = -ENOMEM;
+ 		goto skip;
+ 	}
+@@ -198,7 +200,6 @@ static int xrx200_hw_receive(struct xrx2
+ 	ch->dma.desc %= LTQ_DESC_NUM;
+ 
+ 	if (ret) {
+-		ch->skb[ch->dma.desc] = skb;
+ 		net_dev->stats.rx_dropped++;
+ 		netdev_err(net_dev, "failed to allocate new rx buffer\n");
+ 		return ret;
