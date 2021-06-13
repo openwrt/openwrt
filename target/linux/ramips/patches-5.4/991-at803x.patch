@@ -105,7 +105,7 @@ Signed-off-by: René van Dorst <opensource@vdorst.com>
  {
  	struct device *dev = &phydev->mdio.dev;
  	struct at803x_priv *priv;
- 	int ret;
+ 	int ret = 0;
  
 +	if (at803x_mode(phydev) == AT803X_MODE_FIBER) {
 +		ret = phy_sfp_probe(phydev, &at803x_sfp_ops);
