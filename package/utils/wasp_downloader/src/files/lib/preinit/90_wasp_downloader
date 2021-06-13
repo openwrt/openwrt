@@ -9,7 +9,7 @@ do_wasp_downloader() {
 		iface="eth0"
 	fi
 	echo "WASP Downloader: Trying to download from $iface" > /dev/kmsg
-	/usr/bin/wasp_downloader $iface /tmp/overlay.tar.gz
+	/usr/bin/wasp_downloader $iface /tmp/overlay.tar.gz > /dev/kmsg
 	cd /
 	if [ -e /tmp/overlay.tar.gz ]; then
 	  tar xzf /tmp/overlay.tar.gz

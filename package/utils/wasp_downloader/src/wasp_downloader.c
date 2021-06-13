@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
 	
 	strncpy(ifopts.ifr_name, argv[1], IFNAMSIZ-1);
 	ioctl(sockfd, SIOCGIFFLAGS, &ifopts);
-	ifopts.ifr_flags |= IFF_PROMISC;
+	ifopts.ifr_flags |= IFF_PROMISC | IFF_UP | IFF_RUNNING;
 	ioctl(sockfd, SIOCSIFFLAGS, &ifopts);
 
 	/* Allow the socket to be reused - incase connection is closed prematurely */

@@ -116,7 +116,7 @@ check_config() {
     
     cat <<EOF >> "${WASP}/files/etc/config/network"
 config interface 'loopback'
-	option ifname 'lo'
+	option device 'lo'
 	option proto 'static'
 	option ipaddr '127.0.0.1'
 	option netmask '255.0.0.0'
@@ -125,12 +125,16 @@ config globals 'globals'
 	option ula_prefix 'fd$r1:$r2:$r3::/48'
 
 config interface 'lan'
-	option type 'bridge'
-	option ifname 'eth0'
+	option device 'br-lan'
 	option proto 'static'
 	option ipaddr '192.168.1.2'
 	option netmask '255.255.255.0'
 	option ip6assign '60'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'eth0'
 	option macaddr '$lan_mac'
 EOF
   fi
