@@ -1,0 +1,25 @@
+PHY capabilities are currently read from the fiber status page, thus
+Linux won't advertise 10 / 100 Base-T operation modes, effectively
+limiting operation to 1000 Base-T.
+
+Statically set the PHYs capabilities, avoiding autodetection.
+
+The issue itself is properly fixed kernel upstream, however backporting
+efforts to OpenWrt master resulted in breaking the fiber operation for
+another target.
+
+This is currently only known to be necessary for the Ubiquiti
+UniFi AC series, so enabling it in the ath79 target should not
+break somewhere else.
+
+--- a/drivers/net/phy/at803x.c
++++ b/drivers/net/phy/at803x.c
+@@ -497,7 +497,7 @@ static struct phy_driver at803x_driver[]
+ 	.get_wol		= at803x_get_wol,
+ 	.suspend		= at803x_suspend,
+ 	.resume			= at803x_resume,
+-	/* PHY_GBIT_FEATURES */
++	.features		= PHY_GBIT_FEATURES,
+ 	.read_status		= at803x_read_status,
+ 	.aneg_done		= at803x_aneg_done,
+ 	.ack_interrupt		= &at803x_ack_interrupt,
