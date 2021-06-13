@@ -409,6 +409,10 @@ wallys,dr531)
 	ucidef_set_led_rssi "sig3" "SIG3" "green:sig3" "wlan0" "50" "100"
 	ucidef_set_led_rssi "sig4" "SIG4" "green:sig4" "wlan0" "75" "100"
 	;;
+watchguard,ap300)
+	ucidef_set_led_netdev "lan_data" "LAN_DATA" "green:lan" "eth0" "rx"
+	ucidef_set_led_netdev "lan_link" "LAN_LINK" "amber:lan" "eth0" "link"
+	;;
 wd,mynet-wifi-rangeextender)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
 	ucidef_set_rssimon "wlan0" "200000" "1"

@@ -1,4 +1,4 @@
-DEVICE_VARS += SENAO_IMGNAME
+DEVICE_VARS += SENAO_IMGNAME WATCHGUARD_MAGIC
 
 # This needs to make /tmp/_sys/sysupgrade.tgz an empty file prior to
 # sysupgrade, as otherwise it will implant the old configuration from
@@ -21,7 +21,13 @@ define Build/senao-tar-gz
 	$(CP) $@ $@.tmp/openwrt-$(word 1,$(1))-root.squashfs && \
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-C $@.tmp . | gzip -9n > $@ && \
+		-C $@.tmp . | gzip -9n > $@
+
+	- [[ -n $(WATCHGUARD_MAGIC) ]] && [[ $@ == *factory.bin ]] && \
+	echo -n $(WATCHGUARD_MAGIC) | cat $@ - | md5sum | \
+		cut -d ' ' -f1 | tr -d '\n' > $@.md5 && \
+	cat $@.md5 >> $@
+
 	rm -rf $@.tmp $@.len $@.md5
 endef
 
@@ -37,4 +43,5 @@ define Device/senao_loader_okli
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
 	check-size | senao-tar-gz $$$$(SENAO_IMGNAME)
   IMAGE/sysupgrade.bin := $$(IMAGE/factory.bin) | append-metadata
+  WATCHGUARD_MAGIC :=
 endef
