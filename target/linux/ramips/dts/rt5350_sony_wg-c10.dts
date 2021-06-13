@@ -1,0 +1,104 @@
+#include "rt5350.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "sony,wg-c10", "ralink,rt5350-soc";
+	model = "Sony WG C10";
+
+	chosen {
+		bootargs = "console=ttyS0,57600n8 root=/dev/mtdblock5";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan {
+			label = "red:wlan";
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@1 {
+				label = "Config";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@2 {
+				label = "Factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@3 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x790000>;
+			};
+
+			partition@4 {
+				label = "nvram";
+				reg = <0x7e0000 0x10000>;
+				read-only;
+			};
+
+			partition@5 {
+				label = "nvram_backup";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uartf";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	status = "disabled";
+};
+
+&esw {
+	status = "disabled";
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0x0>;
+};

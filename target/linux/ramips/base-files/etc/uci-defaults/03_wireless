@@ -1,0 +1,17 @@
+#
+# Copyright (C) 2021 OpenWrt.org
+#
+
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+sony,wg-c10)
+	uci set wireless.radio0.disabled=0
+	;;
+esac
+
+uci commit wireless
+
+exit 0

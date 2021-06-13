@@ -973,6 +973,18 @@ define Device/skyline_sl-r7205
 endef
 TARGET_DEVICES += skyline_sl-r7205
 
+define Device/sony_wg-c10
+  SOC := rt5350
+  IMAGE_SIZE := 7744k
+  DEVICE_VENDOR := Sony
+  DEVICE_MODEL := WG-C10
+  SUPPORTED_DEVICES += wg-c10
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-storage kmod-fs-ext4 \
+	kmod-fs-vfat block-mount rssileds
+  DEFAULT := n
+endef
+TARGET_DEVICES += sony_wg-c10
+
 define Device/sparklan_wcr-150gn
   SOC := rt3050
   BLOCKSIZE := 64k

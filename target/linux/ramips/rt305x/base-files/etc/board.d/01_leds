@@ -86,6 +86,11 @@ intenso,memory2move)
 omnima,miniembplug)
 	ucidef_set_led_netdev "wifi_led" "wifi" "red:wlan" "wlan0"
 	;;
+sony,wg-c10)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "red:wlan" "wlan0" "1" "40" "0" "6"
+	ucidef_set_led_wlan "wifi" "wifi" "rt2800soc-phy0::radio" "phy0tx"
+	;;
 vocore,vocore-8m|\
 vocore,vocore-16m)
 	ucidef_set_led_netdev "eth" "ETH" "orange:eth" "eth0"
