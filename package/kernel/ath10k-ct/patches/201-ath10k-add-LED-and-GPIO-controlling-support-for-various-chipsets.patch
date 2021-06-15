@@ -210,7 +210,7 @@ v13:
  
  #include "htt.h"
  #include "htc.h"
-@@ -1551,6 +1552,13 @@ struct ath10k {
+@@ -1557,6 +1558,13 @@ struct ath10k {
  	} testmode;
  
  	struct {
@@ -445,7 +445,7 @@ v13:
  {
 --- a/ath10k-5.10/wmi-tlv.c
 +++ b/ath10k-5.10/wmi-tlv.c
-@@ -4585,6 +4585,8 @@ static const struct wmi_ops wmi_tlv_ops
+@@ -4594,6 +4594,8 @@ static const struct wmi_ops wmi_tlv_ops
  	.gen_echo = ath10k_wmi_tlv_op_gen_echo,
  	.gen_vdev_spectral_conf = ath10k_wmi_tlv_op_gen_vdev_spectral_conf,
  	.gen_vdev_spectral_enable = ath10k_wmi_tlv_op_gen_vdev_spectral_enable,

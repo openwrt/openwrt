@@ -22,6 +22,10 @@ define Build/elecom-wrc-gs-factory
 	mv $@.new $@
 endef
 
+define Build/gemtek-trailer
+	printf "%s%08X" ".GEMTEK." "$$(cksum $@ | cut -d ' ' -f1)" >> $@
+endef
+
 define Build/iodata-factory
 	$(eval fw_size=$(word 1,$(1)))
 	$(eval fw_type=$(word 2,$(1)))
@@ -121,6 +125,33 @@ define Device/alfa-network_quad-e4g
   SUPPORTED_DEVICES += quad-e4g
 endef
 TARGET_DEVICES += alfa-network_quad-e4g
+
+define Device/ampedwireless_ally_common
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Amped Wireless
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware uboot-envtools
+  IMAGE_SIZE := 32768k
+  KERNEL_SIZE := 4096k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma -n 'flashable-initramfs' |\
+	edimax-header -s CSYS -m RN68 -f 0x001c0000 -S 0x01100000
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/ampedwireless_ally-r1900k
+  $(Device/ampedwireless_ally_common)
+  DEVICE_MODEL := ALLY-R1900K
+  DEVICE_PACKAGES += kmod-usb3
+endef
+TARGET_DEVICES += ampedwireless_ally-r1900k
+
+define Device/ampedwireless_ally-00x19k
+  $(Device/ampedwireless_ally_common)
+  DEVICE_MODEL := ALLY-00X19K
+endef
+TARGET_DEVICES += ampedwireless_ally-00x19k
 
 define Device/asiarf_ap7621-001
   $(Device/dsa-migration)
@@ -762,6 +793,25 @@ define Device/lenovo_newifi-d1
 endef
 TARGET_DEVICES += lenovo_newifi-d1
 
+define Device/linksys_e5600
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 26624k
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := E5600
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-mt7663-firmware-sta uboot-envtools
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | check-size | gemtek-trailer
+endef
+TARGET_DEVICES += linksys_e5600
+
 define Device/linksys_ea7xxx
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -803,6 +853,14 @@ define Device/linksys_ea7500-v2
   LINKSYS_HWNAME := EA7500v2
 endef
 TARGET_DEVICES += linksys_ea7500-v2
+
+define Device/linksys_ea8100-v1
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA8100
+  DEVICE_VARIANT := v1
+  LINKSYS_HWNAME := EA8100
+endef
+TARGET_DEVICES += linksys_ea8100-v1
 
 define Device/linksys_re6500
   $(Device/dsa-migration)
@@ -1109,6 +1167,20 @@ define Device/samknows_whitebox-v8
 endef
 TARGET_DEVICES += samknows_whitebox-v8
 
+define Device/sercomm_na502
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 20480k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  UBINIZE_OPTS := -E 5
+  KERNEL_SIZE := 4096k
+  DEVICE_VENDOR := SERCOMM
+  DEVICE_MODEL := NA502
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-mt7603 kmod-usb3
+endef
+TARGET_DEVICES += sercomm_na502
+
 define Device/storylink_sap-g3200u3
   $(Device/dsa-migration)
   IMAGE_SIZE := 7872k
@@ -1171,6 +1243,19 @@ define Device/tplink_archer-a6-v3
   IMAGE_SIZE := 15744k
 endef
 TARGET_DEVICES += tplink_archer-a6-v3
+
+define Device/tplink_archer-c6-v3
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := Archer C6
+  DEVICE_VARIANT := V3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
+	kmod-mt7663-firmware-ap kmod-mt7663-firmware-sta
+  TPLINK_BOARD_ID := ARCHER-C6-V3
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_archer-c6-v3
 
 define Device/tplink_archer-c6u-v1
   $(Device/dsa-migration)

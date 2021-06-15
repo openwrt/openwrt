@@ -85,7 +85,7 @@ endif
 
 TARGET_LDFLAGS += -lcrypt
 
-CMAKE_OPTIONS = -DTLS_SUPPORT=on
+CMAKE_OPTIONS += -DTLS_SUPPORT=on
 
 define Package/uhttpd/install
 	$(INSTALL_DIR) $(1)/etc/init.d

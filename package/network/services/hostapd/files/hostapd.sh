@@ -91,6 +91,7 @@ hostapd_add_log_config() {
 hostapd_common_add_device_config() {
 	config_add_array basic_rate
 	config_add_array supported_rates
+	config_add_string beacon_rate
 
 	config_add_string country
 	config_add_boolean country_ie doth
@@ -100,6 +101,9 @@ hostapd_common_add_device_config() {
 	config_add_boolean legacy_rates
 	config_add_int cell_density
 	config_add_int rts_threshold
+	config_add_int rssi_reject_assoc_rssi
+	config_add_int rssi_ignore_probe_request
+	config_add_int maxassoc
 
 	config_add_string acs_chan_bias
 	config_add_array hostapd_options
@@ -117,7 +121,7 @@ hostapd_prepare_device_config() {
 
 	json_get_vars country country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
 		acs_chan_bias local_pwr_constraint spectrum_mgmt_required airtime_mode cell_density \
-		rts_threshold
+		rts_threshold beacon_rate rssi_reject_assoc_rssi rssi_ignore_probe_request maxassoc
 
 	hostapd_set_log_options base_cfg
 
@@ -208,12 +212,16 @@ hostapd_prepare_device_config() {
 		hostapd_add_rate brlist "$br"
 	done
 
+	[ -n "$rssi_reject_assoc_rssi" ] && append base_cfg "rssi_reject_assoc_rssi=$rssi_reject_assoc_rssi" "$N"
+	[ -n "$rssi_ignore_probe_request" ] && append base_cfg "rssi_ignore_probe_request=$rssi_ignore_probe_request" "$N"
+	[ -n "$beacon_rate" ] && append base_cfg "beacon_rate=$beacon_rate" "$N"
 	[ -n "$rlist" ] && append base_cfg "supported_rates=$rlist" "$N"
 	[ -n "$brlist" ] && append base_cfg "basic_rates=$brlist" "$N"
 	append base_cfg "beacon_int=$beacon_int" "$N"
 	[ -n "$rts_threshold" ] && append base_cfg "rts_threshold=$rts_threshold" "$N"
 	append base_cfg "dtim_period=$dtim_period" "$N"
 	[ "$airtime_mode" -gt 0 ] && append base_cfg "airtime_mode=$airtime_mode" "$N"
+	[ -n "$maxassoc" ] && append base_cfg "iface_max_num_sta=$maxassoc" "$N"
 
 	json_get_values opts hostapd_options
 	for val in $opts; do
@@ -335,13 +343,16 @@ hostapd_common_add_bss_config() {
 	config_add_array airtime_sta_weight
 	config_add_int airtime_bss_weight airtime_bss_limit
 
-	config_add_boolean multicast_to_unicast per_sta_vif
+	config_add_boolean multicast_to_unicast proxy_arp per_sta_vif
 
 	config_add_array hostapd_bss_options
 
 	config_add_boolean request_cui
 	config_add_array radius_auth_req_attr
 	config_add_array radius_acct_req_attr
+
+	config_add_int eap_server
+	config_add_string eap_user_file ca_cert server_cert private_key private_key_passwd server_id
 }
 
 hostapd_set_vlan_file() {
@@ -479,11 +490,11 @@ append_hs20_conn_capab() {
 }
 
 append_radius_acct_req_attr() {
-	append bss_conf "radius_acct_req_attr=$1" "$N"
+	[ -n "$1" ] && append bss_conf "radius_acct_req_attr=$1" "$N"
 }
 
 append_radius_auth_req_attr() {
-	append bss_conf "radius_auth_req_attr=$1" "$N"
+	[ -n "$1" ] && append bss_conf "radius_auth_req_attr=$1" "$N"
 }
 
 append_airtime_sta_weight() {
@@ -512,7 +523,8 @@ hostapd_set_bss_options() {
 		bss_load_update_period chan_util_avg_period sae_require_mfp \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
 		airtime_bss_weight airtime_bss_limit airtime_sta_weight \
-		multicast_to_unicast per_sta_vif
+		multicast_to_unicast proxy_arp per_sta_vif \
+		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id
 
 	set_default isolate 0
 	set_default maxassoc 0
@@ -533,6 +545,7 @@ hostapd_set_bss_options() {
 	set_default multi_ap 0
 	set_default airtime_bss_weight 0
 	set_default airtime_bss_limit 0
+	set_default eap_server 0
 
 	append bss_conf "ctrl_interface=/var/run/hostapd"
 	if [ "$isolate" -gt 0 ]; then
@@ -646,9 +659,11 @@ hostapd_set_bss_options() {
 			set_default dae_port 3799
 			set_default request_cui 0
 
-			append bss_conf "auth_server_addr=$auth_server" "$N"
-			append bss_conf "auth_server_port=$auth_port" "$N"
-			append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+			[ "$eap_server" -eq 0 ] && {
+				append bss_conf "auth_server_addr=$auth_server" "$N"
+				append bss_conf "auth_server_port=$auth_port" "$N"
+				append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+			}
 
 			[ "$request_cui" -gt 0 ] && append bss_conf "radius_request_cui=$request_cui" "$N"
 			[ -n "$eap_reauth_period" ] && append bss_conf "eap_reauth_period=$eap_reauth_period" "$N"
@@ -790,6 +805,7 @@ hostapd_set_bss_options() {
 				;;
 			esac
 
+			[ -n "$network_ifname" ] && append bss_conf "ft_iface=$network_ifname" "$N"
 			append bss_conf "mobility_domain=$mobility_domain" "$N"
 			append bss_conf "ft_psk_generate_local=$ft_psk_generate_local" "$N"
 			append bss_conf "ft_over_ds=$ft_over_ds" "$N"
@@ -803,6 +819,13 @@ hostapd_set_bss_options() {
 
 				set_default r0_key_lifetime 10000
 				set_default pmk_r1_push 0
+
+				[ -n "$r0kh" -a -n "$r1kh" ] || {
+					key=`echo -n "$mobility_domain/$auth_secret" | md5sum | awk '{print $1}'`
+
+					set_default r0kh "ff:ff:ff:ff:ff:ff,*,$key"
+					set_default r1kh "00:00:00:00:00:00,00:00:00:00:00:00,$key"
+				}
 
 				[ -n "$r1_key_holder" ] && append bss_conf "r1_key_holder=$r1_key_holder" "$N"
 				append bss_conf "r0_key_lifetime=$r0_key_lifetime" "$N"
@@ -987,9 +1010,23 @@ hostapd_set_bss_options() {
 		json_for_each_item append_operator_icon operator_icon
 	fi
 
+	if [ "$eap_server" = "1" ]; then
+		append bss_conf "eap_server=1" "$N"
+		[ -n "$eap_user_file" ] && append bss_conf "eap_user_file=$eap_user_file" "$N"
+		[ -n "$ca_cert" ] && append bss_conf "ca_cert=$ca_cert" "$N"
+		[ -n "$server_cert" ] && append bss_conf "server_cert=$server_cert" "$N"
+		[ -n "$private_key" ] && append bss_conf "private_key=$private_key" "$N"
+		[ -n "$private_key_passwd" ] && append bss_conf "private_key_passwd=$private_key_passwd" "$N"
+		[ -n "$server_id" ] && append bss_conf "server_id=$server_id" "$N"
+	fi
+
 	set_default multicast_to_unicast 0
 	if [ "$multicast_to_unicast" -gt 0 ]; then
 		append bss_conf "multicast_to_unicast=$multicast_to_unicast" "$N"
+	fi
+	set_default proxy_arp 0
+	if [ "$proxy_arp" -gt 0 ]; then
+		append bss_conf "proxy_arp=$proxy_arp" "$N"
 	fi
 
 	set_default per_sta_vif 0

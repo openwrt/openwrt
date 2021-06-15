@@ -27,6 +27,12 @@ platform_do_upgrade() {
 			fi
 		}
 		;;
+	ampedwireless,ally-00x19k|\
+	ampedwireless,ally-r1900k)
+		if [ "$(fw_printenv --lock / -n bootImage 2>/dev/null)" != "0" ]; then
+			fw_setenv --lock / bootImage 0 || exit 1
+		fi
+		;;
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
@@ -43,6 +49,8 @@ platform_do_upgrade() {
 	esac
 
 	case "$board" in
+	ampedwireless,ally-00x19k|\
+	ampedwireless,ally-r1900k|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	dlink,dir-1960-a1|\
@@ -50,9 +58,11 @@ platform_do_upgrade() {
 	dlink,dir-2660-a1|\
 	hiwifi,hc5962|\
 	jcg,q20|\
+	linksys,e5600|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
 	linksys,ea7500-v2|\
+	linksys,ea8100-v1|\
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
@@ -62,6 +72,7 @@ platform_do_upgrade() {
 	netgear,wac104|\
 	netgear,wac124|\
 	netis,wf2881|\
+	sercomm,na502|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\

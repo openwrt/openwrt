@@ -8,6 +8,27 @@ ramips_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	ampedwireless,ally-00x19k|\
+	edimax,re23s|\
+	mikrotik,routerboard-m11g|\
+	netgear,ex6150|\
+	sercomm,na502|\
+	thunder,timecloud|\
+	tplink,re350-v1|\
+	tplink,re500-v1|\
+	tplink,re650-v1|\
+	ubnt,unifi-6-lite|\
+	ubnt,unifi-nanohd)
+		ucidef_set_interface_lan "lan"
+		;;
+	ampedwireless,ally-r1900k|\
+	gehua,ghl-r-001|\
+	hiwifi,hc5962|\
+	xiaomi,mi-router-3-pro|\
+	xiaomi,mi-router-ac2100|\
+	xiaomi,redmi-router-ac2100)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	asiarf,ap7621-001|\
 	winstars,ws-wn583a6)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
@@ -22,24 +43,6 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-4|\
 	xiaomi,mi-router-4a-gigabit)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
-		;;
-	edimax,re23s|\
-	mikrotik,routerboard-m11g|\
-	netgear,ex6150|\
-	thunder,timecloud|\
-	tplink,re350-v1|\
-	tplink,re500-v1|\
-	tplink,re650-v1|\
-	ubnt,unifi-6-lite|\
-	ubnt,unifi-nanohd)
-		ucidef_set_interface_lan "lan"
-		;;
-	gehua,ghl-r-001|\
-	hiwifi,hc5962|\
-	xiaomi,mi-router-3-pro|\
-	xiaomi,mi-router-ac2100|\
-	xiaomi,redmi-router-ac2100)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	gnubee,gb-pc1|\
 	gnubee,gb-pc2)
@@ -85,6 +88,15 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
+	ampedwireless,ally-00x19k)
+		lan_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
+		label_mac=$lan_mac
+		;;
+	ampedwireless,ally-r1900k)
+		lan_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
+		wan_mac=$(mtd_get_mac_ascii hwconfig HW.WAN.MAC.Address)
+		label_mac=$lan_mac
+		;;
 	asus,rt-ac65p|\
 	asus,rt-ac85p)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
@@ -127,9 +139,11 @@ ramips_setup_macs()
 	zbtlink,zbt-wg3526-32m)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
+	linksys,e5600|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
-	linksys,ea7500-v2)
+	linksys,ea7500-v2|\
+	linksys,ea8100-v1)
 		lan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		wan_mac=$lan_mac
 		label_mac=$lan_mac

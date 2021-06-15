@@ -1,5 +1,4 @@
 #!/bin/sh
-. /lib/netifd/mac80211.sh
 
 append DRIVERS "mac80211"
 
@@ -11,7 +10,7 @@ lookup_phy() {
 	local devpath
 	config_get devpath "$device" path
 	[ -n "$devpath" ] && {
-		phy="$(mac80211_path_to_phy "$devpath")"
+		phy="$(iwinfo nl80211 phyname "path=$devpath")"
 		[ -n "$phy" ] && return
 	}
 
@@ -70,7 +69,7 @@ BEGIN {
         if (channel) {
 		mode="NOHT"
 		if (ht) mode="HT20"
-		if (vht) mode="VHT80"
+		if (vht && band != "1:") mode="VHT80"
 		if (he) mode="HE80"
 		if (he && band == "1:") mode="HE20"
                 sub("\\[", "", channel)
@@ -92,7 +91,7 @@ $0 ~ "Capabilities:" {
 	ht=1
 }
 
-$0 ~ "VHT Capabilities:" {
+$0 ~ "VHT Capabilities" {
 	vht=1
 }
 
@@ -161,7 +160,7 @@ detect_mac80211() {
 
 		get_band_defaults "$dev"
 
-		path="$(mac80211_phy_to_path "$dev")"
+		path="$(iwinfo nl80211 path "$dev")"
 		if [ -n "$path" ]; then
 			dev_id="set wireless.radio${devidx}.path='$path'"
 		else

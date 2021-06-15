@@ -8,9 +8,11 @@ boot() {
 		[ -n "$(fw_printenv bootcount bootchanged 2>/dev/null)" ] &&\
 			echo -e "bootcount\nbootchanged\n" | /usr/sbin/fw_setenv -s -
 		;;
+	linksys,e5600|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
-	linksys,ea7500-v2)
+	linksys,ea7500-v2|\
+	linksys,ea8100-v1)
 		mtd resetbc s_env || true
 		;;
 	samknows,whitebox-v8)

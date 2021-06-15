@@ -25,6 +25,10 @@ allnet,all0256n-8m|\
 allnet,all5002)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
+ampedwireless,ally-00x19k|\
+ampedwireless,ally-r1900k)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000" "4"
+	;;
 buffalo,wsr-1166dhp|\
 buffalo,wsr-600dhp|\
 mediatek,linkit-smart-7688|\
@@ -49,6 +53,7 @@ jcg,q20)
 linksys,ea7300-v1|\
 linksys,ea7300-v2|\
 linksys,ea7500-v2|\
+linksys,ea8100-v1|\
 xiaomi,mi-router-3g|\
 xiaomi,mi-router-3-pro|\
 xiaomi,mi-router-4|\
