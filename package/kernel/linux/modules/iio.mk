@@ -544,3 +544,18 @@ define KernelPackage/iio-fxos8700-spi/description
 endef
 
 $(eval $(call KernelPackage,iio-fxos8700-spi))
+
+define KernelPackage/iio-vf610
+  SUBMENU:=$(IIO_MENU)
+  DEPENDS:=+kmod-i2c-core +kmod-iio-core +kmod-industrialio-triggered-buffer
+  TITLE:=Freescale VF610 ADC driver
+  KCONFIG:= CONFIG_VF610_ADC
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/vf610_adc.ko
+  AUTOLOAD:=$(call AutoLoad,56,vf610_adc)
+endef
+
+define KernelPackage/iio-vf610/description
+ Support for Vybrid board analog-to-digital converter.
+endef
+
+$(eval $(call KernelPackage,iio-vf610))
