@@ -119,7 +119,6 @@ struct ifx_deu_des_ctx {
 extern int disable_multiblock;
 extern int disable_deudma;
 
-
 /*! \fn	int des_setkey(struct crypto_tfm *tfm, const u8 *key, unsigned int keylen)
  *  \ingroup IFX_DES_FUNCTIONS
  *  \brief sets DES key   
@@ -154,7 +153,6 @@ int des_setkey(struct crypto_tfm *tfm, const u8 *key,
         return err;
 }
 
-
 /*! \fn int des_setkey_skcipher (struct crypto_skcipher *tfm, const uint8_t *in_key, unsigned int key_len)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief sets the AES keys for skcipher
@@ -167,7 +165,6 @@ int des_setkey_skcipher (struct crypto_skcipher *tfm, const u8 *in_key, unsigned
 {
     return des_setkey(crypto_skcipher_tfm(tfm), in_key, key_len);
 }
-
 
 /*! \fn void ifx_deu_des(void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, u32 nbytes, int encdec, int mode)
  *  \ingroup IFX_DES_FUNCTIONS
@@ -287,8 +284,6 @@ void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
  *  \param mode operation mode such as ebc, cbc 
 */   
 
-
-
 /*! \fn  void ifx_deu_des_ecb (void *ctx, uint8_t *dst, const uint8_t *src, uint8_t *iv, size_t nbytes, int encdec, int inplace)
  *  \ingroup IFX_DES_FUNCTIONS
  *  \brief sets DES hardware to ECB mode   
@@ -300,7 +295,6 @@ void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
  *  \param encdec 1 for encrypt; 0 for decrypt  
  *  \param inplace not used  
 */
-    
 void ifx_deu_des_ecb (void *ctx, uint8_t *dst, const uint8_t *src,
                 uint8_t *iv, size_t nbytes, int encdec, int inplace)
 {
@@ -776,4 +770,3 @@ void ifxdeu_fini_des (void)
         crypto_unregister_skcipher (&ifxdeu_cbc_des3_ede_alg);
 
 }
-

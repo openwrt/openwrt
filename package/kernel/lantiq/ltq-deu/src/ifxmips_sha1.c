@@ -38,7 +38,6 @@
   \brief ifx deu sha1 functions
 */
 
-
 /* Project header */
 #include <linux/init.h>
 #include <linux/module.h>
@@ -85,7 +84,6 @@ struct sha1_ctx {
 };
 
 extern int disable_deudma;
-
 
 /*! \fn static void sha1_transform1 (u32 *state, const u32 *in)
  *  \ingroup IFX_SHA1_FUNCTIONS
@@ -283,5 +281,3 @@ void ifxdeu_fini_sha1 (void)
 
 
 }
-
-

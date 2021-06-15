@@ -119,7 +119,6 @@ static void md5_hmac_transform(struct shash_desc *desc, u32 const *in)
 static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen) 
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(tfm);
-    volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
     int err;
     //printk("copying keys to context with length %d\n", keylen);
 
@@ -145,14 +144,12 @@ static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int
     return 0;
 }
 
-
 /*! \fn int md5_hmac_setkey_hw(const u8 *key, unsigned int keylen)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
  *  \brief sets md5 hmac key into the hardware registers  
  *  \param key input key  
  *  \param keylen key length greater than 64 bytes IS NOT SUPPORTED  
 */  
-                               
 static int md5_hmac_setkey_hw(const u8 *key, unsigned int keylen)
 {
     volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
@@ -323,7 +320,6 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
         in += 16;
 }
 
-
 #if 1
     if (hash_final) {
         //wait for digest ready
@@ -338,6 +334,8 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
     *((u32 *) out + 2) = hashs->D3R;
     *((u32 *) out + 3) = hashs->D4R;
 
+    CRTCL_SECT_HASH_END;
+
     if (hash_final) {
         /* reset the context after we finish with the hash */
         mctx->byte_count = 0;
@@ -347,10 +345,7 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
     } else {
         mctx->dbn = 0;
     }
-    CRTCL_SECT_HASH_END;
-
-
-   return 0;
+    return 0;
 }
 
 /*! \fn void md5_hmac_init_tfm(struct crypto_tfm *tfm)
@@ -381,11 +376,9 @@ static void md5_hmac_exit_tfm(struct crypto_tfm *tfm)
     kfree(mctx->desc);
 }
 
-
 /* 
  * \brief MD5_HMAC function mappings
 */
-
 static struct shash_alg ifxdeu_md5_hmac_alg = {
     .digestsize         =       MD5_DIGEST_SIZE,
     .init               =       md5_hmac_init,
@@ -435,5 +428,3 @@ void ifxdeu_fini_md5_hmac (void)
 {
     crypto_unregister_shash(&ifxdeu_md5_hmac_alg);
 }
-
-
