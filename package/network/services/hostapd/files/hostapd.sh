@@ -92,7 +92,7 @@ hostapd_common_add_device_config() {
 	config_add_array basic_rate
 	config_add_array supported_rates
 
-	config_add_string country
+	config_add_string country country3
 	config_add_boolean country_ie doth
 	config_add_boolean spectrum_mgmt_required
 	config_add_int local_pwr_constraint
@@ -114,7 +114,7 @@ hostapd_prepare_device_config() {
 
 	local base_cfg=
 
-	json_get_vars country country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
+	json_get_vars country country3 country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
 		acs_chan_bias local_pwr_constraint spectrum_mgmt_required airtime_mode cell_density
 
 	hostapd_set_log_options base_cfg
@@ -128,6 +128,7 @@ hostapd_prepare_device_config() {
 
 	[ -n "$country" ] && {
 		append base_cfg "country_code=$country" "$N"
+		[ -n "$country3" ] && append base_cfg "country3=$country3" "$N"
 
 		[ "$country_ie" -gt 0 ] && {
 			append base_cfg "ieee80211d=1" "$N"
