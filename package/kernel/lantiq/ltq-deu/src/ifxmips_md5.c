@@ -119,9 +119,9 @@ static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
     *((u32 *) hash + 2) = hashs->D3R;
     *((u32 *) hash + 3) = hashs->D4R;
 
-    mctx->started = 1; 
-
     CRTCL_SECT_HASH_END;
+
+    mctx->started = 1;
 }
 
 /*! \fn static inline void md5_transform_helper(struct md5_ctx *ctx)
@@ -274,4 +274,3 @@ void ifxdeu_fini_md5 (void)
     crypto_unregister_shash(&ifxdeu_md5_alg);
 
 }
-

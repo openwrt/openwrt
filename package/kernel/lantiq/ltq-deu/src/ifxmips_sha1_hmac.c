@@ -38,7 +38,6 @@
   \brief ifx sha1 hmac functions
 */
 
-
 /* Project header */
 #include <linux/init.h>
 #include <linux/module.h>
@@ -125,7 +124,6 @@ static int sha1_hmac_transform(struct shash_desc *desc, u32 const *in)
 static int sha1_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
 {
     struct sha1_hmac_ctx *sctx = crypto_shash_ctx(tfm);
-    volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
     int err;
 
     if (keylen > SHA1_HMAC_MAX_KEYLEN) {
@@ -151,7 +149,6 @@ static int sha1_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned in
 
     return 0;
 }
-
 
 /*! \fn int sha1_hmac_setkey_hw(struct crypto_tfm *tfm, const u8 *key, unsigned int keylen)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
@@ -351,6 +348,8 @@ static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fina
     *((u32 *) out + 3) = hashs->D4R;
     *((u32 *) out + 4) = hashs->D5R;
 
+    CRTCL_SECT_HASH_END;
+
     if (hash_final) {
         memset(&sctx->buffer[0], 0, SHA1_HMAC_BLOCK_SIZE);
         sctx->count = 0;
@@ -358,8 +357,6 @@ static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fina
         sctx->dbn = 0;
     }
     //printk("debug ln: %d, fn: %s\n", __LINE__, __func__);
-    CRTCL_SECT_HASH_END;
-
 
     return 0;
 
@@ -393,7 +390,6 @@ static void sha1_hmac_exit_tfm(struct crypto_tfm *tfm)
     kfree(sctx->desc);
 }
 
-
 /* 
  * \brief SHA1_HMAC function mappings
 */
@@ -417,7 +413,6 @@ static struct shash_alg ifxdeu_sha1_hmac_alg = {
         .cra_exit       =       sha1_hmac_exit_tfm,
         }
 };
-
 
 /*! \fn int ifxdeu_init_sha1_hmac (void)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
@@ -451,4 +446,3 @@ void ifxdeu_fini_sha1_hmac (void)
 
 
 }
-

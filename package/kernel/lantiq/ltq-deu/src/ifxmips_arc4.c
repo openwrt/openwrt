@@ -89,7 +89,6 @@ struct arc4_ctx {
 extern int disable_deudma;
 extern int disable_multiblock;
 
-
 /*! \fn static void _deu_arc4 (void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, u32 nbytes, int encdec, int mode)
     \ingroup IFX_ARC4_FUNCTIONS
     \brief main interface to ARC4 hardware   
@@ -386,5 +385,3 @@ void ifxdeu_fini_arc4(void)
 
 
 }
-
-
