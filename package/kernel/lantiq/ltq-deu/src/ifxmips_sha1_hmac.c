@@ -61,6 +61,7 @@
 
 #define SHA1_DIGEST_SIZE    20
 #define SHA1_BLOCK_WORDS    16
+#define SHA1_HASH_WORDS     5
 #define SHA1_HMAC_BLOCK_SIZE    64
 #define SHA1_HMAC_DBN_TEMP_SIZE 1024 // size in dword, needed for dbn workaround 
 #define HASH_START   IFX_HASH_CON
@@ -79,8 +80,9 @@ struct sha1_hmac_ctx {
 
     u8 buffer[SHA1_HMAC_BLOCK_SIZE];
     u8 key[SHA1_HMAC_MAX_KEYLEN];
-    u32 state[5];
+    u32 hash[SHA1_HASH_WORDS];
     u32 dbn;
+    int started;
     u64 count;
 
     struct shash_desc *desc;
@@ -88,6 +90,8 @@ struct sha1_hmac_ctx {
 };
 
 extern int disable_deudma;
+
+static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final);
 
 /*! \fn static void sha1_hmac_transform(struct crypto_tfm *tfm, u32 const *in)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
@@ -99,14 +103,15 @@ static int sha1_hmac_transform(struct shash_desc *desc, u32 const *in)
 {
     struct sha1_hmac_ctx *sctx =  crypto_shash_ctx(desc->tfm);
 
+    if ( ((sctx->dbn<<4)+1) > SHA1_HMAC_DBN_TEMP_SIZE )
+    {
+        //printk("SHA1_HMAC_DBN_TEMP_SIZE exceeded\n");
+        sha1_hmac_final_impl(desc, (u8 *)sctx->hash, false);
+    }
+
     memcpy(&sctx->temp[sctx->dbn], in, 64); //dbn workaround
     sctx->dbn += 1;
-    
-    if ( (sctx->dbn<<4) > SHA1_HMAC_DBN_TEMP_SIZE )
-    {
-        printk("SHA1_HMAC_DBN_TEMP_SIZE exceeded\n");
-    }
-   
+
     return 0;
 }
 
@@ -186,6 +191,7 @@ static int sha1_hmac_init(struct shash_desc *desc)
 
     //printk("debug ln: %d, fn: %s\n", __LINE__, __func__);
     sctx->dbn = 0; //dbn workaround
+    sctx->started = 0;
 
     return 0;
 }
@@ -223,13 +229,25 @@ static int sha1_hmac_update(struct shash_desc *desc, const u8 *data,
     return 0;
 }
 
-/*! \fn static void sha1_hmac_final(struct crypto_tfm *tfm, u8 *out)
+/*! \fn static int sha1_hmac_final(struct crypto_tfm *tfm, u8 *out)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief ompute final sha1 hmac value   
+ *  \brief call sha1_hmac_final_impl with hash_final true   
  *  \param tfm linux crypto algo transform  
  *  \param out final sha1 hmac output value  
 */                                 
 static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
+{
+    return sha1_hmac_final_impl(desc, out, true);
+}
+
+/*! \fn static int sha1_hmac_final_impl(struct crypto_tfm *tfm, u8 *out, bool hash_final)
+ *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
+ *  \brief ompute final or intermediate sha1 hmac value   
+ *  \param tfm linux crypto algo transform  
+ *  \param out final sha1 hmac output value  
+ *  \param in finalize or intermediate processing  
+*/                                 
+static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final)
 {
     struct sha1_hmac_ctx *sctx =  crypto_shash_ctx(desc->tfm);
     u32 index, padlen;
@@ -241,46 +259,63 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
     int i = 0;
     int dbn;
     u32 *in = sctx->temp[0];
-        
-    t = sctx->count + 512; // need to add 512 bit of the IPAD operation
-    bits[7] = 0xff & t;
-    t >>= 8;
-    bits[6] = 0xff & t;
-    t >>= 8;
-    bits[5] = 0xff & t;
-    t >>= 8;
-    bits[4] = 0xff & t;
-    t >>= 8;
-    bits[3] = 0xff & t;
-    t >>= 8;
-    bits[2] = 0xff & t;
-    t >>= 8;
-    bits[1] = 0xff & t;
-    t >>= 8;
-    bits[0] = 0xff & t;
 
-    /* Pad out to 56 mod 64 */
-    index = (sctx->count >> 3) & 0x3f;
-    padlen = (index < 56) ? (56 - index) : ((64 + 56) - index);
-    sha1_hmac_update (desc, padding, padlen);
+    if (hash_final) {
+        t = sctx->count + 512; // need to add 512 bit of the IPAD operation
+        bits[7] = 0xff & t;
+        t >>= 8;
+        bits[6] = 0xff & t;
+        t >>= 8;
+        bits[5] = 0xff & t;
+        t >>= 8;
+        bits[4] = 0xff & t;
+        t >>= 8;
+        bits[3] = 0xff & t;
+        t >>= 8;
+        bits[2] = 0xff & t;
+        t >>= 8;
+        bits[1] = 0xff & t;
+        t >>= 8;
+        bits[0] = 0xff & t;
 
-    /* Append length */
-    sha1_hmac_update (desc, bits, sizeof bits);
+        /* Pad out to 56 mod 64 */
+        index = (sctx->count >> 3) & 0x3f;
+        padlen = (index < 56) ? (56 - index) : ((64 + 56) - index);
+        sha1_hmac_update (desc, padding, padlen);
+
+        /* Append length */
+        sha1_hmac_update (desc, bits, sizeof bits);
+    }
 
     CRTCL_SECT_HASH_START;
 
     SHA_HASH_INIT;
 
     sha1_hmac_setkey_hw(sctx->key, sctx->keylen);
-    
-    hashs->DBN = sctx->dbn;
-    
+
+    if (hash_final) {
+        hashs->DBN = sctx->dbn;
+    } else {
+        hashs->DBN = sctx->dbn + 5;
+    }
+    asm("sync");
+
     //for vr9 change, ENDI = 1
     *IFX_HASH_CON = HASH_CON_VALUE; 
 
     //wait for processing
     while (hashs->controlr.BSY) {
         // this will not take long
+    }
+
+    if (sctx->started) {
+        hashs->D1R = *((u32 *) sctx->hash + 0);
+        hashs->D2R = *((u32 *) sctx->hash + 1);
+        hashs->D3R = *((u32 *) sctx->hash + 2);
+        hashs->D4R = *((u32 *) sctx->hash + 3);
+        hashs->D5R = *((u32 *) sctx->hash + 4);
+    } else {
+        sctx->started = 1;
     }
 
     for (dbn = 0; dbn < sctx->dbn; dbn++)
@@ -302,9 +337,11 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
 
 
 #if 1
-    //wait for digest ready
-    while (! hashs->controlr.DGRY) {
-        // this will not take long
+    if (hash_final) {
+        //wait for digest ready
+        while (! hashs->controlr.DGRY) {
+            // this will not take long
+        }
     }
 #endif
 
@@ -314,9 +351,12 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
     *((u32 *) out + 3) = hashs->D4R;
     *((u32 *) out + 4) = hashs->D5R;
 
-    memset(&sctx->buffer[0], 0, SHA1_HMAC_BLOCK_SIZE);
-    sctx->count = 0; 
- 
+    if (hash_final) {
+        memset(&sctx->buffer[0], 0, SHA1_HMAC_BLOCK_SIZE);
+        sctx->count = 0;
+    } else {
+        sctx->dbn = 0;
+    }
     //printk("debug ln: %d, fn: %s\n", __LINE__, __func__);
     CRTCL_SECT_HASH_END;
 

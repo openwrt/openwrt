@@ -79,12 +79,15 @@ struct md5_hmac_ctx {
     u32 block[MD5_BLOCK_WORDS];
     u64 byte_count;
     u32 dbn;
+    int started;
     unsigned int keylen;
     struct shash_desc *desc;
     u32 (*temp)[MD5_BLOCK_WORDS];
 };
 
 extern int disable_deudma;
+
+static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final);
 
 /*! \fn static void md5_hmac_transform(struct crypto_tfm *tfm, u32 const *in)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
@@ -96,14 +99,14 @@ static void md5_hmac_transform(struct shash_desc *desc, u32 const *in)
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(desc->tfm);
 
-    memcpy(&mctx->temp[mctx->dbn], in, 64); //dbn workaround
-    mctx->dbn += 1;
-    
-    if ( (mctx->dbn<<4) > MD5_HMAC_DBN_TEMP_SIZE )
+    if ( ((mctx->dbn<<4)+1) > MD5_HMAC_DBN_TEMP_SIZE )
     {
-        printk("MD5_HMAC_DBN_TEMP_SIZE exceeded\n");
+        //printk("MD5_HMAC_DBN_TEMP_SIZE exceeded\n");
+        md5_hmac_final_impl(desc, (u8 *)mctx->hash, false);
     }
 
+    memcpy(&mctx->temp[mctx->dbn], in, 64); //dbn workaround
+    mctx->dbn += 1;
 }
 
 /*! \fn int md5_hmac_setkey(struct crypto_tfm *tfm, const u8 *key, unsigned int keylen)
@@ -184,6 +187,7 @@ static int md5_hmac_init(struct shash_desc *desc)
     
 
     mctx->dbn = 0; //dbn workaround
+    mctx->started = 0;
 
     return 0;
 }
@@ -226,13 +230,25 @@ static int md5_hmac_update(struct shash_desc *desc, const u8 *data, unsigned int
     return 0;    
 }
 
-/*! \fn void md5_hmac_final(struct crypto_tfm *tfm, u8 *out)
+/*! \fn static int md5_hmac_final(struct crypto_tfm *tfm, u8 *out)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief compute final md5 hmac value   
+ *  \brief call md5_hmac_final_impl with hash_final true   
  *  \param tfm linux crypto algo transform  
  *  \param out final md5 hmac output value  
 */                                 
 static int md5_hmac_final(struct shash_desc *desc, u8 *out)
+{
+    return md5_hmac_final_impl(desc, out, true);
+}
+
+/*! \fn static int md5_hmac_final_impl(struct crypto_tfm *tfm, u8 *out, bool hash_final)
+ *  \ingroup IFX_MD5_HMAC_FUNCTIONS
+ *  \brief compute final or intermediate md5 hmac value   
+ *  \param tfm linux crypto algo transform  
+ *  \param out final md5 hmac output value  
+ *  \param in finalize or intermediate processing  
+*/                                 
+static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final)
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(desc->tfm);
     const unsigned int offset = mctx->byte_count & 0x3f;
@@ -244,20 +260,21 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
     int dbn;
     u32 *in = mctx->temp[0];
 
+    if (hash_final) {
+        *p++ = 0x80;
+        if (padding < 0) {
+            memset(p, 0x00, padding + sizeof (u64));
+            md5_hmac_transform(desc, mctx->block);
+            p = (char *)mctx->block;
+            padding = 56;
+        }
 
-    *p++ = 0x80;
-    if (padding < 0) {
-        memset(p, 0x00, padding + sizeof (u64));
+        memset(p, 0, padding);
+        mctx->block[14] = le32_to_cpu((mctx->byte_count + 64) << 3); // need to add 512 bit of the IPAD operation 
+        mctx->block[15] = 0x00000000;
+
         md5_hmac_transform(desc, mctx->block);
-        p = (char *)mctx->block;
-        padding = 56;
     }
-
-    memset(p, 0, padding);
-    mctx->block[14] = le32_to_cpu((mctx->byte_count + 64) << 3); // need to add 512 bit of the IPAD operation 
-    mctx->block[15] = 0x00000000;
-
-    md5_hmac_transform(desc, mctx->block);
 
     CRTCL_SECT_HASH_START;
 
@@ -266,7 +283,11 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
     md5_hmac_setkey_hw(mctx->key, mctx->keylen);
 
     //printk("\ndbn = %d\n", mctx->dbn); 
-    hashs->DBN = mctx->dbn;
+    if (hash_final) {
+       hashs->DBN = mctx->dbn;
+    } else {
+       hashs->DBN = mctx->dbn + 5;
+    }
     asm("sync");
     
     *IFX_HASH_CON = 0x0703002D; //khs, go, init, ndc, endi, kyue, hmen, md5 	
@@ -274,6 +295,15 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
     //wait for processing
     while (hashs->controlr.BSY) {
         // this will not take long
+    }
+
+    if (mctx->started) {
+        hashs->D1R = *((u32 *) mctx->hash + 0);
+        hashs->D2R = *((u32 *) mctx->hash + 1);
+        hashs->D3R = *((u32 *) mctx->hash + 2);
+        hashs->D4R = *((u32 *) mctx->hash + 3);
+    } else {
+        mctx->started = 1;
     }
 
     for (dbn = 0; dbn < mctx->dbn; dbn++)
@@ -295,9 +325,11 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
 
 
 #if 1
-    //wait for digest ready
-    while (! hashs->controlr.DGRY) {
-        // this will not take long
+    if (hash_final) {
+        //wait for digest ready
+        while (! hashs->controlr.DGRY) {
+            // this will not take long
+        }
     }
 #endif
 
@@ -306,12 +338,15 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
     *((u32 *) out + 2) = hashs->D3R;
     *((u32 *) out + 3) = hashs->D4R;
 
-    /* reset the context after we finish with the hash */
-    mctx->byte_count = 0;
-    memset(&mctx->hash[0], 0, sizeof(MD5_HASH_WORDS));
-    memset(&mctx->block[0], 0, sizeof(MD5_BLOCK_WORDS));
-    memset(&mctx->temp[0], 0, MD5_HMAC_DBN_TEMP_SIZE);
-
+    if (hash_final) {
+        /* reset the context after we finish with the hash */
+        mctx->byte_count = 0;
+        memset(&mctx->hash[0], 0, sizeof(MD5_HASH_WORDS));
+        memset(&mctx->block[0], 0, sizeof(MD5_BLOCK_WORDS));
+        memset(&mctx->temp[0], 0, MD5_HMAC_DBN_TEMP_SIZE);
+    } else {
+        mctx->dbn = 0;
+    }
     CRTCL_SECT_HASH_END;
 
 
