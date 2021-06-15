@@ -11,6 +11,21 @@ boot() {
 		sh /etc/rc.local
 	}
 
+	[ -d /sys/firmware/efi ] && {
+		grub-editenv /boot/grub/grubenv set attempt=0
+		if grep -q openwrt_rootfs_alt /proc/cmdline; then
+			if grep -q '^set default="0"' /boot/grub/grub.cfg; then
+				sed -e 's:^set default="0":set default="1":' \
+				    -e 's:^set fallback="1":set fallback="0":' \
+				    -i /boot/grub/grub.cfg
+			fi
+		elif grep -q '^set default="1"' /boot/grub/grub.cfg; then
+			sed -e 's:^set default="1":set default="0":' \
+			    -e 's:^set fallback="0":set fallback="1":' \
+			    -i /boot/grub/grub.cfg
+		fi
+	}
+
 	# set leds to normal state
 	. /etc/diag.sh
 	set_state done
