@@ -657,7 +657,7 @@ define KernelPackage/igb
     CONFIG_IGB_HWMON=y \
     CONFIG_IGB_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igb/igb.ko
-  AUTOLOAD:=$(call AutoLoad,35,igb)
+  AUTOLOAD:=$(call AutoLoad,35,igb,1)
 endef
 
 define KernelPackage/igb/description
