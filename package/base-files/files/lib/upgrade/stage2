@@ -76,40 +76,56 @@ switch_to_ramfs() {
 	}
 }
 
+get_remaining() {
+	local stat
+
+	local proc_pid proc_name proc_state proc_ppid proc_rest
+	read proc_pid proc_name proc_state proc_ppid proc_rest < /proc/$$/stat
+
+	for stat in /proc/[0-9]*/stat; do
+		[ -f "$stat" ] || continue
+
+		local pid name state ppid rest
+		read pid name state ppid rest < $stat
+		name="${name#(}"; name="${name%)}"
+
+		# Skip PID1, our parent, ourself and our children
+		[ $pid -ne 1 -a $pid -ne $proc_ppid -a $pid -ne $$ -a $ppid -ne $$ ] || continue
+
+		local cmdline
+		read cmdline < /proc/$pid/cmdline
+
+		# Skip kernel threads
+		[ -n "$cmdline" ] || continue
+
+		procs="${procs}${pid} ${name}\n"
+	done
+	procs="${procs%??}"
+}
+
 kill_remaining() { # [ <signal> [ <loop> ] ]
+	local remaining pid name
+
 	local loop_limit=10
 
 	local sig="${1:-TERM}"
 	local loop="${2:-0}"
 	local run=true
-	local stat
-	local proc_ppid=$(cut -d' ' -f4  /proc/$$/stat)
 
 	vn "Sending $sig to remaining processes ..."
 
 	while $run; do
 		run=false
-		for stat in /proc/[0-9]*/stat; do
-			[ -f "$stat" ] || continue
-
-			local pid name state ppid rest
-			read pid name state ppid rest < $stat
-			name="${name#(}"; name="${name%)}"
-
-			# Skip PID1, our parent, ourself and our children
-			[ $pid -ne 1 -a $pid -ne $proc_ppid -a $pid -ne $$ -a $ppid -ne $$ ] || continue
-
-			local cmdline
-			read cmdline < /proc/$pid/cmdline
-
-			# Skip kernel threads
-			[ -n "$cmdline" ] || continue
+		echo -e $procs | while read pid name; do
+			[ -d "/proc/$pid" ] || continue
+			remaining="${remaining}${pid} ${name}\n"
 
 			_vn " $name"
 			kill -$sig $pid 2>/dev/null
 
 			[ $loop -eq 1 ] && run=true
 		done
+		procs="${remaining%??}"; remaining=""
 
 		let loop_limit--
 		[ $loop_limit -eq 0 ] && {
@@ -142,6 +158,10 @@ done
 killall -9 telnetd
 killall -9 dropbear
 killall -9 ash
+
+sleep 4
+
+get_remaining
 
 kill_remaining TERM
 sleep 4
