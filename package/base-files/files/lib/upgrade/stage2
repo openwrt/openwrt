@@ -85,9 +85,12 @@ get_remaining() {
 	for stat in /proc/[0-9]*/stat; do
 		[ -f "$stat" ] || continue
 
-		local pid name state ppid rest
-		read pid name state ppid rest < $stat
-		name="${name#(}"; name="${name%)}"
+		local pid name state ppid
+		read stat < $stat
+		pid="${stat%%[[:blank:]]*}"; stat="${stat#*[[:blank:]]}"
+		name="${stat%)*}"; name="${name#(}"; name="${name//[[:blank:]]/_}"; stat="${stat#*)[[:blank:]]}"
+		state="${stat%%[[:blank:]]*}"; stat="${stat#*[[:blank:]]}"
+		ppid="${stat%%[[:blank:]]*}"; stat="${stat#*[[:blank:]]}"
 
 		# Skip PID1, our parent, ourself and our children
 		[ $pid -ne 1 -a $pid -ne $proc_ppid -a $pid -ne $$ -a $ppid -ne $$ ] || continue
