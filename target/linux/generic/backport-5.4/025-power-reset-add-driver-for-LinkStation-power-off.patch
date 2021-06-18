@@ -60,7 +60,7 @@ Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
  obj-$(CONFIG_POWER_RESET_OCELOT_RESET) += ocelot-reset.o
 --- /dev/null
 +++ b/drivers/power/reset/linkstation-poweroff.c
-@@ -0,0 +1,144 @@
+@@ -0,0 +1,136 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * LinkStation power off restart driver
@@ -127,13 +127,6 @@ Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
 +	rc = phy_restore_page(phydev, saved_page, rc);
 +	if (rc < 0)
 +		dev_err(&phydev->mdio.dev, "Write register failed, %d\n", rc);
-+
-+	if (!data) {
-+		/* Slow down the PHY to save energy */
-+		rc= phy_speed_down(phydev, false);
-+		if (rc < 0)
-+			dev_err(&phydev->mdio.dev, "PHY speed down failed, %d\n", rc);
-+	}
 +}
 +
 +static int linkstation_reboot_notifier(struct notifier_block *nb,
@@ -189,7 +182,6 @@ Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
 +	register_reboot_notifier(&linkstation_reboot_nb);
 +	pm_power_off = linkstation_poweroff;
 +
-+	pr_info("LinkStation power off driver registered\n");
 +	return 0;
 +}
 +
