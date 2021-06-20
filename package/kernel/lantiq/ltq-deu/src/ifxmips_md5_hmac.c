@@ -185,6 +185,7 @@ static int md5_hmac_init(struct shash_desc *desc)
 
     mctx->dbn = 0; //dbn workaround
     mctx->started = 0;
+    mctx->byte_count = 0;
 
     return 0;
 }
@@ -338,10 +339,7 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
 
     if (hash_final) {
         /* reset the context after we finish with the hash */
-        mctx->byte_count = 0;
-        memset(&mctx->hash[0], 0, sizeof(MD5_HASH_WORDS));
-        memset(&mctx->block[0], 0, sizeof(MD5_BLOCK_WORDS));
-        memset(&mctx->temp[0], 0, MD5_HMAC_DBN_TEMP_SIZE);
+        md5_hmac_init(desc);
     } else {
         mctx->dbn = 0;
     }
