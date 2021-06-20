@@ -63,7 +63,7 @@ define Device/Default
   SOC := $(DEFAULT_SOC)
   DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 
 define Device/NAND/xway
@@ -102,7 +102,7 @@ define Device/AVM
   KERNEL := kernel-bin | append-dtb | lzma | eva-image
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-avm-fakeroot | \
-	append-rootfs | pad-rootfs | append-metadata | check-size
+	append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 
 ifeq ($(SUBTARGET),ase)
