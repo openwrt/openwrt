@@ -189,6 +189,7 @@ static int sha1_hmac_init(struct shash_desc *desc)
     //printk("debug ln: %d, fn: %s\n", __LINE__, __func__);
     sctx->dbn = 0; //dbn workaround
     sctx->started = 0;
+    sctx->count = 0;
 
     return 0;
 }
@@ -351,8 +352,7 @@ static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fina
     CRTCL_SECT_HASH_END;
 
     if (hash_final) {
-        memset(&sctx->buffer[0], 0, SHA1_HMAC_BLOCK_SIZE);
-        sctx->count = 0;
+        sha1_hmac_init(desc);
     } else {
         sctx->dbn = 0;
     }
