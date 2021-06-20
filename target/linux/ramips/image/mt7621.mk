@@ -289,7 +289,7 @@ define Device/dlink_dir-8xx-a1
   KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr 96
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
-	pad-rootfs | append-metadata | check-size
+	pad-rootfs | check-size | append-metadata
   IMAGE/factory.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
 	check-size
 endef
@@ -440,7 +440,7 @@ define Device/edimax_re23s
   DEVICE_ALT0_MODEL := Gemini RE23S
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN76 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size
+	check-size | append-metadata
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN76 -f 0x70000 -S 0x01100000 | pad-rootfs | \
@@ -824,7 +824,7 @@ define Device/linksys_ea7xxx
 	uboot-envtools
   UBINIZE_OPTS := -E 5
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | check-size | linksys-image type=$$$$(LINKSYS_HWNAME)
 endef
@@ -901,8 +901,8 @@ define Device/MikroTik
   KERNEL_NAME := vmlinuz
   KERNEL := kernel-bin | append-dtb-elf
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | \
-	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | \
-	check-size
+	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | \
+	append-metadata
 endef
 
 define Device/mikrotik_routerboard-750gr3
