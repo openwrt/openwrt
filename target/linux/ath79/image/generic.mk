@@ -1369,6 +1369,15 @@ define Device/jjplus_ja76pf2
 endef
 TARGET_DEVICES += jjplus_ja76pf2
 
+define Device/joyit_jt-or750i
+  SOC := qca9531
+  DEVICE_VENDOR := Joy-IT
+  DEVICE_MODEL := JT-OR750i
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += joyit_jt-or750i
+
 define Device/librerouter_librerouter-v1
   SOC := qca9558
   DEVICE_VENDOR := Librerouter
