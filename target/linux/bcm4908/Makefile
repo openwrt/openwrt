@@ -22,6 +22,7 @@ KERNELNAME:=Image dtbs
 
 DEFAULT_PACKAGES += \
 	bcm4908img \
+	kmod-gpio-button-hotplug \
 	kmod-usb-ohci kmod-usb2 kmod-usb3
 
 $(eval $(call BuildTarget))
