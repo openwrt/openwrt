@@ -1,0 +1,6 @@
+remove_switch() {
+	# delete switch created in 05_set_preinit_iface_realtek again
+	ip link del name switch
+}
+
+boot_hook_add preinit_main remove_switch
