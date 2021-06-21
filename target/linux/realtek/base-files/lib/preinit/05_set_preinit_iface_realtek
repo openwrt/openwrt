@@ -1,0 +1,13 @@
+set_preinit_iface() {
+
+	# Create a switch on lan1 to configure the VLAN 1.
+	# Without configuring VLAN ID 1 RTL8380 - RTL9300 will not
+	# forward packets.
+	ip link add name switch type bridge vlan_filtering 1
+	ip link set dev lan1 master switch
+	ip link set lan1 up
+
+	pi_ifname=switch
+}
+
+boot_hook_add preinit_main set_preinit_iface
