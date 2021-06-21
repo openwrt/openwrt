@@ -72,14 +72,20 @@ preinit_config_board() {
 
 	json_select network
 		json_select "lan"
-			json_get_vars ifname
+			json_get_vars device
+			json_get_values ports ports
 		json_select ..
 	json_select ..
 
-	[ -n "$ifname" ] || return
+	[ -n "$device" -o -n "$ports" ] || return
+
+	# swconfig uses $device and DSA uses ports
+	[ -z "$ports" ] && {
+		ports="$device"
+	}
 
 	# only use the first one
-	ifname=${ifname%% *}
+	ifname=${ports%% *}
 
 	if [ -x /sbin/swconfig ]; then
 		# configure the switch, if present
