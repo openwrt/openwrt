@@ -375,7 +375,7 @@ $(eval $(call KernelPackage,crypto-hw-hifn-795x))
 
 define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
-  DEPENDS:=+kmod-crypto-manager
+  DEPENDS:=@TARGET_x86 +kmod-crypto-manager
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PADLOCK \
