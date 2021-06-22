@@ -1,0 +1,43 @@
+From 04ebdd8574617a8e617516806db429dd2c2caa16 Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Wed, 24 Mar 2021 20:25:14 +0100
+Subject: [PATCH 1/3] net: dsa: lantiq_gswip: Let GSWIP automatically set the
+ xMII clock
+
+The xMII interface clock depends on the PHY interface (MII, RMII, RGMII)
+as well as the current link speed. Explicitly configure the GSWIP to
+automatically select the appropriate xMII interface clock.
+
+This fixes an issue seen by some users where ports using an external
+RMII or RGMII PHY were deaf (no RX or TX traffic could be seen). Most
+likely this is due to an "invalid" xMII clock being selected either by
+the bootloader or hardware-defaults.
+
+Fixes: 14fceff4771e51 ("net: dsa: Add Lantiq / Intel DSA driver for vrx200")
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+ drivers/net/dsa/lantiq_gswip.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -837,10 +837,15 @@ static int gswip_setup(struct dsa_switch
+ 	/* Configure the MDIO Clock 2.5 MHz */
+ 	gswip_mdio_mask(priv, 0xff, 0x09, GSWIP_MDIO_MDC_CFG1);
+
+-	/* Disable the xMII interface and clear it's isolation bit */
+-	for (i = 0; i < priv->hw_info->max_ports; i++)
++	for (i = 0; i < priv->hw_info->max_ports; i++) {
++		/* Disable the xMII interface and clear it's isolation bit */
+ 		gswip_mii_mask_cfg(priv,
+ 				   GSWIP_MII_CFG_EN | GSWIP_MII_CFG_ISOLATE,
+ 				   0, i);
+ 
++		/* Automatically select the xMII interface clock */
++		gswip_mii_mask_cfg(priv, GSWIP_MII_CFG_RATE_MASK,
++				   GSWIP_MII_CFG_RATE_AUTO, i);
++	}
++
+ 	/* enable special tag insertion on cpu port */
+ 	gswip_switch_mask(priv, 0, GSWIP_FDMA_PCTRL_STEN,
+ 			  GSWIP_FDMA_PCTRLp(cpu_port));
