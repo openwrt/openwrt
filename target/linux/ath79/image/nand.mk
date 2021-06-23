@@ -11,6 +11,14 @@ define Build/dongwon-header
 	mv $@.tmp $@
 endef
 
+define Build/meraki-old-nand
+	-$(STAGING_DIR_HOST)/bin/mkmerakifw-old \
+		-B $(1) -s \
+		-i $@ \
+		-o $@.new
+	@mv $@.new $@
+endef
+
 # attention: only zlib compression is allowed for the boot fs
 define Build/zyxel-buildkerneljffs
 	mkdir -p $@.tmp/boot
@@ -259,6 +267,19 @@ define Device/linksys_ea4500-v3
   UBINIZE_OPTS := -E 5
 endef
 TARGET_DEVICES += linksys_ea4500-v3
+
+define Device/meraki_z1
+  SOC = ar9344
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := Z1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-owl-loader
+  KERNEL_SIZE := 8064k
+  BLOCKSIZE := 64k
+  PAGESIZE := 2048
+  KERNEL := kernel-bin | meraki-old-nand z1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += meraki_z1
 
 # fake rootfs is mandatory, pad-offset 64 equals (1 * uimage_header)
 define Device/netgear_ath79_nand
