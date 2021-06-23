@@ -28,29 +28,41 @@ export UMOUNT_ETCBACKUP_DIR=0
 # parse options
 while [ -n "$1" ]; do
 	case "$1" in
-		-i) export INTERACTIVE=1;;
-		-v) export VERBOSE="$(($VERBOSE + 1))";;
-		-q) export VERBOSE="$(($VERBOSE - 1))";;
-		-n) export SAVE_CONFIG=0;;
-		-c) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/etc;;
-		-o) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/;;
-		-p) export SAVE_PARTITIONS=0;;
-		-k) export SAVE_INSTALLED_PKGS=1;;
-		-u) export SKIP_UNCHANGED=1;;
-		-b|--create-backup) export CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
-		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
-		-l|--list-backup) export CONF_BACKUP_LIST=1;;
-		-f) export CONF_IMAGE="$2"; shift;;
-		-F|--force) export FORCE=1;;
-		-T|--test) export TEST=1;;
-		-h|--help) export HELP=1; break;;
-		-*)
-			echo "Invalid option: $1" >&2
-			exit 1
+	-i) export INTERACTIVE=1 ;;
+	-v) export VERBOSE="$((VERBOSE + 1))" ;;
+	-q) export VERBOSE="$((VERBOSE - 1))" ;;
+	-n) export SAVE_CONFIG=0 ;;
+	-c) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/etc ;;
+	-o) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/ ;;
+	-p) export SAVE_PARTITIONS=0 ;;
+	-k) export SAVE_INSTALLED_PKGS=1 ;;
+	-u) export SKIP_UNCHANGED=1 ;;
+	-b | --create-backup)
+		export CONF_BACKUP="$2" NEED_IMAGE=1
+		shift
 		;;
-		*) break;;
+	-r | --restore-backup)
+		export CONF_RESTORE="$2" NEED_IMAGE=1
+		shift
+		;;
+	-l | --list-backup) export CONF_BACKUP_LIST=1 ;;
+	-f)
+		export CONF_IMAGE="$2"
+		shift
+		;;
+	-F | --force) export FORCE=1 ;;
+	-T | --test) export TEST=1 ;;
+	-h | --help)
+		export HELP=1
+		break
+		;;
+	-*)
+		echo "Invalid option: $1" >&2
+		exit 1
+		;;
+	*) break ;;
 	esac
-	shift;
+	shift
 done
 
 export CONFFILES=/tmp/sysupgrade.conffiles
@@ -61,7 +73,7 @@ export INSTALLED_PACKAGES=${ETCBACKUP_DIR}/installed_packages.txt
 IMAGE="$1"
 
 [ -z "$IMAGE" -a -z "$NEED_IMAGE" -a $CONF_BACKUP_LIST -eq 0 -o $HELP -gt 0 ] && {
-	cat <<EOF
+	cat << EOF
 Usage: $0 [<upgrade-option>...] <image file or URL>
        $0 [-q] [-i] [-c] [-u] [-o] [-k] <backup-command> <file>
 
@@ -102,7 +114,7 @@ EOF
 }
 
 [ -n "$IMAGE" -a -n "$NEED_IMAGE" ] && {
-	cat <<-EOF
+	cat <<- EOF
 		-b|--create-backup and -r|--restore-backup do not perform a firmware upgrade.
 		Do not specify both -b|-r and a firmware image.
 	EOF
@@ -111,7 +123,6 @@ EOF
 
 # prevent messages from clobbering the tarball when using stdout
 [ "$CONF_BACKUP" = "-" ] && export VERBOSE=0
-
 
 list_conffiles() {
 	awk '
@@ -135,15 +146,17 @@ list_static_conffiles() {
 	local filter=$1
 
 	find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
-		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
-		\( -type f -o -type l \) $filter 2>/dev/null
+		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2> /dev/null) \
+		\( -type f -o -type l \) $filter 2> /dev/null
 }
 
 add_conffiles() {
 	local file="$1"
 
-	( list_static_conffiles "$find_filter"; list_changed_conffiles ) |
-		sort -u > "$file"
+	(
+		list_static_conffiles "$find_filter"
+		list_changed_conffiles
+	) | sort -u > "$file"
 	return 0
 }
 
@@ -175,21 +188,23 @@ add_overlayfiles() {
 			find /usr/lib/opkg/info -type f -name "*.control" -exec sed \
 				-ne '/^Alternatives/{s/^Alternatives: //;s/, /\n/g;p}' {} \; |
 				cut -f2 -d:
-		} |  grep -v -x -F -f $conffiles |
-		     grep -v -x -F -f $keepfiles | sort -u > "$packagesfiles"
+		} | grep -v -x -F -f $conffiles |
+			grep -v -x -F -f $keepfiles | sort -u > "$packagesfiles"
 		rm -f "$keepfiles" "$conffiles"
 	fi
 
 	# busybox grep bug when file is empty
 	[ -s "$packagesfiles" ] || echo > $packagesfiles
 
-	( cd /overlay/upper/; find .$SAVE_OVERLAY_PATH \( -type f -o -type l \) $find_filter | sed \
-		-e 's,^\.,,' \
-		-e '\,^/etc/board.json$,d' \
-		-e '\,/[^/]*-opkg$,d' \
-		-e '\,^/etc/urandom.seed$,d' \
-		-e "\,^$INSTALLED_PACKAGES$,d" \
-		-e '\,^/usr/lib/opkg/.*,d' \
+	(
+		cd /overlay/upper/
+		find .$SAVE_OVERLAY_PATH \( -type f -o -type l \) $find_filter | sed \
+			-e 's,^\.,,' \
+			-e '\,^/etc/board.json$,d' \
+			-e '\,/[^/]*-opkg$,d' \
+			-e '\,^/etc/urandom.seed$,d' \
+			-e "\,^$INSTALLED_PACKAGES$,d" \
+			-e '\,^/usr/lib/opkg/.*,d'
 	) | grep -v -x -F -f $packagesfiles > "$file"
 
 	rm -f "$packagesfiles"
@@ -238,9 +253,9 @@ do_save_conffiles() {
 		mkdir -p "$RAMFS/upper" "$RAMFS/work"
 		mount -t overlay overlay -o lowerdir=$ETCBACKUP_DIR,upperdir=$RAMFS/upper,workdir=$RAMFS/work $ETCBACKUP_DIR &&
 			UMOUNT_ETCBACKUP_DIR=1 || {
-				echo "Cannot mount '$ETCBACKUP_DIR' as tmpfs to avoid touching disk while saving the list of installed packages." >&2
-				ask_bool 0 "Abort" && exit
-			}
+			echo "Cannot mount '$ETCBACKUP_DIR' as tmpfs to avoid touching disk while saving the list of installed packages." >&2
+			ask_bool 0 "Abort" && exit
+		}
 
 		# Format: pkg-name<TAB>{rom,overlay,unkown}
 		# rom is used for pkgs in /rom, even if updated later
@@ -253,7 +268,7 @@ do_save_conffiles() {
 
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
-	tar c${TAR_V}zf "$conf_tar" -T "$CONFFILES" 2>/dev/null
+	tar c${TAR_V}zf "$conf_tar" -T "$CONFFILES" 2> /dev/null
 	if [ "$?" -ne 0 ]; then
 		echo "Failed to create the configuration backup."
 		rm -f "$conf_tar"
@@ -292,32 +307,32 @@ if [ -n "$CONF_RESTORE" ]; then
 	exit $?
 fi
 
-type platform_check_image >/dev/null 2>/dev/null || {
+type platform_check_image > /dev/null 2> /dev/null || {
 	echo "Firmware upgrade is not implemented for this platform." >&2
 	exit 1
 }
 
 case "$IMAGE" in
-	http://*|\
+http://* | \
 	https://*)
-		wget -O/tmp/sysupgrade.img "$IMAGE" || exit 1
-		IMAGE=/tmp/sysupgrade.img
-		;;
+	wget -O/tmp/sysupgrade.img "$IMAGE" || exit 1
+	IMAGE=/tmp/sysupgrade.img
+	;;
 esac
 
 IMAGE="$(readlink -f "$IMAGE")"
 
 case "$IMAGE" in
-	'')
-		echo "Image file not found." >&2
-		exit 1
-		;;
-	/tmp/*)	;;
-	*)
-		v "Image not in /tmp, copying..."
-		cp -f "$IMAGE" /tmp/sysupgrade.img
-		IMAGE=/tmp/sysupgrade.img
-		;;
+'')
+	echo "Image file not found." >&2
+	exit 1
+	;;
+/tmp/*) ;;
+*)
+	v "Image not in /tmp, copying..."
+	cp -f "$IMAGE" /tmp/sysupgrade.img
+	IMAGE=/tmp/sysupgrade.img
+	;;
 esac
 
 json_load "$(/usr/libexec/validate_firmware_image "$IMAGE")" || {
@@ -336,11 +351,11 @@ json_get_var valid "valid"
 
 if [ -n "$CONF_IMAGE" ]; then
 	case "$(get_magic_word $CONF_IMAGE cat)" in
-		# .gz files
-		1f8b) ;;
-		*)
-			echo "Invalid config file. Please use only .tar.gz files" >&2
-			exit 1
+	# .gz files
+	1f8b) ;;
+	*)
+		echo "Invalid config file. Please use only .tar.gz files" >&2
+		exit 1
 		;;
 	esac
 	get_image "$CONF_IMAGE" "cat" > "$CONF_TAR"
@@ -363,7 +378,7 @@ v "Commencing upgrade. Closing all shell sessions."
 COMMAND='/lib/upgrade/do_stage2'
 
 if [ -n "$FAILSAFE" ]; then
-	printf '%s\x00%s\x00%s' "$RAM_ROOT" "$IMAGE" "$COMMAND" >/tmp/sysupgrade
+	printf '%s\x00%s\x00%s' "$RAM_ROOT" "$IMAGE" "$COMMAND" > /tmp/sysupgrade
 	lock -u /tmp/.failsafe
 else
 	json_init

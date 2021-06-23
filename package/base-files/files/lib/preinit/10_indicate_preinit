@@ -47,20 +47,20 @@ preinit_config_switch() {
 		for role in $roles; do
 			json_select "$role"
 			json_get_vars ports device
-			json_select ..
+			json_select .. # roles
 
 			if [ "$device" = "$lan_if" ]; then
 				swconfig dev $name vlan $role set ports "$ports"
 			fi
 		done
 
-		json_select ..
+		json_select .. # $name
 	fi
 
 	swconfig dev $name set apply
 
-	json_select ..
-	json_select ..
+	json_select .. # switch
+	json_select .. # root
 }
 
 preinit_config_board() {
@@ -74,11 +74,10 @@ preinit_config_board() {
 	json_load "$(cat /tmp/board.json)"
 
 	json_select network
-		json_select "lan"
-			json_get_vars device
-			json_get_values ports ports
-		json_select ..
-	json_select ..
+	json_select "lan"
+	json_get_vars device
+	json_get_values ports ports
+	json_select .. # network
 
 	[ -n "$device" -o -n "$ports" ] || return
 

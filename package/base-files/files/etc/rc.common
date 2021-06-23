@@ -44,11 +44,11 @@ disable() {
 enable() {
 	err=1
 	name="$(basename "${initscript}")"
-	[ "$START" ] && \
-		ln -sf "../init.d/$name" "$IPKG_INSTROOT/etc/rc.d/S${START}${name##S[0-9][0-9]}" && \
+	[ "$START" ] &&
+		ln -sf "../init.d/$name" "$IPKG_INSTROOT/etc/rc.d/S${START}${name##S[0-9][0-9]}" &&
 		err=0
-	[ "$STOP" ] && \
-		ln -sf "../init.d/$name" "$IPKG_INSTROOT/etc/rc.d/K${STOP}${name##K[0-9][0-9]}" && \
+	[ "$STOP" ] &&
+		ln -sf "../init.d/$name" "$IPKG_INSTROOT/etc/rc.d/K${STOP}${name##K[0-9][0-9]}" &&
 		err=0
 	return $err
 }
@@ -79,7 +79,7 @@ extra_command() {
 }
 
 help() {
-	cat <<EOF
+	cat << EOF
 Syntax: $initscript [command]
 
 Available commands:
@@ -139,7 +139,7 @@ extra_command "enabled" "Check if service is started on boot"
 
 	start() {
 		rc_procd start_service "$@"
-		if eval "type service_started" 2>/dev/null >/dev/null; then
+		if eval "type service_started" 2> /dev/null > /dev/null; then
 			service_started
 		fi
 	}
@@ -153,13 +153,13 @@ extra_command "enabled" "Check if service is started on boot"
 		procd_lock
 		stop_service "$@"
 		procd_kill "$(basename ${basescript:-$initscript})" "$1"
-		if eval "type service_stopped" 2>/dev/null >/dev/null; then
+		if eval "type service_stopped" 2> /dev/null > /dev/null; then
 			service_stopped
 		fi
 	}
 
 	reload() {
-		if eval "type reload_service" 2>/dev/null >/dev/null; then
+		if eval "type reload_service" 2> /dev/null > /dev/null; then
 			procd_lock
 			reload_service "$@"
 		else
@@ -172,7 +172,7 @@ extra_command "enabled" "Check if service is started on boot"
 	}
 
 	status() {
-		if eval "type status_service" 2>/dev/null >/dev/null; then
+		if eval "type status_service" 2> /dev/null > /dev/null; then
 			status_service "$@"
 		else
 			_procd_status "$(basename ${basescript:-$initscript})" "$1"

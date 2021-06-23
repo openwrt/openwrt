@@ -10,17 +10,16 @@ export INTERACTIVE=0
 export VERBOSE=1
 export CONFFILES=/tmp/sysupgrade.conffiles
 
-RAMFS_COPY_BIN=		# extra programs for temporary ramfs root
-RAMFS_COPY_DATA=	# extra data files
+RAMFS_COPY_BIN=  # extra programs for temporary ramfs root
+RAMFS_COPY_DATA= # extra data files
 
 include /lib/upgrade
 
-
 supivot() { # <new_root> <old_root>
 	/bin/mount | grep "on $1 type" 2>&- 1>&- || /bin/mount -o bind $1 $1
-	mkdir -p $1$2 $1/proc $1/sys $1/dev $1/tmp $1/overlay && \
-	/bin/mount -o noatime,move /proc $1/proc && \
-	pivot_root $1 $1$2 || {
+	mkdir -p $1$2 $1/proc $1/sys $1/dev $1/tmp $1/overlay &&
+		/bin/mount -o noatime,move /proc $1/proc &&
+		pivot_root $1 $1$2 || {
 		/bin/umount -l $1 $1
 		return 1
 	}
@@ -37,19 +36,18 @@ switch_to_ramfs() {
 	RAMFS_COPY_LVM="$(command -v lvm)"
 
 	for binary in \
-		/bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount	\
-		pivot_root mount_root reboot sync kill sleep		\
-		md5sum hexdump cat zcat dd tar				\
+		/bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount \
+		pivot_root mount_root reboot sync kill sleep \
+		md5sum hexdump cat zcat dd tar \
 		ls basename find cp mv rm mkdir rmdir mknod touch chmod \
-		'[' printf wc grep awk sed cut				\
-		mtd partx losetup mkfs.ext4 nandwrite flash_erase	\
-		ubiupdatevol ubiattach ubiblock ubiformat		\
-		ubidetach ubirsvol ubirmvol ubimkvol			\
-		snapshot snapshot_tool date logger			\
-		$RAMFS_COPY_LOSETUP $RAMFS_COPY_LVM			\
-		$RAMFS_COPY_BIN
-	do
-		local file="$(command -v "$binary" 2>/dev/null)"
+		'[' printf wc grep awk sed cut \
+		mtd partx losetup mkfs.ext4 nandwrite flash_erase \
+		ubiupdatevol ubiattach ubiblock ubiformat \
+		ubidetach ubirsvol ubirmvol ubimkvol \
+		snapshot snapshot_tool date logger \
+		$RAMFS_COPY_LOSETUP $RAMFS_COPY_LVM \
+		$RAMFS_COPY_BIN; do
+		local file="$(command -v "$binary" 2> /dev/null)"
 		[ -n "$file" ] && install_bin "$file"
 	done
 	install_file /etc/resolv.conf /lib/*.sh /lib/functions/*.sh /lib/upgrade/*.sh /lib/upgrade/do_stage2 /usr/share/libubox/jshn.sh $RAMFS_COPY_DATA
@@ -83,7 +81,7 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 	local loop="${2:-0}"
 	local run=true
 	local stat
-	local proc_ppid=$(cut -d' ' -f4  /proc/$$/stat)
+	local proc_ppid=$(cut -d' ' -f4 /proc/$$/stat)
 
 	v "Sending $sig to remaining processes ..."
 
@@ -94,7 +92,8 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 
 			local pid name state ppid rest
 			read pid name state ppid rest < $stat
-			name="${name#(}"; name="${name%)}"
+			name="${name#(}"
+			name="${name%)}"
 
 			# Skip PID1, our parent, ourself and our children
 			[ $pid -ne 1 -a $pid -ne $proc_ppid -a $pid -ne $$ -a $ppid -ne $$ ] || continue
@@ -106,7 +105,7 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 			[ -n "$cmdline" ] || continue
 
 			v "Sending signal $sig to $name ($pid)"
-			kill -$sig $pid 2>/dev/null
+			kill -$sig $pid 2> /dev/null
 
 			[ $loop -eq 1 ] && run=true
 		done
@@ -123,23 +122,22 @@ indicate_upgrade
 
 while read -r a b c; do
 	case "$a" in
-		MemT*) mem="$b" ;; esac
+	MemT*) mem="$b" ;; esac
 done < /proc/meminfo
 
-[ "$mem" -gt 32768 ] && \
-	skip_services="dnsmasq log network"
+[ "$mem" -gt 32768 ] && skip_services="dnsmasq log network"
 for service in /etc/init.d/*; do
 	service=${service##*/}
 
 	case " $skip_services " in
-		*" $service "*) continue ;; esac
+	*" $service "*) continue ;; esac
 
-	ubus call service delete '{ "name": "'"$service"'" }' 2>/dev/null
+	ubus call service delete '{ "name": "'"$service"'" }' 2> /dev/null
 done
 
-killall -9 telnetd 2>/dev/null
-killall -9 dropbear 2>/dev/null
-killall -9 ash 2>/dev/null
+killall -9 telnetd 2> /dev/null
+killall -9 dropbear 2> /dev/null
+killall -9 ash 2> /dev/null
 
 kill_remaining TERM
 sleep 4
@@ -149,7 +147,7 @@ sleep 6
 
 echo 3 > /proc/sys/vm/drop_caches
 
-if [ -n "$IMAGE" ] && type 'platform_pre_upgrade' >/dev/null 2>/dev/null; then
+if [ -n "$IMAGE" ] && type 'platform_pre_upgrade' > /dev/null 2>&1; then
 	platform_pre_upgrade "$IMAGE"
 fi
 

@@ -8,7 +8,8 @@ boot_hook_splice_start() {
 boot_hook_splice_finish() {
 	local hook
 	for hook in $PI_STACK_LIST; do
-		local v; eval "v=\${${hook}_splice:+\$${hook}_splice }$hook"
+		local v
+		eval "v=\${${hook}_splice:+\$${hook}_splice }$hook"
 		export -n "${hook}=${v% }"
 		export -n "${hook}_splice="
 	done
@@ -26,7 +27,8 @@ boot_hook_add() {
 	local func="${2}"
 
 	[ -n "$func" ] && {
-		local v; eval "v=\$$hook"
+		local v
+		eval "v=\$$hook"
 		export -n "$hook=${v:+$v }$func"
 	}
 }
@@ -35,12 +37,13 @@ boot_hook_shift() {
 	local hook="${1}_hook"
 	local rvar="${2}"
 
-	local v; eval "v=\$$hook"
+	local v
+	eval "v=\$$hook"
 	[ -n "$v" ] && {
 		local first="${v%% *}"
 
-		[ "$v" != "${v#* }" ] && \
-			export -n "$hook=${v#* }" || \
+		[ "$v" != "${v#* }" ] &&
+			export -n "$hook=${v#* }" ||
 			export -n "$hook="
 
 		export -n "$rvar=$first"
@@ -55,7 +58,8 @@ boot_run_hook() {
 	local func
 
 	while boot_hook_shift "$hook" func; do
-		local ran; eval "ran=\$PI_RAN_$func"
+		local ran
+		eval "ran=\$PI_RAN_$func"
 		[ -n "$ran" ] || {
 			export -n "PI_RAN_$func=1"
 			$func "$1" "$2"
@@ -64,8 +68,8 @@ boot_run_hook() {
 }
 
 pivot() { # <new_root> <old_root>
-	/bin/mount -o noatime,move /proc $1/proc && \
-	pivot_root $1 $1$2 && {
+	/bin/mount -o noatime,move /proc $1/proc &&
+		pivot_root $1 $1$2 && {
 		/bin/mount -o noatime,move $2/dev /dev
 		/bin/mount -o noatime,move $2/tmp /tmp
 		/bin/mount -o noatime,move $2/sys /sys 2>&-

@@ -1,7 +1,8 @@
 . /lib/functions.sh
 
 migrate_led_sysfs() {
-	local cfg="$1"; shift
+	local cfg="$1"
+	shift
 	local tuples="$@"
 	local sysfs
 	local name
@@ -23,11 +24,12 @@ migrate_led_sysfs() {
 		uci set system.${cfg}.sysfs="${new_sysfs}"
 
 		logger -t led-migration "sysfs option of LED \"${name}\" updated to ${new_sysfs}"
-	done;
+	done
 }
 
 remove_devicename_led_sysfs() {
-	local cfg="$1"; shift
+	local cfg="$1"
+	shift
 	local exceptions="$@"
 	local sysfs
 	local name

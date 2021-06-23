@@ -49,18 +49,18 @@ FWTOOL_DEVICE_MATCH=$?
 
 json_set_namespace validate_firmware_image old_ns
 json_init
-	json_add_object "tests"
-		json_add_boolean fwtool_signature "$(err_to_bool $FWTOOL_SIGNATURE)"
-		json_add_boolean fwtool_device_match "$(err_to_bool $FWTOOL_DEVICE_MATCH)"
+json_add_object "tests"
+json_add_boolean fwtool_signature "$(err_to_bool $FWTOOL_SIGNATURE)"
+json_add_boolean fwtool_device_match "$(err_to_bool $FWTOOL_DEVICE_MATCH)"
 
-		# Call platform_check_image() here so it can add its test
-		# results and still mark image properly.
-		json_set_namespace $old_ns
-		platform_check_image "$1" >&2 || notify_firmware_invalid
-		json_set_namespace validate_firmware_image old_ns
-	json_close_object
-	json_add_boolean valid "$VALID"
-	json_add_boolean forceable "$FORCEABLE"
-	json_add_boolean allow_backup "$ALLOW_BACKUP"
+# Call platform_check_image() here so it can add its test
+# results and still mark image properly.
+json_set_namespace $old_ns
+platform_check_image "$1" >&2 || notify_firmware_invalid
+json_set_namespace validate_firmware_image old_ns
+json_close_object
+json_add_boolean valid "$VALID"
+json_add_boolean forceable "$FORCEABLE"
+json_add_boolean allow_backup "$ALLOW_BACKUP"
 json_dump -i
 json_set_namespace $old_ns

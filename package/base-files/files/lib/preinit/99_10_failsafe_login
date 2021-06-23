@@ -6,7 +6,7 @@ failsafe_shell() {
 	[ -n "$console" ] || console=console
 	[ -c "/dev/$console" ] || return 0
 	while true; do
-		ash --login <"/dev/$console" >"/dev/$console" 2>"/dev/$console"
+		ash --login < "/dev/$console" > "/dev/$console" 2> "/dev/$console"
 		sleep 1
 	done &
 }

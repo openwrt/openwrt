@@ -1,7 +1,7 @@
 # Copyright (C) 2006-2010 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 
-fs_wait_for_key () {
+fs_wait_for_key() {
 	local timeout=$3
 	local timer
 	local do_keypress
@@ -32,8 +32,8 @@ fs_wait_for_key () {
 		while [ $timer -gt 0 ]; do
 			pi_failsafe_net_message=true \
 				preinit_net_echo "Please press button now to enter failsafe"
-			echo "$timer" >$keypress_sec
-			timer=$(($timer - 1))
+			echo "$timer" > $keypress_sec
+			timer=$((timer - 1))
 			sleep 1
 		done
 		lock -u $keypress_wait
@@ -55,13 +55,13 @@ fs_wait_for_key () {
 				read -t "$timer" do_keypress
 				case "$do_keypress" in
 				$1)
-					echo "true" >$keypress_true
+					echo "true" > $keypress_true
 					;;
 				1 | 2 | 3 | 4)
-					echo "$do_keypress" >/tmp/debug_level
+					echo "$do_keypress" > /tmp/debug_level
 					;;
 				*)
-					continue;
+					continue
 					;;
 				esac
 				lock -u $keypress_wait

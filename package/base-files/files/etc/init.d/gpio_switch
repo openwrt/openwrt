@@ -5,9 +5,7 @@ START=94
 STOP=10
 USE_PROCD=1
 
-
-load_gpio_switch()
-{
+load_gpio_switch() {
 	local name
 	local gpio_pin
 	local value
@@ -27,7 +25,7 @@ load_gpio_switch()
 
 		# export GPIO pin for access
 		[ -d "$gpio_path" ] || {
-			echo "$gpio_pin" >/sys/class/gpio/export
+			echo "$gpio_pin" > /sys/class/gpio/export
 			# we need to wait a bit until the GPIO appears
 			[ -d "$gpio_path" ] || sleep 1
 		}
@@ -37,28 +35,26 @@ load_gpio_switch()
 		if [ -e "${gpio_path}/direction" ]; then
 			# set the pin to output with high or low pin value
 			{ [ "$value" = "0" ] && echo "low" || echo "high"; } \
-				>"$gpio_path/direction"
+				> "$gpio_path/direction"
 		else
 			{ [ "$value" = "0" ] && echo "0" || echo "1"; } \
-				>"$gpio_path/value"
+				> "$gpio_path/value"
 		fi
 	else
 		gpio_path="/sys/class/gpio/${gpio_pin}"
 
 		[ -d "$gpio_path" ] && {
 			{ [ "$value" = "0" ] && echo "0" || echo "1"; } \
-				>"$gpio_path/value"
+				> "$gpio_path/value"
 		}
 	fi
 }
 
-service_triggers()
-{
+service_triggers() {
 	procd_add_reload_trigger "system"
 }
 
-start_service()
-{
+start_service() {
 	[ -e /sys/class/gpio/ ] && {
 		config_load system
 		config_foreach load_gpio_switch gpio_switch

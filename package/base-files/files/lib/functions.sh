@@ -2,8 +2,7 @@
 # Copyright (C) 2006 Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
 # Copyright (C) 2010 Vertical Communications
 
-
-debug () {
+debug() {
 	${DEBUG:-:} "$@"
 }
 
@@ -65,7 +64,7 @@ package() {
 	return 0
 }
 
-config () {
+config() {
 	local cfgtype="$1"
 	local name="$2"
 
@@ -77,8 +76,9 @@ config () {
 	[ -n "$NO_CALLBACK" ] || config_cb "$cfgtype" "$name"
 }
 
-option () {
-	local varname="$1"; shift
+option() {
+	local varname="$1"
+	shift
 	local value="$*"
 
 	config_set "$CONFIG_SECTION" "${varname}" "${value}"
@@ -86,7 +86,8 @@ option () {
 }
 
 list() {
-	local varname="$1"; shift
+	local varname="$1"
+	shift
 	local value="$*"
 	local len
 
@@ -107,12 +108,12 @@ config_unset() {
 # config_get <section> <option>
 config_get() {
 	case "$2${3:-$1}" in
-		*[!A-Za-z0-9_]*) : ;;
-		*)
-			case "$3" in
-				"") eval echo "\"\${CONFIG_${1}_${2}:-\${4}}\"";;
-				*)  eval export ${NO_EXPORT:+-n} -- "${1}=\${CONFIG_${2}_${3}:-\${4}}";;
-			esac
+	*[!A-Za-z0-9_]*) : ;;
+	*)
+		case "$3" in
+		"") eval echo "\"\${CONFIG_${1}_${2}:-\${4}}\"" ;;
+		*) eval export ${NO_EXPORT:+-n} -- "${1}=\${CONFIG_${2}_${3}:-\${4}}" ;;
+		esac
 		;;
 	esac
 }
@@ -121,9 +122,9 @@ config_get() {
 get_bool() {
 	local _tmp="$1"
 	case "$_tmp" in
-		1|on|true|yes|enabled) _tmp=1;;
-		0|off|false|no|disabled) _tmp=0;;
-		*) _tmp="$2";;
+	1 | on | true | yes | enabled) _tmp=1 ;;
+	0 | off | false | no | disabled) _tmp=0 ;;
+	*) _tmp="$2" ;;
 	esac
 	echo -n "$_tmp"
 }
@@ -161,9 +162,12 @@ config_foreach() {
 
 config_list_foreach() {
 	[ "$#" -ge 3 ] || return 0
-	local section="$1"; shift
-	local option="$1"; shift
-	local function="$1"; shift
+	local section="$1"
+	shift
+	local option="$1"
+	shift
+	local function="$1"
+	shift
 	local val
 	local len
 	local c=1
@@ -183,7 +187,7 @@ default_prerm() {
 	local ret=0
 
 	if [ -f "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" ]; then
-		( . "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" )
+		(. "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg")
 		ret=$?
 	fi
 
@@ -204,7 +208,7 @@ default_prerm() {
 
 add_group_and_user() {
 	local pkgname="$1"
-	local rusers="$(sed -ne 's/^Require-User: *//p' $root/usr/lib/opkg/info/${pkgname}.control 2>/dev/null)"
+	local rusers="$(sed -ne 's/^Require-User: *//p' $root/usr/lib/opkg/info/${pkgname}.control 2> /dev/null)"
 
 	if [ -n "$rusers" ]; then
 		local tuple oIFS="$IFS"
@@ -212,10 +216,16 @@ add_group_and_user() {
 			local uid gid uname gname
 
 			IFS=":"
-			set -- $tuple; uname="$1"; gname="$2"
+			set -- $tuple
+			uname="$1"
+			gname="$2"
 			IFS="="
-			set -- $uname; uname="$1"; uid="$2"
-			set -- $gname; gname="$1"; gid="$2"
+			set -- $uname
+			uname="$1"
+			uid="$2"
+			set -- $gname
+			gname="$1"
+			gid="$2"
 			IFS="$oIFS"
 
 			if [ -n "$gname" ] && [ -n "$gid" ]; then
@@ -246,7 +256,7 @@ default_postinst() {
 	add_group_and_user "${pkgname}"
 
 	if [ -f "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" ]; then
-		( . "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" )
+		(. "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg")
 		ret=$?
 	fi
 
@@ -267,7 +277,7 @@ default_postinst() {
 		if grep -m1 -q -s "^/etc/uci-defaults/" "$filelist"; then
 			[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
 			for i in $(grep -s "^/etc/uci-defaults/" "$filelist"); do
-				( [ -f "$i" ] && cd "$(dirname $i)" && . "$i" ) && rm -f "$i"
+				([ -f "$i" ] && cd "$(dirname $i)" && . "$i") && rm -f "$i"
 			done
 			uci commit
 		fi
@@ -293,7 +303,7 @@ default_postinst() {
 include() {
 	local file
 
-	for file in $(ls $1/*.sh 2>/dev/null); do
+	for file in $(ls $1/*.sh 2> /dev/null); do
 		. $file
 	done
 }

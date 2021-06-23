@@ -40,19 +40,20 @@ service() {
 	local start
 	ssd="${SERVICE_DEBUG:+echo }start-stop-daemon${SERVICE_QUIET:+ -q}"
 	case "$1" in
-	  -C)
+	-C)
 		ssd="$ssd -K -t"
 		;;
-	  -S)
+	-S)
 		ssd="$ssd -S${SERVICE_DAEMONIZE:+ -b}${SERVICE_WRITE_PID:+ -m}"
 		start=1
 		;;
-	  -K)
+	-K)
 		ssd="$ssd -K${SERVICE_SIG:+ -s $SERVICE_SIG}"
 		;;
-	  *)
+	*)
 		echo "service: unknown ACTION '$1'" 1>&2
 		return 1
+		;;
 	esac
 	shift
 	exec="$1"
@@ -65,8 +66,8 @@ service() {
 		return 1
 	}
 	name="${SERVICE_NAME:-${exec##*/}}"
-	[ -z "$SERVICE_USE_PID$SERVICE_WRITE_PID$SERVICE_PID_FILE" ] \
-		|| ssd="$ssd -p ${SERVICE_PID_FILE:-/var/run/$name.pid}"
+	[ -z "$SERVICE_USE_PID$SERVICE_WRITE_PID$SERVICE_PID_FILE" ] ||
+		ssd="$ssd -p ${SERVICE_PID_FILE:-/var/run/$name.pid}"
 	[ -z "$SERVICE_MATCH_NAME" ] || ssd="$ssd -n $name"
 	ssd="$ssd${SERVICE_UID:+ -c $SERVICE_UID${SERVICE_GID:+:$SERVICE_GID}}"
 	[ -z "$SERVICE_MATCH_EXEC$start" ] || ssd="$ssd -x $exec"

@@ -9,16 +9,16 @@ __network_ifstatus() {
 	[ -z "$__NETWORK_CACHE" ] && {
 		__tmp="$(ubus call network.interface dump 2>&1)"
 		case "$?" in
-			4) : ;;
-			0) export __NETWORK_CACHE="$__tmp" ;;
-			*) echo "$__tmp" >&2 ;;
+		4) : ;;
+		0) export __NETWORK_CACHE="$__tmp" ;;
+		*) echo "$__tmp" >&2 ;;
 		esac
 	}
 
 	__tmp="$(jsonfilter ${4:+-F "$4"} ${5:+-l "$5"} -s "${__NETWORK_CACHE:-{}}" -e "$1=@.interface${2:+[@.interface='$2']}$3")"
 
-	[ -z "$__tmp" ] && \
-		unset "$1" && \
+	[ -z "$__tmp" ] &&
+		unset "$1" &&
 		return 1
 
 	eval "$__tmp"
@@ -28,15 +28,15 @@ __network_ifstatus() {
 # 1: destination variable
 # 2: interface
 network_get_ipaddr() {
-	__network_ifstatus "$1" "$2" "['ipv4-address'][0].address";
+	__network_ifstatus "$1" "$2" "['ipv4-address'][0].address"
 }
 
 # determine first IPv6 address of given logical interface
 # 1: destination variable
 # 2: interface
 network_get_ipaddr6() {
-	__network_ifstatus "$1" "$2" "['ipv6-address'][0].address" || \
-		__network_ifstatus "$1" "$2" "['ipv6-prefix-assignment'][0]['local-address'].address" || \
+	__network_ifstatus "$1" "$2" "['ipv6-address'][0].address" ||
+		__network_ifstatus "$1" "$2" "['ipv6-prefix-assignment'][0]['local-address'].address" ||
 		return 1
 }
 
@@ -56,8 +56,9 @@ network_get_subnet6() {
 	if network_get_subnets6 __nets "$2"; then
 		# Attempt to return first non-fe80::/10, non-fc::/7 range
 		for __addr in $__nets; do
-			case "$__addr" in fe[8ab]?:*|f[cd]??:*)
+			case "$__addr" in fe[8ab]?:* | f[cd]??:*)
 				continue
+				;;
 			esac
 			export "$1=$__addr"
 			return 0
@@ -67,6 +68,7 @@ network_get_subnet6() {
 		for __addr in $__nets; do
 			case "$__addr" in fe[8ab]?:*)
 				continue
+				;;
 			esac
 			export "$1=$__addr"
 			return 0
@@ -163,8 +165,8 @@ network_get_subnets6() {
 		done
 	fi
 
-	if __network_ifstatus "__addr" "$2" "['ipv6-prefix-assignment'][*]['local-address'].address" && \
-	   __network_ifstatus "__mask" "$2" "['ipv6-prefix-assignment'][*].mask"; then
+	if __network_ifstatus "__addr" "$2" "['ipv6-prefix-assignment'][*]['local-address'].address" &&
+		__network_ifstatus "__mask" "$2" "['ipv6-prefix-assignment'][*].mask"; then
 		for __addr in $__addr; do
 			__list="${__list:+$__list }${__addr}/${__mask%% *}"
 			__mask="${__mask#* }"
@@ -192,10 +194,10 @@ network_get_prefixes6() {
 # 2: interface
 # 3: consider inactive gateway if "true" (optional)
 network_get_gateway() {
-	__network_ifstatus "$1" "$2" ".route[@.target='0.0.0.0' && !@.table].nexthop" "" 1 && \
+	__network_ifstatus "$1" "$2" ".route[@.target='0.0.0.0' && !@.table].nexthop" "" 1 &&
 		return 0
 
-	[ "$3" = 1 -o "$3" = "true" ] && \
+	[ "$3" = 1 -o "$3" = "true" ] &&
 		__network_ifstatus "$1" "$2" ".inactive.route[@.target='0.0.0.0' && !@.table].nexthop" "" 1
 }
 
@@ -204,10 +206,10 @@ network_get_gateway() {
 # 2: interface
 # 3: consider inactive gateway if "true" (optional)
 network_get_gateway6() {
-	__network_ifstatus "$1" "$2" ".route[@.target='::' && !@.table].nexthop" "" 1 && \
+	__network_ifstatus "$1" "$2" ".route[@.target='::' && !@.table].nexthop" "" 1 &&
 		return 0
 
-	[ "$3" = 1 -o "$3" = "true" ] && \
+	[ "$3" = 1 -o "$3" = "true" ] &&
 		__network_ifstatus "$1" "$2" ".inactive.route[@.target='::' && !@.table].nexthop" "" 1
 }
 
@@ -218,7 +220,7 @@ network_get_gateway6() {
 network_get_dnsserver() {
 	__network_ifstatus "$1" "$2" "['dns-server'][*]" && return 0
 
-	[ "$3" = 1 -o "$3" = "true" ] && \
+	[ "$3" = 1 -o "$3" = "true" ] &&
 		__network_ifstatus "$1" "$2" ".inactive['dns-server'][*]"
 }
 
@@ -229,21 +231,19 @@ network_get_dnsserver() {
 network_get_dnssearch() {
 	__network_ifstatus "$1" "$2" "['dns-search'][*]" && return 0
 
-	[ "$3" = 1 -o "$3" = "true" ] && \
+	[ "$3" = 1 -o "$3" = "true" ] &&
 		__network_ifstatus "$1" "$2" ".inactive['dns-search'][*]"
 }
-
 
 # 1: destination variable
 # 2: addr
 # 3: inactive
-__network_wan()
-{
+__network_wan() {
 	__network_ifstatus "$1" "" \
-		"[@.route[@.target='$2' && !@.table]].interface" "" 1 && \
-			return 0
+		"[@.route[@.target='$2' && !@.table]].interface" "" 1 &&
+		return 0
 
-	[ "$3" = 1 -o "$3" = "true" ] && \
+	[ "$3" = 1 -o "$3" = "true" ] &&
 		__network_ifstatus "$1" "" \
 			"[@.inactive.route[@.target='$2' && !@.table]].interface" "" 1
 }
@@ -260,8 +260,7 @@ network_find_wan6() { __network_wan "$1" "::" "$2"; }
 
 # test whether the given logical interface is running
 # 1: interface
-network_is_up()
-{
+network_is_up() {
 	local __up
 	__network_ifstatus "__up" "$1" ".up" && [ "$__up" = 1 ]
 }
@@ -293,18 +292,16 @@ network_get_physdev() { __network_ifstatus "$1" "$2" ".device"; }
 
 # defer netifd actions on the given linux network device
 # 1: device name
-network_defer_device()
-{
+network_defer_device() {
 	ubus call network.device set_state \
-		"$(printf '{ "name": "%s", "defer": true }' "$1")" 2>/dev/null
+		"$(printf '{ "name": "%s", "defer": true }' "$1")" 2> /dev/null
 }
 
 # continue netifd actions on the given linux network device
 # 1: device name
-network_ready_device()
-{
+network_ready_device() {
 	ubus call network.device set_state \
-		"$(printf '{ "name": "%s", "defer": false }' "$1")" 2>/dev/null
+		"$(printf '{ "name": "%s", "defer": false }' "$1")" 2> /dev/null
 }
 
 # flush the internal value cache to force re-reading values from ubus

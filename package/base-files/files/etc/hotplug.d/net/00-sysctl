@@ -2,8 +2,8 @@
 
 if [ "$ACTION" = add ]; then
 	for CONF in /etc/sysctl.d/*.conf /etc/sysctl.conf; do
-		[ ! -f "$CONF" ] && continue;
-		sed -ne "/^[[:space:]]*net\..*\.$DEVICENAME\./p" "$CONF" | \
+		[ ! -f "$CONF" ] && continue
+		sed -ne "/^[[:space:]]*net\..*\.$DEVICENAME\./p" "$CONF" |
 			sysctl -e -p - | logger -t sysctl
 	done
 fi

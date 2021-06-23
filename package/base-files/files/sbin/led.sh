@@ -11,15 +11,14 @@ do_led() {
 	config_get sysfs $1 sysfs
 	[ "$name" = "$NAME" -o "$sysfs" = "$NAME" -a -e "/sys/class/leds/${sysfs}" ] && {
 		[ "$ACTION" = "set" ] &&
-			echo 1 >/sys/class/leds/${sysfs}/brightness \
-			|| echo 0 >/sys/class/leds/${sysfs}/brightness
+			echo 1 > /sys/class/leds/${sysfs}/brightness ||
+			echo 0 > /sys/class/leds/${sysfs}/brightness
 		exit 0
 	}
 }
 
-[ "$1" = "clear" -o "$1" = "set" ] &&
-	[ -n "$2" ] &&{
-		config_load system
-		config_foreach do_led
-		exit 1
-	}
+[ "$1" = "clear" -o "$1" = "set" ] && [ -n "$2" ] && {
+	config_load system
+	config_foreach do_led
+	exit 1
+}

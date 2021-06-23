@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 ERRFATAL="no"
 QUIET="yes"
 MISSING=""
@@ -49,7 +48,10 @@ done
 
 # Check all packages by default
 if [ -z "$1" ]; then
-	set $(cd /usr/lib/opkg/info/; for i in *.files-sha256sum; do basename $i .files-sha256sum; done)
+	set $(
+		cd /usr/lib/opkg/info/
+		for i in *.files-sha256sum; do basename $i .files-sha256sum; done
+	)
 fi
 
 # Iterate over packages
@@ -78,8 +80,8 @@ while [ "$1" ]; do
 	if [ $? -ne 0 ] && [ "$(cat "/usr/lib/opkg/info/$1.files-sha256sum")" ]; then
 		NEWCHECK="$(echo "$CHECK" | grep '^.*: OK$')"
 		for i in $(echo "$CHECK" | sed -n 's|^\(.*\): FAILED$|\1|p'); do
-			if [ "$(grep "^$i\$" "/usr/lib/opkg/info/$1.conffiles" 2> /dev/null)" ] || \
-			   [ "$(echo "$i" | grep "^/etc/uci-defaults/")" ]; then
+			if [ "$(grep "^$i\$" "/usr/lib/opkg/info/$1.conffiles" 2> /dev/null)" ] ||
+				[ "$(echo "$i" | grep "^/etc/uci-defaults/")" ]; then
 				NEWCHECK="${NEWCHECK}${NL}${i}: CONFIGURED"
 			else
 				NEWCHECK="${NEWCHECK}${NL}${i}: FAILED"

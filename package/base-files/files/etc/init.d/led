@@ -53,10 +53,10 @@ load_led() {
 			"$sysfs" \
 			"$(sed -ne 's/^.*\[\(.*\)\].*$/\1/p' /sys/class/leds/${sysfs}/trigger)" \
 			"$(cat /sys/class/leds/${sysfs}/brightness)" \
-				>> /var/run/led.state
+			>> /var/run/led.state
 
 		[ "$default" = 0 ] &&
-			echo 0 >/sys/class/leds/${sysfs}/brightness
+			echo 0 > /sys/class/leds/${sysfs}/brightness
 
 		echo $trigger > /sys/class/leds/${sysfs}/trigger 2> /dev/null
 		ret="$?"
@@ -73,17 +73,17 @@ load_led() {
 			[ -n "$dev" ] && {
 				echo $dev > /sys/class/leds/${sysfs}/device_name
 				for m in $mode; do
-					[ -e "/sys/class/leds/${sysfs}/$m" ] && \
+					[ -e "/sys/class/leds/${sysfs}/$m" ] &&
 						echo 1 > /sys/class/leds/${sysfs}/$m
 				done
 				echo $interval > /sys/class/leds/${sysfs}/interval
 			}
 			;;
 
-		"timer"|"oneshot")
-			[ -n "$delayon" ] && \
+		"timer" | "oneshot")
+			[ -n "$delayon" ] &&
 				echo $delayon > /sys/class/leds/${sysfs}/delay_on
-			[ -n "$delayoff" ] && \
+			[ -n "$delayoff" ] &&
 				echo $delayoff > /sys/class/leds/${sysfs}/delay_off
 			;;
 
@@ -96,7 +96,7 @@ load_led() {
 			;;
 
 		"port_state")
-			[ -n "$port_state" ] && \
+			[ -n "$port_state" ] &&
 				echo $port_state > /sys/class/leds/${sysfs}/port_state
 			;;
 
@@ -109,12 +109,12 @@ load_led() {
 			local port_mask speed_mask
 
 			config_get port_mask $1 port_mask
-			[ -n "$port_mask" ] && \
+			[ -n "$port_mask" ] &&
 				echo $port_mask > /sys/class/leds/${sysfs}/port_mask
 			config_get speed_mask $1 speed_mask
-			[ -n "$speed_mask" ] && \
+			[ -n "$speed_mask" ] &&
 				echo $speed_mask > /sys/class/leds/${sysfs}/speed_mask
-			[ -n "$mode" ] && \
+			[ -n "$mode" ] &&
 				echo "$mode" > /sys/class/leds/${sysfs}/mode
 			;;
 		esac
@@ -126,10 +126,10 @@ start() {
 		[ -s /var/run/led.state ] && {
 			local led trigger brightness
 			while read led trigger brightness; do
-				[ -e "/sys/class/leds/$led/trigger" ] && \
+				[ -e "/sys/class/leds/$led/trigger" ] &&
 					echo "$trigger" > "/sys/class/leds/$led/trigger"
 
-				[ -e "/sys/class/leds/$led/brightness" ] && \
+				[ -e "/sys/class/leds/$led/brightness" ] &&
 					echo "$brightness" > "/sys/class/leds/$led/brightness"
 			done < /var/run/led.state
 			rm /var/run/led.state

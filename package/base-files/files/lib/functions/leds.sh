@@ -15,9 +15,9 @@ get_dt_led() {
 	local label
 	local ledpath=$(get_dt_led_path $1)
 
-	[ -n "$ledpath" ] && \
-		label=$(cat "$ledpath/label" 2>/dev/null) || \
-		label=$(cat "$ledpath/chan-name" 2>/dev/null) || \
+	[ -n "$ledpath" ] &&
+		label=$(cat "$ledpath/label" 2> /dev/null) ||
+		label=$(cat "$ledpath/chan-name" 2> /dev/null) ||
 		label=$(basename "$ledpath")
 
 	echo "$label"
@@ -47,10 +47,10 @@ status_led_restore_trigger() {
 	local trigger
 	local ledpath=$(get_dt_led_path $1)
 
-	[ -n "$ledpath" ] && \
-		trigger=$(cat "$ledpath/linux,default-trigger" 2>/dev/null)
+	[ -n "$ledpath" ] &&
+		trigger=$(cat "$ledpath/linux,default-trigger" 2> /dev/null)
 
-	[ -n "$trigger" ] && \
+	[ -n "$trigger" ] &&
 		led_set_attr "$(get_dt_led $1)" "trigger" "$trigger"
 }
 

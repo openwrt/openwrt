@@ -15,7 +15,7 @@ export PS1='\u@\h:\w\$ '
 export ENV=/etc/shinit
 
 case "$TERM" in
-	xterm*|rxvt*)
+	xterm* | rxvt*)
 		export PS1='\[\e]0;\u@\h: \w\a\]'$PS1
 		;;
 esac
@@ -27,10 +27,9 @@ esac
 	unset FILE
 }
 
-if ( grep -qs '^root::' /etc/shadow && \
-     [ -z "$FAILSAFE" ] )
-then
-cat << EOF
+if (grep -qs '^root::' /etc/shadow \
+	&& [ -z "$FAILSAFE" ]); then
+	cat << EOF
 === WARNING! =====================================
 There is no root password defined on this device!
 Use the "passwd" command to set up a new password

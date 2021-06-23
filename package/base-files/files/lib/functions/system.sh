@@ -12,18 +12,18 @@ get_mac_binary() {
 		return
 	fi
 
-	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' $path 2>/dev/null
+	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' $path 2> /dev/null
 }
 
 get_mac_label_dt() {
 	local basepath="/proc/device-tree"
-	local macdevice="$(cat "$basepath/aliases/label-mac-device" 2>/dev/null)"
+	local macdevice="$(cat "$basepath/aliases/label-mac-device" 2> /dev/null)"
 	local macaddr
 
 	[ -n "$macdevice" ] || return
 
-	macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2>/dev/null)
-	[ -n "$macaddr" ] || macaddr=$(get_mac_binary "$basepath/$macdevice/local-mac-address" 0 2>/dev/null)
+	macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2> /dev/null)
+	[ -n "$macaddr" ] || macaddr=$(get_mac_binary "$basepath/$macdevice/local-mac-address" 0 2> /dev/null)
 
 	echo $macaddr
 }
@@ -38,7 +38,7 @@ get_mac_label_json() {
 	json_load "$(cat $cfg)"
 	if json_is_a system object; then
 		json_select system
-			json_get_var macaddr label_macaddr
+		json_get_var macaddr label_macaddr
 		json_select ..
 	fi
 
@@ -96,7 +96,7 @@ mtd_get_mac_text() {
 		return
 	fi
 
-	mac_dirty=$(dd if="$part" bs=1 skip="$offset" count=17 2>/dev/null)
+	mac_dirty=$(dd if="$part" bs=1 skip="$offset" count=17 2> /dev/null)
 
 	# "canonicalize" mac
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
@@ -127,7 +127,8 @@ mtd_get_part_size() {
 	local part_name=$1
 	local first dev size erasesize name
 	while read dev size erasesize name; do
-		name=${name#'"'}; name=${name%'"'}
+		name=${name#'"'}
+		name=${name%'"'}
 		if [ "$name" = "$part_name" ]; then
 			echo $((0x$size))
 			break
@@ -158,7 +159,7 @@ macaddr_setbit() {
 
 	[ $bit -gt 0 -a $bit -le 48 ] || return
 
-	printf "%012x" $(( 0x${mac//:/} | 2**(48-bit) )) | sed -e 's/\(.\{2\}\)/\1:/g' -e 's/:$//'
+	printf "%012x" $((0x${mac//:/} | 2 ** (48 - bit))) | sed -e 's/\(.\{2\}\)/\1:/g' -e 's/:$//'
 }
 
 macaddr_unsetbit() {
@@ -167,7 +168,7 @@ macaddr_unsetbit() {
 
 	[ $bit -gt 0 -a $bit -le 48 ] || return
 
-	printf "%012x" $(( 0x${mac//:/} & ~(2**(48-bit)) )) | sed -e 's/\(.\{2\}\)/\1:/g' -e 's/:$//'
+	printf "%012x" $((0x${mac//:/} & ~(2 ** (48 - bit)))) | sed -e 's/\(.\{2\}\)/\1:/g' -e 's/:$//'
 }
 
 macaddr_setbit_la() {
@@ -182,7 +183,7 @@ macaddr_unsetbit_mc() {
 
 macaddr_random() {
 	local randsrc=$(get_mac_binary /dev/urandom 0)
-	
+
 	echo "$(macaddr_unsetbit_mc "$(macaddr_setbit_la "${randsrc}")")"
 }
 
@@ -205,8 +206,8 @@ macaddr_canonicalize() {
 		1)
 			octet="0${octet}"
 			;;
-		2)
-			;;
+		2) ;;
+
 		4)
 			octet="${octet:0:2} ${octet:2:2}"
 			;;
@@ -222,5 +223,5 @@ macaddr_canonicalize() {
 
 	[ ${#canon} -ne 17 ] && return
 
-	printf "%02x:%02x:%02x:%02x:%02x:%02x" 0x${canon// / 0x} 2>/dev/null
+	printf "%02x:%02x:%02x:%02x:%02x:%02x" 0x${canon// / 0x} 2> /dev/null
 }

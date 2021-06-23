@@ -9,7 +9,7 @@ caldata_dd() {
 	local count=$(($3))
 	local offset=$(($4))
 
-	dd if=$source of=$target iflag=skip_bytes,fullblock bs=$count skip=$offset count=1 2>/dev/null
+	dd if=$source of=$target iflag=skip_bytes,fullblock bs=$count skip=$offset count=1 2> /dev/null
 	return $?
 }
 
@@ -27,7 +27,7 @@ caldata_extract() {
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || caldata_die "no mtd device found for partition $part"
 
-	caldata_dd $mtd /lib/firmware/$FIRMWARE $count $offset || \
+	caldata_dd $mtd /lib/firmware/$FIRMWARE $count $offset ||
 		caldata_die "failed to extract calibration data from $mtd"
 }
 
@@ -44,7 +44,7 @@ caldata_extract_ubi() {
 	ubi=$(nand_find_volume $ubidev $part)
 	[ -n "$ubi" ] || caldata_die "no UBI volume found for $part"
 
-	caldata_dd /dev/$ubi /lib/firmware/$FIRMWARE $count $offset || \
+	caldata_dd /dev/$ubi /lib/firmware/$FIRMWARE $count $offset ||
 		caldata_die "failed to extract calibration data from $ubi"
 }
 
@@ -74,7 +74,7 @@ caldata_from_file() {
 
 	[ -n "$target" ] || target=/lib/firmware/$FIRMWARE
 
-	caldata_dd $source $target $count $offset || \
+	caldata_dd $source $target $count $offset ||
 		caldata_die "failed to extract calibration data from $source"
 }
 
@@ -85,7 +85,7 @@ caldata_sysfsload_from_file() {
 	local target_dir="/sys/$DEVPATH"
 	local target="$target_dir/data"
 
-	[ -d "$target_dir" ] || \
+	[ -d "$target_dir" ] ||
 		caldata_die "no sysfs dir to write: $target"
 
 	echo 1 > "$target_dir/loading"
@@ -127,7 +127,7 @@ caldata_patch_chksum() {
 	xor_fw_chksum=$(hexdump -v -n 2 -s $chksum_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
 	xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
 
-	printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
+	printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" |
 		dd of=$target conv=notrunc bs=1 seek=$chksum_offset count=2
 }
 
@@ -143,7 +143,7 @@ caldata_patch_mac() {
 
 	[ -n "$chksum_offset" ] && caldata_patch_chksum "$mac" "$mac_offset" "$chksum_offset" "$target"
 
-	macaddr_2bin $mac | dd of=$target conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1 || \
+	macaddr_2bin $mac | dd of=$target conv=notrunc oflag=seek_bytes bs=6 seek=$mac_offset count=1 ||
 		caldata_die "failed to write MAC address to eeprom file"
 }
 
