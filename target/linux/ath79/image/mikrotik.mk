@@ -13,7 +13,7 @@ define Device/mikrotik_routerboard-912uag-2hpnd
   $(Device/mikrotik_nand)
   SOC := ar9342
   DEVICE_MODEL := RouterBOARD 912UAG-2HPnD
-  DEVICE_PACKAGES += kmod-usb-ehci kmod-usb2 kmod-gpio-beeper
+  DEVICE_PACKAGES += kmod-usb-ehci kmod-usb2
   SUPPORTED_DEVICES += rb-912uag-2hpnd
 endef
 TARGET_DEVICES += mikrotik_routerboard-912uag-2hpnd
