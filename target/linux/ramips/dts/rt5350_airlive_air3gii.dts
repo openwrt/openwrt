@@ -13,6 +13,7 @@
 		wlan {
 			label = "green:wlan";
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		mobile {

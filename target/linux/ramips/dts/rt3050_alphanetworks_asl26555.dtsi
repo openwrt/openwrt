@@ -51,6 +51,7 @@
 		wlan {
 			label = "green:wlan";
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led_power_green: power-green {

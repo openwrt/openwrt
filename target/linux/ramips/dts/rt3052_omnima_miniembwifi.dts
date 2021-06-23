@@ -25,6 +25,7 @@
 		wlan {
 			label = "green:wlan";
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 
