@@ -2,8 +2,8 @@
 
 START=15
 
-extra_command "compact" "Trigger compaction for all Z-RAM swap dev's"
-extra_command "status" "Print out information & statistics about Z-RAM swap devices"
+extra_command "compact" "Trigger compaction for all zram swap devices"
+extra_command "status" "Print out information & statistics about zram swap devices"
 
 ram_getsize()
 {
@@ -60,15 +60,15 @@ zram_comp_algo()
 	local zram_comp_algo="$( uci -q get system.@system[0].zram_comp_algo )"
 
 	if [ -z "$zram_comp_algo" ]; then
-		# lzo-rle fails on small RAM devices, default to lzo, which is always available
+		# default to lzo, which is always available
 		zram_comp_algo="lzo"
 	fi
 
 	if [ $(grep -c "$zram_comp_algo" /sys/block/$( basename $dev )/comp_algorithm) -ne 0 ]; then
-		logger -s -t zram_comp_algo -p daemon.debug "Set compression algorithm '$zram_comp_algo' for zram '$dev'"
+		logger -s -t zram_comp_algo -p daemon.debug "set compression algorithm '$zram_comp_algo' for zram '$dev'"
 		echo $zram_comp_algo > "/sys/block/$( basename $dev )/comp_algorithm"
 	else
-		logger -s -t zram_comp_algo -p daemon.debug "Compression algorithm '$zram_comp_algo' is not supported for '$dev'"
+		logger -s -t zram_comp_algo -p daemon.debug "compression algorithm '$zram_comp_algo' is not supported for '$dev'"
 	fi
 }
 
@@ -79,7 +79,7 @@ zram_stats()
 
 	printf "\nGathering stats info for zram device \"$( basename "$1" )\"\n\n"
 
-	printf "Z-RAM\n-----\n"
+	printf "ZRAM\n----\n"
 	printf "%-25s - %s\n" "Block device" $zdev
 	awk '{ printf "%-25s - %d MiB\n", "Device size", $1/1024/1024 }' <$zdev/disksize
 	printf "%-25s - %s\n" "Compression algo" "$(cat $zdev/comp_algorithm)"
@@ -131,7 +131,7 @@ start()
 	}
 
 	if [ $( grep -cs zram /proc/swaps ) -ne 0 ]; then
-		logger -s -t zram_start -p daemon.notice "[OK] zram swap is already mounted"
+		logger -s -t zram_start -p daemon.notice "zram swap is already mounted"
 		return 1
 	fi
 
@@ -149,7 +149,7 @@ start()
 		zram_priority="100"
 	fi
 
-	logger -s -t zram_start -p daemon.debug "activating '$zram_dev' for swapping ($zram_size MegaBytes)"
+	logger -s -t zram_start -p daemon.debug "activating '$zram_dev' for swapping ($zram_size MiB)"
 
 	zram_reset "$zram_dev" "enforcing defaults"
 	zram_comp_algo "$zram_dev"
