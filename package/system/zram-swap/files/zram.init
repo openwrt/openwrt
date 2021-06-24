@@ -25,31 +25,6 @@ zram_getsize()	# in megabytes
 	fi
 }
 
-zram_applicable()
-{
-	local zram_dev="$1"
-
-	[ -e "$zram_dev" ] || {
-		logger -s -t zram_applicable -p daemon.crit "[ERROR] device '$zram_dev' not found"
-		return 1
-	}
-
-	[ -x /sbin/mkswap ] || {
-		logger -s -t zram_applicable -p daemon.err "[ERROR] 'BusyBox mkswap' not installed"
-		return 1
-	}
-
-	[ -x /sbin/swapon ] || {
-		logger -s -t zram_applicable -p daemon.err "[ERROR] 'BusyBox swapon' not installed"
-		return 1
-	}
-
-	[ -x /sbin/swapoff ] || {
-		logger -s -t zram_applicable -p daemon.err "[ERROR] 'BusyBox swapoff' not installed"
-		return 1
-	}
-}
-
 zram_dev()
 {
 	local idx="$1"
@@ -160,9 +135,14 @@ start()
 		return 1
 	fi
 
-	local zram_size="$( zram_getsize )"
 	local zram_dev="$( zram_getdev )"
-	zram_applicable "$zram_dev" || return 1
+
+	[ -e "$zram_dev" ] || {
+		logger -s -t zram_start -p daemon.crit "[ERROR] device '$zram_dev' not found"
+		return 1
+	}
+
+	local zram_size="$( zram_getsize )"
 	local zram_priority="$( uci -q get system.@system[0].zram_priority )"
 	zram_priority=${zram_priority:+-p $zram_priority}
 
@@ -171,8 +151,8 @@ start()
 	zram_reset "$zram_dev" "enforcing defaults"
 	zram_comp_algo "$zram_dev"
 	echo $(( $zram_size * 1024 * 1024 )) >"/sys/block/$( basename "$zram_dev" )/disksize"
-	/sbin/mkswap "$zram_dev"
-	/sbin/swapon -d $zram_priority "$zram_dev"
+	busybox mkswap "$zram_dev"
+	busybox swapon -d $zram_priority "$zram_dev"
 }
 
 stop()
@@ -181,7 +161,7 @@ stop()
 
 	for zram_dev in $( grep zram /proc/swaps |awk '{print $1}' ); do {
 		logger -s -t zram_stop -p daemon.debug "deactivate swap $zram_dev"
-		/sbin/swapoff "$zram_dev" && zram_reset "$zram_dev" "claiming memory back"
+		busybox swapoff "$zram_dev" && zram_reset "$zram_dev" "claiming memory back"
 		local dev_index="$( echo $zram_dev | grep -o "[0-9]*$" )"
 		if [ $dev_index -ne 0 ]; then
 			logger -s -t zram_stop -p daemon.debug "removing zram $zram_dev"
