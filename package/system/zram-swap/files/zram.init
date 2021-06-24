@@ -144,7 +144,10 @@ start()
 
 	local zram_size="$( zram_getsize )"
 	local zram_priority="$( uci -q get system.@system[0].zram_priority )"
-	zram_priority=${zram_priority:+-p $zram_priority}
+
+	if [ -z "$zram_priority" ]; then
+		zram_priority="100"
+	fi
 
 	logger -s -t zram_start -p daemon.debug "activating '$zram_dev' for swapping ($zram_size MegaBytes)"
 
@@ -152,7 +155,7 @@ start()
 	zram_comp_algo "$zram_dev"
 	echo $(( $zram_size * 1024 * 1024 )) >"/sys/block/$( basename "$zram_dev" )/disksize"
 	busybox mkswap "$zram_dev"
-	busybox swapon -d $zram_priority "$zram_dev"
+	busybox swapon -d -p $zram_priority "$zram_dev"
 }
 
 stop()
