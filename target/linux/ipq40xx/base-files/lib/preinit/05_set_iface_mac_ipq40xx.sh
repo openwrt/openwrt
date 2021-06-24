@@ -29,6 +29,11 @@ preinit_set_mac_address() {
 		base_mac=$(cat /sys/class/net/eth0/address)
 		ip link set dev eth0 address $(macaddr_add "$base_mac" 2)
 		ip link set dev eth1 address $(macaddr_add "$base_mac" 3)
+		;;
+	tp-link,deco-m5-eu-v3.0)
+		base_mac=$(get_mac_binary "/dev/mtd10" 0x8)
+		ip link set dev eth0 address "${base_mac}"
+		ip link set dev eth1 address $(macaddr_add "$base_mac" +1)
 	esac
 }
 
