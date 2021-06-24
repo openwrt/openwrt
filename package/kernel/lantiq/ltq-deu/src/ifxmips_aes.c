@@ -57,6 +57,10 @@
 #include <linux/delay.h>
 #include <asm/byteorder.h>
 #include <crypto/algapi.h>
+#include <crypto/b128ops.h>
+#include <crypto/gf128mul.h>
+#include <crypto/scatterwalk.h>
+#include <crypto/xts.h>
 #include <crypto/internal/skcipher.h>
 
 #include "ifxmips_deu.h"
@@ -115,7 +119,10 @@ extern void ifx_deu_aes (void *ctx_arg, uint8_t *out_arg, const uint8_t *in_arg,
 struct aes_ctx {
     int key_length;
     u32 buf[AES_MAX_KEY_SIZE];
+    u32 tweakkey[AES_MAX_KEY_SIZE];
     u8 nonce[CTR_RFC3686_NONCE_SIZE];
+    u8 lastbuffer[4 * XTS_BLOCK_SIZE];
+    int use_tweak;
 };
 
 extern int disable_deudma;
@@ -142,6 +149,7 @@ int aes_set_key (struct crypto_tfm *tfm, const u8 *in_key, unsigned int key_len)
     }
 
     ctx->key_length = key_len;
+    ctx->use_tweak = 0;
     DPRINTF(0, "ctx @%p, key_len %d, ctx->key_length %d\n", ctx, key_len, ctx->key_length);
     memcpy ((u8 *) (ctx->buf), in_key, key_len);
 
@@ -190,6 +198,7 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     int i = 0;
     int byte_cnt = nbytes; 
 
+    if (ctx->use_tweak) in_key = ctx->tweakkey;
 
     CRTCL_SECT_START;
     /* 128, 192 or 256 bit key length */
@@ -322,6 +331,7 @@ int ctr_rfc3686_aes_set_key (struct crypto_tfm *tfm, const uint8_t *in_key, unsi
     }
 
     ctx->key_length = key_len;
+    ctx->use_tweak = 0;
     
     memcpy ((u8 *) (ctx->buf), in_key, key_len);
 
@@ -645,6 +655,312 @@ struct skcipher_alg ifxdeu_cbc_aes_alg = {
     .decrypt                 =   cbc_aes_decrypt,
 };
 
+/*! \fn void ifx_deu_aes_xts (void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, size_t nbytes, int encdec)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief main interface to AES hardware for XTS impl
+ *  \param ctx_arg crypto algo context
+ *  \param out_arg output bytestream
+ *  \param in_arg input bytestream
+ *  \param iv_arg initialization vector
+ *  \param nbytes length of bytestream
+ *  \param encdec 1 for encrypt; 0 for decrypt
+ *
+*/
+void ifx_deu_aes_xts (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
+        u8 *iv_arg, size_t nbytes, int encdec)
+{
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+    volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
+    struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
+    u32 *in_key = ctx->buf;
+    unsigned long flag;
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+    int key_len = ctx->key_length;
+    u8 oldiv[16];
+    int i = 0;
+    int byte_cnt = nbytes; 
+
+    CRTCL_SECT_START;
+
+    //prepare the key
+    /* 128, 192 or 256 bit key length */
+    aes->controlr.K = key_len / 8 - 2;
+        if (key_len == 128 / 8) {
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+    }
+    else if (key_len == 192 / 8) {
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+    }
+    else if (key_len == 256 / 8) {
+        aes->K7R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K6R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 6));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 7));
+    }
+    else {
+        printk (KERN_ERR "[%s %s %d]: Invalid key_len : %d\n", __FILE__, __func__, __LINE__, key_len);
+        CRTCL_SECT_END;
+        return;// -EINVAL;
+    }
+
+    /* let HW pre-process DEcryption key in any case (even if
+       ENcryption is used). Key Valid (KV) bit is then only
+       checked in decryption routine! */
+    aes->controlr.PNK = 1;
+
+    aes->controlr.E_D = !encdec;    //encryption
+    aes->controlr.O = 1; //0 ECB 1 CBC 2 OFB 3 CFB 4 CTR - CBC mode for xts
+
+    i = 0;
+    while (byte_cnt >= 16) {
+
+        if (!encdec) {
+            if (((byte_cnt % 16) > 0) && (byte_cnt < (2*XTS_BLOCK_SIZE))) {
+                 memcpy(oldiv, iv_arg, 16);
+                 gf128mul_x_ble((le128 *)iv_arg, (le128 *)iv_arg);
+            }
+            u128_xor((u128 *)((u32 *) in_arg + (i * 4) + 0), (u128 *)((u32 *) in_arg + (i * 4) + 0), (u128 *)iv_arg);
+        }
+
+        aes->IV3R = DEU_ENDIAN_SWAP(*(u32 *) iv_arg);
+        aes->IV2R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));
+        aes->IV1R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 2));
+        aes->IV0R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 3));
+
+        aes->ID3R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 0));
+        aes->ID2R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 1));
+        aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 2));
+        aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 3));    /* start crypto */
+
+        while (aes->controlr.BUS) {
+            // this will not take long
+        }
+
+        *((volatile u32 *) out_arg + (i * 4) + 0) = aes->OD3R;
+        *((volatile u32 *) out_arg + (i * 4) + 1) = aes->OD2R;
+        *((volatile u32 *) out_arg + (i * 4) + 2) = aes->OD1R;
+        *((volatile u32 *) out_arg + (i * 4) + 3) = aes->OD0R;
+
+        if (encdec) {
+            u128_xor((u128 *)((volatile u32 *) out_arg + (i * 4) + 0), (u128 *)((volatile u32 *) out_arg + (i * 4) + 0), (u128 *)iv_arg);
+        }
+        gf128mul_x_ble((le128 *)iv_arg, (le128 *)iv_arg);
+        i++;
+        byte_cnt -= 16;
+    }
+
+    if (byte_cnt) {
+	u8 state[XTS_BLOCK_SIZE] = {0,};
+
+        if (!encdec) memcpy(iv_arg, oldiv, 16);
+
+        aes->IV3R = DEU_ENDIAN_SWAP(*(u32 *) iv_arg);
+        aes->IV2R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));
+        aes->IV1R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 2));
+        aes->IV0R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 3));
+
+        memcpy(state, ((u32 *) in_arg + (i * 4) + 0), byte_cnt);
+        memcpy((state + byte_cnt), (out_arg + ((i - 1) * 16) + byte_cnt), (XTS_BLOCK_SIZE - byte_cnt));
+        if (!encdec) {
+            u128_xor((u128 *)state, (u128 *)state, (u128 *)iv_arg);
+        }
+
+        aes->ID3R = INPUT_ENDIAN_SWAP(*((u32 *) state + 0));
+        aes->ID2R = INPUT_ENDIAN_SWAP(*((u32 *) state + 1));
+        aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) state + 2));
+        aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) state + 3));    /* start crypto */
+
+        memcpy(((u32 *) out_arg + (i * 4) + 0), ((u32 *) out_arg + ((i - 1) * 4) + 0), byte_cnt);
+
+        while (aes->controlr.BUS) {
+            // this will not take long
+        }
+
+        *((volatile u32 *) out_arg + ((i-1) * 4) + 0) = aes->OD3R;
+        *((volatile u32 *) out_arg + ((i-1) * 4) + 1) = aes->OD2R;
+        *((volatile u32 *) out_arg + ((i-1) * 4) + 2) = aes->OD1R;
+        *((volatile u32 *) out_arg + ((i-1) * 4) + 3) = aes->OD0R;
+
+        if (encdec) {
+            u128_xor((u128 *)((volatile u32 *) out_arg + ((i-1) * 4) + 0), (u128 *)((volatile u32 *) out_arg + ((i-1) * 4) + 0), (u128 *)iv_arg);
+        }
+    }
+
+    CRTCL_SECT_END;
+}
+
+/*! \fn int xts_aes_encrypt(struct skcipher_req *req)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief XTS AES encrypt using linux crypto skcipher
+ *  \param req skcipher request
+ *  \return err
+*/
+int xts_aes_encrypt(struct skcipher_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    int err;
+    unsigned int enc_bytes, nbytes, processed;
+
+    err = skcipher_walk_virt(&walk, req, false);
+
+    if (req->cryptlen < XTS_BLOCK_SIZE)
+            return -EINVAL;
+
+    ctx->use_tweak = 1;
+    aes_encrypt(req->base.tfm, walk.iv, walk.iv);
+    ctx->use_tweak = 0;
+    processed = 0;
+
+    while ((nbytes = walk.nbytes) && (walk.nbytes >= (XTS_BLOCK_SIZE * 2)) ) {
+        u8 *iv = walk.iv;
+        if (nbytes == walk.total) {
+            enc_bytes = nbytes;
+        } else {
+            enc_bytes = nbytes & ~(XTS_BLOCK_SIZE - 1);
+            if ((req->cryptlen - processed - enc_bytes) < (XTS_BLOCK_SIZE)) {
+                if (enc_bytes > (2 * XTS_BLOCK_SIZE)) {
+                    enc_bytes -= XTS_BLOCK_SIZE;
+                } else {
+                    break;
+                }
+            }
+        }
+        ifx_deu_aes_xts(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                   iv, enc_bytes, CRYPTO_DIR_ENCRYPT);
+        err = skcipher_walk_done(&walk, nbytes - enc_bytes);
+        processed += enc_bytes;
+    }
+
+    if ((walk.nbytes)) {
+        u8 *iv = walk.iv;
+        nbytes = req->cryptlen - processed;
+        scatterwalk_map_and_copy(ctx->lastbuffer, req->src, (req->cryptlen - nbytes), nbytes, 0);
+        ifx_deu_aes_xts(ctx, ctx->lastbuffer, ctx->lastbuffer, 
+                   iv, nbytes, CRYPTO_DIR_ENCRYPT);
+        scatterwalk_map_and_copy(ctx->lastbuffer, req->dst, (req->cryptlen - nbytes), nbytes, 1);
+        skcipher_request_complete(req, 0);
+    }
+
+    return err;
+}
+
+/*! \fn int xts_aes_decrypt(struct skcipher_req *req)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief XTS AES decrypt using linux crypto skcipher
+ *  \param req skcipher request
+ *  \return err
+*/
+int xts_aes_decrypt(struct skcipher_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    int err;
+    unsigned int dec_bytes, nbytes, processed;
+
+    err = skcipher_walk_virt(&walk, req, false);
+
+    if (req->cryptlen < XTS_BLOCK_SIZE)
+            return -EINVAL;
+
+    ctx->use_tweak = 1;
+    aes_encrypt(req->base.tfm, walk.iv, walk.iv);
+    ctx->use_tweak = 0;
+    processed = 0;
+
+    while ((nbytes = walk.nbytes) && (walk.nbytes >= (XTS_BLOCK_SIZE * 2))) {
+        u8 *iv = walk.iv;
+        if (nbytes == walk.total) {
+            dec_bytes = nbytes;
+        } else {
+            dec_bytes = nbytes & ~(XTS_BLOCK_SIZE - 1);
+            if ((req->cryptlen - processed - dec_bytes) < (XTS_BLOCK_SIZE)) {
+                if (dec_bytes > (2 * XTS_BLOCK_SIZE)) {
+                    dec_bytes -= XTS_BLOCK_SIZE;
+                } else {
+                    break;
+                }
+            }
+        }
+        ifx_deu_aes_xts(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                   iv, dec_bytes, CRYPTO_DIR_DECRYPT);
+        err = skcipher_walk_done(&walk, nbytes - dec_bytes);
+        processed += dec_bytes;
+    }
+
+    if ((walk.nbytes)) {
+        u8 *iv = walk.iv;
+        nbytes = req->cryptlen - processed;
+        scatterwalk_map_and_copy(ctx->lastbuffer, req->src, (req->cryptlen - nbytes), nbytes, 0);
+        ifx_deu_aes_xts(ctx, ctx->lastbuffer, ctx->lastbuffer, 
+                   iv, nbytes, CRYPTO_DIR_DECRYPT);
+        scatterwalk_map_and_copy(ctx->lastbuffer, req->dst, (req->cryptlen - nbytes), nbytes, 1);
+        skcipher_request_complete(req, 0);
+    }
+
+    return err;
+}
+
+/*! \fn int xts_aes_set_key_skcipher (struct crypto_tfm *tfm, const uint8_t *in_key, unsigned int key_len)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief sets the AES keys for XTS
+ *  \param tfm linux crypto algo transform
+ *  \param in_key input key
+ *  \param key_len key lengths of 16, 24 and 32 bytes supported
+ *  \return -EINVAL - bad key length, 0 - SUCCESS
+*/
+int xts_aes_set_key_skcipher (struct crypto_skcipher *tfm, const u8 *in_key, unsigned int key_len)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(crypto_skcipher_tfm(tfm));
+    unsigned int keylen = (key_len / 2);
+
+    if (key_len % 2) return -EINVAL;
+
+    if (keylen != 16 && keylen != 24 && keylen != 32) {
+        return -EINVAL;
+    }
+
+    ctx->key_length = keylen;
+    ctx->use_tweak = 0;
+    DPRINTF(0, "ctx @%p, key_len %d, ctx->key_length %d\n", ctx, key_len, ctx->key_length);
+    memcpy ((u8 *) (ctx->buf), in_key, keylen);
+    memcpy ((u8 *) (ctx->tweakkey), in_key + keylen, keylen);
+
+    return 0;
+}
+
+/*
+ * \brief AES function mappings
+*/
+struct skcipher_alg ifxdeu_xts_aes_alg = {
+    .base.cra_name           =   "xts(aes)",
+    .base.cra_driver_name    =   "ifxdeu-xts(aes)",
+    .base.cra_priority       =   400,
+    .base.cra_flags          =   CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
+    .base.cra_blocksize      =   XTS_BLOCK_SIZE,
+    .base.cra_ctxsize        =   sizeof(struct aes_ctx),
+    .base.cra_module         =   THIS_MODULE,
+    .base.cra_list           =   LIST_HEAD_INIT(ifxdeu_xts_aes_alg.base.cra_list),
+    .min_keysize             =   AES_MIN_KEY_SIZE * 2,
+    .max_keysize             =   AES_MAX_KEY_SIZE * 2,
+    .ivsize                  =   XTS_BLOCK_SIZE,
+    .walksize                =   2 * XTS_BLOCK_SIZE,
+    .setkey                  =   xts_aes_set_key_skcipher,
+    .encrypt                 =   xts_aes_encrypt,
+    .decrypt                 =   xts_aes_decrypt,
+};
 
 /*! \fn int ofb_aes_encrypt(struct skcipher_req *req)
  *  \ingroup IFX_AES_FUNCTIONS
@@ -1036,6 +1352,9 @@ int ifxdeu_init_aes (void)
     if ((ret = crypto_register_skcipher(&ifxdeu_cbc_aes_alg)))
         goto cbc_aes_err;
 
+    if ((ret = crypto_register_skcipher(&ifxdeu_xts_aes_alg)))
+        goto xts_aes_err;
+
     if ((ret = crypto_register_skcipher(&ifxdeu_ofb_aes_alg)))
         goto ofb_aes_err;
 
@@ -1070,6 +1389,10 @@ ofb_aes_err:
     crypto_unregister_skcipher(&ifxdeu_ofb_aes_alg);
     printk (KERN_ERR "IFX ofb_aes initialization failed!\n");
     return ret;
+xts_aes_err:
+    crypto_unregister_skcipher(&ifxdeu_xts_aes_alg);
+    printk (KERN_ERR "IFX xts_aes initialization failed!\n");
+    return ret;
 cbc_aes_err:
     crypto_unregister_skcipher(&ifxdeu_cbc_aes_alg);
     printk (KERN_ERR "IFX cbc_aes initialization failed!\n");
@@ -1093,6 +1416,7 @@ void ifxdeu_fini_aes (void)
     crypto_unregister_alg (&ifxdeu_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_ecb_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_cbc_aes_alg);
+    crypto_unregister_skcipher (&ifxdeu_xts_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_ofb_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_cfb_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_ctr_basic_aes_alg);
