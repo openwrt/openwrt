@@ -1,0 +1,69 @@
+From 36564d7e53f9efd14ab5692cd9475a75e8000c98 Mon Sep 17 00:00:00 2001
+From: Andrey Smirnov <andrew.smirnov@gmail.com>
+Date: Tue, 10 Dec 2019 08:41:51 -0800
+Subject: thermal: qoriq: Do not report invalid temperature reading
+
+Before returning measured temperature data to upper layer we need to
+make sure that the reading was marked as "valid" to avoid reporting
+bogus data.
+
+Signed-off-by: Andrey Smirnov <andrew.smirnov@gmail.com>
+Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Tested-by: Lucas Stach <l.stach@pengutronix.de>
+Cc: Chris Healy <cphealy@gmail.com>
+Cc: Lucas Stach <l.stach@pengutronix.de>
+Cc: Eduardo Valentin <edubezval@gmail.com>
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: Angus Ainslie (Purism) <angus@akkea.ca>
+Cc: linux-imx@nxp.com
+Cc: linux-pm@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Link: https://lore.kernel.org/r/20191210164153.10463-11-andrew.smirnov@gmail.com
+---
+ drivers/thermal/qoriq_thermal.c | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+(limited to 'drivers/thermal/qoriq_thermal.c')
+
+diff --git a/drivers/thermal/qoriq_thermal.c b/drivers/thermal/qoriq_thermal.c
+index 9a455948ddf05..1730dbe5eeb6a 100644
+--- a/drivers/thermal/qoriq_thermal.c
++++ b/drivers/thermal/qoriq_thermal.c
+@@ -49,6 +49,7 @@
+ #define REGS_TRITSR(n)	(0x100 + 16 * (n)) /* Immediate Temperature
+ 					    * Site Register
+ 					    */
++#define TRITSR_V	BIT(31)
+ #define REGS_TTRnCR(n)	(0xf10 + 4 * (n)) /* Temperature Range n
+ 					   * Control Register
+ 					   */
+@@ -81,8 +82,24 @@ static int tmu_get_temp(void *p, int *temp)
+ 	struct qoriq_sensor *qsensor = p;
+ 	struct qoriq_tmu_data *qdata = qoriq_sensor_to_data(qsensor);
+ 	u32 val;
++	/*
++	 * REGS_TRITSR(id) has the following layout:
++	 *
++	 * 31  ... 7 6 5 4 3 2 1 0
++	 *  V          TEMP
++	 *
++	 * Where V bit signifies if the measurement is ready and is
++	 * within sensor range. TEMP is an 8 bit value representing
++	 * temperature in C.
++	 */
++	if (regmap_read_poll_timeout(qdata->regmap,
++				     REGS_TRITSR(qsensor->id),
++				     val,
++				     val & TRITSR_V,
++				     USEC_PER_MSEC,
++				     10 * USEC_PER_MSEC))
++		return -ENODATA;
+ 
+-	regmap_read(qdata->regmap, REGS_TRITSR(qsensor->id), &val);
+ 	*temp = (val & 0xff) * 1000;
+ 
+ 	return 0;
+-- 
+cgit 1.2.3-1.el7
+

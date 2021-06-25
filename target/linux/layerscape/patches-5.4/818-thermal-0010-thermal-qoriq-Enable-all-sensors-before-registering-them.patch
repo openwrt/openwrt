@@ -1,0 +1,90 @@
+From 45038e03d633b0d49e4211e6dc2b5774ca1672f4 Mon Sep 17 00:00:00 2001
+From: Andrey Smirnov <andrew.smirnov@gmail.com>
+Date: Tue, 10 Dec 2019 08:41:50 -0800
+Subject: thermal: qoriq: Enable all sensors before registering them
+
+Tmu_get_temp will get called as a part of sensor registration via
+devm_thermal_zone_of_sensor_register(). To prevent it from retruning
+bogus data we need to enable sensor monitoring before that. Looking at
+the datasheet (i.MX8MQ RM) there doesn't seem to be any harm in
+enabling them all, so, for the sake of simplicity, change the code to
+do just that.
+
+Signed-off-by: Andrey Smirnov <andrew.smirnov@gmail.com>
+Tested-by: Lucas Stach <l.stach@pengutronix.de>
+Cc: Chris Healy <cphealy@gmail.com>
+Cc: Lucas Stach <l.stach@pengutronix.de>
+Cc: Eduardo Valentin <edubezval@gmail.com>
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: Angus Ainslie (Purism) <angus@akkea.ca>
+Cc: linux-imx@nxp.com
+Cc: linux-pm@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Link: https://lore.kernel.org/r/20191210164153.10463-10-andrew.smirnov@gmail.com
+---
+ drivers/thermal/qoriq_thermal.c | 31 ++++++++++++-------------------
+ 1 file changed, 12 insertions(+), 19 deletions(-)
+
+(limited to 'drivers/thermal/qoriq_thermal.c')
+
+diff --git a/drivers/thermal/qoriq_thermal.c b/drivers/thermal/qoriq_thermal.c
+index cacf2230201de..9a455948ddf05 100644
+--- a/drivers/thermal/qoriq_thermal.c
++++ b/drivers/thermal/qoriq_thermal.c
+@@ -30,6 +30,7 @@
+ #define TMR_DISABLE	0x0
+ #define TMR_ME		0x80000000
+ #define TMR_ALPF	0x0c000000
++#define TMR_MSITE_ALL	GENMASK(15, 0)
+ 
+ #define REGS_TMTMIR	0x008	/* Temperature measurement interval Register */
+ #define TMTMIR_DEFAULT	0x0000000f
+@@ -94,7 +95,15 @@ static const struct thermal_zone_of_device_ops tmu_tz_ops = {
+ static int qoriq_tmu_register_tmu_zone(struct device *dev,
+ 				       struct qoriq_tmu_data *qdata)
+ {
+-	int id, sites = 0;
++	int id;
++
++	if (qdata->ver == TMU_VER1) {
++		regmap_write(qdata->regmap, REGS_TMR,
++			     TMR_MSITE_ALL | TMR_ME | TMR_ALPF);
++	} else {
++		regmap_write(qdata->regmap, REGS_V2_TMSR, TMR_MSITE_ALL);
++		regmap_write(qdata->regmap, REGS_TMR, TMR_ME | TMR_ALPF_V2);
++	}
+ 
+ 	for (id = 0; id < SITES_MAX; id++) {
+ 		struct thermal_zone_device *tzd;
+@@ -110,25 +119,9 @@ static int qoriq_tmu_register_tmu_zone(struct device *dev,
+ 		if (ret) {
+ 			if (ret == -ENODEV)
+ 				continue;
+-			else
+-				return ret;
+-		}
+ 
+-		if (qdata->ver == TMU_VER1)
+-			sites |= 0x1 << (15 - id);
+-		else
+-			sites |= 0x1 << id;
+-	}
+-
+-	/* Enable monitoring */
+-	if (sites != 0) {
+-		if (qdata->ver == TMU_VER1) {
+-			regmap_write(qdata->regmap, REGS_TMR,
+-				     sites | TMR_ME | TMR_ALPF);
+-		} else {
+-			regmap_write(qdata->regmap, REGS_V2_TMSR, sites);
+-			regmap_write(qdata->regmap, REGS_TMR,
+-				     TMR_ME | TMR_ALPF_V2);
++			regmap_write(qdata->regmap, REGS_TMR, TMR_DISABLE);
++			return ret;
+ 		}
+ 	}
+ 
+-- 
+cgit 1.2.3-1.el7
+
