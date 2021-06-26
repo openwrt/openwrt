@@ -192,7 +192,6 @@ define Device/bt_homehub-v2b
   DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
-	kmod-ltq-deu-danube \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ath9k kmod-owl-loader wpad-basic-wolfssl
   SUPPORTED_DEVICES += BTHOMEHUBV2B
