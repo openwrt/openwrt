@@ -124,7 +124,7 @@ define Device/gateworks_ventana
   DEVICE_VENDOR := Gateworks
   DEVICE_MODEL := Ventana family
   DEVICE_VARIANT := normal NAND flash
-  DEVICE_NAME := gateworks_ventana
+  DEVICE_NAME := ventana
   DEVICE_DTS:= \
 	imx6dl-gw51xx \
 	imx6dl-gw52xx \
