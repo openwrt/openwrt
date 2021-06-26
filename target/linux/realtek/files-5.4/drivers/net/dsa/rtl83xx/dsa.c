@@ -134,6 +134,10 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 	for (i = 0; i < MAX_VLANS; i ++)
 		priv->r->vlan_set_tagged(i, &info);
 
+	// reset PVIDs; defaults to 1 on reset
+	for (i = 0; i <= priv->ds->num_ports; i++)
+		sw_w32(0, priv->r->vlan_port_pb + (i << 2));
+
 	// Set forwarding action based on inner VLAN tag
 	for (i = 0; i < priv->cpu_port; i++)
 		priv->r->vlan_fwd_on_inner(i, true);
@@ -909,9 +913,6 @@ static void rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	}
 
 	for (v = vlan->vid_begin; v <= vlan->vid_end; v++) {
-		if (!v)
-			continue;
-
 		/* Get port memberships of this vlan */
 		priv->r->vlan_tables_read(v, &info);
 
@@ -971,9 +972,7 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 
 		/* remove port from both tables */
 		info.untagged_ports &= (~BIT_ULL(port));
-		/* always leave vid 1 */
-		if (v != 1)
-			info.tagged_ports &= (~BIT_ULL(port));
+		info.tagged_ports &= (~BIT_ULL(port));
 
 		priv->r->vlan_set_untagged(v, info.untagged_ports);
 		pr_debug("Untagged ports, VLAN %d: %llx\n", v, info.untagged_ports);
