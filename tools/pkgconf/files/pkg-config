@@ -1,6 +1,7 @@
 #!/bin/sh
 
 pkg-config.real \
+--dont-define-prefix \
 --keep-system-cflags \
 --keep-system-libs \
 --define-variable=prefix="${STAGING_PREFIX}" \
