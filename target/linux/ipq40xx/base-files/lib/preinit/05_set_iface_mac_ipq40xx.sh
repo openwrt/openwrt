@@ -29,6 +29,7 @@ preinit_set_mac_address() {
 		base_mac=$(cat /sys/class/net/eth0/address)
 		ip link set dev eth0 address $(macaddr_add "$base_mac" 2)
 		ip link set dev eth1 address $(macaddr_add "$base_mac" 3)
+		;;
 	esac
 }
 
