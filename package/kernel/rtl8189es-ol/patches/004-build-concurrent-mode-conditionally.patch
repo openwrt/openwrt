@@ -1,0 +1,10 @@
+--- a/Makefile
++++ b/Makefile
+@@ -20,7 +20,6 @@ EXTRA_CFLAGS += -Wno-date-time	# Fix com
+ endif
+ 
+ EXTRA_CFLAGS += -I$(src)/include
+-EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
+ EXTRA_LDFLAGS += --strip-debug
+ 
+ CONFIG_AUTOCFG_CP = n
