@@ -52,11 +52,12 @@ endef
 
 define U-Boot/xiaomi_dgnwg05lm
   NAME:=Xiaomi Lumi gateway
-  BUILD_DEVICES:=xiaomi_dgnwg05lm
+  BUILD_DEVICES:=aqara_zhwg11lm xiaomi_dgnwg05lm
 endef
 
 UBOOT_TARGETS := \
 	apalis_imx6 \
+	aqara_zhwg11lm \
 	mx6cuboxi \
 	pico-pi-imx7d \
 	wandboard \
