@@ -69,8 +69,8 @@ define U-Boot/wandboard
 endef
 
 define U-Boot/xiaomi_dgnwg05lm
-  NAME:=Xiaomi Lumi gateway
-  BUILD_DEVICES:=xiaomi_dgnwg05lm
+  NAME:=Xiaomi/Aqara Lumi gateway
+  BUILD_DEVICES:=aqara_zhwg11lm xiaomi_dgnwg05lm
 endef
 
 UBOOT_CUSTOMIZE_CONFIG := \
