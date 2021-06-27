@@ -70,7 +70,7 @@ endef
 
 define U-Boot/xiaomi_dgnwg05lm
   NAME:=Xiaomi Lumi gateway
-  BUILD_DEVICES:=xiaomi_dgnwg05lm
+  BUILD_DEVICES:=aqara_zhwg11lm xiaomi_dgnwg05lm
 endef
 
 UBOOT_CUSTOMIZE_CONFIG := \
@@ -78,6 +78,7 @@ UBOOT_CUSTOMIZE_CONFIG := \
 
 UBOOT_TARGETS := \
 	apalis_imx6 \
+	aqara_zhwg11lm \
 	imx8mp_olimex_som_evb \
 	kontron-osm-s-mx8mp \
 	mx6cuboxi \
