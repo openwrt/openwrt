@@ -15,13 +15,14 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	technexion,imx7d-pico-pi)
-		return 0
-		;;
+	aqara,zhwg11lm |\
 	xiaomi,dgnwg05lm )
 		local platform_dir_name=$(echo $board | sed 's/,/_/g')
 		nand_do_platform_check $platform_dir_name $1
 		return $?;
+		;;
+	technexion,imx7d-pico-pi)
+		return 0
 		;;
 	esac
 
@@ -33,11 +34,12 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	technexion,imx7d-pico-pi)
-		imx_sdcard_do_upgrade "$1"
-		;;
+	aqara,zhwg11lm |\
 	xiaomi,dgnwg05lm )
 		nand_do_upgrade "$1"
+		;;
+	technexion,imx7d-pico-pi)
+		imx_sdcard_do_upgrade "$1"
 		;;
 	esac
 }
