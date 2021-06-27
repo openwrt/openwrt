@@ -1,0 +1,38 @@
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -4570,6 +4570,9 @@ static int	cfg80211_rtw_set_channel(stru
+ 
+ static int cfg80211_rtw_set_monitor_channel(struct wiphy *wiphy
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
++#if defined(BUILD_OPENWRT)
++	, struct net_device *dev
++#endif
+ 	, struct cfg80211_chan_def *chandef
+ #else
+ 	, struct ieee80211_channel *chan
+--- a/hal/rtl8723b/sdio/rtl8723bs_recv.c
++++ b/hal/rtl8723b/sdio/rtl8723bs_recv.c
+@@ -412,11 +412,9 @@ s32 rtl8723bs_init_recv_priv(PADAPTER pa
+ 		goto initbuferror;
+ 
+ 	/* 3 2. init tasklet */
+-#ifdef PLATFORM_LINUX
+ 	tasklet_init(&precvpriv->recv_tasklet,
+-		     (void(*)(unsigned long))rtl8723bs_recv_tasklet,
++		     (void *)rtl8723bs_recv_tasklet,
+ 		     (unsigned long)padapter);
+-#endif
+ 
+ 	goto exit;
+ 
+--- a/hal/phydm/halrf/halrf.h
++++ b/hal/phydm/halrf/halrf.h
+@@ -206,7 +206,7 @@ halrf_cmn_info_init(
+ void
+ halrf_cmn_info_hook(
+ 	void		*p_dm_void,
+-	u32		cmn_info,
++	enum halrf_cmninfo_hook_e	cmn_info,
+ 	void		*p_value
+ );
+ 

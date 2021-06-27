@@ -1,0 +1,22 @@
+--- a/include/hal_data.h
++++ b/include/hal_data.h
+@@ -338,7 +338,7 @@ struct txpwr_lmt_ent {
+ 		[MAX_TX_COUNT];
+ #endif
+ 
+-	char regd_name[0];
++	char regd_name[1];
+ };
+ #endif /* CONFIG_TXPWR_LIMIT */
+ 
+--- a/include/rtw_rf.h
++++ b/include/rtw_rf.h
+@@ -202,7 +202,7 @@ struct regd_exc_ent {
+ 	_list list;
+ 	char country[2];
+ 	u8 domain;
+-	char regd_name[0];
++	char regd_name[1];
+ };
+ 
+ void dump_regd_exc_list(void *sel, struct rf_ctl_t *rfctl);

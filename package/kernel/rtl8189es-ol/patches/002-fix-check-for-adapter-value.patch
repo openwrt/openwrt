@@ -1,0 +1,20 @@
+--- a/core/rtw_ap.c
++++ b/core/rtw_ap.c
+@@ -4400,7 +4400,7 @@ static u8 rtw_ap_update_chbw_by_ifbmp(st
+ 	int i;
+ 
+ 	for (i = 0; i < dvobj->iface_nums; i++) {
+-		if (!(ifbmp & BIT(i)) || !dvobj->padapters)
++		if (!(ifbmp & BIT(i)) || !dvobj->padapters[i])
+ 			continue;
+ 
+ 		iface = dvobj->padapters[i];
+@@ -4420,7 +4420,7 @@ static u8 rtw_ap_update_chbw_by_ifbmp(st
+ 	}
+ 
+ 	for (i = 0; i < dvobj->iface_nums; i++) {
+-		if (!(ifbmp & BIT(i)) || !dvobj->padapters)
++		if (!(ifbmp & BIT(i)) || !dvobj->padapters[i])
+ 			continue;
+ 
+ 		iface = dvobj->padapters[i];
