@@ -36,7 +36,7 @@ define Device/xiaomi_gateway-lumi
 	kmod-ledtrig-activity kmod-ledtrig-oneshot \
 	kmod-ledtrig-transient kmod-ledtrig-gpio \
 	kmod-i2c-core kmod-iio-core kmod-iio-vf610 \
-	kmod-sound-core kmod-sound-soc-imx \
+	kmod-hid kmod-sound-core kmod-sound-soc-imx \
 	kmod-sound-soc-tfa9882 alsa-utils \
 	wpa-supplicant ca-certificates hostapd \
 	nand-utils kobs-ng
@@ -62,3 +62,13 @@ define Device/xiaomi_dgnwg05lm
 	imx6ull-xiaomi-dgnwg05lm
 endef
 TARGET_DEVICES += xiaomi_dgnwg05lm
+
+define Device/aqara_zhwg11lm
+  $(Device/xiaomi_gateway-lumi)
+  DEVICE_VENDOR := Aqara
+  DEVICE_MODEL := ZHWG11LM
+  DEVICE_PACKAGES += kmod-rtl8189es-ol
+  DEVICE_DTS := \
+	imx6ull-aqara-zhwg11lm
+endef
+TARGET_DEVICES += aqara_zhwg11lm
