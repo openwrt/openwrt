@@ -257,4 +257,15 @@ define Device/xiaomi_dgnwg05lm
 endef
 TARGET_DEVICES += xiaomi_dgnwg05lm
 
+define Device/aqara_zhwg11lm
+  $(Device/xiaomi_gateway-lumi)
+  DEVICE_VENDOR := Aqara
+  DEVICE_MODEL := ZHWG11LM
+  DEVICE_PACKAGES += kmod-rtl8189es-ol
+  DEVICE_DTS := \
+	imx6ull-aqara-zhwg11lm
+  UBOOT := xiaomi_dgnwg05lm
+endef
+TARGET_DEVICES += aqara_zhwg11lm
+
 $(eval $(call BuildImage))

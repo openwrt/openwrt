@@ -64,7 +64,8 @@ platform_check_image() {
 		nand_do_platform_check $board $1
 		return $?;
 		;;
-	xiaomi,dgnwg05lm )
+	xiaomi,dgnwg05lm |\
+	aqara,zhwg11lm )
 		local platform_dir_name=$(echo $board | sed 's/,/_/g')
 		nand_do_platform_check $platform_dir_name $1
 		return $?;
@@ -109,7 +110,8 @@ platform_do_upgrade() {
 	gw,imx6q-gw5910 |\
 	gw,imx6q-gw5912 |\
 	gw,imx6q-gw5913 |\
-	xiaomi,dgnwg05lm )
+	xiaomi,dgnwg05lm |\
+	aqara,zhwg11lm )
 		nand_do_upgrade "$1"
 		;;
 	toradex,apalis_imx6q-eval |\
