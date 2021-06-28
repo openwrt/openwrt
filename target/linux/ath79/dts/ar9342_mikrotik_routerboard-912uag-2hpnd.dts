@@ -107,6 +107,12 @@
 	gpio-export {
 		compatible = "gpio-export";
 
+		beeper {
+			gpio-export,name = "beeper";
+			gpio-export,output = <1>;	/* Must be 1 to avoid EMI induced clicking noise */
+			gpios = <&ssr 5 GPIO_ACTIVE_HIGH>;
+		};
+
 		usb_power {
 			gpio-export,name = "power-usb";
 			gpio-export,output = <1>;
