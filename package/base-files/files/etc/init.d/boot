@@ -43,6 +43,9 @@ boot() {
 		sleep 1
 	}
 
+	# for some private wifi driver
+	/sbin/wifi config
+
 	/bin/config_generate
 	uci_apply_defaults
 	
