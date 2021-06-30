@@ -7,7 +7,7 @@
 
 / {
 	compatible = "sitecom,wlr-4100v1002", "ralink,mt7620a-soc";
-	model = "Sitecom sw66 WLR-4100 v1 002";
+	model = "Sitecom WLR-4100 v1 002";
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
@@ -23,17 +23,19 @@
 	leds {
 		compatible = "gpio-leds";
 		
-		led_power: power {	
+		led_power:power {	
 			label = "amber:power";
+			default-state = "on";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi_led: wifi {
+		wifi {
 			label = "blue:wifi";
+			default-state = "on";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
-		led_wps: wps {
+		wps {
 			label = "white:wps";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
@@ -58,6 +60,7 @@
 	gpio_export {
 		compatible = "gpio-export";
 		#size-cells = <0>;
+
 		usb-power {
 			gpio-export,name = "usb-power";
 			gpio-export,output = <1>;
@@ -69,7 +72,6 @@
 &gpio1 {
 	status = "okay";
 };
-
 &gpio3 {
 	status = "okay";
 };
@@ -132,35 +134,30 @@
 	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
 	mtd-mac-address = <&factory 0x4>;
 
-	port@4 {
-		status = "disabled";
-	};
-	
 	port@5 {
 		status = "okay";
 		phy-mode = "rgmii";
 		mediatek,fixed-link = <1000 1 1 1>;
-		phy-handle = <&phy0>;
 	};
 
 	mdio-bus {
 		status = "okay";
-		mediatek,mdio-mode = <1>;
-		phy0: ethernet-phy@0 {
-				reg = <0>;
-				phy-mode = "rgmii";
-				qca,ar8327-initvals = <
-					0x04 0x06200000  // PORT0 PAD MODE CTRL
-					0x08 0x01000000  //  PORT5 PAD MODE CTRL  RX delay EN all ports 0, 5, 6 
-					0x7C 0x0000004e  // 	PORT0_STATUS 
-					0x94 0x00000000   // PORT6_STATUS
-					>;
+		ethernet-phy@0 {
+			reg = <0>;
+			phy-mode = "rgmii";
+			
+			qca,ar8327-initvals = <
+				0x04 0x06200000  /* PORT0 PAD MODE CTRL */
+				0x08 0x01000000  /* PORT5 PAD MODE CTRL  RX delay EN all ports 0, 5, 6 */
+				0x7c 0x0000004e  /* PORT0_STATUS */
+				0x94 0x00000000  /* PORT6_STATUS */
+			>;
 		};
 	};
 };
 
 &gsw {
-		mediatek,ephy-base = /bits/ 8 <8>;
+	mediatek,ephy-base = /bits/ 8 <8>;
 };
 
 &ehci {
@@ -173,12 +170,13 @@
 
 &wmac {
 	status = "okay";
-	ralink,mtd-eeprom = <&factory 0>;
+	
+	ralink,mtd-eeprom = <&factory 0x0>;
 };
 
 &state_default {
 	gpio {
-			groups = "uartf", "i2c", "rgmii2", "wled", "spi refclk", "ephy",  "nd_sd";
+			groups = "uartf", "i2c", "wled", "spi refclk";
 			function = "gpio";
 	};
 };
