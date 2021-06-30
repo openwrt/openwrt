@@ -326,7 +326,7 @@ static int mtk_get_scan(const char *ifname, struct survey_table *st)
 
 	line = strtok(NULL, "\n");
 
-	while (line && (survey_count < 64))
+	while (line && (survey_count < 200))
 	{
 		memset(&st[survey_count], 0, sizeof(st[survey_count]));
 
@@ -383,7 +383,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	int i = 0, h, sc;
 	struct iwinfo_scanlist_entry sce;
-	struct survey_table stl[64];
+	struct survey_table stl[200];
 	
 	sc = mtk_get_scan(ifname, stl);
 	*len = 0;
@@ -402,7 +402,7 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 		sce.channel = atoi(stl[i].channel);
 		sce.quality = atoi(stl[i].signal);
 		sce.quality_max = 100;
-		sce.signal = atoi(stl[i].signal);
+		sce.signal = atoi(stl[i].signal) + 100;
 		sce.mode = IWINFO_OPMODE_MASTER;
 
 		if (!strcmp(stl[i].security, "NONE") || !strcmp(stl[i].security, "OPEN")) {

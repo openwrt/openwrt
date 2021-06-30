@@ -143,32 +143,6 @@
  	luaL_newmetatable(L, IWINFO_WEXT_META);
  	luaL_register(L, NULL, R_common);
  	luaL_register(L, NULL, R_wext);
---- a/iwinfo_cli.c
-+++ b/iwinfo_cli.c
-@@ -111,7 +111,11 @@ static char * format_signal(int sig)
- 	if (!sig)
- 		snprintf(buf, sizeof(buf), "unknown");
- 	else
-+#ifdef USE_MTK
-+		snprintf(buf, sizeof(buf), "%d %%", sig);
-+#else
- 		snprintf(buf, sizeof(buf), "%d dBm", sig);
-+#endif
- 
- 	return buf;
- }
-@@ -609,7 +613,11 @@ static void print_scanlist(const struct
- 			IWINFO_OPMODE_NAMES[e->mode],
- 			format_channel(e->channel));
- 		printf("          Signal: %s  Quality: %s/%s\n",
-+#ifdef USE_MTK
-+			format_signal(e->signal),
-+#else
- 			format_signal(e->signal - 0x100),
-+#endif
- 			format_quality(e->quality),
- 			format_quality_max(e->quality_max));
- 		printf("          Encryption: %s\n",
 --- a/hardware.txt
 +++ b/hardware.txt
 @@ -175,4 +175,8 @@
