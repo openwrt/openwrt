@@ -31,13 +31,11 @@
 
 		wifi {
 			label = "blue:wifi";
-			default-state = "on";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
 			label = "white:wps";
-			default-state = "on";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -177,7 +175,7 @@
 
 &state_default {
 	gpio {
-			groups = "uartf", "i2c", "wled", "spi refclk";
-			function = "gpio";
+		groups = "uartf", "i2c", "wled", "spi refclk";
+		function = "gpio";
 	};
 };
