@@ -106,6 +106,10 @@ ifdef CONFIG_SIGNED_PACKAGES
 	[ -s $(BUILD_KEY).ucert ] || \
 		$(STAGING_DIR_HOST)/bin/ucert -I -c $(BUILD_KEY).ucert -p $(BUILD_KEY).pub -s $(BUILD_KEY)
 
+	[ -s $(BUILD_KEY_APK_SEC) -a -s $(BUILD_KEY_APK_PUB) ] || \
+		openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
+		openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB)
+
   endef
 
 ifndef CONFIG_BUILDBOT
