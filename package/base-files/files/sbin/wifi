@@ -133,6 +133,7 @@ wifi_updown() {
 		cmd=up
 	}
 	[ reconf = "$1" ] && {
+		ubus call network reload
 		scan_wifi
 		cmd=reconf
 	}
@@ -247,7 +248,7 @@ case "$1" in
 	reload) wifi_reload "$2";;
 	reload_legacy) wifi_reload_legacy "$2";;
 	--help|help) usage;;
-	reconf) ubus call network reload; wifi_updown "reconf" "$2";;
+	reconf) wifi_updown "reconf" "$2";;
 	''|up) wifi_updown "enable" "$2";;
 	*) usage; exit 1;;
 esac
