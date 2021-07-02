@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libiwinfo
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/iwinfo.git
@@ -16,14 +16,6 @@ PKG_SOURCE_VERSION:=c45f0b584b4b86f8250f90ea19afca271c114fa2
 PKG_MIRROR_HASH:=24ad04791254a0523cd15a4fec6116d9ff121e006c93e5e41459f91347b33ec2
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0
-
-PKG_FLAGS := nonshared
-
-PKG_CONFIG_DEPENDS := \
-	CONFIG_PACKAGE_kmod-brcm-wl \
-	CONFIG_PACKAGE_kmod-brcm-wl-mini \
-	CONFIG_PACKAGE_kmod-brcm-wl-mimo \
-	CONFIG_PACKAGE_kmod-cfg80211
 
 IWINFO_ABI_VERSION:=20210430
 
@@ -34,13 +26,13 @@ define Package/libiwinfo
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Generalized Wireless Information Library (iwinfo)
-  DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny +libuci +libubus
+  DEPENDS:=+libnl-tiny +libuci +libubus
   ABI_VERSION:=$(IWINFO_ABI_VERSION)
 endef
 
 define Package/libiwinfo/description
-  Wireless information library with consistent interface for proprietary Broadcom,
-  nl80211 and wext driver interfaces.
+  Wireless information library with simplified API for nl80211
+  and wext driver interfaces.
 endef
 
 
@@ -73,12 +65,6 @@ endef
 define Build/Configure
 endef
 
-IWINFO_BACKENDS := \
-	$(if $(CONFIG_PACKAGE_kmod-brcm-wl),wl) \
-	$(if $(CONFIG_PACKAGE_kmod-brcm-wl-mini),wl) \
-	$(if $(CONFIG_PACKAGE_kmod-brcm-wl-mimo),wl) \
-	$(if $(CONFIG_PACKAGE_kmod-cfg80211),nl80211)
-
 TARGET_CFLAGS += \
 	-I$(STAGING_DIR)/usr/include/libnl-tiny \
 	-I$(STAGING_DIR)/usr/include \
@@ -88,7 +74,7 @@ MAKE_FLAGS += \
 	FPIC="$(FPIC)" \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
-	BACKENDS="$(IWINFO_BACKENDS)" \
+	BACKENDS="nl80211" \
 	SOVERSION="$(IWINFO_ABI_VERSION)"
 
 define Build/InstallDev
