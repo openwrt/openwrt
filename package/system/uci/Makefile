@@ -22,8 +22,6 @@ PKG_LICENSE_FILES:=
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
-PKG_FLAGS := nonshared
-
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 

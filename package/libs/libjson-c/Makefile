@@ -20,7 +20,6 @@ PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
 PKG_CPE_ID:=cpe:/a:json-c_project:json-c
 
-PKG_FLAGS := nonshared
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 
 include $(INCLUDE_DIR)/package.mk
