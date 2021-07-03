@@ -76,12 +76,13 @@ SQUASHFS_BLOCKSIZE := $(CONFIG_TARGET_SQUASHFS_BLOCK_SIZE)k
 SQUASHFSOPT := -b $(SQUASHFS_BLOCKSIZE)
 SQUASHFSOPT += -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1'
 SQUASHFSCOMP := gzip
-LZMA_XZ_OPTIONS := -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2
+LZMA_XZ_OPTIONS := -X lc=0,lp=2,pb=2
+BCJ_FILTER:=extreme
 ifeq ($(CONFIG_SQUASHFS_XZ),y)
   ifneq ($(filter arm x86 powerpc sparc,$(LINUX_KARCH)),)
-    BCJ_FILTER:=-Xbcj $(LINUX_KARCH)
+    BCJ_FILTER:=,$(LINUX_KARCH)
   endif
-  SQUASHFSCOMP := xz $(LZMA_XZ_OPTIONS) $(BCJ_FILTER)
+  SQUASHFSCOMP := xz $(LZMA_XZ_OPTIONS)$(BCJ_FILTER)
 endif
 
 JFFS2_BLOCKSIZE ?= 64k 128k
@@ -226,10 +227,18 @@ $(eval $(foreach S,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/template,$(S))))
 $(eval $(foreach S,$(NAND_BLOCKSIZE),$(call Image/mkfs/jffs2-nand/template,$(S))))
 
 define Image/mkfs/squashfs-common
-	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(call mkfs_target_dir,$(1)) $@ \
-		-nopad -noappend -root-owned \
-		-comp $(SQUASHFSCOMP) $(SQUASHFSOPT) \
-		-processors 1
+	echo 'dir /dev 0755 0 0' > $@.squashfs.packfile; \
+	echo 'nod /dev/console 0600 0 0 c 5 1' >> $@.squashfs.packfile; \
+	echo 'glob / * * *' >> $@.squashfs.packfile; \
+	$(STAGING_DIR_HOST)/bin/gensquashfs \
+		--block-size $(SQUASHFS_BLOCKSIZE) \
+		--all-root \
+		--force \
+		--compressor $(SQUASHFSCOMP) \
+		--defaults uid=0,gid=0,mtime=0 \
+		--pack-dir $(call mkfs_target_dir,$(1)) \
+		--pack-file $@.squashfs.packfile \
+		$@
 endef
 
 ifeq ($(CONFIG_TARGET_ROOTFS_SECURITY_LABELS),y)
