@@ -374,7 +374,7 @@ endef
 define Device/tplink_eap225-outdoor-v1
   $(Device/tplink-eap2x5)
   SOC := qca9563
-  IMAGE_SIZE := 13824k
+  IMAGE_SIZE := 15104k
   DEVICE_MODEL := EAP225-Outdoor
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
@@ -385,7 +385,7 @@ TARGET_DEVICES += tplink_eap225-outdoor-v1
 define Device/tplink_eap225-v3
   $(Device/tplink-eap2x5)
   SOC := qca9563
-  IMAGE_SIZE := 13824k
+  IMAGE_SIZE := 15104k
   DEVICE_MODEL := EAP225
   DEVICE_VARIANT := v3
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
@@ -407,7 +407,7 @@ TARGET_DEVICES += tplink_eap225-wall-v2
 define Device/tplink_eap245-v1
   $(Device/tplink-eap2x5)
   SOC := qca9563
-  IMAGE_SIZE := 13824k
+  IMAGE_SIZE := 15104k
   DEVICE_MODEL := EAP245
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
