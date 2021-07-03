@@ -382,7 +382,7 @@ struct fe_soc_data {
 	const u16 *reg_table;
 
 	void (*init_data)(struct fe_soc_data *data, struct net_device *netdev);
-	void (*reset_fe)(void);
+	void (*reset_fe)(struct fe_priv *priv);
 	void (*set_mac)(struct fe_priv *priv, unsigned char *mac);
 	int (*fwd_config)(struct fe_priv *priv);
 	void (*tx_dma)(struct fe_tx_dma *txd);
@@ -498,6 +498,7 @@ struct fe_priv {
 	DECLARE_BITMAP(pending_flags, FE_FLAG_MAX);
 
 	struct reset_control		*rst_ppe;
+	struct reset_control		*rst_fe;
 	struct mtk_foe_entry		*foe_table;
 	dma_addr_t			foe_table_phys;
 	struct flow_offload __rcu	**foe_flow_table;
@@ -517,6 +518,7 @@ void fe_reg_w32(u32 val, enum fe_reg reg);
 u32 fe_reg_r32(enum fe_reg reg);
 
 void fe_reset(u32 reset_bits);
+void fe_reset_fe(struct fe_priv *priv);
 
 static inline void *priv_netdev(struct fe_priv *priv)
 {

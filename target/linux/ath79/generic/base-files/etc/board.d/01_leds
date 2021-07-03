@@ -276,6 +276,10 @@ qihoo,c301)
 samsung,wam250)
 	ucidef_set_led_netdev "lan" "LAN" "white:lan" "eth0"
 	;;
+teltonika,rut230-v1)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x04"
+	;;
 tplink,archer-a7-v5|\
 tplink,archer-c7-v4|\
 tplink,archer-c7-v5)
