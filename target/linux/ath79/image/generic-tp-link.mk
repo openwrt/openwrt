@@ -805,7 +805,6 @@ define Device/tplink_tl-wr941hp-v1
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := TL-WR941HP-V1
   IMAGE_SIZE := 7360k
-  SUPPORTED_DEVICES += tplink,tl-wr941hp-v1
 endef
 TARGET_DEVICES += tplink_tl-wr941hp-v1
 

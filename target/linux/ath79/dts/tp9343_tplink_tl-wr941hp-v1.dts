@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/dts-v1/;
+
+#include "qca956x.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-
-#include "qca956x.dtsi"
 
 / {
 	compatible = "tplink,tl-wr941hp-v1", "qca,tp9343";
@@ -21,10 +20,10 @@
 	leds {
 		compatible = "gpio-leds";
 
-        ranext {
-            label = "blue:ranext";
-            gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
-        };
+		re {
+			label = "blue:re";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		};
 
 		wifi {
 			label = "blue:wifi";
@@ -34,17 +33,17 @@
 
 		led_power: power {
 			label = "blue:power";
-			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;      
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
-		wan_data {
-			label = "blue:wan_data";
+		wan_blue {
+			label = "blue:wan";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
-		wan_link {
-			label = "red:wan_link";
+		wan_red {
+			label = "red:wan";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
@@ -62,7 +61,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		ranext {
+		re {
 			label = "range extender button";
 			linux,code = <BTN_0>;
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
@@ -76,7 +75,7 @@
 			debounce-interval = <60>;
 		};
 
-    	reset {
+		reset {
 			label = "reset button";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
@@ -90,10 +89,6 @@
 			debounce-interval = <60>;
 		};
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &spi {
@@ -121,15 +116,9 @@
 				reg = <0x020000 0x730000>;
 			};
 
-			info: partition@750000 {
-				label = "info";
-				reg = <0x750000 0x010000>;
-				read-only;
-			};
-
-			partition@760000 {
-				label = "tplink";
-				reg = <0x760000 0x090000>;
+			config: partition@750000 {
+				label = "config";
+				reg = <0x750000 0x0a0000>;
 				read-only;
 			};
 
@@ -142,53 +131,24 @@
 	};
 };
 
-&mdio1 {
-	status = "okay";
-	resets = <&rst 23>;
-	reset-names = "mdio";
-	builtin-switch;
-
-	builtin_switch: switch0@1f {
-		compatible = "qca,ar8229";
-		reg = <0x1f>;
-		resets = <&rst 8>;
-		reset-names = "switch";
-		phy-mode = "gmii";
-		//remove this line is important
-		//qca,phy4-mii-enable;
-		qca,mib-poll-interval = <500>;
-
-		mdio-bus {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			phy0: ethernet-phy@0 {
-				reg = <0>;
-				phy-mode = "mii";
-			};
-
-		};
-	};
-};
-
 &eth0 {
 	status = "okay";
 
-	phy-handle = <&phy0>;
-
-	mtd-mac-address = <&info 0x8>;
+	phy-handle = <&swphy0>;
+		
+	mtd-mac-address = <&config 0x8>;
 	mtd-mac-address-increment = <1>;
 };
 
 &eth1 {
 	status = "okay";
-	mtd-mac-address = <&info 0x8>;
-	mtd-mac-address-increment = <2>;
+	
+	mtd-mac-address = <&config 0x8>;
 };
 
 &wmac {
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	mtd-mac-address = <&info 0x8>;
+	mtd-mac-address = <&config 0x8>;
 };

@@ -1940,10 +1940,6 @@ static struct device_info boards[] = {
 		.part_trail = 0x00,
 		.soft_ver = NULL,
 
-		/**
-		   384KB were moved from file-system to os-image
-		   in comparison to the stock image
-		*/
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
 			{"firmware", 0x20000, 0x730000},
