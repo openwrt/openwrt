@@ -62,6 +62,13 @@ def parseVer_r(match, filepath):
 	progversion = (int(match.group(2)) << 64)
 	return (progname, progversion)
 
+def parseVer_ymd_GIT_SHASUM(match, filepath):
+	progname = match.group(1)
+	progversion = (int(match.group(2)) << 64) |\
+		      (int(match.group(3)) << 48) |\
+		      (int(match.group(4)) << 32)
+	return (progname, progversion)
+
 def parseVer_ymd(match, filepath):
 	progname = match.group(1)
 	progversion = (int(match.group(2)) << 64) |\
@@ -90,6 +97,7 @@ extensions = (
 
 versionRegex = (
 	(re.compile(r"(.+)[-_](\d+)\.(\d+)\.(\d+)\.(\d+)"), parseVer_1234),	# xxx-1.2.3.4
+	(re.compile(r"(.+)[-_](\d\d\d\d)-?(\d\d)-?(\d\d)-"), parseVer_ymd_GIT_SHASUM),	# xxx-YYYY-MM-DD-GIT_SHASUM
 	(re.compile(r"(.+)[-_](\d\d\d\d)-?(\d\d)-?(\d\d)"), parseVer_ymd),	# xxx-YYYY-MM-DD
 	(re.compile(r"(.+)[-_]([0-9a-fA-F]{40,40})"), parseVer_GIT),		# xxx-GIT_SHASUM
 	(re.compile(r"(.+)[-_](\d+)\.(\d+)\.(\d+)(\w?)"), parseVer_123),	# xxx-1.2.3a
