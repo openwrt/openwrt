@@ -849,6 +849,12 @@ dnsmasq_start()
 		xappend "--conf-file=${dnsmasqconffile}"
 	}
 
+	config_get_bool boguspriv "$cfg" boguspriv 1
+	[ "$boguspriv" -gt 0 ] && {
+		xappend "--bogus-priv"
+		[ -r "$RFC6761FILE" ] && xappend "--conf-file=$RFC6761FILE"
+	}
+
 	$PROG --version | grep -osqE "^Compile time options:.* DHCPv6( |$)" && DHCPv6CAPABLE=1 || DHCPv6CAPABLE=0
 
 
@@ -1103,11 +1109,6 @@ dnsmasq_start()
 	config_foreach filter_dnsmasq mxhost dhcp_mx_add "$cfg"
 	echo >> $CONFIGFILE_TMP
 
-	config_get_bool boguspriv "$cfg" boguspriv 1
-	[ "$boguspriv" -gt 0 ] && {
-		xappend "--bogus-priv"
-		[ -r "$RFC6761FILE" ] && xappend "--conf-file=$RFC6761FILE"
-	}
 
 	if [ "$DNSMASQ_DHCP_VER" -gt 4 ] ; then
 		# Enable RA feature for when/if it is constructed,
