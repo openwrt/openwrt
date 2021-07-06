@@ -13,6 +13,7 @@ import sys
 import os
 import re
 import getopt
+import shutil
 
 # Commandline options
 opt_dryrun = False
@@ -140,15 +141,18 @@ class EntryParseError(Exception):
 
 
 class Entry:
-    def __init__(self, directory, filename):
+    def __init__(self, directory, builddir, filename):
         self.directory = directory
         self.filename = filename
+        self.builddir = builddir
         self.progname = ""
         self.fileext = ""
+        self.filenoext = ""
 
         for ext in extensions:
             if filename.endswith(ext):
                 filename = filename[0 : 0 - len(ext)]
+                self.filenoext = filename
                 self.fileext = ext
                 break
         else:
@@ -168,11 +172,26 @@ class Entry:
     def getPath(self):
         return (self.directory + "/" + self.filename).replace("//", "/")
 
+    def getBuildPaths(self):
+        paths = []
+        for subdir in os.scandir(self.builddir):
+            package_build_dir = os.path.join(subdir.path, self.filenoext)
+            if os.path.exists(package_build_dir):
+                paths.append(package_build_dir)
+        return paths
+
     def deleteFile(self):
         path = self.getPath()
         print("Deleting", path)
         if not opt_dryrun:
             os.unlink(path)
+
+    def deleteBuildDir(self):
+        paths = self.getBuildPaths()
+        for path in paths:
+            print("Deleting BuildDir", path)
+            if not opt_dryrun:
+                    shutil.rmtree(path)
 
     def __ge__(self, y):
         return self.version >= y.version
@@ -188,6 +207,9 @@ def usage():
     print(
         " -D|--download-dir       Provide path to dl dir to clean also the build directory"
     )
+    print(
+        " -b|--build-dir          Provide path to build dir to clean also the build directory"
+    )
 
 
 def main(argv):
@@ -196,13 +218,14 @@ def main(argv):
     try:
         (opts, args) = getopt.getopt(
             argv[1:],
-            "hdBwD:",
+            "hdBwDb:",
             [
                 "help",
                 "dry-run",
                 "show-blacklist",
                 "whitelist=",
                 "download-dir=",
+                "build-dir=",
             ],
         )
     except getopt.GetoptError as e:
@@ -210,6 +233,7 @@ def main(argv):
         return 1
 
     directory = "dl/"
+    builddir = "build_dir/"
 
     for (o, v) in opts:
         if o in ("-h", "--help"):
@@ -235,9 +259,15 @@ def main(argv):
             return 0
         if o in ("-D", "--download-dir"):
             directory = v
+        if o in ("-b", "--build-dir"):
+            builddir = v
 
     if not os.path.exists(directory):
         print("Can't find dl path", directory)
+        return 1
+
+    if not os.path.exists(builddir):
+        print("Can't find dl path", builddir)
         return 1
 
     # Create a directory listing and parse the file names.
@@ -252,7 +282,7 @@ def main(argv):
                 break
         else:
             try:
-                entries.append(Entry(directory, filename))
+                entries.append(Entry(directory, builddir, filename))
             except EntryParseError as e:
                 pass
 
@@ -277,6 +307,8 @@ def main(argv):
             for version in versions:
                 if version is not lastVersion:
                     version.deleteFile()
+                    if builddir:
+                        version.deleteBuildDir()
             if opt_dryrun:
                 print("Keeping", lastVersion.getPath())
 
