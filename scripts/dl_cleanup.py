@@ -183,6 +183,9 @@ def usage():
     print(" -d|--dry-run            Do a dry-run. Don't delete any files")
     print(" -B|--show-blacklist     Show the blacklist and exit")
     print(" -w|--whitelist ITEM     Remove ITEM from blacklist")
+    print(
+        " -D|--download-dir       Provide path to dl dir to clean also the build directory"
+    )
 
 
 def main(argv):
@@ -191,25 +194,20 @@ def main(argv):
     try:
         (opts, args) = getopt.getopt(
             argv[1:],
-            "hdBw:",
+            "hdBwD:",
             [
                 "help",
                 "dry-run",
                 "show-blacklist",
                 "whitelist=",
+                "download-dir=",
             ],
         )
-        if len(args) != 1:
-            usage()
-            return 1
     except getopt.GetoptError as e:
         usage()
         return 1
-    directory = args[0]
 
-    if not os.path.exists(directory):
-        print("Can't find dl path", directory)
-        return 1
+    directory = "dl/"
 
     for (o, v) in opts:
         if o in ("-h", "--help"):
@@ -233,6 +231,12 @@ def main(argv):
                     sep = "\t"
                 print("%s%s(%s)" % (name, sep, regex.pattern))
             return 0
+        if o in ("-D", "--download-dir"):
+            directory = v
+
+    if not os.path.exists(directory):
+        print("Can't find dl path", directory)
+        return 1
 
     # Create a directory listing and parse the file names.
     entries = []
