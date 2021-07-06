@@ -23,10 +23,10 @@
 	leds {
 		compatible = "gpio-leds";
 		
-		led_power:power {	
+		led_power: power {	
 			label = "amber:power";
-			default-state = "on";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+			default-state = "on";
 		};
 
 		wifi {
@@ -71,6 +71,7 @@
 &gpio1 {
 	status = "okay";
 };
+
 &gpio3 {
 	status = "okay";
 };
@@ -127,7 +128,6 @@
 	};
 };
 
-
 &ethernet {
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
@@ -135,12 +135,14 @@
 
 	port@5 {
 		status = "okay";
+		
 		phy-mode = "rgmii";
 		mediatek,fixed-link = <1000 1 1 1>;
 	};
 
 	mdio-bus {
 		status = "okay";
+		
 		ethernet-phy@0 {
 			reg = <0>;
 			phy-mode = "rgmii";
