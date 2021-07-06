@@ -109,6 +109,8 @@ extensions = (
 )
 
 versionRegex = (
+    (re.compile(r"(gcc[-_]\d+)\.(\d+)\.(\d+)"), parseVer_12),  # gcc.1.2
+    (re.compile(r"(linux[-_]\d+\.\d+)\.(\d+)"), parseVer_r),  # linux.1
     (re.compile(r"(.+)[-_](\d+)\.(\d+)\.(\d+)\.(\d+)"), parseVer_1234),  # xxx-1.2.3.4
     (
         re.compile(r"(.+)[-_](\d\d\d\d)-?(\d\d)-?(\d\d)-"),
@@ -123,8 +125,6 @@ versionRegex = (
 )
 
 blacklist = [
-    ("linux", re.compile(r"linux-\d.*")),
-    ("gcc", re.compile(r"gcc-.*")),
     ("wl_apsta", re.compile(r"wl_apsta.*")),
     (".fw", re.compile(r".*\.fw")),
     (".arm", re.compile(r".*\.arm")),
