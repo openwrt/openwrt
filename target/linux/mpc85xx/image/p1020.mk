@@ -1,19 +1,33 @@
-define Device/aerohive_hiveap-330
+define Device/aerohive_hiveap
   DEVICE_VENDOR := Aerohive
-  DEVICE_MODEL := HiveAP-330
   DEVICE_PACKAGES := kmod-tpm-i2c-atmel
   BLOCKSIZE := 128k
   KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_SIZE := 8m
   KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs | uImage none
   IMAGES := fdt.bin sysupgrade.bin
-  IMAGE/fdt.bin := append-dtb
+  IMAGE/fdt.bin := append-dtb | pad-to 256k | check-size 256k
+endef
+
+define Device/aerohive_hiveap-330
+  $(Device/aerohive_hiveap)
+  DEVICE_MODEL := HiveAP-330
   IMAGE/sysupgrade.bin := append-dtb | pad-to 256k | check-size 256k | \
 	append-uImage-fakehdr ramdisk | pad-to 256k | check-size 512k | \
 	append-rootfs | pad-rootfs $$(BLOCKSIZE) | pad-to 41216k | check-size 41216k | \
 	append-kernel | append-metadata
 endef
 TARGET_DEVICES += aerohive_hiveap-330
+
+define Device/aerohive_hiveap-370
+  $(Device/aerohive_hiveap)
+  DEVICE_MODEL := HiveAP-370
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-ath9k nand-utils
+  IMAGES := fdt.bin ramdisk.bin sysupgrade.bin
+  IMAGE/ramdisk.bin := append-uImage-fakehdr ramdisk | pad-to 256k | check-size 512k
+  IMAGE/sysupgrade.bin := sysupgrade-dtb-ramdisk-tar $(KDIR_TMP)/*fdt.bin $(KDIR_TMP)/*ramdisk.bin | append-metadata
+endef
+TARGET_DEVICES += aerohive_hiveap-370
 
 define Device/enterasys_ws-ap3710i
   DEVICE_VENDOR := Enterasys
