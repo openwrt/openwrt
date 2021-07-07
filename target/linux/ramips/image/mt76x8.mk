@@ -274,6 +274,7 @@ define Device/minew_g1-c
   DEVICE_VENDOR := Minew
   DEVICE_MODEL := G1-C
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-serial-cp210x
+  SUPPORTED_DEVICES += minew-g1c
 endef
 TARGET_DEVICES += minew_g1-c
 
