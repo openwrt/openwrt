@@ -61,6 +61,7 @@
 #include <crypto/gf128mul.h>
 #include <crypto/scatterwalk.h>
 #include <crypto/xts.h>
+#include <crypto/internal/hash.h>
 #include <crypto/internal/skcipher.h>
 
 #include "ifxmips_deu.h"
@@ -88,10 +89,12 @@ spinlock_t aes_lock;
 #define AES_MIN_KEY_SIZE    16
 #define AES_MAX_KEY_SIZE    32
 #define AES_BLOCK_SIZE      16
+#define AES_BLOCK_WORDS     4
 #define CTR_RFC3686_NONCE_SIZE    4
 #define CTR_RFC3686_IV_SIZE       8
 #define CTR_RFC3686_MIN_KEY_SIZE  (AES_MIN_KEY_SIZE + CTR_RFC3686_NONCE_SIZE)
 #define CTR_RFC3686_MAX_KEY_SIZE  (AES_MAX_KEY_SIZE + CTR_RFC3686_NONCE_SIZE)
+#define AES_CBCMAC_DBN_TEMP_SIZE  128
 
 #ifdef CRYPTO_DEBUG
 extern char debug_level;
@@ -118,11 +121,17 @@ extern void ifx_deu_aes (void *ctx_arg, uint8_t *out_arg, const uint8_t *in_arg,
 
 struct aes_ctx {
     int key_length;
-    u32 buf[AES_MAX_KEY_SIZE];
-    u32 tweakkey[AES_MAX_KEY_SIZE];
+    u8 buf[AES_MAX_KEY_SIZE];
+    u8 tweakkey[AES_MAX_KEY_SIZE];
     u8 nonce[CTR_RFC3686_NONCE_SIZE];
     u8 lastbuffer[4 * XTS_BLOCK_SIZE];
     int use_tweak;
+    u32 byte_count;
+    u32 dbn;
+    int started;
+    u32 (*temp)[AES_BLOCK_WORDS];
+    u8 block[AES_BLOCK_SIZE];
+    u8 hash[AES_BLOCK_SIZE];
 };
 
 extern int disable_deudma;
@@ -171,6 +180,62 @@ int aes_set_key_skcipher (struct crypto_skcipher *tfm, const u8 *in_key, unsigne
 }
 
 
+/*! \fn void aes_set_key_skcipher (void *ctx_arg)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief sets the AES key to the hardware, requires spinlock to be set by caller
+ *  \param ctx_arg crypto algo context  
+ *  \return
+*/
+void aes_set_key_hw (void *ctx_arg)
+{
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+    volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
+    struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
+    u8 *in_key = ctx->buf;
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+    int key_len = ctx->key_length;
+
+    if (ctx->use_tweak) in_key = ctx->tweakkey;
+
+    /* 128, 192 or 256 bit key length */
+    aes->controlr.K = key_len / 8 - 2;
+        if (key_len == 128 / 8) {
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+    }
+    else if (key_len == 192 / 8) {
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+    }
+    else if (key_len == 256 / 8) {
+        aes->K7R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K6R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 6));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 7));
+    }
+    else {
+        printk (KERN_ERR "[%s %s %d]: Invalid key_len : %d\n", __FILE__, __func__, __LINE__, key_len);
+        return; //-EINVAL;
+    }
+
+    /* let HW pre-process DEcryption key in any case (even if
+       ENcryption is used). Key Valid (KV) bit is then only
+       checked in decryption routine! */
+    aes->controlr.PNK = 1;
+
+}
+
+
 /*! \fn void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, size_t nbytes, int encdec, int mode)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief main interface to AES hardware
@@ -190,7 +255,7 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
     struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
-    u32 *in_key = ctx->buf;
+    u8 *in_key = ctx->buf;
     unsigned long flag;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     int key_len = ctx->key_length;
@@ -672,7 +737,7 @@ void ifx_deu_aes_xts (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
     struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
-    u32 *in_key = ctx->buf;
+    u8 *in_key = ctx->buf;
     unsigned long flag;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     int key_len = ctx->key_length;
@@ -1332,6 +1397,291 @@ struct skcipher_alg ifxdeu_ctr_rfc3686_aes_alg = {
     .decrypt                 =   ctr_rfc3686_aes_decrypt,
 };
 
+static int aes_cbcmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final);
+
+/*! \fn static void aes_cbcmac_transform(struct shash_desc *desc, u8 const *in)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief save input block to context
+ *  \param desc linux crypto shash descriptor
+ *  \param in 16-byte block of input
+*/
+static void aes_cbcmac_transform(struct shash_desc *desc, u8 const *in)
+{
+    struct aes_ctx *mctx = crypto_shash_ctx(desc->tfm);
+
+    if ( ((mctx->dbn)+1) > AES_CBCMAC_DBN_TEMP_SIZE )
+    {
+        //printk("aes_cbcmac_DBN_TEMP_SIZE exceeded\n");
+        aes_cbcmac_final_impl(desc, (u8 *)mctx->hash, false);
+    }
+
+    memcpy(&mctx->temp[mctx->dbn], in, 16); //dbn workaround
+    mctx->dbn += 1;
+}
+
+/*! \fn int aes_cbcmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief sets cbcmac aes key
+ *  \param tfm linux crypto shash transform
+ *  \param key input key
+ *  \param keylen key
+*/
+static int aes_cbcmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
+{
+    return aes_set_key(crypto_shash_tfm(tfm), key, keylen);
+
+    return 0;
+}
+
+/*! \fn void aes_cbcmac_init(struct shash_desc *desc)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief initialize md5 hmac context
+ *  \param desc linux crypto shash descriptor
+*/
+static int aes_cbcmac_init(struct shash_desc *desc)
+{
+
+    struct aes_ctx *mctx = crypto_shash_ctx(desc->tfm);
+
+    mctx->dbn = 0; //dbn workaround
+    mctx->started = 0;
+    mctx->byte_count = 0;
+    memset(mctx->hash, 0, AES_BLOCK_SIZE);
+
+    return 0;
+}
+
+/*! \fn void aes_cbcmac_update(struct shash_desc *desc, const u8 *data, unsigned int len)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief on-the-fly cbcmac aes computation
+ *  \param desc linux crypto shash descriptor
+ *  \param data input data
+ *  \param len size of input data
+*/
+static int aes_cbcmac_update(struct shash_desc *desc, const u8 *data, unsigned int len)
+{
+    struct aes_ctx *mctx = crypto_shash_ctx(desc->tfm);
+    const u32 avail = sizeof(mctx->block) - (mctx->byte_count & 0x0f);
+
+    mctx->byte_count += len;
+
+    if (avail > len) {
+        memcpy((char *)mctx->block + (sizeof(mctx->block) - avail),
+               data, len);
+        return 0;
+    }
+
+    memcpy((char *)mctx->block + (sizeof(mctx->block) - avail),
+           data, avail);
+
+    aes_cbcmac_transform(desc, mctx->block);
+    data += avail;
+    len -= avail;
+
+    while (len >= sizeof(mctx->block)) {
+        memcpy(mctx->block, data, sizeof(mctx->block));
+        aes_cbcmac_transform(desc, mctx->block);
+        data += sizeof(mctx->block);
+        len -= sizeof(mctx->block);
+    }
+
+    memcpy(mctx->block, data, len);
+    return 0;
+}
+
+/*! \fn static int aes_cbcmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief compute final or intermediate md5 hmac value
+ *  \param desc linux crypto shash descriptor
+ *  \param out final cbcmac aes output value
+ *  \param in finalize or intermediate processing
+*/
+static int aes_cbcmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final)
+{
+    struct aes_ctx *mctx = crypto_shash_ctx(desc->tfm);
+    const unsigned int offset = mctx->byte_count & 0x0f;
+    char *p = (char *)mctx->block + offset;
+    volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
+    int key_len = mctx->key_length;
+    u8 *in_key = mctx->buf;
+    unsigned long flag;
+    int i = 0;
+    int dbn;
+    u32 *in = mctx->temp[0];
+
+    CRTCL_SECT_START;
+
+    /* 128, 192 or 256 bit key length */
+    aes->controlr.K = key_len / 8 - 2;
+        if (key_len == 128 / 8) {
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+    }
+    else if (key_len == 192 / 8) {
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+    }
+    else if (key_len == 256 / 8) {
+        aes->K7R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
+        aes->K6R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
+        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
+        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
+        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
+        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
+        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 6));
+        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 7));
+    }
+    else {
+        printk (KERN_ERR "[%s %s %d]: Invalid key_len : %d\n", __FILE__, __func__, __LINE__, key_len);
+        CRTCL_SECT_END;
+        return -EINVAL;
+    }
+
+    /* let HW pre-process DEcryption key in any case (even if
+       ENcryption is used). Key Valid (KV) bit is then only
+       checked in decryption routine! */
+    aes->controlr.PNK = 1;
+
+
+    aes->controlr.E_D = !CRYPTO_DIR_ENCRYPT;    //encryption
+    aes->controlr.O = 1; //0 ECB 1 CBC 2 OFB 3 CFB 4 CTR 
+
+    //aes->controlr.F = 128; //default; only for CFB and OFB modes; change only for customer-specific apps
+
+    //printk("\ndbn = %d\n", mctx->dbn);
+
+    if (mctx->started) {
+        aes->IV3R = DEU_ENDIAN_SWAP(*(u32 *) mctx->hash);
+        aes->IV2R = DEU_ENDIAN_SWAP(*((u32 *) mctx->hash + 1));
+        aes->IV1R = DEU_ENDIAN_SWAP(*((u32 *) mctx->hash + 2));
+        aes->IV0R = DEU_ENDIAN_SWAP(*((u32 *) mctx->hash + 3));
+    } else {
+        mctx->started = 1;
+        aes->IV3R = 0;
+        aes->IV2R = 0;
+        aes->IV1R = 0;
+        aes->IV0R = 0;
+    }
+
+    i = 0;
+    for (dbn = 0; dbn < mctx->dbn; dbn++)
+    {
+        aes->ID3R = INPUT_ENDIAN_SWAP(*((u32 *) in + (i * 4) + 0));
+        aes->ID2R = INPUT_ENDIAN_SWAP(*((u32 *) in + (i * 4) + 1));
+        aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) in + (i * 4) + 2));
+        aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) in + (i * 4) + 3));    /* start crypto */
+
+        while (aes->controlr.BUS) {
+            // this will not take long
+        }
+
+        in += 4;
+    }
+
+    *((u32 *) mctx->hash) = DEU_ENDIAN_SWAP(aes->IV3R);
+    *((u32 *) mctx->hash + 1) = DEU_ENDIAN_SWAP(aes->IV2R);
+    *((u32 *) mctx->hash + 2) = DEU_ENDIAN_SWAP(aes->IV1R);
+    *((u32 *) mctx->hash + 3) = DEU_ENDIAN_SWAP(aes->IV0R);
+
+    if (hash_final && offset) {
+        aes->controlr.O = 0; //0 ECB 1 CBC 2 OFB 3 CFB 4 CTR 
+        crypto_xor(mctx->block, mctx->hash, offset);
+
+        memcpy(p, mctx->hash + offset, (AES_BLOCK_SIZE - offset));
+
+        aes->ID3R = INPUT_ENDIAN_SWAP(*((u32 *) mctx->block + 0));
+        aes->ID2R = INPUT_ENDIAN_SWAP(*((u32 *) mctx->block + 1));
+        aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) mctx->block + 2));
+        aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) mctx->block + 3));    /* start crypto */
+
+        while (aes->controlr.BUS) {
+            // this will not take long
+        }
+
+        *((u32 *) mctx->hash) = DEU_ENDIAN_SWAP(aes->OD3R);
+        *((u32 *) mctx->hash + 1) = DEU_ENDIAN_SWAP(aes->OD2R);
+        *((u32 *) mctx->hash + 2) = DEU_ENDIAN_SWAP(aes->OD1R);
+        *((u32 *) mctx->hash + 3) = DEU_ENDIAN_SWAP(aes->OD0R);
+    }
+
+    CRTCL_SECT_END;
+
+    if (hash_final) {
+        memcpy(out, mctx->hash, AES_BLOCK_SIZE);
+        /* reset the context after we finish with the hash */
+        aes_cbcmac_init(desc);
+    } else {
+        mctx->dbn = 0;
+    }
+    return 0;
+}
+
+/*! \fn static int aes_cbcmac_final(struct crypto_tfm *tfm, u8 *out)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief call aes_cbcmac_final_impl with hash_final true
+ *  \param tfm linux crypto algo transform
+ *  \param out final md5 hmac output value
+*/
+static int aes_cbcmac_final(struct shash_desc *desc, u8 *out)
+{
+    return aes_cbcmac_final_impl(desc, out, true);
+}
+
+/*! \fn void aes_cbcmac_init_tfm(struct crypto_tfm *tfm)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief initialize pointers in aes_ctx
+ *  \param tfm linux crypto shash transform
+*/
+static int aes_cbcmac_init_tfm(struct crypto_tfm *tfm)
+{
+    struct aes_ctx *mctx = crypto_tfm_ctx(tfm);
+    mctx->temp = kzalloc(AES_BLOCK_SIZE * AES_CBCMAC_DBN_TEMP_SIZE, GFP_KERNEL);
+    if (IS_ERR(mctx->temp)) return PTR_ERR(mctx->temp);
+
+    return 0;
+}
+
+/*! \fn void aes_cbcmac_exit_tfm(struct crypto_tfm *tfm)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief free pointers in aes_ctx
+ *  \param tfm linux crypto shash transform
+*/
+static void aes_cbcmac_exit_tfm(struct crypto_tfm *tfm)
+{
+    struct aes_ctx *mctx = crypto_tfm_ctx(tfm);
+    kfree(mctx->temp);
+}
+
+/*
+ * \brief aes_cbcmac function mappings
+*/
+static struct shash_alg ifxdeu_cbcmac_aes_alg = {
+    .digestsize         =       AES_BLOCK_SIZE,
+    .init               =       aes_cbcmac_init,
+    .update             =       aes_cbcmac_update,
+    .final              =       aes_cbcmac_final,
+    .setkey             =       aes_cbcmac_setkey,
+    .descsize           =       sizeof(struct aes_ctx),
+    .base               =       {
+        .cra_name       =       "cbcmac(aes)",
+        .cra_driver_name=       "ifxdeu-cbcmac(aes)",
+        .cra_priority   =       400,
+        .cra_ctxsize    =       sizeof(struct aes_ctx),
+        .cra_flags      =       CRYPTO_ALG_TYPE_HASH | CRYPTO_ALG_KERN_DRIVER_ONLY,
+        .cra_blocksize  =       1,
+        .cra_module     =       THIS_MODULE,
+        .cra_init       =       aes_cbcmac_init_tfm,
+        .cra_exit       =       aes_cbcmac_exit_tfm,
+        }
+};
+
+
 /*! \fn int ifxdeu_init_aes (void)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief function to initialize AES driver
@@ -1367,12 +1717,19 @@ int ifxdeu_init_aes (void)
     if ((ret = crypto_register_skcipher(&ifxdeu_ctr_rfc3686_aes_alg)))
         goto ctr_rfc3686_aes_err;
 
+    if ((ret = crypto_register_shash(&ifxdeu_cbcmac_aes_alg)))
+        goto cbcmac_aes_err;
+
     CRTCL_SECT_INIT;
 
 
     printk (KERN_NOTICE "IFX DEU AES initialized%s%s.\n", disable_multiblock ? "" : " (multiblock)", disable_deudma ? "" : " (DMA)");
     return ret;
 
+cbcmac_aes_err:
+    crypto_unregister_shash(&ifxdeu_cbcmac_aes_alg);
+    printk (KERN_ERR "IFX cbcmac_aes initialization failed!\n");
+    return ret;
 ctr_rfc3686_aes_err:
     crypto_unregister_skcipher(&ifxdeu_ctr_rfc3686_aes_alg);
     printk (KERN_ERR "IFX ctr_rfc3686_aes initialization failed!\n");
@@ -1421,5 +1778,5 @@ void ifxdeu_fini_aes (void)
     crypto_unregister_skcipher (&ifxdeu_cfb_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_ctr_basic_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_ctr_rfc3686_aes_alg);
-
+    crypto_unregister_shash (&ifxdeu_cbcmac_aes_alg);
 }
