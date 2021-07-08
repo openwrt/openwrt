@@ -100,6 +100,13 @@ define Device/d-team_pbr-d1
 endef
 TARGET_DEVICES += d-team_pbr-d1
 
+define Device/dlink_dap-1325-a1
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-1325 A1
+endef
+TARGET_DEVICES += dlink_dap-1325-a1
+
 define Device/duzun_dm06
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := DuZun
