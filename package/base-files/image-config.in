@@ -142,6 +142,55 @@ menuconfig INITOPT
 			previous versions of OpenWrt.  Removing this does nothing if
 			stderr is suppressed during preinit (which is the default).
 
+menuconfig WIFIOPT
+	bool "WiFi configuration options" if IMAGEOPT
+	default n
+	help
+		These options allow to override the WiFi settings embedded in
+		/etc/openwrt_wifi_default, which is used as a seed to setup the
+		default WiFI access points.
+
+if WIFIOPT
+
+	config WIFI_DISABLED
+		bool
+		prompt "Start WiFi disabled"
+		default y
+		help
+			Per default all WiFi access points are disabled. Change
+			this to enable WiFi interfaces after first boot.
+
+
+	config WIFI_SSID
+		string
+		prompt "WiFi SSID"
+		default "OpenWrt"
+		help
+			WiFi SSID used for automatically created access points.
+
+	config WIFI_ENCRYPTION
+		string
+		prompt "WiFi Encryption"
+		default "none"
+		help
+			WiFi encryption used for automatically created access points.
+
+			Supported modes:
+			none - No encryption
+			owe - OWE
+			sae - WPA3 Pers.
+			sae-mixed - WPA2/WPA3 Pers.
+			psk2 - WPA2 Pers.
+			psk - WPA Pers.
+
+	config WIFI_KEY
+		string
+		prompt "WiFi Key"
+		default ""
+		help
+			WiFi key used for automatically created access points.
+			Requires at least eight (8) characters.
+endif
 
 menuconfig VERSIONOPT
 	bool "Version configuration options" if IMAGEOPT
