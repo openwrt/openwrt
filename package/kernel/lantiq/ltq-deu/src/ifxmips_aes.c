@@ -192,8 +192,8 @@ void aes_set_key_hw (void *ctx_arg)
     volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
     struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
     u8 *in_key = ctx->buf;
-    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     int key_len = ctx->key_length;
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
     if (ctx->use_tweak) in_key = ctx->tweakkey;
 
@@ -255,54 +255,14 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
     struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
-    u8 *in_key = ctx->buf;
     unsigned long flag;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-    int key_len = ctx->key_length;
-
     int i = 0;
     int byte_cnt = nbytes; 
 
-    if (ctx->use_tweak) in_key = ctx->tweakkey;
-
     CRTCL_SECT_START;
-    /* 128, 192 or 256 bit key length */
-    aes->controlr.K = key_len / 8 - 2;
-        if (key_len == 128 / 8) {
-        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
-        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
-        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
-        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
-    }
-    else if (key_len == 192 / 8) {
-        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
-        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
-        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
-        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
-        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
-        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
-    }
-    else if (key_len == 256 / 8) {
-        aes->K7R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
-        aes->K6R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
-        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
-        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
-        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
-        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
-        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 6));
-        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 7));
-    }
-    else {
-        printk (KERN_ERR "[%s %s %d]: Invalid key_len : %d\n", __FILE__, __func__, __LINE__, key_len);
-        CRTCL_SECT_END;
-        return;// -EINVAL;
-    }
 
-    /* let HW pre-process DEcryption key in any case (even if
-       ENcryption is used). Key Valid (KV) bit is then only
-       checked in decryption routine! */
-    aes->controlr.PNK = 1;
-
+    aes_set_key_hw (ctx_arg);
 
     aes->controlr.E_D = !encdec;    //encryption
     aes->controlr.O = mode; //0 ECB 1 CBC 2 OFB 3 CFB 4 CTR 
@@ -737,53 +697,15 @@ void ifx_deu_aes_xts (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
     struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
-    u8 *in_key = ctx->buf;
     unsigned long flag;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-    int key_len = ctx->key_length;
     u8 oldiv[16];
     int i = 0;
     int byte_cnt = nbytes; 
 
     CRTCL_SECT_START;
 
-    //prepare the key
-    /* 128, 192 or 256 bit key length */
-    aes->controlr.K = key_len / 8 - 2;
-        if (key_len == 128 / 8) {
-        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
-        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
-        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
-        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
-    }
-    else if (key_len == 192 / 8) {
-        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
-        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
-        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
-        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
-        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
-        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
-    }
-    else if (key_len == 256 / 8) {
-        aes->K7R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
-        aes->K6R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
-        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
-        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
-        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
-        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
-        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 6));
-        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 7));
-    }
-    else {
-        printk (KERN_ERR "[%s %s %d]: Invalid key_len : %d\n", __FILE__, __func__, __LINE__, key_len);
-        CRTCL_SECT_END;
-        return;// -EINVAL;
-    }
-
-    /* let HW pre-process DEcryption key in any case (even if
-       ENcryption is used). Key Valid (KV) bit is then only
-       checked in decryption routine! */
-    aes->controlr.PNK = 1;
+    aes_set_key_hw (ctx_arg);
 
     aes->controlr.E_D = !encdec;    //encryption
     aes->controlr.O = 1; //0 ECB 1 CBC 2 OFB 3 CFB 4 CTR - CBC mode for xts
@@ -1502,8 +1424,6 @@ static int aes_cbcmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fin
     const unsigned int offset = mctx->byte_count & 0x0f;
     char *p = (char *)mctx->block + offset;
     volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
-    int key_len = mctx->key_length;
-    u8 *in_key = mctx->buf;
     unsigned long flag;
     int i = 0;
     int dbn;
@@ -1511,43 +1431,7 @@ static int aes_cbcmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fin
 
     CRTCL_SECT_START;
 
-    /* 128, 192 or 256 bit key length */
-    aes->controlr.K = key_len / 8 - 2;
-        if (key_len == 128 / 8) {
-        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
-        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
-        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
-        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
-    }
-    else if (key_len == 192 / 8) {
-        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
-        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
-        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
-        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
-        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
-        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
-    }
-    else if (key_len == 256 / 8) {
-        aes->K7R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 0));
-        aes->K6R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 1));
-        aes->K5R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 2));
-        aes->K4R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 3));
-        aes->K3R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 4));
-        aes->K2R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 5));
-        aes->K1R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 6));
-        aes->K0R = DEU_ENDIAN_SWAP(*((u32 *) in_key + 7));
-    }
-    else {
-        printk (KERN_ERR "[%s %s %d]: Invalid key_len : %d\n", __FILE__, __func__, __LINE__, key_len);
-        CRTCL_SECT_END;
-        return -EINVAL;
-    }
-
-    /* let HW pre-process DEcryption key in any case (even if
-       ENcryption is used). Key Valid (KV) bit is then only
-       checked in decryption routine! */
-    aes->controlr.PNK = 1;
-
+    aes_set_key_hw (mctx);
 
     aes->controlr.E_D = !CRYPTO_DIR_ENCRYPT;    //encryption
     aes->controlr.O = 1; //0 ECB 1 CBC 2 OFB 3 CFB 4 CTR 
