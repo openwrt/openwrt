@@ -49,6 +49,10 @@ define Build/boot-2711
 endef
 
 define Build/sdcard-img
+	if [ -d $(TOPDIR)/overlay/boot ]; then \
+		mcopy -D o -i $@.boot $(TOPDIR)/overlay/boot/* ::; \
+	fi;
+
 	./gen_rpi_sdcard_img.sh $@ $@.boot $(IMAGE_ROOTFS) \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
