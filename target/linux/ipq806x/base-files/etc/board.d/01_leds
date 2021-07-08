@@ -21,6 +21,10 @@ edgecore,ecw5410)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy0tpt"
 	;;
+extreme,ap3935i)
+	ucidef_set_led_netdev "wan" "wan" "yellow:lan1" "eth0"
+	ucidef_set_led_netdev "lan" "lan" "yellow:lan2" "eth1"
+	;;
 nec,wg2600hp)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy0tpt"

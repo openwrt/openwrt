@@ -30,6 +30,11 @@ tplink,vr2600v)
 edgecore,ecw5410)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
+extreme,ap3935i)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_set_interface_macaddr "lan" "$(mtd_get_mac_ascii CFG1 eth1addr)"
+	ucidef_set_interface_macaddr "wan" "$(mtd_get_mac_ascii CFG1 ethaddr)"
+	;;
 linksys,ea7500-v1)
 	hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 	ucidef_add_switch "switch0" \

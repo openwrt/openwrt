@@ -1,0 +1,367 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq8064-v2.0.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Extreme Networks AP3935i";
+	compatible = "extreme,ap3935i", "qcom,ipq8064";
+
+	memory@0 {
+		reg = <0x41400000 0x3ec00000>;
+		device_type = "memory";
+	};
+
+	cpus {
+		idle-states {
+			CPU_SPC: spc {
+				status = "disabled";
+			};
+		};
+	};
+
+	aliases {
+		serial0 = &gsbi7_serial;
+		serial1 = &gsbi2_serial;
+		mdio-gpio0 = &mdio0;
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac2;
+
+		led-boot = &led_power_yellow;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_yellow;
+		led-upgrade = &led_power_yellow;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-override = "loglevel=8 earlycon=msm_serial_dm,0x16640000 console=ttyMSM0,115200n8 ubi.block=0,0 root=/dev/ubiblock0_0 rootfstype=squashfs";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 56 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_power_yellow: power_yellow {
+			label = "yellow:power";
+			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_LOW>;
+		};
+		
+		led_power_orange: power_orange { 
+			label = "orange:power";
+			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan2g_yellow {
+			label = "yellow:wlan2g";
+			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+		
+		led_wlan5g_yellow {
+			label = "yellow:wlan5g";
+			gpios = <&qcom_pinmux 25 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+		
+		led_lan1_yellow {
+			label = "yellow:lan1";
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
+		};
+		
+		led_lan1_orange {
+			label = "orange:lan1";
+			gpios = <&qcom_pinmux 27 GPIO_ACTIVE_LOW>;
+		};
+		
+		led_lan2_yellow {
+			label = "yellow:lan2";
+			gpios = <&qcom_pinmux 28 GPIO_ACTIVE_LOW>;
+		};
+		
+		led_lan2_orange {
+			label = "orange:lan2";
+			gpios = <&qcom_pinmux 29 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+
+&qcom_pinmux {
+	spi_pins: spi_pins {
+		mux {
+			pins = "gpio18", "gpio19";
+			function = "gsbi5";
+			drive-strength = <10>;
+			bias-pull-down;
+		};
+
+		clk {
+			pins = "gpio21";
+			function = "gsbi5";
+			drive-strength = <12>;
+			bias-pull-down;
+		};
+
+		cs {
+			pins = "gpio20";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio22", "gpio23", "gpio24", "gpio25", "gpio26", "gpio27", "gpio28", "gpio29";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button_pins {
+		mux {
+			pins = "gpio56";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+	
+	rgmii0_pins: rgmii0_pins {
+		mux {
+			pins = "gpio2", "gpio66";
+			drive-strength = <8>;
+			bias-disable;
+		};
+		
+		tx {
+			pins = "gpio53", "gpio64";
+			drive-strength = <2>;
+			bias-pull-down;		
+			input-enable;
+		};
+	};
+};
+
+&gsbi2 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+	status = "okay";
+
+	gsbi2_serial: serial@12490000 {
+		status = "okay";
+	};
+};
+
+&gsbi4 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+	status = "okay";
+
+	serial@16340000 {
+		status = "disabled";
+	};
+};
+
+&gsbi7 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+	status = "okay";
+
+	gsbi7_serial: serial@16640000 {
+		status = "okay";
+	};
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi4: spi@1a280000 {
+		status = "okay";
+		spi-max-frequency = <50000000>;
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
+
+		flash@0 {
+			compatible = "jedec,spi-nor";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			spi-max-frequency = <50000000>;
+			reg = <0>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				
+				cfg1@02a0000 {
+					label = "CFG1";
+					reg = <0x02a0000 0x0010000>;
+				};
+				cfg1@02b0000 {
+					label = "BootPRI";
+					reg = <0x02b0000 0x0080000>;
+				};
+				cfg2@0330000 {
+					label = "CFG2";
+					reg = <0x0330000 0x0010000>;
+				};
+				fs@0340000 {
+					label = "FS";
+					reg = <0x0340000 0x0080000>;
+				};
+				priimg@03c0000 {
+					label = "PriImg";
+					reg = <0x03c0000 0x0e10000>;
+				};
+				secimg@11d0000 {
+					label = "SecImg";
+					reg = <0x11d0000 0x0e10000>;
+				};
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+	/delete-property/ perst-gpios;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "qcom,ath10k";
+			status = "okay";
+			reg = <0x00010000 0 0 0 0>;
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+	/delete-property/ perst-gpios;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "qcom,ath10k";
+			status = "okay";
+			reg = <0x00010000 0 0 0 0>;
+		};
+	};
+};
+
+&nand_controller {
+	status = "okay";
+
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+
+	nand@0 {
+		compatible = "qcom,nandcs";
+
+		reg = <0>;
+
+		nand-ecc-strength = <8>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			
+			ubi@0 {
+				label = "ubi";
+				reg = <0x0000000 0x20000000>;
+			};
+		};
+	};
+};
+
+&soc {
+	mdio1: mdio {
+		compatible = "virtual,mdio-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "okay";
+
+		pinctrl-0 = <&mdio0_pins>;
+		pinctrl-names = "default";
+
+		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
+
+		phy1: ethernet-phy@1 {
+			reg = <1>;
+		};
+
+		phy2: ethernet-phy@2 {
+			reg = <2>;
+		};
+	};
+};
+
+&gmac0 {
+	status = "okay";
+
+	qcom,id = <0>;
+	mdiobus = <&mdio1>;
+
+	pinctrl-0 = <&rgmii0_pins>;
+	pinctrl-names = "default";
+
+	phy-mode = "rgmii";
+	phy-handle = <&phy1>;
+	
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+
+	qcom,id = <2>;
+	mdiobus = <&mdio1>;
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy2>;
+};
+
+&adm_dma {
+	status = "okay";
+};

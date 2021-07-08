@@ -25,6 +25,22 @@ define Download/qca99x0-board-2g
 endef
 $(eval $(call Download,qca99x0-board-2g))
 
+define Download/qca99x0-board-5g-high
+  URL:=https://gitlab.zenterprise.org/zenjabba/starlink-wifi/-/raw/master/dl/wlan/halphy_tools/host/eepromUtil/release_ar900b/hw2/
+  URL_FILE:=boardData_AR900B_CUS238_5GMipiHigh_v2_004.bin
+  FILE:=boardData_AR900B_CUS238_5GMipiHigh_v2_004.bin
+  HASH:=4f181c3ad1b8290612a599d5a64c28c3a02eb367d74646d7d54df3ed3289b9ea
+endef
+$(eval $(call Download,qca99x0-board-5g-high))
+
+define Download/qca99x0-board-2g-high
+  URL:=https://gitlab.zenterprise.org/zenjabba/starlink-wifi/-/raw/master/dl/wlan/halphy_tools/host/eepromUtil/release_ar900b/hw2/
+  URL_FILE:=boardData_AR900B_CUS240_2GMipiHigh_v2_006.bin
+  FILE:=boardData_AR900B_CUS240_2GMipiHigh_v2_006.bin
+  HASH:=beee709b694f3d433c96cc84562a1967a119df4c87ebd1bb74e55794281ae58f
+endef
+$(eval $(call Download,qca99x0-board-2g-high))
+
 Package/ath10k-board-qca4019 = $(call Package/firmware-default,ath10k qca4019 board firmware)
 define Package/ath10k-board-qca4019/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA4019/hw1.0
@@ -158,6 +174,24 @@ define Package/ath10k-board-qca99x0-5g/install
 		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board-5g-precal.bin
 endef
 $(eval $(call BuildPackage,ath10k-board-qca99x0-5g))
+
+Package/ath10k-board-qca99x0-2g-high = $(call Package/firmware-default,ath10k qca99x0 board 2g high precal firmware)
+define Package/ath10k-board-qca99x0-2g-high/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA99X0/hw2.0
+	$(INSTALL_DATA) \
+		$(DL_DIR)/boardData_AR900B_CUS240_2GMipiHigh_v2_006.bin \
+		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board-2g-high-precal.bin
+endef
+$(eval $(call BuildPackage,ath10k-board-qca99x0-2g-high))
+
+Package/ath10k-board-qca99x0-5g-high = $(call Package/firmware-default,ath10k qca99x0 board 5g high precal firmware)
+define Package/ath10k-board-qca99x0-5g-high/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA99X0/hw2.0
+	$(INSTALL_DATA) \
+		$(DL_DIR)/boardData_AR900B_CUS238_5GMipiHigh_v2_004.bin \
+		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board-5g-high-precal.bin
+endef
+$(eval $(call BuildPackage,ath10k-board-qca99x0-5g-high))
 
 Package/ath10k-firmware-qca99x0 = $(call Package/firmware-default,ath10k qca99x0 firmware,+ath10k-board-qca99x0)
 define Package/ath10k-firmware-qca99x0/install
