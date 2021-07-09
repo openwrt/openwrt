@@ -77,11 +77,13 @@ extract_eeprom() {
 	avm,fritz3490)
 		do_extract_eeprom_reverse ${mtd} 0x1541 0x440 "${WASP}/files/lib/firmware/ath9k-eeprom-ahb-18100000.wmac.bin"
 		do_extract_eeprom ${mtd} 0x198A 0x844 "${WASP}/files/lib/firmware/ath10k/cal-pci-0000:00:00.0.bin"
+		do_extract_eeprom ${mtd} 0x198A 0x844 "${WASP}/files/lib/firmware/ath10k/board.bin"
 	;;
 	avm,fritz5490|\
 	avm,fritz7490)
 		do_extract_eeprom_reverse ${mtd} 0x1541 0x440 "${WASP}/files/lib/firmware/ath9k-eeprom-ahb-18100000.wmac.bin"
 		do_extract_eeprom ${mtd} 0x199F 0x844 "${WASP}/files/lib/firmware/ath10k/cal-pci-0000:00:00.0.bin"
+		do_extract_eeprom ${mtd} 0x199F 0x844 "${WASP}/files/lib/firmware/ath10k/board.bin"
 	;;
   esac
 
