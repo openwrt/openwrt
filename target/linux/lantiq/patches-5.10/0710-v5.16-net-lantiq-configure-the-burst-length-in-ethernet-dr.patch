@@ -75,7 +75,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	priv->txch.netdev = dev;
 --- a/drivers/net/ethernet/lantiq_xrx200.c
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -71,6 +71,9 @@ struct xrx200_priv {
+@@ -81,6 +81,9 @@ struct xrx200_priv {
  	struct net_device *net_dev;
  	struct device *dev;
  
@@ -85,7 +85,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	__iomem void *pmac_reg;
  };
  
-@@ -316,8 +319,8 @@ static netdev_tx_t xrx200_start_xmit(str
+@@ -363,8 +366,8 @@ static netdev_tx_t xrx200_start_xmit(str
  	if (unlikely(dma_mapping_error(priv->dev, mapping)))
  		goto err_drop;
  
@@ -96,7 +96,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	desc->addr = mapping - byte_offset;
  	/* Make sure the address is written before we give it to HW */
-@@ -369,7 +372,7 @@ static int xrx200_dma_init(struct xrx200
+@@ -465,7 +468,7 @@ static int xrx200_dma_init(struct xrx200
  	int ret = 0;
  	int i;
  
@@ -105,7 +105,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	ch_rx->dma.nr = XRX200_DMA_RX;
  	ch_rx->dma.dev = priv->dev;
-@@ -487,6 +490,18 @@ static int xrx200_probe(struct platform_
+@@ -584,6 +587,18 @@ static int xrx200_probe(struct platform_
  	if (err)
  		eth_hw_addr_random(net_dev);
  
