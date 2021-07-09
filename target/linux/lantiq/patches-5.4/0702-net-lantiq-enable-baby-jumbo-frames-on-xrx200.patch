@@ -1,0 +1,61 @@
+From 3e5779db34e2397ec0fd336a993fd907f28c0da8 Mon Sep 17 00:00:00 2001
+From: Thomas Nixon <tom@tomn.co.uk>
+Date: Sat, 3 Jul 2021 15:57:03 +0100
+Subject: [PATCH] net: lantiq: enable baby jumbo frames on xrx200
+
+xrx200 MTU is reduced so that the maximum mtu setting works correctly.
+
+The maximum packet size accepted by the switch is increased to match the
+maximum mtu.
+
+Signed-off-by: Thomas Nixon <tom@tomn.co.uk>
+---
+ drivers/net/dsa/lantiq_gswip.c       | 9 ++++++---
+ drivers/net/ethernet/lantiq_xrx200.c | 4 +++-
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/dsa/lantiq_gswip.c b/drivers/net/dsa/lantiq_gswip.c
+index 3225de0f655f..e02ea6f61824 100644
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -835,9 +835,12 @@ static int gswip_setup(struct dsa_switch *ds)
+ 	gswip_switch_mask(priv, 0, GSWIP_PCE_PCTRL_0_INGRESS,
+ 			  GSWIP_PCE_PCTRL_0p(cpu_port));
+ 
+-	gswip_switch_mask(priv, 0, GSWIP_MAC_CTRL_2_MLEN,
+-			  GSWIP_MAC_CTRL_2p(cpu_port));
+-	gswip_switch_w(priv, VLAN_ETH_FRAME_LEN + 8 + ETH_FCS_LEN,
++	/* enable baby jumbo frames on all ports */
++	for (i = 0; i < priv->hw_info->max_ports; i++)
++		gswip_switch_mask(priv, 0, GSWIP_MAC_CTRL_2_MLEN,
++				  GSWIP_MAC_CTRL_2p(i));
++	/* 8 bytes for special tag, 8 for baby jumbo */
++	gswip_switch_w(priv, VLAN_ETH_FRAME_LEN + 8 + 8 + ETH_FCS_LEN,
+ 		       GSWIP_MAC_FLEN);
+ 	gswip_switch_mask(priv, 0, GSWIP_BM_QUEUE_GCTRL_GL_MOD,
+ 			  GSWIP_BM_QUEUE_GCTRL);
+diff --git a/drivers/net/ethernet/lantiq_xrx200.c b/drivers/net/ethernet/lantiq_xrx200.c
+index 95e7caabff95..69b6cbd36375 100644
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -14,6 +14,8 @@
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ 
++#include <linux/if_vlan.h>
++
+ #include <linux/of_net.h>
+ #include <linux/of_platform.h>
+ 
+@@ -453,7 +455,7 @@ static int xrx200_probe(struct platform_device *pdev)
+ 	net_dev->netdev_ops = &xrx200_netdev_ops;
+ 	SET_NETDEV_DEV(net_dev, dev);
+ 	net_dev->min_mtu = ETH_ZLEN;
+-	net_dev->max_mtu = XRX200_DMA_DATA_LEN;
++	net_dev->max_mtu = XRX200_DMA_DATA_LEN - VLAN_ETH_HLEN - NET_IP_ALIGN;
+ 
+ 	/* load the memory ranges */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-- 
+2.29.3
+
