@@ -134,8 +134,12 @@ define Host/Install
 		INSTALL_TOP="$(STAGING_DIR_HOSTPKG)" \
 		install
 
-	$(LN) $(STAGING_DIR_HOSTPKG)/bin/lua5.1 $(STAGING_DIR_HOSTPKG)/bin/lua
-	$(LN) $(STAGING_DIR_HOSTPKG)/bin/luac5.1 $(STAGING_DIR_HOSTPKG)/bin/luac
+	$(INSTALL_DIR) $(STAGING_DIR_HOSTPKG)/lib/pkgconfig
+	$(CP) $(HOST_BUILD_DIR)/etc/lua.pc $(STAGING_DIR_HOSTPKG)/lib/pkgconfig/lua5.1.pc
+
+	$(LN) lua5.1 $(STAGING_DIR_HOSTPKG)/bin/lua
+	$(LN) luac5.1 $(STAGING_DIR_HOSTPKG)/bin/luac
+	$(LN) lua5.1.pc $(STAGING_DIR_HOSTPKG)/lib/pkgconfig/lua.pc
 endef
 
 define Build/InstallDev
