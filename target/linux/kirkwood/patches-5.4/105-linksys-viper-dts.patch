@@ -23,30 +23,34 @@
  		};
  
  		white-pulse {
-@@ -114,22 +119,22 @@
- 		};
+@@ -115,27 +120,12 @@
  
  		partition@200000 {
--			label = "kernel";
-+			label = "kernel1";
- 			reg = <0x200000 0x2A0000>;
+ 			label = "kernel";
+-			reg = <0x200000 0x2A0000>;
++			reg = <0x200000 0x300000>;
  		};
  
- 		partition@4a0000 {
--			label = "rootfs";
-+			label = "rootfs1";
- 			reg = <0x4A0000 0x1760000>;
- 		};
- 
- 		partition@1c00000 {
+-		partition@4a0000 {
++		partition@500000 {
+ 			label = "rootfs";
+-			reg = <0x4A0000 0x1760000>;
+-		};
+-
+-		partition@1c00000 {
 -			label = "alt_kernel";
-+			label = "kernel2";
- 			reg = <0x1C00000 0x2A0000>;
- 		};
- 
- 		partition@1ea0000 {
+-			reg = <0x1C00000 0x2A0000>;
+-		};
+-
+-		partition@1ea0000 {
 -			label = "alt_rootfs";
-+			label = "rootfs2";
- 			reg = <0x1EA0000 0x1760000>;
+-			reg = <0x1EA0000 0x1760000>;
+-		};
+-
+-		partition@3600000 {
+-			label = "syscfg";
+-			reg = <0x3600000 0x4A00000>;
++			reg = <0x500000 0x7B00000>;
  		};
  
+ 		partition@c0000 {
