@@ -31,12 +31,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct Qdisc_class_common {
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
-@@ -4,8 +4,9 @@
- #
+@@ -5,7 +5,9 @@
  
  menuconfig NET_SCHED
--	bool "QoS and/or fair queueing"
-+	def_bool y
+ 	bool "QoS and/or fair queueing"
++	default y
  	select NET_SCH_FIFO
 +	select NET_SCH_FQ_CODEL
  	---help---
