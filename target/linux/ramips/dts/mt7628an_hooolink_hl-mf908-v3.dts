@@ -1,0 +1,135 @@
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "hooolink,hl-mf908-v3", "mediatek,mt7628an-soc";
+	model = "HL-MF908v3";
+
+	chosen {
+		bootargs = "console=ttyS0,57600n8";
+	};
+
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		lan {
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+			label = "green:lan";
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan {
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			label = "green:wlan";
+		};
+
+		4g {
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			label = "green:4g";
+		};
+
+		led_status: status {
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			label = "green:status";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		minipcie {
+			gpio-export,name = "minipcie";
+			gpio-export,output = <0>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xfb0000>;
+			};
+		};
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&i2c {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+	mtd-mac-address = <&factory 0x2e>;
+};
+
+&esw {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+	ralink,mtd-eeprom = <&factory 0x04>;
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "gpio", "uart1", "refclk", "wdt", "pwm0";
+		function = "gpio";
+	};
+};
