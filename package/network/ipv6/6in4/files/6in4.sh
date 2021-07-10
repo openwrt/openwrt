@@ -23,19 +23,6 @@ test_6in4_rfc1918()
 	return 0
 }
 
-proto_6in4_update() {
-	sh -c '
-		timeout=5
-
-		(while [ $((timeout--)) -gt 0 ]; do
-			sleep 1
-			kill -0 $$ || exit 0
-		done; kill -9 $$) 2>/dev/null &
-
-		exec "$@"
-	' "$1" "$@"
-}
-
 proto_6in4_add_prefix() {
 	append "$3" "$1"
 }
@@ -45,8 +32,10 @@ proto_6in4_setup() {
 	local iface="$2"
 	local link="6in4-$cfg"
 
-	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix ip6prefixes tunlink tunnelid username password updatekey
-	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr tunlink tunnelid username password updatekey
+	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix ip6prefixes tunlink peerdependency \
+		tunnelid username password updatekey sendipaddr delay timeout retryinterval maxretries
+	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr tunlink peerdependency \
+		tunnelid username password updatekey sendipaddr delay timeout retryinterval maxretries
 	json_for_each_item proto_6in4_add_prefix ip6prefix ip6prefixes
 
 	[ -z "$peeraddr" ] && {
@@ -55,7 +44,9 @@ proto_6in4_setup() {
 		return
 	}
 
-	( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
+	[ ${peerdependency:=1} -eq 1 ] && {
+		proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink"
+	}
 
 	[ -z "$ipaddr" ] && {
 		local wanif="$tunlink"
@@ -102,7 +93,7 @@ proto_6in4_setup() {
 
 		local http="http"
 		local urlget="uclient-fetch"
-		local urlget_opts="-qO-"
+		local urlget_opts="-qO- -T ${timeout:-5}"
 		local ca_path="${SSL_CERT_DIR:-/etc/ssl/certs}"
 
 		[ -f /lib/libustream-ssl.so ] && http=https
@@ -111,27 +102,40 @@ proto_6in4_setup() {
 		}
 
 		local url="$http://ipv4.tunnelbroker.net/nic/update?hostname=$tunnelid"
-		
-		test_6in4_rfc1918 "$ipaddr" && {
-			local url="${url}&myip=${ipaddr}"
+
+		test_6in4_rfc1918 "$ipaddr" && [ ${sendipaddr:=1} -eq 1 ] && {
+			url="${url}&myip=${ipaddr}"
 		}
 
-		local try=0
-		local max=3
+		[ ${delay:=0} -gt 0 ] && sleep $delay
 
 		(
-			set -o pipefail
-			while [ $((++try)) -le $max ]; do
-				if proto_6in4_update $urlget $urlget_opts --user="$username" --password="$password" "$url" 2>&1 | \
-					sed -e 's,^Killed$,timeout,' -e "s,^,update $try/$max: ," | \
-					logger -t "$link";
-				then
-					logger -t "$link" "updated"
+			local try=0
+			while [ $((++try)) -le ${maxretries:=3} ]; do
+				local response rc error
+				response=$($urlget $urlget_opts --user="$username" --password="$password" "$url" 2>&1)
+				rc=$?
+				case $rc in
+					4) error="timeout";;
+					5) error="SSL error";;
+					*) error="unknown error";;
+				esac
+
+				logger -t "$link" "update $try/$maxretries: ${response:-$error}"
+
+				local msg
+				if [ $rc -eq 0 ]; then
+					case "$response" in
+						good*) msg="updated";;
+						nochg*) msg="not changed";;
+						*) msg="unexpected response received";;
+					esac
+					logger -t "$link" "$msg"
 					return 0
 				fi
-				sleep 5
+				[ $try -lt $maxretries ] && sleep ${retryinterval:=5}
 			done
-			logger -t "$link" "update failed"
+			logger -t "$link" "max update retries exceeded"
 		)
 	}
 }
@@ -149,10 +153,16 @@ proto_6in4_init_config() {
 	proto_config_add_array "ip6prefix"
 	proto_config_add_string "peeraddr"
 	proto_config_add_string "tunlink"
+	proto_config_add_boolean "peerdependency"
 	proto_config_add_string "tunnelid"
 	proto_config_add_string "username"
 	proto_config_add_string "password"
 	proto_config_add_string "updatekey"
+	proto_config_add_boolean "sendipaddr"
+	proto_config_add_int "delay"
+	proto_config_add_int "timeout"
+	proto_config_add_int "retryinterval"
+	proto_config_add_int "maxretries"
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
 	proto_config_add_string "tos"
