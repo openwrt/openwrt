@@ -617,6 +617,17 @@ define Device/tplink_tl-wpa8630p-v2.1-eu
 endef
 TARGET_DEVICES += tplink_tl-wpa8630p-v2.1-eu
 
+define Device/tplink_tl-wpa8730-v1
+  $(Device/tplink-8mlzma)
+  SOC := qca9558
+  DEVICE_MODEL := TL-WPA8730
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  TPLINK_HWID := 0x87300001
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += tplink_tl-wpa8730-v1
+
 define Device/tplink_tl-wr1043nd-v1
   $(Device/tplink-8m)
   SOC := ar9132
