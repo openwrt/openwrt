@@ -102,6 +102,7 @@ uint32_t firmware_size;
 uint32_t image_offset;
 uint16_t family_member;
 char *rom_id[12] = { 0 };
+char auh_magic[3] = { 0 };
 char image_type;
 
 static void usage(int status)
@@ -114,6 +115,7 @@ static void usage(int status)
 		"  -f              set family member id (hexval prefixed with 0x)\n"
 		"  -F <file>       read image and convert it to FACTORY\n"
 		"  -k <file>       read kernel image from the file <file>\n"
+		"  -M <AUH MAGIC>  override standard AUH MAGIC string\n"
 		"  -r <file>       read rootfs image from the file <file>\n"
 		"  -o <file>       write output to the file <file>\n"
 		"  -s <size>       set firmware partition size\n"
@@ -230,8 +232,11 @@ static int find_auh_headers(char *buf)
 
 	int ret = EXIT_FAILURE;
 
+	if(!memcmp(auh_magic,"\0\0\0",3))
+		memcpy(auh_magic, AUH_MAGIC, 3);
+
 	while (tmp_buf - buf <= inspect_info.file_size - AUH_SIZE) {
-		if (!memcmp(tmp_buf, AUH_MAGIC, 3)) {
+		if (!memcmp(tmp_buf, auh_magic, 3)) {
 			if (((struct auh_header *)tmp_buf)->header_checksum ==
 			    (uint16_t) ~jboot_checksum(0, (uint16_t *) tmp_buf,
 							AUH_SIZE - 2)) {
@@ -609,7 +614,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		int c;
 
-		c = getopt(argc, argv, "f:F:i:hk:m:o:O:r:s:");
+		c = getopt(argc, argv, "f:F:i:hk:m:M:o:O:r:s:");
 		if (c == -1)
 			break;
 
@@ -630,6 +635,10 @@ int main(int argc, char *argv[])
 		case 'm':
 			if (strlen(optarg) == 12)
 				memcpy(rom_id, optarg, 12);
+			break;
+		case 'M':
+			if (strlen(optarg) == 3)
+				memcpy(auh_magic, optarg, 3);
 			break;
 		case 'r':
 			rootfs_info.file_name = optarg;
