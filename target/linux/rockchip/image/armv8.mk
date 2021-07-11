@@ -2,6 +2,36 @@
 #
 # Copyright (C) 2020 Tobias Maedel
 
+define Device/friendlyarm_nanopi-m4-2gb
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi M4 2GB
+  DEVICE_VARIANT := DDR3
+  DEVICE_DTS := rockchip/rk3399-nanopi-m4
+  SOC := rk3399
+  SUPPORTED_DEVICES :=friendlyarm,nanopi-m4
+  UBOOT_DEVICE_NAME := nanopi-m4-2gb-rk3399
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := \
+	brcmfmac-firmware-4356-sdio \
+	brcmfmac-firmware-4356-sdio-nanopi-m4 \
+	kmod-bluetooth kmod-brcmfmac wpad-basic-wolfssl
+endef
+TARGET_DEVICES += friendlyarm_nanopi-m4-2gb
+
+define Device/friendlyarm_nanopi-m4
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi M4
+  DEVICE_VARIANT := 4GB LPDDR3
+  SOC := rk3399
+  UBOOT_DEVICE_NAME := nanopi-m4-rk3399
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := \
+	brcmfmac-firmware-4356-sdio \
+	brcmfmac-firmware-4356-sdio-nanopi-m4 \
+	kmod-bluetooth kmod-brcmfmac wpad-basic-wolfssl
+endef
+TARGET_DEVICES += friendlyarm_nanopi-m4
+
 define Device/friendlyarm_nanopi-r2s
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R2S

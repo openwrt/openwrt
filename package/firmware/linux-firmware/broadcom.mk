@@ -79,6 +79,35 @@ define Package/brcmfmac-firmware-43455-sdio-rpi-4b/install
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-43455-sdio-rpi-4b))
 
+Package/brcmfmac-firmware-4356-sdio = $(call Package/firmware-default,Broadcom BCM4356 FullMac SDIO firmware)
+define Package/brcmfmac-firmware-4356-sdio/install
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac4356-sdio.bin \
+		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.bin
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/cypress/cyfmac4356-sdio.clm_blob \
+		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.clm_blob
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-4356-sdio))
+
+Package/brcmfmac-firmware-4356-sdio-nanopi-m4 = $(call Package/firmware-default,Broadcom BCM4356 NVRAM for NanoPi M4)
+define Package/brcmfmac-firmware-4356-sdio-nanopi-m4/install
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/brcm/brcmfmac4356-pcie.gpd-win-pocket.txt \
+		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.friendlyarm,nanopi-m4.txt
+	$(SED) 's/boardrev=.*/boardrev=0x1102/g'\
+		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.friendlyarm,nanopi-m4.txt
+	$(SED) 's/ccode=.*/ccode=0x5854/g'\
+		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.friendlyarm,nanopi-m4.txt
+	$(SED) 's/regrev=.*/regrev=205/g'\
+		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.friendlyarm,nanopi-m4.txt
+	$(SED) 's/devid=.*/devid=0x43ec/g'\
+		$(1)/lib/firmware/brcm/brcmfmac4356-sdio.friendlyarm,nanopi-m4.txt
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-4356-sdio-nanopi-m4))
+
 Package/brcmfmac-firmware-usb = $(call Package/firmware-default,Broadcom BCM43xx fullmac USB firmware)
 define Package/brcmfmac-firmware-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
