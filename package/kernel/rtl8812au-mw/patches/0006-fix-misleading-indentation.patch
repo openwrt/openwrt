@@ -1,0 +1,34 @@
+From bc3c4248562db1fbe6a622865f1ab5da2aeac9f4 Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <gh2020@plntyk.name>
+Date: Tue, 1 Jun 2021 14:59:28 +0200
+Subject: [PATCH 06/12] fix misleading indentation
+
+---
+ core/rtw_recv.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/core/rtw_recv.c b/core/rtw_recv.c
+index 6e903b94..dbc8a507 100644
+--- a/core/rtw_recv.c
++++ b/core/rtw_recv.c
+@@ -3598,11 +3598,12 @@ int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
+ 			for (i = 0; i < precv_frame->u.hdr.len; i = i + 8)
+ 				RTW_INFO("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:\n", *(ptr + i),
+ 					*(ptr + i + 1), *(ptr + i + 2) , *(ptr + i + 3) , *(ptr + i + 4), *(ptr + i + 5), *(ptr + i + 6), *(ptr + i + 7));
+-				RTW_INFO("#############################\n");
+-				_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
+-				_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
+-				pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
+-				pmppriv->mplink_brx =_TRUE;
++			
++			RTW_INFO("#############################\n");
++			_rtw_memset(pmppriv->mplink_buf, '\0' , sizeof(pmppriv->mplink_buf));
++			_rtw_memcpy(pmppriv->mplink_buf, ptr, precv_frame->u.hdr.len);
++			pmppriv->mplink_rx_len = precv_frame->u.hdr.len;
++			pmppriv->mplink_brx =_TRUE;
+ 		}
+ 	}
+ 	if (pmppriv->bloopback) {
+-- 
+2.31.1
+

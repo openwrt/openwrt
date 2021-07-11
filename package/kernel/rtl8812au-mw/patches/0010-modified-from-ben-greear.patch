@@ -1,0 +1,42 @@
+From 2aec5769852b0edb7b5b2d6f25c50ad6fc64e9cf Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <gh2020@plntyk.name>
+Date: Tue, 1 Jun 2021 16:10:00 +0200
+Subject: [PATCH 10/12] modified from ben greear
+
+Signed-off-by: Dirk Neukirchen <gh2020@plntyk.name>
+---
+ Makefile | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index 29555236..20ee249c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -202,6 +202,7 @@ CONFIG_PLATFORM_NV_TK1_UBUNTU = n
+ CONFIG_PLATFORM_RTL8197D = n
+ CONFIG_PLATFORM_AML_S905 = n
+ CONFIG_PLATFORM_ZTE_ZX296716 = n
++CONFIG_PLATFORM_OPENWRT_TREE = n
+ ########### CUSTOMER ################################
+ CONFIG_CUSTOMER_HUAWEI_GENERAL = n
+ 
+@@ -1597,6 +1598,16 @@ CROSS_COMPILE := mips-openwrt-linux-
+ KSRC := /home/alex/test_openwrt/tmp/linux-2.6.30.9
+ endif
+ 
++# modified from Ben Greear
++ifeq ($(CONFIG_PLATFORM_OPENWRT_TREE), y)
++EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
++ARCH := x86_64
++CROSS_COMPILE := x86_64-openwrt-linux-
++#export PATH=$PATH:/home/tenchi/programming/upstream/plntyk/openwrt/staging_dir/toolchain-x86_64_gcc-8.4.0_musl/bin/
++#export STAGING_DIR=/home/tenchi/programming/upstream/plntyk/openwrt/staging_dir/
++KSRC := /home/tenchi/programming/upstream/plntyk/openwrt/build_dir/target-x86_64_musl/linux-x86_64/linux-5.10.41/
++endif
++
+ ifeq ($(CONFIG_PLATFORM_DMP_PHILIPS), y)
+ EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN -DRTK_DMP_PLATFORM
+ ARCH := mips
+-- 
+2.31.1
+

@@ -1,0 +1,36 @@
+From e8f92ac4a42e32b549661b3b386ed07d78e3ac67 Mon Sep 17 00:00:00 2001
+From: Ben Greear <greearb@candelatech.com>
+Date: Thu, 8 Nov 2018 13:05:41 -0800
+Subject: [PATCH 08/12] makefile: Allow defining KSRC outside of build.
+
+So, you can do this:
+
+KSRC=/tmp/my/kernel make
+
+And not have to edit the makefile to have this function as desired.
+
+Signed-off-by: Ben Greear <greearb@candelatech.com>
+---
+ Makefile | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index c3a8921a..29555236 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1341,8 +1341,12 @@ ifndef CROSS_COMPILE
+ CROSS_COMPILE ?=
+ endif
+ KVER  := $(shell uname -r)
++ifndef KSRC
+ KSRC := /lib/modules/$(KVER)/build
++endif
++ifndef MODDESTDIR
+ MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/
++endif
+ INSTALL_PREFIX :=
+ STAGINGMODDIR := /lib/modules/$(KVER)/kernel/drivers/staging
+ endif
+-- 
+2.31.1
+
