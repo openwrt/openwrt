@@ -16,10 +16,10 @@ case "$board" in
 				> /sys${DEVPATH}/macaddress
 		;;
 	dlink,dir-853-r1)
-		[ "$PHYNBR" = "0" ] && \
-			base_mac=$(mtd_get_mac_binary factory 0x4)
-			base_mac=$(macaddr_add "$base_mac" -1)
+		if [ "$PHYNBR" = "0" ]; then
+			base_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" -1)
 			macaddr_setbit_la "$base_mac" > /sys${DEVPATH}/macaddress
+		fi
 		;;
 	glinet,gl-mt1300)
 		[ "$PHYNBR" = "1" ] && \
