@@ -1,0 +1,26 @@
+From c7d1b1890880ee64786b92a1b95ba9ecb4694997 Mon Sep 17 00:00:00 2001
+From: Christian Melki <christian.melki@t2data.com>
+Date: Mon, 7 Jun 2021 11:21:15 +0200
+Subject: [PATCH] disk/part_dos.c: Fix a variable typo in
+ write_mbr_partitions()
+
+This function is passed *dev not *dev_desc, so pass the right name to
+part_init().
+
+Fixes: f14c5ee5ab8b ("disk: part_dos: update partition table entries after write")
+Signed-off-by: Christian Melki <christian.melki@t2data.com>
+---
+ disk/part_dos.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/disk/part_dos.c
++++ b/disk/part_dos.c
+@@ -424,7 +424,7 @@ int write_mbr_partitions(struct blk_desc
+ 	}
+ 
+ 	/* Update the partition table entries*/
+-	part_init(dev_desc);
++	part_init(dev);
+ 
+ 	return 0;
+ }
