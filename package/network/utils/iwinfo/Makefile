@@ -11,9 +11,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/iwinfo.git
-PKG_SOURCE_DATE:=2021-06-28
-PKG_SOURCE_VERSION:=c9b1672f5a83c8dcb14fdbaee651f775a7defe52
-PKG_MIRROR_HASH:=f33779035153da6bd0b2f100f402f62f1554ab87ed6fbbd938d41df6b9947a1f
+PKG_SOURCE_DATE:=2021-07-11
+PKG_SOURCE_VERSION:=a0a0e02dd91d14a50155390d5fd3b95d6ec87bf4
+PKG_MIRROR_HASH:=7b4f745c2cace836e57bd116399973d9ac32cee7f98d4628a17395caa3d0cebc
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0
 
@@ -105,7 +105,7 @@ endef
 
 define Package/libiwinfo-data/install
 	$(INSTALL_DIR) $(1)/usr/share/libiwinfo
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/hardware.txt $(1)/usr/share/libiwinfo/devices.txt
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/devices.txt $(1)/usr/share/libiwinfo/devices.txt
 endef
 
 define Package/iwinfo/install
