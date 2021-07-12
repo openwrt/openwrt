@@ -1243,6 +1243,15 @@ define Device/glinet_gl-usb150
 endef
 TARGET_DEVICES += glinet_gl-usb150
 
+define Device/glinet_gl-x300b
+  SOC := qca9531
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-X300B
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += glinet_gl-x300b
+
 define Device/glinet_gl-x750
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
