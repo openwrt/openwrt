@@ -31,6 +31,19 @@ caldata_extract() {
 		caldata_die "failed to extract calibration data from $mtd"
 }
 
+caldata_extract_mmc() {
+	local part=$1
+	local offset=$(($2))
+	local count=$(($3))
+	local mmcpart
+
+	mmcpart=$(find_mmc_part $part)
+	[ -n "$mmcpart" ] || caldata_die "no mmc partition found for $part"
+
+	caldata_dd $mmcpart /lib/firmware/$FIRMWARE $count $offset || \
+		caldata_die "failed to extract calibration data from $mmcpart"
+}
+
 caldata_extract_ubi() {
 	local part=$1
 	local offset=$(($2))

@@ -154,6 +154,9 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary "0:MANUDATA" 0x6)
 		;;
+	sony,ncp-hg100-cellular)
+		caldata_extract_mmc "0:ART" 0x1000 0x2f20
+		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
 		caldata_extract "ART" 0x1000 0x2f20
@@ -267,6 +270,9 @@ case "$FIRMWARE" in
 	netgear,wac510)
 		caldata_extract "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:MANUDATA" 0x6) 16)
+		;;
+	sony,ncp-hg100-cellular)
+		caldata_extract_mmc "0:ART" 0x5000 0x2f20
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
