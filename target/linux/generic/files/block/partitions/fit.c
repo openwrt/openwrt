@@ -189,8 +189,8 @@ int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, 
 
 		image_description = fdt_getprop(fit, node, FIT_DESC_PROP, &image_description_len);
 
-		printk(KERN_DEBUG "FIT: %16s sub-image 0x%08x - 0x%08x \"%s\" %s%s%s\n",
-			image_type, image_pos, image_pos + image_len, image_name,
+		printk(KERN_DEBUG "FIT: %16s sub-image 0x%08x..0x%08x \"%s\" %s%s%s\n",
+			image_type, image_pos, image_pos + image_len - 1, image_name,
 			image_description?"(":"", image_description?:"", image_description?") ":"");
 
 		if (strcmp(image_type, FIT_FILESYSTEM_PROP))
