@@ -24,33 +24,12 @@
 #include "iwinfo_wext.h"
 #include "api/mtk.h"
 
-struct survey_table
-{
-	char channel[4];
-	char ssid[33];
-	char len[4];
-	char bssid[20];
-	char security[23];
-	char *crypto;
-	char signal[9];
-};
-
 static int mtk_wrq(struct iwreq *wrq, const char *ifname, int cmd, void *data, size_t len)
 {
 	strncpy(wrq->ifr_name, ifname, IFNAMSIZ);
 
-	if(data != NULL)
-	{
-		if(len < IFNAMSIZ)
-		{
-			memcpy(wrq->u.name, data, len);
-		}
-		else
-		{
-			wrq->u.data.pointer = data;
-			wrq->u.data.length = len;
-		}
-	}
+	wrq->u.data.pointer = data;
+	wrq->u.data.length = len;
 
 	return iwinfo_ioctl(cmd, wrq);
 }
@@ -261,176 +240,63 @@ static int mtk_get_txpwrlist(const char *ifname, char *buf, int *len)
 	return 0;
 }
 
-static int ascii2num(char ascii)
+struct site_survey_info {
+	char ssid[33];
+	unsigned char bssid[6];
+	int mode;
+	int channel;
+	struct {
+		int enabled;
+		int auth_algs;
+		int wpa_version;
+		int auth_suites;
+		int pair_ciphers;
+	} crypto;
+	int signal;
+	int quality;
+	int htmodelist;
+};
+
+static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
-	int num;
-	if ((ascii >= '0') && (ascii <= '9'))
-		num=ascii - 48;
-	else if ((ascii >= 'a') && (ascii <= 'f'))
-		num=ascii - 'a' + 10;
-        else if ((ascii >= 'A') && (ascii <= 'F'))
-		num=ascii - 'A' + 10;
-	else
-		num = 0;
-	return num;
-}
+	struct iwinfo_scanlist_entry sce;
+	char buf2[IWINFO_BUFSIZE];
+	int i, j, length;
 
-static void next_field(char **line, char *output, int n) {
-	char *l = *line;
-	int i;
-
-	memcpy(output, *line, n);
-	*line = &l[n];
-
-	for (i = n - 1; i > 0; i--) {
-		if (output[i] != ' ')
-			break;
-		output[i] = '\0';
-	}
-}
-
-static int mtk_get_scan(const char *ifname, struct survey_table *st)
-{
-	int survey_count = 0;
-	char *s = calloc(1, IWINFO_BUFSIZE + 1);
-	char ss[64] = "SiteSurvey=1";
-	char *line, *start ,*p;
-	char buf[128];
-
-	if (!s)
-		return -1;
-
-	if(mtk_get80211priv(ifname, RTPRIV_IOCTL_SET, ss, sizeof(ss)) < 0)
+	if(mtk_get80211priv(ifname, RTPRIV_IOCTL_SET, "SiteSurvey=", sizeof("SiteSurvey=") - 1) < 0)
 		return -1;
 
 	sleep(5);
 
-	if(mtk_get80211priv(ifname, RTPRIV_IOCTL_GSITESURVEY, s, IWINFO_BUFSIZE) < 1) {
-		free(s);
+	strcpy(buf2, "fine");
+
+	length = mtk_get80211priv(ifname, RTPRIV_IOCTL_GSITESURVEY, buf2, sizeof(buf2));
+	if (length < 0)
 		return -1;
-	}
-
-	start = s;
-
-	line = strtok(start, "\n");
-
-	while (line) {
-		if (!strncmp("Ch ", line, 3) || !strncmp("No ", line, 3))
-			break;
-
-		line = strtok(NULL, "\n");
-	}
-
-	if (!line)
-		return -1;
-
-	line = strtok(NULL, "\n");
-
-	while (line && (survey_count < 200))
-	{
-		memset(&st[survey_count], 0, sizeof(st[survey_count]));
-
-#ifdef MT7615
-		char number[4] = {0};	
-		next_field(&line, number, 4);
-		if (!isdigit(number[0]))
-		{
-			line = strtok(NULL, "\n");
-			continue;
-		}
-#endif
-
-		next_field(&line, st[survey_count].channel, sizeof(st->channel));
-		next_field(&line, st[survey_count].ssid, sizeof(st->ssid));
-#ifndef MT7615
-		next_field(&line, st[survey_count].len, sizeof(st->len));
-#endif
-		next_field(&line, st[survey_count].bssid, sizeof(st->bssid));
-		next_field(&line, st[survey_count].security, sizeof(st->security));
-		st[survey_count].crypto = strstr(st[survey_count].security, "/");
-		if (st[survey_count].crypto)
-		{
-			*st[survey_count].crypto = '\0';
-			st[survey_count].crypto++;
-		}
-		next_field(&line, st[survey_count].signal, sizeof(st->signal));
-
-		next_field(&line, buf, sizeof(buf));	/* W-Mode */
-		next_field(&line, buf, sizeof(buf));	/* ExtCH */
-		next_field(&line, buf, sizeof(buf));	/* NT */
-
-#ifdef MT7615
-		next_field(&line, st[survey_count].len, sizeof(st->len));
-#endif
-
-		line = strtok(NULL, "\n");
-
-		/* skip hidden ssid */
-#ifdef MT7615
-		if (st[survey_count].ssid == NULL || strcmp(st[survey_count].ssid, " ") == 0)
-			continue;
-#endif
-		if (!strcmp(st[survey_count].len, "0"))
-			continue;
-
-		survey_count++;
-	}
-	free(s);
-	return survey_count;
-}
-
-static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
-{
-	int i = 0, h, sc;
-	struct iwinfo_scanlist_entry sce;
-	struct survey_table stl[200];
 	
-	sc = mtk_get_scan(ifname, stl);
 	*len = 0;
-	
-	for (i = 0; i < sc; i++) {
-		memset(&sce, 0, sizeof(sce));
 
-		if (strstr(stl[i].security,"UNKNOW"))
-			continue;
+	for (i = 0; i < length; i += sizeof(struct site_survey_info),
+		j += sizeof(struct iwinfo_scanlist_entry)) {
+		struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)&buf[j];
+		struct site_survey_info *si = (struct site_survey_info *)&buf2[i];
 
-		for (h = 0; h < 6; h++)
-			sce.mac[h] = (uint8_t)(ascii2num(stl[i].bssid[h * 3]) * 16 + ascii2num(stl[i].bssid[h * 3 + 1]));
+		strcpy(e->ssid, si->ssid);
+		memcpy(e->mac, si->bssid, 6);
 
-		strcpy(sce.ssid, stl[i].ssid);
+		e->mode = si->mode;
+		e->channel = si->channel;
+		e->signal = si->signal;
+		e->quality = si->quality;
+		e->quality_max = 100;
+		e->htmodelist = si->htmodelist;
 
-		sce.channel = atoi(stl[i].channel);
-		sce.quality = atoi(stl[i].signal);
-		sce.quality_max = 100;
-		sce.signal = atoi(stl[i].signal) + 100;
-		sce.mode = IWINFO_OPMODE_MASTER;
+		e->crypto.enabled = si->crypto.enabled;
+		e->crypto.auth_algs = si->crypto.auth_algs;
+		e->crypto.wpa_version = si->crypto.wpa_version;
+		e->crypto.auth_suites = si->crypto.auth_suites;
+		e->crypto.pair_ciphers = si->crypto.pair_ciphers;
 
-		if (!strcmp(stl[i].security, "NONE") || !strcmp(stl[i].security, "OPEN")) {
-			sce.crypto.enabled = 0;
-		} else {
-			sce.crypto.enabled = 1;
-
-			if (strstr(stl[i].security,"WPA3"))
-				sce.crypto.wpa_version |= 1 << 2;
-
-			if (strstr(stl[i].security,"WPA2"))
-				sce.crypto.wpa_version |= 1 << 1;
-
-			if (strstr(stl[i].security,"WPAPSK") || strstr(stl[i].security,"WPA1PSK"))
-				sce.crypto.wpa_version |= 1 << 0;
-
-			if (strstr(stl[i].security,"PSK"))
-				sce.crypto.auth_suites |= IWINFO_KMGMT_PSK;
-
-			if (stl[i].crypto) {
-				if (!strcmp(stl[i].crypto,"AES"))
-					sce.crypto.pair_ciphers = IWINFO_CIPHER_CCMP;
-				else if (!strcmp(stl[i].crypto,"TKIP"))
-					sce.crypto.pair_ciphers = IWINFO_CIPHER_TKIP;
-			}
-		}
-		
-		memcpy(buf + *len, &sce, sizeof(struct iwinfo_scanlist_entry));
 		*len += sizeof(struct iwinfo_scanlist_entry);
 	}
 
