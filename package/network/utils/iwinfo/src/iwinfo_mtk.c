@@ -28,8 +28,18 @@ static int mtk_wrq(struct iwreq *wrq, const char *ifname, int cmd, void *data, s
 {
 	strncpy(wrq->ifr_name, ifname, IFNAMSIZ);
 
-	wrq->u.data.pointer = data;
-	wrq->u.data.length = len;
+	if(data != NULL)
+	{
+		if(len < IFNAMSIZ)
+		{
+			memcpy(wrq->u.name, data, len);
+		}
+		else
+		{
+			wrq->u.data.pointer = data;
+			wrq->u.data.length = len;
+		}
+	}
 
 	return iwinfo_ioctl(cmd, wrq);
 }
@@ -260,10 +270,11 @@ struct site_survey_info {
 static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_scanlist_entry sce;
+	char action[64] = "SiteSurvey=";
 	char buf2[IWINFO_BUFSIZE];
 	int i, j, length;
 
-	if(mtk_get80211priv(ifname, RTPRIV_IOCTL_SET, "SiteSurvey=", sizeof("SiteSurvey=") - 1) < 0)
+	if(mtk_get80211priv(ifname, RTPRIV_IOCTL_SET, action, sizeof(action)) < 0)
 		return -1;
 
 	sleep(5);
