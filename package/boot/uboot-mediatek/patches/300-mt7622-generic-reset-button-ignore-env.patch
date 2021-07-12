@@ -39,3 +39,14 @@
  	env_relocate();
  	return 0;
  }
+--- a/board/mediatek/mt7622/Kconfig
++++ b/board/mediatek/mt7622/Kconfig
+@@ -14,4 +14,8 @@ config MTK_BROM_HEADER_INFO
+ 	string
+ 	default "media=nor"
+ 
++config RESET_BUTTON_LABEL
++	string "Button to trigger factory reset"
++	default "reset"
++
+ endif
