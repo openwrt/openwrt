@@ -55,11 +55,16 @@ const char* part_type(unsigned int id)
 	return "/tmp/unknown.lzma";
 }
 
+void free_buffer(char **buffer)
+{
+	free(*buffer);
+}
+
 int main(int argc, char **argv)
 {
 	struct stat s;
-	unsigned char *buf_orig;
-	unsigned int *buf;
+	unsigned char *buf_orig __attribute__ ((__cleanup__(free_buffer)));
+	unsigned int *buf __attribute__ ((__cleanup__(free_buffer)));
 	int buflen;
 	int fd;
 	int i;
@@ -83,9 +88,14 @@ int main(int argc, char **argv)
 	}
 
 	buf_orig = malloc(s.st_size);
+	if (!buf_orig) {
+		printf("Failed to alloc %zu bytes\n", s.st_size);
+		return -1;
+	}
+
 	buf = malloc(s.st_size);
-	if (!buf_orig || !buf) {
-		printf("Failed to alloc %d bytes\n", s.st_size);
+	if (!buf) {
+		printf("Failed to alloc %zu bytes\n", s.st_size);
 		return -1;
 	}
 
