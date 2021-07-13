@@ -9,6 +9,22 @@ define Download/qca99x0-board
 endef
 $(eval $(call Download,qca99x0-board))
 
+define Download/qca99x0-board-5g
+  URL:=https://github.com/kvalo/ath10k-firmware/raw/master/QCA99X0/hw2.0/
+  URL_FILE:=boardData_AR900B_CUS239_5G_v2_001.bin
+  FILE:=boardData_AR900B_CUS239_5G_v2_001.bin
+  HASH:=3bf7561ee373b369025dcd366d276d038a97d3397ccae41ce841d98a58b30aff
+endef
+$(eval $(call Download,qca99x0-board-5g))
+
+define Download/qca99x0-board-2g
+  URL:=https://github.com/kvalo/ath10k-firmware/raw/master/QCA99X0/hw2.0/
+  URL_FILE:=boardData_AR900B_CUS260_2G_v2_002.bin
+  FILE:=boardData_AR900B_CUS260_2G_v2_002.bin
+  HASH:=fd91ddf93a271633c28fb1831a1dc5e829c345fbf2aa8980e816585cf9b9e9ed
+endef
+$(eval $(call Download,qca99x0-board-2g))
+
 Package/ath10k-board-qca4019 = $(call Package/firmware-default,ath10k qca4019 board firmware)
 define Package/ath10k-board-qca4019/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA4019/hw1.0
@@ -124,6 +140,25 @@ define Package/ath10k-board-qca99x0/install
 		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board.bin
 endef
 $(eval $(call BuildPackage,ath10k-board-qca99x0))
+
+Package/ath10k-board-qca99x0-2g = $(call Package/firmware-default,ath10k qca99x0 board 2g precal firmware)
+define Package/ath10k-board-qca99x0-2g/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA99X0/hw2.0
+	$(INSTALL_DATA) \
+		$(DL_DIR)/boardData_AR900B_CUS260_2G_v2_002.bin \
+		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board-2g-precal.bin
+endef
+$(eval $(call BuildPackage,ath10k-board-qca99x0-2g))
+
+Package/ath10k-board-qca99x0-5g = $(call Package/firmware-default,ath10k qca99x0 board 5g precal firmware)
+define Package/ath10k-board-qca99x0-5g/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA99X0/hw2.0
+	$(INSTALL_DATA) \
+		$(DL_DIR)/boardData_AR900B_CUS239_5G_v2_001.bin \
+		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board-5g-precal.bin
+endef
+$(eval $(call BuildPackage,ath10k-board-qca99x0-5g))
+
 Package/ath10k-firmware-qca99x0 = $(call Package/firmware-default,ath10k qca99x0 firmware,+ath10k-board-qca99x0)
 define Package/ath10k-firmware-qca99x0/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA99X0/hw2.0
