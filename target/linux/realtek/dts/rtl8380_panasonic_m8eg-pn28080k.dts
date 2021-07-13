@@ -1,0 +1,280 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "rtl838x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "panasonic,m8eg-pn28080k", "realtek,rtl838x-soc";
+	model = "Panasonic Switch-M8eG PN28080K";
+
+	aliases {
+		led-boot = &led_status_eco_green;
+		led-failsafe = &led_status_eco_amber;
+		led-running = &led_status_eco_green;
+		led-upgrade = &led_status_eco_green;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,9600";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		any_collision {
+			label = "amber:any_col";
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_eco_amber: status_eco_amber {
+			label = "amber:status_eco";
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_eco_green: status_eco_green {
+			label = "green:status_eco";
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
+		};
+
+		giga {
+			label = "green:giga";
+			gpios = <&gpio2 8 GPIO_ACTIVE_LOW>;
+		};
+
+		100m {
+			label = "green:100m";
+			gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+		};
+
+		full_duplex {
+			label = "green:full";
+			gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
+		};
+
+		loop_history {
+			label = "green:loop_history";
+			gpios = <&gpio2 11 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		led_mode {
+			label = "led-mode";
+			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+		};
+	};
+
+	/* Switch-M8eG PN28080K has no RTL8231 chip */
+	/delete-node/ rtl8231-gpio;
+
+	i2c-gpio-0 {
+		compatible = "i2c-gpio";
+		/* SoC GPIO 0 */
+		scl-gpios = <&gpio0 24 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		/* SoC GPIO 1 */
+		sda-gpios = <&gpio0 25 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gpio1: gpio@20 {
+			compatible = "nxp,pca9555";
+			reg = <0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio2: gpio@75 {
+			compatible = "nxp,pca9539";
+			reg = <0x75>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			/* GPIO14 (IO1_6): 6x Shift Register (port LED) */
+			portled_sregister_reset {
+				gpio-hog;
+				gpios = <14 GPIO_ACTIVE_HIGH>;
+				output-high;
+				line-name = "portled-sregister-reset";
+			};
+		};
+	};
+
+	i2c-gpio-1 {
+		compatible = "i2c-gpio";
+		/* SoC GPIO 12 */
+		scl-gpios = <&gpio0 20 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		/* SoC GPIO 13 */
+		sda-gpios = <&gpio0 21 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		i2c-switch@70 {
+			compatible = "nxp,pca9545";
+			reset-gpios = <&gpio2 13 GPIO_ACTIVE_LOW>;
+			reg = <0x70>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* for port 9 SFP */
+			i2c0: i2c@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+			};
+		};
+	};
+
+	sfp0: sfp-p9 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		tx-fault-gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 2 GPIO_ACTIVE_LOW>;
+		los-gpio = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio0 {
+	indirect-access-bus-id = <0>;
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0x80000 0x10000>;
+			};
+
+			partition@90000 {
+				label = "u-boot-env2";
+				reg = <0x90000 0x10000>;
+			};
+
+			partition@a0000 {
+				label = "sysinfo";
+				reg = <0xa0000 0x60000>;
+				read-only;
+			};
+
+			/*
+			 * 0x100000 - 0x1DFFFFF
+			 * Filesystem area for runtime images and
+			 * configuration files in stock firmware
+			 */
+
+			/*
+			 * re-created filesystem area, 2x stock images
+			 * are included with checksum files
+			 */
+			partition@100000 {
+				label = "fs_reserved";
+				reg = <0x100000 0xd00000>;
+			};
+
+			/* free area for OpenWrt */
+			partition@e00000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0xe00000 0x1000000>;
+			};
+
+			partition@1e00000 {
+				label = "vlog_data";
+				reg = <0x1e00000 0x100000>;
+				read-only;
+			};
+
+			partition@1f00000 {
+				label = "elog_data";
+				reg = <0x1f00000 0x100000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	mdio-bus {
+		compatible = "realtek,rtl838x-mdio";
+		regmap = <&ethernet0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		INTERNAL_PHY(8)
+		INTERNAL_PHY(9)
+		INTERNAL_PHY(10)
+		INTERNAL_PHY(11)
+		INTERNAL_PHY(12)
+		INTERNAL_PHY(13)
+		INTERNAL_PHY(14)
+		INTERNAL_PHY(15)
+
+		INTERNAL_PHY(24)
+	};
+};
+
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT(8, 1, internal)
+		SWITCH_PORT(9, 2, internal)
+		SWITCH_PORT(10, 3, internal)
+		SWITCH_PORT(11, 4, internal)
+		SWITCH_PORT(12, 5, internal)
+		SWITCH_PORT(13, 6, internal)
+		SWITCH_PORT(14, 7, internal)
+		SWITCH_PORT(15, 8, internal)
+
+		port@24 {
+			reg = <24>;
+			label = "lan9";
+			phy-mode = "1000base-x";
+			phy-handle = <&phy24>;
+			managed = "in-band-status";
+			sfp = <&sfp0>;
+		};
+
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
