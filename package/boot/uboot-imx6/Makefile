@@ -39,10 +39,16 @@ define U-Boot/wandboard
   BUILD_DEVICES:=wandboard_dual
 endef
 
+define U-Boot/xiaomi_dgnwg05lm
+  NAME:=Xiaomi Lumi gateway
+  BUILD_DEVICES:=xiaomi_dgnwg05lm
+endef
+
 UBOOT_TARGETS := \
 	apalis_imx6 \
 	mx6cuboxi \
-	wandboard
+	wandboard \
+	xiaomi_dgnwg05lm
 
 UBOOT_MAKE_FLAGS += u-boot.imx
 

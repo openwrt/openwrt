@@ -1,0 +1,38 @@
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -7585,7 +7585,7 @@ static void cfg80211_rtw_mgmt_frame_regi
+ #else
+ 	struct net_device *ndev,
+ #endif
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) || defined(BUILD_OPENWRT))
+ 	struct mgmt_frame_regs *upd)
+ #else
+ 	u16 frame_type, bool reg)
+@@ -7605,7 +7605,7 @@ static void cfg80211_rtw_mgmt_frame_regi
+ 	pwdev_priv = adapter_wdev_data(adapter);
+ 
+ #ifdef CONFIG_DEBUG_CFG80211
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) || defined(BUILD_OPENWRT))
+ 	RTW_INFO(FUNC_ADPT_FMT" old_regs:%x, new_regs:%x\n", FUNC_ADPT_ARG(adapter),
+ 		pwdev_priv->report_mgmt, upd->interface_stypes);
+ #else
+@@ -7614,7 +7614,7 @@ static void cfg80211_rtw_mgmt_frame_regi
+ #endif
+ #endif
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) || defined(BUILD_OPENWRT))
+ 	pwdev_priv->report_mgmt = upd->interface_stypes & (
+ #ifdef not_yet
+ 		BIT(IEEE80211_STYPE_PROBE_REQ >> 4) |
+@@ -10029,7 +10029,7 @@ static struct cfg80211_ops rtw_cfg80211_
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)) || defined(COMPAT_KERNEL_RELEASE)
+ 	.mgmt_tx = cfg80211_rtw_mgmt_tx,
+-	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
++	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) || defined(BUILD_OPENWRT))
+ 	.update_mgmt_frame_registrations = cfg80211_rtw_mgmt_frame_register,
+ 	#else
+ 	.mgmt_frame_register = cfg80211_rtw_mgmt_frame_register,
