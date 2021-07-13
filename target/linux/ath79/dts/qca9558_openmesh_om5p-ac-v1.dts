@@ -6,8 +6,8 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "openmesh,om5p-ac-v2", "qca,qca9558";
-	model = "OpenMesh OM5P-AC v2";
+	compatible = "openmesh,om5p-ac-v1", "qca,qca9558";
+	model = "OpenMesh OM5P-AC v1";
 
 	chosen {
 		/delete-property/ bootargs;
@@ -25,21 +25,31 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wifi_green {
-			label = "green:wifi";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		led_power_blue: power_blue {
 			label = "blue:power";
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			default-state = "on";
+		};
+
+		wan_blue {
+			label = "blue:wan";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+
+		lan_blue {
+			label = "blue:lan";
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi_green {
+			label = "green:wifi";
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wifi_yellow {
 			label = "yellow:wifi";
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi_red {
@@ -48,20 +58,10 @@
 		};
 	};
 
-	keys {
-		compatible = "gpio-keys";
-
-		reset {
-			label = "reset";
-			linux,code = <KEY_RESTART>;
-			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
-		};
-	};
-
 	i2c {
 		compatible = "i2c-gpio";
-		gpios = <&gpio 19 GPIO_ACTIVE_HIGH /* sda */
-			 &gpio 18 GPIO_ACTIVE_HIGH /* scl */
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH /* sda */
+			 &gpio 12 GPIO_ACTIVE_HIGH /* scl */
 			>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -69,50 +69,20 @@
 		i2c-gpio,scl-open-drain;
 		i2c-gpio,sda-open-drain;
 
-		tmp423a@4e {
+		tmp423a@4c {
 			compatible = "ti,tmp423";
-			reg = <0x4e>;
+			reg = <0x4c>;
 		};
 	};
 
 	watchdog {
 		compatible = "linux,wdt-gpio";
-		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		hw_algo = "toggle";
 		/* hw_margin_ms is actually 300s but driver limits it to 60s */
 		hw_margin_ms = <60000>;
 		always-running;
 	};
-
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		gpio_pa_dcdc {
-			gpio-export,name = "om5pac:pa_dcdc";
-			gpio-export,output = <1>;
-			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
-		};
-		gpio_pa_high {
-			gpio-export,name = "om5pac:pa_high";
-			gpio-export,output = <1>;
-			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
-		};
-	};
-};
-
-&pinmux {
-	pinmux_pa_dcdc_pins {
-		pinctrl-single,bits = <0x0 0x0 0xff0000>;
-	};
-
-	pinmux_pa_high_pins {
-		pinctrl-single,bits = <0x10 0x0 0xff>;
-	};
-};
-
-&pcie0 {
-	status = "okay";
 };
 
 &spi {
@@ -121,7 +91,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <25000000>;
+		spi-max-frequency = <40000000>;
 
 		/* partitions are passed via bootloader */
 		partitions {
@@ -168,22 +138,16 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <0x10>;
-
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		eee-broken-100tx;
-		eee-broken-1000t;
-	};
-};
-
-&mdio1 {
-	status = "okay";
-
-	phy-mask = <0x2>;
+	phy-mask = <0x6>;
 
 	phy1: ethernet-phy@1 {
 		reg = <1>;
+		eee-broken-100tx;
+		eee-broken-1000t;
+	};
+
+	phy2: ethernet-phy@2 {
+		reg = <2>;
 		eee-broken-100tx;
 		eee-broken-1000t;
 		at803x-override-sgmii-link-check;
@@ -198,13 +162,13 @@
 	mtd-mac-address = <&art 0x0>;
 
 	phy-mode = "rgmii-id";
-	phy-handle = <&phy4>;
+	phy-handle = <&phy1>;
 
 	gmac-config {
 		device = <&gmac>;
 		rgmii-enabled = <1>;
-		rxd-delay = <2>;
-		rxdv-delay = <2>;
+		rxd-delay = <3>;
+		rxdv-delay = <3>;
 		txd-delay = <0>;
 		txen-delay = <0>;
 	};
@@ -219,7 +183,7 @@
 
 	qca955x-sgmii-fixup;
 
-	phy-handle = <&phy1>;
+	phy-handle = <&phy2>;
 };
 
 &wmac {
@@ -228,4 +192,8 @@
 	mtd-cal-data = <&art 0x1000>;
 	mtd-mac-address = <&art 0x0>;
 	mtd-mac-address-increment = <2>;
+};
+
+&pcie1 {
+	status = "okay";
 };

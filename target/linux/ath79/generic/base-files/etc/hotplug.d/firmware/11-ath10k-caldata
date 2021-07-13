@@ -103,12 +103,9 @@ case "$FIRMWARE" in
 	openmesh,a40|\
 	openmesh,a60|\
 	openmesh,mr1750-v1|\
-	openmesh,mr1750-v2)
-		caldata_extract "ART" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) 16)
-		;;
+	openmesh,mr1750-v2|\
 	openmesh,om5p-ac-v2)
-		caldata_extract "art" 0x5000 0x844
+		caldata_extract "ART" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) 16)
 		;;
 	qihoo,c301)
@@ -163,6 +160,10 @@ case "$FIRMWARE" in
 	;;
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case $board in
+	openmesh,om5p-ac-v1)
+		caldata_extract "ART" 0x5000 0x844
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
+		;;
 	sitecom,wlr-8100)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 1)
