@@ -1,0 +1,8 @@
+image: openwrtorg/sdk
+
+formal:
+  stage: test
+  variables:
+    BRANCH: "master"
+  script:
+    - make ci-formal-checks

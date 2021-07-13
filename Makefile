@@ -113,6 +113,10 @@ diffconfig: FORCE
 buildinfo: FORCE
 	$(_SINGLE)$(SUBMAKE) -r diffconfig buildversion feedsversion
 
+ci-formal-checks:
+	export BRANCH
+	$(SCRIPT_DIR)/ci-formal-checks.sh
+
 prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
 	$(_SINGLE)$(SUBMAKE) -r buildinfo
 

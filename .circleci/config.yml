@@ -1,0 +1,18 @@
+version: 2.0
+jobs:
+  build:
+    environment:
+      - BRANCH: "master"
+    steps:
+      - checkout:
+      - run:
+          name: Check changes / verify commits
+          command: make ci-formal-checks
+workflows:
+  version: 2
+  buildpr:
+    jobs:
+      - build:
+          filters:
+            branches:
+              ignore: master
