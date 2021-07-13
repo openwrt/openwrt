@@ -1,0 +1,27 @@
+From 470a9eaa5b5884288becd0bcccec44f9be615001 Mon Sep 17 00:00:00 2001
+From: Dirk Neukirchen <dirkneukirchen@web.de>
+Date: Mon, 7 Jun 2021 10:36:51 +0200
+Subject: [PATCH 3/6] core/rtw_wlan_util.c: fix indent warning
+
+Signed-off-by: Dirk Neukirchen <dirkneukirchen@web.de>
+---
+ core/rtw_wlan_util.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/core/rtw_wlan_util.c b/core/rtw_wlan_util.c
+index 0e6193e..7f470ed 100644
+--- a/core/rtw_wlan_util.c
++++ b/core/rtw_wlan_util.c
+@@ -3226,7 +3226,8 @@ void rtw_parse_sta_vendor_ie_8812(_adapter *adapter, struct sta_info *sta, u8 *t
+ 		if(*(p+1) > 6 ) {
+ 			for(i=0; i<9;i++)
+ 				RTW_INFO("p[%d]=0x%x",i,*(p+i) );
+-				RTW_INFO("\n");
++			RTW_INFO("\n");
++
+ 			if(*(p+6) != 2)
+ 				goto exit;
+ 
+-- 
+2.31.1
+
