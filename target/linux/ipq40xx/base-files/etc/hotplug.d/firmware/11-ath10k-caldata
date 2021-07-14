@@ -46,6 +46,13 @@ case "$FIRMWARE" in
 		# OEM assigns 4 sequential MACs
 		ath10k_patch_mac $(macaddr_setbit_la $(macaddr_add "$(cat /sys/class/net/eth0/address)" 4))
 		;;
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
+	netgear,srs60)
+		caldata_extract_mmc "0:ART" 0x9000 0x2f20
+		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0x12)
+		;;
 	esac
 	;;
 "ath10k/pre-cal-ahb-a000000.wifi.bin")
@@ -149,6 +156,13 @@ case "$FIRMWARE" in
 	netgear,ex6150v2)
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary dnidata 0x0)
+		;;
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
+	netgear,srs60)
+		caldata_extract_mmc "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0x0)
 		;;
 	netgear,wac510)
 		caldata_extract "0:ART" 0x1000 0x2f20
@@ -263,6 +277,13 @@ case "$FIRMWARE" in
 	netgear,ex6150v2)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary dnidata 0xc)
+		;;
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
+	netgear,srs60)
+		caldata_extract_mmc "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0xc)
 		;;
 	netgear,wac510)
 		caldata_extract "0:ART" 0x5000 0x2f20

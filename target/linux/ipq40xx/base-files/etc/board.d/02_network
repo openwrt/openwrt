@@ -106,6 +106,14 @@ ipq40xx_setup_interfaces()
 			"0u@eth0" "3:lan:2" "4:lan:1"
 		ucidef_set_interface_wan "eth1"
 		;;
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
+	netgear,srs60)
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "2:lan" "3:lan" "4:lan"
+		ucidef_set_interface_wan "eth1"
+		;;
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
