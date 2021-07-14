@@ -1,0 +1,95 @@
+From b319da1b00d28fb7717784a81e5d9ecac0e98bec Mon Sep 17 00:00:00 2001
+From: Andrey Smirnov <andrew.smirnov@gmail.com>
+Date: Tue, 10 Dec 2019 08:41:45 -0800
+Subject: thermal: qoriq: Embed per-sensor data into struct qoriq_tmu_data
+
+Embed per-sensor data into struct qoriq_tmu_data so we can drop the
+code allocating it. This also allows us to get rid of per-sensor back
+reference to struct qoriq_tmu_data since now its address can be
+calculated using container_of().
+
+Signed-off-by: Andrey Smirnov <andrew.smirnov@gmail.com>
+Cc: Chris Healy <cphealy@gmail.com>
+Cc: Lucas Stach <l.stach@pengutronix.de>
+Cc: Zhang Rui <rui.zhang@intel.com>
+Cc: Eduardo Valentin <edubezval@gmail.com>
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: Angus Ainslie (Purism) <angus@akkea.ca>
+Cc: linux-imx@nxp.com
+Cc: linux-pm@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Link: https://lore.kernel.org/r/20191210164153.10463-5-andrew.smirnov@gmail.com
+---
+ drivers/thermal/qoriq_thermal.c | 23 ++++++++---------------
+ 1 file changed, 8 insertions(+), 15 deletions(-)
+
+(limited to 'drivers/thermal/qoriq_thermal.c')
+
+diff --git a/drivers/thermal/qoriq_thermal.c b/drivers/thermal/qoriq_thermal.c
+index 61733d820e1b4..9886daf8ac977 100644
+--- a/drivers/thermal/qoriq_thermal.c
++++ b/drivers/thermal/qoriq_thermal.c
+@@ -104,13 +104,10 @@ struct qoriq_tmu_regs_v2 {
+ 	u32 ttrcr[4];	/* Temperature Range Control Register */
+ };
+ 
+-struct qoriq_tmu_data;
+-
+ /*
+  * Thermal zone data
+  */
+ struct qoriq_sensor {
+-	struct qoriq_tmu_data		*qdata;
+ 	int				id;
+ };
+ 
+@@ -120,9 +117,14 @@ struct qoriq_tmu_data {
+ 	struct qoriq_tmu_regs_v2 __iomem *regs_v2;
+ 	struct clk *clk;
+ 	bool little_endian;
+-	struct qoriq_sensor	*sensor[SITES_MAX];
++	struct qoriq_sensor	sensor[SITES_MAX];
+ };
+ 
++static struct qoriq_tmu_data *qoriq_sensor_to_data(struct qoriq_sensor *s)
++{
++	return container_of(s, struct qoriq_tmu_data, sensor[s->id]);
++}
++
+ static void tmu_write(struct qoriq_tmu_data *p, u32 val, void __iomem *addr)
+ {
+ 	if (p->little_endian)
+@@ -142,7 +144,7 @@ static u32 tmu_read(struct qoriq_tmu_data *p, void __iomem *addr)
+ static int tmu_get_temp(void *p, int *temp)
+ {
+ 	struct qoriq_sensor *qsensor = p;
+-	struct qoriq_tmu_data *qdata = qsensor->qdata;
++	struct qoriq_tmu_data *qdata = qoriq_sensor_to_data(qsensor);
+ 	u32 val;
+ 
+ 	val = tmu_read(qdata, &qdata->regs->site[qsensor->id].tritsr);
+@@ -162,19 +164,10 @@ static int qoriq_tmu_register_tmu_zone(struct platform_device *pdev)
+ 
+ 	for (id = 0; id < SITES_MAX; id++) {
+ 		struct thermal_zone_device *tzd;
+-		struct qoriq_sensor *sensor;
++		struct qoriq_sensor *sensor = &qdata->sensor[id];
+ 		int ret;
+ 
+-		sensor = devm_kzalloc(&pdev->dev,
+-				      sizeof(struct qoriq_sensor),
+-				      GFP_KERNEL);
+-		if (!qdata->sensor[id])
+-			return -ENOMEM;
+-
+-		qdata->sensor[id] = sensor;
+-
+ 		sensor->id = id;
+-		sensor->qdata = qdata;
+ 
+ 		tzd = devm_thermal_zone_of_sensor_register(&pdev->dev, id,
+ 							   sensor,
+-- 
+cgit 1.2.3-1.el7
+

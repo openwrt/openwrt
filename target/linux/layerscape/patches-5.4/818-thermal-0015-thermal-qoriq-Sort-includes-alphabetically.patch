@@ -1,0 +1,40 @@
+From ce68eeca8f26c9691513d8f94ceaca0040585f52 Mon Sep 17 00:00:00 2001
+From: Anson Huang <Anson.Huang@nxp.com>
+Date: Wed, 11 Mar 2020 13:07:32 +0800
+Subject: thermal: qoriq: Sort includes alphabetically
+
+Sort includes alphabetically for consistency, and take this chance
+to remove unused include of of_address.h.
+
+Signed-off-by: Anson Huang <Anson.Huang@nxp.com>
+Reviewed-by: Amit Kucheria <amit.kucheria@linaro.org>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Link: https://lore.kernel.org/r/1583903252-2058-2-git-send-email-Anson.Huang@nxp.com
+---
+ drivers/thermal/qoriq_thermal.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+(limited to 'drivers/thermal/qoriq_thermal.c')
+
+diff --git a/drivers/thermal/qoriq_thermal.c b/drivers/thermal/qoriq_thermal.c
+index 67a8d84c14fb6..028a6bbf75dc8 100644
+--- a/drivers/thermal/qoriq_thermal.c
++++ b/drivers/thermal/qoriq_thermal.c
+@@ -3,12 +3,11 @@
+ // Copyright 2016 Freescale Semiconductor, Inc.
+ 
+ #include <linux/clk.h>
+-#include <linux/module.h>
+-#include <linux/platform_device.h>
+ #include <linux/err.h>
+ #include <linux/io.h>
++#include <linux/module.h>
+ #include <linux/of.h>
+-#include <linux/of_address.h>
++#include <linux/platform_device.h>
+ #include <linux/regmap.h>
+ #include <linux/sizes.h>
+ #include <linux/thermal.h>
+-- 
+cgit 1.2.3-1.el7
+

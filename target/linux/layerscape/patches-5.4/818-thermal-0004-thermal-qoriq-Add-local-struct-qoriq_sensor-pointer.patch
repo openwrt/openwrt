@@ -1,0 +1,61 @@
+From d6fb05647b10bfd440616de12ca92df6b80652cd Mon Sep 17 00:00:00 2001
+From: Andrey Smirnov <andrew.smirnov@gmail.com>
+Date: Tue, 10 Dec 2019 08:41:44 -0800
+Subject: thermal: qoriq: Add local struct qoriq_sensor pointer
+
+Add local struct qoriq_sensor pointer in qoriq_tmu_register_tmu_zone()
+for brevity.
+
+Signed-off-by: Andrey Smirnov <andrew.smirnov@gmail.com>
+Cc: Chris Healy <cphealy@gmail.com>
+Cc: Lucas Stach <l.stach@pengutronix.de>
+Cc: Zhang Rui <rui.zhang@intel.com>
+Cc: Eduardo Valentin <edubezval@gmail.com>
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: Angus Ainslie (Purism) <angus@akkea.ca>
+Cc: linux-imx@nxp.com
+Cc: linux-pm@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Link: https://lore.kernel.org/r/20191210164153.10463-4-andrew.smirnov@gmail.com
+---
+ drivers/thermal/qoriq_thermal.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+(limited to 'drivers/thermal/qoriq_thermal.c')
+
+diff --git a/drivers/thermal/qoriq_thermal.c b/drivers/thermal/qoriq_thermal.c
+index 2f2f5ffa8f26e..61733d820e1b4 100644
+--- a/drivers/thermal/qoriq_thermal.c
++++ b/drivers/thermal/qoriq_thermal.c
+@@ -162,18 +162,22 @@ static int qoriq_tmu_register_tmu_zone(struct platform_device *pdev)
+ 
+ 	for (id = 0; id < SITES_MAX; id++) {
+ 		struct thermal_zone_device *tzd;
++		struct qoriq_sensor *sensor;
+ 		int ret;
+ 
+-		qdata->sensor[id] = devm_kzalloc(&pdev->dev,
+-				sizeof(struct qoriq_sensor), GFP_KERNEL);
++		sensor = devm_kzalloc(&pdev->dev,
++				      sizeof(struct qoriq_sensor),
++				      GFP_KERNEL);
+ 		if (!qdata->sensor[id])
+ 			return -ENOMEM;
+ 
+-		qdata->sensor[id]->id = id;
+-		qdata->sensor[id]->qdata = qdata;
++		qdata->sensor[id] = sensor;
++
++		sensor->id = id;
++		sensor->qdata = qdata;
+ 
+ 		tzd = devm_thermal_zone_of_sensor_register(&pdev->dev, id,
+-							   qdata->sensor[id],
++							   sensor,
+ 							   &tmu_tz_ops);
+ 		ret = PTR_ERR_OR_ZERO(tzd);
+ 		if (ret) {
+-- 
+cgit 1.2.3-1.el7
+

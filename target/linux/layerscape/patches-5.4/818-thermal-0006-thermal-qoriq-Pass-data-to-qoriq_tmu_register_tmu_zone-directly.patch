@@ -1,0 +1,65 @@
+From 03036625d35b6b9c152bb81e406aaf98a7cd3c85 Mon Sep 17 00:00:00 2001
+From: Andrey Smirnov <andrew.smirnov@gmail.com>
+Date: Tue, 10 Dec 2019 08:41:46 -0800
+Subject: thermal: qoriq: Pass data to qoriq_tmu_register_tmu_zone() directly
+
+Pass all necessary data to qoriq_tmu_register_tmu_zone() directly
+instead of passing a platform device and then deriving it. This is
+done as a first step to simplify resource deallocation code.
+
+Signed-off-by: Andrey Smirnov <andrew.smirnov@gmail.com>
+Acked-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Tested-by: Lucas Stach <l.stach@pengutronix.de>
+Cc: Chris Healy <cphealy@gmail.com>
+Cc: Lucas Stach <l.stach@pengutronix.de>
+Cc: Eduardo Valentin <edubezval@gmail.com>
+Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: Angus Ainslie (Purism) <angus@akkea.ca>
+Cc: linux-imx@nxp.com
+Cc: linux-pm@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Link: https://lore.kernel.org/r/20191210164153.10463-6-andrew.smirnov@gmail.com
+---
+ drivers/thermal/qoriq_thermal.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+(limited to 'drivers/thermal/qoriq_thermal.c')
+
+diff --git a/drivers/thermal/qoriq_thermal.c b/drivers/thermal/qoriq_thermal.c
+index 9886daf8ac977..f024ac68e2edb 100644
+--- a/drivers/thermal/qoriq_thermal.c
++++ b/drivers/thermal/qoriq_thermal.c
+@@ -157,9 +157,9 @@ static const struct thermal_zone_of_device_ops tmu_tz_ops = {
+ 	.get_temp = tmu_get_temp,
+ };
+ 
+-static int qoriq_tmu_register_tmu_zone(struct platform_device *pdev)
++static int qoriq_tmu_register_tmu_zone(struct device *dev,
++				       struct qoriq_tmu_data *qdata)
+ {
+-	struct qoriq_tmu_data *qdata = platform_get_drvdata(pdev);
+ 	int id, sites = 0;
+ 
+ 	for (id = 0; id < SITES_MAX; id++) {
+@@ -169,7 +169,7 @@ static int qoriq_tmu_register_tmu_zone(struct platform_device *pdev)
+ 
+ 		sensor->id = id;
+ 
+-		tzd = devm_thermal_zone_of_sensor_register(&pdev->dev, id,
++		tzd = devm_thermal_zone_of_sensor_register(dev, id,
+ 							   sensor,
+ 							   &tmu_tz_ops);
+ 		ret = PTR_ERR_OR_ZERO(tzd);
+@@ -303,7 +303,7 @@ static int qoriq_tmu_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto err;
+ 
+-	ret = qoriq_tmu_register_tmu_zone(pdev);
++	ret = qoriq_tmu_register_tmu_zone(dev, data);
+ 	if (ret < 0) {
+ 		dev_err(dev, "Failed to register sensors\n");
+ 		ret = -ENODEV;
+-- 
+cgit 1.2.3-1.el7
+

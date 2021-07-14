@@ -1,7 +1,7 @@
-From 031573a8a1e73b0ac548812c10c3e426c2b4ce61 Mon Sep 17 00:00:00 2001
+From 9809797b932e7d0485a37bd8a14bccb2c893b6c6 Mon Sep 17 00:00:00 2001
 From: Yuantian Tang <andy.tang@nxp.com>
-Date: Tue, 15 Oct 2019 20:08:58 +0800
-Subject: [PATCH] thermal: qoriq: add thermal monitor unit version 2 support
+Date: Fri, 11 Oct 2019 10:05:34 +0800
+Subject: thermal: qoriq: add thermal monitor unit version 2 support
 
 Thermal Monitor Unit v2 is introduced on new Layscape SoC.
 Compared to v1, TMUv2 has a little different register layout
@@ -9,16 +9,24 @@ and digital output is fairly linear.
 
 Signed-off-by: Yuantian Tang <andy.tang@nxp.com>
 Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Link: https://lore.kernel.org/r/20191011020534.334-1-andy.tang@nxp.com
 ---
- drivers/thermal/qoriq_thermal.c | 118 ++++++++++++++++++++++++++++++++--------
- 1 file changed, 96 insertions(+), 22 deletions(-)
+ drivers/thermal/qoriq_thermal.c | 120 ++++++++++++++++++++++++++++++++--------
+ 1 file changed, 97 insertions(+), 23 deletions(-)
 
+(limited to 'drivers/thermal/qoriq_thermal.c')
+
+diff --git a/drivers/thermal/qoriq_thermal.c b/drivers/thermal/qoriq_thermal.c
+index 39542c6703011..45e9fcb172cc5 100644
 --- a/drivers/thermal/qoriq_thermal.c
 +++ b/drivers/thermal/qoriq_thermal.c
-@@ -16,6 +16,15 @@
+@@ -13,7 +13,16 @@
  
- #define SITES_MAX	16
- #define TMU_TEMP_PASSIVE_COOL_DELTA	10000
+ #include "thermal_core.h"
+ 
+-#define SITES_MAX	16
++#define SITES_MAX		16
 +#define TMR_DISABLE		0x0
 +#define TMR_ME			0x80000000
 +#define TMR_ALPF		0x0c000000
@@ -31,7 +39,7 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
  
  /*
   * QorIQ TMU Registers
-@@ -26,17 +35,12 @@ struct qoriq_tmu_site_regs {
+@@ -24,17 +33,12 @@ struct qoriq_tmu_site_regs {
  	u8 res0[0x8];
  };
  
@@ -50,7 +58,7 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
  	u32 tidr;		/* Interrupt Detect Register */
  	u32 tiscr;		/* Interrupt Site Capture Register */
  	u32 ticscr;		/* Interrupt Critical Site Capture Register */
-@@ -56,12 +60,52 @@ struct qoriq_tmu_regs {
+@@ -54,10 +58,50 @@ struct qoriq_tmu_regs {
  	u32 ipbrr0;		/* IP Block Revision Register 0 */
  	u32 ipbrr1;		/* IP Block Revision Register 1 */
  	u8 res6[0x310];
@@ -59,8 +67,8 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
 -	u32 ttr2cr;		/* Temperature Range 2 Control Register */
 -	u32 ttr3cr;		/* Temperature Range 3 Control Register */
 +	u32 ttrcr[4];		/* Temperature Range Control Register */
- };
- 
++};
++
 +struct qoriq_tmu_regs_v2 {
 +	u32 tmr;		/* Mode Register */
 +	u32 tsr;		/* Status Register */
@@ -102,12 +110,10 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
 +	u32 teumr2;
 +	u32 res9;
 +	u32 ttrcr[4];	/* Temperature Range Control Register */
-+ };
-+ 
- struct qoriq_tmu_data;
+ };
  
- /*
-@@ -77,7 +121,9 @@ struct qoriq_sensor {
+ struct qoriq_tmu_data;
+@@ -72,7 +116,9 @@ struct qoriq_sensor {
  };
  
  struct qoriq_tmu_data {
@@ -118,8 +124,8 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
  	struct clk *clk;
  	bool little_endian;
  	struct qoriq_sensor	*sensor[SITES_MAX];
-@@ -210,12 +256,23 @@ static int qoriq_tmu_register_tmu_zone(s
- 			qdata->sensor[id]->temp_critical = trip[1].temperature;
+@@ -132,12 +178,23 @@ static int qoriq_tmu_register_tmu_zone(struct platform_device *pdev)
+ 				return PTR_ERR(qdata->sensor[id]->tzd);
  		}
  
 -		sites |= 0x1 << (15 - id);
@@ -145,7 +151,7 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
  
  	return 0;
  }
-@@ -228,16 +285,21 @@ static int qoriq_tmu_calibration(struct
+@@ -150,16 +207,21 @@ static int qoriq_tmu_calibration(struct platform_device *pdev)
  	struct device_node *np = pdev->dev.of_node;
  	struct qoriq_tmu_data *data = platform_get_drvdata(pdev);
  
@@ -174,7 +180,7 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
  
  	calibration = of_get_property(np, "fsl,tmu-calibration", &len);
  	if (calibration == NULL || len % 8) {
-@@ -261,7 +323,12 @@ static void qoriq_tmu_init_device(struct
+@@ -183,7 +245,12 @@ static void qoriq_tmu_init_device(struct qoriq_tmu_data *data)
  	tmu_write(data, TIER_DISABLE, &data->regs->tier);
  
  	/* Set update_interval */
@@ -188,7 +194,7 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
  
  	/* Disable monitoring */
  	tmu_write(data, TMR_DISABLE, &data->regs->tmr);
-@@ -270,6 +337,7 @@ static void qoriq_tmu_init_device(struct
+@@ -192,6 +259,7 @@ static void qoriq_tmu_init_device(struct qoriq_tmu_data *data)
  static int qoriq_tmu_probe(struct platform_device *pdev)
  {
  	int ret;
@@ -196,7 +202,7 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
  	struct qoriq_tmu_data *data;
  	struct device_node *np = pdev->dev.of_node;
  
-@@ -298,6 +366,12 @@ static int qoriq_tmu_probe(struct platfo
+@@ -220,6 +288,12 @@ static int qoriq_tmu_probe(struct platform_device *pdev)
  		return ret;
  	}
  
@@ -209,3 +215,6 @@ Reviewed-by: Anson Huang <Anson.Huang@nxp.com>
  	qoriq_tmu_init_device(data);	/* TMU initialization */
  
  	ret = qoriq_tmu_calibration(pdev);	/* TMU calibration */
+-- 
+cgit 1.2.3-1.el7
+
