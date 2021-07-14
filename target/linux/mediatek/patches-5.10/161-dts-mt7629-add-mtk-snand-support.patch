@@ -1,0 +1,61 @@
+--- a/arch/arm/boot/dts/mt7629.dtsi
++++ b/arch/arm/boot/dts/mt7629.dtsi
+@@ -294,6 +294,20 @@
+ 			status = "disabled";
+ 		};
+ 
++		snand: snfi@1100d000 {
++			compatible = "mediatek,mt7629-snand";
++			reg = <0 0x1100d000 0 0x1000>, <0 0x1100e000 0 0x1000>;
++			reg-names = "nfi", "ecc";
++			interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_LOW>;
++			clocks = <&pericfg CLK_PERI_NFI_PD>,
++				 <&pericfg CLK_PERI_SNFI_PD>,
++				 <&pericfg CLK_PERI_NFIECC_PD>;
++			clock-names = "nfi_clk", "pad_clk", "ecc_clk";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		spi: spi@1100a000 {
+ 			compatible = "mediatek,mt7629-spi",
+ 				     "mediatek,mt7622-spi";
+--- a/arch/arm/boot/dts/mt7629-rfb.dts
++++ b/arch/arm/boot/dts/mt7629-rfb.dts
+@@ -250,23 +250,13 @@
+ 	};
+ };
+ 
+-&bch {
+-	status = "okay";
+-};
+-
+-&snfi {
++&snand {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&serial_nand_pins>;
+ 	status = "okay";
++	mediatek,quad-spi;
+ 
+-	spi_nand@0 {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		compatible = "spi-nand";
+-		spi-max-frequency = <104000000>;
+-		reg = <0>;
+-
+-		partitions {
++	partitions {
+ 		compatible = "fixed-partitions";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+@@ -291,8 +281,6 @@
+ 			label = "firmware";
+ 			reg = <0x1c0000 0x1000000>;
+ 		};
+-
+-		};
+ 	};
+ };
+ 

@@ -1,0 +1,23 @@
+--- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
+@@ -574,6 +574,20 @@
+ 		status = "disabled";
+ 	};
+ 
++	snand: snfi@1100d000 {
++		compatible = "mediatek,mt7622-snand";
++		reg = <0 0x1100d000 0 0x1000>, <0 0x1100e000 0 0x1000>;
++		reg-names = "nfi", "ecc";
++		interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_LOW>;
++		clocks = <&pericfg CLK_PERI_NFI_PD>,
++			 <&pericfg CLK_PERI_SNFI_PD>,
++			 <&pericfg CLK_PERI_NFIECC_PD>;
++		clock-names = "nfi_clk", "pad_clk", "ecc_clk";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	nor_flash: spi@11014000 {
+ 		compatible = "mediatek,mt7622-nor",
+ 			     "mediatek,mt8173-nor";
