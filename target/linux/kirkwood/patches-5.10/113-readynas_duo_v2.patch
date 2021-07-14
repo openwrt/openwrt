@@ -1,0 +1,86 @@
+--- a/arch/arm/boot/dts/kirkwood-netgear_readynas_duo_v2.dts
++++ b/arch/arm/boot/dts/kirkwood-netgear_readynas_duo_v2.dts
+@@ -19,6 +19,13 @@
+ 		reg = <0x00000000 0x10000000>;
+ 	};
+ 
++	aliases {
++		led-boot = &led_power;
++		led-failsafe = &led_power;
++		led-running = &led_power;
++		led-upgrade = &led_power;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttyS0,115200n8 earlyprintk";
+ 		stdout-path = &uart0;
+@@ -115,7 +122,7 @@
+ 			      &pmx_led_blue_backup >;
+ 		pinctrl-names = "default";
+ 
+-		power_led {
++		led_power: power_led {
+ 			label = "status:blue:power_led";
+ 			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+ 			default-state = "keep";
+@@ -129,11 +136,13 @@
+ 		disk1_led {
+ 			label = "status:blue:disk1_led";
+ 			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "ata1";
+ 		};
+ 
+ 		disk2_led {
+ 			label = "status:blue:disk2_led";
+ 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "ata2";
+ 		};
+ 
+ 		backup_led {
+@@ -167,12 +176,23 @@
+ 		};
+ 	};
+ 
++	/* gpio-poweroff from upstream is buggy. It isn't work and causes only
++	   warning. According to GPL sources of NETGEAR, poweroff should be done as
++	   reboot with some registers configuration. To proper poweroff is needed 
++	   to clear bit in one of registers:
++	   PHY register: Page 3 Reg 17 Bit 4
++	   RTC register: SL2(BIT5) of RS5C372a control 1 register (0xe0)
++	   
++	   For more info please look at file:
++	   RND_5.3.13_WW.src/u-boot/board/mv_feroceon/mv_hal/usibootup/usibootup.c
++	   from Netgear GPL sources.
++
+ 	gpio-poweroff {
+ 		compatible = "gpio-poweroff";
+ 		pinctrl-0 = <&pmx_poweroff>;
+ 		pinctrl-names = "default";
+ 		gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+-	};
++	};*/
+ 
+ 	regulators {
+ 		compatible = "simple-bus";
+@@ -208,18 +228,13 @@
+ 	};
+ 
+ 	partition@200000 {
+-		label = "uImage";
++		label = "kernel";
+ 		reg = <0x0200000 0x600000>;
+ 	};
+ 
+ 	partition@800000 {
+-		label = "minirootfs";
+-		reg = <0x0800000 0x1000000>;
+-	};
+-
+-	partition@1800000 {
+-		label = "jffs2";
+-		reg = <0x1800000 0x6800000>;
++		label = "ubi";
++		reg = <0x0800000 0x7800000>;
+ 	};
+ };
+ 
