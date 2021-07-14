@@ -386,4 +386,15 @@ menu "Global build settings"
 
 	endchoice
 
+	config APPARMOR
+		bool "Enable AppArmor"
+		select TARGET_ROOTFS_SECURITY_LABELS
+		select KERNEL_SECURITY_APPARMOR
+		select KERNEL_AUDIT
+		select KERNEL_SECURITY
+		select KERNEL_SECURITYFS
+		help
+		  This option enables the AppArmor security module and
+		  selects AppArmor userspace tools.
+
 endmenu
