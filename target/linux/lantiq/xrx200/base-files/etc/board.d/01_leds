@@ -55,6 +55,9 @@ buffalo,wbmr-300hpd)
 netgear,dm200)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
+tplink,archer-d2)
+	ucidef_set_led_netdev "lan" "lan" "white:lan" "eth0"
+	;;
 esac
 
 board_config_flush
