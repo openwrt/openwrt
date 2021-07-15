@@ -10,6 +10,15 @@ define Device/mikrotik_nor
 		check-size | append-metadata
 endef
 
+define Device/mikrotik_cap-ac
+	$(call Device/mikrotik_nor)
+	DEVICE_MODEL := cAP ac
+	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := ipq-wifi-mikrotik_cap-ac -kmod-ath10k-ct \
+		kmod-ath10k-ct-smallbuffers
+endef
+TARGET_DEVICES += mikrotik_cap-ac
+
 define Device/mikrotik_hap-ac2
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := hAP ac2
