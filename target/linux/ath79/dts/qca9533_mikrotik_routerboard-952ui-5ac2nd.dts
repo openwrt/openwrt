@@ -1,0 +1,178 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9533_mikrotik_routerboard-16m.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-952ui-5ac2nd", "qca,qca9533";
+	model = "MikroTik RouterBOARD 952Ui-5ac2nD (hAP ac lite)";
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&led_wan_pin>;
+
+		power {
+			label = "green:power";
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_user: user {
+			label = "green:user";
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+		};
+		
+		lan1 {
+			label = "green:lan1";
+			gpios = <&gpio_ext 0 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			label = "green:lan2";
+			gpios = <&gpio_ext 1 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3 {
+			label = "green:lan3";
+			gpios = <&gpio_ext 2 GPIO_ACTIVE_LOW>;
+		};
+
+		lan4 {
+			label = "green:lan4";
+			gpios = <&gpio_ext 3 GPIO_ACTIVE_LOW>;
+		};
+		
+		lan5 {
+			label = "green:lan5";
+			gpios = <&gpio_ext 4 GPIO_ACTIVE_LOW>;
+		};
+
+	};
+	
+	gpio-export {
+		compatible = "gpio-export";
+
+		usb_power {
+			gpio-export,name = "usb-power";
+			gpio-export,output = <1>;
+			gpios = <&gpio_ext 5 GPIO_ACTIVE_LOW>;
+		};
+		
+		enable_poe_lan5 {
+			gpio-export,name = "enable-poe:lan5";
+			gpio-export,output = <0>;
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+	
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmx_spi_cs1>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "RouterBoot";
+				reg = <0x0 0x20000>;
+				read-only;
+				compatible = "mikrotik,routerboot-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "bootloader1";
+					reg = <0x0 0x0>;
+					read-only;
+				};
+
+				hard_config {
+					read-only;
+				};
+
+				bios {
+					size = <0x1000>;
+					read-only;
+				};
+
+				partition@10000 {
+					label = "bootloader2";
+					reg = <0x10000 0x0>;
+					read-only;
+				};
+
+				soft_config {
+				};
+			};
+
+			partition@20000 {
+				compatible = "mikrotik,minor";
+				label = "firmware";
+				reg = <0x020000 0xfe0000>;
+			};
+		};
+	};
+	
+	gpio_ext: gpio_ext@1 {
+		compatible = "fairchild,74hc595";
+		reg = <1>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <1>;
+		spi-max-frequency = <10000000>;
+	};
+};
+
+
+&pinmux {
+	led_wan_pin: pinmux_led_wan_pin {
+		pinctrl-single,bits = <0x4 0x0 0xff>;
+	};
+	
+	pmx_spi_cs1: pinmux_spi_cs1 {
+		pinctrl-single,bits = <0x8 0x0a000000 0xff000000>;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+};
+
+&eth1 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
