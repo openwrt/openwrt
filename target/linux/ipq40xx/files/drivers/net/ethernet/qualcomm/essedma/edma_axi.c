@@ -1188,9 +1188,14 @@ static int edma_axi_probe(struct platform_device *pdev)
 
 	for (i = 0; i < edma_cinfo->num_gmac; i++) {
 		if (adapter[i]->poll_required) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,10,0)
+			phy_interface_t phy_mode;
+			err = of_get_phy_mode(np, &phy_mode);
+			if (err < 0)
+#else
 			int phy_mode = of_get_phy_mode(np);
-
 			if (phy_mode < 0)
+#endif
 				phy_mode = PHY_INTERFACE_MODE_SGMII;
 			adapter[i]->phydev =
 				phy_connect(edma_netdev[i],

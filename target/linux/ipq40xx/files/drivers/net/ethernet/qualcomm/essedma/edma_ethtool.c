@@ -320,6 +320,9 @@ static const struct ethtool_ops edma_ethtool_ops = {
 	.get_ethtool_stats = &edma_get_ethtool_stats,
 	.get_coalesce = &edma_get_coalesce,
 	.set_coalesce = &edma_set_coalesce,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,7,0)
+	.supported_coalesce_params = ETHTOOL_COALESCE_USECS,
+#endif
 	.get_priv_flags = edma_get_priv_flags,
 	.set_priv_flags = edma_set_priv_flags,
 	.get_ringparam = edma_get_ringparam,
