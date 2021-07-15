@@ -46,6 +46,17 @@ define Build/append-rootfshdr
 	dd if=$@.new bs=64 count=1 >> $(IMAGE_KERNEL)
 endef
 
+define Build/append-rutx-metadata
+	echo \
+		'{ \
+			"device_code": [".*"], \
+			"hwver": [".*"], \
+			"batch": [".*"], \
+			"serial": [".*"], \
+			"supported_devices":["teltonika,rutx"] \
+		}' | fwtool -I - $@
+endef
+
 define Build/mkmylofw_32m
 	$(eval device_id=$(word 1,$(1)))
 	$(eval revision=$(word 2,$(1)))
@@ -779,6 +790,23 @@ define Device/qxwlan_e2600ac-c2
 	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
+
+define Device/teltonika_rutx10
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Teltonika
+	DEVICE_MODEL := RUTX10
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@5
+	KERNEL_INSTALL := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	FILESYSTEMS := squashfs
+	IMAGES := nand-factory.bin nand-sysupgrade.bin
+	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
+	DEVICE_PACKAGES := ipq-wifi-teltonika_rutx kmod-bluetooth
+endef
+TARGET_DEVICES += teltonika_rutx10
 
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)

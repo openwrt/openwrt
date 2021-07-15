@@ -124,6 +124,10 @@ platform_do_upgrade() {
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
+	teltonika,rutx10)
+		CI_UBIPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
 	zyxel,nbg6617)
 		zyxel_do_upgrade "$1"
 		;;
