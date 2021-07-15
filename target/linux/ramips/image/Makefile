@@ -144,6 +144,12 @@ define Build/uimage-padhdr
 	mv $@.new $@
 endef
 
+define Build/uimage-sgehdr
+	uimage_sgehdr -i $@ -o $@.new -m $(DEVICE_MODEL) \
+		-h $(DEVICE_VARIANT) -s V1.00000
+	mv $@.new $@
+endef
+
 define Build/umedia-header
 	fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
 endef
