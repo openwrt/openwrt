@@ -1,0 +1,86 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+const unsigned char key1[] =
+	"\x35\x87\x90\x03\x45\x19\xf8\xc8\x23\x5d\xb6\x49\x28\x39\xa7\x3f";
+
+const unsigned char key2[] =
+	"\xc8\xd3\x2f\x40\x9c\xac\xb3\x47\xc8\xd2\x6f\xdc\xb9\x09\x0b\x3c";
+
+const unsigned char iv[] =
+	"\x98\xc9\xd8\xf0\x13\x3d\x06\x95\xe2\xa7\x09\xc8\xb6\x96\x82\xd4";
+
+const unsigned char salt[] =
+	"\x67\xc6\x69\x73\x51\xff\x4a\xec\x29\xcd\xba\xab\xf2\xfb\xe3\x46";
+
+// public.pem as found in GPL tarball
+const unsigned char public_pem[] = R"(
+-----BEGIN RSA PUBLIC KEY-----
+MIICCgKCAgEApZLuH2XFDWuazEMpx4v6QY0ePRJm344JgkLKfeofovxvbjfX6RHU
+7yUz6b2wJnW4lomEzjrJEQFnPGNFV/oWO/NaTb3k0rPUewDzlzy/pn7ZMehqnMK1
+tHVnyQ6RZ+9qkdYEu08f79UgZcGQzSy2TLNMquAB9ffGbTHAjRfoK7cDjQX+RKWh
+OOs5tbnzhR0B4Jdd6UL9Sqoq5UisTdlnFhy67RdsItz3OOrHIiDYmfkEOqAZySKZ
+MhY7h7kkC8t1IzZOncBx3LYU4PMo9ulycAx7xDUric8xswnKoYAJbbKtp9xnGKRJ
+HPuZOZyXFdWNlTVhzG3sGdDzcpHxrFOJZ5RK/n19DArbq6w9MEInTmU3bcwDYFvX
+JCQ5Al05lgqP8vk7U4xx3AcwZUQHNVzduBuibB26jhpPXSk1Cl6NpFdXlKvcynfV
+H8XaCHy8LXhZBMiuR62Ft6YkcIpBdsQ2uBGL5GOmVFA/cOEtPZjWxzN/miXaZ7In
+iRhXEHFus6zYIPOTa9DNyAA87UCqxkem7Xgu59fgq49YwGPk+Q7HJXKgts9QTn9y
+26OtlUAq1i23EJK6GJvTmszslXbAWEi5Mlb/o7QdpEQt/gyz9udnVmfXOy4UmNXN
+ZxuVyXNomTBFRObZ5Zmn6n+xat5eBDpvct+OO1IUMC154div9i2szF0CAwEAAQ==
+-----END RSA PUBLIC KEY-----
+)";
+
+// key2.pem as found in GPL tarball, decrypted via openssl using
+// PEM passphrase 12345678 to reduce code and runtime complexity
+const unsigned char key2_pem[] = R"(
+-----BEGIN RSA PRIVATE KEY-----
+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
+-----END RSA PRIVATE KEY-----
+)";

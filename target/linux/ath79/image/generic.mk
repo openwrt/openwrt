@@ -48,6 +48,10 @@ define Build/cybertan-trx
 	-rm $@-empty.bin
 endef
 
+define Build/dlink-sge-signature
+	$(TOPDIR)/scripts/dlink-sge-signature.py $@ $(1)
+endef
+
 define Build/edimax-headers
 	$(eval edimax_magic=$(word 1,$(1)))
 	$(eval edimax_model=$(word 2,$(1)))
@@ -744,6 +748,29 @@ define Device/devolo_magic-2-wifi
   IMAGE_SIZE := 15872k
 endef
 TARGET_DEVICES += devolo_magic-2-wifi
+
+define Device/dlink_covr-c1200-a1
+  SOC := qca9563
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := COVR-C1200
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x050000
+  LOADER_KERNEL_MAGIC := 0x68737173
+  COMPILE := loader-$(1).bin loader-$(1).uImage
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | \
+	lzma | uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x68737173
+  IMAGE_SIZE := 14528k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | pad-to 14528k | \
+	append-file $(KDIR)/loader-$(1).uImage | pad-to 15616k | \
+	dlink-sge-signature COVR-C1200 | dlink-sge-image
+endef
+TARGET_DEVICES += dlink_covr-c1200-a1
 
 define Device/dlink_dap-13xx
   SOC := qca9533

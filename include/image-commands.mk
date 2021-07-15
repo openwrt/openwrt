@@ -23,6 +23,10 @@ define Build/append-dtb-elf
 		.appended_dtb=$(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@
 endef
 
+define Build/append-file
+	dd if=$(1) >> $@
+endef
+
 define Build/append-kernel
 	dd if=$(IMAGE_KERNEL) >> $@
 endef
@@ -173,6 +177,11 @@ define Build/check-size
 		echo "WARNING: Image file $@ is too big: $$imagesize > $$limitsize" >&2; \
 		rm -f $@; \
 	}
+endef
+
+define Build/dlink-sge-image
+	$(STAGING_DIR_HOST)/bin/dlink-sge-image $@ $@.enc
+	mv $@.enc $@
 endef
 
 define Build/elecom-product-header
