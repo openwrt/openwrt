@@ -104,5 +104,9 @@ VERSION_SED_SCRIPT:=$(SED) 's,%U,$(call sed_escape,$(VERSION_REPO)),g' \
 	-e 's,%u,$(call sed_escape,$(VERSION_HOME_URL)),g' \
 	-e 's,%s,$(call sed_escape,$(VERSION_SUPPORT_URL)),g' \
 	-e 's,%P,$(call sed_escape,$(VERSION_PRODUCT)),g' \
-	-e 's,%h,$(call sed_escape,$(VERSION_HWREV)),g'
+	-e 's,%h,$(call sed_escape,$(VERSION_HWREV)),g' \
+	-e 's,%wD,$(call sed_escape,$(if $(WIFI_DISABLED),1,0)),g' \
+	-e 's,%wS,$(call sed_escape,$(WIFI_SSID)),g' \
+	-e 's,%wE,$(call sed_escape,$(WIFI_ENCRYPTION)),g' \
+	-e 's,%wK,$(call sed_escape,$(WIFI_KEY)),g'
 
