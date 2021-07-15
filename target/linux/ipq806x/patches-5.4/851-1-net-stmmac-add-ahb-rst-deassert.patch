@@ -1,0 +1,104 @@
+From: Matthew Hagan <mnhagan88@gmail.com>
+Date: Sat, 8 May 2021 16:11:23 +0100
+Subject: net: stmmac: Deassert STMMAC AHB reset
+
+Currently we are assuming the bootloader will deassert GMAC_AHB_RESET,
+resulting in failure if it has not done so. This patch explicitly deasserts
+at probe time.
+
+Signed-off-by: Matthew Hagan <mnhagan88@gmail.com>
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -4502,6 +4502,13 @@
+ 			reset_control_reset(priv->plat->stmmac_rst);
+ 	}
+ 
++	if (priv->plat->stmmac_ahb_rst) {
++		ret = reset_control_deassert(priv->plat->stmmac_ahb_rst);
++		if (ret)
++			dev_err(priv->device,
++				"unable to bring out of ahb reset\n");
++	}
++
+ 	/* Init MAC and get the capabilities */
+ 	ret = stmmac_hw_init(priv);
+ 	if (ret)
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+@@ -604,6 +604,16 @@
+ 		plat->stmmac_rst = NULL;
+ 	}
+ 
++	plat->stmmac_ahb_rst = devm_reset_control_get_shared(&pdev->dev,
++							     "ahb");
++	if (IS_ERR(plat->stmmac_ahb_rst)) {
++		if (PTR_ERR(plat->stmmac_ahb_rst) == -EPROBE_DEFER)
++			goto error_hw_init;
++
++		dev_info(&pdev->dev, "no ahb reset control found\n");
++		plat->stmmac_ahb_rst = NULL;
++	}
++
+ 	return plat;
+ 
+ error_hw_init:
+--- a/include/linux/stmmac.h
++++ b/include/linux/stmmac.h
+@@ -171,6 +171,7 @@
+ 	unsigned int clk_ref_rate;
+ 	s32 ptp_max_adj;
+ 	struct reset_control *stmmac_rst;
++	struct reset_control *stmmac_ahb_rst;
+ 	struct stmmac_axi *axi;
+ 	int has_gmac4;
+ 	bool has_sun8i;
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -1513,8 +1513,9 @@
+ 			clocks = <&gcc GMAC_CORE1_CLK>;
+ 			clock-names = "stmmaceth";
+ 
+-			resets = <&gcc GMAC_CORE1_RESET>;
+-			reset-names = "stmmaceth";
++			resets = <&gcc GMAC_CORE1_RESET>,
++				 <&gcc GMAC_AHB_RESET>;
++			reset-names = "stmmaceth", "ahb";
+ 
+ 			status = "disabled";
+ 		};
+@@ -1536,8 +1537,9 @@
+ 			clocks = <&gcc GMAC_CORE2_CLK>;
+ 			clock-names = "stmmaceth";
+ 
+-			resets = <&gcc GMAC_CORE2_RESET>;
+-			reset-names = "stmmaceth";
++			resets = <&gcc GMAC_CORE2_RESET>,
++				 <&gcc GMAC_AHB_RESET>;
++			reset-names = "stmmaceth", "ahb";
+ 
+ 			status = "disabled";
+ 		};
+@@ -1559,8 +1561,9 @@
+ 			clocks = <&gcc GMAC_CORE3_CLK>;
+ 			clock-names = "stmmaceth";
+ 
+-			resets = <&gcc GMAC_CORE3_RESET>;
+-			reset-names = "stmmaceth";
++			resets = <&gcc GMAC_CORE3_RESET>,
++				 <&gcc GMAC_AHB_RESET>;
++			reset-names = "stmmaceth", "ahb";
+ 
+ 			status = "disabled";
+ 		};
+@@ -1582,8 +1585,9 @@
+ 			clocks = <&gcc GMAC_CORE4_CLK>;
+ 			clock-names = "stmmaceth";
+ 
+-			resets = <&gcc GMAC_CORE4_RESET>;
+-			reset-names = "stmmaceth";
++			resets = <&gcc GMAC_CORE4_RESET>,
++				 <&gcc GMAC_AHB_RESET>;
++			reset-names = "stmmaceth", "ahb";
+ 
+ 			status = "disabled";
+ 		};

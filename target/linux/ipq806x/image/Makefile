@@ -192,6 +192,41 @@ define Device/linksys_ea8500
 endef
 TARGET_DEVICES += linksys_ea8500
 
+define Device/meraki_mr42
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Cisco Meraki
+	DEVICE_MODEL := MR42
+	SOC := qcom-ipq8068
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_LOADADDR = 0x44208000
+	DEVICE_PACKAGES := -swconfig -kmod-ata-ahci -kmod-ata-ahci-platform \
+		-kmod-usb-ohci -kmod-usb2 -kmod-usb-ledtrig-usbport \
+		-kmod-phy-qcom-ipq806x-usb -kmod-usb3 -kmod-usb-dwc3-qcom \
+		-uboot-envtools ath10k-firmware-qca9887-ct \
+		ath10k-firmware-qca99x0-ct kmod-eeprom-at24 kmod-hwmon-ina2xx \
+		kmod-leds-tlc591xx
+endef
+TARGET_DEVICES += meraki_mr42
+
+define Device/meraki_mr52
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Cisco Meraki
+	DEVICE_MODEL := MR52
+	SOC := qcom-ipq8068
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_LOADADDR = 0x44208000
+	DEVICE_DTS_CONFIG := config@2
+	DEVICE_PACKAGES := -swconfig -kmod-ata-ahci -kmod-ata-ahci-platform \
+		-kmod-usb-ohci -kmod-usb2 -kmod-usb-ledtrig-usbport \
+		-kmod-phy-qcom-ipq806x-usb -kmod-usb3 -kmod-usb-dwc3-qcom \
+		-uboot-envtools ath10k-firmware-qca9887-ct \
+		ath10k-firmware-qca9984-ct kmod-eeprom-at24 kmod-hwmon-ina2xx \
+		kmod-leds-tlc591xx
+endef
+TARGET_DEVICES += meraki_mr52
+
 define Device/nec_wg2600hp
 	$(call Device/LegacyImage)
 	DEVICE_VENDOR := NEC

@@ -1,0 +1,58 @@
+--- a/arch/arm/boot/dts/qcom-ipq8068-mr42.dts
++++ b/arch/arm/boot/dts/qcom-ipq8068-mr42.dts
+@@ -10,6 +10,7 @@
+ 
+ 	aliases {
+ 		serial1 = &gsbi1_serial;
++		mdio-gpio0 = &mdio_gpio0;
+ 		ethernet0 = &gmac3;
+ 
+ 		led-boot = &led_active;
+@@ -148,20 +149,28 @@
+ 	};
+ };
+ 
+-&mdio0 {
+-	status = "okay";
++&soc {
++	mdio_gpio0: mdio {
++		compatible = "virtual,mdio-gpio";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "okay";
+ 
+-	pinctrl-0 = <&mdio0_pins_active>, <&phy_active>;
+-	pinctrl-names = "default";
++		pinctrl-0 = <&mdio0_pins_active>, <&phy_active>;
++		pinctrl-names = "default";
++
++		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH
++			 &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
+ 
+-	phy2: ethernet-phy2 {
+-		reg = <2>;
++		phy2: ethernet-phy2 {
++			reg = <2>;
+ 
+-		reset-gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
+-		reset-assert-us = <24000>;
++			reset-gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
++			reset-assert-us = <24000>;
+
+-		eee-broken-100tx;
+-		eee-broken-1000t;
++			eee-broken-100tx;
++			eee-broken-1000t;
++		};
+ 	};
+ };
+ 
+@@ -169,7 +178,7 @@
+ 	status = "okay";
+ 
+ 	qcom,id = <3>;
+-	mdiobus = <&mdio0>;
++	mdiobus = <&mdio_gpio0>;
+ 
+ 	phy-mode = "sgmii";
+ 	phy-handle = <&phy2>;

@@ -1,0 +1,19 @@
+From: Matthew Hagan <mnhagan88@gmail.com>
+Date: Fri, 14 May 2021 21:14:53 +0100
+Subject: net: dt-bindings: stmmac: ipq806x: add GMAC AHB reset
+
+Add ahb to reset properties.
+
+Signed-off-by: Matthew Hagan <mnhagan88@gmail.com>
+--- a/Documentation/devicetree/bindings/net/ipq806x-dwmac.txt
++++ b/Documentation/devicetree/bindings/net/ipq806x-dwmac.txt
+@@ -30,6 +30,7 @@
+ 		clocks = <&gcc GMAC_CORE1_CLK>;
+ 		clock-names = "stmmaceth";
+ 
+-		resets = <&gcc GMAC_CORE1_RESET>;
+-		reset-names = "stmmaceth";
++		resets = <&gcc GMAC_CORE1_RESET>,
++			 <&gcc GMAC_AHB_RESET>;
++		reset-names = "stmmaceth", "ahb";
+ 	};

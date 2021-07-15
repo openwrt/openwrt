@@ -52,6 +52,17 @@ linksys,ea8500)
 	ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
 	ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
 	;;
+meraki,mr42)
+	hw_mac_addr="$(get_mac_binary "/sys/bus/i2c/devices/0-0056/eeprom" 0x66)"
+	ucidef_set_interface_lan "eth0"
+	ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
+	;;
+meraki,mr52)
+	hw_mac_addr="$(get_mac_binary "/sys/bus/i2c/devices/0-0052/eeprom" 0x66)"
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_set_interface_macaddr "lan" "$(macaddr_add $hw_mac_addr 1)"
+	ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
+	;;
 nec,wg2600hp3)
 	ucidef_add_switch "switch0" \
 		"2:lan" "3:lan" "4:lan" "5:lan" "0@eth1" "1:wan" "6@eth0"
