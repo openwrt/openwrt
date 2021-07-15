@@ -1,0 +1,21 @@
+From: Matthew Hagan <mnhagan88@gmail.com>
+Date: Wed, 17 Mar 2021 10:51:45 +0000
+Subject: net: dsa: qca8k: VLAN timeout fix
+
+Adding or removing VLAN on will result in frequent timeouts. This patch
+lengthens the timeout from 20 to 2000 msec.
+
+Signed-off-by: Matthew Hagan <mnhagan88@gmail.com>
+---
+
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -264,7 +264,7 @@
+ {
+ 	unsigned long timeout;
+ 
+-	timeout = jiffies + msecs_to_jiffies(20);
++	timeout = jiffies + msecs_to_jiffies(2000);
+ 
+ 	/* loop until the busy flag has cleared */
+ 	do {

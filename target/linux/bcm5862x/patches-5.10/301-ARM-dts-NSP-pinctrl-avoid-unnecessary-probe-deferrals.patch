@@ -1,0 +1,46 @@
+From: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Date: Fri, 25 Oct 2019 17:00:41 +1300
+Subject: [PATCH 2/2] ARM: dts: NSP: avoid unnecessary probe deferrals
+
+The pinctrl node is used by the gpioa node. Which may have more
+descendants at a board level. If the pinctrl node isn't probed first the
+gpio is deferred and anything that needs a gpio pin on that chip is also
+deferred.
+
+Normally we and nodes in the device tree to be listed in their natural
+memory mapped address order but putting the pinctrl node first avoids
+the deferral of numerous devices so make an exception in this case.
+
+Signed-off-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+---
+
+--- a/arch/arm/boot/dts/bcm-nsp.dtsi
++++ b/arch/arm/boot/dts/bcm-nsp.dtsi
+@@ -172,6 +172,13 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 
++		pinctrl: pinctrl@3f1c0 {
++			compatible = "brcm,nsp-pinmux";
++			reg = <0x3f1c0 0x04>,
++			      <0x30028 0x04>,
++			      <0x3f408 0x04>;
++		};
++
+ 		gpioa: gpio@20 {
+ 			compatible = "brcm,nsp-gpio-a";
+ 			reg = <0x0020 0x70>,
+@@ -460,13 +467,6 @@
+ 					     "sata2";
+ 		};
+ 
+-		pinctrl: pinctrl@3f1c0 {
+-			compatible = "brcm,nsp-pinmux";
+-			reg = <0x3f1c0 0x04>,
+-			      <0x30028 0x04>,
+-			      <0x3f408 0x04>;
+-		};
+-
+ 		thermal: thermal@3f2c0 {
+ 			compatible = "brcm,ns-thermal";
+ 			reg = <0x3f2c0 0x10>;

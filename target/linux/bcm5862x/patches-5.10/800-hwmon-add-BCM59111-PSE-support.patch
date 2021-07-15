@@ -1,0 +1,165 @@
+From: Matthew Hagan <mnhagan88@gmail.com>
+Date: Wed, 17 Mar 2021 10:53:02 +0000
+Subject: hwmon: add BCM59111 PSE support
+
+The MX65 features a BCM59111 PSE. This patch modifies the bcm_poe driver
+included in the GPL archive to allow device tree support and maintain
+power output across reboots.
+
+Signed-off-by: Matthew Hagan <mnhagan88@gmail.com>
+---
+
+--- a/drivers/hwmon/bcm_poe.c
++++ b/drivers/hwmon/bcm_poe.c 
+@@ -11,6 +11,7 @@
+ #include <linux/sysfs.h>
+ #include <linux/time.h>
+ #include <linux/uaccess.h>
++#include <linux/of_device.h>
+ 
+ /* Misc */
+ #define POE_PORT_REG(base, port, offset) (base + (port*offset))
+@@ -190,8 +191,8 @@
+ #define POE_FW_CRC_FAIL 0xFF
+ 
+ #define POE_ATTR_RO(_name, _func) __ATTR(_name, 0444, _func, NULL)
+-#define POE_ATTR_WO(_name, _func) __ATTR(_name, 0222, NULL,  _func)
+-#define POE_ATTR_RW(_name, _show, _store) __ATTR(_name, 0666, _show, _store)
++#define POE_ATTR_WO(_name, _func) __ATTR(_name, 0220, NULL,  _func)
++#define POE_ATTR_RW(_name, _show, _store) __ATTR(_name, 0664, _show, _store)
+ 
+ #define POE_ATTR_RO_AUTO(_name) POE_ATTR_RO(_name, _name##_show)
+ #define POE_ATTR_WO_AUTO(_name) POE_ATTR_WO(_name, _name##_store)
+@@ -257,7 +258,7 @@
+     ENOPOWER,
+ };
+ 
+-__devinitdata u8 poe_fw[] = {
++u8 poe_fw[] = {
+ 0xFF, 0x3D, 0x1D, 0xFF, 0x3F, 0x4A, 0xFF, 0x49, 0x21, 0xFF, 0x4E, 0xFD, 0xFF,
+ 0x42, 0x2E, 0xFF, 0x2F, 0x0B, 0xFF, 0x42, 0xA6, 0xFF, 0x43, 0x1E, 0xFF, 0x50,
+ 0x10, 0xFF, 0x52, 0x6E, 0xFF, 0x52, 0x6F, 0xFF, 0x52, 0x70, 0xFF, 0x52, 0x71,
+@@ -1617,15 +1618,12 @@
+         class_unregister(poe.class);
+ }
+ 
+-static int __devinit bcm_fw_init(void)
++static int bcm_fw_init(void)
+ {
+     int fail = 0;
+     u32 i, j;
+     u8 block[I2C_BLOCK_SIZE];
+-    struct timespec start;
+-
+-    //Disable port to force client to renegotiate
+-    bcm_write(POE_OP_MODE_REG, OP_MODE_SET_ALL(OP_MODE_SHUTDOWN));
++    unsigned long start;
+ 
+     fail = bcm_write(POE_FW_LOAD_CTL_REG, POE_FW_LOAD_START);
+ 
+@@ -1645,8 +1643,8 @@
+     if (fail < 0)
+         goto init_fail;
+ 
+-    start = CURRENT_TIME_SEC;
+-    while (bcm_read(POE_FW_CRC_REG) != POE_FW_CRC_GOOD && timespec_sub(CURRENT_TIME_SEC, start).tv_sec < POE_FW_CRC_MAX_TIME) {};
++    start = ktime_get_real_seconds();
++    while (bcm_read(POE_FW_CRC_REG) != POE_FW_CRC_GOOD && ktime_get_real_seconds() - start < POE_FW_CRC_MAX_TIME) {};
+ 
+     if (bcm_read(POE_FW_CRC_REG) != POE_FW_CRC_GOOD) {
+         fail = -ECRC;
+@@ -1657,6 +1655,8 @@
+     bcm_write(POE_DISC_SENSE_REG, DISC_ENABLE_DC(POE_ALL_PORTS));
+     //Classify/detect on ports 0/1/2/3 (only used are 0/1)
+     bcm_write(POE_DET_CLASS_REG, DET_CLASS_ENABLE(POE_ALL_PORTS));
++    //Enable
++    bcm_write(POE_OP_MODE_REG, OP_MODE_SET_ALL(OP_MODE_AUTO));
+ 
+ init_fail:
+     return fail;
+@@ -1780,7 +1780,7 @@
+     return ret;
+ }
+ 
+-static int __devexit bcm_poe_remove(struct i2c_client *client)
++static int bcm_poe_remove(struct i2c_client *client)
+ {
+     remove_sysfs_dirs();
+     return 0;
+@@ -1791,15 +1791,21 @@
+     { }
+ };
+ 
++static struct of_device_id bcm_poe_of_idtable[] = {
++    { .compatible = "brcm,bcm59111" },
++    { }
++};
++
+ static struct i2c_driver bcm_poe_driver = {
+     .driver = {
+         .name   = "bcm59111",
++        .of_match_table = bcm_poe_of_idtable,
+         .owner  = THIS_MODULE,
+     },
+ 
+     .id_table   = bcm_poe_idtable,
+     .probe      = bcm_poe_probe,
+-    .remove = __devexit_p(bcm_poe_remove),
++    .remove = bcm_poe_remove,
+ };
+ 
+ static int __init bcm_poe_init(void)
+@@ -1815,6 +1821,7 @@
+ module_init(bcm_poe_init);
+ module_exit(bcm_poe_exit);
+ MODULE_DEVICE_TABLE(i2c, bcm_poe_idtable);
++MODULE_DEVICE_TABLE(of, bcm_poe_of_idtable);
+ 
+ MODULE_AUTHOR("Timothy Passaro");
+ MODULE_DESCRIPTION("Driver for BCM59111");
+--- a/drivers/hwmon/Makefile
++++ b/drivers/hwmon/Makefile
+@@ -54,6 +54,7 @@
+ obj-$(CONFIG_SENSORS_ASPEED)	+= aspeed-pwm-tacho.o
+ obj-$(CONFIG_SENSORS_ATXP1)	+= atxp1.o
+ obj-$(CONFIG_SENSORS_AXI_FAN_CONTROL) += axi-fan-control.o
++obj-$(CONFIG_SENSORS_BCM59111)	+= bcm_poe.o
+ obj-$(CONFIG_SENSORS_BT1_PVT)	+= bt1-pvt.o
+ obj-$(CONFIG_SENSORS_CORETEMP)	+= coretemp.o
+ obj-$(CONFIG_SENSORS_CORSAIR_CPRO) += corsair-cpro.o
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -414,6 +414,16 @@
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called atxp1.
+ 
++config SENSORS_BCM59111
++	tristate "Broadcom BCM59111"
++	depends on I2C
++	help
++	  If you say yes here you get support for the Broadcom BCM59111 PSE
++	  controller.
++
++	  This driver can also be built as a module. If so, the module
++	  will be called bcm_poe.
++
+ config SENSORS_BT1_PVT
+ 	tristate "Baikal-T1 Process, Voltage, Temperature sensor driver"
+ 	depends on MIPS_BAIKAL_T1 || COMPILE_TEST
+--- a/arch/arm/boot/dts/bcm958625-mx65.dts
++++ b/arch/arm/boot/dts/bcm958625-mx65.dts
+@@ -307,3 +307,14 @@
+ 		};
+ 	};
+ };
++
++&i2c0 {
++	bcm59111@21 {
++		compatible = "brcm,bcm59111";
++		pagesize = <32>;
++		reg = <0x21>;
++		ports = <2>;
++		port_base = <0>;
++		max_power_mw = <60000>;
++	};
++};

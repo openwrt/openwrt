@@ -1,0 +1,23 @@
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+meraki,mx64|\
+meraki,mx64a0)
+	ucidef_set_led_netdev "wan" "WAN Port" "green:wan-right" "wan"
+	ucidef_set_led_netdev "lan1" "LAN Port 1" "green:lan1-right" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN Port 2" "green:lan2-right" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN Port 3" "green:lan3-right" "lan3"
+	ucidef_set_led_netdev "lan4" "LAN Port 4" "green:lan4-right" "lan4"
+	;;
+meraki,mx65)
+	ucidef_set_led_netdev "wan1" "WAN Port 1" "green:wan1-right" "wan1"
+	ucidef_set_led_netdev "wan2" "WAN Port 2" "green:wan2-right" "wan2"
+	;;
+esac
+
+board_config_flush
+
+exit 0
