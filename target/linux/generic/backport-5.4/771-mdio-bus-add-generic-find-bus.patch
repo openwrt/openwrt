@@ -1,0 +1,40 @@
+diff --git a/drivers/net/phy/mdio_bus.c b/drivers/net/phy/mdio_bus.c
+index 229e480179ff..46dfb112fd04 100644
+--- a/drivers/net/phy/mdio_bus.c
++++ b/drivers/net/phy/mdio_bus.c
+@@ -260,6 +260,23 @@ static struct class mdio_bus_class = {
+ 	.dev_release	= mdiobus_release,
+ };
+ 
++/**
++ * mdio_find_bus - Given the name of a mdiobus, find the mii_bus.
++ * @mdio_bus_np: Pointer to the mii_bus.
++ *
++ * Returns a reference to the mii_bus, or NULL if none found.  The
++ * embedded struct device will have its reference count incremented,
++ * and this must be put_deviced'ed once the bus is finished with.
++ */
++struct mii_bus *mdio_find_bus(const char *mdio_name)
++{
++	struct device *d;
++
++	d = class_find_device_by_name(&mdio_bus_class, mdio_name);
++	return d ? to_mii_bus(d) : NULL;
++}
++EXPORT_SYMBOL(mdio_find_bus);
++
+ #if IS_ENABLED(CONFIG_OF_MDIO)
+ /**
+  * of_mdio_find_bus - Given an mii_bus node, find the mii_bus.
+diff --git a/include/linux/phy.h b/include/linux/phy.h
+index dd4a91f1feaa..5700dd4dbb6f 100644
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -273,6 +273,7 @@ static inline struct mii_bus *devm_mdiobus_alloc(struct device *dev)
+ 	return devm_mdiobus_alloc_size(dev, 0);
+ }
+ 
++struct mii_bus *mdio_find_bus(const char *mdio_name);
+ void devm_mdiobus_free(struct device *dev, struct mii_bus *bus);
+ struct phy_device *mdiobus_scan(struct mii_bus *bus, int addr);
+ 
