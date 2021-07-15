@@ -25,10 +25,14 @@ define Package/Default
     ifneq ($(PKG_RELEASE),)
       VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
     else
-      VERSION:=$(PKG_VERSION)
+      VERSION:=$(PKG_VERSION)-$(AUTORELEASE)
     endif
   else
-    VERSION:=$(PKG_RELEASE)
+    ifneq ($(PKG_RELEASE),)
+      VERSION:=$(PKG_RELEASE)
+    else
+      VERSION:=$(COMMITCOUNT)
+    endif
   endif
   ABI_VERSION:=
   ifneq ($(PKG_FLAGS),)
