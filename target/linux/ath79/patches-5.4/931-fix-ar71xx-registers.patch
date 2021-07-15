@@ -1,0 +1,16 @@
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -923,11 +923,11 @@
+ #define AR71XX_GPIO_REG_OUT		0x08
+ #define AR71XX_GPIO_REG_SET		0x0c
+ #define AR71XX_GPIO_REG_CLEAR		0x10
+-#define AR71XX_GPIO_REG_INT_MODE	0x14
++#define AR71XX_GPIO_REG_INT_ENABLE	0x14
+ #define AR71XX_GPIO_REG_INT_TYPE	0x18
+ #define AR71XX_GPIO_REG_INT_POLARITY	0x1c
+ #define AR71XX_GPIO_REG_INT_PENDING	0x20
+-#define AR71XX_GPIO_REG_INT_ENABLE	0x24
++#define AR71XX_GPIO_REG_INT_MASK	0x24
+ #define AR71XX_GPIO_REG_FUNC		0x28
+ 
+ #define AR934X_GPIO_REG_OUT_FUNC0	0x2c
