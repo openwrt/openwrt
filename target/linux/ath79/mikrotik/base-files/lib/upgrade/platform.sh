@@ -32,6 +32,7 @@ platform_do_upgrade() {
 
 	case "$board" in
 	mikrotik,routerboard-493g|\
+	mikrotik,routerboard-911-5hn-nand128m|\
 	mikrotik,routerboard-912uag-2hpnd|\
 	mikrotik,routerboard-921gs-5hpacd-15s|\
 	mikrotik,routerboard-922uags-5hpacd|\

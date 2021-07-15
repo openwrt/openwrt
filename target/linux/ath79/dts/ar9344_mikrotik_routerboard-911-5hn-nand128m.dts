@@ -3,13 +3,8 @@
 #include "ar9344_mikrotik_routerboard-sxt-5n.dtsi"
 
 / {
-	compatible = "mikrotik,routerboard-sxt-5nd-r2", "qca,ar9344";
-	model = "MikroTik RouterBOARD SXT 5nD r2 (SXT Lite5)";
-
-	beeper {
-		compatible = "gpio-beeper";
-		gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
-	};
+	compatible = "mikrotik,routerboard-911-5hn-nand128m", "qca,ar9344";
+	model = "MikroTik RouterBOARD 911-5Hn NAND 128MB (911 Lite5)";
 };
 
 &spi {
@@ -25,9 +20,9 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@0 {
+			routerboot: partition@0 {
 				label = "RouterBoot";
-				reg = <0x0 0x20000>;
+				reg = <0x0 0x10000>;
 				read-only;
 				compatible = "mikrotik,routerboot-partitions";
 				#address-cells = <1>;
@@ -49,12 +44,6 @@
 				};
 
 				soft_config {
-				};
-
-				partition@10000 {
-					label = "bootloader2";
-					reg = <0x10000 0x10000>;
-					read-only;
 				};
 			};
 		};
