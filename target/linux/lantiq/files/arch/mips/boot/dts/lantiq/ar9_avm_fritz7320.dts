@@ -97,8 +97,9 @@
 
 &gsw {
 	phy-mode = "mii";
-	mtd-mac-address = <&ath9k_cal 0xa91>;
-	mtd-mac-address-increment = <(-2)>;
+	nvmem-cells = <&macaddr_ath9k_cal_a91>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <(-2)>;
 };
 
 &gpio {
@@ -192,4 +193,14 @@
 &usb1 {
 	status = "okay";
 	vbus-supply = <&usb1_vbus>;
+};
+
+&ath9k_cal {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_ath9k_cal_a91: macaddr@a91 {
+		reg = <0xa91 0x6>;
+	};
 };

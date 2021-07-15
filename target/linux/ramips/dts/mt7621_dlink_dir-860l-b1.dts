@@ -109,7 +109,8 @@
 };
 
 &gmac0 {
-	mtd-mac-address = <&radio 0x4>;
+	nvmem-cells = <&macaddr_radio_4>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch0 {
@@ -168,5 +169,15 @@
 	gpio {
 		groups = "uart3", "jtag", "wdt";
 		function = "gpio";
+	};
+};
+
+&radio {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_radio_4: macaddr@4 {
+		reg = <0x4 0x6>;
 	};
 };
