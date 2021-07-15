@@ -117,6 +117,9 @@ ipq40xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "0u@eth1" "5:wan"
 		;;
+	tp-link,deco-m5-eu-v3.0)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;

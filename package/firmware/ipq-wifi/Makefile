@@ -50,7 +50,8 @@ ALLWIFIBOARDS:= \
 	netgear_wac510 \
 	plasmacloud_pa1200 \
 	plasmacloud_pa2200 \
-	qxwlan_e2600ac
+	qxwlan_e2600ac \
+	tp-link_deco_m5_eu_v3.0
 
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
@@ -137,5 +138,6 @@ $(eval $(call generate-ipq-wifi-package,netgear_wac510,Netgear WAC510))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa1200,Plasma Cloud PA1200))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa2200,Plasma Cloud PA2200))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
+$(eval $(call generate-ipq-wifi-package,tp-link_deco_m5_eu_v3.0,TP-Link Deco M5 EU v3.0))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))

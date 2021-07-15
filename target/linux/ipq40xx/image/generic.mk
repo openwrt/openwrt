@@ -2,6 +2,7 @@
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
+DEVICE_VARS += TPLINK_BOARD_ID
 
 define Device/FitImage
 	KERNEL_SUFFIX := -fit-uImage.itb
@@ -751,6 +752,23 @@ define Device/qcom_ap-dk04.1-c1
 	BOARD_NAME := ap-dk04.1-c1
 endef
 TARGET_DEVICES += qcom_ap-dk04.1-c1
+
+define Device/tp-link_deco-m5-eu-v3.0
+	$(call Device/FitImage)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := Deco-M5-EU
+	DEVICE_VARIANT := V3.0
+	SOC := qcom-ipq4019
+	DEVICE_DTS := qcom-ipq4019-deco-m5-eu-v3.0
+	DEVICE_PACKAGES := ipq-wifi-tp-link_deco_m5_eu_v3.0
+	BOARD_NAME := deco-m5-eu-v3.0
+	TPLINK_BOARD_ID := DECO-M5-EU-V3.0
+	IMAGE_SIZE := 16640k
+	IMAGES := factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += tp-link_deco-m5-eu-v3.0
 
 define Device/qxwlan_e2600ac-c1
 	$(call Device/FitImage)
