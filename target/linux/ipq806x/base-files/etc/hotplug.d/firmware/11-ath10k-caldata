@@ -30,6 +30,13 @@ case "$FIRMWARE" in
 			caldata_extract "0:ART" 0x1000 0x2f20
 		fi
 		;;
+	extreme,ap3935i)
+		if [ -e /lib/firmware/ath10k/QCA99X0/hw2.0/board-2g-precal.bin ]; then
+			ln -sf /lib/firmware/ath10k/QCA99X0/hw2.0/board-2g-precal.bin \
+				/lib/firmware/ath10k/pre-cal-pci-0000\:01\:00.0.bin
+		fi
+		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR0)
+		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
 		caldata_extract "art" 0x1000 0x2f20
@@ -81,6 +88,13 @@ case "$FIRMWARE" in
 	buffalo,wxr-2533dhp)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary ART 0x18)
+		;;
+	extreme,ap3935i)
+		if [ -e /lib/firmware/ath10k/QCA99X0/hw2.0/board-5g-precal.bin ]; then
+			ln -sf /lib/firmware/ath10k/QCA99X0/hw2.0/board-5g-precal.bin \
+				/lib/firmware/ath10k/pre-cal-pci-0001\:01\:00.0.bin
+		fi
+		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR1)
 		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
