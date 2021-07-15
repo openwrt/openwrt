@@ -235,23 +235,7 @@ $base_cfg
 EOF
 }
 
-hostapd_common_add_bss_config() {
-	config_add_string 'bssid:macaddr' 'ssid:string'
-	config_add_boolean wds wmm uapsd hidden utf8_ssid
-
-	config_add_int maxassoc max_inactivity
-	config_add_boolean disassoc_low_ack isolate short_preamble skip_inactivity_poll
-
-	config_add_int \
-		wep_rekey eap_reauth_period \
-		wpa_group_rekey wpa_pair_rekey wpa_master_rekey
-	config_add_boolean wpa_strict_rekey
-	config_add_boolean wpa_disable_eapol_key_retries
-
-	config_add_boolean tdls_prohibit
-
-	config_add_boolean rsn_preauth auth_cache
-	config_add_int ieee80211w
+hostapd_common_add_ieee8021x_config() {
 	config_add_int eapol_version
 
 	config_add_string 'auth_server:host' 'server:host'
@@ -263,8 +247,6 @@ hostapd_common_add_bss_config() {
 	config_add_int acct_port
 	config_add_int acct_interval
 
-	config_add_int bss_load_update_period chan_util_avg_period
-
 	config_add_string dae_client
 	config_add_string dae_secret
 	config_add_int dae_port
@@ -272,17 +254,50 @@ hostapd_common_add_bss_config() {
 	config_add_string nasid
 	config_add_string ownip
 	config_add_string radius_client_addr
-	config_add_string iapp_interface
+
 	config_add_string eap_type ca_cert client_cert identity anonymous_identity auth priv_key priv_key_pwd
 	config_add_boolean ca_cert_usesystem ca_cert2_usesystem
 	config_add_string subject_match subject_match2
 	config_add_array altsubject_match altsubject_match2
 	config_add_array domain_match domain_match2 domain_suffix_match domain_suffix_match2
-	config_add_string ieee80211w_mgmt_cipher
 
+	config_add_int eap_reauth_period
+}
+
+hostapd_common_add_vlan_config() {
 	config_add_int dynamic_vlan vlan_naming vlan_no_bridge
 	config_add_string vlan_tagged_interface vlan_bridge
 	config_add_string vlan_file
+}
+
+hostapd_common_add_eap_server_config() {
+	config_add_int eap_server
+	config_add_string eap_user_file ca_cert server_cert private_key private_key_passwd server_id
+}
+
+hostapd_common_add_bss_config() {
+	config_add_string 'bssid:macaddr' 'ssid:string'
+	config_add_boolean wds wmm uapsd hidden utf8_ssid
+
+	config_add_int maxassoc max_inactivity
+	config_add_boolean disassoc_low_ack isolate short_preamble skip_inactivity_poll
+
+	config_add_int wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey
+	config_add_boolean wpa_strict_rekey
+	config_add_boolean wpa_disable_eapol_key_retries
+
+	config_add_boolean tdls_prohibit
+
+	config_add_boolean rsn_preauth auth_cache
+	config_add_int ieee80211w
+	hostapd_common_add_ieee8021x_config
+
+	config_add_int bss_load_update_period chan_util_avg_period
+
+	config_add_string iapp_interface
+	config_add_string ieee80211w_mgmt_cipher
+
+	hostapd_common_add_vlan_config
 
 	config_add_string 'key1:wepkey' 'key2:wepkey' 'key3:wepkey' 'key4:wepkey' 'password:wpakey'
 
@@ -357,8 +372,14 @@ hostapd_common_add_bss_config() {
 	config_add_array radius_auth_req_attr
 	config_add_array radius_acct_req_attr
 
-	config_add_int eap_server
-	config_add_string eap_user_file ca_cert server_cert private_key private_key_passwd server_id
+	hostapd_common_add_eap_server_config
+}
+
+hostapd_common_add_wired_config() {
+	config_add_boolean use_pae_group_addr
+	hostapd_common_add_ieee8021x_config
+	hostapd_common_add_vlan_config
+	hostapd_common_add_eap_server_config
 }
 
 hostapd_set_vlan_file() {
@@ -507,6 +528,135 @@ append_airtime_sta_weight() {
 	[ -n "$1" ] && append bss_conf "airtime_sta_weight=$1" "$N"
 }
 
+hostapd_set_ieee8021x_options() {
+	local var="$1"
+
+	local ieee8021x_conf
+	local eapol_version dynamic_vlan nasid acct_server acct_secret acct_port acct_interval eap_server
+
+	json_get_vars eapol_version dynamic_vlan nasid acct_server acct_secret acct_port:1813 acct_interval eap_server:0
+	if [ -n "$wpa" ]; then
+		set_default eapol_version $((wpa & 1))
+	else
+		set_default eapol_version 2
+	fi
+
+	[ -n "$nasid" ] && append ieee8021x_conf "nas_identifier=$nasid" "$N"
+	[ -n "$acct_server" ] && {
+		append ieee8021x_conf "acct_server_addr=$acct_server" "$N"
+		append ieee8021x_conf "acct_server_port=$acct_port" "$N"
+		[ -n "$acct_secret" ] && \
+			append ieee8021x_conf "acct_server_shared_secret=$acct_secret" "$N"
+		[ -n "$acct_interval" ] && \
+			append ieee8021x_conf "radius_acct_interim_interval=$acct_interval" "$N"
+		json_for_each_item append_radius_acct_req_attr radius_acct_req_attr
+	}
+
+	case "$auth_type" in
+		""|eap|eap192|eap-eap192)
+			local \
+				auth_server auth_secret auth_port \
+				dae_client dae_secret dae_port \
+				ownip radius_client_addr \
+				eap_reauth_period request_cui use_pae_group_addr
+			json_get_vars \
+				auth_server auth_secret auth_port \
+				dae_client dae_secret dae_port:3799 \
+				ownip radius_client_addr \
+				eap_reauth_period request_cui:0 use_pae_group_addr:0
+
+			# legacy compatibility
+			[ -n "$auth_server" ] || json_get_var auth_server server
+			[ -n "$auth_port" ] || json_get_var auth_port port
+			[ -n "$auth_secret" ] || json_get_var auth_secret key
+
+			set_default auth_port 1812
+
+			[ "$eap_server" -eq 0 ] && {
+				append ieee8021x_conf "auth_server_addr=$auth_server" "$N"
+				append ieee8021x_conf "auth_server_port=$auth_port" "$N"
+				append ieee8021x_conf "auth_server_shared_secret=$auth_secret" "$N"
+			}
+
+			[ "$request_cui" -gt 0 ] && append ieee8021x_conf "radius_request_cui=$request_cui" "$N"
+			[ -n "$eap_reauth_period" ] && append ieee8021x_conf "eap_reauth_period=$eap_reauth_period" "$N"
+
+			[ -n "$dae_client" -a -n "$dae_secret" ] && {
+				append ieee8021x_conf "radius_das_port=$dae_port" "$N"
+				append ieee8021x_conf "radius_das_client=$dae_client $dae_secret" "$N"
+			}
+			json_for_each_item append_radius_auth_req_attr radius_auth_req_attr
+
+			[ -n "$ownip" ] && append ieee8021x_conf "own_ip_addr=$ownip" "$N"
+			[ -n "$radius_client_addr" ] && append ieee8021x_conf "radius_client_addr=$radius_client_addr" "$N"
+			append ieee8021x_conf "eapol_key_index_workaround=1" "$N"
+			append ieee8021x_conf "ieee8021x=1" "$N"
+
+			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append ieee8021x_conf "eapol_version=$eapol_version" "$N"
+
+			[ "$use_pae_group_addr" -ne "0" ] && append ieee8021x_conf "use_pae_group_addr=1" "$N"
+		;;
+	esac
+
+	append "$var" "$ieee8021x_conf" "$N"
+	return 0
+}
+
+hostapd_set_vlan_options() {
+	local var="$1"
+
+	local vlan_conf
+	local vlan_naming vlan_tagged_interface vlan_bridge vlan_file vlan_no_bridge per_sta_vif
+
+	json_get_vars vlan_naming:1 vlan_tagged_interface vlan_bridge vlan_file vlan_no_bridge per_sta_vif:0
+
+	[ -z "$vlan_file" ] && set_default vlan_file /var/run/hostapd-$ifname.vlan
+	append vlan_conf "dynamic_vlan=$dynamic_vlan" "$N"
+	append vlan_conf "vlan_naming=$vlan_naming" "$N"
+	if [ -n "$vlan_bridge" ]; then
+		append vlan_conf "vlan_bridge=$vlan_bridge" "$N"
+	else
+		set_default vlan_no_bridge 1
+	fi
+	append vlan_conf "vlan_no_bridge=$vlan_no_bridge" "$N"
+	[ -n "$vlan_tagged_interface" ] && \
+		append vlan_conf "vlan_tagged_interface=$vlan_tagged_interface" "$N"
+	[ -n "$vlan_file" ] && {
+		[ -e "$vlan_file" ] || touch "$vlan_file"
+		append vlan_conf "vlan_file=$vlan_file" "$N"
+	}
+	[ "$per_sta_vif" -gt 0 ] && append bss_conf "per_sta_vif=$per_sta_vif" "$N"
+
+	append "$var" "$vlan_conf" "$N"
+	return 0
+}
+
+hostapd_set_eap_server_options() {
+	local eap_server
+	json_get_var eap_server 0
+
+	[ "$eap_server" = "1" ] && {
+		local var="$1"
+
+		local eap_server_conf
+		local eap_user_file ca_cert server_cert private_key private_key_passwd server_id
+
+		json_get_vars eap_user_file ca_cert server_cert private_key private_key_passwd server_id
+
+		append eap_server_conf "eap_server=1" "$N"
+		[ -n "$eap_user_file" ] && append eap_server_conf "eap_user_file=$eap_user_file" "$N"
+		[ -n "$ca_cert" ] && append eap_server_conf "ca_cert=$ca_cert" "$N"
+		[ -n "$server_cert" ] && append eap_server_conf "server_cert=$server_cert" "$N"
+		[ -n "$private_key" ] && append eap_server_conf "private_key=$private_key" "$N"
+		[ -n "$private_key_passwd" ] && append eap_server_conf "private_key_passwd=$private_key_passwd" "$N"
+		[ -n "$server_id" ] && append eap_server_conf "server_id=$server_id" "$N"
+
+		append "$var" "$eap_server_conf" "$N"
+	}
+
+	return 0
+}
+
 hostapd_set_bss_options() {
 	local var="$1"
 	local phy="$2"
@@ -524,13 +674,11 @@ hostapd_set_bss_options() {
 		wps_pushbutton wps_label ext_registrar wps_pbc_in_m1 wps_ap_setup_locked \
 		wps_independent wps_device_type wps_device_name wps_manufacturer wps_pin \
 		macfilter ssid utf8_ssid wmm uapsd hidden short_preamble rsn_preauth \
-		iapp_interface eapol_version dynamic_vlan ieee80211w nasid \
-		acct_server acct_secret acct_port acct_interval \
+		iapp_interface ieee80211w nasid \
 		bss_load_update_period chan_util_avg_period sae_require_mfp sae_pwe \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
 		airtime_bss_weight airtime_bss_limit airtime_sta_weight \
-		multicast_to_unicast proxy_arp per_sta_vif \
-		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id \
+		multicast_to_unicast proxy_arp \
 		vendor_elements
 
 	set_default isolate 0
@@ -544,15 +692,12 @@ hostapd_set_bss_options() {
 	set_default uapsd 1
 	set_default wpa_disable_eapol_key_retries 0
 	set_default tdls_prohibit 0
-	set_default eapol_version $((wpa & 1))
-	set_default acct_port 1813
 	set_default bss_load_update_period 60
 	set_default chan_util_avg_period 600
 	set_default utf8_ssid 1
 	set_default multi_ap 0
 	set_default airtime_bss_weight 0
 	set_default airtime_bss_limit 0
-	set_default eap_server 0
 
 	append bss_conf "ctrl_interface=/var/run/hostapd"
 	if [ "$isolate" -gt 0 ]; then
@@ -590,16 +735,7 @@ hostapd_set_bss_options() {
 		[ -n "$wpa_strict_rekey" ] && append bss_conf "wpa_strict_rekey=$wpa_strict_rekey" "$N"
 	}
 
-	[ -n "$nasid" ] && append bss_conf "nas_identifier=$nasid" "$N"
-	[ -n "$acct_server" ] && {
-		append bss_conf "acct_server_addr=$acct_server" "$N"
-		append bss_conf "acct_server_port=$acct_port" "$N"
-		[ -n "$acct_secret" ] && \
-			append bss_conf "acct_server_shared_secret=$acct_secret" "$N"
-		[ -n "$acct_interval" ] && \
-			append bss_conf "radius_acct_interim_interval=$acct_interval" "$N"
-		json_for_each_item append_radius_acct_req_attr radius_acct_req_attr
-	}
+	hostapd_set_ieee8021x_options bss_conf
 
 	case "$auth_type" in
 		sae|owe|eap192|eap-eap192)
@@ -650,45 +786,8 @@ hostapd_set_bss_options() {
 			wps_possible=1
 		;;
 		eap|eap192|eap-eap192)
-			json_get_vars \
-				auth_server auth_secret auth_port \
-				dae_client dae_secret dae_port \
-				ownip radius_client_addr \
-				eap_reauth_period request_cui
-
 			# radius can provide VLAN ID for clients
 			vlan_possible=1
-
-			# legacy compatibility
-			[ -n "$auth_server" ] || json_get_var auth_server server
-			[ -n "$auth_port" ] || json_get_var auth_port port
-			[ -n "$auth_secret" ] || json_get_var auth_secret key
-
-			set_default auth_port 1812
-			set_default dae_port 3799
-			set_default request_cui 0
-
-			[ "$eap_server" -eq 0 ] && {
-				append bss_conf "auth_server_addr=$auth_server" "$N"
-				append bss_conf "auth_server_port=$auth_port" "$N"
-				append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
-			}
-
-			[ "$request_cui" -gt 0 ] && append bss_conf "radius_request_cui=$request_cui" "$N"
-			[ -n "$eap_reauth_period" ] && append bss_conf "eap_reauth_period=$eap_reauth_period" "$N"
-
-			[ -n "$dae_client" -a -n "$dae_secret" ] && {
-				append bss_conf "radius_das_port=$dae_port" "$N"
-				append bss_conf "radius_das_client=$dae_client $dae_secret" "$N"
-			}
-			json_for_each_item append_radius_auth_req_attr radius_auth_req_attr
-
-			[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
-			[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
-			append bss_conf "eapol_key_index_workaround=1" "$N"
-			append bss_conf "ieee8021x=1" "$N"
-
-			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
 		;;
 		wep)
 			local wep_keyidx=0
@@ -924,25 +1023,7 @@ hostapd_set_bss_options() {
 		) > "$_macfile"
 	}
 
-	[ -n "$vlan_possible" -a -n "$dynamic_vlan" ] && {
-		json_get_vars vlan_naming vlan_tagged_interface vlan_bridge vlan_file vlan_no_bridge
-		set_default vlan_naming 1
-		[ -z "$vlan_file" ] && set_default vlan_file /var/run/hostapd-$ifname.vlan
-		append bss_conf "dynamic_vlan=$dynamic_vlan" "$N"
-		append bss_conf "vlan_naming=$vlan_naming" "$N"
-		if [ -n "$vlan_bridge" ]; then
-			append bss_conf "vlan_bridge=$vlan_bridge" "$N"
-		else
-			set_default vlan_no_bridge 1
-		fi
-		append bss_conf "vlan_no_bridge=$vlan_no_bridge" "$N"
-		[ -n "$vlan_tagged_interface" ] && \
-			append bss_conf "vlan_tagged_interface=$vlan_tagged_interface" "$N"
-		[ -n "$vlan_file" ] && {
-			[ -e "$vlan_file" ] || touch "$vlan_file"
-			append bss_conf "vlan_file=$vlan_file" "$N"
-		}
-	}
+	[ -n "$vlan_possible" -a -n "$dynamic_vlan" ] && hostapd_set_vlan_options bss_conf
 
 	json_get_vars iw_enabled iw_internet iw_asra iw_esr iw_uesa iw_access_network_type
 	json_get_vars iw_hessid iw_venue_group iw_venue_type iw_network_auth_type
@@ -1023,15 +1104,7 @@ hostapd_set_bss_options() {
 		json_for_each_item append_operator_icon operator_icon
 	fi
 
-	if [ "$eap_server" = "1" ]; then
-		append bss_conf "eap_server=1" "$N"
-		[ -n "$eap_user_file" ] && append bss_conf "eap_user_file=$eap_user_file" "$N"
-		[ -n "$ca_cert" ] && append bss_conf "ca_cert=$ca_cert" "$N"
-		[ -n "$server_cert" ] && append bss_conf "server_cert=$server_cert" "$N"
-		[ -n "$private_key" ] && append bss_conf "private_key=$private_key" "$N"
-		[ -n "$private_key_passwd" ] && append bss_conf "private_key_passwd=$private_key_passwd" "$N"
-		[ -n "$server_id" ] && append bss_conf "server_id=$server_id" "$N"
-	fi
+	hostapd_set_eap_server_options bss_conf
 
 	set_default multicast_to_unicast 0
 	if [ "$multicast_to_unicast" -gt 0 ]; then
@@ -1040,11 +1113,6 @@ hostapd_set_bss_options() {
 	set_default proxy_arp 0
 	if [ "$proxy_arp" -gt 0 ]; then
 		append bss_conf "proxy_arp=$proxy_arp" "$N"
-	fi
-
-	set_default per_sta_vif 0
-	if [ "$per_sta_vif" -gt 0 ]; then
-		append bss_conf "per_sta_vif=$per_sta_vif" "$N"
 	fi
 
 	json_get_values opts hostapd_bss_options
@@ -1056,6 +1124,19 @@ hostapd_set_bss_options() {
 	append bss_conf "config_id=$bss_md5sum" "$N"
 
 	append "$var" "$bss_conf" "$N"
+	return 0
+}
+
+hostapd_set_wired_options() {
+	local var="$1"
+
+	local wired_conf
+
+	hostapd_set_ieee8021x_options wired_conf
+	hostapd_set_vlan_options wired_conf
+	hostapd_set_eap_server_options wired_conf
+
+	append "$var" "$wired_conf" "$N"
 	return 0
 }
 
