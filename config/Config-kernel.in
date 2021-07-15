@@ -313,6 +313,20 @@ config KERNEL_DEBUG_INFO
 	help
 	  This will compile your kernel and modules with debug information.
 
+config KERNEL_DEBUG_INFO_BTF
+	bool "Enable additional BTF type information"
+	default n
+	depends on KERNEL_DEBUG_INFO
+	select DWARVES
+	help
+	  Generate BPF Type Format (BTF) information from DWARF debug info.
+	  Turning this on expects presence of pahole tool, which will convert
+	  DWARF type info into equivalent deduplicated BTF type info.
+
+config KERNEL_DEBUG_INFO_REDUCED
+	def_bool !KERNEL_DEBUG_INFO_BTF
+	depends on KERNEL_DEBUG_INFO
+
 config KERNEL_DEBUG_LL_UART_NONE
 	bool
 	default n
