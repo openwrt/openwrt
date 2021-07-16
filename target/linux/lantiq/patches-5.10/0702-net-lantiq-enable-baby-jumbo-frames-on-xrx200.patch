@@ -1,0 +1,123 @@
+From 4b979ec3adbee5a3568d798873cc4bdbdb1a1e60 Mon Sep 17 00:00:00 2001
+From: Thomas Nixon <tom@tomn.co.uk>
+Date: Sat, 3 Jul 2021 15:57:03 +0100
+Subject: [PATCH] net: lantiq: enable baby jumbo frames on xrx200
+
+xrx200 max MTU is reduced so that it works correctly when set to the
+max, and the max MTU of the switch is increased.
+
+The switch driver now enables non-standard MTUs on a per-port basis,
+with the overall frame size set based on the cpu port.
+
+When the MTU is not changed, this should have no effect.
+
+Signed-off-by: Thomas Nixon <tom@tomn.co.uk>
+---
+ drivers/net/dsa/lantiq_gswip.c       | 40 +++++++++++++++++++++++++---
+ drivers/net/ethernet/lantiq_xrx200.c |  4 ++-
+ 2 files changed, 40 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/dsa/lantiq_gswip.c b/drivers/net/dsa/lantiq_gswip.c
+index 93c7fa1fd4cb..4ff94fe0e33c 100644
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -238,6 +238,8 @@
+ 
+ #define XRX200_GPHY_FW_ALIGN	(16 * 1024)
+ 
++#define GSWIP_MAX_PACKET_LENGTH	9600
++
+ struct gswip_hw_info {
+ 	int max_ports;
+ 	int cpu_port;
+@@ -851,9 +853,6 @@ static int gswip_setup(struct dsa_switch *ds)
+ 	gswip_switch_mask(priv, 0, GSWIP_PCE_PCTRL_0_INGRESS,
+ 			  GSWIP_PCE_PCTRL_0p(cpu_port));
+ 
+-	gswip_switch_mask(priv, 0, GSWIP_MAC_CTRL_2_MLEN,
+-			  GSWIP_MAC_CTRL_2p(cpu_port));
+-	gswip_switch_w(priv, VLAN_ETH_FRAME_LEN + 8, GSWIP_MAC_FLEN);
+ 	gswip_switch_mask(priv, 0, GSWIP_BM_QUEUE_GCTRL_GL_MOD,
+ 			  GSWIP_BM_QUEUE_GCTRL);
+ 
+@@ -870,6 +869,8 @@ static int gswip_setup(struct dsa_switch *ds)
+ 		return err;
+ 	}
+ 
++	ds->mtu_enforcement_ingress = true;
++
+ 	gswip_port_enable(ds, cpu_port, NULL);
+ 	return 0;
+ }
+@@ -1426,6 +1427,37 @@ static int gswip_port_fdb_dump(struct dsa_switch *ds, int port,
+ 	return 0;
+ }
+ 
++static int gswip_port_max_mtu(struct dsa_switch *ds, int port)
++{
++	/* includes 8 bytes for special header */
++	return GSWIP_MAX_PACKET_LENGTH - VLAN_ETH_HLEN - ETH_FCS_LEN;
++}
++
++static int gswip_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
++{
++	struct gswip_priv *priv = ds->priv;
++	int cpu_port = priv->hw_info->cpu_port;
++
++	/* enable MLEN for ports with non-standard MTUs, and the CPU port which
++	 * always needs it for the special header
++	 */
++	if (new_mtu > ETH_DATA_LEN || port == cpu_port)
++		gswip_switch_mask(priv, 0, GSWIP_MAC_CTRL_2_MLEN,
++				  GSWIP_MAC_CTRL_2p(port));
++	else
++		gswip_switch_mask(priv, GSWIP_MAC_CTRL_2_MLEN, 0,
++				  GSWIP_MAC_CTRL_2p(port));
++
++	/* cpu port always has maximum mtu of user ports, so use it to set
++	 * switch frame size, including 8 byte special header
++	 */
++	if (port == cpu_port)
++		gswip_switch_w(priv, VLAN_ETH_HLEN + new_mtu + 8 + ETH_FCS_LEN,
++			       GSWIP_MAC_FLEN);
++
++	return 0;
++}
++
+ static void gswip_phylink_validate(struct dsa_switch *ds, int port,
+ 				   unsigned long *supported,
+ 				   struct phylink_link_state *state)
+@@ -1769,6 +1801,8 @@ static const struct dsa_switch_ops gswip_switch_ops = {
+ 	.port_fdb_add		= gswip_port_fdb_add,
+ 	.port_fdb_del		= gswip_port_fdb_del,
+ 	.port_fdb_dump		= gswip_port_fdb_dump,
++	.port_change_mtu	= gswip_port_change_mtu,
++	.port_max_mtu		= gswip_port_max_mtu,
+ 	.phylink_validate	= gswip_phylink_validate,
+ 	.phylink_mac_config	= gswip_phylink_mac_config,
+ 	.phylink_mac_link_down	= gswip_phylink_mac_link_down,
+diff --git a/drivers/net/ethernet/lantiq_xrx200.c b/drivers/net/ethernet/lantiq_xrx200.c
+index 072075bc60ee..c39ebb55b373 100644
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -14,6 +14,8 @@
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ 
++#include <linux/if_vlan.h>
++
+ #include <linux/of_net.h>
+ #include <linux/of_platform.h>
+ 
+@@ -455,7 +457,7 @@ static int xrx200_probe(struct platform_device *pdev)
+ 	net_dev->netdev_ops = &xrx200_netdev_ops;
+ 	SET_NETDEV_DEV(net_dev, dev);
+ 	net_dev->min_mtu = ETH_ZLEN;
+-	net_dev->max_mtu = XRX200_DMA_DATA_LEN;
++	net_dev->max_mtu = XRX200_DMA_DATA_LEN - VLAN_ETH_HLEN - NET_IP_ALIGN;
+ 
+ 	/* load the memory ranges */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-- 
+2.29.3
+
