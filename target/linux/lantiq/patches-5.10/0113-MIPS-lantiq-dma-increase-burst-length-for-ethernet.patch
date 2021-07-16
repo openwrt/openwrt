@@ -1,0 +1,35 @@
+From 58c7e91ec0059ebc0f9e9c88dfee4081876ee032 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Fri, 14 May 2021 21:25:08 +0200
+Subject: [PATCH 5/5] MIPS: lantiq: dma: increase burst length for ethernet
+
+Increase the burst length for Ethernet. This improves Ethernet
+performance by 60%.
+
+The NAT benchmark results on xRX200:
+* 1W: 332 Mb/s
+* 2W: 330 Mb/s
+* 4W: 432 Mb/s
+* 8W: 520 Mb/s
+
+Tested on xRX200 and xRX330.
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ arch/mips/lantiq/xway/dma.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/lantiq/xway/dma.c
++++ b/arch/mips/lantiq/xway/dma.c
+@@ -191,8 +191,9 @@ ltq_dma_init_port(int p)
+ 		 * Tell the DMA engine to swap the endianness of data frames and
+ 		 * drop packets if the channel arbitration fails.
+ 		 */
+-		ltq_dma_w32_mask(0, DMA_ETOP_ENDIANNESS | DMA_PDEN,
+-			LTQ_DMA_PCTRL);
++		ltq_dma_w32_mask(0x3c, ((DMA_PCTRL_8W_BURST << DMA_TX_BURST_SHIFT) |
++			(DMA_PCTRL_8W_BURST << DMA_RX_BURST_SHIFT) | DMA_ETOP_ENDIANNESS |
++			DMA_PDEN), LTQ_DMA_PCTRL);
+ 		break;
+ 
+ 	case DMA_PORT_DEU:

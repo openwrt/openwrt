@@ -1,0 +1,39 @@
+From c555f5341a2c48d8e2ab1b54c7e34407c8d1f403 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Sun, 16 May 2021 15:52:06 +0200
+Subject: [PATCH 4/5] net: lantiq: increase align to 32 bytes
+
+32 byte alignment is needed to handle 8W burst length.
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ drivers/net/ethernet/lantiq_etop.c   | 4 ++--
+ drivers/net/ethernet/lantiq_xrx200.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/lantiq_etop.c
++++ b/drivers/net/ethernet/lantiq_etop.c
+@@ -676,8 +676,8 @@ ltq_etop_tx(struct sk_buff *skb, struct
+ 		return NETDEV_TX_BUSY;
+ 	}
+ 
+-	/* dma needs to start on a 16 byte aligned address */
+-	byte_offset = CPHYSADDR(skb->data) % 16;
++	/* dma needs to start on a 32 byte aligned address */
++	byte_offset = CPHYSADDR(skb->data) % 32;
+ 	priv->txch.skb[priv->txch.dma.desc] = skb;
+ 
+ 	netif_trans_update(dev);
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -316,8 +316,8 @@ static netdev_tx_t xrx200_start_xmit(str
+ 	if (unlikely(dma_mapping_error(priv->dev, mapping)))
+ 		goto err_drop;
+ 
+-	/* dma needs to start on a 16 byte aligned address */
+-	byte_offset = mapping % 16;
++	/* dma needs to start on a 32 byte aligned address */
++	byte_offset = mapping % 32;
+ 
+ 	desc->addr = mapping - byte_offset;
+ 	/* Make sure the address is written before we give it to HW */
