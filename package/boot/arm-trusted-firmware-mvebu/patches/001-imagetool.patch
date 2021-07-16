@@ -1,0 +1,20 @@
+--- a/plat/marvell/armada/a3k/common/a3700_common.mk
++++ b/plat/marvell/armada/a3k/common/a3700_common.mk
+@@ -76,7 +76,7 @@ $(if $(wildcard $(value WTP)/*),,$(error
+ $(if $(shell test -s "$(value WTP)/branch.txt" || git -C $(value WTP) rev-parse --show-cdup 2>&1),$(error "'WTP=$(value WTP)' was specified, but '$(value WTP)' does not contain valid Marvell a3700_utils release tarball nor git repository"))
+ 
+ DOIMAGEPATH	:= $(WTP)
+-DOIMAGETOOL	:= $(DOIMAGEPATH)/wtptp/src/TBB_Linux/release/TBB_linux
++DOIMAGETOOL	:= $(DOIMAGEPATH)/wtptp/linux/tbb_linux
+ 
+ BUILD_UART	:= uart-images
+ UART_IMAGE	:= $(BUILD_UART).tgz.bin
+@@ -132,7 +132,7 @@ TIMBLDUARTARGS		:= $(MARVELL_SECURE_BOOT
+ CRYPTOPP_LIBDIR		?= $(CRYPTOPP_PATH)
+ CRYPTOPP_INCDIR		?= $(CRYPTOPP_PATH)
+ 
+-$(DOIMAGETOOL): FORCE
++$(DOIMAGETOOL):
+ 	$(if $(CRYPTOPP_LIBDIR),,$(error "Platform '$(PLAT)' for WTP image tool requires CRYPTOPP_PATH or CRYPTOPP_LIBDIR. Please set CRYPTOPP_PATH or CRYPTOPP_LIBDIR to point to the right directory"))
+ 	$(if $(CRYPTOPP_INCDIR),,$(error "Platform '$(PLAT)' for WTP image tool requires CRYPTOPP_PATH or CRYPTOPP_INCDIR. Please set CRYPTOPP_PATH or CRYPTOPP_INCDIR to point to the right directory"))
+ 	$(if $(wildcard $(CRYPTOPP_LIBDIR)/*),,$(error "Either 'CRYPTOPP_PATH' or 'CRYPTOPP_LIB' was set to '$(CRYPTOPP_LIBDIR)', but '$(CRYPTOPP_LIBDIR)' does not exist"))
