@@ -92,7 +92,7 @@ hostapd_common_add_device_config() {
 	config_add_array basic_rate
 	config_add_array supported_rates
 
-	config_add_string country
+	config_add_string country country3
 	config_add_boolean country_ie doth
 	config_add_boolean spectrum_mgmt_required
 	config_add_int local_pwr_constraint
@@ -114,7 +114,7 @@ hostapd_prepare_device_config() {
 
 	local base_cfg=
 
-	json_get_vars country country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
+	json_get_vars country country3 country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
 		acs_chan_bias local_pwr_constraint spectrum_mgmt_required airtime_mode cell_density
 
 	hostapd_set_log_options base_cfg
@@ -128,6 +128,7 @@ hostapd_prepare_device_config() {
 
 	[ -n "$country" ] && {
 		append base_cfg "country_code=$country" "$N"
+		[ -n "$country3" ] && append base_cfg "country3=$country3" "$N"
 
 		[ "$country_ie" -gt 0 ] && {
 			append base_cfg "ieee80211d=1" "$N"
@@ -251,6 +252,8 @@ hostapd_common_add_bss_config() {
 	config_add_int acct_port
 	config_add_int acct_interval
 
+	config_add_int bss_load_update_period chan_util_avg_period
+
 	config_add_string dae_client
 	config_add_string dae_secret
 	config_add_int dae_port
@@ -281,7 +284,7 @@ hostapd_common_add_bss_config() {
 	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
 	config_add_string multi_ap_backhaul_ssid multi_ap_backhaul_key
 
-	config_add_boolean wnm_sleep_mode bss_transition
+	config_add_boolean wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition
 	config_add_int time_advertisement
 	config_add_string time_zone
 
@@ -703,13 +706,17 @@ hostapd_set_bss_options() {
 		append bss_conf "iapp_interface=$ifname" "$N"
 	}
 
-	json_get_vars time_advertisement time_zone wnm_sleep_mode bss_transition
+	json_get_vars time_advertisement time_zone wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition
 	set_default bss_transition 0
 	set_default wnm_sleep_mode 0
+	set_default wnm_sleep_mode_no_keys 0
 
 	[ -n "$time_advertisement" ] && append bss_conf "time_advertisement=$time_advertisement" "$N"
 	[ -n "$time_zone" ] && append bss_conf "time_zone=$time_zone" "$N"
-	[ "$wnm_sleep_mode" -eq "1" ] && append bss_conf "wnm_sleep_mode=1" "$N"
+	if [ "$wnm_sleep_mode" -eq "1" ]; then
+		append bss_conf "wnm_sleep_mode=1" "$N"
+		[ "$wnm_sleep_mode_no_keys" -eq "1" ] && append bss_conf "wnm_sleep_mode_no_keys=1" "$N"
+	fi
 	[ "$bss_transition" -eq "1" ] && append bss_conf "bss_transition=1" "$N"
 
 	json_get_vars ieee80211k rrm_neighbor_report rrm_beacon_report

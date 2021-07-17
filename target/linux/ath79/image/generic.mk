@@ -1,6 +1,6 @@
 include ./common-buffalo.mk
-include ./common-engenius.mk
 include ./common-netgear.mk
+include ./common-senao.mk
 include ./common-tp-link.mk
 include ./common-yuncore.mk
 
@@ -290,11 +290,14 @@ endef
 TARGET_DEVICES += alfa-network_r36a
 
 define Device/allnet_all-wap02860ac
+  $(Device/senao_loader_okli)
   SOC := qca9558
   DEVICE_VENDOR := ALLNET
   DEVICE_MODEL := ALL-WAP02860AC
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
-  IMAGE_SIZE := 13120k
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-allwap02860ac
 endef
 TARGET_DEVICES += allnet_all-wap02860ac
 
@@ -989,34 +992,37 @@ endef
 TARGET_DEVICES += embeddedwireless_dorin
 
 define Device/engenius_eap1200h
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := qca9557
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP1200H
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
-  IMAGE_SIZE := 11520k
-  LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := ar71xx-generic-eap1200h
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := ar71xx-generic-eap1200h
 endef
 TARGET_DEVICES += engenius_eap1200h
 
 define Device/engenius_eap300-v2
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := ar9341
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP300
   DEVICE_VARIANT := v2
-  IMAGE_SIZE := 12032k
-  LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := senao-eap300v2
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-eap300v2
 endef
 TARGET_DEVICES += engenius_eap300-v2
 
 define Device/engenius_eap600
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := ar9344
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EAP600
-  IMAGE_SIZE := 12032k
-  LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := senao-eap600
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-eap600
 endef
 TARGET_DEVICES += engenius_eap600
 
@@ -1047,36 +1053,39 @@ endef
 TARGET_DEVICES += engenius_ecb1750
 
 define Device/engenius_ecb600
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := ar9344
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ECB600
-  IMAGE_SIZE := 12032k
-  LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := senao-ecb600
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-ecb600
 endef
 TARGET_DEVICES += engenius_ecb600
 
 define Device/engenius_ens202ext-v1
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := ar9341
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := ENS202EXT
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := rssileds
-  IMAGE_SIZE := 12032k
-  LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := senao-ens202ext
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-ens202ext
 endef
 TARGET_DEVICES += engenius_ens202ext-v1
 
 define Device/engenius_enstationac-v1
-  $(Device/engenius_loader_okli)
+  $(Device/senao_loader_okli)
   SOC := qca9557
+  DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EnStationAC
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct rssileds
-  IMAGE_SIZE := 11520k
-  LOADER_FLASH_OFFS := 0x230000
-  ENGENIUS_IMGNAME := ar71xx-generic-enstationac
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := ar71xx-generic-enstationac
 endef
 TARGET_DEVICES += engenius_enstationac-v1
 
@@ -1116,7 +1125,7 @@ define Device/etactica_eg200
   DEVICE_VENDOR := eTactica
   DEVICE_MODEL := EG200
   DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-ledtrig-oneshot \
-	kmod-usb-serial kmod-usb-serial-ftdi kmod-usb-storage kmod-fs-ext4
+	kmod-usb-serial-ftdi kmod-usb-storage kmod-fs-ext4
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += rme-eg200
 endef
@@ -2219,7 +2228,7 @@ define Device/zbtlink_zbt-wd323
   DEVICE_MODEL := WD323
   IMAGE_SIZE := 16000k
   DEVICE_PACKAGES := kmod-usb2 kmod-i2c-gpio kmod-rtc-pcf8563 \
-	kmod-usb-serial kmod-usb-serial-cp210x uqmi
+	kmod-usb-serial-cp210x uqmi
 endef
 TARGET_DEVICES += zbtlink_zbt-wd323
 
