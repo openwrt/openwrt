@@ -1,0 +1,65 @@
+From aeb7ac1f2fbad88de1e101be69da61e86eb9ef1d Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Sat, 17 Jul 2021 18:01:02 +0800
+Subject: [PATCH] natcap: patch kernel for cone nat support
+
+Signed-off-by: Chen Minqiang <ptpt52@gmail.com>
+---
+ include/net/netfilter/nf_nat.h |  3 +++
+ net/netfilter/nf_nat_core.c    | 28 +++++++++++++++++++++++++++-
+ 2 files changed, 30 insertions(+), 1 deletion(-)
+
+--- a/include/net/netfilter/nf_nat.h
++++ b/include/net/netfilter/nf_nat.h
+@@ -114,4 +114,7 @@ static inline int nf_nat_initialized(str
+ 	else
+ 		return ct->status & IPS_DST_NAT_DONE;
+ }
++
++#define CONE_NAT_CHECK_USED_HOOK cone_nat_tuple_used
++extern int (*cone_nat_check_used)(__be32 iip, __be16 iport, __be32 eip, __be16 eport);
+ #endif
+--- a/net/netfilter/nf_nat_core.c
++++ b/net/netfilter/nf_nat_core.c
+@@ -219,6 +219,32 @@ nf_nat_used_tuple(const struct nf_conntr
+ 	return nf_conntrack_tuple_taken(&reply, ignored_conntrack);
+ }
+ 
++int (*cone_nat_check_used)(__be32 iip, __be16 iport, __be32 eip, __be16 eport) = NULL;
++EXPORT_SYMBOL_GPL(cone_nat_check_used);
++
++static int
++cone_nat_tuple_ok(const struct nf_conntrack_tuple *tuple,
++		  enum nf_nat_manip_type maniptype,
++		  const struct nf_conn *ct)
++{
++	int (*cone_call)(__be32 iip, __be16 iport, __be32 eip, __be16 eport) = cone_nat_check_used;
++	if (maniptype != NF_NAT_MANIP_SRC)
++		return 1;
++	if (tuple->dst.protonum != IPPROTO_UDP)
++		return 1;
++	if (tuple->src.l3num != NFPROTO_IPV4)
++		return 1;
++
++	if (!cone_call ||
++	    !cone_call(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.u3.ip,
++		    ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.u.all,
++		    tuple->src.u3.ip, tuple->src.u.all)) {
++		return 1;
++	}
++
++	return 0;
++}
++
+ static bool nf_nat_inet_in_range(const struct nf_conntrack_tuple *t,
+ 				 const struct nf_nat_range2 *range)
+ {
+@@ -505,7 +531,7 @@ find_free_id:
+ another_round:
+ 	for (i = 0; i < attempts; i++, off++) {
+ 		*keyptr = htons(min + off % range_size);
+-		if (!nf_nat_used_tuple(tuple, ct))
++		if (cone_nat_tuple_ok(tuple, maniptype, ct) && !nf_nat_used_tuple(tuple, ct))
+ 			return;
+ 	}
+ 
