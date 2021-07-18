@@ -1381,6 +1381,14 @@ define Device/ubnt_edgerouter-x-sfp
 endef
 TARGET_DEVICES += ubnt_edgerouter-x-sfp
 
+define Device/ubnt_edgepoint-r6
+  $(Device/ubnt_edgerouter_common)
+  DEVICE_MODEL := EdgePoint R6
+  DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-sfp
+  SUPPORTED_DEVICES += ubiquiti,edgerouterx-sfp
+endef
+TARGET_DEVICES += ubnt_edgepoint-r6
+
 define Device/ubnt_unifi-6-lite
   $(Device/dsa-migration)
   DEVICE_VENDOR := Ubiquiti

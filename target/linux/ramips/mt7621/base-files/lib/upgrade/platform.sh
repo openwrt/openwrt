@@ -92,6 +92,7 @@ platform_do_upgrade() {
 		iodata_mstc_upgrade_prepare "0x1fe75"
 		nand_do_upgrade "$1"
 		;;
+	ubnt,edgepoint-r6|\
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
