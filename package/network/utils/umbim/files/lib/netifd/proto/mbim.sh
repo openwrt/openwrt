@@ -169,6 +169,8 @@ _proto_mbim_setup() {
 
 	echo "mbim[$$]" "Connected"
 
+	local zone="$(fw3 -q network "$interface" 2>/dev/null)"
+
 	if [ -z "$dhcp" -o "$dhcp" = 0 ]; then
 		echo "mbim[$$]" "Setting up $ifname"
 		eval $(umbim $DBG -n -t $tid -d $device config | sed 's/: /=/g')
@@ -190,6 +192,7 @@ _proto_mbim_setup() {
 			[ "$peerdns" = 0 ] || json_add_string "" "$ipv4dnsserver"
 			json_close_array
 			proto_add_dynamic_defaults
+			[ -n "$zone" ] && json_add_string zone "$zone"
 			json_close_object
 			ubus call network add_dynamic "$(json_dump)"
 		}
@@ -207,6 +210,7 @@ _proto_mbim_setup() {
 			[ "$peerdns" = 0 ] || json_add_string "" "$ipv6dnsserver"
 			json_close_array
 			proto_add_dynamic_defaults
+			[ -n "$zone" ] && json_add_string zone "$zone"
 			json_close_object
 			ubus call network add_dynamic "$(json_dump)"
 		}
@@ -221,6 +225,7 @@ _proto_mbim_setup() {
 			json_add_string ifname "@$interface"
 			json_add_string proto "dhcp"
 			proto_add_dynamic_defaults
+			[ -n "$zone" ] && json_add_string zone "$zone"
 			json_close_object
 			ubus call network add_dynamic "$(json_dump)"
 		}
@@ -232,6 +237,7 @@ _proto_mbim_setup() {
 			json_add_string proto "dhcpv6"
 			json_add_string extendprefix 1
 			proto_add_dynamic_defaults
+			[ -n "$zone" ] && json_add_string zone "$zone"
 			json_close_object
 			ubus call network add_dynamic "$(json_dump)"
 		}
