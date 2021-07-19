@@ -18,7 +18,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -61,6 +61,7 @@ static void *of_get_mac_addr_nvmem(struc
+@@ -55,6 +55,7 @@ static void *of_get_mac_addr_nvmem(struc
  	void *mac;
  	u8 nvmem_mac[ETH_ALEN];
  	struct platform_device *pdev = of_find_device_by_node(np);
@@ -26,7 +26,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  
  	if (!pdev) {
  		*err = -ENODEV;
-@@ -78,10 +79,29 @@ static void *of_get_mac_addr_nvmem(struc
+@@ -72,10 +73,29 @@ static void *of_get_mac_addr_nvmem(struc
  	put_device(&pdev->dev);
  	if (!mac) {
  		*err = -ENOMEM;
