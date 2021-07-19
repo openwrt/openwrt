@@ -169,7 +169,7 @@ _proto_mbim_setup() {
 
 	echo "mbim[$$]" "Connected"
 
-	if [ "$dhcp" = 0 ]; then
+	if [ -z "$dhcp" -o "$dhcp" = 0 ]; then
 		echo "mbim[$$]" "Setting up $ifname"
 		eval $(umbim $DBG -n -t $tid -d $device config | sed 's/: /=/g')
 		tid=$((tid + 1))
