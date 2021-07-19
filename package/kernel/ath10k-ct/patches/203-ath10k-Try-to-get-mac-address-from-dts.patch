@@ -30,15 +30,17 @@ index 5f4e12196..9ed7b9883 100644
  #include <linux/property.h>
  #include <linux/dmi.h>
  #include <linux/ctype.h>
-@@ -2961,8 +2963,12 @@ EXPORT_SYMBOL(ath10k_core_stop);
+@@ -2961,8 +2963,14 @@ EXPORT_SYMBOL(ath10k_core_stop);
  static int ath10k_core_probe_fw(struct ath10k *ar)
  {
  	struct bmi_target_info target_info;
 +	const char *mac;
  	int ret = 0;
  
++#ifdef CONFIG_OF
 +	/* register the platform to be found by the of api */
 +	of_platform_device_create(ar->dev->of_node, NULL, NULL);
++#endif
 +
  	ret = ath10k_hif_power_up(ar, ATH10K_FIRMWARE_MODE_NORMAL);
  	if (ret) {
