@@ -18,11 +18,9 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  drivers/of/of_net.c | 59 ++++++++++++++++++++++++++++++++++-----------
  1 file changed, 45 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/of/of_net.c b/drivers/of/of_net.c
-index f072e2509cc9..0dbd1f7ef396 100644
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -55,31 +55,36 @@ static void *of_get_mac_addr(struct device_node *np, const char *name)
+@@ -55,31 +55,36 @@ static void *of_get_mac_addr(struct devi
  	return NULL;
  }
  
@@ -67,7 +65,7 @@ index f072e2509cc9..0dbd1f7ef396 100644
  {
  #ifdef CONFIG_MTD
  	struct device_node *mtd_np = NULL;
-@@ -167,28 +172,54 @@ static const void *of_get_mac_address_mtd(struct device_node *np)
+@@ -167,28 +172,54 @@ free:
   * If a mtd-mac-address property exists, try to fetch the MAC address from the
   * specified mtd device, and store it as a 'mac-address' property
   *
@@ -128,6 +126,3 @@ index f072e2509cc9..0dbd1f7ef396 100644
 +	return addr;
  }
  EXPORT_SYMBOL(of_get_mac_address);
--- 
-2.30.2
-
