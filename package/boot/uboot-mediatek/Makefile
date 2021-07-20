@@ -85,7 +85,7 @@ endef
 
 define U-Boot/mt7623n_bpir2
   NAME:=Banana Pi R2 (mt7623)
-  BUILD_DEVICES:=bpi_bananapi-r2
+  BUILD_DEVICES:=bananapi_bpi-r2
   BUILD_SUBTARGET:=mt7623
   UBOOT_IMAGE:=u-boot.bin
   UBOOT_CONFIG:=mt7623n_bpir2
