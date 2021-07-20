@@ -19,6 +19,7 @@ proto_mbim_init_config() {
 	proto_config_add_string auth
 	proto_config_add_string username
 	proto_config_add_string password
+	[ -e /proc/sys/net/ipv6 ] && proto_config_add_string ipv6
 	proto_config_add_boolean dhcp
 	proto_config_add_boolean dhcpv6
 	proto_config_add_string pdptype
@@ -32,6 +33,8 @@ _proto_mbim_setup() {
 
 	local device apn pincode delay allow_roaming allow_partner dhcp dhcpv6 pdptype $PROTO_DEFAULT_OPTIONS
 	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner dhcp dhcpv6 pdptype $PROTO_DEFAULT_OPTIONS
+
+	[ ! -e /proc/sys/net/ipv6 ] && ipv6=0 || json_get_var ipv6 ipv6
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
@@ -150,6 +153,7 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	pdptype=$(echo "$pdptype" | awk '{print tolower($0)}')
+	[ "$ipv6" = 0 ] && pdptype="ipv4"
 
 	local req_pdptype="" # Pass "default" PDP type to umbim if unconfigured
 	[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && req_pdptype="$pdptype:"
