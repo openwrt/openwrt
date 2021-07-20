@@ -15,8 +15,6 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  drivers/of/of_net.c | 75 ++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 74 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/of/of_net.c b/drivers/of/of_net.c
-index 6e411821583e..f072e2509cc9 100644
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
 @@ -11,6 +11,7 @@
@@ -27,7 +25,7 @@ index 6e411821583e..f072e2509cc9 100644
  
  /**
   * of_get_phy_mode - Get phy mode for given device_node
-@@ -45,7 +46,7 @@ int of_get_phy_mode(struct device_node *np, phy_interface_t *interface)
+@@ -39,7 +40,7 @@ int of_get_phy_mode(struct device_node *
  }
  EXPORT_SYMBOL_GPL(of_get_phy_mode);
  
@@ -36,7 +34,7 @@ index 6e411821583e..f072e2509cc9 100644
  {
  	struct property *pp = of_find_property(np, name, NULL);
  
-@@ -78,6 +79,70 @@ static const void *of_get_mac_addr_nvmem(struct device_node *np)
+@@ -72,6 +73,70 @@ static const void *of_get_mac_addr_nvmem
  	return mac;
  }
  
@@ -107,7 +105,7 @@ index 6e411821583e..f072e2509cc9 100644
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
   * checked first, because that is supposed to contain to "most recent" MAC
-@@ -98,6 +163,10 @@ static const void *of_get_mac_addr_nvmem(struct device_node *np)
+@@ -92,6 +157,10 @@ static const void *of_get_mac_addr_nvmem
   * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
   * but is all zeros.
   *
@@ -118,7 +116,7 @@ index 6e411821583e..f072e2509cc9 100644
   * Return: Will be a valid pointer on success and ERR_PTR in case of error.
  */
  const void *of_get_mac_address(struct device_node *np)
-@@ -116,6 +185,10 @@ const void *of_get_mac_address(struct device_node *np)
+@@ -110,6 +179,10 @@ const void *of_get_mac_address(struct de
  	if (addr)
  		return addr;
  
@@ -129,6 +127,3 @@ index 6e411821583e..f072e2509cc9 100644
  	return of_get_mac_addr_nvmem(np);
  }
  EXPORT_SYMBOL(of_get_mac_address);
--- 
-2.30.2
-
