@@ -1,0 +1,59 @@
+From: David Bauer <mail@david-bauer.net>
+Date: Tue, 20 Jul 2021 22:00:10 +0200
+Subject: [PATCH] generic: add mac-address property for NVMEM mac addresses
+
+Traversing the device-tree by referencing a network device to determine
+a devices labe-mac does not work with the generic nvmem implementation,
+as the userspace expects the MAC-address to be available as a
+device-tree property.
+
+The legacy mtd-mac-address implementation did create such a node. Do the
+same when using the nvmem implementation to allow reading the MAC
+address.
+
+Fixes commit d284e6ef0f06 ("treewide: convert mtd-mac-address-increment*
+to generic implementation")
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+
+--- a/drivers/of/of_net.c
++++ b/drivers/of/of_net.c
+@@ -61,6 +61,7 @@ static void *of_get_mac_addr_nvmem(struc
+ 	void *mac;
+ 	u8 nvmem_mac[ETH_ALEN];
+ 	struct platform_device *pdev = of_find_device_by_node(np);
++	struct property *prop;
+ 
+ 	if (!pdev) {
+ 		*err = -ENODEV;
+@@ -78,10 +79,29 @@ static void *of_get_mac_addr_nvmem(struc
+ 	put_device(&pdev->dev);
+ 	if (!mac) {
+ 		*err = -ENOMEM;
+-		return NULL;
++		goto out_err;
++	}
++
++	prop = devm_kzalloc(&pdev->dev, sizeof(*prop), GFP_KERNEL);
++	if (!prop) {
++		*err = -ENOMEM;
++		goto out_err;
++	}
++	prop->name = "mac-address";
++	prop->length = ETH_ALEN;
++	prop->value = devm_kmemdup(&pdev->dev, mac, ETH_ALEN, GFP_KERNEL);
++	if (!prop->value || of_add_property(np, prop)) {
++		*err = -ENOMEM;
++		goto out_err;
+ 	}
+ 
+ 	return mac;
++
++out_err:
++	devm_kfree(&pdev->dev, prop->value);
++	devm_kfree(&pdev->dev, prop);
++	devm_kfree(&pdev->dev, mac);
++	return NULL;
+ }
+ 
+ static void *of_get_mac_address_mtd(struct device_node *np)
