@@ -113,6 +113,27 @@ endef
 TARGET_DEVICES += bananapi_bpi-r2
 
 
+define Build/mtk-mmc-img
+	rm -f $@.boot
+	mkfs.fat -C $@.boot $(BOOTFS_BLOCKS)
+
+	if [ -r $(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-preloader.bin ]; then \
+		./gen_mtk_mmc_img.sh emmc $@.emmc \
+			$(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-preloader.bin; \
+		mcopy -i $@.boot $@.emmc ::eMMCboot.bin; \
+	fi
+	mkenvimage -s $(UBOOT_ENVSIZE) -o $(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-uboot.env $(UBOOT_TARGET)-uEnv.txt
+	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-uboot.env ::uboot.env
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
+	./gen_mtk_mmc_img.sh sd $@ \
+		$(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-preloader.bin \
+		$(STAGING_DIR_IMAGE)/$(UBOOT_TARGET)-u-boot*.bin \
+		$(UBOOT_OFFSET) \
+		$@.boot \
+		$(IMAGE_ROOTFS) \
+		$(CONFIG_MTK_BOOT_PARTSIZE) \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+endef
 
 define Build/scatterfile
 	./gen_scatterfile.sh $(subst mt,MT,$(SUBTARGET)) "$1" \
