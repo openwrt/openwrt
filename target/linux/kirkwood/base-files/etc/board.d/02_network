@@ -31,6 +31,9 @@ seagate,goflexnet|\
 zyxel,nsa310s)
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
+endian,4i-edge-200)
+	ucidef_set_interface_lan "port1 port2 port3 port4 eth1"
+	;;
 linksys,e4200-v2|\
 linksys,ea3500|\
 linksys,ea4500)

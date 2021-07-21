@@ -140,6 +140,17 @@ define Device/ctera_c200-v1
 endef
 TARGET_DEVICES += ctera_c200-v1
 
+define Device/endian_4i-edge-200
+  DEVICE_VENDOR := Endian
+  DEVICE_MODEL := 4i Edge 200
+  DEVICE_ALT0_VENDOR := Endian
+  DEVICE_ALT0_MODEL := UTM Mini Firewall
+  DEVICE_PACKAGES := kmod-ath9k kmod-mvsdio wpad-basic-wolfssl
+  KERNEL_SIZE := 4096k
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += endian_4i-edge-200
+
 define Device/globalscale_sheevaplug
   DEVICE_VENDOR := Globalscale
   DEVICE_MODEL := Sheevaplug
