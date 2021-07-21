@@ -113,6 +113,11 @@ endef
 TARGET_DEVICES += bananapi_bpi-r2
 
 
+ifneq ($(CONFIG_MTK_BOOT_PARTSIZE),)
+BOOTFS_BLOCK_SIZE := 1024
+BOOTFS_BLOCKS := $(shell echo $$(($(CONFIG_MTK_BOOT_PARTSIZE)*1024*1024/$(BOOTFS_BLOCK_SIZE))))
+endif
+
 define Build/mtk-mmc-img
 	rm -f $@.boot
 	mkfs.fat -C $@.boot $(BOOTFS_BLOCKS)
@@ -139,6 +144,7 @@ define Build/scatterfile
 	./gen_scatterfile.sh $(subst mt,MT,$(SUBTARGET)) "$1" \
 		$(subst -scatter.txt,,$(notdir $@)) "$(DEVICE_TITLE)" > $@
 endef
+
 
 # Full eMMC image including U-Boot and partition table
 define Device/unielec_u7623-emmc
