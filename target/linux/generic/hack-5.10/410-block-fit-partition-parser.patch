@@ -219,7 +219,7 @@
  
 --- a/block/partitions/msdos.c
 +++ b/block/partitions/msdos.c
-@@ -565,6 +565,15 @@ static void parse_minix(struct parsed_pa
+@@ -563,6 +563,15 @@ static void parse_minix(struct parsed_pa
  #endif /* CONFIG_MINIX_SUBPARTITION */
  }
  
@@ -235,7 +235,7 @@
  static struct {
  	unsigned char id;
  	void (*parse)(struct parsed_partitions *, sector_t, sector_t, int);
-@@ -576,6 +585,7 @@ static struct {
+@@ -574,6 +583,7 @@ static struct {
  	{UNIXWARE_PARTITION, parse_unixware},
  	{SOLARIS_X86_PARTITION, parse_solaris_x86},
  	{NEW_SOLARIS_X86_PARTITION, parse_solaris_x86},
