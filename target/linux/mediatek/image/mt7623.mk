@@ -132,7 +132,7 @@ define Build/mtk-mmc-img
 		$@.boot \
 		$(IMAGE_ROOTFS) \
 		$(CONFIG_MTK_BOOT_PARTSIZE) \
-		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+		104
 endef
 
 define Build/scatterfile
