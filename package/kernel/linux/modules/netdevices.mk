@@ -1199,7 +1199,8 @@ define KernelPackage/qlcnic
   TITLE:=QLogic QLE8240 and QLE8242 device support
   KCONFIG:= \
 	CONFIG_QLCNIC \
-	CONFIG_QLCNIC_HWMON=y
+	CONFIG_QLCNIC_HWMON=y \
+	CONFIG_QLCNIC_SRIOV=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/qlogic/qlcnic/qlcnic.ko
   AUTOLOAD:=$(call AutoProbe,qlcnic)
 endef
