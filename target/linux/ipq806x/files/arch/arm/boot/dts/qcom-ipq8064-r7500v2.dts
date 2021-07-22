@@ -186,6 +186,22 @@
 	reset-gpio = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&pcie0_pins>;
 	pinctrl-names = "default";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "pci168c,0040";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cells = <&macaddr_art_6>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <(1)>;
+		};
+	};
 };
 
 &pcie1 {
@@ -194,6 +210,22 @@
 	pinctrl-0 = <&pcie1_pins>;
 	pinctrl-names = "default";
 	max-link-speed = <1>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "pci168c,0040";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cells = <&macaddr_art_6>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <(2)>;
+		};
+	};
 };
 
 &nand_controller {
