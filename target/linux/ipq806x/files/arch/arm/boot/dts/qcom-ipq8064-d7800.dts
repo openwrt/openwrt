@@ -161,6 +161,22 @@
 
 	pinctrl-0 = <&usb0_pwr_en_pins>;
 	pinctrl-names = "default";
+	
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "pci168c,0040";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cells = <&macaddr_art_6>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <(1)>;
+		};
+	};
 };
 
 &usb3_1 {
@@ -168,6 +184,22 @@
 
 	pinctrl-0 = <&usb1_pwr_en_pins>;
 	pinctrl-names = "default";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "pci168c,0040";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cells = <&macaddr_art_6>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <(2)>;
+		};
+	};
 };
 
 &pcie0 {
