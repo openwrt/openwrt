@@ -1956,6 +1956,15 @@ define Device/youku_yk-l2
 endef
 TARGET_DEVICES += youku_yk-l2
 
+define Device/yuncore_ax820
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := AX820
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += yuncore_ax820
+
 define Device/zbtlink_zbt-we1326
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
