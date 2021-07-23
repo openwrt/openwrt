@@ -10,18 +10,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- Makefile                          | 10 +++----
- arch/arm/Kconfig                  |  1 +
- arch/arm/boot/compressed/Makefile |  1 +
- arch/arm/kernel/vmlinux.lds.S     | 26 ++++++++--------
- arch/mips/Kconfig                 |  1 +
- arch/mips/kernel/vmlinux.lds.S    |  4 +--
- include/asm-generic/vmlinux.lds.h | 63 ++++++++++++++++++++-------------------
- 7 files changed, 55 insertions(+), 51 deletions(-)
-
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -111,6 +111,7 @@ config ARM
+@@ -113,6 +113,7 @@ config ARM
  	select HAVE_UID16
  	select HAVE_VIRT_CPU_ACCOUNTING_GEN
  	select IRQ_FORCED_THREADING
@@ -31,16 +22,25 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	select OF_EARLY_FLATTREE if OF
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
-@@ -106,6 +106,7 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
- ORIG_CFLAGS := $(KBUILD_CFLAGS)
- KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
+@@ -98,6 +98,7 @@ $(foreach o, $(libfdt_objs) atags_to_fdt
+ ifdef building_out_of_srctree
+ $(shell rm -f $(addprefix $(obj)/, fdt_rw.c fdt_ro.c fdt_wip.c fdt.c))
  endif
 +KBUILD_CFLAGS_KERNEL := $(patsubst -f%-sections,,$(KBUILD_CFLAGS_KERNEL))
  
- # -fstack-protector-strong triggers protection checks in this code,
- # but it is being used too early to link to meaningful stack_chk logic.
+ targets       := vmlinux vmlinux.lds piggy_data piggy.o \
+ 		 lib1funcs.o ashldi3.o bswapsdi2.o \
 --- a/arch/arm/kernel/vmlinux.lds.S
 +++ b/arch/arm/kernel/vmlinux.lds.S
+@@ -75,7 +75,7 @@ SECTIONS
+ 	. = ALIGN(4);
+ 	__ex_table : AT(ADDR(__ex_table) - LOAD_OFFSET) {
+ 		__start___ex_table = .;
+-		ARM_MMU_KEEP(*(__ex_table))
++		KEEP(*(__ex_table))
+ 		__stop___ex_table = .;
+ 	}
+ 
 @@ -100,24 +100,24 @@ SECTIONS
  	}
  	.init.arch.info : {
@@ -70,16 +70,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		__pv_table_end = .;
  	}
  
---- a/arch/arm/kernel/vmlinux.lds.h
-+++ b/arch/arm/kernel/vmlinux.lds.h
-@@ -22,13 +22,13 @@
- #define ARM_MMU_DISCARD(x)
- #else
- #define ARM_MMU_KEEP(x)
--#define ARM_MMU_DISCARD(x)	x
-+#define ARM_MMU_DISCARD(x)	KEEP(x)
- #endif
- 
+--- a/arch/arm/include/asm/vmlinux.lds.h
++++ b/arch/arm/include/asm/vmlinux.lds.h
+@@ -29,13 +29,13 @@
  #define PROC_INFO							\
  		. = ALIGN(4);						\
  		__proc_info_begin = .;					\
@@ -87,22 +80,15 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +		KEEP(*(.proc.info.init))				\
  		__proc_info_end = .;
  
- #define HYPERVISOR_TEXT							\
-@@ -39,11 +39,11 @@
  #define IDMAP_TEXT							\
  		ALIGN_FUNCTION();					\
  		__idmap_text_start = .;					\
 -		*(.idmap.text)						\
 +		KEEP(*(.idmap.text))					\
  		__idmap_text_end = .;					\
- 		. = ALIGN(PAGE_SIZE);					\
- 		__hyp_idmap_text_start = .;				\
--		*(.hyp.idmap.text)					\
-+		KEEP(*(.hyp.idmap.text))				\
- 		__hyp_idmap_text_end = .;
  
  #define ARM_DISCARD							\
-@@ -86,12 +86,12 @@
+@@ -96,12 +96,12 @@
  	. = ALIGN(8);							\
  	.ARM.unwind_idx : {						\
  		__start_unwind_idx = .;					\
@@ -117,7 +103,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		__stop_unwind_tab = .;					\
  	}
  
-@@ -102,14 +102,14 @@
+@@ -112,14 +112,14 @@
  #define ARM_VECTORS							\
  	__vectors_start = .;						\
  	.vectors 0xffff0000 : AT(__vectors_start) {			\
