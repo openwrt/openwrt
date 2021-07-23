@@ -24,7 +24,7 @@ define Device/Default
   DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
-	append-metadata | check-size
+	check-size | append-metadata
 endef
 
 # "NGE" refers to the uImage magic

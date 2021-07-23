@@ -153,9 +153,8 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &mdio_pins &phy_reset_pins>;
 
-	mtd-mac-address = <&factory 0x4>;
-
-	mediatek,mdio-mode = <1>;
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
 
 	phy-reset-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 	phy-reset-duration = <30>;
@@ -202,7 +201,7 @@
 };
 
 &gsw {
-	mediatek,port5 = "gmac";
+	mediatek,ephy-base = /bits/ 8 <8>;
 };
 
 &wmac {
@@ -218,5 +217,15 @@
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x8000>;
 		mediatek,2ghz = <0>;
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_4: macaddr@4 {
+		reg = <0x4 0x6>;
 	};
 };

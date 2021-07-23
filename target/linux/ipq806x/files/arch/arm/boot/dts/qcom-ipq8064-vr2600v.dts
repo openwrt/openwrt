@@ -323,8 +323,9 @@
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
 
-	mtd-mac-address = <&defaultmac 0>;
-	mtd-mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_defaultmac_0>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <1>;
 
 	fixed-link {
 		speed = <1000>;
@@ -337,7 +338,8 @@
 	phy-mode = "sgmii";
 	qcom,id = <2>;
 
-	mtd-mac-address = <&defaultmac 0>;
+	nvmem-cells = <&macaddr_defaultmac_0>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <1000>;
@@ -347,4 +349,14 @@
 
 &adm_dma {
 	status = "okay";
+};
+
+&defaultmac {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_defaultmac_0: macaddr@0 {
+		reg = <0x0 0x6>;
+	};
 };

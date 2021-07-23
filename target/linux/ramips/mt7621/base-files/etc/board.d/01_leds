@@ -34,6 +34,12 @@ dlink,dir-2640-a1|\
 dlink,dir-2660-a1)
 	ucidef_set_led_netdev "wan" "wan" "white:net" "wan"
 	;;
+dlink,dir-853-a3)
+	ucidef_set_led_netdev "wan" "wan" "blue:net" "wan"
+	;;
+dlink,dir-853-r1)
+	ucidef_set_led_netdev "internet" "internet" "blue:net" "wan"
+	;;
 dlink,dir-860l-b1|\
 dlink,dir-867-a1|\
 dlink,dir-878-a1|\
@@ -52,7 +58,8 @@ linksys,e5600)
 linksys,ea7300-v1|\
 linksys,ea7300-v2|\
 linksys,ea7500-v2|\
-linksys,ea8100-v1)
+linksys,ea8100-v1|\
+linksys,ea8100-v2)
 	ucidef_set_led_netdev "lan1" "lan1 link" "green:lan1" "lan1" "link"
 	ucidef_set_led_netdev "lan2" "lan2 link" "green:lan2" "lan2" "link"
 	ucidef_set_led_netdev "lan3" "lan3 link" "green:lan3" "lan3" "link"

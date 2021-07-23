@@ -7,7 +7,7 @@ define Device/mikrotik_nor
 	IMAGES = sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | \
 		pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
-		append-metadata | check-size
+		check-size | append-metadata
 endef
 
 define Device/mikrotik_hap-ac2

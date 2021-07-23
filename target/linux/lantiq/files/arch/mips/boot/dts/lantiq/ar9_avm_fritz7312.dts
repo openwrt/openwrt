@@ -96,8 +96,9 @@
 &gsw {
 	phy-mode = "rmii";
 	phy-handle = <&phy0>;
-	mtd-mac-address = <&ath9k_cal 0xa91>;
-	mtd-mac-address-increment = <(-2)>;
+	nvmem-cells = <&macaddr_ath9k_cal_a91>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <(-2)>;
 
 	mdio-bus {
 		#address-cells = <1>;
@@ -164,5 +165,15 @@
 		compatible = "pci0,0";
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+	};
+};
+
+&ath9k_cal {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_ath9k_cal_a91: macaddr@a91 {
+		reg = <0xa91 0x6>;
 	};
 };

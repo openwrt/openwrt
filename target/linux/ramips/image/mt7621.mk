@@ -289,7 +289,7 @@ define Device/dlink_dir-8xx-a1
   KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr 96
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
-	pad-rootfs | append-metadata | check-size
+	pad-rootfs | check-size | append-metadata
   IMAGE/factory.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
 	check-size
 endef
@@ -341,6 +341,21 @@ define Device/dlink_dir-2660-a1
   DEVICE_VARIANT := A1
 endef
 TARGET_DEVICES += dlink_dir-2660-a1
+
+define Device/dlink_dir-853-a3
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-853
+  DEVICE_VARIANT := A3
+endef
+TARGET_DEVICES += dlink_dir-853-a3
+
+define Device/dlink_dir-853-r1
+  $(Device/dlink_dir-8xx-r1)
+  DEVICE_MODEL := DIR-853
+  DEVICE_VARIANT := R1
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += dlink_dir-853-r1
 
 define Device/dlink_dir-860l-b1
   $(Device/dsa-migration)
@@ -440,7 +455,7 @@ define Device/edimax_re23s
   DEVICE_ALT0_MODEL := Gemini RE23S
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN76 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size
+	check-size | append-metadata
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN76 -f 0x70000 -S 0x01100000 | pad-rootfs | \
@@ -824,7 +839,7 @@ define Device/linksys_ea7xxx
 	uboot-envtools
   UBINIZE_OPTS := -E 5
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | check-size | linksys-image type=$$$$(LINKSYS_HWNAME)
 endef
@@ -861,6 +876,14 @@ define Device/linksys_ea8100-v1
   LINKSYS_HWNAME := EA8100
 endef
 TARGET_DEVICES += linksys_ea8100-v1
+
+define Device/linksys_ea8100-v2
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA8100
+  DEVICE_VARIANT := v2
+  LINKSYS_HWNAME := EA8100v2
+endef
+TARGET_DEVICES += linksys_ea8100-v2
 
 define Device/linksys_re6500
   $(Device/dsa-migration)
@@ -901,8 +924,8 @@ define Device/MikroTik
   KERNEL_NAME := vmlinuz
   KERNEL := kernel-bin | append-dtb-elf
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | \
-	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | \
-	check-size
+	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | \
+	append-metadata
 endef
 
 define Device/mikrotik_routerboard-750gr3
@@ -1199,6 +1222,18 @@ define Device/telco-electronics_x1
   DEVICE_PACKAGES := kmod-usb3 kmod-mt76
 endef
 TARGET_DEVICES += telco-electronics_x1
+
+define Device/tenbay_t-mb5eu-v01
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Tenbay
+  DEVICE_MODEL := T-MB5EU-V01
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES += kmod-mt7915e kmod-usb3
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 15808k
+  SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
+endef
+TARGET_DEVICES += tenbay_t-mb5eu-v01
 
 define Device/thunder_timecloud
   $(Device/dsa-migration)

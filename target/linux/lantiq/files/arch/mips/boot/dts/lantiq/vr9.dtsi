@@ -438,8 +438,6 @@
 				0xe10b100 0x70   /* mdio */
 				0xe10b1d8 0x30   /* mii */
 				>;
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
 
 			dsa,member = <0 0>;
 
@@ -480,7 +478,7 @@
 					reset-names = "gphy";
 				};
 			};
-                };
+		};
 
 		eth0: eth@e10b308 {
 			compatible = "lantiq,xrx200-net";

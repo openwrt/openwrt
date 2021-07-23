@@ -13,8 +13,6 @@ DEFAULT_PACKAGES+=kmod-leds-gpio \
 	kmod-ltq-ptm-vr9 \
 	kmod-ltq-deu-vr9 \
 	ltq-vdsl-app \
-	dsl-vrx200-firmware-xdsl-a \
-	dsl-vrx200-firmware-xdsl-b-patch \
 	ppp-mod-pppoa
 
 define Target/Description
