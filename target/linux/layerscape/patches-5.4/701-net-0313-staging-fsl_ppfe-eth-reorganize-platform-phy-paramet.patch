@@ -33,15 +33,9 @@ Signed-off-by: Calvin Johnson <calvin.johnson@nxp.com>
  	int size;
  	int ii = 0, phy_id = 0;
  	const u32 *addr;
-@@ -49,18 +49,11 @@ static int pfe_get_gemac_if_proprties(st
- 	pdata->ls1012a_eth_pdata[port].gem_id = port;
+@@ -49,12 +49,6 @@ static int pfe_get_gemac_if_proprties(st
  
- 	mac_addr = of_get_mac_address(gem);
--
- 	if (mac_addr) {
- 		memcpy(pdata->ls1012a_eth_pdata[port].mac_addr, mac_addr,
- 		       ETH_ALEN);
- 	}
+ 	of_get_mac_address(gem, pdata->ls1012a_eth_pdata[port].mac_addr);
  
 -	pdata->ls1012a_eth_pdata[port].mii_config = of_get_phy_mode(gem);
 -

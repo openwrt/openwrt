@@ -20,38 +20,19 @@ diff --git a/drivers/net/wireless/ath/ath10k/core.c b/drivers/net/wireless/ath/a
 index 5f4e12196..9ed7b9883 100644
 --- a/drivers/net/wireless/ath/ath10k/core.c
 +++ b/drivers/net/wireless/ath/ath10k/core.c
-@@ -8,6 +8,9 @@
+@@ -8,6 +8,7 @@
  #include <linux/module.h>
  #include <linux/firmware.h>
  #include <linux/of.h>
 +#include <linux/of_net.h>
-+#include <linux/of_platform.h>
-+#include <linux/property.h>
  #include <linux/property.h>
  #include <linux/dmi.h>
  #include <linux/ctype.h>
-@@ -2961,8 +2963,14 @@ EXPORT_SYMBOL(ath10k_core_stop);
- static int ath10k_core_probe_fw(struct ath10k *ar)
- {
- 	struct bmi_target_info target_info;
-+	const char *mac;
- 	int ret = 0;
- 
-+#ifdef CONFIG_OF
-+	/* register the platform to be found by the of api */
-+	of_platform_device_create(ar->dev->of_node, NULL, NULL);
-+#endif
-+
- 	ret = ath10k_hif_power_up(ar, ATH10K_FIRMWARE_MODE_NORMAL);
- 	if (ret) {
- 		ath10k_err(ar, "could not power on hif bus (%d)\n", ret);
-@@ -3062,6 +3068,10 @@ static int ath10k_core_probe_fw(struct ath10k *ar)
+@@ -3062,6 +3068,8 @@ static int ath10k_core_probe_fw(struct ath10k *ar)
  
  	device_get_mac_address(ar->dev, ar->mac_addr, sizeof(ar->mac_addr));
  
-+	mac = of_get_mac_address(ar->dev->of_node);
-+	if (!IS_ERR(mac))
-+		ether_addr_copy(ar->mac_addr, mac);
++	of_get_mac_address(ar->dev->of_node, ar->mac_addr);
 +
  	ret = ath10k_core_init_firmware_features(ar);
  	if (ret) {
