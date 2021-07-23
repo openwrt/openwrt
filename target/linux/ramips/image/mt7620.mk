@@ -963,6 +963,20 @@ define Device/sercomm_na930
 endef
 TARGET_DEVICES += sercomm_na930
 
+define Device/sitecom_wlr-4100-v1-002
+  SOC := mt7620a
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := $$(sysupgrade_bin) | check-size | \
+	senao-header -r 0x0222 -p 0x104A -t 2
+  DEVICE_VENDOR := Sitecom
+  DEVICE_MODEL := WLR-4100
+  DEVICE_VARIANT := v1 002
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci uboot-envtools
+endef
+TARGET_DEVICES += sitecom_wlr-4100-v1-002
+
 define Device/tplink_archer-c20i
   $(Device/tplink-v2)
   SOC := mt7620a
