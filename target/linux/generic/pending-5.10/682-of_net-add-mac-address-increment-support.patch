@@ -20,52 +20,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -55,31 +55,36 @@ static void *of_get_mac_addr(struct devi
- 	return NULL;
- }
- 
--static const void *of_get_mac_addr_nvmem(struct device_node *np)
-+static void *of_get_mac_addr_nvmem(struct device_node *np, int *err)
- {
- 	int ret;
--	const void *mac;
-+	void *mac;
- 	u8 nvmem_mac[ETH_ALEN];
- 	struct platform_device *pdev = of_find_device_by_node(np);
- 
--	if (!pdev)
--		return ERR_PTR(-ENODEV);
-+	if (!pdev) {
-+		*err = -ENODEV;
-+		return NULL;
-+	}
- 
- 	ret = nvmem_get_mac_address(&pdev->dev, &nvmem_mac);
- 	if (ret) {
- 		put_device(&pdev->dev);
--		return ERR_PTR(ret);
-+		*err = ret;
-+		return NULL;
- 	}
- 
- 	mac = devm_kmemdup(&pdev->dev, nvmem_mac, ETH_ALEN, GFP_KERNEL);
- 	put_device(&pdev->dev);
--	if (!mac)
--		return ERR_PTR(-ENOMEM);
-+	if (!mac) {
-+		*err = -ENOMEM;
-+		return NULL;
-+	}
- 
- 	return mac;
- }
- 
--static const void *of_get_mac_address_mtd(struct device_node *np)
-+static void *of_get_mac_address_mtd(struct device_node *np)
- {
- #ifdef CONFIG_MTD
- 	struct platform_device *pdev = of_find_device_by_node(np);
-@@ -152,28 +157,54 @@ static const void *of_get_mac_address_mt
+@@ -165,31 +165,56 @@ static int of_get_mac_address_mtd(struct
   * If a mtd-mac-address property exists, try to fetch the MAC address from the
   * specified mtd device.
   *
@@ -77,52 +32,53 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 + *   not overflow to other bytes if the increment is over 255.
 + *   (example 00:01:02:03:04:ff + 1 == 00:01:02:03:04:00)
 + *
-  * Return: Will be a valid pointer on success and ERR_PTR in case of error.
+  * Return: 0 on success and errno in case of error.
  */
- const void *of_get_mac_address(struct device_node *np)
+ int of_get_mac_address(struct device_node *np, u8 *addr)
  {
--	const void *addr;
 +	u32 inc_idx, mac_inc;
-+	int ret = 0;
-+	u8 *addr;
-+
+ 	int ret;
+ 
 +	/* Check first if the increment byte is present and valid.
 +	 * If not set assume to increment the last byte if found.
 +	 */
 +	if (of_property_read_u32(np, "mac-address-increment-byte", &inc_idx))
 +		inc_idx = 5;
 +	if (inc_idx < 3 || inc_idx > 5)
-+		return ERR_PTR(-EINVAL);
++		return -EINVAL;
++
+ 	if (!np)
+ 		return -ENODEV;
  
- 	addr = of_get_mac_addr(np, "mac-address");
- 	if (addr)
--		return addr;
+ 	ret = of_get_mac_addr(np, "mac-address", addr);
+ 	if (!ret)
+-		return 0;
 +		goto found;
  
- 	addr = of_get_mac_addr(np, "local-mac-address");
- 	if (addr)
--		return addr;
+ 	ret = of_get_mac_addr(np, "local-mac-address", addr);
+ 	if (!ret)
+-		return 0;
 +		goto found;
  
- 	addr = of_get_mac_addr(np, "address");
- 	if (addr)
--		return addr;
+ 	ret = of_get_mac_addr(np, "address", addr);
+ 	if (!ret)
+-		return 0;
 +		goto found;
  
- 	addr = of_get_mac_address_mtd(np);
- 	if (addr)
--		return addr;
+ 	ret = of_get_mac_address_mtd(np, addr);
+ 	if (!ret)
+-		return 0;
 +		goto found;
 +
-+	addr = of_get_mac_addr_nvmem(np, &ret);
++	ret = of_get_mac_addr_nvmem(np, addr);
 +	if (ret)
-+		return ERR_PTR(ret);
++		return ret;
 +
 +found:
 +	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc))
 +		addr[inc_idx] += mac_inc;
  
--	return of_get_mac_addr_nvmem(np);
-+	return addr;
+-	return of_get_mac_addr_nvmem(np, addr);
++	return ret;
  }
  EXPORT_SYMBOL(of_get_mac_address);
