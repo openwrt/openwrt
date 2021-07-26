@@ -121,7 +121,7 @@ load_led() {
 	}
 }
 
-start() {
+stop() {
 	[ -e /sys/class/leds/ ] && {
 		[ -s /var/run/led.state ] && {
 			local led trigger brightness
@@ -134,7 +134,12 @@ start() {
 			done < /var/run/led.state
 			rm /var/run/led.state
 		}
+	}
+}
 
+start() {
+	[ -e /sys/class/leds/ ] && {
+		stop
 		config_load system
 		config_foreach load_led led
 	}
