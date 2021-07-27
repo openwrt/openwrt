@@ -71,6 +71,7 @@ ramips_setup_interfaces()
 	hilink,hlk-7628n|\
 	hilink,hlk-7688a|\
 	hiwifi,hc5861b|\
+	qihoo,p2|\
 	skylab,skw92a|\
 	tplink,archer-c20-v4|\
 	tplink,archer-c20-v5|\
@@ -215,6 +216,10 @@ ramips_setup_macs()
 		;;
 	mercury,mac1200r-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory_info 0xd)" 1)
+		;;
+	qihoo,p2)
+		wan_mac=$(mtd_get_mac_binary factory 0xffee)
+		label_mac=$wan_mac
 		;;
 	rakwireless,rak633|\
 	unielec,u7628-01-16m|\

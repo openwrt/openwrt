@@ -335,6 +335,15 @@ define Device/onion_omega2p
 endef
 TARGET_DEVICES += onion_omega2p
 
+define Device/qihoo_p2
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Qihoo
+  DEVICE_MODEL := P2
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb-ohci kmod-usb2 \
+	kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += qihoo_p2
+
 define Device/rakwireless_rak633
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Rakwireless
