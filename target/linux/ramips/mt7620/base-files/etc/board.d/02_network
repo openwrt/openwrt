@@ -107,7 +107,8 @@ ramips_setup_interfaces()
 		;;
 	dlink,dir-810l|\
 	netgear,jwnr2010-v5|\
-	phicomm,psg1218a|\
+	phicomm,k2-v22.4|\
+	phicomm,k2-v22.5|\
 	trendnet,tew-810dr|\
 	zbtlink,zbt-we2026)
 		ucidef_add_switch "switch0" \
@@ -339,8 +340,9 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary u-boot 0x1fc20)" 2)
 		;;
 	lb-link,bl-w1200|\
+	phicomm,k2-v22.4|\
+	phicomm,k2-v22.5|\
 	phicomm,k2g|\
-	phicomm,psg1218a|\
 	phicomm,psg1218b)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		label_mac=$wan_mac
