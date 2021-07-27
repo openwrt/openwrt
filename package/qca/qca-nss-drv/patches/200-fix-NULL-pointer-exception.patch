@@ -1,0 +1,31 @@
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -1599,7 +1599,7 @@ static int32_t nss_core_handle_cause_que
+ 		 *
+ 		 */
+ 		if (unlikely((buffer_type == N2H_BUFFER_CRYPTO_RESP))) {
+-			dma_unmap_single(NULL, (desc->buffer + desc->payload_offs), desc->payload_len, DMA_FROM_DEVICE);
++			dma_unmap_single(nss_ctx->dev, (desc->buffer + desc->payload_offs), desc->payload_len, DMA_FROM_DEVICE);
+ 			goto consume;
+ 		}
+ 
+--- a/nss_coredump.c
++++ b/nss_coredump.c
+@@ -154,7 +154,7 @@ void nss_fw_coredump_notify(struct nss_c
+ 		dma_addr = nss_own->meminfo_ctx.logbuffer_dma;
+ 	}
+ 
+-	dma_sync_single_for_cpu(NULL, dma_addr, sizeof(struct nss_log_descriptor), DMA_FROM_DEVICE);
++	dma_sync_single_for_cpu(nss_own->dev, dma_addr, sizeof(struct nss_log_descriptor), DMA_FROM_DEVICE);
+ 
+ 	/*
+ 	 * If the current entry is smaller than or equal to the number of NSS_LOG_COREDUMP_LINE_NUM,
+@@ -181,7 +181,7 @@ void nss_fw_coredump_notify(struct nss_c
+ 
+ 		offset = (index * sizeof(struct nss_log_entry))
+ 			+ offsetof(struct nss_log_descriptor, log_ring_buffer);
+-		dma_sync_single_for_cpu(NULL, dma_addr + offset,
++		dma_sync_single_for_cpu(nss_own->dev, dma_addr + offset,
+ 				sizeof(struct nss_log_entry), DMA_FROM_DEVICE);
+ 		nss_info_always("%p: %s\n", nss_own, nle_print->message);
+ 		nle_print++;
