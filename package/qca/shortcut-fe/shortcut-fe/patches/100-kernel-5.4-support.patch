@@ -1,0 +1,176 @@
+--- a/shortcut-fe/sfe_backport.h
++++ b/shortcut-fe/sfe_backport.h
+@@ -180,7 +180,7 @@ static inline struct net_device *sfe_dev
+ #endif
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
+-#define sfe_dst_get_neighbour(dst, daddr) dst_neigh_lookup(dst, addr)
++#define sfe_dst_get_neighbour(dst, daddr) dst_neigh_lookup(dst, daddr)
+ #else
+ static inline struct neighbour *
+ sfe_dst_get_neighbour(struct dst_entry *dst, void *daddr)
+--- a/shortcut-fe/sfe_cm.c
++++ b/shortcut-fe/sfe_cm.c
+@@ -219,7 +219,7 @@ static bool sfe_cm_find_dev_and_mac_addr
+ 
+ 		dst = (struct dst_entry *)rt;
+ 	} else {
+-		rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, 0, 0, 0);
++		rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, 0, 0, NULL, 0);
+ 		if (!rt6) {
+ 			goto ret_fail;
+ 		}
+@@ -348,15 +348,6 @@ static unsigned int sfe_cm_post_routing(
+ 	}
+ 
+ 	/*
+-	 * Don't process untracked connections.
+-	 */
+-	if (unlikely(nf_ct_is_untracked(ct))) {
+-		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_CT_NO_TRACK);
+-		DEBUG_TRACE("untracked connection\n");
+-		return NF_ACCEPT;
+-	}
+-
+-	/*
+ 	 * Unconfirmed connection may be dropped by Linux at the final step,
+ 	 * So we don't process unconfirmed connections.
+ 	 */
+@@ -526,7 +517,7 @@ static unsigned int sfe_cm_post_routing(
+ 	 * For packets de-capsulated from xfrm, we still can accelerate it
+ 	 * on the direction we just received the packet.
+ 	 */
+-	if (unlikely(skb->sp)) {
++	if (unlikely(skb_ext_exist(skb, SKB_EXT_SEC_PATH))) {
+ 		if (sic.protocol == IPPROTO_TCP &&
+ 		    !(sic.flags & SFE_CREATE_FLAG_NO_SEQ_CHECK)) {
+ 			return NF_ACCEPT;
+@@ -677,14 +668,6 @@ static int sfe_cm_conntrack_event(unsign
+ 	}
+ 
+ 	/*
+-	 * If this is an untracked connection then we can't have any state either.
+-	 */
+-	if (unlikely(nf_ct_is_untracked(ct))) {
+-		DEBUG_TRACE("ignoring untracked conn\n");
+-		return NOTIFY_DONE;
+-	}
+-
+-	/*
+ 	 * We're only interested in destroy events.
+ 	 */
+ 	if (unlikely(!(events & (1 << IPCT_DESTROY)))) {
+@@ -810,14 +793,13 @@ static void sfe_cm_sync_rule(struct sfe_
+ 	}
+ 
+ 	ct = nf_ct_tuplehash_to_ctrack(h);
+-	NF_CT_ASSERT(ct->timeout.data == (unsigned long)ct);
+ 
+ 	/*
+ 	 * Only update if this is not a fixed timeout
+ 	 */
+ 	if (!test_bit(IPS_FIXED_TIMEOUT_BIT, &ct->status)) {
+ 		spin_lock_bh(&ct->lock);
+-		ct->timeout.expires += sis->delta_jiffies;
++		ct->timeout += sis->delta_jiffies;
+ 		spin_unlock_bh(&ct->lock);
+ 	}
+ 
+@@ -871,17 +853,15 @@ static void sfe_cm_sync_rule(struct sfe_
+ 			u_int64_t reply_pkts = atomic64_read(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets);
+ 
+ 			if (reply_pkts != 0) {
+-				struct nf_conntrack_l4proto *l4proto;
+ 				unsigned int *timeouts;
+ 
+ 				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+ 
+-				l4proto = __nf_ct_l4proto_find((sis->is_v6 ? AF_INET6 : AF_INET), IPPROTO_UDP);
+-				timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
++				timeouts = nf_ct_timeout_lookup(ct);
+ 
+ 				spin_lock_bh(&ct->lock);
+-				ct->timeout.expires = jiffies + timeouts[UDP_CT_REPLIED];
++				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+ 				spin_unlock_bh(&ct->lock);
+ 			}
+ 		}
+@@ -1008,7 +988,8 @@ static int __init sfe_cm_init(void)
+ 	/*
+ 	 * Register our netfilter hooks.
+ 	 */
+-	result = nf_register_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
++	result = nf_register_net_hooks(&init_net, sfe_cm_ops_post_routing, \
++				       ARRAY_SIZE(sfe_cm_ops_post_routing));
+ 	if (result < 0) {
+ 		DEBUG_ERROR("can't register nf post routing hook: %d\n", result);
+ 		goto exit3;
+@@ -1049,7 +1030,8 @@ static int __init sfe_cm_init(void)
+ #ifdef CONFIG_NF_CONNTRACK_EVENTS
+ #ifndef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
+ exit4:
+-	nf_unregister_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
++	nf_unregister_net_hooks(&init_net, sfe_cm_ops_post_routing, \
++				ARRAY_SIZE(sfe_cm_ops_post_routing));
+ #endif
+ #endif
+ exit3:
+@@ -1098,7 +1080,8 @@ static void __exit sfe_cm_exit(void)
+ 	nf_conntrack_unregister_notifier(&init_net, &sfe_cm_conntrack_notifier);
+ 
+ #endif
+-	nf_unregister_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
++	nf_unregister_net_hooks(&init_net, sfe_cm_ops_post_routing, \
++				ARRAY_SIZE(sfe_cm_ops_post_routing));
+ 
+ 	unregister_inet6addr_notifier(&sc->inet6_notifier);
+ 	unregister_inetaddr_notifier(&sc->inet_notifier);
+--- a/shortcut-fe/sfe_ipv4.c
++++ b/shortcut-fe/sfe_ipv4.c
+@@ -2847,9 +2847,9 @@ another_round:
+ /*
+  * sfe_ipv4_periodic_sync()
+  */
+-static void sfe_ipv4_periodic_sync(unsigned long arg)
++static void sfe_ipv4_periodic_sync(struct timer_list *arg)
+ {
+-	struct sfe_ipv4 *si = (struct sfe_ipv4 *)arg;
++	struct sfe_ipv4 *si = (struct sfe_ipv4 *)arg->cust_data;
+ 	u64 now_jiffies;
+ 	int quota;
+ 	sfe_sync_rule_callback_t sync_rule_callback;
+@@ -3528,7 +3528,8 @@ static int __init sfe_ipv4_init(void)
+ 	/*
+ 	 * Create a timer to handle periodic statistics.
+ 	 */
+-	setup_timer(&si->timer, sfe_ipv4_periodic_sync, (unsigned long)si);
++	timer_setup(&si->timer, sfe_ipv4_periodic_sync, 0);
++	si->timer.cust_data = (unsigned long)si;
+ 	mod_timer(&si->timer, jiffies + ((HZ + 99) / 100));
+ 
+ 	spin_lock_init(&si->lock);
+--- a/shortcut-fe/sfe_ipv6.c
++++ b/shortcut-fe/sfe_ipv6.c
+@@ -2855,9 +2855,9 @@ another_round:
+ /*
+  * sfe_ipv6_periodic_sync()
+  */
+-static void sfe_ipv6_periodic_sync(unsigned long arg)
++static void sfe_ipv6_periodic_sync(struct timer_list *arg)
+ {
+-	struct sfe_ipv6 *si = (struct sfe_ipv6 *)arg;
++	struct sfe_ipv6 *si = (struct sfe_ipv6 *)arg->cust_data;
+ 	u64 now_jiffies;
+ 	int quota;
+ 	sfe_sync_rule_callback_t sync_rule_callback;
+@@ -3536,7 +3536,8 @@ static int __init sfe_ipv6_init(void)
+ 	/*
+ 	 * Create a timer to handle periodic statistics.
+ 	 */
+-	setup_timer(&si->timer, sfe_ipv6_periodic_sync, (unsigned long)si);
++	timer_setup(&si->timer, sfe_ipv6_periodic_sync, 0);
++	si->timer.cust_data = (unsigned long)si;
+ 	mod_timer(&si->timer, jiffies + ((HZ + 99) / 100));
+ 
+ 	spin_lock_init(&si->lock);
