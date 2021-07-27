@@ -1,0 +1,11 @@
+--- a/frontends/nss/ecm_nss_common.h
++++ b/frontends/nss/ecm_nss_common.h
+@@ -272,7 +272,7 @@ static inline bool ecm_nss_common_igs_ac
+ 		/*
+ 		 * Check whether ingress qdisc is attached to the egress device or not.
+ 		 */
+-		if (likely(!(to_dev->ingress_cl_list))) {
++		if (likely(!(to_dev->miniq_ingress->filter_list))) {
+ 			dev_put(to_dev);
+ 			continue;
+ 		}

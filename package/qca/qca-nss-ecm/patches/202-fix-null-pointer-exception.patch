@@ -1,0 +1,44 @@
+--- a/frontends/nss/ecm_nss_ipv4.c
++++ b/frontends/nss/ecm_nss_ipv4.c
+@@ -2324,6 +2324,8 @@ sync_conntrack:
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+ 
+ 				timeouts = nf_ct_timeout_lookup(ct);
++				if (!timeouts)
++					timeouts = nf_udp_pernet(nf_ct_net(ct))->timeouts;
+ 
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+--- a/frontends/nss/ecm_nss_ipv6.c
++++ b/frontends/nss/ecm_nss_ipv6.c
+@@ -2042,6 +2042,8 @@ sync_conntrack:
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+ 
+ 				timeouts = nf_ct_timeout_lookup(ct);
++				if (!timeouts)
++					timeouts = nf_udp_pernet(nf_ct_net(ct))->timeouts;
+ 
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+--- a/frontends/sfe/ecm_sfe_ipv4.c
++++ b/frontends/sfe/ecm_sfe_ipv4.c
+@@ -1609,6 +1609,8 @@ sync_conntrack:
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+ 
+ 				timeouts = nf_ct_timeout_lookup(ct);
++				if (!timeouts)
++					timeouts = nf_udp_pernet(nf_ct_net(ct))->timeouts;
+ 
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+--- a/frontends/sfe/ecm_sfe_ipv6.c
++++ b/frontends/sfe/ecm_sfe_ipv6.c
+@@ -1337,6 +1337,8 @@ sync_conntrack:
+ 				set_bit(IPS_ASSURED_BIT, &ct->status);
+ 
+ 				timeouts = nf_ct_timeout_lookup(ct);
++				if (!timeouts)
++					timeouts = nf_udp_pernet(nf_ct_net(ct))->timeouts;
+ 
+ 				spin_lock_bh(&ct->lock);
+ 				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
