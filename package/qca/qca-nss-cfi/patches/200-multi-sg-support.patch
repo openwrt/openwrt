@@ -1,0 +1,124 @@
+--- a/cryptoapi/v1.1/nss_cryptoapi_ablk.c
++++ b/cryptoapi/v1.1/nss_cryptoapi_ablk.c
+@@ -58,6 +58,8 @@ struct nss_cryptoapi_ablk_info {
+ 	nss_crypto_comp_t cb_fn;
+ };
+ 
++int nss_cryptoapi_ablk_checkaddr(struct skcipher_request *req);
++
+ /*
+  * nss_cryptoapi_skcipher_ctx2session()
+  *	Cryptoapi function to get the session ID for an skcipher
+@@ -302,6 +304,7 @@ void nss_cryptoapi_skcipher_done(struct
+ 	struct nss_cryptoapi_ctx *ctx;
+ 	struct skcipher_request *req;
+ 	int err = 0;
++	int copied_bytes;
+ 
+ 	nss_cfi_assert(buf);
+ 
+@@ -313,6 +316,17 @@ void nss_cryptoapi_skcipher_done(struct
+ 	ctx = crypto_tfm_ctx(req->base.tfm);
+ 	nss_cryptoapi_verify_magic(ctx);
+ 
++	if (nss_cryptoapi_ablk_checkaddr(req)) {
++		copied_bytes = sg_copy_buffer(req->dst, sg_nents(req->dst),
++					      phys_to_virt(buf->data_out),
++					      req->cryptlen, 0, false);
++		kfree(phys_to_virt(buf->data_out));
++
++		if (copied_bytes != req->cryptlen)
++			nss_cfi_err("Failed to copy results to sg - [%d/%d]\n",
++				    copied_bytes, req->cryptlen);
++	}
++
+ 	/*
+ 	 * Free Crypto buffer.
+ 	 */
+@@ -344,13 +358,11 @@ int nss_cryptoapi_ablk_checkaddr(struct
+ 	 * 	return error, if caller send multiple sg for any of src and dst.
+ 	 */
+ 	if (nss_cryptoapi_sg_has_frags(req->src)) {
+-		nss_cfi_err("Only single sg supported: src invalid\n");
+-		return -EINVAL;
++		return 1;
+ 	}
+ 
+ 	if (nss_cryptoapi_sg_has_frags(req->dst)) {
+-		nss_cfi_err("Only single sg supported: dst invalid\n");
+-		return -EINVAL;
++		return 1;
+ 	}
+ 
+ 	/*
+@@ -358,7 +370,7 @@ int nss_cryptoapi_ablk_checkaddr(struct
+ 	 */
+ 	if (req->cryptlen > NSS_CRYPTOAPI_MAX_DATA_LEN) {
+ 		nss_cfi_err("Buffer length exceeded limit\n");
+-		return -EINVAL;
++		return -1;
+ 	}
+ 
+ 	return 0;
+@@ -378,6 +390,9 @@ struct nss_crypto_buf *nss_cryptoapi_abl
+ 	uint16_t iv_size;
+ 	uint16_t cipher_len = 0, auth_len = 0;
+ 	uint8_t *iv_addr;
++	int multi_sg;
++	u8 *big_buf;
++	int copied_bytes;
+ 
+ 	nss_cfi_assert(ctx);
+ 
+@@ -387,11 +402,34 @@ struct nss_crypto_buf *nss_cryptoapi_abl
+ 	info->params->cipher_skip = 0;
+ 	info->params->auth_skip = 0;
+ 
+-	if (nss_cryptoapi_ablk_checkaddr(req)) {
+-		nss_cfi_err("Invalid address!!\n");
++	multi_sg = nss_cryptoapi_ablk_checkaddr(req);
++	if (multi_sg < 0) {
+ 		return NULL;
+ 	}
+ 
++	if (multi_sg) {
++		/*
++		 * Since we have multi sg segments, we'll just copy all into
++		 * one big buffer to workaround the ipq806x crypto engine's
++		 * limitation of only processing one buffer at any time.
++		 */
++		big_buf = kmalloc(req->cryptlen, GFP_KERNEL);
++		if (!big_buf) {
++			nss_cfi_err("Failed to allocate memory for buffer\n");
++
++			return NULL;
++		}
++
++		copied_bytes = sg_copy_buffer(req->src, sg_nents(req->src),
++					      big_buf, req->cryptlen, 0, true);
++		if (copied_bytes != req->cryptlen) {
++			kfree(big_buf);
++			nss_cfi_err("Failed to copy sg data to buffer\n");
++
++			return NULL;
++		}
++	}
++
+ 	/*
+ 	 * Update the crypto session data
+ 	 */
+@@ -449,7 +487,13 @@ struct nss_crypto_buf *nss_cryptoapi_abl
+ 	cipher_len = req->cryptlen;
+ 	auth_len = 0;
+ 
+-	nss_crypto_set_data(buf, sg_virt(req->src), sg_virt(req->dst), cipher_len);
++	if (multi_sg) {
++		nss_crypto_set_data(buf, big_buf, big_buf, cipher_len);
++	}
++	else {
++		nss_crypto_set_data(buf, sg_virt(req->src), sg_virt(req->dst), cipher_len);
++	}
++
+ 	nss_crypto_set_transform_len(buf, cipher_len, auth_len);
+ 
+ 	nss_cfi_dbg("cipher_len: %d, iv_len: %d, auth_len: %d"

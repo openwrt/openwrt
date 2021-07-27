@@ -1,0 +1,137 @@
+--- a/cryptoapi/v1.1/nss_cryptoapi_private.h
++++ b/cryptoapi/v1.1/nss_cryptoapi_private.h
+@@ -81,6 +81,7 @@ struct nss_cryptoapi_ctx {
+ 	enum nss_crypto_cipher cip_alg;
+ 	enum nss_crypto_auth auth_alg;
+ 	enum nss_crypto_req_type op;
++	bool is_rfc3686;
+ };
+ 
+ static inline void nss_cryptoapi_verify_magic(struct nss_cryptoapi_ctx *ctx)
+--- a/cryptoapi/v1.1/nss_cryptoapi.c
++++ b/cryptoapi/v1.1/nss_cryptoapi.c
+@@ -195,6 +195,26 @@ struct aead_alg cryptoapi_aead_algs[] =
+ static struct skcipher_alg cryptoapi_skcipher_algs[] = {
+ 	{
+ 		.base = {
++			.cra_name       = "ctr(aes)",
++			.cra_driver_name = "nss-ctr-aes",
++			.cra_priority   = 10000,
++			.cra_flags      = CRYPTO_ALG_ASYNC | CRYPTO_ALG_NEED_FALLBACK | CRYPTO_ALG_KERN_DRIVER_ONLY,
++			.cra_blocksize  = AES_BLOCK_SIZE,
++			.cra_ctxsize    = sizeof(struct nss_cryptoapi_ctx),
++			.cra_alignmask  = 0,
++			.cra_module     = THIS_MODULE,
++		},
++		.init           = nss_cryptoapi_skcipher_init,
++		.exit           = nss_cryptoapi_skcipher_exit,
++		.ivsize         = AES_BLOCK_SIZE,
++		.min_keysize    = AES_MIN_KEY_SIZE,
++		.max_keysize    = AES_MAX_KEY_SIZE,
++		.setkey         = nss_cryptoapi_skc_aes_setkey,
++		.encrypt        = nss_cryptoapi_skc_aes_encrypt,
++		.decrypt        = nss_cryptoapi_skc_aes_decrypt,
++	},
++	{
++		.base = {
+ 			.cra_name       = "cbc(aes)",
+ 			.cra_driver_name = "nss-cbc-aes",
+ 			.cra_priority   = 10000,
+--- a/cryptoapi/v1.1/nss_cryptoapi_ablk.c
++++ b/cryptoapi/v1.1/nss_cryptoapi_ablk.c
+@@ -120,6 +120,7 @@ int nss_cryptoapi_skcipher_init(struct c
+ 	ctx->queue_failed = 0;
+ 	ctx->fallback_req = 0;
+ 	ctx->sw_tfm = NULL;
++	ctx->is_rfc3686 = false;
+ 	atomic_set(&ctx->refcnt, 0);
+ 
+ 	nss_cryptoapi_set_magic(ctx);
+@@ -216,6 +217,7 @@ int nss_cryptoapi_skc_aes_setkey(struct
+ 	 */
+ 	if (!strncmp("nss-rfc3686-ctr-aes", crypto_tfm_alg_driver_name(tfm), CRYPTO_MAX_ALG_NAME)) {
+ 		cip.algo = NSS_CRYPTO_CIPHER_AES_CTR;
++		ctx->is_rfc3686 = true;
+ 
+ 		/*
+ 		 * For RFC3686 CTR mode we construct the IV such that
+@@ -228,9 +230,15 @@ int nss_cryptoapi_skc_aes_setkey(struct
+ 		ctx->ctx_iv[0] = *(uint32_t *)(cip.key + cip.key_len);
+ 		ctx->ctx_iv[3] = ntohl(0x1);
+ 
+-	} else if (!strncmp("nss-cbc-aes", crypto_tfm_alg_driver_name(tfm), CRYPTO_MAX_ALG_NAME)) {
++	}
++	else if (!strncmp("nss-cbc-aes", crypto_tfm_alg_driver_name(tfm), CRYPTO_MAX_ALG_NAME)) {
+ 		cip.algo = NSS_CRYPTO_CIPHER_AES_CBC;
+-	} else
++	}
++	else if (!strncmp("nss-ctr-aes", crypto_tfm_alg_driver_name(tfm), CRYPTO_MAX_ALG_NAME)) {
++		cip.algo = NSS_CRYPTO_CIPHER_AES_CTR;
++		ctx->is_rfc3686 = false;
++	}
++	else
+ 		goto fail;
+ 
+ 	ctx->cip_alg = cip.algo;
+@@ -340,6 +348,30 @@ void nss_cryptoapi_skcipher_done(struct
+ 	}
+ 
+ skip_nr_iv:
++	/* For AES-CTR mode, calculate the next round IV */
++	if (ctx->cip_alg == NSS_CRYPTO_CIPHER_AES_CTR && !ctx->is_rfc3686) {
++		uint64_t iv_part = 0;
++		uint32_t iv_incr = 0;
++		int idx;
++
++		/* Get IV counter increments */
++		iv_incr = req->cryptlen >> 4;
++		if (req->cryptlen & 0xF)
++			iv_incr++;
++
++		iv_part = ntohl(((uint32_t *)req->iv)[3]) + iv_incr;
++		((uint32_t *)req->iv)[3] = htonl(iv_part & 0xFFFFFFFF);
++		if (unlikely(iv_part & 0xFFFFFFFF00000000)) {
++			for (idx = 2; idx >=0; idx--) {
++				iv_part = ntohl(((uint32_t *)req->iv)[idx]) + 1;
++				((uint32_t *)req->iv)[idx] = htonl(iv_part & 0xFFFFFFFF);
++
++				if (likely(!(iv_part & 0xFFFFFFFF00000000)))
++					break;
++			}
++		}
++	}
++
+ 	if (nss_cryptoapi_ablk_checkaddr(req)) {
+ 		copied_bytes = sg_copy_buffer(req->dst, sg_nents(req->dst),
+ 					      phys_to_virt(buf->data_out),
+@@ -486,7 +494,16 @@ struct nss_crypto_buf *nss_cryptoapi_abl
+ 	iv_addr = nss_crypto_get_ivaddr(buf);
+ 
+ 	switch (ctx->cip_alg) {
++	case NSS_CRYPTO_CIPHER_AES_CTR:
+ 	case NSS_CRYPTO_CIPHER_AES_CBC:
++		if (unlikely(ctx->is_rfc3686)) {
++			((uint32_t *)iv_addr)[0] = ctx->ctx_iv[0];
++			((uint32_t *)iv_addr)[1] = ((uint32_t *)req->iv)[0];
++			((uint32_t *)iv_addr)[2] = ((uint32_t *)req->iv)[1];
++			((uint32_t *)iv_addr)[3] = ctx->ctx_iv[3];
++			break;
++		}
++
+ 		((uint32_t *)iv_addr)[2] = ((uint32_t *)req->iv)[2];
+ 		((uint32_t *)iv_addr)[3] = ((uint32_t *)req->iv)[3];
+ 		/* fall-through */
+@@ -496,13 +513,6 @@ struct nss_crypto_buf *nss_cryptoapi_abl
+ 		((uint32_t *)iv_addr)[1] = ((uint32_t *)req->iv)[1];
+ 		break;
+ 
+-	case NSS_CRYPTO_CIPHER_AES_CTR:
+-		((uint32_t *)iv_addr)[0] = ctx->ctx_iv[0];
+-		((uint32_t *)iv_addr)[1] = ((uint32_t *)req->iv)[0];
+-		((uint32_t *)iv_addr)[2] = ((uint32_t *)req->iv)[1];
+-		((uint32_t *)iv_addr)[3] = ctx->ctx_iv[3];
+-		break;
+-
+ 	default:
+ 		/*
+ 		 * Should never happen

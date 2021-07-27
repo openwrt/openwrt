@@ -1,0 +1,171 @@
+--- a/cryptoapi/v1.1/nss_cryptoapi_ablk.c
++++ b/cryptoapi/v1.1/nss_cryptoapi_ablk.c
+@@ -305,6 +305,7 @@ void nss_cryptoapi_skcipher_done(struct
+ 	struct skcipher_request *req;
+ 	int err = 0;
+ 	int copied_bytes;
++	uint8_t *nr_iv_vaddr;
+ 
+ 	nss_cfi_assert(buf);
+ 
+@@ -316,6 +317,29 @@ void nss_cryptoapi_skcipher_done(struct
+ 	ctx = crypto_tfm_ctx(req->base.tfm);
+ 	nss_cryptoapi_verify_magic(ctx);
+ 
++	if (ctx->op == NSS_CRYPTO_REQ_TYPE_DECRYPT)
++		goto skip_nr_iv;
++
++	/* Store IV for next round (CBC mode only) */
++	nr_iv_vaddr = phys_to_virt(buf->data_out) + req->cryptlen - NSS_CRYPTO_MAX_IVLEN_DES;
++	switch (ctx->cip_alg) {
++		case NSS_CRYPTO_CIPHER_AES_CBC:
++			nr_iv_vaddr -= NSS_CRYPTO_MAX_IVLEN_DES;
++			((uint32_t *)req->iv)[2] = ((uint32_t *)nr_iv_vaddr)[2];
++			((uint32_t *)req->iv)[3] = ((uint32_t *)nr_iv_vaddr)[3];
++			/* fall-through */
++
++		case NSS_CRYPTO_CIPHER_DES:
++			((uint32_t *)req->iv)[0] = ((uint32_t *)nr_iv_vaddr)[0];
++			((uint32_t *)req->iv)[1] = ((uint32_t *)nr_iv_vaddr)[1];
++			break;
++
++		default:
++			/* Ignore others for now */
++			break;
++	}
++
++skip_nr_iv:
+ 	if (nss_cryptoapi_ablk_checkaddr(req)) {
+ 		copied_bytes = sg_copy_buffer(req->dst, sg_nents(req->dst),
+ 					      phys_to_virt(buf->data_out),
+@@ -390,6 +414,7 @@ struct nss_crypto_buf *nss_cryptoapi_abl
+ 	uint16_t iv_size;
+ 	uint16_t cipher_len = 0, auth_len = 0;
+ 	uint8_t *iv_addr;
++	uint32_t *src_iv_vaddr;
+ 	int multi_sg;
+ 	u8 *big_buf;
+ 	int copied_bytes;
+@@ -462,8 +487,13 @@ struct nss_crypto_buf *nss_cryptoapi_abl
+ 
+ 	switch (ctx->cip_alg) {
+ 	case NSS_CRYPTO_CIPHER_AES_CBC:
++		((uint32_t *)iv_addr)[2] = ((uint32_t *)req->iv)[2];
++		((uint32_t *)iv_addr)[3] = ((uint32_t *)req->iv)[3];
++		/* fall-through */
++
+ 	case NSS_CRYPTO_CIPHER_DES:
+-		memcpy(iv_addr, req->iv, iv_size);
++		((uint32_t *)iv_addr)[0] = ((uint32_t *)req->iv)[0];
++		((uint32_t *)iv_addr)[1] = ((uint32_t *)req->iv)[1];
+ 		break;
+ 
+ 	case NSS_CRYPTO_CIPHER_AES_CTR:
+@@ -494,6 +524,26 @@ struct nss_crypto_buf *nss_cryptoapi_abl
+ 		nss_crypto_set_data(buf, sg_virt(req->src), sg_virt(req->dst), cipher_len);
+ 	}
+ 
++	/* For CBC decrypt, we need source crypt-text as IV for next round */
++	if (ctx->op == NSS_CRYPTO_REQ_TYPE_DECRYPT) {
++		src_iv_vaddr = (uint32_t *)((uint8_t *)buf->data_in + req->cryptlen - iv_size);
++		switch (ctx->cip_alg) {
++			case NSS_CRYPTO_CIPHER_AES_CBC:
++				((uint32_t *)req->iv)[2] = src_iv_vaddr[2];
++				((uint32_t *)req->iv)[3] = src_iv_vaddr[3];
++				/* fall-through */
++
++			case NSS_CRYPTO_CIPHER_DES:
++				((uint32_t *)req->iv)[0] = src_iv_vaddr[0];
++				((uint32_t *)req->iv)[1] = src_iv_vaddr[1];
++				break;
++
++			default:
++				/* Ignore for others */
++				break;
++		}
++	}
++
+ 	nss_crypto_set_transform_len(buf, cipher_len, auth_len);
+ 
+ 	nss_cfi_dbg("cipher_len: %d, iv_len: %d, auth_len: %d"
+@@ -544,6 +594,12 @@ int nss_cryptoapi_skcipher_fallback(stru
+ 	return err;
+ }
+ 
++static void nss_cryptoapi_free_membuf(struct skcipher_request *req, struct nss_crypto_buf *buf)
++{
++	if (nss_cryptoapi_ablk_checkaddr(req) > 0)
++		kfree(phys_to_virt(buf->data_out));
++}
++
+ /*
+  * nss_cryptoapi_skc_aes_encrypt()
+  * 	Crytoapi encrypt for aes(aes-cbc/rfc3686-aes-ctr) algorithms.
+@@ -589,6 +645,8 @@ int nss_cryptoapi_skc_aes_encrypt(struct
+ 		return -EINVAL;
+ 	}
+ 
++	ctx->op = NSS_CRYPTO_REQ_TYPE_ENCRYPT;
++
+ 	buf = nss_cryptoapi_ablk_transform(req, &info);
+ 	if (!buf) {
+ 		nss_cfi_err("Invalid parameters\n");
+@@ -600,6 +658,7 @@ int nss_cryptoapi_skc_aes_encrypt(struct
+ 	 */
+ 	if (nss_crypto_transform_payload(sc->crypto, buf) != NSS_CRYPTO_STATUS_OK) {
+ 		nss_cfi_info("Not enough resources with driver\n");
++		nss_cryptoapi_free_membuf(req, buf);
+ 		nss_crypto_buf_free(sc->crypto, buf);
+ 		ctx->queue_failed++;
+ 		return -EINVAL;
+@@ -656,6 +715,8 @@ int nss_cryptoapi_skc_aes_decrypt(struct
+ 		return -EINVAL;
+ 	}
+ 
++	ctx->op = NSS_CRYPTO_REQ_TYPE_DECRYPT;
++
+ 	buf = nss_cryptoapi_ablk_transform(req, &info);
+ 	if (!buf) {
+ 		nss_cfi_err("Invalid parameters\n");
+@@ -667,6 +728,7 @@ int nss_cryptoapi_skc_aes_decrypt(struct
+ 	 */
+ 	if (nss_crypto_transform_payload(sc->crypto, buf) != NSS_CRYPTO_STATUS_OK) {
+ 		nss_cfi_info("Not enough resources with driver\n");
++		nss_cryptoapi_free_membuf(req, buf);
+ 		nss_crypto_buf_free(sc->crypto, buf);
+ 		ctx->queue_failed++;
+ 		return -EINVAL;
+@@ -780,6 +842,8 @@ int nss_cryptoapi_3des_cbc_encrypt(struc
+ 	info.params = &params;
+ 	info.cb_fn = nss_cryptoapi_skcipher_done;
+ 
++	ctx->op = NSS_CRYPTO_REQ_TYPE_ENCRYPT;
++
+ 	buf = nss_cryptoapi_ablk_transform(req, &info);
+ 	if (!buf) {
+ 		nss_cfi_err("Invalid parameters\n");
+@@ -791,6 +855,7 @@ int nss_cryptoapi_3des_cbc_encrypt(struc
+ 	 */
+ 	if (nss_crypto_transform_payload(sc->crypto, buf) != NSS_CRYPTO_STATUS_OK) {
+ 		nss_cfi_info("Not enough resources with driver\n");
++		nss_cryptoapi_free_membuf(req, buf);
+ 		nss_crypto_buf_free(sc->crypto, buf);
+ 		ctx->queue_failed++;
+ 		return -EINVAL;
+@@ -841,6 +906,8 @@ int nss_cryptoapi_3des_cbc_decrypt(struc
+ 	info.params = &params;
+ 	info.cb_fn = nss_cryptoapi_skcipher_done;
+ 
++	ctx->op = NSS_CRYPTO_REQ_TYPE_DECRYPT;
++
+ 	buf = nss_cryptoapi_ablk_transform(req, &info);
+ 	if (!buf) {
+ 		nss_cfi_err("Invalid parameters\n");
+@@ -852,6 +919,7 @@ int nss_cryptoapi_3des_cbc_decrypt(struc
+ 	 */
+ 	if (nss_crypto_transform_payload(sc->crypto, buf) != NSS_CRYPTO_STATUS_OK) {
+ 		nss_cfi_info("Not enough resources with driver\n");
++		nss_cryptoapi_free_membuf(req, buf);
+ 		nss_crypto_buf_free(sc->crypto, buf);
+ 		ctx->queue_failed++;
+ 		return -EINVAL;

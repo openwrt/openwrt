@@ -1,0 +1,20 @@
+--- a/include/linux/crypto.h
++++ b/include/linux/crypto.h
+@@ -1850,5 +1850,17 @@ static inline int crypto_comp_decompress
+ 						    src, slen, dst, dlen);
+ }
+ 
++/* QCA NSS CFI Support - Start */
++/*
++ * Set this flag if algorithm does not support SG list transforms
++ */
++#define CRYPTO_ALG_NOSUPP_SG		0x00004000
++
++static inline u32 crypto_tfm_alg_flags(struct crypto_tfm *tfm)
++{
++	return tfm->__crt_alg->cra_flags & ~CRYPTO_ALG_TYPE_MASK;
++}
++/* QCA NSS CFI Support - End */
++
+ #endif	/* _LINUX_CRYPTO_H */
+ 
