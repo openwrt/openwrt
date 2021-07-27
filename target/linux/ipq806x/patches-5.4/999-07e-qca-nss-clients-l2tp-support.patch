@@ -1,0 +1,49 @@
+--- a/net/l2tp/l2tp_core.h
++++ b/net/l2tp/l2tp_core.h
+@@ -201,6 +201,11 @@ struct l2tp_session *l2tp_session_get_nt
+ struct l2tp_session *l2tp_session_get_by_ifname(const struct net *net,
+ 						const char *ifname);
+ 
++/* QCA NSS Clients - L2TP Support - Start */
++void l2tp_stats_update(struct l2tp_tunnel *tunnel, struct l2tp_session *session,
++		       struct l2tp_stats *stats);
++/* QCA NSS Clients - L2TP Support - Start */
++
+ int l2tp_tunnel_create(struct net *net, int fd, int version, u32 tunnel_id,
+ 		       u32 peer_tunnel_id, struct l2tp_tunnel_cfg *cfg,
+ 		       struct l2tp_tunnel **tunnelp);
+--- a/net/l2tp/l2tp_core.c
++++ b/net/l2tp/l2tp_core.c
+@@ -355,6 +355,32 @@ err_tlock:
+ }
+ EXPORT_SYMBOL_GPL(l2tp_session_register);
+ 
++/* QCA NSS Clients - L2TP Support - Start */
++void l2tp_stats_update(struct l2tp_tunnel *tunnel,
++		       struct l2tp_session *session,
++		       struct l2tp_stats *stats)
++{
++	atomic_long_add(atomic_long_read(&stats->rx_packets),
++			&tunnel->stats.rx_packets);
++	atomic_long_add(atomic_long_read(&stats->rx_bytes),
++			&tunnel->stats.rx_bytes);
++	atomic_long_add(atomic_long_read(&stats->tx_packets),
++			&tunnel->stats.tx_packets);
++	atomic_long_add(atomic_long_read(&stats->tx_bytes),
++			&tunnel->stats.tx_bytes);
++
++	atomic_long_add(atomic_long_read(&stats->rx_packets),
++			&session->stats.rx_packets);
++	atomic_long_add(atomic_long_read(&stats->rx_bytes),
++			&session->stats.rx_bytes);
++	atomic_long_add(atomic_long_read(&stats->tx_packets),
++			&session->stats.tx_packets);
++	atomic_long_add(atomic_long_read(&stats->tx_bytes),
++			&session->stats.tx_bytes);
++}
++EXPORT_SYMBOL_GPL(l2tp_stats_update);
++/* QCA NSS Clients - L2TP Support - End */
++
+ /*****************************************************************************
+  * Receive data handling
+  *****************************************************************************/

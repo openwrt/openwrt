@@ -1,0 +1,38 @@
+--- a/nss_core.c
++++ b/nss_core.c
+@@ -1116,7 +1116,7 @@ static inline bool nss_core_handle_nr_fr
+ 		 * ingress shaped flag set.
+ 		 */
+ 		if (unlikely(desc->bit_flags & N2H_BIT_FLAG_INGRESS_SHAPED)) {
+-			nbuf->tc_verd = SET_TC_NCLS_NSS(nbuf->tc_verd);
++			nbuf->tc_verd_qca_nss = SET_TC_NCLS_NSS(nbuf->tc_verd_qca_nss);
+ 		}
+ #endif
+ 		goto pull;
+@@ -1156,7 +1156,7 @@ static inline bool nss_core_handle_nr_fr
+ 		 * ingress shaped flag set.
+ 		 */
+ 		if (unlikely(desc->bit_flags & N2H_BIT_FLAG_INGRESS_SHAPED)) {
+-			nbuf->tc_verd = SET_TC_NCLS_NSS(nbuf->tc_verd);
++			nbuf->tc_verd_qca_nss = SET_TC_NCLS_NSS(nbuf->tc_verd_qca_nss);
+ 		}
+ #endif
+ 
+@@ -1271,7 +1271,7 @@ static inline bool nss_core_handle_linea
+ 		 * ingress shaped flag set.
+ 		 */
+ 		if (unlikely(desc->bit_flags & N2H_BIT_FLAG_INGRESS_SHAPED)) {
+-			nbuf->tc_verd = SET_TC_NCLS_NSS(nbuf->tc_verd);
++			nbuf->tc_verd_qca_nss = SET_TC_NCLS_NSS(nbuf->tc_verd_qca_nss);
+ 		}
+ #endif
+ 
+@@ -1329,7 +1329,7 @@ static inline bool nss_core_handle_linea
+ 		 * ingress shaped flag set.
+ 		 */
+ 		if (unlikely(desc->bit_flags & N2H_BIT_FLAG_INGRESS_SHAPED)) {
+-			nbuf->tc_verd = SET_TC_NCLS_NSS(nbuf->tc_verd);
++			nbuf->tc_verd_qca_nss = SET_TC_NCLS_NSS(nbuf->tc_verd_qca_nss);
+ 		}
+ #endif
+ 
