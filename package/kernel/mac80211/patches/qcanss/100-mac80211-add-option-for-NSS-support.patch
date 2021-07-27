@@ -1,0 +1,277 @@
+--- a/net/mac80211/Kconfig
++++ b/net/mac80211/Kconfig
+@@ -16,6 +16,13 @@
+ 
+ if MAC80211 != n
+ 
++config MAC80211_NSS_SUPPORT
++	bool "Enable NSS support for IPQ platform"
++	default n
++	---help---
++	This option enables support for NSS in boards
++	like AP148.
++
+ config MAC80211_HAS_RC
+ 	bool
+ 
+--- a/local-symbols	2019-01-03 21:24:00.087001000 +0800
++++ b/local-symbols	2019-01-03 21:24:56.535001000 +0800
+@@ -47,6 +47,7 @@ LIB80211_CRYPT_CCMP=
+ LIB80211_CRYPT_TKIP=
+ LIB80211_DEBUG=
+ MAC80211=
++MAC80211_NSS_SUPPORT=
+ MAC80211_HAS_RC=
+ MAC80211_RC_MINSTREL=
+ MAC80211_RC_DEFAULT_MINSTREL=
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -35,6 +35,10 @@
+ 
+ extern const struct cfg80211_ops mac80211_config_ops;
+ 
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++#include <nss_api_if.h>
++#endif
++
+ struct ieee80211_local;
+ 
+ /* Maximum number of broadcast/multicast frames to buffer when some of the
+@@ -997,6 +1001,10 @@ struct ieee80211_sub_if_data {
+ 	} debugfs;
+ #endif
+ 
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++	struct nss_virt_if_handle *nssctx;
++#endif
++
+ 	/* must be last, dynamically sized area in this! */
+ 	struct ieee80211_vif vif;
+ };
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -15,6 +15,7 @@
+ #include <linux/if_arp.h>
+ #include <linux/netdevice.h>
+ #include <linux/rtnetlink.h>
++#include <linux/module.h>
+ #include <net/mac80211.h>
+ #include <net/ieee80211_radiotap.h>
+ #include "ieee80211_i.h"
+@@ -26,6 +27,12 @@
+ #include "wme.h"
+ #include "rate.h"
+ 
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++bool is_nss_enable = true;
++module_param(is_nss_enable, bool, 0644);
++MODULE_PARM_DESC(is_nss_enable, "NSS enable module param");
++#endif
++
+ /**
+  * DOC: Interface list locking
+  *
+@@ -364,6 +371,35 @@ static int ieee80211_open(struct net_dev
+ 	return ieee80211_do_open(&sdata->wdev, true);
+ }
+ 
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++static int ieee80211_create_nss_virtif(struct ieee80211_sub_if_data *sdata, struct net_device *dev)
++{
++	if (sdata->nssctx != NULL) {
++		sdata_err(sdata, "Cannot create a NSS virtual interface. Already exists[n2h:%d, h2n:%d]!\n",
++			  sdata->nssctx->if_num_n2h, sdata->nssctx->if_num_h2n);
++		return 1;
++	}
++
++	if (is_nss_enable) {
++		sdata->nssctx = nss_virt_if_create_sync(dev);
++		if (sdata->nssctx)
++			sdata_info(sdata, "Created a NSS virtual interface\n");
++		else
++			sdata_err(sdata, "Failed to create a NSS virtual interface\n");
++	}
++
++	return 0;
++}
++
++static void ieee80211_destroy_nss_virtif(struct ieee80211_sub_if_data *sdata)
++{
++	if (sdata->nssctx) {
++		nss_virt_if_destroy_sync(sdata->nssctx);
++		sdata_info(sdata, "Destroyed NSS virtual interface\n");
++	}
++}
++#endif
++
+ static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata,
+ 			      bool going_down)
+ {
+@@ -377,6 +413,10 @@ static void ieee80211_do_stop(struct iee
+ 	bool cancel_scan;
+ 	struct cfg80211_nan_func *func;
+ 
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++	ieee80211_destroy_nss_virtif(sdata);
++#endif
++
+ 	clear_bit(SDATA_STATE_RUNNING, &sdata->state);
+ 
+ 	cancel_scan = rcu_access_pointer(local->scan_sdata) == sdata;
+@@ -1372,6 +1412,10 @@ int ieee80211_do_open(struct wireless_de
+ 		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+ 	}
+ 
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++	ieee80211_create_nss_virtif(sdata, dev);
++#endif
++
+ 	return 0;
+  err_del_interface:
+ 	drv_remove_interface(local, sdata);
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -32,6 +32,56 @@
+ #include "wme.h"
+ #include "rate.h"
+ 
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++extern bool is_nss_enable;
++
++#define case_rtn_string(val) case val: return #val
++
++static const char *nss_tx_status_str(nss_tx_status_t status)
++{
++	switch (status) {
++		case_rtn_string(NSS_TX_SUCCESS);
++		case_rtn_string(NSS_TX_FAILURE);
++		case_rtn_string(NSS_TX_FAILURE_QUEUE);
++		case_rtn_string(NSS_TX_FAILURE_NOT_READY);
++		case_rtn_string(NSS_TX_FAILURE_TOO_LARGE);
++		case_rtn_string(NSS_TX_FAILURE_TOO_SHORT);
++		case_rtn_string(NSS_TX_FAILURE_NOT_SUPPORTED);
++		case_rtn_string(NSS_TX_FAILURE_BAD_PARAM);
++		case_rtn_string(NSS_TX_FAILURE_NOT_ENABLED);
++		case_rtn_string(NSS_TX_FAILURE_SYNC_BAD_PARAM);
++		case_rtn_string(NSS_TX_FAILURE_SYNC_TIMEOUT);
++		case_rtn_string(NSS_TX_FAILURE_SYNC_FW_ERR);
++	default:
++		return "Unknown NSS TX status";
++	}
++}
++
++static void netif_rx_nss(struct ieee80211_sub_if_data *sdata,
++			 struct sk_buff *skb)
++{
++	int ret;
++
++	if (!sdata->nssctx)
++		goto out;
++
++	skb_push(skb, ETH_HLEN);
++	ret = nss_virt_if_tx_buf(sdata->nssctx, skb);
++	if (ret) {
++		if (net_ratelimit()) {
++			sdata_err(sdata, "NSS TX failed with error[%d]: %s\n", ret,
++				  nss_tx_status_str(ret));
++		}
++		skb_pull(skb, ETH_HLEN);
++		goto out;
++	}
++
++	return;
++out:
++	netif_receive_skb(skb);
++}
++#endif
++
+ static inline void ieee80211_rx_stats(struct net_device *dev, u32 len)
+ {
+ 	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
+@@ -2604,6 +2654,12 @@ static void ieee80211_deliver_skb_to_loc
+ 			ether_addr_copy(ehdr->h_dest, sdata->vif.addr);
+ 
+ 		/* deliver to local stack */
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++		if (likely(is_nss_enable)) {
++			netif_rx_nss(sdata, skb);
++			return;
++		}
++#endif
+ 		if (rx->list)
+ #if LINUX_VERSION_IS_GEQ(4,19,0)
+ 			list_add_tail(&skb->list, rx->list);
+@@ -4461,6 +4517,12 @@ static void ieee80211_rx_8023(struct iee
+ 	/* deliver to local stack */
+ 	skb->protocol = eth_type_trans(skb, fast_rx->dev);
+ 	memset(skb->cb, 0, sizeof(skb->cb));
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++	if (likely(is_nss_enable)) {
++		netif_rx_nss(rx->sdata, skb);
++		return;
++	}
++#endif
+ 	if (rx->list)
+ #if LINUX_VERSION_IS_GEQ(4,19,0)
+ 		list_add_tail(&skb->list, rx->list);
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -36,6 +36,11 @@
+ #include "wme.h"
+ #include "rate.h"
+ 
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++#include <net/ip.h>
++#include <net/dsfield.h>
++#endif
++
+ /* misc utils */
+ 
+ static inline void ieee80211_tx_stats(struct net_device *dev, u32 len)
+@@ -1697,6 +1702,16 @@ static bool ieee80211_tx_frags(struct ie
+ 					return true;
+ 				}
+ 			} else {
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++				if (skb_queue_len(&local->pending[q]) >= 1000) {
++					spin_unlock_irqrestore(
++						&local->queue_stop_reason_lock,
++						flags);
++					ieee80211_purge_tx_queue(&local->hw,
++								 skbs);
++					return false;
++				}
++#endif
+ 
+ 				/*
+ 				 * Since queue is stopped, queue up frames for
+@@ -4193,6 +4208,29 @@ out:
+ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
+ 				       struct net_device *dev)
+ {
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++	/* Packets from NSS does not have valid protocol, priority and other
++	 * network stack values. Derive required parameters (priority
++	 * and network_header) from payload for QoS header.
++	 * XXX: Here the assumption is that packet are in 802.3 format.
++	 * As of now priority is handled only for IPv4 and IPv6.
++	 */
++	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++
++	if (sdata->nssctx && likely(!skb->protocol)) {
++		skb_set_network_header(skb, 14);
++		switch (((struct ethhdr *)skb->data)->h_proto) {
++			case htons(ETH_P_IP):
++				skb->priority = (ipv4_get_dsfield(ip_hdr(skb)) &
++						0xfc) >> 5;
++				break;
++			case htons(ETH_P_IPV6):
++				skb->priority = (ipv6_get_dsfield(ipv6_hdr(skb)) &
++						0xfc) >> 5;
++				break;
++		}
++	}
++#endif
+ 	if (unlikely(ieee80211_multicast_to_unicast(skb, dev))) {
+ 		struct sk_buff_head queue;
+ 
