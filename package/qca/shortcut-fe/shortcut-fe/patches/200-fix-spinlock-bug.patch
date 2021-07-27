@@ -1,0 +1,84 @@
+--- a/shortcut-fe/sfe_ipv4.c
++++ b/shortcut-fe/sfe_ipv4.c
+@@ -349,6 +349,7 @@ enum sfe_ipv4_exception_events {
+ 	SFE_IPV4_EXCEPTION_EVENT_DATAGRAM_INCOMPLETE,
+ 	SFE_IPV4_EXCEPTION_EVENT_IP_OPTIONS_INCOMPLETE,
+ 	SFE_IPV4_EXCEPTION_EVENT_UNHANDLED_PROTOCOL,
++	SFE_IPV4_EXCEPTION_EVENT_CLONED_SKB_UNSHARE_ERROR,
+ 	SFE_IPV4_EXCEPTION_EVENT_LAST
+ };
+ 
+@@ -388,7 +389,8 @@ static char *sfe_ipv4_exception_events_s
+ 	"NON_INITIAL_FRAGMENT",
+ 	"DATAGRAM_INCOMPLETE",
+ 	"IP_OPTIONS_INCOMPLETE",
+-	"UNHANDLED_PROTOCOL"
++	"UNHANDLED_PROTOCOL",
++	"CLONED_SKB_UNSHARE_ERROR"
+ };
+ 
+ /*
+@@ -1312,6 +1314,10 @@ static int sfe_ipv4_recv_udp(struct sfe_
+ 		skb = skb_unshare(skb, GFP_ATOMIC);
+                 if (!skb) {
+ 			DEBUG_WARN("Failed to unshare the cloned skb\n");
++			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_CLONED_SKB_UNSHARE_ERROR]++;
++			si->packets_not_forwarded++;
++			spin_unlock_bh(&si->lock);
++
+ 			return 0;
+ 		}
+ 
+@@ -1888,6 +1894,10 @@ static int sfe_ipv4_recv_tcp(struct sfe_
+ 		skb = skb_unshare(skb, GFP_ATOMIC);
+                 if (!skb) {
+ 			DEBUG_WARN("Failed to unshare the cloned skb\n");
++			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_CLONED_SKB_UNSHARE_ERROR]++;
++			si->packets_not_forwarded++;
++			spin_unlock_bh(&si->lock);
++
+ 			return 0;
+ 		}
+ 
+--- a/shortcut-fe/sfe_ipv6.c
++++ b/shortcut-fe/sfe_ipv6.c
+@@ -375,6 +375,7 @@ enum sfe_ipv6_exception_events {
+ 	SFE_IPV6_EXCEPTION_EVENT_IP_OPTIONS_INCOMPLETE,
+ 	SFE_IPV6_EXCEPTION_EVENT_UNHANDLED_PROTOCOL,
+ 	SFE_IPV6_EXCEPTION_EVENT_FLOW_COOKIE_ADD_FAIL,
++	SFE_IPV6_EXCEPTION_EVENT_CLONED_SKB_UNSHARE_ERROR,
+ 	SFE_IPV6_EXCEPTION_EVENT_LAST
+ };
+ 
+@@ -415,7 +416,8 @@ static char *sfe_ipv6_exception_events_s
+ 	"DATAGRAM_INCOMPLETE",
+ 	"IP_OPTIONS_INCOMPLETE",
+ 	"UNHANDLED_PROTOCOL",
+-	"FLOW_COOKIE_ADD_FAIL"
++	"FLOW_COOKIE_ADD_FAIL",
++	"CLONED_SKB_UNSHARE_ERROR"
+ };
+ 
+ /*
+@@ -1370,6 +1372,10 @@ static int sfe_ipv6_recv_udp(struct sfe_
+ 		skb = skb_unshare(skb, GFP_ATOMIC);
+                 if (!skb) {
+ 			DEBUG_WARN("Failed to unshare the cloned skb\n");
++			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_CLONED_SKB_UNSHARE_ERROR]++;
++			si->packets_not_forwarded++;
++			spin_unlock_bh(&si->lock);
++
+ 			return 0;
+ 		}
+ 
+@@ -1926,6 +1932,10 @@ static int sfe_ipv6_recv_tcp(struct sfe_
+ 		skb = skb_unshare(skb, GFP_ATOMIC);
+                 if (!skb) {
+ 			DEBUG_WARN("Failed to unshare the cloned skb\n");
++			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_CLONED_SKB_UNSHARE_ERROR]++;
++			si->packets_not_forwarded++;
++			spin_unlock_bh(&si->lock);
++
+ 			return 0;
+ 		}
+ 
