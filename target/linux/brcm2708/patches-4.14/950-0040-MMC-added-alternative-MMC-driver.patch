@@ -156,7 +156,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  		goto out;
 --- a/drivers/mmc/core/core.c
 +++ b/drivers/mmc/core/core.c
-@@ -2210,7 +2210,8 @@ EXPORT_SYMBOL(mmc_erase);
+@@ -2213,7 +2213,8 @@ EXPORT_SYMBOL(mmc_erase);
  int mmc_can_erase(struct mmc_card *card)
  {
  	if ((card->host->caps & MMC_CAP_ERASE) &&

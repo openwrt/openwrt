@@ -223,7 +223,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -819,10 +820,10 @@ static void tcp_v6_send_response(const s
+@@ -835,10 +836,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -325,7 +325,7 @@
  	for (p = *head; p; p = p->next) {
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -465,7 +465,7 @@ static struct neighbour *ipv4_neigh_look
+@@ -466,7 +466,7 @@ static struct neighbour *ipv4_neigh_look
  	else if (skb)
  		pkey = &ip_hdr(skb)->daddr;
  
@@ -850,7 +850,7 @@
  		*sum = csum_fold(csum_partial(diff, sizeof(diff),
 --- a/drivers/net/vxlan.c
 +++ b/drivers/net/vxlan.c
-@@ -1876,15 +1876,15 @@ static int vxlan_build_skb(struct sk_buf
+@@ -1878,15 +1878,15 @@ static int vxlan_build_skb(struct sk_buf
  		return err;
  
  	vxh = __skb_push(skb, sizeof(*vxh));

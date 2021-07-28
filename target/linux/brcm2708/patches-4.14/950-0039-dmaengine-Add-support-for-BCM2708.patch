@@ -161,7 +161,7 @@ bcm2708-dmaengine - Fix arm64 portability/build issues
 
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
-@@ -131,7 +131,7 @@ config COH901318
+@@ -132,7 +132,7 @@ config COH901318
  
  config DMA_BCM2835
  	tristate "BCM2835 DMA engine support"
@@ -170,7 +170,7 @@ bcm2708-dmaengine - Fix arm64 portability/build issues
  	select DMA_ENGINE
  	select DMA_VIRTUAL_CHANNELS
  
-@@ -535,6 +535,10 @@ config TIMB_DMA
+@@ -536,6 +536,10 @@ config TIMB_DMA
  	help
  	  Enable support for the Timberdale FPGA DMA engine.
  

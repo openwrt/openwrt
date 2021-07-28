@@ -1,7 +1,7 @@
-From 584bc4a6093ceb9aea07673185ee0084edc8690b Mon Sep 17 00:00:00 2001
+From 66b3e537b50cd2b46b71edb6ffeef633d1224d10 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Mon, 27 Nov 2017 17:14:54 +0000
-Subject: [PATCH 136/454] cgroup: Disable cgroup "memory" by default
+Subject: [PATCH] cgroup: Disable cgroup "memory" by default
 
 Some Raspberry Pis have limited RAM and most users won't use the
 cgroup memory support so it is disabled by default. Enable with:
@@ -12,34 +12,46 @@ See: https://github.com/raspberrypi/linux/issues/1950
 
 Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 ---
- kernel/cgroup/cgroup.c | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ kernel/cgroup/cgroup.c | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
-@@ -5220,6 +5220,8 @@ int __init cgroup_init_early(void)
+@@ -5219,6 +5219,9 @@ int __init cgroup_init_early(void)
+ 	return 0;
  }
  
- static u16 cgroup_disable_mask __initdata;
 +static u16 cgroup_enable_mask __initdata;
 +static int __init cgroup_disable(char *str);
- 
++
  /**
   * cgroup_init - cgroup initialization
-@@ -5258,6 +5260,12 @@ int __init cgroup_init(void)
+  *
+@@ -5256,6 +5259,12 @@ int __init cgroup_init(void)
  
  	mutex_unlock(&cgroup_mutex);
  
-+	/* Apply an implicit disable... */
++	/*
++	 * Apply an implicit disable, knowing that an explicit enable will
++	 * prevent if from doing anything.
++	 */
 +	cgroup_disable("memory");
-+
-+	/* ...knowing that an explicit enable will override it. */
-+	cgroup_disable_mask &= ~cgroup_enable_mask;
 +
  	for_each_subsys(ss, ssid) {
  		if (ss->early_init) {
  			struct cgroup_subsys_state *css =
-@@ -5649,6 +5657,28 @@ static int __init cgroup_disable(char *s
+@@ -5637,6 +5646,10 @@ static int __init cgroup_disable(char *s
+ 			    strcmp(token, ss->legacy_name))
+ 				continue;
+ 
++			/* An explicit cgroup_enable overrides a disable */
++			if (cgroup_enable_mask & (1 << i))
++				continue;
++
+ 			static_branch_disable(cgroup_subsys_enabled_key[i]);
+ 			pr_info("Disabling %s control group subsystem\n",
+ 				ss->name);
+@@ -5646,6 +5659,31 @@ static int __init cgroup_disable(char *s
  }
  __setup("cgroup_disable=", cgroup_disable);
  
@@ -59,6 +71,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 +				continue;
 +
 +			cgroup_enable_mask |= 1 << i;
++			static_branch_enable(cgroup_subsys_enabled_key[i]);
++			pr_info("Enabling %s control group subsystem\n",
++				ss->name);
 +		}
 +	}
 +	return 1;

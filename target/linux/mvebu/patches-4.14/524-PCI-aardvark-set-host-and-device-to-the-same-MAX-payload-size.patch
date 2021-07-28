@@ -57,7 +57,7 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  #define PCIE_CORE_LINK_CTRL_STAT_REG				0xd0
  #define     PCIE_CORE_LINK_L0S_ENTRY				BIT(0)
  #define     PCIE_CORE_LINK_TRAINING				BIT(5)
-@@ -297,7 +299,8 @@ static void advk_pcie_setup_hw(struct ad
+@@ -298,7 +300,8 @@ static void advk_pcie_setup_hw(struct ad
  
  	/* Set PCIe Device Control and Status 1 PF0 register */
  	reg = PCIE_CORE_DEV_CTRL_STATS_RELAX_ORDER_DISABLE |
@@ -67,7 +67,7 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  		PCIE_CORE_DEV_CTRL_STATS_SNOOP_DISABLE |
  		(PCIE_CORE_DEV_CTRL_STATS_MAX_RD_REQ_SZ <<
  		 PCIE_CORE_DEV_CTRL_STATS_MAX_RD_REQ_SIZE_SHIFT);
-@@ -882,6 +885,58 @@ out_release_res:
+@@ -913,6 +916,58 @@ out_release_res:
  	return err;
  }
  
@@ -126,7 +126,7 @@ Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  static int advk_pcie_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
-@@ -956,6 +1011,9 @@ static int advk_pcie_probe(struct platfo
+@@ -987,6 +1042,9 @@ static int advk_pcie_probe(struct platfo
  	list_for_each_entry(child, &bus->children, node)
  		pcie_bus_configure_settings(child);
  

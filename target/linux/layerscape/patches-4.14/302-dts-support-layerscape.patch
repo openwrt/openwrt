@@ -7318,7 +7318,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		dspi: dspi@2100000 {
-@@ -574,15 +494,126 @@
+@@ -573,15 +493,126 @@
  			#interrupt-cells = <2>;
  		};
  
@@ -7447,7 +7447,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		i2c1: i2c@2010000 {
-@@ -593,7 +624,7 @@
+@@ -592,7 +623,7 @@
  			reg = <0x0 0x2010000 0x0 0x10000>;
  			interrupts = <0 34 0x4>; /* Level high type */
  			clock-names = "i2c";
@@ -7456,7 +7456,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		i2c2: i2c@2020000 {
-@@ -604,7 +635,7 @@
+@@ -603,7 +634,7 @@
  			reg = <0x0 0x2020000 0x0 0x10000>;
  			interrupts = <0 35 0x4>; /* Level high type */
  			clock-names = "i2c";
@@ -7465,7 +7465,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		i2c3: i2c@2030000 {
-@@ -615,7 +646,7 @@
+@@ -614,7 +645,7 @@
  			reg = <0x0 0x2030000 0x0 0x10000>;
  			interrupts = <0 35 0x4>; /* Level high type */
  			clock-names = "i2c";
@@ -7474,7 +7474,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		ifc: ifc@2240000 {
-@@ -648,8 +679,8 @@
+@@ -647,8 +678,8 @@
  			compatible = "fsl,ls2080a-pcie", "fsl,ls2085a-pcie",
  				     "snps,dw-pcie";
  			reg-names = "regs", "config";
@@ -7485,7 +7485,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  			#address-cells = <3>;
  			#size-cells = <2>;
  			device_type = "pci";
-@@ -657,20 +688,22 @@
+@@ -656,20 +687,22 @@
  			num-lanes = <4>;
  			bus-range = <0x0 0xff>;
  			msi-parent = <&its>;
@@ -7510,7 +7510,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  			#address-cells = <3>;
  			#size-cells = <2>;
  			device_type = "pci";
-@@ -678,20 +711,22 @@
+@@ -677,20 +710,22 @@
  			num-lanes = <4>;
  			bus-range = <0x0 0xff>;
  			msi-parent = <&its>;
@@ -7535,7 +7535,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  			#address-cells = <3>;
  			#size-cells = <2>;
  			device_type = "pci";
-@@ -699,20 +734,22 @@
+@@ -698,20 +733,22 @@
  			num-lanes = <8>;
  			bus-range = <0x0 0xff>;
  			msi-parent = <&its>;
@@ -7560,7 +7560,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  			#address-cells = <3>;
  			#size-cells = <2>;
  			device_type = "pci";
-@@ -720,12 +757,14 @@
+@@ -719,12 +756,14 @@
  			num-lanes = <4>;
  			bus-range = <0x0 0xff>;
  			msi-parent = <&its>;
@@ -7575,7 +7575,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		sata0: sata@3200000 {
-@@ -754,6 +793,8 @@
+@@ -753,6 +792,8 @@
  			dr_mode = "host";
  			snps,quirk-frame-length-adjustment = <0x20>;
  			snps,dis_rxdet_inp3_quirk;
@@ -7584,7 +7584,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		usb1: usb3@3110000 {
-@@ -764,6 +805,14 @@
+@@ -763,6 +804,14 @@
  			dr_mode = "host";
  			snps,quirk-frame-length-adjustment = <0x20>;
  			snps,dis_rxdet_inp3_quirk;
@@ -7599,7 +7599,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  		};
  
  		ccn@4000000 {
-@@ -771,6 +820,14 @@
+@@ -770,6 +819,14 @@
  			reg = <0x0 0x04000000 0x0 0x01000000>;
  			interrupts = <0 12 4>;
  		};
@@ -7614,7 +7614,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  	};
  
  	ddr1: memory-controller@1080000 {
-@@ -786,4 +843,44 @@
+@@ -785,4 +842,44 @@
  		interrupts = <0 18 0x4>;
  		little-endian;
  	};

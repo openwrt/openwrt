@@ -47,7 +47,7 @@ Signed-off-by: Yuan Yao <yao.yuan@nxp.com>
 
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
-@@ -129,6 +129,24 @@ config COH901318
+@@ -130,6 +130,24 @@ config COH901318
  	help
  	  Enable support for ST-Ericsson COH 901 318 DMA.
  
@@ -72,7 +72,7 @@ Signed-off-by: Yuan Yao <yao.yuan@nxp.com>
  config DMA_BCM2835
  	tristate "BCM2835 DMA engine support"
  	depends on ARCH_BCM2835
-@@ -215,6 +233,20 @@ config FSL_EDMA
+@@ -216,6 +234,20 @@ config FSL_EDMA
  	  multiplexing capability for DMA request sources(slot).
  	  This module can be found on Freescale Vybrid and LS-1 SoCs.
  
@@ -93,7 +93,7 @@ Signed-off-by: Yuan Yao <yao.yuan@nxp.com>
  config FSL_RAID
          tristate "Freescale RAID engine Support"
          depends on FSL_SOC && !ASYNC_TX_ENABLE_CHANNEL_SWITCH
-@@ -600,7 +632,6 @@ config ZX_DMA
+@@ -601,7 +633,6 @@ config ZX_DMA
  	help
  	  Support the DMA engine for ZTE ZX family platform devices.
  

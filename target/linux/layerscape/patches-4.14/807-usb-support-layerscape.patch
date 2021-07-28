@@ -508,7 +508,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  
 --- a/drivers/usb/dwc3/ep0.c
 +++ b/drivers/usb/dwc3/ep0.c
-@@ -391,7 +391,7 @@ static int dwc3_ep0_handle_u1(struct dwc
+@@ -394,7 +394,7 @@ static int dwc3_ep0_handle_u1(struct dwc
  		return -EINVAL;
  
  	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
@@ -517,7 +517,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		reg |= DWC3_DCTL_INITU1ENA;
  	else
  		reg &= ~DWC3_DCTL_INITU1ENA;
-@@ -413,7 +413,7 @@ static int dwc3_ep0_handle_u2(struct dwc
+@@ -416,7 +416,7 @@ static int dwc3_ep0_handle_u2(struct dwc
  		return -EINVAL;
  
  	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
@@ -1289,7 +1289,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		xhci->quirks |= XHCI_BROKEN_PORT_PED;
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -1983,10 +1983,12 @@ static int finish_td(struct xhci_hcd *xh
+@@ -2016,10 +2016,12 @@ static int finish_td(struct xhci_hcd *xh
  	union xhci_trb *ep_trb, struct xhci_transfer_event *event,
  	struct xhci_virt_ep *ep, int *status)
  {
@@ -1302,7 +1302,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	u32 trb_comp_code;
  	int ep_index;
  
-@@ -2009,14 +2011,30 @@ static int finish_td(struct xhci_hcd *xh
+@@ -2042,14 +2044,30 @@ static int finish_td(struct xhci_hcd *xh
  	if (trb_comp_code == COMP_STALL_ERROR ||
  		xhci_requires_manual_halt_cleanup(xhci, ep_ctx,
  						trb_comp_code)) {
@@ -1387,7 +1387,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	spin_unlock_irqrestore(&xhci->lock, flags);
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1794,7 +1794,7 @@ struct xhci_hcd {
+@@ -1795,7 +1795,7 @@ struct xhci_hcd {
  #define XHCI_STATE_DYING	(1 << 0)
  #define XHCI_STATE_HALTED	(1 << 1)
  #define XHCI_STATE_REMOVING	(1 << 2)
@@ -1396,7 +1396,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  #define	XHCI_LINK_TRB_QUIRK	BIT_ULL(0)
  #define XHCI_RESET_EP_QUIRK	BIT_ULL(1)
  #define XHCI_NEC_HOST		BIT_ULL(2)
-@@ -1830,6 +1830,9 @@ struct xhci_hcd {
+@@ -1831,6 +1831,9 @@ struct xhci_hcd {
  #define XHCI_SSIC_PORT_UNUSED	BIT_ULL(22)
  #define XHCI_NO_64BIT_SUPPORT	BIT_ULL(23)
  #define XHCI_MISSING_CAS	BIT_ULL(24)
@@ -1406,7 +1406,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  /* For controller with a broken Port Disable implementation */
  #define XHCI_BROKEN_PORT_PED	BIT_ULL(25)
  #define XHCI_LIMIT_ENDPOINT_INTERVAL_7	BIT_ULL(26)
-@@ -1838,8 +1841,9 @@ struct xhci_hcd {
+@@ -1839,8 +1842,9 @@ struct xhci_hcd {
  #define XHCI_HW_LPM_DISABLE	BIT_ULL(29)
  #define XHCI_SUSPEND_DELAY	BIT_ULL(30)
  #define XHCI_INTEL_USB_ROLE_SW	BIT_ULL(31)

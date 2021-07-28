@@ -5604,9 +5604,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	 * them, we have to fall back to INTx or other interrupts, e.g., a
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -3408,6 +3408,13 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_A
- DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x0033, quirk_no_bus_reset);
- DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x0034, quirk_no_bus_reset);
+@@ -3430,6 +3430,13 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_A
+  */
+ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_TI, 0xb005, quirk_no_bus_reset);
  
 +/*
 + * NXP (Freescale Vendor ID) LS1088 chips do not behave correctly after

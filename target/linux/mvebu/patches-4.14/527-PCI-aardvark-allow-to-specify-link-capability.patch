@@ -14,7 +14,7 @@ Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
 
 --- a/drivers/pci/host/pci-aardvark.c
 +++ b/drivers/pci/host/pci-aardvark.c
-@@ -272,6 +272,8 @@ static void advk_pcie_set_ob_win(struct
+@@ -273,6 +273,8 @@ static void advk_pcie_set_ob_win(struct
  
  static void advk_pcie_setup_hw(struct advk_pcie *pcie)
  {
@@ -23,7 +23,7 @@ Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
  	u32 reg;
  	int i;
  
-@@ -311,10 +313,15 @@ static void advk_pcie_setup_hw(struct ad
+@@ -312,10 +314,15 @@ static void advk_pcie_setup_hw(struct ad
  		PCIE_CORE_CTRL2_TD_ENABLE;
  	advk_writel(pcie, reg, PCIE_CORE_CTRL2_REG);
  
