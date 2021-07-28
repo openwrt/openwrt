@@ -30,6 +30,9 @@
 	leds {
 		compatible = "gpio-leds";
 
+		pinctrl-names = "default";
+		pinctrl-0 = <&jtag_disable_pins &pinmux_led_eth_pins>;
+
 		led_status_green: status_green {
 			label = "green:status";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
