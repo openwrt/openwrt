@@ -101,7 +101,11 @@ void rtl838x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 
 	if (dest_port > 0) {
 		// cpu_tag[0] is reserved on the RTL83XX SoCs
-		h->cpu_tag[1] = 0x0400;
+		// In 0x401, bit 10 is AS_DPM, meaning that the Destination Port Mask given
+		// is used to send the packet instead of flooding it. Bit 0 is L2LEARNING,
+		// meaning the source address is learned for outgoing packets, which is
+		// required to avoid flooding packets sent to the CPU port.
+		h->cpu_tag[1] = 0x0401;
 		h->cpu_tag[2] = 0x0200;
 		h->cpu_tag[3] = 0x0000;
 		h->cpu_tag[4] = BIT(dest_port) >> 16;
