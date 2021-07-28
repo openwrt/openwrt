@@ -18,11 +18,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  drivers/spi/spi-mt65xx.c | 16 +++++++++++++---
  1 file changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/spi/spi-mt65xx.c b/drivers/spi/spi-mt65xx.c
-index 976f73b9e2998..8d5fa7f1e5069 100644
 --- a/drivers/spi/spi-mt65xx.c
 +++ b/drivers/spi/spi-mt65xx.c
-@@ -427,13 +427,23 @@ static int mtk_spi_fifo_transfer(struct spi_master *master,
+@@ -434,13 +434,23 @@ static int mtk_spi_fifo_transfer(struct
  	mtk_spi_setup_packet(master);
  
  	cnt = xfer->len / 4;
@@ -49,6 +47,3 @@ index 976f73b9e2998..8d5fa7f1e5069 100644
  	}
  
  	mtk_spi_enable_transfer(master);
--- 
-cgit 1.2.3-1.el7
-
