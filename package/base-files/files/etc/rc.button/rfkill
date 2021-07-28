@@ -27,6 +27,6 @@ case "${TYPE}" in
 esac
 config_foreach wifi_rfkill_set wifi-device
 uci commit wireless
-wifi up
+wifi reload
 
 return 0
