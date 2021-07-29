@@ -36,6 +36,7 @@ sub target_config_features(@) {
 		/^rfkill$/ and $ret .= "\tselect RFKILL_SUPPORT\n";
 		/^rootfs-part$/ and $ret .= "\tselect USES_ROOTFS_PART\n";
 		/^rtc$/ and $ret .= "\tselect RTC_SUPPORT\n";
+		/^sdcard$/ and $ret .= "\tselect SDCARD_SUPPORT\n";
 		/^separate_ramdisk$/ and $ret .= "\tselect USES_INITRAMFS\n\tselect USES_SEPARATE_INITRAMFS\n";
 		/^small_flash$/ and $ret .= "\tselect SMALL_FLASH\n";
 		/^spe_fpu$/ and $ret .= "\tselect HAS_SPE_FPU\n";
