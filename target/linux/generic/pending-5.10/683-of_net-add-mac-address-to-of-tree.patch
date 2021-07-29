@@ -1,7 +1,7 @@
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -132,6 +132,33 @@ static void *of_get_mac_address_mtd(stru
- #endif
+@@ -133,6 +133,33 @@ static void *of_get_mac_address_mtd(stru
+ 	return NULL;
  }
  
 +static int of_add_mac_address(struct device_node *np, u8* addr)
@@ -34,7 +34,7 @@
  
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
-@@ -205,6 +232,7 @@ found:
+@@ -206,6 +233,7 @@ found:
  	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc))
  		addr[inc_idx] += mac_inc;
  
