@@ -34,7 +34,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  {
  	struct property *pp = of_find_property(np, name, NULL);
  
-@@ -78,6 +79,56 @@ static const void *of_get_mac_addr_nvmem
+@@ -78,6 +79,55 @@ static const void *of_get_mac_addr_nvmem
  	return mac;
  }
  
@@ -43,7 +43,6 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +#ifdef CONFIG_MTD
 +	struct platform_device *pdev = of_find_device_by_node(np);
 +	struct device_node *mtd_np = NULL;
-+	struct property *prop;
 +	size_t retlen;
 +	int size, ret;
 +	struct mtd_info *mtd;
@@ -91,7 +90,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
   * checked first, because that is supposed to contain to "most recent" MAC
-@@ -98,6 +149,10 @@ static const void *of_get_mac_addr_nvmem
+@@ -98,6 +148,10 @@ static const void *of_get_mac_addr_nvmem
   * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
   * but is all zeros.
   *
@@ -102,7 +101,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
   * Return: Will be a valid pointer on success and ERR_PTR in case of error.
  */
  const void *of_get_mac_address(struct device_node *np)
-@@ -116,6 +171,10 @@ const void *of_get_mac_address(struct de
+@@ -116,6 +170,10 @@ const void *of_get_mac_address(struct de
  	if (addr)
  		return addr;
  
