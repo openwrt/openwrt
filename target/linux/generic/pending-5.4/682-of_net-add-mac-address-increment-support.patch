@@ -65,7 +65,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  {
  #ifdef CONFIG_MTD
  	struct platform_device *pdev = of_find_device_by_node(np);
-@@ -147,28 +152,54 @@ static const void *of_get_mac_address_mt
+@@ -146,28 +151,54 @@ static const void *of_get_mac_address_mt
   * If a mtd-mac-address property exists, try to fetch the MAC address from the
   * specified mtd device.
   *
