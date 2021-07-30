@@ -10,7 +10,11 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=otrx
 PKG_RELEASE:=1
 
-PKG_FLAGS:=nonshared
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware-utils.git
+PKG_SOURCE_DATE:=2021-07-30
+PKG_SOURCE_VERSION:=a5c65fa1192e174e9e895637aaf93945959aa029
+PKG_MIRROR_HASH:=8ef94e74f50b21fd226dd5311962f8bdbd3aa55da11026b2cf2a4b35556350af
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -26,10 +30,12 @@ define Package/otrx/description
  This package contains an utility that allows validating TRX images.
 endef
 
+TARGET_CFLAGS += -Wall
+
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC="$(TARGET_CC)" \
-		CFLAGS="$(TARGET_CFLAGS) -Wall"
+	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) \
+		-o $(PKG_BUILD_DIR)/otrx \
+		$(PKG_BUILD_DIR)/src/otrx.c
 endef
 
 define Package/otrx/install
