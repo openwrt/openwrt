@@ -608,6 +608,8 @@ define Device/sunvalley_filehub_common
   IMAGES += kernel.bin rootfs.bin
   IMAGE/kernel.bin := append-loader-okli $(1) | check-size 64k
   IMAGE/rootfs.bin := $$(sysupgrade_bin) | check-size
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+       check-size 7744k | append-metadata
 endef
 
 define Device/hootoo_ht-tm05
