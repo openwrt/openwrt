@@ -11,6 +11,14 @@ define Build/dongwon-header
 	mv $@.tmp $@
 endef
 
+define Build/meraki-header
+        -$(STAGING_DIR_HOST)/bin/mkmerakifw \
+                -B $(1) -s \
+                -i $@ \
+                -o $@.new
+        @mv $@.new $@
+endef
+
 # attention: only zlib compression is allowed for the boot fs
 define Build/zyxel-buildkerneljffs
 	mkdir -p $@.tmp/boot
@@ -259,6 +267,23 @@ define Device/linksys_ea4500-v3
   UBINIZE_OPTS := -E 5
 endef
 TARGET_DEVICES += linksys_ea4500-v3
+
+define Device/meraki_mr18
+  SOC := qca9557
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := MR18
+  DEVICE_PACKAGES := kmod-spi-gpio nu801
+  KERNEL_SIZE := 8m
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | meraki-header MR18
+# Initramfs-build fails due to size issues
+# KERNEL_INITRAMFS := $$(KERNEL)
+  KERNEL_INITRAMFS :=
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += meraki_mr18
 
 # fake rootfs is mandatory, pad-offset 64 equals (1 * uimage_header)
 define Device/netgear_ath79_nand
