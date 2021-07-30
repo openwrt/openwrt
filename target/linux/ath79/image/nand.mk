@@ -11,6 +11,14 @@ define Build/dongwon-header
 	mv $@.tmp $@
 endef
 
+define Build/MerakiNAND
+        -$(STAGING_DIR_HOST)/bin/mkmerakifw \
+                -B $(1) -s \
+                -i $@ \
+                -o $@.new
+        @mv $@.new $@
+endef
+
 define Build/meraki-old-nand
 	-$(STAGING_DIR_HOST)/bin/mkmerakifw-old \
 		-B $(1) -s \
@@ -267,6 +275,21 @@ define Device/linksys_ea4500-v3
   UBINIZE_OPTS := -E 5
 endef
 TARGET_DEVICES += linksys_ea4500-v3
+
+define Device/meraki_mr18
+  SOC := qca9557
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := MR18
+  DEVICE_PACKAGES := kmod-spi-gpio nu801
+  KERNEL_SIZE := 8m
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | MerakiNAND MR18
+  KERNEL_INITRAMFS := $$(KERNEL)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += meraki_mr18
 
 define Device/meraki_z1
   SOC = ar9344
