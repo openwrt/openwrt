@@ -27,14 +27,17 @@ define Build/loader-common
 endef
 
 define Build/loader-kernel
-	$(call Build/loader-common,LOADER_DATA="$@")
+	$(call Build/loader-common, \
+		LOADER_DATA="$@" \
+		BOARD="$(DEVICE_NAME)" )
 endef
 
 define Build/loader-okli-compile
 	$(call Build/loader-common, \
 		FLASH_OFFS=$(LOADER_FLASH_OFFS) \
 		FLASH_MAX=$(LOADER_FLASH_MAX) \
-		KERNEL_MAGIC=$(LOADER_KERNEL_MAGIC) )
+		KERNEL_MAGIC=$(LOADER_KERNEL_MAGIC) \
+		BOARD="$(DEVICE_NAME)" )
 endef
 
 # Arguments: <output name> <kernel offset>
