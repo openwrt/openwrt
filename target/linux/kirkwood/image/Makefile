@@ -137,7 +137,8 @@ define Device/netgear_stora
   DEVICE_MODEL := Stora
   BOARD_NAME := netgear_stora
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
-	kmod-rtc-pcf8563 kmod-hwmon-lm75 kmod-gpio-button-hotplug \
+	kmod-rtc-pcf8563 kmod-hwmon-lm75 kmod-hwmon-tc654 \
+	kmod-gpio-button-hotplug \
 	kmod-usb-storage kmod-fs-vfat kmod-fs-exfat blkid block-mount \
 	mdadm kmod-md-linear kmod-fs-xfs
   DEVICE_DTS := kirkwood-netgear_stora
