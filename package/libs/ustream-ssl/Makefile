@@ -31,23 +31,26 @@ define Package/libustream-openssl
   TITLE += (openssl)
   DEPENDS += +PACKAGE_libustream-openssl:libopenssl
   VARIANT:=openssl
+  PROVIDES:=libustream-ssl
 endef
 
 define Package/libustream-wolfssl
   $(Package/libustream/default)
   TITLE += (wolfssl)
   DEPENDS += +PACKAGE_libustream-wolfssl:libwolfssl
-  CONFLICTS := libustream-openssl
+  CONFLICTS := libustream-openssl libustream-mbedtls
   VARIANT:=wolfssl
+  PROVIDES:=libustream-ssl
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/libustream-mbedtls
   $(Package/libustream/default)
   TITLE += (mbedtls)
   DEPENDS += +libmbedtls
-  CONFLICTS := libustream-openssl libustream-wolfssl
+  CONFLICTS := libustream-openssl
   VARIANT:=mbedtls
-  DEFAULT_VARIANT:=1
+  PROVIDES:=libustream-ssl
 endef
 
 ifeq ($(BUILD_VARIANT),wolfssl)
