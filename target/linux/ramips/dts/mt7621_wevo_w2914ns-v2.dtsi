@@ -8,6 +8,17 @@
 		label-mac-device = &wan;
 	};
 
+	leds {
+		compatible = "gpio-leds";
+
+		usb {
+			label = "green:usb";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
+			linux,default-trigger = "usbport";
+		};
+	};
+
 	keys {
 		compatible = "gpio-keys";
 
