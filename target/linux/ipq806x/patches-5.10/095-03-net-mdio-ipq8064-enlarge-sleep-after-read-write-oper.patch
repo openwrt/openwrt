@@ -1,0 +1,51 @@
+From b68e380068f349f6145800c488dd4a097af941fe Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Thu, 29 Apr 2021 22:07:40 +0200
+Subject: [PATCH 3/3] net: mdio: ipq8064: enlarge sleep after read/write
+ operation
+
+With the use of the qca8k dsa driver, some problem arised related to
+port status detection. With a load on a specific port (for example a
+simple speed test), the driver starts to behave in a strange way and
+garbage data is produced. To address this, enlarge the sleep delay and
+address a bug for the reg offset 31 that require additional delay for
+this specific reg.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/net/mdio/mdio-ipq8064.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/mdio/mdio-ipq8064.c b/drivers/net/mdio/mdio-ipq8064.c
+index 14b3c310af73..bd1aea2d5a26 100644
+--- a/drivers/net/mdio/mdio-ipq8064.c
++++ b/drivers/net/mdio/mdio-ipq8064.c
+@@ -65,7 +65,7 @@ ipq8064_mdio_read(struct mii_bus *bus, int phy_addr, int reg_offset)
+ 		   ((reg_offset << MII_REG_SHIFT) & MII_REG_MASK);
+ 
+ 	regmap_write(priv->base, MII_ADDR_REG_ADDR, miiaddr);
+-	usleep_range(8, 10);
++	usleep_range(10, 13);
+ 
+ 	err = ipq8064_mdio_wait_busy(priv);
+ 	if (err)
+@@ -91,7 +91,14 @@ ipq8064_mdio_write(struct mii_bus *bus, int phy_addr, int reg_offset, u16 data)
+ 		   ((reg_offset << MII_REG_SHIFT) & MII_REG_MASK);
+ 
+ 	regmap_write(priv->base, MII_ADDR_REG_ADDR, miiaddr);
+-	usleep_range(8, 10);
++
++	/* For the specific reg 31 extra time is needed or the next
++	 * read will produce garbage data.
++	 */
++	if (reg_offset == 31)
++		usleep_range(30, 43);
++	else
++		usleep_range(10, 13);
+ 
+ 	return ipq8064_mdio_wait_busy(priv);
+ }
+-- 
+2.30.2
+
