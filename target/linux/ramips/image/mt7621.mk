@@ -804,6 +804,21 @@ define Device/iptime_a8004t
 endef
 TARGET_DEVICES += iptime_a8004t
 
+define Device/iptime_t5004
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 129280k
+  UBINIZE_OPTS := -E 5
+  UIMAGE_NAME := t5004
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := T5004
+  DEVICE_PACKAGES := -wpad-basic-wolfssl
+endef
+TARGET_DEVICES += iptime_t5004
+
 define Device/jcg_jhr-ac876m
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
