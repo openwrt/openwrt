@@ -715,7 +715,7 @@ dhcp_srv_add() {
 	xappend "--srv-host=$service"
 }
 
-dhcp_mx_add() {
+dhcp_mxhost_add() {
 	local cfg="$1"
 	local domain relay pref
 
@@ -1085,7 +1085,9 @@ dnsmasq_start()
 
 	echo >> $CONFIGFILE_TMP
 	config_foreach filter_dnsmasq srvhost dhcp_srv_add "$cfg"
-	config_foreach filter_dnsmasq mxhost dhcp_mx_add "$cfg"
+	config_foreach filter_dnsmasq mxhost dhcp_mxhost_add "$cfg"
+	append_parm "$cfg" mxtarget "--mx-target"
+	append_bool "$cfg" localmx "--localmx"
 	echo >> $CONFIGFILE_TMP
 
 	config_get_bool boguspriv "$cfg" boguspriv 1
