@@ -1,0 +1,15 @@
+--- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
+@@ -23,6 +23,12 @@
+ 	cpu_opp_table: opp-table {
+ 		compatible = "operating-points-v2";
+ 		opp-shared;
++
++		opp-125000000 {
++			opp-hz = /bits/ 64 <125000000>;
++			opp-microvolt = <950000>;
++		};
++
+ 		opp-300000000 {
+ 			opp-hz = /bits/ 64 <300000000>;
+ 			opp-microvolt = <950000>;
