@@ -210,6 +210,10 @@ append_bogusnxdomain() {
 	xappend "--bogus-nxdomain=$1"
 }
 
+append_ptr_record() {
+	xappend "--ptr-record=$1"
+}
+
 append_pxe_service() {
 	xappend "--pxe-service=$1"
 }
@@ -953,6 +957,7 @@ dnsmasq_start()
 	fi
 	config_list_foreach "$cfg" "addnhosts" append_addnhosts
 	config_list_foreach "$cfg" "bogusnxdomain" append_bogusnxdomain
+	config_list_foreach "$cfg" "ptr_record" append_ptr_record
 	append_parm "$cfg" "leasefile" "--dhcp-leasefile" "/tmp/dhcp.leases"
 	append_parm "$cfg" "serversfile" "--servers-file"
 	append_parm "$cfg" "tftp_root" "--tftp-root"
