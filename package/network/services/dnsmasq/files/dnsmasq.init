@@ -892,6 +892,7 @@ dnsmasq_start()
 	append_bool "$cfg" nonegcache "--no-negcache"
 	append_bool "$cfg" strictorder "--strict-order"
 	append_bool "$cfg" logqueries "--log-queries=extra"
+	append_parm "$cfg" log_async "--log-async"
 	append_bool "$cfg" noresolv "--no-resolv"
 	append_bool "$cfg" localise_queries "--localise-queries"
 	append_bool "$cfg" readethers "--read-ethers"
