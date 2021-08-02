@@ -138,6 +138,8 @@ proto_6in4_setup() {
 
 proto_6in4_teardown() {
 	local cfg="$1"
+	local link="6in4-$cfg"
+	ip link del $link
 }
 
 proto_6in4_init_config() {
