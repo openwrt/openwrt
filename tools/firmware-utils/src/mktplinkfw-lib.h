@@ -1,14 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
  *
  * This tool was based on:
  *   TP-Link WR941 V2 firmware checksum fixing tool.
  *   Copyright (C) 2008,2009 Wang Jian <lark@linux.net.cn>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
- *
  */
 
 

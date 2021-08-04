@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * dns313-header.c
  *
@@ -8,7 +9,6 @@
  * The DNS313 use the same header on zImage, ramdisk, rootfs.
  *
  * Written by Linus Walleij <linus.walleij@linaro.org>
- * License terms: GPLv2
  */
 #include <stdlib.h>
 #include <stdio.h>
