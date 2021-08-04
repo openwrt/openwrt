@@ -99,7 +99,9 @@ endef
 
 define Device/AVM
   DEVICE_VENDOR := AVM
-  KERNEL := kernel-bin | append-dtb | lzma | eva-image
+  KERNEL_LOADADDR:=$(shell awk '/[AT] _text/ { print "0x"$$1; }' < $(LINUX_DIR)/System.map)
+  KERNEL_ENTRY:=$(shell awk '/T kernel_entry/ { print "0x"$$1; }' < $(LINUX_DIR)/System.map)
+  KERNEL := kernel-bin | append-dtb | lzma | eva-image | pad-to 256
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-avm-fakeroot | \
 	append-rootfs | pad-rootfs | check-size | append-metadata
