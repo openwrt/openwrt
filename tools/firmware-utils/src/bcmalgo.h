@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #ifndef bcmutils_H
 #define bcmutils_H
 
