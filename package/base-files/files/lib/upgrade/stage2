@@ -64,6 +64,10 @@ switch_to_ramfs() {
 	/bin/mount -o remount,ro /mnt
 	/bin/umount -l /mnt
 
+	grep -e "^/dev/dm-.*" -e "^/dev/loop.*" /proc/mounts | while read bdev mp _r; do
+		umount $mp
+	done
+
 	[ "$RAMFS_COPY_LOSETUP" ] && losetup -D
 	[ "$RAMFS_COPY_LVM" ] && {
 		mkdir -p /tmp/lvm/cache
