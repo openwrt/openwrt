@@ -1243,6 +1243,15 @@ define Device/glinet_gl-usb150
 endef
 TARGET_DEVICES += glinet_gl-usb150
 
+define Device/glinet_gl-x300b
+  SOC := qca9531
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-X300B
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += glinet_gl-x300b
+
 define Device/glinet_gl-x750
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
@@ -1368,6 +1377,15 @@ define Device/jjplus_ja76pf2
   SUPPORTED_DEVICES += ja76pf2
 endef
 TARGET_DEVICES += jjplus_ja76pf2
+
+define Device/joyit_jt-or750i
+  SOC := qca9531
+  DEVICE_VENDOR := Joy-IT
+  DEVICE_MODEL := JT-OR750i
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += joyit_jt-or750i
 
 define Device/librerouter_librerouter-v1
   SOC := qca9558
