@@ -1,0 +1,316 @@
+--- a/include/iwinfo.h
++++ b/include/iwinfo.h
+@@ -242,6 +242,7 @@ struct iwinfo_ops {
+ 	int (*assoclist)(const char *, char *, int *);
+ 	int (*txpwrlist)(const char *, char *, int *);
+ 	int (*scanlist)(const char *, char *, int *);
++	int (*scanlist_ssid)(const char *, char *, int *, const char *);
+ 	int (*freqlist)(const char *, char *, int *);
+ 	int (*countrylist)(const char *, char *, int *);
+ 	int (*survey)(const char *, char *, int *);
+--- a/iwinfo_lua.c
++++ b/iwinfo_lua.c
+@@ -382,77 +382,98 @@ static int iwinfo_L_txpwrlist(lua_State
+ }
+ 
+ /* Wrapper for scan list */
+-static int iwinfo_L_scanlist(lua_State *L, int (*func)(const char *, char *, int *))
++static void parse_scanlist(lua_State *L, char *rv, int len, const char *ssid)
+ {
+-	int i, x, h, len = 0;
+-	char rv[IWINFO_BUFSIZE];
+-	char macstr[18];
+-	const char *ifname = luaL_checkstring(L, 1);
+ 	struct iwinfo_scanlist_entry *e;
++	char macstr[18];
++	int i, x, h;
+ 
+-	lua_newtable(L);
+-	memset(rv, 0, sizeof(rv));
+-
+-	if (!(*func)(ifname, rv, &len))
++	for (i = 0, x = 1; i < len; i += sizeof(struct iwinfo_scanlist_entry))
+ 	{
+-		for (i = 0, x = 1; i < len; i += sizeof(struct iwinfo_scanlist_entry), x++)
+-		{
+-			e = (struct iwinfo_scanlist_entry *) &rv[i];
+-
+-			lua_newtable(L);
++		e = (struct iwinfo_scanlist_entry *) &rv[i];
+ 
+-			/* BSSID */
+-			sprintf(macstr, "%02X:%02X:%02X:%02X:%02X:%02X",
+-				e->mac[0], e->mac[1], e->mac[2],
+-				e->mac[3], e->mac[4], e->mac[5]);
++		lua_newtable(L);
+ 
+-			lua_pushstring(L, macstr);
+-			lua_setfield(L, -2, "bssid");
++		/* BSSID */
++		sprintf(macstr, "%02X:%02X:%02X:%02X:%02X:%02X",
++			e->mac[0], e->mac[1], e->mac[2],
++			e->mac[3], e->mac[4], e->mac[5]);
+ 
+-			/* ESSID */
+-			if (e->ssid[0])
+-			{
+-				lua_pushstring(L, (char *) e->ssid);
+-				lua_setfield(L, -2, "ssid");
+-			}
++		lua_pushstring(L, macstr);
++		lua_setfield(L, -2, "bssid");
+ 
+-			/* Channel */
+-			lua_pushinteger(L, e->channel);
+-			lua_setfield(L, -2, "channel");
++		/* ESSID */
++		if (e->ssid[0])
++		{
++			lua_pushstring(L, (char *) e->ssid);
++			lua_setfield(L, -2, "ssid");
++		}
+ 
+-			/* Mode */
+-			lua_pushstring(L, IWINFO_OPMODE_NAMES[e->mode]);
+-			lua_setfield(L, -2, "mode");
+-
+-			/* Quality, Signal */
+-			lua_pushinteger(L, e->quality);
+-			lua_setfield(L, -2, "quality");
+-
+-			lua_pushinteger(L, e->quality_max);
+-			lua_setfield(L, -2, "quality_max");
+-
+-			lua_pushnumber(L, (e->signal - 0x100));
+-			lua_setfield(L, -2, "signal");
+-
+-			/* Crypto */
+-			iwinfo_L_cryptotable(L, &e->crypto);
+-			lua_setfield(L, -2, "encryption");
++		/* Channel */
++		lua_pushinteger(L, e->channel);
++		lua_setfield(L, -2, "channel");
++
++		/* Mode */
++		lua_pushstring(L, IWINFO_OPMODE_NAMES[e->mode]);
++		lua_setfield(L, -2, "mode");
++
++		/* Quality, Signal */
++		lua_pushinteger(L, e->quality);
++		lua_setfield(L, -2, "quality");
++
++		lua_pushinteger(L, e->quality_max);
++		lua_setfield(L, -2, "quality_max");
++
++		lua_pushnumber(L, (e->signal - 0x100));
++		lua_setfield(L, -2, "signal");
++
++		/* Crypto */
++		iwinfo_L_cryptotable(L, &e->crypto);
++		lua_setfield(L, -2, "encryption");
+ 
+-			/* HT Modes */
+-			if (e->htmodelist)
++		/* HT Modes */
++		if (e->htmodelist)
++		{
++			lua_newtable(L);
++			for (h = 0; h < ARRAY_SIZE(IWINFO_HTMODE_NAMES); h++)
+ 			{
+-				lua_newtable(L);
+-				for (h = 0; h < ARRAY_SIZE(IWINFO_HTMODE_NAMES); h++)
+-				{
+-					lua_pushboolean(L, e->htmodelist & (1 << h));
+-					lua_setfield(L, -2, IWINFO_HTMODE_NAMES[h]);
+-				}
+-				lua_setfield(L, -2, "htmodelist");
++				lua_pushboolean(L, e->htmodelist & (1 << h));
++				lua_setfield(L, -2, IWINFO_HTMODE_NAMES[h]);
+ 			}
+-
+-			lua_rawseti(L, -2, x);
++			lua_setfield(L, -2, "htmodelist");
+ 		}
++
++		lua_rawseti(L, -2, x++);
+ 	}
++}
++
++static int iwinfo_L_scanlist(lua_State *L, int (*func)(const char *, char *, int *))
++{
++	int len = 0;
++	char rv[IWINFO_BUFSIZE];
++	const char *ifname = luaL_checkstring(L, 1);
++
++	lua_newtable(L);
++	memset(rv, 0, sizeof(rv));
++
++	if (!(*func)(ifname, rv, &len))
++		parse_scanlist(L, rv, len, NULL);
++
++	return 1;
++}
++
++static int iwinfo_L_scanlist_ssid(lua_State *L, int (*func)(const char *, char *, int *, const char *))
++{
++	int len = 0;
++	char rv[IWINFO_BUFSIZE];
++	const char *ifname = luaL_checkstring(L, 1);
++	const char *ssid = lua_tostring(L, 2);
++
++	lua_newtable(L);
++	memset(rv, 0, sizeof(rv));
++
++	if (!(*func)(ifname, rv, &len, ssid))
++		parse_scanlist(L, rv, len, ssid);
+ 
+ 	return 1;
+ }
+@@ -753,6 +774,7 @@ LUA_WRAP_STRUCT_OP(nl80211,mode)
+ LUA_WRAP_STRUCT_OP(nl80211,assoclist)
+ LUA_WRAP_STRUCT_OP(nl80211,txpwrlist)
+ LUA_WRAP_STRUCT_OP(nl80211,scanlist)
++LUA_WRAP_STRUCT_OP(nl80211,scanlist_ssid)
+ LUA_WRAP_STRUCT_OP(nl80211,freqlist)
+ LUA_WRAP_STRUCT_OP(nl80211,countrylist)
+ LUA_WRAP_STRUCT_OP(nl80211,hwmodelist)
+@@ -783,6 +805,7 @@ LUA_WRAP_STRUCT_OP(mtk,mode)
+ LUA_WRAP_STRUCT_OP(mtk,assoclist)
+ LUA_WRAP_STRUCT_OP(mtk,txpwrlist)
+ LUA_WRAP_STRUCT_OP(mtk,scanlist)
++LUA_WRAP_STRUCT_OP(mtk,scanlist_ssid)
+ LUA_WRAP_STRUCT_OP(mtk,freqlist)
+ LUA_WRAP_STRUCT_OP(mtk,countrylist)
+ LUA_WRAP_STRUCT_OP(mtk,hwmodelist)
+@@ -906,6 +929,7 @@ static const luaL_reg R_nl80211[] = {
+ 	LUA_REG(nl80211,assoclist),
+ 	LUA_REG(nl80211,txpwrlist),
+ 	LUA_REG(nl80211,scanlist),
++	LUA_REG(nl80211,scanlist_ssid),
+ 	LUA_REG(nl80211,freqlist),
+ 	LUA_REG(nl80211,countrylist),
+ 	LUA_REG(nl80211,hwmodelist),
+@@ -939,6 +963,7 @@ static const luaL_reg R_mtk[] = {
+ 	LUA_REG(mtk,assoclist),
+ 	LUA_REG(mtk,txpwrlist),
+ 	LUA_REG(mtk,scanlist),
++	LUA_REG(mtk,scanlist_ssid),
+ 	LUA_REG(mtk,freqlist),
+ 	LUA_REG(mtk,countrylist),
+ 	LUA_REG(mtk,hwmodelist),
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -2476,11 +2476,30 @@ static int nl80211_get_scanlist_cb(struc
+ 	return NL_SKIP;
+ }
+ 
+-static int nl80211_get_scanlist_nl(const char *ifname, char *buf, int *len)
++static int nl80211_get_scanlist_nl(const char *ifname, char *buf, int *len, const char *ssid)
+ {
+ 	struct nl80211_scanlist sl = { .e = (struct iwinfo_scanlist_entry *)buf };
++	struct nl80211_msg_conveyor *cv;
++
++	cv = nl80211_msg(ifname, NL80211_CMD_TRIGGER_SCAN, 0);
++	if (!cv)
++		return -ENOMEM;
++
++	if (ssid && ssid[0])
++	{
++		struct nl_msg *ssids = nlmsg_alloc();
++		if (!ssids)
++		{
++			nl80211_free(cv);
++			return -ENOMEM;
++		}
+ 
+-	if (nl80211_request(ifname, NL80211_CMD_TRIGGER_SCAN, 0, NULL, NULL))
++		nla_put(ssids, 1, strlen(ssid), ssid);
++		nla_put_nested(cv->msg, NL80211_ATTR_SCAN_SSIDS, ssids);
++		nlmsg_free(ssids);
++	}
++
++	if (nl80211_send(cv, NULL, NULL))
+ 		goto out;
+ 
+ 	if (nl80211_wait("nl80211", "scan",
+@@ -2709,7 +2728,7 @@ static int nl80211_get_scanlist_wpactl(c
+ 	return (count >= 0) ? 0 : -1;
+ }
+ 
+-static int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
++static int nl80211_get_scanlist_ssid(const char *ifname, char *buf, int *len, const char *ssid)
+ {
+ 	char *res;
+ 	int rv, mode;
+@@ -2722,13 +2741,13 @@ static int nl80211_get_scanlist(const ch
+ 		/* Reuse existing interface */
+ 		if ((res = nl80211_phy2ifname(ifname)) != NULL)
+ 		{
+-			return nl80211_get_scanlist(res, buf, len);
++			return nl80211_get_scanlist_ssid(res, buf, len, ssid);
+ 		}
+ 
+ 		/* Need to spawn a temporary iface for scanning */
+ 		else if ((res = nl80211_ifadd(ifname)) != NULL)
+ 		{
+-			rv = nl80211_get_scanlist(res, buf, len);
++			rv = nl80211_get_scanlist_ssid(res, buf, len, ssid);
+ 			nl80211_ifdel(res);
+ 			return rv;
+ 		}
+@@ -2749,7 +2768,7 @@ static int nl80211_get_scanlist(const ch
+ 	          mode == IWINFO_OPMODE_MONITOR) &&
+ 	         iwinfo_ifup(ifname))
+ 	{
+-		return nl80211_get_scanlist_nl(ifname, buf, len);
++		return nl80211_get_scanlist_nl(ifname, buf, len, ssid);
+ 	}
+ 
+ 	/* AP scan */
+@@ -2761,7 +2780,7 @@ static int nl80211_get_scanlist(const ch
+ 			if (!iwinfo_ifup(ifname))
+ 				return -1;
+ 
+-			rv = nl80211_get_scanlist_nl(ifname, buf, len);
++			rv = nl80211_get_scanlist_nl(ifname, buf, len, ssid);
+ 			iwinfo_ifdown(ifname);
+ 			return rv;
+ 		}
+@@ -2778,7 +2797,7 @@ static int nl80211_get_scanlist(const ch
+ 			 * additional interface and there's no need to tear down the ap */
+ 			if (iwinfo_ifup(res))
+ 			{
+-				rv = nl80211_get_scanlist_nl(res, buf, len);
++				rv = nl80211_get_scanlist_nl(res, buf, len, ssid);
+ 				iwinfo_ifdown(res);
+ 			}
+ 
+@@ -2786,7 +2805,7 @@ static int nl80211_get_scanlist(const ch
+ 			 * during scan */
+ 			else if (iwinfo_ifdown(ifname) && iwinfo_ifup(res))
+ 			{
+-				rv = nl80211_get_scanlist_nl(res, buf, len);
++				rv = nl80211_get_scanlist_nl(res, buf, len, ssid);
+ 				iwinfo_ifdown(res);
+ 				iwinfo_ifup(ifname);
+ 				nl80211_hostapd_hup(ifname);
+@@ -2800,6 +2819,11 @@ static int nl80211_get_scanlist(const ch
+ 	return -1;
+ }
+ 
++static int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
++{
++	return nl80211_get_scanlist_ssid(ifname, buf, len, NULL);
++}
++
+ static int nl80211_get_freqlist_cb(struct nl_msg *msg, void *arg)
+ {
+ 	int bands_remain, freqs_remain;
+@@ -3238,6 +3262,7 @@ const struct iwinfo_ops nl80211_ops = {
+ 	.assoclist        = nl80211_get_assoclist,
+ 	.txpwrlist        = nl80211_get_txpwrlist,
+ 	.scanlist         = nl80211_get_scanlist,
++	.scanlist_ssid    = nl80211_get_scanlist_ssid,
+ 	.freqlist         = nl80211_get_freqlist,
+ 	.countrylist      = nl80211_get_countrylist,
+ 	.survey           = nl80211_get_survey,

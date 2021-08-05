@@ -267,18 +267,31 @@ struct site_survey_info {
 	int htmodelist;
 };
 
-static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
+static int mtk_get_scanlist_ssid(const char *ifname, char *buf, int *len,
+	const char *ssid, enum iwinfo_scan_type type)
 {
 	struct iwinfo_scanlist_entry sce;
 	char action[64] = "SiteSurvey=";
 	char buf2[IWINFO_BUFSIZE];
-	int i, j, length;
+	int i, length;
+
+	if (type == IWINFO_SCAN_DUMP)
+		goto dump;
+
+	if (ssid && ssid[0])
+		snprintf(action, sizeof(action), "SiteSurvey=%s", ssid);
 
 	if(mtk_get80211priv(ifname, RTPRIV_IOCTL_SET, action, sizeof(action)) < 0)
 		return -1;
 
+	if (type == IWINFO_SCAN_TRIGGER) {
+		*len = 0;
+		return 0;
+	}
+
 	sleep(5);
 
+dump:
 	strcpy(buf2, "fine");
 
 	length = mtk_get80211priv(ifname, RTPRIV_IOCTL_GSITESURVEY, buf2, sizeof(buf2));
@@ -287,10 +300,12 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 	
 	*len = 0;
 
-	for (i = 0; i < length; i += sizeof(struct site_survey_info),
-		j += sizeof(struct iwinfo_scanlist_entry)) {
-		struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)&buf[j];
+	for (i = 0; i < length; i += sizeof(struct site_survey_info)) {
+		struct iwinfo_scanlist_entry *e = (struct iwinfo_scanlist_entry *)&buf[*len];
 		struct site_survey_info *si = (struct site_survey_info *)&buf2[i];
+
+		if (!si->ssid[0])
+			continue;
 
 		strcpy(e->ssid, si->ssid);
 		memcpy(e->mac, si->bssid, 6);
@@ -312,6 +327,11 @@ static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
 	}
 
 	return 0;
+}
+
+static int mtk_get_scanlist(const char *ifname, char *buf, int *len)
+{
+	return mtk_get_scanlist_ssid(ifname, buf, len, NULL, 0);
 }
 
 static int mtk_get_freqlist(const char *ifname, char *buf, int *len)
@@ -467,6 +487,7 @@ const struct iwinfo_ops mtk_ops = {
 	.assoclist        = mtk_get_assoclist,
 	.txpwrlist        = mtk_get_txpwrlist,
 	.scanlist         = mtk_get_scanlist,
+	.scanlist_ssid    = mtk_get_scanlist_ssid,
 	.freqlist         = mtk_get_freqlist,
 	.countrylist      = mtk_get_countrylist,
 	.close            = mtk_close
