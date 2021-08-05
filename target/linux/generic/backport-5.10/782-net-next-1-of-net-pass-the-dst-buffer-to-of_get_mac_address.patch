@@ -423,7 +423,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (bgmac->irq < 0)
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4453,7 +4453,6 @@ static int macb_probe(struct platform_de
+@@ -4456,7 +4456,6 @@ static int macb_probe(struct platform_de
  	struct net_device *dev;
  	struct resource *regs;
  	void __iomem *mem;
@@ -431,7 +431,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct macb *bp;
  	int err, val;
  
-@@ -4566,15 +4565,11 @@ static int macb_probe(struct platform_de
+@@ -4569,15 +4568,11 @@ static int macb_probe(struct platform_de
  	if (bp->caps & MACB_CAPS_NEEDS_RSTONUBR)
  		bp->rx_intr_mask |= MACB_BIT(RXUBR);
  
@@ -561,7 +561,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* Get IRQ number */
 --- a/drivers/net/ethernet/freescale/fec_main.c
 +++ b/drivers/net/ethernet/freescale/fec_main.c
-@@ -1664,6 +1664,7 @@ static void fec_get_mac(struct net_devic
+@@ -1666,6 +1666,7 @@ static void fec_get_mac(struct net_devic
  	struct fec_enet_private *fep = netdev_priv(ndev);
  	struct fec_platform_data *pdata = dev_get_platdata(&fep->pdev->dev);
  	unsigned char *iap, tmpaddr[ETH_ALEN];
@@ -569,7 +569,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/*
  	 * try to get mac address in following order:
-@@ -1679,9 +1680,9 @@ static void fec_get_mac(struct net_devic
+@@ -1681,9 +1682,9 @@ static void fec_get_mac(struct net_devic
  	if (!is_valid_ether_addr(iap)) {
  		struct device_node *np = fep->pdev->dev.of_node;
  		if (np) {
@@ -752,7 +752,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			    ndev->dev_addr);
 --- a/drivers/net/ethernet/lantiq_xrx200.c
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -435,7 +435,6 @@ static int xrx200_probe(struct platform_
+@@ -440,7 +440,6 @@ static int xrx200_probe(struct platform_
  	struct resource *res;
  	struct xrx200_priv *priv;
  	struct net_device *net_dev;
@@ -760,7 +760,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int err;
  
  	/* alloc the network device */
-@@ -479,10 +478,8 @@ static int xrx200_probe(struct platform_
+@@ -484,10 +483,8 @@ static int xrx200_probe(struct platform_
  		return PTR_ERR(priv->clk);
  	}
  
@@ -895,7 +895,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -2559,14 +2559,11 @@ static int __init mtk_init(struct net_de
+@@ -2580,14 +2580,11 @@ static int __init mtk_init(struct net_de
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
@@ -1360,7 +1360,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int irq;
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -4911,7 +4911,7 @@ int stmmac_dvr_probe(struct device *devi
+@@ -4904,7 +4904,7 @@ int stmmac_dvr_probe(struct device *devi
  	priv->wol_irq = res->wol_irq;
  	priv->lpi_irq = res->lpi_irq;
  
@@ -1380,7 +1380,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  {
  	struct device_node *np = pdev->dev.of_node;
  	struct plat_stmmacenet_data *plat;
-@@ -405,12 +405,12 @@ stmmac_probe_config_dt(struct platform_d
+@@ -406,12 +406,12 @@ stmmac_probe_config_dt(struct platform_d
  	if (!plat)
  		return ERR_PTR(-ENOMEM);
  
@@ -1397,8 +1397,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +		eth_zero_addr(mac);
  	}
  
- 	plat->phy_interface = device_get_phy_mode(&pdev->dev);
-@@ -631,7 +631,7 @@ void stmmac_remove_config_dt(struct plat
+ 	phy_mode = device_get_phy_mode(&pdev->dev);
+@@ -635,7 +635,7 @@ void stmmac_remove_config_dt(struct plat
  }
  #else
  struct plat_stmmacenet_data *
@@ -1586,7 +1586,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (!is_valid_ether_addr(ndev->dev_addr))
  		eth_hw_addr_random(ndev);
  	temac_do_set_mac_address(ndev);
-@@ -1351,7 +1351,7 @@ static int temac_probe(struct platform_d
+@@ -1372,7 +1372,7 @@ static int temac_probe(struct platform_d
  	struct device_node *temac_np = dev_of_node(&pdev->dev), *dma_np;
  	struct temac_local *lp;
  	struct net_device *ndev;
@@ -1595,7 +1595,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	__be32 *p;
  	bool little_endian;
  	int rc = 0;
-@@ -1542,8 +1542,8 @@ static int temac_probe(struct platform_d
+@@ -1563,8 +1563,8 @@ static int temac_probe(struct platform_d
  
  	if (temac_np) {
  		/* Retrieve the MAC address */
@@ -1902,7 +1902,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			break;
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -1852,7 +1852,7 @@ int dsa_slave_create(struct dsa_port *po
+@@ -1857,7 +1857,7 @@ int dsa_slave_create(struct dsa_port *po
  	slave_dev->hw_features |= NETIF_F_HW_TC;
  	slave_dev->features |= NETIF_F_LLTX;
  	slave_dev->ethtool_ops = &dsa_slave_ethtool_ops;

@@ -25,7 +25,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  
  /**
   * of_get_phy_mode - Get phy mode for given device_node
-@@ -95,6 +96,52 @@ static int of_get_mac_addr_nvmem(struct
+@@ -89,6 +90,52 @@ static int of_get_mac_addr_nvmem(struct
  	return 0;
  }
  
@@ -78,7 +78,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
   * checked first, because that is supposed to contain to "most recent" MAC
-@@ -115,6 +161,10 @@ static int of_get_mac_addr_nvmem(struct
+@@ -109,6 +156,10 @@ static int of_get_mac_addr_nvmem(struct
   * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
   * but is all zeros.
   *
@@ -89,7 +89,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
   * Return: 0 on success and errno in case of error.
  */
  int of_get_mac_address(struct device_node *np, u8 *addr)
-@@ -136,6 +186,10 @@ int of_get_mac_address(struct device_nod
+@@ -130,6 +181,10 @@ int of_get_mac_address(struct device_nod
  	if (!ret)
  		return 0;
  
