@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2015 Thomas Hebb <tommyhebb@gmail.com>
  * Copyright (C) 2016 Christian Lamparter <chunkeey@googlemail.com>
@@ -12,11 +13,6 @@
  * has been reverse engineered from the nandloader's nand_load_bk function.
  * The original code is part of Cisco's GPL code and can be found at:
  * <https://github.com/riptidewave93/meraki-linux>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
- *
  */
 
 #include <stdio.h>
