@@ -6,6 +6,63 @@
 . /lib/functions/uci-defaults.sh
 . /lib/functions/system.sh
 
+reset_lan_switch_leds_rule()
+{
+	if [ -f /sys/class/leds/$1\:lan-1 ]; then
+		echo 0 > /sys/class/leds/$1\:lan-*/offload-phy-activity/*
+		echo 0 > /sys/class/leds/$1\:lan-*/offload-phy-activity/*
+	fi
+}
+
+set_lan_switch_leds_rule()
+{
+	if [ -f /sys/class/leds/$1\:lan-1 ]; then
+		echo 1 > /sys/class/leds/$1\:lan-1/offload-phy-activity/$2
+		echo 1 > /sys/class/leds/$1\:lan-2/offload-phy-activity/$2
+		echo 1 > /sys/class/leds/$1\:lan-3/offload-phy-activity/$2
+		echo 1 > /sys/class/leds/$1\:lan-4/offload-phy-activity/$2
+	fi
+}
+
+ipq806x_setup_switch_leds()
+{
+	local board="$1"
+
+	case "$board" in
+	nec,wg2600hp3)
+		reset_lan_switch_leds_rule "green"
+		set_lan_switch_leds_rule "green" "option_power_on_reset"
+		set_lan_switch_leds_rule "green" "keep_link_100m"
+		set_lan_switch_leds_rule "green" "blink_rx"
+		set_lan_switch_leds_rule "green" "blink_tx"
+		set_lan_switch_leds_rule "green" "option_linkup_over"
+		set_lan_switch_leds_rule "green" "option_blink_8hz"
+
+		reset_lan_switch_leds_rule "amber"
+		set_lan_switch_leds_rule "amber" "option_power_on_reset"
+		set_lan_switch_leds_rule "amber" "keep_link_100m"
+		set_lan_switch_leds_rule "amber" "blink_rx"
+		set_lan_switch_leds_rule "amber" "blink_tx"
+		set_lan_switch_leds_rule "amber" "option_linkup_over"
+		set_lan_switch_leds_rule "amber" "option_blink_8hz"
+		;;
+	askey,rt4230w-rev6)
+		reset_lan_switch_leds_rule "green"
+		set_lan_switch_leds_rule "green" "option_power_on_reset";
+		set_lan_switch_leds_rule "green" "keep_link_1000m"
+		set_lan_switch_leds_rule "green" "keep_link_100m"
+		set_lan_switch_leds_rule "green" "keep_link_10m"
+		set_lan_switch_leds_rule "green" "option_blink_8hz"
+
+		reset_lan_switch_leds_rule "amber"
+		set_lan_switch_leds_rule "green" "option_power_on_reset"
+		set_lan_switch_leds_rule "green" "blink_rx"
+		set_lan_switch_leds_rule "green" "blink_tx"
+		set_lan_switch_leds_rule "green" "option_blink_8hz"
+		;;
+	esac
+}
+
 ipq806x_setup_interfaces()
 {
 	local board="$1"
