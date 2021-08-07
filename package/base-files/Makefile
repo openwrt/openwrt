@@ -23,7 +23,7 @@ PKG_LICENSE:=GPL-2.0
 PKG_CONFIG_DEPENDS += \
 	CONFIG_SIGNED_PACKAGES CONFIG_TARGET_INIT_PATH CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE \
 	CONFIG_NAND_SUPPORT \
-	CONFIG_SDCARD_SUPPORT \
+	CONFIG_LEGACY_SDCARD_SUPPORT \
 	CONFIG_CLEAN_IPKG \
 	CONFIG_PER_FEED_REPO \
 	$(foreach feed,$(FEEDS_AVAILABLE),CONFIG_FEED_$(feed))
@@ -124,9 +124,9 @@ ifeq ($(CONFIG_NAND_SUPPORT),)
   endef
 endif
 
-ifeq ($(CONFIG_SDCARD_SUPPORT),)
-  define Package/base-files/sdcard-support
-	rm -f $(1)/lib/upgrade/sdcard.sh
+ifeq ($(CONFIG_LEGACY_SDCARD_SUPPORT),)
+  define Package/base-files/legacy-sdcard-support
+	rm -f $(1)/lib/upgrade/legacy-sdcard.sh
   endef
 endif
 
@@ -135,7 +135,7 @@ define Package/base-files/install
 	$(CP) ./files/* $(1)/
 	$(Package/base-files/install-key)
 	$(Package/base-files/nand-support)
-	$(Package/base-files/sdcard-support)
+	$(Package/base-files/legacy-sdcard-support)
 	if [ -d $(GENERIC_PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(GENERIC_PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
