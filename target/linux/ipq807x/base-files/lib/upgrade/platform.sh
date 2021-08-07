@@ -10,6 +10,9 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	edimax,cax1800)
+		nand_do_upgrade "$1"
+		;;
 	redmi,ax6|\
 	xiaomi,ax3600|\
 	xiaomi,ax9000)
