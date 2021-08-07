@@ -1,4 +1,4 @@
-sdcard_check_image() {
+legacy_sdcard_check_image() {
 	local file="$1"
 	local diskdev partdev diff
 
@@ -26,7 +26,7 @@ sdcard_check_image() {
 	fi
 }
 
-sdcard_do_upgrade() {
+legacy_sdcard_do_upgrade() {
 	local board=$(board_name)
 	local diskdev partdev diff
 
@@ -78,7 +78,7 @@ sdcard_do_upgrade() {
 	sleep 1
 }
 
-sdcard_copy_config() {
+legacy_sdcard_copy_config() {
 	local partdev
 
 	if export_partdevice partdev 1; then
