@@ -75,10 +75,25 @@ ipq806x_setup_macs()
 		;;
 	esac
 }
+
+ipq806x_setup_gmacs()
+{
+	local board="$1"
+
+	case "$board" in
+		ubnt,unifi-ac-hd)
+		ip link set eth0 name ethtmp
+		ip link set eth1 name eth0
+		ip link set ethtmp name eth1
+		;;
+	esac
+}
+
 board_config_update
 board=$(board_name)
 ipq806x_setup_macs $board
 ipq806x_setup_interfaces $board
+ipq806x_setup_gmacs $board
 board_config_flush
 
 exit 0
