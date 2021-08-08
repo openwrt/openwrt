@@ -1,0 +1,43 @@
+diff -rNu a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+--- a/drivers/usb/dwc3/core.c	2020-08-26 11:41:08.000000000 +0300
++++ b/drivers/usb/dwc3/core.c	2020-09-20 11:31:30.243285496 +0300
+@@ -1451,9 +1451,13 @@
+ 	if (dev->of_node) {
+ 		dwc->num_clks = ARRAY_SIZE(dwc3_core_clks);
+ 
+-		ret = devm_clk_bulk_get(dev, dwc->num_clks, dwc->clks);
+-		if (ret == -EPROBE_DEFER)
+-			return ret;
++		if (dev->of_node->parent && of_property_read_bool(dev->of_node->parent, "no-clk_bulk_get")){
++			ret = -ENOENT;
++		} else {
++			ret = devm_clk_bulk_get(dev, dwc->num_clks, dwc->clks);
++			if (ret == -EPROBE_DEFER)
++				return ret;
++		}
+ 		/*
+ 		 * Clocks are optional, but new DT platforms should support all
+ 		 * clocks as required by the DT-binding.
+diff -rNu a/drivers/usb/dwc3/dwc3-qcom.c b/drivers/usb/dwc3/dwc3-qcom.c
+--- a/drivers/usb/dwc3/dwc3-qcom.c	2020-08-26 11:41:08.000000000 +0300
++++ b/drivers/usb/dwc3/dwc3-qcom.c	2020-09-20 11:30:21.907910131 +0300
+@@ -622,11 +622,14 @@
+ 		ret = PTR_ERR(qcom->qscratch_base);
+ 		goto clk_disable;
+ 	}
+-
+-	ret = dwc3_qcom_setup_irq(pdev);
+-	if (ret) {
+-		dev_err(dev, "failed to setup IRQs, err=%d\n", ret);
+-		goto clk_disable;
++	if (np && of_property_read_bool(np, "no-dwc3_qcom_setup_irq")) {
++		ret = 0;
++	} else {
++		ret = dwc3_qcom_setup_irq(pdev);
++		if (ret) {
++			dev_err(dev, "failed to setup IRQs, err=%d\n", ret);
++			goto clk_disable;
++		}
+ 	}
+ 
+ 	/*
