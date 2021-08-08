@@ -878,6 +878,44 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		eth_hw_addr_random(dev);
  		dev_err(eth->dev, "generated random MAC address %pM\n",
  			dev->dev_addr);
+--- a/drivers/net/ethernet/micrel/ks8851.c
++++ b/drivers/net/ethernet/micrel/ks8851.c
+@@ -419,11 +419,10 @@ static void ks8851_read_mac_addr(struct
+ static void ks8851_init_mac(struct ks8851_net *ks)
+ {
+ 	struct net_device *dev = ks->netdev;
+-	const u8 *mac_addr;
++	int ret;
+ 
+-	mac_addr = of_get_mac_address(ks->spidev->dev.of_node);
+-	if (!IS_ERR(mac_addr)) {
+-		ether_addr_copy(dev->dev_addr, mac_addr);
++	ret = of_get_mac_address(ks->spidev->dev.of_node, dev->dev_addr);
++	if (!ret) {
+ 		ks8851_write_mac_addr(dev);
+ 		return;
+ 	}
+--- a/drivers/net/ethernet/micrel/ks8851_mll.c
++++ b/drivers/net/ethernet/micrel/ks8851_mll.c
+@@ -1239,7 +1239,6 @@ static int ks8851_probe(struct platform_
+ 	struct net_device *netdev;
+ 	struct ks_net *ks;
+ 	u16 id, data;
+-	const char *mac;
+ 
+ 	netdev = alloc_etherdev(sizeof(struct ks_net));
+ 	if (!netdev)
+@@ -1326,9 +1325,7 @@ static int ks8851_probe(struct platform_
+ 
+ 	/* overwriting the default MAC address */
+ 	if (pdev->dev.of_node) {
+-		mac = of_get_mac_address(pdev->dev.of_node);
+-		if (!IS_ERR(mac))
+-			ether_addr_copy(ks->mac_addr, mac);
++		of_get_mac_address(pdev->dev.of_node, ks->mac_addr);
+ 	} else {
+ 		struct ks8851_mll_platform_data *pdata;
+ 
 --- a/drivers/net/ethernet/nxp/lpc_eth.c
 +++ b/drivers/net/ethernet/nxp/lpc_eth.c
 @@ -1350,9 +1350,7 @@ static int lpc_eth_drv_probe(struct plat
