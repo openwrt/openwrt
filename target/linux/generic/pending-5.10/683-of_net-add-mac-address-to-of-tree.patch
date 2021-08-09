@@ -1,6 +1,6 @@
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -141,6 +141,30 @@ static int of_get_mac_address_mtd(struct
+@@ -135,6 +135,26 @@ static int of_get_mac_address_mtd(struct
  	return -EINVAL;
  }
  
@@ -8,18 +8,14 @@
 +{
 +	struct property *prop;
 +
-+	prop = of_find_property(np, "mac-address", NULL);
-+	if (prop)
-+		kfree(prop);
-+
 +	prop = kzalloc(sizeof(*prop), GFP_KERNEL);
 +	if (!prop)
-+		return 0;
++		return -ENOMEM;
 +
 +	prop->name = "mac-address";
 +	prop->length = ETH_ALEN;
 +	prop->value = kmemdup(addr, ETH_ALEN, GFP_KERNEL);
-+	if (!prop->value || of_add_property(np, prop))
++	if (!prop->value || of_update_property(np, prop))
 +		goto free;
 +
 +	return 0;
@@ -31,7 +27,7 @@
  
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
-@@ -216,6 +240,7 @@ found:
+@@ -210,6 +230,7 @@ found:
  	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc))
  		addr[inc_idx] += mac_inc;
  
