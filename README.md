@@ -50,7 +50,7 @@ Product Branch Relationship Table
 | MV1000 | openwrt-19.07.7 | >21.02 |  |
 | E750 | openwrt-18.06<br>openwrt-19.07.7 | >21.02 |  |
 | AP1300 | We don't make patch for this project, so you must use the official OpenWrt | >21.02 |  |
-| B2200 |  |  |  |
+| B2200 | openwrt-trunk(emmc) | >21.02 |  |
 | MT1300 | openwrt-19.07.7 | >21.02 | GL fireware wifi drivers are closed source, we do not guarantee that OpenWrt drivers are stable |
 | XE300 | openwrt-19.07.7 | N |  |
 | X300B | openwrt-18.06.5<br>openwrt-19.07.7 | N |  |
