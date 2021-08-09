@@ -97,7 +97,7 @@
  static struct board_info __initdata board_DWVS0 = {
  	.name				= "DWV-S0",
  	.expected_cpu_id		= 0x6358,
-@@ -1638,6 +1721,238 @@ static struct board_info __initdata boar
+@@ -1638,6 +1721,245 @@ static struct board_info __initdata boar
  	.has_ohci0			= 1,
  	.has_ehci0			= 1,
  };
@@ -332,11 +332,18 @@
 +		.has_phy = 1,
 +		.use_internal_phy = 1,
 +	},
++
++	.use_fallback_sprom 		= 1,
++	.fallback_sprom = {
++		.type = SPROM_BCM4322,
++		.pci_bus 		= 0,
++ 		.pci_dev 		= 1,
++	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
-@@ -1708,7 +2023,20 @@ static const struct board_info __initcon
+@@ -1708,7 +2030,20 @@ static const struct board_info __initcon
  	&board_96358vw,
  	&board_96358vw2,
  	&board_AGPFS0,
@@ -357,7 +364,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  };
  
-@@ -1785,11 +2113,24 @@ static struct of_device_id const bcm963x
+@@ -1785,11 +2120,24 @@ static struct of_device_id const bcm963x
  	{ .compatible = "alcatel,rg100a", .data = &board_96358vw2, },
  	{ .compatible = "brcm,bcm96358vw", .data = &board_96358vw, },
  	{ .compatible = "brcm,bcm96358vw2", .data = &board_96358vw2, },
