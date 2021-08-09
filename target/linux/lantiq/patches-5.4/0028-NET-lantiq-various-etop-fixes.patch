@@ -744,7 +744,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!res) {
-@@ -658,31 +867,60 @@ ltq_etop_probe(struct platform_device *p
+@@ -658,31 +866,60 @@ ltq_etop_probe(struct platform_device *p
  		goto err_out;
  	}
  
@@ -820,7 +820,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	err = register_netdev(dev);
  	if (err)
-@@ -711,31 +951,22 @@ ltq_etop_remove(struct platform_device *
+@@ -711,31 +948,22 @@ ltq_etop_remove(struct platform_device *
  	return 0;
  }
  
