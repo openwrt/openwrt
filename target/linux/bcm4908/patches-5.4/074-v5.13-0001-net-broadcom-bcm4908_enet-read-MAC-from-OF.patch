@@ -25,7 +25,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #include <linux/platform_device.h>
  #include <linux/slab.h>
  #include <linux/string.h>
-@@ -647,7 +649,9 @@ static int bcm4908_enet_probe(struct pla
+@@ -647,7 +648,9 @@ static int bcm4908_enet_probe(struct pla
  		return err;
  
  	SET_NETDEV_DEV(netdev, &pdev->dev);
