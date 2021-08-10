@@ -1,0 +1,25 @@
+diff --git a/fs/Kconfig b/fs/Kconfig
+index 141a856c50e7..bb140cacf84b 100644
+--- a/fs/Kconfig
++++ b/fs/Kconfig
+@@ -318,7 +318,7 @@ config GRACE_PERIOD
+ 	tristate
+ 
+ config LOCKD
+-	tristate
++	tristate "Lockd"
+ 	depends on FILE_LOCKING
+ 	select GRACE_PERIOD
+ 
+diff --git a/net/sunrpc/Kconfig b/net/sunrpc/Kconfig
+index bbbb5af0af13..6a932eed8da3 100644
+--- a/net/sunrpc/Kconfig
++++ b/net/sunrpc/Kconfig
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ config SUNRPC
+-	tristate
++	tristate "Secure RPC"
+ 	depends on MULTIUSER
+ 
+ config SUNRPC_GSS
