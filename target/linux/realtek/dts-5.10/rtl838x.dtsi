@@ -79,7 +79,7 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0xb8000000 0x10000>;
+		ranges = <0x0 0x18000000 0x10000>;
 
 		intc: rtlintc@3000 {
 			compatible = "realtek,rtl-intc";
@@ -167,9 +167,9 @@
 		status = "disabled";
 	};
 
-	pinmux: pinmux@bb001000 {
+	pinmux: pinmux@1b001000 {
 		compatible = "pinctrl-single";
-		reg = <0xbb001000 0x4>;
+		reg = <0x1b001000 0x4>;
 
 		pinctrl-single,bit-per-mux;
 		pinctrl-single,register-width = <32>;
@@ -182,9 +182,9 @@
 	};
 
 	/* LED_GLB_CTRL */
-	pinmux_led: pinmux@bb00a000 {
+	pinmux_led: pinmux@1b00a000 {
 		compatible = "pinctrl-single";
-		reg = <0xbb00a000 0x4>;
+		reg = <0x1b00a000 0x4>;
 
 		pinctrl-single,bit-per-mux;
 		pinctrl-single,register-width = <32>;
@@ -197,9 +197,9 @@
 		};
 	};
 
-	ethernet0: ethernet@bb00a300 {
+	ethernet0: ethernet@1b00a300 {
 		compatible = "realtek,rtl838x-eth";
-		reg = <0xbb00a300 0x100>;
+		reg = <0x1b00a300 0x100>;
 		interrupt-parent = <&intc>;
 		interrupts = <24>;
 		#interrupt-cells = <1>;
@@ -211,7 +211,7 @@
 		};
 	};
 
-	switch0: switch@bb000000 {
+	switch0: switch@1b000000 {
 		compatible = "realtek,rtl83xx-switch";
 
 		interrupt-parent = <&intc>;
