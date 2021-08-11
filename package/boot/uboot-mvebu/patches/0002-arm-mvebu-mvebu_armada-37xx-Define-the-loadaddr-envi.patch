@@ -1,0 +1,35 @@
+From 7977bb60120bfe274829829e5130261322ce8b2d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Kerma=20G=C3=A9rald?= <gandalf@gk2.net>
+Date: Wed, 11 Aug 2021 08:35:40 +0200
+Subject: [PATCH 2/3] arm: mvebu: mvebu_armada-37xx: Define the loadaddr
+ environment variable
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add the loadaddr U-Boot environment variable, as this is available in
+the stock Marvell U-Boot by default on Marvell Armada A37XX platforms.
+
+Signed-off-by: Kerma Gérald <gandalf@gk2.net>
+Cc: Luka Kovacic <luka.kovacic@sartura.hr>
+Cc: Luka Perkov <luka.perkov@sartura.hr>
+Cc: Robert Marko <robert.marko@sartura.hr>
+---
+ include/configs/mvebu_armada-37xx.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/configs/mvebu_armada-37xx.h b/include/configs/mvebu_armada-37xx.h
+index 2ad4325eaf..1041df8d91 100644
+--- a/include/configs/mvebu_armada-37xx.h
++++ b/include/configs/mvebu_armada-37xx.h
+@@ -103,6 +103,7 @@
+ 
+ /* fdt_addr and kernel_addr are needed for existing distribution boot scripts */
+ #define CONFIG_EXTRA_ENV_SETTINGS	\
++	"loadaddr=0x6000000\0"		\
+ 	"scriptaddr=0x6d00000\0"	\
+ 	"pxefile_addr_r=0x6e00000\0"	\
+ 	"fdt_addr=0x6f00000\0"		\
+-- 
+2.30.2
+

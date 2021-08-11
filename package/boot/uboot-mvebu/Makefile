@@ -42,6 +42,12 @@ define U-Boot/espressobin
   UBOOT_CONFIG:=mvebu_espressobin-88f3720
 endef
 
+define U-Boot/espressobin-ultra
+  NAME:=Marvell ESPRESSObin Ultra
+  BUILD_SUBTARGET:=cortexa53
+  UBOOT_CONFIG:=mvebu_espressobin-ultra-88f3720
+endef
+
 define U-Boot/uDPU
   NAME:=Methode uDPU
   BUILD_SUBTARGET:=cortexa53
@@ -51,6 +57,7 @@ UBOOT_TARGETS:= \
 	clearfog \
 	helios4 \
 	espressobin \
+	espressobin-ultra \
 	uDPU
 
 Build/Exports:=$(Host/Exports)

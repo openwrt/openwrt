@@ -1,0 +1,516 @@
+From 0a6d2787f8b65977963b21d77eed23d055f19613 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Kerma=20G=C3=A9rald?= <gandalf@gk2.net>
+Date: Wed, 11 Aug 2021 08:40:01 +0200
+Subject: [PATCH 3/3] arm: mvebu: Initial ESPRESSOBin-Ultra board support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add initial support for the ESPRESSOBin-Ultra board from Globalscale
+Technologies, Inc.
+
+The board is based on the 64-bit dual-core Marvell Armada 3720 SoC.
+Peripherals:
+ - 5 Gigabit Ethernet ports (WAN has PoE, up to 30W, Topaz 6341 switch)
+ - RTC clock (PCF8563)
+ - USB 3.0 port
+ - USB 2.0 port
+ - 4x LED
+ - UART over Micro-USB
+ - M.2 slot (2280)
+ - Mini PCI-E slot
+
+Additionally, automatic import of the Marvell hw_info parameters is
+enabled via the recently added hw_info command.
+The parameters stored in Marvell hw_info are usually the board serial
+number and MAC addresses.
+
+Signed-off-by: Kerma Gérald <gandalf@gk2.net>
+Cc: Luka Kovacic <luka.kovacic@sartura.hr>
+Cc: Luka Perkov <luka.perkov@sartura.hr>
+Cc: Robert Marko <robert.marko@sartura.hr>
+Signed-off-by: Kerma Gérald <gandalf@gk2.net>
+---
+ arch/arm/dts/Makefile                         |   1 +
+ .../arm/dts/armada-3720-espressobin-ultra.dts | 202 ++++++++++++++++++
+ board/Marvell/mvebu_armada-37xx/MAINTAINERS   |   9 +
+ board/Marvell/mvebu_armada-37xx/board.c       |  92 +++++++-
+ .../mvebu_espressobin-ultra-88f3720_defconfig |  92 ++++++++
+ 5 files changed, 390 insertions(+), 6 deletions(-)
+ create mode 100644 arch/arm/dts/armada-3720-espressobin-ultra.dts
+ create mode 100644 configs/mvebu_espressobin-ultra-88f3720_defconfig
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 9fb38682e6..cf94ad9a36 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -209,6 +209,7 @@ dtb-$(CONFIG_ARCH_TEGRA) += tegra20-harmony.dtb \
+ dtb-$(CONFIG_ARCH_MVEBU) +=			\
+ 	armada-3720-db.dtb			\
+ 	armada-3720-espressobin.dtb		\
++	armada-3720-espressobin-ultra.dtb	\
+ 	armada-3720-turris-mox.dtb		\
+ 	armada-3720-uDPU.dtb			\
+ 	armada-375-db.dtb			\
+diff --git a/arch/arm/dts/armada-3720-espressobin-ultra.dts b/arch/arm/dts/armada-3720-espressobin-ultra.dts
+new file mode 100644
+index 0000000000..70f97fe239
+--- /dev/null
++++ b/arch/arm/dts/armada-3720-espressobin-ultra.dts
+@@ -0,0 +1,202 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Device Tree file for ESPRESSObin-Ultra board
++ * Copyright (C) 2016 Marvell
++ * Copyright (C) 2019 Globalscale technologies, Inc.
++ * Copyright (C) 2020 Sartura Ltd.
++ *
++ * Author: Jason Hung <jhung@globalscaletechnologies.com>
++ * Author: Luka Kovacic <luka.kovacic@sartura.hr>
++ * Author: Vladimir Vid <vladimir.vid@sartura.hr>
++ */
++
++/dts-v1/;
++
++#include "armada-372x.dtsi"
++
++/ {
++	model = "Globalscale Marvell ESPRESSOBin Ultra Board";
++	compatible = "globalscale,espressobin-ultra", "marvell,armada3720", "marvell,armada3710";
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	aliases {
++		ethernet0 = &eth0;
++		i2c0 = &i2c0;
++		spi0 = &spi0;
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x00000000 0x00000000 0x00000000 0x20000000>;
++	};
++
++	vcc_sd_reg0: regulator@0 {
++		compatible = "regulator-gpio";
++		regulator-name = "vcc_sd0";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-type = "voltage";
++		states = <1800000 0x1
++			  3300000 0x0>;
++		gpios = <&gpionb 4 GPIO_ACTIVE_HIGH>;
++	};
++
++	gpio-leds {
++		pinctrl-names = "default";
++		pinctrl-0 = <&led1_pins>, <&led2_pins>, <&led3_pins>, <&led4_pins>;
++		compatible = "gpio-leds";
++
++		led1 {
++			label = "led1";
++			gpios = <&gpionb 11 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++		led2 {
++			label = "led2";
++			gpios = <&gpionb 12 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++		led3 {
++			label = "led3";
++			gpios = <&gpionb 13 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++		led4 {
++			label = "led4";
++			gpios = <&gpionb 14 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++	};
++};
++
++&pinctrl_nb {
++	led1_pins: led1-pins {
++		groups = "pwm0";
++		function = "gpio";
++	};
++	led2_pins: led2-pins {
++		groups = "pwm1";
++		function = "gpio";
++	};
++	led3_pins: led3-pins {
++		groups = "pwm2";
++		function = "gpio";
++	};
++	led4_pins: led4-pins {
++		groups = "pwm3";
++		function = "gpio";
++	};
++};
++
++&comphy {
++	max-lanes = <3>;
++	phy0 {
++		phy-type = <COMPHY_TYPE_USB3_HOST0>;
++		phy-speed = <COMPHY_SPEED_5G>;
++	};
++
++	phy1 {
++		phy-type = <COMPHY_TYPE_PEX0>;
++		phy-speed = <COMPHY_SPEED_2_5G>;
++	};
++
++	phy2 {
++		phy-type = <COMPHY_TYPE_SATA0>;
++		phy-speed = <COMPHY_SPEED_5G>;
++	};
++};
++
++&eth0 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgmii_pins>, <&smi_pins>;
++	phy-mode = "rgmii";
++	phy_addr = <0x3>;
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	status = "okay";
++
++	#address-cells = <1>;
++	#size-cells = <0>;
++	rtc@51 {
++		compatible = "nxp,pcf8563";
++		reg = <0x51>;
++	};
++};
++
++&sata {
++	status = "okay";
++};
++
++&sdhci0 {
++	status = "disabled";
++};
++
++/* U11 */
++&sdhci1 {
++	non-removable;
++	bus-width = <8>;
++	mmc-ddr-1_8v;
++	mmc-hs400-1_8v;
++	marvell,xenon-emmc;
++	marvell,xenon-tun-count = <9>;
++	marvell,pad-type = "fixed-1-8v";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc_pins>;
++	status = "okay";
++
++	#address-cells = <1>;
++	#size-cells = <0>;
++	mmccard: mmccard@0 {
++		compatible = "mmc-card";
++		reg = <0>;
++	};
++};
++
++&spi0 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi_quad_pins>;
++
++	spi-flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "st,m25p128", "jedec,spi-nor";
++		reg = <0>; /* Chip select 0 */
++		spi-max-frequency = <50000000>;
++		m25p,fast-read;
++	};
++};
++
++/* Exported on the micro USB connector through an FTDI */
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>;
++	status = "okay";
++};
++
++&usb2 {
++	status = "okay";
++};
++
++&usb3 {
++	status = "okay";
++};
++
++&pcie0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie_pins>;
++	reset-gpios = <&gpiosb 3 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
+diff --git a/board/Marvell/mvebu_armada-37xx/MAINTAINERS b/board/Marvell/mvebu_armada-37xx/MAINTAINERS
+index f2c0a582d7..6b1697b942 100644
+--- a/board/Marvell/mvebu_armada-37xx/MAINTAINERS
++++ b/board/Marvell/mvebu_armada-37xx/MAINTAINERS
+@@ -10,6 +10,15 @@ M:	Konstantin Porotchkin <kostap@marvell.com>
+ S:	Maintained
+ F:	configs/mvebu_espressobin-88f3720_defconfig
+ 
++ESPRESSOBin-Ultra BOARD
++M:	Kerma Gerald <gandalf@gk2.net>
++M:	Luka Kovacic <luka.kovacic@sartura.hr>
++M:	Robert Marko <robert.marko@sartura.hr>
++M:	Luka Perkov <luka.perkov@sartura.hr>
++S:	Maintained
++F:	arch/arm/dts/armada-3720-espressobin-ultra.dts
++F:	configs/mvebu_espressobin-ultra-88f3720_defconfig
++
+ uDPU BOARD
+ M:	Vladimir Vid <vladimir.vid@sartura.hr>
+ S:	Maintained
+diff --git a/board/Marvell/mvebu_armada-37xx/board.c b/board/Marvell/mvebu_armada-37xx/board.c
+index c630437c08..9ffda8fdba 100644
+--- a/board/Marvell/mvebu_armada-37xx/board.c
++++ b/board/Marvell/mvebu_armada-37xx/board.c
+@@ -11,6 +11,7 @@
+ #include <i2c.h>
+ #include <init.h>
+ #include <mmc.h>
++#include <miiphy.h>
+ #include <phy.h>
+ #include <asm/global_data.h>
+ #include <asm/io.h>
+@@ -55,6 +56,15 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define MVEBU_G2_SMI_PHY_CMD_REG	(24)
+ #define MVEBU_G2_SMI_PHY_DATA_REG	(25)
+ 
++/* Marvell 88E1512 */
++#define MII_MARVELL_PHY_PAGE		22
++
++#define MV88E1512_GENERAL_CTRL		20
++#define MV88E1512_MODE_SGMII		1
++#define MV88E1512_RESET_OFFS		15
++
++#define ULTRA_MV88E1512_PHYADDR		0x1
++
+ /*
+  * Memory Controller Registers
+  *
+@@ -289,12 +299,68 @@ static int mii_multi_chip_mode_write(struct mii_dev *bus, int dev_smi_addr,
+ 	return 0;
+ }
+ 
+-/* Bring-up board-specific network stuff */
+-int board_network_enable(struct mii_dev *bus)
++void force_phy_88e1512_sgmii_to_copper(u16 devaddr)
+ {
+-	if (!of_machine_is_compatible("globalscale,espressobin"))
+-		return 0;
++	const char *name;
++	u16 reg;
++
++	name = miiphy_get_current_dev();
++	if (name) {
++		/* SGMII-to-Copper mode initialization */
++
++		/* Select page 18 */
++		miiphy_write(name, devaddr, MII_MARVELL_PHY_PAGE, 0x12);
++		/* In reg 20, write MODE[2:0] = 0x1 (SGMII to Copper) */
++		miiphy_read(name, devaddr, MV88E1512_GENERAL_CTRL, &reg);
++		reg &= ~0x7;
++		reg |= MV88E1512_MODE_SGMII;
++		miiphy_write(name, devaddr, MV88E1512_GENERAL_CTRL, reg);
++		/* PHY reset is necessary after changing MODE[2:0] */
++		miiphy_read(name, devaddr, MV88E1512_GENERAL_CTRL, &reg);
++		reg |= 1 << MV88E1512_RESET_OFFS;
++		miiphy_write(name, devaddr, MV88E1512_GENERAL_CTRL, reg);
++		/* Reset page selection */
++		miiphy_write(name, devaddr, MII_MARVELL_PHY_PAGE, 0);
++		udelay(100);
++	}
++}
++
++int board_network_enable_espressobin_ultra(struct mii_dev *bus)
++{
++	int i;
++	/* Setup 88E1512 SGMII-to-Copper mode */
++	force_phy_88e1512_sgmii_to_copper(ULTRA_MV88E1512_PHYADDR);
+ 
++	/*
++	 * FIXME: remove this code once Topaz driver gets available
++	 * A3720 ESPRESSObin Ultra Board Only
++	 * Configure Topaz switch (88E6341)
++	 * Set port 1,2,3,4,5 to forwarding Mode (through Switch Port registers)
++	 */
++	for (i = 0; i <= 5; i++) {
++		mii_multi_chip_mode_write(bus, 3, MVEBU_PORT_CTRL_SMI_ADDR(i),
++					  MVEBU_SW_PORT_CTRL_REG,
++					  i == 5 ? 0x7c : 0x7f);
++	}
++
++	/* RGMII Delay on Port 0 (CPU port), force link to 1000Mbps */
++	mii_multi_chip_mode_write(bus, 3, MVEBU_PORT_CTRL_SMI_ADDR(0),
++				  MVEBU_SW_LINK_CTRL_REG, 0xe002);
++
++	/* Power up PHY 1, 2, 3, 4, 5 (through Global 2 registers) */
++	mii_multi_chip_mode_write(bus, 3, MVEBU_SW_G2_SMI_ADDR,
++				  MVEBU_G2_SMI_PHY_DATA_REG, 0x1140);
++	for (i = 1; i <= 5; i++) {
++		mii_multi_chip_mode_write(bus, 3, MVEBU_SW_G2_SMI_ADDR,
++					  MVEBU_G2_SMI_PHY_CMD_REG, 0x9400 +
++					  (MVEBU_PORT_CTRL_SMI_ADDR(i) << 5));
++	}
++
++	return 0;
++}
++
++int board_network_enable_espressobin(struct mii_dev *bus)
++{
+ 	/*
+ 	 * FIXME: remove this code once Topaz driver gets available
+ 	 * A3720 Community Board Only
+@@ -335,6 +401,16 @@ int board_network_enable(struct mii_dev *bus)
+ 	return 0;
+ }
+ 
++/* Bring-up the board-specific networking */
++int board_network_enable(struct mii_dev *bus)
++{
++	if (of_machine_is_compatible("globalscale,espressobin"))
++		return board_network_enable_espressobin(bus);
++	if (of_machine_is_compatible("globalscale,espressobin-ultra"))
++		return board_network_enable_espressobin_ultra(bus);
++	return 0;
++}
++
+ #if defined(CONFIG_OF_BOARD_SETUP) && defined(CONFIG_ENV_IS_IN_SPI_FLASH)
+ int ft_board_setup(void *blob, struct bd_info *bd)
+ {
+@@ -343,8 +419,12 @@ int ft_board_setup(void *blob, struct bd_info *bd)
+ 	int parts_off;
+ 	int part_off;
+ 
+-	/* Fill SPI MTD partitions for Linux kernel on Espressobin */
+-	if (!of_machine_is_compatible("globalscale,espressobin"))
++	/*
++	 * Fill SPI MTD partitions for the Linux kernel on ESPRESSOBin and
++	 * ESPRESSOBin Ultra boards.
++	 */
++	if (!of_machine_is_compatible("globalscale,espressobin") &&
++	    !of_machine_is_compatible("globalscale,espressobin-ultra"))
+ 		return 0;
+ 
+ 	spi_off = fdt_node_offset_by_compatible(blob, -1, "jedec,spi-nor");
+diff --git a/configs/mvebu_espressobin-ultra-88f3720_defconfig b/configs/mvebu_espressobin-ultra-88f3720_defconfig
+new file mode 100644
+index 0000000000..207f38d300
+--- /dev/null
++++ b/configs/mvebu_espressobin-ultra-88f3720_defconfig
+@@ -0,0 +1,92 @@
++CONFIG_ARM=y
++CONFIG_ARCH_CPU_INIT=y
++CONFIG_ARCH_MVEBU=y
++CONFIG_SYS_TEXT_BASE=0x00000000
++CONFIG_SYS_MALLOC_F_LEN=0x2000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_TARGET_MVEBU_ARMADA_37XX=y
++CONFIG_ENV_SIZE=0x10000
++CONFIG_ENV_OFFSET=0x3F0000
++CONFIG_ENV_SECT_SIZE=0x10000
++CONFIG_DM_GPIO=y
++CONFIG_DEBUG_UART_BASE=0xd0012000
++CONFIG_DEBUG_UART_CLOCK=25804800
++CONFIG_DEFAULT_DEVICE_TREE="armada-3720-espressobin-ultra"
++CONFIG_DEBUG_UART=y
++CONFIG_AHCI=y
++CONFIG_DISTRO_DEFAULTS=y
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_OF_BOARD_SETUP=y
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_FIT_BEST_MATCH=y
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_PROMPT="Autoboot in %d seconds, to stop use 's' key\n"
++CONFIG_AUTOBOOT_STOP_STR="s"
++CONFIG_AUTOBOOT_KEYED_CTRLC=y
++CONFIG_HUSH_PARSER=y
++CONFIG_USE_PREBOOT=y
++CONFIG_PREBOOT="if printenv read_board_hw_info; then echo \"Marvell hw_info already imported...\" ; else setenv read_board_hw_info 1; hw_info load; fi"
++CONFIG_SYS_CONSOLE_INFO_QUIET=y
++# CONFIG_DISPLAY_CPUINFO is not set
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_DISPLAY_BOARDINFO_LATE=y
++CONFIG_ARCH_EARLY_INIT_R=y
++CONFIG_BOARD_EARLY_INIT_F=y
++CONFIG_BOARD_LATE_INIT=y
++# CONFIG_CMD_FLASH is not set
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_I2C=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_PCI=y
++CONFIG_CMD_SPI=y
++CONFIG_CMD_USB=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_TFTPPUT=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_TIME=y
++CONFIG_CMD_MVEBU_BUBT=y
++CONFIG_CMD_MVEBU_HW_INFO=y
++CONFIG_CMD_EXT4_WRITE=y
++CONFIG_MAC_PARTITION=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_SPI_FLASH=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_AHCI_MVEBU=y
++CONFIG_CLK=y
++CONFIG_CLK_MVEBU=y
++CONFIG_DM_I2C=y
++CONFIG_MISC=y
++CONFIG_DM_MMC=y
++CONFIG_MMC_SDHCI=y
++CONFIG_MMC_SDHCI_SDMA=y
++CONFIG_MMC_SDHCI_XENON=y
++CONFIG_MTD=y
++CONFIG_SF_DEFAULT_MODE=0
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_PHY_MARVELL=y
++CONFIG_PHY_GIGE=y
++CONFIG_MVNETA=y
++CONFIG_PCI=y
++CONFIG_DM_PCI=y
++CONFIG_PCI_AARDVARK=y
++CONFIG_MVEBU_COMPHY_SUPPORT=y
++CONFIG_PINCTRL=y
++CONFIG_PINCTRL_ARMADA_37XX=y
++CONFIG_DM_REGULATOR_GPIO=y
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_DEBUG_UART_ANNOUNCE=y
++CONFIG_MVEBU_A3700_UART=y
++CONFIG_MVEBU_A3700_SPI=y
++CONFIG_USB=y
++CONFIG_DM_USB=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_HOST_ETHER=y
++CONFIG_SHA1=y
++CONFIG_SHA256=y
++CONFIG_DM_RTC=y
++CONFIG_RTC_PCF8563=y
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
+-- 
+2.30.2
+

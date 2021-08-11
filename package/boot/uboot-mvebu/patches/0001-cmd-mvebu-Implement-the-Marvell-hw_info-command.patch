@@ -1,0 +1,416 @@
+From e0c5472d9fbb70e6fada7f8bbae023a536dd853f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Kerma=20G=C3=A9rald?= <gandalf@gk2.net>
+Date: Wed, 11 Aug 2021 08:34:25 +0200
+Subject: [PATCH 1/3] cmd: mvebu: Implement the Marvell hw_info command
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The hw_info command is implemented to enable parsing Marvell hw_info
+formatted environments. This format is often used on Marvell Armada A37XX
+based devices to store parameters like the board serial number, factory
+MAC addresses and some other information.
+These parameters are usually written to the flash in the factory.
+
+Currently the command supports reading/writing parameters and dumping the
+current hw_info parameters.
+EEPROM config pattern and checksum aren't supported.
+
+This functionality has been tested on the GST ESPRESSOBin-Ultra board
+successfully, both reading the stock U-Boot parameters in mainline U-Boot
+and reading the parameters written by this command in the stock U-Boot.
+
+Usage example:
+ => hw_info load
+ => saveenv
+
+Signed-off-by: Kerma Gérald <gandalf@gk2.net>
+Cc: Luka Kovacic <luka.kovacic@sartura.hr>
+Cc: Luka Perkov <luka.perkov@sartura.hr>
+Cc: Robert Marko <robert.marko@sartura.hr>
+---
+ cmd/mvebu/Kconfig   |  23 ++++
+ cmd/mvebu/Makefile  |   2 +
+ cmd/mvebu/hw_info.c | 312 ++++++++++++++++++++++++++++++++++++++++++++
+ lib/hashtable.c     |   2 +-
+ 4 files changed, 338 insertions(+), 1 deletion(-)
+ create mode 100644 cmd/mvebu/hw_info.c
+
+diff --git a/cmd/mvebu/Kconfig b/cmd/mvebu/Kconfig
+index 7c42c75afb..d87220d44c 100644
+--- a/cmd/mvebu/Kconfig
++++ b/cmd/mvebu/Kconfig
+@@ -9,6 +9,29 @@ config CMD_MVEBU_BUBT
+ 	  For details about bubt command please see the documentation
+ 	  in doc/mvebu/cmd/bubt.txt
+ 
++config CMD_MVEBU_HW_INFO
++	bool "hw_info"
++	depends on SPI_FLASH && ENV_IS_IN_SPI_FLASH && ARCH_MVEBU
++	default n
++	help
++	  Enable loading of the Marvell hw_info parameters from the
++	  SPI flash hw_info area. Parameters (usually the board serial
++	  number and MAC addresses) are then imported into the
++	  existing U-Boot environment.
++	  Implementation of this command is compatible with the
++	  original Marvell U-Boot command. Reading and writing is
++	  supported.
++	  EEPROM config pattern and checksum aren't supported.
++
++config CMD_MVEBU_HW_INFO_OFFSET
++	hex "Marvell hw_info SPI flash offset"
++	depends on CMD_MVEBU_HW_INFO
++	default 0x3E0000
++	help
++	  This option defines the SPI flash offset of the Marvell
++	  hw_info area. This defaults to 0x3E0000 on most Armada
++	  A3720 platforms.
++
+ choice
+ 	prompt "Flash for image"
+ 	default MVEBU_SPI_BOOT
+diff --git a/cmd/mvebu/Makefile b/cmd/mvebu/Makefile
+index ca96ad01d9..c988dca38c 100644
+--- a/cmd/mvebu/Makefile
++++ b/cmd/mvebu/Makefile
+@@ -6,3 +6,5 @@
+ 
+ obj-$(CONFIG_CMD_MVEBU_BUBT) += bubt.o
+ obj-$(CONFIG_CMD_MVEBU_COMPHY_RX_TRAINING) += comphy_rx_training.o
++obj-$(CONFIG_CMD_MVEBU_HW_INFO) += hw_info.o
++
+diff --git a/cmd/mvebu/hw_info.c b/cmd/mvebu/hw_info.c
+new file mode 100644
+index 0000000000..1ef49d78d4
+--- /dev/null
++++ b/cmd/mvebu/hw_info.c
+@@ -0,0 +1,312 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Marvell hw_info command
++ * Helper command for interfacing with the Marvell hw_info parameters
++ *
++ * Copyright (c) 2021 Sartura Ltd.
++ * Copyright (c) 2018 Marvell International Ltd.
++ *
++ * Author: Luka Kovacic <luka.kovacic@sartura.hr>
++ */
++
++#include <command.h>
++#include <common.h>
++#include <env.h>
++#include <env_internal.h>
++#include <spi.h>
++#include <spi_flash.h>
++
++#define HW_INFO_SPI_FLASH_OFFSET	CONFIG_CMD_MVEBU_HW_INFO_OFFSET
++
++#define HW_INFO_MAX_ENV_SIZE		0x1F0
++#define HW_INFO_ENV_OFFSET		0xA
++#define HW_INFO_ENV_SEP			0x20
++
++#define HW_INFO_MAX_NAME_LEN		32
++
++static char hw_info_allowed_parameters[][HW_INFO_MAX_NAME_LEN] = {
++	"pcb_slm",
++	"pcb_rev",
++	"eco_rev",
++	"pcb_sn",
++	"ethaddr",
++	"eth1addr",
++	"eth2addr",
++	"eth3addr",
++	"eth4addr",
++	"eth5addr",
++	"eth6addr",
++	"eth7addr",
++	"eth8addr",
++	"eth9addr",
++};
++
++static int hw_info_allowed_param_count = (sizeof(hw_info_allowed_parameters) /
++					sizeof(hw_info_allowed_parameters[0]));
++
++static int hw_info_check_parameter(char *name)
++{
++	int idx;
++
++	for (idx = 0; idx < hw_info_allowed_param_count; idx++) {
++		if (strcmp(name, hw_info_allowed_parameters[idx]) == 0)
++			return 0;
++	}
++
++	return -EINVAL;
++}
++
++static int read_spi_flash_offset(char *buf, int offset)
++{
++	struct spi_flash *flash;
++	int ret;
++
++	flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS,
++				CONFIG_SF_DEFAULT_CS,
++				CONFIG_SF_DEFAULT_SPEED,
++				CONFIG_SF_DEFAULT_MODE);
++
++	if (!flash) {
++		printf("Error - unable to probe SPI flash.\n");
++		return -EIO;
++	}
++
++	ret = spi_flash_read(flash, offset, HW_INFO_MAX_ENV_SIZE, buf);
++	if (ret) {
++		printf("Error - unable to read hw_info environment from SPI flash.\n");
++		return ret;
++	}
++
++	return ret;
++}
++
++static int write_spi_flash_offset(char *buf, int offset, ssize_t size)
++{
++	ssize_t safe_size, erase_size;
++	struct spi_flash *flash;
++	int ret;
++
++	flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS,
++				CONFIG_SF_DEFAULT_CS,
++				CONFIG_SF_DEFAULT_SPEED,
++				CONFIG_SF_DEFAULT_MODE);
++
++	if (!flash) {
++		printf("Error - unable to probe SPI flash.\n");
++		return -EIO;
++	}
++
++	safe_size = size > HW_INFO_MAX_ENV_SIZE ? HW_INFO_MAX_ENV_SIZE : size;
++	erase_size = safe_size +
++		     (flash->erase_size - safe_size % flash->erase_size);
++	ret = spi_flash_erase(flash, HW_INFO_SPI_FLASH_OFFSET, erase_size);
++	if (ret) {
++		printf("Error - unable to erase the hw_info area on SPI flash.\n");
++		return ret;
++	}
++	ret = spi_flash_write(flash, offset, safe_size, buf);
++	if (ret) {
++		printf("Error - unable to write hw_info parameters to SPI flash.\n");
++		return ret;
++	}
++
++	return ret;
++}
++
++static int cmd_hw_info_dump(void)
++{
++	char buffer[HW_INFO_MAX_ENV_SIZE];
++	struct hsearch_data htab;
++	char *res = NULL;
++	ssize_t len;
++	int ret = 0;
++
++	ret = read_spi_flash_offset(buffer, HW_INFO_SPI_FLASH_OFFSET +
++				    HW_INFO_ENV_OFFSET);
++	if (ret)
++		goto err;
++	memset(&htab, 0, sizeof(htab));
++	if (!hcreate_r(HW_INFO_MAX_ENV_SIZE, &htab)) {
++		ret = -ENOMEM;
++		goto err;
++	}
++	if (!himport_r(&htab, buffer, HW_INFO_MAX_ENV_SIZE,
++		       HW_INFO_ENV_SEP, H_NOCLEAR, 0, 0, NULL)) {
++		ret = -EFAULT;
++		goto err_htab;
++	}
++
++	len = hexport_r(&htab, '\n', H_HIDE_DOT, &res, 0, 0, NULL);
++	if (len > 0) {
++		printf("Parameters (hw_info):\n");
++		puts(res);
++		free(res);
++		ret = 0;
++		goto ret_htab;
++	}
++ret_htab:
++	hdestroy_r(&htab);
++	return ret;
++err_htab:
++	hdestroy_r(&htab);
++err:
++	printf("## Error: cannot store hw_info parameters to SPI flash\n");
++	return ret;
++}
++
++static int cmd_hw_info_load(bool print_env)
++{
++	char buffer[HW_INFO_MAX_ENV_SIZE];
++	char *res = NULL;
++	ssize_t len;
++	int ret = 0;
++
++	ret = read_spi_flash_offset(buffer, HW_INFO_SPI_FLASH_OFFSET +
++				    HW_INFO_ENV_OFFSET);
++	if (ret)
++		goto err;
++	if (!himport_r(&env_htab, buffer, HW_INFO_MAX_ENV_SIZE,
++		       HW_INFO_ENV_SEP, H_NOCLEAR, 0, 0, NULL)) {
++		ret = -EFAULT;
++		goto err;
++	}
++
++	printf("Successfully imported the Marvell hw_info parameters.\n");
++	if (!print_env)
++		return 0;
++
++	len = hexport_r(&env_htab, '\n', H_HIDE_DOT, &res, 0, 0, NULL);
++	if (len > 0) {
++		printf("Updated environment:\n");
++		puts(res);
++		free(res);
++		return 0;
++	}
++err:
++	printf("## Error: cannot import hw_info parameters\n");
++	return ret;
++}
++
++static int cmd_hw_info_store(char *name)
++{
++	char buffer[HW_INFO_MAX_ENV_SIZE];
++	struct env_entry e, *ep, *rv;
++	struct hsearch_data htab;
++	char *res = NULL;
++	ssize_t len;
++	int ret = 0;
++
++	ret = hw_info_check_parameter(name);
++	if (ret) {
++		printf("Invalid parameter %s, stopping.\n", name);
++		goto err;
++	}
++
++	ret = read_spi_flash_offset(buffer, HW_INFO_SPI_FLASH_OFFSET +
++				    HW_INFO_ENV_OFFSET);
++	if (ret)
++		goto err;
++	memset(&htab, 0, sizeof(htab));
++	if (!hcreate_r(HW_INFO_MAX_ENV_SIZE, &htab)) {
++		ret = -ENOMEM;
++		goto err;
++	}
++	if (!himport_r(&htab, buffer, HW_INFO_MAX_ENV_SIZE,
++		       HW_INFO_ENV_SEP, H_NOCLEAR, 0, 0, NULL)) {
++		ret = -EFAULT;
++		goto err_htab;
++	}
++
++	e.key = name;
++	e.data = NULL;
++	if (!hsearch_r(e, ENV_FIND, &ep, &env_htab, H_HIDE_DOT)) {
++		ret = -ENOENT;
++		goto err_htab;
++	}
++	if (!ep) {
++		ret = -ENOENT;
++		goto err_htab;
++	}
++
++	printf("Storing %s=%s to hw_info...\n", ep->key, ep->data);
++
++	e.key = ep->key;
++	e.data = ep->data;
++	if (!hsearch_r(e, ENV_ENTER, &rv, &htab, H_HIDE_DOT)) {
++		ret = -EINVAL;
++		goto err_htab;
++	}
++	if (!rv) {
++		ret = -EINVAL;
++		goto err_htab;
++	}
++	len = hexport_r(&htab, HW_INFO_ENV_SEP, H_MATCH_KEY | H_MATCH_IDENT,
++			&res, 0, 0, NULL);
++	if (len <= 0) {
++		free(res);
++		goto ret_htab;
++	}
++	ret = write_spi_flash_offset(res, HW_INFO_SPI_FLASH_OFFSET +
++				     HW_INFO_ENV_OFFSET, len);
++	free(res);
++	if (ret)
++		goto err_htab;
++
++	printf("Successfully stored the Marvell hw_info parameters.\n");
++	return 0;
++ret_htab:
++	hdestroy_r(&htab);
++	return ret;
++err_htab:
++	hdestroy_r(&htab);
++err:
++	printf("## Error: cannot store hw_info parameters to SPI flash\n");
++	return ret;
++}
++
++static int do_hw_info(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++	const char *cmd = argv[1];
++
++	if (argc < 2)
++		return CMD_RET_USAGE;
++
++	if (!strcmp(cmd, "dump")) {
++		if (cmd_hw_info_dump())
++			return -EINVAL;
++	} else if (!strcmp(cmd, "load")) {
++		if (cmd_hw_info_load(true))
++			return -EINVAL;
++	} else if (!strcmp(cmd, "store")) {
++		if (cmd_hw_info_store(argv[2]))
++			return -EINVAL;
++	} else {
++		return CMD_RET_USAGE;
++	}
++
++	return CMD_RET_SUCCESS;
++}
++
++U_BOOT_CMD(
++	hw_info, 3, 0, do_hw_info,
++	"Marvell hw_info utility",
++	"hw_info\n"
++	"\tdump                        - Dump all hw_info parameters from SPI flash\n"
++	"\tload                        - Load all hw_info parameters from hw_info to environment variables\n"
++	"\tstore <env_name>            - Store specific hw_info parameter from envirnoment variable to SPI flash\n"
++	"\nSupported hw_info parameters:\n"
++	"\tpcb_slm       PCB SLM number\n"
++	"\tpcb_rev       PCB revision number\n"
++	"\teco_rev       ECO revision number\n"
++	"\tpcb_sn        PCB SN\n"
++	"\tethaddr       first MAC address\n"
++	"\teth1addr      second MAC address\n"
++	"\teth2addr      third MAC address\n"
++	"\teth3addr      fourth MAC address\n"
++	"\teth4addr      fifth MAC address\n"
++	"\teth5addr      sixth MAC address\n"
++	"\teth6addr      seventh MAC address\n"
++	"\teth7addr      eighth MAC address\n"
++	"\teth8addr      ninth MAC address\n"
++	"\teth9addr      tenth MAC address\n"
++);
+diff --git a/lib/hashtable.c b/lib/hashtable.c
+index ff5ff72639..06322e3304 100644
+--- a/lib/hashtable.c
++++ b/lib/hashtable.c
+@@ -794,7 +794,7 @@ static int drop_var_from_set(const char *name, int nvars, char * vars[])
+  * multi-line values.
+  *
+  * In theory, arbitrary separator characters can be used, but only
+- * '\0' and '\n' have really been tested.
++ * '\0', '\n' and 0x20 have been tested.
+  */
+ 
+ int himport_r(struct hsearch_data *htab,
+-- 
+2.30.2
+
