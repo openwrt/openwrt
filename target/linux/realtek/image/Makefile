@@ -20,7 +20,11 @@ define Device/Default
   PROFILES = Default
   KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
   KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip
+ifdef CONFIG_LINUX_5_10
+  DEVICE_DTS_DIR := ../dts-5.10
+else
   DEVICE_DTS_DIR := ../dts
+endif
   DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
