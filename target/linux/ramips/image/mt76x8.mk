@@ -93,6 +93,15 @@ define Device/hiwifi_hc5861b
 endef
 TARGET_DEVICES += hiwifi_hc5861b
 
+define Device/iptime_extn3
+  DTS := IPTIME-EXTN3
+  IMAGE_SIZE := 3840k
+  UIMAGE_NAME := extn3
+  DEVICE_TITLE := ipTIME EXTN3
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += iptime_extn3
+
 define Device/LinkIt7688
   DTS := LINKIT7688
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
