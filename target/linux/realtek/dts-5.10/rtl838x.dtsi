@@ -69,23 +69,21 @@
 	};
 
 	cpuintc: cpuintc {
+		compatible = "mti,cpu-interrupt-controller";
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
 		interrupt-controller;
-		compatible = "mti,cpu-interrupt-controller";
 	};
 
 	intc: rtlintc {
+		compatible = "realtek,rt8380-intc";
+		reg = <0xb8003000 0x20>;
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
 		interrupt-controller;
-		compatible = "realtek,rt8380-intc";
-		reg = <0xb8003000 0x20>;
 	};
 
 	spi0: spi@b8001200 {
-		status = "okay";
-
 		compatible = "realtek,rtl838x-nor";
 		reg = <0xb8001200 0x100>;
 
@@ -94,8 +92,6 @@
 	};
 
 	uart0: uart@b8002000 {
-		status = "okay";
-
 		compatible = "ns16550a";
 		reg = <0xb8002000 0x100>;
 
@@ -113,8 +109,6 @@
 	uart1: uart@b8002100 {
 		pinctrl-names = "default";
 		pinctrl-0 = <&enable_uart1>;
-
-		status = "okay";
 
 		compatible = "ns16550a";
 		reg = <0xb8002100 0x100>;
@@ -140,11 +134,12 @@
 	};
 
 	gpio1: rtl8231-gpio {
-		status = "disabled";
 		compatible = "realtek,rtl8231-gpio";
 		#gpio-cells = <2>;
 		indirect-access-bus-id = <0>;
 		gpio-controller;
+
+		status = "disabled";
 	};
 
 	pinmux: pinmux@bb001000 {
@@ -162,8 +157,6 @@
 	};
 
 	ethernet0: ethernet@bb00a300 {
-		status = "okay";
-
 		compatible = "realtek,rtl838x-eth";
 		reg = <0xbb00a300 0x100>;
 		interrupt-parent = <&intc>;
@@ -178,11 +171,9 @@
 	};
 
 	switch0: switch@bb000000 {
-		status = "okay";
+		compatible = "realtek,rtl83xx-switch";
 
 		interrupt-parent = <&intc>;
 		interrupts = <20>;
-
-		compatible = "realtek,rtl83xx-switch";
 	};
 };
