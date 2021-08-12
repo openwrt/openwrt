@@ -29,6 +29,7 @@ include $(INCLUDE_DIR)/host-build.mk
 define Package/audit/Default
   TITLE:=Audit Daemon
   URL:=http://people.redhat.com/sgrubb/audit/
+  DEPENDS:=@(aarch64||arm||powerpc64||i386||x86_64)
 endef
 
 define Package/audit/Default/description
@@ -55,7 +56,7 @@ $(call Package/audit/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= (parsing shared library)
-  DEPENDS:= +libaudit
+  DEPENDS+= +libaudit
 endef
 
 define Package/libauparse/description
@@ -68,7 +69,7 @@ $(call Package/audit/Default)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE+= (utilities)
-  DEPENDS:= +libaudit +libauparse
+  DEPENDS+= +libaudit +libauparse
 endef
 
 define Package/audit-utils/description
@@ -81,7 +82,7 @@ $(call Package/audit/Default)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE+= (daemon)
-  DEPENDS:= +libaudit +libauparse +audit-utils +libev
+  DEPENDS+= +libaudit +libauparse +audit-utils +libev
 endef
 
 define Package/audit/description
