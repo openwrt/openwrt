@@ -114,7 +114,7 @@ static int mtk_get_channel(const char *ifname, int *buf)
 
 static int mtk_get_frequency(const char *ifname, int *buf)
 {
-	return -1;
+	return wext_ops.frequency(ifname, buf);
 }
 
 static int mtk_get_txpower(const char *ifname, int *buf)
