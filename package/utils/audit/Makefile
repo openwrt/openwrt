@@ -148,7 +148,7 @@ endef
 
 define Package/libaudit/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/*.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libaudit.so.* $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/etc
 	$(CP) $(PKG_INSTALL_DIR)/etc/libaudit.conf $(1)/etc/
 endef
