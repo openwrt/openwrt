@@ -238,10 +238,10 @@ static int mtk_get_txpwrlist(const char *ifname, char *buf, int *len)
 	struct iwinfo_txpwrlist_entry entry;
 	int i;
 
-	for (i = 0; i < 100; i++)
+	for (i = 0; i < 21; i++)
 	{
-		entry.dbm = iwinfo_mw2dbm(i);
-		entry.mw  = i;
+		entry.dbm = i;
+		entry.mw  = iwinfo_dbm2mw(i);
 
 		memcpy(&buf[i * sizeof(entry)], &entry, sizeof(entry));
 	}
