@@ -126,7 +126,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	  Support for PF_PACKET sockets monitoring interface used by the ss tool.
 --- a/net/unix/Kconfig
 +++ b/net/unix/Kconfig
-@@ -22,6 +22,7 @@ config UNIX
+@@ -27,6 +27,7 @@ config UNIX_SCM
  config UNIX_DIAG
  	tristate "UNIX: socket monitoring interface"
  	depends on UNIX
