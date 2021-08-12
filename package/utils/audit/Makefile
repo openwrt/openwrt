@@ -29,7 +29,7 @@ include $(INCLUDE_DIR)/host-build.mk
 define Package/audit/Default
   TITLE:=Audit Daemon
   URL:=http://people.redhat.com/sgrubb/audit/
-  DEPENDS:=@(aarch64||arm||powerpc64||i386||x86_64)
+  DEPENDS:=@(aarch64||arm||powerpc64||i386||x86_64) +@KERNEL_AUDIT
 endef
 
 define Package/audit/Default/description
