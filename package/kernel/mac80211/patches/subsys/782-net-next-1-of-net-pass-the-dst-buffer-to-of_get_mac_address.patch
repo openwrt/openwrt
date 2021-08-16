@@ -180,11 +180,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/ethernet/eth.c                                 | 11 ++--
  85 files changed, 218 insertions(+), 364 deletions(-)
 
-diff --git a/drivers/net/wireless/ath/ath9k/init.c b/drivers/net/wireless/ath/ath9k/init.c
-index 01f9c26f9bf37..e9a36dd7144f1 100644
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -617,7 +617,6 @@ static int ath9k_of_init(struct ath_softc *sc)
+@@ -618,7 +618,6 @@ static int ath9k_of_init(struct ath_soft
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	enum ath_bus_type bus_type = common->bus_ops->ath_bus_type;
@@ -192,7 +190,7 @@ index 01f9c26f9bf37..e9a36dd7144f1 100644
  	char eeprom_name[100];
  	int ret;
  
-@@ -640,9 +639,7 @@ static int ath9k_of_init(struct ath_softc *sc)
+@@ -641,9 +640,7 @@ static int ath9k_of_init(struct ath_soft
  		ah->ah_flags |= AH_NO_EEP_SWAP;
  	}
  
@@ -203,11 +201,9 @@ index 01f9c26f9bf37..e9a36dd7144f1 100644
  
  	return 0;
  }
-diff --git a/drivers/net/wireless/mediatek/mt76/eeprom.c b/drivers/net/wireless/mediatek/mt76/eeprom.c
-index 665b54c5c8ae5..6d895738222ad 100644
 --- a/drivers/net/wireless/mediatek/mt76/eeprom.c
 +++ b/drivers/net/wireless/mediatek/mt76/eeprom.c
-@@ -91,15 +91,9 @@ void
+@@ -90,15 +90,9 @@ out_put_node:
  void
  mt76_eeprom_override(struct mt76_dev *dev)
  {
@@ -224,11 +220,9 @@ index 665b54c5c8ae5..6d895738222ad 100644
  
  	if (!is_valid_ether_addr(dev->macaddr)) {
  		eth_random_addr(dev->macaddr);
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
-index 61a4f1ad31e28..e95c101c27111 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
-@@ -989,11 +989,7 @@ static void rt2x00lib_rate(struct ieee80211_rate *entry,
+@@ -990,11 +990,7 @@ static void rt2x00lib_rate(struct ieee80
  
  void rt2x00lib_set_mac_address(struct rt2x00_dev *rt2x00dev, u8 *eeprom_mac_addr)
  {
@@ -241,5 +235,3 @@ index 61a4f1ad31e28..e95c101c27111 100644
  
  	if (!is_valid_ether_addr(eeprom_mac_addr)) {
  		eth_random_addr(eeprom_mac_addr);
--- 
-cgit 1.2.3-1.el7
