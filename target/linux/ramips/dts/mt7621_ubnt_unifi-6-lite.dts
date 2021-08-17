@@ -73,13 +73,21 @@
 	};
 };
 
+&gmac0 {
+	nvmem-cells = <&macaddr_eeprom_0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &wlan_2g {
+	mediatek,mtd-eeprom = <&factory 0x0>;
+
 	nvmem-cells = <&macaddr_eeprom_0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wlan_5g {
 	mediatek,mtd-eeprom = <&factory 0x20000>;
+
 	nvmem-cells = <&macaddr_eeprom_6>;
 	nvmem-cell-names = "mac-address";
 	ieee80211-freq-limit = <5000000 6000000>;
