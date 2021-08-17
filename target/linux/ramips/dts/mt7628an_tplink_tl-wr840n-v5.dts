@@ -88,6 +88,9 @@
 
 &wmac {
 	status = "okay";
+
+	mediatek,mtd-eeprom = <&factory 0x0>;
+
 	nvmem-cells = <&macaddr_factory_f100>;
 	nvmem-cell-names = "mac-address";
 };
