@@ -74,9 +74,11 @@
 
 &wmac {
 	status = "okay";
+
+	mediatek,mtd-eeprom = <&radio 0x0>;
+
 	nvmem-cells = <&macaddr_rom_f100>;
 	nvmem-cell-names = "mac-address";
-	mediatek,mtd-eeprom = <&radio 0x0>;
 };
 
 &ethernet {
