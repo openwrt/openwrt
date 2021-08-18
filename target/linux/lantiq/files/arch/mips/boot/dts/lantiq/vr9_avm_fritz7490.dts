@@ -10,6 +10,76 @@
 		device_type = "memory";
 		reg = <0x0 0x20000000>;
 	};
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_info_red;
+		led-running = &led_power;
+		led-upgrade = &led_info_red;
+
+		led-dsl = &led_info_green;
+		led-internet = &led_internet;
+		led-wifi = &led_wlan;
+	};
+
+	/delete-node/ leds;
+	leds {
+		compatible = "gpio-leds";
+
+		// led 5 "Power/DSL"
+		led_power: power {
+			label = "green:power";
+			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
+			default-state = "keep";
+		};
+
+		// led 4 "Internet"
+		led_internet: internet {
+			label = "green:internet";
+			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
+		};
+
+		// led 3 "FixedLine"
+		led_fixedline: fixedline {
+			label = "green:fixedline";
+			gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
+		};
+
+		// led 2 "WLAN"
+		led_wlan: wlan {
+			label = "green:wlan";
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+		};
+
+		// led 1 "Info"
+		led_info_green: info_green {
+			label = "green:info";
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+		};
+		led_info_red: info_red {
+			label = "red:info";
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/delete-node/ keys;
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		// key "DECT"
+		key_dect {
+			label = "dect";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
+		};
+		// key "WLAN/WPS"
+		key_wlan {
+			label = "wlan";
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
 };
 
 &eth0 {
