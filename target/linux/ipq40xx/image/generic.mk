@@ -365,6 +365,7 @@ define Device/edgecore_ecw5211
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
 	DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-usb-acm
 endef
 TARGET_DEVICES += edgecore_ecw5211
