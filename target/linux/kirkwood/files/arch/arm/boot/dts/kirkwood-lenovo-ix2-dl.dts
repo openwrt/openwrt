@@ -1,0 +1,366 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/dts-v1/;
+
+#include "kirkwood.dtsi"
+#include "kirkwood-6281.dtsi"
+
+/ {
+	model = "Lenovo IX2-DL";
+	compatible = "lenovo,ix2", "marvell,kirkwood-88f6282", "marvell,kirkwood";
+
+	aliases {
+		gpio0 = "/ocp@f1000000/gpio@10100";
+		gpio1 = "/ocp@f1000000/gpio@10140";
+		i2c0 = "/ocp@f1000000/i2c@11000";
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x00 0x10000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8 earlyprintk";
+		stdout-path = "/ocp@f1000000/serial@12100";
+	};
+
+	ocp@f1000000 {
+		pinctrl: pin-controller@10000 {
+			pinctrl-names = "default";
+
+      pmx-nand {
+				marvell,pins = "mpp0\0mpp1\0mpp2\0mpp3\0mpp4\0mpp5\0mpp18\0mpp19";
+				marvell,function = "nand";
+				phandle = < 0x05 >;
+			};
+      
+			pmx_usb_power: pmx-usb-power {
+				marvell,pins = "mpp21";
+				marvell,function = "gpio";
+			};
+
+			pmx-power-off {
+				marvell,pins = "mpp36";
+				marvell,function = "gpio";
+				phandle = < 0x12 >;
+			};
+
+			pmx-btn-power {
+				marvell,pins = "mpp15";
+				marvell,function = "gpio";
+				phandle = < 0x14 >;
+			};
+
+			pmx-btn-reset {
+				marvell,pins = "mpp29";
+				marvell,function = "gpio";
+				phandle = < 0x15 >;
+			};
+
+			pmx-led-sys-white {
+				marvell,pins = "mpp39";
+				marvell,function = "gpio";
+				phandle = < 0x17 >;
+			};
+
+			pmx-led-sys-red {
+				marvell,pins = "mpp37";
+				marvell,function = "gpio";
+				phandle = < 0x18 >;
+			};
+
+			pmx-led-hdd-blue {
+				marvell,pins = "mpp26";
+				marvell,function = "gpio";
+				phandle = < 0x19 >;
+			};
+
+			pmx-led-hdd1-red {
+				marvell,pins = "mpp25";
+				marvell,function = "gpio";
+				phandle = < 0x1a >;
+			};
+
+			pmx-led-hdd2-red {
+				marvell,pins = "mpp24";
+				marvell,function = "gpio";
+				phandle = < 0x1b >;
+			};
+
+			pmx-led-brightness {
+				marvell,pins = "mpp40\0mpp41";
+				marvell,function = "gpio";
+				phandle = < 0x1c >;
+			};
+
+      pmx-sata0 {
+				marvell,pins = "mpp5\0mpp21\0mpp23";
+				marvell,function = "sata0";
+			};
+
+			pmx-sata1 {
+				marvell,pins = "mpp4\0mpp20\0mpp22";
+				marvell,function = "sata1";
+			};
+      
+			pmx-sata1-power {
+				marvell,pins = "mpp17";
+				marvell,function = "gpio";
+				phandle = < 0x1d >;
+			};
+
+		};
+
+		i2c@11000 {
+			status = "okay";
+      
+      adt7473@2e {
+				compatible = "adi,adt7473";
+				reg = < 0x2e >;
+			};
+      
+			rtc@68 {
+				compatible = "htk,ht1382";
+				reg = <0x68>;
+			};
+		};
+
+		serial@12100 {
+			status = "okay";
+		};
+	};
+
+	regulators {
+		compatible = "simple-bus";
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		pinctrl-0 = <0x1c 0x1d>;
+		pinctrl-names = "default";
+
+		regulator@1 {
+			compatible = "regulator-gpio";
+			reg = < 0x01 >;
+			regulator-name = "LED brightness";
+			regulator-type = "voltage";
+			regulator-min-microvolt = < 0x10c8e0 >;
+			regulator-max-microvolt = < 0x325aa0 >;
+			gpios = < 0x13 0x09 0x00 0x13 0x08 0x00 >;
+			gpios_states = < 0x01 0x01 >;
+			state = < 0x325aa0 0x03 0x2191c0 0x01 0x10c8e0 0x00 >;
+			regulator-always-on;
+			regulator-boot-on;
+			enable-active-high;
+		};
+
+regulator@2 {
+			compatible = "regulator-fixed";
+			reg = < 0x02 >;
+			regulator-name = "SATA1 Power";
+			regulator-min-microvolt = < 0x4c4b40 >;
+			regulator-max-microvolt = < 0x4c4b40 >;
+			regulator-always-on;
+			regulator-boot-on;
+			enable-active-high;
+			gpio = < 0x16 0x11 0x00 >;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		#address-cells = < 0x01 >;
+		#size-cells = < 0x00 >;
+		pinctrl-0 = < 0x14 0x15 >;
+		pinctrl-names = "default";
+
+		power {
+			label = "Power Button";
+			linux,code = < 0x74 >;
+			gpios = < 0x16 0x0f 0x00 >;
+		};
+
+		reset {
+			label = "Reset Button";
+			linux,code = < 0x198 >;
+			gpios = < 0x16 0x1d 0x01 >;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = < 0x17 0x18 0x19 0x1a 0x1b >;
+		pinctrl-names = "default";
+
+		white-sys {
+			label = "ix2:white:sys";
+			gpios = < 0x13 0x07 0x00 >;
+			default-state = "keep";
+		};
+
+		red-sys {
+			label = "ix2:red:sys";
+			gpios = < 0x13 0x05 0x00 >;
+		};
+
+		blue-hdd {
+			label = "ix2:blue:hdd";
+			gpios = < 0x16 0x1a 0x00 >;
+		};
+
+		red-hdd1 {
+			label = "ix2:red:hdd1";
+			gpios = < 0x16 0x19 0x00 >;
+		};
+
+		red-hdd2 {
+			label = "ix2:red:hdd2";
+			gpios = < 0x16 0x18 0x00 >;
+		};
+	};
+
+	gpio-poweroff {
+		compatible = "gpio-poweroff";
+		pinctrl-0 = < 0x12 >;
+		pinctrl-names = "default";
+		gpios = < 0x13 0x04 0x00 >;
+	};
+};
+
+
+    ethernet-controller@72000 {
+			compatible = "marvell,kirkwood-eth";
+			#address-cells = < 0x01 >;
+			#size-cells = < 0x00 >;
+			reg = < 0x72000 0x4000 >;
+			clocks = < 0x03 0x00 >;
+			marvell,tx-checksum-limit = < 0x640 >;
+			status = "okay";
+
+			ethernet0-port@0 {
+				compatible = "marvell,kirkwood-eth-port";
+				reg = < 0x00 >;
+				interrupts = < 0x0b >;
+				local-mac-address = [ 00 00 00 00 00 00 ];
+				phy-handle = < 0x0c >;
+			};
+
+	ethernet0-port@0 {
+		phy-handle = <&ethphy0>;
+	};
+};
+
+mdio-bus@72004 {
+			compatible = "marvell,orion-mdio";
+			#address-cells = < 0x01 >;
+			#size-cells = < 0x00 >;
+			reg = < 0x72004 0x84 >;
+			interrupts = < 0x2e >;
+			clocks = < 0x03 0x00 >;
+			status = "okay";
+
+			ethernet-phy@0 {
+				reg = < 0x00 >;
+				phandle = < 0x0c >;
+			};
+
+	ethphy0: ethernet-phy@1 {
+		reg = <1>;
+		phy-mode = "rgmii-id";
+		marvell,reg-init = <0x1 0x16 0x0 0x3>,
+				   <0x1 0x10 0x0 0x1017>,
+				   <0x1 0x11 0x0 0x4408>,
+				   <0x1 0x16 0x0 0x0>;
+	};
+ rtc@10300 {
+			compatible = "marvell,kirkwood-rtc\0marvell,orion-rtc";
+			reg = < 0x10300 0x20 >;
+			interrupts = < 0x35 >;
+			clocks = < 0x03 0x07 >;
+			status = "okay";
+		};
+    
+    sata-phy@82000 {
+			compatible = "marvell,mvebu-sata-phy";
+			reg = < 0x82000 0x334 >;
+			clocks = < 0x03 0x0e >;
+			clock-names = "sata";
+			#phy-cells = < 0x00 >;
+			status = "ok";
+			phandle = < 0x0f >;
+		};
+
+		sata-phy@84000 {
+			compatible = "marvell,mvebu-sata-phy";
+			reg = < 0x84000 0x334 >;
+			clocks = < 0x03 0x0f >;
+			clock-names = "sata";
+			#phy-cells = < 0x00 >;
+			status = "ok";
+			phandle = < 0x10 >;
+		};
+    
+    sata@80000 {
+			compatible = "marvell,orion-sata";
+			reg = < 0x80000 0x5000 >;
+			interrupts = < 0x15 >;
+			clocks = < 0x03 0x0e 0x03 0x0f >;
+			clock-names = < 0x30003100 >;
+			phys = < 0x0f 0x10 >;
+			phy-names = "port0\0port1";
+			status = "okay";
+			nr-ports = < 0x02 >;
+		};
+};
+
+nand@12f {
+	    #address-cells = < 0x01 >;
+			#size-cells = < 0x01 >;
+			cle = < 0x00 >;
+			ale = < 0x01 >;
+			bank-width = < 0x01 >;
+			compatible = "marvell,orion-nand";
+			reg = < 0x12f0000 0x00 0x400 >;
+			chip-delay = < 0x23 >;
+			clocks = < 0x03 0x07 >;
+			pinctrl-0 = < 0x05 >;
+			pinctrl-names = "default";
+			status = "okay";
+
+	partition@0 {
+				label = "uboot";
+				reg = < 0x0000000 0x0080000 >;
+				read-only;
+			};
+
+			partition@0a0000 {
+				label = "uboot_env";
+				reg = < 0x00a0000 0x0020000 >;
+			};
+
+			partition@0c0000 {
+				label = "uboot_env2";
+				reg = < 0x00c0000 0x0020000 >;
+			};
+
+			partition@100000 {
+				label = "kernel";
+				reg = < 0x0100000 0x0300000 >;
+			};
+
+			partition@400000 {
+				label = "ubi";
+				reg = < 0x0400000 0x020000000 >;
+			};
+};
+
+&pciec {
+        status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&sata {
+	status = "okay";
+	nr-ports = <1>;
+};
