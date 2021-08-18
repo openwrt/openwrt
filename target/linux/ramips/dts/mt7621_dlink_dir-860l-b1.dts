@@ -8,11 +8,12 @@
 	model = "D-Link DIR-860L B1";
 
 	aliases {
+		label-mac-device = &gmac0;
+
 		led-boot = &led_power_green;
 		led-failsafe = &led_power_green;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
-		label-mac-device = &gmac0;
 	};
 
 	leds {
