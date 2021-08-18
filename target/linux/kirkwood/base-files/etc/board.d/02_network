@@ -18,6 +18,9 @@ case "$board" in
 "cloudengines,pogoplugv4"|\
 "iom,iconnect-1.1"|\
 "iom,ix2-200"|\
+"lenovo,ix2")
+	ucidef_set_interface_lan "eth0" "dhcp"
+	;;
 "raidsonic,ib-nas62x0"|\
 "seagate,dockstar"|\
 "seagate,goflexhome"|\

@@ -78,6 +78,22 @@ define Device/iom_ix2_200
 endef
 TARGET_DEVICES += iom_ix2_200
 
+define Device/lenovo_ix2
+  DEVICE_TITLE := Lenovo IX2
+  DEVICE_DTS := kirkwood-lenovo_ix2
+  DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-i2c-mv64xxx kmod-hwmon-adt7475
+  DEVICE_TYPE:=nas
+  PAGESIZE := 512
+  SUBPAGESIZE := 256
+  BLOCKSIZE := 16KiB
+  KERNEL_SIZE := 3072k
+  KERNEL_IN_UBI :=
+  UBINIZE_OPTS := -E 5
+  IMAGE_SIZE := 32505856
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += lenovo_ix2
+
 define Device/linksys_audi
   DEVICE_TITLE := Linksys EA3500 (Audi)
   DEVICE_PACKAGES := kmod-mwl8k swconfig wpad-basic kmod-gpio-button-hotplug

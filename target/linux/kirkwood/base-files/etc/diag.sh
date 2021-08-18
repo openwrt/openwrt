@@ -18,6 +18,9 @@ get_status_led() {
 	iom,ix2-200)
 		status_led="status:white:power_led"
 		;;
+        lenovo,ix2)
+                status_led="status:white:power_led"
+                ;;
 	linksys,audi)
 		status_led="audi:green:power"
 		;;
