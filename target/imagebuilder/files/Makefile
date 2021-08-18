@@ -35,6 +35,7 @@ Available Commands:
 	info:	Show a list of available target profiles
 	clean:	Remove images and temporary build files
 	image:	Build an image (see below for more information).
+	package_depends: Show installation dependency of the package
 
 Building images:
 	By default 'make image' will create an image with the default
@@ -56,6 +57,12 @@ Print manifest:
 	make manifest PROFILE="<profilename>" # override the default target profile
 	make manifest PACKAGES="<pkg1> [<pkg2> [<pkg3> ...]]" # include extra packages
 	make manifest STRIP_ABI=1 # remove ABI version from printed package names
+
+package_depends:
+	List "all" packages dependency of the package
+	You can use the following parameters:
+
+	make package_depends PACKAGE="<pkg>"
 
 endef
 $(eval $(call shexport,Helptext))
@@ -263,4 +270,13 @@ endif
 	@$(MAKE) -s package_reload
 	@$(OPKG) whatdepends -A $(PACKAGE)
 
-.SILENT: help info image manifest whatdepends
+package_depends: FORCE
+ifeq ($(PACKAGE),)
+	@echo 'Variable `PACKAGE` is not set but required by `package_depends`'
+	@exit 1
+endif
+	@$(MAKE) -s package_reload
+	@$(OPKG) depends -A $(PACKAGE)
+
+
+.SILENT: help info image manifest whatdepends package_depends
