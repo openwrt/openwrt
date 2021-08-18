@@ -1,0 +1,708 @@
+--- a/arch/arm/boot/dts/kirkwood-lenovo_ix2.dts
++++ b/arch/arm/boot/dts/kirkwood-lenovo_ix2.dts
+@@ -0,0 +1,705 @@
++/dts-v1/;
++
++/ {
++	#address-cells = < 0x01 >;
++	#size-cells = < 0x01 >;
++	compatible = "lenovo,ix2\0marvell,kirkwood-88f6282\0marvell,kirkwood";
++	interrupt-parent = < 0x01 >;
++	model = "Lenovo IX2";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++		stdout-path = "/ocp@f1000000/serial@12100";
++	};
++
++	aliases {
++		gpio0 = "/ocp@f1000000/gpio@10100";
++		gpio1 = "/ocp@f1000000/gpio@10140";
++		i2c0 = "/ocp@f1000000/i2c@11000";
++	};
++
++	memory {
++		device_type = "memory";
++		reg = < 0x00 0x10000000 >;
++	};
++
++	cpus {
++		#address-cells = < 0x01 >;
++		#size-cells = < 0x00 >;
++
++		cpu@0 {
++			device_type = "cpu";
++			compatible = "marvell,feroceon";
++			reg = < 0x00 >;
++			clocks = < 0x02 0x01 0x02 0x03 0x03 0x0b >;
++			clock-names = "cpu_clk\0ddrclk\0powersave";
++		};
++	};
++
++	mbus@f1000000 {
++		compatible = "marvell,kirkwood-mbus\0simple-bus";
++		#address-cells = < 0x02 >;
++		#size-cells = < 0x01 >;
++		ranges = < 0xf0010000 0x00 0xf1000000 0x100000 0x12f0000 0x00 0xf4000000 0x10000 0x3010000 0x00 0xf5000000 0x10000 >;
++		controller = < 0x04 >;
++		pcie-mem-aperture = < 0xe0000000 0x10000000 >;
++		pcie-io-aperture = < 0xf2000000 0x100000 >;
++
++		nand@12f {
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x01 >;
++			cle = < 0x00 >;
++			ale = < 0x01 >;
++			bank-width = < 0x01 >;
++			compatible = "marvell,orion-nand";
++			reg = < 0x12f0000 0x00 0x400 >;
++			chip-delay = < 0x23 >;
++			clocks = < 0x03 0x07 >;
++			pinctrl-0 = < 0x05 >;
++			pinctrl-names = "default";
++			status = "okay";
++
++			partition@0 {
++				label = "uboot";
++				reg = < 0x0000000 0x0080000 >;
++				read-only;
++			};
++
++			partition@0a0000 {
++				label = "uboot_env";
++				reg = < 0x00a0000 0x0020000 >;
++			};
++
++			partition@0c0000 {
++				label = "uboot_env2";
++				reg = < 0x00c0000 0x0020000 >;
++			};
++
++			partition@100000 {
++				label = "kernel";
++				reg = < 0x0100000 0x0300000 >;
++			};
++
++			partition@400000 {
++				label = "ubi";
++				reg = < 0x0400000 0x020000000 >;
++			};
++		};
++
++		sa-sram@301 {
++			compatible = "mmio-sram";
++			reg = < 0x3010000 0x00 0x800 >;
++			clocks = < 0x03 0x11 >;
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x01 >;
++			phandle = < 0x0b >;
++		};
++
++		pcie@82000000 {
++			compatible = "marvell,kirkwood-pcie";
++			status = "disabled";
++			device_type = "pci";
++			#address-cells = < 0x03 >;
++			#size-cells = < 0x02 >;
++			bus-range = < 0x00 0xff >;
++			ranges = < 0x82000000 0x00 0x40000 0xf0010000 0x40000 0x00 0x2000 0x82000000 0x00 0x44000 0xf0010000 0x44000 0x00 0x2000 0x82000000 0x00 0x80000 0xf0010000 0x80000 0x00 0x2000 0x82000000 0x01 0x00 0x4e80000 0x00 0x01 0x00 0x81000000 0x01 0x00 0x4e00000 0x00 0x01 0x00 0x82000000 0x02 0x00 0x4d80000 0x00 0x01 0x00 0x81000000 0x02 0x00 0x4d00000 0x00 0x01 0x00 >;
++
++			pcie@1,0 {
++				device_type = "pci";
++				assigned-addresses = < 0x82000800 0x00 0x40000 0x00 0x2000 >;
++				reg = < 0x800 0x00 0x00 0x00 0x00 >;
++				#address-cells = < 0x03 >;
++				#size-cells = < 0x02 >;
++				#interrupt-cells = < 0x01 >;
++				ranges = < 0x82000000 0x00 0x00 0x82000000 0x01 0x00 0x01 0x00 0x81000000 0x00 0x00 0x81000000 0x01 0x00 0x01 0x00 >;
++				bus-range = < 0x00 0xff >;
++				interrupt-map-mask = < 0x00 0x00 0x00 0x00 >;
++				interrupt-map = < 0x00 0x00 0x00 0x00 0x01 0x09 >;
++				marvell,pcie-port = < 0x00 >;
++				marvell,pcie-lane = < 0x00 >;
++				clocks = < 0x03 0x02 >;
++				status = "disabled";
++			};
++
++			pcie@2,0 {
++				device_type = "pci";
++				assigned-addresses = < 0x82001000 0x00 0x44000 0x00 0x2000 >;
++				reg = < 0x1000 0x00 0x00 0x00 0x00 >;
++				#address-cells = < 0x03 >;
++				#size-cells = < 0x02 >;
++				#interrupt-cells = < 0x01 >;
++				ranges = < 0x82000000 0x00 0x00 0x82000000 0x02 0x00 0x01 0x00 0x81000000 0x00 0x00 0x81000000 0x02 0x00 0x01 0x00 >;
++				bus-range = < 0x00 0xff >;
++				interrupt-map-mask = < 0x00 0x00 0x00 0x00 >;
++				interrupt-map = < 0x00 0x00 0x00 0x00 0x01 0x0a >;
++				marvell,pcie-port = < 0x01 >;
++				marvell,pcie-lane = < 0x00 >;
++				clocks = < 0x03 0x12 >;
++				status = "disabled";
++			};
++		};
++	};
++
++	ocp@f1000000 {
++		compatible = "simple-bus";
++		ranges = < 0x00 0xf1000000 0x100000 >;
++		#address-cells = < 0x01 >;
++		#size-cells = < 0x01 >;
++
++		pin-controller@10000 {
++			reg = < 0x10000 0x20 >;
++			compatible = "marvell,88f6282-pinctrl";
++
++			pmx-ge1 {
++				marvell,pins = "mpp20\0mpp21\0mpp22\0mpp23\0mpp24\0mpp25\0mpp26\0mpp27\0mpp30\0mpp31\0mpp32\0mpp33";
++				marvell,function = "ge1";
++				phandle = < 0x0d >;
++			};
++
++			pmx-nand {
++				marvell,pins = "mpp0\0mpp1\0mpp2\0mpp3\0mpp4\0mpp5\0mpp18\0mpp19";
++				marvell,function = "nand";
++				phandle = < 0x05 >;
++			};
++
++			pmx-spi {
++				marvell,pins = "mpp0\0mpp1\0mpp2\0mpp3";
++				marvell,function = "spi";
++				phandle = < 0x06 >;
++			};
++
++			pmx-twsi0 {
++				marvell,pins = "mpp8\0mpp9";
++				marvell,function = "twsi0";
++				phandle = < 0x07 >;
++			};
++
++			pmx-uart0 {
++				marvell,pins = "mpp10\0mpp11";
++				marvell,function = "uart0";
++				phandle = < 0x08 >;
++			};
++
++			pmx-uart1 {
++				marvell,pins = "mpp13\0mpp14";
++				marvell,function = "uart1";
++				phandle = < 0x09 >;
++			};
++
++			pmx-sata0 {
++				marvell,pins = "mpp5\0mpp21\0mpp23";
++				marvell,function = "sata0";
++			};
++
++			pmx-sata1 {
++				marvell,pins = "mpp4\0mpp20\0mpp22";
++				marvell,function = "sata1";
++			};
++
++			pmx-twsi1 {
++				marvell,pins = "mpp36\0mpp37";
++				marvell,function = "twsi1";
++				phandle = < 0x0e >;
++			};
++
++			pmx-sdio {
++				marvell,pins = "mpp12\0mpp13\0mpp14\0mpp15\0mpp16\0mpp17";
++				marvell,function = "sdio";
++				phandle = < 0x11 >;
++			};
++
++			pmx-power-off {
++				marvell,pins = "mpp36";
++				marvell,function = "gpio";
++				phandle = < 0x12 >;
++			};
++
++			pmx-sata1-power {
++				marvell,pins = "mpp17";
++				marvell,function = "gpio";
++				phandle = < 0x1d >;
++			};
++
++			pmx-btn-power {
++				marvell,pins = "mpp15";
++				marvell,function = "gpio";
++				phandle = < 0x14 >;
++			};
++
++			pmx-btn-reset {
++				marvell,pins = "mpp29";
++				marvell,function = "gpio";
++				phandle = < 0x15 >;
++			};
++
++			pmx-led-sys-white {
++				marvell,pins = "mpp39";
++				marvell,function = "gpio";
++				phandle = < 0x17 >;
++			};
++
++			pmx-led-sys-red {
++				marvell,pins = "mpp37";
++				marvell,function = "gpio";
++				phandle = < 0x18 >;
++			};
++
++			pmx-led-hdd-blue {
++				marvell,pins = "mpp26";
++				marvell,function = "gpio";
++				phandle = < 0x19 >;
++			};
++
++			pmx-led-hdd1-red {
++				marvell,pins = "mpp25";
++				marvell,function = "gpio";
++				phandle = < 0x1a >;
++			};
++
++			pmx-led-hdd2-red {
++				marvell,pins = "mpp24";
++				marvell,function = "gpio";
++				phandle = < 0x1b >;
++			};
++
++			pmx-led-brightness {
++				marvell,pins = "mpp40\0mpp41";
++				marvell,function = "gpio";
++				phandle = < 0x1c >;
++			};
++		};
++
++		core-clocks@10030 {
++			compatible = "marvell,kirkwood-core-clock";
++			reg = < 0x10030 0x04 >;
++			#clock-cells = < 0x01 >;
++			phandle = < 0x02 >;
++		};
++
++		spi@10600 {
++			compatible = "marvell,orion-spi";
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++			cell-index = < 0x00 >;
++			interrupts = < 0x17 >;
++			reg = < 0x10600 0x28 >;
++			clocks = < 0x03 0x07 >;
++			pinctrl-0 = < 0x06 >;
++			pinctrl-names = "default";
++			status = "disabled";
++		};
++
++		gpio@10100 {
++			compatible = "marvell,orion-gpio";
++			#gpio-cells = < 0x02 >;
++			gpio-controller;
++			reg = < 0x10100 0x40 >;
++			ngpios = < 0x20 >;
++			interrupt-controller;
++			#interrupt-cells = < 0x02 >;
++			interrupts = < 0x23 0x24 0x25 0x26 >;
++			clocks = < 0x03 0x07 >;
++			phandle = < 0x16 >;
++		};
++
++		gpio@10140 {
++			compatible = "marvell,orion-gpio";
++			#gpio-cells = < 0x02 >;
++			gpio-controller;
++			reg = < 0x10140 0x40 >;
++			ngpios = < 0x12 >;
++			interrupt-controller;
++			#interrupt-cells = < 0x02 >;
++			interrupts = < 0x27 0x28 0x29 >;
++			clocks = < 0x03 0x07 >;
++			phandle = < 0x13 >;
++		};
++
++		i2c@11000 {
++			compatible = "marvell,mv64xxx-i2c";
++			reg = < 0x11000 0x20 >;
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++			interrupts = < 0x1d >;
++			clock-frequency = < 0x186a0 >;
++			clocks = < 0x03 0x07 >;
++			pinctrl-0 = < 0x07 >;
++			pinctrl-names = "default";
++			status = "okay";
++
++			adt7473@2e {
++				compatible = "adi,adt7473";
++				reg = < 0x2e >;
++			};
++		};
++
++		serial@12000 {
++			compatible = "ns16550a";
++			reg = < 0x12000 0x100 >;
++			reg-shift = < 0x02 >;
++			interrupts = < 0x21 >;
++			clocks = < 0x03 0x07 >;
++			pinctrl-0 = < 0x08 >;
++			pinctrl-names = "default";
++			status = "disabled";
++		};
++
++		serial@12100 {
++			compatible = "ns16550a";
++			reg = < 0x12100 0x100 >;
++			reg-shift = < 0x02 >;
++			interrupts = < 0x22 >;
++			clocks = < 0x03 0x07 >;
++			pinctrl-0 = < 0x09 >;
++			pinctrl-names = "default";
++			status = "okay";
++		};
++
++		mbus-controller@20000 {
++			compatible = "marvell,mbus-controller";
++			reg = < 0x20000 0x80 0x1500 0x20 >;
++			phandle = < 0x04 >;
++		};
++
++		system-controller@20000 {
++			compatible = "marvell,orion-system-controller";
++			reg = < 0x20000 0x120 >;
++		};
++
++		bridge-interrupt-ctrl@20110 {
++			compatible = "marvell,orion-bridge-intc";
++			interrupt-controller;
++			#interrupt-cells = < 0x01 >;
++			reg = < 0x20110 0x08 >;
++			interrupts = < 0x01 >;
++			marvell,#interrupts = < 0x06 >;
++			phandle = < 0x0a >;
++		};
++
++		clock-gating-control@2011c {
++			compatible = "marvell,kirkwood-gating-clock";
++			reg = < 0x2011c 0x04 >;
++			clocks = < 0x02 0x00 >;
++			#clock-cells = < 0x01 >;
++			phandle = < 0x03 >;
++		};
++
++		l2-cache@20128 {
++			compatible = "marvell,kirkwood-cache";
++			reg = < 0x20128 0x04 >;
++		};
++
++		main-interrupt-ctrl@20200 {
++			compatible = "marvell,orion-intc";
++			interrupt-controller;
++			#interrupt-cells = < 0x01 >;
++			reg = < 0x20200 0x10 0x20210 0x10 >;
++			phandle = < 0x01 >;
++		};
++
++		timer@20300 {
++			compatible = "marvell,orion-timer";
++			reg = < 0x20300 0x20 >;
++			interrupt-parent = < 0x0a >;
++			interrupts = < 0x01 0x02 >;
++			clocks = < 0x02 0x00 >;
++		};
++
++		watchdog-timer@20300 {
++			compatible = "marvell,orion-wdt";
++			reg = < 0x20300 0x28 0x20108 0x04 >;
++			interrupt-parent = < 0x0a >;
++			interrupts = < 0x03 >;
++			clocks = < 0x03 0x07 >;
++			status = "okay";
++		};
++
++		crypto@30000 {
++			compatible = "marvell,kirkwood-crypto";
++			reg = < 0x30000 0x10000 >;
++			reg-names = "regs";
++			interrupts = < 0x16 >;
++			clocks = < 0x03 0x11 >;
++			marvell,crypto-srams = < 0x0b >;
++			marvell,crypto-sram-size = < 0x800 >;
++			status = "okay";
++		};
++
++		ehci@50000 {
++			compatible = "marvell,orion-ehci";
++			reg = < 0x50000 0x1000 >;
++			interrupts = < 0x13 >;
++			clocks = < 0x03 0x03 >;
++			status = "okay";
++		};
++
++		xor@60800 {
++			compatible = "marvell,orion-xor";
++			reg = < 0x60800 0x100 0x60a00 0x100 >;
++			status = "okay";
++			clocks = < 0x03 0x08 >;
++
++			xor00 {
++				interrupts = < 0x05 >;
++				dmacap,memcpy;
++				dmacap,xor;
++			};
++
++			xor01 {
++				interrupts = < 0x06 >;
++				dmacap,memcpy;
++				dmacap,xor;
++				dmacap,memset;
++			};
++		};
++
++		xor@60900 {
++			compatible = "marvell,orion-xor";
++			reg = < 0x60900 0x100 0x60b00 0x100 >;
++			status = "okay";
++			clocks = < 0x03 0x10 >;
++
++			xor00 {
++				interrupts = < 0x07 >;
++				dmacap,memcpy;
++				dmacap,xor;
++			};
++
++			xor01 {
++				interrupts = < 0x08 >;
++				dmacap,memcpy;
++				dmacap,xor;
++				dmacap,memset;
++			};
++		};
++
++		ethernet-controller@72000 {
++			compatible = "marvell,kirkwood-eth";
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++			reg = < 0x72000 0x4000 >;
++			clocks = < 0x03 0x00 >;
++			marvell,tx-checksum-limit = < 0x640 >;
++			status = "okay";
++
++			ethernet0-port@0 {
++				compatible = "marvell,kirkwood-eth-port";
++				reg = < 0x00 >;
++				interrupts = < 0x0b >;
++				local-mac-address = [ 00 00 00 00 00 00 ];
++				phy-handle = < 0x0c >;
++			};
++		};
++
++		mdio-bus@72004 {
++			compatible = "marvell,orion-mdio";
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++			reg = < 0x72004 0x84 >;
++			interrupts = < 0x2e >;
++			clocks = < 0x03 0x00 >;
++			status = "okay";
++
++			ethernet-phy@0 {
++				reg = < 0x00 >;
++				phandle = < 0x0c >;
++			};
++		};
++
++		ethernet-controller@76000 {
++			compatible = "marvell,kirkwood-eth";
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++			reg = < 0x76000 0x4000 >;
++			clocks = < 0x03 0x13 >;
++			marvell,tx-checksum-limit = < 0x640 >;
++			pinctrl-0 = < 0x0d >;
++			pinctrl-names = "default";
++			status = "disabled";
++
++			ethernet1-port@0 {
++				compatible = "marvell,kirkwood-eth-port";
++				reg = < 0x00 >;
++				interrupts = < 0x0f >;
++				local-mac-address = [ 00 00 00 00 00 00 ];
++			};
++		};
++
++		sata-phy@82000 {
++			compatible = "marvell,mvebu-sata-phy";
++			reg = < 0x82000 0x334 >;
++			clocks = < 0x03 0x0e >;
++			clock-names = "sata";
++			#phy-cells = < 0x00 >;
++			status = "ok";
++			phandle = < 0x0f >;
++		};
++
++		sata-phy@84000 {
++			compatible = "marvell,mvebu-sata-phy";
++			reg = < 0x84000 0x334 >;
++			clocks = < 0x03 0x0f >;
++			clock-names = "sata";
++			#phy-cells = < 0x00 >;
++			status = "ok";
++			phandle = < 0x10 >;
++		};
++
++		audio-controller@a0000 {
++			compatible = "marvell,kirkwood-audio";
++			#sound-dai-cells = < 0x00 >;
++			reg = < 0xa0000 0x2210 >;
++			interrupts = < 0x18 >;
++			clocks = < 0x03 0x09 >;
++			clock-names = "internal";
++			status = "disabled";
++		};
++
++		thermal@10078 {
++			compatible = "marvell,kirkwood-thermal";
++			reg = < 0x10078 0x04 >;
++			status = "okay";
++		};
++
++		rtc@10300 {
++			compatible = "marvell,kirkwood-rtc\0marvell,orion-rtc";
++			reg = < 0x10300 0x20 >;
++			interrupts = < 0x35 >;
++			clocks = < 0x03 0x07 >;
++			status = "okay";
++		};
++
++		i2c@11100 {
++			compatible = "marvell,mv64xxx-i2c";
++			reg = < 0x11100 0x20 >;
++			#address-cells = < 0x01 >;
++			#size-cells = < 0x00 >;
++			interrupts = < 0x20 >;
++			clock-frequency = < 0x186a0 >;
++			clocks = < 0x03 0x07 >;
++			pinctrl-0 = < 0x0e >;
++			pinctrl-names = "default";
++			status = "disabled";
++		};
++
++		sata@80000 {
++			compatible = "marvell,orion-sata";
++			reg = < 0x80000 0x5000 >;
++			interrupts = < 0x15 >;
++			clocks = < 0x03 0x0e 0x03 0x0f >;
++			clock-names = < 0x30003100 >;
++			phys = < 0x0f 0x10 >;
++			phy-names = "port0\0port1";
++			status = "okay";
++			nr-ports = < 0x02 >;
++		};
++
++		mvsdio@90000 {
++			compatible = "marvell,orion-sdio";
++			reg = < 0x90000 0x200 >;
++			interrupts = < 0x1c >;
++			clocks = < 0x03 0x04 >;
++			pinctrl-0 = < 0x11 >;
++			pinctrl-names = "default";
++			bus-width = < 0x04 >;
++			cap-sdio-irq;
++			cap-sd-highspeed;
++			cap-mmc-highspeed;
++			status = "disabled";
++		};
++	};
++
++	gpio-poweroff {
++		compatible = "gpio-poweroff";
++		pinctrl-0 = < 0x12 >;
++		pinctrl-names = "default";
++		gpios = < 0x13 0x04 0x00 >;
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		#address-cells = < 0x01 >;
++		#size-cells = < 0x00 >;
++		pinctrl-0 = < 0x14 0x15 >;
++		pinctrl-names = "default";
++
++		power {
++			label = "Power Button";
++			linux,code = < 0x74 >;
++			gpios = < 0x16 0x0f 0x00 >;
++		};
++
++		reset {
++			label = "Reset Button";
++			linux,code = < 0x198 >;
++			gpios = < 0x16 0x1d 0x01 >;
++		};
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++		pinctrl-0 = < 0x17 0x18 0x19 0x1a 0x1b >;
++		pinctrl-names = "default";
++
++		white-sys {
++			label = "ix2:white:sys";
++			gpios = < 0x13 0x07 0x00 >;
++			default-state = "keep";
++		};
++
++		red-sys {
++			label = "ix2:red:sys";
++			gpios = < 0x13 0x05 0x00 >;
++		};
++
++		blue-hdd {
++			label = "ix2:blue:hdd";
++			gpios = < 0x16 0x1a 0x00 >;
++		};
++
++		red-hdd1 {
++			label = "ix2:red:hdd1";
++			gpios = < 0x16 0x19 0x00 >;
++		};
++
++		red-hdd2 {
++			label = "ix2:red:hdd2";
++			gpios = < 0x16 0x18 0x00 >;
++		};
++	};
++
++	regulators {
++		compatible = "simple-bus";
++		#address-cells = < 0x01 >;
++		#size-cells = < 0x00 >;
++		pinctrl-0 = < 0x1c 0x1d >;
++		pinctrl-names = "default";
++
++		regulator@1 {
++			compatible = "regulator-gpio";
++			reg = < 0x01 >;
++			regulator-name = "LED brightness";
++			regulator-type = "voltage";
++			regulator-min-microvolt = < 0x10c8e0 >;
++			regulator-max-microvolt = < 0x325aa0 >;
++			gpios = < 0x13 0x09 0x00 0x13 0x08 0x00 >;
++			gpios_states = < 0x01 0x01 >;
++			state = < 0x325aa0 0x03 0x2191c0 0x01 0x10c8e0 0x00 >;
++			regulator-always-on;
++			regulator-boot-on;
++			enable-active-high;
++		};
++
++		regulator@2 {
++			compatible = "regulator-fixed";
++			reg = < 0x02 >;
++			regulator-name = "SATA1 Power";
++			regulator-min-microvolt = < 0x4c4b40 >;
++			regulator-max-microvolt = < 0x4c4b40 >;
++			regulator-always-on;
++			regulator-boot-on;
++			enable-active-high;
++			gpio = < 0x16 0x11 0x00 >;
++		};
++	};
++};
