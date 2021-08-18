@@ -1,0 +1,84 @@
+From 639dba857aa554f2a78572adc4cf3c32de9ec2e2 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Tue, 30 Mar 2021 18:21:14 +0200
+Subject: [PATCH 2/2] of_net: add mac-address-increment support
+
+Lots of embedded devices use the mac-address of other interface
+extracted from nvmem cells and increments it by one or two. Add two
+bindings to integrate this and directly use the right mac-address for
+the interface. Some example are some routers that use the gmac
+mac-address stored in the art partition and increments it by one for the
+wifi. mac-address-increment-byte bindings is used to tell what byte of
+the mac-address has to be increased (if not defined the last byte is
+increased) and mac-address-increment tells how much the byte decided
+early has to be increased.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/of/of_net.c | 59 ++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 45 insertions(+), 14 deletions(-)
+
+--- a/drivers/of/of_net.c
++++ b/drivers/of/of_net.c
+@@ -166,31 +166,56 @@ static int of_get_mac_address_mtd(struct
+  * If a mtd-mac-address property exists, try to fetch the MAC address from the
+  * specified mtd device.
+  *
++ * DT can tell the system to increment the mac-address after is extracted by
++ * using:
++ * - mac-address-increment-byte to decide what byte to increase
++ *   (if not defined is increased the last byte)
++ * - mac-address-increment to decide how much to increase. The value will
++ *   not overflow to other bytes if the increment is over 255.
++ *   (example 00:01:02:03:04:ff + 1 == 00:01:02:03:04:00)
++ *
+  * Return: 0 on success and errno in case of error.
+ */
+ int of_get_mac_address(struct device_node *np, u8 *addr)
+ {
++	u32 inc_idx, mac_inc;
+ 	int ret;
+ 
++	/* Check first if the increment byte is present and valid.
++	 * If not set assume to increment the last byte if found.
++	 */
++	if (of_property_read_u32(np, "mac-address-increment-byte", &inc_idx))
++		inc_idx = 5;
++	if (inc_idx < 3 || inc_idx > 5)
++		return -EINVAL;
++
+ 	if (!np)
+ 		return -ENODEV;
+ 
+ 	ret = of_get_mac_addr(np, "mac-address", addr);
+ 	if (!ret)
+-		return 0;
++		goto found;
+ 
+ 	ret = of_get_mac_addr(np, "local-mac-address", addr);
+ 	if (!ret)
+-		return 0;
++		goto found;
+ 
+ 	ret = of_get_mac_addr(np, "address", addr);
+ 	if (!ret)
+-		return 0;
++		goto found;
+ 
+ 	ret = of_get_mac_address_mtd(np, addr);
+ 	if (!ret)
+-		return 0;
++		goto found;
++
++	ret = of_get_mac_addr_nvmem(np, addr);
++	if (ret)
++		return ret;
++
++found:
++	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc))
++		addr[inc_idx] += mac_inc;
+ 
+-	return of_get_mac_addr_nvmem(np, addr);
++	return ret;
+ }
+ EXPORT_SYMBOL(of_get_mac_address);

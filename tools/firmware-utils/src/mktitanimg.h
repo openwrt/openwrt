@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 #ifndef __MKTITANIMG_H
 #define __MKTITANIMG_H
 
