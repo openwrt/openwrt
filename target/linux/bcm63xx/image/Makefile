@@ -238,7 +238,7 @@ define Build/cfe-sercomm-crypto
 endef
 
 define Build/cfe-old-bin
-	$(TOPDIR)/scripts/brcmImage.pl -t -p \
+	../scripts/brcmImage.pl -t -p \
 		-o $@ -b $(CFE_BOARD_ID) -c $(CHIP_ID) \
 		-e $(LOADER_ENTRY) -a $(LOADER_ENTRY) \
 		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) \
@@ -280,7 +280,7 @@ define Build/redboot-bin
 	dd if=$(IMAGE_ROOTFS) of=$(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(IMAGE_ROOTFS)) bs=64k conv=sync
 	echo -ne \\xDE\\xAD\\xC0\\xDE >> $(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(IMAGE_ROOTFS))
 	# Generate the scripted image
-	$(TOPDIR)/scripts/redboot-script.pl \
+	../scripts/redboot-script.pl \
 		-k $(BIN_DIR)/$(REDBOOT_PREFIX)-vmlinux.gz \
 		-r $(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(IMAGE_ROOTFS)) \
 		-a $(strip $(LOADER_ENTRY)) -f 0xbe430000 -l 0x7c0000 \
