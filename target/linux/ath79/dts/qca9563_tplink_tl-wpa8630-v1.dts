@@ -43,6 +43,8 @@
 };
 
 &wmac {
+	mtd-cal-data = <&art 0x1000>;
+
 	nvmem-cells = <&macaddr_uboot_fc00>;
 	nvmem-cell-names = "mac-address";
 };
