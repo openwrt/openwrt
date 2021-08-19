@@ -100,9 +100,9 @@ define Device/iom_ix2-200
 endef
 TARGET_DEVICES += iom_ix2-200
 
-define Device/lenovo_ix2
-  DEVICE_TITLE := Lenovo IX2
-  DEVICE_DTS := kirkwood-lenovo_ix2
+define Device/lenovo-ix2-dl
+  DEVICE_TITLE := Lenovo IX2-dl
+  DEVICE_DTS := kirkwood-lenovo-ix2-dl
   DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-i2c-mv64xxx kmod-hwmon-adt7475
   DEVICE_TYPE:=nas
   PAGESIZE := 512
@@ -114,7 +114,7 @@ define Device/lenovo_ix2
   IMAGE_SIZE := 32505856
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
 endef
-TARGET_DEVICES += lenovo_ix2
+TARGET_DEVICES += lenovo-ix2-dl
 
 define Device/linksys
   DEVICE_VENDOR := Linksys
