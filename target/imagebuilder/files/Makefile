@@ -36,6 +36,7 @@ Available Commands:
 	clean:	Remove images and temporary build files
 	image:	Build an image (see below for more information).
 	manifest: Show all package that will be installed into the image
+	package_whatdepends: Show which packages have a dependency on this
 	package_depends: Show installation dependency of the package
 
 image:
@@ -58,6 +59,13 @@ manifest:
 	make manifest PROFILE="<profilename>" # override the default target profile
 	make manifest PACKAGES="<pkg1> [<pkg2> [<pkg3> ...]]" # include extra packages
 	make manifest STRIP_ABI=1 # remove ABI version from printed package names
+
+
+package_whatdepends:
+	List "all" packages that have a dependency on this package
+	You can use the following parameters:
+
+	make package_whatdepends PACKAGE="<pkg>"
 
 package_depends:
 	List "all" packages dependency of the package
@@ -263,7 +271,7 @@ manifest: FORCE
 		$(if $(PROFILE),USER_PROFILE="$(PROFILE_FILTER)") \
 		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)"))
 
-whatdepends: FORCE
+package_whatdepends: FORCE
 ifeq ($(PACKAGE),)
 	@echo 'Variable `PACKAGE` is not set but required by `whatdepends`'
 	@exit 1
@@ -280,4 +288,4 @@ endif
 	@$(OPKG) depends -A $(PACKAGE)
 
 
-.SILENT: help info image manifest whatdepends package_depends
+.SILENT: help info image manifest package_whatdepends package_depends
