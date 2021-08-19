@@ -37,7 +37,7 @@ Available Commands:
 	image:	Build an image (see below for more information).
 	package_depends: Show installation dependency of the package
 
-Building images:
+image:
 	By default 'make image' will create an image with the default
 	target profile and package set. You can use the following parameters
 	to change that:
