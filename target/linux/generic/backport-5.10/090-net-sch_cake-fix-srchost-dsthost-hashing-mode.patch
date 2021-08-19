@@ -1,0 +1,36 @@
+From: "Toke Høiland-Jørgensen" <toke@redhat.com>
+To: netdev@vger.kernel.org
+Cc: "Toke Høiland-Jørgensen" <toke@redhat.com>,
+	cake@lists.bufferbloat.net, "Pete Heist" <pete@heistp.net>
+Subject: [PATCH net] sch_cake: fix srchost/dsthost hashing mode
+Date: Mon, 16 Aug 2021 13:59:17 +0200
+Message-ID: <20210816115917.16800-1-toke@redhat.com> (raw)
+
+When adding support for using the skb->hash value as the flow hash in CAKE,
+I accidentally introduced a logic error that broke the host-only isolation
+modes of CAKE (srchost and dsthost keywords). Specifically, the flow_hash
+variable should stay initialised to 0 in cake_hash() in pure host-based
+hashing mode. Add a check for this before using the skb->hash value as
+flow_hash.
+
+Fixes: b0c19ed6088a ("sch_cake: Take advantage of skb->hash where appropriate")
+Reported-by: Pete Heist <pete@heistp.net>
+Tested-by: Pete Heist <pete@heistp.net>
+Signed-off-by: Toke Høiland-Jørgensen <toke@redhat.com>
+---
+ net/sched/sch_cake.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/sched/sch_cake.c b/net/sched/sch_cake.c
+index 951542843cab..28af8b1e1bb1 100644
+--- a/net/sched/sch_cake.c
++++ b/net/sched/sch_cake.c
+@@ -720,7 +720,7 @@ static u32 cake_hash(struct cake_tin_data *q, const struct sk_buff *skb,
+ skip_hash:
+ 	if (flow_override)
+ 		flow_hash = flow_override - 1;
+-	else if (use_skbhash)
++	else if (use_skbhash && (flow_mode & CAKE_FLOW_FLOWS))
+ 		flow_hash = skb->hash;
+ 	if (host_override) {
+ 		dsthost_hash = host_override - 1;
