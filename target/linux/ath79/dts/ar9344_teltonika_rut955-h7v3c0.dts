@@ -192,13 +192,3 @@
 		pinctrl-single,bits = <0x0 0x002e0000 0x00ff0000>;
 	};
 };
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-};
