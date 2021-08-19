@@ -11,6 +11,19 @@ boot() {
 		path_to_hwmon='/sys/class/hwmon/hwmon0'
 		echo 2 > "$path_to_hwmon/pwm1_enable" # fan is on pwm1
 		;;
+	lenovo,ix2)
+                path_to_hwmon='/sys/devices/platform/ocp@f1000000/f1011000.i2c/i2c-0/0-002e'
+                echo 7 > "$path_to_hwmon/pwm1_auto_channels_temp"
+                echo 64 > "$path_to_hwmon/pwm1_auto_point1_pwm"
+                echo 255 > "$path_to_hwmon/pwm1_auto_point2_pwm"
+                echo 40000 > "$path_to_hwmon/temp1_auto_point1_temp"
+                echo 50000 > "$path_to_hwmon/temp1_auto_point2_temp"
+                echo 40000 > "$path_to_hwmon/temp2_auto_point1_temp"
+                echo 50000 > "$path_to_hwmon/temp2_auto_point2_temp"
+                echo 40000 > "$path_to_hwmon/temp3_auto_point1_temp"
+                echo 50000 > "$path_to_hwmon/temp3_auto_point2_temp"
+                echo 2 > "$path_to_hwmon/pwm1_enable" # fan is on pwm1
+               ;;
 	seagate,blackarmor-nas220)
 		path_to_hwmon='/sys/devices/platform/ocp@f1000000/f1011000.i2c/i2c-0/0-002e/hwmon/hwmon0'
 		# adt7476 fan control chip. 3 temp sensors. Set to 1/4 speed at 35C and max speed at 48C.
@@ -44,18 +57,5 @@ boot() {
 		# pre-defined steps: 103000, 122000, 143300, 170000 in [millicelsius]
 		echo 103000 > "$path_to_hwmon/temp3_auto_temp_max"
 		;;
-	lenovo,ix2)
-		path_to_hwmon='/sys/devices/platform/ocp@f1000000/f1011000.i2c/i2c-0/0-002e'
-		echo 7 > "$path_to_hwmon/pwm1_auto_channels_temp"
-        	echo 64 > "$path_to_hwmon/pwm1_auto_point1_pwm"
-        	echo 255 > "$path_to_hwmon/pwm1_auto_point2_pwm"
-        	echo 40000 > "$path_to_hwmon/temp1_auto_point1_temp"
-        	echo 50000 > "$path_to_hwmon/temp1_auto_point2_temp"
-        	echo 40000 > "$path_to_hwmon/temp2_auto_point1_temp"
-        	echo 50000 > "$path_to_hwmon/temp2_auto_point2_temp"
-        	echo 40000 > "$path_to_hwmon/temp3_auto_point1_temp"
-        	echo 50000 > "$path_to_hwmon/temp3_auto_point2_temp"
-        	echo 2 > "$path_to_hwmon/pwm1_enable" # fan is on pwm1
-               ;;
 	esac
 }
