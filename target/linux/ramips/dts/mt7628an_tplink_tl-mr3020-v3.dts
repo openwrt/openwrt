@@ -31,12 +31,14 @@
 			label = "sw1";
 			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
 		};
 
 		modec2 {
 			label = "sw2";
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
+			linux,input-type = <EV_SW>;
 		};
 	};
 
