@@ -188,13 +188,3 @@
 					<0x14 0x08 0xff>;
 	};
 };
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-};
