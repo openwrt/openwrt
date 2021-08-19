@@ -35,6 +35,7 @@ Available Commands:
 	info:	Show a list of available target profiles
 	clean:	Remove images and temporary build files
 	image:	Build an image (see below for more information).
+	manifest: Show all package that will be installed into the image
 	package_depends: Show installation dependency of the package
 
 image:
@@ -50,7 +51,7 @@ image:
 	make image DISABLED_SERVICES="<svc1> [<svc2> [<svc3> ..]]" # Which services in /etc/init.d/ should be disabled
 	make image ADD_LOCAL_KEY=1 # store locally generated signing key in built images
 
-Print manifest:
+manifest:
 	List "all" packages which get installed into the image.
 	You can use the following parameters:
 
