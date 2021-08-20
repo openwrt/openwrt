@@ -1408,6 +1408,16 @@ define Device/ubnt_unifi-nanohd
 endef
 TARGET_DEVICES += ubnt_unifi-nanohd
 
+define Device/ubnt_usw-flex
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi Switch Flex
+  DEVICE_DTS_CONFIG := config@1
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 7360k
+endef
+TARGET_DEVICES += ubnt_usw-flex
+
 define Device/unielec_u7621-01-16m
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
