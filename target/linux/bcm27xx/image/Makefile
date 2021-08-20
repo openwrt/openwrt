@@ -77,7 +77,8 @@ define Device/rpi
   DEVICE_PACKAGES := \
 	cypress-firmware-43430-sdio \
 	cypress-nvram-43430-sdio-rpi-zero-w \
-	kmod-brcmfmac wpad-basic-wolfssl
+	kmod-brcmfmac wpad-basic-wolfssl \
+	kmod-usb-dwc2 kmod-usb-net-rndis kmod-usb-gadget-cdc-composite
 endef
 ifeq ($(SUBTARGET),bcm2708)
   TARGET_DEVICES += rpi
