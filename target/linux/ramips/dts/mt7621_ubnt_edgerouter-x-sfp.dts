@@ -72,13 +72,3 @@
 		};
 	};
 };
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_22: macaddr@22 {
-		reg = <0x22 0x6>;
-	};
-};
