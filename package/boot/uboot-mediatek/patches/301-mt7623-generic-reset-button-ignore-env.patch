@@ -1,13 +1,25 @@
---- a/board/mediatek/mt7622/mt7622_rfb.c
-+++ b/board/mediatek/mt7622/mt7622_rfb.c
-@@ -6,9 +6,16 @@
+--- a/board/mediatek/mt7623/Kconfig
++++ b/board/mediatek/mt7623/Kconfig
+@@ -10,4 +10,8 @@ config MTK_BROM_HEADER_INFO
+ 	string
+ 	default "lk=1"
+ 
++config RESET_BUTTON_LABEL
++	string "Button to trigger factory reset"
++	default "reset"
++
+ endif
+--- a/board/mediatek/mt7623/mt7623_rfb.c
++++ b/board/mediatek/mt7623/mt7623_rfb.c
+@@ -4,8 +4,17 @@
+  */
  
  #include <common.h>
- #include <config.h>
 +#include <dm.h>
 +#include <button.h>
- #include <env.h>
- #include <init.h>
++#include <env.h>
++#include <init.h>
+ #include <mmc.h>
  #include <asm/global_data.h>
 +#include <linux/delay.h>
 +
@@ -17,11 +29,13 @@
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -20,7 +27,19 @@ int board_init(void)
- 
- int board_late_init(void)
- {
--	gd->env_valid = 1; //to load environment variable from persistent store
+@@ -41,3 +50,22 @@ int mmc_get_env_dev(void)
+ 	return mmc_get_boot_dev();
+ }
+ #endif
++
++int board_late_init(void)
++{
 +	struct udevice *dev;
 +
 +	if (!button_get_by_label(CONFIG_RESET_BUTTON_LABEL, &dev)) {
@@ -35,17 +49,6 @@
 +		}
 +	}
 +
- 	env_relocate();
- 	return 0;
- }
---- a/board/mediatek/mt7622/Kconfig
-+++ b/board/mediatek/mt7622/Kconfig
-@@ -14,4 +14,8 @@ config MTK_BROM_HEADER_INFO
- 	string
- 	default "media=nor"
- 
-+config RESET_BUTTON_LABEL
-+	string "Button to trigger factory reset"
-+	default "reset"
-+
- endif
++	env_relocate();
++	return 0;
++}

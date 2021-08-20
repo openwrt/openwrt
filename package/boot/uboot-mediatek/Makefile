@@ -78,7 +78,7 @@ endef
 
 define U-Boot/mt7623a_unielec_u7623
   NAME:=UniElec U7623 (mt7623)
-  BUILD_DEVICES:=unielec_u7623-emmc unielec_u7623-02-emmc-512m-legacy
+  BUILD_DEVICES:=unielec_u7623-02
   BUILD_SUBTARGET:=mt7623
   UBOOT_CONFIG:=mt7623a_unielec_u7623_02
 endef
