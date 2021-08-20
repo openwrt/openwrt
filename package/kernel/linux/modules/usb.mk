@@ -147,6 +147,7 @@ define KernelPackage/usb-gadget-ehci-debug
 	CONFIG_USB_G_DBGP_PRINTK=n
   DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite +kmod-usb-gadget-serial
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/legacy/g_dbgp.ko
+  AUTOLOAD:=$(call AutoLoad,52,g_dbgp)
   $(call AddDepends/usb)
 endef
 
@@ -169,7 +170,7 @@ define KernelPackage/usb-gadget-eth
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm_subset.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_rndis.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_ether.ko
-  AUTOLOAD:=$(call AutoLoad,52,usb_f_ecm)
+  AUTOLOAD:=$(call AutoLoad,52,usb_f_ecm g_ether)
   $(call AddDepends/usb)
 endef
 
@@ -207,7 +208,7 @@ define KernelPackage/usb-gadget-serial
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_obex.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_serial.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_serial.ko
-  AUTOLOAD:=$(call AutoLoad,52,usb_f_acm)
+  AUTOLOAD:=$(call AutoLoad,52,usb_f_acm g_serial)
   $(call AddDepends/usb)
 endef
 
@@ -224,7 +225,7 @@ define KernelPackage/usb-gadget-mass-storage
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_mass_storage.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_mass_storage.ko
-  AUTOLOAD:=$(call AutoLoad,52,usb_f_mass_storage)
+  AUTOLOAD:=$(call AutoLoad,52,usb_f_mass_storage g_mass_storage)
   $(call AddDepends/usb)
 endef
 
