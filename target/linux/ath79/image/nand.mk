@@ -195,6 +195,22 @@ define Device/glinet_gl-e750
 endef
 TARGET_DEVICES += glinet_gl-e750
 
+define Device/glinet_gl-xe300
+  SOC := qca9531
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-XE300
+  DEVICE_PACKAGES := kmod-usb2 block-mount kmod-usb-serial-ch341
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 131072k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  BLOCKSIZE := 128k
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += glinet_gl-xe300
+
 # fake rootfs is mandatory, pad-offset 129 equals (2 * uimage_header + 0xff)
 define Device/netgear_ath79_nand
   DEVICE_VENDOR := NETGEAR
