@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9
 PKG_VERSION:=4.17.18.6
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_BASE_NAME:=drv_dsl_cpe_api
 PKG_SOURCE:=$(PKG_BASE_NAME)_vrx-$(PKG_VERSION).tar.gz
@@ -57,7 +57,7 @@ CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
 	--enable-add-drv-cflags="-DMODULE -DINCLUDE_DSL_ATM_PTM_INTERFACE_SUPPORT" \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
-	--enable-debug-prints=no
+	--enable-debug-prints=no \
 	ARCH=mips
 
 CONFIGURE_ARGS += \
