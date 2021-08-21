@@ -17,7 +17,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <netinet/in.h>
-#include <linux/limits.h>
+#include <limits.h>
 #include "md5.h"
 
 #define ZYXEL_MAGIC	0xdeadbeaf
