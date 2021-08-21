@@ -26,7 +26,7 @@
  		};
  
  		cpu1: cpu@1 {
-@@ -38,11 +50,476 @@
+@@ -38,11 +50,479 @@
  			next-level-cache = <&L2>;
  			qcom,acc = <&acc1>;
  			qcom,saw = <&saw1>;
@@ -85,12 +85,15 @@
 +		compatible = "operating-points-v2-kryo-cpu";
 +		nvmem-cells = <&speedbin_efuse>;
 +
++		/*
++		 * Voltage thresholds are <target min max>
++		 */
 +		opp-384000000 {
 +			opp-hz = /bits/ 64 <384000000>;
-+			opp-microvolt-speed0-pvs0-v0 = <1000000>;
-+			opp-microvolt-speed0-pvs1-v0 = <925000>;
-+			opp-microvolt-speed0-pvs2-v0 = <875000>;
-+			opp-microvolt-speed0-pvs3-v0 = <800000>;
++			opp-microvolt-speed0-pvs0-v0 = <1000000 950000 1050000>;
++			opp-microvolt-speed0-pvs1-v0 = <925000 878750 971250>;
++			opp-microvolt-speed0-pvs2-v0 = <875000 831250 918750>;
++			opp-microvolt-speed0-pvs3-v0 = <800000 760000 840000>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
 +			opp-level = <0>;
@@ -98,10 +101,10 @@
 +
 +		opp-600000000 {
 +			opp-hz = /bits/ 64 <600000000>;
-+			opp-microvolt-speed0-pvs0-v0 = <1050000>;
-+			opp-microvolt-speed0-pvs1-v0 = <975000>;
-+			opp-microvolt-speed0-pvs2-v0 = <925000>;
-+			opp-microvolt-speed0-pvs3-v0 = <850000>;
++			opp-microvolt-speed0-pvs0-v0 = <1050000 997500 1102500>;
++			opp-microvolt-speed0-pvs1-v0 = <975000 926250 1023750>;
++			opp-microvolt-speed0-pvs2-v0 = <925000 878750 971250>;
++			opp-microvolt-speed0-pvs3-v0 = <850000 807500 892500>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
 +			opp-level = <1>;
@@ -109,10 +112,10 @@
 +
 +		opp-800000000 {
 +			opp-hz = /bits/ 64 <800000000>;
-+			opp-microvolt-speed0-pvs0-v0 = <1100000>;
-+			opp-microvolt-speed0-pvs1-v0 = <1025000>;
-+			opp-microvolt-speed0-pvs2-v0 = <995000>;
-+			opp-microvolt-speed0-pvs3-v0 = <900000>;
++			opp-microvolt-speed0-pvs0-v0 = <1100000 1045000 1155000>;
++			opp-microvolt-speed0-pvs1-v0 = <1025000 973750 1076250>;
++			opp-microvolt-speed0-pvs2-v0 = <995000 945250 1044750>;
++			opp-microvolt-speed0-pvs3-v0 = <900000 855000 945000>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
 +			opp-level = <1>;
@@ -120,10 +123,10 @@
 +
 +		opp-1000000000 {
 +			opp-hz = /bits/ 64 <1000000000>;
-+			opp-microvolt-speed0-pvs0-v0 = <1150000>;
-+			opp-microvolt-speed0-pvs1-v0 = <1075000>;
-+			opp-microvolt-speed0-pvs2-v0 = <1025000>;
-+			opp-microvolt-speed0-pvs3-v0 = <950000>;
++			opp-microvolt-speed0-pvs0-v0 = <1150000 1092500 1207500>;
++			opp-microvolt-speed0-pvs1-v0 = <1075000 1021250 1128750>;
++			opp-microvolt-speed0-pvs2-v0 = <1025000 973750 1076250>;
++			opp-microvolt-speed0-pvs3-v0 = <950000 902500 997500>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
 +			opp-level = <1>;
@@ -131,21 +134,21 @@
 +
 +		opp-1200000000 {
 +			opp-hz = /bits/ 64 <1200000000>;
-+			opp-microvolt-speed0-pvs0-v0 = <1200000>;
-+			opp-microvolt-speed0-pvs1-v0 = <1125000>;
-+			opp-microvolt-speed0-pvs2-v0 = <1075000>;
-+			opp-microvolt-speed0-pvs3-v0 = <1000000>;
++			opp-microvolt-speed0-pvs0-v0 = <1200000 1140000 1260000>;
++			opp-microvolt-speed0-pvs1-v0 = <1125000 1068750 1181250>;
++			opp-microvolt-speed0-pvs2-v0 = <1075000 1021250 1128750>;
++			opp-microvolt-speed0-pvs3-v0 = <1000000 950000 1050000>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
-+			opp-level = <1>;
++			opp-level = <2>;
 +		};
 +
 +		opp-1400000000 {
 +			opp-hz = /bits/ 64 <1400000000>;
-+			opp-microvolt-speed0-pvs0-v0 = <1250000>;
-+			opp-microvolt-speed0-pvs1-v0 = <1175000>;
-+			opp-microvolt-speed0-pvs2-v0 = <1125000>;
-+			opp-microvolt-speed0-pvs3-v0 = <1050000>;
++			opp-microvolt-speed0-pvs0-v0 = <1250000 1187500 1312500>;
++			opp-microvolt-speed0-pvs1-v0 = <1175000 1116250 1233750>;
++			opp-microvolt-speed0-pvs2-v0 = <1125000 1068750 1181250>;
++			opp-microvolt-speed0-pvs3-v0 = <1050000 997500 1102500>;
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
 +			opp-level = <2>;
@@ -506,7 +509,7 @@
  		};
  	};
  
-@@ -93,6 +570,15 @@
+@@ -93,6 +573,15 @@
  		};
  	};
  
@@ -522,7 +525,7 @@
  	firmware {
  		scm {
  			compatible = "qcom,scm-ipq806x", "qcom,scm";
-@@ -120,6 +606,95 @@
+@@ -120,6 +609,95 @@
  			reg-names = "lpass-lpaif";
  		};
  
@@ -618,7 +621,7 @@
  		qcom_pinmux: pinmux@800000 {
  			compatible = "qcom,ipq8064-pinctrl";
  			reg = <0x800000 0x4000>;
-@@ -159,6 +734,15 @@
+@@ -159,6 +737,15 @@
  				};
  			};
  
@@ -634,7 +637,7 @@
  			spi_pins: spi_pins {
  				mux {
  					pins = "gpio18", "gpio19", "gpio21";
-@@ -168,6 +752,53 @@
+@@ -168,6 +755,53 @@
  				};
  			};
  
@@ -688,7 +691,7 @@
  			leds_pins: leds_pins {
  				mux {
  					pins = "gpio7", "gpio8", "gpio9",
-@@ -229,6 +860,17 @@
+@@ -229,6 +863,17 @@
  			clock-output-names = "acpu1_aux";
  		};
  
@@ -706,7 +709,7 @@
  		saw0: regulator@2089000 {
  			compatible = "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
  			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;
-@@ -241,6 +883,17 @@
+@@ -241,6 +886,17 @@
  			regulator;
  		};
  
@@ -724,7 +727,7 @@
  		gsbi2: gsbi@12480000 {
  			compatible = "qcom,gsbi-v1.0.0";
  			cell-index = <2>;
-@@ -436,6 +1089,15 @@
+@@ -436,6 +1092,15 @@
  			#power-domain-cells = <1>;
  		};
  
@@ -740,7 +743,7 @@
  		tcsr: syscon@1a400000 {
  			compatible = "qcom,tcsr-ipq8064", "syscon";
  			reg = <0x1a400000 0x100>;
-@@ -448,6 +1110,95 @@
+@@ -448,6 +1113,95 @@
  			#reset-cells = <1>;
  		};
  
@@ -836,7 +839,7 @@
  		pcie0: pci@1b500000 {
  			compatible = "qcom,pcie-ipq8064";
  			reg = <0x1b500000 0x1000
-@@ -601,6 +1352,167 @@
+@@ -601,6 +1355,167 @@
  			perst-gpio = <&qcom_pinmux 63 GPIO_ACTIVE_LOW>;
  		};
  
@@ -1004,7 +1007,7 @@
  		vsdcc_fixed: vsdcc-regulator {
  			compatible = "regulator-fixed";
  			regulator-name = "SDCC Power";
-@@ -676,4 +1588,17 @@
+@@ -676,4 +1591,17 @@
  			};
  		};
  	};
