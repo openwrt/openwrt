@@ -169,7 +169,6 @@
 					full-duplex;
 				};
 			};
-
 		};
 	};
 };
@@ -177,12 +176,13 @@
 &eth0 {
 	status = "okay";
 
+	phy-handle = <&phy0>;
 	phy-mode = "rgmii-rxid";
 	pll-data = <0x16000000 0x00000101 0x00001313>;
+
 	nvmem-cells = <&macaddr_art_0>;
 	nvmem-cell-names = "mac-address";
 
-	phy-handle = <&phy0>;
 	fixed-link {
 		speed = <1000>;
 		full-duplex;

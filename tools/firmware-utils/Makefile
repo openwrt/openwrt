@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := firmware-utils
-PKG_RELEASE := 7
+PKG_RELEASE := 9
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -77,6 +77,7 @@ define Host/Compile
 	$(call cc,mkwrgimg md5,-Wall)
 	$(call cc,mkzcfw cyg_crc32,-Wall)
 	$(call cc,mkzynfw,-Wall)
+	$(call cc,mkzyxelzldfw md5,-Wall)
 	$(call cc,motorola-bin,-Wall)
 	$(call cc,nand_ecc,-Wall)
 	$(call cc,nec-enc,-Wall --std=gnu99)
