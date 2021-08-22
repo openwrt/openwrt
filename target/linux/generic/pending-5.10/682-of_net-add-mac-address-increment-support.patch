@@ -20,9 +20,9 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -166,31 +166,56 @@ static int of_get_mac_address_mtd(struct
-  * If a mtd-mac-address property exists, try to fetch the MAC address from the
-  * specified mtd device.
+@@ -115,27 +115,52 @@ static int of_get_mac_addr_nvmem(struct
+  * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
+  * but is all zeros.
   *
 + * DT can tell the system to increment the mac-address after is extracted by
 + * using:
@@ -61,11 +61,6 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +		goto found;
  
  	ret = of_get_mac_addr(np, "address", addr);
- 	if (!ret)
--		return 0;
-+		goto found;
- 
- 	ret = of_get_mac_address_mtd(np, addr);
  	if (!ret)
 -		return 0;
 +		goto found;
