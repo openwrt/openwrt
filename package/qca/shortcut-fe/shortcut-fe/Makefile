@@ -21,6 +21,8 @@ PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/shortcut-fe
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=c7dd8173b178affc9d8da22f51610243be994e1c
 
+PKG_EXTMOD_SUBDIRS:=shortcut-fe
+
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/shortcut-fe
