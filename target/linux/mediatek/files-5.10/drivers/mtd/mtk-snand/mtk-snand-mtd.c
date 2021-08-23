@@ -57,7 +57,7 @@ static int mtk_snand_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 	int ret;
 
 	/* Do not allow write past end of device */
-	if ((instr->addr + instr->len) > mtd->size) {
+	if ((instr->addr + instr->len) > msm->cinfo.chipsize) {
 		dev_err(msm->pdev.dev,
 			"attempt to erase beyond end of device\n");
 		return -EINVAL;
@@ -194,7 +194,7 @@ static int mtk_snand_mtd_read_oob(struct mtd_info *mtd, loff_t from,
 	maxooblen = mtd_oobavail(mtd, ops);
 
 	/* Do not allow read past end of device */
-	if (ops->datbuf && (from + ops->len) > mtd->size) {
+	if (ops->datbuf && (from + ops->len) > msm->cinfo.chipsize) {
 		dev_err(msm->pdev.dev,
 			"attempt to read beyond end of device\n");
 		return -EINVAL;
@@ -205,9 +205,11 @@ static int mtk_snand_mtd_read_oob(struct mtd_info *mtd, loff_t from,
 		return -EINVAL;
 	}
 
-	if (unlikely(from >= mtd->size ||
-	    ops->ooboffs + ops->ooblen > ((mtd->size >> mtd->writesize_shift) -
-	    (from >> mtd->writesize_shift)) * maxooblen)) {
+	if (unlikely(from >= msm->cinfo.chipsize ||
+		     ops->ooboffs + ops->ooblen >
+			     ((msm->cinfo.chipsize >> mtd->writesize_shift) -
+			      (from >> mtd->writesize_shift)) *
+				     maxooblen)) {
 		dev_err(msm->pdev.dev,
 			"attempt to read beyond end of device\n");
 		return -EINVAL;
@@ -321,7 +323,7 @@ static int mtk_snand_mtd_write_oob(struct mtd_info *mtd, loff_t to,
 	maxooblen = mtd_oobavail(mtd, ops);
 
 	/* Do not allow write past end of device */
-	if (ops->datbuf && (to + ops->len) > mtd->size) {
+	if (ops->datbuf && (to + ops->len) > msm->cinfo.chipsize) {
 		dev_err(msm->pdev.dev,
 			"attempt to write beyond end of device\n");
 		return -EINVAL;
@@ -333,9 +335,11 @@ static int mtk_snand_mtd_write_oob(struct mtd_info *mtd, loff_t to,
 		return -EINVAL;
 	}
 
-	if (unlikely(to >= mtd->size ||
-	    ops->ooboffs + ops->ooblen > ((mtd->size >> mtd->writesize_shift) -
-	    (to >> mtd->writesize_shift)) * maxooblen)) {
+	if (unlikely(to >= msm->cinfo.chipsize ||
+		     ops->ooboffs + ops->ooblen >
+			     ((msm->cinfo.chipsize >> mtd->writesize_shift) -
+			      (to >> mtd->writesize_shift)) *
+				     maxooblen)) {
 		dev_err(msm->pdev.dev,
 			"attempt to write beyond end of device\n");
 		return -EINVAL;
