@@ -176,17 +176,20 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
 		;;
-        glinet,gl-xe300|\
-        glinet,gl-xe300-nor|\
-        glinet,gl-xe300-iot|\
-        glinet,gl-xe300-nor-nand)
-                ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	glinet,gl-xe300|\
+	glinet,gl-xe300-nor|\
+	glinet,gl-xe300-iot|\
+	glinet,gl-xe300-nor-nand)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	glinet,gl-ar750)
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan"
         ;;
+	glinet,gl-s200)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
 	iodata,etg3-r|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
