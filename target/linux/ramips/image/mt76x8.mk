@@ -278,6 +278,14 @@ define Device/minew_g1-c
 endef
 TARGET_DEVICES += minew_g1-c
 
+define Device/motorola_mwr03
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Motorola
+  DEVICE_MODEL := MWR03
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += motorola_mwr03
+
 define Device/netgear_r6020
   $(Device/netgear_sercomm_nor)
   IMAGE_SIZE := 7104k
