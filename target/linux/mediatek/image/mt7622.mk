@@ -74,7 +74,7 @@ define Device/bananapi_bpi-r64
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
-  DEVICE_DTS_OVERLAY := mt7622-bananapi-bpi-r64-pcie1 mt7622-bananapi-bpi-r64-sata
+  DEVICE_DTS_OVERLAY := mt7622-bananapi-bpi-r64-pcie1 mt7622-bananapi-bpi-r64-sata mt7622-bananapi-bpi-r64-qorvo-dw3000
   DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
   ARTIFACTS := emmc-preloader.bin emmc-bl31-uboot.fip sdcard.img.gz snand-preloader.bin snand-bl31-uboot.fip
   IMAGES := sysupgrade.itb

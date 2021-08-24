@@ -78,3 +78,38 @@
 +		};
 +	};
 +};
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64-qorvo-dw3000.dts
+@@ -0,0 +1,22 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
++
++#include <dt-bindings/gpio/gpio.h>
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "bananapi,bpi-r64", "mediatek,mt7622";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			spidev: spidev@0 {
++				compatible = "qorvo,dw3000";
++				spi-max-frequency = <1000000>;
++				reg = <0>;
++			};
++		};
++	};
++};
++
+--- a/drivers/spi/spidev.c
++++ b/drivers/spi/spidev.c
+@@ -683,6 +683,7 @@ static const struct of_device_id spidev_
+ 	{ .compatible = "dh,dhcom-board" },
+ 	{ .compatible = "menlo,m53cpld" },
+ 	{ .compatible = "siliconlabs,si3210" },
++	{ .compatible = "qorvo,dw3000" },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, spidev_dt_ids);
