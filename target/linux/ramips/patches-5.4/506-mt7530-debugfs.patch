@@ -1,0 +1,57 @@
+diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
+index dfba0da6a18f..577205568b30 100644
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -3,6 +3,7 @@
+  * Mediatek MT7530 DSA Switch driver
+  * Copyright (C) 2017 Sean Wang <sean.wang@mediatek.com>
+  */
++#include <linux/debugfs.h>
+ #include <linux/etherdevice.h>
+ #include <linux/if_bridge.h>
+ #include <linux/iopoll.h>
+@@ -2326,6 +2327,28 @@ mt7530_irq_init(struct mt7530_priv *priv)
+ 	return 0;
+ }
+ 
++static u32 debugfs_regnum;
++
++static int mt7530_debugfs_regval_get(void *data, u64 *val)
++{
++	struct mt7530_priv *priv = data;
++
++	*val = mt7530_read(priv, debugfs_regnum);
++
++	return 0;
++}
++
++static int mt7530_debugfs_regval_set(void *data, u64 val)
++{
++	struct mt7530_priv *priv = data;
++
++	mt7530_write(priv, debugfs_regnum, (u32) val);
++
++	return 0;
++}
++
++DEFINE_DEBUGFS_ATTRIBUTE(mt7530_debugfs_ops, mt7530_debugfs_regval_get, mt7530_debugfs_regval_set, "0x%08llx\n");
++
+ static int
+ mt7530_setup(struct dsa_switch *ds)
+ {
+@@ -2335,9 +2358,15 @@ mt7530_setup(struct dsa_switch *ds)
+ 	struct mt7530_dummy_poll p;
+ 	phy_interface_t interface;
+ 	struct device_node *dn;
++	struct dentry *dir;
+ 	u32 id, val;
+ 	int ret, i;
+ 
++	dir = debugfs_create_dir("mt7530", NULL);
++	if (!IS_ERR(dir)) {
++		debugfs_create_x32("regnum", 0644, dir, &debugfs_regnum);
++		debugfs_create_file("regval", 0644, dir, priv, &mt7530_debugfs_ops);
++	}
+ 	/* The parent node of master netdev which holds the common system
+ 	 * controller also is the container for two GMACs nodes representing
+ 	 * as two netdev instances.
