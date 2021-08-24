@@ -161,7 +161,7 @@
 +CONFIG_USB_STORAGE=y
 --- /dev/null
 +++ b/bananapi_bpi-r64-sdmmc_env
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,83 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x48000000
@@ -170,6 +170,7 @@
 +bootconf=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_pcie=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_sata=config-mt7622-bananapi-bpi-r64-sata
++bootconf_dw3000=config-mt7622-bananapi-bpi-r64-qorvo-dw3000
 +bootdelay=0
 +bootfile=openwrt-mediatek-mt7622-bananapi_bpi-r64-initramfs-recovery.itb
 +bootfile_emmcbl2=openwrt-mediatek-mt7622-bananapi_bpi-r64-emmc-preloader.bin
@@ -394,7 +395,7 @@
 +CONFIG_USB_STORAGE=y
 --- /dev/null
 +++ b/bananapi_bpi-r64-emmc_env
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,57 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x48000000
@@ -403,6 +404,7 @@
 +bootconf=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_pcie=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_sata=config-mt7622-bananapi-bpi-r64-sata
++bootconf_dw3000=config-mt7622-bananapi-bpi-r64-qorvo-dw3000
 +bootdelay=0
 +bootfile=openwrt-mediatek-mt7622-bananapi_bpi-r64-initramfs-recovery.itb
 +bootfile_upg=openwrt-mediatek-mt7622-bananapi_bpi-r64-squashfs-sysupgrade.itb
@@ -595,7 +597,7 @@
 +CONFIG_USB_STORAGE=y
 --- /dev/null
 +++ b/bananapi_bpi-r64-snand_env
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x48000000
@@ -604,6 +606,7 @@
 +bootconf=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_pcie=config-mt7622-bananapi-bpi-r64-pcie1
 +bootconf_sata=config-mt7622-bananapi-bpi-r64-sata
++bootconf_dw3000=config-mt7622-bananapi-bpi-r64-qorvo-dw3000
 +bootdelay=0
 +bootfile=openwrt-mediatek-mt7622-bananapi_bpi-r64-initramfs-recovery.itb
 +bootfile_fip=openwrt-mediatek-mt7622-bananapi_bpi-r64-snand-bl31-uboot.fip
