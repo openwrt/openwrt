@@ -700,7 +700,7 @@
 +
 +	if (of_property_read_u8(np, "mediatek,bmt-oob-offset",
 +				 &bmtd.oob_offset) != 0)
-+		bmtd.oob_offset = 8;
++		bmtd.oob_offset = 0;
 +
 +	if (of_property_read_u32(np, "mediatek,bmt-table-size",
 +				 &bmt_table_size) != 0)
