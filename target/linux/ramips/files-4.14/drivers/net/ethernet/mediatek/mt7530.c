@@ -643,20 +643,11 @@ mt7530_apply_config(struct switch_dev *dev)
 	if (priv->reset) {
 		priv->reset = 0;
 
-		/* turn off all PHYs */
+		/* reset all PHYs */
 		for (i = 0; i <= 4; i++) {
 			u32 val = mdiobus_read(priv->bus, i, 0x0);
-			val |= BIT(11);
+			val |= BIT(15);//set reset bit
 			mdiobus_write(priv->bus, i, 0x0, val);
-		}
-
-		usleep_range(10, 20);
-
-		/* turn on all PHYs */
-		for (i = 0; i <= 4; i++) {
-			u32 val = mdiobus_read(priv->bus, i, 0);
-			val &= ~BIT(11);
-			mdiobus_write(priv->bus, i, 0, val);
 		}
 	}
 
