@@ -535,15 +535,7 @@
  #endif
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -14,6 +14,7 @@ clk-qcom-y += clk-regmap-mux-div.o
- clk-qcom-$(CONFIG_KRAIT_CLOCKS) += clk-krait.o
- clk-qcom-y += clk-hfpll.o
- clk-qcom-y += reset.o
-+clk-qcom-y += fab_scaling.o
- clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o
-
- # Keep alphabetically sorted by config
-@@ -21,6 +22,7 @@ obj-$(CONFIG_APQ_GCC_8084) += gcc-apq808
+@@ -22,6 +22,7 @@ obj-$(CONFIG_APQ_GCC_8084) += gcc-apq808
  obj-$(CONFIG_APQ_MMCC_8084) += mmcc-apq8084.o
  obj-$(CONFIG_IPQ_GCC_4019) += gcc-ipq4019.o
  obj-$(CONFIG_IPQ_GCC_806X) += gcc-ipq806x.o

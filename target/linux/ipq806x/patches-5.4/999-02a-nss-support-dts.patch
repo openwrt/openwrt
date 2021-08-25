@@ -1,6 +1,6 @@
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -1427,6 +1427,12 @@
+@@ -1456,6 +1456,12 @@
  			status = "disabled";
  		};
  
@@ -13,7 +13,7 @@
  		gmac0: ethernet@37000000 {
  			device_type = "network";
  			compatible = "qcom,ipq806x-gmac";
-@@ -1527,6 +1533,131 @@
+@@ -1556,6 +1562,131 @@
  			regulator-always-on;
  		};
  
@@ -145,7 +145,7 @@
  		sdcc1bam:dma@12402000 {
  			compatible = "qcom,bam-v1.3.0";
  			reg = <0x12402000 0x8000>;
-@@ -1595,6 +1726,20 @@
+@@ -1624,6 +1755,20 @@
  		};
  	};
  
