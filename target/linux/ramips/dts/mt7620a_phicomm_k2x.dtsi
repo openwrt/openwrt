@@ -5,10 +5,10 @@
 
 / {
 	aliases {
-		led-boot = &led_blue;
-		led-failsafe = &led_blue;
-		led-running = &led_blue;
-		led-upgrade = &led_blue;
+		led-boot = &led_red;
+		led-failsafe = &led_red;
+		led-running = &led_yellow;
+		led-upgrade = &led_red;
 	};
 
 	keys {
@@ -24,18 +24,17 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_blue: blue {
+		blue {
 			label = "blue:status";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
-			default-state = "on";
 		};
 
-		yellow {
+		led_yellow: yellow {
 			label = "yellow:status";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
-		red {
+		led_red: red {
 			label = "red:status";
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};

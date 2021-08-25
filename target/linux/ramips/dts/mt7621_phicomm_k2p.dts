@@ -8,26 +8,26 @@
 	model = "Phicomm K2P";
 
 	aliases {
-		led-boot = &led_blue;
-		led-failsafe = &led_blue;
-		led-running = &led_blue;
-		led-upgrade = &led_blue;
+		led-boot = &led_red;
+		led-failsafe = &led_red;
+		led-running = &led_yellow;
+		led-upgrade = &led_red;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		stat_r {
+		led_red: red {
 			label = "red:status";
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 
-		stat_y {
+		led_yellow: yellow {
 			label = "yellow:status";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
-		led_blue: stat_b {
+		blue {
 			label = "blue:status";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
