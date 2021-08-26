@@ -24,10 +24,10 @@
  dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h5-orangepi-prime.dtb
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi-r1s.dts
-@@ -0,0 +1,244 @@
+@@ -0,0 +1,201 @@
 +/*
-+ * Copyright (C) 2017 Icenowy Zheng <icenowy@aosc.io>
-+ * Copyright (C) 2017 Armbian
++ * Copyright (C) 2017 Antony Antony <antony@phenome.org>
++ * Copyright (C) 2016 ARM Ltd.
 + *
 + * This file is dual-licensed: you can use it either under the terms
 + * of the GPL or the X11 license, at your option. Note that this dual
@@ -72,9 +72,11 @@
 +#include "sun50i-h5.dtsi"
 +
 +#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/pinctrl/sun4i-a10.h>
 +
 +/ {
-+	model = "FriendlyARM Nanopi R1S H5";
++	model = "FriendlyARM NanoPi R1S";
 +	compatible = "friendlyarm,nanopi-r1s", "allwinner,sun50i-h5";
 +
 +	aliases {
@@ -96,8 +98,8 @@
 +		};
 +
 +		status {
-+			label = "nanopi:blue:status";
-+			gpios = <&pio 0 10 GPIO_ACTIVE_HIGH>;
++			label = "nanopi:red:status";
++			gpios = <&pio 0 20 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +
@@ -118,33 +120,36 @@
 +		regulator-max-microvolt = <3300000>;
 +	};
 +
-+	reg_usb0_vbus: usb0-vbus {
-+		compatible = "regulator-fixed";
-+		regulator-name = "usb0-vbus";
-+		regulator-min-microvolt = <5000000>;
-+		regulator-max-microvolt = <5000000>;
-+		enable-active-high;
-+		gpio = <&r_pio 0 2 GPIO_ACTIVE_HIGH>; /* PL2 */
-+		status = "okay";
++	vdd_cpux: gpio-regulator {
++		compatible = "regulator-gpio";
++		regulator-name = "vdd-cpux";
++		regulator-type = "voltage";
++		regulator-boot-on;
++		regulator-always-on;
++		regulator-min-microvolt = <1100000>;
++		regulator-max-microvolt = <1300000>;
++		regulator-ramp-delay = <50>; /* 4ms */
++		gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>;
++		gpios-states = <0x1>;
++		states = <1100000 0>, <1300000 1>;
 +	};
 +
 +	wifi_pwrseq: wifi_pwrseq {
 +		compatible = "mmc-pwrseq-simple";
 +		reset-gpios = <&r_pio 0 7 GPIO_ACTIVE_LOW>; /* PL7 */
-+		post-power-on-delay-ms = <50>;
++		post-power-on-delay-ms = <200>;
 +	};
++};
 +
++&codec {
++	allwinner,audio-routing =
++		"Line Out", "LINEOUT",
++		"MIC1", "Mic",
++		"Mic",  "MBIAS";
++	status = "okay";
 +};
 +
 +&ehci0 {
-+	status = "okay";
-+};
-+
-+&ehci1 {
-+	status = "okay";
-+};
-+
-+&ehci2 {
 +	status = "okay";
 +};
 +
@@ -161,7 +166,7 @@
 +	status = "okay";
 +};
 +
-+&mdio {
++&external_mdio {
 +	ext_rgmii_phy: ethernet-phy@7 {
 +		compatible = "ethernet-phy-ieee802.3-c22";
 +		reg = <7>;
@@ -176,22 +181,17 @@
 +};
 +
 +&mmc1 {
-+        vmmc-supply = <&reg_vcc3v3>;
-+        vqmmc-supply = <&reg_vcc3v3>;
-+        mmc-pwrseq = <&wifi_pwrseq>;
-+        bus-width = <4>;
-+        non-removable;
-+        status = "okay";
++	vmmc-supply = <&reg_vcc3v3>;
++	vqmmc-supply = <&reg_vcc3v3>;
++	mmc-pwrseq = <&wifi_pwrseq>;
++	bus-width = <4>;
++	non-removable;
++	status = "okay";
 +
-+        brcmf: brcmf@1 {
-+                reg = <1>;
-+                compatible = "brcm,bcm4329-fmac";
-+                interrupt-parent = <&pio>;
-+                interrupts = <6 10 IRQ_TYPE_LEVEL_LOW>; /* PG10 */
-+                interrupt-names = "host-wake";
-+                pinctrl-names = "default";
-+                pinctrl-0 = <&wifi_wake>;
-+        };
++	brcmf: wifi@1 {
++		reg = <1>;
++		compatible = "brcm,bcm4329-fmac";
++	};
 +};
 +
 +&mmc2 {
@@ -204,51 +204,11 @@
 +	status = "okay";
 +};
 +
-+&de {
-+	status = "okay";
-+};
-+
 +&ohci0 {
 +	status = "okay";
 +};
 +
-+&ohci1 {
-+	status = "okay";
-+};
-+
-+&ohci2 {
-+	status = "okay";
-+};
-+
 +&ohci3 {
-+	status = "okay";
-+};
-+
-+&hdmi {
-+	status = "okay";
-+};
-+
-+&mixer0 {
-+	status = "okay";
-+};
-+
-+&r_pio {
-+	wifi_wake: wifi_wake@0 {
-+		pins = "PL7";
-+		function = "irq";
-+		bias-pull-up;
-+	};
-+};
-+
-+
-+
-+
-+
-+&tcon0 {
-+	status = "okay";
-+};
-+
-+&r_i2c {
 +	status = "okay";
 +};
 +
@@ -259,13 +219,11 @@
 +};
 +
 +&usb_otg {
-+	dr_mode = "peripheral";
++	dr_mode = "host";
 +	status = "okay";
 +};
 +
 +&usbphy {
-+	/* USB Type-A port's VBUS is always on */
-+	usb0_id_det-gpios = <&pio 6 12 GPIO_ACTIVE_HIGH>; /* PG12 */
-+	usb0_vbus-supply = <&reg_usb0_vbus>;
++	/* USB Type-A ports' VBUS is always on */
 +	status = "okay";
 +};
