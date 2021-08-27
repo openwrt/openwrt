@@ -92,8 +92,11 @@ int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, 
 		return -ERANGE;
 
 	page = read_mapping_page(mapping, fit_start_sector >> (PAGE_SHIFT - SECTOR_SHIFT), NULL);
-	if (!page)
-		return -ENOMEM;
+	if (IS_ERR(page))
+		return -EFAULT;
+
+	if (PageError(page))
+		return -EFAULT;
 
 	init_fit = page_address(page);
 
