@@ -645,9 +645,9 @@ mt7530_apply_config(struct switch_dev *dev)
 
 		/* reset all PHYs */
 		for (i = 0; i <= 4; i++) {
-			u32 val = mdiobus_read(priv->bus, i, 0x0);
-			val |= BIT(15);//set reset bit
-			mdiobus_write(priv->bus, i, 0x0, val);
+			u32 val = mdiobus_read(priv->bus, i, MII_BMCR);
+			val |= BMCR_RESET;
+			mdiobus_write(priv->bus, i, MII_BMCR, val);
 		}
 	}
 
