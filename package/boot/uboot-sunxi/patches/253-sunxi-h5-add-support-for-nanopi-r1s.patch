@@ -1,20 +1,56 @@
 --- /dev/null
 +++ b/arch/arm/dts/sun50i-h5-nanopi-r1s.dts
-@@ -0,0 +1,163 @@
-+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-+// Copyright (C) 2017 Antony Antony <antony@phenome.org>
-+// Copyright (C) 2016 ARM Ltd.
+@@ -0,0 +1,188 @@
++/*
++ * Copyright (C) 2017 Icenowy Zheng <icenowy@aosc.io>
++ *
++ * This file is dual-licensed: you can use it either under the terms
++ * of the GPL or the X11 license, at your option. Note that this dual
++ * licensing only applies to this file, and not this project as a
++ * whole.
++ *
++ *  a) This file is free software; you can redistribute it and/or
++ *     modify it under the terms of the GNU General Public License as
++ *     published by the Free Software Foundation; either version 2 of the
++ *     License, or (at your option) any later version.
++ *
++ *     This file is distributed in the hope that it will be useful,
++ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *     GNU General Public License for more details.
++ *
++ * Or, alternatively,
++ *
++ *  b) Permission is hereby granted, free of charge, to any person
++ *     obtaining a copy of this software and associated documentation
++ *     files (the "Software"), to deal in the Software without
++ *     restriction, including without limitation the rights to use,
++ *     copy, modify, merge, publish, distribute, sublicense, and/or
++ *     sell copies of the Software, and to permit persons to whom the
++ *     Software is furnished to do so, subject to the following
++ *     conditions:
++ *
++ *     The above copyright notice and this permission notice shall be
++ *     included in all copies or substantial portions of the Software.
++ *
++ *     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
++ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
++ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ *     OTHER DEALINGS IN THE SOFTWARE.
++ */
 +
 +/dts-v1/;
 +#include "sun50i-h5.dtsi"
 +
 +#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
-+#include <dt-bindings/pinctrl/sun4i-a10.h>
 +
 +/ {
-+	model = "FriendlyARM NanoPi NEO Plus2";
-+	compatible = "friendlyarm,nanopi-neo-plus2", "allwinner,sun50i-h5";
++	model = "FriendlyARM NanoPi R1S";
++	compatible = "friendlyarm,nanopi-r1s", "allwinner,sun50i-h5";
 +
 +	aliases {
 +		ethernet0 = &emac;
@@ -26,17 +62,21 @@
 +	};
 +
 +	leds {
-+		compatible = "gpio-leds";
-+
-+		pwr {
-+			label = "nanopi:green:pwr";
-+			gpios = <&r_pio 0 10 GPIO_ACTIVE_HIGH>;
-+			default-state = "on";
-+		};
-+
++		/delete-node/ pwr;
 +		status {
 +			label = "nanopi:red:status";
-+			gpios = <&pio 0 20 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 0 10 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "heartbeat";
++		};
++
++		wan {
++			label = "nanopi:green:wan";
++			gpios = <&pio 6 11 GPIO_ACTIVE_HIGH>;
++		};
++
++		lan {
++			label = "nanopi:green:lan";
++			gpios = <&pio 0 9 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +
@@ -57,36 +97,32 @@
 +		regulator-max-microvolt = <3300000>;
 +	};
 +
-+	vdd_cpux: gpio-regulator {
-+		compatible = "regulator-gpio";
-+		regulator-name = "vdd-cpux";
-+		regulator-type = "voltage";
-+		regulator-boot-on;
-+		regulator-always-on;
-+		regulator-min-microvolt = <1100000>;
-+		regulator-max-microvolt = <1300000>;
-+		regulator-ramp-delay = <50>; /* 4ms */
-+		gpios = <&r_pio 0 6 GPIO_ACTIVE_HIGH>;
-+		gpios-states = <0x1>;
-+		states = <1100000 0>, <1300000 1>;
++	reg_usb0_vbus: usb0-vbus {
++		compatible = "regulator-fixed";
++		regulator-name = "usb0-vbus";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		enable-active-high;
++		gpio = <&r_pio 0 2 GPIO_ACTIVE_HIGH>; /* PL2 */
++		status = "okay";
 +	};
 +
 +	wifi_pwrseq: wifi_pwrseq {
 +		compatible = "mmc-pwrseq-simple";
-+		reset-gpios = <&r_pio 0 7 GPIO_ACTIVE_LOW>; /* PL7 */
-+		post-power-on-delay-ms = <200>;
++		pinctrl-names = "default";
++		reset-gpios = <&r_pio 0 7 GPIO_ACTIVE_LOW>;
 +	};
 +};
 +
-+&codec {
-+	allwinner,audio-routing =
-+		"Line Out", "LINEOUT",
-+		"MIC1", "Mic",
-+		"Mic",  "MBIAS";
++&ehci0 {
 +	status = "okay";
 +};
 +
-+&ehci0 {
++&ehci1 {
++	status = "okay";
++};
++
++&ehci2 {
 +	status = "okay";
 +};
 +
@@ -110,38 +146,32 @@
 +	};
 +};
 +
-+&mmc0 {
-+	vmmc-supply = <&reg_vcc3v3>;
-+	bus-width = <4>;
-+	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>; /* PF6 */
-+	status = "okay";
-+};
-+
 +&mmc1 {
-+	vmmc-supply = <&reg_vcc3v3>;
-+	vqmmc-supply = <&reg_vcc3v3>;
-+	mmc-pwrseq = <&wifi_pwrseq>;
-+	bus-width = <4>;
-+	non-removable;
-+	status = "okay";
++        vmmc-supply = <&reg_vcc3v3>;
++        vqmmc-supply = <&reg_vcc3v3>;
++        mmc-pwrseq = <&wifi_pwrseq>;
++        bus-width = <4>;
++        non-removable;
++        status = "okay";
 +
-+	brcmf: wifi@1 {
-+		reg = <1>;
-+		compatible = "brcm,bcm4329-fmac";
-+	};
-+};
-+
-+&mmc2 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&mmc2_8bit_pins>;
-+	vmmc-supply = <&reg_vcc3v3>;
-+	bus-width = <8>;
-+	non-removable;
-+	cap-mmc-hw-reset;
-+	status = "okay";
++        brcmf: brcmf@1 {
++                reg = <1>;
++                compatible = "brcm,bcm4329-fmac";
++                interrupt-parent = <&pio>;
++                interrupts = <6 10 IRQ_TYPE_LEVEL_LOW>; /* PG10 */
++                interrupt-names = "host-wake";
++        };
 +};
 +
 +&ohci0 {
++	status = "okay";
++};
++
++&ohci1 {
++	status = "okay";
++};
++
++&ohci2 {
 +	status = "okay";
 +};
 +
@@ -156,12 +186,7 @@
 +};
 +
 +&usb_otg {
-+	dr_mode = "host";
-+	status = "okay";
-+};
-+
-+&usbphy {
-+	/* USB Type-A ports' VBUS is always on */
++	dr_mode = "otg";
 +	status = "okay";
 +};
 --- a/arch/arm/dts/Makefile
@@ -170,20 +195,22 @@
  	sun50i-h5-libretech-all-h5-cc.dtb \
  	sun50i-h5-nanopi-neo2.dtb \
  	sun50i-h5-nanopi-neo-plus2.dtb \
-+        sun50i-h5-nanopi-r1s.dtb \
++    sun50i-h5-nanopi-r1s.dtb \
  	sun50i-h5-orangepi-zero-plus.dtb \
  	sun50i-h5-orangepi-pc2.dtb \
  	sun50i-h5-orangepi-prime.dtb \
 --- /dev/null
 +++ b/configs/nanopi_r1s_defconfig
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,14 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_SUNXI=y
 +CONFIG_SPL=y
 +CONFIG_MACH_SUN50I_H5=y
-+CONFIG_DRAM_CLK=672
++CONFIG_DRAM_CLK=408
 +CONFIG_DRAM_ZQ=3881977
 +# CONFIG_DRAM_ODT_EN is not set
++CONFIG_MACPWR="PD6"
++CONFIG_MMC_SUNXI_SLOT_EXTRA=2
 +# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
 +CONFIG_DEFAULT_DEVICE_TREE="sun50i-h5-nanopi-r1s"
 +CONFIG_SUN8I_EMAC=y
