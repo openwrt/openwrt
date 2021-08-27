@@ -24,7 +24,7 @@
  dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h5-orangepi-prime.dtb
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi-r1s.dts
-@@ -0,0 +1,159 @@
+@@ -0,0 +1,192 @@
 +/*
 + * Copyright (C) 2017 Icenowy Zheng <icenowy@aosc.io>
 + *
@@ -126,13 +126,19 @@
 +		gpio = <&r_pio 0 2 GPIO_ACTIVE_HIGH>; /* PL2 */
 +		status = "okay";
 +	};
++
++	wifi_pwrseq: wifi_pwrseq {
++		compatible = "mmc-pwrseq-simple";
++		pinctrl-names = "default";
++		reset-gpios = <&r_pio 0 7 GPIO_ACTIVE_LOW>;
++	};
 +};
 +
-+&ehci0 {
++&ehci1 {
 +	status = "okay";
 +};
 +
-+&ehci3 {
++&ehci2 {
 +	status = "okay";
 +};
 +
@@ -159,11 +165,38 @@
 +	status = "okay";
 +};
 +
-+&ohci0 {
++&mmc1 {
++	vmmc-supply = <&reg_vcc3v3>;
++	vqmmc-supply = <&reg_vcc3v3>;
++	mmc-pwrseq = <&wifi_pwrseq>;
++	bus-width = <4>;
++	non-removable;
++	status = "okay";
++
++	sdio_wifi: sdio_wifi@1 {
++		reg = <1>;
++		compatible = "brcm,bcm4329-fmac";
++		interrupt-parent = <&pio>;
++		interrupts = <6 10 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-names = "host-wake";
++	};
++};
++
++&mmc2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc2_8bit_pins>;
++	vmmc-supply = <&reg_vcc3v3>;
++	vqmmc-supply = <&reg_vcc3v3>;
++	bus-width = <8>;
++	non-removable;
 +	status = "okay";
 +};
 +
-+&ohci3 {
++&ohci1 {
++	status = "okay";
++};
++
++&ohci2 {
 +	status = "okay";
 +};
 +
@@ -174,7 +207,7 @@
 +};
 +
 +&usb_otg {
-+	dr_mode = "otg";
++	dr_mode = "peripheral";
 +	status = "okay";
 +};
 +

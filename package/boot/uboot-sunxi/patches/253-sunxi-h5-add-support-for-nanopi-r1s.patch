@@ -65,11 +65,11 @@
 +	};
 +};
 +
-+&ehci0 {
++&ehci1 {
 +	status = "okay";
 +};
 +
-+&ehci3 {
++&ehci2 {
 +	status = "okay";
 +};
 +
@@ -96,11 +96,11 @@
 +	status = "okay";
 +};
 +
-+&ohci0 {
++&ohci1 {
 +	status = "okay";
 +};
 +
-+&ohci3 {
++&ohci2 {
 +	status = "okay";
 +};
 +
@@ -111,7 +111,7 @@
 +};
 +
 +&usb_otg {
-+	dr_mode = "otg";
++	dr_mode = "peripheral";
 +	status = "okay";
 +};
 +
