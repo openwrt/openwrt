@@ -184,12 +184,6 @@ define U-Boot/nanopi_r1
   BUILD_DEVICES:=friendlyarm_nanopi-r1
 endef
 
-define U-Boot/nanopi_r1s
-  BUILD_SUBTARGET:=cortexa53
-  NAME:=U-Boot for NanoPi R1S (H5)
-  BUILD_DEVICES:=friendlyarm_nanopi-r1s
-endef
-
 define U-Boot/orangepi_r1
   BUILD_SUBTARGET:=cortexa7
   NAME:=Orange Pi R1 (H2+)
@@ -259,6 +253,14 @@ define U-Boot/nanopi_neo2
   NAME:=NanoPi NEO2 (H5)
   BUILD_DEVICES:=friendlyarm_nanopi-neo2
   DEPENDS:=+PACKAGE_u-boot-nanopi_neo2:arm-trusted-firmware-sunxi
+  UENV:=a64
+endef
+
+define U-Boot/nanopi_r1s
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=U-Boot for NanoPi R1S (H5)
+  BUILD_DEVICES:=friendlyarm_nanopi-r1s
+  DEPENDS:=+PACKAGE_u-boot-nanopi_r1s:arm-trusted-firmware-sunxi
   UENV:=a64
 endef
 
@@ -338,7 +340,7 @@ UBOOT_TARGETS := \
 	nanopi_neo_plus2 \
 	nanopi_neo2 \
 	nanopi_r1 \
-        nanopi_r1s \
+    nanopi_r1s \
 	orangepi_zero \
 	orangepi_r1 \
 	orangepi_one \

@@ -24,7 +24,7 @@
  dtb-$(CONFIG_ARCH_SUNXI) += sun50i-h5-orangepi-prime.dtb
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-h5-nanopi-r1s.dts
-@@ -0,0 +1,188 @@
+@@ -0,0 +1,159 @@
 +/*
 + * Copyright (C) 2017 Icenowy Zheng <icenowy@aosc.io>
 + *
@@ -86,21 +86,17 @@
 +	};
 +
 +	leds {
-+		/delete-node/ pwr;
++		compatible = "gpio-leds";
++
++		pwr {
++			label = "nanopi:green:pwr";
++			gpios = <&r_pio 0 10 GPIO_ACTIVE_HIGH>;
++			default-state = "on";
++		};
++
 +		status {
-+			label = "nanopi:red:status";
++			label = "nanopi:blue:status";
 +			gpios = <&pio 0 10 GPIO_ACTIVE_HIGH>;
-+			linux,default-trigger = "heartbeat";
-+		};
-+
-+		wan {
-+			label = "nanopi:green:wan";
-+			gpios = <&pio 6 11 GPIO_ACTIVE_HIGH>;
-+		};
-+
-+		lan {
-+			label = "nanopi:green:lan";
-+			gpios = <&pio 0 9 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +
@@ -130,23 +126,9 @@
 +		gpio = <&r_pio 0 2 GPIO_ACTIVE_HIGH>; /* PL2 */
 +		status = "okay";
 +	};
-+
-+	wifi_pwrseq: wifi_pwrseq {
-+		compatible = "mmc-pwrseq-simple";
-+		pinctrl-names = "default";
-+		reset-gpios = <&r_pio 0 7 GPIO_ACTIVE_LOW>;
-+	};
 +};
 +
 +&ehci0 {
-+	status = "okay";
-+};
-+
-+&ehci1 {
-+	status = "okay";
-+};
-+
-+&ehci2 {
 +	status = "okay";
 +};
 +
@@ -170,32 +152,14 @@
 +	};
 +};
 +
-+&mmc1 {
-+        vmmc-supply = <&reg_vcc3v3>;
-+        vqmmc-supply = <&reg_vcc3v3>;
-+        mmc-pwrseq = <&wifi_pwrseq>;
-+        bus-width = <4>;
-+        non-removable;
-+        status = "okay";
-+
-+        brcmf: brcmf@1 {
-+                reg = <1>;
-+                compatible = "brcm,bcm4329-fmac";
-+                interrupt-parent = <&pio>;
-+                interrupts = <6 10 IRQ_TYPE_LEVEL_LOW>; /* PG10 */
-+                interrupt-names = "host-wake";
-+        };
++&mmc0 {
++	vmmc-supply = <&reg_vcc3v3>;
++	bus-width = <4>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>; /* PF6 */
++	status = "okay";
 +};
 +
 +&ohci0 {
-+	status = "okay";
-+};
-+
-+&ohci1 {
-+	status = "okay";
-+};
-+
-+&ohci2 {
 +	status = "okay";
 +};
 +
@@ -211,5 +175,12 @@
 +
 +&usb_otg {
 +	dr_mode = "otg";
++	status = "okay";
++};
++
++&usbphy {
++	/* USB Type-A port's VBUS is always on */
++	usb0_id_det-gpios = <&pio 6 12 GPIO_ACTIVE_HIGH>; /* PG12 */
++	usb0_vbus-supply = <&reg_usb0_vbus>;
 +	status = "okay";
 +};
