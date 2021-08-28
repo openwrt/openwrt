@@ -11,11 +11,9 @@ Signed-off-by: Sungbo Eo <mans0n@gorani.run>
  arch/arm/boot/dts/mt7623a.dtsi |  4 ++++
  2 files changed, 38 insertions(+)
 
-diff --git a/arch/arm/boot/dts/mt7623.dtsi b/arch/arm/boot/dts/mt7623.dtsi
-index 3c11f7cfcc401..790d74439cc66 100644
 --- a/arch/arm/boot/dts/mt7623.dtsi
 +++ b/arch/arm/boot/dts/mt7623.dtsi
-@@ -585,6 +585,40 @@ spi2: spi@11017000 {
+@@ -585,6 +585,40 @@
  		status = "disabled";
  	};
  
@@ -56,11 +54,9 @@ index 3c11f7cfcc401..790d74439cc66 100644
  	audsys: clock-controller@11220000 {
  		compatible = "mediatek,mt7623-audsys",
  			     "mediatek,mt2701-audsys",
-diff --git a/arch/arm/boot/dts/mt7623a.dtsi b/arch/arm/boot/dts/mt7623a.dtsi
-index 0735a1fb8ad9a..d304b62d24b58 100644
 --- a/arch/arm/boot/dts/mt7623a.dtsi
 +++ b/arch/arm/boot/dts/mt7623a.dtsi
-@@ -35,6 +35,10 @@ &scpsys {
+@@ -35,6 +35,10 @@
  	clock-names = "ethif";
  };
  
@@ -71,6 +67,3 @@ index 0735a1fb8ad9a..d304b62d24b58 100644
  &usb1 {
  	power-domains = <&scpsys MT7623A_POWER_DOMAIN_HIF>;
  };
--- 
-2.32.0
-
