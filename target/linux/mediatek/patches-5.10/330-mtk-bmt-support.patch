@@ -836,7 +836,7 @@
  #include <linux/mtd/partitions.h>
  #include <linux/of_platform.h>
  
-@@ -608,6 +609,8 @@ static int mtk_snand_probe(struct platfo
+@@ -612,6 +613,8 @@ static int mtk_snand_probe(struct platfo
  	mtd->_block_isbad = mtk_snand_mtd_block_isbad;
  	mtd->_block_markbad = mtk_snand_mtd_block_markbad;
  
@@ -845,7 +845,7 @@
  	ret = mtd_device_register(mtd, NULL, 0);
  	if (ret) {
  		dev_err(msm->pdev.dev, "failed to register mtd partition\n");
-@@ -619,6 +622,7 @@ static int mtk_snand_probe(struct platfo
+@@ -623,6 +626,7 @@ static int mtk_snand_probe(struct platfo
  	return 0;
  
  errout4:
@@ -853,7 +853,7 @@
  	devm_kfree(msm->pdev.dev, msm->page_cache);
  
  errout3:
-@@ -646,6 +650,8 @@ static int mtk_snand_remove(struct platf
+@@ -650,6 +654,8 @@ static int mtk_snand_remove(struct platf
  	if (ret)
  		return ret;
  
