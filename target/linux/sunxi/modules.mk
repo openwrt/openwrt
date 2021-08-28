@@ -2,6 +2,24 @@
 #
 # Copyright (C) 2013-2016 OpenWrt.org
 
+define KernelPackage/rtc-sun6i
+    SUBMENU:=$(OTHER_MENU)
+    TITLE:=Sunxi SoC sun6i RTC support
+    DEPENDS:=@TARGET_sunxi
+    $(call AddDepends/rtc)
+    KCONFIG:= \
+	CONFIG_RTC_DRV_SUN6I \
+	CONFIG_RTC_CLASS=y
+    FILES:=$(LINUX_DIR)/drivers/rtc/rtc-sun6i.ko
+    AUTOLOAD:=$(call AutoLoad,50,rtc-sun6i)
+endef
+
+define KernelPackage/rtc-sun6i/description
+ Support for the RTC found in some Allwinner SoCs like the A31 or the A64
+endef
+
+$(eval $(call KernelPackage,rtc-sun6i))
+
 define KernelPackage/rtc-sunxi
     SUBMENU:=$(OTHER_MENU)
     TITLE:=Sunxi SoC built-in RTC support
