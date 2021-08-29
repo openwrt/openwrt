@@ -167,7 +167,7 @@ for BIN in "$@"; do
 
 	LDSO=""
 
-	[ -n "$LDD" ] && should_be_patched "$BIN" && {
+	[ -n "$LDD" ] && {
 		for token in $("$LDD" "$BIN" 2>/dev/null); do
 			case "$token" in */*.so*)
 				dest="$DIR/lib/${token##*/}"
@@ -190,7 +190,7 @@ for BIN in "$@"; do
 	}
 
 	# is a dynamically linked executable
-	if [ -n "$LDSO" ]; then
+	if [ -n "$LDSO" ] && should_be_patched "$BIN"; then
 		echo "Bundling ${BIN##*/}"
 
 		RUNDIR="$(readlink -f "$BIN")"; RUNDIR="${RUNDIR%/*}"
