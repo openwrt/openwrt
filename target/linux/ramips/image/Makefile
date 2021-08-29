@@ -182,6 +182,7 @@ define Device/netgear_sercomm_nor
 endef
 
 define Device/seama
+  BLOCKSIZE := 64k
   SEAMA_MTDBLOCK := 2
   IMAGES += factory.bin
 
