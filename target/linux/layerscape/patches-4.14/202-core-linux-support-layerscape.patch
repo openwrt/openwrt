@@ -509,7 +509,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * @dma_pfn_offset: offset of DMA memory range relatively of RAM
   * @dma_parms:	A low level driver may set these to teach IOMMU code about
   * 		segment limitations.
-@@ -930,6 +938,7 @@ struct device {
+@@ -931,6 +939,7 @@ struct device {
  					     not all hardware supports
  					     64 bit addresses for consistent
  					     allocations such descriptors. */
@@ -517,7 +517,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	unsigned long	dma_pfn_offset;
  
  	struct device_dma_parameters *dma_parms;
-@@ -1268,6 +1277,7 @@ extern const char *dev_driver_string(con
+@@ -1269,6 +1278,7 @@ extern const char *dev_driver_string(con
  struct device_link *device_link_add(struct device *consumer,
  				    struct device *supplier, u32 flags);
  void device_link_del(struct device_link *link);

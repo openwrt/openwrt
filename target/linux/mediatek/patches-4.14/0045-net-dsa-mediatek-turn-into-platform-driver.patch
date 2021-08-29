@@ -10,7 +10,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -1049,10 +1049,10 @@ static const struct dsa_switch_ops mt753
+@@ -1050,10 +1050,10 @@ static const struct dsa_switch_ops mt753
  };
  
  static int
@@ -23,7 +23,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  	dn = mdiodev->dev.of_node;
  
-@@ -1100,7 +1100,12 @@ mt7530_probe(struct mdio_device *mdiodev
+@@ -1101,7 +1101,12 @@ mt7530_probe(struct mdio_device *mdiodev
  		}
  	}
  
@@ -37,7 +37,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	priv->dev = &mdiodev->dev;
  	priv->ds->priv = priv;
  	priv->ds->ops = &mt7530_switch_ops;
-@@ -1110,8 +1115,8 @@ mt7530_probe(struct mdio_device *mdiodev
+@@ -1111,8 +1116,8 @@ mt7530_probe(struct mdio_device *mdiodev
  	return dsa_register_switch(priv->ds);
  }
  
@@ -48,7 +48,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  {
  	struct mt7530_priv *priv = dev_get_drvdata(&mdiodev->dev);
  	int ret = 0;
-@@ -1128,6 +1133,8 @@ mt7530_remove(struct mdio_device *mdiode
+@@ -1129,6 +1134,8 @@ mt7530_remove(struct mdio_device *mdiode
  
  	dsa_unregister_switch(priv->ds);
  	mutex_destroy(&priv->reg_mutex);
@@ -57,7 +57,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  }
  
  static const struct of_device_id mt7530_of_match[] = {
-@@ -1136,16 +1143,16 @@ static const struct of_device_id mt7530_
+@@ -1137,16 +1144,16 @@ static const struct of_device_id mt7530_
  };
  MODULE_DEVICE_TABLE(of, mt7530_of_match);
  

@@ -1,6 +1,6 @@
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -670,6 +670,9 @@ static int
+@@ -671,6 +671,9 @@ static int
  mt7530_cpu_port_enable(struct mt7530_priv *priv,
  		       int port)
  {
@@ -10,7 +10,7 @@
  	/* Enable Mediatek header mode on the cpu port */
  	mt7530_write(priv, MT7530_PVC_P(port),
  		     PORT_SPEC_TAG);
-@@ -686,8 +689,12 @@ mt7530_cpu_port_enable(struct mt7530_pri
+@@ -687,8 +690,12 @@ mt7530_cpu_port_enable(struct mt7530_pri
  	/* CPU port gets connected to all user ports of
  	 * the switch
  	 */
@@ -24,7 +24,7 @@
  
  	return 0;
  }
-@@ -697,6 +704,7 @@ mt7530_port_enable(struct dsa_switch *ds
+@@ -698,6 +705,7 @@ mt7530_port_enable(struct dsa_switch *ds
  		   struct phy_device *phy)
  {
  	struct mt7530_priv *priv = ds->priv;
@@ -32,7 +32,7 @@
  
  	mutex_lock(&priv->reg_mutex);
  
-@@ -707,7 +715,7 @@ mt7530_port_enable(struct dsa_switch *ds
+@@ -708,7 +716,7 @@ mt7530_port_enable(struct dsa_switch *ds
  	 * restore the port matrix if the port is the member of a certain
  	 * bridge.
  	 */
@@ -41,7 +41,7 @@
  	priv->ports[port].enable = true;
  	mt7530_rmw(priv, MT7530_PCR_P(port), PCR_MATRIX_MASK,
  		   priv->ports[port].pm);
-@@ -770,7 +778,8 @@ mt7530_port_bridge_join(struct dsa_switc
+@@ -771,7 +779,8 @@ mt7530_port_bridge_join(struct dsa_switc
  			struct net_device *bridge)
  {
  	struct mt7530_priv *priv = ds->priv;
@@ -51,7 +51,7 @@
  	int i;
  
  	mutex_lock(&priv->reg_mutex);
-@@ -808,6 +817,7 @@ mt7530_port_bridge_leave(struct dsa_swit
+@@ -809,6 +818,7 @@ mt7530_port_bridge_leave(struct dsa_swit
  			 struct net_device *bridge)
  {
  	struct mt7530_priv *priv = ds->priv;
@@ -59,7 +59,7 @@
  	int i;
  
  	mutex_lock(&priv->reg_mutex);
-@@ -832,8 +842,8 @@ mt7530_port_bridge_leave(struct dsa_swit
+@@ -833,8 +843,8 @@ mt7530_port_bridge_leave(struct dsa_swit
  	 */
  	if (priv->ports[port].enable)
  		mt7530_rmw(priv, MT7530_PCR_P(port), PCR_MATRIX_MASK,
@@ -70,7 +70,7 @@
  
  	mutex_unlock(&priv->reg_mutex);
  }
-@@ -908,15 +918,7 @@ err:
+@@ -909,15 +919,7 @@ err:
  static enum dsa_tag_protocol
  mtk_get_tag_protocol(struct dsa_switch *ds)
  {
@@ -87,7 +87,7 @@
  }
  
  static int
-@@ -989,7 +991,7 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -990,7 +992,7 @@ mt7530_setup(struct dsa_switch *ds)
  
  	/* Enable Port 6 only; P5 as GMAC5 which currently is not supported */
  	val = mt7530_read(priv, MT7530_MHWTRAP);

@@ -238,7 +238,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
  /*
   * Data section helpers
-@@ -500,7 +501,7 @@
+@@ -501,7 +502,7 @@
  #define ENTRY_TEXT							\
  		ALIGN_FUNCTION();					\
  		VMLINUX_SYMBOL(__entry_text_start) = .;			\
@@ -247,7 +247,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__entry_text_end) = .;
  
  #define IRQENTRY_TEXT							\
-@@ -607,7 +608,7 @@
+@@ -608,7 +609,7 @@
  	. = ALIGN(sbss_align);						\
  	.sbss : AT(ADDR(.sbss) - LOAD_OFFSET) {				\
  		*(.dynsbss)						\
