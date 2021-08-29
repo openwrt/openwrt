@@ -360,7 +360,6 @@ TARGET_DEVICES += dlink_dir-853-r1
 define Device/dlink_dir-860l-b1
   $(Device/dsa-migration)
   $(Device/seama)
-  BLOCKSIZE := 64k
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
   LOADER_TYPE := bin
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | relocate-kernel | \
