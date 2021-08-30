@@ -93,6 +93,11 @@ tplink,tl-wa850re-v2)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "blue:signal4" "wlan0" "60" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "blue:signal5" "wlan0" "80" "100"
 	;;
+tplink,tl-wpa8630p-v2-int|\
+tplink,tl-wpa8630p-v2.0-eu|\
+tplink,tl-wpa8630p-v2.1-eu)
+	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x3c"
+	;;
 tplink,tl-wr940n-v3|\
 tplink,tl-wr940n-v4|\
 tplink,tl-wr941nd-v6)
