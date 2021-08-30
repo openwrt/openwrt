@@ -218,12 +218,12 @@
 };
 
 &localbus {
-	flash@1 {
+	flash1: flash@1 {
 		compatible = "lantiq,nand-xway";
 		bank-width = <2>;
 		reg = <0x1 0x0 0x2000000>;
 
-		nand-ecc-mode = "on-die";
+		nand-ecc-engine = <&flash1>;
 
 		partitions {
 			compatible = "fixed-partitions";
