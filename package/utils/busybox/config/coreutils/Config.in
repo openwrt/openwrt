@@ -569,19 +569,23 @@ config BUSYBOX_CONFIG_SLEEP
 		sleep 2.3s 4.5h sleeps for 16202.3 seconds
 	Last one is "the most compatible" with coreutils sleep,
 	but it adds around 1k of code.
-
 config BUSYBOX_CONFIG_FEATURE_FANCY_SLEEP
 	bool "Enable multiple arguments and s/m/h/d suffixes"
 	default BUSYBOX_DEFAULT_FEATURE_FANCY_SLEEP
 	depends on BUSYBOX_CONFIG_SLEEP
 	help
 	Allow sleep to pause for specified minutes, hours, and days.
+config BUSYBOX_CONFIG_FEATURE_FLOAT_SLEEP
+	bool "Enable fractional arguments"
+	default BUSYBOX_DEFAULT_FEATURE_FLOAT_SLEEP
+	depends on BUSYBOX_CONFIG_FEATURE_FANCY_SLEEP
+	help
+	Allow for fractional numeric parameters.
 config BUSYBOX_CONFIG_SORT
 	bool "sort (7.7 kb)"
 	default BUSYBOX_DEFAULT_SORT
 	help
 	sort is used to sort lines of text in specified files.
-
 config BUSYBOX_CONFIG_FEATURE_SORT_BIG
 	bool "Full SuSv3 compliant sort (support -ktcbdfiogM)"
 	default BUSYBOX_DEFAULT_FEATURE_SORT_BIG
