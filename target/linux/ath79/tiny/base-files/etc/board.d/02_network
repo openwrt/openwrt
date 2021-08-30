@@ -82,6 +82,13 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:1" "3:lan:2" "4:lan:3"
 		;;
+	tplink,tl-wpa8630p-v2-int|\
+	tplink,tl-wpa8630p-v2.0-eu|\
+	tplink,tl-wpa8630p-v2.1-eu)
+		# port 5 (internal) is the power-line port
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "5:lan:4"
+		;;
 	tplink,tl-wr941-v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;

@@ -440,10 +440,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:3" "3:lan:2"
 		;;
-	tplink,tl-wpa8630-v1|\
-	tplink,tl-wpa8630p-v2-int|\
-	tplink,tl-wpa8630p-v2.0-eu|\
-	tplink,tl-wpa8630p-v2.1-eu)
+	tplink,tl-wpa8630-v1)
 		# port 5 (internal) is the power-line port
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "5:lan:4"
