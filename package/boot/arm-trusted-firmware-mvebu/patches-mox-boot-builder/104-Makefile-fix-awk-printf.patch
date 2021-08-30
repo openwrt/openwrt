@@ -1,0 +1,31 @@
+From f8f0ca4274a7903be01e7ea82ed26f73fa664f1f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
+Date: Fri, 16 Jul 2021 18:17:28 +0200
+Subject: [PATCH] Makefile: fix awk printf
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Awk's printf %c prints multibyte character when LC_ALL=UTF-8.
+
+Signed-off-by: Marek Behún <marek.behun@nic.cz>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 2cbd1a0..a8b077d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -67,7 +67,7 @@ arm-trusted-firmware/build/a3700/release/boot-image.bin: u-boot/u-boot.bin FORCE
+ 
+ a53-firmware.bin: arm-trusted-firmware/build/a3700/release/boot-image.bin
+ 	cp -a $< $@
+-	od -v -tu8 -An -j 131184 -N 8 $@ | awk '{ for (i = 0; i < 64; i += 8) printf "%c", and(rshift(1310720-$$1, i), 255) }' | dd of=$@ bs=1 seek=131192 count=8 conv=notrunc 2>/dev/null
++	od -v -tu8 -An -j 131184 -N 8 $@ | LC_ALL=C awk '{ for (i = 0; i < 64; i += 8) printf "%c", and(rshift(1310720-$$1, i), 255) }' | dd of=$@ bs=1 seek=131192 count=8 conv=notrunc 2>/dev/null
+ 
+ u-boot/u-boot.bin: FORCE
+ 	$(MAKE) -C u-boot CROSS_COMPILE=$(CROSS_COMPILE) turris_mox_defconfig
+-- 
+2.33.0
+

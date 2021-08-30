@@ -1,0 +1,29 @@
+From f9f794b5aa289f787359d6dce42fe57aa52f97ea Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
+Date: Fri, 16 Jul 2021 18:18:21 +0200
+Subject: [PATCH] Makefile: fix wrong size computation of bl3 image
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Marek Behún <marek.behun@nic.cz>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index a8b077d..0597425 100644
+--- a/Makefile
++++ b/Makefile
+@@ -67,7 +67,7 @@ arm-trusted-firmware/build/a3700/release/boot-image.bin: u-boot/u-boot.bin FORCE
+ 
+ a53-firmware.bin: arm-trusted-firmware/build/a3700/release/boot-image.bin
+ 	cp -a $< $@
+-	od -v -tu8 -An -j 131184 -N 8 $@ | LC_ALL=C awk '{ for (i = 0; i < 64; i += 8) printf "%c", and(rshift(1310720-$$1, i), 255) }' | dd of=$@ bs=1 seek=131192 count=8 conv=notrunc 2>/dev/null
++	od -v -tu8 -An -j 131184 -N 8 $@ | LC_ALL=C awk '{ for (i = 0; i < 64; i += 8) printf "%c", and(rshift(1310720-131072-$$1, i), 255) }' | dd of=$@ bs=1 seek=131192 count=8 conv=notrunc 2>/dev/null
+ 
+ u-boot/u-boot.bin: FORCE
+ 	$(MAKE) -C u-boot CROSS_COMPILE=$(CROSS_COMPILE) turris_mox_defconfig
+-- 
+2.33.0
+

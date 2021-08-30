@@ -1,0 +1,66 @@
+From e8c94a5b064a71e4754af680d147c7301a494e63 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
+Date: Thu, 22 Jul 2021 16:47:23 +0200
+Subject: [PATCH] wtmi: Count RAM size from both CS0 and CS1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+For devices using both chip selects (some variants of EspressoBIN, for
+example) the current code returns wrong RAM size, which causes failure
+in probing the turris-mox-rwtm driver in Linux. Fix this.
+
+Signed-off-by: Marek Behún <marek.behun@nic.cz>
+---
+ wtmi/main.c | 28 ++++++++++++++++++++++------
+ 1 file changed, 22 insertions(+), 6 deletions(-)
+
+diff --git a/wtmi/main.c b/wtmi/main.c
+index aa65a21..7e6ed1a 100644
+--- a/wtmi/main.c
++++ b/wtmi/main.c
+@@ -15,19 +15,35 @@
+ #include "debug.h"
+ 
+ #ifndef DEPLOY
++static int cs_reg_to_ram_size(u32 addr)
++{
++	u32 reg = readl(addr);
++
++	if (!(reg & 0x1))
++		return 0;
++
++	reg = (reg >> 16) & 0x1f;
++	if (reg >= 7)
++		return 1 << (reg - 4);
++	else
++		return (1 << reg) * 384;
++}
++
+ static int get_ram_size(void)
+ {
+ 	static int ram_size;
+-	u32 reg;
+ 
+ 	if (ram_size)
+ 		return ram_size;
+ 
+-	reg = (readl(0xc0000200) >> 16) & 0x1f;
+-	if (reg >= 7 && reg <= 16)
+-		ram_size = 1 << (reg - 4);
+-	else
+-		ram_size = 512;
++	ram_size = cs_reg_to_ram_size(0xc0000200) +
++		   cs_reg_to_ram_size(0xc0000208);
++
++	if (!ram_size) {
++		printf("No DDR chip configured!\n");
++		while (1)
++			wait_for_irq();
++	}
+ 
+ 	return ram_size;
+ }
+-- 
+2.33.0
+
