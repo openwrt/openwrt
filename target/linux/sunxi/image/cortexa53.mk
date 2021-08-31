@@ -35,16 +35,14 @@ define Device/friendlyarm_nanopi-neo2
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo2
 
-define Device/friendlyarm_nanopi-r1s
+define Device/friendlyarm_nanopi-r1s-h5
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R1S-H5
-  SUPPORTED_DEVICES:=nanopi-r1s
-  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-usb2 kmod-usb-net-rtl8152 \
-     kmod-brcmfmac kmod-leds-gpio kmod-ledtrig-heartbeat wpad-basic-wolfssl \
-     brcmfmac-firmware-43430-sdio
+  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-usb-net-rtl8152 \
+     kmod-leds-gpio kmod-ledtrig-heartbeat
   $(Device/sun50i-h5)
 endef
-TARGET_DEVICES += friendlyarm_nanopi-r1s
+TARGET_DEVICES += friendlyarm_nanopi-r1s-h5
 
 define Device/libretech_all-h3-cc-h5
   DEVICE_VENDOR := Libre Computer
