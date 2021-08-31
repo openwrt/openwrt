@@ -1,0 +1,41 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 31 Aug 2021 08:40:49 +0200
+Subject: [PATCH fix] Revert "USB: bcma: Add a check for devm_gpiod_get"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit f3de5d857bb2362b00e2a8d4bc886cd49dcb66db.
+
+That commit broke USB on all routers that have USB always powered on and
+don't require toggling any GPIO. It's a majority of devices actually.
+
+The original code worked and seemed safe: vcc GPIO is optional and
+bcma_hci_platform_power_gpio() takes care of checking the pointer before
+using it.
+
+This revert fixes:
+[   10.801127] bcma_hcd: probe of bcma0:11 failed with error -2
+
+Cc: Chuhong Yuan <hslester96@gmail.com>
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ drivers/usb/host/bcma-hcd.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -406,12 +406,9 @@ static int bcma_hcd_probe(struct bcma_de
+ 		return -ENOMEM;
+ 	usb_dev->core = core;
+ 
+-	if (core->dev.of_node) {
++	if (core->dev.of_node)
+ 		usb_dev->gpio_desc = devm_gpiod_get(&core->dev, "vcc",
+ 						    GPIOD_OUT_HIGH);
+-		if (IS_ERR(usb_dev->gpio_desc))
+-			return PTR_ERR(usb_dev->gpio_desc);
+-	}
+ 
+ 	switch (core->id.id) {
+ 	case BCMA_CORE_USB20_HOST:
