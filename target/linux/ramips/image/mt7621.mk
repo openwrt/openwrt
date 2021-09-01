@@ -429,6 +429,16 @@ define Device/d-team_pbr-m1
 endef
 TARGET_DEVICES += d-team_pbr-m1
 
+define Device/pangubox_pgb-m1
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DTS := PGB-M1
+  IMAGE_SIZE := 32768k
+  DEVICE_TITLE := PanguBox PGB-M1
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt762x kmod-rtc-pcf8563 kmod-nvme nvme-cli kmod-mt7915e
+endef
+TARGET_DEVICES += pangubox_pgb-m1
+
 define Device/edimax_ra21s
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
