@@ -2366,6 +2366,42 @@ define Device/sitecom_wlr-8100
 endef
 TARGET_DEVICES += sitecom_wlr-8100
 
+define Device/sophos_ap55
+  SOC := qca9558
+  DEVICE_VENDOR := Sophos
+  DEVICE_MODEL := AP55
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += sophos_ap55
+
+define Device/sophos_ap55c
+  SOC := qca9558
+  DEVICE_VENDOR := Sophos
+  DEVICE_MODEL := AP55C
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += sophos_ap55c
+
+define Device/sophos_ap100
+  SOC := qca9558
+  DEVICE_VENDOR := Sophos
+  DEVICE_MODEL := AP100
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += sophos_ap100
+
+define Device/sophos_ap100c
+  SOC := qca9558
+  DEVICE_VENDOR := Sophos
+  DEVICE_MODEL := AP100C
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += sophos_ap100c
+
 define Device/telco_t1
   SOC := qca9531
   DEVICE_VENDOR := Telco
