@@ -49,11 +49,6 @@ extern struct rtl83xx_soc_info soc_info;
 
 #define RING_BUFFER	1600
 
-#define RTL838X_STORM_CTRL_PORT_BC_EXCEED	(0x470C)
-#define RTL838X_STORM_CTRL_PORT_MC_EXCEED	(0x4710)
-#define RTL838X_STORM_CTRL_PORT_UC_EXCEED	(0x4714)
-#define RTL838X_ATK_PRVNT_STS			(0x5B1C)
-
 struct p_hdr {
 	uint8_t		*buf;
 	uint16_t	reserved;
@@ -407,29 +402,9 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 	struct net_device *dev = dev_id;
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	u32 status = sw_r32(priv->r->dma_if_intr_sts);
-	bool triggered = false;
-	u32 atk = sw_r32(RTL838X_ATK_PRVNT_STS);
 	int i;
-	u32 storm_uc = sw_r32(RTL838X_STORM_CTRL_PORT_UC_EXCEED);
-	u32 storm_mc = sw_r32(RTL838X_STORM_CTRL_PORT_MC_EXCEED);
-	u32 storm_bc = sw_r32(RTL838X_STORM_CTRL_PORT_BC_EXCEED);
 
 	pr_debug("IRQ: %08x\n", status);
-	if (storm_uc || storm_mc || storm_bc) {
-		pr_warn("Storm control UC: %08x, MC: %08x, BC: %08x\n",
-			storm_uc, storm_mc, storm_bc);
-
-		sw_w32(storm_uc, RTL838X_STORM_CTRL_PORT_UC_EXCEED);
-		sw_w32(storm_mc, RTL838X_STORM_CTRL_PORT_MC_EXCEED);
-		sw_w32(storm_bc, RTL838X_STORM_CTRL_PORT_BC_EXCEED);
-
-		triggered = true;
-	}
-
-	if (atk) {
-		pr_debug("Attack prevention triggered: %08x\n", atk);
-		sw_w32(atk, RTL838X_ATK_PRVNT_STS);
-	}
 
 	spin_lock(&priv->lock);
 	/*  Ignore TX interrupt */
