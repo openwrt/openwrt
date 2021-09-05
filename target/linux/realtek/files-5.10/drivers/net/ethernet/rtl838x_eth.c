@@ -89,14 +89,14 @@ struct notify_b {
 	u32			reserved2[8];
 };
 
-void rtl838x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl838x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 {
 	prio &= 0x7;
 
 	if (dest_port > 0) {
 		// cpu_tag[0] is reserved on the RTL83XX SoCs
-		h->cpu_tag[1] = 0x0400;
-		h->cpu_tag[2] = 0x0200;
+		h->cpu_tag[1] = 0x0401;  // BIT 10: RTL8380_CPU_TAG, BIT0: L2LEARNING on
+		h->cpu_tag[2] = 0x0200;  // Set only AS_DPM, to enable DPM settings below
 		h->cpu_tag[3] = 0x0000;
 		h->cpu_tag[4] = BIT(dest_port) >> 16;
 		h->cpu_tag[5] = BIT(dest_port) & 0xffff;
@@ -106,14 +106,15 @@ void rtl838x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 	}
 }
 
-void rtl839x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl839x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 {
 	prio &= 0x7;
 
 	if (dest_port > 0) {
 		// cpu_tag[0] is reserved on the RTL83XX SoCs
-		h->cpu_tag[1] = 0x0100;
+		h->cpu_tag[1] = 0x0100; // RTL8390_CPU_TAG marker
 		h->cpu_tag[2] = h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
+		// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
 		if (dest_port >= 32) {
 			dest_port -= 32;
 			h->cpu_tag[2] = BIT(dest_port) >> 16;
@@ -122,35 +123,43 @@ void rtl839x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 			h->cpu_tag[4] = BIT(dest_port) >> 16;
 			h->cpu_tag[5] = BIT(dest_port) & 0xffff;
 		}
-		h->cpu_tag[6] |= BIT(21); // Enable destination port mask use
+		h->cpu_tag[2] |= BIT(20); // Enable destination port mask use
+		h->cpu_tag[2] |= BIT(23); // Enable L2 Learning
 		// Set internal priority and AS_PRIO
 		if (prio >= 0)
 			h->cpu_tag[1] |= prio | BIT(3);
 	}
 }
 
-void rtl930x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl930x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 {
-	h->cpu_tag[0] = 0x8000;
-	h->cpu_tag[1] = 0;  // TODO: Fill port and prio
-	h->cpu_tag[2] = 0;
+	h->cpu_tag[0] = 0x8000;  // CPU tag marker
+	h->cpu_tag[1] = h->cpu_tag[2] = 0;
+	if (prio >= 0)
+		h->cpu_tag[2] = BIT(13) | prio << 8; // Enable and set Priority Queue
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = 0;
 	h->cpu_tag[5] = 0;
-	h->cpu_tag[6] = 0;
-	h->cpu_tag[7] = 0xffff;
+	h->cpu_tag[6] = BIT(dest_port) >> 16;
+	h->cpu_tag[7] = BIT(dest_port) & 0xffff;
 }
 
-void rtl931x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl931x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 {
-	h->cpu_tag[0] = 0x8000;
-	h->cpu_tag[1] = 0;  // TODO: Fill port and prio
-	h->cpu_tag[2] = 0;
+	h->cpu_tag[0] = 0x8000;  // CPU tag marker
+	h->cpu_tag[1] = h->cpu_tag[2] = 0;
+	if (prio >= 0)
+		h->cpu_tag[2] = BIT(13) | prio << 8; // Enable and set Priority Queue
 	h->cpu_tag[3] = 0;
-	h->cpu_tag[4] = 0;
-	h->cpu_tag[5] = 0;
-	h->cpu_tag[6] = 0;
-	h->cpu_tag[7] = 0xffff;
+	h->cpu_tag[4] = h->cpu_tag[5] = h->cpu_tag[6] = h->cpu_tag[7] = 0;
+	if (dest_port >= 32) {
+		dest_port -= 32;
+		h->cpu_tag[4] = BIT(dest_port) >> 16;
+		h->cpu_tag[5] = BIT(dest_port) & 0xffff;
+	} else {
+		h->cpu_tag[6] = BIT(dest_port) >> 16;
+		h->cpu_tag[7] = BIT(dest_port) & 0xffff;
+	}
 }
 
 struct rtl838x_rx_q {
