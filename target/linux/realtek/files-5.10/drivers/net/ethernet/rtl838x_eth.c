@@ -30,11 +30,12 @@ extern struct rtl83xx_soc_info soc_info;
  * Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX
  * The ring is assigned by switch based on packet/port priortity
  * Maximum number of TX rings is 2, Ring 2 being the high priority
- * ring on the RTL93xx SoCs. MAX_RING_SIZE * RING_BUFFER gives
- * the memory used for the ring buffer.
+ * ring on the RTL93xx SoCs. MAX_RXLEN gives the maximum length
+ * for an RX ring, MAX_ENTRIES the maximum number of entries
+ * available in total for all queues.
  */
 #define MAX_RXRINGS	32
-#define MAX_RXLEN	100
+#define MAX_RXLEN	200
 #define MAX_ENTRIES	(200 * 8)
 #define TXRINGS		2
 #define TXRINGLEN	160
@@ -437,7 +438,7 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 
 	/* RX buffer overrun */
 	if (status & 0x000ff) {
-		pr_info("RX buffer overrun: status %x, mask: %x\n",
+		pr_debug("RX buffer overrun: status %x, mask: %x\n",
 			 status, sw_r32(priv->r->dma_if_intr_msk));
 		sw_w32(status, priv->r->dma_if_intr_sts);
 		rtl838x_rb_cleanup(priv, status & 0xff);
