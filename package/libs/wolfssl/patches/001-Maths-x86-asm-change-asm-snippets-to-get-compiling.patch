@@ -91,7 +91,7 @@ diff --git a/wolfcrypt/src/sp_int.c b/wolfcrypt/src/sp_int.c
 index 6070faaa9..d26702e47 100644
 --- a/wolfcrypt/src/sp_int.c
 +++ b/wolfcrypt/src/sp_int.c
-@@ -477,7 +477,7 @@ static WC_INLINE sp_int_digit sp_div_word(sp_int_digit hi, sp_int_digit lo,
+@@ -476,7 +476,7 @@ static WC_INLINE sp_int_digit sp_div_word(sp_int_digit hi, sp_int_digit lo,
          "addl	%%eax, %[l]	\n\t"                    \
          "adcl	%%edx, %[h]	\n\t"                    \
          "adcl	$0   , %[o]	\n\t"                    \
@@ -100,7 +100,7 @@ index 6070faaa9..d26702e47 100644
          : [a] "r" (va), [b] "r" (vb)                     \
          : "eax", "edx", "cc"                             \
      )
-@@ -503,7 +503,7 @@ static WC_INLINE sp_int_digit sp_div_word(sp_int_digit hi, sp_int_digit lo,
+@@ -502,7 +502,7 @@ static WC_INLINE sp_int_digit sp_div_word(sp_int_digit hi, sp_int_digit lo,
          "addl	%%eax, %[l]	\n\t"                    \
          "adcl	%%edx, %[h]	\n\t"                    \
          "adcl	$0   , %[o]	\n\t"                    \
@@ -109,7 +109,7 @@ index 6070faaa9..d26702e47 100644
          : [a] "r" (va), [b] "r" (vb)                     \
          : "eax", "edx", "cc"                             \
      )
-@@ -542,7 +542,7 @@ static WC_INLINE sp_int_digit sp_div_word(sp_int_digit hi, sp_int_digit lo,
+@@ -541,7 +541,7 @@ static WC_INLINE sp_int_digit sp_div_word(sp_int_digit hi, sp_int_digit lo,
          "addl	%%eax, %[l]	\n\t"                    \
          "adcl	%%edx, %[h]	\n\t"                    \
          "adcl	$0   , %[o]	\n\t"                    \
