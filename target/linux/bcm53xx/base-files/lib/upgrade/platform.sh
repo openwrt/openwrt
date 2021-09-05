@@ -1,6 +1,7 @@
 RAMFS_COPY_BIN='osafeloader oseama otrx truncate'
 
 PART_NAME=firmware
+REQUIRE_IMAGE_METADATA=0
 
 BCM53XX_FW_FORMAT=
 BCM53XX_FW_BOARD_ID=
@@ -197,13 +198,10 @@ platform_check_image() {
 
 	board="$(board_name)"
 	case "$board" in
-	# Ideally, REQUIRE_IMAGE_METADATA=1 would suffice
-	# but this would require converting all other
-	# devices too.
 	meraki,mr26 | \
 	meraki,mr32)
-		nand_do_platform_check "${board//,/_}" "$1"
-		return $?
+		# NAND sysupgrade
+		return 0
 		;;
 	*)
 		platform_other_check_image "$1"
@@ -400,6 +398,7 @@ platform_do_upgrade() {
 	case "$(board_name)" in
 	meraki,mr26 | \
 	meraki,mr32)
+		REQUIRE_IMAGE_METADATA=1
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
