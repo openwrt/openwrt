@@ -199,7 +199,10 @@ platform_check_image() {
 	board="$(board_name)"
 	case "$board" in
 	meraki,mr26 | \
-	meraki,mr32)
+	meraki,mr32 | \
+	meraki,mx64 | \
+	meraki,mx64-a0 | \
+	meraki,mx65)
 		# NAND sysupgrade
 		return 0
 		;;
@@ -400,6 +403,12 @@ platform_do_upgrade() {
 	meraki,mr32)
 		REQUIRE_IMAGE_METADATA=1
 		CI_KERNPART="part.safe"
+		nand_do_upgrade "$1"
+		;;
+	meraki,mx64 | \
+	meraki,mx64-a0 | \
+	meraki,mx65)
+		REQUIRE_IMAGE_METADATA=1
 		nand_do_upgrade "$1"
 		;;
 	*)

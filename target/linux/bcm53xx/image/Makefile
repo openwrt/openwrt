@@ -365,6 +365,45 @@ define Device/meraki_mr32
 endef
 TARGET_DEVICES += meraki_mr32
 
+define Device/meraki_mx6x
+  KERNEL_IN_UBI := 1
+  KERNEL_LOADADDR := 0x60008000
+  DEVICE_PACKAGES := -oseama kmod-i2c-bcm-iproc kmod-i2c-gpio kmod-eeprom-at24 \
+	kmod-leds-pwm kmod-usb-ehci kmod-usb-ohci kmod-usb2 \
+	kmod-ledtrig-default-on kmod-ledtrig-netdev
+  DEVICE_VENDOR := Cisco Meraki
+  KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS_SUFFIX := .bin
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/meraki_mx64
+  $(call Device/meraki_mx6x)
+  DEVICE_MODEL := MX64
+  DEVICE_DTS_CONFIG := config@4
+  DEVICE_DTS := bcm958625-meraki-mx64
+endef
+TARGET_DEVICES += meraki_mx64
+
+define Device/meraki_mx64_a0
+  $(call Device/meraki_mx64)
+  DEVICE_VARIANT := A0
+  DEVICE_DTS_CONFIG := config@2
+  DEVICE_DTS := bcm958625-meraki-mx64-a0
+endef
+TARGET_DEVICES += meraki_mx64_a0
+
+define Device/meraki_mx65
+  $(call Device/meraki_mx6x)
+  DEVICE_MODEL := MX65
+  DEVICE_DTS_CONFIG := config@3
+  DEVICE_DTS := bcm958625-meraki-mx65
+  DEVICE_PACKAGES += kmod-switch-qca8k
+endef
+TARGET_DEVICES += meraki_mx65
+
 define Device/netgear
   DEVICE_VENDOR := NETGEAR
   IMAGES := chk
