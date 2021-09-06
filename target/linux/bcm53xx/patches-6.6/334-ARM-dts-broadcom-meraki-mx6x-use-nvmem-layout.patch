@@ -1,0 +1,47 @@
+From e56e37ccec198958937abf4b69735529f67d161c Mon Sep 17 00:00:00 2001
+From: Lech Perczak <lech.perczak@gmail.com>
+Date: Sun, 6 Oct 2024 16:14:41 +0200
+Subject: [PATCH] ARM: dts: broadcom: meraki-mx6x: use nvmem-layout
+
+Using plain subnode in eeprom node for MAC address causes
+of_get_ethdev_address to fail for some reason. Switch to nvmem-layout to
+fix it, as it's the preferred way of describing it, too.
+
+Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
+---
+ .../broadcom/bcm958625-meraki-mx6x-common.dtsi   | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm958625-meraki-mx6x-common.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm958625-meraki-mx6x-common.dtsi
+@@ -39,7 +39,7 @@
+ 
+ &amac2 {
+ 	status = "okay";
+-	nvmem-cells = <&mac_address>;
++	nvmem-cells = <&mac_address 0>;
+ 	nvmem-cell-names = "mac-address";
+ };
+ 
+@@ -55,11 +55,17 @@
+ 		reg = <0x50>;
+ 		pagesize = <32>;
+ 		read-only;
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+ 
+-		mac_address: mac-address@66 {
+-			reg = <0x66 0x6>;
++		nvmem-layout {
++			compatible = "fixed-layout";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			mac_address: mac-address@66 {
++				compatible = "mac-base";
++				reg = <0x66 0x6>;
++				#nvmem-cell-cells = <1>;
++			};
+ 		};
+ 	};
+ };
