@@ -29,6 +29,14 @@ bcm53xx_setup_interfaces()
 	meraki,mr32)
 		ucidef_set_interface_lan "poe" "dhcp"
 		;;
+	meraki,mx64 | \
+	meraki,mx64-a0)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
+	meraki,mx65)
+		ucidef_set_interfaces_lan_wan \
+			"lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12" "wan1 wan2"
+		;;
 	phicomm,k3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -67,6 +75,12 @@ bcm53xx_setup_macs()
 		label_mac="$(mtd_get_mac_binary_ubi board-config 0x66)"
 		ucidef_set_interface_macaddr "lan" "$label_mac"
 		ucidef_set_label_macaddr "$label_mac"
+		;;
+	meraki,mx64 | \
+	meraki,mx64-a0 | \
+	meraki,mx65)
+		etXmacaddr=$(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66)
+		offset=1
 		;;
 	*)
 		etXmacaddr=$(nvram get et0macaddr)
