@@ -188,6 +188,8 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 	rtl83xx_enable_phy_polling(priv);
 	pr_debug("Please wait until PHY is settled\n");
 	msleep(1000);
+	priv->r->pie_init(priv);
+
 	return 0;
 }
 
@@ -227,6 +229,8 @@ static int rtl930x_setup(struct dsa_switch *ds)
 	ds->configure_vlan_while_not_filtering = true;
 
 	rtl83xx_enable_phy_polling(priv);
+
+	priv->r->pie_init(priv);
 
 	return 0;
 }

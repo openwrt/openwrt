@@ -449,6 +449,62 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 	return 0;
 }
 
+/*
+ * Allocate a 64 bit octet counter located in the LOG HW table
+ */
+static int rtl83xx_octet_cntr_alloc(struct rtl838x_switch_priv *priv)
+{
+	int idx;
+
+	mutex_lock(&priv->reg_mutex);
+
+	idx = find_first_zero_bit(priv->octet_cntr_use_bm, MAX_COUNTERS);
+	if (idx >= priv->n_counters) {
+		mutex_unlock(&priv->reg_mutex);
+		return -1;
+	}
+
+	set_bit(idx, priv->octet_cntr_use_bm);
+	mutex_unlock(&priv->reg_mutex);
+
+	return idx;
+}
+
+/*
+ * Allocate a 32-bit packet counter
+ * 2 32-bit packet counters share the location of a 64-bit octet counter
+ * Initially there are no free packet counters and 2 new ones need to be freed
+ * by allocating the corresponding octet counter
+ */
+int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
+{
+	int idx, j;
+
+	mutex_lock(&priv->reg_mutex);
+
+	/* Because initially no packet counters are free, the logic is reversed:
+	 * a 0-bit means the counter is already allocated (for octets)
+	 */
+	idx = find_first_bit(priv->packet_cntr_use_bm, MAX_COUNTERS * 2);
+	if (idx >= priv->n_counters * 2) {
+		j = find_first_zero_bit(priv->octet_cntr_use_bm, MAX_COUNTERS);
+		if (j >= priv->n_counters) {
+			mutex_unlock(&priv->reg_mutex);
+			return -1;
+		}
+		set_bit(j, priv->octet_cntr_use_bm);
+		idx = j * 2;
+		set_bit(j * 2 + 1, priv->packet_cntr_use_bm);
+
+	} else {
+		clear_bit(idx, priv->packet_cntr_use_bm);
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return idx;
+}
+
 static int rtl83xx_handle_changeupper(struct rtl838x_switch_priv *priv,
 				      struct net_device *ndev,
 				      struct netdev_notifier_changeupper_info *info)
@@ -497,6 +553,30 @@ static int rtl83xx_handle_changeupper(struct rtl838x_switch_priv *priv,
 out:
 	mutex_unlock(&priv->reg_mutex);
 	return 0;
+}
+
+/*
+ * Is the lower network device a DSA slave network device of our RTL930X-switch?
+ * Unfortunately we cannot just follow dev->dsa_prt as this is only set for the
+ * DSA master device.
+ */
+int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_priv *priv)
+{
+	int i;
+
+// TODO: On 5.12:
+// 	if(!dsa_slave_dev_check(dev)) {
+//		netdev_info(dev, "%s: not a DSA device.\n", __func__);
+//		return -EINVAL;
+//	}
+
+	for (i = 0; i < priv->cpu_port; i++) {
+		if (!priv->ports[i].dp)
+			continue;
+		if (priv->ports[i].dp->slave == dev)
+			return i;
+	}
+	return -EINVAL;
 }
 
 static int rtl83xx_netdevice_event(struct notifier_block *this,
@@ -568,6 +648,9 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		rtl8380_get_version(priv);
 		priv->n_lags = 8;
 		priv->l2_bucket_size = 4;
+		priv->n_pie_blocks = 12;
+		priv->port_ignore = 0x1f;
+		priv->n_counters = 128;
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->ds->ops = &rtl83xx_switch_ops;
@@ -581,6 +664,9 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		rtl8390_get_version(priv);
 		priv->n_lags = 16;
 		priv->l2_bucket_size = 4;
+		priv->n_pie_blocks = 18;
+		priv->port_ignore = 0x3f;
+		priv->n_counters = 1024;
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->ds->ops = &rtl930x_switch_ops;
@@ -595,6 +681,9 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_lags = 16;
 		sw_w32(1, RTL930X_ST_CTRL);
 		priv->l2_bucket_size = 8;
+		priv->n_pie_blocks = 16;
+		priv->port_ignore = 0x3f;
+		priv->n_counters = 2048;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->ds->ops = &rtl930x_switch_ops;
