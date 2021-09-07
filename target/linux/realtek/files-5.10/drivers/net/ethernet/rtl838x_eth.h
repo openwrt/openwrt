@@ -424,6 +424,6 @@ int rtl930x_write_phy(u32 port, u32 page, u32 reg, u32 val);
 int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
 int rtl931x_write_phy(u32 port, u32 page, u32 reg, u32 val);
 int rtl931x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
-void rtl9300_sds_power(int sds_num, int val);
+int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
 #endif /* _RTL838X_ETH_H */
