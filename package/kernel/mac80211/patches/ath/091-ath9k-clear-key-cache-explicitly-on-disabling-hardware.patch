@@ -1,0 +1,32 @@
+From 73488cb2fa3bb1ef9f6cf0d757f76958bd4deaca Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Mon, 14 Dec 2020 19:21:15 +0200
+Subject: ath9k: Clear key cache explicitly on disabling hardware
+
+commit 73488cb2fa3bb1ef9f6cf0d757f76958bd4deaca upstream.
+
+Now that ath/key.c may not be explicitly clearing keys from the key
+cache, clear all key cache entries when disabling hardware to make sure
+no keys are left behind beyond this point.
+
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201214172118.18100-3-jouni@codeaurora.org
+---
+ drivers/net/wireless/ath/ath9k/main.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -891,6 +891,11 @@ static void ath9k_stop(struct ieee80211_
+ 
+ 	spin_unlock_bh(&sc->sc_pcu_lock);
+ 
++	/* Clear key cache entries explicitly to get rid of any potentially
++	 * remaining keys.
++	 */
++	ath9k_cmn_init_crypto(sc->sc_ah);
++
+ 	ath9k_ps_restore(sc);
+ 
+ 	sc->ps_idle = prev_idle;

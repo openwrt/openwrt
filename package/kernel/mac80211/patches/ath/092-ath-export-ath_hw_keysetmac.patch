@@ -1,0 +1,47 @@
+From d2d3e36498dd8e0c83ea99861fac5cf9e8671226 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Mon, 14 Dec 2020 19:21:16 +0200
+Subject: ath: Export ath_hw_keysetmac()
+
+commit d2d3e36498dd8e0c83ea99861fac5cf9e8671226 upstream.
+
+ath9k is going to use this for safer management of key cache entries.
+
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20201214172118.18100-4-jouni@codeaurora.org
+---
+ drivers/net/wireless/ath/ath.h | 1 +
+ drivers/net/wireless/ath/key.c | 4 ++--
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath.h
++++ b/drivers/net/wireless/ath/ath.h
+@@ -203,6 +203,7 @@ int ath_key_config(struct ath_common *co
+ 			  struct ieee80211_sta *sta,
+ 			  struct ieee80211_key_conf *key);
+ bool ath_hw_keyreset(struct ath_common *common, u16 entry);
++bool ath_hw_keysetmac(struct ath_common *common, u16 entry, const u8 *mac);
+ void ath_hw_cycle_counters_update(struct ath_common *common);
+ int32_t ath_hw_get_listen_time(struct ath_common *common);
+ 
+--- a/drivers/net/wireless/ath/key.c
++++ b/drivers/net/wireless/ath/key.c
+@@ -84,8 +84,7 @@ bool ath_hw_keyreset(struct ath_common *
+ }
+ EXPORT_SYMBOL(ath_hw_keyreset);
+ 
+-static bool ath_hw_keysetmac(struct ath_common *common,
+-			     u16 entry, const u8 *mac)
++bool ath_hw_keysetmac(struct ath_common *common, u16 entry, const u8 *mac)
+ {
+ 	u32 macHi, macLo;
+ 	u32 unicast_flag = AR_KEYTABLE_VALID;
+@@ -125,6 +124,7 @@ static bool ath_hw_keysetmac(struct ath_
+ 
+ 	return true;
+ }
++EXPORT_SYMBOL(ath_hw_keysetmac);
+ 
+ static bool ath_hw_set_keycache_entry(struct ath_common *common, u16 entry,
+ 				      const struct ath_keyval *k,
