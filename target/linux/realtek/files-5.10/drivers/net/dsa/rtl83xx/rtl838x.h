@@ -145,6 +145,7 @@
 #define RTL839X_MAC_RX_PAUSE_STS		(0x03c0)
 #define RTL930X_MAC_RX_PAUSE_STS		(0xCB30)
 #define RTL931X_MAC_RX_PAUSE_STS		(0x0F00)
+#define RTL930X_MAC_LINK_MEDIA_STS		(0xCB14)
 
 /* MAC link state bits */
 #define FORCE_EN				(1 << 0)

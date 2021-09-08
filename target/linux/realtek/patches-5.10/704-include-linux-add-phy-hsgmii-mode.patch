@@ -1,0 +1,19 @@
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -93,6 +93,7 @@
+ 	PHY_INTERFACE_MODE_SMII,
+ 	PHY_INTERFACE_MODE_XGMII,
+ 	PHY_INTERFACE_MODE_MOCA,
++	PHY_INTERFACE_MODE_HSGMII,
+ 	PHY_INTERFACE_MODE_QSGMII,
+ 	PHY_INTERFACE_MODE_TRGMII,
+ 	PHY_INTERFACE_MODE_1000BASEX,
+@@ -163,6 +164,8 @@
+ 		return "xgmii";
+ 	case PHY_INTERFACE_MODE_MOCA:
+ 		return "moca";
++	case PHY_INTERFACE_MODE_HSGMII:
++		return "hsgmii";
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 		return "qsgmii";
+ 	case PHY_INTERFACE_MODE_TRGMII:
