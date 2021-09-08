@@ -542,6 +542,20 @@ void rtl839x_traffic_disable(int source, int dest)
 	rtl839x_mask_port_reg_be(BIT_ULL(dest), 0, rtl839x_port_iso_ctrl(source));
 }
 
+static void rtl839x_l2_learning_setup(void)
+{
+	/* Set portmask for broadcast (offset bit 12) and unknown unicast (offset 0)
+	 * address flooding to the reserved entry in the portmask table used
+	 * also for multicast flooding */
+	sw_w32(UNKNOWN_MC_PMASK << 12 | UNKNOWN_MC_PMASK, RTL839X_L2_FLD_PMSK);
+
+	// Limit learning to maximum: 32k entries, after that just flood (bits 0-1)
+	sw_w32((0x7fff << 2) | 0, RTL839X_L2_LRN_CONSTRT);
+
+	// Do not trap ARP packets to CPU_PORT
+	sw_w32(0, RTL839X_SPCL_TRAP_ARP_CTRL);
+}
+
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
@@ -1677,6 +1691,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.pie_rule_write = rtl839x_pie_rule_write,
 	.pie_rule_add = rtl839x_pie_rule_add,
 	.pie_rule_rm = rtl839x_pie_rule_rm,
+	.l2_learning_setup = rtl839x_l2_learning_setup,
 	.packet_cntr_read = rtl839x_packet_cntr_read,
 	.packet_cntr_clear = rtl839x_packet_cntr_clear,
 };

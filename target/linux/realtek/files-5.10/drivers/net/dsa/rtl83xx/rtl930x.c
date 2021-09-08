@@ -254,7 +254,18 @@ static void rtl930x_vlan_profile_setup(int profile)
 	sw_w32(p[2], RTL930X_VLAN_PROFILE_SET(profile) + 8);
 	sw_w32(p[3], RTL930X_VLAN_PROFILE_SET(profile) + 12);
 	sw_w32(p[4], RTL930X_VLAN_PROFILE_SET(profile) + 16);
-	pr_info("Leaving %s\n", __func__);
+}
+
+static void rtl930x_l2_learning_setup(void)
+{
+	// Portmask for flooding broadcast traffic
+	sw_w32(0x1fffffff, RTL930X_L2_BC_FLD_PMSK);
+
+	// Portmask for flooding unicast traffic with unknown destination
+	sw_w32(0x1fffffff, RTL930X_L2_UNKN_UC_FLD_PMSK);
+
+	// Limit learning to maximum: 32k entries, after that just flood (bits 0-1)
+	sw_w32((0x7fff << 2) | 0, RTL930X_L2_LRN_CONSTRT_CTRL);
 }
 
 static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -1712,6 +1723,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.pie_rule_write = rtl930x_pie_rule_write,
 	.pie_rule_add = rtl930x_pie_rule_add,
 	.pie_rule_rm = rtl930x_pie_rule_rm,
+	.l2_learning_setup = rtl930x_l2_learning_setup,
 	.packet_cntr_read = rtl930x_packet_cntr_read,
 	.packet_cntr_clear = rtl930x_packet_cntr_clear,
 };
