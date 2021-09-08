@@ -491,6 +491,24 @@ static void rtl838x_vlan_profile_setup(int profile)
 	rtl838x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x1fffffff);
 }
 
+static void rtl838x_l2_learning_setup(void)
+{
+	/* Set portmask for broadcast traffic and unknown unicast address flooding
+	 * to the reserved entry in the portmask table used also for
+	 * multicast flooding */
+	sw_w32(UNKNOWN_MC_PMASK << 12 | UNKNOWN_MC_PMASK, RTL838X_L2_FLD_PMSK);
+
+	/* Enable learning constraint system-wide (bit 0), per-port (bit 1)
+	 * and per vlan (bit 2) */
+	sw_w32(0x7, RTL838X_L2_LRN_CONSTRT_EN);
+
+	// Limit learning to maximum: 16k entries, after that just flood (bits 0-1)
+	sw_w32((0x3fff << 2) | 0, RTL838X_L2_LRN_CONSTRT);
+
+	// Do not trap ARP packets to CPU_PORT
+	sw_w32(0, RTL838X_SPCL_TRAP_ARP_CTRL);
+}
+
 static inline int rtl838x_vlan_port_egr_filter(int port)
 {
 	return RTL838X_VLAN_PORT_EGR_FLTR;
@@ -1605,6 +1623,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.pie_rule_write = rtl838x_pie_rule_write,
 	.pie_rule_add = rtl838x_pie_rule_add,
 	.pie_rule_rm = rtl838x_pie_rule_rm,
+	.l2_learning_setup = rtl838x_l2_learning_setup,
 	.packet_cntr_read = rtl838x_packet_cntr_read,
 	.packet_cntr_clear = rtl838x_packet_cntr_clear,
 };

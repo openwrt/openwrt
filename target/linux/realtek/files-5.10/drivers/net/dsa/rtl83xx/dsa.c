@@ -184,6 +184,8 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 
 	ds->configure_vlan_while_not_filtering = true;
 
+	priv->r->l2_learning_setup();
+
 	/* Enable MAC Polling PHY again */
 	rtl83xx_enable_phy_polling(priv);
 	pr_debug("Please wait until PHY is settled\n");
@@ -227,6 +229,8 @@ static int rtl930x_setup(struct dsa_switch *ds)
 	rtl83xx_vlan_setup(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
+
+	priv->r->l2_learning_setup();
 
 	rtl83xx_enable_phy_polling(priv);
 

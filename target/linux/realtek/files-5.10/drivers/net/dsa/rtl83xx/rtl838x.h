@@ -198,6 +198,15 @@
 #define RTL930X_L2_TBL_FLUSH_CTRL		(0x9404)
 #define RTL931X_L2_TBL_FLUSH_CTRL		(0xCD9C)
 
+#define RTL838X_L2_LRN_CONSTRT			(0x329C)
+#define RTL839X_L2_LRN_CONSTRT			(0x3910)
+#define RTL930X_L2_LRN_CONSTRT_CTRL		(0x909c)
+#define RTL838X_L2_FLD_PMSK			(0x3288)
+#define RTL839X_L2_FLD_PMSK			(0x38EC)
+#define RTL930X_L2_BC_FLD_PMSK			(0x9068)
+#define RTL930X_L2_UNKN_UC_FLD_PMSK		(0x9064)
+#define RTL838X_L2_LRN_CONSTRT_EN		(0x3368)
+
 #define RTL838X_L2_PORT_NEW_SALRN(p)		(0x328c + (((p >> 4) << 2)))
 #define RTL839X_L2_PORT_NEW_SALRN(p)		(0x38F0 + (((p >> 4) << 2)))
 #define RTL930X_L2_PORT_SALRN(p)		(0x8FEC + (((p >> 4) << 2)))
@@ -303,6 +312,8 @@
 /* 802.1X */
 #define RTL838X_SPCL_TRAP_EAPOL_CTRL		(0x6988)
 #define RTL839X_SPCL_TRAP_EAPOL_CTRL		(0x105C)
+#define RTL838X_SPCL_TRAP_ARP_CTRL		(0x698C)
+#define RTL839X_SPCL_TRAP_ARP_CTRL		(0x1060)
 
 /* QoS */
 #define RTL838X_QM_INTPRI2QID_CTRL		(0x5F00)
@@ -699,6 +710,7 @@ struct rtl838x_reg {
 	int (*pie_rule_write)(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr);
 	int (*pie_rule_add)(struct rtl838x_switch_priv *priv, struct pie_rule *rule);
 	void (*pie_rule_rm)(struct rtl838x_switch_priv *priv, struct pie_rule *rule);
+	void (*l2_learning_setup)(void);
 	u32 (*packet_cntr_read)(int counter);
 	void (*packet_cntr_clear)(int counter);
 };
