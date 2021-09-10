@@ -300,7 +300,7 @@ static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 	e->is_ip_mc = !!(r[2] & BIT(31));
 	e->is_ipv6_mc = !!(r[2] & BIT(30));
 	e->type = L2_INVALID;
-	if (!e->is_ip_mc) {
+	if (!e->is_ip_mc && !e->is_ipv6_mc) {
 		e->mac[0] = (r[0] >> 12);
 		e->mac[1] = (r[0] >> 4);
 		e->mac[2] = ((r[1] >> 28) | (r[0] << 4));
@@ -308,18 +308,23 @@ static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 		e->mac[4] = (r[1] >> 12);
 		e->mac[5] = (r[1] >> 4);
 
+		e->vid = (r[2] >> 4) & 0xfff;
+		e->rvid = (r[0] >> 20) & 0xfff;
+
 		/* Is it a unicast entry? check multicast bit */
 		if (!(e->mac[0] & 1)) {
 			e->is_static = !!((r[2] >> 18) & 1);
-			e->vid = (r[2] >> 4) & 0xfff;
-			e->rvid = (r[0] >> 20) & 0xfff;
 			e->port = (r[2] >> 24) & 0x3f;
 			e->block_da = !!(r[2] & (1 << 19));
 			e->block_sa = !!(r[2] & (1 << 20));
 			e->suspended = !!(r[2] & (1 << 17));
 			e->next_hop = !!(r[2] & (1 << 16));
-			if (e->next_hop)
-				pr_info("Found next hop entry, need to read data\n");
+			if (e->next_hop) {
+				pr_debug("Found next hop entry, need to read data\n");
+				e->nh_vlan_target = !!(r[2] & BIT(15));
+				e->nh_route_id = (r[2] >> 4) & 0x1ff;
+				e->vid = e->rvid;
+			}
 			e->age = (r[2] >> 21) & 3;
 			e->valid = true;
 			if (!(r[2] & 0xc0fd0000)) /* Check for valid entry */
@@ -329,8 +334,13 @@ static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 		} else {
 			e->valid = true;
 			e->type = L2_MULTICAST;
-			e->mc_portmask_index = (r[2]>>6) & 0xfff;
+			e->mc_portmask_index = (r[2] >> 6) & 0xfff;
+			e->vid = e->rvid;
 		}
+	} else { // IPv4 and IPv6 multicast
+		e->vid = e->rvid = (r[0] << 20) & 0xfff;
+		e->mc_gip = r[1];
+		e->mc_portmask_index = (r[2] >> 6) & 0xfff;
 	}
 	if (e->is_ip_mc) {
 		e->valid = true;
@@ -340,10 +350,11 @@ static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 		e->valid = true;
 		e->type = IP6_MULTICAST;
 	}
+	// pr_info("%s: vid %d, rvid: %d\n", __func__, e->vid, e->rvid);
 }
 
 /*
- * Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry
+ * Fills the 3 SoC table registers r[] with the information in the rtl838x_l2_entry
  */
 static void rtl839x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 {
@@ -366,27 +377,28 @@ static void rtl839x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 
 		if (!(e->mac[0] & 1)) { // Not multicast
 			r[2] |= e->is_static ? BIT(18) : 0;
-			r[2] |= e->vid << 4;
 			r[0] |= ((u32)e->rvid) << 20;
 			r[2] |= e->port << 24;
 			r[2] |= e->block_da ? BIT(19) : 0;
 			r[2] |= e->block_sa ? BIT(20) : 0;
 			r[2] |= e->suspended ? BIT(17) : 0;
+			r[2] |= ((u32)e->age) << 21;
 			if (e->next_hop) {
 				r[2] |= BIT(16);
 				r[2] |= e->nh_vlan_target ? BIT(15) : 0;
 				r[2] |= (e->nh_route_id & 0x7ff) << 4;
+			} else {
+				r[2] |= e->vid << 4;
 			}
-			r[2] |= ((u32)e->age) << 21;
+			pr_debug("Write L2 NH: %08x %08x %08x\n", r[0], r[1], r[2]);
 		} else {  // L2 Multicast
 			r[0] |= ((u32)e->rvid) << 20;
 			r[2] |= ((u32)e->mc_portmask_index) << 6;
-			pr_debug("Write L2 MC entry: %08x %08x %08x\n", r[0], r[1], r[2]);
 		}
 	} else { // IPv4 or IPv6 MC entry
 		r[0] = ((u32)e->rvid) << 20;
-		r[2] |= ((u32)e->mc_portmask_index) << 6;
 		r[1] = e->mc_gip;
+		r[2] |= ((u32)e->mc_portmask_index) << 6;
 	}
 }
 
@@ -510,16 +522,6 @@ static void rtl839x_vlan_profile_setup(int profile)
 	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
 
 	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x001fffffffffffff);
-}
-
-static inline int rtl839x_vlan_port_egr_filter(int port)
-{
-	return RTL839X_VLAN_PORT_EGR_FLTR(port);
-}
-
-static inline int rtl839x_vlan_port_igr_filter(int port)
-{
-	return RTL839X_VLAN_PORT_IGR_FLTR(port);
 }
 
 u64 rtl839x_traffic_get(int source)
@@ -1621,6 +1623,69 @@ static void rtl839x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
+static void rtl839x_route_read(int idx, struct rtl83xx_route *rt)
+{
+	u64 v;
+	// Read ROUTING table (2) via register RTL8390_TBL_1
+	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 2);
+
+	pr_debug("In %s\n", __func__);
+	rtl_table_read(r, idx);
+
+	// The table has a size of 2 registers
+	v = sw_r32(rtl_table_data(r, 0));
+	v <<= 32;
+	v |= sw_r32(rtl_table_data(r, 1));
+	rt->switch_mac_id = (v >> 12) & 0xf;
+	rt->nh.gw = v >> 16;
+
+	rtl_table_release(r);
+}
+
+static void rtl839x_route_write(int idx, struct rtl83xx_route *rt)
+{
+	u32 v;
+
+	// Read ROUTING table (2) via register RTL8390_TBL_1
+	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 2);
+
+	pr_debug("In %s\n", __func__);
+	sw_w32(rt->nh.gw >> 16, rtl_table_data(r, 0));
+	v = rt->nh.gw << 16;
+	v |= rt->switch_mac_id << 12;
+	sw_w32(v, rtl_table_data(r, 1));
+	rtl_table_write(r, idx);
+
+	rtl_table_release(r);
+}
+
+/*
+ * Configure the switch's own MAC addresses used when routing packets
+ */
+static void rtl839x_setup_port_macs(struct rtl838x_switch_priv *priv)
+{
+	int i;
+	struct net_device *dev;
+	u64 mac;
+
+	pr_debug("%s: got port %08x\n", __func__, (u32)priv->ports[priv->cpu_port].dp);
+	dev = priv->ports[priv->cpu_port].dp->slave;
+	mac = ether_addr_to_u64(dev->dev_addr);
+
+	for (i = 0; i < 15; i++) {
+		mac++;  // BUG: VRRP for testing
+		sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + i * 8);
+		sw_w32(mac, RTL839X_ROUTING_SA_CTRL + i * 8 + 4);
+	}
+}
+
+int rtl839x_l3_setup(struct rtl838x_switch_priv *priv)
+{
+	rtl839x_setup_port_macs(priv);
+
+	return 0;
+}
+
 const struct rtl838x_reg rtl839x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -1672,8 +1737,8 @@ const struct rtl838x_reg rtl839x_reg = {
 	.write_l2_entry_using_hash = rtl839x_write_l2_entry_using_hash,
 	.read_cam = rtl839x_read_cam,
 	.write_cam = rtl839x_write_cam,
-	.vlan_port_egr_filter = RTL839X_VLAN_PORT_EGR_FLTR(0),
-	.vlan_port_igr_filter = RTL839X_VLAN_PORT_IGR_FLTR(0),
+	.vlan_port_egr_filter = RTL839X_VLAN_PORT_EGR_FLTR,
+	.vlan_port_igr_filter = RTL839X_VLAN_PORT_IGR_FLTR,
 	.vlan_port_pb = RTL839X_VLAN_PORT_PB_VLAN,
 	.vlan_port_tag_sts_ctrl = RTL839X_VLAN_PORT_TAG_STS_CTRL,
 	.trk_mbr_ctr = rtl839x_trk_mbr_ctr,
@@ -1694,4 +1759,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.l2_learning_setup = rtl839x_l2_learning_setup,
 	.packet_cntr_read = rtl839x_packet_cntr_read,
 	.packet_cntr_clear = rtl839x_packet_cntr_clear,
+	.route_read = rtl839x_route_read,
+	.route_write = rtl839x_route_write,
+	.l3_setup = rtl839x_l3_setup,
 };
