@@ -211,7 +211,7 @@ void rtl9300_sds_rst(int sds_num, u32 mode)
 		       0x02A4, 0x02A4, 0x0198, 0x0198 };
 	u8  lsb[]  = { 0, 6, 12, 18, 0, 6, 12, 18, 0, 6, 0, 6};
 
-	pr_info("SerDes: %s %d\n", __func__, mode);
+	pr_info("%s %d\n", __func__, mode);
 	if (sds_num < 0 || sds_num > 11) {
 		pr_err("Wrong SerDes number: %d\n", sds_num);
 		return;
@@ -223,7 +223,7 @@ void rtl9300_sds_rst(int sds_num, u32 mode)
 	sw_w32_mask(0x1f << lsb[sds_num], mode << lsb[sds_num], regs[sds_num]);
 	mdelay(10);
 
-	pr_info("SDS: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n",
+	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
 		sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
 }
 
@@ -276,7 +276,7 @@ int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg)
 	int i;
 	u32 cmd = phy_addr << 2 | page << 7 | phy_reg << 13 | 1;
 
-	pr_info("%s: phy_addr %d, phy_reg: %d\n", __func__, phy_addr, phy_reg);
+	pr_debug("%s: phy_addr %d, phy_reg: %d\n", __func__, phy_addr, phy_reg);
 	sw_w32(cmd, RTL930X_SDS_INDACS_CMD);
 
 	for (i = 0; i < 100; i++) {
@@ -288,7 +288,7 @@ int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg)
 	if (i >= 100)
 		return -EIO;
 
-	pr_info("%s: returning %04x\n", __func__, sw_r32(RTL930X_SDS_INDACS_DATA) & 0xffff);
+	pr_debug("%s: returning %04x\n", __func__, sw_r32(RTL930X_SDS_INDACS_DATA) & 0xffff);
 	return sw_r32(RTL930X_SDS_INDACS_DATA) & 0xffff;
 }
 
@@ -508,7 +508,7 @@ static int rtl8226_config_aneg(struct phy_device *phydev)
 	u32 v;
 	int port = phydev->mdio.addr;
 
-	pr_info("In %s\n", __func__);
+	pr_debug("In %s\n", __func__);
 	if (phydev->autoneg == AUTONEG_ENABLE) {
 		ret = rtl8226_advertise_aneg(phydev);
 		if (ret)
@@ -532,11 +532,9 @@ static int rtl8226_config_aneg(struct phy_device *phydev)
 		ret = write_mmd_phy(port, MMD_VEND2, 0xA400, v);
 	}
 
-	pr_info("%s: Ret is already: %d\n", __func__, ret);
 //	TODO: ret = __genphy_config_aneg(phydev, ret);
 
 out:
-	pr_info("%s: And ret is now: %d\n", __func__, ret);
 	return ret;
 }
 
@@ -1727,7 +1725,7 @@ static int rtl8218d_phy_probe(struct phy_device *phydev)
 	struct rtl838x_phy_priv *priv;
 	int addr = phydev->mdio.addr;
 
-	pr_info("%s: id: %d\n", __func__, addr);
+	pr_debug("%s: id: %d\n", __func__, addr);
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
