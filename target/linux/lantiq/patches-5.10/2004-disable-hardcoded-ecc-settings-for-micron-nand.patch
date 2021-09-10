@@ -1,20 +1,27 @@
 --- a/drivers/mtd/nand/raw/xway_nand.c
 +++ b/drivers/mtd/nand/raw/xway_nand.c
-@@ -10,6 +10,7 @@
- #include <linux/of_platform.h>
- 
- #include <lantiq_soc.h>
-+#include "internals.h"
- 
- /* nand registers */
- #define EBU_ADDSEL1		0x24
-@@ -148,7 +149,8 @@
+@@ -148,9 +148,8 @@
  
  static int xway_attach_chip(struct nand_chip *chip)
  {
 -	chip->ecc.engine_type = NAND_ECC_ENGINE_TYPE_SOFT;
-+	if (chip->manufacturer.desc->id != NAND_MFR_MICRON)
-+		chip->ecc.engine_type = NAND_ECC_ENGINE_TYPE_SOFT;
- 
- 	if (chip->ecc.algo == NAND_ECC_ALGO_UNKNOWN)
+-
+-	if (chip->ecc.algo == NAND_ECC_ALGO_UNKNOWN)
++	if (chip->ecc.engine_type == NAND_ECC_ENGINE_TYPE_SOFT &&
++	    chip->ecc.algo == NAND_ECC_ALGO_UNKNOWN)
  		chip->ecc.algo = NAND_ECC_ALGO_HAMMING;
+ 
+ 	return 0;
+--- a/drivers/mtd/nand/raw/nand_micron.c
++++ b/drivers/mtd/nand/raw/nand_micron.c
+@@ -508,6 +508,10 @@
+ 		goto err_free_manuf_data;
+ 	}
+ 
++	if (ondie == MICRON_ON_DIE_SUPPORTED) {
++		chip->ecc.engine_type = NAND_ECC_ENGINE_TYPE_ON_DIE;
++	}
++
+ 	if (chip->ecc.engine_type == NAND_ECC_ENGINE_TYPE_ON_DIE) {
+ 		if (ondie == MICRON_ON_DIE_UNSUPPORTED) {
+ 			pr_err("On-die ECC selected but not supported\n");
