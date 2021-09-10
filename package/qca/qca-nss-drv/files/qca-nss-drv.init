@@ -54,7 +54,9 @@ start() {
 
 		local board=$(board_name)
 		case "$board" in
-			zyxel,nbg6817 | netgear,r7800)
+			askey,rt4230w-rev6 |\
+			zyxel,nbg6817 |\
+			netgear,r7800)
 				echo 800000000 > /proc/sys/dev/nss/clock/current_freq
 				;;
 		esac
