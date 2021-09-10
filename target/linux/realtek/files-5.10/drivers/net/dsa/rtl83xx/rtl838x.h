@@ -66,29 +66,28 @@
 #define RTL838X_VLAN_PROFILE(idx)		(0x3A88 + ((idx) << 2))
 #define RTL838X_VLAN_PORT_EGR_FLTR		(0x3A84)
 #define RTL838X_VLAN_PORT_PB_VLAN		(0x3C00)
-#define RTL838X_VLAN_PORT_IGR_FLTR(port)	(0x3A7C + (((port >> 4) << 2)))
-#define RTL838X_VLAN_PORT_IGR_FLTR_0		(0x3A7C)
-#define RTL838X_VLAN_PORT_IGR_FLTR_1		(0x3A7C + 4)
+#define RTL838X_VLAN_PORT_IGR_FLTR		(0x3A7C)
 #define RTL838X_VLAN_PORT_TAG_STS_CTRL		(0xA530)
 
 #define RTL839X_VLAN_PROFILE(idx)		(0x25C0 + (((idx) << 3)))
 #define RTL839X_VLAN_CTRL			(0x26D4)
 #define RTL839X_VLAN_PORT_PB_VLAN		(0x26D8)
-#define RTL839X_VLAN_PORT_IGR_FLTR(port)	(0x27B4 + (((port >> 4) << 2)))
-#define RTL839X_VLAN_PORT_EGR_FLTR(port)	(0x27C4 + (((port >> 5) << 2)))
+#define RTL839X_VLAN_PORT_IGR_FLTR		(0x27B4)
+#define RTL839X_VLAN_PORT_EGR_FLTR		(0x27C4)
+#define RTL839X_VLAN_PORT_TAG_STS_CTRL		(0x6828)
 #define RTL839X_VLAN_PORT_TAG_STS_CTRL		(0x6828)
 
 #define RTL930X_VLAN_PROFILE_SET(idx)		(0x9c60 + (((idx) * 20)))
 #define RTL930X_VLAN_CTRL			(0x82D4)
 #define RTL930X_VLAN_PORT_PB_VLAN		(0x82D8)
-#define RTL930X_VLAN_PORT_IGR_FLTR(port)	(0x83C0 + (((port >> 4) << 2)))
+#define RTL930X_VLAN_PORT_IGR_FLTR		(0x83C0)
 #define RTL930X_VLAN_PORT_EGR_FLTR		(0x83C8)
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL		(0xCE24)
 
 #define RTL931X_VLAN_PROFILE_SET(idx)		(0x9800 + (((idx) * 28)))
 #define RTL931X_VLAN_CTRL			(0x94E4)
-#define RTL931X_VLAN_PORT_IGR_FLTR(port)	(0x96B4 + (((port >> 4) << 2)))
-#define RTL931X_VLAN_PORT_EGR_FLTR(port)	(0x96C4 + (((port >> 5) << 2)))
+#define RTL931X_VLAN_PORT_IGR_FLTR		(0x96B4)
+#define RTL931X_VLAN_PORT_EGR_FLTR		(0x96C4)
 #define RTL931X_VLAN_PORT_TAG_CTRL		(0x4860)
 
 /* Table access registers */
@@ -379,6 +378,35 @@
 #define PIE_ACT_ROUTE_UC	6
 #define PIE_ACT_VID_ASSIGN	0
 
+// L3 actions
+#define L3_FORWARD		0
+#define L3_DROP			1
+#define L3_TRAP2CPU		2
+#define L3_COPY2CPU		3
+#define L3_TRAP2MASTERCPU	4
+#define L3_COPY2MASTERCPU	5
+#define L3_HARDDROP		6
+
+// Route actions
+#define ROUTE_ACT_FORWARD	0
+#define ROUTE_ACT_TRAP2CPU	1
+#define ROUTE_ACT_COPY2CPU	2
+#define ROUTE_ACT_DROP		3
+
+/* L3 Routing */
+#define RTL839X_ROUTING_SA_CTRL 		0x6afc
+#define RTL930X_L3_HOST_TBL_CTRL		(0xAB48)
+#define RTL930X_L3_IPUC_ROUTE_CTRL		(0xAB4C)
+#define RTL930X_L3_IP6UC_ROUTE_CTRL		(0xAB50)
+#define RTL930X_L3_IPMC_ROUTE_CTRL		(0xAB54)
+#define RTL930X_L3_IP6MC_ROUTE_CTRL		(0xAB58)
+#define RTL930X_L3_IP_MTU_CTRL(i)		(0xAB5C + ((i >> 1) << 2))
+#define RTL930X_L3_IP6_MTU_CTRL(i)		(0xAB6C + ((i >> 1) << 2))
+#define RTL930X_L3_HW_LU_KEY_CTRL		(0xAC9C)
+#define RTL930X_L3_HW_LU_KEY_IP_CTRL		(0xACA0)
+#define RTL930X_L3_HW_LU_CTRL			(0xACC0)
+#define RTL930X_L3_IP_ROUTE_CTRL		0xab44
+
 #define MAX_VLANS 4096
 #define MAX_LAGS 16
 #define MAX_PRIOS 8
@@ -389,6 +417,14 @@
 #define MAX_PIE_ENTRIES (18 * PIE_BLOCK_SIZE)
 #define N_FIXED_FIELDS 12
 #define MAX_COUNTERS 2048
+#define MAX_ROUTES 512
+#define MAX_HOST_ROUTES 1536
+#define MAX_INTF_MTUS 8
+#define DEFAULT_MTU 1536
+#define MAX_INTERFACES 100
+#define MAX_ROUTER_MACS 64
+#define L3_EGRESS_DMACS 2048
+#define MAX_SMACS 64
 
 enum phy_type {
 	PHY_NONE = 0,
@@ -614,17 +650,52 @@ struct pie_rule {
 	bool bypass_ibc_sc;	// Bypass Ingress Bandwidth Control and Storm Control
 };
 
-struct rtl838x_nexthop {
-	u16 id;		// ID in HW Nexthop table
-	u32 ip;		// IP Addres of nexthop
+struct rtl838x_l3_intf {
+	u16 vid;
+	u8 smac_idx;
+	u8 ip4_mtu_id;
+	u8 ip6_mtu_id;
+	u16 ip4_mtu;
+	u16 ip6_mtu;
+	u8 ttl_scope;
+	u8 hl_scope;
+	u8 ip4_icmp_redirect;
+	u8 ip6_icmp_redirect;
+	u8 ip4_pbr_icmp_redirect;
+	u8 ip6_pbr_icmp_redirect;
+};
+
+/*
+ * An entry in the RTL93XX SoC's ROUTER_MAC tables setting up a termination point
+ * for the L3 routing system. Packets arriving and matching an entry in this table
+ * will be considered for routing.
+ * Mask fields state whether the corresponding data fields matter for matching
+ */
+struct rtl93xx_rt_mac {
+	bool valid;	// Valid or not
+	bool p_type;	// Individual (0) or trunk (1) port
+	bool p_mask;	// Whether the port type is used
+	u8 p_id;
+	u8 p_id_mask;	// Mask for the port
+	u8 action;	// Routing action performed: 0: FORWARD, 1: DROP, 2: TRAP2CPU
+			//   3: COPY2CPU, 4: TRAP2MASTERCPU, 5: COPY2MASTERCPU, 6: HARDDROP
+	u16 vid;
+	u16 vid_mask;
+	u64 mac;	// MAC address used as source MAC in the routed packet
+	u64 mac_mask;
+};
+
+struct rtl83xx_nexthop {
+	u16 id;		// ID: L3_NEXT_HOP table-index or route-index set in L2_NEXT_HOP
 	u32 dev_id;
 	u16 port;
-	u16 vid;
-	u16 fid;
-	u64 mac;
+	u16 vid;	// VLAN-ID for L2 table entry (saved from L2-UC entry)
+	u16 rvid;	// Relay VID/FID for the L2 table entry
+	u64 mac;	// The MAC address of the entry in the L2_NEXT_HOP table
 	u16 mac_id;
 	u16 l2_id;	// Index of this next hop forwarding entry in L2 FIB table
-	u16 if_id;
+	u64 gw;		// The gateway MAC address packets are forwarded to
+	int if_id;	// Interface (into L3_EGR_INTF_IDX)
 };
 
 struct rtl838x_switch_priv;
@@ -636,6 +707,32 @@ struct rtl83xx_flow {
 	struct rtl838x_switch_priv *priv;
 	struct pie_rule rule;
 	u32 flags;
+};
+
+struct rtl93xx_route_attr {
+	bool valid;
+	bool hit;
+	bool ttl_dec;
+	bool ttl_check;
+	bool dst_null;
+	bool qos_as;
+	u8 qos_prio;
+	u8 type;
+	u8 action;
+};
+
+struct rtl83xx_route {
+	u32 gw_ip;			// IP of the route's gateway
+	u32 dst_ip;			// IP of the destination net
+	struct in6_addr dst_ip6;
+	int prefix_len;			// Network prefix len of the destination net
+	bool is_host_route;
+	int id;				// ID number of this route
+	struct rhlist_head linkage;
+	u16 switch_mac_id;		// Index into switch's own MACs, RTL839X only
+	struct rtl83xx_nexthop nh;
+	struct pie_rule pr;
+	struct rtl93xx_route_attr attr;
 };
 
 struct rtl838x_reg {
@@ -713,6 +810,19 @@ struct rtl838x_reg {
 	void (*l2_learning_setup)(void);
 	u32 (*packet_cntr_read)(int counter);
 	void (*packet_cntr_clear)(int counter);
+	void (*route_read)(int idx, struct rtl83xx_route *rt);
+	void (*route_write)(int idx, struct rtl83xx_route *rt);
+	void (*host_route_write)(int idx, struct rtl83xx_route *rt);
+	int (*l3_setup)(struct rtl838x_switch_priv *priv);
+	void (*set_l3_nexthop)(int idx, u16 dmac_id, u16 interface);
+	void (*get_l3_nexthop)(int idx, u16 *dmac_id, u16 *interface);
+	u64 (*get_l3_egress_mac)(u32 idx);
+	void (*set_l3_egress_mac)(u32 idx, u64 mac);
+	int (*find_l3_slot)(struct rtl83xx_route *rt, bool must_exist);
+	int (*route_lookup_hw)(struct rtl83xx_route *rt);
+	void (*get_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
+	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
+	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
 };
 
 struct rtl838x_switch_priv {
@@ -740,7 +850,9 @@ struct rtl838x_switch_priv {
 	int n_lags;
 	u64 lags_port_members[MAX_LAGS];
 	struct net_device *lag_devs[MAX_LAGS];
-	struct notifier_block nb;
+	struct notifier_block nb;  // TODO: change to different name
+	struct notifier_block ne_nb;
+	struct notifier_block fib_nb;
 	bool eee_enabled;
 	unsigned long int mc_group_bm[MAX_MC_GROUPS >> 5];
 	int n_pie_blocks;
@@ -749,8 +861,15 @@ struct rtl838x_switch_priv {
 	int n_counters;
 	unsigned long int octet_cntr_use_bm[MAX_COUNTERS >> 5];
 	unsigned long int packet_cntr_use_bm[MAX_COUNTERS >> 4];
+	struct rhltable routes;
+	unsigned long int route_use_bm[MAX_ROUTES >> 5];
+	unsigned long int host_route_use_bm[MAX_HOST_ROUTES >> 5];
+	struct rtl838x_l3_intf *interfaces[MAX_INTERFACES];
+	u16 intf_mtus[MAX_INTF_MTUS];
+	int intf_mtu_count[MAX_INTF_MTUS];
 };
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
+void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
 
 #endif /* _RTL838X_H */
