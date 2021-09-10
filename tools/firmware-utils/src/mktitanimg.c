@@ -139,7 +139,7 @@ int main(int argc, char* argv[], char* env[])
 	cmdline_err = cmdline_read(argc, argv);
 
 	/* Check for parsing errors. */
-	if(cmdline_err != 0) {
+	if (cmdline_err != 0) {
 		/* Get the parse error message */
 		cmdline_error_msg = cmdline_error(cmdline_err);
 
@@ -150,8 +150,8 @@ int main(int argc, char* argv[], char* env[])
 		print_help();
 		return -1;
 	}
-	if(cmdline_getopt_count('h') > 0)
-	{
+	if (cmdline_getopt_count('h') > 0)
+	{ 
 		header_version=atoi(argv[cmdline_getarg(cmdline_getarg_list('h'),0)]);
 	}
 	/* Set up arguments */
@@ -188,7 +188,7 @@ int main(int argc, char* argv[], char* env[])
 
 	/* Open the out file */
 	nsp_image = fopen(filen_out,"wb+");
-	if(nsp_image==NULL) {
+	if (nsp_image==NULL) {
 		printf("ERROR: can't open %s for writing.\n", filen_out);
 		return -1;
 	}
@@ -203,21 +203,21 @@ int main(int argc, char* argv[], char* env[])
 		int	padding;
 		char * buf;
 		align = (header_version==1?0x10000:0x4000);
-		if(align==0) {
+		if (align==0) {
 			/* The user indicated no padding */
 			padding = 0;
 		} else {
 			/* Calculate number padding bytes */
-			if((total %align) ==0)
+			if ((total %align) ==0)
 				padding=0;
 			else
 				padding = align - (total % align);
 		}
-		if(padding>0)
+		if (padding>0)
 		{
 			buf=malloc(padding);
 			memset(buf, 0xff, padding);
-			if(fwrite((void*)buf,1,padding,nsp_image)!=padding) {
+			if (fwrite((void*)buf,1,padding,nsp_image)!=padding) {
 				printf("ERROR: can't write to %s.\n", filen_out);
 				free(buf);
 				fclose(nsp_image);
@@ -231,7 +231,7 @@ int main(int argc, char* argv[], char* env[])
 
 	}
 	/* Write out all specified images (with -i option) */
-	for(i=0; i < num_sects; i++) {
+	for (i=0; i < num_sects; i++) {
 		char*	file_name;		/* input file name */
 		FILE*	filep;			/* input file pointer */
 		int	padding;		/* number of padding bytes to prepend */
@@ -242,7 +242,7 @@ int main(int argc, char* argv[], char* env[])
 		/* Open the specified image for reading */
 		file_name	= argv[cmdline_getarg(cmdline_getarg_list('i'),i)];
 		filep		= fopen(file_name, "rb");
-		if(filep==NULL) {
+		if (filep==NULL) {
 			printf("ERROR: can't open file %s for reading.\n", file_name);
 			return -1;
 		}
@@ -269,18 +269,18 @@ int main(int argc, char* argv[], char* env[])
 		
 		/* HACK: This is a hack to get the names and types to the files.
 			TODO: Fix this to be a real method */
-		if(i==0){
+		if (i==0){
 			section->type=NSP_IMG_SECTION_TYPE_KERNEL;
 			strncpy(section->name, "kernel", 16);
-		} else if(i==1){
+		} else if (i==1){
 			section->type=NSP_IMG_SECTION_TYPE_FILESYSTEM_ROOT;
 			strncpy(section->name, "root", 16);
 		}
 
 		/* Account for the total */
 		align	=  strtoul(argv[cmdline_getarg(cmdline_getarg_list('a'),i)],NULL,0);
-		if(i==0){
-			if(align==0 || (((section->raw_size+ section->offset)%align)==0))
+		if (i==0){
+			if (align==0 || (((section->raw_size+ section->offset)%align)==0))
 				padding=0;
 			else
 				padding = align - ((section->raw_size+ section->offset) % align);
@@ -300,13 +300,13 @@ int main(int argc, char* argv[], char* env[])
 			fwrite(buf, 1, EXTRA_BLOCK+4, nsp_image);
 			free(buf);
 			
-			if(align==0 || (((section->raw_size + (EXTRA_BLOCK + 4 + squash_padding)) %align)==0))
-				padding=0;
+			if (align==0 || (((section->raw_size + (EXTRA_BLOCK + 4 + squash_padding)) %align)==0))
+			 	padding=0;
 			else
 				padding = align - ((section->raw_size + (EXTRA_BLOCK + 4 + squash_padding)) % align);
 			section->total_size=section->raw_size + (EXTRA_BLOCK + 4 + squash_padding) + padding;
 		}
-		if(padding>0){
+		if (padding>0){
 			buf=malloc(padding);
 			memset(buf, 0xff, padding);
 			fwrite(buf, 1, padding, nsp_image);
@@ -331,10 +331,10 @@ int main(int argc, char* argv[], char* env[])
 	img_hdr_head->boot_offset	= img_hdr_sections->offset;
 	img_hdr_head->flags		= ~0x00;			/* Set to all 1's */
 
-	if(cmdline_getopt_count('b'))
+	if (cmdline_getopt_count('b'))
 		img_hdr_head->flags	&= ~(NSP_IMG_FLAG_FAILBACK_5 | NSP_IMG_FLAG_FAILBACK_1);
 
-	if(cmdline_getopt_count('f'))
+	if (cmdline_getopt_count('f'))
 		img_hdr_head->flags	= strtoul(argv[cmdline_getarg(cmdline_getarg_list('f'),0)], 0, 16);
 
 #if 0
@@ -342,17 +342,17 @@ int main(int argc, char* argv[], char* env[])
 	img_hdr_head->hdr_size	= header_size;
 #endif
 
-	if(cmdline_getopt_count('p'))
+	if (cmdline_getopt_count('p'))
 		img_hdr_head->prod_id		= strtoul(argv[cmdline_getarg(cmdline_getarg_list('p'),0)], 0, 16);
 	else
 		img_hdr_head->prod_id		= 0x4C575943;
 
-	if(cmdline_getopt_count('r'))
+	if (cmdline_getopt_count('r'))
 		img_hdr_head->rel_id		= strtoul(argv[cmdline_getarg(cmdline_getarg_list('r'),0)], 0, 0);
 	else
 		img_hdr_head->rel_id		= 0x10203040;
 
-	if(cmdline_getopt_count('s'))
+	if (cmdline_getopt_count('s'))
 		img_hdr_head->version		= strtoul(argv[cmdline_getarg(cmdline_getarg_list('s'),0)], 0, 0);
 	else
 		img_hdr_head->version		= 0x0b040000;
@@ -386,13 +386,13 @@ int main(int argc, char* argv[], char* env[])
 	/* Write out the NSP header. */
 	fseek(nsp_image,0,SEEK_SET);
 	count = fwrite((void*)img_hdr_head, header_size, 1, nsp_image);
-	if(count!=1) {
+	if (count!=1) {
 		printf("ERROR: can't write to %s.\n", filen_out);
 		return -1;
 	}
 
 	/* Check if -v option was specified (no arg needed) */
-	if(cmdline_getopt_count('v') > 0)
+	if (cmdline_getopt_count('v') > 0)
 	{
 		struct nsp_img_hdr_head	head;
 		struct nsp_img_hdr	*hdr;
@@ -519,7 +519,7 @@ int cs_is_tagged(FILE *fp)
 
 	fseek(fp, -8, SEEK_END);
 	fread(buf, 8, 1, fp);
-	if(*(unsigned long*)buf == CKSUM_MAGIC_NUMBER)
+	if (*(unsigned long*)buf == CKSUM_MAGIC_NUMBER)
 		return 1;
 	return 0;
 }
@@ -542,25 +542,25 @@ int cs_calc_sum(FILE *fp, unsigned long *res, int tagged)
 
 	fseek(fp, 0, SEEK_SET);
 
-	while((bytes_read = fread(buf, 1, BUFLEN, fp)) > 0)
+	while ((bytes_read = fread(buf, 1, BUFLEN, fp)) > 0)
 	{
 		unsigned char *cp = buf;
 
-		if(length + bytes_read < length)
+		if (length + bytes_read < length)
 			return 0;
 
-		if(bytes_read != BUFLEN && tagged)
+		if (bytes_read != BUFLEN && tagged)
 			bytes_read -= 8;
 
 		length += bytes_read;
-		while(bytes_read--)
+		while (bytes_read--)
 			crc =(crc << 8) ^ crctab[((crc >> 24) ^ *cp++) & 0xFF];
 	}
 
-	if(ferror(fp))
+	if (ferror(fp))
 		return 0;
 
-	for(; length; length >>= 8)
+	for (; length; length >>= 8)
 		crc =(crc << 8) ^ crctab[((crc >> 24) ^ length) & 0xFF];
 
 	crc = ~crc & 0xFFFFFFFF;
@@ -576,10 +576,10 @@ unsigned long cs_calc_buf_sum(char *buf, int size)
 	char *cp = buf;
 	unsigned long length = size;
 
-	while(size--)
+	while (size--)
 		crc =(crc << 8) ^ crctab[((crc >> 24) ^ *cp++) & 0xFF];
 
-	for(; length; length >>= 8)
+	for (; length; length >>= 8)
 		crc =(crc << 8) ^ crctab[((crc >> 24) ^ length) & 0xFF];
 
 	crc = ~crc & 0xFFFFFFFF;
@@ -593,15 +593,15 @@ unsigned long cs_calc_buf_sum_ds(char *buf, int buf_size, char *sign, int sign_l
 	char *cp = buf;
 	unsigned long length = buf_size+sign_len;
 
-	while(buf_size--)
+	while (buf_size--)
 		crc =(crc << 8) ^ crctab[((crc >> 24) ^ *cp++) & 0xFF];
 
 	cp = sign;
-	while(sign_len--)
+	while (sign_len--)
 		crc =(crc << 8) ^ crctab[((crc >> 24) ^ *cp++) & 0xFF];
 
 
-	for(; length; length >>= 8)
+	for (; length; length >>= 8)
 		crc =(crc << 8) ^ crctab[((crc >> 24) ^ length) & 0xFF];
 
 	crc = ~crc & 0xFFFFFFFF;
@@ -613,14 +613,14 @@ int cs_set_sum(FILE *fp, unsigned long sum, int tagged)
 {
 	unsigned long magic = CKSUM_MAGIC_NUMBER;
 
-	if(tagged)
+	if (tagged)
 		fseek(fp, -8, SEEK_END);
 	else
 		fseek(fp, 0, SEEK_END);
 
-	if(fwrite(&magic, 1, 4, fp) < 4)
+	if (fwrite(&magic, 1, 4, fp) < 4)
 		return 0;
-	if(fwrite(&sum, 1, 4, fp) < 4)
+	if (fwrite(&sum, 1, 4, fp) < 4)
 		return 0;
 
 	return 1;
@@ -641,15 +641,15 @@ int cs_validate_file(char *filename)
 	FILE *pFile = NULL;
 	unsigned long sum = 0, res = 0;
 
-	if((pFile = fopen(filename, "r")) == NULL)
+	if ((pFile = fopen(filename, "r")) == NULL)
 		return 0;
 
-	if(!cs_is_tagged(pFile))
+	if (!cs_is_tagged(pFile))
 	{
 		fclose(pFile);
 		return 0;
 	}
-	if(!cs_calc_sum(pFile, &sum, 1))
+	if (!cs_calc_sum(pFile, &sum, 1))
 	{
 		fclose(pFile);
 		return 0;
@@ -657,7 +657,7 @@ int cs_validate_file(char *filename)
 	cs_get_sum(pFile, &res);
 	fclose(pFile);
 
-	if(sum != res)
+	if (sum != res)
 		return 0;
 	return 1;
 }
@@ -715,7 +715,7 @@ void* cmdline_getarg_list(char opt)
 	int index = (opt - 'a');
 
 	/* Check the validity of the index */
-	if((index < 0) || (index > 25))
+	if ((index < 0) || (index > 25))
 	{
 		/* ERROR: Wrong option */
 		return NULL;
@@ -745,7 +745,7 @@ int cmdline_getopt_count(char opt)
 
 	/* Calculate index value */
 	index = opt - 'a';
-	if(index < 0 || index > 25) return -1;
+	if (index < 0 || index > 25) return -1;
 
 	/* Return number of arguments for this option */
 	return(cmdline_data.opt_args[index].optc);
@@ -761,10 +761,10 @@ int cmdline_getarg(void* list, int num)
 	CMDLINE_ARG*	p_arg;
 
 	/* Search the 'num' argument in the list for this option */
-	for(i=0,p_arg=p_args->list; (p_arg!=NULL) && (i<p_args->argc); i++, p_arg=p_arg->p_next)
+	for (i=0,p_arg=p_args->list; (p_arg!=NULL) && (i<p_args->argc); i++, p_arg=p_arg->p_next)
 	{
 		/* if num matches i, we found it */
-		if(i==num) return(p_arg->index);
+		if (i==num) return(p_arg->index);
 	}
 	/* We did not find the specified argument or the list was empty */
 	return -1;
@@ -776,8 +776,8 @@ int cmdline_getarg(void* list, int num)
 int cmdline_configure(CMDLINE_CFG* p_cfg)
 {
 	/* reset global data */
-	memset(&cmdline_cfg,0,sizeof(cmdline_cfg));
-	memset(&cmdline_data,0,sizeof(cmdline_data));
+	memset(&cmdline_cfg, 0, sizeof(cmdline_cfg));
+	memset(&cmdline_data, 0, sizeof(cmdline_data));
 
 	/* Copy the user's config structure */
 	cmdline_cfg = *p_cfg;
@@ -803,11 +803,11 @@ static void cmdline_print_args(CMDLINE_ARGS* p_arglist, char* argv[])
 	printf("   Number of times option was specified: %d\n", p_arglist->optc);
 	printf("   Number of Arguments:                  %d\n", p_arglist->argc);
 
-	if(p_arglist->argc > 0)
+	if (p_arglist->argc > 0)
 	{
 		printf("   Argument List: ");
 
-		for(p_arg=p_arglist->list; p_arg != NULL; p_arg=p_arg->p_next)
+		for (p_arg=p_arglist->list; p_arg != NULL; p_arg=p_arg->p_next)
 			printf("%s ", argv[p_arg->index]);
 	}
 
@@ -822,17 +822,17 @@ void cmdline_print(char* argv[])
 	int i;
 
 	/* Check if the command line was parsed */
-	if(cmdline_data.parsed != CMDLINE_TRUE)
+	if (cmdline_data.parsed != CMDLINE_TRUE)
 	{
 		printf("The command line has not been parsed yet.\n");
 		return;
 	}
 
 	/* Print out option arguments */
-	for( i = 0; i < 26; i++ )
+	for ( i = 0; i < 26; i++ )
 	{
 		/* Check if the option was specified */
-		if(cmdline_data.opt_args[i].optc !=0 )
+		if (cmdline_data.opt_args[i].optc !=0 )
 		{
 			/* Print out option name and arguments */
 			printf("Option: -%c\n", (char)('a'+i));
@@ -859,7 +859,7 @@ static void cmdline_argadd(CMDLINE_ARGS* p_arglist, CMDLINE_ARG* p_arg)
 	CMDLINE_ARG*	p_prev=NULL;
 
 	/* See if we had anything in the list */
-	if(p_arglist->argc == 0)
+	if (p_arglist->argc == 0)
 	{
 		/* Link the argument in */
 		p_arglist->list = p_arg;
@@ -867,7 +867,7 @@ static void cmdline_argadd(CMDLINE_ARGS* p_arglist, CMDLINE_ARG* p_arg)
 	else
 	{
 		/* Find the tail of the list */
-		for(p_list=p_arglist->list; p_list != NULL; p_list=p_list->p_next)
+		for (p_list=p_arglist->list; p_list != NULL; p_list=p_list->p_next)
 			p_prev = p_list;
 
 		/* Link the argument in */
@@ -887,20 +887,20 @@ int cmdline_read(int argc, char* argv[])
 	int i, option=0;
 
 	/* Process every command line argument in argv[] array */
-	for( i = 1; i < argc; i++ )
+	for ( i = 1; i < argc; i++ )
 	{
 		/* Does the argument start with a dash? */
-		if( *argv[i] == '-' )
+		if ( *argv[i] == '-' )
 		{
 			/* The argument must be two characters: a dash, and a letter */
-			if( strlen(argv[i]) != 2 )
+			if ( strlen(argv[i]) != 2 )
 			{
 				/* ERROR: option syntax (needs to be a dash and one letter) */
 				return(CMDLINE_ERR_ERROR);
 			}
 
 			/* Check validity of the option key ('a' through 'z') */
-			if( ((*(argv[i] + 1)) < 'a') || ((*(argv[i] + 1)) > 'z') )
+			if ( ((*(argv[i] + 1)) < 'a') || ((*(argv[i] + 1)) > 'z') )
 			{
 				/* ERROR: option sysntax (invalid option key) */
 				return(CMDLINE_ERR_INVKEY);
@@ -908,10 +908,10 @@ int cmdline_read(int argc, char* argv[])
 
 			/* Calculate the option index */
 			option = (*(argv[i] + 1)) - 'a';
-			if((option < 0) || (option > 25)) return(CMDLINE_ERR_INVKEY);
+			if ((option < 0) || (option > 25) ) return(CMDLINE_ERR_INVKEY);
 
 			/* Check to see if the option is allowed */
-			if( cmdline_cfg.opts[option].flags & CMDLINE_OPTFLAG_ALLOW )
+			if ( cmdline_cfg.opts[option].flags & CMDLINE_OPTFLAG_ALLOW )
 			{
 				/* Option allowed. */
 				cmdline_data.opt_args[option].optc++;
@@ -930,7 +930,7 @@ int cmdline_read(int argc, char* argv[])
 
 			/* Allocate space for the argument node */
 			p_arg = (CMDLINE_ARG*)calloc(1,sizeof(CMDLINE_ARG));
-			if( p_arg== NULL )
+			if ( p_arg== NULL )
 			{
 				/* ERROR: Can't allocate memory for the argument index */
 				return(CMDLINE_ERR_NOMEM);
@@ -941,7 +941,7 @@ int cmdline_read(int argc, char* argv[])
 			p_arg->p_next	= NULL;
 
 			/* Check if we can add to the list of arguments for this option */
-			if( (option < 0)																/* Do we have to add to the global list? */
+			if ((option < 0)																/* Do we have to add to the global list? */
 				|| (cmdline_data.opt_args[option].argc == cmdline_cfg.opts[option].max)		/* Did we reach MAX arguments? */
 				)
 			{
@@ -952,7 +952,7 @@ int cmdline_read(int argc, char* argv[])
 			else
 			{
 				/* See if the current count has reached max for this option */
-				if( cmdline_data.opt_args[option].argc == cmdline_cfg.opts[option].max )
+				if (cmdline_data.opt_args[option].argc == cmdline_cfg.opts[option].max)
 				{
 					/* ERROR: too many arguments for an option */
 					return(CMDLINE_ERR_MANYARG);
@@ -970,16 +970,16 @@ int cmdline_read(int argc, char* argv[])
 	/* ****** We read the complete command line. See if what we collected matches the configuration ******* */
 
 	/* Check every collected option against its configuration */
-	for( i=0; i < 26; i++ )
+	for ( i=0; i < 26; i++ )
 	{
 		/* Check if this option was allowed */
-		if(cmdline_cfg.opts[i].flags & CMDLINE_OPTFLAG_ALLOW)
+		if (cmdline_cfg.opts[i].flags & CMDLINE_OPTFLAG_ALLOW)
 		{
 			/* See if it was mandatory */
-			if(cmdline_cfg.opts[i].flags & CMDLINE_OPTFLAG_MANDAT)
+			if (cmdline_cfg.opts[i].flags & CMDLINE_OPTFLAG_MANDAT)
 			{
 				/* Check if we really collected this option on the command line. */
-				if(cmdline_data.opt_args[i].optc == 0)
+				if (cmdline_data.opt_args[i].optc == 0)
 				{
 					/* ERROR: a missing mandatory option */
 					return(CMDLINE_ERR_OPTMIS);
@@ -987,7 +987,7 @@ int cmdline_read(int argc, char* argv[])
 				else
 				{
 					/* Option was there. Check how many args we got for it. */
-					if(cmdline_data.opt_args[i].argc < cmdline_cfg.opts[i].min)
+					if (cmdline_data.opt_args[i].argc < cmdline_cfg.opts[i].min)
 					{
 						/* ERROR: too few arguments for an option */
 						return(CMDLINE_ERR_FEWARG);
@@ -1002,7 +1002,7 @@ int cmdline_read(int argc, char* argv[])
 			else	/* This is non-mandatory option: */
 			{
 				/* Check if the option was specified on the command line */
-				if(cmdline_data.opt_args[i].optc == 0)
+				if ( cmdline_data.opt_args[i].optc == 0 )
 				{
 					/* option wasn't specified, go to the next */
 					continue;
@@ -1010,7 +1010,7 @@ int cmdline_read(int argc, char* argv[])
 				else
 				{
 					/* Option was there. Check how many args we collected for it. */
-					if(cmdline_data.opt_args[i].argc < cmdline_cfg.opts[i].min)
+					if ( cmdline_data.opt_args[i].argc < cmdline_cfg.opts[i].min )
 					{
 						/* ERROR: too few arguments for a non-mandatory option */
 						return(CMDLINE_ERR_FEWARG);
