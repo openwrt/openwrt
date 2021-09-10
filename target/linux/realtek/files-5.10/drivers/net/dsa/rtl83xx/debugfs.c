@@ -40,7 +40,11 @@
 #define RTL839X_MIR_RSPAN_TX_CTRL		(0x69b0)
 #define RTL839X_MIR_RSPAN_TX_TAG_RM_CTRL	(0x2550)
 #define RTL839X_MIR_RSPAN_TX_TAG_EN_CTRL	(0x2554)
-#define RTL839X_MIR_SAMPLE_RATE_CTRL                (0x2558)
+#define RTL839X_MIR_SAMPLE_RATE_CTRL		(0x2558)
+
+#define RTL838X_STAT_PRVTE_DROP_COUNTERS	(0x6A00)
+#define RTL839X_STAT_PRVTE_DROP_COUNTERS	(0x3E00)
+#define RTL930X_STAT_PRVTE_DROP_COUNTERS	(0xB5B8)
 
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
 void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
@@ -49,6 +53,58 @@ u32 rtl838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
 int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
+
+
+const char *rtl838x_drop_cntr[] = {
+    "ALE_TX_GOOD_PKTS", "MAC_RX_DROP", "ACL_FWD_DROP", "HW_ATTACK_PREVENTION_DROP",
+    "RMA_DROP", "VLAN_IGR_FLTR_DROP", "INNER_OUTER_CFI_EQUAL_1_DROP", "PORT_MOVE_DROP",
+    "NEW_SA_DROP", "MAC_LIMIT_SYS_DROP", "MAC_LIMIT_VLAN_DROP", "MAC_LIMIT_PORT_DROP",
+    "SWITCH_MAC_DROP", "ROUTING_EXCEPTION_DROP", "DA_LKMISS_DROP", "RSPAN_DROP",
+    "ACL_LKMISS_DROP", "ACL_DROP", "INBW_DROP", "IGR_METER_DROP",
+    "ACCEPT_FRAME_TYPE_DROP", "STP_IGR_DROP", "INVALID_SA_DROP", "SA_BLOCKING_DROP",
+    "DA_BLOCKING_DROP", "L2_INVALID_DPM_DROP", "MCST_INVALID_DPM_DROP", "RX_FLOW_CONTROL_DROP",
+    "STORM_SPPRS_DROP", "LALS_DROP", "VLAN_EGR_FILTER_DROP", "STP_EGR_DROP",
+    "SRC_PORT_FILTER_DROP", "PORT_ISOLATION_DROP", "ACL_FLTR_DROP", "MIRROR_FLTR_DROP",
+    "TX_MAX_DROP", "LINK_DOWN_DROP", "FLOW_CONTROL_DROP", "BRIDGE .1d discards"
+};
+
+const char *rtl839x_drop_cntr[] = {
+    "ALE_TX_GOOD_PKTS", "ERROR_PKTS", "EGR_ACL_DROP", "EGR_METER_DROP",
+    "OAM", "CFM" "VLAN_IGR_FLTR", "VLAN_ERR",
+    "INNER_OUTER_CFI_EQUAL_1", "VLAN_TAG_FORMAT", "SRC_PORT_SPENDING_TREE", "INBW",
+    "RMA", "HW_ATTACK_PREVENTION", "PROTO_STORM", "MCAST_SA",
+    "IGR_ACL_DROP", "IGR_METER_DROP", "DFLT_ACTION_FOR_MISS_ACL_AND_C2SC", "NEW_SA",
+    "PORT_MOVE", "SA_BLOCKING", "ROUTING_EXCEPTION", "SRC_PORT_SPENDING_TREE_NON_FWDING",
+    "MAC_LIMIT", "UNKNOW_STORM", "MISS_DROP", "CPU_MAC_DROP",
+    "DA_BLOCKING", "SRC_PORT_FILTER_BEFORE_EGR_ACL", "VLAN_EGR_FILTER", "SPANNING_TRE",
+    "PORT_ISOLATION", "OAM_EGRESS_DROP", "MIRROR_ISOLATION", "MAX_LEN_BEFORE_EGR_ACL",
+    "SRC_PORT_FILTER_BEFORE_MIRROR", "MAX_LEN_BEFORE_MIRROR", "SPECIAL_CONGEST_BEFORE_MIRROR",
+    "LINK_STATUS_BEFORE_MIRROR",
+    "WRED_BEFORE_MIRROR", "MAX_LEN_AFTER_MIRROR", "SPECIAL_CONGEST_AFTER_MIRROR",
+    "LINK_STATUS_AFTER_MIRROR",
+    "WRED_AFTER_MIRROR"
+};
+
+const char *rtl930x_drop_cntr[] = {
+	"OAM_PARSER", "UC_RPF", "DEI_CFI", "MAC_IP_SUBNET_BASED_VLAN", "VLAN_IGR_FILTER",
+	"L2_UC_MC", "IPV_IP6_MC_BRIDGE", "PTP", "USER_DEF_0_3", "RESERVED",
+	"RESERVED1", "RESERVED2", "BPDU_RMA", "LACP", "LLDP",
+	"EAPOL", "XX_RMA", "L3_IPUC_NON_IP", "IP4_IP6_HEADER_ERROR", "L3_BAD_IP",
+	"L3_DIP_DMAC_MISMATCH", "IP4_IP_OPTION", "IP_UC_MC_ROUTING_LOOK_UP_MISS", "L3_DST_NULL_INTF",
+	"L3_PBR_NULL_INTF",
+	"HOST_NULL_INTF", "ROUTE_NULL_INTF", "BRIDGING_ACTION", "ROUTING_ACTION", "IPMC_RPF",
+	"L2_NEXTHOP_AGE_OUT", "L3_UC_TTL_FAIL", "L3_MC_TTL_FAIL", "L3_UC_MTU_FAIL", "L3_MC_MTU_FAIL",
+	"L3_UC_ICMP_REDIR", "IP6_MLD_OTHER_ACT", "ND", "IP_MC_RESERVED", "IP6_HBH",
+	"INVALID_SA", "L2_HASH_FULL", "NEW_SA", "PORT_MOVE_FORBID", "STATIC_PORT_MOVING",
+	"DYNMIC_PORT_MOVING", "L3_CRC", "MAC_LIMIT", "ATTACK_PREVENT", "ACL_FWD_ACTION",
+	"OAMPDU", "OAM_MUX", "TRUNK_FILTER", "ACL_DROP", "IGR_BW",
+	"ACL_METER", "VLAN_ACCEPT_FRAME_TYPE", "MSTP_SRC_DROP_DISABLED_BLOCKING", "SA_BLOCK", "DA_BLOCK",
+	"STORM_CONTROL", "VLAN_EGR_FILTER", "MSTP_DESTINATION_DROP", "SRC_PORT_FILTER", "PORT_ISOLATION",
+	"TX_MAX_FRAME_SIZE", "EGR_LINK_STATUS", "MAC_TX_DISABLE", "MAC_PAUSE_FRAME", "MAC_RX_DROP",
+	"MIRROR_ISOLATE", "RX_FC", "EGR_QUEUE", "HSM_RUNOUT", "ROUTING_DISABLE", "INVALID_L2_NEXTHOP_ENTRY",
+	"L3_MC_SRC_FLT", "CPUTAG_FLT", "FWD_PMSK_NULL", "IPUC_ROUTING_LOOKUP_MISS", "MY_DEV_DROP",
+	"STACK_NONUC_BLOCKING_PMSK", "STACK_PORT_NOT_FOUND", "ACL_LOOPBACK_DROP", "IP6_ROUTING_EXT_HEADER"
+};
 
 static ssize_t rtl838x_common_read(char __user *buffer, size_t count,
 					loff_t *ppos, unsigned int value)
@@ -132,6 +188,61 @@ static const struct file_operations stp_state_fops = {
 	.open = simple_open,
 	.read = stp_state_read,
 	.write = stp_state_write,
+};
+
+static ssize_t drop_counter_read(struct file *filp, char __user *buffer, size_t count,
+			     loff_t *ppos)
+{
+	struct rtl838x_switch_priv *priv = filp->private_data;
+	int i;
+	const char **d;
+	u32 v;
+	char *buf;
+	int n = 0, len, offset;
+	int num;
+
+	switch (priv->family_id) {
+	case RTL8380_FAMILY_ID:
+		d = rtl838x_drop_cntr;
+		offset = RTL838X_STAT_PRVTE_DROP_COUNTERS;
+		num = 40;
+		break;
+	case RTL8390_FAMILY_ID:
+		d = rtl839x_drop_cntr;
+		offset = RTL839X_STAT_PRVTE_DROP_COUNTERS;
+		num = 45;
+		break;
+	case RTL9300_FAMILY_ID:
+		d = rtl930x_drop_cntr;
+		offset = RTL930X_STAT_PRVTE_DROP_COUNTERS;
+		num = 85;
+		break;
+	}
+
+	buf = kmalloc(30 * num, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	for (i = 0; i < num; i++) {
+		v = sw_r32(offset + (i << 2)) & 0xffff;
+		n += sprintf(buf + n, "%s: %d\n", d[i], v);
+	}
+
+	if (count < strlen(buf)) {
+		kfree(buf);
+		return -ENOSPC;
+	}
+
+	len = simple_read_from_buffer(buffer, count, ppos, buf, strlen(buf));
+	kfree(buf);
+
+	return len;
+}
+
+static const struct file_operations drop_counter_fops = {
+	.owner = THIS_MODULE,
+	.open = simple_open,
+	.read = drop_counter_read,
 };
 
 static ssize_t age_out_read(struct file *filp, char __user *buffer, size_t count,
@@ -470,7 +581,23 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	if (ret)
 		goto err;
 
+	debugfs_create_file("drop_counters", 0400, rtl838x_dir, priv, &drop_counter_fops);
+
 	return;
 err:
 	rtl838x_dbgfs_cleanup(priv);
+}
+
+void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
+{
+	struct dentry *dbg_dir;
+
+	pr_info("%s called\n", __func__);
+	dbg_dir = debugfs_lookup(RTL838X_DRIVER_NAME, NULL);
+	if (!dbg_dir)
+		dbg_dir = debugfs_create_dir(RTL838X_DRIVER_NAME, NULL);
+
+	priv->dbgfs_dir = dbg_dir;
+
+	debugfs_create_file("drop_counters", 0400, dbg_dir, priv, &drop_counter_fops);
 }

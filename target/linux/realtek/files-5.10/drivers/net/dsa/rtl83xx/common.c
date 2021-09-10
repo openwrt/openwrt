@@ -1570,6 +1570,8 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		sw_w32(7, priv->r->spcl_trap_eapol_ctrl);
 
 		rtl838x_dbgfs_init(priv);
+	} else {
+		rtl930x_dbgfs_init(priv);
 	}
 
 	return 0;
