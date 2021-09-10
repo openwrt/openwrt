@@ -63,18 +63,39 @@ enum partition_trail_value {
 	PART_TRAIL_NONE = 0x100
 };
 
+/** soft-version value overwrite types
+ * The default (for an uninitialised soft_ver field) is to use the numerical
+ * version number "0.0.0"
+ */
+enum soft_ver_type {
+	SOFT_VER_TYPE_NUMERIC = 0,
+	SOFT_VER_TYPE_TEXT = 1,
+};
+
 /** Firmware layout description */
 struct device_info {
 	const char *id;
 	const char *vendor;
 	const char *support_list;
 	enum partition_trail_value part_trail;
-	const char *soft_ver;
+	struct {
+		enum soft_ver_type type;
+		union {
+			const char *text;
+			uint8_t num[3];
+		};
+	} soft_ver;
 	uint32_t soft_ver_compat_level;
 	struct flash_partition_entry partitions[MAX_PARTITIONS+1];
 	const char *first_sysupgrade_partition;
 	const char *last_sysupgrade_partition;
 };
+
+#define SOFT_VER_TEXT(_t) {.type = SOFT_VER_TYPE_TEXT, .text = _t}
+#define SOFT_VER_NUMERIC(_maj, _min, _patch) {  \
+		.type = SOFT_VER_TYPE_NUMERIC,          \
+		.num = {_maj, _min, _patch}}
+#define SOFT_VER_DEFAULT SOFT_VER_NUMERIC(0, 0, 0)
 
 struct __attribute__((__packed__)) meta_header {
 	uint32_t length;
@@ -129,7 +150,7 @@ static struct device_info boards[] = {
 			"CPE220(TP-LINK|US|N300-2):1.1\r\n"
 			"CPE220(TP-LINK|EU|N300-2):1.1\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -168,7 +189,7 @@ static struct device_info boards[] = {
 			"CPE210(TP-LINK|EU|N300-2):2.0\r\n"
 			"CPE210(TP-LINK|US|N300-2):2.0\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -210,7 +231,7 @@ static struct device_info boards[] = {
 			"CPE210(TP-LINK|UN|N300-2|00000000):3.20\r\n"
 			"CPE210(TP-LINK|US|N300-2|55530000):3.20\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -251,7 +272,7 @@ static struct device_info boards[] = {
 			"CPE220(TP-LINK|EU|N300-2):2.0\r\n"
 			"CPE220(TP-LINK|US|N300-2):2.0\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -290,7 +311,7 @@ static struct device_info boards[] = {
 			"CPE220(TP-LINK|EU|N300-2):3.0\r\n"
 			"CPE220(TP-LINK|US|N300-2):3.0\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -329,7 +350,7 @@ static struct device_info boards[] = {
 			"CPE520(TP-LINK|US|N300-5):1.1\r\n"
 			"CPE520(TP-LINK|EU|N300-5):1.1\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -370,7 +391,7 @@ static struct device_info boards[] = {
 			"CPE510(TP-LINK|EU|N300-5):2.0\r\n"
 			"CPE510(TP-LINK|US|N300-5):2.0\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -414,7 +435,7 @@ static struct device_info boards[] = {
 			"CPE510(TP-LINK|US|N300-5|55530000):3.20\r\n"
 			"CPE510(TP-LINK|EU|N300-5|45550000):3.20\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -453,7 +474,7 @@ static struct device_info boards[] = {
 			"CPE610(TP-LINK|EU|N300-5):1.0\r\n"
 			"CPE610(TP-LINK|US|N300-5):1.0\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -492,7 +513,7 @@ static struct device_info boards[] = {
 			"CPE610(TP-LINK|EU|N300-5):2.0\r\n"
 			"CPE610(TP-LINK|US|N300-5):2.0\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -523,7 +544,7 @@ static struct device_info boards[] = {
 			"WBS210(TP-LINK|US|N300-2):1.20\r\n"
 			"WBS210(TP-LINK|EU|N300-2):1.20\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -554,7 +575,7 @@ static struct device_info boards[] = {
 			"WBS210(TP-LINK|US|N300-2|55530000):2.0\r\n"
 			"WBS210(TP-LINK|EU|N300-2|45550000):2.0\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -586,7 +607,7 @@ static struct device_info boards[] = {
 			"WBS510(TP-LINK|EU|N300-5):1.20\r\n"
 			"WBS510(TP-LINK|CA|N300-5):1.20\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -618,7 +639,7 @@ static struct device_info boards[] = {
 			"WBS510(TP-LINK|EU|N300-5|45550000):2.0\r\n"
 			"WBS510(TP-LINK|CA|N300-5|43410000):2.0\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -648,7 +669,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"{product_name:AD7200,product_ver:1.0.0,special_id:00000000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"SBL1", 0x00000, 0x20000},
@@ -692,7 +713,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"{product_name:Archer C2600,product_ver:1.0.0,special_id:00000000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/**
 		    We use a bigger os-image partition than the stock images (and thus
@@ -744,7 +765,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer A7,product_ver:5.0.0,special_id:54570000}\n"
 			"{product_name:Archer A7,product_ver:5.0.0,special_id:52550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.0\n"),
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -782,7 +803,7 @@ static struct device_info boards[] = {
 			"{product_name:ArcherC2,product_ver:3.0.0,special_id:55530000}\n"
 			"{product_name:ArcherC2,product_ver:3.0.0,special_id:45550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:3.0.1\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:3.0.1\n"),
 
 		/** We're using a dynamic kernel/rootfs split here */
 
@@ -820,7 +841,7 @@ static struct device_info boards[] = {
 			"{product_name:ArcherC25,product_ver:1.0.0,special_id:55530000}\n"
 			"{product_name:ArcherC25,product_ver:1.0.0,special_id:45550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.0\n"),
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -859,7 +880,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C58,product_ver:1.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C58,product_ver:1.0.0,special_id:55530000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.0\n"),
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x10000},
@@ -894,7 +915,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:52550000}\r\n"
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:55530000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.0\n"),
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -932,7 +953,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C59,product_ver:2.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C59,product_ver:2.0.0,special_id:55530000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:2.0.0 Build 20161206 rel.7303\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:2.0.0 Build 20161206 rel.7303\n"),
 
 		/** We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -972,7 +993,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:52550000}\r\n"
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:4A500000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.9.1\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.9.1\n"),
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -1007,7 +1028,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer A6,product_ver:2.0.0,special_id:54570000}\n"
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:55530000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.9.1\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.9.1\n"),
 
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
@@ -1043,7 +1064,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C6,product_ver:3.20,special_id:4A500000}"
 			"{product_name:Archer C6,product_ver:3.20,special_id:4B520000}",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.9\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.9\n"),
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x40000},
@@ -1082,7 +1103,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer A6,product_ver:3.0.0,special_id:55530000}\n"
 			"{product_name:Archer A6,product_ver:3.0.0,special_id:54570000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.5\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.5\n"),
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x40000},
@@ -1119,7 +1140,7 @@ static struct device_info boards[] = {
 			"SupportList:\n"
 			"{product_name:Archer C6U,product_ver:1.0.0,special_id:45550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.2\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.2\n"),
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x40000},
@@ -1155,7 +1176,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:55530000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.0\n"),
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x10000},
@@ -1189,7 +1210,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C60,product_ver:2.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C60,product_ver:2.0.0,special_id:55530000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:2.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:2.0.0\n"),
 
 		.partitions = {
 			{"factory-boot", 0x00000, 0x1fb00},
@@ -1225,7 +1246,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C60,product_ver:3.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C60,product_ver:3.0.0,special_id:55530000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:3.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:3.0.0\n"),
 
 		.partitions = {
 			{"factory-boot", 0x00000, 0x1fb00},
@@ -1261,7 +1282,7 @@ static struct device_info boards[] = {
 			"{product_name:ArcherC5,product_ver:2.0.0,special_id:55530000}\r\n"
 			"{product_name:ArcherC5,product_ver:2.0.0,special_id:4A500000}\r\n", /* JP version */
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x40000},
@@ -1302,7 +1323,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C7,product_ver:4.0.0,special_id:55530000}\n"
 			"{product_name:Archer C7,product_ver:4.0.0,special_id:43410000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.0\n"),
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -1347,7 +1368,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C7,product_ver:5.0.0,special_id:4B520000}\n",
 
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:7.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:7.0.0\n"),
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -1390,7 +1411,7 @@ static struct device_info boards[] = {
 			"product_ver:1.0.0,"
 			"special_id:00000000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x40000},
@@ -1423,7 +1444,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"EAP120(TP-LINK|UN|N300-2):1.0\r\n",
 		.part_trail = 0xff,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -1452,7 +1473,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"EAP225-Outdoor(TP-Link|UN|AC1200-D):1.0\r\n",
 		.part_trail = PART_TRAIL_NONE,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 		.soft_ver_compat_level = 1,
 
 		.partitions = {
@@ -1481,7 +1502,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"EAP225(TP-Link|UN|AC1350-D):3.0\r\n",
 		.part_trail = PART_TRAIL_NONE,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 		.soft_ver_compat_level = 1,
 
 		.partitions = {
@@ -1510,7 +1531,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"EAP225-Wall(TP-Link|UN|AC1200-D):2.0\r\n",
 		.part_trail = PART_TRAIL_NONE,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 		.soft_ver_compat_level = 1,
 
 		.partitions = {
@@ -1539,7 +1560,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"EAP235-Wall(TP-Link|UN|AC1200-D):1.0\r\n",
 		.part_trail = PART_TRAIL_NONE,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 		.soft_ver_compat_level = 1,
 
 		.partitions = {
@@ -1568,7 +1589,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"EAP245(TP-LINK|UN|AC1750-D):1.0\r\n",
 		.part_trail = PART_TRAIL_NONE,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -1594,7 +1615,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"EAP245(TP-Link|UN|AC1750-D):3.0\r\n",
 		.part_trail = PART_TRAIL_NONE,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 		.soft_ver_compat_level = 1,
 
 		/** Firmware partition with dynamic kernel/rootfs split */
@@ -1628,7 +1649,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WA1201,product_ver:2.0.0,special_id:45550000}\n"
 			"{product_name:TL-WA1201,product_ver:2.0.0,special_id:55530000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.1 Build 20200709 rel.66244\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.1 Build 20200709 rel.66244\n"),
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -1678,7 +1699,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WA850RE,product_ver:2.0.0,special_id:41550000}\n"
 			"{product_name:TL-WA850RE,product_ver:2.0.0,special_id:52550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/**
 		   576KB were moved from file-system to os-image
@@ -1720,7 +1741,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:41550000}\n"
 			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:52550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -1751,7 +1772,7 @@ static struct device_info boards[] = {
 			"SupportList:\n"
 			"{product_name:TL-WPA8630P,product_ver:2.0.0,special_id:45550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"factory-uboot", 0x00000, 0x20000},
@@ -1788,7 +1809,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WPA8630P,product_ver:2.0.0,special_id:44450000}\n"
 			"{product_name:TL-WPA8630P,product_ver:2.1.0,special_id:41550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"factory-uboot", 0x00000, 0x20000},
@@ -1823,7 +1844,7 @@ static struct device_info boards[] = {
 			"SupportList:\n"
 			"{product_name:TL-WPA8630P,product_ver:2.1.0,special_id:45550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"factory-uboot", 0x00000, 0x20000},
@@ -1859,7 +1880,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WR1043N,product_ver:5.0.0,special_id:45550000}\n"
 			"{product_name:TL-WR1043N,product_ver:5.0.0,special_id:55530000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.0.0\n"),
 		.partitions = {
 			{"factory-boot", 0x00000, 0x20000},
 			{"fs-uboot", 0x20000, 0x20000},
@@ -1893,7 +1914,7 @@ static struct device_info boards[] = {
 			"SupportList:\n"
 			"{product_name:TL-WR1043ND,product_ver:4.0.0,special_id:45550000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -1926,7 +1947,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WR902AC,product_ver:1.0.0,special_id:45550000}\n"
 			"{product_name:TL-WR902AC,product_ver:1.0.0,special_id:55530000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/**
 		   384KB were moved from file-system to os-image
@@ -1961,7 +1982,7 @@ static struct device_info boards[] = {
 			"SupportList:\n"
 			"{product_name:TL-WR941HP,product_ver:1.0.0,special_id:00000000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -1993,7 +2014,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WR942N,product_ver:1.0.0,special_id:00000000}\r\n"
 			"{product_name:TL-WR942N,product_ver:1.0.0,special_id:52550000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -2040,7 +2061,7 @@ static struct device_info boards[] = {
 			"{product_name:RE200,product_ver:2.0.0,special_id:54570000}\n"
 			"{product_name:RE200,product_ver:2.0.0,special_id:55530000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -2084,7 +2105,7 @@ static struct device_info boards[] = {
 			"{product_name:RE200,product_ver:3.0.0,special_id:54570000}\n"
 			"{product_name:RE200,product_ver:3.0.0,special_id:55530000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -2128,7 +2149,7 @@ static struct device_info boards[] = {
 			"{product_name:RE200,product_ver:4.0.0,special_id:49440000}\n"
 			"{product_name:RE200,product_ver:4.0.0,special_id:45470000}\n",
 		.part_trail = 0x00,
-		.soft_ver = "soft_ver:1.1.0\n",
+		.soft_ver = SOFT_VER_TEXT("soft_ver:1.1.0\n"),
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -2171,7 +2192,7 @@ static struct device_info boards[] = {
 			"{product_name:RE220,product_ver:2.0.0,special_id:54570000}\n"
 			"{product_name:RE220,product_ver:2.0.0,special_id:55530000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -2208,7 +2229,7 @@ static struct device_info boards[] = {
 			"{product_name:RE305,product_ver:1.0.0,special_id:41550000}\n"
 			"{product_name:RE305,product_ver:1.0.0,special_id:43410000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -2244,7 +2265,7 @@ static struct device_info boards[] = {
 			"{product_name:RE350,product_ver:1.0.0,special_id:4b520000}\n"
 			"{product_name:RE350,product_ver:1.0.0,special_id:4a500000}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/** We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -2275,7 +2296,7 @@ static struct device_info boards[] = {
 			"SupportList:\n"
 			"{product_name:RE350K,product_ver:1.0.0,special_id:00000000,product_region:US}\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/** We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -2314,7 +2335,7 @@ static struct device_info boards[] = {
 			"{product_name:RE355,product_ver:1.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE355,product_ver:1.0.0,special_id:55534100}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -2352,7 +2373,7 @@ static struct device_info boards[] = {
 			"{product_name:RE450,product_ver:1.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE450,product_ver:1.0.0,special_id:55534100}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/** We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -2391,7 +2412,7 @@ static struct device_info boards[] = {
 			"{product_name:RE450,product_ver:2.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE450,product_ver:2.0.0,special_id:42520000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -2430,7 +2451,7 @@ static struct device_info boards[] = {
 			"{product_name:RE450,product_ver:3.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE450,product_ver:3.0.0,special_id:42520000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -2470,7 +2491,7 @@ static struct device_info boards[] = {
 			"{product_name:RE455,product_ver:1.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE455,product_ver:1.0.0,special_id:42520000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -2508,7 +2529,7 @@ static struct device_info boards[] = {
 			"{product_name:RE500,product_ver:1.0.0,special_id:41550000}\r\n"
 			"{product_name:RE500,product_ver:1.0.0,special_id:41530000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -2545,7 +2566,7 @@ static struct device_info boards[] = {
 			"{product_name:RE650,product_ver:1.0.0,special_id:41550000}\r\n"
 			"{product_name:RE650,product_ver:1.0.0,special_id:41530000}\r\n",
 		.part_trail = 0x00,
-		.soft_ver = NULL,
+		.soft_ver = SOFT_VER_DEFAULT,
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {
@@ -2696,10 +2717,10 @@ static struct image_partition_entry make_soft_version(
 {
 	/** If an info string is provided, use this instead of
 	 * the structured data, and include the null-termination */
-	if (info->soft_ver) {
-		uint32_t len = strlen(info->soft_ver) + 1;
+	if (info->soft_ver.type == SOFT_VER_TYPE_TEXT) {
+		uint32_t len = strlen(info->soft_ver.text) + 1;
 		return init_meta_partition_entry("soft-version",
-			info->soft_ver, len, info->part_trail);
+			info->soft_ver.text, len, info->part_trail);
 	}
 
 	time_t t;
@@ -2714,9 +2735,9 @@ static struct image_partition_entry make_soft_version(
 	struct soft_version s = {
 		.pad1 = 0xff,
 
-		.version_major = 0,
-		.version_minor = 0,
-		.version_patch = 0,
+		.version_major = info->soft_ver.num[0],
+		.version_minor = info->soft_ver.num[1],
+		.version_patch = info->soft_ver.num[2],
 
 		.year_hi = bcd((1900+tm->tm_year)/100),
 		.year_lo = bcd(tm->tm_year%100),
