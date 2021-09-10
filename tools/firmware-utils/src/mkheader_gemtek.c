@@ -115,14 +115,14 @@ main(int argc, char *argv[])
 	}
 
 	if (argc == 4) {
-		for(index = 0; mach_def[index].id != 0; index++) {
-			if(strcmp(mach_def[index].id, argv[3]) == 0) {
+		for (index = 0; mach_def[index].id != 0; index++) {
+			if (strcmp(mach_def[index].id, argv[3]) == 0) {
 				image_type = index;
 				break;
 			}
 		}
 
-		if(image_type == -1) {
+		if (image_type == -1) {
 			fprintf(stderr, "\nERROR: invalid machine type\n");
 			exit(-1);
 		}
@@ -132,7 +132,7 @@ main(int argc, char *argv[])
 	printf("Opening %s...\n", argv[1]);
 
 	f = fopen(argv[1], "r");
-	if(!f) {
+	if (!f) {
 		fprintf(stderr, "\nERROR: couldn't open input image\n");
 		exit(-1);
 	}
@@ -180,7 +180,7 @@ main(int argc, char *argv[])
 	printf("  Writing...\n");
 
 	f_out = fopen(argv[2], "w");
-	if(!f_out) {
+	if (!f_out) {
 		fprintf(stderr, "\nERROR: couldn't open output image\n");
 		exit(-1);
 	}
