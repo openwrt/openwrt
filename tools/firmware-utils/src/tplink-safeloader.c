@@ -1560,7 +1560,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"EAP235-Wall(TP-Link|UN|AC1200-D):1.0\r\n",
 		.part_trail = PART_TRAIL_NONE,
-		.soft_ver = SOFT_VER_DEFAULT,
+		.soft_ver = SOFT_VER_NUMERIC(3, 0, 0),
 		.soft_ver_compat_level = 1,
 
 		.partitions = {
