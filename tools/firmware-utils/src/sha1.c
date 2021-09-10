@@ -230,7 +230,7 @@ void sha1_update( sha1_context *ctx, void *data, uint length )
     uchar *input = data;
     ulong left, fill;
 
-    if( ! length ) return;
+    if ( ! length ) return;
 
     left = ctx->total[0] & 0x3F;
     fill = 64 - left;
@@ -238,10 +238,10 @@ void sha1_update( sha1_context *ctx, void *data, uint length )
     ctx->total[0] += length;
     ctx->total[0] &= 0xFFFFFFFF;
 
-    if( ctx->total[0] < length )
+    if ( ctx->total[0] < length )
         ctx->total[1]++;
 
-    if( left && length >= fill )
+    if ( left && length >= fill )
     {
         memcpy( (void *) (ctx->buffer + left),
                 (void *) input, fill );
@@ -251,14 +251,14 @@ void sha1_update( sha1_context *ctx, void *data, uint length )
         left = 0;
     }
 
-    while( length >= 64 )
+    while ( length >= 64 )
     {
         sha1_process( ctx, input );
         length -= 64;
         input  += 64;
     }
 
-    if( length )
+    if ( length )
     {
         memcpy( (void *) (ctx->buffer + left),
                 (void *) input, length );
@@ -309,7 +309,7 @@ int sha1_file( char *filename, uchar digest[20] )
     sha1_context ctx;
     uchar buf[1024];
 
-    if( ( f = fopen( filename, "rb" ) ) == NULL )
+    if ( ( f = fopen( filename, "rb" ) ) == NULL )
         return( 1 );
 
     sha1_starts( &ctx );
@@ -352,7 +352,7 @@ void sha1_hmac( uchar *key, uint keylen, uchar *buf, uint buflen,
 
     for( i = 0; i < keylen; i++ )
     {
-        if( i >= 64 ) break;
+        if ( i >= 64 ) break;
 
         k_ipad[i] ^= key[i];
         k_opad[i] ^= key[i];
@@ -405,13 +405,13 @@ int sha1_self_test( void )
     uchar sha1sum[20];
     sha1_context ctx;
 
-    for( i = 0; i < 3; i++ )
+    for ( i = 0; i < 3; i++ )
     {
         printf( "  SHA-1 test #%d: ", i + 1 );
 
         sha1_starts( &ctx );
 
-        if( i < 2 )
+        if ( i < 2 )
             sha1_update( &ctx, (uchar *) sha1_test_str[i],
                          strlen( sha1_test_str[i] ) );
         else
@@ -423,7 +423,7 @@ int sha1_self_test( void )
 
         sha1_finish( &ctx, sha1sum );
 
-        if( memcmp( sha1sum, sha1_test_sum[i], 20 ) != 0 )
+        if ( memcmp( sha1sum, sha1_test_sum[i], 20 ) != 0 )
         {
             printf( "failed\n" );
             return( 1 );
