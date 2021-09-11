@@ -32,7 +32,8 @@ define Package/umbim/description
 endef
 
 TARGET_CFLAGS += \
-	-I$(STAGING_DIR)/usr/include -ffunction-sections -fdata-sections
+	-I$(STAGING_DIR)/usr/include -ffunction-sections -fdata-sections \
+	-Wno-error=address-of-packed-member
 
 TARGET_LDFLAGS += -Wl,--gc-sections
 
