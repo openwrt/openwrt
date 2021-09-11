@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=automake
 PKG_CPE_ID:=cpe:/a:gnu:automake
-PKG_VERSION:=1.15.1
+PKG_VERSION:=1.16.4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/automake
-PKG_HASH:=af6ba39142220687c500f79b4aa2f181d9b24e4f8d8ec497cea4ba26c64bedaf
+PKG_HASH:=80facc09885a57e6d49d06972c0ae1089c5fa8f4d4c7cfe5baea58e5085f136d
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -41,6 +41,7 @@ define Host/Install
 	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.11
 	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.11.6
 	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.15
+	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.16
 endef
 
 define Host/Clean
