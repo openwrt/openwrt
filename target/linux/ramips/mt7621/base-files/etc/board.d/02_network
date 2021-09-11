@@ -138,6 +138,10 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "qtn" ifname "eth1" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.0"
 		;;
+	xiaomi,mi-router-cr660x)
+		ucidef_add_switch "switch0" \
+			"0:lan:1" "1:lan:2" "2:lan:3" "4:wan" "6@eth0"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
@@ -288,6 +292,10 @@ ramips_setup_macs()
 		;;
 	yuncore,ax820)
 		label_mac=$(mtd_get_mac_binary Factory 0x4)
+		;;
+	xiaomi,mi-router-cr660x)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(mtd_get_mac_binary factory 0x3fff4)
 		;;
 	esac
 

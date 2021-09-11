@@ -2575,7 +2575,7 @@ define Device/xiaomi_mi-router-ac2100
 endef
 TARGET_DEVICES += xiaomi_mi-router-ac2100
 
-define Device/xiaomi_mi-router-cr660x
+define Device/xiaomi_mi-router-cr660x-default
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := Xiaomi
@@ -2592,22 +2592,34 @@ define Device/xiaomi_mi-router-cr660x
 endef
 
 define Device/xiaomi_mi-router-cr6606
-  $(Device/xiaomi_mi-router-cr660x)
+  $(Device/xiaomi_mi-router-cr660x-default)
   DEVICE_MODEL := Mi Router CR6606
 endef
 TARGET_DEVICES += xiaomi_mi-router-cr6606
 
 define Device/xiaomi_mi-router-cr6608
-  $(Device/xiaomi_mi-router-cr660x)
+  $(Device/xiaomi_mi-router-cr660x-default)
   DEVICE_MODEL := Mi Router CR6608
 endef
 TARGET_DEVICES += xiaomi_mi-router-cr6608
 
 define Device/xiaomi_mi-router-cr6609
-  $(Device/xiaomi_mi-router-cr660x)
+  $(Device/xiaomi_mi-router-cr660x-default)
   DEVICE_MODEL := Mi Router CR6609
 endef
 TARGET_DEVICES += xiaomi_mi-router-cr6609
+
+define Device/xiaomi_mi-router-cr660x
+  $(Device/xiaomi_mi-router-cr660x-default)
+  DEVICE_COMPAT_VERSION := 1.0
+  DEVICE_COMPAT_MESSAGE := Config is compat with swconfig
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_MODEL := Mi Router CR660x
+  SUPPORTED_DEVICES += xiaomi,mi-router-cr6606 xiaomi,mi-router-cr6608 xiaomi,mi-router-cr6609
+endef
+TARGET_DEVICES += xiaomi_mi-router-cr660x
 
 define Device/xiaomi_redmi-router-ac2100
   $(Device/xiaomi_nand_separate)

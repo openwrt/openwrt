@@ -108,6 +108,7 @@ platform_do_upgrade() {
 	xiaomi,mi-router-cr6606|\
 	xiaomi,mi-router-cr6608|\
 	xiaomi,mi-router-cr6609|\
+	xiaomi,mi-router-cr660x|\
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		nand_do_upgrade "$1"

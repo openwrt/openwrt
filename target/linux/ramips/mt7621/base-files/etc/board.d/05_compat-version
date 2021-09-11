@@ -8,6 +8,9 @@
 board_config_update
 
 case "$(board_name)" in
+	xiaomi,mi-router-cr660x)
+		ucidef_set_compat_version "1.0"
+		;;
 	*)
 		ucidef_set_compat_version "1.1"
 		;;
