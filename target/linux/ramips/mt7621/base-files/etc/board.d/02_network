@@ -108,6 +108,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "2:lan:1" "3:lan:2" "4:lan:3" "6@eth0"
 		;;
+	xiaomi,mi-router-cr660x)
+		ucidef_add_switch "switch0" \
+			"0:lan:1" "1:lan:2" "2:lan:3" "4:wan" "6@eth0"
+		;;
 	xwrt,t-cpe1201k-v01)
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "6@eth0"
@@ -246,6 +250,10 @@ ramips_setup_macs()
 	xwrt,x-sdwan-1200)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 2)
+		;;
+	xiaomi,mi-router-cr660x)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(mtd_get_mac_binary factory 0x3fffa)
 		;;
 	esac
 
