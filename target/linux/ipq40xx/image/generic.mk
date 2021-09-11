@@ -419,6 +419,7 @@ define Device/engenius_emd1
 	IMAGES += factory.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
+	DEVICE_PACKAGES := ipq-wifi-engenius_emd1
 endef
 TARGET_DEVICES += engenius_emd1
 
