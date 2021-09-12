@@ -12,11 +12,26 @@
 		device_type = "memory";
 	};
 
+	reserved-memory {
+		ramoops@7ff80000 {
+			compatible = "ramoops";
+			reg = <0x7ff80000 0x40000>;
+			record-size = <0x4000>;
+			console-size = <0x4000>;
+			ftrace-size = <0x4000>;
+			pmsg-size = <0x4000>;
+		};
+	};
+
 	aliases {
 		led-boot = &ledctrl3;
 		led-failsafe = &ledctrl1;
 		led-running = &ledctrl2;
 		led-upgrade = &ledctrl3;
+	};
+
+	chosen {
+		bootargs = "mem=991M";
 	};
 
 	keys {
