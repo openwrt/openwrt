@@ -1,6 +1,6 @@
-From 193856b5fe11c50a0b6ff22457dd674c1a45fec6 Mon Sep 17 00:00:00 2001
+From b8afc254b40167fd37b4d4263e750dab1f9ef157 Mon Sep 17 00:00:00 2001
 From: John Crispin <john@phrozen.org>
-Date: Wed, 9 Sep 2020 18:31:03 +0200
+Date: Wed, 9 Sep 2020 18:38:31 +0200
 Subject: [PATCH] ARM: dts: qcom: ipq4019: add USB devicetree nodes
 
 Since we now have driver for the USB PHY, and USB controller is already supported by the DWC3 driver lets add the necessary nodes to DTSI.
@@ -9,13 +9,15 @@ Signed-off-by: John Crispin <john@phrozen.org>
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 Cc: Luka Perkov <luka.perkov@sartura.hr>
 Reviewed-by: Vinod Koul <vkoul@kernel.org>
+Link: https://lore.kernel.org/r/20200909163831.1894142-1-robert.marko@sartura.hr
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
 ---
  arch/arm/boot/dts/qcom-ipq4019.dtsi | 74 +++++++++++++++++++++++++++++
  1 file changed, 74 insertions(+)
 
 --- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-@@ -615,5 +615,79 @@
+@@ -605,5 +605,79 @@
  				reg = <4>;
  			};
  		};
