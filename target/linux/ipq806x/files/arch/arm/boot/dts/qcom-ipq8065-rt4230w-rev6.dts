@@ -19,10 +19,6 @@
 		led-upgrade = &ledctrl3;
 	};
 
-	chosen {
-		bootargs = "rootfstype=squashfs noinitrd";
-	};
-
 	keys {
 		compatible = "gpio-keys";
 		pinctrl-0 = <&button_pins>;
