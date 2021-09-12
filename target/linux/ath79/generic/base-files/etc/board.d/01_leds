@@ -145,8 +145,8 @@ comfast,cf-e314n-v2)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan0" "76" "100"
 	;;
 comfast,cf-e375ac)
-	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x04"
-	ucidef_set_led_switch "wan" "WAN" "red:wan" "switch0" "0x02"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
+	ucidef_set_led_netdev "wan" "WAN" "red:wan" "wan"
 	;;
 comfast,cf-e5)
 	ucidef_set_led_switch "lan" "LAN" "blue:lan" "switch0" "0x02"
@@ -204,7 +204,7 @@ dlink,dap-1365-a1)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan0" "76" "100"
 	;;
 dlink,dir-859-a1)
-	ucidef_set_led_switch "internet" "WAN" "green:internet" "switch0" "0x20"
+	ucidef_set_led_netdev "internet" "WAN" "green:internet" "wan"
 	;;
 engenius,ens202ext-v1|\
 engenius,enstationac-v1)
@@ -311,20 +311,14 @@ teltonika,rut230-v1)
 tplink,archer-a7-v5|\
 tplink,archer-c7-v4|\
 tplink,archer-c7-v5)
-	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x02"
-	ucidef_set_led_switch "lan1" "LAN1" "green:lan1" "switch0" "0x04"
-	ucidef_set_led_switch "lan2" "LAN2" "green:lan2" "switch0" "0x08"
-	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x10"
-	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x20"
-	;;
 tplink,archer-c2-v3|\
 tplink,tl-wr1043nd-v4|\
 tplink,tl-wr1043n-v5)
-	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x20"
-	ucidef_set_led_switch "lan1" "LAN1" "green:lan1" "switch0" "0x10"
-	ucidef_set_led_switch "lan2" "LAN2" "green:lan2" "switch0" "0x08"
-	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x04"
-	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x02"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN3" "green:lan3" "lan3"
+	ucidef_set_led_netdev "lan4" "LAN4" "green:lan4" "lan4"
 	;;
 tplink,archer-c6-v2|\
 tplink,archer-c6-v2-us)
@@ -458,7 +452,7 @@ wd,mynet-wifi-rangeextender)
 	ucidef_set_led_rssi "rssihigh" "RSSIMAX" "blue:rssi-max" "wlan0" "66" "100"
 	;;
 xiaomi,aiot-ac2350)
-	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x02"
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan"
 	;;
 yuncore,a770)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"

@@ -59,29 +59,112 @@
 
 	pll-data = <0x06000000 0x00000101 0x00001616>;
 
-	phy-mode = "rgmii";
-	phy-handle = <&phy0>;
-
 	gmac-config {
 		device = <&gmac>;
 		rgmii-gmac0 = <1>;
+	};
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
 	};
 };
 
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "rgmii";
+	switch0@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-		qca,ar8327-initvals = <
-			0x04 0x87a00000 /* PORT0 PAD Mode */
-			0x0c 0x01000000 /* PORT6 PAD Mode */
-			0x10 0x80000000 /* PWS_REG_VALUE */
-			0x7c 0x000000fe /* PORT0_STATUS */
-			0x94 0x000000fe /* PORT6_STATUS */
-		>;
+		reg = <0>;
+		qca,ignore-power-on-sel;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&eth1>;
+				phy-mode = "rgmii-id";
+				tx-internal-delay-ps = <2000>;
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-rxid";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 };
 

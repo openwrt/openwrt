@@ -44,35 +44,109 @@
 &mdio0 {
 	status = "okay";
 
-	phy17: ethernet-phy@11 {
-		reg = <0x11>;
-		phy-mode = "rgmii-id";
-	};
+	switch0@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	switch0@1f {
-		compatible = "qca,ar8327";
-		reg = <0x1f>;
-		qca,ar8327-initvals = <
-			0x04 0x87600000 /* PORT0 PAD MODE CTRL */
-			0x0c 0x00080080 /* PORT6 PAD MODE CTRL */
-			0x10 0x81000080 /* POWER_ON_STRAP */
-			0x50 0xffb7ffb7 /* LED_CTRL0 */
-			0x54 0xffb7ffb7 /* LED_CTRL1 */
-			0x58 0xffb7ffb7 /* LED_CTRL2 */
-			0x5c 0x03ffff00 /* LED_CTRL3 */
-			0x7c 0x0000007e /* PORT0_STATUS */
-			0x94 0x0000007e /* PORT6 STATUS */
-			>;
+		reg = <0>;
+		qca,ignore-power-on-sel;
+		qca,led-open-drain;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-id";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&eth1>;
+				phy-mode = "sgmii";
+				qca,sgmii-rxclk-falling-edge;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 };
 
 &mdio1 {
 	status = "okay";
-
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-		phy-mode = "sgmii";
-	};
 };
 
 
@@ -80,7 +154,6 @@
 	status = "okay";
 
 	pll-data = <0xa6000000 0x00000101 0x00001616>;
-	phy-handle = <&phy17>;
 
 	fixed-link {
 		speed = <1000>;
@@ -92,7 +165,6 @@
 	status = "okay";
 
 	pll-data = <0x03000101 0x00000101 0x00001616>;
-	phy-handle = <&phy1>;
 
 	fixed-link {
 		speed = <1000>;

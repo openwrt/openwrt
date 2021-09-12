@@ -152,8 +152,10 @@
 	nvmem-cells = <&macaddr_art_0>;
 	nvmem-cell-names = "mac-address";
 
-	phy-mode = "rgmii";
-	phy-handle = <&phy0>;
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &mdio0 {
@@ -161,15 +163,91 @@
 
 	phy-mask = <0>;
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
+	switch0@10 {
+		compatible = "qca,qca8327";
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-		qca,ar8327-initvals = <
-			0x04 0x07600000 /* PORT0 PAD MODE CTRL */
-			0x10 0xc1000000 /* POWER_ON_STRAP */
-			0x7c 0x0000007e /* PORT0_STATUS */
-			0x94 0x0000007e /* PORT6_STATUS */
-			>;
+		reg = <0>;
+		qca,ignore-power-on-sel;
+		qca,led-open-drain;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-id";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 };
 
@@ -197,6 +275,11 @@
 		device = <&gmac>;
 		switch-phy-swap = <0>;
 		switch-only-mode = <1>;
+	};
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
 	};
 };
 
