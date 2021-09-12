@@ -135,20 +135,22 @@ ath79_setup_interfaces()
 		;;
 	belkin,f9j1108-v2|\
 	belkin,f9k1115-v2|\
+	buffalo,bhr-4grv2|\
 	tplink,archer-c5-v1|\
 	tplink,archer-c7-v1|\
 	tplink,archer-c7-v2|\
+	tplink,tl-wr1043nd-v2|\
+	tplink,tl-wr1043nd-v3|\
+	tplink,tl-wr1045nd-v2|\
 	tplink,tl-wdr4900-v2|\
 	tplink,tl-wdr7500-v3)
-		ucidef_add_switch "switch0" \
-			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	buffalo,bhr-4grv|\
 	buffalo,wzr-hp-g450h)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
 		;;
-	buffalo,bhr-4grv2|\
 	trendnet,tew-823dru)
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth0"
@@ -324,8 +326,7 @@ ath79_setup_interfaces()
 	tplink,tl-wdr4300-v1|\
 	tplink,tl-wdr4300-v1-il|\
 	tplink,tl-wdr4310-v1)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "1:wan"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	nec,wf1200cr)
 		ucidef_set_interface_wan "eth1"
@@ -399,8 +400,7 @@ ath79_setup_interfaces()
 		;;
 	tplink,archer-d7-v1|\
 	tplink,archer-d7b-v1)
-		ucidef_add_switch "switch0" \
-			"0@eth1" "3:lan:3" "4:lan:2" "5:lan:1" "6@eth0" "2:wan:4" "1:wan:5"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan1 wan2"
 		;;
 	tplink,eap225-wall-v2)
 		ucidef_add_switch "switch0" \
@@ -432,12 +432,6 @@ ath79_setup_interfaces()
 	tplink,tl-wr1043nd-v1)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5@eth0"
-		;;
-	tplink,tl-wr1043nd-v2|\
-	tplink,tl-wr1043nd-v3|\
-	tplink,tl-wr1045nd-v2)
-		ucidef_add_switch "switch0" \
-			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "6@eth0"
 		;;
 	tplink,tl-wr2543-v1)
 		ucidef_add_switch "switch0" \

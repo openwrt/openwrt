@@ -14,7 +14,7 @@ KERNEL_TESTING_PATCHVER:=5.10
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
-	kmod-gpio-button-hotplug swconfig \
+	kmod-gpio-button-hotplug \
 	kmod-ath9k uboot-envtools
 
 $(eval $(call BuildTarget))
