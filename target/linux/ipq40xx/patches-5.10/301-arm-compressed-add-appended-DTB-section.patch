@@ -26,7 +26,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/arch/arm/boot/compressed/vmlinux.lds.S
 +++ b/arch/arm/boot/compressed/vmlinux.lds.S
-@@ -93,6 +93,13 @@ SECTIONS
+@@ -101,6 +101,13 @@ SECTIONS
  
    _edata = .;
  
@@ -40,9 +40,9 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
    /*
     * The image_end section appears after any additional loadable sections
     * that the linker may decide to insert in the binary image.  Having
-@@ -132,4 +139,4 @@ SECTIONS
-   .stab.indexstr 0	: { *(.stab.indexstr) }
-   .comment 0		: { *(.comment) }
+@@ -138,4 +145,4 @@ SECTIONS
+ 
+   ARM_ASSERTS
  }
 -ASSERT(_edata_real == _edata, "error: zImage file size is incorrect");
 +ASSERT(_edata_real == _edata_dtb, "error: zImage file size is incorrect");
