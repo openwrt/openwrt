@@ -13,6 +13,9 @@ config HAS_SPE_FPU
 config HAS_FPU
 	bool
 
+config HAS_DT_OVERLAY_SUPPORT
+	bool
+
 config AUDIO_SUPPORT
 	bool
 
@@ -96,6 +99,9 @@ config RFKILL_SUPPORT
 	bool
 
 config NAND_SUPPORT
+	bool
+
+config LEGACY_SDCARD_SUPPORT
 	bool
 
 config ARCH_64BIT

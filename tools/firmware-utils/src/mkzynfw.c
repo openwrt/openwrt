@@ -1,16 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  *
  *  Copyright (C) 2007-2008 OpenWrt.org
  *  Copyright (C) 2007-2008 Gabor Juhos <juhosg at openwrt.org>
- *
- *  This code was based on the information of the ZyXEL's firmware
- *  image format written by Kolja Waschk, can be found at:
- *  http://www.ixo.de/info/zyxel_uclinux
- *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 as published
- *  by the Free Software Foundation.
- *
  */
 
 #include <stdio.h>
@@ -444,8 +436,10 @@ csum_init(struct csum_state *css)
 
 
 void
-csum_update(uint8_t *p, uint32_t len, struct csum_state *css)
+csum_update(void *data, uint32_t len, struct csum_state *css)
 {
+	uint8_t *p = data;
+
 	if (len == 0)
 		return;
 
@@ -499,19 +493,21 @@ csum_buf(uint8_t *p, uint32_t len)
  * routines to write data to the output file
  */
 int
-write_out_data(FILE *outfile, uint8_t *data, size_t len,
+write_out_data(FILE *outfile, void *data, size_t len,
 		struct csum_state *css)
 {
+	uint8_t *ptr = data;
+
 	errno = 0;
 
-	fwrite(data, len, 1, outfile);
+	fwrite(ptr, len, 1, outfile);
 	if (errno) {
 		ERR("unable to write output file");
 		return -1;
 	}
 
 	if (css) {
-		csum_update(data, len, css);
+		csum_update(ptr, len, css);
 	}
 
 	return 0;
@@ -541,7 +537,7 @@ write_out_padding(FILE *outfile, size_t len, uint8_t padc,
 
 
 int
-write_out_data_align(FILE *outfile, uint8_t *data, size_t len, size_t align,
+write_out_data_align(FILE *outfile, void *data, size_t len, size_t align,
 		struct csum_state *css)
 {
 	size_t padlen;
@@ -611,7 +607,7 @@ write_out_mmap(FILE *outfile, struct fw_mmap *mmap, struct csum_state *css)
 	mh->count=0;
 
 	/* Build user data section */
-	data = buf+sizeof(*mh);
+	data = (char *)buf + sizeof(*mh);
 	data += sprintf(data, "Vendor 1 %d", board->vendor);
 	*data++ = '\0';
 	data += sprintf(data, "Model 1 %d", BE16_TO_HOST(board->model));
@@ -922,7 +918,6 @@ parse_opt_block(char ch, char *arg)
 {
 	char buf[MAX_ARG_LEN];
 	char *argv[MAX_ARG_COUNT];
-	int argc;
 	char *p;
 	struct fw_block *block;
 	int i;
@@ -951,7 +946,7 @@ parse_opt_block(char ch, char *arg)
 		break;
 	}
 
-	argc = parse_arg(arg, buf, argv);
+	parse_arg(arg, buf, argv);
 
 	i = 0;
 	p = argv[i++];

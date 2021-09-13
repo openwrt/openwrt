@@ -18,27 +18,6 @@ extern const struct dsa_switch_ops rtl930x_switch_ops;
 
 DEFINE_MUTEX(smi_lock);
 
-// TODO: unused
-static void dump_fdb(struct rtl838x_switch_priv *priv)
-{
-	struct rtl838x_l2_entry e;
-	int i;
-
-	mutex_lock(&priv->reg_mutex);
-
-	for (i = 0; i < priv->fib_entries; i++) {
-		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
-
-		if (!e.valid) /* Check for invalid entry */
-			continue;
-
-		pr_debug("-> port %02d: mac %pM, vid: %d, rvid: %d, MC: %d, %d\n",
-			e.port, &e.mac[0], e.vid, e.rvid, e.is_ip_mc, e.is_ipv6_mc);
-	}
-
-	mutex_unlock(&priv->reg_mutex);
-}
-
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {
 	u32 msti = 0;
@@ -144,7 +123,6 @@ void rtl_table_read(struct table_reg *r, int idx)
 
 	cmd |= BIT(r->c_bit + 1) | (r->tbl << r->t_bit) | (idx & (BIT(r->t_bit) - 1));
 	sw_w32(cmd, r->addr);
-	pr_debug("Writing %08x to %x for read\n", cmd, r->addr);
 	do { } while (sw_r32(r->addr) & BIT(r->c_bit + 1));
 }
 
@@ -156,8 +134,6 @@ void rtl_table_write(struct table_reg *r, int idx)
 	u32 cmd = r->rmode ? 0 : BIT(r->c_bit);
 
 	cmd |= BIT(r->c_bit + 1) | (r->tbl << r->t_bit) | (idx & (BIT(r->t_bit) - 1));
-	pr_debug("Writing %08x to %x for write, value %08x\n",
-		cmd, r->addr, sw_r32(0xb344));
 	sw_w32(cmd, r->addr);
 	do { } while (sw_r32(r->addr) & BIT(r->c_bit + 1));
 }
@@ -368,8 +344,8 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 	/* Enable PHY control via SoC */
 	if (priv->family_id == RTL8380_FAMILY_ID) {
-		/* Enable PHY control via SoC */
-		sw_w32_mask(0, BIT(15), RTL838X_SMI_GLB_CTRL);
+		/* Enable SerDes NWAY and PHY control via SoC */
+		sw_w32_mask(BIT(7), BIT(15), RTL838X_SMI_GLB_CTRL);
 	} else {
 		/* Disable PHY polling via SoC */
 		sw_w32_mask(BIT(7), 0, RTL839X_SMI_GLB_CTRL);
@@ -555,7 +531,6 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	int err = 0, i;
 	struct rtl838x_switch_priv *priv;
 	struct device *dev = &pdev->dev;
-	u64 irq_mask;
 	u64 bpdu_mask;
 
 	pr_debug("Probing RTL838X switch device\n");
@@ -594,6 +569,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->fib_entries = 8192;
 		rtl8380_get_version(priv);
 		priv->n_lags = 8;
+		priv->l2_bucket_size = 4;
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->ds->ops = &rtl83xx_switch_ops;
@@ -606,6 +582,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->fib_entries = 16384;
 		rtl8390_get_version(priv);
 		priv->n_lags = 16;
+		priv->l2_bucket_size = 4;
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->ds->ops = &rtl930x_switch_ops;
@@ -619,6 +596,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->version = RTL8390_VERSION_A;
 		priv->n_lags = 16;
 		sw_w32(1, RTL930X_ST_CTRL);
+		priv->l2_bucket_size = 8;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->ds->ops = &rtl930x_switch_ops;
@@ -631,6 +609,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->fib_entries = 16384;
 		priv->version = RTL8390_VERSION_A;
 		priv->n_lags = 16;
+		priv->l2_bucket_size = 8;
 		break;
 	}
 	pr_debug("Chip version %c\n", priv->version);
@@ -650,9 +629,9 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
 	sw_w32_mask(0, 3, priv->r->isr_glb_src);
-	
-	priv->r->set_port_reg_le(irq_mask, priv->r->isr_port_link_sts_chg);
-	priv->r->set_port_reg_le(irq_mask, priv->r->imr_port_link_sts_chg);
+
+	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
+	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);

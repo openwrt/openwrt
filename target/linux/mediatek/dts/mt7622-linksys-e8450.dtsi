@@ -110,10 +110,6 @@
 	};
 };
 
-&bch {
-	status = "okay";
-};
-
 &btif {
 	status = "okay";
 };
@@ -210,15 +206,6 @@
 };
 
 &pio {
-	/* Attention: GPIO 90 is used to switch between PCIe@1,0 and
-	 * SATA functions. i.e. output-high: PCIe, output-low: SATA
-	 */
-//	asm_sel {
-//		gpio-hog;
-//		gpios = <90 GPIO_ACTIVE_HIGH>;
-//		output-high;
-//	};
-
 	eth_pins: eth-pins {
 		mux {
 			function = "eth";
@@ -351,18 +338,11 @@
 	};
 };
 
-&snfi {
+&snand {
+	mediatek,quad-spi;
 	pinctrl-names = "default";
 	pinctrl-0 = <&serial_nand_pins>;
 	status = "okay";
-
-	snand: spi_nand@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "spi-nand";
-		spi-max-frequency = <104000000>;
-		reg = <0>;
-	};
 };
 
 &spi0 {

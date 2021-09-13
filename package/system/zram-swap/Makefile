@@ -1,14 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2013 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2013-2021 OpenWrt.org
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zram-swap
-PKG_RELEASE:=8
+PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
@@ -17,14 +14,20 @@ include $(INCLUDE_DIR)/package.mk
 define Package/zram-swap
   SECTION:=utils
   CATEGORY:=Base system
-  DEPENDS:=+kmod-zram +@BUSYBOX_CONFIG_MKSWAP +@BUSYBOX_CONFIG_SWAPON +@BUSYBOX_CONFIG_FEATURE_SWAPON_DISCARD +@BUSYBOX_CONFIG_FEATURE_SWAPON_PRI +@BUSYBOX_CONFIG_SWAPOFF
+  DEPENDS:= \
+	+@BUSYBOX_CONFIG_FEATURE_SWAPON_DISCARD \
+	+@BUSYBOX_CONFIG_FEATURE_SWAPON_PRI \
+	+@BUSYBOX_CONFIG_MKSWAP \
+	+@BUSYBOX_CONFIG_SWAPOFF \
+	+@BUSYBOX_CONFIG_SWAPON \
+	+kmod-zram
   TITLE:=ZRAM swap scripts
   PKGARCH:=all
 endef
 
 define Package/zram-swap/description
- A script to activate swaping on a compressed zram partition. This 
- could be used to increase the available memory, by using compressed 
+ A script to activate swaping on a compressed zram partition. This
+ could be used to increase the available memory, by using compressed
  memory.
 endef
 

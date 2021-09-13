@@ -32,6 +32,7 @@ case "$FIRMWARE" in
 	dlink,dir-842-c2|\
 	dlink,dir-842-c3|\
 	dlink,dir-859-a1|\
+	nec,wf1200cr|\
 	nec,wg1200cr|\
 	wd,mynet-n750)
 		caldata_extract "art" 0x1000 0x440
@@ -40,7 +41,7 @@ case "$FIRMWARE" in
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env athaddr) +1)
+		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env athaddr) 1)
 		;;
 	engenius,epg5000|\
 	iodata,wn-ac1167dgr|\
@@ -71,6 +72,21 @@ case "$FIRMWARE" in
 	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
+	atheros,db120|\
+	engenius,eap600|\
+	engenius,ecb600|\
+	mercury,mw4530r-v1|\
+	ocedo,raccoon|\
+	tplink,tl-wdr3500-v1|\
+	tplink,tl-wdr3600-v1|\
+	tplink,tl-wdr4300-v1|\
+	tplink,tl-wdr4300-v1-il|\
+	tplink,tl-wdr4310-v1|\
+	tplink,tl-wdr4900-v2|\
+	ubnt,unifi-ap-pro|\
+	winchannel,wb2000)
+		caldata_extract "art" 0x5000 0x440
+		;;
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
@@ -86,20 +102,6 @@ case "$FIRMWARE" in
 	dlink,dir-835-a1)
 		caldata_extract "art" 0x5000 0x440
 		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1)
-		;;
-	engenius,eap600|\
-	engenius,ecb600|\
-	mercury,mw4530r-v1|\
-	ocedo,raccoon|\
-	tplink,tl-wdr3500-v1|\
-	tplink,tl-wdr3600-v1|\
-	tplink,tl-wdr4300-v1|\
-	tplink,tl-wdr4300-v1-il|\
-	tplink,tl-wdr4310-v1|\
-	tplink,tl-wdr4900-v2|\
-	ubnt,unifi-ap-pro|\
-	winchannel,wb2000)
-		caldata_extract "art" 0x5000 0x440
 		;;
 	enterasys,ws-ap3705i)
 		caldata_extract "calibrate" 0x5000 0x440

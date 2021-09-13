@@ -37,7 +37,7 @@ PKG_CONFIG_DEPENDS:= \
 include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell echo $(CONFIG_TARGET_INIT_PATH) | mkhash md5)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell echo $(CONFIG_TARGET_INIT_PATH) | $(MKHASH) md5)
 endif
 
 define Package/dropbear/Default
@@ -106,14 +106,12 @@ CONFIGURE_ARGS += \
 # remove protocol idented software version number:
 # - LOCAL_IDENT
 # disable legacy/unsafe methods and unused functionality:
-# - INETD_MODE
 # - DROPBEAR_CLI_NETCAT
 # - DROPBEAR_DSS
 # - DO_MOTD
 DB_OPT_COMMON = \
 	DEFAULT_PATH|"$(TARGET_INIT_PATH)" \
 	!!LOCAL_IDENT|"SSH-2.0-dropbear" \
-	INETD_MODE|0 \
 	DROPBEAR_CLI_NETCAT|0 \
 	DROPBEAR_DSS|0 \
 	DO_MOTD|0 \

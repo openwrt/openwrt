@@ -1,20 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * mkbrnimg.c - partially based on OpenWrt's wndr3700.c
  *
  * Copyright (C) 2011 Tobias Diedrich <ranma+openwrt@tdiedrich.de>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License,
- * version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include <stdio.h>
@@ -52,12 +40,13 @@ static void init_crc32()
 	}
 }
 
-static uint32_t crc32buf(unsigned char *buf, size_t len)
+static uint32_t crc32buf(const void *buf, size_t len)
 {
 	uint32_t crc = 0xFFFFFFFF;
+	const uint8_t *in = buf;
 
-	for (; len; len--, buf++)
-		crc = crc32[(uint8_t)crc ^ *buf] ^ (crc >> BPB);
+	for (; len; len--, in++)
+		crc = crc32[(uint8_t)crc ^ *in] ^ (crc >> BPB);
 	return ~crc;
 }
 

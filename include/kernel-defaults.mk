@@ -43,7 +43,9 @@ else
 		rmdir $(LINUX_DIR); \
 	fi
 	ln -s $(CONFIG_EXTERNAL_KERNEL_TREE) $(LINUX_DIR)
-	$(_SINGLE) [ -d $(LINUX_DIR)/user_headers ] && rm -rf $(LINUX_DIR)/user_headers
+	if [ -d $(LINUX_DIR)/user_headers ]; then \
+		rm -rf $(LINUX_DIR)/user_headers; \
+	fi
   endef
 endif
 
@@ -116,7 +118,7 @@ define Kernel/Configure/Default
 		cp $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.prev; \
 	}
 	$(_SINGLE) [ -d $(LINUX_DIR)/user_headers ] || $(KERNEL_MAKE) INSTALL_HDR_PATH=$(LINUX_DIR)/user_headers headers_install
-	grep '=[ym]' $(LINUX_DIR)/.config.set | LC_ALL=C sort | mkhash md5 > $(LINUX_DIR)/.vermagic
+	grep '=[ym]' $(LINUX_DIR)/.config.set | LC_ALL=C sort | $(MKHASH) md5 > $(LINUX_DIR)/.vermagic
 endef
 
 define Kernel/Configure/Initramfs
@@ -147,12 +149,17 @@ define Kernel/CopyImage
 	}
 endef
 
+# Always add "modules" so a proper Module.symvers file is written that
+# also contains symbols from the kernel modules. Without these symbols
+# external packages that depend on exported symbols from kernel modules
+# will fail to build.
 define Kernel/CompileImage/Default
 	rm -f $(TARGET_DIR)/init
-	+$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all)
+	+$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all) modules
 	$(call Kernel/CopyImage)
 endef
 
+# Here as well, always add "modules", see comment above.
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 define Kernel/CompileImage/Initramfs
 	$(call Kernel/Configure/Initramfs)
@@ -173,7 +180,7 @@ endif
 # ?	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZ4),)
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD),$(STAGING_DIR_HOST)/bin/zstd -T0 -f -o $(KERNEL_BUILD_DIR)/initrd.cpio.zstd $(KERNEL_BUILD_DIR)/initrd.cpio)
 endif
-	+$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all)
+	+$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all) modules
 	$(call Kernel/CopyImage,-initramfs)
 endef
 else
@@ -186,5 +193,3 @@ define Kernel/Clean/Default
 	rm -f $(LINUX_KERNEL)
 	$(_SINGLE)$(MAKE) -C $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) clean
 endef
-
-

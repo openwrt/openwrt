@@ -65,8 +65,8 @@ sub hash_cmd() {
 	my $len = length($file_hash);
 	my $cmd;
 
-	$len == 64 and return "mkhash sha256";
-	$len == 32 and return "mkhash md5";
+	$len == 64 and return "$ENV{'MKHASH'} sha256";
+	$len == 32 and return "$ENV{'MKHASH'} md5";
 	return undef;
 }
 
@@ -296,4 +296,3 @@ while (!-f "$target/$filename") {
 }
 
 $SIG{INT} = \&cleanup;
-

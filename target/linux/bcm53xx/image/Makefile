@@ -274,7 +274,6 @@ define Device/linksys_ea9500
   DEVICE_MODEL := EA9500
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
   DEVICE_DTS := bcm47094-linksys-panamera
-  BROKEN := y
 endef
 TARGET_DEVICES += linksys_ea9500
 

@@ -18,6 +18,8 @@ PKG_BUILD_DEPENDS:=tfa-layerscape/host
 PKG_LICENSE:=EULA
 PKG_LICENSE_FILES:=NXP-Binary-EULA.txt
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/layerscape-ddr-phy

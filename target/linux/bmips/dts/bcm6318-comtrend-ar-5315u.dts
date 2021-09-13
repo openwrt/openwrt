@@ -8,14 +8,13 @@
 
 	aliases {
 		led-boot = &led_power_green;
-		led-failsafe = &led_power_green;
+		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
-	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x00000000 0x04000000>;
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
+		led-usb = &led_usb_green;
 	};
 
 	keys {
@@ -36,10 +35,40 @@
 			debounce-interval = <60>;
 		};
 	};
+
+	bcm43217-sprom {
+		compatible = "brcm,bcm43217-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		nvmem-cells = <&macaddr_cfe_6a0>;
+		nvmem-cell-names = "mac-address";
+		mac-address-increment = <1>;
+
+		brcm,sprom-fixups = <6 0x1c00>,
+				    <65 0x1255>,
+				    <97 0xfe55>,
+				    <98 0x171d>,
+				    <99 0xfa42>,
+				    <113 0xfeb7>,
+				    <114 0x18cd>,
+				    <115 0xfa4f>,
+				    <162 0x6444>,
+				    <170 0x6444>,
+				    <172 0x6444>;
+	};
 };
 
 &ehci {
 	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &hsspi {
@@ -100,7 +129,7 @@
 		label = "green:power";
 	};
 
-	led@2 {
+	led_usb_green: led@2 {
 		reg = <2>;
 		active-low;
 		label = "green:usb";
@@ -134,7 +163,7 @@
 		/* EPHY3 Act */
 	};
 
-	led@8 {
+	led_internet_green: led@8 {
 		reg = <8>;
 		active-low;
 		label = "green:internet";
@@ -146,13 +175,13 @@
 		label = "red:internet";
 	};
 
-	led@10 {
+	led_dsl_green: led@10 {
 		reg = <10>;
 		active-low;
 		label = "green:dsl";
 	};
 
-	led@11 {
+	led_power_red: led@11 {
 		reg = <11>;
 		active-low;
 		label = "red:power";
@@ -160,6 +189,10 @@
 };
 
 &ohci {
+	status = "okay";
+};
+
+&pcie {
 	status = "okay";
 };
 
@@ -173,10 +206,52 @@
 	};
 };
 
+&switch0 {
+	ports {
+		port@0 {
+			reg = <0>;
+			label = "lan4";
+
+			phy-handle = <&phy1>;
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan3";
+
+			phy-handle = <&phy2>;
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+
+			phy-handle = <&phy3>;
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan1";
+
+			phy-handle = <&phy4>;
+		};
+	};
+};
+
 &uart0 {
 	status = "okay";
 };
 
 &usbh {
 	status = "okay";
+};
+
+&cfe {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_cfe_6a0: macaddr@6a0 {
+		reg = <0x6a0 0x6>;
+	};
 };

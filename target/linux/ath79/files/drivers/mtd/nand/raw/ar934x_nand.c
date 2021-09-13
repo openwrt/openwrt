@@ -1273,7 +1273,6 @@ static int ar934x_nfc_setup_hwecc(struct ar934x_nfc *nfc)
 		 * Writing a subpage separately is not supported, because
 		 * the controller only does ECC on full-page accesses.
 		 */
-		nand->options = NAND_NO_SUBPAGE_WRITE;
 
 		nand->ecc.size = 512;
 		nand->ecc.bytes = 7;
@@ -1332,6 +1331,9 @@ static int ar934x_nfc_attach_chip(struct nand_chip *nand)
 	if (ret)
 		return ret;
 
+	if (mtd->writesize == 2048)
+		nand->options |= NAND_NO_SUBPAGE_WRITE;
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
 	if (nand->ecc.engine_type == NAND_ECC_ENGINE_TYPE_ON_HOST) {
 #else
@@ -1341,7 +1343,7 @@ static int ar934x_nfc_attach_chip(struct nand_chip *nand)
 		if (ret)
 			return ret;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
-	} else if (nand->ecc.engine_type == NAND_ECC_ENGINE_TYPE_SOFT) {
+	} else if (nand->ecc.engine_type != NAND_ECC_ENGINE_TYPE_SOFT) {
 		dev_err(dev, "unknown ECC mode %d\n", nand->ecc.engine_type);
 #else
 	} else if (nand->ecc.mode != NAND_ECC_SOFT) {

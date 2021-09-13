@@ -84,7 +84,7 @@
  	    -e 's,@''HAVE_SNPRINTF''@,@HAVE_SNPRINTF@,g' \
  	    -e 's,@''HAVE_WPRINTF''@,@HAVE_WPRINTF@,g' \
 -	    -e 's,@''HAVE_NAMELESS_LOCALES''@,@HAVE_NAMELESS_LOCALES@,g' \
-+	    -e 's,@''HAVE_NAMELESS_LOCALES''@,1,g' \
++	    -e 's,@''HAVE_NAMELESS_LOCALES''@,0,g' \
  	    -e 's,@''HAVE_NEWLOCALE''@,@HAVE_NEWLOCALE@,g' \
  	  < $(srcdir)/libgnuintl.in.h \
  	| if test '@WOE32DLL@' = yes; then \
@@ -93,7 +93,7 @@
  	    -e 's,@''HAVE_SNPRINTF''@,@HAVE_SNPRINTF@,g' \
  	    -e 's,@''HAVE_WPRINTF''@,@HAVE_WPRINTF@,g' \
 -	    -e 's,@''HAVE_NAMELESS_LOCALES''@,@HAVE_NAMELESS_LOCALES@,g' \
-+	    -e 's,@''HAVE_NAMELESS_LOCALES''@,1,g' \
++	    -e 's,@''HAVE_NAMELESS_LOCALES''@,0,g' \
  	    -e 's,@''HAVE_NEWLOCALE''@,@HAVE_NEWLOCALE@,g' \
  	  < $(srcdir)/libgnuintl.in.h > libintl.h
  MOSTLYCLEANFILES += libintl.h
@@ -278,7 +278,7 @@
  	    -e 's,@''HAVE_SNPRINTF''@,@HAVE_SNPRINTF@,g' \
  	    -e 's,@''HAVE_WPRINTF''@,@HAVE_WPRINTF@,g' \
 -	    -e 's,@''HAVE_NAMELESS_LOCALES''@,@HAVE_NAMELESS_LOCALES@,g' \
-+	    -e 's,@''HAVE_NAMELESS_LOCALES''@,1,g' \
++	    -e 's,@''HAVE_NAMELESS_LOCALES''@,0,g' \
  	    -e 's,@''HAVE_NEWLOCALE''@,@HAVE_NEWLOCALE@,g' \
  	  < $(srcdir)/libgnuintl.in.h \
  	| if test '@WOE32DLL@' = yes; then \
@@ -287,7 +287,7 @@
  	    -e 's,@''HAVE_SNPRINTF''@,@HAVE_SNPRINTF@,g' \
  	    -e 's,@''HAVE_WPRINTF''@,@HAVE_WPRINTF@,g' \
 -	    -e 's,@''HAVE_NAMELESS_LOCALES''@,@HAVE_NAMELESS_LOCALES@,g' \
-+	    -e 's,@''HAVE_NAMELESS_LOCALES''@,1,g' \
++	    -e 's,@''HAVE_NAMELESS_LOCALES''@,0,g' \
  	    -e 's,@''HAVE_NEWLOCALE''@,@HAVE_NEWLOCALE@,g' \
  	  < $(srcdir)/libgnuintl.in.h > libintl.h
  MOSTLYCLEANFILES += libintl.h

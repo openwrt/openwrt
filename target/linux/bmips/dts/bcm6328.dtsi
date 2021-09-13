@@ -145,99 +145,100 @@
 			};
 		};
 
-		gpio: syscon@10000080 {
-			compatible = "syscon", "simple-mfd";
+		gpio_cntl: syscon@10000080 {
+			compatible = "brcm,bcm6328-gpio-sysctl",
+				     "syscon", "simple-mfd";
 			reg = <0x10000080 0x80>;
+			ranges = <0 0x10000080 0x80>;
 			native-endian;
 
-			pinctrl: pin-controller {
-				compatible = "brcm,bcm6328-pinctrl";
+			gpio: gpio@0 {
+				compatible = "brcm,bcm6328-gpio";
+				reg-names = "dirout", "dat";
+				reg = <0x0 0x8>, <0x8 0x8>;
 
 				gpio-controller;
+				gpio-ranges = <&pinctrl 0 0 32>;
 				#gpio-cells = <2>;
+			};
 
-				interrupts-extended = <&ext_intc 3 0>,
-						      <&ext_intc 2 0>,
-						      <&ext_intc 1 0>,
-						      <&ext_intc 0 0>;
-				interrupt-names = "gpio12",
-						  "gpio15",
-						  "gpio23",
-						  "gpio24";
+			pinctrl: pinctrl@18 {
+				compatible = "brcm,bcm6328-pinctrl";
+				reg = <0x18 0x10>;
 
-				pinctrl_serial_led: serial_led {
-					pinctrl_serial_led_data: serial_led_data {
+				pinctrl_serial_led: serial_led-pins {
+					pinctrl_serial_led_data: serial_led_data-pins {
 						function = "serial_led_data";
 						pins = "gpio6";
 					};
 
-					pinctrl_serial_led_clk: serial_led_clk {
+					pinctrl_serial_led_clk: serial_led_clk-pins {
 						function = "serial_led_clk";
 						pins = "gpio7";
 					};
 				};
 
-				pinctrl_inet_act_led: inet_act_led {
+				pinctrl_inet_act_led: inet_act_led-pins {
 					function = "inet_act_led";
 					pins = "gpio11";
 				};
 
-				pinctrl_pcie_clkreq: pcie_clkreq {
+				pinctrl_pcie_clkreq: pcie_clkreq-pins {
 					function = "pcie_clkreq";
 					pins = "gpio16";
 				};
 
-				pinctrl_ephy0_spd_led: ephy0_spd_led {
+				pinctrl_ephy0_spd_led: ephy0_spd_led-pins {
 					function = "led";
 					pins = "gpio17";
 				};
 
-				pinctrl_ephy1_spd_led: ephy1_spd_led {
+				pinctrl_ephy1_spd_led: ephy1_spd_led-pins {
 					function = "led";
 					pins = "gpio18";
 				};
 
-				pinctrl_ephy2_spd_led: ephy2_spd_led {
+				pinctrl_ephy2_spd_led: ephy2_spd_led-pins {
 					function = "led";
 					pins = "gpio19";
 				};
 
-				pinctrl_ephy3_spd_led: ephy3_spd_led {
+				pinctrl_ephy3_spd_led: ephy3_spd_led-pins {
 					function = "led";
 					pins = "gpio20";
 				};
 
-				pinctrl_ephy0_act_led: ephy0_act_led {
+				pinctrl_ephy0_act_led: ephy0_act_led-pins {
 					function = "ephy0_act_led";
 					pins = "gpio25";
 				};
 
-				pinctrl_ephy1_act_led: ephy1_act_led {
+				pinctrl_ephy1_act_led: ephy1_act_led-pins {
 					function = "ephy1_act_led";
 					pins = "gpio26";
 				};
 
-				pinctrl_ephy2_act_led: ephy2_act_led {
+				pinctrl_ephy2_act_led: ephy2_act_led-pins {
 					function = "ephy2_act_led";
 					pins = "gpio27";
 				};
 
-				pinctrl_ephy3_act_led: ephy3_act_led {
+				pinctrl_ephy3_act_led: ephy3_act_led-pins {
 					function = "ephy3_act_led";
 					pins = "gpio28";
 				};
 
-				pinctrl_hsspi_cs1: hsspi_cs1 {
+				pinctrl_hsspi_cs1: hsspi_cs1-pins {
 					function = "hsspi_cs1";
 					pins = "hsspi_cs1";
 				};
 
-				pinctrl_usb_port1_device: usb_port1_device {
+				pinctrl_usb_port1_device: usb_port1_device-pins {
 					function = "usb_device_port";
 					pins = "usb_port1";
 				};
 
-				pinctrl_usb_port1_host: usb_port1_host {
+				pinctrl_usb_port1_host: usb_port1_host-pins {
 					function = "usb_host_port";
 					pins = "usb_port1";
 				};
@@ -317,6 +318,12 @@
 			status = "disabled";
 		};
 
+		serdes_cntl: syscon@10001800 {
+			compatible = "syscon";
+			reg = <0x10001800 0x4>;
+			native-endian;
+		};
+
 		periph_pwr: power-controller@10001848 {
 			compatible = "brcm,bcm6328-power-controller";
 			reg = <0x10001848 0x4>;
@@ -328,7 +335,7 @@
 			compatible = "brcm,bcm6328-ehci", "generic-ehci";
 			reg = <0x10002500 0x100>;
 			big-endian;
-			ignore-oc;
+			spurious-oc;
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6328_IRQ_EHCI>;
@@ -365,6 +372,133 @@
 
 			power-domains = <&periph_pwr BCM6328_POWER_DOMAIN_USBH>;
 			resets = <&periph_rst BCM6328_RST_USBH>;
+
+			status = "disabled";
+		};
+
+		ethernet: ethernet@1000d800 {
+			compatible = "brcm,bcm6328-enetsw";
+			reg = <0x1000d800 0x80>,
+			      <0x1000da00 0x80>,
+			      <0x1000dc00 0x80>;
+			reg-names = "dma",
+				    "dma-channels",
+				    "dma-sram";
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM6328_IRQ_ENETSW_RX_DMA0>,
+				     <BCM6328_IRQ_ENETSW_TX_DMA0>;
+			interrupt-names = "rx",
+					  "tx";
+
+			clocks = <&periph_clk BCM6328_CLK_ROBOSW>;
+
+			resets = <&periph_rst BCM6328_RST_ENETSW>,
+				 <&periph_rst BCM6328_RST_EPHY>;
+
+			power-domains = <&periph_pwr BCM6328_POWER_DOMAIN_ROBOSW>,
+					<&periph_pwr BCM6328_POWER_DOMAIN_EPHY>;
+
+			dma-rx = <0>;
+			dma-tx = <1>;
+
+			status = "disabled";
+		};
+
+		switch0: switch@10e00000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6328-switch";
+			reg = <0x10e00000 0x8000>;
+			big-endian;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@8 {
+					reg = <8>;
+					label = "cpu";
+
+					phy-mode = "internal";
+					ethernet = <&ethernet>;
+
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+				};
+			};
+		};
+
+		mdio: mdio@10e000b0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6368-mdio-mux";
+			reg = <0x10e000b0 0x8>;
+
+			mdio_int: mdio@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+
+				phy1: ethernet-phy@1 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <1>;
+				};
+
+				phy2: ethernet-phy@2 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <2>;
+				};
+
+				phy3: ethernet-phy@3 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <3>;
+				};
+
+				phy4: ethernet-phy@4 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <4>;
+				};
+			};
+
+			mdio_ext: mdio@1 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <1>;
+			};
+		};
+
+		pcie: pcie@10e40000 {
+			compatible = "brcm,bcm6328-pcie";
+			reg = <0x10e40000 0x10000>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			device_type = "pci";
+			bus-range = <0x00 0x01>;
+			ranges = <0x2000000 0 0x10f00000 0x10f00000 0 0x100000>;
+			linux,pci-probe-only = <1>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM6328_IRQ_PCIE_RC>;
+
+			clocks = <&periph_clk BCM6328_CLK_PCIE>;
+			clock-names = "pcie";
+
+			resets = <&periph_rst BCM6328_RST_PCIE>,
+				 <&periph_rst BCM6328_RST_PCIE_EXT>,
+				 <&periph_rst BCM6328_RST_PCIE_CORE>,
+				 <&periph_rst BCM6328_RST_PCIE_HARD>;
+			reset-names = "pcie",
+				      "pcie-ext",
+				      "pcie-core",
+				      "pcie-hard";
+
+			power-domains = <&periph_pwr BCM6328_POWER_DOMAIN_PCIE>;
+
+			brcm,serdes = <&serdes_cntl>;
 
 			status = "disabled";
 		};

@@ -1,27 +1,26 @@
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2006-2015 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# Copyright (C) 2006-2021 OpenWrt.org
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=grub
 PKG_CPE_ID:=cpe:/a:gnu:grub2
-PKG_VERSION:=2.04
-PKG_RELEASE:=3
+PKG_VERSION:=2.06
+PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/grub
-PKG_HASH:=e5292496995ad42dabe843a0192cf2a2c502e7ffcc7479398232b10a472df77d
+PKG_HASH:=b79ea44af91b93d17cd3fe80bdae6ed43770678a9a5ae192ccea803ebb657ee1
 
 HOST_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=grub2/host
 
-PKG_ASLR_PIE:=0
-PKG_SSP:=0
+ifneq ($(BUILD_VARIANT),none)
+  PKG_ASLR_PIE:=0
+  PKG_SSP:=0
+endif
 
 PKG_FLAGS:=nonshared
 
@@ -47,11 +46,25 @@ define Package/grub2-editenv
   TITLE:=Grub2 Environment editor
   URL:=http://www.gnu.org/software/grub/
   DEPENDS:=@TARGET_x86
-  VARIANT:=pc
+  VARIANT:=none
 endef
 
 define Package/grub2-editenv/description
 	Edit grub2 environment files.
+endef
+
+define Package/grub2-bios-setup
+  CATEGORY:=Utilities
+  SECTION:=utils
+  SUBMENU:=Boot Loaders
+  TITLE:=Grub2 BIOS boot setup tool
+  URL:=http://www.gnu.org/software/grub/
+  DEPENDS:=@TARGET_x86
+  VARIANT:=none
+endef
+
+define Package/grub2-bios-setup/description
+	Set up images to bootable.
 endef
 
 HOST_BUILD_PREFIX := $(STAGING_DIR_HOST)
@@ -65,6 +78,7 @@ CONFIGURE_ARGS += \
 	--disable-nls \
 	--disable-device-mapper \
 	--disable-libzfs \
+	--disable-liblzma \
 	--disable-grub-mkfont \
 	--with-platform=$(BUILD_VARIANT)
 
@@ -84,7 +98,11 @@ HOST_MAKE_FLAGS += \
 	TARGET_RANLIB=$(TARGET_RANLIB) \
 	LIBLZMA=$(STAGING_DIR_HOST)/lib/liblzma.a
 
-TARGET_CFLAGS := $(filter-out -fno-plt,$(TARGET_CFLAGS))
+
+ifneq ($(BUILD_VARIANT),none)
+  TARGET_CFLAGS := $(filter-out -O2 -O3 -fno-plt,$(TARGET_CFLAGS))
+  MAKE_PATH := grub-core
+endif
 
 define Host/Configure
 	$(SED) 's,(RANLIB),(TARGET_RANLIB),' $(HOST_BUILD_DIR)/grub-core/Makefile.in
@@ -92,8 +110,6 @@ define Host/Configure
 endef
 
 define Package/grub2/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-bios-setup $(1)/usr/sbin/
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/grub2
 	$(CP) $(PKG_BUILD_DIR)/grub-core/boot.img $(STAGING_DIR_IMAGE)/grub2/
 	$(CP) $(PKG_BUILD_DIR)/grub-core/cdboot.img $(STAGING_DIR_IMAGE)/grub2/
@@ -151,7 +167,13 @@ define Package/grub2-editenv/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-editenv $(1)/usr/sbin/
 endef
 
+define Package/grub2-bios-setup/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/grub-bios-setup $(1)/usr/sbin/
+endef
+
 $(eval $(call HostBuild))
 $(eval $(call BuildPackage,grub2))
 $(eval $(call BuildPackage,grub2-efi))
 $(eval $(call BuildPackage,grub2-editenv))
+$(eval $(call BuildPackage,grub2-bios-setup))

@@ -22,7 +22,7 @@
 	};
 
 	chosen {
-		bootargs = "rootfstype=squashfs,ext4 rootwait noinitrd";
+		bootargs = "rootfstype=squashfs,ext4 rootwait noinitrd fstools_ignore_partname=1";
 		append-rootblock = "root=/dev/mmcblk0p";
 	};
 
@@ -36,18 +36,24 @@
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 			linux,input-type = <EV_SW>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 
 		wps {
 			label = "wps";
 			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 	};
 
@@ -182,7 +188,7 @@
 			reg = <0>;
 
 			partitions {
-				compatible = "qcom,smem";
+				compatible = "qcom,smem-part";
 			};
 		};
 	};

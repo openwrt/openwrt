@@ -1,10 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  *  Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>
- *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 as published
- *  by the Free Software Foundation.
- *
  */
 
 #include <stdio.h>
@@ -100,7 +96,7 @@ static void get_digest(struct wrg_header *header, char *data, int size)
 	MD5_Update(&ctx, (char *)&header->devname, sizeof(header->devname));
 	MD5_Update(&ctx, data, size);
 
-	MD5_Final(header->digest, &ctx);
+	MD5_Final((unsigned char *)header->digest, &ctx);
 }
 
 int main(int argc, char *argv[])

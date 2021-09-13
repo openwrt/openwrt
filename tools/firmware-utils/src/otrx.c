@@ -1,12 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * otrx
  *
  * Copyright (C) 2015-2017 Rafał Miłecki <zajec5@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
  */
 
 #include <byteswap.h>
@@ -287,7 +283,6 @@ static int otrx_create_write_hdr(FILE *trx, struct trx_header *hdr) {
 	uint8_t buf[1024];
 	uint32_t crc32;
 
-	hdr->magic = cpu_to_le32(TRX_MAGIC);
 	hdr->version = 1;
 
 	fseek(trx, 0, SEEK_SET);
@@ -324,8 +319,12 @@ static int otrx_create(int argc, char **argv) {
 	ssize_t sbytes;
 	size_t curr_idx = 0;
 	size_t curr_offset = sizeof(hdr);
+	char *e;
+	uint32_t magic;
 	int c;
 	int err = 0;
+
+	hdr.magic = cpu_to_le32(TRX_MAGIC);
 
 	if (argc < 3) {
 		fprintf(stderr, "No TRX file passed\n");
@@ -343,7 +342,7 @@ static int otrx_create(int argc, char **argv) {
 	fseek(trx, curr_offset, SEEK_SET);
 
 	optind = 3;
-	while ((c = getopt(argc, argv, "f:A:a:b:")) != -1) {
+	while ((c = getopt(argc, argv, "f:A:a:b:M:")) != -1) {
 		switch (c) {
 		case 'f':
 			if (curr_idx >= TRX_MAX_PARTS) {
@@ -399,6 +398,14 @@ static int otrx_create(int argc, char **argv) {
 				else
 					curr_offset += sbytes;
 			}
+			break;
+		case 'M':
+			errno = 0;
+			magic = strtoul(optarg, &e, 0);
+			if (errno || (e == optarg) || *e)
+				fprintf(stderr, "illegal magic string %s\n", optarg);
+			else
+				hdr.magic = cpu_to_le32(magic);
 			break;
 		}
 		if (err)

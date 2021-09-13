@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lldpd
-PKG_VERSION:=1.0.7
+PKG_VERSION:=1.0.12
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://media.luffy.cx/files/lldpd
-PKG_HASH:=1df79179d489c841b49265f2ab5ff05f284a647e95862d2f3c02b3fb079a87e1
+PKG_HASH:=d194c65b5b9c98d194a2842ddc75ba17ebdee7ebd5499f81a98d24031628daf1
 
 PKG_MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>
 PKG_LICENSE:=ISC
@@ -30,7 +30,7 @@ define Package/lldpd
   SUBMENU:=Routing and Redirection
   TITLE:=Link Layer Discovery Protocol daemon
   URL:=https://vincentbernat.github.io/lldpd/
-  DEPENDS:=+libevent2 +USE_GLIBC:libbsd +LLDPD_WITH_JSON:libjson-c +LLDPD_WITH_SNMP:libnetsnmp
+  DEPENDS:=+libcap +libevent2 +USE_GLIBC:libbsd +LLDPD_WITH_JSON:libjson-c +LLDPD_WITH_SNMP:libnetsnmp
   USERID:=lldp=121:lldp=129
   MENU:=1
 endef
@@ -109,5 +109,8 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_JSON),--enable-json0,) \
 	$(if $(CONFIG_LLDPD_WITH_SNMP),--with-snmp,) \
 	$(if $(CONFIG_USE_GLIBC),,--without-libbsd)
+
+TARGET_CFLAGS += -flto
+TARGET_LDFLAGS += -flto -Wl,--gc-sections,--as-needed
 
 $(eval $(call BuildPackage,lldpd))

@@ -1,0 +1,52 @@
+From 15ff10623c83ee2e626d93d16e022b115dcb608f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>
+Date: Sat, 10 Apr 2021 16:56:12 +0200
+Subject: [PATCH] avs: Validate VDD value from OTP
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+CPU VDD voltage value for 1.2 GHz frequency on some Espressobin boards is
+not set and raw value 0x00 is returned. In this case init_avs() function
+calculated CPU VDD voltage value to 0x00 + AVS_VDD_BASE = 0.898 V, which is
+too low for any operation and Espressobin board immediately crashed
+init_avs() function set this low value.
+
+This patch fixes above issue by validating returned VDD value from OTP and
+using default VDD value when invalid value is in OTP. With this patch
+init_avs() function does cause CPU crash anymore.
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+Signed-off-by: Marek Behún <marek.behun@nic.cz>
+---
+ wtmi/avs.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/wtmi/avs.c b/wtmi/avs.c
+index 36ca9fa..4624359 100644
+--- a/wtmi/avs.c
++++ b/wtmi/avs.c
+@@ -140,10 +140,16 @@ int init_avs(u32 speed)
+ 	}
+ 
+ 	if (svc_rev >= SVC_REVISION_2) {
+-		vdd_otp = ((otp_data[OTP_DATA_SVC_SPEED_ID] >> shift) +
+-			   AVS_VDD_BASE) & AVS_VDD_MASK;
+-		regval |= (vdd_otp << HIGH_VDD_LIMIT_OFF);
+-		regval |= (vdd_otp << LOW_VDD_LIMIT_OFF);
++		vdd_otp = (otp_data[OTP_DATA_SVC_SPEED_ID] >> shift) &
++			  AVS_VDD_MASK;
++		if (!vdd_otp || vdd_otp + AVS_VDD_BASE > AVS_VDD_MASK) {
++			regval |= (vdd_default << HIGH_VDD_LIMIT_OFF);
++			regval |= (vdd_default << LOW_VDD_LIMIT_OFF);
++		} else {
++			vdd_otp += AVS_VDD_BASE;
++			regval |= (vdd_otp << HIGH_VDD_LIMIT_OFF);
++			regval |= (vdd_otp << LOW_VDD_LIMIT_OFF);
++		}
+ 	} else {
+ 		regval |= (vdd_default << HIGH_VDD_LIMIT_OFF);
+ 		regval |= (vdd_default << LOW_VDD_LIMIT_OFF);
+-- 
+2.30.2
+

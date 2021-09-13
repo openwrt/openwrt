@@ -1,8 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License,
- * version 2 as published by the Free Software Foundation.
- *
  * (C) Nicolò Veronese <nicveronese@gmail.com>
  */
 
@@ -92,7 +89,8 @@ main(int ac, char *av[])
 	char region[MAX_REG_LEN];
 	int kernel = 0;
 
-	FILE *ifile, *ofile;
+	FILE *ifile = NULL;
+	FILE *ofile = NULL;
 	int c;
 
 	uint32_t cksum;

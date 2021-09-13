@@ -90,6 +90,19 @@ define Device/ZyXELImage
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 
+define Device/askey_rt4230w-rev6
+	$(call Device/LegacyImage)
+	DEVICE_VENDOR := Askey
+	DEVICE_MODEL := RT4230W
+	DEVICE_VARIANT := REV6
+	SOC := qcom-ipq8065
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
+	KERNEL_IN_UBI := 1
+endef
+TARGET_DEVICES += askey_rt4230w-rev6
+
 define Device/asrock_g10
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -388,7 +401,7 @@ define Device/ubnt_unifi-ac-hd
 	BLOCKSIZE := 64k
 	IMAGE_SIZE := 14784k
 	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
-	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | check-size
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += ubnt_unifi-ac-hd
 

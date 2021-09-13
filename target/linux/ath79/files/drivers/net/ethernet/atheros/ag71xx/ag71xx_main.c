@@ -602,6 +602,11 @@ static void ag71xx_sgmii_serdes_init_qca956x(struct device_node *np)
 		goto err_iomap;
 	}
 
+	t = __raw_readl(gmac_base + QCA956X_GMAC_REG_SGMII_CONFIG);
+	t &= ~(QCA956X_SGMII_CONFIG_MODE_CTRL_MASK << QCA956X_SGMII_CONFIG_MODE_CTRL_SHIFT);
+	t |= QCA956X_SGMII_CONFIG_MODE_CTRL_SGMII_MAC;
+	__raw_writel(t, gmac_base + QCA956X_GMAC_REG_SGMII_CONFIG);
+
 	pr_debug("%pOF: fixup SERDES calibration to value %i\n",
 		np_dev, serdes_cal);
 	t = __raw_readl(gmac_base + QCA956X_GMAC_REG_SGMII_SERDES);
@@ -1514,7 +1519,6 @@ static int ag71xx_probe(struct platform_device *pdev)
 	struct net_device *dev;
 	struct resource *res;
 	struct ag71xx *ag;
-	const void *mac_addr;
 	u32 max_frame_len;
 	int tx_size, err;
 
@@ -1663,21 +1667,19 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->stop_desc->ctrl = 0;
 	ag->stop_desc->next = (u32) ag->stop_desc_dma;
 
-	mac_addr = of_get_mac_address(np);
-	if (IS_ERR_OR_NULL(mac_addr) || !is_valid_ether_addr(mac_addr)) {
+	of_get_mac_address(np, dev->dev_addr);
+	if (!is_valid_ether_addr(dev->dev_addr)) {
 		dev_err(&pdev->dev, "invalid MAC address, using random address\n");
 		eth_random_addr(dev->dev_addr);
-	} else {
-		memcpy(dev->dev_addr, mac_addr, ETH_ALEN);
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,10,0)
-	of_get_phy_mode(np, &ag->phy_if_mode);
+	err = of_get_phy_mode(np, &ag->phy_if_mode);
+	if (err < 0) {
 #else
 	ag->phy_if_mode = of_get_phy_mode(np);
-#endif
-
 	if (ag->phy_if_mode < 0) {
+#endif
 		dev_err(&pdev->dev, "missing phy-mode property in DT\n");
 		return ag->phy_if_mode;
 	}

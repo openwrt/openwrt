@@ -88,7 +88,8 @@
 &eth0 {
 	status = "okay";
 
-	mtd-mac-address = <&art 0x0>;
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
 
 	phy-handle = <&phy1>;
 	phy-mode = "rgmii-id";
@@ -99,8 +100,9 @@
 &eth1 {
 	status = "okay";
 
-	mtd-mac-address = <&art 0x0>;
-	mtd-mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <1>;
 
 	phy-handle = <&phy2>;
 
@@ -109,12 +111,12 @@
 	qca955x-sgmii-fixup;
 };
 
-&pcie0 {
-	status = "okay";
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
-	wifi@0,0,0 {
-		compatible = "qcom,ath10k";
-		reg = <0x0 0 0 0 0>;
-		qca,no-eeprom;
+	macaddr_art_0: macaddr@0 {
+		reg = <0x0 0x6>;
 	};
 };

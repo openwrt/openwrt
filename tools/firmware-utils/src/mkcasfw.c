@@ -1,12 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  *
  *  Copyright (C) 2007 OpenWrt.org
  *  Copyright (C) 2007 Gabor Juhos <juhosg at openwrt.org>
- *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 as published
- *  by the Free Software Foundation.
- *
  */
 
 #include <stdio.h>
@@ -463,8 +459,9 @@ csum8_get(struct csum_state *css)
 
 
 void
-csum16_update(uint8_t *p, uint32_t len, struct csum_state *css)
+csum16_update(void *data, uint32_t len, struct csum_state *css)
 {
+	uint8_t *p = data;
 	uint16_t t;
 
 	if (css->odd) {
@@ -524,8 +521,10 @@ csum_init(struct csum_state *css, int size)
 }
 
 void
-csum_update(uint8_t *p, uint32_t len, struct csum_state *css)
+csum_update(void *data, uint32_t len, struct csum_state *css)
 {
+	uint8_t *p = data;
+
 	switch (css->size) {
 	case CSUM_TYPE_8:
 		csum8_update(p,len,css);
@@ -554,6 +553,10 @@ csum_get(struct csum_state *css)
 		break;
 	case CSUM_TYPE_32:
 		ret = csum32_get(css);
+		break;
+	default:
+		ERR("invalid checksum size\n");
+		return 0;
 	}
 
 	return ret;
@@ -564,19 +567,21 @@ csum_get(struct csum_state *css)
  * routines to write data to the output file
  */
 int
-write_out_data(FILE *outfile, uint8_t *data, size_t len,
+write_out_data(FILE *outfile, void *data, size_t len,
 		struct csum_state *css)
 {
+	uint8_t *ptr = data;
+
 	errno = 0;
 
-	fwrite(data, len, 1, outfile);
+	fwrite(ptr, len, 1, outfile);
 	if (errno) {
 		ERRS("unable to write output file");
 		return ERR_FATAL;
 	}
 
 	if (css) {
-		csum_update(data, len, css);
+		csum_update(ptr, len, css);
 	}
 
 	return 0;
@@ -755,6 +760,9 @@ write_out_header(FILE *outfile)
 		res = write_out_data(outfile, (uint8_t *)&tmp.nfs,
 					sizeof(tmp.nfs), NULL);
 		break;
+	default:
+		ERR("invalid header type\n");
+		return -EINVAL;
 	}
 
 	return res;
@@ -763,8 +771,7 @@ write_out_header(FILE *outfile)
 int
 write_out_images(FILE *outfile)
 {
-	struct image_desc *desc;
-	int i, res;
+	int res;
 
 	res = image_writeout(outfile, &kernel_image);
 	if (res)
@@ -839,7 +846,6 @@ parse_opt_image(char ch, char *arg)
 {
 	char buf[MAX_ARG_LEN];
 	char *argv[MAX_ARG_COUNT];
-	int argc;
 	char *p;
 	struct image_desc *desc = NULL;
 	int i;
@@ -864,7 +870,7 @@ parse_opt_image(char ch, char *arg)
 	if (!desc)
 		return ERR_FATAL;
 
-	argc = parse_arg(arg, buf, argv);
+	parse_arg(arg, buf, argv);
 
 	i = 0;
 	p = argv[i++];
@@ -886,9 +892,6 @@ parse_opt_image(char ch, char *arg)
 int
 process_images(void)
 {
-	struct image_desc *desc;
-	uint32_t offs = 0;
-	int i;
 	int res;
 
 	kernel_image.out_size = board->max_kernel_size;

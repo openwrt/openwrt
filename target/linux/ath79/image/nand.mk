@@ -102,7 +102,6 @@ TARGET_DEVICES += glinet_gl-ar300m-nand
 define Device/glinet_gl-ar300m-nor
   $(Device/glinet_gl-ar300m-common-nand)
   DEVICE_VARIANT := NOR
-  BLOCKSIZE := 64k
   SUPPORTED_DEVICES += glinet,gl-ar300m-nand gl-ar300m
 endef
 TARGET_DEVICES += glinet_gl-ar300m-nor
@@ -128,7 +127,6 @@ TARGET_DEVICES += glinet_gl-ar750s-nor-nand
 define Device/glinet_gl-ar750s-nor
   $(Device/glinet_gl-ar750s-common)
   DEVICE_VARIANT := NOR
-  BLOCKSIZE := 64k
   SUPPORTED_DEVICES += gl-ar750s glinet,gl-ar750s glinet,gl-ar750s-nor-nand
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor
@@ -166,8 +164,7 @@ define Device/netgear_ath79_nand
   IMAGES := sysupgrade.bin factory.img
   IMAGE/factory.img := append-kernel | append-ubi | netgear-dni | \
 	check-size
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | \
-	check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
   UBINIZE_OPTS := -E 5
 endef
 
@@ -256,5 +253,6 @@ define Device/zyxel_nbg6716
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 	zyxel-factory
   UBINIZE_OPTS := -E 5
+  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_nbg6716

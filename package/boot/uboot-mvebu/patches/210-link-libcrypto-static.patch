@@ -3,7 +3,7 @@ needed dependencies are added too.
 
 --- a/tools/Makefile
 +++ b/tools/Makefile
-@@ -158,7 +158,7 @@ ifneq ($(CONFIG_MX23)$(CONFIG_MX28)$(CON
+@@ -168,7 +168,7 @@ ifneq ($(CONFIG_MX23)$(CONFIG_MX28)$(CON
  HOSTCFLAGS_kwbimage.o += \
  	$(shell pkg-config --cflags libssl libcrypto 2> /dev/null || echo "")
  HOSTLDLIBS_mkimage += \

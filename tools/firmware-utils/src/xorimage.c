@@ -1,19 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * xorimage.c - partially based on OpenWrt's addpattern.c
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
 
@@ -29,15 +16,17 @@ static char default_pattern[] = "12345678";
 static int is_hex_pattern;
 
 
-int xor_data(uint8_t *data, size_t len, const uint8_t *pattern, int p_len, int p_off)
+int xor_data(void *data, size_t len, const void *pattern, int p_len, int p_off)
 {
-	int offset = p_off;
+	const uint8_t *key = pattern;
+	uint8_t *d = data;
+
 	while (len--) {
-		*data ^= pattern[offset];
-		data++;
-		offset = (offset + 1) % p_len;
+		*d ^= key[p_off];
+		d++;
+		p_off = (p_off + 1) % p_len;
 	}
-	return offset;
+	return p_off;
 }
 
 
@@ -61,7 +50,6 @@ int main(int argc, char **argv)
 	char hex_pattern[128];
 	unsigned int hex_buf;
 	int c;
-	int v0, v1, v2;
 	size_t n;
 	int p_len, p_off = 0;
 

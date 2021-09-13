@@ -72,6 +72,7 @@ platform_do_upgrade() {
 	glinet,gl-ap1300 |\
 	luma,wrtq-329acn |\
 	mobipromo,cm520-79f |\
+	netgear,wac510 |\
 	qxwlan,e2600ac-c2)
 		nand_do_upgrade "$1"
 		;;
@@ -110,6 +111,11 @@ platform_do_upgrade() {
 	meraki,mr33)
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
+		;;
+	mikrotik,hap-ac2|\
+	mikrotik,sxtsq-5-ac)
+		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
+		default_do_upgrade "$1"
 		;;
 	openmesh,a42 |\
 	openmesh,a62 |\

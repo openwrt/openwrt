@@ -697,10 +697,13 @@ int __init rb_hardconfig_init(struct kobject *rb_kobj)
 
 	hc_buflen = mtd->size;
 	hc_buf = kmalloc(hc_buflen, GFP_KERNEL);
-	if (!hc_buf)
+	if (!hc_buf) {
+		put_mtd_device(mtd);
 		return -ENOMEM;
+	}
 
 	ret = mtd_read(mtd, 0, hc_buflen, &bytes_read, hc_buf);
+	put_mtd_device(mtd);
 
 	if (ret)
 		goto fail;

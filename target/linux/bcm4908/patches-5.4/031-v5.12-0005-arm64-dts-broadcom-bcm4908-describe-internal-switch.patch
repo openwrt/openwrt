@@ -1,4 +1,4 @@
-From 961c38974fa5b34d6232d7485120e4392d279ab4 Mon Sep 17 00:00:00 2001
+From 527a3ac9bdf81da4b7160ce3cea57f28a0e5eb64 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
 Date: Wed, 13 Jan 2021 12:14:06 +0100
 Subject: [PATCH] arm64: dts: broadcom: bcm4908: describe internal switch
@@ -58,22 +58,22 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +
 +&mdio {
 +	/* lan8 */
-+	phy@0 {
++	ethernet-phy@0 {
 +		reg = <0>;
 +	};
 +
 +	/* lan7 */
-+	phy@1 {
++	ethernet-phy@1 {
 +		reg = <1>;
 +	};
 +
 +	/* lan4 */
-+	phy@2 {
++	ethernet-phy@2 {
 +		reg = <2>;
 +	};
 +
 +	/* lan3 */
-+	phy@3 {
++	ethernet-phy@3 {
 +		reg = <3>;
 +	};
 +};
@@ -97,13 +97,13 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  			status = "disabled";
  		};
 +
-+		switch@80000 {
++		ethernet-switch@80000 {
 +			compatible = "simple-bus";
 +			#size-cells = <1>;
 +			#address-cells = <1>;
 +			ranges = <0 0x80000 0x50000>;
 +
-+			switch@0 {
++			ethernet-switch@0 {
 +				compatible = "brcm,bcm4908-switch";
 +				reg = <0x0 0x40000>,
 +				      <0x40000 0x110>,
@@ -155,26 +155,26 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +				compatible = "brcm,unimac-mdio";
 +				reg = <0x405c0 0x8>;
 +				reg-names = "mdio";
-+				#size-cells = <1>;
-+				#address-cells = <0>;
++				#size-cells = <0>;
++				#address-cells = <1>;
 +
-+				phy8: phy@8 {
++				phy8: ethernet-phy@8 {
 +					reg = <8>;
 +				};
 +
-+				phy9: phy@9 {
++				phy9: ethernet-phy@9 {
 +					reg = <9>;
 +				};
 +
-+				phy10: phy@a {
++				phy10: ethernet-phy@a {
 +					reg = <10>;
 +				};
 +
-+				phy11: phy@b {
++				phy11: ethernet-phy@b {
 +					reg = <11>;
 +				};
 +
-+				phy12: phy@c {
++				phy12: ethernet-phy@c {
 +					reg = <12>;
 +				};
 +			};

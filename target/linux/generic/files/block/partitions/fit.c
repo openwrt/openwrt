@@ -92,8 +92,11 @@ int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, 
 		return -ERANGE;
 
 	page = read_mapping_page(mapping, fit_start_sector >> (PAGE_SHIFT - SECTOR_SHIFT), NULL);
-	if (!page)
-		return -ENOMEM;
+	if (IS_ERR(page))
+		return -EFAULT;
+
+	if (PageError(page))
+		return -EFAULT;
 
 	init_fit = page_address(page);
 
@@ -112,20 +115,19 @@ int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, 
 		dsectors = (dsectors>sectors)?sectors:dsectors;
 
 	dsize = dsectors << SECTOR_SHIFT;
-	printk(KERN_DEBUG "FIT: volume size: %llu sectors (%llu bytes)\n", dsectors, dsize);
 
 	size = fdt_totalsize(init_fit);
-	printk(KERN_DEBUG "FIT: FDT structure size: %u bytes\n", size);
+
+	/* silently skip non-external-data legacy FIT images */
 	if (size > PAGE_SIZE) {
-		printk(KERN_ERR "FIT: FDT structure beyond page boundaries, use 'mkimage -E ...'!\n");
 		put_page(page);
-		return -ENOTSUPP;
+		return 0;
 	}
 
 	if (size >= dsize) {
+		state->access_beyond_eod = 1;
 		put_page(page);
-		state->access_beyond_eod = (size >= dsize);
-		return 0;
+		return -EFBIG;
 	}
 
 	fit = kmemdup(init_fit, size, GFP_KERNEL);
@@ -158,7 +160,7 @@ int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, 
 	config_description = fdt_getprop(fit, node, FIT_DESC_PROP, &config_description_len);
 	config_loadables = fdt_getprop(fit, node, FIT_LOADABLE_PROP, &config_loadables_len);
 
-	printk(KERN_DEBUG "FIT: Default configuration: %s%s%s%s\n", config_default,
+	printk(KERN_DEBUG "FIT: Default configuration: \"%s\"%s%s%s\n", config_default,
 		config_description?" (":"", config_description?:"", config_description?")":"");
 
 	images = fdt_path_offset(fit, FIT_IMAGES_PATH);
@@ -190,8 +192,8 @@ int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, 
 
 		image_description = fdt_getprop(fit, node, FIT_DESC_PROP, &image_description_len);
 
-		printk(KERN_DEBUG "FIT: %16s sub-image 0x%08x - 0x%08x '%s' %s%s%s\n",
-			image_type, image_pos, image_pos + image_len, image_name,
+		printk(KERN_DEBUG "FIT: %16s sub-image 0x%08x..0x%08x \"%s\" %s%s%s\n",
+			image_type, image_pos, image_pos + image_len - 1, image_name,
 			image_description?"(":"", image_description?:"", image_description?") ":"");
 
 		if (strcmp(image_type, FIT_FILESYSTEM_PROP))
@@ -230,7 +232,7 @@ int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, 
 		state->parts[*slot].has_info = true;
 
 		if (config_loadables && !strcmp(image_name, config_loadables)) {
-			printk(KERN_DEBUG "FIT: selecting configured loadable %s to be root filesystem\n", image_name);
+			printk(KERN_DEBUG "FIT: selecting configured loadable \"%s\" to be root filesystem\n", image_name);
 			state->parts[*slot].flags |= ADDPART_FLAG_ROOTDEV;
 		}
 	}

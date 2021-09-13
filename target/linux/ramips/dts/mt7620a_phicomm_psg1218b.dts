@@ -1,10 +1,14 @@
-#include "mt7620a_phicomm_psg1218.dtsi"
+#include "mt7620a_phicomm_k2x.dtsi"
 
 / {
 	compatible = "phicomm,psg1218b", "phicomm,psg1218", "ralink,mt7620a-soc";
 	model = "Phicomm PSG1218 rev.B";
 };
 
-&ethernet {
-	mtd-mac-address = <&factory 0x28>;
+&partitions {
+	partition@50000 {
+		compatible = "denx,uimage";
+		label = "firmware";
+		reg = <0x50000 0x7b0000>;
+	};
 };

@@ -13,9 +13,9 @@ PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/mtk-openwrt/arm-trusted-firmware.git
-PKG_SOURCE_DATE:=2021-02-25
-PKG_SOURCE_VERSION:=1220acb044a9db9a201aba3be0bb4ce0c9ed3702
-PKG_MIRROR_HASH:=f2ca44b9b8acfbd3a6be30aba316c765f73bad6231a821f524c9f21a845e50a3
+PKG_SOURCE_DATE:=2021-05-08
+PKG_SOURCE_VERSION:=d2c75b2139be003887af9cc5a94da5e9bdc59de7
+PKG_MIRROR_HASH:=4af9ce8e11511afee7f588cc982946c06339edbfa47afef6a7f3e2231ac9f34d
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
@@ -48,7 +48,7 @@ define Trusted-Firmware-A/mt7622-snand-1ddr
 endef
 
 define Trusted-Firmware-A/mt7622-snand-2ddr
-  NAME:=MediaTek MT7622 (SPI-SNAND, 2x DDR3)
+  NAME:=MediaTek MT7622 (SPI-NAND, 2x DDR3)
   BOOT_DEVICE:=snand
   DDR3_FLYBY:=1
 endef
@@ -85,7 +85,11 @@ TFA_TARGETS:= \
 	mt7622-sdmmc-1ddr \
 	mt7622-sdmmc-2ddr
 
-TFA_MAKE_FLAGS += BOOT_DEVICE=$(BOOT_DEVICE) $(if $(DDR3_FLYBY),DDR3_FLYBY=1) all
+TFA_MAKE_FLAGS += \
+	BOOT_DEVICE=$(BOOT_DEVICE) \
+	USE_MKIMAGE=1 MKIMAGE=$(STAGING_DIR_HOST)/bin/mkimage \
+	$(if $(DDR3_FLYBY),DDR3_FLYBY=1) \
+	all
 
 define Build/Configure
 	$(call Build/Configure/Default)

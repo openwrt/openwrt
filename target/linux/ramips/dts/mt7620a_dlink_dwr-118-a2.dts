@@ -140,8 +140,9 @@
 	wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		mtd-mac-address = <&config 0xe4a8>;
-		mtd-mac-address-increment = <(2)>;
+		nvmem-cells = <&macaddr_config_e4a8>;
+		nvmem-cell-names = "mac-address";
+		mac-address-increment = <(2)>;
 
 		led {
 			led-sources = <2>;
@@ -173,6 +174,16 @@
 };
 
 &gsw {
-	mediatek,port4 = "gmac";
-	mediatek,ephy-base-address = /bits/ 16 < 2 >;
+	mediatek,port4-gmac;
+	mediatek,ephy-base = /bits/ 8 <2>;
+};
+
+&config {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_config_e4a8: macaddr@e4a8 {
+		reg = <0xe4a8 0x6>;
+	};
 };

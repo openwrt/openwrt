@@ -17,7 +17,7 @@
 #define je16_to_cpu(x) ((x).v16)
 #define je32_to_cpu(x) ((x).v32)
 
-#define NR_PARTS		1
+#define NR_PARTS		2
 
 static int mtdsplit_cfe_bootfs_parse(struct mtd_info *mtd,
 				     const struct mtd_partition **pparts,
@@ -58,12 +58,16 @@ static int mtdsplit_cfe_bootfs_parse(struct mtd_info *mtd,
 	if (!parts)
 		return -ENOMEM;
 
+	parts[0].name = "bootfs";
+	parts[0].offset = 0;
+	parts[0].size = rootfs_offset;
+
 	if (type == MTDSPLIT_PART_TYPE_UBI)
-		parts[0].name = UBI_PART_NAME;
+		parts[1].name = UBI_PART_NAME;
 	else
-		parts[0].name = ROOTFS_PART_NAME;
-	parts[0].offset = rootfs_offset;
-	parts[0].size = mtd->size - rootfs_offset;
+		parts[1].name = ROOTFS_PART_NAME;
+	parts[1].offset = rootfs_offset;
+	parts[1].size = mtd->size - rootfs_offset;
 
 	*pparts = parts;
 

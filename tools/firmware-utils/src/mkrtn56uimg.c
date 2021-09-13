@@ -1,12 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  *
  *  Copyright (C) 2014 OpenWrt.org
  *  Copyright (C) 2014 Mikko Hissa <mikko.hissa@werzek.com>
- *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 as published
- *  by the Free Software Foundation.
- *
  */
 
 #include <errno.h>
@@ -67,7 +63,7 @@ typedef struct image_header {
 	uint8_t		ih_type;
 	uint8_t		ih_comp;
 	union {
-		uint8_t	ih_name[IH_NMLEN];
+		char	ih_name[IH_NMLEN];
 		asus_t	asus;
 	} tail;
 } image_header_t;
@@ -102,7 +98,6 @@ static void
 usage(const char *progname, int status)
 {
 	FILE *stream = (status != EXIT_SUCCESS) ? stderr : stdout;
-	int i;
 
 	fprintf(stream, "Usage: %s [OPTIONS...]\n", progname);
 	fprintf(stream, "\n"
@@ -116,12 +111,12 @@ usage(const char *progname, int status)
 int
 process_image(char *progname, char *filename, op_mode_t opmode)
 {
-	int 		fd, len;
-	void 		*data, *ptr;
+	int 		fd;
+	void 		*ptr;
 	char		namebuf[IH_NMLEN];
 	struct 		stat sbuf;
-	uint32_t	checksum, offset_kernel, offset_sqfs, offset_end,
-				offset_sec_header, offset_eb, offset_image_end;
+	uint32_t	offset_kernel, offset_sqfs, offset_end,
+			offset_sec_header, offset_eb, offset_image_end;
 	squashfs_sb_t *sqs;
 	image_header_t *hdr;
 
@@ -252,7 +247,8 @@ int
 main(int argc, char **argv)
 {
 	int 		opt;
-	char 		*filename, *progname;
+	char 		*filename = NULL;
+	char		*progname;
 	op_mode_t	opmode = NONE;
 
 	progname = argv[0];

@@ -1,12 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * asustrx
  *
  * Copyright (C) 2015 Rafał Miłecki <zajec5@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
  */
 
 #include <byteswap.h>
@@ -132,7 +128,7 @@ static void parse_options(int argc, char **argv) {
 			productid = optarg;
 			break;
 		case 'v':
-			if (sscanf(optarg, "%hu.%hu.%hu.%hu", &version[0], &version[1], &version[2], &version[3]) != 4)
+			if (sscanf(optarg, "%hhu.%hhu.%hhu.%hhu", &version[0], &version[1], &version[2], &version[3]) != 4)
 				fprintf(stderr, "Version %s doesn't match suppored 4-digits format\n", optarg);
 			break;
 		}
@@ -150,7 +146,8 @@ static void usage() {
 int main(int argc, char **argv) {
 	struct trx_header hdr;
 	struct asustrx_tail tail = { };
-	FILE *in, *out;
+	FILE *out = NULL;
+	FILE *in = NULL;
 	uint8_t buf[1024];
 	size_t bytes;
 	size_t length = 0;

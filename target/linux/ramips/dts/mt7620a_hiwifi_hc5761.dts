@@ -36,6 +36,17 @@
 			linux,default-trigger = "phy0tpt";
 		};
 	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		usbpower {
+			gpio-export,name = "usbpower";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 &ehci {
