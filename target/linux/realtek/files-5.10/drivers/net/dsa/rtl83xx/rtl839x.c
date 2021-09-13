@@ -608,6 +608,10 @@ int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	if (port > 63 || page > 4095 || reg > 31)
 		return -ENOTSUPP;
 
+	// Take bug on RTL839x Rev <= C into account
+	if (port >= RTL839X_CPU_PORT)
+		return -EIO;
+
 	mutex_lock(&smi_lock);
 
 	sw_w32_mask(0xffff0000, port << 16, RTL839X_PHYREG_DATA_CTRL);
@@ -636,6 +640,10 @@ int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	val &= 0xffff;
 	if (port > 63 || page > 4095 || reg > 31)
 		return -ENOTSUPP;
+
+	// Take bug on RTL839x Rev <= C into account
+	if (port >= RTL839X_CPU_PORT)
+		return -EIO;
 
 	mutex_lock(&smi_lock);
 
@@ -670,6 +678,10 @@ int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	int err = 0;
 	u32 v;
 
+	// Take bug on RTL839x Rev <= C into account
+	if (port >= RTL839X_CPU_PORT)
+		return -EIO;
+
 	mutex_lock(&smi_lock);
 
 	// Set PHY to access
@@ -701,6 +713,10 @@ int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 	int err = 0;
 	u32 v;
 
+	// Take bug on RTL839x Rev <= C into account
+	if (port >= RTL839X_CPU_PORT)
+		return -EIO;
+
 	mutex_lock(&smi_lock);
 
 	// Set PHY to access
@@ -726,12 +742,15 @@ int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 
 void rtl8390_get_version(struct rtl838x_switch_priv *priv)
 {
-	u32 info;
+	u32 info, model;
 
 	sw_w32_mask(0xf << 28, 0xa << 28, RTL839X_CHIP_INFO);
 	info = sw_r32(RTL839X_CHIP_INFO);
-	pr_debug("Chip-Info: %x\n", info);
-	priv->version = RTL8390_VERSION_A;
+
+	model = sw_r32(RTL839X_MODEL_NAME_INFO);
+	priv->version = RTL8390_VERSION_A + ((model & 0x3f) >> 1);
+
+	pr_info("RTL839X Chip-Info: %x, version %c\n", info, priv->version);
 }
 
 void rtl839x_vlan_profile_dump(int profile)
