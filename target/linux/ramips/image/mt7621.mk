@@ -429,6 +429,15 @@ define Device/d-team_pbr-m1
 endef
 TARGET_DEVICES += d-team_pbr-m1
 
+define Device/pangubox_ip04349
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := PanguBox
+  DEVICE_MODEL := IP04349
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += pangubox_ip04349
+
 define Device/edimax_ra21s
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
