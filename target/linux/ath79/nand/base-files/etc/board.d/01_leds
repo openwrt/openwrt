@@ -10,6 +10,10 @@ glinet,gl-ar300m-nand|\
 glinet,gl-ar300m-nor)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
 	;;
+netgear,r6100)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_switch "wan-amber" "WAN (amber)" "amber:wan" "switch0" "0x1e"
+	;;
 netgear,wndr3700-v4|\
 netgear,wndr4300|\
 netgear,wndr4300sw|\
