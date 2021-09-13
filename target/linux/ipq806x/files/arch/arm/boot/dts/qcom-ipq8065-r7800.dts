@@ -16,6 +16,15 @@
 			reg = <0x5fe00000 0x200000>;
 			reusable;
 		};
+
+		ramoops@5ff80000 {
+			compatible = "ramoops";
+			reg = <0x5ff80000 0x40000>;
+			record-size = <0x4000>;
+			console-size = <0x4000>;
+			ftrace-size = <0x4000>;
+			pmsg-size = <0x4000>;
+		};
 	};
 
 	aliases {
@@ -26,6 +35,10 @@
 		led-running = &power_white;
 		led-upgrade = &power_amber;
 		label-mac-device = &gmac2;
+	};
+
+	chosen {
+		bootargs = "mem=479M";
 	};
 
 	keys {
