@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3797,6 +3797,7 @@ void __ieee80211_subif_start_xmit(struct
+@@ -3805,6 +3805,7 @@ void __ieee80211_subif_start_xmit(struct
  				  u32 ctrl_flags)
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct sta_info *sta;
  	struct sk_buff *next;
  
-@@ -3810,7 +3811,15 @@ void __ieee80211_subif_start_xmit(struct
+@@ -3818,7 +3819,15 @@ void __ieee80211_subif_start_xmit(struct
  	if (ieee80211_lookup_ra_sta(sdata, skb, &sta))
  		goto out_free;
  

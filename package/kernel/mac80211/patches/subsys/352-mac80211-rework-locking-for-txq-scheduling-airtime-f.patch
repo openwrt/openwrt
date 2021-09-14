@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * ieee80211_txq_may_transmit - check whether TXQ is allowed to transmit
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3648,16 +3648,17 @@ EXPORT_SYMBOL(ieee80211_tx_dequeue);
+@@ -3656,16 +3656,17 @@ EXPORT_SYMBOL(ieee80211_tx_dequeue);
  struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
  {
  	struct ieee80211_local *local = hw_to_local(hw);
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (txqi->txq.sta) {
  		struct sta_info *sta = container_of(txqi->txq.sta,
-@@ -3674,21 +3675,25 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -3682,21 +3683,25 @@ struct ieee80211_txq *ieee80211_next_txq
  
  
  	if (txqi->schedule_round == local->schedule_round[ac])
@@ -146,7 +146,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (list_empty(&txqi->schedule_order) &&
  	    (!skb_queue_empty(&txqi->frags) || txqi->tin.backlog_packets)) {
-@@ -3708,18 +3713,7 @@ void ieee80211_return_txq(struct ieee802
+@@ -3716,18 +3721,7 @@ void ieee80211_return_txq(struct ieee802
  			list_add_tail(&txqi->schedule_order,
  				      &local->active_txqs[txq->ac]);
  	}
@@ -165,7 +165,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spin_unlock_bh(&local->active_txq_lock[txq->ac]);
  }
  EXPORT_SYMBOL(ieee80211_schedule_txq);
-@@ -3732,7 +3726,7 @@ bool ieee80211_txq_may_transmit(struct i
+@@ -3740,7 +3734,7 @@ bool ieee80211_txq_may_transmit(struct i
  	struct sta_info *sta;
  	u8 ac = txq->ac;
  
@@ -174,7 +174,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (!txqi->txq.sta)
  		goto out;
-@@ -3762,34 +3756,27 @@ bool ieee80211_txq_may_transmit(struct i
+@@ -3770,34 +3764,27 @@ bool ieee80211_txq_may_transmit(struct i
  
  	sta->airtime[ac].deficit += sta->airtime_weight;
  	list_move_tail(&txqi->schedule_order, &local->active_txqs[ac]);

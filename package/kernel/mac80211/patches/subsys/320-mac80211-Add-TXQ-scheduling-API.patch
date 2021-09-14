@@ -202,7 +202,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1441,6 +1441,7 @@ void ieee80211_txq_init(struct ieee80211
+@@ -1447,6 +1447,7 @@ void ieee80211_txq_init(struct ieee80211
  	codel_vars_init(&txqi->def_cvars);
  	codel_stats_init(&txqi->cstats);
  	__skb_queue_head_init(&txqi->frags);
@@ -210,7 +210,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	txqi->txq.vif = &sdata->vif;
  
-@@ -1464,6 +1465,9 @@ void ieee80211_txq_purge(struct ieee8021
+@@ -1470,6 +1471,9 @@ void ieee80211_txq_purge(struct ieee8021
  
  	fq_tin_reset(fq, tin, fq_skb_free_func);
  	ieee80211_purge_tx_queue(&local->hw, &txqi->frags);
@@ -220,7 +220,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
  
  void ieee80211_txq_set_params(struct ieee80211_local *local)
-@@ -1580,7 +1584,7 @@ static bool ieee80211_queue_skb(struct i
+@@ -1586,7 +1590,7 @@ static bool ieee80211_queue_skb(struct i
  	ieee80211_txq_enqueue(local, txqi, skb);
  	spin_unlock_bh(&fq->lock);
  
@@ -229,7 +229,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	return true;
  }
-@@ -3631,6 +3635,60 @@ out:
+@@ -3639,6 +3643,60 @@ out:
  }
  EXPORT_SYMBOL(ieee80211_tx_dequeue);
  

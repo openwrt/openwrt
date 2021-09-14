@@ -100,7 +100,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		     (unsigned long) local);
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3498,13 +3498,19 @@ struct sk_buff *ieee80211_tx_dequeue(str
+@@ -3506,13 +3506,19 @@ struct sk_buff *ieee80211_tx_dequeue(str
  	struct ieee80211_tx_info *info;
  	struct ieee80211_tx_data tx;
  	ieee80211_tx_result r;
@@ -122,7 +122,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	/* Make sure fragments stay together. */
  	skb = __skb_dequeue(&txqi->frags);
  	if (skb)
-@@ -3617,6 +3623,7 @@ begin:
+@@ -3625,6 +3631,7 @@ begin:
  	}
  
  	IEEE80211_SKB_CB(skb)->control.vif = vif;

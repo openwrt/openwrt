@@ -18,7 +18,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -6474,12 +6474,13 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6477,12 +6477,13 @@ static int brcmf_setup_ifmodes(struct wi
  	struct ieee80211_iface_limit *c0_limits = NULL;
  	struct ieee80211_iface_limit *p2p_limits = NULL;
  	struct ieee80211_iface_limit *mbss_limits = NULL;
@@ -33,7 +33,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	n_combos = 1 + !!(p2p && !rsdb) + !!mbss;
  	combo = kcalloc(n_combos, sizeof(*combo), GFP_KERNEL);
-@@ -6489,6 +6490,10 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6492,6 +6493,10 @@ static int brcmf_setup_ifmodes(struct wi
  	wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) |
  				 BIT(NL80211_IFTYPE_ADHOC) |
  				 BIT(NL80211_IFTYPE_AP);
@@ -44,7 +44,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	c = 0;
  	i = 0;
-@@ -6500,48 +6505,28 @@ static int brcmf_setup_ifmodes(struct wi
+@@ -6503,48 +6508,28 @@ static int brcmf_setup_ifmodes(struct wi
  		c0_limits = kcalloc(2, sizeof(*c0_limits), GFP_KERNEL);
  	if (!c0_limits)
  		goto err;

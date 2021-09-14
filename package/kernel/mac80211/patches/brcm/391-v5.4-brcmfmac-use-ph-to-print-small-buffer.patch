@@ -13,7 +13,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -4214,10 +4214,8 @@ brcmf_parse_vndr_ies(const u8 *vndr_ie_b
+@@ -4217,10 +4217,8 @@ brcmf_parse_vndr_ies(const u8 *vndr_ie_b
  
  		vndr_ies->count++;
  
@@ -26,7 +26,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			  parsed_info->vndrie.oui_type);
  
  		if (vndr_ies->count >= VNDR_IE_PARSE_LIMIT)
-@@ -4341,12 +4339,10 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_c
+@@ -4344,12 +4342,10 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_c
  		for (i = 0; i < old_vndr_ies.count; i++) {
  			vndrie_info = &old_vndr_ies.ie_info[i];
  
@@ -41,7 +41,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  			del_add_ie_buf_len = brcmf_vndr_ie(curr_ie_buf, pktflag,
  							   vndrie_info->ie_ptr,
-@@ -4378,12 +4374,10 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_c
+@@ -4381,12 +4377,10 @@ s32 brcmf_vif_set_mgmt_ie(struct brcmf_c
  			remained_buf_len -= (vndrie_info->ie_len +
  					     VNDR_IE_VSIE_OFFSET);
  

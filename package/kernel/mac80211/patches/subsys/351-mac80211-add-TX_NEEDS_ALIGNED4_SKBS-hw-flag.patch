@@ -113,7 +113,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!(mshdr->flags & MESH_FLAGS_AE)) {
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2705,7 +2705,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2702,7 +2702,7 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	struct ieee80211_local *local = rx->local;
  	struct ieee80211_sub_if_data *sdata = rx->sdata;
  	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
@@ -122,7 +122,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int tailroom = 0;
  
  	hdr = (struct ieee80211_hdr *) skb->data;
-@@ -2798,7 +2798,9 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2795,7 +2795,9 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	if (sdata->crypto_tx_tailroom_needed_cnt)
  		tailroom = IEEE80211_ENCRYPT_TAILROOM;
  
@@ -133,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				       sdata->encrypt_headroom,
  				  tailroom, GFP_ATOMIC);
  	if (!fwd_skb)
-@@ -2830,6 +2832,12 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2827,6 +2829,12 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  		return RX_DROP_MONITOR;
  	}
  
@@ -148,7 +148,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   out:
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -312,7 +312,7 @@ struct ieee80211_fast_tx {
+@@ -313,7 +313,7 @@ struct ieee80211_fast_tx {
  	u8 hdr_len;
  	u8 sa_offs, da_offs, pn_offs;
  	u8 band;
@@ -217,7 +217,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1175,8 +1175,7 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1181,8 +1181,7 @@ ieee80211_tx_prepare(struct ieee80211_su
  	info->flags &= ~IEEE80211_TX_INTFL_NEED_TXPROCESSING;
  
  	hdr = (struct ieee80211_hdr *) skb->data;
@@ -227,7 +227,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (likely(sta)) {
  		if (!IS_ERR(sta))
-@@ -2233,7 +2232,7 @@ netdev_tx_t ieee80211_monitor_start_xmit
+@@ -2239,7 +2238,7 @@ netdev_tx_t ieee80211_monitor_start_xmit
  		goto fail;
  
  	hdr = (struct ieee80211_hdr *)(skb->data + len_rthdr);
@@ -236,7 +236,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (skb->len < len_rthdr + hdrlen)
  		goto fail;
-@@ -2452,7 +2451,7 @@ static struct sk_buff *ieee80211_build_h
+@@ -2458,7 +2457,7 @@ static struct sk_buff *ieee80211_build_h
  	struct ieee80211_chanctx_conf *chanctx_conf;
  	struct ieee80211_sub_if_data *ap_sdata;
  	enum nl80211_band band;
@@ -245,7 +245,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (IS_ERR(sta))
  		sta = NULL;
-@@ -2751,7 +2750,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -2757,7 +2756,9 @@ static struct sk_buff *ieee80211_build_h
  	}
  
  	skb_pull(skb, skip_header_bytes);
@@ -255,7 +255,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/*
  	 * So we need to modify the skb header and hence need a copy of
-@@ -2784,6 +2785,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -2790,6 +2791,9 @@ static struct sk_buff *ieee80211_build_h
  		memcpy(skb_push(skb, meshhdrlen), &mesh_hdr, meshhdrlen);
  #endif
  
@@ -265,7 +265,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ieee80211_is_data_qos(fc)) {
  		__le16 *qos_control;
  
-@@ -2960,6 +2964,8 @@ void ieee80211_check_fast_xmit(struct st
+@@ -2966,6 +2970,8 @@ void ieee80211_check_fast_xmit(struct st
  		fc |= cpu_to_le16(IEEE80211_STYPE_QOS_DATA);
  	}
  
@@ -274,7 +274,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* We store the key here so there's no point in using rcu_dereference()
  	 * but that's fine because the code that changes the pointers will call
  	 * this function after doing so. For a single CPU that would be enough,
-@@ -3536,7 +3542,7 @@ begin:
+@@ -3544,7 +3550,7 @@ begin:
  	tx.local = local;
  	tx.skb = skb;
  	tx.sdata = vif_to_sdata(info->control.vif);
@@ -283,7 +283,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (txq->sta) {
  		tx.sta = container_of(txq->sta, struct sta_info, sta);
-@@ -4040,7 +4046,7 @@ ieee80211_build_data_template(struct iee
+@@ -4048,7 +4054,7 @@ ieee80211_build_data_template(struct iee
  	hdr = (void *)skb->data;
  	tx.sta = sta_info_get(sdata, hdr->addr1);
  	tx.skb = skb;

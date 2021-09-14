@@ -76,7 +76,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	flow->backlog += skb->len;
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1390,11 +1390,15 @@ static void ieee80211_txq_enqueue(struct
+@@ -1396,11 +1396,15 @@ static void ieee80211_txq_enqueue(struct
  {
  	struct fq *fq = &local->fq;
  	struct fq_tin *tin = &txqi->tin;
@@ -93,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static bool fq_vlan_filter_func(struct fq *fq, struct fq_tin *tin,
-@@ -1564,7 +1568,6 @@ static bool ieee80211_queue_skb(struct i
+@@ -1570,7 +1574,6 @@ static bool ieee80211_queue_skb(struct i
  				struct sta_info *sta,
  				struct sk_buff *skb)
  {
@@ -101,7 +101,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_vif *vif;
  	struct txq_info *txqi;
  
-@@ -1582,9 +1585,7 @@ static bool ieee80211_queue_skb(struct i
+@@ -1588,9 +1591,7 @@ static bool ieee80211_queue_skb(struct i
  	if (!txqi)
  		return false;
  
@@ -111,7 +111,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	schedule_and_wake_txq(local, txqi);
  
-@@ -3211,6 +3212,7 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3219,6 +3220,7 @@ static bool ieee80211_amsdu_aggregate(st
  	u8 max_subframes = sta->sta.max_amsdu_subframes;
  	int max_frags = local->hw.max_tx_fragments;
  	int max_amsdu_len = sta->sta.max_amsdu_len;
@@ -119,7 +119,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int orig_truesize;
  	__be16 len;
  	void *data;
-@@ -3233,6 +3235,8 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3241,6 +3243,8 @@ static bool ieee80211_amsdu_aggregate(st
  		max_amsdu_len = min_t(int, max_amsdu_len,
  				      sta->sta.max_rc_amsdu_len);
  
@@ -128,7 +128,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spin_lock_bh(&fq->lock);
  
  	/* TODO: Ideally aggregation should be done on dequeue to remain
-@@ -3240,7 +3244,8 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3248,7 +3252,8 @@ static bool ieee80211_amsdu_aggregate(st
  	 */
  
  	tin = &txqi->tin;

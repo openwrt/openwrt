@@ -18,7 +18,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -5293,6 +5293,7 @@ struct brcmf_cfg80211_vif *brcmf_alloc_v
+@@ -5296,6 +5296,7 @@ struct brcmf_cfg80211_vif *brcmf_alloc_v
  	struct brcmf_cfg80211_vif *vif_walk;
  	struct brcmf_cfg80211_vif *vif;
  	bool mbss;
@@ -26,7 +26,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	brcmf_dbg(TRACE, "allocating virtual interface (size=%zu)\n",
  		  sizeof(*vif));
-@@ -5305,7 +5306,8 @@ struct brcmf_cfg80211_vif *brcmf_alloc_v
+@@ -5308,7 +5309,8 @@ struct brcmf_cfg80211_vif *brcmf_alloc_v
  
  	brcmf_init_prof(&vif->profile);
  
