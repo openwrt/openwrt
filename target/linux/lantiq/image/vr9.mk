@@ -234,6 +234,10 @@ define Device/avm_fritz7490
   IMAGE_SIZE := 49152k
   DEVICE_PACKAGES := kmod-usb3 fritz-tffs wasp_uploader \
 	-kmod-owl-loader -dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+  UBINIZE_OPTS := -E 5
+  IMAGES += eva-kernel.bin eva-filesystem.bin
+  IMAGE/eva-kernel.bin := append-kernel
+  IMAGE/eva-filesystem.bin := append-ubi
 endef
 TARGET_DEVICES += avm_fritz7490
 
