@@ -7,7 +7,7 @@
 
 / {
 	compatible = "avm,fritz7490", "lantiq,xway", "lantiq,vr9";
-	model = "AVM FRITZ!Box 7490";
+	model = "AVM FRITZ!Box 7490 (Micron NAND)";
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200";
@@ -278,7 +278,7 @@
 			};
 
 			partition@3800000 {
-				label = "filesystem";
+				label = "ubi"; /* filesystem */
 				reg = <0x3800000 0x3000000>;
 			};
 
