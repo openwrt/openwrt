@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * --- ZyXEL header format ---
  * Original Version by Benjamin Berg <benjamin@sipsolutions.net>
@@ -29,11 +30,6 @@
  *
  * The checksum for the header is calculated over the first 2048 bytes with
  * the rootfs image checksum as the placeholder during calculation.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
- *
  */
 #include <fcntl.h>
 #include <getopt.h>

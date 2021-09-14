@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2015 Thomas Hebb <tommyhebb@gmail.com>
  * Copyright (C) 2016 Christian Lamparter <chunkeey@googlemail.com>
@@ -12,11 +13,6 @@
  * has been reverse engineered from the nandloader's nand_load_bk function.
  * The original code is part of Cisco's GPL code and can be found at:
  * <https://github.com/riptidewave93/meraki-linux>
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published
- * by the Free Software Foundation.
- *
  */
 
 #include <stdio.h>
@@ -48,6 +44,7 @@ struct board_info {
 	uint32_t imagelen;
 	uint32_t load_addr;
 	uint32_t entry;
+	bool le32;
 };
 
 /*
@@ -66,7 +63,16 @@ static const struct board_info boards[] = {
 		.magic		= 0x4d495053,
 		.imagelen	= 0x007e0000,
 		.load_addr	= 0x80060000,
-		.entry		= 0x80060000
+		.entry		= 0x80060000,
+		.le32		= 0,
+	}, {
+		.id		= "mx64",
+		.description	= "Meraki MX64/MX65",
+		.magic		= 0x4d495053,
+		.imagelen	= 0x00000000,
+		.load_addr	= 0x60008000,
+		.entry		= 0x60008000,
+		.le32		= 1,
 	}, {
 		/* terminating entry */
 	}
@@ -127,9 +133,11 @@ static void usage(int status)
 	exit(status);
 }
 
-static void writel(unsigned char *buf, size_t offset, uint32_t value)
+static void writel(unsigned char *buf, size_t offset, uint32_t value, bool le32)
 {
-	value = htonl(value);
+	if (!le32)
+		value = htonl(value);
+
 	memcpy(buf + offset, &value, sizeof(uint32_t));
 }
 
@@ -205,21 +213,25 @@ static inline uint32_t crc32_accumulate_8(const uint32_t crc, const uint8_t ch)
 	return crc32_table[(crc ^ ch) & 0xff] ^ (crc >> 8);
 }
 
-static void crc32_csum(uint8_t *buf, const size_t len)
+static void crc32_csum(uint8_t *buf, const size_t len, bool le32)
 {
+	int j, k, l, m;
 	uint32_t crc;
 	size_t i;
 
 	crc = ~0;
+	k = le32 * 3;
+	l = le32 * -2 + 1;
+
 	for (i = 0; i < len; i += 4) {
-		crc = crc32_accumulate_8(crc, buf[i + 3]);
-		crc = crc32_accumulate_8(crc, buf[i + 2]);
-		crc = crc32_accumulate_8(crc, buf[i + 1]);
-		crc = crc32_accumulate_8(crc, buf[i]);
+		for (j = 3; j >= 0; j -= 1) {
+			m = (j - k) * l;
+			crc = crc32_accumulate_8(crc, buf[i + m]);
+		}
 	}
 	crc = ~crc;
 
-	writel(buf, HDR_OFF_CHECKSUM, crc);
+	writel(buf, HDR_OFF_CHECKSUM, crc, le32);
 }
 
 
@@ -233,11 +245,14 @@ static int meraki_build_hdr(const struct board_info *board, const size_t klen,
 
 	size_t rc;
 	buflen = board->imagelen;
-	kspace = buflen - HDR_LENGTH;
 
-	if (klen > kspace) {
-		ERR("kernel file is too big - max size: 0x%08lX\n", kspace);
-		return EXIT_FAILURE;
+	if (buflen > 0) {
+		kspace = buflen - HDR_LENGTH;
+
+		if (klen > kspace) {
+			ERR("kernel file is too big - max size: 0x%08lX\n", kspace);
+			return EXIT_FAILURE;
+		}
 	}
 
 	/* If requested, resize buffer to remove padding */
@@ -257,23 +272,23 @@ static int meraki_build_hdr(const struct board_info *board, const size_t klen,
 	fread(kernel, klen, 1, in);
 
 	/* Write magic values and filler */
-	writel(buf, HDR_OFF_MAGIC1, board->magic);
-	writel(buf, HDR_OFF_FILLER0, 0);
-	writel(buf, HDR_OFF_FILLER1, 0);
-	writel(buf, HDR_OFF_FILLER2, 0);
+	writel(buf, HDR_OFF_MAGIC1, board->magic, board->le32);
+	writel(buf, HDR_OFF_FILLER0, 0, board->le32);
+	writel(buf, HDR_OFF_FILLER1, 0, board->le32);
+	writel(buf, HDR_OFF_FILLER2, 0, board->le32);
 
 	/* Write load and kernel entry point address */
-	writel(buf, HDR_OFF_LOAD_ADDR, board->load_addr);
-	writel(buf, HDR_OFF_ENTRY, board->entry);
+	writel(buf, HDR_OFF_LOAD_ADDR, board->load_addr, board->le32);
+	writel(buf, HDR_OFF_ENTRY, board->entry, board->le32);
 
 	/* Write header and image length */
-	writel(buf, HDR_OFF_IMAGELEN, klen);
+	writel(buf, HDR_OFF_IMAGELEN, klen, board->le32);
 
 	/* this gets replaced later, after the checksum has been calculated */
-	writel(buf, HDR_OFF_CHECKSUM, 0);
+	writel(buf, HDR_OFF_CHECKSUM, 0, board->le32);
 
 	/* Write checksum */
-	crc32_csum(buf, klen + HDR_LENGTH);
+	crc32_csum(buf, klen + HDR_LENGTH, board->le32);
 
 	rc = fwrite(buf, buflen, 1, out);
 

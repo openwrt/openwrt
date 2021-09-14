@@ -45,6 +45,7 @@ ath79_setup_interfaces()
 	netgear,ex7300|\
 	ocedo,koala|\
 	ocedo,raccoon|\
+	onion,omega|\
 	openmesh,mr600-v1|\
 	openmesh,mr600-v2|\
 	openmesh,mr900-v1|\
@@ -71,6 +72,7 @@ ath79_setup_interfaces()
 	tplink,re450-v2|\
 	tplink,re450-v3|\
 	tplink,re455-v1|\
+	tplink,tl-wa1201-v2|\
 	tplink,tl-wr902ac-v1|\
 	ubnt,bullet-ac|\
 	ubnt,bullet-m-ar7240|\
@@ -86,7 +88,8 @@ ath79_setup_interfaces()
 	ubnt,picostation-m|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2|\
-	ubnt,powerbeam-m-xw|\
+	ubnt,powerbeam-m2-xw|\
+	ubnt,powerbeam-m5-xw|\
 	ubnt,powerbridge-m|\
 	ubnt,rocket-5ac-lite|\
 	ubnt,rocket-m|\
@@ -114,6 +117,12 @@ ath79_setup_interfaces()
 	ocedo,ursus|\
 	ubnt,unifi-ap-outdoor-plus)
 		ucidef_set_interface_lan "eth0 eth1"
+		;;
+	atheros,db120)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
+		ucidef_add_switch "switch1" \
+			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:lan"
 		;;
 	avm,fritz4020|\
 	pcs,cr3000|\
@@ -214,6 +223,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan" "2:wan"
 		;;
+	compex,wpj558-16m)
+		ucidef_add_switch "switch0" \
+			"1:wan" "5:lan" "6@eth0"
+		;;
 	devolo,dlan-pro-1200plus-ac|\
 	devolo,magic-2-wifi)
 		ucidef_add_switch "switch0" \
@@ -272,6 +285,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan"
 		;;
+	glinet,gl-x300b)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "4:lan"
+		;;
 	iodata,etg3-r|\
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
@@ -281,6 +299,11 @@ ath79_setup_interfaces()
 	wd,mynet-n750)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+		;;
+	joyit,jt-or750i)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
 	librerouter,librerouter-v1)
 		ucidef_add_switch "switch0" \
@@ -511,6 +534,7 @@ ath79_setup_macs()
 		wan_mac=$(macaddr_add $(mtd_get_mac_binary art 0x0) 1)
 		;;
 	compex,wpj344-16m|\
+	compex,wpj558-16m|\
 	compex,wpj563)
 		wan_mac=$(mtd_get_mac_binary u-boot 0x2e018)
 		;;

@@ -153,4 +153,13 @@ define Device/zyxel_gs1900-8hp-v2
 endef
 TARGET_DEVICES += zyxel_gs1900-8hp-v2
 
+define Device/zyxel_gs1900-24hp-v2
+  $(Device/zyxel_gs1900)
+  SOC := rtl8382
+  DEVICE_MODEL := GS1900-24HP
+  DEVICE_VARIANT := v2
+  ZYXEL_VERS := ABTP
+endef
+TARGET_DEVICES += zyxel_gs1900-24hp-v2
+
 $(eval $(call BuildImage))

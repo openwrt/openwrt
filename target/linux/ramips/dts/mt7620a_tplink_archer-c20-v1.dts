@@ -82,13 +82,3 @@
 	nvmem-cell-names = "mac-address";
 	mac-address-increment = <(-1)>;
 };
-
-&rom {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_rom_f100: macaddr@f100 {
-		reg = <0xf100 0x6>;
-	};
-};

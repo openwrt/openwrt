@@ -10,10 +10,12 @@ ramips_setup_interfaces()
 	case $board in
 	alfa-network,awusfree1|\
 	d-team,pbr-d1|\
+	dlink,dap-1325-a1|\
 	glinet,microuter-n300|\
 	glinet,vixmini|\
 	hak5,wifi-pineapple-mk7|\
 	mediatek,linkit-smart-7688|\
+	minew,g1-c|\
 	onion,omega2p|\
 	onion,omega2|\
 	ravpower,rp-wd009|\
@@ -31,11 +33,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0"
 		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_set_interface_lan "eth0"
-		;;
-	minew,g1-c)
-		ucidef_add_switch "switch0"
-		ucidef_add_switch_attr "switch0" "enable" "false"
-		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	asus,rt-n10p-v3|\
 	asus,rt-n11p-b1|\
@@ -108,6 +105,10 @@ ramips_setup_interfaces()
 	jotale,js76x8-32m)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "6@eth0"
+		;;
+	motorola,mwr03)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "0:wan" "6@eth0"
 		;;
 	netgear,r6020|\
 	netgear,r6080|\
@@ -216,6 +217,16 @@ ramips_setup_macs()
 	mercury,mac1200r-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory_info 0xd)" 1)
 		;;
+	motorola,mwr03)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
+		wan_mac=$(macaddr_add "$label_mac" 2)
+		;;
+	onion,omega2|\
+	onion,omega2p|\
+	vocore,vocore2|\
+	vocore,vocore2-lite)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
 	rakwireless,rak633|\
 	unielec,u7628-01-16m|\
 	wavlink,wl-wn575a3)
@@ -235,10 +246,6 @@ ramips_setup_macs()
 	tplink,archer-c20-v5|\
 	tplink,archer-c50-v4)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary rom 0xf100)" 1)
-		;;
-	vocore,vocore2|\
-	vocore,vocore2-lite)
-		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	wavlink,wl-wn570ha1|\
 	zbtlink,zbt-we1226)
