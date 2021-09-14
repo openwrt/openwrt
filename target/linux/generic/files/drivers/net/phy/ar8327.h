@@ -317,6 +317,7 @@ struct ar8327_led {
 	struct work_struct led_work;
 	bool enable_hw_mode;
 	enum ar8327_led_pattern pattern;
+	struct fwnode_handle *fwnode;
 };
 
 struct ar8327_data {
