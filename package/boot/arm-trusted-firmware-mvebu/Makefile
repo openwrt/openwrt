@@ -112,6 +112,7 @@ TFA_MAKE_FLAGS += \
 		MV_DDR_PATH=$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
 		WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
 		WTMI_IMG=$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE)/wtmi_app.bin \
+		CRYPTOPP_PATH=$(STAGING_DIR_IMAGE)/$(CRYPTOPP_NAME) \
 		USE_COHERENT_MEM=0 \
 		FIP_ALIGN=0x100 \
 		DDR_TOPOLOGY=$(DDR_TOPOLOGY) \
@@ -133,6 +134,19 @@ define Download/a3700-utils
   VERSION:=2efdb10f3524c534d276002adf81fec06e0f1cf2
   MIRROR_HASH:=4476e1bacfa7abb4a1303c6cf3aa7d067038b24090dfd5da13ca2a72a0d5c7a4
   SUBDIR:=$(A3700_UTILS_NAME)
+endef
+
+CRYPTOPP_NAME:=cryptopp
+CRYPTOPP_RELEASE:=f210224
+CRYPTOPP_SOURCE=$(CRYPTOPP_NAME)-$(CRYPTOPP_RELEASE).tar.bz2
+
+define Download/cryptopp
+  FILE:=$(CRYPTOPP_SOURCE)
+  PROTO:=git
+  URL:=https://github.com/weidai11/cryptopp.git
+  VERSION:=f2102243e6fdd48c0b2a393a0993cca228f20573
+  MIRROR_HASH:=74ec9e48ee04b9f2d9a1d8c4f2392ed0ab52780d7af0f70405d7bbb23d1504fa
+  SUBDIR:=$(CRYPTOPP_NAME)
 endef
 
 MV_DDR_NAME:=mv-ddr-marvell
@@ -175,6 +189,7 @@ endef
 
 define Build/Clean
 	rm -rf \
+		$(STAGING_DIR_IMAGE)/$(CRYPTOPP_NAME) \
 		$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
 		$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
 		$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
@@ -186,11 +201,13 @@ define Build/Prepare
 	$(eval $(call Download,a3700-utils))
 	$(eval $(call Download,mv-ddr-marvell))
 	$(eval $(call Download,mox-boot-builder))
+	$(eval $(call Download,cryptopp))
 	$(eval $(call Download,cm3-gcc))
 
 	$(call Build/Prepare/Default,)
 
 	mkdir -p $(STAGING_DIR_IMAGE)
+	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(CRYPTOPP_SOURCE)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(A3700_UTILS_SOURCE)
 	echo "master" > $(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME)/branch.txt
 	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME),./patches-a3700-utils)
@@ -206,6 +223,7 @@ define Build/Compile
 	+$(MAKE) \
 		CROSS_CM3=$(STAGING_DIR_IMAGE)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
 		WTMI_VERSION=$(MOX_BB_RELEASE) \
+		CRYPTOPP_PATH=$PWD/cryptopp/ \
 		-C $(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
 		wtmi_app.bin
 	$(call Build/Compile/Default)
