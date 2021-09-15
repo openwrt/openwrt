@@ -8,7 +8,7 @@ BOARDNAME:=MT7623
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
 KERNELNAME:=Image dtbs zImage
-FEATURES+=usb
+FEATURES+=display usbgadget
 DEFAULT_PACKAGES+=blockdev uboot-envtools
 
 define Target/Description
