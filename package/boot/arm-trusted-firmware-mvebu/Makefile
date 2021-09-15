@@ -166,7 +166,11 @@ CM3_GCC_SOURCE=$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION).tar.xz
 define Download/cm3-gcc
   FILE:=$(CM3_GCC_SOURCE)
   URL:=https://developer.arm.com/-/media/Files/downloads/gnu-a/$(CM3_GCC_RELEASE)/binrel
+ifeq ($(HOST_ARCH),aarch64)
+  HASH:=1a42eecafa03dc6f32b8ae49ffcd15114dc818efbd72292fa6bab58233940bb9
+else
   HASH:=bf7ee185936d22d787b80c8da573f72ead5675695331fb8b590f0133ef1f6bb9
+endif
 endef
 
 define Build/Clean
