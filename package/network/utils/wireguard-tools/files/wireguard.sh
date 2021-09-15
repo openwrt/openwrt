@@ -102,6 +102,23 @@ proto_wireguard_setup_peer() {
 	fi
 }
 
+ensure_key_is_generated() {
+	local private_key
+	private_key="$(uci get network."$1".private_key)"
+
+	if [ "$private_key" == "generate" ]; then
+		local ucitmp
+		oldmask="$(umask)"
+		umask 077
+		ucitmp="$(mktemp -d)"
+		private_key="$("${WG}" genkey)"
+		uci -q -t "$ucitmp" set network."$1".private_key="$private_key" && \
+			uci -q -t "$ucitmp" commit network
+		rm -rf "$ucitmp"
+		umask "$oldmask"
+	fi
+}
+
 proto_wireguard_setup() {
 	local config="$1"
 	local wg_dir="/tmp/wireguard"
@@ -110,6 +127,8 @@ proto_wireguard_setup() {
 	local private_key
 	local listen_port
 	local mtu
+
+	ensure_key_is_generated "${config}"
 
 	config_load network
 	config_get private_key "${config}" "private_key"
