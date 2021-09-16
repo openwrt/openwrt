@@ -294,8 +294,6 @@ define Device/netgear_xr500
 	NETGEAR_HW_ID := 29764958+0+256+512+4x4+4x4+cascade
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	BOARD_NAME := xr500
-	SUPPORTED_DEVICES += xr500
 	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
 endef
 TARGET_DEVICES += netgear_xr500
