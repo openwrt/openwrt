@@ -1812,6 +1812,20 @@ define Device/xwrt_wr1800k-ax-nand
 endef
 TARGET_DEVICES += xwrt_wr1800k-ax-nand
 
+define Device/xwrt_wr1800k-ax-nor
+  $(Device/uimage-lzma-loader)
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := WR1800K-AX
+  DEVICE_VARIANT := NOR
+  DEVICE_PACKAGES += kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7915e \
+		     kmod-usb3 kmod-i2c-core kmod-eeprom-at24 i2c-tools \
+		     uboot-envtools partx-utils mkf2fs e2fsprogs
+  IMAGE_SIZE := 15808k
+  SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
+endef
+TARGET_DEVICES += xwrt_wr1800k-ax-nor
+
 define Device/xwrt_t-cpe1200k-v01
   $(Device/uimage-lzma-loader)
   SOC := mt7621
