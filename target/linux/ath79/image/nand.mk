@@ -215,6 +215,17 @@ define Device/netgear_ath79_nand
   UBINIZE_OPTS := -E 5
 endef
 
+define Device/netgear_r6100
+  SOC := ar9344
+  DEVICE_MODEL := R6100
+  UIMAGE_MAGIC := 0x36303030
+  NETGEAR_BOARD_ID := R6100
+  NETGEAR_HW_ID := 29764434+0+128+128+2x2+2x2
+  $(Device/netgear_ath79_nand)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += netgear_r6100
+
 define Device/netgear_wndr3700-v4
   SOC := ar9344
   DEVICE_MODEL := WNDR3700
