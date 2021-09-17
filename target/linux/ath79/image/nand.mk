@@ -254,6 +254,8 @@ define Device/zyxel_nbg6716
   PAGESIZE := 2048
   KERNEL := kernel-bin | append-dtb | uImage none | zyxel-buildkerneljffs | \
 	check-size 6144k
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none | \
+	zyxel-buildkerneljffs | zyxel-factory
   IMAGES := sysupgrade.tar sysupgrade-6M-Kernel.bin factory.bin
   IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | \
 	sysupgrade-tar rootfs=$$$$@ | append-metadata
