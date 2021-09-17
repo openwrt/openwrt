@@ -24,7 +24,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -2559,6 +2559,8 @@ static int b53_switch_init(struct b53_de
+@@ -2587,6 +2587,8 @@ static int b53_switch_init(struct b53_de
  	dev->enabled_ports |= BIT(dev->cpu_port);
  	dev->num_ports = fls(dev->enabled_ports);
  
@@ -33,7 +33,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* Include non standard CPU port built-in PHYs to be probed */
  	if (is539x(dev) || is531x5(dev)) {
  		for (i = 0; i < dev->num_ports; i++) {
-@@ -2603,7 +2605,6 @@ struct b53_device *b53_switch_alloc(stru
+@@ -2631,7 +2633,6 @@ struct b53_device *b53_switch_alloc(stru
  		return NULL;
  
  	ds->dev = base;

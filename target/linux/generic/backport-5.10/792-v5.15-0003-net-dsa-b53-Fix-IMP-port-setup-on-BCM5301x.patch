@@ -1,0 +1,237 @@
+From 63f8428b4077de3664eb0b252393c839b0b293ec Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sun, 5 Sep 2021 19:23:28 +0200
+Subject: [PATCH] net: dsa: b53: Fix IMP port setup on BCM5301x
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Broadcom's b53 switches have one IMP (Inband Management Port) that needs
+to be programmed using its own designed register. IMP port may be
+different than CPU port - especially on devices with multiple CPU ports.
+
+For that reason it's required to explicitly note IMP port index and
+check for it when choosing a register to use.
+
+This commit fixes BCM5301x support. Those switches use CPU port 5 while
+their IMP port is 8. Before this patch b53 was trying to program port 5
+with B53_PORT_OVERRIDE_CTRL instead of B53_GMII_PORT_OVERRIDE_CTRL(5).
+
+It may be possible to also replace "cpu_port" usages with
+dsa_is_cpu_port() but that is out of the scope of thix BCM5301x fix.
+
+Fixes: 967dd82ffc52 ("net: dsa: b53: Add support for Broadcom RoboSwitch")
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c | 28 +++++++++++++++++++++++++---
+ drivers/net/dsa/b53/b53_priv.h   |  1 +
+ 2 files changed, 26 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1109,7 +1109,7 @@ static void b53_force_link(struct b53_de
+ 	u8 reg, val, off;
+ 
+ 	/* Override the port settings */
+-	if (port == dev->cpu_port) {
++	if (port == dev->imp_port) {
+ 		off = B53_PORT_OVERRIDE_CTRL;
+ 		val = PORT_OVERRIDE_EN;
+ 	} else {
+@@ -1133,7 +1133,7 @@ static void b53_force_port_config(struct
+ 	u8 reg, val, off;
+ 
+ 	/* Override the port settings */
+-	if (port == dev->cpu_port) {
++	if (port == dev->imp_port) {
+ 		off = B53_PORT_OVERRIDE_CTRL;
+ 		val = PORT_OVERRIDE_EN;
+ 	} else {
+@@ -1201,7 +1201,7 @@ static void b53_adjust_link(struct dsa_s
+ 	b53_force_link(dev, port, phydev->link);
+ 
+ 	if (is531x5(dev) && phy_interface_is_rgmii(phydev)) {
+-		if (port == 8)
++		if (port == dev->imp_port)
+ 			off = B53_RGMII_CTRL_IMP;
+ 		else
+ 			off = B53_RGMII_CTRL_P(port);
+@@ -2266,6 +2266,7 @@ struct b53_chip_data {
+ 	const char *dev_name;
+ 	u16 vlans;
+ 	u16 enabled_ports;
++	u8 imp_port;
+ 	u8 cpu_port;
+ 	u8 vta_regs[3];
+ 	u8 arl_bins;
+@@ -2290,6 +2291,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 2,
+ 		.arl_buckets = 1024,
++		.imp_port = 5,
+ 		.cpu_port = B53_CPU_PORT_25,
+ 		.duplex_reg = B53_DUPLEX_STAT_FE,
+ 	},
+@@ -2300,6 +2302,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 2,
+ 		.arl_buckets = 1024,
++		.imp_port = 5,
+ 		.cpu_port = B53_CPU_PORT_25,
+ 		.duplex_reg = B53_DUPLEX_STAT_FE,
+ 	},
+@@ -2310,6 +2313,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2323,6 +2327,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2336,6 +2341,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS_9798,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2349,6 +2355,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x7f,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS_9798,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2363,6 +2370,7 @@ static const struct b53_chip_data b53_sw
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
+ 		.vta_regs = B53_VTA_REGS,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+ 		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
+@@ -2375,6 +2383,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0xff,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2388,6 +2397,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1ff,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2401,6 +2411,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0, /* pdata must provide them */
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS_63XX,
+ 		.duplex_reg = B53_DUPLEX_STAT_63XX,
+@@ -2414,6 +2425,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2427,6 +2439,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1bf,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2440,6 +2453,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1bf,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2453,6 +2467,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2466,6 +2481,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2479,6 +2495,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1ff,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2492,6 +2509,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x103,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2505,6 +2523,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1ff,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 1024,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2518,6 +2537,7 @@ static const struct b53_chip_data b53_sw
+ 		.enabled_ports = 0x1ff,
+ 		.arl_bins = 4,
+ 		.arl_buckets = 256,
++		.imp_port = 8,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2543,6 +2563,7 @@ static int b53_switch_init(struct b53_de
+ 			dev->vta_regs[1] = chip->vta_regs[1];
+ 			dev->vta_regs[2] = chip->vta_regs[2];
+ 			dev->jumbo_pm_reg = chip->jumbo_pm_reg;
++			dev->imp_port = chip->imp_port;
+ 			dev->cpu_port = chip->cpu_port;
+ 			dev->num_vlans = chip->vlans;
+ 			dev->num_arl_bins = chip->arl_bins;
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -122,6 +122,7 @@ struct b53_device {
+ 
+ 	/* used ports mask */
+ 	u16 enabled_ports;
++	unsigned int imp_port;
+ 	unsigned int cpu_port;
+ 
+ 	/* connect specific data */

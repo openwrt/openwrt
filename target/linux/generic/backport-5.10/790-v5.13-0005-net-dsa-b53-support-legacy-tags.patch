@@ -1,7 +1,7 @@
 From 46c5176c586c81306bf9e7024c13b95da775490f Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
 Date: Wed, 17 Mar 2021 11:29:27 +0100
-Subject: [PATCH 2/2] net: dsa: b53: support legacy tags
+Subject: [PATCH] net: dsa: b53: support legacy tags
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -28,7 +28,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	  This driver adds support for Broadcom managed switch chips. It supports
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -2021,15 +2021,17 @@ enum dsa_tag_protocol b53_get_tag_protoc
+@@ -2024,15 +2024,17 @@ enum dsa_tag_protocol b53_get_tag_protoc
  {
  	struct b53_device *dev = ds->priv;
  
