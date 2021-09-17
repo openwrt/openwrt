@@ -1,0 +1,264 @@
+From 802764f8ed76f927dff494558332b0b77de7ac65 Mon Sep 17 00:00:00 2001
+From: Ionut-robert Aron <ionut-robert.aron@nxp.com>
+Date: Fri, 16 Oct 2020 11:01:24 +0300
+Subject: [PATCH] restool: yocto build issue
+
+Prefix 'enum mc_cmd_status mc_status' with 'static' so restool can
+compile.
+
+Signed-off-by: Ionut-robert Aron <ionut-robert.aron@nxp.com>
+---
+ dpaiop_commands.c            | 2 +-
+ dpbp_commands.c              | 2 +-
+ dpci_commands.c              | 2 +-
+ dpcon_commands.c             | 2 +-
+ dpdbg_commands.c             | 2 +-
+ dpdcei_commands.c            | 2 +-
+ dpdmai_commands.c            | 2 +-
+ dpdmux_commands.c            | 2 +-
+ dpio_commands.c              | 2 +-
+ dpmac_commands.c             | 2 +-
+ dpmcp_commands.c             | 2 +-
+ dpni_commands.c              | 2 +-
+ dprc_commands.c              | 2 +-
+ dprc_commands_generate_dpl.c | 4 ++--
+ dprtc_commands.c             | 2 +-
+ dpseci_commands.c            | 2 +-
+ dpsw_commands.c              | 2 +-
+ restool.c                    | 8 ++++----
+ 18 files changed, 22 insertions(+), 22 deletions(-)
+
+--- a/dpaiop_commands.c
++++ b/dpaiop_commands.c
+@@ -44,7 +44,7 @@
+ #include "mc_v9/fsl_dpaiop.h"
+ #include "mc_v10/fsl_dpaiop.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpaiop info command options
+--- a/dpbp_commands.c
++++ b/dpbp_commands.c
+@@ -43,7 +43,7 @@
+ #include "mc_v9/fsl_dpbp.h"
+ #include "mc_v10/fsl_dpbp.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpbp info command options
+--- a/dpci_commands.c
++++ b/dpci_commands.c
+@@ -44,7 +44,7 @@
+ #include "mc_v9/fsl_dpci.h"
+ #include "mc_v10/fsl_dpci.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpci info command options
+--- a/dpcon_commands.c
++++ b/dpcon_commands.c
+@@ -44,7 +44,7 @@
+ #include "mc_v9/fsl_dpcon.h"
+ #include "mc_v10/fsl_dpcon.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpcon info command options
+--- a/dpdbg_commands.c
++++ b/dpdbg_commands.c
+@@ -41,7 +41,7 @@
+ #include "utils.h"
+ #include "mc_v10/fsl_dpdbg.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ enum dpdbg_info_options {
+ 	INFO_OPT_HELP = 0,
+--- a/dpdcei_commands.c
++++ b/dpdcei_commands.c
+@@ -43,7 +43,7 @@
+ #include "mc_v9/fsl_dpdcei.h"
+ #include "mc_v10/fsl_dpdcei.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpdcei info command options
+--- a/dpdmai_commands.c
++++ b/dpdmai_commands.c
+@@ -42,7 +42,7 @@
+ #include "mc_v9/fsl_dpdmai.h"
+ #include "mc_v10/fsl_dpdmai.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpdmai info command options
+--- a/dpdmux_commands.c
++++ b/dpdmux_commands.c
+@@ -47,7 +47,7 @@
+ 	DPDMUX_OPT_BRIDGE_EN |		\
+ 	DPDMUX_OPT_CLS_MASK_SUPPORT)
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpdmux info command options
+--- a/dpio_commands.c
++++ b/dpio_commands.c
+@@ -43,7 +43,7 @@
+ #include "mc_v9/fsl_dpio.h"
+ #include "mc_v10/fsl_dpio.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpio info command options
+--- a/dpmac_commands.c
++++ b/dpmac_commands.c
+@@ -43,7 +43,7 @@
+ #include "mc_v9/fsl_dpmac.h"
+ #include "mc_v10/fsl_dpmac.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpmac info command options
+--- a/dpmcp_commands.c
++++ b/dpmcp_commands.c
+@@ -43,7 +43,7 @@
+ #include "mc_v9/fsl_dpmcp.h"
+ #include "mc_v10/fsl_dpmcp.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpmcp info command options
+--- a/dpni_commands.c
++++ b/dpni_commands.c
+@@ -71,7 +71,7 @@
+ 	DPNI_OPT_SINGLE_SENDER |			\
+ 	DPNI_OPT_CUSTOM_CG)
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * max_dist: Maximum distribution size for Rx traffic class;
+--- a/dprc_commands.c
++++ b/dprc_commands.c
+@@ -52,7 +52,7 @@
+ 	DPRC_CFG_OPT_IRQ_CFG_ALLOWED |		\
+ 	DPRC_CFG_OPT_PL_ALLOWED)
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dprc sync command options
+--- a/dprc_commands_generate_dpl.c
++++ b/dprc_commands_generate_dpl.c
+@@ -189,7 +189,7 @@ static struct container_list *container_
+ static struct obj_list *obj_head;
+ static struct conn_list *conn_head;
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * compare_insert_obj - compare the newly added object node with existing ones,
+@@ -273,7 +273,7 @@ static int find_all_obj_desc(uint32_t dp
+ 
+ 	int num_child_devices;
+ 	int error = 0;
+-	enum mc_cmd_status mc_status;
++	static enum mc_cmd_status mc_status;
+ 	struct container_list *prev_cont;
+ 	struct container_list *curr_cont;
+ 	struct dprc_attributes dprc_attr;
+--- a/dprtc_commands.c
++++ b/dprtc_commands.c
+@@ -42,7 +42,7 @@
+ #include "mc_v9/fsl_dprtc.h"
+ #include "mc_v10/fsl_dprtc.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dprtc info command options
+--- a/dpseci_commands.c
++++ b/dpseci_commands.c
+@@ -43,7 +43,7 @@
+ #include "mc_v9/fsl_dpseci.h"
+ #include "mc_v10/fsl_dpseci.h"
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpseci info command options
+--- a/dpsw_commands.c
++++ b/dpsw_commands.c
+@@ -50,7 +50,7 @@
+ 	DPSW_OPT_FLOODING_METERING_DIS |	\
+ 	DPSW_OPT_METERING_EN)
+ 
+-enum mc_cmd_status mc_status;
++static enum mc_cmd_status mc_status;
+ 
+ /**
+  * dpsw info command options
+--- a/restool.c
++++ b/restool.c
+@@ -360,7 +360,7 @@ int find_target_obj_desc(uint32_t dprc_i
+ {
+ 	int num_child_devices;
+ 	int error = 0;
+-	enum mc_cmd_status mc_status;
++	static enum mc_cmd_status mc_status;
+ 
+ 	assert(nesting_level <= MAX_DPRC_NESTING);
+ 
+@@ -492,7 +492,7 @@ int print_obj_verbose(struct dprc_obj_de
+ 	uint16_t obj_handle;
+ 	uint32_t irq_mask;
+ 	uint32_t irq_status;
+-	enum mc_cmd_status mc_status;
++	static enum mc_cmd_status mc_status;
+ 	int error = 0;
+ 
+ 	if (strcmp(target_obj_desc->type, "dprc") == 0 &&
+@@ -816,7 +816,7 @@ int parse_object_name(const char *obj_na
+ int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
+ {
+ 	int error;
+-	enum mc_cmd_status mc_status;
++	static enum mc_cmd_status mc_status;
+ 
+ 	error = dprc_open(&restool.mc_io, 0,
+ 			  dprc_id,
+@@ -1325,7 +1325,7 @@ int main(int argc, char *argv[])
+ 	const char *cmd_name;
+ 	bool mc_io_initialized = false;
+ 	bool root_dprc_opened = false;
+-	enum mc_cmd_status mc_status;
++	static enum mc_cmd_status mc_status;
+ 	bool talk_to_mc = true;
+ 
+ 	#ifdef DEBUG
