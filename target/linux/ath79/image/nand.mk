@@ -232,6 +232,16 @@ TARGET_DEVICES += netgear_wndr4500-v3
 
 define Device/zyxel_nbg6716
   SOC := qca9558
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Kernel partition has been resized to 6M. \
+	A sysupgrade will brick your device. \
+	Please install a fresh factory image via bootloader. \
+	Alternatively, you can flash sysupgrade-6M-Kernel.bin with \
+	zcat sysupgrade-6M-Kernel.bin | mtd -r -e /dev/mtd3 write - /dev/mtd3 .\
+	This may thow an error, because it is a 256M image. There are \
+	devices out there with this flash size. \
+	You have to ignore it and reboot. \
+	Notice that you will always loose configuration.
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NBG6716
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
@@ -239,19 +249,18 @@ define Device/zyxel_nbg6716
   RAS_BOARD := NBG6716
   RAS_ROOTFS_SIZE := 29696k
   RAS_VERSION := "OpenWrt Linux-$(LINUX_VERSION)"
-  KERNEL_SIZE := 4096k
+  KERNEL_SIZE := 6144k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL := kernel-bin | append-dtb | uImage none | zyxel-buildkerneljffs | \
-	check-size 4096k
-  IMAGES := sysupgrade.tar sysupgrade-4M-Kernel.bin factory.bin
+	check-size 6144k
+  IMAGES := sysupgrade.tar sysupgrade-6M-Kernel.bin factory.bin
   IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | \
 	sysupgrade-tar rootfs=$$$$@ | append-metadata
-  IMAGE/sysupgrade-4M-Kernel.bin/squashfs := append-kernel | \
+  IMAGE/sysupgrade-6M-Kernel.bin/squashfs := append-kernel | \
 	pad-to $$$$(KERNEL_SIZE) | append-ubi | pad-to 263192576 | gzip
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
-	zyxel-factory
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | zyxel-factory
   UBINIZE_OPTS := -E 5
-  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_nbg6716

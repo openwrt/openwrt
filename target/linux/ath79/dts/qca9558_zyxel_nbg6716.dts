@@ -147,12 +147,12 @@
 
 		partition@500000 {
 			label = "kernel";
-			reg = <0x500000 0x400000>;
+			reg = <0x500000 0x600000>;
 		};
 
-		partition@900000 {
+		partition@b00000 {
 			label = "ubi";
-			reg = <0x900000 0x7700000>;
+			reg = <0xb00000 0x7500000>;
 		};
 	};
 };

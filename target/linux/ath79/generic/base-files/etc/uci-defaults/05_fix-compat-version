@@ -2,7 +2,8 @@
 
 case "$(board_name)" in
 	meraki,mr12|\
-	meraki,mr16)
+	meraki,mr16|\
+	zyxel,nbg6716)
 		uci set system.@system[0].compat_version="2.0"
 		uci commit system
 		;;
