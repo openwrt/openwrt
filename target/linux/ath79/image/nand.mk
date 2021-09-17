@@ -1,13 +1,12 @@
 # attention: only zlib compression is allowed for the boot fs
 define Build/zyxel-buildkerneljffs
-	rm -rf  $(KDIR_TMP)/zyxelnbg6716
-	mkdir -p $(KDIR_TMP)/zyxelnbg6716/image/boot
-	cp $@ $(KDIR_TMP)/zyxelnbg6716/image/boot/vmlinux.lzma.uImage
+	mkdir -p $@.tmp/boot
+	cp $@ $@.tmp/boot/vmlinux.lzma.uImage
 	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
 		--big-endian --squash-uids -v -e 128KiB -q -f -n -x lzma -x rtime \
 		-o $@ \
-		-d $(KDIR_TMP)/zyxelnbg6716/image
-	rm -rf $(KDIR_TMP)/zyxelnbg6716
+		-d $@.tmp
+	rm -rf $@.tmp
 endef
 
 define Build/zyxel-factory
