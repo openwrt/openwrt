@@ -9,6 +9,7 @@ sub target_config_features(@) {
 	my $ret;
 
 	while ($_ = shift @_) {
+		/^acpi$/ and $ret .= "\tselect HAS_ACPI$1\n";
 		/^arm_v(\w+)$/ and $ret .= "\tselect arm_v$1\n";
 		/^audio$/ and $ret .= "\tselect AUDIO_SUPPORT\n";
 		/^boot-part$/ and $ret .= "\tselect USES_BOOT_PART\n";
