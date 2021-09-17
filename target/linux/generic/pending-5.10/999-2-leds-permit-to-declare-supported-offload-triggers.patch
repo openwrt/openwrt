@@ -1,0 +1,90 @@
+From a4cb4b1c91575620293ba9898cd825629f479233 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sun, 7 Nov 2021 02:09:28 +0100
+Subject: [RFC PATCH 2/6] leds: permit to declare supported offload triggers
+
+With LEDs that can be offload driven, permit to declare supported triggers
+in the dts and add them to the cled struct to be used by the related
+offload trigger. This is particurally useful for phy that have support
+for HW blinking on tx/rx traffic or based on the speed link.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ Documentation/leds/leds-class.rst |  4 ++++
+ drivers/leds/led-class.c          | 15 ++++++++++++++-
+ include/linux/leds.h              |  5 ++++-
+ 3 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/leds/leds-class.rst b/Documentation/leds/leds-class.rst
+index 035a738afc4a..ab50b58d6a21 100644
+--- a/Documentation/leds/leds-class.rst
++++ b/Documentation/leds/leds-class.rst
+@@ -191,6 +191,10 @@ If the second argument (enable) to the trigger_offload() method is false, any
+ active HW offloading must be deactivated. In this case errors are not permitted
+ in the trigger_offload() method.
+ 
++LEDs can declare the supported offload trigger using linux,supported-offload-triggers
++binding in the dts. This is just an array of string that will be used by any
++offload trigger to check the supported triggers and configure the LED offload mode
++and bheaviour.
+ 
+ Known Issues
+ ============
+diff --git a/drivers/leds/led-class.c b/drivers/leds/led-class.c
+index f4bb02f6e042..56f75e70b81e 100644
+--- a/drivers/leds/led-class.c
++++ b/drivers/leds/led-class.c
+@@ -339,7 +339,7 @@ int led_classdev_register_ext(struct device *parent,
+ 	char composed_name[LED_MAX_NAME_SIZE];
+ 	char final_name[LED_MAX_NAME_SIZE];
+ 	const char *proposed_name = composed_name;
+-	int ret;
++	int count, ret;
+ 
+ 	if (init_data) {
+ 		if (init_data->devname_mandatory && !init_data->devicename) {
+@@ -358,10 +358,24 @@ int led_classdev_register_ext(struct device *parent,
+ 		if (ret < 0)
+ 			return ret;
+ 
+-		if (init_data->fwnode)
++		if (init_data->fwnode) {
+ 			fwnode_property_read_string(init_data->fwnode,
+ 				"linux,default-trigger",
+ 				&led_cdev->default_trigger);
++
++			if (fwnode_property_present(init_data->fwnode,
++						    "linux,supported-offload-triggers")) {
++				count = fwnode_property_string_array_count(
++				    init_data->fwnode, "linux,supported-offload-triggers");
++
++				led_cdev->supported_offload_triggers =
++				    kcalloc(count, sizeof(char *), GFP_KERNEL);
++				fwnode_property_read_string_array(
++				    init_data->fwnode, "linux,supported-offload-triggers",
++				    led_cdev->supported_offload_triggers, count);
++				led_cdev->supported_offload_triggers_count = count;
++			}
++		}
+ 	} else {
+ 		proposed_name = led_cdev->name;
+ 	}
+diff --git a/include/linux/leds.h b/include/linux/leds.h
+index 949ab461287f..ff1f903f8079 100644
+--- a/include/linux/leds.h
++++ b/include/linux/leds.h
+@@ -157,7 +157,10 @@ struct led_classdev {
+ 
+ #ifdef CONFIG_LEDS_OFFLOAD_TRIGGERS
+ 	int			offloaded;
+-	/* some LEDs cne be driven by HW */
++	/* LEDs can have multiple offload triggers */
++	int			supported_offload_triggers_count;
++	const char		**supported_offload_triggers;
++	/* some LEDs may be able to offload some SW triggers to HW */
+ 	int			(*trigger_offload)(struct led_classdev *led_cdev,
+ 						   bool enable);
+ #endif
+-- 
+2.32.0
+

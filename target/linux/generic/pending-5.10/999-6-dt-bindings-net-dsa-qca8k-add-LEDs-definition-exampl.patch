@@ -1,0 +1,66 @@
+From 3f9099452818affcb3ed81e14641fe90dc45a60f Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sun, 7 Nov 2021 18:20:27 +0100
+Subject: [RFC PATCH 6/6] dt-bindings: net: dsa: qca8k: add LEDs definition
+ example
+
+Add LEDs definition example for qca8k using the offload trigger as the
+default trigger and add all the supported offload triggers by the
+switch.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ .../devicetree/bindings/net/dsa/qca8k.yaml    | 30 +++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/net/dsa/qca8k.yaml b/Documentation/devicetree/bindings/net/dsa/qca8k.yaml
+index 48de0ace265d..d8394f625d03 100644
+--- a/Documentation/devicetree/bindings/net/dsa/qca8k.yaml
++++ b/Documentation/devicetree/bindings/net/dsa/qca8k.yaml
+@@ -64,6 +64,8 @@ properties:
+                  internal mdio access is used.
+                  With the legacy mapping the reg corresponding to the internal
+                  mdio is the switch reg with an offset of -1.
++                 Each phy have at least 3 LEDs connected and can be declared
++                 using the standard LEDs structure.
+ 
+     properties:
+       '#address-cells':
+@@ -340,6 +342,34 @@ examples:
+ 
+                 internal_phy_port1: ethernet-phy@0 {
+                     reg = <0>;
++
++                    leds {
++                        led@0 {
++                            reg = <0>;
++                            color = <LED_COLOR_ID_WHITE>;
++                            function = LED_FUNCTION_LAN;
++                            function-enumerator = <1>;
++                            linux,default-trigger = "offload-phy-activity";
++                            linux,supported-offload-triggers = "rx-blink", "tx-blink", "ollision-blink",
++                                                        "link-10M", "link-100M", "link-1000M",
++                                                        "half-duplex", "full-duplex", "linkup-over",
++                                                        "power-on-reset", "blink-2hz", "blink-4hz",
++                                                        "blink-8hz", "blink-auto";
++                        };
++
++                        led@1 {
++                            reg = <1>;
++                            color = <LED_COLOR_ID_AMBER>;
++                            function = LED_FUNCTION_LAN;
++                            function-enumerator = <1>;
++                            linux,default-trigger = "offload-phy-activity";
++                            linux,supported-offload-triggers = "rx-blink", "tx-blink", "ollision-blink",
++                                                        "link-10M", "link-100M", "link-1000M",
++                                                        "half-duplex", "full-duplex", "linkup-over",
++                                                        "power-on-reset", "blink-2hz", "blink-4hz",
++                                                        "blink-8hz", "blink-auto";
++                        };
++                    };
+                 };
+ 
+                 internal_phy_port2: ethernet-phy@1 {
+-- 
+2.32.0
+

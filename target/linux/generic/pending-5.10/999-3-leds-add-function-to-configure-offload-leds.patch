@@ -1,0 +1,77 @@
+From 84f9f6fc06024e8a0fe7b4df303f271dc1ce746c Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sun, 7 Nov 2021 02:11:50 +0100
+Subject: [RFC PATCH 3/6] leds: add function to configure offload leds
+
+Add configure_offload helper to configure how the LED should work in
+offload mode. The function require to support the particular trigger and
+will use the passed offload_flags to elaborate the data and apply the
+correct configuration. This function will then be used by the offload
+trigger to request and update offload configuration.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ Documentation/leds/leds-class.rst | 12 ++++++++++++
+ include/linux/leds.h              | 16 ++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/Documentation/leds/leds-class.rst b/Documentation/leds/leds-class.rst
+index ab50b58d6a21..af84cce09068 100644
+--- a/Documentation/leds/leds-class.rst
++++ b/Documentation/leds/leds-class.rst
+@@ -191,6 +191,18 @@ If the second argument (enable) to the trigger_offload() method is false, any
+ active HW offloading must be deactivated. In this case errors are not permitted
+ in the trigger_offload() method.
+ 
++The offload trigger will use the function configure_offload() provided by the driver
++that will configure the offloaded mode for the LED.
++This function pass as the first argument (offload_flags) a u32 flag, it's in the LED
++driver interest how to elaborate this flags and to declare support for a particular
++offload trigger.
++The second argument (cmd) of the configure_offload() method can be used to do various
++operation for the specific trigger. We currently support ENABLE, DISABLE and READ to
++enable, disable and read the state of the offload trigger for the LED driver.
++If the driver return -ENOTSUPP on configure_offload, the trigger activation will
++fail as the driver doesn't support that specific offload trigger or don't know
++how to handle the provided flags.
++
+ LEDs can declare the supported offload trigger using linux,supported-offload-triggers
+ binding in the dts. This is just an array of string that will be used by any
+ offload trigger to check the supported triggers and configure the LED offload mode
+diff --git a/include/linux/leds.h b/include/linux/leds.h
+index ff1f903f8079..eb06d812bc24 100644
+--- a/include/linux/leds.h
++++ b/include/linux/leds.h
+@@ -67,6 +67,14 @@ struct led_hw_trigger_type {
+ 	int dummy;
+ };
+ 
++#ifdef CONFIG_LEDS_OFFLOAD_TRIGGERS
++enum offload_trigger_cmd {
++	TRIGGER_ENABLE,
++	TRIGGER_DISABLE,
++	TRIGGER_READ
++};
++#endif
++
+ struct led_classdev {
+ 	const char		*name;
+ 	unsigned int brightness;
+@@ -163,6 +171,14 @@ struct led_classdev {
+ 	/* some LEDs may be able to offload some SW triggers to HW */
+ 	int			(*trigger_offload)(struct led_classdev *led_cdev,
+ 						   bool enable);
++	/* Function to configure how the LEDs should work in offload mode.
++	 * The function require to support the trigger and will use the
++	 * passed flags to elaborate the trigger requested and apply the
++	 * correct configuration.
++	 */
++	int			(*configure_offload)(struct led_classdev *led_cdev,
++						     u32 offload_flags,
++						     enum offload_trigger_cmd cmd);
+ #endif
+ #endif
+ 
+-- 
+2.32.0
+

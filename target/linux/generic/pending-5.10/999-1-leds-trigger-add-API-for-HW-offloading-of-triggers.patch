@@ -1,0 +1,159 @@
+From 6512b288a4d3b199a617118b66a43afe03c70bea Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <kabel@kernel.org>
+Date: Tue, 1 Jun 2021 02:51:47 +0200
+Subject: [RFC PATCH 1/6] leds: trigger: add API for HW offloading of triggers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add method trigger_offload() and member variable `offloaded` to struct
+led_classdev. Add helper functions led_trigger_offload() and
+led_trigger_offload_stop().
+
+The trigger_offload() method, when implemented by the LED driver, should
+be called (via led_trigger_offload() function) from trigger code wanting
+to be offloaded at the moment when configuration of the trigger changes.
+
+If the trigger is successfully offloaded, this method returns 0 and the
+trigger does not have to blink the LED in software.
+
+If the trigger with given configuration cannot be offloaded, the method
+should return -EOPNOTSUPP, in which case the trigger must blink the LED
+in SW.
+
+The second argument to trigger_offload() being false means that the
+offloading is being disabled. In this case the function must return 0,
+errors are not permitted.
+
+An additional config CONFIG_LEDS_OFFLOAD_TRIGGERS is added to add support
+for these special trigger offload driven.
+
+Signed-off-by: Marek Behún <kabel@kernel.org>
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ Documentation/leds/leds-class.rst | 22 +++++++++++++++++++++
+ drivers/leds/led-triggers.c       |  1 +
+ drivers/leds/trigger/Kconfig      | 10 ++++++++++
+ include/linux/leds.h              | 33 +++++++++++++++++++++++++++++++
+ 4 files changed, 66 insertions(+)
+
+diff --git a/Documentation/leds/leds-class.rst b/Documentation/leds/leds-class.rst
+index cd155ead8703..035a738afc4a 100644
+--- a/Documentation/leds/leds-class.rst
++++ b/Documentation/leds/leds-class.rst
+@@ -169,6 +169,28 @@ Setting the brightness to zero with brightness_set() callback function
+ should completely turn off the LED and cancel the previously programmed
+ hardware blinking function, if any.
+ 
++Hardware offloading of LED triggers
++===================================
++
++Some LEDs can offload SW triggers to hardware (for example a LED connected to
++an ethernet PHY or an ethernet switch can be configured to blink on activity on
++the network, which in software is done by the netdev trigger).
++
++To do such offloading, LED driver must support the this and a deficated offload
++trigger must be used. The LED must implement the trigger_offload() method and
++the trigger code must try to call this method (via led_trigger_offload()
++function) when configuration of the trigger (trigger_data) changes.
++
++The implementation of the trigger_offload() method by the LED driver must return
++0 if the offload is successful and -EOPNOTSUPP if the requested trigger
++configuration is not supported and the trigger should be executed in software.
++If trigger_offload() returns negative value, the triggering will be done in
++software, so any active offloading must also be disabled.
++
++If the second argument (enable) to the trigger_offload() method is false, any
++active HW offloading must be deactivated. In this case errors are not permitted
++in the trigger_offload() method.
++
+ 
+ Known Issues
+ ============
+diff --git a/drivers/leds/led-triggers.c b/drivers/leds/led-triggers.c
+index 072491d3e17b..281c52914f42 100644
+--- a/drivers/leds/led-triggers.c
++++ b/drivers/leds/led-triggers.c
+@@ -179,6 +179,7 @@ int led_trigger_set(struct led_classdev *led_cdev, struct led_trigger *trig)
+ 
+ 		cancel_work_sync(&led_cdev->set_brightness_work);
+ 		led_stop_software_blink(led_cdev);
++		led_trigger_offload_stop(led_cdev);
+ 		if (led_cdev->trigger->deactivate)
+ 			led_cdev->trigger->deactivate(led_cdev);
+ 		device_remove_groups(led_cdev->dev, led_cdev->trigger->groups);
+diff --git a/drivers/leds/trigger/Kconfig b/drivers/leds/trigger/Kconfig
+index dc6816d36d06..c073e64e0a37 100644
+--- a/drivers/leds/trigger/Kconfig
++++ b/drivers/leds/trigger/Kconfig
+@@ -9,6 +9,16 @@ menuconfig LEDS_TRIGGERS
+ 
+ if LEDS_TRIGGERS
+ 
++config LEDS_OFFLOAD_TRIGGERS
++	bool "LED Offload Trigger support"
++	help
++	  This option enabled offload triggers support used by leds that
++	  can be driven in HW by declaring some specific triggers.
++	  A offload trigger will expose a sysfs dir to configure the
++	  different blinking trigger and the available hw trigger.
++
++	  If unsure, say Y.
++
+ config LEDS_TRIGGER_TIMER
+ 	tristate "LED Timer Trigger"
+ 	help
+diff --git a/include/linux/leds.h b/include/linux/leds.h
+index ba4861ec73d3..949ab461287f 100644
+--- a/include/linux/leds.h
++++ b/include/linux/leds.h
+@@ -154,6 +154,13 @@ struct led_classdev {
+ 
+ 	/* LEDs that have private triggers have this set */
+ 	struct led_hw_trigger_type	*trigger_type;
++
++#ifdef CONFIG_LEDS_OFFLOAD_TRIGGERS
++	int			offloaded;
++	/* some LEDs cne be driven by HW */
++	int			(*trigger_offload)(struct led_classdev *led_cdev,
++						   bool enable);
++#endif
+ #endif
+ 
+ #ifdef CONFIG_LEDS_BRIGHTNESS_HW_CHANGED
+@@ -409,6 +416,32 @@ static inline void *led_get_trigger_data(struct led_classdev *led_cdev)
+ 	return led_cdev->trigger_data;
+ }
+ 
++#ifdef CONFIG_LEDS_OFFLOAD_TRIGGERS
++static inline int led_trigger_offload(struct led_classdev *led_cdev)
++{
++	int ret;
++
++	if (!led_cdev->trigger_offload)
++		return -EOPNOTSUPP;
++
++	ret = led_cdev->trigger_offload(led_cdev, true);
++	led_cdev->offloaded = !ret;
++
++	return ret;
++}
++
++static inline void led_trigger_offload_stop(struct led_classdev *led_cdev)
++{
++	if (!led_cdev->trigger_offload)
++		return;
++
++	if (led_cdev->offloaded) {
++		led_cdev->trigger_offload(led_cdev, false);
++		led_cdev->offloaded = false;
++	}
++}
++#endif
++
+ /**
+  * led_trigger_rename_static - rename a trigger
+  * @name: the new trigger name
+-- 
+2.32.0
+

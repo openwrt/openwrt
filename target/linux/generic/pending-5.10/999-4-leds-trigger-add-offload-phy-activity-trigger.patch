@@ -1,0 +1,285 @@
+From 481b6388813c812388895ca525e771e9becb1ea5 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sun, 7 Nov 2021 02:24:16 +0100
+Subject: [RFC PATCH 4/6] leds: trigger: add offload-phy-activity trigger
+
+Add Offload Trigger for PHY Activity. This special trigger is used to
+configure and expose the different HW trigger that are provided by the
+PHY. Each offload trigger can be configured by sysfs and on trigger
+activation the offload mode is enabled.
+
+This currently implement these hw triggers:
+  - blink_tx: Blink LED on tx packet receive
+  - blink_rx: Blink LED on rx packet receive
+  - blink_collision: Blink LED on collision detection
+  - link_10m: Keep LED on with 10m link speed
+  - link_100m: Keep LED on with 100m link speed
+  - link_1000m: Keep LED on with 1000m link speed
+  - half_duplex: Keep LED on with half duplex link
+  - full_duplex: Keep LED on with full duplex link
+  - linkup_over: Keep LED on with link speed and blink on rx/tx traffic
+  - power_on_reset: Keep LED on with switch reset
+  - blink_2hz: Set blink speed at 2hz for every blink event
+  - blink_4hz: Set blink speed at 4hz for every blink event
+  - blink_8hz: Set blink speed at 8hz for every blink event
+  - blink_auto: Set blink speed at 2hz for 10m link speed,
+      4hz for 100m and 8hz for 1000m
+
+The trigger will read the supported offload trigger in the led cdev and
+will expose the offload triggers in sysfs and then activate the offload
+mode for the led in offload mode has it configured by default. A flag is
+passed to configure_offload with the related rule from this trigger to
+active or disable.
+It's in the led driver interest the detection and knowing how to
+elaborate the passed flags.
+
+The different hw triggers are exposed in the led sysfs dir under the
+offload-phy-activity subdir.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/leds/trigger/Kconfig                  |  25 +++
+ drivers/leds/trigger/Makefile                 |   1 +
+ .../trigger/ledtrig-offload-phy-activity.c    | 151 ++++++++++++++++++
+ include/linux/leds.h                          |  24 +++
+ 4 files changed, 201 insertions(+)
+ create mode 100644 drivers/leds/trigger/ledtrig-offload-phy-activity.c
+
+diff --git a/drivers/leds/trigger/Kconfig b/drivers/leds/trigger/Kconfig
+index c073e64e0a37..377a8bceb0b7 100644
+--- a/drivers/leds/trigger/Kconfig
++++ b/drivers/leds/trigger/Kconfig
+@@ -164,4 +164,29 @@ config LEDS_TRIGGER_TTY
+ 
+ 	  When build as a module this driver will be called ledtrig-tty.
+ 
++config LEDS_OFFLOAD_TRIGGER_PHY_ACTIVITY
++	tristate "LED Offload Trigger for PHY Activity"
++	depends on LEDS_OFFLOAD_TRIGGERS
++	help
++	  This allows LEDs to be configured to run by HW and offloaded based
++	  on some rules. The LED will blink or be on based on the PHY Activity
++	  for example on packet receive of based on the link speed.
++	  The current rules are:
++	  - blink_tx: Blink LED on tx packet receive
++	  - blink_rx: Blink LED on rx packet receive
++	  - blink_collision: Blink LED on collision detection
++	  - link_10m: Keep LED on with 10m link speed
++	  - link_100m: Keep LED on with 100m link speed
++	  - link_1000m: Keep LED on with 1000m link speed
++	  - half_duplex: Keep LED on with half duplex link
++	  - full_duplex: Keep LED on with full duplex link
++	  - linkup_over: Keep LED on with link speed and blink on rx/tx traffic
++	  - power_on_reset: Keep LED on with switch reset
++	  - blink_2hz: Set blink speed at 2hz for every blink event
++	  - blink_4hz: Set blink speed at 4hz for every blink event
++	  - blink_8hz: Set blink speed at 8hz for every blink event
++	  - blink_auto: Set blink speed at 2hz for 10m link speed,
++	                4hz for 100m and 8hz for 1000m
++
++
+ endif # LEDS_TRIGGERS
+diff --git a/drivers/leds/trigger/Makefile b/drivers/leds/trigger/Makefile
+index 25c4db97cdd4..392ca8568588 100644
+--- a/drivers/leds/trigger/Makefile
++++ b/drivers/leds/trigger/Makefile
+@@ -16,3 +16,4 @@ obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= ledtrig-netdev.o
+ obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= ledtrig-netdev.o
+ obj-$(CONFIG_LEDS_TRIGGER_PATTERN)	+= ledtrig-pattern.o
+ obj-$(CONFIG_LEDS_TRIGGER_AUDIO)	+= ledtrig-audio.o
++obj-$(CONFIG_LEDS_OFFLOAD_TRIGGER_PHY_ACTIVITY) += ledtrig-offload-phy-activity.o
+diff --git a/drivers/leds/trigger/ledtrig-offload-phy-activity.c b/drivers/leds/trigger/ledtrig-offload-phy-activity.c
+new file mode 100644
+index 000000000000..ca0500b1d37a
+--- /dev/null
++++ b/drivers/leds/trigger/ledtrig-offload-phy-activity.c
+@@ -0,0 +1,151 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/leds.h>
++#include <linux/slab.h>
++
++#define PHY_ACTIVITY_MAX_TRIGGERS 14
++
++#define DEFINE_OFFLOAD_TRIGGER(trigger_name, trigger) \
++	static ssize_t trigger_name##_show(struct device *dev, \
++				struct device_attribute *attr, char *buf) \
++	{ \
++		struct led_classdev *led_cdev = led_trigger_get_led(dev); \
++		int val; \
++		val = led_cdev->configure_offload(led_cdev, trigger, TRIGGER_READ); \
++		return sprintf(buf, "%d\n", val ? 1 : 0); \
++	} \
++	static ssize_t trigger_name##_store(struct device *dev, \
++					struct device_attribute *attr, \
++					const char *buf, size_t size) \
++	{ \
++		struct led_classdev *led_cdev = led_trigger_get_led(dev); \
++		unsigned long state; \
++		int cmd, ret; \
++		ret = kstrtoul(buf, 0, &state); \
++		if (ret) \
++			return ret; \
++		cmd = !!state ? TRIGGER_ENABLE : TRIGGER_DISABLE; \
++		/* Update the configuration with every change */ \
++		led_cdev->configure_offload(led_cdev, trigger, cmd); \
++		return size; \
++	} \
++	DEVICE_ATTR_RW(trigger_name)
++
++/* Expose sysfs for every blink to be configurable from userspace */
++DEFINE_OFFLOAD_TRIGGER(blink_tx, BLINK_TX);
++DEFINE_OFFLOAD_TRIGGER(blink_rx, BLINK_RX);
++DEFINE_OFFLOAD_TRIGGER(blink_collision, BLINK_COLLISION);
++DEFINE_OFFLOAD_TRIGGER(keep_link_10m, KEEP_LINK_10M);
++DEFINE_OFFLOAD_TRIGGER(keep_link_100m, KEEP_LINK_100M);
++DEFINE_OFFLOAD_TRIGGER(keep_link_1000m, KEEP_LINK_1000M);
++DEFINE_OFFLOAD_TRIGGER(keep_half_duplex, KEEP_HALF_DUPLEX);
++DEFINE_OFFLOAD_TRIGGER(keep_full_duplex, KEEP_FULL_DUPLEX);
++DEFINE_OFFLOAD_TRIGGER(option_linkup_over, OPTION_LINKUP_OVER);
++DEFINE_OFFLOAD_TRIGGER(option_power_on_reset, OPTION_POWER_ON_RESET);
++DEFINE_OFFLOAD_TRIGGER(option_blink_2hz, OPTION_BLINK_2HZ);
++DEFINE_OFFLOAD_TRIGGER(option_blink_4hz, OPTION_BLINK_4HZ);
++DEFINE_OFFLOAD_TRIGGER(option_blink_8hz, OPTION_BLINK_8HZ);
++DEFINE_OFFLOAD_TRIGGER(option_blink_auto, OPTION_BLINK_AUTO);
++
++/* The attrs will be placed dynamically based on the supported triggers */
++static struct attribute *phy_activity_attrs[PHY_ACTIVITY_MAX_TRIGGERS + 1];
++
++static int offload_phy_activity_activate(struct led_classdev *led_cdev)
++{
++	const char *offload_trigger;
++	int i, trigger, ret;
++
++	/* This triggered is supported only by LEDs that can be offload driven */
++	if (!led_cdev->trigger_offload || !led_cdev->trigger_offload)
++		return -EOPNOTSUPP;
++
++	/* Scan the supported offload triggers and expose them in sysfs if supported */
++	for (trigger = 0, i = 0; trigger < led_cdev->supported_offload_triggers_count; trigger++) {
++		offload_trigger = led_cdev->supported_offload_triggers[trigger];
++
++		if (i >= PHY_ACTIVITY_MAX_TRIGGERS)
++			break;
++
++		if (!strcmp(offload_trigger, "tx-blink"))
++			phy_activity_attrs[i++] = &dev_attr_blink_tx.attr;
++
++		if (!strcmp(offload_trigger, "rx-blink"))
++			phy_activity_attrs[i++] = &dev_attr_blink_rx.attr;
++
++		if (!strcmp(offload_trigger, "collision-blink"))
++			phy_activity_attrs[i++] = &dev_attr_blink_collision.attr;
++
++		if (!strcmp(offload_trigger, "link-10M"))
++			phy_activity_attrs[i++] = &dev_attr_keep_link_10m.attr;
++
++		if (!strcmp(offload_trigger, "link-100M"))
++			phy_activity_attrs[i++] = &dev_attr_keep_link_100m.attr;
++
++		if (!strcmp(offload_trigger, "link-1000M"))
++			phy_activity_attrs[i++] = &dev_attr_keep_link_1000m.attr;
++
++		if (!strcmp(offload_trigger, "half-duplex"))
++			phy_activity_attrs[i++] = &dev_attr_keep_half_duplex.attr;
++
++		if (!strcmp(offload_trigger, "full-duplex"))
++			phy_activity_attrs[i++] = &dev_attr_keep_full_duplex.attr;
++
++		if (!strcmp(offload_trigger, "linkup-over"))
++			phy_activity_attrs[i++] = &dev_attr_option_linkup_over.attr;
++
++		if (!strcmp(offload_trigger, "power-on-reset"))
++			phy_activity_attrs[i++] = &dev_attr_option_power_on_reset.attr;
++
++		if (!strcmp(offload_trigger, "blink-2hz"))
++			phy_activity_attrs[i++] = &dev_attr_option_blink_2hz.attr;
++
++		if (!strcmp(offload_trigger, "blink-4hz"))
++			phy_activity_attrs[i++] = &dev_attr_option_blink_4hz.attr;
++
++		if (!strcmp(offload_trigger, "blink-8hz"))
++			phy_activity_attrs[i++] = &dev_attr_option_blink_8hz.attr;
++
++		if (!strcmp(offload_trigger, "blink-auto"))
++			phy_activity_attrs[i++] = &dev_attr_option_blink_auto.attr;
++	}
++
++	/* Enable offload mode. No custom configuration is applied,
++	 * the LED driver will use whatever default configuration is
++	 * currently configured.
++	 */
++	ret = led_cdev->trigger_offload(led_cdev, true);
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++static void offload_phy_activity_deactivate(struct led_classdev *led_cdev)
++{
++	led_cdev->trigger_offload(led_cdev, false);
++}
++
++static const struct attribute_group phy_activity_group = {
++	.name = "offload-phy-activity",
++	.attrs = phy_activity_attrs,
++};
++
++static const struct attribute_group *phy_activity_groups[] = {
++	&phy_activity_group,
++	NULL,
++};
++
++static struct led_trigger offload_phy_activity_trigger = {
++	.name       = "offload-phy-activity",
++	.activate   = offload_phy_activity_activate,
++	.deactivate = offload_phy_activity_deactivate,
++	.groups     = phy_activity_groups,
++};
++
++static int __init offload_phy_activity_init(void)
++{
++	return led_trigger_register(&offload_phy_activity_trigger);
++}
++device_initcall(offload_phy_activity_init);
+diff --git a/include/linux/leds.h b/include/linux/leds.h
+index eb06d812bc24..1e8d1efcb44f 100644
+--- a/include/linux/leds.h
++++ b/include/linux/leds.h
+@@ -537,6 +537,30 @@ static inline void ledtrig_flash_ctrl(bool on) {}
+ static inline void ledtrig_torch_ctrl(bool on) {}
+ #endif
+ 
++#ifdef CONFIG_LEDS_OFFLOAD_TRIGGER_PHY_ACTIVITY
++/* 3 main category for offload trigger:
++ * - blink: the led will blink on trigger
++ * - keep: the led will be kept on with condition
++ * - option: a configuration value internal to the led on how offload works
++ */
++enum offload_phy_activity {
++	BLINK_TX = BIT(0), /* Blink on TX traffic */
++	BLINK_RX = BIT(1), /* Blink on RX traffic */
++	BLINK_COLLISION = BIT(2), /* Blink on Collision packet */
++	KEEP_LINK_10M = BIT(3), /* LED on with 10M link */
++	KEEP_LINK_100M = BIT(4), /* LED on with 100M link */
++	KEEP_LINK_1000M = BIT(5), /* LED on with 1000M link */
++	KEEP_HALF_DUPLEX = BIT(6), /* LED on with Half-Duplex link */
++	KEEP_FULL_DUPLEX = BIT(7), /* LED on with Full-Duplex link */
++	OPTION_LINKUP_OVER = BIT(8), /* LED will be on with KEEP offload_triggers and blink on BLINK traffic */
++	OPTION_POWER_ON_RESET = BIT(9), /* LED will be on Switch reset */
++	OPTION_BLINK_2HZ = BIT(10), /* LED will blink with any offload_trigger at 2Hz */
++	OPTION_BLINK_4HZ = BIT(11), /* LED will blink with any offload_trigger at 4Hz */
++	OPTION_BLINK_8HZ = BIT(12), /* LED will blink with any offload_trigger at 8Hz */
++	OPTION_BLINK_AUTO = BIT(13), /* LED will blink differently based on the Link Speed */
++};
++#endif
++
+ /*
+  * Generic LED platform data for describing LED names and default triggers.
+  */
+-- 
+2.32.0
+
