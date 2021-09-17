@@ -1,0 +1,253 @@
+From 67baaf8a363a2d762c15d99178f1581adaf2849c Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sat, 18 Sep 2021 00:39:53 +0200
+Subject: [PATCH 2/2] Documentation: devicetree: net: dsa: qca8k: document
+ configurable led support
+
+Document binding for configurable led. Ports led can now be set on/off
+and the blink/on rules can be configured using the "qca,led_rules"
+binding. Refer to the Documentation on how to configure them.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ .../devicetree/bindings/net/dsa/qca8k.txt     | 219 ++++++++++++++++++
+ 1 file changed, 219 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/net/dsa/qca8k.txt b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+index 8c73f67c43ca..dff2c07aedf7 100644
+--- a/Documentation/devicetree/bindings/net/dsa/qca8k.txt
++++ b/Documentation/devicetree/bindings/net/dsa/qca8k.txt
+@@ -29,6 +29,45 @@ the mdio MASTER is used as communication.
+ Don't use mixed external and internal mdio-bus configurations, as this is
+ not supported by the hardware.
+ 
++A leds subnode in the phy node can be declared to configure leds port behaviour.
++The leds subnode must declare the port with the mdio reg that will have the
++attached led. Each port can have a max of 3 different leds. (Refer to example)
++A led can have 4 different settings:
++- Always off
++- Always on
++- Blink at 4hz
++- Hw_mode: This special mode follow control_rule rules and blink based on switch
++event.
++A sysfs entry for control_rule and hw_mode is provided for each led.
++Control rule for phy0-3 are shared and refer to the same reg. That means that
++phy0-3 will blink based on the same rules. Phy4 have its dedicated control_rules.
++
++Each led can have the following binding:
++The binding "default-state" can be declared to set them off by default or to
++follow leds control_rule using the keep value. By default hw_mode is set as it's
++the default switch setting.
++The binding "qca,led_rules" can be used to declare the control_rule set on
++switch setup. The following rules can be applied decalred in an array of string
++in the dts:
++- tx-blink: Led blink on tx traffic for the port
++- rx-blink: Led blink on rx traffic for the port
++- collision-blink: Led blink when a collision is detected for the port
++- link-10M: Led is turned on when a link of 10M is detected for the port
++- link-100M: Led is turned on when a link of 100M is detected for the port
++- link-1000M: Led is turned on when a link of 1000M is detected for the port
++- half-duplex: Led is turned on when a half-duplex link is detected for the port
++- full-duplex: Led is turned on when a full-duplex link is detected for the port
++- linkup-over: Led blinks only when the linkup led is on, ignore blink otherwise
++- power-on-reset: Reset led on switch reset
++- One of
++	- blink-2hz: Led blinks at 2hz frequency
++	- blink-4hz: Led blinks at 4hz frequency
++	- blink-8hz: Led blinks at 8hz frequency
++	- blink-auto: Led blinks at 2hz frequency with 10M, 4hz with 100M, 8hz
++	  with 1000M
++Due to the phy0-3 limitation, multiple use of 'qca8k_led_rules' will result in
++the last defined one to be applied.
++
+ The CPU port of this switch is always port 0.
+ 
+ A CPU port node has the following optional node:
+@@ -213,3 +252,183 @@ for the internal master mdio-bus configuration:
+ 			};
+ 		};
+ 	};
++
++for the leds declaration example:
++
++#include <dt-bindings/leds/common.h>
++
++	&mdio0 {
++		switch@10 {
++			compatible = "qca,qca8337";
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			reset-gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
++			reg = <0x10>;
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++					label = "cpu";
++					ethernet = <&gmac1>;
++					phy-mode = "rgmii";
++					fixed-link {
++						speed = 1000;
++						full-duplex;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++					label = "lan1";
++					phy-mode = "internal";
++					phy-handle = <&phy_port1>;
++				};
++
++				port@2 {
++					reg = <2>;
++					label = "lan2";
++					phy-mode = "internal";
++					phy-handle = <&phy_port2>;
++				};
++
++				port@3 {
++					reg = <3>;
++					label = "lan3";
++					phy-mode = "internal";
++					phy-handle = <&phy_port3>;
++				};
++
++				port@4 {
++					reg = <4>;
++					label = "lan4";
++					phy-mode = "internal";
++					phy-handle = <&phy_port4>;
++				};
++
++				port@5 {
++					reg = <5>;
++					label = "wan";
++					phy-mode = "internal";
++					phy-handle = <&phy_port5>;
++				};
++			};
++
++			mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				phy_port1: phy@0 {
++					reg = <0>;
++
++					leds {
++						led@0 {
++							reg = <0>;
++							color = <LED_COLOR_ID_GREEN>;
++							default-state = "keep";
++							function = LED_FUNCTION_LAN;
++							function-enumerator = <1>;
++						};
++
++						led@1 {
++							reg = <1>;
++							color = <LED_COLOR_ID_AMBER>;
++							default-state = "keep";
++							function = LED_FUNCTION_LAN;
++							function-enumerator = <1>;
++						};
++					};
++				};
++
++				phy_port2: phy@1 {
++					reg = <1>;
++
++					leds {
++						led@0 {
++							reg = <0>;
++							color = <LED_COLOR_ID_GREEN>;
++							default-state = "keep";
++							function = LED_FUNCTION_LAN;
++							function-enumerator = <2>;
++						};
++
++						led@1 {
++							reg = <1>;
++							color = <LED_COLOR_ID_AMBER>;
++							default-state = "keep";
++							function = LED_FUNCTION_LAN;
++							function-enumerator = <2>;
++						};
++					};
++				};
++
++				phy_port3: phy@2 {
++					reg = <2>;
++
++					leds {
++						led@0 {
++							reg = <0>;
++							color = <LED_COLOR_ID_GREEN>;
++							default-state = "keep";
++							function = LED_FUNCTION_LAN;
++							function-enumerator = <3>;
++						};
++
++						led@1 {
++							reg = <1>;
++							color = <LED_COLOR_ID_AMBER>;
++							default-state = "keep";
++							function = LED_FUNCTION_LAN;
++							function-enumerator = <3>;
++						};
++					};
++				};
++
++				phy_port4: phy@3 {
++					reg = <3>;
++
++					leds {
++						led@0 {
++							reg = <0>;
++							color = <LED_COLOR_ID_GREEN>;
++							default-state = "keep";
++							function = LED_FUNCTION_LAN;
++							function-enumerator = <4>;
++						};
++
++						led@1 {
++							reg = <1>;
++							color = <LED_COLOR_ID_AMBER>;
++							default-state = "keep";
++							function = LED_FUNCTION_LAN;
++							function-enumerator = <4>;
++						};
++					};
++				};
++
++				phy_port5: phy@4 {
++					reg = <4>;
++
++					leds {
++						led@0 {
++							reg = <0>;
++							color = <LED_COLOR_ID_GREEN>;
++							default-state = "keep";
++							function = LED_FUNCTION_WAN;
++							qca,led_rules = "tx-blink", "rx-blink", "link-1000M", "full-duplex", "linkup-over", "blink-8hz";
++						};
++
++						led@1 {
++							reg = <1>;
++							color = <LED_COLOR_ID_AMBER>;
++							default-state = "keep";
++							function = LED_FUNCTION_WAN;
++						};
++					};
++				};
++			};
++		};
++	};
+\ No newline at end of file
+-- 
+2.32.0
+
