@@ -1343,6 +1343,15 @@ define Device/jjplus_ja76pf2
 endef
 TARGET_DEVICES += jjplus_ja76pf2
 
+define Device/joyit_jt-or750i
+  SOC := qca9531
+  DEVICE_VENDOR := Joy-IT
+  DEVICE_MODEL := JT-OR750i
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += joyit_jt-or750i
+
 define Device/librerouter_librerouter-v1
   SOC := qca9558
   DEVICE_VENDOR := Librerouter
@@ -1593,6 +1602,19 @@ define Device/ocedo_ursus
   IMAGE_SIZE := 7424k
 endef
 TARGET_DEVICES += ocedo_ursus
+
+define Device/onion_omega
+  $(Device/tplink-16mlzma)
+  SOC := ar9331
+  DEVICE_VENDOR := Onion
+  DEVICE_MODEL := Omega
+  DEVICE_PACKAGES := kmod-usb-chipidea2
+  SUPPORTED_DEVICES += onion-omega
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGE_SIZE := 16192k
+  TPLINK_HWID := 0x04700001
+endef
+TARGET_DEVICES += onion_omega
 
 define Device/openmesh_common_64k
   DEVICE_VENDOR := OpenMesh

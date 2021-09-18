@@ -46,6 +46,7 @@ ath79_setup_interfaces()
 	netgear,ex7300|\
 	ocedo,koala|\
 	ocedo,raccoon|\
+	onion,omega|\
 	openmesh,mr600-v1|\
 	openmesh,mr600-v2|\
 	openmesh,mr900-v1|\
@@ -269,6 +270,11 @@ ath79_setup_interfaces()
 	wd,mynet-n750)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+		;;
+	joyit,jt-or750i)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
 	librerouter,librerouter-v1)
 		ucidef_add_switch "switch0" \
