@@ -518,17 +518,18 @@ define Device/dlink_dir-x1860
   $(Device/dsa-migration)
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-X1860
+  DEVICE_DTS_CONFIG := config@1
   DEVICE_PACKAGES += kmod-mt7915e uboot-envtools
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
   UBINIZE_OPTS := -E 5
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage-relocate lzma
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size
+  KERNEL := kernel-bin | relocate-kernel | lzma | \
+	fit-relocate lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += recovery.bin
   IMAGE_SIZE := 40960k
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
 endef
 TARGET_DEVICES += dlink_dir-x1860
 
