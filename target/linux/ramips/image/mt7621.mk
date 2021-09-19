@@ -15,6 +15,11 @@ endif
 
 RELOCATE_LOADADDR = 0x81000000
 
+define Build/alpha_encimg
+	$(STAGING_DIR_HOST)/bin/alpha_encimg $@ $@.new $(1)
+	mv $@.new $@
+endef
+
 define Build/uImage-relocate
 	mkimage \
 		-A $(LINUX_KARCH) \
@@ -526,10 +531,13 @@ define Device/dlink_dir-x1860
   UBINIZE_OPTS := -E 5
   KERNEL := kernel-bin | relocate-kernel | lzma | \
 	fit-relocate lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGES += recovery.bin
+  IMAGES += factory.bin recovery.bin
   IMAGE_SIZE := 40960k
   IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
+  SEAMA_SIGNATURE := wrgax10_dlink_dirx1860
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | alpha_encimg \
+	$$(SEAMA_SIGNATURE) 9I92bgRMPu+0fgFzo/ZwCyuBTNrtpeQ7 tTc4XS3LiRBq+Muv
 endef
 TARGET_DEVICES += dlink_dir-x1860
 
