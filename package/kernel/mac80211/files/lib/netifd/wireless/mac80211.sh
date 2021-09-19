@@ -860,6 +860,7 @@ mac80211_setup_adhoc() {
 	mcval=
 	[ -n "$mcast_rate" ] && wpa_supplicant_add_rate mcval "$mcast_rate"
 
+	iw dev "$ifname" set type ibss
 	iw dev "$ifname" ibss join "$ssid" $freq $iw_htmode fixed-freq $bssid \
 		beacon-interval $beacon_int \
 		${brstr:+basic-rates $brstr} \
