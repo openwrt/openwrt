@@ -82,6 +82,8 @@ proto_6rd_setup() {
 
 proto_6rd_teardown() {
 	local cfg="$1"
+	local link="6rd-$cfg"
+	ip link del $link
 }
 
 proto_6rd_init_config() {
