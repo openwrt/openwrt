@@ -122,6 +122,18 @@ define Build/append-ubi
 	rm $@.tmp
 endef
 
+define Build/ubinize-kernel
+	cp $@ $@.tmp
+	sh $(TOPDIR)/scripts/ubinize-image.sh \
+		--kernel $@.tmp \
+		$@ \
+		-p $(BLOCKSIZE:%k=%KiB) -m $(PAGESIZE) \
+		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE)) \
+		$(if $(VID_HDR_OFFSET),-O $(VID_HDR_OFFSET)) \
+		$(UBINIZE_OPTS)
+	rm $@.tmp
+endef
+
 define Build/append-uboot
 	dd if=$(UBOOT_PATH) >> $@
 endef
