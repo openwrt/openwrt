@@ -11,8 +11,6 @@ Signed-off-by: Biwen Li <biwen.li@nxp.com>
  plat/nxp/tools/pbl_ch3.mk | 5 -----
  2 files changed, 8 deletions(-)
 
-diff --git a/plat/nxp/tools/pbl_ch2.mk b/plat/nxp/tools/pbl_ch2.mk
-index afa43520..ff624dd9 100644
 --- a/plat/nxp/tools/pbl_ch2.mk
 +++ b/plat/nxp/tools/pbl_ch2.mk
 @@ -20,8 +20,6 @@ ifeq ($(RCW),"")
@@ -32,8 +30,6 @@ index afa43520..ff624dd9 100644
  	${CREATE_PBL} -r ${RCW} -i ${BUILD_PLAT}/bl2.bin -b ${BOOT_MODE} -c ${SOC_NUM} -d ${BL2_BASE} -e ${BL2_BASE} \
  	-o ${BUILD_PLAT}/bl2_${BOOT_MODE}.pbl ;
  # Swapping of RCW is required for QSPi Chassis 2 devices
-diff --git a/plat/nxp/tools/pbl_ch3.mk b/plat/nxp/tools/pbl_ch3.mk
-index 944ae3bb..9aa8f635 100644
 --- a/plat/nxp/tools/pbl_ch3.mk
 +++ b/plat/nxp/tools/pbl_ch3.mk
 @@ -27,9 +27,6 @@ else
@@ -55,6 +51,3 @@ index 944ae3bb..9aa8f635 100644
  	# Add Block Copy command and populate boot loc ptrfor bl2.bin to RCW
  	${CREATE_PBL} -r ${RCW} -i ${BUILD_PLAT}/bl2.bin -b ${BOOT_MODE} -c ${SOC_NUM} -d ${BL2_BASE} -e ${BL2_BASE} \
  	-o ${BUILD_PLAT}/bl2_${BOOT_MODE}.pbl -f ${BL2_SRC_OFFSET};
--- 
-2.17.1
-
