@@ -12,6 +12,22 @@ define Device/allnet_all-sg8208m
 endef
 TARGET_DEVICES += allnet_all-sg8208m
 
+define Device/apresia_aplgs120gtss
+  $(Device/cameo-fw)
+  SOC := rtl8382
+  IMAGE_SIZE := 14848k
+  DEVICE_VENDOR := APRESIA
+  DEVICE_MODEL := ApresiaLightGS120GT-SS
+  UIMAGE_MAGIC := 0x12345000
+  CAMEO_KERNEL_PART_SIZE := 1572864
+  CAMEO_KERNEL_PART := 3
+  CAMEO_ROOTFS_PART := 4
+  CAMEO_CUSTOMER_SIGNATURE := 2
+  CAMEO_BOARD_MODEL := APLGS120GTSS
+  CAMEO_BOARD_VERSION := 4
+endef
+TARGET_DEVICES += apresia_aplgs120gtss
+
 define Device/d-link_dgs-1210-10mp-f
   $(Device/d-link_dgs-1210)
   SOC := rtl8380
