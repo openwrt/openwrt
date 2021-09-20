@@ -1,0 +1,20 @@
+--- a/common/runtime_svc.c
++++ b/common/runtime_svc.c
+@@ -38,7 +38,7 @@ uintptr_t handle_runtime_svc(uint32_t smc_fid,
+ 	u_register_t x1, x2, x3, x4;
+ 	int index;
+ 	unsigned int idx;
+-	const rt_svc_desc_t *rt_svc_descs;
++	rt_svc_desc_t *rt_svc_descs = NULL;
+ 
+ 	assert(handle);
+ 	idx = get_unique_oen_from_smc_fid(smc_fid);
+@@ -48,7 +48,7 @@ uintptr_t handle_runtime_svc(uint32_t smc_fid,
+ 	if (index < 0 || index >= (int)RT_SVC_DECS_NUM)
+ 		SMC_RET1(handle, SMC_UNK);
+ 
+-	rt_svc_descs = (rt_svc_desc_t *) RT_SVC_DESCS_START;
++	memcpy(rt_svc_descs, (rt_svc_desc_t *)RT_SVC_DESCS_START, MAX_RT_SVCS);
+ 
+ 	get_smc_params_from_ctx(handle, x1, x2, x3, x4);
+ 
