@@ -106,12 +106,11 @@ static int rtl8231_pin_dir(struct rtl8231_gpios *gpios, u32 gpio, u32 dir)
 	u32 v;
 	int pin_sel_addr = RTL8231_GPIO_PIN_SEL(gpio);
 	int pin_dir_addr = RTL8231_GPIO_DIR(gpio);
-	int pin = gpio % 16;
-	int dpin = pin;
+	int dpin = gpio % 16;
 
 	if (gpio > 31) {
 		pr_debug("WARNING: HIGH pin\n");
-		dpin = pin << 5;
+		dpin += 5;
 		pin_dir_addr = pin_sel_addr;
 	}
 
@@ -140,7 +139,7 @@ static int rtl8231_pin_dir_get(struct rtl8231_gpios *gpios, u32 gpio, u32 *dir)
 
 	if (gpio > 31) {
 		pin_dir_addr = RTL8231_GPIO_PIN_SEL(gpio);
-		pin = pin << 5;
+		pin += 5;
 	}
 
 	v = rtl8231_read(gpios, pin_dir_addr);
@@ -240,6 +239,8 @@ void rtl8231_gpio_set(struct gpio_chip *gc, unsigned int offset, int value)
 
 int rtl8231_init(struct rtl8231_gpios *gpios)
 {
+	u32 v;
+
 	pr_info("%s called, MDIO bus ID: %d\n", __func__, gpios->smi_bus_id);
 
 	gpios->reg_cached = 0;
@@ -253,9 +254,11 @@ int rtl8231_init(struct rtl8231_gpios *gpios)
 		sw_w32_mask(3, 1, RTL838X_DMY_REG5);
 	}
 
-	/*Select GPIO functionality for pins 0-15, 16-31 and 32-37 */
+	/* Select GPIO functionality for pins 0-34 */
 	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(0), 0xffff);
 	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(16), 0xffff);
+	v = rtl8231_read(gpios, RTL8231_GPIO_PIN_SEL(32));
+	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(32), v | 0x7);
 
 	return 0;
 }
