@@ -9,7 +9,24 @@ RAMFS_COPY_BIN='fw_printenv fw_setenv'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {
+	local board=$(board_name)
+	case "$board" in
+	xwrt,wr1800k-ax-norplusemmc)
+		norplusemmc_check_image "$1"
+		return $?
+		;;
+	esac
+
 	return 0
+}
+
+platform_copy_config() {
+	local board=$(board_name)
+	case "$board" in
+	xwrt,wr1800k-ax-norplusemmc)
+		norplusemmc_copy_config
+		;;
+	esac
 }
 
 platform_do_upgrade() {
@@ -146,6 +163,9 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
+		;;
+	xwrt,wr1800k-ax-norplusemmc)
+		norplusemmc_do_upgrade "$1"
 		;;
 	zyxel,lte3301-plus|\
 	zyxel,nr7101)

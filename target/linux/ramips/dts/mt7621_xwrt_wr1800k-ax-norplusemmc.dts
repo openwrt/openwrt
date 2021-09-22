@@ -1,0 +1,12 @@
+/dts-v1/;
+
+#include "mt7621_xwrt_wr1800k-ax-nor.dts"
+
+/ {
+	compatible = "xwrt,wr1800k-ax-norplusemmc", "mediatek,mt7621-soc";
+	model = "WR1800K-AX-NORPLUSEMMC";
+
+	chosen {
+		bootargs = "root=/dev/mmcblk0p2 console=ttyS0,115200 overlay_size=256";
+	};
+};
