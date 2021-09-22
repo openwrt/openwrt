@@ -95,6 +95,138 @@ define Device/dsa-migration
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 
+define Build/norplusemmc-combined-tar
+	-[ -f "$@" ] && mv "$@" "$@.flash"
+
+	rm -fR $@.boot
+	mkdir -p $@.boot
+
+	$(CP) $(IMAGE_KERNEL) $@.boot/linux.itb
+
+	( \
+		GPT_ROOTPART=`echo $(IMG_PART_DISKGUID) | sed 's/00$$/02/'`; \
+		echo \
+			"bootargs=console=ttyS0,115200 root=PARTUUID=$${GPT_ROOTPART}" \
+			> $@.boot/uEnv.txt; \
+	)
+
+	GUID=$(IMG_PART_DISKGUID) \
+	PADDING="1" \
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
+	$(SCRIPT_DIR)/gen_image_generic.sh \
+		$@ \
+		16 $@.boot \
+		$(if $(CONFIG_TARGET_ROOTFS_PARTSIZE),$(CONFIG_TARGET_ROOTFS_PARTSIZE),256) $(IMAGE_ROOTFS) \
+		256
+
+	printf '\xeb\x48' | dd of="$@" conv=notrunc
+
+	gzip -f -9n -c "$@" > "$@.emmc"
+
+	sh $(TOPDIR)/scripts/sysupgrade-tar.sh \
+		--board $(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)) \
+		--kernel "$@.flash" \
+		--rootfs "$@.emmc" \
+		$@
+
+	rm -f "$@.flash" "$@.emmc"
+endef
+
+define Build/initrd-kernel
+	rm -fR $@.initrd
+	rm -fR $@.initrd.cpio
+
+	mkdir -p $@.initrd/{bin,dev,lib,proc,root,sys}
+	mkdir -p $@.initrd/lib/modules/$(LINUX_VERSION)
+
+	$(CP) ./initrd/init $@.initrd/
+	chmod +x $@.initrd/init
+
+	$(CP) $(TARGET_DIR)/bin/busybox $@.initrd/bin/
+	$(LN) busybox $@.initrd/bin/sh
+	$(LN) busybox $@.initrd/bin/ls
+	$(LN) busybox $@.initrd/bin/ln
+	$(LN) busybox $@.initrd/bin/mkdir
+	$(LN) busybox $@.initrd/bin/mount
+	$(LN) busybox $@.initrd/bin/umount
+	$(LN) busybox $@.initrd/bin/find
+	$(LN) busybox $@.initrd/bin/grep
+	$(LN) busybox $@.initrd/bin/sed
+	$(LN) busybox $@.initrd/bin/cat
+	$(LN) busybox $@.initrd/bin/mknod
+	$(LN) busybox $@.initrd/bin/switch_root
+	$(LN) busybox $@.initrd/bin/reboot
+	$(LN) busybox $@.initrd/bin/sleep
+
+	$(CP) $(TARGET_DIR)/sbin/kmodloader $@.initrd/bin/
+	$(LN) kmodloader $@.initrd/bin/modprobe
+
+	$(CP) $(TARGET_DIR)/usr/sbin/blkid $@.initrd/bin/
+
+	( \
+		KMODS=(ext4 crc32c_generic mtk_sd mmc_block xhci-mtk usb-storage sd_mod); \
+		for kmod in "$${KMODS[@]}"; do \
+			$(CP) \
+				$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/$$kmod.ko \
+				$@.initrd/lib/modules/$(LINUX_VERSION)/; \
+		done; \
+	)
+
+	$(CP) $(TARGET_DIR)/lib/ld* $@.initrd/lib/
+	( \
+		FLAG_FILE="$@.initrd/.new"; \
+		touch "$$FLAG_FILE"; \
+		while [ -f "$$FLAG_FILE" ]; do \
+			rm "$$FLAG_FILE"; \
+			( \
+				export \
+					READELF=$(TARGET_CROSS)readelf \
+					OBJCOPY=$(TARGET_CROSS)objcopy \
+					XARGS="$(XARGS)"; \
+				$(SCRIPT_DIR)/gen-dependencies.sh "$@.initrd/"; \
+			) | while read DEPS; do \
+				if [ "$${DEPS##*.}" == "ko" ]; then \
+					SRC_PATHS=("$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)"); \
+					TARGET_PATH="$@.initrd/lib/modules/$(LINUX_VERSION)"; \
+				else \
+					SRC_PATHS=("$(TARGET_DIR)/lib" "$(TARGET_DIR)/usr/lib"); \
+					TARGET_PATH="$@.initrd/lib"; \
+				fi; \
+				if [ ! -f "$$TARGET_PATH/$$DEPS" ]; then \
+					touch "$$FLAG_FILE"; \
+					for src in "$${SRC_PATHS[@]}"; do \
+						if [ -f "$$src/$$DEPS" ]; then \
+							cp "$$src/$$DEPS" "$$TARGET_PATH/$$DEPS"; \
+						fi; \
+					done; \
+				fi; \
+			done; \
+		done; \
+		rm -f "$$FLAG_FILE"; \
+	)
+
+	( \
+		if [ -f $(STAGING_DIR_HOST)/bin/cpio ]; then \
+			CPIO=$(STAGING_DIR_HOST)/bin/cpio; \
+		else \
+			CPIO="cpio"; \
+		fi; \
+		cd $@.initrd; \
+		find . | cpio -o -H newc -R 0:0 > $@.initrd.cpio; \
+	)
+
+	$(TOPDIR)/scripts/mkits.sh \
+		-D $(DEVICE_NAME) -o $@.its -k $@ \
+		-C lzma -d $(KDIR)/image-$(DEVICE_DTS).dtb \
+		-i $@.initrd.cpio \
+		-a $(KERNEL_LOADADDR) -e $(KERNEL_LOADADDR) \
+		-c config-1 -A $(LINUX_KARCH) -v $(LINUX_VERSION)
+
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+
+	@mv $@.new $@
+endef
+
 define Build/xwrt_wr1800k-factory
   -[ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) ] && \
   mkdir -p "$(1).tmp" && \
@@ -1811,6 +1943,22 @@ define Device/xwrt_wr1800k-ax-nand
   DEVICE_PACKAGES := kmod-mt7915e
 endef
 TARGET_DEVICES += xwrt_wr1800k-ax-nand
+
+define Device/xwrt_wr1800k-ax-norplusemmc
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := WR1800K-AX
+  DEVICE_VARIANT := NORPLUSEMMC
+  DEVICE_PACKAGES += kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7915e \
+		     kmod-usb3 kmod-i2c-core kmod-eeprom-at24 i2c-tools \
+		     uboot-envtools partx-utils mkf2fs e2fsprogs kmod-fs-msdos \
+		     base-config-setting-ext4fs
+  SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
+  KERNEL := kernel-bin | lzma | initrd-kernel
+  IMAGES := sysupgrade.tar
+  IMAGE/sysupgrade.tar := append-kernel | norplusemmc-combined-tar | append-metadata
+endef
+TARGET_DEVICES += xwrt_wr1800k-ax-norplusemmc
 
 define Device/xwrt_wr1800k-ax-nor
   $(Device/uimage-lzma-loader)

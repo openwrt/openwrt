@@ -1,0 +1,84 @@
+#!/bin/sh
+
+mount -t proc none /proc
+mount -t sysfs none /sys
+mount -t tmpfs none /dev
+
+mknod -m 622 /dev/console c 5 1
+mknod -m 666 /dev/null c 1 3
+mknod -m 666 /dev/zero c 1 5
+mknod -m 666 /dev/tty c 5 0
+
+echo -n "Press 'C' to enter initramfs shell... "
+read -n 1 -t 1 CHAR
+if [ "${CHAR}" = "C" ];then
+    exec /bin/sh
+else
+    echo "Skip."
+fi
+
+find /lib/modules/ -name "*.ko" | while read MODULE; do
+    modprobe ${MODULE}
+done
+
+ROOTPART=""
+if read cmdline < /proc/cmdline; then
+    case "$cmdline" in
+        *root=*)
+            ROOTPART="${cmdline##*root=}"
+            ROOTPART="${ROOTPART%% *}"
+        ;;
+    esac
+    case "$ROOTPART" in
+        PARTUUID=????????-????-????-????-????????????)
+            PARTUUID="${ROOTPART#PARTUUID=}"
+            ROOTPART="/dev/disk/by-partuuid/${PARTUUID}"
+            echo "Waiting for root partuuid ${PARTUUID}..."
+        ;;
+        /dev/*)
+            echo "Waiting for root device ${ROOTPART}..."
+        ;;
+    esac
+fi
+
+WAIT_CNT=0
+
+mkdir -p /dev/disk/by-uuid/
+mkdir -p /dev/disk/by-partuuid/
+while [ ! -b "${ROOTPART}" ]
+do
+    if [ ${WAIT_CNT} -lt 60 ]; then
+	echo "Waiting for root device ${ROOTPART}...${WAIT_CNT}"
+	sleep 1
+	WAIT_CNT=$((WAIT_CNT+1))
+    else
+	echo "Waiting TIMEOUT for device ${ROOTPART}...abort"
+	reboot -f
+    fi
+    find /sys/block | while read BLOCK; do
+        find "${BLOCK}/" | grep "/dev\$" | sed "s/\/dev$//" | while read DEVICE; do
+            DEVPATH="/dev/${DEVICE##*/}"
+            MAJORMINOR=`cat "${DEVICE}/dev" | sed "s/:/ /"`
+            if [ ! -b "${DEVPATH}" ]; then
+                mknod ${DEVPATH} b ${MAJORMINOR}
+            else
+                UUID=`blkid -s UUID -o value ${DEVPATH}`
+                ln -sf ${DEVPATH} /dev/disk/by-uuid/${UUID}
+                PARTUUID=`blkid -s PARTUUID -o value ${DEVPATH}`
+                ln -sf ${DEVPATH} /dev/disk/by-partuuid/${PARTUUID}
+            fi
+        done
+    done
+done
+
+mount -o ro ${ROOTPART} /root || {
+	echo "Failed on mount root device ${ROOTPART}"
+	echo "Reboot..."
+	reboot -d 2 -f
+}
+
+umount /proc
+umount /sys
+umount /dev
+
+exec switch_root /root /etc/preinit
