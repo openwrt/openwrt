@@ -76,7 +76,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			vl->untag &= ~(BIT(port));
  
  		b53_set_vlan_entry(dev, vid, vl);
-@@ -2623,7 +2635,6 @@ struct b53_device *b53_switch_alloc(stru
+@@ -2644,7 +2656,6 @@ struct b53_device *b53_switch_alloc(stru
  	dev->ops = ops;
  	ds->ops = &b53_switch_ops;
  	ds->configure_vlan_while_not_filtering = true;
