@@ -39,9 +39,14 @@ setup_interface () {
 	[ -n "$staticroutes" ] && set_classless_routes $staticroutes
 	[ -n "$msstaticroutes" ] && set_classless_routes $msstaticroutes
 
-	for i in $dns; do
-		proto_add_dns_server "$i"
-	done
+	# Do not add DNS for interfaces which are down.
+	for i in $dns; do 
+        isoffline=`timeout 10 wget -qq -O- stdout http://localhost/api/status/interfaces/$interface | jsonfilter -e '@[0]["offline"]'`
+        if [ $? -eq 0 ]  && [ "$isoffline" = "true" ]; then
+                continue                                                                                                              
+        fi
+                proto_add_dns_server "$i"                                                                                             
+        done   
 	for i in $domain; do
 		proto_add_dns_search "$i"
 	done
