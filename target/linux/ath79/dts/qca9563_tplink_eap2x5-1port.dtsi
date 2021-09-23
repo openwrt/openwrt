@@ -60,18 +60,17 @@
 			partition@40000 {
 				compatible = "openwrt,elf";
 				label = "firmware";
-				reg = <0x040000 0xd80000>;
+				reg = <0x040000 0xec0000>;
 			};
 
-			partition@dc0000 {
+			partition@f00000 {
 				label = "config";
-				reg = <0xdc0000 0x030000>;
+				reg = <0xf00000 0x030000>;
 				read-only;
 			};
 
-			/* df0000-f30000 undefined in vendor firmware */
-
 			partition@f30000 {
+				/* vendor firmware: f30000-fb0000 "multi-log"; fb0000-ff0000 "oops"  */
 				label = "log";
 				reg = <0xf30000 0x0c0000>;
 				read-only;
