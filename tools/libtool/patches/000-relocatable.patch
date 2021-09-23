@@ -1,24 +1,17 @@
-From ca10caa502f971f90d8c041aa2476de54ef0ce2b Mon Sep 17 00:00:00 2001
-From: Eneas U de Queiroz <cotequeiroz@gmail.com>
-Date: Tue, 20 Jul 2021 16:41:11 -0300
-Subject: openwrt: make relocatable, search resources relative to STAGING_DIR
-
-This was originally commited to openwrt by Jo-Philipp Wich
-<jow@openwrt.org>.
-
-(adjusted to v2.4.6)
-Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
-
---- a/libtoolize.in
-+++ b/libtoolize.in
-@@ -40,11 +40,18 @@
- 
- : ${AUTOCONF="autoconf"}
- : ${AUTOMAKE="automake"}
+--- a/libltdl/config/general.m4sh
++++ b/libltdl/config/general.m4sh
+@@ -45,15 +45,22 @@ progpath="$0"
+ M4SH_VERBATIM([[
+ : ${CP="cp -f"}
+ test "${ECHO+set}" = set || ECHO=${as_echo-'printf %s\n'}
 -: ${EGREP="@EGREP@"}
 -: ${FGREP="@FGREP@"}
 -: ${GREP="@GREP@"}
  : ${LN_S="@LN_S@"}
+ : ${MAKE="make"}
+ : ${MKDIR="mkdir"}
+ : ${MV="mv -f"}
+ : ${RM="rm -f"}
 -: ${SED="@SED@"}
 +if test -n "$STAGING_DIR"; then
 +	: ${EGREP="$STAGING_DIR/../host/bin/grep -E"}
@@ -31,12 +24,87 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
 +	: ${GREP="@GREP@"}
 +	: ${SED="@SED@"}
 +fi
+ : ${SHELL="${CONFIG_SHELL-/bin/sh}"}
+ : ${Xsed="$SED -e 1s/^X//"}
  
+--- a/libtoolize.in
++++ b/libtoolize.in
+@@ -334,15 +334,22 @@ as_unset=as_fn_unset
  
- ## -------------------------- ##
---- a/m4/libtool.m4
-+++ b/m4/libtool.m4
-@@ -929,9 +929,8 @@ dnl AC_DEFUN([AC_LIBTOOL_RC], [])
+ : ${CP="cp -f"}
+ test "${ECHO+set}" = set || ECHO=${as_echo-'printf %s\n'}
+-: ${EGREP="@EGREP@"}
+-: ${FGREP="@FGREP@"}
+-: ${GREP="@GREP@"}
+ : ${LN_S="@LN_S@"}
+ : ${MAKE="make"}
+ : ${MKDIR="mkdir"}
+ : ${MV="mv -f"}
+ : ${RM="rm -f"}
+-: ${SED="@SED@"}
++if test -n "$STAGING_DIR"; then
++	: ${EGREP="$STAGING_DIR/../host/bin/grep -E"}
++	: ${FGREP="$STAGING_DIR/../host/bin/grep -F"}
++	: ${GREP="$STAGING_DIR/../host/bin/grep"}
++	: ${SED="$STAGING_DIR/../host/bin/sed"}
++else
++	: ${EGREP="@EGREP@"}
++	: ${FGREP="@FGREP@"}
++	: ${GREP="@GREP@"}
++	: ${SED="@SED@"}
++fi
+ : ${SHELL="${CONFIG_SHELL-/bin/sh}"}
+ : ${Xsed="$SED -e 1s/^X//"}
+ 
+@@ -2487,10 +2494,17 @@ func_check_macros ()
+ 
+   # Locations for important files:
+   prefix=@prefix@
+-  datadir=@datadir@
+-  pkgdatadir=@pkgdatadir@
+-  pkgltdldir=@pkgdatadir@
+-  aclocaldir=@aclocaldir@
++  if test -n "$STAGING_DIR"; then
++    datadir="$STAGING_DIR/../host/share"
++    pkgdatadir="$STAGING_DIR/../host/share/libtool"
++    pkgltdldir="$STAGING_DIR/../host/share/libtool"
++    aclocaldir="$STAGING_DIR/../host/share/aclocal"
++  else
++    datadir=@datadir@
++    pkgdatadir=@pkgdatadir@
++    pkgltdldir=@pkgdatadir@
++    aclocaldir=@aclocaldir@
++  fi
+   auxdir=
+   macrodir=
+   configure_ac=configure.in
+--- a/libtoolize.m4sh
++++ b/libtoolize.m4sh
+@@ -1453,10 +1453,17 @@ func_check_macros ()
+ 
+   # Locations for important files:
+   prefix=@prefix@
+-  datadir=@datadir@
+-  pkgdatadir=@pkgdatadir@
+-  pkgltdldir=@pkgdatadir@
+-  aclocaldir=@aclocaldir@
++  if test -n "$STAGING_DIR"; then
++    datadir="$STAGING_DIR/../host/share"
++    pkgdatadir="$STAGING_DIR/../host/share/libtool"
++    pkgltdldir="$STAGING_DIR/../host/share/libtool"
++    aclocaldir="$STAGING_DIR/../host/share/aclocal"
++  else
++    datadir=@datadir@
++    pkgdatadir=@pkgdatadir@
++    pkgltdldir=@pkgdatadir@
++    aclocaldir=@aclocaldir@
++  fi
+   auxdir=
+   macrodir=
+   configure_ac=configure.in
+--- a/libltdl/m4/libtool.m4
++++ b/libltdl/m4/libtool.m4
+@@ -907,9 +907,8 @@ dnl AC_DEFUN([AC_LIBTOOL_RC], [])
  # ----------------
  m4_defun([_LT_TAG_COMPILER],
  [AC_REQUIRE([AC_PROG_CC])dnl
@@ -47,7 +115,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  _LT_TAGDECL([CC], [compiler], [1], [A language specific compiler])dnl
  _LT_TAGDECL([with_gcc], [GCC], [0], [Is the compiler the GNU compiler?])dnl
  
-@@ -8160,9 +8159,9 @@ m4_defun([_LT_DECL_EGREP],
+@@ -7660,9 +7659,9 @@ m4_defun([_LT_DECL_EGREP],
  [AC_REQUIRE([AC_PROG_EGREP])dnl
  AC_REQUIRE([AC_PROG_FGREP])dnl
  test -z "$GREP" && GREP=grep
@@ -60,7 +128,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  dnl Non-bleeding-edge autoconf doesn't subst GREP, so do it here too
  AC_SUBST([GREP])
  ])
-@@ -8195,9 +8194,8 @@ AC_SUBST([DLLTOOL])
+@@ -7695,9 +7694,8 @@ AC_SUBST([DLLTOOL])
  # as few characters as possible.  Prefer GNU sed if found.
  m4_defun([_LT_DECL_SED],
  [AC_PROG_SED
