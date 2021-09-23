@@ -12,6 +12,7 @@ platform_do_upgrade() {
 	case "$(board_name)" in
 	askey,rt4230w-rev6 |\
 	compex,wpq864|\
+	mikrotik,routerboard-3011uias |\
 	netgear,d7800 |\
 	netgear,r7500 |\
 	netgear,r7500v2 |\

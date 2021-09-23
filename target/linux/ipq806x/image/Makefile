@@ -192,6 +192,29 @@ define Device/linksys_ea8500
 endef
 TARGET_DEVICES += linksys_ea8500
 
+define Device/MikrotikNAND
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := MikroTik
+	KERNEL_INITRAMFS = $$(KERNEL) | ipq-aux-loader-kernel elf
+	KERNEL_INITRAMFS_SUFFIX := -fit-uImage.elf
+	PLATFORM := mikrotik-ipq806x
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | ipq-aux-loader-kernel ubi | \
+	    sysupgrade-tar kernel=$$$$@ | append-metadata
+endef
+define Device/mikrotik_routerboard-3011uias
+	$(call Device/MikrotikNAND)
+	DEVICE_MODEL := MikroTik RouterBOARD 3011UiAS
+	SOC := qcom-ipq8064
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	AUX_LOADER_LEBSIZE := 126976
+	AUX_LOADER_LEBCOUNT := 120
+	AUX_LOADER_RB3011_PREINITS := YES
+	DEVICE_PACKAGES := kmod-gpio-beeper
+endef
+TARGET_DEVICES += mikrotik_routerboard-3011uias
+
 define Device/nec_wg2600hp
 	$(call Device/LegacyImage)
 	DEVICE_VENDOR := NEC
