@@ -44,6 +44,7 @@ define Package/musl-fts/description
   The musl-fts package implements the fts(3) functions fts_open, fts_read, fts_children, fts_set and fts_close, which are missing in musl libc.
 endef
 
+HOST_CONFIGURE_ARGS += --disable-shared --with-pic
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
