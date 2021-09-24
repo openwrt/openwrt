@@ -205,26 +205,28 @@ define Build/initrd-kernel
 		rm -f "$$FLAG_FILE"; \
 	)
 
-	( \
-		if [ -f $(STAGING_DIR_HOST)/bin/cpio ]; then \
-			CPIO=$(STAGING_DIR_HOST)/bin/cpio; \
-		else \
-			CPIO="cpio"; \
-		fi; \
-		cd $@.initrd; \
-		find . | cpio -o -H newc -R 0:0 > $@.initrd.cpio; \
-	)
-
-	$(TOPDIR)/scripts/mkits.sh \
-		-D $(DEVICE_NAME) -o $@.its -k $@ \
-		-C lzma -d $(KDIR)/image-$(DEVICE_DTS).dtb \
-		-i $@.initrd.cpio \
-		-a $(KERNEL_LOADADDR) -e $(KERNEL_LOADADDR) \
-		-c config-1 -A $(LINUX_KARCH) -v $(LINUX_VERSION)
-
-	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
-
-	@mv $@.new $@
+	rm -f $(LINUX_DIR)/.config.prev
+	mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
+	grep -v \
+		-e INITRAMFS \
+		-e CONFIG_RD_ \
+		-e CONFIG_BLK_DEV_INITRD \
+		$(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
+	echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
+	echo 'CONFIG_INITRAMFS_ROOT_GID=$(shell id -g)' >> $(LINUX_DIR)/.config
+	echo "# CONFIG_INITRAMFS_FORCE is not set"                                               >> $(LINUX_DIR)/.config
+	echo "# CONFIG_INITRAMFS_COMPRESSION_NONE is not set"                                    >> $(LINUX_DIR)/.config
+	echo -e "# CONFIG_INITRAMFS_COMPRESSION_GZIP is not set\n# CONFIG_RD_GZIP is not set"    >> $(LINUX_DIR)/.config
+	echo -e "# CONFIG_INITRAMFS_COMPRESSION_BZIP2 is not set\n# CONFIG_RD_BZIP2 is not set"  >> $(LINUX_DIR)/.config
+	echo -e "CONFIG_INITRAMFS_COMPRESSION_LZMA=y\nCONFIG_RD_LZMA=y"                          >> $(LINUX_DIR)/.config
+	echo -e "# CONFIG_INITRAMFS_COMPRESSION_LZO is not set\n# CONFIG_RD_LZO is not set"      >> $(LINUX_DIR)/.config
+	echo -e "# CONFIG_INITRAMFS_COMPRESSION_XZ is not set\n# CONFIG_RD_XZ is not set"        >> $(LINUX_DIR)/.config
+	echo -e "# CONFIG_INITRAMFS_COMPRESSION_LZ4 is not set\n# CONFIG_RD_LZ4 is not set"      >> $(LINUX_DIR)/.config
+	echo -e "# CONFIG_INITRAMFS_COMPRESSION_ZSTD is not set\n# CONFIG_RD_ZSTD is not set"    >> $(LINUX_DIR)/.config
+	echo 'CONFIG_BLK_DEV_INITRD=y'                                                           >> $(LINUX_DIR)/.config
+	echo 'CONFIG_INITRAMFS_SOURCE="$(strip $@.initrd $(GENERIC_PLATFORM_DIR)/image/initramfs-base-files.txt)"' >> $(LINUX_DIR)/.config
+	$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all) modules
+	$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $@
 endef
 
 define Build/xwrt_wr1800k-factory
@@ -1954,9 +1956,10 @@ define Device/xwrt_wr1800k-ax-norplusemmc
 		     uboot-envtools partx-utils mkf2fs e2fsprogs kmod-fs-msdos \
 		     base-config-setting-ext4fs
   SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
-  KERNEL := kernel-bin | lzma | initrd-kernel
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   IMAGES := sysupgrade.tar
-  IMAGE/sysupgrade.tar := append-kernel | norplusemmc-combined-tar | append-metadata
+  IMAGE/sysupgrade.tar := initrd-kernel | append-dtb | lzma | loader-kernel | uImage none | norplusemmc-combined-tar | append-metadata
 endef
 TARGET_DEVICES += xwrt_wr1800k-ax-norplusemmc
 
