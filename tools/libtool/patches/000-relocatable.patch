@@ -34,6 +34,31 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  
  
  ## -------------------------- ##
+@@ -1901,11 +1908,19 @@ func_require_seen_libtool ()
+   pkgmacro_files="@pkgmacro_files@"
+ 
+   # Locations for important files:
+-  prefix="@prefix@"
+-  datadir="@datadir@"
+-  pkgauxdir="@pkgauxdir@"
+-  pkgltdldir="@pkgdatadir@"
+-  aclocaldir="@aclocaldir@"
++  if test -n "$STAGING_DIR"; then
++    prefix="$STAGING_DIR/../host"
++    datadir="$STAGING_DIR/../host/share"
++    pkgauxdir="$STAGING_DIR/../host/share/libtool/build-aux"
++    pkgltdldir="$STAGING_DIR/../host/share/libtool"
++    aclocaldir="$STAGING_DIR/../host/share/aclocal"
++  else
++    prefix="@prefix@"
++    datadir="@datadir@"
++    pkgauxdir="@pkgauxdir@"
++    pkgltdldir="@pkgdatadir@"
++    aclocaldir="@aclocaldir@"
++  fi
+ 
+   # Allow the user to override the master libtoolize repository:
+   if test -n "$_lt_pkgdatadir"; then
 --- a/m4/libtool.m4
 +++ b/m4/libtool.m4
 @@ -929,9 +929,8 @@ dnl AC_DEFUN([AC_LIBTOOL_RC], [])
