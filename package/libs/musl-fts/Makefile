@@ -30,6 +30,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/musl-fts
   SECTION:=libs
@@ -58,3 +59,4 @@ define Package/musl-fts/install
 endef
 
 $(eval $(call BuildPackage,musl-fts))
+$(eval $(call HostBuild))
