@@ -66,48 +66,58 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  : ${SHELL="${CONFIG_SHELL-/bin/sh}"}
  : ${Xsed="$SED -e 1s/^X//"}
  
-@@ -2487,10 +2494,17 @@ func_check_macros ()
+@@ -2486,11 +2493,21 @@ func_check_macros ()
+   all_pkgltdl_files="COPYING.LIB Makefile Makefile.in Makefile.inc Makefile.am README acinclude.m4 aclocal.m4 argz_.h argz.c config.h.in config-h.in configure configure.ac configure.in libltdl/lt__alloc.h libltdl/lt__dirent.h libltdl/lt__glibc.h libltdl/lt__private.h libltdl/lt__strl.h libltdl/lt_dlloader.h libltdl/lt_error.h libltdl/lt_system.h libltdl/slist.h loaders/dld_link.c loaders/dlopen.c loaders/dyld.c loaders/load_add_on.c loaders/loadlibrary.c loaders/preopen.c loaders/shl_load.c lt__alloc.c lt__dirent.c lt__strl.c lt_dlloader.c lt_error.c ltdl.c ltdl.h slist.c"
  
    # Locations for important files:
-   prefix=@prefix@
+-  prefix=@prefix@
 -  datadir=@datadir@
 -  pkgdatadir=@pkgdatadir@
 -  pkgltdldir=@pkgdatadir@
 -  aclocaldir=@aclocaldir@
 +  if test -n "$STAGING_DIR_HOST"; then
++    prefix="$STAGING_DIR_HOST"
 +    datadir="$STAGING_DIR_HOST/share"
++    pkgauxdir="$STAGING_DIR_HOST/share/libtool/build-aux"
 +    pkgdatadir="$STAGING_DIR_HOST/share/libtool"
 +    pkgltdldir="$STAGING_DIR_HOST/share/libtool"
 +    aclocaldir="$STAGING_DIR_HOST/share/aclocal"
 +  else
-+    datadir=@datadir@
-+    pkgdatadir=@pkgdatadir@
-+    pkgltdldir=@pkgdatadir@
-+    aclocaldir=@aclocaldir@
++    prefix="@prefix@"
++    datadir="@datadir@"
++    pkgauxdir="@pkgauxdir@"
++    pkgdatadir="@pkgdatadir@"
++    pkgltdldir="@pkgdatadir@"
++    aclocaldir="@aclocaldir@"
 +  fi
    auxdir=
    macrodir=
    configure_ac=configure.in
 --- a/libtoolize.m4sh
 +++ b/libtoolize.m4sh
-@@ -1453,10 +1453,17 @@ func_check_macros ()
+@@ -1452,11 +1452,21 @@ func_check_macros ()
+   all_pkgltdl_files="COPYING.LIB Makefile Makefile.in Makefile.inc Makefile.am README acinclude.m4 aclocal.m4 argz_.h argz.c config.h.in config-h.in configure configure.ac configure.in libltdl/lt__alloc.h libltdl/lt__dirent.h libltdl/lt__glibc.h libltdl/lt__private.h libltdl/lt__strl.h libltdl/lt_dlloader.h libltdl/lt_error.h libltdl/lt_system.h libltdl/slist.h loaders/dld_link.c loaders/dlopen.c loaders/dyld.c loaders/load_add_on.c loaders/loadlibrary.c loaders/preopen.c loaders/shl_load.c lt__alloc.c lt__dirent.c lt__strl.c lt_dlloader.c lt_error.c ltdl.c ltdl.h slist.c"
  
    # Locations for important files:
-   prefix=@prefix@
+-  prefix=@prefix@
 -  datadir=@datadir@
 -  pkgdatadir=@pkgdatadir@
 -  pkgltdldir=@pkgdatadir@
 -  aclocaldir=@aclocaldir@
 +  if test -n "$STAGING_DIR_HOST"; then
++    prefix="$STAGING_DIR_HOST"
 +    datadir="$STAGING_DIR_HOST/share"
++    pkgauxdir="$STAGING_DIR_HOST/share/libtool/build-aux"
 +    pkgdatadir="$STAGING_DIR_HOST/share/libtool"
 +    pkgltdldir="$STAGING_DIR_HOST/share/libtool"
 +    aclocaldir="$STAGING_DIR_HOST/share/aclocal"
 +  else
-+    datadir=@datadir@
-+    pkgdatadir=@pkgdatadir@
-+    pkgltdldir=@pkgdatadir@
-+    aclocaldir=@aclocaldir@
++    prefix="@prefix@"
++    datadir="@datadir@"
++    pkgauxdir="@pkgauxdir@"
++    pkgdatadir="@pkgdatadir@"
++    pkgltdldir="@pkgdatadir@"
++    aclocaldir="@aclocaldir@"
 +  fi
    auxdir=
    macrodir=
