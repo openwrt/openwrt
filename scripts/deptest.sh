@@ -122,7 +122,7 @@ test_package() # $1=pkgname
 	fi
 }
 
-# parse commandline options
+# parse command-line options
 packages=
 lean_test=0
 force=0

@@ -14,7 +14,7 @@ import os
 import re
 import getopt
 
-# Commandline options
+# Command-line options
 opt_dryrun = False
 
 
