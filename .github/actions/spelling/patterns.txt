@@ -1,0 +1,25 @@
+# See https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-patterns
+
+(?:HASH|VERSION)\s*:=\s*[0-9a-f]+\b
+LINUX_KERNEL_HASH.\S+\s*=\s*[0-9a-f]+\b
+REBOOT=[0-9a-f]+\b
+
+^# 90[0-9A-F]{6}-90[0-9A-F]{6} 
+
+# hex digits including css/html color classes:
+(?:[\\0][xX]|\\u|[uU]\+|#x?|\%23)[0-9a-fA-FgGrR_]{2,}(?:[uU]?[lL]{0,2}|u\d+)\b
+
+# ignore long runs of a single character:
+\b([A-Za-z])\g{-1}{3,}\b
+
+# Compiler flags
+(?<!,)[\t "`=]-[DPWXYLl]
+,-B
+
+# tar arguments
+\b(?:\\n|)tar(?:\s+-[a-zA-Z]+|\s[a-z]+)+
+
+# regex
+\\b
+/\^.*\$/
+/\[.*\]/
