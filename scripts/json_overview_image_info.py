@@ -7,7 +7,7 @@ from sys import argv
 import json
 
 if len(argv) != 2:
-    print("JSON info files script requires ouput file as argument")
+    print("JSON info files script requires output file as argument")
     exit(1)
 
 output_path = Path(argv[1])
