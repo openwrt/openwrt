@@ -1101,6 +1101,19 @@ define Device/netgear_r6850
 endef
 TARGET_DEVICES += netgear_r6850
 
+define Device/netgear_r6900-v2
+  $(Device/netgear_sercomm_nand)
+  DEVICE_MODEL := R6900
+  DEVICE_VARIANT := v2
+  SERCOMM_HWNAME := R6950
+  SERCOMM_HWID := BZV
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x1032
+  IMAGE_SIZE := 40960k
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += netgear_r6900-v2
+
 define Device/netgear_r7200
   $(Device/netgear_sercomm_nand)
   DEVICE_MODEL := R7200

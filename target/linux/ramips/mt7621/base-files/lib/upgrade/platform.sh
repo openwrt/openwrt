@@ -71,6 +71,7 @@ platform_do_upgrade() {
 	netgear,r6700-v2|\
 	netgear,r6800|\
 	netgear,r6850|\
+	netgear,r6900-v2|\
 	netgear,r7200|\
 	netgear,wac104|\
 	netgear,wac124|\
