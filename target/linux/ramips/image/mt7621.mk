@@ -1126,6 +1126,18 @@ define Device/netgear_r7200
 endef
 TARGET_DEVICES += netgear_r7200
 
+define Device/netgear_r7450
+  $(Device/netgear_sercomm_nand)
+  DEVICE_MODEL := R7450
+  SERCOMM_HWNAME := R6950
+  SERCOMM_HWID := BZV
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x1032
+  IMAGE_SIZE := 40960k
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += netgear_r7450
+
 define Device/netgear_wac104
   $(Device/netgear_sercomm_nand)
   DEVICE_MODEL := WAC104

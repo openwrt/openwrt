@@ -73,6 +73,7 @@ platform_do_upgrade() {
 	netgear,r6850|\
 	netgear,r6900-v2|\
 	netgear,r7200|\
+	netgear,r7450|\
 	netgear,wac104|\
 	netgear,wac124|\
 	netis,wf2881|\
