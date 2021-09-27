@@ -1,3 +1,11 @@
+define Device/globalscale_mochabin
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := Globalscale
+  DEVICE_MODEL := MOCHAbin
+  SOC := armada-7040
+endef
+TARGET_DEVICES += globalscale_mochabin
+
 define Device/marvell_armada7040-db
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Marvell
