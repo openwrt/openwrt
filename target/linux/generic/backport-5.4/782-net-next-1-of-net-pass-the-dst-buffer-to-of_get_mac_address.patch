@@ -1470,7 +1470,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (!is_valid_ether_addr(ndev->dev_addr))
  		eth_hw_addr_random(ndev);
  	temac_do_set_mac_address(ndev);
-@@ -1298,7 +1298,7 @@ static int temac_probe(struct platform_d
+@@ -1296,7 +1296,7 @@ static int temac_probe(struct platform_d
  	struct temac_local *lp;
  	struct net_device *ndev;
  	struct resource *res;
@@ -1479,7 +1479,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	__be32 *p;
  	bool little_endian;
  	int rc = 0;
-@@ -1494,8 +1494,8 @@ static int temac_probe(struct platform_d
+@@ -1492,8 +1492,8 @@ static int temac_probe(struct platform_d
  
  	if (temac_np) {
  		/* Retrieve the MAC address */

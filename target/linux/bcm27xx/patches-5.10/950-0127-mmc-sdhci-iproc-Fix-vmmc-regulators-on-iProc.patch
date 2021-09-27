@@ -18,8 +18,8 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/mmc/host/sdhci-iproc.c
 +++ b/drivers/mmc/host/sdhci-iproc.c
-@@ -173,6 +173,17 @@ static unsigned int sdhci_iproc_get_max_
- 		return pltfm_host->clock;
+@@ -190,6 +190,17 @@ static unsigned int sdhci_iproc_bcm2711_
+ 	return 200000;
  }
  
 +static void sdhci_iproc_set_power(struct sdhci_host *host, unsigned char mode,
@@ -36,7 +36,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  static const struct sdhci_ops sdhci_iproc_ops = {
  	.set_clock = sdhci_set_clock,
  	.get_max_clock = sdhci_iproc_get_max_clock,
-@@ -190,6 +201,7 @@ static const struct sdhci_ops sdhci_ipro
+@@ -207,6 +218,7 @@ static const struct sdhci_ops sdhci_ipro
  	.write_b = sdhci_iproc_writeb,
  	.set_clock = sdhci_set_clock,
  	.get_max_clock = sdhci_iproc_get_max_clock,

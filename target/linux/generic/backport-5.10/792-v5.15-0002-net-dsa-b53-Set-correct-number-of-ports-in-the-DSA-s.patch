@@ -1,0 +1,43 @@
+From d12e1c4649883e8ca5e8ff341e1948b3b6313259 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Thu, 2 Sep 2021 10:30:51 +0200
+Subject: [PATCH] net: dsa: b53: Set correct number of ports in the DSA struct
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Setting DSA_MAX_PORTS caused DSA to call b53 callbacks (e.g.
+b53_disable_port() during dsa_register_switch()) for invalid
+(non-existent) ports. That made b53 modify unrelated registers and is
+one of reasons for a broken BCM5301x support.
+
+This problem exists for years but DSA_MAX_PORTS usage has changed few
+times. It seems the most accurate to reference commit dropping
+dsa_switch_alloc() in the Fixes tag.
+
+Fixes: 7e99e3470172 ("net: dsa: remove dsa_switch_alloc helper")
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -2587,6 +2587,8 @@ static int b53_switch_init(struct b53_de
+ 	dev->enabled_ports |= BIT(dev->cpu_port);
+ 	dev->num_ports = fls(dev->enabled_ports);
+ 
++	dev->ds->num_ports = min_t(unsigned int, dev->num_ports, DSA_MAX_PORTS);
++
+ 	/* Include non standard CPU port built-in PHYs to be probed */
+ 	if (is539x(dev) || is531x5(dev)) {
+ 		for (i = 0; i < dev->num_ports; i++) {
+@@ -2631,7 +2633,6 @@ struct b53_device *b53_switch_alloc(stru
+ 		return NULL;
+ 
+ 	ds->dev = base;
+-	ds->num_ports = DSA_MAX_PORTS;
+ 
+ 	dev = devm_kzalloc(base, sizeof(*dev), GFP_KERNEL);
+ 	if (!dev)

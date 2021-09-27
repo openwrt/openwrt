@@ -23,9 +23,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii2_pins &mdio_pins>;
 
-	nvmem-cells = <&macaddr_factory_28>;
-	nvmem-cell-names = "mac-address";
-
 	mediatek,portmap = "llllw";
 
 	port@5 {
@@ -47,14 +44,4 @@
 &wmac {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pa_pins>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_28: macaddr@28 {
-		reg = <0x28 0x6>;
-	};
 };

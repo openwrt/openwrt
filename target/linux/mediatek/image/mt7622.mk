@@ -202,6 +202,16 @@ define Device/mediatek_mt7622-rfb1-ubi
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
+define Device/totolink_a8000ru
+  DEVICE_VENDOR := TOTOLINK
+  DEVICE_MODEL := A8000RU
+  DEVICE_DTS := mt7622-totolink-a8000ru
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := swconfig
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += totolink_a8000ru
+
 define Device/ubnt_unifi-6-lr
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi 6 LR

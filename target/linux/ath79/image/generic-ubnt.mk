@@ -328,13 +328,21 @@ define Device/ubnt_powerbeam-5ac-gen2
 endef
 TARGET_DEVICES += ubnt_powerbeam-5ac-gen2
 
-define Device/ubnt_powerbeam-m-xw
+define Device/ubnt_powerbeam-m2-xw
   $(Device/ubnt-xw)
-  DEVICE_MODEL := PowerBeam M
+  DEVICE_MODEL := PowerBeam M2
   DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += loco-m-xw
 endef
-TARGET_DEVICES += ubnt_powerbeam-m-xw
+TARGET_DEVICES += ubnt_powerbeam-m2-xw
+
+define Device/ubnt_powerbeam-m5-xw
+  $(Device/ubnt-xw)
+  DEVICE_MODEL := PowerBeam M5
+  DEVICE_PACKAGES += rssileds
+  SUPPORTED_DEVICES += loco-m-xw
+endef
+TARGET_DEVICES += ubnt_powerbeam-m5-xw
 
 define Device/ubnt_powerbridge-m
   $(Device/ubnt-xm)

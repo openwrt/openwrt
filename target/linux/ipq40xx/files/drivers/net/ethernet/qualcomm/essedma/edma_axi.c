@@ -23,6 +23,7 @@
 #include <linux/clk.h>
 #include <linux/string.h>
 #include <linux/reset.h>
+#include <linux/version.h>
 #include "edma.h"
 #include "ess_edma.h"
 
@@ -1184,10 +1185,17 @@ static int edma_axi_probe(struct platform_device *pdev)
 
 	for (i = 0; i < edma_cinfo->num_gmac; i++) {
 		if (adapter[i]->poll_required) {
-			int phy_mode = of_get_phy_mode(np);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,5,0)
+			phy_interface_t phy_mode;
 
+			err = of_get_phy_mode(np, &phy_mode);
+			if (err)
+				phy_mode = PHY_INTERFACE_MODE_SGMII;
+#else
+			int phy_mode = of_get_phy_mode(np);
 			if (phy_mode < 0)
 				phy_mode = PHY_INTERFACE_MODE_SGMII;
+#endif
 			adapter[i]->phydev =
 				phy_connect(edma_netdev[i],
 					    (const char *)adapter[i]->phy_id,

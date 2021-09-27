@@ -1,0 +1,40 @@
+From 15a563d008ef9d04df525f0c476cd7d7127bb883 Mon Sep 17 00:00:00 2001
+From: Matthew Hagan <mnhagan88@gmail.com>
+Date: Sun, 29 Aug 2021 22:37:48 +0000
+Subject: [PATCH] ARM: dts: NSP: Fix mpcore, mmc node names
+
+Running dtbs_check yielded the issues with bcm-nsp.dtsi.
+
+Firstly this patch fixes the following message by appending "-bus" to
+the mpcore node name:
+mpcore@19000000: $nodename:0: 'mpcore@19000000' does not match '^([a-z][a-z0-9\\-]+-bus|bus|soc|axi|ahb|apb)(@[0-9a-f]+)?$'
+
+Secondly mmc node name. The label name can remain as is.
+sdhci@21000: $nodename:0: 'sdhci@21000' does not match '^mmc(@.*)?$'
+
+Signed-off-by: Matthew Hagan <mnhagan88@gmail.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm/boot/dts/bcm-nsp.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm-nsp.dtsi
++++ b/arch/arm/boot/dts/bcm-nsp.dtsi
+@@ -77,7 +77,7 @@
+ 		interrupt-affinity = <&cpu0>, <&cpu1>;
+ 	};
+ 
+-	mpcore@19000000 {
++	mpcore-bus@19000000 {
+ 		compatible = "simple-bus";
+ 		ranges = <0x00000000 0x19000000 0x00023000>;
+ 		#address-cells = <1>;
+@@ -219,7 +219,7 @@
+ 			status = "disabled";
+ 		};
+ 
+-		sdio: sdhci@21000 {
++		sdio: mmc@21000 {
+ 			compatible = "brcm,sdhci-iproc-cygnus";
+ 			reg = <0x21000 0x100>;
+ 			interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>;

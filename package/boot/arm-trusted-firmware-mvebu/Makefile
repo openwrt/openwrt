@@ -149,13 +149,13 @@ define Download/mv-ddr-marvell
 endef
 
 MOX_BB_NAME:=mox-boot-builder
-MOX_BB_RELEASE:=v2021.04.09
+MOX_BB_RELEASE:=v2021.09.07
 MOX_BB_SOURCE:=$(MOX_BB_NAME)-$(MOX_BB_RELEASE).tar.bz2
 
 define Download/mox-boot-builder
   FILE:=$(MOX_BB_SOURCE)
   URL:=https://gitlab.nic.cz/turris/mox-boot-builder/-/archive/$(MOX_BB_RELEASE)
-  HASH:=f0ed4fa25006e36a07d4256f633e3f25d6f8898dbe2e081e578251a182885520
+  HASH:=fd5fe276a3b0dee3177d61c017907a8eb23cd2169478fa78e9a3a836cfe3a4a8
 endef
 
 CM3_GCC_NAME:=gcc-arm
@@ -166,7 +166,11 @@ CM3_GCC_SOURCE=$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION).tar.xz
 define Download/cm3-gcc
   FILE:=$(CM3_GCC_SOURCE)
   URL:=https://developer.arm.com/-/media/Files/downloads/gnu-a/$(CM3_GCC_RELEASE)/binrel
+ifeq ($(HOST_ARCH),aarch64)
+  HASH:=1a42eecafa03dc6f32b8ae49ffcd15114dc818efbd72292fa6bab58233940bb9
+else
   HASH:=bf7ee185936d22d787b80c8da573f72ead5675695331fb8b590f0133ef1f6bb9
+endif
 endef
 
 define Build/Clean

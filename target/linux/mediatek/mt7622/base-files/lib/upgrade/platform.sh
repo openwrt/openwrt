@@ -54,6 +54,9 @@ platform_do_upgrade() {
 		fi
 		default_do_upgrade "$1"
 		;;
+	totolink,a8000ru)
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
@@ -71,6 +74,9 @@ platform_check_image() {
 	case "$board" in
 	buffalo,wsr-2533dhp2)
 		buffalo_check_image "$board" "$magic" "$1" || return 1
+		;;
+	totolink,a8000ru)
+		nand_do_platform_check "$board" "$1"
 		;;
 	*)
 		[ "$magic" != "d00dfeed" ] && {

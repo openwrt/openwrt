@@ -17,9 +17,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  delete mode 100644 Documentation/devicetree/bindings/usb/mediatek,musb.txt
  create mode 100644 Documentation/devicetree/bindings/usb/mediatek,musb.yaml
 
-diff --git a/Documentation/devicetree/bindings/usb/mediatek,musb.txt b/Documentation/devicetree/bindings/usb/mediatek,musb.txt
-deleted file mode 100644
-index 5eedb02965622..0000000000000
 --- a/Documentation/devicetree/bindings/usb/mediatek,musb.txt
 +++ /dev/null
 @@ -1,57 +0,0 @@
@@ -80,9 +77,6 @@ index 5eedb02965622..0000000000000
 -		vbus-supply = <&usb_vbus>;
 -	};
 -};
-diff --git a/Documentation/devicetree/bindings/usb/mediatek,musb.yaml b/Documentation/devicetree/bindings/usb/mediatek,musb.yaml
-new file mode 100644
-index 0000000000000..790efe8b62746
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/usb/mediatek,musb.yaml
 @@ -0,0 +1,113 @@
@@ -199,6 +193,3 @@ index 0000000000000..790efe8b62746
 +        };
 +    };
 +...
--- 
-2.32.0
-
