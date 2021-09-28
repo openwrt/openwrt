@@ -53,13 +53,13 @@ jobs:
 
           df -h
           
-      - name: 自定义插件主题。
-        run: |
-          cd package
-          mkdir openwrt-packages
-          cd openwrt-packages
-          git clone https://github.com/kenzok8/openwrt-packages.git
-          git clone https://github.com/kenzok8/small.git
+     # - name: 自定义插件主题。
+     #   run: |
+     #     cd package
+     #     mkdir openwrt-packages
+     #     cd openwrt-packages
+     #     git clone https://github.com/kenzok8/openwrt-packages.git
+     #     git clone https://github.com/kenzok8/small.git
          
 
            
@@ -155,7 +155,7 @@ jobs:
           # EOF
 
           # 常用LuCI插件选择:
-          cat >> .config <<EOF
+          # cat >> .config <<EOF
           # CONFIG_PACKAGE_luci-app-adbyby-plus=y
           # CONFIG_PACKAGE_luci-app-aria2=y
           # CONFIG_PACKAGE_luci-app-baidupcs-web=y
@@ -177,9 +177,9 @@ jobs:
           # CONFIG_PACKAGE_luci-app-webadmin=y
           # CONFIG_PACKAGE_luci-app-wireguard=y
           # CONFIG_PACKAGE_luci-app-wrtbwmon=y
-          CONFIG_PACKAGE_luci-app-passwall=y
+          # CONFIG_PACKAGE_luci-app-passwall=y
           # CONFIG_PACKAGE_luci-app-smartdns=y
-          CONFIG_PACKAGE_luci-app-adguardhome=y
+          # CONFIG_PACKAGE_luci-app-adguardhome=y
           EOF
 
           # LuCI主题:
@@ -189,7 +189,7 @@ jobs:
           EOF
 
           # 常用软件包:
-          cat >> .config <<EOF
+          # cat >> .config <<EOF
           # CONFIG_PACKAGE_curl=y
           # CONFIG_PACKAGE_htop=y
           # CONFIG_PACKAGE_nano=y
@@ -200,7 +200,7 @@ jobs:
           # CONFIG_PACKAGE_adguardhome=y
           # CONFIG_PACKAGE_smartdns=y
           # CONFIG_PACKAGE_openwrt-passwall=y
-          EOF
+          # EOF
 
           # 取消编译VMware镜像以及镜像填充 (不要删除被缩进的注释符号):
           # cat >> .config <<EOF
