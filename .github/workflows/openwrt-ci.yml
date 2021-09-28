@@ -1,4 +1,4 @@
-﻿#
+#
 # This is free software, lisence use MIT.
 # 
 # Copyright (C) 2019 P3TERX <https://p3terx.com>
@@ -52,17 +52,7 @@ jobs:
           # ln -s /mnt/openwrt/staging_dir ./staging_dir
 
           df -h
-          
-     # - name: 自定义插件主题。
-     #   run: |
-     #     cd package
-     #     mkdir openwrt-packages
-     #     cd openwrt-packages
-     #     git clone https://github.com/kenzok8/openwrt-packages.git
-     #     git clone https://github.com/kenzok8/small.git
-         
 
-           
       - name: Update feeds
         run: |
           ./scripts/feeds update -a
@@ -106,18 +96,12 @@ jobs:
           # 无论你想要对固件进行怎样的定制, 都需要且只需要修改 EOF 回环内的内容.
           # 
 
-          # 编译BCM4716固件:
+          # 编译x64固件:
           cat >> .config <<EOF
           CONFIG_TARGET_bcm47xx=y
           CONFIG_TARGET_bcm47xx_mips74k=y
           CONFIG_TARGET_bcm47xx_mips74k_DEVICE_asus_rt-n16=y
           EOF
-          
-          # 设置固件大小:
-          # cat >> .config <<EOF
-          # CONFIG_TARGET_KERNEL_PARTSIZE=30
-          # CONFIG_TARGET_ROOTFS_PARTSIZE=400
-          # EOF
 
           # 固件压缩:
           # cat >> .config <<EOF
@@ -177,16 +161,13 @@ jobs:
           # CONFIG_PACKAGE_luci-app-webadmin=y
           # CONFIG_PACKAGE_luci-app-wireguard=y
           # CONFIG_PACKAGE_luci-app-wrtbwmon=y
-          # CONFIG_PACKAGE_luci-app-passwall=y
-          # CONFIG_PACKAGE_luci-app-smartdns=y
-          # CONFIG_PACKAGE_luci-app-adguardhome=y
-          EOF
+          # EOF
 
           # LuCI主题:
           # cat >> .config <<EOF
           # CONFIG_PACKAGE_luci-theme-argon=y
           # CONFIG_PACKAGE_luci-theme-netgear=y
-          EOF
+          # EOF
 
           # 常用软件包:
           # cat >> .config <<EOF
@@ -197,9 +178,6 @@ jobs:
           # CONFIG_PACKAGE_tree=y
           # CONFIG_PACKAGE_vim-fuller=y
           # CONFIG_PACKAGE_wget=y
-          # CONFIG_PACKAGE_adguardhome=y
-          # CONFIG_PACKAGE_smartdns=y
-          # CONFIG_PACKAGE_openwrt-passwall=y
           # EOF
 
           # 取消编译VMware镜像以及镜像填充 (不要删除被缩进的注释符号):
