@@ -28,11 +28,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/broadcom/bgmac-bcma.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/net/ethernet/broadcom/bgmac-bcma.c b/drivers/net/ethernet/broadcom/bgmac-bcma.c
-index 85fa0ab7201c7..9513cfb5ba58c 100644
 --- a/drivers/net/ethernet/broadcom/bgmac-bcma.c
 +++ b/drivers/net/ethernet/broadcom/bgmac-bcma.c
-@@ -129,6 +129,8 @@ static int bgmac_probe(struct bcma_device *core)
+@@ -129,6 +129,8 @@ static int bgmac_probe(struct bcma_devic
  	bcma_set_drvdata(core, bgmac);
  
  	err = of_get_mac_address(bgmac->dev->of_node, bgmac->net_dev->dev_addr);
@@ -41,6 +39,3 @@ index 85fa0ab7201c7..9513cfb5ba58c 100644
  
  	/* If no MAC address assigned via device tree, check SPROM */
  	if (err) {
--- 
-cgit 1.2.3-1.el7
-

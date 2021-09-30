@@ -154,7 +154,7 @@
  # CONFIG_EFI_GRUB_ARM32_WORKAROUND is not set
 --- /dev/null
 +++ b/bananapi_bpi-r2_env
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,70 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x88000000
@@ -167,6 +167,8 @@
 +bootdelay=0
 +bootfile=openwrt-mediatek-mt7623-bananapi_bpi-r2-initramfs-recovery.itb
 +bootfile_upg=openwrt-mediatek-mt7623-bananapi_bpi-r2-squashfs-sysupgrade.itb
++bootled_pwr=bpi-r2:pio:green
++bootled_rec=bpi-r2:pio:blue
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
@@ -176,7 +178,7 @@
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_first=if button factory ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
-+boot_tftp_forever=led bpi-r64:pio:blue on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
++boot_tftp_forever=led bpi-r2:pio:blue on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
 +boot_tftp_production=tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run mmc_write_production ; if env exists noboot ; then else bootm $loadaddr ; fi
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run mmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr ; fi
 +boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr
@@ -205,9 +207,13 @@
 +sdmmc_write_recovery=iminfo $fileaddr && mmc dev 1 && part start mmc 1 $part_recovery part_addr && part size mmc 1 $part_recovery part_size && run mmc_write_vol
 +_checkbootedfrom=setenv _checkbootedfrom ; if itest.l *81dffff0 == 434d4d65 ; then setenv bootedfrom eMMC ; else setenv bootedfrom SD ; fi
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; led bpi-r64:pio:blue on ; run _checkbootedfrom _switch_to_menu _update_bootdev _update_bootcmd _update_bootcmd2 _init_env boot_first
-+_update_bootcmd=setenv _update_bootcmd ; if test "$bootedfrom" = "SD" ; then setenv boot_production "run sdmmc_read_production && bootm $loadaddr" ; else setenv boot_production "run emmc_read_production && bootm $loadaddr" ; fi
-+_update_bootcmd2=setenv _update_bootcmd2 ; if test "$bootedfrom" = "SD" ; then setenv boot_recovery "run sdmmc_read_recovery && bootm $loadaddr" ; else setenv boot_recovery "run emmc_read_recovery && bootm $loadaddr" ; fi
++_firstboot=setenv _firstboot ; led $bootled_pwr off ;led $bootled_rec on ; run _checkbootedfrom _switch_to_menu _update_bootdev _update_bootcmd _update_bootcmd2 _init_env boot_first
++_set_bootcmd_sdmmc=setenv boot_production "led $bootled_rec off ; led $bootled_pwr on ; run sdmmc_read_production && bootm $loadaddr ; led $bootled_pwr off"
++_set_bootcmd_emmc=setenv boot_production "led $bootled_rec off ; led $bootled_pwr on ; run emmc_read_production && bootm $loadaddr ; led $bootled_pwr off"
++_update_bootcmd=setenv _update_bootcmd ; if test "$bootedfrom" = "SD" ; then run _set_bootcmd_sdmmc ; else run _set_bootcmd_emmc ; fi ; setenv _set_bootcmd_sdmmc ; setenv _set_bootcmd_emmc
++_set_bootcmd2_sdmmc=setenv boot_recovery "led $bootled_pwr off ; led $bootled_rec on ; run sdmmc_read_recovery && bootm $loadaddr ; led $bootled_rec off"
++_set_bootcmd2_emmc=setenv boot_recovery "led $bootled_pwr off ; led $bootled_rec on ; run emmc_read_recovery && bootm $loadaddr ; led $bootled_rec off"
++_update_bootcmd2=setenv _update_bootcmd2 ; if test "$bootedfrom" = "SD" ; then run _set_bootcmd2_sdmmc ; else run _set_bootcmd2_emmc ; fi ; setenv _set_bootcmd2_sdmmc ; setenv _set_bootcmd2_emmc
 +_update_bootdev=setenv _update_bootdev ; if test "$bootedfrom" = "SD" ; then setenv bootargs "$console root=/dev/mmcblk1p65" ; else setenv bootargs "$console root=/dev/mmcblk0p65" ; fi
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title  [0;36m[$bootedfrom][0m    [33m$ver[0m" ; run _set_bm2
