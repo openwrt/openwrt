@@ -77,9 +77,8 @@ buffalo,wzr-hp-g300nh-s)
 domywifi,dw33d)
 	ubootenv_add_uci_config "/dev/mtd4" "0x0" "0x10000" "0x10000"
 	;;
-glinet,gl-ar150)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x8000" "0x10000"
-	;;
+dongwon,dw02-412h-64m|\
+dongwon,dw02-412h-128m|\
 glinet,gl-ar300m-lite|\
 glinet,gl-ar300m-nand|\
 glinet,gl-ar300m-nor|\
@@ -87,6 +86,9 @@ glinet,gl-ar300m16)
 	idx="$(find_mtd_index u-boot-env)"
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000"
+	;;
+glinet,gl-ar150)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x8000" "0x10000"
 	;;
 netgear,wndr3700|\
 netgear,wndr3700-v2|\
