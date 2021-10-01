@@ -41,22 +41,20 @@ endef
 TARGET_DEVICES += meraki_mr24
 
 define Device/meraki_mx60
-  DEFAULT := n
   DEVICE_VENDOR := Cisco Meraki
   DEVICE_MODEL := MX60/MX60W
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
 		     kmod-usb-storage block-mount
-  BOARD_NAME := mx60
-  BLOCKSIZE := 63k
+  BLOCKSIZE := 128k
   IMAGES := sysupgrade.bin
-  DTB_SIZE := 64512
+  DTB_SIZE := 20480
   IMAGE_SIZE := 1021m
-  KERNEL_SIZE := 4031k
-  KERNEL := kernel-bin | gzip | uImage gzip | MerakiAdd-dtb | MerakiNAND
-  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
+  KERNEL := kernel-bin | gzip | dtb | MuImage-initramfs gzip
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
-  SUPPORTED_DEVICES += mx60
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := uboot's bootcmd has to be updated to support standard multi-image uImages. \
+       Upgrade via sysupgrade mechanism is not possible.
 endef
 TARGET_DEVICES += meraki_mx60
 
