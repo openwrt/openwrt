@@ -59,12 +59,12 @@ jobs:
           mkdir openwrt-packages
           cd openwrt-packages
           git clone https://github.com/xiaorouji/openwrt-passwall.git
-          git clone https://github.com/sirpdboy/sirpdboy-package.git
-          git clone https://git.openwrt.org/feed/packages.git
-          git clone https://git.openwrt.org/project/luci.git
-          git clone https://git.openwrt.org/feed/routing.git
-          git clone https://git.openwrt.org/feed/telephony.git      
-
+          git clone https://github.com/rufengsuixing/luci-app-adguardhome.git
+          git clone https://github.com/AdguardTeam/AdGuardHome.git
+          # git clone https://github.com/ujincn/smartdns.git
+          # git clone https://github.com/ujincn/luci-app-smartdns-compat.git
+          
+          
       - name: Update feeds
         run: |
           ./scripts/feeds update -a
@@ -174,6 +174,8 @@ jobs:
           # CONFIG_PACKAGE_luci-app-wireguard=y
           # CONFIG_PACKAGE_luci-app-wrtbwmon=y
           CONFIG_PACKAGE_luci-app-passwall=y
+          CONFIG_PACKAGE_luci-app-smartdns-compat=y
+          # CONFIG_PACKAGE_luci-app-smartdns=y
           EOF
 
           # LuCI主题:
@@ -183,7 +185,7 @@ jobs:
           # EOF
 
           # 常用软件包:
-          # cat >> .config <<EOF
+          cat >> .config <<EOF
           # CONFIG_PACKAGE_curl=y
           # CONFIG_PACKAGE_htop=y
           # CONFIG_PACKAGE_nano=y
@@ -191,7 +193,9 @@ jobs:
           # CONFIG_PACKAGE_tree=y
           # CONFIG_PACKAGE_vim-fuller=y
           # CONFIG_PACKAGE_wget=y
-          # EOF
+          CONFIG_PACKAGE_adguardhome=y
+          # CONFIG_PACKAGE_smartdns=y
+          EOF
 
           # 取消编译VMware镜像以及镜像填充 (不要删除被缩进的注释符号):
           # cat >> .config <<EOF
