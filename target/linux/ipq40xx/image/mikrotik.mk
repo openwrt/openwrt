@@ -13,6 +13,7 @@ endef
 define Device/mikrotik_hap-ac2
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := hAP ac2
+	DEVICE_ALT0_MODEL := RBD52G-5HacD2HnD-TC
 	SOC := qcom-ipq4018
 	DEVICE_PACKAGES := ipq-wifi-mikrotik_hap-ac2 -kmod-ath10k-ct \
 		kmod-ath10k-ct-smallbuffers
@@ -30,7 +31,8 @@ TARGET_DEVICES += mikrotik_lhg-5-ac
 
 define Device/mikrotik_sxtsq-5-ac
 	$(call Device/mikrotik_nor)
-	DEVICE_MODEL := SXTsq 5 ac (RBSXTsqG-5acD)
+	DEVICE_MODEL := SXTsq 5 ac
+	DEVICE_ALT0_MODEL := RBSXTsqG-5acD
 	SOC := qcom-ipq4018
 	DEVICE_PACKAGES := ipq-wifi-mikrotik_sxtsq-5-ac rssileds
 endef
