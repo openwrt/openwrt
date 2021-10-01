@@ -186,7 +186,7 @@ $(eval $(call SetupHostCommand,rsync,Please install 'rsync', \
 	rsync --version </dev/null))
 
 $(eval $(call SetupHostCommand,which,Please install 'which', \
-	env which which | grep which))
+	which which | grep which))
 
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
