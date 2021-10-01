@@ -1,0 +1,188 @@
+Fix header clash with system /usr/include/sha1.h and sha256.h when libmd
+is installed.
+
+Backport of u-boot commit "includes: move openssl headers to include/u-boot"
+https://github.com/u-boot/u-boot/commit/2b9912e6a7df7b1f60beb7942bd0e6fa5f9d0167
+
+diff -urN u-boot-2013.10/board/gdsys/p1022/controlcenterd-id.c u-boot-2013.10-fixcryptheaderclash/board/gdsys/p1022/controlcenterd-id.c
+--- u-boot-2013.10/board/gdsys/p1022/controlcenterd-id.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/board/gdsys/p1022/controlcenterd-id.c	2021-10-01 16:10:32.845841257 +0100
+@@ -30,7 +30,7 @@
+ #include <i2c.h>
+ #include <mmc.h>
+ #include <tpm.h>
+-#include <sha1.h>
++#include <u-boot/sha1.h>
+ #include <asm/byteorder.h>
+ #include <asm/unaligned.h>
+ #include <pca9698.h>
+diff -urN u-boot-2013.10/board/pcs440ep/pcs440ep.c u-boot-2013.10-fixcryptheaderclash/board/pcs440ep/pcs440ep.c
+--- u-boot-2013.10/board/pcs440ep/pcs440ep.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/board/pcs440ep/pcs440ep.c	2021-10-01 16:10:19.407844676 +0100
+@@ -13,7 +13,7 @@
+ #include <asm/processor.h>
+ #include <spd_sdram.h>
+ #include <status_led.h>
+-#include <sha1.h>
++#include <u-boot/sha1.h>
+ #include <asm/io.h>
+ #include <net.h>
+ #include <ata.h>
+diff -urN u-boot-2013.10/common/cmd_sha1sum.c u-boot-2013.10-fixcryptheaderclash/common/cmd_sha1sum.c
+--- u-boot-2013.10/common/cmd_sha1sum.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/common/cmd_sha1sum.c	2021-10-01 16:10:06.737847899 +0100
+@@ -11,7 +11,7 @@
+ #include <common.h>
+ #include <command.h>
+ #include <hash.h>
+-#include <sha1.h>
++#include <u-boot/sha1.h>
+ 
+ int do_sha1sum(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+ {
+diff -urN u-boot-2013.10/common/hash.c u-boot-2013.10-fixcryptheaderclash/common/hash.c
+--- u-boot-2013.10/common/hash.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/common/hash.c	2021-10-01 16:09:55.433850772 +0100
+@@ -14,8 +14,8 @@
+ #include <command.h>
+ #include <hw_sha.h>
+ #include <hash.h>
+-#include <sha1.h>
+-#include <sha256.h>
++#include <u-boot/sha1.h>
++#include <u-boot/sha256.h>
+ #include <asm/io.h>
+ #include <asm/errno.h>
+ 
+diff -urN u-boot-2013.10/common/image-fit.c u-boot-2013.10-fixcryptheaderclash/common/image-fit.c
+--- u-boot-2013.10/common/image-fit.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/common/image-fit.c	2021-10-01 16:09:40.107854720 +0100
+@@ -21,7 +21,7 @@
+ #endif /* !USE_HOSTCC*/
+ 
+ #include <bootstage.h>
+-#include <sha1.h>
++#include <u-boot/sha1.h>
+ #include <u-boot/crc.h>
+ #include <u-boot/md5.h>
+ 
+diff -urN u-boot-2013.10/common/image.c u-boot-2013.10-fixcryptheaderclash/common/image.c
+--- u-boot-2013.10/common/image.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/common/image.c	2021-10-01 16:09:26.740858201 +0100
+@@ -34,7 +34,7 @@
+ #endif
+ 
+ #include <u-boot/md5.h>
+-#include <sha1.h>
++#include <u-boot/sha1.h>
+ #include <asm/errno.h>
+ #include <asm/io.h>
+ 
+diff -urN u-boot-2013.10/drivers/crypto/ace_sha.c u-boot-2013.10-fixcryptheaderclash/drivers/crypto/ace_sha.c
+--- u-boot-2013.10/drivers/crypto/ace_sha.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/drivers/crypto/ace_sha.c	2021-10-01 16:09:12.425861933 +0100
+@@ -5,8 +5,8 @@
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+ #include <common.h>
+-#include <sha256.h>
+-#include <sha1.h>
++#include <u-boot/sha256.h>
++#include <u-boot/sha1.h>
+ #include <asm/errno.h>
+ #include "ace_sha.h"
+ 
+diff -urN u-boot-2013.10/include/u-boot/sha1.h u-boot-2013.10-fixcryptheaderclash/include/u-boot/sha1.h
+--- u-boot-2013.10/include/u-boot/sha1.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/include/u-boot/sha1.h	2021-10-01 16:12:05.421818362 +0100
+@@ -0,0 +1 @@
++#include "../sha1.h"
+diff -urN u-boot-2013.10/include/u-boot/sha256.h u-boot-2013.10-fixcryptheaderclash/include/u-boot/sha256.h
+--- u-boot-2013.10/include/u-boot/sha256.h	1970-01-01 01:00:00.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/include/u-boot/sha256.h	2021-10-01 16:12:18.701815198 +0100
+@@ -0,0 +1 @@
++#include "../sha256.h"
+diff -urN u-boot-2013.10/lib/rsa/rsa-verify.c u-boot-2013.10-fixcryptheaderclash/lib/rsa/rsa-verify.c
+--- u-boot-2013.10/lib/rsa/rsa-verify.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/lib/rsa/rsa-verify.c	2021-10-01 16:08:48.725868101 +0100
+@@ -7,7 +7,7 @@
+ #include <common.h>
+ #include <fdtdec.h>
+ #include <rsa.h>
+-#include <sha1.h>
++#include <u-boot/sha1.h>
+ #include <asm/byteorder.h>
+ #include <asm/errno.h>
+ #include <asm/unaligned.h>
+diff -urN u-boot-2013.10/lib/sha1.c u-boot-2013.10-fixcryptheaderclash/lib/sha1.c
+--- u-boot-2013.10/lib/sha1.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/lib/sha1.c	2021-10-01 16:08:17.924875211 +0100
+@@ -36,7 +36,7 @@
+ #include <string.h>
+ #endif /* USE_HOSTCC */
+ #include <watchdog.h>
+-#include "sha1.h"
++#include <u-boot/sha1.h>
+ 
+ /*
+  * 32-bit integer manipulation macros (big endian)
+diff -urN u-boot-2013.10/lib/sha256.c u-boot-2013.10-fixcryptheaderclash/lib/sha256.c
+--- u-boot-2013.10/lib/sha256.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/lib/sha256.c	2021-10-01 16:11:06.452832823 +0100
+@@ -11,7 +11,7 @@
+ #endif /* USE_HOSTCC */
+ #include <watchdog.h>
+ #include <linux/string.h>
+-#include <sha256.h>
++#include <u-boot/sha256.h>
+ 
+ /*
+  * 32-bit integer manipulation macros (big endian)
+diff -urN u-boot-2013.10/lib/tpm.c u-boot-2013.10-fixcryptheaderclash/lib/tpm.c
+--- u-boot-2013.10/lib/tpm.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/lib/tpm.c	2021-10-01 16:07:58.195879648 +0100
+@@ -7,7 +7,7 @@
+ 
+ #include <common.h>
+ #include <stdarg.h>
+-#include <sha1.h>
++#include <u-boot/sha1.h>
+ #include <tpm.h>
+ #include <asm/unaligned.h>
+ 
+diff -urN u-boot-2013.10/tools/imls/imls.c u-boot-2013.10-fixcryptheaderclash/tools/imls/imls.c
+--- u-boot-2013.10/tools/imls/imls.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/tools/imls/imls.c	2021-10-01 16:07:45.509882499 +0100
+@@ -24,7 +24,7 @@
+ #include <mtd/mtd-user.h>
+ #endif
+ 
+-#include <sha1.h>
++#include <u-boot/sha1.h>
+ #include <libfdt.h>
+ #include <fdt_support.h>
+ #include <image.h>
+diff -urN u-boot-2013.10/tools/mkimage.h u-boot-2013.10-fixcryptheaderclash/tools/mkimage.h
+--- u-boot-2013.10/tools/mkimage.h	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/tools/mkimage.h	2021-10-01 16:07:31.147885267 +0100
+@@ -18,7 +18,7 @@
+ #include <sys/stat.h>
+ #include <time.h>
+ #include <unistd.h>
+-#include <sha1.h>
++#include <u-boot/sha1.h>
+ #include "fdt_host.h"
+ 
+ #undef MKIMAGE_DEBUG
+diff -urN u-boot-2013.10/tools/ubsha1.c u-boot-2013.10-fixcryptheaderclash/tools/ubsha1.c
+--- u-boot-2013.10/tools/ubsha1.c	2013-10-16 18:08:12.000000000 +0100
++++ u-boot-2013.10-fixcryptheaderclash/tools/ubsha1.c	2021-10-01 16:07:15.712887823 +0100
+@@ -13,7 +13,7 @@
+ #include <errno.h>
+ #include <string.h>
+ #include <sys/stat.h>
+-#include "sha1.h"
++#include <u-boot/sha1.h>
+ 
+ int main (int argc, char **argv)
+ {
