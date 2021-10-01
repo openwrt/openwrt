@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4018-mikrotik-5acd.dtsi"
+
+/ {
+	model = "MikroTik LHG 5 ac (RBLHGG-5acD)";
+	compatible = "mikrotik,lhg-5-ac";
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,ath10k-calibration-variant = "MikroTik-LHG-5-ac";
+};
