@@ -1,0 +1,28 @@
+The nand-ecc-mode DT binding is depracated but the new bindings are
+not supported by kernel 5.4. Based on a fix in the kernel to not
+overwrite the DT ECC settings, the DT needs to be updated and moves
+to the new DT binding.
+Since the DT is shared between kernel 5.4 and 5.10, this patch is
+an interim solution to allow to use the new DT bindings in kernel 5.4.
+It should be removed when moving away from kernel 5.4.
+--- a/drivers/mtd/nand/raw/nand_base.c
++++ b/drivers/mtd/nand/raw/nand_base.c
+@@ -4851,10 +4851,17 @@ static int of_get_nand_ecc_mode(struct d
+ {
+ 	const char *pm;
+ 	int err, i;
++	struct device_node *eng_np;
+ 
+ 	err = of_property_read_string(np, "nand-ecc-mode", &pm);
+-	if (err < 0)
++	if (err < 0) {
++		if (of_property_read_bool(np, "nand-use-soft-ecc-engine"))
++			return NAND_ECC_SOFT;
++		eng_np = of_parse_phandle(np, "nand-ecc-engine", 0);
++		if (eng_np && (eng_np == np))
++			return NAND_ECC_ON_DIE;
+ 		return err;
++	}
+ 
+ 	for (i = 0; i < ARRAY_SIZE(nand_ecc_modes); i++)
+ 		if (!strcasecmp(pm, nand_ecc_modes[i]))

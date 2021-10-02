@@ -239,8 +239,6 @@ void rtl8231_gpio_set(struct gpio_chip *gc, unsigned int offset, int value)
 
 int rtl8231_init(struct rtl8231_gpios *gpios)
 {
-	u32 v;
-
 	pr_info("%s called, MDIO bus ID: %d\n", __func__, gpios->smi_bus_id);
 
 	gpios->reg_cached = 0;
@@ -254,11 +252,15 @@ int rtl8231_init(struct rtl8231_gpios *gpios)
 		sw_w32_mask(3, 1, RTL838X_DMY_REG5);
 	}
 
-	/* Select GPIO functionality for pins 0-34 */
+	/* Select GPIO functionality and force input direction for pins 0-36 */
 	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(0), 0xffff);
+	rtl8231_write(gpios, RTL8231_GPIO_DIR(0), 0xffff);
 	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(16), 0xffff);
-	v = rtl8231_read(gpios, RTL8231_GPIO_PIN_SEL(32));
-	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(32), v | 0x7);
+	rtl8231_write(gpios, RTL8231_GPIO_DIR(16), 0xffff);
+	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(32), 0x03ff);
+
+	/* Set LED_Start to enable drivers for output mode */
+	rtl8231_write(gpios, RTL8231_LED_FUNC0, 1 << 1);
 
 	return 0;
 }

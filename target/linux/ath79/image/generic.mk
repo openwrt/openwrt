@@ -331,19 +331,15 @@ endef
 TARGET_DEVICES += aruba_ap-105
 
 define Device/atheros_db120
+  $(Device/loader-okli-uimage)
   SOC := ar9344
   DEVICE_VENDOR := Atheros
   DEVICE_MODEL := DB120
   DEVICE_PACKAGES := kmod-usb2
   IMAGE_SIZE := 7808k
   SUPPORTED_DEVICES += db120
-  LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x50000
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
-  COMPILE := loader-$(1).bin loader-$(1).uImage
-  COMPILE/loader-$(1).bin := loader-okli-compile
-  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | \
-	uImage lzma
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size | pad-to 6336k | \
@@ -410,17 +406,13 @@ endef
 TARGET_DEVICES += avm_fritzdvbc
 
 define Device/belkin_f9x-v2
+  $(Device/loader-okli-uimage)
   SOC := qca9558
   DEVICE_VENDOR := Belkin
   IMAGE_SIZE := 14464k
   DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2 \
 	kmod-usb3 kmod-usb-ledtrig-usbport
-  LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x50000
-  COMPILE := loader-$(1).bin loader-$(1).uImage
-  COMPILE/loader-$(1).bin := loader-okli-compile
-  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | \
-	lzma | uImage lzma
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
@@ -1945,17 +1937,13 @@ endef
 TARGET_DEVICES += pisen_ts-d084
 
 define Device/pisen_wmb001n
+  $(Device/loader-okli-uimage)
   SOC := ar9341
   DEVICE_VENDOR := PISEN
   DEVICE_MODEL := WMB001N
   IMAGE_SIZE := 14080k
   DEVICE_PACKAGES := kmod-i2c-gpio kmod-usb2
-  LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x20000
-  COMPILE := loader-$(1).bin loader-$(1).uImage
-  COMPILE/loader-$(1).bin := loader-okli-compile
-  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | \
-	uImage lzma
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pisen_wmb001n-factory $(1)
@@ -1996,18 +1984,14 @@ endef
 TARGET_DEVICES += plasmacloud_pa300e
 
 define Device/qca_ap143
+  $(Device/loader-okli-uimage)
   SOC := qca9533
   DEVICE_VENDOR := Qualcomm Atheros
   DEVICE_MODEL := AP143
   DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += ap143
-  LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x50000
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
-  COMPILE := loader-$(1).bin loader-$(1).uImage
-  COMPILE/loader-$(1).bin := loader-okli-compile
-  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | lzma | \
-	uImage lzma
 endef
 
 define Device/qca_ap143-8m
