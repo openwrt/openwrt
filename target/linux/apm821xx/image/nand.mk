@@ -68,11 +68,14 @@ define Device/netgear_wndap6x0
   DTB_SIZE := 32768
   IMAGE_SIZE := 27392k
   IMAGES := sysupgrade.bin factory.img
-  KERNEL_SIZE := 4032k
+  KERNEL_SIZE := 6080k
   KERNEL := dtb | kernel-bin | gzip | MuImage-initramfs gzip
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   UBINIZE_OPTS := -E 5
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := kernel and ubi partitions had to be resized. \
+       Upgrade via sysupgrade mechanism is not possible.
 endef
 
 define Device/netgear_wndap620
