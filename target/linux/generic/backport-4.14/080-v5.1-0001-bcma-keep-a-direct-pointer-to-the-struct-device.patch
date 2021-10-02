@@ -95,7 +95,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		return 0;
  	case BCMA_HOSTTYPE_SDIO:
  		return 0;
-@@ -239,18 +239,18 @@ void bcma_prepare_core(struct bcma_bus *
+@@ -240,18 +240,18 @@ void bcma_prepare_core(struct bcma_bus *
  	core->dev.release = bcma_release_core_dev;
  	core->dev.bus = &bcma_bus_type;
  	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
@@ -120,7 +120,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		} else {
  			core->dev.dma_mask = &core->dev.coherent_dma_mask;
  			core->dma_dev = &core->dev;
-@@ -261,28 +261,6 @@ void bcma_prepare_core(struct bcma_bus *
+@@ -262,28 +262,6 @@ void bcma_prepare_core(struct bcma_bus *
  	}
  }
  

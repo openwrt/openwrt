@@ -3128,7 +3128,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Parse and map our Configuration Space windows */
 --- a/drivers/pci/host/pcie-xilinx-nwl.c
 +++ b/drivers/pci/host/pcie-xilinx-nwl.c
-@@ -778,16 +778,7 @@ static int nwl_pcie_parse_dt(struct nwl_
+@@ -780,16 +780,7 @@ static int nwl_pcie_parse_dt(struct nwl_
  			     struct platform_device *pdev)
  {
  	struct device *dev = pcie->dev;
@@ -5604,7 +5604,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	 * them, we have to fall back to INTx or other interrupts, e.g., a
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -3430,6 +3430,13 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_A
+@@ -3431,6 +3431,13 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_A
   */
  DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_TI, 0xb005, quirk_no_bus_reset);
  
@@ -5808,7 +5808,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct pci_epc		*epc;
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1946,6 +1946,7 @@ void pcibios_release_device(struct pci_d
+@@ -1947,6 +1947,7 @@ void pcibios_release_device(struct pci_d
  void pcibios_penalize_isa_irq(int irq, int active);
  int pcibios_alloc_irq(struct pci_dev *dev);
  void pcibios_free_irq(struct pci_dev *dev);
