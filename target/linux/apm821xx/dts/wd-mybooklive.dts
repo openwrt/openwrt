@@ -123,24 +123,6 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 	};
-
-	sata1pwr: sata1-regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "Power Drive Port 1";
-		gpios = <&GPIO1 3 GPIO_ACTIVE_LOW>;
-		regulator-min-microvolt = <12000000>;
-		regulator-max-microvolt = <12000000>;
-		regulator-always-on; /* needed to read OS from HDD */
-	};
-
-	sata0pwr: sata0-regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "Power Drive Port 0";
-		gpios = <&GPIO1 7 GPIO_ACTIVE_LOW>;
-		regulator-min-microvolt = <12000000>;
-		regulator-max-microvolt = <12000000>;
-		regulator-always-on; /* needed to read OS from HDD */
-	};
 };
 
 &EMAC0 {
