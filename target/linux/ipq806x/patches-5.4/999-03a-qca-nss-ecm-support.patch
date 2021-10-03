@@ -673,7 +673,7 @@
  	bond_sysfs_slave_del(slave);
  
  	/* recompute stats just before removing the slave */
-@@ -2217,6 +2260,10 @@ static void bond_miimon_commit(struct bo
+@@ -2218,6 +2261,10 @@ static void bond_miimon_commit(struct bo
  {
  	struct list_head *iter;
  	struct slave *slave, *primary;
@@ -684,7 +684,7 @@
  
  	bond_for_each_slave(bond, slave, iter) {
  		switch (slave->link_new_state) {
-@@ -2260,6 +2307,12 @@ static void bond_miimon_commit(struct bo
+@@ -2261,6 +2308,12 @@ static void bond_miimon_commit(struct bo
  
  			bond_miimon_link_change(bond, slave, BOND_LINK_UP);
  
@@ -697,7 +697,7 @@
  			if (!bond->curr_active_slave || slave == primary)
  				goto do_failover;
  
-@@ -2301,6 +2354,15 @@ do_failover:
+@@ -2302,6 +2355,15 @@ do_failover:
  	}
  
  	bond_set_carrier(bond);
@@ -713,7 +713,7 @@
  }
  
  /* bond_mii_monitor
-@@ -4383,6 +4445,11 @@ static void bond_destructor(struct net_d
+@@ -4384,6 +4446,11 @@ static void bond_destructor(struct net_d
  	struct bonding *bond = netdev_priv(bond_dev);
  	if (bond->wq)
  		destroy_workqueue(bond->wq);
@@ -725,7 +725,7 @@
  }
  
  void bond_setup(struct net_device *bond_dev)
-@@ -4932,6 +4999,16 @@ int bond_create(struct net *net, const c
+@@ -4933,6 +5000,16 @@ int bond_create(struct net *net, const c
  	bond_work_init_all(bond);
  
  	rtnl_unlock();
@@ -742,7 +742,7 @@
  	return 0;
  }
  
-@@ -5027,6 +5104,203 @@ static void __exit bonding_exit(void)
+@@ -5028,6 +5105,203 @@ static void __exit bonding_exit(void)
  #endif
  }
  
@@ -1878,7 +1878,7 @@
  		   const struct in6_addr *daddr)
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -3754,6 +3754,9 @@ out:
+@@ -3757,6 +3757,9 @@ out:
  	return ERR_PTR(err);
  }
  
@@ -1888,7 +1888,7 @@
  int ip6_route_add(struct fib6_config *cfg, gfp_t gfp_flags,
  		  struct netlink_ext_ack *extack)
  {
-@@ -3765,6 +3768,10 @@ int ip6_route_add(struct fib6_config *cf
+@@ -3768,6 +3771,10 @@ int ip6_route_add(struct fib6_config *cf
  		return PTR_ERR(rt);
  
  	err = __ip6_ins_rt(rt, &cfg->fc_nlinfo, extack);
@@ -1899,7 +1899,7 @@
  	fib6_info_release(rt);
  
  	return err;
-@@ -3786,6 +3793,9 @@ static int __ip6_del_rt(struct fib6_info
+@@ -3789,6 +3796,9 @@ static int __ip6_del_rt(struct fib6_info
  	err = fib6_del(rt, info);
  	spin_unlock_bh(&table->tb6_lock);
  
@@ -1909,7 +1909,7 @@
  out:
  	fib6_info_release(rt);
  	return err;
-@@ -6077,6 +6087,20 @@ static int ip6_route_dev_notify(struct n
+@@ -6080,6 +6090,20 @@ static int ip6_route_dev_notify(struct n
  	return NOTIFY_OK;
  }
  
