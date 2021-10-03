@@ -13,9 +13,9 @@
 	};
 
 	reserved-memory {
-		ramoops@7ff80000 {
+		ramoops@42100000 {
 			compatible = "ramoops";
-			reg = <0x7ff80000 0x40000>;
+			reg = <0x42100000 0x40000>;
 			record-size = <0x4000>;
 			console-size = <0x4000>;
 			ftrace-size = <0x4000>;
@@ -28,10 +28,6 @@
 		led-failsafe = &ledctrl1;
 		led-running = &ledctrl2;
 		led-upgrade = &ledctrl3;
-	};
-
-	chosen {
-		bootargs = "mem=991M";
 	};
 
 	keys {

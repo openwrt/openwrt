@@ -17,9 +17,9 @@
 			reusable;
 		};
 
-		ramoops@5ff80000 {
+		ramoops@42100000 {
 			compatible = "ramoops";
-			reg = <0x5ff80000 0x40000>;
+			reg = <0x42100000 0x40000>;
 			record-size = <0x4000>;
 			console-size = <0x4000>;
 			ftrace-size = <0x4000>;
@@ -35,10 +35,6 @@
 		led-running = &power_white;
 		led-upgrade = &power_amber;
 		label-mac-device = &gmac2;
-	};
-
-	chosen {
-		bootargs = "mem=479M";
 	};
 
 	keys {
