@@ -502,6 +502,18 @@ static void get_vector_status(int fd, vector_t *status) {
 #endif
 }
 
+static void vector_erb(int fd) {
+#ifdef INCLUDE_DSL_CPE_API_VRX
+	if (fd < 0)
+		return;
+
+	IOCTL(IOCTL_MEI_dsmStatistics_t, FIO_MEI_DSM_STATISTICS_GET);
+
+	m_u32("sent", out.n_processed);
+	m_u32("discarded", out.n_fw_dropped_size + out.n_mei_dropped_size + out.n_mei_dropped_no_pp_cb + out.n_pp_dropped);
+#endif
+}
+
 static void band_plan_status(int fd, profile_t *profile) {
 #if (INCLUDE_DSL_CPE_API_VDSL_SUPPORT == 1)
 	IOCTL(DSL_BandPlanStatus_t, DSL_FIO_BAND_PLAN_STATUS_GET)
@@ -802,6 +814,17 @@ static int metrics(struct ubus_context *ctx, struct ubus_object *obj,
 	retx_statistics(fd, DSL_FAR_END);
 	blobmsg_close_table(&b, c2);
 	blobmsg_close_table(&b, c);
+
+	switch (vector) {
+	case VECTOR_ON_DS:
+	case VECTOR_ON_DS_US:
+		c = blobmsg_open_table(&b, "erb");
+		vector_erb(fd_mei);
+		blobmsg_close_table(&b, c);
+		break;
+	default:
+		break;
+	};
 
 	ubus_send_reply(ctx, req, b.head);
 
