@@ -57,14 +57,16 @@ jobs:
           # ln -s /mnt/openwrt/staging_dir ./staging_dir
 
           df -h
+          
+          
       - name: 自定义插件主题。
         run: |
          cd package
          mkdir openwrt-packages
           cd openwrt-packages
           # git clone https://github.com/xiaorouji/openwrt-passwall.git
-          git clone https://github.com/kenzok8/openwrt-packages.git
-          git clone https://github.com/kenzok8/small.git
+          # git clone https://github.com/kenzok8/openwrt-packages.git
+          # git clone https://github.com/kenzok8/small.git
           # git clone https://github.com/rufengsuixing/luci-app-adguardhome.git
           # git clone https://github.com/AdguardTeam/AdGuardHome.git
           # git clone https://github.com/ujincn/smartdns.git
@@ -91,22 +93,26 @@ jobs:
           CONFIG_TARGET_bcm47xx_mips74k=y
           CONFIG_TARGET_bcm47xx_mips74k_DEVICE_asus_rt-n16=y
           # 基本包
-          CONFIG_PACKAGE_luci=y
-          CONFIG_PACKAGE_luci-app-firewall=y
-          CONFIG_PACKAGE_luci-app-opkg=y
-          CONFIG_PACKAGE_luci-base=y
-          CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
-          CONFIG_PACKAGE_luci-lib-base=y
-          CONFIG_PACKAGE_luci-lib-ip=y
-          CONFIG_PACKAGE_luci-lib-jsonc=y
+          CONFIG_PACKAGE_liblua=y
+          CONFIG_PACKAGE_lua=y
+          CONFIG_PACKAGE_libuci-lua=y
+          CONFIG_PACKAGE_libubus-lua=y
+          CONFIG_PACKAGE_uhttpd=y
+          CONFIG_PACKAGE_luci-lib-ipkg=y
+          CONFIG_PACKAGE_i18n-base-zh-cn=y
+          CONFIG_PACKAGE_luci-sgi-cgi=y
+          CONFIG_PACKAGE_luci-lib-core=y
           CONFIG_PACKAGE_luci-lib-nixio=y
+          CONFIG_PACKAGE_luci-lib-sys=y
+          CONFIG_PACKAGE_luci-lib-web=y
+          CONFIG_PACKAGE_luci-proto-core=y
+          CONFIG_PACKAGE_luci-theme-base=y
+          CONFIG_PACKAGE_luci-theme-openwrt=y
+          CONFIG_PACKAGE_luci-mod-admin-core=y
           CONFIG_PACKAGE_luci-mod-admin-full=y
-          CONFIG_PACKAGE_luci-mod-network=y
-          CONFIG_PACKAGE_luci-mod-status=y
-          CONFIG_PACKAGE_luci-mod-system=y
-          CONFIG_PACKAGE_luci-proto-ipv6=y
-          CONFIG_PACKAGE_luci-proto-ppp=y
-          CONFIG_PACKAGE_luci-ssl=y
+          CONFIG_PACKAGE_libiw=y
+          CONFIG_PACKAGE_libiwinfo=y
+          CONFIG_PACKAGE_libiwinfo-lua=y
           CONFIG_PACKAGE_luci-theme-bootstrap=y
           # 固件压缩:
           # cat >> .config <<EOF
@@ -160,7 +166,7 @@ jobs:
           # CONFIG_PACKAGE_luci-app-webadmin=y
           # CONFIG_PACKAGE_luci-app-wireguard=y
           # CONFIG_PACKAGE_luci-app-wrtbwmon=y
-          CONFIG_PACKAGE_luci-app-passwall=y
+          # CONFIG_PACKAGE_luci-app-passwall=y
           # CONFIG_PACKAGE_luci-app-smartdns-compat=y
           # CONFIG_PACKAGE_luci-app-smartdns=y
           # CONFIG_PACKAGE_luci-app-adguardhome=y
@@ -183,25 +189,25 @@ jobs:
           # CONFIG_PACKAGE_AdGuardHome=y
           # CONFIG_PACKAGE_smartdns=y
           # passwall依赖库
-          CONFIG_PACKAGE_brook=y
-          CONFIG_PACKAGE_chinadns-ng=y
-          CONFIG_PACKAGE_dns2socks=y
-          CONFIG_PACKAGE_hysteria=y
-          CONFIG_PACKAGE_ipt2socks=y
-          CONFIG_PACKAGE_kcptun=y
-          CONFIG_PACKAGE_openssl1.1=y
-          CONFIG_PACKAGE_pdnsd-alt=y
-          CONFIG_PACKAGE_shadowsocks-rust=y
-          CONFIG_PACKAGE_shadowsocksr-libev=y
-          CONFIG_PACKAGE_simple-obfs=y
-          CONFIG_PACKAGE_ssocks=y
-          CONFIG_PACKAGE_trojan-go=y
-          CONFIG_PACKAGE_trojan-plus=y
-          CONFIG_PACKAGE_trojan=y
-          CONFIG_PACKAGE_v2ray-core=y
-          CONFIG_PACKAGE_v2ray-plugin=y
-          CONFIG_PACKAGE_xray-core=y
-          CONFIG_PACKAGE_xray-plugin=y
+          # CONFIG_PACKAGE_brook=y
+          # CONFIG_PACKAGE_chinadns-ng=y
+          # CONFIG_PACKAGE_dns2socks=y
+          # CONFIG_PACKAGE_hysteria=y
+          # CONFIG_PACKAGE_ipt2socks=y
+          # CONFIG_PACKAGE_kcptun=y
+          # CONFIG_PACKAGE_openssl1.1=y
+          # CONFIG_PACKAGE_pdnsd-alt=y
+          # CONFIG_PACKAGE_shadowsocks-rust=y
+          # CONFIG_PACKAGE_shadowsocksr-libev=y
+          # CONFIG_PACKAGE_simple-obfs=y
+          # CONFIG_PACKAGE_ssocks=y
+          # CONFIG_PACKAGE_trojan-go=y
+          # CONFIG_PACKAGE_trojan-plus=y
+          # CONFIG_PACKAGE_trojan=y
+          # CONFIG_PACKAGE_v2ray-core=y
+          # CONFIG_PACKAGE_v2ray-plugin=y
+          # CONFIG_PACKAGE_xray-core=y
+          # CONFIG_PACKAGE_xray-plugin=y
           EOF
           # 取消编译VMware镜像以及镜像填充 (不要删除被缩进的注释符号):
           # cat >> .config <<EOF
