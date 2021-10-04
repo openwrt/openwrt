@@ -58,7 +58,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  								skb->data,
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1195,9 +1195,7 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1182,9 +1182,7 @@ ieee80211_tx_prepare(struct ieee80211_su
  			tx->sta = rcu_dereference(sdata->u.vlan.sta);
  			if (!tx->sta && sdata->wdev.use_4addr)
  				return TX_DROP;
@@ -69,7 +69,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			tx->sta = sta_info_get_bss(sdata, hdr->addr1);
  		}
  		if (!tx->sta && !is_multicast_ether_addr(hdr->addr1))
-@@ -5443,6 +5441,7 @@ int ieee80211_tx_control_port(struct wip
+@@ -5393,6 +5391,7 @@ int ieee80211_tx_control_port(struct wip
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ieee80211_local *local = sdata->local;
@@ -77,7 +77,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct sk_buff *skb;
  	struct ethhdr *ehdr;
  	u32 ctrl_flags = 0;
-@@ -5465,8 +5464,7 @@ int ieee80211_tx_control_port(struct wip
+@@ -5415,8 +5414,7 @@ int ieee80211_tx_control_port(struct wip
  	if (cookie)
  		ctrl_flags |= IEEE80211_TX_CTL_REQ_TX_STATUS;
  
@@ -87,7 +87,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	skb = dev_alloc_skb(local->hw.extra_tx_headroom +
  			    sizeof(struct ethhdr) + len);
-@@ -5483,10 +5481,25 @@ int ieee80211_tx_control_port(struct wip
+@@ -5433,10 +5431,25 @@ int ieee80211_tx_control_port(struct wip
  	ehdr->h_proto = proto;
  
  	skb->dev = dev;

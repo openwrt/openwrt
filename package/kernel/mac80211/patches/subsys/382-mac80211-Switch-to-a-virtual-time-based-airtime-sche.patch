@@ -50,7 +50,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -6557,9 +6557,6 @@ static inline void ieee80211_txq_schedul
+@@ -6578,9 +6578,6 @@ static inline void ieee80211_txq_schedul
  {
  }
  
@@ -60,7 +60,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  /**
   * ieee80211_schedule_txq - schedule a TXQ for transmission
   *
-@@ -6572,11 +6569,7 @@ void __ieee80211_schedule_txq(struct iee
+@@ -6593,11 +6590,7 @@ void __ieee80211_schedule_txq(struct iee
   * The driver may call this function if it has buffered packets for
   * this TXQ internally.
   */
@@ -73,7 +73,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  /**
   * ieee80211_return_txq - return a TXQ previously acquired by ieee80211_next_txq()
-@@ -6588,12 +6581,8 @@ ieee80211_schedule_txq(struct ieee80211_
+@@ -6609,12 +6602,8 @@ ieee80211_schedule_txq(struct ieee80211_
   * The driver may set force=true if it has buffered packets for this TXQ
   * internally.
   */
@@ -90,7 +90,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * ieee80211_txq_may_transmit - check whether TXQ is allowed to transmit
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1461,6 +1461,38 @@ static void sta_apply_mesh_params(struct
+@@ -1441,6 +1441,38 @@ static void sta_apply_mesh_params(struct
  #endif
  }
  
@@ -129,7 +129,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static int sta_apply_parameters(struct ieee80211_local *local,
  				struct sta_info *sta,
  				struct station_parameters *params)
-@@ -1648,7 +1680,8 @@ static int sta_apply_parameters(struct i
+@@ -1628,7 +1660,8 @@ static int sta_apply_parameters(struct i
  		sta_apply_mesh_params(local, sta, params);
  
  	if (params->airtime_weight)
@@ -277,7 +277,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  IEEE80211_IF_FILE(multicast_to_unicast, u.ap.multicast_to_unicast, HEX);
  
  /* IBSS attributes */
-@@ -661,8 +689,10 @@ static void add_common_files(struct ieee
+@@ -658,8 +686,10 @@ static void add_common_files(struct ieee
  
  	if (sdata->local->ops->wake_tx_queue &&
  	    sdata->vif.type != NL80211_IFTYPE_P2P_DEVICE &&
@@ -355,7 +355,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -840,20 +840,16 @@ enum txq_info_flags {
+@@ -846,20 +846,16 @@ enum txq_info_flags {
   * @def_flow: used as a fallback flow when a packet destined to @tin hashes to
   *	a fq_flow which is already owned by a different tin
   * @def_cvars: codel vars for @def_flow
@@ -378,7 +378,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	unsigned long flags;
  
  	/* keep last! */
-@@ -930,6 +926,8 @@ struct ieee80211_sub_if_data {
+@@ -938,6 +934,8 @@ struct ieee80211_sub_if_data {
  	struct ieee80211_tx_queue_params tx_conf[IEEE80211_NUM_ACS];
  	struct mac80211_qos_map __rcu *qos_map;
  
@@ -387,7 +387,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct work_struct csa_finalize_work;
  	bool csa_block_tx; /* write-protected by sdata_lock and local->mtx */
  	struct cfg80211_chan_def csa_chandef;
-@@ -1143,6 +1141,44 @@ enum mac80211_scan_state {
+@@ -1150,6 +1148,44 @@ enum mac80211_scan_state {
  	SCAN_ABORT,
  };
  
@@ -432,7 +432,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  DECLARE_STATIC_KEY_FALSE(aql_disable);
  
  struct ieee80211_local {
-@@ -1156,13 +1192,8 @@ struct ieee80211_local {
+@@ -1163,13 +1199,8 @@ struct ieee80211_local {
  	struct codel_params cparams;
  
  	/* protects active_txqs and txqi->schedule_order */
@@ -447,7 +447,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	u32 aql_threshold;
  	atomic_t aql_total_pending_airtime;
  
-@@ -1581,6 +1612,125 @@ static inline bool txq_has_queue(struct
+@@ -1587,6 +1618,125 @@ static inline bool txq_has_queue(struct
  	return !(skb_queue_empty(&txqi->frags) && !txqi->tin.backlog_packets);
  }
  
@@ -573,7 +573,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static inline int ieee80211_bssid_match(const u8 *raddr, const u8 *addr)
  {
  	return ether_addr_equal(raddr, addr) ||
-@@ -1821,6 +1971,14 @@ int ieee80211_tx_control_port(struct wip
+@@ -1827,6 +1977,14 @@ int ieee80211_tx_control_port(struct wip
  			      u64 *cookie);
  int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
  			      const u8 *buf, size_t len);
@@ -590,7 +590,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  void ieee80211_apply_htcap_overrides(struct ieee80211_sub_if_data *sdata,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -2088,6 +2088,9 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -2013,6 +2013,9 @@ int ieee80211_if_add(struct ieee80211_lo
  		}
  	}
  
@@ -602,7 +602,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	sdata->ap_power_level = IEEE80211_UNSET_POWER_LEVEL;
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -693,10 +693,13 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -691,10 +691,13 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  	spin_lock_init(&local->queue_stop_reason_lock);
  
  	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
@@ -622,7 +622,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1573,12 +1573,8 @@ static void sta_ps_start(struct sta_info
+@@ -1562,12 +1562,8 @@ static void sta_ps_start(struct sta_info
  
  	for (tid = 0; tid < IEEE80211_NUM_TIDS; tid++) {
  		struct ieee80211_txq *txq = sta->sta.txq[tid];
@@ -638,7 +638,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			set_bit(tid, &sta->txq_buffered_tids);
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -426,15 +426,11 @@ struct sta_info *sta_info_alloc(struct i
+@@ -424,15 +424,11 @@ struct sta_info *sta_info_alloc(struct i
  	if (sta_prepare_rate_control(local, sta, gfp))
  		goto free_txq;
  
@@ -655,7 +655,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	for (i = 0; i < IEEE80211_NUM_TIDS; i++)
-@@ -1893,24 +1889,59 @@ void ieee80211_sta_set_buffered(struct i
+@@ -1894,24 +1890,59 @@ void ieee80211_sta_set_buffered(struct i
  }
  EXPORT_SYMBOL(ieee80211_sta_set_buffered);
  
@@ -727,7 +727,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
  EXPORT_SYMBOL(ieee80211_sta_register_airtime);
  
-@@ -2354,7 +2385,7 @@ void sta_set_sinfo(struct sta_info *sta,
+@@ -2360,7 +2391,7 @@ void sta_set_sinfo(struct sta_info *sta,
  	}
  
  	if (!(sinfo->filled & BIT_ULL(NL80211_STA_INFO_AIRTIME_WEIGHT))) {
@@ -765,7 +765,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  struct sta_info;
  
-@@ -515,7 +522,6 @@ struct ieee80211_fragment_cache {
+@@ -487,7 +494,6 @@ struct ieee80211_sta_rx_stats {
   * @tid_seq: per-TID sequence numbers for sending to this STA
   * @airtime: per-AC struct airtime_info describing airtime statistics for this
   *	station
@@ -773,7 +773,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * @ampdu_mlme: A-MPDU state machine state
   * @mesh: mesh STA information
   * @debugfs_dir: debug filesystem directory dentry
-@@ -646,7 +652,6 @@ struct sta_info {
+@@ -617,7 +623,6 @@ struct sta_info {
  	u16 tid_seq[IEEE80211_QOS_CTL_TID_MASK + 1];
  
  	struct airtime_info airtime[IEEE80211_NUM_ACS];
@@ -783,7 +783,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	 * Aggregation information, locked with lock.
 --- a/net/mac80211/status.c
 +++ b/net/mac80211/status.c
-@@ -972,6 +972,25 @@ static void __ieee80211_tx_status(struct
+@@ -970,6 +970,25 @@ static void __ieee80211_tx_status(struct
  		if (!(info->flags & IEEE80211_TX_CTL_INJECTED) && acked)
  			ieee80211_frame_acked(sta, skb);
  
@@ -819,7 +819,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #include <net/net_namespace.h>
  #include <net/ieee80211_radiotap.h>
  #include <net/cfg80211.h>
-@@ -1489,7 +1490,7 @@ void ieee80211_txq_init(struct ieee80211
+@@ -1476,7 +1477,7 @@ void ieee80211_txq_init(struct ieee80211
  	codel_vars_init(&txqi->def_cvars);
  	codel_stats_init(&txqi->cstats);
  	__skb_queue_head_init(&txqi->frags);
@@ -828,7 +828,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	txqi->txq.vif = &sdata->vif;
  
-@@ -1533,9 +1534,7 @@ void ieee80211_txq_purge(struct ieee8021
+@@ -1520,9 +1521,7 @@ void ieee80211_txq_purge(struct ieee8021
  	ieee80211_purge_tx_queue(&local->hw, &txqi->frags);
  	spin_unlock_bh(&fq->lock);
  
@@ -839,7 +839,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
  
  void ieee80211_txq_set_params(struct ieee80211_local *local)
-@@ -3819,102 +3818,259 @@ EXPORT_SYMBOL(ieee80211_tx_dequeue);
+@@ -3768,102 +3767,259 @@ EXPORT_SYMBOL(ieee80211_tx_dequeue);
  struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
  {
  	struct ieee80211_local *local = hw_to_local(hw);
@@ -999,7 +999,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +{
 +	struct airtime_info *air_info, *tmp;
 +	u64 weight_sum = 0;
-+
+ 
 +	if (unlikely(!now))
 +		now = ktime_get_boottime_ns();
 +
@@ -1008,7 +1008,8 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +	if (!force && (air_sched->last_weight_update <
 +		       now - AIRTIME_ACTIVE_DURATION))
 +		return;
-+
+ 
+-	if (txqi->schedule_round == local->schedule_round[ac])
 +	list_for_each_entry_safe(air_info, tmp,
 +				 &air_sched->active_list, list) {
 +		if (airtime_is_active(air_info, now))
@@ -1019,7 +1020,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +	airtime_weight_sum_set(air_sched, weight_sum);
 +	air_sched->last_weight_update = now;
 +}
- 
++
 +void ieee80211_schedule_txq(struct ieee80211_hw *hw,
 +			    struct ieee80211_txq *txq)
 +	__acquires(txq_lock) __releases(txq_lock)
@@ -1031,8 +1032,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +	struct airtime_info *air_info;
 +	u8 ac = txq->ac;
 +	bool was_active;
- 
--	if (txqi->schedule_round == local->schedule_round[ac])
++
 +	air_sched = &local->airtime[ac];
 +	air_info = to_airtime_info(txq);
 +
@@ -1161,7 +1161,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct ieee80211_local *local = hw_to_local(hw);
  
  	if (!wiphy_ext_feature_isset(local->hw.wiphy, NL80211_EXT_FEATURE_AQL))
-@@ -3929,15 +4085,12 @@ bool ieee80211_txq_airtime_check(struct
+@@ -3878,15 +4034,12 @@ bool ieee80211_txq_airtime_check(struct
  	if (unlikely(txq->tid == IEEE80211_NUM_TIDS))
  		return true;
  
@@ -1179,7 +1179,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		return true;
  
  	return false;
-@@ -3947,60 +4100,59 @@ EXPORT_SYMBOL(ieee80211_txq_airtime_chec
+@@ -3896,60 +4049,59 @@ EXPORT_SYMBOL(ieee80211_txq_airtime_chec
  bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
  				struct ieee80211_txq *txq)
  {
@@ -1200,11 +1200,11 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 -		goto out;
 +	if (!ieee80211_txq_airtime_check(hw, txq))
 +		return false;
-+
-+	air_sched = &local->airtime[txq->ac];
-+	spin_lock_bh(&air_sched->lock);
  
 -	if (list_empty(&txqi->schedule_order))
++	air_sched = &local->airtime[txq->ac];
++	spin_lock_bh(&air_sched->lock);
++
 +	if (RB_EMPTY_NODE(&txqi->schedule_order))
  		goto out;
  
@@ -1223,6 +1223,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 -		if (sta->airtime[ac].deficit < 0)
 -			sta->airtime[ac].deficit += sta->airtime_weight;
 -		list_move_tail(&iter->schedule_order, &local->active_txqs[ac]);
+-	}
 +	/* Like in ieee80211_next_txq(), make sure the first station in the
 +	 * scheduling order is eligible for transmission to avoid starvation.
 +	 */
@@ -1231,15 +1232,14 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +		first_txqi = container_of(node, struct txq_info,
 +					  schedule_order);
 +		air_info = to_airtime_info(&first_txqi->txq);
-+
-+		if (air_sched->v_t < air_info->v_t)
-+			airtime_catchup_v_t(air_sched, air_info->v_t, now);
- 	}
  
 -	sta = container_of(txqi->txq.sta, struct sta_info, sta);
 -	if (sta->airtime[ac].deficit >= 0)
 -		goto out;
--
++		if (air_sched->v_t < air_info->v_t)
++			airtime_catchup_v_t(air_sched, air_info->v_t, now);
++	}
+ 
 -	sta->airtime[ac].deficit += sta->airtime_weight;
 -	list_move_tail(&txqi->schedule_order, &local->active_txqs[ac]);
 -	spin_unlock_bh(&local->active_txq_lock[ac]);

@@ -1,3 +1,4 @@
+From 0d2ab3aea50bb02ff0c9c3d53c7b2b4b21cdd59d Mon Sep 17 00:00:00 2001
 From: John Crispin <john@phrozen.org>
 Date: Fri, 2 Jul 2021 19:44:07 +0200
 Subject: [PATCH] nl80211: add support for BSS coloring
@@ -13,10 +14,16 @@ Link: https://lore.kernel.org/r/500b3582aec8fe2c42ef46f3117b148cb7cbceb5.1625247
 [remove unnecessary NULL initialisation]
 Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 ---
+ include/net/cfg80211.h       |  92 ++++++++++++++++++++
+ include/uapi/linux/nl80211.h |  43 ++++++++++
+ net/wireless/nl80211.c       | 157 +++++++++++++++++++++++++++++++++++
+ net/wireless/rdev-ops.h      |  13 +++
+ net/wireless/trace.h         |  46 ++++++++++
+ 5 files changed, 351 insertions(+)
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1252,6 +1252,27 @@ struct cfg80211_csa_settings {
+@@ -1248,6 +1248,27 @@ struct cfg80211_csa_settings {
  #define CFG80211_MAX_NUM_DIFFERENT_CHANNELS 10
  
  /**
@@ -44,16 +51,16 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * struct iface_combination_params - input parameters for interface combinations
   *
   * Used to pass interface combination parameters
-@@ -3979,6 +4000,8 @@ struct mgmt_frame_regs {
-  *	This callback may sleep.
-  * @reset_tid_config: Reset TID specific configuration for the peer, for the
+@@ -3975,6 +3996,8 @@ struct mgmt_frame_regs {
   *	given TIDs. This callback may sleep.
+  *
+  * @set_sar_specs: Update the SAR (TX power) settings.
 + *
 + * @color_change: Initiate a color change.
   */
  struct cfg80211_ops {
  	int	(*suspend)(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
-@@ -4309,6 +4332,9 @@ struct cfg80211_ops {
+@@ -4302,6 +4325,9 @@ struct cfg80211_ops {
  				    const u8 *peer, u8 tids);
  	int	(*set_sar_specs)(struct wiphy *wiphy,
  				 struct cfg80211_sar_specs *sar);
@@ -63,7 +70,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /*
-@@ -8094,4 +8120,70 @@ void cfg80211_update_owe_info_event(stru
+@@ -8089,4 +8115,70 @@ void cfg80211_update_owe_info_event(stru
   */
  void cfg80211_bss_flush(struct wiphy *wiphy);
  
@@ -225,8 +232,8 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +++ b/net/wireless/nl80211.c
 @@ -753,6 +753,10 @@ static const struct nla_policy nl80211_p
  				 NL80211_SAE_PWE_BOTH),
- 	[NL80211_ATTR_SAR_SPEC] = NLA_POLICY_NESTED(sar_policy),
  	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
+ 	[NL80211_ATTR_SAR_SPEC] = NLA_POLICY_NESTED(sar_policy),
 +	[NL80211_ATTR_OBSS_COLOR_BITMAP] = { .type = NLA_U64 },
 +	[NL80211_ATTR_COLOR_CHANGE_COUNT] = { .type = NLA_U8 },
 +	[NL80211_ATTR_COLOR_CHANGE_COLOR] = { .type = NLA_U8 },
@@ -234,7 +241,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -14677,6 +14681,106 @@ bad_tid_conf:
+@@ -14659,6 +14663,106 @@ bad_tid_conf:
  	return ret;
  }
  
@@ -341,7 +348,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #define NL80211_FLAG_NEED_WIPHY		0x01
  #define NL80211_FLAG_NEED_NETDEV	0x02
  #define NL80211_FLAG_NEED_RTNL		0x04
-@@ -15758,6 +15862,14 @@ static const struct genl_small_ops nl802
+@@ -15730,6 +15834,14 @@ static const struct genl_small_ops nl802
  		.internal_flags = NL80211_FLAG_NEED_WIPHY |
  				  NL80211_FLAG_NEED_RTNL,
  	},
@@ -356,7 +363,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  static struct genl_family nl80211_fam __genl_ro_after_init = {
-@@ -17384,6 +17496,51 @@ void cfg80211_ch_switch_started_notify(s
+@@ -17361,6 +17473,51 @@ void cfg80211_ch_switch_started_notify(s
  }
  EXPORT_SYMBOL(cfg80211_ch_switch_started_notify);
  
@@ -410,7 +417,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		     const struct cfg80211_chan_def *chandef,
 --- a/net/wireless/rdev-ops.h
 +++ b/net/wireless/rdev-ops.h
-@@ -1368,4 +1368,17 @@ static inline int rdev_set_sar_specs(str
+@@ -1358,4 +1358,17 @@ static inline int rdev_set_sar_specs(str
  	return ret;
  }
  
@@ -430,7 +437,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #endif /* __CFG80211_RDEV_OPS */
 --- a/net/wireless/trace.h
 +++ b/net/wireless/trace.h
-@@ -3570,6 +3570,52 @@ TRACE_EVENT(rdev_set_sar_specs,
+@@ -3565,6 +3565,52 @@ TRACE_EVENT(rdev_set_sar_specs,
  		  WIPHY_PR_ARG, __entry->type, __entry->num)
  );
  

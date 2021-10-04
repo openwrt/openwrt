@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1159,6 +1159,29 @@ static bool ieee80211_tx_prep_agg(struct
+@@ -1146,6 +1146,29 @@ static bool ieee80211_tx_prep_agg(struct
  	return queued;
  }
  
@@ -46,7 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /*
   * initialises @tx
   * pass %NULL for the station if unknown, a valid pointer if known
-@@ -1172,6 +1195,7 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1159,6 +1182,7 @@ ieee80211_tx_prepare(struct ieee80211_su
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_hdr *hdr;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
@@ -54,7 +54,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int tid;
  
  	memset(tx, 0, sizeof(*tx));
-@@ -1200,8 +1224,10 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1187,8 +1211,10 @@ ieee80211_tx_prepare(struct ieee80211_su
  		} else if (tx->sdata->control_port_protocol == tx->skb->protocol) {
  			tx->sta = sta_info_get_bss(sdata, hdr->addr1);
  		}
@@ -66,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	if (tx->sta && ieee80211_is_data_qos(hdr->frame_control) &&
-@@ -1211,8 +1237,12 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1198,8 +1224,12 @@ ieee80211_tx_prepare(struct ieee80211_su
  		struct tid_ampdu_tx *tid_tx;
  
  		tid = ieee80211_get_tid(hdr);
@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		if (tid_tx) {
  			bool queued;
  
-@@ -3969,29 +3999,6 @@ void ieee80211_txq_schedule_start(struct
+@@ -3918,29 +3948,6 @@ void ieee80211_txq_schedule_start(struct
  }
  EXPORT_SYMBOL(ieee80211_txq_schedule_start);
  
