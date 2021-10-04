@@ -68,7 +68,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int fq_init(struct fq *fq, int flows_cnt)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -846,7 +846,6 @@ enum txq_info_flags {
+@@ -852,7 +852,6 @@ enum txq_info_flags {
   */
  struct txq_info {
  	struct fq_tin tin;
@@ -78,7 +78,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct sk_buff_head frags;
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1322,7 +1322,7 @@ static struct sk_buff *codel_dequeue_fun
+@@ -1309,7 +1309,7 @@ static struct sk_buff *codel_dequeue_fun
  	fq = &local->fq;
  
  	if (cvars == &txqi->def_cvars)
@@ -87,7 +87,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	else
  		flow = &fq->flows[cvars - local->cvars];
  
-@@ -1365,7 +1365,7 @@ static struct sk_buff *fq_tin_dequeue_fu
+@@ -1352,7 +1352,7 @@ static struct sk_buff *fq_tin_dequeue_fu
  		cparams = &local->cparams;
  	}
  
@@ -96,7 +96,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		cvars = &txqi->def_cvars;
  	else
  		cvars = &local->cvars[flow - fq->flows];
-@@ -1392,17 +1392,6 @@ static void fq_skb_free_func(struct fq *
+@@ -1379,17 +1379,6 @@ static void fq_skb_free_func(struct fq *
  	ieee80211_free_txskb(&local->hw, skb);
  }
  
@@ -114,7 +114,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void ieee80211_txq_enqueue(struct ieee80211_local *local,
  				  struct txq_info *txqi,
  				  struct sk_buff *skb)
-@@ -1415,8 +1404,7 @@ static void ieee80211_txq_enqueue(struct
+@@ -1402,8 +1391,7 @@ static void ieee80211_txq_enqueue(struct
  
  	spin_lock_bh(&fq->lock);
  	fq_tin_enqueue(fq, tin, flow_idx, skb,
@@ -124,7 +124,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spin_unlock_bh(&fq->lock);
  }
  
-@@ -1459,7 +1447,6 @@ void ieee80211_txq_init(struct ieee80211
+@@ -1446,7 +1434,6 @@ void ieee80211_txq_init(struct ieee80211
  			struct txq_info *txqi, int tid)
  {
  	fq_tin_init(&txqi->tin);
@@ -132,7 +132,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	codel_vars_init(&txqi->def_cvars);
  	codel_stats_init(&txqi->cstats);
  	__skb_queue_head_init(&txqi->frags);
-@@ -3332,8 +3319,7 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3281,8 +3268,7 @@ static bool ieee80211_amsdu_aggregate(st
  	 */
  
  	tin = &txqi->tin;

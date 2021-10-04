@@ -27,7 +27,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -4219,6 +4219,11 @@ struct ieee80211_ops {
+@@ -4223,6 +4223,11 @@ struct ieee80211_ops {
  	void (*sta_set_decap_offload)(struct ieee80211_hw *hw,
  				      struct ieee80211_vif *vif,
  				      struct ieee80211_sta *sta, bool enabled);
@@ -84,7 +84,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #endif /* __MAC80211_DRIVER_OPS */
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -954,6 +954,7 @@ struct ieee80211_sub_if_data {
+@@ -962,6 +962,7 @@ struct ieee80211_sub_if_data {
  
  	struct work_struct work;
  	struct sk_buff_head skb_queue;
@@ -92,7 +92,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	u8 needed_rx_chains;
  	enum ieee80211_smps_mode smps_mode;
-@@ -2093,6 +2094,11 @@ ieee80211_he_op_ie_to_bss_conf(struct ie
+@@ -2099,6 +2100,11 @@ ieee80211_he_op_ie_to_bss_conf(struct ie
  
  /* S1G */
  void ieee80211_s1g_sta_rate_init(struct sta_info *sta);
@@ -106,7 +106,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  void ieee80211_process_measurement_req(struct ieee80211_sub_if_data *sdata,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -563,6 +563,7 @@ static void ieee80211_do_stop(struct iee
+@@ -555,6 +555,7 @@ static void ieee80211_do_stop(struct iee
  		 */
  		ieee80211_free_keys(sdata, true);
  		skb_queue_purge(&sdata->skb_queue);
@@ -114,7 +114,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
-@@ -1070,6 +1071,7 @@ int ieee80211_add_virtual_monitor(struct
+@@ -1029,6 +1030,7 @@ int ieee80211_add_virtual_monitor(struct
  	}
  
  	skb_queue_head_init(&sdata->skb_queue);
@@ -122,8 +122,8 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	INIT_WORK(&sdata->work, ieee80211_iface_work);
  
  	return 0;
-@@ -1442,6 +1444,24 @@ static void ieee80211_if_setup_no_queue(
- #endif
+@@ -1370,6 +1372,24 @@ static void ieee80211_if_setup_no_queue(
+ 	dev->priv_flags |= IFF_NO_QUEUE;
  }
  
 +static void ieee80211_iface_process_status(struct ieee80211_sub_if_data *sdata,
@@ -147,7 +147,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1519,6 +1539,16 @@ static void ieee80211_iface_work(struct
+@@ -1448,6 +1468,16 @@ static void ieee80211_iface_work(struct
  				WARN_ON(1);
  				break;
  			}
@@ -164,8 +164,8 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		} else if (ieee80211_is_ext(mgmt->frame_control)) {
  			if (sdata->vif.type == NL80211_IFTYPE_STATION)
  				ieee80211_sta_rx_queued_ext(sdata, skb);
-@@ -1574,6 +1604,12 @@ static void ieee80211_iface_work(struct
- 		kfree_skb(skb);
+@@ -1504,6 +1534,12 @@ static void ieee80211_iface_work(struct
+ 		kcov_remote_stop();
  	}
  
 +	/* process status queue */
@@ -177,7 +177,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	/* then other type-dependent work */
  	switch (sdata->vif.type) {
  	case NL80211_IFTYPE_STATION:
-@@ -1637,6 +1677,7 @@ static void ieee80211_setup_sdata(struct
+@@ -1567,6 +1603,7 @@ static void ieee80211_setup_sdata(struct
  	}
  
  	skb_queue_head_init(&sdata->skb_queue);
@@ -187,7 +187,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	INIT_WORK(&sdata->csa_finalize_work, ieee80211_csa_finalize_work);
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -3208,6 +3208,68 @@ ieee80211_rx_h_mgmt_check(struct ieee802
+@@ -3116,6 +3116,68 @@ ieee80211_rx_h_mgmt_check(struct ieee802
  	return RX_CONTINUE;
  }
  
@@ -256,7 +256,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static ieee80211_rx_result debug_noinline
  ieee80211_rx_h_action(struct ieee80211_rx_data *rx)
  {
-@@ -3487,6 +3549,17 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -3395,6 +3457,17 @@ ieee80211_rx_h_action(struct ieee80211_r
  		    !mesh_path_sel_is_hwmp(sdata))
  			break;
  		goto queue;

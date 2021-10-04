@@ -26,7 +26,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1297,6 +1297,8 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1300,6 +1300,8 @@ ieee80211_tx_info_clear_status(struct ie
   *	the "0-length PSDU" field included there.  The value for it is
   *	in &struct ieee80211_rx_status.  Note that if this value isn't
   *	known the frame shouldn't be reported.
@@ -35,7 +35,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  enum mac80211_rx_flags {
  	RX_FLAG_MMIC_ERROR		= BIT(0),
-@@ -1329,6 +1331,7 @@ enum mac80211_rx_flags {
+@@ -1332,6 +1334,7 @@ enum mac80211_rx_flags {
  	RX_FLAG_RADIOTAP_HE_MU		= BIT(27),
  	RX_FLAG_RADIOTAP_LSIG		= BIT(28),
  	RX_FLAG_NO_PSDU			= BIT(29),
@@ -43,7 +43,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  /**
-@@ -1650,11 +1653,15 @@ enum ieee80211_vif_flags {
+@@ -1653,11 +1656,15 @@ enum ieee80211_vif_flags {
   *	The driver supports sending frames passed as 802.3 frames by mac80211.
   *	It must also support sending 802.11 packets for the same interface.
   * @IEEE80211_OFFLOAD_ENCAP_4ADDR: support 4-address mode encapsulation offload
@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  /**
-@@ -2390,6 +2397,9 @@ struct ieee80211_txq {
+@@ -2393,6 +2400,9 @@ struct ieee80211_txq {
   * @IEEE80211_HW_SUPPORTS_TX_ENCAP_OFFLOAD: Hardware supports tx encapsulation
   *	offload
   *
@@ -69,7 +69,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2443,6 +2453,7 @@ enum ieee80211_hw_flags {
+@@ -2446,6 +2456,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_SUPPORTS_ONLY_HE_MULTI_BSSID,
  	IEEE80211_HW_AMPDU_KEYBORDER_SUPPORT,
  	IEEE80211_HW_SUPPORTS_TX_ENCAP_OFFLOAD,
@@ -77,10 +77,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* keep last, obviously */
  	NUM_IEEE80211_HW_FLAGS
-@@ -4196,6 +4207,9 @@ struct ieee80211_ops {
- 				   struct ieee80211_vif *vif);
- 	void (*sta_set_4addr)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+@@ -4202,6 +4213,9 @@ struct ieee80211_ops {
  			      struct ieee80211_sta *sta, bool enabled);
+ 	int (*set_sar_specs)(struct ieee80211_hw *hw,
+ 			     const struct cfg80211_sar_specs *sar);
 +	void (*sta_set_decap_offload)(struct ieee80211_hw *hw,
 +				      struct ieee80211_vif *vif,
 +				      struct ieee80211_sta *sta, bool enabled);
@@ -132,7 +132,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* __MAC80211_DRIVER_OPS */
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -856,7 +856,7 @@ static const struct net_device_ops ieee8
+@@ -815,7 +815,7 @@ static const struct net_device_ops ieee8
  
  };
  
@@ -141,7 +141,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	switch (iftype) {
  	/* P2P GO and client are mapped to AP/STATION types */
-@@ -876,7 +876,7 @@ static bool ieee80211_set_sdata_offload_
+@@ -835,7 +835,7 @@ static bool ieee80211_set_sdata_offload_
  	flags = sdata->vif.offload_flags;
  
  	if (ieee80211_hw_check(&local->hw, SUPPORTS_TX_ENCAP_OFFLOAD) &&
@@ -150,7 +150,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		flags |= IEEE80211_OFFLOAD_ENCAP_ENABLED;
  
  		if (!ieee80211_hw_check(&local->hw, SUPPORTS_TX_FRAG) &&
-@@ -889,10 +889,21 @@ static bool ieee80211_set_sdata_offload_
+@@ -848,10 +848,21 @@ static bool ieee80211_set_sdata_offload_
  		flags &= ~IEEE80211_OFFLOAD_ENCAP_ENABLED;
  	}
  
@@ -172,7 +172,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return true;
  }
  
-@@ -910,7 +921,7 @@ static void ieee80211_set_vif_encap_ops(
+@@ -869,7 +880,7 @@ static void ieee80211_set_vif_encap_ops(
  	}
  
  	if (!ieee80211_hw_check(&local->hw, SUPPORTS_TX_ENCAP_OFFLOAD) ||
@@ -183,7 +183,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	enabled = bss->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED;
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -4195,7 +4195,9 @@ void ieee80211_check_fast_rx(struct sta_
+@@ -4099,7 +4099,9 @@ void ieee80211_check_fast_rx(struct sta_
  		.vif_type = sdata->vif.type,
  		.control_port_protocol = sdata->control_port_protocol,
  	}, *old, *new = NULL;
@@ -193,7 +193,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* use sparse to check that we don't return without updating */
  	__acquire(check_fast_rx);
-@@ -4308,6 +4310,17 @@ void ieee80211_check_fast_rx(struct sta_
+@@ -4212,6 +4214,17 @@ void ieee80211_check_fast_rx(struct sta_
  	if (assign)
  		new = kmemdup(&fastrx, sizeof(fastrx), GFP_KERNEL);
  
@@ -211,7 +211,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spin_lock_bh(&sta->lock);
  	old = rcu_dereference_protected(sta->fast_rx, true);
  	rcu_assign_pointer(sta->fast_rx, new);
-@@ -4354,6 +4367,108 @@ void ieee80211_check_fast_rx_iface(struc
+@@ -4258,6 +4271,108 @@ void ieee80211_check_fast_rx_iface(struc
  	mutex_unlock(&local->sta_mtx);
  }
  
@@ -264,7 +264,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	skb->dev = fast_rx->dev;
 +
-+	ieee80211_rx_stats(fast_rx->dev, skb->len);
++	dev_sw_netstats_rx_add(fast_rx->dev, skb->len);
 +
 +	/* The seqno index has the same property as needed
 +	 * for the rx_msdu field, i.e. it is IEEE80211_NUM_TIDS
@@ -320,7 +320,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static bool ieee80211_invoke_fast_rx(struct ieee80211_rx_data *rx,
  				     struct ieee80211_fast_rx *fast_rx)
  {
-@@ -4374,9 +4489,6 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4278,9 +4393,6 @@ static bool ieee80211_invoke_fast_rx(str
  	} addrs __aligned(2);
  	struct ieee80211_sta_rx_stats *stats = &sta->rx_stats;
  
@@ -330,7 +330,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* for parallel-rx, we need to have DUP_VALIDATED, otherwise we write
  	 * to a common data structure; drivers can implement that per queue
  	 * but we don't have that information in mac80211
-@@ -4450,32 +4562,6 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4354,32 +4466,6 @@ static bool ieee80211_invoke_fast_rx(str
  	    pskb_trim(skb, skb->len - fast_rx->icv_len))
  		goto drop;
  
@@ -363,7 +363,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (rx->key && !ieee80211_has_protected(hdr->frame_control))
  		goto drop;
  
-@@ -4487,12 +4573,6 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4391,12 +4477,6 @@ static bool ieee80211_invoke_fast_rx(str
  		return true;
  	}
  
@@ -376,13 +376,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* do the header conversion - first grab the addresses */
  	ether_addr_copy(addrs.da, skb->data + fast_rx->da_offs);
  	ether_addr_copy(addrs.sa, skb->data + fast_rx->sa_offs);
-@@ -4501,62 +4581,14 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4405,62 +4485,14 @@ static bool ieee80211_invoke_fast_rx(str
  	/* push the addresses in front */
  	memcpy(skb_push(skb, sizeof(addrs)), &addrs, sizeof(addrs));
  
 -	skb->dev = fast_rx->dev;
 -
--	ieee80211_rx_stats(fast_rx->dev, skb->len);
+-	dev_sw_netstats_rx_add(fast_rx->dev, skb->len);
 -
 -	/* The seqno index has the same property as needed
 -	 * for the rx_msdu field, i.e. it is IEEE80211_NUM_TIDS
@@ -443,7 +443,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	stats->dropped++;
  	return true;
  }
-@@ -4610,6 +4642,47 @@ static bool ieee80211_prepare_and_rx_han
+@@ -4514,6 +4546,47 @@ static bool ieee80211_prepare_and_rx_han
  	return true;
  }
  
@@ -491,31 +491,26 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /*
   * This is the actual Rx frames handler. as it belongs to Rx path it must
   * be called with rcu_read_lock protection.
-@@ -4847,15 +4920,20 @@ void ieee80211_rx_list(struct ieee80211_
+@@ -4753,13 +4826,17 @@ void ieee80211_rx_list(struct ieee80211_
  	 * if it was previously present.
  	 * Also, frames with less than 16 bytes are dropped.
  	 */
 -	skb = ieee80211_rx_monitor(local, skb, rate);
--	if (!skb)
--		return;
-+	if (!(status->flag & RX_FLAG_8023)) {
++	if (!(status->flag & RX_FLAG_8023))
 +		skb = ieee80211_rx_monitor(local, skb, rate);
-+		if (!skb)
-+			return;
-+	}
+ 	if (skb) {
+ 		ieee80211_tpt_led_trig_rx(local,
+ 					  ((struct ieee80211_hdr *)skb->data)->frame_control,
+ 					  skb->len);
  
- 	ieee80211_tpt_led_trig_rx(local,
- 			((struct ieee80211_hdr *)skb->data)->frame_control,
- 			skb->len);
+-		__ieee80211_rx_handle_packet(hw, pubsta, skb, list);
++		if (status->flag & RX_FLAG_8023)
++			__ieee80211_rx_handle_8023(hw, pubsta, skb, list);
++		else
++			__ieee80211_rx_handle_packet(hw, pubsta, skb, list);
+ 	}
  
--	__ieee80211_rx_handle_packet(hw, pubsta, skb, list);
-+	if (status->flag & RX_FLAG_8023)
-+		__ieee80211_rx_handle_8023(hw, pubsta, skb, list);
-+	else
-+		__ieee80211_rx_handle_packet(hw, pubsta, skb, list);
- 
- 	return;
-  drop:
+ 	kcov_remote_stop();
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
 @@ -71,6 +71,7 @@

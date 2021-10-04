@@ -89,7 +89,7 @@ Tested-by: Maciej S. Szmigiero <mail@maciej.szmigiero.name>
  #endif
 --- a/drivers/net/wireless/realtek/rtlwifi/usb.c
 +++ b/drivers/net/wireless/realtek/rtlwifi/usb.c
-@@ -807,6 +807,7 @@ static void rtl_usb_stop(struct ieee8021
+@@ -806,6 +806,7 @@ static void rtl_usb_stop(struct ieee8021
  
  	tasklet_kill(&rtlusb->rx_work_tasklet);
  	cancel_work_sync(&rtlpriv->works.lps_change_work);
@@ -97,7 +97,7 @@ Tested-by: Maciej S. Szmigiero <mail@maciej.szmigiero.name>
  
  	flush_workqueue(rtlpriv->works.rtl_wq);
  
-@@ -1033,6 +1034,8 @@ int rtl_usb_probe(struct usb_interface *
+@@ -1032,6 +1033,8 @@ int rtl_usb_probe(struct usb_interface *
  		  rtl_fill_h2c_cmd_work_callback);
  	INIT_WORK(&rtlpriv->works.lps_change_work,
  		  rtl_lps_change_work_callback);
