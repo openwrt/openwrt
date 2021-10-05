@@ -20,9 +20,24 @@ function init_network() {
 	uci commit network
 }
 
-function init_ttylogin() {
-	uci set system.@system[-1].ttylogin='1'
-	uci commit system
+function init_system() {
+	uci -q batch <<-EOF
+		set system.@system[-1].hostname='$HOSTNAME'
+		set system.@system[-1].ttylogin='1'
+		commit system
+	EOF
+}
+
+function init_samba4() {
+	[ -f /etc/samba/smb.conf.template ] || return 0
+
+	uci -q batch <<-EOF
+		set samba4.@samba[0].name='$HOSTNAME'
+		set samba4.@samba[0].workgroup='WORKGROUP'
+		set samba4.@samba[0].description='$HOSTNAME'
+		set samba4.@samba[0].homes='1'
+		commit samba4
+	EOF
 }
 
 function init_ttyd() {
@@ -87,10 +102,13 @@ function add_static_host() {
 
 # ---------------------------------------------------------
 
+HOSTNAME="FriendlyWrt"
+
 if [ "${1,,}" = "all" ]; then
 	init_network
 	init_firewall
-	init_ttylogin
+	init_system
+	init_samba4
 	init_ttyd
 	init_luci_stat
 	init_watchcat
