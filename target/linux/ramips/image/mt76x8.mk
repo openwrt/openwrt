@@ -290,6 +290,15 @@ define Device/widora_neo-32m
 endef
 TARGET_DEVICES += widora_neo-32m
 
+define Device/widora_jbox2-8m
+  DTS := WIDORA-JBOX2-8M
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Widora-JBOX2 (8M)
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += widora-neo
+endef
+TARGET_DEVICES += widora_jbox2-8m
+
 define Device/wrtnode2p
   DTS := WRTNODE2P
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
