@@ -19,7 +19,6 @@
 #
 # Host packages are built in the same fashion, just use these vars instead:
 #
-# HOST_BUILD_DEPENDS:=meson/host
 # MESON_HOST_ARGS+=-Dfoo -Dbar=baz
 # MESON_HOST_VARS+=FOO=bar
 
@@ -57,7 +56,7 @@ MESON_CPU:="$(CPU_TYPE)$(if $(CPU_SUBTYPE),+$(CPU_SUBTYPE))"
 endif
 
 define Meson
-	$(2) $(STAGING_DIR_HOST)/bin/$(PYTHON) $(MESON_DIR)/meson.py $(1)
+	$(2) $(STAGING_DIR_HOST)/bin/meson $(1)
 endef
 
 define Meson/CreateNativeFile
