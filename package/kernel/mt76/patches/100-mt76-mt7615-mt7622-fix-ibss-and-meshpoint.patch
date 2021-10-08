@@ -30,11 +30,9 @@ Signed-off-by: Nick Hainke <vincent@systemli.org>
  mt7615/main.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/mt7615/main.c b/mt7615/main.c
-index dada43d6d879..51260a669d16 100644
 --- a/mt7615/main.c
 +++ b/mt7615/main.c
-@@ -135,8 +135,6 @@ static int get_omac_idx(enum nl80211_iftype type, u64 mask)
+@@ -135,8 +135,6 @@ static int get_omac_idx(enum nl80211_ift
  	int i;
  
  	switch (type) {
@@ -43,7 +41,7 @@ index dada43d6d879..51260a669d16 100644
  	case NL80211_IFTYPE_STATION:
  		/* prefer hw bssid slot 1-3 */
  		i = get_free_idx(mask, HW_BSSID_1, HW_BSSID_3);
-@@ -160,6 +158,8 @@ static int get_omac_idx(enum nl80211_iftype type, u64 mask)
+@@ -160,6 +158,8 @@ static int get_omac_idx(enum nl80211_ift
  			return HW_BSSID_0;
  
  		break;
@@ -52,6 +50,3 @@ index dada43d6d879..51260a669d16 100644
  	case NL80211_IFTYPE_MONITOR:
  	case NL80211_IFTYPE_AP:
  		/* ap uses hw bssid 0 and ext bssid */
--- 
-2.33.0
-
