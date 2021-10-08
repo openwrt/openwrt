@@ -1,0 +1,57 @@
+From b3be16e335289b5a5dfa23a3e1f5ee86bd581ac6 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Thu, 7 Oct 2021 22:20:33 +0200
+Subject: [PATCH] mt76: mt7615: mt7622: fix ibss and meshpoint
+
+commit 7f4b7920318b ("mt76: mt7615: add ibss support") introduced IBSS
+and commit f4ec7fdf7f83 ("mt76: mt7615: enable support for mesh")
+meshpoint support.
+
+Both used in the "get_omac_idx"-function:
+
+	if (~mask & BIT(HW_BSSID_0))
+		return HW_BSSID_0;
+
+With commit d8d59f66d136 ("mt76: mt7615: support 16 interfaces") the
+ibss and meshpoint mode should "prefer hw bssid slot 1-3". However,
+with that change the ibss or meshpoint mode will not send any beacon on
+the mt7622 wifi anymore. Devices were still able to exchange data but
+only if a bssid already existed. Two mt7622 devices will never be able
+to communicate.
+
+This commits reverts the preferation of slot 1-3 for ibss and
+meshpoint. Only NL80211_IFTYPE_STATION will still prefer slot 1-3.
+
+Tested on Banana Pi R64.
+
+Fixes: d8d59f66d136 ("mt76: mt7615: support 16 interfaces").
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ mt7615/main.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/mt7615/main.c b/mt7615/main.c
+index dada43d6d879..51260a669d16 100644
+--- a/mt7615/main.c
++++ b/mt7615/main.c
+@@ -135,8 +135,6 @@ static int get_omac_idx(enum nl80211_iftype type, u64 mask)
+ 	int i;
+ 
+ 	switch (type) {
+-	case NL80211_IFTYPE_MESH_POINT:
+-	case NL80211_IFTYPE_ADHOC:
+ 	case NL80211_IFTYPE_STATION:
+ 		/* prefer hw bssid slot 1-3 */
+ 		i = get_free_idx(mask, HW_BSSID_1, HW_BSSID_3);
+@@ -160,6 +158,8 @@ static int get_omac_idx(enum nl80211_iftype type, u64 mask)
+ 			return HW_BSSID_0;
+ 
+ 		break;
++	case NL80211_IFTYPE_ADHOC:
++	case NL80211_IFTYPE_MESH_POINT:
+ 	case NL80211_IFTYPE_MONITOR:
+ 	case NL80211_IFTYPE_AP:
+ 		/* ap uses hw bssid 0 and ext bssid */
+-- 
+2.33.0
+
