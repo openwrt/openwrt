@@ -50,6 +50,7 @@ ipq40xx_setup_interfaces()
 		;;
 	asus,rt-ac58u|\
 	mikrotik,hap-ac2|\
+	mikrotik,hap-ac3|\
 	p2w,r619ac-64m|\
 	p2w,r619ac-128m|\
 	zyxel,nbg6617)
@@ -182,7 +183,8 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
-	mikrotik,hap-ac2)
+	mikrotik,hap-ac2|\
+	mikrotik,hap-ac3)
 		wan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
 		lan_mac=$(macaddr_add $wan_mac 1)
 		label_mac="$wan_mac"
