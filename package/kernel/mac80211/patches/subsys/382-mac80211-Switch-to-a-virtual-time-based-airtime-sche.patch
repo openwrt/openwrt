@@ -50,7 +50,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -6585,9 +6585,6 @@ static inline void ieee80211_txq_schedul
+@@ -6589,9 +6589,6 @@ static inline void ieee80211_txq_schedul
  {
  }
  
@@ -60,7 +60,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  /**
   * ieee80211_schedule_txq - schedule a TXQ for transmission
   *
-@@ -6600,11 +6597,7 @@ void __ieee80211_schedule_txq(struct iee
+@@ -6604,11 +6601,7 @@ void __ieee80211_schedule_txq(struct iee
   * The driver may call this function if it has buffered packets for
   * this TXQ internally.
   */
@@ -73,7 +73,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  /**
   * ieee80211_return_txq - return a TXQ previously acquired by ieee80211_next_txq()
-@@ -6616,12 +6609,8 @@ ieee80211_schedule_txq(struct ieee80211_
+@@ -6620,12 +6613,8 @@ ieee80211_schedule_txq(struct ieee80211_
   * The driver may set force=true if it has buffered packets for this TXQ
   * internally.
   */
@@ -90,7 +90,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * ieee80211_txq_may_transmit - check whether TXQ is allowed to transmit
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1441,6 +1441,38 @@ static void sta_apply_mesh_params(struct
+@@ -1460,6 +1460,38 @@ static void sta_apply_mesh_params(struct
  #endif
  }
  
@@ -129,7 +129,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static int sta_apply_parameters(struct ieee80211_local *local,
  				struct sta_info *sta,
  				struct station_parameters *params)
-@@ -1628,7 +1660,8 @@ static int sta_apply_parameters(struct i
+@@ -1647,7 +1679,8 @@ static int sta_apply_parameters(struct i
  		sta_apply_mesh_params(local, sta, params);
  
  	if (params->airtime_weight)
@@ -227,7 +227,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #ifdef CONFIG_PM
  static ssize_t reset_write(struct file *file, const char __user *user_buf,
  			   size_t count, loff_t *ppos)
-@@ -631,7 +671,11 @@ void debugfs_hw_add(struct ieee80211_loc
+@@ -632,7 +672,11 @@ void debugfs_hw_add(struct ieee80211_loc
  	if (local->ops->wake_tx_queue)
  		DEBUGFS_ADD_MODE(aqm, 0600);
  
@@ -573,7 +573,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static inline int ieee80211_bssid_match(const u8 *raddr, const u8 *addr)
  {
  	return ether_addr_equal(raddr, addr) ||
-@@ -1814,6 +1964,14 @@ int ieee80211_tx_control_port(struct wip
+@@ -1816,6 +1966,14 @@ int ieee80211_tx_control_port(struct wip
  			      u64 *cookie);
  int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
  			      const u8 *buf, size_t len);
@@ -590,7 +590,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  void ieee80211_apply_htcap_overrides(struct ieee80211_sub_if_data *sdata,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -2018,6 +2018,9 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -2041,6 +2041,9 @@ int ieee80211_if_add(struct ieee80211_lo
  		}
  	}
  
@@ -602,7 +602,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	sdata->ap_power_level = IEEE80211_UNSET_POWER_LEVEL;
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -698,10 +698,13 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -707,10 +707,13 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  	spin_lock_init(&local->queue_stop_reason_lock);
  
  	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
@@ -622,7 +622,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1562,12 +1562,8 @@ static void sta_ps_start(struct sta_info
+@@ -1563,12 +1563,8 @@ static void sta_ps_start(struct sta_info
  
  	for (tid = 0; tid < IEEE80211_NUM_TIDS; tid++) {
  		struct ieee80211_txq *txq = sta->sta.txq[tid];
@@ -819,7 +819,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #include <net/net_namespace.h>
  #include <net/ieee80211_radiotap.h>
  #include <net/cfg80211.h>
-@@ -1476,7 +1477,7 @@ void ieee80211_txq_init(struct ieee80211
+@@ -1479,7 +1480,7 @@ void ieee80211_txq_init(struct ieee80211
  	codel_vars_init(&txqi->def_cvars);
  	codel_stats_init(&txqi->cstats);
  	__skb_queue_head_init(&txqi->frags);
@@ -828,7 +828,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	txqi->txq.vif = &sdata->vif;
  
-@@ -1520,9 +1521,7 @@ void ieee80211_txq_purge(struct ieee8021
+@@ -1523,9 +1524,7 @@ void ieee80211_txq_purge(struct ieee8021
  	ieee80211_purge_tx_queue(&local->hw, &txqi->frags);
  	spin_unlock_bh(&fq->lock);
  
@@ -839,7 +839,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
  
  void ieee80211_txq_set_params(struct ieee80211_local *local)
-@@ -3801,102 +3800,259 @@ EXPORT_SYMBOL(ieee80211_tx_dequeue);
+@@ -3812,102 +3811,259 @@ EXPORT_SYMBOL(ieee80211_tx_dequeue);
  struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
  {
  	struct ieee80211_local *local = hw_to_local(hw);
@@ -1161,7 +1161,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct ieee80211_local *local = hw_to_local(hw);
  
  	if (!wiphy_ext_feature_isset(local->hw.wiphy, NL80211_EXT_FEATURE_AQL))
-@@ -3911,15 +4067,12 @@ bool ieee80211_txq_airtime_check(struct
+@@ -3922,15 +4078,12 @@ bool ieee80211_txq_airtime_check(struct
  	if (unlikely(txq->tid == IEEE80211_NUM_TIDS))
  		return true;
  
@@ -1179,7 +1179,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		return true;
  
  	return false;
-@@ -3929,60 +4082,59 @@ EXPORT_SYMBOL(ieee80211_txq_airtime_chec
+@@ -3940,60 +4093,59 @@ EXPORT_SYMBOL(ieee80211_txq_airtime_chec
  bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
  				struct ieee80211_txq *txq)
  {

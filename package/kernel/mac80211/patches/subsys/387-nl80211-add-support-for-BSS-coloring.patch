@@ -23,7 +23,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1248,6 +1248,27 @@ struct cfg80211_csa_settings {
+@@ -1253,6 +1253,27 @@ struct cfg80211_csa_settings {
  #define CFG80211_MAX_NUM_DIFFERENT_CHANNELS 10
  
  /**
@@ -51,7 +51,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * struct iface_combination_params - input parameters for interface combinations
   *
   * Used to pass interface combination parameters
-@@ -3983,6 +4004,8 @@ struct mgmt_frame_regs {
+@@ -3991,6 +4012,8 @@ struct mgmt_frame_regs {
   *	given TIDs. This callback may sleep.
   *
   * @set_sar_specs: Update the SAR (TX power) settings.
@@ -60,7 +60,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  struct cfg80211_ops {
  	int	(*suspend)(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
-@@ -4310,6 +4333,9 @@ struct cfg80211_ops {
+@@ -4318,6 +4341,9 @@ struct cfg80211_ops {
  				    const u8 *peer, u8 tids);
  	int	(*set_sar_specs)(struct wiphy *wiphy,
  				 struct cfg80211_sar_specs *sar);
@@ -70,7 +70,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /*
-@@ -8193,4 +8219,70 @@ void cfg80211_update_owe_info_event(stru
+@@ -8209,4 +8235,70 @@ void cfg80211_update_owe_info_event(stru
   */
  void cfg80211_bss_flush(struct wiphy *wiphy);
  
@@ -230,7 +230,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	NUM_NL80211_EXT_FEATURES,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -774,6 +774,10 @@ static const struct nla_policy nl80211_p
+@@ -776,6 +776,10 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
  	[NL80211_ATTR_SAR_SPEC] = NLA_POLICY_NESTED(sar_policy),
  	[NL80211_ATTR_DISABLE_HE] = { .type = NLA_FLAG },
@@ -241,7 +241,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -14813,6 +14817,106 @@ bad_tid_conf:
+@@ -14815,6 +14819,106 @@ bad_tid_conf:
  	return ret;
  }
  
@@ -348,7 +348,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #define NL80211_FLAG_NEED_WIPHY		0x01
  #define NL80211_FLAG_NEED_NETDEV	0x02
  #define NL80211_FLAG_NEED_RTNL		0x04
-@@ -15813,6 +15917,14 @@ static const struct genl_small_ops nl802
+@@ -15815,6 +15919,14 @@ static const struct genl_small_ops nl802
  		.internal_flags = NL80211_FLAG_NEED_WIPHY |
  				  NL80211_FLAG_NEED_RTNL,
  	},
@@ -363,7 +363,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  static struct genl_family nl80211_fam __genl_ro_after_init = {
-@@ -17444,6 +17556,51 @@ void cfg80211_ch_switch_started_notify(s
+@@ -17446,6 +17558,51 @@ void cfg80211_ch_switch_started_notify(s
  }
  EXPORT_SYMBOL(cfg80211_ch_switch_started_notify);
  
