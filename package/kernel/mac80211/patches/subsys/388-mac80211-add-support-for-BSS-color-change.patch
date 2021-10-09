@@ -40,7 +40,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	/* must be last */
  	u8 drv_priv[] __aligned(sizeof(void *));
  };
-@@ -4986,6 +4993,16 @@ void ieee80211_csa_finish(struct ieee802
+@@ -4988,6 +4995,16 @@ void ieee80211_csa_finish(struct ieee802
  bool ieee80211_beacon_cntdwn_is_complete(struct ieee80211_vif *vif);
  
  /**
@@ -57,7 +57,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * ieee80211_proberesp_get - retrieve a Probe Response template
   * @hw: pointer obtained from ieee80211_alloc_hw().
   * @vif: &struct ieee80211_vif pointer from the add_interface callback.
-@@ -6745,6 +6762,18 @@ ieee80211_get_unsol_bcast_probe_resp_tmp
+@@ -6752,6 +6769,18 @@ ieee80211_get_unsol_bcast_probe_resp_tmp
  					  struct ieee80211_vif *vif);
  
  /**
@@ -411,7 +411,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -259,6 +259,12 @@ struct ieee80211_csa_settings {
+@@ -248,6 +248,12 @@ struct ieee80211_csa_settings {
  	u8 count;
  };
  
@@ -424,7 +424,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  struct beacon_data {
  	u8 *head, *tail;
  	int head_len, tail_len;
-@@ -940,6 +946,8 @@ struct ieee80211_sub_if_data {
+@@ -927,6 +933,8 @@ struct ieee80211_sub_if_data {
  	bool csa_block_tx; /* write-protected by sdata_lock and local->mtx */
  	struct cfg80211_chan_def csa_chandef;
  
@@ -433,7 +433,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct list_head assigned_chanctx_list; /* protected by chanctx_mtx */
  	struct list_head reserved_chanctx_list; /* protected by chanctx_mtx */
  
-@@ -1906,6 +1914,9 @@ void ieee80211_csa_finalize_work(struct
+@@ -1893,6 +1901,9 @@ void ieee80211_csa_finalize_work(struct
  int ieee80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
  			     struct cfg80211_csa_settings *params);
  
@@ -445,7 +445,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  					 NETIF_F_HW_CSUM | NETIF_F_SG | \
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -458,6 +458,7 @@ static void ieee80211_do_stop(struct iee
+@@ -461,6 +461,7 @@ static void ieee80211_do_stop(struct iee
  	sdata_unlock(sdata);
  
  	cancel_work_sync(&sdata->csa_finalize_work);
@@ -453,7 +453,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	cancel_delayed_work_sync(&sdata->dfs_cac_timer_work);
  
-@@ -1569,6 +1570,7 @@ static void ieee80211_setup_sdata(struct
+@@ -1572,6 +1573,7 @@ static void ieee80211_setup_sdata(struct
  	INIT_WORK(&sdata->work, ieee80211_iface_work);
  	INIT_WORK(&sdata->recalc_smps, ieee80211_recalc_smps_work);
  	INIT_WORK(&sdata->csa_finalize_work, ieee80211_csa_finalize_work);
@@ -463,7 +463,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4740,11 +4740,11 @@ static int ieee80211_beacon_add_tim(stru
+@@ -4773,11 +4773,11 @@ static int ieee80211_beacon_add_tim(stru
  static void ieee80211_set_beacon_cntdwn(struct ieee80211_sub_if_data *sdata,
  					struct beacon_data *beacon)
  {
@@ -477,7 +477,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	switch (sdata->vif.type) {
  	case NL80211_IFTYPE_AP:
-@@ -4764,21 +4764,27 @@ static void ieee80211_set_beacon_cntdwn(
+@@ -4797,21 +4797,27 @@ static void ieee80211_set_beacon_cntdwn(
  	}
  
  	rcu_read_lock();
@@ -514,7 +514,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  	rcu_read_unlock();
  }
-@@ -4988,6 +4994,7 @@ __ieee80211_beacon_get(struct ieee80211_
+@@ -5021,6 +5027,7 @@ __ieee80211_beacon_get(struct ieee80211_
  			if (offs) {
  				offs->tim_offset = beacon->head_len;
  				offs->tim_length = skb->len - beacon->head_len;

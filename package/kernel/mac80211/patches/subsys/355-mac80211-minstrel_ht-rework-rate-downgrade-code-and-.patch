@@ -86,7 +86,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static u16
  __minstrel_ht_get_sample_rate(struct minstrel_ht_sta *mi,
  			      enum minstrel_sample_type type)
-@@ -1111,8 +1080,6 @@ minstrel_ht_update_stats(struct minstrel
+@@ -1109,8 +1078,6 @@ minstrel_ht_update_stats(struct minstrel
  
  	mi->max_prob_rate = tmp_max_prob_rate;
  
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	minstrel_ht_refill_sample_rates(mi);
  
  #ifdef CPTCFG_MAC80211_DEBUGFS
-@@ -1157,7 +1124,7 @@ minstrel_ht_txstat_valid(struct minstrel
+@@ -1155,7 +1122,7 @@ minstrel_ht_txstat_valid(struct minstrel
  }
  
  static void
@@ -104,7 +104,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	int group, orig_group;
  
-@@ -1172,11 +1139,7 @@ minstrel_downgrade_rate(struct minstrel_
+@@ -1170,11 +1137,7 @@ minstrel_downgrade_rate(struct minstrel_
  		    minstrel_mcs_groups[orig_group].streams)
  			continue;
  
@@ -117,7 +117,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -1210,7 +1173,7 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1208,7 +1171,7 @@ minstrel_ht_tx_status(void *priv, struct
  	struct ieee80211_tx_info *info = st->info;
  	struct minstrel_ht_sta *mi = priv_sta;
  	struct ieee80211_tx_rate *ar = info->status.rates;
@@ -126,7 +126,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct minstrel_priv *mp = priv;
  	u32 update_interval = mp->update_interval;
  	bool last, update = false;
-@@ -1256,18 +1219,13 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1254,18 +1217,13 @@ minstrel_ht_tx_status(void *priv, struct
  		/*
  		 * check for sudden death of spatial multiplexing,
  		 * downgrade to a lower number of streams if necessary.
