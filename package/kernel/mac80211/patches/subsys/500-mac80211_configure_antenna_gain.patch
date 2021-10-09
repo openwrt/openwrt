@@ -1,6 +1,6 @@
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -3810,6 +3810,7 @@ struct mgmt_frame_regs {
+@@ -3818,6 +3818,7 @@ struct mgmt_frame_regs {
   *	(as advertised by the nl80211 feature flag.)
   * @get_tx_power: store the current TX power into the dbm variable;
   *	return 0 if successful
@@ -8,7 +8,7 @@
   *
   * @rfkill_poll: polls the hw rfkill line, use cfg80211 reporting
   *	functions to adjust rfkill hw state
-@@ -4134,6 +4135,7 @@ struct cfg80211_ops {
+@@ -4142,6 +4143,7 @@ struct cfg80211_ops {
  				enum nl80211_tx_power_setting type, int mbm);
  	int	(*get_tx_power)(struct wiphy *wiphy, struct wireless_dev *wdev,
  				int *dbm);
@@ -87,7 +87,7 @@
  	CFG80211_TESTMODE_DUMP(ieee80211_testmode_dump)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1441,6 +1441,7 @@ struct ieee80211_local {
+@@ -1428,6 +1428,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */
@@ -119,7 +119,7 @@
  	if (local->hw.conf.power_level != power) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;
  		local->hw.conf.power_level = power;
-@@ -663,6 +669,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -670,6 +676,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  					 IEEE80211_RADIOTAP_MCS_HAVE_BW;
  	local->hw.radiotap_vht_details = IEEE80211_RADIOTAP_VHT_KNOWN_GI |
  					 IEEE80211_RADIOTAP_VHT_KNOWN_BANDWIDTH;
@@ -129,7 +129,7 @@
  	local->hw.max_mtu = IEEE80211_MAX_DATA_LEN;
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -757,6 +757,7 @@ static const struct nla_policy nl80211_p
+@@ -778,6 +778,7 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_COLOR_CHANGE_COUNT] = { .type = NLA_U8 },
  	[NL80211_ATTR_COLOR_CHANGE_COLOR] = { .type = NLA_U8 },
  	[NL80211_ATTR_COLOR_CHANGE_ELEMS] = NLA_POLICY_NESTED(nl80211_policy),
@@ -137,11 +137,10 @@
  };
  
  /* policy for the key attributes */
-@@ -3296,6 +3297,20 @@ static int nl80211_set_wiphy(struct sk_b
- 		if (result)
- 			return result;
+@@ -3315,6 +3316,20 @@ static int nl80211_set_wiphy(struct sk_b
+ 			goto out;
  	}
-+
+ 
 +	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_GAIN]) {
 +		int idx, dbi = 0;
 +
@@ -155,6 +154,7 @@
 +		if (result)
 +			return result;
 +	}
- 
- 	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_TX] &&
- 	    info->attrs[NL80211_ATTR_WIPHY_ANTENNA_RX]) {
++
+ 	if (info->attrs[NL80211_ATTR_WIPHY_TX_POWER_SETTING]) {
+ 		struct wireless_dev *txp_wdev = wdev;
+ 		enum nl80211_tx_power_setting type;

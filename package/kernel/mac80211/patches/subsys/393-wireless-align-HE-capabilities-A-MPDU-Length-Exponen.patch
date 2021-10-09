@@ -27,7 +27,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		if (sta->vht_cap.vht_supported)
 --- a/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
 +++ b/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
-@@ -552,7 +552,7 @@ static const struct ieee80211_sband_ifty
+@@ -550,7 +550,7 @@ static const struct ieee80211_sband_ifty
  					IEEE80211_HE_MAC_CAP2_32BIT_BA_BITMAP,
  				.mac_cap_info[3] =
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
@@ -47,7 +47,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				.mac_cap_info[5] =
 --- a/drivers/net/wireless/mac80211_hwsim.c
 +++ b/drivers/net/wireless/mac80211_hwsim.c
-@@ -2795,7 +2795,7 @@ static const struct ieee80211_sband_ifty
+@@ -2817,7 +2817,7 @@ static const struct ieee80211_sband_ifty
  					IEEE80211_HE_MAC_CAP2_ACK_EN,
  				.mac_cap_info[3] =
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
@@ -56,7 +56,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
  				.phy_cap_info[1] =
  					IEEE80211_HE_PHY_CAP1_PREAMBLE_PUNC_RX_MASK |
-@@ -2839,7 +2839,7 @@ static const struct ieee80211_sband_ifty
+@@ -2861,7 +2861,7 @@ static const struct ieee80211_sband_ifty
  					IEEE80211_HE_MAC_CAP2_ACK_EN,
  				.mac_cap_info[3] =
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
@@ -65,7 +65,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
  				.phy_cap_info[1] =
  					IEEE80211_HE_PHY_CAP1_PREAMBLE_PUNC_RX_MASK |
-@@ -2885,7 +2885,7 @@ static const struct ieee80211_sband_ifty
+@@ -2907,7 +2907,7 @@ static const struct ieee80211_sband_ifty
  					IEEE80211_HE_MAC_CAP2_ACK_EN,
  				.mac_cap_info[3] =
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
@@ -74,7 +74,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
  				.phy_cap_info[0] =
  					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G |
-@@ -2933,7 +2933,7 @@ static const struct ieee80211_sband_ifty
+@@ -2955,7 +2955,7 @@ static const struct ieee80211_sband_ifty
  					IEEE80211_HE_MAC_CAP2_ACK_EN,
  				.mac_cap_info[3] =
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |

@@ -10,34 +10,7 @@
   * @NL80211_CMD_DISCONNECT: drop a given connection; also used to notify
   *	userspace that a connection was dropped by the AP or due to other
   *	reasons, for this the %NL80211_ATTR_DISCONNECTED_BY_AP and
-@@ -1963,8 +1966,15 @@ enum nl80211_commands {
-  * @NL80211_ATTR_PROBE_RESP: Probe Response template data. Contains the entire
-  *	probe-response frame. The DA field in the 802.11 header is zero-ed out,
-  *	to be filled by the FW.
-- * @NL80211_ATTR_DISABLE_HT:  Force HT capable interfaces to disable
-- *      this feature.  Currently, only supported in mac80211 drivers.
-+ * @NL80211_ATTR_DISABLE_HT: Force HT capable interfaces to disable
-+ *      this feature during association. This is a flag attribute.
-+ *	Currently only supported in mac80211 drivers.
-+ * @NL80211_ATTR_DISABLE_VHT: Force VHT capable interfaces to disable
-+ *      this feature during association. This is a flag attribute.
-+ *	Currently only supported in mac80211 drivers.
-+ * @NL80211_ATTR_DISABLE_HE: Force HE capable interfaces to disable
-+ *      this feature during association. This is a flag attribute.
-+ *	Currently only supported in mac80211 drivers.
-  * @NL80211_ATTR_HT_CAPABILITY_MASK: Specify which bits of the
-  *      ATTR_HT_CAPABILITY to which attention should be paid.
-  *      Currently, only mac80211 NICs support this feature.
-@@ -3045,6 +3055,8 @@ enum nl80211_attrs {
- 
- 	NL80211_ATTR_SAR_SPEC,
- 
-+	NL80211_ATTR_DISABLE_HE,
-+
- 	/* add attributes here, update the policy in nl80211.c */
- 
- 	__NL80211_ATTR_AFTER_LAST,
-@@ -5928,6 +5940,16 @@ enum nl80211_feature_flags {
+@@ -5937,6 +5940,16 @@ enum nl80211_feature_flags {
   * @NL80211_EXT_FEATURE_BEACON_RATE_HE: Driver supports beacon rate
   *	configuration (AP/mesh) with HE rates.
   *
@@ -54,7 +27,7 @@
   * @NUM_NL80211_EXT_FEATURES: number of extended features.
   * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
   */
-@@ -5989,6 +6011,9 @@ enum nl80211_ext_feature_index {
+@@ -5998,6 +6011,9 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_FILS_DISCOVERY,
  	NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP,
  	NL80211_EXT_FEATURE_BEACON_RATE_HE,
@@ -64,7 +37,7 @@
  
  	/* add new features before the definition below */
  	NUM_NL80211_EXT_FEATURES,
-@@ -6286,11 +6311,13 @@ struct nl80211_vendor_cmd_info {
+@@ -6295,11 +6311,13 @@ struct nl80211_vendor_cmd_info {
   * @NL80211_TDLS_PEER_HT: TDLS peer is HT capable.
   * @NL80211_TDLS_PEER_VHT: TDLS peer is VHT capable.
   * @NL80211_TDLS_PEER_WMM: TDLS peer is WMM capable.
@@ -78,7 +51,7 @@
  };
  
  /**
-@@ -6882,6 +6909,9 @@ enum nl80211_peer_measurement_ftm_capa {
+@@ -6891,6 +6909,9 @@ enum nl80211_peer_measurement_ftm_capa {
   *      if neither %NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED nor
   *	%NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED is set, EDCA based
   *	ranging will be used.
@@ -88,7 +61,7 @@
   *
   * @NUM_NL80211_PMSR_FTM_REQ_ATTR: internal
   * @NL80211_PMSR_FTM_REQ_ATTR_MAX: highest attribute number
-@@ -6900,6 +6930,7 @@ enum nl80211_peer_measurement_ftm_req {
+@@ -6909,6 +6930,7 @@ enum nl80211_peer_measurement_ftm_req {
  	NL80211_PMSR_FTM_REQ_ATTR_REQUEST_CIVICLOC,
  	NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED,
  	NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED,
