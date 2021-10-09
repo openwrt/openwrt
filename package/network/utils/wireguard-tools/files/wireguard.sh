@@ -33,7 +33,9 @@ proto_wireguard_setup_peer() {
 	local endpoint_host
 	local endpoint_port
 	local persistent_keepalive
+	local enabled
 
+	config_get_bool enabled "${peer_config}" "enabled" 1
 	config_get public_key "${peer_config}" "public_key"
 	config_get preshared_key "${peer_config}" "preshared_key"
 	config_get allowed_ips "${peer_config}" "allowed_ips"
@@ -41,6 +43,11 @@ proto_wireguard_setup_peer() {
 	config_get endpoint_host "${peer_config}" "endpoint_host"
 	config_get endpoint_port "${peer_config}" "endpoint_port"
 	config_get persistent_keepalive "${peer_config}" "persistent_keepalive"
+
+	if [ ${enabled} -eq 0 ]; then
+		echo "Skipping peer config $peer_config because it's disabled."
+		return 0
+	fi
 
 	if [ -z "$public_key" ]; then
 		echo "Skipping peer config $peer_config because public key is not defined."
