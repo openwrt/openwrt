@@ -41,6 +41,7 @@ endef
 TARGET_DEVICES += meraki_mr24
 
 define Device/meraki_mx60
+  DEFAULT := n
   DEVICE_VENDOR := Cisco Meraki
   DEVICE_MODEL := MX60/MX60W
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
