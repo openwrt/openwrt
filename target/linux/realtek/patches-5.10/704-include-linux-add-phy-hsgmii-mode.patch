@@ -1,15 +1,15 @@
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -93,6 +93,7 @@
- 	PHY_INTERFACE_MODE_SMII,
+@@ -133,6 +133,7 @@ typedef enum {
  	PHY_INTERFACE_MODE_XGMII,
+ 	PHY_INTERFACE_MODE_XLGMII,
  	PHY_INTERFACE_MODE_MOCA,
 +	PHY_INTERFACE_MODE_HSGMII,
  	PHY_INTERFACE_MODE_QSGMII,
  	PHY_INTERFACE_MODE_TRGMII,
  	PHY_INTERFACE_MODE_1000BASEX,
-@@ -163,6 +164,8 @@
- 		return "xgmii";
+@@ -199,6 +200,8 @@ static inline const char *phy_modes(phy_
+ 		return "xlgmii";
  	case PHY_INTERFACE_MODE_MOCA:
  		return "moca";
 +	case PHY_INTERFACE_MODE_HSGMII:
