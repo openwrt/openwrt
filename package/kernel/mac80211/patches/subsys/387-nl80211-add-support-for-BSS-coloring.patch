@@ -23,8 +23,8 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1253,6 +1253,27 @@ struct cfg80211_csa_settings {
- #define CFG80211_MAX_NUM_DIFFERENT_CHANNELS 10
+@@ -1258,6 +1258,27 @@ struct cfg80211_csa_settings {
+ };
  
  /**
 + * struct cfg80211_color_change_settings - color change settings
@@ -51,7 +51,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * struct iface_combination_params - input parameters for interface combinations
   *
   * Used to pass interface combination parameters
-@@ -3991,6 +4012,8 @@ struct mgmt_frame_regs {
+@@ -4000,6 +4021,8 @@ struct mgmt_frame_regs {
   *	given TIDs. This callback may sleep.
   *
   * @set_sar_specs: Update the SAR (TX power) settings.
@@ -60,7 +60,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  struct cfg80211_ops {
  	int	(*suspend)(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
-@@ -4318,6 +4341,9 @@ struct cfg80211_ops {
+@@ -4327,6 +4350,9 @@ struct cfg80211_ops {
  				    const u8 *peer, u8 tids);
  	int	(*set_sar_specs)(struct wiphy *wiphy,
  				 struct cfg80211_sar_specs *sar);
@@ -70,7 +70,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /*
-@@ -8209,4 +8235,70 @@ void cfg80211_update_owe_info_event(stru
+@@ -8226,4 +8252,70 @@ void cfg80211_update_owe_info_event(stru
   */
  void cfg80211_bss_flush(struct wiphy *wiphy);
  
@@ -210,7 +210,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -5950,6 +5989,9 @@ enum nl80211_feature_flags {
+@@ -5953,6 +5992,9 @@ enum nl80211_feature_flags {
   *      frame protection for all management frames exchanged during the
   *      negotiation and range measurement procedure.
   *
@@ -220,7 +220,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * @NUM_NL80211_EXT_FEATURES: number of extended features.
   * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
   */
-@@ -6014,6 +6056,7 @@ enum nl80211_ext_feature_index {
+@@ -6017,6 +6059,7 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_SECURE_LTF,
  	NL80211_EXT_FEATURE_SECURE_RTT,
  	NL80211_EXT_FEATURE_PROT_RANGE_NEGO_AND_MEASURE,
@@ -241,7 +241,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -14815,6 +14819,106 @@ bad_tid_conf:
+@@ -14823,6 +14827,106 @@ bad_tid_conf:
  	return ret;
  }
  
@@ -348,7 +348,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #define NL80211_FLAG_NEED_WIPHY		0x01
  #define NL80211_FLAG_NEED_NETDEV	0x02
  #define NL80211_FLAG_NEED_RTNL		0x04
-@@ -15815,6 +15919,14 @@ static const struct genl_small_ops nl802
+@@ -15823,6 +15927,14 @@ static const struct genl_small_ops nl802
  		.internal_flags = NL80211_FLAG_NEED_WIPHY |
  				  NL80211_FLAG_NEED_RTNL,
  	},
@@ -363,7 +363,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  static struct genl_family nl80211_fam __genl_ro_after_init = {
-@@ -17446,6 +17558,51 @@ void cfg80211_ch_switch_started_notify(s
+@@ -17454,6 +17566,51 @@ void cfg80211_ch_switch_started_notify(s
  }
  EXPORT_SYMBOL(cfg80211_ch_switch_started_notify);
  
@@ -417,7 +417,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		     const struct cfg80211_chan_def *chandef,
 --- a/net/wireless/rdev-ops.h
 +++ b/net/wireless/rdev-ops.h
-@@ -1358,4 +1358,17 @@ static inline int rdev_set_sar_specs(str
+@@ -1368,4 +1368,17 @@ static inline int rdev_set_sar_specs(str
  	return ret;
  }
  
@@ -437,7 +437,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #endif /* __CFG80211_RDEV_OPS */
 --- a/net/wireless/trace.h
 +++ b/net/wireless/trace.h
-@@ -3565,6 +3565,52 @@ TRACE_EVENT(rdev_set_sar_specs,
+@@ -3597,6 +3597,52 @@ TRACE_EVENT(rdev_set_sar_specs,
  		  WIPHY_PR_ARG, __entry->type, __entry->num)
  );
  

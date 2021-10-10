@@ -117,7 +117,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -1206,7 +1169,7 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1183,7 +1146,7 @@ minstrel_ht_tx_status(void *priv, struct
  	struct ieee80211_tx_info *info = st->info;
  	struct minstrel_ht_sta *mi = priv_sta;
  	struct ieee80211_tx_rate *ar = info->status.rates;
@@ -126,7 +126,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct minstrel_priv *mp = priv;
  	u32 update_interval = mp->update_interval;
  	bool last, update = false;
-@@ -1252,18 +1215,13 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1233,18 +1196,13 @@ minstrel_ht_tx_status(void *priv, struct
  		/*
  		 * check for sudden death of spatial multiplexing,
  		 * downgrade to a lower number of streams if necessary.
