@@ -166,13 +166,9 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
-	lava,lr-25g001|\
-	telewell,tw-4g-lte)
+	lava,lr-25g001)
 		ucidef_add_switch "switch0" \
-			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "0@eth0"
-		ucidef_add_switch "switch1" \
-			"5:lan" "6@eth0"
-		ucidef_add_switch_attr "switch1" "enable" "false"
+			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
 		;;
 	lenovo,newifi-y1|\
 	xiaomi,miwifi-mini)
@@ -292,8 +288,7 @@ ramips_setup_macs()
 	dlink,dwr-921-c1|\
 	dlink,dwr-922-e2|\
 	dlink,dwr-960|\
-	lava,lr-25g001|\
-	telewell,tw-4g-lte)
+	lava,lr-25g001)
 		wan_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
