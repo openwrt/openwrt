@@ -1,5 +1,14 @@
 --- a/nl80211.h
 +++ b/nl80211.h
+@@ -11,7 +11,7 @@
+  * Copyright 2008 Jouni Malinen <jouni.malinen@atheros.com>
+  * Copyright 2008 Colin McCabe <colin@cozybit.com>
+  * Copyright 2015-2017	Intel Deutschland GmbH
+- * Copyright (C) 2018-2020 Intel Corporation
++ * Copyright (C) 2018-2021 Intel Corporation
+  *
+  * Permission to use, copy, modify, and/or distribute this software for any
+  * purpose with or without fee is hereby granted, provided that the above
 @@ -655,6 +655,9 @@
   *	When a security association was established on an 802.1X network using
   *	fast transition, this event should be followed by an
@@ -160,7 +169,24 @@
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -5896,6 +5981,22 @@ enum nl80211_feature_flags {
+@@ -3613,6 +3698,8 @@ enum nl80211_mpath_info {
+  *     defined
+  * @NL80211_BAND_IFTYPE_ATTR_HE_6GHZ_CAPA: HE 6GHz band capabilities (__le16),
+  *	given for all 6 GHz band channels
++ * @NL80211_BAND_IFTYPE_ATTR_VENDOR_ELEMS: vendor element capabilities that are
++ *	advertised on this band/for this iftype (binary)
+  * @__NL80211_BAND_IFTYPE_ATTR_AFTER_LAST: internal use
+  */
+ enum nl80211_band_iftype_attr {
+@@ -3624,6 +3711,7 @@ enum nl80211_band_iftype_attr {
+ 	NL80211_BAND_IFTYPE_ATTR_HE_CAP_MCS_SET,
+ 	NL80211_BAND_IFTYPE_ATTR_HE_CAP_PPE,
+ 	NL80211_BAND_IFTYPE_ATTR_HE_6GHZ_CAPA,
++	NL80211_BAND_IFTYPE_ATTR_VENDOR_ELEMS,
+ 
+ 	/* keep last */
+ 	__NL80211_BAND_IFTYPE_ATTR_AFTER_LAST,
+@@ -5896,6 +5984,22 @@ enum nl80211_feature_flags {
   * @NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP: Driver/device supports
   *	unsolicited broadcast probe response transmission
   *
@@ -183,7 +209,7 @@
   * @NUM_NL80211_EXT_FEATURES: number of extended features.
   * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
   */
-@@ -5956,6 +6057,11 @@ enum nl80211_ext_feature_index {
+@@ -5956,6 +6060,11 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_SAE_OFFLOAD_AP,
  	NL80211_EXT_FEATURE_FILS_DISCOVERY,
  	NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP,
@@ -195,7 +221,7 @@
  
  	/* add new features before the definition below */
  	NUM_NL80211_EXT_FEATURES,
-@@ -6253,11 +6359,13 @@ struct nl80211_vendor_cmd_info {
+@@ -6253,11 +6362,13 @@ struct nl80211_vendor_cmd_info {
   * @NL80211_TDLS_PEER_HT: TDLS peer is HT capable.
   * @NL80211_TDLS_PEER_VHT: TDLS peer is VHT capable.
   * @NL80211_TDLS_PEER_WMM: TDLS peer is WMM capable.
@@ -209,25 +235,29 @@
  };
  
  /**
-@@ -6849,6 +6957,9 @@ enum nl80211_peer_measurement_ftm_capa {
+@@ -6849,6 +6960,12 @@ enum nl80211_peer_measurement_ftm_capa {
   *      if neither %NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED nor
   *	%NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED is set, EDCA based
   *	ranging will be used.
 + * @NL80211_PMSR_FTM_REQ_ATTR_LMR_FEEDBACK: negotiate for LMR feedback. Only
 + *	valid if either %NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED or
 + *	%NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED is set.
++ * @NL80211_PMSR_FTM_REQ_ATTR_BSS_COLOR: optional. The BSS color of the
++ *	responder. Only valid if %NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED
++ *	or %NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED is set.
   *
   * @NUM_NL80211_PMSR_FTM_REQ_ATTR: internal
   * @NL80211_PMSR_FTM_REQ_ATTR_MAX: highest attribute number
-@@ -6867,6 +6978,7 @@ enum nl80211_peer_measurement_ftm_req {
+@@ -6867,6 +6984,8 @@ enum nl80211_peer_measurement_ftm_req {
  	NL80211_PMSR_FTM_REQ_ATTR_REQUEST_CIVICLOC,
  	NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED,
  	NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED,
 +	NL80211_PMSR_FTM_REQ_ATTR_LMR_FEEDBACK,
++	NL80211_PMSR_FTM_REQ_ATTR_BSS_COLOR,
  
  	/* keep last */
  	NUM_NL80211_PMSR_FTM_REQ_ATTR,
-@@ -7124,4 +7236,115 @@ enum nl80211_unsol_bcast_probe_resp_attr
+@@ -7124,4 +7243,115 @@ enum nl80211_unsol_bcast_probe_resp_attr
  	NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX =
  		__NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST - 1
  };

@@ -1,3 +1,4 @@
+From f5a4c24e689f54e66201f04d343bdd2e8a1d7923 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Mon, 23 Aug 2021 20:02:39 +0200
 Subject: [PATCH] mac80211: introduce individual TWT support in AP mode
@@ -24,10 +25,33 @@ Link: https://lore.kernel.org/r/257512f2e22ba42b9f2624942a128dd8f141de4b.1629741
  fix to use ieee80211_get_he_iftype_cap() correctly]
 Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 ---
+ include/net/mac80211.h     |  12 +++
+ net/mac80211/driver-ops.h  |  36 ++++++++
+ net/mac80211/ieee80211_i.h |   6 ++
+ net/mac80211/iface.c       |  41 +++++++++
+ net/mac80211/rx.c          |  73 +++++++++++++++
+ net/mac80211/s1g.c         | 180 +++++++++++++++++++++++++++++++++++++
+ net/mac80211/status.c      |  17 +++-
+ net/mac80211/trace.h       |  67 ++++++++++++++
+ 8 files changed, 430 insertions(+), 2 deletions(-)
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -4229,6 +4229,11 @@ struct ieee80211_ops {
+@@ -3930,6 +3930,13 @@ struct ieee80211_prep_tx_info {
+  * @set_sar_specs: Update the SAR (TX power) settings.
+  * @sta_set_decap_offload: Called to notify the driver when a station is allowed
+  *	to use rx decapsulation offload
++ * @add_twt_setup: Update hw with TWT agreement parameters received from the peer.
++ *	This callback allows the hw to check if requested parameters
++ *	are supported and if there is enough room for a new agreement.
++ *	The hw is expected to set agreement result in the req_type field of
++ *	twt structure.
++ * @twt_teardown_request: Update the hw with TWT teardown request received
++ *	from the peer.
+  */
+ struct ieee80211_ops {
+ 	void (*tx)(struct ieee80211_hw *hw,
+@@ -4253,6 +4260,11 @@ struct ieee80211_ops {
  	void (*sta_set_decap_offload)(struct ieee80211_hw *hw,
  				      struct ieee80211_vif *vif,
  				      struct ieee80211_sta *sta, bool enabled);
@@ -41,7 +65,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  /**
 --- a/net/mac80211/driver-ops.h
 +++ b/net/mac80211/driver-ops.h
-@@ -1429,4 +1429,40 @@ static inline void drv_sta_set_decap_off
+@@ -1447,4 +1447,40 @@ static inline void drv_sta_set_decap_off
  	trace_drv_return_void(local);
  }
  
@@ -92,7 +116,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	u8 needed_rx_chains;
  	enum ieee80211_smps_mode smps_mode;
-@@ -2088,6 +2089,11 @@ ieee80211_he_op_ie_to_bss_conf(struct ie
+@@ -2083,6 +2084,11 @@ ieee80211_he_op_ie_to_bss_conf(struct ie
  
  /* S1G */
  void ieee80211_s1g_sta_rate_init(struct sta_info *sta);
@@ -122,8 +146,25 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	INIT_WORK(&sdata->work, ieee80211_iface_work);
  
  	return 0;
-@@ -1396,6 +1398,24 @@ static void ieee80211_if_setup_no_queue(
- 	dev->priv_flags |= IFF_NO_QUEUE;
+@@ -1459,6 +1461,16 @@ static void ieee80211_iface_process_skb(
+ 			WARN_ON(1);
+ 			break;
+ 		}
++	} else if (ieee80211_is_action(mgmt->frame_control) &&
++		   mgmt->u.action.category == WLAN_CATEGORY_S1G) {
++		switch (mgmt->u.action.u.s1g.action_code) {
++		case WLAN_S1G_TWT_TEARDOWN:
++		case WLAN_S1G_TWT_SETUP:
++			ieee80211_s1g_rx_twt_action(sdata, skb);
++			break;
++		default:
++			break;
++		}
+ 	} else if (ieee80211_is_ext(mgmt->frame_control)) {
+ 		if (sdata->vif.type == NL80211_IFTYPE_STATION)
+ 			ieee80211_sta_rx_queued_ext(sdata, skb);
+@@ -1514,6 +1526,24 @@ static void ieee80211_iface_process_skb(
+ 	}
  }
  
 +static void ieee80211_iface_process_status(struct ieee80211_sub_if_data *sdata,
@@ -147,37 +188,24 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -1474,6 +1494,16 @@ static void ieee80211_iface_work(struct
- 				WARN_ON(1);
- 				break;
- 			}
-+		} else if (ieee80211_is_action(mgmt->frame_control) &&
-+			   mgmt->u.action.category == WLAN_CATEGORY_S1G) {
-+			switch (mgmt->u.action.u.s1g.action_code) {
-+			case WLAN_S1G_TWT_TEARDOWN:
-+			case WLAN_S1G_TWT_SETUP:
-+				ieee80211_s1g_rx_twt_action(sdata, skb);
-+				break;
-+			default:
-+				break;
-+			}
- 		} else if (ieee80211_is_ext(mgmt->frame_control)) {
- 			if (sdata->vif.type == NL80211_IFTYPE_STATION)
- 				ieee80211_sta_rx_queued_ext(sdata, skb);
-@@ -1530,6 +1560,12 @@ static void ieee80211_iface_work(struct
+@@ -1543,6 +1573,16 @@ static void ieee80211_iface_work(struct
  		kcov_remote_stop();
  	}
  
 +	/* process status queue */
 +	while ((skb = skb_dequeue(&sdata->status_queue))) {
++		kcov_remote_start_common(skb_get_kcov_handle(skb));
++
 +		ieee80211_iface_process_status(sdata, skb);
 +		kfree_skb(skb);
++
++		kcov_remote_stop();
 +	}
 +
  	/* then other type-dependent work */
  	switch (sdata->vif.type) {
  	case NL80211_IFTYPE_STATION:
-@@ -1593,6 +1629,7 @@ static void ieee80211_setup_sdata(struct
+@@ -1606,6 +1646,7 @@ static void ieee80211_setup_sdata(struct
  	}
  
  	skb_queue_head_init(&sdata->skb_queue);
@@ -187,7 +215,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	INIT_WORK(&sdata->csa_finalize_work, ieee80211_csa_finalize_work);
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -3198,6 +3198,68 @@ ieee80211_rx_h_mgmt_check(struct ieee802
+@@ -3211,6 +3211,68 @@ ieee80211_rx_h_mgmt_check(struct ieee802
  	return RX_CONTINUE;
  }
  
@@ -256,7 +284,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static ieee80211_rx_result debug_noinline
  ieee80211_rx_h_action(struct ieee80211_rx_data *rx)
  {
-@@ -3477,6 +3539,17 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -3490,6 +3552,17 @@ ieee80211_rx_h_action(struct ieee80211_r
  		    !mesh_path_sel_is_hwmp(sdata))
  			break;
  		goto queue;
@@ -500,7 +528,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		rcu_read_unlock();
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
-@@ -2804,6 +2804,73 @@ DEFINE_EVENT(sta_flag_evt, drv_sta_set_d
+@@ -2825,6 +2825,73 @@ DEFINE_EVENT(sta_flag_evt, drv_sta_set_d
  	TP_ARGS(local, sdata, sta, enabled)
  );
  
