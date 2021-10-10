@@ -20,7 +20,7 @@
   *
   * @NL80211_CMD_SET_MULTICAST_TO_UNICAST: Configure if this AP should perform
   *	multicast to unicast conversion. When enabled, all multicast packets
-@@ -1177,6 +1181,10 @@
+@@ -1177,6 +1181,25 @@
   *	includes the contents of the frame. %NL80211_ATTR_ACK flag is included
   *	if the recipient acknowledged the frame.
   *
@@ -28,19 +28,42 @@
 + *	passed using %NL80211_ATTR_SAR_SPEC. %NL80211_ATTR_WIPHY is used to
 + *	specify the wiphy index to be applied to.
 + *
++ * @NL80211_CMD_OBSS_COLOR_COLLISION: This notification is sent out whenever
++ *	mac80211/drv detects a bss color collision.
++ *
++ * @NL80211_CMD_COLOR_CHANGE_REQUEST: This command is used to indicate that
++ *	userspace wants to change the BSS color.
++ *
++ * @NL80211_CMD_COLOR_CHANGE_STARTED: Notify userland, that a color change has
++ *	started
++ *
++ * @NL80211_CMD_COLOR_CHANGE_ABORTED: Notify userland, that the color change has
++ *	been aborted
++ *
++ * @NL80211_CMD_COLOR_CHANGE_COMPLETED: Notify userland that the color change
++ *	has completed
++ *
   * @NL80211_CMD_MAX: highest used command number
   * @__NL80211_CMD_AFTER_LAST: internal use
   */
-@@ -1407,6 +1415,8 @@ enum nl80211_commands {
+@@ -1407,6 +1430,16 @@ enum nl80211_commands {
  
  	NL80211_CMD_CONTROL_PORT_FRAME_TX_STATUS,
  
 +	NL80211_CMD_SET_SAR_SPECS,
 +
++	NL80211_CMD_OBSS_COLOR_COLLISION,
++
++	NL80211_CMD_COLOR_CHANGE_REQUEST,
++
++	NL80211_CMD_COLOR_CHANGE_STARTED,
++	NL80211_CMD_COLOR_CHANGE_ABORTED,
++	NL80211_CMD_COLOR_CHANGE_COMPLETED,
++
  	/* add new commands above here */
  
  	/* used to define NL80211_CMD_MAX below */
-@@ -1750,8 +1760,9 @@ enum nl80211_commands {
+@@ -1750,8 +1783,9 @@ enum nl80211_commands {
   *	specify just a single bitrate, which is to be used for the beacon.
   *	The driver must also specify support for this with the extended
   *	features NL80211_EXT_FEATURE_BEACON_RATE_LEGACY,
@@ -52,7 +75,7 @@
   *
   * @NL80211_ATTR_FRAME_MATCH: A binary attribute which typically must contain
   *	at least one byte, currently used with @NL80211_CMD_REGISTER_FRAME.
-@@ -1955,8 +1966,15 @@ enum nl80211_commands {
+@@ -1955,8 +1989,15 @@ enum nl80211_commands {
   * @NL80211_ATTR_PROBE_RESP: Probe Response template data. Contains the entire
   *	probe-response frame. The DA field in the 802.11 header is zero-ed out,
   *	to be filled by the FW.
@@ -70,7 +93,7 @@
   * @NL80211_ATTR_HT_CAPABILITY_MASK: Specify which bits of the
   *      ATTR_HT_CAPABILITY to which attention should be paid.
   *      Currently, only mac80211 NICs support this feature.
-@@ -2077,7 +2095,8 @@ enum nl80211_commands {
+@@ -2077,7 +2118,8 @@ enum nl80211_commands {
   *	until the channel switch event.
   * @NL80211_ATTR_CH_SWITCH_BLOCK_TX: flag attribute specifying that transmission
   *	must be blocked on the current channel (before the channel switch
@@ -80,7 +103,7 @@
   * @NL80211_ATTR_CSA_IES: Nested set of attributes containing the IE information
   *	for the time while performing a channel switch.
   * @NL80211_ATTR_CNTDWN_OFFS_BEACON: An array of offsets (u16) to the channel
-@@ -2527,6 +2546,23 @@ enum nl80211_commands {
+@@ -2527,6 +2569,33 @@ enum nl80211_commands {
   *	override mask. Used with NL80211_ATTR_S1G_CAPABILITY in
   *	NL80211_CMD_ASSOCIATE or NL80211_CMD_CONNECT.
   *
@@ -98,13 +121,23 @@
 + *	disassoc events to indicate that an immediate reconnect to the AP
 + *	is desired.
 + *
++ * @NL80211_ATTR_OBSS_COLOR_BITMAP: bitmap of the u64 BSS colors for the
++ *	%NL80211_CMD_OBSS_COLOR_COLLISION event.
++ *
++ * @NL80211_ATTR_COLOR_CHANGE_COUNT: u8 attribute specifying the number of TBTT's
++ *	until the color switch event.
++ * @NL80211_ATTR_COLOR_CHANGE_COLOR: u8 attribute specifying the color that we are
++ *	switching to
++ * @NL80211_ATTR_COLOR_CHANGE_ELEMS: Nested set of attributes containing the IE
++ *	information for the time while performing a color switch.
++ *
 + * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
 + *	transmit power to stay within regulatory limits. u32, dBi.
 + *
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3016,6 +3052,16 @@ enum nl80211_attrs {
+@@ -3016,6 +3085,22 @@ enum nl80211_attrs {
  	NL80211_ATTR_S1G_CAPABILITY,
  	NL80211_ATTR_S1G_CAPABILITY_MASK,
  
@@ -116,12 +149,18 @@
 +
 +	NL80211_ATTR_DISABLE_HE,
 +
++	NL80211_ATTR_OBSS_COLOR_BITMAP,
++
++	NL80211_ATTR_COLOR_CHANGE_COUNT,
++	NL80211_ATTR_COLOR_CHANGE_COLOR,
++	NL80211_ATTR_COLOR_CHANGE_ELEMS,
++
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
 +
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -5896,6 +5942,19 @@ enum nl80211_feature_flags {
+@@ -5896,6 +5981,22 @@ enum nl80211_feature_flags {
   * @NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP: Driver/device supports
   *	unsolicited broadcast probe response transmission
   *
@@ -138,10 +177,13 @@
 + *      frame protection for all management frames exchanged during the
 + *      negotiation and range measurement procedure.
 + *
++ * @NL80211_EXT_FEATURE_BSS_COLOR: The driver supports BSS color collision
++ *	detection and change announcemnts.
++ *
   * @NUM_NL80211_EXT_FEATURES: number of extended features.
   * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
   */
-@@ -5956,6 +6015,10 @@ enum nl80211_ext_feature_index {
+@@ -5956,6 +6057,11 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_SAE_OFFLOAD_AP,
  	NL80211_EXT_FEATURE_FILS_DISCOVERY,
  	NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP,
@@ -149,10 +191,11 @@
 +	NL80211_EXT_FEATURE_SECURE_LTF,
 +	NL80211_EXT_FEATURE_SECURE_RTT,
 +	NL80211_EXT_FEATURE_PROT_RANGE_NEGO_AND_MEASURE,
++	NL80211_EXT_FEATURE_BSS_COLOR,
  
  	/* add new features before the definition below */
  	NUM_NL80211_EXT_FEATURES,
-@@ -6253,11 +6316,13 @@ struct nl80211_vendor_cmd_info {
+@@ -6253,11 +6359,13 @@ struct nl80211_vendor_cmd_info {
   * @NL80211_TDLS_PEER_HT: TDLS peer is HT capable.
   * @NL80211_TDLS_PEER_VHT: TDLS peer is VHT capable.
   * @NL80211_TDLS_PEER_WMM: TDLS peer is WMM capable.
@@ -166,7 +209,7 @@
  };
  
  /**
-@@ -6849,6 +6914,9 @@ enum nl80211_peer_measurement_ftm_capa {
+@@ -6849,6 +6957,9 @@ enum nl80211_peer_measurement_ftm_capa {
   *      if neither %NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED nor
   *	%NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED is set, EDCA based
   *	ranging will be used.
@@ -176,7 +219,7 @@
   *
   * @NUM_NL80211_PMSR_FTM_REQ_ATTR: internal
   * @NL80211_PMSR_FTM_REQ_ATTR_MAX: highest attribute number
-@@ -6867,6 +6935,7 @@ enum nl80211_peer_measurement_ftm_req {
+@@ -6867,6 +6978,7 @@ enum nl80211_peer_measurement_ftm_req {
  	NL80211_PMSR_FTM_REQ_ATTR_REQUEST_CIVICLOC,
  	NL80211_PMSR_FTM_REQ_ATTR_TRIGGER_BASED,
  	NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED,
@@ -184,7 +227,7 @@
  
  	/* keep last */
  	NUM_NL80211_PMSR_FTM_REQ_ATTR,
-@@ -7124,4 +7193,115 @@ enum nl80211_unsol_bcast_probe_resp_attr
+@@ -7124,4 +7236,115 @@ enum nl80211_unsol_bcast_probe_resp_attr
  	NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX =
  		__NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST - 1
  };
