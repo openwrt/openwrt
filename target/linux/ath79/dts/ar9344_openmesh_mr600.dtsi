@@ -96,8 +96,7 @@
 
 	pll-data = <0x02000000 0x00000101 0x00001313>;
 
-	nvmem-cells = <&macaddr_art_0>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&art 0x0>;
 
 	phy-mode = "rgmii-id";
 	phy-handle = <&phy0>;
@@ -114,8 +113,7 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_art_0>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&art 0x0>;
 	mac-address-increment = <1>;
 };
 
@@ -126,18 +124,7 @@
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_art_0>;
-		nvmem-cell-names = "mac-address";
+		mtd-mac-address = <&art 0x0>;
 		mac-address-increment = <8>;
-	};
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
 	};
 };
