@@ -164,18 +164,14 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		} else if (ieee80211_is_ext(mgmt->frame_control)) {
  			if (sdata->vif.type == NL80211_IFTYPE_STATION)
  				ieee80211_sta_rx_queued_ext(sdata, skb);
-@@ -1574,6 +1604,16 @@ static void ieee80211_iface_work(struct
+@@ -1574,6 +1604,12 @@ static void ieee80211_iface_work(struct
  		kfree_skb(skb);
  	}
  
 +	/* process status queue */
 +	while ((skb = skb_dequeue(&sdata->status_queue))) {
-+		kcov_remote_start_common(skb_get_kcov_handle(skb));
-+
 +		ieee80211_iface_process_status(sdata, skb);
 +		kfree_skb(skb);
-+
-+		kcov_remote_stop();
 +	}
 +
  	/* then other type-dependent work */
