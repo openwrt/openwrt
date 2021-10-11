@@ -59,6 +59,12 @@ define U-Boot/sama5d3_xplained_mmc
   BUILD_DEVICES:=microchip_sama5d3-xplained
 endef
 
+define U-Boot/sama5d2_icp_mmc
+  NAME:=SAMA5D2 ICP board (SDCard)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d2-icp
+endef
+
 define U-Boot/sama5d2_xplained_spiflash
   NAME:=SAMA5D2 Xplained board (SPI Flash)
   BUILD_SUBTARGET:=sama5
@@ -119,6 +125,7 @@ UBOOT_TARGETS := \
 	at91sam9x5ek_mmc \
 	sama5d3_xplained_nandflash \
 	sama5d3_xplained_mmc \
+	sama5d2_icp_mmc \
 	sama5d2_xplained_mmc \
 	sama5d2_xplained_spiflash \
 	sama5d4_xplained_mmc \

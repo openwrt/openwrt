@@ -40,6 +40,18 @@ define AT91Bootstrap/at91sam9x5eksd_uboot
   BUILD_DEVICES:=atmel_at91sam9x25ek atmel_at91sam9x35ek
 endef
 
+define AT91Bootstrap/sama5d2_icpdf_qspi_uboot
+  TITLE:=AT91Bootstrap for SAMA5D2 ICP board (QSPI Flash)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d2-icp
+endef
+
+define AT91Bootstrap/sama5d2_icpsd_uboot
+  TITLE:=AT91Bootstrap for SAMA5D2 ICP board (SDcard)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d2-icp
+endef
+
 define AT91Bootstrap/sama5d2_xplaineddf_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 Xplained board (SPI Flash)
   BUILD_SUBTARGET:=sama5
@@ -121,6 +133,8 @@ endef
 AT91BOOTSTRAP_TARGETS := \
 	at91sam9x5eknf_uboot \
 	at91sam9x5eksd_uboot \
+	sama5d2_icpdf_qspi_uboot \
+	sama5d2_icpsd_uboot \
 	sama5d2_xplaineddf_uboot \
 	sama5d2_xplaineddf_qspi_uboot \
 	sama5d2_xplainedsd_uboot \

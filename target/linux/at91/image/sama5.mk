@@ -54,6 +54,17 @@ define Build/at91-sdcard
   rm -f $@.img $@.boot $@-uboot.env $@-uboot-env.txt)
 endef
 
+define Device/microchip_sama5d2-icp
+  $(Device/evaluation-dtb)
+  DEVICE_VENDOR := Microchip
+  DEVICE_MODEL := SAMA5D2 ICP
+  DEVICE_DTS := at91-sama5d2_icp
+  SUPPORTED_DEVICES := microchip,sama5d2-icp
+  KERNEL_SIZE := 6144k
+  $(Device/evaluation-sdimage)
+endef
+TARGET_DEVICES += microchip_sama5d2-icp
+
 define Device/microchip_sama5d2-xplained
   $(Device/evaluation-dtb)
   DEVICE_VENDOR := Microchip
