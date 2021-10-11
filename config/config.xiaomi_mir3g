@@ -1659,7 +1659,10 @@ CONFIG_PACKAGE_procd=y
 # CONFIG_PACKAGE_qos-scripts is not set
 # CONFIG_PACKAGE_refpolicy is not set
 # CONFIG_PACKAGE_resolveip is not set
-# CONFIG_PACKAGE_rpcd is not set
+CONFIG_PACKAGE_rpcd=y
+CONFIG_PACKAGE_rpcd-mod-file=y
+CONFIG_PACKAGE_rpcd-mod-iwinfo=y
+# CONFIG_PACKAGE_rpcd-mod-rpcsys is not set
 # CONFIG_PACKAGE_selinux-policy is not set
 # CONFIG_PACKAGE_snapshot-tool is not set
 # CONFIG_PACKAGE_sqm-scripts is not set
@@ -2859,11 +2862,11 @@ CONFIG_GOLANG_BUILD_CACHE_DIR=""
 # CONFIG_PACKAGE_dkjson is not set
 # CONFIG_PACKAGE_json4lua is not set
 # CONFIG_PACKAGE_ldbus is not set
-# CONFIG_PACKAGE_libiwinfo-lua is not set
+CONFIG_PACKAGE_libiwinfo-lua=y
 # CONFIG_PACKAGE_linotify is not set
 # CONFIG_PACKAGE_lpeg is not set
 # CONFIG_PACKAGE_lsqlite3 is not set
-# CONFIG_PACKAGE_lua is not set
+CONFIG_PACKAGE_lua=y
 # CONFIG_PACKAGE_lua-argparse is not set
 # CONFIG_PACKAGE_lua-bencode is not set
 # CONFIG_PACKAGE_lua-bit32 is not set
@@ -2871,6 +2874,7 @@ CONFIG_GOLANG_BUILD_CACHE_DIR=""
 # CONFIG_PACKAGE_lua-copas is not set
 # CONFIG_PACKAGE_lua-coxpcall is not set
 # CONFIG_PACKAGE_lua-ev is not set
+# CONFIG_PACKAGE_lua-examples is not set
 # CONFIG_PACKAGE_lua-libmodbus is not set
 # CONFIG_PACKAGE_lua-lzlib is not set
 # CONFIG_PACKAGE_lua-md5 is not set
@@ -3938,10 +3942,10 @@ CONFIG_PACKAGE_libjson-c=y
 # CONFIG_PACKAGE_libleptonica is not set
 # CONFIG_PACKAGE_libloragw is not set
 # CONFIG_PACKAGE_libltdl is not set
-# CONFIG_PACKAGE_liblua is not set
+CONFIG_PACKAGE_liblua=y
 # CONFIG_PACKAGE_liblua5.3 is not set
-# CONFIG_PACKAGE_liblucihttp is not set
-# CONFIG_PACKAGE_liblucihttp-lua is not set
+CONFIG_PACKAGE_liblucihttp=y
+CONFIG_PACKAGE_liblucihttp-lua=y
 # CONFIG_PACKAGE_liblzo is not set
 # CONFIG_PACKAGE_libmad is not set
 # CONFIG_PACKAGE_libmagic is not set
@@ -4100,7 +4104,7 @@ CONFIG_PACKAGE_libnl-tiny=y
 CONFIG_PACKAGE_libubox=y
 # CONFIG_PACKAGE_libubox-lua is not set
 CONFIG_PACKAGE_libubus=y
-# CONFIG_PACKAGE_libubus-lua is not set
+CONFIG_PACKAGE_libubus-lua=y
 CONFIG_PACKAGE_libuci=y
 # CONFIG_PACKAGE_libuci-lua is not set
 # CONFIG_PACKAGE_libuci2 is not set
@@ -4163,9 +4167,9 @@ CONFIG_PACKAGE_libustream-wolfssl=y
 # CONFIG_PACKAGE_protobuf-lite is not set
 # CONFIG_PACKAGE_pthsem is not set
 # CONFIG_PACKAGE_re2 is not set
-# CONFIG_PACKAGE_rpcd-mod-luci is not set
+CONFIG_PACKAGE_rpcd-mod-luci=y
 # CONFIG_PACKAGE_rpcd-mod-rad2-enc is not set
-# CONFIG_PACKAGE_rpcd-mod-rrdns is not set
+CONFIG_PACKAGE_rpcd-mod-rrdns=y
 # CONFIG_PACKAGE_sbc is not set
 # CONFIG_PACKAGE_serdisplib is not set
 # CONFIG_PACKAGE_terminfo is not set
@@ -4187,7 +4191,7 @@ CONFIG_PACKAGE_libustream-wolfssl=y
 #
 # 1. Collections
 #
-# CONFIG_PACKAGE_luci is not set
+CONFIG_PACKAGE_luci=y
 # CONFIG_PACKAGE_luci-nginx is not set
 # CONFIG_PACKAGE_luci-ssl is not set
 # CONFIG_PACKAGE_luci-ssl-nginx is not set
@@ -4197,7 +4201,7 @@ CONFIG_PACKAGE_libustream-wolfssl=y
 #
 # 2. Modules
 #
-# CONFIG_PACKAGE_luci-base is not set
+CONFIG_PACKAGE_luci-base=y
 # CONFIG_LUCI_SRCDIET is not set
 CONFIG_LUCI_JSMIN=y
 CONFIG_LUCI_CSSTIDY=y
@@ -4241,14 +4245,14 @@ CONFIG_LUCI_LANG_zh_Hans=y
 # end of Translations
 
 # CONFIG_PACKAGE_luci-compat is not set
-# CONFIG_PACKAGE_luci-mod-admin-full is not set
+CONFIG_PACKAGE_luci-mod-admin-full=y
 # CONFIG_PACKAGE_luci-mod-battstatus is not set
 # CONFIG_PACKAGE_luci-mod-dashboard is not set
 # CONFIG_PACKAGE_luci-mod-failsafe is not set
-# CONFIG_PACKAGE_luci-mod-network is not set
+CONFIG_PACKAGE_luci-mod-network=y
 # CONFIG_PACKAGE_luci-mod-rpc is not set
-# CONFIG_PACKAGE_luci-mod-status is not set
-# CONFIG_PACKAGE_luci-mod-system is not set
+CONFIG_PACKAGE_luci-mod-status=y
+CONFIG_PACKAGE_luci-mod-system=y
 # end of 2. Modules
 
 #
@@ -4257,8 +4261,6 @@ CONFIG_LUCI_LANG_zh_Hans=y
 # CONFIG_PACKAGE_luci-app-acl is not set
 # CONFIG_PACKAGE_luci-app-acme is not set
 # CONFIG_PACKAGE_luci-app-adblock is not set
-CONFIG_PACKAGE_luci-app-adguardhome=y
-# CONFIG_PACKAGE_luci-app-openclash is not set
 # CONFIG_PACKAGE_luci-app-advanced-reboot is not set
 # CONFIG_PACKAGE_luci-app-ahcp is not set
 # CONFIG_PACKAGE_luci-app-aria2 is not set
@@ -4282,7 +4284,7 @@ CONFIG_PACKAGE_luci-app-adguardhome=y
 # CONFIG_PACKAGE_luci-app-dump1090 is not set
 # CONFIG_PACKAGE_luci-app-dynapoint is not set
 # CONFIG_PACKAGE_luci-app-eoip is not set
-# CONFIG_PACKAGE_luci-app-firewall is not set
+CONFIG_PACKAGE_luci-app-firewall=y
 # CONFIG_PACKAGE_luci-app-frpc is not set
 # CONFIG_PACKAGE_luci-app-frps is not set
 # CONFIG_PACKAGE_luci-app-fwknopd is not set
@@ -4354,7 +4356,7 @@ CONFIG_PACKAGE_luci-app-opkg=y
 #
 # 4. Themes
 #
-# CONFIG_PACKAGE_luci-theme-bootstrap is not set
+CONFIG_PACKAGE_luci-theme-bootstrap=y
 # CONFIG_PACKAGE_luci-theme-material is not set
 # CONFIG_PACKAGE_luci-theme-openwrt is not set
 CONFIG_PACKAGE_luci-theme-openwrt-2020=y
@@ -4386,17 +4388,17 @@ CONFIG_PACKAGE_luci-proto-ppp=y
 #
 # 6. Libraries
 #
-# CONFIG_PACKAGE_luci-lib-base is not set
+CONFIG_PACKAGE_luci-lib-base=y
 # CONFIG_PACKAGE_luci-lib-dracula is not set
 # CONFIG_PACKAGE_luci-lib-httpclient is not set
 # CONFIG_PACKAGE_luci-lib-httpprotoutils is not set
-# CONFIG_PACKAGE_luci-lib-ip is not set
+CONFIG_PACKAGE_luci-lib-ip=y
 # CONFIG_PACKAGE_luci-lib-ipkg is not set
 # CONFIG_PACKAGE_luci-lib-iptparser is not set
 # CONFIG_PACKAGE_luci-lib-jquery-1-4 is not set
 # CONFIG_PACKAGE_luci-lib-json is not set
-# CONFIG_PACKAGE_luci-lib-jsonc is not set
-# CONFIG_PACKAGE_luci-lib-nixio is not set
+CONFIG_PACKAGE_luci-lib-jsonc=y
+CONFIG_PACKAGE_luci-lib-nixio=y
 CONFIG_PACKAGE_luci-lib-nixio_notls=y
 # CONFIG_PACKAGE_luci-lib-nixio_axtls is not set
 # CONFIG_PACKAGE_luci-lib-nixio_cyassl is not set
@@ -4404,6 +4406,71 @@ CONFIG_PACKAGE_luci-lib-nixio_notls=y
 # CONFIG_PACKAGE_luci-lib-px5g is not set
 # end of 6. Libraries
 
+# CONFIG_PACKAGE_luci-i18n-base-ar is not set
+# CONFIG_PACKAGE_luci-i18n-base-bg is not set
+# CONFIG_PACKAGE_luci-i18n-base-bn is not set
+# CONFIG_PACKAGE_luci-i18n-base-ca is not set
+# CONFIG_PACKAGE_luci-i18n-base-cs is not set
+# CONFIG_PACKAGE_luci-i18n-base-de is not set
+# CONFIG_PACKAGE_luci-i18n-base-el is not set
+# CONFIG_PACKAGE_luci-i18n-base-en is not set
+# CONFIG_PACKAGE_luci-i18n-base-es is not set
+# CONFIG_PACKAGE_luci-i18n-base-fi is not set
+# CONFIG_PACKAGE_luci-i18n-base-fr is not set
+# CONFIG_PACKAGE_luci-i18n-base-he is not set
+# CONFIG_PACKAGE_luci-i18n-base-hi is not set
+# CONFIG_PACKAGE_luci-i18n-base-hu is not set
+# CONFIG_PACKAGE_luci-i18n-base-it is not set
+# CONFIG_PACKAGE_luci-i18n-base-ja is not set
+# CONFIG_PACKAGE_luci-i18n-base-ko is not set
+# CONFIG_PACKAGE_luci-i18n-base-mr is not set
+# CONFIG_PACKAGE_luci-i18n-base-ms is not set
+# CONFIG_PACKAGE_luci-i18n-base-nl is not set
+# CONFIG_PACKAGE_luci-i18n-base-no is not set
+# CONFIG_PACKAGE_luci-i18n-base-pl is not set
+# CONFIG_PACKAGE_luci-i18n-base-pt is not set
+# CONFIG_PACKAGE_luci-i18n-base-pt-br is not set
+# CONFIG_PACKAGE_luci-i18n-base-ro is not set
+# CONFIG_PACKAGE_luci-i18n-base-ru is not set
+# CONFIG_PACKAGE_luci-i18n-base-sk is not set
+# CONFIG_PACKAGE_luci-i18n-base-sv is not set
+# CONFIG_PACKAGE_luci-i18n-base-tr is not set
+# CONFIG_PACKAGE_luci-i18n-base-uk is not set
+# CONFIG_PACKAGE_luci-i18n-base-vi is not set
+CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
+# CONFIG_PACKAGE_luci-i18n-base-zh-tw is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-ar is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-bg is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-bn is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-ca is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-cs is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-de is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-el is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-en is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-es is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-fi is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-fr is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-he is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-hi is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-hu is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-it is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-ja is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-ko is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-mr is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-ms is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-no is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-pl is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-pt is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-pt-br is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-ro is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-ru is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-sk is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-sv is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-tr is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-uk is not set
+# CONFIG_PACKAGE_luci-i18n-firewall-vi is not set
+CONFIG_PACKAGE_luci-i18n-firewall-zh-cn=y
+# CONFIG_PACKAGE_luci-i18n-firewall-zh-tw is not set
 # CONFIG_PACKAGE_luci-i18n-opkg-ar is not set
 # CONFIG_PACKAGE_luci-i18n-opkg-bg is not set
 # CONFIG_PACKAGE_luci-i18n-opkg-bn is not set
@@ -5139,7 +5206,7 @@ CONFIG_OPENLDAP_DEBUG=y
 # Web Servers/Proxies
 #
 # CONFIG_PACKAGE_apache is not set
-# CONFIG_PACKAGE_cgi-io is not set
+CONFIG_PACKAGE_cgi-io=y
 # CONFIG_PACKAGE_clamav is not set
 # CONFIG_PACKAGE_etebase is not set
 # CONFIG_PACKAGE_freshclam is not set
@@ -5175,7 +5242,9 @@ CONFIG_OPENLDAP_DEBUG=y
 # CONFIG_PACKAGE_spawn-fcgi is not set
 # CONFIG_PACKAGE_squid is not set
 # CONFIG_PACKAGE_tinyproxy is not set
-# CONFIG_PACKAGE_uhttpd is not set
+CONFIG_PACKAGE_uhttpd=y
+# CONFIG_PACKAGE_uhttpd-mod-lua is not set
+CONFIG_PACKAGE_uhttpd-mod-ubus=y
 # CONFIG_PACKAGE_uwsgi is not set
 # end of Web Servers/Proxies
 
