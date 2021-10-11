@@ -118,6 +118,18 @@ define AT91Bootstrap/sama5d27_som1_ekqspi_uboot
   BUILD_DEVICES:=microchip_sama5d27-som1-ek
 endef
 
+define AT91Bootstrap/sama5d27_wlsom1_eksd_uboot
+  TITLE:=AT91Bootstrap for SAMA5D27 WLSOM1 Ek (SDcard0)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d27-wlsom1-ek
+endef
+
+define AT91Bootstrap/sama5d27_wlsom1_ekdf_qspi_uboot
+  TITLE:=AT91Bootstrap for SAMA5D27 WLSOM1 Ek (QSPI Flash)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d27-wlsom1-ek
+endef
+
 define AT91Bootstrap/sama5d2_ptc_eknf_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 PTC EK (Nand Flash)
   BUILD_SUBTARGET:=sama5
@@ -145,6 +157,8 @@ AT91BOOTSTRAP_TARGETS := \
 	sama5d4_xplainedsd_uboot_secure \
 	sama5d27_som1_eksd1_uboot \
 	sama5d27_som1_ekqspi_uboot \
+	sama5d27_wlsom1_eksd_uboot \
+	sama5d27_wlsom1_ekdf_qspi_uboot \
 	sama5d2_ptc_eknf_uboot \
 	sama5d2_ptc_eksd_uboot
 

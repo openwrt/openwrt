@@ -87,6 +87,17 @@ define Device/microchip_sama5d27-som1-ek
 endef
 TARGET_DEVICES += microchip_sama5d27-som1-ek
 
+define Device/microchip_sama5d27-wlsom1-ek
+  $(Device/evaluation-dtb)
+  DEVICE_VENDOR := Microchip
+  DEVICE_MODEL := SAMA5D27 WSOM1 Ek
+  DEVICE_DTS := at91-sama5d27_wlsom1_ek
+  SUPPORTED_DEVICES := microchip,sama5d27-wlsom1-ek
+  KERNEL_SIZE := 6144k
+  $(Device/evaluation-sdimage)
+endef
+TARGET_DEVICES += microchip_sama5d27-wlsom1-ek
+
 define Device/microchip_sama5d2-ptc-ek
   $(Device/evaluation-dtb)
   DEVICE_VENDOR := Microchip
