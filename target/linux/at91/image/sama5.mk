@@ -104,6 +104,7 @@ ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
     $(Device/evaluation-fit)
     DEVICE_VENDOR := Laird
     DEVICE_MODEL := WB50N
+    DEVICE_DTS := at91-wb50n
     DEVICE_PACKAGES := \
 	  kmod-mmc-at91 kmod-ath6kl-sdio ath6k-firmware \
 	  kmod-usb-storage kmod-fs-vfat kmod-fs-msdos \

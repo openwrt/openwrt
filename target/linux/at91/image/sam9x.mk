@@ -194,6 +194,7 @@ define Device/laird_wb45n
   $(Device/evaluation-fit)
   DEVICE_VENDOR := Laird
   DEVICE_MODEL := WB45N
+  DEVICE_DTS := at91-wb45n
   DEVICE_PACKAGES := \
 	kmod-mmc-at91 kmod-ath6kl-sdio ath6k-firmware \
 	kmod-usb-storage kmod-fs-vfat kmod-fs-msdos \
