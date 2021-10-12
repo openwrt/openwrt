@@ -150,15 +150,15 @@ define Download/cryptopp
 endef
 
 MV_DDR_NAME:=mv-ddr-marvell
-MV_DDR_RELEASE:=02e23dbc
+MV_DDR_RELEASE:=efcad0e2
 MV_DDR_SOURCE:=$(MV_DDR_NAME)-$(MV_DDR_RELEASE).tar.bz2
 
 define Download/mv-ddr-marvell
   FILE:=$(MV_DDR_SOURCE)
   PROTO:=git
   URL:=https://github.com/MarvellEmbeddedProcessors/mv-ddr-marvell.git
-  VERSION:=02e23dbcf8dd22e038986052d99319a0eba8f25f
-  MIRROR_HASH:=d87dcc288b3895d1a1a78908fc607976d500b317ef81edfe667035579df0b440
+  VERSION:=efcad0e2fae66a8b6f84a4dd2326f5add67569d5
+  MIRROR_HASH:=99363f928ee1239fd42d651b495d163a60cdab00c24770a3c5e192efa7169d62
   SUBDIR:=$(MV_DDR_NAME)
 endef
 
