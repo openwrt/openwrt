@@ -150,8 +150,8 @@ xwrt,ms1201k)
 	;;
 xwrt,wr1800k-ax-norplusemmc|\
 xwrt,wr1800k-ax-nor)
-	ucidef_set_led_netdev "wan" "wan" "ether:blue" "wan"
-	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "wlan:green" "wlan0"
+	ucidef_set_led_netdev "wan" "wan" "ether:blue" "wan" "link"
+	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "wlan:green" "wlan0" "link"
 	;;
 xiaomi,mi-router-ac2100)
 	ucidef_set_led_switch "wan-blue" "WAN (blue)" "blue:wan" "switch0" "0x1"
