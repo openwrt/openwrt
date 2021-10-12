@@ -12,9 +12,9 @@ PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
-PKG_SOURCE_DATE:=2021-09-15
-PKG_SOURCE_VERSION:=1eb4371e2534296d04580cb8b9cb5baa5f07e27d
-PKG_MIRROR_HASH:=d0e61032482eebb225ffbca8034b3d838eaa3db0dcd9b0166e106e729ce5320c
+PKG_SOURCE_DATE:=2021-10-13
+PKG_SOURCE_VERSION:=82dd39024f63e53becd07c89831ed7d5fac7f339
+PKG_MIRROR_HASH:=a9449894b4ce0b2860680c1691270d5fe9c84e4eecd48008ed732ef2d19af7db
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -68,7 +68,7 @@ define Package/procd-ujail
   SECTION:=base
   CATEGORY:=Base system
   DEPENDS:=@KERNEL_NAMESPACES +@KERNEL_UTS_NS +@KERNEL_IPC_NS +@KERNEL_PID_NS \
-	  +libubox +libubus +libblobmsg-json
+	  +libubox +libubus +libuci +libblobmsg-json
   TITLE:=OpenWrt process jail helper
 endef
 
