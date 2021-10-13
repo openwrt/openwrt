@@ -1,7 +1,0 @@
-#!/bin/sh
-
-[ "$ACTION" == "ifup" ] || exit 0
-
-[ "$INTERFACE" = "wan" -a "$(uci get chilli.@chilli[-1].disabled)" -neq 0 ] && {
-	/etc/init.d/chilli restart
-}

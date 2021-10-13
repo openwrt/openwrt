@@ -1,4 +1,0 @@
-[ ifup = "$ACTION" ] && {
-	ip-collide
-	[ $? -eq 0 ] || ubus call ucentral send '{"msg": "ip/domain collision detected", "severity": 3}'
-}

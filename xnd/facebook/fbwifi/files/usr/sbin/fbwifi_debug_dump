@@ -1,8 +1,0 @@
-echo -e "Runtime configuration and token DB\n"
-uci -c /var/state export fbwifi
-
-echo -e "\nDynamic firewall flow rules\n"
-iptables -t mangle -L FBWIFI_CLIENT_TO_INTERNET
-
-echo -e "\nDHCP leases\n"
-cat /tmp/dhcp.leases
