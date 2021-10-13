@@ -736,6 +736,17 @@ define Device/iodata_wnpr2600g
 endef
 TARGET_DEVICES += iodata_wnpr2600g
 
+define Device/iptime_a3004ns-dual
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16128k
+  UIMAGE_NAME := a3004nd
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A3004NS-dual
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt76x2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += iptime_a3004ns-dual
+
 define Device/iptime_a6ns-m
   $(Device/dsa-migration)
   IMAGE_SIZE := 16128k
