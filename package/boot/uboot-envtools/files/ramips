@@ -134,6 +134,13 @@ xiaomi,mi-router-cr6609)
 	;;
 esac
 
+case "$board" in
+xwrt,wr1800k-ax-norplusemmc|\
+xwrt,wr1800k-ax-nor)
+	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x10000" "0x10000"
+	;;
+esac
+
 config_load ubootenv
 config_foreach ubootenv_add_app_config
 
