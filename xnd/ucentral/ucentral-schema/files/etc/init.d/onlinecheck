@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+USE_PROCD=1
+PROG=/usr/bin/ucode
+
+start_service() {
+	local interval=$(uci get onlinecheck.@config.check_interval)
+	procd_open_instance
+	procd_set_param command "$PROG" -m uci -m fs -i /usr/share/ucentral/onlinecheck.uc
+	procd_set_param respawn 1 $interval 0
+	procd_close_instance
+}

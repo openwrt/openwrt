@@ -1,0 +1,45 @@
+From 5bf167984d6db67389ff597ca2a45d176224e17d Mon Sep 17 00:00:00 2001
+From: Maharaja Kennadyrajan <mkenna@codeaurora.org>
+Date: Mon, 26 Apr 2021 18:32:07 +0530
+Subject: [PATCH] ath11k: Add vdev start flag to disable hardware encryption
+
+Enable WMI_VDEV_START_HW_ENCRYPTION_DISABLED flag in
+vdev_start cmd to notify firmware to disable hardware
+encryption for a vdev. This is set if raw mode software
+encryption is enabled.
+
+Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 3 +++
+ drivers/net/wireless/ath/ath11k/wmi.h | 1 +
+ 2 files changed, 4 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 1fbba1b..26f5d8c 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -984,6 +984,9 @@ int ath11k_wmi_vdev_start(struct ath11k *ar, struct wmi_vdev_start_req_arg *arg,
+ 
+ 	cmd->flags |= WMI_VDEV_START_LDPC_RX_ENABLED;
+ 
++	if (test_bit(ATH11K_FLAG_HW_CRYPTO_DISABLED, &ar->ab->dev_flags))
++		cmd->flags |= WMI_VDEV_START_HW_ENCRYPTION_DISABLED;
++
+ 	ptr = skb->data + sizeof(*cmd);
+ 	chan = ptr;
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.h b/drivers/net/wireless/ath/ath11k/wmi.h
+index d74128f..23c704d 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -2715,6 +2715,7 @@ struct wmi_vdev_down_cmd {
+ #define WMI_VDEV_START_HIDDEN_SSID  BIT(0)
+ #define WMI_VDEV_START_PMF_ENABLED  BIT(1)
+ #define WMI_VDEV_START_LDPC_RX_ENABLED BIT(3)
++#define WMI_VDEV_START_HW_ENCRYPTION_DISABLED BIT(4)
+ 
+ struct wmi_ssid {
+ 	u32 ssid_len;
+-- 
+2.7.4
+

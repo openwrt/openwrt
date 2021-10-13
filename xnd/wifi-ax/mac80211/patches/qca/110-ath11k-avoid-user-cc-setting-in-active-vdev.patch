@@ -1,0 +1,54 @@
+--- a/drivers/net/wireless/ath/ath11k/reg.c
++++ b/drivers/net/wireless/ath/ath11k/reg.c
+@@ -41,6 +41,37 @@ static bool ath11k_regdom_changes(struct
+ 	return memcmp(regd->alpha2, alpha2, 2) != 0;
+ }
+ 
++static bool ath11k_reg_validate_pdev_state(struct ath11k* ar)
++{
++	struct ath11k_base *ab = ar->ab;
++	struct ath11k_pdev *pdev;
++	struct ath11k* tmp_ar;
++	int i;
++
++	rcu_read_lock();
++	for (i = 0; i < ab->num_radios; i++) {
++		pdev = rcu_dereference(ab->pdevs_active[i]);
++		if (!pdev)
++			continue;
++
++		tmp_ar = pdev->ar;
++		if (tmp_ar) {
++			mutex_lock(&tmp_ar->conf_mutex);
++			if (tmp_ar->num_started_vdevs) {
++				if (tmp_ar == ar)
++					ath11k_warn(ab, "%s has active interface, please bring down to set country code",
++						    wiphy_name(ar->hw->wiphy));
++				mutex_unlock(&tmp_ar->conf_mutex);
++				rcu_read_unlock();
++				return false;
++			}
++			mutex_unlock(&tmp_ar->conf_mutex);
++		}
++	}
++	rcu_read_unlock();
++	return true;
++}
++
+ static void
+ ath11k_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
+ {
+@@ -74,6 +105,13 @@ ath11k_reg_notifier(struct wiphy *wiphy,
+ 		return;
+ 	}
+ 
++	/* The SET_INIT_COUNTRY command should not be sent to firmware while any vdev is active.
++	 * Also it does not make sense to give the command for certain pdev's alone.
++	 * Hence check all the pdev's if any have an active vdev before sending the command.
++	 */
++	if (!ath11k_reg_validate_pdev_state(ar))
++		return;
++
+ 	/* Set the country code to the firmware and wait for
+ 	 * the WMI_REG_CHAN_LIST_CC EVENT for updating the
+ 	 * reg info

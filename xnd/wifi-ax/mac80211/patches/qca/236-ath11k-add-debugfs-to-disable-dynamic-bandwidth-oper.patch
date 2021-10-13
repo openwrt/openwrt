@@ -1,0 +1,105 @@
+From 804e9b7fb356ead474a64f036ac227fef6ad8bbc Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Thu, 21 Jan 2021 11:53:43 -0800
+Subject: [PATCH] ath11k: add debugfs to disable dynamic bandwidth operation
+
+Bydefault dynamic bandwidth operation is enabled. Setting this debugfs
+to 1 disables it.
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h  |  1 +
+ drivers/net/wireless/ath/ath11k/debugfs.c | 65 +++++++++++++++++++++++++
+ 2 files changed, 66 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -524,6 +524,7 @@ struct ath11k_debug {
+ 	struct completion wmi_ctrl_path_stats_rcvd;
+ 	u32 wmi_ctrl_path_stats_tagid;
+ 	struct ath11k_db_module_debug *module_debug[WMI_DIRECT_BUF_MAX];
++	bool disable_dynamic_bw;
+ };
+ 
+ struct ath11k_per_peer_tx_stats {
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -3478,6 +3478,68 @@ static const struct file_operations fops
+ 	.llseek = default_llseek,
+ };
+ 
++static ssize_t ath11k_write_disable_dynamic_bw(struct file *file,
++					       const char __user *ubuf,
++					       size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	u32 filter;
++	int ret;
++
++	if (kstrtouint_from_user(ubuf, count, 0, &filter))
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (ar->state != ATH11K_STATE_ON) {
++		ret = -ENETDOWN;
++		goto out;
++	}
++
++	if (filter == ar->debug.disable_dynamic_bw) {
++		ret = count;
++		goto out;
++	}
++
++	ret = ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_DYNAMIC_BW, !filter,
++					ar->pdev->pdev_id);
++	if (ret) {
++		ath11k_err(ar->ab, "failed to %s dynamic bw: %d\n",
++			   filter ? "disable" : "enable", ret);
++		goto out;
++	}
++
++	ar->debug.disable_dynamic_bw = filter;
++	ret = count;
++
++out:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static ssize_t ath11k_read_disable_dynamic_bw(struct file *file,
++					      char __user *ubuf,
++					      size_t count, loff_t *ppos)
++
++{
++	char buf[32] = {0};
++	struct ath11k *ar = file->private_data;
++	int len = 0;
++
++	mutex_lock(&ar->conf_mutex);
++	len = scnprintf(buf, sizeof(buf) - len, "%08x\n",
++			ar->debug.disable_dynamic_bw);
++	mutex_unlock(&ar->conf_mutex);
++
++	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops_disable_dyn_bw = {
++	.read = ath11k_read_disable_dynamic_bw,
++	.write = ath11k_write_disable_dynamic_bw,
++	.open = simple_open
++};
++
+ int ath11k_debugfs_register(struct ath11k *ar)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+@@ -3527,6 +3589,9 @@ int ath11k_debugfs_register(struct ath11
+ 	debugfs_create_file("dump_mgmt_stats", 0644,
+ 			    ar->debug.debugfs_pdev, ar,
+ 			    &fops_dump_mgmt_stats);
++	debugfs_create_file("disable_dynamic_bw", 0644,
++			    ar->debug.debugfs_pdev, ar,
++			    &fops_disable_dyn_bw);
+ 
+ 	debugfs_create_file("ps_state_enable", 0600, ar->debug.debugfs_pdev, ar,
+ 			    &fops_ps_state_enable);

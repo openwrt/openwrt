@@ -1,0 +1,41 @@
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -4235,6 +4235,8 @@ static int hostapd_config_fill(struct ho
+ 	} else if (os_strcmp(buf, "wowlan_triggers") == 0) {
+ 		os_free(bss->wowlan_triggers);
+ 		bss->wowlan_triggers = os_strdup(pos);
++	} else if (os_strcmp(buf, "disable_40mhz_scan") == 0) {
++		conf->disable_40mhz_scan = atoi(pos);
+ #ifdef CONFIG_FST
+ 	} else if (os_strcmp(buf, "fst_group_id") == 0) {
+ 		size_t len = os_strlen(pos);
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -1018,6 +1018,7 @@ struct hostapd_config {
+ 	} *acs_chan_bias;
+ 	unsigned int num_acs_chan_bias;
+ #endif /* CONFIG_ACS */
++	int disable_40mhz_scan;
+ 
+ 	struct wpabuf *lci;
+ 	struct wpabuf *civic;
+--- a/src/ap/hw_features.c
++++ b/src/ap/hw_features.c
+@@ -696,9 +696,14 @@ int hostapd_check_ht_capab(struct hostap
+ 	    !ieee80211ac_supported_vht_capab(iface))
+ 		return -1;
+ #endif /* CONFIG_IEEE80211AC */
+-	ret = ieee80211n_check_40mhz(iface);
+-	if (ret)
+-		return ret;
++	if (!iface->conf->disable_40mhz_scan) {
++		ret = ieee80211n_check_40mhz(iface);
++		if (ret)
++			return ret;
++	} else {
++		wpa_printf(MSG_INFO, "%s:40mhz scan disabled",
++		iface->conf->bss[0]->iface);
++	}
+ 	if (!ieee80211n_allowed_ht40_channel_pair(iface))
+ 		return -1;
+ 

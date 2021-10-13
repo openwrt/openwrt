@@ -1,0 +1,22 @@
+From 7e91e58668d316dd7ea7bc69c0040b7d60214b57 Mon Sep 17 00:00:00 2001
+From: Tamizh Chelvam <tamizhr@codeaurora.org>
+Date: Tue, 9 Mar 2021 10:20:47 +0530
+Subject: [PATCH] hostap: Add changes to fix compilation errors
+
+Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
+---
+ src/ap/beacon.c              | 2 +-
+ src/drivers/driver_nl80211.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -5170,7 +5170,7 @@ static int wpa_driver_nl80211_sta_add(vo
+ 
+ 		if (params->he_6ghz_capab) {
+ 			wpa_hexdump(MSG_DEBUG, "  * he_6ghz_capab",
+-				    params->he_6ghz_capab,
++				    (u8 *) params->he_6ghz_capab,
+ 				    sizeof(*params->he_6ghz_capab));
+ 			if (nla_put(msg, NL80211_ATTR_HE_6GHZ_CAPABILITY,
+ 				    sizeof(*params->he_6ghz_capab),

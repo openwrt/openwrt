@@ -1,0 +1,229 @@
+From 7c79ef90001929dfa9f150135d672e7105a5ef44 Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Tue, 9 Feb 2021 16:51:13 -0800
+Subject: [PATCH 4/4] 6G: add TX power envelope IE in 6GHz
+
+Add power envelope element for 6GHz Indoor AP as per the
+spec IEEE P802.11ax/D7.0.
+
+Currently uses fixed values for maximum transmit power limits
+which are applicable to 6GHz operation in United states, Japan
+and Korea. Support to extract the AP operation type and country
+or channel specific power contraints will be added later on.
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+---
+ src/ap/beacon.c              | 26 +++++++++++-
+ src/ap/ieee802_11_vht.c      | 81 ++++++++++++++++++++++++++++--------
+ src/common/ieee802_11_defs.h | 32 ++++++++++++++
+ 3 files changed, 119 insertions(+), 20 deletions(-)
+
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -498,9 +498,14 @@ static u8 * hostapd_gen_probe_resp(struc
+ 			3 + sizeof(struct ieee80211_he_operation) +
+ 			3 + sizeof(struct ieee80211_he_mu_edca_parameter_set) +
+ 			3 + sizeof(struct ieee80211_spatial_reuse);
+-		if (is_6ghz_op_class(hapd->iconf->op_class))
++		if (is_6ghz_op_class(hapd->iconf->op_class)) {
+ 			buflen += sizeof(struct ieee80211_he_6ghz_oper_info) +
+ 				3 + sizeof(struct ieee80211_he_6ghz_band_cap);
++			 /* Additional TX Power envelope for subordinate client */
++			if (hostapd_get_he_6ghz_reg_pwr_type(hapd->iconf) ==
++			    AP_TYPE_6GHZ_INDOOR_AP)
++				buflen += 4;
++		}
+ 	}
+ #endif /* CONFIG_IEEE80211AX */
+ 
+@@ -1388,6 +1393,15 @@ static u8 * hostapd_gen_fils_discovery(s
+ 	buf_len = pos - buf;
+ 	total_len += buf_len;
+ 
++	/* TX Power Envelopes */
++	if (is_6ghz_op_class(hapd->iconf->op_class)) {
++		if (hostapd_get_he_6ghz_reg_pwr_type(hapd->iconf) ==
++		    AP_TYPE_6GHZ_INDOOR_AP)
++			total_len = total_len + 8;
++		else
++			total_len = total_len + 4;
++	}
++
+ 	head = os_zalloc(total_len);
+ 	if (!head)
+ 		return NULL;
+@@ -1460,6 +1474,9 @@ static u8 * hostapd_gen_fils_discovery(s
+ 		pos += buf_len;
+ 	}
+ 
++	if (is_6ghz_op_class(hapd->iconf->op_class))
++		pos = hostapd_eid_txpower_envelope(hapd, pos);
++
+ 	*len = pos - (u8 *) head;
+ 	wpa_hexdump(MSG_DEBUG, "FILS Discovery frame template",
+ 		    (u8 *) head, pos - (u8 *) head);
+@@ -1534,9 +1551,14 @@ int ieee802_11_build_ap_params(struct ho
+ 			3 + sizeof(struct ieee80211_he_operation) +
+ 			3 + sizeof(struct ieee80211_he_mu_edca_parameter_set) +
+ 			3 + sizeof(struct ieee80211_spatial_reuse);
+-		if (is_6ghz_op_class(hapd->iconf->op_class))
++		if (is_6ghz_op_class(hapd->iconf->op_class)) {
+ 			tail_len += sizeof(struct ieee80211_he_6ghz_oper_info) +
+ 				3 + sizeof(struct ieee80211_he_6ghz_band_cap);
++			 /* Additional TX Power envelope for subordinate client */
++			if (hostapd_get_he_6ghz_reg_pwr_type(hapd->iconf) ==
++                            AP_TYPE_6GHZ_INDOOR_AP)
++				tail_len += 4;
++		}
+ 	}
+ #endif /* CONFIG_IEEE80211AX */
+ 
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -1938,8 +1938,40 @@ struct tpc_report {
+ 	u8 link_margin;
+ } STRUCT_PACKED;
+ 
++
++/*
++ * IEEE P802.11ax/D7.0, Table 9-275a—Maximum Transmit Power Interpretation
++ * subfield encoding.
++ */
++enum max_tx_pwr_interpretation {
++        LOCAL_EIRP = 0,
++        LOCAL_EIRP_PSD = 1,
++        REGULATORY_CLIENT_EIRP = 2,
++        REGULATORY_CLIENT_EIRP_PSD = 3,
++};
++
++/*
++ * IEEE P802.11ax/D7.0,Table E-13 — Maximum Transmit Power
++ * 	Category subfield encoding in the United States.
++ */
++enum reg_6g_client_type {
++        REG_DEFAULT_CLIENT = 0,
++        REG_SUBORDINATE_CLIENT = 1,
++};
++
++/* same Max Tx Pwr for all 20MHz bands */
++#define DEFAULT_MAX_TX_POWER_COUNT_6G 0
++/*
++ * These tx-power macros are present till the 6G regdomains are defined to
++ * support tx-power values for various client types.
++ */
++#define REG_PSD_MAX_TXPOWER_FOR_DEFAULT_CLIENT      (-1) /* dBm/MHz */
++#define REG_PSD_MAX_TXPOWER_FOR_SUBORDINATE_CLIENT  5    /* dBm/MHz */
++#define REG_EIRP_MAX_TXPOWER_FOR_SUBORDINATE_CLIENT 24   /* dBm */
++
+ #define RRM_CAPABILITIES_IE_LEN 5
+ 
++
+ /* IEEE Std 802.11-2012, 8.5.7.4 - Link Measurement Request frame format */
+ struct rrm_link_measurement_request {
+ 	u8 dialog_token;
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6817,6 +6817,30 @@ void ieee802_11_rx_from_unknown(struct h
+ 			WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+ }
+ 
++static u8 * hostapd_add_tpe_info(u8 *eid, u8 tx_pwr_count,
++				 u8 tx_pwr_intrpn, u8 tx_pwr_cat,
++				 u8 tx_pwr)
++{
++	int i;
++
++	*eid++ = WLAN_EID_TRANSMIT_POWER_ENVELOPE;
++	/* length */
++	*eid++ = 2 + tx_pwr_count;
++
++	/*
++	 * Transmit Power Information
++	 * 	bits 0-2 : Maximum Transmit Power Count
++	 * 	bits 3-5 : Maximum Transmit Power Interpretation
++	 * 	bits 6-7 : Maximum Transmit Power Category
++	 */
++	*eid++ = tx_pwr_count | ( tx_pwr_intrpn << 3) | (tx_pwr_cat << 6);
++
++	/* Maximum transmit Power field */
++	for (i = 0; i <= tx_pwr_count; i++)
++		*eid++ = tx_pwr;
++
++	return eid;
++}
+ 
+ u8 * hostapd_eid_txpower_envelope(struct hostapd_data *hapd, u8 *eid)
+ {
+@@ -6826,8 +6850,8 @@ u8 * hostapd_eid_txpower_envelope(struct
+ 	struct hostapd_channel_data *chan;
+ 	int dfs, i;
+ 	u8 channel, tx_pwr_count, local_pwr_constraint;
++	u8 tx_pwr, tx_pwr_intrpn, tx_pwr_cat, ap_type;
+ 	int max_tx_power;
+-	u8 tx_pwr;
+ 
+ 	if (!mode)
+ 		return eid;
+@@ -6842,6 +6866,41 @@ u8 * hostapd_eid_txpower_envelope(struct
+ 	if (i == mode->num_channels)
+ 		return eid;
+ 
++	/* For now, 6GHz has only support for Indoor AP type
++	 * From IEEE P802.11ax/D7.0: An AP that is an
++	 * Indoor Access Point per regulatory rules shall send at least
++	 * two Transmit Power Envelope elements in Beacon and Probe
++	 * Response frames as follows:
++	 *  - Maximum Transmit Power Category subfield = Default;
++	 *  	Unit interpretation = Regulatory client EIRP PSD
++	 *  - Maximum Transmit Power Category subfield = Subordinate Device;
++	 *  	Unit interpretation = Regulatory client EIRP PSD
++	 */
++	if (is_6ghz_op_class(iconf->op_class)) {
++		ap_type = hostapd_get_he_6ghz_reg_pwr_type(iconf);
++
++		tx_pwr_count = DEFAULT_MAX_TX_POWER_COUNT_6G;
++		tx_pwr_intrpn = REGULATORY_CLIENT_EIRP_PSD;
++
++		/* Indoor access point must include additional
++		 * TPE for subordinate device
++		 */
++		if (ap_type == AP_TYPE_6GHZ_INDOOR_AP) {
++			tx_pwr_cat = REG_SUBORDINATE_CLIENT;
++			/* TODO: extract psd limits from channel data */
++			tx_pwr = REG_PSD_MAX_TXPOWER_FOR_SUBORDINATE_CLIENT * 2;
++			eid = hostapd_add_tpe_info(eid, tx_pwr_count, tx_pwr_intrpn,
++						   tx_pwr_cat, tx_pwr);
++		}
++
++		/* Default Tx Power envelope for Global Operating class */
++		tx_pwr_cat = REG_DEFAULT_CLIENT;
++		tx_pwr = REG_PSD_MAX_TXPOWER_FOR_DEFAULT_CLIENT * 2;
++		eid = hostapd_add_tpe_info(eid, tx_pwr_count, tx_pwr_intrpn, tx_pwr_cat, tx_pwr);
++
++		return eid;
++	}
++
+ 	switch (hostapd_get_oper_chwidth(iconf)) {
+ 	case CHANWIDTH_USE_HT:
+ 		if (iconf->secondary_channel == 0) {
+@@ -6914,17 +6973,9 @@ u8 * hostapd_eid_txpower_envelope(struct
+ 	else
+ 		tx_pwr = max_tx_power;
+ 
+-	*eid++ = WLAN_EID_TRANSMIT_POWER_ENVELOPE;
+-	*eid++ = 2 + tx_pwr_count;
+-
+-	/*
+-	 * Max Transmit Power count and
+-	 * Max Transmit Power units = 0 (EIRP)
+-	 */
+-	*eid++ = tx_pwr_count;
+-
+-	for (i = 0; i <= tx_pwr_count; i++)
+-		*eid++ = tx_pwr;
++	tx_pwr_intrpn = LOCAL_EIRP;
++	tx_pwr_cat = 0; /* Reserved for non 6GHz */
++	eid = hostapd_add_tpe_info(eid, tx_pwr_count, tx_pwr_intrpn, tx_pwr_cat, tx_pwr);
+ 
+ 	return eid;
+ }

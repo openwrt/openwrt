@@ -1,0 +1,216 @@
+From 4a23f2bf9ab2dd4d86d3c92882665f5cdedada1a Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Wed, 12 Aug 2020 14:36:58 -0700
+Subject: [PATCH] ath11k: add 6ghz params in peer assoc command
+
+without this ampdu density/smps is not being configured
+on 6ghz radio.
+Also fix smps configuration in peer assoc command.
+
+Add fix for sending Block ack with 256 bitmap in 11s mesh.
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 89 +++++++++++++++++++++++----
+ include/linux/ieee80211.h             |  2 +
+ net/wireless/nl80211.c                |  4 ++
+ 3 files changed, 84 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1981,17 +1981,76 @@ static void ath11k_peer_assoc_h_he(struc
+ 		   arg->peer_bw_rxnss_override);
+ }
+ 
++static void ath11k_peer_assoc_h_he_6ghz(struct ath11k *ar,
++					struct ieee80211_vif *vif,
++					struct ieee80211_sta *sta,
++					struct peer_assoc_params *arg)
++{
++	const struct ieee80211_sta_he_cap *he_cap = &sta->he_cap;
++	struct cfg80211_chan_def def;
++	enum nl80211_band band;
++	u8  ampdu_factor;
++
++	if (WARN_ON(ath11k_mac_vif_chan(vif, &def)))
++		return;
++
++	band = def.chan->band;
++
++	if (!arg->he_flag || band != NL80211_BAND_6GHZ || !sta->he_6ghz_capa.capa)
++		return;
++
++	if (sta->bandwidth >= IEEE80211_STA_RX_BW_40)
++		arg->bw_40 = true;
++
++	if (sta->bandwidth >= IEEE80211_STA_RX_BW_80)
++		arg->bw_80 = true;
++
++	if (sta->bandwidth == IEEE80211_STA_RX_BW_160)
++		arg->bw_160 = true;
++
++	arg->peer_he_caps_6ghz = le16_to_cpu(sta->he_6ghz_capa.capa);
++
++	arg->peer_mpdu_density = ath11k_parse_mpdudensity(
++		FIELD_GET(IEEE80211_HE_6GHZ_CAP_MIN_MPDU_START, arg->peer_he_caps_6ghz));
++
++	/* From IEEE P802.11ax/D6.1: An HE STA shall be capable of receiving A-MPDU
++	 * where the A-MPDU pre-EOF padding length is up to the value indicated by the
++	 * Maximum A-MPDU Length Exponent Extension field in the HE Capabilities element
++	 * and the Maximum A-MPDU Length Exponent field in HE 6 GHz Band Capabilities
++	 * element in the 6 GHz band.
++	 *
++	 * Here, we are extracting the Max AMPDU Exponent Extension from HE caps and
++	 * ampdu factor is Maximum A-MPDU Length Exponent from HE 6GHZ Band capability.
++	 */
++	arg->peer_max_mpdu = (he_cap->he_cap_elem.mac_cap_info[3] &
++			IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK) >>
++			IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_SHIFT;
++
++	ampdu_factor = FIELD_GET(IEEE80211_HE_6GHZ_CAP_MAX_AMPDU_LEN_EXP,
++				 arg->peer_he_caps_6ghz);
++
++	arg->peer_max_mpdu = (1u << (IEEE80211_HE_6GHZ_MAX_AMPDU_FACTOR + ampdu_factor +
++			      arg->peer_max_mpdu)) - 1;
++}
++
++
+ static void ath11k_peer_assoc_h_smps(struct ieee80211_sta *sta,
+ 				     struct peer_assoc_params *arg)
+ {
+ 	const struct ieee80211_sta_ht_cap *ht_cap = &sta->ht_cap;
+ 	int smps;
+ 
+-	if (!ht_cap->ht_supported)
++	if (!ht_cap->ht_supported && !sta->he_6ghz_capa.capa)
+ 		return;
+ 
+-	smps = ht_cap->cap & IEEE80211_HT_CAP_SM_PS;
+-	smps >>= IEEE80211_HT_CAP_SM_PS_SHIFT;
++	if (ht_cap->ht_supported) {
++		smps = ht_cap->cap & IEEE80211_HT_CAP_SM_PS;
++		smps >>= IEEE80211_HT_CAP_SM_PS_SHIFT;
++	}
++
++	if (sta->he_6ghz_capa.capa)
++		smps = FIELD_GET(IEEE80211_HE_6GHZ_CAP_SM_PS,
++				 le16_to_cpu(sta->he_6ghz_capa.capa));
+ 
+ 	switch (smps) {
+ 	case WLAN_HT_CAP_SM_PS_STATIC:
+@@ -2270,6 +2329,7 @@ static void ath11k_peer_assoc_prepare(st
+ 	ath11k_peer_assoc_h_ht(ar, vif, sta, arg);
+ 	ath11k_peer_assoc_h_vht(ar, vif, sta, arg);
+ 	ath11k_peer_assoc_h_he(ar, vif, sta, arg);
++	ath11k_peer_assoc_h_he_6ghz(ar, vif, sta, arg);
+ 	ath11k_peer_assoc_h_qos(ar, vif, sta, arg);
+ 	ath11k_peer_assoc_h_smps(sta, arg);
+ 
+@@ -2278,15 +2338,21 @@ static void ath11k_peer_assoc_prepare(st
+ 
+ static int ath11k_setup_peer_smps(struct ath11k *ar, struct ath11k_vif *arvif,
+ 				  const u8 *addr,
+-				  const struct ieee80211_sta_ht_cap *ht_cap)
++				  const struct ieee80211_sta_ht_cap *ht_cap,
++				  u16 he_6ghz_capa)
+ {
+ 	int smps;
+ 
+-	if (!ht_cap->ht_supported)
++	if (!(ht_cap && ht_cap->ht_supported) && !ar->supports_6ghz)
+ 		return 0;
+ 
+-	smps = ht_cap->cap & IEEE80211_HT_CAP_SM_PS;
+-	smps >>= IEEE80211_HT_CAP_SM_PS_SHIFT;
++	if (ht_cap->ht_supported) {
++		smps = ht_cap->cap & IEEE80211_HT_CAP_SM_PS;
++		smps >>= IEEE80211_HT_CAP_SM_PS_SHIFT;
++	} else {
++		smps = FIELD_GET(IEEE80211_HE_6GHZ_CAP_SM_PS, he_6ghz_capa);
++	}
++
+ 
+ 	if (smps >= ARRAY_SIZE(ath11k_smps_map))
+ 		return -EINVAL;
+@@ -2459,7 +2525,7 @@ static void ath11k_bss_assoc(struct ieee
+ 	}
+ 
+ 	ret = ath11k_setup_peer_smps(ar, arvif, bss_conf->bssid,
+-				     &ap_sta->ht_cap);
++				     &ap_sta->ht_cap, le16_to_cpu(ap_sta->he_6ghz_capa.capa));
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to setup peer SMPS for vdev %d: %d\n",
+ 			    arvif->vdev_id, ret);
+@@ -3834,7 +3900,7 @@ static int ath11k_station_assoc(struct a
+ 		return 0;
+ 
+ 	ret = ath11k_setup_peer_smps(ar, arvif, sta->addr,
+-				     &sta->ht_cap);
++				     &sta->ht_cap, le16_to_cpu(sta->he_6ghz_capa.capa));
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to setup peer SMPS for vdev %d: %d\n",
+ 			    arvif->vdev_id, ret);
+@@ -8028,7 +8094,7 @@ static int __ath11k_mac_register(struct
+ 	ieee80211_hw_set(ar->hw, SUPPORTS_TX_ENCAP_OFFLOAD);
+ 	ieee80211_hw_set(ar->hw, SUPPORTS_MULTI_BSSID);
+ 	ieee80211_hw_set(ar->hw, SUPPORTS_MULTI_BSSID_AP);
+-	if (ht_cap & WMI_HT_CAP_ENABLED) {
++	if (ht_cap & WMI_HT_CAP_ENABLED || ar->supports_6ghz) {
+ 		ieee80211_hw_set(ar->hw, AMPDU_AGGREGATION);
+ 		ieee80211_hw_set(ar->hw, TX_AMPDU_SETUP_IN_HW);
+ 		ieee80211_hw_set(ar->hw, SUPPORTS_REORDERING_BUFFER);
+@@ -8048,7 +8114,7 @@ static int __ath11k_mac_register(struct
+ 	 * for each band for a dual band capable radio. It will be tricky to
+ 	 * handle it when the ht capability different for each band.
+ 	 */
+-	if (ht_cap & WMI_HT_CAP_DYNAMIC_SMPS)
++	if (ht_cap & WMI_HT_CAP_DYNAMIC_SMPS || ar->supports_6ghz)
+ 		ar->hw->wiphy->features |= NL80211_FEATURE_DYNAMIC_SMPS;
+ 
+ 	ar->hw->wiphy->max_scan_ssids = WLAN_SCAN_PARAMS_MAX_SSID;
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -3474,6 +3474,8 @@ struct ieee80211_tspec_ie {
+ 	__le16 medium_time;
+ } __packed;
+ 
++#define IEEE80211_HE_6GHZ_MAX_AMPDU_FACTOR       13
++
+ struct ieee80211_he_6ghz_capa {
+ 	/* uses IEEE80211_HE_6GHZ_CAP_* below */
+ 	__le16 capa;
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -5528,8 +5528,7 @@ static int nl80211_start_ap(struct sk_bu
+ 		err = nl80211_parse_he_obss_pd(
+ 					info->attrs[NL80211_ATTR_HE_OBSS_PD],
+ 					&params.he_obss_pd);
+-		if (err)
+-			goto out;
++		goto out;
+ 	}
+ 
+ 	if (info->attrs[NL80211_ATTR_HE_BSS_COLOR]) {
+@@ -6367,6 +6366,10 @@ static int nl80211_parse_sta_channel_inf
+ 		 */
+ 		if (params->supported_channels_len % 2)
+ 			return -EINVAL;
++
++	    if (info->attrs[NL80211_ATTR_HE_6GHZ_CAPABILITY])
++		     params->he_6ghz_capa =
++			nla_data(info->attrs[NL80211_ATTR_HE_6GHZ_CAPABILITY]);
+ 	}
+ 
+ 	if (info->attrs[NL80211_ATTR_STA_SUPPORTED_OPER_CLASSES]) {
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -579,6 +579,9 @@ int mesh_add_he_cap_ie(struct ieee80211_
+ 	if (skb_tailroom(skb) < ie_len)
+ 		return -ENOMEM;
+ 
++	if (!sdata->vif.bss_conf.he_support)
++		sdata->vif.bss_conf.he_support = 1;
++
+ 	pos = skb_put(skb, ie_len);
+ 	ieee80211_ie_build_he_cap(pos, he_cap, pos + ie_len);
+ 

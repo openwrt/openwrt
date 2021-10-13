@@ -1,0 +1,41 @@
+From 69be0c192eba71f6a5411d03d486c7f59d567621 Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Date: Tue, 23 Mar 2021 17:51:12 +0530
+Subject: [PATCH] ath11k: add 177 channel to 5G channel list
+
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h | 4 ++--
+ drivers/net/wireless/ath/ath11k/mac.c  | 1 +
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index 325a97f..a319da6 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -474,8 +474,8 @@ struct ath11k_sta {
+ #define ATH11K_MIN_5G_FREQ 4150
+ #define ATH11K_MIN_6G_FREQ 5925
+ #define ATH11K_MAX_6G_FREQ 7125
+-#define ATH11K_NUM_CHANS 101
+-#define ATH11K_MAX_5G_CHAN 173
++#define ATH11K_NUM_CHANS 102
++#define ATH11K_MAX_5G_CHAN 177
+ 
+ enum ath11k_state {
+ 	ATH11K_STATE_OFF,
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index d6d14c4..cd639d0 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -97,6 +97,7 @@ static const struct ieee80211_channel ath11k_5ghz_channels[] = {
+ 	CHAN5G(165, 5825, 0),
+ 	CHAN5G(169, 5845, 0),
+ 	CHAN5G(173, 5865, 0),
++	CHAN5G(177, 5885, 0),
+ };
+ 
+ static const struct ieee80211_channel ath11k_6ghz_channels[] = {
+-- 
+2.7.4
+

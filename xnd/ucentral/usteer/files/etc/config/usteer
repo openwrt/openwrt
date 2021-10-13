@@ -1,0 +1,111 @@
+config usteer
+	# The network interface for inter-AP communication
+	option 'network' 'lan'
+
+	# Log messages to syslog (0/1)
+	option 'syslog' '1'
+
+	# Minimum level of logged messages
+	# 0 = fatal
+	# 1 = info
+	# 2 = verbose
+	# 3 = some debug messages
+	# 4 = network packet information
+	# 5 = all debug messages
+	option 'debug_level' '2'
+
+	# Maximum amount of time (ms) a station may be blocked due to policy decisions
+	#option sta_block_timeout 30000
+
+	# Maximum amount of time (ms) a local unconnected station is tracked
+	#option local_sta_timeout 120000
+
+	# Local station information update interval (ms)
+	#option local_sta_update 1000
+
+	# Maximum number of consecutive times a station may be blocked by policy
+	#option max_retry_band 5
+
+	# Maximum idle time of a station entry (ms) to be considered for policy decisions
+	#option seen_policy_timeout 30000
+
+	# Minimum number of stations delta between APs before load balancing policy is active
+	#option load_balancing_threshold 5
+
+	# Minimum number of stations delta between bands before band steering policy is active
+	#option band_steering_threshold 5
+
+	# Interval (ms) between sending state updates to other APs
+	#option remote_update_interval 1000
+
+	# Allow rejecting assoc requests for steering purposes (0/1)
+	#option assoc_steering 0
+
+	# Minimum signal-to-noise ratio or signal level (dBm) to allow connections
+	#option min_connect_snr 0
+
+	# Minimum signal-to-noise ratio or signal level (dBm) to remain connected
+	#option min_snr 0
+
+	# Minimum signal-to-noise ratio or signal level (dBm) before attempting to trigger
+	# client scans for roaming
+	#option roam_scan_snr 0
+
+	# Maximum number of client roaming scan trigger attempts
+	#option roam_scan_tries 3
+
+	# Minimum time (ms) between client roaming scan trigger attempts
+	#option roam_scan_interval 10000
+
+	# Minimum signal-to-noise ratio or signal level (dBm) before attempting to trigger
+	# forced client roaming
+	#option roam_trigger_snr 0
+
+	# Minimum time (ms) between client roaming trigger attempts
+	#option roam_trigger_interval 60000
+
+	# Timeout (in 100ms beacon intervals) for client roam requests
+	#option roam_kick_delay 100
+
+	# Minimum signal strength difference until AP steering policy is active
+	#option signal_diff_threshold 0
+
+	# Initial delay (ms) before responding to probe requests (to allow other APs to see packets as well)
+	#option initial_connect_delay 0
+
+	# Enable kicking client on excessive channel load (0/1)
+	#option load_kick_enabled 0
+
+	# Minimum channel load (%) before kicking clients
+	#option load_kick_threshold 75
+
+	# Minimum amount of time (ms) that channel load is above threshold before starting to kick clients
+	#option load_kick_delay 10000
+
+	# Minimum number of connected clients before kicking based on channel load
+	#option load_kick_min_clients 10
+
+	# Reason code on client kick based on channel load (default: WLAN_REASON_DISASSOC_AP_BUSY)
+	#option load_kick_reason_code 5
+
+	# Script to run after bringing up a node
+	#option node_up_script ''
+
+	# Message types to include in log
+	# Available types:
+	# - probe_req_accept
+	# - probe_req_deny
+	# - auth_req_accept
+	# - auth_req_deny
+	# - assoc_req_accept
+	# - assoc_req_deny
+	# - load_kick_trigger
+	# - load_kick_reset
+	# - load_kick_min_clients
+	# - load_kick_no_client
+	# - load_kick_client
+	# - signal_kick
+	#list event_log_types ''
+
+	# List of SSIDs to enable steering on
+	#list ssid_list ''

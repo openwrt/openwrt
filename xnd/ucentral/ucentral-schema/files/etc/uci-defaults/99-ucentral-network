@@ -1,0 +1,29 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+section_del() {
+	uci delete $2.$1
+}
+
+config_load network
+config_foreach section_del interface network
+config_foreach section_del bridge-vlan network
+config_foreach section_del device network
+
+config_load dhcp
+config_foreach section_del dhcp dhcp
+
+config_load firewall
+config_foreach section_del rule firewall
+config_foreach section_del zone firewall
+config_foreach section_del forwarding firewall
+
+config_load igmpproxy
+config_foreach section_del phyint igmpproxy
+
+config_load radsecproxy
+config_foreach section_del options radsecproxy
+
+config_load usteer
+config_foreach section_del usteer usteer

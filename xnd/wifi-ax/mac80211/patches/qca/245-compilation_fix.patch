@@ -1,0 +1,699 @@
+From 9cdb8bae50aca80b593d0f53be5b8efedfc91324 Mon Sep 17 00:00:00 2001
+From: Tamizh Chelvam <tamizhr@codeaurora.org>
+Date: Sun, 7 Mar 2021 22:49:26 +0530
+Subject: [PATCH] backport: Compile fix
+
+Adding these changes to fix compilation issue due to
+package upgrade
+
+Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
+---
+ backport-include/linux/skbuff.h          |  8 -----
+ drivers/net/wireless/ath/ath11k/ahb.c    |  2 +-
+ drivers/net/wireless/ath/ath11k/dbring.c |  4 ---
+ drivers/net/wireless/ath/ath11k/debug.h  |  4 +--
+ drivers/net/wireless/ath/ath11k/dp.c     |  3 +-
+ drivers/net/wireless/ath/ath11k/dp_rx.c  | 45 +++++++++++++++-----------
+ drivers/net/wireless/ath/ath11k/dp_rx.h  |  3 +-
+ drivers/net/wireless/ath/ath11k/dp_tx.c  |  2 +-
+ drivers/net/wireless/ath/ath11k/hw.h     |  2 +-
+ drivers/net/wireless/ath/ath11k/mac.c    | 19 +++++------
+ drivers/net/wireless/ath/ath11k/mhi.c    |  9 +++---
+ drivers/net/wireless/ath/ath11k/pci.c    |  2 +-
+ drivers/net/wireless/ath/ath11k/qmi.c    |  3 +-
+ include/linux/backport-refcount.h        |  4 +--
+ include/net/fq.h                         | 10 +++++-
+ include/net/mac80211.h                   |  1 +
+ net/mac80211/cfg.c                       |  4 +--
+ net/mac80211/ieee80211_i.h               |  4 ++-
+ net/mac80211/iface.c                     |  2 --
+ net/mac80211/rx.c                        | 23 +++++++++-----
+ net/mac80211/tx.c                        | 54 ++++++++++++++++++++++----------
+ 21 files changed, 120 insertions(+), 88 deletions(-)
+
+--- a/backport-include/linux/skbuff.h
++++ b/backport-include/linux/skbuff.h
+@@ -348,14 +348,6 @@ static inline void *backport___skb_push(
+ }
+ #define __skb_push LINUX_BACKPORT(__skb_push)
+ 
+-static inline void *__skb_put_zero(struct sk_buff *skb, unsigned int len)
+-{
+-	void *tmp = __skb_put(skb, len);
+-
+-	memset(tmp, 0, len);
+-	return tmp;
+-}
+-
+ static inline void *backport_skb_put_zero(struct sk_buff *skb, unsigned int len)
+ {
+ 	void *tmp = skb_put(skb, len);
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -867,7 +867,7 @@ static int ath11k_ahb_probe(struct platf
+ 	ab->pdev = pdev;
+ 	ab->hw_rev = (enum ath11k_hw_rev)of_id->data;
+ 	ab->fw_mode = ATH11K_FIRMWARE_MODE_NORMAL;
+-	ab->enable_cold_boot_cal = enable_cold_boot_cal;
++	ab->enable_cold_boot_cal = ath11k_cold_boot_cal;
+ 	ab->userpd_id = userpd_id;
+ 
+ 	platform_set_drvdata(pdev, ab);
+--- a/drivers/net/wireless/ath/ath11k/dbring.c
++++ b/drivers/net/wireless/ath/ath11k/dbring.c
+@@ -95,7 +95,6 @@ int ath11k_dbring_bufs_replenish(struct
+ 
+ 	ath11k_hal_rx_buf_addr_info_set(desc, paddr, cookie, 0);
+ 
+-	ath11k_dbring_add_debug_entry(ar, id, DBR_RING_DEBUG_EVENT_REPLENISH, srng);
+ 	ath11k_hal_srng_access_end(ab, srng);
+ 
+ 	return 0;
+@@ -360,9 +359,6 @@ int ath11k_dbring_buffer_release_event(s
+ 		dma_unmap_single(ab->dev, buff->paddr, ring->buf_sz,
+ 				 DMA_FROM_DEVICE);
+ 
+-		ath11k_dbring_add_debug_entry(ar, module_id,
+-					      DBR_RING_DEBUG_EVENT_RX, srng);
+-
+ 		if (ring->handler) {
+ 			vaddr_unalign = buff->payload;
+ 			handler_data.data = PTR_ALIGN(vaddr_unalign,
+--- a/drivers/net/wireless/ath/ath11k/debug.h
++++ b/drivers/net/wireless/ath/ath11k/debug.h
+@@ -23,8 +23,8 @@ enum ath11k_debug_mask {
+ 	ATH11K_DBG_TESTMODE	= 0x00000400,
+ 	ATH11k_DBG_HAL		= 0x00000800,
+ 	ATH11K_DBG_PCI		= 0x00001000,
+-	ATH11K_DBG_DP_TX	= 0x00001000,
+-	ATH11K_DBG_DP_RX	= 0x00002000,
++	ATH11K_DBG_DP_TX	= 0x00002000,
++	ATH11K_DBG_DP_RX	= 0x00004000,
+ 	ATH11K_DBG_CFR		= 0x00008000,
+ 	ATH11K_DBG_CFR_DUMP	= 0x00010000,
+ 	ATH11K_DBG_ANY		= 0xffffffff,
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -892,7 +892,8 @@ int ath11k_dp_service_srng(struct ath11k
+ 				struct dp_rxdma_ring *rx_ring = &dp->rx_refill_buf_ring;
+ 
+ 				ath11k_dp_rxbufs_replenish(ab, id, rx_ring, 0,
+-							   HAL_RX_BUF_RBM_SW3_BM);
++							   HAL_RX_BUF_RBM_SW3_BM,
++							   GFP_ATOMIC);
+ 			}
+ 		}
+ 	}
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -362,7 +362,8 @@ static inline u8 ath11k_dp_rx_h_msdu_sta
+ int ath11k_dp_rxbufs_replenish(struct ath11k_base *ab, int mac_id,
+ 			       struct dp_rxdma_ring *rx_ring,
+ 			       int req_entries,
+-			       enum hal_rx_buf_return_buf_manager mgr)
++			       enum hal_rx_buf_return_buf_manager mgr,
++			       gfp_t gfp)
+ {
+ 	struct hal_srng *srng;
+ 	u32 *desc;
+@@ -529,7 +530,7 @@ static int ath11k_dp_rxdma_ring_buf_setu
+ 
+ 	rx_ring->bufs_max = num_entries;
+ 	ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id, rx_ring, num_entries,
+-				   HAL_RX_BUF_RBM_SW3_BM);
++				   HAL_RX_BUF_RBM_SW3_BM, GFP_KERNEL);
+ 	return 0;
+ }
+ 
+@@ -2408,7 +2409,7 @@ static void ath11k_dp_rx_h_undecap_snap(
+ 	 */
+ 
+ 	rx_desc = (void *)msdu->data - sizeof(*rx_desc);
+-	l3_pad_bytes = ath11k_dp_rx_h_msdu_end_l3pad(rx_desc);
++	l3_pad_bytes = ath11k_dp_rx_h_msdu_end_l3pad(ar->ab, rx_desc);
+ 
+ 	skb_put(msdu, l3_pad_bytes);
+ 	skb_pull(msdu, sizeof(struct ath11k_dp_amsdu_subframe_hdr) + l3_pad_bytes);
+@@ -2563,11 +2564,11 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 
+ 	/* PN for multicast packets will be checked in mac80211 */
+ 	rxcb = ATH11K_SKB_RXCB(msdu);
+-	rxcb->is_mcbc = fill_crypto_hdr = ath11k_dp_rx_h_attn_is_mcbc(rx_desc);
++	rxcb->is_mcbc = fill_crypto_hdr = ath11k_dp_rx_h_attn_is_mcbc(ar->ab, rx_desc);
+ 
+ 	if (rxcb->is_mcbc) {
+-		rxcb->peer_id = ath11k_dp_rx_h_mpdu_start_peer_id(rx_desc);
+-		rxcb->seq_no = ath11k_dp_rx_h_mpdu_start_seq_no(rx_desc);
++		rxcb->peer_id = ath11k_dp_rx_h_mpdu_start_peer_id(ar->ab, rx_desc);
++		rxcb->seq_no = ath11k_dp_rx_h_mpdu_start_seq_no(ar->ab, rx_desc);
+ 	}
+ 
+ 	spin_lock_bh(&ar->ab->base_lock);
+@@ -2597,7 +2598,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 		else
+ 			enctype = peer->sec_type;
+ 	} else {
+-		enctype = ath11k_dp_rx_h_mpdu_start_enctype(rx_desc);
++		enctype = ath11k_dp_rx_h_mpdu_start_enctype(ar->ab, rx_desc);
+ 	}
+ 	spin_unlock_bh(&ar->ab->base_lock);
+ 
+@@ -2636,7 +2637,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 	if (!is_decrypted || fill_crypto_hdr)
+ 		return;
+ 
+-	if (ath11k_dp_rx_h_msdu_start_decap_type(rx_desc) !=
++	if (ath11k_dp_rx_h_msdu_start_decap_type(ar->ab, rx_desc) !=
+ 	    DP_RX_DECAP_TYPE_ETHERNET2_DIX) {
+ 		hdr = (void *)msdu->data;
+ 		hdr->frame_control &= ~__cpu_to_le16(IEEE80211_FCTL_PROTECTED);
+@@ -2789,7 +2790,7 @@ static void ath11k_dp_rx_deliver_msdu(st
+ 	}
+ 
+ 	if (!(status->flag & RX_FLAG_ONLY_MONITOR))
+-		decap = ath11k_dp_rx_h_msdu_start_decap_type(rxcb->rx_desc);
++		decap = ath11k_dp_rx_h_msdu_start_decap_type(ar->ab, rxcb->rx_desc);
+ 	spin_lock_bh(&ar->ab->base_lock);
+ 	peer = ath11k_dp_rx_h_find_peer(ar->ab, msdu);
+ 	if (peer && peer->sta)
+@@ -2797,7 +2798,7 @@ static void ath11k_dp_rx_deliver_msdu(st
+ 	spin_unlock_bh(&ar->ab->base_lock);
+ 
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_DATA,
+-		   "rx skb %pK len %u peer %pM %s %s sn %u %s%s%s%s%s%s%s %srate_idx %u vht_nss %u freq %u band %u flag 0x%x fcs-err %i mic-err %i amsdu-more %i\n",
++		   "rx skb %pK len %u peer %pM %hhu %s sn %u %s%s%s%s%s%s%s %srate_idx %u vht_nss %u freq %u band %u flag 0x%x fcs-err %i mic-err %i amsdu-more %i\n",
+ 		   msdu,
+ 		   msdu->len,
+ 		   peer ? peer->addr : NULL,
+@@ -3136,7 +3137,7 @@ try_again:
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
+ 
+ 		ath11k_dp_rxbufs_replenish(ab, i, rx_ring, num_buffs_reaped[i],
+-					   HAL_RX_BUF_RBM_SW3_BM);
++					   HAL_RX_BUF_RBM_SW3_BM, GFP_ATOMIC);
+ 	}
+ 
+ exit:
+@@ -4538,7 +4539,7 @@ exit:
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
+ 
+ 		ath11k_dp_rxbufs_replenish(ab, i, rx_ring, n_bufs_reaped[i],
+-					   HAL_RX_BUF_RBM_SW3_BM);
++					   HAL_RX_BUF_RBM_SW3_BM, GFP_ATOMIC);
+ 	}
+ 
+ 	return tot_n_bufs_reaped;
+@@ -4851,7 +4852,7 @@ int ath11k_dp_rx_process_wbm_err(struct
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
+ 
+ 		ath11k_dp_rxbufs_replenish(ab, i, rx_ring, num_buffs_reaped[i],
+-					   HAL_RX_BUF_RBM_SW3_BM);
++					   HAL_RX_BUF_RBM_SW3_BM, GFP_ATOMIC);
+ 	}
+ 
+ 	rcu_read_lock();
+@@ -4960,7 +4961,7 @@ int ath11k_dp_process_rxdma_err(struct a
+ 
+ 	if (num_buf_freed)
+ 		ath11k_dp_rxbufs_replenish(ab, mac_id, rx_ring, num_buf_freed,
+-					   HAL_RX_BUF_RBM_SW3_BM);
++					   HAL_RX_BUF_RBM_SW3_BM, GFP_ATOMIC);
+ 
+ 	return budget - quota;
+ }
+@@ -5634,7 +5635,7 @@ ath11k_dp_rx_mon_merg_msdus(struct ath11
+ 
+ 		while (msdu) {
+ 
+-			ath11k_dp_rx_msdus_set_payload(msdu);
++			ath11k_dp_rx_msdus_set_payload(ar, msdu);
+ 			if (qos_pkt) {
+ 				dest = skb_push(msdu, sizeof(__le16));
+ 				if (!dest)
+@@ -5905,12 +5906,12 @@ void ath11k_dp_rx_mon_dest_process(struc
+ 			ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id,
+ 						   &dp->rxdma_mon_buf_ring,
+ 						   rx_bufs_used,
+-						   HAL_RX_BUF_RBM_SW3_BM);
++						   HAL_RX_BUF_RBM_SW3_BM, GFP_ATOMIC);
+ 		else
+ 			ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id,
+ 						   &dp->rx_refill_buf_ring,
+ 						   rx_bufs_used,
+-						   HAL_RX_BUF_RBM_SW3_BM);
++						   HAL_RX_BUF_RBM_SW3_BM, GFP_ATOMIC);
+ 	}
+ }
+ 
+@@ -6097,6 +6098,7 @@ ath11k_dp_rx_full_mon_mpdu_pop(struct at
+ 	void *rx_msdu_link_desc;
+ 	void *p_buf_addr_info, *p_last_buf_addr_info;
+ 	int buf_id, i = 0;
++	dma_addr_t paddr;
+ 	u32 rx_buf_size, rx_pkt_offset, l2_hdr_offset;
+ 	u32 rx_bufs_used = 0;
+ 	u32 msdu_cnt = 0;
+@@ -6105,7 +6107,12 @@ ath11k_dp_rx_full_mon_mpdu_pop(struct at
+ 	u8 rxdma_err;
+ 	bool is_frag, is_first_msdu;
+ 	bool drop_mpdu = false;
++	u8 rbm;
+ 
++	ath11k_hal_rx_reo_ent_buf_paddr_get(ring_entry, &paddr,
++					    &sw_cookie,
++					    &p_last_buf_addr_info, &rbm,
++					    &msdu_cnt);
+ 	rx_mon_stats = &pmon->rx_mon_stats;
+ 
+ 	ath11k_hal_rx_sw_mon_ring_buf_paddr_get(ring_entry, sw_mon_entries);
+@@ -6217,7 +6224,7 @@ next_msdu:
+ 		ath11k_dp_rx_mon_next_link_desc_get(rx_msdu_link_desc,
+ 						    &sw_mon_entries->mon_dst_paddr,
+ 						    &sw_mon_entries->mon_dst_sw_cookie,
+-						    &p_buf_addr_info);
++						    &rbm, &p_buf_addr_info);
+ 
+ 		if (ath11k_dp_rx_monitor_link_desc_return(ar,
+ 							  p_last_buf_addr_info,
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.h
+@@ -93,7 +93,8 @@ int ath11k_dp_process_rx(struct ath11k_b
+ int ath11k_dp_rxbufs_replenish(struct ath11k_base *ab, int mac_id,
+ 			       struct dp_rxdma_ring *rx_ring,
+ 			       int req_entries,
+-			       enum hal_rx_buf_return_buf_manager mgr);
++			       enum hal_rx_buf_return_buf_manager mgr,
++			       gfp_t gfp);
+ int ath11k_dp_htt_tlv_iter(struct ath11k_base *ab, const void *ptr, size_t len,
+ 			   int (*iter)(struct ath11k_base *ar, u16 tag, u16 len,
+ 				       const void *ptr, void *data),
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -254,7 +254,7 @@ tcl_ring_sel:
+ 
+ 	/* Add metadata for sw encrypted vlan group traffic */
+ 	if (!test_bit(ATH11K_FLAG_HW_CRYPTO_DISABLED, &ar->ab->dev_flags) &&
+-	    !(info->control.flags & IEEE80211_TX_CTRL_HW_80211_ENCAP) &&
++	    !(info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) &&
+ 	    !info->control.hw_key &&
+ 	    ieee80211_has_protected(hdr->frame_control)) {
+ 		/* HW requirement is that metadata should always point to a
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -203,7 +203,7 @@ struct ath11k_hw_params {
+ 	u32 hal_desc_sz;
+ 	u32 m3_addr;
+ 	u8 reo_dest_ring_map_shift;
+-	bool cold_boot_calib;
++	bool needs_band_to_mac;
+ 	bool ce_fwlog_enable;
+ 	bool fwmem_mode_change;
+ 	bool is_qdss_support;
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -840,8 +840,6 @@ static int ath11k_mac_monitor_vdev_start
+ 	}
+ 
+ 
+-	int ret = 0;
+-
+ 	ret = ath11k_wmi_vdev_up(ar, &params);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to put up monitor vdev %i: %d\n",
+@@ -1052,6 +1050,7 @@ static int ath11k_mac_op_config(struct i
+ {
+  	struct ath11k *ar = hw->priv;
+ 	struct ieee80211_conf *conf = &hw->conf;
++	int ret = 0;
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
+@@ -2867,7 +2866,7 @@ static int ath11k_mac_config_obss_pd(str
+ 
+ 	/* Set and enable SRG/non-SRG OBSS PD Threshold */
+ 	param_id = WMI_PDEV_PARAM_SET_CMD_OBSS_PD_THRESHOLD;
+-	if (test_bit(ATH11K_FLAG_MONITOR_ENABLED, &ar->monitor_flags)) {
++	if (ar->monitor_started) {
+ 		ret = ath11k_wmi_pdev_set_param(ar, param_id, 0, pdev_id);
+ 		if (ret)
+ 			ath11k_warn(ar->ab,
+@@ -3337,7 +3336,6 @@ static void ath11k_mac_op_bss_info_chang
+ 	if (changed & BSS_CHANGED_FILS_DISCOVERY ||
+ 	    changed & BSS_CHANGED_UNSOL_BCAST_PROBE_RESP)
+ 		ath11k_mac_fils_discovery(arvif, info);
+-
+ 	mutex_unlock(&ar->conf_mutex);
+ }
+ 
+@@ -6242,7 +6240,7 @@ ath11k_mac_setup_vdev_create_params(stru
+ 	return 0;
+ }
+ 
+-static void ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
++static int ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
+ 					     struct ieee80211_vif *vif)
+ {
+ 	struct ath11k *ar = hw->priv;
+@@ -6257,7 +6255,7 @@ static void ath11k_mac_op_update_vif_off
+ 	ret = ath11k_nss_vdev_create(arvif);
+ 	if(ret) {
+ 		ath11k_warn(ab, "failed to create nss vdev %d\n", ret);
+-		goto err_vdev_del;
++		return ret;
+ 	}
+ 
+ 	param_id = WMI_VDEV_PARAM_TX_ENCAP_TYPE;
+@@ -6297,6 +6295,7 @@ static void ath11k_mac_op_update_vif_off
+ 			    arvif->vdev_id, ret);
+ 		vif->offload_flags &= ~IEEE80211_OFFLOAD_DECAP_ENABLED;
+ 	}
++	return ret;
+ }
+ 
+ static int ath11k_mac_op_add_interface(struct ieee80211_hw *hw,
+@@ -6342,7 +6341,7 @@ static int ath11k_mac_op_add_interface(s
+ 	if ((vif->type == NL80211_IFTYPE_AP_VLAN ||
+ 	     vif->type == NL80211_IFTYPE_STATION) && ab->nss.enabled) {
+ 		if (ath11k_frame_mode == ATH11K_HW_TXRX_ETHERNET &&
+-		    ieee80211_set_hw_80211_encap(vif, true)) {
++		    (vif->offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED)) {
+ 			vif->offload_flags |= IEEE80211_OFFLOAD_ENCAP_4ADDR;
+ 			arvif->nss.encap = ATH11K_HW_TXRX_ETHERNET;
+ 			arvif->nss.decap = ATH11K_HW_TXRX_ETHERNET;
+@@ -7325,7 +7324,7 @@ ath11k_mac_op_assign_vif_chanctx(struct
+ 	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR) {
+ 		ret = ath11k_mac_monitor_start(ar);
+ 		if (ret)
+-			goto err;
++			goto out;
+ 
+ 		arvif->is_started = true;
+ 		goto exit;
+@@ -8469,6 +8468,8 @@ static void ath11k_mac_update_ch_list(st
+ 		    band->channels[i].center_freq > freq_high)
+ 			band->channels[i].flags |= IEEE80211_CHAN_DISABLED;
+ 	}
++
++	return;
+ }
+ 
+ #define ATH11k_5_DOT_9_MIN_FREQ	5845
+@@ -8644,7 +8645,7 @@ static int ath11k_mac_setup_iface_combin
+ 	combinations[0].radar_detect_widths = BIT(NL80211_CHAN_WIDTH_20_NOHT) |
+ 						BIT(NL80211_CHAN_WIDTH_20) |
+ 						BIT(NL80211_CHAN_WIDTH_40) |
+-						ddBIT(NL80211_CHAN_WIDTH_80) |
++						BIT(NL80211_CHAN_WIDTH_80) |
+ 						BIT(NL80211_CHAN_WIDTH_80P80) |
+ 						BIT(NL80211_CHAN_WIDTH_160);
+ 
+--- a/drivers/net/wireless/ath/ath11k/mhi.c
++++ b/drivers/net/wireless/ath/ath11k/mhi.c
+@@ -357,14 +357,13 @@ int ath11k_mhi_register(struct ath11k_pc
+ 	struct ath11k_base *ab = ab_pci->ab;
+ 	struct mhi_controller *mhi_ctrl;
+ 	struct mhi_controller_config *ath11k_mhi_config;
+-	struct mhi_controller_config *ath11k_mhi_config;
+ 	struct device_node *np;
+ 	int ret, len, sw, aw;
+ 	unsigned int *reg, *reg_end;
+ 	unsigned long start, size;
+ 	bool no_dt_entry = 0;
+ 
+-	mhi_ctrl = mhi_alloc_controller();
++	mhi_ctrl = kzalloc(sizeof(*mhi_ctrl), GFP_KERNEL);
+ 	if (!mhi_ctrl)
+ 		return -ENOMEM;
+ 
+@@ -381,7 +380,7 @@ int ath11k_mhi_register(struct ath11k_pc
+ 	ret = ath11k_mhi_get_msi(ab_pci);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to get msi for mhi\n");
+-		mhi_free_controller(mhi_ctrl);
++		kfree(mhi_ctrl);
+ 		return ret;
+ 	}
+ 
+@@ -437,7 +436,7 @@ no_dt_entry:
+ 	ret = mhi_register_controller(mhi_ctrl, ath11k_mhi_config);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to register to mhi bus, err = %d\n", ret);
+-		mhi_free_controller(mhi_ctrl);
++		kfree(mhi_ctrl);
+ 		return ret;
+ 	}
+ 
+@@ -602,7 +601,7 @@ static int ath11k_mhi_set_state(struct a
+ 		ret = mhi_pm_suspend(ab_pci->mhi_ctrl);
+ 		break;
+ 	case ATH11K_MHI_RESUME:
+-		ret = mhi_pm_resume(ab_pci->mhi_ctrl);
++		//ret = mhi_pm_resume(ab_pci->mhi_ctrl);
+ 		break;
+ 	case ATH11K_MHI_TRIGGER_RDDM:
+ 		ret = mhi_force_rddm_mode(ab_pci->mhi_ctrl);
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -1120,7 +1120,6 @@ static int ath11k_pci_power_up(struct at
+ {
+ 	struct ath11k_pci *ab_pci = ath11k_pci_priv(ab);
+ 	int ret;
+-	u32 addr;
+ 
+ 	ab_pci->register_window = 0;
+ 	clear_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags);
+@@ -1328,6 +1327,7 @@ static int ath11k_pci_probe(struct pci_d
+ 	struct ath11k_base *ab;
+ 	struct ath11k_pci *ab_pci;
+ 	u32 soc_hw_version, soc_hw_version_major, soc_hw_version_minor;
++	u32 addr;
+ 	int ret;
+ 
+ 	ab = ath11k_core_alloc(&pdev->dev, sizeof(*ab_pci), ATH11K_BUS_PCI,
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2646,7 +2646,7 @@ static int ath11k_qmi_respond_fw_mem_req
+ 			req->mem_seg[i].type = ab->qmi.target_mem[i].type;
+ 			ath11k_dbg(ab, ATH11K_DBG_QMI,
+ 				   "qmi req mem_seg[%d] 0x%llx %u %u\n", i,
+-				    ab->qmi.target_mem[i].paddr,
++				    (u64)ab->qmi.target_mem[i].paddr,
+ 				    ab->qmi.target_mem[i].size,
+ 				    ab->qmi.target_mem[i].type);
+ 		}
+@@ -2827,11 +2827,6 @@ static int ath11k_qmi_assign_target_mem_
+ 			idx++;
+ 			break;
+ 		case CALDB_MEM_REGION_TYPE:
+-			if (ab->qmi.target_mem[i].size > ATH11K_QMI_CALDB_SIZE) {
+-				ath11k_warn(ab, "qmi mem size is low to load caldata\n");
+-				return -EINVAL;
+-			}
+-
+ 			if (ath11k_host_ddr_addr) {
+ 				addr = ath11k_host_ddr_addr +
+ 					ATH11K_HOST_DDR_CALDB_OFFSET;
+@@ -3171,7 +3166,6 @@ static int ath11k_qmi_load_bdf_qmi(struc
+ 	char filename[ATH11K_QMI_MAX_BDF_FILE_NAME_SIZE];
+ 	const struct firmware *fw_entry;
+ 	struct ath11k_board_data bd;
+-	int bdf_type;
+ 	u32 fw_size, file_type;
+ 	u8 *tmp;
+ 	int ret = 0;
+--- a/include/linux/backport-refcount.h
++++ b/include/linux/backport-refcount.h
+@@ -217,7 +217,7 @@ static inline __must_check bool refcount
+ 
+ static inline void __refcount_inc(refcount_t *r, int *oldp)
+ {
+-	__refcount_add(1, r, oldp);
++	refcount_add(1, r);
+ }
+ 
+ /**
+@@ -244,7 +244,7 @@ static inline __must_check bool refcount
+ 
+ static inline __must_check bool __refcount_dec_and_test(refcount_t *r, int *oldp)
+ {
+-	return atomic_sub_and_test(i, &r->refs);
++	return refcount_sub_and_test(1, r);
+ }
+ 
+ /**
+--- a/include/net/fq.h
++++ b/include/net/fq.h
+@@ -68,7 +68,15 @@ struct fq {
+ 	struct list_head tin_backlog;
+ 	spinlock_t lock;
+ 	u32 flows_cnt;
+-	siphash_key_t	perturbation;
++#if LINUX_VERSION_IS_GEQ(5,3,10) || \
++	LINUX_VERSION_IN_RANGE(4,19,83, 4,20,0) || \
++	LINUX_VERSION_IN_RANGE(4,14,153, 4,15,0) || \
++	LINUX_VERSION_IN_RANGE(4,9,200, 4,10,0) || \
++	LINUX_VERSION_IN_RANGE(4,4,200, 4,5,0)
++	siphash_key_t   perturbation;
++#else
++	u32 perturbation;
++#endif
+ 	u32 limit;
+ 	u32 memory_limit;
+ 	u32 memory_usage;
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -218,6 +218,7 @@ enum ieee80211_rx_flags {
+ };
+ 
+ struct ieee80211_rx_data {
++	struct napi_struct *napi;
+ #if LINUX_VERSION_IS_GEQ(4,19,0)
+ 	struct list_head *list;
+ #else
+@@ -298,6 +299,7 @@ struct unsol_bcast_probe_resp_data {
+ 	u8 data[];
+ };
+ 
++
+ struct ps_data {
+ 	/* yes, this looks ugly, but guarantees that we can later use
+ 	 * bitmap_empty :)
+@@ -2170,7 +2172,7 @@ void ieee80211_txq_remove_vlan(struct ie
+ 			       struct ieee80211_sub_if_data *sdata);
+ void ieee80211_fill_txq_stats(struct cfg80211_txq_stats *txqstats,
+ 			      struct txq_info *txqi);
+-void ieee80211_wake_txqs(struct tasklet_struct *t);
++void ieee80211_wake_txqs(unsigned long data);
+ void ieee80211_send_auth(struct ieee80211_sub_if_data *sdata,
+ 			 u16 transaction, u16 auth_alg, u16 status,
+ 			 const u8 *extra, size_t extra_len, const u8 *bssid,
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -1491,7 +1491,6 @@ static void ieee80211_iface_work(struct
+ 	while ((skb = skb_dequeue(&sdata->skb_queue))) {
+ 		struct ieee80211_mgmt *mgmt = (void *)skb->data;
+ 
+-		kcov_remote_start_common(skb_get_kcov_handle(skb));
+ 		if (ieee80211_is_action(mgmt->frame_control) &&
+ 		    mgmt->u.action.category == WLAN_CATEGORY_BACK) {
+ 			int len = skb->len;
+@@ -1601,7 +1600,6 @@ static void ieee80211_iface_work(struct
+ 		}
+ 
+ 		kfree_skb(skb);
+-		kcov_remote_stop();
+ 	}
+ 
+ 	/* then other type-dependent work */
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -38,7 +38,7 @@
+ 
+ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
+ 				struct net_device *dev, struct sta_info *sta,
+-				struct sk_buff *skb);
++				struct ieee80211_key *key, struct sk_buff *skb);
+ /* misc utils */
+ 
+ static __le16 ieee80211_duration(struct ieee80211_tx_data *tx,
+@@ -3931,6 +3931,7 @@ void __ieee80211_subif_start_xmit(struct
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+ 	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_key *key = NULL;
+ 	struct sta_info *sta;
+ 	struct sk_buff *next;
+ 	struct ieee80211_sub_if_data *ap_sdata;
+@@ -4277,19 +4278,20 @@ static void ieee80211_8023_xmit(struct i
+ 	memset(info, 0, sizeof(*info));
+ 
+ 	tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
+-	tid_tx = rcu_dereference(sta->ampdu_mlme.tid_tx[tid]);
+-	if (tid_tx) {
+-		if (!test_bit(HT_AGG_STATE_OPERATIONAL, &tid_tx->state)) {
+-			/* fall back to non-offload slow path */
+-			__ieee80211_subif_start_xmit(skb, dev, 0, 0, NULL);
+-			return;
+-		}
++	if (!ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD)) {
++		tid_tx = rcu_dereference(sta->ampdu_mlme.tid_tx[tid]);
++		if (tid_tx) {
++			if (!test_bit(HT_AGG_STATE_OPERATIONAL, &tid_tx->state)) {
++				/* fall back to non-offload slow path */
++				__ieee80211_subif_start_xmit(skb, dev, 0, 0, NULL);
++				return;
++			}
+ 
+-		info->flags |= IEEE80211_TX_CTL_AMPDU;
+-		if (tid_tx->timeout)
+-			tid_tx->last_tx = jiffies;
++			info->flags |= IEEE80211_TX_CTL_AMPDU;
++			if (tid_tx->timeout)
++				tid_tx->last_tx = jiffies;
++		}
+ 	}
+-
+ 	if (unlikely(skb->sk &&
+ 		     skb_shinfo(skb)->tx_flags & SKBTX_WIFI_STATUS &&
+ 		     !ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD)))
+@@ -4331,8 +4333,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+ 					    struct net_device *dev)
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+-	struct ethhdr *ehdr = (struct ethhdr *)skb->data;
+-	struct ieee80211_key *key;
++	struct ieee80211_key *key = NULL;
+ 	struct sta_info *sta;
+ 
+ 	ieee80211_xmit_nss_fixup(skb, dev);
+@@ -4348,9 +4349,11 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+ 		goto out;
+ 	}
+ 
+-	if (unlikely(IS_ERR_OR_NULL(sta) || !sta->uploaded ||
+-	    !test_sta_flag(sta, WLAN_STA_AUTHORIZED) ||
+-	    sdata->control_port_protocol == ehdr->h_proto))
++	if (ieee80211_hw_check(&sdata->local->hw, SUPPORTS_NSS_OFFLOAD)) {
++		if (unlikely(IS_ERR_OR_NULL(sta) || !sta->uploaded))
++			sta = NULL;
++		goto tx_offload;
++	} else if (unlikely(IS_ERR_OR_NULL(sta) || !sta->uploaded))
+ 		goto skip_offload;
+ 
+ 	key = rcu_dereference(sta->ptk[sta->ptk_idx]);
+@@ -4360,6 +4363,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+ 	if (key && (!(key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE)))
+ 		goto skip_offload;
+ 
++tx_offload:
+ 	ieee80211_8023_xmit(sdata, dev, sta, key, skb);
+ 	goto out;
+ 
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -4817,7 +4817,7 @@ void ieee80211_rx_list(struct ieee80211_
+ 
+ 	if (pubsta) {
+ 		sta = container_of(pubsta, struct sta_info, sta);
+-		if (sta && napi) {
++		if (sta) {
+ 			if (!(status->flag & RX_FLAG_ONLY_MONITOR))
+ 				atomic_inc(&sta->rx_drv_pkts);
+ 		}
+@@ -4909,8 +4909,6 @@ void ieee80211_rx_list(struct ieee80211_
+ 
+ 	status->rx_flags = 0;
+ 
+-	kcov_remote_start_common(skb_get_kcov_handle(skb));
+-
+ 	/*
+ 	 * Frames with failed FCS/PLCP checksum are not returned,
+ 	 * all other frames are returned without radiotap header
+@@ -4930,7 +4928,6 @@ void ieee80211_rx_list(struct ieee80211_
+ 			__ieee80211_rx_handle_packet(hw, pubsta, skb, list);
+ 	}
+ 
+-	kcov_remote_stop();
+ 	return;
+  drop:
+ 	kfree_skb(skb);

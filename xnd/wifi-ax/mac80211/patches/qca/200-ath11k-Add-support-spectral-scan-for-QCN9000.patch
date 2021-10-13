@@ -1,0 +1,190 @@
+From 3e88b70ba7f0c52853b1d9208159c03dab037bf5 Mon Sep 17 00:00:00 2001
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Date: Sun, 19 Jul 2020 12:49:34 +0530
+Subject: [PATCH] ath11k: Add support spectral scan for QCN9000
+
+QCN9000 supported with 4 bytes FFT bin size. FFT report
+header length is 24 bytes instead of 16 bytes. Summary
+report is padded with 16 bytes in QCN9000.
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c     |  9 +++++++++
+ drivers/net/wireless/ath/ath11k/hw.h       |  4 ++++
+ drivers/net/wireless/ath/ath11k/spectral.c | 30 ++++++++++++++++--------------
+ drivers/net/wireless/ath/spectral_common.h |  2 +-
+ 4 files changed, 30 insertions(+), 15 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -71,6 +71,9 @@ static const struct ath11k_hw_params ath
+ 		.htt_peer_map_v2 = true,
+ 		.tcl_0_only = false,
+ 		.spectral_fft_sz = 2,
++		.spectral_fft_pad_sz = 2,
++		.spectral_max_fft_bins = 512,
++		.spectral_fft_hdr_len = 16,
+ 
+ 		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
+ 					BIT(NL80211_IFTYPE_AP) |
+@@ -113,6 +116,8 @@ static const struct ath11k_hw_params ath
+ 		.htt_peer_map_v2 = true,
+ 		.tcl_0_only = false,
+ 		.spectral_fft_sz = 4,
++		.spectral_max_fft_bins = 512,
++		.spectral_fft_hdr_len = 16,
+ 
+ 		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
+ 					BIT(NL80211_IFTYPE_AP) |
+@@ -190,6 +195,8 @@ static const struct ath11k_hw_params ath
+ 		.vdev_start_delay = false,
+ 		.htt_peer_map_v2 = true,
+ 		.tcl_0_only = false,
++		.spectral_fft_sz = 2,
++
+ 		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
+ 					BIT(NL80211_IFTYPE_AP) |
+ 					BIT(NL80211_IFTYPE_MESH_POINT),
+@@ -199,6 +206,9 @@ static const struct ath11k_hw_params ath
+ 		.cold_boot_calib = true,
+ 		.supports_suspend = false,
+ 		.hal_desc_sz = sizeof(struct hal_rx_desc_qcn9074),
++		.spectral_max_fft_bins = 1024,
++		.spectral_summary_pad_sz = 16,
++		.spectral_fft_hdr_len = 24,
+ 	},
+ };
+ 
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -157,6 +157,10 @@ struct ath11k_hw_params {
+ 	bool htt_peer_map_v2;
+ 	bool tcl_0_only;
+ 	u8 spectral_fft_sz;
++	u8 spectral_fft_pad_sz;
++	u8 spectral_summary_pad_sz;
++	u8 spectral_fft_hdr_len;
++	u32 spectral_max_fft_bins;
+ 	bool credit_flow;
+ 
+ 	u16 interface_modes;
+--- a/drivers/net/wireless/ath/ath11k/spectral.c
++++ b/drivers/net/wireless/ath/ath11k/spectral.c
+@@ -11,11 +11,9 @@
+ #define ATH11K_SPECTRAL_EVENT_TIMEOUT_MS	1
+ 
+ #define ATH11K_SPECTRAL_DWORD_SIZE		4
+-/* HW bug, expected BIN size is 2 bytes but HW report as 4 bytes */
+-#define ATH11K_SPECTRAL_BIN_SIZE		4
+-#define ATH11K_SPECTRAL_ATH11K_MIN_BINS		64
+-#define ATH11K_SPECTRAL_ATH11K_MIN_IB_BINS	32
+-#define ATH11K_SPECTRAL_ATH11K_MAX_IB_BINS	256
++#define ATH11K_SPECTRAL_ATH11K_MIN_BINS		32
++#define ATH11K_SPECTRAL_ATH11K_MIN_IB_BINS	16
++#define ATH11K_SPECTRAL_ATH11K_MAX_IB_BINS	(ab->hw_params.spectral_max_fft_bins >> 1)
+ 
+ #define ATH11K_SPECTRAL_SCAN_COUNT_MAX		4095
+ 
+@@ -445,7 +443,7 @@ static ssize_t ath11k_write_file_spectra
+ 		return -EINVAL;
+ 
+ 	if (val < ATH11K_SPECTRAL_ATH11K_MIN_BINS ||
+-	    val > SPECTRAL_ATH11K_MAX_NUM_BINS)
++	    val > ar->ab->hw_params.spectral_max_fft_bins)
+ 		return -EINVAL;
+ 
+ 	if (!is_power_of_2(val))
+@@ -581,7 +579,7 @@ int ath11k_spectral_process_fft(struct a
+ 	struct spectral_tlv *tlv;
+ 	int tlv_len, bin_len, num_bins;
+ 	u16 length, freq;
+-	u8 chan_width_mhz;
++	u8 chan_width_mhz, bin_sz;
+ 	int ret;
+ 
+ 	lockdep_assert_held(&ar->spectral.lock);
+@@ -596,7 +594,7 @@ int ath11k_spectral_process_fft(struct a
+ 	tlv_len = FIELD_GET(SPECTRAL_TLV_HDR_LEN, __le32_to_cpu(tlv->header));
+ 	/* convert Dword into bytes */
+ 	tlv_len *= ATH11K_SPECTRAL_DWORD_SIZE;
+-	bin_len = tlv_len - (sizeof(*fft_report) - sizeof(*tlv));
++	bin_len = tlv_len - ab->hw_params.spectral_fft_hdr_len;
+ 
+ 	if (data_len < (bin_len + sizeof(*fft_report))) {
+ 		ath11k_warn(ab, "mismatch in expected bin len %d and data len %d\n",
+@@ -604,7 +602,9 @@ int ath11k_spectral_process_fft(struct a
+ 		return -EINVAL;
+ 	}
+ 
+-	num_bins = bin_len / ATH11K_SPECTRAL_BIN_SIZE;
++	bin_sz = ab->hw_params.spectral_fft_sz + ab->hw_params.spectral_fft_pad_sz;
++	num_bins = bin_len / bin_sz;
++
+ 	/* Only In-band bins are useful to user for visualize */
+ 	num_bins >>= 1;
+ 
+@@ -738,7 +738,8 @@ static int ath11k_spectral_process_data(
+ 			 * is 4 DWORD size (16 bytes).
+ 			 * Need to remove this workaround once HW bug fixed
+ 			 */
+-			tlv_len = sizeof(*summary) - sizeof(*tlv);
++			tlv_len = sizeof(*summary) - sizeof(*tlv) +
++				  ab->hw_params.spectral_summary_pad_sz;
+ 
+ 			if (tlv_len < (sizeof(*summary) - sizeof(*tlv))) {
+ 				ath11k_warn(ab, "failed to parse spectral summary at bytes %d tlv_len:%d\n",
+@@ -897,6 +898,7 @@ void ath11k_spectral_deinit(struct ath11
+ 
+ static inline int ath11k_spectral_debug_register(struct ath11k *ar)
+ {
++	struct ath11k_base *ab = ar->ab;
+ 	int ret;
+ 
+ 	ar->spectral.rfs_scan = relay_open("spectral_scan",
+@@ -905,7 +907,7 @@ static inline int ath11k_spectral_debug_
+ 					   ATH11K_SPECTRAL_NUM_SUB_BUF,
+ 					   &rfs_scan_cb, NULL);
+ 	if (!ar->spectral.rfs_scan) {
+-		ath11k_warn(ar->ab, "failed to open relay in pdev %d\n",
++		ath11k_warn(ab, "failed to open relay in pdev %d\n",
+ 			    ar->pdev_idx);
+ 		return -EINVAL;
+ 	}
+@@ -915,7 +917,7 @@ static inline int ath11k_spectral_debug_
+ 						    ar->debug.debugfs_pdev, ar,
+ 						    &fops_scan_ctl);
+ 	if (!ar->spectral.scan_ctl) {
+-		ath11k_warn(ar->ab, "failed to open debugfs in pdev %d\n",
++		ath11k_warn(ab, "failed to open debugfs in pdev %d\n",
+ 			    ar->pdev_idx);
+ 		ret = -EINVAL;
+ 		goto debug_unregister;
+@@ -926,7 +928,7 @@ static inline int ath11k_spectral_debug_
+ 						      ar->debug.debugfs_pdev, ar,
+ 						      &fops_scan_count);
+ 	if (!ar->spectral.scan_count) {
+-		ath11k_warn(ar->ab, "failed to open debugfs in pdev %d\n",
++		ath11k_warn(ab, "failed to open debugfs in pdev %d\n",
+ 			    ar->pdev_idx);
+ 		ret = -EINVAL;
+ 		goto debug_unregister;
+@@ -937,7 +939,7 @@ static inline int ath11k_spectral_debug_
+ 						     ar->debug.debugfs_pdev, ar,
+ 						     &fops_scan_bins);
+ 	if (!ar->spectral.scan_bins) {
+-		ath11k_warn(ar->ab, "failed to open debugfs in pdev %d\n",
++		ath11k_warn(ab, "failed to open debugfs in pdev %d\n",
+ 			    ar->pdev_idx);
+ 		ret = -EINVAL;
+ 		goto debug_unregister;
+--- a/drivers/net/wireless/ath/spectral_common.h
++++ b/drivers/net/wireless/ath/spectral_common.h
+@@ -24,7 +24,7 @@
+  * could be acquired so far.
+  */
+ #define SPECTRAL_ATH10K_MAX_NUM_BINS		256
+-#define SPECTRAL_ATH11K_MAX_NUM_BINS		512
++#define SPECTRAL_ATH11K_MAX_NUM_BINS		1024
+ 
+ /* FFT sample format given to userspace via debugfs.
+  *

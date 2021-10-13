@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+USE_PROCD=1
+PROG=/usr/sbin/maverick
+
+start_service() {
+	active=$(readlink  /etc/ucentral/ucentral.active)
+	[ -n "$active" -a "$active" != "/etc/ucentral/ucentral.cfg.0000000001" ] && return 0
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_close_instance
+}

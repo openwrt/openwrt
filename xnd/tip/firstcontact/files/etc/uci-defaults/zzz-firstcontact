@@ -1,0 +1,3 @@
+#!/bin/sh
+[ -f "/etc/ucentral/redirector.json" ] && /etc/init.d/firstcontact disable
+[ -f "/etc/ucentral/redirector.json" ] || /etc/init.d/ucentral disable

@@ -1,0 +1,253 @@
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6503,9 +6503,94 @@ ath11k_mac_get_single_legacy_rate(struct
+ 	return 0;
+ }
+ 
+-static int ath11k_mac_set_fixed_rate_params(struct ath11k_vif *arvif,
+-					    u32 rate, u8 nss, u8 sgi, u8 ldpc,
+-					    u8 he_gi, u8 he_ltf)
++static int
++ath11k_mac_set_fixed_rate_GI_LTF(struct ath11k_vif *arvif, u8 he_gi, u8 he_ltf)
++{
++	struct ath11k *ar = arvif->ar;
++	int ret;
++
++	/* 0.8 = 0, 1.6 = 2 and 3.2 = 3. */
++	if (he_gi && he_gi != 0xFF)
++		he_gi += 1;
++
++	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
++					    WMI_VDEV_PARAM_SGI, he_gi);
++	if (ret) {
++		ath11k_warn(ar->ab, "failed to set HE GI:%d, error:%d\n",
++			    he_gi, ret);
++		return ret;
++	}
++	/* start from 1 */
++	if (he_ltf != 0xFF)
++		he_ltf += 1;
++
++	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
++					    WMI_VDEV_PARAM_HE_LTF, he_ltf);
++	if (ret) {
++		ath11k_warn(ar->ab, "failed to set HE LTF:%d, error:%d\n",
++			    he_ltf, ret);
++		return ret;
++	}
++	return 0;
++}
++
++static int
++ath11k_mac_set_auto_rate_GI_LTF(struct ath11k_vif *arvif, u16 he_gi, u8 he_ltf)
++{
++	struct ath11k *ar = arvif->ar;
++	int ret;
++	u32 he_ar_gi_ltf = 0;
++
++	if (he_gi != 0xFF) {
++		switch (he_gi) {
++		case NL80211_RATE_INFO_HE_GI_0_8:
++			he_gi = WMI_AUTORATE_800NS_GI;
++			break;
++		case NL80211_RATE_INFO_HE_GI_1_6:
++			he_gi = WMI_AUTORATE_1600NS_GI;
++			break;
++		case NL80211_RATE_INFO_HE_GI_3_2:
++			he_gi = WMI_AUTORATE_3200NS_GI;
++			break;
++		default:
++			ath11k_warn(ar->ab, "Invalid GI\n");
++			return 1;
++		}
++	}
++
++	if (he_ltf != 0xFF) {
++		switch (he_ltf) {
++		case NL80211_RATE_INFO_HE_1XLTF:
++			he_ltf = WMI_HE_AUTORATE_LTF_1X;
++			break;
++		case NL80211_RATE_INFO_HE_2XLTF:
++			he_ltf = WMI_HE_AUTORATE_LTF_2X;
++			break;
++		case NL80211_RATE_INFO_HE_4XLTF:
++			he_ltf = WMI_HE_AUTORATE_LTF_4X;
++			break;
++		default:
++			ath11k_warn(ar->ab, "Invalid LTF\n");
++			return 1;
++		}
++	}
++
++	he_ar_gi_ltf = he_gi | he_ltf;
++	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
++					    WMI_VDEV_PARAM_AUTORATE_MISC_CFG,
++					    he_ar_gi_ltf);
++	if (ret) {
++		ath11k_warn(ar->ab,
++			    "failed to set HE autorate GI:%u, LTF:%u params, error:%d\n",
++			    he_gi, he_ltf, ret);
++		return ret;
++	}
++	return 0;
++}
++
++static int ath11k_mac_set_rate_params(struct ath11k_vif *arvif,
++				      u32 rate, u8 nss, u8 sgi, u8 ldpc,
++				      u8 he_gi, u8 he_ltf, bool he_fixed_rate)
+ {
+ 	struct ath11k *ar = arvif->ar;
+ 	u32 vdev_param;
+@@ -6513,8 +6598,13 @@ static int ath11k_mac_set_fixed_rate_par
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
+-	ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "mac set fixed rate params vdev %i rate 0x%02x nss %u sgi %u\n",
+-		   arvif->vdev_id, rate, nss, sgi);
++	ath11k_dbg(ar->ab, ATH11K_DBG_MAC,
++		   "mac set rate params vdev %i, rate:0x%02x, nss:0x%02x, sgi:0x%02x, ldpc:0x%02x\n",
++		   arvif->vdev_id, rate, nss, sgi, ldpc);
++
++	ath11k_dbg(ar->ab, ATH11K_DBG_MAC,
++		   "he_gi:0x%02x, he_ltf:0x%02x, he_fixed_rate:%d\n", he_gi,
++		   he_ltf, he_fixed_rate);
+ 
+ 	if (!arvif->vif->bss_conf.he_support) {
+ 		vdev_param = WMI_VDEV_PARAM_FIXED_RATE;
+@@ -6537,39 +6627,23 @@ static int ath11k_mac_set_fixed_rate_par
+ 
+ 	vdev_param = WMI_VDEV_PARAM_LDPC;
+ 	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+-					     vdev_param, ldpc);
++					    vdev_param, ldpc);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to set ldpc param %d: %d\n",
+-			     ldpc, ret);
++			    ldpc, ret);
+ 		return ret;
+ 	}
+ 
+ 	if (arvif->vif->bss_conf.he_support) {
+-		if (he_gi != 0xFF) {
+-			vdev_param = WMI_VDEV_PARAM_SGI;
+-			/* 0.8 = 0, 1.6 = 2 and 3.2 = 3. */
+-			if (he_gi)
+-				he_gi += 1;
+-			ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+-							    vdev_param, he_gi);
+-			if (ret) {
+-				ath11k_warn(ar->ab, "failed to set hegi param %d: %d\n",
+-					    sgi, ret);
+-				return ret;
+-			}
+-		}
+-		if (he_ltf != 0xFF) {
+-			vdev_param = WMI_VDEV_PARAM_HE_LTF;
+-				/* start from 1 */
+-				he_ltf += 1;
+-			ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+-							    vdev_param, he_ltf);
+-			if (ret) {
+-				ath11k_warn(ar->ab, "failed to set heltf param %d: %d\n",
+-					    he_ltf, ret);
+-					return ret;
+-			}
++		if (he_fixed_rate) {
++			ret = ath11k_mac_set_fixed_rate_GI_LTF(arvif, he_gi,
++							       he_ltf);
++		} else {
++			ret = ath11k_mac_set_auto_rate_GI_LTF(arvif, he_gi,
++							      he_ltf);
+ 		}
++		if (ret)
++			return ret;
+ 	} else {
+ 		vdev_param = WMI_VDEV_PARAM_SGI;
+ 		ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+@@ -6732,6 +6806,7 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 	int single_nss;
+ 	int ret;
+ 	int num_rates;
++	bool he_fixed_rate = false;
+ 
+ 	if (ath11k_mac_vif_chan(vif, &def))
+ 		return -EPERM;
+@@ -6772,6 +6847,12 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 							  &single_nss)) {
+ 		rate = WMI_FIXED_RATE_NONE;
+ 		nss = single_nss;
++		mutex_lock(&ar->conf_mutex);
++		arvif->bitrate_mask = *mask;
++		ieee80211_iterate_stations_atomic(ar->hw,
++						  ath11k_mac_set_bitrate_mask_iter,
++						  arvif);
++		mutex_unlock(&ar->conf_mutex);
+ 	} else {
+ 		rate = WMI_FIXED_RATE_NONE;
+ 
+@@ -6819,6 +6900,8 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 
+ 		num_rates = ath11k_mac_bitrate_mask_num_he_rates(ar, band,
+ 								 mask);
++		if (num_rates == 1)
++			he_fixed_rate = true;
+ 
+ 		if (!ath11k_mac_he_mcs_range_present(ar, band, mask) &&
+ 		    num_rates > 1) {
+@@ -6828,6 +6911,9 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 		}
+ 
+ 		mutex_lock(&ar->conf_mutex);
++		ieee80211_iterate_stations_atomic(ar->hw,
++						  ath11k_mac_disable_peer_fixed_rate,
++						  arvif);
+ 
+ 		arvif->bitrate_mask = *mask;
+ 		ieee80211_iterate_stations_atomic(ar->hw,
+@@ -6839,10 +6925,10 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
+-	ret = ath11k_mac_set_fixed_rate_params(arvif, rate, nss, sgi, ldpc,
+-					       he_gi, he_ltf);
++	ret = ath11k_mac_set_rate_params(arvif, rate, nss, sgi, ldpc, he_gi,
++					 he_ltf, he_fixed_rate);
+ 	if (ret) {
+-		ath11k_warn(ar->ab, "failed to set fixed rate params on vdev %i: %d\n",
++		ath11k_warn(ar->ab, "failed to set rate params on vdev %i: %d\n",
+ 			    arvif->vdev_id, ret);
+ 	}
+ 
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -117,6 +117,22 @@ enum {
+ 	WMI_HOST_WLAN_2G_5G_CAP	= 0x3,
+ };
+ 
++/* Parameters used for WMI_VDEV_PARAM_AUTORATE_MISC_CFG command.
++ * Used only for HE auto rate mode.
++ */
++enum {
++/* HE LTF related configuration */
++	WMI_HE_AUTORATE_LTF_1X = (1 << 0),
++	WMI_HE_AUTORATE_LTF_2X = (1 << 1),
++	WMI_HE_AUTORATE_LTF_4X = (1 << 2),
++
++/* HE GI related configuration */
++	WMI_AUTORATE_400NS_GI = (1 << 8),
++	WMI_AUTORATE_800NS_GI = (1 << 9),
++	WMI_AUTORATE_1600NS_GI = (1 << 10),
++	WMI_AUTORATE_3200NS_GI = (1 << 11),
++};
++
+ /*
+  * wmi command groups.
+  */
+@@ -1044,6 +1060,7 @@ enum wmi_tlv_vdev_param {
+ 	WMI_VDEV_PARAM_FILS_MAX_CHANNEL_GUARD_TIME,
+ 	WMI_VDEV_PARAM_HE_LTF = 0x74,
+ 	WMI_VDEV_PARAM_BA_MODE = 0x7e,
++	WMI_VDEV_PARAM_AUTORATE_MISC_CFG = 0x80,
+ 	WMI_VDEV_PARAM_SET_HE_SOUNDING_MODE = 0x87,
+ 	WMI_VDEV_PARAM_6GHZ_PARAMS = 0x99,
+ 	WMI_VDEV_PARAM_PROTOTYPE = 0x8000,

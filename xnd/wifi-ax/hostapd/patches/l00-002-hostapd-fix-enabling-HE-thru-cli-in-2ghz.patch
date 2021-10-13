@@ -1,0 +1,32 @@
+From 994bff7d74eba00244b481a7d164a44412908ad6 Mon Sep 17 00:00:00 2001
+From: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+Date: Fri, 4 Jun 2021 22:19:27 +0530
+Subject: [PATCH] hostapd: unable to set HE mode on 2.4Ghz
+
+Channel switch through hostapd_cli is not able to operate in HE mode in
+2.4Ghz. This is because since the he mode is not enabled for 2ghz the
+channel type is set to 20Mhz NO_HT.
+
+Enabled he for 2Ghz radio on 20Mhz bandwidth for channel switch.
+
+Signed-off-by: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+---
+ src/drivers/driver_nl80211.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index cbf41c6..a0dd827 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4979,7 +4979,7 @@ static int nl80211_put_freq_params(struct nl_msg *msg,
+ 		     nla_put_u32(msg, NL80211_ATTR_CENTER_FREQ2,
+ 				 freq->center_freq2)))
+ 			return -ENOBUFS;
+-	} else if (freq->ht_enabled) {
++	} else if (freq->ht_enabled || (freq->he_enabled && is_24ghz)) {
+ 		enum nl80211_channel_type ct;
+ 
+ 		wpa_printf(MSG_DEBUG, "  * sec_channel_offset=%d",
+-- 
+2.7.4
+

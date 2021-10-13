@@ -1,0 +1,137 @@
+--- a/scan.c
++++ b/scan.c
+@@ -378,19 +378,23 @@ static int handle_scan(struct nl80211_st
+ 	enum {
+ 		NONE,
+ 		FREQ,
++		MODE,
++		CHECK_SCAN_FLAG_AP,
+ 		IES,
+ 		SSID,
+ 		MESHID,
+ 		DURATION,
+ 		DONE,
+ 	} parse = NONE;
+-	int freq;
++	int freq = 0;
+ 	unsigned int duration = 0;
+ 	bool passive = false, have_ssids = false, have_freqs = false;
++	bool have_chandef = false;
+ 	bool duration_mandatory = false;
+ 	size_t ies_len = 0, meshid_len = 0;
+ 	unsigned char *ies = NULL, *meshid = NULL, *tmpies = NULL;
+ 	unsigned int flags = 0;
++	struct chandef chandef;
+ 
+ 	ssids = nlmsg_alloc();
+ 	if (!ssids)
+@@ -407,7 +411,6 @@ static int handle_scan(struct nl80211_st
+ 		case NONE:
+ 			if (strcmp(argv[i], "freq") == 0) {
+ 				parse = FREQ;
+-				have_freqs = true;
+ 				break;
+ 			} else if (strcmp(argv[i], "ies") == 0) {
+ 				parse = IES;
+@@ -451,14 +454,33 @@ static int handle_scan(struct nl80211_st
+ 			err = 1;
+ 			goto nla_put_failure;
+ 		case FREQ:
+-			freq = strtoul(argv[i], &eptr, 10);
+-			if (eptr != argv[i] + strlen(argv[i])) {
+-				/* failed to parse as number -- maybe a tag? */
+-				i--;
+-				parse = NONE;
+-				continue;
++			parse_freqchan(&chandef, false, argc - i, argv + i, NULL);
++
++			if (!chandef.control_freq || have_freqs) {
++				freq = strtoul(argv[i], &eptr, 10);
++				if (eptr != argv[i] + strlen(argv[i])) {
++					/* failed to parse as number -- maybe a tag? */
++					i--;
++					parse = NONE;
++					continue;
++				}
++				NLA_PUT_U32(freqs, i, freq);
++			} else {
++				if (chandef.width == NL80211_CHAN_WIDTH_20_NOHT){
++					have_freqs = true;
++					NLA_PUT_U32(freqs, i, chandef.control_freq);
++				} else {
++					parse = MODE;
++				}
+ 			}
+-			NLA_PUT_U32(freqs, i, freq);
++			break;
++		case MODE:
++			have_chandef = true;
++			parse = CHECK_SCAN_FLAG_AP;
++			break;
++		case CHECK_SCAN_FLAG_AP:
++			if (strcmp(argv[i], "ap-force") == 0)
++				flags |= NL80211_SCAN_FLAG_AP;
+ 			break;
+ 		case IES:
+ 			if (ies)
+@@ -506,8 +528,11 @@ static int handle_scan(struct nl80211_st
+ 	if (!passive)
+ 		nla_put_nested(msg, NL80211_ATTR_SCAN_SSIDS, ssids);
+ 
+-	if (have_freqs)
++	if (have_chandef)
++		put_chandef(msg, &chandef);
++	else if (have_freqs)
+ 		nla_put_nested(msg, NL80211_ATTR_SCAN_FREQUENCIES, freqs);
++
+ 	if (flags)
+ 		NLA_PUT_U32(msg, NL80211_ATTR_SCAN_FLAGS, flags);
+ 	if (duration)
+@@ -2615,20 +2640,24 @@ static int handle_scan_combined(struct n
+ 	dump_argv[0] = argv[0];
+ 	return handle_cmd(state, id, dump_argc, dump_argv);
+ }
+-TOPLEVEL(scan, "[-u] [freq <freq>*] [duration <dur>] [ies <hex as 00:11:..>] [meshid <meshid>] [lowpri,flush,ap-force,duration-mandatory] [randomise[=<addr>/<mask>]] [ssid <ssid>*|passive]", 0, 0,
++TOPLEVEL(scan, "[-u] [freq <freq>*] [HT40+|HT40-|80MHz] [duration <dur>] [ies <hex as 00:11:..>] [meshid <meshid>] [lowpri,flush,ap-force,duration-mandatory] [randomise[=<addr>/<mask>]] [ssid <ssid>*|passive]", 0, 0,
+ 	 CIB_NETDEV, handle_scan_combined,
+ 	 "Scan on the given frequencies and probe for the given SSIDs\n"
+ 	 "(or wildcard if not given) unless passive scanning is requested.\n"
++	 "If channel mode/width is provided along with frequency, only \n"
++	 "scanning on primary frequency of channel mode/width is done.\n"
+ 	 "If -u is specified print unknown data in the scan results.\n"
+ 	 "Specified (vendor) IEs must be well-formed.");
+ COMMAND(scan, dump, "[-u]",
+ 	NL80211_CMD_GET_SCAN, NLM_F_DUMP, CIB_NETDEV, handle_scan_dump,
+ 	"Dump the current scan results. If -u is specified, print unknown\n"
+ 	"data in scan results.");
+-COMMAND(scan, trigger, "[freq <freq>*] [duration <dur>] [ies <hex as 00:11:..>] [meshid <meshid>] [lowpri,flush,ap-force,duration-mandatory] [randomise[=<addr>/<mask>]] [ssid <ssid>*|passive]",
++COMMAND(scan, trigger, "[freq <freq>*] [HT40+|HT40-|80MHz] [duration <dur>] [ies <hex as 00:11:..>] [meshid <meshid>] [lowpri,flush,ap-force,duration-mandatory] [randomise[=<addr>/<mask>]] [ssid <ssid>*|passive]",
+ 	NL80211_CMD_TRIGGER_SCAN, 0, CIB_NETDEV, handle_scan,
+ 	 "Trigger a scan on the given frequencies with probing for the given\n"
+ 	 "SSIDs (or wildcard if not given) unless passive scanning is requested.\n"
++	 "If channel mode/width is provided along with frequency, only \n"
++	 "scanning on primary frequency of channel mode/width is done.\n"
+ 	 "Duration(in TUs), if specified, will be used to set dwell times.\n");
+ 
+ 
+--- a/util.c
++++ b/util.c
+@@ -633,6 +633,9 @@ int parse_freqchan(struct chandef *chand
+ 
+ 	if (!argv[0])
+ 		goto out;
++
++	memset(chandef, 0, sizeof(struct chandef));
++
+ 	freq = strtoul(argv[0], &end, 10);
+ 	if (*end) {
+ 		res = 1;
+@@ -641,8 +644,6 @@ int parse_freqchan(struct chandef *chand
+ 
+ 	_parsed += 1;
+ 
+-	memset(chandef, 0, sizeof(struct chandef));
+-
+ 	if (chan) {
+ 		enum nl80211_band band;
+ 

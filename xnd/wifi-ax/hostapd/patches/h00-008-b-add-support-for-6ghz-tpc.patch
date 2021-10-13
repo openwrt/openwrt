@@ -1,0 +1,50 @@
+From 5b23a6f5fba606cb76fe50e2fc73285caf935b32 Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Mon, 1 Feb 2021 11:16:07 -0800
+Subject: [PATCH 2/4] ieee80211: Regulatory info field definition for HE 6GHz
+ operation IE
+
+Regulatory info subfield is added per specification
+IEEE P802.11ax/D7.0.
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+---
+ src/ap/ieee802_11_he.c       | 9 ++++++++-
+ src/common/ieee802_11_defs.h | 1 +
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/src/ap/ieee802_11_he.c b/src/ap/ieee802_11_he.c
+index 18436a6b336b..a78ed01a54b6 100644
+--- a/src/ap/ieee802_11_he.c
++++ b/src/ap/ieee802_11_he.c
+@@ -226,7 +226,14 @@ u8 * hostapd_eid_he_operation(struct hostapd_data *hapd, u8 *eid)
+ 		/* 6 GHz Operation Information field */
+ 		*pos++ = hapd->iconf->channel; /* Primary Channel */
+ 
+-		/* Control: Channel Width */
++		/* Control:
++		 * 	bits 0-1: Channel Width
++		 * 	bits 2-2: Duplicate Beacon
++		 * 	bits 3-5: Regulatory Info
++		 * 		 - 0 (Indoor Access Point)
++		 * 		 - 1 (Standard Power Access Point)
++		 * 		 - Reserved in 5GHz and 2Ghz bands
++		 */
+ 		if (seg1)
+ 			*pos++ = 3;
+ 		else
+diff --git a/src/common/ieee802_11_defs.h b/src/common/ieee802_11_defs.h
+index be37c9323ae2..3c065ab27f51 100644
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -2188,6 +2188,7 @@ struct ieee80211_he_6ghz_oper_info {
+ 
+ #define HE_6GHZ_OPER_INFO_CTRL_CHAN_WIDTH_MASK	(BIT(0) | BIT(1))
+ #define HE_6GHZ_OPER_INFO_CTRL_DUP_BEACON	BIT(2)
++#define HE_6GHZ_OPER_INFO_CTRL_REG_INFO_MASK	(BIT(3) | BIT(4) | BIT(5))
+ 
+ /* IEEE P802.11ax/D6.0, 9.4.2.261 HE 6 GHz Band Capabilities element */
+ struct ieee80211_he_6ghz_band_cap {
+-- 
+2.17.1
+

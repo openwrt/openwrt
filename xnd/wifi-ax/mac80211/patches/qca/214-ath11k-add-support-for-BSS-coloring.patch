@@ -1,0 +1,216 @@
+From: John Crispin <john@phrozen.org>
+Date: Wed, 26 Aug 2020 07:56:50 +0200
+Subject: [PATCH] ath11k: add support for BSS coloring
+
+Whenever the MAC detects a color collision or any of its associated station
+detects one the FW will send out an event. Add the code to parse and handle
+this event. and pass the data up to mac80211.
+
+The FW does not provide an offload feature such as the one used for CSA. The
+color change process is hence triggered via the beacon offload tx completion events
+sent out by the FW.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 37 +++++++++++++++++++++-----
+ drivers/net/wireless/ath/ath11k/wmi.c | 49 ++++++++++++++++++++++++++++++++++-
+ drivers/net/wireless/ath/ath11k/wmi.h | 14 ++++++++++
+ 3 files changed, 93 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1111,30 +1111,32 @@ static int ath11k_mac_setup_bcn_tmpl(str
+ 
+ void ath11k_mac_bcn_tx_event(struct ath11k_vif *arvif)
+ {
+-	struct ieee80211_vif *vif = arvif->vif, *child, *tmp;
+-	int multiple_bssid = 0;
++        struct ieee80211_vif *vif = arvif->vif, *child, *tmp;
++        int multiple_bssid = 0;
+ 
+-	if (!vif->multiple_bssid.non_transmitted &&
+-	    !list_empty(&vif->multiple_bssid.list)) {
+-		if (vif->csa_active) {
+-			if (ieee80211_csa_is_complete(vif)) {
+-				ieee80211_csa_finish(vif);
+-				list_for_each_entry_safe(child, tmp,
+-							 &vif->multiple_bssid.list,
+-							 multiple_bssid.list)
+-					ieee80211_csa_finish(child);
+-
+-				return;
+-			} else {
+-				ieee80211_csa_update_counter(vif);
+-			}
+-		}
++        if (!vif->multiple_bssid.non_transmitted &&
++           !list_empty(&vif->multiple_bssid.list))
++                multiple_bssid = 1;
++
++        if (!multiple_bssid && !vif->color_change_active)
++                return;
++
++        if (vif->csa_active && ieee80211_beacon_cntdwn_is_complete(vif)) {
++		ieee80211_csa_finish(vif);
++		list_for_each_entry_safe(child, tmp,
++					 &vif->multiple_bssid.list,
++					 multiple_bssid.list)
++			ieee80211_csa_finish(child);
++                        return;
++        }
+ 
+-		multiple_bssid = 1;
+-	}
++        if (vif->color_change_active && ieee80211_beacon_cntdwn_is_complete(vif)) {
++                ieee80211_color_change_finish(vif);
++                return;
++        }
+ 
+-	if (!multiple_bssid)
+-		return;
++        if (vif->color_change_active || vif->csa_active)
++                ieee80211_beacon_update_cntdwn(vif);
+ 
+ 	ath11k_mac_setup_bcn_tmpl(arvif);
+ }
+@@ -3145,6 +3147,24 @@ static void ath11k_mac_op_bss_info_chang
+ 			if (ret)
+ 				ath11k_warn(ar->ab, "failed to set bss color collision on vdev %i: %d\n",
+ 					    arvif->vdev_id,  ret);
++
++			param_id = WMI_VDEV_PARAM_BSS_COLOR;
++			param_value = info->he_bss_color.color <<
++					IEEE80211_HE_OPERATION_BSS_COLOR_OFFSET;
++
++			if (!info->he_bss_color.enabled)
++				param_value |= IEEE80211_HE_OPERATION_BSS_COLOR_DISABLED;
++
++			ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
++							    param_id,
++							    param_value);
++			if (ret)
++				ath11k_warn(ar->ab,
++					    "failed to set bss color param on vdev %i: %d\n",
++					    arvif->vdev_id,  ret);
++
++			ath11k_info(ar->ab, "bss color param 0x%x set on vdev %i\n",
++				    param_value, arvif->vdev_id);
+ 		} else if (vif->type == NL80211_IFTYPE_STATION) {
+ 			ret = ath11k_wmi_send_bss_color_change_enable_cmd(ar,
+ 									  arvif->vdev_id,
+@@ -8211,6 +8231,7 @@ static int __ath11k_mac_register(struct
+ 
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_STA_TX_PWR);
++	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_BSS_COLOR);
+ 
+ 	if (test_bit(WMI_TLV_SERVICE_SCAN_PHYMODE_SUPPORT,
+ 		     ar->ab->wmi_ab.svc_map))
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -139,6 +139,8 @@ static const struct wmi_tlv_policy wmi_t
+ 		= { .min_len = sizeof(struct wmi_tpc_stats_event_fixed_param) },
+ 	[WMI_TAG_MUEDCA_PARAMS_CONFIG_EVENT]
+ 		= { .min_len = sizeof(struct wmi_pdev_update_muedca_event) },
++	[WMI_TAG_OBSS_COLOR_COLLISION_EVT]
++		= { .min_len = sizeof(struct wmi_obss_color_collision_event) },
+ 	[WMI_TAG_WDS_ADDR_EVENT]
+ 		= { .min_len = sizeof(struct wmi_wds_addr_event) },
+ };
+@@ -3988,6 +3990,49 @@ int ath11k_wmi_fils_discovery(struct ath
+ }
+ 
+ static void
++ath11k_wmi_obss_color_collision_event(struct ath11k_base *ab, struct sk_buff *skb)
++{
++	const void **tb;
++	const struct wmi_obss_color_collision_event *ev;
++	struct ath11k_vif *arvif;
++	int ret;
++
++	tb = ath11k_wmi_tlv_parse_alloc(ab, skb->data, skb->len, GFP_ATOMIC);
++	if (IS_ERR(tb)) {
++		ret = PTR_ERR(tb);
++		ath11k_warn(ab, "failed to parse tlv: %d\n", ret);
++		return;
++	}
++
++	ev = tb[WMI_TAG_OBSS_COLOR_COLLISION_EVT];
++	if (!ev) {
++		ath11k_warn(ab, "failed to fetch obss color collision ev");
++		goto exit;
++	}
++
++	arvif = ath11k_mac_get_arvif_by_vdev_id(ab, ev->vdev_id);
++	switch (ev->evt_type) {
++	case WMI_BSS_COLOR_COLLISION_DETECTION:
++		break;
++	case WMI_BSS_COLOR_COLLISION_DISABLE:
++	case WMI_BSS_COLOR_FREE_SLOT_TIMER_EXPIRY:
++	case WMI_BSS_COLOR_FREE_SLOT_AVAILABLE:
++		goto exit;
++	default:
++		ath11k_warn(ab, "received unknown obss color collision detetction event\n");
++		goto exit;
++	}
++
++	ieeee80211_obss_color_collision_notify(arvif->vif, ev->obss_color_bitmap);
++
++	ath11k_dbg(ab, ATH11K_DBG_WMI,
++		   "OBSS color collision detected vdev:%d, event:%d, bitmap:%08llx\n",
++		   ev->vdev_id, ev->evt_type, ev->obss_color_bitmap);
++exit:
++	kfree(tb);
++}
++
++static void
+ ath11k_fill_band_to_mac_param(struct ath11k_base  *soc,
+ 			      struct wmi_host_pdev_band_to_mac *band_to_mac)
+ {
+@@ -8364,6 +8409,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	case WMI_WDS_PEER_EVENTID:
+ 		ath11k_wmi_wds_peer_event(ab, skb);
+ 		break;
++	case WMI_OBSS_COLOR_COLLISION_DETECTION_EVENTID:
++		ath11k_wmi_obss_color_collision_event(ab, skb);
++		break;
+ 	/* add Unsupported events here */
+ 	case WMI_TBTTOFFSET_EXT_UPDATE_EVENTID:
+ 	case WMI_PEER_OPER_MODE_CHANGE_EVENTID:
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -781,6 +781,7 @@ enum wmi_tlv_event_id {
+ 	WMI_MDNS_STATS_EVENTID = WMI_TLV_CMD(WMI_GRP_MDNS_OFL),
+ 	WMI_SAP_OFL_ADD_STA_EVENTID = WMI_TLV_CMD(WMI_GRP_SAP_OFL),
+ 	WMI_SAP_OFL_DEL_STA_EVENTID,
++	WMI_OBSS_COLOR_COLLISION_DETECTION_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_OBSS_OFL),
+ 	WMI_OCB_SET_CONFIG_RESP_EVENTID = WMI_TLV_CMD(WMI_GRP_OCB),
+ 	WMI_OCB_GET_TSF_TIMER_RESP_EVENTID,
+ 	WMI_DCC_GET_STATS_RESP_EVENTID,
+@@ -5287,6 +5288,13 @@ enum wmi_vdev_aggr_type {
+ #define ATH11K_BSS_COLOR_COLLISION_DETECTION_STA_PERIOD_MS	10000
+ #define ATH11K_BSS_COLOR_COLLISION_DETECTION_AP_PERIOD_MS	5000
+ 
++enum wmi_bss_color_collision {
++	WMI_BSS_COLOR_COLLISION_DISABLE = 0,
++	WMI_BSS_COLOR_COLLISION_DETECTION,
++	WMI_BSS_COLOR_FREE_SLOT_TIMER_EXPIRY,
++	WMI_BSS_COLOR_FREE_SLOT_AVAILABLE,
++};
++
+ struct wmi_obss_color_collision_cfg_params_cmd {
+ 	u32 tlv_header;
+ 	u32 vdev_id;
+@@ -5304,6 +5312,12 @@ struct wmi_bss_color_change_enable_param
+ 	u32 enable;
+ } __packed;
+ 
++struct wmi_obss_color_collision_event {
++	u32 vdev_id;
++	u32 evt_type;
++	u64 obss_color_bitmap;
++} __packed;
++
+ #define ATH11K_IPV4_TH_SEED_SIZE 5
+ #define ATH11K_IPV6_TH_SEED_SIZE 11
+ 

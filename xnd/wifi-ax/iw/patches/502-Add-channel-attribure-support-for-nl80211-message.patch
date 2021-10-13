@@ -1,0 +1,40 @@
+Add channel attribure support for nl80211 message
+
+---
+ info.c    | 9 +++++++--
+ nl80211.h | 1 +
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+--- a/info.c
++++ b/info.c
+@@ -183,13 +183,18 @@ static int print_phy_handler(struct nl_m
+ 					band_had_freq = true;
+ 				}
+ 				nla_for_each_nested(nl_freq, tb_band[NL80211_BAND_ATTR_FREQS], rem_freq) {
+-					uint32_t freq;
++					uint32_t freq,channel;
+ 					nla_parse(tb_freq, NL80211_FREQUENCY_ATTR_MAX, nla_data(nl_freq),
+ 						  nla_len(nl_freq), freq_policy);
+ 					if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
+ 						continue;
+ 					freq = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
+-					printf("\t\t\t* %d MHz [%d]", freq, ieee80211_frequency_to_channel(freq));
++					if (tb_freq[NL80211_FREQUENCY_ATTR_CHANNEL])
++						channel = nla_get_u16(tb_freq[NL80211_FREQUENCY_ATTR_CHANNEL]);
++					else
++						channel = ieee80211_frequency_to_channel(freq);
++					printf("\t\t\t* %d MHz [%d]", freq, channel);
++
+ 
+ 					if (tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] &&
+ 					    !tb_freq[NL80211_FREQUENCY_ATTR_DISABLED])
+--- a/nl80211.h
++++ b/nl80211.h
+@@ -3802,6 +3802,7 @@ enum nl80211_frequency_attr {
+ 	NL80211_FREQUENCY_ATTR_NO_20MHZ,
+ 	NL80211_FREQUENCY_ATTR_NO_10MHZ,
+ 	NL80211_FREQUENCY_ATTR_WMM,
++	NL80211_FREQUENCY_ATTR_CHANNEL,
+ 	NL80211_FREQUENCY_ATTR_NO_HE,
+ 	NL80211_FREQUENCY_ATTR_OFFSET,
+ 	NL80211_FREQUENCY_ATTR_1MHZ,

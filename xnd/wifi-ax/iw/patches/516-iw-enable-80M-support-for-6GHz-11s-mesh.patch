@@ -1,0 +1,43 @@
+From 7bc4688806777e9f6131289c9befba141a8e0f6c Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Wed, 2 Sep 2020 17:56:04 -0700
+Subject: [PATCH] iw: enable 80M support for 6GHz 11s mesh
+
+without this 11s mesh could not be configured for 80MHz using iw.
+example:
+iw <interface> mesh join <meshname> freq 6195 HT40+  ---> 40MHz
+iw <interface> mesh join <meshname> freq 6195 80MHz  ---> 80MHz
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+---
+ util.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/util.c
++++ b/util.c
+@@ -1235,20 +1235,20 @@ void iw_hexdump(const char *prefix, cons
+ int get_cf1(const struct chanmode *chanmode, unsigned long freq)
+ {
+ 	unsigned int cf1 = freq, j;
+-	unsigned int vht80[] = { 5180, 5260, 5500, 5580, 5660, 5745 };
++	unsigned int bw80[] = { 5180, 5260, 5500, 5580, 5660, 5745, 5955, 6035, 6115, 6195, 6275, 6355, 6435, 6515, 6595, 6675, 6755, 6835, 6195, 6995};
+ 
+ 	switch (chanmode->width) {
+ 	case NL80211_CHAN_WIDTH_80:
+ 	        /* setup center_freq1 */
+-		for (j = 0; j < ARRAY_SIZE(vht80); j++) {
+-			if (freq >= vht80[j] && freq < vht80[j] + 80)
++		for (j = 0; j < ARRAY_SIZE(bw80); j++) {
++			if (freq >= bw80[j] && freq < bw80[j] + 80)
+ 				break;
+ 		}
+ 
+-		if (j == ARRAY_SIZE(vht80))
++		if (j == ARRAY_SIZE(bw80))
+ 			break;
+ 
+-		cf1 = vht80[j] + 30;
++		cf1 = bw80[j] + 30;
+ 		break;
+ 	default:
+ 		cf1 = freq + chanmode->freq1_diff;

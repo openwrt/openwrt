@@ -1,0 +1,40 @@
+Index: qca-ssdk/include/hsl/phy/hsl_phy.h
+===================================================================
+--- qca-ssdk.orig/include/hsl/phy/hsl_phy.h
++++ qca-ssdk/include/hsl/phy/hsl_phy.h
+@@ -541,6 +541,7 @@ typedef struct {
+ #define QCA8033_PHY             0x004DD074
+ #define QCA8035_PHY             0x004DD072
+ /*qca808x_start*/
++#define QCA8081_PHY             0x004DD100
+ #define QCA8081_PHY_V1_1        0x004DD101
+ #define INVALID_PHY_ID          0
+ 
+@@ -559,6 +560,7 @@ typedef struct {
+ #define AQUANTIA_PHY_113C_A0    0x31c31C10
+ #define AQUANTIA_PHY_113C_A1    0x31c31C11
+ #define AQUANTIA_PHY_112C       0x03a1b792
++#define AQUANTIA_PHY_114C       0x31c31C22
+ 
+ #define PHY_805XV2              0x004DD082
+ #define PHY_805XV1              0x004DD081
+Index: qca-ssdk/src/hsl/phy/hsl_phy.c
+===================================================================
+--- qca-ssdk.orig/src/hsl/phy/hsl_phy.c
++++ qca-ssdk/src/hsl/phy/hsl_phy.c
+@@ -231,6 +231,7 @@ phy_type_t hsl_phytype_get_by_phyid(a_ui
+ 		case AQUANTIA_PHY_108:
+ 		case AQUANTIA_PHY_109:
+ 		case AQUANTIA_PHY_111:
++		case AQUANTIA_PHY_114C:
+ 		case AQUANTIA_PHY_111B0:
+ 		case AQUANTIA_PHY_112:
+ 		case AQUANTIA_PHY_113C_A0:
+@@ -250,6 +251,7 @@ phy_type_t hsl_phytype_get_by_phyid(a_ui
+ 			phytype = MPGE_PHY_CHIP;
+ 			break;
+ /*qca808x_start*/
++		case QCA8081_PHY:
+ 		case QCA8081_PHY_V1_1:
+ 			phytype = QCA808X_PHY_CHIP;
+ 			break;

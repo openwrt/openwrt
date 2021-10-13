@@ -1,0 +1,127 @@
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+
+ath11k: send multicast packet in 4addr
+
+User peer meta flag instead of vdev meta flag in Tx descriptor
+to send out multicast packet in 4addr format.
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -421,6 +421,7 @@ struct ath11k_sta {
+ #ifdef CPTCFG_ATH11K_NSS_SUPPORT
+ 	struct ath11k_nss_sta_stats *nss_stats;
+ #endif
++	u16 tcl_metadata;
+ };
+ 
+ #define ATH11K_MIN_5G_FREQ 4150
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -997,6 +997,15 @@ void ath11k_dp_vdev_tx_attach(struct ath
+ 	ath11k_dp_update_vdev_search(arvif);
+ }
+ 
++void ath11k_dp_sta_tx_attach(struct ath11k_sta *arsta, int peer_id)
++{
++	arsta->tcl_metadata |= FIELD_PREP(HTT_TCL_META_DATA_TYPE, 0) |
++			       FIELD_PREP(HTT_TCL_META_DATA_PEER_ID, peer_id);
++
++	/* set HTT extension valid bit to 0 by default */
++	arsta->tcl_metadata &= ~HTT_TCL_META_DATA_VALID_HTT;
++}
++
+ static int ath11k_dp_tx_pending_cleanup(int buf_id, void *skb, void *ctx)
+ {
+ 	struct ath11k_base *ab = (struct ath11k_base *)ctx;
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -16,6 +16,7 @@ struct ath11k_dp;
+ struct ath11k_vif;
+ struct hal_tcl_status_ring;
+ struct ath11k_ext_irq_grp;
++struct ath11k_sta;
+ 
+ struct dp_rx_tid {
+ 	u8 tid;
+@@ -1802,6 +1803,7 @@ int ath11k_dp_service_srng(struct ath11k
+ 			   int budget);
+ int ath11k_dp_htt_connect(struct ath11k_dp *dp);
+ void ath11k_dp_vdev_tx_attach(struct ath11k *ar, struct ath11k_vif *arvif);
++void ath11k_dp_sta_tx_attach(struct ath11k_sta *arsta, int peer_id);
+ void ath11k_dp_free(struct ath11k_base *ab);
+ int ath11k_dp_alloc(struct ath11k_base *ab);
+ int ath11k_dp_pdev_alloc(struct ath11k_base *ab);
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -106,7 +106,7 @@ static int ath11k_dp_prepare_htt_metadat
+ }
+ 
+ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+-		 struct sk_buff *skb)
++		 struct sk_buff *skb, struct ath11k_sta *arsta)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct ath11k_dp *dp = &ab->dp;
+@@ -174,7 +174,15 @@ tcl_ring_sel:
+ 		     FIELD_PREP(DP_TX_DESC_ID_MSDU_ID, ret) |
+ 		     FIELD_PREP(DP_TX_DESC_ID_POOL_ID, pool_id);
+ 	ti.encap_type = ath11k_dp_tx_get_encap_type(arvif, skb);
+-	ti.meta_data_flags = arvif->tcl_metadata;
++
++	if (ieee80211_has_a4(hdr->frame_control) &&
++	    is_multicast_ether_addr(hdr->addr3) && arsta &&
++	    arsta->use_4addr_set) {
++		ti.meta_data_flags = arsta->tcl_metadata;
++		ti.flags0 |= FIELD_PREP(HAL_TCL_DATA_CMD_INFO1_TO_FW, 1);
++	} else {
++		ti.meta_data_flags = arvif->tcl_metadata;
++	}
+ 
+ 	if (ti.encap_type == HAL_TCL_ENCAP_TYPE_RAW) {
+ 		if (skb_cb->flags & ATH11K_SKB_CIPHER_SET) {
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5502,7 +5502,8 @@ static void ath11k_mac_op_tx(struct ieee
+ 	if (ar->ab->nss.enabled)
+ 		ret = ath11k_nss_tx(arvif,skb);
+ 	else
+-		ret = ath11k_dp_tx(ar, arvif, skb);
++		ret = ath11k_dp_tx(ar, arvif, skb,
++				   (control->sta) ? control->sta->drv_priv : NULL);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to transmit frame %d\n", ret);
+ 		ieee80211_free_txskb(ar->hw, skb);
+--- a/drivers/net/wireless/ath/ath11k/peer.c
++++ b/drivers/net/wireless/ath/ath11k/peer.c
+@@ -646,6 +646,7 @@ int ath11k_peer_create(struct ath11k *ar
+ {
+ 	struct ath11k_peer *peer;
+ 	struct ieee80211_vif *vif = arvif->vif;
++	struct ath11k_sta *arsta;
+ 	int ret;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+@@ -721,6 +722,10 @@ int ath11k_peer_create(struct ath11k *ar
+ 	else
+ 		ar->bss_peer = NULL;
+ #endif
++	if (sta) {
++		arsta = (struct ath11k_sta *)sta->drv_priv;
++		ath11k_dp_sta_tx_attach(arsta, peer->peer_id);
++	}
+ 
+ 	ar->num_peers++;
+ 
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.h
+@@ -215,7 +215,7 @@ struct htt_tx_msdu_desc_ext {
+ 
+ int ath11k_dp_tx_htt_h2t_ver_req_msg(struct ath11k_base *ab);
+ int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
+-		 struct sk_buff *skb);
++		 struct sk_buff *skb, struct ath11k_sta *arsta);
+ void ath11k_dp_tx_completion_handler(struct ath11k_base *ab, int ring_id);
+ int ath11k_dp_tx_send_reo_cmd(struct ath11k_base *ab, struct dp_rx_tid *rx_tid,
+ 			      enum hal_reo_cmd_type type,

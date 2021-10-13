@@ -1,0 +1,53 @@
+From 1737f5a14528e32df1806471222176e507728fe0 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Fri, 3 May 2019 08:16:44 +0200
+Subject: [PATCH] update nl80211.h
+
+Sync with mac80211-next.git include/uapi/linux/nl80211.h
+
+This brings in nl80211 definitions as of 2019-06-19.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ src/drivers/nl80211_copy.h | 75 +++++++++++++++++++++++-----------------------
+ 1 file changed, 37 insertions(+), 38 deletions(-)
+
+Index: hostapd-2021-02-08/src/drivers/nl80211_copy.h
+===================================================================
+--- hostapd-2021-02-08.orig/src/drivers/nl80211_copy.h
++++ hostapd-2021-02-08/src/drivers/nl80211_copy.h
+@@ -4541,6 +4541,10 @@ enum nl80211_chan_width {
+ 	NL80211_CHAN_WIDTH_4,
+ 	NL80211_CHAN_WIDTH_8,
+ 	NL80211_CHAN_WIDTH_16,
++
++	/* keep last */
++	__NL80211_CHAN_WIDTH_NUM,
++	NL80211_CHAN_WIDTH_MAX = __NL80211_CHAN_WIDTH_NUM - 1,
+ };
+ 
+ /**
+Index: hostapd-2021-02-08/src/ap/dfs.c
+===================================================================
+--- hostapd-2021-02-08.orig/src/ap/dfs.c
++++ hostapd-2021-02-08/src/ap/dfs.c
+@@ -1051,13 +1051,17 @@ static int hostapd_dfs_testmode_set_beac
+ 				      iface->conf->hw_mode,
+ 				      iface->freq,
+ 				      iface->conf->channel,
++				      iface->conf->enable_edmg,
++				      iface->conf->edmg_channel,
+ 				      iface->conf->ieee80211n,
+ 				      iface->conf->ieee80211ac,
++				      iface->conf->ieee80211ax,
+ 				      secondary_channel,
+-				      iface->conf->vht_oper_chwidth,
++				      hostapd_get_oper_chwidth(iface->conf),
+ 				      vht_oper_centr_freq_seg0_idx,
+ 				      vht_oper_centr_freq_seg1_idx,
+-				      iface->current_mode->vht_capab);
++				      iface->current_mode->vht_capab,
++				      &iface->current_mode->he_capab[IEEE80211_MODE_AP]);
+ 
+ 	if (err) {
+ 		wpa_printf(MSG_ERROR, "DFS failed to calculate CSA freq params");

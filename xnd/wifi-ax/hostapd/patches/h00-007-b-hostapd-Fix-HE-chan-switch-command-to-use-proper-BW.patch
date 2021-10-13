@@ -1,0 +1,68 @@
+From ebcd20553b63eb899b6983b5b205e374aba85e73 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Tue, 18 May 2021 12:56:15 +0530
+Subject: [PATCH] hostapd: Fix HE chan switch command to use proper BW
+
+VHT is not enabled when HE mode is indicated in channel
+switch command, due to which VHT operation IE is missing
+in beacon causing STA to connect in HT40 mode.
+
+HE support for channel switch command patch is modified in
+upstream commit causing this issue. It is reverted to the
+previous version for fixing the same.
+
+Fixes: I4bd28058adbc27 (hostap: upgrade hostapd to 59e9794c7d7e)
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ src/ap/drv_callbacks.c | 38 ++++++++++++++++++++++----------------
+ 1 file changed, 22 insertions(+), 16 deletions(-)
+
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -928,22 +928,30 @@ void hostapd_event_ch_switch(struct host
+ 	hapd->iconf->ieee80211n = ht;
+ 	if (!ht) {
+ 		hapd->iconf->ieee80211ac = 0;
+-	} else if (hapd->iconf->ch_switch_vht_config) {
+-		/* CHAN_SWITCH VHT config */
+-		if (hapd->iconf->ch_switch_vht_config &
+-		    CH_SWITCH_VHT_ENABLED)
+-			hapd->iconf->ieee80211ac = 1;
+-		else if (hapd->iconf->ch_switch_vht_config &
+-			 CH_SWITCH_VHT_DISABLED)
+-			hapd->iconf->ieee80211ac = 0;
+-	} else if (hapd->iconf->ch_switch_he_config) {
+-		/* CHAN_SWITCH HE config */
+-		if (hapd->iconf->ch_switch_he_config &
+-		    CH_SWITCH_HE_ENABLED)
+-			hapd->iconf->ieee80211ax = 1;
+-		else if (hapd->iconf->ch_switch_he_config &
+-			 CH_SWITCH_HE_DISABLED)
++		if (!is_6ghz_freq(hapd->iface->freq))
+ 			hapd->iconf->ieee80211ax = 0;
++	} else {
++		if (hapd->iconf->ch_switch_vht_config) {
++			/* CHAN_SWITCH VHT config */
++			if (hapd->iconf->ch_switch_vht_config &
++		    	    CH_SWITCH_VHT_ENABLED)
++				hapd->iconf->ieee80211ac = 1;
++			else if (hapd->iconf->ch_switch_vht_config &
++			 	 CH_SWITCH_VHT_DISABLED)
++				hapd->iconf->ieee80211ac = 0;
++		}
++		if (hapd->iconf->ch_switch_he_config) {
++			/* CHAN_SWITCH HE config */
++			if (hapd->iconf->ch_switch_he_config &
++		    	    CH_SWITCH_HE_ENABLED) {
++				hapd->iconf->ieee80211ax = 1;
++				if (!is_6ghz_freq(hapd->iface->freq))
++					hapd->iconf->ieee80211ac = 1;
++			}
++			else if (hapd->iconf->ch_switch_he_config &
++				 CH_SWITCH_HE_DISABLED)
++				hapd->iconf->ieee80211ax = 0;
++		}
+ 	}
+ 	hapd->iconf->ch_switch_vht_config = 0;
+ 	hapd->iconf->ch_switch_he_config = 0;

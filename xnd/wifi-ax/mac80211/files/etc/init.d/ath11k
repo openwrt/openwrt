@@ -1,0 +1,8 @@
+#!/bin/sh /etc/rc.common
+
+START=11
+
+boot() {
+	sleep 5
+	modprobe ath11k_ahb
+}

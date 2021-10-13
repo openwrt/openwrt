@@ -1,0 +1,32 @@
+From b46dcb02b9d78fffa48c1a032a307695d263f6b4 Mon Sep 17 00:00:00 2001
+From: Thiraviyam Mariyappan <tmariyap@codeaurora.org>
+Date: Tue, 25 May 2021 23:37:08 +0530
+Subject: [PATCH] mac80211: fix invalid nss config
+
+In HE-enabled STAs, HE-MCS Rx map filled with value 3 for all eight spacial
+streams if tx/rxantenna configured as invalid value. Because of this, peer_nss
+computed as 0 caused q6 crash during WMI_PEER_ASSOC_CMDID.
+With this patch, HE STA supports at least single spactial stream HE-MCSs 0 to 7
+(transmit and receive) in all supported channel widths and fixing the q6 crash.
+
+Signed-off-by: Thiraviyam Mariyappan <tmariyap@codeaurora.org>
+---
+ net/mac80211/he.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/net/mac80211/he.c
++++ b/net/mac80211/he.c
+@@ -194,6 +194,13 @@ ieee80211_he_cap_ie_to_sta_he_cap(struct
+ 		       &he_cap_ie[sizeof(he_cap->he_cap_elem) + mcs_nss_size],
+ 		       he_ppe_size);
+ 
++	if (he_cap->he_mcs_nss_supp.rx_mcs_80 == cpu_to_le16(0xFFFF)) {
++		he_cap->has_he = false;
++		sdata_info(sdata, "Ignoring HE IE from %pM due to invalid rx_mcs_80\n",
++			   sta->addr);
++		return;
++	}
++
+ 	he_cap->has_he = true;
+ 
+ 	sta->cur_max_bandwidth = ieee80211_sta_cap_rx_bw(sta);

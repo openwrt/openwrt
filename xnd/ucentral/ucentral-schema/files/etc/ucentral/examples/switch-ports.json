@@ -1,0 +1,63 @@
+{
+	"uuid": 2,
+
+	"ethernet": [
+		{
+			"select-ports": [
+				"WAN1"
+			],
+			"speed": 100,
+			"duplex": "half"
+		},
+		{
+			"select-ports": [
+				"WAN2"
+			],
+			"speed": 1000,
+			"duplex": "full"
+		},
+		{
+			"select-ports": [
+				"WAN3"
+			],
+			"speed": 100,
+			"duplex": "half"
+		}
+	],
+
+	"interfaces": [
+		{
+			"name": "WAN",
+			"role": "upstream",
+			"services": [ "lldp", "ssh" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"WAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "dynamic"
+			}
+		}
+	],
+	"metrics": {
+		"statistics": {
+			"interval": 120,
+			"types": [ "ssids", "lldp", "clients" ]
+		},
+		"health": {
+			"interval": 120
+		}
+	},
+	"services": {
+		"lldp": {
+			"describe": "uCentral",
+			"location": "universe"
+		},
+		"ssh": {
+			"port": 22
+		}
+	}
+}

@@ -1,0 +1,197 @@
+<HTML>
+<HEAD>
+<!-- @(#) $Revision: 4.43 $ $Source: /cvsroot/judy/doc/ext/JudyHS_3.htm,v $ --->
+<TITLE>JudyHS(3)</TITLE>
+</HEAD>
+<BODY>
+<TABLE border=0 width="100%"><TR>
+<TD width="40%" align="left">JudyHS(3)</TD>
+<TD width="10%" align="center">     </TD>
+<TD width="40%" align="right">JudyHS(3)</TD>
+</TR></TABLE>
+<P>
+<!----------------->
+<DT><B>NAME</B></DT>
+<DD>
+JudyHS macros - C library for creating and accessing a dynamic array,
+using an array-of-bytes of <B>Length</B> as an <B>Index</B> and a word
+as a <B>Value</B>.
+<!----------------->
+<P>
+<DT><B>SYNOPSIS</B></DT>
+<DD>
+<B><PRE>
+cc [flags] <I>sourcefiles</I> -lJudy
+
+#include &lt;Judy.h&gt;
+
+Word_t  * PValue;                           // JudyHS array element
+int       Rc_int;                           // return flag
+Word_t    Rc_word;                          // full word return value
+Pvoid_t   PJHSArray = (Pvoid_t) NULL;       // initialize JudyHS array
+uint8_t * Index;                            // array-of-bytes pointer
+Word_t    Length;                           // number of bytes in Index
+
+<A href="#JHSI" >JHSI</A>( PValue,  PJHSArray, Index, Length);   // <A href="JudyHS_funcs_3.htm#JudyHSIns">JudyHSIns()</A>
+<A href="#JHSD" >JHSD</A>( Rc_int,  PJHSArray, Index, Length);   // <A href="JudyHS_funcs_3.htm#JudyHSDel">JudyHSDel()</A>
+<A href="#JHSG" >JHSG</A>( PValue,  PJHSArray, Index, Length);   // <A href="JudyHS_funcs_3.htm#JudyHSGet">JudyHSGet()</A>
+<A href="#JHSFA">JHSFA</A>(Rc_word, PJHSArray);                  // <A href="JudyHS_funcs_3.htm#JudyHSFreeArray">JudyHSFreeArray()</A>
+</PRE></B>
+<!----------------->
+<DT><B>DESCRIPTION</B></DT>
+<DD>
+A JudyHS array is the equivalent of an array of word-sized
+value/pointers.  An <B>Index</B> is a pointer to an array-of-bytes of
+specified length:  <B>Length</B>.  Rather than using a null terminated
+string, this difference from <A href="JudySL_3.htm">JudySL(3)</A>
+allows strings to contain all bits (specifically the null character).
+This new addition (May 2004) to Judy arrays is a hybird using the best
+capabilities of hashing and Judy methods.  <B>JudyHS</B> does not have a
+poor performance case where knowledge of the hash algorithm can be used
+to degrade the performance.
+<P>
+Since JudyHS is based on a hash method, <B>Indexes</B> are not stored in
+any particular order.  Therefore the JudyHSFirst(), JudyHSNext(),
+JudyHSPrev() and JudyHSLast() neighbor search functions are not
+practical.  The <B>Length</B> of each array-of-bytes can be from 0 to
+the limits of <I>malloc()</I> (about 2GB).  
+<P>
+The hallmark of <B>JudyHS</B> is speed with scalability, but memory
+efficiency is excellent.  The speed is very competitive with the best
+hashing methods.  The memory efficiency is similar to a linked list of
+the same <B>Indexes</B> and <B>Values</B>.  <B>JudyHS</B> is designed to
+scale from 0 to billions of <B>Indexes</B>.
+<P>
+A JudyHS array is allocated with a <B>NULL</B> pointer
+<PRE>
+Pvoid_t PJHSArray = (Pvoid_t) NULL;
+</PRE>
+<P>
+Because the macro forms of the API have a simpler error handling
+interface than the equivalent
+<A href="JudyHS_funcs_3.htm">functions</A>,
+they are the preferred way to use JudyHS.
+<P>
+<DT>
+<A name="JHSI"><B>JHSI(PValue, PJHSArray, Index, Length)</B></A> // <A href="JudyHS_funcs_3.htm#JudyHSIns">JudyHSIns()</A></DT>
+<DD>
+Given a pointer to a JudyHS array (<B>PJHSArray</B>), insert an
+<B>Index</B> string of length: <B>Length</B> and a <B>Value</B> into the
+JudyHS array:  <B>PJHSArray</B>.  If the <B>Index</B> is successfully
+inserted, the <B>Value</B> is initialized to 0.  If the <B>Index</B> was
+already present, the <B>Value</B> is not modified.
+<P>
+Return <B>PValue</B> pointing to <B>Value</B>.  Your program should use
+this pointer to read or modify the <B>Value</B>, for example:
+<PRE>
+Value = *PValue;
+*PValue = 1234;
+</PRE>
+<P>
+<B>Note</B>:
+<B>JHSI()</B> and <B>JHSD</B> can reorganize the JudyHS array.
+Therefore, pointers returned from previous <B>JudyHS</B> calls become
+invalid and must be re-acquired (using <B>JHSG()</B>).
+<P>
+<DT><A name="JHSD"><B>JHSD(Rc_int, PJHSArray, Index, Length)</B></A> // <A href="JudyHS_funcs_3.htm#JudyHSDel">JudyHSDel()</A></DT>
+<DD>
+Given a pointer to a JudyHS array (<B>PJHSArray</B>), delete the
+specified <B>Index</B> along with the <B>Value</B> from the JudyHS
+array.
+<P>
+Return <B>Rc_int</B> set to 1 if successfully removed from the array.
+Return <B>Rc_int</B> set to 0 if <B>Index</B> was not present.
+<P>
+<DT><A name="JHSG"><B>JHSG(PValue, PJHSArray, Index, Length)</B></A> // <A href="JudyHS_funcs_3.htm#JudyHSGet">JudyHSGet()</A></DT>
+<DD>
+Given a pointer to a JudyHS array (<B>PJHSArray</B>),
+find <B>Value</B> associated with <B>Index</B>.
+<P>
+Return <B>PValue</B> pointing to <B>Index</B>'s <B>Value</B>.
+Return <B>PValue</B> set to <B>NULL</B> if the <B>Index</B> was not present.
+<P>
+<DT><A name="JHSFA"><B>JHSFA(Rc_word, PJHSArray)</B></A> // <A href="JudyHS_funcs_3.htm#JudyHSFreeArray">JudyHSFreeArray()</A></DT>
+<DD>
+Given a pointer to a JudyHS array (<B>PJHSArray</B>), free the entire array.
+<P>
+Return <B>Rc_word</B> set to the number of bytes freed and <B>PJHSArray</B> set to NULL.
+<!----------------->
+<P>
+<DT><A name="ERRORS"><B>ERRORS:</B> See: </A><A href="Judy_3.htm#ERRORS">Judy_3.htm#ERRORS</A></DT>
+<DD>
+<P>
+<DT><B>EXAMPLES</B></DT>
+<DD>
+Show how to program with the JudyHS macros.  This program will print
+duplicate lines and their line number from <I>stdin</I>.
+<P><PRE>
+#include &lt;unistd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;Judy.h&gt;
+
+//  Compiled:
+//  cc -O PrintDupLines.c -lJudy -o PrintDupLines
+
+#define MAXLINE 1000000                 /* max fgets length of line */
+uint8_t   Index[MAXLINE];               // string to check
+
+int     // Usage:  PrintDupLines &lt; file
+main()
+{
+    Pvoid_t   PJArray = (PWord_t)NULL;  // Judy array.
+    PWord_t   PValue;                   // Judy array element pointer.
+    Word_t    Bytes;                    // size of JudyHS array.
+    Word_t    LineNumb = 0;             // current line number
+    Word_t    Dups = 0;                 // number of duplicate lines
+
+    while (fgets(Index, MAXLINE, stdin) != (char *)NULL)
+    {
+        LineNumb++;                     // line number
+
+        // store string into array
+        JHSI(PValue, PJArray, Index, strlen(Index)); 
+        if (PValue == PJERR)            // See ERRORS section
+        {
+            fprintf(stderr, "Out of memory -- exit\n");
+            exit(1);
+        }
+        if (*PValue == 0)               // check if duplicate
+        {
+            Dups++;
+            printf("Duplicate lines %lu:%lu:%s", *PValue, LineNumb, Index);
+        }
+        else
+        {
+            *PValue = LineNumb;         // store Line number
+        }
+    }
+    printf("%lu Duplicates, free JudyHS array of %lu Lines\n", 
+                    Dups, LineNumb - Dups);
+    JHSFA(Bytes, PJArray);              // free JudyHS array
+    printf("JudyHSFreeArray() free'ed %lu bytes of memory\n", Bytes);
+    return (0);
+}
+</PRE>
+<!----------------->
+<P>
+<DT><B>AUTHOR</B></DT>
+<DD>
+JudyHS was invented and implemented by Doug Baskins after retiring from Hewlett-Packard.
+<!----------------->
+<P>
+<DT><B>SEE ALSO</B></DT>
+<DD>
+<A href="Judy_3.htm">Judy(3)</A>,
+<A href="Judy1_3.htm">Judy1(3)</A>,
+<A href="JudyL_3.htm">JudyL(3)</A>,
+<A href="JudySL_3.htm">JudySL(3)</A>,
+<BR>
+<I>malloc()</I>,
+<BR>
+the Judy website,
+<A href="http://judy.sourceforge.net">
+http://judy.sourceforge.net</A>,
+for further information and Application Notes.
+</BODY>
+</HTML>

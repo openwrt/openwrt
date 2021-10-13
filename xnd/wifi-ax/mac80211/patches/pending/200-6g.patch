@@ -1,0 +1,13 @@
+Index: backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.c
+===================================================================
+--- backports-20210222_001-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/qmi.c
++++ backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -3047,7 +3047,7 @@ static int ath11k_qmi_request_target_cap
+ 	if (r)
+ 		ath11k_dbg(ab, ATH11K_DBG_QMI, "DT bdf variant name not set.\n");
+ 
+-	if (resp.eeprom_read_timeout_valid) {
++	if (0 && resp.eeprom_read_timeout_valid) {
+ 		ab->qmi.target.eeprom_read_timeout =
+ 					resp.eeprom_read_timeout;
+ 		ath11k_info(ab, "cal data supported from eeprom\n");

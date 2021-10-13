@@ -1,0 +1,80 @@
+{
+	"uuid": 2,
+	"radios": [
+		{
+			"band": "2G",
+			"country": "CA",
+			"channel-mode": "HE",
+			"channel-width": 80,
+			"channel": 32
+		}
+	],
+
+	"interfaces": [
+		{
+			"name": "WAN",
+			"role": "upstream",
+			"wwan": {
+				"protocol": "qmi",
+				"pin-code": "7846",
+				"access-point-name": "web.vodafone.de",
+				"packet-data-protocol": "dual-stack",
+				"authentication-type": "none"
+			}
+		},
+		{
+			"name": "LAN",
+			"role": "downstream",
+			"services": [ "ssh", "lldp" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"LAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "static",
+				"subnet": "192.168.1.1/24",
+				"dhcp": {
+					"lease-first": 10,
+					"lease-count": 100,
+					"lease-time": "6h"
+				}
+			},
+			"ssids": [
+				{
+					"name": "OpenWifi",
+					"wifi-bands": [
+						"2G"
+					],
+					"bss-mode": "ap",
+					"encryption": {
+						"proto": "psk2",
+						"key": "OpenWifi",
+						"ieee80211w": "optional"
+					}
+				}
+			]
+
+		}
+	],
+	"metrics": {
+		"statistics": {
+			"interval": 120,
+			"types": [ "ssids", "lldp", "clients" ]
+		},
+		"health": {
+			"interval": 120
+		}
+	},
+	"services": {
+		"lldp": {
+			"describe": "uCentral",
+			"location": "universe"
+		},
+		"ssh": {
+			"port": 22
+		}
+	}
+}

@@ -1,0 +1,94 @@
+From 56994b4ac2ad1966065f4a09977fcd5102b052ab Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Fri, 11 Dec 2020 11:49:08 -0800
+Subject: [PATCH 6/9] hostapd: Change storage class of multiple BSSID functions
+
+This patch changes the variables and input parameters used for length
+from int to size_t.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/beacon.c     |  2 +-
+ src/ap/ieee802_11.c | 25 +++++++++++++------------
+ src/ap/ieee802_11.h |  6 +++---
+ 3 files changed, 17 insertions(+), 16 deletions(-)
+
+diff --git a/src/ap/beacon.c b/src/ap/beacon.c
+index 74ac8584ab5e..fcc3b7517bcb 100644
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -1815,7 +1815,7 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
+ 	}
+ 
+ 	if (hapd->iconf->multiple_bssid) {
+-		int len;
++		size_t len;
+ 		u8 *end;
+ 
+ 		params->multiple_bssid_index = hostapd_get_bss_index(hapd);
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index 953a444a5cd4..b13f6ee47b8a 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -5753,15 +5753,15 @@ int hostapd_config_read_maclist(const char *fname,
+ }
+ 
+ 
+-static int hostapd_eid_multiple_bssid_chunk_len(struct hostapd_data *hapd,
+-						struct hostapd_data *req_bss,
+-						int *count, u8 is_beacon,
+-						const u8 *known_bssids,
+-						u8 known_bssids_len)
++static size_t hostapd_eid_multiple_bssid_chunk_len(struct hostapd_data *hapd,
++						   struct hostapd_data *req_bss,
++						   int *count, u8 is_beacon,
++						   const u8 *known_bssids,
++						   u8 known_bssids_len)
+ {
+ 	/* ID + size + count */
+-	int i, j, len = 3, nontx_profile_len;
+-	size_t ies_len = 0;
++	int i, j;
++	size_t ies_len = 0, len = 3, nontx_profile_len;
+ 	u8 mask;
+ 	struct hostapd_data *bss;
+ 	struct hostapd_bss_config *conf;
+@@ -5810,12 +5810,13 @@ multiple_bssid_too_big:
+ }
+ 
+ 
+-int hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd,
+-				   struct hostapd_data *req_bss,
+-				   u8 is_beacon, const u8 *known_bssids,
+-				   u8 known_bssids_len)
++size_t hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd,
++				      struct hostapd_data *req_bss,
++				      u8 is_beacon, const u8 *known_bssids,
++				      u8 known_bssids_len)
+ {
+-	int count = 1, len = 0;
++	int count = 1;
++	size_t len = 0;
+ 
+ 	while (count < hapd->iface->num_bss)
+ 		len += hostapd_eid_multiple_bssid_chunk_len(hapd, req_bss,
+diff --git a/src/ap/ieee802_11.h b/src/ap/ieee802_11.h
+index 74e426bc99f0..8e70bc3aa84a 100644
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -134,9 +134,9 @@ u8 * hostapd_eid_multiple_bssid(struct hostapd_data *hapd,
+ 				u8 is_beacon, u8 **eid_offsets, int *eid_count,
+ 				int eid_max, u8 ema_beacon,
+ 				const u8 *known_bssids, u8 known_bssids_len);
+-int hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd,
+-				   struct hostapd_data *req_bss, u8 is_beacon,
+-				   const u8 *known_bssids, u8 known_bssids_len);
++size_t hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd,
++				      struct hostapd_data *req_bss, u8 is_beacon,
++				      const u8 *known_bssids, u8 known_bssids_len);
+ u8 * hostapd_eid_rnr(struct hostapd_data *hapd, u8 *eid, u32 type);
+ size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type);
+ int auth_sae_init_committed(struct hostapd_data *hapd, struct sta_info *sta);
+-- 
+2.25.0
+

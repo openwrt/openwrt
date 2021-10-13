@@ -1,0 +1,70 @@
+From 1c971905743a98006e9f4004ac72dc00c63a01ed Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Tue, 22 Sep 2020 20:05:57 +0530
+Subject: [PATCH] ath11k: send proper txpower, maxregpower values to FW
+
+Set proper values for txpower, regpower, maxpower, antennamax
+in wmi scan chan list and vdev start command.
+
+If txpower is not set, it will lead to cca stuck resulting in
+latency issues for pine.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 12 ++++++------
+ drivers/net/wireless/ath/ath11k/reg.c |  6 +++---
+ drivers/net/wireless/ath/ath11k/wmi.c |  8 +++++---
+ 3 files changed, 14 insertions(+), 12 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -790,9 +790,9 @@ static int ath11k_mac_monitor_vdev_start
+ 			!!(channel->flags & IEEE80211_CHAN_RADAR);
+ 
+ 	arg.channel.min_power = 0;
+-	arg.channel.max_power = channel->max_power * 2;
+-	arg.channel.max_reg_power = channel->max_reg_power * 2;
+-	arg.channel.max_antenna_gain = channel->max_antenna_gain * 2;
++	arg.channel.max_power = channel->max_power;
++	arg.channel.max_reg_power = channel->max_reg_power;
++	arg.channel.max_antenna_gain = channel->max_antenna_gain;
+ 
+ 	arg.pref_tx_streams = ar->num_tx_chains;
+ 	arg.pref_rx_streams = ar->num_rx_chains;
+@@ -6282,9 +6282,9 @@ ath11k_mac_vdev_start_restart(struct ath
+ 		ath11k_phymodes[chandef->chan->band][chandef->width];
+ 
+ 	arg.channel.min_power = 0;
+-	arg.channel.max_power = chandef->chan->max_power * 2;
+-	arg.channel.max_reg_power = chandef->chan->max_reg_power * 2;
+-	arg.channel.max_antenna_gain = chandef->chan->max_antenna_gain * 2;
++	arg.channel.max_power = chandef->chan->max_power;
++	arg.channel.max_reg_power = chandef->chan->max_reg_power;
++	arg.channel.max_antenna_gain = chandef->chan->max_antenna_gain;
+ 
+ 	arg.pref_tx_streams = ar->num_tx_chains;
+ 	arg.pref_rx_streams = ar->num_rx_chains;
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -2230,9 +2230,9 @@ int ath11k_wmi_update_scan_chan_list(str
+ 				IEEE80211_CHAN_NO_IR);
+ 			ch->is_chan_passive |= ch->dfs_set;
+ 			ch->minpower = 0;
+-			ch->maxpower = channel->max_power * 2;
+-			ch->maxregpower = channel->max_reg_power * 2;
+-			ch->antennamax = channel->max_antenna_gain * 2;
++			ch->maxpower = channel->max_power;
++			ch->maxregpower = channel->max_reg_power;
++			ch->antennamax = channel->max_antenna_gain;
+ 
+ 			if (channel->band == NL80211_BAND_6GHZ &&
+ 			    cfg80211_channel_is_psc(channel))
+@@ -2732,6 +2732,8 @@ int ath11k_wmi_send_scan_chan_list_cmd(s
+ 					    tchan_info->reg_class_id);
+ 			*reg2 |= FIELD_PREP(WMI_CHAN_REG_INFO2_ANT_MAX,
+ 					    tchan_info->antennamax);
++			*reg2 |= FIELD_PREP(WMI_CHAN_REG_INFO2_MAX_TX_PWR,
++					    tchan_info->maxregpower);
+ 
+ 			ath11k_dbg(ar->ab, ATH11K_DBG_WMI,
+ 				   "WMI chan scan list chan[%d] = %u, chan_info->info %8x\n",

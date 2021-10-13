@@ -1,0 +1,45 @@
+From 2e78fb74a8521a73d072a7732ce7e71370475898 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Mon, 8 Feb 2021 15:41:49 +0530
+Subject: [PATCH] ath11k: Increment pending_mgmt_tx before tx send
+
+Updated to increment 'num_pending_mgmt_tx' count before invoking
+send, to avoid 0 value while decrementing in tx completion handler.
+
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5833,15 +5833,18 @@ static void ath11k_mgmt_over_wmi_tx_work
+ 		}
+ 
+ 		arvif = ath11k_vif_to_arvif(skb_cb->vif);
++		mutex_lock(&ar->conf_mutex);
+ 		if (ar->allocated_vdev_map & (1LL << arvif->vdev_id) &&
+ 		    arvif->is_started) {
++			atomic_inc(&ar->num_pending_mgmt_tx);
+ 			ret = ath11k_mac_mgmt_tx_wmi(ar, arvif, skb);
+ 			if (ret) {
++				if (atomic_dec_if_positive(&ar->num_pending_mgmt_tx) < 0) {
++					WARN_ON_ONCE(1);
++				}
+ 				ath11k_warn(ar->ab, "failed to tx mgmt frame, vdev_id %d :%d\n",
+ 					    arvif->vdev_id, ret);
+ 				ieee80211_free_txskb(ar->hw, skb);
+-			} else {
+-				atomic_inc(&ar->num_pending_mgmt_tx);
+ 			}
+ 		} else {
+ 			ath11k_warn(ar->ab,
+@@ -5850,6 +5853,7 @@ static void ath11k_mgmt_over_wmi_tx_work
+ 				    arvif->is_started);
+ 			ieee80211_free_txskb(ar->hw, skb);
+ 		}
++		mutex_unlock(&ar->conf_mutex);
+ 	}
+ }
+ 

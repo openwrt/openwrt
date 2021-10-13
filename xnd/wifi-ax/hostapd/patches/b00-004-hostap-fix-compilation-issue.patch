@@ -1,0 +1,120 @@
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -1022,7 +1022,7 @@ void wpa_receive(struct wpa_authenticato
+ 		   mic_len, key_data_length);
+ 	wpa_hexdump(MSG_MSGDUMP,
+ 		    "WPA: EAPOL-Key header (ending before Key MIC)",
+-		    key, sizeof(*key));
++		    (u8 *)key, sizeof(*key));
+ 	wpa_hexdump(MSG_MSGDUMP, "WPA: EAPOL-Key Key MIC",
+ 		    mic, mic_len);
+ 	if (key_data_length > data_len - sizeof(*hdr) - keyhdrlen) {
+@@ -3086,7 +3086,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
+ 		idx = bitfield_get_first_zero(wpa_auth->ip_pool);
+ 		if (idx >= 0) {
+ 			u32 start = WPA_GET_BE32(wpa_auth->conf.ip_addr_start);
+-			bitfield_set(wpa_auth->ip_pool, idx);
++			bitfield_set_local(wpa_auth->ip_pool, idx);
+ 			WPA_PUT_BE32(sm->ip_addr, start + idx);
+ 			wpa_printf(MSG_DEBUG,
+ 				   "P2P: Assigned IP address %u.%u.%u.%u to "
+--- a/src/crypto/tls_openssl.c
++++ b/src/crypto/tls_openssl.c
+@@ -1097,7 +1097,7 @@ void * tls_init(const struct tls_config
+ 	if (conf && conf->openssl_ciphers)
+ 		ciphers = conf->openssl_ciphers;
+ 	else
+-		ciphers = TLS_DEFAULT_CIPHERS;
++		ciphers = "DEFAULT:!EXP:!LOW";
+ 	if (SSL_CTX_set_cipher_list(ssl, ciphers) != 1) {
+ 		wpa_printf(MSG_ERROR,
+ 			   "OpenSSL: Failed to set cipher string '%s'",
+--- a/src/utils/bitfield.c
++++ b/src/utils/bitfield.c
+@@ -37,7 +37,7 @@ void bitfield_free(struct bitfield *bf)
+ }
+ 
+ 
+-void bitfield_set(struct bitfield *bf, size_t bit)
++void bitfield_set_local(struct bitfield *bf, size_t bit)
+ {
+ 	if (bit >= bf->max_bits)
+ 		return;
+--- a/src/utils/bitfield.h
++++ b/src/utils/bitfield.h
+@@ -13,7 +13,7 @@ struct bitfield;
+ 
+ struct bitfield * bitfield_alloc(size_t max_bits);
+ void bitfield_free(struct bitfield *bf);
+-void bitfield_set(struct bitfield *bf, size_t bit);
++void bitfield_set_local(struct bitfield *bf, size_t bit);
+ void bitfield_clear(struct bitfield *bf, size_t bit);
+ int bitfield_is_set(struct bitfield *bf, size_t bit);
+ int bitfield_get_first_zero(struct bitfield *bf);
+--- a/src/utils/utils_module_tests.c
++++ b/src/utils/utils_module_tests.c
+@@ -142,7 +142,7 @@ static int bitfield_tests(void)
+ 			errors++;
+ 		if (i > 0 && bitfield_is_set(bf, i - 1))
+ 			errors++;
+-		bitfield_set(bf, i);
++		bitfield_set_local(bf, i);
+ 		if (!bitfield_is_set(bf, i))
+ 			errors++;
+ 		bitfield_clear(bf, i);
+@@ -155,7 +155,7 @@ static int bitfield_tests(void)
+ 			errors++;
+ 		if (i > 0 && bitfield_is_set(bf, i - 1))
+ 			errors++;
+-		bitfield_set(bf, i);
++		bitfield_set_local(bf, i);
+ 		if (bitfield_is_set(bf, i))
+ 			errors++;
+ 		bitfield_clear(bf, i);
+@@ -166,7 +166,7 @@ static int bitfield_tests(void)
+ 	for (i = 0; i < 123; i++) {
+ 		if (bitfield_is_set(bf, i) || bitfield_is_set(bf, i + 1))
+ 			errors++;
+-		bitfield_set(bf, i);
++		bitfield_set_local(bf, i);
+ 		if (!bitfield_is_set(bf, i))
+ 			errors++;
+ 	}
+@@ -182,7 +182,7 @@ static int bitfield_tests(void)
+ 	for (i = 0; i < 123; i++) {
+ 		if (bitfield_get_first_zero(bf) != i)
+ 			errors++;
+-		bitfield_set(bf, i);
++		bitfield_set_local(bf, i);
+ 	}
+ 	if (bitfield_get_first_zero(bf) != -1)
+ 		errors++;
+@@ -192,7 +192,7 @@ static int bitfield_tests(void)
+ 		bitfield_clear(bf, i);
+ 		if (bitfield_get_first_zero(bf) != i)
+ 			errors++;
+-		bitfield_set(bf, i);
++		bitfield_set_local(bf, i);
+ 	}
+ 	if (bitfield_get_first_zero(bf) != -1)
+ 		errors++;
+@@ -205,7 +205,7 @@ static int bitfield_tests(void)
+ 	if (bitfield_get_first_zero(bf) != 0)
+ 		errors++;
+ 	for (i = 0; i < 8; i++)
+-		bitfield_set(bf, i);
++		bitfield_set_local(bf, i);
+ 	if (bitfield_get_first_zero(bf) != -1)
+ 		errors++;
+ 	bitfield_free(bf);
+--- a/wpa_supplicant/rrm.c
++++ b/wpa_supplicant/rrm.c
+@@ -1116,7 +1116,7 @@ static int wpas_rm_handle_beacon_req_sub
+ 		}
+ 
+ 		for (i = 0; i < slen; i++)
+-			bitfield_set(data->eids, subelem[i]);
++			bitfield_set_local(data->eids, subelem[i]);
+ 		break;
+ 	case WLAN_BEACON_REQUEST_SUBELEM_AP_CHANNEL:
+ 		/* Skip - it will be processed when freqs are added */

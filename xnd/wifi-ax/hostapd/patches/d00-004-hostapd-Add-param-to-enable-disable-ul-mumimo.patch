@@ -1,0 +1,79 @@
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -3448,6 +3448,8 @@ static int hostapd_config_fill(struct ho
+ 		conf->he_phy_capab.he_su_beamformee = atoi(pos);
+ 	} else if (os_strcmp(buf, "he_mu_beamformer") == 0) {
+ 		conf->he_phy_capab.he_mu_beamformer = atoi(pos);
++	} else if (os_strcmp(buf, "he_ul_mumimo") == 0) {
++		conf->he_phy_capab.he_ul_mumimo = atoi(pos);
+ 	} else if (os_strcmp(buf, "he_bss_color") == 0) {
+ 		conf->he_op.he_bss_color = atoi(pos) & 0x3f;
+ 		conf->he_op.he_bss_color_disabled = 0;
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -801,6 +801,12 @@ wmm_ac_vo_acm=0
+ # 1 = supported
+ #he_mu_beamformer=1
+ 
++#he_ul_mumimo: HE Uplink multiple user MIMO support
++# -1 or unspecified = Decided by firmware or underlying hardware(Default)
++# 0 = not supported
++# 1 = supported
++#he_mu_beamformer=1
++
+ # he_bss_color: BSS color (1-63)
+ #he_bss_color=1
+ 
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
+@@ -265,6 +265,8 @@ struct hostapd_config * hostapd_config_d
+ 		HE_OPERATION_RTS_THRESHOLD_OFFSET;
+ 	/* Set default basic MCS/NSS set to single stream MCS 0-7 */
+ 	conf->he_op.he_basic_mcs_nss_set = 0xfffc;
++	/* Set default to be decided by Driver/underlying HW */
++	conf->he_phy_capab.he_ul_mumimo = -1;
+ 	conf->he_op.he_bss_color_disabled = 1;
+ 	conf->he_op.he_bss_color_partial = 0;
+ 	conf->he_op.he_bss_color = 1;
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -875,6 +875,7 @@ struct he_phy_capabilities_info {
+ 	bool he_su_beamformer;
+ 	bool he_su_beamformee;
+ 	bool he_mu_beamformer;
++	int he_ul_mumimo;
+ };
+ 
+ /**
+--- a/src/ap/hw_features.c
++++ b/src/ap/hw_features.c
+@@ -717,9 +717,10 @@ static int ieee80211ax_supported_he_capa
+ 		       (SPATIAL_REUSE_NON_SRG_OFFSET_PRESENT |
+ 			SPATIAL_REUSE_SRG_INFORMATION_PRESENT))));
+ 
+-	HE_CAP_CHECK2(hw->phy_cap, HE_PHYCAP_UL_MUMIMO_CAPB,
+-		      HE_PHYCAP_UL_MUMIMO_CAPB_IDX, HE_PHYCAP_UL_MUOFDMA_CAPB,
+-		      HE_PHYCAP_UL_MUOFDMA_CAPB_IDX, conf->he_mu_edca.he_qos_info);
++	if (conf->he_phy_capab.he_ul_mumimo != -1)
++		HE_CAP_CHECK(hw->phy_cap, HE_PHYCAP_UL_MUMIMO_CAPB,
++			     HE_PHYCAP_UL_MUMIMO_CAPB_IDX,
++			     conf->he_phy_capab.he_ul_mumimo);
+ 
+ 	HE_CAP_CHECK2(hw->mac_cap, HE_MACCAP_TWT_REQUESTER, HE_MACCAP_TWT_REQUESTER_IDX,
+ 		      HE_MACCAP_TWT_RESPONDER, HE_MACCAP_TWT_RESPONDER_IDX,
+--- a/src/ap/ieee802_11_he.c
++++ b/src/ap/ieee802_11_he.c
+@@ -151,6 +151,13 @@ u8 * hostapd_eid_he_capab(struct hostapd
+ 		cap->he_phy_capab_info[HE_PHYCAP_MU_BEAMFORMER_CAPAB_IDX] &=
+ 			~HE_PHYCAP_MU_BEAMFORMER_CAPAB;
+ 
++	if (hapd->iface->conf->he_phy_capab.he_ul_mumimo == 1)
++		cap->he_phy_capab_info[HE_PHYCAP_UL_MUMIMO_CAPB_IDX] |=
++			HE_PHYCAP_UL_MUMIMO_CAPB;
++	else if (hapd->iface->conf->he_phy_capab.he_ul_mumimo == 0)
++		cap->he_phy_capab_info[HE_PHYCAP_UL_MUMIMO_CAPB_IDX] &=
++			~HE_PHYCAP_UL_MUMIMO_CAPB;
++
+ 	cap->he_phy_capab_info[HE_PHYCAP_CHANNEL_WIDTH_SET_IDX] &=
+ 		he_oper_chwidth;
+ 

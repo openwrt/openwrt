@@ -1,0 +1,209 @@
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -187,6 +187,20 @@ static struct ieee80211_rate ath11k_lega
+ 	{ .bitrate = 540, .hw_value = ATH11K_HW_RATE_OFDM_54M },
+ };
+ 
++static const struct ieee80211_tpt_blink ath11k_tpt_blink[] = {
++	{ .throughput =   0 * 1024, .blink_time = 334 },
++	{ .throughput =   1 * 1024, .blink_time = 260 },
++	{ .throughput =   5 * 1024, .blink_time = 220 },
++	{ .throughput =  10 * 1024, .blink_time = 190 },
++	{ .throughput =  20 * 1024, .blink_time = 170 },
++	{ .throughput =  50 * 1024, .blink_time = 150 },
++	{ .throughput =  70 * 1024, .blink_time = 130 },
++	{ .throughput = 100 * 1024, .blink_time = 110 },
++	{ .throughput = 200 * 1024, .blink_time =  80 },
++	{ .throughput = 300 * 1024, .blink_time =  50 },
++	{ .throughput = 600 * 1024, .blink_time =  20 },
++};
++
+ static const int
+ ath11k_phymodes[NUM_NL80211_BANDS][ATH11K_CHAN_WIDTH_NUM] = {
+ 	[NL80211_BAND_2GHZ] = {
+@@ -9381,6 +9395,10 @@ static int __ath11k_mac_register(struct
+ 			ieee80211_hw_set(ar->hw, SUPPORTS_MESH_NSS_OFFLOAD);
+ 	}
+ 
++	ieee80211_create_tpt_led_trigger(ar->hw, IEEE80211_TPT_LEDTRIG_FL_RADIO,
++		ath11k_tpt_blink,
++		ARRAY_SIZE(ath11k_tpt_blink));
++
+ 	ret = ieee80211_register_hw(ar->hw);
+ 	if (ret) {
+ 		ath11k_err(ar->ab, "ieee80211 registration failed: %d\n", ret);
+--- a/net/mac80211/led.h
++++ b/net/mac80211/led.h
+@@ -86,19 +86,19 @@ static inline void ieee80211_mod_tpt_led
+ #endif
+ 
+ static inline void
+-ieee80211_tpt_led_trig_tx(struct ieee80211_local *local, __le16 fc, int bytes)
++ieee80211_tpt_led_trig_tx(struct ieee80211_local *local, int bytes)
+ {
+ #ifdef CPTCFG_MAC80211_LEDS
+-	if (ieee80211_is_data(fc) && atomic_read(&local->tpt_led_active))
++	if (atomic_read(&local->tpt_led_active))
+ 		local->tpt_led_trigger->tx_bytes += bytes;
+ #endif
+ }
+ 
+ static inline void
+-ieee80211_tpt_led_trig_rx(struct ieee80211_local *local, __le16 fc, int bytes)
++ieee80211_tpt_led_trig_rx(struct ieee80211_local *local, int bytes)
+ {
+ #ifdef CPTCFG_MAC80211_LEDS
+-	if (ieee80211_is_data(fc) && atomic_read(&local->tpt_led_active))
++	if (atomic_read(&local->tpt_led_active))
+ 		local->tpt_led_trigger->rx_bytes += bytes;
+ #endif
+ }
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -4865,6 +4865,7 @@ void ieee80211_rx_list(struct ieee80211_
+ 	struct ieee80211_rate *rate = NULL;
+ 	struct ieee80211_supported_band *sband;
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 	struct sta_info *sta = NULL;
+ 
+ 	WARN_ON_ONCE(softirq_count() == 0);
+@@ -4972,9 +4973,9 @@ void ieee80211_rx_list(struct ieee80211_
+ 	if (!(status->flag & RX_FLAG_8023))
+ 		skb = ieee80211_rx_monitor(local, skb, rate);
+ 	if (skb) {
+-		ieee80211_tpt_led_trig_rx(local,
+-					  ((struct ieee80211_hdr *)skb->data)->frame_control,
+-					  skb->len);
++		if ((status->flag & RX_FLAG_8023) ||
++		    ieee80211_is_data_present(hdr->frame_control))
++			ieee80211_tpt_led_trig_rx(local, skb->len);
+ 
+ 		if (status->flag & RX_FLAG_8023)
+ 			__ieee80211_rx_handle_8023(hw, pubsta, skb, list);
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1702,8 +1702,8 @@ static bool ieee80211_tx_frags(struct ie
+  * Returns false if the frame couldn't be transmitted but was queued instead.
+  */
+ static bool __ieee80211_tx(struct ieee80211_local *local,
+-			   struct sk_buff_head *skbs, int led_len,
+-			   struct sta_info *sta, bool txpending)
++			   struct sk_buff_head *skbs, struct sta_info *sta,
++			   bool txpending)
+ {
+ 	struct ieee80211_tx_info *info;
+ 	struct ieee80211_sub_if_data *sdata;
+@@ -1750,8 +1750,6 @@ static bool __ieee80211_tx(struct ieee80
+ 
+ 	result = ieee80211_tx_frags(local, vif, sta, skbs, txpending);
+ 
+-	ieee80211_tpt_led_trig_tx(local, fc, led_len);
+-
+ 	WARN_ON_ONCE(!skb_queue_empty(skbs));
+ 
+ 	return result;
+@@ -1900,7 +1898,6 @@ static bool ieee80211_tx(struct ieee8021
+ 	ieee80211_tx_result res_prepare;
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 	bool result = true;
+-	int led_len;
+ 
+ 	if (unlikely(skb->len < 10)) {
+ 		dev_kfree_skb(skb);
+@@ -1908,7 +1905,6 @@ static bool ieee80211_tx(struct ieee8021
+ 	}
+ 
+ 	/* initialises tx */
+-	led_len = skb->len;
+ 	res_prepare = ieee80211_tx_prepare(sdata, &tx, sta, skb);
+ 
+ 	if (unlikely(res_prepare == TX_DROP)) {
+@@ -1931,8 +1927,7 @@ static bool ieee80211_tx(struct ieee8021
+ 		return true;
+ 
+ 	if (!invoke_tx_handlers_late(&tx))
+-		result = __ieee80211_tx(local, &tx.skbs, led_len,
+-					tx.sta, txpending);
++		result = __ieee80211_tx(local, &tx.skbs, tx.sta, txpending);
+ 
+ 	return result;
+ }
+@@ -3956,6 +3951,7 @@ void __ieee80211_subif_start_xmit(struct
+ 	struct sk_buff *next;
+ 	struct ieee80211_tx_info *info;
+ 	struct ieee80211_sub_if_data *ap_sdata;
++	int len = skb->len;
+ 
+ 	if (unlikely(skb->len < ETH_HLEN)) {
+ 		kfree_skb(skb);
+@@ -4021,10 +4017,8 @@ void __ieee80211_subif_start_xmit(struct
+ 		}
+ 	} else {
+ 		/* we cannot process non-linear frames on this path */
+-		if (skb_linearize(skb)) {
+-			kfree_skb(skb);
+-			goto out;
+-		}
++		if (skb_linearize(skb))
++			goto out_free;
+ 
+ 		/* the frame could be fragmented, software-encrypted, and other
+ 		 * things so we cannot really handle checksum offload with it -
+@@ -4064,7 +4058,10 @@ void __ieee80211_subif_start_xmit(struct
+ 	goto out;
+  out_free:
+ 	kfree_skb(skb);
++	len = 0;
+  out:
++	if (len)
++		ieee80211_tpt_led_trig_tx(local, len);
+ 	rcu_read_unlock();
+ }
+ 
+@@ -4231,8 +4228,7 @@ netdev_tx_t ieee80211_subif_start_xmit(s
+ }
+ 
+ static bool ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
+-			      struct sk_buff *skb, int led_len,
+-			      struct sta_info *sta,
++			      struct sk_buff *skb, struct sta_info *sta,
+ 			      bool txpending)
+ {
+ 	struct ieee80211_local *local = sdata->local;
+@@ -4242,6 +4238,8 @@ static bool ieee80211_tx_8023(struct iee
+ 	unsigned long flags;
+ 	int q = info->hw_queue;
+ 
++	ieee80211_tpt_led_trig_tx(local, skb->len);
++
+ 	if (ieee80211_queue_skb(local, sdata, sta, skb))
+ 		return true;
+ 
+@@ -4345,7 +4343,7 @@ static void ieee80211_8023_xmit(struct i
+ 	if (key)
+ 		info->control.hw_key = &key->conf;
+ 
+-	ieee80211_tx_8023(sdata, skb, skb->len, sta, false);
++	ieee80211_tx_8023(sdata, skb, sta, false);
+ 
+ 	if (sta)
+ 		atomic_inc(&sta->tx_netif_pkts);
+@@ -4489,7 +4487,7 @@ static bool ieee80211_tx_pending_skb(str
+ 		if (IS_ERR(sta) || (sta && !sta->uploaded))
+ 			sta = NULL;
+ 
+-		result = ieee80211_tx_8023(sdata, skb, skb->len, sta, true);
++		result = ieee80211_tx_8023(sdata, skb, sta, true);
+ 	} else {
+ 		struct sk_buff_head skbs;
+ 
+@@ -4499,7 +4497,7 @@ static bool ieee80211_tx_pending_skb(str
+ 		hdr = (struct ieee80211_hdr *)skb->data;
+ 		sta = sta_info_get(sdata, hdr->addr1);
+ 
+-		result = __ieee80211_tx(local, &skbs, skb->len, sta, true);
++		result = __ieee80211_tx(local, &skbs, sta, true);
+ 	}
+ 
+ 	return result;

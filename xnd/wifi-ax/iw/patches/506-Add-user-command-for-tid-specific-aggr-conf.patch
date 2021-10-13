@@ -1,0 +1,117 @@
+--- a/interface.c
++++ b/interface.c
+@@ -803,6 +803,71 @@ COMMAND(set, tid_retry_count, "tid <tid>
+ 		NL80211_CMD_SET_TID_CONFIG, 0, CIB_NETDEV, handle_retry_count,
+ 		"Set the retry count for the TIDs ");
+ 
++static int handle_aggr_conf(struct nl80211_state *state,
++			    struct nl_msg *msg,
++			    int argc, char **argv,
++			    enum id_input id)
++{
++	struct nl_msg *tid = NULL;
++	unsigned char mac_addr[ETH_ALEN];
++	uint8_t tid_no;
++	char *end;
++	int ret = -ENOSPC;
++
++	if (argc < 4)
++		return 1;
++
++	tid = nlmsg_alloc();
++	if (!tid)
++		return -ENOMEM;
++
++	while (argc) {
++		if (strcmp(argv[0], "tid") == 0) {
++			if (argc < 2)
++				return 1;
++
++			tid_no = strtoul(argv[1], &end, 8);
++			if (*end)
++				return 1;
++
++			NLA_PUT_U8(tid, NL80211_ATTR_TID, tid_no);
++		} else if (strcmp(argv[0], "peer") == 0) {
++			if (argc < 2)
++				return 1;
++
++			if (mac_addr_a2n(mac_addr, argv[1])) {
++				fprintf(stderr, "invalid mac address\n");
++				return 2;
++			}
++
++			NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, mac_addr);
++		} else if (strcmp(argv[0], "aggr") == 0) {
++			if (argc < 2)
++				return 1;
++			if (strcmp(argv[1], "on") == 0)
++				NLA_PUT_U8(tid, NL80211_ATTR_TID_AMPDU_AGGR_CTRL, 1);
++			else if (strcmp(argv[1], "off") == 0)
++				NLA_PUT_U8(tid, NL80211_ATTR_TID_AMPDU_AGGR_CTRL, 0);
++			else
++				return 1;
++		} else {
++			return 1;
++		}
++		argc -= 2;
++		argv += 2;
++	}
++
++	nla_put_nested(msg, NL80211_ATTR_TID_CONFIG, tid);
++	ret = 0;
++
++nla_put_failure:
++	nlmsg_free(tid);
++	return ret;
++}
++COMMAND(set, tid_aggr_conf, "tid <tid> <[peer <MAC address>] aggr on|off>",
++	NL80211_CMD_SET_TID_CONFIG, 0, CIB_NETDEV, handle_aggr_conf,
++	"Enable/disable aggregation for the TIDs ");
++
+ 
+ static int toggle_tid_param(const char *argv0, const char *argv1,
+ 			    struct nl_msg *msg, uint32_t attr)
+--- a/nl80211.h
++++ b/nl80211.h
+@@ -4915,17 +4915,32 @@ enum nl80211_ps_state {
+  *	the max value should be advertised by the driver through
+  *	max_data_retry_count. when this attribute is not present, the driver
+  *	would use the default configuration.
++ * @NL80211_ATTR_TID_AMPDU_AGGR_CTRL: Enable/Disable aggregation for the TID
++ *	specified in %%NL80211_ATTR_TID. Its type is u8, if the peer MAC address
++ *	is passed in %NL80211_ATTR_MAC, the aggregation configuration is applied
++ *	to the data frame for the tid to that connected station.
++ *	Station specific aggregation configuration is valid only for STA's
++ *	current connection. i.e. the configuration will be reset to default when
++ *	the station connects back after disconnection/roaming.
++ *	when user-space does not include %NL80211_ATTR_MAC, this configuration
++ *	should be treated as per-netdev configuration. This configuration will
++ *	be cleared when the interface goes down and on the disconnection from a
++ *	BSS. Driver supporting this feature should advertise
++ *	NL80211_EXT_FEATURE_PER_STA_AMPDU_AGGR_CTRL and supporting per station
++ *	aggregation configuration should advertise
++ *	NL80211_EXT_FEATURE_PER_STA_AMPDU_AGGR_CTRL.
+  */
+ enum nl80211_attr_tid_config {
+-        __NL80211_ATTR_TID_INVALID,
+-        NL80211_ATTR_TID,
+-        NL80211_ATTR_TID_RETRY_CONFIG,
+-        NL80211_ATTR_TID_RETRY_SHORT,
+-        NL80211_ATTR_TID_RETRY_LONG,
++	__NL80211_ATTR_TID_INVALID,
++	NL80211_ATTR_TID,
++	NL80211_ATTR_TID_RETRY_CONFIG,
++	NL80211_ATTR_TID_RETRY_SHORT,
++	NL80211_ATTR_TID_RETRY_LONG,
++	NL80211_ATTR_TID_AMPDU_AGGR_CTRL,
+ 
+-        /* keep last */
+-        __NL80211_ATTR_TID_AFTER_LAST,
+-        NL80211_ATTR_TID_MAX = __NL80211_ATTR_TID_AFTER_LAST - 1
++	/* keep last */
++	__NL80211_ATTR_TID_AFTER_LAST,
++	NL80211_ATTR_TID_MAX = __NL80211_ATTR_TID_AFTER_LAST - 1
+ };
+ /**
+  * enum nl80211_attr_cqm - connection quality monitor attributes

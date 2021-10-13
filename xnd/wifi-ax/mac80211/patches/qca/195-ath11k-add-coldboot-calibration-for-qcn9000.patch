@@ -1,0 +1,271 @@
+From f4fe362e3f0a3b3d08bd6cfeb57004c777d8ba0f Mon Sep 17 00:00:00 2001
+From: Jaya Surya Mathavan <jmathava@codeaurora.org>
+Date: Tue, 23 Jun 2020 11:40:04 +0530
+Subject: [PATCH] ath11k: add coldboot calibration in qcn9000
+
+Changed ATH11K_COLD_BOOT_FW_RESET_DELAY to 60 seconds to support qcn9000
+Firmware reset after coldboot-calibration moved to qmi and made common for both ahb and pci.
+
+Signed-off-by: Jaya Surya Mathavan <jmathava@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c  | 37 +++++++++++-----------------------
+ drivers/net/wireless/ath/ath11k/core.h |  1 +
+ drivers/net/wireless/ath/ath11k/pci.c  |  3 +++
+ drivers/net/wireless/ath/ath11k/qmi.c  | 32 +++++++++++++++++++++++++++--
+ drivers/net/wireless/ath/ath11k/qmi.h  |  3 ++-
+ 5 files changed, 48 insertions(+), 28 deletions(-)
+
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/ahb.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/ahb.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -11,6 +11,7 @@
+ #include "ahb.h"
+ #include "debug.h"
+ #include "hif.h"
++#include "qmi.h"
+ #include <linux/remoteproc.h>
+ 
+ static const struct of_device_id ath11k_ahb_of_match[] = {
+@@ -340,31 +341,6 @@ static void ath11k_ahb_power_down(struct
+ 	rproc_shutdown(ab_ahb->tgt_rproc);
+ }
+ 
+-static int ath11k_ahb_fwreset_from_cold_boot(struct ath11k_base *ab)
+-{
+-	int timeout;
+-
+-	if (ath11k_cold_boot_cal == 0 || ab->qmi.cal_done ||
+-	    ab->hw_params.cold_boot_calib == 0)
+-		return 0;
+-
+-	ath11k_dbg(ab, ATH11K_DBG_AHB, "wait for cold boot done\n");
+-	timeout = wait_event_timeout(ab->qmi.cold_boot_waitq,
+-				     (ab->qmi.cal_done  == 1),
+-				     ATH11K_COLD_BOOT_FW_RESET_DELAY);
+-	if (timeout <= 0) {
+-		ath11k_cold_boot_cal = 0;
+-		ath11k_warn(ab, "Coldboot Calibration failed timed out\n");
+-	}
+-
+-	/* reset the firmware */
+-	ath11k_ahb_power_down(ab);
+-	ath11k_ahb_power_up(ab);
+-
+-	ath11k_dbg(ab, ATH11K_DBG_AHB, "exited from cold boot mode\n");
+-	return 0;
+-}
+-
+ static void ath11k_ahb_init_qmi_ce_config(struct ath11k_base *ab)
+ {
+ 	struct ath11k_qmi_ce_cfg *cfg = &ab->qmi.ce_cfg;
+@@ -653,10 +629,12 @@ static int ath11k_core_get_rproc(struct
+ static int ath11k_ahb_probe(struct platform_device *pdev)
+ {
+ 	struct ath11k_base *ab;
++	struct device *dev = &pdev->dev;
+ 	const struct of_device_id *of_id;
+ 	struct resource *mem_res;
+ 	void __iomem *mem;
+ 	int ret;
++	u32 hw_mode_id;
+ 
+ 	of_id = of_match_device(ath11k_ahb_of_match, &pdev->dev);
+ 	if (!of_id) {
+@@ -696,6 +674,7 @@ static int ath11k_ahb_probe(struct platf
+ 	ab->fw_mode = ATH11K_FIRMWARE_MODE_NORMAL;
+ 	ab->mem = mem;
+ 	ab->mem_len = resource_size(mem_res);
++	ab->enable_cold_boot_cal = enable_cold_boot_cal;
+ 	platform_set_drvdata(pdev, ab);
+ 
+ 	ret = ath11k_core_pre_init(ab);
+@@ -732,7 +711,13 @@ static int ath11k_ahb_probe(struct platf
+ 		goto err_ce_free;
+ 	}
+ 
+-	ath11k_ahb_fwreset_from_cold_boot(ab);
++	/* TODO
++	 * below 4 lines can be removed once fw changes available
++	 */
++	of_property_read_u32(dev->of_node, "wlan-hw-mode",
++			     &hw_mode_id);
++
++	ath11k_qmi_fwreset_from_cold_boot(ab);
+ 
+ 	return 0;
+ 
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/core.h
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/core.h
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/core.h
+@@ -792,6 +792,7 @@ struct ath11k_base {
+ 	struct ath11k_targ_cap target_caps;
+ 	u32 ext_service_bitmap[WMI_SERVICE_EXT_BM_SIZE];
+ 	bool pdevs_macaddr_valid;
++	bool enable_cold_boot_cal;
+ 	int bd_api;
+ 
+ 	struct ath11k_hw_params hw_params;
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/pci.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/pci.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/pci.c
+@@ -12,6 +12,7 @@
+ #include "hif.h"
+ #include "mhi.h"
+ #include "debug.h"
++#include "qmi.h"
+ #include <linux/of.h>
+ 
+ #define ATH11K_PCI_BAR_NUM		0
+@@ -1248,6 +1249,7 @@ static int ath11k_pci_probe(struct pci_d
+ 		ab_pci->msi_config = &ath11k_msi_config[1];
+ 		ab->bus_params.static_window_map = true;
+ 		ab->hw_rev = ATH11K_HW_QCN9074_HW10;
++		ab->enable_cold_boot_cal = ath11k_cold_boot_cal;
+ 		break;
+ 	default:
+ 		dev_err(&pdev->dev, "Unknown PCI device found: 0x%x\n",
+@@ -1295,6 +1297,7 @@ static int ath11k_pci_probe(struct pci_d
+ 		ath11k_err(ab, "failed to init core: %d\n", ret);
+ 		goto err_free_irq;
+ 	}
++	ath11k_qmi_fwreset_from_cold_boot(ab);
+ 	return 0;
+ 
+ err_free_irq:
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/qmi.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -8,6 +8,7 @@
+ #include "qmi.h"
+ #include "core.h"
+ #include "debug.h"
++#include "hif.h"
+ #include <linux/of.h>
+ #include <linux/firmware.h>
+ #include <linux/devcoredump.h>
+@@ -2297,6 +2298,25 @@ static int ath11k_qmi_alloc_target_mem_c
+ 
+ 	for (i = 0; i < ab->qmi.mem_seg_count; i++) {
+ 		chunk = &ab->qmi.target_mem[i];
++
++		/*
++		 * FW reloads in coldboot/FWrecovery.
++		 * in such case, no need to allocate memory for FW again.
++		 */
++		if (chunk->vaddr) {
++			if (chunk->prev_type != chunk->type ||
++			    chunk->prev_size != chunk->size) {
++				dma_free_coherent(ab->dev,
++						  ab->qmi.target_mem[i].size,
++						  ab->qmi.target_mem[i].vaddr,
++						  ab->qmi.target_mem[i].paddr);
++
++				ab->qmi.target_mem[i].vaddr = NULL;
++			} else {
++				continue;
++			}
++		}
++
+ 		chunk->vaddr = dma_alloc_coherent(ab->dev,
+ 						  chunk->size,
+ 						  &chunk->paddr,
+@@ -2316,6 +2336,9 @@ static int ath11k_qmi_alloc_target_mem_c
+ 				   chunk->type);
+ 			return -EINVAL;
+ 		}
++
++		chunk->prev_type = chunk->type;
++		chunk->prev_size = chunk->size;
+ 	}
+ 
+ 	return 0;
+@@ -2364,9 +2387,14 @@ static int ath11k_qmi_assign_target_mem_
+ 				ab->qmi.target_mem[idx].vaddr =
+ 						ioremap(ab->qmi.target_mem[idx].paddr,
+ 								ab->qmi.target_mem[i].size);
+-			} else {
++			} else if (ab->bus_params.fixed_bdf_addr) {
+ 				ab->qmi.target_mem[idx].paddr = 0UL;
+ 				ab->qmi.target_mem[idx].vaddr = 0UL;
++			} else {
++				ab->qmi.target_mem[idx].paddr = (phys_addr_t)addr;
++				ab->qmi.target_mem[idx].vaddr =
++					ioremap(ab->qmi.target_mem[idx].paddr,
++							ab->qmi.target_mem[i].size);
+ 			}
+ 			ab->qmi.target_mem[idx].size = ab->qmi.target_mem[i].size;
+ 			ab->qmi.target_mem[idx].type = ab->qmi.target_mem[i].type;
+@@ -2966,6 +2994,30 @@ int ath11k_qmi_firmware_start(struct ath
+ 	return 0;
+ }
+ 
++int ath11k_qmi_fwreset_from_cold_boot(struct ath11k_base *ab)
++{
++	int timeout;
++
++	if (ab->enable_cold_boot_cal == 0 || ab->qmi.cal_done)
++		return 0;
++
++	ath11k_dbg(ab, ATH11K_DBG_QMI, "wait for cold boot done\n");
++
++	timeout = wait_event_timeout(ab->qmi.cold_boot_waitq, (ab->qmi.cal_done  == 1),
++				     ATH11K_COLD_BOOT_FW_RESET_DELAY);
++	if (timeout <= 0) {
++		ath11k_warn(ab, "Coldboot Calibration timed out\n");
++		return -ETIMEDOUT;
++	}
++
++	/* reset the firmware */
++	ath11k_hif_power_down(ab);
++	ath11k_hif_power_up(ab);
++	ath11k_dbg(ab, ATH11K_DBG_QMI, "exit wait for cold boot done\n");
++	return 0;
++}
++EXPORT_SYMBOL(ath11k_qmi_fwreset_from_cold_boot);
++
+ static int ath11k_qmi_process_coldboot_calibration(struct ath11k_base *ab)
+ {
+ 	int timeout;
+@@ -3225,7 +3277,7 @@ static void ath11k_qmi_msg_mem_request_c
+ 				    ret);
+ 			return;
+ 		}
+-	} else if (msg->mem_seg_len > 3) {
++	} else {
+ 		ret = ath11k_qmi_alloc_target_mem_chunk(ab);
+ 		if (ret) {
+ 			ath11k_warn(ab, "qmi failed to alloc target memory: %d\n",
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.h
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/qmi.h
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -46,7 +46,7 @@
+ #define QMI_WLANFW_MAX_DATA_SIZE_V01		6144
+ #define ATH11K_FIRMWARE_MODE_OFF		4
+ #define ATH11K_QMI_TARGET_MEM_MODE_DEFAULT	0
+-#define ATH11K_COLD_BOOT_FW_RESET_DELAY		(40 * HZ)
++#define ATH11K_COLD_BOOT_FW_RESET_DELAY		(60 * HZ)
+ 
+ struct ath11k_base;
+ 
+@@ -112,6 +112,8 @@ struct ath11k_qmi_event_msg {
+ struct target_mem_chunk {
+ 	u32 size;
+ 	u32 type;
++	u32 prev_size;
++	u32 prev_type;
+ 	dma_addr_t paddr;
+ 	u32 *vaddr;
+ };
+@@ -583,6 +585,7 @@ int wlfw_send_qdss_trace_config_download
+ 
+ int ath11k_send_qdss_trace_mode_req(struct ath11k_base *ab,
+ 		enum wlfw_qdss_trace_mode_enum_v01 mode);
++int ath11k_qmi_fwreset_from_cold_boot(struct ath11k_base *ab);
+ 
+ 
+ #endif

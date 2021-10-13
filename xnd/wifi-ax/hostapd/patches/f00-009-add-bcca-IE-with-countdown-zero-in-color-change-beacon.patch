@@ -1,0 +1,96 @@
+From f2cc86f874e09b0b1d1247de98f1720aa51080d8 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Tue, 6 Oct 2020 21:37:04 +0530
+Subject: [PATCH] hostapd: Add BCCA IE with countdown zero
+
+During BCCA, BCCA IE with countdown zero has to be added
+in the beacon in which new color is updated. Remove BCCA
+IE in the beacon template after color change is
+completed.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ src/ap/drv_callbacks.c |  6 ++++++
+ src/ap/hostapd.c       | 10 ++++++++--
+ src/ap/hostapd.h       |  1 +
+ src/ap/ieee802_11_he.c |  2 +-
+ 4 files changed, 16 insertions(+), 3 deletions(-)
+
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -1802,14 +1802,29 @@ static void hostapd_event_bss_color_coll
+ 
+ static void hostapd_event_cca(struct hostapd_data *hapd, enum wpa_event_type event)
+ {
++	int b, err;
++
+ 	switch (event) {
+ 	case EVENT_CCA_STARTED_NOTIFY:
+ 		wpa_printf(MSG_DEBUG, "CCA started on %s", hapd->conf->iface);
+ 		break;
+ 	case EVENT_CCA_NOTIFY:
+ 		wpa_printf(MSG_DEBUG, "CCA finished on %s (new color: %d)", hapd->conf->iface, hapd->cca_color);
+-		hapd->iface->conf->he_op.he_bss_color = hapd->cca_color;
+-		hostapd_cleanup_cca_params(hapd);
++
++		for (b = 0; b < hapd->iface->num_bss; b++) {
++			if (hapd->iface->bss[b]->cca_color != 0) {
++				hapd->iface->conf->he_op.he_bss_color = hapd->iface->bss[b]->cca_color;
++				hapd->iface->bss[b]->cca_in_progress = 0;
++                        	err = ieee802_11_set_beacon(hapd->iface->bss[b]);
++				if (err) {
++					wpa_printf(MSG_ERROR, "Failed to remove BCCA IE");
++					hapd->iface->bss[b]->cca_in_progress = 1;
++				}
++				else
++					hostapd_cleanup_cca_params(hapd->iface->bss[b]);
++			}
++		}
++
+ 		break;
+ 	case EVENT_CCA_ABORTED_NOTIFY:
+ 		wpa_printf(MSG_DEBUG, "CCA aborted on %s for cca_color: %d", hapd->conf->iface, hapd->cca_color);
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3742,12 +3742,18 @@ int hostapd_fill_cca_settings(struct hos
+ 
+         old_color = iface->conf->he_op.he_bss_color;
+ 	iface->conf->he_op.he_bss_color = hapd->cca_color;
++
++	settings->cca_count = hapd->cca_count;
++	settings->cca_color = hapd->cca_color;
++	hapd->cca_count = 0;
++	hapd->cca_zero_count = 1;
++
+ 	ret = hostapd_build_beacon_data(hapd, &settings->beacon_after);
+ 	iface->conf->he_op.he_bss_color = old_color;
+ 
+-	settings->cca_count = hapd->cca_count;
+-	settings->cca_color = hapd->cca_color,
++	hapd->cca_count = settings->cca_count;
+ 	hapd->cca_in_progress = 1;
++	hapd->cca_zero_count = 0;
+ 
+ 	ret = hostapd_build_beacon_data(hapd, &settings->beacon_cca);
+ 	if (ret) {
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -298,6 +298,7 @@ struct hostapd_data {
+ 
+ #ifdef CONFIG_IEEE80211AX
+ 	int cca_in_progress;
++	int cca_zero_count;
+ 	u8 cca_count;
+ 	u8 cca_color;
+ 	unsigned int cca_c_off_beacon;
+--- a/src/ap/ieee802_11_he.c
++++ b/src/ap/ieee802_11_he.c
+@@ -496,7 +496,7 @@ int hostapd_get_he_twt_responder(struct
+ 
+ u8 * hostapd_eid_cca(struct hostapd_data *hapd, u8 *eid)
+ {
+-	if (!hapd->cca_in_progress)
++	if (!hapd->cca_in_progress && !hapd->cca_zero_count)
+ 		return eid;
+ 	*eid++ = WLAN_EID_EXTENSION;
+ 	*eid++ = 3;

@@ -1,0 +1,39 @@
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Subject: [PATCH] ath11k: fix q6 crash in authorize
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+---
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -2613,14 +2613,6 @@ static void ath11k_bss_assoc(struct ieee
+ 		return;
+ 	}
+ 
+-	/* Authorize BSS Peer */
+-	ret = ath11k_wmi_set_peer_param(ar, arvif->bssid,
+-					arvif->vdev_id,
+-					WMI_PEER_AUTHORIZE,
+-					1);
+-	if (ret)
+-		ath11k_warn(ar->ab, "Unable to authorize BSS peer: %d\n", ret);
+-
+ 	ret = ath11k_wmi_send_obss_spr_cmd(ar, arvif->vdev_id,
+ 					   &bss_conf->he_obss_pd);
+ 	if (ret)
+@@ -4486,6 +4478,16 @@ static int ath11k_mac_op_sta_state(struc
+ 			ath11k_warn(ar->ab, "Failed to associate station: %pM\n",
+ 				    sta->addr);
+ 	} else if (old_state == IEEE80211_STA_ASSOC &&
++		   new_state == IEEE80211_STA_AUTHORIZED &&
++		   vif->type == NL80211_IFTYPE_STATION) {
++		ret = ath11k_wmi_set_peer_param(ar, sta->addr,
++						arvif->vdev_id,
++						WMI_PEER_AUTHORIZE,
++						1);
++		if (ret)
++			ath11k_warn(ar->ab, "Unable to authorize peer (%pM) vdev %d: %d\n",
++				    sta->addr, arvif->vdev_id, ret);
++	} else if (old_state == IEEE80211_STA_ASSOC &&
+ 		   new_state == IEEE80211_STA_AUTH &&
+ 		   (vif->type == NL80211_IFTYPE_AP ||
+ 		    vif->type == NL80211_IFTYPE_MESH_POINT ||

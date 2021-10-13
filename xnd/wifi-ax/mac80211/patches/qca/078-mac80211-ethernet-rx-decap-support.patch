@@ -1,0 +1,80 @@
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -2404,6 +2404,9 @@ struct ieee80211_txq {
+  * @IEEE80211_HW_SUPPORTS_RX_DECAP_OFFLOAD: Hardware supports rx decapsulation
+  *	offload
+  *
++ * @IEEE80211_HW_SUPPORTS_CONC_MON_RX_DECAP: Hardware supports concurrent rx
++ *	decapsulation offload and passing raw 802.11 frames for monitor iface.
++ *
+  * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
+  */
+ enum ieee80211_hw_flags {
+@@ -2458,6 +2461,7 @@ enum ieee80211_hw_flags {
+ 	IEEE80211_HW_AMPDU_KEYBORDER_SUPPORT,
+ 	IEEE80211_HW_SUPPORTS_TX_ENCAP_OFFLOAD,
+ 	IEEE80211_HW_SUPPORTS_RX_DECAP_OFFLOAD,
++	IEEE80211_HW_SUPPORTS_CONC_MON_RX_DECAP,
+ 
+ 	/* keep last, obviously */
+ 	NUM_IEEE80211_HW_FLAGS
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2549,6 +2549,7 @@ ieee80211_deliver_skb(struct ieee80211_r
+ 	struct sk_buff *skb, *xmit_skb;
+ 	struct ethhdr *ehdr = (struct ethhdr *) rx->skb->data;
+ 	struct sta_info *dsta;
++	struct ieee80211_sta_rx_stats *rx_stats;
+ 
+ 	skb = rx->skb;
+ 	xmit_skb = NULL;
+@@ -2561,9 +2562,12 @@ ieee80211_deliver_skb(struct ieee80211_r
+ 		 * for non-QoS-data frames. Here we know it's a data
+ 		 * frame, so count MSDUs.
+ 		 */
+-		u64_stats_update_begin(&rx->sta->rx_stats.syncp);
+-		rx->sta->rx_stats.msdu[rx->seqno_idx]++;
+-		u64_stats_update_end(&rx->sta->rx_stats.syncp);
++		rx_stats = &rx->sta->rx_stats;
++		if (ieee80211_hw_check(&rx->local->hw, USES_RSS))
++			rx_stats = this_cpu_ptr(rx->sta->pcpu_rx_stats);
++		u64_stats_update_begin(&rx_stats->syncp);
++		rx_stats->msdu[rx->seqno_idx]++;
++		u64_stats_update_end(&rx_stats->syncp);
+ 	}
+ 
+ 	if ((sdata->vif.type == NL80211_IFTYPE_AP ||
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -2100,6 +2100,9 @@ sta_get_last_rx_stats(struct sta_info *s
+ 
+ 		cpustats = per_cpu_ptr(sta->pcpu_rx_stats, cpu);
+ 
++		if(!cpustats->last_rx)
++			continue;
++
+ 		if (time_after(cpustats->last_rx, stats->last_rx))
+ 			stats = cpustats;
+ 	}
+--- a/net/mac80211/debugfs.c
++++ b/net/mac80211/debugfs.c
+@@ -406,6 +406,7 @@ static const char *hw_flag_names[] = {
+ 	FLAG(AMPDU_KEYBORDER_SUPPORT),
+ 	FLAG(SUPPORTS_TX_ENCAP_OFFLOAD),
+ 	FLAG(SUPPORTS_RX_DECAP_OFFLOAD),
++	FLAG(SUPPORTS_CONC_MON_RX_DECAP),
+ #undef FLAG
+ };
+ 
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -873,7 +873,8 @@ static bool ieee80211_set_sdata_offload_
+ 	    ieee80211_iftype_supports_hdr_offload(sdata->vif.type)) {
+ 		flags |= IEEE80211_OFFLOAD_DECAP_ENABLED;
+ 
+-		if (local->monitors)
++		    if(local->monitors &&
++		       !ieee80211_hw_check(&local->hw, SUPPORTS_CONC_MON_RX_DECAP))
+ 			flags &= ~IEEE80211_OFFLOAD_DECAP_ENABLED;
+ 	} else {
+ 		flags &= ~IEEE80211_OFFLOAD_DECAP_ENABLED;

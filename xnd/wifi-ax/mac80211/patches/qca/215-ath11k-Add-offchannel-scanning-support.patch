@@ -1,0 +1,127 @@
+From 2dea4f3eea80c9024e2ca291c821dee3f31876b5 Mon Sep 17 00:00:00 2001
+From: Abinaya Kalaiselvan <akalaise@codeaurora.org>
+Date: Thu, 15 Oct 2020 16:39:56 +0530
+Subject: [PATCH] ath11k: Add offchannel scanning support
+
+Advertise NL80211_EXT_FEATURE_SET_SCAN_DWELL to add support for
+offchannel scanning.
+
+Usage:
+iw wlanX scan trigger freq <freq> duration <dur> ap-force
+
+Ex:
+iw wlan0 scan trigger freq 5825 duration 30 ap-force
+
+Sample Output:
+iw wlan0 survey dump
+
+Survey data from wlan0
+        frequency:                      5825 MHz
+        noise:                          -105 dBm
+        channel active time:            25 ms
+
+Signed-off-by: Abinaya Kalaiselvan <akalaise@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h |  2 ++
+ drivers/net/wireless/ath/ath11k/mac.c  | 25 ++++++++++++++++++++++---
+ drivers/net/wireless/ath/ath11k/wmi.c  |  4 ++++
+ drivers/net/wireless/ath/ath11k/wmi.h  |  2 ++
+ 4 files changed, 30 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -34,6 +34,8 @@
+ 
+ #define ATH11K_TX_MGMT_TARGET_MAX_SUPPORT_WMI 64
+ 
++#define ATH11K_SCAN_CHANNEL_SWITCH_WMI_EVT_OVERHEAD 10 /* msec */
++
+ /* Pending management packets threshold for dropping probe responses */
+ #define ATH11K_PRB_RSP_DROP_THRESHOLD ((ATH11K_TX_MGMT_TARGET_MAX_SUPPORT_WMI * 3) / 4)
+ 
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -3380,6 +3380,7 @@ static int ath11k_mac_op_hw_scan(struct
+ 	struct scan_req_params *arg;
+ 	int ret = 0;
+ 	int i;
++	u32 scan_timeout;
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
+@@ -3445,6 +3446,21 @@ static int ath11k_mac_op_hw_scan(struct
+ 			goto exit;
+ 	}
+ 
++	if (req->duration) {
++		arg->dwell_time_active = req->duration;
++		arg->dwell_time_passive = req->duration;
++		arg->burst_duration = req->duration;
++
++		scan_timeout = min_t(u32, arg->max_rest_time *
++				    (arg->chan_list.num_chan - 1) + (req->duration +
++				     ATH11K_SCAN_CHANNEL_SWITCH_WMI_EVT_OVERHEAD) *
++				     arg->chan_list.num_chan, arg->max_scan_time +
++				     ATH11K_MAC_SCAN_TIMEOUT_MSECS);
++	} else {
++		/* Add a 200ms margin to account for event/command processing */
++		scan_timeout = arg->max_scan_time + ATH11K_MAC_SCAN_TIMEOUT_MSECS;
++	}
++
+ 	ret = ath11k_start_scan(ar, arg);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to start hw scan: %d\n", ret);
+@@ -3453,10 +3469,8 @@ static int ath11k_mac_op_hw_scan(struct
+ 		spin_unlock_bh(&ar->data_lock);
+ 	}
+ 
+-	/* Add a 200ms margin to account for event/command processing */
+ 	ieee80211_queue_delayed_work(ar->hw, &ar->scan.timeout,
+-				     msecs_to_jiffies(arg->max_scan_time +
+-						      ATH11K_MAC_SCAN_TIMEOUT_MSECS));
++				     msecs_to_jiffies(scan_timeout));
+ 
+ exit:
+ 	if (arg) {
+@@ -8297,6 +8311,11 @@ static int __ath11k_mac_register(struct
+ 
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_ACK_SIGNAL_SUPPORT);
+ 
++	if (test_bit(WMI_TLV_SERVICE_PASSIVE_SCAN_START_TIME_ENHANCE,
++                     ar->ab->wmi_ab.svc_map))
++		 wiphy_ext_feature_set(ar->hw->wiphy,
++				       NL80211_EXT_FEATURE_SET_SCAN_DWELL);
++
+ 	ar->hw->queues = ATH11K_HW_MAX_QUEUES;
+ 	ar->hw->wiphy->tx_queue_len = ATH11K_QUEUE_LEN;
+ 	ar->hw->offchannel_tx_hw_queue = ATH11K_HW_MAX_QUEUES - 1;
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -2321,6 +2321,9 @@ void ath11k_wmi_start_scan_init(struct a
+ 				  WMI_SCAN_EVENT_FOREIGN_CHAN |
+ 				  WMI_SCAN_EVENT_DEQUEUED;
+ 	arg->scan_flags |= WMI_SCAN_CHAN_STAT_EVENT;
++	if (test_bit(WMI_TLV_SERVICE_PASSIVE_SCAN_START_TIME_ENHANCE,
++	             ar->ab->wmi_ab.svc_map))
++		arg->scan_ctrl_flags_ext |= WMI_SCAN_FLAG_EXT_PASSIVE_SCAN_START_TIME_ENHANCE;
+ 	arg->num_bssid = 1;
+ 
+ 	/* fill bssid_list[0] with 0xff, otherwise bssid and RA will be
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -3348,6 +3348,7 @@ struct  wmi_start_scan_cmd {
+ 
+ #define WMI_SCAN_DWELL_MODE_MASK 0x00E00000
+ #define WMI_SCAN_DWELL_MODE_SHIFT        21
++#define WMI_SCAN_FLAG_EXT_PASSIVE_SCAN_START_TIME_ENHANCE   0x00000800
+ 
+ enum {
+ 	WMI_SCAN_DWELL_MODE_DEFAULT      = 0,
+@@ -3411,6 +3412,7 @@ struct scan_req_params {
+ 		};
+ 		u32 scan_events;
+ 	};
++	u32 scan_ctrl_flags_ext;
+ 	u32 dwell_time_active;
+ 	u32 dwell_time_active_2g;
+ 	u32 dwell_time_passive;

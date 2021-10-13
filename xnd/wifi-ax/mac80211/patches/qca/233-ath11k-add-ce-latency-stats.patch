@@ -1,0 +1,342 @@
+From aa224d8563bdbf582d75fc3af8177dfad4632a3e Mon Sep 17 00:00:00 2001
+From: Thiraviyam Mariyappan <tmariyap@codeaurora.org>
+Date: Thu, 24 Dec 2020 13:06:14 +0530
+Subject: [PATCH] ath11k: Track ce tasklet scheduled and execution time
+
+Add support to track ce tasklet scheduled and execution time in
+different buckets for debugging purposes.
+Tasklet sched and exec derived from below calculation:
+sched_time = exec_entry_ts - sched_entry_ts
+exec_time = exec_exit_ts - exec_entry_ts
+The different buckets in terms of 100us,200us,300us,400us,500us.
+
+enable/disable the stats using below debugfs command:
+echo <1/0> > /sys/kernel/debug/ath11k/ipq5018\ hw1.0/ce_latency_stats
+
+stats can be displayed during FW crash and debugfs command:
+cat /sys/kernel/debug/ath11k/ipq5018\ hw1.0/ce_latency_stats
+
+Signed-off-by: Thiraviyam Mariyappan <tmariyap@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c   | 11 ++++
+ drivers/net/wireless/ath/ath11k/ce.c    | 30 +++++++++++
+ drivers/net/wireless/ath/ath11k/ce.h    | 25 +++++++++
+ drivers/net/wireless/ath/ath11k/core.h  |  1 +
+ drivers/net/wireless/ath/ath11k/debugfs.c | 89 +++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/hal.c   | 24 +++++++--
+ drivers/net/wireless/ath/ath11k/pci.c   | 12 +++++
+ 7 files changed, 189 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -455,8 +455,16 @@ static void ath11k_ahb_ce_tasklet(struct
+ {
+ 	struct ath11k_ce_pipe *ce_pipe = from_tasklet(ce_pipe, t, intr_tq);
+ 
++	if (ce_pipe->ab->ce_latency_stats_enable)
++		ce_pipe->tasklet_ts.exec_entry_ts = ktime_get_boottime();
++
+ 	ath11k_ce_per_engine_service(ce_pipe->ab, ce_pipe->pipe_num);
+ 
++	if (ce_pipe->ab->ce_latency_stats_enable) {
++		ce_pipe->tasklet_ts.exec_complete_ts = ktime_get_boottime();
++		ce_update_tasklet_time_duration_stats(ce_pipe);
++	}
++
+ 	ath11k_ahb_ce_irq_enable(ce_pipe->ab, ce_pipe->pipe_num);
+ }
+ 
+@@ -471,6 +479,9 @@ static irqreturn_t ath11k_ahb_ce_interru
+ 
+ 	tasklet_schedule(&ce_pipe->intr_tq);
+ 
++	if (ce_pipe->ab->ce_latency_stats_enable)
++		ce_pipe->tasklet_ts.sched_entry_ts = ktime_get_boottime();
++
+ 	return IRQ_HANDLED;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/ce.c
++++ b/drivers/net/wireless/ath/ath11k/ce.c
+@@ -1049,6 +1049,8 @@ int ath11k_ce_alloc_pipes(struct ath11k_
+ 	int ret;
+ 	const struct ce_attr *attr;
+ 
++	ab->ce_latency_stats_enable = 1;
++
+ 	spin_lock_init(&ab->ce.ce_lock);
+ 
+ 	for (i = 0; i < ab->hw_params.ce_count; i++) {
+@@ -1097,3 +1099,30 @@ int ath11k_ce_get_attr_flags(struct ath1
+ 	return ab->hw_params.host_ce_config[ce_id].flags;
+ }
+ EXPORT_SYMBOL(ath11k_ce_get_attr_flags);
++
++void ce_update_tasklet_time_duration_stats(struct ath11k_ce_pipe *ce_pipe)
++{
++	s64 sched_us, exec_us;
++
++	sched_us = (ce_pipe->tasklet_ts.exec_entry_ts.tv64 -
++		    ce_pipe->tasklet_ts.sched_entry_ts.tv64);
++	exec_us = (ce_pipe->tasklet_ts.exec_complete_ts.tv64 -
++		   ce_pipe->tasklet_ts.exec_entry_ts.tv64);
++
++	sched_us = div_s64(sched_us, CE_TIME_DURATION_USEC * NSEC_PER_USEC);
++	if (sched_us > CE_TIME_DURATION_USEC_500) {
++	        ce_pipe->sched_delay_gt_500US++;
++	} else if (sched_us >= 0){
++	        ce_pipe->tracker[sched_us].sched_count++;
++	        ce_pipe->tracker[sched_us].sched_last_update = jiffies;
++	}
++
++	exec_us = div_s64(exec_us, CE_TIME_DURATION_USEC * NSEC_PER_USEC);
++	if (exec_us > CE_TIME_DURATION_USEC_500) {
++	        ce_pipe->exec_delay_gt_500US++;
++	} else if (exec_us >= 0){
++	        ce_pipe->tracker[exec_us].exec_count++;
++	        ce_pipe->tracker[exec_us].exec_last_update = jiffies;
++	}
++}
++EXPORT_SYMBOL(ce_update_tasklet_time_duration_stats);
+--- a/drivers/net/wireless/ath/ath11k/ce.h
++++ b/drivers/net/wireless/ath/ath11k/ce.h
+@@ -60,6 +60,12 @@ void ath11k_ce_byte_swap(void *mem, u32
+ 
+ #define ATH11K_CE_RX_POST_RETRY_JIFFIES 50
+ 
++#define CE_TIME_DURATION_USEC	100
++
++#define CE_TIME_DURATION_USEC_500	4
++
++#define CE_TIME_DURATION_MAX	5
++
+ struct ath11k_base;
+ 
+ /*
+@@ -153,6 +159,19 @@ struct ath11k_ce_ring {
+ 	struct sk_buff *skb[0];
+ };
+ 
++struct ce_tasklet_time {
++	u64 sched_count;
++	u64 exec_count;
++	u64 sched_last_update;
++	u64 exec_last_update;
++};
++
++struct ce_tasklet_entry_ts {
++	ktime_t sched_entry_ts;
++	ktime_t exec_entry_ts;
++	ktime_t exec_complete_ts;
++};
++
+ struct ath11k_ce_pipe {
+ 	struct ath11k_base *ab;
+ 	u16 pipe_num;
+@@ -168,6 +187,11 @@ struct ath11k_ce_pipe {
+ 	struct ath11k_ce_ring *dest_ring;
+ 	struct ath11k_ce_ring *status_ring;
+ 	u64 timestamp;
++
++	struct ce_tasklet_entry_ts tasklet_ts;
++	struct ce_tasklet_time tracker[CE_TIME_DURATION_MAX];
++	u32 sched_delay_gt_500US;
++	u32 exec_delay_gt_500US;
+ };
+ 
+ struct ath11k_ce {
+@@ -198,5 +222,5 @@ int ath11k_ce_attr_attach(struct ath11k_
+ void ath11k_ce_get_shadow_config(struct ath11k_base *ab,
+ 				 u32 **shadow_cfg, u32 *shadow_cfg_len);
+ void ath11k_ce_stop_shadow_timers(struct ath11k_base *ab);
+-
++void ce_update_tasklet_time_duration_stats(struct ath11k_ce_pipe *ce_pipe);
+ #endif
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -929,6 +929,7 @@ struct ath11k_base {
+ 
+ 	bool fw_recovery_support;
+ 	bool ce_remap;
++	bool ce_latency_stats_enable;
+ 	u32 ce_remap_base_addr;
+ 	atomic_t num_max_allowed;
+ 	struct ath11k_num_vdevs_peers *num_vdevs_peers;
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -1581,6 +1581,93 @@ static const struct file_operations fops
+ 	.llseek = default_llseek,
+ };
+ 
++static ssize_t ath11k_write_ce_latency_stats(struct file *file,
++				       const char __user *user_buf,
++				       size_t count, loff_t *ppos)
++{
++       struct ath11k_base *ab = file->private_data;
++       bool enable;
++       int ret;
++
++       if (kstrtobool_from_user(user_buf, count, &enable))
++                return -EINVAL;
++
++       if (enable == ab->ce_latency_stats_enable) {
++                ret = count;
++                goto exit;
++       }
++
++       ab->ce_latency_stats_enable = enable;
++       ret = count;
++
++exit:
++	return ret;
++}
++
++static ssize_t ath11k_read_ce_latency_stats(struct file *file,
++					    char __user *user_buf,
++					    size_t count, loff_t *ppos)
++{
++	struct ath11k_base *ab = file->private_data;
++	int len = 0, retval;
++	const int size = 12288;
++	char *buf;
++	struct ath11k_ce_pipe *ce_pipe;
++	int i, j;
++	unsigned int last_sched, last_exec;
++	char *ce_time_dur[CE_TIME_DURATION_MAX] = {
++		"ce_time_dur_100US", "ce_time_dur_200US", "ce_time_dur_300US",
++		"ce_time_dur_400US", "ce_time_dur_500US"};
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	len += scnprintf(buf + len, size - len, "CE_LATENCY_STATS:\n");
++	for (i = 0; i < ab->hw_params.ce_count; i++) {
++		ce_pipe = &ab->ce.ce_pipe[i];
++
++		len += scnprintf(buf + len, size - len, "CE_id  %u ", i);
++		len += scnprintf(buf + len, size - len, "pipe_num  %d ",
++				 ce_pipe->pipe_num);
++		len += scnprintf(buf + len, size - len, "%ums before, ",
++				 jiffies_to_msecs(jiffies - ce_pipe->timestamp));
++		len += scnprintf(buf + len, size - len, "sched_delay_gt_500US %u, ",
++				 ce_pipe->sched_delay_gt_500US);
++		len += scnprintf(buf + len, size - len, "exec_delay_gt_500US %u,\n",
++				 ce_pipe->sched_delay_gt_500US);
++
++		for (j = 0; j < CE_TIME_DURATION_MAX; j++) {
++			last_sched = jiffies_to_msecs(jiffies -
++						      ce_pipe->tracker[j].sched_last_update);
++			last_exec = jiffies_to_msecs(jiffies -
++						     ce_pipe->tracker[j].exec_last_update);
++
++			len += scnprintf(buf + len, size - len, "%-17s,\t ", ce_time_dur[j]);
++			len += scnprintf(buf + len, size - len, "last_sched_before %10ums,\t ",
++					 ((ce_pipe->tracker[j].sched_last_update > 0) ? last_sched : 0));
++			len += scnprintf(buf + len, size - len, "tot_sched_cnt %20llu,\t ",
++					 ce_pipe->tracker[j].sched_count);
++			len += scnprintf(buf + len, size - len, "last_exec_before %10ums,\t ",
++					 ((ce_pipe->tracker[j].exec_last_update > 0) ? last_exec : 0));
++			len += scnprintf(buf + len, size - len, "tot_exec_cnt %20llu\n",
++					 ce_pipe->tracker[j].exec_count);
++		}
++	}
++	if (len > size)
++		len = size;
++	retval = simple_read_from_buffer(user_buf, count, ppos, buf, len);
++	kfree(buf);
++
++	return retval;
++}
++
++static const struct file_operations fops_ce_latency_stats = {
++	.write = ath11k_write_ce_latency_stats,
++	.open = simple_open,
++	.read = ath11k_read_ce_latency_stats,
++};
++
+ int ath11k_debugfs_pdev_create(struct ath11k_base *ab)
+ {
+ 	if (test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags))
+@@ -1598,6 +1685,8 @@ int ath11k_debugfs_pdev_create(struct at
+ 	debugfs_create_file("set_fw_recovery", 0600, ab->debugfs_soc, ab,
+ 			    &fops_fw_recovery);
+ 
++	debugfs_create_file("ce_latency_stats", 0600, ab->debugfs_soc, ab,
++			    &fops_ce_latency_stats);
+ 
+ 	return 0;
+ }
+--- a/drivers/net/wireless/ath/ath11k/hal.c
++++ b/drivers/net/wireless/ath/ath11k/hal.c
+@@ -1289,7 +1289,11 @@ void ath11k_hal_dump_srng_stats(struct a
+ 	struct hal_srng *srng;
+ 	struct ath11k_ext_irq_grp *irq_grp;
+ 	struct ath11k_ce_pipe *ce_pipe;
+-	int i;
++	int i, j;
++	unsigned int last_sched, last_exec;
++	char *ce_time_dur[CE_TIME_DURATION_MAX] = {
++		"ce_time_dur_100US", "ce_time_dur_200US", "ce_time_dur_300US",
++		"ce_time_dur_400US", "ce_time_dur_500US"};
+ 
+ 	ath11k_err(ab, "Last interrupt received for each CE:\n");
+ 	for (i = 0; i < ab->hw_params.ce_count; i++) {
+@@ -1298,9 +1302,23 @@ void ath11k_hal_dump_srng_stats(struct a
+ 		if (ath11k_ce_get_attr_flags(ab, i) & CE_ATTR_DIS_INTR)
+ 			continue;
+ 
+-		ath11k_err(ab, "CE_id %d pipe_num %d %ums before\n",
++		ath11k_info(ab, "CE_id %d pipe_num %d %ums before, sched_delay_gt_500US %u, exec_delay_gt_500US %u\n",
+ 			   i, ce_pipe->pipe_num,
+-			   jiffies_to_msecs(jiffies - ce_pipe->timestamp));
++			   jiffies_to_msecs(jiffies - ce_pipe->timestamp),
++			   ce_pipe->sched_delay_gt_500US, ce_pipe->exec_delay_gt_500US);
++
++		for (j = 0; j < CE_TIME_DURATION_MAX; j++) {
++			last_sched = jiffies_to_msecs(jiffies -
++						      ce_pipe->tracker[j].sched_last_update);
++			last_exec = jiffies_to_msecs(jiffies -
++						     ce_pipe->tracker[j].exec_last_update);
++			ath11k_info(ab, "%-17s,\t last_sched_before %10ums,\t tot_sched_cnt %20llu,\t last_exec_before %10ums,\t tot_exec_cnt %20llu\n",
++				    ce_time_dur[j],
++				    ((ce_pipe->tracker[j].sched_last_update > 0) ? last_sched : 0),
++				    ce_pipe->tracker[j].sched_count,
++				    ((ce_pipe->tracker[j].exec_last_update > 0) ? last_exec : 0),
++				    ce_pipe->tracker[j].exec_count);
++		}
+ 	}
+ 
+ 	ath11k_err(ab, "\nLast interrupt received for each group:\n");
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -644,8 +644,16 @@ static void ath11k_pci_ce_tasklet(struct
+ {
+ 	struct ath11k_ce_pipe *ce_pipe = from_tasklet(ce_pipe, t, intr_tq);
+ 
++	if (ce_pipe->ab->ce_latency_stats_enable)
++		ce_pipe->tasklet_ts.exec_entry_ts = ktime_get_boottime();
++
+ 	ath11k_ce_per_engine_service(ce_pipe->ab, ce_pipe->pipe_num);
+ 
++	if (ce_pipe->ab->ce_latency_stats_enable) {
++		ce_pipe->tasklet_ts.exec_complete_ts = ktime_get_boottime();
++		ce_update_tasklet_time_duration_stats(ce_pipe);
++	}
++
+ 	ath11k_pci_ce_irq_enable(ce_pipe->ab, ce_pipe->pipe_num);
+ }
+ 
+@@ -657,8 +665,12 @@ static irqreturn_t ath11k_pci_ce_interru
+ 	ce_pipe->timestamp = jiffies;
+ 
+ 	ath11k_pci_ce_irq_disable(ce_pipe->ab, ce_pipe->pipe_num);
++
+ 	tasklet_schedule(&ce_pipe->intr_tq);
+ 
++	if (ce_pipe->ab->ce_latency_stats_enable)
++		ce_pipe->tasklet_ts.sched_entry_ts = ktime_get_boottime();
++
+ 	return IRQ_HANDLED;
+ }
+ 

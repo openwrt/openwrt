@@ -1,0 +1,656 @@
+From 101daf566661f208f78081de2d7d4040141ea5e1 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 6 Oct 2020 15:03:13 -0700
+Subject: [PATCH 1/4] co-located: add a config option to indicate co locate
+
+A 6GHz BSS can be co-located with a 2/5GHz BSS. This option allows us to
+indicate if this should be done.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ hostapd/config_file.c | 2 ++
+ hostapd/hostapd.conf  | 3 +++
+ src/ap/ap_config.h    | 1 +
+ 3 files changed, 6 insertions(+)
+
+diff --git a/hostapd/config_file.c b/hostapd/config_file.c
+index 0bdf526..bbdd969 100644
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -3642,6 +3642,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
+ 			return 1;
+ 		}
+ 		bss->unsol_bcast_probe_resp_interval = val;
++	} else if (os_strcmp(buf, "he_co_locate") == 0) {
++		conf->he_co_locate = atoi(pos);
+ #endif /* CONFIG_IEEE80211AX */
+ 	} else if (os_strcmp(buf, "max_listen_interval") == 0) {
+ 		bss->max_listen_interval = atoi(pos);
+diff --git a/hostapd/hostapd.conf b/hostapd/hostapd.conf
+index ef26fe3..7c371cb 100644
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -577,6 +577,9 @@ wmm_ac_vo_acm=0
+ # Default: 0 (disabled)
+ #notify_mgmt_frames=0
+ 
++# Enable co-locate for a 6GHz radio
++#co_locate=0
++
+ ##### IEEE 802.11n related configuration ######################################
+ 
+ # ieee80211n: Whether IEEE 802.11n (HT) is enabled
+diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
+index 95e44fa..5ae9187 100644
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -1066,6 +1066,7 @@ struct hostapd_config {
+ 	u8 he_6ghz_max_ampdu_len_exp;
+ 	u8 he_6ghz_rx_ant_pat;
+ 	u8 he_6ghz_tx_ant_pat;
++	bool he_co_locate;
+ #endif /* CONFIG_IEEE80211AX */
+ 
+ 	/* VHT enable/disable config from CHAN_SWITCH */
+-- 
+2.7.4
+
+From e9263d5c0a8e166e025a63f823288266d1085942 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 6 Oct 2020 15:05:24 -0700
+Subject: [PATCH 2/4] neighbor_db: set the co-locate bit
+
+If the BSS is co-located, the corresponding bit needs to be set inside
+bssid_info.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ src/ap/neighbor_db.c         | 3 +++
+ src/common/ieee802_11_defs.h | 2 ++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/src/ap/neighbor_db.c b/src/ap/neighbor_db.c
+index ce6cfa9..6a0e8c3 100644
+--- a/src/ap/neighbor_db.c
++++ b/src/ap/neighbor_db.c
+@@ -282,6 +282,9 @@ void hostapd_neighbor_set_own_report(struct hostapd_data *hapd)
+ 			bssid_info |= NEI_REP_BSSID_INFO_HE;
+ 	}
+ 
++	if (hapd->iconf->he_co_locate)
++		bssid_info |= NEI_REP_BSSID_INFO_HE_CO_LOCATED;
++
+ 	/* TODO: Set NEI_REP_BSSID_INFO_MOBILITY_DOMAIN if MDE is set */
+ 
+ 	if (ieee80211_freq_to_channel_ext(hapd->iface->freq,
+diff --git a/src/common/ieee802_11_defs.h b/src/common/ieee802_11_defs.h
+index 8c73156..3a2cb6c 100644
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -2145,6 +2145,8 @@ enum phy_type {
+ #define NEI_REP_BSSID_INFO_VHT BIT(12)
+ #define NEI_REP_BSSID_INFO_FTM BIT(13)
+ #define NEI_REP_BSSID_INFO_HE BIT(14)
++#define NEI_REP_BSSID_INFO_HE_ER_BSS BIT(15)
++#define NEI_REP_BSSID_INFO_HE_CO_LOCATED BIT(16)
+ 
+ /*
+  * IEEE P802.11-REVmc/D5.0 Table 9-152 - HT/VHT Operation Information
+-- 
+2.7.4
+
+From 92d786ddb2568b688ed4d25e32f3987e926c0ca4 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Mon, 21 Sep 2020 13:50:58 +0200
+Subject: [PATCH 3/4] rrm: add handling for co-located BSS
+
+A BSS shall include the neighbor entry of a co-located BSS upon an incoming
+request.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ src/ap/rrm.c | 117 +++++++++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 74 insertions(+), 43 deletions(-)
+
+diff --git a/src/ap/rrm.c b/src/ap/rrm.c
+index f2d5cd1..c9d51df 100644
+--- a/src/ap/rrm.c
++++ b/src/ap/rrm.c
+@@ -196,6 +196,63 @@ static size_t hostapd_neighbor_report_len(struct wpabuf *buf,
+ }
+ 
+ 
++static int hostapd_add_nei_report_entry(struct wpabuf *buf, struct hostapd_neighbor_entry *nr,
++					struct wpa_ssid_value *ssid, u8 lci,
++					u8 civic, u16 lci_max_age)
++{
++	u8 *msmt_token;
++	int send_lci;
++	size_t len;
++
++	if (ssid->ssid_len != nr->ssid.ssid_len ||
++	    os_memcmp(ssid->ssid, nr->ssid.ssid, ssid->ssid_len) != 0)
++		return 0;
++
++	send_lci = (lci != 0) && hostapd_check_lci_age(nr, lci_max_age);
++	len = hostapd_neighbor_report_len(buf, nr, send_lci, civic);
++
++	if (len - 2 > 0xff) {
++		wpa_printf(MSG_DEBUG,
++			   "NR entry for " MACSTR " exceeds 0xFF bytes",
++			   MAC2STR(nr->bssid));
++		return 0;
++	}
++
++	if (len > wpabuf_tailroom(buf))
++		return -1;
++
++	wpabuf_put_u8(buf, WLAN_EID_NEIGHBOR_REPORT);
++	wpabuf_put_u8(buf, len - 2);
++	wpabuf_put_buf(buf, nr->nr);
++
++	if (send_lci && nr->lci) {
++		wpabuf_put_u8(buf, WLAN_EID_MEASURE_REPORT);
++		wpabuf_put_u8(buf, wpabuf_len(nr->lci));
++		/*
++		 * Override measurement token - the first byte of the
++		 * Measurement Report element.
++		 */
++		msmt_token = wpabuf_put(buf, 0);
++		wpabuf_put_buf(buf, nr->lci);
++		*msmt_token = lci;
++	}
++
++	if (civic && nr->civic) {
++		wpabuf_put_u8(buf, WLAN_EID_MEASURE_REPORT);
++		wpabuf_put_u8(buf, wpabuf_len(nr->civic));
++		/*
++		 * Override measurement token - the first byte of the
++		 * Measurement Report element.
++		 */
++		msmt_token = wpabuf_put(buf, 0);
++		wpabuf_put_buf(buf, nr->civic);
++		*msmt_token = civic;
++	}
++
++	return 0;
++}
++
++
+ static void hostapd_send_nei_report_resp(struct hostapd_data *hapd,
+ 					 const u8 *addr, u8 dialog_token,
+ 					 struct wpa_ssid_value *ssid, u8 lci,
+@@ -203,7 +260,6 @@ static void hostapd_send_nei_report_resp(struct hostapd_data *hapd,
+ {
+ 	struct hostapd_neighbor_entry *nr;
+ 	struct wpabuf *buf;
+-	u8 *msmt_token;
+ 
+ 	/*
+ 	 * The number and length of the Neighbor Report elements in a Neighbor
+@@ -220,52 +276,27 @@ static void hostapd_send_nei_report_resp(struct hostapd_data *hapd,
+ 
+ 	dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry,
+ 			 list) {
+-		int send_lci;
+-		size_t len;
+-
+-		if (ssid->ssid_len != nr->ssid.ssid_len ||
+-		    os_memcmp(ssid->ssid, nr->ssid.ssid, ssid->ssid_len) != 0)
+-			continue;
+-
+-		send_lci = (lci != 0) && hostapd_check_lci_age(nr, lci_max_age);
+-		len = hostapd_neighbor_report_len(buf, nr, send_lci, civic);
+-
+-		if (len - 2 > 0xff) {
+-			wpa_printf(MSG_DEBUG,
+-				   "NR entry for " MACSTR " exceeds 0xFF bytes",
+-				   MAC2STR(nr->bssid));
+-			continue;
+-		}
+-
+-		if (len > wpabuf_tailroom(buf))
++		if (hostapd_add_nei_report_entry(buf, nr, ssid, lci, civic, lci_max_age))
+ 			break;
++	}
+ 
+-		wpabuf_put_u8(buf, WLAN_EID_NEIGHBOR_REPORT);
+-		wpabuf_put_u8(buf, len - 2);
+-		wpabuf_put_buf(buf, nr->nr);
++	if (!hapd->iconf->he_co_locate) {
++		int i;
+ 
+-		if (send_lci && nr->lci) {
+-			wpabuf_put_u8(buf, WLAN_EID_MEASURE_REPORT);
+-			wpabuf_put_u8(buf, wpabuf_len(nr->lci));
+-			/*
+-			 * Override measurement token - the first byte of the
+-			 * Measurement Report element.
+-			 */
+-			msmt_token = wpabuf_put(buf, 0);
+-			wpabuf_put_buf(buf, nr->lci);
+-			*msmt_token = lci;
+-		}
++		for (i = 0; i < hapd->iface->interfaces->count; i++) {
++			struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
++			int j;
++
++			if (iface == hapd->iface || !iface->conf->he_co_locate)
++				continue;
+ 
+-		if (civic && nr->civic) {
+-			wpabuf_put_u8(buf, WLAN_EID_MEASURE_REPORT);
+-			wpabuf_put_u8(buf, wpabuf_len(nr->civic));
+-			/*
+-			 * Override measurement token - the first byte of the
+-			 * Measurement Report element.
+-			 */
+-			msmt_token = wpabuf_put(buf, 0);
+-			wpabuf_put_buf(buf, nr->civic);
+-			*msmt_token = civic;
++			for (j = 0; j < iface->num_bss; j++) {
++				nr = hostapd_neighbor_get(iface->bss[j], iface->bss[j]->own_addr, NULL);
++				if (!nr)
++					continue;
++				if (hostapd_add_nei_report_entry(buf, nr, ssid, lci, civic, lci_max_age))
++					break;
++			}
+ 		}
+ 	}
+ 
+-- 
+2.7.4
+
+From fe0833e906559efb41ec9ee3f3e77049b968e6aa Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 21 Oct 2020 11:47:22 -0700
+Subject: [PATCH 4/4] rnr: add reduced neighbor reporting
+
+The Reduced Neighbor Report (rnr) element contains channel and other
+information related to neighbor APs. It is part of the OCE requirement.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+Signed-off-by: Muna Sinada <msinada@codeaurora.org>
+---
+ src/ap/beacon.c              |  40 +++++++++-
+ src/ap/ieee802_11.c          | 177 ++++++++++++++++++++++++++++++++-----------
+ src/ap/ieee802_11.h          |   4 +-
+ src/common/ieee802_11_defs.h |   6 +-
+ 4 files changed, 173 insertions(+), 54 deletions(-)
+
+diff --git a/src/ap/beacon.c b/src/ap/beacon.c
+index 769e0d0..8afaf7a 100644
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -481,6 +481,8 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
+ 	buflen += hostapd_eid_dpp_cc_len(hapd);
+ 	if (hapd->iconf->multiple_bssid)
+ 		buflen += hostapd_eid_multiple_bssid_len(hapd, hidden, 0);
++	if (hapd->conf->rnr_beacon)
++		buflen += hostapd_eid_reduced_neighbor_report_len(hapd, 1);
+ 
+ 	resp = os_zalloc(buflen);
+ 	if (resp == NULL)
+@@ -645,6 +647,8 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
+ 	pos = hostapd_eid_mbo(hapd, pos, (u8 *) resp + buflen - pos);
+ 	pos = hostapd_eid_owe_trans(hapd, pos, (u8 *) resp + buflen - pos);
+ 	pos = hostapd_eid_dpp_cc(hapd, pos, (u8 *) resp + buflen - pos);
++	if (hapd->conf->rnr_beacon)
++		pos = hostapd_eid_reduced_neighbor_report(hapd, pos, 1);
+ 
+ 	if (hapd->conf->vendor_elements) {
+ 		os_memcpy(pos, wpabuf_head(hapd->conf->vendor_elements),
+@@ -660,7 +664,8 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
+ enum ssid_match_result {
+ 	NO_SSID_MATCH,
+ 	EXACT_SSID_MATCH,
+-	WILDCARD_SSID_MATCH
++	WILDCARD_SSID_MATCH,
++	CO_LOCATED_SSID_MATCH
+ };
+ 
+ static enum ssid_match_result ssid_match(struct hostapd_data *hapd,
+@@ -672,6 +677,7 @@ static enum ssid_match_result ssid_match(struct hostapd_data *hapd,
+ {
+ 	const u8 *pos, *end;
+ 	int wildcard = 0;
++	size_t i, j;
+ 
+ 	if (ssid_len == 0)
+ 		wildcard = 1;
+@@ -705,6 +711,25 @@ static enum ssid_match_result ssid_match(struct hostapd_data *hapd,
+ 		}
+ 	}
+ 
++	/* Case of probe request from STA with SSID matching the SSID of a
++	 * co-located AP
++	 */
++	if (!wildcard && hapd->conf->rnr_beacon) {
++		for (i = 0; i < hapd->iface->interfaces->count; i++) {
++			struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
++
++			if (iface == hapd->iface || !iface->conf->he_co_locate)
++				continue;
++
++			struct hostapd_iface *iface2 = iface->bss[0]->iface;
++			for (j = 0; j < iface2->num_bss; j++){
++				if (ssid_len == iface2->bss[j]->conf->ssid.ssid_len &&
++				    os_memcmp(ssid, iface2->bss[j]->conf->ssid.ssid, ssid_len) == 0)
++					return CO_LOCATED_SSID_MATCH;
++			}
++		}
++	}
++
+ 	return wildcard ? WILDCARD_SSID_MATCH : NO_SSID_MATCH;
+ }
+ 
+@@ -1079,7 +1104,8 @@ void handle_probe_req(struct hostapd_data *hapd,
+ 		     " signal=%d", MAC2STR(mgmt->sa), ssi_signal);
+ 
+ 	if (hapd->iconf->multiple_bssid &&
+-	    hapd != hostapd_get_primary_bss(hapd) && res != EXACT_SSID_MATCH)
++	    hapd != hostapd_get_primary_bss(hapd) &&
++	    (res != EXACT_SSID_MATCH && res != CO_LOCATED_SSID_MATCH))
+ 		return;
+ 
+ 	resp = hostapd_gen_probe_resp(hapd, mgmt, elems.p2p != NULL,
+@@ -1318,6 +1344,8 @@ static u8 * hostapd_gen_fils_discovery(struct hostapd_data *hapd, size_t *len)
+ 		total_len += 3;
+ 	}
+ 
++	total_len += hostapd_eid_reduced_neighbor_report_len(hapd, 0);
++
+ 	pos = hostapd_eid_fils_indic(hapd, buf, 0);
+ 	buf_len = pos - buf;
+ 	total_len += buf_len;
+@@ -1386,6 +1414,8 @@ static u8 * hostapd_gen_fils_discovery(struct hostapd_data *hapd, size_t *len)
+ 	/* Fill in the Length field value */
+ 	*length_pos = pos - (length_pos + 1);
+ 
++	pos = hostapd_eid_reduced_neighbor_report(hapd, pos, 0);
++
+ 	/* FILS Indication element */
+ 	if (buf_len) {
+ 		os_memcpy(pos, buf, buf_len);
+@@ -1475,7 +1505,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
+ 	tail_len += hostapd_mbo_ie_len(hapd);
+ 	tail_len += hostapd_eid_owe_trans_len(hapd);
+ 	tail_len += hostapd_eid_dpp_cc_len(hapd);
+-	tail_len += hostapd_eid_reduced_neighbor_report_len(hapd);
++	if (hapd->conf->rnr_beacon)
++		tail_len += hostapd_eid_reduced_neighbor_report_len(hapd, 0);
+ 
+ 	tailpos = tail = os_malloc(tail_len);
+ 	if (head == NULL || tail == NULL) {
+@@ -1654,7 +1685,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
+ 	tailpos = hostapd_eid_owe_trans(hapd, tailpos,
+ 					tail + tail_len - tailpos);
+ 	tailpos = hostapd_eid_dpp_cc(hapd, tailpos, tail + tail_len - tailpos);
+-	tailpos = hostapd_eid_reduced_neighbor_report(hapd, tailpos);
++	if (hapd->conf->rnr_beacon)
++		tailpos = hostapd_eid_reduced_neighbor_report(hapd, tailpos, 0);
+ 
+ 	if (hapd->conf->vendor_elements) {
+ 		os_memcpy(tailpos, wpabuf_head(hapd->conf->vendor_elements),
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index 668c4db..408c764 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -7158,14 +7158,45 @@ u8 * hostapd_eid_multiple_bssid(struct hostapd_data *hapd,
+ }
+ 
+ 
+-size_t hostapd_eid_reduced_neighbor_report_len(struct hostapd_data *hapd)
++size_t hostapd_eid_reduced_neighbor_report_iface_len(struct hostapd_data *hapd,
++						     struct hostapd_data *reporting_hapd)
+ {
+ 	size_t len = 0;
++	int i;
++	for (i = 0; i < hapd->iface->num_bss; i++) {
++		if (hapd->iface->bss[i] == reporting_hapd ||
++		    hapd->iface->bss[i]->conf->ignore_broadcast_ssid)
++			continue;
++		len += TBTT_INFO_LENGTH;
++	}
++	return len;
++}
++
++
++size_t hostapd_eid_reduced_neighbor_report_len(struct hostapd_data *hapd, bool probe_resp)
++{
++	size_t len = 0;
++	int i;
+ 
+ 	if (hapd->iface->num_bss > 1)
+-		len += TBTT_HEADER_LENGTH + ((hapd->iface->num_bss - 1) * TBTT_INFO_LENGTH);
+-	if (!dl_list_empty(&hapd->nr_db))
++		len += (TBTT_HEADER_LENGTH +
++			hostapd_eid_reduced_neighbor_report_iface_len(hapd,
++								      hapd));
++
++	for (i = 0; i < hapd->iface->interfaces->count; i++) {
++		struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
++
++		if (iface == hapd->iface || !iface->conf->he_co_locate)
++			continue;
++
++		len += (TBTT_HEADER_LENGTH +
++			hostapd_eid_reduced_neighbor_report_iface_len(iface->bss[0],
++								      hapd));
++	}
++
++	if (!probe_resp && !dl_list_empty(&hapd->nr_db))
+ 		len += dl_list_len(&hapd->nr_db) * (TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH);
++
+ 	if (len)
+ 		len += 2; /* Element ID and length */
+ 
+@@ -7173,58 +7204,76 @@ size_t hostapd_eid_reduced_neighbor_report_len(struct hostapd_data *hapd)
+ }
+ 
+ 
+-u8 * hostapd_eid_reduced_neighbor_report(struct hostapd_data *hapd, u8 *eid)
++static u8 *hostapd_eid_reduced_neighbor_report_iface(struct hostapd_data *hapd,
++						     struct hostapd_data *reporting_hapd,
++						     u8 *eid, int *count)
+ {
+-	size_t len = hostapd_eid_reduced_neighbor_report_len(hapd);
+-        struct hostapd_neighbor_entry *nr;
+-	int i, count = 0;
+-	u8 *size_offset;
++	u8 *eid_start = eid, *tbtt_count_pos;
++	u8 tbtt_count = 0;
++	u8 op_class, channel;
++	int i;
+ 
+-	if (!len)
++	if (!(hapd->iface->drv_flags & WPA_DRIVER_FLAGS_AP_CSA) ||
++	    !hapd->iface->freq)
+ 		return eid;
+ 
+-	*eid++ = WLAN_EID_REDUCED_NEIGHBOR_REPORT;
+-	size_offset = eid++;
+-
+-	if (hapd->iface->num_bss > 1) {
+-		u8 op_class, channel;
++	if (ieee80211_freq_to_channel_ext(hapd->iface->freq,
++					  hapd->iconf->secondary_channel,
++					  hostapd_get_oper_chwidth(hapd->iconf),
++					  &op_class, &channel) ==
++	    NUM_HOSTAPD_MODES)
++		return eid;
+ 
+-		if (!(hapd->iface->drv_flags & WPA_DRIVER_FLAGS_AP_CSA) ||
+-		    !hapd->iface->freq)
+-			goto nr_db;
++	tbtt_count_pos = eid++;
++	*eid++ = TBTT_INFO_LENGTH;
++	*eid++ = op_class;
++	*eid++ = hapd->iconf->channel;
++	for (i = 0; i < hapd->iface->num_bss; i++) {
++		u8 bss_param = 0;
+ 
+-		if (ieee80211_freq_to_channel_ext(hapd->iface->freq,
+-						  hapd->iconf->secondary_channel,
+-						  hostapd_get_oper_chwidth(hapd->iconf),
+-						  &op_class, &channel) ==
+-		    NUM_HOSTAPD_MODES)
+-			goto nr_db;
++		if (hapd->iface->bss[i] == reporting_hapd ||
++		    hapd->iface->bss[i]->conf->ignore_broadcast_ssid)
++			continue;
+ 
+-		*eid++ = TBTT_INFO_COUNT(hapd->iface->num_bss - 2);
+-		*eid++ = TBTT_INFO_LENGTH;
+-		*eid++ = op_class;
+-		*eid++ = hapd->iconf->channel;
+-		for (i = 0; i < hapd->iface->num_bss; i++) {
+-			u8 bss_param = 0;
+-
+-			if (hapd->iface->bss[i] == hapd)
+-				continue;
+-			*eid++ = TBTT_AP_OFFSET_UNKNOWN;
+-			os_memcpy(eid, hapd->iface->bss[i]->conf->bssid, ETH_ALEN);
+-			eid += 6;
+-			os_memcpy(eid, &hapd->iface->bss[i]->conf->ssid.short_ssid, 4);
+-			eid += 4;
+-			if (hapd->iface->bss[i]->conf->ssid.short_ssid ==
+-			    hapd->conf->ssid.short_ssid)
+-				bss_param |= TBTT_BSS_PARAM_SAME_SSID;
+-			if (hapd->iconf->multiple_bssid)
+-				bss_param |= TBTT_BSS_PARAM_MULTIPLE_BSSID;
+-			*eid++ = bss_param;
+-			count++;
++		*eid++ = TBTT_AP_OFFSET_UNKNOWN;
++		os_memcpy(eid, hapd->iface->bss[i]->conf->bssid, ETH_ALEN);
++		eid += 6;
++		os_memcpy(eid, &hapd->iface->bss[i]->conf->ssid.short_ssid, 4);
++		eid += 4;
++		if (hapd->iface->bss[i]->conf->ssid.short_ssid ==
++		    reporting_hapd->conf->ssid.short_ssid)
++			bss_param |= TBTT_BSS_PARAM_SAME_SSID;
++
++		if (hapd->iconf->multiple_bssid && hapd->iface->num_bss > 1) {
++			bss_param |= TBTT_BSS_PARAM_MULTIPLE_BSSID;
++			if (hapd->iface->bss[i] == hostapd_get_primary_bss(hapd->iface->bss[i]))
++				bss_param |= TBTT_BSS_PARAM_TRANSMITTED_BSSID;
+ 		}
++		if (hapd->iface->bss[i]->iconf->he_co_locate)
++			bss_param |= TBTT_BSS_PARAM_CO_LOCATED;
++
++		if (hapd->iface->bss[i]->conf->unsol_bcast_probe_resp_interval)
++			bss_param |= TBTT_BSS_PARAM_20_TU_PROBE_RESP_ACTIVE;
++
++		*eid++ = bss_param;
++		/* Setting 20 MHz PSD */
++		*eid++ = TBTT_PSD_MAX_TXPOWER - 1;
++		*count += 1;
++		tbtt_count++;
+ 	}
+ 
+-nr_db:
++	if (tbtt_count == 0)
++		return eid_start;
++
++	*tbtt_count_pos = TBTT_INFO_COUNT(tbtt_count - 1);
++	return eid;
++}
++
++
++static u8 *hostapd_eid_reduced_neighbor_report_nr_db(struct hostapd_data *hapd, u8 *eid, int *count)
++{
++	struct hostapd_neighbor_entry *nr;
++
+ 	dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry,
+ 			 list) {
+ 		if (!nr->nr || wpabuf_len(nr->nr) < 12)
+@@ -7241,9 +7290,45 @@ nr_db:
+ 		os_memcpy(eid, &nr->short_ssid, 4);
+ 		eid += 4;
+ 		*eid++ = nr->bss_parameters;
+-		count++;
++		/* setting 20 MHZ PSD */
++		*eid++ = TBTT_PSD_MAX_TXPOWER - 1;
++		*count += 1;
+ 	}
+ 
++	return eid;
++}
++
++
++u8 * hostapd_eid_reduced_neighbor_report(struct hostapd_data *hapd, u8 *eid, bool probe_resp)
++{
++	size_t len = hostapd_eid_reduced_neighbor_report_len(hapd, probe_resp);
++	int i, count = 0;
++	u8 *size_offset;
++
++	if (!len)
++		return eid;
++
++	*eid++ = WLAN_EID_REDUCED_NEIGHBOR_REPORT;
++	size_offset = eid++;
++
++	if (hapd->iface->num_bss > 1)
++		eid = hostapd_eid_reduced_neighbor_report_iface(hapd, hapd,
++								eid, &count);
++
++	for (i = 0; i < hapd->iface->interfaces->count; i++) {
++		struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
++
++		if (iface == hapd->iface || !iface->conf->he_co_locate)
++			continue;
++
++		eid = hostapd_eid_reduced_neighbor_report_iface(iface->bss[0],
++								hapd, eid,
++								&count);
++	}
++
++	if (!probe_resp)
++		hostapd_eid_reduced_neighbor_report_nr_db(hapd, eid, &count);
++
+ 	if (!count)
+ 		eid -= 2;
+ 	else
+diff --git a/src/ap/ieee802_11.h b/src/ap/ieee802_11.h
+index 1145210..2f45b61 100644
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -126,8 +126,8 @@ u8 * hostapd_eid_multiple_bssid(struct hostapd_data *hapd,
+ int hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd,
+ 				   struct hostapd_data *hidden,
+ 				   u8 is_beacon);
+-u8 * hostapd_eid_reduced_neighbor_report(struct hostapd_data *hapd, u8 *eid);
+-size_t hostapd_eid_reduced_neighbor_report_len(struct hostapd_data *hapd);
++u8 * hostapd_eid_reduced_neighbor_report(struct hostapd_data *hapd, u8 *eid, bool probe_resp);
++size_t hostapd_eid_reduced_neighbor_report_len(struct hostapd_data *hapd, bool probe_resp);
+ int auth_sae_init_committed(struct hostapd_data *hapd, struct sta_info *sta);
+ #ifdef CONFIG_SAE
+ void sae_clear_retransmit_timer(struct hostapd_data *hapd,
+diff --git a/src/common/ieee802_11_defs.h b/src/common/ieee802_11_defs.h
+index 3a2cb6c..4c438dd 100644
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -2441,7 +2441,7 @@ enum mscs_description_subelem {
+ 
+ /* TBTT Information field defines */
+ #define TBTT_HEADER_LENGTH			4
+-#define TBTT_INFO_LENGTH			12
++#define TBTT_INFO_LENGTH			13
+ #define TBTT_INFO_FILTERED_NEIGH_AP		BIT(2)
+ #define TBTT_INFO_COUNT(x)			(((x) & 0xf) << 4)
+ #define TBTT_AP_OFFSET_UNKNOWN			255
+@@ -2449,7 +2449,9 @@ enum mscs_description_subelem {
+ #define TBTT_BSS_PARAM_SAME_SSID		BIT(1)
+ #define TBTT_BSS_PARAM_MULTIPLE_BSSID		BIT(2)
+ #define TBTT_BSS_PARAM_TRANSMITTED_BSSID	BIT(3)
+-#define TBTT_BSS_PARAM_CO_LOCATED_ESS		BIT(4)
++#define TBTT_BSS_PARAM_MEMBER_CO_LOCATED_ESS	BIT(4)
+ #define TBTT_BSS_PARAM_20_TU_PROBE_RESP_ACTIVE	BIT(5)
++#define TBTT_BSS_PARAM_CO_LOCATED		BIT(6)
++#define TBTT_PSD_MAX_TXPOWER			255 /* dBm */
+ 
+ #endif /* IEEE802_11_DEFS_H */
+-- 
+2.7.4
+

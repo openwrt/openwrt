@@ -1,0 +1,167 @@
+From 60b184884f0105c57977d67eb92e8342337009af Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Thu, 10 Dec 2020 13:07:15 -0800
+Subject: [PATCH 3/9] hostapd: Type of frame instead of 'probe_resp' flag in
+ RNR functions
+
+Functions related to generation of reduced neighbor report element accept
+flag 'probe_resp' as an input parameter to differentiate between beacons
+and probe responses.
+
+This patch instead uses frame type as input as RNR can also be added in
+FILS discovery frame.
+
+Frame type is used to decide whether to add data for co-located APs/APs from
+same ESS in RNR.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/beacon.c     | 12 ++++++------
+ src/ap/ieee802_11.c | 36 ++++++++++++++++++++----------------
+ src/ap/ieee802_11.h |  4 ++--
+ 3 files changed, 28 insertions(+), 24 deletions(-)
+
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -486,7 +486,7 @@ static u8 * hostapd_gen_probe_resp(struc
+ 							 known_bssids,
+ 							 known_bssids_len);
+ 	if (hapd->conf->rnr_beacon)
+-		buflen += hostapd_eid_rnr_len(hapd, 1);
++		buflen += hostapd_eid_rnr_len(hapd, WLAN_FC_STYPE_PROBE_RESP);
+ 
+ 	resp = os_zalloc(buflen);
+ 	if (resp == NULL)
+@@ -656,7 +656,7 @@ static u8 * hostapd_gen_probe_resp(struc
+ 	pos = hostapd_eid_owe_trans(hapd, pos, (u8 *) resp + buflen - pos);
+ 	pos = hostapd_eid_dpp_cc(hapd, pos, (u8 *) resp + buflen - pos);
+ 	if (hapd->conf->rnr_beacon)
+-		pos = hostapd_eid_rnr(hapd, pos, 1);
++		pos = hostapd_eid_rnr(hapd, pos, WLAN_FC_STYPE_PROBE_RESP);
+ 
+ 	if (hapd->conf->vendor_elements) {
+ 		os_memcpy(pos, wpabuf_head(hapd->conf->vendor_elements),
+@@ -1354,7 +1354,7 @@ static u8 * hostapd_gen_fils_discovery(s
+ 		total_len += 3;
+ 	}
+ 
+-	total_len += hostapd_eid_rnr_len(hapd, 0);
++	total_len += hostapd_eid_rnr_len(hapd, WLAN_FC_STYPE_ACTION);
+ 
+ 	pos = hostapd_eid_fils_indic(hapd, buf, 0);
+ 	buf_len = pos - buf;
+@@ -1424,7 +1424,7 @@ static u8 * hostapd_gen_fils_discovery(s
+ 	/* Fill in the Length field value */
+ 	*length_pos = pos - (length_pos + 1);
+ 
+-	pos = hostapd_eid_rnr(hapd, pos, 0);
++	pos = hostapd_eid_rnr(hapd, pos, WLAN_FC_STYPE_ACTION);
+ 
+ 	/* FILS Indication element */
+ 	if (buf_len) {
+@@ -1516,7 +1516,7 @@ int ieee802_11_build_ap_params(struct ho
+ 	tail_len += hostapd_eid_owe_trans_len(hapd);
+ 	tail_len += hostapd_eid_dpp_cc_len(hapd);
+ 	if (hapd->conf->rnr_beacon)
+-		tail_len += hostapd_eid_rnr_len(hapd, 0);
++		tail_len += hostapd_eid_rnr_len(hapd, WLAN_FC_STYPE_BEACON);
+ 
+ 	tailpos = tail = os_malloc(tail_len);
+ 	if (head == NULL || tail == NULL) {
+@@ -1702,7 +1702,7 @@ int ieee802_11_build_ap_params(struct ho
+ 					tail + tail_len - tailpos);
+ 	tailpos = hostapd_eid_dpp_cc(hapd, tailpos, tail + tail_len - tailpos);
+ 	if (hapd->conf->rnr_beacon)
+-		tailpos = hostapd_eid_rnr(hapd, tailpos, 0);
++		tailpos = hostapd_eid_rnr(hapd, tailpos, WLAN_FC_STYPE_BEACON);
+ 
+ 	if (hapd->conf->vendor_elements) {
+ 		os_memcpy(tailpos, wpabuf_head(hapd->conf->vendor_elements),
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -7294,7 +7294,7 @@ size_t hostapd_eid_rnr_iface_len(struct
+ }
+ 
+ 
+-size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, bool probe_resp)
++size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type)
+ {
+ 	size_t len = 0;
+ 	int i;
+@@ -7303,17 +7303,19 @@ size_t hostapd_eid_rnr_len(struct hostap
+ 		len += (TBTT_HEADER_LENGTH +
+ 			hostapd_eid_rnr_iface_len(hapd, hapd));
+ 
+-	for (i = 0; i < hapd->iface->interfaces->count; i++) {
+-		struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
++	if (type != WLAN_FC_STYPE_ACTION) {
++		for (i = 0; i < hapd->iface->interfaces->count; i++) {
++			struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
+ 
+-		if (iface == hapd->iface || !iface->conf->he_co_locate)
+-			continue;
++			if (iface == hapd->iface || !iface->conf->he_co_locate)
++				continue;
+ 
+-		len += (TBTT_HEADER_LENGTH +
+-			hostapd_eid_rnr_iface_len(iface->bss[0], hapd));
++			len += (TBTT_HEADER_LENGTH +
++				hostapd_eid_rnr_iface_len(iface->bss[0], hapd));
++		}
+ 	}
+ 
+-	if (!probe_resp && !dl_list_empty(&hapd->nr_db))
++	if ((type == WLAN_FC_STYPE_BEACON) && !dl_list_empty(&hapd->nr_db))
+ 		len += dl_list_len(&hapd->nr_db) * (TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH);
+ 
+ 	if (len)
+@@ -7419,9 +7421,9 @@ static u8 *hostapd_eid_neighbor_report_d
+ }
+ 
+ 
+-u8 * hostapd_eid_rnr(struct hostapd_data *hapd, u8 *eid, bool probe_resp)
++u8 * hostapd_eid_rnr(struct hostapd_data *hapd, u8 *eid, u32 type)
+ {
+-	size_t len = hostapd_eid_rnr_len(hapd, probe_resp);
++	size_t len = hostapd_eid_rnr_len(hapd, type);
+ 	int i, count = 0;
+ 	u8 *size_offset;
+ 
+@@ -7434,16 +7436,18 @@ u8 * hostapd_eid_rnr(struct hostapd_data
+ 	if (hapd->iface->num_bss > 1)
+ 		eid = hostapd_eid_rnr_iface(hapd, hapd,	eid, &count);
+ 
+-	for (i = 0; i < hapd->iface->interfaces->count; i++) {
+-		struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
++	if (type != WLAN_FC_STYPE_ACTION) {
++		for (i = 0; i < hapd->iface->interfaces->count; i++) {
++			struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
+ 
+-		if (iface == hapd->iface || !iface->conf->he_co_locate)
+-			continue;
++			if (iface == hapd->iface || !iface->conf->he_co_locate)
++				continue;
+ 
+-		eid = hostapd_eid_rnr_iface(iface->bss[0], hapd, eid, &count);
++			eid = hostapd_eid_rnr_iface(iface->bss[0], hapd, eid, &count);
++		}
+ 	}
+ 
+-	if (!probe_resp)
++	if (type == WLAN_FC_STYPE_BEACON)
+ 		eid = hostapd_eid_neighbor_report_db(hapd, eid, &count);
+ 
+ 	if (!count)
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -137,8 +137,8 @@ u8 * hostapd_eid_multiple_bssid(struct h
+ int hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd,
+ 				   struct hostapd_data *req_bss, u8 is_beacon,
+ 				   const u8 *known_bssids, u8 known_bssids_len);
+-u8 * hostapd_eid_rnr(struct hostapd_data *hapd, u8 *eid, bool probe_resp);
+-size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, bool probe_resp);
++u8 * hostapd_eid_rnr(struct hostapd_data *hapd, u8 *eid, u32 type);
++size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type);
+ int auth_sae_init_committed(struct hostapd_data *hapd, struct sta_info *sta);
+ #ifdef CONFIG_SAE
+ void sae_clear_retransmit_timer(struct hostapd_data *hapd,

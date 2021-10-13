@@ -1,0 +1,41 @@
+From d08b74269ff8a35d9bd695610e1dad0fc38f1b66 Mon Sep 17 00:00:00 2001
+From: Sriram R <srirrama@codeaurora.org>
+Date: Mon, 10 May 2021 18:23:56 +0530
+Subject: [PATCH] cfg80211: Fetch wiphy dfs domain if it is self managed
+
+Currently during CAC start or other radar events, the DFS
+domain is fetched from cfg based on global dfs setting.
+
+But this could be different in case of self managed wiphy's
+in case the self managed driver updates it database or supports
+regions which has DFS domain set to UNSET in cfg80211 glocal
+regdomain.
+
+This avoids AP bringup failure for these self managed drivers
+in certain countries.
+
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+---
+ net/wireless/reg.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/net/wireless/reg.c b/net/wireless/reg.c
+index bc5d311..f3bf028 100644
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -182,6 +182,12 @@ enum nl80211_dfs_regions reg_get_dfs_region(struct wiphy *wiphy)
+ 	if (!wiphy_regd)
+ 		goto out;
+ 
++	/* In case the wiphy is self managed, return its dfs domain */
++	if (wiphy->regulatory_flags & REGULATORY_WIPHY_SELF_MANAGED) {
++		rcu_read_unlock();
++		return wiphy_regd->dfs_region;
++	}
++
+ 	if (wiphy_regd->dfs_region == regd->dfs_region)
+ 		goto out;
+ 
+-- 
+2.7.4
+

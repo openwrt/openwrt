@@ -1,0 +1,12 @@
+Index: backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/ahb.c
+===================================================================
+--- backports-20210222_001-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/ahb.c
++++ backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -839,6 +839,7 @@ static int ath11k_ahb_probe(struct platf
+ 	int userpd_id;
+ 	u32 hw_mode_id;
+ 
++	msleep(5000);
+ 	of_id = of_match_device(ath11k_ahb_of_match, &pdev->dev);
+ 	if (!of_id) {
+ 		dev_err(&pdev->dev, "failed to find matching device tree id\n");

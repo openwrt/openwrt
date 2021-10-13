@@ -1,0 +1,21 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+board=$(board_name)
+
+budget=0
+case "$board" in
+d-link,dgs-1210-10p)
+	budget=65
+	;;
+netgear,gs110tpp-v1|\
+zyxel,gs1900-10hp)
+	budget=130
+	;;
+*)
+	exit 0
+	;;
+esac
+uci set poe.poe.enable=1
+uci set poe.poe.budget=$budget

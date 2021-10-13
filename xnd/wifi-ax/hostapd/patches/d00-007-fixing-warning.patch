@@ -1,0 +1,107 @@
+From ed93959f61e103703d04b85351eed7a1c4fe644b Mon Sep 17 00:00:00 2001
+From: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+Date: Fri, 28 Aug 2020 14:16:10 +0530
+Subject: [PATCH] hostapd: Fixed compilation warnings
+
+Below warnings are fixed
+
+1) ../src/rsn_supp/wpa.c:2693:12: error: 'wpa_key_mgmt_suite' defined
+   but not used [-Werror=unused-function]
+   static u32 wpa_key_mgmt_suite(struct wpa_sm *sm)
+2) ../src/ap/wpa_auth.c:4449:21: error: 'wpa_bool_txt' defined but not
+   used [-Werror=unused-function]
+   static const char * wpa_bool_txt(int val)
+3) Uninitialized warning has been fixed
+
+Signed-off-by: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+---
+ src/ap/ieee802_11.c | 2 +-
+ src/ap/wpa_auth.c   | 4 ++++
+ src/rsn_supp/wpa.c  | 2 +-
+ 3 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -4454,12 +4454,13 @@ void wpa_gtk_rekey(struct wpa_authentica
+ }
+ 
+ 
++#ifdef CONFIG_CTRL_IFACE_MIB
++
+ static const char * wpa_bool_txt(int val)
+ {
+ 	return val ? "TRUE" : "FALSE";
+ }
+ 
+-#ifdef CONFIG_CTRL_IFACE_MIB
+ 
+ #define RSN_SUITE "%02x-%02x-%02x-%d"
+ #define RSN_SUITE_ARG(s) \
+--- a/src/rsn_supp/wpa.c
++++ b/src/rsn_supp/wpa.c
+@@ -2701,7 +2701,7 @@ out:
+ }
+ 
+ 
+-#ifdef CONFIG_CTRL_IFACE
++#if defined(CONFIG_CTRL_IFACE) && defined(CONFIG_CTRL_IFACE_MIB)
+ static u32 wpa_key_mgmt_suite(struct wpa_sm *sm)
+ {
+ 	switch (sm->key_mgmt) {
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4859,7 +4859,7 @@ static int wpa_driver_nl80211_sta_add(vo
+ 
+ 		if (params->he_capab) {
+ 			wpa_hexdump(MSG_DEBUG, "  * he_capab",
+-				    params->he_capab, params->he_capab_len);
++				    (u8 *) params->he_capab, params->he_capab_len);
+ 			if (nla_put(msg, NL80211_ATTR_HE_CAPABILITY,
+ 				    params->he_capab_len, params->he_capab))
+ 				goto fail;
+--- a/src/tls/tlsv1_client_ocsp.c
++++ b/src/tls/tlsv1_client_ocsp.c
+@@ -322,7 +322,7 @@ tls_process_ocsp_responses(struct tlsv1_
+ {
+ 	struct asn1_hdr hdr;
+ 	const u8 *pos, *end;
+-	enum tls_ocsp_result res;
++	enum tls_ocsp_result res = TLS_OCSP_NO_RESPONSE;
+ 
+ 	pos = resp;
+ 	end = resp + len;
+--- a/src/crypto/sha1-internal.c
++++ b/src/crypto/sha1-internal.c
+@@ -141,17 +141,32 @@ A million repetitions of "a"
+ 	block->l[(i + 8) & 15] ^ block->l[(i + 2) & 15] ^ block->l[i & 15], 1))
+ 
+ /* (R0+R1), R2, R3, R4 are the different operations used in SHA1 */
++#ifdef R0
++#undef R0
++#endif
+ #define R0(v,w,x,y,z,i) \
+ 	z += ((w & (x ^ y)) ^ y) + blk0(i) + 0x5A827999 + rol(v, 5); \
+ 	w = rol(w, 30);
++#ifdef R1
++#undef R1
++#endif
+ #define R1(v,w,x,y,z,i) \
+ 	z += ((w & (x ^ y)) ^ y) + blk(i) + 0x5A827999 + rol(v, 5); \
+ 	w = rol(w, 30);
++#ifdef R2
++#undef R2
++#endif
+ #define R2(v,w,x,y,z,i) \
+ 	z += (w ^ x ^ y) + blk(i) + 0x6ED9EBA1 + rol(v, 5); w = rol(w, 30);
++#ifdef R3
++#undef R3
++#endif
+ #define R3(v,w,x,y,z,i) \
+ 	z += (((w | x) & y) | (w & x)) + blk(i) + 0x8F1BBCDC + rol(v, 5); \
+ 	w = rol(w, 30);
++#ifdef R4
++#undef R4
++#endif
+ #define R4(v,w,x,y,z,i) \
+ 	z += (w ^ x ^ y) + blk(i) + 0xCA62C1D6 + rol(v, 5); \
+ 	w=rol(w, 30);

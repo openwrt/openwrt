@@ -1,0 +1,24 @@
+#!/bin/sh /etc/rc.common
+
+START=63
+PROG=/usr/sbin/bluetooth_6lowpand
+HCICONFIG=/usr/bin/hciconfig
+
+start() {
+	config_load btle
+	config_get enable bluetooth_6lowpand enable 0
+	[ "$enable" -eq 1 ] || return
+	echo "start bluetooth_6lowpand"
+	sleep 1
+	echo 1 > /sys/kernel/debug/bluetooth/6lowpan_enable
+	sleep 1
+	killall bluetoothd
+	sleep 1
+	$HCICONFIG hci0 reset
+	$PROG -w 3 -t 5 -a -d
+}
+
+stop() {
+	echo "stop bluetooth_6lowpand"
+	killall -9 bluetooth_6lowpand
+}

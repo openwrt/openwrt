@@ -1,0 +1,28 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+USE_PROCD=1
+PROG=/usr/share/ucentral/state.uc
+
+service_triggers() {
+	procd_add_reload_trigger ustats
+}
+
+start_service() {
+	. /lib/functions.sh
+	config_load 'ustats'
+	config_get interval 'stats' 'interval' 0
+
+	[ "$interval" -eq 0 ] || {
+		procd_open_instance
+		procd_set_param command "$PROG"
+		procd_set_param respawn 1 $interval 0
+		procd_close_instance
+	}
+
+        config_get interval 'health' 'interval' 0
+	[ "$interval" -eq 0 ] || {
+		ubus call ucentral config '{"health": '$interval' }'
+	}
+}

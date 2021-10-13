@@ -1,0 +1,49 @@
+From fb86f111da3d60ae6c53c2fe9d4654d14eec9355 Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Wed, 3 Feb 2021 22:35:13 +0530
+Subject: [PATCH] ath11k: Fix mon status ring rx tlv processing
+
+In HE monitor capure, Muliple ring entries TLV contains one
+HAL_TLV_STATUS_PPDU_DONE. Do not clear the ppdu_info till the
+PPDU status done received.
+
+This fixes below warning.
+ "Rate marked as an HE rate but data is invalid: MCS: 6, NSS: 0"
+ WARNING: at
+ PC is at ieee80211_rx_napi+0x624/0x840 [mac80211]
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -3730,6 +3730,8 @@ int ath11k_dp_rx_process_mon_status(stru
+ 	struct ath11k_pdev_mon_stats *rx_mon_stats;
+ 
+ 	ppdu_info = &pmon->mon_ppdu_info;
++	memset(ppdu_info, 0, sizeof(*ppdu_info));
++	ppdu_info->peer_id = HAL_INVALID_PEERID;
+ 	rx_mon_stats = &pmon->rx_mon_stats;
+ 
+ 	__skb_queue_head_init(&skb_list);
+@@ -3740,9 +3742,6 @@ int ath11k_dp_rx_process_mon_status(stru
+ 		goto exit;
+ 
+ 	while ((skb = __skb_dequeue(&skb_list))) {
+-		memset(ppdu_info, 0, sizeof(*ppdu_info));
+-		ppdu_info->peer_id = HAL_INVALID_PEERID;
+-
+ 		if (ath11k_debugfs_is_pktlog_rx_stats_enabled(ar)) {
+ 			log_type = ATH11K_PKTLOG_TYPE_LITE_RX;
+ 			rx_buf_sz = DP_RX_BUFFER_SIZE_LITE;
+@@ -3798,6 +3797,8 @@ int ath11k_dp_rx_process_mon_status(stru
+ 		spin_unlock_bh(&ab->base_lock);
+ 		rcu_read_unlock();
+ 		dev_kfree_skb_any(skb);
++		memset(ppdu_info, 0, sizeof(*ppdu_info));
++		ppdu_info->peer_id = HAL_INVALID_PEERID;
+ 	}
+ exit:
+ 	return num_buffs_reaped;

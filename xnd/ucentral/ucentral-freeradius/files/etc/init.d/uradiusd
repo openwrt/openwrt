@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+
+START=49
+
+USE_PROCD=1
+PROG=/usr/libexec/ucentral-radiusd.sh
+
+service_triggers() {
+	procd_add_reload_trigger radiusd
+}
+
+start_service() {
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_close_instance
+}

@@ -1,0 +1,147 @@
+diff --git a/interface.c b/interface.c
+index 89c95a9ac4ab..506151002fae 100644
+--- a/interface.c
++++ b/interface.c
+@@ -728,6 +728,81 @@ COMMAND(switch, freq,
+ COMMAND(switch, channel, "<channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz] [beacons <count>] [block-tx]",
+ 	NL80211_CMD_CHANNEL_SWITCH, 0, CIB_NETDEV, handle_chan, NULL);
+ 
++static int handle_retry_count(struct nl80211_state *state,
++			      struct nl_msg *msg,
++			      int argc, char **argv,
++			      enum id_input id)
++{
++	struct nl_msg *tid = NULL;
++	unsigned char mac_addr[ETH_ALEN];
++	uint8_t retry_short, retry_long, tid_no;
++	char *end;
++	int ret = -ENOSPC;
++
++	if (argc < 4)
++		return 1;
++
++	tid = nlmsg_alloc();
++	if (!tid)
++		return -ENOMEM;
++
++	while (argc) {
++		if (strcmp(argv[0], "tid") == 0) {
++			if (argc < 2)
++				return 1;
++
++			tid_no = strtoul(argv[1], &end, 8);
++			if (*end)
++				return 1;
++
++			NLA_PUT_U8(tid, NL80211_ATTR_TID, tid_no);
++		} else if (strcmp(argv[0], "peer") == 0) {
++			if (argc < 2)
++				return 1;
++
++			if (mac_addr_a2n(mac_addr, argv[1])) {
++				fprintf(stderr, "invalid mac address\n");
++				return 2;
++			}
++
++			NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, mac_addr);
++		} else if (strcmp(argv[0], "short") == 0) {
++			if (argc < 2)
++				return 1;
++
++			retry_short = strtoul(argv[1], &end, 0);
++			if (*end)
++				return 1;
++
++			NLA_PUT_U8(tid, NL80211_ATTR_TID_RETRY_SHORT, retry_short);
++		} else if (strcmp(argv[0], "long") == 0) {
++			if (argc < 2)
++				return 1;
++			retry_long = strtoul(argv[1], &end, 0);
++			if (*end)
++				return 1;
++
++			NLA_PUT_U8(tid, NL80211_ATTR_TID_RETRY_LONG, retry_long);
++		} else {
++			return 1;
++		}
++		argc -= 2;
++		argv += 2;
++	}
++
++	NLA_PUT_FLAG(tid, NL80211_ATTR_TID_RETRY_CONFIG);
++	nla_put_nested(msg, NL80211_ATTR_TID_CONFIG, tid);
++
++	ret = 0;
++
++nla_put_failure:
++	nlmsg_free(tid);
++	return ret;
++}
++COMMAND(set, tid_retry_count, "tid <tid> <[peer <MAC address>] short <limit> long <limit>]>",
++		NL80211_CMD_SET_TID_CONFIG, 0, CIB_NETDEV, handle_retry_count,
++		"Set the retry count for the TIDs ");
++
+ 
+ static int toggle_tid_param(const char *argv0, const char *argv1,
+ 			    struct nl_msg *msg, uint32_t attr)
+diff --git a/nl80211.h b/nl80211.h
+index b0ce8767ea25..998851d8f9e1 100644
+--- a/nl80211.h
++++ b/nl80211.h
+@@ -4886,7 +4886,55 @@ enum nl80211_ps_state {
+ 	NL80211_PS_DISABLED,
+ 	NL80211_PS_ENABLED,
+ };
+-
++/*
++ * @NL80211_ATTR_TID: a TID value (u8 attribute)
++ * @NL80211_ATTR_TID_RETRY_CONFIG: Data frame retry count should be
++ *	applied with the value passed through %NL80211_ATTR_RETRY_LONG
++ *	and/or %NL80211_ATTR_RETRY_SHORT. This configuration is  per-TID,
++ *	TID is specified with %NL80211_ATTR_TID. If the peer MAC address
++ *	is passed in %NL80211_ATTR_MAC, the retry configuration is applied
++ *	to the data frame for the tid to that connected station.
++ *	This attribute will be useful to notfiy the driver to apply default
++ *	retry values for the connected station (%NL80211_ATTR_MAC), when the
++ *	command received without %NL80211_ATTR_RETRY_LONG and/or
++ *	%NL80211_ATTR_RETRY_SHORT.
++ *	Station specific retry configuration is valid only for STA's
++ *	current connection. i.e. the configuration will be reset to default when
++ *	the station connects back after disconnection/roaming.
++ *	when user-space does not include %NL80211_ATTR_MAC, this configuration
++ *	should be treated as per-netdev configuration. This configuration will
++ *	be cleared when the interface goes down and on the disconnection from a
++ *	BSS. When retry count has never been configured using this command, the
++ *	other available radio level retry configuration
++ *	(%NL80211_ATTR_WIPHY_RETRY_SHORT and %NL80211_ATTR_WIPHY_RETRY_LONG)
++ *	should be used. Driver supporting this feature should advertise
++ *	NL80211_EXT_FEATURE_PER_TID_RETRY_CONFIG and supporting per station
++ *	retry count configuration should advertise
++ *	NL80211_EXT_FEATURE_PER_STA_RETRY_CONFIG.
++ * @NL80211_ATTR_TID_RETRY_SHORT: Number of retries used with data frame
++ *	transmission, user-space sets this configuration in
++ *	&NL80211_CMD_SET_TID_CONFIG. Its type is u8, min value is 1 and
++ *	the max value should be advertised by the driver through
++ *	max_data_retry_count. when this attribute is not present, the driver
++ *	would use the default configuration.
++ * @NL80211_ATTR_TID_RETRY_LONG: Number of retries used with data frame
++ *	transmission, user-space sets this configuration in
++ *	&NL80211_CMD_SET_TID_CONFIG. Its type is u8, min value is 1 and
++ *	the max value should be advertised by the driver through
++ *	max_data_retry_count. when this attribute is not present, the driver
++ *	would use the default configuration.
++ */
++enum nl80211_attr_tid_config {
++        __NL80211_ATTR_TID_INVALID,
++        NL80211_ATTR_TID,
++        NL80211_ATTR_TID_RETRY_CONFIG,
++        NL80211_ATTR_TID_RETRY_SHORT,
++        NL80211_ATTR_TID_RETRY_LONG,
++
++        /* keep last */
++        __NL80211_ATTR_TID_AFTER_LAST,
++        NL80211_ATTR_TID_MAX = __NL80211_ATTR_TID_AFTER_LAST - 1
++};
+ /**
+  * enum nl80211_attr_cqm - connection quality monitor attributes
+  * @__NL80211_ATTR_CQM_INVALID: invalid

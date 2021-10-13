@@ -1,0 +1,133 @@
+From b1b771b665e2eba1369c3f7896b7236e8c03886d Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Wed, 23 Sep 2020 22:20:58 +0530
+Subject: [PATCH] ath11k: use reserved memory from bootargs
+
+QCN9000 FW uses HOST DDR memory.
+For x86 reserve memory using memmap=60M$0x70000000
+
+Identify the 60MB continuous memory with in 32bit address space
+and reserve through kernel cmd line parameters.
+
+when the FW request for the DDR HOST memory, send the reserved
+address space offset and size in QMI.
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c |  5 +++++
+ drivers/net/wireless/ath/ath11k/qmi.c  | 29 +++++++++++++++++++++++++----
+ drivers/net/wireless/ath/ath11k/qmi.h  |  1 +
+ 3 files changed, 31 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -37,6 +37,11 @@ module_param_named(frame_mode, ath11k_fr
+ MODULE_PARM_DESC(frame_mode,
+ 		 "Datapath frame mode (0: raw, 1: native wifi (default), 2: ethernet)");
+ 
++unsigned int ath11k_host_ddr_addr;
++EXPORT_SYMBOL(ath11k_host_ddr_addr);
++module_param_named(host_ddr_addr, ath11k_host_ddr_addr, uint, 0644);
++MODULE_PARM_DESC(host_ddr_addr, "host ddr addr for FW");
++
+ struct ath11k_base *ath11k_soc;
+ 
+ static const struct ath11k_hw_params ath11k_hw_params[] = {
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2487,6 +2487,10 @@ static int ath11k_qmi_alloc_target_mem_c
+ 	return 0;
+ }
+ 
++#define ATH11K_HOST_DDR_M3_OFFSET	0x2D00000
++#define ATH11K_HOST_DDR_QDSS_OFFSET	0x2E00000
++#define ATH11K_HOST_DDR_CALDB_OFFSET	0x2F00000
++
+ static int ath11k_qmi_assign_target_mem_chunk(struct ath11k_base *ab)
+ {
+ 	struct device *dev = ab->dev;
+@@ -2496,7 +2500,15 @@ static int ath11k_qmi_assign_target_mem_
+ 	for (i = 0, idx = 0; i < ab->qmi.mem_seg_count; i++) {
+ 		switch (ab->qmi.target_mem[i].type) {
+ 		case HOST_DDR_REGION_TYPE:
+-			if (of_property_read_u32(dev->of_node, "base-addr", &addr)) {
++			/* This is HACK
++			 * QCN9074 Firmware needs contiguous 60MB HOST DDR memory
++			 * use reserve memory from bootargs x86
++			 * HACK reserve memory using memmap=60M$0x70000000
++			 */
++
++			if (ath11k_host_ddr_addr) {
++				addr = ath11k_host_ddr_addr;
++			} else if (of_property_read_u32(dev->of_node, "base-addr", &addr)) {
+ 				ath11k_warn(ab, "qmi fail to get base-addr in dt\n");
+ 				return -EINVAL;
+ 			}
+@@ -2522,8 +2534,12 @@ static int ath11k_qmi_assign_target_mem_
+ 				return -EINVAL;
+ 			}
+ 
+-			if (of_property_read_u32(dev->of_node, "qcom,caldb-addr", &addr))
++			if (ath11k_host_ddr_addr) {
++				addr = ath11k_host_ddr_addr +
++					ATH11K_HOST_DDR_CALDB_OFFSET;
++			} else if (of_property_read_u32(dev->of_node, "qcom,caldb-addr", &addr)) {
+ 				ath11k_warn(ab, "qmi fail to get caldb-addr in dt\n");
++			}
+ 
+ 			if (ab->enable_cold_boot_cal && ab->hw_params.cold_boot_calib) {
+ 				ab->qmi.target_mem[idx].paddr = (u32)addr;
+@@ -2555,10 +2571,14 @@ static int ath11k_qmi_assign_target_mem_
+ 
+ 			ab->qmi.target_mem[idx].size = ab->qmi.target_mem[i].size;
+ 			ab->qmi.target_mem[idx].type = ab->qmi.target_mem[i].type;
+-			if (of_property_read_u32(dev->of_node, "m3-dump-addr", &addr))
+-				ab->qmi.target_mem[idx].paddr = ab->hw_params.m3_addr;
+-			else
+-				ab->qmi.target_mem[idx].paddr =  (phys_addr_t)addr;
++
++			if (ath11k_host_ddr_addr) {
++				addr = ath11k_host_ddr_addr +
++					ATH11K_HOST_DDR_M3_OFFSET;
++			} else if (of_property_read_u32(dev->of_node, "m3-dump-addr", &addr)) {
++				addr = ab->hw_params.m3_addr;
++			}
++			ab->qmi.target_mem[idx].paddr =  (phys_addr_t)addr;
+ 
+ 				ab->qmi.target_mem[idx].vaddr =
+ 					ioremap(ab->qmi.target_mem[idx].paddr,
+@@ -3395,7 +3415,10 @@ int ath11k_qmi_pci_alloc_qdss_mem(struct
+ 				return -ENOMEM;
+ 			}
+ 
+-			if (of_property_read_u32(dev->of_node,
++			if (ath11k_host_ddr_addr) {
++				addr = ath11k_host_ddr_addr +
++				       ATH11K_HOST_DDR_QDSS_OFFSET;
++			} else if (of_property_read_u32(dev->of_node,
+ 						 "etr-addr", &addr)) {
+ 				ath11k_warn(ab, "qmi fail to get etr-addr in dt\n");
+ 				return -ENOMEM;
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -52,6 +52,7 @@
+ #define ATH11K_COLD_BOOT_FW_RESET_DELAY		(60 * HZ)
+ 
+ struct ath11k_base;
++extern unsigned int ath11k_host_ddr_addr;
+ 
+ enum ath11k_target_mem_mode {
+ 	ATH11K_QMI_TARGET_MEM_MODE_DEFAULT = 0,
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -1235,8 +1235,8 @@ static int ath11k_pci_probe(struct pci_d
+ 	 * allocate memory for FW in DDR, set fixed_mem_region to true for
+ 	 * these pltforms supports reserved memory.
+ 	 */
+-	ret = of_property_read_u32(ab->dev->of_node, "base-addr", &addr);
+-	if (ret == 0)
++	if (ath11k_host_ddr_addr ||
++	    !of_property_read_u32(ab->dev->of_node, "base-addr", &addr))
+ 		ab->bus_params.fixed_mem_region = true;
+ 
+ 	ret = ath11k_pci_claim(ab_pci, pdev);

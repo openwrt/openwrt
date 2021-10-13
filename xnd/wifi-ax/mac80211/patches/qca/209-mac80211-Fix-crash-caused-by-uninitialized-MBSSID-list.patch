@@ -1,0 +1,46 @@
+From 68047a1e20efba832c4717c4b5c744cdd0d1a304 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Wed, 16 Sep 2020 22:33:27 -0700
+Subject: [PATCH] mac80211: Fix crash caused by uninitialized MBSSID list
+
+When /etc/config/wireless file is used, the first created interface of
+type 'AP' is always set as the transmitting interface and a list is
+initialized to store pointers to all non-transmitting interfaces
+belonging to the same multiple BSSID set.
+
+However, when hostapd is started manually, this code path does not get
+executed. When first non-transmitting interface is getting created, it
+results in a crash due to non-initialized list head.
+
+This patch fixes this crash by moving the initialization to function
+ieee80211_if_add() for all types of interfaces.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ net/mac80211/cfg.c   | 3 ---
+ net/mac80211/iface.c | 1 +
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -134,10 +134,7 @@ static int ieee80211_set_multiple_bssid_
+ 		list_add(&sdata->vif.multiple_bssid.list,
+ 			 &psdata->vif.multiple_bssid.list);
+ 		sdata->vif.multiple_bssid.non_transmitted = true;
+-	} else {
+-		INIT_LIST_HEAD(&sdata->vif.multiple_bssid.list);
+ 	}
+-
+ 	return 0;
+ }
+ 
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -2062,6 +2062,7 @@ int ieee80211_if_add(struct ieee80211_lo
+ 		skb_queue_head_init(&sdata->fragments[i].skb_list);
+ 
+ 	INIT_LIST_HEAD(&sdata->key_list);
++	INIT_LIST_HEAD(&sdata->vif.multiple_bssid.list);
+ 
+ 	INIT_DELAYED_WORK(&sdata->dfs_cac_timer_work,
+ 			  ieee80211_dfs_cac_timer_work);

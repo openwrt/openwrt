@@ -1,0 +1,170 @@
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -30,6 +30,8 @@ module_param_named(frame_mode, ath11k_fr
+ MODULE_PARM_DESC(frame_mode,
+ 		 "Datapath frame mode (0: raw, 1: native wifi (default), 2: ethernet)");
+ 
++struct ath11k_base *ath11k_soc;
++
+ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ8074,
+@@ -803,6 +805,62 @@ err_firmware_stop:
+ 	return ret;
+ }
+ 
++void ath11k_core_dump_bp_stats(struct ath11k_base *ab)
++{
++	int len = 0;
++	const int size = 4096;
++	char *buf;
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return;
++
++	len = ath11k_debugfs_dump_soc_ring_bp_stats(ab, buf, size - 1);
++
++	buf[len] = '\0';
++
++	ath11k_info(ab, "ATH11K Driver Stats\n%s\n", buf);
++
++	kfree(buf);
++}
++
++#ifdef CONFIG_QCOM_QMI_HELPERS
++
++/* Print the driver stats and crash the system on receving this notification */
++int ath11k_core_ssr_notifier_cb(struct notifier_block *nb, unsigned long event,
++				void *data)
++{
++	struct ath11k_qmi *qmi = container_of(nb, struct ath11k_qmi, ssr_nb);
++	struct ath11k_base *ab = qmi->ab;
++	struct device *dev = ab->dev;
++	bool multi_pd_arch = false;
++	const char *name;
++
++	if (test_bit(ATH11K_FLAG_FW_RESTART_FOR_HOST, &qmi->ab->dev_flags)) {
++		return 0;
++	}
++
++	/* Print the stats only if notification is received for expected PD*/
++	multi_pd_arch = of_property_read_bool(dev->of_node, "qcom,multipd_arch");
++	if (multi_pd_arch) {
++		if (of_property_read_string(dev->of_node, "qcom,userpd-subsys-name", &name))
++			return 0;
++
++		if (strcmp((char*)data, name) != 0)
++			return 0;
++	}
++
++	ath11k_core_dump_bp_stats(qmi->ab);
++	ath11k_hal_dump_srng_stats(qmi->ab);
++	/* TODO Add more driver stats */
++
++	/* Crash the system once all the stats are dumped */
++	BUG_ON(1);
++
++	return 0;
++}
++#endif
++
+ int ath11k_core_qmi_firmware_ready(struct ath11k_base *ab)
+ {
+ 	int ret;
+@@ -848,6 +906,16 @@ int ath11k_core_qmi_firmware_ready(struc
+ 		ath11k_err(ab, "failed to create pdev core: %d\n", ret);
+ 		goto err_core_stop;
+ 	}
++
++#ifdef CONFIG_QCOM_QMI_HELPERS
++	/* Register a notifier after mac registration
++	 * to be called on fw crash
++	 */
++	if (ab->hif.bus == ATH11K_BUS_AHB) {
++		ab->qmi.ssr_nb.notifier_call = ath11k_core_ssr_notifier_cb;
++		qcom_register_ssr_notifier(&ab->qmi.ssr_nb);
++	}
++#endif
+ 	ath11k_hif_irq_enable(ab);
+ 	mutex_unlock(&ab->core_lock);
+ 
+@@ -1061,6 +1129,13 @@ void ath11k_core_deinit(struct ath11k_ba
+ {
+ 	mutex_lock(&ab->core_lock);
+ 
++#ifdef CONFIG_QCOM_QMI_HELPERS
++	/* Unregister the ssr notifier as we are not intersted
++	 * in receving these notifications after mac is unregistered.
++	 */
++	if (ab->hif.bus == ATH11K_BUS_AHB)
++		qcom_unregister_ssr_notifier(&ab->qmi.ssr_nb);
++#endif
+ 	ath11k_core_pdev_destroy(ab);
+ 	ath11k_core_stop(ab);
+ 
+@@ -1109,6 +1184,7 @@ struct ath11k_base *ath11k_core_alloc(st
+ 	ab->dev = dev;
+ 	ab->bus_params = *bus_params;
+ 	ab->hif.bus = bus;
++	ath11k_soc = ab;
+ 
+ 	return ab;
+ 
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -706,8 +706,8 @@ static int ath11k_fill_bp_stats(struct a
+ 	return len;
+ }
+ 
+-static ssize_t ath11k_debugfs_dump_soc_ring_bp_stats(struct ath11k_base *ab,
+-						     char *buf, int size)
++ssize_t ath11k_debugfs_dump_soc_ring_bp_stats(struct ath11k_base *ab,
++					      char *buf, int size)
+ {
+ 	struct ath11k_bp_stats *bp_stats;
+ 	bool stats_rxd = false;
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -113,6 +113,8 @@ void ath11k_debugfs_unregister(struct at
+ void ath11k_debugfs_fw_stats_process(struct ath11k_base *ab, struct sk_buff *skb);
+ 
+ void ath11k_debugfs_fw_stats_init(struct ath11k *ar);
++ssize_t ath11k_debugfs_dump_soc_ring_bp_stats(struct ath11k_base *ab,
++					    char *buf, int size);
+ 
+ static inline bool ath11k_debugfs_is_pktlog_lite_mode_enabled(struct ath11k *ar)
+ {
+@@ -146,6 +148,12 @@ static inline int ath11k_debugfs_rx_filt
+ }
+ 
+ #else
++ssize_t ath11k_debugfs_dump_soc_ring_bp_stats(struct ath11k_base *ab,
++					      char *buf, int size)
++{
++	return 0;
++}
++
+ static inline int ath11k_debugfs_soc_create(struct ath11k_base *ab)
+ {
+ 	return 0;
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -7,7 +7,9 @@
+ #define ATH11K_QMI_H
+ 
+ #include <linux/mutex.h>
++#include <linux/notifier.h>
+ #include <linux/soc/qcom/qmi.h>
++#include <linux/remoteproc/qcom_rproc.h>
+ 
+ #define ATH11K_HOST_VERSION_STRING		"WIN"
+ #define ATH11K_QMI_WLANFW_TIMEOUT_MS		5000
+@@ -123,6 +125,7 @@ struct ath11k_qmi {
+ 	struct workqueue_struct *event_wq;
+ 	struct list_head event_list;
+ 	spinlock_t event_lock; /* spinlock for qmi event list */
++	struct notifier_block ssr_nb;
+ 	struct ath11k_qmi_ce_cfg ce_cfg;
+ 	struct target_mem_chunk target_mem[ATH11K_QMI_WLANFW_MAX_NUM_MEM_SEG_V01];
+ 	u32 mem_seg_count;

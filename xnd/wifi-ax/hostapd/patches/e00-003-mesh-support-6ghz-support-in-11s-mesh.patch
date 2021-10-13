@@ -1,0 +1,222 @@
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/mesh.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/mesh.c
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/mesh.c
+@@ -453,6 +453,12 @@ static int wpa_supplicant_mesh_init(stru
+ 		conf->country[2] = ' ';
+ 		wpa_s->mesh_params->handle_dfs = true;
+ 	}
++	ifmsh->freq = frequency;
++
++	/* set 6GHz op_class defaulted to 80MHz */
++	if (is_6ghz_freq(frequency))
++		conf->op_class = 133;
++
+ 
+ 	bss->iconf = conf;
+ 	ifmsh->conf = conf;
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/wpa_supplicant.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/wpa_supplicant.c
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/wpa_supplicant.c
+@@ -2440,7 +2440,9 @@ void ibss_mesh_setup_freq(struct wpa_sup
+ 	struct hostapd_hw_modes *mode = NULL;
+ 	int ht40plus[] = { 1, 2, 3, 4, 5, 6, 36, 44, 52, 60, 100, 108, 116, 124, 132, 149, 157,
+ 			   184, 192 };
+-	int vht80[] = { 36, 52, 100, 116, 132, 149 };
++	unsigned int bw80[] = { 5180, 5260, 5500, 5580, 5660, 5745, 5955,
++				6035, 6115, 6195, 6275, 6355, 6435, 6515,
++				6595, 6675, 6755, 6835, 6915, 6995 };
+ 	struct hostapd_channel_data *pri_chan = NULL, *sec_chan = NULL;
+ 	u8 channel;
+ 	int i, chan_idx, ht40 = -1, res, obss_scan = !(ssid->noscan);
+@@ -2448,7 +2450,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
+ 	struct hostapd_freq_params vht_freq;
+ 	int chwidth, seg0, seg1;
+ 	u32 vht_caps = 0;
+-	int is_24ghz;
++	int is_24ghz, is_6ghz;
+ 	int dfs_enabled = wpa_s->conf->country[0] &&
+ 			 (wpa_s->drv_flags & WPA_DRIVER_FLAGS_RADAR);
+ 
+@@ -2506,9 +2508,16 @@ void ibss_mesh_setup_freq(struct wpa_sup
+ 
+ 	freq->channel = channel;
+ 
++	freq->channel = channel;
++
+ 	is_24ghz = hw_mode == HOSTAPD_MODE_IEEE80211G ||
+ 		hw_mode == HOSTAPD_MODE_IEEE80211B;
+ 
++	/* HT/VHT and corresponding overrides are not applicable to 6GHz.
++	 * However, HE is mandatory for 6ghz */
++	if ((is_6ghz = is_6ghz_freq(freq->freq) && (hw_mode == HOSTAPD_MODE_IEEE80211A)) == 1)
++		goto skip_to_6ghz;
++
+ #ifdef CONFIG_HT_OVERRIDES
+ 	if (ssid->disable_ht) {
+ 		freq->ht_enabled = 0;
+@@ -2645,8 +2654,6 @@ skip_ht40:
+ 	    !(wpa_s->drv_flags & WPA_DRIVER_FLAGS_VHT_IBSS))
+ 		return;
+ 
+-	vht_freq = *freq;
+-
+ #ifdef CONFIG_VHT_OVERRIDES
+ 	if (ssid->disable_vht) {
+ 		freq->vht_enabled = 0;
+@@ -2654,12 +2661,16 @@ skip_ht40:
+ 	}
+ #endif /* CONFIG_VHT_OVERRIDES */
+ 
++skip_to_6ghz:
++	vht_freq = *freq;
++
++	/* 6GHz does not have vht enabled. So Allow */
+ 	vht_freq.vht_enabled = vht_supported(mode);
+-	if (!vht_freq.vht_enabled)
++	if (!vht_freq.vht_enabled && !is_6ghz)
+ 		return;
+ 
+ 	/* Enable HE with VHT for 5 GHz */
+-	freq->he_enabled = mode->he_capab[ieee80211_mode].he_supported;
++	vht_freq.he_enabled = mode->he_capab[ieee80211_mode].he_supported;
+ 
+ #ifdef CONFIG_HE_OVERRIDES
+ 	if (is_24ghz)
+@@ -2667,16 +2678,14 @@ skip_ht40:
+ #endif /* CONFIG_HE_OVERRIDES */
+ 
+ 	/* setup center_freq1, bandwidth */
+-	for (j = 0; j < ARRAY_SIZE(vht80); j++) {
+-		if (freq->channel >= vht80[j] &&
+-		    freq->channel < vht80[j] + 16)
++	for (j = 0; j < ARRAY_SIZE(bw80); j++)
++		if (freq->freq == bw80[j])
+ 			break;
+-	}
+ 
+-	if (j == ARRAY_SIZE(vht80))
++	if (j == ARRAY_SIZE(bw80))
+ 		return;
+ 
+-	for (i = vht80[j]; i < vht80[j] + 16; i += 4) {
++	for (i = freq->channel; i < freq->channel + 16; i += 4) {
+ 		struct hostapd_channel_data *chan;
+ 
+ 		chan = hw_get_channel_chan(mode, i, NULL);
+@@ -2692,16 +2701,20 @@ skip_ht40:
+ 	}
+ 
+ 	chwidth = CHANWIDTH_80MHZ;
+-	seg0 = vht80[j] + 6;
++	seg0 = freq->channel + 6;
+ 	seg1 = 0;
+ 
+ 	if (ssid->max_oper_chwidth == CHANWIDTH_80P80MHZ) {
+ 		/* setup center_freq2, bandwidth */
+-		for (k = 0; k < ARRAY_SIZE(vht80); k++) {
++		for (k = 0; k < ARRAY_SIZE(bw80); k++) {
+ 			/* Only accept 80 MHz segments separated by a gap */
+-			if (j == k || abs(vht80[j] - vht80[k]) == 16)
++			if (j == k || abs(bw80[j] - bw80[k]) == 80)
+ 				continue;
+-			for (i = vht80[k]; i < vht80[k] + 16; i += 4) {
++
++			if (ieee80211_freq_to_chan(bw80[k], &channel) == NUM_HOSTAPD_MODES)
++				return;
++
++			for (i = channel; i < channel + 16; i += 4) {
+ 				struct hostapd_channel_data *chan;
+ 
+ 				chan = hw_get_channel_chan(mode, i, NULL);
+@@ -2717,9 +2730,10 @@ skip_ht40:
+ 
+ 				/* Found a suitable second segment for 80+80 */
+ 				chwidth = CHANWIDTH_80P80MHZ;
+-				vht_caps |=
+-					VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ;
+-				seg1 = vht80[k] + 6;
++				if (!is_6ghz)
++					vht_caps |=
++						VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ;
++				seg1 = channel + 6;
+ 			}
+ 
+ 			if (chwidth == CHANWIDTH_80P80MHZ)
+@@ -2737,7 +2751,7 @@ skip_ht40:
+ 		}
+ 	} else if (ssid->max_oper_chwidth == CHANWIDTH_USE_HT) {
+ 		chwidth = CHANWIDTH_USE_HT;
+-		seg0 = vht80[j] + 2;
++		seg0 = freq->channel + 2;
+ #ifdef CONFIG_HT_OVERRIDES
+ 		if (ssid->disable_ht40)
+ 			seg0 = 0;
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/ap.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/ap.c
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/ap.c
+@@ -305,20 +305,16 @@ int wpa_supplicant_conf_ap_ht(struct wpa
+ 				 HT_CAP_INFO_TX_STBC |
+ 				 HT_CAP_INFO_MAX_AMSDU_SIZE);
+ 
+-			/* check this before VHT, because setting oper chan
+-			 * width and friends is the same call for HE and VHT
+-			 * and checks if conf->ieee8021ax == 1 */
+-			if (mode->he_capab[wpas_mode_to_ieee80211_mode(
+-					    ssid->mode)].he_supported &&
+-			    ssid->he)
+-				conf->ieee80211ax = 1;
+-
+ 			if (mode->vht_capab && ssid->vht) {
+ 				conf->ieee80211ac = 1;
+ 				conf->vht_capab |= mode->vht_capab;
+ 				wpas_conf_ap_vht(wpa_s, ssid, conf, mode);
+ 			}
+ 		}
++		if (mode->he_capab[wpas_mode_to_ieee80211_mode(
++				    ssid->mode)].he_supported && ssid->he)
++			conf->ieee80211ax = 1;
++
+ 	}
+ 
+ 	if (conf->secondary_channel) {
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/mesh_mpm.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/mesh_mpm.c
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/mesh_mpm.c
+@@ -251,6 +251,9 @@ static void mesh_mpm_send_plink_action(s
+ 			   HE_MAX_MCS_CAPAB_SIZE +
+ 			   HE_MAX_PPET_CAPAB_SIZE;
+ 		buf_len += 3 + sizeof(struct ieee80211_he_operation);
++                if (is_6ghz_op_class(bss->iconf->op_class))
++                        buf_len += sizeof(struct ieee80211_he_6ghz_oper_info) +
++                                3 + sizeof(struct ieee80211_he_6ghz_band_cap);
+ 	}
+ #endif /* CONFIG_IEEE80211AX */
+ 	if (type != PLINK_CLOSE)
+@@ -380,6 +383,7 @@ static void mesh_mpm_send_plink_action(s
+ 		pos = hostapd_eid_he_capab(bss, he_capa_oper,
+ 					   IEEE80211_MODE_MESH);
+ 		pos = hostapd_eid_he_operation(bss, pos);
++		pos = hostapd_eid_he_6ghz_band_cap(bss, pos);
+ 		wpabuf_put_data(buf, he_capa_oper, pos - he_capa_oper);
+ 	}
+ #endif /* CONFIG_IEEE80211AX */
+@@ -749,6 +753,7 @@ static struct sta_info * mesh_mpm_add_pe
+ #ifdef CONFIG_IEEE80211AX
+ 	copy_sta_he_capab(data, sta, IEEE80211_MODE_MESH,
+ 			  elems->he_capabilities, elems->he_capabilities_len);
++	copy_sta_he_6ghz_capab(data, sta, elems->he_6ghz_band_cap);
+ #endif /* CONFIG_IEEE80211AX */
+ 
+ 	if (hostapd_get_aid(data, sta) < 0) {
+@@ -770,6 +775,7 @@ static struct sta_info * mesh_mpm_add_pe
+ 	params.vht_capabilities = sta->vht_capabilities;
+ 	params.he_capab = sta->he_capab;
+ 	params.he_capab_len = sta->he_capab_len;
++	params.he_6ghz_capab = sta->he_6ghz_capab;
+ 	params.flags |= WPA_STA_WMM;
+ 	params.flags_mask |= WPA_STA_AUTHENTICATED;
+ 	if (conf->security == MESH_CONF_SEC_NONE) {

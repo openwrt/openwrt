@@ -1,0 +1,187 @@
+From 6b97399c2fe5fa8b5d2ee5560bd20106d453fcab Mon Sep 17 00:00:00 2001
+From: Hari Chandrakanthan <haric@codeaurora.org>
+Date: Wed, 16 Jun 2021 17:33:17 +0530
+Subject: [PATCH] ath11k : support to calculate medium busy
+
+Signed-off-by: Hari Chandrakanthan <haric@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/debugfs.c | 26 ++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.c     | 25 +++++++++++++++++++++++++
+ include/net/mac80211.h                    |  1 +
+ net/mac80211/mesh_hwmp.c                  | 11 +++++++----
+ net/mac80211/mesh_pathtbl.c               |  5 +++--
+ 5 files changed, 62 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/debugfs.c b/drivers/net/wireless/ath/ath11k/debugfs.c
+index cace542..51343c1 100644
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -4192,6 +4192,30 @@ static const struct file_operations fops_ani_level = {
+ 	.llseek = default_llseek,
+ };
+ 
++static ssize_t ath11k_medium_busy_read(struct file *file,
++				       char __user *user_buf,
++				       size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	u8 buf[50];
++	size_t len = 0;
++
++	mutex_lock(&ar->conf_mutex);
++	len += scnprintf(buf + len, sizeof(buf) - len,
++			 "Medium Busy in percentage %u\n",
++			 ar->hw->medium_busy);
++	mutex_unlock(&ar->conf_mutex);
++
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops_medium_busy = {
++	.read = ath11k_medium_busy_read,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
+ int ath11k_debugfs_register(struct ath11k *ar)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+@@ -4302,6 +4326,8 @@ int ath11k_debugfs_register(struct ath11k *ar)
+ 			    ar->debug.debugfs_pdev, ar, &fops_ani_poll_period);
+ 	debugfs_create_file("ani_listen_period", S_IRUSR | S_IWUSR,
+ 			    ar->debug.debugfs_pdev, ar, &fops_ani_listen_period);
++	debugfs_create_file("medium_busy", S_IRUSR, ar->debug.debugfs_pdev, ar,
++			    &fops_medium_busy);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 595f8fe..5404a75 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -6589,9 +6589,12 @@ int ath11k_wmi_pull_fw_stats(struct ath11k_base *ab, struct sk_buff *skb,
+ {
+ 	const void **tb;
+ 	const struct wmi_stats_event *ev;
++	struct ath11k *ar;
+ 	const void *data;
+ 	int i, ret;
+ 	u32 len = skb->len;
++	u64 time;
++	u64 time_busy;
+ 
+ 	tb = ath11k_wmi_tlv_parse_alloc(ab, skb->data, len, GFP_ATOMIC);
+ 	if (IS_ERR(tb)) {
+@@ -6617,6 +6620,16 @@ int ath11k_wmi_pull_fw_stats(struct ath11k_base *ab, struct sk_buff *skb,
+ 	stats->pdev_id = ev->pdev_id;
+ 	stats->stats_id = 0;
+ 
++	rcu_read_lock();
++	ar = ath11k_mac_get_ar_by_pdev_id(ab, ev->pdev_id);
++	if(!ar) {
++		ath11k_warn(ab, "couldn't get ar for pdev id %d in pull fw ev\n",
++		ev->pdev_id);
++		rcu_read_unlock();
++		kfree(tb);
++		return -EPROTO;
++	}
++
+ 	for (i = 0; i < ev->num_pdev_stats; i++) {
+ 		const struct wmi_pdev_stats *src;
+ 		struct ath11k_fw_stats_pdev *dst;
+@@ -6640,7 +6653,16 @@ int ath11k_wmi_pull_fw_stats(struct ath11k_base *ab, struct sk_buff *skb,
+ 		ath11k_wmi_pull_pdev_stats_tx(&src->tx, dst);
+ 		ath11k_wmi_pull_pdev_stats_rx(&src->rx, dst);
+ 		list_add_tail(&dst->list, &stats->pdevs);
++
++		spin_lock_bh(&ar->data_lock);
++		time = div_u64(dst->cycle_count, ab->cc_freq_hz);
++		if(ar && time) {
++			time_busy = div_u64(dst->rx_clear_count, ab->cc_freq_hz);
++			ar->hw->medium_busy = div_u64((time_busy * 100), time);
++		}
++		spin_unlock_bh(&ar->data_lock);
+ 	}
++	rcu_read_unlock();
+ 
+ 	for (i = 0; i < ev->num_vdev_stats; i++) {
+ 		const struct wmi_vdev_stats *src;
+@@ -8069,6 +8091,9 @@ static void ath11k_chan_info_event(struct ath11k_base *ab, struct sk_buff *skb)
+ 				 SURVEY_INFO_TIME_BUSY;
+ 		survey->time = div_u64(ch_info_ev.cycle_count, cc_freq_hz);
+ 		survey->time_busy = div_u64(ch_info_ev.rx_clear_count, cc_freq_hz);
++		if (survey->time)
++			ar->hw->medium_busy = div_u64((survey->time_busy * 100),
++						      survey->time);
+ 	}
+ exit:
+ 	spin_unlock_bh(&ar->data_lock);
+diff --git a/include/net/mac80211.h b/include/net/mac80211.h
+index 743749c..7518ba3 100644
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -2725,6 +2725,7 @@ struct ieee80211_hw {
+ 	u8 weight_multiplier;
+ 	u32 max_mtu;
+ 	u32 dbg_mask;
++	u8 medium_busy;
+ };
+ 
+ static inline bool _ieee80211_hw_check(struct ieee80211_hw *hw,
+diff --git a/net/mac80211/mesh_hwmp.c b/net/mac80211/mesh_hwmp.c
+index 40bf52b..b602ad1 100644
+--- a/net/mac80211/mesh_hwmp.c
++++ b/net/mac80211/mesh_hwmp.c
+@@ -538,11 +538,12 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
+ 				signal_avg = -ewma_signal_read(&sta->rx_stats_avg.signal);
+ 				mpath_dbg(sdata, "MESH MPLMU DIRECT dst %pM next hop"
+ 					  " %pM metric from %d to %d ft 0x%x signal %d"
+-					  "dbm signal_avg %d dbm\n",
++					  "dbm signal_avg %d dbm medium_busy %u\n",
+ 					  mpath->dst, sta->addr, mpath->metric,
+ 					  last_hop_metric, action,
+ 					  sta->rx_stats.last_signal,
+-					  signal_avg);
++					  signal_avg,
++					  sta->local->hw.medium_busy);
+ 				mpath_metric_change = 1;
+                         }
+ 			mesh_path_assign_nexthop(mpath, sta);
+@@ -603,11 +604,13 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
+ 				signal_avg = -ewma_signal_read(&sta->rx_stats_avg.signal);
+ 				mpath_dbg(sdata, "MESH MPLMU DIRECT dst %pM next hop"
+ 					  " %pM metric from %d to %d ft 0x%x signal"
+-					  " %d dbm signal_avg %d dbm\n",
++					  " %d dbm signal_avg %d dbm"
++					  " medium_busy %u\n",
+ 					  mpath->dst, sta->addr, mpath->metric,
+ 					  last_hop_metric, action,
+ 					  sta->rx_stats.last_signal,
+-					  signal_avg);
++					  signal_avg,
++					  sta->local->hw.medium_busy);
+ 				mpath_metric_change = 1;
+ 			}
+ 
+diff --git a/net/mac80211/mesh_pathtbl.c b/net/mac80211/mesh_pathtbl.c
+index e171cc1..37576a1 100644
+--- a/net/mac80211/mesh_pathtbl.c
++++ b/net/mac80211/mesh_pathtbl.c
+@@ -614,10 +614,11 @@ void mesh_plink_broken(struct sta_info *sta)
+ 		signal_avg = -ewma_signal_read(&sta->rx_stats_avg.signal);
+ 		if(sta->mesh->tx_fail_log & MESH_ENABLE_MPL_LOG)
+ 			sdata_info(sta->sdata, " MESH MPL link to %pM is broken and"
+-				   " %d path deactivated signal %d dbm signal_avg %d dbm\n",
++				   " %d path deactivated signal %d dbm signal_avg %d dbm"
++				   " medium_busy : %d\n",
+ 				   sta->addr, paths_deactivated,
+ 				   sta->rx_stats.last_signal,
+-				   signal_avg);
++				   signal_avg, sta->local->hw.medium_busy);
+ 		mesh_continuous_tx_fail_cnt(sta, NL80211_MPATH_BROKEN_NOTIFY);
+ 	}
+ }
+-- 
+2.7.4
+

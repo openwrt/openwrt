@@ -1,0 +1,95 @@
+{
+	"uuid": 2,
+	"radios": [
+		{
+			"band": "6G",
+			"country": "CA",
+			"channel-mode": "HE",
+			"channel-width": 80
+		},
+		{
+			"band": "5G",
+			"country": "CA",
+			"channel-mode": "HE",
+			"channel-width": 80
+		},
+		{
+			"band": "2G",
+			"country": "CA",
+			"channel-mode": "HE",
+			"channel-width": 80
+		}
+	],
+
+	"interfaces": [
+		{
+			"name": "WAN",
+			"role": "upstream",
+			"ethernet": [
+				{
+					"select-ports": [
+						"WAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "dynamic"
+			}
+		},
+		{
+			"name": "GRE",
+			"role": "upstream",
+			"vlan": {
+				"id": 50
+			},
+			"tunnel": {
+				"proto": "gre",
+				"peer-address": "50.210.104.108"
+			}
+		},
+		{
+			"name": "LAN",
+			"role": "downstream",
+			"services": [ "ssh" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"LAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "static",
+				"subnet": "192.168.1.1/24",
+				"dhcp": {
+					"lease-first": 10,
+					"lease-count": 100,
+					"lease-time": "6h"
+				}
+			},
+			"ssids": [
+				{
+					"name": "Maverick",
+					"wifi-bands": [
+						"5G",
+						"2G"
+					],
+					"bss-mode": "ap",
+					"encryption": {
+						"proto": "none",
+						"ieee80211w": "optional"
+					},
+					"roaming": {
+						"message-exchange": "ds",
+						"generate-psk": true
+					}
+				}
+			]
+		}
+	],
+	"services": {
+		"ssh": {
+			"port": 22
+		}
+	}
+}

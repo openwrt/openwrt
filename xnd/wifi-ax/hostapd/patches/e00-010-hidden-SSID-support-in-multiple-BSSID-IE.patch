@@ -1,0 +1,284 @@
+From 427d9ffc462dd1e76d03334d477864b7a33afc05 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Sat, 3 Oct 2020 15:41:11 -0700
+Subject: [PATCH] hostapd: Hidden SSID support in multiple BSSID IE
+
+Hidden nontransmitted BSSID profiles will be included in the beacons and
+probe responses but SSID value will be removed or set to all zeros
+depending on the configured value of 'ignore_broadcast_ssid'.
+If complete profiles are omited, clients cannot stay connected to the AP.
+
+For unicast probe requests with SSID set to a hidden nontransmitted BSSID
+profile, complete SSID is included in the probe response.
+This patch adds a new input parameter in related functions, pointer to
+hostapd_data for nontransmitted profiles, to differentiate this case.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/beacon.c     | 24 +++++++++++--------
+ src/ap/ieee802_11.c | 56 +++++++++++++++++++++++++++++++++------------
+ src/ap/ieee802_11.h |  7 ++++--
+ 3 files changed, 62 insertions(+), 25 deletions(-)
+
+Index: hostapd-2021-02-20/src/ap/beacon.c
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/beacon.c
++++ hostapd-2021-02-20/src/ap/beacon.c
+@@ -432,12 +432,16 @@ static u8 * hostapd_gen_probe_resp(struc
+ 				   const struct ieee80211_mgmt *req,
+ 				   int is_p2p, size_t *resp_len)
+ {
++	struct hostapd_data *hidden = NULL;
+ 	struct ieee80211_mgmt *resp;
+ 	u8 *pos, *epos, *csa_pos, *ext_cap_pos;
+ 	size_t buflen;
+ 
+-	if (hapd->iconf->multiple_bssid)
++	if (hapd->iconf->multiple_bssid &&
++	    hapd != hostapd_get_primary_bss(hapd)) {
++		hidden = hapd;
+ 		hapd = hostapd_get_primary_bss(hapd);
++	}
+ 
+ #define MAX_PROBERESP_LEN 768
+ 	buflen = MAX_PROBERESP_LEN;
+@@ -476,7 +480,7 @@ static u8 * hostapd_gen_probe_resp(struc
+ 	buflen += hostapd_eid_owe_trans_len(hapd);
+ 	buflen += hostapd_eid_dpp_cc_len(hapd);
+ 	if (hapd->iconf->multiple_bssid)
+-		buflen += hostapd_eid_multiple_bssid_len(hapd);
++		buflen += hostapd_eid_multiple_bssid_len(hapd, hidden, 0);
+ 
+ 	resp = os_zalloc(buflen);
+ 	if (resp == NULL)
+@@ -502,9 +506,21 @@ static u8 * hostapd_gen_probe_resp(struc
+ 
+ 	pos = resp->u.probe_resp.variable;
+ 	*pos++ = WLAN_EID_SSID;
+-	*pos++ = hapd->conf->ssid.ssid_len;
+-	os_memcpy(pos, hapd->conf->ssid.ssid, hapd->conf->ssid.ssid_len);
+-	pos += hapd->conf->ssid.ssid_len;
++	if (hapd->iconf->multiple_bssid && hidden &&
++	    hapd->conf->ignore_broadcast_ssid == 2) {
++		/* clear the data, but keep the correct length of the SSID */
++		*pos++ = hapd->conf->ssid.ssid_len;
++		os_memset(pos, 0, hapd->conf->ssid.ssid_len);
++		pos += hapd->conf->ssid.ssid_len;
++	} else if (hapd->iconf->multiple_bssid && hidden &&
++		   hapd->conf->ignore_broadcast_ssid) {
++		*pos++ = 0; /* empty SSID */
++	} else {
++		*pos++ = hapd->conf->ssid.ssid_len;
++		os_memcpy(pos, hapd->conf->ssid.ssid,
++			hapd->conf->ssid.ssid_len);
++		pos += hapd->conf->ssid.ssid_len;
++	}
+ 
+ 	/* Supported rates */
+ 	pos = hostapd_eid_supp_rates(hapd, pos);
+@@ -535,7 +551,8 @@ static u8 * hostapd_gen_probe_resp(struc
+ 	pos = hostapd_get_mde(hapd, pos, epos - pos);
+ 
+         if (hapd->iconf->multiple_bssid)
+-		pos = hostapd_eid_multiple_bssid(hapd, pos, epos, 0, NULL, 0, 0, 0);
++		pos = hostapd_eid_multiple_bssid(hapd, hidden, pos, epos, 0,
++						 NULL, 0, 0, 0);
+ 
+ 	/* eCSA IE */
+ 	csa_pos = hostapd_eid_ecsa(hapd, pos);
+@@ -847,10 +864,6 @@ void handle_probe_req(struct hostapd_dat
+                .frame_info = fi,
+        };
+ 
+-        if (hapd->iconf->multiple_bssid &&
+-	    hapd != hostapd_get_primary_bss(hapd))
+-		return;
+-
+ 	if (len < IEEE80211_HDRLEN)
+ 		return;
+ 	ie = ((const u8 *) mgmt) + IEEE80211_HDRLEN;
+@@ -1077,6 +1090,10 @@ void handle_probe_req(struct hostapd_dat
+ 	wpa_msg_ctrl(hapd->msg_ctx, MSG_INFO, RX_PROBE_REQUEST "sa=" MACSTR
+ 		     " signal=%d", MAC2STR(mgmt->sa), ssi_signal);
+ 
++	if (hapd->iconf->multiple_bssid &&
++	    hapd != hostapd_get_primary_bss(hapd) && res != EXACT_SSID_MATCH)
++		return;
++
+ 	resp = hostapd_gen_probe_resp(hapd, mgmt, elems.p2p != NULL,
+ 				      &resp_len);
+ 	if (resp == NULL)
+@@ -1754,7 +1771,7 @@ int ieee802_11_build_ap_params(struct ho
+ 	}
+ 
+ 	if (hapd->iconf->multiple_bssid) {
+-		int len = hostapd_eid_multiple_bssid_len(hapd);
++		int len = hostapd_eid_multiple_bssid_len(hapd, NULL, 1);
+ 		u8 *end;
+ 
+ 		params->multiple_bssid_index = hostapd_get_bss_index(hapd);
+@@ -1762,7 +1779,8 @@ int ieee802_11_build_ap_params(struct ho
+ 		params->multiple_bssid_ies = os_zalloc(len);
+ 		if (params->multiple_bssid_ies == NULL)
+ 			return -1;
+-		end = hostapd_eid_multiple_bssid(hapd, params->multiple_bssid_ies,
++		end = hostapd_eid_multiple_bssid(hapd, NULL,
++						 params->multiple_bssid_ies,
+ 						 params->multiple_bssid_ies + len,
+ 						 1, params->multiple_bssid_ie_offsets,
+ 						 &params->multiple_bssid_ie_count,
+Index: hostapd-2021-02-20/src/ap/ieee802_11.c
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/ieee802_11.c
++++ hostapd-2021-02-20/src/ap/ieee802_11.c
+@@ -6968,24 +6968,35 @@ u8 * hostapd_eid_wb_chsw_wrapper(struct
+ 
+ 
+ static int hostapd_eid_multiple_bssid_chunk_len(struct hostapd_data *hapd,
+-						int *count)
++						struct hostapd_data *hidden,
++						int *count,
++						u8 is_beacon)
+ {
+ 	/* ID + size + count */
+ 	int i, len = 3, nontx_profile_len;
+ 	size_t ies_len = 0;
+ 	struct hostapd_data *bss;
++	struct hostapd_bss_config *conf;
+ 
+ 	for (i = *count; i < hapd->iface->num_bss; i++) {
+ 		bss = hapd->iface->bss[i];
++		conf = bss->conf;
+ 
+ 		/*
+ 		 * Sublement ID: 1 byte
+ 		 * Length: 1 byte
+ 		 * Nontransmitted capabilities: 4 bytes
+-		 * Multiple BSSID Index Element: 5 bytes
+-		 * SSID element: 2 + variable
++		 * SSID element: 2 bytes
++		 * Multiple BSSID Index Element: 3 bytes (+2 bytes in beacons)
+ 		 */
+-		nontx_profile_len = 13 + bss->conf->ssid.ssid_len;
++		nontx_profile_len = 11;
++
++		if (!conf->ignore_broadcast_ssid ||
++		    conf->ignore_broadcast_ssid == 2 || bss == hidden)
++			nontx_profile_len += conf->ssid.ssid_len;
++
++		if (is_beacon)
++			nontx_profile_len += 2;
+ 
+ 		if (wpa_auth_get_wpa_ie(bss->wpa_auth, &ies_len))
+ 			nontx_profile_len += ies_len;
+@@ -7003,21 +7014,27 @@ multiple_bssid_too_big:
+ }
+ 
+ 
+-int hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd)
++int hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd,
++				   struct hostapd_data *hidden,
++				   u8 is_beacon)
+ {
+ 	int count = 1, len = 0;
+ 
+ 	while (count < hapd->iface->num_bss)
+-		len += hostapd_eid_multiple_bssid_chunk_len(hapd, &count);
++		len += hostapd_eid_multiple_bssid_chunk_len(hapd, hidden,
++							    &count, is_beacon);
+ 
+ 	return len;
+ }
+ 
+ 
+ static u8 * hostapd_eid_multiple_bssid_chunk(struct hostapd_data *hapd,
++					     struct hostapd_data *hidden,
+ 					     u8 *eid, u8 *end, int *count,
+ 					     u8 is_beacon, u8 *dtim_offset[])
+ {
++	struct hostapd_data *bss;
++	struct hostapd_bss_config *conf;
+ 	u8 *size_offset, *num_offset;
+ 	int i;
+ 
+@@ -7026,7 +7043,8 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 	num_offset = eid++;
+ 
+ 	for (i = *count; i < hapd->iface->num_bss; i++) {
+-		struct hostapd_data *bss = hapd->iface->bss[i];
++		bss = hapd->iface->bss[i];
++		conf = bss->conf;
+ 		u8 *bss_size_offset, *index_size_offset, *pos = eid;
+ 		u16 capab_info;
+ 
+@@ -7040,16 +7058,24 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 		eid += sizeof(capab_info);
+ 
+ 		*eid++ = WLAN_EID_SSID;
+-		*eid++ = bss->conf->ssid.ssid_len;
+-		os_memcpy(eid, bss->conf->ssid.ssid, bss->conf->ssid.ssid_len);
+-		eid += bss->conf->ssid.ssid_len;
++		if (!conf->ignore_broadcast_ssid || bss == hidden) {
++			*eid++ = conf->ssid.ssid_len;
++			os_memcpy(eid, conf->ssid.ssid, conf->ssid.ssid_len);
++			eid += conf->ssid.ssid_len;
++		} else if (conf->ignore_broadcast_ssid == 2) {
++			*eid++ = conf->ssid.ssid_len;
++			os_memset(eid, 0, conf->ssid.ssid_len);
++			eid += conf->ssid.ssid_len;
++		} else {
++			*eid++ = 0;
++		}
+ 
+ 		*eid++ = WLAN_EID_MULTIPLE_BSSID_INDEX;
+ 		index_size_offset = eid++;
+ 		*eid++ = i;
+ 		if (is_beacon) {
+ 			dtim_offset[i] = eid;
+-			*eid++ = bss->conf->dtim_period;
++			*eid++ = conf->dtim_period;
+ 			*eid++ = 0xFF;
+ 		}
+ 		*index_size_offset = (eid - index_size_offset) - 1;
+@@ -7075,7 +7101,8 @@ multiple_bssid_too_big:
+ }
+ 
+ 
+-u8 * hostapd_eid_multiple_bssid(struct hostapd_data *hapd, u8 *eid, u8 *end,
++u8 * hostapd_eid_multiple_bssid(struct hostapd_data *hapd,
++				struct hostapd_data *hidden, u8 *eid, u8 *end,
+ 				u8 is_beacon, u8 **eid_offsets, int *eid_count,
+ 				int eid_max, u8 ema_beacon)
+ {
+@@ -7094,8 +7121,9 @@ u8 * hostapd_eid_multiple_bssid(struct h
+ 			eid_offsets[*eid_count] = eid;
+ 			*eid_count = *eid_count + 1;
+ 		}
+-		eid = hostapd_eid_multiple_bssid_chunk(hapd, eid, end, &count,
+-						       is_beacon, dtim_offset);
++		eid = hostapd_eid_multiple_bssid_chunk(hapd, hidden, eid, end,
++						       &count, is_beacon,
++						       dtim_offset);
+ 	}
+ 
+ 	if (!eid_count || !(*eid_count)) {
+Index: hostapd-2021-02-20/src/ap/ieee802_11.h
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/ieee802_11.h
++++ hostapd-2021-02-20/src/ap/ieee802_11.h
+@@ -119,10 +119,13 @@ u8 * hostapd_eid_time_zone(struct hostap
+ int hostapd_update_time_adv(struct hostapd_data *hapd);
+ void hostapd_client_poll_ok(struct hostapd_data *hapd, const u8 *addr);
+ u8 * hostapd_eid_bss_max_idle_period(struct hostapd_data *hapd, u8 *eid);
+-u8 * hostapd_eid_multiple_bssid(struct hostapd_data *hapd, u8 *eid, u8 *end,
++u8 * hostapd_eid_multiple_bssid(struct hostapd_data *hapd,
++				struct hostapd_data *hidden, u8 *eid, u8 *end,
+ 				u8 is_beacon, u8 **eid_offsets, int *eid_count,
+ 				int eid_max, u8 ema_beacon);
+-int hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd);
++int hostapd_eid_multiple_bssid_len(struct hostapd_data *hapd,
++				   struct hostapd_data *hidden,
++				   u8 is_beacon);
+ u8 * hostapd_eid_reduced_neighbor_report(struct hostapd_data *hapd, u8 *eid);
+ size_t hostapd_eid_reduced_neighbor_report_len(struct hostapd_data *hapd);
+ int auth_sae_init_committed(struct hostapd_data *hapd, struct sta_info *sta);

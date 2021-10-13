@@ -1,0 +1,323 @@
+From 21faabb69319073e19b48a531c530216138564dc Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Tue, 18 Aug 2020 21:58:16 +0530
+Subject: [PATCH 05/15] ath11k: update msi_config and pci_bus_config
+
+update msi_config and pci_bus_config structures, to add multiple
+pci device support.
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 39 ++++++++++++++++++++---------------
+ drivers/net/wireless/ath/ath11k/pci.h |  1 +
+ 2 files changed, 23 insertions(+), 17 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -12,6 +12,7 @@
+ #include "hif.h"
+ #include "mhi.h"
+ #include "debug.h"
++#include <linux/of.h>
+ 
+ #define ATH11K_PCI_BAR_NUM		0
+ #define ATH11K_PCI_DMA_MASK		32
+@@ -39,7 +40,7 @@
+ 
+ static const struct pci_device_id ath11k_pci_id_table[] = {
+ 	{ PCI_VDEVICE(QCOM, QCA6390_DEVICE_ID) },
+-	/* TODO: add QCN9074_DEVICE_ID) once firmware issues are resolved */
++	{ PCI_VDEVICE(QCOM, QCN9074_DEVICE_ID) },
+ 	{0}
+ };
+ 
+@@ -827,6 +828,7 @@ static int ath11k_pci_config_irq(struct
+ static void ath11k_pci_init_qmi_ce_config(struct ath11k_base *ab)
+ {
+ 	struct ath11k_qmi_ce_cfg *cfg = &ab->qmi.ce_cfg;
++	int ret, node_id;
+ 
+ 	cfg->tgt_ce = ab->hw_params.target_ce_config;
+ 	cfg->tgt_ce_len = ab->hw_params.target_ce_count;
+@@ -835,6 +837,9 @@ static void ath11k_pci_init_qmi_ce_confi
+ 	cfg->svc_to_ce_map_len = ab->hw_params.svc_to_ce_map_len;
+ 	ab->qmi.service_ins_id = ab->hw_params.qmi_service_ins_id;
+ 
++	ret = of_property_read_u32(ab->dev->of_node, "qrtr_instance_id", &node_id);
++	if (!ret)
++		ab->qmi.service_ins_id += node_id;
+ 	ath11k_ce_get_shadow_config(ab, &cfg->shadow_reg_v2,
+ 				    &cfg->shadow_reg_v2_len);
+ }
+@@ -861,7 +866,7 @@ static int ath11k_pci_enable_msi(struct
+ 	num_vectors = pci_alloc_irq_vectors(ab_pci->pdev,
+ 					    msi_config->total_vectors,
+ 					    msi_config->total_vectors,
+-					    PCI_IRQ_MSI);
++					    PCI_IRQ_NOMSIX);
+ 	if (num_vectors != msi_config->total_vectors) {
+ 		ath11k_err(ab, "failed to get %d MSI vectors, only %d available",
+ 			   msi_config->total_vectors, num_vectors);
+@@ -1010,6 +1015,7 @@ static int ath11k_pci_power_up(struct at
+ {
+ 	struct ath11k_pci *ab_pci = ath11k_pci_priv(ab);
+ 	int ret;
++	u32 addr;
+ 
+ 	ab_pci->register_window = 0;
+ 	clear_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags);
+@@ -1201,6 +1207,14 @@ static int ath11k_pci_probe(struct pci_d
+ 	pci_set_drvdata(pdev, ab);
+ 	spin_lock_init(&ab_pci->window_lock);
+ 
++	/* IPQ8074 reserves memory for FW, ath11k does not need to
++	 * allocate memory for FW in DDR, set fixed_mem_region to true for
++	 * these pltforms supports reserved memory.
++	 */
++	ret = of_property_read_u32(ab->dev->of_node, "base-addr", &addr);
++	if (ret == 0)
++		ab->bus_params.fixed_mem_region = true;
++
+ 	ret = ath11k_pci_claim(ab_pci, pdev);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to claim device: %d\n", ret);
+--- a/drivers/net/wireless/ath/ath11k/mhi.c
++++ b/drivers/net/wireless/ath/ath11k/mhi.c
+@@ -3,6 +3,7 @@
+ 
+ #include <linux/msi.h>
+ #include <linux/pci.h>
++#include <linux/of.h>
+ 
+ #include "core.h"
+ #include "debug.h"
+@@ -25,6 +26,7 @@ static struct mhi_channel_config ath11k_
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = false,
++		.auto_start = false,
+ 	},
+ 	{
+ 		.num = 1,
+@@ -39,6 +41,7 @@ static struct mhi_channel_config ath11k_
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = false,
++		.auto_start = false,
+ 	},
+ 	{
+ 		.num = 20,
+@@ -53,6 +56,7 @@ static struct mhi_channel_config ath11k_
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = false,
++		.auto_start = true,
+ 	},
+ 	{
+ 		.num = 21,
+@@ -67,6 +71,7 @@ static struct mhi_channel_config ath11k_
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = true,
++		.auto_start = true,
+ 	},
+ };
+ 
+@@ -118,6 +123,7 @@ static struct mhi_channel_config ath11k_
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = false,
++		.auto_start = false,
+ 	},
+ 	{
+ 		.num = 1,
+@@ -132,6 +138,7 @@ static struct mhi_channel_config ath11k_
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = false,
++		.auto_start = false,
+ 	},
+ 	{
+ 		.num = 20,
+@@ -146,6 +153,7 @@ static struct mhi_channel_config ath11k_
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = false,
++		.auto_start = true,
+ 	},
+ 	{
+ 		.num = 21,
+@@ -160,6 +168,7 @@ static struct mhi_channel_config ath11k_
+ 		.offload_channel = false,
+ 		.doorbell_mode_switch = false,
+ 		.auto_queue = true,
++		.auto_start = true,
+ 	},
+ };
+ 
+@@ -316,7 +325,12 @@ int ath11k_mhi_register(struct ath11k_pc
+ 	struct ath11k_base *ab = ab_pci->ab;
+ 	struct mhi_controller *mhi_ctrl;
+ 	struct mhi_controller_config *ath11k_mhi_config;
+-	int ret;
++	struct mhi_controller_config *ath11k_mhi_config;
++	struct device_node *np;
++	int ret, len, sw, aw;
++	unsigned int *reg, *reg_end;
++	unsigned long start, size;
++	bool no_dt_entry = 0;
+ 
+ 	mhi_ctrl = mhi_alloc_controller();
+ 	if (!mhi_ctrl)
+@@ -338,8 +352,41 @@ int ath11k_mhi_register(struct ath11k_pc
+ 		return ret;
+ 	}
+ 
+-	mhi_ctrl->iova_start = 0;
+-	mhi_ctrl->iova_stop = 0xffffffff;
++	np = of_find_node_by_type(NULL, "memory");
++	if (!np) {
++		no_dt_entry = 1;
++		goto no_dt_entry;
++	}
++
++	aw = of_n_addr_cells(np);
++	sw = of_n_size_cells(np);
++
++	reg = (unsigned int *)of_get_property(np, "reg", &len);
++	if (!reg) {
++		no_dt_entry = 1;
++		goto no_dt_entry;
++	}
++
++	reg_end = reg + len/4;
++	do {
++		start = of_read_number(reg, aw);
++		reg += aw;
++		size = of_read_number(reg, sw);
++		reg += sw;
++	} while (reg < reg_end);
++
++no_dt_entry:
++	if (no_dt_entry) {
++		mhi_ctrl->iova_start = 0;
++		mhi_ctrl->iova_stop = 0xFFFFFFFF;
++	} else {
++		mhi_ctrl->iova_start = (dma_addr_t)(start + 0x1000000);
++		mhi_ctrl->iova_stop = (dma_addr_t)(start + size);
++	}
++
++	ath11k_info(ab, "mhi_ctrl start addr %llx end addr %llx\n",
++			(u64)mhi_ctrl->iova_start, (u64)mhi_ctrl->iova_stop);
++
+ 	mhi_ctrl->sbl_size = SZ_512K;
+ 	mhi_ctrl->seg_len = SZ_512K;
+ 	mhi_ctrl->fbc_download = true;
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2079,17 +2079,18 @@ static void ath11k_qmi_free_target_mem_c
+ {
+ 	int i;
+ 
+-	if (ab->bus_params.fixed_mem_region)
+-		return;
+-
+ 	for (i = 0; i < ab->qmi.mem_seg_count; i++) {
+ 		if (!ab->qmi.target_mem[i].vaddr)
+ 			continue;
+ 
+-		dma_free_coherent(ab->dev,
+-				  ab->qmi.target_mem[i].size,
+-				  ab->qmi.target_mem[i].vaddr,
+-				  ab->qmi.target_mem[i].paddr);
++		if (ab->bus_params.fixed_mem_region) {
++			iounmap(ab->qmi.target_mem[i].vaddr);
++		} else {
++			dma_free_coherent(ab->dev,
++					  ab->qmi.target_mem[i].size,
++					  ab->qmi.target_mem[i].vaddr,
++					  ab->qmi.target_mem[i].paddr);
++		}
+ 		ab->qmi.target_mem[i].vaddr = NULL;
+ 	}
+ }
+@@ -2129,10 +2130,26 @@ static int ath11k_qmi_alloc_target_mem_c
+ 
+ static int ath11k_qmi_assign_target_mem_chunk(struct ath11k_base *ab)
+ {
++	struct device *dev = ab->dev;
+ 	int i, idx;
++	u32 addr = 0;
+ 
+ 	for (i = 0, idx = 0; i < ab->qmi.mem_seg_count; i++) {
+ 		switch (ab->qmi.target_mem[i].type) {
++		case HOST_DDR_REGION_TYPE:
++			if (of_property_read_u32(dev->of_node, "base-addr", &addr)) {
++				ath11k_warn(ab, "qmi fail to get base-addr in dt\n");
++				return -EINVAL;
++			}
++
++			ab->qmi.target_mem[idx].paddr = (phys_addr_t)addr;
++			ab->qmi.target_mem[idx].vaddr =
++				ioremap(ab->qmi.target_mem[idx].paddr,
++					ab->qmi.target_mem[i].size);
++			ab->qmi.target_mem[idx].size = ab->qmi.target_mem[i].size;
++			ab->qmi.target_mem[idx].type = ab->qmi.target_mem[i].type;
++			idx++;
++			break;
+ 		case BDF_MEM_REGION_TYPE:
+ 			ab->qmi.target_mem[idx].paddr = ab->hw_params.bdf_addr;
+ 			ab->qmi.target_mem[idx].vaddr = NULL;
+@@ -2146,14 +2163,17 @@ static int ath11k_qmi_assign_target_mem_
+ 				return -EINVAL;
+ 			}
+ 
+-			if (ath11k_cold_boot_cal && ab->hw_params.cold_boot_calib) {
+-				ab->qmi.target_mem[idx].paddr =
+-						     ATH11K_QMI_CALDB_ADDRESS;
++			if (of_property_read_u32(dev->of_node, "qcom,caldb-addr", &addr))
++				ath11k_warn(ab, "qmi fail to get caldb-addr in dt\n");
++
++			if (ab->enable_cold_boot_cal && ab->hw_params.cold_boot_calib) {
++				ab->qmi.target_mem[idx].paddr = (u32)addr;
+ 				ab->qmi.target_mem[idx].vaddr =
+-						     (void *)ATH11K_QMI_CALDB_ADDRESS;
++						ioremap(ab->qmi.target_mem[idx].paddr,
++								ab->qmi.target_mem[i].size);
+ 			} else {
+-				ab->qmi.target_mem[idx].paddr = 0;
+-				ab->qmi.target_mem[idx].vaddr = NULL;
++				ab->qmi.target_mem[idx].paddr = 0UL;
++				ab->qmi.target_mem[idx].vaddr = 0UL;
+ 			}
+ 			ab->qmi.target_mem[idx].size = ab->qmi.target_mem[i].size;
+ 			ab->qmi.target_mem[idx].type = ab->qmi.target_mem[i].type;
+@@ -2915,7 +2935,7 @@ static void ath11k_qmi_msg_mem_request_c
+ 				    ret);
+ 			return;
+ 		}
+-	} else {
++	} else if (msg->mem_seg_len > 3) {
+ 		ret = ath11k_qmi_alloc_target_mem_chunk(ab);
+ 		if (ret) {
+ 			ath11k_warn(ab, "qmi failed to alloc target memory: %d\n",
+@@ -3083,7 +3103,7 @@ static void ath11k_qmi_driver_event_work
+ 				break;
+ 			}
+ 
+-			if (ath11k_cold_boot_cal && ab->qmi.cal_done == 0 &&
++			if (ab->enable_cold_boot_cal && ab->qmi.cal_done == 0 &&
+ 			    ab->hw_params.cold_boot_calib) {
+ 				ath11k_qmi_process_coldboot_calibration(ab);
+ 			} else {
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -185,7 +185,7 @@ static const struct ath11k_hw_params ath
+ 		.supports_monitor = true,
+ 		.supports_shadow_regs = false,
+ 		.idle_ps = false,
+-		.cold_boot_calib = false,
++		.cold_boot_calib = true,
+ 		.supports_suspend = false,
+ 		.hal_desc_sz = sizeof(struct hal_rx_desc_qcn9074),
+ 	},

@@ -1,0 +1,174 @@
+Index: hostapd-2021-02-20-59e9794c/hostapd/ctrl_iface.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/hostapd/ctrl_iface.c
++++ hostapd-2021-02-20-59e9794c/hostapd/ctrl_iface.c
+@@ -2673,6 +2673,59 @@ static int hostapd_ctrl_check_freq_param
+ }
+ #endif /* NEED_AP_MLME */
+ 
++static int hostapd_ctrl_iface_color_change(struct hostapd_iface *iface,
++                                          char *pos)
++{
++#ifdef NEED_AP_MLME
++	struct cca_settings settings;
++	struct hostapd_data *hapd = iface->bss[0];
++	int ret, color;
++	unsigned int i;
++	char *end;
++
++	os_memset(&settings, 0, sizeof(settings));
++	color = strtol(pos, &end, 10);
++	if (pos == end || color < 0 || color > 63) {
++		wpa_printf(MSG_ERROR, "colorchange: invalid color provided");
++		return -1;
++	}
++
++	if (color == iface->conf->he_op.he_bss_color) {
++		wpa_printf(MSG_ERROR, "colorchange: provided color is already set");
++		return -1;
++	}
++
++	if (hapd->cca_in_progress) {
++		wpa_printf(MSG_ERROR, "colorchange: cca is in progress, so color change is now allowed");
++		return -1;
++	}
++
++	for (i = 0; i < iface->num_bss; i++) {
++		struct hostapd_data *bss = iface->bss[i];
++		hostapd_cleanup_cca_params(bss);
++		bss->cca_color = color;
++		bss->cca_count = 10;
++
++		if (hostapd_fill_cca_settings(bss, &settings)) {
++			wpa_printf(MSG_DEBUG, "hostapd fill cca settings failed for color: %d\n", color);
++			hostapd_cleanup_cca_params(bss);
++			continue;
++		}
++
++		wpa_printf(MSG_DEBUG, "Setting user selected color: %d\n", color);
++		ret = hostapd_drv_switch_color(bss, &settings);
++		free_beacon_data(&settings.beacon_cca);
++		free_beacon_data(&settings.beacon_after);
++
++		if (ret)
++			 hostapd_cleanup_cca_params(bss);
++	}
++
++        return 0;
++#else /* NEED_AP_MLME */
++        return -1;
++#endif /* NEED_AP_MLME */
++}
+ 
+ static int hostapd_ctrl_iface_chan_switch(struct hostapd_iface *iface,
+ 					  char *pos)
+@@ -3682,6 +3735,9 @@ static int hostapd_ctrl_iface_receive_pr
+ 	} else if (os_strncmp(buf, "CHAN_SWITCH ", 12) == 0) {
+ 		if (hostapd_ctrl_iface_chan_switch(hapd->iface, buf + 12))
+ 			reply_len = -1;
++	} else if (os_strncmp(buf, "COLOR_CHANGE ", 12) == 0) {
++		if (hostapd_ctrl_iface_color_change(hapd->iface, buf + 12))
++			reply_len = -1;
+ 	} else if (os_strncmp(buf, "VENDOR ", 7) == 0) {
+ 		reply_len = hostapd_ctrl_iface_vendor(hapd, buf + 7, reply,
+ 						      reply_size);
+Index: hostapd-2021-02-20-59e9794c/hostapd/hostapd_cli.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/hostapd/hostapd_cli.c
++++ hostapd-2021-02-20-59e9794c/hostapd/hostapd_cli.c
+@@ -1150,6 +1150,27 @@ static int hostapd_cli_cmd_fst(struct wp
+ }
+ #endif /* CONFIG_FST */
+ 
++static int hostapd_cli_cmd_color_change(struct wpa_ctrl *ctrl,
++                                        int argc, char *argv[])
++{
++	char cmd[256];
++	int res;
++
++	if (argc < 1) {
++		printf("Invalid color_change command: no argument given \n"
++		       "usage: <color> \n");
++		return -1;
++	}
++
++	res = os_snprintf(cmd, sizeof(cmd), "COLOR_CHANGE %s",
++                          argv[0]);
++	if (os_snprintf_error(sizeof(cmd), res)) {
++		printf("Too long CHAN_CHANGE command\n");
++		return -1;
++	}
++
++	return wpa_ctrl_command(ctrl, cmd);
++}
+ 
+ static int hostapd_cli_cmd_chan_switch(struct wpa_ctrl *ctrl,
+ 				       int argc, char *argv[])
+@@ -1638,6 +1659,8 @@ static const struct hostapd_cli_cmd host
+ 	  "<cs_count> <freq> [sec_channel_offset=] [center_freq1=]\n"
+ 	  "  [center_freq2=] [bandwidth=] [blocktx] [ht|vht]\n"
+ 	  "  = initiate channel switch announcement" },
++	{ "color_change", hostapd_cli_cmd_color_change, NULL,
++	  "<color> = initiate bss color change to set user color\n" },
+ 	{ "hs20_wnm_notif", hostapd_cli_cmd_hs20_wnm_notif, NULL,
+ 	  "<addr> <url>\n"
+ 	  "  = send WNM-Notification Subscription Remediation Request" },
+Index: hostapd-2021-02-20-59e9794c/src/ap/ctrl_iface_ap.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/ap/ctrl_iface_ap.c
++++ hostapd-2021-02-20-59e9794c/src/ap/ctrl_iface_ap.c
+@@ -1055,10 +1055,12 @@ int hostapd_ctrl_iface_status(struct hos
+ 		ret = os_snprintf(buf + len, buflen - len,
+ 				  "he_oper_chwidth=%d\n"
+ 				  "he_oper_centr_freq_seg0_idx=%d\n"
+-				  "he_oper_centr_freq_seg1_idx=%d\n",
++				  "he_oper_centr_freq_seg1_idx=%d\n"
++				  "he_bss_color=%d\n",
+ 				  iface->conf->he_oper_chwidth,
+ 				  iface->conf->he_oper_centr_freq_seg0_idx,
+-				  iface->conf->he_oper_centr_freq_seg1_idx);
++				  iface->conf->he_oper_centr_freq_seg1_idx,
++				  iface->conf->he_op.he_bss_color);
+ 		if (os_snprintf_error(buflen - len, ret))
+ 			return len;
+ 		len += ret;
+Index: hostapd-2021-02-20-59e9794c/src/ap/hostapd.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/ap/hostapd.c
++++ hostapd-2021-02-20-59e9794c/src/ap/hostapd.c
+@@ -3443,7 +3443,7 @@ int hostapd_csa_in_progress(struct hosta
+ 
+ #ifdef NEED_AP_MLME
+ 
+-static void free_beacon_data(struct beacon_data *beacon)
++void free_beacon_data(struct beacon_data *beacon)
+ {
+ 	os_free(beacon->head);
+ 	beacon->head = NULL;
+@@ -3833,7 +3833,7 @@ void hostapd_cleanup_cca_params(struct h
+ }
+ 
+ 
+-static int hostapd_fill_cca_settings(struct hostapd_data *hapd,
++int hostapd_fill_cca_settings(struct hostapd_data *hapd,
+ 				     struct cca_settings *settings)
+ {
+ 	struct hostapd_iface *iface = hapd->iface;
+Index: hostapd-2021-02-20-59e9794c/src/ap/hostapd.h
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/ap/hostapd.h
++++ hostapd-2021-02-20-59e9794c/src/ap/hostapd.h
+@@ -661,11 +661,13 @@ void hostapd_periodic_iface(struct hosta
+ int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
+ void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
+ int hostapd_check_max_sta(struct hostapd_data *hapd);
++void free_beacon_data(struct beacon_data *beacon);
+ 
+ 
+ #ifdef CONFIG_IEEE80211AX
+ void hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap);
+ void hostapd_cleanup_cca_params(struct hostapd_data *hapd);
++int hostapd_fill_cca_settings(struct hostapd_data *hapd, struct cca_settings *settings);
+ #endif
+ 
+ /* utils.c */

@@ -1,0 +1,49 @@
+--- a/drivers/net/wireless/ath/ath11k/testmode.c
++++ b/drivers/net/wireless/ath/ath11k/testmode.c
+@@ -273,13 +273,16 @@ out:
+ 	return ret;
+ }
+ 
+-static int ath11k_tm_cmd_wmi(struct ath11k *ar, struct nlattr *tb[])
++static int ath11k_tm_cmd_wmi(struct ath11k *ar, struct nlattr *tb[],
++			     struct ieee80211_vif *vif)
+ {
+ 	struct ath11k_pdev_wmi *wmi = ar->wmi;
+ 	struct sk_buff *skb;
++	struct ath11k_vif *arvif;
+ 	u32 cmd_id, buf_len;
+-	int ret;
++	int ret, tag;
+ 	void *buf;
++	u32 *ptr;
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
+@@ -302,6 +305,18 @@ static int ath11k_tm_cmd_wmi(struct ath1
+ 	buf_len = nla_len(tb[ATH11K_TM_ATTR_DATA]);
+ 	cmd_id = nla_get_u32(tb[ATH11K_TM_ATTR_WMI_CMDID]);
+ 
++	ptr = (u32 *)buf;
++	tag = FIELD_GET(WMI_TLV_TAG, *ptr);
++	ptr++;
++
++	if (tag == WMI_TAG_PDEV_SET_PARAM_CMD)
++		*ptr = ar->pdev->pdev_id;
++
++	if (vif && (tag == WMI_TAG_VDEV_SET_PARAM_CMD || tag == WMI_TAG_UNIT_TEST_CMD)) {
++		arvif = (struct ath11k_vif *)vif->drv_priv;
++		*ptr = arvif->vdev_id;
++	}
++
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_TESTMODE,
+ 		   "testmode cmd wmi cmd_id %d buf %pK buf_len %d\n",
+ 		   cmd_id, buf, buf_len);
+@@ -443,7 +458,7 @@ int ath11k_tm_cmd(struct ieee80211_hw *h
+ 	case ATH11K_TM_CMD_GET_VERSION:
+ 		return ath11k_tm_cmd_get_version(ar, tb);
+ 	case ATH11K_TM_CMD_WMI_FW_TEST:
+-		return ath11k_tm_cmd_wmi(ar, tb);
++		return ath11k_tm_cmd_wmi(ar, tb, vif);
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}

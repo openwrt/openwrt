@@ -1,0 +1,95 @@
+commit 120f4976cdb83e421459242db7a1b41c16b772f6
+Author: Sathishkumar Muruganandam <murugana@codeaurora.org>
+Date:   Wed Jan 13 16:51:07 2021 +0530
+
+    hostapd: allow AP_VLAN creation with wpa_psk_file having vlan_id
+    
+    When WPA_DRIVER_FLAGS_VLAN_OFFLOAD is advertised from driver during
+    NSS offload enabled case, vlan_id is sent to mac80211 which is stored
+    in key_conf for dynamic VLAN support on NSS offload case.
+    
+    This flag blocks the AP_VLAN creation when using wpa_psk_file with
+    vlan_id which is needed for dynamic VLAN support on NSS offload case.
+    
+    Hence removing the check associated with _VLAN_OFFLOAD flag which is
+    advertised only when NSS offload is enabled to allow AP_VLAN creation.
+    
+    Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
+
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1060,8 +1060,7 @@ int ap_sta_bind_vlan(struct hostapd_data
+ 	if (sta->vlan_id == old_vlanid)
+ 		goto skip_counting;
+ 
+-	if (sta->vlan_id > 0 && !vlan &&
+-	    !(hapd->iface->drv_flags & WPA_DRIVER_FLAGS_VLAN_OFFLOAD)) {
++	if (sta->vlan_id > 0 && !vlan) {
+ 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
+ 			       HOSTAPD_LEVEL_DEBUG, "could not find VLAN for "
+ 			       "binding station to (vlan_id=%d)",
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
+@@ -437,12 +437,8 @@ static int hostapd_wpa_auth_set_key(void
+ 
+ 	if (vlan_id > 0) {
+ 		ifname = hostapd_get_vlan_id_ifname(hapd->conf->vlan, vlan_id);
+-		if (!ifname) {
+-			if (!(hapd->iface->drv_flags &
+-			      WPA_DRIVER_FLAGS_VLAN_OFFLOAD))
+-				return -1;
+-			ifname = hapd->conf->iface;
+-		}
++		if (!ifname)
++			return -1;
+ 	}
+ 
+ #ifdef CONFIG_TESTING_OPTIONS
+@@ -917,32 +913,27 @@ static int hostapd_wpa_auth_update_vlan(
+ #ifndef CONFIG_NO_VLAN
+ 	struct hostapd_data *hapd = ctx;
+ 	struct sta_info *sta;
++	struct vlan_description vlan_desc;
+ 
+ 	sta = ap_get_sta(hapd, addr);
+ 	if (!sta)
+ 		return -1;
+ 
+-	if (!(hapd->iface->drv_flags & WPA_DRIVER_FLAGS_VLAN_OFFLOAD)) {
+-		struct vlan_description vlan_desc;
+-
+-		os_memset(&vlan_desc, 0, sizeof(vlan_desc));
+-		vlan_desc.notempty = 1;
+-		vlan_desc.untagged = vlan_id;
+-		if (!hostapd_vlan_valid(hapd->conf->vlan, &vlan_desc)) {
+-			wpa_printf(MSG_INFO,
+-				   "Invalid VLAN ID %d in wpa_psk_file",
+-				   vlan_id);
+-			return -1;
+-		}
++	os_memset(&vlan_desc, 0, sizeof(vlan_desc));
++	vlan_desc.notempty = 1;
++	vlan_desc.untagged = vlan_id;
++	if (!hostapd_vlan_valid(hapd->conf->vlan, &vlan_desc)) {
++		wpa_printf(MSG_INFO,
++			   "Invalid VLAN ID %d in wpa_psk_file",
++			   vlan_id);
++		return -1;
++	}
+ 
+-		if (ap_sta_set_vlan(hapd, sta, &vlan_desc) < 0) {
+-			wpa_printf(MSG_INFO,
+-				   "Failed to assign VLAN ID %d from wpa_psk_file to "
+-				   MACSTR, vlan_id, MAC2STR(sta->addr));
+-			return -1;
+-		}
+-	} else {
+-		sta->vlan_id = vlan_id;
++	if (ap_sta_set_vlan(hapd, sta, &vlan_desc) < 0) {
++		wpa_printf(MSG_INFO,
++			   "Failed to assign VLAN ID %d from wpa_psk_file to "
++			   MACSTR, vlan_id, MAC2STR(sta->addr));
++		return -1;
+ 	}
+ 
+ 	wpa_printf(MSG_INFO,

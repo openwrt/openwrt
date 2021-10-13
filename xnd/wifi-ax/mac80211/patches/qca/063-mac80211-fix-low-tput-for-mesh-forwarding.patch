@@ -1,0 +1,124 @@
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -350,16 +350,16 @@ out:
+ 	local_bh_enable();
+ }
+ 
+-static void
+-__releases(&local->queue_stop_reason_lock)
+-__acquires(&local->queue_stop_reason_lock)
+-_ieee80211_wake_txqs(struct ieee80211_local *local, unsigned long *flags)
++void ieee80211_wake_txqs(unsigned long data)
+ {
++	struct ieee80211_local *local = (struct ieee80211_local *)data;
+ 	struct ieee80211_sub_if_data *sdata;
+ 	int n_acs = IEEE80211_NUM_ACS;
++	unsigned long flags;
+ 	int i;
+ 
+ 	rcu_read_lock();
++	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+ 
+ 	if (local->hw.queues < IEEE80211_NUM_ACS)
+ 		n_acs = 1;
+@@ -368,7 +368,7 @@ _ieee80211_wake_txqs(struct ieee80211_lo
+ 		if (local->queue_stop_reasons[i])
+ 			continue;
+ 
+-		spin_unlock_irqrestore(&local->queue_stop_reason_lock, *flags);
++		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+ 		list_for_each_entry_rcu(sdata, &local->interfaces, list) {
+ 			int ac;
+ 
+@@ -380,21 +380,11 @@ _ieee80211_wake_txqs(struct ieee80211_lo
+ 					__ieee80211_wake_txqs(sdata, ac);
+ 			}
+ 		}
+-		spin_lock_irqsave(&local->queue_stop_reason_lock, *flags);
++		spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+ 	}
+ 
+-	rcu_read_unlock();
+-}
+-
+-void ieee80211_wake_txqs(struct tasklet_struct *t)
+-{
+-	struct ieee80211_local *local = from_tasklet(local, t,
+-						     wake_txqs_tasklet);
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+-	_ieee80211_wake_txqs(local, &flags);
+ 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
++	rcu_read_unlock();
+ }
+ 
+ void ieee80211_propagate_queue_wake(struct ieee80211_local *local, int queue)
+@@ -432,8 +422,7 @@ void ieee80211_propagate_queue_wake(stru
+ 
+ static void __ieee80211_wake_queue(struct ieee80211_hw *hw, int queue,
+ 				   enum queue_stop_reason reason,
+-				   bool refcounted,
+-				   unsigned long *flags)
++				   bool refcounted)
+ {
+ 	struct ieee80211_local *local = hw_to_local(hw);
+ 
+@@ -467,19 +456,8 @@ static void __ieee80211_wake_queue(struc
+ 	} else
+ 		tasklet_schedule(&local->tx_pending_tasklet);
+ 
+-	/*
+-	 * Calling _ieee80211_wake_txqs here can be a problem because it may
+-	 * release queue_stop_reason_lock which has been taken by
+-	 * __ieee80211_wake_queue's caller. It is certainly not very nice to
+-	 * release someone's lock, but it is fine because all the callers of
+-	 * __ieee80211_wake_queue call it right before releasing the lock.
+-	 */
+-	if (local->ops->wake_tx_queue) {
+-		if (reason == IEEE80211_QUEUE_STOP_REASON_DRIVER)
+-			tasklet_schedule(&local->wake_txqs_tasklet);
+-		else
+-			_ieee80211_wake_txqs(local, flags);
+-	}
++	if (local->ops->wake_tx_queue)
++		tasklet_schedule(&local->wake_txqs_tasklet);
+ }
+ 
+ void ieee80211_wake_queue_by_reason(struct ieee80211_hw *hw, int queue,
+@@ -490,7 +468,7 @@ void ieee80211_wake_queue_by_reason(stru
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+-	__ieee80211_wake_queue(hw, queue, reason, refcounted, &flags);
++	__ieee80211_wake_queue(hw, queue, reason, refcounted);
+ 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+ }
+ 
+@@ -587,7 +565,7 @@ void ieee80211_add_pending_skb(struct ie
+ 			       false);
+ 	__skb_queue_tail(&local->pending[queue], skb);
+ 	__ieee80211_wake_queue(hw, queue, IEEE80211_QUEUE_STOP_REASON_SKB_ADD,
+-			       false, &flags);
++			       false);
+ 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+ }
+ 
+@@ -620,7 +598,7 @@ void ieee80211_add_pending_skbs(struct i
+ 	for (i = 0; i < hw->queues; i++)
+ 		__ieee80211_wake_queue(hw, i,
+ 			IEEE80211_QUEUE_STOP_REASON_SKB_ADD,
+-			false, &flags);
++			false);
+ 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+ }
+ 
+@@ -678,7 +656,7 @@ void ieee80211_wake_queues_by_reason(str
+ 	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+ 
+ 	for_each_set_bit(i, &queues, hw->queues)
+-		__ieee80211_wake_queue(hw, i, reason, refcounted, &flags);
++		__ieee80211_wake_queue(hw, i, reason, refcounted);
+ 
+ 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+ }

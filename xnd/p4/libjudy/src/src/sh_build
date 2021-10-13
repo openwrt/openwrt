@@ -1,0 +1,206 @@
+echo  "--- This is a compile kit to suggest how to port to your machine"
+echo  "--- This script runs in 7 seconds on a 3.2Ghz Pentium P4C"
+echo  "--- Must be in the 'src' directory to execute this script"
+echo  "--- I normally run it like: COPT='-O3 -march=i686' sh_build"
+
+echo  "--- Set Compiler"
+CC='cc'
+
+echo  "--- Set Optimization"
+# COPT='-O'
+
+echo  "--- Set Shared library option"
+#  CPIC='-fPIC
+CPIC=''
+
+echo "--- Compile JudyMalloc - common to Judy1 and JudyL"
+echo "--- cd JudyCommon"
+cd JudyCommon
+rm -f *.o
+$CC  $COPT $CPIC -I. -I.. -c JudyMalloc.c 
+echo "--- cd .."
+cd ..
+
+echo "--- Give Judy1 the proper names"
+echo "--- cd Judy1"
+cd Judy1
+rm -f *.o
+ln -sf ../JudyCommon/JudyByCount.c      	Judy1ByCount.c   
+ln -sf ../JudyCommon/JudyCascade.c      	Judy1Cascade.c
+ln -sf ../JudyCommon/JudyCount.c        	Judy1Count.c
+ln -sf ../JudyCommon/JudyCreateBranch.c 	Judy1CreateBranch.c
+ln -sf ../JudyCommon/JudyDecascade.c    	Judy1Decascade.c
+ln -sf ../JudyCommon/JudyDel.c          	Judy1Unset.c
+ln -sf ../JudyCommon/JudyFirst.c        	Judy1First.c
+ln -sf ../JudyCommon/JudyFreeArray.c    	Judy1FreeArray.c
+ln -sf ../JudyCommon/JudyGet.c          	Judy1Test.c
+ln -sf ../JudyCommon/JudyGet.c          	j__udy1Test.c
+ln -sf ../JudyCommon/JudyInsArray.c     	Judy1SetArray.c
+ln -sf ../JudyCommon/JudyIns.c          	Judy1Set.c
+ln -sf ../JudyCommon/JudyInsertBranch.c 	Judy1InsertBranch.c
+ln -sf ../JudyCommon/JudyMallocIF.c     	Judy1MallocIF.c
+ln -sf ../JudyCommon/JudyMemActive.c    	Judy1MemActive.c
+ln -sf ../JudyCommon/JudyMemUsed.c      	Judy1MemUsed.c
+ln -sf ../JudyCommon/JudyPrevNext.c     	Judy1Next.c
+ln -sf ../JudyCommon/JudyPrevNext.c     	Judy1Prev.c
+ln -sf ../JudyCommon/JudyPrevNextEmpty.c	Judy1NextEmpty.c
+ln -sf ../JudyCommon/JudyPrevNextEmpty.c	Judy1PrevEmpty.c
+ln -sf ../JudyCommon/JudyTables.c	        Judy1TablesGen.c
+
+
+echo "--- This table is constructed from Judy1.h data to match malloc(3) needs"
+echo "--- $CC $COPT  -I. -I.. -I../JudyCommon -DJUDY1 Judy1TablesGen.c -o Judy1TablesGen"
+$CC $COPT  -I. -I.. -I../JudyCommon -DJUDY1 Judy1TablesGen.c -o Judy1TablesGen
+rm -f *.o
+./Judy1TablesGen
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Tables.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Tables.c 
+
+echo "--- Compile the main line Judy1 modules"
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Test.c" 
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Test.c 
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYGETINLINE j__udy1Test.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYGETINLINE j__udy1Test.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Set.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Set.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1SetArray.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1SetArray.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Unset.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Unset.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1First.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1First.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYNEXT Judy1Next.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYNEXT Judy1Next.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYPREV Judy1Prev.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYPREV Judy1Prev.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYNEXT Judy1NextEmpty.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYNEXT Judy1NextEmpty.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYPREV Judy1PrevEmpty.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DJUDYPREV Judy1PrevEmpty.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Count.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Count.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DNOSMARTJBB -DNOSMARTJBU -DNOSMARTJLB Judy1ByCount.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 -DNOSMARTJBB -DNOSMARTJBU -DNOSMARTJLB Judy1ByCount.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1FreeArray.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1FreeArray.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1MemUsed.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1MemUsed.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1MemActive.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1MemActive.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Cascade.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Cascade.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Decascade.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1Decascade.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1CreateBranch.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1CreateBranch.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1InsertBranch.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1InsertBranch.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1MallocIF.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDY1 Judy1MallocIF.c
+echo "--- cd .."
+cd ..
+
+echo "--- Give JudyL the proper names"
+echo "--- cd JudyL"
+cd JudyL
+rm -f *.o
+ln -sf ../JudyCommon/JudyByCount.c      	JudyLByCount.c   
+ln -sf ../JudyCommon/JudyCascade.c              JudyLCascade.c
+ln -sf ../JudyCommon/JudyCount.c        	JudyLCount.c
+ln -sf ../JudyCommon/JudyCreateBranch.c 	JudyLCreateBranch.c
+ln -sf ../JudyCommon/JudyDecascade.c    	JudyLDecascade.c
+ln -sf ../JudyCommon/JudyDel.c          	JudyLDel.c
+ln -sf ../JudyCommon/JudyFirst.c        	JudyLFirst.c
+ln -sf ../JudyCommon/JudyFreeArray.c    	JudyLFreeArray.c
+ln -sf ../JudyCommon/JudyGet.c          	JudyLGet.c
+ln -sf ../JudyCommon/JudyGet.c          	j__udyLGet.c
+ln -sf ../JudyCommon/JudyInsArray.c     	JudyLInsArray.c
+ln -sf ../JudyCommon/JudyIns.c          	JudyLIns.c
+ln -sf ../JudyCommon/JudyInsertBranch.c 	JudyLInsertBranch.c
+ln -sf ../JudyCommon/JudyMallocIF.c     	JudyLMallocIF.c
+ln -sf ../JudyCommon/JudyMemActive.c    	JudyLMemActive.c
+ln -sf ../JudyCommon/JudyMemUsed.c      	JudyLMemUsed.c
+ln -sf ../JudyCommon/JudyPrevNext.c     	JudyLNext.c
+ln -sf ../JudyCommon/JudyPrevNext.c     	JudyLPrev.c
+ln -sf ../JudyCommon/JudyPrevNextEmpty.c	JudyLNextEmpty.c
+ln -sf ../JudyCommon/JudyPrevNextEmpty.c	JudyLPrevEmpty.c
+ln -sf ../JudyCommon/JudyTables.c	        JudyLTablesGen.c
+
+echo "--- This table is constructed from JudyL.h data to match malloc(3) needs"
+echo "--- $CC $COPT  -I. -I.. -I../JudyCommon -DJUDYL JudyLTablesGen.c -o JudyLTablesGen"
+$CC $COPT  -I. -I.. -I../JudyCommon -DJUDYL JudyLTablesGen.c -o JudyLTablesGen
+rm -f *.o
+./JudyLTablesGen 
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLTables.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLTables.c 
+
+echo "--- Compile the main line JudyL modules"
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLGet.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLGet.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYGETINLINE j__udyLGet.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYGETINLINE j__udyLGet.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLIns.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLIns.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLIns.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLInsArray.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLDel.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLDel.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLFirst.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLFirst.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYNEXT JudyLNext.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYNEXT JudyLNext.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYPREV JudyLPrev.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYPREV JudyLPrev.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYNEXT JudyLNextEmpty.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYNEXT JudyLNextEmpty.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYPREV JudyLPrevEmpty.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DJUDYPREV JudyLPrevEmpty.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLCount.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLCount.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DNOSMARTJBB -DNOSMARTJBU -DNOSMARTJLB JudyLByCount.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL -DNOSMARTJBB -DNOSMARTJBU -DNOSMARTJLB JudyLByCount.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLFreeArray.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLFreeArray.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLMemUsed.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLMemUsed.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLMemActive.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLMemActive.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLCascade.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLCascade.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLDecascade.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLDecascade.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLCreateBranch.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLCreateBranch.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLInsertBranch.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLInsertBranch.c
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLMallocIF.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c -DJUDYL JudyLMallocIF.c
+echo "--- cd .."
+cd ..
+
+echo "--- Compile the JudySL routine"
+echo "--- cd JudySL"
+cd JudySL
+rm -f *.o
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c JudySL.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c JudySL.c
+echo "--- cd .."
+cd ..
+echo "--- Compile the JudyHS routine"
+echo "--- cd JudyHS"
+cd JudyHS
+rm -f *.o
+echo "--- $CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c JudyHS.c"
+$CC  $COPT $CPIC -I. -I.. -I../JudyCommon -c JudyHS.c
+echo "--- cd .."
+cd ..
+
+# Make a Judy shared library with CPIC='-fPIC' above
+#ld -shared -o libJudy.so Judy*/*.o
+#
+#  -OR-
+#
+echo "--- Make a Judy static library"
+ar -r libJudy.a Judy*/*.o
+
+echo "--- Done"

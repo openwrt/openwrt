@@ -1,0 +1,22 @@
+sampling         1000
+
+[PMIC_THERM]
+sampling         5000
+thresholds       40.2    45      50
+thresholds_clr   38      43      48
+actions          report  cpu     cpu
+action_info      768000  368640  245760
+
+[XO_THERM]
+sampling         5000
+thresholds       40.1    45      90
+thresholds_clr   38      43      88
+actions          cpu     cpu     shutdown
+action_info      768000  368640  245760
+
+[XO_THERM_GPS]
+sampling         5000
+thresholds       27.0    45      50
+thresholds_clr   26.5    43      48
+actions          report  cpu     cpu
+action_info      768000  368640  245760

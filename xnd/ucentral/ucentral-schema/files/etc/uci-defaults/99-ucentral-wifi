@@ -1,0 +1,10 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+iface_del() {
+        uci delete wireless.$1
+}
+
+config_load wireless
+config_foreach iface_del wifi-iface

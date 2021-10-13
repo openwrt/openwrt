@@ -1,0 +1,47 @@
+From dadbaf6d113470f6b013dd5cbd0d734634f3d5f9 Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Tue, 5 Jan 2021 01:32:39 +0530
+Subject: [PATCH] hostapd: update 160MHz center freq calculation in 6GHz
+
+In 6G Operation channel information, The Channel Center Frequency
+Segment 0 field indicates the channel center frequency index for
+the 20 MHz, 40 MHz or 80 MHz, or 80+80 MHz channel on which the
+BSS operates in the 6 GHz band. If the BSS channel width is 160 MHz
+then the Channel Center Frequency Segment 0 field indicates the
+channel center frequency index of the primary 80 MHz.
+
+The Channel Center Frequency Segment 1 field indicates the channel
+center frequency index of the 160 MHz channel on which the BSS operates
+in the 6 GHz band.
+
+Since Channel Center Frequency Segment 1 is 0 for 160MHz, some of the
+6G third party clients associated in 80MHz. Hence updated seg0 and
+seg1 field as per standard (Draft P802.11_ax_D7.0).
+
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+---
+ src/ap/ieee802_11_he.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/src/ap/ieee802_11_he.c b/src/ap/ieee802_11_he.c
+index 8391f94..18436a6 100644
+--- a/src/ap/ieee802_11_he.c
++++ b/src/ap/ieee802_11_he.c
+@@ -233,6 +233,14 @@ u8 * hostapd_eid_he_operation(struct hostapd_data *hapd, u8 *eid)
+ 			*pos++ = center_idx_to_bw_6ghz(seg0);
+ 
+ 		/* Channel Center Freq Seg0/Seg1 */
++		if (hapd->iconf->he_oper_chwidth == 2) {
++			seg1 = seg0;
++			if (hapd->iconf->channel < seg0)
++				seg0 -= 8;
++			else
++				seg0 += 8;
++		}
++
+ 		*pos++ = seg0;
+ 		*pos++ = seg1;
+ 		/* Minimum Rate */
+-- 
+2.7.4
+

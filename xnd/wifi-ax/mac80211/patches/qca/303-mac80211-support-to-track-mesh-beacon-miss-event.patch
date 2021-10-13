@@ -1,0 +1,297 @@
+From 71b5c29dc6fe94e6bd070bcd2d6ad7ee9595db91 Mon Sep 17 00:00:00 2001
+From: Hari Chandrakanthan <haric@codeaurora.org>
+Date: Wed, 19 May 2021 10:22:26 +0530
+Subject: [PATCH] mac80211 : support to track mesh beacon miss event
+
+Signed-off-by: Hari Chandrakanthan <haric@codeaurora.org>
+---
+ include/net/mac80211.h        |  8 +++++++
+ net/mac80211/debugfs.c        | 36 ++++++++++++++++++++++++++++++
+ net/mac80211/debugfs_netdev.c | 28 +++++++++++++++++++++++
+ net/mac80211/mesh.c           |  6 +++++
+ net/mac80211/mesh.h           |  5 ++++-
+ net/mac80211/mesh_plink.c     | 52 +++++++++++++++++++++++++++++++++++++++++++
+ net/mac80211/sta_info.c       |  1 +
+ net/mac80211/sta_info.h       |  4 ++++
+ 8 files changed, 139 insertions(+), 1 deletion(-)
+
+diff --git a/include/net/mac80211.h b/include/net/mac80211.h
+index 002cd40..9709d80 100644
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1809,6 +1809,7 @@ struct ieee80211_vif {
+ 
+ 	bool color_change_active;
+ 	u8 color_change_color;
++	u8 bmiss_threshold;
+ 
+ 	/* must be last */
+ 	u8 drv_priv[] __aligned(sizeof(void *));
+@@ -2555,6 +2556,12 @@ enum ieee80211_hw_flags {
+ 	NUM_IEEE80211_HW_FLAGS
+ };
+ 
++enum ieee80211_dbg_mask {
++	IEEE80211_HW_DBG_BMISS_LOG = 0x00000001,
++	IEEE80211_HW_DBG_DRIVER_LOG = 0x00000002,
++	IEEE80211_HW_MAX_DBG_MASK = 0x00000004
++};
++
+ /**
+  * struct ieee80211_hw - hardware information and state
+  *
+@@ -2717,6 +2724,7 @@ struct ieee80211_hw {
+ 	u8 tx_sk_pacing_shift;
+ 	u8 weight_multiplier;
+ 	u32 max_mtu;
++	u32 dbg_mask;
+ };
+ 
+ static inline bool _ieee80211_hw_check(struct ieee80211_hw *hw,
+diff --git a/net/mac80211/debugfs.c b/net/mac80211/debugfs.c
+index c3fc9fa..87dd864 100644
+--- a/net/mac80211/debugfs.c
++++ b/net/mac80211/debugfs.c
+@@ -334,6 +334,41 @@ static const struct file_operations force_tx_status_ops = {
+ 	.llseek = default_llseek,
+ };
+ 
++static ssize_t dbg_mask_read(struct file *file, char __user *user_buf,
++			     size_t count, loff_t *ppos)
++{
++	struct ieee80211_local *local = file->private_data;
++	char buf[10];
++	int len = 0;
++
++	len = scnprintf(buf, sizeof(buf), "0x%x\n", local->hw.dbg_mask);
++
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t dbg_mask_write(struct file *file, const char __user *user_buf,
++			      size_t count, loff_t *ppos)
++{
++	struct ieee80211_local *local = file->private_data;
++	int ret;
++	u32 mask;
++
++	ret = kstrtou32_from_user(user_buf, count, 0, &mask);
++	if (ret || mask >= IEEE80211_HW_MAX_DBG_MASK)
++		return -EINVAL;
++
++	local->hw.dbg_mask = mask;
++
++	return count;
++}
++
++static const struct file_operations dbg_mask_ops = {
++	.write = dbg_mask_write,
++	.read = dbg_mask_read,
++	.open = simple_open,
++	.llseek = default_llseek,
++};
++
+ #ifdef CONFIG_PM
+ static ssize_t reset_write(struct file *file, const char __user *user_buf,
+ 			   size_t count, loff_t *ppos)
+@@ -575,6 +610,7 @@ void debugfs_hw_add(struct ieee80211_local *local)
+ 	DEBUGFS_ADD(power);
+ 	DEBUGFS_ADD(hw_conf);
+ 	DEBUGFS_ADD_MODE(force_tx_status, 0600);
++	DEBUGFS_ADD(dbg_mask);
+ 
+ 	if (local->ops->wake_tx_queue)
+ 		DEBUGFS_ADD_MODE(aqm, 0600);
+diff --git a/net/mac80211/debugfs_netdev.c b/net/mac80211/debugfs_netdev.c
+index 7d4ad09..f9b2529 100644
+--- a/net/mac80211/debugfs_netdev.c
++++ b/net/mac80211/debugfs_netdev.c
+@@ -300,6 +300,32 @@ static ssize_t ieee80211_if_parse_smps(struct ieee80211_sub_if_data *sdata,
+ }
+ IEEE80211_IF_FILE_RW(smps);
+ 
++int ieee80211_if_fmt_bmiss_threshold(const struct ieee80211_sub_if_data *sdata,
++				     char *buf, int buflen)
++{
++	return snprintf(buf, buflen, "%u\n", sdata->vif.bmiss_threshold);
++}
++
++static ssize_t ieee80211_if_parse_bmiss_threshold(struct ieee80211_sub_if_data *sdata,
++						  const char *buf, int buflen)
++{
++	int ret;
++	u8 val;
++
++	ret = kstrtou8(buf, 0, &val);
++	if (ret)
++		return ret;
++
++	if (!val)
++		return -EINVAL;
++
++	sdata->vif.bmiss_threshold = val;
++
++	return buflen;
++}
++
++IEEE80211_IF_FILE_RW(bmiss_threshold);
++
+ static ssize_t ieee80211_if_parse_tkip_mic_test(
+ 	struct ieee80211_sub_if_data *sdata, const char *buf, int buflen)
+ {
+@@ -684,6 +710,7 @@ static void add_ap_files(struct ieee80211_sub_if_data *sdata)
+ 	DEBUGFS_ADD(num_buffered_multicast);
+ 	DEBUGFS_ADD_MODE(tkip_mic_test, 0200);
+ 	DEBUGFS_ADD_MODE(multicast_to_unicast, 0600);
++	DEBUGFS_ADD_MODE(bmiss_threshold, 0600);
+ }
+ 
+ static void add_vlan_files(struct ieee80211_sub_if_data *sdata)
+@@ -704,6 +731,7 @@ static void add_mesh_files(struct ieee80211_sub_if_data *sdata)
+ {
+ 	DEBUGFS_ADD_MODE(tsf, 0600);
+ 	DEBUGFS_ADD_MODE(estab_plinks, 0400);
++	DEBUGFS_ADD_MODE(bmiss_threshold, 0600);
+ }
+ 
+ static void add_mesh_stats(struct ieee80211_sub_if_data *sdata)
+diff --git a/net/mac80211/mesh.c b/net/mac80211/mesh.c
+index 9c064bb..18089c8 100644
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -162,6 +162,8 @@ void mesh_sta_cleanup(struct sta_info *sta)
+ 	struct ieee80211_sub_if_data *sdata = sta->sdata;
+ 	u32 changed = mesh_plink_deactivate(sta);
+ 
++	del_timer_sync(&sta->mesh->bmiss_timer);
++
+ 	if (changed)
+ 		ieee80211_mbss_info_change_notify(sdata, changed);
+ }
+@@ -1357,6 +1359,10 @@ static void ieee80211_mesh_rx_bcn_presp(struct ieee80211_sub_if_data *sdata,
+ 		if (ifmsh->csa_role != IEEE80211_MESH_CSA_ROLE_INIT &&
+ 		    !sdata->vif.csa_active)
+ 			ieee80211_mesh_process_chnswitch(sdata, &elems, true);
++
++		if (stype != IEEE80211_STYPE_PROBE_RESP) {
++			mesh_bmiss_update(sdata, mgmt, &elems, rx_status);
++                }
+ 	}
+ 
+ 	if (ifmsh->sync_ops)
+diff --git a/net/mac80211/mesh.h b/net/mac80211/mesh.h
+index 9f1f024..0c6eea6 100644
+--- a/net/mac80211/mesh.h
++++ b/net/mac80211/mesh.h
+@@ -287,7 +287,9 @@ int mesh_path_send_to_gates(struct mesh_path *mpath);
+ int mesh_gate_num(struct ieee80211_sub_if_data *sdata);
+ u32 airtime_link_metric_get(struct ieee80211_local *local,
+ 			    struct sta_info *sta);
+-
++void mesh_bmiss_update(struct ieee80211_sub_if_data *sdata,
++		       struct ieee80211_mgmt *mgmt, struct ieee802_11_elems *ie,
++		       struct ieee80211_rx_status *rx_status);
+ /* Mesh plinks */
+ void mesh_neighbour_update(struct ieee80211_sub_if_data *sdata,
+ 			   u8 *hw_addr, struct ieee802_11_elems *ie,
+@@ -322,6 +324,7 @@ void mesh_path_discard_frame(struct ieee80211_sub_if_data *sdata,
+ void mesh_path_tx_root_frame(struct ieee80211_sub_if_data *sdata);
+ 
+ bool mesh_action_is_path_sel(struct ieee80211_mgmt *mgmt);
++void mesh_bmiss_event(struct timer_list *t);
+ void mesh_nss_offld_path_update(struct mesh_path *mpath, bool is_mpath, u8 *old_next_hop_addr);
+ 
+ #ifdef CPTCFG_MAC80211_MESH
+diff --git a/net/mac80211/mesh_plink.c b/net/mac80211/mesh_plink.c
+index e840277..df54b8d 100644
+--- a/net/mac80211/mesh_plink.c
++++ b/net/mac80211/mesh_plink.c
+@@ -597,6 +597,58 @@ mesh_sta_info_get(struct ieee80211_sub_if_data *sdata,
+ 	return sta;
+ }
+ 
++void mesh_bmiss_update(struct ieee80211_sub_if_data *sdata,
++		       struct ieee80211_mgmt *mgmt,
++		       struct ieee802_11_elems *elems,
++		       struct ieee80211_rx_status *rx_status)
++{
++	struct sta_info *sta;
++	u32 timeout;
++
++	/* mesh_sta_info_get api returns with rcu_read_lock */
++	sta = mesh_sta_info_get(sdata, mgmt->sa, elems, rx_status);
++	if (!sta)
++		goto unlock_rcu;
++
++	if (!(sta->local->hw.dbg_mask & IEEE80211_HW_DBG_BMISS_LOG) ||
++	    !sta->sdata->vif.bmiss_threshold)
++		goto unlock_rcu;
++
++	sta->mesh->bmiss_count = 0;
++	sta->mesh->beacon_int = mgmt->u.beacon.beacon_int;
++	timeout = sta->mesh->beacon_int * sta->sdata->vif.bmiss_threshold;
++
++	mod_timer(&sta->mesh->bmiss_timer, (jiffies + msecs_to_jiffies(timeout)));
++
++unlock_rcu:
++	rcu_read_unlock();
++}
++
++void mesh_bmiss_event(struct timer_list *t)
++{
++	struct mesh_sta *mesh = from_timer(mesh, t, bmiss_timer);
++	struct sta_info *sta;
++	u32 timeout;
++
++	rcu_read_lock();
++	sta = mesh->plink_sta;
++
++	if (!(sta->local->hw.dbg_mask & IEEE80211_HW_DBG_BMISS_LOG) ||
++	    !sta->sdata->vif.bmiss_threshold)
++		goto unlock_rcu;
++
++	mesh->bmiss_count++;
++	sdata_info(sta->sdata, "Beacon miss count %u from %pM\n",
++		   mesh->bmiss_count, sta->sta.addr);
++
++	timeout = sta->mesh->beacon_int * sta->sdata->vif.bmiss_threshold;
++
++	mod_timer(&sta->mesh->bmiss_timer, (jiffies + msecs_to_jiffies(timeout)));
++
++unlock_rcu:
++	rcu_read_unlock();
++}
++
+ /*
+  * mesh_neighbour_update - update or initialize new mesh neighbor.
+  *
+diff --git a/net/mac80211/sta_info.c b/net/mac80211/sta_info.c
+index 43771f3..550a610 100644
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -379,6 +379,7 @@ struct sta_info *sta_info_alloc(struct ieee80211_sub_if_data *sdata,
+ 		    !sdata->u.mesh.user_mpm)
+ 			timer_setup(&sta->mesh->plink_timer, mesh_plink_timer,
+ 				    0);
++		timer_setup(&sta->mesh->bmiss_timer, mesh_bmiss_event, 0);
+ 		sta->mesh->nonpeer_pm = NL80211_MESH_POWER_ACTIVE;
+ 	}
+ #endif
+diff --git a/net/mac80211/sta_info.h b/net/mac80211/sta_info.h
+index 01deec7..2e2122e 100644
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -415,6 +415,10 @@ struct mesh_sta {
+ 	enum nl80211_mesh_power_mode peer_pm;
+ 	enum nl80211_mesh_power_mode nonpeer_pm;
+ 
++	struct timer_list bmiss_timer;
++	u32 bmiss_count;
++	u32 beacon_int;
++
+ 	/* moving percentage of failed MSDUs */
+ 	struct ewma_mesh_fail_avg fail_avg;
+ 	/* moving average of tx bitrate */
+-- 
+2.7.4
+

@@ -1,0 +1,49 @@
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Date: Thu, 23 Jun 2021 15:07:12 +0530
+Subject: [PATCH] ath11k: avoid false error code in add interface
+
+return error code is not properly return to mac80211. The return code
+is overwrite by the error handling return codes so mac80211 treats as
+success for the non created VAP. Then we are getting remove interface
+callback for non created VAP and proceeds to the self peer delete WMI
+request leads to FW assert since its already deleted on the cleanup
+of the add interface callback.
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6680,7 +6680,7 @@ static int ath11k_mac_op_add_interface(s
+ 	u32 param_id, param_value;
+ 	u16 nss;
+ 	int i;
+-	int ret;
++	int ret, err_ret;
+ 	int bit;
+ 
+ 	vif->driver_flags |= IEEE80211_VIF_SUPPORTS_UAPSD;
+@@ -6954,17 +6954,17 @@ err_peer_del:
+ 	if (arvif->vdev_type == WMI_VDEV_TYPE_AP) {
+ 		reinit_completion(&ar->peer_delete_done);
+ 
+-		ret = ath11k_wmi_send_peer_delete_cmd(ar, vif->addr,
+-						      arvif->vdev_id);
+-		if (ret) {
++		err_ret = ath11k_wmi_send_peer_delete_cmd(ar, vif->addr,
++							  arvif->vdev_id);
++		if (err_ret) {
+ 			ath11k_warn(ar->ab, "failed to delete peer vdev_id %d addr %pM\n",
+ 				    arvif->vdev_id, vif->addr);
+ 			goto err_keyid;
+ 		}
+ 
+-		ret = ath11k_wait_for_peer_delete_done(ar, arvif->vdev_id,
+-						       vif->addr);
+-		if (ret)
++		err_ret = ath11k_wait_for_peer_delete_done(ar, arvif->vdev_id,
++							   vif->addr);
++		if (err_ret)
+ 			goto err_keyid;
+ 
+ 		ar->num_peers--;

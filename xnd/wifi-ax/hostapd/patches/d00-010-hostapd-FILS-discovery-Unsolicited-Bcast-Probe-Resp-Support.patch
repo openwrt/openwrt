@@ -1,0 +1,315 @@
+From b8811424b33126941645ef541a223ea7efc31cf1 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Mon, 16 Nov 2020 19:16:22 -0800
+Subject: [PATCH] hostapd: FILS discovery and unsolicited bcast probe response
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Both features are used in 6GHz for in-band discovery.
+
+Additions for FILS Discovery support:
+(1) IEEE Std 802.11ai-2016 9.6.8.36 FILS discovery frame elements
+	(Figures 9-687b, 9-687c) and 6GHz specific definitions
+	from IEEE P802.11ax/D6.0, Table 9-386—PHY Index subfield
+	and 26.17.2.3.2, AP behavior for fast passive scanning.
+(2) Configuration options for FILS discovery transmission,
+	fils_discovery_min_interval - Default 20 TUs
+	fils_discovery_max_interval - Default 0 (disabled)
+(3) Nested attribute, NL80211_ATTR_FILS_DISCOVERY which uses
+	struct nl80211_fils_discovery_attributes.
+(4) Netlink command NL80211_CMD_SET_FILS_DISCOVERY to configure
+	the transmission.
+
+Additions for unsolicited broadcast probe response support:
+(1) Configuration option to set packet interval,
+	unsol_bcast_probe_resp_interval - Default 0 (disabled).
+(2) Nested attribute, NL80211_ATTR_UNSOL_BCAST_PROBE_RESP which uses
+	struct nl80211_unsol_bcast_probe_resp_attributes
+(3) Netlink command NL80211_CMD_SET_UNSOL_BCAST_PROBE_RESP to
+	configure the transmission.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/beacon.c              |   2 +-
+ src/drivers/driver_nl80211.c | 170 +++++++++++++++++++++--------------
+ src/drivers/nl80211_copy.h   |  10 +++
+ 3 files changed, 116 insertions(+), 66 deletions(-)
+
+diff --git a/src/ap/beacon.c b/src/ap/beacon.c
+index 510670da64a8..c873f5b744d0 100644
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -1374,7 +1374,7 @@ static u8 * hostapd_gen_fils_discovery(struct hostapd_data *hapd, size_t *len)
+ 
+ 	*len = pos - (u8 *) head;
+ 	wpa_hexdump(MSG_DEBUG, "FILS Discovery frame template",
+-		    head, pos - (u8 *) head);
++		    (u8 *) head, pos - (u8 *) head);
+ 	return (u8 *) head;
+ }
+ 
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index f4c646180b36..84ba66be3e4f 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4381,94 +4381,135 @@ static int nl80211_set_multicast_to_unicast(struct i802_bss *bss,
+ 	return ret;
+ }
+ 
+-
+-#ifdef CONFIG_SAE
+-static int nl80211_put_sae_pwe(struct nl_msg *msg, int pwe)
++#ifdef CONFIG_FILS
++static int nl80211_fils_discovery(struct i802_bss *bss,
++				  struct wpa_driver_ap_params *params)
+ {
+-	u8 sae_pwe;
++	struct nlattr *attr;
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++	struct nl_msg *msg;
+ 
+-	wpa_printf(MSG_DEBUG, "nl802111: sae_pwe=%d", pwe);
+-	if (pwe == 0)
+-		sae_pwe = NL80211_SAE_PWE_HUNT_AND_PECK;
+-	else if (pwe == 1)
+-		sae_pwe = NL80211_SAE_PWE_HASH_TO_ELEMENT;
+-	else if (pwe == 2)
+-		sae_pwe = NL80211_SAE_PWE_BOTH;
+-	else if (pwe == 3)
+-		return 0; /* special test mode */
+-	else
+-		return -1;
+-	if (nla_put_u8(msg, NL80211_ATTR_SAE_PWE, sae_pwe))
+-		return -1;
++	if (!params->fd_max_int)
++		return 0;
+ 
+-	return 0;
+-}
+-#endif /* CONFIG_SAE */
++	wpa_printf(MSG_DEBUG,
++		   "nl80211: FILS discovery maximum interval=%u, minimum interval=%u",
++		   params->fd_max_int,
++		   params->fd_min_int);
+ 
++	msg = nl80211_bss_msg(bss, 0, NL80211_CMD_SET_FILS_DISCOVERY);
++	if (!msg)
++		return -ENOBUFS;
+ 
+-#ifdef CONFIG_FILS
+-static int nl80211_fils_discovery(struct i802_bss *bss, struct nl_msg *msg,
+-				  struct wpa_driver_ap_params *params)
+-{
+-	struct nlattr *attr;
++	attr = nla_nest_start(msg, NL80211_ATTR_FILS_DISCOVERY);
++	if (!attr)
++		goto error;
+ 
+-	if (!bss->drv->fils_discovery) {
++	if (nla_put_u32(msg, NL80211_FILS_DISCOVERY_ATTR_INT_MIN,
++			params->fd_min_int) ||
++	    nla_put_u32(msg, NL80211_FILS_DISCOVERY_ATTR_INT_MAX,
++			params->fd_max_int)) {
+ 		wpa_printf(MSG_ERROR,
+-			   "nl80211: Driver does not support FILS Discovery frame transmission for %s",
++			   "nl80211: Failed to build FILS discovery msg for %s\n",
+ 			   bss->ifname);
+-		return -1;
++		goto error;
+ 	}
+ 
+-	attr = nla_nest_start(msg, NL80211_ATTR_FILS_DISCOVERY);
+-	if (!attr ||
+-	    nla_put_u32(msg, NL80211_FILS_DISCOVERY_ATTR_INT_MIN,
+-			params->fd_min_int) ||
+-	    nla_put_u32(msg, NL80211_FILS_DISCOVERY_ATTR_INT_MAX,
+-			params->fd_max_int) ||
+-	    (params->fd_frame_tmpl &&
+-	     nla_put(msg, NL80211_FILS_DISCOVERY_ATTR_TMPL,
+-		     params->fd_frame_tmpl_len, params->fd_frame_tmpl)))
+-		return -1;
++	if (params->fd_frame_tmpl &&
++	    nla_put(msg, NL80211_FILS_DISCOVERY_ATTR_TMPL,
++		    params->fd_frame_tmpl_len,
++		    params->fd_frame_tmpl)) {
++		wpa_printf(MSG_ERROR,
++			   "nl80211: Failed to build FILS discovery msg for %s\n",
++			   bss->ifname);
++		goto error;
++	}
+ 
+ 	nla_nest_end(msg, attr);
+-	return 0;
++
++	return send_and_recv_msgs(drv, msg, NULL, NULL, NULL, NULL);
++
++error:
++	nlmsg_free(msg);
++	return -1;
+ }
+ #endif /* CONFIG_FILS */
+ 
+-
+ #ifdef CONFIG_IEEE80211AX
+ static int nl80211_unsol_bcast_probe_resp(struct i802_bss *bss,
+-					  struct nl_msg *msg,
+ 					  struct wpa_driver_ap_params *params)
+ {
+ 	struct nlattr *attr;
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++	struct nl_msg *msg;
+ 
+-	if (!bss->drv->unsol_bcast_probe_resp) {
+-		wpa_printf(MSG_ERROR,
+-			   "nl80211: Driver does not support unsolicited broadcast Probe Response frame transmission for %s",
+-			   bss->ifname);
+-		return -1;
+-	}
++	if (!params->unsol_bcast_probe_resp_interval)
++		return 0;
+ 
+ 	wpa_printf(MSG_DEBUG,
+-		   "nl80211: Unsolicited broadcast Probe Response frame interval: %u",
++		   "nl80211: Unsolicited broadcast probe response interval=%u",
+ 		   params->unsol_bcast_probe_resp_interval);
++
++	msg = nl80211_bss_msg(bss, 0, NL80211_CMD_SET_UNSOL_BCAST_PROBE_RESP);
++	if (!msg)
++		return -ENOBUFS;
++
+ 	attr = nla_nest_start(msg, NL80211_ATTR_UNSOL_BCAST_PROBE_RESP);
+-	if (!attr ||
+-	    nla_put_u32(msg, NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_INT,
+-			params->unsol_bcast_probe_resp_interval) ||
+-	    (params->unsol_bcast_probe_resp_tmpl &&
+-	     nla_put(msg, NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_TMPL,
+-		     params->unsol_bcast_probe_resp_tmpl_len,
+-		     params->unsol_bcast_probe_resp_tmpl)))
+-		return -1;
++	if (!attr)
++		goto error;
++
++	if (nla_put_u32(msg, NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_INT,
++			params->unsol_bcast_probe_resp_interval)) {
++		wpa_printf(MSG_ERROR,
++			   "nl80211: Failed to build unsolicited broadcast probe response msg for %s\n",
++			   bss->ifname);
++		goto error;
++	}
++
++	if (params->unsol_bcast_probe_resp_tmpl &&
++	    nla_put(msg, NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_TMPL,
++		    params->unsol_bcast_probe_resp_tmpl_len,
++		    params->unsol_bcast_probe_resp_tmpl)) {
++		wpa_printf(MSG_ERROR,
++			   "nl80211: Failed to build unsolicited broadcast probe response msg for %s\n",
++			   bss->ifname);
++		goto error;
++	}
+ 
+ 	nla_nest_end(msg, attr);
+-	return 0;
++	return send_and_recv_msgs(drv, msg, NULL, NULL, NULL, NULL);
++
++error:
++	nlmsg_free(msg);
++	return -1;
+ }
+ #endif /* CONFIG_IEEE80211AX */
+ 
+ 
++#ifdef CONFIG_SAE
++static int nl80211_put_sae_pwe(struct nl_msg *msg, int pwe)
++{
++	u8 sae_pwe;
++
++	wpa_printf(MSG_DEBUG, "nl802111: sae_pwe=%d", pwe);
++	if (pwe == 0)
++		sae_pwe = NL80211_SAE_PWE_HUNT_AND_PECK;
++	else if (pwe == 1)
++		sae_pwe = NL80211_SAE_PWE_HASH_TO_ELEMENT;
++	else if (pwe == 2)
++		sae_pwe = NL80211_SAE_PWE_BOTH;
++	else if (pwe == 3)
++		return 0; /* special test mode */
++	else
++		return -1;
++	if (nla_put_u8(msg, NL80211_ATTR_SAE_PWE, sae_pwe))
++		return -1;
++
++	return 0;
++}
++#endif /* CONFIG_SAE */
++
++
+ static int wpa_driver_nl80211_set_ap(void *priv,
+ 				     struct wpa_driver_ap_params *params)
+ {
+@@ -4746,9 +4787,6 @@ static int wpa_driver_nl80211_set_ap(void *priv,
+ 			goto fail;
+ 	}
+ 
+-	if (params->unsol_bcast_probe_resp_interval &&
+-	    nl80211_unsol_bcast_probe_resp(bss, msg, params) < 0)
+-		goto fail;
+ #endif /* CONFIG_IEEE80211AX */
+ 
+ #ifdef CONFIG_SAE
+@@ -4758,11 +4796,6 @@ static int wpa_driver_nl80211_set_ap(void *priv,
+ 		goto fail;
+ #endif /* CONFIG_SAE */
+ 
+-#ifdef CONFIG_FILS
+-	if (params->fd_max_int && nl80211_fils_discovery(bss, msg, params) < 0)
+-		goto fail;
+-#endif /* CONFIG_FILS */
+-
+ 	ret = send_and_recv_msgs_owner(drv, msg, get_connect_handle(bss), 1,
+ 				       NULL, NULL, NULL, NULL);
+ 	if (ret) {
+@@ -4775,6 +4808,13 @@ static int wpa_driver_nl80211_set_ap(void *priv,
+ 				params->isolate, params->basic_rates);
+ 		nl80211_set_multicast_to_unicast(bss,
+ 						 params->multicast_to_unicast);
++#ifdef CONFIG_FILS
++		nl80211_fils_discovery(bss, params);
++#endif /* CONFIG_FILS */
++#ifdef CONFIG_IEEE80211AX
++		nl80211_unsol_bcast_probe_resp(bss, params);
++#endif /* CONFIG_IEEE80211AX */
++
+ 		if (beacon_set && params->freq &&
+ 		    params->freq->bandwidth != bss->bandwidth) {
+ 			wpa_printf(MSG_DEBUG,
+diff --git a/src/drivers/nl80211_copy.h b/src/drivers/nl80211_copy.h
+index a4a611992ca0..1084c6d4c080 100644
+--- a/src/drivers/nl80211_copy.h
++++ b/src/drivers/nl80211_copy.h
+@@ -1187,6 +1187,12 @@
+  *	were indicated by driver and now need to be reflected in
+  *	Beacon frame.
+  *
++ * @NL80211_CMD_SET_FILS_DISCOVERY: Command to set FILS discovery transmission
++ *	parameters.
++ *
++ * @NL80211_CMD_SET_UNSOL_BCAST_PROBE_RESP: Command to set unsolicited
++ *	broadcast probe response transmission parameters.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1420,6 +1426,10 @@ enum nl80211_commands {
+ 	NL80211_CMD_SET_SAR_SPECS,
+ 
+ 	NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS,
++
++	NL80211_CMD_SET_FILS_DISCOVERY,
++	NL80211_CMD_SET_UNSOL_BCAST_PROBE_RESP,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+-- 
+2.25.0
+

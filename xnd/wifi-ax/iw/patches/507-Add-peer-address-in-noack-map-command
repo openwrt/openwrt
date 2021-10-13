@@ -1,0 +1,54 @@
+--- a/interface.c
++++ b/interface.c
+@@ -579,23 +579,43 @@ static int handle_interface_noack_map(st
+ 				      enum id_input id)
+ {
+ 	uint16_t noack_map;
++	unsigned char mac_addr[ETH_ALEN];
+ 	char *end;
+ 
+-	if (argc != 1)
++	if (argc < 1)
+ 		return 1;
+ 
+-	noack_map = strtoul(argv[0], &end, 16);
+-	if (*end)
+-		return 1;
+-
+-	NLA_PUT_U16(msg, NL80211_ATTR_NOACK_MAP, noack_map);
++	if (strcmp(argv[0], "peer") == 0) {
++		if (argc < 2)
++			return 1;
++
++		if (mac_addr_a2n(mac_addr, argv[1])) {
++			fprintf(stderr, "Invalid MAC address\n");
++			return 2;
++		}
++
++		NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, mac_addr);
++		argc -= 2;
++		argv += 2;
++	}
++
++	if (argc) {
++		if (argc > 1)
++			return 1;
++
++		noack_map = strtoul(argv[0], &end, 16);
++		if (*end)
++			return 1;
++		NLA_PUT_U16(msg, NL80211_ATTR_NOACK_MAP, noack_map);
++	}
+ 
+ 	return 0;
+- nla_put_failure:
++
++nla_put_failure:
+ 	return -ENOBUFS;
+ 
+ }
+-COMMAND(set, noack_map, "<map>",
++COMMAND(set, noack_map, "<[peer <addr>] [map]>",
+ 	NL80211_CMD_SET_NOACK_MAP, 0, CIB_NETDEV, handle_interface_noack_map,
+ 	"Set the NoAck map for the TIDs. (0x0009 = BE, 0x0006 = BK, 0x0030 = VI, 0x00C0 = VO)");
+ 

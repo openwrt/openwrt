@@ -1,0 +1,248 @@
+<HTML>
+<HEAD>
+<!-- @(#) $Revision: 4.5 $ $Source: /cvsroot/judy/doc/ext/JudyL_funcs_3.htm,v $ --->
+<TITLE>JudyL_funcs(3)</TITLE>
+</HEAD>
+<BODY>
+<TABLE border=0 width="100%"><TR>
+<TD width="40%" align="left">JudyL_funcs(3)</TD>
+<TD width="10%" align="center">     </TD>
+<TD width="40%" align="right">JudyL_funcs(3)</TD>
+</TR></TABLE>
+<P>
+<DL>
+<!----------------->
+<DT><B>NAME</B></DT>
+<DD>
+JudyL functions -
+C library for creating and accessing a dynamic array of words, using
+any value of a word as an index
+<!----------------->
+<P>
+<DT><B>SYNOPSIS</B></DT>
+<DD>
+<B><PRE>
+PPvoid_t <A href="#JudyLIns"       >JudyLIns</A>(       PPvoid_t PPJLArray, Word_t    Index, PJError_t PJError);
+int      <A href="#JudyLDel"       >JudyLDel</A>(       PPvoid_t PPJLArray, Word_t    Index, PJError_t PJError);
+PPvoid_t <A href="#JudyLGet"       >JudyLGet</A>(       Pcvoid_t  PJLArray, Word_t    Index, PJError_t PJError);
+Word_t   <A href="#JudyLCount"     >JudyLCount</A>(     Pcvoid_t  PJLArray, Word_t    Index1, Word_t    Index2, PJError_t PJError);
+PPvoid_t <A href="#JudyLByCount"   >JudyLByCount</A>(   Pcvoid_t  PJLArray, Word_t    Nth,  Word_t * PIndex,  PJError_t PJError);
+Word_t   <A href="#JudyLFreeArray ">JudyLFreeArray</A>( PPvoid_t PPJLArray, PJError_t PJError);
+Word_t   <A href="#JudyLMemUsed"   >JudyLMemUsed</A>(   Pcvoid_t  PJLArray);
+PPvoid_t <A href="#JudyLFirst"     >JudyLFirst</A>(     Pcvoid_t  PJLArray, Word_t * PIndex, PJError_t PJError);
+PPvoid_t <A href="#JudyLNext"      >JudyLNext</A>(      Pcvoid_t  PJLArray, Word_t * PIndex, PJError_t PJError);
+PPvoid_t <A href="#JudyLLast"      >JudyLLast</A>(      Pcvoid_t  PJLArray, Word_t * PIndex, PJError_t PJError);
+PPvoid_t <A href="#JudyLPrev"      >JudyLPrev</A>(      Pcvoid_t  PJLArray, Word_t * PIndex, PJError_t PJError);
+int      <A href="#JudyLFirstEmpty">JudyLFirstEmpty</A>(Pcvoid_t  PJLArray, Word_t * PIndex, PJError_t PJError);
+int      <A href="#JudyLNextEmpty" >JudyLNextEmpty</A>( Pcvoid_t  PJLArray, Word_t * PIndex, PJError_t PJError);
+int      <A href="#JudyLLastEmpty" >JudyLLastEmpty</A>( Pcvoid_t  PJLArray, Word_t * PIndex, PJError_t PJError);
+int      <A href="#JudyLPrevEmpty" >JudyLPrevEmpty</A>( Pcvoid_t  PJLArray, Word_t * PIndex, PJError_t PJError);
+</PRE></B>
+<!----------------->
+<P>
+<DT><B>DESCRIPTION</B></DT>
+<DD>
+A macro equivalent exists for each function call.
+Because the macro forms are sometimes faster and have a simpler error
+handling interface than the equivalent functions,
+they are the preferred way of calling the JudyL functions.
+See <A href="JudyL_3.htm">JudyL(3)</A>
+for more information.
+The function call definitions are included here for completeness.
+<P>
+One of the difficulties in using the JudyL function calls lies in
+determining whether to pass a pointer or the address of a pointer.
+Since the functions that modify the JudyL array must also modify the
+pointer to the JudyL array, you must pass the address of the pointer
+rather than the pointer itself.
+This often leads to hard-to-debug programmatic errors.
+In practice, the macros allow the compiler to catch programming
+errors when pointers instead of addresses of pointers are passed.
+<P>
+The JudyL function calls have an additional parameter beyond
+those specified in the macro calls.  This parameter is either a
+pointer to an error structure, or <B>NULL</B> (in which case the
+detailed error information is not returned).
+<P>
+In the following descriptions, the functions are described in
+terms of how the macros use them (only in the case of
+<B>#define JUDYERROR_NOTEST 1</B>).  This is the suggested use
+of the macros after your program has been fully debugged.
+When the <B>JUDYERROR_NOTEST</B> macro is not specified,
+an error structure is declared to store error information
+returned from the JudyL functions when an error occurs.
+<P>
+Notice the placement of the <B>&amp;</B> in the different functions.
+<P>
+<DL>
+<DT><A name="JudyLIns"><B>JudyLIns(&amp;PJLArray, Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLI(PValue, PJLArray, Index)  \
+   PValue = JudyLIns(&amp;PJLArray, Index, PJE0)
+
+</PRE>
+<P>
+<DT><A name="JudyLDel"><B>JudyLDel(&amp;PJLArray, Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLD(Rc_int, PJLArray, Index)  \
+   Rc_int = JudyLDel(&amp;PJLArray, Index, PJE0)
+
+</PRE>
+<P>
+<DT><A name="JudyLGet"><B>JudyLGet(PJLArray, Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLG(PValue, PJLArray, Index)  \
+   PValue = JudyLGet(PJLArray, Index, PJE0)
+
+</PRE>
+<P>
+<DT><A name="JudyLCount"><B>JudyLCount(PJLArray, Index1, Index2, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLC(Rc_word, PJLArray, Index1, Index2)  \
+   Rc_word = JudyLCount(PJLArray, Index1, Index2, PJE0)
+
+</PRE>
+<P>
+<DT><A name="JudyLByCount"><B>JudyLByCount(PJLArray, Nth, &amp;Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLBC(PValue, PJLArray, Nth, Index) \
+   PValue = JudyLByCount(PJLArray, Nth, &amp;Index, PJE0)
+
+</PRE>
+<P>
+<DT><A name="JudyLFreeArray"><B>JudyLFreeArray(&amp;PJLArray, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLFA(Rc_word, PJLArray) \
+   Rc_word = JudyLFreeArray(&amp;PJLArray, PJE0)
+
+</PRE>
+<P>
+<DT><A name="JudyLMemUsed"><B>JudyLMemUsed(PJLArray)</B></A></DT>
+<DD>
+<PRE>
+#define JLMU(Rc_word, PJLArray) \
+   Rc_word = JudyLMemUsed(PJLArray)
+
+</PRE>
+<P>
+<DT><A name="JudyLFirst"><B>JudyLFirst(PJLArray, &amp;Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLF(PValue, PJLArray, Index) \
+   PValue = JudyLFirst(PJLArray, &amp;Index, PJEO)
+
+</PRE>
+<P>
+<DT><A name="JudyLNext"><B>JudyLNext(PJLArray, &amp;Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLN(PValue, PJLArray, Index) \
+   PValue = JudyLNext(PJLArray, &amp;Index, PJEO)
+
+</PRE>
+<P>
+<DT><A name="JudyLLast"><B>JudyLLast(PJLArray, &amp;Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLL(PValue, PJLArray, Index) \
+   PValue = JudyLLast(PJLArray, &amp;Index, PJEO)
+
+</PRE>
+<P>
+<DT><A name="JudyLPrev"><B>JudyLPrev(PJLArray, &amp;Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLP(PValue, PJLArray, Index) \
+   PValue = JudyLPrev(PJLArray, &amp;Index, PJEO)
+
+</PRE>
+<P>
+<DT><A name="JudyLFirstEmpty"><B>JudyLFirstEmpty(PJLArray, &amp;Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLFE(Rc_int, PJLArray, Index) \
+   Rc_int = JudyLFirstEmpty(PJLArray, &amp;Index, PJEO)
+
+</PRE>
+<P>
+<DT><A name="JudyLNextEmpty"><B>JudyLNextEmpty(PJLArray, &amp;Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLNE(Rc_int, PJLArray, Index) \
+   Rc_int = JudyLNextEmpty(PJLArray, &amp;Index, PJEO)
+
+</PRE>
+<P>
+<DT><A name="JudyLLastEmpty"><B>JudyLLastEmpty(PJLArray, &amp;Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLLE(Rc_int, PJLArray, Index) \
+   Rc_int = JudyLLastEmpty(PJLArray, &amp;Index, PJEO)
+
+</PRE>
+<P>
+<DT><A name="JudyLPrevEmpty"><B>JudyLPrevEmpty(PJLArray, &amp;Index, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JLPE(Rc_int, PJLArray, Index) \
+   Rc_int = JudyLPrevEmpty(PJLArray, &amp;Index, PJEO)
+
+</PRE>
+</DL>
+<P>
+Definitions for all the Judy functions, the types
+<B>Pvoid_t</B>,
+<B>Pcvoid_t</B>,
+<B>PPvoid_t</B>,
+<B>Word_t</B>,
+<B>JError_t</B>,
+and
+<B>PJError_t</B>,
+the constants
+<B>NULL</B>,
+<B>JU_ERRNO_*</B>,
+<B>JERR</B>,
+<B>PPJERR</B>,
+and
+<B>PJE0</B>,
+are provided in the <B>Judy.h</B> header file
+(/usr/include/Judy.h).
+<B>Note</B>:  Callers should define JudyL arrays as type <B>Pvoid_t</B>,
+which can be passed by value to functions that take
+<B>Pcvoid_t</B> (constant <B>Pvoid_t</B>),
+and also by address to functions that take <B>PPvoid_t</B>.
+<P>
+The return type from most <B>JudyL</B> functions is <B>PPvoid_t</B> so
+that the values stored in the array can be pointers to other objects,
+which is a typical usage, or cast to a <B>Word_t *</B> when a pointer
+to a <B>Value</B> is required instead of a pointer to a pointer.
+<!----------------->
+<P>
+<DT><B>AUTHOR</B></DT>
+<DD>
+Judy was invented by Doug Baskins and implemented by Hewlett-Packard.
+<!----------------->
+<P>
+<DT><B>SEE ALSO</B></DT>
+<DD>
+<A href="Judy_3.htm">Judy(3)</A>,
+<A href="Judy1_3.htm">Judy1(3)</A>,
+<A href="JudyL_3.htm">JudyL(3)</A>,
+<A href="JudySL_3.htm">JudySL(3)</A>,
+<A href="JudyHS_3.htm">JudyHS(3)</A>,
+<BR>
+<I>malloc()</I>,
+<BR>
+the Judy website,
+<A href="http://judy.sourceforge.net">
+http://judy.sourceforge.net</A>,
+for more information and Application Notes.
+</DL>
+</BODY>
+</HTML>

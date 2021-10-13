@@ -1,0 +1,61 @@
+From dff7c06e3ffb82c5af9918b14c0fae32bbcafc0d Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Wed, 10 Feb 2021 15:26:54 +0530
+Subject: [PATCH] ath11k: Fix ce interrupt count
+
+CE11 config was removed and is causing below KASAN issue.
+
+ BUG: KASAN: global-out-of-bounds in 0xffffffbffdfb035c at addr
+ffffffbffde6eeac
+ Read of size 4 by task kworker/u8:2/132
+ Address belongs to variable ath11k_core_qmi_firmware_ready+0x1b0/0x5bc [ath11k] 
+
+Fixes: c5000fe803 ("ath11k: Add ipq6018 support")
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c | 12 ++++++------
+ drivers/net/wireless/ath/ath11k/pci.c | 14 +++++++-------
+ 2 files changed, 13 insertions(+), 13 deletions(-)
+
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/core.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/core.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/core.c
+@@ -76,7 +76,7 @@ static const struct ath11k_hw_params ath
+ 		.host_ce_config = ath11k_host_ce_config_ipq8074,
+ 		.ce_count = 12,
+ 		.target_ce_config = ath11k_target_ce_config_wlan_ipq8074,
+-		.target_ce_count = 11,
++		.target_ce_count = 12,
+ 		.svc_to_ce_map = ath11k_target_service_to_ce_map_wlan_ipq8074,
+ 		.svc_to_ce_map_len = 21,
+ 		.single_pdev_only = false,
+@@ -131,7 +131,7 @@ static const struct ath11k_hw_params ath
+ 		.host_ce_config = ath11k_host_ce_config_ipq8074,
+ 		.ce_count = 12,
+ 		.target_ce_config = ath11k_target_ce_config_wlan_ipq8074,
+-		.target_ce_count = 11,
++		.target_ce_count = 12,
+ 		.svc_to_ce_map = ath11k_target_service_to_ce_map_wlan_ipq6018,
+ 		.svc_to_ce_map_len = 19,
+ 		.single_pdev_only = false,
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/hw.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/hw.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/hw.c
+@@ -1446,6 +1446,14 @@ const struct ce_pipe_config ath11k_targe
+ 	},
+ 
+ 	/* CE11 Not used */
++	{
++		.pipenum = __cpu_to_le32(11),
++		.pipedir = __cpu_to_le32(0),
++		.nentries = __cpu_to_le32(0),
++		.nbytes_max = __cpu_to_le32(0),
++		.flags = __cpu_to_le32(CE_ATTR_FLAGS | CE_ATTR_DIS_INTR),
++		.reserved = __cpu_to_le32(0),
++	},
+ };
+ 
+ /* Map from service/endpoint to Copy Engine.

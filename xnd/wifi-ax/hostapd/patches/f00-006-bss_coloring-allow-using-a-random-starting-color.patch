@@ -1,0 +1,44 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH V4 6/6] bss_coloring: allow using a random starting color
+Date: Wed, 26 Aug 2020 08:22:16 +0200
+
+
+Enhance the possible values for he_bss_color. Anything greater than 63 will
+make hostapd choose a random color.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ hostapd/config_file.c | 7 +++++--
+ hostapd/hostapd.conf  | 5 ++++-
+ 2 files changed, 9 insertions(+), 3 deletions(-)
+
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -3367,8 +3367,11 @@ static int hostapd_config_fill(struct ho
+ 	} else if (os_strcmp(buf, "he_ul_mumimo") == 0) {
+ 		conf->he_phy_capab.he_ul_mumimo = atoi(pos);
+ 	} else if (os_strcmp(buf, "he_bss_color") == 0) {
+-		conf->he_op.he_bss_color = atoi(pos) & 0x3f;
+-		conf->he_op.he_bss_color_disabled = 0;
++		conf->he_op.he_bss_color = atoi(pos);
++		if (conf->he_op.he_bss_color > 63)
++			conf->he_op.he_bss_color = (os_random() % 63) + 1;
++		if (conf->he_op.he_bss_color)
++			conf->he_op.he_bss_color_disabled = 0;
+ 	} else if (os_strcmp(buf, "he_bss_color_partial") == 0) {
+ 		conf->he_op.he_bss_color_partial = atoi(pos);
+ 	} else if (os_strcmp(buf, "he_default_pe_duration") == 0) {
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -810,7 +810,10 @@ wmm_ac_vo_acm=0
+ # 1 = supported
+ #he_mu_beamformer=1
+ 
+-# he_bss_color: BSS color (1-63)
++# he_bss_color:
++# 0 = disable
++# 1-63 = pre-defined color
++# 64+ =	random color
+ #he_bss_color=1
+ 
+ # he_bss_color_partial: BSS color AID equation

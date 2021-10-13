@@ -1,0 +1,46 @@
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -3336,7 +3336,8 @@ void ath11k_dp_rx_mon_process_ulofdma(st
+ 	uint32_t mu_ul_user_v0_word1;
+ 	uint32_t ru_size;
+ 
+-	if (!(ppdu_info->reception_type == HAL_RX_RECEPTION_TYPE_MU_OFDMA ||
++	if (!(ppdu_info->reception_type == HAL_RX_RECEPTION_TYPE_MU_MIMO ||
++	      ppdu_info->reception_type == HAL_RX_RECEPTION_TYPE_MU_OFDMA ||
+ 	      ppdu_info->reception_type == HAL_RX_RECEPTION_TYPE_MU_OFDMA_MIMO))
+ 		return;
+ 
+@@ -3372,7 +3373,10 @@ void ath11k_dp_rx_mon_process_ulofdma(st
+ 			rx_user_status->ul_ofdma_ru_width = ru_size;
+ 			rx_user_status->ul_ofdma_ru_size = ru_size;
+ 		}
++		rx_user_status->ldpc = FIELD_GET(HAL_RX_UL_OFDMA_USER_INFO_V0_W1_LDPC,
++						 mu_ul_user_v0_word1);
+ 	}
++	ppdu_info->ldpc = 1;
+ 
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/hal_rx.h
++++ b/drivers/net/wireless/ath/ath11k/hal_rx.h
+@@ -126,6 +126,7 @@ struct hal_rx_user_status {
+ 	u16 vht_flags;
+ 	u16 he_flags;
+ 	u8 rs_flags;
++	u8 ldpc;
+ 	u32 mpdu_cnt_fcs_ok;
+ 	u32 mpdu_cnt_fcs_err;
+ 	u32 mpdu_fcs_ok_bitmap[HAL_RX_NUM_WORDS_PER_PPDU_BITMAP];
+--- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
+@@ -517,8 +517,8 @@ static ssize_t ath11k_dbg_sta_dump_rx_st
+ 			 rx_stats->num_mpdu_fcs_ok);
+ 	len += scnprintf(buf + len, size - len, "Num of MPDUs with FCS error: %llu\n",
+ 			 rx_stats->num_mpdu_fcs_err);
+-	len += scnprintf(buf + len, size - len, "BCC %llu LDPC %llu\n",
+-			 rx_stats->coding_count[0], rx_stats->coding_count[1]);
++	/* len += scnprintf(buf + len, size - len, "BCC %llu LDPC %llu\n",
++			 rx_stats->coding_count[0], rx_stats->coding_count[1]); */
+ 	len += scnprintf(buf + len, size - len,
+ 			 "preamble: 11A %llu 11B %llu 11N %llu 11AC %llu 11AX %llu\n",
+ 			 rx_stats->pream_cnt[0], rx_stats->pream_cnt[1],

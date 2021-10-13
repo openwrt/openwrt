@@ -1,0 +1,33 @@
+server default {
+
+listen {
+	type = auth
+	ipaddr = *
+	port = 0
+#	interface = eth0
+	limit {
+	      max_connections = 16
+	      lifetime = 0
+	      idle_timeout = 30
+	}
+}
+
+listen {
+	type = acct
+	ipaddr = *
+	port = 0
+#	interface = eth0
+}
+
+authorize {
+	eap {
+		ok = return
+	}
+	files
+}
+
+authenticate {
+	eap
+}
+
+}

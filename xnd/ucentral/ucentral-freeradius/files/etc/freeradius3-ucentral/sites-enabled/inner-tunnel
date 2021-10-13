@@ -1,0 +1,19 @@
+server inner-tunnel {
+listen {
+       ipaddr = 127.0.0.1
+       port = 18120
+       type = auth
+}
+
+authorize {
+	eap {
+		ok = return
+	}
+	files
+}
+
+authenticate {
+	eap
+}
+
+}

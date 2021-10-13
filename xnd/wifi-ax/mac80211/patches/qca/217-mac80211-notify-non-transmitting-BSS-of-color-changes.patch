@@ -1,0 +1,81 @@
+From: John Crispin <john@phrozen.org>
+Date: Sat, 22 Aug 2020 17:39:02 +0200
+Subject: [PATCH] mac80211: notify non-transmitting BSS of color changes
+
+When a transmitting multiple bssid BSS changes its bss color, we need to
+also notify the non transmitting BSSs of the new bss color.
+
+This patch depends on the multiple bssid and bss coloring series.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ net/mac80211/cfg.c | 42 ++++++++++++++++++++++++++++++------------
+ 1 file changed, 30 insertions(+), 12 deletions(-)
+
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -4279,6 +4279,32 @@ static int ieee80211_set_color_change_be
+ 	return 0;
+ }
+ 
++static void ieee80211_color_change_bss_config_notify(struct ieee80211_sub_if_data *sdata,
++						     u8 color, int enable, u32 changed)
++{
++	sdata->vif.bss_conf.he_bss_color.color = color;
++	sdata->vif.bss_conf.he_bss_color.enabled = enable;
++	changed |= BSS_CHANGED_HE_BSS_COLOR;
++
++	ieee80211_bss_info_change_notify(sdata, changed);
++
++	if (ieee80211_hw_check(&sdata->local->hw, SUPPORTS_MULTI_BSSID_AP) &&
++	    !sdata->vif.multiple_bssid.non_transmitted) {
++		struct ieee80211_vif *child;
++
++		list_for_each_entry(child, &sdata->vif.multiple_bssid.list,
++				    multiple_bssid.list) {
++			struct ieee80211_sub_if_data *child_sdata = vif_to_sdata(child);
++
++			sdata_lock(child_sdata);
++			child->bss_conf.he_bss_color.color = color;
++			child->bss_conf.he_bss_color.enabled = enable;
++			ieee80211_bss_info_change_notify(child_sdata, BSS_CHANGED_HE_BSS_COLOR);
++			sdata_unlock(child_sdata);
++		}
++	}
++}
++
+ static int ieee80211_color_change_finalize(struct ieee80211_sub_if_data *sdata)
+ {
+ 	struct ieee80211_local *local = sdata->local;
+@@ -4296,12 +4322,7 @@ static int ieee80211_color_change_finali
+ 		return err;
+ 	}
+ 
+-	sdata->vif.bss_conf.he_bss_color.color = sdata->vif.color_change_color;
+-	sdata->vif.bss_conf.he_bss_color.enabled = 1;
+-	changed |= BSS_CHANGED_HE_BSS_COLOR;
+-
+-	ieee80211_bss_info_change_notify(sdata, changed);
+-
++	ieee80211_color_change_bss_config_notify(sdata, sdata->vif.color_change_color, 1, changed);
+ 	cfg80211_color_change_notify(sdata->dev);
+ 
+ 	return 0;
+@@ -4380,14 +4401,11 @@ __ieee80211_color_change(struct wiphy *w
+ 
+ 	cfg80211_color_change_started_notify(sdata->dev, params->count);
+ 
+-	if (changed) {
+-		sdata->vif.bss_conf.he_bss_color.enabled = 0;
+-		changed |= BSS_CHANGED_HE_BSS_COLOR;
+-		ieee80211_bss_info_change_notify(sdata, changed);
+-	} else {
++	if (changed)
++		ieee80211_color_change_bss_config_notify(sdata, sdata->vif.bss_conf.he_bss_color.color, 0, changed);
++	else
+ 		/* if the beacon didn't change, we can finalize immediately */
+ 		ieee80211_color_change_finalize(sdata);
+-	}
+ 
+ 	return 0;
+ }

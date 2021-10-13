@@ -1,0 +1,199 @@
+From 07ce203ddee206785244a083ba030ed99af07392 Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Wed, 9 Sep 2020 19:53:01 +0530
+Subject: [PATCH 13/15] ath11k: ath11k: add support for device recovery
+
+Test command:
+echo assert > /sys/kernel/debug/ath11k/qca6390/simulate_fw_crash
+
+Then ath11k_mhi_notify_status receive MHI_CB_EE_RDDM notify and start
+to do recovery process.
+
+It need add workqueue_aux, because ab->workqueue is used when receive
+ATH11K_QMI_EVENT_FW_READY in recovery process(queue_work(ab->workqueue,
+&ab->restart_work;)), and ath11k_core_reset will wait for max
+ATH11K_RESET_TIMEOUT_HZ for the previous restart_work finished, if
+ath11k_core_reset also queued in ab->workqueue, then it will delay
+restart_work of previous recovery and lead previous recovery fail.
+
+With this patch, ath11k recovery success
+
+Signed-off-by: Wen Gong <wgong@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c | 48 ++++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/core.h |  6 +++++
+ drivers/net/wireless/ath/ath11k/mhi.c  | 31 ++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/pci.c  |  1 +
+ 4 files changed, 86 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -1075,9 +1075,49 @@ static void ath11k_core_restart(struct w
+ 		}
+ 		mutex_unlock(&ar->conf_mutex);
+ 	}
++
++	if (ab->is_reset) {
++		atomic_dec(&ab->reset_count);
++		complete(&ab->reset_complete);
++		ab->is_reset = false;
++	}
++
+ 	complete(&ab->driver_recovery);
+ }
+ 
++static void ath11k_core_reset(struct work_struct *work)
++{
++	struct ath11k_base *ab = container_of(work, struct ath11k_base, reset_work);
++	int reset_count;
++	long time_left;
++
++	reset_count = atomic_add_return(1, &ab->reset_count);
++
++	if (reset_count > 1) {
++		ath11k_warn(ab, "already reseting count %d\n", reset_count);
++
++		reinit_completion(&ab->reset_complete);
++		time_left = wait_for_completion_timeout(&ab->reset_complete,
++							ATH11K_RESET_TIMEOUT_HZ);
++		ath11k_info(ab, "reset wait time left %ld\n", time_left);
++
++		if (time_left) {
++			ath11k_info(ab, "to skip reset\n");
++			atomic_dec(&ab->reset_count);
++			return;
++		}
++	}
++
++	ath11k_info(ab, "reset starting\n");
++
++	ab->is_reset = true;
++
++	ath11k_hif_power_down(ab);
++	ath11k_hif_power_up(ab);
++
++	ath11k_info(ab, "reset started\n");
++}
++
+ static int ath11k_init_hw_params(struct ath11k_base *ab)
+ {
+ 	const struct ath11k_hw_params *hw_params = NULL;
+@@ -1179,14 +1219,20 @@ struct ath11k_base *ath11k_core_alloc(st
+ 	if (!ab->workqueue)
+ 		goto err_sc_free;
+ 
++	ab->workqueue_aux = create_singlethread_workqueue("ath11k_aux_wq");
++	if (!ab->workqueue_aux)
++		goto err_free_wq;
++
+ 	mutex_init(&ab->core_lock);
+ 	spin_lock_init(&ab->base_lock);
++	init_completion(&ab->reset_complete);
+ 
+ 	INIT_LIST_HEAD(&ab->peers);
+ 	init_waitqueue_head(&ab->peer_mapping_wq);
+ 	init_waitqueue_head(&ab->wmi_ab.tx_credits_wq);
+ 	init_waitqueue_head(&ab->qmi.cold_boot_waitq);
+ 	INIT_WORK(&ab->restart_work, ath11k_core_restart);
++	INIT_WORK(&ab->reset_work, ath11k_core_reset);
+ 	timer_setup(&ab->rx_replenish_retry, ath11k_ce_rx_replenish_retry, 0);
+ 	init_completion(&ab->htc_suspend);
+ 	init_completion(&ab->wow.wakeup_completed);
+@@ -1197,6 +1243,8 @@ struct ath11k_base *ath11k_core_alloc(st
+ 
+ 	return ab;
+ 
++err_free_wq:
++	destroy_workqueue(ab->workqueue);
+ err_sc_free:
+ 	kfree(ab);
+ 	return NULL;
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -36,6 +36,7 @@
+ /* Pending management packets threshold for dropping probe responses */
+ #define ATH11K_PRB_RSP_DROP_THRESHOLD ((ATH11K_TX_MGMT_TARGET_MAX_SUPPORT_WMI * 3) / 4)
+ 
++#define ATH11K_RESET_TIMEOUT_HZ (10 * HZ)
+ #define ATH11K_INVALID_HW_MAC_ID	0xFF
+ #define ATH11K_RX_RATE_TABLE_NUM 320
+ #define ATH11K_RX_RATE_TABLE_11AX_NUM 576
+@@ -819,6 +820,11 @@ struct ath11k_base {
+ 	struct completion driver_recovery;
+ 	struct workqueue_struct *workqueue;
+ 	struct work_struct restart_work;
++	struct workqueue_struct *workqueue_aux;
++	struct work_struct reset_work;
++	atomic_t reset_count;
++	bool is_reset;
++	struct completion reset_complete;
+ 	struct {
+ 		/* protected by data_lock */
+ 		u32 fw_crash_counter;
+--- a/drivers/net/wireless/ath/ath11k/mhi.c
++++ b/drivers/net/wireless/ath/ath11k/mhi.c
+@@ -281,6 +281,29 @@ static int ath11k_mhi_get_msi(struct ath
+ 	return 0;
+ }
+ 
++static char *ath11k_mhi_callback_to_str(int reason)
++{
++	switch (reason) {
++	case MHI_CB_IDLE:
++		return "MHI_CB_IDLE";
++	case MHI_CB_PENDING_DATA:
++		return "MHI_CB_PENDING_DATA";
++	case MHI_CB_LPM_ENTER:
++		return "MHI_CB_LPM_ENTER";
++	case MHI_CB_LPM_EXIT:
++		return "MHI_CB_LPM_EXIT";
++	case MHI_CB_EE_RDDM:
++		return "MHI_CB_EE_RDDM";
++	case MHI_CB_SYS_ERROR:
++		return "MHI_CB_SYS_ERROR";
++	case MHI_CB_FATAL_ERROR:
++		return "MHI_CB_FATAL_ERROR";
++	default:
++		return "UNKNOWN";
++	}
++};
++
++
+ static int ath11k_mhi_op_runtime_get(struct mhi_controller *mhi_cntrl)
+ {
+ 	return 0;
+@@ -288,6 +311,7 @@ static int ath11k_mhi_op_runtime_get(str
+ 
+ static void ath11k_mhi_op_runtime_put(struct mhi_controller *mhi_cntrl)
+ {
++
+ }
+ 
+ static void ath11k_mhi_op_status_cb(struct mhi_controller *mhi_cntrl,
+@@ -295,10 +319,16 @@ static void ath11k_mhi_op_status_cb(stru
+ {
+ 	struct ath11k_base *ab = dev_get_drvdata(mhi_cntrl->cntrl_dev);
+ 
++	ath11k_info(ab, "mhi notify status reason %s\n",
++		    ath11k_mhi_callback_to_str(cb));
++
+ 	switch (cb) {
+ 	case MHI_CB_SYS_ERROR:
+ 		ath11k_warn(ab, "firmware crashed: MHI_CB_SYS_ERROR\n");
+ 		break;
++	case MHI_CB_EE_RDDM:
++		queue_work(ab->workqueue_aux, &ab->reset_work);
++		break;
+ 	default:
+ 		break;
+ 	}
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -1334,6 +1334,7 @@ static void ath11k_pci_remove(struct pci
+ 	}
+ 
+ 	set_bit(ATH11K_FLAG_UNREGISTERING, &ab->dev_flags);
++	cancel_work_sync(&ab->reset_work);
+ 
+ 	ath11k_core_deinit(ab);
+ 

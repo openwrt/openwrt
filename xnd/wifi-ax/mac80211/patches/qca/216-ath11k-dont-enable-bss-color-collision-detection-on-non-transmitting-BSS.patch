@@ -1,0 +1,27 @@
+From: John Crispin <john@phrozen.org>
+Date: Sat, 22 Aug 2020 16:40:48 +0200
+Subject: [PATCH] ath11k: dont enable bss color collision detection on
+ non-transmitting BSS
+
+A none transmitting BSS color collision detection should not be enabled.
+
+This patch depends on the BSS coloring and multiple bssid series.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+Reported-by: kernel test robot <lkp@intel.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -3137,7 +3137,8 @@ static void ath11k_mac_op_bss_info_chang
+ 			ret = ath11k_wmi_send_obss_color_collision_cfg_cmd(
+ 				ar, arvif->vdev_id, info->he_bss_color.color,
+ 				ATH11K_BSS_COLOR_COLLISION_DETECTION_AP_PERIOD_MS,
+-				info->he_bss_color.enabled);
++				!arvif->vif->multiple_bssid.non_transmitted ?
++					info->he_bss_color.enabled : 0);
+ 			if (ret)
+ 				ath11k_warn(ar->ab, "failed to set bss color collision on vdev %i: %d\n",
+ 					    arvif->vdev_id,  ret);

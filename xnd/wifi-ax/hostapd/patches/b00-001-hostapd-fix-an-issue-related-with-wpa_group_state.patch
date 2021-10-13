@@ -1,0 +1,18 @@
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -31,6 +31,7 @@
+ #include "tkip_countermeasures.h"
+ #include "ieee802_1x.h"
+ #include "wpa_auth.h"
++#include "wpa_auth_glue.h"
+ #include "wps_hostapd.h"
+ #include "ap_drv_ops.h"
+ #include "ap_config.h"
+@@ -2030,6 +2031,7 @@ void hostapd_wpa_event(void *ctx, enum w
+ 			 * Try to re-enable interface if the driver stopped it
+ 			 * when the interface got disabled.
+ 			 */
++			hostapd_reconfig_wpa(hapd);
+ 			if (hapd->wpa_auth)
+ 				wpa_auth_reconfig_group_keys(hapd->wpa_auth);
+ 			else

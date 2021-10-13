@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+
+START=98
+
+SERVICE_WRITE_PID=1
+SERVICE_DAEMONIZE=1
+
+start() {
+	. /lib/functions.sh
+
+	local enabled
+
+	config_load 'thermal'
+	config_get_bool enabled config 'Enabled' '0'
+
+	[ "$enabled" -gt 0 ] || return 1
+
+	service_start /usr/sbin/thermald
+}
+
+stop() {
+	service_stop /usr/sbin/thermald
+}

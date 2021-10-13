@@ -1,0 +1,35 @@
+From 2149e44c4a1767645c889de3e1712465b7fe5137 Mon Sep 17 00:00:00 2001
+From: Sriram R <srirrama@codeaurora.org>
+Date: Wed, 12 May 2021 20:03:07 +0530
+Subject: [PATCH] hostapd: avoid filling group mgmt cipher type in FD RSN to
+ reflect beacon RSN IE
+
+Currently we don’t advertise Group Management cipher suite
+in beacons if management frame protection is not enabled or
+if the group management cipher is default (WPA_CIPHER_AES_128_CMAC)
+but we advertise the suite type in FD RSN IE.
+
+Hence set it to 63, if management frame protection is disabled or when
+default cipher is used.
+
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+---
+ src/ap/wpa_auth_ie.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/src/ap/wpa_auth_ie.c
++++ b/src/ap/wpa_auth_ie.c
+@@ -1177,11 +1177,9 @@ bool wpa_auth_write_fd_rsn_info(struct w
+ 
+ 	/* Group Management Cipher Suite Selector (B22..B27) */
+ 	cipher = 63; /* Default to no cipher suite selected */
+-	if (conf->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
++	if (conf->ieee80211w != NO_MGMT_FRAME_PROTECTION &&
++	    conf->group_mgmt_cipher != WPA_CIPHER_AES_128_CMAC) {
+ 		switch (conf->group_mgmt_cipher) {
+-		case WPA_CIPHER_AES_128_CMAC:
+-			cipher = RSN_CIPHER_SUITE_AES_128_CMAC & 0xff;
+-			break;
+ 		case WPA_CIPHER_BIP_GMAC_128:
+ 			cipher = RSN_CIPHER_SUITE_BIP_GMAC_128 & 0xff;
+ 			break;

@@ -1,0 +1,10 @@
+[ "$ACTION" == 'ifup' ] || exit 0
+dev=$(ubus call network.interface.$INTERFACE status | jsonfilter -e '@.l3_device')
+program=$(uci get dataplane.$INTERFACE.program)
+tc qdisc del dev $dev handle ffff: ingress
+tc qdisc add dev $dev handle ffff: ingress
+for p in $program; do                     
+        path=$(uci get dataplane.$p.program)
+        [ -f "$path" ] || continue          
+        tc filter add dev $dev parent ffff: bpf obj $path verbose direct-action
+done 

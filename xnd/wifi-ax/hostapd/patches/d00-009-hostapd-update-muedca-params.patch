@@ -1,0 +1,282 @@
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -1775,6 +1775,39 @@ static void hostapd_event_wds_sta_interf
+ 		ifname, MAC2STR(addr));
+ }
+ 
++static void hostapd_event_update_muedca_params(struct hostapd_data *hapd,
++					       struct update_muedca *params)
++{
++	int i;
++	u8 updated_count;
++
++	/* Update current MU-EDCA parameters */
++	for (i = 0; i < 3; i++) {
++		hapd->iface->conf->he_mu_edca.he_mu_ac_be_param[i] =
++						params->he_mu_ac_be_param[i];
++		hapd->iface->conf->he_mu_edca.he_mu_ac_bk_param[i] =
++						params->he_mu_ac_bk_param[i];
++		hapd->iface->conf->he_mu_edca.he_mu_ac_vo_param[i] =
++						params->he_mu_ac_vo_param[i];
++		hapd->iface->conf->he_mu_edca.he_mu_ac_vi_param[i] =
++						params->he_mu_ac_vi_param[i];
++	}
++
++	/* Increment Parameter Set Update Count for MU-EDCA and WME EDCA only
++	 * if any STA is connected
++	 */
++	if (hapd->num_sta) {
++		updated_count = (hapd->iface->conf->he_mu_edca.he_qos_info + 1) & 0xf;
++		hapd->iface->conf->he_mu_edca.he_qos_info &= 0xf0;
++		hapd->iface->conf->he_mu_edca.he_qos_info |= updated_count;
++		hapd->parameter_set_count++;
++	}
++
++	/* Update beacon with updated MU-EDCA parameters */
++	if (ieee802_11_update_beacons(hapd->iface))
++		wpa_printf(MSG_DEBUG,
++			   "Failed to update beacons with MU-EDCA parameters");
++}
+ 
+ #ifdef CONFIG_OWE
+ static int hostapd_notif_update_dh_ie(struct hostapd_data *hapd,
+@@ -2083,6 +2116,9 @@ void hostapd_wpa_event(void *ctx, enum w
+ 			data->wds_sta_interface.ifname,
+ 			data->wds_sta_interface.sta_addr);
+ 		break;
++	case EVENT_UPDATE_MUEDCA_PARAMS:
++		hostapd_event_update_muedca_params(hapd, &data->update_muedca);
++		break;
+ 	default:
+ 		wpa_printf(MSG_DEBUG, "Unknown event %d", event);
+ 		break;
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -5038,6 +5038,15 @@ enum wpa_event_type {
+ 	 * is required to provide more details of the frame.
+ 	 */
+ 	EVENT_UNPROT_BEACON,
++
++	/**
++	 * EVENT_UPDATE_MUEDCA_PARAMS - Updated MU-EDCA parameters received
++	 *
++	 * This event is emitted when updated MU-EDCA parameters from driver
++	 * are received. Updated MU-EDCA parameters need to be updated in
++	 * beacon.
++	 */
++	EVENT_UPDATE_MUEDCA_PARAMS,
+ };
+ 
+ 
+@@ -5897,6 +5906,16 @@ union wpa_event_data {
+ 	struct unprot_beacon {
+ 		const u8 *sa;
+ 	} unprot_beacon;
++
++	/**
++	 * struct update_muedca - Data for EVENT_UPDATE_MU_EDCA_PARAMS
++	 */
++	struct update_muedca {
++		u8 he_mu_ac_be_param[3];
++		u8 he_mu_ac_bk_param[3];
++		u8 he_mu_ac_vi_param[3];
++		u8 he_mu_ac_vo_param[3];
++	} update_muedca;
+ };
+ 
+ /**
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -2540,6 +2540,35 @@ static void nl80211_sta_opmode_change_ev
+ 	wpa_supplicant_event(drv->ctx, EVENT_STATION_OPMODE_CHANGED, &ed);
+ }
+ 
++static void nl80211_update_muedca_params_event(struct wpa_driver_nl80211_data *drv,
++					    struct nlattr **tb)
++{
++	struct host_update_muedca {
++		u8 mu_qos_info;
++		u8 ac_be[3];
++		u8 ac_bk[3];
++		u8 ac_vi[3];
++		u8 ac_vo[3];
++	};
++
++	struct host_update_muedca *rx_muedca_params;
++	union wpa_event_data ed;
++	int i;
++
++	if (!tb[NL80211_ATTR_HE_MUEDCA_PARAMS])
++		return;
++
++	rx_muedca_params = nla_data(tb[NL80211_ATTR_HE_MUEDCA_PARAMS]);
++
++	for (i = 0; i< 3; i++) {
++		ed.update_muedca.he_mu_ac_be_param[i] = rx_muedca_params->ac_be[i];
++		ed.update_muedca.he_mu_ac_bk_param[i] = rx_muedca_params->ac_bk[i];
++		ed.update_muedca.he_mu_ac_vi_param[i] = rx_muedca_params->ac_vi[i];
++		ed.update_muedca.he_mu_ac_vo_param[i] = rx_muedca_params->ac_vo[i];
++	}
++
++	wpa_supplicant_event(drv->ctx, EVENT_UPDATE_MUEDCA_PARAMS, &ed);
++}
+ 
+ static void nl80211_control_port_frame(struct wpa_driver_nl80211_data *drv,
+ 				       struct nlattr **tb)
+@@ -2597,7 +2626,6 @@ nl80211_control_port_frame_tx_status(str
+ 	wpa_supplicant_event(drv->ctx, EVENT_EAPOL_TX_STATUS, &event);
+ }
+ 
+-
+ static void do_process_drv_event(struct i802_bss *bss, int cmd,
+ 				 struct nlattr **tb)
+ {
+@@ -2825,6 +2853,9 @@ static void do_process_drv_event(struct
+ 						     tb[NL80211_ATTR_ACK],
+ 						     tb[NL80211_ATTR_COOKIE]);
+ 		break;
++	case NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS:
++		nl80211_update_muedca_params_event(drv, tb);
++		break;
+ 	default:
+ 		wpa_dbg(drv->ctx, MSG_DEBUG, "nl80211: Ignored unknown event "
+ 			"(cmd=%d)", cmd);
+--- a/src/drivers/nl80211_copy.h
++++ b/src/drivers/nl80211_copy.h
+@@ -1170,6 +1170,11 @@
+  *	includes the contents of the frame. %NL80211_ATTR_ACK flag is included
+  *	if the recipient acknowledged the frame.
+  *
++ * @NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS: Updated MU-EDCA parameters from driver.
++ *	This event is used to update MU-EDCA parameters in Beacon frame, which
++ *	were indicated by driver and now need to be reflected in
++ *	Beacon frame.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1400,6 +1405,7 @@ enum nl80211_commands {
+ 
+ 	NL80211_CMD_CONTROL_PORT_FRAME_TX_STATUS,
+ 
++	NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS,
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -2505,6 +2511,9 @@ enum nl80211_commands {
+  * @NL80211_ATTR_HE_6GHZ_CAPABILITY: HE 6 GHz Band Capability element (from
+  *	association request when used with NL80211_CMD_NEW_STATION).
+  *
++ * @NL80211_ATTR_HE_MUEDCA_PARAMS: MU-EDCA AC parameters for the
++	NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS command.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -2987,6 +2996,7 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_HE_6GHZ_CAPABILITY,
+ 
++	NL80211_ATTR_HE_MUEDCA_PARAMS,
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+--- a/src/drivers/driver_common.c
++++ b/src/drivers/driver_common.c
+@@ -90,6 +90,7 @@ const char * event_to_string(enum wpa_ev
+ 	E2S(WDS_STA_INTERFACE_STATUS);
+ 	E2S(UPDATE_DH);
+ 	E2S(UNPROT_BEACON);
++	E2S(UPDATE_MUEDCA_PARAMS);
+ 	}
+ 
+ 	return "UNKNOWN";
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3525,6 +3525,10 @@ static int hostapd_fill_csa_settings(str
+ 	hapd->cs_count = settings->cs_count;
+ 	hapd->cs_block_tx = settings->block_tx;
+ 
++	/* reset MU-EDCA and WME EDCA parameter set count */
++	hapd->iface->conf->he_mu_edca.he_qos_info &= 0xfff0;
++	hapd->parameter_set_count = 0;
++
+ 	ret = hostapd_build_beacon_data(hapd, &settings->beacon_csa);
+ 	if (ret) {
+ 		free_beacon_data(&settings->beacon_after);
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -1472,6 +1472,11 @@ static int hostapd_ctrl_iface_set(struct
+ 		} else if (os_strncmp(cmd, "wme_ac_", 7) == 0 ||
+ 			   os_strncmp(cmd, "wmm_ac_", 7) == 0) {
+ 			hapd->parameter_set_count++;
++			/* Incrementing MU-EDCA Parameter Set Update Count*/
++			hapd->iface->conf->he_mu_edca.he_qos_info =
++			 (hapd->iface->conf->he_mu_edca.he_qos_info & 0xf0) |
++			 ((hapd->iface->conf->he_mu_edca.he_qos_info + 1) &
++			  0xf);
+ 			if (ieee802_11_update_beacons(hapd->iface))
+ 				wpa_printf(MSG_DEBUG,
+ 					   "Failed to update beacons with WMM parameters");
+--- a/src/ap/wmm.c
++++ b/src/ap/wmm.c
+@@ -68,8 +68,8 @@ wmm_set_regulatory_limit(const struct ho
+ /*
+  * Calculate WMM regulatory limit if any.
+  */
+-static void wmm_calc_regulatory_limit(struct hostapd_data *hapd,
+-				      struct hostapd_wmm_ac_params *acp)
++void wmm_calc_regulatory_limit(struct hostapd_data *hapd,
++			       struct hostapd_wmm_ac_params *acp)
+ {
+ 	struct hostapd_hw_modes *mode = hapd->iface->current_mode;
+ 	int c;
+@@ -98,6 +98,10 @@ static void wmm_calc_regulatory_limit(st
+ 		os_memcpy(hapd->iface->prev_wmm, acp,
+ 			  sizeof(hapd->iconf->wmm_ac_params));
+ 		hapd->parameter_set_count++;
++		/* Incrementing MU-EDCA Parameter Set Update Count*/
++		hapd->iface->conf->he_mu_edca.he_qos_info =
++		 (hapd->iface->conf->he_mu_edca.he_qos_info & 0xf0) |
++		 ((hapd->iface->conf->he_mu_edca.he_qos_info + 1) & 0xf);
+ 	}
+ }
+ 
+--- a/src/ap/ieee802_11_he.c
++++ b/src/ap/ieee802_11_he.c
+@@ -18,6 +18,7 @@
+ #include "sta_info.h"
+ #include "ieee802_11.h"
+ #include "dfs.h"
++#include "wmm.h"
+ 
+ static u8 ieee80211_he_ppet_size(u8 ppe_thres_hdr, const u8 *phy_cap_info)
+ {
+@@ -247,9 +248,16 @@ u8 * hostapd_eid_he_operation(struct hos
+ u8 * hostapd_eid_he_mu_edca_parameter_set(struct hostapd_data *hapd, u8 *eid)
+ {
+ 	struct ieee80211_he_mu_edca_parameter_set *edca;
++	struct hostapd_wmm_ac_params wmmp[WMM_AC_NUM];
+ 	u8 *pos;
+ 	size_t i;
+ 
++	/* Updating WME Parameter Set Count to avoid mismatch */
++	os_memset(wmmp, 0, sizeof(wmmp));
++
++	if (hapd->conf->wmm_enabled)
++		wmm_calc_regulatory_limit(hapd, wmmp);
++
+ 	pos = (u8 *) &hapd->iface->conf->he_mu_edca;
+ 	for (i = 0; i < sizeof(*edca); i++) {
+ 		if (pos[i])
+--- a/src/ap/wmm.h
++++ b/src/ap/wmm.h
+@@ -13,6 +13,8 @@
+ struct ieee80211_mgmt;
+ struct wmm_tspec_element;
+ 
++void wmm_calc_regulatory_limit(struct hostapd_data *hapd,
++			       struct hostapd_wmm_ac_params *acp);
+ u8 * hostapd_eid_wmm(struct hostapd_data *hapd, u8 *eid);
+ int hostapd_eid_wmm_valid(struct hostapd_data *hapd, const u8 *eid,
+ 			  size_t len);

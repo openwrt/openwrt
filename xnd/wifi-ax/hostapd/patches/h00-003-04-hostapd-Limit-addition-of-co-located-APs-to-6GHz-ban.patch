@@ -1,0 +1,216 @@
+From 381cd16dea77e1966f4fff249dde5092663546da Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Thu, 10 Dec 2020 12:10:11 -0800
+Subject: [PATCH 4/9] hostapd: Limit addition of co-located APs to 6GHz band.
+
+(1) New function to decide if co-located 6GHz APs are present.
+(2) Move the checks for option 'rnr_beacon' from beacon.c to RNR
+    function definitions and add check for 6GHz colocation. This way
+    co-located 6GHz APs are included in RNR even if 'rnr_beacon' is
+    not set.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/beacon.c     |  12 ++---
+ src/ap/ieee802_11.c | 106 +++++++++++++++++++++++++++++++++-----------
+ 2 files changed, 85 insertions(+), 33 deletions(-)
+
+diff --git a/src/ap/beacon.c b/src/ap/beacon.c
+index eda20fc0d9df..74ac8584ab5e 100644
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -485,8 +485,7 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
+ 		buflen += hostapd_eid_multiple_bssid_len(hapd, req_bss, 0,
+ 							 known_bssids,
+ 							 known_bssids_len);
+-	if (hapd->conf->rnr_beacon)
+-		buflen += hostapd_eid_rnr_len(hapd, WLAN_FC_STYPE_PROBE_RESP);
++	buflen += hostapd_eid_rnr_len(hapd, WLAN_FC_STYPE_PROBE_RESP);
+ 
+ 	resp = os_zalloc(buflen);
+ 	if (resp == NULL)
+@@ -652,8 +651,7 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
+ 	pos = hostapd_eid_mbo(hapd, pos, (u8 *) resp + buflen - pos);
+ 	pos = hostapd_eid_owe_trans(hapd, pos, (u8 *) resp + buflen - pos);
+ 	pos = hostapd_eid_dpp_cc(hapd, pos, (u8 *) resp + buflen - pos);
+-	if (hapd->conf->rnr_beacon)
+-		pos = hostapd_eid_rnr(hapd, pos, WLAN_FC_STYPE_PROBE_RESP);
++	pos = hostapd_eid_rnr(hapd, pos, WLAN_FC_STYPE_PROBE_RESP);
+ 
+ 	if (hapd->conf->vendor_elements) {
+ 		os_memcpy(pos, wpabuf_head(hapd->conf->vendor_elements),
+@@ -1532,8 +1530,7 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
+ 	tail_len += hostapd_mbo_ie_len(hapd);
+ 	tail_len += hostapd_eid_owe_trans_len(hapd);
+ 	tail_len += hostapd_eid_dpp_cc_len(hapd);
+-	if (hapd->conf->rnr_beacon)
+-		tail_len += hostapd_eid_rnr_len(hapd, WLAN_FC_STYPE_BEACON);
++	tail_len += hostapd_eid_rnr_len(hapd, WLAN_FC_STYPE_BEACON);
+ 
+ 	tailpos = tail = os_malloc(tail_len);
+ 	if (head == NULL || tail == NULL) {
+@@ -1711,8 +1708,7 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
+ 	tailpos = hostapd_eid_owe_trans(hapd, tailpos,
+ 					tail + tail_len - tailpos);
+ 	tailpos = hostapd_eid_dpp_cc(hapd, tailpos, tail + tail_len - tailpos);
+-	if (hapd->conf->rnr_beacon)
+-		tailpos = hostapd_eid_rnr(hapd, tailpos, WLAN_FC_STYPE_BEACON);
++	tailpos = hostapd_eid_rnr(hapd, tailpos, WLAN_FC_STYPE_BEACON);
+ 
+ 	if (hapd->conf->vendor_elements) {
+ 		os_memcpy(tailpos, wpabuf_head(hapd->conf->vendor_elements),
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index 97c5b42a7528..488f02f58f63 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -5989,6 +5989,7 @@ size_t hostapd_eid_rnr_iface_len(struct hostapd_data *hapd,
+ {
+ 	size_t len = 0;
+ 	int i;
++
+ 	for (i = 0; i < hapd->iface->num_bss; i++) {
+ 		if (hapd->iface->bss[i] == reporting_hapd ||
+ 		    hapd->iface->bss[i]->conf->ignore_broadcast_ssid)
+@@ -5999,29 +6000,69 @@ size_t hostapd_eid_rnr_iface_len(struct hostapd_data *hapd,
+ }
+ 
+ 
+-size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type)
++static size_t hostapd_eid_rnr_colocation_len(struct hostapd_data *hapd)
+ {
++	struct hostapd_iface *iface;
+ 	size_t len = 0;
+ 	int i;
+ 
+-	if (hapd->iface->num_bss > 1)
++	if ((hapd->iface == NULL) || (hapd->iface->interfaces == NULL))
++		return 0;
++
++	for (i = 0; i < hapd->iface->interfaces->count; i++) {
++		iface = hapd->iface->interfaces->iface[i];
++
++		if (iface == hapd->iface || !iface->conf->he_co_locate)
++			continue;
++
+ 		len += (TBTT_HEADER_LENGTH +
+-			hostapd_eid_rnr_iface_len(hapd, hapd));
++			hostapd_eid_rnr_iface_len(iface->bss[0], hapd));
++	}
++	return len;
++}
++
++
++static bool is_6ghz_colocated(struct hostapd_data *hapd)
++{
++	u8 i;
++	struct hostapd_iface *iface;
++
++	if ((hapd->iface == NULL) || (hapd->iface->interfaces == NULL))
++		return false;
++
++	if (is_6ghz_op_class(hapd->iconf->op_class) ||
++	    hapd->iface->interfaces->count == 1)
++		return false;
++
++	for (i = 0; i < hapd->iface->interfaces->count; i++) {
++		iface = hapd->iface->interfaces->iface[i];
++		if (iface == hapd->iface)
++			continue;
++
++		if (is_6ghz_op_class(iface->bss[0]->iconf->op_class) &&
++		    iface->conf->he_co_locate)
++			return true;
++	}
++	return false;
++}
+ 
+-	if (type != WLAN_FC_STYPE_ACTION) {
+-		for (i = 0; i < hapd->iface->interfaces->count; i++) {
+-			struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
+ 
+-			if (iface == hapd->iface || !iface->conf->he_co_locate)
+-				continue;
++size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type)
++{
++	size_t len = 0;
+ 
++	if (hapd->conf->rnr_beacon) {
++		if (hapd->iface->num_bss > 1)
+ 			len += (TBTT_HEADER_LENGTH +
+-				hostapd_eid_rnr_iface_len(iface->bss[0], hapd));
+-		}
++				hostapd_eid_rnr_iface_len(hapd, hapd));
++
++		if ((type == WLAN_FC_STYPE_BEACON) &&
++		    !dl_list_empty(&hapd->nr_db))
++			len += dl_list_len(&hapd->nr_db) * (TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH);
+ 	}
+ 
+-	if ((type == WLAN_FC_STYPE_BEACON) && !dl_list_empty(&hapd->nr_db))
+-		len += dl_list_len(&hapd->nr_db) * (TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH);
++	if ((true == is_6ghz_colocated(hapd)) && type != WLAN_FC_STYPE_ACTION)
++		len += hostapd_eid_rnr_colocation_len(hapd);
+ 
+ 	if (len)
+ 		len += 2; /* Element ID and length */
+@@ -6096,6 +6137,27 @@ static u8 *hostapd_eid_rnr_iface(struct hostapd_data *hapd,
+ }
+ 
+ 
++static u8 * hostapd_eid_rnr_colocation(struct hostapd_data *hapd, u8 *eid,
++				       int *count)
++{
++	struct hostapd_iface *iface;
++	int i;
++
++	if ((hapd->iface == NULL) || (hapd->iface->interfaces == NULL))
++		return eid;
++
++	for (i = 0; i < hapd->iface->interfaces->count; i++) {
++		iface = hapd->iface->interfaces->iface[i];
++
++		if (iface == hapd->iface || !iface->conf->he_co_locate)
++			continue;
++
++		eid = hostapd_eid_rnr_iface(iface->bss[0], hapd, eid, count);
++	}
++	return eid;
++}
++
++
+ static u8 *hostapd_eid_neighbor_report_db(struct hostapd_data *hapd, u8 *eid,
+ 					  int *count)
+ {
+@@ -6138,22 +6200,16 @@ u8 * hostapd_eid_rnr(struct hostapd_data *hapd, u8 *eid, u32 type)
+ 	*eid++ = WLAN_EID_REDUCED_NEIGHBOR_REPORT;
+ 	size_offset = eid++;
+ 
+-	if (hapd->iface->num_bss > 1)
+-		eid = hostapd_eid_rnr_iface(hapd, hapd,	eid, &count);
+-
+-	if (type != WLAN_FC_STYPE_ACTION) {
+-		for (i = 0; i < hapd->iface->interfaces->count; i++) {
+-			struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
++	if (hapd->conf->rnr_beacon) {
++		if (hapd->iface->num_bss > 1)
++			eid = hostapd_eid_rnr_iface(hapd, hapd,	eid, &count);
+ 
+-			if (iface == hapd->iface || !iface->conf->he_co_locate)
+-				continue;
+-
+-			eid = hostapd_eid_rnr_iface(iface->bss[0], hapd, eid, &count);
+-		}
++		if (type == WLAN_FC_STYPE_BEACON)
++			eid = hostapd_eid_neighbor_report_db(hapd, eid, &count);
+ 	}
+ 
+-	if (type == WLAN_FC_STYPE_BEACON)
+-		eid = hostapd_eid_neighbor_report_db(hapd, eid, &count);
++	if ((true == is_6ghz_colocated(hapd)) && type != WLAN_FC_STYPE_ACTION)
++		eid = hostapd_eid_rnr_colocation(hapd, eid, &count);
+ 
+ 	if (!count)
+ 		eid -= 2;
+-- 
+2.25.0
+

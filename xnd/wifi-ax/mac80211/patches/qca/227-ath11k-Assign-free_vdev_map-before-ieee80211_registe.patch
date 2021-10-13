@@ -1,0 +1,36 @@
+From 4dc2dd99dc07fdecfd2a191b1efdc8de90e4f3b7 Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Date: Wed, 18 Nov 2020 12:48:46 +0530
+Subject: [PATCH] ath11k: Assign free_vdev_map value before ieee80211_register_hw
+
+Firmware crash is seen sometimes, because of sending wrong vdev_id
+in vdev_create command. This is due to free_vdev_map value being 0.
+free_vdev_map is getting assigned after ieee80211_register_hw. In
+some race conditions, add_interface api is getting called before 
+assigning value to free_vdev_map. Fix this by assigning free_vdev_map
+before ieee80211_register_hw.
+
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8502,6 +8502,8 @@ int ath11k_mac_register(struct ath11k_ba
+ 	if (test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags))
+ 		return 0;
+ 
++	ab->free_vdev_map = (1LL << (ab->num_radios * TARGET_NUM_VDEVS)) - 1;
++
+ 	for (i = 0; i < ab->num_radios; i++) {
+ 		pdev = &ab->pdevs[i];
+ 		ar = pdev->ar;
+@@ -8522,7 +8524,6 @@ int ath11k_mac_register(struct ath11k_ba
+ 
+ 	/* Initialize channel counters frequency value in hertz */
+ 	ab->cc_freq_hz = IPQ8074_CC_FREQ_HERTZ;
+-	ab->free_vdev_map = (1LL << (ab->num_radios * TARGET_NUM_VDEVS)) - 1;
+ 
+ 	return 0;
+ 

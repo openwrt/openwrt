@@ -1,0 +1,382 @@
+From e16e606c956892bda991ffc50dedc85042ddd3ca Mon Sep 17 00:00:00 2001
+From: Maharaja Kennadyrajan <mkenna@codeaurora.org>
+Date: Mon, 4 Jan 2021 23:47:57 +0530
+Subject: [PATCH 2/2] ath11k/mac80211: Add support to account memory stats
+
+Memory allocations in the driver & mac80211 are logged
+and populate those values to the user space via debugfs.
+This stats will give the snapshot of the memory being
+used by the driver at the time of dumping these
+memory stats.
+
+Command:
+cat /sys/kernel/debug/ath11k/ipq8074\ hw2.0/memory_stats
+
+Sample output of the stats
+MEMORY STATS IN BYTES:
+malloc size : 6287583
+ce_ring_alloc size: 109308
+dma_alloc size:: 10831860
+htc_skb_alloc size: 3840
+wmi alloc size: 0
+per peer object: 4644
+rx_post_buf size: 5091840
+Total size: 22329075
+
+User can disable/enable the memory stats accounting with
+the below command.
+
+echo N > /sys/kernel/debug/ath11k/ipq8074\ hw2.0/enable_memory_stats
+where N = 0 to disable logging, 1 to enable the logging.
+
+Note: This should be enabled/disabled only after wifi is down.
+User shouldn't enable/disable when the wifi is up to avoid
+accounting the negative values which cause incorrect values
+in the memory stats.
+
+Command:
+cat /sys/kernel/debug/ieee80211/phyX/memory_stats
+memory stats: malloc_size: 108
+
+Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
+---
+ net/mac80211/chan.c         | 12 ++++++++++++
+ net/mac80211/debugfs.c      |  4 ++++
+ net/mac80211/ieee80211_i.h  |  6 ++++++
+ net/mac80211/iface.c        |  5 +++++
+ net/mac80211/mesh.c         |  4 ++++
+ net/mac80211/mesh_hwmp.c    |  5 +++++
+ net/mac80211/mesh_pathtbl.c | 12 ++++++++++++
+ net/mac80211/offchannel.c   |  7 +++++++
+ net/mac80211/scan.c         | 18 ++++++++++++++++++
+ net/mac80211/sta_info.c     | 16 ++++++++++++++++
+ 10 files changed, 89 insertions(+)
+
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -517,6 +517,9 @@ ieee80211_alloc_chanctx(struct ieee80211
+ 	if (!ctx)
+ 		return NULL;
+ 
++	atomic_add(sizeof(*ctx) + local->hw.chanctx_data_size,
++		   &local->memory_stats.malloc_size);
++
+ 	INIT_LIST_HEAD(&ctx->assigned_vifs);
+ 	INIT_LIST_HEAD(&ctx->reserved_vifs);
+ 	ctx->conf.def = *chandef;
+@@ -577,6 +580,8 @@ ieee80211_new_chanctx(struct ieee80211_l
+ 
+ 	err = ieee80211_add_chanctx(local, ctx);
+ 	if (err) {
++		atomic_sub(sizeof(*ctx) + local->hw.chanctx_data_size,
++			   &local->memory_stats.malloc_size);
+ 		kfree(ctx);
+ 		return ERR_PTR(err);
+ 	}
+@@ -629,6 +634,8 @@ static void ieee80211_free_chanctx(struc
+ 
+ 	list_del_rcu(&ctx->list);
+ 	ieee80211_del_chanctx(local, ctx);
++	atomic_sub(sizeof(*ctx) + local->hw.chanctx_data_size,
++		   &local->memory_stats.malloc_size);
+ 	kfree_rcu(ctx, rcu_head);
+ }
+ 
+@@ -1265,6 +1272,9 @@ static int ieee80211_chsw_switch_vifs(st
+ 	if (!vif_chsw)
+ 		return -ENOMEM;
+ 
++	atomic_add(sizeof(vif_chsw[0]) * n_vifs,
++		   &local->memory_stats.malloc_size);
++
+ 	i = 0;
+ 	list_for_each_entry(ctx, &local->chanctx_list, list) {
+ 		if (ctx->replace_state != IEEE80211_CHANCTX_REPLACES_OTHER)
+@@ -1294,6 +1304,8 @@ static int ieee80211_chsw_switch_vifs(st
+ 				     CHANCTX_SWMODE_SWAP_CONTEXTS);
+ 
+ out:
++	atomic_sub(sizeof(vif_chsw[0]) * n_vifs,
++		   &local->memory_stats.malloc_size);
+ 	kfree(vif_chsw);
+ 	return err;
+ }
+--- a/net/mac80211/debugfs.c
++++ b/net/mac80211/debugfs.c
+@@ -71,6 +71,8 @@ DEBUGFS_READONLY_FILE(wep_iv, "%#08x",
+ 		      local->wep_iv & 0xffffff);
+ DEBUGFS_READONLY_FILE(rate_ctrl_alg, "%s",
+ 	local->rate_ctrl ? local->rate_ctrl->ops->name : "hw/driver");
++DEBUGFS_READONLY_FILE(memory_stats, "memory stats: malloc_size: %u",
++		      atomic_read(&local->memory_stats.malloc_size));
+ 
+ static ssize_t aqm_read(struct file *file,
+ 			char __user *user_buf,
+@@ -587,6 +589,8 @@ void debugfs_hw_add(struct ieee80211_loc
+ 	if (!statsd)
+ 		return;
+ 
++	DEBUGFS_ADD(memory_stats);
++
+ #ifdef CPTCFG_MAC80211_DEBUG_COUNTERS
+ 	DEBUGFS_STATS_ADD(dot11TransmittedFragmentCount);
+ 	DEBUGFS_STATS_ADD(dot11MulticastTransmittedFrameCount);
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1164,6 +1164,10 @@ enum mac80211_scan_state {
+ 	SCAN_ABORT,
+ };
+ 
++struct mac80211_memory_stats {
++	atomic_t malloc_size;
++};
++
+ struct ieee80211_local {
+ 	/* embed the driver visible part.
+ 	 * don't cast (use the static inlines below), but we keep
+@@ -1451,6 +1455,8 @@ struct ieee80211_local {
+ 	/* TDLS channel switch */
+ 	struct work_struct tdls_chsw_work;
+ 	struct sk_buff_head skb_queue_tdls_chsw;
++
++	struct mac80211_memory_stats memory_stats;
+ };
+ 
+ static inline struct ieee80211_sub_if_data *
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -1065,6 +1065,9 @@ int ieee80211_add_virtual_monitor(struct
+ 		return ret;
+ 	}
+ 
++	atomic_add(sizeof(*sdata) + local->hw.vif_data_size,
++		   &local->memory_stats.malloc_size);
++
+ 	skb_queue_head_init(&sdata->skb_queue);
+ 	INIT_WORK(&sdata->work, ieee80211_iface_work);
+ 
+@@ -1100,6 +1103,8 @@ void ieee80211_del_virtual_monitor(struc
+ 
+ 	drv_remove_interface(local, sdata);
+ 
++	atomic_sub(sizeof(*sdata) + local->hw.vif_data_size,
++		   &local->memory_stats.malloc_size);
+ 	kfree(sdata);
+ }
+ 
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -173,6 +173,8 @@ int mesh_rmc_init(struct ieee80211_sub_i
+ 	sdata->u.mesh.rmc = kmalloc(sizeof(struct mesh_rmc), GFP_KERNEL);
+ 	if (!sdata->u.mesh.rmc)
+ 		return -ENOMEM;
++	atomic_add(sizeof(struct mesh_rmc),
++		   &sdata->local->memory_stats.malloc_size);
+ 	sdata->u.mesh.rmc->idx_mask = RMC_BUCKETS - 1;
+ 	for (i = 0; i < RMC_BUCKETS; i++)
+ 		INIT_HLIST_HEAD(&sdata->u.mesh.rmc->bucket[i]);
+@@ -196,6 +198,8 @@ void mesh_rmc_free(struct ieee80211_sub_
+ 		}
+ 	}
+ 
++	atomic_sub(sizeof(struct mesh_rmc),
++		   &sdata->local->memory_stats.malloc_size);
+ 	kfree(rmc);
+ 	sdata->u.mesh.rmc = NULL;
+ }
+--- a/net/mac80211/mesh_hwmp.c
++++ b/net/mac80211/mesh_hwmp.c
+@@ -997,6 +997,9 @@ static void mesh_queue_preq(struct mesh_
+ 		return;
+ 	}
+ 
++	atomic_add(sizeof(struct mesh_preq_queue),
++		   &sdata->local->memory_stats.malloc_size);
++
+ 	memcpy(preq_node->dst, mpath->dst, ETH_ALEN);
+ 	preq_node->flags = flags;
+ 
+@@ -1111,6 +1114,8 @@ void mesh_path_start_discovery(struct ie
+ 
+ enddiscovery:
+ 	rcu_read_unlock();
++	atomic_sub(sizeof(struct mesh_preq_queue),
++		   &sdata->local->memory_stats.malloc_size);
+ 	kfree(preq_node);
+ }
+ 
+--- a/net/mac80211/mesh_pathtbl.c
++++ b/net/mac80211/mesh_pathtbl.c
+@@ -764,6 +764,9 @@ int mesh_pathtbl_init(struct ieee80211_s
+ 	struct mesh_table *tbl_path, *tbl_mpp;
+ 	int ret;
+ 
++	atomic_add(sizeof(struct mesh_table),
++		   &sdata->local->memory_stats.malloc_size);
++
+ 	tbl_path = mesh_table_alloc();
+ 	if (!tbl_path)
+ 		return -ENOMEM;
+@@ -774,12 +777,17 @@ int mesh_pathtbl_init(struct ieee80211_s
+ 		goto free_path;
+ 	}
+ 
++	atomic_add(sizeof(struct mesh_table),
++		   &sdata->local->memory_stats.malloc_size);
++
+ 	sdata->u.mesh.mesh_paths = tbl_path;
+ 	sdata->u.mesh.mpp_paths = tbl_mpp;
+ 
+ 	return 0;
+ 
+ free_path:
++	atomic_sub(sizeof(struct mesh_table),
++		   &sdata->local->memory_stats.malloc_size);
+ 	mesh_table_free(tbl_path);
+ 	return ret;
+ }
+@@ -809,6 +817,10 @@ void mesh_path_expire(struct ieee80211_s
+ 
+ void mesh_pathtbl_unregister(struct ieee80211_sub_if_data *sdata)
+ {
++	atomic_sub(sizeof(struct mesh_table),
++		   &sdata->local->memory_stats.malloc_size);
++	atomic_sub(sizeof(struct mesh_table),
++		   &sdata->local->memory_stats.malloc_size);
+ 	mesh_table_free(sdata->u.mesh.mesh_paths);
+ 	mesh_table_free(sdata->u.mesh.mpp_paths);
+ }
+--- a/net/mac80211/offchannel.c
++++ b/net/mac80211/offchannel.c
+@@ -168,6 +168,7 @@ void ieee80211_offchannel_return(struct
+ 
+ static void ieee80211_roc_notify_destroy(struct ieee80211_roc_work *roc)
+ {
++	struct ieee80211_sub_if_data *sdata = roc->sdata;
+ 	/* was never transmitted */
+ 	if (roc->frame) {
+ 		cfg80211_mgmt_tx_status(&roc->sdata->wdev, roc->mgmt_tx_cookie,
+@@ -186,6 +187,8 @@ static void ieee80211_roc_notify_destroy
+ 					 roc->chan, GFP_KERNEL);
+ 
+ 	list_del(&roc->list);
++	atomic_sub(sizeof(*roc),
++		   &sdata->local->memory_stats.malloc_size);
+ 	kfree(roc);
+ }
+ 
+@@ -548,6 +551,8 @@ static int ieee80211_start_roc_work(stru
+ 	if (!roc)
+ 		return -ENOMEM;
+ 
++	atomic_add(sizeof(*roc), &local->memory_stats.malloc_size);
++
+ 	/*
+ 	 * If the duration is zero, then the driver
+ 	 * wouldn't actually do anything. Set it to
+@@ -593,6 +598,8 @@ static int ieee80211_start_roc_work(stru
+ 			ret = drv_remain_on_channel(local, sdata, channel,
+ 						    duration, type);
+ 			if (ret) {
++				atomic_sub(sizeof(*roc),
++					   &local->memory_stats.malloc_size);
+ 				kfree(roc);
+ 				return ret;
+ 			}
+--- a/net/mac80211/scan.c
++++ b/net/mac80211/scan.c
+@@ -441,6 +441,12 @@ static void __ieee80211_scan_completed(s
+ 	scan_req = rcu_dereference_protected(local->scan_req,
+ 					     lockdep_is_held(&local->mtx));
+ 
++	atomic_sub(sizeof(*local->hw_scan_req) +
++		   scan_req->n_channels *
++		   sizeof(scan_req->channels[0]) +
++		   local->hw_scan_ies_bufsize,
++		   &local->memory_stats.malloc_size);
++
+ 	if (scan_req != local->int_scan_req) {
+ 		local->scan_info.aborted = aborted;
+ 		cfg80211_scan_done(scan_req, &local->scan_info);
+@@ -710,6 +716,12 @@ static int __ieee80211_start_scan(struct
+ 		if (!local->hw_scan_req)
+ 			return -ENOMEM;
+ 
++		atomic_add(sizeof(*local->hw_scan_req) +
++			   req->n_channels *
++			   sizeof(req->channels[0]) +
++			   local->hw_scan_ies_bufsize,
++			   &local->memory_stats.malloc_size);
++
+ 		local->hw_scan_req->req.chandef = req->chandef;
+ 		local->hw_scan_req->req.ssids = req->ssids;
+ 		local->hw_scan_req->req.n_ssids = req->n_ssids;
+@@ -799,6 +811,12 @@ static int __ieee80211_start_scan(struct
+ 	}
+ 
+ 	if (rc) {
++		atomic_sub(sizeof(*local->hw_scan_req) +
++			   req->n_channels *
++			   sizeof(req->channels[0]) +
++			   local->hw_scan_ies_bufsize,
++			   &local->memory_stats.malloc_size);
++
+ 		kfree(local->hw_scan_req);
+ 		local->hw_scan_req = NULL;
+ 		local->scanning = 0;
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -258,6 +258,7 @@ struct sta_info *sta_info_get_by_idx(str
+  */
+ void sta_info_free(struct ieee80211_local *local, struct sta_info *sta)
+ {
++	struct ieee80211_hw *hw = &local->hw;
+ 	/*
+ 	 * If we had used sta_info_pre_move_state() then we might not
+ 	 * have gone through the state transitions down again, so do
+@@ -285,8 +286,13 @@ void sta_info_free(struct ieee80211_loca
+ 		kfree(to_txq_info(sta->sta.txq[0]));
+ 	kfree(rcu_dereference_raw(sta->sta.rates));
+ #ifdef CPTCFG_MAC80211_MESH
++	if (sta->mesh)
++		atomic_sub(sizeof(*sta->mesh),
++			   &local->memory_stats.malloc_size);
+ 	kfree(sta->mesh);
+ #endif
++	atomic_sub(sizeof(*sta) + hw->sta_data_size,
++		   &local->memory_stats.malloc_size);
+ 	free_percpu(sta->pcpu_rx_stats);
+ 	kfree(sta);
+ }
+@@ -345,6 +351,9 @@ struct sta_info *sta_info_alloc(struct i
+ 	if (!sta)
+ 		return NULL;
+ 
++	atomic_add(sizeof(*sta) + hw->sta_data_size,
++		   &local->memory_stats.malloc_size);
++
+ 	if (ieee80211_hw_check(hw, USES_RSS)) {
+ 		sta->pcpu_rx_stats =
+ 			alloc_percpu_gfp(struct ieee80211_sta_rx_stats, gfp);
+@@ -362,6 +371,8 @@ struct sta_info *sta_info_alloc(struct i
+ 		sta->mesh = kzalloc(sizeof(*sta->mesh), gfp);
+ 		if (!sta->mesh)
+ 			goto free;
++		atomic_add(sizeof(*sta->mesh),
++			   &local->memory_stats.malloc_size);
+ 		sta->mesh->plink_sta = sta;
+ 		spin_lock_init(&sta->mesh->plink_lock);
+ 		if (ieee80211_vif_is_mesh(&sdata->vif) &&
+@@ -526,8 +537,12 @@ free_txq:
+ free:
+ 	free_percpu(sta->pcpu_rx_stats);
+ #ifdef CPTCFG_MAC80211_MESH
++	atomic_sub(sizeof(*sta->mesh),
++		   &local->memory_stats.malloc_size);
+ 	kfree(sta->mesh);
+ #endif
++	atomic_sub(sizeof(*sta) + hw->sta_data_size,
++		   &local->memory_stats.malloc_size);
+ 	kfree(sta);
+ 	return NULL;
+ }

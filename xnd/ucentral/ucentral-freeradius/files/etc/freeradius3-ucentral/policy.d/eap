@@ -1,0 +1,85 @@
+#
+#	Response caching to handle proxy failovers
+#
+Xeap.authorize {
+	cache_eap
+	if (ok) {
+		#
+		#	Expire previous cache entry
+		#
+		if (&control:State) {
+			update control {
+				&Cache-TTL := 0
+			}
+			cache_eap
+
+			update control {
+				&State !* ANY
+			}
+		}
+
+		handled
+	}
+	else {
+		eap.authorize
+	}
+}
+
+#
+#	Populate cache with responses from the EAP module
+#
+Xeap.authenticate {
+	eap {
+		handled = 1
+	}
+	if (handled) {
+		cache_eap.authorize
+
+		handled
+	}
+
+	cache_eap.authorize
+}
+
+#
+#       Forbid all EAP types.  Enable this by putting "forbid_eap"
+#       into the "authorize" section.
+#
+forbid_eap {
+	if (&EAP-Message) {
+		reject
+	}
+}
+
+#
+#       Forbid all non-EAP types outside of an EAP tunnel.
+#
+permit_only_eap {
+	if (!&EAP-Message) {
+		#  We MAY be inside of a TTLS tunnel.
+		#  PEAP and EAP-FAST require EAP inside of
+		#  the tunnel, so this check is OK.
+		#  If so, then there MUST be an outer EAP message.
+		if (!&outer.request || !&outer.request:EAP-Message) {
+			reject
+		}
+	}
+}
+
+#
+#       Remove Reply-Message from response if were doing EAP
+#
+#  Be RFC 3579 2.6.5 compliant - EAP-Message and Reply-Message should
+#  not be present in the same response.
+#
+remove_reply_message_if_eap {
+	if (&reply:EAP-Message && &reply:Reply-Message) {
+		update reply {
+			&Reply-Message !* ANY
+		}
+	}
+	else {
+		noop
+	}
+}
+

@@ -1,0 +1,2044 @@
+From 5cd2da1a4d9cf177444d3633d9cfdc0a68573587 Mon Sep 17 00:00:00 2001
+From: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+Date: Wed, 10 Feb 2021 18:17:04 +0530
+Subject: [PATCH] ath11k: add CFR capture support for ipq8074
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This change is to add single shot/periodic CFR capture
+support for ipq8074.
+
+To enable/disable cfr feature use command,
+echo <val> > /sys/kernel/debug/ieee80211/phyX/ath11k/enable_cfr
+where, val: 0 to disable CFR and 1 to enable CFR.
+
+To enable CFR capture for associated peers,
+echo "<val> <bw> <periodicity> <method>"
+ > /sys/kernel/debug/ieee80211/phyX/netdev\:wlanx/stations/<mac>/cfr_capture
+val: 0 - stop CFR capture
+         1 - start CFR capture
+bw: CFR capture bandwidth
+        0 - 20MHZ
+        1 - 40MHZ
+        2 - 80MHZ
+Periodicity: Periodicity at which hardware is expceted to collect CFR dump.
+        0 - single shot capture.
+        non zero - for Periodic captures (value should be multiple of 10).
+method: Method used by hardware to collect the CFR dump.
+        0 - from the ACKs of QOS NULL packets.
+
+To enable CFR capture for unassociated clients,
+echo “<mac address> <val> <periodicity>”
+ > /sys/kernel/debug/ieee80211/phyX/ath11k/cfr_unassoc
+Mac address: mac address of the client.
+Val: 0 - start CFR capture
+     1 – stop CFR capture
+Periodicity: Periodicity at which hardware is expceted to collect CFR dump.
+        0 - single shot capture.
+        non zero - for Periodic captures (value should be multiple of 10).
+
+To collect the cfr dump,
+cat /sys/kernel/debug/ieee80211/phy0/ath11k/cfr_capture0 > /tmp/cfr.bin
+
+Signed-off-by: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/Kconfig       |   9 +
+ drivers/net/wireless/ath/ath11k/Makefile      |   1 +
+ drivers/net/wireless/ath/ath11k/cfr.c         | 878 ++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/cfr.h         | 282 +++++++++
+ drivers/net/wireless/ath/ath11k/core.c        |  15 +
+ drivers/net/wireless/ath/ath11k/core.h        |  16 +-
+ drivers/net/wireless/ath/ath11k/dbring.c      |  28 +-
+ drivers/net/wireless/ath/ath11k/dbring.h      |  11 +-
+ drivers/net/wireless/ath/ath11k/debugfs.h       |   2 +
+ drivers/net/wireless/ath/ath11k/debugfs_sta.c | 157 +++++
+ drivers/net/wireless/ath/ath11k/hal.c         |   2 +-
+ drivers/net/wireless/ath/ath11k/hw.h          |   4 +
+ drivers/net/wireless/ath/ath11k/mac.c         |  11 +-
+ drivers/net/wireless/ath/ath11k/spectral.c    |   2 +-
+ drivers/net/wireless/ath/ath11k/wmi.c         | 137 +++-
+ drivers/net/wireless/ath/ath11k/wmi.h         |  91 ++-
+ local-symbols                                 |   1 +
+ 17 files changed, 1629 insertions(+), 18 deletions(-)
+ create mode 100644 drivers/net/wireless/ath/ath11k/cfr.c
+ create mode 100644 drivers/net/wireless/ath/ath11k/cfr.h
+
+--- a/drivers/net/wireless/ath/ath11k/Kconfig
++++ b/drivers/net/wireless/ath/ath11k/Kconfig
+@@ -84,3 +84,12 @@ config ATH11K_MEM_PROFILE_512M
+ 	default n
+ 	---help---
+ 	Enables 512MB memory profile for ath11k
++
++config ATH11K_CFR
++	bool "QCA ath11k CFR support"
++	depends on ATH11K_DEBUGFS
++	depends on RELAY
++	help
++	  Enable ath11k cfr dump support
++
++	  Say Y to enable access to collect cfr data dump via debugfs.
+--- a/drivers/net/wireless/ath/ath11k/Makefile
++++ b/drivers/net/wireless/ath/ath11k/Makefile
+@@ -28,6 +28,7 @@ ath11k-$(CONFIG_WANT_DEV_COREDUMP) += co
+ ath11k-$(CPTCFG_ATH11K_SPECTRAL) += spectral.o
+ ath11k-$(CPTCFG_ATH11K_PKTLOG) += pktlog.o
+ ath11k-$(CPTCFG_ATH11K_NSS_SUPPORT) += nss.o
++ath11k-$(CPTCFG_ATH11K_CFR) += cfr.o
+ 
+ obj-$(CPTCFG_ATH11K_AHB) += ath11k_ahb.o
+ ath11k_ahb-y += ahb.o
+--- /dev/null
++++ b/drivers/net/wireless/ath/ath11k/cfr.c
+@@ -0,0 +1,878 @@
++// SPDX-License-Identifier: BSD-3-Clause-Clear
++/*
++ * Copyright (c) 2020 The Linux Foundation. All rights reserved.
++ */
++
++#include <linux/relay.h>
++#include "core.h"
++#include "debug.h"
++
++bool peer_is_in_cfr_unassoc_pool(struct ath11k *ar, u8 *peer_mac)
++{
++	struct ath11k_cfr *cfr = &ar->cfr;
++	struct cfr_unassoc_pool_entry *entry;
++	int i;
++
++	if (!ar->cfr_enabled)
++		return false;
++
++	spin_lock_bh(&cfr->lock);
++	for (i = 0; i < ATH11K_MAX_CFR_ENABLED_CLIENTS; i++) {
++		entry = &cfr->unassoc_pool[i];
++		if (!entry->is_valid)
++			continue;
++
++		if (ether_addr_equal(peer_mac, entry->peer_mac)) {
++			/* Remove entry if it is single shot */
++			if (entry->period == 0) {
++				memset(entry->peer_mac, 0 , ETH_ALEN);
++				entry->is_valid = false;
++				cfr->cfr_enabled_peer_cnt--;
++			}
++			spin_unlock_bh(&cfr->lock);
++			return true;
++		}
++	}
++
++	spin_unlock_bh(&cfr->lock);
++
++	return false;
++}
++
++void ath11k_cfr_lut_update_paddr(struct ath11k *ar, dma_addr_t paddr,
++				 u32 buf_id)
++{
++	struct ath11k_cfr *cfr = &ar->cfr;
++	struct ath11k_cfr_look_up_table *lut;
++
++	if (cfr->lut) {
++		lut = &cfr->lut[buf_id];
++		lut->dbr_address = paddr;
++	}
++}
++
++void ath11k_cfr_decrement_peer_count(struct ath11k *ar,
++				     struct ath11k_sta *arsta)
++{
++	struct ath11k_cfr *cfr = &ar->cfr;
++
++	spin_lock_bh(&cfr->lock);
++
++	if (arsta->cfr_capture.cfr_enable)
++		cfr->cfr_enabled_peer_cnt--;
++
++	spin_unlock_bh(&cfr->lock);
++}
++
++struct ath11k_dbring *ath11k_cfr_get_dbring(struct ath11k *ar)
++{
++	if (ar->cfr_enabled)
++		return &ar->cfr.rx_ring;
++	else
++		return NULL;
++}
++
++static int cfr_calculate_tones_form_dma_hdr(struct ath11k_cfir_dma_hdr *hdr)
++{
++	u8 bw = FIELD_GET(CFIR_DMA_HDR_INFO1_UPLOAD_PKT_BW, hdr->info1);
++	u8 preamble = FIELD_GET(CFIR_DMA_HDR_INFO1_PREABLE_TYPE, hdr->info1);
++
++	switch (preamble) {
++	case ATH11K_CFR_PREAMBLE_TYPE_LEGACY:
++	case ATH11K_CFR_PREAMBLE_TYPE_VHT:
++		switch (bw) {
++		case 0:
++			return TONES_IN_20MHZ;
++		case 1: /* DUP40/VHT40 */
++			return TONES_IN_40MHZ;
++		case 2: /* DUP80/VHT80 */
++			return TONES_IN_80MHZ;
++		case 3: /* DUP160/VHT160 */
++			return TONES_IN_160MHZ;
++		}
++
++	case ATH11K_CFR_PREAMBLE_TYPE_HT:
++		switch (bw) {
++		case 0:
++			return TONES_IN_20MHZ;
++		case 1:
++			return TONES_IN_40MHZ;
++		}
++	}
++
++	return TONES_INVALID;
++}
++
++static inline
++void ath11k_cfr_release_lut_entry(struct ath11k_cfr_look_up_table *lut)
++{
++	memset(lut, 0, sizeof(*lut));
++}
++
++static void ath11k_cfr_rfs_write(struct ath11k *ar, const void *head,
++				 u32 head_len, const void *data, u32 data_len,
++				 const void * tail, int tail_data)
++{
++	struct ath11k_cfr *cfr = &ar->cfr;
++
++	if (!ar->cfr.rfs_cfr_capture)
++		return;
++
++	relay_write(cfr->rfs_cfr_capture, head, head_len);
++	relay_write(cfr->rfs_cfr_capture, data, data_len);
++	relay_write(cfr->rfs_cfr_capture, tail, tail_data);
++	relay_flush(cfr->rfs_cfr_capture);
++}
++
++static void ath11k_cfr_free_pending_dbr_events(struct ath11k *ar)
++{
++	struct ath11k_cfr *cfr = &ar->cfr;
++	struct ath11k_cfr_look_up_table *lut = NULL;
++	int i;
++
++	if (!cfr->lut)
++		return;
++
++	for (i = 0; i < cfr->lut_num; i++) {
++		lut = &cfr->lut[i];
++		if (lut->dbr_recv && !lut->tx_recv &&
++		    (lut->dbr_tstamp < cfr->last_success_tstamp)) {
++			ath11k_dbring_bufs_replenish(ar, &cfr->rx_ring, lut->buff,
++						     WMI_DIRECT_BUF_CFR, GFP_ATOMIC);
++			ath11k_cfr_release_lut_entry(lut);
++			cfr->flush_dbr_cnt++;
++		}
++	}
++}
++
++/* Correlate and relay: This function correlate the data coming from
++ * WMI_PDEV_DMA_RING_BUF_RELEASE_EVENT(DBR event) and
++ * WMI_PEER_CFR_CAPTURE_EVENT(Tx capture event). if both the events
++ * are received and PPDU id matches from the both events,
++ * return CORRELATE_STATUS_RELEASE which means relay the correlated data
++ * to user space. Otherwise return CORRELATE_STATUS_HOLD which means wait
++ * for the second event to come. It will return CORRELATE_STATUS_ERR in
++ * case of any error.
++ *
++ * It also check for the pending DBR events and clear those events
++ * in case of corresponding TX capture event is not received for
++ * the PPDU.
++ */
++
++static int ath11k_cfr_correlate_and_relay(struct ath11k *ar,
++					  struct ath11k_cfr_look_up_table *lut,
++					  u8 event_type)
++{
++	struct ath11k_cfr *cfr = &ar->cfr;
++	u64 diff;
++
++	if (event_type == ATH11K_CORRELATE_TX_EVENT) {
++		if (lut->tx_recv)
++			cfr->cfr_dma_aborts++;
++		cfr->tx_evt_cnt++;
++		lut->tx_recv = true;
++	} else if (event_type == ATH11K_CORRELATE_DBR_EVENT) {
++		cfr->dbr_evt_cnt++;
++		lut->dbr_recv = true;
++	}
++
++	if (lut->dbr_recv && lut->tx_recv) {
++		if (lut->dbr_ppdu_id == lut->tx_ppdu_id) {
++			cfr->last_success_tstamp = lut->dbr_tstamp;
++			if (lut->dbr_tstamp > lut->txrx_tstamp) {
++				diff = lut->dbr_tstamp - lut->txrx_tstamp;
++				ath11k_dbg(ar->ab, ATH11K_DBG_CFR,
++					   "txrx event -> dbr event delay = %u ms",
++					   jiffies_to_msecs(diff));
++			} else if (lut->txrx_tstamp > lut->dbr_tstamp) {
++				diff = lut->txrx_tstamp - lut->dbr_tstamp;
++				ath11k_dbg(ar->ab, ATH11K_DBG_CFR,
++					   "dbr event -> txrx event delay = %u ms",
++					   jiffies_to_msecs(diff));
++			}
++
++			ath11k_cfr_free_pending_dbr_events(ar);
++
++			cfr->release_cnt++;
++			return ATH11K_CORRELATE_STATUS_RELEASE;
++		} else {
++			/*
++			 * When there is a ppdu id mismatch, discard the TXRX
++			 * event since multiple PPDUs are likely to have same
++			 * dma addr, due to ucode aborts.
++			 */
++
++			ath11k_dbg(ar->ab, ATH11K_DBG_CFR,
++				   "Received dbr event twice for the same lut entry");
++			lut->tx_recv = false;
++			lut->tx_ppdu_id = 0;
++			cfr->clear_txrx_event++;
++			cfr->cfr_dma_aborts++;
++			return ATH11K_CORRELATE_STATUS_HOLD;
++		}
++	} else {
++		return ATH11K_CORRELATE_STATUS_HOLD;
++	}
++}
++
++static int ath11k_cfr_process_data(struct ath11k *ar,
++				   struct ath11k_dbring_data *param)
++{
++	struct ath11k_base *ab = ar->ab;
++	struct ath11k_cfr *cfr = &ar->cfr;
++	struct ath11k_cfr_look_up_table *lut;
++	struct ath11k_csi_cfr_header *header;
++	struct ath11k_cfir_dma_hdr dma_hdr;
++	u8 *data;
++	u32 end_magic = ATH11K_CFR_END_MAGIC;
++	u32 buf_id;
++	u32 tones;
++	u32 length;
++	int status;
++	u8 num_chains;
++	int ret = 0;
++
++	data = param->data;
++	buf_id = param->buf_id;
++
++	memcpy(&dma_hdr, data, sizeof(struct ath11k_cfir_dma_hdr));
++
++	tones = cfr_calculate_tones_form_dma_hdr(&dma_hdr);
++	if (tones == TONES_INVALID) {
++		ath11k_err(ar->ab, "Number of tones received is invalid");
++		return -EINVAL;
++	}
++
++	num_chains = FIELD_GET(CFIR_DMA_HDR_INFO1_NUM_CHAINS,
++			       dma_hdr.info1);
++
++	length = sizeof(struct ath11k_cfir_dma_hdr);
++	length += tones * (num_chains + 1);
++
++	spin_lock_bh(&cfr->lut_lock);
++
++	if (!cfr->lut) {
++		spin_unlock_bh(&cfr->lut_lock);
++		return -EINVAL;
++	}
++
++	lut = &cfr->lut[buf_id];
++
++	if (!lut) {
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "lut failure to process cfr data id:%d\n", buf_id);
++		spin_unlock_bh(&cfr->lut_lock);
++		return -EINVAL;
++	}
++
++	ath11k_dbg_dump(ab, ATH11K_DBG_CFR_DUMP,"data_from_buf_rel:", "",
++			data, length);
++
++	lut->buff = param->buff;
++	lut->data = data;
++	lut->data_len = length;
++	lut->dbr_ppdu_id = dma_hdr.phy_ppdu_id;
++	lut->dbr_tstamp = jiffies;
++
++	memcpy(&lut->hdr, &dma_hdr, sizeof(struct ath11k_cfir_dma_hdr));
++
++	header = &lut->header;
++	header->u.meta_v2.channel_bw = FIELD_GET(CFIR_DMA_HDR_INFO1_UPLOAD_PKT_BW,
++						 dma_hdr.info1);
++	header->u.meta_v2.length = length;
++
++	status = ath11k_cfr_correlate_and_relay(ar, lut,
++						ATH11K_CORRELATE_DBR_EVENT);
++	if (status == ATH11K_CORRELATE_STATUS_RELEASE) {
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "releasing CFR data to user space");
++		ath11k_cfr_rfs_write(ar, &lut->header,
++				     sizeof(struct ath11k_csi_cfr_header),
++				     lut->data, lut->data_len,
++				     &end_magic, sizeof(u32));
++		ath11k_cfr_release_lut_entry(lut);
++		ret = ATH11K_CORRELATE_STATUS_RELEASE;
++	} else if (status == ATH11K_CORRELATE_STATUS_HOLD) {
++		ret = ATH11K_CORRELATE_STATUS_HOLD;
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "tx event is not yet received holding the buf");
++	} else {
++		ret = ATH11K_CORRELATE_STATUS_ERR;
++		ath11k_cfr_release_lut_entry(lut);
++		ath11k_err(ab, "error in correlating events");
++	}
++
++	spin_unlock_bh(&cfr->lut_lock);
++
++	return ret;
++}
++
++static void ath11k_cfr_fill_hdr_info(struct ath11k *ar,
++				     struct ath11k_csi_cfr_header *header,
++				     struct ath11k_cfr_peer_tx_param *params)
++{
++	header->cfr_metadata_version = ATH11K_CFR_META_VERSION_2;
++	header->cfr_data_version = ATH11K_CFR_DATA_VERSION_1;
++	/* TODO: can we add this chip_type to hw param table */
++	header->chip_type = ATH11K_CFR_RADIO_IPQ8074;
++	header->u.meta_v2.status = FIELD_GET(WMI_CFR_PEER_CAPTURE_STATUS,
++			params->status);
++	header->u.meta_v2.capture_bw = params->bandwidth;
++	header->u.meta_v2.phy_mode = params->phy_mode;
++	header->u.meta_v2.prim20_chan = params->primary_20mhz_chan;
++	header->u.meta_v2.center_freq1 = params->band_center_freq1;
++	header->u.meta_v2.center_freq2 = params->band_center_freq2;
++
++	/* Currently CFR data is captured on ACK of a Qos NULL frame.
++	 * For 20 MHz, ACK is Legacy and for 40/80/160, ACK is DUP Legacy.
++	 */
++	header->u.meta_v2.capture_mode = params->bandwidth ?
++		ATH11K_CFR_CAPTURE_DUP_LEGACY_ACK : ATH11K_CFR_CAPTURE_LEGACY_ACK;
++	header->u.meta_v2.capture_type = params->capture_method;
++	header->u.meta_v2.num_rx_chain = ar->num_rx_chains;
++	header->u.meta_v2.sts_count    = params->spatial_streams;
++	header->u.meta_v2.timestamp    = params->timestamp_us;
++	memcpy(header->u.meta_v2.peer_addr, params->peer_mac_addr, ETH_ALEN);
++	memcpy(header->u.meta_v2.chain_rssi, params->chain_rssi,
++	       sizeof(params->chain_rssi));
++	memcpy(header->u.meta_v2.chain_phase, params->chain_phase,
++	       sizeof(params->chain_phase));
++}
++
++int ath11k_process_cfr_capture_event(struct ath11k_base *ab,
++				     struct ath11k_cfr_peer_tx_param *params)
++{
++	struct ath11k *ar;
++	struct ath11k_cfr *cfr;
++	struct ath11k_vif *arvif;
++	struct ath11k_cfr_look_up_table *lut = NULL, *temp = NULL;
++	struct ath11k_dbring_element *buff;
++	struct ath11k_csi_cfr_header *header;
++	dma_addr_t buf_addr;
++	u32 end_magic = ATH11K_CFR_END_MAGIC;
++	u8 tx_status;
++	int ret = 0;
++	int status;
++	int i;
++
++	rcu_read_lock();
++	arvif = ath11k_mac_get_arvif_by_vdev_id(ab, params->vdev_id);
++	if (!arvif) {
++		ath11k_warn(ab, "Failed to get arvif for vdev id %d\n",
++			    params->vdev_id);
++		rcu_read_unlock();
++		return -ENOENT;
++	}
++
++	ar = arvif->ar;
++	cfr = &ar->cfr;
++	rcu_read_unlock();
++
++	if (WMI_CFR_CAPTURE_STATUS_PEER_PS & params->status) {
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "CFR capture failed as peer %pM is in powersave",
++			   params->peer_mac_addr);
++		return -EINVAL;
++	}
++
++	if (!(WMI_CFR_PEER_CAPTURE_STATUS & params->status)) {
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "CFR capture failed for the peer : %pM",
++			   params->peer_mac_addr);
++		cfr->tx_peer_status_cfr_fail++;
++		return -EINVAL;
++	}
++
++	tx_status = FIELD_GET(WMI_CFR_FRAME_TX_STATUS, params->status);
++
++	if (tx_status != WMI_FRAME_TX_STATUS_OK) {
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "WMI tx status %d for the peer %pM",
++			   tx_status, params->peer_mac_addr);
++		cfr->tx_evt_status_cfr_fail++;
++		return -EINVAL;
++	}
++
++	buf_addr = (((u64)FIELD_GET(WMI_CFR_CORRELATION_INFO2_BUF_ADDR_HIGH,
++				    params->correlation_info_2)) << 32) |
++		   params->correlation_info_1;
++
++	spin_lock_bh(&cfr->lut_lock);
++
++	if (!cfr->lut) {
++		spin_unlock_bh(&cfr->lut_lock);
++		return -EINVAL;
++	}
++
++	for (i = 0; i < cfr->lut_num; i++) {
++		temp = &cfr->lut[i];
++		if (temp->dbr_address == buf_addr) {
++			lut = &cfr->lut[i];
++			break;
++		}
++	}
++
++	if (!lut) {
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "lut failure to process tx event\n");
++		cfr->tx_dbr_lookup_fail++;
++		spin_unlock_bh(&cfr->lut_lock);
++		return -EINVAL;
++	}
++
++	lut->tx_ppdu_id = FIELD_GET(WMI_CFR_CORRELATION_INFO2_PPDU_ID,
++				    params->correlation_info_2);
++	lut->tx_address1 = params->correlation_info_1;
++	lut->tx_address2 = params->correlation_info_2;
++	lut->txrx_tstamp = jiffies;
++
++	header = &lut->header;
++	header->start_magic_num = ATH11K_CFR_START_MAGIC;
++	header->vendorid = VENDOR_QCA;
++	header->pltform_type = PLATFORM_TYPE_ARM;
++
++	ath11k_cfr_fill_hdr_info(ar, header, params);
++
++	status = ath11k_cfr_correlate_and_relay(ar, lut,
++						ATH11K_CORRELATE_TX_EVENT);
++	if (status == ATH11K_CORRELATE_STATUS_RELEASE) {
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "Releasing CFR data to user space");
++		ath11k_cfr_rfs_write(ar, &lut->header,
++				     sizeof(struct ath11k_csi_cfr_header),
++				     lut->data, lut->data_len,
++				     &end_magic, sizeof(u32));
++		buff = lut->buff;
++		ath11k_cfr_release_lut_entry(lut);
++
++		ath11k_dbring_bufs_replenish(ar, &cfr->rx_ring, buff,
++					     WMI_DIRECT_BUF_CFR, GFP_ATOMIC);
++	} else if (status == ATH11K_CORRELATE_STATUS_HOLD) {
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "dbr event is not yet received holding buf\n");
++	} else {
++		ath11k_cfr_release_lut_entry(lut);
++		ret = -EINVAL;
++	}
++
++	spin_unlock_bh(&cfr->lut_lock);
++	return ret;
++}
++
++static struct dentry *create_buf_file_handler(const char *filename,
++					      struct dentry *parent,
++					      umode_t mode,
++					      struct rchan_buf *buf,
++					      int *is_global)
++{
++	struct dentry *buf_file;
++
++	buf_file = debugfs_create_file(filename, mode, parent, buf,
++				       &relay_file_operations);
++	*is_global = 1;
++	return buf_file;
++}
++
++static int remove_buf_file_handler(struct dentry *dentry)
++{
++	debugfs_remove(dentry);
++
++	return 0;
++}
++
++static struct rchan_callbacks rfs_cfr_capture_cb = {
++	.create_buf_file = create_buf_file_handler,
++	.remove_buf_file = remove_buf_file_handler,
++};
++
++static ssize_t ath11k_read_file_enable_cfr(struct file *file,
++					   char __user *user_buf,
++					   size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	char buf[32] = {0};
++	size_t len;
++
++	mutex_lock(&ar->conf_mutex);
++	len = scnprintf(buf, sizeof(buf), "%d\n", ar->cfr_enabled);
++	mutex_unlock(&ar->conf_mutex);
++
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t ath11k_write_file_enable_cfr(struct file *file,
++					    const char __user *ubuf,
++					    size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	u8 enable_cfr;
++	int ret;
++
++	if (kstrtouint_from_user(ubuf, count, 0, &enable_cfr))
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (ar->state != ATH11K_STATE_ON) {
++		ret = -ENETDOWN;
++		goto out;
++	}
++
++	if (enable_cfr > 1) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (ar->cfr_enabled == enable_cfr) {
++		ret = count;
++		goto out;
++	}
++
++	ret = ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_PER_PEER_CFR_ENABLE,
++					enable_cfr, ar->pdev->pdev_id);
++	if (ret) {
++		ath11k_warn(ar->ab,
++			    "Failed to enable/disable per peer cfr (%d)\n",
++			    ret);
++		goto out;
++	}
++
++	ar->cfr_enabled = enable_cfr;
++	ret = count;
++
++out:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static const struct file_operations fops_enable_cfr = {
++	.read = ath11k_read_file_enable_cfr,
++	.write = ath11k_write_file_enable_cfr,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static ssize_t ath11k_write_file_cfr_unassoc(struct file *file,
++					     const char __user *ubuf,
++					     size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	struct ath11k_cfr *cfr = &ar->cfr;
++	struct cfr_unassoc_pool_entry *entry;
++	char buf[64] = {0};
++	u8 peer_mac[6];
++	u32 cfr_capture_enable;
++	u32 cfr_capture_period;
++	int available_idx = -1;
++	int ret, i;
++
++	simple_write_to_buffer(buf, sizeof(buf) - 1, ppos, ubuf, count);
++
++	mutex_lock(&ar->conf_mutex);
++	spin_lock_bh(&cfr->lock);
++
++	if (ar->state != ATH11K_STATE_ON) {
++		ret = -ENETDOWN;
++		goto out;
++	}
++
++	if (!ar->cfr_enabled) {
++		ret = -EINVAL;
++		ath11k_err(ar->ab, "CFR is not enabled on this pdev %d\n",
++			   ar->pdev_idx);
++		goto out;
++	}
++
++	ret = sscanf(buf, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx %u %u",
++		     &peer_mac[0], &peer_mac[1], &peer_mac[2], &peer_mac[3],
++		     &peer_mac[4], &peer_mac[5], &cfr_capture_enable,
++		     &cfr_capture_period);
++
++	if (ret < 1) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (cfr_capture_enable && ret != 8) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (!cfr_capture_enable) {
++		for (i = 0; i < ATH11K_MAX_CFR_ENABLED_CLIENTS; i++) {
++			entry = &cfr->unassoc_pool[i];
++			if (ether_addr_equal(peer_mac, entry->peer_mac)) {
++				memset(entry->peer_mac, 0, ETH_ALEN);
++				entry->is_valid = false;
++				cfr->cfr_enabled_peer_cnt--;
++			}
++		}
++
++		ret = count;
++		goto out;
++	}
++
++
++	if (cfr->cfr_enabled_peer_cnt >= ATH11K_MAX_CFR_ENABLED_CLIENTS) {
++		ath11k_info(ar->ab, "Max cfr peer threshold reached\n");
++		ret = count;
++		goto out;
++	}
++
++	for (i = 0; i < ATH11K_MAX_CFR_ENABLED_CLIENTS; i++) {
++		entry = &cfr->unassoc_pool[i];
++
++		if ((available_idx < 0) && !entry->is_valid)
++			available_idx = i;
++
++		if (ether_addr_equal(peer_mac, entry->peer_mac)) {
++			ath11k_info(ar->ab,
++				    "peer entry already present updating params\n");
++			entry->period = cfr_capture_period;
++			ret = count;
++			goto out;
++		}
++	}
++
++	if (available_idx >= 0) {
++		entry = &cfr->unassoc_pool[available_idx];
++		ether_addr_copy(entry->peer_mac, peer_mac);
++		entry->period = cfr_capture_period;
++		entry->is_valid = true;
++		cfr->cfr_enabled_peer_cnt++;
++	}
++
++	ret = count;
++out:
++	spin_unlock_bh(&cfr->lock);
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static ssize_t ath11k_read_file_cfr_unassoc(struct file *file,
++					    char __user *ubuf,
++					    size_t count, loff_t *ppos)
++{
++	char buf[512] = {0};
++	struct ath11k *ar = file->private_data;
++	struct ath11k_cfr *cfr = &ar->cfr;
++	struct cfr_unassoc_pool_entry *entry;
++	int len = 0, i;
++
++	mutex_lock(&ar->conf_mutex);
++	spin_lock_bh(&cfr->lock);
++
++	for (i = 0; i < ATH11K_MAX_CFR_ENABLED_CLIENTS; i++) {
++		entry = &cfr->unassoc_pool[i];
++		if (entry->is_valid)
++			len += scnprintf(buf + len, sizeof(buf) - len,
++					 "peer: %pM period: %u\n",
++					 entry->peer_mac, entry->period);
++	}
++
++	spin_unlock_bh(&cfr->lock);
++	mutex_unlock(&ar->conf_mutex);
++
++	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops_configure_cfr_unassoc = {
++	.write = ath11k_write_file_cfr_unassoc,
++	.read = ath11k_read_file_cfr_unassoc,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static inline void ath11k_cfr_debug_unregister(struct ath11k *ar)
++{
++	debugfs_remove(ar->cfr.enable_cfr);
++	ar->cfr.enable_cfr = NULL;
++	debugfs_remove(ar->cfr.cfr_unassoc);
++	ar->cfr.cfr_unassoc = NULL;
++
++	if (ar->cfr.rfs_cfr_capture) {
++		relay_close(ar->cfr.rfs_cfr_capture);
++		ar->cfr.rfs_cfr_capture = NULL;
++	}
++}
++
++static inline int ath11k_cfr_debug_register(struct ath11k *ar)
++{
++	int ret;
++
++	ar->cfr.rfs_cfr_capture = relay_open("cfr_capture",
++					     ar->debug.debugfs_pdev,
++					     ar->ab->hw_params.cfr_stream_buf_size,
++					     ar->ab->hw_params.cfr_num_stream_bufs,
++					     &rfs_cfr_capture_cb, NULL);
++	if (!ar->cfr.rfs_cfr_capture) {
++		ath11k_warn(ar->ab, "failed to open relay for cfr in pdev %d\n",
++			    ar->pdev_idx);
++		return -EINVAL;
++	}
++
++	ar->cfr.enable_cfr = debugfs_create_file("enable_cfr", 0600,
++						 ar->debug.debugfs_pdev, ar,
++						 &fops_enable_cfr);
++	if (!ar->cfr.enable_cfr) {
++		ath11k_warn(ar->ab, "failed to open debugfs in pdev %d\n",
++			    ar->pdev_idx);
++		ret = -EINVAL;
++		goto debug_unregister;
++	}
++
++	ar->cfr.cfr_unassoc = debugfs_create_file("cfr_unassoc", 0600,
++						  ar->debug.debugfs_pdev, ar,
++						  &fops_configure_cfr_unassoc);
++
++	if (!ar->cfr.cfr_unassoc) {
++		ath11k_warn(ar->ab,
++			    "failed to open debugfs for unassoc pool in pdev %d\n",
++			    ar->pdev_idx);
++		ret = -EINVAL;
++		goto debug_unregister;
++	}
++
++	return 0;
++
++debug_unregister :
++	ath11k_cfr_debug_unregister(ar);
++	return ret;
++}
++
++static int ath11k_cfr_ring_alloc(struct ath11k *ar,
++				 struct ath11k_dbring_cap *db_cap)
++{
++	struct ath11k_cfr *cfr = &ar->cfr;
++	int ret;
++
++	ret = ath11k_dbring_srng_setup(ar, &cfr->rx_ring,
++				       1, db_cap->min_elem);
++	if (ret) {
++		ath11k_warn(ar->ab, "failed to setup db ring\n");
++		return ret;
++	}
++
++	ath11k_dbring_set_cfg(ar, &cfr->rx_ring,
++			      ATH11K_CFR_NUM_RESP_PER_EVENT,
++			      ATH11K_CFR_EVENT_TIMEOUT_MS,
++			      ath11k_cfr_process_data);
++
++	ret = ath11k_dbring_buf_setup(ar, &cfr->rx_ring, db_cap);
++	if (ret) {
++		ath11k_warn(ar->ab, "failed to setup db ring buffer\n");
++		goto srng_cleanup;
++	}
++
++	ret = ath11k_dbring_wmi_cfg_setup(ar, &cfr->rx_ring, WMI_DIRECT_BUF_CFR);
++	if (ret) {
++		ath11k_warn(ar->ab, "failed to setup db ring cfg\n");
++		goto buffer_cleanup;
++	}
++
++	return 0;
++
++buffer_cleanup:
++	ath11k_dbring_buf_cleanup(ar, &cfr->rx_ring);
++srng_cleanup:
++	ath11k_dbring_srng_cleanup(ar, &cfr->rx_ring);
++	return ret;
++}
++
++void ath11k_cfr_ring_free(struct ath11k *ar)
++{
++	struct ath11k_cfr *cfr = &ar->cfr;
++
++	ath11k_dbring_srng_cleanup(ar, &cfr->rx_ring);
++	ath11k_dbring_buf_cleanup(ar, &cfr->rx_ring);
++}
++
++void ath11k_cfr_deinit(struct ath11k_base *ab)
++{
++	struct ath11k *ar;
++	struct ath11k_cfr *cfr;
++	int i;
++
++	if (!test_bit(WMI_TLV_SERVICE_CFR_CAPTURE_SUPPORT,
++		      ab->wmi_ab.svc_map) || !ab->hw_params.cfr_support)
++		return;
++
++	for (i = 0; i <  ab->num_radios; i++) {
++		ar = ab->pdevs[i].ar;
++		cfr = &ar->cfr;
++
++		ath11k_cfr_debug_unregister(ar);
++		ath11k_cfr_ring_free(ar);
++
++		spin_lock_bh(&cfr->lut_lock);
++		if (cfr->lut) {
++			kfree(cfr->lut);
++			cfr->lut = NULL;
++		}
++
++		spin_unlock_bh(&cfr->lut_lock);
++		ar->cfr_enabled = 0;
++	}
++}
++
++int ath11k_cfr_init(struct ath11k_base *ab)
++{
++	struct ath11k *ar;
++	struct ath11k_cfr *cfr;
++	struct ath11k_dbring_cap db_cap;
++	struct ath11k_cfr_look_up_table *lut;
++	u32 num_lut_entries;
++	int ret = 0;
++	int i;
++
++	if (!test_bit(WMI_TLV_SERVICE_CFR_CAPTURE_SUPPORT,
++		      ab->wmi_ab.svc_map) || !ab->hw_params.cfr_support)
++		return ret;
++
++	for (i = 0; i < ab->num_radios; i++) {
++		ar = ab->pdevs[i].ar;
++		cfr = &ar->cfr;
++
++		ret = ath11k_dbring_get_cap(ar->ab, ar->pdev_idx,
++					    WMI_DIRECT_BUF_CFR, &db_cap);
++		if (ret)
++			continue;
++
++		idr_init(&cfr->rx_ring.bufs_idr);
++		spin_lock_init(&cfr->rx_ring.idr_lock);
++		spin_lock_init(&cfr->lock);
++		spin_lock_init(&cfr->lut_lock);
++
++		num_lut_entries = min((u32)CFR_MAX_LUT_ENTRIES, db_cap.min_elem);
++
++		cfr->lut = kzalloc(num_lut_entries * sizeof(*lut), GFP_KERNEL);
++		if (!cfr->lut) {
++			ath11k_warn(ab, "failed to allocate lut for pdev %d\n", i);
++			return -ENOMEM;
++		}
++
++		ret = ath11k_cfr_ring_alloc(ar, &db_cap);
++		if (ret) {
++			ath11k_warn(ab, "failed to init cfr ring for pdev %d\n", i);
++			goto deinit;
++		}
++
++		spin_lock_bh(&cfr->lock);
++		cfr->lut_num = num_lut_entries;
++		spin_unlock_bh(&cfr->lock);
++
++		ret = ath11k_cfr_debug_register(ar);
++		if (ret) {
++			ath11k_warn(ab, "failed to register cfr for pdev %d\n", i);
++			goto deinit;
++		}
++	}
++
++	return 0;
++
++deinit:
++	ath11k_cfr_deinit(ab);
++	return ret;
++}
+--- /dev/null
++++ b/drivers/net/wireless/ath/ath11k/cfr.h
+@@ -0,0 +1,282 @@
++/* SPDX-License-Identifier: BSD-3-Clause-Clear */
++/*
++ * Copyright (c) 2020 The Linux Foundation. All rights reserved.
++ */
++
++#ifndef ATH11K_CFR_H
++#define ATH11K_CFR_H
++
++#include "dbring.h"
++#include "wmi.h"
++
++#define ATH11K_CFR_NUM_RESP_PER_EVENT   1
++#define ATH11K_CFR_EVENT_TIMEOUT_MS     1
++
++#define ATH11K_CORRELATE_TX_EVENT 1
++#define ATH11K_CORRELATE_DBR_EVENT 0
++
++#define ATH11K_MAX_CFR_ENABLED_CLIENTS 10
++
++#define ATH11K_CFR_START_MAGIC 0xDEADBEAF
++#define ATH11K_CFR_END_MAGIC 0xBEAFDEAD
++
++#define ATH11K_CFR_RADIO_IPQ8074 23
++
++#define VENDOR_QCA 0x8cfdf0
++#define PLATFORM_TYPE_ARM 2
++
++enum ath11k_cfr_meta_version {
++	ATH11K_CFR_META_VERSION_NONE,
++	ATH11K_CFR_META_VERSION_1,
++	ATH11K_CFR_META_VERSION_2,
++	ATH11K_CFR_META_VERSION_3,
++	ATH11K_CFR_META_VERSION_MAX = 0xFF,
++};
++
++enum ath11k_cfr_data_version {
++	ATH11K_CFR_DATA_VERSION_NONE,
++	ATH11K_CFR_DATA_VERSION_1,
++	ATH11K_CFR_DATA_VERSION_MAX = 0xFF,
++};
++
++enum ath11k_cfr_capture_ack_mode {
++	ATH11K_CFR_CAPTURE_LEGACY_ACK,
++	ATH11K_CFR_CAPTURE_DUP_LEGACY_ACK,
++	ATH11K_CFR_CAPTURE_HT_ACK,
++	ATH11K_CFR_CPATURE_VHT_ACK,
++
++	/*Always keep this at last*/
++	ATH11K_CFR_CPATURE_INVALID_ACK
++};
++
++enum ath11k_cfr_correlate_status {
++	ATH11K_CORRELATE_STATUS_RELEASE,
++	ATH11K_CORRELATE_STATUS_HOLD,
++	ATH11K_CORRELATE_STATUS_ERR,
++};
++
++struct ath11k_cfr_peer_tx_param {
++        u32 capture_method;
++        u32 vdev_id;
++        u8 peer_mac_addr[ETH_ALEN];
++        u32 primary_20mhz_chan;
++        u32 bandwidth;
++        u32 phy_mode;
++        u32 band_center_freq1;
++        u32 band_center_freq2;
++        u32 spatial_streams;
++        u32 correlation_info_1;
++        u32 correlation_info_2;
++        u32 status;
++        u32 timestamp_us;
++        u32 counter;
++        u32 chain_rssi[WMI_MAX_CHAINS];
++        u16 chain_phase[WMI_MAX_CHAINS];
++};
++
++struct cfr_metadata_version_1 {
++	u8 peer_addr[ETH_ALEN];
++	u8 status;
++	u8 capture_bw;
++	u8 channel_bw;
++	u8 phy_mode;
++	u16 prim20_chan;
++	u16 center_freq1;
++	u16 center_freq2;
++	u8 capture_mode;
++	u8 capture_type;
++	u8 sts_count;
++	u8 num_rx_chain;
++	u32 timestamp;
++	u32 length;
++} __packed;
++
++#define HOST_MAX_CHAINS 8
++
++struct cfr_metadata_version_2 {
++	u8 peer_addr[ETH_ALEN];
++	u8 status;
++	u8 capture_bw;
++	u8 channel_bw;
++	u8 phy_mode;
++	u16 prim20_chan;
++	u16 center_freq1;
++	u16 center_freq2;
++	u8 capture_mode;
++	u8 capture_type;
++	u8 sts_count;
++	u8 num_rx_chain;
++	u32 timestamp;
++	u32 length;
++	u32 chain_rssi[HOST_MAX_CHAINS];
++	u16 chain_phase[HOST_MAX_CHAINS];
++} __packed;
++
++struct ath11k_csi_cfr_header {
++	u32 start_magic_num;
++	u32 vendorid;
++	u8 cfr_metadata_version;
++	u8 cfr_data_version;
++	u8 chip_type;
++	u8 pltform_type;
++	u32 Reserved;
++	union {
++		struct cfr_metadata_version_1 meta_v1;
++		struct cfr_metadata_version_2 meta_v2;
++	} u;
++} __packed;
++
++enum ath11k_cfr_preamble_type {
++	ATH11K_CFR_PREAMBLE_TYPE_LEGACY,
++	ATH11K_CFR_PREAMBLE_TYPE_HT,
++	ATH11K_CFR_PREAMBLE_TYPE_VHT,
++};
++
++#define TONES_IN_20MHZ  256
++#define TONES_IN_40MHZ  512
++#define TONES_IN_80MHZ  1024
++#define TONES_IN_160MHZ 2048 /* 160 MHz isn't supported yet */
++#define TONES_INVALID   0
++
++#define CFIR_DMA_HDR_INFO0_TAG GENMASK(7, 0)
++#define CFIR_DMA_HDR_INFO0_LEN GENMASK(13, 8)
++
++#define CFIR_DMA_HDR_INFO1_UPLOAD_DONE	GENMASK(0, 0)
++#define CFIR_DMA_HDR_INFO1_CAPTURE_TYPE	GENMASK(3, 1)
++#define CFIR_DMA_HDR_INFO1_PREABLE_TYPE	GENMASK(5, 4)
++#define CFIR_DMA_HDR_INFO1_NSS		GENMASK(8, 6)
++#define CFIR_DMA_HDR_INFO1_NUM_CHAINS	GENMASK(11, 9)
++#define CFIR_DMA_HDR_INFO1_UPLOAD_PKT_BW GENMASK(14, 12)
++#define CFIR_DMA_HDR_INFO1_SW_PEER_ID_VALID GENMASK(15, 15)
++
++struct ath11k_cfir_dma_hdr {
++        u16 info0;
++	u16 info1;
++	u16 sw_peer_id;
++	u16 phy_ppdu_id;
++};
++
++#define CFR_MAX_LUT_ENTRIES 136
++
++struct ath11k_cfr_look_up_table {
++	bool dbr_recv;
++	bool tx_recv;
++	u8 *data;
++	u32 data_len;
++	u16 dbr_ppdu_id;
++	u16 tx_ppdu_id;
++	dma_addr_t dbr_address;
++	u32 tx_address1;
++	u32 tx_address2;
++	struct ath11k_csi_cfr_header header;
++	struct ath11k_cfir_dma_hdr hdr;
++	u64 txrx_tstamp;
++	u64 dbr_tstamp;
++	u32 header_length;
++	u32 payload_length;
++	struct ath11k_dbring_element *buff;
++};
++
++enum cfr_capture_type {
++	CFR_CAPTURE_METHOD_NULL_FRAME = 0,
++	CFR_CAPURE_METHOD_NULL_FRAME_WITH_PHASE = 1,
++	CFR_CAPTURE_METHOD_PROBE_RESP = 2,
++	CFR_CAPTURE_METHOD_TM = 3,
++	CFR_CAPTURE_METHOD_FTM = 4,
++	CFR_CAPTURE_METHOD_ACK_RESP_TO_TM_FTM = 5,
++	CFR_CAPTURE_METHOD_TA_RA_TYPE_FILTER = 6,
++	CFR_CAPTURE_METHOD_NDPA_NDP = 7,
++	CFR_CAPTURE_METHOD_ALL_PACKET = 8,
++	/* Add new capture methods before this line */
++	CFR_CAPTURE_METHOD_LAST_VALID,
++	CFR_CAPTURE_METHOD_AUTO = 0xff,
++	CFR_CAPTURE_METHOD_MAX,
++};
++
++struct cfr_unassoc_pool_entry {
++	u8 peer_mac[ETH_ALEN];
++	u32 period;
++	bool is_valid;
++};
++
++struct ath11k_cfr {
++	struct ath11k_dbring rx_ring;
++	/* Protects enabled for ath11k_cfr */
++	spinlock_t lock;
++	struct rchan *rfs_cfr_capture;
++	struct dentry *enable_cfr;
++	struct dentry *cfr_unassoc;
++	u8 cfr_enabled_peer_cnt;
++	struct ath11k_cfr_look_up_table *lut;
++	u32 lut_num;
++	u32 dbr_buf_size;
++	u32 dbr_num_bufs;
++	u32 max_mu_users;
++	/* protect look up table data */
++	spinlock_t lut_lock;
++	u64 tx_evt_cnt;
++	u64 dbr_evt_cnt;
++	u64 total_tx_evt_cnt;
++	u64 release_cnt;
++	u64 tx_peer_status_cfr_fail;
++	u64 tx_evt_status_cfr_fail;
++	u64 tx_dbr_lookup_fail;
++	u64 last_success_tstamp;
++	u64 flush_dbr_cnt;
++	u64 invalid_dma_length_cnt;
++	u64 clear_txrx_event;
++	u64 cfr_dma_aborts;
++	u64 flush_timeout_dbr_cnt;
++	struct cfr_unassoc_pool_entry unassoc_pool[ATH11K_MAX_CFR_ENABLED_CLIENTS];
++};
++
++#ifdef CPTCFG_ATH11K_CFR
++
++int ath11k_cfr_init(struct ath11k_base *ab);
++void ath11k_cfr_deinit(struct ath11k_base *ab);
++struct ath11k_dbring *ath11k_cfr_get_dbring(struct ath11k *ar);
++int ath11k_process_cfr_capture_event(struct ath11k_base *ab,
++				     struct ath11k_cfr_peer_tx_param *params);
++bool peer_is_in_cfr_unassoc_pool(struct ath11k *ar, u8 *peer_mac);
++void ath11k_cfr_relase_lut_entry(struct ath11k_cfr_look_up_table *lut);
++void ath11k_cfr_lut_update_paddr(struct ath11k *ar, dma_addr_t paddr,
++				 u32 buf_id);
++void ath11k_cfr_decrement_peer_count(struct ath11k *ar,
++				     struct ath11k_sta *arsta);
++#else
++static inline int ath11k_cfr_init(struct ath11k_base *ab)
++{
++	return 0;
++}
++static inline void ath11k_cfr_deinit(struct ath11k_base *ab)
++{
++}
++static inline
++struct ath11k_dbring *ath11k_cfr_get_dbring(struct ath11k *ar)
++{
++	return NULL;
++}
++static inline bool peer_is_in_cfr_unassoc_pool(struct ath11k *ar, u8 *peer_mac)
++{
++	return false;
++}
++static inline
++void ath11k_cfr_relase_lut_entry(struct ath11k_cfr_look_up_table *lut)
++{
++}
++static inline
++int ath11k_process_cfr_capture_event(struct ath11k_base *ab,
++				     struct ath11k_cfr_peer_tx_param *params)
++{
++	return 0;
++}
++static inline void ath11k_cfr_lut_update_paddr(struct ath11k *ar,
++					       dma_addr_t paddr, u32 buf_id)
++{
++}
++static inline void ath11k_cfr_decrement_peer_count(struct ath11k *ar,
++						   struct ath11k_sta *arsta)
++{
++}
++#endif /* CPTCFG_ATH11K_CFR */
++#endif /* ATH11K_CFR_H */
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -103,6 +103,11 @@ static const struct ath11k_hw_params ath
+ 		.ce_fwlog_enable = false,
+ 		.fwmem_mode_change = false,
+ 		.is_qdss_support = false,
++		.cfr_support = true,
++		.cfr_dma_hdr_size = sizeof(struct ath11k_cfir_dma_hdr),
++		.cfr_num_stream_bufs = 255,
++		/* csi_cfr_header + cfr header + max cfr payload */
++		.cfr_stream_buf_size = 8500,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -843,8 +848,16 @@ static int ath11k_core_pdev_create(struc
+ 		goto err_thermal_unregister;
+ 	}
+ 
++	ret = ath11k_cfr_init(ab);
++	if (ret) {
++		ath11k_err(ab, "failed to init cfr %d\n", ret);
++		goto err_spectral_unregister;
++	}
++
+ 	return 0;
+ 
++err_spectral_unregister:
++	ath11k_spectral_deinit(ab);
+ err_thermal_unregister:
+ 	ath11k_thermal_unregister(ab);
+ err_mac_unregister:
+@@ -861,6 +874,7 @@ err_pdev_debug:
+ 
+ static void ath11k_core_pdev_destroy(struct ath11k_base *ab)
+ {
++	ath11k_cfr_deinit(ab);
+ 	ath11k_spectral_deinit(ab);
+ 	ath11k_thermal_unregister(ab);
+ 	ath11k_mac_unregister(ab);
+@@ -1153,6 +1167,7 @@ static int ath11k_core_reconfigure_on_cr
+ 	ath11k_hif_irq_disable(ab);
+ 	ath11k_dp_pdev_free(ab);
+ 	ath11k_spectral_deinit(ab);
++	ath11k_cfr_deinit(ab);
+ 	ath11k_hif_stop(ab);
+ 	ath11k_wmi_detach(ab);
+ 	ath11k_dp_pdev_reo_cleanup(ab);
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -27,6 +27,7 @@
+ #include "vendor.h"
+ #include "rx_desc.h"
+ #include "nss.h"
++#include "cfr.h"
+ 
+ extern unsigned int ath11k_skip_radio;
+ 
+@@ -401,6 +402,13 @@ struct ath11k_htt_tx_stats {
+ 	u32 mu_group[MAX_MU_GROUP_ID];
+ };
+ 
++struct ath11k_per_peer_cfr_capture {
++	u32 cfr_enable;
++	u32 cfr_period;
++	u32 cfr_bandwidth;
++	u32 cfr_method;
++};
++
+ struct ath11k_per_ppdu_tx_stats {
+ 	u16 succ_pkts;
+ 	u16 failed_pkts;
+@@ -458,6 +466,9 @@ struct ath11k_sta {
+ 	u32 ps_start_jiffies;
+ 	u8 peer_current_ps_valid;
+ 	u32 ps_total_duration;
++#ifdef CPTCFG_ATH11K_CFR
++	struct ath11k_per_peer_cfr_capture cfr_capture;
++#endif
+ };
+ 
+ #define ATH11K_MIN_5G_FREQ 4150
+@@ -724,6 +735,10 @@ struct ath11k {
+ 	u8 ps_state_enable;
+ 	u8 ps_timekeeper_enable;
+ 	u8 reset_ps_duration;
++#ifdef CPTCFG_ATH11K_CFR
++	struct ath11k_cfr cfr;
++#endif
++	u8 cfr_enabled;
+ };
+ 
+ struct ath11k_band_cap {
+--- a/drivers/net/wireless/ath/ath11k/dbring.c
++++ b/drivers/net/wireless/ath/ath11k/dbring.c
+@@ -41,11 +41,11 @@ static void ath11k_dbring_fill_magic_val
+ 	}
+ }
+ 
+-static int ath11k_dbring_bufs_replenish(struct ath11k *ar,
+-					struct ath11k_dbring *ring,
+-					struct ath11k_dbring_element *buff,
+-					enum wmi_direct_buffer_module id,
+-					gfp_t gfp)
++int ath11k_dbring_bufs_replenish(struct ath11k *ar,
++				 struct ath11k_dbring *ring,
++				 struct ath11k_dbring_element *buff,
++				 enum wmi_direct_buffer_module id,
++				 gfp_t gfp)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct hal_srng *srng;
+@@ -85,6 +85,9 @@ static int ath11k_dbring_bufs_replenish(
+ 		goto err_idr_remove;
+ 	}
+ 
++	if (id == WMI_DIRECT_BUF_CFR)
++		ath11k_cfr_lut_update_paddr(ar, paddr, buf_id);
++
+ 	buff->paddr = paddr;
+ 
+ 	cookie = FIELD_PREP(DP_RXDMA_BUF_COOKIE_PDEV_ID, ar->pdev_idx) |
+@@ -200,8 +203,7 @@ int ath11k_dbring_set_cfg(struct ath11k
+ 
+ int ath11k_dbring_buf_setup(struct ath11k *ar,
+ 			    struct ath11k_dbring *ring,
+-			    struct ath11k_dbring_cap *db_cap,
+-			    enum wmi_direct_buffer_module id)
++			    struct ath11k_dbring_cap *db_cap)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct hal_srng *srng;
+@@ -217,7 +219,7 @@ int ath11k_dbring_buf_setup(struct ath11
+ 	ring->hp_addr = ath11k_hal_srng_get_hp_addr(ar->ab, srng);
+ 	ring->tp_addr = ath11k_hal_srng_get_tp_addr(ar->ab, srng);
+ 
+-	ret = ath11k_dbring_fill_bufs(ar, ring, id, GFP_KERNEL);
++	ret = ath11k_dbring_fill_bufs(ar, ring, db_cap->id, GFP_KERNEL);
+ 
+ 	return ret;
+ }
+@@ -283,6 +285,7 @@ int ath11k_dbring_buffer_release_event(s
+ 	int size;
+ 	dma_addr_t paddr;
+ 	int ret = 0;
++	int status;
+ 
+ 	pdev_idx = ev->fixed.pdev_id;
+ 	module_id = ev->fixed.module_id;
+@@ -312,6 +315,9 @@ int ath11k_dbring_buffer_release_event(s
+ 	case WMI_DIRECT_BUF_SPECTRAL:
+ 		ring = ath11k_spectral_get_dbring(ar);
+ 		break;
++	case WMI_DIRECT_BUF_CFR:
++		ring = ath11k_cfr_get_dbring(ar);
++		break;
+ 	default:
+ 		ring = NULL;
+ 		ath11k_warn(ab, "Recv dma buffer release ev on unsupp module %d\n",
+@@ -362,8 +368,12 @@ int ath11k_dbring_buffer_release_event(s
+ 			handler_data.data = PTR_ALIGN(vaddr_unalign,
+ 						      ring->buf_align);
+ 			handler_data.data_sz = ring->buf_sz;
++			handler_data.buff = buff;
++			handler_data.buf_id = buf_id;
+ 
+-			ring->handler(ar, &handler_data);
++			status = ring->handler(ar, &handler_data);
++			if (status == ATH11K_CORRELATE_STATUS_HOLD)
++				continue;
+ 		}
+ 
+ 		memset(buff, 0, size);
+--- a/drivers/net/wireless/ath/ath11k/dbring.h
++++ b/drivers/net/wireless/ath/ath11k/dbring.h
+@@ -20,6 +20,8 @@ struct ath11k_dbring_data {
+ 	void *data;
+ 	u32 data_sz;
+ 	struct wmi_dma_buf_release_meta_data meta;
++	struct ath11k_dbring_element *buff;
++	u32 buf_id;
+ };
+ 
+ struct ath11k_dbring_buf_release_event {
+@@ -60,13 +62,18 @@ int ath11k_dbring_set_cfg(struct ath11k
+ 			  u32 event_timeout_ms,
+ 			  int (*handler)(struct ath11k *,
+ 					 struct ath11k_dbring_data *));
++
++int ath11k_dbring_bufs_replenish(struct ath11k *ar,
++                                 struct ath11k_dbring *ring,
++                                 struct ath11k_dbring_element *buff,
++                                 enum wmi_direct_buffer_module id,
++                                 gfp_t gfp);
+ int ath11k_dbring_wmi_cfg_setup(struct ath11k *ar,
+ 				struct ath11k_dbring *ring,
+ 				enum wmi_direct_buffer_module id);
+ int ath11k_dbring_buf_setup(struct ath11k *ar,
+ 			    struct ath11k_dbring *ring,
+-			    struct ath11k_dbring_cap *db_cap,
+-			    enum wmi_direct_buffer_module id);
++			    struct ath11k_dbring_cap *db_cap);
+ int ath11k_dbring_srng_setup(struct ath11k *ar, struct ath11k_dbring *ring,
+ 			     int ring_num, int num_entries);
+ int ath11k_dbring_buffer_release_event(struct ath11k_base *ab,
+--- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
+@@ -1331,6 +1331,157 @@ static const struct file_operations fops
+ 	.llseek = default_llseek,
+ };
+ 
++#ifdef CPTCFG_ATH11K_CFR
++static ssize_t ath11k_dbg_sta_write_cfr_capture(struct file *file,
++						const char __user *user_buf,
++						size_t count, loff_t *ppos)
++{
++	struct ieee80211_sta *sta = file->private_data;
++	struct ath11k_sta *arsta = (struct ath11k_sta *)sta->drv_priv;
++	struct ath11k *ar = arsta->arvif->ar;
++	struct ath11k_cfr *cfr = &ar->cfr;
++	struct wmi_peer_cfr_capture_conf_arg arg;
++	u32 cfr_capture_enable = 0, cfr_capture_bw  = 0;
++	u32 cfr_capture_method = 0, cfr_capture_period = 0;
++	int ret;
++	char buf[64] = {0};
++
++	simple_write_to_buffer(buf, sizeof(buf) - 1, ppos, user_buf, count);
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (ar->state != ATH11K_STATE_ON) {
++		ret = -ENETDOWN;
++		goto out;
++	}
++
++	if (!ar->cfr_enabled) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	ret = sscanf(buf, "%u %u %u %u", &cfr_capture_enable, &cfr_capture_bw,
++		     &cfr_capture_period, &cfr_capture_method);
++
++	if ((ret < 1) || (cfr_capture_enable && ret != 4)) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (cfr_capture_enable == arsta->cfr_capture.cfr_enable &&
++	    (cfr_capture_period &&
++	     cfr_capture_period == arsta->cfr_capture.cfr_period) &&
++	    cfr_capture_bw == arsta->cfr_capture.cfr_bandwidth &&
++	    cfr_capture_method == arsta->cfr_capture.cfr_method) {
++		ret = count;
++		goto out;
++	}
++
++	if (!cfr_capture_enable &&
++	    cfr_capture_enable == arsta->cfr_capture.cfr_enable) {
++		ret = count;
++		goto out;
++	}
++
++	if (cfr_capture_enable > WMI_PEER_CFR_CAPTURE_ENABLE ||
++	    cfr_capture_bw > WMI_PEER_CFR_CAPTURE_BW_80MHZ ||
++	    cfr_capture_bw > sta->bandwidth ||
++	    cfr_capture_method > CFR_CAPURE_METHOD_NULL_FRAME_WITH_PHASE ||
++	    cfr_capture_period > WMI_PEER_CFR_PERIODICITY_MAX) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	/* Target expects cfr period in multiple of 10 */
++	if (cfr_capture_period % 10) {
++		ath11k_err(ar->ab, "periodicity should be 10x\n");
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (ar->cfr.cfr_enabled_peer_cnt >= ATH11K_MAX_CFR_ENABLED_CLIENTS &&
++	    !arsta->cfr_capture.cfr_enable) {
++		ret = -EINVAL;
++		ath11k_err(ar->ab, "CFR enable peer threshold reached %u\n",
++			   ar->cfr.cfr_enabled_peer_cnt);
++		goto out;
++	}
++
++	if (!cfr_capture_enable) {
++		cfr_capture_bw = arsta->cfr_capture.cfr_bandwidth;
++		cfr_capture_period = arsta->cfr_capture.cfr_period;
++		cfr_capture_method = arsta->cfr_capture.cfr_method;
++	}
++
++	arg.request = cfr_capture_enable;
++	arg.periodicity = cfr_capture_period;
++	arg.bandwidth = cfr_capture_bw;
++	arg.capture_method = cfr_capture_method;
++
++	ret = ath11k_wmi_peer_set_cfr_capture_conf(ar, arsta->arvif->vdev_id,
++						   sta->addr, &arg);
++	if (ret) {
++		ath11k_warn(ar, "failed to send cfr capture info: vdev_id %u peer %pM\n",
++			    arsta->arvif->vdev_id, sta->addr);
++		goto out;
++	}
++
++	ret = count;
++
++	spin_lock_bh(&ar->cfr.lock);
++
++	if (cfr_capture_enable &&
++	    cfr_capture_enable != arsta->cfr_capture.cfr_enable)
++		cfr->cfr_enabled_peer_cnt++;
++	else if (!cfr_capture_enable)
++		cfr->cfr_enabled_peer_cnt--;
++
++	spin_unlock_bh(&ar->cfr.lock);
++
++	arsta->cfr_capture.cfr_enable = cfr_capture_enable;
++	arsta->cfr_capture.cfr_period = cfr_capture_period;
++	arsta->cfr_capture.cfr_bandwidth = cfr_capture_bw;
++	arsta->cfr_capture.cfr_method = cfr_capture_method;
++out:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static ssize_t ath11k_dbg_sta_read_cfr_capture(struct file *file,
++					       char __user *user_buf,
++					       size_t count, loff_t *ppos)
++{
++	struct ieee80211_sta *sta = file->private_data;
++	struct ath11k_sta *arsta = (struct ath11k_sta *)sta->drv_priv;
++	struct ath11k *ar = arsta->arvif->ar;
++	char buf[512] = {0};
++	int len = 0;
++
++	mutex_lock(&ar->conf_mutex);
++
++	len += scnprintf(buf + len, sizeof(buf) - len, "cfr_enabled = %d\n",
++			 arsta->cfr_capture.cfr_enable);
++	len += scnprintf(buf + len, sizeof(buf) - len, "bandwidth = %d\n",
++			 arsta->cfr_capture.cfr_bandwidth);
++	len += scnprintf(buf + len, sizeof(buf) - len, "period = %d\n",
++			 arsta->cfr_capture.cfr_period);
++	len += scnprintf(buf + len, sizeof(buf) - len, "cfr_method = %d\n",
++			 arsta->cfr_capture.cfr_method);
++
++	mutex_unlock(&ar->conf_mutex);
++
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops_peer_cfr_capture = {
++	.write = ath11k_dbg_sta_write_cfr_capture,
++	.read = ath11k_dbg_sta_read_cfr_capture,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++#endif /* CPTCFG_ATH11K_CFR */
++
+ void ath11k_debugfs_sta_op_add(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			       struct ieee80211_sta *sta, struct dentry *dir)
+ {
+@@ -1378,4 +1529,10 @@ void ath11k_debugfs_sta_op_add(struct ie
+ 		     ar->ab->wmi_ab.svc_map))
+ 		debugfs_create_file("htt_peer_stats_reset", 0600, dir, sta,
+ 				    &fops_htt_peer_stats_reset);
++#ifdef CPTCFG_ATH11K_CFR
++	if (test_bit(WMI_TLV_SERVICE_CFR_CAPTURE_SUPPORT,
++		     ar->ab->wmi_ab.svc_map))
++		debugfs_create_file("cfr_capture", 0400, dir, sta,
++				    &fops_peer_cfr_capture);
++#endif/* CPTCFG_ATH11K_CFR */
+ }
+--- a/drivers/net/wireless/ath/ath11k/hal.c
++++ b/drivers/net/wireless/ath/ath11k/hal.c
+@@ -181,7 +181,7 @@ static const struct hal_srng_config hw_s
+ 	},
+ 	{ /* RXDMA DIR BUF */
+ 		.start_ring_id = HAL_SRNG_RING_ID_RXDMA_DIR_BUF,
+-		.max_rings = 1,
++		.max_rings = 2,
+ 		.entry_size = 8 >> 2, /* TODO: Define the struct */
+ 		.lmac_ring = true,
+ 		.ring_dir = HAL_SRNG_DIR_SRC,
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -204,6 +204,10 @@ struct ath11k_hw_params {
+ 	bool ce_fwlog_enable;
+ 	bool fwmem_mode_change;
+ 	bool is_qdss_support;
++	bool cfr_support;
++	u32 cfr_dma_hdr_size;
++	u32 cfr_num_stream_bufs;
++	u32 cfr_stream_buf_size;
+ };
+ 
+ struct ath11k_hw_ops {
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -4796,6 +4796,8 @@ static int ath11k_mac_op_sta_state(struc
+ 
+ 		kfree(arsta->rx_stats);
+ 		arsta->rx_stats = NULL;
++
++		ath11k_cfr_decrement_peer_count(ar, arsta);
+ 	} else if (old_state == IEEE80211_STA_AUTH &&
+ 		   new_state == IEEE80211_STA_ASSOC &&
+ 		   (vif->type == NL80211_IFTYPE_AP ||
+@@ -5727,6 +5729,7 @@ static int ath11k_mac_mgmt_tx_wmi(struct
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 	struct ieee80211_tx_info *info;
+ 	dma_addr_t paddr;
++	bool tx_params_valid = false;
+ 	int buf_id;
+ 	int ret;
+ 
+@@ -5766,7 +5769,13 @@ static int ath11k_mac_mgmt_tx_wmi(struct
+ 		return 0;
+ 	}
+ 
+-	ret = ath11k_wmi_mgmt_send(ar, arvif->vdev_id, buf_id, skb);
++	if (ar->cfr_enabled &&
++	    ieee80211_is_probe_resp(hdr->frame_control) &&
++	    peer_is_in_cfr_unassoc_pool(ar, hdr->addr1))
++		tx_params_valid = true;
++
++	ret = ath11k_wmi_mgmt_send(ar, arvif->vdev_id, buf_id, skb,
++				   tx_params_valid);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to send mgmt frame: %d\n", ret);
+ 		goto err_unmap_buf;
+--- a/drivers/net/wireless/ath/ath11k/spectral.c
++++ b/drivers/net/wireless/ath/ath11k/spectral.c
+@@ -817,7 +817,7 @@ static int ath11k_spectral_ring_alloc(st
+ 			      ATH11K_SPECTRAL_EVENT_TIMEOUT_MS,
+ 			      ath11k_spectral_process_data);
+ 
+-	ret = ath11k_dbring_buf_setup(ar, &sp->rx_ring, db_cap, WMI_DIRECT_BUF_SPECTRAL);
++	ret = ath11k_dbring_buf_setup(ar, &sp->rx_ring, db_cap);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to setup db ring buffer\n");
+ 		goto srng_cleanup;
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -612,10 +612,11 @@ struct sk_buff *ath11k_wmi_alloc_skb(str
+ }
+ 
+ int ath11k_wmi_mgmt_send(struct ath11k *ar, u32 vdev_id, u32 buf_id,
+-			 struct sk_buff *frame)
++			 struct sk_buff *frame, bool tx_params_valid)
+ {
+ 	struct ath11k_pdev_wmi *wmi = ar->wmi;
+ 	struct wmi_mgmt_send_cmd *cmd;
++	struct wmi_tx_send_params *params;
+ 	struct wmi_tlv *frame_tlv;
+ 	struct sk_buff *skb;
+ 	u32 buf_len;
+@@ -626,6 +627,9 @@ int ath11k_wmi_mgmt_send(struct ath11k *
+ 
+ 	len = sizeof(*cmd) + sizeof(*frame_tlv) + roundup(buf_len, 4);
+ 
++	if (tx_params_valid)
++		len += sizeof(*params);
++
+ 	skb = ath11k_wmi_alloc_skb(wmi->wmi_ab, len);
+ 	if (!skb)
+ 		return -ENOMEM;
+@@ -640,7 +644,7 @@ int ath11k_wmi_mgmt_send(struct ath11k *
+ 	cmd->paddr_hi = upper_32_bits(ATH11K_SKB_CB(frame)->paddr);
+ 	cmd->frame_len = frame->len;
+ 	cmd->buf_len = buf_len;
+-	cmd->tx_params_valid = 0;
++	cmd->tx_params_valid = tx_params_valid;
+ 
+ 	frame_tlv = (struct wmi_tlv *)(skb->data + sizeof(*cmd));
+ 	frame_tlv->header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_ARRAY_BYTE) |
+@@ -650,6 +654,13 @@ int ath11k_wmi_mgmt_send(struct ath11k *
+ 
+ 	ath11k_ce_byte_swap(frame_tlv->value, buf_len);
+ 
++	if (tx_params_valid) {
++		params = (struct wmi_tx_send_params *)(skb->data + (len - sizeof(*params)));
++		params->tlv_header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_TX_SEND_PARAMS) |
++				     FIELD_PREP(WMI_TLV_LEN, sizeof(*params) - TLV_HDR_SIZE);
++		params->tx_params_dword1 |= WMI_TX_PARAMS_DWORD1_CFR_CAPTURE;
++	}
++
+ 	ret = ath11k_wmi_cmd_send(wmi, skb, WMI_MGMT_TX_SEND_CMDID);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab,
+@@ -4053,6 +4064,42 @@ int ath11k_wmi_fils_discovery_tmpl(struc
+ 	return ret;
+ }
+ 
++int ath11k_wmi_peer_set_cfr_capture_conf(struct ath11k *ar,
++					 u32 vdev_id, const u8 *mac_addr,
++					 struct wmi_peer_cfr_capture_conf_arg *arg)
++{
++	struct ath11k_pdev_wmi *wmi = ar->wmi;
++	struct wmi_peer_cfr_capture_cmd_fixed_param *cmd;
++	struct sk_buff *skb;
++	int ret;
++
++	skb = ath11k_wmi_alloc_skb(wmi->wmi_ab, sizeof(*cmd));
++	if (!skb)
++		return -ENOMEM;
++
++	cmd = (struct wmi_peer_cfr_capture_cmd_fixed_param *)skb->data;
++	cmd->tlv_header = FIELD_PREP(WMI_TLV_TAG,
++				     WMI_TAG_PEER_CFR_CAPTURE_CMD) |
++			  FIELD_PREP(WMI_TLV_LEN, sizeof(*cmd) - TLV_HDR_SIZE);
++
++	ether_addr_copy(cmd->mac_addr.addr, mac_addr);
++	cmd->request = arg->request;
++	cmd->vdev_id = vdev_id;
++	cmd->periodicity = arg->periodicity;
++	cmd->bandwidth = arg->bandwidth;
++	cmd->capture_method = arg->capture_method;
++
++	ret = ath11k_wmi_cmd_send(ar->wmi, skb, WMI_PEER_CFR_CAPTURE_CMDID);
++	if (ret) {
++		ath11k_warn(ar->ab,
++			    "WMI vdev %d failed to send peer cfr capture cmd\n",
++			    vdev_id);
++		dev_kfree_skb(skb);
++	}
++
++	return ret;
++}
++
+ int ath11k_wmi_probe_resp_tmpl(struct ath11k *ar, u32 vdev_id,
+ 			       struct sk_buff *tmpl)
+ {
+@@ -8928,6 +8975,89 @@ static void ath11k_wmi_diag_event(struct
+ 	ath11k_fwlog_write(ab,data, tlv_len);
+ }
+ 
++static void ath11k_wmi_tlv_cfr_cpature_event_fixed_param(const void *ptr,
++							 void *data)
++{
++	struct ath11k_cfr_peer_tx_param *tx_params =
++			(struct ath11k_cfr_peer_tx_param *)data;
++	struct ath11k_wmi_cfr_peer_tx_event_param *params =
++			(struct ath11k_wmi_cfr_peer_tx_event_param *)ptr;
++
++	tx_params->capture_method = params->capture_method;
++	tx_params->vdev_id = params->vdev_id;
++	ether_addr_copy(tx_params->peer_mac_addr, params->mac_addr.addr);
++	tx_params->primary_20mhz_chan = params->chan_mhz;
++	tx_params->bandwidth = params->bandwidth;
++	tx_params->phy_mode = params->phy_mode;
++	tx_params->band_center_freq1 = params->band_center_freq1;
++	tx_params->band_center_freq2 = params->band_center_freq2;
++	tx_params->spatial_streams = params->sts_count;
++	tx_params->correlation_info_1 = params->correlation_info_1;
++	tx_params->correlation_info_2 = params->correlation_info_2;
++	tx_params->status = params->status;
++	tx_params->timestamp_us = params->timestamp_us;
++	tx_params->counter = params->counter;
++	memcpy(tx_params->chain_rssi, params->chain_rssi,
++		 sizeof(tx_params->chain_rssi));
++}
++
++static void ath11k_wmi_tlv_cfr_cpature_phase_fixed_param(const void *ptr,
++							 void *data)
++{
++	struct ath11k_cfr_peer_tx_param *tx_params =
++			(struct ath11k_cfr_peer_tx_param *)data;
++	struct ath11k_wmi_cfr_peer_tx_event_phase_param *params =
++			(struct ath11k_wmi_cfr_peer_tx_event_phase_param *)ptr;
++	int i;
++
++	for (i = 0; i < WMI_MAX_CHAINS; i++)
++		tx_params->chain_phase[i] = params->chain_phase[i];
++}
++
++static int ath11k_wmi_tlv_cfr_capture_evt_parse(struct ath11k_base *ab,
++						u16 tag, u16 len,
++						const void *ptr, void *data)
++{
++	switch (tag) {
++	case WMI_TAG_PEER_CFR_CAPTURE_EVENT:
++		ath11k_wmi_tlv_cfr_cpature_event_fixed_param(ptr, data);
++		break;
++	case WMI_TAG_CFR_CAPTURE_PHASE_PARAM:
++		ath11k_wmi_tlv_cfr_cpature_phase_fixed_param(ptr, data);
++		break;
++	default:
++		ath11k_warn(ab, "Invalid tag received tag %d len %d\n",
++		tag, len);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static void ath11k_wmi_parse_cfr_capture_event(struct ath11k_base *ab,
++					       struct sk_buff *skb)
++{
++	struct ath11k_cfr_peer_tx_param params = {};
++	int ret;
++
++	ath11k_dbg_dump(ab, ATH11K_DBG_CFR_DUMP, "cfr_dump:", "",
++			skb->data, skb->len);
++
++	ret = ath11k_wmi_tlv_iter(ab, skb->data, skb->len,
++				  ath11k_wmi_tlv_cfr_capture_evt_parse,
++				  &params);
++	if (ret) {
++		ath11k_warn(ab, "failed to parse cfr capture event tlv %d\n",
++			    ret);
++		return;
++	}
++
++	ret = ath11k_process_cfr_capture_event(ab, &params);
++	if (ret)
++		ath11k_dbg(ab, ATH11K_DBG_CFR,
++			   "failed to process cfr cpature ret = %d\n", ret);
++}
++
+ static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
+ {
+ 	struct wmi_cmd_hdr *cmd_hdr;
+@@ -9077,6 +9207,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	case WMI_CTRL_PATH_STATS_EVENTID:
+ 		ath11k_wmi_ctrl_path_stats_event(ab, skb);
+ 		break;
++	case WMI_PEER_CFR_CAPTURE_EVENTID:
++		ath11k_wmi_parse_cfr_capture_event(ab, skb);
++		break;
+ 	/* TODO: Add remaining events */
+ 	default:
+ 		ath11k_dbg(ab, ATH11K_DBG_WMI, "Unknown eventid: 0x%x\n", id);
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -339,6 +339,10 @@ enum wmi_tlv_cmd_id {
+ 	WMI_PEER_REORDER_QUEUE_REMOVE_CMDID,
+ 	WMI_PEER_SET_RX_BLOCKSIZE_CMDID,
+ 	WMI_PEER_ANTDIV_INFO_REQ_CMDID,
++	WMI_PEER_RESERVED0_CMDID,
++	WMI_PEER_TID_MSDUQ_QDEPTH_THRESH_UPDATE_CMDID,
++	WMI_PEER_TID_CONFIGURATIONS_CMDID,
++	WMI_PEER_CFR_CAPTURE_CMDID,
+ 	WMI_BCN_TX_CMDID = WMI_TLV_CMD(WMI_GRP_MGMT),
+ 	WMI_PDEV_SEND_BCN_CMDID,
+ 	WMI_BCN_TMPL_CMDID,
+@@ -966,6 +970,7 @@ enum wmi_tlv_pdev_param {
+ 	WMI_PDEV_PARAM_RADIO_CHAN_STATS_ENABLE,
+ 	WMI_PDEV_PARAM_RADIO_DIAGNOSIS_ENABLE,
+ 	WMI_PDEV_PARAM_MESH_MCAST_ENABLE,
++	WMI_PDEV_PARAM_PER_PEER_CFR_ENABLE = 0xa8,
+ 	WMI_PDEV_PARAM_SET_CMD_OBSS_PD_THRESHOLD = 0xbc,
+ 	WMI_PDEV_PARAM_SET_CMD_OBSS_PD_PER_AC = 0xbe,
+ 	WMI_PDEV_PARAM_ENABLE_SR_PROHIBIT = 0xc6,
+@@ -1869,7 +1874,9 @@ enum wmi_tlv_tag {
+ 	WMI_TAG_NDP_EVENT,
+ 	WMI_TAG_PDEV_PEER_PKTLOG_FILTER_CMD = 0x301,
+ 	WMI_TAG_PDEV_PEER_PKTLOG_FILTER_INFO,
++	WMI_TAG_PEER_CFR_CAPTURE_EVENT = 0x317,
+ 	WMI_TAG_MUEDCA_PARAMS_CONFIG_EVENT = 0x32a,
++	WMI_TAG_CFR_CAPTURE_PHASE_PARAM = 0x33b,
+ 	WMI_TAG_FILS_DISCOVERY_TMPL_CMD = 0x344,
+ 	WMI_TAG_PDEV_SRG_BSS_COLOR_BITMAP_CMD = 0x37b,
+ 	WMI_TAG_PDEV_SRG_PARTIAL_BSSID_BITMAP_CMD,
+@@ -3494,6 +3501,85 @@ struct wmi_bssid_arg {
+ 	const u8 *bssid;
+ };
+ 
++enum ath11k_wmi_frame_tx_status {
++	WMI_FRAME_TX_STATUS_OK,
++	WMI_FRAME_TX_STATUS_XRETRY,
++	WMI_FRAME_TX_STATUS_DROP,
++	WMI_FRAME_TX_STATUS_FILTERED,
++};
++
++struct wmi_peer_cfr_capture_conf_arg {
++	u32 request;
++	u32 periodicity;
++	u32 bandwidth;
++	u32 capture_method;
++};
++
++struct wmi_peer_cfr_capture_cmd_fixed_param {
++	u32 tlv_header;
++	u32 request;
++	struct wmi_mac_addr mac_addr;
++	u32 vdev_id;
++	u32 periodicity;
++	u32 bandwidth;
++	u32 capture_method;
++} __packed;
++
++#define WMI_PEER_CFR_CAPTURE_ENABLE   1
++#define WMI_PEER_CFR_CAPTURE_DISABLE  0
++
++/* periodicity in ms */
++#define WMI_PEER_CFR_PERIODICITY_MAX  (10*60*1000)
++
++#define WMI_CFR_FRAME_TX_STATUS GENMASK(1, 0)
++#define WMI_CFR_CAPTURE_STATUS_PEER_PS BIT(30)
++#define WMI_CFR_PEER_CAPTURE_STATUS BIT(31)
++
++#define WMI_CFR_CORRELATION_INFO2_BUF_ADDR_HIGH GENMASK(3, 0)
++#define WMI_CFR_CORRELATION_INFO2_PPDU_ID GENMASK(31, 16)
++
++#define WMI_CFR_CFO_MEASUREMENT_VALID GENMASK(0, 0)
++#define WMI_CFR_CFO_MEASUREMENT_RAW_DATA GENMASK(14, 1)
++
++struct ath11k_wmi_cfr_peer_tx_event_param {
++	u32 capture_method;
++	u32 vdev_id;
++	struct wmi_mac_addr mac_addr;
++	u32 chan_mhz;
++	u32 bandwidth;
++	u32 phy_mode;
++	u32 band_center_freq1;
++	u32 band_center_freq2;
++	u32 sts_count;
++	u32 correlation_info_1;
++	u32 correlation_info_2;
++	u32 status;
++	u32 timestamp_us;
++	u32 counter;
++	u32 chain_rssi[WMI_MAX_CHAINS];
++	u32 cfo_measurement;
++} __packed;
++
++struct ath11k_wmi_cfr_peer_tx_event_phase_param {
++	u32 chain_phase[WMI_MAX_CHAINS];
++} __packed;
++
++enum ath11k_wmi_cfr_capture_bw {
++	WMI_PEER_CFR_CAPTURE_BW_20MHZ,
++	WMI_PEER_CFR_CAPTURE_BW_40MHZ,
++	WMI_PEER_CFR_CAPTURE_BW_80MHZ,
++	WMI_PEER_CFR_CAPTURE_BW_160MHZ,
++	WMI_PEER_CFR_CAPTURE_BW_80_80MHZ,
++	WMI_PEER_CFR_CAPTURE_BW_MAX,
++};
++
++struct ath11k_wmi_peer_cfr_capture_conf {
++	u32 request;
++	u32 periodicity;
++	u32 bandwidth;
++	u32 capture_method;
++};
++
+ struct wmi_start_scan_arg {
+ 	u32 scan_id;
+ 	u32 scan_req_id;
+@@ -6334,7 +6420,7 @@ int ath11k_wmi_cmd_send(struct ath11k_pd
+ 			u32 cmd_id);
+ struct sk_buff *ath11k_wmi_alloc_skb(struct ath11k_wmi_base *wmi_sc, u32 len);
+ int ath11k_wmi_mgmt_send(struct ath11k *ar, u32 vdev_id, u32 buf_id,
+-			 struct sk_buff *frame);
++			 struct sk_buff *frame, bool tx_params_valid);
+ int ath11k_wmi_qos_null_send(struct ath11k *ar, u32 vdev_id, u32 buf_id,
+ 			     struct sk_buff *frame);
+ int ath11k_wmi_bcn_tmpl(struct ath11k *ar, u32 vdev_id,
+@@ -6496,4 +6582,7 @@ int ath11k_wmi_send_aggr_size_cmd(struct
+ int ath11k_wmi_send_wmi_ctrl_stats_cmd(struct ath11k *ar,
+ 				  struct wmi_ctrl_path_stats_cmd_param *param);
+ int ath11k_wmi_dbglog_cfg(struct ath11k *ar, u32 param, u64 value);
++int ath11k_wmi_peer_set_cfr_capture_conf(struct ath11k *ar,
++					 u32 vdev_id, const u8 *mac,
++					 struct wmi_peer_cfr_capture_conf_arg *arg);
+ #endif
+--- a/local-symbols
++++ b/local-symbols
+@@ -140,3 +140,4 @@ ATH11K_DEBUGFS=
+ ATH11K_TRACING=
+ ATH11K_SPECTRAL=
+ ATH11K_PKTLOG=
++ATH11K_CFR=
+--- a/drivers/net/wireless/ath/ath11k/debug.h
++++ b/drivers/net/wireless/ath/ath11k/debug.h
+@@ -25,6 +25,8 @@ enum ath11k_debug_mask {
+ 	ATH11K_DBG_PCI		= 0x00001000,
+ 	ATH11K_DBG_DP_TX	= 0x00001000,
+ 	ATH11K_DBG_DP_RX	= 0x00002000,
++	ATH11K_DBG_CFR		= 0x00008000,
++	ATH11K_DBG_CFR_DUMP	= 0x00010000,
+ 	ATH11K_DBG_ANY		= 0xffffffff,
+ };
+ 

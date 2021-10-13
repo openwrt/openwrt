@@ -1,0 +1,111 @@
+From eb1ad9bd9d72ca6fd8810890bf10def06fdcf632 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Wed, 7 Oct 2020 13:45:16 +0530
+Subject: [PATCH] mac80211: disable color collision detection in case of no
+ free colors
+
+Send disable event in wmi collision detection cfg command to FW,
+when there are no free colors available to select.
+
+It can be reenabled once new color is available. Send wmi collision
+cfg command only if any value is changed.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ include/linux/ieee80211.h |  1 +
+ include/net/cfg80211.h    |  1 +
+ net/mac80211/cfg.c        | 33 ++++++++++++++++++++++++++++++---
+ net/wireless/nl80211.c    |  5 +++++
+ 4 files changed, 37 insertions(+), 3 deletions(-)
+
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -1828,6 +1828,7 @@ struct ieee80211_he_mcs_nss_supp {
+ 	__le16 tx_mcs_80p80;
+ } __packed;
+ 
++#define HE_OPERATION_BSS_COLOR_DISABLED		((u32) BIT(31))
+ /**
+  * struct ieee80211_he_operation - HE capabilities element
+  *
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1102,6 +1102,7 @@ struct cfg80211_beacon_data {
+ 	const u8 *lci;
+ 	const u8 *civicloc;
+ 	s8 ftm_responder;
++	u8 bss_color_info;
+ 
+ 	size_t head_len, tail_len;
+ 	size_t beacon_ies_len;
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1027,6 +1027,8 @@ static int ieee80211_assign_beacon(struc
+ 	struct beacon_data *new, *old;
+ 	int new_head_len, new_tail_len, new_multiple_bssid_len;
+ 	u8 *new_multiple_bssid_offset;
++	const u8 *cap;
++        struct ieee80211_he_operation *he_oper = NULL;
+ 	int size, err;
+ 	u32 changed = BSS_CHANGED_BEACON;
+ 
+@@ -1137,6 +1139,26 @@ static int ieee80211_assign_beacon(struc
+ 		changed |= BSS_CHANGED_FTM_RESPONDER;
+ 	}
+ 
++	if (params->bss_color_info == 1) {
++		cap = cfg80211_find_ext_ie(WLAN_EID_EXT_HE_OPERATION, params->tail, params->tail_len);
++		if (cap && cap[1] >= sizeof(*he_oper) + 1)
++			he_oper = (void *)(cap + 3);
++
++		if (he_oper &&
++		    he_oper->he_oper_params & HE_OPERATION_BSS_COLOR_DISABLED) {
++                        if (sdata->vif.bss_conf.he_bss_color.enabled) {
++                                sdata->vif.bss_conf.he_bss_color.enabled = 0;
++                                changed |= BSS_CHANGED_HE_BSS_COLOR;
++                        }
++                }
++                else {
++                        if(!sdata->vif.bss_conf.he_bss_color.enabled) {
++                                sdata->vif.bss_conf.he_bss_color.enabled = 1;
++                                changed |= BSS_CHANGED_HE_BSS_COLOR;
++                        }
++                }
++	}
++
+ 	rcu_assign_pointer(sdata->u.ap.beacon, new);
+ 
+ 	if (old)
+@@ -4282,9 +4304,15 @@ static int ieee80211_set_color_change_be
+ static void ieee80211_color_change_bss_config_notify(struct ieee80211_sub_if_data *sdata,
+ 						     u8 color, int enable, u32 changed)
+ {
+-	sdata->vif.bss_conf.he_bss_color.color = color;
+-	sdata->vif.bss_conf.he_bss_color.enabled = enable;
+-	changed |= BSS_CHANGED_HE_BSS_COLOR;
++	if (sdata->vif.bss_conf.he_bss_color.color != color) {
++		sdata->vif.bss_conf.he_bss_color.color = color;
++		changed |= BSS_CHANGED_HE_BSS_COLOR;
++	}
++
++	if (sdata->vif.bss_conf.he_bss_color.enabled != enable) {
++		sdata->vif.bss_conf.he_bss_color.enabled = enable;
++		changed |= BSS_CHANGED_HE_BSS_COLOR;
++	}
+ 
+ 	ieee80211_bss_info_change_notify(sdata, changed);
+ 
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -5099,6 +5099,11 @@ static int nl80211_parse_beacon(struct c
+ 		}
+ 	}
+ 
++	if (attrs[NL80211_ATTR_HE_BSS_COLOR])
++                bcn->bss_color_info = 1;
++	else
++		bcn->bss_color_info = 0;
++
+ 	return 0;
+ }
+ 

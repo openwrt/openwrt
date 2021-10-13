@@ -1,0 +1,195 @@
+From 678c239bbcf06ac54ecdbc34f9299619875b8e7c Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Thu, 12 Nov 2020 17:24:50 +0530
+Subject: [PATCH] ath11k: Update CE/DP irq names during registration for
+ affinity setup
+
+Update the ce and dp irq names based on pci domain id and irq idx or group
+so that these could be displayed appropriately in proc/interrupts and can
+also aid in defining the affinity settings for them based on name.
+
+This patch got missed during mac80211 package upgrade. Since
+irq names are not registered, SMP affinities are not configured
+properly. This results low throughput and high single core usage
+in KPI testing.
+
+Fix: (I99e478c - mac80211: Package upgrade)
+
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 88 ++++++++++++++---------------------
+ drivers/net/wireless/ath/ath11k/pci.h | 30 ++++++++++++
+ 2 files changed, 64 insertions(+), 54 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -76,58 +76,16 @@ static const struct ath11k_msi_config at
+ 	},
+ };
+ 
+-static const char *irq_name[ATH11K_IRQ_NUM_MAX] = {
+-	"bhi",
+-	"mhi-er0",
+-	"mhi-er1",
+-	"ce0",
+-	"ce1",
+-	"ce2",
+-	"ce3",
+-	"ce4",
+-	"ce5",
+-	"ce6",
+-	"ce7",
+-	"ce8",
+-	"ce9",
+-	"ce10",
+-	"ce11",
+-	"host2wbm-desc-feed",
+-	"host2reo-re-injection",
+-	"host2reo-command",
+-	"host2rxdma-monitor-ring3",
+-	"host2rxdma-monitor-ring2",
+-	"host2rxdma-monitor-ring1",
+-	"reo2ost-exception",
+-	"wbm2host-rx-release",
+-	"reo2host-status",
+-	"reo2host-destination-ring4",
+-	"reo2host-destination-ring3",
+-	"reo2host-destination-ring2",
+-	"reo2host-destination-ring1",
+-	"rxdma2host-monitor-destination-mac3",
+-	"rxdma2host-monitor-destination-mac2",
+-	"rxdma2host-monitor-destination-mac1",
+-	"ppdu-end-interrupts-mac3",
+-	"ppdu-end-interrupts-mac2",
+-	"ppdu-end-interrupts-mac1",
+-	"rxdma2host-monitor-status-ring-mac3",
+-	"rxdma2host-monitor-status-ring-mac2",
+-	"rxdma2host-monitor-status-ring-mac1",
+-	"host2rxdma-host-buf-ring-mac3",
+-	"host2rxdma-host-buf-ring-mac2",
+-	"host2rxdma-host-buf-ring-mac1",
+-	"rxdma2host-destination-ring-mac3",
+-	"rxdma2host-destination-ring-mac2",
+-	"rxdma2host-destination-ring-mac1",
+-	"host2tcl-input-ring4",
+-	"host2tcl-input-ring3",
+-	"host2tcl-input-ring2",
+-	"host2tcl-input-ring1",
+-	"wbm2host-tx-completions-ring3",
+-	"wbm2host-tx-completions-ring2",
+-	"wbm2host-tx-completions-ring1",
+-	"tcl2host-status-ring",
++const char *ce_irq_name[ATH11K_MAX_PCI_DOMAINS + 1][CE_COUNT_MAX] = {
++	{
++		ATH11K_PCI_CE_IRQS_NAME(0)
++	},
++	{
++		ATH11K_PCI_CE_IRQS_NAME(1)
++	},
++	{
++		ATH11K_PCI_CE_IRQS_NAME()
++	},
+ };
+ 
+ static inline void ath11k_pci_select_window(struct ath11k_pci *ab_pci, u32 offset)
+@@ -537,6 +495,18 @@ static int ath11k_get_user_msi_assignmen
+ 						  base_vector);
+ }
+ 
++const char *dp_irq_name[ATH11K_MAX_PCI_DOMAINS + 1][ATH11K_EXT_IRQ_GRP_NUM_MAX] = {
++	{
++		ATH11K_PCI_DP_IRQS_NAME(0)
++	},
++	{
++		ATH11K_PCI_DP_IRQS_NAME(1)
++	},
++	{
++		ATH11K_PCI_DP_IRQS_NAME()
++	},
++};
++
+ static void ath11k_pci_free_ext_irq(struct ath11k_base *ab)
+ {
+ 	int i, j;
+@@ -730,6 +700,11 @@ static int ath11k_pci_ext_irq_config(str
+ {
+ 	int i, j, ret, num_vectors = 0;
+ 	u32 user_base_data = 0, base_vector = 0, base_idx;
++	struct ath11k_pci *ar_pci = ath11k_pci_priv(ab);
++	u8 domain_id = pci_domain_nr(ar_pci->pdev->bus);
++
++	if (domain_id > ATH11K_MAX_PCI_DOMAINS)
++		domain_id = ATH11K_MAX_PCI_DOMAINS;
+ 
+ 	base_idx = ATH11K_PCI_IRQ_CE0_OFFSET + CE_COUNT_MAX;
+ 	ret = ath11k_pci_get_user_msi_assignment(ath11k_pci_priv(ab), "DP",
+@@ -781,7 +756,7 @@ static int ath11k_pci_ext_irq_config(str
+ 			irq_set_status_flags(irq, IRQ_DISABLE_UNLAZY);
+ 			ret = request_irq(irq, ath11k_pci_ext_interrupt_handler,
+ 					  IRQF_SHARED,
+-					  "DP_EXT_IRQ", irq_grp);
++					  dp_irq_name[domain_id][i], irq_grp);
+ 			if (ret) {
+ 				ath11k_err(ab, "failed request irq %d: %d\n",
+ 					   vector, ret);
+@@ -803,6 +778,11 @@ static int ath11k_pci_config_irq(struct
+ 	u32 msi_irq_start;
+ 	unsigned int msi_data;
+ 	int irq, i, ret, irq_idx;
++	struct ath11k_pci *ar_pci = ath11k_pci_priv(ab);
++	u8 domain_id = pci_domain_nr(ar_pci->pdev->bus);
++
++	if (domain_id > ATH11K_MAX_PCI_DOMAINS)
++		domain_id = ATH11K_MAX_PCI_DOMAINS;
+ 
+ 	ret = ath11k_pci_get_user_msi_assignment(ath11k_pci_priv(ab),
+ 						 "CE", &msi_data_count,
+@@ -824,7 +804,7 @@ static int ath11k_pci_config_irq(struct
+ 		tasklet_setup(&ce_pipe->intr_tq, ath11k_pci_ce_tasklet);
+ 
+ 		ret = request_irq(irq, ath11k_pci_ce_interrupt_handler,
+-				  IRQF_SHARED, irq_name[irq_idx],
++				  IRQF_SHARED, ce_irq_name[domain_id][i],
+ 				  ce_pipe);
+ 		if (ret) {
+ 			ath11k_err(ab, "failed to request irq %d: %d\n",
+--- a/drivers/net/wireless/ath/ath11k/pci.h
++++ b/drivers/net/wireless/ath/ath11k/pci.h
+@@ -53,6 +53,36 @@
+ #define WLAON_QFPROM_PWR_CTRL_REG		0x01f8031c
+ #define QFPROM_PWR_CTRL_VDD4BLOW_MASK		0x4
+ 
++#define STR_CONV(str) #str
++
++#define ATH11K_PCI_DP_IRQS_NAME(x) \
++	STR_CONV(pci##x##_wbm2host_tx_completions_ring1),\
++	STR_CONV(pci##x##_wbm2host_tx_completions_ring2),\
++	STR_CONV(pci##x##_wbm2host_tx_completions_ring3),\
++	STR_CONV(pci##x##_lmac_reo_misc_irq),\
++	STR_CONV(pci##x##_reo2host_destination_ring1),\
++	STR_CONV(pci##x##_reo2host_destination_ring2),\
++	STR_CONV(pci##x##_reo2host_destination_ring3),\
++	STR_CONV(pci##x##_reo2host_destination_ring4),\
++	/* Currently only 8 msi are registered */ \
++	STR_CONV(pci##x##_dp_res1),\
++	STR_CONV(pci##x##_dp_res2),\
++	STR_CONV(pci##x##_dp_res3),\
++
++#define ATH11K_PCI_CE_IRQS_NAME(x) \
++	STR_CONV(pci##x##_ce0),\
++	STR_CONV(pci##x##_ce1),\
++	STR_CONV(pci##x##_ce2),\
++	STR_CONV(pci##x##_ce3),\
++	STR_CONV(pci##x##_ce4),\
++	STR_CONV(pci##x##_ce5),\
++	STR_CONV(pci##x##_ce6),\
++	STR_CONV(pci##x##_ce7),\
++	STR_CONV(pci##x##_ce8),\
++	STR_CONV(pci##x##_ce9),\
++	STR_CONV(pci##x##_ce10),\
++	STR_CONV(pci##x##_ce11),\
++
+ struct ath11k_msi_user {
+ 	char *name;
+ 	int num_vectors;

@@ -1,0 +1,80 @@
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1740,6 +1740,16 @@ static void ath11k_peer_assoc_h_he(struc
+ 			he_tx_mcs = v;
+ 		break;
+ 	}
++
++	if ((he_mcs_mask[0] == 0 || he_mcs_mask[1] == 0) &&
++	    (he_cap->he_cap_elem.phy_cap_info[HECAP_PHYDWORD_4] &
++	    IEEE80211_HE_PHY_CAP4_SU_BEAMFORMEE)) {
++		arg->peer_vht_caps &= ~IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE;
++		arg->peer_he_cap_macinfo_internal |=
++			IEEE80211_HE_DL_MU_SUPPORT_DISABLE <<
++				IEEE80211_HE_DL_MUMIMO_SUPP_S;
++	}
++
+ 	/* Calculate peer NSS capability from HE capabilities if STA
+ 	 * supports HE.
+ 	 */
+@@ -6761,7 +6771,7 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 			 * RATEMASK CMD
+ 			 */
+ 			ath11k_warn(ar->ab,
+-				    "Setting more than one MCS Value in bitrate mask not supported\n");
++				    "Setting VHT MCS range other than 0-7, 0-8 and 0-9 in bitrate mask not supported\n");
+ 			return -EINVAL;
+ 		}
+ 
+@@ -6771,7 +6781,7 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 		if (!ath11k_mac_he_mcs_range_present(ar, band, mask) &&
+ 		    num_rates > 1) {
+ 			ath11k_warn(ar->ab,
+-				    "Setting more than one HE MCS Value in bitrate mask not supported\n");
++				    "Setting HE MCS range other than 0-7, 0-9 and 0-11 in bitrate mask not supported\n");
+ 			return -EINVAL;
+ 		}
+ 
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -2006,8 +2006,8 @@ int ath11k_wmi_send_peer_assoc_cmd(struc
+ 				     FIELD_PREP(WMI_TLV_LEN,
+ 						sizeof(*he_mcs) - TLV_HDR_SIZE);
+ 
+-		he_mcs->rx_mcs_set = param->peer_he_rx_mcs_set[i];
+-		he_mcs->tx_mcs_set = param->peer_he_tx_mcs_set[i];
++		he_mcs->rx_mcs_set = param->peer_he_tx_mcs_set[i];
++		he_mcs->tx_mcs_set = param->peer_he_rx_mcs_set[i];
+ 		ptr += sizeof(*he_mcs);
+ 	}
+ 
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -3956,8 +3956,8 @@ struct wmi_vht_rate_set {
+ 
+ struct wmi_he_rate_set {
+ 	u32 tlv_header;
+-	u32 rx_mcs_set;
+-	u32 tx_mcs_set;
++	u32 rx_mcs_set; /* MCS at which the peer can receive */
++	u32 tx_mcs_set; /* MCS at which the peer can transmit */
+ } __packed;
+ 
+ #define MAX_REG_RULES 10
+--- a/drivers/net/wireless/ath/ath11k/mac.h
++++ b/drivers/net/wireless/ath/ath11k/mac.h
+@@ -122,6 +122,14 @@ struct ath11k_generic_iter {
+ #define ATH11K_OBSS_PD_SRG_EN				BIT(30)
+ #define ATH11K_OBSS_PD_NON_SRG_EN			BIT(31)
+ 
++/* HECAP info internal bits */
++#define IEEE80211_HE_DL_MUMIMO_SUPP_S                5
++
++#define IEEE80211_HE_DL_MU_SUPPORT_DEFAULT       0
++#define IEEE80211_HE_DL_MU_SUPPORT_DISABLE       1
++#define IEEE80211_HE_DL_MU_SUPPORT_ENABLE        2
++#define IEEE80211_HE_DL_MU_SUPPORT_INVALID       3
++
+ extern const struct htt_rx_ring_tlv_filter ath11k_mac_mon_status_filter_default;
+ 
+ int ath11k_mac_ap_ps_recalc(struct ath11k *ar);

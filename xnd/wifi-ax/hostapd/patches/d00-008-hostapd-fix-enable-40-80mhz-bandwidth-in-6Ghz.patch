@@ -1,0 +1,232 @@
+From 5144ba29e5687818afcfacaadb0c31575a8315e6 Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Fri, 19 Jun 2020 14:46:54 -0700
+Subject: [PATCH] hostapd: fix enable 40/80mhz bandwidth in 6Ghz
+
+Currently higher bandwidths are being rejected by hostapd for 6ghz
+channels due to invalid sanity check. So fix that.
+
+Also, currently 6GHz AP is setting unicast destination address
+for probe response which need to be set to broadcast address
+according to spec IEEE P802.11ax/D6.1. So fix that.
+
+Make management frame protection required as default for 6Ghz band.
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+---
+ src/common/hw_features_common.c |  2 +-
+ src/common/ieee802_11_common.c  | 16 ++++++++--------
+ src/drivers/driver_nl80211.c    |  3 ++-
+ wpa_supplicant/op_classes.c     |  8 ++++----
+ 4 files changed, 15 insertions(+), 14 deletions(-)
+
+Index: hostapd-2021-02-20/src/drivers/driver_nl80211.c
+===================================================================
+--- hostapd-2021-02-20.orig/src/drivers/driver_nl80211.c
++++ hostapd-2021-02-20/src/drivers/driver_nl80211.c
+@@ -10936,7 +10936,8 @@ static int add_acs_ch_list(struct nl_msg
+ 		 * compatibility.
+ 		 */
+ 		if (!(freq >= 2412 && freq <= 2484) &&
+-		    !(freq >= 5180 && freq <= 5900))
++		    !(freq >= 5180 && freq <= 5900) &&
++		    !(freq >= 5945 && freq <= 7115))
+ 			continue;
+ 		hw_mode = ieee80211_freq_to_chan(freq, &ch_list[num_channels]);
+ 		if (hw_mode != NUM_HOSTAPD_MODES)
+Index: hostapd-2021-02-20/wpa_supplicant/op_classes.c
+===================================================================
+--- hostapd-2021-02-20.orig/wpa_supplicant/op_classes.c
++++ hostapd-2021-02-20/wpa_supplicant/op_classes.c
+@@ -270,7 +270,7 @@ static int wpas_op_class_supported(struc
+ 
+ 			if (f == 0)
+ 				break; /* end of list */
+-			if (f > 4000 && f < 6000)
++			if (f > 4000 && f < 7115)
+ 				freq5 = 1;
+ 			else if (f > 2400 && f < 2500)
+ 				freq2 = 1;
+@@ -281,7 +281,7 @@ static int wpas_op_class_supported(struc
+ 		freq2 = freq5 = 1;
+ 	}
+ 
+-	if (op_class->op_class >= 115 && op_class->op_class <= 130 && !freq5)
++	if (op_class->op_class >= 115 && op_class->op_class <= 136 && !freq5)
+ 		return 0;
+ 	if (op_class->op_class >= 81 && op_class->op_class <= 84 && !freq2)
+ 		return 0;
+Index: hostapd-2021-02-20/src/ap/acs.c
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/acs.c
++++ hostapd-2021-02-20/src/ap/acs.c
+@@ -372,40 +372,44 @@ acs_survey_chan_interference_factor(stru
+ }
+ 
+ 
+-static int acs_usable_ht40_chan(const struct hostapd_channel_data *chan)
++static int acs_usable_bw40_chan(const struct hostapd_channel_data *chan)
+ {
+-	const int allowed[] = { 36, 44, 52, 60, 100, 108, 116, 124, 132, 149,
+-				157, 184, 192 };
++	const int allowed[] = { 5180, 5220, 5260, 5300, 5500, 5540, 5580, 5620, 5660, 5745,
++				5785, 5955, 5995, 6035, 6075, 6115, 6155, 6195, 6235, 6275,
++				6315, 6355, 6395, 6435, 6475, 6515, 6555, 6595, 6635, 6675,
++				6715, 6755, 6795, 6835, 6875, 6915, 6955, 6995, 7035, 7075 };
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(allowed); i++)
+-		if (chan->chan == allowed[i])
++		if (chan->freq == allowed[i])
+ 			return 1;
+ 
+ 	return 0;
+ }
+ 
+ 
+-static int acs_usable_vht80_chan(const struct hostapd_channel_data *chan)
++static int acs_usable_bw80_chan(const struct hostapd_channel_data *chan)
+ {
+-	const int allowed[] = { 36, 52, 100, 116, 132, 149 };
++	const int allowed[] = { 5180, 5260, 5500, 5580, 5660, 5745, 6035, 6115, 6195,
++				6275, 6355, 6435, 6515, 6595, 6675, 6755, 6835, 6915,
++				6995 };
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(allowed); i++)
+-		if (chan->chan == allowed[i])
++		if (chan->freq == allowed[i])
+ 			return 1;
+ 
+ 	return 0;
+ }
+ 
+ 
+-static int acs_usable_vht160_chan(const struct hostapd_channel_data *chan)
++static int acs_usable_bw160_chan(const struct hostapd_channel_data *chan)
+ {
+-	const int allowed[] = { 36, 100 };
++	const int allowed[] = { 5180, 5500, 5955, 6115, 6275, 6435, 6595, 6755, 6915 };
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(allowed); i++)
+-		if (chan->chan == allowed[i])
++		if (chan->freq == allowed[i])
+ 			return 1;
+ 
+ 	return 0;
+@@ -678,10 +682,11 @@ acs_find_ideal_chan_mode(struct hostapd_
+ 		/* HT40 on 5 GHz has a limited set of primary channels as per
+ 		 * 11n Annex J */
+ 		if (mode->mode == HOSTAPD_MODE_IEEE80211A &&
+-		    iface->conf->ieee80211n &&
+-		    iface->conf->secondary_channel &&
+-		    !acs_usable_ht40_chan(chan)) {
+-			wpa_printf(MSG_DEBUG, "ACS: Channel %d: not allowed as primary channel for HT40",
++		    ((iface->conf->ieee80211n &&
++		    iface->conf->secondary_channel) ||
++		    is_6ghz_freq(chan->freq)) &&
++		    !acs_usable_bw40_chan(chan)) {
++			wpa_printf(MSG_DEBUG, "ACS: Channel %d: not allowed as primary channel for 40MHz bandwidth",
+ 				   chan->chan);
+ 			continue;
+ 		}
+@@ -690,18 +695,18 @@ acs_find_ideal_chan_mode(struct hostapd_
+ 		    (iface->conf->ieee80211ac || iface->conf->ieee80211ax)) {
+ 			if (hostapd_get_oper_chwidth(iface->conf) ==
+ 			    CHANWIDTH_80MHZ &&
+-			    !acs_usable_vht80_chan(chan)) {
++			    !acs_usable_bw80_chan(chan)) {
+ 				wpa_printf(MSG_DEBUG,
+-					   "ACS: Channel %d: not allowed as primary channel for VHT80",
++					   "ACS: Channel %d: not allowed as primary channel for 80MHz bandwidth",
+ 					   chan->chan);
+ 				continue;
+ 			}
+ 
+ 			if (hostapd_get_oper_chwidth(iface->conf) ==
+ 			    CHANWIDTH_160MHZ &&
+-			    !acs_usable_vht160_chan(chan)) {
++			    !acs_usable_bw160_chan(chan)) {
+ 				wpa_printf(MSG_DEBUG,
+-					   "ACS: Channel %d: not allowed as primary channel for VHT160",
++					   "ACS: Channel %d: not allowed as primary channel for 160MHz bandwidth",
+ 					   chan->chan);
+ 				continue;
+ 			}
+@@ -832,16 +837,20 @@ acs_find_ideal_chan(struct hostapd_iface
+ 	u32 bw;
+ 	struct hostapd_hw_modes *mode;
+ 
+-	/* TODO: HT40- support */
++	if (is_6ghz_op_class(iface->conf->op_class)) {
++		bw = op_class_to_bandwidth(iface->conf->op_class);
++		n_chans = bw/20;
++		goto bw_selected;
++	}
+ 
++	/* TODO: HT40- support */
+ 	if (iface->conf->ieee80211n &&
+ 	    iface->conf->secondary_channel == -1) {
+ 		wpa_printf(MSG_ERROR, "ACS: HT40- is not supported yet. Please try HT40+");
+ 		return NULL;
+ 	}
+ 
+-	if (iface->conf->ieee80211n &&
+-	    iface->conf->secondary_channel)
++	if (iface->conf->ieee80211n && iface->conf->secondary_channel)
+ 		n_chans = 2;
+ 
+ 	if (iface->conf->ieee80211ac || iface->conf->ieee80211ax) {
+@@ -857,6 +866,7 @@ acs_find_ideal_chan(struct hostapd_iface
+ 
+ 	bw = num_chan_to_bw(n_chans);
+ 
++bw_selected:
+ 	/* TODO: VHT/HE80+80. Update acs_adjust_center_freq() too. */
+ 
+ 	wpa_printf(MSG_DEBUG,
+Index: hostapd-2021-02-20/src/ap/hostapd.c
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/hostapd.c
++++ hostapd-2021-02-20/src/ap/hostapd.c
+@@ -1691,6 +1691,10 @@ static int setup_interface2(struct hosta
+ 
+ 			ch_width = op_class_to_ch_width(iface->conf->op_class);
+ 			hostapd_set_oper_chwidth(iface->conf, ch_width);
++			if (!iface->conf->secondary_channel &&
++			    op_class_to_bandwidth(iface->conf->op_class) >= 40)
++				iface->conf->secondary_channel =
++					(((iface->conf->channel - 1) / 4 ) % 2) ? -1 : 1 ;
+ 		}
+ 
+ 		ret = hostapd_select_hw_mode(iface);
+Index: hostapd-2021-02-20/src/ap/beacon.c
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/beacon.c
++++ hostapd-2021-02-20/src/ap/beacon.c
+@@ -481,8 +481,10 @@ static u8 * hostapd_gen_probe_resp(struc
+ 
+ 	resp->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
+ 					   WLAN_FC_STYPE_PROBE_RESP);
+-	if (req)
++	os_memset(resp->da, 0xff, ETH_ALEN);
++	if (req && !is_6ghz_op_class(hapd->iconf->op_class))
+ 		os_memcpy(resp->da, req->sa, ETH_ALEN);
++
+ 	os_memcpy(resp->sa, hapd->own_addr, ETH_ALEN);
+ 
+ 	os_memcpy(resp->bssid, hapd->own_addr, ETH_ALEN);
+Index: hostapd-2021-02-20/wpa_supplicant/mesh.c
+===================================================================
+--- hostapd-2021-02-20.orig/wpa_supplicant/mesh.c
++++ hostapd-2021-02-20/wpa_supplicant/mesh.c
+@@ -644,6 +644,8 @@ int wpa_supplicant_join_mesh(struct wpa_
+ 		params->flags |= WPA_DRIVER_MESH_FLAG_SAE_AUTH;
+ 		params->flags |= WPA_DRIVER_MESH_FLAG_AMPE;
+ 		wpa_s->conf->user_mpm = 1;
++		if (is_6ghz_freq(ssid->frequency))
++			ssid->ieee80211w = MGMT_FRAME_PROTECTION_REQUIRED;
+ 	}
+ 
+ 	if (wpa_s->conf->user_mpm) {

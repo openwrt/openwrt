@@ -1,0 +1,185 @@
+From 1027f2d49304146a1bd1cfc00542615d8b528f92 Mon Sep 17 00:00:00 2001
+From: Michal Kazior <michal.kazior@tieto.com>
+Date: Thu, 17 Dec 2020 20:40:30 +0530
+Subject: [PATCH] ath11k: Add support for STA to handle beacon miss
+
+When AP goes down without any indication to STA, FW
+detects missing beacon, and sends wmi roam event with
+reason BEACON_MISS to the host.
+
+Added support for STA mode to trigger disassociation
+from AP, on receiving this event from FW.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
+Signed-off-by: Kalle Valo <kvalo@qca.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath11k/core.h |  2 ++
+ drivers/net/wireless/ath/ath11k/mac.c  | 50 ++++++++++++++++++++++++++++++----
+ drivers/net/wireless/ath/ath11k/mac.h  |  1 +
+ drivers/net/wireless/ath/ath11k/wmi.c  |  5 +---
+ 4 files changed, 49 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -40,6 +40,7 @@
+ #define ATH11K_PRB_RSP_DROP_THRESHOLD ((ATH11K_TX_MGMT_TARGET_MAX_SUPPORT_WMI * 3) / 4)
+ 
+ #define ATH11K_RESET_TIMEOUT_HZ (10 * HZ)
++#define ATH11K_CONNECTION_LOSS_HZ (3 * HZ)
+ #define ATH11K_INVALID_HW_MAC_ID	0xFF
+ #define ATH11K_RX_RATE_TABLE_NUM 320
+ #define ATH11K_RX_RATE_TABLE_11AX_NUM 576
+@@ -259,6 +260,7 @@ struct ath11k_vif {
+ 	u32 aid;
+ 	u8 bssid[ETH_ALEN];
+ 	struct cfg80211_bitrate_mask bitrate_mask;
++	struct delayed_work connection_loss_work;
+ 	int num_legacy_stations;
+ 	int rtscts_prot_mode;
+ 	int txpower;
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1272,6 +1272,75 @@ static void ath11k_control_beaconing(str
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "mac vdev %d up\n", arvif->vdev_id);
+ }
+ 
++static void ath11k_mac_handle_beacon_iter(void *data, u8 *mac,
++					  struct ieee80211_vif *vif)
++{
++	struct sk_buff *skb = data;
++	struct ieee80211_mgmt *mgmt = (void *)skb->data;
++	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++
++	if (vif->type != NL80211_IFTYPE_STATION)
++		return;
++
++	if (!ether_addr_equal(mgmt->bssid, vif->bss_conf.bssid))
++		return;
++
++	cancel_delayed_work(&arvif->connection_loss_work);
++}
++
++void ath11k_mac_handle_beacon(struct ath11k *ar, struct sk_buff *skb)
++{
++	ieee80211_iterate_active_interfaces_atomic(ar->hw,
++						   IEEE80211_IFACE_ITER_NORMAL,
++						   ath11k_mac_handle_beacon_iter,
++						   skb);
++}
++
++static void ath11k_mac_handle_beacon_miss_iter(void *data, u8 *mac,
++                                               struct ieee80211_vif *vif)
++{
++	u32 *vdev_id = data;
++	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k *ar = arvif->ar;
++	struct ieee80211_hw *hw = ar->hw;
++
++	if (arvif->vdev_id != *vdev_id)
++		return;
++
++	if (!arvif->is_up)
++		return;
++
++	ieee80211_beacon_loss(vif);
++
++	/* Firmware doesn't report beacon loss events repeatedly. If AP probe
++	 * (done by mac80211) succeeds but beacons do not resume then it
++	 * doesn't make sense to continue operation. Queue connection loss work
++	 * which can be cancelled when beacon is received.
++	 */
++	ieee80211_queue_delayed_work(hw, &arvif->connection_loss_work,
++				     ATH11K_CONNECTION_LOSS_HZ);
++}
++
++void ath11k_mac_handle_beacon_miss(struct ath11k *ar, u32 vdev_id)
++{
++	ieee80211_iterate_active_interfaces_atomic(ar->hw,
++						   IEEE80211_IFACE_ITER_NORMAL,
++						   ath11k_mac_handle_beacon_miss_iter,
++						   &vdev_id);
++}
++
++static void ath11k_mac_vif_sta_connection_loss_work(struct work_struct *work)
++{
++	struct ath11k_vif *arvif = container_of(work, struct ath11k_vif,
++						connection_loss_work.work);
++	struct ieee80211_vif *vif = arvif->vif;
++
++	if (!arvif->is_up)
++		return;
++
++	ieee80211_connection_loss(vif);
++}
++
+ static void ath11k_peer_assoc_h_basic(struct ath11k *ar,
+ 				      struct ieee80211_vif *vif,
+ 				      struct ieee80211_sta *sta,
+@@ -2643,7 +2712,7 @@ static void ath11k_bss_disassoc(struct i
+ 
+ 	arvif->is_up = false;
+ 
+-	/* TODO: cancel connection_loss_work */
++	cancel_delayed_work_sync(&arvif->connection_loss_work);
+ }
+ 
+ static u32 ath11k_mac_get_rate_hw_value(int bitrate)
+@@ -5914,10 +5983,8 @@ static int ath11k_mac_op_add_interface(s
+ 	arvif->vif = vif;
+ 
+ 	INIT_LIST_HEAD(&arvif->list);
+-
+-	/* Should we initialize any worker to handle connection loss indication
+-	 * from firmware in sta mode?
+-	 */
++	INIT_DELAYED_WORK(&arvif->connection_loss_work,
++                          ath11k_mac_vif_sta_connection_loss_work);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(arvif->bitrate_mask.control); i++) {
+ 		arvif->bitrate_mask.control[i].legacy = 0xffffffff;
+@@ -6200,6 +6267,8 @@ static void ath11k_mac_op_remove_interfa
+ 	int ret;
+ 	int i;
+ 
++	cancel_delayed_work_sync(&arvif->connection_loss_work);
++
+ 	mutex_lock(&ar->conf_mutex);
+ 
+ 	ath11k_dbg(ab, ATH11K_DBG_MAC, "mac remove interface (vdev %d)\n",
+--- a/drivers/net/wireless/ath/ath11k/mac.h
++++ b/drivers/net/wireless/ath/ath11k/mac.h
+@@ -164,4 +164,6 @@ u8 ath11k_mac_bw_to_mac80211_bw(u8 bw);
+ enum ath11k_supported_bw ath11k_mac_mac80211_bw_to_ath11k_bw(enum rate_info_bw bw);
+ enum hal_encrypt_type ath11k_dp_tx_get_encrypt_type(u32 cipher);
+ void ath11k_mac_bcn_tx_event(struct ath11k_vif *arvif);
++void ath11k_mac_handle_beacon(struct ath11k *ar, struct sk_buff *skb);
++void ath11k_mac_handle_beacon_miss(struct ath11k *ar, u32 vdev_id);
+ #endif
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -6974,10 +6974,8 @@ skip_mgmt_stats:
+ 		}
+ 	}
+ 
+-	/* TODO: Pending handle beacon implementation
+-	 *if (ieee80211_is_beacon(hdr->frame_control))
+-	 *	ath11k_mac_handle_beacon(ar, skb);
+-	 */
++	 if (ieee80211_is_beacon(hdr->frame_control))
++	 	ath11k_mac_handle_beacon(ar, skb);
+ 
+ 	ath11k_dbg(ab, ATH11K_DBG_MGMT,
+ 		   "event mgmt rx skb %pK len %d ftype %02x stype %02x\n",
+@@ -7226,10 +7224,7 @@ static void ath11k_roam_event(struct ath
+ 
+ 	switch (roam_ev.reason) {
+ 	case WMI_ROAM_REASON_BEACON_MISS:
+-		/* TODO: Pending beacon miss and connection_loss_work
+-		 * implementation
+-		 * ath11k_mac_handle_beacon_miss(ar, vdev_id);
+-		 */
++		ath11k_mac_handle_beacon_miss(ar, roam_ev.vdev_id);
+ 		break;
+ 	case WMI_ROAM_REASON_BETTER_AP:
+ 	case WMI_ROAM_REASON_LOW_RSSI:

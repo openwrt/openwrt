@@ -1,0 +1,45 @@
+From 42fd8fcafbb2f59305d5584e769964e6231113e0 Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Wed, 16 Dec 2020 00:44:00 +0530
+Subject: [PATCH] ath11k: add wmi peer create conf event in wmi_tlv_event_id
+
+When driver sends peer create cmd, firmware responds with
+WMI_PEER_CREATE_CONF_EVENTID to confirm firmware received
+WMI_PEER_CREATE_CMDID. Since peer create conf event is
+not handled in ath11k_wmi_tlv_op_rx,we are getting unknown
+event id warning prints during peer creation.
+
+Added WMI_PEER_CREATE_CONF_EVENTID in wmi_tlv_event_id and handle
+the same as unsupported event id under wmi logs.
+
+warning prints:
+[ 4382.230817] ath11k_pci 0000:01:00.0: Unknown eventid: 0x601a
+
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 1 +
+ drivers/net/wireless/ath/ath11k/wmi.h | 3 +++
+ 2 files changed, 4 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -8705,6 +8705,7 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	case WMI_TWT_PAUSE_DIALOG_EVENTID:
+ 	case WMI_TWT_RESUME_DIALOG_EVENTID:
+ 	case WMI_PDEV_DMA_RING_CFG_RSP_EVENTID:
++	case WMI_PEER_CREATE_CONF_EVENTID:
+ 		ath11k_dbg(ab, ATH11K_DBG_WMI,
+ 			   "ignoring unsupported event 0x%x\n", id);
+ 		break;
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -678,6 +678,9 @@ enum wmi_tlv_event_id {
+ 	WMI_PEER_RESERVED9_EVENTID,
+ 	WMI_PEER_RESERVED10_EVENTID,
+ 	WMI_PEER_OPER_MODE_CHANGE_EVENTID,
++	WMI_PEER_TX_PN_RESPONSE_EVENTID,
++	WMI_PEER_CFR_CAPTURE_EVENTID,
++	WMI_PEER_CREATE_CONF_EVENTID,
+ 	WMI_MGMT_RX_EVENTID = WMI_TLV_CMD(WMI_GRP_MGMT),
+ 	WMI_HOST_SWBA_EVENTID,
+ 	WMI_TBTTOFFSET_UPDATE_EVENTID,

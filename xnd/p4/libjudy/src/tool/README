@@ -1,0 +1,134 @@
+
+# @(#) $Revision: 4.2 $
+
+# CHECK README FILES AGAINST DIRECTORIES.
+
+# Usage: <script> [-b] [dir ...]
+#
+# -b:  Compare files by basenames only (in case of fuller paths in the README
+# file), except for trailing slashes or at-signs on directory names.
+#
+# For caller convenience, if a "dir" argument ends in "/README", that part is
+# ignored and the rest is taken as the directory name.
+
+# Checks the current directory by default, else the the named directories.
+# Reads $file (see below) in each directory.  Takes the first field of each
+# line which starts in column 1 and is not a comment ("#") as a filename, and
+# compares it (or its basename) against the files in the directory, except for
+# README itself and ".sbcm", the ubiquitous Softbench CM cache file created in
+# many source directories.
+
+# Defect:  If there are two files, one a directory and the other a superset of
+# the first file's name, they are mis-sorted due to the trailing slash on the
+# directory, and one shows up as both present and missing.
+
+##############################################################################
+# Here's a sample README file that works with this program, ignoring the
+# comment marks in the first column.
+# _________________
+#
+# # @(#) $Revision: 4.2 $
+# # This directory contains blah blah blah...
+#
+# # IMPORTANT FILES:
+#
+# foobar	A silly file containing lots of stuff
+#		that only its mother could love.
+#
+# barfoo	The opposite.
+#
+#
+# # LESS IMPORTANT FILES:
+#
+# bagle		Document titled, "In the Beginning, ..."
+#
+# beagle	Another document, titled "Then There was Darwin"
+#
+##############################################################################
+
+
+# CHECK ARGUMENTS, INITIALIZE:
+
+	if [[ "x$1" = x-b ]]		# -b option.
+	then optb='yes'; shift
+	else optb=''
+	fi
+
+	if [[ $# = 0 ]]			# no args given.
+	then telldir=''; set .		# use PWD, ".".
+	else telldir='yes'
+	fi
+
+	file='README'			# to read and check in each directory.
+
+	temp1="/tmp/readme1$$"
+	temp2="/tmp/readme2$$"
+	trap "rm -f $temp1 $temp2; exit "'$retval' 0 1 2 3 15
+
+	tab='	'
+	retval='0'			# default return value.
+
+
+# EXTRACT FILENAMES FROM README FILE:
+#
+# If $dir ends in "/README", strip that part as a convenience to the caller.
+
+	for dir in "$@"
+	do
+	    dir="${dir%/README}"
+
+# Since this whole script is a checker, write the following message to stdout,
+# not stderr:
+
+	    if [[ ! -f "$dir/$file" ]]
+	    then echo "$0: cannot find $dir/$file file"; retval='1'; continue
+	    fi
+
+# Print field 1 if it starts in column 1 and isn't a comment or a README or
+# .sbcm file, optionally the basename part only (except for trailing "/"):
+
+	    awk < "$dir/$file" '
+
+	    (NF > 0) && ($0 !~ /^[ '"$tab"'#]/) {
+
+		if ($1 == "README") next;
+		if ($1 == ".sbcm" ) next;
+
+		if ("'"$optb"'" == "yes")
+		    while ((at = index ($1, "/")) && (at < length ($1)))
+			$1 = substr ($1, at + 1);
+
+		print $1;
+	    }' |
+
+	    sort -u > $temp1
+
+
+# COMPARE:
+#
+# Add "/" to directory names, but remove "*" from executable file names.
+# Also ignore "README" and ".sbcm" files themselves, and "." and ".." files.
+# Sort the results because ls -F lists "x/" before "x.y/", and sort reverses
+# them.
+
+	    ls -aF $dir |
+
+	    sed	-e 's/\*$//' \
+		-e '/^README$/d' \
+		-e '/^\.sbcm$/d' \
+		-e '/^\.\/$/d' \
+		-e '/^\.\.\/$/d' |
+
+	    sort | comm -3 $temp1 - > $temp2
+
+	    if [[ -s $temp2 ]]			# not empty.
+	    then
+		[[ -n "$telldir" ]] && echo "\n$dir:"
+		echo "README\tdirectory"
+		cat $temp2
+		retval='1'
+	    fi
+	done
+
+	exit $retval
+ironment.

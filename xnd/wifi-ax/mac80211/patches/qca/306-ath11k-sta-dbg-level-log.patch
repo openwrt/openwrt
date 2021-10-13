@@ -1,0 +1,424 @@
+From 3fb34916b37bb56d1f956191b438a7447e134c77 Mon Sep 17 00:00:00 2001
+From: Tamizh Chelvam <tamizhr@codeaurora.org>
+Date: Tue, 30 Mar 2021 12:34:08 +0530
+Subject: [PATCH] ath11k: Add support for peer dbg level logs
+
+Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h    |  7 +++
+ drivers/net/wireless/ath/ath11k/debug.h   |  1 +
+ drivers/net/wireless/ath/ath11k/debugfs.c | 97 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/debugfs.h |  5 ++
+ drivers/net/wireless/ath/ath11k/mac.c     | 79 +++++++++++++++++++++----
+ drivers/net/wireless/ath/ath11k/mac.h     |  1 +
+ drivers/net/wireless/ath/ath11k/peer.c    |  3 +
+ drivers/net/wireless/ath/ath11k/wmi.c     |  7 +++
+ 8 files changed, 189 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -231,6 +231,11 @@ struct ath11k_mgmt_frame_stats {
+ 	u32 tx_compl_fail[ATH11K_STATS_MGMT_FRM_TYPE_MAX];
+ };
+ 
++struct ath11k_mac_filter {
++	struct list_head list;
++	u8 peer_mac[ETH_ALEN];
++};
++
+ struct ath11k_vif {
+ 	u32 vdev_id;
+ 	enum wmi_vdev_type vdev_type;
+@@ -284,6 +289,9 @@ struct ath11k_vif {
+ 	struct ieee80211_chanctx_conf chanctx;
+ 	struct dentry *debugfs_twt;
+ 	struct ath11k_mgmt_frame_stats mgmt_stats;
++	/* protected by conf_mutex */
++	struct list_head mac_filters;
++	u32 mac_filter_count;
+ #ifdef CPTCFG_ATH11K_NSS_SUPPORT
+ 	struct arvif_nss nss;
+ 	struct list_head ap_vlan_arvifs;
+--- a/drivers/net/wireless/ath/ath11k/debug.h
++++ b/drivers/net/wireless/ath/ath11k/debug.h
+@@ -28,6 +28,7 @@ enum ath11k_debug_mask {
+ 	ATH11K_DBG_DP_RX	= 0x00004000,
+ 	ATH11K_DBG_CFR		= 0x00008000,
+ 	ATH11K_DBG_CFR_DUMP	= 0x00010000,
++	ATH11K_DBG_PEER		= 0x00020000,
+ 	ATH11K_DBG_ANY		= 0xffffffff,
+ };
+ 
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -453,6 +453,108 @@ static const struct file_operations ath1
+ 	.read = ath11k_read_wmi_ctrl_path_stats,
+ };
+ 
++static ssize_t ath11k_write_mac_filter(struct file *file,
++				       const char __user *ubuf,
++				       size_t count, loff_t *ppos)
++{
++	struct ath11k_vif *arvif = file->private_data;
++	struct ath11k_mac_filter *mac_filter;
++	struct ath11k_mac_filter *i;
++	struct ath11k *ar = arvif->ar;
++	bool found = false;
++	u8 buf[64] = {0};
++	int ret;
++	unsigned int val;
++
++	ret = simple_write_to_buffer(buf, sizeof(buf) - 1, ppos, ubuf, count);
++	if (ret < 0)
++		return ret;
++
++	mac_filter = kzalloc(sizeof(*mac_filter), GFP_ATOMIC);
++	if (!mac_filter)
++		return -ENOMEM;
++
++	buf[ret] = '\0';
++	ret = sscanf(buf, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx %u",
++		     &mac_filter->peer_mac[0], &mac_filter->peer_mac[1],
++		     &mac_filter->peer_mac[2], &mac_filter->peer_mac[3],
++		     &mac_filter->peer_mac[4], &mac_filter->peer_mac[5],
++		     &val);
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (!list_empty(&arvif->mac_filters)) {
++		list_for_each_entry(i, &arvif->mac_filters, list) {
++			if (ether_addr_equal(i->peer_mac, mac_filter->peer_mac)) {
++				found = true;
++				break;
++			}
++		}
++	}
++
++	if (!found && val) {
++		list_add(&mac_filter->list, &arvif->mac_filters);
++		arvif->mac_filter_count++;
++	} else if (found && !val) {
++		list_del(&i->list);
++		kfree(i);
++		arvif->mac_filter_count--;
++	}
++
++	mutex_unlock(&ar->conf_mutex);
++	return count;
++}
++
++static ssize_t ath11k_read_mac_filter(struct file *file, char __user *ubuf,
++				      size_t count, loff_t *ppos)
++{
++	struct ath11k_vif *arvif = file->private_data;
++	struct ath11k *ar = arvif->ar;
++	struct ath11k_mac_filter *i;
++	int len = 0, ret;
++	char *buf;
++	int size;
++
++	size = (arvif->mac_filter_count * 20) + 25;
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (list_empty(&arvif->mac_filters)) {
++		len += scnprintf(buf + len, size - len, "List is Empty\n");
++		goto exit;
++	}
++
++	len += scnprintf(buf + len, size - len, "Mac address entries :\n");
++	list_for_each_entry(i, &arvif->mac_filters, list) {
++		len += scnprintf(buf + len, size - len, "%pM\n", i->peer_mac);
++	}
++
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	ret = simple_read_from_buffer(ubuf, count, ppos, buf, len);
++	kfree(buf);
++	return ret;
++
++}
++
++static const struct file_operations fops_mac_filter = {
++	.read = ath11k_read_mac_filter,
++	.write = ath11k_write_mac_filter,
++	.open = simple_open
++};
++
++void ath11k_debugfs_dbg_mac_filter(struct ath11k_vif *arvif)
++{
++	debugfs_create_file("mac_filter", 0644,
++			    arvif->vif->debugfs_dir, arvif,
++			    &fops_mac_filter);
++	INIT_LIST_HEAD(&arvif->mac_filters);
++}
++
+ void ath11k_debugfs_wmi_ctrl_stats(struct ath11k_vif *arvif)
+ {
+ 	debugfs_create_file("wmi_ctrl_stats", 0644,
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -182,11 +182,16 @@ enum ath11k_dbg_aggr_mode {
+ 
+ #ifdef CPTCFG_MAC80211_DEBUGFS
+ void ath11k_debugfs_twt(struct ath11k_vif *arvif, bool enable);
++void ath11k_debugfs_dbg_mac_filter(struct ath11k_vif *arvif);
+ #else
+ static inline void ath11k_debugfs_twt(struct ath11k_vif *arvif, bool enable)
+ {
+ 
+ }
++
++static void ath11k_debugfs_dbg_mac_filter(struct ath11k_vif *arvif)
++{
++}
+ #endif
+ 
+ void ath11k_debug_aggr_size_config_init(struct ath11k_vif *arvif);
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -4046,6 +4046,25 @@ ath11k_mac_bitrate_mask_num_vht_rates(st
+ 	return num_rates;
+ }
+ 
++bool ath11k_mac_sta_level_info(struct ath11k_vif *arvif,
++			       struct ieee80211_sta *sta)
++{
++	struct ath11k_mac_filter *peer;
++
++	lockdep_assert_held(&arvif->ar->conf_mutex);
++
++	if (arvif->vif->type == NL80211_IFTYPE_AP_VLAN ||
++	    list_empty(&arvif->mac_filters) || !sta)
++		return true;
++
++	list_for_each_entry(peer, &arvif->mac_filters, list) {
++		if (ether_addr_equal(peer->peer_mac, sta->addr))
++			return true;
++	}
++
++	return false;
++}
++
+ static int
+ ath11k_mac_bitrate_mask_num_he_rates(struct ath11k *ar,
+ 				     enum nl80211_band band,
+@@ -4187,9 +4206,15 @@ static int ath11k_station_assoc(struct a
+ 	enum nl80211_band band;
+ 	struct cfg80211_bitrate_mask *mask;
+ 	u8 num_vht_rates, num_he_rates;
++	bool peer_dbg_info;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
++	peer_dbg_info = ath11k_mac_sta_level_info(arvif, sta);
++	if (peer_dbg_info)
++		ath11k_dbg(ar->ab, ATH11K_DBG_PEER, "mac assoc sta %pM\n",
++			   sta->addr);
++
+ 	if (WARN_ON(ath11k_mac_vif_chan(vif, &def)))
+ 		return -EPERM;
+ 
+@@ -4270,10 +4295,16 @@ static int ath11k_station_disassoc(struc
+ 				   struct ieee80211_sta *sta)
+ {
+ 	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	bool peer_dbg_info;
+ 	int ret = 0;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
++	peer_dbg_info = ath11k_mac_sta_level_info(arvif, sta);
++	if (peer_dbg_info)
++		ath11k_dbg(ar->ab, ATH11K_DBG_PEER, "mac disassoc sta %pM\n",
++			   sta->addr);
++
+ 	if (!sta->wme) {
+ 		arvif->num_legacy_stations--;
+ 		ret = ath11k_recalc_rtscts_prot(arvif);
+@@ -4305,6 +4336,7 @@ static void ath11k_sta_rc_update_wk(stru
+ 	int err, num_vht_rates,  num_he_rates;
+ 	const struct cfg80211_bitrate_mask *mask;
+ 	struct peer_assoc_params peer_arg;
++	bool peer_dbg_info;
+ 
+ 	arsta = container_of(wk, struct ath11k_sta, update_wk);
+ 	sta = container_of((void *)arsta, struct ieee80211_sta, drv_priv);
+@@ -4332,6 +4364,8 @@ static void ath11k_sta_rc_update_wk(stru
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
++	peer_dbg_info = ath11k_mac_sta_level_info(arvif, sta);
++
+ 	nss = max_t(u32, 1, nss);
+ 	nss = min(nss, max(max(ath11k_mac_max_ht_nss(ht_mcs_mask),
+ 			       ath11k_mac_max_vht_nss(vht_mcs_mask)),
+@@ -4346,8 +4380,9 @@ static void ath11k_sta_rc_update_wk(stru
+ 	}
+ 
+ 	if (changed & IEEE80211_RC_NSS_CHANGED) {
+-		ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "mac update sta %pM nss %d\n",
+-			   sta->addr, nss);
++		if (peer_dbg_info)
++			ath11k_dbg(ar->ab, ATH11K_DBG_PEER, "mac update sta %pM nss %d\n",
++				   sta->addr, nss);
+ 
+ 		err = ath11k_wmi_set_peer_param(ar, sta->addr, arvif->vdev_id,
+ 						WMI_PEER_NSS, nss);
+@@ -4357,8 +4392,9 @@ static void ath11k_sta_rc_update_wk(stru
+ 	}
+ 
+ 	if (changed & IEEE80211_RC_SMPS_CHANGED) {
+-		ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "mac update sta %pM smps %d\n",
+-			   sta->addr, smps);
++		if (peer_dbg_info)
++			ath11k_dbg(ar->ab, ATH11K_DBG_PEER, "mac update sta %pM smps %d\n",
++				   sta->addr, smps);
+ 
+ 		err = ath11k_wmi_set_peer_param(ar, sta->addr, arvif->vdev_id,
+ 						WMI_PEER_MIMO_PS_STATE, smps);
+@@ -4368,6 +4404,10 @@ static void ath11k_sta_rc_update_wk(stru
+ 	}
+ 
+ 	if (changed & IEEE80211_RC_SUPP_RATES_CHANGED) {
++		if (peer_dbg_info)
++			ath11k_dbg(ar->ab, ATH11K_DBG_PEER, "mac update supp rates for sta %pM\n",
++				   sta->addr);
++
+ 		mask = &arvif->bitrate_mask;
+ 		num_vht_rates = ath11k_mac_bitrate_mask_num_vht_rates(ar, band,
+ 								      mask);
+@@ -4435,6 +4475,7 @@ static void ath11k_sta_use_4addr_wk(stru
+ 	struct ath11k_base *ab;
+ 	struct ath11k_peer *wds_peer;
+ 	u8 wds_addr[ETH_ALEN];
++	bool peer_dbg_info;
+ 	u32 wds_peer_id;
+ 	int ret = 0;
+ 
+@@ -4444,13 +4485,18 @@ static void ath11k_sta_use_4addr_wk(stru
+ 	ar = arvif->ar;
+ 	ab = ar->ab;
+ 
++	mutex_lock(&ar->conf_mutex);
++	peer_dbg_info = ath11k_mac_sta_level_info(arvif, sta);
++	mutex_unlock(&ar->conf_mutex);
++
+ 	if (ab->nss.enabled && arvif->vif->type == NL80211_IFTYPE_AP_VLAN) {
+ 		ap_vlan_arvif = arsta->arvif;
+ 		arvif = ap_vlan_arvif->nss.ap_vif;
+ 	}
+ 
+-	ath11k_dbg(ab, ATH11K_DBG_MAC,
+-		   "setting USE_4ADDR for peer %pM\n", sta->addr);
++	if (peer_dbg_info)
++		ath11k_dbg(ab, ATH11K_DBG_PEER,
++			   "setting USE_4ADDR for STA %pM\n", sta->addr);
+ 
+ 	ret = ath11k_wmi_set_peer_param(ar, sta->addr,
+ 					arvif->vdev_id,
+@@ -4618,6 +4664,7 @@ static int ath11k_mac_station_add(struct
+ 	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct ath11k_sta *arsta = (struct ath11k_sta *)sta->drv_priv;
+ 	struct peer_create_params peer_param;
++	bool peer_dbg_info;
+ 	int ret;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+@@ -4629,6 +4676,7 @@ static int ath11k_mac_station_add(struct
+ 		goto exit;
+ 	}
+ 
++	peer_dbg_info = ath11k_mac_sta_level_info(arvif, sta);
+ 	arsta->rx_stats = kzalloc(sizeof(*arsta->rx_stats), GFP_KERNEL);
+ 	if (!arsta->rx_stats) {
+ 		ret = -ENOMEM;
+@@ -4646,8 +4694,9 @@ static int ath11k_mac_station_add(struct
+ 		goto free_rx_stats;
+ 	}
+ 
+-	ath11k_dbg(ab, ATH11K_DBG_MAC, "Added peer: %pM for VDEV: %d\n",
+-		   sta->addr, arvif->vdev_id);
++	if (peer_dbg_info)
++		ath11k_dbg(ab, ATH11K_DBG_PEER, "Added peer: %pM for VDEV: %d\n",
++			   sta->addr, arvif->vdev_id);
+ 
+ 	ret = ath11k_mac_ap_ps_recalc(ar);
+ 	if (ret) {
+@@ -4664,8 +4713,9 @@ static int ath11k_mac_station_add(struct
+ 	}
+ 
+ 	if (ieee80211_vif_is_mesh(vif)) {
+-		ath11k_dbg(ab, ATH11K_DBG_MAC,
+-			   "setting USE_4ADDR for mesh peer %pM\n", sta->addr);
++		if (peer_dbg_info)
++			ath11k_dbg(ab, ATH11K_DBG_PEER,
++			   	   "setting USE_4ADDR for mesh peer %pM\n", sta->addr);
+ 		ret = ath11k_wmi_set_peer_param(ar, sta->addr,
+ 						arvif->vdev_id,
+ 						WMI_PEER_USE_4ADDR, 1);
+@@ -4782,7 +4832,7 @@ static int ath11k_mac_op_sta_state(struc
+ 			ath11k_warn(ar->ab, "Failed to delete peer: %pM for VDEV: %d\n",
+ 				    sta->addr, arvif->vdev_id);
+ 		else
+-			ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "Removed peer: %pM for VDEV: %d\n",
++			ath11k_dbg(ar->ab, ATH11K_DBG_PEER, "Removed peer: %pM for VDEV: %d\n",
+ 				   sta->addr, arvif->vdev_id);
+ 
+ 		ath11k_mac_dec_num_stations(arvif, sta);
+@@ -4860,6 +4910,10 @@ static int ath11k_mac_op_sta_state(struc
+ 		spin_unlock_bh(&ar->ab->base_lock);
+ 	}
+ 
++	if (ath11k_mac_sta_level_info(arvif, sta))
++		ath11k_dbg(ar->ab, ATH11K_DBG_PEER, "mac sta %pM old state %d new state :%d\n",
++			   sta->addr, old_state, new_state);
++
+ 	mutex_unlock(&ar->conf_mutex);
+ 	return ret;
+ }
+@@ -6411,6 +6465,8 @@ static int ath11k_mac_op_add_interface(s
+ 		goto err;
+ 	}
+ 
++	ath11k_debugfs_dbg_mac_filter(arvif);
++
+ 	switch (vif->type) {
+ 	case NL80211_IFTYPE_UNSPECIFIED:
+ 	case NL80211_IFTYPE_STATION:
+--- a/drivers/net/wireless/ath/ath11k/mac.h
++++ b/drivers/net/wireless/ath/ath11k/mac.h
+@@ -166,4 +166,5 @@ enum hal_encrypt_type ath11k_dp_tx_get_e
+ void ath11k_mac_bcn_tx_event(struct ath11k_vif *arvif);
+ void ath11k_mac_handle_beacon(struct ath11k *ar, struct sk_buff *skb);
+ void ath11k_mac_handle_beacon_miss(struct ath11k *ar, u32 vdev_id);
++bool ath11k_mac_sta_level_info(struct ath11k_vif *arvif, struct ieee80211_sta *sta);
+ #endif
+--- a/drivers/net/wireless/ath/ath11k/peer.c
++++ b/drivers/net/wireless/ath/ath11k/peer.c
+@@ -753,6 +753,9 @@ int ath11k_peer_create(struct ath11k *ar
+ 
+ 	ar->num_peers++;
+ 
++	if (ath11k_mac_sta_level_info(arvif, sta))
++		ath11k_dbg(ar->ab, ATH11K_DBG_PEER, "Peer created %pM\n", param->peer_addr);
++
+ 	spin_unlock_bh(&ar->ab->base_lock);
+ 
+ 	return 0;
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -7946,9 +7946,6 @@ static void ath11k_peer_sta_kickout_even
+ 		goto exit;
+ 	}
+ 
+-	ath11k_dbg(ab, ATH11K_DBG_WMI, "peer sta kickout event %pM",
+-		   arg.mac_addr);
+-
+ 	ieee80211_report_low_ack(sta, 10);
+ 
+ exit:

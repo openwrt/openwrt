@@ -1,0 +1,59 @@
+From c4401adb2f0188add0dc2194849f4baacf31ce49 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 17 Jul 2019 16:22:12 -0700
+Subject: [PATCH 1/6] mac80211: add xmit rate to struct ieee80211_tx_status
+
+Right now struct ieee80211_tx_rate cannot hold HE rates. Lets use
+struct ieee80211_tx_status instead. This will also make the code
+future-proof for when we have EHT.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ include/net/mac80211.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/dp_tx.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -417,9 +417,12 @@ static void ath11k_dp_tx_complete_msdu(s
+ 				       struct sk_buff *msdu,
+ 				       struct hal_tx_status *ts)
+ {
++	struct ieee80211_tx_status status = { 0 };
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct ieee80211_tx_info *info;
+ 	struct ath11k_skb_cb *skb_cb;
++	struct ath11k_peer *peer;
++	struct ath11k_sta *arsta;
+ 
+ 	if (WARN_ON_ONCE(ts->buf_rel_source != HAL_WBM_REL_SRC_MODULE_TQM)) {
+ 		/* Must not happen */
+@@ -488,8 +491,25 @@ static void ath11k_dp_tx_complete_msdu(s
+ 	 * Might end up reporting it out-of-band from HTT stats.
+ 	 */
+ 
+-	ieee80211_tx_status(ar->hw, msdu);
+-
++	spin_lock_bh(&ab->base_lock);
++	peer = ath11k_peer_find_by_id(ab, ts->peer_id);
++	if (!peer || !peer->sta) {
++		ath11k_dbg(ab, ATH11K_DBG_DATA,
++			   "dp_tx: failed to find the peer with peer_id %d\n",
++			    ts->peer_id);
++		spin_unlock_bh(&ab->base_lock);
++		dev_kfree_skb_any(msdu);
++		goto exit;
++	}
++	arsta = (struct ath11k_sta *)peer->sta->drv_priv;
++	status.sta = peer->sta;
++	status.skb = msdu;
++	status.info = info;
++	status.rate = &arsta->last_txrate;
++	rcu_read_unlock();
++	ieee80211_tx_status_ext(ar->hw, &status);
++	spin_unlock_bh(&ab->base_lock);
++	return;
+ exit:
+ 	rcu_read_unlock();
+ }

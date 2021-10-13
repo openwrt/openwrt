@@ -1,0 +1,1425 @@
+From 476d81d314f2316cd057db96cbb692de21f4489b Mon Sep 17 00:00:00 2001
+From: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
+Date: Thu, 25 Jun 2020 16:07:56 +0530
+Subject: [PATCH] ath11k: Add tpc stats support
+
+TPC value is minimum of regulatory power limit, rates array and ctl array.
+These arrays are obtained from FW in form of multiple(4) wmi events.
+The events are parsed and saved. Min of these are computed based on
+number of chains, nss, pream/modes, mcs and tx beamforming enabled/disabled.
+Based on the above variant 4 sets of data are displayed.
+0- SU
+1- SU + TXBF
+2- MU
+3- MU + TXBF
+Type of display required is set in /sys/kernel/debug/ieee80211/phyX/ath11k/tpc_stats_type
+By default tpc_stats_type is set 0 and SU op is displayed
+root@OpenWrt:/# echo 2 > /sys/kernel/debug/ieee80211/phyX/ath11k/tpc_stats_type
+root@OpenWrt:/# cat /sys/kernel/debug/ieee80211/phyX/ath11k/tpc_stats
+*************** TPC config **************
+* powers are in 0.25 dBm steps
+reg domain-22           chan freq-2462
+power limit-120         max reg-domain Power-120
+No.of tx chain-2        No.of rates-748
+**************** SU ****************
+                                TPC values for Active chains
+Rate idx Preamble Rate code     1-Chain 2-Chain
+0        CCK     0x100          92      92
+1        CCK     0x101          92      92
+2        CCK     0x102          92      92
+3        CCK     0x103          92      92
+4        OFDM    0x000          92      92
+5        OFDM    0x001          92      92
+....
+
+Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h  |   5 +
+ drivers/net/wireless/ath/ath11k/debugfs.c | 557 ++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/debugfs.h |  36 +++
+ drivers/net/wireless/ath/ath11k/wmi.c   | 448 +++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.h   | 199 ++++++++++++
+ 5 files changed, 1245 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -638,6 +638,11 @@ struct ath11k {
+ 	int monitor_vdev_id;
+ 
+ 	struct ath11k_coex_info coex;
++	u8 tpc_stats_type;
++	/* tpc_stats ptr is protected by data lock */
++	struct wmi_tpc_stats_event *tpc_stats;
++	struct completion tpc_complete;
++	bool tpc_request;
+ #ifdef CPTCFG_ATH11K_DEBUGFS
+ 	struct ath11k_debug debug;
+ #endif
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -1817,6 +1817,588 @@ static const struct file_operations fops
+ 	.open = simple_open
+ };
+ 
++static int ath11k_get_tpc_ctl_mode(struct wmi_tpc_stats_event *tpc_stats,
++				   u32 pream_idx, int *mode)
++{
++	switch (pream_idx) {
++	case WMI_TPC_PREAM_CCK:
++		*mode = ATH11K_TPC_STATS_CTL_MODE_CCK;
++		break;
++	case WMI_TPC_PREAM_OFDM:
++		*mode = ATH11K_TPC_STATS_CTL_MODE_OFDM;
++		break;
++	case WMI_TPC_PREAM_HT20:
++	case WMI_TPC_PREAM_VHT20:
++	case WMI_TPC_PREAM_HE20:
++		*mode = ATH11K_TPC_STATS_CTL_MODE_BW_20;
++		break;
++	case WMI_TPC_PREAM_HT40:
++	case WMI_TPC_PREAM_VHT40:
++	case WMI_TPC_PREAM_HE40:
++		*mode = ATH11K_TPC_STATS_CTL_MODE_BW_40;
++		break;
++	case WMI_TPC_PREAM_VHT80:
++	case WMI_TPC_PREAM_HE80:
++		*mode = ATH11K_TPC_STATS_CTL_MODE_BW_80;
++		break;
++	case WMI_TPC_PREAM_VHT160:
++	case WMI_TPC_PREAM_HE160:
++		*mode = ATH11K_TPC_STATS_CTL_MODE_BW_160;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	if (tpc_stats->tpc_config.chan_freq >= 5180) {
++		/* Index of 5G is one less than 2.4G due to absence of CCK */
++		*mode -= 1;
++	}
++
++	return 0;
++}
++
++static s16 ath11k_tpc_get_rate(struct ath11k *ar,
++			       struct wmi_tpc_stats_event *tpc_stats,
++			       u32 rate_idx, u32 num_chains, u32 rate_code,
++			       u32 pream_idx, u8 type)
++{
++	s8 rates_ctl_min, tpc_ctl, tpc_ctl_pri, tpc_ctl_sec;
++	u8 chain_idx, stm_idx, num_streams;
++	s16 rates, tpc, reg_pwr;
++	u32 tot_nss, tot_modes, txbf_on_off, chan_pri_sec;
++	u32 index_offset1, index_offset2, index_offset3;
++	int mode, ret, txbf_enabled;
++	bool is_mu;
++
++	num_streams = 1 + ATH11K_HW_NSS(rate_code);
++	chain_idx = num_chains - 1;
++	stm_idx = num_streams - 1;
++	mode = -1;
++
++	ret = ath11k_get_tpc_ctl_mode(tpc_stats, pream_idx, &mode);
++	if (ret) {
++		ath11k_warn(ar->ab, "Invalid mode index received\n");
++		tpc = TPC_INVAL;
++		goto out;
++	}
++
++	if (num_chains < num_streams) {
++		tpc = TPC_INVAL;
++		goto out;
++	}
++
++	if (__le32_to_cpu(tpc_stats->tpc_config.num_tx_chain) <= 1) {
++		tpc = TPC_INVAL;
++		goto out;
++	}
++
++	if (type == ATH11K_DBG_TPC_STATS_MU_WITH_TXBF ||
++	    type == ATH11K_DBG_TPC_STATS_SU_WITH_TXBF)
++		txbf_enabled = 1;
++	else
++		txbf_enabled = 0;
++
++	if (type == ATH11K_DBG_TPC_STATS_MU_WITH_TXBF ||
++	    type == ATH11K_DBG_TPC_STATS_MU) {
++		is_mu = true;
++	} else {
++		is_mu = false;
++	}
++
++	/* Below is the min calculation of ctl array, rates array and
++	 * regulator power table. tpc is minimum of all 3
++	 */
++	if (chain_idx < 4) {
++		if (is_mu) {
++			rates = FIELD_GET(ATH11K_TPC_RATE_ARRAY_MU,
++					  tpc_stats->rates_array1.rate_array[rate_idx]);
++		} else {
++			rates = FIELD_GET(ATH11K_TPC_RATE_ARRAY_SU,
++					  tpc_stats->rates_array1.rate_array[rate_idx]);
++		}
++	} else {
++		if (is_mu) {
++			rates = FIELD_GET(ATH11K_TPC_RATE_ARRAY_MU,
++					  tpc_stats->rates_array2.rate_array[rate_idx]);
++		} else {
++			rates = FIELD_GET(ATH11K_TPC_RATE_ARRAY_SU,
++					  tpc_stats->rates_array2.rate_array[rate_idx]);
++		}
++	}
++
++	/* ctl_160 array is accessed for BW 160. Mode is subtracted by -1 as
++	 * 5G index is one less than 2G due to absence of CCK
++	 * ctl array are 4 dimension array which is packed linearly, hence
++	 * needs to be stitched back based on the dimension values.
++	 * formula : when buf[i][j][k][l] values can be taken as
++	 * buf[i*d3*d2*d1 + j*d2*d1 + k*d1 + l]
++	 */
++	if (tpc_stats->tlvs_rcvd & WMI_TPC_CTL_PWR_160ARRAY &&
++	    mode == ATH11K_TPC_STATS_CTL_MODE_BW_160 - 1) {
++		tot_nss = tpc_stats->ctl_160array.d1;
++		txbf_on_off = tpc_stats->ctl_160array.d2;
++		chan_pri_sec = tpc_stats->ctl_160array.d3;
++		index_offset1 = chan_pri_sec * txbf_on_off * tot_nss;
++		index_offset2 = txbf_on_off * tot_nss;
++		index_offset3 = tot_nss;
++
++		if (num_streams < 2)
++			num_streams = 2;
++
++		tpc_ctl_pri = *(tpc_stats->ctl_160array.ctl_pwr_table +
++				((num_chains / 2) - 1) * index_offset1 +
++				0 + txbf_enabled * index_offset3 +
++				(((num_streams) / 2) - 1));
++
++		tpc_ctl_sec = *(tpc_stats->ctl_160array.ctl_pwr_table +
++				((num_chains / 2) - 1) * index_offset1 +
++				1 * index_offset2 + txbf_enabled * index_offset3 +
++				(((num_streams) / 2) - 1));
++		/* Taking min of pri and sec channel for 160 Mhz */
++		tpc_ctl = min_t(s8, tpc_ctl_pri, tpc_ctl_sec);
++	} else if (tpc_stats->tlvs_rcvd & WMI_TPC_CTL_PWR_ARRAY) {
++		tot_nss = tpc_stats->ctl_array.d1;
++		tot_modes = tpc_stats->ctl_array.d2;
++		txbf_on_off = tpc_stats->ctl_array.d3;
++		index_offset1 = txbf_on_off * tot_modes * tot_nss;
++		index_offset2 = tot_modes * tot_nss;
++		index_offset3 = tot_nss;
++
++		tpc_ctl = *(tpc_stats->ctl_array.ctl_pwr_table +
++			    chain_idx * index_offset1 + txbf_enabled * index_offset2
++			    + mode * index_offset3 + stm_idx);
++	} else {
++		tpc_ctl = TPC_MAX;
++		ath11k_info(ar->ab,
++			    "ctl array for tpc stats not received from fw\n");
++	}
++
++	rates_ctl_min = min_t(s16, rates, tpc_ctl);
++
++	reg_pwr = tpc_stats->max_reg_allowed_power.reg_pwr_array[chain_idx];
++	tpc = min_t(s16, rates_ctl_min, reg_pwr);
++
++	/* MODULATION_LIMIT is the maximum power limit,tpc should not exceed
++	 * modulation limt even if min tpc of all three array is greater
++	 * modulation limit
++	 */
++	tpc = min_t(s16, tpc, MODULATION_LIMIT);
++
++out:
++	return tpc;
++}
++
++static bool ath11k_he_supports_extra_mcs(struct ath11k *ar, int freq)
++{
++	struct ath11k_pdev_cap *cap = &ar->pdev->cap;
++	struct ath11k_band_cap *cap_band;
++	bool extra_mcs_supported;
++
++	if (freq <= ATH11K_2G_MAX_FREQUENCY)
++		cap_band = &cap->band[NL80211_BAND_2GHZ];
++	else
++		cap_band = &cap->band[NL80211_BAND_5GHZ];
++
++	extra_mcs_supported = FIELD_GET(HE_EXTRA_MCS_SUPPORT, cap_band->he_cap_info[1]);
++	return extra_mcs_supported;
++}
++
++static int ath11k_tpc_fill_pream(struct ath11k *ar, char *buf, int buf_len, int len,
++				 int pream_idx, int max_nss, int max_rates,
++				 int pream_type, int tpc_type, int rate_idx)
++{
++	int nss, rates, chains;
++	u8 active_tx_chains;
++	u16 rate_code, tpc;
++	struct wmi_tpc_stats_event *tpc_stats = ar->tpc_stats;
++
++	static const char pream_str[WMI_TPC_PREAM_MAX][MAX_TPC_PREAM_STR_LEN] = {
++				     "CCK",
++				     "OFDM",
++				     "HT20",
++				     "HT40",
++				     "VHT20",
++				     "VHT40",
++				     "VHT80",
++				     "VHT160",
++				     "HE20",
++				     "HE40",
++				     "HE80",
++				     "HE160"};
++
++	active_tx_chains = ar->num_tx_chains;
++
++	for (nss = 0; nss < max_nss; nss++) {
++		for (rates = 0; rates < max_rates; rates++, rate_idx++) {
++			/* FW send extra MCS(10&11) for VHT and HE rates,
++			 *  this is not used. Hence skipping it here
++			 */
++			if (pream_type == WMI_RATE_PREAMBLE_VHT &&
++			    rates > ATH11K_VHT_MCS_MAX)
++				continue;
++
++			if (pream_type == WMI_RATE_PREAMBLE_HE &&
++			    rates > ATH11K_HE_MCS_MAX)
++				continue;
++
++			rate_code = ATH11K_HW_RATE_CODE(rates, nss, pream_type);
++			len += scnprintf(buf + len, buf_len - len,
++				 "%d\t %s\t 0x%03x\t", rate_idx,
++				 pream_str[pream_idx], rate_code);
++
++			for (chains = 0; chains < active_tx_chains; chains++) {
++				/* check for 160Mhz where two chains requires to
++				 * support one spatial stream.
++				 */
++				if ((pream_idx == WMI_TPC_PREAM_VHT160 ||
++				     pream_idx == WMI_TPC_PREAM_HE160) &&
++				    (((chains + 1) / 2) < nss + 1)) {
++					len += scnprintf(buf + len,
++							 buf_len - len,
++							 "\t%s", "NA");
++				} else if (nss > chains) {
++					len += scnprintf(buf + len,
++							 buf_len - len,
++							 "\t%s", "NA");
++				} else {
++					tpc = ath11k_tpc_get_rate(ar, tpc_stats, rate_idx,
++								  chains + 1, rate_code,
++								  pream_idx, tpc_type);
++
++					if (tpc == TPC_INVAL) {
++						len += scnprintf(buf + len,
++						       buf_len - len, "\tNA");
++					} else {
++						len += scnprintf(buf + len,
++						       buf_len - len, "\t%d",
++						       tpc);
++					}
++				}
++			}
++			len += scnprintf(buf + len, buf_len - len, "\n");
++		}
++	}
++	return len;
++}
++
++static int ath11k_tpc_stats_print(struct ath11k *ar,
++				  struct wmi_tpc_stats_event *tpc_stats,
++				  char *buf, size_t len, u8 type)
++{
++	u32 i, pream_idx = 0, rate_pream_idx = 0, total_rates = 0;
++	u8 nss, active_tx_chains;
++	size_t buf_len = ATH11K_TPC_STATS_BUF_SIZE;
++	bool he_ext_mcs;
++	static const char type_str[ATH11K_DBG_TPC_MAX_STATS][13] = {"SU",
++					   "SU WITH TXBF",
++					   "MU",
++					   "MU WITH TXBF"};
++
++	u8 max_rates[WMI_TPC_PREAM_MAX] = {ATH11K_CCK_RATES,
++					   ATH11K_OFDM_RATES,
++					   AT11K_HT_RATES,
++					   AT11K_HT_RATES,
++					   ATH11K_VHT_RATES,
++					   ATH11K_VHT_RATES,
++					   ATH11K_VHT_RATES,
++					   ATH11K_VHT_RATES,
++					   ATH11K_HE_RATES,
++					   ATH11K_HE_RATES,
++					   ATH11K_HE_RATES,
++					   ATH11K_HE_RATES};
++
++	u8 max_nss[WMI_TPC_PREAM_MAX] = {ATH11K_NSS_1, ATH11K_NSS_1,
++					 ATH11K_NSS_4, ATH11K_NSS_4,
++					 ATH11K_NSS_8, ATH11K_NSS_8,
++					 ATH11K_NSS_8, ATH11K_NSS_4,
++					 ATH11K_NSS_8, ATH11K_NSS_8,
++					 ATH11K_NSS_8, ATH11K_NSS_4};
++
++	u16 rate_idx[WMI_TPC_PREAM_MAX] = {0};
++
++	u8 pream_type[WMI_TPC_PREAM_MAX] = {WMI_RATE_PREAMBLE_CCK,
++					    WMI_RATE_PREAMBLE_OFDM,
++					    WMI_RATE_PREAMBLE_HT,
++					    WMI_RATE_PREAMBLE_HT,
++					    WMI_RATE_PREAMBLE_VHT,
++					    WMI_RATE_PREAMBLE_VHT,
++					    WMI_RATE_PREAMBLE_VHT,
++					    WMI_RATE_PREAMBLE_VHT,
++					    WMI_RATE_PREAMBLE_HE,
++					    WMI_RATE_PREAMBLE_HE,
++					    WMI_RATE_PREAMBLE_HE,
++					    WMI_RATE_PREAMBLE_HE};
++
++	active_tx_chains = ar->num_tx_chains;
++	he_ext_mcs = ath11k_he_supports_extra_mcs(ar, tpc_stats->tpc_config.chan_freq);
++
++	/* mcs 12&13 is sent by FW for qcn9000 in rate array, skipping it as
++	 * it is not supported
++	 */
++	if (he_ext_mcs) {
++		for (i = WMI_TPC_PREAM_HE20; i <= WMI_TPC_PREAM_HE160;  ++i)
++			max_rates[i] = ATH11K_HE_RATES_WITH_EXTRA_MCS;
++	}
++
++	if (type == ATH11K_DBG_TPC_STATS_MU ||
++	    type == ATH11K_DBG_TPC_STATS_MU_WITH_TXBF)
++		pream_idx = WMI_TPC_PREAM_VHT20;
++
++	/* Enumerate all the rate indices */
++	for (i = rate_pream_idx + 1 ; i < WMI_TPC_PREAM_MAX; i++) {
++		nss = (max_nss[i - 1] < tpc_stats->tpc_config.num_tx_chain ?
++		       max_nss[i - 1] : tpc_stats->tpc_config.num_tx_chain);
++
++		if ((i == WMI_TPC_PREAM_VHT160 || i == WMI_TPC_PREAM_HE160) &&
++		    (!(tpc_stats->tlvs_rcvd & WMI_TPC_CTL_PWR_160ARRAY))) {
++			/* ratesarray doesnot hold any 160Mhz power info,
++			 * so skipping here
++			 */
++			rate_idx[i] = rate_idx[i - 1] + max_rates[i - 1] * nss;
++			max_rates[i] = 0;
++			max_nss[i] = 0;
++			continue;
++		}
++
++		rate_idx[i] = rate_idx[i - 1] + max_rates[i - 1] * nss;
++	}
++
++	for (i = 0 ; i < WMI_TPC_PREAM_MAX; i++) {
++		nss = (max_nss[i] < tpc_stats->tpc_config.num_tx_chain ?
++		       max_nss[i] : tpc_stats->tpc_config.num_tx_chain);
++		total_rates += max_rates[i] * nss;
++	}
++
++	len += scnprintf(buf + len, buf_len - len,
++			 "No.of rates-%d\n", total_rates);
++
++	len += scnprintf(buf + len, buf_len - len,
++			 "**************** %s ****************\n",
++			 type_str[type]);
++	len += scnprintf(buf + len, buf_len - len,
++			 "\t\t\t\tTPC values for Active chains\n");
++	len += scnprintf(buf + len, buf_len - len,
++			 "Rate idx Preamble Rate code");
++
++	for (i = 1; i <= active_tx_chains; ++i) {
++		len += scnprintf(buf + len, buf_len - len,
++				 "\t%d-Chain", i);
++	}
++	len += scnprintf(buf + len, buf_len - len, "\n");
++
++	for (i = pream_idx; i < WMI_TPC_PREAM_MAX; i++) {
++		if (tpc_stats->tpc_config.chan_freq <= 2483) {
++			if (i == WMI_TPC_PREAM_VHT80 ||
++			    i == WMI_TPC_PREAM_VHT160 ||
++			    i == WMI_TPC_PREAM_HE80 ||
++			    i == WMI_TPC_PREAM_HE160) {
++				continue;
++			}
++		} else {
++			if (i == WMI_TPC_PREAM_CCK)
++				continue;
++		}
++
++		nss = (max_nss[i] < ar->num_tx_chains ? max_nss[i] : ar->num_tx_chains);
++
++		if (i == WMI_TPC_PREAM_VHT160 || i == WMI_TPC_PREAM_HE160) {
++			/* Skip 160MHz in power table if not supported */
++			if (!(tpc_stats->tlvs_rcvd & WMI_TPC_CTL_PWR_160ARRAY))
++				continue;
++		}
++
++		len = ath11k_tpc_fill_pream(ar, buf, buf_len, len, i, nss,
++					    max_rates[i], pream_type[i],
++					    type, rate_idx[i]);
++	}
++	return len;
++}
++
++static void ath11k_tpc_stats_fill(struct ath11k *ar,
++				  struct wmi_tpc_stats_event *tpc_stats,
++				  char *buf)
++{
++	struct wmi_tpc_configs *tpc;
++	size_t len = 0;
++	size_t buf_len = ATH11K_TPC_STATS_BUF_SIZE;
++
++	spin_lock_bh(&ar->data_lock);
++	if (!tpc_stats) {
++		ath11k_warn(ar->ab, "failed to find tpc stats\n");
++		goto unlock;
++	}
++
++	tpc = &tpc_stats->tpc_config;
++	len += scnprintf(buf + len, buf_len - len, "\n");
++	len += scnprintf(buf + len, buf_len - len,
++			 "*************** TPC config **************\n");
++	len += scnprintf(buf + len, buf_len - len,
++			 "* powers are in 0.25 dBm steps\n");
++	len += scnprintf(buf + len, buf_len - len,
++			 "reg domain-%d\t\tchan freq-%d\n",
++			 tpc->reg_domain, tpc->chan_freq);
++	len += scnprintf(buf + len, buf_len - len,
++			 "power limit-%d\t\tmax reg-domain Power-%d\n",
++			 (tpc->twice_max_reg_power) / 2, tpc->power_limit);
++	len += scnprintf(buf + len, buf_len - len,
++			 "No.of tx chain-%d\t",
++			 ar->num_tx_chains);
++
++	ath11k_tpc_stats_print(ar, tpc_stats, buf, len,
++			       ar->tpc_stats_type);
++
++unlock:
++	spin_unlock_bh(&ar->data_lock);
++}
++
++static int ath11k_debug_tpc_stats_request(struct ath11k *ar)
++{
++	int ret;
++	unsigned long time_left;
++	struct ath11k_base *ab = ar->ab;
++
++	lockdep_assert_held(&ar->conf_mutex);
++
++	reinit_completion(&ar->tpc_complete);
++
++	ret = ath11k_wmi_pdev_get_tpc_table_cmdid(ar);
++	if (ret) {
++		ath11k_warn(ab, "failed to request tpc table cmdid: %d\n", ret);
++		return ret;
++	}
++
++	spin_lock_bh(&ar->data_lock);
++	ar->tpc_request = true;
++	spin_unlock_bh(&ar->data_lock);
++
++	time_left = wait_for_completion_timeout(&ar->tpc_complete,
++						TPC_STATS_WAIT_TIME);
++	spin_lock_bh(&ar->data_lock);
++	ar->tpc_request = false;
++	spin_unlock_bh(&ar->data_lock);
++
++	if (time_left == 0)
++		return -ETIMEDOUT;
++
++	return 0;
++}
++
++static int ath11k_tpc_stats_open(struct inode *inode, struct file *file)
++{
++	struct ath11k *ar = inode->i_private;
++	void *buf;
++	int ret;
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (ar->state != ATH11K_STATE_ON) {
++		ath11k_warn(ar->ab, "Interface not up\n");
++		ret = -ENETDOWN;
++		goto err_unlock;
++	}
++
++	buf = vmalloc(ATH11K_TPC_STATS_BUF_SIZE);
++	if (!buf) {
++		ret = -ENOMEM;
++		goto err_unlock;
++	}
++
++	ret = ath11k_debug_tpc_stats_request(ar);
++	if (ret) {
++		ath11k_warn(ar->ab, "failed to request tpc stats: %d\n",
++			    ret);
++		spin_lock_bh(&ar->data_lock);
++		ath11k_wmi_free_tpc_stats_mem(ar);
++		spin_unlock_bh(&ar->data_lock);
++		goto err_free;
++	}
++
++	ath11k_tpc_stats_fill(ar, ar->tpc_stats, buf);
++	file->private_data = buf;
++
++	spin_lock_bh(&ar->data_lock);
++	ath11k_wmi_free_tpc_stats_mem(ar);
++	spin_unlock_bh(&ar->data_lock);
++	mutex_unlock(&ar->conf_mutex);
++
++	return 0;
++
++err_free:
++	vfree(buf);
++
++err_unlock:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static int ath11k_tpc_stats_release(struct inode *inode,
++				    struct file *file)
++{
++	vfree(file->private_data);
++	return 0;
++}
++
++static ssize_t ath11k_tpc_stats_read(struct file *file,
++				     char __user *user_buf,
++				     size_t count, loff_t *ppos)
++{
++	const char *buf = file->private_data;
++	unsigned int len = strlen(buf);
++
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t ath11k_read_tpc_stats_type(struct file *file,
++					  char __user *user_buf,
++					  size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	char buf[32];
++	size_t len;
++
++	len = scnprintf(buf, sizeof(buf), "%u\n", ar->tpc_stats_type);
++
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t ath11k_write_tpc_stats_type(struct file *file,
++					   const char __user *user_buf,
++					   size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	u8 type;
++	int ret;
++
++	ret = kstrtou8_from_user(user_buf, count, 0, &type);
++	if (ret)
++		return ret;
++
++	if (type >= ATH11K_DBG_TPC_MAX_STATS)
++		return -E2BIG;
++
++	ar->tpc_stats_type = type;
++
++	ret = count;
++
++	return ret;
++}
++
++static const struct file_operations fops_tpc_stats_type = {
++	.read = ath11k_read_tpc_stats_type,
++	.write = ath11k_write_tpc_stats_type,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static const struct file_operations fops_tpc_stats = {
++	.open = ath11k_tpc_stats_open,
++	.release = ath11k_tpc_stats_release,
++	.read = ath11k_tpc_stats_read,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
+ int ath11k_debugfs_register(struct ath11k *ar)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+@@ -1840,6 +2422,7 @@ int ath11k_debugfs_register(struct ath11
+ 
+ 	ath11k_debugfs_fw_stats_init(ar);
+ 	ath11k_init_pktlog(ar);
++	init_completion(&ar->tpc_complete);
+ 
+ 	debugfs_create_file("ext_tx_stats", 0644,
+ 			    ar->debug.debugfs_pdev, ar,
+@@ -1878,6 +2461,10 @@ int ath11k_debugfs_register(struct ath11
+ 	debugfs_create_file("enable_m3_dump", 0644,
+ 			    ar->debug.debugfs_pdev, ar,
+ 			    &fops_enable_m3_dump);
++	debugfs_create_file("tpc_stats", 0400, ar->debug.debugfs_pdev,
++			    ar, &fops_tpc_stats);
++	debugfs_create_file("tpc_stats_type", 0600, ar->debug.debugfs_pdev,
++			    ar, &fops_tpc_stats_type);
+ 
+ 	return 0;
+ }
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -49,6 +49,43 @@ enum ath11k_dbg_htt_ext_stats_type {
+ 	ATH11K_DBG_HTT_NUM_EXT_STATS,
+ };
+ 
++#define ATH11K_CCK_RATES			4
++#define ATH11K_OFDM_RATES			8
++#define AT11K_HT_RATES				8
++/* VHT rates includes extra MCS. sent by FW */
++#define ATH11K_VHT_RATES			12
++#define ATH11K_HE_RATES				12
++#define ATH11K_HE_RATES_WITH_EXTRA_MCS		14
++#define ATH11K_NSS_1				1
++#define ATH11K_NSS_4				4
++#define ATH11K_NSS_8				8
++#define TPC_STATS_WAIT_TIME			(1 * HZ)
++#define MAX_TPC_PREAM_STR_LEN			7
++/* Max negative power value to indicate error */
++#define TPC_INVAL				-128
++#define TPC_MAX					127
++#define TPC_STATS_TOT_ROW			700
++#define TPC_STATS_TOT_COLUMN			100
++#define ATH11K_TPC_STATS_BUF_SIZE   (TPC_STATS_TOT_ROW * TPC_STATS_TOT_COLUMN)
++
++enum ath11k_debug_tpc_stats_type {
++	ATH11K_DBG_TPC_STATS_SU,
++	ATH11K_DBG_TPC_STATS_SU_WITH_TXBF,
++	ATH11K_DBG_TPC_STATS_MU,
++	ATH11K_DBG_TPC_STATS_MU_WITH_TXBF,
++	/*last*/
++	ATH11K_DBG_TPC_MAX_STATS,
++};
++
++enum ath11k_debug_tpc_stats_ctl_mode {
++	ATH11K_TPC_STATS_CTL_MODE_CCK,
++	ATH11K_TPC_STATS_CTL_MODE_OFDM,
++	ATH11K_TPC_STATS_CTL_MODE_BW_20,
++	ATH11K_TPC_STATS_CTL_MODE_BW_40,
++	ATH11K_TPC_STATS_CTL_MODE_BW_80,
++	ATH11K_TPC_STATS_CTL_MODE_BW_160,
++};
++
+ struct debug_htt_stats_req {
+ 	bool done;
+ 	u8 pdev_id;
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -79,6 +79,10 @@ static const struct wmi_tlv_policy wmi_t
+ 		= { .min_len = 0 },
+ 	[WMI_TAG_ARRAY_UINT32]
+ 		= { .min_len = 0 },
++	[WMI_TAG_ARRAY_STRUCT]
++		= { .min_len = 0 },
++	[WMI_TAG_ARRAY_INT16]
++		= { .min_len = 0 },
+ 	[WMI_TAG_SERVICE_READY_EVENT]
+ 		= { .min_len = sizeof(struct wmi_service_ready_event) },
+ 	[WMI_TAG_SERVICE_READY_EXT_EVENT]
+@@ -131,6 +135,9 @@ static const struct wmi_tlv_policy wmi_t
+ 		.min_len = sizeof(struct wmi_vdev_delete_resp_event) },
+ 	[WMI_TAG_TWT_ADD_DIALOG_COMPLETE_EVENT]
+ 		= { .min_len = sizeof(struct wmi_twt_add_dialog_event) },
++	[WMI_TAG_TPC_STATS_EVENT_FIXED_PARAM]
++		= { .min_len = sizeof(struct wmi_tpc_stats_event_fixed_param) },
++
+ };
+ 
+ #define PRIMAP(_hw_mode_) \
+@@ -7515,6 +7522,444 @@ static void ath11k_wmi_event_wow_wakeup_
+ 	complete(&ab->wow.wakeup_completed);
+ }
+ 
++static int ath11k_tpc_get_reg_pwr(struct ath11k_base *ab,
++				  struct wmi_tpc_stats_event *tpc_stats,
++				  struct wmi_max_reg_power_allowed *ev)
++{
++	struct wmi_max_reg_power_allowed *reg_pwr = NULL;
++
++	ath11k_dbg(ab, ATH11K_DBG_WMI,
++		   "Received reg power array type %d length %d for tpc stats\n",
++		   ev->reg_power_type, ev->reg_array_len);
++
++	switch (ev->reg_power_type) {
++	case TPC_STATS_REG_PWR_ALLOWED_TYPE:
++		reg_pwr = &tpc_stats->max_reg_allowed_power;
++		break;
++	default:
++		goto out;
++	}
++
++	memcpy(reg_pwr, ev, sizeof(struct wmi_max_reg_power_allowed));
++
++	reg_pwr->reg_pwr_array = kzalloc(reg_pwr->reg_array_len,
++					 GFP_ATOMIC);
++	if (!reg_pwr->reg_pwr_array)
++		return -ENOMEM;
++
++	tpc_stats->tlvs_rcvd |= WMI_TPC_REG_PWR_ALLOWED;
++out:
++	return 0;
++}
++
++static int ath11k_tpc_get_rate_array(struct ath11k_base *ab,
++				     struct wmi_tpc_stats_event *tpc_stats,
++				     struct wmi_tpc_rates_array *ev)
++{
++	u32 flag = 0;
++	struct wmi_tpc_rates_array *rates_array = NULL;
++
++	ath11k_dbg(ab, ATH11K_DBG_WMI,
++		   "Received rates array type %d length %d for tpc stats\n",
++		   ev->rate_array_type, ev->rate_array_len);
++
++	switch (ev->rate_array_type) {
++	case ATH11K_TPC_STATS_RATES_ARRAY1:
++		rates_array = &tpc_stats->rates_array1;
++		flag = WMI_TPC_RATES_ARRAY1;
++		break;
++	case ATH11K_TPC_STATS_RATES_ARRAY2:
++		rates_array = &tpc_stats->rates_array2;
++		flag = WMI_TPC_RATES_ARRAY2;
++		break;
++	default:
++		ath11k_warn(ab,
++			    "Received invalid type of rates array for tpc stats\n");
++		return -EINVAL;
++	}
++	memcpy(rates_array, ev, sizeof(struct wmi_tpc_rates_array));
++	rates_array->rate_array = kzalloc(rates_array->rate_array_len,
++					  GFP_ATOMIC);
++	if (!rates_array->rate_array)
++		return -ENOMEM;
++
++	tpc_stats->tlvs_rcvd |= flag;
++	return 0;
++}
++
++static int ath11k_tpc_get_ctl_pwr_tbl(struct ath11k_base *ab,
++				      struct wmi_tpc_stats_event *tpc_stats,
++				      struct wmi_tpc_ctl_pwr_table *ev)
++{
++	int total_size, ret = 0;
++	u32 flag = 0;
++	struct wmi_tpc_ctl_pwr_table *ctl_array = NULL;
++
++	ath11k_dbg(ab, ATH11K_DBG_WMI,
++		   "Received ctl array type %d length %d for tpc stats\n",
++		   ev->ctl_array_type, ev->ctl_array_len);
++
++	switch (ev->ctl_array_type) {
++	case ATH11K_TPC_STATS_CTL_ARRAY:
++		ctl_array = &tpc_stats->ctl_array;
++		flag = WMI_TPC_CTL_PWR_ARRAY;
++		break;
++	case ATH11K_TPC_STATS_CTL_160ARRAY:
++		ctl_array = &tpc_stats->ctl_160array;
++		flag = WMI_TPC_CTL_PWR_160ARRAY;
++		break;
++	default:
++		ath11k_warn(ab,
++			    "Received invalid type of ctl pwr table for tpc stats\n");
++		return -EINVAL;
++	}
++	memcpy(ctl_array, ev, sizeof(struct wmi_tpc_ctl_pwr_table));
++	total_size = (ctl_array->d1 * ctl_array->d2 *
++		      ctl_array->d3 * ctl_array->d4);
++
++	if (ctl_array->ctl_array_len != total_size) {
++		ath11k_warn(ab,
++			    "Total size and ctl_array_len doesn't match for tpc stats\n");
++		return -EINVAL;
++	}
++
++	ctl_array->ctl_pwr_table = kzalloc(ctl_array->ctl_array_len,
++					   GFP_ATOMIC);
++	if (!ctl_array->ctl_pwr_table)
++		return -ENOMEM;
++
++	tpc_stats->tlvs_rcvd |= flag;
++	return ret;
++}
++
++static int ath11k_wmi_tpc_stats_subtlv_parser(struct ath11k_base *ab,
++					      u16 tag, u16 len,
++					      const void *ptr, void *data)
++{
++	int ret = 0;
++	struct wmi_tpc_stats_event *tpc_stats = (struct wmi_tpc_stats_event *)data;
++	struct wmi_tpc_configs *tpc_config;
++	struct wmi_max_reg_power_allowed *reg_pwr;
++	struct wmi_tpc_rates_array *rates_array;
++	struct wmi_tpc_ctl_pwr_table *ctl_tbl;
++
++	if (!tpc_stats) {
++		ath11k_warn(ab, "tpc stats memory unavailable\n");
++		return -EINVAL;
++	}
++
++	switch (tag) {
++	case WMI_TAG_TPC_STATS_CONFIG_EVENT:
++		tpc_config = (struct wmi_tpc_configs *)ptr;
++		memcpy(&tpc_stats->tpc_config, tpc_config,
++		       sizeof(struct wmi_tpc_configs));
++		break;
++
++	case WMI_TAG_TPC_STATS_REG_PWR_ALLOWED:
++		reg_pwr = (struct wmi_max_reg_power_allowed *)ptr;
++		ret = ath11k_tpc_get_reg_pwr(ab, tpc_stats, reg_pwr);
++		break;
++
++	case WMI_TAG_TPC_STATS_RATES_ARRAY:
++		rates_array = (struct wmi_tpc_rates_array *)ptr;
++		ret = ath11k_tpc_get_rate_array(ab, tpc_stats, rates_array);
++		break;
++
++	case WMI_TAG_TPC_STATS_CTL_PWR_TABLE_EVENT:
++		ctl_tbl = (struct wmi_tpc_ctl_pwr_table *)ptr;
++		ret = ath11k_tpc_get_ctl_pwr_tbl(ab, tpc_stats, ctl_tbl);
++		break;
++
++	default:
++		ath11k_warn(ab,
++			    "Received invalid tag for tpc stats in subtlvs\n");
++		return -EINVAL;
++	}
++	return ret;
++}
++
++static int ath11k_wmi_tpc_stats_copy_buffer(struct ath11k_base *ab,
++					    const void *ptr, u16 tag, u16 len,
++					    struct wmi_tpc_stats_event *tpc_stats)
++{
++	s16 *reg_rates_src;
++	s8 *ctl_src;
++	s16 *dst_ptr;
++	s8 *dst_ptr_ctl;
++	int ret = 0;
++
++	if (tag == WMI_TAG_ARRAY_INT16)
++		reg_rates_src = (s16 *)ptr;
++	else
++		ctl_src = (s8 *)ptr;
++
++	switch (tpc_stats->event_count) {
++	case ATH11K_TPC_STATS_CONFIG_REG_PWR_EVENT:
++		if (tpc_stats->tlvs_rcvd & WMI_TPC_REG_PWR_ALLOWED) {
++			dst_ptr = tpc_stats->max_reg_allowed_power.reg_pwr_array;
++			memcpy(dst_ptr, reg_rates_src,
++			       tpc_stats->max_reg_allowed_power.reg_array_len);
++			reg_rates_src += tpc_stats->max_reg_allowed_power.reg_array_len;
++		}
++		break;
++	case ATH11K_TPC_STATS_RATES_EVENT1:
++		if (tpc_stats->tlvs_rcvd & WMI_TPC_RATES_ARRAY1) {
++			dst_ptr = tpc_stats->rates_array1.rate_array;
++			memcpy(dst_ptr, reg_rates_src,
++			       tpc_stats->rates_array1.rate_array_len);
++			reg_rates_src += tpc_stats->rates_array1.rate_array_len;
++		}
++		break;
++	case ATH11K_TPC_STATS_RATES_EVENT2:
++		if (tpc_stats->tlvs_rcvd & WMI_TPC_RATES_ARRAY2) {
++			dst_ptr = tpc_stats->rates_array2.rate_array;
++			memcpy(dst_ptr, reg_rates_src,
++			       tpc_stats->rates_array2.rate_array_len);
++			reg_rates_src += tpc_stats->rates_array2.rate_array_len;
++		}
++		break;
++	case ATH11K_TPC_STATS_CTL_TABLE_EVENT:
++		if (tpc_stats->tlvs_rcvd & WMI_TPC_CTL_PWR_ARRAY) {
++			dst_ptr_ctl = tpc_stats->ctl_array.ctl_pwr_table;
++			memcpy(dst_ptr_ctl, ctl_src,
++			       tpc_stats->ctl_array.ctl_array_len);
++			ctl_src += tpc_stats->ctl_array.ctl_array_len;
++		}
++		if (tpc_stats->tlvs_rcvd & WMI_TPC_CTL_PWR_160ARRAY) {
++			dst_ptr_ctl = tpc_stats->ctl_160array.ctl_pwr_table;
++			memcpy(dst_ptr_ctl, ctl_src,
++			       tpc_stats->ctl_160array.ctl_array_len);
++			ctl_src += tpc_stats->ctl_160array.ctl_array_len;
++		}
++		break;
++	}
++	return ret;
++}
++
++static int ath11k_wmi_tpc_stats_event_parser(struct ath11k_base *ab,
++					     u16 tag, u16 len,
++					     const void *ptr, void *data)
++{
++	struct wmi_tpc_stats_event *tpc_stats = (struct wmi_tpc_stats_event *)data;
++	int ret = 0;
++
++	ath11k_dbg(ab, ATH11K_DBG_WMI, "tpc stats tag 0x%x of len %d rcvd\n",
++		   tag, len);
++	switch (tag) {
++	case WMI_TAG_TPC_STATS_EVENT_FIXED_PARAM:
++		/* Fixed param is already processed*/
++		break;
++
++	case WMI_TAG_ARRAY_STRUCT:
++		/* len 0 is expected for array of struct when there
++		 * is no content of that type to pack inside that tlv
++		 */
++		if (len == 0)
++			return 0;
++		ret = ath11k_wmi_tlv_iter(ab, ptr, len,
++					  ath11k_wmi_tpc_stats_subtlv_parser,
++					  tpc_stats);
++		break;
++
++	case WMI_TAG_ARRAY_INT16:
++		if (len == 0)
++			return 0;
++		ret = ath11k_wmi_tpc_stats_copy_buffer(ab, ptr,
++						       WMI_TAG_ARRAY_INT16,
++						       len, tpc_stats);
++		break;
++
++	case WMI_TAG_ARRAY_BYTE:
++		if (len == 0)
++			return 0;
++		ret = ath11k_wmi_tpc_stats_copy_buffer(ab, ptr,
++						       WMI_TAG_ARRAY_BYTE,
++						       len, tpc_stats);
++		break;
++
++	default:
++		ath11k_warn(ab, "Received invalid tag for tpc stats\n");
++		ret = -EINVAL;
++		break;
++	}
++	return ret;
++}
++
++void ath11k_wmi_free_tpc_stats_mem(struct ath11k *ar)
++{
++	struct wmi_tpc_stats_event *tpc_stats = ar->tpc_stats;
++
++	lockdep_assert_held(&ar->data_lock);
++	ath11k_dbg(ar->ab, ATH11K_DBG_WMI, "tpc stats mem free\n");
++	if (tpc_stats) {
++		kfree(tpc_stats->max_reg_allowed_power.reg_pwr_array);
++		kfree(tpc_stats->rates_array1.rate_array);
++		kfree(tpc_stats->rates_array2.rate_array);
++		kfree(tpc_stats->ctl_array.ctl_pwr_table);
++		kfree(tpc_stats->ctl_160array.ctl_pwr_table);
++		kfree(tpc_stats);
++		ar->tpc_stats = NULL;
++	}
++}
++
++static struct ath11k *ath11k_wmi_tpc_process_fixed_param(struct ath11k_base *ab,
++							 u8 *ptr, size_t len)
++{
++	struct ath11k *ar = NULL;
++	const struct wmi_tlv *tlv;
++	struct wmi_tpc_stats_event_fixed_param *fixed_param;
++	struct wmi_tpc_stats_event *tpc_stats = NULL;
++	u16 tlv_tag;
++
++	if (!ptr) {
++		ath11k_warn(ab, "No data present in tpc stats event\n");
++		return NULL;
++	}
++
++	if (len < (sizeof(*fixed_param) + TLV_HDR_SIZE)) {
++		ath11k_warn(ab, "tpc stats event size invalid\n");
++		return NULL;
++	}
++
++	tlv = (struct wmi_tlv *)ptr;
++	tlv_tag = FIELD_GET(WMI_TLV_TAG, tlv->header);
++	ptr += sizeof(*tlv);
++
++	if (tlv_tag == WMI_TAG_TPC_STATS_EVENT_FIXED_PARAM) {
++		fixed_param = (struct wmi_tpc_stats_event_fixed_param *)ptr;
++		ar = ath11k_mac_get_ar_by_pdev_id(ab, fixed_param->pdev_id);
++		if (!ar) {
++			ath11k_warn(ab, "Failed to get ar for tpc stats\n");
++			return NULL;
++		}
++	} else {
++		ath11k_warn(ab, "TPC Stats received without fixed param tlv at start\n");
++		return NULL;
++	}
++
++	spin_lock_bh(&ar->data_lock);
++	if (!ar->tpc_request) {
++		/* Event is received either without request or the
++		 * timeout, if memory is already allocated free it
++		 */
++		if (ar->tpc_stats) {
++			ath11k_warn(ab, "Freeing memory for tpc_stats\n");
++			ath11k_wmi_free_tpc_stats_mem(ar);
++		}
++		spin_unlock_bh(&ar->data_lock);
++		return NULL;
++	}
++
++	if (fixed_param->event_count == 0) {
++		if (ar->tpc_stats) {
++			ath11k_warn(ab,
++				    "Invalid tpc memory present\n");
++			spin_unlock_bh(&ar->data_lock);
++			return NULL;
++		}
++		ar->tpc_stats =
++			    kzalloc(sizeof(struct wmi_tpc_stats_event),
++				    GFP_ATOMIC);
++	}
++
++	if (!ar->tpc_stats) {
++		ath11k_warn(ab,
++			    "Failed to allocate memory for tpc stats\n");
++		spin_unlock_bh(&ar->data_lock);
++		return NULL;
++	}
++
++	tpc_stats = ar->tpc_stats;
++
++	if (!(fixed_param->event_count == 0)) {
++		if (fixed_param->event_count != tpc_stats->event_count + 1) {
++			ath11k_warn(ab,
++				    "Invalid tpc event received\n");
++			spin_unlock_bh(&ar->data_lock);
++			return NULL;
++		}
++	}
++	tpc_stats->pdev_id = fixed_param->pdev_id;
++	tpc_stats->event_count = fixed_param->event_count;
++	tpc_stats->end_of_event = fixed_param->end_of_event;
++	ath11k_dbg(ab, ATH11K_DBG_WMI,
++		   "tpc stats event_count %d\n",
++		   tpc_stats->event_count);
++
++	spin_unlock_bh(&ar->data_lock);
++
++	return ar;
++}
++
++static void ath11k_process_tpc_stats(struct ath11k_base *ab,
++				     struct sk_buff *skb)
++{
++	int ret;
++	struct ath11k *ar;
++	struct wmi_tpc_stats_event *tpc_stats = NULL;
++
++	rcu_read_lock();
++	ar = ath11k_wmi_tpc_process_fixed_param(ab, skb->data, skb->len);
++	if (!ar) {
++		ath11k_warn(ab, "Failed to get ar for tpc event\n");
++		goto exit;
++	}
++
++	spin_lock_bh(&ar->data_lock);
++	tpc_stats = ar->tpc_stats;
++	ret = ath11k_wmi_tlv_iter(ab, skb->data, skb->len,
++				  ath11k_wmi_tpc_stats_event_parser,
++				  tpc_stats);
++	if (ret) {
++		if (tpc_stats) {
++			ath11k_warn(ab, "Freeing memory for tpc_stats\n");
++			ath11k_wmi_free_tpc_stats_mem(ar);
++		}
++		spin_unlock_bh(&ar->data_lock);
++		ath11k_warn(ab, "failed to parse tpc_stats tlv: %d\n", ret);
++		goto exit;
++	}
++
++	if (tpc_stats && tpc_stats->end_of_event)
++		complete(&ar->tpc_complete);
++
++	spin_unlock_bh(&ar->data_lock);
++
++exit:
++	rcu_read_unlock();
++}
++
++int ath11k_wmi_pdev_get_tpc_table_cmdid(struct ath11k *ar)
++{
++	struct ath11k_pdev_wmi *wmi = ar->wmi;
++	struct wmi_tpc_stats_cmd *cmd;
++	struct sk_buff *skb;
++	int ret;
++
++	spin_lock_bh(&ar->data_lock);
++	ar->tpc_stats = NULL;
++	spin_unlock_bh(&ar->data_lock);
++	skb = ath11k_wmi_alloc_skb(wmi->wmi_ab, sizeof(*cmd));
++	if (!skb)
++		return -ENOMEM;
++	cmd = (struct wmi_tpc_stats_cmd *)skb->data;
++	cmd->tlv_header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_TPC_STATS_GET_CMD) |
++			  FIELD_PREP(WMI_TLV_LEN, sizeof(*cmd) - TLV_HDR_SIZE);
++	cmd->pdev_id = ar->pdev->pdev_id;
++	cmd->param = WMI_TPC_CONFIG_PARAM;
++	ret = ath11k_wmi_cmd_send(wmi, skb, WMI_PDEV_GET_TPC_STATS_CMDID);
++	if (ret) {
++		ath11k_warn(ar->ab,
++			    "failed to submit WMI_PDEV_GET_TPC_STATS_CMDID\n");
++		dev_kfree_skb(skb);
++		return ret;
++	}
++	ath11k_dbg(ar->ab, ATH11K_DBG_WMI, "WMI get TPC STATS sent on pdev %d\n",
++		   ar->pdev->pdev_id);
++
++	return ret;
++}
++
+ static void ath11k_wmi_twt_add_dialog_event(struct ath11k_base *ab, struct sk_buff *skb)
+ {
+ 	const char *status[] = {
+@@ -7665,6 +8110,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	case WMI_WOW_WAKEUP_HOST_EVENTID:
+ 		ath11k_wmi_event_wow_wakeup_host(ab, skb);
+ 		break;
++	case WMI_PDEV_GET_TPC_STATS_EVENTID:
++		ath11k_process_tpc_stats(ab, skb);
++		break;
+ 	/* TODO: Add remaining events */
+ 	default:
+ 		ath11k_dbg(ab, ATH11K_DBG_WMI, "Unknown eventid: 0x%x\n", id);
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -286,6 +286,7 @@ enum wmi_tlv_cmd_id {
+ 	WMI_PDEV_SET_SRG_OBSS_BSSID_ENABLE_BITMAP_CMDID,
+ 	WMI_PDEV_SET_NON_SRG_OBSS_COLOR_ENABLE_BITMAP_CMDID,
+ 	WMI_PDEV_SET_NON_SRG_OBSS_BSSID_ENABLE_BITMAP_CMDID,
++	WMI_PDEV_GET_TPC_STATS_CMDID,
+ 	WMI_VDEV_CREATE_CMDID = WMI_TLV_CMD(WMI_GRP_VDEV),
+ 	WMI_VDEV_DELETE_CMDID,
+ 	WMI_VDEV_START_REQUEST_CMDID,
+@@ -635,6 +636,8 @@ enum wmi_tlv_event_id {
+ 	WMI_PDEV_RAP_INFO_EVENTID,
+ 	WMI_CHAN_RF_CHARACTERIZATION_INFO_EVENTID,
+ 	WMI_SERVICE_READY_EXT2_EVENTID,
++	WMI_PDEV_MULTIPLE_VDEV_RESTART_RESP_EVENTID,
++	WMI_PDEV_GET_TPC_STATS_EVENTID,
+ 	WMI_VDEV_START_RESP_EVENTID = WMI_TLV_CMD(WMI_GRP_VDEV),
+ 	WMI_VDEV_STOPPED_EVENTID,
+ 	WMI_VDEV_INSTALL_KEY_COMPLETE_EVENTID,
+@@ -1104,6 +1107,7 @@ enum wmi_tlv_tag {
+ 	WMI_TAG_ARRAY_BYTE,
+ 	WMI_TAG_ARRAY_STRUCT,
+ 	WMI_TAG_ARRAY_FIXED_STRUCT,
++	WMI_TAG_ARRAY_INT16,
+ 	WMI_TAG_LAST_ARRAY_ENUM = 31,
+ 	WMI_TAG_SERVICE_READY_EVENT,
+ 	WMI_TAG_HAL_REG_CAPABILITIES,
+@@ -1855,6 +1859,13 @@ enum wmi_tlv_tag {
+ 	WMI_TAG_PDEV_SRG_OBSS_BSSID_ENABLE_BITMAP_CMD,
+ 	WMI_TAG_PDEV_NON_SRG_OBSS_COLOR_ENABLE_BITMAP_CMD,
+ 	WMI_TAG_PDEV_NON_SRG_OBSS_BSSID_ENABLE_BITMAP_CMD,
++	WMI_TAG_TPC_STATS_GET_CMD = 0x38B,
++	WMI_TAG_TPC_STATS_EVENT_FIXED_PARAM,
++	WMI_TAG_TPC_STATS_CONFIG_EVENT,
++	WMI_TAG_TPC_STATS_REG_PWR_ALLOWED,
++	WMI_TAG_TPC_STATS_RATES_ARRAY,
++	WMI_TAG_TPC_STATS_CTL_PWR_TABLE_EVENT,
++
+ 	WMI_TAG_MAX
+ };
+ 
+@@ -5330,6 +5341,183 @@ struct target_resource_config {
+ 	u32 twt_ap_sta_count;
+ };
+ 
++enum wmi_tpc_pream_bw {
++	WMI_TPC_PREAM_CCK,
++	WMI_TPC_PREAM_OFDM,
++	WMI_TPC_PREAM_HT20,
++	WMI_TPC_PREAM_HT40,
++	WMI_TPC_PREAM_VHT20,
++	WMI_TPC_PREAM_VHT40,
++	WMI_TPC_PREAM_VHT80,
++	WMI_TPC_PREAM_VHT160,
++	WMI_TPC_PREAM_HE20,
++	WMI_TPC_PREAM_HE40,
++	WMI_TPC_PREAM_HE80,
++	WMI_TPC_PREAM_HE160,
++	WMI_TPC_PREAM_MAX
++};
++#define ATH11K_2G_MAX_FREQUENCY		2495
++#define WMI_TPC_CONFIG			BIT(1)
++#define WMI_TPC_REG_PWR_ALLOWED		BIT(2)
++#define WMI_TPC_RATES_ARRAY1		BIT(3)
++#define WMI_TPC_RATES_ARRAY2		BIT(4)
++#define WMI_TPC_RATES_DL_OFDMA_ARRAY	BIT(5)
++#define WMI_TPC_CTL_PWR_ARRAY		BIT(6)
++#define WMI_TPC_CTL_PWR_160ARRAY	BIT(7)
++#define WMI_TPC_CTL_PWR_DL_OFDMA	BIT(8)
++#define WMI_TPC_CONFIG_PARAM		0x1
++#define ATH11K_TPC_RATE_ARRAY_MU	GENMASK(15, 8)
++#define ATH11K_TPC_RATE_ARRAY_SU	GENMASK(7, 0)
++#define ATH11K_HW_PREAMBLE(_rcode) (((_rcode) >> 8) & 0x7)
++#define ATH11K_HW_NSS(_rcode) (((_rcode) >> 5) & 0x7)
++#define MODULATION_LIMIT 		126
++#define TPC_STATS_REG_PWR_ALLOWED_TYPE	0
++#define HE_EXTRA_MCS_SUPPORT		GENMASK(31, 16)
++
++struct wmi_tpc_stats_cmd {
++	u32 tlv_header;
++	u32 pdev_id;
++	u32 param;
++} __packed;
++
++struct wmi_tpc_stats_event_fixed_param {
++	u32 pdev_id;
++	/* Message will be split into smaller chunks to fit in the WMI
++	 * svc msg size limit
++	 */
++	u32 end_of_event;
++	/*Incremented for every event chunk for Host to know the sequence */
++	u32 event_count;
++	/* wmi_tpc_configs TLV to follow
++	 * wmi_max_reg_power_allowed TLV to follow
++	 * wmi_tpc_rates_array
++	 * wmi_tpc_ctl_pwr_table
++	 */
++} __packed;
++
++struct wmi_tpc_configs {
++	u32 reg_domain;
++	/* current channel in MHz */
++	u32 chan_freq;
++	/* current phy mode */
++	u32 phy_mode;
++	/* Max antenna gain for current regulatory in 0.25 dBm steps */
++	u32 twice_antenna_reduction;
++	/* Max transmit power allowed in regulatory domain in 0.25 dBm steps */
++	u32 twice_max_reg_power;
++	/* User specified antenna gain in 0.25 dBm steps */
++	s32 twice_antenna_gain;
++	/* The overall power limit in 0.25 dBm steps */
++	u32 power_limit;
++	/* The total number of rates supported */
++	u32 rate_max;
++	/* The total number of active chains */
++	u32 num_tx_chain;
++	/* not used for now */
++	u32 ctl;
++	u32 flags;
++} __packed;
++
++struct wmi_max_reg_power_allowed {
++	/* 0: maxRegAllowedPower[TX_NUM_CHAIN];
++	 * 1:maxRegPowerAGCDD[TX_NUM_CHAIN - 1][TX_NUM_CHAIN - 1],
++	 * 2:maxRegPowerAGSTBC[TX_NUM_CHAIN - 1][TX_NUM_CHAIN - 1],
++	 * 3:maxRegPowerAGTXBF([TX_NUM_CHAIN - 1][TX_NUM_CHAIN - 1]
++	 * type 1-3 no used, for future use
++	 */
++	u32 reg_power_type;
++	/* Length of the regulatory power array being sent in bytes */
++	u32 reg_array_len;
++	/* dimensions below
++	 * d1 - [TX_NUM_CHAIN - 1]
++	 * d2- [TX_NUM_CHAIN - 1] for cdd, stbc, txbf
++	 * d2 = 1 for maxRegAllowedPower
++	 * d3 = 1  d4 = 1
++	 */
++	u32 d1;
++	u32 d2;
++	u32 d3;
++	u32 d4;
++	s16 *reg_pwr_array;
++} __packed;
++
++struct wmi_tpc_rates_array {
++	/* 0: ratesArray[TPC_RATE_MAX],
++	 * 1: ratesArray2[TPC_RATE_MAX] (for chain > 4),
++	 * 2: dl_ofdma rate array. Type 2 unsed, for future use
++	 */
++	u32 rate_array_type;
++	u32 rate_array_len;
++	s16 *rate_array;
++} __packed;
++
++struct wmi_tpc_ctl_pwr_table {
++	/* 0: ctl_array; 1: ctl_160 array; 2: ctl_dlOfdma array
++	 * Type 2 unsed, for future use
++	 */
++	u32 ctl_array_type;
++	/* Length of the CTL array being sent in bytes */
++	u32 ctl_array_len;
++	/* Message MAY be split into smaller chunks to fit in the WMI svc msg
++	 * not used for now
++	 */
++	u32 end_of_ctl_pwr;
++	/* Incremented for every event chunk for Host to know the sequence
++	 * not used for now
++	 */
++	u32 ctl_pwr_count;
++	/* Dimensions below
++	 * For ctl_array
++	 * d4 = No of chains
++	 * d3 = BF on/off = 2
++	 * d2 = 10 which the number of different tx modes-legacy, HT20, HT40 etc
++	 * d1 = NSS  number of spatial streams
++	 * s8 ctl_160array[WHAL_MAX_NUM_CHAINS][pri_or_sec][bf][nss].
++	 * For ctl_160 array
++	 * d4 = No of chains	d3 = primary/secondary channel
++	 * d2 = BF on/off	d1 = NSS
++	 */
++	u32 d1;
++	u32 d2;
++	u32 d3;
++	u32 d4;
++	s8 *ctl_pwr_table;
++} __packed;
++
++struct wmi_tpc_stats_event {
++	u32 pdev_id;
++	u32 event_count;
++	u32 end_of_event;
++	/* Bitmap to set and use the received tlvs alone. Not all tlvs are
++	 * supported for all chipset. For eg ctl_160 is not present for chipset
++	 * which does not have 160Mhz support
++	 */
++	u32 tlvs_rcvd;
++	struct wmi_max_reg_power_allowed max_reg_allowed_power;
++	struct wmi_tpc_rates_array rates_array1;
++	struct wmi_tpc_rates_array rates_array2;
++	struct wmi_tpc_configs tpc_config;
++	struct wmi_tpc_ctl_pwr_table ctl_array;
++	struct wmi_tpc_ctl_pwr_table ctl_160array;
++};
++
++enum ath11k_wmi_tpc_stats_events {
++	ATH11K_TPC_STATS_CONFIG_REG_PWR_EVENT,
++	ATH11K_TPC_STATS_RATES_EVENT1,
++	ATH11K_TPC_STATS_RATES_EVENT2,
++	ATH11K_TPC_STATS_CTL_TABLE_EVENT
++};
++
++enum ath11k_wmi_tpc_stats_rates_array {
++	ATH11K_TPC_STATS_RATES_ARRAY1,
++	ATH11K_TPC_STATS_RATES_ARRAY2,
++};
++
++enum ath11k_wmi_tpc_stats_ctl_array {
++	ATH11K_TPC_STATS_CTL_ARRAY,
++	ATH11K_TPC_STATS_CTL_160ARRAY,
++};
++
+ #define WMI_MAX_MEM_REQS 32
+ 
+ #define MAX_RADIOS 3
+@@ -5677,5 +5865,7 @@ int ath11k_wmi_set_hw_mode(struct ath11k
+ int ath11k_wmi_wow_host_wakeup_ind(struct ath11k *ar);
+ int ath11k_wmi_wow_enable(struct ath11k *ar);
+ int ath11k_wmi_pdev_m3_dump_enable(struct ath11k *ar, u32 enable);
++int ath11k_wmi_pdev_get_tpc_table_cmdid(struct ath11k *ar);
++void ath11k_wmi_free_tpc_stats_mem(struct ath11k *ar);
+ 
+ #endif

@@ -1,0 +1,340 @@
+From f251063dfeb6d6ab15a8a426b6b9238b406704f0 Mon Sep 17 00:00:00 2001
+From: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+Date: Wed, 17 Feb 2021 12:10:24 +0530
+Subject: [PATCH] ath11k: add new parameters for tx based capture
+
+This change add new parameters as part of cfr metadata
+for tx based capture dumps.
+
+Newly added parameters,
+        * CFO measurement
+        * per chain AGC gain
+        * rx start timestamp
+
+Signed-off-by: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/cfr.c         |  8 +--
+ drivers/net/wireless/ath/ath11k/cfr.h         | 59 +++++++++++++++++++++-
+ drivers/net/wireless/ath/ath11k/debugfs_sta.c |  6 +--
+ drivers/net/wireless/ath/ath11k/hw.c          | 70 +++++++++++++++------------
+ drivers/net/wireless/ath/ath11k/wmi.c         | 13 ++++-
+ drivers/net/wireless/ath/ath11k/wmi.h         |  5 +-
+ 6 files changed, 121 insertions(+), 40 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/cfr.c
++++ b/drivers/net/wireless/ath/ath11k/cfr.c
+@@ -276,7 +276,7 @@ static int ath11k_cfr_enh_process_data(s
+ 	struct ath11k_cfr_look_up_table *lut;
+ 	struct ath11k_csi_cfr_header *header;
+ 	struct ath11k_cfir_enh_dma_hdr dma_hdr;
+-	struct cfr_metadata_version_3 *meta;
++	struct cfr_metadata_version_5 *meta;
+ 	void *mu_rx_user_info = NULL, *freeze_tlv = NULL;
+ 	u8 *peer_macaddr;
+ 	u8 *data;
+@@ -343,7 +343,7 @@ static int ath11k_cfr_enh_process_data(s
+ 	memcpy(&lut->dma_hdr.enh_hdr, &dma_hdr, sizeof(struct ath11k_cfir_enh_dma_hdr));
+ 
+ 	header = &lut->header;
+-	meta = &header->u.meta_v3;
++	meta = &header->u.meta_v5;
+ 	meta->channel_bw = FIELD_GET(CFIR_DMA_HDR_INFO1_UPLOAD_PKT_BW,
+ 				     dma_hdr.hdr.info1);
+ 	meta->num_rx_chain =
+@@ -450,9 +450,9 @@ static int ath11k_cfr_process_data(struc
+ 	memcpy(&lut->dma_hdr.hdr, &dma_hdr, sizeof(struct ath11k_cfir_dma_hdr));
+ 
+ 	header = &lut->header;
+-	header->u.meta_v2.channel_bw = FIELD_GET(CFIR_DMA_HDR_INFO1_UPLOAD_PKT_BW,
++	header->u.meta_v4.channel_bw = FIELD_GET(CFIR_DMA_HDR_INFO1_UPLOAD_PKT_BW,
+ 						 dma_hdr.info1);
+-	header->u.meta_v2.length = length;
++	header->u.meta_v4.length = length;
+ 
+ 	status = ath11k_cfr_correlate_and_relay(ar, lut,
+ 						ATH11K_CORRELATE_DBR_EVENT);
+--- a/drivers/net/wireless/ath/ath11k/cfr.h
++++ b/drivers/net/wireless/ath/ath11k/cfr.h
+@@ -35,6 +35,8 @@ enum ath11k_cfr_meta_version {
+ 	ATH11K_CFR_META_VERSION_1,
+ 	ATH11K_CFR_META_VERSION_2,
+ 	ATH11K_CFR_META_VERSION_3,
++	ATH11K_CFR_META_VERSION_4,
++	ATH11K_CFR_META_VERSION_5,
+ 	ATH11K_CFR_META_VERSION_MAX = 0xFF,
+ };
+ 
+@@ -77,6 +79,10 @@ struct ath11k_cfr_peer_tx_param {
+         u32 counter;
+         u32 chain_rssi[WMI_MAX_CHAINS];
+         u16 chain_phase[WMI_MAX_CHAINS];
++	u32 cfo_measurement;
++	u8 agc_gain[WMI_MAX_CHAINS];
++	u32 rx_start_ts;
++	u32 rx_ts_reset;
+ };
+ 
+ struct cfr_metadata_version_1 {
+@@ -142,6 +148,55 @@ struct cfr_metadata_version_3 {
+ 	u16 chain_phase[HOST_MAX_CHAINS];
+ } __packed;
+ 
++struct cfr_metadata_version_4 {
++	u8 peer_addr[ETH_ALEN];
++	u8 status;
++	u8 capture_bw;
++	u8 channel_bw;
++	u8 phy_mode;
++	u16 prim20_chan;
++	u16 center_freq1;
++	u16 center_freq2;
++	u8 capture_mode;
++	u8 capture_type;
++	u8 sts_count;
++	u8 num_rx_chain;
++	u32 timestamp;
++	u32 length;
++	u32 chain_rssi[HOST_MAX_CHAINS];
++	u16 chain_phase[HOST_MAX_CHAINS];
++	u32 cfo_measurement;
++	u8 agc_gain[HOST_MAX_CHAINS];
++	u32 rx_start_ts;
++} __packed;
++
++struct cfr_metadata_version_5 {
++        u8 status;
++        u8 capture_bw;
++        u8 channel_bw;
++        u8 phy_mode;
++        u16 prim20_chan;
++        u16 center_freq1;
++        u16 center_freq2;
++        u8 capture_mode;
++        u8 capture_type;
++        u8 sts_count;
++        u8 num_rx_chain;
++        u64 timestamp;
++        u32 length;
++        u8 is_mu_ppdu;
++        u8 num_mu_users;
++        union {
++                u8 su_peer_addr[ETH_ALEN];
++                u8 mu_peer_addr[MAX_CFR_MU_USERS][ETH_ALEN];
++        } peer_addr;
++        u32 chain_rssi[HOST_MAX_CHAINS];
++        u16 chain_phase[HOST_MAX_CHAINS];
++	u32 cfo_measurement;
++	u8 agc_gain[HOST_MAX_CHAINS];
++	u32 rx_start_ts;
++} __packed;
++
+ struct ath11k_csi_cfr_header {
+ 	u32 start_magic_num;
+ 	u32 vendorid;
+@@ -149,11 +204,13 @@ struct ath11k_csi_cfr_header {
+ 	u8 cfr_data_version;
+ 	u8 chip_type;
+ 	u8 pltform_type;
+-	u32 Reserved;
++	u32 cfr_metadata_len;
+ 	union {
+ 		struct cfr_metadata_version_1 meta_v1;
+ 		struct cfr_metadata_version_2 meta_v2;
+ 		struct cfr_metadata_version_3 meta_v3;
++		struct cfr_metadata_version_4 meta_v4;
++		struct cfr_metadata_version_5 meta_v5;
+ 	} u;
+ } __packed;
+ 
+--- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
+@@ -1386,14 +1386,7 @@ static ssize_t ath11k_dbg_sta_write_cfr_
+ 	if (cfr_capture_enable > WMI_PEER_CFR_CAPTURE_ENABLE ||
+ 	    cfr_capture_bw > sta->bandwidth ||
+ 	    cfr_capture_method > CFR_CAPURE_METHOD_NULL_FRAME_WITH_PHASE ||
+-	    cfr_capture_period > WMI_PEER_CFR_PERIODICITY_MAX) {
+-		ret = -EINVAL;
+-		goto out;
+-	}
+-
+-	/* Target expects cfr period in multiple of 10 */
+-	if (cfr_capture_period % 10) {
+-		ath11k_err(ar->ab, "periodicity should be 10x\n");
++	     cfr_capture_period > WMI_PEER_CFR_PERIODICITY_MAX) {
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -852,60 +852,70 @@ void ath11k_hw_ipq8074_fill_cfr_hdr_info
+ 					 struct ath11k_csi_cfr_header *header,
+ 					 struct ath11k_cfr_peer_tx_param *params)
+ {
+-	header->cfr_metadata_version = ATH11K_CFR_META_VERSION_2;
++	header->cfr_metadata_version = ATH11K_CFR_META_VERSION_4;
+ 	header->cfr_data_version = ATH11K_CFR_DATA_VERSION_1;
++	header->cfr_metadata_len =sizeof(struct cfr_metadata_version_4);
+ 	/* TODO: can we add this chip_type to hw param table */
+ 	header->chip_type = ATH11K_CFR_RADIO_IPQ8074;
+-	header->u.meta_v2.status = FIELD_GET(WMI_CFR_PEER_CAPTURE_STATUS,
++	header->u.meta_v4.status = FIELD_GET(WMI_CFR_PEER_CAPTURE_STATUS,
+ 					     params->status);
+-	header->u.meta_v2.capture_bw = params->bandwidth;
+-	header->u.meta_v2.phy_mode = params->phy_mode;
+-	header->u.meta_v2.prim20_chan = params->primary_20mhz_chan;
+-	header->u.meta_v2.center_freq1 = params->band_center_freq1;
+-	header->u.meta_v2.center_freq2 = params->band_center_freq2;
++	header->u.meta_v4.capture_bw = params->bandwidth;
++	header->u.meta_v4.phy_mode = params->phy_mode;
++	header->u.meta_v4.prim20_chan = params->primary_20mhz_chan;
++	header->u.meta_v4.center_freq1 = params->band_center_freq1;
++	header->u.meta_v4.center_freq2 = params->band_center_freq2;
+ 
+ 	/* Currently CFR data is captured on ACK of a Qos NULL frame.
+ 	 * For 20 MHz, ACK is Legacy and for 40/80/160, ACK is DUP Legacy.
+ 	 */
+-	header->u.meta_v2.capture_mode = params->bandwidth ?
++	header->u.meta_v4.capture_mode = params->bandwidth ?
+ 		ATH11K_CFR_CAPTURE_DUP_LEGACY_ACK : ATH11K_CFR_CAPTURE_LEGACY_ACK;
+-	header->u.meta_v2.capture_type = params->capture_method;
+-	header->u.meta_v2.num_rx_chain = ar->cfg_rx_chainmask;
+-	header->u.meta_v2.sts_count = params->spatial_streams;
+-	header->u.meta_v2.timestamp = params->timestamp_us;
+-	memcpy(header->u.meta_v2.peer_addr, params->peer_mac_addr, ETH_ALEN);
+-	memcpy(header->u.meta_v2.chain_rssi, params->chain_rssi,
++	header->u.meta_v4.capture_type = params->capture_method;
++	header->u.meta_v4.num_rx_chain = ar->cfg_rx_chainmask;
++	header->u.meta_v4.sts_count = params->spatial_streams;
++	header->u.meta_v4.timestamp = params->timestamp_us;
++	header->u.meta_v4.cfo_measurement = params->cfo_measurement;
++	header->u.meta_v4.rx_start_ts = params->rx_start_ts;
++	memcpy(header->u.meta_v4.peer_addr, params->peer_mac_addr, ETH_ALEN);
++	memcpy(header->u.meta_v4.chain_rssi, params->chain_rssi,
+ 	       sizeof(params->chain_rssi));
+-	memcpy(header->u.meta_v2.chain_phase, params->chain_phase,
++	memcpy(header->u.meta_v4.chain_phase, params->chain_phase,
+ 	       sizeof(params->chain_phase));
++	memcpy(header->u.meta_v4.agc_gain, params->agc_gain,
++	       sizeof(params->agc_gain));
+ }
+ 
+ void ath11k_hw_qcn9074_fill_cfr_hdr_info(struct ath11k *ar,
+ 					 struct ath11k_csi_cfr_header *header,
+ 					 struct ath11k_cfr_peer_tx_param *params)
+ {
+-	header->cfr_metadata_version = ATH11K_CFR_META_VERSION_3;
++	header->cfr_metadata_version = ATH11K_CFR_META_VERSION_5;
+ 	header->cfr_data_version = ATH11K_CFR_DATA_VERSION_1;
+ 	header->chip_type = ATH11K_CFR_RADIO_QCN9074;
+-	header->u.meta_v3.status = FIELD_GET(WMI_CFR_PEER_CAPTURE_STATUS,
++	header->cfr_metadata_len = sizeof(struct cfr_metadata_version_5);
++	header->u.meta_v5.status = FIELD_GET(WMI_CFR_PEER_CAPTURE_STATUS,
+ 					     params->status);
+-	header->u.meta_v3.capture_bw = params->bandwidth;
+-	header->u.meta_v3.phy_mode = params->phy_mode;
+-	header->u.meta_v3.prim20_chan = params->primary_20mhz_chan;
+-	header->u.meta_v3.center_freq1 = params->band_center_freq1;
+-	header->u.meta_v3.center_freq2 = params->band_center_freq2;
+-	header->u.meta_v3.capture_mode = params->bandwidth ?
++	header->u.meta_v5.capture_bw = params->bandwidth;
++	header->u.meta_v5.phy_mode = params->phy_mode;
++	header->u.meta_v5.prim20_chan = params->primary_20mhz_chan;
++	header->u.meta_v5.center_freq1 = params->band_center_freq1;
++	header->u.meta_v5.center_freq2 = params->band_center_freq2;
++	header->u.meta_v5.capture_mode = params->bandwidth ?
+ 		ATH11K_CFR_CAPTURE_DUP_LEGACY_ACK : ATH11K_CFR_CAPTURE_LEGACY_ACK;
+-	header->u.meta_v3.capture_type = params->capture_method;
+-	header->u.meta_v3.num_rx_chain = ar->cfg_rx_chainmask;
+-	header->u.meta_v3.sts_count = params->spatial_streams;
+-	header->u.meta_v3.timestamp = params->timestamp_us;
+-	memcpy(header->u.meta_v3.peer_addr.su_peer_addr,
++	header->u.meta_v5.capture_type = params->capture_method;
++	header->u.meta_v5.num_rx_chain = ar->cfg_rx_chainmask;
++	header->u.meta_v5.sts_count = params->spatial_streams;
++	header->u.meta_v5.timestamp = params->timestamp_us;
++	header->u.meta_v5.cfo_measurement = params->cfo_measurement;
++	header->u.meta_v5.rx_start_ts = params->rx_start_ts;
++	memcpy(header->u.meta_v5.peer_addr.su_peer_addr,
+ 	       params->peer_mac_addr, ETH_ALEN);
+-	memcpy(header->u.meta_v3.chain_rssi, params->chain_rssi,
++	memcpy(header->u.meta_v5.chain_rssi, params->chain_rssi,
+ 	       sizeof(params->chain_rssi));
+-	memcpy(header->u.meta_v3.chain_phase, params->chain_phase,
++	memcpy(header->u.meta_v5.chain_phase, params->chain_phase,
+ 	       sizeof(params->chain_phase));
++	memcpy(header->u.meta_v5.agc_gain, params->agc_gain,
++	       sizeof(params->agc_gain));
+ }
+ 
+ const struct ath11k_hw_ops ipq8074_ops = {
+@@ -955,6 +965,7 @@ const struct ath11k_hw_ops ipq8074_ops =
+ 	.rx_desc_dot11_hdr_fields_valid = ath11k_hw_ipq8074_rx_desc_dot11_hdr_fields_valid,
+ 	.rx_desc_get_dot11_hdr = ath11k_hw_ipq8074_rx_desc_get_dot11_hdr,
+ 	.rx_desc_get_crypto_header = ath11k_hw_ipq8074_rx_desc_get_crypto_hdr,
++	.fill_cfr_hdr_info = ath11k_hw_ipq8074_fill_cfr_hdr_info,
+ };
+ 
+ const struct ath11k_hw_ops ipq6018_ops = {
+@@ -1004,7 +1015,6 @@ const struct ath11k_hw_ops ipq6018_ops =
+ 	.rx_desc_dot11_hdr_fields_valid = ath11k_hw_ipq8074_rx_desc_dot11_hdr_fields_valid,
+ 	.rx_desc_get_dot11_hdr = ath11k_hw_ipq8074_rx_desc_get_dot11_hdr,
+ 	.rx_desc_get_crypto_header = ath11k_hw_ipq8074_rx_desc_get_crypto_hdr,
+-	.fill_cfr_hdr_info = ath11k_hw_ipq8074_fill_cfr_hdr_info,
+ };
+ 
+ const struct ath11k_hw_ops qca6390_ops = {
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -9043,6 +9043,15 @@ static void ath11k_wmi_tlv_cfr_cpature_e
+ 	tx_params->counter = params->counter;
+ 	memcpy(tx_params->chain_rssi, params->chain_rssi,
+ 		 sizeof(tx_params->chain_rssi));
++
++	if (WMI_CFR_CFO_MEASUREMENT_VALID & params->cfo_measurement)
++		tx_params->cfo_measurement = FIELD_GET(WMI_CFR_CFO_MEASUREMENT_RAW_DATA,
++						       params->cfo_measurement);
++	else
++		tx_params->cfo_measurement = 0;
++
++	tx_params->rx_start_ts = params->rx_start_ts;
++	tx_params->rx_ts_reset = params->rx_ts_reset;
+ }
+ 
+ static void ath11k_wmi_tlv_cfr_cpature_phase_fixed_param(const void *ptr,
+@@ -9054,8 +9063,10 @@ static void ath11k_wmi_tlv_cfr_cpature_p
+ 			(struct ath11k_wmi_cfr_peer_tx_event_phase_param *)ptr;
+ 	int i;
+ 
+-	for (i = 0; i < WMI_MAX_CHAINS; i++)
++	for (i = 0; i < WMI_MAX_CHAINS; i++) {
+ 		tx_params->chain_phase[i] = params->chain_phase[i];
++		tx_params->agc_gain[i] = params->agc_gain[i];
++	}
+ }
+ 
+ static int ath11k_wmi_tlv_cfr_capture_evt_parse(struct ath11k_base *ab,
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -3569,7 +3569,7 @@ struct wmi_peer_cfr_capture_cmd_fixed_pa
+ #define WMI_CFR_CORRELATION_INFO2_BUF_ADDR_HIGH GENMASK(3, 0)
+ #define WMI_CFR_CORRELATION_INFO2_PPDU_ID GENMASK(31, 16)
+ 
+-#define WMI_CFR_CFO_MEASUREMENT_VALID GENMASK(0, 0)
++#define WMI_CFR_CFO_MEASUREMENT_VALID BIT(0)
+ #define WMI_CFR_CFO_MEASUREMENT_RAW_DATA GENMASK(14, 1)
+ 
+ struct ath11k_wmi_cfr_peer_tx_event_param {
+@@ -3589,10 +3589,13 @@ struct ath11k_wmi_cfr_peer_tx_event_para
+ 	u32 counter;
+ 	u32 chain_rssi[WMI_MAX_CHAINS];
+ 	u32 cfo_measurement;
++	u32 rx_start_ts;
++	u32 rx_ts_reset;
+ } __packed;
+ 
+ struct ath11k_wmi_cfr_peer_tx_event_phase_param {
+ 	u32 chain_phase[WMI_MAX_CHAINS];
++	u8 agc_gain[WMI_MAX_CHAINS];
+ } __packed;
+ 
+ enum ath11k_wmi_cfr_capture_bw {

@@ -1,0 +1,278 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH V4 1/6] bss coloring: add support for handling collision
+ events and triggering CCA
+Date: Wed, 26 Aug 2020 08:22:11 +0200
+
+Add the core code for handling bss color collision events and triggering
+CCA inside the kernel.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ src/ap/ap_drv_ops.h          |  12 ++++
+ src/ap/hostapd.c             | 119 +++++++++++++++++++++++++++++++++++
+ src/ap/hostapd.h             |  16 +++++
+ src/common/ieee802_11_defs.h |   6 ++
+ src/drivers/driver.h         |  31 +++++++++
+ 5 files changed, 184 insertions(+)
+
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -299,6 +299,18 @@ static inline int hostapd_drv_switch_cha
+ 	return hapd->driver->switch_channel(hapd->drv_priv, settings);
+ }
+ 
++#ifdef CONFIG_IEEE80211AX
++static inline int hostapd_drv_switch_color(struct hostapd_data *hapd,
++					   struct cca_settings *settings)
++{
++	if (hapd->driver == NULL || hapd->driver->switch_color == NULL ||
++	    hapd->drv_priv == NULL)
++		return -1;
++
++	return hapd->driver->switch_color(hapd->drv_priv, settings);
++}
++#endif
++
+ static inline int hostapd_drv_status(struct hostapd_data *hapd, char *buf,
+ 				     size_t buflen)
+ {
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -65,6 +65,8 @@ static int setup_interface2(struct hosta
+ static void channel_list_update_timeout(void *eloop_ctx, void *timeout_ctx);
+ static void hostapd_interface_setup_failure_handler(void *eloop_ctx,
+ 						    void *timeout_ctx);
++static void
++hostapd_switch_color_timeout_handler(void *eloop_data, void *user_ctx);
+ 
+ 
+ int hostapd_for_each_interface(struct hapd_interfaces *interfaces,
+@@ -476,6 +478,9 @@ static void hostapd_free_hapd_data(struc
+ 	}
+ 	eloop_cancel_timeout(auth_sae_process_commit, hapd, NULL);
+ #endif /* CONFIG_SAE */
++#ifdef CONFIG_IEEE80211AX
++	eloop_cancel_timeout(hostapd_switch_color_timeout_handler, hapd, NULL);
++#endif
+ }
+ 
+ 
+@@ -3713,6 +3718,119 @@ hostapd_switch_channel_fallback(struct h
+ 	hostapd_enable_iface(iface);
+ }
+ 
++
++#ifdef CONFIG_IEEE80211AX
++void hostapd_cleanup_cca_params(struct hostapd_data *hapd)
++{
++	hapd->cca_count = 0;
++	hapd->cca_color = 0;
++	hapd->cca_c_off_beacon = 0;
++	hapd->cca_c_off_proberesp = 0;
++	hapd->cca_in_progress = 0;
++}
++
++
++static int hostapd_fill_cca_settings(struct hostapd_data *hapd,
++				     struct cca_settings *settings)
++{
++	struct hostapd_iface *iface = hapd->iface;
++	u8 old_color;
++	int ret;
++
++	if (!iface || iface->conf->he_op.he_bss_color_disabled)
++		return -1;
++
++        old_color = iface->conf->he_op.he_bss_color;
++	iface->conf->he_op.he_bss_color = hapd->cca_color;
++	ret = hostapd_build_beacon_data(hapd, &settings->beacon_after);
++	iface->conf->he_op.he_bss_color = old_color;
++
++	settings->cca_count = hapd->cca_count;
++	settings->cca_color = hapd->cca_color,
++	hapd->cca_in_progress = 1;
++
++	ret = hostapd_build_beacon_data(hapd, &settings->beacon_cca);
++	if (ret) {
++		free_beacon_data(&settings->beacon_after);
++		return ret;
++	}
++
++	settings->counter_offset_beacon = hapd->cca_c_off_beacon;
++	settings->counter_offset_presp = hapd->cca_c_off_proberesp;
++
++	return 0;
++}
++
++
++static void
++hostapd_switch_color_timeout_handler(void *eloop_data, void *user_ctx)
++{
++	struct hostapd_data *hapd = (struct hostapd_data *) eloop_data;
++	struct cca_settings settings;
++	struct os_time now;
++	int i, r, b, ret;
++
++	if (os_get_time(&now))
++		return;
++
++	/* check if there has been a recent collision */
++	if (now.sec - hapd->last_color_collision.sec > 50)
++		return;
++
++	r = os_random() % HE_OPERATION_BSS_COLOR_MAX;
++	for (i = 0; i < HE_OPERATION_BSS_COLOR_MAX; i++) {
++		if (r && (hapd->color_collision_bitmap & (1 << r)) == 0)
++			break;
++		r = (r + 1) % HE_OPERATION_BSS_COLOR_MAX;
++	}
++	if (i == HE_OPERATION_BSS_COLOR_MAX) {
++		/* there are no free colors so turn bss coloring off */
++		wpa_printf(MSG_INFO, "no free colors left, turning of BSS coloring");
++		hapd->iface->conf->he_op.he_bss_color_disabled = 1;
++		for (b = 0; b < hapd->iface->num_bss; b++)
++			ieee802_11_set_beacon(hapd->iface->bss[b]);
++		return;
++	}
++
++	for (b = 0; b < hapd->iface->num_bss; b++) {
++		struct hostapd_data *bss = hapd->iface->bss[b];
++
++		hostapd_cleanup_cca_params(bss);
++		bss->cca_color = r;
++		bss->cca_count = 10;
++
++		if (hostapd_fill_cca_settings(bss, &settings)) {
++			hostapd_cleanup_cca_params(bss);
++			continue;
++		}
++
++		ret = hostapd_drv_switch_color(bss, &settings);
++		free_beacon_data(&settings.beacon_cca);
++		free_beacon_data(&settings.beacon_after);
++
++		if (ret)
++			hostapd_cleanup_cca_params(bss);
++	}
++}
++
++
++void
++hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap)
++{
++	if (hapd->cca_in_progress)
++		return;
++
++	if (os_get_time(&hapd->last_color_collision))
++		return;
++
++	hapd->color_collision_bitmap = bitmap;
++
++	if (!eloop_is_timeout_registered(hostapd_switch_color_timeout_handler, hapd, NULL))
++		eloop_register_timeout(DOT11BSS_COLOR_COLLISION_AP_PERIOD, 0,
++				       hostapd_switch_color_timeout_handler, hapd, NULL);
++}
++#endif
++
+ #endif /* NEED_AP_MLME */
+ 
+ 
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -296,6 +296,16 @@ struct hostapd_data {
+ 	unsigned int cs_c_off_ecsa_beacon;
+ 	unsigned int cs_c_off_ecsa_proberesp;
+ 
++#ifdef CONFIG_IEEE80211AX
++	int cca_in_progress;
++	u8 cca_count;
++	u8 cca_color;
++	unsigned int cca_c_off_beacon;
++	unsigned int cca_c_off_proberesp;
++	struct os_time last_color_collision;
++	u64 color_collision_bitmap;
++#endif
++
+ #ifdef CONFIG_P2P
+ 	struct p2p_data *p2p;
+ 	struct p2p_group *p2p_group;
+@@ -642,6 +652,12 @@ void hostapd_periodic_iface(struct hosta
+ int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
+ void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
+ 
++
++#ifdef CONFIG_IEEE80211AX
++void hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap);
++void hostapd_cleanup_cca_params(struct hostapd_data *hapd);
++#endif
++
+ /* utils.c */
+ int hostapd_register_probereq_cb(struct hostapd_data *hapd,
+ 				 int (*cb)(void *ctx, const u8 *sa,
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -2280,6 +2280,7 @@ struct ieee80211_spatial_reuse {
+ #define HE_OPERATION_BSS_COLOR_PARTIAL		((u32) BIT(30))
+ #define HE_OPERATION_BSS_COLOR_DISABLED		((u32) BIT(31))
+ #define HE_OPERATION_BSS_COLOR_OFFSET		24
++#define HE_OPERATION_BSS_COLOR_MAX		64
+ 
+ /* Spatial Reuse defines */
+ #define SPATIAL_REUSE_SRP_DISALLOWED		BIT(0)
+@@ -2430,4 +2431,9 @@ enum mscs_description_subelem {
+ #define TBTT_BSS_PARAM_CO_LOCATED		BIT(6)
+ #define TBTT_PSD_MAX_TXPOWER			255 /* dBm */
+ 
++/* IEEE802.11/D6.0 - 26.17.3.5.1
++ * the minimum default timeout between color collision and color change is defined as 50s
++ */
++#define DOT11BSS_COLOR_COLLISION_AP_PERIOD	50
++
+ #endif /* IEEE802_11_DEFS_H */
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -2417,6 +2417,26 @@ struct csa_settings {
+ 	u16 counter_offset_presp[2];
+ };
+ 
++/**
++ * struct cca_settings - Settings for color switch command
++ * @cca_count: Count in Beacon frames (TBTT) to perform the switch
++ * @cca_color: The new color that we are switching to
++ * @beacon_cca: Beacon/probe resp/asooc resp info for color switch period
++ * @beacon_after: Next beacon/probe resp/asooc resp info
++ * @counter_offset_beacon: Offset to the count field in beacon's tail
++ * @counter_offset_presp: Offset to the count field in probe resp.
++ */
++struct cca_settings {
++	u8 cca_count;
++	u8 cca_color;
++
++	struct beacon_data beacon_cca;
++	struct beacon_data beacon_after;
++
++	u16 counter_offset_beacon;
++	u16 counter_offset_presp;
++};
++
+ /* TDLS peer capabilities for send_tdls_mgmt() */
+ enum tdls_peer_capability {
+ 	TDLS_PEER_HT = BIT(0),
+@@ -3989,6 +4009,17 @@ struct wpa_driver_ops {
+ 	int (*switch_channel)(void *priv, struct csa_settings *settings);
+ 
+ 	/**
++	 * switch_color - Announce color switch and migrate the BSS to the
++	 * given color
++	 * @priv: Private driver interface data
++	 * @settings: Settings for CCA period and new color
++	 * Returns: 0 on success, -1 on failure
++	 *
++	 * This function is used to move the BSS to its new color.
++	 */
++	int (*switch_color)(void *priv, struct cca_settings *settings);
++
++	/**
+ 	 * add_tx_ts - Add traffic stream
+ 	 * @priv: Private driver interface data
+ 	 * @tsid: Traffic stream ID

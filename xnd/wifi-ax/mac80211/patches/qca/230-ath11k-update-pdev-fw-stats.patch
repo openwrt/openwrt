@@ -1,0 +1,247 @@
+From 7bfda3536d622d53a103d53440b00ed469021f2d Mon Sep 17 00:00:00 2001
+From: Sriram R <srirrama@codeaurora.org>
+Date: Mon, 4 Jan 2021 13:36:15 +0530
+Subject: [PATCH] ath11k: update pdev tx,rx fw stats
+
+Update the fields of PDEV TX and RX firmware stats structure.
+This was causing wrong fw stats to be printed as below.
+
+	Illegal rate phy errors   36839112
+
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h | 33 +++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.c  | 43 ++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.h  | 48 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 124 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -949,12 +949,15 @@ struct ath11k_fw_stats_pdev {
+ 	s32 hw_reaped;
+ 	/* Num underruns */
+ 	s32 underrun;
++	/* Num hw paused */
++	u32 hw_paused;
+ 	/* Num PPDUs cleaned up in TX abort */
+ 	s32 tx_abort;
+ 	/* Num MPDUs requed by SW */
+ 	s32 mpdus_requed;
+ 	/* excessive retries */
+ 	u32 tx_ko;
++	u32 tx_xretry;
+ 	/* data hw rate code */
+ 	u32 data_rc;
+ 	/* Scheduler self triggers */
+@@ -975,6 +978,32 @@ struct ath11k_fw_stats_pdev {
+ 	u32 phy_underrun;
+ 	/* MPDU is more than txop limit */
+ 	u32 txop_ovf;
++	/* Num sequences posted */
++	u32 seq_posted;
++	/* Num sequences failed in queueing */
++	u32 seq_failed_queing;
++	/* Num sequences completed */
++	u32 seq_completed;
++	/* Num sequences restarted */
++	u32 seq_restarted;
++	/* Num of MU sequences posted */
++	u32 mu_seq_posted;
++	/* Num MPDUs flushed by SW, HWPAUSED, SW TXABORT
++	 * (Reset,channel change)
++	 */
++	s32 mpdus_sw_flush;
++	/* Num MPDUs filtered by HW, all filter condition (TTL expired) */
++	s32 mpdus_hw_filter;
++	/* Num MPDUs truncated by PDG (TXOP, TBTT,
++	 * PPDU_duration based on rate, dyn_bw)
++	 */
++	s32 mpdus_truncated;
++	/* Num MPDUs that was tried but didn't receive ACK or BA */
++	s32 mpdus_ack_failed;
++	/* Num MPDUs that was dropped du to expiry. */
++	s32 mpdus_expired;
++	/* Num mc drops */
++	u32 mc_drop;
+ 
+ 	/* PDEV RX stats */
+ 	/* Cnts any change in ring routing mid-ppdu */
+@@ -1000,6 +1029,10 @@ struct ath11k_fw_stats_pdev {
+ 	s32 phy_err_drop;
+ 	/* Number of mpdu errors - FCS, MIC, ENC etc. */
+ 	s32 mpdu_errs;
++	/* Inactivity timeouts */
++	u32 pdev_rx_timeout;
++	/* Num overflow errors */
++	s32 rx_ovf_err;
+ };
+ 
+ struct ath11k_fw_stats_vdev {
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -6032,9 +6032,11 @@ ath11k_wmi_pull_pdev_stats_tx(const stru
+ 	dst->hw_queued = src->hw_queued;
+ 	dst->hw_reaped = src->hw_reaped;
+ 	dst->underrun = src->underrun;
++	dst->hw_paused = src->hw_paused;
+ 	dst->tx_abort = src->tx_abort;
+ 	dst->mpdus_requed = src->mpdus_requed;
+ 	dst->tx_ko = src->tx_ko;
++	dst->tx_xretry = src->tx_xretry;
+ 	dst->data_rc = src->data_rc;
+ 	dst->self_triggers = src->self_triggers;
+ 	dst->sw_retry_failure = src->sw_retry_failure;
+@@ -6045,6 +6047,17 @@ ath11k_wmi_pull_pdev_stats_tx(const stru
+ 	dst->stateless_tid_alloc_failure = src->stateless_tid_alloc_failure;
+ 	dst->phy_underrun = src->phy_underrun;
+ 	dst->txop_ovf = src->txop_ovf;
++	dst->seq_posted = src->seq_posted;
++	dst->seq_failed_queing = src->seq_failed_queing;
++	dst->seq_completed = src->seq_completed;
++	dst->seq_restarted = src->seq_restarted;
++	dst->mu_seq_posted = src->mu_seq_posted;
++	dst->mpdus_sw_flush = src->mpdus_sw_flush;
++	dst->mpdus_hw_filter = src->mpdus_hw_filter;
++	dst->mpdus_truncated = src->mpdus_truncated;;
++	dst->mpdus_ack_failed = src->mpdus_ack_failed;
++	dst->mpdus_expired = src->mpdus_expired;
++	dst->mc_drop = src->mc_drop;
+ }
+ 
+ static void ath11k_wmi_pull_pdev_stats_rx(const struct wmi_pdev_stats_rx *src,
+@@ -6064,6 +6077,8 @@ static void ath11k_wmi_pull_pdev_stats_r
+ 	dst->phy_errs = src->phy_errs;
+ 	dst->phy_err_drop = src->phy_err_drop;
+ 	dst->mpdu_errs = src->mpdu_errs;
++	dst->pdev_rx_timeout = src->pdev_rx_timeout;
++	dst->rx_ovf_err = src->rx_ovf_err;
+ }
+ 
+ static void
+@@ -6301,6 +6316,8 @@ ath11k_wmi_fw_pdev_tx_stats_fill(const s
+ 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
+ 			 "Num underruns", pdev->underrun);
+ 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
++			 "Num HW Paused", pdev->hw_paused);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
+ 			 "PPDUs cleaned", pdev->tx_abort);
+ 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
+ 			 "MPDUs requed", pdev->mpdus_requed);
+@@ -6329,6 +6346,28 @@ ath11k_wmi_fw_pdev_tx_stats_fill(const s
+ 			 "PHY underrun", pdev->phy_underrun);
+ 	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
+ 			 "MPDU is more than txop limit", pdev->txop_ovf);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num sequences posted", pdev->seq_posted);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num seq failed queueing ", pdev->seq_failed_queing);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num sequences completed ", pdev->seq_completed);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num sequences restarted ", pdev->seq_restarted);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num of MU sequences posted ", pdev->mu_seq_posted);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num of MPDUS SW flushed ", pdev->mpdus_sw_flush);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num of MPDUS HW filtered ", pdev->mpdus_hw_filter);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num of MPDUS truncated ", pdev->mpdus_truncated);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num of MPDUS ACK failed ", pdev->mpdus_ack_failed);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num of MPDUS expired ", pdev->mpdus_expired);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10u\n",
++			 "Num of MC Drops ", pdev->mc_drop);
+ 	*length = len;
+ }
+ 
+@@ -6373,6 +6412,10 @@ ath11k_wmi_fw_pdev_rx_stats_fill(const s
+ 			 "PHY errors drops", pdev->phy_err_drop);
+ 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
+ 			 "MPDU errors (FCS, MIC, ENC)", pdev->mpdu_errs);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
++			 "Inactivity timeouts", pdev->pdev_rx_timeout);
++	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
++			 "Overflow errors", pdev->rx_ovf_err);
+ 	*length = len;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -4459,6 +4459,9 @@ struct wmi_pdev_stats_tx {
+ 	/* Num underruns */
+ 	s32 underrun;
+ 
++	/* Num hw paused */
++	u32 hw_paused;
++
+ 	/* Num PPDUs cleaned up in TX abort */
+ 	s32 tx_abort;
+ 
+@@ -4468,6 +4471,8 @@ struct wmi_pdev_stats_tx {
+ 	/* excessive retries */
+ 	u32 tx_ko;
+ 
++	u32 tx_xretry;
++
+ 	/* data hw rate code */
+ 	u32 data_rc;
+ 
+@@ -4497,6 +4502,43 @@ struct wmi_pdev_stats_tx {
+ 
+ 	/* MPDU is more than txop limit */
+ 	u32 txop_ovf;
++
++	/* Num sequences posted */
++	u32 seq_posted;
++
++	/* Num sequences failed in queueing */
++	u32 seq_failed_queing;
++
++	/* Num sequences completed */
++	u32 seq_completed;
++
++	/* Num sequences restarted */
++	u32 seq_restarted;
++
++	/* Num of MU sequences posted */
++	u32 mu_seq_posted;
++
++	/* Num MPDUs flushed by SW, HWPAUSED, SW TXABORT
++	 * (Reset,channel change)
++	 */
++	s32 mpdus_sw_flush;
++
++	/* Num MPDUs filtered by HW, all filter condition (TTL expired) */
++	s32 mpdus_hw_filter;
++
++	/* Num MPDUs truncated by PDG (TXOP, TBTT,
++	 * PPDU_duration based on rate, dyn_bw)
++	 */
++	s32 mpdus_truncated;
++
++	/* Num MPDUs that was tried but didn't receive ACK or BA */
++	s32 mpdus_ack_failed;
++
++	/* Num MPDUs that was dropped du to expiry. */
++	s32 mpdus_expired;
++
++	/* Num mc drops */
++	u32 mc_drop;
+ } __packed;
+ 
+ struct wmi_pdev_stats_rx {
+@@ -4531,6 +4573,12 @@ struct wmi_pdev_stats_rx {
+ 
+ 	/* Number of mpdu errors - FCS, MIC, ENC etc. */
+ 	s32 mpdu_errs;
++
++	/* Inactivity timeouts */
++	u32 pdev_rx_timeout;
++
++	/* Num overflow errors */
++	s32 rx_ovf_err;
+ } __packed;
+ 
+ struct wmi_pdev_stats {

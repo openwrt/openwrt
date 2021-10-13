@@ -1,0 +1,153 @@
+#CPU=mips
+
+OS=linux
+
+ifeq ($(KVER), 3.4.0)
+OS_VER=3_4
+endif
+
+ifeq ($(KVER), 3.3.8)
+OS_VER=3_2
+endif
+
+ifeq ($(ARCH), arm)
+BOARD=ipq806x
+endif
+
+ifeq ($(ARCH), mips)
+BOARD=ar71xx
+endif
+
+ifeq ($(BOARD), ar71xx)
+BOARD_NAME=BOARD_AR71XX
+endif
+
+ifeq ($(BOARD), ipq806x)
+BOARD_NAME=BOARD_IPQ806X
+endif
+
+OS_SUB=31
+CHIP_TYPE=ISISC
+
+ifndef OS_VER
+OS_VER=2_6
+endif
+# OS subversion, 2.6.31 for WASP (db120)
+#OS_SUB=31
+# GCC version, 3 or 4
+#GCC_VER=4
+
+#For MIPS Linux2.6
+  #pb45
+  #TOOL_PATH=/disk/pb45/sw/build/gcc-3.4.4-2.16.1/build_mips_nofpu/bin
+  #SYS_PATH=/disk/pb45/sw/linux/kernels/mips-linux-2.6.15
+	
+  #ap81
+# compatiable with OpenWRT
+ifndef  TOOL_PATH 
+TOOL_PATH=/disk/ap81fus/sw/build/gcc-3.4.4-2.16.1/build_mips/bin
+endif
+ifndef SYS_PATH 
+SYS_PATH=/disk/ap81fus/sw/linux/kernels/mips-linux-2.6.15
+endif
+ifeq ($(ARCH), mips)
+  CPU_CFLAG=-Wstrict-prototypes -fomit-frame-pointer -G 0 -mno-abicalls -fno-strict-aliasing -O2 -fno-pic -pipe -mabi=32 -march=mips32r2 -DMODULE -mlong-calls -DEXPORT_SYMTAB -D$(BOARD_NAME)
+endif
+
+
+#db120
+ifeq ($(BOARD_TYPE),db12x)
+OS_SUB=31
+GCC_VER=4
+TOOL_PATH=$(TOPDIR)/build/gcc-4.3.3/build_mips/staging_dir/usr/bin
+SYS_PATH=$(TOPDIR)/linux/kernels/mips-linux-2.6.31
+CPU_CFLAG=-Wstrict-prototypes -fomit-frame-pointer -G 0 -mno-abicalls -fno-strict-aliasing -O2 -fno-pic -pipe -mabi=32 -march=mips32r2 -DMODULE -mlong-calls -DEXPORT_SYMTAB
+endif
+
+ifeq ($(ARCH), arm)
+  CPU_CFLAG=-D__LINUX_ARM_ARCH__=7  -DMODULE -fno-common -DCONFIG_MMU -D$(BOARD_NAME)
+endif
+
+ifeq ($(BOARD_TYPE), ap136)
+OS_SUB=31
+GCC_VER=4
+TOOL_PATH=$(TOPDIR)/build/gcc-4.3.3/build_mips/staging_dir/usr/bin
+SYS_PATH=$(TOPDIR)/linux/kernels/mips-linux-2.6.31
+CPU_CFLAG=-Wstrict-prototypes -fomit-frame-pointer -G 0 -mno-abicalls -fno-strict-aliasing -O2 -fno-pic -pipe -mabi=32 -march=mips32r2 -DMODULE -mlong-calls -DEXPORT_SYMTAB
+endif
+
+#For MIPS Linux2.4
+  #TOOL_PATH=/home/perforce/kernel2.4/5.3.1.20/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin
+  #SYS_PATH=/home/perforce/kernel2.4/5.3.1.20/src/kernels/mips-linux-2.4.25
+
+  #TOOLPREFIX=$(CPU)-$(OS)-
+  #CPU_CFLAG=-Wstrict-prototypes -Wundef -fomit-frame-pointer -G 0 -mno-abicalls -Wno-trigraphs -fno-strict-aliasing -fno-common -ffreestanding -O2 -fno-pic -pipe -mabi=32 -march=r4600 -Wa,-32 -Wa,-march=r4600 -Wa,--trap -DMODULE -mlong-calls -DEXPORT_SYMTAB
+
+
+KERNEL_MODE=TRUE
+#compatiable with OpenWRT
+ifeq ($(SWITCH_SSDK_MODE),user)
+KERNEL_MODE=FLASE
+endif
+
+#FAL=FALSE or not define FAL, FAL will not be included in SSDK
+FAL=TRUE
+
+#CHIP_TYPE can be defined as ATHENA, GARUDA, SHIVA, HORUS, ISIS, ISISC and ALL_CHIP(ALL_CHIP means GARUDA, SHIVA, HORUS and ISIS)
+CHIP_TYPE=ISISC
+
+#UK_IF=FALSE or not define UK_IF, UK_IF will not be included in SSDK
+#when UK_IF=TRUE one of UK_NETLINK,UK_IOCTL must be defined as TRUE
+UK_IF=TRUE
+#UK_IOCTL=TRUE define user-kernel space communication based on ioctl
+UK_IOCTL=TRUE
+UK_MINOR_DEV=254
+
+#API_LOCK=FALSE or not define API_LOCK, API_LOCK will not be included in SSDK
+API_LOCK=FALSE
+
+#REG_ACCESS_SPEEDUP=FALSE or not define REG_ACCESS_SPEEDUP, REG_ACCESS_SPEEDUP will not be enabled, now only ISIS supports
+REG_ACCESS_SPEEDUP=FALSE
+
+#ALL supported features:
+#ACL FDB IGMP LEAKY LED MIB MIRROR MISC PORTCONTROL PORTVLAN QOS RATE STP VLAN
+#IN_X=FALSE or not define IN_X, X will not be included in SSDK
+IN_ACL=TRUE
+IN_FDB=TRUE
+IN_IGMP=TRUE
+IN_LEAKY=TRUE
+IN_LED=TRUE
+IN_MIB=TRUE
+IN_MIRROR=TRUE
+IN_MISC=TRUE
+IN_PORTCONTROL=TRUE
+IN_PORTVLAN=TRUE
+IN_QOS=TRUE
+IN_RATE=TRUE
+IN_STP=TRUE
+IN_VLAN=TRUE
+IN_REDUCED_ACL=FALSE
+IN_COSMAP=TRUE
+IN_IP=TRUE
+IN_NAT=TRUE
+IN_TRUNK=TRUE
+IN_QM=TRUE
+IN_FLOW=TRUE
+IN_SEC=TRUE
+ifeq ($(HNAT_FEATURE), enable)
+IN_NAT_HELPER=TRUE
+else
+IN_NAT_HELPER=FALSE
+endif
+IN_INTERFACECONTROL=TRUE
+IN_MACBLOCK=FALSE
+IN_VSI=TRUE
+IN_CTRLPKT=TRUE
+IN_SERVCODE=TRUE
+IN_RSS_HASH=TRUE
+IN_PPPOE=TRUE
+IN_BM=TRUE
+IN_SHAPER=TRUE
+IN_POLICER=TRUE
+IN_PTP=TRUE
+IN_SFP=TRUE

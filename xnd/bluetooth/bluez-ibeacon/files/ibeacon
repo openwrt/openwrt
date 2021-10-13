@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+
+START=80
+
+USE_PROCD=1
+PROG=/usr/sbin/ibeacon
+
+service_triggers() {
+	procd_add_reload_trigger btle
+}
+
+start_service() {
+	config_load btle
+	config_get enable ibeacon enable 0
+	config_get uuid ibeacon uuid 0
+	config_get major ibeacon major 0
+	config_get minor ibeacon minor 0
+
+	[ "$enable" -eq 1 ] || return
+
+	procd_open_instance
+	procd_set_param command "$PROG" 200 "${uuid}" "${major}" "${minor}" -29
+	procd_set_param respawn
+	procd_close_instance
+}

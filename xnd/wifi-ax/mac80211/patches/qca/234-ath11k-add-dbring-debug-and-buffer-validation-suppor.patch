@@ -1,0 +1,567 @@
+From 475f5c31d6c28a5fbb53aa9779af61214613cde9 Mon Sep 17 00:00:00 2001
+From: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+Date: Wed, 23 Dec 2020 10:53:49 +0530
+Subject: [PATCH] ath11k: add dbring debug and buffer validation support
+
+Target copy spectral report through dbring to host for further
+processing. This mechanism involves ring and buffer management
+in the Host, FW, and uCode, where improper tail pointer update
+issues are seen. This dbring debug support help to debug such
+issues by tracking head and tail pointer movement along with
+the timestamp at which each buffer is received and replenished.
+
+Currently there is no validation on the spectral report over the
+db ring buffers from the hardware. Improper/incomplete DMA by
+the target can result in invalid data received by host.
+Due to this we may populate incorrect data to user space.
+
+This buffer validation support fix this issues by filling some
+magic value in the buffer during buffer replenish and check for
+the magic value in the buffer received by the target.
+If host detect magic value in the received buffer it will
+drop the buffer.
+
+Signed-off-by: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h     |   1 +
+ drivers/net/wireless/ath/ath11k/dbring.c   |  54 ++++++-
+ drivers/net/wireless/ath/ath11k/dbring.h   |   4 +-
+ drivers/net/wireless/ath/ath11k/debugfs.c    | 218 +++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/debugfs.h    |  40 +++++-
+ drivers/net/wireless/ath/ath11k/spectral.c |  29 ++--
+ 6 files changed, 331 insertions(+), 15 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -512,6 +512,7 @@ struct ath11k_debug {
+ 	struct list_head wmi_list;
+ 	struct completion wmi_ctrl_path_stats_rcvd;
+ 	u32 wmi_ctrl_path_stats_tagid;
++	struct ath11k_db_module_debug *module_debug[WMI_DIRECT_BUF_MAX];
+ };
+ 
+ struct ath11k_per_peer_tx_stats {
+--- a/drivers/net/wireless/ath/ath11k/dbring.c
++++ b/drivers/net/wireless/ath/ath11k/dbring.c
+@@ -6,9 +6,45 @@
+ #include "core.h"
+ #include "debug.h"
+ 
++#define ATH11K_DB_MAGIC_VALUE 0xdeadbeaf
++
++int ath11k_dbring_validate_buffer(struct ath11k *ar, void *buffer, u32 size)
++{
++	u32 *temp = (u32 *)buffer;
++	int idx;
++
++	size = size >> 2;
++
++	for (idx = 0; idx < size; idx++) {
++		if (*temp == ATH11K_DB_MAGIC_VALUE) {
++			ath11k_warn(ar->ab, "found magic value in the buffer\n");
++			return -EINVAL;
++		}
++
++		temp++;
++	}
++
++	return 0;
++}
++
++static void ath11k_dbring_fill_magic_value(struct ath11k *ar,
++					   void *buffer, u32 size)
++{
++	u32 *temp = (u32 *)buffer;
++	int idx;
++
++	size = size >> 2;
++
++	for (idx = 0; idx < size; idx++) {
++		*temp = ATH11K_DB_MAGIC_VALUE;
++		temp++;
++	}
++}
++
+ static int ath11k_dbring_bufs_replenish(struct ath11k *ar,
+ 					struct ath11k_dbring *ring,
+ 					struct ath11k_dbring_element *buff,
++					enum wmi_direct_buffer_module id,
+ 					gfp_t gfp)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+@@ -27,6 +63,7 @@ static int ath11k_dbring_bufs_replenish(
+ 
+ 	ptr_unaligned = buff->payload;
+ 	ptr_aligned = PTR_ALIGN(ptr_unaligned, ring->buf_align);
++	ath11k_dbring_fill_magic_value(ar, ptr_aligned, ring->buf_sz);
+ 	paddr = dma_map_single(ab->dev, ptr_aligned, ring->buf_sz,
+ 			       DMA_FROM_DEVICE);
+ 
+@@ -55,6 +92,7 @@ static int ath11k_dbring_bufs_replenish(
+ 
+ 	ath11k_hal_rx_buf_addr_info_set(desc, paddr, cookie, 0);
+ 
++	ath11k_dbring_add_debug_entry(ar, id, DBR_RING_DEBUG_EVENT_REPLENISH, srng);
+ 	ath11k_hal_srng_access_end(ab, srng);
+ 
+ 	return 0;
+@@ -73,6 +111,7 @@ err:
+ 
+ static int ath11k_dbring_fill_bufs(struct ath11k *ar,
+ 				   struct ath11k_dbring *ring,
++				   enum wmi_direct_buffer_module id,
+ 				   gfp_t gfp)
+ {
+ 	struct ath11k_dbring_element *buff;
+@@ -96,7 +135,7 @@ static int ath11k_dbring_fill_bufs(struc
+ 		if (!buff)
+ 			break;
+ 
+-		ret = ath11k_dbring_bufs_replenish(ar, ring, buff, gfp);
++		ret = ath11k_dbring_bufs_replenish(ar, ring, buff, id, gfp);
+ 		if (ret) {
+ 			ath11k_warn(ar->ab, "failed to replenish db ring num_remain %d req_ent %d\n",
+ 				    num_remain, req_entries);
+@@ -161,7 +200,8 @@ int ath11k_dbring_set_cfg(struct ath11k
+ 
+ int ath11k_dbring_buf_setup(struct ath11k *ar,
+ 			    struct ath11k_dbring *ring,
+-			    struct ath11k_dbring_cap *db_cap)
++			    struct ath11k_dbring_cap *db_cap,
++			    enum wmi_direct_buffer_module id)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct hal_srng *srng;
+@@ -177,7 +217,7 @@ int ath11k_dbring_buf_setup(struct ath11
+ 	ring->hp_addr = ath11k_hal_srng_get_hp_addr(ar->ab, srng);
+ 	ring->tp_addr = ath11k_hal_srng_get_tp_addr(ar->ab, srng);
+ 
+-	ret = ath11k_dbring_fill_bufs(ar, ring, GFP_KERNEL);
++	ret = ath11k_dbring_fill_bufs(ar, ring, id, GFP_KERNEL);
+ 
+ 	return ret;
+ }
+@@ -237,7 +277,7 @@ int ath11k_dbring_buffer_release_event(s
+ 	struct ath11k_buffer_addr desc;
+ 	u8 *vaddr_unalign;
+ 	u32 num_entry, num_buff_reaped;
+-	u8 pdev_idx, rbm;
++	u8 pdev_idx, rbm, module_id;
+ 	u32 cookie;
+ 	int buf_id;
+ 	int size;
+@@ -245,6 +285,7 @@ int ath11k_dbring_buffer_release_event(s
+ 	int ret = 0;
+ 
+ 	pdev_idx = ev->fixed.pdev_id;
++	module_id = ev->fixed.module_id;
+ 
+ 	if (pdev_idx >= ab->num_radios) {
+ 		ath11k_warn(ab, "Invalid pdev id %d\n", pdev_idx);
+@@ -313,6 +354,9 @@ int ath11k_dbring_buffer_release_event(s
+ 		dma_unmap_single(ab->dev, buff->paddr, ring->buf_sz,
+ 				 DMA_FROM_DEVICE);
+ 
++		ath11k_dbring_add_debug_entry(ar, module_id,
++					      DBR_RING_DEBUG_EVENT_RX, srng);
++
+ 		if (ring->handler) {
+ 			vaddr_unalign = buff->payload;
+ 			handler_data.data = PTR_ALIGN(vaddr_unalign,
+@@ -323,7 +367,7 @@ int ath11k_dbring_buffer_release_event(s
+ 		}
+ 
+ 		memset(buff, 0, size);
+-		ath11k_dbring_bufs_replenish(ar, ring, buff, GFP_ATOMIC);
++		ath11k_dbring_bufs_replenish(ar, ring, buff, module_id, GFP_ATOMIC);
+ 	}
+ 
+ 	spin_unlock_bh(&srng->lock);
+--- a/drivers/net/wireless/ath/ath11k/dbring.h
++++ b/drivers/net/wireless/ath/ath11k/dbring.h
+@@ -65,7 +65,8 @@ int ath11k_dbring_wmi_cfg_setup(struct a
+ 				enum wmi_direct_buffer_module id);
+ int ath11k_dbring_buf_setup(struct ath11k *ar,
+ 			    struct ath11k_dbring *ring,
+-			    struct ath11k_dbring_cap *db_cap);
++			    struct ath11k_dbring_cap *db_cap,
++			    enum wmi_direct_buffer_module id);
+ int ath11k_dbring_srng_setup(struct ath11k *ar, struct ath11k_dbring *ring,
+ 			     int ring_num, int num_entries);
+ int ath11k_dbring_buffer_release_event(struct ath11k_base *ab,
+@@ -76,4 +77,5 @@ int ath11k_dbring_get_cap(struct ath11k_
+ 			  struct ath11k_dbring_cap *db_cap);
+ void ath11k_dbring_srng_cleanup(struct ath11k *ar, struct ath11k_dbring *ring);
+ void ath11k_dbring_buf_cleanup(struct ath11k *ar, struct ath11k_dbring *ring);
++int ath11k_dbring_validate_buffer(struct ath11k *ar, void *data, u32 size);
+ #endif /* ATH11K_DBRING_H */
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -3281,6 +3281,203 @@ static const struct file_operations fops
+ 	.llseek = default_llseek,
+ };
+ 
++void ath11k_dbring_add_debug_entry(struct ath11k *ar,
++				   enum wmi_direct_buffer_module id,
++				   enum ath11k_db_ring_dbg_event event,
++				   struct hal_srng *srng)
++{
++	struct ath11k_db_module_debug *db_module_debug;
++	struct ath11k_db_ring_debug *db_ring_debug;
++	struct ath11k_db_ring_debug_entry *entry;
++
++	if (id > WMI_DIRECT_BUF_MAX || event > DBR_RING_DEBUG_EVENT_MAX)
++		return;
++
++	db_module_debug = ar->debug.module_debug[id];
++	if (!db_module_debug)
++		return;
++
++	db_ring_debug = &db_module_debug->db_ring_debug;
++
++	if (!db_module_debug->db_ring_debug_enabled)
++		return;
++
++	if (db_ring_debug->entries) {
++		entry = &db_ring_debug->entries[db_ring_debug->db_ring_debug_idx];
++		entry->hp = srng->u.src_ring.hp;
++		entry->tp = *srng->u.src_ring.tp_addr;
++		entry->timestamp = jiffies;
++		entry->event = event;
++
++		db_ring_debug->db_ring_debug_idx++;
++		if (db_ring_debug->db_ring_debug_idx ==
++		    db_ring_debug->num_ring_debug_entries)
++			db_ring_debug->db_ring_debug_idx = 0;
++	}
++}
++
++static ssize_t ath11k_dbr_dump_debug_entries(struct file *file,
++					     char __user *user_buf,
++					     size_t count, loff_t *ppos)
++{
++	struct ath11k_db_ring_debug *db_ring_debug = file->private_data;
++	static const char * const event_id_to_string[] = {"empty", "Rx", "Replenish"};
++	int size = 25 * 1024;
++	char *buf;
++	int i, ret;
++	int len = 0;
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	len += scnprintf(buf + len, size - len, "-------------------------------------\n");
++	len += scnprintf(buf + len, size - len, "| idx | hp | tp | timestamp | event |\n");
++	len += scnprintf(buf + len, size - len, "-------------------------------------\n");
++
++	for (i = 0; i < db_ring_debug->num_ring_debug_entries; i++) {
++		len += scnprintf(buf + len, size - len,
++				 "|%4u|%8u|%8u|%11llu|%8s|\n", i,
++				 db_ring_debug->entries[i].hp,
++				 db_ring_debug->entries[i].tp,
++				 db_ring_debug->entries[i].timestamp,
++				 event_id_to_string[db_ring_debug->entries[i].event]);
++	}
++
++	ret = simple_read_from_buffer(user_buf, count, ppos, buf, len);
++	kfree(buf);
++
++	return ret;
++}
++
++static const struct file_operations fops_dump_dbr_debug_entries = {
++	.read = ath11k_dbr_dump_debug_entries,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static void ath11k_db_module_debugfs_destroy(struct ath11k *ar, int module_id)
++{
++	struct ath11k_db_module_debug *module_debug;
++	struct ath11k_db_ring_debug *db_ring_debug;
++
++	module_debug = ar->debug.module_debug[module_id];
++	db_ring_debug = &module_debug->db_ring_debug;
++
++	if (!module_debug || !module_debug->module_debugfs)
++		return;
++
++	debugfs_remove_recursive(module_debug->module_debugfs);
++	module_debug->module_debugfs = NULL;
++	module_debug->db_ring_debug_enabled = false;
++	kfree(db_ring_debug->entries);
++	db_ring_debug->entries = NULL;
++	kfree(module_debug);
++	ar->debug.module_debug[module_id] = NULL;
++}
++
++static int ath11k_db_module_debugfs_init(struct ath11k *ar, int module_id)
++{
++	struct ath11k_db_module_debug *module_debug;
++	struct ath11k_db_ring_debug *db_ring_debug;
++	static const char * const module_id_to_str[] = {"spectral", "CFR"};
++	u32 size;
++
++	if (!ar->debug.module_debug[module_id])
++		ar->debug.module_debug[module_id] = kzalloc(sizeof(*module_debug),
++							    GFP_KERNEL);
++
++	module_debug = ar->debug.module_debug[module_id];
++	db_ring_debug = &module_debug->db_ring_debug;
++
++	if (module_debug->module_debugfs)
++		return 0;
++
++	module_debug->module_debugfs = debugfs_create_dir(module_id_to_str[module_id],
++			ar->debug.debugfs_pdev);
++	if (IS_ERR_OR_NULL(module_debug->module_debugfs)) {
++		if (IS_ERR(module_debug->module_debugfs))
++			return PTR_ERR(module_debug->module_debugfs);
++		return -ENOMEM;
++	}
++
++	size = ATH11K_DBR_DEUBG_ENTRIES_MAX *
++		sizeof(struct ath11k_db_ring_debug_entry);
++
++	module_debug->db_ring_debug_enabled = true;
++	db_ring_debug->num_ring_debug_entries = ATH11K_DBR_DEUBG_ENTRIES_MAX;
++	db_ring_debug->db_ring_debug_idx = 0;
++	db_ring_debug->entries = kzalloc(size, GFP_KERNEL);
++	if (!db_ring_debug->entries)
++		return -ENOMEM;
++
++	debugfs_create_file("dump_db_ring_debug", 0444, module_debug->module_debugfs,
++			    db_ring_debug, &fops_dump_dbr_debug_entries);
++
++	return 0;
++}
++
++static ssize_t ath11k_write_enable_dbr_debug(struct file *file,
++					     const char __user *ubuf,
++					     size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	char buf[32] = {0};
++	u32 module_id, enable;
++	int ret;
++	static const char usage[] = "usage: echo <module_id> <val> "
++		"module_id:0-Spectral 1-CFR val:0-disable 1-enable";
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (ar->state != ATH11K_STATE_ON) {
++		ret = -ENETDOWN;
++		goto out;
++	}
++
++	ret = simple_write_to_buffer(buf, sizeof(buf) - 1, ppos, ubuf, count);
++	if (ret < 0)
++		goto out;
++
++	buf[ret] = '\0';
++	ret = sscanf(buf, "%u %u", &module_id, &enable);
++	if (ret != 2) {
++		ath11k_warn(ar->ab, "%s\n", usage);
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (module_id > 1 || enable > 1) {
++		ath11k_warn(ar->ab, "%s\n", usage);
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (enable) {
++		ret = ath11k_db_module_debugfs_init(ar, module_id);
++		if (ret) {
++			ath11k_warn(ar->ab, "db ring module debgfs init failed: %d\n",
++				    ret);
++			goto out;
++		}
++	} else {
++		ath11k_db_module_debugfs_destroy(ar, module_id);
++	}
++
++	ret = count;
++out:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static const struct file_operations fops_dbr_debug = {
++	.write = ath11k_write_enable_dbr_debug,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
+ int ath11k_debugfs_register(struct ath11k *ar)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+@@ -3368,11 +3565,32 @@ int ath11k_debugfs_register(struct ath11
+ 				    &fops_athdiag);
+ 	}
+ 
++	debugfs_create_file("enable_dbr_debug", 0200, ar->debug.debugfs_pdev,
++			    ar, &fops_dbr_debug);
++
+ 	return 0;
+ }
+ 
+ void ath11k_debugfs_unregister(struct ath11k *ar)
+ {
++	struct ath11k_db_module_debug *module_debug;
++	struct ath11k_db_ring_debug *db_ring_debug;
++	int i;
++
++	for (i = 0; i < WMI_DIRECT_BUF_MAX; i++) {
++		module_debug = ar->debug.module_debug[i];
++		if (!module_debug)
++			continue;
++
++		db_ring_debug = &module_debug->db_ring_debug;
++		module_debug->db_ring_debug_enabled = false;
++		kfree(db_ring_debug->entries);
++		db_ring_debug->entries = NULL;
++		debugfs_remove_recursive(module_debug->module_debugfs);
++		kfree(module_debug);
++		ar->debug.module_debug[i] = NULL;
++	}
++
+ 	ath11k_deinit_pktlog(ar);
+ 	debugfs_remove_recursive(ar->debug.debugfs_pdev);
+ 	ar->debug.debugfs_pdev = NULL;
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -92,6 +92,34 @@ enum ath11k_debug_tpc_stats_ctl_mode {
+ 	ATH11K_TPC_STATS_CTL_MODE_BW_160,
+ };
+ 
++#define ATH11K_DBR_DEUBG_ENTRIES_MAX 512
++
++enum ath11k_db_ring_dbg_event {
++	DBR_RING_DEBUG_EVENT_INVALID,
++	DBR_RING_DEBUG_EVENT_RX,
++	DBR_RING_DEBUG_EVENT_REPLENISH,
++	DBR_RING_DEBUG_EVENT_MAX,
++};
++
++struct ath11k_db_ring_debug_entry {
++	u32 hp;
++	u32 tp;
++	u64 timestamp;
++	enum ath11k_db_ring_dbg_event event;
++};
++
++struct ath11k_db_ring_debug {
++	struct ath11k_db_ring_debug_entry *entries;
++	u32 db_ring_debug_idx;
++	u32 num_ring_debug_entries;
++};
++
++struct ath11k_db_module_debug {
++	struct ath11k_db_ring_debug db_ring_debug;
++	struct dentry *module_debugfs;
++	bool db_ring_debug_enabled;
++};
++
+ struct debug_htt_stats_req {
+ 	bool done;
+ 	u8 pdev_id;
+@@ -197,6 +225,10 @@ void ath11k_debugfs_fw_stats_process(str
+ void ath11k_debugfs_fw_stats_init(struct ath11k *ar);
+ ssize_t ath11k_debugfs_dump_soc_ring_bp_stats(struct ath11k_base *ab,
+ 					    char *buf, int size);
++void ath11k_dbring_add_debug_entry(struct ath11k *ar,
++				   enum wmi_direct_buffer_module id,
++				   enum ath11k_db_ring_dbg_event event,
++				   struct hal_srng *srng);
+ 
+ static inline bool ath11k_debugfs_is_pktlog_lite_mode_enabled(struct ath11k *ar)
+ {
+@@ -320,7 +352,13 @@ static inline int ath11k_debugfs_rx_filt
+ {
+ 	return 0;
+ }
+-
++static inline void
++ath11k_dbring_add_debug_entry(struct ath11k *ar,
++			      enum wmi_direct_buffer_module id,
++			      enum ath11k_db_ring_dbg_event event,
++			      struct hal_srng *srng)
++{
++}
+ #endif /* CPTCFG_MAC80211_DEBUGFS*/
+ 
+ #ifdef CPTCFG_ATH11K_PKTLOG
+--- a/drivers/net/wireless/ath/ath11k/spectral.c
++++ b/drivers/net/wireless/ath/ath11k/spectral.c
+@@ -581,6 +581,7 @@ int ath11k_spectral_process_fft(struct a
+ 	u16 length, freq;
+ 	u8 chan_width_mhz, bin_sz;
+ 	int ret;
++	u32 check_length;
+ 
+ 	lockdep_assert_held(&ar->spectral.lock);
+ 
+@@ -615,6 +616,11 @@ int ath11k_spectral_process_fft(struct a
+ 		return -EINVAL;
+ 	}
+ 
++	check_length = sizeof(*fft_report) + (num_bins * ab->hw_params.spectral_fft_sz);
++	ret = ath11k_dbring_validate_buffer(ar, data, check_length);
++	if (ret)
++		return ret;
++
+ 	ret = ath11k_spectral_pull_search(ar, data, &search);
+ 	if (ret) {
+ 		ath11k_warn(ab, "failed to pull search report %d\n", ret);
+@@ -731,15 +737,18 @@ static int ath11k_spectral_process_data(
+ 
+ 		tag = FIELD_GET(SPECTRAL_TLV_HDR_TAG,
+ 				__le32_to_cpu(tlv->header));
+-		switch (tag) {
+-		case ATH11K_SPECTRAL_TAG_SCAN_SUMMARY:
+-			/* HW bug in tlv length of summary report,
+-			 * HW report 3 DWORD size but the data payload
+-			 * is 4 DWORD size (16 bytes).
+-			 * Need to remove this workaround once HW bug fixed
+-			 */
++
++
++		/* HW bug in tlv length of summary report,
++		 * HW report 3 DWORD size but the data payload
++		 * is 4 DWORD size (16 bytes).
++		 * Need to remove this workaround once HW bug fixed
++		 */
++		if (tag == ATH11K_SPECTRAL_TAG_SCAN_SUMMARY)
+ 			tlv_len = sizeof(*summary) - sizeof(*tlv) +
+ 				  ab->hw_params.spectral_summary_pad_sz;
++		switch (tag) {
++		case ATH11K_SPECTRAL_TAG_SCAN_SUMMARY:
+ 
+ 			if (tlv_len < (sizeof(*summary) - sizeof(*tlv))) {
+ 				ath11k_warn(ab, "failed to parse spectral summary at bytes %d tlv_len:%d\n",
+@@ -748,6 +757,10 @@ static int ath11k_spectral_process_data(
+ 				goto err;
+ 			}
+ 
++			ret = ath11k_dbring_validate_buffer(ar, data, tlv_len);
++			if (ret)
++				goto err;
++
+ 			summary = (struct spectral_summary_fft_report *)tlv;
+ 			ath11k_spectral_pull_summary(ar, &param->meta,
+ 						     summary, &summ_rpt);
+@@ -804,7 +817,7 @@ static int ath11k_spectral_ring_alloc(st
+ 			      ATH11K_SPECTRAL_EVENT_TIMEOUT_MS,
+ 			      ath11k_spectral_process_data);
+ 
+-	ret = ath11k_dbring_buf_setup(ar, &sp->rx_ring, db_cap);
++	ret = ath11k_dbring_buf_setup(ar, &sp->rx_ring, db_cap, WMI_DIRECT_BUF_SPECTRAL);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to setup db ring buffer\n");
+ 		goto srng_cleanup;

@@ -1,0 +1,404 @@
+From f8217bb43d1157dbd83c1361dd44b66b81bd70b8 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Thu, 10 Dec 2020 14:12:33 -0800
+Subject: [PATCH 5/9] hostapd: Length checks for reduced neighbor report
+
+Maximum length of any RNR element can be 255 bytes.
+This commit adds code to check the length in all RNR related functions
+and creates a new element if required.
+
+Additionally, this change modifies some incorrect calculations used for
+for total lengths.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/ieee802_11.c          | 247 +++++++++++++++++++++++------------
+ src/common/ieee802_11_defs.h |   2 +
+ 2 files changed, 166 insertions(+), 83 deletions(-)
+
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index 488f02f58f63..953a444a5cd4 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -5985,22 +5985,48 @@ u8 * hostapd_eid_multiple_bssid(struct hostapd_data *hapd,
+ 
+ 
+ size_t hostapd_eid_rnr_iface_len(struct hostapd_data *hapd,
+-				 struct hostapd_data *reporting_hapd)
++				 struct hostapd_data *reporting_hapd,
++				 size_t *current_len)
+ {
+-	size_t len = 0;
+-	int i;
++	size_t total_len = 0;
++	int i, tbtt_count = 0, start = 0;
++
++	while (start < hapd->iface->num_bss) {
++		if (!(*current_len) ||
++		    ((*current_len + TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH) >
++		     255)) {
++			*current_len = RNR_HEADER_LENGTH;
++			total_len += RNR_HEADER_LENGTH;
++		}
+ 
+-	for (i = 0; i < hapd->iface->num_bss; i++) {
+-		if (hapd->iface->bss[i] == reporting_hapd ||
+-		    hapd->iface->bss[i]->conf->ignore_broadcast_ssid)
+-			continue;
+-		len += TBTT_INFO_LENGTH;
++		*current_len += TBTT_HEADER_LENGTH;
++		total_len += TBTT_HEADER_LENGTH;
++
++		for (i = start; i < hapd->iface->num_bss; i++) {
++			if (hapd->iface->bss[i] == reporting_hapd ||
++			    hapd->conf->ignore_broadcast_ssid)
++				continue;
++
++			if ((*current_len + TBTT_INFO_LENGTH > 255) ||
++			    (tbtt_count >= TBTT_INFO_COUNT_MAX))
++				break;
++
++			*current_len += TBTT_INFO_LENGTH;
++			total_len += TBTT_INFO_LENGTH;
++			tbtt_count++;
++		}
++		start = i;
+ 	}
+-	return len;
++
++	if (!tbtt_count)
++		total_len = 0;
++
++	return total_len;
+ }
+ 
+ 
+-static size_t hostapd_eid_rnr_colocation_len(struct hostapd_data *hapd)
++static size_t hostapd_eid_rnr_colocation_len(struct hostapd_data *hapd,
++					     size_t *current_len)
+ {
+ 	struct hostapd_iface *iface;
+ 	size_t len = 0;
+@@ -6015,8 +6041,35 @@ static size_t hostapd_eid_rnr_colocation_len(struct hostapd_data *hapd)
+ 		if (iface == hapd->iface || !iface->conf->he_co_locate)
+ 			continue;
+ 
+-		len += (TBTT_HEADER_LENGTH +
+-			hostapd_eid_rnr_iface_len(iface->bss[0], hapd));
++		len += hostapd_eid_rnr_iface_len(iface->bss[0], hapd,
++						 current_len);
++	}
++	return len;
++}
++
++
++static size_t hostapd_eid_neighbor_report_db_len(struct hostapd_data *hapd,
++						 size_t *current_len)
++{
++	struct hostapd_neighbor_entry *nr;
++	size_t len = 0;
++
++	dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry,
++			 list) {
++		if (!nr->nr || wpabuf_len(nr->nr) < 12)
++			continue;
++		if (nr->short_ssid == hapd->conf->ssid.short_ssid)
++			continue;
++
++		if (!*current_len ||
++		    ((*current_len + TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH) >
++		     255)) {
++			*current_len = RNR_HEADER_LENGTH;
++			len += RNR_HEADER_LENGTH;
++		}
++
++		*current_len += (TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH);
++		len += (TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH);
+ 	}
+ 	return len;
+ }
+@@ -6049,23 +6102,21 @@ static bool is_6ghz_colocated(struct hostapd_data *hapd)
+ 
+ size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type)
+ {
+-	size_t len = 0;
++	size_t len = 0, current_len = 0;
+ 
+ 	if (hapd->conf->rnr_beacon) {
+ 		if (hapd->iface->num_bss > 1)
+-			len += (TBTT_HEADER_LENGTH +
+-				hostapd_eid_rnr_iface_len(hapd, hapd));
++			len += hostapd_eid_rnr_iface_len(hapd, hapd,
++							 &current_len);
+ 
+ 		if ((type == WLAN_FC_STYPE_BEACON) &&
+-		    !dl_list_empty(&hapd->nr_db))
+-			len += dl_list_len(&hapd->nr_db) * (TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH);
++		     !dl_list_empty(&hapd->nr_db))
++			len += hostapd_eid_neighbor_report_db_len(hapd,
++								  &current_len);
+ 	}
+ 
+ 	if ((true == is_6ghz_colocated(hapd)) && type != WLAN_FC_STYPE_ACTION)
+-		len += hostapd_eid_rnr_colocation_len(hapd);
+-
+-	if (len)
+-		len += 2; /* Element ID and length */
++		len += hostapd_eid_rnr_colocation_len(hapd, &current_len);
+ 
+ 	return len;
+ }
+@@ -6073,72 +6124,95 @@ size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type)
+ 
+ static u8 *hostapd_eid_rnr_iface(struct hostapd_data *hapd,
+ 				 struct hostapd_data *reporting_hapd,
+-				 u8 *eid, int *count)
++				 u8 *eid, size_t *current_len)
+ {
+-	u8 *eid_start = eid, *tbtt_count_pos;
+-	u8 tbtt_count = 0;
+-	u8 op_class, channel;
+-	int i;
++	u8 *eid_start = eid, *tbtt_count_pos = NULL;
++	u8 tbtt_count = 0, op_class, channel, bss_param;
++	u8 *size_offset = (eid - *current_len) + 1;
++	int i, start = 0;
++	struct hostapd_data *bss;
++	struct hostapd_iface *iface = hapd->iface;
+ 
+-	if (!(hapd->iface->drv_flags & WPA_DRIVER_FLAGS_AP_CSA) ||
+-	    !hapd->iface->freq)
++	if (!(iface->drv_flags & WPA_DRIVER_FLAGS_AP_CSA) || !iface->freq)
+ 		return eid;
+ 
+-	if (ieee80211_freq_to_channel_ext(hapd->iface->freq,
++	if (ieee80211_freq_to_channel_ext(iface->freq,
+ 					  hapd->iconf->secondary_channel,
+ 					  hostapd_get_oper_chwidth(hapd->iconf),
+ 					  &op_class, &channel) ==
+ 	    NUM_HOSTAPD_MODES)
+ 		return eid;
+ 
+-	tbtt_count_pos = eid++;
+-	*eid++ = TBTT_INFO_LENGTH;
+-	*eid++ = op_class;
+-	*eid++ = hapd->iconf->channel;
+-	for (i = 0; i < hapd->iface->num_bss; i++) {
+-		u8 bss_param = 0;
++	while (start < iface->num_bss) {
++		if (!(*current_len) ||
++		    ((*current_len + TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH) >
++		     255)) {
++			eid_start = eid;
++			*eid++ = WLAN_EID_REDUCED_NEIGHBOR_REPORT;
++			size_offset = eid++;
++			*current_len = RNR_HEADER_LENGTH;
++			tbtt_count = 0;
++		}
+ 
+-		if (hapd->iface->bss[i] == reporting_hapd ||
+-		    hapd->iface->bss[i]->conf->ignore_broadcast_ssid)
+-			continue;
++		tbtt_count_pos = eid++;
++		*eid++ = TBTT_INFO_LENGTH;
++		*eid++ = op_class;
++		*eid++ = hapd->iconf->channel;
++		*current_len += TBTT_HEADER_LENGTH;
+ 
+-		*eid++ = TBTT_AP_OFFSET_UNKNOWN;
+-		os_memcpy(eid, hapd->iface->bss[i]->conf->bssid, ETH_ALEN);
+-		eid += 6;
+-		os_memcpy(eid, &hapd->iface->bss[i]->conf->ssid.short_ssid, 4);
+-		eid += 4;
+-		if (hapd->iface->bss[i]->conf->ssid.short_ssid ==
+-		    reporting_hapd->conf->ssid.short_ssid)
+-			bss_param |= TBTT_BSS_PARAM_SAME_SSID;
+-
+-		if (hapd->iconf->multiple_bssid && hapd->iface->num_bss > 1) {
+-			bss_param |= TBTT_BSS_PARAM_MULTIPLE_BSSID;
+-			if (hapd->iface->bss[i] == hostapd_get_primary_bss(hapd->iface->bss[i]))
+-				bss_param |= TBTT_BSS_PARAM_TRANSMITTED_BSSID;
+-		}
+-		if (hapd->iface->bss[i]->iconf->he_co_locate)
+-			bss_param |= TBTT_BSS_PARAM_CO_LOCATED;
++		for (i = start; i < iface->num_bss; i++) {
++			bss_param = 0;
++			bss = iface->bss[i];
+ 
+-		if (hapd->iface->bss[i]->conf->unsol_bcast_probe_resp_interval)
+-			bss_param |= TBTT_BSS_PARAM_20_TU_PROBE_RESP_ACTIVE;
++			if (bss == reporting_hapd ||
++			    hapd->conf->ignore_broadcast_ssid)
++				continue;
+ 
+-		*eid++ = bss_param;
+-		/* Setting 20 MHz PSD */
+-		*eid++ = TBTT_PSD_MAX_TXPOWER - 1;
+-		*count += 1;
+-		tbtt_count++;
++			if ((*current_len + TBTT_INFO_LENGTH > 255) ||
++			    (tbtt_count >= TBTT_INFO_COUNT_MAX))
++				break;
++
++			*eid++ = TBTT_AP_OFFSET_UNKNOWN;
++			os_memcpy(eid, bss->conf->bssid, ETH_ALEN);
++			eid += ETH_ALEN;
++			os_memcpy(eid, &bss->conf->ssid.short_ssid, 4);
++			eid += 4;
++			if (bss->conf->ssid.short_ssid ==
++			    reporting_hapd->conf->ssid.short_ssid)
++				bss_param |= TBTT_BSS_PARAM_SAME_SSID;
++
++			if (hapd->iconf->multiple_bssid &&
++			    (iface->num_bss > 1)) {
++				bss_param |= TBTT_BSS_PARAM_MULTIPLE_BSSID;
++				if (bss == hostapd_get_primary_bss(bss))
++					bss_param |= TBTT_BSS_PARAM_TRANSMITTED_BSSID;
++			}
++			if (bss->iconf->he_co_locate)
++				bss_param |= TBTT_BSS_PARAM_CO_LOCATED;
++
++			if (bss->conf->unsol_bcast_probe_resp_interval)
++				bss_param |= TBTT_BSS_PARAM_20_TU_PROBE_RESP_ACTIVE;
++
++			*eid++ = bss_param;
++			*eid++ = TBTT_PSD_MAX_TXPOWER - 1;
++			*current_len += TBTT_INFO_LENGTH;
++			tbtt_count += 1;
++		}
++
++		start = i;
++		*tbtt_count_pos = TBTT_INFO_COUNT(tbtt_count - 1);
++		*size_offset = (eid - size_offset) - 1;
+ 	}
+ 
+ 	if (tbtt_count == 0)
+ 		return eid_start;
+ 
+-	*tbtt_count_pos = TBTT_INFO_COUNT(tbtt_count - 1);
+ 	return eid;
+ }
+ 
+ 
+ static u8 * hostapd_eid_rnr_colocation(struct hostapd_data *hapd, u8 *eid,
+-				       int *count)
++				       size_t *current_len)
+ {
+ 	struct hostapd_iface *iface;
+ 	int i;
+@@ -6152,36 +6226,50 @@ static u8 * hostapd_eid_rnr_colocation(struct hostapd_data *hapd, u8 *eid,
+ 		if (iface == hapd->iface || !iface->conf->he_co_locate)
+ 			continue;
+ 
+-		eid = hostapd_eid_rnr_iface(iface->bss[0], hapd, eid, count);
++		eid = hostapd_eid_rnr_iface(iface->bss[0], hapd, eid,
++					    current_len);
+ 	}
+ 	return eid;
+ }
+ 
+ 
+ static u8 *hostapd_eid_neighbor_report_db(struct hostapd_data *hapd, u8 *eid,
+-					  int *count)
++					  size_t *current_len)
+ {
+ 	struct hostapd_neighbor_entry *nr;
++	u8 *size_offset = (eid - *current_len) + 1;
+ 
+ 	dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry,
+ 			 list) {
+ 		if (!nr->nr || wpabuf_len(nr->nr) < 12)
+ 			continue;
++
+ 		if (nr->short_ssid == hapd->conf->ssid.short_ssid)
+ 			continue;
++
++		if (!*current_len ||
++		    ((*current_len + TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH) >
++		     255)) {
++			*eid++ = WLAN_EID_REDUCED_NEIGHBOR_REPORT;
++			size_offset = eid++;
++			*current_len = RNR_HEADER_LENGTH;
++		}
++
+ 		*eid++ = 0;
+ 		*eid++ = TBTT_INFO_LENGTH;
+ 		*eid++ = wpabuf_head_u8(nr->nr)[10];
+ 		*eid++ = wpabuf_head_u8(nr->nr)[11];
++		*current_len += TBTT_HEADER_LENGTH;
+ 		*eid++ = TBTT_AP_OFFSET_UNKNOWN;
+ 		os_memcpy(eid, nr->bssid, ETH_ALEN);
+-		eid += 6;
++		eid += ETH_ALEN;
+ 		os_memcpy(eid, &nr->short_ssid, 4);
+ 		eid += 4;
+ 		*eid++ = nr->bss_parameters;
+ 		/* setting 20 MHZ PSD */
+ 		*eid++ = TBTT_PSD_MAX_TXPOWER - 1;
+-		*count += 1;
++		*current_len += TBTT_INFO_LENGTH;
++		*size_offset = (eid - size_offset) - 1;
+ 	}
+ 
+ 	return eid;
+@@ -6190,31 +6278,24 @@ static u8 *hostapd_eid_neighbor_report_db(struct hostapd_data *hapd, u8 *eid,
+ 
+ u8 * hostapd_eid_rnr(struct hostapd_data *hapd, u8 *eid, u32 type)
+ {
+-	size_t len = hostapd_eid_rnr_len(hapd, type);
+-	int i, count = 0;
+-	u8 *size_offset;
+-
+-	if (!len)
+-		return eid;
+-
+-	*eid++ = WLAN_EID_REDUCED_NEIGHBOR_REPORT;
+-	size_offset = eid++;
++	u8 *eid_start = eid;
++	size_t current_len = 0;
+ 
+ 	if (hapd->conf->rnr_beacon) {
+ 		if (hapd->iface->num_bss > 1)
+-			eid = hostapd_eid_rnr_iface(hapd, hapd,	eid, &count);
++			eid = hostapd_eid_rnr_iface(hapd, hapd, eid,
++						    &current_len);
+ 
+ 		if (type == WLAN_FC_STYPE_BEACON)
+-			eid = hostapd_eid_neighbor_report_db(hapd, eid, &count);
++			eid = hostapd_eid_neighbor_report_db(hapd, eid,
++							     &current_len);
+ 	}
+ 
+ 	if ((true == is_6ghz_colocated(hapd)) && type != WLAN_FC_STYPE_ACTION)
+-		eid = hostapd_eid_rnr_colocation(hapd, eid, &count);
++		eid = hostapd_eid_rnr_colocation(hapd, eid, &current_len);
+ 
+-	if (!count)
+-		eid -= 2;
+-	else
+-		*size_offset = (eid - size_offset) - 1;
++	if (eid == (eid_start + 2))
++		return eid_start;
+ 
+ 	return eid;
+ }
+diff --git a/src/common/ieee802_11_defs.h b/src/common/ieee802_11_defs.h
+index 52e2c868e723..ab7f36f39196 100644
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -2420,10 +2420,12 @@ enum mscs_description_subelem {
+ #define FILS_DISCOVERY_MAX_INTERVAL_6GHZ                  20
+ 
+ /* TBTT Information field defines */
++#define RNR_HEADER_LENGTH                       2
+ #define TBTT_HEADER_LENGTH			4
+ #define TBTT_INFO_LENGTH			13
+ #define TBTT_INFO_FILTERED_NEIGH_AP		BIT(2)
+ #define TBTT_INFO_COUNT(x)			(((x) & 0xf) << 4)
++#define TBTT_INFO_COUNT_MAX                     16
+ #define TBTT_AP_OFFSET_UNKNOWN			255
+ #define TBTT_BSS_PARAM_OCT_RECOMMENDED		BIT(0)
+ #define TBTT_BSS_PARAM_SAME_SSID		BIT(1)
+-- 
+2.25.0
+

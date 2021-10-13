@@ -1,0 +1,165 @@
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -42,6 +42,8 @@ enum ath11k_dbg_htt_ext_stats_type {
+ 	ATH11K_DBG_HTT_EXT_STATS_PDEV_UL_TRIG_STATS         =  26,
+ 	ATH11K_DBG_HTT_EXT_STATS_PDEV_UL_MUMIMO_TRIG_STATS  =  27,
+ 	ATH11K_DBG_HTT_EXT_STATS_FSE_RX                     =  28,
++	ATH11K_DBG_HTT_EXT_STATS_PEER_CTRL_PATH_TXRX_STATS  =  29,
++	ATH11K_DBG_HTT_EXT_STATS_PDEV_RX_RATE_EXT           =  30,
+ 
+ 	/* keep this last */
+ 	ATH11K_DBG_HTT_NUM_EXT_STATS,
+--- a/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c
+@@ -4156,6 +4156,79 @@ static inline void htt_print_rx_fse_stat
+ 	}
+ }
+ 
++static inline void htt_print_rx_pdev_rate_ext_stats_tlv(const void *tag_buf,
++							struct debug_htt_stats_req *stats_req)
++{
++	const struct htt_rx_pdev_rate_ext_stats_tlv *htt_stats_buf = tag_buf;
++	u8 *buf = stats_req->buf;
++	u32 len = stats_req->buf_len;
++	u32 buf_len = ATH11K_HTT_STATS_BUF_SIZE;
++	u8 j;
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "HTT_RX_PDEV_RATE_EXT_STATS_TLV:\n");
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "rssi_mcast = %d\n",
++			   htt_stats_buf->rssi_mcast);
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "rssi_mgmt = %d\n",
++			   htt_stats_buf->rssi_mgmt);
++
++	for (j = 0; j < HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS; j++) {
++		len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrssi_chain_ext[%u] = ",j);
++		ARRAY_TO_BUF(buf, len, htt_stats_buf->rssi_chain_ext[j],
++			     HTT_RX_PDEV_STATS_NUM_BW_EXT_COUNTERS);
++	}
++
++	for (j = 0; j < HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS; j++) {
++		len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_per_chain_rssi_ext_in_dbm[%u] = ",j);
++		CHAIN_ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_per_chain_rssi_ext_in_dbm[j],
++				   HTT_RX_PDEV_STATS_NUM_BW_EXT_COUNTERS);
++	}
++
++        len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_mcs_ext = ");
++        ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_mcs_ext,
++		     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT);
++
++        len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_stbc_ext = ");
++        ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_stbc_ext,
++		     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT);
++
++	for (j = 0; j < HTT_RX_PDEV_STATS_NUM_GI_COUNTERS; j++) {
++		len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_gi_ext[%u] = ",j);
++		ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_gi_ext[j],
++			     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT);
++	}
++
++        len += HTT_DBG_OUT(buf + len, buf_len - len, "\nul_ofdma_rx_mcs_ext = ");
++        ARRAY_TO_BUF(buf, len, htt_stats_buf->ul_ofdma_rx_mcs_ext,
++		     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT);
++
++	for (j = 0; j < HTT_RX_PDEV_STATS_NUM_GI_COUNTERS; j++) {
++		len += HTT_DBG_OUT(buf + len, buf_len - len, "\nul_ofdma_rx_gi_ext[%u] = ",j);
++		ARRAY_TO_BUF(buf, len, htt_stats_buf->ul_ofdma_rx_gi_ext[j],
++			     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT);
++	}
++
++        len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_11ax_su_txbf_mcs_ext = ");
++        ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_11ax_su_txbf_mcs_ext,
++		     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT);
++
++        len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_11ax_mu_txbf_mcs_ext = ");
++        ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_11ax_mu_txbf_mcs_ext,
++		     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT);
++
++        len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_11ax_dl_ofdma_mcs_ext = ");
++        ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_11ax_dl_ofdma_mcs_ext,
++		     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\n");
++
++	if (len >= buf_len)
++		buf[buf_len - 1] = 0;
++	else
++		buf[len] = 0;
++
++	stats_req->buf_len = len;
++}
++
+ static int ath11k_dbg_htt_ext_stats_parse(struct ath11k_base *ab,
+ 					  u16 tag, u16 len, const void *tag_buf,
+ 					  void *user_data)
+@@ -4531,6 +4604,9 @@ static int ath11k_dbg_htt_ext_stats_pars
+ 	case HTT_STATS_RX_FSE_STATS_TAG:
+ 		htt_print_rx_fse_stats_tlv(tag_buf, stats_req);
+ 		break;
++	case HTT_STATS_RX_PDEV_RATE_EXT_STATS_TAG:
++		htt_print_rx_pdev_rate_ext_stats_tlv(tag_buf, stats_req);
++		break;
+ 	default:
+ 		break;
+ 	}
+--- a/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.h
+@@ -111,6 +111,10 @@ enum htt_tlv_tag_t {
+ 	HTT_STATS_RX_PDEV_UL_MUMIMO_TRIG_STATS_TAG          = 97,
+ 	HTT_STATS_RX_FSE_STATS_TAG                          = 98,
+ 	HTT_STATS_PEER_SCHED_STATS_TAG                      = 99,
++	HTT_STATS_SCHED_TXQ_SUPERCYCLE_TRIGGER_TAG	    = 100,
++	HTT_STATS_PEER_CTRL_PATH_TXRX_STATS_TAG		    = 101,
++	HTT_STATS_PDEV_CTRL_PATH_TX_STATS_TAG		    = 102,
++	HTT_STATS_RX_PDEV_RATE_EXT_STATS_TAG		    = 103,
+ 
+ 	HTT_STATS_MAX_TAG,
+ };
+@@ -419,6 +423,12 @@ enum htt_stats_param_type {
+ #define HTT_TX_PEER_STATS_NUM_MCS_COUNTERS        12
+ #define HTT_TX_PEER_STATS_NUM_GI_COUNTERS          4
+ #define HTT_TX_PEER_STATS_NUM_DCM_COUNTERS         5
++/* HTT_TX_PEER_STATS_NUM_BW_COUNTERS:
++  * bw index 0: rssi_pri20_chain0
++  * bw index 1: rssi_ext20_chain0
++  * bw index 2: rssi_ext40_low20_chain0
++  * bw index 3: rssi_ext40_high20_chain0
++  */
+ #define HTT_TX_PEER_STATS_NUM_BW_COUNTERS          4
+ #define HTT_TX_PEER_STATS_NUM_SPATIAL_STREAMS      8
+ #define HTT_TX_PEER_STATS_NUM_PREAMBLE_TYPES       HTT_STATS_PREAM_COUNT
+@@ -1864,4 +1874,35 @@ struct htt_rx_fse_stats_tlv {
+ 	u32 fse_search_stat_search_pending_cnt[HTT_RX_MAX_PENDING_SEARCH_INDEX];
+ };
+ 
++/* == PDEV RX RATE EXT STATS == */
++#define HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT 14
++/* HTT_RX_PEER_STATS_NUM_BW_EXT_COUNTERS:
++ * bw index 4 (bw ext index 0): rssi_ext80_low20_chain0
++ * bw index 5 (bw ext index 1): rssi_ext80_low_high20_chain0
++ * bw index 6 (bw ext index 2): rssi_ext80_high_low20_chain0
++ * bw index 7 (bw ext index 3): rssi_ext80_high20_chain0
++ */
++#define HTT_RX_PEER_STATS_NUM_BW_EXT_COUNTERS 4
++#define HTT_RX_PDEV_STATS_NUM_BW_EXT_COUNTERS 4
++
++struct htt_rx_pdev_rate_ext_stats_tlv {
++	u8 rssi_chain_ext[HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS]
++		         [HTT_RX_PDEV_STATS_NUM_BW_EXT_COUNTERS];
++					/* units = dB above noise floor */
++	s8 rx_per_chain_rssi_ext_in_dbm[HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS]
++				       [HTT_RX_PDEV_STATS_NUM_BW_EXT_COUNTERS];
++	s32 rssi_mcast; /* rx mcast signal strength value in dBm unit */
++	s32 rssi_mgmt; /* rx mgmt packet signal strength value in dBm unit */
++	u32 rx_mcs_ext[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT];
++	u32 rx_stbc_ext[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT];
++	u32 rx_gi_ext[HTT_RX_PDEV_STATS_NUM_GI_COUNTERS]
++		     [HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT];
++	u32 ul_ofdma_rx_mcs_ext[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT];
++	u32 ul_ofdma_rx_gi_ext[HTT_TX_PDEV_STATS_NUM_GI_COUNTERS]
++			      [HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT];
++	u32 rx_11ax_su_txbf_mcs_ext[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT];
++	u32 rx_11ax_mu_txbf_mcs_ext[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT];
++	u32 rx_11ax_dl_ofdma_mcs_ext[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS_EXT];
++};
++
+ #endif

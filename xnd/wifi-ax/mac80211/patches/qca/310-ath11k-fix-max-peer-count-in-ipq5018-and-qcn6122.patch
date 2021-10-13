@@ -1,0 +1,151 @@
+From ca828a24a8caf9d370f89927176fca481b27bdd5 Mon Sep 17 00:00:00 2001
+From: Hari Chandrakanthan <haric@codeaurora.org>
+Date: Thu, 27 May 2021 12:43:00 +0530
+Subject: [PATCH] ath11k : fix max peer count in ipq5018 and qcn6122
+
+When fw receives the peer_create wmi cmd for 129th peer, the peer pool in
+fw gets exhausted and it leads to Q6 crash in ipq5018 and qcn6122.
+
+Currently the maximum number of peers is set as 512 and the maximum
+number of vdevs is set as (16+1) for all the platforms with 1GB profile.
+
+But the maximum number of peers is 128 and the maximum number of
+vdevs is (8+1) for ipq5018 and qcn6122 with 1GB profile.
+
+Signed-off-by: Hari Chandrakanthan <haric@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c | 26 ++++++++++++++++++++++++--
+ drivers/net/wireless/ath/ath11k/core.h |  1 -
+ drivers/net/wireless/ath/ath11k/hw.h   |  7 ++++---
+ 3 files changed, 28 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index f73e48c..0f25293 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -54,6 +54,9 @@ EXPORT_SYMBOL(ath11k_skip_radio);
+ 
+ struct ath11k_base *ath11k_soc;
+ 
++static const struct ath11k_num_vdevs_peers ath11k_vdevs_peers[];
++static const struct ath11k_num_vdevs_peers ath11k_vdevs_peers_ipq5018[];
++
+ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ8074,
+@@ -112,6 +115,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
+ 		.wakeup_mhi = false,
+ 		.reo_status_poll = false,
++		.num_vdevs_peers = ath11k_vdevs_peers,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -165,6 +169,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
+ 		.wakeup_mhi = false,
+ 		.reo_status_poll = false,
++		.num_vdevs_peers = ath11k_vdevs_peers,
+ 	},
+ 	{
+ 		.name = "qca6390 hw2.0",
+@@ -212,6 +217,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.max_tx_ring = 1,
+ 		.wakeup_mhi = true,
+ 		.reo_status_poll = false,
++		.num_vdevs_peers = ath11k_vdevs_peers,
+ 	},
+ 	{
+ 		.name = "qcn9074 hw1.0",
+@@ -271,6 +277,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
+ 		.wakeup_mhi = false,
+ 		.reo_status_poll = false,
++		.num_vdevs_peers = ath11k_vdevs_peers,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ5018,
+@@ -323,6 +330,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX,
+ 		.wakeup_mhi = false,
+ 		.reo_status_poll = true,
++		.num_vdevs_peers = ath11k_vdevs_peers_ipq5018,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_QCN6122,
+@@ -376,9 +384,25 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX,
+ 		.wakeup_mhi = false,
+ 		.reo_status_poll = true,
++		.num_vdevs_peers = ath11k_vdevs_peers_ipq5018,
+  	},
+ };
+ 
++static const struct ath11k_num_vdevs_peers ath11k_vdevs_peers_ipq5018[] = {
++	{
++		.num_vdevs = (8 + 1),
++		.num_peers = 128,
++	},
++	{
++		.num_vdevs = (8 + 1),
++		.num_peers = 128,
++	},
++	{
++		.num_vdevs = 8,
++		.num_peers = 128,
++	},
++};
++
+ static const struct ath11k_num_vdevs_peers ath11k_vdevs_peers[] = {
+ 	{
+ 		.num_vdevs = (16 + 1),
+@@ -799,8 +823,6 @@ static int ath11k_core_soc_create(struct ath11k_base *ab)
+ 		ath11k_info(ab, "Booting in ftm mode - %d\n", ab->fw_mode);
+ 	}
+ 
+-	ab->num_vdevs_peers = &ath11k_vdevs_peers;
+-
+ 	ret = ath11k_qmi_init_service(ab);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to initialize qmi :%d\n", ret);
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index 206e63c..363ff8f 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -990,7 +990,6 @@ struct ath11k_base {
+ 	bool ce_latency_stats_enable;
+ 	u32 ce_remap_base_addr;
+ 	atomic_t num_max_allowed;
+-	struct ath11k_num_vdevs_peers *num_vdevs_peers;
+ 	int userpd_id;
+ 	struct ath11k_internal_pci ipci;
+ 	bool enable_memory_stats;
+diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
+index c3cdef8..c1b2ab9 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -30,10 +30,10 @@ struct ath11k_cfr_peer_tx_param;
+ #define ATH11K_DP_RXDMA_NSS_REFILL_RING_SIZE	1816
+ #else
+ /* Num VDEVS per radio */
+-#define TARGET_NUM_VDEVS	(ab->num_vdevs_peers[ab->qmi.target_mem_mode].num_vdevs)
+-#define TARGET_NUM_PEERS_PDEV	(ab->num_vdevs_peers[ab->qmi.target_mem_mode].num_peers + TARGET_NUM_VDEVS)
++#define TARGET_NUM_VDEVS	(ab->hw_params.num_vdevs_peers[ab->qmi.target_mem_mode].num_vdevs)
++#define TARGET_NUM_PEERS_PDEV	(ab->hw_params.num_vdevs_peers[ab->qmi.target_mem_mode].num_peers + TARGET_NUM_VDEVS)
+ /* Max num of stations (per radio) */
+-#define TARGET_NUM_STATIONS	(ab->num_vdevs_peers[ab->qmi.target_mem_mode].num_peers)
++#define TARGET_NUM_STATIONS	(ab->hw_params.num_vdevs_peers[ab->qmi.target_mem_mode].num_peers)
+ #define ATH11K_QMI_TARGET_MEM_MODE	ATH11K_QMI_TARGET_MEM_MODE_DEFAULT
+ #define ATH11K_DP_TX_COMP_RING_SIZE	32768
+ #define ATH11K_DP_RXDMA_MON_STATUS_RING_SIZE	1024
+@@ -214,6 +214,7 @@ struct ath11k_hw_params {
+ 	u32 cfr_stream_buf_size;
+ 	u8 max_tx_ring;
+ 	bool reo_status_poll;
++	const struct ath11k_num_vdevs_peers *num_vdevs_peers;
+ };
+ 
+ struct ath11k_hw_ops {
+-- 
+2.7.4
+

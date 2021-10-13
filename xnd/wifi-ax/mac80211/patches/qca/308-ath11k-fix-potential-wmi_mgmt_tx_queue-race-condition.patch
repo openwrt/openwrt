@@ -1,0 +1,41 @@
+From 5bb4a0bee3b2196ced72c35bd0ba0b238971c721 Mon Sep 17 00:00:00 2001
+From: Miaoqing Pan <miaoqing@codeaurora.org>
+Date: Thu, 13 May 2021 10:37:00 +0530
+Subject: [PATCH] ath11k: fix potential wmi_mgmt_tx_queue race condition
+
+There is a potential race condition between skb_queue_len()
+and skb_queue_tail(), the former may get old value before
+updated by the latter.
+
+So use skb_queue_len_lockless() instead. And also use '>=',
+in case we queue a few SKBs simultaneously.
+
+Found while discussing a similar fix for ath10k:
+https://patchwork.kernel.org/project/linux-wireless/patch/1608515579-1066-1-git-send-email-miaoqing@codeaurora.org/
+
+No functional changes, compile tested only.
+
+Signed-off-by: Miaoqing Pan <miaoqing@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1613630709-704-1-git-send-email-miaoqing@codeaurora.org
+Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 60475ad7cf8e..9bc132d44e4e 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5953,7 +5953,7 @@ static int ath11k_mac_tx_over_wmi(struct ath11k *ar, struct sk_buff *skb,
+ 		return -EBUSY;
+ 	}
+ 
+-	if (skb_queue_len(q) == ATH11K_TX_MGMT_NUM_PENDING_MAX) {
++	if (skb_queue_len_lockless(q) >= ATH11K_TX_MGMT_NUM_PENDING_MAX) {
+ 		ath11k_warn(ar->ab, "mgmt tx queue is full\n");
+ 		return -ENOSPC;
+ 	}
+-- 
+2.31.1
+

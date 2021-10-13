@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+START=80
+
+boot() {
+	[ -f /etc/ucentral/dev-id ] && return
+	. /lib/functions.sh
+	mkdir -p /certificates /etc/ucentral/
+	local mtd=$(find_mtd_index certificates)
+	[ -n "$mtd" -a -f /sys/class/mtd/mtd$mtd/oobsize ] && ubiattach -p /dev/mtd$mtd
+	if [ -n "$(ubinfo -a | grep certificates)" ]; then
+		mount -t ubifs ubi0:certificates /certificates
+		mount -t ubifs ubi1:certificates /certificates
+	else
+		mount -t squashfs /dev/mtdblock$mtd /certificates
+	fi
+	[ -f /certificates/dev-id ] && {
+		cp /certificates/*.pem /etc/ucentral/
+		cp /certificates/dev-id /etc/ucentral/
+	}
+}

@@ -1,0 +1,283 @@
+<HTML>
+<HEAD>
+<!-- @(#) $Revision: 4.36 $ $Source: /cvsroot/judy/doc/ext/Judy_3.htm,v $ --->
+<TITLE>Judy(3)</TITLE>
+</HEAD>
+<BODY>
+<TABLE border=0 width="100%"><TR>
+<TD width="40%" align="left">Judy(3)</TD>
+<TD width="10%" align="center">     </TD>
+<TD width="40%" align="right">Judy(3)</TD>
+</TR></TABLE>
+<P>
+<!----------------->
+<DT><B>NAME</B></DT>
+<DD>
+Judy arrays -
+C library functions for creating and accessing dynamic arrays
+</DD>
+<!----------------->
+<P>
+<DT><B>SYNOPSIS</B></DT>
+<DD>
+<PRE>
+<A href="Judy1_3.htm">Judy1</A>  - maps an <B>Index</B> (word) to a <B>bit</B>
+<A href="JudyL_3.htm">JudyL</A>  - maps an <B>Index</B> (word) to a <B>Value</B> (word/pointer)
+<A href="JudySL_3.htm">JudySL</A> - maps an <B>Index</B> (null terminated string) to a <B>Value</B>
+<A href="JudyHS_3.htm">JudyHS</A> - maps an <B>Index</B> (array-of-bytes) of <B>Length</B> to a <B>Value</B>
+</PRE>
+<!----------------->
+<P>
+<DT><B>DESCRIPTION</B></DT>
+<DD>
+The Judy family of functions supports fully dynamic arrays.  These
+arrays may be indexed by a 32- or 64-bit word (depending on processor
+word size), a null terminated string or an array-of-bytes plus length.
+A dynamic array (sparsely populated) can also be thought of as a
+<I>mapping function</I> or <I>associative memory</I>.
+<P>
+A <B>Word_t</B> is a <I>typedef unsigned long int </I> in <B>Judy.h</B> 
+and must be the same size as <I>sizeof(void *)</I> I.E. a pointer.
+<P>
+<A href="Judy1_3.htm">Judy1</A> functions: <B>Index</B> is a
+<B>Word_t</B> and <B>Value</B> is just a <B>bit</B> or simply
+a flag that <B>Index</B> is present or missing from the array.
+This can be thought of as a huge bitmap.
+<P>
+<A href="JudyL_3.htm">JudyL</A> functions: <B>Index</B> is a
+<B>Word_t</B> and <B>Value</B> is a <B>Word_t</B>.  This makes
+<B>JudyL</B> a pure word-to-word/pointer mapper.  <B>JudySL</B> and
+<B>JudyHL</B> are based on this property of <B>JudyL</B>.
+<P> 
+<A href="JudySL_3.htm">JudySL</A> functions: <B>Index</B> is a
+null-terminated string and <B>Value</B> is a <B>Word_t</B>.
+<P>
+<A href="JudyHS_3.htm">JudyHS</A> functions:  <B>Index</B> is an
+array-of-bytes of length:  <B>Length</B>.  <B>Value</B> is a
+<B>Word_t</B>.  This new addition (May 2004) to Judy is a hybird using
+the best features of hashing and Judy methods.  The author believes
+<B>JudyHS</B> is a good replacement for a hashing method when resizing
+the hash table is done during population growth.  A correctly tuned hash
+method with a <B>static</B> hash table size and population is unbeatable
+for speed.  However, <B>JudyHS</B> will perform better than a hashing
+method with smaller and larger populations than the optimum hash table
+size.  <B>JudyHS</B> does not have a degenerate performance case where
+knowledge of the hash algorithm can be exploited.  (I.E.  JudyHS does
+not use a linked list to handle hash collisions, it uses a tree of
+<B>JudyL</B> arrays and a virtual hash table size of 4 billion).
+<P>
+Judy arrays are both <B>speed-</B> and <B>memory-efficient</B>, with no
+tuning or configuration required, across a wide range of index set types
+(sequential, periodic, clustered, random).  Judy's speed and memory
+usage are typically better than other data storage models such as
+skiplists, linked lists, binary, ternary, b-trees, or even hashing, and
+improves with very large data sets.
+<P> 
+A Judy array is created merely by defining a null pointer and then
+storing (inserting) the first element into the array under that pointer.
+The memory used by a Judy array is nearly proportional to the population
+(number of elements).
+<P> 
+Judy has two Application Program Interfaces (APIs):  a C macro
+interface, and a function call interface.  Because the macro forms are
+sometimes faster and have a simpler error handling interface than the
+equivalent functions, they are the preferred way of using the Judy
+functions.  
+<P>
+Since an initial (empty) Judy array is represented by a null pointer, it
+is possible to construct an array of Judy arrays.  In other words, a
+Judy array's <B>Values</B> (except Judy1) can be pointers to other Judy
+arrays.  This makes it very simple to construct an array with an
+arbitrary number of dimensions or <B>Index</B> sizes.  (JudySL and
+JudyHS are implemented using JudyL this way).
+<!----------------->
+<P>
+<DT><B>A 10 MINUTE TECHNICAL DESCRIPTION</B></DT>
+<DD>
+may be found at 
+<A href="http://judy.sourceforge.net/downloads/10minutes.htm">http://judy.sourceforge.net/downloads/10minutes.htm</A>
+<!----------------->
+<P>
+<DT><B>A 3 HOUR TECHNICAL DESCRIPTION</B> (out of date and a bit corny)</DT>
+<DD>
+may be found at 
+<A href="http://judy.sourceforge.net/application/shop_interm.pdf">http://judy.sourceforge.net/application/shop_interm.pdf</A>
+<!----------------->
+<P>
+<DT>
+<A name="DOWNLOADS"> <B>DOWNLOADS</B></A></DT>
+<DD>
+Judy source downloads are available at
+<A href="http://sourceforge.net/projects/judy">http://sourceforge.net/projects/judy</A><BR>
+Binarys may be built and installed in a minute or two 
+after downloading
+<P>
+For versions including more platforms and/or new features see:
+<A href="http://judy.sourceforge.net/downloads/">http://judy.sourceforge.net/downloads/</A>
+<!----------------->
+<P>
+<DT><B>AUTHOR</B></DT>
+<DD>
+Judy was invented by Doug Baskins (dougbaskins .AT, yahoo.com) and
+implemented by Hewlett-Packard.  (Note:  Judy is named for the
+inventor's sister, after discarding many proposed names.)
+<!----------------->
+<P>
+<DT>
+<A name="FILES">
+<B>FILES</B></A></DT>
+<DD>
+Locations of interest include:
+<BR>
+<A href="http://sourceforge.net/projects/judy">http://sourceforge.net/projects/judy</A>
+ -- project downloads<BR>
+<A href="file:/usr/share/doc/Judy/">file:/usr/share/doc/Judy/</A>
+-- for HTML version of man pages.<BR>
+/usr/share/doc/Judy/demo/ -- demonstration program source files.<BR>
+<BR>
+The author attempted to write interesting application notes using
+advanced features of Judy.  They may be found at 
+<A href="http://judy.sourceforge.net/application/">"http://judy.sourceforge.net/application/</A>
+(Some may be out of date).
+<!----------------->
+<P>
+<DT><A name="ERRORS"><B>ERRORS</B></A></DT>
+<DD>
+A lot of thought (and time) went into making error handling in Judy
+simple, while maintaining flexibility and capability.  Error handling is
+a very boring subject even to write about.  So read this short section
+and use the recommended second method.  It generates the fastest code,
+uses the least amount of memory and requires you to write extra code
+only for insert/deletes functions.  Also it is compatible with the other
+two methods.  This method is for production code that may want to handle
+<I>malloc()</I> fails differently than the Judy default.  If the Judy
+default method of handling <I>malloc()</I> fails are OK, then use the
+first method.
+<P>
+There are <I>two (2)</I> categories of Judy error returns, (or for any dynamic ADT):
+<P>
+1) User programming errors (bugs) such as memory corruption or
+invalid pointers.
+<BR>
+2) Out-of-memory (<I>malloc()</I> failure) with <B>I</B>nsert
+(<B>S</B>et) or <B>D</B>elete (<B>U</B>nset) when modifying a Judy
+array.  Not all calls to insert and delete call <I>malloc()</I>, so they
+may succeed even when a call to <I>malloc()</I> would fail.
+<BR>
+<P>
+There are roughly <I>three (3)</I> methods of handling errors when using
+the macros:
+<DL>
+<P>
+<DT><B>1) Default Error Handling Method</B></DT>
+<DD>
+The default is to print error messages to <B>stderr</B>, for example:
+<P>
+<PRE>
+File 'YourCfile.c', line 1234: JudyLIns(), JU_ERRNO_* == 2, ID == 321
+</PRE>
+This indicates that an error occurred in the <B>JudyLIns()</B> function
+at line 321.  Line 1234 is the line in 'YourCfile.c' where the
+<B>JLI()</B> call failed.  JU_ERRNO_* == 2 is equal to JU_ERRNO_NOMEM
+(as defined in the <B>Judy.h</B> file).  The ID number indicates the
+source line number in the function where the error originated.  Your
+program then terminates with an <I>exit(1);</I>.  By default, both
+categories of Judy error returns are printed this way.  (The 'ID == 321'
+is for die hards that want more detail or for debugging Judy itself.)
+<BR>
+<P>
+<DT><B>2) Disable Macro Error Handling</B> </DT>
+<DD>
+When your program is "bug free", the only errors returned should be
+<I>malloc()</I> failures.  Therefore all error returns can be treated as
+a <I>malloc()</I> failure.  By using the below <B>#define</B>, all
+error testing and printing is turned off.  Additional code needs to be
+added to the code that can have <I>malloc()</I> failures.  Judy was
+designed to leave the same data in the array before the call if a
+<I>malloc()</I> fail occurs.  (During testing of Judy, we found very few
+<I>malloc()</I>/OS's that were bug free after a <I>malloc()</I> failure.
+Sometimes it took weeks to discover because most systems go into a
+paging frenzy before running out of memory).
+<PRE>
+#define JUDYERROR_NOTEST 1
+</PRE>
+(in your program code), or
+<PRE>
+cc -DJUDYERROR_NOTEST <I>sourcefile</I> -lJudy
+</PRE>
+(on your command line).
+<PRE>
+// This is an example of how to program using method two (2).
+    
+JLI(PValue, PLArray, Index);
+if (PValue == PJERR) goto out_of_memory_handling;
+...
+
+JLD(RC_int, PLArray, Index);
+if (RC_int == JERR) goto out_of_memory_handling;
+...
+
+J1S(RC_int, P1Array, Index);
+if (RC_int == JERR) goto out_of_memory_handling;
+...
+
+J1U(RC_int, P1Array, Index);
+if (RC_int == JERR) goto out_of_memory_handling;
+...
+
+</PRE>
+Note:  Without 'JUDYERROR_NOTEST' defined, the 'goto
+out_of_memory_handling' will never be executed and will be optimized out
+by the compiler.  The default method will be used -- Macro will print
+error information if an error occurs as explained above.
+<P>
+With 'JUDYERROR_NOTEST' defined, the 'goto out_of_memory_handling' will
+be executed when an error occurs -- which should only happen when
+<I>malloc()</I> fails.
+<DT><B>3) User-Specified JUDYERROR() Macro Method</B> </DT>
+<DD>
+The <B>JUDYERROR()</B> macro (in <B>Judy.h</B>) provides flexibility for
+handling error returns as needed to suit your program while still using
+the Judy array macros instead of function calls.  You can use a
+different <B>JUDYERROR()</B> macro to suit your needs.  The following
+example is a possible alternative to the default. It is used to
+distinguish between the two types of errors (described above), and
+explicitly test for the remaining JU_ERRNO_NOMEM errors possible in your
+program.
+<P>
+<PRE>
+// This is an example of Judy macro API to continue when out of memory 
+// and print and exit(1) when any other error occurs.
+
+#ifndef JUDYERROR_NOTEST
+#include &lt;stdio.h&gt;  // needed for fprintf()
+
+// This is the macro that the Judy macro APIs use for return codes of -1:
+
+#define JUDYERROR(CallerFile, CallerLine, JudyFunc, JudyErrno, JudyErrID) \
+{                                                                         \
+    if ((JudyErrno) != JU_ERRNO_NOMEM) /* ! a malloc() failure */         \
+    {                                                                     \
+        (void) fprintf(stderr, "File '%s', line %d: %s(), "               \
+            "JU_ERRNO_* == %d, ID == %d\n",                               \
+            CallerFile, CallerLine,                                       \
+            JudyFunc, JudyErrno, JudyErrID);                              \
+        exit(1);                                                          \
+    }                                                                     \
+}
+#endif // JUDYERROR_NOTEST not defined
+<BR>
+</PRE>
+This error handling macro must be included before the <B>#include &lt;Judy.h&gt;</B>
+statement in your program.
+</DL>
+<!----------------->
+<P>
+<DT><B>SEE ALSO</B></DT>
+<DD>
+<A href="Judy1_3.htm">Judy1(3)</A>,
+<A href="JudyL_3.htm">JudyL(3)</A>,
+<A href="JudySL_3.htm">JudySL(3)</A>,
+<A href="JudyHS_3.htm">JudyHS(3)</A>
+</BODY>
+</HTML>

@@ -1,0 +1,262 @@
+From ed2cc4a481cf39c478459bd19836a926eea3ba32 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Sat, 3 Oct 2020 14:25:59 -0700
+Subject: [PATCH] hostapd: Multiple BSSID DTIM setting
+
+For EMA (Enhanced Multiple BSSID Advertisement) AP, nontransmitted
+profiles should have DTIM value as a multiple of profile periodicity
+as mentioned in IEEE P802.11ax/D7.0, 11.1.3.8.3 Discovery of a
+nontransmitted BSSID profile.
+
+This is to make sure that if there is a change in a profile, the next
+beacon containing that profile will be the DTIM beacon.
+The stations associated with the profile will be notified of the change
+as soon as possible.
+
+With existing design, the transmitted beacon is set before RSN
+information element is formed for any nontransmitted profile hence the
+beacon has these profiles with open encryption.
+It also sets wrong profile periodicity until all profiles are up.
+
+This patch fixes the issue by retrieving configurations for all
+nontransmitted profiles before setting beacon for the transmitted
+profile.
+The profile periodicity is calculated before setting the beacon
+and DTIM values are set to be the next multiple of profile periodicity.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/beacon.c     |  1 +
+ src/ap/hostapd.c    | 93 +++++++++++++++++++++++++++++++--------------
+ src/ap/ieee802_11.c | 47 ++++++++++++++++++++---
+ 3 files changed, 108 insertions(+), 33 deletions(-)
+
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -1788,6 +1788,7 @@ int ieee802_11_build_ap_params(struct ho
+ 		if ((params->multiple_bssid_ie_count <= 1) &&
+ 		    (ext_cap_len >= 13) && (ext_cap_pos[12] & 0x08))
+ 			ext_cap_pos[12] |= 0x01;
++		params->dtim_period = hapd->conf->dtim_period;
+ 	}
+ 
+ 	return 0;
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -1109,19 +1109,60 @@ static int db_table_create_radius_attrib
+ 
+ #endif /* CONFIG_NO_RADIUS */
+ 
++static int hostapd_set_beacon(struct hostapd_data *hapd)
++{
++	struct hostapd_bss_config *conf = hapd->conf;
++	int flush_old_stations = 1;
++
++#ifdef CONFIG_MESH
++	if ((hapd->conf->mesh & MESH_ENABLED) && hapd->iface->mconf == NULL)
++		flush_old_stations = 0;
++#endif /* CONFIG_MESH */
++
++	if (!conf->start_disabled && ieee802_11_set_beacon(hapd) < 0)
++		return -1;
++
++	if (flush_old_stations && !conf->start_disabled &&
++	    conf->broadcast_deauth) {
++		u8 addr[ETH_ALEN];
++
++		/* Should any previously associated STA not have noticed that
++		 * the AP had stopped and restarted, send one more
++		 * deauthentication notification now that the AP is ready to
++		 * operate. */
++		wpa_dbg(hapd->msg_ctx, MSG_DEBUG,
++			"Deauthenticate all stations at BSS start");
++		os_memset(addr, 0xff, ETH_ALEN);
++		hostapd_drv_sta_deauth(hapd, addr,
++				       WLAN_REASON_PREV_AUTH_NOT_VALID);
++	}
++
++	if (hapd->wpa_auth && wpa_init_keys(hapd->wpa_auth) < 0)
++		return -1;
++
++	if (hapd->driver && hapd->driver->set_operstate)
++		hapd->driver->set_operstate(hapd->drv_priv, 1);
++
++	hostapd_ubus_add_bss(hapd);
++	return 0;
++}
+ 
+ /**
+  * hostapd_setup_bss - Per-BSS setup (initialization)
+  * @hapd: Pointer to BSS data
+  * @first: Whether this BSS is the first BSS of an interface; -1 = not first,
+  *	but interface may exist
++ * @set_beacon: Whether beacon should be set. When MBSSID IE is enabled,
++ *	information regarding all BSSes should be retrieved before setting
++ *	beacons.
+  *
+  * This function is used to initialize all per-BSS data structures and
+  * resources. This gets called in a loop for each BSS when an interface is
+  * initialized. Most of the modules that are initialized here will be
+  * deinitialized in hostapd_cleanup().
+  */
+-static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
++static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
++			     bool set_beacon)
+ {
+ 	struct hostapd_bss_config *conf = hapd->conf;
+ 	u8 ssid[SSID_MAX_LEN + 1];
+@@ -1393,31 +1434,8 @@ static int hostapd_setup_bss(struct host
+ 		return -1;
+ 	}
+ 
+-	if (!conf->start_disabled && ieee802_11_set_beacon(hapd) < 0)
+-		return -1;
+-
+-	if (flush_old_stations && !conf->start_disabled &&
+-	    conf->broadcast_deauth) {
+-		u8 addr[ETH_ALEN];
+-
+-		/* Should any previously associated STA not have noticed that
+-		 * the AP had stopped and restarted, send one more
+-		 * deauthentication notification now that the AP is ready to
+-		 * operate. */
+-		wpa_dbg(hapd->msg_ctx, MSG_DEBUG,
+-			"Deauthenticate all stations at BSS start");
+-		os_memset(addr, 0xff, ETH_ALEN);
+-		hostapd_drv_sta_deauth(hapd, addr,
+-				       WLAN_REASON_PREV_AUTH_NOT_VALID);
+-	}
+-
+-	if (hapd->wpa_auth && wpa_init_keys(hapd->wpa_auth) < 0)
+-		return -1;
+-
+-	if (hapd->driver && hapd->driver->set_operstate)
+-		hapd->driver->set_operstate(hapd->drv_priv, 1);
+-
+-	hostapd_ubus_add_bss(hapd);
++	if (set_beacon)
++		return hostapd_set_beacon(hapd);
+ 
+ 	return 0;
+ }
+@@ -2109,7 +2127,8 @@ static int hostapd_setup_interface_compl
+ 		hapd = iface->bss[j];
+ 		if (j)
+ 			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
+-		if (hostapd_setup_bss(hapd, j == 0)) {
++		if (hostapd_setup_bss(hapd, j == 0,
++				      hapd->iconf->multiple_bssid? 0 : 1)) {
+ 			for (;;) {
+ 				hapd = iface->bss[j];
+ 				hostapd_bss_deinit_no_free(hapd);
+@@ -2123,6 +2142,24 @@ static int hostapd_setup_interface_compl
+ 		if (is_zero_ether_addr(hapd->conf->bssid))
+ 			prev_addr = hapd->own_addr;
+ 	}
++
++	if (hapd->iconf->multiple_bssid) {
++		for (j = 0; j < iface->num_bss; j++) {
++			hapd = iface->bss[j];
++			if (hostapd_set_beacon(hapd)) {
++				for (;;) {
++					hapd = iface->bss[j];
++					hostapd_bss_deinit_no_free(hapd);
++					hostapd_free_hapd_data(hapd);
++					if (j == 0)
++						break;
++					j--;
++				}
++				goto fail;
++			}
++		}
++	}
++
+ 	hapd = iface->bss[0];
+ 
+ 	hostapd_tx_queue_params(iface);
+@@ -2989,7 +3026,7 @@ int hostapd_add_iface(struct hapd_interf
+ 
+ 			if (start_ctrl_iface_bss(hapd) < 0 ||
+ 			    (hapd_iface->state == HAPD_IFACE_ENABLED &&
+-			     hostapd_setup_bss(hapd, -1))) {
++			     hostapd_setup_bss(hapd, -1, 1))) {
+ 				hostapd_cleanup(hapd);
+ 				hapd_iface->bss[hapd_iface->num_bss - 1] = NULL;
+ 				hapd_iface->conf->num_bss--;
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -5721,7 +5721,7 @@ int hostapd_eid_multiple_bssid_len(struc
+ 
+ static u8 * hostapd_eid_multiple_bssid_chunk(struct hostapd_data *hapd,
+ 					     u8 *eid, u8 *end, int *count,
+-					     u8 is_beacon)
++					     u8 is_beacon, u8 *dtim_offset[])
+ {
+ 	u8 *size_offset, *num_offset;
+ 	int i;
+@@ -5753,6 +5753,7 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 		index_size_offset = eid++;
+ 		*eid++ = i;
+ 		if (is_beacon) {
++			dtim_offset[i] = eid;
+ 			*eid++ = bss->conf->dtim_period;
+ 			*eid++ = 0xFF;
+ 		}
+@@ -5783,17 +5784,53 @@ u8 * hostapd_eid_multiple_bssid(struct h
+ 				u8 is_beacon, u8 **eid_offsets, int *eid_count,
+ 				int eid_max, u8 ema_beacon)
+ {
+-	int count = 1;
++	int count = 1, dtim_period;
++	u8 remainder, **dtim_offset = NULL;
++	struct hostapd_bss_config *conf;
++	struct hostapd_iface *iface = hapd->iface;
++
++	if (eid_count &&
++	    !(dtim_offset = os_zalloc(iface->num_bss * sizeof(eid))))
++		return eid;
+ 
+-	while (count < hapd->iface->num_bss) {
+-		if (eid_offsets && eid_count && *eid_count < eid_max &&
++	while (count < iface->num_bss) {
++		if (eid_offsets && eid_count && (*eid_count < eid_max) &&
+ 		    (ema_beacon || count == 1)) {
+ 			eid_offsets[*eid_count] = eid;
+ 			*eid_count = *eid_count + 1;
+ 		}
+ 		eid = hostapd_eid_multiple_bssid_chunk(hapd, eid, end, &count,
+-						       is_beacon);
++						       is_beacon, dtim_offset);
+ 	}
++
++	if (!eid_count || !(*eid_count)) {
++		if (dtim_offset)
++			os_free(dtim_offset);
++		return eid;
++	}
++
++	do {
++		if (hapd != hostapd_get_primary_bss(hapd))
++			break;
++
++		for (count = 0; count < iface->num_bss; count++) {
++			conf = iface->bss[count]->conf;
++			dtim_period = conf->dtim_period;
++			remainder = dtim_period % (*eid_count);
++			if (remainder) {
++				conf->dtim_period += ((*eid_count) - remainder);
++				wpa_printf(MSG_DEBUG,
++					   "Multiple BSSID: DTIM period changed from %d to %d for SSID %s\n",
++					   dtim_period, conf->dtim_period,
++					   conf->ssid.ssid);
++
++				if (count && dtim_offset[count])
++					*dtim_offset[count] = conf->dtim_period;
++			}
++		}
++	} while (0);
++
++	os_free(dtim_offset);
+ 	return eid;
+ }
+ 

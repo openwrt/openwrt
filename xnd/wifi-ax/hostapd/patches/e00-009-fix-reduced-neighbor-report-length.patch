@@ -1,0 +1,53 @@
+From 2fc69199a935c06c95f9b2766a4ec30208478720 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Wed, 30 Sep 2020 20:41:54 -0700
+Subject: [PATCH] hostapd: Fix reduced neighbor report length
+
+The function hostapd_eid_reduced_neighbor_report_len() doesn't include 2
+bytes for the element ID and length fields which results in failure to
+set beacon when more than basic features are enabled.
+
+This patch fixes this error which was found after enabling radio
+measurement capabilities.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/ieee802_11.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -5843,6 +5843,8 @@ size_t hostapd_eid_reduced_neighbor_repo
+ 		len += TBTT_HEADER_LENGTH + ((hapd->iface->num_bss - 1) * TBTT_INFO_LENGTH);
+ 	if (!dl_list_empty(&hapd->nr_db))
+ 		len += dl_list_len(&hapd->nr_db) * (TBTT_HEADER_LENGTH + TBTT_INFO_LENGTH);
++	if (len)
++		len += 2; /* Element ID and length */
+ 
+ 	return len;
+ }
+@@ -5853,12 +5855,13 @@ u8 * hostapd_eid_reduced_neighbor_report
+ 	size_t len = hostapd_eid_reduced_neighbor_report_len(hapd);
+         struct hostapd_neighbor_entry *nr;
+ 	int i, count = 0;
++	u8 *size_offset;
+ 
+ 	if (!len)
+ 		return eid;
+ 
+ 	*eid++ = WLAN_EID_REDUCED_NEIGHBOR_REPORT;
+-	*eid++ = len;
++	size_offset = eid++;
+ 
+ 	if (hapd->iface->num_bss > 1) {
+ 		u8 op_class, channel;
+@@ -5920,6 +5923,9 @@ nr_db:
+ 
+ 	if (!count)
+ 		eid -= 2;
++	else
++		*size_offset = (eid - size_offset) - 1;
++
+ 	return eid;
+ }
+ 

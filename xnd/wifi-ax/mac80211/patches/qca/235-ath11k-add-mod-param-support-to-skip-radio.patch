@@ -1,0 +1,116 @@
+From 094d6e53e9c654144d1fba484965fc63c9493282 Mon Sep 17 00:00:00 2001
+From: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
+Date: Mon, 18 Jan 2021 13:11:29 +0530
+Subject: [PATCH] ath11k:add mod param support to skip radio during boot
+
+Added a module param which skip qcn6122-5G or 6G or both
+during device boot up. This will boot only unskipped radios.
+
+Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c  | 27 +++++++++++++++++++++++++--
+ drivers/net/wireless/ath/ath11k/ahb.h  |  2 ++
+ drivers/net/wireless/ath/ath11k/core.c |  4 ++++
+ 3 files changed, 31 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -813,6 +813,22 @@ static int ath11k_core_get_rproc(struct
+ 	return 0;
+ }
+ 
++static bool ath11k_skip_target_probe(int userpd_id, const struct of_device_id *of_id)
++{
++	int hw_rev = (enum ath11k_hw_rev)of_id->data;
++
++	if (ath11k_skip_radio & SKIP_QCN6122_0) {
++		if (hw_rev == ATH11K_HW_QCN6122 &&
++		    userpd_id == QCN6122_USERPD_0)
++			return true;
++	} else if (ath11k_skip_radio & SKIP_QCN6122_1) {
++		if (hw_rev == ATH11K_HW_QCN6122 &&
++		    userpd_id == QCN6122_USERPD_1)
++			return true;
++	}
++		return false;
++}
++
+ static int ath11k_ahb_probe(struct platform_device *pdev)
+ {
+ 	struct ath11k_base *ab;
+@@ -820,7 +836,7 @@ static int ath11k_ahb_probe(struct platf
+ 	const struct of_device_id *of_id;
+ 	struct resource *mem_res;
+ 	void __iomem *mem;
+-	int ret;
++	int ret = 0;
+ 	int userpd_id;
+ 	u32 hw_mode_id;
+ 
+@@ -831,6 +847,9 @@ static int ath11k_ahb_probe(struct platf
+ 	}
+ 
+ 	userpd_id = ath11k_get_userpd_id(dev);
++	if (ath11k_skip_target_probe(userpd_id, of_id))
++		goto end;
++
+ 	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(32));
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "failed to set 32-bit consistent dma\n");
+@@ -942,8 +961,8 @@ err_hal_srng_deinit:
+ 
+ err_core_free:
+ 	ath11k_core_free(ab);
++end:
+ 	platform_set_drvdata(pdev, NULL);
+-
+ 	return ret;
+ }
+ 
+@@ -952,6 +971,9 @@ static int ath11k_ahb_remove(struct plat
+ 	struct ath11k_base *ab = platform_get_drvdata(pdev);
+ 	unsigned long left;
+ 
++	if (!ab)
++		return 0;
++
+ 	if (test_bit(ATH11K_FLAG_QMI_FAIL, &ab->dev_flags)) {
+ 		ath11k_ahb_power_down(ab);
+ 		ath11k_debugfs_soc_destroy(ab);
+--- a/drivers/net/wireless/ath/ath11k/ahb.h
++++ b/drivers/net/wireless/ath/ath11k/ahb.h
+@@ -8,6 +8,8 @@
+ #include "core.h"
+ 
+ #define ATH11K_AHB_RECOVERY_TIMEOUT (3 * HZ)
++#define SKIP_QCN6122_0              0x2
++#define SKIP_QCN6122_1              0x4
+ struct ath11k_base;
+ 
+ struct ath11k_ahb {
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -46,6 +46,12 @@ unsigned int ath11k_ftm_mode;
+ module_param_named(ftm_mode, ath11k_ftm_mode, uint, 0644);
+ MODULE_PARM_DESC(ftm_mode, "Boots up in factory test mode");
+ 
++module_param_named(skip_radio_bmap, ath11k_skip_radio, uint, 0644);
++MODULE_PARM_DESC(skip_radio_bmap, "Bitmap to skip device probe");
++unsigned int ath11k_skip_radio;
++EXPORT_SYMBOL(ath11k_skip_radio);
++
++
+ struct ath11k_base *ath11k_soc;
+ 
+ static const struct ath11k_hw_params ath11k_hw_params[] = {
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -28,6 +28,8 @@
+ #include "rx_desc.h"
+ #include "nss.h"
+ 
++extern unsigned int ath11k_skip_radio;
++
+ #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
+ 
+ #define ATH11K_TX_MGMT_NUM_PENDING_MAX	512

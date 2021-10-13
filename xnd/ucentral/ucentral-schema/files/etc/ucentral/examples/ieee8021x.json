@@ -1,0 +1,54 @@
+{
+	"uuid": 2,
+	"interfaces": [
+		{
+			"name": "WAN",
+			"role": "upstream",
+			"ethernet": [
+				{
+					"select-ports": [
+						"WAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "dynamic"
+			}
+		},
+		{
+			"name": "LAN",
+			"role": "downstream",
+			"services": [ "ieee8021x", "ssh" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"LAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "static",
+				"subnet": "192.168.1.1/24",
+				"dhcp": {
+					"lease-first": 10,
+					"lease-count": 100,
+					"lease-time": "6h"
+				}
+			}
+		}
+	],
+	"services": {
+		"ieee8021x": {
+			"use-local-certificates": true,
+			"users": [
+				{
+					"user-name": "john",
+					"password": "aaaaaaaa"
+				}
+			]
+		},
+			"ssh": {
+			"port": 22
+		}
+	}
+}

@@ -1,0 +1,145 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 OpenWrt.org
+
+START=50
+USE_PROCD=1
+
+NAME=usteer
+PROG=/sbin/usteerd
+
+. /lib/functions/network.sh
+. /usr/share/libubox/jshn.sh
+. /lib/functions.sh
+
+load_ifaces() {
+	local network="$(uci get usteer.@usteer[-1].network)"
+	for n in $network; do
+		local device
+		json_load "$(ifstatus $n)"
+		json_get_var device l3_device
+		echo -n "$device "
+	done
+}
+
+_add_string() {
+	json_add_string "" "$1"
+}
+
+uci_option_to_json_string_array() {
+	local cfg="$1"
+	local option="$2"
+
+	json_add_array "$option"
+	config_list_foreach "$cfg" "$option" _add_string
+	json_close_array
+}
+
+uci_option_to_json_bool() {
+	local cfg="$1"
+	local option="$2"
+	local val
+
+	config_get_bool val "$cfg" $option
+	[ -n "$val" ] && json_add_boolean $option $val
+}
+
+uci_option_to_json_string() {
+	local cfg="$1"
+	local option="$2"
+	local val
+
+	config_get val "$cfg" "$option"
+	[ -n "$val" ] && json_add_string $option "$val"
+}
+
+uci_option_to_json() {
+	local cfg="$1"
+	local option="$2"
+	local val
+
+	config_get val "$cfg" $option
+	[ -n "$val" ] && json_add_int $option $val
+}
+
+uci_usteer() {
+	local cfg="$1"
+
+	uci_option_to_json_bool "$cfg" syslog
+	uci_option_to_json_bool "$cfg" load_kick_enabled
+	uci_option_to_json_bool "$cfg" assoc_steering
+	uci_option_to_json_string "$cfg" node_up_script
+	uci_option_to_json_string_array "$cfg" ssid_list
+	uci_option_to_json_string_array "$cfg" event_log_types
+
+	for opt in \
+		debug_level \
+		sta_block_timeout local_sta_timeout local_sta_update \
+		max_retry_band seen_policy_timeout \
+		load_balancing_threshold band_steering_threshold \
+		remote_update_interval \
+		min_connect_snr min_snr signal_diff_threshold \
+		initial_connect_delay \
+		roam_kick_delay roam_scan_tries \
+		roam_scan_snr roam_scan_interval \
+		roam_trigger_snr roam_trigger_interval \
+		load_kick_threshold load_kick_delay load_kick_min_clients \
+		load_kick_reason_code
+	do
+		uci_option_to_json "$cfg" "$opt"
+	done
+}
+
+
+load_config() {
+	[ "$ENABLED" -gt 0 ] || return
+
+	ubus -t 10 wait_for usteer
+
+	json_init
+	json_add_array interfaces
+	for i in $(load_ifaces); do
+		json_add_string "" "$i"
+	done
+	json_close_array
+
+	config_load usteer
+	config_foreach uci_usteer usteer
+
+	ubus call usteer set_config "$(json_dump)"
+}
+
+reload_service() {
+	start
+	load_config
+}
+
+service_started() {
+	load_config
+}
+
+service_triggers() {
+	procd_add_reload_trigger usteer
+	procd_add_raw_trigger "interface.*" 2000 /etc/init.d/usteer reload
+}
+
+start_service()
+{
+	local network="$(uci -q get usteer.@usteer[-1].network)"
+	ENABLED="$(uci -q get usteer.@usteer[-1].enabled)"
+	ENABLED="${ENABLED:-1}"
+	CHANNEL="$(uci -q get usteer.@usteer[-1].autochannel)"
+	CHANNEL="${CHANNEL:-0}"
+
+	[ "$ENABLED" -gt 0 ] || return
+
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_close_instance
+	
+	[ "$CHANNEL" -gt 0 ] || return
+
+	procd_open_instance
+	procd_set_param command "/usr/libexec/uchannel.uc"
+	procd_set_param respawn 1 300 0
+	procd_close_instance
+}

@@ -1,0 +1,33 @@
+From ed96951a0e08771570c950f42ebfd49ff0511756 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Thu, 3 Dec 2020 18:58:19 +0530
+Subject: [PATCH] wpa_supplicant: add mesh ID IE only for mesh mode
+
+Mesh ID IE is added in probe request frame irrespective
+of mode. Added check to avoid adding this IE for non-mesh
+modes.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ wpa_supplicant/scan.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/wpa_supplicant/scan.c b/wpa_supplicant/scan.c
+index b9e4162..9992e42 100644
+--- a/wpa_supplicant/scan.c
++++ b/wpa_supplicant/scan.c
+@@ -611,7 +611,10 @@ static struct wpabuf * wpa_supplicant_extra_ies(struct wpa_supplicant *wpa_s)
+ 	}
+ #endif /* CONFIG_P2P */
+ 
+-	wpa_supplicant_mesh_add_scan_ie(wpa_s, &extra_ie);
++#ifdef CONFIG_MESH
++	if (wpa_s->conf->ssid && wpa_s->conf->ssid->mode == WPAS_MODE_MESH)
++		wpa_supplicant_mesh_add_scan_ie(wpa_s, &extra_ie);
++#endif /* CONFIG_MESH */
+ 
+ #endif /* CONFIG_WPS */
+ 
+-- 
+2.7.4
+

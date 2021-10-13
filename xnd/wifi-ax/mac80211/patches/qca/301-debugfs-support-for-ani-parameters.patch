@@ -1,0 +1,548 @@
+From b6b05d6e9b69d76053cc6997e1cedf2e4c9c24c0 Mon Sep 17 00:00:00 2001
+From: Hari Chandrakanthan <haric@codeaurora.org>
+Date: Sun, 18 Apr 2021 16:51:56 +0530
+Subject: [PATCH] debugfs-support-for-ani-parameters
+
+Signed-off-by: Hari Chandrakanthan <haric@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h    |   8 +
+ drivers/net/wireless/ath/ath11k/debugfs.c | 308 ++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/debugfs.h |   6 +
+ drivers/net/wireless/ath/ath11k/mac.c     |   3 +
+ drivers/net/wireless/ath/ath11k/wmi.c     |  74 +++++++
+ drivers/net/wireless/ath/ath11k/wmi.h     |  18 ++
+ 6 files changed, 417 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index 07a7175..c1dc737 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -740,6 +740,7 @@ struct ath11k {
+ 	struct ath11k_cfr cfr;
+ #endif
+ 	u8 cfr_enabled;
++	bool ani_enabled;
+ };
+ 
+ struct ath11k_band_cap {
+@@ -988,6 +989,13 @@ struct ath11k_base {
+ 	u32 rx_hash;
+ 	bool stats_disable;
+ 
++	u32 ani_poll_period;
++	u32 ani_listen_period;
++	int ani_ofdm_level;
++	int ani_cck_level;
++	struct completion ani_ofdm_event;
++	struct completion ani_cck_event;
++
+ 	/* must be last */
+ 	u8 drv_priv[0] __aligned(sizeof(void *));
+ };
+diff --git a/drivers/net/wireless/ath/ath11k/debugfs.c b/drivers/net/wireless/ath/ath11k/debugfs.c
+index 2636931..f04395a 100644
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -3692,6 +3692,302 @@ static const struct file_operations fops_disable_dyn_bw = {
+ 	.open = simple_open
+ };
+ 
++static ssize_t ath11k_read_ani_enable(struct file *file, char __user *user_buf,
++				      size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	int len = 0;
++	char buf[32];
++
++	len = scnprintf(buf, sizeof(buf) - len, "%d\n",ar->ani_enabled);
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t ath11k_write_ani_enable(struct file *file,
++				       const char __user *user_buf,
++				       size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	int ret;
++	u8 enable;
++
++	if (kstrtou8_from_user(user_buf, count, 0, &enable))
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (ar->ani_enabled == enable) {
++		ret = count;
++		goto exit;
++	}
++
++	ret = ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_ANI_ENABLE,
++					enable, ar->pdev->pdev_id);
++	if (ret) {
++		ath11k_warn(ar, "ani_enable failed from debugfs: %d\n", ret);
++		goto exit;
++	}
++	ar->ani_enabled = enable;
++	ret = count;
++
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static const struct file_operations fops_ani_enable = {
++	.read = ath11k_read_ani_enable,
++	.write = ath11k_write_ani_enable,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static ssize_t ath11k_read_ani_poll_period(struct file *file,
++					   char __user *user_buf,
++					   size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	int len = 0;
++	char buf[32];
++
++	len = scnprintf(buf, sizeof(buf) - len, "%u\n", ar->ab->ani_poll_period);
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t ath11k_write_ani_poll_period(struct file *file,
++					    const char __user *user_buf,
++					    size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	int ret;
++	u32 ani_poll_period;
++
++	if (kstrtou32_from_user(user_buf, count, 0, &ani_poll_period))
++		return -EINVAL;
++
++	if(ani_poll_period > ATH11K_ANI_POLL_PERIOD_MAX)
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++
++	ret = ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_ANI_POLL_PERIOD,
++			ani_poll_period, ar->pdev->pdev_id);
++	if (ret) {
++		ath11k_warn(ar, "ani poll period write failed in debugfs: %d\n", ret);
++		goto exit;
++	}
++	ar->ab->ani_poll_period = ani_poll_period;
++	ret = count;
++
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static const struct file_operations fops_ani_poll_period = {
++	.read = ath11k_read_ani_poll_period,
++	.write = ath11k_write_ani_poll_period,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static ssize_t ath11k_read_ani_listen_period(struct file *file,
++					     char __user *user_buf,
++					     size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	int len = 0;
++	char buf[32];
++
++	len = scnprintf(buf, sizeof(buf) - len, "%u\n", ar->ab->ani_listen_period);
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t ath11k_write_ani_listen_period(struct file *file,
++					      const char __user *user_buf,
++					      size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	int ret;
++	u32 ani_listen_period = 0;
++
++	if (kstrtou32_from_user(user_buf, count, 0, &ani_listen_period))
++		return -EINVAL;
++
++	if(ani_listen_period > ATH11K_ANI_LISTEN_PERIOD_MAX)
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++
++	ret = ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_ANI_LISTEN_PERIOD,
++					ani_listen_period, ar->pdev->pdev_id);
++	if (ret) {
++		ath11k_warn(ar, "ani listen period write failed in debugfs: %d\n", ret);
++		goto exit;
++	}
++	ar->ab->ani_listen_period = ani_listen_period;
++	ret = count;
++
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static const struct file_operations fops_ani_listen_period = {
++	.read = ath11k_read_ani_listen_period,
++	.write = ath11k_write_ani_listen_period,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static int ath11k_debug_get_ani_level(struct ath11k *ar)
++{
++	unsigned long time_left;
++	int ret;
++
++	lockdep_assert_held(&ar->conf_mutex);
++
++	reinit_completion(&(ar->ab->ani_ofdm_event));
++
++	ret = ath11k_wmi_pdev_get_ani_level(ar, WMI_PDEV_GET_ANI_OFDM_CONFIG_CMDID,
++					    ar->pdev->pdev_id);
++	if (ret) {
++		ath11k_warn(ar, "failed to request ofdm ani level: %d\n", ret);
++		return ret;
++	}
++	time_left = wait_for_completion_timeout(&ar->ab->ani_ofdm_event, 1 * HZ);
++	if (time_left == 0)
++		return -ETIMEDOUT;
++
++	if (ar->ab->target_caps.phy_capability & WHAL_WLAN_11G_CAPABILITY) {
++		reinit_completion(&(ar->ab->ani_cck_event));
++		ret = ath11k_wmi_pdev_get_ani_level(ar, WMI_PDEV_GET_ANI_CCK_CONFIG_CMDID,
++						    ar->pdev->pdev_id);
++		if (ret) {
++			ath11k_warn(ar, "failed to request cck ani level: %d\n", ret);
++			return ret;
++		}
++		time_left = wait_for_completion_timeout(&ar->ab->ani_cck_event, 1 * HZ);
++		if (time_left == 0)
++			return -ETIMEDOUT;
++	}
++
++	return 0;
++}
++
++static ssize_t ath11k_read_ani_level(struct file *file, char __user *user_buf,
++				     size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	char buf[128];
++	int ret, len = 0;
++
++	mutex_lock(&ar->conf_mutex);
++	if (ar->state != ATH11K_STATE_ON) {
++		ret = -ENETDOWN;
++		goto unlock;
++	}
++
++	if(!ar->ani_enabled) {
++		len += scnprintf(buf, sizeof(buf), "ANI is disabled\n");
++	} else {
++		ret = ath11k_debug_get_ani_level(ar);
++		if (ret) {
++			ath11k_warn(ar, "failed to request ani level: %d\n", ret);
++			goto unlock;
++		}
++		len += scnprintf(buf, sizeof(buf), "ofdm level %d cck level %d\n",
++				ar->ab->ani_ofdm_level, ar->ab->ani_cck_level);
++	}
++	mutex_unlock(&ar->conf_mutex);
++
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++
++unlock:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static ssize_t ath11k_write_ani_level(struct file *file,
++				      const char __user *user_buf,
++				      size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	char buf[32] = {0};
++	ssize_t rc;
++	u32 ofdm_param = 0, cck_param = 0;
++	int ofdm_level, cck_level;
++	int ret;
++
++	rc = simple_write_to_buffer(buf, sizeof(buf) - 1, ppos, user_buf, count);
++	if (rc < 0)
++		return rc;
++
++	buf[*ppos - 1] = '\0';
++
++	ret = sscanf(buf, "%d %d", &ofdm_level, &cck_level);
++
++	if (ret != 2)
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (ar->state != ATH11K_STATE_ON && ar->state != ATH11K_STATE_RESTARTED) {
++		ret = -ENETDOWN;
++		goto exit;
++	}
++
++	if ((ofdm_level >= ATH11K_ANI_LEVEL_MIN && ofdm_level <= ATH11K_ANI_LEVEL_MAX) ||
++	   (ofdm_level == ATH11K_ANI_LEVEL_AUTO)) {
++		ofdm_param = WMI_PDEV_PARAM_ANI_OFDM_LEVEL;
++	} else {
++		ret = -EINVAL;
++		goto exit;
++	}
++
++	if((ar->ab->target_caps.phy_capability & WHAL_WLAN_11G_CAPABILITY)) {
++		if ((cck_level >= ATH11K_ANI_LEVEL_MIN &&
++		   cck_level <= ATH11K_ANI_LEVEL_MAX) ||
++		   (cck_level == ATH11K_ANI_LEVEL_AUTO)) {
++			cck_param = WMI_PDEV_PARAM_ANI_CCK_LEVEL;
++		} else {
++			ret = -EINVAL;
++			goto exit;
++		}
++	}
++
++	ret = ath11k_wmi_pdev_set_param(ar, ofdm_param, ofdm_level, ar->pdev->pdev_id);
++	if (ret) {
++		ath11k_warn(ar, "failed to set ANI ofdm level :%d\n", ret);
++		goto exit;
++	}
++
++	if (cck_param) {
++		ret = ath11k_wmi_pdev_set_param(ar, cck_param, cck_level,
++						ar->pdev->pdev_id);
++		if (ret) {
++			ath11k_warn(ar, "failed to set ANI cck level :%d\n", ret);
++			goto exit;
++		}
++	}
++
++	ret = count;
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static const struct file_operations fops_ani_level = {
++	.write = ath11k_write_ani_level,
++	.read = ath11k_read_ani_level,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
+ int ath11k_debugfs_register(struct ath11k *ar)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+@@ -3716,6 +4012,8 @@ int ath11k_debugfs_register(struct ath11k *ar)
+ 	ath11k_debugfs_fw_stats_init(ar);
+ 	ath11k_init_pktlog(ar);
+ 	init_completion(&ar->tpc_complete);
++        init_completion(&ab->ani_ofdm_event);
++        init_completion(&ab->ani_cck_event);
+ 
+ 	debugfs_create_file("ext_tx_stats", 0644,
+ 			    ar->debug.debugfs_pdev, ar,
+@@ -3781,6 +4079,16 @@ int ath11k_debugfs_register(struct ath11k *ar)
+ 
+ 	debugfs_create_file("enable_dbr_debug", 0200, ar->debug.debugfs_pdev,
+ 			    ar, &fops_dbr_debug);
++
++	debugfs_create_file("ani_enable", S_IRUSR | S_IWUSR,
++			    ar->debug.debugfs_pdev, ar, &fops_ani_enable);
++	debugfs_create_file("ani_level", S_IRUSR | S_IWUSR,
++			    ar->debug.debugfs_pdev, ar, &fops_ani_level);
++	debugfs_create_file("ani_poll_period", S_IRUSR | S_IWUSR,
++			    ar->debug.debugfs_pdev, ar, &fops_ani_poll_period);
++	debugfs_create_file("ani_listen_period", S_IRUSR | S_IWUSR,
++			    ar->debug.debugfs_pdev, ar, &fops_ani_listen_period);
++
+ 	return 0;
+ }
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/debugfs.h b/drivers/net/wireless/ath/ath11k/debugfs.h
+index e08034c..95a8372 100644
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -211,6 +211,12 @@ do {									\
+ #define ATH11K_MEMORY_STATS_DEC(_struct, _field, _size)
+ #endif
+ 
++#define ATH11K_ANI_LEVEL_MAX         30
++#define ATH11K_ANI_LEVEL_MIN         -5
++#define ATH11K_ANI_LEVEL_AUTO        0x80
++#define ATH11K_ANI_POLL_PERIOD_MAX   3000
++#define ATH11K_ANI_LISTEN_PERIOD_MAX 3000
++
+ #ifdef CPTCFG_ATH11K_DEBUGFS
+ int ath11k_debugfs_create(void);
+ void ath11k_debugfs_destroy(void);
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 29cbc33..a68ab06 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6153,6 +6153,9 @@ static int ath11k_mac_op_start(struct ieee80211_hw *hw)
+ 	rcu_assign_pointer(ab->pdevs_active[ar->pdev_idx],
+ 			   &ab->pdevs[ar->pdev_idx]);
+ 
++	/*ani is enabled by default*/
++	ar->ani_enabled = true;
++
+ 	return 0;
+ 
+ err:
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 173d217..1fbba1b 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -8370,6 +8370,74 @@ ath11k_wmi_pdev_csa_switch_count_status_event(struct ath11k_base *ab,
+ 	kfree(tb);
+ }
+ 
++int ath11k_wmi_pdev_get_ani_level(struct ath11k *ar, u32 cmd_id, u8 pdev_id)
++{
++	struct ath11k_pdev_wmi *wmi = ar->wmi;
++	struct wmi_pdev_get_ani_level_cmd *cmd = NULL;
++	struct sk_buff *skb;
++	int ret;
++	enum wmi_tlv_tag temp_tlv_tag;
++
++	switch(cmd_id) {
++	case WMI_PDEV_GET_ANI_OFDM_CONFIG_CMDID:
++		temp_tlv_tag = WMI_TAG_PDEV_GET_ANI_OFDM_CONFIG_CMD;
++		break;
++	case WMI_PDEV_GET_ANI_CCK_CONFIG_CMDID:
++		temp_tlv_tag = WMI_TAG_PDEV_GET_ANI_CCK_CONFIG_CMD;
++		break;
++	default:
++		ath11k_warn(ar->ab, "Invalid cmd %d\n", cmd_id);
++		return -EINVAL;
++	}
++
++	skb = ath11k_wmi_alloc_skb(wmi->wmi_ab, sizeof(*cmd));
++	if (!skb)
++		return -ENOMEM;
++
++	cmd = (struct wmi_pdev_get_ani_level_cmd *)skb->data;
++	cmd->tlv_header = FIELD_PREP(WMI_TLV_TAG, temp_tlv_tag) |
++			  FIELD_PREP(WMI_TLV_LEN, sizeof(*cmd) - TLV_HDR_SIZE);
++	cmd->pdev_id = pdev_id;
++
++	ret = ath11k_wmi_cmd_send(wmi, skb, cmd_id);
++	if (ret) {
++		ath11k_warn(ar->ab, "failed to send WMI_PDEV_SET_PARAM cmd\n");
++		dev_kfree_skb(skb);
++	}
++
++	ath11k_dbg(ar->ab, ATH11K_DBG_WMI, "WMI pdev pdev id %d\n", pdev_id);
++
++	return ret;
++}
++
++static int ath11k_wmi_event_ani_ofdm_level(struct ath11k_base *ab,
++					   struct sk_buff *skb)
++{
++	const struct wmi_pdev_ani_event *ev;
++
++	ev = (struct wmi_pdev_ani_event *)skb->data;
++	if (WARN_ON(skb->len < sizeof(*ev)))
++		return -EPROTO;
++
++	ab->ani_ofdm_level = ev->ani_level;
++	complete(&ab->ani_ofdm_event);
++	return 0;
++}
++
++static int ath11k_wmi_event_ani_cck_level(struct ath11k_base *ab,
++					  struct sk_buff *skb)
++{
++	const struct wmi_pdev_ani_event *ev;
++
++	ev = (struct wmi_pdev_ani_event *)skb->data;
++	if (WARN_ON(skb->len < sizeof(*ev)))
++		return -EPROTO;
++
++	ab->ani_cck_level = ev->ani_level;
++	complete(&(ab->ani_cck_event));
++	return 0;
++}
++
+ static void
+ ath11k_wmi_pdev_dfs_radar_detected_event(struct ath11k_base *ab, struct sk_buff *skb)
+ {
+@@ -9587,6 +9655,12 @@ static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
+ 	case WMI_PEER_CFR_CAPTURE_EVENTID:
+ 		ath11k_wmi_parse_cfr_capture_event(ab, skb);
+ 		break;
++	case WMI_PDEV_ANI_CCK_LEVEL_EVENTID:
++		ath11k_wmi_event_ani_cck_level(ab, skb);
++		break;
++	case WMI_PDEV_ANI_OFDM_LEVEL_EVENTID:
++		ath11k_wmi_event_ani_ofdm_level(ab, skb);
++		break;
+ 	/* TODO: Add remaining events */
+ 	default:
+ 		ath11k_dbg(ab, ATH11K_DBG_WMI, "Unknown eventid: 0x%x\n", id);
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.h b/drivers/net/wireless/ath/ath11k/wmi.h
+index 55f51fa..d74128f 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -117,6 +117,12 @@ enum {
+ 	WMI_HOST_WLAN_2G_5G_CAP	= 0x3,
+ };
+ 
++enum wlan_mode_capability {
++	WHAL_WLAN_11A_CAPABILITY   = 0x1,
++	WHAL_WLAN_11G_CAPABILITY   = 0x2,
++	WHAL_WLAN_11AG_CAPABILITY  = 0x3,
++};
++
+ /* Parameters used for WMI_VDEV_PARAM_AUTORATE_MISC_CFG command.
+  * Used only for HE auto rate mode.
+  */
+@@ -2753,6 +2759,11 @@ struct wmi_p2p_noa_descriptor {
+ 	u32 start_time;
+ };
+ 
++struct wmi_pdev_ani_event {
++	u32 tlv_header;
++	u32 ani_level;
++} __packed;
++
+ struct channel_param {
+ 	u8 chan_id;
+ 	u8 pwr;
+@@ -3148,6 +3159,12 @@ struct wmi_fwtest_set_param_cmd_param {
+ 	u32 param_value;
+ };
+ 
++struct wmi_pdev_get_ani_level_cmd {
++	u32 tlv_header;
++	u32 pdev_id;
++	u32 param_id;
++} __packed;
++
+ struct wmi_pdev_set_param_cmd {
+ 	u32 tlv_header;
+ 	u32 pdev_id;
+@@ -6694,4 +6711,5 @@ int ath11k_wmi_dbglog_cfg(struct ath11k *ar, u32 param, u64 value);
+ int ath11k_wmi_peer_set_cfr_capture_conf(struct ath11k *ar,
+ 					 u32 vdev_id, const u8 *mac,
+ 					 struct wmi_peer_cfr_capture_conf_arg *arg);
++int ath11k_wmi_pdev_get_ani_level(struct ath11k *ar, u32 param_id, u8 pdev_id);
+ #endif
+-- 
+2.7.4
+

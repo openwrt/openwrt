@@ -1,0 +1,241 @@
+From 5814dee7be8e69c9ce8384e4bba6bc3dedc6129e Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Wed, 26 Aug 2020 15:40:56 -0700
+Subject: [PATCH] ath11k: EMA CSA failure and MBSSID mode setting modifications
+
+This patch fixes channel switch failure for EMA AP by adding following
+functionality:
+(1) Ath11k driver handles the CSA counter calculations.
+(2) Driver calls ieee80211_csa_finish() function provided by mac80211 on all
+interfaces in the MBSSID set when countdown completes.
+
+This patch also add support to set MBSSID interface mode (tranmitting
+and non-transmitting) in vdev START command instead of vdev CREATE.
+
+Changes also include fixing the MBSSID configuration element to the
+proper format.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 32 ++++++++++++++-
+ drivers/net/wireless/ath/ath11k/wmi.c | 15 ++++++-
+ drivers/net/wireless/ath/ath11k/wmi.h | 57 ++++++++++++++++++++++++---
+ net/mac80211/tx.c                     |  6 +--
+ 4 files changed, 98 insertions(+), 12 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1113,12 +1113,27 @@ static int ath11k_mac_setup_bcn_tmpl(str
+ 
+ void ath11k_mac_bcn_tx_event(struct ath11k_vif *arvif)
+ {
+-	struct ieee80211_vif *vif = arvif->vif;
++	struct ieee80211_vif *vif = arvif->vif, *child, *tmp;
+ 	int multiple_bssid = 0;
+ 
+ 	if (!vif->multiple_bssid.non_transmitted &&
+-	    !list_empty(&vif->multiple_bssid.list))
++	    !list_empty(&vif->multiple_bssid.list)) {
++		if (vif->csa_active) {
++			if (ieee80211_csa_is_complete(vif)) {
++				ieee80211_csa_finish(vif);
++				list_for_each_entry_safe(child, tmp,
++							 &vif->multiple_bssid.list,
++							 multiple_bssid.list)
++					ieee80211_csa_finish(child);
++
++				return;
++			} else {
++				ieee80211_csa_update_counter(vif);
++			}
++		}
++
+ 		multiple_bssid = 1;
++	}
+ 
+ 	if (!multiple_bssid)
+ 		return;
+@@ -6148,6 +6163,7 @@ ath11k_mac_vdev_start_restart(struct ath
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct wmi_vdev_start_req_arg arg = {};
+ 	int ret = 0;
++	struct ieee80211_vif *parent;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
+@@ -6192,6 +6208,18 @@ ath11k_mac_vdev_start_restart(struct ath
+ 
+ 	arg.channel.passive |= !!(chandef->chan->flags & IEEE80211_CHAN_NO_IR);
+ 
++	if (arvif->vif->multiple_bssid.non_transmitted) {
++		arg.mbss_capability_flags = WMI_HOST_VDEV_FLAGS_NON_TRANSMIT_AP;
++		parent = arvif->vif->multiple_bssid.parent;
++		if (!parent)
++			return -ENOENT;
++		if (ar->hw->wiphy != ieee80211_vif_to_wdev(parent)->wiphy)
++			return -EINVAL;
++		arg.vdevid_trans = ath11k_vif_to_arvif(parent)->vdev_id;
++	} else {
++		arg.mbss_capability_flags = WMI_HOST_VDEV_FLAGS_TRANSMIT_AP;
++	}
++
+ 	ath11k_dbg(ab, ATH11K_DBG_MAC,
+ 		   "mac vdev %d start center_freq %d phymode %s\n",
+ 		   arg.vdev_id, arg.channel.freq,
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -691,8 +691,13 @@ int ath11k_wmi_vdev_create(struct ath11k
+ 	cmd->vdev_subtype = param->subtype;
+ 	cmd->num_cfg_txrx_streams = WMI_NUM_SUPPORTED_BAND_MAX;
+ 	cmd->pdev_id = param->pdev_id;
+-	cmd->flags = param->flags;
+-	cmd->vdevid_trans = param->vdevid_trans;
++
++	if (!test_bit(WMI_TLV_SERVICE_MBSS_PARAM_IN_VDEV_START_SUPPORT,
++		      ar->ab->wmi_ab.svc_map)) {
++		cmd->flags = param->flags;
++		cmd->vdevid_trans = param->vdevid_trans;
++	}
++
+ 	ether_addr_copy(cmd->vdev_macaddr.addr, macaddr);
+ 
+ 	ptr = skb->data + sizeof(*cmd);
+@@ -915,6 +920,12 @@ int ath11k_wmi_vdev_start(struct ath11k
+ 			cmd->flags |= WMI_VDEV_START_HIDDEN_SSID;
+ 		if (arg->pmf_enabled)
+ 			cmd->flags |= WMI_VDEV_START_PMF_ENABLED;
++
++		if (test_bit(WMI_TLV_SERVICE_MBSS_PARAM_IN_VDEV_START_SUPPORT,
++			     ar->ab->wmi_ab.svc_map)) {
++			cmd->mbss_capability_flags = arg->mbss_capability_flags;
++			cmd->vdevid_trans = arg->vdevid_trans;
++		}
+ 	}
+ 
+ 	cmd->flags |= WMI_VDEV_START_LDPC_RX_ENABLED;
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -139,9 +139,11 @@ enum {
+ };
+ 
+ enum {
+-	WMI_HOST_VDEV_FLAGS_NON_MBSSID_AP	= 1,
+-	WMI_HOST_VDEV_FLAGS_TRANSMIT_AP		= 2,
+-	WMI_HOST_VDEV_FLAGS_NON_TRANSMIT_AP	= 4,
++	WMI_HOST_VDEV_FLAGS_NON_MBSSID_AP	= 0x00000001,
++	WMI_HOST_VDEV_FLAGS_TRANSMIT_AP		= 0x00000002,
++	WMI_HOST_VDEV_FLAGS_NON_TRANSMIT_AP	= 0x00000004,
++	WMI_HOST_VDEV_FLAGS_EMA_MODE            = 0x00000008,
++	WMI_HOST_VDEV_FLAGS_SCAN_MODE_VAP       = 0x00000010,
+ };
+ 
+ /*
+@@ -2098,7 +2100,40 @@ enum wmi_tlv_service {
+ 	WMI_TLV_SERVICE_PER_PEER_HTT_STATS_RESET = 213,
+ 	WMI_TLV_SERVICE_FREQINFO_IN_METADATA = 219,
+ 	WMI_TLV_SERVICE_EXT2_MSG = 220,
++	WMI_TLV_SERVICE_WPA3_SAE_ROAM_SUPPORT = 221,
++	WMI_TLV_SERVICE_WPA3_OWE_ROAM_SUPPORT = 222,
++	WMI_TLV_SERVICE_AUDIO_AGGR = 223,
++	WMI_TLV_SERVICE_6GHZ_SUPPORT = 224,
++	WMI_TLV_SERVICE_QMI_STATS_SUPPORT = 225,
++	WMI_TLV_SERVICE_CFR_CAPTURE_FILTER_SUPPORT = 226,
++	WMI_TLV_SERVICE_STA_BSS_MAX_IDLE_TIME = 227,
++	WMI_TLV_SERVICE_BIP_CIPHER_SUPPORT = 228,
++	WMI_TLV_SERVICE_BW_165MHZ_SUPPORT = 229,
++	WMI_TLV_SERVICE_BW_RESTRICTED_80P80_SUPPORT = WMI_TLV_SERVICE_BW_165MHZ_SUPPORT,
++	WMI_TLV_SERVICE_NAN_NDI_SAP_SAP_SCC_SUPPORT = 230,
++	WMI_TLV_SERVICE_NAN_VDEV_SUPPORT = 231,
++	WMI_TLV_SERVICE_AUDIO_SYNC_SUPPORT = 232,
++	WMI_TLV_SERVICE_DUAL_STA_ROAM_SUPPORT = 233,
++	WMI_TLV_SERVICE_PEER_CREATE_CONF = 234,
++	WMI_TLV_SERVICE_MULTIPLE_VDEV_RESTART_RESPONSE_SUPPORT = 235,
++	WMI_TLV_SERVICE_ROAM_SCAN_CHANNEL_LIST_TO_HOST_SUPPORT = 236,
++	WMI_TLV_SERVICE_PEER_DELETE_NO_PEER_FLUSH_TIDS_CMD = 237,
++	WMI_TLV_SERVICE_NSS_RATIO_TO_HOST_SUPPORT = 238,
++	WMI_TLV_SERVICE_WPA3_SUITEB_ROAM_SUPPORT = 239,
++	WMI_TLV_SERVICE_PERIODIC_FRAME_INJECT_SUPPORT = 240,
++	WMI_TLV_SERVICE_NDI_NDI_STA_SUPPORT = 241,
++	WMI_TLV_SERVICE_BW_TRUE_160_SUPPORT = 242,
++	WMI_TLV_SERVICE_HOST_SCAN_STOP_VDEV_ALL_SUPPORT = 243,
++	WMI_TLV_SERVICE_BEACON_PROTECTION_SUPPORT = 244,
++	WMI_TLV_SERVICE_EMA_AP_SUPPORT = 245,
++	WMI_TLV_SERVICE_PEER_POWER_SAVE_DURATION_SUPPORT = 246,
++	WMI_TLV_SERVICE_5_DOT_9GHZ_SUPPORT = 247,
++	WMI_TLV_SERVICE_MU_PREAMBLE_PUNCTURE_SUPPORT = 248,
+ 	WMI_TLV_SERVICE_SRG_SRP_SPATIAL_REUSE_SUPPORT = 249,
++	WMI_TLV_REQUEST_CTRL_PATH_STATS_REQUEST = 250,
++	WMI_TLV_SERVICE_TPC_STATS_EVENT = 251,
++	WMI_TLV_SERVICE_NO_INTERBAND_MCC_SUPPORT = 252,
++	WMI_TLV_SERVICE_MBSS_PARAM_IN_VDEV_START_SUPPORT = 253,
+ 
+ 	WMI_MAX_EXT_SERVICE
+ };
+@@ -2572,8 +2607,8 @@ struct wmi_vdev_create_cmd {
+ 	struct wmi_mac_addr vdev_macaddr;
+ 	u32 num_cfg_txrx_streams;
+ 	u32 pdev_id;
+-	u32 flags;
+-	u32 vdevid_trans;
++	u32 flags; /* Deprecated. Use wmi_vdev_start_request_cmd */
++	u32 vdevid_trans; /* Deprecated. Use wmi_vdev_start_request_cmd */
+ } __packed;
+ 
+ struct wmi_vdev_txrx_streams {
+@@ -2654,6 +2689,9 @@ struct wmi_vdev_start_request_cmd {
+ 	u32 he_ops;
+ 	u32 cac_duration_ms;
+ 	u32 regdomain;
++	u32 min_data_rate;
++	u32 mbss_capability_flags;
++	u32 vdevid_trans;
+ } __packed;
+ 
+ #define MGMT_TX_DL_FRM_LEN		     64
+@@ -2823,6 +2861,9 @@ struct wmi_vdev_start_req_arg {
+ 	u32 pref_rx_streams;
+ 	u32 pref_tx_streams;
+ 	u32 num_noa_descriptors;
++	u32 min_data_rate;
++	u32 mbss_capability_flags;
++	u32 vdevid_trans;
+ };
+ 
+ struct peer_create_params {
+@@ -3585,6 +3626,11 @@ struct wmi_bcn_tmpl_cmd {
+ 	u32 csa_event_bitmap;
+ 	u32 mbssid_ie_offset;
+ 	u32 esp_ie_offset;
++	u32 csc_switch_count_offset;
++	u32 csc_event_bitmap;
++	u32 mu_edca_ie_offset;
++	u32 feature_enable_bitmap;
++	u32 ema_params;
+ } __packed;
+ 
+ struct wmi_key_seq_counter {
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4736,12 +4736,11 @@ static void
+ ieee80211_beacon_add_multiple_bssid_config(struct ieee80211_vif *vif, struct sk_buff *skb,
+ 					   struct cfg80211_multiple_bssid_data *config)
+ {
+-	u8 *pos = skb_put(skb, 6);
++	u8 *pos = skb_put(skb, 5);
+ 
+ 	*pos++ = WLAN_EID_EXTENSION;
+-	*pos++ = 4;
++	*pos++ = 3;
+ 	*pos++ = WLAN_EID_EXT_MULTIPLE_BSSID_CONFIGURATION;
+-	*pos++ = 2;
+ 	*pos++ = vif->bss_conf.multiple_bssid.count;
+ 	*pos++ = config->cnt;
+ }
+@@ -4823,6 +4822,7 @@ __ieee80211_beacon_get(struct ieee80211_
+ 					     beacon->multiple_bssid.len[beacon->ema_index]);
+ 				if (offs)
+ 					offs->multiple_bssid_offset = skb->len - ema_len;
++
+ 				beacon->ema_index++;
+ 				beacon->ema_index %= beacon->multiple_bssid.cnt;
+ 			}

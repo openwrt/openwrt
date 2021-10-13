@@ -1,0 +1,173 @@
+From 8b24a51b51e503807da62ab3aac3e4a0780579e3 Mon Sep 17 00:00:00 2001
+From: Ramya Gnanasekar <rgnanase@codeaurora.org>
+Date: Thu, 31 Dec 2020 17:31:55 +0530
+Subject: [PATCH] ath11k: QDSS support for qcn9100
+
+qcn9100 is a hybrid bus type device which is enumerated as
+pci device by Q6. Hence qdss trace collection is similar to qcn9000.
+QDSS trace collection depends on parameters from pci_dev structure for
+pci devices. Changed the dependent parameter to fetch from ab for
+qcn9100 and pci_dev for qcn9000.
+
+Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c     |  6 +++++
+ drivers/net/wireless/ath/ath11k/coredump.c | 38 +++++++++++++++++++++---------
+ drivers/net/wireless/ath/ath11k/debugfs.c    |  2 +-
+ drivers/net/wireless/ath/ath11k/hw.h       |  1 +
+ 4 files changed, 35 insertions(+), 12 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -96,6 +96,7 @@ static const struct ath11k_hw_params ath
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
+ 		.ce_fwlog_enable = false,
+ 		.fwmem_mode_change = false,
++		.is_qdss_support = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -144,6 +145,7 @@ static const struct ath11k_hw_params ath
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
+ 		.ce_fwlog_enable = false,
+ 		.fwmem_mode_change = false,
++		.is_qdss_support = false,
+ 	},
+ 	{
+ 		.name = "qca6390 hw2.0",
+@@ -187,6 +189,7 @@ static const struct ath11k_hw_params ath
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
+ 		.ce_fwlog_enable = false,
+  		.fwmem_mode_change = false,
++ 		.is_qdss_support = false,
+ 	},
+ 	{
+ 		.name = "qcn9074 hw1.0",
+@@ -232,6 +235,7 @@ static const struct ath11k_hw_params ath
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
+ 		.ce_fwlog_enable = true,
+ 		.fwmem_mode_change = true,
++		.is_qdss_support = true,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ5018,
+@@ -273,6 +277,7 @@ static const struct ath11k_hw_params ath
+ 		.ce_fwlog_enable = false,
+ 		.fwmem_mode_change = false,
+ 		.cold_boot_calib = true,
++		.is_qdss_support = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_QCN6122,
+@@ -314,6 +319,7 @@ static const struct ath11k_hw_params ath
+ 		.ce_fwlog_enable = false,
+ 		.cold_boot_calib = false,
+  		.fwmem_mode_change = false,
++ 		.is_qdss_support = true,
+  	},
+ };
+ 
+--- a/drivers/net/wireless/ath/ath11k/coredump.c
++++ b/drivers/net/wireless/ath/ath11k/coredump.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include <linux/devcoredump.h>
++#include <linux/platform_device.h>
+ #include <linux/dma-direction.h>
+ #include <linux/mhi.h>
+ #include <linux/pci.h>
+@@ -93,13 +94,15 @@ static void ath11k_coredump_free_q6dump(
+ 	complete(&dump_state->dump_done);
+ }
+ 
+-void ath11k_coredump_build_inline(struct ath11k_pci *ar_pci,
++void ath11k_coredump_build_inline(struct ath11k_base *ab,
+ 				  struct ath11k_dump_segment *segments, int num_seg)
+ {
+ 	struct ath11k_coredump_state *dump_state;
+ 	struct timespec64 timestamp;
+ 	struct ath11k_dump_file_data *file_data;
+ 	size_t header_size;
++	struct ath11k_pci *ar_pci = (struct ath11k_pci *)ab->drv_priv;
++	struct device dev;
+ 	u8 *buf;
+ 
+ 	header_size = sizeof(struct ath11k_dump_file_data);
+@@ -116,9 +119,17 @@ void ath11k_coredump_build_inline(struct
+ 	        sizeof(file_data->df_magic));
+ 	file_data->len = cpu_to_le32(header_size);
+ 	file_data->version = cpu_to_le32(ATH11K_FW_CRASH_DUMP_VERSION);
+-	file_data->chip_id = ar_pci->dev_id;
+-	file_data->qrtr_id = ar_pci->ab->qmi.service_ins_id;
+-	file_data->bus_id = pci_domain_nr(ar_pci->pdev->bus);
++	if (ab->hw_rev == ATH11K_HW_QCN6122) {
++		file_data->chip_id = ab->qmi.target.chip_id;
++		file_data->qrtr_id = ab->qmi.service_ins_id;
++		file_data->bus_id = ab->userpd_id;
++		dev = ab->pdev->dev;
++	} else {
++		file_data->chip_id = ar_pci->dev_id;
++		file_data->qrtr_id = ar_pci->ab->qmi.service_ins_id;
++		file_data->bus_id = pci_domain_nr(ar_pci->pdev->bus);
++		dev = ar_pci->pdev->dev;
++	}
+ 	if (file_data->bus_id > ATH11K_MAX_PCI_DOMAINS)
+ 		file_data->bus_id = ATH11K_MAX_PCI_DOMAINS;
+ 	guid_gen(&file_data->guid);
+@@ -144,7 +155,7 @@ void ath11k_coredump_build_inline(struct
+ 	dump_state->segments = segments;
+ 	init_completion(&dump_state->dump_done);
+ 
+-	dev_coredumpm(&ar_pci->pdev->dev, NULL, dump_state, header_size, GFP_KERNEL,
++	dev_coredumpm(&dev, NULL, dump_state, header_size, GFP_KERNEL,
+ 		      ath11k_coredump_read_q6dump, ath11k_coredump_free_q6dump);
+ 
+ 	/* Wait until the dump is read and free is called */
+@@ -258,7 +269,7 @@ void ath11k_coredump_download_rddm(struc
+ 
+ 		BUG_ON(1);
+ 	} else {
+-		ath11k_coredump_build_inline(ar_pci, segment, num_seg);
++		ath11k_coredump_build_inline(ab, segment, num_seg);
+ 	}
+ 
+ 	vfree(segment);
+@@ -267,7 +278,6 @@ void ath11k_coredump_download_rddm(struc
+ void ath11k_coredump_qdss_dump(struct ath11k_base *ab,
+ 			       struct ath11k_qmi_event_qdss_trace_save_data *event_data)
+ {
+-	struct ath11k_pci *ar_pci = (struct ath11k_pci *)ab->drv_priv;
+ 	struct ath11k_dump_segment *segment;
+ 	int len, num_seg;
+ 	void *dump;
+@@ -348,7 +358,7 @@ void ath11k_coredump_qdss_dump(struct at
+ 			   segment->vaddr, segment->len);
+ 		segment->type = ATH11K_FW_QDSS_DATA;
+ 	}
+-	ath11k_coredump_build_inline(ar_pci, segment, 1);
++	ath11k_coredump_build_inline(ab, segment, 1);
+ out:
+ 	ATH11K_MEMORY_STATS_DEC(ab, malloc_size, event_data->total_size);
+ 	ATH11K_MEMORY_STATS_DEC(ab, malloc_size, len);
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -1090,7 +1090,7 @@ ath11k_write_trace_qdss(struct file *fil
+ 			ret = count;
+ 			goto exit;
+ 		}
+-		if (!ab->bus_params.fixed_bdf_addr) {
++		if (ab->hw_params.is_qdss_support) {
+ 			ret = ath11k_send_qdss_trace_mode_req(ab,
+ 							      QMI_WLANFW_QDSS_TRACE_OFF_V01);
+ 			if (ret < 0)
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -198,6 +198,7 @@ struct ath11k_hw_params {
+ 	bool cold_boot_calib;
+ 	bool ce_fwlog_enable;
+ 	bool fwmem_mode_change;
++	bool is_qdss_support;
+ };
+ 
+ struct ath11k_hw_ops {

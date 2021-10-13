@@ -1,0 +1,148 @@
+From 2974dde2aa3273451b6a51c33a30fc98cee10b25 Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Sat, 30 Jan 2021 10:15:52 -0800
+Subject: [PATCH 1/4] hostapd: Add country Information element support for 6Ghz
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+---
+ src/ap/beacon.c              | 66 +++++++++++++++++++++++++-----------
+ src/common/ieee802_11_defs.h | 10 ++++++
+ 2 files changed, 56 insertions(+), 20 deletions(-)
+
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -187,7 +187,8 @@ static u8 * hostapd_eid_pwr_constraint(s
+ }
+ 
+ 
+-static u8 * hostapd_eid_country_add(u8 *pos, u8 *end, int chan_spacing,
++static u8 * hostapd_eid_country_add(struct hostapd_data *hapd, u8 *pos,
++				    u8 *end, int chan_spacing,
+ 				    struct hostapd_channel_data *start,
+ 				    struct hostapd_channel_data *prev)
+ {
+@@ -199,30 +200,20 @@ static u8 * hostapd_eid_country_add(u8 *
+ 	/* number of channels */
+ 	*pos++ = (prev->chan - start->chan) / chan_spacing + 1;
+ 	/* maximum transmit power level */
+-	*pos++ = start->max_tx_power;
++	if (!is_6ghz_op_class(hapd->iconf->op_class))
++		*pos++ = start->max_tx_power;
++	else
++		*pos++ = 0; /* Reserved for 6GHz Band */
+ 
+ 	return pos;
+ }
+ 
+-
+-static u8 * hostapd_eid_country(struct hostapd_data *hapd, u8 *eid,
+-				int max_len)
++static u8 * hostapd_fill_triplets(struct hostapd_data *hapd, u8 *pos,
++				  u8 *end)
+ {
+-	u8 *pos = eid;
+-	u8 *end = eid + max_len;
+-	int i;
+ 	struct hostapd_hw_modes *mode;
+ 	struct hostapd_channel_data *start, *prev;
+-	int chan_spacing = 1;
+-
+-	if (!hapd->iconf->ieee80211d || max_len < 6 ||
+-	    hapd->iface->current_mode == NULL)
+-		return eid;
+-
+-	*pos++ = WLAN_EID_COUNTRY;
+-	pos++; /* length will be set later */
+-	os_memcpy(pos, hapd->iconf->country, 3); /* e.g., 'US ' */
+-	pos += 3;
++	int i, chan_spacing = 1;
+ 
+ 	mode = hapd->iface->current_mode;
+ 	if (mode->mode == HOSTAPD_MODE_IEEE80211A)
+@@ -233,6 +224,7 @@ static u8 * hostapd_eid_country(struct h
+ 		struct hostapd_channel_data *chan = &mode->channels[i];
+ 		if (chan->flag & HOSTAPD_CHAN_DISABLED)
+ 			continue;
++
+ 		if (start && prev &&
+ 		    prev->chan + chan_spacing == chan->chan &&
+ 		    start->max_tx_power == chan->max_tx_power) {
+@@ -241,7 +233,8 @@ static u8 * hostapd_eid_country(struct h
+ 		}
+ 
+ 		if (start && prev) {
+-			pos = hostapd_eid_country_add(pos, end, chan_spacing,
++			pos = hostapd_eid_country_add(hapd, pos, end,
++						      chan_spacing,
+ 						      start, prev);
+ 			start = NULL;
+ 		}
+@@ -251,10 +244,48 @@ static u8 * hostapd_eid_country(struct h
+ 	}
+ 
+ 	if (start) {
+-		pos = hostapd_eid_country_add(pos, end, chan_spacing,
++		pos = hostapd_eid_country_add(hapd, pos, end,
++					      chan_spacing,
+ 					      start, prev);
+ 	}
+ 
++	return pos;
++}
++
++static u8 * hostapd_eid_country(struct hostapd_data *hapd, u8 *eid,
++				int max_len)
++{
++	u8 *pos = eid;
++	u8 *end = eid + max_len;
++
++	if (!hapd->iconf->ieee80211d || max_len < 6 ||
++	    hapd->iface->current_mode == NULL)
++		return eid;
++
++	*pos++ = WLAN_EID_COUNTRY;
++	pos++; /* length will be set later */
++	os_memcpy(pos, hapd->iconf->country, 3); /* e.g., 'US ' */
++	pos += 3;
++
++	if (is_6ghz_op_class(hapd->iconf->op_class)) {
++		/* Third octet of the country string to indicate
++		 * Global Operating Class
++		 */
++		eid[4] = 0x4;
++
++		*pos++ = WLAN_EID_EXT_OPERATING_TRIPLET;
++		/* Operating class*/
++		*pos++ = hapd->iconf->op_class;
++		/* Coverage Class */
++		*pos++ = 0;
++		/* Subband Triplets are required only for 20MHz case */
++		if (hapd->iconf->op_class == 131 ||
++		    hapd->iconf->op_class == 136)
++			pos = hostapd_fill_triplets(hapd, pos, end);
++	} else {
++		pos = hostapd_fill_triplets(hapd, pos, end);
++	}
++
+ 	if ((pos - eid) & 1) {
+ 		if (end - pos < 1)
+ 			return eid;
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -494,6 +494,16 @@
+ #define WLAN_EID_EXT_ANTI_CLOGGING_TOKEN 93
+ #define WLAN_EID_EXT_PASN_PARAMS 100
+ 
++/* Operating Triplet can be any integer >= 201
++ * From IEEE P802.11-REVmd/D4.0: The first octet in each Subband
++ * Triplet field or Operating Triplet field contains an unsigned
++ * integer and identifies the type of field. If the integer has
++ * a value less than or equal to 200, then the field is a
++ * Subband Triplet field. If the integer has a value of 201 or
++ * greater, then the field is an Operating Triplet field.
++ */
++#define WLAN_EID_EXT_OPERATING_TRIPLET 201
++
+ /* Extended Capabilities field */
+ #define WLAN_EXT_CAPAB_20_40_COEX 0
+ #define WLAN_EXT_CAPAB_GLK 1

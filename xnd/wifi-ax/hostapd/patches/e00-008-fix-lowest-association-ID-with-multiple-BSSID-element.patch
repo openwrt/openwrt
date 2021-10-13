@@ -1,0 +1,33 @@
+From fbb47fb4bf673cc7d5c7b59a5c9cae5e1fea89eb Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Tue, 29 Sep 2020 17:29:16 -0700
+Subject: [PATCH] hostapd: Fix lowest association ID with multiple BSSID element
+
+Association ID space is shared when multiple BSSID element is included
+in beacons.
+
+As per IEEE P802.11ax/D6.0, 11.1.3.8.5 Traffic advertisement in a
+multiple BSSID set, the lowest association ID to be assigned to non-AP
+station should be 2^n, where n is the maximum BSSID indicator of the
+multiple BSSID set.
+Example, if the set has 6 BSSes, the lowest association ID will be 8.
+
+This patch sets the correct value which was incorrectly set to the number
+BSSes in the multiple BSSID set.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/ieee802_11.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -2719,7 +2719,7 @@ int hostapd_get_aid(struct hostapd_data
+ 		return -1;
+ 	aid = i * 32 + j;
+ 	if (hapd->iconf->multiple_bssid)
+-		aid += hapd->iface->num_bss;
++		aid += pow(2, ceil(log2(hapd->iface->num_bss)));
+ 	else
+ 		aid += 1;
+ 	if (aid > 2007)

@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+
+START=80
+
+USE_PROCD=1
+PROG=/usr/sbin/dynamic-vlan
+
+start_service() {
+	wan=$(cat /etc/board.json | jsonfilter -e '@.network.wan.device')
+	procd_open_instance
+	procd_set_param command "$PROG" $wan
+	procd_set_param respawn
+	procd_close_instance
+}

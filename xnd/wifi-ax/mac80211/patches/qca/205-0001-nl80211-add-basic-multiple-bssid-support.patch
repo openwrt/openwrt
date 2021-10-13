@@ -1,0 +1,1274 @@
+From 9a3e2346e01b569676a2c468063c5689d451e761 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 25 Aug 2020 00:10:23 -0700
+Subject: [PATCH 1/9] nl80211: add basic multiple bssid support
+
+This patch adds support for passing the multiple bssid config to the
+kernel when adding an interface. If the BSS is non-transmitting it needs
+to be indicated. A non-transmitting BSSID will have a parent interface,
+which needs to be transmitting. The multiple bssid elements are passed
+as an array.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ include/net/cfg80211.h       | 35 +++++++++++++++++++++++++++++++++++
+ include/uapi/linux/nl80211.h | 23 +++++++++++++++++++++++
+ net/wireless/nl80211.c       | 40 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 98 insertions(+)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index 71d6a6c..240108e 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -488,6 +488,21 @@ struct ieee80211_supported_band {
+ };
+ 
+ /**
++ * struct ieee80211_multiple_bssid - AP settings for multi bssid
++ *
++ * @index: the index of this AP in the multi bssid group.
++ * @count: the total number of multi bssid peer APs.
++ * @parent: a non-transmitted bssid has a transmitted parent
++ * @non_transmitted: Is this a non-transmitted bssid
++ */
++struct ieee80211_multiple_bssid {
++	u8 index;
++	u8 count;
++	u32 parent;
++	bool non_transmitted;
++};
++
++/**
+  * ieee80211_get_sband_iftype_data - return sband data for a given iftype
+  * @sband: the sband to search for the STA on
+  * @iftype: enum nl80211_iftype
+@@ -631,6 +646,7 @@ static inline void wiphy_read_of_freq_limits(struct wiphy *wiphy)
+  *	belonging to that MU-MIMO groupID; %NULL if not changed
+  * @vht_mumimo_follow_addr: MU-MIMO follow address, used for monitoring
+  *	MU-MIMO packets going to the specified station; %NULL if not changed
++ * @multiple_bssid: AP settings for multiple bssid
+  */
+ struct vif_params {
+ 	u32 flags;
+@@ -638,6 +654,7 @@ struct vif_params {
+ 	u8 macaddr[ETH_ALEN];
+ 	const u8 *vht_mumimo_groups;
+ 	const u8 *vht_mumimo_follow_addr;
++	struct ieee80211_multiple_bssid	multiple_bssid;
+ };
+ 
+ /**
+@@ -1035,6 +1052,19 @@ struct cfg80211_crypto_settings {
+ };
+ 
+ /**
++ * struct cfg80211_multiple_bssid_data - multiple_bssid data
++ * @ies: array of extra information element(s) to add into Beacon frames for multiple
++ *	bssid or %NULL
++ * @len: array of lengths of multiple_bssid.ies in octets
++ * @cnt: number of entries in multiple_bssid.ies
++ */
++struct cfg80211_multiple_bssid_data {
++	u8 *ies[NL80211_MULTIPLE_BSSID_IES_MAX];
++	size_t len[NL80211_MULTIPLE_BSSID_IES_MAX];
++	int cnt;
++};
++
++/**
+  * struct cfg80211_beacon_data - beacon data
+  * @head: head portion of beacon (before TIM IE)
+  *	or %NULL if not changed
+@@ -1060,6 +1090,7 @@ struct cfg80211_crypto_settings {
+  *	Token (measurement type 11)
+  * @lci_len: LCI data length
+  * @civicloc_len: Civic location data length
++ * @multiple_bssid: multiple_bssid data
+  */
+ struct cfg80211_beacon_data {
+ 	const u8 *head, *tail;
+@@ -1078,6 +1109,8 @@ struct cfg80211_beacon_data {
+ 	size_t probe_resp_len;
+ 	size_t lci_len;
+ 	size_t civicloc_len;
++
++	struct cfg80211_multiple_bssid_data multiple_bssid;
+ };
+ 
+ struct mac_address {
+@@ -1181,6 +1214,7 @@ enum cfg80211_ap_settings_flags {
+  * @he_obss_pd: OBSS Packet Detection settings
+  * @he_bss_color: BSS Color settings
+  * @he_oper: HE operation IE (or %NULL if HE isn't enabled)
++ * @multiple_bssid: AP settings for multiple bssid
+  */
+ struct cfg80211_ap_settings {
+ 	struct cfg80211_chan_def chandef;
+@@ -1211,6 +1245,7 @@ struct cfg80211_ap_settings {
+ 	u32 flags;
+ 	struct ieee80211_he_obss_pd he_obss_pd;
+ 	struct cfg80211_he_bss_color he_bss_color;
++	struct ieee80211_multiple_bssid multiple_bssid;
+ };
+ 
+ /**
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index 7bc9318..835ae03 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -2577,6 +2577,20 @@ enum nl80211_commands {
+  * @NL80211_ATTR_HE_MUEDCA_PARAMS: MU-EDCA AC parameters for the
+  *	%NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS command.
+  *
++ * @NL80211_ATTR_MULTIPLE_BSSID_NON_TRANSMITTING: Set the Non-Transmitted flag for this
++ *	BSSIDs beacon.
++ *
++ * @NL80211_ATTR_MULTIPLE_BSSID_PARENT: If this is a Non-Transmitted BSSID, define
++ *	the parent (transmitting) interface.
++ *
++ * @NL80211_ATTR_MULTIPLE_BSSID_INDEX: The index of this BSS inside the multi bssid
++ *	element.
++ *
++ * @NL80211_ATTR_MULTIPLE_BSSID_COUNT: The number of BSSs inside the multi bssid element.
++ *
++ * @NL80211_ATTR_MULTIPLE_BSSID_IES: The Elements that describe our multiple BSS group.
++ *	these get passed separately as the kernel might need to split them up for EMA VAP.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3075,6 +3089,13 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_DISABLE_HE,
+ 
+ 	NL80211_ATTR_HE_MUEDCA_PARAMS,
++
++	NL80211_ATTR_MULTIPLE_BSSID_NON_TRANSMITTING,
++	NL80211_ATTR_MULTIPLE_BSSID_PARENT,
++	NL80211_ATTR_MULTIPLE_BSSID_INDEX,
++	NL80211_ATTR_MULTIPLE_BSSID_COUNT,
++	NL80211_ATTR_MULTIPLE_BSSID_IES,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -3138,6 +3159,8 @@ enum nl80211_attrs {
+ 
+ #define NL80211_CQM_TXE_MAX_INTVL		1800
+ 
++#define NL80211_MULTIPLE_BSSID_IES_MAX		8
++
+ /**
+  * enum nl80211_iftype - (virtual) interface types
+  *
+diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
+index ab8fc60..f7ec308 100644
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -773,6 +773,11 @@ static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
+ 	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
+ 	[NL80211_ATTR_SAR_SPEC] = NLA_POLICY_NESTED(sar_policy),
+ 	[NL80211_ATTR_DISABLE_HE] = { .type = NLA_FLAG },
++	[NL80211_ATTR_MULTIPLE_BSSID_NON_TRANSMITTING] = { .type = NLA_FLAG },
++	[NL80211_ATTR_MULTIPLE_BSSID_PARENT] = { .type = NLA_U32 },
++	[NL80211_ATTR_MULTIPLE_BSSID_INDEX] = { .type = NLA_U8 },
++	[NL80211_ATTR_MULTIPLE_BSSID_COUNT] = { .type = NLA_U8 },
++	[NL80211_ATTR_MULTIPLE_BSSID_IES] = { .type = NLA_NESTED },
+ };
+ 
+ /* policy for the key attributes */
+@@ -3986,6 +3991,14 @@ static int nl80211_new_interface(struct sk_buff *skb, struct genl_info *info)
+ 			return err;
+ 	}
+ 
++	if (info->attrs[NL80211_ATTR_MULTIPLE_BSSID_NON_TRANSMITTING])
++		params.multiple_bssid.non_transmitted =
++			nla_get_flag(info->attrs[NL80211_ATTR_MULTIPLE_BSSID_NON_TRANSMITTING]);
++
++	if (info->attrs[NL80211_ATTR_MULTIPLE_BSSID_PARENT])
++		params.multiple_bssid.parent =
++			nla_get_u8(info->attrs[NL80211_ATTR_MULTIPLE_BSSID_PARENT]);
++
+ 	if (!cfg80211_iftype_allowed(&rdev->wiphy, type, params.use_4addr, 0))
+ 		return -EOPNOTSUPP;
+ 
+@@ -5055,6 +5068,21 @@ static int nl80211_parse_beacon(struct cfg80211_registered_device *rdev,
+ 		bcn->ftm_responder = -1;
+ 	}
+ 
++	if (attrs[NL80211_ATTR_MULTIPLE_BSSID_IES]) {
++		struct nlattr *nl_ie;
++		int rem_ie;
++
++		nla_for_each_nested(nl_ie, attrs[NL80211_ATTR_MULTIPLE_BSSID_IES], rem_ie) {
++			if (bcn->multiple_bssid.cnt > NL80211_MULTIPLE_BSSID_IES_MAX)
++				return -EINVAL;
++			if (nla_type(nl_ie) != bcn->multiple_bssid.cnt + 1)
++				return -EINVAL;
++			bcn->multiple_bssid.ies[bcn->multiple_bssid.cnt] = nla_data(nl_ie);
++			bcn->multiple_bssid.len[bcn->multiple_bssid.cnt] = nla_len(nl_ie);
++			bcn->multiple_bssid.cnt++;
++		}
++	}
++
+ 	return 0;
+ }
+ 
+@@ -5512,6 +5540,18 @@ static int nl80211_start_ap(struct sk_buff *skb, struct genl_info *info)
+ 			goto out;
+ 	}
+ 
++	if (info->attrs[NL80211_ATTR_MULTIPLE_BSSID_INDEX])
++		params.multiple_bssid.index = nla_get_u8(
++				info->attrs[NL80211_ATTR_MULTIPLE_BSSID_INDEX]);
++
++	if (info->attrs[NL80211_ATTR_MULTIPLE_BSSID_COUNT])
++		params.multiple_bssid.count = nla_get_u8(
++				info->attrs[NL80211_ATTR_MULTIPLE_BSSID_COUNT]);
++
++	if (params.multiple_bssid.non_transmitted &&
++	    !info->attrs[NL80211_ATTR_MULTIPLE_BSSID_PARENT])
++		return -EOPNOTSUPP;
++
+ 	nl80211_calculate_ap_params(&params);
+ 
+ 	if (info->attrs[NL80211_ATTR_EXTERNAL_AUTH_SUPPORT])
+-- 
+2.7.4
+
+
+From 3067f5de76b82f77799185ecd1a7f86409d06790 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 26 Aug 2020 10:49:48 -0700
+Subject: [PATCH 2/9] mac80211: add multiple bssid support to interface
+ handling
+
+When bringing up multi bssid APs we need to track the parent-child relation
+of non-transmitting and transmitting VAPs. This patch checks the above by
+using a linked list to track the relations. The patch also ensures that
+when a non-transmitting interface is closed the transmitting one is also
+closed.
+
+Fixed Null pointer dereference.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+---
+ include/net/mac80211.h | 13 +++++++++++-
+ net/mac80211/cfg.c     | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ net/mac80211/debugfs.c |  1 +
+ net/mac80211/iface.c   |  7 +++++++
+ 4 files changed, 74 insertions(+), 1 deletion(-)
+
+diff --git a/include/net/mac80211.h b/include/net/mac80211.h
+index 2adb4bc..26530d0 100644
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1730,6 +1730,9 @@ enum ieee80211_offload_flags {
+  *	protected by fq->lock.
+  * @offload_flags: 802.3 -> 802.11 enapsulation offload flags, see
+  *	&enum ieee80211_offload_flags.
++ * @multiple_bssid.parent: a non-transmitted bssid has a transmitted parent.
++ * @multiple_bssid.list: linked list for tracking parent - child relations.
++ * @multiple_bssid.non_transmitted: Is this a non-transmitted bssi
+  */
+ struct ieee80211_vif {
+ 	enum nl80211_iftype type;
+@@ -1757,6 +1760,11 @@ struct ieee80211_vif {
+ 	bool rx_mcast_action_reg;
+ 
+ 	bool txqs_stopped[IEEE80211_NUM_ACS];
++	struct {
++		struct ieee80211_vif *parent;
++		struct list_head list;
++		bool non_transmitted;
++	} multiple_bssid;
+ 
+ 	/* must be last */
+ 	u8 drv_priv[] __aligned(sizeof(void *));
+@@ -2415,7 +2423,7 @@ struct ieee80211_txq {
+  * @IEEE80211_HW_TX_STATUS_NO_AMPDU_LEN: Driver does not report accurate A-MPDU
+  *	length in tx status information
+  *
+- * @IEEE80211_HW_SUPPORTS_MULTI_BSSID: Hardware supports multi BSSID
++ * @IEEE80211_HW_SUPPORTS_MULTI_BSSID: Hardware supports multi BSSID in STA mode
+  *
+  * @IEEE80211_HW_SUPPORTS_ONLY_HE_MULTI_BSSID: Hardware supports multi BSSID
+  *	only for HE APs. Applies if @IEEE80211_HW_SUPPORTS_MULTI_BSSID is set.
+@@ -2435,6 +2443,8 @@ struct ieee80211_txq {
+  *
+  *  @IEEE80211_HW_SUPPORTS_NSS_OFFLOAD: Hardware/driver supports NSS offload
+  *
++ * @IEEE80211_HW_SUPPORTS_MULTI_BSSID_AP: Hardware supports multi BSSID in AP mode
++ *
+  * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
+  */
+ enum ieee80211_hw_flags {
+@@ -2491,6 +2501,7 @@ enum ieee80211_hw_flags {
+ 	IEEE80211_HW_SUPPORTS_RX_DECAP_OFFLOAD,
+ 	IEEE80211_HW_SUPPORTS_CONC_MON_RX_DECAP,
+ 	IEEE80211_HW_SUPPORTS_NSS_OFFLOAD,
++	IEEE80211_HW_SUPPORTS_MULTI_BSSID_AP,
+ 
+ 	/* keep last, obviously */
+ 	NUM_IEEE80211_HW_FLAGS
+diff --git a/net/mac80211/cfg.c b/net/mac80211/cfg.c
+index d56a16a..c9b0072 100644
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -111,6 +111,36 @@ static int ieee80211_set_mon_options(struct ieee80211_sub_if_data *sdata,
+ 	return 0;
+ }
+ 
++static int ieee80211_set_multiple_bssid_options(struct ieee80211_sub_if_data *sdata,
++						struct vif_params *params)
++{
++	struct ieee80211_local *local = sdata->local;
++	struct wiphy *wiphy = local->hw.wiphy;
++	struct net_device *parent;
++	struct ieee80211_sub_if_data *psdata;
++
++	if (!ieee80211_hw_check(&local->hw, SUPPORTS_MULTI_BSSID_AP))
++		return 0;
++
++	if (params->multiple_bssid.non_transmitted) {
++		parent = __dev_get_by_index(wiphy_net(wiphy),
++					    params->multiple_bssid.parent);
++		if (!parent || !parent->ieee80211_ptr)
++			return -EINVAL;
++		psdata = IEEE80211_WDEV_TO_SUB_IF(parent->ieee80211_ptr);
++		if (psdata->vif.multiple_bssid.non_transmitted)
++			return -EINVAL;
++		sdata->vif.multiple_bssid.parent = &psdata->vif;
++		list_add(&sdata->vif.multiple_bssid.list,
++			 &psdata->vif.multiple_bssid.list);
++		sdata->vif.multiple_bssid.non_transmitted = true;
++	} else {
++		INIT_LIST_HEAD(&sdata->vif.multiple_bssid.list);
++	}
++
++	return 0;
++}
++
+ static struct wireless_dev *ieee80211_add_iface(struct wiphy *wiphy,
+ 						const char *name,
+ 						unsigned char name_assign_type,
+@@ -136,11 +166,35 @@ static struct wireless_dev *ieee80211_add_iface(struct wiphy *wiphy,
+ 		}
+ 	}
+ 
++	if (type == NL80211_IFTYPE_AP) {
++		err = ieee80211_set_multiple_bssid_options(sdata, params);
++		if (err) {
++			ieee80211_if_remove(sdata);
++			return NULL;
++		}
++	}
++
+ 	return wdev;
+ }
+ 
+ static int ieee80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
+ {
++	struct ieee80211_sub_if_data *sdata;
++	struct ieee80211_vif *child, *tmp;
++
++	sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
++	if (sdata && sdata->vif.type == NL80211_IFTYPE_AP) {
++		if (!sdata->vif.multiple_bssid.non_transmitted) {
++			if (!list_empty(&sdata->vif.multiple_bssid.list))
++				list_for_each_entry_safe(child, tmp,
++							 &sdata->vif.multiple_bssid.list,
++							 multiple_bssid.list)
++					dev_close(vif_to_sdata(child)->wdev.netdev);
++		} else {
++			list_del(&sdata->vif.multiple_bssid.list);
++		}
++	}
++
+ 	ieee80211_if_remove(IEEE80211_WDEV_TO_SUB_IF(wdev));
+ 
+ 	return 0;
+diff --git a/net/mac80211/debugfs.c b/net/mac80211/debugfs.c
+index 45849ce..59071d1 100644
+--- a/net/mac80211/debugfs.c
++++ b/net/mac80211/debugfs.c
+@@ -408,6 +408,7 @@ static const char *hw_flag_names[] = {
+ 	FLAG(SUPPORTS_RX_DECAP_OFFLOAD),
+ 	FLAG(SUPPORTS_CONC_MON_RX_DECAP),
+ 	FLAG(SUPPORTS_NSS_OFFLOAD),
++	FLAG(SUPPORTS_MULTI_BSSID_AP),
+ #undef FLAG
+ };
+ 
+diff --git a/net/mac80211/iface.c b/net/mac80211/iface.c
+index 520455d..186c138 100644
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -376,6 +376,13 @@ static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata, bool going_do
+ 	bool cancel_scan;
+ 	struct cfg80211_nan_func *func;
+ 
++	if (sdata->vif.type == NL80211_IFTYPE_AP &&
++	    sdata->vif.multiple_bssid.non_transmitted)
++		/* make sure the parent is already down */
++		if (sdata->vif.multiple_bssid.parent &&
++		    ieee80211_sdata_running(vif_to_sdata(sdata->vif.multiple_bssid.parent)))
++			dev_close(vif_to_sdata(sdata->vif.multiple_bssid.parent)->wdev.netdev);
++
+ 	clear_bit(SDATA_STATE_RUNNING, &sdata->state);
+ 
+ 	cancel_scan = rcu_access_pointer(local->scan_sdata) == sdata;
+-- 
+2.7.4
+
+
+From 1ab91aa3c291efb22a9feec070181156d00f4685 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 26 Aug 2020 10:54:07 -0700
+Subject: [PATCH 3/9] mac80211: add multiple bssid support to beacon handling
+
+With beacon_data now holding the additional information about the multiple
+bssid elements, we need to honour these in the various beacon handling
+code paths.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ include/net/mac80211.h     |  2 ++
+ net/mac80211/cfg.c         | 59 +++++++++++++++++++++++++++++++++++++++++++---
+ net/mac80211/ieee80211_i.h |  1 +
+ 3 files changed, 59 insertions(+), 3 deletions(-)
+
+diff --git a/include/net/mac80211.h b/include/net/mac80211.h
+index 26530d0..20a835f 100644
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -646,6 +646,7 @@ struct ieee80211_fils_discovery {
+  * @beacon_tx_rate: The configured beacon transmit rate that needs to be passed
+  *	to driver when rate control is offloaded to firmware.
+  * @nss_ap_isolate: Used for notifying the NSS host about AP isolate feature
++ * @multiple_bssid: the multiple bssid settings of the AP.
+  */
+ struct ieee80211_bss_conf {
+ 	const u8 *bssid;
+@@ -717,6 +718,7 @@ struct ieee80211_bss_conf {
+ 	bool s1g;
+ 	struct cfg80211_bitrate_mask beacon_tx_rate;
+ 	bool nss_ap_isolate;
++	struct ieee80211_multiple_bssid multiple_bssid;
+ };
+ 
+ /**
+diff --git a/net/mac80211/cfg.c b/net/mac80211/cfg.c
+index c9b0072..15aa4ee 100644
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -994,12 +994,38 @@ static int ieee80211_set_ftm_responder_params(
+ 	return 0;
+ }
+ 
++static int ieee80211_get_multiple_bssid_beacon_len(struct cfg80211_multiple_bssid_data *data)
++{
++	int i, len = 0;
++
++	for (i = 0; i < data->cnt; i++)
++		len += data->len[i];
++
++	return len;
++}
++
++static u8 *ieee80211_copy_multiple_bssid_beacon(u8 *offset,
++						struct cfg80211_multiple_bssid_data *new,
++						struct cfg80211_multiple_bssid_data *old)
++{
++	int i;
++
++	*new = *old;
++	for (i = 0; i < new->cnt; i++) {
++		new->ies[i] = offset;
++		memcpy(new->ies[i], old->ies[i], new->len[i]);
++		offset += new->len[i];
++	}
++	return offset;
++}
++
+ static int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
+ 				   struct cfg80211_beacon_data *params,
+ 				   const struct ieee80211_csa_settings *csa)
+ {
+ 	struct beacon_data *new, *old;
+-	int new_head_len, new_tail_len;
++	int new_head_len, new_tail_len, new_multiple_bssid_len;
++	u8 *new_multiple_bssid_offset;
+ 	int size, err;
+ 	u32 changed = BSS_CHANGED_BEACON;
+ 
+@@ -1023,7 +1049,15 @@ static int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
+ 	else
+ 		new_tail_len = old->tail_len;
+ 
+-	size = sizeof(*new) + new_head_len + new_tail_len;
++	/* new or old multiple_bssid? */
++	if (params->multiple_bssid.cnt || !old)
++		new_multiple_bssid_len =
++			ieee80211_get_multiple_bssid_beacon_len(&params->multiple_bssid);
++	else
++		new_multiple_bssid_len =
++			ieee80211_get_multiple_bssid_beacon_len(&old->multiple_bssid);
++
++	size = sizeof(*new) + new_head_len + new_tail_len + new_multiple_bssid_len;
+ 
+ 	new = kzalloc(size, GFP_KERNEL);
+ 	if (!new)
+@@ -1040,6 +1074,18 @@ static int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
+ 	new->head_len = new_head_len;
+ 	new->tail_len = new_tail_len;
+ 
++	new_multiple_bssid_offset = new->tail + new_tail_len;
++
++	/* copy in optional multiple_bssid_ies */
++	if (params->multiple_bssid.cnt)
++		ieee80211_copy_multiple_bssid_beacon(new_multiple_bssid_offset,
++						     &new->multiple_bssid,
++						     &params->multiple_bssid);
++	else if (old && old->multiple_bssid.cnt)
++		ieee80211_copy_multiple_bssid_beacon(new_multiple_bssid_offset,
++						     &new->multiple_bssid,
++						     &old->multiple_bssid);
++
+ 	if (csa) {
+ 		new->cntdwn_current_counter = csa->count;
+ 		memcpy(new->cntdwn_counter_offsets, csa->counter_offsets_beacon,
+@@ -1191,6 +1237,8 @@ static int ieee80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
+ 	sdata->vif.bss_conf.he_bss_color = params->he_bss_color;
+ 	sdata->vif.bss_conf.s1g = params->chandef.chan->band ==
+ 				  NL80211_BAND_S1GHZ;
++	sdata->vif.bss_conf.multiple_bssid.count = params->multiple_bssid.count;
++	sdata->vif.bss_conf.multiple_bssid.index = params->multiple_bssid.index;
+ 
+ 	sdata->vif.bss_conf.ssid_len = params->ssid_len;
+ 	if (params->ssid_len)
+@@ -3094,7 +3142,8 @@ cfg80211_beacon_dup(struct cfg80211_beacon_data *beacon)
+ 
+ 	len = beacon->head_len + beacon->tail_len + beacon->beacon_ies_len +
+ 	      beacon->proberesp_ies_len + beacon->assocresp_ies_len +
+-	      beacon->probe_resp_len + beacon->lci_len + beacon->civicloc_len;
++	      beacon->probe_resp_len + beacon->lci_len + beacon->civicloc_len +
++	      ieee80211_get_multiple_bssid_beacon_len(&beacon->multiple_bssid);
+ 
+ 	new_beacon = kzalloc(sizeof(*new_beacon) + len, GFP_KERNEL);
+ 	if (!new_beacon)
+@@ -3137,6 +3186,10 @@ cfg80211_beacon_dup(struct cfg80211_beacon_data *beacon)
+ 		memcpy(pos, beacon->probe_resp, beacon->probe_resp_len);
+ 		pos += beacon->probe_resp_len;
+ 	}
++	if (beacon->multiple_bssid.cnt)
++		pos = ieee80211_copy_multiple_bssid_beacon(pos,
++							   &new_beacon->multiple_bssid,
++							   &beacon->multiple_bssid);
+ 
+ 	/* might copy -1, meaning no changes requested */
+ 	new_beacon->ftm_responder = beacon->ftm_responder;
+diff --git a/net/mac80211/ieee80211_i.h b/net/mac80211/ieee80211_i.h
+index 27702fc..674b241 100644
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -265,6 +265,7 @@ struct beacon_data {
+ 	struct ieee80211_meshconf_ie *meshconf;
+ 	u16 cntdwn_counter_offsets[IEEE80211_MAX_CNTDWN_COUNTERS_NUM];
+ 	u8 cntdwn_current_counter;
++	struct cfg80211_multiple_bssid_data multiple_bssid;
+ 	struct rcu_head rcu_head;
+ };
+ 
+-- 
+2.7.4
+
+
+From 27172ed89ee48b5947b2936a04ab78ad572182fe Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 12 Aug 2020 14:58:08 +0200
+Subject: [PATCH 4/9] mac80211: add multiple bssid/ema support to bcn
+ templating
+
+Extend ieee80211_beacon_get_template() to allow generation of EMA beacons.
+Drivers for hardware that does not support ema offloading can use this
+function to update their becaons after they receive beacon completion
+events from the hardware.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ include/net/mac80211.h     | 26 +++++++++++++++++++++++++
+ net/mac80211/ieee80211_i.h |  1 +
+ net/mac80211/tx.c          | 48 ++++++++++++++++++++++++++++++++++++++++++----
+ 3 files changed, 71 insertions(+), 4 deletions(-)
+
+diff --git a/include/net/mac80211.h b/include/net/mac80211.h
+index 20a835f..d3bb1d1 100644
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -4923,12 +4923,16 @@ void ieee80211_report_low_ack(struct ieee80211_sta *sta, u32 num_packets);
+  * @cntdwn_counter_offs: array of IEEE80211_MAX_CNTDWN_COUNTERS_NUM offsets
+  *	to countdown counters.  This array can contain zero values which
+  *	should be ignored.
++ * @multiple_bssid_offset: position of the multiple bssid element
++ * @multiple_bssid_length: size of the multiple bssid element
+  */
+ struct ieee80211_mutable_offsets {
+ 	u16 tim_offset;
+ 	u16 tim_length;
+ 
+ 	u16 cntdwn_counter_offs[IEEE80211_MAX_CNTDWN_COUNTERS_NUM];
++	u16 multiple_bssid_offset;
++	u16 multiple_bssid_length;
+ };
+ 
+ /**
+@@ -4956,6 +4960,28 @@ ieee80211_beacon_get_template(struct ieee80211_hw *hw,
+ 			      struct ieee80211_mutable_offsets *offs);
+ 
+ /**
++ * ieee80211_beacon_get_template - beacon template generation function
++ * @hw: pointer obtained from ieee80211_alloc_hw().
++ * @vif: &struct ieee80211_vif pointer from the add_interface callback.
++ * @offs: &struct ieee80211_mutable_offsets pointer to struct that will
++ *	receive the offsets that may be updated by the driver.
++ *
++ * This function differs from ieee80211_beacon_get_template in the sense that
++ * it generates EMA VAP templates. When we use multiple_bssid, the beacons can
++ * get very large costing a lot of airtime. To work around this, we iterate
++ * over the multiple bssid elements and only send one inside the beacon for 1..n.
++ *
++ * This function needs to follow the same rules as ieee80211_beacon_get_template
++ *
++ * Return: The beacon template. %NULL on error.
++ */
++
++struct sk_buff *
++ieee80211_beacon_get_template_ema(struct ieee80211_hw *hw,
++				  struct ieee80211_vif *vif,
++				  struct ieee80211_mutable_offsets *offs);
++
++/**
+  * ieee80211_beacon_get_tim - beacon generation function
+  * @hw: pointer obtained from ieee80211_alloc_hw().
+  * @vif: &struct ieee80211_vif pointer from the add_interface callback.
+diff --git a/net/mac80211/ieee80211_i.h b/net/mac80211/ieee80211_i.h
+index 674b241..521f3a3 100644
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -266,6 +266,7 @@ struct beacon_data {
+ 	u16 cntdwn_counter_offsets[IEEE80211_MAX_CNTDWN_COUNTERS_NUM];
+ 	u8 cntdwn_current_counter;
+ 	struct cfg80211_multiple_bssid_data multiple_bssid;
++	u16 ema_index;
+ 	struct rcu_head rcu_head;
+ };
+ 
+diff --git a/net/mac80211/tx.c b/net/mac80211/tx.c
+index 0d2255a..92f45bb 100644
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4732,11 +4732,26 @@ static int ieee80211_beacon_protect(struct sk_buff *skb,
+ 	return 0;
+ }
+ 
++static void
++ieee80211_beacon_add_multiple_bssid_config(struct ieee80211_vif *vif, struct sk_buff *skb,
++					   struct cfg80211_multiple_bssid_data *config)
++{
++	u8 *pos = skb_put(skb, 6);
++
++	*pos++ = WLAN_EID_EXTENSION;
++	*pos++ = 4;
++	*pos++ = WLAN_EID_EXT_MULTIPLE_BSSID_CONFIGURATION;
++	*pos++ = 2;
++	*pos++ = vif->bss_conf.multiple_bssid.count;
++	*pos++ = config->cnt;
++}
++
+ static struct sk_buff *
+ __ieee80211_beacon_get(struct ieee80211_hw *hw,
+ 		       struct ieee80211_vif *vif,
+ 		       struct ieee80211_mutable_offsets *offs,
+-		       bool is_template)
++		       bool is_template,
++		       bool is_ema)
+ {
+ 	struct ieee80211_local *local = hw_to_local(hw);
+ 	struct beacon_data *beacon = NULL;
+@@ -4764,6 +4779,7 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
+ 
+ 		beacon = rcu_dereference(ap->beacon);
+ 		if (beacon) {
++			int ema_len = 0;
+ 			if (beacon->cntdwn_counter_offsets[0]) {
+ 				if (!is_template)
+ 					ieee80211_beacon_update_cntdwn(vif);
+@@ -4771,6 +4787,9 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
+ 				ieee80211_set_beacon_cntdwn(sdata, beacon);
+ 			}
+ 
++			if (is_ema && beacon->multiple_bssid.cnt)
++				ema_len = beacon->multiple_bssid.len[beacon->ema_index];
++
+ 			/*
+ 			 * headroom, head length,
+ 			 * tail length and maximum TIM length
+@@ -4778,7 +4797,8 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
+ 			skb = dev_alloc_skb(local->tx_headroom +
+ 					    beacon->head_len +
+ 					    beacon->tail_len + 256 +
+-					    local->hw.extra_beacon_tailroom);
++					    local->hw.extra_beacon_tailroom +
++					    ema_len);
+ 			if (!skb)
+ 				goto out;
+ 
+@@ -4796,6 +4816,17 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
+ 				csa_off_base = skb->len;
+ 			}
+ 
++			if (ema_len) {
++				ieee80211_beacon_add_multiple_bssid_config(vif, skb,
++									   &beacon->multiple_bssid);
++				skb_put_data(skb, beacon->multiple_bssid.ies[beacon->ema_index],
++					     beacon->multiple_bssid.len[beacon->ema_index]);
++				if (offs)
++					offs->multiple_bssid_offset = skb->len - ema_len;
++				beacon->ema_index++;
++				beacon->ema_index %= beacon->multiple_bssid.cnt;
++			}
++
+ 			if (beacon->tail)
+ 				skb_put_data(skb, beacon->tail,
+ 					     beacon->tail_len);
+@@ -4924,16 +4955,25 @@ ieee80211_beacon_get_template(struct ieee80211_hw *hw,
+ 			      struct ieee80211_vif *vif,
+ 			      struct ieee80211_mutable_offsets *offs)
+ {
+-	return __ieee80211_beacon_get(hw, vif, offs, true);
++	return __ieee80211_beacon_get(hw, vif, offs, true, false);
+ }
+ EXPORT_SYMBOL(ieee80211_beacon_get_template);
+ 
++struct sk_buff *
++ieee80211_beacon_get_template_ema(struct ieee80211_hw *hw,
++				  struct ieee80211_vif *vif,
++				  struct ieee80211_mutable_offsets *offs)
++{
++	return __ieee80211_beacon_get(hw, vif, offs, true, true);
++}
++EXPORT_SYMBOL(ieee80211_beacon_get_template_ema);
++
+ struct sk_buff *ieee80211_beacon_get_tim(struct ieee80211_hw *hw,
+ 					 struct ieee80211_vif *vif,
+ 					 u16 *tim_offset, u16 *tim_length)
+ {
+ 	struct ieee80211_mutable_offsets offs = {};
+-	struct sk_buff *bcn = __ieee80211_beacon_get(hw, vif, &offs, false);
++	struct sk_buff *bcn = __ieee80211_beacon_get(hw, vif, &offs, false, false);
+ 	struct sk_buff *copy;
+ 	struct ieee80211_supported_band *sband;
+ 	int shift;
+-- 
+2.7.4
+
+
+From 538414b5f37c5952cfee454c3ff5c9c7aa62999b Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 6 Jan 2021 12:50:01 +0530
+Subject: [PATCH 5/9] ath11k: add a struct to pass parameters into
+ ath11k_wmi_vdev_up
+
+When setting up a multiple bssid we need to pass additional parameters to
+the FW. Doing this as individual parameters would make the call signature
+very long. Use an intermediate struct instead and adjust all callees to
+make use of it.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 43 +++++++++++++++++++++++++++++------
+ drivers/net/wireless/ath/ath11k/wmi.c | 17 +++++++++-----
+ drivers/net/wireless/ath/ath11k/wmi.h | 12 ++++++++--
+ 3 files changed, 57 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index fc9aa50..0697ad1 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -760,6 +760,10 @@ static inline int ath11k_mac_vdev_setup_sync(struct ath11k *ar)
+ 
+ static int ath11k_mac_monitor_vdev_start(struct ath11k *ar, int vdev_id)
+ {
++	struct vdev_up_params params = {
++		.vdev_id = vdev_id,
++		.bssid = ar->mac_addr,
++	};
+ 	struct cfg80211_chan_def *chandef = NULL;
+ 	struct ieee80211_channel *channel = NULL;
+ 	struct wmi_vdev_start_req_arg arg = {};
+@@ -812,7 +816,7 @@ static int ath11k_mac_monitor_vdev_start(struct ath11k *ar, int vdev_id)
+ 
+ 	int ret = 0;
+ 
+-	ret = ath11k_wmi_vdev_up(ar, vdev_id, 0, ar->mac_addr);
++	ret = ath11k_wmi_vdev_up(ar, &params);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to put up monitor vdev %i: %d\n",
+ 			    vdev_id, ret);
+@@ -1106,6 +1110,12 @@ static void ath11k_control_beaconing(struct ath11k_vif *arvif,
+ 				     struct ieee80211_bss_conf *info)
+ {
+ 	struct ath11k *ar = arvif->ar;
++	struct vdev_up_params params = {
++		.vdev_id = arvif->vdev_id,
++		.bssid = arvif->bssid,
++		.profile_num = info->multiple_bssid.count,
++		.profile_idx = info->multiple_bssid.index,
++	};
+ 	int ret = 0;
+ 
+ 	lockdep_assert_held(&arvif->ar->conf_mutex);
+@@ -1147,9 +1157,14 @@ static void ath11k_control_beaconing(struct ath11k_vif *arvif,
+ 	arvif->aid = 0;
+ 
+ 	ether_addr_copy(arvif->bssid, info->bssid);
++	if (arvif->vif->multiple_bssid.parent) {
++		struct ath11k_vif *pvif;
++
++		pvif = (struct ath11k_vif *)arvif->vif->multiple_bssid.parent->drv_priv;
++		params.trans_bssid = pvif->bssid;
++	}
+ 
+-	ret = ath11k_wmi_vdev_up(arvif->ar, arvif->vdev_id, arvif->aid,
+-				 arvif->bssid);
++	ret = ath11k_wmi_vdev_up(arvif->ar, &params);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to bring up vdev %d: %i\n",
+ 			    arvif->vdev_id, ret);
+@@ -2378,6 +2393,11 @@ static void ath11k_bss_assoc(struct ieee80211_hw *hw,
+ 	struct ath11k *ar = hw->priv;
+ 	struct ath11k_vif *arvif = (void *)vif->drv_priv;
+ 	struct peer_assoc_params peer_arg;
++	struct vdev_up_params params = {
++		.vdev_id = arvif->vdev_id,
++		.bssid = bss_conf->bssid,
++		.aid = bss_conf->aid,
++	};
+ 	struct ieee80211_sta *ap_sta;
+ 	struct ieee80211_sta_he_cap  he_cap;
+ 	int ret;
+@@ -2435,7 +2455,7 @@ static void ath11k_bss_assoc(struct ieee80211_hw *hw,
+ 	arvif->aid = bss_conf->aid;
+ 	ether_addr_copy(arvif->bssid, bss_conf->bssid);
+ 
+-	ret = ath11k_wmi_vdev_up(ar, arvif->vdev_id, arvif->aid, arvif->bssid);
++	ret = ath11k_wmi_vdev_up(ar, &params);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to set vdev %d up: %d\n",
+ 			    arvif->vdev_id, ret);
+@@ -6326,6 +6346,8 @@ ath11k_mac_update_vif_chan(struct ath11k *ar,
+ 	/* TODO: Update ar->rx_channel */
+ 
+ 	for (i = 0; i < n_vifs; i++) {
++		struct vdev_up_params params;
++
+ 		arvif = (void *)vifs[i].vif->drv_priv;
+ 
+ 		if (WARN_ON(!arvif->is_started))
+@@ -6346,8 +6368,10 @@ ath11k_mac_update_vif_chan(struct ath11k *ar,
+ 			continue;
+ 		}
+ 
+-		ret = ath11k_wmi_vdev_up(arvif->ar, arvif->vdev_id, arvif->aid,
+-					 arvif->bssid);
++		params.vdev_id = arvif->vdev_id,
++		params.bssid = arvif->bssid,
++		params.aid = arvif->aid,
++		ret = ath11k_wmi_vdev_up(arvif->ar, &params);
+ 		if (ret) {
+ 			ath11k_warn(ab, "failed to bring vdev up %d: %d\n",
+ 				    arvif->vdev_id, ret);
+@@ -6443,7 +6467,12 @@ static int ath11k_start_vdev_delay(struct ieee80211_hw *hw,
+ 	}
+ 
+ 	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR) {
+-		ret = ath11k_wmi_vdev_up(ar, arvif->vdev_id, 0, ar->mac_addr);
++		struct vdev_up_params params;
++
++		params.vdev_id = arvif->vdev_id,
++		params.bssid = arvif->bssid,
++		params.aid = arvif->aid,
++		ret = ath11k_wmi_vdev_up(arvif->ar, &params);
+ 		if (ret) {
+ 			ath11k_warn(ab, "failed put monitor up: %d\n", ret);
+ 			return ret;
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 6239508..91a207e 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -984,7 +984,7 @@ int ath11k_wmi_vdev_set_ratemask(struct ath11k *ar, u32 vdev_id, u32 *params)
+ 	return ret;
+ }
+ 
+-int ath11k_wmi_vdev_up(struct ath11k *ar, u32 vdev_id, u32 aid, const u8 *bssid)
++int ath11k_wmi_vdev_up(struct ath11k *ar, struct vdev_up_params *params)
+ {
+ 	struct ath11k_pdev_wmi *wmi = ar->wmi;
+ 	struct wmi_vdev_up_cmd *cmd;
+@@ -999,10 +999,14 @@ int ath11k_wmi_vdev_up(struct ath11k *ar, u32 vdev_id, u32 aid, const u8 *bssid)
+ 
+ 	cmd->tlv_header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_VDEV_UP_CMD) |
+ 			  FIELD_PREP(WMI_TLV_LEN, sizeof(*cmd) - TLV_HDR_SIZE);
+-	cmd->vdev_id = vdev_id;
+-	cmd->vdev_assoc_id = aid;
++	cmd->vdev_id = params->vdev_id;
++	cmd->vdev_assoc_id = params->aid;
++	cmd->profile_idx = params->profile_idx;
++	cmd->profile_num = params->profile_num;
+ 
+-	ether_addr_copy(cmd->vdev_bssid.addr, bssid);
++	if (params->trans_bssid)
++		ether_addr_copy(cmd->trans_bssid.addr, params->trans_bssid);
++	ether_addr_copy(cmd->vdev_bssid.addr, params->bssid);
+ 
+ 	ret = ath11k_wmi_cmd_send(wmi, skb, WMI_VDEV_UP_CMDID);
+ 	if (ret) {
+@@ -1011,8 +1015,9 @@ int ath11k_wmi_vdev_up(struct ath11k *ar, u32 vdev_id, u32 aid, const u8 *bssid)
+ 	}
+ 
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_WMI,
+-		   "WMI mgmt vdev up id 0x%x assoc id %d bssid %pM\n",
+-		   vdev_id, aid, bssid);
++		   "WMI mgmt vdev up id 0x%x assoc id %d idx %d num %d bssid %pM trans_bssid %pM\n",
++		   params->vdev_id, params->aid, params->profile_idx, params->profile_num,
++		   params->bssid, params->trans_bssid);
+ 
+ 	return ret;
+ }
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.h b/drivers/net/wireless/ath/ath11k/wmi.h
+index 5c181a9..69bdac5 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -2582,6 +2582,15 @@ struct wmi_vdev_config_ratemask_cmd {
+ 	u32 mask_l2;
+ } __packed;
+ 
++struct vdev_up_params {
++	u32 vdev_id;
++	u16 aid;
++	u32 profile_idx;
++	u32 profile_num;
++	const u8 *bssid;
++	u8 *trans_bssid;
++};
++
+ struct wmi_vdev_up_cmd {
+ 	u32 tlv_header;
+ 	u32 vdev_id;
+@@ -5755,8 +5764,7 @@ int ath11k_wmi_bcn_tmpl(struct ath11k *ar, u32 vdev_id,
+ 			struct ieee80211_mutable_offsets *offs,
+ 			struct sk_buff *bcn);
+ int ath11k_wmi_vdev_down(struct ath11k *ar, u8 vdev_id);
+-int ath11k_wmi_vdev_up(struct ath11k *ar, u32 vdev_id, u32 aid,
+-		       const u8 *bssid);
++int ath11k_wmi_vdev_up(struct ath11k *ar, struct vdev_up_params *params);
+ int ath11k_wmi_vdev_stop(struct ath11k *ar, u8 vdev_id);
+ int ath11k_wmi_vdev_start(struct ath11k *ar, struct wmi_vdev_start_req_arg *arg,
+ 			  bool restart);
+-- 
+2.7.4
+
+
+From e51d8e37adecfcab073a1a487f6256707bc8b035 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 26 Aug 2020 10:55:49 -0700
+Subject: [PATCH 6/9] ath11k: add the multiple bssid WMI commands
+
+Add the code to pass the BSS specific multiple bssid info to the FW.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c |  3 +++
+ drivers/net/wireless/ath/ath11k/wmi.h | 10 ++++++++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 91a207e..29701d3 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -685,6 +685,8 @@ int ath11k_wmi_vdev_create(struct ath11k *ar, u8 *macaddr,
+ 	cmd->vdev_subtype = param->subtype;
+ 	cmd->num_cfg_txrx_streams = WMI_NUM_SUPPORTED_BAND_MAX;
+ 	cmd->pdev_id = param->pdev_id;
++	cmd->flags = param->flags;
++	cmd->vdevid_trans = param->vdevid_trans;
+ 	ether_addr_copy(cmd->vdev_macaddr.addr, macaddr);
+ 
+ 	ptr = skb->data + sizeof(*cmd);
+@@ -1807,6 +1809,7 @@ int ath11k_wmi_bcn_tmpl(struct ath11k *ar, u32 vdev_id,
+ 	cmd->csa_switch_count_offset = offs->cntdwn_counter_offs[0];
+ 	cmd->ext_csa_switch_count_offset = offs->cntdwn_counter_offs[1];
+ 	cmd->buf_len = bcn->len;
++	cmd->mbssid_ie_offset = offs->multiple_bssid_offset;
+ 
+ 	ptr = skb->data + sizeof(*cmd);
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.h b/drivers/net/wireless/ath/ath11k/wmi.h
+index 69bdac5..4d6fd78 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -133,6 +133,12 @@ enum {
+ 	WMI_AUTORATE_3200NS_GI = (1 << 11),
+ };
+ 
++enum {
++	WMI_HOST_VDEV_FLAGS_NON_MBSSID_AP	= 1,
++	WMI_HOST_VDEV_FLAGS_TRANSMIT_AP		= 2,
++	WMI_HOST_VDEV_FLAGS_NON_TRANSMIT_AP	= 4,
++};
++
+ /*
+  * wmi command groups.
+  */
+@@ -2549,6 +2555,8 @@ struct vdev_create_params {
+ 		u8 rx;
+ 	} chains[NUM_NL80211_BANDS];
+ 	u32 pdev_id;
++	u32 flags;
++	u32 vdevid_trans;
+ };
+ 
+ struct wmi_vdev_create_cmd {
+@@ -2559,6 +2567,8 @@ struct wmi_vdev_create_cmd {
+ 	struct wmi_mac_addr vdev_macaddr;
+ 	u32 num_cfg_txrx_streams;
+ 	u32 pdev_id;
++	u32 flags;
++	u32 vdevid_trans;
+ } __packed;
+ 
+ struct wmi_vdev_txrx_streams {
+-- 
+2.7.4
+
+
+From 5d087cf0a0c6148f3a09b68111fbef67caaef227 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 26 Aug 2020 10:56:58 -0700
+Subject: [PATCH 7/9] ath11k: add multiple bssid support to device creation
+
+We need to pass info such as parent device, bssid count/index and
+(non-)transmit mode information to the FW when we create a new vdev.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 0697ad1..9be4d60 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5521,17 +5521,30 @@ static void ath11k_mac_op_stop(struct ieee80211_hw *hw)
+ 	atomic_set(&ar->num_pending_mgmt_tx, 0);
+ }
+ 
+-static void
++static int
+ ath11k_mac_setup_vdev_create_params(struct ath11k_vif *arvif,
+ 				    struct vdev_create_params *params)
+ {
+ 	struct ath11k *ar = arvif->ar;
++	struct ieee80211_vif *parent;
+ 	struct ath11k_pdev *pdev = ar->pdev;
+ 
+ 	params->if_id = arvif->vdev_id;
+ 	params->type = arvif->vdev_type;
+ 	params->subtype = arvif->vdev_subtype;
+ 	params->pdev_id = pdev->pdev_id;
++	params->vdevid_trans = 0;
++	if (arvif->vif->multiple_bssid.non_transmitted) {
++		params->flags = WMI_HOST_VDEV_FLAGS_NON_TRANSMIT_AP;
++		parent = arvif->vif->multiple_bssid.parent;
++		if (!parent)
++			return -ENOENT;
++		if (ar->hw->wiphy != ieee80211_vif_to_wdev(parent)->wiphy)
++			return -EINVAL;
++		params->vdevid_trans = ath11k_vif_to_arvif(parent)->vdev_id;
++	} else {
++		params->flags = WMI_HOST_VDEV_FLAGS_TRANSMIT_AP;
++	}
+ 
+ 	if (pdev->cap.supported_bands & WMI_HOST_WLAN_2G_CAP) {
+ 		params->chains[NL80211_BAND_2GHZ].tx = ar->num_tx_chains;
+@@ -5546,6 +5559,7 @@ ath11k_mac_setup_vdev_create_params(struct ath11k_vif *arvif,
+ 		params->chains[NL80211_BAND_6GHZ].tx = ar->num_tx_chains;
+ 		params->chains[NL80211_BAND_6GHZ].rx = ar->num_rx_chains;
+ 	}
++	return 0;
+ }
+ 
+ static void ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
+@@ -5691,7 +5705,11 @@ static int ath11k_mac_op_add_interface(struct ieee80211_hw *hw,
+ 	for (i = 0; i < ARRAY_SIZE(vif->hw_queue); i++)
+ 		vif->hw_queue[i] = i % (ATH11K_HW_MAX_QUEUES - 1);
+ 
+-	ath11k_mac_setup_vdev_create_params(arvif, &vdev_param);
++	ret = ath11k_mac_setup_vdev_create_params(arvif, &vdev_param);
++	if (ret) {
++		ath11k_warn(ab, "failed to prepare vdev %d\n", ret);
++		goto err;
++	}
+ 
+ 	ret = ath11k_wmi_vdev_create(ar, vif->addr, &vdev_param);
+ 	if (ret) {
+-- 
+2.7.4
+
+
+From 33e3c43fa086063a50ccd21fe8d4f539e0678a7a Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 6 Jan 2021 13:23:31 +0530
+Subject: [PATCH 8/9] ath11k: add EMA beacon support
+
+We need to update the beacon in multiple bssid mode after each completion
+event to get the next EMA beacon.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 20 +++++++++++++++++++-
+ drivers/net/wireless/ath/ath11k/mac.h |  1 +
+ drivers/net/wireless/ath/ath11k/wmi.c |  8 ++++++++
+ 3 files changed, 28 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 9be4d60..6434d3f 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1072,7 +1072,10 @@ static int ath11k_mac_setup_bcn_tmpl(struct ath11k_vif *arvif)
+ 	if (arvif->vdev_type != WMI_VDEV_TYPE_AP)
+ 		return 0;
+ 
+-	bcn = ieee80211_beacon_get_template(hw, vif, &offs);
++	if (arvif->vif->multiple_bssid.non_transmitted)
++		return 0;
++
++	bcn = ieee80211_beacon_get_template_ema(hw, vif, &offs);
+ 	if (!bcn) {
+ 		ath11k_warn(ab, "failed to get beacon template from mac80211\n");
+ 		return -EPERM;
+@@ -1106,6 +1109,21 @@ static int ath11k_mac_setup_bcn_tmpl(struct ath11k_vif *arvif)
+ 	return ret;
+ }
+ 
++void ath11k_mac_bcn_tx_event(struct ath11k_vif *arvif)
++{
++	struct ieee80211_vif *vif = arvif->vif;
++	int multiple_bssid = 0;
++
++	if (!vif->multiple_bssid.non_transmitted &&
++	    !list_empty(&vif->multiple_bssid.list))
++		multiple_bssid = 1;
++
++	if (!multiple_bssid)
++		return;
++
++	ath11k_mac_setup_bcn_tmpl(arvif);
++}
++
+ static void ath11k_control_beaconing(struct ath11k_vif *arvif,
+ 				     struct ieee80211_bss_conf *info)
+ {
+diff --git a/drivers/net/wireless/ath/ath11k/mac.h b/drivers/net/wireless/ath/ath11k/mac.h
+index b87e516..10a4f16 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.h
++++ b/drivers/net/wireless/ath/ath11k/mac.h
+@@ -163,4 +163,5 @@ int ath11k_mac_tx_mgmt_pending_free(int buf_id, void *skb, void *ctx);
+ u8 ath11k_mac_bw_to_mac80211_bw(u8 bw);
+ enum ath11k_supported_bw ath11k_mac_mac80211_bw_to_ath11k_bw(enum rate_info_bw bw);
+ enum hal_encrypt_type ath11k_dp_tx_get_encrypt_type(u32 cipher);
++void ath11k_mac_bcn_tx_event(struct ath11k_vif *arvif);
+ #endif
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 29701d3..a8f756c 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -8099,6 +8099,7 @@ exit:
+ 
+ static void ath11k_bcn_tx_status_event(struct ath11k_base *ab, struct sk_buff *skb)
+ {
++	struct ath11k_vif *arvif;
+ 	u32 vdev_id, tx_status;
+ 
+ 	if (ath11k_pull_bcn_tx_status_ev(ab, skb->data, skb->len,
+@@ -8106,6 +8107,13 @@ static void ath11k_bcn_tx_status_event(struct ath11k_base *ab, struct sk_buff *s
+ 		ath11k_warn(ab, "failed to extract bcn tx status");
+ 		return;
+ 	}
++
++	arvif = ath11k_mac_get_arvif_by_vdev_id(ab, vdev_id);
++	if (!arvif) {
++		ath11k_warn(ab, "invalid vdev id %d in bcn_tx_status", vdev_id);
++		return;
++	}
++	ath11k_mac_bcn_tx_event(arvif);
+ }
+ 
+ 
+-- 
+2.7.4
+
+
+From afea0f0cb6f8706d60f2938d788797e1f21d393c Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 26 Aug 2020 10:58:56 -0700
+Subject: [PATCH 9/9] ath11k: set the multiple bssid hw flags and capabilities
+
+This wraps up the support for multiple bssid and actually makes
+the feature available.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 6434d3f..3550176 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -7865,19 +7865,23 @@ static void ath11k_mac_fetch_coex_info(struct ath11k *ar)
+ 
+ static const u8 ath11k_if_types_ext_capa[] = {
+ 	[0] = WLAN_EXT_CAPA1_EXT_CHANNEL_SWITCHING,
++	[2] = WLAN_EXT_CAPA3_MULTI_BSSID_SUPPORT,
+ 	[7] = WLAN_EXT_CAPA8_OPMODE_NOTIF,
+ };
+ 
+ static const u8 ath11k_if_types_ext_capa_sta[] = {
+ 	[0] = WLAN_EXT_CAPA1_EXT_CHANNEL_SWITCHING,
++	[2] = WLAN_EXT_CAPA3_MULTI_BSSID_SUPPORT,
+ 	[7] = WLAN_EXT_CAPA8_OPMODE_NOTIF,
+ 	[9] = WLAN_EXT_CAPA10_TWT_REQUESTER_SUPPORT,
+ };
+ 
+ static const u8 ath11k_if_types_ext_capa_ap[] = {
+ 	[0] = WLAN_EXT_CAPA1_EXT_CHANNEL_SWITCHING,
++	[2] = WLAN_EXT_CAPA3_MULTI_BSSID_SUPPORT,
+ 	[7] = WLAN_EXT_CAPA8_OPMODE_NOTIF,
+ 	[9] = WLAN_EXT_CAPA10_TWT_RESPONDER_SUPPORT,
++	[11] = WLAN_EXT_CAPA11_EMA_SUPPORT,
+ };
+ 
+ static const struct wiphy_iftype_ext_capab ath11k_iftypes_ext_capa[] = {
+@@ -7998,6 +8002,8 @@ static int __ath11k_mac_register(struct ath11k *ar)
+ 		ieee80211_hw_set(ar->hw, SUPPORTS_RX_DECAP_OFFLOAD);
+ 		ieee80211_hw_set(ar->hw, SUPPORTS_CONC_MON_RX_DECAP);
+ 	}
++	ieee80211_hw_set(ar->hw, SUPPORTS_MULTI_BSSID);
++	ieee80211_hw_set(ar->hw, SUPPORTS_MULTI_BSSID_AP);
+ 	if (ht_cap & WMI_HT_CAP_ENABLED) {
+ 		ieee80211_hw_set(ar->hw, AMPDU_AGGREGATION);
+ 		ieee80211_hw_set(ar->hw, TX_AMPDU_SETUP_IN_HW);
+-- 
+2.7.4
+

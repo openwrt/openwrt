@@ -1,0 +1,501 @@
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -1249,6 +1249,247 @@ static const struct file_operations fops
+ 	.open = simple_open
+ };
+ 
++static ssize_t ath11k_write_btcoex(struct file *file,
++				   const char __user *ubuf,
++				   size_t count, loff_t *ppos)
++{
++	struct ath11k_vif *arvif;
++	struct ath11k *ar = file->private_data;
++	char buf[256];
++	size_t buf_size;
++	int ret,coex = -1;
++	enum qca_wlan_priority_type wlan_prio_mask = 0;
++	int wlan_weight = 0;
++
++	if (!ar)
++		return -EINVAL;
++
++	buf_size = min(count, (sizeof(buf) - 1));
++	if (copy_from_user(buf, ubuf, buf_size))
++		return -EFAULT;
++
++	buf[buf_size] = '\0';
++	ret = sscanf(buf, "%d %u %d" , &coex, &wlan_prio_mask, &wlan_weight);
++	if (!ret)
++		return -EINVAL;
++
++	if (wlan_weight == -1)
++		wlan_weight = 0;
++
++	if(wlan_prio_mask == -1)
++		wlan_prio_mask =0;
++
++	if(wlan_weight < 0 || wlan_prio_mask < 0)
++		return -EINVAL;
++
++	if(coex != 1 &&  coex != -1 && coex)
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++	arvif = list_first_entry(&ar->arvifs, typeof(*arvif), list);
++	if (!arvif->is_started) {
++		ret = -EINVAL;
++		goto exit;
++	}
++
++	if(coex == 1 && !test_bit(ATH11K_FLAG_BTCOEX, &ar->dev_flags))
++		set_bit(ATH11K_FLAG_BTCOEX, &ar->dev_flags);
++
++	if(coex == -1 && !test_bit(ATH11K_FLAG_BTCOEX, &ar->dev_flags)){
++		ret = -EINVAL;
++		goto exit;
++	}
++
++	if (!coex)
++		clear_bit(ATH11K_FLAG_BTCOEX, &ar->dev_flags);
++
++	ret = ath11k_mac_coex_config(ar, arvif, coex, wlan_prio_mask, wlan_weight);
++	if (ret)
++		goto exit;
++
++	ar->coex.wlan_prio_mask = wlan_prio_mask;
++	ar->coex.wlan_weight = wlan_weight;
++	ret = count;
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static ssize_t ath11k_read_btcoex(struct file *file, char __user *ubuf,
++				  size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	char buf[256];
++	int  len=0;
++
++	if (!ar)
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++	len = scnprintf(buf, sizeof(buf) - len, "%d %d %d\n",
++			test_bit(ATH11K_FLAG_BTCOEX, &ar->dev_flags),
++			ar->coex.wlan_prio_mask,
++			ar->coex.wlan_weight);
++	mutex_unlock(&ar->conf_mutex);
++	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops__btcoex = {
++	.read = ath11k_read_btcoex,
++	.write = ath11k_write_btcoex,
++	.open = simple_open
++};
++
++
++static ssize_t ath11k_write_btcoex_duty_cycle(struct file *file,
++					      const char __user *ubuf,
++					      size_t count, loff_t *ppos)
++{
++	struct ath11k_vif *arvif;
++	struct ath11k *ar = file->private_data;
++	struct coex_config_arg coex_config;
++	char buf[256];
++	size_t buf_size;
++	u32 duty_cycle,wlan_duration;
++	int ret;
++
++	if (!ar)
++		return -EINVAL;
++
++	if (!test_bit(ATH11K_FLAG_BTCOEX, &ar->dev_flags))
++		return -EINVAL;
++
++	if (ar->coex.coex_algo_type != COEX_ALGO_OCS) {
++		ath11k_err(ar->ab,"duty cycle algo is not enabled");
++		return -EINVAL;
++	}
++
++	buf_size = min(count, (sizeof(buf) - 1));
++	if (copy_from_user(buf, ubuf, buf_size))
++		return -EFAULT;
++
++	buf[buf_size] = '\0';
++	ret = sscanf(buf, "%d %d" , &duty_cycle, &wlan_duration);
++
++	if (!ret)
++		return -EINVAL;
++
++	/*Maximum duty_cycle period allowed is 100 Miliseconds*/
++	if (duty_cycle < wlan_duration || !duty_cycle || !wlan_duration || duty_cycle > 100000)
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++	arvif = list_first_entry(&ar->arvifs, typeof(*arvif), list);
++	if (!arvif->is_started) {
++		ret = -EINVAL;
++		goto exit;
++	}
++
++	coex_config.vdev_id = arvif->vdev_id;
++	coex_config.config_type = WMI_COEX_CONFIG_AP_TDM;
++	coex_config.duty_cycle = duty_cycle;
++	coex_config.wlan_duration = wlan_duration;
++
++	ret = ath11k_send_coex_config_cmd(ar, &coex_config);
++	if (ret) {
++		ath11k_warn(ar->ab,
++			    "failed to set coex config vdev_id %d ret %d\n",
++			    coex_config.vdev_id, ret);
++		goto exit;
++	}
++
++	ar->coex.duty_cycle = duty_cycle;
++	ar->coex.wlan_duration = wlan_duration;
++	ret = count;
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++
++}
++
++static ssize_t ath11k_read_btcoex_duty_cycle(struct file *file, char __user *ubuf,
++					     size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	char buf[256];
++	int len =0;
++
++	if (!ar)
++		return -EINVAL;
++
++	len = scnprintf(buf, sizeof(buf) - len, "%d %d\n",
++			ar->coex.duty_cycle,ar->coex.wlan_duration);
++	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
++}
++
++
++static const struct file_operations fops__btcoex_duty_cycle = {
++	.read = ath11k_read_btcoex_duty_cycle,
++	.write = ath11k_write_btcoex_duty_cycle,
++	.open = simple_open
++};
++
++static ssize_t ath11k_write_btcoex_algo(struct file *file,
++					const char __user *ubuf,
++					size_t count, loff_t *ppos)
++{
++	struct ath11k_vif *arvif;
++	struct ath11k *ar = file->private_data;
++	unsigned int coex_algo;
++	struct coex_config_arg coex_config;
++	int ret;
++
++	if (kstrtouint_from_user(ubuf, count, 0, &coex_algo))
++		return -EINVAL;
++
++	if (coex_algo >= COEX_ALGO_MAX_SUPPORTED)
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++
++	arvif = list_first_entry(&ar->arvifs, typeof(*arvif), list);
++	if (!arvif->is_started) {
++		ret = -EINVAL;
++		goto exit;
++	}
++
++	ar->coex.coex_algo_type = coex_algo;
++	coex_config.vdev_id = arvif->vdev_id;
++	coex_config.config_type = WMI_COEX_CONFIG_FORCED_ALGO;
++	coex_config.coex_algo = coex_algo;
++
++	ret = ath11k_send_coex_config_cmd(ar, &coex_config);
++	if (ret) {
++		ath11k_warn(ar->ab,
++			    "failed to set coex algorithm vdev_id %d ret %d\n",
++			    coex_config.vdev_id, ret);
++		goto exit;
++	}
++
++	ret = count;
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static ssize_t ath11k_read_btcoex_algo(struct file *file, char __user *ubuf,
++				       size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	char buf[32];
++	int len = 0;
++
++	len = scnprintf(buf, sizeof(buf) - len, "%d\n",
++			ar->coex.coex_algo_type);
++	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops_btcoex_algo = {
++	.read = ath11k_read_btcoex_algo,
++	.write = ath11k_write_btcoex_algo,
++	.open = simple_open
++};
++
+ int ath11k_debugfs_register(struct ath11k *ar)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+@@ -1279,6 +1520,15 @@ int ath11k_debugfs_register(struct ath11
+ 	debugfs_create_file("pktlog_filter", 0644,
+ 			    ar->debug.debugfs_pdev, ar,
+ 			    &fops_pktlog_filter);
++	debugfs_create_file("btcoex", 0644,
++	                    ar->debug.debugfs_pdev, ar,
++	                    &fops__btcoex);
++	debugfs_create_file("btcoex_duty_cycle", 0644,
++	                    ar->debug.debugfs_pdev, ar,
++	                    &fops__btcoex_duty_cycle);
++	debugfs_create_file("btcoex_algorithm", 0644,
++			    ar->debug.debugfs_pdev, ar,
++			    &fops_btcoex_algo);
+ 
+ 	if (ar->hw->wiphy->bands[NL80211_BAND_5GHZ]) {
+ 		debugfs_create_file("dfs_simulate_radar", 0200,
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -1558,6 +1558,26 @@ static void ath11k_wmi_copy_coex_config(
+ 			   coex_config->bt_txrx_time, coex_config->bt_priority_time,
+ 			   coex_config->pta_algorithm, coex_config->pta_priority);
+ 	}
++
++	if (coex_config->config_type == WMI_COEX_CONFIG_AP_TDM) {
++		cmd->duty_cycle = coex_config->duty_cycle;
++		cmd->wlan_duration = coex_config->wlan_duration;
++		ath11k_dbg(ar->ab, ATH11K_DBG_WMI,
++			   "WMI coex config type %u vdev id %d  duty_cycle %u wlan_duration %u\n",
++			    coex_config->config_type,
++			    coex_config->vdev_id,
++			    coex_config->duty_cycle,
++			    coex_config->wlan_duration);
++        }
++
++	if (coex_config->config_type == WMI_COEX_CONFIG_FORCED_ALGO) {
++		cmd->coex_algo = coex_config->coex_algo;
++		ath11k_dbg(ar->ab, ATH11K_DBG_WMI,
++			   "WMI coex config type %u vdev id %d coex_algorithm %u\n",
++			   coex_config->config_type,
++			   coex_config->vdev_id,
++			   coex_config->coex_algo);
++	}
+ }
+ 
+ int ath11k_send_coex_config_cmd(struct ath11k *ar,
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -4792,6 +4792,11 @@ enum wmi_coex_config_type {
+ 	WMI_COEX_CONFIG_WLAN_SCAN_PRIORITY	= 15,
+ 	WMI_COEX_CONFIG_WLAN_PKT_PRIORITY	= 16,
+ 	WMI_COEX_CONFIG_PTA_INTERFACE		= 17,
++	/* WMI_COEX_CONFIG_FORCED_ALGO
++	 * config to select coex algorithm
++	 * coex_algo: select fixed coex algorithm
++	 */
++	WMI_COEX_CONFIG_FORCED_ALGO		= 47,
+ };
+ 
+ struct coex_config_arg {
+@@ -4817,6 +4822,13 @@ struct coex_config_arg {
+ 			u32 wlan_pkt_weight;
+ 			u32 bt_pkt_weight;
+ 		};
++		struct {
++			u32 duty_cycle;
++			u32 wlan_duration;
++		};
++		struct {
++			u32 coex_algo;
++		};
+ 	};
+ };
+ 
+@@ -4844,6 +4856,15 @@ struct wmi_coex_config_cmd {
+ 			u32 wlan_pkt_weight;
+ 			u32 bt_pkt_weight;
+ 		} __packed;
++
++		struct {
++			u32 duty_cycle;
++			u32 wlan_duration;
++		} __packed;
++
++		struct {
++			u32 coex_algo;
++		} __packed;
+ 	} __packed;
+ } __packed;
+ 
+--- a/drivers/net/wireless/ath/ath11k/vendor.c
++++ b/drivers/net/wireless/ath/ath11k/vendor.c
+@@ -9,102 +9,10 @@
+ #include "debug.h"
+ 
+ static const struct nla_policy
+-ath11k_vendor_btcoex_config_policy[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_MAX + 1] = {
+-	[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_ENABLE] = { .type = NLA_U8 },
+-	[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_WLAN_PRIORITY] = { .type = NLA_NESTED },
+-};
+-
+-static const struct nla_policy
+-ath11k_vendor_wlan_prio_policy[QCA_WLAN_VENDOR_ATTR_WLAN_PRIO_MAX + 1] = {
+-	[QCA_WLAN_VENDOR_ATTR_WLAN_PRIO_MASK] = { .type = NLA_U8 },
+-	[QCA_WLAN_VENDOR_ATTR_WLAN_PRIO_WEIGHT] = { .type = NLA_U8 },
+-};
+-
+-static const struct nla_policy
+ ath11k_vendor_set_wifi_config_policy[QCA_WLAN_VENDOR_ATTR_CONFIG_MAX + 1] = {
+ 	[QCA_WLAN_VENDOR_ATTR_CONFIG_GTX] = {.type = NLA_FLAG}
+ };
+ 
+-static int ath11k_vendor_btcoex_configure(struct wiphy *wiphy,
+-					  struct wireless_dev *wdev,
+-					  const void *data,
+-					  int data_len)
+-{
+-	struct ieee80211_vif *vif;
+-	struct ath11k_vif *arvif;
+-	struct ath11k *ar;
+-	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_MAX + 1];
+-	struct nlattr *tb_wlan_prio[QCA_WLAN_VENDOR_ATTR_WLAN_PRIO_MAX + 1];
+-	struct nlattr *wlan_prio;
+-	enum qca_wlan_priority_type wlan_prio_mask = 0;
+-	int ret, coex = -1, rem_conf;
+-	u8 wlan_weight = 0;
+-
+-	if (!wdev)
+-		return -EINVAL;
+-
+-	vif = wdev_to_ieee80211_vif(wdev);
+-	if (!vif)
+-		return -EINVAL;
+-
+-	arvif = (struct ath11k_vif *)vif->drv_priv;
+-	if (!arvif)
+-		return -EINVAL;
+-
+-	ar = arvif->ar;
+-
+-	mutex_lock(&ar->conf_mutex);
+-
+-	ret = nla_parse(tb, QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_MAX, data, data_len,
+-			ath11k_vendor_btcoex_config_policy, NULL);
+-	if (ret) {
+-		ath11k_warn(ar->ab, "invalid BTCOEX config policy attribute\n");
+-		goto out;
+-	}
+-
+-	if (!tb[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_ENABLE] &&
+-	    !tb[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_WLAN_PRIORITY]) {
+-		ath11k_warn(ar->ab, "invalid BTCOEX config attributes\n");
+-		ret = -EINVAL;
+-		goto out;
+-	}
+-
+-	if (tb[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_ENABLE]) {
+-		coex = nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_ENABLE]);
+-		ret = ath11k_mac_coex_config(ar, arvif, coex, wlan_prio_mask, wlan_weight);
+-		if (ret)
+-			goto out;
+-	}
+-	if (tb[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_WLAN_PRIORITY]) {
+-		nla_for_each_nested(wlan_prio,
+-				    tb[QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_WLAN_PRIORITY],
+-				    rem_conf) {
+-			ret =
+-			nla_parse_nested(tb_wlan_prio, QCA_WLAN_VENDOR_ATTR_WLAN_PRIO_MAX,
+-					 wlan_prio, ath11k_vendor_wlan_prio_policy,
+-					 NULL);
+-			if (ret)
+-				goto out;
+-			wlan_prio_mask =
+-				nla_get_u8(tb_wlan_prio[QCA_WLAN_VENDOR_ATTR_WLAN_PRIO_MASK]);
+-			if (tb_wlan_prio[QCA_WLAN_VENDOR_ATTR_WLAN_PRIO_WEIGHT])
+-				wlan_weight =
+-				nla_get_u8(tb_wlan_prio[QCA_WLAN_VENDOR_ATTR_WLAN_PRIO_WEIGHT]);
+-			ath11k_dbg(ar->ab, ATH11K_DBG_MAC,
+-				   "BTCOEX enable %u WLAN Priority %u wlan weight %u\n",
+-				   coex, wlan_prio_mask, wlan_weight);
+-
+-			ret = ath11k_mac_coex_config(ar, arvif, coex, wlan_prio_mask, wlan_weight);
+-			if (ret)
+-				goto out;
+-		}
+-	}
+-
+-out:
+-	mutex_unlock(&ar->conf_mutex);
+-	return ret;
+-}
+-
+ static int ath11k_vendor_set_wifi_config(struct wiphy *wihpy,
+ 					 struct wireless_dev *wdev,
+ 					 const void *data,
+@@ -153,15 +61,6 @@ exit:
+ static struct wiphy_vendor_command ath11k_vendor_commands[] = {
+ 	{
+ 		.info.vendor_id = QCA_NL80211_VENDOR_ID,
+-		.info.subcmd = QCA_NL80211_VENDOR_SUBCMD_BTCOEX_CONFIG,
+-		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+-			WIPHY_VENDOR_CMD_NEED_RUNNING,
+-		.doit = ath11k_vendor_btcoex_configure,
+-		.policy = ath11k_vendor_btcoex_config_policy,
+-		.maxattr = QCA_WLAN_VENDOR_ATTR_BTCOEX_CONFIG_MAX
+-	},
+-	{
+-		.info.vendor_id = QCA_NL80211_VENDOR_ID,
+ 		.info.subcmd = QCA_NL80211_VENDOR_SUBCMD_SET_WIFI_CONFIGURATION,
+ 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+ 			WIPHY_VENDOR_CMD_NEED_RUNNING,
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -487,6 +487,10 @@ struct ath11k_coex_info {
+ 	u32 bt_priority_time_slot;
+ 	u32 coex_algo_type;
+ 	u32 pta_priority;
++	u32 wlan_prio_mask;
++	u32 wlan_weight;
++	u32 duty_cycle;
++	u32 wlan_duration;
+ };
+ 
+ enum ath11k_ap_ps_state {
+@@ -494,6 +498,13 @@ enum ath11k_ap_ps_state {
+ 	ATH11K_AP_PS_STATE_ON,
+ };
+ 
++enum coex_algo {
++	COEX_ALGO_UNCONS_FREERUN = 0,
++	COEX_ALGO_FREERUN,
++	COEX_ALGO_OCS,
++	COEX_ALGO_MAX_SUPPORTED,
++};
++
+ struct ath11k {
+ 	struct ath11k_base *ab;
+ 	struct ath11k_pdev *pdev;
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -7276,6 +7276,11 @@ static void ath11k_mac_fetch_coex_info(s
+ 		ath11k_err(ab, "No qcom,pta-priority entry in dev-tree.\n");
+ 	}
+ 
++	if (ar->coex.coex_algo_type == COEX_ALGO_OCS) {
++		ar->coex.duty_cycle = 100000;
++		ar->coex.wlan_duration = 80000;
++	}
++
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "coex pta_num %u coex_mode %u"
+ 		   " bt_active_time_slot %u bt_priority_time_slot %u"
+ 		   " coex_algorithm %u pta_priority %u\n", ar->coex.pta_num,

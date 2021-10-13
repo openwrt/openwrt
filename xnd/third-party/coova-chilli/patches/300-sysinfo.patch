@@ -1,0 +1,23 @@
+From 196b783b5ea7f8d6cf57ddbd41dc1881ef47a1c4 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 11 Dec 2019 19:33:58 -0800
+Subject: [PATCH] system.h: Fix compilation with kernel 4.19 + musl
+
+<linux/netlink.h> includes <linux/sysinfo.h> , which redefines struct sysinfo, leading to an error.
+Define the linux header as included to solve compilation.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ src/system.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/src/system.h
++++ b/src/system.h
+@@ -114,6 +114,7 @@
+ 
+ #ifdef HAVE_SYS_SYSINFO_H
+ #include <sys/sysinfo.h>
++#define _LINUX_SYSINFO_H
+ #else
+ #ifdef HAVE_LINUX_SYSINFO_H
+ #define _LINUX_KERNEL_H

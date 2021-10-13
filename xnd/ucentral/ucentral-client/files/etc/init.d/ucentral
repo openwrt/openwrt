@@ -1,0 +1,49 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=01
+
+USE_PROCD=1
+PROG=/usr/sbin/ucentral
+
+service_triggers() {
+	procd_add_reload_trigger ucentral
+}
+
+reload_service() {
+	restart
+}
+
+start_service() {
+	[ -f /etc/ucentral/capabilities.json ] || /usr/share/ucentral/capabilities.uc
+	
+	[ -f /tmp/ucentral.version ] || cat /etc/openwrt_release | grep DISTRIB_REVISION= | cut -d\' -f2 > /tmp/ucentral.version
+
+	mkdir /tmp/ucentral/
+
+	ucode -m fs -i /usr/share/ucentral/crashlog.uc
+	
+	. /lib/functions.sh
+	cp /etc/config-shadow/ucentral /etc/config/
+	config_load 'ucentral'
+	config_get serial 'config' 'serial'
+	config_get server 'config' 'server'
+	config_get port 'config' 'port'
+	config_get debug 'config' 'debug' 0
+	config_get insecure 'config' 'insecure' 0
+
+	interval=$(uci get ustats.health.interval)
+
+	procd_open_instance
+	procd_set_param command "$PROG"
+	[ -n "$serial" ] && procd_append_param command -S $serial
+	[ -n "$server" ] && procd_append_param command -s $server
+	[ -n "$port" ] && procd_append_param command -P $port
+	[ "$debug" -eq 0 ] || procd_append_param command -d
+	[ "$insecure" -eq 0 ] || procd_append_param command -i
+	[ -z "$interval" ] || procd_append_param command -H $interval
+	[ -z "$(mount | grep 'tmpfs on / type tmpfs')" ] || procd_append_param command -r
+	procd_append_param command -f "$(cat /tmp/ucentral.version)"
+	procd_set_param respawn 3600 5 0
+	procd_close_instance
+}

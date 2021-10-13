@@ -1,0 +1,506 @@
+From 29221d565be14bc6549b0d9fa3127dd397b9713e Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Date: Fri, 23 Oct 2020 12:12:14 +0530
+Subject: [PATCH] ath11k: add debugfs interface to read/write target memory for
+ qcn9000
+
+Debugfs file 'athdiag' is added in qcn9000, for reading/writing to
+the target memory address through QMI interface, using athdiag tool.
+
+
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h  |   2 +
+ drivers/net/wireless/ath/ath11k/debugfs.c | 164 +++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/qmi.c   | 275 ++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/qmi.h   |  32 ++++
+ 4 files changed, 473 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -488,6 +488,7 @@ struct ath11k_debug {
+ #endif
+ 	u32 rx_filter;
+ 	bool enable_m3_dump;
++	u32 mem_addr;
+ };
+ 
+ struct ath11k_per_peer_tx_stats {
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -13,6 +13,7 @@
+ #include "debugfs_htt_stats.h"
+ #include "peer.h"
+ #include "pktlog.h"
++#include "qmi.h"
+ 
+ struct dentry *debugfs_ath11k;
+ 
+@@ -1924,6 +1925,103 @@ static const struct file_operations fops
+ 	.open = simple_open
+ };
+ 
++static ssize_t ath11k_athdiag_read(struct file *file,
++				   char __user *user_buf,
++				   size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	u8 *buf;
++	int ret;
++
++	if (*ppos <= 0)
++		return -EINVAL;
++
++	if (!count)
++		return 0;
++
++	mutex_lock(&ar->conf_mutex);
++
++	buf = vmalloc(count);
++	if (!buf) {
++		ret = -ENOMEM;
++		 goto exit;
++	}
++
++	ret = ath11k_qmi_mem_read(ar->ab, *ppos, buf, count);
++	if (ret < 0) {
++		ath11k_warn(ar->ab, "failed to read address 0x%08x via diagnose window from debugfs: %d\n",
++			    (u32)(*ppos), ret);
++		 goto exit;
++	}
++
++	ret = copy_to_user(user_buf, buf, count);
++	if (ret) {
++		ret = -EFAULT;
++		goto exit;
++	}
++
++	count -= ret;
++	*ppos += count;
++	ret = count;
++exit:
++	vfree(buf);
++	mutex_unlock(&ar->conf_mutex);
++
++	return ret;
++}
++
++static ssize_t ath11k_athdiag_write(struct file *file,
++				    const char __user *user_buf,
++				    size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	u8 *buf;
++	int ret;
++
++	if (*ppos <= 0)
++		return -EINVAL;
++
++	if (!count)
++		return 0;
++
++	mutex_lock(&ar->conf_mutex);
++
++	buf = vmalloc(count);
++	if (!buf) {
++		ret = -ENOMEM;
++		goto exit;
++	}
++
++	ret = copy_from_user(buf, user_buf, count);
++	if (ret) {
++		ret = -EFAULT;
++		goto exit;
++	}
++
++	ret = ath11k_qmi_mem_write(ar->ab, *ppos, buf, count);
++	if (ret < 0) {
++		ath11k_warn(ar->ab, "failed to write address 0x%08x via diagnose window from debugfs: %d\n",
++			    (u32)(*ppos), ret);
++		goto exit;
++	}
++
++	*ppos += count;
++	ret = count;
++
++exit:
++	vfree(buf);
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static const struct file_operations fops_athdiag = {
++	.read = ath11k_athdiag_read,
++	.write = ath11k_athdiag_write,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
+ static int ath11k_get_tpc_ctl_mode(struct wmi_tpc_stats_event *tpc_stats,
+ 				   u32 pream_idx, int *mode)
+ {
+@@ -2570,6 +2668,10 @@ int ath11k_debugfs_register(struct ath11
+ 	debugfs_create_file("tpc_stats_type", 0600, ar->debug.debugfs_pdev,
+ 			    ar, &fops_tpc_stats_type);
+ 
++	debugfs_create_file("athdiag", S_IRUSR | S_IWUSR,
++			    ar->debug.debugfs_pdev, ar,
++			    &fops_athdiag);
++
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2100,6 +2100,157 @@ struct qmi_elem_info wlfw_ini_resp_msg_v
+ 	},
+ };
+ 
++struct qmi_elem_info qmi_wlanfw_mem_read_req_msg_v01_ei[] = {
++	{
++		.data_type      = QMI_UNSIGNED_4_BYTE,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u32),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x01,
++		.offset         = offsetof(struct qmi_wlanfw_mem_read_req_msg_v01,
++					   offset),
++	},
++	{
++		.data_type      = QMI_UNSIGNED_4_BYTE,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u32),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x02,
++		.offset         = offsetof(struct qmi_wlanfw_mem_read_req_msg_v01,
++					   mem_type),
++	},
++	{
++		.data_type      = QMI_UNSIGNED_4_BYTE,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u32),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x03,
++		.offset         = offsetof(struct qmi_wlanfw_mem_read_req_msg_v01,
++					   data_len),
++	},
++	{
++		.data_type      = QMI_EOTI,
++		.array_type     = NO_ARRAY,
++		.tlv_type       = QMI_COMMON_TLV_TYPE,
++	},
++};
++
++struct qmi_elem_info qmi_wlanfw_mem_read_resp_msg_v01_ei[] = {
++	{
++		.data_type      = QMI_STRUCT,
++		.elem_len       = 1,
++		.elem_size      = sizeof(struct qmi_response_type_v01),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x02,
++		.offset         = offsetof(struct
++					   qmi_wlanfw_mem_read_resp_msg_v01,
++					   resp),
++		.ei_array       = qmi_response_type_v01_ei,
++	},
++	{
++		.data_type      = QMI_OPT_FLAG,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u8),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x10,
++		.offset         = offsetof(struct
++					   qmi_wlanfw_mem_read_resp_msg_v01,
++					   data_valid),
++	},
++	{
++		.data_type      = QMI_DATA_LEN,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u16),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x10,
++		.offset         = offsetof(struct
++					   qmi_wlanfw_mem_read_resp_msg_v01,
++					   data_len),
++	},
++	{
++		.data_type      = QMI_UNSIGNED_1_BYTE,
++		.elem_len       = QMI_WLANFW_MAX_DATA_SIZE_V01,
++		.elem_size      = sizeof(u8),
++		.array_type     = VAR_LEN_ARRAY,
++		.tlv_type       = 0x10,
++		.offset         = offsetof(struct
++					   qmi_wlanfw_mem_read_resp_msg_v01,
++					   data),
++	},
++	{
++		.data_type      = QMI_EOTI,
++		.array_type     = NO_ARRAY,
++		.tlv_type       = QMI_COMMON_TLV_TYPE,
++	},
++};
++
++struct qmi_elem_info qmi_wlanfw_mem_write_req_msg_v01_ei[] = {
++	{
++		.data_type      = QMI_UNSIGNED_4_BYTE,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u32),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x01,
++		.offset         = offsetof(struct
++					   qmi_wlanfw_mem_write_req_msg_v01,
++					   offset),
++	},
++	{
++		.data_type      = QMI_UNSIGNED_4_BYTE,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u32),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x02,
++		.offset         = offsetof(struct
++					   qmi_wlanfw_mem_write_req_msg_v01,
++					   mem_type),
++	},
++	{
++		.data_type      = QMI_DATA_LEN,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u16),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x03,
++		.offset         = offsetof(struct
++					   qmi_wlanfw_mem_write_req_msg_v01,
++					   data_len),
++	},
++	{
++		.data_type      = QMI_UNSIGNED_1_BYTE,
++		.elem_len       = QMI_WLANFW_MAX_DATA_SIZE_V01,
++		.elem_size      = sizeof(u8),
++		.array_type     = VAR_LEN_ARRAY,
++		.tlv_type       = 0x03,
++		.offset         = offsetof(struct
++					   qmi_wlanfw_mem_write_req_msg_v01,
++					   data),
++	},
++	{
++		.data_type      = QMI_EOTI,
++		.array_type     = NO_ARRAY,
++		.tlv_type       = QMI_COMMON_TLV_TYPE,
++	},
++};
++
++struct qmi_elem_info qmi_wlanfw_mem_write_resp_msg_v01_ei[] = {
++	{
++		.data_type      = QMI_STRUCT,
++		.elem_len       = 1,
++		.elem_size      = sizeof(struct qmi_response_type_v01),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x02,
++		.offset         = offsetof(struct
++					   qmi_wlanfw_mem_write_resp_msg_v01,
++					   resp),
++		.ei_array       = qmi_response_type_v01_ei,
++	},
++	{
++		.data_type      = QMI_EOTI,
++		.array_type     = NO_ARRAY,
++		.tlv_type       = QMI_COMMON_TLV_TYPE,
++	},
++};
++
+ int wlfw_send_qdss_trace_config_download_req(struct ath11k_base *ab,
+ 					     const u8 *buffer, unsigned int file_len)
+ {
+@@ -3839,6 +3990,130 @@ free_event_data:
+ 	kfree(event_data);
+ }
+ 
++int ath11k_qmi_mem_read(struct ath11k_base *ab, u32 mem_addr, void *mem_value,size_t count)
++{
++	struct qmi_wlanfw_mem_read_req_msg_v01 *req;
++	struct qmi_wlanfw_mem_read_resp_msg_v01 *resp;
++	struct qmi_txn txn = {};
++	int ret = 0;
++
++	req = kzalloc(sizeof(*req), GFP_KERNEL);
++	if (!req)
++		return -ENOMEM;
++
++	resp = kzalloc(sizeof(*resp), GFP_KERNEL);
++	if (!resp) {
++		kfree(req);
++		return -ENOMEM;
++	}
++
++	req->offset = mem_addr;
++
++	/* Firmware uses mem type to map to various memory regions.
++	 * If this is set to 0, firmware uses automatic mapping of regions.
++	 * i.e, if mem address is given and mem_type is 0, firmware will
++	 * find under which memory region that address belongs
++	 */
++	req->mem_type = QMI_MEM_REGION_TYPE;
++	req->data_len = count;
++
++	ret = qmi_txn_init(&ab->qmi.handle, &txn,
++			   qmi_wlanfw_mem_read_resp_msg_v01_ei, resp);
++	if (ret < 0)
++		goto out;
++
++	ret =
++	qmi_send_request(&ab->qmi.handle, NULL, &txn,
++			 QMI_WLANFW_MEM_READ_REQ_V01,
++			 QMI_WLANFW_MEM_READ_REQ_MSG_V01_MAX_MSG_LEN,
++			 qmi_wlanfw_mem_read_req_msg_v01_ei, req);
++	if (ret < 0) {
++		qmi_txn_cancel(&txn);
++		ath11k_warn(ab, "Failed to send mem read request, err %d\n",
++			    ret);
++		goto out;
++	}
++
++	ret = qmi_txn_wait(&txn, msecs_to_jiffies(ATH11K_QMI_WLANFW_TIMEOUT_MS));
++	if (ret < 0)
++		goto out;
++
++	if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
++		ath11k_warn(ab, "qmi mem read req failed, result: %d, err: %d\n",
++			    resp->resp.result, resp->resp.error);
++		ret = -EINVAL;
++		goto out;
++	}
++
++	if (!resp->data_valid || resp->data_len != req->data_len) {
++		ath11k_warn(ab, "qmi mem read is invalid\n");
++		ret = -EINVAL;
++		goto out;
++	}
++	memcpy(mem_value, resp->data, resp->data_len);
++
++out:
++	kfree(req);
++	kfree(resp);
++	return ret;
++}
++
++int ath11k_qmi_mem_write(struct ath11k_base *ab, u32 mem_addr, void* mem_value, size_t count)
++{
++	struct qmi_wlanfw_mem_write_req_msg_v01 *req;
++	struct qmi_wlanfw_mem_write_resp_msg_v01 *resp;
++	struct qmi_txn txn = {};
++	int ret = 0;
++
++	req = kzalloc(sizeof(*req), GFP_KERNEL);
++	if (!req)
++		return -ENOMEM;
++
++	resp = kzalloc(sizeof(*resp), GFP_KERNEL);
++	if (!resp) {
++		kfree(req);
++		return -ENOMEM;
++	}
++
++	req->offset = mem_addr;
++	req->mem_type = QMI_MEM_REGION_TYPE;
++	req->data_len = count;
++	memcpy(req->data, mem_value, req->data_len);
++
++	ret = qmi_txn_init(&ab->qmi.handle, &txn,
++			   qmi_wlanfw_mem_write_resp_msg_v01_ei, resp);
++	if (ret < 0)
++		goto out;
++
++	ret =
++	qmi_send_request(&ab->qmi.handle, NULL, &txn,
++			 QMI_WLANFW_MEM_WRITE_REQ_V01,
++			 QMI_WLANFW_MEM_WRITE_REQ_MSG_V01_MAX_MSG_LEN,
++			 qmi_wlanfw_mem_write_req_msg_v01_ei, req);
++	if (ret < 0) {
++		qmi_txn_cancel(&txn);
++		ath11k_warn(ab, "Failed to send mem write request, err %d\n",
++			    ret);
++		goto out;
++	}
++
++	ret = qmi_txn_wait(&txn, msecs_to_jiffies(ATH11K_QMI_WLANFW_TIMEOUT_MS));
++	if (ret < 0)
++		goto out;
++
++	if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
++		ath11k_warn(ab, "qmi mem write req failed, result: %d, err: %d\n",
++			    resp->resp.result, resp->resp.error);
++		ret = -EINVAL;
++		goto out;
++	}
++
++out:
++	kfree(req);
++	kfree(resp);
++	return ret;
++}
++
+ static const struct qmi_msg_handler ath11k_qmi_msg_handlers[] = {
+ 	{
+ 		.type = QMI_INDICATION,
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -260,6 +260,7 @@ struct qmi_wlanfw_qdss_trace_mode_resp_m
+ #define M3_DUMP_REGION_TYPE				0x3
+ #define CALDB_MEM_REGION_TYPE				0x4
+ #define QDSS_ETR_MEM_REGION_TYPE                        0x6
++#define QMI_MEM_REGION_TYPE				0
+ 
+ struct qmi_wlanfw_host_cap_req_msg_v01 {
+ 	u8 num_clients_valid;
+@@ -355,6 +356,10 @@ struct qmi_wlanfw_ind_register_resp_msg_
+ #define QMI_WLFW_QDSS_TRACE_MEM_INFO_REQ_V01            0x0040
+ #define QMI_WLANFW_MAX_NUM_MEM_CFG_V01			2
+ #define QMI_WLANFW_MAX_STR_LEN_V01                      16
++#define QMI_WLANFW_MEM_WRITE_REQ_V01			0x0031
++#define QMI_WLANFW_MEM_WRITE_REQ_MSG_V01_MAX_MSG_LEN	6163
++#define QMI_WLANFW_MEM_READ_REQ_V01			0x0030
++#define QMI_WLANFW_MEM_READ_REQ_MSG_V01_MAX_MSG_LEN	21
+ 
+ struct qmi_wlanfw_mem_cfg_s_v01 {
+ 	u64 offset;
+@@ -631,6 +636,30 @@ struct qmi_wlanfw_wlan_cfg_resp_msg_v01
+ 	struct qmi_response_type_v01 resp;
+ };
+ 
++struct qmi_wlanfw_mem_read_req_msg_v01 {
++	u32 offset;
++	u32 mem_type;
++	u32 data_len;
++};
++
++struct qmi_wlanfw_mem_read_resp_msg_v01 {
++	struct qmi_response_type_v01 resp;
++	u8 data_valid;
++	u32 data_len;
++	u8 data[QMI_WLANFW_MAX_DATA_SIZE_V01];
++};
++
++struct qmi_wlanfw_mem_write_req_msg_v01 {
++	u32 offset;
++	u32 mem_type;
++	u32 data_len;
++	u8 data[QMI_WLANFW_MAX_DATA_SIZE_V01];
++};
++
++struct qmi_wlanfw_mem_write_resp_msg_v01 {
++	struct qmi_response_type_v01 resp;
++};
++
+ int ath11k_qmi_firmware_start(struct ath11k_base *ab,
+ 			      u32 mode);
+ void ath11k_qmi_firmware_stop(struct ath11k_base *ab);
+@@ -645,6 +674,8 @@ int ath11k_send_qdss_trace_mode_req(stru
+ 				    enum wlfw_qdss_trace_mode_enum_v01 mode);
+ int ath11k_qmi_fwreset_from_cold_boot(struct ath11k_base *ab);
+ int ath11k_enable_fwlog(struct ath11k_base *ab);
++int ath11k_qmi_mem_read(struct ath11k_base *ab, u32 mem_addr, void *mem_value, size_t count);
++int ath11k_qmi_mem_write(struct ath11k_base *ab, u32 mem_addr, void* mem_value, size_t count);
+ 
+ 
+ #endif

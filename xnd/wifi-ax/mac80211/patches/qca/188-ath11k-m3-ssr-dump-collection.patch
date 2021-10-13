@@ -1,0 +1,668 @@
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/qmi.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -10,6 +10,7 @@
+ #include "debug.h"
+ #include <linux/of.h>
+ #include <linux/firmware.h>
++#include <linux/devcoredump.h>
+ 
+ #define SLEEP_CLOCK_SELECT_INTERNAL_BIT	0x02
+ #define HOST_CSTATE_BIT			0x04
+@@ -470,6 +471,24 @@ static struct qmi_elem_info qmi_wlanfw_h
+ 		.ei_array	= qmi_response_type_v01_ei,
+ 	},
+ 	{
++		.data_type	= QMI_OPT_FLAG,
++		.elem_len	= 1,
++		.elem_size	= sizeof(u8),
++		.array_type	= NO_ARRAY,
++		.tlv_type	= 0x20,
++		.offset		= offsetof(struct qmi_wlanfw_ind_register_req_msg_v01,
++					   m3_dump_upload_req_enable_valid),
++	},
++	{
++		.data_type	= QMI_UNSIGNED_1_BYTE,
++		.elem_len	= 1,
++		.elem_size	= sizeof(u8),
++		.array_type	= NO_ARRAY,
++		.tlv_type	= 0x20,
++		.offset		= offsetof(struct qmi_wlanfw_ind_register_req_msg_v01,
++					   m3_dump_upload_req_enable),
++	},
++	{
+ 		.data_type	= QMI_EOTI,
+ 		.array_type	= NO_ARRAY,
+ 		.tlv_type	= QMI_COMMON_TLV_TYPE,
+@@ -695,6 +714,24 @@ static struct qmi_elem_info qmi_wlanfw_i
+ 					   cal_done_enable),
+ 	},
+ 	{
++		.data_type      = QMI_OPT_FLAG,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u8),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x20,
++		.offset         = offsetof(struct qmi_wlanfw_ind_register_req_msg_v01,
++					   m3_dump_upload_req_enable_valid),
++	},
++	{
++		.data_type      = QMI_UNSIGNED_1_BYTE,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u8),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x20,
++		.offset         = offsetof(struct qmi_wlanfw_ind_register_req_msg_v01,
++					   m3_dump_upload_req_enable),
++	},
++	{
+ 		.data_type	= QMI_EOTI,
+ 		.array_type	= NO_ARRAY,
+ 		.tlv_type	= QMI_COMMON_TLV_TYPE,
+@@ -1771,6 +1808,87 @@ static struct qmi_elem_info qmi_wlanfw_c
+ 	},
+ };
+ 
++static struct qmi_elem_info qmi_wlanfw_m3_dump_upload_req_ind_msg_v01_ei[] = {
++	{
++		.data_type = QMI_UNSIGNED_4_BYTE,
++		.elem_len = 1,
++		.elem_size = sizeof(u32),
++		.array_type = NO_ARRAY,
++		.tlv_type = 0x01,
++		.offset = offsetof(struct qmi_wlanfw_m3_dump_upload_req_ind_msg_v01,
++				   pdev_id),
++	},
++	{
++		.data_type = QMI_UNSIGNED_8_BYTE,
++		.elem_len = 1,
++		.elem_size = sizeof(u64),
++		.array_type = NO_ARRAY,
++		.tlv_type = 0x02,
++		.offset = offsetof(struct qmi_wlanfw_m3_dump_upload_req_ind_msg_v01,
++				   addr),
++	},
++	{
++		.data_type = QMI_UNSIGNED_8_BYTE,
++		.elem_len = 1,
++		.elem_size = sizeof(u64),
++		.array_type = NO_ARRAY,
++		.tlv_type = 0x03,
++		.offset = offsetof(struct qmi_wlanfw_m3_dump_upload_req_ind_msg_v01,
++				   size),
++	},
++	{
++		.data_type = QMI_EOTI,
++		.array_type = NO_ARRAY,
++		.tlv_type = QMI_COMMON_TLV_TYPE,
++	},
++};
++
++static struct qmi_elem_info qmi_wlanfw_m3_dump_upload_done_req_msg_v01_ei[] = {
++	{
++		.data_type = QMI_UNSIGNED_4_BYTE,
++		.elem_len = 1,
++		.elem_size = sizeof(u32),
++		.array_type = NO_ARRAY,
++		.tlv_type = 0x01,
++		.offset = offsetof(struct
++				   qmi_wlanfw_m3_dump_upload_done_req_msg_v01,
++				   pdev_id),
++	},
++	{
++		.data_type = QMI_UNSIGNED_4_BYTE,
++		.elem_len = 1,
++		.elem_size = sizeof(u32),
++		.array_type = NO_ARRAY,
++		.tlv_type = 0x02,
++		.offset = offsetof(struct
++				   qmi_wlanfw_m3_dump_upload_done_req_msg_v01,
++				   status),
++	},
++	{
++		.data_type = QMI_EOTI,
++		.array_type = NO_ARRAY,
++		.tlv_type = QMI_COMMON_TLV_TYPE,
++	},
++};
++
++static struct qmi_elem_info qmi_wlanfw_m3_dump_upload_done_resp_msg_v01_ei[] = {
++	{
++		.data_type = QMI_STRUCT,
++		.elem_len = 1,
++		.elem_size = sizeof(struct qmi_response_type_v01),
++		.array_type = NO_ARRAY,
++		.tlv_type = 0x02,
++		.offset = offsetof(struct qmi_wlanfw_m3_dump_upload_done_resp_msg_v01,
++				   resp),
++		.ei_array = qmi_response_type_v01_ei,
++	},
++	{
++		.data_type = QMI_EOTI,
++		.array_type = NO_ARRAY,
++		.tlv_type = QMI_COMMON_TLV_TYPE,
++	},
++};
++
+ int wlfw_send_qdss_trace_config_download_req(struct ath11k_base *ab,
+ 					     const u8 *buffer, unsigned int file_len)
+ {
+@@ -2034,6 +2152,8 @@ static int ath11k_qmi_fw_ind_register_se
+ 	req->qdss_trace_free_enable = 1;
+ 	req->pin_connect_result_enable_valid = 0;
+ 	req->pin_connect_result_enable = 0;
++	req->m3_dump_upload_req_enable_valid = 1;
++	req->m3_dump_upload_req_enable = 1;
+ 
+ 	ret = qmi_txn_init(handle, &txn,
+ 			   qmi_wlanfw_ind_register_resp_msg_v01_ei, resp);
+@@ -2252,6 +2372,24 @@ static int ath11k_qmi_assign_target_mem_
+ 			ab->qmi.target_mem[idx].type = ab->qmi.target_mem[i].type;
+ 			idx++;
+ 			break;
++		case M3_DUMP_REGION_TYPE:
++			if (!ab->qmi.target_mem[i].size) {
++				ath11k_info(ab, "qmi mem size is zero\n");
++				return -EINVAL;
++			}
++			if (ab->qmi.target_mem[i].size > ATH11K_QMI_M3_DUMP_SIZE) {
++				ath11k_warn(ab, "qmi mem size is low to dump m3 ssr\n");
++				return -EINVAL;
++			}
++
++			ab->qmi.target_mem[idx].size = ab->qmi.target_mem[i].size;
++			ab->qmi.target_mem[idx].type = ab->qmi.target_mem[i].type;
++			if (of_property_read_u32(dev->of_node, "m3-dump-addr", &addr))
++				ab->qmi.target_mem[idx].paddr = ab->hw_params.m3_addr;
++			else
++				ab->qmi.target_mem[idx].paddr =  (phys_addr_t)addr;
++			idx++;
++			break;
+ 		default:
+ 			ath11k_warn(ab, "qmi ignore invalid mem req type %d\n",
+ 				    ab->qmi.target_mem[i].type);
+@@ -2854,6 +2992,114 @@ static int ath11k_qmi_process_coldboot_c
+ 	return 0;
+ }
+ 
++static int ath11k_qmi_m3_dump_upload_done_ind_send(struct ath11k_base *ab,
++						   u32 pdev_id, int status)
++{
++	struct qmi_wlanfw_m3_dump_upload_done_req_msg_v01 *req;
++	struct qmi_wlanfw_m3_dump_upload_done_resp_msg_v01 *resp;
++	struct qmi_txn txn = {};
++	int ret = 0;
++
++	req = kzalloc(sizeof(*req), GFP_KERNEL);
++	if (!req)
++		return -ENOMEM;
++
++	resp = kzalloc(sizeof(*resp), GFP_KERNEL);
++	if (!resp) {
++		kfree(req);
++		return -ENOMEM;
++	}
++
++	req->pdev_id = pdev_id;
++	req->status = status;
++
++	ret = qmi_txn_init(&ab->qmi.handle, &txn,
++			   qmi_wlanfw_m3_dump_upload_done_resp_msg_v01_ei, resp);
++	if (ret < 0)
++		goto out;
++
++	ret =
++	qmi_send_request(&ab->qmi.handle, NULL, &txn,
++			 QMI_WLFW_M3_DUMP_UPLOAD_DONE_REQ_V01,
++			 QMI_WLANFW_M3_DUMP_UPLOAD_DONE_REQ_MSG_V01_MAX_MSG_LEN,
++			 qmi_wlanfw_m3_dump_upload_done_req_msg_v01_ei, req);
++	if (ret < 0) {
++		qmi_txn_cancel(&txn);
++		ath11k_warn(ab, "Failed to send M3 dump upload done request, err %d\n",
++			    ret);
++		goto out;
++	}
++
++	ret = qmi_txn_wait(&txn, msecs_to_jiffies(ATH11K_QMI_WLANFW_TIMEOUT_MS));
++	if (ret < 0)
++		goto out;
++
++	if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
++		ath11k_warn(ab, "qmi M3 upload done req failed, result: %d, err: %d\n",
++			    resp->resp.result, resp->resp.error);
++		ret = -EINVAL;
++		goto out;
++	}
++	ath11k_info(ab, "qmi m3 dump uploaded\n");
++
++out:
++	kfree(req);
++	kfree(resp);
++	return ret;
++}
++
++static void ath11k_qmi_event_m3_dump_upload_req(struct ath11k_qmi *qmi,
++						void *data)
++{
++	struct ath11k_base *ab = qmi->ab;
++	struct target_mem_chunk *target_mem = ab->qmi.target_mem;
++	struct ath11k_qmi_m3_dump_upload_req_data *event_data = data;
++	struct ath11k_qmi_m3_dump_data *m3_dump_data;
++	void *dump;
++	int i, ret = 0;
++
++	m3_dump_data = kzalloc(sizeof(*m3_dump_data), GFP_KERNEL);
++	if (!m3_dump_data)
++		return;
++
++	dump = vzalloc(event_data->size);
++	if (!dump) {
++		kfree(m3_dump_data);
++		return;
++	}
++
++	for (i = 0; i < ab->qmi.mem_seg_count; i++) {
++		if (target_mem[i].paddr == event_data->addr &&
++		    event_data->size <= target_mem[i].size)
++		    	break;
++	}
++
++	if (i == ab->qmi.mem_seg_count) {
++		ath11k_warn(ab, "qmi invalid paddr from firmware for M3 dump\n");
++		ret = -EINVAL;
++		vfree(dump);
++		goto send_resp;
++	}
++
++	m3_dump_data->addr = target_mem[i].vaddr;
++	m3_dump_data->size = event_data->size;
++	m3_dump_data->pdev_id = event_data->pdev_id;
++	m3_dump_data->timestamp = ktime_to_ms(ktime_get());
++
++	memcpy(dump, m3_dump_data->addr, m3_dump_data->size);
++
++	dev_coredumpv(ab->dev, dump, le32_to_cpu(m3_dump_data->size),
++		      GFP_KERNEL);
++
++send_resp:
++	ret = ath11k_qmi_m3_dump_upload_done_ind_send(ab, event_data->pdev_id, ret);
++	if (ret < 0)
++		ath11k_warn(ab, "qmi M3 dump upload done failed\n");
++
++	kfree(m3_dump_data);
++	return;
++}
++
+ static int
+ ath11k_qmi_driver_event_post(struct ath11k_qmi *qmi,
+ 			     enum ath11k_qmi_event_type type,
+@@ -3020,6 +3266,30 @@ static void ath11k_qmi_msg_cold_boot_cal
+ 	ath11k_dbg(ab, ATH11K_DBG_QMI, "qmi cold boot calibration done\n");
+ }
+ 
++static void ath11k_qmi_m3_dump_upload_req_ind_cb(struct qmi_handle *qmi_hdl,
++						 struct sockaddr_qrtr *sq,
++						 struct qmi_txn *txn,
++						 const void *data)
++{
++	struct ath11k_qmi *qmi = container_of(qmi_hdl, struct ath11k_qmi, handle);
++	struct ath11k_base *ab = qmi->ab;
++	const struct qmi_wlanfw_m3_dump_upload_req_ind_msg_v01 *msg = data;
++	struct ath11k_qmi_m3_dump_upload_req_data *event_data;
++
++	ath11k_dbg(ab, ATH11K_DBG_QMI, "qmi m3 dump memory request\n");
++
++	event_data = kzalloc(sizeof(*event_data), GFP_KERNEL);
++	if (!event_data)
++		return;
++
++	event_data->pdev_id = msg->pdev_id;
++	event_data->addr = msg->addr;
++	event_data->size = msg->size;
++
++	ath11k_qmi_driver_event_post(qmi, ATH11K_QMI_EVENT_M3_DUMP_UPLOAD_REQ,
++				     event_data);
++}
++
+ static const struct qmi_msg_handler ath11k_qmi_msg_handlers[] = {
+ 	{
+ 		.type = QMI_INDICATION,
+@@ -3050,6 +3320,14 @@ static const struct qmi_msg_handler ath1
+ 			sizeof(struct qmi_wlanfw_fw_cold_cal_done_ind_msg_v01),
+ 		.fn = ath11k_qmi_msg_cold_boot_cal_done_cb,
+ 	},
++	{
++		.type = QMI_INDICATION,
++		.msg_id = QMI_WLFW_M3_DUMP_UPLOAD_REQ_IND_V01,
++		.ei = qmi_wlanfw_m3_dump_upload_req_ind_msg_v01_ei,
++		.decoded_size =
++			sizeof(struct qmi_wlanfw_m3_dump_upload_req_ind_msg_v01),
++		.fn = ath11k_qmi_m3_dump_upload_req_ind_cb,
++	},
+ };
+ 
+ static int ath11k_qmi_ops_new_server(struct qmi_handle *qmi_hdl,
+@@ -3152,6 +3430,9 @@ static void ath11k_qmi_driver_event_work
+ 			break;
+ 		case ATH11K_QMI_EVENT_COLD_BOOT_CAL_DONE:
+ 			break;
++		case ATH11K_QMI_EVENT_M3_DUMP_UPLOAD_REQ:
++			ath11k_qmi_event_m3_dump_upload_req(qmi, event->data);
++			break;
+ 		default:
+ 			ath11k_warn(ab, "invalid event type: %d", event->type);
+ 			break;
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.h
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/qmi.h
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -32,11 +32,16 @@
+ #define ATH11K_QMI_FW_MEM_REQ_SEGMENT_CNT	3
+ #define ATH11K_QMI_MAX_QDSS_CONFIG_FILE_NAME_SIZE 64
+ #define ATH11K_QMI_DEFAULT_QDSS_CONFIG_FILE_NAME "qdss_trace_config.bin"
++#define ATH11K_QMI_IPQ8074_M3_DUMP_ADDRESS	0x51000000
++#define ATH11K_QMI_IPQ6018_M3_DUMP_ADDRESS	0x50100000
++#define ATH11K_QMI_M3_DUMP_SIZE			0x100000
+ 
+ #define QMI_WLFW_REQUEST_MEM_IND_V01		0x0035
+ #define QMI_WLFW_FW_MEM_READY_IND_V01		0x0037
+ #define QMI_WLFW_COLD_BOOT_CAL_DONE_IND_V01	0x0021
+ #define QMI_WLFW_FW_READY_IND_V01		0x0038
++#define QMI_WLFW_M3_DUMP_UPLOAD_DONE_REQ_V01	0x004E
++#define QMI_WLFW_M3_DUMP_UPLOAD_REQ_IND_V01	0x004D
+ 
+ #define QMI_WLANFW_MAX_DATA_SIZE_V01		6144
+ #define ATH11K_FIRMWARE_MODE_OFF		4
+@@ -71,6 +76,7 @@ enum ath11k_qmi_event_type {
+ 	ATH11K_QMI_EVENT_FORCE_FW_ASSERT,
+ 	ATH11K_QMI_EVENT_POWER_UP,
+ 	ATH11K_QMI_EVENT_POWER_DOWN,
++	ATH11K_QMI_EVENT_M3_DUMP_UPLOAD_REQ,
+ 	ATH11K_QMI_EVENT_MAX,
+ };
+ 
+@@ -80,6 +86,13 @@ struct ath11k_qmi_driver_event {
+ 	void *data;
+ };
+ 
++struct ath11k_qmi_m3_dump_data {
++	u32 pdev_id;
++	u32 size;
++	u64 timestamp;
++	char *addr;
++};
++
+ struct ath11k_qmi_ce_cfg {
+ 	const struct ce_pipe_config *tgt_ce;
+ 	int tgt_ce_len;
+@@ -142,6 +155,12 @@ struct ath11k_qmi {
+ 	wait_queue_head_t cold_boot_waitq;
+ };
+ 
++struct ath11k_qmi_m3_dump_upload_req_data {
++	u32 pdev_id;
++	u64 addr;
++	u64 size;
++};
++
+ #define QMI_WLANFW_QDSS_TRACE_CONFIG_DOWNLOAD_REQ_MSG_V01_MAX_LEN 6167
+ #define QMI_WLANFW_QDSS_TRACE_CONFIG_DOWNLOAD_RESP_MSG_V01_MAX_LEN 7
+ #define QMI_WLANFW_QDSS_TRACE_CONFIG_DOWNLOAD_REQ_V01 0x0044
+@@ -163,6 +182,15 @@ struct qmi_wlanfw_qdss_trace_config_down
+ 	struct qmi_response_type_v01 resp;
+ };
+ 
++struct qmi_wlanfw_m3_dump_upload_done_req_msg_v01 {
++	u32 pdev_id;
++	u32 status;
++};
++
++struct qmi_wlanfw_m3_dump_upload_done_resp_msg_v01 {
++	struct qmi_response_type_v01 resp;
++};
++
+ #define QMI_WLANFW_QDSS_TRACE_MODE_REQ_V01 0x0045
+ #define QMI_WLANFW_QDSS_TRACE_MODE_REQ_MSG_V01_MAX_LEN 18
+ #define QMI_WLANFW_QDSS_TRACE_MODE_RESP_MSG_V01_MAX_LEN 7
+@@ -270,6 +298,10 @@ struct qmi_wlanfw_ind_register_req_msg_v
+ 	u8 qdss_trace_save_enable;
+ 	u8 qdss_trace_free_enable_valid;
+ 	u8 qdss_trace_free_enable;
++	u8 respond_get_info_enable_valid;
++	u8 respond_get_info_enable;
++	u8 m3_dump_upload_req_enable_valid;
++	u8 m3_dump_upload_req_enable;
+ };
+ 
+ struct qmi_wlanfw_ind_register_resp_msg_v01 {
+@@ -343,6 +375,12 @@ struct qmi_wlanfw_fw_cold_cal_done_ind_m
+ 	char placeholder;
+ };
+ 
++struct qmi_wlanfw_m3_dump_upload_req_ind_msg_v01 {
++	u32 pdev_id;
++	u64 addr;
++	u64 size;
++};
++
+ #define QMI_WLANFW_CAP_REQ_MSG_V01_MAX_LEN	0
+ #define QMI_WLANFW_CAP_RESP_MSG_V01_MAX_LEN	235
+ #define QMI_WLANFW_CAP_REQ_V01			0x0024
+@@ -473,6 +511,8 @@ struct qmi_wlanfw_bdf_download_resp_msg_
+ #define QMI_WLANFW_M3_INFO_RESP_V01		0x003C
+ #define QMI_WLANFW_M3_INFO_REQ_V01		0x003C
+ 
++#define QMI_WLANFW_M3_DUMP_UPLOAD_DONE_REQ_MSG_V01_MAX_MSG_LEN	14
++
+ struct qmi_wlanfw_m3_info_req_msg_v01 {
+ 	u64 addr;
+ 	u32 size;
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/core.h
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/core.h
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/core.h
+@@ -467,6 +467,7 @@ struct ath11k_debug {
+ 	bool is_pkt_logging;
+ #endif
+ 	u32 rx_filter;
++	bool enable_m3_dump;
+ };
+ 
+ struct ath11k_per_peer_tx_stats {
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/debugfs.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/debugfs.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -1679,6 +1679,68 @@ static const struct file_operations fops
+ 	.open = simple_open
+ };
+ 
++static ssize_t ath11k_write_enable_m3_dump(struct file *file,
++					   const char __user *ubuf,
++					   size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	bool enable;
++	int ret;
++
++	if (kstrtobool_from_user(ubuf, count, &enable))
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (ar->state != ATH11K_STATE_ON) {
++		ret = -ENETDOWN;
++		goto exit;
++	}
++
++	if (enable == ar->debug.enable_m3_dump) {
++		ret = count;
++		goto exit;
++	}
++
++	ret = ath11k_wmi_pdev_m3_dump_enable(ar, enable);
++	if (ret) {
++		ath11k_warn(ar->ab,
++			    "failed to enable m3 ssr dump %d\n",
++			    ret);
++		goto exit;
++	}
++
++	ar->debug.enable_m3_dump = enable;
++	ret = count;
++
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static ssize_t ath11k_read_enable_m3_dump(struct file *file,
++					  char __user *ubuf,
++					  size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	char buf[32];
++	size_t len = 0;
++
++	mutex_lock(&ar->conf_mutex);
++	len = scnprintf(buf, sizeof(buf) - len, "%d\n",
++			ar->debug.enable_m3_dump);
++	mutex_unlock(&ar->conf_mutex);
++
++	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
++
++}
++
++static const struct file_operations fops_enable_m3_dump = {
++	.read = ath11k_read_enable_m3_dump,
++	.write = ath11k_write_enable_m3_dump,
++	.open = simple_open
++};
++
+ int ath11k_debugfs_register(struct ath11k *ar)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+@@ -1737,6 +1799,10 @@ int ath11k_debugfs_register(struct ath11
+ 				    &ar->dfs_block_radar_events);
+ 	}
+ 
++	debugfs_create_file("enable_m3_dump", 0644,
++			    ar->debug.debugfs_pdev, ar,
++			    &fops_enable_m3_dump);
++
+ 	return 0;
+ }
+ 
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/wmi.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/wmi.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -7838,6 +7838,36 @@ int ath11k_wmi_simulate_radar(struct ath
+ 	return ath11k_wmi_send_unit_test_cmd(ar, wmi_ut, dfs_args);
+ }
+ 
++int ath11k_wmi_pdev_m3_dump_enable(struct ath11k *ar, u32 enable) {
++	struct ath11k_vif *arvif;
++	u32 m3_args[WMI_M3_MAX_TEST_ARGS];
++	struct wmi_unit_test_cmd wmi_ut;
++	bool arvif_found = false;
++
++	list_for_each_entry(arvif, &ar->arvifs, list) {
++		if (arvif->is_started) {
++			arvif_found = true;
++			break;
++		}
++	}
++
++	if (!arvif_found)
++		return -EINVAL;
++
++	m3_args[WMI_M3_TEST_CMDID] = WMI_DBG_ENABLE_M3_SSR;
++	m3_args[WMI_M3_TEST_ENABLE] = enable;
++
++	wmi_ut.vdev_id = arvif->vdev_id;
++	wmi_ut.module_id = WMI_M3_UNIT_TEST_MODULE;
++	wmi_ut.num_args = WMI_M3_MAX_TEST_ARGS;
++	wmi_ut.diag_token = WMI_M3_UNIT_TEST_TOKEN;
++
++	ath11k_dbg(ar->ab, ATH11K_DBG_WMI, "%s M3 SSR dump\n",
++		   enable ? "Enabling" : "Disabling");
++
++	return ath11k_wmi_send_unit_test_cmd(ar, wmi_ut, m3_args);
++}
++
+ int ath11k_wmi_connect(struct ath11k_base *ab)
+ {
+ 	u32 i;
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/wmi.h
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/wmi.h
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -2078,6 +2078,11 @@ enum wmi_tlv_service {
+ 	WMI_MAX_EXT_SERVICE
+ };
+ 
++enum wmi_unit_test_cmdid {
++	/* TODO: Add the remaining cmd ids if needed */
++	WMI_DBG_ENABLE_M3_SSR = 36,
++};
++
+ enum {
+ 	WMI_SMPS_FORCED_MODE_NONE = 0,
+ 	WMI_SMPS_FORCED_MODE_DISABLED,
+@@ -3921,6 +3926,15 @@ struct wmi_dfs_unit_test_arg {
+ 	u32 radar_param;
+ };
+ 
++#define WMI_M3_UNIT_TEST_MODULE	0x22
++#define WMI_M3_UNIT_TEST_TOKEN	0
++
++enum wmi_m3_test_args_idx {
++	WMI_M3_TEST_CMDID,
++	WMI_M3_TEST_ENABLE,
++	WMI_M3_MAX_TEST_ARGS,
++};
++
+ struct wmi_unit_test_cmd {
+ 	u32 tlv_header;
+ 	u32 vdev_id;
+@@ -5653,5 +5667,6 @@ int ath11k_wmi_set_hw_mode(struct ath11k
+ 			   enum wmi_host_hw_mode_config_type mode);
+ int ath11k_wmi_wow_host_wakeup_ind(struct ath11k *ar);
+ int ath11k_wmi_wow_enable(struct ath11k *ar);
++int ath11k_wmi_pdev_m3_dump_enable(struct ath11k *ar, u32 enable);
+ 
+ #endif
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/core.c
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/core.c
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/core.c
+@@ -43,6 +43,7 @@ static const struct ath11k_hw_params ath
+ 		.bdf_addr = 0x4B0C0000,
+ 		.hw_ops = &ipq8074_ops,
+ 		.credit_flow = false,
++		.m3_addr = ATH11K_QMI_IPQ8074_M3_DUMP_ADDRESS,
+ 		.ring_mask = &ath11k_hw_ring_mask_ipq8074,
+ 		.internal_sleep_clock = false,
+ 		.regs = &ipq8074_regs,
+@@ -84,6 +85,7 @@ static const struct ath11k_hw_params ath
+ 		.bdf_addr = 0x4ABC0000,
+ 		.hw_ops = &ipq6018_ops,
+ 		.credit_flow = false,
++		.m3_addr = ATH11K_QMI_IPQ6018_M3_DUMP_ADDRESS,
+ 		.ring_mask = &ath11k_hw_ring_mask_ipq8074,
+ 		.internal_sleep_clock = false,
+ 		.regs = &ipq8074_regs,
+Index: backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/hw.h
+===================================================================
+--- backports-20210222-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/hw.h
++++ backports-20210222-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/hw.h
+@@ -166,6 +166,7 @@ struct ath11k_hw_params {
+ 	bool cold_boot_calib;
+ 	bool supports_suspend;
+ 	u32 hal_desc_sz;
++	u32 m3_addr;
+ };
+ 
+ struct ath11k_hw_ops {

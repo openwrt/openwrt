@@ -1,0 +1,64 @@
+# @(#) $Revision: 4.4 $ $Source: /judy/src/apps/demo/run_demo $
+
+# Simple Judy example script.  See the first block of text below, or just run
+# this with no arguments.
+
+	BASE='interL'
+	PROGRAM="$BASE.c"
+	COMPILE="cc -I../.. -o $BASE $PROGRAM `find ../../ -name libJudy.a`"
+
+	set -e			# exit if anything goes wrong.
+
+
+# GREET THE USER:
+
+	cat <<-'EOF'
+	This script illustrates a simple program that calls the Judy library,
+	shows how to compile it, and then runs it for you.
+
+	The program reads numbers from standard input and stores them in a
+	JudyL array as array indexes.  The target value associated with each
+	number (index) is the number of times it was duplicated in the input.
+	Exit with ^D or ^C.
+
+	Press RETURN to continue and view the program source code...
+	EOF
+
+	read input
+
+
+# SHOW THE SAMPLE C PROGRAM:
+
+	echo '____________________________________'
+	echo
+
+	cat $PROGRAM
+
+	echo
+	echo 'Press RETURN to continue...'
+	read input
+
+
+# COMPILE THE SAMPLE C PROGRAM:
+
+	cat <<-EOF
+
+	To compile this program with the Judy library already installed on your
+	system, the simplest command line is:
+
+	    $COMPILE
+
+	Press RETURN to continue and compile the program source code...
+	EOF
+
+	read input
+	$COMPILE
+
+
+# RUN THE SAMPLE C PROGRAM:
+
+	echo
+	echo "Press RETURN to run the sample program \"$BASE\"..."
+	read input
+
+	./$BASE

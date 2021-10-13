@@ -1,0 +1,20 @@
+Index: sched-cake-2021-07-09-d9e1398c/cobalt_compat.h
+===================================================================
+--- sched-cake-2021-07-09-d9e1398c.orig/cobalt_compat.h
++++ sched-cake-2021-07-09-d9e1398c/cobalt_compat.h
+@@ -95,15 +95,6 @@ static inline unsigned int __tcp_hdrlen(
+ }
+ #endif
+ 
+-#if KERNEL_VERSION(4, 6, 0) > LINUX_VERSION_CODE
+-static inline int skb_try_make_writable(struct sk_buff *skb,
+-					unsigned int write_len)
+-{
+-	return skb_cloned(skb) && !skb_clone_writable(skb, write_len) &&
+-	       pskb_expand_head(skb, 0, 0, GFP_ATOMIC);
+-}
+-#endif
+-
+ #if KERNEL_VERSION(4, 11, 0) > LINUX_VERSION_CODE
+ static inline int skb_mac_offset(const struct sk_buff *skb)
+ {

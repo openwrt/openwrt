@@ -1,0 +1,100 @@
+From 092d838b9660999c7e7212fe9430a5bd0eed8ef9 Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Thu, 3 Sep 2020 16:45:40 -0700
+Subject: [PATCH] iw: support optional argument to parse 6Ghz channel
+
+Channel numbers of 6GHz band overlaps with those of 2G or 5G bands.
+Therefore additional argument "6G" is expected next to channel
+number to map it to correct frequency. If not specified defaults to
+matching 2G or 5G frequency.
+example: iw wlanX set channel 1 6G 80MHz
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+---
+ interface.c |  6 ++++--
+ phy.c       |  8 ++++----
+ util.c      | 14 ++++++++++----
+ 3 files changed, 18 insertions(+), 10 deletions(-)
+
+--- a/interface.c
++++ b/interface.c
+@@ -745,8 +745,10 @@ COMMAND(switch, freq,
+ 	"<control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]] [beacons <count>] [block-tx]",
+ 	NL80211_CMD_CHANNEL_SWITCH, 0, CIB_NETDEV, handle_freq,
+ 	"Switch the operating channel by sending a channel switch announcement (CSA).");
+-COMMAND(switch, channel, "<channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz] [beacons <count>] [block-tx]",
+-	NL80211_CMD_CHANNEL_SWITCH, 0, CIB_NETDEV, handle_chan, NULL);
++COMMAND(switch, channel, "<channel> [6G] [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz] [beacons <count>] [block-tx]",
++	NL80211_CMD_CHANNEL_SWITCH, 0, CIB_NETDEV, handle_chan,
++	"Switch the operating channel by sending a channel switch announcement (CSA)."
++	"6GHz channels expects '6G' in argument. Defaults to 5GHz or 2GHz channels");
+ 
+ static int handle_retry_count(struct nl80211_state *state,
+ 			      struct nl_msg *msg,
+--- a/phy.c
++++ b/phy.c
+@@ -222,9 +222,9 @@ static int handle_chan(struct nl80211_st
+ 
+ 	return put_chandef(msg, &chandef);
+ }
+-COMMAND(set, channel, "<channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]",
++COMMAND(set, channel, "<channel> [6G] [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]",
+ 	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_chan, NULL);
+-COMMAND(set, channel, "<channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]",
++COMMAND(set, channel, "<channel> [6G] [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz] [6G]",
+ 	NL80211_CMD_SET_WIPHY, 0, CIB_NETDEV, handle_chan, NULL);
+ 
+ 
+@@ -369,12 +369,12 @@ err_out:
+ 		free(cac_trigger_argv);
+ 	return err;
+ }
+-TOPLEVEL(cac, "channel <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
++TOPLEVEL(cac, "channel <channel> [6G] [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
+ 	      "freq <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
+ 	      "freq <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]",
+ 	 0, 0, CIB_NETDEV, handle_cac, NULL);
+ COMMAND(cac, trigger,
+-	"channel <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
++	"channel <channel> [6G] [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
+ 	"freq <frequency> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
+ 	"freq <frequency> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]",
+ 	NL80211_CMD_RADAR_DETECT, 0, CIB_NETDEV, handle_cac_trigger,
+--- a/util.c
++++ b/util.c
+@@ -578,7 +578,8 @@ static int parse_freqs(struct chandef *c
+  * user by giving "NOHT" instead.
+  *
+  * The working specifier if chan is set are:
+- *   <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]
++ *   <channel> [6G] [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]
++ * channel number defaults to 5G or 2G band unless 6G is specified.
+  *
+  * And if frequency is set:
+  *   <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]
+@@ -647,7 +648,12 @@ int parse_freqchan(struct chandef *chand
+ 	if (chan) {
+ 		enum nl80211_band band;
+ 
+-		band = freq <= 14 ? NL80211_BAND_2GHZ : NL80211_BAND_5GHZ;
++		if (argc > 1 && strcmp(argv[1], "6G") == 0) {
++			band = NL80211_BAND_6GHZ;
++			_parsed += 1;
++		} else {
++			band = freq <= 14 ? NL80211_BAND_2GHZ : NL80211_BAND_5GHZ;
++		}
+ 		freq = ieee80211_channel_to_frequency(freq, band);
+ 	}
+ 	chandef->control_freq = freq;
+@@ -655,9 +661,9 @@ int parse_freqchan(struct chandef *chand
+ 	chandef->center_freq1 = freq;
+ 
+ 	/* Try to parse HT mode definitions */
+-	if (argc > 1) {
++	if ((argc - _parsed) > 0) {
+ 		for (i = 0; i < ARRAY_SIZE(chanmode); i++) {
+-			if (strcasecmp(chanmode[i].name, argv[1]) == 0) {
++			if (strcasecmp(chanmode[i].name, argv[_parsed]) == 0) {
+ 				chanmode_selected = &chanmode[i];
+ 				_parsed += 1;
+ 				break;

@@ -1,0 +1,149 @@
+From 64f2a21dd6358addcf27d391d4c217e958c7014a Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Date: Wed, 14 Apr 2021 15:31:27 +0530
+Subject: [PATCH] ath11k: add hw_param for wakeup_mhi
+
+wakeup mhi is needed before pci_read/write only for QCA6390.
+Since wakeup & release mhi is enabled for all platforms,
+below mhi assert is seen in QCN9074.
+
+Disable wakeup/release mhi using hw_param for other hardwares.
+
+Kernel panic - not syncing: dev_wake != 0
+CPU: 2 PID: 13535 Comm: procd Not tainted 4.4.60 #1
+Hardware name: Generic DT based system
+[<80316dac>] (unwind_backtrace) from [<80313700>] (show_stack+0x10/0x14)
+[<80313700>] (show_stack) from [<805135dc>] (dump_stack+0x7c/0x9c)
+[<805135dc>] (dump_stack) from [<8032136c>] (panic+0x84/0x1f8)
+[<8032136c>] (panic) from [<80549b24>] (mhi_pm_disable_transition+0x3b8/0x5b8)
+[<80549b24>] (mhi_pm_disable_transition) from [<80549ddc>] (mhi_power_down+0xb8/0x100)
+[<80549ddc>] (mhi_power_down) from [<7f5242b0>] (ath11k_mhi_op_status_cb+0x284/0x3ac [ath11k_pci])
+[E][__mhi_device_get_sync] Did not enter M0 state, cur_state:RESET pm_state:SHUTDOWN Process
+[E][__mhi_device_get_sync] Did not enter M0 state, cur_state:RESET pm_state:SHUTDOWN Process
+[E][__mhi_device_get_sync] Did not enter M0 state, cur_state:RESET pm_state:SHUTDOWN Process
+[<7f5242b0>] (ath11k_mhi_op_status_cb [ath11k_pci]) from [<7f524878>] (ath11k_mhi_stop+0x10/0x20 [ath11k_pci])
+[<7f524878>] (ath11k_mhi_stop [ath11k_pci]) from [<7f525b94>] (ath11k_pci_power_down+0x54/0x90 [ath11k_pci])
+[<7f525b94>] (ath11k_pci_power_down [ath11k_pci]) from [<8056b2a8>] (pci_device_shutdown+0x30/0x44)
+[<8056b2a8>] (pci_device_shutdown) from [<805cfa0c>] (device_shutdown+0x124/0x174)
+[<805cfa0c>] (device_shutdown) from [<8033aaa4>] (kernel_restart+0xc/0x50)
+[<8033aaa4>] (kernel_restart) from [<8033ada8>] (SyS_reboot+0x178/0x1ec)
+[<8033ada8>] (SyS_reboot) from [<80301b80>] (ret_fast_syscall+0x0/0x34)
+
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c |  6 ++++++
+ drivers/net/wireless/ath/ath11k/hw.h   |  1 +
+ drivers/net/wireless/ath/ath11k/pci.c  | 12 ++++++++----
+ 3 files changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index 7b446e0..7691859 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -110,6 +110,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.cfr_stream_buf_size = 8500,
+ 		/* In addition to TCL ring use TCL_CMD ring also for tx */
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
++		.wakeup_mhi = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -161,6 +162,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.is_qdss_support = false,
+ 		/* In addition to TCL ring use TCL_CMD ring also for tx */
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
++		.wakeup_mhi = false,
+ 	},
+ 	{
+ 		.name = "qca6390 hw2.0",
+@@ -206,6 +208,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+  		.fwmem_mode_change = false,
+  		.is_qdss_support = false,
+ 		.max_tx_ring = 1,
++		.wakeup_mhi = true,
+ 	},
+ 	{
+ 		.name = "qcn9074 hw1.0",
+@@ -263,6 +266,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 					CFR_DATA_MAX_LEN_QCN9074,
+ 		/* In addition to TCL ring use TCL_CMD ring also for tx */
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
++		.wakeup_mhi = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ5018,
+@@ -313,6 +317,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.cold_boot_calib = true,
+ 		.is_qdss_support = false,
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX,
++		.wakeup_mhi = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_QCN6122,
+@@ -364,6 +369,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+  		.fwmem_mode_change = false,
+  		.is_qdss_support = true,
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX,
++		.wakeup_mhi = false,
+  	},
+ };
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
+index 80723ca..b99ecb5 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -208,6 +208,7 @@ struct ath11k_hw_params {
+ 	bool fwmem_mode_change;
+ 	bool is_qdss_support;
+ 	bool cfr_support;
++	bool wakeup_mhi;
+ 	u32 cfr_dma_hdr_size;
+ 	u32 cfr_num_stream_bufs;
+ 	u32 cfr_stream_buf_size;
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index 6b138ab..494888e 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -169,7 +169,8 @@ void ath11k_pci_write32(struct ath11k_base *ab, u32 offset, u32 value)
+ 	/* for offset beyond BAR + 4K - 32, may
+ 	 * need to wakeup MHI to access.
+ 	 */
+-	if (test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
++	if (ab->hw_params.wakeup_mhi &&
++	    test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
+ 	    offset >= ACCESS_ALWAYS_OFF && ab_pci->mhi_ctrl)
+ 		mhi_device_get_sync(ab_pci->mhi_ctrl->mhi_dev);
+ 
+@@ -193,7 +194,8 @@ void ath11k_pci_write32(struct ath11k_base *ab, u32 offset, u32 value)
+ 		}
+ 	}
+ 
+-	if (test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
++	if (ab->hw_params.wakeup_mhi &&
++	    test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
+ 	    offset >= ACCESS_ALWAYS_OFF && ab_pci->mhi_ctrl)
+ 		mhi_device_put(ab_pci->mhi_ctrl->mhi_dev);
+ }
+@@ -207,7 +209,8 @@ u32 ath11k_pci_read32(struct ath11k_base *ab, u32 offset)
+ 	/* for offset beyond BAR + 4K - 32, may
+ 	 * need to wakeup MHI to access.
+ 	 */
+-	if (test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
++	if (ab->hw_params.wakeup_mhi &&
++	    test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
+ 	    offset >= ACCESS_ALWAYS_OFF && ab_pci->mhi_ctrl)
+ 		mhi_device_get_sync(ab_pci->mhi_ctrl->mhi_dev);
+ 
+@@ -231,7 +234,8 @@ u32 ath11k_pci_read32(struct ath11k_base *ab, u32 offset)
+ 		}
+ 	}
+ 
+-	if (test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
++	if (ab->hw_params.wakeup_mhi &&
++	    test_bit(ATH11K_PCI_FLAG_INIT_DONE, &ab_pci->flags) &&
+ 	    offset >= ACCESS_ALWAYS_OFF && ab_pci->mhi_ctrl)
+ 		mhi_device_put(ab_pci->mhi_ctrl->mhi_dev);
+ 
+-- 
+2.7.4
+

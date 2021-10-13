@@ -1,0 +1,129 @@
+============================================================
+Changes for SSDK 1.0.3:
+============================================================
+
+* Support HORUS:
+  - Add chip type HORUS and related source code.
+
+
+
+
+============================================================                           
+Changes for SSDK 1.0.4:                                                
+============================================================                           
+                                                
+* Support ISIS:                                                
+  - Add chip type ISIS and related source code.     
+
+
+
+
+============================================================ 
+Changes for SSDK 1.0.5:                                                                         
+============================================================
+                                            
+* Speed up FDB entry next operation.
+* Support linux 2.6.31 version.  
+
+
+
+
+============================================================  
+Changes for SSDK 1.0.6:                                                                         
+============================================================
+                                            
+* New APIs pppoe_session_id_set/get are supported for ISIS chip.
+* Fix parameter speed check bug in API isis_port_speed_set.
+
+
+
+
+============================================================  
+Changes for SSDK 1.0.7:                                                                         
+============================================================
+* Fix address bytes order bug in API _isis_ip6_base_addr_set/get.
+* Change the socket call for user space and kernel communication to nonblocking way.
+* Remove force routing function for ISIS acl action.
+* Add configuration for ISIS register accessing speed up feature in ./config file.
+* Add configuration for ISIS NAT helper feature in ./config.file.
+
+
+
+
+============================================================  
+Changes for SSDK 1.0.8:                                                                         
+============================================================
+* Offer ioctl based method for linux kernel&user space communication
+* Remove some port property logic limitation for ISIS.
+* Remove FDB CRC mode setting in ISIS init.
+* Add some operation mode flag for ISIS NAPT entry next operation.
+* Add some operation mode flag for ISIS NAPT del opertion.
+* Fix one bug for fdb entry extendnext command parsing when shell works at slient mode. 
+* Fix one bug in ISIS ACL rule delete operation(isis_acl_rule_delete).
+* Fix one bug in ISIS queue shapper get operation(isis_rate_queue_shaper_get).
+* Add new API for ISIS MAC based VLAN translation.(isis_port_mac_vlan_xlt_set/isis_port_mac_vlan_xlt_get).
+* Add new API for ISIS add/delete port to/from an exist FDB entry.(isis_fdb_port_add/isis_fdb_port_del).
+* Add new API for ISIS ACL rules active/deactive. (isis_acl_rule_active/isis_acl_rule_deactive).
+* Add new API for ISIS wcmp hash mode setting. (isis_ip_wcmp_hash_mode_set/isis_ip_wcmp_hash_mode_get).
+* Add new API for ISIS host entry aging time setting. (isis_ip_age_time_set/isis_ip_age_time_get).
+* Add new API for ISIS interrupt operation. (isis_intr_mask_set/isis_intr_mask_get/isis_intr_status_get/
+      isis_intr_status_clear/isis_intr_port_link_mask_set/isis_intr_port_link_mask_get/isis_intr_port_link_status_get).
+* Add new API for ISIS port MAC mode setting. (isis_interface_mac_mode_set/isis_interface_mac_mode_get).
+* Add new API for ISIS port PHY mode setting. (isis_interface_phy_mode_set/isis_interface_phy_mode_get).
+* Add new API for ISIS 802.3az setting. (isis_port_3az_status_set/isis_port_3az_status_get).
+* Add new API for ISIS link status getting. (isis_port_link_status_get).
+* Add new API for ISIS MAC TX status setting. (isis_port_txmac_status_set/isis_port_txmac_status_get).
+* Add new API for ISIS MAC RX status setting. (isis_port_rxmac_status_set/isis_port_rxmac_status_get).
+* Add new API for ISIS MAC TX flow control setting. (isis_port_txfc_status_set/isis_port_txfc_status_get).
+* Add new API for ISIS MAC RX flow control setting. (isis_port_rxfc_status_set/isis_port_rxfc_status_get).
+* Add new API for ISIS MAC back pressure setting. (isis_port_bp_status_set/isis_port_bp_status_get).
+* Add new API for ISIS link force mode setting. (isis_port_link_forcemode_set/isis_port_link_forcemode_get).
+* Fix one bug in Giga PHY device autoneg ability setting operation.
+* Makefile change for ISIS NAT helper refactoring.
+
+============================================================
+Changes for SSDK 1.1.x:
+============================================================
+* Add support for QCA833x family (ISISC, S17c).
+* Add support for out-of-band register access through ethernet packets with Atheros header. (S17/S17c)
+* Add IPV6 Hardware Routing (ISISC, S17c).
+* Add new API for set/get status of one ACL rule source filter. (S17c only)
+* Add new API for set/get arl search mode as ivl or svl when vlan invalid. (S17c only)
+* Add new API for interface control:
+fal_interface_fx100_ctrl_set/fal_interface_fx100_ctrl_get/fal_interface_fx100_status_get/fal_interface_fx100_status_set/fal_interface_mac06_exch_get/fal_interface_mac06_exch_set. (S17c only)
+* Add new API for MIB counter:
+fal_mib_port_flush_counters/fal_mib_cpukeep_set/fal_mib_cpukeep_get. (S17c only)
+*Add new API for Misc:
+fal_intr_mask_mac_linkchg_set/fal_intr_mask_mac_linkchg_get/fal_intr_status_mac_linkchg_get/fal_cpu_vid_en_set/fal_cpu_vid_en_get/fal_rtd_pppoe_en_set/fal_rtd_pppoe_en_get/fal_intr_status_mac_linkchg_clear (S17c only)
+* Add new API for nat: nat_prv_base_mask_set/nat_prv_base_mask_get. (S17c only)
+* Add new API for port ctrl:
+fal_port_mac_loopback_set/fal_port_mac_loopback_set. (S17c only)
+* Add new API for port vlan:
+fal_netisolate_set/fal_netisolate_get/fal_eg_trans_filter_bypass_en_set/fal_eg_trans_filter_bypass_en_get. (S17c only)
+* Add new API for QoS:
+fal_qos_port_force_spri_status_set/fal_qos_port_force_spri_status_get/fal_qos_port_force_cpri_status_set/fal_qos_port_force_cpri_status_get. (S17c only)
+* Add new API for Rate limit:
+fal_rate_port_add_rate_byte_set/fal_rate_port_add_rate_byte_get/fal_rate_port_gol_flow_en_set/fal_rate_port_gol_flow_en_get.
+
+============================================================
+Changes for SSDK 1.1.1:
+============================================================
+* Add IGMP mldv2 support
+
+============================================================
+Changes for SSDK 1.1.2:
+============================================================
+* Add API for Trunk support
+* Add API for MAC loopback support
+
+============================================================
+Changes for SSDK 1.1.3:
+============================================================
+* Support CHIP_TYPE=ALL_CHIP
+============================================================
+Changes for SSDK 1.1.3.2:
+============================================================
+* Add hsl_shared_api.h (sync from Perforce server)
+* Add support for Linux Kernel 3.2.0 
+* Add support for LITTLE ENDIAN (especially for HNAT)
+* Add support for ARM CPU

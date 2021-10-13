@@ -1,0 +1,53 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -397,7 +397,7 @@ AC_ARG_WITH([cyassl],
+  [AS_HELP_STRING([--with-cyassl], [enable support for cyassl])],[],[with_cyassl=no])
+ 
+ AS_IF([test x"$with_cyassl" != xno],
+-  [AC_CHECK_LIB([cyassl], [CyaSSL_Init],
++  [AC_CHECK_LIB([cyassl], [wolfSSL_Init],
+               [AC_SUBST([LIBSSL], ["-lcyassl"])
+                AC_DEFINE([HAVE_CYASSL], [1],
+                          [Define if you have cyassl])
+--- a/src/ippool.c
++++ b/src/ippool.c
+@@ -35,6 +35,7 @@ int ippool_print(int fd, struct ippool_t
+   char * sep = "-- %-15s ------------------------------------------------------------\n";
+ 
+ #define ERR 0
++#undef USED /* defined in <wolfssl/wolfcrypt/integer.h> */
+ #define USED 1
+ #define FREE 2
+ #define LIST 3
+--- a/src/md5.h
++++ b/src/md5.h
+@@ -35,7 +35,6 @@
+ #define MD5Update MD5_Update
+ #define MD5Final MD5_Final
+ 
+-typedef struct CYASSL_MD5_CTX MD5_CTX;
+ #else
+ 
+ struct MD5Context {
+--- a/src/ssl.c
++++ b/src/ssl.c
+@@ -131,7 +131,7 @@ _openssl_env_init(openssl_env *env, char
+    */
+   const long options = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
+   env->meth = SSLv23_method();
+-  env->ctx = SSL_CTX_new(env->meth);
++  env->ctx = SSL_CTX_new((void *)env->meth);
+   SSL_CTX_set_options(env->ctx, options);
+   if (_options.sslciphers) {
+     SSL_CTX_set_cipher_list(env->ctx, _options.sslciphers);
+--- a/src/ssl.h
++++ b/src/ssl.h
+@@ -48,6 +48,8 @@ typedef struct {
+ #include <time.h>
+ #include <string.h>
+ 
++#define OPENSSL_NO_ENGINE
++#include <cyassl/options.h>
+ #include <cyassl/ssl.h>
+ #include <cyassl/openssl/bio.h>
+ #include <cyassl/openssl/crypto.h>

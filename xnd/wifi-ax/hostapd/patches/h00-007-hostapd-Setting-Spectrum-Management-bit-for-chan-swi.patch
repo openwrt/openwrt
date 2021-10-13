@@ -1,0 +1,67 @@
+From d2b5a9ed668829c04a8c86e8712cc045a9aaac5f Mon Sep 17 00:00:00 2001
+From: Muna Sinada <msinada@codeaurora.org>
+Date: Mon, 11 Jan 2021 17:30:34 -0800
+Subject: [PATCH] hostapd: Setting Spectrum Management bit for chan switch
+
+When CSA IEs are adversied by AP when CSA is initiated, spectrum
+management bit in capability information located in management frame's
+fixed field shoud be set. Therfore when channel switch is supported,
+the spectrum management bit is set.
+
+Signed-off-by: Muna Sinada <msinada@codeaurora.org>
+---
+ src/ap/ap_config.c  |  4 +++-
+ src/ap/ieee802_11.c | 15 +++++++++------
+ 2 files changed, 12 insertions(+), 7 deletions(-)
+
+Index: hostapd-2021-02-18/src/ap/ap_config.c
+===================================================================
+--- hostapd-2021-02-18.orig/src/ap/ap_config.c
++++ hostapd-2021-02-18/src/ap/ap_config.c
+@@ -229,6 +229,8 @@ struct hostapd_config * hostapd_config_d
+ 	conf->fragm_threshold = -2; /* user driver default: 2346 */
+ 	/* Set to invalid value means do not add Power Constraint IE */
+ 	conf->local_pwr_constraint = -1;
++	/* Set to invalid value means that user did not set this value */
++	conf->spectrum_mgmt_required = -1;
+ 
+ 	conf->wmm_ac_params[0] = ac_be;
+ 	conf->wmm_ac_params[1] = ac_bk;
+@@ -1471,7 +1473,7 @@ int hostapd_config_check(struct hostapd_
+ 		return -1;
+ 	}
+ 
+-	if (full_config && conf->spectrum_mgmt_required &&
++	if (full_config && conf->spectrum_mgmt_required != -1 &&
+ 	    conf->local_pwr_constraint == -1) {
+ 		wpa_printf(MSG_ERROR, "Cannot set Spectrum Management bit without Country and Power Constraint elements");
+ 		return -1;
+Index: hostapd-2021-02-18/src/ap/ieee802_11.c
+===================================================================
+--- hostapd-2021-02-18.orig/src/ap/ieee802_11.c
++++ hostapd-2021-02-18/src/ap/ieee802_11.c
+@@ -300,15 +300,18 @@ u16 hostapd_own_capab_info(struct hostap
+ 		capab |= WLAN_CAPABILITY_SHORT_SLOT_TIME;
+ 
+ 	/*
+-	 * Currently, Spectrum Management capability bit is set when directly
+-	 * requested in configuration by spectrum_mgmt_required or when AP is
+-	 * running on DFS channel.
++	 * Currently, Spectrum Management capability bit is set by default when
++	 * channel switch is supported. When CSA is not supported, then Spectrum
++	 * Management capability bit is set when directly requested in
++	 * configuration by spectrum_mgmt_required or when AP is running on DFS
++	 * channel.
+ 	 * TODO: Also consider driver support for TPC to set Spectrum Mgmt bit
+ 	 */
+ 	if (hapd->iface->current_mode &&
+-	    hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211A &&
+-	    (hapd->iconf->spectrum_mgmt_required || dfs))
+-		capab |= WLAN_CAPABILITY_SPECTRUM_MGMT;
++	    hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211A)
++		if (!(hapd->iconf->spectrum_mgmt_required == 0 && !dfs) &&
++		    (hapd->iface->drv_flags & WPA_DRIVER_FLAGS_AP_CSA || dfs))
++			capab |= WLAN_CAPABILITY_SPECTRUM_MGMT;
+ 
+ 	for (i = 0; i < RRM_CAPABILITIES_IE_LEN; i++) {
+ 		if (hapd->conf->radio_measurements[i]) {

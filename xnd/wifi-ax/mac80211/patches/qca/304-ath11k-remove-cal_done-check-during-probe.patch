@@ -1,0 +1,32 @@
+From 610f6387768be2323257cfcc422589f5b417003f Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Date: Fri, 9 Apr 2021 18:12:02 +0530
+Subject: [PATCH] ath11k: remove cal_done check during probe
+
+cal_done is set when calibration done qmi message is received.
+In some race conditions, cal done is received even before host
+wait starts for calibration done. Hence, remove check cal_done
+check in ath11k_qmi_fwreset_from_cold_boot() as this is called
+only from probe.
+
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/qmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.c b/drivers/net/wireless/ath/ath11k/qmi.c
+index 75d382e..18cc3ff 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -3541,7 +3541,7 @@ int ath11k_qmi_fwreset_from_cold_boot(struct ath11k_base *ab)
+ {
+ 	int timeout;
+ 
+-	if (ab->enable_cold_boot_cal == 0 || ab->qmi.cal_done ||
++	if (ab->enable_cold_boot_cal == 0 ||
+ 	    ab->hw_params.cold_boot_calib == 0)
+ 		return 0;
+ 
+-- 
+2.7.4
+

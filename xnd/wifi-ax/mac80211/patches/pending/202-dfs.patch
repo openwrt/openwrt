@@ -1,0 +1,13 @@
+Index: backports-20200902_001-4.4.60-931c337125/drivers/net/wireless/ath/Kconfig
+===================================================================
+--- backports-20200902_001-4.4.60-931c337125.orig/drivers/net/wireless/ath/Kconfig
++++ backports-20200902_001-4.4.60-931c337125/drivers/net/wireless/ath/Kconfig
+@@ -45,7 +45,7 @@ config ATH_TRACEPOINTS
+ config ATH_REG_DYNAMIC_USER_REG_HINTS
+ 	bool "Atheros dynamic user regulatory hints"
+ 	depends on CFG80211_CERTIFICATION_ONUS
+-	default n
++	default y
+ 	help
+ 	  Say N. This should only be enabled in countries where
+ 	  this feature is explicitly allowed and only on cards that

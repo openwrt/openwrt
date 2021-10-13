@@ -1,0 +1,65 @@
+From 917653b0674dfacc976e20956e999fef13c6e6ba Mon Sep 17 00:00:00 2001
+From: Muna Sinada <msinada@codeaurora.org>
+Date: Wed, 29 Jul 2020 09:41:31 -0700
+Subject: [PATCH] hostapd:remove 11A specific case to allow for 6 GHz
+
+With 6 GHz utilizing 11A/HE, frequency to channel conversions needed
+to accomedate for 6 GHz frequencies in hostapd_event_ch_switch. Removed
+5 GHz specific conversions for the 11A case due to incorrect 6 GHz
+frequencies being incorrectly being converted in
+hostapd_event_ch_switch
+
+Signed-off-by: Muna Sinada <msinada@codeaurora.org>
+---
+ src/ap/drv_callbacks.c | 14 ++------------
+ 1 file changed, 2 insertions(+), 12 deletions(-)
+
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -876,7 +876,7 @@ void hostapd_event_ch_switch(struct host
+ {
+ #ifdef NEED_AP_MLME
+ 	int channel, chwidth, is_dfs;
+-	u8 seg0_idx = 0, seg1_idx = 0;
++	u8 seg0_idx = 0, seg1_idx = 0, op_class;
+ 	size_t i;
+ 
+ 	hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
+@@ -922,27 +922,8 @@ void hostapd_event_ch_switch(struct host
+ 		break;
+ 	}
+ 
+-	switch (hapd->iface->current_mode->mode) {
+-	case HOSTAPD_MODE_IEEE80211A:
+-		if (cf1 == 5935)
+-			seg0_idx = (cf1 - 5925) / 5;
+-		else if (cf1 > 5950)
+-			seg0_idx = (cf1 - 5950) / 5;
+-		else if (cf1 > 5000)
+-			seg0_idx = (cf1 - 5000) / 5;
+-
+-		if (cf2 == 5935)
+-			seg1_idx = (cf2 - 5925) / 5;
+-		else if (cf2 > 5950)
+-			seg1_idx = (cf2 - 5950) / 5;
+-		else if (cf2 > 5000)
+-			seg1_idx = (cf2 - 5000) / 5;
+-		break;
+-	default:
+-		ieee80211_freq_to_chan(cf1, &seg0_idx);
+-		ieee80211_freq_to_chan(cf2, &seg1_idx);
+-		break;
+-	}
++	ieee80211_freq_to_channel_ext(cf1, offset, chwidth, &op_class, &seg0_idx);
++	ieee80211_freq_to_chan(cf2, &seg1_idx);
+ 
+ 	hapd->iconf->channel = channel;
+ 	hapd->iconf->ieee80211n = ht;
+@@ -977,6 +958,7 @@ void hostapd_event_ch_switch(struct host
+ 	hostapd_set_oper_chwidth(hapd->iconf, chwidth);
+ 	hostapd_set_oper_centr_freq_seg0_idx(hapd->iconf, seg0_idx);
+ 	hostapd_set_oper_centr_freq_seg1_idx(hapd->iconf, seg1_idx);
++	hapd->iconf->op_class = op_class;
+ 
+ 	is_dfs = ieee80211_is_dfs(freq, hapd->iface->hw_features,
+ 				  hapd->iface->num_hw_features);

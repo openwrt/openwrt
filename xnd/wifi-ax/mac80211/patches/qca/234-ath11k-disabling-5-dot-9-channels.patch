@@ -1,0 +1,53 @@
+From 439900d674e7dc2ea088c03c0a73ac40589534fc Mon Sep 17 00:00:00 2001
+From: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+Date: Thu, 7 Jan 2021 12:43:48 +0530
+Subject: [PATCH] ath11k: disabling 5.9Ghz channels from ath11k
+
+Disabling the 5.9Ghz channels based on
+WMI_TLV_SERVICE_5_DOT_9GHZ_SUPPORT response from FW.
+
+Signed-off-by: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8117,6 +8117,28 @@ static void ath11k_mac_update_ch_list(st
+ 	}
+ }
+ 
++#define ATH11k_5_DOT_9_MIN_FREQ	5845
++#define ATH11k_5_DOT_9_MAX_FREQ	5885
++
++static void ath11k_mac_update_5_dot_9_ch_list(struct ath11k *ar,
++				      struct ieee80211_supported_band *band)
++{
++	int i;
++
++	if (test_bit(WMI_TLV_SERVICE_5_DOT_9GHZ_SUPPORT,
++				ar->ab->wmi_ab.svc_map))
++		return;
++
++	if (ar->ab->dfs_region != ATH11K_DFS_REG_FCC)
++		return;
++
++	for (i = 0; i < band->n_channels; i++) {
++		if (band->channels[i].center_freq >= ATH11k_5_DOT_9_MIN_FREQ &&
++		    band->channels[i].center_freq <= ATH11k_5_DOT_9_MAX_FREQ)
++			band->channels[i].flags |= IEEE80211_CHAN_DISABLED;
++	}
++}
++
+ static u32 ath11k_get_phy_id(struct ath11k *ar, u32 band)
+ {
+ 	struct ath11k_pdev *pdev = ar->pdev;
+@@ -8222,6 +8244,8 @@ static int ath11k_mac_setup_channels_rat
+ 			ath11k_mac_update_ch_list(ar, band,
+ 						  reg_cap->low_5ghz_chan,
+ 						  reg_cap->high_5ghz_chan);
++
++			ath11k_mac_update_5_dot_9_ch_list(ar, band);
+ 		}
+ 	}
+ 

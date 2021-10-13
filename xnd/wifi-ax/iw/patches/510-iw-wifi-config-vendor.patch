@@ -1,0 +1,71 @@
+--- a/iw.h
++++ b/iw.h
+@@ -62,6 +62,19 @@ enum id_input {
+ 	II_WDEV,
+ };
+ 
++/* Attributes for data used by
++ * QCA_NL80211_VENDOR_SUBCMD_SET_WIFI_CONFIGURATION and
++ * QCA_NL80211_VENDOR_SUBCMD_GET_WIFI_CONFIGURATION subcommands.
++ */
++enum qca_wlan_vendor_attr_config {
++	QCA_WLAN_VENDOR_ATTR_CONFIG_GTX = 57,
++
++	/* keep last */
++	QCA_WLAN_VENDOR_ATTR_CONFIG_AFTER_LAST,
++	QCA_WLAN_VENDOR_ATTR_CONFIG_MAX =
++		QCA_WLAN_VENDOR_ATTR_CONFIG_AFTER_LAST - 1,
++};
++
+ #define HANDLER_RET_USAGE 1
+ #define HANDLER_RET_DONE 3
+ 
+--- a/vendor.c
++++ b/vendor.c
+@@ -78,9 +78,12 @@ static int handle_vendor(struct nl80211_
+ {
+ 	unsigned int oui;
+ 	unsigned int subcmd;
++	struct nlattr *params;
+ 	char buf[2048] = {};
+ 	int res, count = 0;
+ 	FILE *file = NULL;
++	char *end;
++	unsigned int ap_ps;
+ 
+ 	if (argc < 3)
+ 		return 1;
+@@ -105,6 +108,33 @@ static int handle_vendor(struct nl80211_
+ 	NLA_PUT_U32(msg, NL80211_ATTR_VENDOR_ID, oui);
+ 	NLA_PUT_U32(msg, NL80211_ATTR_VENDOR_SUBCMD, subcmd);
+ 
++	if (subcmd == 0x4a) {
++		argc -= 2;
++		argv += 2;
++
++		if (!argc)
++			return 1;
++
++		params = nla_nest_start(msg, NL80211_ATTR_VENDOR_DATA | NLA_F_NESTED);
++
++		if (!strcmp(argv[0], "ap-ps")) {
++			if (argc < 2)
++				return 1;
++			ap_ps = strtol(argv[1], &end, 10);
++			if (*end)
++				return 2;
++
++			if (ap_ps > 1)
++				return -EINVAL;
++
++			if (ap_ps)
++				NLA_PUT_FLAG(msg, QCA_WLAN_VENDOR_ATTR_CONFIG_GTX);
++		}
++
++		nla_nest_end(msg, params);
++		return 0;
++	}
++
+ 	if (file) {
+ 		count = read_file(file, buf, sizeof(buf));
+ 		if (file != stdin)

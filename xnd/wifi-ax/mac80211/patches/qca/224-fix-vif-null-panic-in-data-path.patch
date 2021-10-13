@@ -1,0 +1,49 @@
+Subject: [PATCH] ath11k: fix null panic in data path
+
+    1. avoid the kernel panic in ath11k_dp_tx_htt_tx_complete_buf()
+       by cross check the vif parameter against null.
+
+    2. In ath11k_mgmt_rx_event() avoid kernel panic by cross check the
+       vif parameter adainst null.
+
+    3. avoid unnecessary warning print.
+
+       ath11k_mac_get_arvif_by_vdev_id() loop all the active radio
+       to find out the arvif from the given vdev_id. if we call
+       ath11k_mac_get_arvif() to find vdev_id for the mismatched radio,
+       will trigger below warning print. Avoid this unnecessary warning
+       print by have a check like whether this vdev is created in the
+       given radio using the member allocated_vdev_map.
+
+    warning print:
+    ath11k c000000.wifi: No VIF found for vdev 2
+    ...
+    ath11k c000000.wifi: No VIF found for vdev 0
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+---
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -510,7 +510,8 @@ struct ath11k_vif *ath11k_mac_get_arvif_
+ 
+ 	for (i = 0; i < ab->num_radios; i++) {
+ 		pdev = rcu_dereference(ab->pdevs_active[i]);
+-		if (pdev && pdev->ar) {
++		if (pdev && pdev->ar &&
++		    (pdev->ar->allocated_vdev_map & (1LL << vdev_id))) {
+ 			arvif = ath11k_mac_get_arvif(pdev->ar, vdev_id);
+ 			if (arvif)
+ 				return arvif;
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -6940,6 +6940,10 @@ static void ath11k_mgmt_rx_event(struct
+ 	vif = peer->vif;
+ 
+ 	spin_unlock_bh(&ab->base_lock);
++
++	if (!vif)
++		goto skip_mgmt_stats;
++
+ 	spin_lock_bh(&ar->data_lock);
+ 
+ 	arvif = ath11k_vif_to_arvif(vif);

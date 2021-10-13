@@ -1,0 +1,914 @@
+From b330e0742cdac4381a996c51809735f07ad01295 Mon Sep 17 00:00:00 2001
+From: Thiraviyam Mariyappan <tmariyap@codeaurora.org>
+Date: Fri, 18 Dec 2020 12:46:09 +0530
+Subject: [PATCH] ath11k: add wmi ctrl path stats
+
+Currently, ath11k HTT debugfs uses the HTT inferface to send stats request
+to target and response from target. Here HTT interface already overloaded
+with the data path stats. To reduce the load from HTT, using WMI interface
+to print the control path stats. This patch come up with framework for
+control path stats using wmi interface.
+
+wmi control path stats command and results are below:
+echo <stats_id> <action> > sys/kernel/debug/ieee80211/phy3/netdev\:wlan3/wmi_ctrl_stats
+cat sys/kernel/debug/ieee80211/phy3/netdev\:wlan3/wmi_ctrl_stats
+
+WMI_CTRL_PATH_PDEV_TX_STATS:
+fw_tx_mgmt_subtype =  0:0, 1:0, 2:0, 3:0, 4:0, 5:109, 6:0, 7:0, 8:344, 9:0, 10:0, 11:0, 12:3, 13:0, 14:0, 15:0,
+fw_rx_mgmt_subtype =  0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0, 13:0, 14:0, 15:0,
+scan_fail_dfs_violation_time_ms = 0
+nol_chk_fail_last_chan_freq = 0
+nol_chk_fail_time_stamp_ms = 0
+tot_peer_create_cnt = 2
+tot_peer_del_cnt = 1
+tot_peer_del_resp_cnt = 1
+vdev_pause_fail_rt_to_sched_algo_fifo_full_cnt = 0
+
+Signed-off-by: Thiraviyam Mariyappan <tmariyap@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h  |   3 +
+ drivers/net/wireless/ath/ath11k/debugfs.c | 136 ++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/debugfs.h |   2 +
+ drivers/net/wireless/ath/ath11k/mac.c   |   1 +
+ drivers/net/wireless/ath/ath11k/wmi.c   | 242 ++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.h   |  93 ++++++++++++
+ 6 files changed, 477 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -496,6 +496,9 @@ struct ath11k_debug {
+ 	u32 rx_filter;
+ 	bool enable_m3_dump;
+ 	u32 mem_addr;
++	struct list_head wmi_list;
++	struct completion wmi_ctrl_path_stats_rcvd;
++	u32 wmi_ctrl_path_stats_tagid;
+ };
+ 
+ struct ath11k_per_peer_tx_stats {
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -251,6 +251,217 @@ void ath11k_debugfs_twt(struct ath11k_vi
+ }
+ #endif
+ 
++static ssize_t ath11k_write_wmi_ctrl_path_stats(struct file *file,
++		const char __user *ubuf,
++		size_t count, loff_t *ppos)
++{
++	struct ath11k_vif *arvif = file->private_data;
++	struct wmi_ctrl_path_stats_cmd_param param = {0};
++	u8 buf[128] = {0};
++	int ret;
++
++	ret = simple_write_to_buffer(buf, sizeof(buf) - 1, ppos, ubuf, count);
++	if (ret < 0) {
++		return ret;
++	}
++
++	buf[ret] = '\0';
++
++	ret = sscanf(buf, "%u %u", &param.stats_id, &param.action);
++	if (ret != 2)
++		return -EINVAL;
++
++	if (!param.action || param.action > WMI_REQ_CTRL_PATH_STAT_RESET)
++		return -EINVAL;
++
++	ret = ath11k_wmi_send_wmi_ctrl_stats_cmd(arvif->ar, &param);
++	return ret ? ret : count;
++}
++
++int wmi_ctrl_path_pdev_stat(struct ath11k_vif *arvif, const char __user *ubuf,
++			    size_t count, loff_t *ppos)
++{
++	const int size = 2048;
++	char *buf;
++	u8 i;
++	int len = 0, ret_val;
++	u16 index_tx = 0;
++	u16 index_rx = 0;
++	char fw_tx_mgmt_subtype[WMI_MAX_STRING_LEN] = {0};
++	char fw_rx_mgmt_subtype[WMI_MAX_STRING_LEN] = {0};
++	struct wmi_ctrl_path_stats_list *stats;
++	struct wmi_ctrl_path_pdev_stats *pdev_stats;
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	list_for_each_entry (stats, &arvif->ar->debug.wmi_list, list) {
++		if (!stats) {
++			break;
++		}
++
++		pdev_stats = stats->stats_ptr;
++
++		for (i = 0; i < WMI_MGMT_FRAME_SUBTYPE_MAX; i++) {
++			index_tx += snprintf(&fw_tx_mgmt_subtype[index_tx],
++			        WMI_MAX_STRING_LEN - index_tx,
++			        " %u:%u,", i,
++			        pdev_stats->tx_mgmt_subtype[i]);
++			index_rx += snprintf(&fw_rx_mgmt_subtype[index_rx],
++			         WMI_MAX_STRING_LEN - index_rx,
++			         " %u:%u,", i,
++			         pdev_stats->rx_mgmt_subtype[i]);
++		}
++
++		len += scnprintf(buf + len, size - len,
++				 "WMI_CTRL_PATH_PDEV_TX_STATS: \n");
++		len += scnprintf(buf + len, size - len,
++				 "fw_tx_mgmt_subtype = %s \n",
++				 fw_tx_mgmt_subtype);
++		len += scnprintf(buf + len, size - len,
++				 "fw_rx_mgmt_subtype = %s \n",
++				 fw_rx_mgmt_subtype);
++		len += scnprintf(buf + len, size - len,
++				 "scan_fail_dfs_violation_time_ms = %u \n",
++				 pdev_stats->scan_fail_dfs_violation_time_ms);
++		len += scnprintf(buf + len, size - len,
++				 "nol_chk_fail_last_chan_freq = %u \n",
++				 pdev_stats->nol_chk_fail_last_chan_freq);
++		len += scnprintf(buf + len, size - len,
++				 "nol_chk_fail_time_stamp_ms = %u \n",
++				 pdev_stats->nol_chk_fail_time_stamp_ms);
++		len += scnprintf(buf + len, size - len,
++				 "tot_peer_create_cnt = %u \n",
++				 pdev_stats->tot_peer_create_cnt);
++		len += scnprintf(buf + len, size - len,
++				 "tot_peer_del_cnt = %u \n",
++				 pdev_stats->tot_peer_del_cnt);
++		len += scnprintf(buf + len, size - len,
++				 "tot_peer_del_resp_cnt = %u \n",
++				 pdev_stats->tot_peer_del_resp_cnt);
++		len += scnprintf(buf + len, size - len,
++				 "vdev_pause_fail_rt_to_sched_algo_fifo_full_cnt = %u \n",
++				 pdev_stats->vdev_pause_fail_rt_to_sched_algo_fifo_full_cnt);
++
++	}
++
++	ret_val =  simple_read_from_buffer(ubuf, count, ppos, buf, len);
++	ath11k_wmi_crl_path_stats_list_free(&arvif->ar->debug.wmi_list);
++	kfree(buf);
++	return ret_val;
++}
++
++int wmi_ctrl_path_cal_stat(struct ath11k_vif *arvif, const char __user *ubuf,
++			   size_t count, loff_t *ppos)
++{
++	const int size = 4096;
++	char *buf;
++	u8 cal_type_mask, cal_prof_mask, is_periodic_cal;
++	int len = 0, ret_val;
++	struct wmi_ctrl_path_stats_list *stats;
++	struct wmi_ctrl_path_cal_stats *cal_stats;
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	len += scnprintf(buf + len, size - len,
++			 "WMI_CTRL_PATH_CAL_STATS\n");
++	len += scnprintf(buf + len, size - len,
++			 "%-25s %-25s %-17s %-16s %-16s %-16s\n",
++			 "cal_profile", "cal_type",
++			 "cal_triggered_cnt", "cal_fail_cnt",
++			 "cal_fcs_cnt", "cal_fcs_fail_cnt");
++
++	list_for_each_entry (stats, &arvif->ar->debug.wmi_list, list) {
++		if (!stats)
++			break;
++
++		cal_stats = stats->stats_ptr;
++
++		cal_prof_mask = FIELD_GET(WMI_CTRL_PATH_CAL_PROF_MASK,
++					  cal_stats->cal_info);
++		if (cal_prof_mask == WMI_CTRL_PATH_STATS_CAL_PROFILE_INVALID)
++			continue;
++
++		cal_type_mask = FIELD_GET(WMI_CTRL_PATH_CAL_TYPE_MASK,
++					  cal_stats->cal_info);
++		is_periodic_cal = FIELD_GET(WMI_CTRL_PATH_IS_PERIODIC_CAL,
++					    cal_stats->cal_info);
++
++
++		if (!is_periodic_cal) {
++			len +=
++		scnprintf(buf + len, size - len,
++			  "%-25s %-25s %-17d %-16d %-16d %-16d\n",
++			  wmi_ctrl_path_cal_prof_id_to_name(cal_prof_mask),
++			  wmi_ctrl_path_cal_type_id_to_name(cal_type_mask),
++			  cal_stats->cal_triggered_cnt,
++			  cal_stats->cal_fail_cnt,
++			  cal_stats->cal_fcs_cnt,
++			  cal_stats->cal_fcs_fail_cnt);
++		} else {
++			len +=
++		scnprintf(buf + len, size - len,
++			  "%-25s %-25s %-17d %-16d %-16d %-16d\n",
++			  "PERIODIC_CAL",
++			  wmi_ctrl_path_periodic_cal_type_id_to_name(cal_type_mask),
++			  cal_stats->cal_triggered_cnt,
++			  cal_stats->cal_fail_cnt,
++			  cal_stats->cal_fcs_cnt,
++			  cal_stats->cal_fcs_fail_cnt);
++		}
++
++	}
++
++	ret_val =  simple_read_from_buffer(ubuf, count, ppos, buf, len);
++	ath11k_wmi_crl_path_stats_list_free(&arvif->ar->debug.wmi_list);
++	kfree(buf);
++	return ret_val;
++}
++
++static ssize_t ath11k_read_wmi_ctrl_path_stats(struct file *file,
++		const char __user *ubuf,
++		size_t count, loff_t *ppos)
++{
++	struct ath11k_vif *arvif = file->private_data;
++	int ret_val = 0;
++	u32 tagid = 0;
++
++	tagid = arvif->ar->debug.wmi_ctrl_path_stats_tagid;
++
++	switch (tagid) {
++	case WMI_CTRL_PATH_PDEV_STATS:
++		ret_val = wmi_ctrl_path_pdev_stat(arvif, ubuf, count, ppos);
++		break;
++	case WMI_CTRL_PATH_CAL_STATS:
++		ret_val = wmi_ctrl_path_cal_stat(arvif, ubuf, count, ppos);
++		break;
++	/* Add case for newly wmi ctrl path added stats here */
++	default :
++		/* Unsupported tag */
++		break;
++	}
++
++	return ret_val;
++}
++
++static const struct file_operations ath11k_fops_wmi_ctrl_stats = {
++	.write = ath11k_write_wmi_ctrl_path_stats,
++	.open = simple_open,
++	.read = ath11k_read_wmi_ctrl_path_stats,
++};
++
++void ath11k_debugfs_wmi_ctrl_stats(struct ath11k_vif *arvif)
++{
++	debugfs_create_file("wmi_ctrl_stats", 0644,
++			arvif->vif->debugfs_dir, arvif,
++			&ath11k_fops_wmi_ctrl_stats);
++	INIT_LIST_HEAD(&arvif->ar->debug.wmi_list);
++	init_completion(&arvif->ar->debug.wmi_ctrl_path_stats_rcvd);
++}
++
+ static ssize_t ath11k_write_ampdu_aggr_size(struct file *file,
+ 					    const char __user *ubuf,
+ 					    size_t count, loff_t *ppos)
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -159,6 +159,8 @@ static inline void ath11k_debugfs_twt(st
+ #endif
+ 
+ void ath11k_debug_aggr_size_config_init(struct ath11k_vif *arvif);
++void ath11k_debugfs_wmi_ctrl_stats(struct ath11k_vif *arvif);
++void ath11k_wmi_crl_path_stats_list_free(struct list_head *head);
+ 
+ #ifdef CPTCFG_ATH11K_DEBUGFS
+ int ath11k_debugfs_create(void);
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6205,6 +6205,7 @@ static int ath11k_mac_op_add_interface(s
+ 	}
+ 
+ 	ath11k_debug_aggr_size_config_init(arvif);
++	ath11k_debugfs_wmi_ctrl_stats(arvif);
+ 
+ 	mutex_unlock(&ar->conf_mutex);
+ 
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -3045,6 +3045,102 @@ ath11k_wmi_send_twt_add_dialog_cmd(struc
+ }
+ 
+ int
++ath11k_wmi_send_wmi_ctrl_stats_cmd(struct ath11k *ar,
++				  struct wmi_ctrl_path_stats_cmd_param *param)
++{
++	struct ath11k_pdev_wmi *wmi = ar->wmi;
++	struct ath11k_base *ab = wmi->wmi_ab->ab;
++	u32 num_pdev_idx = 0;
++	u32 num_vdev_idx = 0;
++	u32 num_mac_addr_list = 0;
++	u32 pdev_id_array[2] = {0};
++	int len, ret;
++	struct wmi_tlv *tlv;
++	struct sk_buff *skb;
++	struct wmi_ctrl_path_stats_cmd_param *cmd;
++	void *ptr;
++	u32 stats_id = 0;
++	unsigned long time_left;
++
++	switch (param->stats_id) {
++	case WMI_REQ_CTRL_PATH_PDEV_TX_STAT:
++		pdev_id_array[num_pdev_idx] = ar->pdev->pdev_id;
++		stats_id = (1 << param->stats_id);
++		num_pdev_idx++;
++		break;
++	case WMI_REQ_CTRL_PATH_CAL_STAT:
++		pdev_id_array[num_pdev_idx] = ar->pdev->pdev_id;
++		stats_id = (1 << param->stats_id);
++		num_pdev_idx++;
++		break;
++	/* Add case for newly wmi ctrl path stats here */
++	default:
++		ath11k_warn(ab, "Unsupported stats id %d", param->stats_id);
++		return -EIO;
++		break;
++	}
++
++	len = sizeof(*cmd) +
++	      TLV_HDR_SIZE + (sizeof(u32) * num_pdev_idx) +
++	      TLV_HDR_SIZE + (sizeof(u32) * num_vdev_idx) +
++	      TLV_HDR_SIZE + (sizeof(struct wmi_mac_addr) * num_mac_addr_list);
++
++	skb = ath11k_wmi_alloc_skb(wmi->wmi_ab, len);
++	if (!skb)
++		return -ENOMEM;
++
++	cmd = (void *)skb->data;
++	cmd->tlv_header = FIELD_PREP(WMI_TLV_TAG,
++				     WMI_CTRL_PATH_STATS_CMD_FIXED_PARAM) |
++			  FIELD_PREP(WMI_TLV_LEN, sizeof(*cmd) - TLV_HDR_SIZE);
++	cmd->stats_id = stats_id;
++	cmd->req_id = param->req_id;
++	cmd->action = param->action;
++
++	ptr = skb->data + sizeof(*cmd);
++
++	tlv = ptr;
++	tlv->header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_ARRAY_UINT32) |
++		      FIELD_PREP(WMI_TLV_LEN, (sizeof(u32) * num_pdev_idx));
++	ptr += TLV_HDR_SIZE;
++	memcpy(ptr, &pdev_id_array[0], sizeof(pdev_id_array));
++	ptr += sizeof(u32) * num_pdev_idx;
++
++	tlv = ptr;
++	tlv->header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_ARRAY_UINT32) |
++		      FIELD_PREP(WMI_TLV_LEN, (sizeof(u32) * num_vdev_idx));
++	ptr += TLV_HDR_SIZE;
++
++	tlv = ptr;
++	tlv->header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_ARRAY_FIXED_STRUCT) |
++		      FIELD_PREP(WMI_TLV_LEN, (sizeof(struct wmi_mac_addr) *
++				 num_mac_addr_list));
++	ptr += TLV_HDR_SIZE;
++
++	if (param->action == WMI_REQ_CTRL_PATH_STAT_GET)
++		reinit_completion(&ar->debug.wmi_ctrl_path_stats_rcvd);
++
++	ret = ath11k_wmi_cmd_send(wmi, skb,
++				  WMI_REQUEST_CTRL_PATH_STATS_CMDID);
++	if (ret) {
++		dev_kfree_skb(skb);
++		ath11k_warn(ab, "Failed to send WMI_REQUEST_CTRL_PATH_STATS_CMDID: %d",ret);
++	} else {
++		if (param->action == WMI_REQ_CTRL_PATH_STAT_GET) {
++	                time_left = wait_for_completion_timeout(
++						&ar->debug.wmi_ctrl_path_stats_rcvd,
++						WMI_CTRL_STATS_READY_TIMEOUT_HZ * HZ);
++			if (time_left == 0) {
++				ath11k_warn(ab, "timeout in receiving wmi ctrl path stats\n");
++				return -ETIMEDOUT;
++			}
++		}
++	}
++
++	return ret;
++}
++
++int
+ ath11k_wmi_send_twt_del_dialog_cmd(struct ath11k *ar,
+ 				  struct wmi_twt_del_dialog_params *params)
+ {
+@@ -7151,6 +7247,195 @@ exit:
+ 	rcu_read_unlock();
+ }
+ 
++void ath11k_wmi_crl_path_stats_list_free(struct list_head *head)
++{
++	struct wmi_ctrl_path_stats_list *stats, *tmp;
++	list_for_each_entry_safe(stats, tmp, head, list) {
++		if (stats->stats_ptr)
++			kfree(stats->stats_ptr);
++	        list_del(&stats->list);
++	        kfree(stats);
++	}
++}
++
++int wmi_print_ctrl_path_pdev_tx_stats_tlv(struct ath11k_base *ab, u16 len, const void *ptr, void *data)
++{
++	struct wmi_ctrl_path_stats_ev_parse_param *stats_buff = (struct wmi_ctrl_path_stats_ev_parse_param *)data;
++	struct wmi_ctrl_path_pdev_stats *pdev_stats_skb = (struct wmi_ctrl_path_pdev_stats *)ptr;
++	struct wmi_ctrl_path_pdev_stats *pdev_stats = NULL;
++	struct wmi_ctrl_path_stats_list *stats = kzalloc(sizeof(struct wmi_ctrl_path_stats_list),GFP_ATOMIC);
++	struct ath11k *ar = NULL;
++
++	if (!stats)
++		return -ENOMEM;
++
++	pdev_stats = kzalloc(sizeof(*pdev_stats), GFP_ATOMIC);
++	if (!pdev_stats)
++		return -ENOMEM;
++
++	memcpy(pdev_stats, pdev_stats_skb, sizeof(struct wmi_ctrl_path_pdev_stats));
++	stats->stats_ptr = pdev_stats;
++	list_add_tail(&stats->list, &stats_buff->list);
++
++	ar = ath11k_mac_get_ar_by_pdev_id(ab, pdev_stats_skb->pdev_id + 1);
++	if (!ar) {
++		ath11k_warn(ab, "Failed to get ar for wmi ctrl stats\n");
++		return -EINVAL;
++	}
++
++	ar->debug.wmi_ctrl_path_stats_tagid = WMI_CTRL_PATH_PDEV_STATS;
++	stats_buff->ar = ar;
++	return 0;
++}
++
++int wmi_print_ctrl_path_cal_stats_tlv(struct ath11k_base *ab, u16 len,
++				      const void *ptr, void *data)
++{
++	struct wmi_ctrl_path_stats_ev_parse_param *stats_buff = (struct wmi_ctrl_path_stats_ev_parse_param *)data;
++	struct wmi_ctrl_path_cal_stats *cal_stats_skb = (struct wmi_ctrl_path_cal_stats *)ptr;
++	struct wmi_ctrl_path_cal_stats *cal_stats = NULL;
++	struct wmi_ctrl_path_stats_list *stats = kzalloc(sizeof(struct wmi_ctrl_path_stats_list),GFP_ATOMIC);
++	struct ath11k *ar = NULL;
++
++	if (!stats)
++		return -ENOMEM;
++
++	cal_stats = kzalloc(sizeof(*cal_stats), GFP_ATOMIC);
++	if (!cal_stats) {
++		kfree(stats);
++		return -ENOMEM;
++	}
++
++	memcpy(cal_stats, cal_stats_skb, sizeof(struct wmi_ctrl_path_cal_stats));
++	stats->stats_ptr = cal_stats;
++	list_add_tail(&stats->list, &stats_buff->list);
++
++	ar = ath11k_mac_get_ar_by_pdev_id(ab, cal_stats_skb->pdev_id + 1);
++	if (!ar) {
++		ath11k_warn(ab, "Failed to get ar for wmi ctrl cal stats\n");
++		return -EINVAL;
++	}
++
++	ar->debug.wmi_ctrl_path_stats_tagid = WMI_CTRL_PATH_CAL_STATS;
++	stats_buff->ar = ar;
++	return 0;
++}
++
++static int ath11k_wmi_ctrl_stats_subtlv_parser(struct ath11k_base *ab,
++					      u16 tag, u16 len,
++					      const void *ptr, void *data)
++{
++	int ret = 0;
++
++	switch (tag) {
++	case WMI_CTRL_PATH_STATS_EV_FIXED_PARAM:
++		break;
++	case WMI_CTRL_PATH_PDEV_STATS:
++		ret = wmi_print_ctrl_path_pdev_tx_stats_tlv(ab, len, ptr, data);
++		break;
++	case WMI_CTRL_PATH_CAL_STATS:
++		ret = wmi_print_ctrl_path_cal_stats_tlv(ab, len, ptr, data);
++		break;
++	/* Add case for newly wmi ctrl path added stats here */
++	default:
++		ath11k_warn(ab,
++			    "Received invalid tag for wmi ctrl path stats in subtlvs\n");
++		return -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static int ath11k_wmi_ctrl_stats_event_parser(struct ath11k_base *ab,
++					     u16 tag, u16 len,
++					     const void *ptr, void *data)
++{
++	int ret = 0;
++
++	ath11k_dbg(ab, ATH11K_DBG_WMI, "wmi ctrl path stats tag 0x%x of len %d rcvd\n",
++		   tag, len);
++
++	switch (tag) {
++	case WMI_CTRL_PATH_STATS_EV_FIXED_PARAM:
++		/* Fixed param is already processed*/
++		break;
++	case WMI_TAG_ARRAY_STRUCT:
++		/* len 0 is expected for array of struct when there
++		 * is no content of that type to pack inside that tlv
++		 */
++		if (len == 0)
++			return 0;
++		ret = ath11k_wmi_tlv_iter(ab, ptr, len,
++					  ath11k_wmi_ctrl_stats_subtlv_parser,
++					  data);
++		break;
++	default:
++		ath11k_warn(ab, "Received invalid tag for wmi ctrl path stats\n");
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static void ath11k_wmi_ctrl_path_stats_event(struct ath11k_base *ab, struct sk_buff *skb)
++{
++        int ret;
++        const struct wmi_tlv *tlv;
++	struct wmi_ctrl_path_stats_ev_param *fixed_param;
++	u16 tlv_tag;
++	u8 *ptr = skb->data;
++	struct ath11k *ar = NULL;
++	struct wmi_ctrl_path_stats_ev_parse_param param;
++	INIT_LIST_HEAD(&param.list);
++
++	if (!skb->data) {
++		ath11k_warn(ab, "No data present in wmi ctrl stats event\n");
++		return;
++	}
++
++	if (skb->len < (sizeof(*fixed_param) + TLV_HDR_SIZE)) {
++		ath11k_warn(ab, "wmi ctrl stats event size invalid\n");
++		return;
++	}
++
++	param.ar = NULL;
++
++	tlv = (struct wmi_tlv *)ptr;
++	tlv_tag = FIELD_GET(WMI_TLV_TAG, tlv->header);
++	ptr += sizeof(*tlv);
++
++	if (tlv_tag == WMI_CTRL_PATH_STATS_EV_FIXED_PARAM) {
++		fixed_param = (struct wmi_ctrl_path_stats_ev_param *)ptr;
++	} else {
++		ath11k_warn(ab, "wmi ctrl Stats received without fixed param tlv at start\n");
++	}
++
++	ret = ath11k_wmi_tlv_iter(ab, skb->data, skb->len,
++				  ath11k_wmi_ctrl_stats_event_parser,
++				  &param);
++	if (ret) {
++		ath11k_warn(ab, "failed to parse wmi_ctrl_path_stats tlv: %d\n", ret);
++		goto free;
++	}
++
++	ar = param.ar;
++	if (!ar)
++		return;
++
++	list_splice_tail_init(&param.list, &ar->debug.wmi_list);
++
++	if (!fixed_param->more) {
++		complete(&ar->debug.wmi_ctrl_path_stats_rcvd);
++		ath11k_dbg(ab, ATH11K_DBG_WMI,"wmi ctrl path stats completed");
++	}
++
++free:
++	ath11k_wmi_crl_path_stats_list_free(&param.list);
++}
++
++
+ static struct ath11k *ath11k_get_ar_on_scan_abort(struct ath11k_base *ab,
+ 						  u32 vdev_id)
+ {
+@@ -8779,6 +9064,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	case WMI_QOS_NULL_FRAME_TX_COMPLETION_EVENTID:
+ 		ath11k_qos_null_compl_event(ab, skb);
+ 		break;
++	case WMI_CTRL_PATH_STATS_EVENTID:
++		ath11k_wmi_ctrl_path_stats_event(ab, skb);
++		break;
+ 	/* TODO: Add remaining events */
+ 	default:
+ 		ath11k_dbg(ab, ATH11K_DBG_WMI, "Unknown eventid: 0x%x\n", id);
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -454,6 +454,8 @@ enum wmi_tlv_cmd_id {
+ 	WMI_REQUEST_RCPI_CMDID,
+ 	WMI_REQUEST_PEER_STATS_INFO_CMDID,
+ 	WMI_REQUEST_RADIO_CHAN_STATS_CMDID,
++	WMI_REQUEST_WLM_STATS_CMDID,
++	WMI_REQUEST_CTRL_PATH_STATS_CMDID,
+ 	WMI_SET_ARP_NS_OFFLOAD_CMDID = WMI_TLV_CMD(WMI_GRP_ARP_NS_OFL),
+ 	WMI_ADD_PROACTIVE_ARP_RSP_PATTERN_CMDID,
+ 	WMI_DEL_PROACTIVE_ARP_RSP_PATTERN_CMDID,
+@@ -723,6 +725,8 @@ enum wmi_tlv_event_id {
+ 	WMI_UPDATE_RCPI_EVENTID,
+ 	WMI_PEER_STATS_INFO_EVENTID,
+ 	WMI_RADIO_CHAN_STATS_EVENTID,
++	WMI_WLM_STATS_EVENTID,
++	WMI_CTRL_PATH_STATS_EVENTID,
+ 	WMI_NLO_MATCH_EVENTID = WMI_TLV_CMD(WMI_GRP_NLO_OFL),
+ 	WMI_NLO_SCAN_COMPLETE_EVENTID,
+ 	WMI_APFIND_EVENTID,
+@@ -1878,6 +1882,11 @@ enum wmi_tlv_tag {
+ 	WMI_TAG_PDEV_SRG_OBSS_BSSID_ENABLE_BITMAP_CMD,
+ 	WMI_TAG_PDEV_NON_SRG_OBSS_COLOR_ENABLE_BITMAP_CMD,
+ 	WMI_TAG_PDEV_NON_SRG_OBSS_BSSID_ENABLE_BITMAP_CMD,
++	/* TODO add all the missing cmds */
++	WMI_CTRL_PATH_STATS_CMD_FIXED_PARAM =
++		WMI_TAG_PDEV_NON_SRG_OBSS_BSSID_ENABLE_BITMAP_CMD + 4,
++	WMI_CTRL_PATH_STATS_EV_FIXED_PARAM,
++	WMI_CTRL_PATH_PDEV_STATS,
+ 	WMI_TAG_TPC_STATS_GET_CMD = 0x38B,
+ 	WMI_TAG_TPC_STATS_EVENT_FIXED_PARAM,
+ 	WMI_TAG_TPC_STATS_CONFIG_EVENT,
+@@ -1887,6 +1896,7 @@ enum wmi_tlv_tag {
+ 	/* TODO add all the missing cmds */
+ 	WMI_TAG_QOS_NULL_FRAME_TX_SEND = 0x3A6,
+ 	WMI_TAG_QOS_NULL_FRAME_TX_STATUS,
++	WMI_CTRL_PATH_CAL_STATS = 0x3BC,
+ 
+ 	WMI_TAG_MAX
+ };
+@@ -5342,6 +5352,257 @@ struct wmi_twt_resume_dialog_params_cmd
+ 	u32 next_twt_size;
+ };
+ 
++/**
++ * WMI arrays of length WMI_MGMT_FRAME_SUBTYPE_MAX use the
++ * IEEE802.11 standard's enumeration of mgmt frame subtypes:
++ *  0 -> IEEE80211_STYPE_FC0_SUBTYPE_ASSOC_REQ
++ *  1 -> IEEE80211_STYPE_FC0_SUBTYPE_ASSOC_RESP
++ *  2 -> IEEE80211_STYPE_FC0_SUBTYPE_REASSOC_REQ
++ *  3 -> IEEE80211_STYPE_FC0_SUBTYPE_REASSOC_RESP
++ *  4 -> IEEE80211_STYPE_FC0_SUBTYPE_PROBE_REQ
++ *  5 -> IEEE80211_STYPE_FC0_SUBTYPE_PROBE_RESP
++ *  6 -> Reserved
++ *  7 -> Reserved
++ *  8 -> IEEE80211_STYPE_FC0_SUBTYPE_BEACON
++ *  9 -> IEEE80211_STYPE_FC0_SUBTYPE_ATIM
++ * 10 -> IEEE80211_STYPE_FC0_SUBTYPE_DISASSOC
++ * 11 -> IEEE80211_STYPE_FC0_SUBTYPE_AUTH
++ * 12 -> IEEE80211_STYPE_FC0_SUBTYPE_DEAUTH
++ * 13 -> IEEE80211_STYPE_FCO_SUBTYPE_ACTION
++ * 14 -> IEEE80211_STYPE_FC0_SUBTYPE_ACTION_NOACK
++ * 15 -> IEEE80211_STYPE_FC0_SUBTYPE_RESERVED
++ */
++#define WMI_MGMT_FRAME_SUBTYPE_MAX 16
++#define WMI_MAX_STRING_LEN 256
++
++enum wmi_ctrl_path_cal_prof_id {
++	WMI_CTRL_PATH_STATS_CAL_PROF_COLD_BOOT_CAL = 0,
++	WMI_CTRL_PATH_STATS_CAL_PROF_FULL_CHAN_SWITCH,
++	WMI_CTRL_PATH_STATS_CAL_PROF_SCAN_CHAN_SWITCH,
++	WMI_CTRL_PATH_STATS_CAL_PROF_DPD_SPLIT_CAL,
++	WMI_CTRL_PATH_STATS_CAL_PROF_TEMP_TRIGEER_CAL,
++	WMI_CTRL_PATH_STATS_CAL_PROF_POWER_SAVE_WAKE_UP,
++	WMI_CTRL_PATH_STATS_CAL_PROF_TIMER_TRIGGER_CAL,
++	WMI_CTRL_PATH_STATS_CAL_PROF_FTM_TRIGGER_CAL,
++	WMI_CTRL_PATH_STATS_CAL_PROF_AGILE_OR_POWER_DOWN_DTIM,
++	WMI_CTRL_PATH_STATS_CAL_PROF_NOISY_ENV_RXDO,
++	/* IDs from 10 to 30 for future use*/
++	WMI_CTRL_PATH_STATS_CAL_PROFILE_INVALID = 0x1F,
++};
++
++static inline const char *
++wmi_ctrl_path_cal_prof_id_to_name(u8 prof_id) {
++	switch (prof_id) {
++	case WMI_CTRL_PATH_STATS_CAL_PROF_COLD_BOOT_CAL:
++		return "COLD_BOOT_CAL";
++	case WMI_CTRL_PATH_STATS_CAL_PROF_FULL_CHAN_SWITCH:
++		return "FULL_CHAN_SWITCH";
++	case WMI_CTRL_PATH_STATS_CAL_PROF_SCAN_CHAN_SWITCH:
++		return "SCAN_CHAN_SWITCH";
++	case WMI_CTRL_PATH_STATS_CAL_PROF_DPD_SPLIT_CAL:
++		return "DPD_SPLIT_CAL";
++	case WMI_CTRL_PATH_STATS_CAL_PROF_TEMP_TRIGEER_CAL:
++		return "TEMP_TRIGEER_CAL";
++	case WMI_CTRL_PATH_STATS_CAL_PROF_POWER_SAVE_WAKE_UP:
++		return "POWER_SAVE_WAKE_UP";
++	case WMI_CTRL_PATH_STATS_CAL_PROF_TIMER_TRIGGER_CAL:
++		return "TIMER_TRIGGER_CAL";
++	case WMI_CTRL_PATH_STATS_CAL_PROF_FTM_TRIGGER_CAL:
++		return "FTM_TRIGGER_CAL";
++	case WMI_CTRL_PATH_STATS_CAL_PROF_AGILE_OR_POWER_DOWN_DTIM:
++		return "AGILE_OR_POWER_DOWN_DTIM";
++	case WMI_CTRL_PATH_STATS_CAL_PROF_NOISY_ENV_RXDO:
++		return "NOISY_ENV_RXDO";
++	case WMI_CTRL_PATH_STATS_CAL_PROFILE_INVALID:
++		break;
++	}
++	return "UNKOWN_CAL_PROFILE";
++}
++
++enum wmi_ctrl_path_cal_type_id {
++	WMI_CTRL_PATH_STATS_CAL_TYPE_ADC = 0,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_DAC,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_PROCESS,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_NOISE_FLOOR,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_COMB_TXLO_TXIQ_RXIQ,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_TXLO,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_TXIQ,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_RXIQ,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_IM2,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_LNA,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_LP_RXDCO,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_LP_RXIQ,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_MEMORYLESS,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_MEMORY,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_IBF,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_PDET_AND_PAL,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO_IQ,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO_DTIM,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_TPC_CAL,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_TIMEREQ,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_BWFILTER,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_PEF,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_PADROOP,
++	WMI_CTRL_PATH_STATS_CAL_TYPE_SELFCALTPC,
++	/* IDs 25 to 254 for future use*/
++	WMI_CTRL_PATH_STATS_CAL_TYPE_INVALID = 0xff,
++};
++
++static inline const char *
++wmi_ctrl_path_cal_type_id_to_name(u8 type_id) {
++	switch (type_id) {
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_ADC:
++		return "ADC";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_DAC:
++		return "DAC";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_PROCESS:
++		return "PROCESS";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_NOISE_FLOOR:
++		return "NOISE_FLOOR";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO:
++		return "RXDCO";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_COMB_TXLO_TXIQ_RXIQ:
++		return "COMB_TXLO_TXIQ_RXIQ";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_TXLO:
++		return "TXLO";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_TXIQ:
++		return "TXIQ";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_RXIQ:
++		return "RXIQ";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_IM2:
++		return "IM2";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_LNA:
++		return "LNA";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_LP_RXDCO:
++		return "DPD_LP_RXDCO";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_LP_RXIQ:
++		return "DPD_LP_RXIQ";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_MEMORYLESS:
++		return "DPD_MEMORYLESS";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_MEMORY:
++		return "DPD_MEMORY";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_IBF:
++		return "IBF";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_PDET_AND_PAL:
++		return "PDET_AND_PAL";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO_IQ:
++		return "RXDCO_IQ";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_RXDCO_DTIM:
++		return "RXDCO_DTIM";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_TPC_CAL:
++		return "TPC_CAL";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_DPD_TIMEREQ:
++		return "DPD_TIMEREQ";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_BWFILTER:
++		return "BWFILTER";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_PEF:
++		return "PEF";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_PADROOP:
++		return "PADROOP";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_SELFCALTPC:
++		return "SELFCALTPC";
++	case WMI_CTRL_PATH_STATS_CAL_TYPE_INVALID:
++		break;
++	}
++	return "UNKNOWN_CAL_TYPE";
++}
++
++enum wmi_ctrl_path_periodic_cal_type_id {
++	WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_NOISE_FLOOR,
++	WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_DPD_MEMORYLESS,
++	WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_DPD_MEMORY,
++	/* IDs 3 to 254 for future use*/
++	WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_INVALID = 0xFF,
++};
++
++static inline const char *
++wmi_ctrl_path_periodic_cal_type_id_to_name(u8 type_id) {
++	switch(type_id) {
++	case WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_NOISE_FLOOR:
++		return "NOISE_FLOOR";
++	case WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_DPD_MEMORYLESS:
++		return "DPD_MEMORYLESS";
++	case WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_DPD_MEMORY:
++		return "DPD_MEMORY";
++	case WMI_CTRL_PATH_STATS_PERIODIC_CAL_TYPE_INVALID:
++		break;
++	}
++	return "UNKNOWN_PERIODIC_CAL_TYPE";
++}
++
++#define WMI_CTRL_PATH_CAL_PROF_MASK	GENMASK(12, 8)
++#define WMI_CTRL_PATH_CAL_TYPE_MASK	GENMASK(7, 0)
++#define WMI_CTRL_PATH_IS_PERIODIC_CAL	GENMASK(13, 13)
++
++struct wmi_ctrl_path_pdev_stats {
++	u32 pdev_id;
++	u32 tx_mgmt_subtype[WMI_MGMT_FRAME_SUBTYPE_MAX];
++	u32 rx_mgmt_subtype[WMI_MGMT_FRAME_SUBTYPE_MAX];
++	u32 scan_fail_dfs_violation_time_ms;
++	u32 nol_chk_fail_last_chan_freq;
++	u32 nol_chk_fail_time_stamp_ms;
++	u32 tot_peer_create_cnt;
++	u32 tot_peer_del_cnt;
++	u32 tot_peer_del_resp_cnt;
++	u32 vdev_pause_fail_rt_to_sched_algo_fifo_full_cnt;
++};
++
++struct wmi_ctrl_path_cal_stats {
++	u32 pdev_id;
++	u32 cal_info;
++	u32 cal_triggered_cnt;
++	u32 cal_fail_cnt;
++	u32 cal_fcs_cnt;
++	u32 cal_fcs_fail_cnt;
++};
++
++struct  wmi_ctrl_path_stats_cmd_param {
++	u32 tlv_header;
++	u32 stats_id;
++	u32 req_id;
++	/* get/reset/start/stop based on stats id is defined as
++	 * a part of wmi_ctrl_path_stats_action
++	 */
++	u32 action;
++};
++
++
++struct wmi_ctrl_path_stats_ev_param {
++	u32 req_id;
++	/* more flag
++	 * 1 - More events sent after this event.
++	 * 0 - no more events after this event.
++	 */
++	u32 more;
++};
++
++struct wmi_ctrl_path_stats_list {
++	struct list_head list;
++	void *stats_ptr;
++};
++
++struct wmi_ctrl_path_stats_ev_parse_param {
++	struct list_head list;
++	struct ath11k *ar;
++};
++
++enum  wmi_ctrl_path_stats_id {
++	/* bit 0 is currently unused / reserved */
++	WMI_REQ_CTRL_PATH_PDEV_TX_STAT   = 1,
++	WMI_REQ_CTRL_PATH_VDEV_EXTD_STAT = 2,
++	WMI_REQ_CTRL_PATH_MEM_STAT       = 3,
++	WMI_REQ_CTRL_PATH_CAL_STAT       = 5,
++};
++
++enum wmi_ctrl_path_stats_action {
++	/* bit 0 is currently unused / reserved */
++	WMI_REQ_CTRL_PATH_STAT_GET   = 1,
++	WMI_REQ_CTRL_PATH_STAT_RESET = 2,
++	WMI_REQ_CTRL_PATH_STAT_START = 3,
++	WMI_REQ_CTRL_PATH_STAT_STOP  = 4,
++};
++
+ struct wmi_obss_spatial_reuse_params_cmd {
+ 	u32 tlv_header;
+ 	u32 pdev_id;
+@@ -5851,6 +6112,7 @@ struct wmi_qos_null_tx_cmd {
+ 
+ #define WMI_SERVICE_READY_TIMEOUT_HZ (5 * HZ)
+ #define WMI_SEND_TIMEOUT_HZ (3 * HZ)
++#define WMI_CTRL_STATS_READY_TIMEOUT_HZ (1 * HZ)
+ 
+ enum ath11k_wmi_peer_ps_param {
+ 	WMI_PEER_STA_WAKEUP_MODE = 0,
+@@ -6227,5 +6489,6 @@ int ath11k_wmi_pdev_get_tpc_table_cmdid(
+ void ath11k_wmi_free_tpc_stats_mem(struct ath11k *ar);
+ int ath11k_wmi_send_aggr_size_cmd(struct ath11k *ar,
+ 				  struct set_custom_aggr_size_params *params);
+-
++int ath11k_wmi_send_wmi_ctrl_stats_cmd(struct ath11k *ar,
++				  struct wmi_ctrl_path_stats_cmd_param *param);
+ #endif

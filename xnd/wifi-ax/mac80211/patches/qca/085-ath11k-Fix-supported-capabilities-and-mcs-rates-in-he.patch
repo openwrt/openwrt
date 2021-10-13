@@ -1,0 +1,65 @@
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -4552,6 +4552,7 @@ static __le16 ath11k_mac_setup_he_6ghz_c
+ }
+ 
+ static void ath11k_mac_set_hemcsmap(struct ath11k *ar,
++				    struct ath11k_pdev_cap *cap,
+ 				    struct ieee80211_sta_he_cap * he_cap)
+ {
+ 	u16 txmcs_map, rxmcs_map;
+@@ -4560,12 +4561,14 @@ static void ath11k_mac_set_hemcsmap(stru
+ 	rxmcs_map = 0;
+ 	txmcs_map = 0;
+ 	for (i = 0; i < 8; i++) {
+-		if (i < ar->num_tx_chains && ar->cfg_tx_chainmask & BIT(i))
++		if (i < ar->num_tx_chains &&
++		    (ar->cfg_tx_chainmask >> cap->tx_chain_mask_shift) & BIT(i))
+ 			txmcs_map |= IEEE80211_HE_MCS_SUPPORT_0_11 << (i * 2);
+ 		else
+ 			txmcs_map |= IEEE80211_HE_MCS_NOT_SUPPORTED << (i * 2);
+ 
+-		if (i < ar->num_rx_chains && ar->cfg_rx_chainmask & BIT(i))
++		if (i < ar->num_rx_chains &&
++		    (ar->cfg_rx_chainmask >> cap->tx_chain_mask_shift) & BIT(i))
+ 			rxmcs_map |= IEEE80211_HE_MCS_SUPPORT_0_11 << (i * 2);
+ 		else
+ 			rxmcs_map |= IEEE80211_HE_MCS_NOT_SUPPORTED << (i * 2);
+@@ -4575,13 +4578,13 @@ static void ath11k_mac_set_hemcsmap(stru
+ 	he_cap->he_mcs_nss_supp.tx_mcs_80 =
+ 		cpu_to_le16(txmcs_map & 0xffff);
+ 	he_cap->he_mcs_nss_supp.rx_mcs_160 =
+-		cpu_to_le16((rxmcs_map >> 16) & 0xffff);
++		cpu_to_le16(rxmcs_map & 0xffff);
+ 	he_cap->he_mcs_nss_supp.tx_mcs_160 =
+-		cpu_to_le16((txmcs_map >> 16) & 0xffff);
++		cpu_to_le16(txmcs_map & 0xffff);
+ 	he_cap->he_mcs_nss_supp.rx_mcs_80p80 =
+-		cpu_to_le16((rxmcs_map >> 16) & 0xffff);
++		cpu_to_le16(rxmcs_map & 0xffff);
+ 	he_cap->he_mcs_nss_supp.tx_mcs_80p80 =
+-		cpu_to_le16((txmcs_map >> 16) & 0xffff);
++		cpu_to_le16(txmcs_map & 0xffff);
+ }
+ 
+ static int ath11k_mac_copy_he_cap(struct ath11k *ar,
+@@ -4616,6 +4619,10 @@ static int ath11k_mac_copy_he_cap(struct
+ 
+ 		he_cap_elem->mac_cap_info[1] &=
+ 			IEEE80211_HE_MAC_CAP1_TF_MAC_PAD_DUR_MASK;
++		he_cap_elem->phy_cap_info[0] &=
++			~IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G;
++		he_cap_elem->phy_cap_info[0] &=
++			~IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_80PLUS80_MHZ_IN_5G;
+ 
+ 		he_cap_elem->phy_cap_info[5] &=
+ 			~IEEE80211_HE_PHY_CAP5_BEAMFORMEE_NUM_SND_DIM_UNDER_80MHZ_MASK;
+@@ -4641,7 +4648,7 @@ static int ath11k_mac_copy_he_cap(struct
+ 			break;
+ 		}
+ 
+-		ath11k_mac_set_hemcsmap(ar, he_cap);
++		ath11k_mac_set_hemcsmap(ar, cap, he_cap);
+ 
+ 		memset(he_cap->ppe_thres, 0, sizeof(he_cap->ppe_thres));
+ 		if (he_cap_elem->phy_cap_info[6] &

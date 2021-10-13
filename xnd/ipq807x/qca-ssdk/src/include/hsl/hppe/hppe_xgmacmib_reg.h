@@ -1,0 +1,1956 @@
+/*
+ * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all copies.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+
+/**
+ * @defgroup
+ * @{
+ */
+#ifndef HPPE_XGMACMIB_REG_H
+#define HPPE_XGMACMIB_REG_H
+
+/*[register] MMC_CONTROL*/
+#define MMC_CONTROL
+#define MMC_CONTROL_ADDRESS 0x800
+#define MMC_CONTROL_NUM     2
+#define MMC_CONTROL_INC     0x4000
+#define MMC_CONTROL_TYPE    REG_TYPE_RO
+#define MMC_CONTROL_DEFAULT 0x0
+	/*[field] CNTRST*/
+	#define MMC_CONTROL_CNTRST
+	#define MMC_CONTROL_CNTRST_OFFSET  0
+	#define MMC_CONTROL_CNTRST_LEN     1
+	#define MMC_CONTROL_CNTRST_DEFAULT 0x0
+	/*[field] CNTSTOPRO*/
+	#define MMC_CONTROL_CNTSTOPRO
+	#define MMC_CONTROL_CNTSTOPRO_OFFSET  1
+	#define MMC_CONTROL_CNTSTOPRO_LEN     1
+	#define MMC_CONTROL_CNTSTOPRO_DEFAULT 0x0
+	/*[field] RSTONRD*/
+	#define MMC_CONTROL_RSTONRD
+	#define MMC_CONTROL_RSTONRD_OFFSET  2
+	#define MMC_CONTROL_RSTONRD_LEN     1
+	#define MMC_CONTROL_RSTONRD_DEFAULT 0x0
+	/*[field] MCF*/
+	#define MMC_CONTROL_MCF
+	#define MMC_CONTROL_MCF_OFFSET  3
+	#define MMC_CONTROL_MCF_LEN     1
+	#define MMC_CONTROL_MCF_DEFAULT 0x0
+	/*[field] MCT*/
+	#define MMC_CONTROL_MCT
+	#define MMC_CONTROL_MCT_OFFSET  4
+	#define MMC_CONTROL_MCT_LEN     2
+	#define MMC_CONTROL_MCT_DEFAULT 0x0
+	/*[field] CNTPRST*/
+	#define MMC_CONTROL_CNTPRST
+	#define MMC_CONTROL_CNTPRST_OFFSET  7
+	#define MMC_CONTROL_CNTPRST_LEN     1
+	#define MMC_CONTROL_CNTPRST_DEFAULT 0x0
+	/*[field] PR_MMC_SEL*/
+	#define MMC_CONTROL_PR_MMC_SEL
+	#define MMC_CONTROL_PR_MMC_SEL_OFFSET  16
+	#define MMC_CONTROL_PR_MMC_SEL_LEN     3
+	#define MMC_CONTROL_PR_MMC_SEL_DEFAULT 0x0
+
+struct mmc_control {
+	a_uint32_t  cntrst:1;
+	a_uint32_t  cntstopro:1;
+	a_uint32_t  rstonrd:1;
+	a_uint32_t  mcf:1;
+	a_uint32_t  mct:2;
+	a_uint32_t  _reserved0:1;
+	a_uint32_t  cntprst:1;
+	a_uint32_t  _reserved1:8;
+	a_uint32_t  pr_mmc_sel:3;
+	a_uint32_t  _reserved2:13;
+};
+
+union mmc_control_u {
+	a_uint32_t val;
+	struct mmc_control bf;
+};
+
+/*[register] TX_OCTET_COUNT_GOOD_BAD_LOW*/
+#define TX_OCTET_COUNT_GOOD_BAD_LOW
+#define TX_OCTET_COUNT_GOOD_BAD_LOW_ADDRESS 0x814
+#define TX_OCTET_COUNT_GOOD_BAD_LOW_NUM     2
+#define TX_OCTET_COUNT_GOOD_BAD_LOW_INC     0x4000
+#define TX_OCTET_COUNT_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_OCTET_COUNT_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TXOCTGBLO*/
+	#define TX_OCTET_COUNT_GOOD_BAD_LOW_TXOCTGBLO
+	#define TX_OCTET_COUNT_GOOD_BAD_LOW_TXOCTGBLO_OFFSET  0
+	#define TX_OCTET_COUNT_GOOD_BAD_LOW_TXOCTGBLO_LEN     32
+	#define TX_OCTET_COUNT_GOOD_BAD_LOW_TXOCTGBLO_DEFAULT 0x0
+
+struct tx_octet_count_good_bad_low {
+	a_uint32_t  txoctgblo:32;
+};
+
+union tx_octet_count_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_octet_count_good_bad_low bf;
+};
+
+/*[register] TX_OCTET_COUNT_GOOD_BAD_HIGH*/
+#define TX_OCTET_COUNT_GOOD_BAD_HIGH
+#define TX_OCTET_COUNT_GOOD_BAD_HIGH_ADDRESS 0x818
+#define TX_OCTET_COUNT_GOOD_BAD_HIGH_NUM     2
+#define TX_OCTET_COUNT_GOOD_BAD_HIGH_INC     0x4000
+#define TX_OCTET_COUNT_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_OCTET_COUNT_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TXOCTGBHI*/
+	#define TX_OCTET_COUNT_GOOD_BAD_HIGH_TXOCTGBHI
+	#define TX_OCTET_COUNT_GOOD_BAD_HIGH_TXOCTGBHI_OFFSET  0
+	#define TX_OCTET_COUNT_GOOD_BAD_HIGH_TXOCTGBHI_LEN     32
+	#define TX_OCTET_COUNT_GOOD_BAD_HIGH_TXOCTGBHI_DEFAULT 0x0
+
+struct tx_octet_count_good_bad_high {
+	a_uint32_t  txoctgbhi:32;
+};
+
+union tx_octet_count_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_octet_count_good_bad_high bf;
+};
+
+/*[register] TX_FRAME_COUNT_GOOD_BAD_LOW*/
+#define TX_FRAME_COUNT_GOOD_BAD_LOW
+#define TX_FRAME_COUNT_GOOD_BAD_LOW_ADDRESS 0x81c
+#define TX_FRAME_COUNT_GOOD_BAD_LOW_NUM     2
+#define TX_FRAME_COUNT_GOOD_BAD_LOW_INC     0x4000
+#define TX_FRAME_COUNT_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_FRAME_COUNT_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TXFRMGBLO*/
+	#define TX_FRAME_COUNT_GOOD_BAD_LOW_TXFRMGBLO
+	#define TX_FRAME_COUNT_GOOD_BAD_LOW_TXFRMGBLO_OFFSET  0
+	#define TX_FRAME_COUNT_GOOD_BAD_LOW_TXFRMGBLO_LEN     32
+	#define TX_FRAME_COUNT_GOOD_BAD_LOW_TXFRMGBLO_DEFAULT 0x0
+
+struct tx_frame_count_good_bad_low {
+	a_uint32_t  txfrmgblo:32;
+};
+
+union tx_frame_count_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_frame_count_good_bad_low bf;
+};
+
+/*[register] TX_FRAME_COUNT_GOOD_BAD_HIGH*/
+#define TX_FRAME_COUNT_GOOD_BAD_HIGH
+#define TX_FRAME_COUNT_GOOD_BAD_HIGH_ADDRESS 0x820
+#define TX_FRAME_COUNT_GOOD_BAD_HIGH_NUM     2
+#define TX_FRAME_COUNT_GOOD_BAD_HIGH_INC     0x4000
+#define TX_FRAME_COUNT_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_FRAME_COUNT_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TXFRMGBHI*/
+	#define TX_FRAME_COUNT_GOOD_BAD_HIGH_TXFRMGBHI
+	#define TX_FRAME_COUNT_GOOD_BAD_HIGH_TXFRMGBHI_OFFSET  0
+	#define TX_FRAME_COUNT_GOOD_BAD_HIGH_TXFRMGBHI_LEN     32
+	#define TX_FRAME_COUNT_GOOD_BAD_HIGH_TXFRMGBHI_DEFAULT 0x0
+
+struct tx_frame_count_good_bad_high {
+	a_uint32_t  txfrmgbhi:32;
+};
+
+union tx_frame_count_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_frame_count_good_bad_high bf;
+};
+
+/*[register] TX_BROADCAST_FRAMES_GOOD_LOW*/
+#define TX_BROADCAST_FRAMES_GOOD_LOW
+#define TX_BROADCAST_FRAMES_GOOD_LOW_ADDRESS 0x824
+#define TX_BROADCAST_FRAMES_GOOD_LOW_NUM     2
+#define TX_BROADCAST_FRAMES_GOOD_LOW_INC     0x4000
+#define TX_BROADCAST_FRAMES_GOOD_LOW_TYPE    REG_TYPE_RO
+#define TX_BROADCAST_FRAMES_GOOD_LOW_DEFAULT 0x0
+	/*[field] TXBCASTGLO*/
+	#define TX_BROADCAST_FRAMES_GOOD_LOW_TXBCASTGLO
+	#define TX_BROADCAST_FRAMES_GOOD_LOW_TXBCASTGLO_OFFSET  0
+	#define TX_BROADCAST_FRAMES_GOOD_LOW_TXBCASTGLO_LEN     32
+	#define TX_BROADCAST_FRAMES_GOOD_LOW_TXBCASTGLO_DEFAULT 0x0
+
+struct tx_broadcast_frames_good_low {
+	a_uint32_t  txbcastglo:32;
+};
+
+union tx_broadcast_frames_good_low_u {
+	a_uint32_t val;
+	struct tx_broadcast_frames_good_low bf;
+};
+
+/*[register] TX_BROADCAST_FRAMES_GOOD_HIGH*/
+#define TX_BROADCAST_FRAMES_GOOD_HIGH
+#define TX_BROADCAST_FRAMES_GOOD_HIGH_ADDRESS 0x828
+#define TX_BROADCAST_FRAMES_GOOD_HIGH_NUM     2
+#define TX_BROADCAST_FRAMES_GOOD_HIGH_INC     0x4000
+#define TX_BROADCAST_FRAMES_GOOD_HIGH_TYPE    REG_TYPE_RO
+#define TX_BROADCAST_FRAMES_GOOD_HIGH_DEFAULT 0x0
+	/*[field] TXBCASTGHI*/
+	#define TX_BROADCAST_FRAMES_GOOD_HIGH_TXBCASTGHI
+	#define TX_BROADCAST_FRAMES_GOOD_HIGH_TXBCASTGHI_OFFSET  0
+	#define TX_BROADCAST_FRAMES_GOOD_HIGH_TXBCASTGHI_LEN     32
+	#define TX_BROADCAST_FRAMES_GOOD_HIGH_TXBCASTGHI_DEFAULT 0x0
+
+struct tx_broadcast_frames_good_high {
+	a_uint32_t  txbcastghi:32;
+};
+
+union tx_broadcast_frames_good_high_u {
+	a_uint32_t val;
+	struct tx_broadcast_frames_good_high bf;
+};
+
+/*[register] TX_MULTICAST_FRAMES_GOOD_LOW*/
+#define TX_MULTICAST_FRAMES_GOOD_LOW
+#define TX_MULTICAST_FRAMES_GOOD_LOW_ADDRESS 0x82c
+#define TX_MULTICAST_FRAMES_GOOD_LOW_NUM     2
+#define TX_MULTICAST_FRAMES_GOOD_LOW_INC     0x4000
+#define TX_MULTICAST_FRAMES_GOOD_LOW_TYPE    REG_TYPE_RO
+#define TX_MULTICAST_FRAMES_GOOD_LOW_DEFAULT 0x0
+	/*[field] TXMCASTGLO*/
+	#define TX_MULTICAST_FRAMES_GOOD_LOW_TXMCASTGLO
+	#define TX_MULTICAST_FRAMES_GOOD_LOW_TXMCASTGLO_OFFSET  0
+	#define TX_MULTICAST_FRAMES_GOOD_LOW_TXMCASTGLO_LEN     32
+	#define TX_MULTICAST_FRAMES_GOOD_LOW_TXMCASTGLO_DEFAULT 0x0
+
+struct tx_multicast_frames_good_low {
+	a_uint32_t  txmcastglo:32;
+};
+
+union tx_multicast_frames_good_low_u {
+	a_uint32_t val;
+	struct tx_multicast_frames_good_low bf;
+};
+
+/*[register] TX_MULTICAST_FRAMES_GOOD_HIGH*/
+#define TX_MULTICAST_FRAMES_GOOD_HIGH
+#define TX_MULTICAST_FRAMES_GOOD_HIGH_ADDRESS 0x830
+#define TX_MULTICAST_FRAMES_GOOD_HIGH_NUM     2
+#define TX_MULTICAST_FRAMES_GOOD_HIGH_INC     0x4000
+#define TX_MULTICAST_FRAMES_GOOD_HIGH_TYPE    REG_TYPE_RO
+#define TX_MULTICAST_FRAMES_GOOD_HIGH_DEFAULT 0x0
+	/*[field] TXMCASTGHI*/
+	#define TX_MULTICAST_FRAMES_GOOD_HIGH_TXMCASTGHI
+	#define TX_MULTICAST_FRAMES_GOOD_HIGH_TXMCASTGHI_OFFSET  0
+	#define TX_MULTICAST_FRAMES_GOOD_HIGH_TXMCASTGHI_LEN     32
+	#define TX_MULTICAST_FRAMES_GOOD_HIGH_TXMCASTGHI_DEFAULT 0x0
+
+struct tx_multicast_frames_good_high {
+	a_uint32_t  txmcastghi:32;
+};
+
+union tx_multicast_frames_good_high_u {
+	a_uint32_t val;
+	struct tx_multicast_frames_good_high bf;
+};
+
+/*[register] TX_64OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW
+#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x834
+#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW_NUM     2
+#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TX64OCTGBLO*/
+	#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW_TX64OCTGBLO
+	#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW_TX64OCTGBLO_OFFSET  0
+	#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW_TX64OCTGBLO_LEN     32
+	#define TX_64OCTETS_FRAMES_GOOD_BAD_LOW_TX64OCTGBLO_DEFAULT 0x0
+
+struct tx_64octets_frames_good_bad_low {
+	a_uint32_t  tx64octgblo:32;
+};
+
+union tx_64octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_64octets_frames_good_bad_low bf;
+};
+
+/*[register] TX_64OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH
+#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x838
+#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     2
+#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TX64OCTGBHI*/
+	#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH_TX64OCTGBHI
+	#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH_TX64OCTGBHI_OFFSET  0
+	#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH_TX64OCTGBHI_LEN     32
+	#define TX_64OCTETS_FRAMES_GOOD_BAD_HIGH_TX64OCTGBHI_DEFAULT 0x0
+
+struct tx_64octets_frames_good_bad_high {
+	a_uint32_t  tx64octgbhi:32;
+};
+
+union tx_64octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_64octets_frames_good_bad_high bf;
+};
+
+/*[register] TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x83c
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_NUM     2
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TX65_127OCTGBLO*/
+	#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_TX65_127OCTGBLO
+	#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_TX65_127OCTGBLO_OFFSET  0
+	#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_TX65_127OCTGBLO_LEN     32
+	#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_TX65_127OCTGBLO_DEFAULT 0x0
+
+struct tx_65to127octets_frames_good_bad_low {
+	a_uint32_t  tx65_127octgblo:32;
+};
+
+union tx_65to127octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_65to127octets_frames_good_bad_low bf;
+};
+
+/*[register] TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x840
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     2
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TX65_127OCTGBHI*/
+	#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_TX65_127OCTGBHI
+	#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_TX65_127OCTGBHI_OFFSET  0
+	#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_TX65_127OCTGBHI_LEN     32
+	#define TX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_TX65_127OCTGBHI_DEFAULT 0x0
+
+struct tx_65to127octets_frames_good_bad_high {
+	a_uint32_t  tx65_127octgbhi:32;
+};
+
+union tx_65to127octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_65to127octets_frames_good_bad_high bf;
+};
+
+/*[register] TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x844
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_NUM     2
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TX128_255OCTGBLO*/
+	#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_TX128_255OCTGBLO
+	#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_TX128_255OCTGBLO_OFFSET  0
+	#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_TX128_255OCTGBLO_LEN     32
+	#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_TX128_255OCTGBLO_DEFAULT 0x0
+
+struct tx_128to255octets_frames_good_bad_low {
+	a_uint32_t  tx128_255octgblo:32;
+};
+
+union tx_128to255octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_128to255octets_frames_good_bad_low bf;
+};
+
+/*[register] TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x848
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     2
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TX128_255OCTGBHI*/
+	#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_TX128_255OCTGBHI
+	#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_TX128_255OCTGBHI_OFFSET  0
+	#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_TX128_255OCTGBHI_LEN     32
+	#define TX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_TX128_255OCTGBHI_DEFAULT 0x0
+
+struct tx_128to255octets_frames_good_bad_high {
+	a_uint32_t  tx128_255octgbhi:32;
+};
+
+union tx_128to255octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_128to255octets_frames_good_bad_high bf;
+};
+
+/*[register] TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x84c
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_NUM     1
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TX256_511OCTGBLO*/
+	#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_TX256_511OCTGBLO
+	#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_TX256_511OCTGBLO_OFFSET  0
+	#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_TX256_511OCTGBLO_LEN     32
+	#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_TX256_511OCTGBLO_DEFAULT 0x0
+
+struct tx_256to511octets_frames_good_bad_low {
+	a_uint32_t  tx256_511octgblo:32;
+};
+
+union tx_256to511octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_256to511octets_frames_good_bad_low bf;
+};
+
+/*[register] TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x850
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TX256_511OCTGBHI*/
+	#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_TX256_511OCTGBHI
+	#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_TX256_511OCTGBHI_OFFSET  0
+	#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_TX256_511OCTGBHI_LEN     32
+	#define TX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_TX256_511OCTGBHI_DEFAULT 0x0
+
+struct tx_256to511octets_frames_good_bad_high {
+	a_uint32_t  tx256_511octgbhi:32;
+};
+
+union tx_256to511octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_256to511octets_frames_good_bad_high bf;
+};
+
+/*[register] TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x854
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_NUM     1
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TX512_1023OCTGBLO*/
+	#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_TX512_1023OCTGBLO
+	#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_TX512_1023OCTGBLO_OFFSET  0
+	#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_TX512_1023OCTGBLO_LEN     32
+	#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_TX512_1023OCTGBLO_DEFAULT 0x0
+
+struct tx_512to1023octets_frames_good_bad_low {
+	a_uint32_t  tx512_1023octgblo:32;
+};
+
+union tx_512to1023octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_512to1023octets_frames_good_bad_low bf;
+};
+
+/*[register] TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x858
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TX512_1023OCTGBHI*/
+	#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_TX512_1023OCTGBHI
+	#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_TX512_1023OCTGBHI_OFFSET  0
+	#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_TX512_1023OCTGBHI_LEN     32
+	#define TX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_TX512_1023OCTGBHI_DEFAULT 0x0
+
+struct tx_512to1023octets_frames_good_bad_high {
+	a_uint32_t  tx512_1023octgbhi:32;
+};
+
+union tx_512to1023octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_512to1023octets_frames_good_bad_high bf;
+};
+
+/*[register] TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW*/
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x85c
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_NUM     1
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TX1024_MAXOCTGBLO*/
+	#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_TX1024_MAXOCTGBLO
+	#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_TX1024_MAXOCTGBLO_OFFSET  0
+	#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_TX1024_MAXOCTGBLO_LEN     32
+	#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_TX1024_MAXOCTGBLO_DEFAULT 0x0
+
+struct tx_1024tomaxoctets_frames_good_bad_low {
+	a_uint32_t  tx1024_maxoctgblo:32;
+};
+
+union tx_1024tomaxoctets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_1024tomaxoctets_frames_good_bad_low bf;
+};
+
+/*[register] TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x860
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TX1024_MAXOCTGBHI*/
+	#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_TX1024_MAXOCTGBHI
+	#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_TX1024_MAXOCTGBHI_OFFSET  0
+	#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_TX1024_MAXOCTGBHI_LEN     32
+	#define TX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_TX1024_MAXOCTGBHI_DEFAULT 0x0
+
+struct tx_1024tomaxoctets_frames_good_bad_high {
+	a_uint32_t  tx1024_maxoctgbhi:32;
+};
+
+union tx_1024tomaxoctets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_1024tomaxoctets_frames_good_bad_high bf;
+};
+
+/*[register] TX_UNICAST_FRAMES_GOOD_BAD_LOW*/
+#define TX_UNICAST_FRAMES_GOOD_BAD_LOW
+#define TX_UNICAST_FRAMES_GOOD_BAD_LOW_ADDRESS 0x864
+#define TX_UNICAST_FRAMES_GOOD_BAD_LOW_NUM     1
+#define TX_UNICAST_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define TX_UNICAST_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_UNICAST_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TXUCASTGBLO*/
+	#define TX_UNICAST_FRAMES_GOOD_BAD_LOW_TXUCASTGBLO
+	#define TX_UNICAST_FRAMES_GOOD_BAD_LOW_TXUCASTGBLO_OFFSET  0
+	#define TX_UNICAST_FRAMES_GOOD_BAD_LOW_TXUCASTGBLO_LEN     32
+	#define TX_UNICAST_FRAMES_GOOD_BAD_LOW_TXUCASTGBLO_DEFAULT 0x0
+
+struct tx_unicast_frames_good_bad_low {
+	a_uint32_t  txucastgblo:32;
+};
+
+union tx_unicast_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_unicast_frames_good_bad_low bf;
+};
+
+/*[register] TX_UNICAST_FRAMES_GOOD_BAD_HIGH*/
+#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH
+#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x868
+#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TXUCASTGBHI*/
+	#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH_TXUCASTGBHI
+	#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH_TXUCASTGBHI_OFFSET  0
+	#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH_TXUCASTGBHI_LEN     32
+	#define TX_UNICAST_FRAMES_GOOD_BAD_HIGH_TXUCASTGBHI_DEFAULT 0x0
+
+struct tx_unicast_frames_good_bad_high {
+	a_uint32_t  txucastgbhi:32;
+};
+
+union tx_unicast_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_unicast_frames_good_bad_high bf;
+};
+
+/*[register] TX_MULTICAST_FRAMES_GOOD_BAD_LOW*/
+#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW
+#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW_ADDRESS 0x86c
+#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW_NUM     1
+#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TXMCASTGBLO*/
+	#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW_TXMCASTGBLO
+	#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW_TXMCASTGBLO_OFFSET  0
+	#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW_TXMCASTGBLO_LEN     32
+	#define TX_MULTICAST_FRAMES_GOOD_BAD_LOW_TXMCASTGBLO_DEFAULT 0x0
+
+struct tx_multicast_frames_good_bad_low {
+	a_uint32_t  txmcastgblo:32;
+};
+
+union tx_multicast_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_multicast_frames_good_bad_low bf;
+};
+
+/*[register] TX_MULTICAST_FRAMES_GOOD_BAD_HIGH*/
+#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH
+#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x870
+#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TXMCASTGBHI*/
+	#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH_TXMCASTGBHI
+	#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH_TXMCASTGBHI_OFFSET  0
+	#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH_TXMCASTGBHI_LEN     32
+	#define TX_MULTICAST_FRAMES_GOOD_BAD_HIGH_TXMCASTGBHI_DEFAULT 0x0
+
+struct tx_multicast_frames_good_bad_high {
+	a_uint32_t  txmcastgbhi:32;
+};
+
+union tx_multicast_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_multicast_frames_good_bad_high bf;
+};
+
+/*[register] TX_BROADCAST_FRAMES_GOOD_BAD_LOW*/
+#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW
+#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW_ADDRESS 0x874
+#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW_NUM     1
+#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] TXBCASTGBLO*/
+	#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW_TXBCASTGBLO
+	#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW_TXBCASTGBLO_OFFSET  0
+	#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW_TXBCASTGBLO_LEN     32
+	#define TX_BROADCAST_FRAMES_GOOD_BAD_LOW_TXBCASTGBLO_DEFAULT 0x0
+
+struct tx_broadcast_frames_good_bad_low {
+	a_uint32_t  txbcastgblo:32;
+};
+
+union tx_broadcast_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct tx_broadcast_frames_good_bad_low bf;
+};
+
+/*[register] TX_BROADCAST_FRAMES_GOOD_BAD_HIGH*/
+#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH
+#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x878
+#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] TXBCASTGBHI*/
+	#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH_TXBCASTGBHI
+	#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH_TXBCASTGBHI_OFFSET  0
+	#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH_TXBCASTGBHI_LEN     32
+	#define TX_BROADCAST_FRAMES_GOOD_BAD_HIGH_TXBCASTGBHI_DEFAULT 0x0
+
+struct tx_broadcast_frames_good_bad_high {
+	a_uint32_t  txbcastgbhi:32;
+};
+
+union tx_broadcast_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct tx_broadcast_frames_good_bad_high bf;
+};
+
+/*[register] TX_UNDERFLOW_ERROR_FRAMES_LOW*/
+#define TX_UNDERFLOW_ERROR_FRAMES_LOW
+#define TX_UNDERFLOW_ERROR_FRAMES_LOW_ADDRESS 0x87c
+#define TX_UNDERFLOW_ERROR_FRAMES_LOW_NUM     1
+#define TX_UNDERFLOW_ERROR_FRAMES_LOW_INC     0x4000
+#define TX_UNDERFLOW_ERROR_FRAMES_LOW_TYPE    REG_TYPE_RO
+#define TX_UNDERFLOW_ERROR_FRAMES_LOW_DEFAULT 0x0
+	/*[field] TXUNDRFLWLO*/
+	#define TX_UNDERFLOW_ERROR_FRAMES_LOW_TXUNDRFLWLO
+	#define TX_UNDERFLOW_ERROR_FRAMES_LOW_TXUNDRFLWLO_OFFSET  0
+	#define TX_UNDERFLOW_ERROR_FRAMES_LOW_TXUNDRFLWLO_LEN     32
+	#define TX_UNDERFLOW_ERROR_FRAMES_LOW_TXUNDRFLWLO_DEFAULT 0x0
+
+struct tx_underflow_error_frames_low {
+	a_uint32_t  txundrflwlo:32;
+};
+
+union tx_underflow_error_frames_low_u {
+	a_uint32_t val;
+	struct tx_underflow_error_frames_low bf;
+};
+
+/*[register] TX_UNDERFLOW_ERROR_FRAMES_HIGH*/
+#define TX_UNDERFLOW_ERROR_FRAMES_HIGH
+#define TX_UNDERFLOW_ERROR_FRAMES_HIGH_ADDRESS 0x880
+#define TX_UNDERFLOW_ERROR_FRAMES_HIGH_NUM     1
+#define TX_UNDERFLOW_ERROR_FRAMES_HIGH_INC     0x4000
+#define TX_UNDERFLOW_ERROR_FRAMES_HIGH_TYPE    REG_TYPE_RO
+#define TX_UNDERFLOW_ERROR_FRAMES_HIGH_DEFAULT 0x0
+	/*[field] TXUNDRFLWHI*/
+	#define TX_UNDERFLOW_ERROR_FRAMES_HIGH_TXUNDRFLWHI
+	#define TX_UNDERFLOW_ERROR_FRAMES_HIGH_TXUNDRFLWHI_OFFSET  0
+	#define TX_UNDERFLOW_ERROR_FRAMES_HIGH_TXUNDRFLWHI_LEN     32
+	#define TX_UNDERFLOW_ERROR_FRAMES_HIGH_TXUNDRFLWHI_DEFAULT 0x0
+
+struct tx_underflow_error_frames_high {
+	a_uint32_t  txundrflwhi:32;
+};
+
+union tx_underflow_error_frames_high_u {
+	a_uint32_t val;
+	struct tx_underflow_error_frames_high bf;
+};
+
+/*[register] TX_OCTET_COUNT_GOOD_LOW*/
+#define TX_OCTET_COUNT_GOOD_LOW
+#define TX_OCTET_COUNT_GOOD_LOW_ADDRESS 0x884
+#define TX_OCTET_COUNT_GOOD_LOW_NUM     1
+#define TX_OCTET_COUNT_GOOD_LOW_INC     0x4000
+#define TX_OCTET_COUNT_GOOD_LOW_TYPE    REG_TYPE_RO
+#define TX_OCTET_COUNT_GOOD_LOW_DEFAULT 0x0
+	/*[field] TXOCTGLO*/
+	#define TX_OCTET_COUNT_GOOD_LOW_TXOCTGLO
+	#define TX_OCTET_COUNT_GOOD_LOW_TXOCTGLO_OFFSET  0
+	#define TX_OCTET_COUNT_GOOD_LOW_TXOCTGLO_LEN     32
+	#define TX_OCTET_COUNT_GOOD_LOW_TXOCTGLO_DEFAULT 0x0
+
+struct tx_octet_count_good_low {
+	a_uint32_t  txoctglo:32;
+};
+
+union tx_octet_count_good_low_u {
+	a_uint32_t val;
+	struct tx_octet_count_good_low bf;
+};
+
+/*[register] TX_OCTET_COUNT_GOOD_HIGH*/
+#define TX_OCTET_COUNT_GOOD_HIGH
+#define TX_OCTET_COUNT_GOOD_HIGH_ADDRESS 0x888
+#define TX_OCTET_COUNT_GOOD_HIGH_NUM     1
+#define TX_OCTET_COUNT_GOOD_HIGH_INC     0x4000
+#define TX_OCTET_COUNT_GOOD_HIGH_TYPE    REG_TYPE_RO
+#define TX_OCTET_COUNT_GOOD_HIGH_DEFAULT 0x0
+	/*[field] TXOCTGHI*/
+	#define TX_OCTET_COUNT_GOOD_HIGH_TXOCTGHI
+	#define TX_OCTET_COUNT_GOOD_HIGH_TXOCTGHI_OFFSET  0
+	#define TX_OCTET_COUNT_GOOD_HIGH_TXOCTGHI_LEN     32
+	#define TX_OCTET_COUNT_GOOD_HIGH_TXOCTGHI_DEFAULT 0x0
+
+struct tx_octet_count_good_high {
+	a_uint32_t  txoctghi:32;
+};
+
+union tx_octet_count_good_high_u {
+	a_uint32_t val;
+	struct tx_octet_count_good_high bf;
+};
+
+/*[register] TX_FRAME_COUNT_GOOD_LOW*/
+#define TX_FRAME_COUNT_GOOD_LOW
+#define TX_FRAME_COUNT_GOOD_LOW_ADDRESS 0x88c
+#define TX_FRAME_COUNT_GOOD_LOW_NUM     1
+#define TX_FRAME_COUNT_GOOD_LOW_INC     0x4000
+#define TX_FRAME_COUNT_GOOD_LOW_TYPE    REG_TYPE_RO
+#define TX_FRAME_COUNT_GOOD_LOW_DEFAULT 0x0
+	/*[field] TXFRMGLO*/
+	#define TX_FRAME_COUNT_GOOD_LOW_TXFRMGLO
+	#define TX_FRAME_COUNT_GOOD_LOW_TXFRMGLO_OFFSET  0
+	#define TX_FRAME_COUNT_GOOD_LOW_TXFRMGLO_LEN     32
+	#define TX_FRAME_COUNT_GOOD_LOW_TXFRMGLO_DEFAULT 0x0
+
+struct tx_frame_count_good_low {
+	a_uint32_t  txfrmglo:32;
+};
+
+union tx_frame_count_good_low_u {
+	a_uint32_t val;
+	struct tx_frame_count_good_low bf;
+};
+
+/*[register] TX_FRAME_COUNT_GOOD_HIGH*/
+#define TX_FRAME_COUNT_GOOD_HIGH
+#define TX_FRAME_COUNT_GOOD_HIGH_ADDRESS 0x890
+#define TX_FRAME_COUNT_GOOD_HIGH_NUM     1
+#define TX_FRAME_COUNT_GOOD_HIGH_INC     0x4000
+#define TX_FRAME_COUNT_GOOD_HIGH_TYPE    REG_TYPE_RO
+#define TX_FRAME_COUNT_GOOD_HIGH_DEFAULT 0x0
+	/*[field] TXFRMGHI*/
+	#define TX_FRAME_COUNT_GOOD_HIGH_TXFRMGHI
+	#define TX_FRAME_COUNT_GOOD_HIGH_TXFRMGHI_OFFSET  0
+	#define TX_FRAME_COUNT_GOOD_HIGH_TXFRMGHI_LEN     32
+	#define TX_FRAME_COUNT_GOOD_HIGH_TXFRMGHI_DEFAULT 0x0
+
+struct tx_frame_count_good_high {
+	a_uint32_t  txfrmghi:32;
+};
+
+union tx_frame_count_good_high_u {
+	a_uint32_t val;
+	struct tx_frame_count_good_high bf;
+};
+
+/*[register] TX_PAUSE_FRAMES_LOW*/
+#define TX_PAUSE_FRAMES_LOW
+#define TX_PAUSE_FRAMES_LOW_ADDRESS 0x894
+#define TX_PAUSE_FRAMES_LOW_NUM     1
+#define TX_PAUSE_FRAMES_LOW_INC     0x4000
+#define TX_PAUSE_FRAMES_LOW_TYPE    REG_TYPE_RO
+#define TX_PAUSE_FRAMES_LOW_DEFAULT 0x0
+	/*[field] TXPAUSEGLO*/
+	#define TX_PAUSE_FRAMES_LOW_TXPAUSEGLO
+	#define TX_PAUSE_FRAMES_LOW_TXPAUSEGLO_OFFSET  0
+	#define TX_PAUSE_FRAMES_LOW_TXPAUSEGLO_LEN     32
+	#define TX_PAUSE_FRAMES_LOW_TXPAUSEGLO_DEFAULT 0x0
+
+struct tx_pause_frames_low {
+	a_uint32_t  txpauseglo:32;
+};
+
+union tx_pause_frames_low_u {
+	a_uint32_t val;
+	struct tx_pause_frames_low bf;
+};
+
+/*[register] TX_PAUSE_FRAMES_HIGH*/
+#define TX_PAUSE_FRAMES_HIGH
+#define TX_PAUSE_FRAMES_HIGH_ADDRESS 0x898
+#define TX_PAUSE_FRAMES_HIGH_NUM     1
+#define TX_PAUSE_FRAMES_HIGH_INC     0x4000
+#define TX_PAUSE_FRAMES_HIGH_TYPE    REG_TYPE_RO
+#define TX_PAUSE_FRAMES_HIGH_DEFAULT 0x0
+	/*[field] TXPAUSEGHI*/
+	#define TX_PAUSE_FRAMES_HIGH_TXPAUSEGHI
+	#define TX_PAUSE_FRAMES_HIGH_TXPAUSEGHI_OFFSET  0
+	#define TX_PAUSE_FRAMES_HIGH_TXPAUSEGHI_LEN     32
+	#define TX_PAUSE_FRAMES_HIGH_TXPAUSEGHI_DEFAULT 0x0
+
+struct tx_pause_frames_high {
+	a_uint32_t  txpauseghi:32;
+};
+
+union tx_pause_frames_high_u {
+	a_uint32_t val;
+	struct tx_pause_frames_high bf;
+};
+
+/*[register] TX_VLAN_FRAMES_GOOD_LOW*/
+#define TX_VLAN_FRAMES_GOOD_LOW
+#define TX_VLAN_FRAMES_GOOD_LOW_ADDRESS 0x89c
+#define TX_VLAN_FRAMES_GOOD_LOW_NUM     1
+#define TX_VLAN_FRAMES_GOOD_LOW_INC     0x4000
+#define TX_VLAN_FRAMES_GOOD_LOW_TYPE    REG_TYPE_RO
+#define TX_VLAN_FRAMES_GOOD_LOW_DEFAULT 0x0
+	/*[field] TXVLANGLO*/
+	#define TX_VLAN_FRAMES_GOOD_LOW_TXVLANGLO
+	#define TX_VLAN_FRAMES_GOOD_LOW_TXVLANGLO_OFFSET  0
+	#define TX_VLAN_FRAMES_GOOD_LOW_TXVLANGLO_LEN     32
+	#define TX_VLAN_FRAMES_GOOD_LOW_TXVLANGLO_DEFAULT 0x0
+
+struct tx_vlan_frames_good_low {
+	a_uint32_t  txvlanglo:32;
+};
+
+union tx_vlan_frames_good_low_u {
+	a_uint32_t val;
+	struct tx_vlan_frames_good_low bf;
+};
+
+/*[register] TX_VLAN_FRAMES_GOOD_HIGH*/
+#define TX_VLAN_FRAMES_GOOD_HIGH
+#define TX_VLAN_FRAMES_GOOD_HIGH_ADDRESS 0x8a0
+#define TX_VLAN_FRAMES_GOOD_HIGH_NUM     1
+#define TX_VLAN_FRAMES_GOOD_HIGH_INC     0x4000
+#define TX_VLAN_FRAMES_GOOD_HIGH_TYPE    REG_TYPE_RO
+#define TX_VLAN_FRAMES_GOOD_HIGH_DEFAULT 0x0
+	/*[field] TXVLANGHI*/
+	#define TX_VLAN_FRAMES_GOOD_HIGH_TXVLANGHI
+	#define TX_VLAN_FRAMES_GOOD_HIGH_TXVLANGHI_OFFSET  0
+	#define TX_VLAN_FRAMES_GOOD_HIGH_TXVLANGHI_LEN     32
+	#define TX_VLAN_FRAMES_GOOD_HIGH_TXVLANGHI_DEFAULT 0x0
+
+struct tx_vlan_frames_good_high {
+	a_uint32_t  txvlanghi:32;
+};
+
+union tx_vlan_frames_good_high_u {
+	a_uint32_t val;
+	struct tx_vlan_frames_good_high bf;
+};
+
+/*[register] TX_LPI_USEC_CNTR*/
+#define TX_LPI_USEC_CNTR
+#define TX_LPI_USEC_CNTR_ADDRESS 0x8a4
+#define TX_LPI_USEC_CNTR_NUM     1
+#define TX_LPI_USEC_CNTR_INC     0x4000
+#define TX_LPI_USEC_CNTR_TYPE    REG_TYPE_RO
+#define TX_LPI_USEC_CNTR_DEFAULT 0x0
+	/*[field] TXLPIUSC*/
+	#define TX_LPI_USEC_CNTR_TXLPIUSC
+	#define TX_LPI_USEC_CNTR_TXLPIUSC_OFFSET  0
+	#define TX_LPI_USEC_CNTR_TXLPIUSC_LEN     32
+	#define TX_LPI_USEC_CNTR_TXLPIUSC_DEFAULT 0x0
+
+struct tx_lpi_usec_cntr {
+	a_uint32_t  txlpiusc:32;
+};
+
+union tx_lpi_usec_cntr_u {
+	a_uint32_t val;
+	struct tx_lpi_usec_cntr bf;
+};
+
+/*[register] TX_LPI_TRAN_CNTR*/
+#define TX_LPI_TRAN_CNTR
+#define TX_LPI_TRAN_CNTR_ADDRESS 0x8a8
+#define TX_LPI_TRAN_CNTR_NUM     1
+#define TX_LPI_TRAN_CNTR_INC     0x4000
+#define TX_LPI_TRAN_CNTR_TYPE    REG_TYPE_RO
+#define TX_LPI_TRAN_CNTR_DEFAULT 0x0
+	/*[field] TXLPITRC*/
+	#define TX_LPI_TRAN_CNTR_TXLPITRC
+	#define TX_LPI_TRAN_CNTR_TXLPITRC_OFFSET  0
+	#define TX_LPI_TRAN_CNTR_TXLPITRC_LEN     32
+	#define TX_LPI_TRAN_CNTR_TXLPITRC_DEFAULT 0x0
+
+struct tx_lpi_tran_cntr {
+	a_uint32_t  txlpitrc:32;
+};
+
+union tx_lpi_tran_cntr_u {
+	a_uint32_t val;
+	struct tx_lpi_tran_cntr bf;
+};
+
+/*[register] RX_FRAME_COUNT_GOOD_BAD_LOW*/
+#define RX_FRAME_COUNT_GOOD_BAD_LOW
+#define RX_FRAME_COUNT_GOOD_BAD_LOW_ADDRESS 0x900
+#define RX_FRAME_COUNT_GOOD_BAD_LOW_NUM     1
+#define RX_FRAME_COUNT_GOOD_BAD_LOW_INC     0x4000
+#define RX_FRAME_COUNT_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_FRAME_COUNT_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RXFRMGBLO*/
+	#define RX_FRAME_COUNT_GOOD_BAD_LOW_RXFRMGBLO
+	#define RX_FRAME_COUNT_GOOD_BAD_LOW_RXFRMGBLO_OFFSET  0
+	#define RX_FRAME_COUNT_GOOD_BAD_LOW_RXFRMGBLO_LEN     32
+	#define RX_FRAME_COUNT_GOOD_BAD_LOW_RXFRMGBLO_DEFAULT 0x0
+
+struct rx_frame_count_good_bad_low {
+	a_uint32_t  rxfrmgblo:32;
+};
+
+union rx_frame_count_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_frame_count_good_bad_low bf;
+};
+
+/*[register] RX_FRAME_COUNT_GOOD_BAD_HIGH*/
+#define RX_FRAME_COUNT_GOOD_BAD_HIGH
+#define RX_FRAME_COUNT_GOOD_BAD_HIGH_ADDRESS 0x904
+#define RX_FRAME_COUNT_GOOD_BAD_HIGH_NUM     1
+#define RX_FRAME_COUNT_GOOD_BAD_HIGH_INC     0x4000
+#define RX_FRAME_COUNT_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_FRAME_COUNT_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RXFRMGBHI*/
+	#define RX_FRAME_COUNT_GOOD_BAD_HIGH_RXFRMGBHI
+	#define RX_FRAME_COUNT_GOOD_BAD_HIGH_RXFRMGBHI_OFFSET  0
+	#define RX_FRAME_COUNT_GOOD_BAD_HIGH_RXFRMGBHI_LEN     32
+	#define RX_FRAME_COUNT_GOOD_BAD_HIGH_RXFRMGBHI_DEFAULT 0x0
+
+struct rx_frame_count_good_bad_high {
+	a_uint32_t  rxfrmgbhi:32;
+};
+
+union rx_frame_count_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_frame_count_good_bad_high bf;
+};
+
+/*[register] RX_OCTET_COUNT_GOOD_BAD_LOW*/
+#define RX_OCTET_COUNT_GOOD_BAD_LOW
+#define RX_OCTET_COUNT_GOOD_BAD_LOW_ADDRESS 0x908
+#define RX_OCTET_COUNT_GOOD_BAD_LOW_NUM     1
+#define RX_OCTET_COUNT_GOOD_BAD_LOW_INC     0x4000
+#define RX_OCTET_COUNT_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_OCTET_COUNT_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RXOCTGBLO*/
+	#define RX_OCTET_COUNT_GOOD_BAD_LOW_RXOCTGBLO
+	#define RX_OCTET_COUNT_GOOD_BAD_LOW_RXOCTGBLO_OFFSET  0
+	#define RX_OCTET_COUNT_GOOD_BAD_LOW_RXOCTGBLO_LEN     32
+	#define RX_OCTET_COUNT_GOOD_BAD_LOW_RXOCTGBLO_DEFAULT 0x0
+
+struct rx_octet_count_good_bad_low {
+	a_uint32_t  rxoctgblo:32;
+};
+
+union rx_octet_count_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_octet_count_good_bad_low bf;
+};
+
+/*[register] RX_OCTET_COUNT_GOOD_BAD_HIGH*/
+#define RX_OCTET_COUNT_GOOD_BAD_HIGH
+#define RX_OCTET_COUNT_GOOD_BAD_HIGH_ADDRESS 0x90c
+#define RX_OCTET_COUNT_GOOD_BAD_HIGH_NUM     1
+#define RX_OCTET_COUNT_GOOD_BAD_HIGH_INC     0x4000
+#define RX_OCTET_COUNT_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_OCTET_COUNT_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RXOCTGBHI*/
+	#define RX_OCTET_COUNT_GOOD_BAD_HIGH_RXOCTGBHI
+	#define RX_OCTET_COUNT_GOOD_BAD_HIGH_RXOCTGBHI_OFFSET  0
+	#define RX_OCTET_COUNT_GOOD_BAD_HIGH_RXOCTGBHI_LEN     32
+	#define RX_OCTET_COUNT_GOOD_BAD_HIGH_RXOCTGBHI_DEFAULT 0x0
+
+struct rx_octet_count_good_bad_high {
+	a_uint32_t  rxoctgbhi:32;
+};
+
+union rx_octet_count_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_octet_count_good_bad_high bf;
+};
+
+/*[register] RX_OCTET_COUNT_GOOD_LOW*/
+#define RX_OCTET_COUNT_GOOD_LOW
+#define RX_OCTET_COUNT_GOOD_LOW_ADDRESS 0x910
+#define RX_OCTET_COUNT_GOOD_LOW_NUM     1
+#define RX_OCTET_COUNT_GOOD_LOW_INC     0x4000
+#define RX_OCTET_COUNT_GOOD_LOW_TYPE    REG_TYPE_RO
+#define RX_OCTET_COUNT_GOOD_LOW_DEFAULT 0x0
+	/*[field] RXOCTGLO*/
+	#define RX_OCTET_COUNT_GOOD_LOW_RXOCTGLO
+	#define RX_OCTET_COUNT_GOOD_LOW_RXOCTGLO_OFFSET  0
+	#define RX_OCTET_COUNT_GOOD_LOW_RXOCTGLO_LEN     32
+	#define RX_OCTET_COUNT_GOOD_LOW_RXOCTGLO_DEFAULT 0x0
+
+struct rx_octet_count_good_low {
+	a_uint32_t  rxoctglo:32;
+};
+
+union rx_octet_count_good_low_u {
+	a_uint32_t val;
+	struct rx_octet_count_good_low bf;
+};
+
+/*[register] RX_OCTET_COUNT_GOOD_HIGH*/
+#define RX_OCTET_COUNT_GOOD_HIGH
+#define RX_OCTET_COUNT_GOOD_HIGH_ADDRESS 0x914
+#define RX_OCTET_COUNT_GOOD_HIGH_NUM     1
+#define RX_OCTET_COUNT_GOOD_HIGH_INC     0x4000
+#define RX_OCTET_COUNT_GOOD_HIGH_TYPE    REG_TYPE_RO
+#define RX_OCTET_COUNT_GOOD_HIGH_DEFAULT 0x0
+	/*[field] RXOCTGHI*/
+	#define RX_OCTET_COUNT_GOOD_HIGH_RXOCTGHI
+	#define RX_OCTET_COUNT_GOOD_HIGH_RXOCTGHI_OFFSET  0
+	#define RX_OCTET_COUNT_GOOD_HIGH_RXOCTGHI_LEN     32
+	#define RX_OCTET_COUNT_GOOD_HIGH_RXOCTGHI_DEFAULT 0x0
+
+struct rx_octet_count_good_high {
+	a_uint32_t  rxoctghi:32;
+};
+
+union rx_octet_count_good_high_u {
+	a_uint32_t val;
+	struct rx_octet_count_good_high bf;
+};
+
+/*[register] RX_BROADCAST_FRAMES_GOOD_LOW*/
+#define RX_BROADCAST_FRAMES_GOOD_LOW
+#define RX_BROADCAST_FRAMES_GOOD_LOW_ADDRESS 0x918
+#define RX_BROADCAST_FRAMES_GOOD_LOW_NUM     1
+#define RX_BROADCAST_FRAMES_GOOD_LOW_INC     0x4000
+#define RX_BROADCAST_FRAMES_GOOD_LOW_TYPE    REG_TYPE_RO
+#define RX_BROADCAST_FRAMES_GOOD_LOW_DEFAULT 0x0
+	/*[field] RXBCASTGLO*/
+	#define RX_BROADCAST_FRAMES_GOOD_LOW_RXBCASTGLO
+	#define RX_BROADCAST_FRAMES_GOOD_LOW_RXBCASTGLO_OFFSET  0
+	#define RX_BROADCAST_FRAMES_GOOD_LOW_RXBCASTGLO_LEN     32
+	#define RX_BROADCAST_FRAMES_GOOD_LOW_RXBCASTGLO_DEFAULT 0x0
+
+struct rx_broadcast_frames_good_low {
+	a_uint32_t  rxbcastglo:32;
+};
+
+union rx_broadcast_frames_good_low_u {
+	a_uint32_t val;
+	struct rx_broadcast_frames_good_low bf;
+};
+
+/*[register] RX_BROADCAST_FRAMES_GOOD_HIGH*/
+#define RX_BROADCAST_FRAMES_GOOD_HIGH
+#define RX_BROADCAST_FRAMES_GOOD_HIGH_ADDRESS 0x91c
+#define RX_BROADCAST_FRAMES_GOOD_HIGH_NUM     1
+#define RX_BROADCAST_FRAMES_GOOD_HIGH_INC     0x4000
+#define RX_BROADCAST_FRAMES_GOOD_HIGH_TYPE    REG_TYPE_RO
+#define RX_BROADCAST_FRAMES_GOOD_HIGH_DEFAULT 0x0
+	/*[field] RXBCASTGHI*/
+	#define RX_BROADCAST_FRAMES_GOOD_HIGH_RXBCASTGHI
+	#define RX_BROADCAST_FRAMES_GOOD_HIGH_RXBCASTGHI_OFFSET  0
+	#define RX_BROADCAST_FRAMES_GOOD_HIGH_RXBCASTGHI_LEN     32
+	#define RX_BROADCAST_FRAMES_GOOD_HIGH_RXBCASTGHI_DEFAULT 0x0
+
+struct rx_broadcast_frames_good_high {
+	a_uint32_t  rxbcastghi:32;
+};
+
+union rx_broadcast_frames_good_high_u {
+	a_uint32_t val;
+	struct rx_broadcast_frames_good_high bf;
+};
+
+/*[register] RX_MULTICAST_FRAMES_GOOD_LOW*/
+#define RX_MULTICAST_FRAMES_GOOD_LOW
+#define RX_MULTICAST_FRAMES_GOOD_LOW_ADDRESS 0x920
+#define RX_MULTICAST_FRAMES_GOOD_LOW_NUM     1
+#define RX_MULTICAST_FRAMES_GOOD_LOW_INC     0x4000
+#define RX_MULTICAST_FRAMES_GOOD_LOW_TYPE    REG_TYPE_RO
+#define RX_MULTICAST_FRAMES_GOOD_LOW_DEFAULT 0x0
+	/*[field] RXMCASTGLO*/
+	#define RX_MULTICAST_FRAMES_GOOD_LOW_RXMCASTGLO
+	#define RX_MULTICAST_FRAMES_GOOD_LOW_RXMCASTGLO_OFFSET  0
+	#define RX_MULTICAST_FRAMES_GOOD_LOW_RXMCASTGLO_LEN     32
+	#define RX_MULTICAST_FRAMES_GOOD_LOW_RXMCASTGLO_DEFAULT 0x0
+
+struct rx_multicast_frames_good_low {
+	a_uint32_t  rxmcastglo:32;
+};
+
+union rx_multicast_frames_good_low_u {
+	a_uint32_t val;
+	struct rx_multicast_frames_good_low bf;
+};
+
+/*[register] RX_MULTICAST_FRAMES_GOOD_HIGH*/
+#define RX_MULTICAST_FRAMES_GOOD_HIGH
+#define RX_MULTICAST_FRAMES_GOOD_HIGH_ADDRESS 0x924
+#define RX_MULTICAST_FRAMES_GOOD_HIGH_NUM     1
+#define RX_MULTICAST_FRAMES_GOOD_HIGH_INC     0x4000
+#define RX_MULTICAST_FRAMES_GOOD_HIGH_TYPE    REG_TYPE_RO
+#define RX_MULTICAST_FRAMES_GOOD_HIGH_DEFAULT 0x0
+	/*[field] RXMCASTGHI*/
+	#define RX_MULTICAST_FRAMES_GOOD_HIGH_RXMCASTGHI
+	#define RX_MULTICAST_FRAMES_GOOD_HIGH_RXMCASTGHI_OFFSET  0
+	#define RX_MULTICAST_FRAMES_GOOD_HIGH_RXMCASTGHI_LEN     32
+	#define RX_MULTICAST_FRAMES_GOOD_HIGH_RXMCASTGHI_DEFAULT 0x0
+
+struct rx_multicast_frames_good_high {
+	a_uint32_t  rxmcastghi:32;
+};
+
+union rx_multicast_frames_good_high_u {
+	a_uint32_t val;
+	struct rx_multicast_frames_good_high bf;
+};
+
+/*[register] RX_CRC_ERROR_FRAMES_LOW*/
+#define RX_CRC_ERROR_FRAMES_LOW
+#define RX_CRC_ERROR_FRAMES_LOW_ADDRESS 0x928
+#define RX_CRC_ERROR_FRAMES_LOW_NUM     1
+#define RX_CRC_ERROR_FRAMES_LOW_INC     0x4000
+#define RX_CRC_ERROR_FRAMES_LOW_TYPE    REG_TYPE_RO
+#define RX_CRC_ERROR_FRAMES_LOW_DEFAULT 0x0
+	/*[field] RXCRCERLO*/
+	#define RX_CRC_ERROR_FRAMES_LOW_RXCRCERLO
+	#define RX_CRC_ERROR_FRAMES_LOW_RXCRCERLO_OFFSET  0
+	#define RX_CRC_ERROR_FRAMES_LOW_RXCRCERLO_LEN     32
+	#define RX_CRC_ERROR_FRAMES_LOW_RXCRCERLO_DEFAULT 0x0
+
+struct rx_crc_error_frames_low {
+	a_uint32_t  rxcrcerlo:32;
+};
+
+union rx_crc_error_frames_low_u {
+	a_uint32_t val;
+	struct rx_crc_error_frames_low bf;
+};
+
+/*[register] RX_CRC_ERROR_FRAMES_HIGH*/
+#define RX_CRC_ERROR_FRAMES_HIGH
+#define RX_CRC_ERROR_FRAMES_HIGH_ADDRESS 0x92c
+#define RX_CRC_ERROR_FRAMES_HIGH_NUM     1
+#define RX_CRC_ERROR_FRAMES_HIGH_INC     0x4000
+#define RX_CRC_ERROR_FRAMES_HIGH_TYPE    REG_TYPE_RO
+#define RX_CRC_ERROR_FRAMES_HIGH_DEFAULT 0x0
+	/*[field] RXCRCERHI*/
+	#define RX_CRC_ERROR_FRAMES_HIGH_RXCRCERHI
+	#define RX_CRC_ERROR_FRAMES_HIGH_RXCRCERHI_OFFSET  0
+	#define RX_CRC_ERROR_FRAMES_HIGH_RXCRCERHI_LEN     32
+	#define RX_CRC_ERROR_FRAMES_HIGH_RXCRCERHI_DEFAULT 0x0
+
+struct rx_crc_error_frames_high {
+	a_uint32_t  rxcrcerhi:32;
+};
+
+union rx_crc_error_frames_high_u {
+	a_uint32_t val;
+	struct rx_crc_error_frames_high bf;
+};
+
+/*[register] RX_RUNT_ERROR_FRAMES*/
+#define RX_RUNT_ERROR_FRAMES
+#define RX_RUNT_ERROR_FRAMES_ADDRESS 0x930
+#define RX_RUNT_ERROR_FRAMES_NUM     1
+#define RX_RUNT_ERROR_FRAMES_INC     0x4000
+#define RX_RUNT_ERROR_FRAMES_TYPE    REG_TYPE_RO
+#define RX_RUNT_ERROR_FRAMES_DEFAULT 0x0
+	/*[field] RXRUNTER*/
+	#define RX_RUNT_ERROR_FRAMES_RXRUNTER
+	#define RX_RUNT_ERROR_FRAMES_RXRUNTER_OFFSET  0
+	#define RX_RUNT_ERROR_FRAMES_RXRUNTER_LEN     32
+	#define RX_RUNT_ERROR_FRAMES_RXRUNTER_DEFAULT 0x0
+
+struct rx_runt_error_frames {
+	a_uint32_t  rxrunter:32;
+};
+
+union rx_runt_error_frames_u {
+	a_uint32_t val;
+	struct rx_runt_error_frames bf;
+};
+
+/*[register] RX_JABBER_ERROR_FRAMES*/
+#define RX_JABBER_ERROR_FRAMES
+#define RX_JABBER_ERROR_FRAMES_ADDRESS 0x934
+#define RX_JABBER_ERROR_FRAMES_NUM     1
+#define RX_JABBER_ERROR_FRAMES_INC     0x4000
+#define RX_JABBER_ERROR_FRAMES_TYPE    REG_TYPE_RO
+#define RX_JABBER_ERROR_FRAMES_DEFAULT 0x0
+	/*[field] RXJABERER*/
+	#define RX_JABBER_ERROR_FRAMES_RXJABERER
+	#define RX_JABBER_ERROR_FRAMES_RXJABERER_OFFSET  0
+	#define RX_JABBER_ERROR_FRAMES_RXJABERER_LEN     32
+	#define RX_JABBER_ERROR_FRAMES_RXJABERER_DEFAULT 0x0
+
+struct rx_jabber_error_frames {
+	a_uint32_t  rxjaberer:32;
+};
+
+union rx_jabber_error_frames_u {
+	a_uint32_t val;
+	struct rx_jabber_error_frames bf;
+};
+
+/*[register] RX_UNDERSIZE_FRAMES_GOOD*/
+#define RX_UNDERSIZE_FRAMES_GOOD
+#define RX_UNDERSIZE_FRAMES_GOOD_ADDRESS 0x938
+#define RX_UNDERSIZE_FRAMES_GOOD_NUM     1
+#define RX_UNDERSIZE_FRAMES_GOOD_INC     0x4000
+#define RX_UNDERSIZE_FRAMES_GOOD_TYPE    REG_TYPE_RO
+#define RX_UNDERSIZE_FRAMES_GOOD_DEFAULT 0x0
+	/*[field] RXUSIZEG*/
+	#define RX_UNDERSIZE_FRAMES_GOOD_RXUSIZEG
+	#define RX_UNDERSIZE_FRAMES_GOOD_RXUSIZEG_OFFSET  0
+	#define RX_UNDERSIZE_FRAMES_GOOD_RXUSIZEG_LEN     32
+	#define RX_UNDERSIZE_FRAMES_GOOD_RXUSIZEG_DEFAULT 0x0
+
+struct rx_undersize_frames_good {
+	a_uint32_t  rxusizeg:32;
+};
+
+union rx_undersize_frames_good_u {
+	a_uint32_t val;
+	struct rx_undersize_frames_good bf;
+};
+
+/*[register] RX_OVERSIZE_FRAMES_GOOD*/
+#define RX_OVERSIZE_FRAMES_GOOD
+#define RX_OVERSIZE_FRAMES_GOOD_ADDRESS 0x93c
+#define RX_OVERSIZE_FRAMES_GOOD_NUM     1
+#define RX_OVERSIZE_FRAMES_GOOD_INC     0x4000
+#define RX_OVERSIZE_FRAMES_GOOD_TYPE    REG_TYPE_RO
+#define RX_OVERSIZE_FRAMES_GOOD_DEFAULT 0x0
+	/*[field] RXOSIZEG*/
+	#define RX_OVERSIZE_FRAMES_GOOD_RXOSIZEG
+	#define RX_OVERSIZE_FRAMES_GOOD_RXOSIZEG_OFFSET  0
+	#define RX_OVERSIZE_FRAMES_GOOD_RXOSIZEG_LEN     32
+	#define RX_OVERSIZE_FRAMES_GOOD_RXOSIZEG_DEFAULT 0x0
+
+struct rx_oversize_frames_good {
+	a_uint32_t  rxosizeg:32;
+};
+
+union rx_oversize_frames_good_u {
+	a_uint32_t val;
+	struct rx_oversize_frames_good bf;
+};
+
+/*[register] RX_64OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW
+#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x940
+#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW_NUM     1
+#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RX64OCTGBLO*/
+	#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW_RX64OCTGBLO
+	#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW_RX64OCTGBLO_OFFSET  0
+	#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW_RX64OCTGBLO_LEN     32
+	#define RX_64OCTETS_FRAMES_GOOD_BAD_LOW_RX64OCTGBLO_DEFAULT 0x0
+
+struct rx_64octets_frames_good_bad_low {
+	a_uint32_t  rx64octgblo:32;
+};
+
+union rx_64octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_64octets_frames_good_bad_low bf;
+};
+
+/*[register] RX_64OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH
+#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x944
+#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RX64OCTGBHI*/
+	#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH_RX64OCTGBHI
+	#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH_RX64OCTGBHI_OFFSET  0
+	#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH_RX64OCTGBHI_LEN     32
+	#define RX_64OCTETS_FRAMES_GOOD_BAD_HIGH_RX64OCTGBHI_DEFAULT 0x0
+
+struct rx_64octets_frames_good_bad_high {
+	a_uint32_t  rx64octgbhi:32;
+};
+
+union rx_64octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_64octets_frames_good_bad_high bf;
+};
+
+/*[register] RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x948
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_NUM     1
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RX65_127OCTGBLO*/
+	#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_RX65_127OCTGBLO
+	#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_RX65_127OCTGBLO_OFFSET  0
+	#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_RX65_127OCTGBLO_LEN     32
+	#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_LOW_RX65_127OCTGBLO_DEFAULT 0x0
+
+struct rx_65to127octets_frames_good_bad_low {
+	a_uint32_t  rx65_127octgblo:32;
+};
+
+union rx_65to127octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_65to127octets_frames_good_bad_low bf;
+};
+
+/*[register] RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x94c
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RX65_127OCTGBHI*/
+	#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_RX65_127OCTGBHI
+	#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_RX65_127OCTGBHI_OFFSET  0
+	#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_RX65_127OCTGBHI_LEN     32
+	#define RX_65TO127OCTETS_FRAMES_GOOD_BAD_HIGH_RX65_127OCTGBHI_DEFAULT 0x0
+
+struct rx_65to127octets_frames_good_bad_high {
+	a_uint32_t  rx65_127octgbhi:32;
+};
+
+union rx_65to127octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_65to127octets_frames_good_bad_high bf;
+};
+
+/*[register] RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x950
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_NUM     1
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RX128_255OCTGBLO*/
+	#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_RX128_255OCTGBLO
+	#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_RX128_255OCTGBLO_OFFSET  0
+	#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_RX128_255OCTGBLO_LEN     32
+	#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_LOW_RX128_255OCTGBLO_DEFAULT 0x0
+
+struct rx_128to255octets_frames_good_bad_low {
+	a_uint32_t  rx128_255octgblo:32;
+};
+
+union rx_128to255octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_128to255octets_frames_good_bad_low bf;
+};
+
+/*[register] RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x954
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RX128_255OCTGBHI*/
+	#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_RX128_255OCTGBHI
+	#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_RX128_255OCTGBHI_OFFSET  0
+	#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_RX128_255OCTGBHI_LEN     32
+	#define RX_128TO255OCTETS_FRAMES_GOOD_BAD_HIGH_RX128_255OCTGBHI_DEFAULT 0x0
+
+struct rx_128to255octets_frames_good_bad_high {
+	a_uint32_t  rx128_255octgbhi:32;
+};
+
+union rx_128to255octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_128to255octets_frames_good_bad_high bf;
+};
+
+/*[register] RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x958
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_NUM     1
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RX256_511OCTGBLO*/
+	#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_RX256_511OCTGBLO
+	#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_RX256_511OCTGBLO_OFFSET  0
+	#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_RX256_511OCTGBLO_LEN     32
+	#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_LOW_RX256_511OCTGBLO_DEFAULT 0x0
+
+struct rx_256to511octets_frames_good_bad_low {
+	a_uint32_t  rx256_511octgblo:32;
+};
+
+union rx_256to511octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_256to511octets_frames_good_bad_low bf;
+};
+
+/*[register] RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x95c
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RX256_511OCTGBHI*/
+	#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_RX256_511OCTGBHI
+	#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_RX256_511OCTGBHI_OFFSET  0
+	#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_RX256_511OCTGBHI_LEN     32
+	#define RX_256TO511OCTETS_FRAMES_GOOD_BAD_HIGH_RX256_511OCTGBHI_DEFAULT 0x0
+
+struct rx_256to511octets_frames_good_bad_high {
+	a_uint32_t  rx256_511octgbhi:32;
+};
+
+union rx_256to511octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_256to511octets_frames_good_bad_high bf;
+};
+
+/*[register] RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW*/
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x960
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_NUM     1
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RX512_1023OCTGBLO*/
+	#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_RX512_1023OCTGBLO
+	#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_RX512_1023OCTGBLO_OFFSET  0
+	#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_RX512_1023OCTGBLO_LEN     32
+	#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_LOW_RX512_1023OCTGBLO_DEFAULT 0x0
+
+struct rx_512to1023octets_frames_good_bad_low {
+	a_uint32_t  rx512_1023octgblo:32;
+};
+
+union rx_512to1023octets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_512to1023octets_frames_good_bad_low bf;
+};
+
+/*[register] RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x964
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RX512_1023OCTGBHI*/
+	#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_RX512_1023OCTGBHI
+	#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_RX512_1023OCTGBHI_OFFSET  0
+	#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_RX512_1023OCTGBHI_LEN     32
+	#define RX_512TO1023OCTETS_FRAMES_GOOD_BAD_HIGH_RX512_1023OCTGBHI_DEFAULT 0x0
+
+struct rx_512to1023octets_frames_good_bad_high {
+	a_uint32_t  rx512_1023octgbhi:32;
+};
+
+union rx_512to1023octets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_512to1023octets_frames_good_bad_high bf;
+};
+
+/*[register] RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW*/
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_ADDRESS 0x968
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_NUM     1
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RX1024_MAXGBOCTLO*/
+	#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_RX1024_MAXGBOCTLO
+	#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_RX1024_MAXGBOCTLO_OFFSET  0
+	#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_RX1024_MAXGBOCTLO_LEN     32
+	#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_LOW_RX1024_MAXGBOCTLO_DEFAULT 0x0
+
+struct rx_1024tomaxoctets_frames_good_bad_low {
+	a_uint32_t  rx1024_maxgboctlo:32;
+};
+
+union rx_1024tomaxoctets_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_1024tomaxoctets_frames_good_bad_low bf;
+};
+
+/*[register] RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH*/
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x96c
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RX1024_MAXGBOCTHI*/
+	#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_RX1024_MAXGBOCTHI
+	#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_RX1024_MAXGBOCTHI_OFFSET  0
+	#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_RX1024_MAXGBOCTHI_LEN     32
+	#define RX_1024TOMAXOCTETS_FRAMES_GOOD_BAD_HIGH_RX1024_MAXGBOCTHI_DEFAULT 0x0
+
+struct rx_1024tomaxoctets_frames_good_bad_high {
+	a_uint32_t  rx1024_maxgbocthi:32;
+};
+
+union rx_1024tomaxoctets_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_1024tomaxoctets_frames_good_bad_high bf;
+};
+
+/*[register] RX_UNICAST_FRAMES_GOOD_LOW*/
+#define RX_UNICAST_FRAMES_GOOD_LOW
+#define RX_UNICAST_FRAMES_GOOD_LOW_ADDRESS 0x970
+#define RX_UNICAST_FRAMES_GOOD_LOW_NUM     1
+#define RX_UNICAST_FRAMES_GOOD_LOW_INC     0x4000
+#define RX_UNICAST_FRAMES_GOOD_LOW_TYPE    REG_TYPE_RO
+#define RX_UNICAST_FRAMES_GOOD_LOW_DEFAULT 0x0
+	/*[field] RXUCASTGLO*/
+	#define RX_UNICAST_FRAMES_GOOD_LOW_RXUCASTGLO
+	#define RX_UNICAST_FRAMES_GOOD_LOW_RXUCASTGLO_OFFSET  0
+	#define RX_UNICAST_FRAMES_GOOD_LOW_RXUCASTGLO_LEN     32
+	#define RX_UNICAST_FRAMES_GOOD_LOW_RXUCASTGLO_DEFAULT 0x0
+
+struct rx_unicast_frames_good_low {
+	a_uint32_t  rxucastglo:32;
+};
+
+union rx_unicast_frames_good_low_u {
+	a_uint32_t val;
+	struct rx_unicast_frames_good_low bf;
+};
+
+/*[register] RX_UNICAST_FRAMES_GOOD_HIGH*/
+#define RX_UNICAST_FRAMES_GOOD_HIGH
+#define RX_UNICAST_FRAMES_GOOD_HIGH_ADDRESS 0x974
+#define RX_UNICAST_FRAMES_GOOD_HIGH_NUM     1
+#define RX_UNICAST_FRAMES_GOOD_HIGH_INC     0x4000
+#define RX_UNICAST_FRAMES_GOOD_HIGH_TYPE    REG_TYPE_RO
+#define RX_UNICAST_FRAMES_GOOD_HIGH_DEFAULT 0x0
+	/*[field] RXUCASTGHI*/
+	#define RX_UNICAST_FRAMES_GOOD_HIGH_RXUCASTGHI
+	#define RX_UNICAST_FRAMES_GOOD_HIGH_RXUCASTGHI_OFFSET  0
+	#define RX_UNICAST_FRAMES_GOOD_HIGH_RXUCASTGHI_LEN     32
+	#define RX_UNICAST_FRAMES_GOOD_HIGH_RXUCASTGHI_DEFAULT 0x0
+
+struct rx_unicast_frames_good_high {
+	a_uint32_t  rxucastghi:32;
+};
+
+union rx_unicast_frames_good_high_u {
+	a_uint32_t val;
+	struct rx_unicast_frames_good_high bf;
+};
+
+/*[register] RX_LENGTH_ERROR_FRAMES_LOW*/
+#define RX_LENGTH_ERROR_FRAMES_LOW
+#define RX_LENGTH_ERROR_FRAMES_LOW_ADDRESS 0x978
+#define RX_LENGTH_ERROR_FRAMES_LOW_NUM     1
+#define RX_LENGTH_ERROR_FRAMES_LOW_INC     0x4000
+#define RX_LENGTH_ERROR_FRAMES_LOW_TYPE    REG_TYPE_RO
+#define RX_LENGTH_ERROR_FRAMES_LOW_DEFAULT 0x0
+	/*[field] RXLENERRLO*/
+	#define RX_LENGTH_ERROR_FRAMES_LOW_RXLENERRLO
+	#define RX_LENGTH_ERROR_FRAMES_LOW_RXLENERRLO_OFFSET  0
+	#define RX_LENGTH_ERROR_FRAMES_LOW_RXLENERRLO_LEN     32
+	#define RX_LENGTH_ERROR_FRAMES_LOW_RXLENERRLO_DEFAULT 0x0
+
+struct rx_length_error_frames_low {
+	a_uint32_t  rxlenerrlo:32;
+};
+
+union rx_length_error_frames_low_u {
+	a_uint32_t val;
+	struct rx_length_error_frames_low bf;
+};
+
+/*[register] RX_LENGTH_ERROR_FRAMES_HIGH*/
+#define RX_LENGTH_ERROR_FRAMES_HIGH
+#define RX_LENGTH_ERROR_FRAMES_HIGH_ADDRESS 0x97c
+#define RX_LENGTH_ERROR_FRAMES_HIGH_NUM     1
+#define RX_LENGTH_ERROR_FRAMES_HIGH_INC     0x4000
+#define RX_LENGTH_ERROR_FRAMES_HIGH_TYPE    REG_TYPE_RO
+#define RX_LENGTH_ERROR_FRAMES_HIGH_DEFAULT 0x0
+	/*[field] RXLENERRHI*/
+	#define RX_LENGTH_ERROR_FRAMES_HIGH_RXLENERRHI
+	#define RX_LENGTH_ERROR_FRAMES_HIGH_RXLENERRHI_OFFSET  0
+	#define RX_LENGTH_ERROR_FRAMES_HIGH_RXLENERRHI_LEN     32
+	#define RX_LENGTH_ERROR_FRAMES_HIGH_RXLENERRHI_DEFAULT 0x0
+
+struct rx_length_error_frames_high {
+	a_uint32_t  rxlenerrhi:32;
+};
+
+union rx_length_error_frames_high_u {
+	a_uint32_t val;
+	struct rx_length_error_frames_high bf;
+};
+
+/*[register] RX_OUTOFRANGE_FRAMES_LOW*/
+#define RX_OUTOFRANGE_FRAMES_LOW
+#define RX_OUTOFRANGE_FRAMES_LOW_ADDRESS 0x980
+#define RX_OUTOFRANGE_FRAMES_LOW_NUM     1
+#define RX_OUTOFRANGE_FRAMES_LOW_INC     0x4000
+#define RX_OUTOFRANGE_FRAMES_LOW_TYPE    REG_TYPE_RO
+#define RX_OUTOFRANGE_FRAMES_LOW_DEFAULT 0x0
+	/*[field] RXORANGELO*/
+	#define RX_OUTOFRANGE_FRAMES_LOW_RXORANGELO
+	#define RX_OUTOFRANGE_FRAMES_LOW_RXORANGELO_OFFSET  0
+	#define RX_OUTOFRANGE_FRAMES_LOW_RXORANGELO_LEN     32
+	#define RX_OUTOFRANGE_FRAMES_LOW_RXORANGELO_DEFAULT 0x0
+
+struct rx_outofrange_frames_low {
+	a_uint32_t  rxorangelo:32;
+};
+
+union rx_outofrange_frames_low_u {
+	a_uint32_t val;
+	struct rx_outofrange_frames_low bf;
+};
+
+/*[register] RX_OUTOFRANGE_FRAMES_HIGH*/
+#define RX_OUTOFRANGE_FRAMES_HIGH
+#define RX_OUTOFRANGE_FRAMES_HIGH_ADDRESS 0x984
+#define RX_OUTOFRANGE_FRAMES_HIGH_NUM     1
+#define RX_OUTOFRANGE_FRAMES_HIGH_INC     0x4000
+#define RX_OUTOFRANGE_FRAMES_HIGH_TYPE    REG_TYPE_RO
+#define RX_OUTOFRANGE_FRAMES_HIGH_DEFAULT 0x0
+	/*[field] RXORANGEHI*/
+	#define RX_OUTOFRANGE_FRAMES_HIGH_RXORANGEHI
+	#define RX_OUTOFRANGE_FRAMES_HIGH_RXORANGEHI_OFFSET  0
+	#define RX_OUTOFRANGE_FRAMES_HIGH_RXORANGEHI_LEN     32
+	#define RX_OUTOFRANGE_FRAMES_HIGH_RXORANGEHI_DEFAULT 0x0
+
+struct rx_outofrange_frames_high {
+	a_uint32_t  rxorangehi:32;
+};
+
+union rx_outofrange_frames_high_u {
+	a_uint32_t val;
+	struct rx_outofrange_frames_high bf;
+};
+
+/*[register] RX_PAUSE_FRAMES_LOW*/
+#define RX_PAUSE_FRAMES_LOW
+#define RX_PAUSE_FRAMES_LOW_ADDRESS 0x988
+#define RX_PAUSE_FRAMES_LOW_NUM     1
+#define RX_PAUSE_FRAMES_LOW_INC     0x4000
+#define RX_PAUSE_FRAMES_LOW_TYPE    REG_TYPE_RO
+#define RX_PAUSE_FRAMES_LOW_DEFAULT 0x0
+	/*[field] RXPAUSELO*/
+	#define RX_PAUSE_FRAMES_LOW_RXPAUSELO
+	#define RX_PAUSE_FRAMES_LOW_RXPAUSELO_OFFSET  0
+	#define RX_PAUSE_FRAMES_LOW_RXPAUSELO_LEN     32
+	#define RX_PAUSE_FRAMES_LOW_RXPAUSELO_DEFAULT 0x0
+
+struct rx_pause_frames_low {
+	a_uint32_t  rxpauselo:32;
+};
+
+union rx_pause_frames_low_u {
+	a_uint32_t val;
+	struct rx_pause_frames_low bf;
+};
+
+/*[register] RX_PAUSE_FRAMES_HIGH*/
+#define RX_PAUSE_FRAMES_HIGH
+#define RX_PAUSE_FRAMES_HIGH_ADDRESS 0x98c
+#define RX_PAUSE_FRAMES_HIGH_NUM     1
+#define RX_PAUSE_FRAMES_HIGH_INC     0x4000
+#define RX_PAUSE_FRAMES_HIGH_TYPE    REG_TYPE_RO
+#define RX_PAUSE_FRAMES_HIGH_DEFAULT 0x0
+	/*[field] RXPAUSEHI*/
+	#define RX_PAUSE_FRAMES_HIGH_RXPAUSEHI
+	#define RX_PAUSE_FRAMES_HIGH_RXPAUSEHI_OFFSET  0
+	#define RX_PAUSE_FRAMES_HIGH_RXPAUSEHI_LEN     32
+	#define RX_PAUSE_FRAMES_HIGH_RXPAUSEHI_DEFAULT 0x0
+
+struct rx_pause_frames_high {
+	a_uint32_t  rxpausehi:32;
+};
+
+union rx_pause_frames_high_u {
+	a_uint32_t val;
+	struct rx_pause_frames_high bf;
+};
+
+/*[register] RX_FIFOOVERFLOW_FRAMES_LOW*/
+#define RX_FIFOOVERFLOW_FRAMES_LOW
+#define RX_FIFOOVERFLOW_FRAMES_LOW_ADDRESS 0x990
+#define RX_FIFOOVERFLOW_FRAMES_LOW_NUM     1
+#define RX_FIFOOVERFLOW_FRAMES_LOW_INC     0x4000
+#define RX_FIFOOVERFLOW_FRAMES_LOW_TYPE    REG_TYPE_RO
+#define RX_FIFOOVERFLOW_FRAMES_LOW_DEFAULT 0x0
+	/*[field] RXFOVFLO*/
+	#define RX_FIFOOVERFLOW_FRAMES_LOW_RXFOVFLO
+	#define RX_FIFOOVERFLOW_FRAMES_LOW_RXFOVFLO_OFFSET  0
+	#define RX_FIFOOVERFLOW_FRAMES_LOW_RXFOVFLO_LEN     32
+	#define RX_FIFOOVERFLOW_FRAMES_LOW_RXFOVFLO_DEFAULT 0x0
+
+struct rx_fifooverflow_frames_low {
+	a_uint32_t  rxfovflo:32;
+};
+
+union rx_fifooverflow_frames_low_u {
+	a_uint32_t val;
+	struct rx_fifooverflow_frames_low bf;
+};
+
+/*[register] RX_FIFOOVERFLOW_FRAMES_HIGH*/
+#define RX_FIFOOVERFLOW_FRAMES_HIGH
+#define RX_FIFOOVERFLOW_FRAMES_HIGH_ADDRESS 0x994
+#define RX_FIFOOVERFLOW_FRAMES_HIGH_NUM     1
+#define RX_FIFOOVERFLOW_FRAMES_HIGH_INC     0x4000
+#define RX_FIFOOVERFLOW_FRAMES_HIGH_TYPE    REG_TYPE_RO
+#define RX_FIFOOVERFLOW_FRAMES_HIGH_DEFAULT 0x0
+	/*[field] RXFOVFHI*/
+	#define RX_FIFOOVERFLOW_FRAMES_HIGH_RXFOVFHI
+	#define RX_FIFOOVERFLOW_FRAMES_HIGH_RXFOVFHI_OFFSET  0
+	#define RX_FIFOOVERFLOW_FRAMES_HIGH_RXFOVFHI_LEN     32
+	#define RX_FIFOOVERFLOW_FRAMES_HIGH_RXFOVFHI_DEFAULT 0x0
+
+struct rx_fifooverflow_frames_high {
+	a_uint32_t  rxfovfhi:32;
+};
+
+union rx_fifooverflow_frames_high_u {
+	a_uint32_t val;
+	struct rx_fifooverflow_frames_high bf;
+};
+
+/*[register] RX_VLAN_FRAMES_GOOD_BAD_LOW*/
+#define RX_VLAN_FRAMES_GOOD_BAD_LOW
+#define RX_VLAN_FRAMES_GOOD_BAD_LOW_ADDRESS 0x998
+#define RX_VLAN_FRAMES_GOOD_BAD_LOW_NUM     1
+#define RX_VLAN_FRAMES_GOOD_BAD_LOW_INC     0x4000
+#define RX_VLAN_FRAMES_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_VLAN_FRAMES_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RXVLANGBLO*/
+	#define RX_VLAN_FRAMES_GOOD_BAD_LOW_RXVLANGBLO
+	#define RX_VLAN_FRAMES_GOOD_BAD_LOW_RXVLANGBLO_OFFSET  0
+	#define RX_VLAN_FRAMES_GOOD_BAD_LOW_RXVLANGBLO_LEN     32
+	#define RX_VLAN_FRAMES_GOOD_BAD_LOW_RXVLANGBLO_DEFAULT 0x0
+
+struct rx_vlan_frames_good_bad_low {
+	a_uint32_t  rxvlangblo:32;
+};
+
+union rx_vlan_frames_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_vlan_frames_good_bad_low bf;
+};
+
+/*[register] RX_VLAN_FRAMES_GOOD_BAD_HIGH*/
+#define RX_VLAN_FRAMES_GOOD_BAD_HIGH
+#define RX_VLAN_FRAMES_GOOD_BAD_HIGH_ADDRESS 0x99c
+#define RX_VLAN_FRAMES_GOOD_BAD_HIGH_NUM     1
+#define RX_VLAN_FRAMES_GOOD_BAD_HIGH_INC     0x4000
+#define RX_VLAN_FRAMES_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_VLAN_FRAMES_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RXVLANGBHI*/
+	#define RX_VLAN_FRAMES_GOOD_BAD_HIGH_RXVLANGBHI
+	#define RX_VLAN_FRAMES_GOOD_BAD_HIGH_RXVLANGBHI_OFFSET  0
+	#define RX_VLAN_FRAMES_GOOD_BAD_HIGH_RXVLANGBHI_LEN     32
+	#define RX_VLAN_FRAMES_GOOD_BAD_HIGH_RXVLANGBHI_DEFAULT 0x0
+
+struct rx_vlan_frames_good_bad_high {
+	a_uint32_t  rxvlangbhi:32;
+};
+
+union rx_vlan_frames_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_vlan_frames_good_bad_high bf;
+};
+
+/*[register] RX_WATCHDOG_ERROR_FRAMES*/
+#define RX_WATCHDOG_ERROR_FRAMES
+#define RX_WATCHDOG_ERROR_FRAMES_ADDRESS 0x9a0
+#define RX_WATCHDOG_ERROR_FRAMES_NUM     1
+#define RX_WATCHDOG_ERROR_FRAMES_INC     0x4000
+#define RX_WATCHDOG_ERROR_FRAMES_TYPE    REG_TYPE_RO
+#define RX_WATCHDOG_ERROR_FRAMES_DEFAULT 0x0
+	/*[field] RXWDOGERR*/
+	#define RX_WATCHDOG_ERROR_FRAMES_RXWDOGERR
+	#define RX_WATCHDOG_ERROR_FRAMES_RXWDOGERR_OFFSET  0
+	#define RX_WATCHDOG_ERROR_FRAMES_RXWDOGERR_LEN     32
+	#define RX_WATCHDOG_ERROR_FRAMES_RXWDOGERR_DEFAULT 0x0
+
+struct rx_watchdog_error_frames {
+	a_uint32_t  rxwdogerr:32;
+};
+
+union rx_watchdog_error_frames_u {
+	a_uint32_t val;
+	struct rx_watchdog_error_frames bf;
+};
+
+/*[register] RX_LPI_USEC_CNTR*/
+#define RX_LPI_USEC_CNTR
+#define RX_LPI_USEC_CNTR_ADDRESS 0x9a4
+#define RX_LPI_USEC_CNTR_NUM     1
+#define RX_LPI_USEC_CNTR_INC     0x4000
+#define RX_LPI_USEC_CNTR_TYPE    REG_TYPE_RO
+#define RX_LPI_USEC_CNTR_DEFAULT 0x0
+	/*[field] RXLPIUSC*/
+	#define RX_LPI_USEC_CNTR_RXLPIUSC
+	#define RX_LPI_USEC_CNTR_RXLPIUSC_OFFSET  0
+	#define RX_LPI_USEC_CNTR_RXLPIUSC_LEN     32
+	#define RX_LPI_USEC_CNTR_RXLPIUSC_DEFAULT 0x0
+
+struct rx_lpi_usec_cntr {
+	a_uint32_t  rxlpiusc:32;
+};
+
+union rx_lpi_usec_cntr_u {
+	a_uint32_t val;
+	struct rx_lpi_usec_cntr bf;
+};
+
+/*[register] RX_LPI_TRAN_CNTR*/
+#define RX_LPI_TRAN_CNTR
+#define RX_LPI_TRAN_CNTR_ADDRESS 0x9a8
+#define RX_LPI_TRAN_CNTR_NUM     1
+#define RX_LPI_TRAN_CNTR_INC     0x4000
+#define RX_LPI_TRAN_CNTR_TYPE    REG_TYPE_RO
+#define RX_LPI_TRAN_CNTR_DEFAULT 0x0
+	/*[field] RXLPITRC*/
+	#define RX_LPI_TRAN_CNTR_RXLPITRC
+	#define RX_LPI_TRAN_CNTR_RXLPITRC_OFFSET  0
+	#define RX_LPI_TRAN_CNTR_RXLPITRC_LEN     32
+	#define RX_LPI_TRAN_CNTR_RXLPITRC_DEFAULT 0x0
+
+struct rx_lpi_tran_cntr {
+	a_uint32_t  rxlpitrc:32;
+};
+
+union rx_lpi_tran_cntr_u {
+	a_uint32_t val;
+	struct rx_lpi_tran_cntr bf;
+};
+
+/*[register] RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW*/
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW_ADDRESS 0x9ac
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW_NUM     1
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW_INC     0x4000
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RXDFCNTGBLO*/
+	#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW_RXDFCNTGBLO
+	#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW_RXDFCNTGBLO_OFFSET  0
+	#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW_RXDFCNTGBLO_LEN     32
+	#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_LOW_RXDFCNTGBLO_DEFAULT 0x0
+
+struct rx_discard_frame_count_good_bad_low {
+	a_uint32_t  rxdfcntgblo:32;
+};
+
+union rx_discard_frame_count_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_discard_frame_count_good_bad_low bf;
+};
+
+/*[register] RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH*/
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH_ADDRESS 0x9b0
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH_NUM     1
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH_INC     0x4000
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RXDFCNTGBHI*/
+	#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH_RXDFCNTGBHI
+	#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH_RXDFCNTGBHI_OFFSET  0
+	#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH_RXDFCNTGBHI_LEN     32
+	#define RX_DISCARD_FRAME_COUNT_GOOD_BAD_HIGH_RXDFCNTGBHI_DEFAULT 0x0
+
+struct rx_discard_frame_count_good_bad_high {
+	a_uint32_t  rxdfcntgbhi:32;
+};
+
+union rx_discard_frame_count_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_discard_frame_count_good_bad_high bf;
+};
+
+/*[register] RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW*/
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW_ADDRESS 0x9b4
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW_NUM     1
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW_INC     0x4000
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW_TYPE    REG_TYPE_RO
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW_DEFAULT 0x0
+	/*[field] RXDOCNTGBLO*/
+	#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW_RXDOCNTGBLO
+	#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW_RXDOCNTGBLO_OFFSET  0
+	#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW_RXDOCNTGBLO_LEN     32
+	#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_LOW_RXDOCNTGBLO_DEFAULT 0x0
+
+struct rx_discard_octet_count_good_bad_low {
+	a_uint32_t  rxdocntgblo:32;
+};
+
+union rx_discard_octet_count_good_bad_low_u {
+	a_uint32_t val;
+	struct rx_discard_octet_count_good_bad_low bf;
+};
+
+/*[register] RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH*/
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH_ADDRESS 0x9b8
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH_NUM     1
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH_INC     0x4000
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH_TYPE    REG_TYPE_RO
+#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH_DEFAULT 0x0
+	/*[field] RXDOCNTGBHI*/
+	#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH_RXDOCNTGBHI
+	#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH_RXDOCNTGBHI_OFFSET  0
+	#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH_RXDOCNTGBHI_LEN     32
+	#define RX_DISCARD_OCTET_COUNT_GOOD_BAD_HIGH_RXDOCNTGBHI_DEFAULT 0x0
+
+struct rx_discard_octet_count_good_bad_high {
+	a_uint32_t  rxdocntgbhi:32;
+};
+
+union rx_discard_octet_count_good_bad_high_u {
+	a_uint32_t val;
+	struct rx_discard_octet_count_good_bad_high bf;
+};
+
+
+
+#endif

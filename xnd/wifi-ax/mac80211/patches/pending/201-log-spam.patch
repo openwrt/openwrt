@@ -1,0 +1,13 @@
+Index: backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/mac.c
+===================================================================
+--- backports-20210222_001-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/mac.c
++++ backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/mac.c
+@@ -493,7 +493,7 @@ struct ath11k_vif *ath11k_mac_get_arvif(
+ 						   ath11k_get_arvif_iter,
+ 						   &arvif_iter);
+ 	if (!arvif_iter.arvif) {
+-		ath11k_warn(ar->ab, "No VIF found for vdev %d\n", vdev_id);
++		//ath11k_warn(ar->ab, "No VIF found for vdev %d\n", vdev_id);
+ 		return NULL;
+ 	}
+ 

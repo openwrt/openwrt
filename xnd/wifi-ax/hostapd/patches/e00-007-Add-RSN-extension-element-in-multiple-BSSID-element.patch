@@ -1,0 +1,97 @@
+From a72e0eb63d7f53dc658e0bf69f4aa09b5d74d350 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Fri, 25 Sep 2020 11:51:37 -0700
+Subject: [PATCH] Add RSN extension element in multiple BSSID element
+
+This patch adds RSN extension element in multiple BSSID element
+when SAE Hash-to-Element method is used for nontransmitted profiles.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ src/ap/beacon.c     |  2 +-
+ src/ap/ieee802_11.c | 28 ++++++++++++++++++++--------
+ src/ap/ieee802_11.h |  2 +-
+ 3 files changed, 22 insertions(+), 10 deletions(-)
+
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -319,7 +319,7 @@ static u8 * hostapd_get_mde(struct hosta
+ }
+ 
+ 
+-static u8 * hostapd_get_rsnxe(struct hostapd_data *hapd, u8 *pos, size_t len)
++u8 * hostapd_get_rsnxe(struct hostapd_data *hapd, u8 *pos, size_t len)
+ {
+ 	const u8 *ie;
+ 
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -5676,17 +5676,29 @@ static int hostapd_eid_multiple_bssid_ch
+ 						int *count)
+ {
+ 	/* ID + size + count */
+-	int i, len = 3;
++	int i, len = 3, nontx_profile_len;
++	size_t ies_len = 0;
++	struct hostapd_data *bss;
+ 
+ 	for (i = *count; i < hapd->iface->num_bss; i++) {
+-		struct hostapd_data *bss = hapd->iface->bss[i];
+-		/* 11 mbssid + ssid len + 32 RSN */
+-		int ssid_len = 11 + bss->conf->ssid.ssid_len + 32;
++		bss = hapd->iface->bss[i];
++
++		/*
++		 * Sublement ID: 1 byte
++		 * Length: 1 byte
++		 * Nontransmitted capabilities: 4 bytes
++		 * Multiple BSSID Index Element: 5 bytes
++		 * SSID element: 2 + variable
++		 */
++		nontx_profile_len = 13 + bss->conf->ssid.ssid_len;
++
++		if (wpa_auth_get_wpa_ie(bss->wpa_auth, &ies_len))
++			nontx_profile_len += ies_len;
+ 
+-		if (len + ssid_len > 255) {
++		if (len + nontx_profile_len > 255) {
+ 			goto multiple_bssid_too_big;
+ 		}
+-		len += ssid_len;
++		len += nontx_profile_len;
+ 	}
+ 
+ multiple_bssid_too_big:
+@@ -5711,7 +5723,7 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 					     u8 *eid, u8 *end, int *count,
+ 					     u8 is_beacon)
+ {
+-	u8 *size_offset, *num_offset, num = 0;
++	u8 *size_offset, *num_offset;
+ 	int i;
+ 
+ 	*eid++ = WLAN_EID_MULTIPLE_BSSID;
+@@ -5747,13 +5759,13 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 		*index_size_offset = (eid - index_size_offset) - 1;
+ 
+ 		eid = hostapd_get_rsne(bss, eid, end - eid);
++		eid = hostapd_get_rsnxe(bss, eid, end - eid);
+ 		*bss_size_offset = (eid - bss_size_offset) - 1;
+ 
+ 		if ((eid - size_offset) - 1 > 255) {
+ 			eid = pos;
+ 			goto multiple_bssid_too_big;
+ 		}
+-		num++;
+ 	}
+ 
+ multiple_bssid_too_big:
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -203,5 +203,5 @@ int get_tx_parameters(struct sta_info *s
+ void auth_sae_process_commit(void *eloop_ctx, void *user_ctx);
+ u8 * hostapd_eid_rsnxe(struct hostapd_data *hapd, u8 *eid, size_t len);
+ u8 * hostapd_get_rsne(struct hostapd_data *hapd, u8 *pos, size_t len);
+-
++u8 * hostapd_get_rsnxe(struct hostapd_data *hapd, u8 *pos, size_t len);
+ #endif /* IEEE802_11_H */

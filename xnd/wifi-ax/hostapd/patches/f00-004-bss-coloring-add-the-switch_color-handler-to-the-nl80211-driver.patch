@@ -1,0 +1,140 @@
+From 2113291e2fb20d82ac9f9740fed13abea2193a35 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 3 Nov 2020 20:15:08 -0800
+Subject: [PATCH V4 4/6] bss coloring: add the switch_color handler to the
+ nl80211 driver
+
+In order to start the CCA process we need to send NL80211_CMD_COLOR_CHANGE
+to the kernel. This patch adds the required code.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ src/drivers/driver_nl80211.c | 79 ++++++++++++++++++++++++++++++++++++
+ src/drivers/nl80211_copy.h   | 18 +++++++-
+ 2 files changed, 95 insertions(+), 2 deletions(-)
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -10031,6 +10031,82 @@ error:
+ }
+ 
+ 
++#ifdef CONFIG_IEEE80211AX
++static int nl80211_switch_color(void *priv, struct cca_settings *settings)
++{
++	struct nl_msg *msg;
++	struct i802_bss *bss = priv;
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++	struct nlattr *beacon_cca;
++	int ret = -ENOBUFS;
++
++	wpa_printf(MSG_DEBUG, "nl80211: Color change request (cca_count=%u color=%d)",
++		   settings->cca_count, settings->cca_color);
++
++	if (drv->nlmode != NL80211_IFTYPE_AP)
++		return -EOPNOTSUPP;
++
++	if (!settings->beacon_cca.tail)
++		return -EINVAL;
++
++	if ((settings->beacon_cca.tail_len <= settings->counter_offset_beacon) ||
++	    (settings->beacon_cca.tail[settings->counter_offset_beacon] !=
++		     settings->cca_count))
++		return -EINVAL;
++
++	if (settings->beacon_cca.probe_resp &&
++	    ((settings->beacon_cca.probe_resp_len <=
++			settings->counter_offset_presp) ||
++	     (settings->beacon_cca.probe_resp[settings->counter_offset_presp] !=
++			settings->cca_count)))
++		return -EINVAL;
++
++	if (!(msg = nl80211_bss_msg(bss, 0, NL80211_CMD_COLOR_CHANGE)) ||
++	    nla_put_u8(msg, NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_COUNT,
++			settings->cca_count) ||
++	    nla_put_u8(msg, NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_COLOR,
++			settings->cca_color))
++		goto error;
++
++	if (nla_put_u16(msg, NL80211_ATTR_CNTDWN_OFFS_BEACON,
++		    settings->counter_offset_beacon) ||
++	    (settings->beacon_cca.probe_resp &&
++	     nla_put_u16(msg, NL80211_ATTR_CNTDWN_OFFS_PRESP,
++		     settings->counter_offset_presp)))
++		goto fail;
++
++	/* beacon_after params */
++	ret = set_beacon_data(msg, &settings->beacon_after);
++	if (ret)
++		goto error;
++
++	/* beacon_csa params */
++	beacon_cca = nla_nest_start(msg, NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_IES);
++	if (!beacon_cca)
++		goto fail;
++
++	ret = set_beacon_data(msg, &settings->beacon_cca);
++	if (ret)
++		goto error;
++
++	nla_nest_end(msg, beacon_cca);
++	ret = send_and_recv_msgs(drv, msg, NULL, NULL, NULL, NULL);
++	if (ret) {
++		wpa_printf(MSG_DEBUG, "nl80211: switch_color failed err=%d (%s)",
++			   ret, strerror(-ret));
++	}
++	return ret;
++
++fail:
++	ret = -ENOBUFS;
++error:
++	nlmsg_free(msg);
++	wpa_printf(MSG_DEBUG, "nl80211: Could not build color switch request");
++	return ret;
++}
++#endif
++
++
+ static int nl80211_add_ts(void *priv, u8 tsid, const u8 *addr,
+ 			  u8 user_priority, u16 admitted_time)
+ {
+@@ -12204,6 +12280,9 @@ const struct wpa_driver_ops wpa_driver_n
+ 	.get_survey = wpa_driver_nl80211_get_survey,
+ 	.status = wpa_driver_nl80211_status,
+ 	.switch_channel = nl80211_switch_channel,
++#ifdef CONFIG_IEEE80211AX
++	.switch_color = nl80211_switch_color,
++#endif
+ #ifdef ANDROID_P2P
+ 	.set_noa = wpa_driver_set_p2p_noa,
+ 	.get_noa = wpa_driver_get_p2p_noa,
+--- a/src/drivers/nl80211_copy.h
++++ b/src/drivers/nl80211_copy.h
+@@ -1429,6 +1429,14 @@ enum nl80211_commands {
+ 	NL80211_CMD_SET_FILS_DISCOVERY,
+ 	NL80211_CMD_SET_UNSOL_BCAST_PROBE_RESP,
+ 
++	NL80211_CMD_OBSS_COLOR_COLLISION,
++
++	NL80211_CMD_COLOR_CHANGE,
++	NL80211_CMD_COLOR_CHANGE_ANNOUNCEMENT_STARTED,
++	NL80211_CMD_COLOR_CHANGE_ANNOUNCEMENT_ABORTED,
++	NL80211_CMD_COLOR_CHANGE_ANNOUNCEMENT_COMPLETED,
++
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -3094,6 +3102,12 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_MULTIPLE_BSSID_COUNT,
+ 	NL80211_ATTR_MULTIPLE_BSSID_IES,
+ 
++	NL80211_ATTR_OBSS_COLOR_BITMAP,
++
++	NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_COUNT,
++	NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_COLOR,
++	NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_IES,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,

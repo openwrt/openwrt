@@ -1,0 +1,65 @@
+From b0b8a0aa0584afacc024ef7b99acb06b6fe7a132 Mon Sep 17 00:00:00 2001
+From: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+Date: Fri, 7 May 2021 18:51:33 +0530
+Subject: [PATCH] ath11k: Fix target assert during channel switch
+
+Updating the new bandwidth for the peer after the channel switch from
+sta_rc_update work may result in target asset if in case new bandwidth
+is greater than the peer phymode configured from peer assoc command.
+Since, no peer assoc comamnd sent for the peer during channel switch.
+
+For example, initially AP is in HE40 mode. So, peer phymode will be
+configured as MODE_11AX_HE40. Now user change the channel with bw HE80
+then the peer bandwidth is configured as HE80 from sta_rc_update.
+Which results in target assert due to peer bandwidth is grater than
+the peer phymode.
+
+Fix this issue by sending peer assoc command before setting the updated
+peer bw to fw.
+
+Signed-off-by: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 26 ++++++++++++++++++++++----
+ 1 file changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index cbd4813..fae44b9 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -4371,11 +4371,29 @@ static void ath11k_sta_rc_update_wk(struct work_struct *wk)
+ 			   ath11k_mac_max_he_nss(he_mcs_mask)));
+ 
+ 	if (changed & IEEE80211_RC_BW_CHANGED) {
+-		err = ath11k_wmi_set_peer_param(ar, sta->addr, arvif->vdev_id,
+-						WMI_PEER_CHWIDTH, bw);
++		/* Send peer assoc command before peer bandwidth param set to
++		 * avoid the target assert due to mismatch between the peer phymode
++		 * and peer bandwidth.
++		 */
++		ath11k_peer_assoc_prepare(ar, arvif->vif, sta, &peer_arg, true);
++
++		peer_arg.is_assoc = false;
++		err = ath11k_wmi_send_peer_assoc_cmd(ar, &peer_arg);
+ 		if (err)
+-			ath11k_warn(ar->ab, "failed to update STA %pM peer bw %d: %d\n",
+-				    sta->addr, bw, err);
++			ath11k_warn(ar->ab, "failed to run peer assoc for STA %pM vdev %i: %d\n",
++					sta->addr, arvif->vdev_id, err);
++		else {
++			if (!wait_for_completion_timeout(&ar->peer_assoc_done, 1 * HZ))
++				ath11k_warn(ar->ab, "failed to get peer assoc conf event for %pM vdev %i\n",
++					    sta->addr, arvif->vdev_id);
++			else {
++				err = ath11k_wmi_set_peer_param(ar, sta->addr, arvif->vdev_id,
++								WMI_PEER_CHWIDTH, bw);
++				if (err)
++					ath11k_warn(ar->ab, "failed to update STA %pM peer bw %d: %d\n",
++						    sta->addr, bw, err);
++			}
++		}
+ 	}
+ 
+ 	if (changed & IEEE80211_RC_NSS_CHANGED) {
+-- 
+2.7.4
+

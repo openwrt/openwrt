@@ -1,0 +1,728 @@
+From 910f0cd7bcb20eacc0bd5c9a6982032589f68024 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Fri, 23 Oct 2020 17:02:06 -0700
+Subject: [PATCH] ath11k: Fixes in EMA beacon transmission offload
+
+(1) Firmware crash on non-MBSSID VAP bring up: Fixed by explicitly
+    setting WMI_HOST_VDEV_FLAGS_NON_MBSSID_AP flag.
+    Also, the calculation for beacon_tx_offload_max_vdev is changed to
+    include ema_max_vap_cnt without which FW allocates insufficient
+    memory for beacons resulting in either a crash or no beacons.
+
+(2) Only first EMA beacon transmitted: Fixed by using correct index in
+    function __ieee80211_beacon_get().
+
+(3) CSA failure: Current code initiates channel switch only on the
+    transmitting VAP hence n_reserved gets set to 1, however n_assigned
+    remains equal number of total VAPs on the radio resulting in
+    failure in ieee80211_vif_use_reserved_switch().
+    This change executes both start and finish for all BSSes.
+    Also, csa_base_off is changed to include MBSSID element and
+    MBSSID configuration element lengths, without this the CSA count
+    is wrong in EMA beacons.
+
+(4) WMI service bit indicates if MBSSID and EMA device flags should be set
+    vdev create or start command. This change moves this check from
+    wmi.c to mac.c file.
+
+(5) Use offsets, if provided by the application, to include reduced
+    neighbor report element in EMA beacons.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/hw.c  |  4 ++
+ drivers/net/wireless/ath/ath11k/hw.h  |  1 +
+ drivers/net/wireless/ath/ath11k/mac.c | 68 ++++++++++++++-----------
+ drivers/net/wireless/ath/ath11k/wmi.c | 21 +++-----
+ include/net/cfg80211.h                | 16 ++++++
+ include/uapi/linux/nl80211.h          | 37 ++++++++++++++
+ net/mac80211/cfg.c                    | 72 +++++++++++++++++++++++----
+ net/mac80211/ieee80211_i.h            |  1 +
+ net/mac80211/iface.c                  |  5 +-
+ net/mac80211/tx.c                     | 34 ++++++++++---
+ net/wireless/nl80211.c                | 34 +++++++++++++
+ 11 files changed, 232 insertions(+), 61 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -144,6 +144,10 @@ static void ath11k_init_wmi_config_ipq80
+ 	config->peer_map_unmap_v2_support = 1;
+ 	config->twt_ap_pdev_count = ab->num_radios;
+ 	config->twt_ap_sta_count = 1000;
++	config->ema_max_vap_cnt = ab->num_radios;
++	config->ema_max_profile_period = TARGET_EMA_MAX_PROFILE_PERIOD;
++	config->beacon_tx_offload_max_vdev += config->ema_max_vap_cnt;
++
+ }
+ 
+ static int ath11k_hw_mac_id_to_pdev_id_ipq8074(struct ath11k_hw_params *hw,
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -78,6 +78,7 @@
+ #define TARGET_NUM_WDS_ENTRIES		32
+ #define TARGET_DMA_BURST_SIZE		1
+ #define TARGET_RX_BATCHMODE		1
++#define TARGET_EMA_MAX_PROFILE_PERIOD	8
+ 
+ #define ATH11K_HW_MAX_QUEUES		4
+ #define ATH11K_QUEUE_LEN		4096
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1097,7 +1097,6 @@ static int __ath11k_mac_setup_bcn_tmpl(s
+ 			     WMI_BEACON_EMA_PARAM_FIRST_TMPL_SHIFT;
+ 		ema_param |= (ema_idx + 1 == ema_cnt ? 1 : 0) <<
+ 			     WMI_BEACON_EMA_PARAM_LAST_TMPL_SHIFT;
+-		printk("%s:%s[%d]%x\n", __FILE__, __func__, __LINE__, ema_param);
+ 	}
+ 
+ 	ret = ath11k_wmi_bcn_tmpl(ar, arvif->vdev_id, &offs, bcn, ema_param);
+@@ -1109,7 +1108,44 @@ static int __ath11k_mac_setup_bcn_tmpl(s
+ 	return ret;
+ }
+ 
+-static int ath11k_mac_setup_bcn_tmpl_ema(struct ath11k_vif *arvif)
++static void ath11k_mac_set_dtim_count(struct sk_buff *bcn, u8 *vdev_up_list)
++{
++	u8 *profile, *next_profile, profile_len;
++	u8 *ies;
++	struct ieee80211_mgmt *mgmt;
++	int ies_len;
++
++	if (!vdev_up_list)
++		return;
++
++	ies = bcn->data + ieee80211_get_hdrlen_from_skb(bcn);
++	ies += sizeof(mgmt->u.beacon);
++	ies_len = skb_tail_pointer(bcn) - ies;
++
++	ies = cfg80211_find_ie(WLAN_EID_MULTIPLE_BSSID, ies, ies_len);
++	while (ies) {
++		ies_len -= (2 + ies[1]);
++		profile_len = ies[1] - 1;
++		profile = &ies[3];
++		while(profile_len) {
++			next_profile = profile + (2 + profile[1]);
++			profile_len -= (2 + profile[1]);
++
++			profile += (4 + profile[3]);
++			profile += (2 + profile[1]);
++
++			if (vdev_up_list[profile[2]])
++				profile[4] = 0x00;
++
++			profile = next_profile;
++		}
++
++		ies = cfg80211_find_ie(WLAN_EID_MULTIPLE_BSSID, profile, ies_len);
++	}
++}
++
++static int ath11k_mac_setup_bcn_tmpl_ema(struct ath11k_vif *arvif,
++					 u8 *vdev_up_list)
+ {
+ 	struct ath11k *ar = arvif->ar;
+ 	struct ieee80211_vif *vif = arvif->vif;
+@@ -1125,21 +1161,20 @@ static int ath11k_mac_setup_bcn_tmpl_ema
+ 		return -EPERM;
+ 	}
+ 
+-	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
+ 	list_for_each_entry(bcn, &bcns, list) {
+-		printk("%s:%s[%d]%d / %d\n", __FILE__, __func__, __LINE__, idx, cnt);
++		ath11k_mac_set_dtim_count(bcn->skb, vdev_up_list);
+ 		ret = __ath11k_mac_setup_bcn_tmpl(arvif, bcn->skb, bcn->offs, idx++, cnt);
+ 		if (ret)
+ 			break;
+ 	}
+-	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
+ 
+ 	ieee80211_beacon_free_ema_list(&bcns);
+ 
+ 	return ret;
+ }
+ 
+-static int ath11k_mac_setup_bcn_tmpl_legacy(struct ath11k_vif *arvif)
++static int ath11k_mac_setup_bcn_tmpl_legacy(struct ath11k_vif *arvif,
++					    u8 *vdev_up_list)
+ {
+ 	struct ath11k *ar = arvif->ar;
+ 	struct ieee80211_mutable_offsets offs = {};
+@@ -1154,6 +1189,7 @@ static int ath11k_mac_setup_bcn_tmpl_leg
+ 		return -EPERM;
+ 	}
+ 
++	ath11k_mac_set_dtim_count(bcn, vdev_up_list);
+ 	ret = __ath11k_mac_setup_bcn_tmpl(arvif, bcn, offs, 0, 0);
+ 
+ 	kfree_skb(bcn);
+@@ -1163,16 +1199,43 @@ static int ath11k_mac_setup_bcn_tmpl_leg
+ 
+ static int ath11k_mac_setup_bcn_tmpl(struct ath11k_vif *arvif)
+ {
++	struct ath11k_vif *pvif = arvif;
++	struct ath11k_vif *cvif = NULL;
++	u8 *vdev_up = NULL, count = 0;
++	int ret = 0;
++
+ 	if (arvif->vdev_type != WMI_VDEV_TYPE_AP)
+ 		return 0;
+ 
+-	if (arvif->vif->multiple_bssid.parent)
+-		return 0;
++	if (arvif->vif->multiple_bssid.parent) {
++		if (arvif->is_up)
++			return 0;
+ 
+-	if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_EMA_BEACON)
+-		return ath11k_mac_setup_bcn_tmpl_ema(arvif);
++		pvif = (struct ath11k_vif *)arvif->vif->multiple_bssid.parent->drv_priv;
++	}
++
++	count = pvif->vif->bss_conf.multiple_bssid.count;
++	if (count) {
++		list_for_each_entry(cvif, &pvif->ar->arvifs, list) {
++			if (cvif == pvif)
++				continue;
+ 
+-	return ath11k_mac_setup_bcn_tmpl_legacy(arvif);
++			if ((cvif->vif->multiple_bssid.parent == arvif->vif->multiple_bssid.parent) &&
++			    cvif->is_up) {
++				if (!vdev_up)
++					vdev_up = kzalloc(count, GFP_KERNEL);
++				vdev_up[cvif->vif->bss_conf.multiple_bssid.index] = 1;
++			}
++		}
++	}
++
++	if (pvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_EMA_BEACON)
++		ret = ath11k_mac_setup_bcn_tmpl_ema(pvif, vdev_up);
++	else
++		ret = ath11k_mac_setup_bcn_tmpl_legacy(pvif, vdev_up);
++
++	kfree(vdev_up);
++	return ret;
+ }
+ 
+ void ath11k_mac_bcn_tx_event(struct ath11k_vif *arvif)
+@@ -5775,20 +5838,26 @@ ath11k_mac_setup_vdev_create_params(stru
+ 	params->subtype = arvif->vdev_subtype;
+ 	params->pdev_id = pdev->pdev_id;
+ 	params->vdevid_trans = 0;
+-	if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_NON_TRANSMITTING) {
+-		params->flags = WMI_HOST_VDEV_FLAGS_NON_TRANSMIT_AP;
+-		parent = arvif->vif->multiple_bssid.parent;
+-		if (!parent)
+-			return -ENOENT;
+-		if (ar->hw->wiphy != ieee80211_vif_to_wdev(parent)->wiphy)
+-			return -EINVAL;
+-		params->vdevid_trans = ath11k_vif_to_arvif(parent)->vdev_id;
+-	} else if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_TRANSMITTING) {
+-		params->flags = WMI_HOST_VDEV_FLAGS_TRANSMIT_AP;
+-	}
+ 
+-	if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_EMA_BEACON)
+-		params->flags |= WMI_HOST_VDEV_FLAGS_EMA_MODE;
++	if (!test_bit(WMI_TLV_SERVICE_MBSS_PARAM_IN_VDEV_START_SUPPORT,
++		      ar->ab->wmi_ab.svc_map)) {
++		if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_NON_TRANSMITTING) {
++			params->flags = WMI_HOST_VDEV_FLAGS_NON_TRANSMIT_AP;
++			parent = arvif->vif->multiple_bssid.parent;
++			if (!parent)
++				return -ENOENT;
++			if (ar->hw->wiphy != ieee80211_vif_to_wdev(parent)->wiphy)
++				return -EINVAL;
++			params->vdevid_trans = ath11k_vif_to_arvif(parent)->vdev_id;
++		} else if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_TRANSMITTING) {
++			params->flags = WMI_HOST_VDEV_FLAGS_TRANSMIT_AP;
++		} else {
++			params->flags = WMI_HOST_VDEV_FLAGS_NON_MBSSID_AP;
++		}
++
++		if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_EMA_BEACON)
++			params->flags |= WMI_HOST_VDEV_FLAGS_EMA_MODE;
++	}
+ 
+ 	if (pdev->cap.supported_bands & WMI_HOST_WLAN_2G_CAP) {
+ 		params->chains[NL80211_BAND_2GHZ].tx = ar->num_tx_chains;
+@@ -6419,21 +6488,27 @@ ath11k_mac_vdev_start_restart(struct ath
+ 
+ 	arg.channel.passive |= !!(chandef->chan->flags & IEEE80211_CHAN_NO_IR);
+ 
+-	if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_NON_TRANSMITTING) {
+-		arg.mbss_capability_flags = WMI_HOST_VDEV_FLAGS_NON_TRANSMIT_AP;
+-		parent = arvif->vif->multiple_bssid.parent;
+-		if (!parent)
+-			return -ENOENT;
+-		if (ar->hw->wiphy != ieee80211_vif_to_wdev(parent)->wiphy)
+-			return -EINVAL;
+-		arg.vdevid_trans = ath11k_vif_to_arvif(parent)->vdev_id;
+-	} else if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_TRANSMITTING) {
+-		arg.mbss_capability_flags = WMI_HOST_VDEV_FLAGS_TRANSMIT_AP;
+-	}
++	if (test_bit(WMI_TLV_SERVICE_MBSS_PARAM_IN_VDEV_START_SUPPORT,
++		     ar->ab->wmi_ab.svc_map)) {
++		if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_NON_TRANSMITTING) {
++			arg.mbss_capability_flags = WMI_HOST_VDEV_FLAGS_NON_TRANSMIT_AP;
++			parent = arvif->vif->multiple_bssid.parent;
++			if (!parent)
++				return -ENOENT;
++			if (ar->hw->wiphy != ieee80211_vif_to_wdev(parent)->wiphy)
++				return -EINVAL;
++			arg.vdevid_trans = ath11k_vif_to_arvif(parent)->vdev_id;
++		} else if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_TRANSMITTING) {
++			arg.mbss_capability_flags = WMI_HOST_VDEV_FLAGS_TRANSMIT_AP;
++		} else {
++			arg.mbss_capability_flags = WMI_HOST_VDEV_FLAGS_NON_MBSSID_AP;
++		}
+ 
+-	if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_EMA_BEACON) {
+-		arg.mbss_capability_flags |= WMI_HOST_VDEV_FLAGS_EMA_MODE;
++		if (arvif->vif->multiple_bssid.flags & IEEE80211_VIF_MBSS_EMA_BEACON) {
++			arg.mbss_capability_flags |= WMI_HOST_VDEV_FLAGS_EMA_MODE;
++		}
+ 	}
++
+ 	ath11k_dbg(ab, ATH11K_DBG_MAC,
+ 		   "mac vdev %d start center_freq %d phymode %s\n",
+ 		   arg.vdev_id, arg.channel.freq,
+@@ -6649,6 +6724,8 @@ ath11k_mac_update_vif_chan(struct ath11k
+ 		params.vdev_id = arvif->vdev_id,
+ 		params.bssid = arvif->bssid,
+ 		params.aid = arvif->aid,
++		params.profile_num = arvif->vif->bss_conf.multiple_bssid.count,
++		params.profile_idx = arvif->vif->bss_conf.multiple_bssid.index,
+ 		ret = ath11k_wmi_vdev_up(arvif->ar, &params);
+ 		if (ret) {
+ 			ath11k_warn(ab, "failed to bring vdev up %d: %d\n",
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -736,12 +736,8 @@ int ath11k_wmi_vdev_create(struct ath11k
+ 	cmd->vdev_subtype = param->subtype;
+ 	cmd->num_cfg_txrx_streams = WMI_NUM_SUPPORTED_BAND_MAX;
+ 	cmd->pdev_id = param->pdev_id;
+-
+-	if (!test_bit(WMI_TLV_SERVICE_MBSS_PARAM_IN_VDEV_START_SUPPORT,
+-		      ar->ab->wmi_ab.svc_map)) {
+-		cmd->flags = param->flags;
+-		cmd->vdevid_trans = param->vdevid_trans;
+-	}
++	cmd->flags = param->flags;
++	cmd->vdevid_trans = param->vdevid_trans;
+ 
+ 	ether_addr_copy(cmd->vdev_macaddr.addr, macaddr);
+ 
+@@ -956,6 +952,8 @@ int ath11k_wmi_vdev_start(struct ath11k
+ 	cmd->cac_duration_ms = arg->cac_duration_ms;
+ 	cmd->regdomain = arg->regdomain;
+ 	cmd->he_ops = arg->he_ops;
++	cmd->mbss_capability_flags = arg->mbss_capability_flags;
++	cmd->vdevid_trans = arg->vdevid_trans;
+ 
+ 	if (!restart) {
+ 		if (arg->ssid) {
+@@ -966,12 +964,6 @@ int ath11k_wmi_vdev_start(struct ath11k
+ 			cmd->flags |= WMI_VDEV_START_HIDDEN_SSID;
+ 		if (arg->pmf_enabled)
+ 			cmd->flags |= WMI_VDEV_START_PMF_ENABLED;
+-
+-		if (test_bit(WMI_TLV_SERVICE_MBSS_PARAM_IN_VDEV_START_SUPPORT,
+-			     ar->ab->wmi_ab.svc_map)) {
+-			cmd->mbss_capability_flags = arg->mbss_capability_flags;
+-			cmd->vdevid_trans = arg->vdevid_trans;
+-		}
+ 	}
+ 
+ 	cmd->flags |= WMI_VDEV_START_LDPC_RX_ENABLED;
+@@ -4405,8 +4397,9 @@ int ath11k_wmi_cmd_init(struct ath11k_ba
+ 	memset(&init_param, 0, sizeof(init_param));
+ 	memset(&config, 0, sizeof(config));
+ 
+-	config.ema_max_vap_cnt = 16;
+-	config.ema_max_profile_period = 8;
++	config.ema_max_vap_cnt = ab->num_radios;
++	config.ema_max_profile_period = TARGET_EMA_MAX_PROFILE_PERIOD;
++	config.beacon_tx_offload_max_vdev += config.ema_max_vap_cnt;
+ 
+ 	ab->hw_params.hw_ops->wmi_init_config(ab, &config);
+ 
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1066,6 +1066,21 @@ struct cfg80211_multiple_bssid_data {
+ };
+ 
+ /**
++ * struct cfg80211_rnr_data - Reduced neighbor report data
++ * @ies: array of extra information element(s) to add into Beacon frames for
++ *	reduced neighbor report or %NULL.
++ *	This is used only when EMA (Enhanced multi-BSSID advertisements) feature
++ *	is enabled and profile periodicity is more than 1.
++ * @len: array of lengths of RNR elements in octets
++ * @cnt: number of entries
++ */
++struct cfg80211_rnr_data {
++	u8 *ies[NL80211_RNR_IES_MAX];
++	size_t len[NL80211_RNR_IES_MAX];
++	u8 cnt;
++};
++
++/**
+  * struct cfg80211_beacon_data - beacon data
+  * @head: head portion of beacon (before TIM IE)
+  *	or %NULL if not changed
+@@ -1113,6 +1128,7 @@ struct cfg80211_beacon_data {
+ 	size_t civicloc_len;
+ 
+ 	struct cfg80211_multiple_bssid_data multiple_bssid;
++	struct cfg80211_rnr_data rnr;
+ };
+ 
+ struct mac_address {
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -2626,6 +2626,17 @@ enum nl80211_commands {
+  * @NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_C_OFF_PRESP: An array of offsets (u16) to the color
+  switch counters in the probe response (%NL80211_ATTR_PROBE_RESP).
+  *
++ * @NL80211_ATTR_RNR_OFFSETS: Offsets for Reduced neighbor element (RNR) of
++ *	type &enum nl80211_rnr_ies_attributes.
++ *	RNR is split into multiple groups when EMA (Enhanced multi-BSSID
++ *	advertisements) feature is enabled. Each group excludes the profiles
++ *	already included in MBSSID group (%NL80211_ATTR_MULTIPLE_BSSID_IES) at
++ *	the same index. Each EMA beacon will be generated by adding MBSSID and
++ *	RNR groups at the same index.
++ *	The last additional RNR group, if present, points to information
++ *	for co-located APs and neighbor APs in ESS to be added in all
++ *	EMA beacons.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3137,6 +3148,8 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_COLOR,
+ 	NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_IES,
+ 
++	NL80211_ATTR_RNR_OFFSETS,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -3201,6 +3214,7 @@ enum nl80211_attrs {
+ #define NL80211_CQM_TXE_MAX_INTVL		1800
+ 
+ #define NL80211_MULTIPLE_BSSID_IES_MAX		8
++#define NL80211_RNR_IES_MAX		(NL80211_MULTIPLE_BSSID_IES_MAX + 1)
+ 
+ /**
+  * enum nl80211_iftype - (virtual) interface types
+@@ -7266,6 +7280,29 @@ enum nl80211_unsol_bcast_probe_resp_attr
+ };
+ 
+ /**
++ * enum nl80211_rnr_ies_attributes - Reduced neighbor report (RNR) offsets.
++ *	Used only when enhanced multi-BSSID advertisements (EMA) are enabled.
++ *
++ * @__NL80211_RNR_IES_ATTR_INVALID: Invalid
++ *
++ * @NL80211_RNR_IES_ATTR_COUNT: Count of RNR offsets
++ *
++ * @NL80211_RNR_IES_ATTR_COUNT: RNR offsets and length for each.
++ *
++ * @__NL80211_RNR_IES_ATTR_LAST: Internal
++ * @NL80211_RNR_IES_ATTR_MAX: highest attribute
++ */
++enum nl80211_rnr_ies_attributes {
++	__NL80211_RNR_IES_ATTR_INVALID,
++
++	NL80211_RNR_IES_ATTR_COUNT,
++	NL80211_RNR_IES_ATTR_DATA,
++
++	/* keep last */
++	__NL80211_RNR_IES_ATTR_LAST,
++	NL80211_RNR_IES_ATTR_MAX = __NL80211_RNR_IES_ATTR_LAST - 1
++};
++/**
+  * enum nl80211_sae_pwe_mechanism - The mechanism(s) allowed for SAE PWE
+  *	derivation. Applicable only when WPA3-Personal SAE authentication is
+  *	used.
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -175,19 +175,26 @@ static struct wireless_dev *ieee80211_ad
+ static int ieee80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
+ {
+ 	struct ieee80211_sub_if_data *sdata;
++	struct ieee80211_local *local;
+ 
+ 	sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
++	local = sdata->local;
+ 	if (sdata && sdata->vif.type == NL80211_IFTYPE_AP) {
+ 		if (sdata->vif.multiple_bssid.flags & IEEE80211_VIF_MBSS_TRANSMITTING) {
+-			struct ieee80211_sub_if_data *child;
++			struct ieee80211_sub_if_data *child, *tmp;
+ 
+-			rcu_read_lock();
+-			list_for_each_entry_rcu(child, &sdata->local->interfaces, list)
+-				if (child->vif.multiple_bssid.parent == &sdata->vif)
++			wiphy_unlock(local->hw.wiphy);
++			mutex_lock(&local->iflist_mtx);
++			list_for_each_entry_safe(child, tmp,
++						 &local->interfaces, list)
++				if ((child->vif.multiple_bssid.parent == &sdata->vif) &&
++				    ieee80211_sdata_running(child))
+ 					dev_close(child->wdev.netdev);
+-			rcu_read_unlock();
++			mutex_unlock(&local->iflist_mtx);
++			wiphy_lock(local->hw.wiphy);
+ 		} else {
+ 			sdata->vif.multiple_bssid.parent = NULL;
++			sdata->vif.multiple_bssid.flags = 0;
+ 		}
+ 	}
+ 
+@@ -1018,6 +1025,27 @@ static u8 *ieee80211_copy_multiple_bssid
+ 	return offset;
+ }
+ 
++static int ieee80211_get_rnr_beacon_len(struct cfg80211_rnr_data *data)
++{
++	int i, len = 0;
++	for (i = 0; i < data->cnt; i++)
++		len += data->len[i];
++	return len;
++}
++
++static u8 *ieee80211_copy_rnr_beacon(u8 *offset, struct cfg80211_rnr_data *new,
++				     struct cfg80211_rnr_data *old)
++{
++	int i;
++	*new = *old;
++	for (i = 0; i < new->cnt; i++) {
++		new->ies[i] = offset;
++		memcpy(new->ies[i], old->ies[i], new->len[i]);
++		offset += new->len[i];
++	}
++	return offset;
++}
++
+ static int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
+ 				   struct cfg80211_beacon_data *params,
+ 				   const struct ieee80211_csa_settings *csa,
+@@ -1030,6 +1058,7 @@ static int ieee80211_assign_beacon(struc
+         struct ieee80211_he_operation *he_oper = NULL;
+ 	int size, err;
+ 	u32 changed = BSS_CHANGED_BEACON;
++	int new_rnr_len = 0;
+ 
+ 	old = sdata_dereference(sdata->u.ap.beacon, sdata);
+ 
+@@ -1059,7 +1088,11 @@ static int ieee80211_assign_beacon(struc
+ 		new_multiple_bssid_len =
+ 			ieee80211_get_multiple_bssid_beacon_len(&old->multiple_bssid);
+ 
+-	size = sizeof(*new) + new_head_len + new_tail_len + new_multiple_bssid_len;
++	if (params->rnr.cnt)
++		new_rnr_len = ieee80211_get_rnr_beacon_len(&params->rnr);
++
++	size = sizeof(*new) + new_head_len + new_tail_len +
++	       new_multiple_bssid_len + new_rnr_len;
+ 
+ 	new = kzalloc(size, GFP_KERNEL);
+ 	if (!new)
+@@ -1088,6 +1121,14 @@ static int ieee80211_assign_beacon(struc
+ 						     &new->multiple_bssid,
+ 						     &old->multiple_bssid);
+ 
++	if (params->rnr.cnt) {
++		ieee80211_copy_rnr_beacon(new_multiple_bssid_offset +
++					  new_multiple_bssid_len, &new->rnr,
++					  &params->rnr);
++	}
++	else if (old && old->rnr.cnt)
++		old->rnr.cnt = 0;
++
+ 	if (csa) {
+ 		new->cntdwn_current_counter = csa->count;
+ 		memcpy(new->cntdwn_counter_offsets, csa->counter_offsets_beacon,
+@@ -3241,6 +3282,20 @@ void ieee80211_csa_finish(struct ieee802
+ {
+ 	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
+ 
++	if (sdata->vif.multiple_bssid.flags & IEEE80211_VIF_MBSS_TRANSMITTING) {
++		struct ieee80211_sub_if_data *child, *tmp;
++		wiphy_unlock(sdata->local->hw.wiphy);
++		mutex_lock(&sdata->local->iflist_mtx);
++		list_for_each_entry_safe(child, tmp,
++					 &sdata->local->interfaces, list)
++			if (child->vif.multiple_bssid.parent == &sdata->vif &&
++			    ieee80211_sdata_running(child))
++				ieee80211_queue_work(&child->local->hw,
++						     &child->csa_finalize_work);
++		mutex_unlock(&sdata->local->iflist_mtx);
++		wiphy_lock(sdata->local->hw.wiphy);
++	}
++
+ 	ieee80211_queue_work(&sdata->local->hw,
+ 			     &sdata->csa_finalize_work);
+ }
+@@ -3546,9 +3601,6 @@ __ieee80211_channel_switch(struct wiphy
+ 	if (sdata->vif.csa_active)
+ 		return -EBUSY;
+ 
+-	if (sdata->vif.multiple_bssid.flags & IEEE80211_VIF_MBSS_NON_TRANSMITTING)
+-		return -EINVAL;
+-
+ 	mutex_lock(&local->chanctx_mtx);
+ 	conf = rcu_dereference_protected(sdata->vif.chanctx_conf,
+ 					 lockdep_is_held(&local->chanctx_mtx));
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -275,6 +275,7 @@ struct beacon_data {
+ 	u8 cntdwn_current_counter;
+ 	struct cfg80211_multiple_bssid_data multiple_bssid;
+ 	u16 ema_index;
++	struct cfg80211_rnr_data rnr;
+ 	struct rcu_head rcu_head;
+ };
+ 
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -383,8 +383,11 @@ static void ieee80211_do_stop(struct iee
+ 	/* make sure the parent is already down */
+ 	if (sdata->vif.type == NL80211_IFTYPE_AP &&
+ 	    sdata->vif.multiple_bssid.parent &&
+-	    ieee80211_sdata_running(vif_to_sdata(sdata->vif.multiple_bssid.parent)))
++	    ieee80211_sdata_running(vif_to_sdata(sdata->vif.multiple_bssid.parent))) {
++		wiphy_unlock(sdata->local->hw.wiphy);
+ 		dev_close(vif_to_sdata(sdata->vif.multiple_bssid.parent)->wdev.netdev);
++		wiphy_lock(sdata->local->hw.wiphy);
++	}
+ 
+ 	clear_bit(SDATA_STATE_RUNNING, &sdata->state);
+ 
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -4831,7 +4831,7 @@ __ieee80211_beacon_get(struct ieee80211_
+ 
+ 		beacon = rcu_dereference(ap->beacon);
+ 		if (beacon) {
+-			int multiple_bssid_len = 0;
++			int multiple_bssid_len = 0, rnr_len = 0;
+ 
+ 			if (beacon->cntdwn_counter_offsets[0]) {
+ 				if (!is_template)
+@@ -4853,6 +4853,13 @@ __ieee80211_beacon_get(struct ieee80211_
+ 			if (beacon->multiple_bssid.cnt) {
+ 				if (ema_index >= IEEE80211_BCN_EMA_INDEX) {
+ 					multiple_bssid_len = beacon->multiple_bssid.len[ema_index];
++					if (beacon->rnr.cnt) {
++						int i;
++						rnr_len = beacon->rnr.len[ema_index];
++						for (i = beacon->multiple_bssid.cnt; i < beacon->rnr.cnt; i++) {
++							rnr_len += beacon->rnr.len[i];
++						}
++					}
+ 				} else {
+ 					int i;
+ 
+@@ -4869,7 +4876,7 @@ __ieee80211_beacon_get(struct ieee80211_
+ 					    beacon->head_len +
+ 					    beacon->tail_len + 256 +
+ 					    local->hw.extra_beacon_tailroom +
+-					    multiple_bssid_len);
++					    multiple_bssid_len + rnr_len);
+ 			if (!skb)
+ 				return NULL;
+ 
+@@ -4893,8 +4900,19 @@ __ieee80211_beacon_get(struct ieee80211_
+ 					ieee80211_beacon_add_multiple_bssid_config(vif, skb,
+ 									   &beacon->multiple_bssid);
+ 					skb_put_data(skb,
+-						     beacon->multiple_bssid.ies[beacon->ema_index],
+-						     beacon->multiple_bssid.len[beacon->ema_index]);
++						     beacon->multiple_bssid.ies[ema_index],
++						     beacon->multiple_bssid.len[ema_index]);
++
++					if (rnr_len) {
++						int i;
++						skb_put_data(skb, beacon->rnr.ies[ema_index],
++							     beacon->rnr.len[ema_index]);
++						for (i = beacon->multiple_bssid.cnt;
++						     i < beacon->rnr.cnt; i++) {
++							skb_put_data(skb, beacon->rnr.ies[i],
++								     beacon->rnr.len[i]);
++						}
++					}
+ 				} else {
+ 					int i;
+ 
+@@ -4902,8 +4920,12 @@ __ieee80211_beacon_get(struct ieee80211_
+ 						skb_put_data(skb, beacon->multiple_bssid.ies[i],
+ 							     beacon->multiple_bssid.len[i]);
+ 				}
+-				if (offs)
+-					offs->multiple_bssid_offset = skb->len - multiple_bssid_len;
++				if (offs) {
++					offs->multiple_bssid_offset = skb->len -
++						(multiple_bssid_len + rnr_len);
++					csa_off_base = skb->len;
++				}
++
+ 			}
+ 
+ 			if (beacon->tail)
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -443,6 +443,13 @@ sar_policy[NL80211_SAR_ATTR_MAX + 1] = {
+ 	[NL80211_SAR_ATTR_SPECS] = NLA_POLICY_NESTED_ARRAY(sar_specs_policy),
+ };
+ 
++static const struct nla_policy
++nl80211_rnr_ies_policy[NL80211_RNR_IES_MAX + 1] = {
++	[NL80211_RNR_IES_ATTR_COUNT] = NLA_POLICY_MAX(NLA_U8,
++						      NL80211_RNR_IES_MAX),
++	[NL80211_RNR_IES_ATTR_DATA] = { .type = NLA_NESTED }
++};
++
+ static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
+ 	[0] = { .strict_start_type = NL80211_ATTR_HE_OBSS_PD },
+ 	[NL80211_ATTR_WIPHY] = { .type = NLA_U32 },
+@@ -789,6 +796,7 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_COUNT] = { .type = NLA_U8 },
+ 	[NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_COLOR] = { .type = NLA_U8 },
+ 	[NL80211_ATTR_COLOR_CHANGE_ANNOUNCEMENT_IES] = NLA_POLICY_NESTED(nl80211_policy),
++	[NL80211_ATTR_RNR_OFFSETS] = NLA_POLICY_NESTED(nl80211_rnr_ies_policy),
+ };
+ 
+ /* policy for the key attributes */
+@@ -5104,6 +5112,32 @@ static int nl80211_parse_beacon(struct c
+ 	else
+ 		bcn->bss_color_info = 0;
+ 
++	if (attrs[NL80211_ATTR_RNR_OFFSETS]) {
++		struct nlattr *nl_ie, *tb[NL80211_RNR_IES_ATTR_MAX + 1];
++		int rem_ie, ret;
++		u8 i = 0;
++
++		ret = nla_parse_nested(tb, NL80211_RNR_IES_ATTR_MAX,
++				       attrs[NL80211_ATTR_RNR_OFFSETS],
++				       NULL, NULL);
++		if (ret)
++			return ret;
++
++		if (!tb[NL80211_RNR_IES_ATTR_COUNT] ||
++		    !tb[NL80211_RNR_IES_ATTR_DATA])
++			return -EINVAL;
++
++		bcn->rnr.cnt = nla_get_u8(tb[NL80211_RNR_IES_ATTR_COUNT]);
++		if (bcn->rnr.cnt > NL80211_RNR_IES_MAX)
++			return -EINVAL;
++
++		nla_for_each_nested(nl_ie, tb[NL80211_RNR_IES_ATTR_DATA], rem_ie) {
++			bcn->rnr.ies[i] = nla_data(nl_ie);
++			bcn->rnr.len[i] = nla_len(nl_ie);
++			i++;
++		}
++	}
++
+ 	return 0;
+ }
+ 

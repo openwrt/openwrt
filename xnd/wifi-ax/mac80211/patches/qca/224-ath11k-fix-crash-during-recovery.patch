@@ -1,0 +1,33 @@
+From 1ef327e5c53a49f6ba4325554d82ef956944fe18 Mon Sep 17 00:00:00 2001
+From: Sriram R <srirrama@codeaurora.org>
+Date: Thu, 5 Nov 2020 11:22:05 +0530
+Subject: [PATCH] ath11k: Fix crash during FW recovery on reo cmd ring access
+
+In scenarios when a peer is disassociating, there could be multiple
+places where a REO cmd ring is accessed, such as during
+aggregation teardown, tid queue cleanup etc.
+
+When this happens during FW recovery where accessing of FW/HW resources/registers
+is not recommended, accessing reo cmd ring in this case could lead to
+crash or undefined behaviour.
+
+Hence avoid this by checking for corresponding flag to avoid
+accessing REO CMD ring during FW recovery.
+
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/dp_tx.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -727,6 +727,9 @@ int ath11k_dp_tx_send_reo_cmd(struct ath
+ 	struct hal_srng *cmd_ring;
+ 	int cmd_num;
+ 
++	if (test_bit(ATH11K_FLAG_CRASH_FLUSH, &ab->dev_flags))
++		return -ESHUTDOWN;
++
+ 	cmd_ring = &ab->hal.srng_list[dp->reo_cmd_ring.ring_id];
+ 	cmd_num = ath11k_hal_reo_cmd_send(ab, cmd_ring, type, cmd);
+ 

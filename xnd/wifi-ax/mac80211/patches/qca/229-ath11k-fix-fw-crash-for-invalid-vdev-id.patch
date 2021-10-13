@@ -1,0 +1,28 @@
+Subject: [PATCH] ath11k: fix invalid vdev id fw crash
+
+num_started_vdevs is incremented for vdev restart scenario also.
+Once num_started_vdevs is wrongly incremented, which is not helping
+to stop the monitor vdev in multiple VAP cases. Since monitor vap not
+stopped, deletion of virtual monitor vdev is missed. It leads to vdev id
+leaks in the free_vdev_map. In that case, when we try to create multiple
+VAPs, invalid vdev id is passed to firmware due to zero value of
+free_vdev_map. So avoid the num_started_vdevs incrementing for restart
+case. so that monitor vdev get stopped and deleted properly also vdev id
+leaks not happen. will have proper vdev id from free_vdev_map.
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6503,7 +6503,9 @@ ath11k_mac_vdev_start_restart(struct ath
+ 		return ret;
+ 	}
+ 
+-	ar->num_started_vdevs++;
++	if (!restart)
++		ar->num_started_vdevs++;
++
+ 	ath11k_dbg(ab, ATH11K_DBG_MAC,  "vdev %pM started, vdev_id %d\n",
+ 		   arvif->vif->addr, arvif->vdev_id);
+ 

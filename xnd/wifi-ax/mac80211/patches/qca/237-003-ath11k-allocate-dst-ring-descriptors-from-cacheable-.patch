@@ -1,0 +1,295 @@
+From 61342ee83df7fa0b90d5ece88e3f83dea426802c Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Mon, 14 Dec 2020 20:22:22 +0530
+Subject: [PATCH] ath11k: allocate dst ring descriptors from cacheable
+ memory
+
+tcl_data and reo_dst rings are currently being allocated
+using dma_allocate_coherent() which is non cachable.
+
+Allocating ring memory from cacheable memory area
+allows cached descriptor access and prefetch next
+descriptors to optimize CPU usage during
+descriptor processing on NAPI.
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/dp.c  | 39 ++++++++++++++++++++++++++++++-----
+ drivers/net/wireless/ath/ath11k/dp.h  |  1 +
+ drivers/net/wireless/ath/ath11k/hal.c | 33 ++++++++++++++++++++++++++---
+ drivers/net/wireless/ath/ath11k/hal.h |  1 +
+ 4 files changed, 66 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -106,8 +106,11 @@ void ath11k_dp_srng_cleanup(struct ath11
+ 	if (!ring->vaddr_unaligned)
+ 		return;
+ 
+-	dma_free_coherent(ab->dev, ring->size, ring->vaddr_unaligned,
+-			  ring->paddr_unaligned);
++	if (!ring->cached)
++		dma_free_coherent(ab->dev, ring->size, ring->vaddr_unaligned,
++				  ring->paddr_unaligned);
++	else
++		kfree(ring->vaddr_unaligned);
+ 
+ 	ATH11K_MEMORY_STATS_DEC(ab, dma_alloc, ring->size);
+ 
+@@ -241,6 +244,7 @@ int ath11k_dp_srng_setup(struct ath11k_b
+ 	int entry_sz = ath11k_hal_srng_get_entrysize(ab, type);
+ 	int max_entries = ath11k_hal_srng_get_max_entries(ab, type);
+ 	int ret;
++	bool cached;
+ 
+ 	if (max_entries < 0 || entry_sz < 0)
+ 		return -EINVAL;
+@@ -248,10 +252,30 @@ int ath11k_dp_srng_setup(struct ath11k_b
+ 	if (num_entries > max_entries)
+ 		num_entries = max_entries;
+ 
++	/* Allocate the reo dst and tx completion rings from cacheable memory */
++	switch (type) {
++	case HAL_REO_DST:
++	case HAL_WBM2SW_RELEASE:
++		cached = true;
++		break;
++	default:
++		cached = false;
++	}
++
++	if (ab->nss.enabled)
++		cached = false;
++
+ 	ring->size = (num_entries * entry_sz) + HAL_RING_BASE_ALIGN - 1;
+-	ring->vaddr_unaligned = dma_alloc_coherent(ab->dev, ring->size,
+-						   &ring->paddr_unaligned,
+-						   GFP_KERNEL);
++
++	if (!cached) {
++		ring->vaddr_unaligned = dma_alloc_coherent(ab->dev, ring->size,
++							   &ring->paddr_unaligned,
++							   GFP_KERNEL);
++	} else {
++		ring->vaddr_unaligned = kzalloc(ring->size, GFP_KERNEL);
++		ring->paddr_unaligned = virt_to_phys(ring->vaddr_unaligned);
++	}
++
+ 	if (!ring->vaddr_unaligned)
+ 		return -ENOMEM;
+ 
+@@ -313,6 +337,11 @@ int ath11k_dp_srng_setup(struct ath11k_b
+ 		return -EINVAL;
+ 	}
+ 
++	if (cached) {
++		params.flags |= HAL_SRNG_FLAGS_CACHED;
++		ring->cached = 1;
++	}
++
+ 	ret = ath11k_hal_srng_setup(ab, type, ring_num, mac_id, &params);
+ 	if (ret < 0) {
+ 		ath11k_warn(ab, "failed to setup srng: %d ring_id %d\n",
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -65,6 +65,7 @@ struct dp_srng {
+ 	dma_addr_t paddr;
+ 	int size;
+ 	u32 ring_id;
++	u8 cached;
+ };
+ 
+ struct dp_rxdma_ring {
+--- a/drivers/net/wireless/ath/ath11k/hal.c
++++ b/drivers/net/wireless/ath/ath11k/hal.c
+@@ -626,7 +626,8 @@ u32 *ath11k_hal_srng_dst_peek(struct ath
+ u32 *ath11k_hal_srng_dst_get_next_entry(struct ath11k_base *ab,
+ 					struct hal_srng *srng)
+ {
+-	u32 *desc;
++	u32 *desc,*desc_next;
++	u32 tp;
+ 
+ 	lockdep_assert_held(&srng->lock);
+ 
+@@ -638,11 +639,79 @@ u32 *ath11k_hal_srng_dst_get_next_entry(
+ 	srng->u.dst_ring.tp = (srng->u.dst_ring.tp + srng->entry_size) %
+ 			      srng->ring_size;
+ 
++	/* Try to prefetch the next descriptor in the ring */
++	if (srng->flags & HAL_SRNG_FLAGS_CACHED) {
++		tp = srng->u.dst_ring.tp;
++		/* prefetch only if desc is available */
++		desc_next = ath11k_hal_srng_dst_peek(ab, srng);
++		if (likely(desc_next)) {
++			dma_sync_single_for_cpu(ab->dev, virt_to_phys(desc_next),
++						(srng->entry_size *sizeof(u32)),
++						DMA_FROM_DEVICE);
++			prefetch(desc_next);
++		}
++	}
+ 	return desc;
+ }
+ 
+-int ath11k_hal_srng_dst_num_free(struct ath11k_base *ab, struct hal_srng *srng,
+-				 bool sync_hw_ptr)
++u32 *ath11k_hal_srng_dst_get_next_cache_entry(struct ath11k_base *ab,
++					      struct hal_srng *srng)
++{
++	u32 *desc,*desc_next;
++
++	lockdep_assert_held(&srng->lock);
++
++	if (srng->u.dst_ring.tp == srng->u.dst_ring.cached_hp)
++		return NULL;
++
++	desc = srng->ring_base_vaddr + srng->u.dst_ring.tp;
++
++	srng->u.dst_ring.tp = (srng->u.dst_ring.tp + srng->entry_size) %
++			      srng->ring_size;
++
++	/* Try to prefetch the next descriptor in the ring */
++	if (srng->u.dst_ring.tp != srng->u.dst_ring.cached_hp) {
++		/* prefetch only if desc is available */
++		desc_next = srng->ring_base_vaddr + srng->u.dst_ring.tp;
++		prefetch(desc_next);
++	}
++	return desc;
++}
++
++void ath11k_hal_srng_dst_invalidate_entry(struct ath11k_base *ab,
++					  struct hal_srng *srng, int entries)
++{
++	u32 *desc;
++	u32 tp, hp;
++
++	lockdep_assert_held(&srng->lock);
++
++	if (!(srng->flags & HAL_SRNG_FLAGS_CACHED) || !entries)
++		return;
++
++	tp = srng->u.dst_ring.tp;
++	hp = srng->u.dst_ring.cached_hp;
++
++	desc = srng->ring_base_vaddr + tp;
++	if (hp > tp) {
++		dma_sync_single_for_cpu(ab->dev, virt_to_phys(desc),
++					entries * srng->entry_size * sizeof(u32),
++					DMA_FROM_DEVICE);
++	} else {
++		entries = srng->ring_size - tp;
++		dma_sync_single_for_cpu(ab->dev, virt_to_phys(desc),
++					entries * sizeof(u32),
++					DMA_FROM_DEVICE);
++
++		entries = hp;
++		dma_sync_single_for_cpu(ab->dev, virt_to_phys(srng->ring_base_vaddr),
++					entries * sizeof(u32),
++					DMA_FROM_DEVICE);
++	}
++}
++
++int ath11k_hal_srng_dst_num_valid(struct ath11k_base *ab, struct hal_srng *srng,
++				  bool sync_hw_ptr)
+ {
+ 	u32 tp, hp;
+ 
+@@ -769,13 +838,27 @@ u32 *ath11k_hal_srng_src_peek(struct ath
+ 
+ void ath11k_hal_srng_access_begin(struct ath11k_base *ab, struct hal_srng *srng)
+ {
++	u32 *desc;
++
+ 	lockdep_assert_held(&srng->lock);
+ 
+-	if (srng->ring_dir == HAL_SRNG_DIR_SRC)
++	if (srng->ring_dir == HAL_SRNG_DIR_SRC) {
+ 		srng->u.src_ring.cached_tp =
+ 			*(volatile u32 *)srng->u.src_ring.tp_addr;
+-	else
++	} else {
+ 		srng->u.dst_ring.cached_hp = *srng->u.dst_ring.hp_addr;
++
++		/* Prefetch the first descriptor memory */
++		if (srng->flags & HAL_SRNG_FLAGS_CACHED) {
++			desc = ath11k_hal_srng_dst_peek(ab, srng);
++			if (likely(desc)) {
++				dma_sync_single_for_cpu(ab->dev, virt_to_phys(desc),
++							(srng->entry_size *sizeof(u32)),
++							DMA_FROM_DEVICE);
++				prefetch(desc);
++			}
++		}
++	}
+ }
+ 
+ /* Update cached ring head/tail pointers to HW. ath11k_hal_srng_access_begin()
+--- a/drivers/net/wireless/ath/ath11k/hal.h
++++ b/drivers/net/wireless/ath/ath11k/hal.h
+@@ -522,6 +522,7 @@ enum hal_srng_dir {
+ #define HAL_SRNG_FLAGS_MSI_INTR			0x00020000
+ #define HAL_SRNG_FLAGS_LMAC_RING		0x80000000
+ #define HAL_SRNG_FLAGS_REMAP_CE_RING		0x10000000
++#define HAL_SRNG_FLAGS_CACHED			0x20000000
+ 
+ #define HAL_SRNG_TLV_HDR_TAG		GENMASK(9, 1)
+ #define HAL_SRNG_TLV_HDR_LEN		GENMASK(25, 10)
+@@ -940,9 +941,13 @@ void ath11k_hal_srng_get_params(struct a
+ 				struct hal_srng_params *params);
+ u32 *ath11k_hal_srng_dst_get_next_entry(struct ath11k_base *ab,
+ 					struct hal_srng *srng);
++u32 *ath11k_hal_srng_dst_get_next_cache_entry(struct ath11k_base *ab,
++					      struct hal_srng *srng);
+ u32 *ath11k_hal_srng_dst_peek(struct ath11k_base *ab, struct hal_srng *srng);
+-int ath11k_hal_srng_dst_num_free(struct ath11k_base *ab, struct hal_srng *srng,
+-				 bool sync_hw_ptr);
++int ath11k_hal_srng_dst_num_valid(struct ath11k_base *ab, struct hal_srng *srng,
++				  bool sync_hw_ptr);
++void ath11k_hal_srng_dst_invalidate_entry(struct ath11k_base *ab,
++					  struct hal_srng *srng, int entries);
+ u32 *ath11k_hal_srng_src_peek(struct ath11k_base *ab, struct hal_srng *srng);
+ u32 *ath11k_hal_srng_src_get_next_reaped(struct ath11k_base *ab,
+ 					 struct hal_srng *srng);
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -3011,7 +3011,7 @@ try_again:
+ 	 * head pointer so that we can reap complete MPDU in the current
+ 	 * rx processing.
+ 	 */
+-	if (!done && ath11k_hal_srng_dst_num_free(ab, srng, true)) {
++	if (!done && ath11k_hal_srng_dst_num_valid(ab, srng, true)) {
+ 		ath11k_hal_srng_access_end(ab, srng);
+ 		goto try_again;
+ 	}
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -646,6 +646,7 @@ void ath11k_dp_tx_completion_handler(str
+ 	struct sk_buff *msdu;
+ 	struct hal_tx_status ts = { 0 };
+ 	struct dp_tx_ring *tx_ring = &dp->tx_ring[ring_id];
++	int valid_entries;
+ 	u32 *desc;
+ 	u32 msdu_id;
+ 	u8 mac_id;
+@@ -654,9 +655,18 @@ void ath11k_dp_tx_completion_handler(str
+ 
+ 	ath11k_hal_srng_access_begin(ab, status_ring);
+ 
++	valid_entries = ath11k_hal_srng_dst_num_valid(ab, status_ring, false);
++	if (!valid_entries) {
++		ath11k_hal_srng_access_end(ab, status_ring);
++		spin_unlock_bh(&status_ring->lock);
++		return;
++	}
++
++	ath11k_hal_srng_dst_invalidate_entry(ab, status_ring, valid_entries);
++
+ 	while ((ATH11K_TX_COMPL_NEXT(tx_ring->tx_status_head) !=
+ 		tx_ring->tx_status_tail) &&
+-	       (desc = ath11k_hal_srng_dst_get_next_entry(ab, status_ring))) {
++	       (desc = ath11k_hal_srng_dst_get_next_cache_entry(ab, status_ring))) {
+ 		memcpy(&tx_ring->tx_status[tx_ring->tx_status_head],
+ 		       desc, sizeof(struct hal_wbm_release_ring));
+ 		tx_ring->tx_status_head =

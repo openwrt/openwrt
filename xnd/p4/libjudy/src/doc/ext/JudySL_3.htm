@@ -1,0 +1,246 @@
+<HTML>
+<HEAD>
+<!-- @(#) $Revision: 4.43 $ $Source: /cvsroot/judy/doc/ext/JudySL_3.htm,v $ --->
+<TITLE>JudySL(3)</TITLE>
+</HEAD>
+<BODY>
+<TABLE border=0 width="100%"><TR>
+<TD width="40%" align="left">JudySL(3)</TD>
+<TD width="10%" align="center">     </TD>
+<TD width="40%" align="right">JudySL(3)</TD>
+</TR></TABLE>
+<P>
+<DL>
+<!----------------->
+<DT><B>NAME</B></DT>
+<DD>
+JudySL macros -
+C library for creating and accessing a dynamic array, using
+a null-terminated string as an <B>Index</B> (associative array)
+<!----------------->
+<P>
+<DT><B>SYNOPSIS</B></DT>
+<DD>
+<B><PRE>
+cc [flags] <I>sourcefiles</I> -lJudy
+
+#include &lt;Judy.h&gt;
+
+#define MAXLINELEN 1000000           // define maximum string length
+
+Word_t * PValue;                     // JudySL array element
+uint8_t  Index[MAXLINELEN];          // string
+int      Rc_int;                     // return value
+Word_t   Rc_word;                    // full word return value
+
+Pvoid_t PJSLArray = (Pvoid_t) NULL;  // initialize JudySL array
+
+<A href="#JSLI" >JSLI</A>( PValue,  PJSLArray, Index);   // <A href="JudySL_funcs_3.htm#JudySLIns">JudySLIns()</A>
+<A href="#JSLD" >JSLD</A>( Rc_int,  PJSLArray, Index);   // <A href="JudySL_funcs_3.htm#JudySLDel">JudySLDel()</A>
+<A href="#JSLG" >JSLG</A>( PValue,  PJSLArray, Index);   // <A href="JudySL_funcs_3.htm#JudySLGet">JudySLGet()</A>
+<A href="#JSLFA">JSLFA</A>(Rc_word, PJSLArray);          // <A href="JudySL_funcs_3.htm#JudySLFreeArray">JudySLFreeArray()</A>
+<A href="#JSLF" >JSLF</A>( PValue,  PJSLArray, Index);   // <A href="JudySL_funcs_3.htm#JudySLFirst">JudySLFirst()</A>
+<A href="#JSLN" >JSLN</A>( PValue,  PJSLArray, Index);   // <A href="JudySL_funcs_3.htm#JudySLNext">JudySLNext()</A>
+<A href="#JSLL" >JSLL</A>( PValue,  PJSLArray, Index);   // <A href="JudySL_funcs_3.htm#JudySLLast">JudySLLast()</A>
+<A href="#JSLP" >JSLP</A>( PValue,  PJSLArray, Index);   // <A href="JudySL_funcs_3.htm#JudySLPrev">JudySLPrev()</A>
+
+</PRE></B>
+<!----------------->
+<P>
+<DT><B>DESCRIPTION</B></DT>
+<DD>
+A JudySL array is the equivalent of a sorted set of strings, each associated
+with a <B>Value</B> (word).
+A <B>Value</B> is addressed by an <B>Index</B> (key), which is a null-terminated
+character string of any length.
+Memory to support the array is allocated as index/value pairs are inserted,
+and released as index/value pairs are deleted.
+This is a form of associative array, where array elements are also sorted
+lexicographically (case-sensitive) by indexes.
+This could be thought of as
+<P><PRE>
+void * JudySLArray["Toto, I don't think we're in Kansas any more"];
+</PRE>
+<P>
+A JudySL array is allocated with a <B>NULL</B> pointer
+<PRE>
+Pvoid_t PJSLArray = (Pvoid_t) NULL;
+</PRE>
+As with an ordinary array, there are no duplicate indexes (strings)
+in a JudySL array.
+<P>
+Using the macros described here, rather than the
+<A href="JudySL_funcs_3.htm">JudySL function calls</A>,
+the default error handling sends a
+message to the standard error and terminates the program with
+<B>exit(1)</B>.
+<P>
+<DT><A name="JSLI"><B>JSLI(PValue, PJSLArray, Index)</B></A> // <A href="JudySL_funcs_3.htm#JudySLIns">JudySLIns()</A></DT>
+<DD>
+Insert an <B>Index</B> string and <B>Value</B> in the JudySL array <B>PJSLArray</B>.
+If the <B>Index</B> is successfully inserted,
+the <B>Value</B> is initialized to 0. If the <B>Index</B> was already present,
+the <B>Value</B> is not modified.
+<P>
+Return <B>PValue</B> pointing to <B>Index</B>'s <B>Value</B>.
+Your program must use this pointer to modify the <B>Value</B>,
+for example:
+<PRE>
+*PValue = 1234;
+</PRE>
+<P>
+<B>Note</B>:
+<B>JSLI()</B> and <B>JSLD</B> reorganize the JudySL array.
+Therefore, pointers returned from previous <B>JudySL</B> calls become
+invalid and must be reacquired.
+<P>
+<DT><A name="JSLD"><B>JSLD(Rc_int, PJSLArray, Index)</B></A> // <A href="JudySL_funcs_3.htm#JudySLDel">JudySLDel()</A></DT>
+<DD>
+Delete the specified <B>Index</B>/<B>Value</B> pair (array element) from the
+JudySL array.
+<P>
+Return <B>Rc_int</B> set to 1 if successful.
+array and it was previously inserted.
+Return <B>Rc_int</B> set to 0 if <B>Index</B> was not present.
+<P>
+<DT><A name="JSLG"><B>JSLG(PValue, PJSLArray, Index)</B></A> // <A href="JudySL_funcs_3.htm#JudySLGet">JudySLGet()</A></DT>
+<DD>
+Get the pointer to <B>Index</B>'s <B>Value</B>.
+<P>
+Return <B>PValue</B> pointing to <B>Index</B>'s <B>Value</B>.
+Return <B>PValue</B> set to <B>NULL</B> if the <B>Index</B> was not present.
+<P>
+<DT><A name="JSLFA"><B>JSLFA(Rc_word, PJSLArray)</B></A> // <A href="JudySL_funcs_3.htm#JudySLFreeArray">JudySLFreeArray()</A></DT>
+<DD>
+Given a pointer to a JudySL array (<B>PJSLArray</B>), free the entire array (much faster
+than using a <B>JSLN()</B>, <B>JSLD()</B> loop.)
+<P>
+Return <B>Rc_word</B> set to the number of bytes freed and <B>PJSLArray</B> set to NULL.
+<P>
+<DT><B>JudySL Search Functions</B></DT>
+<DD>
+The JudySL search functions allow you to search for indexes in the array.
+You may search inclusively or exclusively,
+in either forward or reverse directions.
+<P>
+If successful,
+<B>Index</B> is returned set to the found index, and
+<B>PValue</B> is returned set to a pointer to <B>Index</B>'s <B>Value</B>.
+If unsuccessful,
+<B>PValue</B> is returned set to <B>NULL</B>,
+and <B>Index</B> contains no useful information.
+<B>PValue</B> must be tested for non-<B>NULL</B> prior
+to using <B>Index</B>,
+since a search failure is possible.
+<P>
+<B>Note</B>:
+To accomodate all possible returns, the <B>Index</B> buffer must be
+at least as large
+as the largest string stored in the array.
+<P>
+<DT><A name="JSLF"><B>JSLF(PValue, PJSLArray, Index)</B></A> // <A href="JudySL_funcs_3.htm#JudySLFirst">JudySLFirst()</A></DT>
+<DD>
+Search (inclusive) for the first index present that is equal to or greater than the
+passed <B>Index</B> string.
+(Start with a null string to find the first index in the array.)
+<B>JSLF()</B> is typically used to <I>begin</I> a sorted-order scan of
+the valid indexes in a JudySL array.
+<PRE>
+uint8_t Index[MAXLINELEN];
+strcpy (Index, "");
+JSLF(PValue, PJSLArray, Index);
+</PRE>
+<P>
+<DT><A name="JSLN"><B>JSLN(PValue, PJSLArray, Index)</B></A> // <A href="JudySL_funcs_3.htm#JudySLNext">JudySLNext()</A></DT>
+<DD>
+Search (exclusive) for the next index present that is greater than the passed
+<B>Index</B> string.
+<B>JSLN()</B> is typically used to <I>continue</I> a sorted-order scan of
+the valid indexes in a JudySL array, or to locate a "neighbor" of a given
+index.
+<P>
+<DT><A name="JSLL"><B>JSLL(PValue, PJSLArray, Index)</B></A> // <A href="JudySL_funcs_3.htm#JudySLLast">JudySLLast()</A></DT>
+<DD>
+Search (inclusive) for the last index present that is equal to or less
+than the passed <B>Index</B> string.
+(Start with a maximum-valued string to look up the last index in the array,
+such as a max-length string of 0xff bytes.)
+<B>JSLL()</B> is typically used to <I>begin</I> a reverse-sorted-order
+scan of the valid indexes in a JudySL array.
+<P>
+<DT><A name="JSLP"><B>JSLP(PValue, PJSLArray, Index)</B></A> // <A href="JudySL_funcs_3.htm#JudySLPrev">JudySLPrev()</A></DT>
+<DD>
+Search (exclusive) for the previous index present that is less than the
+passed <B>Index</B> string.
+<B>JSLP()</B> is typically used to <I>continue</I> a reverse-sorted-order
+scan of the valid indexes in a JudySL array, or to locate a "neighbor" of
+a given index.
+<!----------------->
+<P>
+<DT><A name="JSLERR"><B>ERRORS:</B> See: </A><A href="Judy_3.htm#ERRORS">Judy_3.htm#ERRORS</A></DT>
+<DD>
+<!----------------->
+<P>
+<DT><B>EXAMPLE</B> of a string sort routine</DT>
+<P><PRE>
+#include &lt;stdio.h&gt;
+#include &lt;Judy.h&gt;
+
+#define MAXLINE 1000000                 // max string (line) length
+
+uint8_t   Index[MAXLINE];               // string to insert
+
+int     // Usage:  JudySort &lt; file_to_sort
+main()
+{
+    Pvoid_t   PJArray = (PWord_t)NULL;  // Judy array.
+    PWord_t   PValue;                   // Judy array element.
+    Word_t    Bytes;                    // size of JudySL array.
+
+    while (fgets(Index, MAXLINE, stdin) != (char *)NULL)
+    {
+        JSLI(PValue, PJArray, Index);   // store string into array
+        if (PValue == PJERR)            // if out of memory?
+        {                               // so do something
+            printf("Malloc failed -- get more ram\n");
+            exit(1);
+        }
+        ++(*PValue);                    // count instances of string
+    }
+    Index[0] = '\0';                    // start with smallest string.
+    JSLF(PValue, PJArray, Index);       // get first string
+    while (PValue != NULL)
+    {
+        while ((*PValue)--)             // print duplicates
+            printf("%s", Index);
+        JSLN(PValue, PJArray, Index);   // get next string
+    }
+    JSLFA(Bytes, PJArray);              // free array
+
+    fprintf(stderr, "The JudySL array used %lu bytes of memory\n", Bytes);
+    return (0);
+}
+</PRE>
+<!----------------->
+<P>
+<DT><B>AUTHOR</B></DT>
+<DD>
+Judy was invented by Doug Baskins and implemented by Hewlett-Packard.
+<!----------------->
+<P>
+<DT><B>SEE ALSO</B></DT>
+<DD>
+<A href="Judy_3.htm">Judy(3)</A>,
+<A href="Judy1_3.htm">Judy1(3)</A>,
+<A href="JudyL_3.htm">JudyL(3)</A>,
+<A href="JudyHS_3.htm">JudyHS(3)</A>,
+<BR>
+<I>malloc()</I>,
+<BR>
+the Judy website,
+<A href="http://judy.sourceforge.net">
+http://judy.sourceforge.net</A>,
+for further information and Application Notes.
+</DL>
+</BODY>
+</HTML>

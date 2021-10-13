@@ -1,0 +1,308 @@
+From b3213496ab8688c6ef6f92be1dce0d1ed32ca9e3 Mon Sep 17 00:00:00 2001
+From: Ramya Gnanasekar <rgnanase@codeaurora.org>
+Date: Thu, 9 Jul 2020 10:48:15 +0530
+Subject: [PATCH] ath11k: add support to collect q6mem dump
+
+q6mem dump is not collected when fw crashes due to system restart.
+Implemented a knob in debugfs to enable/disable fw recovery from
+qsdk to collect q6mem dump .
+
+root@OpenWrt:~# echo 1 > /sys/kernel/debug/ath11k/ipq6018_2/set_fw_recovery
+root@OpenWrt:~# cat /sys/kernel/debug/ath11k/ipq6018_2/set_fw_recovery
+1
+
+Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c  |  3 ++-
+ drivers/net/wireless/ath/ath11k/core.h  |  1 +
+ drivers/net/wireless/ath/ath11k/debugfs.c | 46 +++++++++++++++++++++++++++++++++
+ 3 files changed, 49 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -860,7 +860,8 @@ int ath11k_core_ssr_notifier_cb(struct n
+ 	/* TODO Add more driver stats */
+ 
+ 	/* Crash the system once all the stats are dumped */
+-	BUG_ON(1);
++	if(!qmi->ab->fw_recovery_support)
++		BUG_ON(1);
+ 
+ 	return 0;
+ }
+@@ -943,6 +944,13 @@ static int ath11k_core_reconfigure_on_cr
+ 	int ret;
+ 
+ 	mutex_lock(&ab->core_lock);
++#ifdef CONFIG_QCOM_QMI_HELPERS
++	/* Unregister the ssr notifier as we are not interested
++	 * in receving these notifications after mac is unregistered.
++	 */
++	if (ab->hif.bus == ATH11K_BUS_AHB)
++		qcom_unregister_ssr_notifier(&ab->qmi.ssr_nb);
++#endif
+ 	ath11k_thermal_unregister(ab);
+ 	ath11k_hif_irq_disable(ab);
+ 	ath11k_dp_pdev_free(ab);
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -845,6 +845,8 @@ struct ath11k_base {
+ 
+ 	struct completion htc_suspend;
+ 
++	bool fw_recovery_support;
++
+ 	/* must be last */
+ 	u8 drv_priv[0] __aligned(sizeof(void *));
+ };
+@@ -972,6 +974,14 @@ struct ath11k_fw_stats_bcn {
+ 	u32 tx_bcn_outage_cnt;
+ };
+ 
++enum ath11k_fw_recovery_option {
++	ATH11K_FW_RECOVERY_DISABLE = 0,
++	ATH11K_FW_RECOVERY_ENABLE_AUTO, /* Automatically recover after FW assert */
++	/* Enable only recovery. Send MPD SSR WMI */
++	/* command to unlink UserPD assert from RootPD */
++	ATH11K_FW_RECOVERY_ENABLE_SSR_ONLY,
++};
++
+ extern const struct ce_pipe_config ath11k_target_ce_config_wlan_ipq8074[];
+ extern const struct service_to_pipe ath11k_target_service_to_ce_map_wlan_ipq8074[];
+ extern const struct service_to_pipe ath11k_target_service_to_ce_map_wlan_ipq6018[];
+@@ -999,6 +1009,7 @@ void ath11k_core_halt(struct ath11k *ar)
+ int ath11k_core_resume(struct ath11k_base *ab);
+ int ath11k_core_suspend(struct ath11k_base *ab);
+ 
++void ath11k_core_dump_bp_stats(struct ath11k_base *ab);
+ void ath11k_coredump_qdss_dump(struct ath11k_base *ab,
+ 			       struct ath11k_qmi_event_qdss_trace_save_data *event_data);
+ const struct firmware *ath11k_core_firmware_request(struct ath11k_base *ab,
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -1110,6 +1110,73 @@ static const struct file_operations fops
+ 	.llseek = default_llseek,
+ };
+ 
++static ssize_t ath11k_debug_write_fw_recovery(struct file *file,
++                                              char __user *user_buf,
++                                              size_t count, loff_t *ppos)
++{
++       struct ath11k_base *ab = file->private_data;
++       struct ath11k *ar;
++       struct ath11k_pdev *pdev;
++       struct device *dev = ab->dev;
++       bool multi_pd_arch = false;
++       unsigned int value;
++       int ret, i;
++
++       if (kstrtouint_from_user(user_buf, count, 0, &value))
++                return -EINVAL;
++
++       if (value < ATH11K_FW_RECOVERY_DISABLE ||
++	   value > ATH11K_FW_RECOVERY_ENABLE_SSR_ONLY) {
++		ath11k_warn(ab, "Please enter: 0 = Disable, 1 = Enable (auto recover),"
++			    "2 = Enable SSR only");
++		ret = -EINVAL;
++		goto exit;
++       }
++
++       for (i = 0; i < ab->num_radios; i++) {
++		pdev = &ab->pdevs[i];
++		ar = pdev->ar;
++		if (ar && ar->state == ATH11K_STATE_ON)
++			break;
++       }
++
++       multi_pd_arch = of_property_read_bool(dev->of_node, "qcom,multipd_arch");
++       if (multi_pd_arch) {
++	       if (value == ATH11K_FW_RECOVERY_DISABLE ||
++		   value == ATH11K_FW_RECOVERY_ENABLE_SSR_ONLY) {
++		       ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_MPD_USERPD_SSR,
++						 0, ar->pdev->pdev_id);
++	       } else if (value == ATH11K_FW_RECOVERY_ENABLE_AUTO)
++		       ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_MPD_USERPD_SSR,
++						 1, ar->pdev->pdev_id);
++       }
++       ab->fw_recovery_support = value ? true : false;
++
++       ret = count;
++
++exit:
++       return ret;
++}
++
++static ssize_t ath11k_debug_read_fw_recovery(struct file *file,
++                                          char __user *user_buf,
++                                          size_t count, loff_t *ppos)
++{
++       struct ath11k_base *ab = file->private_data;
++       char buf[32];
++       size_t len;
++
++       len = scnprintf(buf, sizeof(buf), "%u\n", ab->fw_recovery_support);
++
++       return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops_fw_recovery = {
++       .read = ath11k_debug_read_fw_recovery,
++       .write = ath11k_debug_write_fw_recovery,
++       .open = simple_open,
++};
++
+ int ath11k_debugfs_pdev_create(struct ath11k_base *ab)
+ {
+ 	if (test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags))
+@@ -1124,6 +1191,10 @@ int ath11k_debugfs_pdev_create(struct at
+ 	debugfs_create_file("soc_dp_stats", 0600, ab->debugfs_soc, ab,
+ 			    &fops_soc_dp_stats);
+ 
++	debugfs_create_file("set_fw_recovery", 0600, ab->debugfs_soc, ab,
++			    &fops_fw_recovery);
++
++
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -1206,6 +1206,8 @@ static int ath11k_pci_probe(struct pci_d
+ 	ab_pci->pdev = pdev;
+ 	ab->hif.ops = &ath11k_pci_hif_ops;
+ 	pci_set_drvdata(pdev, ab);
++	ab->fw_recovery_support = false;
++
+ 	spin_lock_init(&ab_pci->window_lock);
+ 
+ 	/* IPQ8074 reserves memory for FW, ath11k does not need to
+--- a/drivers/net/wireless/ath/ath11k/coredump.c
++++ b/drivers/net/wireless/ath/ath11k/coredump.c
+@@ -163,13 +163,16 @@ void ath11k_coredump_download_rddm(struc
+ 	fw_img = mhi_ctrl->fbc_image;
+ 
+ 	for (i = 0; i < ab->qmi.mem_seg_count; i++) {
+-		if (ab->qmi.target_mem[i].type == HOST_DDR_REGION_TYPE)
++		if (ab->qmi.target_mem[i].type == HOST_DDR_REGION_TYPE ||
++		    ab->qmi.target_mem[i].type == CALDB_MEM_REGION_TYPE ||
++			ab->qmi.target_mem[i].type == M3_DUMP_REGION_TYPE)
+ 			rem_seg_cnt++;
+ 	}
+ 
+ 	num_seg = fw_img->entries + rddm_img->entries + rem_seg_cnt;
+ 	if (ab->is_qdss_tracing)
+ 		num_seg += qdss_seg_cnt;
++
+ 	len = num_seg * sizeof(*segment);
+ 
+ 	seg_info = segment = (struct ath11k_dump_segment *)vzalloc(len);
+@@ -196,31 +199,46 @@ void ath11k_coredump_download_rddm(struc
+ 		ath11k_info(ab, "seg vaddr is %px len is 0x%x type %d\n",
+ 			    seg_info->vaddr, seg_info->len, seg_info->type);
+ 		seg_info->type = ATH11K_FW_CRASH_RDDM_DATA;
++		ath11k_info(ab, "seg vaddr is %px len is 0x%x type %d\n",
++			    seg_info->vaddr, seg_info->len, seg_info->type);
+ 		seg_info++;
+ 	}
+ 
+ 	for (i = 0; i < ab->qmi.mem_seg_count; i++) {
+-		if (ab->qmi.target_mem[i].type != HOST_DDR_REGION_TYPE)
+-			continue;
+-		seg_info->len = ab->qmi.target_mem[i].size;
+-		seg_info->addr = ab->qmi.target_mem[i].paddr;
+-		seg_info->vaddr = ab->qmi.target_mem[i].vaddr;
+-		ath11k_info(ab, "seg vaddr is %px len is 0x%x type %d\n",
+-			    seg_info->vaddr, seg_info->len, seg_info->type);
+-		seg_info->type = ATH11K_FW_REMOTE_MEM_DATA;
+-		seg_info++;
++		if (ab->qmi.target_mem[i].type == HOST_DDR_REGION_TYPE ||
++		    ab->qmi.target_mem[i].type == M3_DUMP_REGION_TYPE) {
++			seg_info->len = ab->qmi.target_mem[i].size;
++			seg_info->addr = ab->qmi.target_mem[i].paddr;
++			seg_info->vaddr = ab->qmi.target_mem[i].vaddr;
++			seg_info->type = ATH11K_FW_REMOTE_MEM_DATA;
++			ath11k_info(ab, "seg vaddr is %px len is 0x%x type %d\n",
++				    seg_info->vaddr, seg_info->len, seg_info->type);
++			seg_info++;
++		}
+ 	}
+ 
+ 	if (ab->is_qdss_tracing) {
+ 		seg_info->len = ab->qmi.qdss_mem[0].size;
+ 		seg_info->addr = ab->qmi.qdss_mem[0].paddr;
+ 		seg_info->vaddr = ab->qmi.qdss_mem[0].vaddr;
+-		ath11k_dbg(ab, ATH11K_DBG_QMI, "seg vaddr is %px len is 0x%x type %d\n",
+-			   seg_info->vaddr, seg_info->len, seg_info->type);
+-		seg_info->type = ATH11K_FW_QDSS_DATA;
++		seg_info->type = ATH11K_FW_REMOTE_MEM_DATA;
++		ath11k_info(ab, "seg vaddr is %px len is 0x%x type %d\n",
++			    seg_info->vaddr, seg_info->len, seg_info->type);
+ 		seg_info++;
+ 	}
+ 
++	for (i = 0; i < ab->qmi.mem_seg_count; i++) {
++		if (ab->qmi.target_mem[i].type == CALDB_MEM_REGION_TYPE) {
++			seg_info->len = ab->qmi.target_mem[i].size;
++			seg_info->addr = ab->qmi.target_mem[i].paddr;
++			seg_info->vaddr = ab->qmi.target_mem[i].vaddr;
++			seg_info->type = ATH11K_FW_REMOTE_MEM_DATA;
++			ath11k_info(ab, "seg vaddr is %px len is 0x%x type %d\n",
++				    seg_info->vaddr, seg_info->len, seg_info->type);
++			seg_info++;
++		}
++	}
++
+ 	/* Crash the system once all the stats are dumped */
+ 	if(!ab->fw_recovery_support) {
+ 		ath11k_core_dump_bp_stats(ab);
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2581,6 +2581,10 @@ static int ath11k_qmi_assign_target_mem_
+ 				ab->qmi.target_mem[idx].paddr = ab->hw_params.m3_addr;
+ 			else
+ 				ab->qmi.target_mem[idx].paddr =  (phys_addr_t)addr;
++
++				ab->qmi.target_mem[idx].vaddr =
++					ioremap(ab->qmi.target_mem[idx].paddr,
++							ab->qmi.target_mem[i].size);
+ 			idx++;
+ 			break;
+ 		default:
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -949,6 +949,7 @@ enum wmi_tlv_pdev_param {
+ 	WMI_PDEV_PARAM_SET_CMD_OBSS_PD_THRESHOLD = 0xbc,
+ 	WMI_PDEV_PARAM_SET_CMD_OBSS_PD_PER_AC = 0xbe,
+ 	WMI_PDEV_PARAM_ENABLE_SR_PROHIBIT = 0xc6,
++	WMI_PDEV_PARAM_MPD_USERPD_SSR = 0xce,
+ };
+ 
+ enum wmi_tlv_vdev_param {
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5146,6 +5146,7 @@ static int ath11k_mac_op_start(struct ie
+ 	struct ath11k *ar = hw->priv;
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct ath11k_pdev *pdev = ar->pdev;
++	struct device *dev = ab->dev;
+ 	int ret;
+ 
+ 	ath11k_mac_drain_tx(ar);
+@@ -5212,6 +5213,17 @@ static int ath11k_mac_op_start(struct ie
+ 		goto err;
+ 	}
+ 
++	if (ab->fw_recovery_support && 
++	    of_property_read_bool(dev->of_node, "qcom,multipd_arch"))
++	{
++		ath11k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_MPD_USERPD_SSR,
++					  1, pdev->pdev_id);
++		if (ret) {
++			ath11k_err(ab, "failed to enable firmware SSR"
++				   "recovery:%d\n", ret);
++		}
++	}
++
+ 	__ath11k_set_antenna(ar, ar->cfg_tx_chainmask, ar->cfg_rx_chainmask);
+ 
+ 	/* TODO: Do we need to enable ANI? */

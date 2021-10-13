@@ -1,0 +1,63 @@
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/config_ssid.h
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/config_ssid.h
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/config_ssid.h
+@@ -1121,7 +1121,6 @@ struct wpa_ssid {
+ 	 * FT initial mobility domain association.
+ 	 */
+ 	int ft_eap_pmksa_caching;
+-
+ 	/**
+ 	 * beacon_prot - Whether Beacon protection is enabled
+ 	 *
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/wpa_supplicant.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/wpa_supplicant.c
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/wpa_supplicant.c
+@@ -2521,16 +2521,14 @@ void ibss_mesh_setup_freq(struct wpa_sup
+ 		return;
+ 
+ 	/* Allow HE on 2.4 GHz without VHT: see nl80211_put_freq_params() */
+-	if (is_24ghz)
+-		freq->he_enabled = mode->he_capab[ieee80211_mode].he_supported;
++	if (is_24ghz) {
+ #ifdef CONFIG_HE_OVERRIDES
+-	if (is_24ghz && ssid->disable_he)
+-		freq->he_enabled = 0;
++		if (ssid->disable_he)
++			freq->he_enabled = 0;
++		else
+ #endif /* CONFIG_HE_OVERRIDES */
+-
+-	/* Setup higher BW only for 5 GHz */
+-	if (mode->mode != HOSTAPD_MODE_IEEE80211A && !(ssid->noscan))
+-		return;
++			freq->he_enabled = mode->he_capab[ieee80211_mode].he_supported;
++	}
+ 
+ 	for (chan_idx = 0; chan_idx < mode->num_channels; chan_idx++) {
+ 		pri_chan = &mode->channels[chan_idx];
+@@ -2626,6 +2624,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+ 
+ 		wpa_scan_results_free(scan_res);
+ 	}
++#ifdef CONFIG_HE_OVERRIDES
++skip_vht80:
++	if (ssid->disable_he)
++		vht_freq.he_enabled = 0;
++#endif /* CONFIG_HE_OVERRIDES */
+ 
+ #ifdef CONFIG_HT_OVERRIDES
+ skip_ht40:
+@@ -2658,6 +2661,11 @@ skip_ht40:
+ 	/* Enable HE with VHT for 5 GHz */
+ 	freq->he_enabled = mode->he_capab[ieee80211_mode].he_supported;
+ 
++#ifdef CONFIG_HE_OVERRIDES
++	if (is_24ghz)
++		goto skip_vht80;
++#endif /* CONFIG_HE_OVERRIDES */
++
+ 	/* setup center_freq1, bandwidth */
+ 	for (j = 0; j < ARRAY_SIZE(vht80); j++) {
+ 		if (freq->channel >= vht80[j] &&

@@ -1,0 +1,42 @@
+From 6e1348ac1eaa8a4a62dccce588aa9306f876b068 Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Mon, 24 May 2021 22:18:11 +0530
+Subject: [PATCH] hostapd: Fix channel switch on 6g
+
+Below cmd does not return fail, but fails to update beacon.
+Center frequency used in command is not valid for 80M bandwidth.
+
+ hostapd_cli -i wlan0 chan_switch 5 6315 sec_channel_offset=1
+ center_freq1=6345 bandwidth=80 he
+
+This patch adds condition check to validate the center frequency.
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+---
+ hostapd/ctrl_iface.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/hostapd/ctrl_iface.c b/hostapd/ctrl_iface.c
+index ea1a1567278c..664711d5bd87 100644
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -2528,6 +2528,16 @@ static int hostapd_ctrl_get_pmk(struct hostapd_data *hapd, const char *cmd,
+ #ifdef NEED_AP_MLME
+ static int hostapd_ctrl_check_freq_params(struct hostapd_freq_params *params)
+ {
++	int idx, bw, bw_idx[] = { 20, 40, 80, 160 };
++
++	if (is_6ghz_freq(params->freq) && params->center_freq1) {
++		idx = (params->center_freq1 - 5950) / 5;
++		bw = center_idx_to_bw_6ghz(idx);
++
++		if (bw < 0 || (bw_idx[bw] != params->bandwidth))
++			return -1;
++	}
++
+ 	switch (params->bandwidth) {
+ 	case 0:
+ 		/* bandwidth not specified: use 20 MHz by default */
+-- 
+2.7.4
+

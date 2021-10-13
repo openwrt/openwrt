@@ -1,0 +1,135 @@
+From: Sven Eckelmann <sven@narfation.org>
+Date: Thu, 28 Jan 2021 21:06:51 +0100
+Subject: Revert "batman-adv: Add new include for min/max helpers"
+
+The OpenWrt kernel sources and backports sources are currently missing this
+header.
+
+This reverts commit 1810de05310d5c5e9140f870ac21052f38bc06b8.
+
+Signed-off-by: Sven Eckelmann <sven@narfation.org>
+
+diff --git a/compat-include/linux/minmax.h b/compat-include/linux/minmax.h
+deleted file mode 100644
+index 9b7269e8a760361c1650b947c77702f0bdcd73d9..0000000000000000000000000000000000000000
+--- a/compat-include/linux/minmax.h
++++ /dev/null
+@@ -1,20 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-/* Copyright (C) B.A.T.M.A.N. contributors:
+- *
+- * Marek Lindner, Simon Wunderlich
+- *
+- * This file contains macros for maintaining compatibility with older versions
+- * of the Linux kernel.
+- */
+-
+-#ifndef _NET_BATMAN_ADV_COMPAT_LINUX_MINMAX_H_
+-#define _NET_BATMAN_ADV_COMPAT_LINUX_MINMAX_H_
+-
+-#include <linux/version.h>
+-#if LINUX_VERSION_IS_GEQ(5, 10, 0)
+-#include_next <linux/minmax.h>
+-#else
+-#include <linux/kernel.h>
+-#endif
+-
+-#endif /* _NET_BATMAN_ADV_COMPAT_LINUX_MINMAX_H_ */
+diff --git a/net/batman-adv/bat_v.c b/net/batman-adv/bat_v.c
+index e1ca2b8c315235f234c9061fc73cde2c1b76aa46..eeb3f6d00d8541b377c9703837ef76b05e8d061e 100644
+--- a/net/batman-adv/bat_v.c
++++ b/net/batman-adv/bat_v.c
+@@ -15,7 +15,6 @@
+ #include <linux/jiffies.h>
+ #include <linux/kref.h>
+ #include <linux/list.h>
+-#include <linux/minmax.h>
+ #include <linux/netdevice.h>
+ #include <linux/netlink.h>
+ #include <linux/rculist.h>
+diff --git a/net/batman-adv/bat_v_elp.c b/net/batman-adv/bat_v_elp.c
+index 423c2d17170387bfe89b83c4e20f06d525a36b30..4d8e3fdb4427a431cab903bc8a20edb816079fd7 100644
+--- a/net/batman-adv/bat_v_elp.c
++++ b/net/batman-adv/bat_v_elp.c
+@@ -18,7 +18,6 @@
+ #include <linux/jiffies.h>
+ #include <linux/kernel.h>
+ #include <linux/kref.h>
+-#include <linux/minmax.h>
+ #include <linux/netdevice.h>
+ #include <linux/nl80211.h>
+ #include <linux/prandom.h>
+diff --git a/net/batman-adv/bat_v_ogm.c b/net/batman-adv/bat_v_ogm.c
+index a0a9636d17406362f879f342300a18e75424efa5..89ba88322c9c11acc49a9dcd9877ad8767fe713b 100644
+--- a/net/batman-adv/bat_v_ogm.c
++++ b/net/batman-adv/bat_v_ogm.c
+@@ -18,7 +18,6 @@
+ #include <linux/kref.h>
+ #include <linux/list.h>
+ #include <linux/lockdep.h>
+-#include <linux/minmax.h>
+ #include <linux/mutex.h>
+ #include <linux/netdevice.h>
+ #include <linux/prandom.h>
+diff --git a/net/batman-adv/fragmentation.c b/net/batman-adv/fragmentation.c
+index a5d9d800082bade3a1d52cc040557e41f963fac3..96873d47fac5cb9b4fbfa217eedf1f92818b0e98 100644
+--- a/net/batman-adv/fragmentation.c
++++ b/net/batman-adv/fragmentation.c
+@@ -14,8 +14,8 @@
+ #include <linux/gfp.h>
+ #include <linux/if_ether.h>
+ #include <linux/jiffies.h>
++#include <linux/kernel.h>
+ #include <linux/lockdep.h>
+-#include <linux/minmax.h>
+ #include <linux/netdevice.h>
+ #include <linux/skbuff.h>
+ #include <linux/slab.h>
+diff --git a/net/batman-adv/hard-interface.c b/net/batman-adv/hard-interface.c
+index 4a6a25d551a83b1723e80a349e1a655a2152b0ac..eabde547d308438257622879e77d84c24daa2199 100644
+--- a/net/batman-adv/hard-interface.c
++++ b/net/batman-adv/hard-interface.c
+@@ -18,7 +18,6 @@
+ #include <linux/kref.h>
+ #include <linux/limits.h>
+ #include <linux/list.h>
+-#include <linux/minmax.h>
+ #include <linux/mutex.h>
+ #include <linux/netdevice.h>
+ #include <linux/printk.h>
+diff --git a/net/batman-adv/main.c b/net/batman-adv/main.c
+index 3ddd66e4c29ef532de33c7182cc0cc470b33fd4f..c552bc4168d0abd7bf6d23e570d583806fb162b1 100644
+--- a/net/batman-adv/main.c
++++ b/net/batman-adv/main.c
+@@ -23,7 +23,6 @@
+ #include <linux/kobject.h>
+ #include <linux/kref.h>
+ #include <linux/list.h>
+-#include <linux/minmax.h>
+ #include <linux/module.h>
+ #include <linux/netdevice.h>
+ #include <linux/printk.h>
+diff --git a/net/batman-adv/netlink.c b/net/batman-adv/netlink.c
+index bdac5dbd899a9540d58052fd32c8c89520927390..b6a703ddd8e97e6a02e8d73c5728802f090ab419 100644
+--- a/net/batman-adv/netlink.c
++++ b/net/batman-adv/netlink.c
+@@ -23,7 +23,6 @@
+ #include <linux/kernel.h>
+ #include <linux/limits.h>
+ #include <linux/list.h>
+-#include <linux/minmax.h>
+ #include <linux/netdevice.h>
+ #include <linux/netlink.h>
+ #include <linux/printk.h>
+diff --git a/net/batman-adv/tp_meter.c b/net/batman-adv/tp_meter.c
+index 789c851732b78ad9d1515f7b171219cc770c7045..46b774c08c947def8f72f260224254b01c3a387d 100644
+--- a/net/batman-adv/tp_meter.c
++++ b/net/batman-adv/tp_meter.c
+@@ -23,7 +23,6 @@
+ #include <linux/kthread.h>
+ #include <linux/limits.h>
+ #include <linux/list.h>
+-#include <linux/minmax.h>
+ #include <linux/netdevice.h>
+ #include <linux/param.h>
+ #include <linux/printk.h>

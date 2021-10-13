@@ -1,0 +1,364 @@
+From ed838800bb8f4c59b320395066ac356f74528a50 Mon Sep 17 00:00:00 2001
+From: Muna Sinada <msinada@codeaurora.org>
+Date: Wed, 29 Jul 2020 00:11:30 -0700
+Subject: [PATCH] 203-mac80211-ath11k-fw-dynamic-muedca.patch
+
+mac80211/ath11k:FW Initiated Dynamic MU-EDCA
+
+Implementing the updating of firmware initiated dynamic MU-EDCA
+parameters in Beacon IE. Firmware routinely checks its clients and
+updates its MU-EDCA values every 3 seconds. Firmware is tuning
+MU-EDCA parameters to improve performance. As part of this process,
+the firmware informs host about new MU-EDCA values utilizing
+WMI_MUEDCA_PARAMS_CONFIG_EVENTID. FW expectation is that host will
+update MU-EDCA parameters in the Beacon IE.
+Implementation consists of:
+	(1) Receiving updated parameters through event in ATH11k
+	(2) Passing updated parameters ATH11k -> mac80211 -> cfg80211
+	(3) Passing updated parameters to user space.
+
+Signed-off-by: Muna Sinada <msinada@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 97 +++++++++++++++++++++++++++++++----
+ drivers/net/wireless/ath/ath11k/wmi.h | 12 +++++
+ include/net/cfg80211.h                | 11 ++++
+ include/net/mac80211.h                | 13 +++++
+ include/uapi/linux/nl80211.h          | 10 ++++
+ net/mac80211/mlme.c                   | 12 +++++
+ net/mac80211/trace.h                  | 20 ++++++++
+ net/wireless/nl80211.c                | 36 +++++++++++++
+ 8 files changed, 200 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -137,6 +137,9 @@ static const struct wmi_tlv_policy wmi_t
+ 		= { .min_len = sizeof(struct wmi_twt_add_dialog_event) },
+ 	[WMI_TAG_TPC_STATS_EVENT_FIXED_PARAM]
+ 		= { .min_len = sizeof(struct wmi_tpc_stats_event_fixed_param) },
++	[WMI_TAG_MUEDCA_PARAMS_CONFIG_EVENT]
++		= { .min_len = sizeof(struct wmi_pdev_update_muedca_event) },
++
+ 
+ };
+ 
+@@ -6549,17 +6552,6 @@ static void ath11k_vdev_start_resp_event
+ 		   vdev_start_resp.vdev_id);
+ }
+ 
+-static void ath11k_bcn_tx_status_event(struct ath11k_base *ab, struct sk_buff *skb)
+-{
+-	u32 vdev_id, tx_status;
+-
+-	if (ath11k_pull_bcn_tx_status_ev(ab, skb->data, skb->len,
+-					 &vdev_id, &tx_status) != 0) {
+-		ath11k_warn(ab, "failed to extract bcn tx status");
+-		return;
+-	}
+-}
+-
+ static void ath11k_vdev_stopped_event(struct ath11k_base *ab, struct sk_buff *skb)
+ {
+ 	struct ath11k *ar;
+@@ -7980,6 +7972,86 @@ exit:
+ 	kfree(tb);
+ }
+ 
++static void
++ath11k_wmi_pdev_update_muedca_params_status_event(struct ath11k_base *ab,
++						  struct sk_buff *skb)
++{
++	const void **tb;
++	const struct wmi_pdev_update_muedca_event *ev;
++	struct ieee80211_mu_edca_param_set *params;
++	struct ath11k *ar;
++	int ret;
++
++	tb = ath11k_wmi_tlv_parse_alloc(ab, skb->data, skb->len, GFP_ATOMIC);
++	if (IS_ERR(tb)) {
++		ret = PTR_ERR(tb);
++		ath11k_warn(ab, "failed to parse tlv: %d\n", ret);
++		return;
++	}
++
++	ev = tb[WMI_TAG_MUEDCA_PARAMS_CONFIG_EVENT];
++	if (!ev) {
++		ath11k_warn(ab, "failed to fetch pdev update muedca params ev");
++		goto exit;
++	}
++
++	ath11k_dbg(ab, ATH11K_DBG_WMI,
++		   "Update MU-EDCA parameters for pdev:%d\n", ev->pdev_id);
++
++	ar = ath11k_mac_get_ar_by_pdev_id(ab, ev->pdev_id);
++	if (!ar) {
++		ath11k_warn(ab,
++			    "MU-EDCA parameter change in invalid pdev %d\n",
++			    ev->pdev_id);
++		goto exit;
++	}
++
++	params = kzalloc(sizeof(*params), GFP_ATOMIC);
++	if (!params) {
++		ath11k_warn(ab,
++			"Failed to allocate memory for updated MU-EDCA Parameters");
++		goto exit;
++	}
++
++	params->ac_be.aifsn = ev->aifsn[0];
++	params->ac_be.ecw_min_max = ((0xF & ev->ecwmax[0]) << 4) |
++				    (0xF & ev->ecwmin[0]);
++	params->ac_be.mu_edca_timer = ev->muedca_expiration_time[0];
++
++	params->ac_bk.aifsn = ev->aifsn[1];
++	params->ac_bk.ecw_min_max = ((0xF & ev->ecwmax[1]) << 4) |
++				    (0xF & ev->ecwmin[1]);
++	params->ac_bk.mu_edca_timer = ev->muedca_expiration_time[1];
++
++	params->ac_vi.aifsn = ev->aifsn[2];
++	params->ac_vi.ecw_min_max = ((0xF & ev->ecwmax[2]) << 4) |
++				    (0xF & ev->ecwmin[2]);
++	params->ac_vi.mu_edca_timer = ev->muedca_expiration_time[2];
++
++	params->ac_vo.aifsn = ev->aifsn[3];
++	params->ac_vo.ecw_min_max = ((0xF & ev->ecwmax[3]) << 4) |
++				    (0xF & ev->ecwmin[3]);
++	params->ac_vo.mu_edca_timer = ev->muedca_expiration_time[3];
++
++	ieee80211_update_muedca_params(ar->hw, params, GFP_ATOMIC);
++
++	kfree(params);
++exit:
++	kfree(tb);
++}
++
++static void ath11k_bcn_tx_status_event(struct ath11k_base *ab, struct sk_buff *skb)
++{
++	u32 vdev_id, tx_status;
++
++	if (ath11k_pull_bcn_tx_status_ev(ab, skb->data, skb->len,
++					 &vdev_id, &tx_status) != 0) {
++		ath11k_warn(ab, "failed to extract bcn tx status");
++		return;
++	}
++}
++
++
+ static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
+ {
+ 	struct wmi_cmd_hdr *cmd_hdr;
+@@ -8102,6 +8174,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	case WMI_PDEV_GET_TPC_STATS_EVENTID:
+ 		ath11k_process_tpc_stats(ab, skb);
+ 		break;
++	case WMI_MUEDCA_PARAMS_CONFIG_EVENTID:
++		ath11k_wmi_pdev_update_muedca_params_status_event(ab, skb);
++		break;
+ 	/* TODO: Add remaining events */
+ 	default:
+ 		ath11k_dbg(ab, ATH11K_DBG_WMI, "Unknown eventid: 0x%x\n", id);
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -745,6 +745,7 @@ enum wmi_tlv_event_id {
+ 	WMI_READ_DATA_FROM_FLASH_EVENTID,
+ 	WMI_REPORT_RX_AGGR_FAILURE_EVENTID,
+ 	WMI_PKGID_EVENTID,
++	WMI_MUEDCA_PARAMS_CONFIG_EVENTID = 0x1d01e,
+ 	WMI_GPIO_INPUT_EVENTID = WMI_TLV_CMD(WMI_GRP_GPIO),
+ 	WMI_UPLOADH_EVENTID,
+ 	WMI_CAPTUREH_EVENTID,
+@@ -1853,6 +1854,7 @@ enum wmi_tlv_tag {
+ 	WMI_TAG_NDP_EVENT,
+ 	WMI_TAG_PDEV_PEER_PKTLOG_FILTER_CMD = 0x301,
+ 	WMI_TAG_PDEV_PEER_PKTLOG_FILTER_INFO,
++	WMI_TAG_MUEDCA_PARAMS_CONFIG_EVENT = 0x32a,
+ 	WMI_TAG_FILS_DISCOVERY_TMPL_CMD = 0x344,
+ 	WMI_TAG_PDEV_SRG_BSS_COLOR_BITMAP_CMD = 0x37b,
+ 	WMI_TAG_PDEV_SRG_PARTIAL_BSSID_BITMAP_CMD,
+@@ -4418,6 +4420,16 @@ struct wmi_pdev_temperature_event {
+ 	u32 pdev_id;
+ } __packed;
+ 
++#define WMI_AC_MAX				4
++
++struct wmi_pdev_update_muedca_event {
++	u32 pdev_id;
++	u32 aifsn[WMI_AC_MAX];
++	u32 ecwmin[WMI_AC_MAX];
++	u32 ecwmax[WMI_AC_MAX];
++	u32 muedca_expiration_time[WMI_AC_MAX];
++} __packed;
++
+ #define WMI_RX_STATUS_OK			0x00
+ #define WMI_RX_STATUS_ERR_CRC			0x01
+ #define WMI_RX_STATUS_ERR_DECRYPT		0x08
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -8196,4 +8196,15 @@ void cfg80211_update_owe_info_event(stru
+  */
+ void cfg80211_bss_flush(struct wiphy *wiphy);
+ 
++/**
++ * cfg80211_update_muedca_params_event - Notify the updated MU-EDCA parameters
++ *	to user space.
++ * @wiphy: the wiphy
++ * @params: Updated MU-EDCA parameters
++ * @gfp: allocation flags
++ */
++void cfg80211_update_muedca_params_event(struct wiphy *wiphy,
++					 struct ieee80211_mu_edca_param_set
++					 *params, gfp_t gfp);
++
+ #endif /* __NET_CFG80211_H */
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -6804,4 +6804,18 @@ struct sk_buff *ieee80211_get_fils_disco
+ struct sk_buff *
+ ieee80211_get_unsol_bcast_probe_resp_tmpl(struct ieee80211_hw *hw,
+ 					  struct ieee80211_vif *vif);
++/**
++ * ieee80211_update_muedca_params - update MU-EDCA parameters.
++ *
++ * This function is used to pass dynamically updated MU-EDCA parameters from
++ * driver to user space in order for parameters to be updated in beacon.
++ *
++ * @hw: pointer as obtained from ieee80211_alloc_hw()
++ * @params: updated MU-EDCA paramters
++ * @gfp: allocation flags
++ */
++void ieee80211_update_muedca_params(struct ieee80211_hw *hw,
++				    struct ieee80211_mu_edca_param_set
++				    *params, gfp_t gfp);
++
+ #endif /* MAC80211_H */
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -1182,6 +1182,10 @@
+  *	passed using %NL80211_ATTR_SAR_SPEC. %NL80211_ATTR_WIPHY is used to
+  *	specify the wiphy index to be applied to.
+  *
++ * @NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS: Updated MU-EDCA parameters from driver.
++ *	This event is used to update dynamic MU-EDCA parameters in Beacon frame,
++ *	coming from driver and now need to be reflected in Beacon frame.
++ *
+  * @NL80211_CMD_MAX: highest used command number
+  * @__NL80211_CMD_AFTER_LAST: internal use
+  */
+@@ -1414,6 +1418,8 @@ enum nl80211_commands {
+ 
+ 	NL80211_CMD_SET_SAR_SPECS,
+ 
++	NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS,
++
+ 	/* add new commands above here */
+ 
+ 	/* used to define NL80211_CMD_MAX below */
+@@ -2557,6 +2563,9 @@ enum nl80211_commands {
+  *	disassoc events to indicate that an immediate reconnect to the AP
+  *	is desired.
+  *
++ * @NL80211_ATTR_HE_MUEDCA_PARAMS: MU-EDCA AC parameters for the
++ *	%NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS command.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3054,6 +3063,7 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_DISABLE_HE,
+ 
++	NL80211_ATTR_HE_MUEDCA_PARAMS,
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -5974,3 +5974,15 @@ void ieee80211_cqm_beacon_loss_notify(st
+ 	cfg80211_cqm_beacon_loss_notify(sdata->dev, gfp);
+ }
+ EXPORT_SYMBOL(ieee80211_cqm_beacon_loss_notify);
++
++void ieee80211_update_muedca_params(struct ieee80211_hw *hw,
++				    struct ieee80211_mu_edca_param_set
++				    *params, gfp_t gfp)
++{
++	struct ieee80211_local *local = hw_to_local(hw);
++
++	trace_api_update_muedca_params(local, params);
++
++	cfg80211_update_muedca_params_event(local->hw.wiphy, params, gfp);
++}
++EXPORT_SYMBOL(ieee80211_update_muedca_params);
+--- a/net/mac80211/trace.h
++++ b/net/mac80211/trace.h
+@@ -2836,6 +2836,26 @@ DEFINE_EVENT(sta_flag_evt, drv_sta_set_d
+ 	TP_ARGS(local, sdata, sta, enabled)
+ );
+ 
++TRACE_EVENT(api_update_muedca_params,
++	TP_PROTO(struct ieee80211_local *local,
++		 struct ieee80211_mu_edca_param_set *params),
++
++	TP_ARGS(local, params),
++
++	TP_STRUCT__entry(
++		LOCAL_ENTRY
++	),
++
++	TP_fast_assign(
++		LOCAL_ASSIGN;
++	),
++
++	TP_printk(
++		LOCAL_PR_FMT " updated MU-EDCA parameters",
++		LOCAL_PR_ARG
++	)
++);
++
+ #endif /* !__MAC80211_DRIVER_TRACE || TRACE_HEADER_MULTI_READ */
+ 
+ #undef TRACE_INCLUDE_PATH
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -18134,6 +18134,42 @@ nla_put_failure:
+ }
+ EXPORT_SYMBOL(cfg80211_update_owe_info_event);
+ 
++void cfg80211_update_muedca_params_event(struct wiphy *wiphy,
++					 struct ieee80211_mu_edca_param_set
++					 *params, gfp_t gfp)
++{
++	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
++	struct sk_buff *msg;
++	void *hdr;
++
++	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, gfp);
++	if (!msg)
++		return;
++
++	hdr = nl80211hdr_put(msg, 0, 0, 0, NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS);
++	if (!hdr)
++		goto nla_put_failure;
++
++	if (nla_put_u32(msg, NL80211_ATTR_WIPHY, rdev->wiphy_idx))
++		goto nla_put_failure;
++
++	if (nla_put(msg, NL80211_ATTR_HE_MUEDCA_PARAMS,
++		    sizeof(struct ieee80211_mu_edca_param_set),
++		    (const void *)params))
++		goto nla_put_failure;
++
++	genlmsg_end(msg, hdr);
++
++	genlmsg_multicast_netns(&nl80211_fam, wiphy_net(&rdev->wiphy), msg, 0,
++				NL80211_MCGRP_MLME, gfp);
++	return;
++
++nla_put_failure:
++	genlmsg_cancel(msg, hdr);
++	nlmsg_free(msg);
++}
++EXPORT_SYMBOL(cfg80211_update_muedca_params_event);
++
+ /* initialisation/exit functions */
+ 
+ int __init nl80211_init(void)

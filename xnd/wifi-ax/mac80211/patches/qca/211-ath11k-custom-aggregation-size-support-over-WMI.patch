@@ -1,0 +1,271 @@
+From 815ddd8110e03496192c171f3058f85096fb2049 Mon Sep 17 00:00:00 2001
+From: Ramya Gnanasekar <rgnanase@codeaurora.org>
+Date: Wed, 7 Oct 2020 20:08:49 +0530
+Subject: [PATCH] ath11k: custom aggregation size support over WMI
+
+This patch is to support custom aggregation size config for A-MPDU
+and A-MSDU through WMI command per vdev_id. rx_aggr_size_disable is
+set true to avoid fw from considering rx_aggr_size paramater. 
+AC is set to all by default. Upon configuring 0, firmware will default 
+AMPDU aggregation size to 1 and AMDSU to 7.
+Default aggregation limit is:
+	* AMPDU : 0 - 255
+	* AMSDU : 0 - 7
+
+echo 64 > /sys/kernel/debug/ieee80211/phy0/netdev:wlan0/ampdu_aggr_size
+echo 6 > /sys/kernel/debug/ieee80211/phy0/netdev:wlan0/amsdu_aggr_size
+
+Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/debugfs.c | 86 +++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/debugfs.h |  2 +
+ drivers/net/wireless/ath/ath11k/mac.c   |  2 +
+ drivers/net/wireless/ath/ath11k/wmi.c   | 54 +++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.h   | 52 ++++++++++++++++++++
+ 5 files changed, 196 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -250,6 +250,92 @@ void ath11k_debugfs_twt(struct ath11k_vi
+ }
+ #endif
+ 
++static ssize_t ath11k_write_ampdu_aggr_size(struct file *file,
++					    const char __user *ubuf,
++					    size_t count, loff_t *ppos)
++{
++	struct ath11k_vif *arvif = file->private_data;
++	struct ath11k_base *ab = arvif->ar->ab;
++	unsigned int tx_aggr_size = 0;
++	int ret;
++	struct set_custom_aggr_size_params params = {0};
++
++	if (kstrtouint_from_user(ubuf, count, 0, &tx_aggr_size))
++		return -EINVAL;
++
++	if (tx_aggr_size > ATH11K_CONFIG_AGGR_MAX_AMPDU_SIZE) {
++		ath11k_warn(ab, "Valid AMPDU Aggregation Size is in the range 0-255");
++		return -EINVAL;
++	}
++
++	params.aggr_type = WMI_VDEV_CUSTOM_AGGR_TYPE_AMPDU;
++	params.tx_aggr_size = tx_aggr_size;
++	params.rx_aggr_size_disable = true;
++	params.vdev_id = arvif->vdev_id;
++
++	ret = ath11k_wmi_send_aggr_size_cmd(arvif->ar, &params);
++	if (ret)
++		ath11k_warn(ab, "Failed to set ampdu config vdev_id %d"
++			   "ret %d \n",params.vdev_id, ret);
++
++	return ret ? ret : count;
++}
++
++static const struct file_operations fops_ampdu_aggr_size = {
++        .write = ath11k_write_ampdu_aggr_size,
++        .open = simple_open,
++        .owner = THIS_MODULE,
++        .llseek = default_llseek,
++};
++
++static ssize_t ath11k_write_amsdu_aggr_size(struct file *file,
++					    const char __user *ubuf,
++					    size_t count, loff_t *ppos)
++{
++	struct ath11k_vif *arvif = file->private_data;
++	struct ath11k_base *ab = arvif->ar->ab;
++	unsigned int tx_aggr_size = 0;
++	int ret;
++	struct set_custom_aggr_size_params params = {0};
++
++	if (kstrtouint_from_user(ubuf, count, 0, &tx_aggr_size))
++		return -EINVAL;
++
++	if (tx_aggr_size > ATH11K_CONFIG_AGGR_MAX_AMSDU_SIZE) {
++		ath11k_warn(ab, "Valid AMSDU Aggregation size is in the range 0-7");
++		return -EINVAL;
++	}
++
++	params.aggr_type = WMI_VDEV_CUSTOM_AGGR_TYPE_AMSDU;
++	params.tx_aggr_size = tx_aggr_size;
++	params.rx_aggr_size_disable = true;
++	params.vdev_id = arvif->vdev_id;
++
++	ret = ath11k_wmi_send_aggr_size_cmd(arvif->ar, &params);
++	if (ret)
++		ath11k_warn(ab, "Failed to set amsdu config vdev_id %d"
++			   "ret %d \n",params.vdev_id, ret);
++
++	return ret ? ret : count;
++}
++
++static const struct file_operations fops_amsdu_aggr_size = {
++	.write = ath11k_write_amsdu_aggr_size,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++void ath11k_debug_aggr_size_config_init(struct ath11k_vif *arvif)
++{
++	debugfs_create_file("ampdu_aggr_size", 0644,
++			    arvif->vif->debugfs_dir, arvif,
++			    &fops_ampdu_aggr_size);
++	debugfs_create_file("amsdu_aggr_size", 0644,
++			    arvif->vif->debugfs_dir, arvif,
++			    &fops_amsdu_aggr_size);
++}
++
+ static void ath11k_fw_stats_pdevs_free(struct list_head *head)
+ {
+ 	struct ath11k_fw_stats_pdev *i, *tmp;
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -155,6 +155,8 @@ static inline void ath11k_debugfs_twt(st
+ }
+ #endif
+ 
++void ath11k_debug_aggr_size_config_init(struct ath11k_vif *arvif);
++
+ #ifdef CPTCFG_ATH11K_DEBUGFS
+ int ath11k_debugfs_create(void);
+ void ath11k_debugfs_destroy(void);
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5987,6 +5987,8 @@ static int ath11k_mac_op_add_interface(s
+ 			goto err_peer_del;
+ 	}
+ 
++	ath11k_debug_aggr_size_config_init(arvif);
++
+ 	mutex_unlock(&ar->conf_mutex);
+ 
+ 	return ret;
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -3791,6 +3791,58 @@ int ath11k_wmi_send_bss_color_change_ena
+ 	return ret;
+ }
+ 
++int ath11k_wmi_send_aggr_size_cmd(struct ath11k *ar,
++				  struct set_custom_aggr_size_params *params)
++{
++	struct ath11k_pdev_wmi *wmi = ar->wmi;
++	struct ath11k_base *ab = wmi->wmi_ab->ab;
++	struct wmi_set_custom_aggr_size_params_cmd *cmd = NULL;
++	struct sk_buff *skb;
++	int ret, len;
++
++	len = sizeof(*cmd);
++
++	skb = ath11k_wmi_alloc_skb(wmi->wmi_ab, len);
++	if (!skb)
++		return -ENOMEM;
++
++	cmd = (void *)skb->data;
++	cmd->tlv_header = FIELD_PREP(WMI_TLV_TAG,
++				     WMI_TAG_VDEV_SET_CUSTOM_AGGR_SIZE_CMD) |
++			  FIELD_PREP(WMI_TLV_LEN, len - TLV_HDR_SIZE);
++
++	cmd->vdev_id = params->vdev_id;
++	cmd->tx_aggr_size = params->tx_aggr_size;
++	cmd->rx_aggr_size = params->rx_aggr_size;
++	cmd->enable_bitmap = FIELD_PREP(WMI_VDEV_AGGR_AC, params->ac) |
++			     FIELD_PREP(WMI_VDEV_AGGR_TYPE, params->aggr_type) |
++			     FIELD_PREP(WMI_VDEV_TX_AGGR_SZ_DISABLE,
++					params->tx_aggr_size_disable) |
++			     FIELD_PREP(WMI_VDEV_RX_AGGR_SZ_DISABLE,
++					params->rx_aggr_size_disable) |
++			     FIELD_PREP(WMI_VDEV_AGGR_AC_ENABLE,
++					params->tx_ac_enable);
++
++	ath11k_dbg(ar->ab, ATH11K_DBG_WMI,
++		   "WMI set aggr size vdev_id %d tx aggr size %d rx_aggr_size %d "
++		   "access category %d aggr type %d tx_aggr_size_disable %d "
++		   "rx_aggr_size_disable %d tx_ac_enable %d ", params->vdev_id,
++		   params->tx_aggr_size, params->rx_aggr_size, params->ac,
++		   params->aggr_type, params->tx_aggr_size_disable,
++		   params->rx_aggr_size_disable, params->tx_ac_enable);
++
++	ret = ath11k_wmi_cmd_send(wmi, skb,
++				  WMI_VDEV_SET_CUSTOM_AGGR_SIZE_CMDID);
++
++	if (ret) {
++		ath11k_warn(ab,
++			    "Failed to send WMI_VDEV_SET_CUSTOM_AGGR_SIZE_CMDID");
++		dev_kfree_skb(skb);
++	}
++
++	return ret;
++}
++
+ int ath11k_wmi_fils_discovery_tmpl(struct ath11k *ar, u32 vdev_id,
+ 				   struct sk_buff *tmpl)
+ {
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -5244,6 +5244,56 @@ struct wmi_pdev_obss_pd_bitmap_cmd {
+ 	u32 bitmap[2];
+ } __packed;
+ 
++#define WMI_VDEV_AGGR_AC			GENMASK(2, 0)
++#define WMI_VDEV_AGGR_TYPE			GENMASK(3, 2)
++#define WMI_VDEV_TX_AGGR_SZ_DISABLE		GENMASK(4, 3)
++#define WMI_VDEV_RX_AGGR_SZ_DISABLE		GENMASK(5, 4)
++#define WMI_VDEV_AGGR_AC_ENABLE			GENMASK(6, 5)
++
++struct set_custom_aggr_size_params {
++	u32 vdev_id;
++	u32 tx_aggr_size;
++	u32 rx_aggr_size;
++	u32 ac;
++	u32 aggr_type;
++	u32 tx_aggr_size_disable;
++	u32 rx_aggr_size_disable;
++	u32 tx_ac_enable;
++};
++
++struct wmi_set_custom_aggr_size_params_cmd {
++	u32 tlv_header;   /* TLV tag and len */
++	u32 vdev_id;      /* vdev id indicating to which aggregation size will be applied. */
++	/* Size for tx aggregation for the vdev mentioned in vdev id
++	 * (max MPDUs per A-MPDU or max MSDUs per A-MSDU based on aggr_type field)
++	 */
++	u32 tx_aggr_size;
++
++	u32 rx_aggr_size; /* Size for rx aggregation (block ack window size limit)for vdev id */
++
++	/* To set TX aggregation size limits per VDEV per AC
++	 * bits 1:0 (ac):
++	 * Access Category (0x0=BE, 0x1=BK, 0x2=VI, 0x3=VO)
++	 * If tx_ac_enable bit is not set, tx_aggr_size is applied
++	 * for all Access Categories
++	 * bit 2 (aggr_type):		 TX Aggregation Type (0=A-MPDU, 1=A-MSDU)
++	 * bit 3 (tx_aggr_size_disable): If set tx_aggr_size is invalid
++	 * bit 4 (rx_aggr_size_disable): If set rx_aggr_size is invalid
++	 * bit 5 (tx_ac_enable):	 If set, above ac bitmap is valid.
++	 * bits 31:6:			 Reserved bits. should be set to zero.
++	 */
++	u32 enable_bitmap;
++} __packed;
++
++enum wmi_vdev_aggr_type {
++	WMI_VDEV_CUSTOM_AGGR_TYPE_AMPDU = 0,
++	WMI_VDEV_CUSTOM_AGGR_TYPE_AMSDU = 1,
++	WMI_VDEV_CUSTOM_AGGR_TYPE_MAX,
++};
++
++#define ATH11K_CONFIG_AGGR_MAX_AMPDU_SIZE	255 /* Maximum Frames for Custom AMPDU Size */
++#define ATH11K_CONFIG_AGGR_MAX_AMSDU_SIZE	7   /* Maximum Frames for Custom AMSDU Size */
++
+ #define ATH11K_BSS_COLOR_COLLISION_SCAN_PERIOD_MS		200
+ #define ATH11K_OBSS_COLOR_COLLISION_DETECTION_DISABLE		0
+ #define ATH11K_OBSS_COLOR_COLLISION_DETECTION			1
+@@ -6007,5 +6057,7 @@ int ath11k_wmi_wow_enable(struct ath11k
+ int ath11k_wmi_pdev_m3_dump_enable(struct ath11k *ar, u32 enable);
+ int ath11k_wmi_pdev_get_tpc_table_cmdid(struct ath11k *ar);
+ void ath11k_wmi_free_tpc_stats_mem(struct ath11k *ar);
++int ath11k_wmi_send_aggr_size_cmd(struct ath11k *ar,
++				  struct set_custom_aggr_size_params *params);
+ 
+ #endif

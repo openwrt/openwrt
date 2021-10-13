@@ -1,0 +1,37 @@
+From d4342be9786373d76303dae06bb7b560d7b8f864 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Thu, 21 Jan 2021 21:27:14 +0530
+Subject: [PATCH] ath11k: Add vdev null checks for fwtest command
+
+Added null checks for vif ptr of vdev, to avoid sending fwtest
+cmd when vdev is not up.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/testmode.c | 37 +++++++++++++++++-------------
+ 1 file changed, 21 insertions(+), 16 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/testmode.c
++++ b/drivers/net/wireless/ath/ath11k/testmode.c
+@@ -381,9 +381,18 @@ static int ath11k_tm_cmd_wmi(struct ath1
+ 	if (tag == WMI_TAG_PDEV_SET_PARAM_CMD)
+ 		*ptr = ar->pdev->pdev_id;
+ 
+-	if (vif && (tag == WMI_TAG_VDEV_SET_PARAM_CMD || tag == WMI_TAG_UNIT_TEST_CMD)) {
+-		arvif = (struct ath11k_vif *)vif->drv_priv;
+-		*ptr = arvif->vdev_id;
++	if (ar->ab->fw_mode != ATH11K_FIRMWARE_MODE_FTM &&
++	    (tag == WMI_TAG_VDEV_SET_PARAM_CMD || tag == WMI_TAG_UNIT_TEST_CMD)) {
++		if (vif) {
++			arvif = (struct ath11k_vif *)vif->drv_priv;
++			*ptr = arvif->vdev_id;
++		}
++		else {
++			ret = -EINVAL;
++			ath11k_warn(ar->ab, "vdev is not up for given vdev id, so failed to send wmi command (testmode): %d\n",
++				    ret);
++			goto out;
++		}
+ 	}
+ 
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_TESTMODE,

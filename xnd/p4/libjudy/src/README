@@ -1,0 +1,149 @@
+
+	     Judy - C library creating and accessing dynamic arrays
+	 ==============================================================
+
+Content
+---------
+
+ 1. Introduction
+ 2. Directory Contents
+ 3. How to install
+ 4. License
+ 5. Change History
+ 6. Reporting Bugs
+ 7. Known Issues
+
+
+1. INTRODUCTION
+-----------------
+
+This tree contains sources, documents, tests, and tools for the Judy package.
+This file is in a form that can be validated using the tool/readme script.
+
+NOTE:  The README files here describe some files that are not included in
+every Judy source package.
+
+WHAT IS JUDY?  (see below for list of top-level directories and files)
+
+Judy is a C library that implements a dynamic array.  Empty Judy arrays are
+declared with null pointers.  A Judy array consumes memory only when
+populated yet can grow to take advantage of all available memory.  Judy's key
+benefits are:  scalability, performance, memory efficiency, and ease of use.
+Judy arrays are designed to grow without tuning into the peta-element range,
+scaling near O(log-base-256) -- 1 more RAM access at 256 X population.
+
+Judy arrays are accessed with insert, retrieve, and delete calls for number
+or string indexes.  Configuration and tuning are not required -- in fact not
+possible.  Judy offers sorting, counting, and neighbor/empty searching.
+Indexes can be sequential, clustered, periodic, or random -- it doesn't
+matter to the algorithm.  Judy arrays can be arranged hierarchically to
+handle any bit patterns -- large indexes, sets of keys, etc.
+
+Judy is often an improvement over common data structures such as:  arrays,
+sparse arrays, hash tables, B-trees, binary trees, linear lists, skiplists,
+other sort and search algorithms, and counting functions.
+
+
+2. JUDY TOP DIRECTORY CONTENTS:
+--------------------------------
+
+AUTHORS		Judy authors and contributors
+README		This file.
+INSTALL		Summary  instructions to build, check and install Judy.
+COPYING		Judy deliverable license notice (the LGPL).
+ChangeLog	List of changes per version of Judy.
+
+configure	Autoconf configure script to allow a portable build e
+                environment. 
+		
+src/		Header and source files used to build the package.
+doc/		Documents, both external (to the package) and internal.
+test/		Test support and some timing programs.
+tool/		Primitive tool (jhton) to convert *.html files to "man" pages.
+                and build tables used by Judy to malloc() sizes of memory.
+
+3. HOW TO INSTALL
+-----------------
+
+For a quick description see the INSTALL file. 
+
+Judy is now based on the GNU Auto tools. This means that you can do the standard
+configure, make, make check and make install and everything should work, with
+one minor difference and a little caveat. 
+
+Judy is capable of being built as a 32-bit or a 64-bit library. Configure
+will test to detect the native environment and default to that. Therefor if you
+explicitly want to to compile for the non-native environment you need to tell
+Judy what you want. You can run ./configure with one of the following flags:
+          
+	  --enable-32-bit 
+          --enable-64-bit 
+
+The caveat comes in on machines that support both at 32-bit and 64-bit runtime
+environments such as RISC platforms and x86-64. In this case your compiler will
+either use 32-bit or 64-bit as default. If you plan to use the default you can
+follow the above instructions and be finished. 
+
+However, if you wish to compile for the non-default target type. YOU ARE
+RESPONSIBLE FOR SETTING THE CORRECT FLAGS! Such as CFLAGS to make your compiler
+switch modes LDFLAGS to make your linker behave, etc. 
+
+For example: On HP-UX PA-RISC the compiler generates 32-bit code by default. If
+I wish to stick with the defaults I can simply build Judy by: 
+   ./configure
+   make
+   make check
+   make install 
+
+If I want to build Judy as a 64-bit library on HP-UX PA-RISC I have to do:
+   CFLAGS=+DD64 ./configure --enable-64-bit 
+   make 
+   make check 
+   make install 
+
+If I want to build Judy native (64-bit) on Linux AMD64 I have to do:
+   ./configure
+   make
+   make check
+   make install 
+
+If I want to build Judy 32-bit on Linux AMD64 I have to do:
+   ./configure --enable-32-bit 
+   make 
+   make check 
+   make install 
+
+4. LICENSE
+----------
+
+The user library is licensed under the GNU Lesser Public License (LGPL)
+Version 2.1, February 1999.  The full text of the LGPL is located at:
+
+COPYING
+
+
+5. CHAGE HISTORY
+----------------
+
+See the ChangeLog file.
+
+6. REPORTING BUGS
+-----------------
+
+If you encounter a bug, please submit it to the project bug list, 
+located on the project page:
+
+    https://sourceforge.net/projects/judy/
+
+7. KNOWN ISSUES
+---------------
+
+When compiling on HP-UX, you may get a message like: 
+ error 1000: Unexpected symbol: 
+
+This is a problem with the HP's compiler in that it doesn't like a typedef'ed
+type following a static inline.
+
+You can work around it by running this command from the Judy directory. 
+
+find ./ -name \*.[ch] | xargs perl -i.BAK -pe 's/static inline/static/g'

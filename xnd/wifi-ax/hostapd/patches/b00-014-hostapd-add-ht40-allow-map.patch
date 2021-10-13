@@ -1,0 +1,130 @@
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -3112,6 +3112,92 @@ set:
+ 	return ret;
+ }
+ 
++static int hostapd_2ghz_ht40_allow_map(struct hostapd_hw_modes *mode,
++				       char *buf, size_t buflen)
++{
++	int j, ret, len = 0;
++
++	for (j = 0; j < mode->num_channels; j++) {
++		struct hostapd_channel_data *chan = &mode->channels[j];
++		if (!(chan->flag & HOSTAPD_CHAN_DISABLED)) {
++			ret = os_snprintf(buf + len, buflen - len,
++					  "Channel: %d : %d HT40%c%c\n",
++					  chan->chan, chan->freq,
++					  (chan->flag & HOSTAPD_CHAN_HT40MINUS) ?
++						'-' : ' ',
++					  (chan->flag & HOSTAPD_CHAN_HT40PLUS) ?
++						'+' : ' ');
++			if (os_snprintf_error(buflen - len, ret))
++				return len;
++			len += ret;
++		}
++	}
++	return len;
++}
++
++static int hostapd_5ghz_ht40_allow_map(struct hostapd_hw_modes *mode,
++				       char *buf, size_t buflen)
++{
++	int j, k, ok, ret, len = 0, allowed[] = { 36, 44, 52, 60, 100, 108, 116, 124, 132, 140,
++						149, 157, 184, 192 };
++
++	for (j = 0; j < mode->num_channels; j++) {
++		struct hostapd_channel_data *chan = &mode->channels[j];
++
++		if ((chan->flag & HOSTAPD_CHAN_HT40MINUS) ||
++				(chan->flag & HOSTAPD_CHAN_HT40PLUS)) {
++			ok = 0;
++			for (k = 0; k < ARRAY_SIZE(allowed); k++) {
++				if (chan->chan < allowed[k])
++					break;
++				if (chan->chan == allowed[k]) {
++					ok = 1;
++					break;
++				}
++			}
++
++			if (!ok && chan->chan != (allowed[k - 1] + 4))
++				ok = -1;
++
++			if (ok == 1 && (mode->channels[j + 1].flag &
++					HOSTAPD_CHAN_DISABLED))
++				ok = -1;
++
++			if (ok != -1) {
++				ret = os_snprintf(buf + len, buflen - len,
++						  "Channel: %d : %d HT40%s\n",
++						  chan->chan, chan->freq,
++						  ok == 1 ? "+" : "-");
++
++				if (os_snprintf_error(buflen - len, ret))
++					return len;
++
++				len += ret;
++			}
++		}
++	}
++	return len;
++}
++
++static int hostapd_ctrl_iface_ht40_allow_map(struct hostapd_iface *iface,
++					     char *buf, size_t buflen)
++{
++	struct hostapd_data *hapd = iface->bss[0];
++	struct hostapd_hw_modes *mode;
++	int len = 0;
++	u16 num_modes, flags;
++	u8 dfs_domain;
++
++	mode = hostapd_get_hw_feature_data(hapd, &num_modes, &flags,
++					   &dfs_domain);
++
++	if (mode->mode != HOSTAPD_MODE_IEEE80211A)
++		len = hostapd_2ghz_ht40_allow_map(mode, buf, buflen);
++	else
++		len = hostapd_5ghz_ht40_allow_map(mode, buf, buflen);
++
++	return len;
++}
+ 
+ static int hostapd_ctrl_iface_remove_neighbor(struct hostapd_data *hapd,
+ 					      char *buf)
+@@ -3790,6 +3876,10 @@ static int hostapd_ctrl_iface_receive_pr
+ 		if (radius_server_dac_request(hapd->radius_srv, buf + 12) < 0)
+ 			reply_len = -1;
+ #endif /* RADIUS_SERVER */
++	} else if (os_strcmp(buf, "HT40_ALLOW_MAP") == 0) {
++		reply_len = hostapd_ctrl_iface_ht40_allow_map(hapd->iface,
++							      reply,
++							      reply_size);
+ 	} else if (os_strncmp(buf, "GET_CAPABILITY ", 15) == 0) {
+ 		reply_len = hostapd_ctrl_iface_get_capability(
+ 			hapd, buf + 15, reply, reply_size);
+--- a/hostapd/hostapd_cli.c
++++ b/hostapd/hostapd_cli.c
+@@ -1362,6 +1362,12 @@ static int hostapd_cli_cmd_driver_flags(
+ 	return wpa_ctrl_command(ctrl, "DRIVER_FLAGS");
+ }
+ 
++static int hostapd_cli_cmd_ht40_allow_map(struct wpa_ctrl *ctrl,
++					  int argc, char *argv[])
++{
++	return wpa_ctrl_command(ctrl, "HT40_ALLOW_MAP");
++}
++
+ 
+ #ifdef CONFIG_DPP
+ 
+@@ -1705,6 +1711,8 @@ static const struct hostapd_cli_cmd host
+ 	  "=Add/Delete/Show/Clear deny MAC ACL" },
+ 	{ "poll_sta", hostapd_cli_cmd_poll_sta, hostapd_complete_stations,
+ 	  "<addr> = poll a STA to check connectivity with a QoS null frame" },
++	{ "ht40_allow_map", hostapd_cli_cmd_ht40_allow_map, NULL,
++	  "= show ht40 allow map status" },
+ 	{ "req_beacon", hostapd_cli_cmd_req_beacon, NULL,
+ 	  "<addr> [req_mode=] <measurement request hexdump>  = send a Beacon report request to a station" },
+ 	{ "reload_wpa_psk", hostapd_cli_cmd_reload_wpa_psk, NULL,

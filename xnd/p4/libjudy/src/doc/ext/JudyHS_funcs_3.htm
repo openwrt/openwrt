@@ -1,0 +1,150 @@
+<HTML>
+<HEAD>
+<!-- @(#) $Revision: 4.5 $ $Source: /cvsroot/judy/doc/ext/JudyHS_funcs_3.htm,v $ --->
+<TITLE>JudyHS_funcs(3)</TITLE>
+</HEAD>
+<BODY>
+<TABLE border=0 width="100%"><TR>
+<TD width="40%" align="left">JudyHS_funcs(3)</TD>
+<TD width="10%" align="center">     </TD>
+<TD width="40%" align="right">JudyHS_funcs(3)</TD>
+</TR></TABLE>
+<P>
+<DL>
+<!----------------->
+<DT><B>NAME</B></DT>
+<DD>
+JudyHS functions -
+C library for creating and accessing a dynamic array,
+using an array-of-bytes of a length: <B>Length</B> as an <B>Index</B> and a word
+as a <B>Value</B>.
+<!----------------->
+<P>
+<DT><B>SYNOPSIS</B></DT>
+<DD>
+<B><PRE>
+PPvoid_t <A href="#JudyHSIns"      >JudyHSIns</A>(PPvoid_t PPJHS, void *Index, Word_t Length, PJError_t PJError);
+int      <A href="#JudyHSDel"      >JudyHSDel</A>(PPvoid_t PPJHS, void *Index, Word_t Length, PJError_t PJError);
+PPvoid_t <A href="#JudyHSGet"      >JudyHSGet</A>(Pcvoid_t  PJHS, void *Index, Word_t Length, PJError_t PJError);
+Word_t   <A href="#JudyHSFreeArray">JudyHSFreeArray</A>(PPvoid_t PPJHS, PJError_t PJError);
+</PRE></B>
+<!----------------->
+<P>
+<DT><B>DESCRIPTION</B></DT>
+<DD>
+A macro equivalent exists for each function call.  Because the macro
+forms are sometimes faster and have a simpler error handling interface
+than the equivalent functions, they are the preferred way of calling the
+JudyHS functions.
+See <A href="JudyHS_3.htm">JudyHS(3)</A>
+for more information.
+The function call definitions are included here for completeness.
+<P>
+One of the difficulties in using the JudyHS function calls lies in
+determining whether to pass a pointer or the address of a pointer.
+Since the functions that modify the JudyHS array must also modify the
+pointer to the JudyHS array, you must pass the address of the pointer
+rather than the pointer itself.
+This often leads to hard-to-debug programmatic errors.
+In practice, the macros allow the compiler to catch programming
+errors when pointers instead of addresses of pointers are passed.
+<P>
+The JudyHS function calls have an additional parameter beyond those
+specified in the macro calls.  This parameter is either a pointer to an
+error structure, or <B>NULL</B> (in which case the error information is
+not returned -- only <B>PJERR</B> in the return parameter).
+<P>
+In the following descriptions, the functions are described in
+terms of how the macros use them.
+This is the suggested use
+of the macros after your program has been fully debugged.
+When the <B>JUDYERROR_NOTEST</B> macro is not specified,
+an error structure is declared to store error information
+returned from the JudyHS functions when an error occurs.
+<P>
+Notice the placement of the <B>&amp;</B> in the different functions.
+<P>
+<DL>
+<DT><A name="JudyHSIns"><B>JudyHSIns(&amp;PJHS, Index, Length, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JHSI(PValue, PJHS, Index) \
+   PValue = JudyLIns(&amp;PJHS, Index, PJE0)
+
+</PRE>
+<P>
+<DT><A name="JudyHSDel"><B>JudyHSDel(&amp;PJHS, Index, Length, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JHSD(Rc_int, PJHS, Index, Length) \
+   Rc_int = JudyHSDel(&amp;PJHS, Index, Length, PJE0)
+
+</PRE>
+<P>
+<DT><A name="JudyHSGet"><B>JudyHSGet(PJHS, Index, Length)</B></A></DT>
+<DD>
+<PRE>
+#define JHSG(PValue, PJHS, Index, Length) \
+   PValue = JudyHSIns(PJHS, Index, Length)
+
+</PRE>
+<P>
+<DT><A name="JudyHSFreeArray"><B>JudyHSFreeArray(&amp;PJHS, &amp;JError)</B></A></DT>
+<DD>
+<PRE>
+#define JHSFA(Rc_word, PJHS) \
+   Rc_word = JudyHSFreeArray(&amp;PJHS, PJE0)
+
+</PRE>
+</DL>
+<P>
+Definitions for all the Judy functions, the types
+<B>Pvoid_t</B>,
+<B>Pcvoid_t</B>,
+<B>PPvoid_t</B>,
+<B>Word_t </B>,
+<B>JError_t</B>,
+and
+<B>PJError_t</B>,
+the constants
+<B>NULL</B>,
+<B>JU_ERRNO_*</B>,
+<B>JERR</B>,
+<B>PPJERR</B>,
+and
+<B>PJE0</B>
+are provided in the <B>Judy.h</B> header file
+(/usr/include/Judy.h).
+<B>Note</B>:  Callers should define JudyHS arrays as type <B>Pvoid_t</B>,
+which can be passed by value to functions that take
+<B>Pcvoid_t</B> (constant <B>Pvoid_t</B>),
+and also by address to functions that take <B>PPvoid_t</B>.
+<P>
+The return type from most <B>JudyHS</B> functions is <B>PPvoid_t</B> so
+that the values stored in the array can be pointers to other objects,
+which is a typical usage, or cast to a <B>Word_t *</B> when a pointer
+to a value is required instead of a pointer to a pointer.
+<!----------------->
+<P>
+<DT><B>AUTHOR</B></DT>
+<DD>
+JudyHS was invented and implemented by Doug Baskins after retiring from Hewlett-Packard.
+<!----------------->
+<P>
+<DT><B>SEE ALSO</B></DT>
+<DD>
+<A href="Judy_3.htm">Judy(3)</A>,
+<A href="Judy1_3.htm">Judy1(3)</A>,
+<A href="JudyL_3.htm">JudyL(3)</A>,
+<A href="JudySL_3.htm">JudySL(3)</A>,
+<A href="JudyHS_3.htm">JudyHS(3)</A>,
+<BR>
+<I>malloc()</I>,
+<BR>
+the Judy website,
+<A href="http://judy.sourceforge.net">
+http://judy.sourceforge.net</A>,
+for more information and Application Notes.
+</DL>
+</BODY>
+</HTML>

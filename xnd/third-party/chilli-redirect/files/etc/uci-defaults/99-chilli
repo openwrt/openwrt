@@ -1,0 +1,24 @@
+#!/bin/sh
+rm /etc/config/chilli
+cat > /etc/config/chilli <<EOF
+config chilli
+	option disabled '0'
+	option domain 'lan'
+	option uamanydns '1'
+	option lease '900'
+	option redir '1'
+	option papalwaysok '1'
+	option adminupdatefile '/var/run/chilli/local.conf'
+	option wwwdir '/etc/chilli/www'
+	option wwwbin '/etc/chilli/wwwsh'
+	option conup '/etc/chilli/conup.sh'
+	option condown '/etc/chilli/condown.sh'
+	option ipup '/etc/chilli/up.sh'
+	option ipdown '/etc/chilli/down.sh'
+	option cmdsocket '/var/run/chilli/chilli.sock'
+	option unixipc 'ipc.sock'
+	option pidfile '/var/run/chilli/chilli.pid'
+	option kname 'chilli'
+	option debug 0
+EOF
+/etc/init.d/chilli disable

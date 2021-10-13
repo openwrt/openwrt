@@ -1,0 +1,371 @@
+From 653734f16158d44b1bc6977536c1a93061b74e9c Mon Sep 17 00:00:00 2001
+From: Sriram R <srirrama@codeaurora.org>
+Date: Mon, 5 Oct 2020 17:17:21 +0530
+Subject: [PATCH] ath11k: Enable WMI based FW Logging
+
+In devices such as QCN9000, FW log data from firmware is sent via WMI Events
+(WMI_DIAG_EVENTID). This data is then posted to the userspace
+via NL testmode cmd as a fwlog attribute.
+
+The logging is enabled during bootup using qmi transaction and cannot be disabled
+during runtime.
+
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c       | 12 ++++
+ drivers/net/wireless/ath/ath11k/hw.h         |  1 +
+ drivers/net/wireless/ath/ath11k/qmi.c        | 92 ++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/qmi.h        | 13 ++++
+ drivers/net/wireless/ath/ath11k/testmode.c   | 40 ++++++++++++
+ drivers/net/wireless/ath/ath11k/testmode.h   |  6 ++
+ drivers/net/wireless/ath/ath11k/testmode_i.h |  3 +
+ drivers/net/wireless/ath/ath11k/wmi.c        | 26 ++++++++
+ 8 files changed, 193 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -90,6 +90,7 @@ static const struct ath11k_hw_params ath
+ 		.supports_suspend = false,
+ 		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
++		.ce_fwlog_enable = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -136,6 +137,7 @@ static const struct ath11k_hw_params ath
+ 		.supports_suspend = false,
+ 		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
++		.ce_fwlog_enable = false,
+ 	},
+ 	{
+ 		.name = "qca6390 hw2.0",
+@@ -177,6 +179,7 @@ static const struct ath11k_hw_params ath
+ 		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
+ 		.spectral_fft_sz = 2,
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
++		.ce_fwlog_enable = false,
+ 	},
+ 	{
+ 		.name = "qcn9074 hw1.0",
+@@ -220,6 +223,7 @@ static const struct ath11k_hw_params ath
+ 		.spectral_summary_pad_sz = 16,
+ 		.spectral_fft_hdr_len = 24,
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
++		.ce_fwlog_enable = true,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ5018,
+@@ -258,6 +262,7 @@ static const struct ath11k_hw_params ath
+ 		.spectral_summary_pad_sz = 16,
+ 		.spectral_fft_hdr_len = 24,
+ 		.reo_dest_ring_map_shift = HAL_IPQ5018_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
++		.ce_fwlog_enable = false,
+ 	},
+ };
+ 
+@@ -944,6 +949,9 @@ int ath11k_core_ssr_notifier_cb(struct n
+ 	return 0;
+ }
+ #endif
++unsigned int ce_fwlog = 1;
++module_param_named(ce_fwlog, ce_fwlog, uint, 0644);
++MODULE_PARM_DESC(ce_fwlog, "Enable/Disable CE based FW logging");
+ 
+ int ath11k_core_qmi_firmware_ready(struct ath11k_base *ab)
+ {
+@@ -1004,6 +1012,14 @@ int ath11k_core_qmi_firmware_ready(struc
+ 
+ 	ath11k_config_qdss(ab);
+ 
++	if (ab->hw_params.ce_fwlog_enable && ce_fwlog) {
++		ret = ath11k_enable_fwlog(ab);
++		if (ret < 0) {
++			ath11k_err(ab, "failed to enable fwlog: %d\n", ret);
++			goto err_core_stop;
++		}
++	}
++
+ 	mutex_unlock(&ab->core_lock);
+ 
+ 	return 0;
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -190,6 +190,7 @@ struct ath11k_hw_params {
+ 	u32 hal_desc_sz;
+ 	u32 m3_addr;
+ 	u8 reo_dest_ring_map_shift;
++	bool ce_fwlog_enable;
+ };
+ 
+ struct ath11k_hw_ops {
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2056,6 +2056,50 @@ struct qmi_elem_info qmi_wlanfw_qdss_tra
+ 	},
+ };
+ 
++struct qmi_elem_info wlfw_ini_req_msg_v01_ei[] = {
++	{
++		.data_type      = QMI_OPT_FLAG,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u8),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x10,
++		.offset         = offsetof(struct wlfw_ini_req_msg_v01,
++					   enablefwlog_valid),
++	},
++	{
++		.data_type      = QMI_UNSIGNED_1_BYTE,
++		.elem_len       = 1,
++		.elem_size      = sizeof(u8),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x10,
++		.offset         = offsetof(struct wlfw_ini_req_msg_v01,
++					   enablefwlog),
++	},
++	{
++		.data_type      = QMI_EOTI,
++		.array_type     = NO_ARRAY,
++		.tlv_type       = QMI_COMMON_TLV_TYPE,
++	},
++};
++
++struct qmi_elem_info wlfw_ini_resp_msg_v01_ei[] = {
++	{
++		.data_type      = QMI_STRUCT,
++		.elem_len       = 1,
++		.elem_size      = sizeof(struct qmi_response_type_v01),
++		.array_type     = NO_ARRAY,
++		.tlv_type       = 0x02,
++		.offset         = offsetof(struct wlfw_ini_resp_msg_v01,
++					   resp),
++		.ei_array       = qmi_response_type_v01_ei,
++	},
++	{
++		.data_type      = QMI_EOTI,
++		.array_type     = NO_ARRAY,
++		.tlv_type       = QMI_COMMON_TLV_TYPE,
++	},
++};
++
+ int wlfw_send_qdss_trace_config_download_req(struct ath11k_base *ab,
+ 					     const u8 *buffer, unsigned int file_len)
+ {
+@@ -3949,6 +3993,55 @@ static void ath11k_qmi_driver_event_work
+ 	spin_unlock(&qmi->event_lock);
+ }
+ 
++int ath11k_enable_fwlog(struct ath11k_base *ab)
++{
++	struct wlfw_ini_req_msg_v01 *req;
++	struct wlfw_ini_resp_msg_v01 resp;
++	struct qmi_txn txn = {};
++	int ret = 0;
++
++	req = kzalloc(sizeof(*req), GFP_KERNEL);
++	if (!req)
++		return -ENOMEM;
++
++	memset(&resp, 0, sizeof(resp));
++
++	req->enablefwlog_valid = 1;
++	req->enablefwlog = 1;
++
++	ret = qmi_txn_init(&ab->qmi.handle, &txn,
++			   wlfw_ini_resp_msg_v01_ei, &resp);
++	if (ret < 0)
++		goto out;
++
++	ret = qmi_send_request(&ab->qmi.handle, NULL, &txn,
++			       QMI_WLFW_INI_REQ_V01,
++			       WLFW_INI_REQ_MSG_V01_MAX_MSG_LEN,
++			       wlfw_ini_req_msg_v01_ei, req);
++
++	if (ret < 0) {
++		ath11k_warn(ab, "Failed to send init request for enabling fwlog = %d\n", ret);
++		qmi_txn_cancel(&txn);
++		goto out;
++	}
++
++	ret = qmi_txn_wait(&txn, msecs_to_jiffies(ATH11K_QMI_WLANFW_TIMEOUT_MS));
++	if (ret < 0) {
++		ath11k_warn(ab, "fwlog enable wait for resp failed: %d\n", ret);
++		goto out;
++	}
++
++	if (resp.resp.result != QMI_RESULT_SUCCESS_V01) {
++		ath11k_warn(ab, "fwlog enable request failed, result: %d, err: %d\n",
++			    resp.resp.result, resp.resp.error);
++		ret = -EINVAL;
++		goto out;
++	}
++out:
++	kfree(req);
++	return ret;
++}
++
+ int ath11k_qmi_init_service(struct ath11k_base *ab)
+ {
+ 	int ret;
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -204,6 +204,18 @@ struct qmi_wlanfw_m3_dump_upload_done_re
+ 	struct qmi_response_type_v01 resp;
+ };
+ 
++struct wlfw_ini_req_msg_v01 {
++	u8 enablefwlog_valid;
++	u8 enablefwlog;
++};
++
++struct wlfw_ini_resp_msg_v01 {
++	struct qmi_response_type_v01 resp;
++};
++
++#define QMI_WLFW_INI_REQ_V01 0x002F
++#define WLFW_INI_REQ_MSG_V01_MAX_MSG_LEN 4
++
+ #define QMI_WLANFW_QDSS_TRACE_MODE_REQ_V01 0x0045
+ #define QMI_WLANFW_QDSS_TRACE_MODE_REQ_MSG_V01_MAX_LEN 18
+ #define QMI_WLANFW_QDSS_TRACE_MODE_RESP_MSG_V01_MAX_LEN 7
+@@ -623,6 +635,7 @@ int wlfw_send_qdss_trace_config_download
+ int ath11k_send_qdss_trace_mode_req(struct ath11k_base *ab,
+ 				    enum wlfw_qdss_trace_mode_enum_v01 mode);
+ int ath11k_qmi_fwreset_from_cold_boot(struct ath11k_base *ab);
++int ath11k_enable_fwlog(struct ath11k_base *ab);
+ 
+ 
+ #endif
+--- a/drivers/net/wireless/ath/ath11k/testmode.c
++++ b/drivers/net/wireless/ath/ath11k/testmode.c
+@@ -19,8 +19,48 @@ static const struct nla_policy ath11k_tm
+ 	[ATH11K_TM_ATTR_WMI_CMDID]	= { .type = NLA_U32 },
+ 	[ATH11K_TM_ATTR_VERSION_MAJOR]	= { .type = NLA_U32 },
+ 	[ATH11K_TM_ATTR_VERSION_MINOR]	= { .type = NLA_U32 },
++	[ATH11K_TM_ATTR_FWLOG]		= { .type = NLA_BINARY,
++					    .len = ATH11K_FWLOG_MAX_LEN },
+ };
+ 
++void ath11k_fwlog_write(struct ath11k_base *ab,  u8 *data, int len)
++{
++	struct sk_buff *nl_skb;
++	int ret, i;
++	struct ath11k *ar = NULL;
++	struct ath11k_pdev *pdev;
++
++	for (i = 0; i < ab->num_radios; i++) {
++		pdev = &ab->pdevs[i];
++		if (pdev && pdev->ar) {
++			ar = pdev->ar;
++			break;
++		}
++	}
++
++	if (!ar)
++		return;
++
++	nl_skb = cfg80211_testmode_alloc_event_skb(ar->hw->wiphy,
++						   len, GFP_ATOMIC);
++	if (!nl_skb) {
++		ath11k_warn(ab,
++			    "failed to allocate skb for fwlog event\n");
++		return;
++	}
++
++	ret = nla_put(nl_skb, ATH11K_TM_ATTR_FWLOG, len, data);
++	if (ret) {
++		ath11k_warn(ab,
++			    "failed to to put fwlog wmi event to nl: %d\n",
++			    ret);
++		kfree_skb(nl_skb);
++		return;
++	}
++
++	cfg80211_testmode_event(nl_skb, GFP_ATOMIC);
++}
++
+ /* Returns true if callee consumes the skb and the skb should be discarded.
+  * Returns false if skb is not used. Does not sleep.
+  */
+--- a/drivers/net/wireless/ath/ath11k/testmode.h
++++ b/drivers/net/wireless/ath/ath11k/testmode.h
+@@ -28,6 +28,7 @@ bool ath11k_tm_event_wmi(struct ath11k_b
+ int ath11k_tm_cmd(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 		  void *data, int len);
+ 
++void ath11k_fwlog_write(struct ath11k_base *ab,  u8 *data, int len);
+ #else
+ 
+ static inline bool ath11k_tm_event_wmi(struct ath11k_base *ab, u32 cmd_id,
+@@ -43,4 +44,9 @@ static inline int ath11k_tm_cmd(struct i
+ 	return 0;
+ }
+ 
++static inline void ath11k_fwlog_write(struct ath11k_base *ab,  u8 *data,
++				     int len)
++{
++
++}
+ #endif
+--- a/drivers/net/wireless/ath/ath11k/testmode_i.h
++++ b/drivers/net/wireless/ath/ath11k/testmode_i.h
+@@ -16,6 +16,8 @@
+ #define ATH11K_TM_DATA_MAX_LEN		5000
+ #define ATH11K_FTM_EVENT_MAX_BUF_LENGTH	2048
+ 
++#define ATH11K_FWLOG_MAX_LEN		2048
++
+ enum ath11k_tm_attr {
+ 	__ATH11K_TM_ATTR_INVALID		= 0,
+ 	ATH11K_TM_ATTR_CMD			= 1,
+@@ -24,6 +26,7 @@ enum ath11k_tm_attr {
+ 	ATH11K_TM_ATTR_VERSION_MAJOR		= 4,
+ 	ATH11K_TM_ATTR_VERSION_MINOR		= 5,
+ 	ATH11K_TM_ATTR_WMI_OP_VERSION		= 6,
++	ATH11K_TM_ATTR_FWLOG			= 7,
+ 
+ 	/* keep last */
+ 	__ATH11K_TM_ATTR_AFTER_LAST,
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -8237,6 +8237,29 @@ static void ath11k_wmi_wds_peer_event(st
+ 		   wds_addr_arg.dst_macaddr);
+ }
+ 
++static void ath11k_wmi_diag_event(struct ath11k_base *ab, struct sk_buff *skb)
++{
++	const struct wmi_tlv *tlv;
++	u16 tlv_tag, tlv_len;
++	uint32_t *dev_id;
++	u8 *data;
++
++	tlv = (struct wmi_tlv *)skb->data;
++	tlv_tag = FIELD_GET(WMI_TLV_TAG, tlv->header);
++	tlv_len = FIELD_GET(WMI_TLV_LEN, tlv->header);
++
++	if (tlv_tag == WMI_TAG_ARRAY_BYTE) {
++		data = skb->data + sizeof(struct wmi_tlv);
++		dev_id = (uint32_t *)data;
++		*dev_id = ab->hw_params.hw_rev;
++	} else {
++		ath11k_warn(ab, "WMI Diag Event missing required tlv\n");
++		return;
++	}
++
++	ath11k_fwlog_write(ab,data, tlv_len);
++}
++
+ static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
+ {
+ 	struct wmi_cmd_hdr *cmd_hdr;
+@@ -8365,6 +8388,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	case WMI_MUEDCA_PARAMS_CONFIG_EVENTID:
+ 		ath11k_wmi_pdev_update_muedca_params_status_event(ab, skb);
+ 		break;
++	case WMI_DIAG_EVENTID:
++		ath11k_wmi_diag_event(ab, skb);
++		break;
+ 	/* TODO: Add remaining events */
+ 	default:
+ 		ath11k_dbg(ab, ATH11K_DBG_WMI, "Unknown eventid: 0x%x\n", id);

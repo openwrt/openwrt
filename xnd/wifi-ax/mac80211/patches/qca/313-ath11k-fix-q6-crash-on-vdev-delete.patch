@@ -1,0 +1,153 @@
+From 1cf6cb1ea65953048c1920ba22d68ae16ba3722d Mon Sep 17 00:00:00 2001
+From: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
+Date: Mon, 31 May 2021 18:54:36 +0530
+Subject: [PATCH] ath11k: fix q6 crash on vdev delete
+
+Add interface call did not wait for vdev delete to complete on interface create
+failures, and was trying to create another vdev with deleted vap's vdev id. Hence
+host tried sending command to fw for vdev id which was removed on previous
+vdev delete causing q6 crash. ath11k_wmi_vdev_set_param_cmd was invoked for
+vdev which got deleted, before calling ath11k_wmi_vdev_create for that vdev.
+
+Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 81 +++++++++++++++++++++--------------
+ 1 file changed, 49 insertions(+), 32 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index ed16227..931e035 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6491,12 +6491,6 @@ static int ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
+ 	if (ab->nss.enabled && vif->type == NL80211_IFTYPE_AP_VLAN)
+ 		return 0;
+ 
+-	ret = ath11k_nss_vdev_create(arvif);
+-	if(ret) {
+-		ath11k_warn(ab, "failed to create nss vdev %d\n", ret);
+-		return ret;
+-	}
+-
+ 	param_id = WMI_VDEV_PARAM_TX_ENCAP_TYPE;
+ 	if (ath11k_frame_mode != ATH11K_HW_TXRX_ETHERNET ||
+ 	    (vif->type != NL80211_IFTYPE_STATION &&
+@@ -6537,6 +6531,42 @@ static int ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
+ 	return ret;
+ }
+ 
++static int ath11k_mac_vdev_delete(struct ath11k *ar, struct ath11k_vif *arvif)
++{
++	unsigned long time_left;
++	struct ieee80211_vif *vif = arvif->vif;
++	int ret = 0;
++
++	lockdep_assert_held(&ar->conf_mutex);
++
++	reinit_completion(&ar->vdev_delete_done);
++
++	ath11k_nss_vdev_delete(arvif);
++
++	ret = ath11k_wmi_vdev_delete(ar, arvif->vdev_id);
++	if (ret) {
++		ath11k_warn(ar->ab, "failed to delete WMI vdev %d: %d\n",
++			    arvif->vdev_id, ret);
++		return ret;
++	}
++
++	time_left = wait_for_completion_timeout(&ar->vdev_delete_done,
++						ATH11K_VDEV_DELETE_TIMEOUT_HZ);
++	if (time_left == 0) {
++		ath11k_warn(ar->ab, "Timeout in receiving vdev delete response\n");
++		return -ETIMEDOUT;
++	}
++
++	ar->ab->free_vdev_map |= 1LL << (arvif->vdev_id);
++	ar->allocated_vdev_map &= ~(1LL << arvif->vdev_id);
++	ar->num_created_vdevs--;
++
++	ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "vdev %pM deleted, vdev_id %d\n",
++		   vif->addr, arvif->vdev_id);
++
++	return ret;
++}
++
+ static int ath11k_mac_op_add_interface(struct ieee80211_hw *hw,
+ 				       struct ieee80211_vif *vif)
+ {
+@@ -6684,8 +6714,17 @@ static int ath11k_mac_op_add_interface(struct ieee80211_hw *hw,
+ 	list_add(&arvif->list, &ar->arvifs);
+ 	spin_unlock_bh(&ar->data_lock);
+ 
+-	if (ath11k_mac_op_update_vif_offload(hw, vif))
++	ret = ath11k_nss_vdev_create(arvif);
++        if(ret) {
++                ath11k_warn(ab, "failed to create nss vdev %d\n", ret);
++                goto  err_vdev_del;
++        }
++
++	ret = ath11k_mac_op_update_vif_offload(hw, vif);
++	if (ret) {
++		ath11k_warn(ab, "failed to update vif offload\n");
+ 		goto err_vdev_del;
++	}
+ 
+ 	if (vif->offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED)
+ 		param_value = ATH11K_HW_TXRX_ETHERNET;
+@@ -6836,11 +6875,7 @@ err_peer_del:
+ 	}
+ 
+ err_vdev_del:
+-	ath11k_nss_vdev_delete(arvif);
+-	ath11k_wmi_vdev_delete(ar, arvif->vdev_id);
+-	ar->num_created_vdevs--;
+-	ar->allocated_vdev_map &= ~(1LL << arvif->vdev_id);
+-	ab->free_vdev_map |= 1LL << arvif->vdev_id;
++	ath11k_mac_vdev_delete(ar, arvif);
+ 	spin_lock_bh(&ar->data_lock);
+ 	list_del(&arvif->list);
+ 	spin_unlock_bh(&ar->data_lock);
+@@ -6870,7 +6905,6 @@ static void ath11k_mac_op_remove_interface(struct ieee80211_hw *hw,
+ 	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct ath11k_vif *ap_vlan_arvif, *tmp;
+ 	struct ath11k_base *ab = ar->ab;
+-	unsigned long time_left;
+ 	int ret;
+ 	int i;
+ 
+@@ -6912,31 +6946,14 @@ static void ath11k_mac_op_remove_interface(struct ieee80211_hw *hw,
+ 		}
+ 	}
+ 
+-	reinit_completion(&ar->vdev_delete_done);
+-
+-	ath11k_nss_vdev_delete(arvif);
+ 
+-	ret = ath11k_wmi_vdev_delete(ar, arvif->vdev_id);
++	ret = ath11k_mac_vdev_delete(ar, arvif);
+ 	if (ret) {
+-		ath11k_warn(ab, "failed to delete WMI vdev %d: %d\n",
++		ath11k_warn(ab, "failed to delete vdev %d: %d\n",
+ 			    arvif->vdev_id, ret);
+ 		goto err_vdev_del;
+ 	}
+ 
+-	time_left = wait_for_completion_timeout(&ar->vdev_delete_done,
+-						ATH11K_VDEV_DELETE_TIMEOUT_HZ);
+-	if (time_left == 0) {
+-		ath11k_warn(ab, "Timeout in receiving vdev delete response\n");
+-		goto err_vdev_del;
+-	}
+-
+-	ab->free_vdev_map |= 1LL << (arvif->vdev_id);
+-	ar->allocated_vdev_map &= ~(1LL << arvif->vdev_id);
+-	ar->num_created_vdevs--;
+-
+-	ath11k_dbg(ab, ATH11K_DBG_MAC, "vdev %pM deleted, vdev_id %d\n",
+-		   vif->addr, arvif->vdev_id);
+-
+ 	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR) {
+ 		ar->monitor_vdev_id = -1;
+ 		ar->monitor_vdev_created = false;
+-- 
+2.7.4
+

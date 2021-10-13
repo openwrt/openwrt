@@ -1,0 +1,40 @@
+From 68906132ee41601381529e2a0131b7ed20483787 Mon Sep 17 00:00:00 2001
+From: Sriram R <srirrama@codeaurora.org>
+Date: Wed, 5 May 2021 07:28:38 +0530
+Subject: [PATCH] ath11k: Drop multicast fragments
+
+Fragments needs to be received only as unicast, drop
+multicast fragments to avoid any undesired behavior.
+
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp_rx.c b/drivers/net/wireless/ath/ath11k/dp_rx.c
+index e8f0db7..56ea0de 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -3535,6 +3535,7 @@ static int ath11k_dp_rx_frag_h_mpdu(struct ath11k *ar,
+ 	u8 tid;
+ 	int ret = 0;
+ 	bool more_frags;
++	bool is_mcbc;
+ 
+ 	rx_desc = (struct hal_rx_desc *)msdu->data;
+ 	peer_id = ath11k_dp_rx_h_mpdu_start_peer_id(ar->ab, rx_desc);
+@@ -3542,6 +3543,11 @@ static int ath11k_dp_rx_frag_h_mpdu(struct ath11k *ar,
+ 	seqno = ath11k_dp_rx_h_mpdu_start_seq_no(ar->ab, rx_desc);
+ 	frag_no = ath11k_dp_rx_h_mpdu_start_frag_no(ar->ab, msdu);
+ 	more_frags = ath11k_dp_rx_h_mpdu_start_more_frags(ar->ab, msdu);
++	is_mcbc = ath11k_dp_rx_h_attn_is_mcbc(ar->ab, rx_desc);
++
++	/* Multicast/Broadcast fragments are not expected */
++	if (is_mcbc)
++		return -EINVAL;
+ 
+ 	if (!ath11k_dp_rx_h_mpdu_start_seq_ctrl_valid(ar->ab, rx_desc) ||
+ 	    !ath11k_dp_rx_h_mpdu_start_fc_valid(ar->ab, rx_desc) ||
+-- 
+2.7.4
+

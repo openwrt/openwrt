@@ -1,0 +1,21 @@
+Index: backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/mac.c
+===================================================================
+--- backports-20210222_001-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/mac.c
++++ backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6590,6 +6590,7 @@ static int ath11k_mac_op_update_vif_offl
+ 	u32 param_id, param_value;
+ 	int ret;
+ 
++	return 0;
+ 	if (ab->nss.enabled && vif->type == NL80211_IFTYPE_AP_VLAN)
+ 		return 0;
+ 
+@@ -6835,6 +6836,8 @@ static int ath11k_mac_op_add_interface(s
+ 	else
+ 		param_value = ATH11K_HW_TXRX_NATIVE_WIFI;
+ 
++	param_value = ATH11K_HW_TXRX_NATIVE_WIFI;
++
+ 	ret = ath11k_nss_vdev_set_cmd(arvif, NSS_WIFI_VDEV_ENCAP_TYPE_CMD, param_value);
+ 
+ 	if(ret) {

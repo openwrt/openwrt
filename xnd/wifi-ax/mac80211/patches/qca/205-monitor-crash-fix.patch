@@ -1,0 +1,35 @@
+From a246e44fed28ec876dbe83e1e7157fa319de3099 Mon Sep 17 00:00:00 2001
+From: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+Date: Thu, 13 Aug 2020 13:42:48 +0530
+Subject: [PATCH] mac80211: monitor crash with 5Ghz high band radio
+
+Since high band radio is operated with low band channel
+fw is getting crashed.
+
+Fixed by assigning the first available channel to the
+respective radios.
+
+Signed-off-by: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+---
+ net/mac80211/main.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -992,8 +992,15 @@ int ieee80211_register_hw(struct ieee802
+ 			continue;
+ 
+ 		if (!dflt_chandef.chan) {
++			/*
++			 * Assigning the first enabled channel to dflt_chandef from the
++			 * list of channels available specific to country
++			 */
++			for (i = 0; i < sband->n_channels; i++)
++				if (!(sband->channels[i].flags & IEEE80211_CHAN_DISABLED))
++					break;
+ 			cfg80211_chandef_create(&dflt_chandef,
+-						&sband->channels[0],
++						&sband->channels[i == sband->n_channels ? 0 : i],
+ 						NL80211_CHAN_NO_HT);
+ 			/* init channel we're on */
+ 			if (!local->use_chanctx && !local->_oper_chandef.chan) {

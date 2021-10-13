@@ -1,0 +1,257 @@
+--- a/drivers/net/wireless/ath/ath10k/ahb.c
++++ b/drivers/net/wireless/ath/ath10k/ahb.c
+@@ -180,40 +180,35 @@ static int ath10k_ahb_rst_ctrl_init(stru
+ 
+ 	dev = &ar_ahb->pdev->dev;
+ 
+-	ar_ahb->core_cold_rst = devm_reset_control_get_exclusive(dev,
+-								 "wifi_core_cold");
++	ar_ahb->core_cold_rst = devm_reset_control_get(dev, "wifi_core_cold");
+ 	if (IS_ERR(ar_ahb->core_cold_rst)) {
+ 		ath10k_err(ar, "failed to get core cold rst ctrl: %ld\n",
+ 			   PTR_ERR(ar_ahb->core_cold_rst));
+ 		return PTR_ERR(ar_ahb->core_cold_rst);
+ 	}
+ 
+-	ar_ahb->radio_cold_rst = devm_reset_control_get_exclusive(dev,
+-								  "wifi_radio_cold");
++	ar_ahb->radio_cold_rst = devm_reset_control_get(dev, "wifi_radio_cold");
+ 	if (IS_ERR(ar_ahb->radio_cold_rst)) {
+ 		ath10k_err(ar, "failed to get radio cold rst ctrl: %ld\n",
+ 			   PTR_ERR(ar_ahb->radio_cold_rst));
+ 		return PTR_ERR(ar_ahb->radio_cold_rst);
+ 	}
+ 
+-	ar_ahb->radio_warm_rst = devm_reset_control_get_exclusive(dev,
+-								  "wifi_radio_warm");
++	ar_ahb->radio_warm_rst = devm_reset_control_get(dev, "wifi_radio_warm");
+ 	if (IS_ERR(ar_ahb->radio_warm_rst)) {
+ 		ath10k_err(ar, "failed to get radio warm rst ctrl: %ld\n",
+ 			   PTR_ERR(ar_ahb->radio_warm_rst));
+ 		return PTR_ERR(ar_ahb->radio_warm_rst);
+ 	}
+ 
+-	ar_ahb->radio_srif_rst = devm_reset_control_get_exclusive(dev,
+-								  "wifi_radio_srif");
++	ar_ahb->radio_srif_rst = devm_reset_control_get(dev, "wifi_radio_srif");
+ 	if (IS_ERR(ar_ahb->radio_srif_rst)) {
+ 		ath10k_err(ar, "failed to get radio srif rst ctrl: %ld\n",
+ 			   PTR_ERR(ar_ahb->radio_srif_rst));
+ 		return PTR_ERR(ar_ahb->radio_srif_rst);
+ 	}
+ 
+-	ar_ahb->cpu_init_rst = devm_reset_control_get_exclusive(dev,
+-								"wifi_cpu_init");
++	ar_ahb->cpu_init_rst = devm_reset_control_get(dev, "wifi_cpu_init");
+ 	if (IS_ERR(ar_ahb->cpu_init_rst)) {
+ 		ath10k_err(ar, "failed to get cpu init rst ctrl: %ld\n",
+ 			   PTR_ERR(ar_ahb->cpu_init_rst));
+--- a/drivers/net/wireless/ath/ath11k/Kconfig
++++ b/drivers/net/wireless/ath/ath11k/Kconfig
+@@ -5,7 +5,6 @@ config ATH11K
+ 	depends on MAC80211 && HAS_DMA
+ 	depends on CRYPTO_MICHAEL_MIC
+ 	select ATH_COMMON
+-	depends on QCOM_QMI_HELPERS
+ 	help
+ 	  This module adds support for Qualcomm Technologies 802.11ax family of
+ 	  chipsets.
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -46,7 +46,7 @@ struct wmi_tlv {
+ 
+ #define WMI_TLV_LEN	GENMASK(15, 0)
+ #define WMI_TLV_TAG	GENMASK(31, 16)
+-#define TLV_HDR_SIZE	sizeof_field(struct wmi_tlv, header)
++#define TLV_HDR_SIZE	FIELD_SIZEOF(struct wmi_tlv, header)
+ 
+ #define WMI_CMD_HDR_CMD_ID      GENMASK(23, 0)
+ #define WMI_MAX_MEM_REQS        32
+--- a/include/linux/backport-refcount.h
++++ b/include/linux/backport-refcount.h
+@@ -165,41 +165,11 @@ static inline __must_check bool __refcou
+ 	return old;
+ }
+ 
+-/**
+- * refcount_add_not_zero - add a value to a refcount unless it is 0
+- * @i: the value to add to the refcount
+- * @r: the refcount
+- *
+- * Will saturate at REFCOUNT_SATURATED and WARN.
+- *
+- * Provides no memory ordering, it is assumed the caller has guaranteed the
+- * object memory to be stable (RCU, etc.). It does provide a control dependency
+- * and thereby orders future stores. See the comment on top.
+- *
+- * Use of this function is not recommended for the normal reference counting
+- * use case in which references are taken and released one at a time.  In these
+- * cases, refcount_inc(), or one of its variants, should instead be used to
+- * increment a reference count.
+- *
+- * Return: false if the passed refcount is 0, true otherwise
+- */
+ static inline __must_check bool refcount_add_not_zero(int i, refcount_t *r)
+ {
+ 	return __refcount_add_not_zero(i, r, NULL);
+ }
+ 
+-static inline void __refcount_add(int i, refcount_t *r, int *oldp)
+-{
+-	int old = atomic_fetch_add_relaxed(i, &r->refs);
+-
+-	if (oldp)
+-		*oldp = old;
+-
+-	if (unlikely(!old))
+-		refcount_warn_saturate(r, REFCOUNT_ADD_UAF);
+-	else if (unlikely(old < 0 || old + i < 0))
+-		refcount_warn_saturate(r, REFCOUNT_ADD_OVF);
+-}
+ 
+ /**
+  * refcount_add - add a value to a refcount
+@@ -219,7 +189,7 @@ static inline void __refcount_add(int i,
+  */
+ static inline void refcount_add(int i, refcount_t *r)
+ {
+-	__refcount_add(i, r, NULL);
++	atomic_add(i, &r->refs);
+ }
+ 
+ static inline __must_check bool __refcount_inc_not_zero(refcount_t *r, int *oldp)
+@@ -267,52 +237,14 @@ static inline void refcount_inc(refcount
+ 	__refcount_inc(r, NULL);
+ }
+ 
+-static inline __must_check bool __refcount_sub_and_test(int i, refcount_t *r, int *oldp)
+-{
+-	int old = atomic_fetch_sub_release(i, &r->refs);
+-
+-	if (oldp)
+-		*oldp = old;
+-
+-	if (old == i) {
+-		smp_acquire__after_ctrl_dep();
+-		return true;
+-	}
+-
+-	if (unlikely(old < 0 || old - i < 0))
+-		refcount_warn_saturate(r, REFCOUNT_SUB_UAF);
+-
+-	return false;
+-}
+-
+-/**
+- * refcount_sub_and_test - subtract from a refcount and test if it is 0
+- * @i: amount to subtract from the refcount
+- * @r: the refcount
+- *
+- * Similar to atomic_dec_and_test(), but it will WARN, return false and
+- * ultimately leak on underflow and will fail to decrement when saturated
+- * at REFCOUNT_SATURATED.
+- *
+- * Provides release memory ordering, such that prior loads and stores are done
+- * before, and provides an acquire ordering on success such that free()
+- * must come after.
+- *
+- * Use of this function is not recommended for the normal reference counting
+- * use case in which references are taken and released one at a time.  In these
+- * cases, refcount_dec(), or one of its variants, should instead be used to
+- * decrement a reference count.
+- *
+- * Return: true if the resulting refcount is 0, false otherwise
+- */
+ static inline __must_check bool refcount_sub_and_test(int i, refcount_t *r)
+ {
+-	return __refcount_sub_and_test(i, r, NULL);
++	return atomic_sub_and_test(i, &r->refs);
+ }
+ 
+ static inline __must_check bool __refcount_dec_and_test(refcount_t *r, int *oldp)
+ {
+-	return __refcount_sub_and_test(1, r, oldp);
++	return atomic_sub_and_test(i, &r->refs);
+ }
+ 
+ /**
+@@ -333,30 +265,9 @@ static inline __must_check bool refcount
+ 	return __refcount_dec_and_test(r, NULL);
+ }
+ 
+-static inline void __refcount_dec(refcount_t *r, int *oldp)
+-{
+-	int old = atomic_fetch_sub_release(1, &r->refs);
+-
+-	if (oldp)
+-		*oldp = old;
+-
+-	if (unlikely(old <= 1))
+-		refcount_warn_saturate(r, REFCOUNT_DEC_LEAK);
+-}
+-
+-/**
+- * refcount_dec - decrement a refcount
+- * @r: the refcount
+- *
+- * Similar to atomic_dec(), it will WARN on underflow and fail to decrement
+- * when saturated at REFCOUNT_SATURATED.
+- *
+- * Provides release memory ordering, such that prior loads and stores are done
+- * before.
+- */
+ static inline void refcount_dec(refcount_t *r)
+ {
+-	__refcount_dec(r, NULL);
++	atomic_dec(&r->refs);
+ }
+ 
+ extern __must_check bool refcount_dec_if_one(refcount_t *r);
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -31,6 +31,8 @@
+ #include "reg.h"
+ #include "rdev-ops.h"
+ 
++#define VLAN_N_VID	4096
++
+ static int nl80211_crypto_settings(struct cfg80211_registered_device *rdev,
+ 				   struct genl_info *info,
+ 				   struct cfg80211_crypto_settings *settings,
+@@ -13763,7 +13765,7 @@ static int nl80211_vendor_check_policy(c
+ 		return -EINVAL;
+ 	}
+ 
+-	return nla_validate_nested(attr, vcmd->maxattr, vcmd->policy, extack);
++	return 0;
+ }
+ 
+ static int nl80211_vendor_cmd(struct sk_buff *skb, struct genl_info *info)
+--- a/backport-include/linux/pm_qos.h
++++ b/backport-include/linux/pm_qos.h
+@@ -41,5 +41,4 @@ static inline s32 cpu_latency_qos_limit(
+ 	return pm_qos_request(PM_QOS_CPU_DMA_LATENCY);
+ }
+ #endif /* < 5.7 */
+-
+ #endif	/* _COMPAT_LINUX_PM_QOS_H */
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -3176,7 +3176,7 @@ u8 *ieee80211_ie_build_he_oper(u8 *pos,
+ 			he_6ghz_op->ccfs0 -= 8;
+ 		else
+ 			he_6ghz_op->ccfs0 += 8;
+-		fallthrough;
++		/* fallthrough; */
+ 	case NL80211_CHAN_WIDTH_80P80:
+ 		he_6ghz_op->control =
+ 			IEEE80211_HE_6GHZ_OPER_CTRL_CHANWIDTH_160MHZ;
+--- a/backport-include/linux/slab.h
++++ b/backport-include/linux/slab.h
+@@ -28,4 +28,6 @@ static inline void *kmalloc_array(size_t
+ #define kfree_sensitive(x)	kzfree(x)
+ #endif
+ 
++#define kfree_sensitive(x)	kzfree(x)	/* For backward compatibility */
++
+ #endif /* __BACKPORT_SLAB_H */

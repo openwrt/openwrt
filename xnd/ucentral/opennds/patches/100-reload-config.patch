@@ -1,0 +1,17 @@
+Index: openNDS-9.0.0/linux_openwrt/opennds/files/etc/init.d/opennds
+===================================================================
+--- openNDS-9.0.0.orig/linux_openwrt/opennds/files/etc/init.d/opennds
++++ openNDS-9.0.0/linux_openwrt/opennds/files/etc/init.d/opennds
+@@ -182,3 +182,12 @@ stop_service() {
+   # opennds fails, second time it succeeds.
+   sleep 1
+ }
++
++reload_service() {
++	restart
++}
++
++service_triggers()
++{
++	procd_add_reload_trigger "opennds"
++}

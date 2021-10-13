@@ -1,0 +1,191 @@
+From 58b9bfce32f7e1d0979e65160a941661c95dadfd Mon Sep 17 00:00:00 2001
+From: Hari Chandrakanthan <haric@codeaurora.org>
+Date: Mon, 17 May 2021 16:43:15 +0530
+Subject: [PATCH] ath11k : fix for incorrect PHY mode for Legacy modes (Pre-11ax)
+
+AP phymode is always set as “MODE_11AX_HE” from ath11k_phymodes[][]
+in ath11k_mac_vdev_start_restart(). To get the configured phymode in
+CFR meta data, ath11k_cfr_chan_to_phymode() is introduced.
+
+Signed-off-by: Abinaya Kalaiselvan <akalaise@codeaurora.org>
+Signed-off-by: Hari Chandrakanthan <haric@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h |   1 +
+ drivers/net/wireless/ath/ath11k/hw.c   |   4 +-
+ drivers/net/wireless/ath/ath11k/mac.c  | 119 +++++++++++++++++++++++++++++++++
+ 3 files changed, 122 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index 827b8b4..206e63c 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -751,6 +751,7 @@ struct ath11k {
+ #endif
+ 	u8 cfr_enabled;
+ 	bool ani_enabled;
++	enum wmi_phy_mode cfr_phymode;
+ };
+ 
+ struct ath11k_band_cap {
+diff --git a/drivers/net/wireless/ath/ath11k/hw.c b/drivers/net/wireless/ath/ath11k/hw.c
+index 2563efc..af40d7f 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -860,7 +860,7 @@ void ath11k_hw_ipq8074_fill_cfr_hdr_info(struct ath11k *ar,
+ 	header->u.meta_v4.status = FIELD_GET(WMI_CFR_PEER_CAPTURE_STATUS,
+ 					     params->status);
+ 	header->u.meta_v4.capture_bw = params->bandwidth;
+-	header->u.meta_v4.phy_mode = params->phy_mode;
++	header->u.meta_v4.phy_mode = ar->cfr_phymode;
+ 	header->u.meta_v4.prim20_chan = params->primary_20mhz_chan;
+ 	header->u.meta_v4.center_freq1 = params->band_center_freq1;
+ 	header->u.meta_v4.center_freq2 = params->band_center_freq2;
+@@ -896,7 +896,7 @@ void ath11k_hw_qcn9074_fill_cfr_hdr_info(struct ath11k *ar,
+ 	header->u.meta_v5.status = FIELD_GET(WMI_CFR_PEER_CAPTURE_STATUS,
+ 					     params->status);
+ 	header->u.meta_v5.capture_bw = params->bandwidth;
+-	header->u.meta_v5.phy_mode = params->phy_mode;
++	header->u.meta_v5.phy_mode = ar->cfr_phymode;
+ 	header->u.meta_v5.prim20_chan = params->primary_20mhz_chan;
+ 	header->u.meta_v5.center_freq1 = params->band_center_freq1;
+ 	header->u.meta_v5.center_freq2 = params->band_center_freq2;
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index d0e187e..dddbedc 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -607,6 +607,124 @@ static void ath11k_pdev_caps_update(struct ath11k *ar)
+ 	ar->txpower_scale = WMI_HOST_TP_SCALE_MAX;
+ }
+ 
++static inline enum wmi_phy_mode
++ath11k_cfr_chan_to_phymode(struct ath11k_vif *arvif)
++{
++	struct cfg80211_chan_def def;
++	enum wmi_phy_mode phymode = MODE_UNKNOWN;
++
++	if (ath11k_mac_vif_chan(arvif->vif, &def))
++		return -EPERM;
++
++	switch (def.chan->band) {
++	case NL80211_BAND_2GHZ:
++		switch (def.width) {
++		case NL80211_CHAN_WIDTH_20_NOHT:
++			if (def.chan->flags & IEEE80211_CHAN_NO_OFDM)
++				phymode = MODE_11B;
++			else
++				phymode = MODE_11G;
++			break;
++		case NL80211_CHAN_WIDTH_20:
++			if (arvif->vif->bss_conf.he_support)
++				phymode = MODE_11AX_HE20_2G;
++			else {
++				if (arvif->vht_cap)
++					phymode = MODE_11AC_VHT20_2G;
++				else
++					phymode = MODE_11NG_HT20;
++			}
++			break;
++		case NL80211_CHAN_WIDTH_40:
++			if (arvif->vif->bss_conf.he_support)
++				phymode =  MODE_11AX_HE40_2G;
++			else {
++				if (arvif->vht_cap)
++					phymode = MODE_11AC_VHT40_2G;
++				else
++					phymode = MODE_11NG_HT40;
++			}
++			break;
++		default:
++			break;
++		}
++		break;
++	case NL80211_BAND_5GHZ:
++		switch (def.width) {
++		case NL80211_CHAN_WIDTH_20_NOHT:
++			phymode = MODE_11A;
++			break;
++		case NL80211_CHAN_WIDTH_20:
++			if (arvif->vif->bss_conf.he_support)
++				phymode = MODE_11AX_HE20;
++			else {
++				if (arvif->vht_cap)
++					phymode = MODE_11AC_VHT20;
++				else
++					phymode = MODE_11NA_HT20;
++			}
++			break;
++		case NL80211_CHAN_WIDTH_40:
++			if (arvif->vif->bss_conf.he_support)
++				phymode = MODE_11AX_HE40;
++			else {
++				if (arvif->vht_cap)
++					phymode = MODE_11AC_VHT40;
++				else
++					phymode = MODE_11NA_HT40;
++			}
++			break;
++		case NL80211_CHAN_WIDTH_80:
++			if (arvif->vif->bss_conf.he_support)
++				phymode = MODE_11AX_HE80;
++			else
++				phymode = MODE_11AC_VHT80;
++			break;
++		case NL80211_CHAN_WIDTH_160:
++			if (arvif->vif->bss_conf.he_support)
++				phymode = MODE_11AX_HE160;
++			else
++				phymode = MODE_11AC_VHT160;
++			break;
++		case NL80211_CHAN_WIDTH_80P80:
++			if (arvif->vif->bss_conf.he_support)
++				phymode = MODE_11AX_HE80_80;
++			else
++				phymode = MODE_11AC_VHT80_80;
++			break;
++		default:
++			break;
++		}
++		break;
++	case NL80211_BAND_6GHZ:
++		switch (def.width) {
++		case NL80211_CHAN_WIDTH_20:
++			phymode = MODE_11AX_HE20;
++			break;
++		case NL80211_CHAN_WIDTH_40:
++			phymode = MODE_11AX_HE40;
++			break;
++		case NL80211_CHAN_WIDTH_80:
++			phymode = MODE_11AX_HE80;
++			break;
++		case NL80211_CHAN_WIDTH_160:
++			phymode = MODE_11AX_HE160;
++			break;
++		case NL80211_CHAN_WIDTH_80P80:
++			phymode = MODE_11AX_HE80_80;
++			break;
++		default:
++			break;
++		}
++		break;
++	default:
++		break;
++	}
++
++	WARN_ON(phymode == MODE_UNKNOWN);
++	return phymode;
++}
++
+ static int ath11k_mac_txpower_recalc(struct ath11k *ar)
+ {
+ 	struct ath11k_pdev *pdev = ar->pdev;
+@@ -1112,6 +1230,7 @@ static int __ath11k_mac_setup_bcn_tmpl(struct ath11k_vif *arvif, struct sk_buff
+ 		vht_cap = (void *)(vht_cap_ie + 2);
+ 		arvif->vht_cap = vht_cap->vht_cap_info;
+ 	}
++	ar->cfr_phymode = ath11k_cfr_chan_to_phymode(arvif);
+ 
+ 	if (cfg80211_find_vendor_ie(WLAN_OUI_MICROSOFT,
+ 				    WLAN_OUI_TYPE_MICROSOFT_WPA,
+-- 
+2.7.4
+

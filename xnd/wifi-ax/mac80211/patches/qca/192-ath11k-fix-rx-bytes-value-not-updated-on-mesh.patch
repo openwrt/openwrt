@@ -1,0 +1,236 @@
+From 7f711a26742fffdcf10cda6089b2442f1da4db60 Mon Sep 17 00:00:00 2001
+From: Thiraviyam Mariyappan <tmariyap@codeaurora.org>
+Date: Wed, 17 Jun 2020 11:19:32 +0530
+Subject: [PATCH] mac80211: fix rx bytes values not updated on mesh link
+
+Previously, for mesh link the rx stats from pcpu is not
+updating. Due to this, rx bytes are not updated. Fixing
+that by updating the rx stats from pcpu rx stats
+
+Signed-off-by: Thiraviyam Mariyappan <tmariyap@codeaurora.org>
+---
+ net/mac80211/rx.c | 27 ++++++++++++++++-----------
+ 1 file changed, 16 insertions(+), 11 deletions(-)
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1720,11 +1720,18 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 	struct sk_buff *skb = rx->skb;
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	struct ieee80211_local *local = rx->sdata->local;
++	struct ieee80211_sta_rx_stats *stats;
+ 	int i;
+ 
+ 	if (!sta)
+ 		return RX_CONTINUE;
+ 
++	stats = &sta->rx_stats;
++
++	if (ieee80211_hw_check(&local->hw, USES_RSS))
++		stats = this_cpu_ptr(sta->pcpu_rx_stats);
++
+ 	/*
+ 	 * Update last_rx only for IBSS packets which are for the current
+ 	 * BSSID and for station already AUTHORIZED to avoid keeping the
+@@ -1734,49 +1741,49 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 	 * something went wrong the first time.
+ 	 */
+ 	if (rx->sdata->vif.type == NL80211_IFTYPE_ADHOC) {
+-		u8 *bssid = ieee80211_get_bssid(hdr, rx->skb->len,
++		u8 *bssid = ieee80211_get_bssid(hdr, skb->len,
+ 						NL80211_IFTYPE_ADHOC);
+ 		if (ether_addr_equal(bssid, rx->sdata->u.ibss.bssid) &&
+ 		    test_sta_flag(sta, WLAN_STA_AUTHORIZED)) {
+-			sta->rx_stats.last_rx = jiffies;
++			stats->last_rx = jiffies;
+ 			if (ieee80211_is_data(hdr->frame_control) &&
+ 			    !is_multicast_ether_addr(hdr->addr1))
+ 				sta->rx_stats.last_rate =
+ 					sta_stats_encode_rate(status);
+ 		}
+ 	} else if (rx->sdata->vif.type == NL80211_IFTYPE_OCB) {
+-		sta->rx_stats.last_rx = jiffies;
++		stats->last_rx = jiffies;
+ 	} else if (!ieee80211_is_s1g_beacon(hdr->frame_control) &&
+ 		   !is_multicast_ether_addr(hdr->addr1)) {
+ 		/*
+ 		 * Mesh beacons will update last_rx when if they are found to
+ 		 * match the current local configuration when processed.
+ 		 */
+-		sta->rx_stats.last_rx = jiffies;
++		stats->last_rx = jiffies;
+ 		if (ieee80211_is_data(hdr->frame_control))
+-			sta->rx_stats.last_rate = sta_stats_encode_rate(status);
++			stats->last_rate = sta_stats_encode_rate(status);
+ 	}
+ 
+-	sta->rx_stats.fragments++;
++	stats->fragments++;
+ 
+-	u64_stats_update_begin(&rx->sta->rx_stats.syncp);
+-	sta->rx_stats.bytes += rx->skb->len;
+-	u64_stats_update_end(&rx->sta->rx_stats.syncp);
++	u64_stats_update_begin(&stats->syncp);
++	stats->bytes += skb->len;
++	u64_stats_update_end(&stats->syncp);
+ 
+ 	if (!(status->flag & RX_FLAG_NO_SIGNAL_VAL)) {
+-		sta->rx_stats.last_signal = status->signal;
++		stats->last_signal = status->signal;
+ 		ewma_signal_add(&sta->rx_stats_avg.signal, -status->signal);
+ 	}
+ 
+ 	if (status->chains) {
+-		sta->rx_stats.chains = status->chains;
++		stats->chains = status->chains;
+ 		for (i = 0; i < ARRAY_SIZE(status->chain_signal); i++) {
+ 			int signal = status->chain_signal[i];
+ 
+ 			if (!(status->chains & BIT(i)))
+ 				continue;
+ 
+-			sta->rx_stats.chain_signal_last[i] = signal;
++			stats->chain_signal_last[i] = signal;
+ 			ewma_signal_add(&sta->rx_stats_avg.chain_signal[i],
+ 					-signal);
+ 		}
+@@ -1838,8 +1845,8 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 		 * Update counter and free packet here to avoid
+ 		 * counting this as a dropped packed.
+ 		 */
+-		sta->rx_stats.packets++;
+-		dev_kfree_skb(rx->skb);
++		stats->packets++;
++		dev_kfree_skb(skb);
+ 		return RX_QUEUED;
+ 	}
+ 
+@@ -2202,6 +2209,7 @@ ieee80211_rx_h_defragment(struct ieee802
+ 	unsigned int frag, seq;
+ 	struct ieee80211_fragment_entry *entry;
+ 	struct sk_buff *skb;
++	struct ieee80211_sta_rx_stats *stats;
+ 
+ 	hdr = (struct ieee80211_hdr *)rx->skb->data;
+ 	fc = hdr->frame_control;
+@@ -2330,8 +2338,12 @@ ieee80211_rx_h_defragment(struct ieee802
+  out:
+ 	ieee80211_led_rx(rx->local);
+  out_no_led:
+-	if (rx->sta)
+-		rx->sta->rx_stats.packets++;
++	if (rx->sta) {
++		stats = &rx->sta->rx_stats;
++		if (ieee80211_hw_check(&rx->sdata->local->hw, USES_RSS))
++			stats = this_cpu_ptr(rx->sta->pcpu_rx_stats);
++		stats->packets++;
++	}
+ 	return RX_CONTINUE;
+ }
+ 
+@@ -3132,6 +3144,7 @@ ieee80211_rx_h_action(struct ieee80211_r
+ 	struct ieee80211_mgmt *mgmt = (struct ieee80211_mgmt *) rx->skb->data;
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(rx->skb);
+ 	int len = rx->skb->len;
++	struct ieee80211_sta_rx_stats *stats;
+ 
+ 	if (!ieee80211_is_action(mgmt->frame_control))
+ 		return RX_CONTINUE;
+@@ -3413,16 +3426,24 @@ ieee80211_rx_h_action(struct ieee80211_r
+ 	return RX_CONTINUE;
+ 
+  handled:
+-	if (rx->sta)
+-		rx->sta->rx_stats.packets++;
++	if (rx->sta) {
++		stats = &rx->sta->rx_stats;
++		if (ieee80211_hw_check(&local->hw, USES_RSS))
++			stats = this_cpu_ptr(rx->sta->pcpu_rx_stats);
++		stats->packets++;
++	}
+ 	dev_kfree_skb(rx->skb);
+ 	return RX_QUEUED;
+ 
+  queue:
+ 	skb_queue_tail(&sdata->skb_queue, rx->skb);
+ 	ieee80211_queue_work(&local->hw, &sdata->work);
+-	if (rx->sta)
+-		rx->sta->rx_stats.packets++;
++	if (rx->sta) {
++		stats = &rx->sta->rx_stats;
++		if (ieee80211_hw_check(&local->hw, USES_RSS))
++			stats = this_cpu_ptr(rx->sta->pcpu_rx_stats);
++		stats->packets++;
++	}
+ 	return RX_QUEUED;
+ }
+ 
+@@ -3465,6 +3486,7 @@ ieee80211_rx_h_action_post_userspace(str
+ 	struct ieee80211_sub_if_data *sdata = rx->sdata;
+ 	struct ieee80211_mgmt *mgmt = (struct ieee80211_mgmt *) rx->skb->data;
+ 	int len = rx->skb->len;
++	struct ieee80211_sta_rx_stats *stats;
+ 
+ 	if (!ieee80211_is_action(mgmt->frame_control))
+ 		return RX_CONTINUE;
+@@ -3488,8 +3510,12 @@ ieee80211_rx_h_action_post_userspace(str
+ 	return RX_CONTINUE;
+ 
+  handled:
+-	if (rx->sta)
+-		rx->sta->rx_stats.packets++;
++	if (rx->sta) {
++		stats = &rx->sta->rx_stats;
++		if (ieee80211_hw_check(&rx->sdata->local->hw, USES_RSS))
++			stats = this_cpu_ptr(rx->sta->pcpu_rx_stats);
++		stats->packets++;
++	}
+ 	dev_kfree_skb(rx->skb);
+ 	return RX_QUEUED;
+ }
+@@ -3583,6 +3609,7 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+ {
+ 	struct ieee80211_sub_if_data *sdata = rx->sdata;
+ 	struct ieee80211_mgmt *mgmt = (void *)rx->skb->data;
++	struct ieee80211_sta_rx_stats *stats;
+ 	__le16 stype;
+ 
+ 	stype = mgmt->frame_control & cpu_to_le16(IEEE80211_FCTL_STYPE);
+@@ -3633,8 +3660,12 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+ 	/* queue up frame and kick off work to process it */
+ 	skb_queue_tail(&sdata->skb_queue, rx->skb);
+ 	ieee80211_queue_work(&rx->local->hw, &sdata->work);
+-	if (rx->sta)
+-		rx->sta->rx_stats.packets++;
++	if (rx->sta) {
++		stats = &rx->sta->rx_stats;
++		if (ieee80211_hw_check(&rx->sdata->local->hw, USES_RSS))
++			stats = this_cpu_ptr(rx->sta->pcpu_rx_stats);
++		stats->packets++;
++	}
+ 
+ 	return RX_QUEUED;
+ }
+--- a/net/mac80211/mesh_plink.c
++++ b/net/mac80211/mesh_plink.c
+@@ -416,6 +416,7 @@ static void mesh_sta_info_init(struct ie
+ 	struct ieee80211_supported_band *sband;
+ 	u32 rates, basic_rates = 0, changed = 0;
+ 	enum ieee80211_sta_rx_bandwidth bw = sta->sta.bandwidth;
++	struct ieee80211_sta_rx_stats *stats;
+ 
+ 	sband = ieee80211_get_sband(sdata);
+ 	if (!sband)
+@@ -425,7 +426,10 @@ static void mesh_sta_info_init(struct ie
+ 					&basic_rates);
+ 
+ 	spin_lock_bh(&sta->mesh->plink_lock);
+-	sta->rx_stats.last_rx = jiffies;
++	stats = &sta->rx_stats;
++	if (ieee80211_hw_check(&local->hw, USES_RSS))
++		stats = this_cpu_ptr(sta->pcpu_rx_stats);
++	stats->last_rx = jiffies;
+ 
+ 	/* rates and capabilities don't change during peering */
+ 	if (sta->mesh->plink_state == NL80211_PLINK_ESTAB &&

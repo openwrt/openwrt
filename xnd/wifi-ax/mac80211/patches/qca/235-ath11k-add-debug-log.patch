@@ -1,0 +1,130 @@
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Subject: [PATCH] ath11k: Add debug logs for the CR2849877 and CR2854245
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+---
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2678,6 +2678,14 @@ static void ath11k_dp_rx_h_ppdu(struct a
+ 	rx_status->freq = ieee80211_channel_to_frequency(channel_num,
+ 							 rx_status->band);
+ 
++	if (!ar->hw->wiphy->bands[rx_status->band]) {
++		ath11k_err(ar->ab, "sband NULL status band %d freq %d channel_num %d pdev_idx %d cookie pdev id %d\n",
++			   rx_status->band, rx_status->freq, channel_num, ar->pdev_idx, ar->cookie_pdev_id);
++
++		print_hex_dump(KERN_DEBUG, "rx_desc: ", DUMP_PREFIX_ADDRESS, 16, 1,
++			       rx_desc, sizeof(struct hal_rx_desc), false);
++	}
++
+ 	if (rx_status->band == NL80211_BAND_6GHZ)
+ 		rx_status->freq = center_freq;
+ 
+@@ -3494,6 +3502,12 @@ static int ath11k_dp_rx_reap_mon_status_
+ 						&cookie, &rbm);
+ 		if (paddr) {
+ 			buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID, cookie);
++			ar->cookie_pdev_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_PDEV_ID, cookie);
++
++			if (mac_id != ar->cookie_pdev_id) {
++				ath11k_warn(ab, "invalid local mac_id %d pdev_id %d\n",
++					    mac_id, ar->cookie_pdev_id);
++			}
+ 
+ 			spin_lock_bh(&rx_ring->idr_lock);
+ 			skb = idr_find(&rx_ring->bufs_idr, buf_id);
+@@ -5784,6 +5798,11 @@ void ath11k_dp_rx_mon_dest_process(struc
+ 	spin_unlock_bh(&pmon->mon_lock);
+ 
+ 	if (rx_bufs_used) {
++		if (ar->cookie_pdev_id != dp->mac_id || mac_id != dp->mac_id) {
++			ath11k_warn(ar->ab, "invalid mac_id for rxbuf replenish pdev id %d mac id %d dp mac id %d\n",
++				    ar->cookie_pdev_id, mac_id, dp->mac_id);
++		}
++
+ 		rx_mon_stats->dest_ppdu_done++;
+ 		if (ar->ab->hw_params.rxdma1_enable)
+ 			ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id,
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -3661,7 +3661,8 @@ static int ath11k_mac_op_hw_scan(struct
+ 
+ 	ret = ath11k_start_scan(ar, arg);
+ 	if (ret) {
+-		ath11k_warn(ar->ab, "failed to start hw scan: %d\n", ret);
++		ath11k_warn(ar->ab, "failed to start hw scan: %d scan_state %d pdev_idx %d\n",
++			    ret, ar->scan.state, ar->pdev_idx);
+ 		spin_lock_bh(&ar->data_lock);
+ 		ar->scan.state = ATH11K_SCAN_IDLE;
+ 		spin_unlock_bh(&ar->data_lock);
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -4823,12 +4823,16 @@ void ieee80211_rx_list(struct ieee80211_
+ 		}
+ 	}
+ 
+-	if (WARN_ON(status->band >= NUM_NL80211_BANDS))
++	if (WARN_ON(status->band >= NUM_NL80211_BANDS)) {
++		printk("invalid status band %d freq %d\n", status->band, status->freq);
+ 		goto drop;
++	}
+ 
+ 	sband = local->hw.wiphy->bands[status->band];
+-	if (WARN_ON(!sband))
++	if (WARN_ON(!sband)) {
++		printk("NULL sband status band %d freq %d\n", status->band, status->freq);
+ 		goto drop;
++	}
+ 
+ 	/*
+ 	 * If we're suspending, it is possible although not too likely
+--- a/net/mac80211/scan.c
++++ b/net/mac80211/scan.c
+@@ -633,9 +633,15 @@ static void ieee80211_scan_state_send_pr
+ 	int i;
+ 	struct ieee80211_sub_if_data *sdata;
+ 	struct cfg80211_scan_request *scan_req;
+-	enum nl80211_band band = local->hw.conf.chandef.chan->band;
++	enum nl80211_band band;
+ 	u32 flags = 0, tx_flags;
+ 
++	if (!local->hw.conf.chandef.chan) {
++		printk("channel NULL\n");
++		WARN_ON(1);
++	}
++
++	band = local->hw.conf.chandef.chan->band;
+ 	scan_req = rcu_dereference_protected(local->scan_req,
+ 					     lockdep_is_held(&local->mtx));
+ 
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -708,6 +708,8 @@ struct ath11k {
+ 
+ 	bool monitor_vdev_created;
+ 
++	int cookie_pdev_id;
++
+ 	/* protected by conf_mutex */
+ 	u8 ps_state_enable;
+ 	u8 ps_timekeeper_enable;
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -3729,6 +3729,7 @@ int ieee80211_attach_ack_skb(struct ieee
+ 
+ 	if (id < 0) {
+ 		kfree_skb(ack_skb);
++		printk(KERN_ERR "attach ack fail %d\n", id);
+ 		return -ENOMEM;
+ 	}
+ 
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2477,6 +2477,7 @@ static u16 ieee80211_store_ack_skb(struc
+ 			}
+ 		} else {
+ 			kfree_skb(ack_skb);
++			printk(KERN_ERR "store ack fail %d\n", id);
+ 		}
+ 	}
+ 

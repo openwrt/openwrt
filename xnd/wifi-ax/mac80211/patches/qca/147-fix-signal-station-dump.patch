@@ -1,0 +1,35 @@
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -3455,15 +3455,13 @@ int ath11k_dp_rx_process_mon_status(stru
+ 			continue;
+ 		}
+ 
+-		if ((ppdu_info->fc_valid) &&
+-		    (ppdu_info->ast_index != HAL_AST_IDX_INVALID)) {
+-			if (ppdu_info->reception_type == HAL_RX_RECEPTION_TYPE_SU) {
+-				arsta = (struct ath11k_sta *)peer->sta->drv_priv;
+-				ath11k_dp_rx_update_peer_su_stats(arsta, ppdu_info);
+-			} else {
+-				ath11k_dp_rx_mon_process_ulofdma(ppdu_info);
+-				ath11k_dp_rx_update_peer_mu_stats(ar, ppdu_info);
+-			}
++		if (ppdu_info->reception_type == HAL_RX_RECEPTION_TYPE_SU) {
++			arsta = (struct ath11k_sta *)peer->sta->drv_priv;
++			ath11k_dp_rx_update_peer_su_stats(arsta, ppdu_info);
++		} else if ((ppdu_info->fc_valid) &&
++			   (ppdu_info->ast_index != HAL_AST_IDX_INVALID)) {
++			ath11k_dp_rx_mon_process_ulofdma(ppdu_info);
++			ath11k_dp_rx_update_peer_mu_stats(ar, ppdu_info);
+ 		}
+ 
+ 		if (ath11k_debugfs_is_pktlog_peer_valid(ar, peer->addr)) {
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -7092,6 +7092,7 @@ static void ath11k_mac_op_sta_statistics
+ 
+ 	/* TODO: Use real NF instead of default one. */
+ 	sinfo->signal = arsta->rssi_comb + ATH11K_DEFAULT_NOISE_FLOOR;
++	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_SIGNAL);
+ }
+ 
+ #define ATH11K_WLAN_PRIO_MAX	0x63

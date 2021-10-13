@@ -1,0 +1,352 @@
+From 55099b7989862821d1a8c3eea3ba1c309ecf40d5 Mon Sep 17 00:00:00 2001
+From: Hari Chandrakanthan <haric@codeaurora.org>
+Date: Wed, 16 Jun 2021 16:59:36 +0530
+Subject: [PATCH] mac80211 - support to dump continuous tx fail count in mesh
+
+Signed-off-by: Hari Chandrakanthan <haric@codeaurora.org>
+---
+ include/net/cfg80211.h       |  5 +++
+ include/uapi/linux/nl80211.h |  6 ++++
+ net/mac80211/debugfs_sta.c   | 46 +++++++++++++++++++++++++
+ net/mac80211/mesh_hwmp.c     | 82 ++++++++++++++++++++++++++++++++++++++++++--
+ net/mac80211/mesh_pathtbl.c  | 12 +++++++
+ net/mac80211/sta_info.h      | 15 ++++++++
+ net/wireless/nl80211.c       | 22 ++++++++++++
+ 7 files changed, 185 insertions(+), 3 deletions(-)
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -7550,6 +7550,11 @@ void cfg80211_cqm_pktloss_notify(struct
+ void cfg80211_cqm_txe_notify(struct net_device *dev, const u8 *peer,
+ 			     u32 num_packets, u32 rate, u32 intvl, gfp_t gfp);
+ 
++void cfg80211_cqm_mpath_change_notify(struct net_device *dev,
++				      const u8 *peer,
++				      enum nl80211_mpath_change_notify event,
++				      gfp_t gfp);
++
+ /**
+  * cfg80211_cqm_beacon_loss_notify - beacon loss event
+  * @dev: network device
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -5012,6 +5012,11 @@ enum nl80211_ps_state {
+ 	NL80211_PS_ENABLED,
+ };
+ 
++enum nl80211_mpath_change_notify {
++	NL80211_MPATH_METRIC_CHANGE,
++	NL80211_MPATH_BROKEN_NOTIFY,
++};
++
+ /**
+  * enum nl80211_attr_cqm - connection quality monitor attributes
+  * @__NL80211_ATTR_CQM_INVALID: invalid
+@@ -5056,6 +5061,7 @@ enum nl80211_attr_cqm {
+ 	NL80211_ATTR_CQM_TXE_INTVL,
+ 	NL80211_ATTR_CQM_BEACON_LOSS_EVENT,
+ 	NL80211_ATTR_CQM_RSSI_LEVEL,
++	NL80211_ATTR_CQM_MPATH_CHANGE_EVENT,
+ 
+ 	/* keep last */
+ 	__NL80211_ATTR_CQM_AFTER_LAST,
+--- a/net/mac80211/debugfs_sta.c
++++ b/net/mac80211/debugfs_sta.c
+@@ -508,6 +508,49 @@ static ssize_t sta_ht_capa_read(struct f
+ }
+ STA_OPS(ht_capa);
+ 
++static ssize_t sta_tx_fail_cnt_read(struct file *file, char __user *userbuf,
++				    size_t count, loff_t *ppos)
++{
++	struct sta_info *sta = file->private_data;
++	char buf[12 * MAX_TX_FAIL_CNT], *p = buf;
++	int i;
++
++	if(!sta->mesh) {
++		p += scnprintf(p, sizeof(buf) + buf - p, "tx_fail_cnt is supported only for mesh\n");
++		return simple_read_from_buffer(userbuf, count, ppos, buf, p - buf);
++	}
++
++	for (i = 0; i < MAX_TX_FAIL_CNT; i++) {
++		if (!sta->mesh->tx_fail_cnt[i])
++			continue;
++		p += scnprintf(p, sizeof(buf) + buf - p, "%d : %u\n",i,
++			       sta->mesh->tx_fail_cnt[i]);
++	}
++	return simple_read_from_buffer(userbuf, count, ppos, buf, p - buf);
++}
++
++static ssize_t sta_tx_fail_cnt_write(struct file *file,
++				     const char __user *userbuf,
++				     size_t count, loff_t *ppos)
++{
++	struct sta_info *sta = file->private_data;
++	int ret;
++	u8 val;
++
++	ret = kstrtou8_from_user(userbuf, count, 0, &val);
++
++	if (!sta->mesh || ret || val >= MESH_TX_FAILURE_LOG_CTRL_MAX)
++		return -EINVAL;
++
++	if (val & MESH_RESET_TX_FAIL_COUNT)
++		memset(sta->mesh->tx_fail_cnt, 0, sizeof(u32) * MAX_TX_FAIL_CNT);
++
++	sta->mesh->tx_fail_log = val;
++	return count;
++}
++
++STA_OPS_RW(tx_fail_cnt);
++
+ static ssize_t sta_vht_capa_read(struct file *file, char __user *userbuf,
+ 				 size_t count, loff_t *ppos)
+ {
+@@ -1196,6 +1239,9 @@ void ieee80211_sta_debugfs_add(struct st
+ 	DEBUGFS_ADD(reset_mac80211_rx_pkts_flow);
+ 	DEBUGFS_ADD(mac80211_tx_pkts_flow);
+ 	DEBUGFS_ADD(mac80211_rx_pkts_flow);
++#ifdef CPTCFG_MAC80211_MESH
++        DEBUGFS_ADD(tx_fail_cnt);
++#endif
+ 
+ 	DEBUGFS_ADD_COUNTER(rx_duplicates, rx_stats.num_duplicates);
+ 	DEBUGFS_ADD_COUNTER(rx_fragments, rx_stats.fragments);
+--- a/net/mac80211/mesh_hwmp.c
++++ b/net/mac80211/mesh_hwmp.c
+@@ -71,6 +71,9 @@ static inline u16 u16_field_get(const u8
+ #define SN_LT(x, y) ((s32)(x - y) < 0)
+ #define MAX_SANE_SN_DELTA 32
+ 
++#define MP_DIFF(a, b) (((a) > (b)) ? ((a) - (b)) : ((b) - (a)))
++#define LOG_PERCENT_DIFF 30
++
+ static inline u32 SN_DELTA(u32 x, u32 y)
+ {
+ 	return x >= y ? x - y : y - x;
+@@ -297,11 +300,24 @@ void ieee80211s_update_metric(struct iee
+ 			      struct ieee80211_tx_status *st)
+ {
+ 	struct ieee80211_tx_info *txinfo = st->info;
+-	int failed;
++	int failed = 0;
+ 	struct rate_info rinfo;
+ 
+ 	failed = !(txinfo->flags & IEEE80211_TX_STAT_ACK);
+ 
++	if (failed)
++		sta->mesh->fail_cnt++;
++	else if (sta->mesh->fail_cnt) {
++		if (sta->mesh->fail_cnt >= MAX_TX_FAIL_CNT &&
++		    (sta->mesh->tx_fail_log & MESH_ENABLE_MPL_LOG))
++			sdata_info(sta->sdata, " MESH MPL HIGHER fail count %u for peer %pM\n",
++				   sta->mesh->fail_cnt, sta->sta.addr);
++
++		if(sta->mesh->fail_cnt  < MAX_TX_FAIL_CNT)
++			sta->mesh->tx_fail_cnt[sta->mesh->fail_cnt]++;
++		sta->mesh->fail_cnt = 0;
++	}
++
+ 	/* moving average, scaled to 100.
+ 	 * feed failure as 100 and success as 0
+ 	 */
+@@ -367,6 +383,30 @@ next_hop_deref_protected(struct mesh_pat
+ 					 lockdep_is_held(&mpath->state_lock));
+ }
+ 
++void mesh_continuous_tx_fail_cnt(struct sta_info *sta,
++				 enum nl80211_mpath_change_notify event)
++{
++	int i;
++
++	if (!(sta->mesh->tx_fail_log & MESH_ENABLE_TX_FAIL_COUNT_LOG))
++		return;
++
++	cfg80211_cqm_mpath_change_notify(sta->sdata->dev, sta->sta.addr,
++					 event, GFP_ATOMIC);
++
++	sdata_info(sta->sdata, "MESH MPL continuous fail count :\n");
++	for (i = 0; i < MAX_TX_FAIL_CNT; i++) {
++		if (!sta->mesh->tx_fail_cnt[i])
++			continue;
++
++		sdata_info(sta->sdata, "%d cont tx failure occurred %u times\n", i,
++			   sta->mesh->tx_fail_cnt[i]);
++	}
++
++	sdata_info(sta->sdata, "current continuous tx fail count %u\n",
++                   sta->mesh->fail_cnt);
++}
++
+ /**
+  * hwmp_route_info_get - Update routing info to originator and transmitter
+  *
+@@ -400,6 +440,8 @@ static u32 hwmp_route_info_get(struct ie
+ 	u32 last_hop_metric, new_metric;
+ 	bool process = true;
+ 	u8 hopcount;
++	int signal_avg;
++	bool mpath_metric_change = 0;
+ 
+ 	rcu_read_lock();
+ 	sta = sta_info_get(sdata, mgmt->sa);
+@@ -498,8 +540,23 @@ static u32 hwmp_route_info_get(struct ie
+ 			next_hop = rcu_dereference(mpath->next_hop);
+ 			if (next_hop)
+ 				ether_addr_copy(old_next_hop_addr, next_hop->sta.addr);
+-			if (next_hop != sta)
++			if (next_hop != sta) {
+ 				mpath->path_change_count++;
++				mpath_dbg(sdata, "MESH MPU dst %pM next hop %pM"
++					  " metric %d ft 0x%x\n",
++					  mpath->dst, sta->addr, last_hop_metric, action);
++			} else if (MP_DIFF(last_hop_metric, mpath->metric) >
++				   (mpath->metric*LOG_PERCENT_DIFF)/100) {
++				signal_avg = -ewma_signal_read(&sta->rx_stats_avg.signal);
++				mpath_dbg(sdata, "MESH MPLMU DIRECT dst %pM next hop"
++					  " %pM metric from %d to %d ft 0x%x signal %d"
++					  "dbm signal_avg %d dbm\n",
++					  mpath->dst, sta->addr, mpath->metric,
++					  last_hop_metric, action,
++					  sta->rx_stats.last_signal,
++					  signal_avg);
++				mpath_metric_change = 1;
++			}
+ 			mesh_path_assign_nexthop(mpath, sta);
+ 			mpath->flags |= MESH_PATH_SN_VALID;
+ 			mpath->metric = new_metric;
+@@ -551,8 +608,23 @@ static u32 hwmp_route_info_get(struct ie
+ 			next_hop = rcu_dereference(mpath->next_hop);
+ 			if (next_hop)
+ 				ether_addr_copy(old_next_hop_addr, next_hop->sta.addr);
+-			if (next_hop != sta)
++			if (next_hop != sta) {
+ 				mpath->path_change_count++;
++				mpath_dbg(sdata, "MESH MPU dst %pM next hop %pM"
++					  " metric %d ft 0x%x\n",
++					  mpath->dst, sta->addr, last_hop_metric, action);
++			} else if (MP_DIFF(last_hop_metric, mpath->metric) >
++				   (mpath->metric*LOG_PERCENT_DIFF)/100) {
++				signal_avg = -ewma_signal_read(&sta->rx_stats_avg.signal);
++				mpath_dbg(sdata, "MESH MPLMU DIRECT dst %pM next hop"
++					  " %pM metric from %d to %d ft 0x%x signal"
++					  " %d dbm signal_avg %d dbm\n",
++					  mpath->dst, sta->addr, mpath->metric,
++					  last_hop_metric, action,
++					  sta->rx_stats.last_signal,
++					  signal_avg);
++				mpath_metric_change = 1;
++			}
+ 			mesh_path_assign_nexthop(mpath, sta);
+ 			mpath->metric = last_hop_metric;
+ 			mpath->exp_time = time_after(mpath->exp_time, exp_time)
+@@ -570,6 +642,9 @@ static u32 hwmp_route_info_get(struct ie
+ 			spin_unlock_bh(&mpath->state_lock);
+ 	}
+ 
++	if (mpath_metric_change)
++		mesh_continuous_tx_fail_cnt(sta, NL80211_MPATH_METRIC_CHANGE);
++
+ 	rcu_read_unlock();
+ 
+ 	return process ? new_metric : 0;
+--- a/net/mac80211/mesh_pathtbl.c
++++ b/net/mac80211/mesh_pathtbl.c
+@@ -601,6 +601,7 @@ void mesh_plink_broken(struct sta_info *
+ 	struct mesh_table *tbl = sdata->u.mesh.mesh_paths;
+ 	static const u8 bcast[ETH_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+ 	struct mesh_path *mpath;
++        int paths_deactivated = 0, signal_avg;
+ 
+ 	rcu_read_lock();
+ 	hlist_for_each_entry_rcu(mpath, &tbl->walk_head, walk_list) {
+@@ -615,9 +616,20 @@ void mesh_plink_broken(struct sta_info *
+ 				sdata->u.mesh.mshcfg.element_ttl,
+ 				mpath->dst, mpath->sn,
+ 				WLAN_REASON_MESH_PATH_DEST_UNREACHABLE, bcast);
++                                ++paths_deactivated;
+ 		}
+ 	}
+ 	rcu_read_unlock();
++	if (paths_deactivated) {
++		signal_avg = -ewma_signal_read(&sta->rx_stats_avg.signal);
++		if(sta->mesh->tx_fail_log & MESH_ENABLE_MPL_LOG)
++			sdata_info(sta->sdata, " MESH MPL link to %pM is broken and"
++				   " %d path deactivated signal %d dbm signal_avg %d dbm\n",
++				   sta->addr, paths_deactivated,
++				   sta->rx_stats.last_signal,
++				   signal_avg);
++		mesh_continuous_tx_fail_cnt(sta, NL80211_MPATH_BROKEN_NOTIFY);
++	}
+ }
+ 
+ static void mesh_path_free_rcu(struct mesh_table *tbl,
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -123,6 +123,15 @@ enum ieee80211_sta_info_flags {
+ #define HT_AGG_STATE_STOP_CB		7
+ #define HT_AGG_STATE_SENT_ADDBA		8
+ 
++#define MAX_TX_FAIL_CNT 		50
++
++enum mesh_tx_failure_log_control{
++	MESH_RESET_TX_FAIL_COUNT = BIT(0),
++	MESH_ENABLE_TX_FAIL_COUNT_LOG = BIT(1),
++	MESH_ENABLE_MPL_LOG = BIT(2),
++	MESH_TX_FAILURE_LOG_CTRL_MAX = BIT(3)
++};
++
+ DECLARE_EWMA(avg_signal, 10, 8)
+ enum ieee80211_agg_stop_reason {
+ 	AGG_STOP_DECLINED,
+@@ -423,6 +432,10 @@ struct mesh_sta {
+ 	struct ewma_mesh_fail_avg fail_avg;
+ 	/* moving average of tx bitrate */
+ 	struct ewma_mesh_tx_rate_avg tx_rate_avg;
++
++	u32 fail_cnt;
++	u32 tx_fail_cnt[MAX_TX_FAIL_CNT];
++	u8 tx_fail_log;
+ };
+ 
+ DECLARE_EWMA(signal, 10, 8)
+@@ -834,6 +847,8 @@ u8 sta_info_tx_streams(struct sta_info *
+ void ieee80211_sta_ps_deliver_wakeup(struct sta_info *sta);
+ void ieee80211_sta_ps_deliver_poll_response(struct sta_info *sta);
+ void ieee80211_sta_ps_deliver_uapsd(struct sta_info *sta);
++void mesh_continuous_tx_fail_cnt(struct sta_info *sta,
++				 enum nl80211_mpath_change_notify event);
+ 
+ unsigned long ieee80211_sta_last_active(struct sta_info *sta);
+ 
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -17439,6 +17439,28 @@ void cfg80211_cqm_txe_notify(struct net_
+ }
+ EXPORT_SYMBOL(cfg80211_cqm_txe_notify);
+ 
++void cfg80211_cqm_mpath_change_notify(struct net_device *dev,
++                                      const u8 *peer,
++                                      enum nl80211_mpath_change_notify event,
++                                      gfp_t gfp)
++{
++        struct sk_buff *msg;
++
++        msg = cfg80211_prepare_cqm(dev, peer, gfp);
++        if (!msg)
++                return;
++
++        if (nla_put_u32(msg, NL80211_ATTR_CQM_MPATH_CHANGE_EVENT, event))
++                goto nla_put_failure;
++
++        cfg80211_send_cqm(msg, gfp);
++        return;
++
++ nla_put_failure:
++        nlmsg_free(msg);
++}
++EXPORT_SYMBOL(cfg80211_cqm_mpath_change_notify);
++
+ void cfg80211_cqm_pktloss_notify(struct net_device *dev,
+ 				 const u8 *peer, u32 num_packets, gfp_t gfp)
+ {

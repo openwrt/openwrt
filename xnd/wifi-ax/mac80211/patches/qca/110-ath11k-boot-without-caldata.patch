@@ -1,0 +1,15 @@
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2283,9 +2283,9 @@ ath11k_qmi_prepare_bdf_download(struct a
+ 		fw_entry = ath11k_core_firmware_request(ab, ATH11K_DEFAULT_CAL_FILE);
+ 		if (IS_ERR(fw_entry)) {
+ 			ret = PTR_ERR(fw_entry);
+-			ath11k_warn(ab, "failed to load %s: %d\n",
+-				    ATH11K_DEFAULT_CAL_FILE, ret);
+-			return ret;
++			ath11k_warn(ab,
++				    "qmi failed to load CAL data file:%s booting with minimal performance\n",ATH11K_DEFAULT_CAL_FILE);
++			return 0;
+ 		}
+ 
+ 		fw_size = min_t(u32, ab->hw_params.fw.board_size,

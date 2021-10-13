@@ -1,0 +1,233 @@
+From c7a64ef56edcc32c18431ec7aba345b20eda5e8f Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Date: Mon, 25 Jan 2021 10:10:30 +0530
+Subject: [PATCH] ath11k: add debugfs interface to configure firmware dbg log
+ level
+
+Added debugfs interface "fw_dbglog_config" to configure firmware log levels.
+Configuration is done via WMI command WMI_DBGLOG_CFG_CMDID.
+
+Command to configure,
+echo "<dbglog_param> <value>" > /sys/kernel/debug/ath11k/<hw>/fw_dbglog_config
+
+where dbglog_param can be,
+  1) WMI_DEBUG_LOG_PARAM_LOG_LEVEL - configure log level for a given module
+     here, <value> = <0xaaaa00bb>, 'aaaa' - module id and 'bb' - loglevel
+  2) WMI_DEBUG_LOG_PARAM_VDEV_ENABLE - enable the debug log for a given vdev
+     here, <value> = vdev_id
+  3) WMI_DEBUG_LOG_PARAM_VDEV_DISABLE - disable debug log for a given vdev
+     except ERROR logs
+     here, <value> = vdev_id
+  4) WMI_DEBUG_LOG_PARAM_VDEV_ENABLE_BITMAP - set vdev enable bitmap
+     here, <value> = vdev_enable_bitmap
+  5) WMI_DEBUG_LOG_PARAM_MOD_ENABLE_BITMAP - set a given log level to all the
+     modules specified in the module bitmap
+     here, <value> = <0xaaaaaaaa000000bb>, 'aaaaaaaa' - module bitmap and
+     'bb' - loglevel
+  6) WMI_DEBUG_LOG_PARAM_WOW_MOD_ENABLE_BITMAP - Wow mode specific logging enable
+     here, <value> = <0xaaaaaaaa000000bb>, 'aaaaaaaa' - module bitmap and
+     'bb' - loglevel
+
+Sample command usage,
+echo "1 0xffff0001" > /sys/kernel/debug/ath11k/qcn9000\ hw1.0_0000
+\:01\:00.0/fw_dbglog_config
+
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h  |  2 +
+ drivers/net/wireless/ath/ath11k/debugfs.c | 66 ++++++++++++++++++++++++++++++++-
+ drivers/net/wireless/ath/ath11k/wmi.c   | 48 ++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.h   | 16 ++++++++
+ 4 files changed, 131 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -967,6 +967,8 @@ struct ath11k_base {
+ 	int userpd_id;
+ 	struct ath11k_internal_pci ipci;
+ 	bool enable_memory_stats;
++	u32 fw_dbglog_param;
++	u64 fw_dbglog_val;
+ 
+ 	u32 rx_hash;
+ 	bool stats_disable;
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -1790,6 +1790,71 @@ static const struct file_operations fops
+ 	.read = ath11k_read_ce_latency_stats,
+ };
+ 
++static ssize_t ath11k_read_fw_dbglog(struct file *file,
++				     char __user *user_buf,
++				     size_t count, loff_t *ppos)
++{
++	struct ath11k_base *ab = file->private_data;
++	size_t len;
++	char buf[128];
++
++	len = scnprintf(buf, sizeof(buf), "%u 0x%016llx\n",
++			ab->fw_dbglog_param, ab->fw_dbglog_val);
++
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t ath11k_write_fw_dbglog(struct file *file,
++				      const char __user *user_buf,
++				      size_t count, loff_t *ppos)
++{
++	struct ath11k_base *ab = file->private_data;
++	struct ath11k *ar = ab->pdevs[0].ar;
++	char buf[128] = {0};
++	unsigned int param;
++	u64 value;
++	int ret;
++
++	if (!ar)
++		return -EINVAL;
++
++	mutex_lock(&ar->conf_mutex);
++	ret = simple_write_to_buffer(buf, sizeof(buf) - 1, ppos,
++				     user_buf, count);
++	if (ret <= 0)
++		goto out;
++
++	ret = sscanf(buf, "%u %llx", &param, &value);
++
++	if (ret != 2) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	ab->fw_dbglog_param = param;
++	ab->fw_dbglog_val = value;
++	ret = ath11k_wmi_dbglog_cfg(ar, param, value);
++	if (ret) {
++		ath11k_warn(ar, "dbglog cfg failed from debugfs: %d\n",
++			    ret);
++		goto out;
++	}
++
++	ret = count;
++
++out:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static const struct file_operations fops_fw_dbglog = {
++	.read = ath11k_read_fw_dbglog,
++	.write = ath11k_write_fw_dbglog,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
+ int ath11k_debugfs_pdev_create(struct ath11k_base *ab)
+ {
+ 	if (test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags))
+@@ -1809,6 +1874,9 @@ int ath11k_debugfs_pdev_create(struct at
+ 
+ 	debugfs_create_file("ce_latency_stats", 0600, ab->debugfs_soc, ab,
+ 			    &fops_ce_latency_stats);
++	debugfs_create_file("fw_dbglog_config", 0600, ab->debugfs_soc, ab,
++			    &fops_fw_dbglog);
++
+ 
+ 	debugfs_create_file("rx_hash", 0600, ab->debugfs_soc, ab,
+ 			    &fops_soc_rx_hash);
+@@ -3759,7 +3827,6 @@ int ath11k_debugfs_register(struct ath11
+ 
+ 	debugfs_create_file("enable_dbr_debug", 0200, ar->debug.debugfs_pdev,
+ 			    ar, &fops_dbr_debug);
+-
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -8683,6 +8683,55 @@ int ath11k_wmi_pdev_get_tpc_table_cmdid(
+ 	return ret;
+ }
+ 
++int ath11k_wmi_dbglog_cfg(struct ath11k *ar, u32 param, u64 value)
++{
++	struct ath11k_pdev_wmi *wmi = ar->wmi;
++	struct wmi_dbglog_config_cmd_fixed_param *cmd;
++	struct sk_buff *skb;
++	struct wmi_tlv *tlv;
++	u32 module_id_bitmap;
++	int ret, len;
++
++	len = sizeof(*cmd) + TLV_HDR_SIZE + sizeof(module_id_bitmap);
++	skb = ath11k_wmi_alloc_skb(wmi->wmi_ab, len);
++	if (!skb)
++		return -ENOMEM;
++	cmd = (struct wmi_dbglog_config_cmd_fixed_param *)skb->data;
++	cmd->tlv_header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_DEBUG_LOG_CONFIG_CMD) |
++			  FIELD_PREP(WMI_TLV_LEN, sizeof(*cmd) - TLV_HDR_SIZE);
++	cmd->dbg_log_param = param;
++
++	tlv = (u8 *) cmd + sizeof(*cmd);
++	tlv->header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_ARRAY_UINT32) |
++		      FIELD_PREP(WMI_TLV_LEN, sizeof(u32));
++
++	switch (param) {
++	case WMI_DEBUG_LOG_PARAM_LOG_LEVEL:
++	case WMI_DEBUG_LOG_PARAM_VDEV_ENABLE:
++	case WMI_DEBUG_LOG_PARAM_VDEV_DISABLE:
++	case WMI_DEBUG_LOG_PARAM_VDEV_ENABLE_BITMAP:
++		cmd->value = value;
++		break;
++	case WMI_DEBUG_LOG_PARAM_MOD_ENABLE_BITMAP:
++	case WMI_DEBUG_LOG_PARAM_WOW_MOD_ENABLE_BITMAP:
++		cmd->value = value;
++		module_id_bitmap = value >> 32;
++		memcpy(tlv->value, &module_id_bitmap, sizeof(module_id_bitmap));
++		break;
++	default:
++		dev_kfree_skb(skb);
++		return -EINVAL;
++	}
++
++	ret = ath11k_wmi_cmd_send(wmi, skb, WMI_DBGLOG_CFG_CMDID);
++	if (ret) {
++		ath11k_warn(ar->ab,
++			    "failed to send WMI_DBGLOG_CFG_CMDID\n");
++		dev_kfree_skb(skb);
++	}
++	return ret;
++}
++
+ static void ath11k_wmi_twt_add_dialog_event(struct ath11k_base *ab, struct sk_buff *skb)
+ {
+ 	const char *status[] = {
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -6111,6 +6111,21 @@ struct wmi_qos_null_tx_cmd {
+ 	u32 tx_params_valid;
+ } __packed;
+ 
++enum wmi_dblog_param {
++	WMI_DEBUG_LOG_PARAM_LOG_LEVEL = 0x1,
++	WMI_DEBUG_LOG_PARAM_VDEV_ENABLE,
++	WMI_DEBUG_LOG_PARAM_VDEV_DISABLE,
++	WMI_DEBUG_LOG_PARAM_VDEV_ENABLE_BITMAP,
++	WMI_DEBUG_LOG_PARAM_MOD_ENABLE_BITMAP,
++	WMI_DEBUG_LOG_PARAM_WOW_MOD_ENABLE_BITMAP,
++};
++
++struct wmi_dbglog_config_cmd_fixed_param {
++	u32 tlv_header;
++	u32 dbg_log_param;
++	u32 value;
++} __packed;
++
+ #define WMI_MAX_MEM_REQS 32
+ 
+ #define MAX_RADIOS 3
+@@ -6496,4 +6511,5 @@ int ath11k_wmi_send_aggr_size_cmd(struct
+ 				  struct set_custom_aggr_size_params *params);
+ int ath11k_wmi_send_wmi_ctrl_stats_cmd(struct ath11k *ar,
+ 				  struct wmi_ctrl_path_stats_cmd_param *param);
++int ath11k_wmi_dbglog_cfg(struct ath11k *ar, u32 param, u64 value);
+ #endif

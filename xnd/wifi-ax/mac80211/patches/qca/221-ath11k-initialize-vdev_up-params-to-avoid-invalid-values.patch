@@ -1,0 +1,40 @@
+From ee06bc39d8cd69e7cb323d6a1c070bb4a7e872f2 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Fri, 23 Oct 2020 15:28:46 +0530
+Subject: [PATCH] ath11k: initialize vdev_up params to avoid invalid values
+
+Parameters not filled explicitly in vdev_up params takes
+invalid junk values sometimes, which is causing invalid
+addr to be filled in trans_bssid parameter during vdev up
+after CSA.
+
+This leads to crash when ether_addr_copy is attempted with
+invalid addr. So vdev_up params needs to be initialized to 0
+before filling values.
+
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6603,7 +6603,7 @@ ath11k_mac_update_vif_chan(struct ath11k
+ 	/* TODO: Update ar->rx_channel */
+ 
+ 	for (i = 0; i < n_vifs; i++) {
+-		struct vdev_up_params params;
++		struct vdev_up_params params = {0};
+ 
+ 		arvif = (void *)vifs[i].vif->drv_priv;
+ 
+@@ -6724,7 +6724,7 @@ static int ath11k_start_vdev_delay(struc
+ 	}
+ 
+ 	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR) {
+-		struct vdev_up_params params;
++		struct vdev_up_params params = {0};
+ 
+ 		params.vdev_id = arvif->vdev_id,
+ 		params.bssid = arvif->bssid,

@@ -1,0 +1,342 @@
+From a7c191e95212c2169b8155ba8456d37c2f33ca65 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Thu, 6 May 2021 13:31:08 +0530
+Subject: [PATCH] ath11k: Add support to handle AWGN interference for 6G
+
+When AWGN interference is detected in any 6G channel, FW indicates it to
+host using WMI_DCS_INTERFERENCE_EVENT. Added support to parse new wmi
+event to get AWGN interference info and indicate to mac80211.
+
+AWGN interference detection support in FW will be advertised in wmi service
+ready event, based on which host can decide to handle and process interference
+events.
+
+Added debugfs support to simulate AWGN interference from host, for testing
+purposes.
+Usage:
+echo 1 > /sys/kernel/debug/ath11k/qcn9074\ hw1.0_000X\:01\:00.0/
+mac0/simulate_awgn
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/debugfs.c |  25 +++++
+ drivers/net/wireless/ath/ath11k/wmi.c     | 176 ++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.h     |  29 +++++
+ 3 files changed, 230 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -2161,6 +2161,35 @@ static const struct file_operations fops
+ 	.open = simple_open
+ };
+ 
++static ssize_t ath11k_write_simulate_awgn(struct file *file,
++					  const char __user *user_buf,
++					  size_t count, loff_t *ppos)
++{
++	struct ath11k *ar = file->private_data;
++	int ret;
++
++	mutex_lock(&ar->conf_mutex);
++	if (ar->state != ATH11K_STATE_ON) {
++		ret = -ENETDOWN;
++		goto exit;
++	}
++
++	ret = ath11k_wmi_simulate_awgn(ar);
++	if (ret)
++		goto exit;
++
++	ret = count;
++
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
++static const struct file_operations fops_simulate_awgn = {
++	.write = ath11k_write_simulate_awgn,
++	.open = simple_open
++};
++
+ static ssize_t ath11k_write_btcoex(struct file *file,
+ 				   const char __user *ubuf,
+ 				   size_t count, loff_t *ppos)
+@@ -3765,6 +3794,12 @@ int ath11k_debugfs_register(struct ath11
+ 				    &ar->dfs_block_radar_events);
+ 	}
+ 
++	if (ar->hw->wiphy->bands[NL80211_BAND_6GHZ]) {
++		debugfs_create_file("simulate_awgn", 0200,
++				    ar->debug.debugfs_pdev, ar,
++				    &fops_simulate_awgn);
++	}
++
+ 	debugfs_create_file("enable_m3_dump", 0644,
+ 			    ar->debug.debugfs_pdev, ar,
+ 			    &fops_enable_m3_dump);
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -8419,6 +8419,143 @@ exit:
+ 	kfree(tb);
+ }
+ 
++static int ath11k_wmi_awgn_intf_subtlv_parser(struct ath11k_base *ab,
++					      u16 tag, u16 len,
++					      const void *ptr, void *data)
++{
++	int ret = 0;
++	struct wmi_dcs_awgn_info *awgn_info;
++
++	switch (tag) {
++	case WMI_TAG_DCS_AWGN_INT_TYPE:
++		awgn_info = (struct wmi_dcs_awgn_info *)ptr;
++
++		ath11k_dbg(ab, ATH11K_DBG_WMI,
++			   "AWGN Info: channel width: %d, chan freq: %d, center_freq0: %d, center_freq1: %d, bw_intf_bitmap: %d\n",
++			   awgn_info->channel_width, awgn_info->chan_freq, awgn_info->center_freq0, awgn_info->center_freq1,
++			   awgn_info->chan_bw_interference_bitmap);
++		break;
++	default:
++		ath11k_warn(ab,
++			    "Received invalid tag for wmi dcs interference in subtlvs\n");
++		return -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static int ath11k_wmi_dcs_awgn_event_parser(struct ath11k_base *ab,
++					    u16 tag, u16 len,
++					    const void *ptr, void *data)
++{
++	int ret = 0;
++
++	ath11k_dbg(ab, ATH11K_DBG_WMI, "wmi dcs awgn event tag 0x%x of len %d rcvd\n",
++		   tag, len);
++
++	switch (tag) {
++	case WMI_TAG_DCS_INTERFERENCE_EVENT:
++		/* Fixed param is already processed*/
++		break;
++	case WMI_TAG_ARRAY_STRUCT:
++		/* len 0 is expected for array of struct when there
++		 * is no content of that type to pack inside that tlv
++		 */
++		if (len == 0)
++			return 0;
++		ret = ath11k_wmi_tlv_iter(ab, ptr, len,
++					  ath11k_wmi_awgn_intf_subtlv_parser,
++					  data);
++		break;
++	default:
++		ath11k_warn(ab, "Received invalid tag for wmi dcs interference event\n");
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static void
++ath11k_wmi_dcs_awgn_interference_event(struct ath11k_base *ab,
++				       struct sk_buff *skb)
++{
++	const struct wmi_dcs_interference_ev *dcs_intf_ev;
++	struct wmi_dcs_awgn_info *awgn_info;
++	struct ath11k *ar;
++	struct ath11k_vif *arvif;
++	const struct wmi_tlv *tlv;
++	u16 tlv_tag;
++	u8 *ptr;
++	int ret;
++
++	if (!test_bit(WMI_TLV_SERVICE_DCS_AWGN_INT_SUPPORT, ab->wmi_ab.svc_map)) {
++		ath11k_warn(ab, "firmware doesn't support awgn interference, so dropping dcs interference ev\n");
++		return;
++	}
++
++	ptr = skb->data;
++
++	if (skb->len < (sizeof(*dcs_intf_ev) + TLV_HDR_SIZE)) {
++		ath11k_warn(ab, "dcs interference event size invalid\n");
++		return;
++	}
++
++	tlv = (struct wmi_tlv *)ptr;
++	tlv_tag = FIELD_GET(WMI_TLV_TAG, tlv->header);
++	ptr += sizeof(*tlv);
++
++	if (tlv_tag == WMI_TAG_DCS_INTERFERENCE_EVENT) {
++		dcs_intf_ev = (struct wmi_dcs_interference_ev*)ptr;
++
++		ath11k_dbg(ab, ATH11K_DBG_WMI,
++			   "pdev awgn detected on pdev %d, interference type %d\n",
++			   dcs_intf_ev->pdev_id, dcs_intf_ev->interference_type);
++
++		if (dcs_intf_ev->interference_type != WMI_DCS_AWGN_INTF) {
++			ath11k_warn(ab, "interference type is not awgn\n");
++			return;
++		}
++	} else {
++		ath11k_warn(ab, "dcs interference event received with wrong tag\n");
++		return;
++	}
++
++	ret = ath11k_wmi_tlv_iter(ab, skb->data, skb->len,
++				  ath11k_wmi_dcs_awgn_event_parser,
++				  awgn_info);
++	if (ret) {
++		ath11k_warn(ab, "failed to parse awgn tlv %d\n", ret);
++		return;
++	}
++
++	rcu_read_lock();
++	ar = ath11k_mac_get_ar_by_pdev_id(ab, dcs_intf_ev->pdev_id);
++	if (!ar) {
++		ath11k_warn(ab, "awgn detected in invalid pdev id(%d)\n",
++			    dcs_intf_ev->pdev_id);
++		goto exit;
++	}
++
++	if (!ar->supports_6ghz) {
++		ath11k_warn(ab, "pdev does not supports 6G, so dropping dcs interference event\n");
++		goto exit;
++	}
++
++	ath11k_info(ab, "Interface(pdev %d) will be disabled because of AWGN interference\n",
++		    dcs_intf_ev->pdev_id);
++
++	list_for_each_entry(arvif, &ar->arvifs, list) {
++		if (arvif->is_started && arvif->vdev_type == WMI_VDEV_TYPE_AP) {
++			ieee80211_awgn_detected(arvif->vif);
++		}
++	}
++
++exit:
++	rcu_read_unlock();
++}
++
+ static void ath11k_wmi_tm_event_segmented(struct ath11k_base *ab, u32 cmd_id,
+ 					  struct sk_buff *skb)
+ {
+@@ -9566,6 +9703,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	case WMI_WOW_WAKEUP_HOST_EVENTID:
+ 		ath11k_wmi_event_wow_wakeup_host(ab, skb);
+ 		break;
++	case WMI_DCS_INTERFERENCE_EVENTID:
++		ath11k_wmi_dcs_awgn_interference_event(ab, skb);
++		break;
+ 	case WMI_PDEV_GET_TPC_STATS_EVENTID:
+ 		ath11k_process_tpc_stats(ab, skb);
+ 		break;
+@@ -9728,6 +9868,42 @@ int ath11k_wmi_simulate_radar(struct ath
+ 	return ath11k_wmi_send_unit_test_cmd(ar, wmi_ut, dfs_args);
+ }
+ 
++
++int ath11k_wmi_simulate_awgn(struct ath11k *ar)
++{
++	struct ath11k_vif *arvif;
++	u32 awgn_args[WMI_AWGN_MAX_TEST_ARGS];
++	struct wmi_unit_test_cmd wmi_ut;
++	bool arvif_found = false;
++
++	if (!test_bit(WMI_TLV_SERVICE_DCS_AWGN_INT_SUPPORT, ar->ab->wmi_ab.svc_map)) {
++		ath11k_warn(ar->ab, "firmware doesn't support awgn interference, so can't simulate it\n");
++		return -EOPNOTSUPP;
++	}
++
++	list_for_each_entry(arvif, &ar->arvifs, list) {
++		if (arvif->is_started && arvif->vdev_type == WMI_VDEV_TYPE_AP) {
++			arvif_found = true;
++			break;
++		}
++	}
++
++	if (!arvif_found)
++		return -EINVAL;
++
++	awgn_args[WMI_AWGN_TEST_AWGN_INT] = WMI_UNIT_TEST_AWGN_INTF_TYPE;
++	awgn_args[WMI_AWGN_TEST_BITMAP] = WMI_UNIT_TEST_AWGN_PRIMARY_20;
++
++	wmi_ut.vdev_id = arvif->vdev_id;
++	wmi_ut.module_id = WMI_AWGN_UNIT_TEST_MODULE;
++	wmi_ut.num_args = WMI_AWGN_MAX_TEST_ARGS;
++	wmi_ut.diag_token = WMI_AWGN_UNIT_TEST_TOKEN;
++
++	ath11k_dbg(ar->ab, ATH11K_DBG_WMI, "Triggering AWGN Simulation\n");
++
++	return ath11k_wmi_send_unit_test_cmd(ar, wmi_ut, awgn_args);
++}
++
+ int ath11k_wmi_pdev_m3_dump_enable(struct ath11k *ar, u32 enable) {
+ 	struct ath11k_vif *arvif;
+ 	u32 m3_args[WMI_M3_MAX_TEST_ARGS];
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -1903,6 +1903,7 @@ enum wmi_tlv_tag {
+ 	WMI_TAG_REG_CHAN_LIST_CC_EXT_EVENT,
+ 
+ 	WMI_CTRL_PATH_CAL_STATS = 0x3BC,
++	WMI_TAG_DCS_AWGN_INT_TYPE = 0x3C5,
+ 
+ 	WMI_TAG_MAX
+ };
+@@ -2175,6 +2176,7 @@ enum wmi_tlv_service {
+ 	WMI_TLV_SERVICE_PASSIVE_SCAN_START_TIME_ENHANCE = 263,
+ 	WMI_TLV_SERVICE_QOS_NULL_FRAME_TX_OVER_WMI = 264,
+ 	WMI_TLV_SERVICE_REG_CC_EXT_EVENT_SUPPORT = 281,
++	WMI_TLV_SERVICE_DCS_AWGN_INT_SUPPORT = 286,
+ 
+ 	WMI_MAX_EXT2_SERVICE
+ };
+@@ -4216,6 +4218,17 @@ struct wmi_dfs_unit_test_arg {
+ 	u32 radar_param;
+ };
+ 
++#define WMI_AWGN_UNIT_TEST_MODULE 0x18
++#define WMI_AWGN_UNIT_TEST_TOKEN  0
++#define WMI_UNIT_TEST_AWGN_INTF_TYPE 1
++#define WMI_UNIT_TEST_AWGN_PRIMARY_20 0x01
++
++enum wmi_awgn_test_args_idx {
++	WMI_AWGN_TEST_AWGN_INT,
++	WMI_AWGN_TEST_BITMAP,
++	WMI_AWGN_MAX_TEST_ARGS,
++};
++
+ #define WMI_M3_UNIT_TEST_MODULE	0x22
+ #define WMI_M3_UNIT_TEST_TOKEN	0
+ 
+@@ -4843,6 +4856,21 @@ struct wmi_pdev_radar_ev {
+ 	s32 sidx;
+ } __packed;
+ 
++#define WMI_DCS_AWGN_INTF	0x04
++
++struct wmi_dcs_awgn_info {
++	u32 channel_width;
++	u32 chan_freq;
++	u32 center_freq0;
++	u32 center_freq1;
++	u32 chan_bw_interference_bitmap;
++} __packed;
++
++struct wmi_dcs_interference_ev {
++	u32 interference_type;
++	u32 pdev_id;
++} __packed;
++
+ struct wmi_pdev_temperature_event {
+ 	/* temperature value in Celcius degree */
+ 	s32 temp;
+@@ -6636,6 +6664,7 @@ void ath11k_wmi_fw_stats_fill(struct ath
+ 			      struct ath11k_fw_stats *fw_stats, u32 stats_id,
+ 			      char *buf);
+ int ath11k_wmi_simulate_radar(struct ath11k *ar);
++int ath11k_wmi_simulate_awgn(struct ath11k *ar);
+ int ath11k_wmi_send_twt_enable_cmd(struct ath11k *ar, u32 pdev_id);
+ int ath11k_wmi_send_twt_disable_cmd(struct ath11k *ar, u32 pdev_id);
+ int ath11k_wmi_send_twt_add_dialog_cmd(struct ath11k *ar,

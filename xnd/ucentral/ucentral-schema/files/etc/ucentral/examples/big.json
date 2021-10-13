@@ -1,0 +1,238 @@
+{
+	"uuid": 2,
+	"radios": [
+		{
+			"band": "6G",
+			"country": "CA",
+			"channel-mode": "HE",
+			"channel-width": 80
+		},
+		{
+			"band": "5G",
+			"country": "CA",
+			"channel-mode": "HE",
+			"channel-width": 80
+		},
+		{
+			"band": "2G",
+			"country": "CA",
+			"channel-mode": "HE",
+			"channel-width": 80
+		}
+	],
+
+	"interfaces": [
+		{
+			"name": "WAN",
+			"role": "upstream",
+			"ethernet": [
+				{
+					"select-ports": [
+						"WAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "dynamic"
+			},
+			"tunnel": {
+				"proto": "mesh"
+			},
+			"services": [ "lldp" ],
+			"ssids": [
+				{
+					"name": "uCentral-Mesh",
+					"wifi-bands": [
+						"5G"
+					],
+					"bss-mode": "mesh",
+					"encryption": {
+						"proto": "psk2",
+						"key": "aaaaaaaa",
+						"ieee80211w": "optional"
+					}
+				},
+				{
+					"name": "uCentral",
+					"wifi-bands": [
+						"5G",
+						"2G"
+					],
+					"bss-mode": "ap",
+					"encryption": {
+						"proto": "psk2",
+						"key": "OpenWifi",
+						"ieee80211w": "optional"
+					},
+					"roaming": {
+						"message-exchange": "ds",
+						"generate-psk": true
+					}
+				}
+			]
+		},
+		{
+			"name": "WAN100",
+			"role": "upstream",
+			"vlan": {
+				"id": 100
+			},
+			"ethernet": [
+				{
+					"select-ports": [
+						"WAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "dynamic"
+			},
+			"ssids": [
+				{
+					"name": "uCentral.100",
+					"wifi-bands": [
+						"2G"
+					],
+					"bss-mode": "ap",
+					"encryption": {
+						"proto": "psk2",
+						"key": "OpenWifi",
+						"ieee80211w": "optional"
+					},
+					"roaming": {
+						"message-exchange": "ds",
+						"generate-psk": true
+					},
+					"rate-limit": {
+						"ingress-rate": 10,
+						"egress-rate": 10
+					}
+				}
+			]
+		},
+		{
+			"name": "LAN",
+			"role": "downstream",
+			"services": [ "http", "lldp", "ssh" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"LAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "static",
+				"subnet": "192.168.10.1/24",
+				"dhcp": {
+					"lease-first": 10,
+					"lease-count": 100,
+					"lease-time": "6h"
+				}
+			},
+			"ssids": [
+				{
+					"name": "uCentral-NAT",
+					"wifi-bands": [
+						"2G"
+					],
+					"bss-mode": "ap",
+					"encryption": {
+						"proto": "psk2",
+						"key": "OpenWifi",
+						"ieee80211w": "optional"
+					},
+					"roaming": {
+						"message-exchange": "ds",
+						"generate-psk": true
+					},
+					"rate-limit": {
+						"ingress-rate": 10,
+						"egress-rate": 10
+					}
+				}
+			]
+		},
+		{
+			"name": "LAN100",
+			"role": "downstream",
+			"services": [ "http", "lldp", "ssh" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"LAN*"
+					]
+				}
+			],
+			"vlan": {
+				"id": 100
+			},
+			"ipv4": {
+				"addressing": "static",
+				"subnet": "192.168.12.1/24",
+				"dhcp": {
+					"lease-first": 10,
+					"lease-count": 100,
+					"lease-time": "6h"
+				}
+			},
+			"ssids": [
+				{
+					"name": "uCentral-NAT100",
+					"wifi-bands": [
+						"2G"
+					],
+					"bss-mode": "ap",
+					"encryption": {
+						"proto": "psk2",
+						"key": "OpenWifi",
+						"ieee80211w": "optional"
+					},
+					"roaming": {
+						"message-exchange": "ds",
+						"generate-psk": true
+					},
+					"rate-limit": {
+						"ingress-rate": 10,
+						"egress-rate": 10
+					}
+				}
+			]
+		}
+	],
+	"services": {
+		"lldp": {
+			"describe": "uCentral",
+			"location": "universe"
+		},
+		"http": {
+			"http-port": 80
+		},
+		"ntp": {
+			"servers": [
+				"0.openwrt.pool.ntp.org",
+				"1.openwrt.pool.ntp.org"
+			],
+			"local-server": true
+		},
+		"rtty": {
+			"host": "websocket.usync.org",
+			"token": "7049cb6b7949ba06c6b356d76f0f6275"
+		},
+		"ssh": {
+			"port": 22
+		}
+	},
+	"metrics": {
+		"statistics": {
+			"interval": 120,
+			"types": [ "ssids", "lldp", "clients" ]
+		},
+		"health": {
+			"interval": 120
+		},
+		"wifi-frames": {
+			"filters": [ "probe", "auth" ]
+		}
+	}
+}

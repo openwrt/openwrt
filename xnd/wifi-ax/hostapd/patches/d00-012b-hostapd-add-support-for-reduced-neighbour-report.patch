@@ -1,0 +1,103 @@
+From ce618acbef40f8a411e7458f3fece26930b538d0 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Thu, 16 Jul 2020 17:05:45 -0700
+Subject: [PATCH 2/4] RNR: add bss_parameters to the neighbor_db
+
+P802.11ax/D4.0 9.4.2.170 (Reduced Neighbor Report element) described
+this field used inside reduced neighbor reports. It holds info about
+multiple ssid and 6G co-location which was not present in the
+existing neighbor reports.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ hostapd/ctrl_iface.c | 16 +++++++++++++++-
+ src/ap/hostapd.h     |  1 +
+ src/ap/neighbor_db.c |  6 ++++--
+ src/ap/neighbor_db.h |  3 ++-
+ 4 files changed, 22 insertions(+), 4 deletions(-)
+
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -3023,6 +3023,7 @@ static int hostapd_ctrl_iface_set_neighb
+ 	u8 bssid[ETH_ALEN];
+ 	struct wpabuf *nr, *lci = NULL, *civic = NULL;
+ 	int stationary = 0;
++	int bss_parameters = 0;
+ 	char *tmp;
+ 	int ret;
+ 
+@@ -3107,9 +3108,22 @@ static int hostapd_ctrl_iface_set_neighb
+ 	if (os_strstr(buf, "stat"))
+ 		stationary = 1;
+ 
++	tmp = os_strstr(buf, "bss_parameter=");
++	if (tmp) {
++		bss_parameters = atoi(tmp + 14);
++		if (bss_parameters > 0xff) {
++			wpa_printf(MSG_ERROR,
++				   "CTRL: SET_NEIGHBOR: Bad bss_parameters subelement");
++			wpabuf_free(nr);
++			wpabuf_free(lci);
++			wpabuf_free(civic);
++			return -1;
++		}
++	}
++
+ set:
+ 	ret = hostapd_neighbor_set(hapd, bssid, &ssid, nr, lci, civic,
+-				   stationary);
++				   stationary, bss_parameters);
+ 
+ 	wpabuf_free(nr);
+ 	wpabuf_free(lci);
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -139,6 +139,7 @@ struct hostapd_neighbor_entry {
+ 	/* LCI update time */
+ 	struct os_time lci_date;
+ 	int stationary;
++	u8 bss_parameters;
+ };
+ 
+ struct hostapd_sae_commit_queue {
+--- a/src/ap/neighbor_db.c
++++ b/src/ap/neighbor_db.c
+@@ -120,7 +120,8 @@ hostapd_neighbor_add(struct hostapd_data
+ int hostapd_neighbor_set(struct hostapd_data *hapd, const u8 *bssid,
+ 			 const struct wpa_ssid_value *ssid,
+ 			 const struct wpabuf *nr, const struct wpabuf *lci,
+-			 const struct wpabuf *civic, int stationary)
++			 const struct wpabuf *civic, int stationary,
++			 u8 bss_parameters)
+ {
+ 	struct hostapd_neighbor_entry *entry;
+ 
+@@ -152,6 +153,7 @@ int hostapd_neighbor_set(struct hostapd_
+ 	}
+ 
+ 	entry->stationary = stationary;
++	entry->bss_parameters = bss_parameters;
+ 
+ 	return 0;
+ 
+@@ -329,7 +331,7 @@ void hostapd_neighbor_set_own_report(str
+ 	wpabuf_put_u8(nr, center_freq2_idx);
+ 
+ 	hostapd_neighbor_set(hapd, hapd->own_addr, &ssid, nr, hapd->iconf->lci,
+-			     hapd->iconf->civic, hapd->iconf->stationary_ap);
++			     hapd->iconf->civic, hapd->iconf->stationary_ap, 0);
+ 
+ 	wpabuf_free(nr);
+ #endif /* NEED_AP_MLME */
+--- a/src/ap/neighbor_db.h
++++ b/src/ap/neighbor_db.h
+@@ -17,7 +17,8 @@ int hostapd_neighbor_show(struct hostapd
+ int hostapd_neighbor_set(struct hostapd_data *hapd, const u8 *bssid,
+ 			 const struct wpa_ssid_value *ssid,
+ 			 const struct wpabuf *nr, const struct wpabuf *lci,
+-			 const struct wpabuf *civic, int stationary);
++			 const struct wpabuf *civic, int stationary,
++			 u8 bss_parameters);
+ void hostapd_neighbor_set_own_report(struct hostapd_data *hapd);
+ int hostapd_prepare_neighbor_buf(struct hostapd_data *hapd,
+ 				 const u8 *bssid, struct wpabuf *nrbuf);

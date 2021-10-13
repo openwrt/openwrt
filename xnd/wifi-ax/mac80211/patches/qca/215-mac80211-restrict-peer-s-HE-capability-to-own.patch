@@ -1,0 +1,78 @@
+From eea1b77db809f88bf90b7c6296339fa5ecd291e0 Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Mon, 12 Oct 2020 01:18:02 +0530
+Subject: [PATCH] mac80211: restrict peer's HE capability to own
+
+Implement restricting peer HE capablities to
+device's own capablities. This is useful when
+the device have different capablities, in particular
+when they differ in number of spatial streams.
+
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+---
+ net/mac80211/he.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+
+--- a/net/mac80211/he.c
++++ b/net/mac80211/he.c
+@@ -103,6 +103,52 @@ static void ieee80211_he_mcs_intersectio
+ 	}
+ }
+ 
++
++static void ieee80211_compute_he_mcs_nss(struct ieee80211_supported_band *sband,
++					 struct ieee80211_sta_he_cap *he_cap)
++{
++	struct ieee80211_he_mcs_nss_supp own_cap_nss = sband->he_cap.he_mcs_nss_supp;
++	struct ieee80211_he_mcs_nss_supp peer_cap_nss = he_cap->he_mcs_nss_supp;
++	u16 own_rx, own_tx, peer_rx, peer_tx;
++	u8 nss;
++
++#define IEEE80211_HE_SET_MCS(x,nss) (((le16_to_cpu(x)) >> nss * 2) & IEEE80211_HE_MCS_NOT_SUPPORTED)
++
++#define IEEE80211_HE_SET_TXRX_MCS(x, peer_txrx, nss) \
++	do {									\
++		x &= ~cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << nss * 2);	\
++		x |= cpu_to_le16(peer_txrx << nss * 2);				\
++	} while(0)								\
++
++#define IEEE80211_HE_COMP_PEER_TXRX(peer_txrx, own_txrx)			\
++	do {									\
++		if (peer_txrx != IEEE80211_HE_MCS_NOT_SUPPORTED) {              \
++			if (own_txrx == IEEE80211_HE_MCS_NOT_SUPPORTED)		\
++				peer_txrx = IEEE80211_HE_MCS_NOT_SUPPORTED;	\
++			else if (own_txrx < peer_txrx)				\
++				peer_txrx = own_txrx;				\
++		}								\
++	} while(0)								\
++
++#define IEEE80211_HE_CALC_MCS(x, nss)						\
++	do {									\
++		own_rx = IEEE80211_HE_SET_MCS(own_cap_nss.rx_mcs_##x, nss);	\
++		own_tx = IEEE80211_HE_SET_MCS(own_cap_nss.tx_mcs_##x, nss);	\
++		peer_rx = IEEE80211_HE_SET_MCS(peer_cap_nss.rx_mcs_##x, nss);	\
++		peer_tx = IEEE80211_HE_SET_MCS(peer_cap_nss.tx_mcs_##x, nss);	\
++		IEEE80211_HE_COMP_PEER_TXRX(peer_tx, own_rx);			\
++		IEEE80211_HE_COMP_PEER_TXRX(peer_rx, own_tx);			\
++		IEEE80211_HE_SET_TXRX_MCS(peer_cap_nss.rx_mcs_##x, peer_rx, nss); \
++		IEEE80211_HE_SET_TXRX_MCS(peer_cap_nss.tx_mcs_##x, peer_tx, nss); \
++	} while(0)								 \
++
++	for (nss = 0; nss < NL80211_HE_NSS_MAX; nss++) {
++		IEEE80211_HE_CALC_MCS(80, nss);
++		IEEE80211_HE_CALC_MCS(80p80, nss);
++		IEEE80211_HE_CALC_MCS(160, nss);
++	}
++}
++
+ void
+ ieee80211_he_cap_ie_to_sta_he_cap(struct ieee80211_sub_if_data *sdata,
+ 				  struct ieee80211_supported_band *sband,
+@@ -140,6 +186,7 @@ ieee80211_he_cap_ie_to_sta_he_cap(struct
+ 	memcpy(&he_cap->he_mcs_nss_supp,
+ 	       &he_cap_ie[sizeof(he_cap->he_cap_elem)], mcs_nss_size);
+ 
++	ieee80211_compute_he_mcs_nss(sband, he_cap);
+ 	/* Check if there are (optional) PPE Thresholds */
+ 	if (he_cap->he_cap_elem.phy_cap_info[6] &
+ 	    IEEE80211_HE_PHY_CAP6_PPE_THRESHOLD_PRESENT)

@@ -1,0 +1,200 @@
+From 98106256d6d36db5e6b848a969d0e7a7728be864 Mon Sep 17 00:00:00 2001
+From: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+Date: Tue, 22 Dec 2020 20:29:01 +0530
+Subject: [PATCH] ath11k: add trace log support
+
+This change is to add trace log support for,
+	* WMI events
+	* WMI commands
+	* ath11k_dbg messages
+	* ath11k_dbg_dump messages
+
+Signed-off-by: Venkateswara Naralasetty <vnaralas@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/debug.c |   6 +-
+ drivers/net/wireless/ath/ath11k/trace.h | 124 ++++++++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.c   |   4 ++
+ 3 files changed, 133 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/debug.c
++++ b/drivers/net/wireless/ath/ath11k/debug.c
+@@ -68,7 +68,7 @@ void __ath11k_dbg(struct ath11k_base *ab
+ 	if (ath11k_debug_mask & mask)
+ 		dev_printk(KERN_DEBUG, ab->dev, "%pV", &vaf);
+ 
+-	/* TODO: trace log */
++	trace_ath11k_log_dbg(ab, mask, &vaf);
+ 
+ 	va_end(args);
+ }
+@@ -100,6 +100,10 @@ void ath11k_dbg_dump(struct ath11k_base
+ 			dev_printk(KERN_DEBUG, ab->dev, "%s\n", linebuf);
+ 		}
+ 	}
++
++	/* tracing code doesn't like null strings */
++	trace_ath11k_log_dbg_dump(ab, msg ? msg : "", prefix ? prefix : "",
++				  buf, len);
+ }
+ EXPORT_SYMBOL(ath11k_dbg_dump);
+ 
+--- a/drivers/net/wireless/ath/ath11k/trace.h
++++ b/drivers/net/wireless/ath/ath11k/trace.h
+@@ -20,6 +20,8 @@ static inline void trace_ ## name(proto)
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM ath11k
+ 
++#define ATH11K_MSG_MAX 400
++
+ TRACE_EVENT(ath11k_htt_pktlog,
+ 	    TP_PROTO(struct ath11k *ar, const void *buf, u16 buf_len,
+ 		     u32 pktlog_checksum),
+@@ -76,6 +78,128 @@ TRACE_EVENT(ath11k_ps_timekeeper,
+ 	    )
+ );
+ 
++TRACE_EVENT(ath11k_wmi_cmd,
++	    TP_PROTO(struct ath11k_base *ab, int id, const void *buf, size_t buf_len),
++
++	TP_ARGS(ab, id, buf, buf_len),
++
++	TP_STRUCT__entry(
++		__string(device, dev_name(ab->dev))
++		__string(driver, dev_driver_string(ab->dev))
++		__field(unsigned int, id)
++		__field(size_t, buf_len)
++		__dynamic_array(u8, buf, buf_len)
++	),
++
++	TP_fast_assign(
++		__assign_str(device, dev_name(ab->dev));
++		__assign_str(driver, dev_driver_string(ab->dev));
++		__entry->id = id;
++		__entry->buf_len = buf_len;
++		memcpy(__get_dynamic_array(buf), buf, buf_len);
++	),
++
++	TP_printk(
++		"%s %s id %d len %zu",
++		__get_str(driver),
++		__get_str(device),
++		__entry->id,
++		__entry->buf_len
++	 )
++);
++
++TRACE_EVENT(ath11k_wmi_event,
++	    TP_PROTO(struct ath11k_base *ab, int id, const void *buf, size_t buf_len),
++
++	TP_ARGS(ab, id, buf, buf_len),
++
++	TP_STRUCT__entry(
++		__string(device, dev_name(ab->dev))
++		__string(driver, dev_driver_string(ab->dev))
++		__field(unsigned int, id)
++		__field(size_t, buf_len)
++		__dynamic_array(u8, buf, buf_len)
++	),
++
++	TP_fast_assign(
++		__assign_str(device, dev_name(ab->dev));
++		__assign_str(driver, dev_driver_string(ab->dev));
++		__entry->id = id;
++		__entry->buf_len = buf_len;
++		memcpy(__get_dynamic_array(buf), buf, buf_len);
++	),
++
++	TP_printk(
++		"%s %s id %d len %zu",
++		__get_str(driver),
++		__get_str(device),
++		__entry->id,
++		__entry->buf_len
++	)
++);
++
++TRACE_EVENT(ath11k_log_dbg,
++	    TP_PROTO(struct ath11k_base *ab, unsigned int level, struct va_format *vaf),
++
++	TP_ARGS(ab, level, vaf),
++
++	TP_STRUCT__entry(
++		__string(device, dev_name(ab->dev))
++		__string(driver, dev_driver_string(ab->dev))
++		__field(unsigned int, level)
++		__dynamic_array(char, msg, ATH11K_MSG_MAX)
++	),
++
++	TP_fast_assign(
++		__assign_str(device, dev_name(ab->dev));
++		__assign_str(driver, dev_driver_string(ab->dev));
++		__entry->level = level;
++		WARN_ON_ONCE(vsnprintf(__get_dynamic_array(msg),
++			     ATH11K_MSG_MAX, vaf->fmt,
++			     *vaf->va) >= ATH11K_MSG_MAX);
++	),
++
++	TP_printk(
++		"%s %s %s",
++		__get_str(driver),
++		__get_str(device),
++		__get_str(msg)
++	)
++);
++
++TRACE_EVENT(ath11k_log_dbg_dump,
++	    TP_PROTO(struct ath11k_base *ab, const char *msg, const char *prefix,
++		     const void *buf, size_t buf_len),
++
++	TP_ARGS(ab, msg, prefix, buf, buf_len),
++
++	TP_STRUCT__entry(
++		__string(device, dev_name(ab->dev))
++		__string(driver, dev_driver_string(ab->dev))
++		__string(msg, msg)
++		__string(prefix, prefix)
++		__field(size_t, buf_len)
++		__dynamic_array(u8, buf, buf_len)
++	),
++
++	TP_fast_assign(
++		__assign_str(device, dev_name(ab->dev));
++		__assign_str(driver, dev_driver_string(ab->dev));
++		__assign_str(msg, msg);
++		__assign_str(prefix, prefix);
++		__entry->buf_len = buf_len;
++		memcpy(__get_dynamic_array(buf), buf, buf_len);
++	),
++
++	TP_printk(
++		"%s %s %s/%s\n",
++		__get_str(driver),
++		__get_str(device),
++		__get_str(prefix),
++		__get_str(msg)
++	)
++);
++
+ TRACE_EVENT(ath11k_htt_ppdu_stats,
+ 	    TP_PROTO(struct ath11k *ar, const void *data, size_t len),
+ 
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -266,6 +266,8 @@ static int ath11k_wmi_cmd_send_nowait(st
+ 	cmd_hdr = (struct wmi_cmd_hdr *)skb->data;
+ 	cmd_hdr->cmd_id = cmd;
+ 
++	trace_ath11k_wmi_cmd(ab, cmd_id, skb->data, skb->len);
++
+ 	memset(skb_cb, 0, sizeof(*skb_cb));
+ 	ret = ath11k_htc_send(&ab->htc, wmi->eid, skb);
+ 
+@@ -8931,6 +8933,8 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	if (skb_pull(skb, sizeof(struct wmi_cmd_hdr)) == NULL)
+ 		goto out;
+ 
++	trace_ath11k_wmi_event(ab, id, skb->data, skb->len);
++
+ 	switch (id) {
+ 		/* Process all the WMI events here */
+ 	case WMI_SERVICE_READY_EVENTID:

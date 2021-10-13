@@ -1,0 +1,13 @@
+eap {
+	default_eap_type = pwd
+	timer_expire = 60
+	ignore_unknown_eap_types = no
+	cisco_accounting_username_bug = no
+	max_sessions = ${max_requests}
+
+	pwd {
+		group = 19
+		server_id = theserver@example.com
+		fragment_size = 1020
+	}
+}

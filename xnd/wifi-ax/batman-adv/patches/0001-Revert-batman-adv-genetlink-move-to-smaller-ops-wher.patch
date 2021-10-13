@@ -1,0 +1,132 @@
+From: Sven Eckelmann <sven@narfation.org>
+Date: Sat, 24 Oct 2020 22:51:23 +0200
+Subject: Revert "batman-adv: genetlink: move to smaller ops wherever possible"
+
+The netlink genl_ops interface was splitted into two parts for Linux 5.10.
+The batman-adv code changed to the new one because it doesn't use the more
+complex policy handling of genl_ops. But the backports-5.8-1 version in
+OpenWrt doesn't yet support the new genl_small_ops.
+
+This patch must be dropped directly when OpenWrt switches to backports-5.10
+or newer - otherwise it will not work as expected.
+
+This reverts commit 725b4ef5be840cfcd0ca33b9393c14dee40c10f7.
+
+diff --git a/compat-include/net/genetlink.h b/compat-include/net/genetlink.h
+index 56a9ab22c062b1d0d01ef9d09ce796075d3d6df7..8f542bef10dc0f2682ab2d428c90df9ab97977ce 100644
+--- a/compat-include/net/genetlink.h
++++ b/compat-include/net/genetlink.h
+@@ -31,17 +31,15 @@ void batadv_genl_dump_check_consistent(struct netlink_callback *cb,
+ #endif /* LINUX_VERSION_IS_LESS(4, 15, 0) */
+ 
+ 
+-#if LINUX_VERSION_IS_LESS(5, 10, 0)
+-
+ #if LINUX_VERSION_IS_LESS(5, 2, 0)
++
+ enum genl_validate_flags {
+ 	GENL_DONT_VALIDATE_STRICT		= BIT(0),
+ 	GENL_DONT_VALIDATE_DUMP			= BIT(1),
+ 	GENL_DONT_VALIDATE_DUMP_STRICT		= BIT(2),
+ };
+-#endif /* LINUX_VERSION_IS_LESS(5, 2, 0) */
+ 
+-struct batadv_genl_small_ops {
++struct batadv_genl_ops {
+ 	int		       (*doit)(struct sk_buff *skb,
+ 				       struct genl_info *info);
+ 	int		       (*dumpit)(struct sk_buff *skb,
+@@ -70,9 +68,9 @@ struct batadv_genl_family {
+ 			 struct genl_info *info);
+         void (*post_doit)(const struct genl_ops *ops, struct sk_buff *skb,
+ 			  struct genl_info *info);
+-	const struct batadv_genl_small_ops *small_ops;
++	const struct batadv_genl_ops *ops;
+ 	const struct genl_multicast_group *mcgrps;
+-	unsigned int n_small_ops;
++	unsigned int n_ops;
+ 	unsigned int n_mcgrps;
+ 	struct module *module;
+ 
+@@ -96,32 +94,24 @@ static inline int batadv_genl_register_family(struct batadv_genl_family *family)
+ 	family->family.pre_doit = family->pre_doit;
+ 	family->family.post_doit = family->post_doit;
+ 	family->family.mcgrps = family->mcgrps;
+-	family->family.n_ops = family->n_small_ops;
++	family->family.n_ops = family->n_ops;
+ 	family->family.n_mcgrps = family->n_mcgrps;
+ 	family->family.module = family->module;
+ 
+-	ops = kzalloc(sizeof(*ops) * family->n_small_ops, GFP_KERNEL);
++	ops = kzalloc(sizeof(*ops) * family->n_ops, GFP_KERNEL);
+ 	if (!ops)
+ 		return -ENOMEM;
+ 
+ 	for (i = 0; i < family->family.n_ops; i++) {
+-		ops[i].doit = family->small_ops[i].doit;
+-		ops[i].dumpit = family->small_ops[i].dumpit;
+-		ops[i].done = family->small_ops[i].done;
+-		ops[i].cmd = family->small_ops[i].cmd;
+-		ops[i].internal_flags = family->small_ops[i].internal_flags;
+-		ops[i].flags = family->small_ops[i].flags;
+-#if LINUX_VERSION_IS_GEQ(5, 2, 0)
+-		ops[i].validate = family->small_ops[i].validate;
+-#else
++		ops[i].doit = family->ops[i].doit;
++		ops[i].dumpit = family->ops[i].dumpit;
++		ops[i].done = family->ops[i].done;
++		ops[i].cmd = family->ops[i].cmd;
++		ops[i].internal_flags = family->ops[i].internal_flags;
++		ops[i].flags = family->ops[i].flags;
+ 		ops[i].policy = family->policy;
+-#endif
+ 	}
+ 
+-#if LINUX_VERSION_IS_GEQ(5, 2, 0)
+-	family->family.policy = family->policy;
+-#endif
+-
+ 	family->family.ops = ops;
+ 	family->copy_ops = ops;
+ 
+@@ -136,7 +126,7 @@ typedef struct genl_ops batadv_genl_ops_old;
+ #define batadv_post_doit(__x, __y, __z) \
+ 	batadv_post_doit(const batadv_genl_ops_old *ops, __y, __z)
+ 
+-#define genl_small_ops batadv_genl_small_ops
++#define genl_ops batadv_genl_ops
+ #define genl_family batadv_genl_family
+ 
+ #define genl_register_family(family) \
+@@ -160,6 +150,6 @@ batadv_genl_unregister_family(struct batadv_genl_family *family)
+ 	genlmsg_multicast_netns(&(_family)->family, _net, _skb, _portid, \
+ 				_group, _flags)
+ 
+-#endif /* LINUX_VERSION_IS_LESS(5, 10, 0) */
++#endif /* LINUX_VERSION_IS_LESS(5, 2, 0) */
+ 
+ #endif /* _NET_BATMAN_ADV_COMPAT_NET_GENETLINK_H_ */
+diff --git a/net/batman-adv/netlink.c b/net/batman-adv/netlink.c
+index f317d206b411d87b4da2f57e35c3fb78cedfb160..bdac5dbd899a9540d58052fd32c8c89520927390 100644
+--- a/net/batman-adv/netlink.c
++++ b/net/batman-adv/netlink.c
+@@ -1351,7 +1351,7 @@ static void batadv_post_doit(const struct genl_ops *ops, struct sk_buff *skb,
+ 	}
+ }
+ 
+-static const struct genl_small_ops batadv_netlink_ops[] = {
++static const struct genl_ops batadv_netlink_ops[] = {
+ 	{
+ 		.cmd = BATADV_CMD_GET_MESH,
+ 		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+@@ -1485,8 +1485,8 @@ struct genl_family batadv_netlink_family __ro_after_init = {
+ 	.pre_doit = batadv_pre_doit,
+ 	.post_doit = batadv_post_doit,
+ 	.module = THIS_MODULE,
+-	.small_ops = batadv_netlink_ops,
+-	.n_small_ops = ARRAY_SIZE(batadv_netlink_ops),
++	.ops = batadv_netlink_ops,
++	.n_ops = ARRAY_SIZE(batadv_netlink_ops),
+ 	.mcgrps = batadv_netlink_mcgrps,
+ 	.n_mcgrps = ARRAY_SIZE(batadv_netlink_mcgrps),
+ };

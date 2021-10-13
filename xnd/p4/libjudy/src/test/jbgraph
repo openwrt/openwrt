@@ -1,0 +1,1022 @@
+#!/bin/sh
+
+# THIS SCRIPT IS A "WRAPPER" FOR: gnuplot
+#
+# - The data used is in "gnuplot" format to compare and contrast
+# - information for analysis in the Judy project.  Circa:  05/12/2000.
+
+# Author:  Bob Gobeille,  # Original functionality.
+#          Jer/ Eberhard, # Ongoing maintenance, added functionality.
+
+ RCS_SCRIPT='
+# @(#) $Revision: 2.24 $ $Source: /judy/src/apps/benchmark/jbgraph $
+'
+
+
+# SET VERBOSE TO QUIET, SILENT (DEFAULT):
+#
+# - then find out if verbose mode is to be set.
+
+    OPT_v="${OPT_v:--q}"		# Set verbose off, (default).
+    v='eval #'				# Set verbose off, (quiet).
+
+    VERBOSE="`echo ${*} | tr ' ' '\012' | grep -- -v`"
+    if [ "${VERBOSE}" = "-v" ]; then	# -v verbose mode on.
+	OPT_v="${VERBOSE}"		# Will be "-v".
+        v=""				# Set verbose on.
+    fi
+    unset VERBOSE			# Unset after last use.
+
+
+# CREATE NAMESPACE:
+#
+# - Set names of OUTPUT and WORK directories and files.
+
+    C="`basename ${0:-jbgraph}`"	# Command name of this script.
+    C_PATH="${0}"			# Called via this path.
+    C_rc=".${C}.rc"			# .rc file, local or ${HOME}.
+    OUTPUT_DIR=./tmp/`echo ${C} | tr "[a-z]" "[A-Z]"` # output name in caps
+
+    mkdir -p ${OUTPUT_DIR}              # Create output directory.
+    if [ ! -d "${OUTPUT_DIR}" ]; then   # Ensure dir exists.
+        echo "${C}.${0}:  ERROR, unable to:  mkdir -p ${OUTPUT_DIR}"
+        exit 3
+    fi
+
+
+# UNCOMMENT THE DATE_TIME FORMAT YOU WANT TO USE:
+
+    #DATE_TIME="`date +%y%m`"		# Monthly    Date/Time stamp.
+    #DATE_TIME="`date +%y%m%d`"		# Daily      Date/Time stamp.
+    DATE_TIME="`date +%y%m%d.%H%M`"	# HourMinute Date/Time stamp.
+
+    COMMAND="${OUTPUT_DIR}/${DATE_TIME}" # Output filename date/time stamp.
+    WORK1="${COMMAND}.WORK1.$$"		# Work file 1.
+    WORK2="${COMMAND}.WORK2.$$"		# Work file 2.
+    WORK3="${COMMAND}.WORK3.$$"		# Work file 3.
+    WORK4="${COMMAND}.WORK4.$$"		# Work file 4.
+
+
+# CREATE AND DISPLAY SCRIPT DEFAULTS AND INFO:
+
+    export GNU_CMDFILE="${GNU_CMDFILE:-$COMMAND.GNU_CMDFILE}" # GNU_CMDFILE name
+    ${v}touch ${COMMAND}                    # Ensure the output file exists.
+    # Produce sample monitor and print commands.
+    INFO="`echo \"${C}:  follow output, or print by:
+    rerun by executing the first commented line in:
+      ${GNU_CMDFILE}
+    head -1 ${GNU_CMDFILE} # or
+    tail -f ${COMMAND} # tail and follow log file or
+    tail    ${COMMAND} # tail log file or print:
+    fold -80 ${COMMAND} |
+      pr -f -l66 -h${COMMAND} |
+      remsh jerslash -l jer lp -odouble -o2\"`"
+    if [ "${OPT_v}" = "-v" ]; then	# -v verbose mode.
+        echo "${INFO}"
+    fi
+
+
+# DEFINE DEFAULTS, CONSTANTS, VARIABLES:
+#
+# - 80 Column line---------------------------------------------------01234567890
+
+# Break line:  BL is 70 columns of "-".
+
+    BL="----------------------------------------------------------------------"
+
+    EXT_OPT="${EXT_OPT:-}"		# Allow external option setting.
+
+# GNU_GEOMETRY default:  
+# - Note, this will respect an environment variable, which could be set as:
+# - export OPT_JBGRAPH_geometry="600x450+20+20" # 4x3 aspect ratio.
+
+    OPT_JBGRAPH_geometry="${OPT_JBGRAPH_geometry:-1000x750+20+20}"
+    GNU_GEOMETRY_DEF="1000x750+20+20"	# 4x3 aspect ratio, default.
+    GNU_GEOMETRY="-geometry ${OPT_JBGRAPH_geometry:-$GNU_GEOMETRY_DEF}"
+
+# GNU_PSFILE name, (default):
+
+    GNU_PSFILE="${OPT_JBGRAPH_psfile:-$COMMAND.GNU_PSFILE}" 
+
+    LP_DEV_DEF="${LP_DEV:-pastel}"	# Printer device (default).
+    LP_OPT_DEF="${LP_OPT:--olandscape}"	# Printer options (default).
+
+# PLOT AXIS NAMES:
+
+    XLABEL="${XLABEL:-Population}"	# Set default.
+    YLABEL_MALLOC="${YLABEL:-Bytes}"	# Set default.
+    YLABEL_TIME="${YLABEL:-USec/index}" # Set default.
+    YLABEL="${YLABEL:-$YLABEL_TIME}"	# Set default.
+
+# ARRAY OF COLUMN NAMES:
+#
+# - Add column names here (from benchutils.c).
+# - These are the column names displayed on "gnuplot".
+
+    CHA[0]="CHA=COLUMN HEADINGS ARRAY"
+    CHA[1]="index number"
+    CHA[2]="insert time per index"
+    CHA[3]="dT/dI insert"
+    CHA[4]="retrieve time per index"
+    CHA[5]="dT/dI retrieve"
+    CHA[6]="bytes used"
+    CHA[8]="bytes free"
+    CHA[9]="bytes alloced"
+    CHA[7]="dM/dI change in memory per index"
+    CHA[10]="leaf count"
+    CHA[11]="leaf average size"
+    CHA[12]="leaf memory used per index"
+    CHA[13]="branch count"
+    CHA[14]="branch average size"
+    CHA[15]="branch memory used per index"
+    CHA[16]=""
+    CHA[17]=""
+    CHA[18]=""
+    CHA[19]=""
+    CHA[21]=""
+    CHA[22]=""
+    CHA[23]=""
+    CHA[24]=""
+    CHA[25]=""
+    CHA[26]=""
+    CHA[27]=""
+    CHA[28]=""
+    CHA[29]=""
+    CHA[30]=""
+    CHA[31]=""
+    CHA[32]=""
+    CHA[33]=""
+    CHA[34]=""
+    CHA[35]=""
+    CHA[36]=""
+    CHA[37]=""
+    CHA[38]=""
+    CHA[39]=""
+    CHA[40]=""
+    CHA[41]=""
+    CHA[42]=""
+    CHA[43]=""
+    CHA[44]=""
+    CHA[45]=""
+    CHA[46]=""
+    CHA[47]=""
+    CHA[48]=""
+    CHA[49]=""
+    CHA[50]=""
+
+    CMN="0"				# Column number for CHA data.
+
+#
+# SET DEFAULT OPTIONS:
+#
+
+    OPT_E="-E"				# -E use embedded options
+    OPT_L="-L"				# -L set logscale axis
+    OPT_L_xaxis="x"			# -L set logscale x axis
+    OPT_L_yaxis="y"			# -L set logscale y axis
+    OPT_H="-H"				# -H default column headings.
+
+
+# M A I N:   MAIN PROGRAM:
+# 
+# - Begin main script, functions first.
+
+{
+
+FUNCTION__getopt()			# Use function getopt.
+{
+# PARSE THE COMMAND LINE FOR OPTIONS, USING GETOPT:
+#
+# - define USAGE message.
+# - use getopts.
+# Note:  FUNCTION__getopt is run twice, in order to support:
+#        FUNCTION_TITLE_COLHEAD()	# Set Column headings from file.
+
+    ${v}echo "${C}.${0}:  beginning at `date`"	# beginning of function
+
+    USAGE="${C} [ -E -G -H -I -M -S -V -i -l -m -q -r -u -v ]
+	[ -C GNU_CMDFILE ]
+	[ -D LP_DEV ]
+	[ -L axis ]
+	[ -N not option ] (turn off option), Example:  -NL
+	[ -P GNU_PSFILE ]
+	[ -c COLUMN_NUMBER ]
+	[ -d differential_type ]
+	[ -g GNU_GEOMETRY ]
+	[ -o LP_OPT ]
+	[ -x xRANGE ]
+	[ -y yRANGE ]
+
+    ${C}:  wrapper for gnuplot
+
+    -c plot column number.  This is useful to plot by column number.
+    -i plot insert; default if no other plots selected.      CMN=2
+    -r plot retrievals; default if no other plots selected.  CMN=4
+    -I plot memory used / index.                             CMN=12
+    -m plot memory malloced.                                 CMN=9
+    -M plot memory used and free.                            CMN=8
+    -l plot leaf data.                                       CMN=11
+    -d plot derivative data.  Useful with -i, -r, -m.  CMN=2,4,9
+
+    -x xRANGE, scale range;  example:  -x [1000:5000] or -x1000:5000
+    -y yRANGE, scale range;  example:  -y [1M:10M]    or -y1M:10M
+	 1[kK] = 1,000; 1[mM] = 1,000,000; 1[gG] = 1,000,000,000.
+
+    -n number plot descriptions; Use column numbers before the description.
+    -L set logscale axis; default,
+	Example:  Turn off logscale with -NL, then turn on, on only one axis:
+	  \"-NL -Lx\" or \"-NL -Ly\", Turn off both with -NL
+    -G grid lines on.
+    -H default column headings.
+    -g geometry description.
+	 default=\"${GNU_GEOMETRY_DEF}\", # 4x3 aspect ratio.
+
+    -E use embedded options, default, Turn off with -NE. 
+      Sets TITLE, COLHEAD, GETOPT from the FIRST data file encountered.
+      Example:  embedded options in the data file begin in column 1:
+      # TITLE This is the title to pass to gnuplot
+      # COLHEAD 1 This is the heading for column 1.
+      # XLABEL This is the x-axis label
+      # YLABEL This is the y-axis label
+      # GETOPT -c2 -c3 -G	# These are the options to use.
+
+    -p print the plot.
+    -o LP_OPT printer option(s);  default \"${LP_OPT_DEF}\".
+	 Example:  \"-ootray2\" will print on clear slides, emits \"-otray2\"
+	 Example:  \"-on2\" will print two copies, emits \"-n2\"
+    -D LP_DEV printer device;  default \"${LP_DEV_DEF}\".
+
+    -C GNU_CMDFILE name;  default is generated and removed: 
+         ${OUTPUT_DIR}/{DATE_TIME}.GNU_CMDFILE
+	 Useful to do your own gnuplot command editing and debugging.
+    -P GNU_PSFILE name.  default is generated and removed:
+         ${OUTPUT_DIR}/{DATE_TIME}.GNU_PSFILE
+    -S Save files.
+	 Generated and working file names are deleted unless -S or -C is on.
+	 User provided file names are not deleted in any case (-C, -P).
+
+    -q quiet mode, verbose mode off;  default.
+    -v verbose mode on.
+
+    -V vi the plot file.
+       quit using \"q\"
+
+    -N not option;  Turn specified option off.  Example:  -NL
+         Note, -N is not available for all options.
+    -NL Turn off:  -L set logscale axis; default
+    -NH Turn off:  -H default column headings.
+
+    -u Usage message.
+
+    Sample usage:
+    ${C} -i  -f data/datafile	# -i is the same as -c1.
+    ${C} -c1 -f data/datafile	# -i is the same as -c1.
+
+     "
+
+    ${v}echo "${C}.${0}:  OPTIONS=${*}"
+
+# Parse options, using getopt:
+#
+# - "a" option, no parameter; "b:" indicates a parameter.
+# - Order of options is "man 5 ascii".
+
+    getopt_PARM="?C:D:EGIL:MN:P:SVc:d:g:ilmno:prsuvx:y:"
+    set -- `getopt ${getopt_PARM} $*`	# Place options in argc/argv.
+    if [ "${?}" != "0" ]; then		# If getopt returns an errror.
+        ${v}echo "${C}.${0}:  \${?}=${?}, USAGE message from return code."
+        echo "${USAGE}"
+	exit 1
+    fi
+
+    while [ ${#} -gt 0 ]		# while there are options...
+    do					# ( for vi parenthesis matching
+        ${v}echo "${C}.${0}:  parsing option \"${1}\", then \"${2}\""
+        case ${1} in
+
+        -C)
+	    OPT_C="${1}"
+            OPT_C_PARM="${2}"		# GNU_CMDFILE name.
+            ${v}echo "${C}.${0}:  OPT_C=${OPT_C}, # -C GNU_CMDFILE name."
+	    ${v}echo "${C}.${0}:  OPT_C_PARM=${OPT_C_PARM}, # GNU_CMDFILE name."
+            export GNU_CMDFILE="${OPT_C_PARM}"
+	    MSG="# GNU_CMDFILE name."
+	    ${v}echo "${C}.${0}:  GNU_CMDFILE=${GNU_CMDFILE}, ${MSG}"
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        -D)
+	    OPT_D="${1}"
+            OPT_D_PARM="${2}"		# LP_DEV name.
+            ${v}echo "${C}.${0}:  OPT_D=${OPT_D}, # -D LP_DEV printer device."
+	    #${v}echo "${C}.${0}:  OPT_D_PARM=${OPT_D_PARM}, # LP_DEV name."
+            LP_DEV="${OPT_D_PARM}"
+	    ${v}echo "${C}.${0}:  LP_DEV=${LP_DEV}, # LP_DEV name."
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        -E)
+	    OPT_E="${1}"
+	    ${v}echo "${C}.${0}:  OPT_E=${OPT_E}, # -E use embedded options"
+            ;;				# ( for vi parenthesis matching
+
+        -G)
+	    OPT_G="${1}"
+	    ${v}echo "${C}.${0}:  OPT_G=${OPT_G}, # -G grid lines on."
+            ;;				# ( for vi parenthesis matching
+
+        -H)
+	    OPT_H="${1}"
+	    ${v}echo "${C}.${0}:  OPT_H=${OPT_H}, # -H default column headings."
+            ;;				# ( for vi parenthesis matching
+
+        -I)
+	    OPT_I="${1}"
+	    ${v}echo "${C}.${0}:  OPT_I=${OPT_I}, # -I Memory used / index."
+	    CMN="12"
+	    COL[$CMN]="${CMN}"
+	    ${v}echo "${C}.${0}:  COL[$CMN]=${COL[$CMN]}"
+            ;;				# ( for vi parenthesis matching
+
+        -L)
+	    OPT_L="${1}"
+	    ${v}echo "${C}.${0}:  OPT_L=${OPT_L}, -L set logscale axis"
+            OPT_L_PARM="${2}"		# axis name, x or y
+	    if [ ${OPT_L_PARM} = "x" ]; then
+		OPT_L_xaxis="${OPT_L_PARM}"
+	    elif [ ${OPT_L_PARM} = "y" ]; then
+		OPT_L_yaxis="${OPT_L_PARM}"
+	    else
+		MSG="must be either \"x\" or \"y\" axis.  exit 5"
+                echo "${C}.${0}:  ERROR, OPT_L_PARM=${OPT_L_PARM} ${MSG}"
+	        exit 5
+	    fi
+	    OPT_NL=""			# -L turn off -NL.
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        -M)
+	    OPT_M="${1}"
+	    ${v}echo "${C}.${0}:  OPT_M=${OPT_M}, # -M Memory used and free."
+	    CMN="8"
+	    COL[$CMN]="${CMN}"
+	    ${v}echo "${C}.${0}:  COL[$CMN]=${COL[$CMN]}"
+            ;;				# ( for vi parenthesis matching
+
+        -N)
+	    OPT_N="${1}"
+            OPT_N_PARM="${2}"		# LP_DEV name.
+            ${v}echo "${C}.${0}:  OPT_N=${OPT_N}, #  -N not option"
+	    ${v}echo "${C}.${0}:  OPT_N_PARM=${OPT_N_PARM}, # Turn option off."
+	    if   [ "${OPT_N_PARM}" = "E" ]; then
+	        OPT_E=""		# -E use embedded options
+	        OPT_NE="-NE"		# -NE turn off -E.
+	    elif [ "${OPT_N_PARM}" = "L" ]; then
+		OPT_L=""		# -L set logscale axis
+		OPT_L_xaxis=""
+		OPT_L_yaxis=""
+	        OPT_NL="-NL"		# -NL turn off -L.
+	    elif [ "${OPT_N_PARM}" = "G" ]; then
+	        OPT_G=""		# -G grid lines on.
+	        OPT_NG="-NG"		# -NG turn off -G.
+	    elif [ "${OPT_N_PARM}" = "H" ]; then
+	        OPT_H=""		# -H default column headings.
+	        OPT_NH="-NH"		# -NH turn off -H.
+	    fi
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        -P)
+	    OPT_P="${1}"
+            OPT_P_PARM="${2}"		# GNU_PSFILE name.
+	    ${v}echo "${C}.${0}:  OPT_P=${OPT_P}, # -P GNU_PSFILE name."
+	    #${v}echo "${C}.${0}:  OPT_P_PARM=${OPT_P_PARM}, # GNU_PSFILE name."
+            GNU_PSFILE="${OPT_P_PARM}"
+	    ${v}echo "${C}.${0}:  GNU_PSFILE=${GNU_PSFILE}, # GNU_PSFILE name."
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        -S)
+	    OPT_S="${1}"
+	    ${v}echo "${C}.${0}:  OPT_S=${OPT_S}, # -S save files."
+            ;;				# ( for vi parenthesis matching
+
+        -V)
+	    OPT_V="${1}"
+	    ${v}echo "${C}.${0}:  OPT_V=${OPT_V}, # -V vi the plot file."
+            ;;				# ( for vi parenthesis matching
+
+        -c)
+	    OPT_c="${1}"
+            OPT_c_PARM="${2}"		# COLUMN_NUMBER.
+            ${v}echo "${C}.${0}:  OPT_c=${OPT_c}, # -c plot column number."
+	    ${v}echo "${C}.${0}:  OPT_c_PARM=${OPT_c_PARM}, # COLUMN_NUMBER."
+	    if [ ${OPT_c_PARM} -ge ${#CHA[*]} ] ||
+	       [ ${OPT_c_PARM} -le 0 ]; then
+		MSG="must be greater than 0 and less than ${#CHA[*]}. exit 6"
+                echo "${C}.${0}:  ERROR, OPT_c_PARM=${OPT_c_PARM} ${MSG}"
+	        exit 6
+	    fi
+	    CMN="${OPT_c_PARM}"
+	    COL[$CMN]="${CMN}"
+	    ${v}echo "${C}.${0}:  COL[$CMN]=${COL[$CMN]}"
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        -d)
+	    OPT_d="${1}"
+            OPT_d_PARM="${2}"		# DERIVATIVE_TYPE
+	    ${v}echo "${C}.${0}:  OPT_d=${OPT_d}, # -d plot derivative type."
+	    ${v}echo "${C}.${0}:  OPT_d_PARM=${OPT_d_PARM}, # DERIVITIVE_TYPE"
+	    if [ "${OPT_d_PARM}" = "i" ]; then
+		OPT_di="${OPT_d_PARM}"
+		CMN="3"
+	    elif [ "${OPT_d_PARM}" = "m" ]; then
+		OPT_dm="${OPT_d_PARM}"
+		CMN="7"
+	    elif [ "${OPT_d_PARM}" = "r" ]; then
+		OPT_dr="${OPT_d_PARM}"
+		CMN="5"
+            else
+                echo "${C}.${0}:  ERROR, ${OPT_d_PARM} must be one of i, m, r."
+	    fi
+	    COL[$CMN]="${CMN}"
+	    ${v}echo "${C}.${0}:  COL[$CMN]=${COL[$CMN]}"
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        -g)
+	    OPT_g="${1}"
+            OPT_g_PARM="${2}"		# Option parameter
+            ${v}echo "${C}.${0}:  OPT_g=${OPT_g}, # -g geometry description."
+	    ${v}echo "${C}.${0}:  OPT_g_PARM=${OPT_g_PARM}, # window geometry"
+            GNU_GEOMETRY="-geometry ${OPT_g_PARM}" # Environment geometry.
+	    MSG="# window geometry"
+	    ${v}echo "${C}.${0}:  GNU_GEOMETRY=${GNU_GEOMETRY}, ${MSG}"
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        -i)
+	    OPT_i="${1}"
+	    ${v}echo "${C}.${0}:  OPT_i=${OPT_i}, # -i plot insert."
+	    CMN="2"
+	    COL[$CMN]="${CMN}"
+	    ${v}echo "${C}.${0}:  COL[$CMN]=${COL[$CMN]}"
+            ;;				# ( for vi parenthesis matching
+
+        -l)
+	    OPT_l="${1}"
+	    ${v}echo "${C}.${0}:  OPT_l=${OPT_l}, # -l plot leaf data."
+	    CMN="10"
+	    COL[$CMN]="${CMN}"
+	    ${v}echo "${C}.${0}:  COL[$CMN]=${COL[$CMN]}"
+	    CMN="11"
+	    COL[$CMN]="${CMN}"
+	    ${v}echo "${C}.${0}:  COL[$CMN]=${COL[$CMN]}"
+            ;;				# ( for vi parenthesis matching
+
+        -m)
+	    OPT_m="${1}"
+	    ${v}echo "${C}.${0}:  OPT_m=${OPT_m}, # -m plot memory malloced."
+	    CMN="9"
+	    COL[$CMN]="${CMN}"
+	    ${v}echo "${C}.${0}:  COL[$CMN]=${COL[$CMN]}"
+            ;;				# ( for vi parenthesis matching
+
+        -n)
+	    OPT_n="${1}"
+	    MSG="# -n number plot descriptions."
+	    ${v}echo "${C}.${0}:  OPT_n=${OPT_n}, ${MSG}"
+            ;;				# ( for vi parenthesis matching
+
+        -o)
+	    OPT_o="${1}"
+            OPT_o_PARM="${2}"		# Option parameter
+	    MSG="# -o LP_OPT printer option(s)."
+	    ${v}echo "${C}.${0}:  OPT_o=${OPT_o}, ${MSG}"
+	    MSG="# -o LP_OPT printer option(s)."
+	    ${v}echo "${C}.${0}:  OPT_o_PARM=${OPT_o_PARM}, ${MSG}"
+	    # Check for duplicates, only add to LP_OPT if not a duplicate.
+	    LP_SET="`echo ${LP_OPT} | adjust -m1 | grep -- -${OPT_o_PARM}`"
+	    if [ "${LP_SET}" != "-${OPT_o_PARM}" ];
+	    then
+	        LP_OPT="${LP_OPT} -${OPT_o_PARM}"
+	    fi
+	    unset LP_SET
+	    ${v}echo "${C}.${0}:  LP_OPT=${LP_OPT}, # LP_OPT printer option(s)."
+	    shift
+            ;;				# ( for vi parenthesis matching
+
+        -p)
+	    OPT_p="${1}"
+	    ${v}echo "${C}.${0}:  OPT_p=${OPT_p}, # -p print the plot."
+            ;;				# ( for vi parenthesis matching
+
+        -q)
+	    OPT_v="${1}"
+            v='eval #'			# Set verbose off (quiet).
+	    ${v}echo "${C}.${0}:  OPT_v=${OPT_v}, # -q quiet mode."
+            ;;				# ( for vi parenthesis matching
+
+        -r)
+	    OPT_r="${1}"
+	    ${v}echo "${C}.${0}:  OPT_r=${OPT_r}, # -r plot retrieve."
+	    CMN="4"
+	    COL[$CMN]="${CMN}"
+	    ${v}echo "${C}.${0}:  COL[$CMN]=${COL[$CMN]}"
+            ;;				# ( for vi parenthesis matching
+
+        -v)
+	    OPT_v="${1}"
+            v=""			# Set verbose on.	
+	    ${v}echo "${C}.${0}:  OPT_v=${OPT_v}, # -v verbose mode."
+	    ${v}echo
+            ;;				# ( for vi parenthesis matching
+
+        -x)
+	    OPT_x="${1}"
+            OPT_x_PARM="${2}"		# Option parameter
+            ${v}echo "${C}.${0}:  OPT_x=${OPT_x}, # -x xRANGE, scale range."
+	    #${v}echo "${C}.${0}:  OPT_x_PARM=${OPT_x_PARM}, # parameter desc."
+	    xRANGE="${OPT_x_PARM}"
+	    ${v}echo "${C}.${0}:  xRANGE=${xRANGE}, # parameter desc."
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        -y)
+	    OPT_y="${1}"
+            OPT_y_PARM="${2}"		# Option parameter
+            ${v}echo "${C}.${0}:  OPT_y=${OPT_y}, # -y yRANGE, scale range."
+	    #${v}echo "${C}.${0}:  OPT_y_PARM=${OPT_y_PARM}, # parameter desc."
+	    yRANGE="${OPT_y_PARM}"
+	    ${v}echo "${C}.${0}:  yRANGE=${yRANGE}, # parameter desc."
+            shift
+            ;;				# ( for vi parenthesis matching
+
+	-u)
+	    OPT_u="-u"
+	    ${v}echo "${C}.${0}:  OPT_u=${OPT_u}, # -u Usage message."
+            echo "${USAGE}"
+	    exit 4
+            ;;				# ( for vi parenthesis matching
+
+        -a)
+	    OPT_a="${1}"
+	    ${v}echo "${C}.${0}:  OPT_a=${OPT_a}, # -a Option description."
+            ;;				# ( for vi parenthesis matching
+
+        -b)
+	    OPT_b="${1}"
+            OPT_b_PARM="${2}"		# Option parameter
+            ${v}echo "${C}.${0}:  OPT_b=${OPT_b}, # -b Option description."
+	    ${v}echo "${C}.${0}:  OPT_b_PARM=${OPT_b_PARM}, # parameter desc."
+            shift
+            ;;				# ( for vi parenthesis matching
+
+        --)
+	    shift			# Remove the "--".
+            break
+            ;;				# ( for vi parenthesis matching
+
+ 	*)
+            echo "${C}.${0}:  Option not understood. \"${1}\""
+            echo "USAGE message follows:  "
+            echo "${USAGE}"             # USAGE message
+            exit 2
+            ;;
+
+        esac
+	shift
+    done
+
+# The rest of the command line parameters are files:
+
+    # If FILES is already set, leave it alone, else set it.
+    # This is necessary due running getopt twice, to support parameters
+    # embedded in the data files.
+    if [ "${FILES}" = "" ]; then
+        FILES="${FILES} ${*}" 		# May result in a blank, " ".
+       if [ "${FILES}" = " " ]; then    # If blank, " ", make it empty.
+	   FILES=""			# Make FILES empty again.
+       fi
+        ${v}echo "${C}.${0}:  FILES=${FILES}"
+    fi
+
+# Set default options, if no applicable plot options were set.
+    COL_CTR="${#COL[*]}"		# Columns were turned on.
+    ${v}echo "COL_CTR=${COL_CTR}, COL=${COL[*]}"
+
+    if [ "${COL_CTR}" = "0" ]; then		# Option not set
+	${v}echo "${C}.${0}:  Setting default options."
+	FUNCTION__getopt -c2 -c4	# Set default, if no options set.
+    fi
+    if [ "${OPT_C}" = "-C" ] ||		# If -C or -P, ensure -S.
+       [ "${OPT_P}" = "-P" ]; then
+	if [ "${OPT_S}" != "-S" ]; then
+        FUNCTION__getopt -S		# -S save files.
+        fi
+    fi
+
+# Save a shar copy of this script, if -S and -v are both on.
+# Turned off, may be useful later.
+
+#    if [ ! -z "${OPT_S}" ] &&		# -S save files.
+#       [ "${OPT_v}" = "-v" ]; then	# -v verbose mode.
+#            ${v}echo "${C}.${0}:  start of shar of script"
+#	    shar -b ${C_PATH} >>${COMMAND}.shar
+#            ${v}echo "${C}.${0}:  end   of shar of script\n"
+#    fi
+
+    ${v}echo "${C}.${0}:  completed at `date`\n"	# end of function
+} # FUNCTION__getopt()			# Use function getopt.
+
+FUNCTION_gnuplot_init()			# Initialize gnuplot command file.
+{
+# INITIALIZE GNU_CMDFILE
+#
+# - Pass options to gnuplot.
+# - Some options for gnuplot are set here (logscale, autoscale).
+
+    ${v}echo "${C}.${0}:  beginning at `date`"	# beginning of function
+  {
+    echo "# ${C_PATH} ${*}"
+    echo "# gnuplot ${GNU_GEOMETRY} ${GNU_CMDFILE}"
+    if [ "${OPT_L}" = "-L" ]; then	# -L set logscale axis
+        echo "set logscale ${OPT_L_xaxis}${OPT_L_yaxis}"
+    fi
+    echo "set autoscale xy"
+    echo "set data style lines"
+    if [ ! -z "${OPT_G}" ]; then	# Turn on grids.
+        echo "set grid"
+    fi
+
+# Naming convention... build some kind of TITLE name, if none given.
+
+    TITLE="${TITLE:-JUDY BENCHMARK:  $CMD_LINE }" # Set default.
+
+    echo "set title  \"${TITLE}\"  0,0 "
+    if [ "${xRANGE}" != "" ]; then
+        echo "set xrange `FUNCTION_units ${xRANGE}`"
+	XLABEL="${XLABEL} ${xRANGE}"
+    fi
+    if [ "${yRANGE}" != "" ]; then
+        echo "set yrange `FUNCTION_units ${yRANGE}`"
+	YLABEL="${YLABEL} ${yRANGE}"
+    fi
+    echo "set xlabel \"${XLABEL}\" 0,0"
+    echo "set ylabel \"${YLABEL}\" 0,0"
+    echo "set label \"${XLOG}\" at  1,1"
+  } >> ${GNU_CMDFILE}
+
+    ${v}echo "${C}.${0}:  completed at `date`\n"	# end of function
+} # FUNCTION_gnuplot_init()		# Initialize gnuplot command file.
+
+FUNCTION_gnuplot_plot()			# Plot these files.
+{
+# FORMAT THE PLOT AND REPLOT COMMANDS
+# 
+# - output to GNU_CMDFILE.
+
+    ${v}echo "${C}.${0}:  beginning at `date`"	# beginning of function
+    ${v}echo "${C}.${0}:  FILES=${*}"
+
+    Fgp_PARM="${*}"			# Save what was passed in.
+    Fgp_FILES=""			# Initialize list of good files.
+    for i in ${Fgp_PARM}
+    do
+        if [ -r "$i" ]; then		# Check that files are readable.
+            Fgp_FILES="${Fgp_FILES} ${i}" # Extend the list of good files.
+	else
+            echo "${C}.${0}:  WARNING:  file: ${i} cannot be read, ignored."
+        fi
+    done
+
+    let j=1
+    while [ ${j} -lt ${#CHA[*]} ]	# For each type of plot.
+    do
+        for i in ${Fgp_FILES}		# For each file.
+        do
+	    CMN="${COL[$j]}"
+            if [ ! -z "${CMN}" ]; then
+	      {
+		MSG="`basename ${i}`"
+		if [ "${OPT_H}" = "-H" ]; then
+		    echo "${FIRST}plot \"${i}\" using 1:${CMN} t \"${CHA[${CMN}]} ${MSG}\""
+		elif [ "${OPT_NH}" = "-NH" ]; then
+		    echo "${FIRST}plot \"${i}\" using 1:${CMN} t \"${MSG}\""
+		fi
+	      } >> ${GNU_CMDFILE}
+                FIRST="re"
+            fi
+        done
+        let j=j+1
+    done
+
+# A bug in gnuplot sometimes prevents all replots from appearing.
+# This particularly happens when xrange is used.
+# Doing an extra replot will plot everything.
+    echo replot >> ${GNU_CMDFILE}
+
+    ${v}echo "${C}.${0}:  completed at `date`\n"	# end of function
+} # FUNCTION_gnuplot_plot()			# Plot these files.
+
+FUNCTION_gnuplot_display()			# Plots the datapoints.
+{
+# DISPLAY PLOT TO SCREEN:
+
+    ${v}echo "${C}.${0}:  beginning at `date`"	# beginning of function
+
+    if [ "${OPT_V}" = "-V" ]; then
+        echo "hpterm -e vi -c \"vi ${GNU_CMDFILE} \""
+        hpterm -e vi -cvi ${GNU_CMDFILE} &
+    fi
+
+    if [ "${OPT_v}" = "-v" ]; then	# -v verbose mode.
+        echo "${C}.${0}:  executing command:  "; echo "\n\
+        gnuplot ${GNU_GEOMETRY} ${GNU_CMDFILE}"
+    fi
+
+# Add additional parameters as necessary to setup for printing:
+    if [ "${OPT_p}" = "-p" ]; then
+      {
+        echo set terminal postscript landscape color
+        echo set output \"${GNU_PSFILE}\"
+        echo replot
+      } >> ${GNU_CMDFILE}
+    fi  
+
+    LINE=""				# External response
+    while [ "${LINE}" != "q" ]
+    do
+        gnuplot ${GNU_GEOMETRY} ${GNU_CMDFILE}
+        LINE="q"			# Setup for quit.
+        if [ "${OPT_V}" = "-V" ]; then
+	    echo "Pause: press return to vi again, \"q\" to quit ${C}"
+	    read -r LINE
+        fi
+    done
+
+    ${v}echo "${C}.${0}:  completed at `date`\n"	# end of function
+} # FUNCTION_gnuplot_display()		# Plots the datapoints.
+
+FUNCTION_gnuplot_print()		# -p print the plot.
+{
+#
+# PRINT THE PLOT.
+#
+# - uses gnuplot command "replot".
+
+    ${v}echo "${C}.${0}:  beginning at `date`"	# beginning of function
+    ${v}echo "${C}.${0}:  OPT_p=${OPT_p}, # -p print the plot."
+    ${v}echo "${C}.${0}:  OPT_P=${OPT_P}, # GNU_PSFILE name."
+    GNU_PSFILE="${GNU_PSFILE:-$GNU_PSFILE_DEF}"
+    ${v}echo "${C}.${0}:  GNU_PSFILE=${GNU_PSFILE}, # GNU_PSFILE name."
+
+    LP_DEV_PARM="-d ${LP_DEV:-$LP_DEV_DEF}" # Printer device parameter.
+    LP_OPT_PARM="${LP_OPT:-$LP_OPT_DEF}"    # Printer option parameters.
+
+    echo "${C}.${0}: executing command:  "; echo "\n\
+    echo lp ${LP_DEV_PARM} ${LP_OPT_PARM} ${GNU_PSFILE}"
+
+    lp ${LP_DEV_PARM} ${LP_OPT_PARM} ${GNU_PSFILE}
+
+    ${v}echo "${C}.${0}:  completed at `date`\n"	# end of function
+} # FUNCTION_gnuplot_print()		# Print the plot.
+
+FUNCTION_TITLE_COLHEAD()			# Set Column headings from file.
+{
+#
+# Parse the TITLE and COLUMN HEADINGS (CHA) from the data, if available.
+# Also parse other settable parameters, if available.
+#
+
+    ${v}echo "${C}.${0}:  beginning at `date`"	# beginning of function
+    FTC_FILES="${*}"			# Local list of file names.
+    ${v}echo "${C}.${0}:  FTC_FILES=${FTC_FILES}"
+
+    # Choose the first readable file.
+    unset FTC_FILE			# Hold the first readable filename.
+    for F in ${FTC_FILES} /dev/null	# /dev/null ensures there is a file.
+    do
+	if [ -r "${F}" ] &&		# Is this file readable?
+	   [ "${FTC_FILE}" = "" ]; then # We do not have one yet?
+	    FTC_FILE="${F}"		# Hold the first readable filename.
+	fi
+    done
+
+    # If FTC_FILE got set, use it to find TITLE, COLHEAD, XLABEL, YLABEL, et.al.
+    if [ "${FTC_FILE}" != "" ]; then	# Use this file.
+	# Grab the FIRST TITLE line (head -1) and use it.
+	TITLE="`grep '^# *TITLE' ${FTC_FILE} | head -1 |
+	  sed -e 's/^# *TITLE *//g'`"
+        ${v}echo "${C}.${0}:  TITLE=${TITLE}"
+
+	# Grab the FIRST XLABEL line (head -1) and use it.
+	XLABEL="`grep '^# *XLABEL' ${FTC_FILE} | head -1 |
+	  sed -e 's/^# *XLABEL *//g'`"
+        ${v}echo "${C}.${0}:  XLABEL=${XLABEL}"
+
+	# Grab the FIRST YLABEL line (head -1) and use it.
+	YLABEL="`grep '^# *YLABEL' ${FTC_FILE} | head -1 |
+	  sed -e 's/^# *YLABEL *//g'`"
+        ${v}echo "${C}.${0}:  YLABEL=${YLABEL}"
+
+	# Find each COLHEAD, and put it in the correct CHA[INDEX].
+        let i=0
+        while [ ${i} -lt ${#CHA[*]} ]	# For each COLHEAD
+        do
+	    # Grab one COLHEAD line at a time, put it into CHA[].
+	      # Note, "@" not allowed in COLHEAD string.
+	    LINE="`grep \"^#.*COLHEAD\" ${FTC_FILE} |	# Find COLHEAD.
+	      sed -e 's/^#.*COLHEAD*//g' \
+		  -e 's/^ *//g' \
+		  -e 's/@//g' | # Remove COLHEAD.
+	      expand | sed -e 's/^0*//g' | # Remove leading zeros.
+	      grep ^${i} |		# Find a line matching ${i}.
+	      head -1 `"		# Make sure there is only 1.
+
+	    # Grab the INDEX number, could do numeric check if problems.
+	    INDEX="`echo ${LINE} | cut -d\" \" -f1`" # field 1 is number.
+
+	    # If INDEX is not empty, save this COLHEAD.
+	    if [ "${INDEX}" != "" ]; then
+	        # Grab the rest of the line and save it into CHA.
+	        REMAINDER="`echo ${LINE} | sed -e \"s@^${INDEX} *@@g\"`"
+	        CHA[${INDEX}]="${REMAINDER}"
+                ${v}echo "${C}.${0}:  CHA[${INDEX}]=\"${CHA[${INDEX}]}\""
+	    fi
+
+	    let i=i+1
+        done
+
+	# GETOPT, pull in options to be set for this data.
+	GETOPT="`grep '^# *GETOPT' ${FTC_FILE} | head -1 |
+	  sed -e 's/^# *GETOPT *//g'`"
+	if [ "${GETOPT}" != "" ]; then
+            FUNCTION__getopt ${GETOPT}		# Parse the options.
+	fi
+	unset GETOPT
+
+    fi
+
+    ${v}echo "${C}.${0}:  completed at `date`\n"	# end of function
+} # FUNCTION_TITLE_COLHEAD()		# Set Column headings from file.
+
+FUNCTION_n()				# -n number plot descriptions.
+{
+# ADD COLUMN NUMBER TO EACH ELEMENT IN CHA:
+#
+# - This is done for comparing plots, and/or debugging.
+
+    ${v}echo "${C}.${0}:  beginning at `date`"	# beginning of function
+    ${v}echo "${C}.${0}:  OPT_n=${OPT_n}, # -n number plot descriptions"
+
+    let i=0
+    while [ ${i} -lt ${#CHA[*]} ]
+    do
+       CHA[${i}]="${i} ${CHA[${i}]}"
+       ${v}echo "${C}.${0}:  CHA[${i}]=\"${CHA[${i}]}\""
+       let i=i+1
+    done
+    ${v}echo "${C}.${0}:  completed at `date`\n"	# end of function
+} # FUNCTION_n()			# -n number plot descriptions.
+
+FUNCTION_units()			# Resolve units.
+{
+#
+# Expand units of the form 1K to 1000, 1M to 1000000, et.al.
+# Used to format the gnuplot parameters xRANGE and yRANGE.
+# gnuplot data format:  "set xrange [1:1000000]"
+#
+
+    Fu_IN="${1}"			# Units in.
+    echo "["${Fu_IN}"]" |
+      sed -e "s/[kK]/000/g"	      | # 1,000
+      sed -e "s/[mM]/000000/g"	      | # 1,000,000
+      sed -e "s/[gG]/000000000/g"     | # 1,000,000,000
+      sed -e "s/^\[\[/\["/g	      | # Ensure single leading bracket.
+      sed -e "s/\]\]$/\]"/g	        # Ensure single trailing bracket.
+}
+
+FUNCTION_a()				# -a Option description.
+{
+#
+# Replace with description of this function.
+#
+
+    ${v}echo "${C}.${0}:  beginning at `date`"	# beginning of function
+    ${v}echo "${C}.${0}:  OPT_a=${OPT_a}, # -a Option description."
+    ${v}echo "${C}.${0}:  completed at `date`\n"	# end of function
+} #
+
+FUNCTION_b()				# -b Option description.
+{
+#
+# Replace with description of this function.
+#
+
+    ${v}echo "${C}.${0}:  beginning at `date`"	# beginning of function
+    ${v}echo "${C}.${0}:  OPT_b=${OPT_b}, # -b Option description."
+    MSG="# -b   Parameter description."
+    ${v}echo "${C}.${0}:  OPT_b_PARM=${OPT_b_PARM}, ${MSG}"
+
+    if [ -r "${OPT_b_PARM}" ]; then	# Ensure this is a file.
+        echo ${OPT_b_PARM} |
+          while read -r FILE; do
+            ${v}echo "${C}.${0}:  FILE=${FILE}"
+          done
+    else				# Or use elif (form of elseif).
+        ${v}echo "${C}.${0}:  ERROR, ${OPT_b_PARM} is not a readable file."
+    fi
+
+    ${v}echo "${C}.${0}:  completed at `date`\n"	# end of function
+} #
+
+
+#
+# MAIN:  Main driver, main processing occurs here.
+#
+
+
+    ${v}echo "\n${C}:  beginning at `date`" # page overflow with each start.
+
+    CMD_LINE="${0} ${*}"		# Save command called and options.
+
+    FUNCTION__getopt ${*}		# Parse the options.
+
+    if [   -z "${OPT_NE}" ] &&		# Not E is not turned on and E is...
+       [ ! -z "${OPT_E}" ]; then	# -E use embedded options
+        FUNCTION_TITLE_COLHEAD ${FILES}	# Set Column headings from file.
+    fi
+
+    FUNCTION__getopt ${*} >/dev/null 2>&1 # Parse the options.
+
+    type banner >/dev/null 2>&1		# Check if banner exists.
+    RC="${?}"				# Save return code.
+    if [ "${RC}" = "0" ]; then		# if RC=0, banner exists.
+        ${v}banner ${C}
+    fi
+
+    ${v}echo "${C}:  RCS_SCRIPT=${RCS_SCRIPT}"
+    ${v}echo "${C}:  PWD=${PWD}"
+
+    if [ ! -z "${OPT_n}" ]; then
+        FUNCTION_n			# -n number plot descriptions.
+    fi
+
+    # If GNU_CMDFILE exists, use it, do not create it.
+    if [ ! -f ${GNU_CMDFILE} ]; then	# ! -f = if this is not a file.
+	if [ "${FILES}" = "" ]; then	# If no files available
+	    MSG="and GNU_CMDFILE is not a file  exit 7"
+	    echo "${C}:  ERROR:  no FILES to plot!  ${MSG}"
+	    exit 7
+	    break
+	fi
+        FUNCTION_gnuplot_init ${*}	# Initialize gnuplot command file.
+
+        FUNCTION_gnuplot_plot ${FILES}	# Plot these files.
+
+        echo pause -1 \'Pause: press return to continue.\' >> ${GNU_CMDFILE}
+        echo				# Place blank line in log file.
+    fi
+
+    FUNCTION_gnuplot_display		# Plots the datapoints.
+
+
+    if [ ! -z "${OPT_p}" ]; then
+        FUNCTION_gnuplot_print		# -p print the plot.
+    fi
+
+
+# REMOVE FILES, CLEANUP:
+#
+# Remove the working files and filenames, unless "-S" is on.
+
+    if [ "${OPT_S}" = "-S" ]; then		# -S save files.
+        echo "${C}: saving  ${COMMAND}"
+        echo "${C}: saving  ${GNU_CMDFILE}"
+        if [ "${OPT_p}" = "-p" ]; then
+           echo "${C}: saving  ${GNU_PSFILE}"
+        fi
+    else
+        rm -f ${COMMAND}		# Remove generated log file.
+        rm -f ${GNU_CMDFILE}	        # Remove generated command file.
+        rm -f ${GNU_PSFILE}		# Remove generated .ps file.
+    fi
+
+    rm -fr ${COMMAND}.WORK*.$$		# Remove generated work files.
+
+    ${v}echo "${C}:  completed at `date`\n^L"
+
+# Message if -v (verbose):
+
+    if [ "${OPT_v}" = "-v" ]; then	# -v verbose mode.
+        echo "${INFO}"
+    fi
+
+# DONE:
+#
+# - If a log file needs to be kept, uncomment the corresponding ():
+
+} 2>&1 | tee -a ${COMMAND}		# Use during testing.
+#) >>${COMMAND} 2>&1 &			# Use for production.

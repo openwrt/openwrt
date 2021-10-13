@@ -1,0 +1,68 @@
+{
+	"uuid": 1,
+	"radios": [
+		{
+			"band": "2G",
+			"country": "CA",
+			"channel-mode": "HE",
+			"channel-width": 80
+		}
+	],
+
+	"interfaces": [
+		{
+			"name": "WAN",
+			"role": "upstream",
+			"services": [ "ssh" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"WAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "dynamic"
+			}
+		},
+		{
+			"name": "WAN-wifi",
+			"role": "upstream",
+			"ipv4": {
+				"addressing": "dynamic"
+			},
+			"metric": 6,
+			"ssids": [
+				{
+					"purpose": "onboarding-sta"
+				}
+			]
+		},
+		{
+			"name": "LAN",
+			"role": "downstream",
+			"services": [ "ssh" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"LAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "static",
+				"subnet": "192.168.1.1/24",
+				"dhcp": {
+					"lease-first": 10,
+					"lease-count": 100,
+					"lease-time": "6h"
+				}
+			}
+		}
+	],
+	"services": {
+		"ssh": {
+			"port": 22
+		}
+	}
+}

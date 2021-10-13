@@ -1,0 +1,687 @@
+From 35a3aff175b3367684823712efa89fb7dfc46f4c Mon Sep 17 00:00:00 2001
+From: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
+Date: Thu, 15 Oct 2020 12:43:43 +0530
+Subject: [PATCH] ath11k: add module param for ftm
+
+Device was switched to ftm mode on receiving start command from
+ftm userspace add, now module param has been added to start
+device in ftm mode directly.Device needs to be rebooted or
+ath11k module has to be reinserted with ftm_mode unset to
+bring it back to machine mode. Booting in ftm mode would
+prevent loading of cal data and vap from starting.
+
+Command: insmod ath11k ftm_mode=1
+
+Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c       |  11 +-
+ drivers/net/wireless/ath/ath11k/core.h       |   2 +
+ drivers/net/wireless/ath/ath11k/debug.h      |   1 +
+ drivers/net/wireless/ath/ath11k/mac.c        |   5 +
+ drivers/net/wireless/ath/ath11k/qmi.c        |   5 +
+ drivers/net/wireless/ath/ath11k/testmode.c   | 276 +++++++++++++++------------
+ drivers/net/wireless/ath/ath11k/testmode.h   |  21 +-
+ drivers/net/wireless/ath/ath11k/testmode_i.h |   2 +-
+ drivers/net/wireless/ath/ath11k/wmi.c        |  36 +++-
+ drivers/net/wireless/ath/ath11k/wmi.h        |  20 ++
+ 10 files changed, 247 insertions(+), 132 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -42,6 +42,10 @@ EXPORT_SYMBOL(ath11k_host_ddr_addr);
+ module_param_named(host_ddr_addr, ath11k_host_ddr_addr, uint, 0644);
+ MODULE_PARM_DESC(host_ddr_addr, "host ddr addr for FW");
+ 
++unsigned int ath11k_ftm_mode;
++module_param_named(ftm_mode, ath11k_ftm_mode, uint, 0644);
++MODULE_PARM_DESC(ftm_mode, "Boots up in factory test mode");
++
+ struct ath11k_base *ath11k_soc;
+ 
+ static const struct ath11k_hw_params ath11k_hw_params[] = {
+@@ -673,6 +677,11 @@ static int ath11k_core_soc_create(struct
+ {
+ 	int ret;
+ 
++	if (ath11k_ftm_mode) {
++		ab->fw_mode = ATH11K_FIRMWARE_MODE_FTM;
++		ath11k_info(ab, "Booting in ftm mode - %d\n", ab->fw_mode);
++	}
++
+ 	ret = ath11k_qmi_init_service(ab);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to initialize qmi :%d\n", ret);
+@@ -1184,9 +1193,6 @@ static void ath11k_core_restart(struct w
+ 			break;
+ 		case ATH11K_STATE_TM:
+ 			ath11k_warn(ab, "fw mode reset done radio %d\n", i);
+-			if (test_bit(ATH11K_FLAG_FW_RESTART_FOR_HOST, &ar->ab->dev_flags)) {
+-				complete(&ar->fw_mode_reset);
+-			}
+ 			break;
+ 		}
+ 		mutex_unlock(&ar->conf_mutex);
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -676,6 +676,7 @@ struct ath11k {
+ 	bool dfs_block_radar_events;
+ 	struct ath11k_thermal thermal;
+ 	struct completion fw_mode_reset;
++	u8 ftm_msgref;
+ 	int ap_ps_enabled;
+ 	enum ath11k_ap_ps_state ap_ps_state;
+ 
+@@ -863,6 +864,7 @@ struct ath11k_base {
+ 		/* protected by data_lock */
+ 		u32 fw_crash_counter;
+ 	} stats;
++	bool ftm_segment_handler;
+ 	struct ath11k_ftm_event_obj ftm_event_obj;
+ 
+ 	u32 max_ast_index;
+--- a/drivers/net/wireless/ath/ath11k/debug.h
++++ b/drivers/net/wireless/ath/ath11k/debug.h
+@@ -33,6 +33,7 @@ __printf(2, 3) void ath11k_err(struct at
+ __printf(2, 3) void ath11k_warn(struct ath11k_base *ab, const char *fmt, ...);
+ 
+ extern unsigned int ath11k_debug_mask;
++extern unsigned int ath11k_ftm_mode;
+ 
+ #ifdef CPTCFG_ATH11K_DEBUG
+ __printf(3, 4) void __ath11k_dbg(struct ath11k_base *ab,
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5560,6 +5560,11 @@ static int ath11k_mac_op_start(struct ie
+ 	struct device *dev = ab->dev;
+ 	int ret;
+ 
++	if (ath11k_ftm_mode) {
++		ath11k_err(ab, "fail to start mac operations in ftm mode\n");
++		return -EWOULDBLOCK;
++	}
++
+ 	ath11k_mac_drain_tx(ar);
+ 	mutex_lock(&ar->conf_mutex);
+ 
+--- a/drivers/net/wireless/ath/ath11k/testmode.c
++++ b/drivers/net/wireless/ath/ath11k/testmode.c
+@@ -12,6 +12,9 @@
+ #include "hif.h"
+ #include "testmode_i.h"
+ 
++#define FTM_SEGHDR_CURRENT_SEQ GENMASK(3, 0)
++#define FTM_SEGHDR_TOTAL_SEGMENTS GENMASK(7, 4)
++
+ static const struct nla_policy ath11k_tm_policy[ATH11K_TM_ATTR_MAX + 1] = {
+ 	[ATH11K_TM_ATTR_CMD]		= { .type = NLA_U32 },
+ 	[ATH11K_TM_ATTR_DATA]		= { .type = NLA_BINARY,
+@@ -63,20 +66,16 @@ void ath11k_fwlog_write(struct ath11k_ba
+ 
+ /* Returns true if callee consumes the skb and the skb should be discarded.
+  * Returns false if skb is not used. Does not sleep.
++ * Unsegmented events are handled here. Segments are aggregated in appln layer
+  */
+-bool ath11k_tm_event_wmi(struct ath11k_base *ab, u32 cmd_id,
+-			 struct sk_buff *skb)
++bool ath11k_wmi_tm_event_unsegmented(struct ath11k_base *ab, u32 cmd_id,
++				     struct sk_buff *skb)
+ {
+ 	struct sk_buff *nl_skb;
++	struct ath11k *ar;
+ 	bool consumed;
+ 	int ret, i;
+-	struct ath11k *ar;
+ 	struct ath11k_pdev *pdev;
+-	u8 *buf_pos;
+-	u16 datalen;
+-	struct seg_hdr_info *seghdr_info;
+-	u8 total_segments, current_seq;
+-	u32 data_pos;
+ 
+ 	ath11k_dbg(ab, ATH11K_DBG_TESTMODE,
+ 		   "testmode event wmi cmd_id %d skb %pK skb->len %d\n",
+@@ -87,30 +86,123 @@ bool ath11k_tm_event_wmi(struct ath11k_b
+ 	for (i = 0; i < ab->num_radios; i++) {
+ 		pdev = &ab->pdevs[i];
+ 		ar = pdev->ar;
+-		if (ar &&  ar->state == ATH11K_STATE_TM)
+-			break;
++		if (ar) {
++			mutex_lock(&ar->conf_mutex);
++			if (ar->state == ATH11K_STATE_TM) {
++				mutex_unlock(&ar->conf_mutex);
++				break;
++			}
++			mutex_unlock(&ar->conf_mutex);
++		}
+ 	}
+ 
+ 	if (i >= ab->num_radios) {
+-		ath11k_dbg(ab, ATH11K_DBG_TESTMODE, "testmode event not handled\n");
++		ath11k_warn(ab, "testmode event not handled due to invalid pdev\n");
+ 		return false;
+ 	}
+ 
+ 	spin_lock_bh(&ar->data_lock);
+ 
++	/* Only testmode.c should be handling events from utf firmware,
++	 * otherwise all sort of problems will arise as mac80211 operations
++	 * are not initialised.
++	 */
+ 	consumed = true;
+ 
+-	seghdr_info = (struct seg_hdr_info *)(skb->data + WMI_TLV_HDR_SIZE);
+-	current_seq = (seghdr_info->segmentinfo & 0xF);
+-	total_segments = (seghdr_info->segmentinfo >> 4) & 0xF;
++	nl_skb = cfg80211_testmode_alloc_event_skb(ar->hw->wiphy,
++						   2 * sizeof(u32) + skb->len,
++						   GFP_ATOMIC);
++	if (!nl_skb) {
++		ath11k_warn(ab,
++			    "failed to allocate skb for testmode wmi event\n");
++		goto out;
++	}
++
++	ret = nla_put_u32(nl_skb, ATH11K_TM_ATTR_CMD, ATH11K_TM_CMD_WMI);
++	if (ret) {
++		ath11k_warn(ab,
++			    "failed to put testmode wmi event cmd attribute: %d\n",
++			    ret);
++		kfree_skb(nl_skb);
++		goto out;
++	}
++
++	ret = nla_put_u32(nl_skb, ATH11K_TM_ATTR_WMI_CMDID, cmd_id);
++	if (ret) {
++		ath11k_warn(ab,
++			    "failed to put testmode wmi event cmd_id: %d\n",
++			    ret);
++		kfree_skb(nl_skb);
++		goto out;
++	}
++
++	ret = nla_put(nl_skb, ATH11K_TM_ATTR_DATA, skb->len, skb->data);
++	if (ret) {
++		ath11k_warn(ab,
++			    "failed to copy skb to testmode wmi event: %d\n",
++			    ret);
++		kfree_skb(nl_skb);
++		goto out;
++	}
++
++	cfg80211_testmode_event(nl_skb, GFP_ATOMIC);
++
++out:
++	spin_unlock_bh(&ar->data_lock);
++	return consumed;
++}
++
++/* Returns true if callee consumes the skb and the skb should be discarded.
++ * Returns false if skb is not used. Does not sleep.
++ * Segmented events are hangled here.
++ * Data of various events received from fw is aggregated and
++ * sent to application layer
++ */
++bool ath11k_process_tm_event(struct ath11k_base *ab, u32 cmd_id,
++			     const struct wmi_ftm_event_msg *ftm_msg,
++			     u16 length)
++{
++	struct sk_buff *nl_skb;
++	bool consumed;
++	int ret;
++	struct ath11k *ar;
++	u8 *buf_pos;
++	u16 datalen;
++	u8 total_segments, current_seq;
++	u32 data_pos;
++	u32 pdev_id;
+ 
+-	datalen = skb->len -  (sizeof(struct seg_hdr_info) + WMI_TLV_HDR_SIZE);
+-	buf_pos = skb->data +  (sizeof(struct seg_hdr_info) + WMI_TLV_HDR_SIZE);
++	ath11k_dbg(ab, ATH11K_DBG_TESTMODE,
++		   "testmode event wmi cmd_id %d ftm event msg %pK datalen %d\n",
++		   cmd_id, ftm_msg, length);
++	ath11k_dbg_dump(ab, ATH11K_DBG_TESTMODE, NULL, "", ftm_msg, length);
++	pdev_id = DP_HW2SW_MACID(ftm_msg->seg_hdr.pdev_id);
++
++	if (pdev_id >= ab->num_radios) {
++		ath11k_warn(ab, "testmode event not handled due to invalid pdev id\n");
++		return false;
++	}
++
++	ar = ab->pdevs[pdev_id].ar;
++	if (!ar) {
++		ath11k_warn(ab, "testmode event not handled due to absence of pdev\n");
++		return false;
++	}
++
++	spin_lock_bh(&ar->data_lock);
++	consumed = true;
++	current_seq = FIELD_GET(FTM_SEGHDR_CURRENT_SEQ,
++				ftm_msg->seg_hdr.segmentinfo);
++	total_segments = FIELD_GET(FTM_SEGHDR_TOTAL_SEGMENTS,
++				   ftm_msg->seg_hdr.segmentinfo);
++	datalen = length - (sizeof(struct wmi_ftm_seg_hdr));
++	buf_pos = (u8 *)ftm_msg->data;
+ 
+ 	if (current_seq == 0) {
+ 		ab->ftm_event_obj.expected_seq = 0;
+ 		ab->ftm_event_obj.data_pos = 0;
+ 	}
++
+ 	data_pos = ab->ftm_event_obj.data_pos;
+ 
+ 	if ((data_pos + datalen) > ATH11K_FTM_EVENT_MAX_BUF_LENGTH) {
+@@ -125,16 +217,15 @@ bool ath11k_tm_event_wmi(struct ath11k_b
+ 
+ 	if (++ab->ftm_event_obj.expected_seq != total_segments) {
+ 		ab->ftm_event_obj.data_pos = data_pos;
+-		ath11k_warn(ab,
+-			    "parial data received current_seq[%d], total_seg[%d]\n",
++		ath11k_dbg(ab, ATH11K_DBG_TESTMODE,
++			   "partial data received current_seq[%d], total_seg[%d]\n",
+ 			    current_seq, total_segments);
+ 		goto out;
+ 	}
+ 
+-	ath11k_warn(ab,
+-		    "total data length[%d] = [%d]\n",
+-		    data_pos, seghdr_info->len);
+-
++	ath11k_dbg(ab, ATH11K_DBG_TESTMODE,
++		   "total data length[%d] = [%d]\n",
++		    data_pos, ftm_msg->seg_hdr.len);
+ 	nl_skb = cfg80211_testmode_alloc_event_skb(ar->hw->wiphy,
+ 						   2 * sizeof(u32) + data_pos,
+ 						   GFP_ATOMIC);
+@@ -144,7 +235,8 @@ bool ath11k_tm_event_wmi(struct ath11k_b
+ 		goto out;
+ 	}
+ 
+-	ret = nla_put_u32(nl_skb, ATH11K_TM_ATTR_CMD, ATH11K_TM_CMD_WMI_FTM);
++	ret = nla_put_u32(nl_skb, ATH11K_TM_ATTR_CMD,
++			  ATH11K_TM_CMD_WMI_FTM);
+ 	if (ret) {
+ 		ath11k_warn(ab,
+ 			    "failed to put testmode wmi event cmd attribute: %d\n",
+@@ -176,7 +268,6 @@ bool ath11k_tm_event_wmi(struct ath11k_b
+ 
+ out:
+ 	spin_unlock_bh(&ar->data_lock);
+-
+ 	return consumed;
+ }
+ 
+@@ -217,7 +308,6 @@ static int ath11k_tm_cmd_testmode_start(
+ 	int ret;
+ 
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_TESTMODE, " enter testmode cmd fw start\n");
+-
+ 	mutex_lock(&ar->conf_mutex);
+ 
+ 	if (ar->state == ATH11K_STATE_TM) {
+@@ -231,88 +321,23 @@ static int ath11k_tm_cmd_testmode_start(
+ 		goto err;
+ 	}
+ 
+-	/* Firmware already running in FTM mode */
+-	if (ar->ab->fw_mode == ATH11K_FIRMWARE_MODE_FTM) {
+-		ar->state = ATH11K_STATE_TM;
+-		ret = 0;
+-		goto err;
+-	}
+-	ar->ab->ftm_event_obj.eventdata = kzalloc(ATH11K_FTM_EVENT_MAX_BUF_LENGTH,
+-						  GFP_KERNEL);
++	ar->ab->ftm_event_obj.eventdata =
++		kzalloc(ATH11K_FTM_EVENT_MAX_BUF_LENGTH, GFP_KERNEL);
+ 	if (!ar->ab->ftm_event_obj.eventdata) {
+ 		ret = -ENOMEM;
+ 		goto err;
+ 	}
+ 
+-	ar->ab->fw_mode = ATH11K_FIRMWARE_MODE_FTM;
+ 	ar->state = ATH11K_STATE_TM;
++	ar->ftm_msgref = 0;
+ 	mutex_unlock(&ar->conf_mutex);
+-	init_completion(&ar->fw_mode_reset);
+-
+-	set_bit(ATH11K_FLAG_FW_RESTART_FOR_HOST, &ar->ab->dev_flags);
+-	ath11k_hif_power_down(ar->ab);
+-	ath11k_hif_power_up(ar->ab);
+-
+-	if (!wait_for_completion_timeout(&ar->fw_mode_reset,
+-					 FTM_MODE_RESET_TIMEOUT_HZ)) {
+-		clear_bit(ATH11K_FLAG_FW_RESTART_FOR_HOST, &ar->ab->dev_flags);
+-		ath11k_warn(ar->ab, "failed to restat the core in ftm mode\n");
+-		return 0;
+-	}
+-	clear_bit(ATH11K_FLAG_FW_RESTART_FOR_HOST, &ar->ab->dev_flags);
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_TESTMODE, " enter testmode cmd started\n");
+-
+ 	return 0;
+ err:
+ 	mutex_unlock(&ar->conf_mutex);
+ 	return ret;
+ }
+ 
+-static int ath11k_tm_cmd_testmode_stop(struct ath11k *ar, struct nlattr *tb[])
+-{
+-	int ret;
+-
+-	ath11k_dbg(ar->ab, ATH11K_DBG_TESTMODE, "Enter testmode cmd fw stop\n");
+-
+-	mutex_lock(&ar->conf_mutex);
+-
+-	if (ar->state != ATH11K_STATE_TM) {
+-		ret = -ENETDOWN;
+-		goto out;
+-	}
+-
+-	/* Firmware not running in FTM mode */
+-	if (ar->ab->fw_mode != ATH11K_FIRMWARE_MODE_FTM) {
+-		ar->state = ATH11K_STATE_OFF;
+-		ret = 0;
+-		goto out;
+-	}
+-
+-	ar->ab->fw_mode = ATH11K_FIRMWARE_MODE_NORMAL;
+-	mutex_unlock(&ar->conf_mutex);
+-	init_completion(&ar->fw_mode_reset);
+-
+-	set_bit(ATH11K_FLAG_FW_RESTART_FOR_HOST, &ar->ab->dev_flags);
+-	ath11k_hif_power_down(ar->ab);
+-	ath11k_hif_power_up(ar->ab);
+-
+-	if (!wait_for_completion_timeout(&ar->fw_mode_reset,
+-					 FTM_MODE_RESET_TIMEOUT_HZ)) {
+-		clear_bit(ATH11K_FLAG_FW_RESTART_FOR_HOST, &ar->ab->dev_flags);
+-		ath11k_warn(ar->ab, "failed to restat the core in ftm mode\n");
+-		return 0;
+-	}
+-
+-	ar->state = ATH11K_STATE_OFF;
+-	clear_bit(ATH11K_FLAG_FW_RESTART_FOR_HOST, &ar->ab->dev_flags);
+-	kfree(ar->ab->ftm_event_obj.eventdata);
+-	ath11k_info(ar->ab, "UTF firmware stopped\n");
+-	return 0;
+-out:
+-	mutex_unlock(&ar->conf_mutex);
+-	return ret;
+-}
+-
+ static int ath11k_tm_cmd_wmi(struct ath11k *ar, struct nlattr *tb[],
+ 			     struct ieee80211_vif *vif)
+ {
+@@ -326,11 +351,6 @@ static int ath11k_tm_cmd_wmi(struct ath1
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
+-	if (ar->state != ATH11K_STATE_ON) {
+-		ret = -ENETDOWN;
+-		goto out;
+-	}
+-
+ 	if (!tb[ATH11K_TM_ATTR_DATA]) {
+ 		ret = -EINVAL;
+ 		goto out;
+@@ -378,7 +398,6 @@ static int ath11k_tm_cmd_wmi(struct ath1
+ 			    ret);
+ 		goto out;
+ 	}
+-
+ 	ret = 0;
+ 
+ out:
+@@ -390,19 +409,16 @@ static int ath11k_tm_cmd_process_ftm(str
+ {
+ 	struct ath11k_pdev_wmi *wmi = ar->wmi;
+ 	struct sk_buff *skb;
+-	u32 cmd_id, buf_len;
++	u32 cmd_id, buf_len, hdr_info;
+ 	int ret;
+ 	void *buf;
+-	u8 *cmd;
+ 	/* if buf_len is 0 no data is sent, return error */
+-	static u8 msgref = 1;
+ 	u8 segnumber = 0, seginfo;
+ 	u16 chunk_len, total_bytes, num_segments;
+ 	u8 *bufpos;
+-	struct seg_hdr_info seg_hdr;
++	struct wmi_ftm_cmd *ftm_cmd;
+ 
+ 	mutex_lock(&ar->conf_mutex);
+-
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_TESTMODE, "ar->state  %d\n", ar->state);
+ 
+ 	if (ar->state != ATH11K_STATE_TM) {
+@@ -418,12 +434,10 @@ static int ath11k_tm_cmd_process_ftm(str
+ 	buf = nla_data(tb[ATH11K_TM_ATTR_DATA]);
+ 	buf_len = nla_len(tb[ATH11K_TM_ATTR_DATA]);
+ 	cmd_id = WMI_PDEV_UTF_CMDID;
+-
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_TESTMODE,
+ 		   "testmode cmd wmi cmd_id %d buf %pK buf_len %d\n",
+ 		   cmd_id, buf, buf_len);
+ 	ath11k_dbg_dump(ar->ab, ATH11K_DBG_TESTMODE, NULL, "", buf, buf_len);
+-
+ 	bufpos = buf;
+ 	total_bytes = buf_len;
+ 	num_segments = total_bytes / MAX_WMI_UTF_LEN;
+@@ -437,27 +451,25 @@ static int ath11k_tm_cmd_process_ftm(str
+ 		else
+ 			chunk_len = buf_len;
+ 
+-		skb = ath11k_wmi_alloc_skb(wmi->wmi_ab,
+-					   (chunk_len + sizeof(seg_hdr) +
+-					   WMI_TLV_HDR_SIZE));
++		skb = ath11k_wmi_alloc_skb(wmi->wmi_ab, (chunk_len +
++					   sizeof(struct wmi_ftm_cmd)));
+ 		if (!skb) {
+ 			ret = -ENOMEM;
+ 			goto out;
+ 		}
+ 
+-		seg_hdr.len = total_bytes;
+-		seg_hdr.msgref = msgref;
+-		seginfo = ((num_segments << 4) & 0xF0) | (segnumber & 0xF);
+-		seg_hdr.segmentinfo = seginfo;
+-		seg_hdr.pad = 0;
++		ftm_cmd = (struct wmi_ftm_cmd *)skb->data;
++		hdr_info = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_ARRAY_BYTE) |
++			   FIELD_PREP(WMI_TLV_LEN, (chunk_len +
++				      sizeof(struct wmi_ftm_seg_hdr)));
++		ftm_cmd->tlv_header = hdr_info;
++		ftm_cmd->seg_hdr.len = total_bytes;
++		ftm_cmd->seg_hdr.msgref = ar->ftm_msgref;
++		seginfo = FIELD_PREP(FTM_SEGHDR_TOTAL_SEGMENTS, num_segments) |
++			  FIELD_PREP(FTM_SEGHDR_CURRENT_SEQ, segnumber);
++		ftm_cmd->seg_hdr.segmentinfo = seginfo;
+ 		segnumber++;
+-
+-		cmd = (uint8_t *)skb->data;
+-		WMITLV_SET_HDR(cmd, WMITLV_TAG_BYTE, (chunk_len + sizeof(seg_hdr)));
+-		cmd += WMI_TLV_HDR_SIZE;
+-		memcpy(cmd, &seg_hdr, sizeof(seg_hdr));
+-		memcpy(&cmd[sizeof(seg_hdr)], bufpos, chunk_len);
+-
++		memcpy(&ftm_cmd->data, bufpos, chunk_len);
+ 		ret = ath11k_wmi_cmd_send(wmi, skb, cmd_id);
+ 		if (ret) {
+ 			ath11k_warn(ar->ab, "ftm wmi command fail: %d\n", ret);
+@@ -467,6 +479,7 @@ static int ath11k_tm_cmd_process_ftm(str
+ 		buf_len -= chunk_len;
+ 		bufpos += chunk_len;
+ 	}
++	++ar->ftm_msgref;
+ 	ret = 0;
+ out:
+ 	mutex_unlock(&ar->conf_mutex);
+@@ -477,6 +490,7 @@ int ath11k_tm_cmd(struct ieee80211_hw *h
+ 			void *data, int len)
+ {
+ 	struct ath11k *ar = hw->priv;
++	struct ath11k_base *ab = ar->ab;
+ 	struct nlattr *tb[ATH11K_TM_ATTR_MAX + 1];
+ 	int ret;
+ 
+@@ -489,16 +503,18 @@ int ath11k_tm_cmd(struct ieee80211_hw *h
+ 		return -EINVAL;
+ 
+ 	switch (nla_get_u32(tb[ATH11K_TM_ATTR_CMD])) {
+-	case ATH11K_TM_CMD_WMI_FTM:
+-		return ath11k_tm_cmd_process_ftm(ar, tb);
++	case ATH11K_TM_CMD_WMI:
++		ab->ftm_segment_handler = 0;
++		return ath11k_tm_cmd_wmi(ar, tb, vif);
+ 	case ATH11K_TM_CMD_TESTMODE_START:
+ 		return ath11k_tm_cmd_testmode_start(ar, tb);
+-	case ATH11K_TM_CMD_TESTMODE_STOP:
+-		return ath11k_tm_cmd_testmode_stop(ar, tb);
+ 	case ATH11K_TM_CMD_GET_VERSION:
+ 		return ath11k_tm_cmd_get_version(ar, tb);
+-	case ATH11K_TM_CMD_WMI_FW_TEST:
+-		return ath11k_tm_cmd_wmi(ar, tb, vif);
++	case ATH11K_TM_CMD_WMI_FTM:
++		ab->ftm_segment_handler = 1;
++		return ath11k_tm_cmd_process_ftm(ar, tb);
++	case ATH11K_TM_CMD_TESTMODE_STOP:
++		return 0;
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+--- a/drivers/net/wireless/ath/ath11k/testmode.h
++++ b/drivers/net/wireless/ath/ath11k/testmode.h
+@@ -4,7 +4,7 @@
+  */
+ 
+ #include "core.h"
+-#include "ahb.h"
++#include "hif.h"
+ 
+ #define MAX_WMI_UTF_LEN 252
+ #define WMI_TLV_HDR_SIZE 4
+@@ -23,16 +23,28 @@ struct seg_hdr_info {
+ 
+ #ifdef CPTCFG_NL80211_TESTMODE
+ 
+-bool ath11k_tm_event_wmi(struct ath11k_base *ab, u32 cmd_id,
+-			 struct sk_buff *skb);
++bool ath11k_wmi_tm_event_unsegmented(struct ath11k_base *ab, u32 cmd_id,
++				     struct sk_buff *skb);
++
++bool ath11k_process_tm_event(struct ath11k_base *ab, u32 cmd_id,
++			     const struct wmi_ftm_event_msg *ftm_msg,
++			     u16 length);
++
+ int ath11k_tm_cmd(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 		  void *data, int len);
+ 
+ void ath11k_fwlog_write(struct ath11k_base *ab,  u8 *data, int len);
+ #else
++static inline bool ath11k_wmi_tm_event_unsegmented(struct ath11k_base *ab,
++						   u32 cmd_id,
++						   struct sk_buff *skb)
++{
++	return false;
++}
+ 
+-static inline bool ath11k_tm_event_wmi(struct ath11k_base *ab, u32 cmd_id,
+-				       struct sk_buff *skb)
++static inline bool ath11k_process_tm_event(struct ath11k_base *ab, u32 cmd_id,
++					  const struct wmi_ftm_event_msg *msg,
++					  u16 length)
+ {
+ 	return false;
+ }
+--- a/drivers/net/wireless/ath/ath11k/testmode_i.h
++++ b/drivers/net/wireless/ath/ath11k/testmode_i.h
+@@ -60,7 +60,7 @@ enum ath11k_tm_cmd {
+ 	 * provided with ATH11K_TM_ATTR_WMI_CMDID and payload in
+ 	 * ATH11K_TM_ATTR_DATA.
+ 	 */
+-	ATH11K_TM_CMD_WMI_FW_TEST = 3,
++	ATH11K_TM_CMD_WMI = 3,
+ 
+ 	/* The command used to transmit a FTM WMI command to the firmware
+ 	 * and the event to receive WMI events from the firmware.The data
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -7678,6 +7678,37 @@ exit:
+ 	kfree(tb);
+ }
+ 
++static void ath11k_wmi_tm_event_segmented(struct ath11k_base *ab, u32 cmd_id,
++					  struct sk_buff *skb)
++{
++	const void **tb;
++	const struct wmi_ftm_event_msg *ev;
++	u16 length;
++	int ret;
++	bool consumed;
++
++	tb = ath11k_wmi_tlv_parse_alloc(ab, skb->data, skb->len, GFP_ATOMIC);
++	if (IS_ERR(tb)) {
++		ret = PTR_ERR(tb);
++		ath11k_warn(ab, "failed to parse ftm event tlv: %d\n", ret);
++		return;
++	}
++
++	ev = tb[WMI_TAG_ARRAY_BYTE];
++	if (!ev) {
++		ath11k_warn(ab, "failed to fetch ftm msg\n");
++		kfree(tb);
++		return;
++	}
++
++	length = skb->len - TLV_HDR_SIZE;
++	consumed = ath11k_process_tm_event(ab, cmd_id, ev, length);
++	if (!consumed)
++		ath11k_warn(ab, "Failed to process ftm event\n");
++
++	kfree(tb);
++}
++
+ static void
+ ath11k_wmi_pdev_temperature_event(struct ath11k_base *ab,
+ 				  struct sk_buff *skb)
+@@ -8520,7 +8551,10 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 		ath11k_probe_resp_tx_status_event(ab, skb);
+ 		break;
+ 	case WMI_PDEV_UTF_EVENTID:
+-		ath11k_tm_event_wmi(ab, id, skb);
++		if (ab->ftm_segment_handler)
++			ath11k_wmi_tm_event_segmented(ab, id, skb);
++		else
++			ath11k_wmi_tm_event_unsegmented(ab, id, skb);
+ 		break;
+ 	case WMI_TWT_ADD_DIALOG_EVENTID:
+ 		ath11k_wmi_twt_add_dialog_event(ab, skb);
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -3637,6 +3637,26 @@ struct wmi_get_pdev_temperature_cmd {
+ 	u32 pdev_id;
+ } __packed;
+ 
++#define MAX_WMI_UTF_LEN 252
++
++struct wmi_ftm_seg_hdr {
++	u32 len;
++	u32 msgref;
++	u32 segmentinfo;
++	u32 pdev_id;
++} __packed;
++
++struct wmi_ftm_cmd {
++	u32 tlv_header;
++	struct wmi_ftm_seg_hdr seg_hdr;
++	u8 data[];
++};
++
++struct wmi_ftm_event_msg {
++	struct wmi_ftm_seg_hdr seg_hdr;
++	u8 data[];
++};
++
+ #define WMI_BEACON_TX_BUFFER_SIZE	512
+ 
+ struct wmi_bcn_tmpl_cmd {

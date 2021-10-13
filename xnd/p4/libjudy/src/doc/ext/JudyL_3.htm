@@ -1,0 +1,358 @@
+<HTML>
+<HEAD>
+<!-- @(#) $Revision: 4.55 $ $Source: /cvsroot/judy/doc/ext/JudyL_3.htm,v $ --->
+<TITLE>JudyL(3)</TITLE>
+</HEAD>
+<BODY>
+<TABLE border=0 width="100%"><TR>
+<TD width="40%" align="left">JudyL(3)</TD>
+<TD width="10%" align="center">     </TD>
+<TD width="40%" align="right">JudyL(3)</TD>
+</TR></TABLE>
+<P>
+<DL>
+<!----------------->
+<DT><B>NAME</B></DT>
+<DD>
+JudyL macros -
+C library for creating and accessing a dynamic array of words, using
+a word as an index.
+<!----------------->
+<P>
+<DT><B>SYNOPSIS</B></DT>
+<DD>
+<B><PRE>
+cc [flags] <I>sourcefiles</I> -lJudy
+
+#include &lt;Judy.h&gt;
+
+int      Rc_int;                          // return code - integer
+Word_t   Rc_word;                         // return code - unsigned word
+Word_t   Index, Index1, Index2, Nth;
+PWord_t  PValue;                          // pointer to return value
+Pvoid_t PJLArray = (Pvoid_t) NULL;        // initialize JudyL array
+
+<A href="#JLI" >JLI</A>( PValue,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLIns">JudyLIns()</A>
+<A href="#JLD" >JLD</A>( Rc_int,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLDel">JudyLDel()</A>
+<A href="#JLG" >JLG</A>( PValue,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLGet">JudyLGet()</A>
+<A href="#JLC"  >JLC</A>( Rc_word, PJLArray, Index1, Index2); // <A href="JudyL_funcs_3.htm#JudyLCount">JudyLCount()</A>
+<A href="#JLBC"  >JLBC</A>(PValue,  PJLArray, Nth, Index);     // <A href="JudyL_funcs_3.htm#JudyLByCount">JudyLByCount()</A>
+<A href="#JLFA" >JLFA</A>(Rc_word, PJLArray);                 // <A href="JudyL_funcs_3.htm#JudyLFreeArray">JudyLFreeArray()</A>
+<A href="#JLMU"   >JLMU</A>(Rc_word, PJLArray);                 // <A href="JudyL_funcs_3.htm#JudyLMemUsed">JudyLMemUsed()</A>
+<A href="#JLF" >JLF</A>( PValue,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLFirst">JudyLFirst()</A>
+<A href="#JLN" >JLN</A>( PValue,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLNext">JudyLNext()</A>
+<A href="#JLL" >JLL</A>( PValue,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLLast">JudyLLast()</A>
+<A href="#JLP" >JLP</A>( PValue,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLPrev">JudyLPrev()</A>
+<A href="#JLFE">JLFE</A>(Rc_int,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLFirstEmpty">JudyLFirstEmpty()</A>
+<A href="#JLNE" >JLNE</A>(Rc_int,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLNextEmpty">JudyLNextEmpty()</A>
+<A href="#JLLE" >JLLE</A>(Rc_int,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLLastEmpty">JudyLLastEmpty()</A>
+<A href="#JLPE" >JLPE</A>(Rc_int,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLPrevEmpty">JudyLPrevEmpty()</A>
+</PRE></B>
+<!----------------->
+<P>
+<DT><B>
+DESCRIPTION
+</B></DT>
+<DD>
+A JudyL array is the equivalent of an array of word-sized values.
+A <B>Value</B> is addressed by an <B>Index</B> (key).
+The array may be sparse, and the <B>Index</B> may be any word-sized number.
+Memory to support the array is allocated as index/value pairs are inserted,
+and released as index/value pairs are deleted.  A JudyL array can also be
+thought of as a mapper, that is "map" a word to another word/pointer.
+<P>
+As with an ordinary array, there are no duplicate indexes in a JudyL array.
+<P>
+The value may be used as a scalar, or a pointer to a structure or block of data
+(or even another Judy array).
+<P>
+A JudyL array is allocated with a <B>NULL</B> pointer
+<PRE>
+Pvoid_t PJLArray = (Pvoid_t) NULL;
+</PRE>
+<P>
+Using the macros described here, rather than the
+<A href="JudyL_funcs_3.htm">JudyL function calls</A>,
+the default error handling sends a
+message to the standard error and terminates the program with <I>exit(1);</I>.
+For other error handling methods, see the
+<A href="#ERRORS">ERRORS</A> section.
+<A href="#JLI" >JLI</A>( PValue,  PJLArray, Index);          // <A href="JudyL_funcs_3.htm#JudyLIns">JudyLIns()</A>
+<P>
+Because the macro forms are sometimes faster and have a simpler error
+handling interface than the equivalent
+<A href="JudyL_funcs_3.htm">JudyL functions</A>,
+they are the preferred way of calling the JudyL functions.
+<P>
+<DL>
+<DT><A name="JLI"><B>JLI(PValue, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLIns">JudyLIns()</A></DT>
+<DD>
+Insert an <B>Index</B> and <B>Value</B> into the JudyL array <B>PJLArray</B>.
+If the <B>Index</B> is successfully inserted,
+the <B>Value</B> is initialized to 0. If the <B>Index</B> was already present,
+the <B>Value</B> is not modified.
+<P>
+Return <B>PValue</B> pointing to <B>Value</B>.
+Your program can use this pointer to read or modify <B>Value</B> until the next 
+<B>JLI()</B> (insert), <B>JLD()</B> (delete) or <B>JLFA()</B> (freearray) 
+is executed on <B>PJLArray</B>. Examples:
+<PRE>
+*PValue = 1234;
+Value = *PValue;
+</PRE>
+<P>
+Return <B>PValue</B> set to <B>PJERR</B> if a <I>malloc()</I> fail occured.
+<B>Note</B>:
+<B>JLI()</B> and <B>JLD()</B> reorganize the JudyL array.
+Therefore, <B>PValue</B> returned from previous <B>JudyL</B> calls become
+invalid and must be re-acquired.
+<P>
+<DT><A name="JLD"><B>JLD(Rc_int, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLDel">JudyLDel()</A></DT>
+<DD>
+Delete the <B>Index</B>/<B>Value</B> pair from the JudyL array.
+<P>
+Return <B>Rc_int</B> set to 1 if successful.
+Return <B>Rc_int</B> set to 0 if <B>Index</B> was not present.
+Return <B>Rc_int</B> set to <B>JERR</B> if a <I>malloc()</I> fail occured.
+<P>
+<DT><A name="JLG"><B>JLG(PValue, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLGet">JudyLGet()</A></DT>
+<DD>
+Get the pointer <B>PValue</B> associated with <B>Index</B> in the <B>PJLArray</B> Judy array.
+<P>
+Return <B>PValue</B> pointing to <B>Value</B>.
+Return <B>PValue</B> set to <B>NULL</B> if the <B>Index</B> was not present.
+Return <B>PValue</B> set to <B>PJERR</B> if a <I>malloc()</I> fail occured.
+<P>
+<DT><A name="JLC"><B>JLC(Rc_word, PJLArray, Index1, Index2)</B></A> // <A href="JudyL_funcs_3.htm#JudyLCount">JudyLCount()</A></DT>
+<DD>
+Count the number of indexes present in the JudyL array <B>PJLArray</B> between
+<B>Index1</B> and <B>Index2</B> (inclusive).
+<P>
+Return <B>Rc_word</B> set to the count.
+A return value of 0 can be valid as a count.
+<P>
+To count all indexes present in a JudyL array, use:
+<PRE>
+JLC(Rc_word, PJLArray, 0, -1);
+</PRE>
+<P>
+<DT><A name="JLBC"><B>JLBC(PValue, PJLArray, Nth, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLByCount">JudyLByCount()</A></DT>
+<DD>
+Locate the <B>Nth</B> index that is present in the JudyL array
+<B>PJLArray</B> (<B>Nth</B> = 1 returns the first index present).
+<P>
+Return <B>PValue</B> pointing to its <B>Value</B> and <B>Index</B>
+set to the <B>Nth</B> index if found, otherwise return
+<B>PValue</B> set to <B>NULL</B> (the value of <B>Index</B>
+is undefined).
+<P>
+<DT><A name="JLFA"><B>JLFA(Rc_word, PJLArray)</B></A> // <A href="JudyL_funcs_3.htm#JudyLFreeArray">JudyLFreeArray()</A></DT>
+<DD>
+Given a pointer to a JudyL array, free the entire array (much faster
+than using a
+<B>JLN()</B>, <B>JLD()</B> loop).
+<P>
+Return <B>Rc_word</B> set to the number of bytes freed and <B>PJLArray</B>
+set to <B>NULL</B>.
+<P>
+<DT><A name="JLMU"><B>JLMU(Rc_word, PJLArray)</B></A> // <A href="JudyL_funcs_3.htm#JudyLMemUsed">JudyLMemUsed()</A></DT>
+<DD>
+Return <B>Rc_word</B> set to the number of bytes of memory <I>malloc()</I>'ed
+by <B>PJLArray</B>.
+This is a very fast routine, and may be used before and after
+a <B>JLI()</B> or <B>JLD()</B> call with little performance impact.
+<P>
+<DT><B>JudyL Search Functions</B></DT>
+<DD>
+<B>JLF()</B>, <B>JLN()</B>, <B>JLL()</B>, <B>JLP()</B>
+allow you to search for indexes
+in the array.
+You may search inclusively or exclusively,
+in either forward or reverse directions.
+If successful,
+<B>Index</B> is returned set to the found index, and
+<B>PValue</B> is returned set to a pointer to <B>Index</B>'s <B>Value</B>.
+If unsuccessful,
+<B>PValue</B> is returned set to <B>NULL</B>,
+and <B>Index</B> contains no useful information.
+<B>PValue</B> must be tested for non-<B>NULL</B> prior
+to using <B>Index</B>,
+since a search failure is possible.
+<P>
+<B>JLFE()</B>, <B>JLNE()</B>, <B>JLLE()</B>, <B>JLPE()</B> allow you to search for
+indexes that are not present ("empty") in the array.
+You may search inclusively or exclusively,
+in either forward or reverse directions.
+If successful, <B>Index</B> is returned set to a not present ("empty") index, and
+<B>Rc_int</B> is returned set to 1.
+If unsuccessful, <B>Rc_int</B> is returned set to 0, and and <B>Index</B> contains no useful information.
+<B>Rc_int</B> must be checked prior to using <B>Index</B>, since a search failure is possible.
+<P>
+<DT><A name="JLF"><B>JLF(PValue, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLFirst">JudyLFirst()</A></DT>
+<DD>
+Search (inclusive) for the first index present that is equal to or greater than the
+passed <B>Index</B>.
+(Start with <B>Index</B> = 0 to find the first index in the array.)
+<B>JLF()</B> is typically used to <I>begin</I> a sorted-order scan of
+the indexes present in a JudyL array.
+<P>
+<DT><A name="JLN"><B>JLN(PValue, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLNext">JudyLNext()</A></DT>
+<DD>
+Search (exclusive) for the next index present that is greater than the passed
+<B>Index</B>.
+<B>JLN()</B> is typically used to <I>continue</I> a sorted-order scan of
+the indexes present in a JudyL array, or to locate a "neighbor" of a given index.
+<P>
+<DT><A name="JLL"><B>JLL(PValue, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLLast">JudyLLast()</A></DT>
+<DD>
+Search (inclusive) for the last index present that is equal to or less than the passed <B>Index</B>.
+(Start with <B>Index</B> = -1, that is, all ones, to find the last index in the array.)
+<B>JLL()</B> is typically used to <I>begin</I> a reverse-sorted-order
+scan of the indexes present in a JudyL array.
+<P>
+<DT><A name="JLP"><B>JLP(PValue, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLPrev">JudyLPrev()</A></DT>
+<DD>
+Search (exclusive) for the previous index present that is less than the
+passed <B>Index</B>.
+<B>JLP()</B> is typically used to <I>continue</I> a reverse-sorted-order
+scan of the indexes present in a JudyL array, or to locate a "neighbor" of
+a given index.
+<P>
+<DT><A name="JLFE"><B>JLFE(Rc_int, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLFirstEmpty">JudyLFirstEmpty()</A></DT>
+<DD>
+Search (inclusive) for the first index absent that is equal to or greater than the passed
+<B>Index</B>.
+(Start with <B>Index</B> = 0 to find the first index absent in the array.)
+<P>
+<DT><A name="JLNE"><B>JLNE(Rc_int, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLNextEmpty">JudyLNextEmpty()</A></DT>
+<DD>
+Search (exclusive) for the next index absent that is greater than the passed <B>Index</B>.
+<P>
+<DT><A name="JLLE"><B>JLLE(Rc_int, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLLastEmpty">JudyLLastEmpty()</A></DT>
+<DD>
+Search (inclusive) for the last index absent that is equal to or less than the passed <B>Index</B>.
+(Start with <B>Index</B> = -1, that is, all ones, to find the last index absent
+in the array.)
+<P>
+<DT><A name="JLPE"><B>JLPE(Rc_int, PJLArray, Index)</B></A> // <A href="JudyL_funcs_3.htm#JudyLPrevEmpty">JudyLPrevEmpty()</A></DT>
+<DD>
+Search (exclusive) for the previous index absent that is less than the passed
+<B>Index</B>.
+</DL>
+<!----------------->
+<P>
+<DT><B>Multi-dimensional JudyL Arrays</B></DT>
+<DD>
+Storing a pointer to another JudyL array in a JudyL array's <B>Value</B>
+is a simple way to support dynamic multi-dimensional arrays.  
+These arrays (or trees) built using JudyL arrays are very fast and 
+memory efficient. (In fact, that is how JudySL and JudyHS are implemented).
+An arbitrary number of dimensions can be realized this way.
+To terminate the number of dimensions (or tree), the <B>Value</B> pointer is 
+marked to <B>NOT</B> point to another Judy array. A <B>JLAP_INVALID</B> flag is 
+used in the least significant bit(s) of the pointer.  
+After the flag <B>JLAP_INVALID</B> is removed, it is used as a pointer to the users data.
+The <B>Judy.h</B> header file defines <B>JLAP_INVALID</B>.
+See code fragment below.
+<P>
+Note: The current version of <B>Judy.h</B> changed this flag from 0x4 to 0x1 
+to allow for a <I>malloc()</I> that does not deliver memory on an 8 byte 
+aligned boundry (such as old versions of valgrind).
+<P>
+The following example code segment can be used to determine whether or
+not a pointer points to another JudyL:
+<P>
+<PRE>
+PValue = (PWord_t)PMultiDimArray;
+
+for (Dim = 0; ;Dim++)
+{
+   if (PValue == (PWord_t)NULL) goto IndexNotFound;
+
+   /* Advance to next dimension in array */
+   JLG(PValue, (Pvoid_t)*PValue, Index[Dim]);
+
+   /* Check if pointer to user buffer: */
+   if (*PValue &amp; JLAP_INVALID)) break;
+}
+UPointer = (UPointer_t) (*PValue &amp; ~JLAP_INVALID);  // mask and cast.
+printf("User object pointer is 0x%lx\n", (Word_t) UPointer);
+       ...
+</PRE>
+<P>
+Note:  This works because <I>malloc()</I> guarantees to return a pointer
+with the least bit(s) == 0x0.
+You must remove <B>JLAP_INVALID</B> before using the pointer.
+</DL>
+<!----------------->
+<P>
+<DT><A name="JLERR"><B>ERRORS:</B> See: </A><A href="Judy_3.htm#ERRORS">Judy_3.htm#ERRORS</A></DT>
+<DD>
+<!----------------->
+<P>
+<DT><B>EXAMPLE</B></DT>
+<DD>
+Read a series of index/value pairs from the standard input, store
+in a JudyL array, and then print out in sorted order.
+<P>
+<PRE>
+#include &lt;stdio.h&gt;
+#include &lt;Judy.h&gt;
+
+Word_t   Index;                     // array index
+Word_t   Value;                     // array element value
+Word_t * PValue;                    // pointer to array element value
+int      Rc_int;                    // return code
+
+Pvoid_t  PJLArray = (Pvoid_t) NULL; // initialize JudyL array
+
+while (scanf("%lu %lu", &amp;Index, &amp;Value))
+{
+    JLI(PValue, PJLArray, Index);
+    If (PValue == PJERR) goto process_malloc_failure;
+    *PValue = Value;                 // store new value
+}
+// Next, visit all the stored indexes in sorted order, first ascending,
+// then descending, and delete each index during the descending pass.
+
+Index = 0;
+JLF(PValue, PJLArray, Index);
+while (PValue != NULL)
+{
+    printf("%lu %lu\n", Index, *PValue));
+    JLN(PValue, PJLArray, Index);
+}
+
+Index = -1;
+JLL(PValue, PJLArray, Index);
+while (PValue != NULL)
+{
+    printf("%lu %lu\n", Index, *PValue));
+
+    JLD(Rc_int, PJLArray, Index);
+    if (Rc_int == JERR) goto process_malloc_failure;
+
+    JLP(PValue, PJLArray, Index);
+}
+</PRE>
+<!----------------->
+<P>
+<DT><B>AUTHOR</B></DT>
+<DD>
+Judy was invented by Doug Baskins and implemented by Hewlett-Packard.
+<!----------------->
+<P>
+<DT><B>SEE ALSO</B></DT>
+<DD>
+<A href="Judy_3.htm">Judy(3)</A>,
+<A href="Judy1_3.htm">Judy1(3)</A>,
+<A href="JudySL_3.htm">JudySL(3)</A>,
+<A href="JudyHS_3.htm">JudyHS(3)</A>,
+<BR>
+<I>malloc()</I>,
+<BR>
+<A href="http://judy.sourceforge.net">
+http://judy.sourceforge.net</A>,
+for more information and Application Notes.
+</BODY>
+</HTML>

@@ -1,0 +1,104 @@
+#!/bin/sh
+CC=${CC:-cc}
+
+echo
+echo "=== +++++++++ This test runs in 15 seconds on a PIII 750Mhz +++++++"
+
+LIBJUDY=`find ../ -name libJudy.a`
+JUDY_H=`find ../ -name Judy.h`
+
+echo "$CC -O SLcompare.c -DHASHMETHOD -o SL_Hash"
+      $CC -O SLcompare.c -DHASHMETHOD -o SL_Hash
+
+echo "$CC -O SLcompare.c -DSPLAYMETHOD -o SL_Splay"
+      $CC -O SLcompare.c -DSPLAYMETHOD -o SL_Splay
+
+echo "$CC -O SLcompare.c -DREDBLACKMETHOD -o SL_Redblack"
+      $CC -O SLcompare.c -DREDBLACKMETHOD -o SL_Redblack
+
+echo
+echo Compiling with Judy library: $LIBJUDY
+echo
+
+echo "$CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
+      $CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm
+RET=$?
+if [ $RET -ne 0 ] ; then
+echo "===  $? Failed: $CC SLcompare.c -DJUDYMETHOD"
+echo "===  $? Failed: $CC -O -I../src SLcompare.c -DJUDYMETHOD -o SL_Judy $LIBJUDY -lm"
+exit $?
+fi
+
+echo "$CC -O -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm"
+      $CC -O -I../src Judy1LHCheck.c -o Judy1LHCheck $LIBJUDY -lm
+RET=$?
+if [ $RET -ne 0 ] ; then
+echo "===  $? Failed: $CC Judy1LHCheck.c"
+exit $?
+fi
+
+
+echo "$CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm"
+      $CC -O -I../src Judy1LHTime.c -DNOINLINE  -o Judy1LHTime  $LIBJUDY -lm
+RET=$?
+if [ $RET -ne 0 ] ; then
+echo "===  $? Failed: $CC Judy1LHTime.c"
+exit $?
+fi
+
+#  -OR-    if Judy is installed, these can be compiled from anywhere:
+#cc -O SLcompare.c -DJUDYMETHOD      -o SL_Judy      -lJudy -lm 
+#cc -O Judy1LHCheck.c                -o Judy1LHCheck -lJudy -lm
+#cc -O Judy1LHTime.c                 -o Judy1LHTime  -lJudy -lm
+echo "===  Pass: Compile of tests"
+
+echo
+echo "     Validate Judy1/JudyL/JudyHS functions (except Judy*ByCount)"
+./Judy1LHCheck -n 300000 -B20 > /dev/null
+RET=$?
+if [ $RET -ne 0 ] ; then
+echo "===  $? Failed: Judy1/JudyL/JudyHS validate program"
+exit $?
+fi
+echo "===  Pass: Judy1/JudyL/JudyHS validate program"
+
+
+echo
+echo "     Do a few timings tests of Judy1/JudyL/JudyHS"
+echo
+# Pop1    is: current number of Indexes stored in Judy array
+# Measmts is: lookups to make measurement
+# J1      is: Judy1
+# JL      is: JudyL
+# /I      is: per Index
+# MU      is: Memory Used (allocated thru malloc(3))
+# HEAP    is: Memory change measured with sbrk(0)
+echo "      Pop1   Measmts    J1S    JLI    J1T    JLG J1MU/I JLMU/I HEAP/I"
+./Judy1LHTime  -n 2000000 -P1 -B19 | grep -v "^#"
+echo "===  Pass: Judy1/JudyL/JudyHS performance program"
+
+
+
+echo
+echo "     Do a few timings tests of JudySL and friends"
+echo
+# lines         is: number of lines in source file
+# avg_linelen   is: average bytes per line
+# getline       is: average time go get a line and remove white space
+# StoreD        is: number of unique lines stored into JudySL array
+# RAMused/line  is: Memory change measured with sbrk(0)
+# store/ln      is: average insert time (including duplicates)
+# lookup/ln     is: average lookup time in same order as inserts
+# ADT           is: Abstract Data Type method
+echo "   lines avg_linelen  getline   StoreD RAMused/line  store/ln lookup/ln ADT"
+./SL_Hash     StringCompare.c | grep HASH
+./SL_Splay    StringCompare.c | grep SPLAY
+./SL_Redblack StringCompare.c | grep REDBLACK
+./SL_Judy     StringCompare.c | grep JUDY
+RET=$?
+if [ $RET -ne 0 ] ; then
+echo "===  $? Failed: JudySL if StoreD numbers are all the same" 
+exit $?
+fi
+echo "===  Pass: JudySL if StoreD numbers are all the same"
+echo

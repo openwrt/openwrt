@@ -1,0 +1,61 @@
+From aacb25d8cd6f23b49dd27e0933bd95778bad30e2 Mon Sep 17 00:00:00 2001
+From: Anilkumar Kolli <akolli@codeaurora.org>
+Date: Tue, 12 Jan 2021 13:20:53 +0530
+Subject: [PATCH] ath11k: add provison to use segmentted memory on hk10
+
+By default QCN9074 uses fixed reserved memory of hk10.
+Use below commands to boot FW to use segmented memory
+allocated dynamically from host.
+
+	rmmod ath11k_pci
+	insmod ath11k_pci.ko fw_mem_seg=1
+
+Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -41,6 +41,11 @@
+ #define QCA6390_DEVICE_ID		0x1101
+ #define QCN9074_DEVICE_ID		0x1104
+ 
++unsigned int ath11k_fw_mem_seg;
++EXPORT_SYMBOL(ath11k_fw_mem_seg);
++module_param_named(fw_mem_seg, ath11k_fw_mem_seg, uint, 0644);
++MODULE_PARM_DESC(fw_mem_seg, "Enable/Disable FW segmentted memory");
++
+ static const struct pci_device_id ath11k_pci_id_table[] = {
+ 	{ PCI_VDEVICE(QCOM, QCA6390_DEVICE_ID) },
+ 	{ PCI_VDEVICE(QCOM, QCN9074_DEVICE_ID) },
+@@ -1352,6 +1357,10 @@ static int ath11k_pci_probe(struct pci_d
+ 	    !of_property_read_u32(ab->dev->of_node, "base-addr", &addr))
+ 		ab->bus_params.fixed_mem_region = true;
+ 
++	/* This is HACK to bring up the QCN9074 with segemnted memory */
++	if (ath11k_fw_mem_seg)
++		ab->bus_params.fixed_mem_region = false;
++
+ 	ret = ath11k_pci_claim(ab_pci, pdev);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to claim device: %d\n", ret);
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2726,6 +2726,16 @@ static int ath11k_qmi_alloc_target_mem_c
+ 		chunk = &ab->qmi.target_mem[i];
+ 
+ 		/*
++		 * Ignore the memory request from FW if size is more than 2MB
++		 * if host sends failure, FW reqesut for 2MB segments in mode-0
++		 * and 1MB segments in mode-1 and mode-2
++		 */
++		if (chunk->size > 2*1024*1024) {
++			ab->qmi.target_mem_delayed = true;
++			return 0;
++		}
++
++		/*
+ 		 * FW reloads in coldboot/FWrecovery.
+ 		 * in such case, no need to allocate memory for FW again.
+ 		 */

@@ -1,0 +1,256 @@
+From 897902953cd02174e49ea796307bb0b74526e84d Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Thu, 15 Oct 2020 21:35:08 -0700
+Subject: [PATCH] multiple_bssid: add support
+
+Add support for multiple bssid. In order to be able to do EMA HW
+offloading inside the kernel, we need to send the multiple bssid elemets
+inside a dedicated nl80211 arreibute.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ hostapd/config_file.c        |  4 ++--
+ hostapd/ctrl_iface.c         |  3 +++
+ src/ap/ap_config.c           |  2 +-
+ src/ap/ap_config.h           |  2 +-
+ src/ap/beacon.c              |  5 ++++-
+ src/ap/ieee802_11.c          | 17 ++++++++++++++---
+ src/ap/ieee802_11_shared.c   |  4 ++--
+ src/common/ieee802_11_defs.h |  1 +
+ src/drivers/driver.h         |  9 +++++++--
+ src/drivers/driver_nl80211.c | 21 ++++++++++-----------
+ src/drivers/nl80211_copy.h   | 12 ++++--------
+ 11 files changed, 49 insertions(+), 31 deletions(-)
+
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -4560,8 +4560,8 @@ static int hostapd_config_fill(struct ho
+ #endif /* CONFIG_MACSEC */
+ 	} else if (os_strcmp(buf, "multiple_bssid") == 0) {
+ 		conf->multiple_bssid = atoi(pos);
+-	} else if (os_strcmp(buf, "ema") == 0) {
+-		conf->ema = atoi(pos);
++	} else if (os_strcmp(buf, "ema_beacon") == 0) {
++		conf->ema_beacon = atoi(pos);
+ 	} else if (os_strcmp(buf, "rnr_beacon") == 0) {
+ 		bss->rnr_beacon = atoi(pos);
+ 	} else if (os_strcmp(buf, "disable_11n") == 0) {
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -2759,6 +2759,9 @@ static int hostapd_ctrl_iface_chan_switc
+ 			 * submitting multi-BSS CSA requests? */
+ 			return ret;
+ 		}
++
++		if (iface->bss[i]->iconf->multiple_bssid)
++			break;
+ 	}
+ 
+ 	return 0;
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
+@@ -1486,7 +1486,7 @@ int hostapd_config_check(struct hostapd_
+ 			return -1;
+ 	}
+ 
+-	if (conf->ema && !conf->multiple_bssid) {
++	if (conf->ema_beacon && !conf->multiple_bssid) {
+ 		wpa_printf(MSG_ERROR,
+ 			   "Cannot enable ema without enabling multiple_bssid");
+ 		return -1;
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -1017,7 +1017,7 @@ struct hostapd_config {
+ 	u8 ht40_plus_minus_allowed;
+ 
+ 	u8 multiple_bssid;
+-	u8 ema;
++	u8 ema_beacon;
+ 
+ 	/* Use driver-generated interface addresses when adding multiple BSSs */
+ 	u8 use_driver_iface_addr;
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -1808,6 +1808,9 @@ int ieee802_11_build_ap_params(struct ho
+ 
+ 		params->multiple_bssid_index = hostapd_get_bss_index(hapd);
+ 		params->multiple_bssid_count = hapd->iface->num_bss;
++		params->ema_beacon = hapd->iconf->ema_beacon;
++		if (hapd != hapd->iface->bss[0])
++			params->multiple_bssid_parent = hapd->iface->bss[0]->conf->iface;
+ 		params->multiple_bssid_ies = os_zalloc(len);
+ 		if (params->multiple_bssid_ies == NULL)
+ 			return -1;
+@@ -1817,7 +1820,7 @@ int ieee802_11_build_ap_params(struct ho
+ 						 1, params->multiple_bssid_ie_offsets,
+ 						 &params->multiple_bssid_ie_count,
+ 						 MULTIPLE_BSSID_IE_MAX,
+-						 hapd->iconf->ema);
++						 hapd->iconf->ema_beacon);
+ 		params->multiple_bssid_ie_len = end - params->multiple_bssid_ies;
+ 		if ((params->multiple_bssid_ie_count <= 1) &&
+ 		    (ext_cap_len >= 13) && (ext_cap_pos[12] & 0x08))
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -7126,7 +7126,7 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 	for (i = *count; i < hapd->iface->num_bss; i++) {
+ 		bss = hapd->iface->bss[i];
+ 		conf = bss->conf;
+-		u8 *bss_size_offset, *index_size_offset, *pos = eid;
++		u8 *bss_size_offset, *index_size_offset, *pos = eid, *rsn;
+ 		u16 capab_info;
+ 
+ 		*eid++ = WLAN_EID_SUBELEMENT_NONTRANSMITTED_BSSID_PROFILE;
+@@ -7161,8 +7161,19 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 		}
+ 		*index_size_offset = (eid - index_size_offset) - 1;
+ 
+-		eid = hostapd_get_rsne(bss, eid, end - eid);
+-		eid = hostapd_get_rsnxe(bss, eid, end - eid);
++		rsn = hostapd_get_rsne(bss, eid, end - eid);
++		if (rsn == eid) {
++			/* add RSN non-inheritance IE */
++			*eid++ = WLAN_EID_EXTENSION;
++			*eid++ = 3;
++			*eid++ = WLAN_EID_EXT_NON_INHERITANCE;
++			*eid++ = 1;
++			*eid++ = WLAN_EID_RSN;
++		} else {
++			eid = rsn;
++			eid = hostapd_get_rsnxe(bss, eid, end - eid);
++		}
++
+ 		*bss_size_offset = (eid - bss_size_offset) - 1;
+ 
+ 		if ((eid - size_offset) - 1 > 255) {
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -428,7 +428,7 @@ static void hostapd_ext_capab_byte(struc
+ 		}
+ #endif /* CONFIG_SAE */
+ 		/* Bit 83 - EMA AP Support */
+-		if (hapd->iconf->ema)
++		if (hapd->iconf->ema_beacon)
+                         *pos |= 0x08;
+ 		if (hapd->conf->beacon_prot &&
+ 		    (hapd->iface->drv_flags &
+@@ -501,7 +501,7 @@ u8 * hostapd_eid_ext_capab(struct hostap
+ 	    hostapd_sae_pw_id_in_use(hapd->conf))
+ 		len = 11;
+ #endif /* CONFIG_SAE */
+-	if (len < 11 && (hapd->conf->beacon_prot || hapd->iconf->ema) &&
++	if (len < 11 && (hapd->conf->beacon_prot || hapd->iconf->ema_beacon) &&
+ 	    (hapd->iface->drv_flags & WPA_DRIVER_FLAGS_BEACON_PROTECTION))
+ 		len = 11;
+ #ifdef CONFIG_SAE_PK
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -482,6 +482,7 @@
+ #define WLAN_EID_EXT_SPATIAL_REUSE 39
+ #define WLAN_EID_EXT_COLOR_CHANGE_ANNOUNCEMENT 42
+ #define WLAN_EID_EXT_OCV_OCI 54
++#define WLAN_EID_EXT_NON_INHERITANCE 56
+ #define WLAN_EID_EXT_SHORT_SSID_LIST 58
+ #define WLAN_EID_EXT_HE_6GHZ_BAND_CAP 59
+ #define WLAN_EID_EXT_EDMG_CAPABILITIES 61
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -1586,9 +1586,9 @@ struct wpa_driver_ap_params {
+ 	size_t unsol_bcast_probe_resp_tmpl_len;
+ 
+ 	/**
+-	 * multiple_bssid_non_transmitted - Is this a non transmitted BSS
++	 * multiple_bssid_parent - The transmitting iface
+ 	 */
+-	int multiple_bssid_non_transmitted;
++	const char *multiple_bssid_parent;
+ 
+ 	/**
+ 	 * multiple_bssid_index - The index of this BSS in the group
+@@ -1619,6 +1619,12 @@ struct wpa_driver_ap_params {
+ 	 * multiple_bssid_ie_count - The the number of offsets inside multiple_bssid_ie_offsets
+ 	 */
+ 	int multiple_bssid_ie_count;
++
++ 	/**
++	 * ema_beacon - should the multiple_bssid beacons be sent out in EMA mode
++	 */
++	int ema_beacon;
++
+ };
+ 
+ struct wpa_driver_mesh_bss_params {
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4872,6 +4872,16 @@ static int wpa_driver_nl80211_set_ap(voi
+ 			   params->multiple_bssid_index);
+ 		nla_put_u8(msg, NL80211_ATTR_MULTIPLE_BSSID_COUNT,
+ 			   params->multiple_bssid_count);
++		if (params->ema_beacon)
++			nla_put_flag(msg, NL80211_ATTR_MULTIPLE_BSSID_EMA);
++	}
++
++	if (params->multiple_bssid_parent) {
++		int ifidx = if_nametoindex(params->multiple_bssid_parent);
++		if (ifidx <= 0)
++			goto fail;
++		nla_put_u32(msg, NL80211_ATTR_MULTIPLE_BSSID_PARENT,
++			    ifidx);
+ 	}
+ 
+ 	if (params->multiple_bssid_ie_len) {
+@@ -5528,17 +5538,6 @@ static int nl80211_create_iface_once(str
+ 			goto fail;
+ 	}
+ 
+-	if (multiple_bssid_non_transmitted) {
+-		if (!multiple_bssid_parent)
+-			goto fail;
+-		ifidx = if_nametoindex(multiple_bssid_parent);
+-		if (ifidx <= 0)
+-			goto fail;
+-		nla_put_flag(msg, NL80211_ATTR_MULTIPLE_BSSID_NON_TRANSMITTING);
+-		nla_put_u32(msg, NL80211_ATTR_MULTIPLE_BSSID_PARENT,
+-			    ifidx);
+-	}
+-
+ 	/*
+ 	 * Tell cfg80211 that the interface belongs to the socket that created
+ 	 * it, and the interface should be deleted when the socket is closed.
+--- a/src/drivers/nl80211_copy.h
++++ b/src/drivers/nl80211_copy.h
+@@ -2583,9 +2583,6 @@ enum nl80211_commands {
+  * @NL80211_ATTR_HE_MUEDCA_PARAMS: MU-EDCA AC parameters for the
+ 	NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS command.
+  *
+- * @NL80211_ATTR_MULTIPLE_BSSID_NON_TRANSMITTING: Set the Non-Transmitted flag for this
+- *	BSSIDs beacon.
+- *
+  * @NL80211_ATTR_MULTIPLE_BSSID_PARENT: If this is a Non-Transmitted BSSID, define
+  *	the parent (transmitting) interface.
+  *
+@@ -2595,7 +2592,9 @@ enum nl80211_commands {
+  * @NL80211_ATTR_MULTIPLE_BSSID_COUNT: The number of BSSs inside the multi bssid element.
+  *
+  * @NL80211_ATTR_MULTIPLE_BSSID_IES: The Elements that describe our multiple BSS group.
+- * these get passed separately as the kernel might need to split them up for EMA VAP.
++ *	these get passed separately as the kernel might need to split them up for EMA VAP.
++ *
++ * @NL80211_ATTR_MULTIPLE_BSSID_EMA: Shall the multiple BSS beacons be sent out in EMA mode.
+  *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+@@ -3096,11 +3095,11 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_HE_MUEDCA_PARAMS,
+ 
+-	NL80211_ATTR_MULTIPLE_BSSID_NON_TRANSMITTING,
+ 	NL80211_ATTR_MULTIPLE_BSSID_PARENT,
+ 	NL80211_ATTR_MULTIPLE_BSSID_INDEX,
+ 	NL80211_ATTR_MULTIPLE_BSSID_COUNT,
+ 	NL80211_ATTR_MULTIPLE_BSSID_IES,
++	NL80211_ATTR_MULTIPLE_BSSID_EMA,
+ 
+ 	NL80211_ATTR_OBSS_COLOR_BITMAP,
+ 

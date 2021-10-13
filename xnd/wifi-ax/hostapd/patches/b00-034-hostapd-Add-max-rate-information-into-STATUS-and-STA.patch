@@ -1,0 +1,224 @@
+commit 2dfbe0feb590dfebaf1e92c4006c1ae22ee482bb
+Author: houbao <houbao@codeaurora.org>
+Date:   Thu Dec 6 15:17:46 2018 +0800
+
+    Subject: [PATCH] hostapd: Add max rate information into STATUS and STA
+     commands
+    
+    These allow external programs to get max MCS, max nss, and rate
+    information of an interface or a STA.
+
+--- a/src/ap/ctrl_iface_ap.c
++++ b/src/ap/ctrl_iface_ap.c
+@@ -51,6 +51,107 @@ static size_t hostapd_write_ht_mcs_bitma
+ }
+ 
+ 
++static u8 hostapd_maxnss(struct hostapd_data *hapd, struct sta_info *sta)
++{
++	u8 *mcs_set = NULL;
++	u16 mcs_map;
++	u8 ht_rx_nss = 0;
++	u8 vht_rx_nss = 1;
++	u8 mcs;
++	u8 ht_supported = 0;
++	u8 vht_supported = 0;
++	int i;
++
++	if (sta) {
++		if (sta->ht_capabilities && (sta->flags & WLAN_STA_HT)) {
++			mcs_set = sta->ht_capabilities->supported_mcs_set;
++			ht_supported = 1;
++		}
++		if (sta->vht_capabilities && (sta->flags & WLAN_STA_VHT)) {
++			mcs_map = le_to_host16(sta->vht_capabilities->
++					       vht_supported_mcs_set.rx_map);
++			vht_supported = 1;
++		}
++	} else {
++		struct hostapd_config *conf = hapd->iface->conf;
++		struct hostapd_hw_modes *mode = hapd->iface->current_mode;
++
++		if (mode && conf->ieee80211ac && !hapd->conf->disable_11ac) {
++			mcs_map = mode->vht_mcs_set[4] | \
++				  (mode->vht_mcs_set[5] << 8);
++			vht_supported = 1;
++		}
++		if (mode && conf->ieee80211n && !hapd->conf->disable_11n) {
++			mcs_set = mode->mcs_set;
++			ht_supported = 1;
++		}
++	}
++	if (ht_supported && mcs_set != NULL) {
++		if (mcs_set[0])
++			ht_rx_nss++;
++		if (mcs_set[1])
++			ht_rx_nss++;
++		if (mcs_set[2])
++			ht_rx_nss++;
++		if (mcs_set[3])
++			ht_rx_nss++;
++	}
++	if (vht_supported) {
++		for (i = 7; i >= 0; i--) {
++			mcs = (mcs_map >> (2 * i)) & 0x03;
++			if (mcs != 0x03) {
++				vht_rx_nss = i + 1;
++				break;
++			}
++		}
++	}
++
++	return ht_rx_nss > vht_rx_nss ? ht_rx_nss : vht_rx_nss;
++}
++
++
++static u8 hostapd_htmaxmcs(const u8 *mcs_set)
++{
++	u8 rates[WLAN_SUPP_RATES_MAX];
++	u8 i;
++	u8 j = 0;
++
++	for (i = 0; i < WLAN_SUPP_HT_RATES_MAX; i++) {
++		if (mcs_set[i / 8] & (1 << (i % 8)))
++			rates[j++] = i;
++		if (j == WLAN_SUPP_RATES_MAX) {
++			wpa_printf(MSG_INFO,
++				   "HT extended rate set too large; using only %u rates",
++				   j);
++			break;
++		}
++	}
++	if (j <= WLAN_SUPP_RATES_MAX)
++		return rates[j - 1];
++
++	return 0;
++}
++
++
++static u8 hostapd_vhtmaxmcs(u16 rx_vht_mcs_map, u16 tx_vht_mcs_map)
++{
++	u8 rx_max_mcs, tx_max_mcs, max_mcs;
++
++	if (rx_vht_mcs_map && tx_vht_mcs_map) {
++		/* Refer to IEEE P802.11ac/D7.0 Figure 8-401bs
++		 * for VHT MCS Map definition
++		 */
++		rx_max_mcs = rx_vht_mcs_map & 0x03;
++		tx_max_mcs = tx_vht_mcs_map & 0x03;
++		max_mcs = rx_max_mcs < tx_max_mcs ? rx_max_mcs : tx_max_mcs;
++		if (max_mcs < 0x03)
++			return 7 + max_mcs;
++	}
++
++	return 0;
++}
++
++
+ static int hostapd_get_sta_tx_rx(struct hostapd_data *hapd,
+ 				 struct sta_info *sta,
+ 				 char *buf, size_t buflen)
+@@ -161,6 +262,38 @@ static int hostapd_get_sta_tx_rx(struct
+ 			len += ret;
+ 	}
+ 
++	ret = os_snprintf(buf + len, buflen - len, "max_nss=%u\n",
++			  hostapd_maxnss(hapd, sta));
++ 	if (!os_snprintf_error(buflen - len, ret))
++ 		len += ret;
++
++#ifdef CONFIG_IEEE80211AC
++	if ((sta->flags & WLAN_STA_VHT) && sta->vht_capabilities) {
++		u8 vht_maxmcs = hostapd_vhtmaxmcs(
++			le_to_host16(sta->vht_capabilities->
++				     vht_supported_mcs_set.rx_map),
++			le_to_host16(sta->vht_capabilities->
++				     vht_supported_mcs_set.tx_map));
++		ret = os_snprintf(buf + len, buflen - len, "max_vhtmcs=%u\n",
++				  vht_maxmcs);
++		if (!os_snprintf_error(buflen - len, ret))
++			len += ret;
++	}
++#endif /* CONFIG_IEEE80211AC */
++
++#ifdef CONFIG_IEEE80211N
++	if ((sta->flags & (WLAN_STA_HT | WLAN_STA_VHT)) == WLAN_STA_HT &&
++	    sta->ht_capabilities) {
++		u8 ht_maxmcs;
++
++		ht_maxmcs = hostapd_htmaxmcs(sta->ht_capabilities->
++					     supported_mcs_set);
++		ret = os_snprintf(buf + len, buflen - len, "max_mcs=%u\n",
++				  ht_maxmcs);
++		if (!os_snprintf_error(buflen - len, ret))
++			len += ret;
++	}
++#endif /* CONFIG_IEEE80211N */
+ 	return len;
+ }
+ 
+@@ -798,6 +931,20 @@ int hostapd_ctrl_iface_status(struct hos
+ 		if (os_snprintf_error(buflen - len, ret))
+ 			return len;
+ 		len += ret;
++
++		if (mode) {
++			u16 rxmap = mode->vht_mcs_set[0] |
++				(mode->vht_mcs_set[1] << 8);
++			u16 txmap = mode->vht_mcs_set[4] |
++				(mode->vht_mcs_set[5] << 8);
++
++			ret = os_snprintf(buf + len, buflen - len,
++					  "vht_max_mcs=%u\n",
++					  hostapd_vhtmaxmcs(rxmap, txmap));
++			if (os_snprintf_error(buflen - len, ret))
++				return len;
++			len += ret;
++		}
+ 	}
+ 
+ 	if (iface->conf->ieee80211n && !hapd->conf->disable_11n) {
+@@ -832,8 +979,33 @@ int hostapd_ctrl_iface_status(struct hos
+ 		if (os_snprintf_error(buflen - len, ret))
+ 			return len;
+ 		len += ret;
++
++		if (mode) {
++			ret = os_snprintf(buf + len, buflen - len,
++					  "max_mcs=%u\n",
++					  hostapd_htmaxmcs(mode->mcs_set));
++			if (os_snprintf_error(buflen - len, ret))
++				return len;
++			len += ret;
++		}
+ 	}
+ 
++	if (mode && mode->rates && mode->num_rates &&
++	    mode->num_rates <= WLAN_SUPP_RATES_MAX) {
++		ret = os_snprintf(buf + len, buflen - len,
++				  "max_rate=%u\n",
++				  mode->rates[mode->num_rates - 1]);
++		if (os_snprintf_error(buflen - len, ret))
++			return len;
++		len += ret;
++	}
++
++	ret = os_snprintf(buf + len, buflen - len, "max_nss=%u\n",
++			  hostapd_maxnss(hapd, NULL));
++	if (os_snprintf_error(buflen - len, ret))
++		return len;
++	len += ret;
++
+ 	for (j = 0; mode && j < mode->num_channels; j++) {
+ 		if (mode->channels[j].freq == iface->freq) {
+ 			ret = os_snprintf(buf + len, buflen - len,
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -46,6 +46,7 @@
+ /* Maximum number of supported rates (from both Supported Rates and Extended
+  * Supported Rates IEs). */
+ #define WLAN_SUPP_RATES_MAX 32
++#define WLAN_SUPP_HT_RATES_MAX 77
+ 
+ struct hostapd_data;
+ 

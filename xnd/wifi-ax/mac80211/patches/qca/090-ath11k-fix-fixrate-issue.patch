@@ -1,0 +1,195 @@
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1312,6 +1312,13 @@ static void ath11k_peer_assoc_h_ht(struc
+ 		arg->bw_40 = true;
+ 		arg->peer_rate_caps |= WMI_HOST_RC_CW40_FLAG;
+ 	}
++	/* As firmware handles this two flags (IEEE80211_HT_CAP_SGI_20
++ 	 * and IEEE80211_HT_CAP_SGI_40) for enabling SGI, we reset
++ 	 * both flags if guard interval is Default GI
++ 	 */
++	if (arvif->bitrate_mask.control[band].gi == NL80211_TXRATE_DEFAULT_GI)
++		arg->peer_ht_caps &= ~(IEEE80211_HT_CAP_SGI_20 |
++				       IEEE80211_HT_CAP_SGI_40);
+ 
+ 	if (arvif->bitrate_mask.control[band].gi != NL80211_TXRATE_FORCE_LGI) {
+ 		if (ht_cap->cap & (IEEE80211_HT_CAP_SGI_20 |
+@@ -1737,7 +1744,11 @@ static void ath11k_peer_assoc_h_he(struc
+ 	for (i = 0, max_nss = 0, he_mcs = 0; i < NL80211_HE_NSS_MAX; i++) {
+ 		he_mcs = __le16_to_cpu(he_tx_mcs) >> (2 * i) & 3;
+ 
+-		if (he_mcs != IEEE80211_HE_MCS_NOT_SUPPORTED &&
++		/* In case of fixed rates, MCS Range in he_tx_mcs might have
++		 * unsupported range, with he_mcs_mask set, so check either of them
++		 * to find nss.
++		 */
++		if (he_mcs != IEEE80211_HE_MCS_NOT_SUPPORTED ||
+ 		    he_mcs_mask[i])
+ 			max_nss = i + 1;
+ 	}
+@@ -3408,6 +3419,10 @@ ath11k_mac_set_peer_vht_fixed_rate(struc
+ 		return -EINVAL;
+ 	}
+ 
++	/* Avoid updating invalid nss as fixed rate*/
++	if (nss > sta->rx_nss)
++		return -EINVAL;
++
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_MAC,
+ 		   "Setting Fixed VHT Rate for peer %pM. Device will not switch to any other selected rates",
+ 		   sta->addr);
+@@ -3454,6 +3469,11 @@ ath11k_mac_set_peer_he_fixed_rate(struct
+ 		return -EINVAL;
+ 	}
+ 
++	/* Avoid updating invalid nss as fixed rate*/
++	if (nss > sta->rx_nss)
++		return -EINVAL;
++
++
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_MAC,
+ 		   "Setting Fixed HE Rate for peer %pM. Device will not switch to any other selected rates",
+ 		   sta->addr);
+@@ -3483,7 +3503,7 @@ static int ath11k_station_assoc(struct a
+ 	struct cfg80211_chan_def def;
+ 	enum nl80211_band band;
+ 	struct cfg80211_bitrate_mask *mask;
+-	u8 num_vht_rates;
++	u8 num_vht_rates, num_he_rates;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
+@@ -3509,9 +3529,10 @@ static int ath11k_station_assoc(struct a
+ 	}
+ 
+ 	num_vht_rates = ath11k_mac_bitrate_mask_num_vht_rates(ar, band, mask);
++	num_he_rates = ath11k_mac_bitrate_mask_num_he_rates(ar, band, mask);
+ 
+-	/* If single VHT rate is configured (by set_bitrate_mask()),
+-	 * peer_assoc will disable VHT. This is now enabled by a peer specific
++	/* If single VHT/HE rate is configured (by set_bitrate_mask()),
++	 * peer_assoc will disable VHT/HE. This is now enabled by a peer specific
+ 	 * fixed param.
+ 	 * Note that all other rates and NSS will be disabled for this peer.
+ 	 */
+@@ -3520,6 +3541,11 @@ static int ath11k_station_assoc(struct a
+ 							 band);
+ 		if (ret)
+ 			return ret;
++	} else if (sta->he_cap.has_he && num_he_rates == 1) {
++		ret = ath11k_mac_set_peer_he_fixed_rate(arvif, sta, mask,
++							 band);
++		if (ret)
++			return ret;
+ 	}
+ 
+ 	/* Re-assoc is run only to update supported rates for given station. It
+@@ -3682,10 +3708,21 @@ static void ath11k_sta_rc_update_wk(stru
+ 			ath11k_mac_set_peer_he_fixed_rate(arvif, sta, mask,
+ 							  band);
+ 		} else {
+-			/* If the peer is non-VHT or no fixed VHT rate
++			/* If the peer is non-VHT/HE or no fixed VHT/HE rate
+ 			 * is provided in the new bitrate mask we set the
+-			 * other rates using peer_assoc command.
++			 * other rates using peer_assoc command. Also clear
++			 * the peer fixed rate settings as it has higher proprity
++			 * than peer assoc
+ 			 */
++			err = ath11k_wmi_set_peer_param(ar, sta->addr,
++							arvif->vdev_id,
++							WMI_PEER_PARAM_FIXED_RATE,
++							WMI_FIXED_RATE_NONE);
++			if (err)
++				ath11k_warn(ar->ab,
++					    "failed to disable peer fixed rate for STA %pM ret %d\n",
++					    sta->addr, err);
++
+ 			ath11k_peer_assoc_prepare(ar, arvif->vif, sta,
+ 						  &peer_arg, true);
+ 
+@@ -5257,6 +5294,7 @@ static int ath11k_mac_op_add_interface(s
+ 
+ 	for (i = 0; i < ARRAY_SIZE(arvif->bitrate_mask.control); i++) {
+ 		arvif->bitrate_mask.control[i].legacy = 0xffffffff;
++		arvif->bitrate_mask.control[i].gi = NL80211_TXRATE_FORCE_SGI;
+ 		memset(arvif->bitrate_mask.control[i].ht_mcs, 0xff,
+ 		       sizeof(arvif->bitrate_mask.control[i].ht_mcs));
+ 		memset(arvif->bitrate_mask.control[i].vht_mcs, 0xff,
+@@ -6573,6 +6611,53 @@ static void ath11k_mac_disable_peer_fixe
+ 			    sta->addr, ret);
+ }
+ 
++static bool
++ath11k_mac_validate_vht_he_fixed_rate_settings(struct ath11k *ar, enum nl80211_band band,
++					const struct cfg80211_bitrate_mask *mask)
++{
++	bool he_fixed_rate = false, vht_fixed_rate = false;
++	struct ath11k_peer *peer, *tmp;
++	const u16 *vht_mcs_mask, *he_mcs_mask;
++	u8 vht_nss, he_nss;
++	bool ret = true;
++
++	vht_mcs_mask = mask->control[band].vht_mcs;
++	he_mcs_mask = mask->control[band].he_mcs;
++
++	if (ath11k_mac_bitrate_mask_num_vht_rates(ar, band, mask) == 1)
++		vht_fixed_rate = true;
++
++	if (ath11k_mac_bitrate_mask_num_he_rates(ar, band, mask) == 1)
++		he_fixed_rate = true;
++
++	if(!vht_fixed_rate && !he_fixed_rate)
++		return true;
++
++	vht_nss = ath11k_mac_max_vht_nss(vht_mcs_mask);
++	he_nss =  ath11k_mac_max_he_nss(he_mcs_mask);
++
++	rcu_read_lock();
++	spin_lock_bh(&ar->ab->base_lock);
++	list_for_each_entry_safe(peer, tmp, &ar->ab->peers, list) {
++		if (peer->sta) {
++			if (vht_fixed_rate && (!peer->sta->vht_cap.vht_supported ||
++			    peer->sta->rx_nss < vht_nss)) {
++				ret = false;
++				goto exit;
++			}
++			if (he_fixed_rate && (!peer->sta->he_cap.has_he ||
++			    peer->sta->rx_nss < he_nss)) {
++				ret = false;
++				goto exit;
++			}
++		}
++	}
++exit:
++	spin_unlock_bh(&ar->ab->base_lock);
++	rcu_read_unlock();
++	return ret;
++}
++
+ static int
+ ath11k_mac_op_set_bitrate_mask(struct ieee80211_hw *hw,
+ 			       struct ieee80211_vif *vif,
+@@ -6635,6 +6720,11 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 		nss = single_nss;
+ 	} else {
+ 		rate = WMI_FIXED_RATE_NONE;
++
++		if (!ath11k_mac_validate_vht_he_fixed_rate_settings(ar, band, mask))
++			ath11k_warn(ar->ab,
++				    "could not update fixed rate settings to all peers due to mcs/nss incompaitiblity\n");
++
+ 		nss = min_t(u32, ar->num_tx_chains,
+ 			    max(max(ath11k_mac_max_ht_nss(ht_mcs_mask),
+ 				    ath11k_mac_max_vht_nss(vht_mcs_mask)),
+@@ -6683,10 +6773,6 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 			return -EINVAL;
+ 		}
+ 
+-		ieee80211_iterate_stations_atomic(ar->hw,
+-						  ath11k_mac_disable_peer_fixed_rate,
+-						  arvif);
+-
+ 		mutex_lock(&ar->conf_mutex);
+ 
+ 		arvif->bitrate_mask = *mask;

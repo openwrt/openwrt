@@ -1,0 +1,116 @@
+From cec59cbc3ec4a1ce2962ce5d0c4fd36478a44593 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Mon, 17 Aug 2020 11:26:15 +0530
+Subject: [PATCH] ath11k: Fix sending invalid he/vht rates in fixed rate settings
+
+If he/vht NSS in set bitrates command is not supported by sta, set user
+rates to sta supported NSS in peer assoc command, instead of sending
+invalid he/vht rates to FW.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+Index: backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/mac.c
+===================================================================
+--- backports-20210222_001-4.4.60-b157d2276.orig/drivers/net/wireless/ath/ath11k/mac.c
++++ backports-20210222_001-4.4.60-b157d2276/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1483,10 +1483,12 @@ static void ath11k_peer_assoc_h_vht(stru
+ 	struct ath11k_vif *arvif = (void *)vif->drv_priv;
+ 	struct cfg80211_chan_def def;
+ 	enum nl80211_band band;
+-	const u16 *vht_mcs_mask;
++	u16 *vht_mcs_mask;
+ 	u8 ampdu_factor;
+ 	u8 max_nss, vht_mcs;
+ 	int i;
++	bool user_rate_valid = true;
++	int vht_nss, nss_idx;
+ 
+ 	if (WARN_ON(ath11k_mac_vif_chan(vif, &def)))
+ 		return;
+@@ -1529,6 +1531,23 @@ static void ath11k_peer_assoc_h_vht(stru
+ 	if (sta->bandwidth == IEEE80211_STA_RX_BW_160)
+ 		arg->bw_160 = true;
+ 
++	vht_nss =  ath11k_mac_max_vht_nss(vht_mcs_mask);
++
++        if (vht_nss > sta->rx_nss) {
++                user_rate_valid = false;
++                for (nss_idx = sta->rx_nss-1; nss_idx >= 0; nss_idx--) {
++                        if (vht_mcs_mask[nss_idx]) {
++                                user_rate_valid = true;
++                                break;
++                        }
++                }
++        }
++
++        if (!user_rate_valid) {
++                ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "Setting vht range MCS value to peer supported nss:%d for peer %pM\n", sta->rx_nss, sta->addr);
++                vht_mcs_mask[sta->rx_nss-1] = vht_mcs_mask[vht_nss-1];
++        }
++
+ 	/* Calculate peer NSS capability from VHT capabilities if STA
+ 	 * supports VHT.
+ 	 */
+@@ -1651,9 +1670,11 @@ static void ath11k_peer_assoc_h_he(struc
+ 	const struct ieee80211_sta_he_cap *he_cap = &sta->he_cap;
+ 	u8 ampdu_factor;
+ 	enum nl80211_band band;
+-	const u16 *he_mcs_mask;
++	u16 *he_mcs_mask;
+ 	u8 max_nss, he_mcs;
+ 	__le16 he_tx_mcs = 0, v = 0;
++	bool user_rate_valid = true;
++	int he_nss, nss_idx;
+ 	int i;
+ 
+ 	if (WARN_ON(ath11k_mac_vif_chan(vif, &def)))
+@@ -1739,6 +1760,23 @@ static void ath11k_peer_assoc_h_he(struc
+ 	if (he_cap->he_cap_elem.mac_cap_info[0] & IEEE80211_HE_MAC_CAP0_TWT_REQ)
+ 		arg->twt_requester = true;
+ 
++	he_nss =  ath11k_mac_max_he_nss(he_mcs_mask);
++
++	if (he_nss > sta->rx_nss) {
++		user_rate_valid = false;
++		for (nss_idx = sta->rx_nss-1; nss_idx >= 0; nss_idx--) {
++			if (he_mcs_mask[nss_idx]) {
++				user_rate_valid = true;
++				break;
++			}
++		}
++	}
++
++	if (!user_rate_valid) {
++		ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "Setting he range MCS value to peer supported nss:%d for peer %pM\n", sta->rx_nss, sta->addr);
++		he_mcs_mask[sta->rx_nss-1] = he_mcs_mask[he_nss-1];
++	}
++
+ 	switch (sta->bandwidth) {
+ 	case IEEE80211_STA_RX_BW_160:
+ 		if (he_cap->he_cap_elem.phy_cap_info[0] &
+Index: backports-20210222_001-4.4.60-b157d2276/net/wireless/nl80211.c
+===================================================================
+--- backports-20210222_001-4.4.60-b157d2276.orig/net/wireless/nl80211.c
++++ backports-20210222_001-4.4.60-b157d2276/net/wireless/nl80211.c
+@@ -4785,12 +4785,17 @@ static int nl80211_parse_tx_bitrate_mask
+ 		       sband->ht_cap.mcs.rx_mask,
+ 		       sizeof(mask->control[i].ht_mcs));
+ 
+-		if (!sband->vht_cap.vht_supported)
++		if (!sband->vht_cap.vht_supported) {
++			if (i == NL80211_BAND_6GHZ)
++				goto skip_vht_mcs_map;
+ 			continue;
++		}
+ 
+ 		vht_tx_mcs_map = le16_to_cpu(sband->vht_cap.vht_mcs.tx_mcs_map);
+ 		vht_build_mcs_mask(vht_tx_mcs_map, mask->control[i].vht_mcs);
+ 
++skip_vht_mcs_map:
++
+ 		he_cap = ieee80211_get_he_iftype_cap(sband, wdev->iftype);
+ 		if (!he_cap)
+ 			continue;

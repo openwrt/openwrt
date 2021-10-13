@@ -1,0 +1,11 @@
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -2653,7 +2653,7 @@ skip_ht40:
+ 	if (hostapd_set_freq_params(&vht_freq, mode->mode, freq->freq,
+ 				    freq->channel, ssid->enable_edmg,
+ 				    ssid->edmg_channel, freq->ht_enabled,
+-				    vht_freq.vht_enabled, freq->he_enabled,
++				    vht_freq.vht_enabled, vht_freq.he_enabled,
+ 				    freq->sec_channel_offset,
+ 				    chwidth, seg0, seg1, vht_caps,
+ 				    &mode->he_capab[ieee80211_mode]) != 0)

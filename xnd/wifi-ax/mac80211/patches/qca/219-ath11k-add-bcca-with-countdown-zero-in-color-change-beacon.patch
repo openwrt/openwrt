@@ -1,0 +1,100 @@
+From daee9cd4e460d23cfb56c61424fefbd298c5948f Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Tue, 6 Oct 2020 21:23:48 +0530
+Subject: [PATCH] ath11k: Add BCCA IE with countdown zero
+
+During BCCA, BCCA IE with countdown zero has to be added
+in the beacon in which new color is updated.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h |  2 ++
+ drivers/net/wireless/ath/ath11k/mac.c  | 21 ++++++++++++++++-----
+ drivers/net/wireless/ath/ath11k/wmi.c  | 10 ++++++++--
+ 3 files changed, 26 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -264,6 +264,8 @@ struct ath11k_vif {
+ 	int txpower;
+ 	bool rsnie_present;
+ 	bool wpaie_present;
++	bool bcca_zero_sent;
++	bool do_not_send_tmpl;
+ 	u32 vht_cap;
+ 	struct ieee80211_chanctx_conf chanctx;
+ 	struct dentry *debugfs_twt;
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1124,7 +1124,7 @@ void ath11k_mac_bcn_tx_event(struct ath1
+            !list_empty(&vif->multiple_bssid.list))
+                 multiple_bssid = 1;
+ 
+-        if (!multiple_bssid && !vif->color_change_active)
++        if (!multiple_bssid && !vif->color_change_active && !arvif->bcca_zero_sent)
+                 return;
+ 
+         if (vif->csa_active && ieee80211_beacon_cntdwn_is_complete(vif)) {
+@@ -1137,10 +1137,14 @@ void ath11k_mac_bcn_tx_event(struct ath1
+         }
+ 
+         if (vif->color_change_active && ieee80211_beacon_cntdwn_is_complete(vif)) {
++		arvif->bcca_zero_sent = true;
+                 ieee80211_color_change_finish(vif);
+                 return;
+         }
+ 
++	if (arvif->bcca_zero_sent)
++		arvif->bcca_zero_sent = false;
++
+         if (vif->color_change_active || vif->csa_active)
+                 ieee80211_beacon_update_cntdwn(vif);
+ 
+@@ -2937,10 +2941,17 @@ static void ath11k_mac_op_bss_info_chang
+ 				   "Set staggered beacon mode for VDEV: %d\n",
+ 				   arvif->vdev_id);
+ 
+-		ret = ath11k_mac_setup_bcn_tmpl(arvif);
+-		if (ret)
+-			ath11k_warn(ar->ab, "failed to update bcn template: %d\n",
+-				    ret);
++		if (!arvif->do_not_send_tmpl || !arvif->bcca_zero_sent) {
++			ret = ath11k_mac_setup_bcn_tmpl(arvif);
++			if (ret)
++				ath11k_warn(ar->ab, "failed to update bcn template: %d\n",
++					    ret);
++		}
++
++		if (arvif->bcca_zero_sent)
++			arvif->do_not_send_tmpl = true;
++		else
++			arvif->do_not_send_tmpl = false;
+ 	}
+ 
+ 	if (changed & (BSS_CHANGED_BEACON_INFO | BSS_CHANGED_BEACON)) {
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -1899,6 +1899,8 @@ int ath11k_wmi_bcn_tmpl(struct ath11k *a
+ 			struct ieee80211_mutable_offsets *offs,
+ 			struct sk_buff *bcn)
+ {
++	struct ath11k_vif *arvif = ath11k_mac_get_arvif(ar, vdev_id);
++	struct ieee80211_vif *vif = arvif->vif;
+ 	struct ath11k_pdev_wmi *wmi = ar->wmi;
+ 	struct wmi_bcn_tmpl_cmd *cmd;
+ 	struct wmi_bcn_prb_info *bcn_prb_info;
+@@ -1919,8 +1921,12 @@ int ath11k_wmi_bcn_tmpl(struct ath11k *a
+ 			  FIELD_PREP(WMI_TLV_LEN, sizeof(*cmd) - TLV_HDR_SIZE);
+ 	cmd->vdev_id = vdev_id;
+ 	cmd->tim_ie_offset = offs->tim_offset;
+-	cmd->csa_switch_count_offset = offs->cntdwn_counter_offs[0];
+-	cmd->ext_csa_switch_count_offset = offs->cntdwn_counter_offs[1];
++
++	if (vif->csa_active) {
++		cmd->csa_switch_count_offset = offs->cntdwn_counter_offs[0];
++		cmd->ext_csa_switch_count_offset = offs->cntdwn_counter_offs[1];
++	}
++
+ 	cmd->buf_len = bcn->len;
+ 	cmd->mbssid_ie_offset = offs->multiple_bssid_offset;
+ 

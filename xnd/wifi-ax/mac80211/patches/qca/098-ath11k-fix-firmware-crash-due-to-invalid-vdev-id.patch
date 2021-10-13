@@ -1,0 +1,134 @@
+From adc09605d4c170735ca73390c8340476ccc19214 Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <mpubbise@codeaurora.org>
+Date: Thu, 19 Dec 2019 19:16:44 +0530
+Subject: [PATCH 1/2] ath11k: add counter to create delete monitor interface
+
+Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.h |  2 ++
+ drivers/net/wireless/ath/ath11k/mac.c  | 24 ++++++++++--------------
+ 2 files changed, 12 insertions(+), 14 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -626,6 +626,8 @@ struct ath11k {
+ 	struct completion fw_mode_reset;
+ 	int ap_ps_enabled;
+ 	enum ath11k_ap_ps_state ap_ps_state;
++
++	int monitor_vdev_cnt;
+ };
+ 
+ struct ath11k_band_cap {
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -944,7 +944,7 @@ static int ath11k_mac_monitor_start(stru
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
+-	if (test_bit(ATH11K_MONITOR_FLAG_STARTED, &ar->monitor_flags))
++	if (ar->monitor_vdev_cnt > 0)
+ 		goto set_monitor_status;
+ 
+ 	ret = ath11k_mac_monitor_vdev_create(ar);
+@@ -961,6 +961,7 @@ static int ath11k_mac_monitor_start(stru
+ 		return ret;
+ 	}
+ 
++	ar->monitor_vdev_cnt++;
+ 	set_bit(ATH11K_MONITOR_FLAG_STARTED, &ar->monitor_flags);
+ set_monitor_status:
+ 	ret = ath11k_dp_tx_htt_monitor_mode_ring_config(ar, false);
+@@ -975,7 +976,7 @@ static int ath11k_mac_monitor_stop(struc
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
+-	if (!test_bit(ATH11K_MONITOR_FLAG_STARTED, &ar->monitor_flags))
++	if (!ar->monitor_vdev_cnt)
+ 		goto clear_monitor_status;
+ 
+ 	ret = ath11k_mac_monitor_vdev_stop(ar);
+@@ -990,17 +991,18 @@ static int ath11k_mac_monitor_stop(struc
+ 		return ret;
+ 	}
+ 
+-	clear_bit(ATH11K_MONITOR_FLAG_STARTED, &ar->monitor_flags);
++	ar->monitor_vdev_cnt--;
+ clear_monitor_status:
+-	ret = ath11k_mac_config_mon_status_default(ar, true);
++	ret = ath11k_dp_tx_htt_monitor_mode_ring_config(ar, true);
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "mac monitor stopped ret %d\n", ret);
+-
++	if(ar->monitor_vdev_cnt <= 0)
++		clear_bit(ATH11K_MONITOR_FLAG_STARTED, &ar->monitor_flags);
+ 	return ret;
+ }
+ 
+ int ath11k_mac_monitor_recalc(struct ath11k *ar, bool needed)
+ {
+-	bool started = test_bit(ATH11K_MONITOR_FLAG_STARTED, &ar->monitor_flags);
++	bool started = !!ar->monitor_vdev_cnt;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_MAC,
+@@ -5442,7 +5444,7 @@ static int ath11k_mac_op_add_interface(s
+ 		}
+ 		break;
+ 	case WMI_VDEV_TYPE_MONITOR:
+-		ar->monitor_vdev_id = arvif->vdev_id;
++		ar->monitor_vdev_cnt++;
+ 		break;
+ 	default:
+ 		break;
+@@ -5564,7 +5566,7 @@ static void ath11k_mac_op_remove_interfa
+ 		   vif->addr, arvif->vdev_id);
+ 
+ 	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR)
+-		ar->monitor_vdev_id = -1;
++		ar->monitor_vdev_cnt--;
+ 
+ err_vdev_del:
+ 	spin_lock_bh(&ar->data_lock);
+@@ -6158,7 +6160,7 @@ ath11k_mac_op_assign_vif_chanctx(struct
+ 		ret = ath11k_wmi_vdev_up(ar, arvif->vdev_id, 0, ar->mac_addr);
+ 		if (ret)
+ 			goto out;
+-		set_bit(ATH11K_MONITOR_FLAG_STARTED, &ar->monitor_flags);
++		ar->monitor_vdev_cnt++;
+ 	}
+ 
+ 	arvif->is_started = true;
+@@ -6202,7 +6204,7 @@ ath11k_mac_op_unassign_vif_chanctx(struc
+ 			ath11k_warn(ar->ab, "failed to down monitor vdev %i: %d\n",
+ 				    arvif->vdev_id, ret);
+ 		arvif->is_up = false;
+-		clear_bit(ATH11K_MONITOR_FLAG_STARTED, &ar->monitor_flags);
++		ar->monitor_vdev_cnt--;
+ 	}
+ 
+ 	ret = ath11k_mac_vdev_stop(arvif);
+@@ -7630,6 +7632,7 @@ int ath11k_mac_allocate(struct ath11k_ba
+ 		skb_queue_head_init(&ar->wmi_mgmt_tx_queue);
+ 		clear_bit(ATH11K_MONITOR_FLAG_STARTED, &ar->monitor_flags);
+ 		ar->monitor_vdev_id = -1;
++		ar->monitor_vdev_cnt = 0;
+ 	}
+ 
+ 	return 0;
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -1090,9 +1090,13 @@ int ath11k_dp_tx_htt_monitor_mode_ring_c
+ 		if (!reset)
+ 			tlv_filter.rx_filter =
+ 					HTT_RX_MON_FILTER_TLV_FLAGS_MON_STATUS_RING;
+-		else
++		else {
+ 			tlv_filter = ath11k_mac_mon_status_filter_default;
+ 
++			if (ath11k_debugfs_is_extd_rx_stats_enabled(ar))
++				tlv_filter.rx_filter = ar->debug.rx_filter;
++		}
++
+ 		ret = ath11k_dp_tx_htt_rx_filter_setup(ab, ring_id,
+ 						       dp->mac_id + i,
+ 						       HAL_RXDMA_MONITOR_STATUS,

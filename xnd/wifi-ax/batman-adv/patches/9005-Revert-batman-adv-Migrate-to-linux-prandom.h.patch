@@ -1,0 +1,56 @@
+From: Sven Eckelmann <sven@narfation.org>
+Date: Tue, 18 May 2021 19:47:14 +0200
+Subject: Revert "batman-adv: Migrate to linux/prandom.h"
+
+This reverts commit fe773e9e389a763f38539de3d4782b628676ac99.
+
+diff --git a/net/batman-adv/bat_iv_ogm.c b/net/batman-adv/bat_iv_ogm.c
+index 680def809838097a9949de1dc9861923911f3d04..97000fe0ae2cebd9dc2fdf02c30faa1caa36a6c8 100644
+--- a/net/batman-adv/bat_iv_ogm.c
++++ b/net/batman-adv/bat_iv_ogm.c
+@@ -27,7 +27,6 @@
+ #include <linux/netdevice.h>
+ #include <linux/netlink.h>
+ #include <linux/pkt_sched.h>
+-#include <linux/prandom.h>
+ #include <linux/printk.h>
+ #include <linux/random.h>
+ #include <linux/rculist.h>
+diff --git a/net/batman-adv/bat_v_elp.c b/net/batman-adv/bat_v_elp.c
+index 4d8e3fdb4427a431cab903bc8a20edb816079fd7..3b3c890870ee6941c337ce820f661f216a819161 100644
+--- a/net/batman-adv/bat_v_elp.c
++++ b/net/batman-adv/bat_v_elp.c
+@@ -20,7 +20,6 @@
+ #include <linux/kref.h>
+ #include <linux/netdevice.h>
+ #include <linux/nl80211.h>
+-#include <linux/prandom.h>
+ #include <linux/random.h>
+ #include <linux/rculist.h>
+ #include <linux/rcupdate.h>
+diff --git a/net/batman-adv/bat_v_ogm.c b/net/batman-adv/bat_v_ogm.c
+index 89ba88322c9c11acc49a9dcd9877ad8767fe713b..cb0bce3774898884b399dd0eb5ba4e03364a2fdd 100644
+--- a/net/batman-adv/bat_v_ogm.c
++++ b/net/batman-adv/bat_v_ogm.c
+@@ -20,7 +20,6 @@
+ #include <linux/lockdep.h>
+ #include <linux/mutex.h>
+ #include <linux/netdevice.h>
+-#include <linux/prandom.h>
+ #include <linux/random.h>
+ #include <linux/rculist.h>
+ #include <linux/rcupdate.h>
+diff --git a/net/batman-adv/network-coding.c b/net/batman-adv/network-coding.c
+index 4bb76b434d0711dd67b8521e05c64772b4c48434..aceb1b2bb04db385f40deb94dd78901312150a17 100644
+--- a/net/batman-adv/network-coding.c
++++ b/net/batman-adv/network-coding.c
+@@ -25,8 +25,8 @@
+ #include <linux/lockdep.h>
+ #include <linux/net.h>
+ #include <linux/netdevice.h>
+-#include <linux/prandom.h>
+ #include <linux/printk.h>
++#include <linux/random.h>
+ #include <linux/rculist.h>
+ #include <linux/rcupdate.h>
+ #include <linux/skbuff.h>

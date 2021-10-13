@@ -1,0 +1,361 @@
+From 26bf6027fe93346f47358e8933e613ac1ece3455 Mon Sep 17 00:00:00 2001
+From: Maharaja Kennadyrajan <mkenna@codeaurora.org>
+Date: Mon, 4 Jan 2021 23:50:37 +0530
+Subject: [PATCH 2/2] ath11k/mac80211: Add support to account Tx and Rx flow
+ packets
+
+Added support to log the inflow and outflow of the Tx and Rx
+packets in netif and host driver.
+
+Command to dump the Tx pkts flow in driver:
+cat
+/sys/kernel/debug/ieee80211/phyX/netdev\:wlanX/stations/
+XX\:XX\:XX\:XX\:XX\:XX/driver_tx_pkts_flow
+
+Command to dump the Rx pkts flow in driver:
+cat
+/sys/kernel/debug/ieee80211/phyX/netdev\:wlanX/stations/
+XX\:XX\:XX\:XX\:XX\:XX/driver_rx_pkts_flow
+
+Commands to reset the Tx/Rx pkts flow in driver:
+echo 1 >
+/sys/kernel/debug/ieee80211/phyX/netdev\:wlanX/stations/
+XX\:XX\:XX\:XX\:XX\:XX/reset_tx_stats
+
+echo 1 >
+/sys/kernel/debug/ieee80211/phyX/netdev\:wlanX/stations/
+XX\:XX\:XX\:XX\:XX\:XX/reset_rx_stats
+
+Command to dump the Tx pkts flow in mac80211:
+cat
+/sys/kernel/debug/ieee80211/phyX/netdev\:wlanX/stations/
+XX\:XX\:XX\:XX\:XX\:XX/mac80211_tx_pkts_flow
+
+Command to dump the Rx pkts flow in mac80211:
+cat
+/sys/kernel/debug/ieee80211/phyX/netdev\:wlanX/stations/
+XX\:XX\:XX\:XX\:XX\:XX/mac80211_rx_pkts_flow
+
+Commands to reset the Tx/Rx pkts flow in mac80211:
+echo 1 >
+/sys/kernel/debug/ieee80211/phyX/netdev\:wlanX/stations/
+XX\:XX\:XX\:XX\:XX\:XX/reset_mac80211_tx_pkts_flow
+
+echo 1 >
+/sys/kernel/debug/ieee80211/phyX/netdev\:wlanX/stations/
+XX\:XX\:XX\:XX\:XX\:XX/reset_mac80211_rx_pkts_flow
+
+Sample output after running the Tx and Rx traffic.
+
+root@OpenWrt:/# cat sys/kernel/debug/ieee80211/phy0/netdev\:
+wlan0/stations/8c\:fd\:f0\:06\:23\:41/driver_tx_pkts_flow
+Tx packets inflow from mac80211: 20
+Tx packets outflow to HW: 20
+
+root@OpenWrt:/# cat sys/kernel/debug/ieee80211/phy0/netdev\:
+wlan0/stations/8c\:fd\:f0\:06\:23\:41/mac80211_tx_pkts_flow
+Tx packets outflow from netif: 20
+Tx packets inflow in mac80211: 20
+
+root@OpenWrt:/# cat sys/kernel/debug/ieee80211/phy0/netdev\:
+wlan0/stations/8c\:fd\:f0\:06\:23\:41/driver_rx_pkts_flow
+Rx packets inflow from HW: 28
+Rx packets outflow from driver: 28
+
+root@OpenWrt:/# cat sys/kernel/debug/ieee80211/phy0/netdev\:
+wlan0/stations/8c\:fd\:f0\:06\:23\:41/mac80211_rx_pkts_flow
+Rx packets inflow in mac80211: 28
+Rx packets inflow in netif: 26
+Rx forwarded packets in bridge: 2
+
+Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
+---
+ net/mac80211/debugfs_sta.c | 174 +++++++++++++++++++++++++++++++++++++
+ net/mac80211/rx.c          |  13 +++
+ net/mac80211/sta_info.h    |   7 ++
+ net/mac80211/tx.c          |   8 ++
+ 4 files changed, 202 insertions(+)
+
+--- a/net/mac80211/debugfs_sta.c
++++ b/net/mac80211/debugfs_sta.c
+@@ -984,6 +984,176 @@ out:
+ }
+ STA_OPS(he_capa);
+ 
++static ssize_t
++sta_reset_mac80211_tx_pkts_flow_read(struct file *file,
++				     char __user *userbuf,
++				     size_t count, loff_t *ppos)
++{
++	size_t bufsz = 30;
++	char *buf = kzalloc(bufsz, GFP_KERNEL), *p = buf;
++	ssize_t rv;
++
++	if (!buf)
++		return -ENOMEM;
++
++	p += scnprintf(p, bufsz + buf - p, "write 1 to reset the stats\n");
++
++	rv = simple_read_from_buffer(userbuf, count, ppos, buf, p - buf);
++	kfree(buf);
++	return rv;
++}
++
++static ssize_t
++sta_reset_mac80211_tx_pkts_flow_write(struct file *file,
++				      const char __user *userbuf,
++				      size_t count, loff_t *ppos)
++{
++	struct sta_info *sta = file->private_data;
++	u32 tx_stats_reset;
++	int ret;
++	char _buf[2] = {}, *buf = _buf;
++
++	if (count > sizeof(_buf))
++		return -EINVAL;
++
++	if (copy_from_user(buf, userbuf, count))
++		return -EFAULT;
++
++	buf[sizeof(_buf) - 1] = '\0';
++	if (sscanf(buf, "%u", &tx_stats_reset) != 1)
++		return -EINVAL;
++
++	ret = kstrtoul(buf, 0, &tx_stats_reset);
++	if (ret || tx_stats_reset != 1)
++		return -EINVAL;
++
++	atomic_set(&sta->tx_drv_pkts, 0);
++	atomic_set(&sta->tx_netif_pkts, 0);
++
++	return count;
++}
++STA_OPS_RW(reset_mac80211_tx_pkts_flow);
++
++static ssize_t
++sta_reset_mac80211_rx_pkts_flow_read(struct file *file,
++				     char __user *userbuf,
++				     size_t count, loff_t *ppos)
++{
++	size_t bufsz = 30;
++	char *buf = kzalloc(bufsz, GFP_KERNEL), *p = buf;
++	ssize_t rv;
++
++	if (!buf)
++		return -ENOMEM;
++
++	p += scnprintf(p, bufsz + buf - p, "write 1 to reset the stats\n");
++
++	rv = simple_read_from_buffer(userbuf, count, ppos, buf, p - buf);
++	kfree(buf);
++	return rv;
++}
++
++static ssize_t
++sta_reset_mac80211_rx_pkts_flow_write(struct file *file,
++				      const char __user *userbuf,
++				      size_t count, loff_t *ppos)
++{
++	struct sta_info *sta = file->private_data;
++	u32 rx_stats_reset;
++	int ret;
++	char _buf[2] = {}, *buf = _buf;
++
++	if (count > sizeof(_buf))
++		return -EINVAL;
++
++	if (copy_from_user(buf, userbuf, count))
++		return -EFAULT;
++
++	buf[sizeof(_buf) - 1] = '\0';
++	if (sscanf(buf, "%u", &rx_stats_reset) != 1)
++		return -EINVAL;
++
++	ret = kstrtoul(buf, 0, &rx_stats_reset);
++	if (ret || rx_stats_reset != 1)
++		return -EINVAL;
++
++	atomic_set(&sta->rx_drv_pkts, 0);
++	atomic_set(&sta->rx_netif_pkts, 0);
++	atomic_set(&sta->rx_forwarded_pkts, 0);
++
++	return count;
++}
++STA_OPS_RW(reset_mac80211_rx_pkts_flow);
++
++static ssize_t sta_mac80211_tx_pkts_flow_read(struct file *file,
++					      char __user *userbuf,
++					      size_t count, loff_t *ppos)
++{
++	struct sta_info *sta = file->private_data;
++	int retval = 0, len = 0;
++	const int size = 256;
++	char *buf;
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	rcu_read_lock();
++
++	len += scnprintf(buf + len, size - len,
++			 "Tx packets outflow from netif: %u\n",
++			 atomic_read(&sta->tx_netif_pkts));
++	len += scnprintf(buf + len, size - len,
++			 "Tx packets outflow from mac80211: %u\n",
++			 atomic_read(&sta->tx_drv_pkts));
++	rcu_read_unlock();
++
++	if (len > size)
++		len = size;
++
++	retval = simple_read_from_buffer(userbuf, count, ppos, buf, len);
++	kfree(buf);
++
++	return retval;
++}
++STA_OPS(mac80211_tx_pkts_flow);
++
++static ssize_t sta_mac80211_rx_pkts_flow_read(struct file *file,
++					      char __user *userbuf,
++					      size_t count, loff_t *ppos)
++{
++	struct sta_info *sta = file->private_data;
++	int retval = 0, len = 0;
++	const int size = 512;
++	char *buf;
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	rcu_read_lock();
++
++	len += scnprintf(buf + len, size - len,
++			 "Rx packets inflow in mac80211: %u\n",
++			 atomic_read(&sta->rx_drv_pkts));
++	len += scnprintf(buf + len, size - len,
++			 "Rx packets inflow in netif: %u\n",
++			 atomic_read(&sta->rx_netif_pkts));
++	len += scnprintf(buf + len, size - len,
++			 "Rx forwarded packets in bridge: %u\n",
++			 atomic_read(&sta->rx_forwarded_pkts));
++
++	rcu_read_unlock();
++
++	if (len > size)
++		len = size;
++	retval = simple_read_from_buffer(userbuf, count, ppos, buf, len);
++	kfree(buf);
++
++	return retval;
++}
++STA_OPS(mac80211_rx_pkts_flow);
++
+ #define DEBUGFS_ADD(name) \
+ 	debugfs_create_file(#name, 0400, \
+ 		sta->debugfs_dir, sta, &sta_ ##name## _ops)
+@@ -1022,6 +1192,10 @@ void ieee80211_sta_debugfs_add(struct st
+ 	DEBUGFS_ADD(ht_capa);
+ 	DEBUGFS_ADD(vht_capa);
+ 	DEBUGFS_ADD(he_capa);
++	DEBUGFS_ADD(reset_mac80211_tx_pkts_flow);
++	DEBUGFS_ADD(reset_mac80211_rx_pkts_flow);
++	DEBUGFS_ADD(mac80211_tx_pkts_flow);
++	DEBUGFS_ADD(mac80211_rx_pkts_flow);
+ 
+ 	DEBUGFS_ADD_COUNTER(rx_duplicates, rx_stats.num_duplicates);
+ 	DEBUGFS_ADD_COUNTER(rx_fragments, rx_stats.fragments);
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2542,6 +2542,7 @@ static void netif_rx_nss(struct ieee8021
+ 			 struct sk_buff *skb)
+ {
+ 	struct ieee80211_sub_if_data *sdata = rx->sdata;
++	struct sta_info *sta = rx->sta;
+ 	int ret;
+ 
+ 	if (!sdata->nssctx)
+@@ -2564,6 +2565,7 @@ out:
+ 		napi_gro_receive(rx->napi, skb);
+ 	else
+ 		netif_receive_skb(skb);
++	atomic_inc(&sta->rx_netif_pkts);
+ }
+ 
+ static void ieee80211_deliver_skb_to_local_stack(struct sk_buff *skb,
+@@ -2646,6 +2648,7 @@ ieee80211_deliver_skb(struct ieee80211_r
+ 				 */
+ 				xmit_skb = skb;
+ 				skb = NULL;
++				atomic_inc(&rx->sta->rx_forwarded_pkts);
+ 			}
+ 		}
+ 	}
+@@ -4802,9 +4805,18 @@ void ieee80211_rx_list(struct ieee80211_
+ 	struct ieee80211_rate *rate = NULL;
+ 	struct ieee80211_supported_band *sband;
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
++	struct sta_info *sta = NULL;
+ 
+ 	WARN_ON_ONCE(softirq_count() == 0);
+ 
++	if (pubsta) {
++		sta = container_of(pubsta, struct sta_info, sta);
++		if (sta && napi) {
++			if (!(status->flag & RX_FLAG_ONLY_MONITOR))
++				atomic_inc(&sta->rx_drv_pkts);
++		}
++	}
++
+ 	if (WARN_ON(status->band >= NUM_NL80211_BANDS))
+ 		goto drop;
+ 
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -639,6 +639,13 @@ struct sta_info {
+ 
+ 	struct cfg80211_chan_def tdls_chandef;
+ 
++	atomic_t tx_drv_pkts;
++	atomic_t tx_netif_pkts;
++	atomic_t rx_drv_pkts;
++	atomic_t rx_netif_pkts;
++	/* Rx packets forwarded to bridge */
++	atomic_t rx_forwarded_pkts;
++
+ 	/* keep last! */
+ 	struct ieee80211_sta sta;
+ };
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -3945,6 +3945,9 @@ void __ieee80211_subif_start_xmit(struct
+ 	if (IS_ERR(sta))
+ 		sta = NULL;
+ 
++	if (sta)
++		atomic_inc(&sta->tx_netif_pkts);
++
+ 	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
+ 		ap_sdata = container_of(sdata->bss,
+ 					struct ieee80211_sub_if_data, u.ap);
+@@ -4229,6 +4232,9 @@ static bool ieee80211_tx_8023(struct iee
+ 
+ 	drv_tx(local, &control, skb);
+ 
++	if (sta)
++		atomic_inc(&sta->tx_drv_pkts);
++
+ 	return true;
+ }
+ 
+@@ -4293,6 +4299,9 @@ static void ieee80211_8023_xmit(struct i
+ 
+ 	ieee80211_tx_8023(sdata, skb, skb->len, sta, false);
+ 
++	if (sta)
++		atomic_inc(&sta->tx_netif_pkts);
++
+ 	return;
+ 
+ out_free:

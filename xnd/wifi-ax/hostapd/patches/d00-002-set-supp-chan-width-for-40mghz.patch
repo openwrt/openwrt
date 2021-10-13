@@ -1,0 +1,30 @@
+From 950186814b355d91bcb15ce544eed6f5727da791 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Tue, 17 Nov 2020 19:23:46 +0530
+Subject: [PATCH] hostapd: Add channel width config in htcapab for 40MHz
+
+HT Support Channel Width field needs to be set in HT capabilities for
+40MHz BW operation.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ src/ap/hostapd.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/ap/hostapd.c b/src/ap/hostapd.c
+index be9ef82..346d83c 100644
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3532,6 +3532,9 @@ static int hostapd_fill_csa_settings(struct hostapd_data *hapd,
+ 	if (!iface || !iface->freq || hapd->csa_in_progress)
+ 		return -1;
+ 
++	if (settings->freq_params.bandwidth != 20)
++		hapd->iconf->ht_capab |= HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET;
++
+ 	switch (settings->freq_params.bandwidth) {
+ 	case 80:
+ 		if (settings->freq_params.center_freq2)
+-- 
+2.7.4
+

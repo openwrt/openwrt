@@ -1,0 +1,205 @@
+--- a/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c
+@@ -1417,6 +1417,8 @@ htt_print_tx_selfgen_ax_stats_tlv(const
+ 			   htt_stats_buf->ax_mu_mimo_brpoll_7);
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "ax_basic_trigger = %u\n",
+ 			   htt_stats_buf->ax_basic_trigger);
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "ax_ulmumimo_trigger = %u\n",
++			   htt_stats_buf->ax_ulmumimo_trigger);
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "ax_bsr_trigger = %u\n",
+ 			   htt_stats_buf->ax_bsr_trigger);
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "ax_mu_bar_trigger = %u\n",
+@@ -1499,6 +1501,8 @@ htt_print_tx_selfgen_ax_err_stats_tlv(co
+ 			   htt_stats_buf->ax_mu_mimo_brp7_err);
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "ax_basic_trigger_err = %u\n",
+ 			   htt_stats_buf->ax_basic_trigger_err);
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "ax_ulmumimo_trigger_err = %u\n",
++			   htt_stats_buf->ax_ulmumimo_trigger_err);
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "ax_bsr_trigger_err = %u\n",
+ 			   htt_stats_buf->ax_bsr_trigger_err);
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "ax_mu_bar_trigger_err = %u\n",
+@@ -1533,6 +1537,16 @@ htt_print_tx_pdev_mu_mimo_sch_stats_tlv(
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "mu_mimo_ppdu_posted = %u\n",
+ 			   htt_stats_buf->mu_mimo_ppdu_posted);
+ 
++	for (i = 0; i < HTT_TX_PDEV_STATS_NUM_AC_MUMIMO_USER_STATS; i++)
++		len += HTT_DBG_OUT(buf + len, buf_len - len,
++				   "ac_mu_mimo_sch_posted_per_group_index %u = %u\n",
++				   i, htt_stats_buf->ac_mu_mimo_sch_posted_per_grp_sz[i]);
++
++	for (i = 0; i < HTT_TX_PDEV_STATS_NUM_AX_MUMIMO_USER_STATS; i++)
++		len += HTT_DBG_OUT(buf + len, buf_len - len,
++				   "ax_mu_mimo_sch_posted_per_group_index %u = %u\n",
++				   i, htt_stats_buf->ax_mu_mimo_sch_posted_per_grp_sz[i]);
++
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "11ac MU_MIMO SCH STATS:\n");
+ 
+ 	for (i = 0; i < HTT_TX_PDEV_STATS_NUM_AC_MUMIMO_USER_STATS; i++)
+@@ -1549,10 +1563,34 @@ htt_print_tx_pdev_mu_mimo_sch_stats_tlv(
+ 
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "\n11ax OFDMA SCH STATS:\n");
+ 
+-	for (i = 0; i < HTT_TX_PDEV_STATS_NUM_OFDMA_USER_STATS; i++)
++	for (i = 0; i < HTT_TX_PDEV_STATS_NUM_OFDMA_USER_STATS; i++) {
+ 		len += HTT_DBG_OUT(buf + len, buf_len - len,
+ 				   "ax_ofdma_sch_nusers_%u = %u\n",
+ 				   i, htt_stats_buf->ax_ofdma_sch_nusers[i]);
++		len += HTT_DBG_OUT(buf + len, buf_len - len,
++				   "ax_ul_ofdma_basic_sch_nusers_%u = %u\n",
++				   i, htt_stats_buf->ax_ul_ofdma_basic_sch_nusers[i]);
++		len += HTT_DBG_OUT(buf + len, buf_len - len,
++				   "ax_ul_ofdma_bsr_sch_nusers_%u = %u\n",
++				   i, htt_stats_buf->ax_ul_ofdma_bsr_sch_nusers[i]);
++		len += HTT_DBG_OUT(buf + len, buf_len - len,
++				   "ax_ul_ofdma_sch_bar_nusers_%u = %u\n",
++				   i, htt_stats_buf->ax_ul_ofdma_bar_sch_nusers[i]);
++		len += HTT_DBG_OUT(buf + len, buf_len - len,
++				   "ax_ul_ofdma_brp_sch_nusers_%u = %u\n",
++				   i, htt_stats_buf->ax_ul_ofdma_brp_sch_nusers[i]);
++	}
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\n11ax UL MUMIO SCH STATS:\n");
++
++	for (i = 0; i < HTT_TX_PDEV_STATS_NUM_UL_MUMIMO_USER_STATS; i++) {
++		len += HTT_DBG_OUT(buf + len, buf_len - len,
++				   "ax_ul_mumimo_basic_sch_nusers_%u = %u\n",
++				   i, htt_stats_buf->ax_ul_mumimo_basic_sch_nusers[i]);
++		len += HTT_DBG_OUT(buf + len, buf_len - len,
++				   "ax_ul_mumimo_brp_sch_nusers_%u = %u\n",
++				   i, htt_stats_buf->ax_ul_mumimo_brp_sch_nusers[i]);
++	}
+ 
+ 	if (len >= buf_len)
+ 		buf[buf_len - 1] = 0;
+@@ -2953,6 +2991,21 @@ static inline void htt_print_rx_pdev_rat
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "\ntxbf = %u",
+ 			   htt_stats_buf->txbf);
+ 
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_su_ndpa = %u",
++			   htt_stats_buf->rx_su_ndpa);
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_11ax_su_txbf_mcs = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_11ax_su_txbf_mcs,
++		     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_mu_ndpa = %u",
++			   htt_stats_buf->rx_mu_ndpa);
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_11ax_mu_txbf_mcs = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_11ax_mu_txbf_mcs,
++		     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_br_poll = %u",
++			   htt_stats_buf->rx_br_poll);
++
+         len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_legacy_cck_rate = ");
+         ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_legacy_cck_rate,
+                      HTT_RX_PDEV_STATS_NUM_LEGACY_CCK_STATS);
+@@ -3013,6 +3066,38 @@ static inline void htt_print_rx_pdev_rat
+ 			     HTT_RX_PDEV_MAX_OFDMA_NUM_USER);
+ 	}
+ 
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_ulofdma_non_data_nusers = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_ulofdma_non_data_nusers,
++		     HTT_RX_PDEV_MAX_OFDMA_NUM_USER);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_ulofdma_data_nusers = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_ulofdma_data_nusers,
++		     HTT_RX_PDEV_MAX_OFDMA_NUM_USER);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_11ax_dl_ofdma_mcs = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_11ax_dl_ofdma_mcs,
++		     HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_11ax_dl_ofdma_ru = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_11ax_dl_ofdma_ru,
++		     HTT_RX_PDEV_STATS_NUM_RU_SIZE_COUNTERS);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_ulmumimo_non_data_ppdu = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_ulmumimo_non_data_ppdu,
++		     HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_ulmumimo_data_ppdu = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_ulmumimo_data_ppdu,
++		     HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_ulmumimo_mpdu_ok = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_ulmumimo_mpdu_ok,
++		     HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER);
++
++	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nrx_ulmumimo_mpdu_fail = ");
++	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_ulmumimo_mpdu_fail,
++		     HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER);
++
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "\nper_chain_rssi_pkt_type = %#x",
+ 			   htt_stats_buf->per_chain_rssi_pkt_type);
+ 
+--- a/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.h
+@@ -657,6 +657,7 @@ struct htt_tx_selfgen_ax_stats_tlv {
+ 	u32 ax_bsr_trigger;
+ 	u32 ax_mu_bar_trigger;
+ 	u32 ax_mu_rts_trigger;
++	u32 ax_ulmumimo_trigger;
+ };
+ 
+ struct htt_tx_selfgen_ac_err_stats_tlv {
+@@ -687,12 +688,14 @@ struct htt_tx_selfgen_ax_err_stats_tlv {
+ 	u32 ax_bsr_trigger_err;
+ 	u32 ax_mu_bar_trigger_err;
+ 	u32 ax_mu_rts_trigger_err;
++	u32 ax_ulmumimo_trigger_err;
+ };
+ 
+ /* == TX MU STATS == */
+ #define HTT_TX_PDEV_STATS_NUM_AC_MUMIMO_USER_STATS 4
+ #define HTT_TX_PDEV_STATS_NUM_AX_MUMIMO_USER_STATS 8
+ #define HTT_TX_PDEV_STATS_NUM_OFDMA_USER_STATS    74
++#define HTT_TX_PDEV_STATS_NUM_UL_MUMIMO_USER_STATS 8
+ 
+ struct htt_tx_pdev_mu_mimo_sch_stats_tlv {
+ 	/* mu-mimo sw sched cmd stats */
+@@ -709,6 +712,23 @@ struct htt_tx_pdev_mu_mimo_sch_stats_tlv
+ 	u32 ac_mu_mimo_sch_nusers[HTT_TX_PDEV_STATS_NUM_AC_MUMIMO_USER_STATS];
+ 	u32 ax_mu_mimo_sch_nusers[HTT_TX_PDEV_STATS_NUM_AX_MUMIMO_USER_STATS];
+ 	u32 ax_ofdma_sch_nusers[HTT_TX_PDEV_STATS_NUM_OFDMA_USER_STATS];
++	u32 ax_ul_ofdma_basic_sch_nusers[HTT_TX_PDEV_STATS_NUM_OFDMA_USER_STATS];
++	u32 ax_ul_ofdma_bsr_sch_nusers[HTT_TX_PDEV_STATS_NUM_OFDMA_USER_STATS];
++	u32 ax_ul_ofdma_bar_sch_nusers[HTT_TX_PDEV_STATS_NUM_OFDMA_USER_STATS];
++	u32 ax_ul_ofdma_brp_sch_nusers[HTT_TX_PDEV_STATS_NUM_OFDMA_USER_STATS];
++	/* UL MUMIMO */
++	/*
++	 * ax_ul_mumimo_basic_sch_nusers[i] is the number of basic triggers sent
++	 * for (i+1) users
++	 */
++	u32 ax_ul_mumimo_basic_sch_nusers[HTT_TX_PDEV_STATS_NUM_UL_MUMIMO_USER_STATS];
++	/*
++	 * ax_ul_mumimo_brp_sch_nusers[i] is the number of brp triggers sent
++	 * for (i+1) users
++	 */
++	u32 ax_ul_mumimo_brp_sch_nusers[HTT_TX_PDEV_STATS_NUM_UL_MUMIMO_USER_STATS];
++	u32 ac_mu_mimo_sch_posted_per_grp_sz[HTT_TX_PDEV_STATS_NUM_AC_MUMIMO_USER_STATS];
++	u32 ax_mu_mimo_sch_posted_per_grp_sz[HTT_TX_PDEV_STATS_NUM_AX_MUMIMO_USER_STATS];
+ };
+ 
+ struct htt_tx_pdev_mu_mimo_mpdu_stats_tlv {
+@@ -1327,6 +1347,21 @@ struct htt_rx_pdev_rate_stats_tlv {
+ 	u32 per_chain_rssi_pkt_type;
+ 	s8 rx_per_chain_rssi_in_dbm[HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS]
+ 				   [HTT_RX_PDEV_STATS_NUM_BW_COUNTERS];
++
++	u32 rx_su_ndpa;
++	u32 rx_11ax_su_txbf_mcs[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS];
++	u32 rx_mu_ndpa;
++	u32 rx_11ax_mu_txbf_mcs[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS];
++	u32 rx_br_poll;
++	u32 rx_11ax_dl_ofdma_mcs[HTT_RX_PDEV_STATS_NUM_MCS_COUNTERS];
++	u32 rx_11ax_dl_ofdma_ru[HTT_RX_PDEV_STATS_NUM_RU_SIZE_COUNTERS];
++
++	u32 rx_ulmumimo_non_data_ppdu[HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER]; /* ppdu level */
++	u32 rx_ulmumimo_data_ppdu[HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER];     /* ppdu level */
++	u32 rx_ulmumimo_mpdu_ok[HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER];       /* mpdu level */
++	u32 rx_ulmumimo_mpdu_fail[HTT_RX_PDEV_MAX_ULMUMIMO_NUM_USER];     /* mpdu level */
++	u32 rx_ulofdma_non_data_nusers[HTT_RX_PDEV_MAX_OFDMA_NUM_USER];
++	u32 rx_ulofdma_data_nusers[HTT_RX_PDEV_MAX_OFDMA_NUM_USER];
+ };
+ 
+ /* == RX PDEV/SOC STATS == */

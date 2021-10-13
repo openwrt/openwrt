@@ -1,0 +1,126 @@
+From d0d7cc4647ecad26b7bf04e39a4e9403cab68a48 Mon Sep 17 00:00:00 2001
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Date: Sat, 15 Aug 2020 18:47:26 +0530
+Subject: [PATCH] hostapd: Add intelligence color choose in CCA
+
+Gather color information of the neighbor APs and choose available
+free color after go through the neighbor colors to minimise the color collision
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+---
+ src/ap/ap_list.c | 29 +++++++++++++++++++++++++
+ src/ap/ap_list.h |  7 ++++++
+ src/ap/hostapd.c | 66 +++++++++++++++++++++++++++++---------------------------
+ 3 files changed, 70 insertions(+), 32 deletions(-)
+
+--- a/src/ap/ap_list.c
++++ b/src/ap/ap_list.c
+@@ -174,6 +174,7 @@ void ap_list_process_beacon(struct hosta
+ 	struct ap_info *ap;
+ 	int new_ap = 0;
+ 	int set_beacon = 0;
++	u32 he_operation;
+ 
+ 	if (iface->conf->ap_table_max_size < 1)
+ 		return;
+@@ -210,6 +211,17 @@ void ap_list_process_beacon(struct hosta
+ 	else
+ 		ap->ht_support = 0;
+ 
++	if (iface->conf->ieee80211ax &&
++	    elems->he_operation) {
++		he_operation = *(u32 *)elems->he_operation;
++
++		if (!(he_operation & HE_OPERATION_BSS_COLOR_DISABLED))
++			ap->color = (he_operation & HE_OPERATION_BSS_COLOR_MASK) >>
++				    HE_OPERATION_BSS_COLOR_OFFSET;
++		else
++			ap->color = 0;
++	}
++
+ 	os_get_reltime(&ap->last_beacon);
+ 
+ 	if (!new_ap && ap != iface->ap_list) {
+@@ -295,6 +307,21 @@ void ap_list_timer(struct hostapd_iface
+ 		ieee802_11_update_beacons(iface);
+ }
+ 
++u64 ap_list_get_color(struct hostapd_iface *iface)
++{
++	u64 used_color_bitmap = 0;
++	struct ap_info *ap;
++
++	if (!iface->ap_list)
++		return used_color_bitmap;
++
++	ap = iface->ap_list;
++	while (ap != NULL) {
++		used_color_bitmap |= (u64)1 << ap->color;
++		ap = ap->next;
++	}
++	return used_color_bitmap;
++}
+ 
+ int ap_list_init(struct hostapd_iface *iface)
+ {
+--- a/src/ap/ap_list.h
++++ b/src/ap/ap_list.h
+@@ -25,6 +25,7 @@ struct ap_info {
+ 	int channel;
+ 
+ 	int ht_support;
++	u8 color;
+ 
+ 	struct os_reltime last_beacon;
+ };
+@@ -40,6 +41,7 @@ void ap_list_process_beacon(struct hosta
+ int ap_list_init(struct hostapd_iface *iface);
+ void ap_list_deinit(struct hostapd_iface *iface);
+ void ap_list_timer(struct hostapd_iface *iface);
++u64 ap_list_get_color(struct hostapd_iface *iface);
+ #else /* NEED_AP_MLME */
+ static inline int ap_list_init(struct hostapd_iface *iface)
+ {
+@@ -53,6 +55,11 @@ static inline void ap_list_deinit(struct
+ static inline void ap_list_timer(struct hostapd_iface *iface)
+ {
+ }
++
++static u64 ap_list_get_color(struct hostapd_iface *iface)
++{
++	return 0;
++}
+ #endif /* NEED_AP_MLME */
+ 
+ #endif /* AP_LIST_H */
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3769,6 +3769,7 @@ hostapd_switch_color_timeout_handler(voi
+ 	struct cca_settings settings;
+ 	struct os_time now;
+ 	int i, r, b, ret;
++	u64 neighbor_color;
+ 
+ 	if (os_get_time(&now))
+ 		return;
+@@ -3777,11 +3778,16 @@ hostapd_switch_color_timeout_handler(voi
+ 	if (now.sec - hapd->last_color_collision.sec > 50)
+ 		return;
+ 
+-	r = os_random() % HE_OPERATION_BSS_COLOR_MAX;
+-	for (i = 0; i < HE_OPERATION_BSS_COLOR_MAX; i++) {
+-		if (r && (hapd->color_collision_bitmap & (1 << r)) == 0)
++	neighbor_color = ap_list_get_color(hapd->iface);
++	neighbor_color |= hapd->color_collision_bitmap;
++
++	r = os_random() % HE_OPERATION_BSS_COLOR_MAX - 1;
++	r++;
++	for (i = 1; i < HE_OPERATION_BSS_COLOR_MAX; i++) {
++		if ((neighbor_color & (1 << r)) == 0)
+ 			break;
+-		r = (r + 1) % HE_OPERATION_BSS_COLOR_MAX;
++		r = r % HE_OPERATION_BSS_COLOR_MAX - 1;
++		r++;
+ 	}
+ 	if (i == HE_OPERATION_BSS_COLOR_MAX) {
+ 		/* there are no free colors so turn bss coloring off */

@@ -1,0 +1,233 @@
+From 4409eb05f67feef95d1c241aa9c7cded4942226e Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Fri, 18 Dec 2020 12:15:35 +0530
+Subject: [PATCH] ath11k: add ATH11K_QMI_TARGET_MEM_MODE_256M support for
+ qcn9074
+
+Added ATH11K_QMI_TARGET_MEM_MODE_256M in ath11k_target_mem_mode
+and enabling ATH11K_QMI_TARGET_MEM_MODE_256M as a default
+target memory mode for qcn9074 in hw_params. Also disabled
+cold boot calibration if target memory mode is ATH11K_QMI_TARGET_MEM_MODE_256M.
+
+Co-developed-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/core.c | 25 +++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/hw.h   |  3 ++-
+ drivers/net/wireless/ath/ath11k/qmi.c  |  6 +++++-
+ drivers/net/wireless/ath/ath11k/qmi.h  |  1 +
+ 4 files changed, 33 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -95,6 +95,7 @@ static const struct ath11k_hw_params ath
+ 		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
+ 		.ce_fwlog_enable = false,
++		.fwmem_mode_change = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -142,6 +143,7 @@ static const struct ath11k_hw_params ath
+ 		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
+ 		.ce_fwlog_enable = false,
++		.fwmem_mode_change = false,
+ 	},
+ 	{
+ 		.name = "qca6390 hw2.0",
+@@ -184,6 +186,7 @@ static const struct ath11k_hw_params ath
+ 		.spectral_fft_sz = 2,
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
+ 		.ce_fwlog_enable = false,
++ 		.fwmem_mode_change = false,
+ 	},
+ 	{
+ 		.name = "qcn9074 hw1.0",
+@@ -228,6 +231,7 @@ static const struct ath11k_hw_params ath
+ 		.spectral_fft_hdr_len = 24,
+ 		.reo_dest_ring_map_shift = HAL_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
+ 		.ce_fwlog_enable = true,
++		.fwmem_mode_change = true,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ5018,
+@@ -274,6 +278,22 @@ static const struct ath11k_hw_params ath
+ 		.spectral_fft_hdr_len = 24,
+ 		.reo_dest_ring_map_shift = HAL_IPQ5018_REO_DEST_RING_CTRL_HASH_RING_SHIFT,
+ 		.ce_fwlog_enable = false,
++		.fwmem_mode_change = false,
++	},
++};
++
++static const struct ath11k_num_vdevs_peers ath11k_vdevs_peers[] = {
++	{
++		.num_vdevs = (16 + 1),
++		.num_peers = 512,
++	},
++	{
++		.num_vdevs = (8 + 1),
++		.num_peers = 128,
++	},
++	{
++		.num_vdevs = 8,
++		.num_peers = 128,
+ 	},
+ };
+ 
+@@ -682,6 +702,8 @@ static int ath11k_core_soc_create(struct
+ 		ath11k_info(ab, "Booting in ftm mode - %d\n", ab->fw_mode);
+ 	}
+ 
++	ab->num_vdevs_peers = &ath11k_vdevs_peers;
++
+ 	ret = ath11k_qmi_init_service(ab);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to initialize qmi :%d\n", ret);
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -22,11 +22,10 @@
+ #define ATH11K_DP_RXDMA_MONITOR_DST_RING_SIZE	128
+ #else
+ /* Num VDEVS per radio */
+-#define TARGET_NUM_VDEVS	(16 + 1)
+-
+-#define TARGET_NUM_PEERS_PDEV	(512 + TARGET_NUM_VDEVS)
++#define TARGET_NUM_VDEVS	(ab->num_vdevs_peers[ab->qmi.target_mem_mode].num_vdevs)
++#define TARGET_NUM_PEERS_PDEV	(ab->num_vdevs_peers[ab->qmi.target_mem_mode].num_peers + TARGET_NUM_VDEVS)
+ /* Max num of stations (per radio) */
+-#define TARGET_NUM_STATIONS	512
++#define TARGET_NUM_STATIONS	(ab->num_vdevs_peers[ab->qmi.target_mem_mode].num_peers)
+ #define ATH11K_QMI_TARGET_MEM_MODE	ATH11K_QMI_TARGET_MEM_MODE_DEFAULT
+ #define ATH11K_DP_TX_COMP_RING_SIZE	32768
+ #define ATH11K_DP_RXDMA_MON_STATUS_RING_SIZE	1024
+@@ -193,6 +192,7 @@ struct ath11k_hw_params {
+ 	u32 m3_addr;
+ 	u8 reo_dest_ring_map_shift;
+ 	bool ce_fwlog_enable;
++	bool fwmem_mode_change;
+ };
+ 
+ struct ath11k_hw_ops {
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -23,6 +23,10 @@ module_param_named(cold_boot_cal, ath11k
+ MODULE_PARM_DESC(cold_boot_cal,
+ 		 "Decrease the channel switch time but increase the driver load time (Default: true)");
+ 
++unsigned int fwmem_mode = ATH11K_QMI_TARGET_MEM_MODE_256M;
++module_param_named(fwmem_mode, fwmem_mode, uint, 0644);
++MODULE_PARM_DESC(fwmem_mode, "Firmware mem mode (applicable only for qcn9074)");
++
+ static struct qmi_elem_info qmi_wlanfw_qdss_trace_config_download_req_msg_v01_ei[] = {
+ 	{
+ 		.data_type	= QMI_OPT_FLAG,
+@@ -2758,20 +2762,16 @@ static int ath11k_qmi_assign_target_mem_
+ 				ath11k_warn(ab, "qmi fail to get caldb-addr in dt\n");
+ 			}
+ 
+-			if (ab->enable_cold_boot_cal && ab->hw_params.cold_boot_calib) {
+-				ab->qmi.target_mem[idx].paddr = (u32)addr;
+-				ab->qmi.target_mem[idx].vaddr =
+-						ioremap(ab->qmi.target_mem[idx].paddr,
+-								ab->qmi.target_mem[i].size);
+-			} else if (ab->bus_params.fixed_bdf_addr) {
+-				ab->qmi.target_mem[idx].paddr = 0UL;
+-				ab->qmi.target_mem[idx].vaddr = 0UL;
++			if (!ab->enable_cold_boot_cal) {
++				ab->qmi.target_mem[idx].paddr = 0;
++				ab->qmi.target_mem[idx].vaddr = NULL;
+ 			} else {
+-				ab->qmi.target_mem[idx].paddr = (phys_addr_t)addr;
++				ab->qmi.target_mem[idx].paddr = (u32)addr;
+ 				ab->qmi.target_mem[idx].vaddr =
+ 					ioremap(ab->qmi.target_mem[idx].paddr,
+ 							ab->qmi.target_mem[i].size);
+ 			}
++
+ 			ab->qmi.target_mem[idx].size = ab->qmi.target_mem[i].size;
+ 			ab->qmi.target_mem[idx].type = ab->qmi.target_mem[i].type;
+ 			idx++;
+@@ -4339,6 +4339,17 @@ int ath11k_qmi_init_service(struct ath11
+ 	ab->qmi.ab = ab;
+ 
+ 	ab->qmi.target_mem_mode = ATH11K_QMI_TARGET_MEM_MODE;
++
++	if (ab->hw_params.fwmem_mode_change) {
++		ab->qmi.target_mem_mode = fwmem_mode;
++		if (ab->qmi.target_mem_mode == ATH11K_QMI_TARGET_MEM_MODE_256M &&
++		    ath11k_ftm_mode)
++			ab->enable_cold_boot_cal = 1;
++		else if(ab->qmi.target_mem_mode == ATH11K_QMI_TARGET_MEM_MODE_256M)
++			ab->enable_cold_boot_cal = 0;
++	}
++	ath11k_dbg(ab, ATH11K_DBG_QMI, "qmi target mem mode %d\n", ab->qmi.target_mem_mode);
++
+ 	ret = qmi_handle_init(&ab->qmi.handle, ATH11K_QMI_RESP_LEN_MAX,
+ 			      &ath11k_qmi_ops, ath11k_qmi_msg_handlers);
+ 	if (ret < 0) {
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -57,6 +57,7 @@ extern unsigned int ath11k_host_ddr_addr
+ enum ath11k_target_mem_mode {
+ 	ATH11K_QMI_TARGET_MEM_MODE_DEFAULT = 0,
+ 	ATH11K_QMI_TARGET_MEM_MODE_512M,
++	ATH11K_QMI_TARGET_MEM_MODE_256M,
+ };
+ 
+ enum ath11k_qmi_file_type {
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -786,6 +786,11 @@ struct ath11k_soc_dp_stats {
+ 	struct ath11k_dp_ring_bp_stats bp_stats;
+ };
+ 
++struct ath11k_num_vdevs_peers {
++	u32 num_vdevs;
++	u32 num_peers;
++};
++
+ /* Master structure to hold the hw data which may be used in core module */
+ struct ath11k_base {
+ 	enum ath11k_hw_rev hw_rev;
+@@ -898,6 +903,7 @@ struct ath11k_base {
+ 	bool ce_remap;
+ 	u32 ce_remap_base_addr;
+ 	atomic_t num_max_allowed;
++	struct ath11k_num_vdevs_peers *num_vdevs_peers;
+ 
+ 	/* must be last */
+ 	u8 drv_priv[0] __aligned(sizeof(void *));
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -2038,6 +2038,9 @@ static ssize_t ath11k_dump_mgmt_stats(st
+ 				      size_t count, loff_t *ppos)
+ {
+ 	struct ath11k *ar = file->private_data;
++#ifndef CPTCFG_ATH11K_MEM_PROFILE_512M
++	struct ath11k_base *ab = ar->ab;
++#endif
+ 	struct ath11k_vif *arvif = NULL;
+ 	struct ath11k_mgmt_frame_stats *mgmt_stats;
+ 	int len = 0, ret, i;
+--- a/drivers/net/wireless/ath/ath11k/coredump.c
++++ b/drivers/net/wireless/ath/ath11k/coredump.c
+@@ -164,7 +164,7 @@ void ath11k_coredump_download_rddm(struc
+ 
+ 	for (i = 0; i < ab->qmi.mem_seg_count; i++) {
+ 		if (ab->qmi.target_mem[i].type == HOST_DDR_REGION_TYPE ||
+-		    ab->qmi.target_mem[i].type == CALDB_MEM_REGION_TYPE ||
++		    (ab->qmi.target_mem[i].type == CALDB_MEM_REGION_TYPE && ab->enable_cold_boot_cal && ab->hw_params.cold_boot_calib) ||
+ 			ab->qmi.target_mem[i].type == M3_DUMP_REGION_TYPE)
+ 			rem_seg_cnt++;
+ 	}
+@@ -228,7 +228,7 @@ void ath11k_coredump_download_rddm(struc
+ 	}
+ 
+ 	for (i = 0; i < ab->qmi.mem_seg_count; i++) {
+-		if (ab->qmi.target_mem[i].type == CALDB_MEM_REGION_TYPE) {
++		if (ab->qmi.target_mem[i].type == CALDB_MEM_REGION_TYPE && ab->enable_cold_boot_cal && ab->hw_params.cold_boot_calib) {
+ 			seg_info->len = ab->qmi.target_mem[i].size;
+ 			seg_info->addr = ab->qmi.target_mem[i].paddr;
+ 			seg_info->vaddr = ab->qmi.target_mem[i].vaddr;

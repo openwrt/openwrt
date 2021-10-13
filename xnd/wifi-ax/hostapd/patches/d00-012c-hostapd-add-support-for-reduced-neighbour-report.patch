@@ -1,0 +1,41 @@
+From 1e28f602d70af2cc2c956d9bb41f09a248f5150f Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Wed, 24 Jun 2020 15:12:11 +0200
+Subject: [PATCH 3/4] RNR: add short_ssid to neighbor_db entries
+
+The RNR IE requires this field.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ src/ap/hostapd.h     | 1 +
+ src/ap/neighbor_db.c | 2 ++
+ 2 files changed, 3 insertions(+)
+
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -140,6 +140,7 @@ struct hostapd_neighbor_entry {
+ 	struct os_time lci_date;
+ 	int stationary;
+ 	u8 bss_parameters;
++	u32 short_ssid;
+ };
+ 
+ struct hostapd_sae_commit_queue {
+--- a/src/ap/neighbor_db.c
++++ b/src/ap/neighbor_db.c
+@@ -10,6 +10,7 @@
+ #include "utils/includes.h"
+ 
+ #include "utils/common.h"
++#include "utils/crc32.h"
+ #include "hostapd.h"
+ #include "ieee802_11.h"
+ #include "neighbor_db.h"
+@@ -135,6 +136,7 @@ int hostapd_neighbor_set(struct hostapd_
+ 
+ 	os_memcpy(entry->bssid, bssid, ETH_ALEN);
+ 	os_memcpy(&entry->ssid, ssid, sizeof(entry->ssid));
++	entry->short_ssid = crc32(ssid->ssid, ssid->ssid_len);
+ 
+ 	entry->nr = wpabuf_dup(nr);
+ 	if (!entry->nr)

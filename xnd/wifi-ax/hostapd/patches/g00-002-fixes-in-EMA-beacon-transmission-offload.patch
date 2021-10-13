@@ -1,0 +1,253 @@
+From f3fa24d9bd04ed37674f896213d037ecca463507 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Fri, 23 Oct 2020 14:52:24 -0700
+Subject: [PATCH] hostapd: Fixes in EMA beacon transmission offload
+
+(1) CSA failure: Fixed by initiating CSA for all BSSes on a radio.
+    Each VAP has an assigned channel context in mac80211.
+    Initiating CSA on only one transmitted VAP results in unequal
+    number of assigned and reserved contexts.
+
+(2) This change adds non-inheritance element only if transmitted VAP is
+    secure but non-transmitted is open, and calculates the length of
+    multiple BSSID element accordingly.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ hostapd/ctrl_iface.c       |  3 ---
+ src/ap/beacon.c            |  9 +++------
+ src/ap/ieee802_11.c        | 19 +++++++++++++------
+ src/ap/ieee802_11_shared.c | 28 +++++++++++++++++++++++-----
+ 4 files changed, 39 insertions(+), 20 deletions(-)
+
+Index: hostapd-2021-02-20/hostapd/ctrl_iface.c
+===================================================================
+--- hostapd-2021-02-20.orig/hostapd/ctrl_iface.c
++++ hostapd-2021-02-20/hostapd/ctrl_iface.c
+@@ -2759,9 +2759,6 @@ static int hostapd_ctrl_iface_chan_switc
+ 			 * submitting multi-BSS CSA requests? */
+ 			return ret;
+ 		}
+-
+-		if (iface->bss[i]->iconf->multiple_bssid)
+-			break;
+ 	}
+ 
+ 	return 0;
+Index: hostapd-2021-02-20/src/ap/beacon.c
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/beacon.c
++++ hostapd-2021-02-20/src/ap/beacon.c
+@@ -434,7 +434,7 @@ static u8 * hostapd_gen_probe_resp(struc
+ {
+ 	struct hostapd_data *hidden = NULL;
+ 	struct ieee80211_mgmt *resp;
+-	u8 *pos, *epos, *csa_pos, *ext_cap_pos;
++	u8 *pos, *epos, *csa_pos;
+ 	size_t buflen;
+ 
+ 	if (hapd->iconf->multiple_bssid &&
+@@ -566,10 +566,7 @@ static u8 * hostapd_gen_probe_resp(struc
+ 	pos = hostapd_eid_ht_capabilities(hapd, pos);
+ 	pos = hostapd_eid_ht_operation(hapd, pos);
+ 
+-	ext_cap_pos = pos;
+ 	pos = hostapd_eid_ext_capab(hapd, pos);
+-	if ((pos - ext_cap_pos >= 13) && (ext_cap_pos[12] & 0x08))
+-		ext_cap_pos[12] |= 0x01;
+ 
+ 	pos = hostapd_eid_time_adv(hapd, pos);
+ 	pos = hostapd_eid_time_zone(hapd, pos);
+@@ -1834,9 +1831,9 @@ int ieee802_11_build_ap_params(struct ho
+ 						 MULTIPLE_BSSID_IE_MAX,
+ 						 hapd->iconf->ema_beacon);
+ 		params->multiple_bssid_ie_len = end - params->multiple_bssid_ies;
+-		if ((params->multiple_bssid_ie_count <= 1) &&
++		if ((params->multiple_bssid_ie_count > 1) &&
+ 		    (ext_cap_len >= 13) && (ext_cap_pos[12] & 0x08))
+-			ext_cap_pos[12] |= 0x01;
++			ext_cap_pos[12] &= ~0x01; /* Clear bit 80 */
+ 		params->dtim_period = hapd->conf->dtim_period;
+ 	}
+ 
+Index: hostapd-2021-02-20/src/ap/ieee802_11.c
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/ieee802_11.c
++++ hostapd-2021-02-20/src/ap/ieee802_11.c
+@@ -167,6 +167,7 @@ u8 * hostapd_eid_ext_supp_rates(struct h
+ 	int i, num, count;
+ 	int h2e_required;
+ 
++	hapd->conf->xrates_supported = 0;
+ 	if (hapd->iface->current_rates == NULL)
+ 		return eid;
+ 
+@@ -216,6 +217,7 @@ u8 * hostapd_eid_ext_supp_rates(struct h
+ 			*pos++ = 0x80 | BSS_MEMBERSHIP_SELECTOR_SAE_H2E_ONLY;
+ 	}
+ 
++	hapd->conf->xrates_supported = 1;
+ 	return pos;
+ }
+ 
+@@ -7081,6 +7083,13 @@ static int hostapd_eid_multiple_bssid_ch
+ 
+ 		if (wpa_auth_get_wpa_ie(bss->wpa_auth, &ies_len))
+ 			nontx_profile_len += ies_len;
++		else if (wpa_auth_get_wpa_ie(hapd->wpa_auth, &ies_len))
++			nontx_profile_len += 8; /* Non-inheritance element */
++
++		if (bss->conf->xrates_supported)
++			nontx_profile_len += 8; /*ext supp rates*/
++		else if (hapd->conf->xrates_supported)
++			nontx_profile_len += 3; /* Non-inheritance element for xrates */
+ 
+ 		if (len + nontx_profile_len > 255) {
+ 			goto multiple_bssid_too_big;
+@@ -7117,7 +7126,8 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 	struct hostapd_data *bss;
+ 	struct hostapd_bss_config *conf;
+ 	u8 *size_offset, *num_offset;
+-	int i;
++	int i, ie_count = 0;
++	u8 non_inherit_ie[3] = {0};
+ 
+ 	*eid++ = WLAN_EID_MULTIPLE_BSSID;
+ 	size_offset = eid++;
+@@ -7126,8 +7136,9 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 	for (i = *count; i < hapd->iface->num_bss; i++) {
+ 		bss = hapd->iface->bss[i];
+ 		conf = bss->conf;
+-		u8 *bss_size_offset, *index_size_offset, *pos = eid, *rsn;
++		u8 *bss_size_offset, *index_size_offset, *pos = eid;
+ 		u16 capab_info;
++		ie_count = 0;
+ 
+ 		*eid++ = WLAN_EID_SUBELEMENT_NONTRANSMITTED_BSSID_PROFILE;
+ 		bss_size_offset = eid++;
+@@ -7161,17 +7172,38 @@ static u8 * hostapd_eid_multiple_bssid_c
+ 		}
+ 		*index_size_offset = (eid - index_size_offset) - 1;
+ 
+-		rsn = hostapd_get_rsne(bss, eid, end - eid);
+-		if (rsn == eid) {
+-			/* add RSN non-inheritance IE */
++		eid = hostapd_get_rsne(bss, eid, end - eid);
++		eid = hostapd_get_rsnxe(bss, eid, end - eid);
++		eid = hostapd_eid_ext_supp_rates(bss, eid);
++
++		/* Add non inheritance ie for capabalities that
++		 * are not inherited by non tx vap from tx vap
++		 */
++
++		if (hostapd_wpa_ie(hapd, WLAN_EID_RSN) &&
++		    !hostapd_wpa_ie(bss, WLAN_EID_RSN)) {
++			non_inherit_ie[ie_count] = WLAN_EID_RSN;
++			ie_count++;
++		}
++
++		if (hapd->conf->xrates_supported &&
++		    !bss->conf->xrates_supported) {
++			non_inherit_ie[ie_count] = WLAN_EID_EXT_SUPP_RATES;
++			ie_count++;
++		}
++		if (hostapd_wpa_ie(hapd, WLAN_EID_RSNX) &&
++		    !hostapd_wpa_ie(bss, WLAN_EID_RSNX)) {
++			non_inherit_ie[ie_count] = WLAN_EID_RSNX;
++			ie_count++;
++		}
++
++		if (ie_count) {
+ 			*eid++ = WLAN_EID_EXTENSION;
+-			*eid++ = 3;
++			*eid++ = 2 + ie_count;
+ 			*eid++ = WLAN_EID_EXT_NON_INHERITANCE;
+-			*eid++ = 1;
+-			*eid++ = WLAN_EID_RSN;
+-		} else {
+-			eid = rsn;
+-			eid = hostapd_get_rsnxe(bss, eid, end - eid);
++			*eid++ = ie_count;
++			os_memcpy(eid, non_inherit_ie, ie_count);
++			eid += ie_count;
+ 		}
+ 
+ 		*bss_size_offset = (eid - bss_size_offset) - 1;
+Index: hostapd-2021-02-20/src/ap/ieee802_11_shared.c
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/ieee802_11_shared.c
++++ hostapd-2021-02-20/src/ap/ieee802_11_shared.c
+@@ -427,9 +427,13 @@ static void hostapd_ext_capab_byte(struc
+ 					       * Identifiers Used Exclusively */
+ 		}
+ #endif /* CONFIG_SAE */
+-		/* Bit 83 - EMA AP Support */
+-		if (hapd->iconf->ema_beacon)
+-                        *pos |= 0x08;
++		if (hapd->iconf->multiple_bssid) {
++			/* Bit 80 - Complete list of non-transmitted profiles */
++                        *pos |= 0x01;
++			/* Bit 83 - EMA AP Support */
++			if (hapd->iconf->ema_beacon)
++	                        *pos |= 0x08;
++		}
+ 		if (hapd->conf->beacon_prot &&
+ 		    (hapd->iface->drv_flags &
+ 		     WPA_DRIVER_FLAGS_BEACON_PROTECTION))
+@@ -447,6 +451,16 @@ static void hostapd_ext_capab_byte(struc
+ }
+ 
+ 
++void hostapd_eid_ext_capab_multiple_bssid(struct hostapd_data *hapd, u8 *eid,
++					  u8 len)
++{
++	if (!hapd->iconf->ema_beacon && (len >= 11))
++		eid[10] &= 0xF7;
++	if (!hapd->iconf->multiple_bssid && (len >= 3))
++		eid[2] &= 0xBF;
++}
++
++
+ u8 * hostapd_eid_ext_capab(struct hostapd_data *hapd, u8 *eid)
+ {
+ 	u8 *pos = eid;
+@@ -459,7 +473,8 @@ u8 * hostapd_eid_ext_capab(struct hostap
+ 	    (hapd->conf->time_advertisement == 2 || hapd->conf->interworking))
+ 		len = 4;
+ 	if (len < 3 &&
+-	    (hapd->conf->wnm_sleep_mode || hapd->conf->bss_transition))
++	    (hapd->conf->wnm_sleep_mode || hapd->conf->bss_transition ||
++	     hapd->iconf->multiple_bssid))
+ 		len = 3;
+ 	if (len < 1 &&
+ 	    (hapd->iconf->obss_interval ||
+@@ -501,7 +516,7 @@ u8 * hostapd_eid_ext_capab(struct hostap
+ 	    hostapd_sae_pw_id_in_use(hapd->conf))
+ 		len = 11;
+ #endif /* CONFIG_SAE */
+-	if (len < 11 && (hapd->conf->beacon_prot || hapd->iconf->ema_beacon) &&
++	if (len < 11 && (hapd->conf->beacon_prot || hapd->iconf->multiple_bssid) &&
+ 	    (hapd->iface->drv_flags & WPA_DRIVER_FLAGS_BEACON_PROTECTION))
+ 		len = 11;
+ #ifdef CONFIG_SAE_PK
+@@ -526,6 +541,8 @@ u8 * hostapd_eid_ext_capab(struct hostap
+ 		}
+ 	}
+ 
++	hostapd_eid_ext_capab_multiple_bssid(hapd, eid + 2, len);
++
+ 	while (len > 0 && eid[1 + len] == 0) {
+ 		len--;
+ 		eid[1] = len;
+Index: hostapd-2021-02-20/src/ap/ap_config.h
+===================================================================
+--- hostapd-2021-02-20.orig/src/ap/ap_config.h
++++ hostapd-2021-02-20/src/ap/ap_config.h
+@@ -534,6 +534,7 @@ struct hostapd_bss_config {
+ 	bool disable_11n;
+ 	bool disable_11ac;
+ 	bool disable_11ax;
++	bool xrates_supported;
+ 
+ 	/* IEEE 802.11v */
+ 	int time_advertisement;

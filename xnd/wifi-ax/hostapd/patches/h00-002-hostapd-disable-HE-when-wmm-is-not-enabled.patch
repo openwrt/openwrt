@@ -1,0 +1,57 @@
+From d8f5c924a1edb1f695f86e7cac71c8faae3770ca Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Fri, 11 Dec 2020 09:38:48 +0530
+Subject: [PATCH] hostapd: disable HE when wmm is not enabled
+
+When wmm is disabled, HE should be disabled in AP, to handle all
+STA. Otherwise, third-party vendor STA will check HE caps of AP and
+gets associated in HE mode. In this case, phymode will be set to HE
+but peer flags won't have HE since it's set based on wmm config, in
+peer assoc params.
+
+This causes q6 crash during association, since FW expects peer flags
+to have HE, because of phymode indicating HE.
+
+ath11k STA handles this case by disabling HT/VHT/HE caps based on wmm
+configuration.
+
+If wmm config is not set explicitly by user, it will be set based on
+HT/HE config.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ src/ap/ap_config.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
+@@ -1184,6 +1184,9 @@ static int hostapd_config_check_bss(stru
+ 	}
+ #endif /* CONFIG_WEP */
+ 
++	if(!bss->wmm_enabled)
++		conf->ieee80211ax = 0;
++
+ 	if (full_config && bss->wpa &&
+ 	    bss->wpa_psk_radius != PSK_RADIUS_IGNORED &&
+ 	    bss->macaddr_acl != USE_EXTERNAL_RADIUS_AUTH) {
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -128,7 +128,7 @@ static void hostapd_reload_bss(struct ho
+ 		return;
+ 
+ 	if (hapd->conf->wmm_enabled < 0)
+-		hapd->conf->wmm_enabled = hapd->iconf->ieee80211n;
++		hapd->conf->wmm_enabled = hapd->iconf->ieee80211n | hapd->iconf->ieee80211ax;
+ 
+ #ifndef CONFIG_NO_RADIUS
+ 	radius_client_reconfig(hapd->radius, hapd->conf->radius);
+@@ -1241,7 +1241,7 @@ static int hostapd_setup_bss(struct host
+ 	}
+ 
+ 	if (conf->wmm_enabled < 0)
+-		conf->wmm_enabled = hapd->iconf->ieee80211n;
++		conf->wmm_enabled = hapd->iconf->ieee80211n | hapd->iconf->ieee80211ax;
+ 
+ #ifdef CONFIG_IEEE80211R_AP
+ 	if (is_zero_ether_addr(conf->r1_key_holder))

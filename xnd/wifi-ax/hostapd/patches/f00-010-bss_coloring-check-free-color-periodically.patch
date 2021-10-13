@@ -1,0 +1,70 @@
+From 7c0383bf8883e2bad9c7beb47712105be38b5427 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Wed, 7 Oct 2020 13:29:03 +0530
+Subject: [PATCH] hostapd: Check free colors periodically if no new color is
+ available
+
+In case of collision, if all the colors are in use, start dot11APcollision
+timer(50s) and check for new color after timeout.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ src/ap/hostapd.c | 20 +++++++++++++++++---
+ src/ap/hostapd.h |  1 +
+ 2 files changed, 18 insertions(+), 3 deletions(-)
+
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3781,11 +3781,12 @@ hostapd_switch_color_timeout_handler(voi
+ 		return;
+ 
+ 	/* check if there has been a recent collision */
+-	if (now.sec - hapd->last_color_collision.sec > 50)
++	if (now.sec - hapd->last_color_collision.sec > 50 && !hapd->no_free_color)
+ 		return;
+ 
+ 	neighbor_color = ap_list_get_color(hapd->iface);
+-	neighbor_color |= hapd->color_collision_bitmap;
++	if (!hapd->no_free_color)
++		neighbor_color |= hapd->color_collision_bitmap;
+ 
+ 	r = os_random() % HE_OPERATION_BSS_COLOR_MAX - 1;
+ 	r++;
+@@ -3797,13 +3798,26 @@ hostapd_switch_color_timeout_handler(voi
+ 	}
+ 	if (i == HE_OPERATION_BSS_COLOR_MAX) {
+ 		/* there are no free colors so turn bss coloring off */
+-		wpa_printf(MSG_INFO, "no free colors left, turning of BSS coloring");
++		wpa_printf(MSG_INFO, "no free colors left, turning off BSS coloring");
+ 		hapd->iface->conf->he_op.he_bss_color_disabled = 1;
++		hapd->no_free_color = 1;
+ 		for (b = 0; b < hapd->iface->num_bss; b++)
+ 			ieee802_11_set_beacon(hapd->iface->bss[b]);
++
++		/* Enabling for next check after timeout*/
++		hapd->iface->conf->he_op.he_bss_color_disabled = 0;
++
++		/* start timer for DOT11BSS_COLOR_COLLISION_AP_PERIOD, and check free color on timeout */
++		if (!eloop_is_timeout_registered(hostapd_switch_color_timeout_handler, hapd, NULL))
++			eloop_register_timeout(DOT11BSS_COLOR_COLLISION_AP_PERIOD, 0,
++					       hostapd_switch_color_timeout_handler, hapd, NULL);
++
+ 		return;
+ 	}
+ 
++	if (hapd->no_free_color)
++		hapd->no_free_color = 0;
++
+ 	for (b = 0; b < hapd->iface->num_bss; b++) {
+ 		struct hostapd_data *bss = hapd->iface->bss[b];
+ 
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -299,6 +299,7 @@ struct hostapd_data {
+ #ifdef CONFIG_IEEE80211AX
+ 	int cca_in_progress;
+ 	int cca_zero_count;
++	int no_free_color;
+ 	u8 cca_count;
+ 	u8 cca_color;
+ 	unsigned int cca_c_off_beacon;

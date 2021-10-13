@@ -1,0 +1,20 @@
+#!/bin/sh /etc/rc.common
+
+START=80
+USE_PROCD=1
+PROG=/usr/bin/realtek-poe
+
+reload_service() {
+	ubus call poe reload
+}
+
+service_triggers() {                                
+        procd_add_config_trigger "config.change" "poe" ubus call poe reload
+}
+
+start_service() {
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_set_param respawn
+	procd_close_instance
+}

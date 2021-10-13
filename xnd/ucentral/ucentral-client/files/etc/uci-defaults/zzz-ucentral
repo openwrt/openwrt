@@ -1,0 +1,10 @@
+#!/bin/sh
+
+[ -d /etc/config-shadow/ ] && exit 0
+
+uci commit
+
+cp -r /etc/config/ /etc/config-shadow/
+rm /etc/config/network
+cp /rom/etc/config/uhttpd /rom/etc/config/firewall /rom/etc/config/dhcp /rom/etc/config/dropbear /etc/config
+config_generate

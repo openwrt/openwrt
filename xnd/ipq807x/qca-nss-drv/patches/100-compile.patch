@@ -1,0 +1,15 @@
+Index: qca-nss-drv/nss_dma_log.c
+===================================================================
+--- qca-nss-drv.orig/nss_dma_log.c
++++ qca-nss-drv/nss_dma_log.c
+@@ -60,8 +60,8 @@ static void nss_dma_configure_msg(struct
+  */
+ static void nss_dma_test_perf_msg(struct nss_dma_msg *ndm)
+ {
+-	struct nss_dma_test_cfg *ndtc = &ndm->msg.test_cfg;
+-	struct nss_cmn_node_stats *ncns = &ndtc->node_stats;
++	//struct nss_dma_test_cfg *ndtc = &ndm->msg.test_cfg;
++	//struct nss_cmn_node_stats *ncns = &ndtc->node_stats;
+ 
+ 	nss_trace("%px: NSS DMA test perf message: \n",ndm);
+ 	nss_trace("%px: processed (TX: %u, RX:%u, time:%u)\n", ndm, ncns->tx_packets, ncns->rx_packets, ndtc->time_delta);

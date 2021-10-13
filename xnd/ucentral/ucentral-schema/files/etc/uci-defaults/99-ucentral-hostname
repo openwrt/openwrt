@@ -1,0 +1,7 @@
+#!/bin.sh
+
+hname=$(cat /etc/board.json  | jsonfilter -e '@.system.label_macaddr')
+[ -z "$hname" ] && hname=$(cat /sys/class/net/eth0/address)
+hname=$(echo $hname | tr -d : | awk '{print tolower($0)}')
+uci set system.@system[-1].hostname=$hname
+uci set ucentral.config.serial=$hname

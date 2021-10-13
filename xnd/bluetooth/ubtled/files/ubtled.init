@@ -1,0 +1,24 @@
+#!/bin/sh /etc/rc.common
+
+START=80
+
+USE_PROCD=1
+PROG=/usr/sbin/ubtled
+
+service_triggers() {
+	procd_add_reload_trigger btle
+}
+
+start_service() {
+	config_load btle
+	config_get enable ubtled enable 0
+
+	[ "$enable" -eq 1 ] || return
+
+	hciconfig hci0 up
+
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_set_param respawn
+	procd_close_instance
+}

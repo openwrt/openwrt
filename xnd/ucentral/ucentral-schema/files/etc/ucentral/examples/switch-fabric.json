@@ -1,0 +1,46 @@
+{
+	"uuid": 2,
+
+	"switch": {
+		"port-mirror": {
+			"monitor-ports": [ "WAN2" ],
+			"analysis-port": "WAN3"
+		}
+	},
+
+	"interfaces": [
+		{
+			"name": "WAN",
+			"role": "upstream",
+			"services": [ "lldp", "ssh" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"WAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "dynamic"
+			}
+		}
+	],
+	"metrics": {
+		"statistics": {
+			"interval": 120,
+			"types": [ "ssids", "lldp", "clients" ]
+		},
+		"health": {
+			"interval": 120
+		}
+	},
+	"services": {
+		"lldp": {
+			"describe": "uCentral",
+			"location": "universe"
+		},
+		"ssh": {
+			"port": 22
+		}
+	}
+}

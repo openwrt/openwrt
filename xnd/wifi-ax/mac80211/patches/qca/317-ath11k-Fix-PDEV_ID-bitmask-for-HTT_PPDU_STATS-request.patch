@@ -1,0 +1,34 @@
+From 46373b5b7fbf88a3ac71c8d45519d21a5308d834 Mon Sep 17 00:00:00 2001
+From: Rameshkumar Sundaram <ramess@codeaurora.org>
+Date: Wed, 2 Jun 2021 15:50:13 +0530
+Subject: [PATCH] ath11k: Fix PDEV_ID bitmask for HTT_PPDU_STATS request
+
+HTT_PPDU_STATS_CFG_PDEV_ID bit mask for target FW PPDU_STATS request message
+was set as bit 8 to 15, bit 8 is reserved for soc stats and pdev id
+starts from bit 9. Hence changed the bitmask form bit 9 to 15.
+Without this, per peer tx stats is not updated.
+
+Fix: Ib6950344286ba18fab43586262c62dcd09557614
+
+Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/dp.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp.h b/drivers/net/wireless/ath/ath11k/dp.h
+index 71c764e..ee91f63 100644
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -563,7 +563,8 @@ struct htt_ppdu_stats_cfg_cmd {
+ } __packed;
+ 
+ #define HTT_PPDU_STATS_CFG_MSG_TYPE		GENMASK(7, 0)
+-#define HTT_PPDU_STATS_CFG_PDEV_ID		GENMASK(15, 8)
++#define HTT_PPDU_STATS_CFG_SOC_STATS		BIT(8)
++#define HTT_PPDU_STATS_CFG_PDEV_ID		GENMASK(15, 9)
+ #define HTT_PPDU_STATS_CFG_TLV_TYPE_BITMASK	GENMASK(31, 16)
+ 
+ enum htt_ppdu_stats_tag_type {
+-- 
+2.7.4
+

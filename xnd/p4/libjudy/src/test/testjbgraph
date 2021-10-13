@@ -1,0 +1,22 @@
+# run timing program to measure Judy1, JudyL and JudyHS performance
+# use jbgraph script to format output suitable for 'gnuplot'
+echo
+echo "This script takes 1 Minute to plot output on a 3.2Ghz Pentium P4C"
+
+# On Linux, higher resolution of times with -DCPUMHZ=3200 on 3.2Ghz
+# cc -O2 -DCPUMHZ=3200 Judy1LHTime.c -lJudy -lm -o Judy1LHTime
+
+# up to 1000000 population of random numbers with Judy1, JudyL, JudyHS
+./Judy1LHTime -n 1000000 -1 -L -H > Judy1LHTime.plot
+
+# Plot the results: y-axis == uSec per Index, x-axis == number of Indexes
+# -NL     == Plot No Log axis
+# -Lx     == Plot Log in x axis
+# -y:1    == default min scale, 1 microsecond max scale
+# -x100:  == 100 min scale, default max scale
+# -c6 -c7 -c8 == plot column 6,7,8 (J1T, JLG, JHSG)
+# Judy1LHTime.plot == file to plot
+./jbgraph -NL -Lx -y:1 -x100: -c6 -c7 -c8 Judy1LHTime.plot
+
+# Performance of other ADT's can be explored with StringCompare.c, 
+# but you should have a very large (>100MB) text file to input.

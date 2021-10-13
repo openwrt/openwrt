@@ -1,0 +1,44 @@
+--- a/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs_htt_stats.c
+@@ -28,6 +28,17 @@
+                 buflen += index;                                               \
+         } while (0)
+ 
++#define CHAIN_ARRAY_TO_BUF(out, buflen, arr, len)			       	       \
++	do {								       \
++		int index = 0; u8 i;					       \
++		for (i = 0; i < len; i++) {				       \
++			index += scnprintf((out + buflen) + index, 	       \
++				(ATH11K_HTT_STATS_BUF_SIZE - buflen) - index,  \
++					  " %u:%d,", i, arr[i]);	       \
++		}							       \
++		buflen += index;					       \
++	} while (0)
++
+ static inline void htt_print_stats_string_tlv(const void *tag_buf,
+ 					      u16 tag_len,
+ 					      struct debug_htt_stats_req *stats_req)
+@@ -2908,12 +2919,12 @@ static inline void htt_print_rx_pdev_rat
+ 
+ 	for (j = 0; j < HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS; j++) {
+ 		len += HTT_DBG_OUT(buf + len, buf_len - len, "\npilot_evm_dB[%u] = ",j);
+-		ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_pilot_evm_db[j],
++		CHAIN_ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_pilot_evm_db[j],
+ 			     HTT_RX_PDEV_STATS_RXEVM_MAX_PILOTS_PER_NSS);
+ 	}
+ 
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "\npilot_evm_dB_mean = ");
+-	ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_pilot_evm_db_mean,
++	CHAIN_ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_pilot_evm_db_mean,
+ 		     HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS);
+ 
+ 	for (j = 0; j < HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS; j++) {
+@@ -3008,7 +3019,7 @@ static inline void htt_print_rx_pdev_rat
+ 	for (j = 0; j < HTT_RX_PDEV_STATS_NUM_SPATIAL_STREAMS; j++) {
+ 		len += HTT_DBG_OUT(buf + len, buf_len - len,
+ 				   "\nrx_per_chain_rssi_in_dbm[%u] = ", j);
+-		ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_per_chain_rssi_in_dbm[j],
++		CHAIN_ARRAY_TO_BUF(buf, len, htt_stats_buf->rx_per_chain_rssi_in_dbm[j],
+ 			     HTT_RX_PDEV_STATS_NUM_BW_COUNTERS);
+ 	}
+ 	len += HTT_DBG_OUT(buf + len, buf_len - len, "\n");

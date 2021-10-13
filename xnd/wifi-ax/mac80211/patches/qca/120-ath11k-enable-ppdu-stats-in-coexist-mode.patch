@@ -1,0 +1,149 @@
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -3387,12 +3387,17 @@ int ath11k_dp_rx_process_mon_status(stru
+ 	enum hal_rx_mon_status hal_status;
+ 	struct sk_buff *skb;
+ 	struct sk_buff_head skb_list;
+-	struct hal_rx_mon_ppdu_info ppdu_info;
++	struct hal_rx_mon_ppdu_info *ppdu_info;
+ 	struct ath11k_peer *peer;
+ 	struct ath11k_sta *arsta;
+ 	int num_buffs_reaped = 0;
+ 	u32 rx_buf_sz;
+ 	u16 log_type = 0;
++	struct ath11k_mon_data *pmon = (struct ath11k_mon_data *)&ar->dp.mon_data;
++	struct ath11k_pdev_mon_stats *rx_mon_stats;
++
++	ppdu_info = &pmon->mon_ppdu_info;
++	rx_mon_stats = &pmon->rx_mon_stats;
+ 
+ 	__skb_queue_head_init(&skb_list);
+ 
+@@ -3402,8 +3407,8 @@ int ath11k_dp_rx_process_mon_status(stru
+ 		goto exit;
+ 
+ 	while ((skb = __skb_dequeue(&skb_list))) {
+-		memset(&ppdu_info, 0, sizeof(ppdu_info));
+-		ppdu_info.peer_id = HAL_INVALID_PEERID;
++		memset(ppdu_info, 0, sizeof(*ppdu_info));
++		ppdu_info->peer_id = HAL_INVALID_PEERID;
+ 
+ 		if (ath11k_debugfs_is_pktlog_rx_stats_enabled(ar)) {
+ 			log_type = ATH11K_PKTLOG_TYPE_LITE_RX;
+@@ -3419,9 +3424,18 @@ int ath11k_dp_rx_process_mon_status(stru
+ 							   log_type, rx_buf_sz);
+ 		}
+ 
+-		hal_status = ath11k_hal_rx_parse_mon_status(ab, &ppdu_info, skb);
++		hal_status = ath11k_hal_rx_parse_mon_status(ab, ppdu_info, skb);
++
++		if ((ar->monitor_started) &&
++		    (hal_status == HAL_TLV_STATUS_PPDU_DONE) &&
++		    (pmon->mon_ppdu_status == DP_PPDU_STATUS_START)) {
++			rx_mon_stats->status_ppdu_done++;
++			pmon->mon_ppdu_status = DP_PPDU_STATUS_DONE;
++			ath11k_dp_rx_mon_dest_process(ar, mac_id, budget, napi);
++			pmon->mon_ppdu_status = DP_PPDU_STATUS_START;
++		}
+ 
+-		if (ppdu_info.peer_id == HAL_INVALID_PEERID ||
++		if (ppdu_info->peer_id == HAL_INVALID_PEERID ||
+ 		    hal_status != HAL_RX_MON_STATUS_PPDU_DONE) {
+ 			dev_kfree_skb_any(skb);
+ 			continue;
+@@ -3429,26 +3443,26 @@ int ath11k_dp_rx_process_mon_status(stru
+ 
+ 		rcu_read_lock();
+ 		spin_lock_bh(&ab->base_lock);
+-		peer = ath11k_peer_find_by_id(ab, ppdu_info.peer_id);
++		peer = ath11k_peer_find_by_id(ab, ppdu_info->peer_id);
+ 
+ 		if (!peer || !peer->sta) {
+ 			ath11k_dbg(ab, ATH11K_DBG_DATA,
+ 				   "failed to find the peer with peer_id %d\n",
+-				   ppdu_info.peer_id);
++				   ppdu_info->peer_id);
+ 			spin_unlock_bh(&ab->base_lock);
+ 			rcu_read_unlock();
+ 			dev_kfree_skb_any(skb);
+ 			continue;
+ 		}
+ 
+-		if ((ppdu_info.fc_valid) &&
+-		    (ppdu_info.ast_index != HAL_AST_IDX_INVALID)) {
+-			if (ppdu_info.reception_type == HAL_RX_RECEPTION_TYPE_SU) {
++		if ((ppdu_info->fc_valid) &&
++		    (ppdu_info->ast_index != HAL_AST_IDX_INVALID)) {
++			if (ppdu_info->reception_type == HAL_RX_RECEPTION_TYPE_SU) {
+ 				arsta = (struct ath11k_sta *)peer->sta->drv_priv;
+-				ath11k_dp_rx_update_peer_su_stats(arsta, &ppdu_info);
++				ath11k_dp_rx_update_peer_su_stats(arsta, ppdu_info);
+ 			} else {
+-				ath11k_dp_rx_mon_process_ulofdma(&ppdu_info);
+-				ath11k_dp_rx_update_peer_mu_stats(ar, &ppdu_info);
++				ath11k_dp_rx_mon_process_ulofdma(ppdu_info);
++				ath11k_dp_rx_update_peer_mu_stats(ar, ppdu_info);
+ 			}
+ 		}
+ 
+@@ -5394,8 +5408,8 @@ mon_deliver_fail:
+ 	return -EINVAL;
+ }
+ 
+-static void ath11k_dp_rx_mon_dest_process(struct ath11k *ar, int mac_id,
+-					  u32 quota, struct napi_struct *napi)
++void ath11k_dp_rx_mon_dest_process(struct ath11k *ar, int mac_id,
++				  u32 quota, struct napi_struct *napi)
+ {
+ 	struct ath11k_pdev_dp *dp = &ar->dp;
+ 	struct ath11k_mon_data *pmon = (struct ath11k_mon_data *)&dp->mon_data;
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.h
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.h
+@@ -106,6 +106,8 @@ int ath11k_dp_rx_mon_status_bufs_repleni
+ 					   struct dp_rxdma_ring *rx_ring,
+ 					   int req_entries,
+ 					   enum hal_rx_buf_return_buf_manager mgr);
++void ath11k_dp_rx_mon_dest_process(struct ath11k *ar, int mac_id, u32 quota,
++				   struct napi_struct *napi);
+ int ath11k_dp_rx_pdev_mon_detach(struct ath11k *ar);
+ int ath11k_dp_rx_pdev_mon_attach(struct ath11k *ar);
+ int ath11k_peer_rx_frag_setup(struct ath11k *ar, const u8 *peer_mac, int vdev_id);
+--- a/drivers/net/wireless/ath/ath11k/hal_rx.h
++++ b/drivers/net/wireless/ath/ath11k/hal_rx.h
+@@ -85,10 +85,6 @@ enum hal_rx_legacy_rate {
+ 	HAL_RX_LEGACY_RATE_INVALID,
+ };
+ 
+-#define HAL_TLV_STATUS_PPDU_NOT_DONE            0
+-#define HAL_TLV_STATUS_PPDU_DONE                1
+-#define HAL_TLV_STATUS_BUF_DONE                 2
+-#define HAL_TLV_STATUS_PPDU_NON_STD_DONE        3
+ #define HAL_RX_FCS_LEN                          4
+ #define HAL_AST_IDX_INVALID                     0xFFFF
+ 
+@@ -102,6 +98,10 @@ enum hal_rx_mon_status {
+ 	HAL_RX_MON_STATUS_BUF_DONE,
+ };
+ 
++#define HAL_TLV_STATUS_PPDU_NOT_DONE            HAL_RX_MON_STATUS_PPDU_NOT_DONE
++#define HAL_TLV_STATUS_PPDU_DONE                HAL_RX_MON_STATUS_PPDU_DONE
++#define HAL_TLV_STATUS_BUF_DONE                 HAL_RX_MON_STATUS_BUF_DONE
++
+ struct hal_rx_user_status {
+ 	u32 mcs:4,
+ 	nss:3,
+--- a/drivers/net/wireless/ath/ath11k/debugfs.c
++++ b/drivers/net/wireless/ath/ath11k/debugfs.c
+@@ -825,6 +825,12 @@ static ssize_t ath11k_write_extd_rx_stat
+ 		goto exit;
+ 	}
+ 
++	if (ar->monitor_started) {
++		ar->debug.extd_rx_stats = enable;
++		ret = count;
++		goto exit;
++	}
++
+ 	if (enable) {
+ 		rx_filter =  HTT_RX_FILTER_TLV_FLAGS_MPDU_START;
+ 		rx_filter |= HTT_RX_FILTER_TLV_FLAGS_PPDU_START;

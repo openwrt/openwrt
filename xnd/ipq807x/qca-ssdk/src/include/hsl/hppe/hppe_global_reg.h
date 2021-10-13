@@ -1,0 +1,988 @@
+/*
+ * Copyright (c) 2016-2017, 2019, The Linux Foundation. All rights reserved.
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all copies.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+
+/**
+ * @defgroup
+ * @{
+ */
+#ifndef HPPE_GLOBAL_REG_H
+#define HPPE_GLOBAL_REG_H
+
+/*[register] SWITCH_ID*/
+#define SWITCH_ID
+#define SWITCH_ID_ADDRESS 0x0
+#define SWITCH_ID_NUM     1
+#define SWITCH_ID_INC     0x4
+#define SWITCH_ID_TYPE    REG_TYPE_RW
+#define SWITCH_ID_DEFAULT 0x1500
+	/*[field] REV_ID*/
+	#define SWITCH_ID_REV_ID
+	#define SWITCH_ID_REV_ID_OFFSET  0
+	#define SWITCH_ID_REV_ID_LEN     8
+	#define SWITCH_ID_REV_ID_DEFAULT 0x0
+	/*[field] DEV_ID*/
+	#define SWITCH_ID_DEV_ID
+	#define SWITCH_ID_DEV_ID_OFFSET  8
+	#define SWITCH_ID_DEV_ID_LEN     8
+	#define SWITCH_ID_DEV_ID_DEFAULT 0x15
+
+struct switch_id {
+	a_uint32_t  rev_id:8;
+	a_uint32_t  dev_id:8;
+	a_uint32_t  _reserved0:16;
+};
+
+union switch_id_u {
+	a_uint32_t val;
+	struct switch_id bf;
+};
+
+/*[register] RGMII_CTRL*/
+#define RGMII_CTRL
+#define RGMII_CTRL_ADDRESS 0x4
+#define RGMII_CTRL_NUM     1
+#define RGMII_CTRL_INC     0x4
+#define RGMII_CTRL_TYPE    REG_TYPE_RW
+#define RGMII_CTRL_DEFAULT 0x0
+	/*[field] RGMII_CTRL*/
+	#define RGMII_CTRL_RGMII_CTRL
+	#define RGMII_CTRL_RGMII_CTRL_OFFSET  0
+	#define RGMII_CTRL_RGMII_CTRL_LEN     32
+	#define RGMII_CTRL_RGMII_CTRL_DEFAULT 0x0
+
+struct rgmii_ctrl {
+	a_uint32_t  rgmii_ctrl:32;
+};
+
+union rgmii_ctrl_u {
+	a_uint32_t val;
+	struct rgmii_ctrl bf;
+};
+
+/*[register] CLK_GATING_CTRL*/
+#define CLK_GATING_CTRL
+#define CLK_GATING_CTRL_ADDRESS 0x8
+#define CLK_GATING_CTRL_NUM     1
+#define CLK_GATING_CTRL_INC     0x4
+#define CLK_GATING_CTRL_TYPE    REG_TYPE_RW
+#define CLK_GATING_CTRL_DEFAULT 0xffffffff
+	/*[field] CLK_GATING_CTRL*/
+	#define CLK_GATING_CTRL_CLK_GATING_CTRL
+	#define CLK_GATING_CTRL_CLK_GATING_CTRL_OFFSET  0
+	#define CLK_GATING_CTRL_CLK_GATING_CTRL_LEN     32
+	#define CLK_GATING_CTRL_CLK_GATING_CTRL_DEFAULT 0xffffffff
+
+struct clk_gating_ctrl {
+	a_uint32_t  clk_gating_ctrl:32;
+};
+
+union clk_gating_ctrl_u {
+	a_uint32_t val;
+	struct clk_gating_ctrl bf;
+};
+
+/*[register] PORT_MUX_CTRL*/
+#define PORT_MUX_CTRL
+#define PORT_MUX_CTRL_ADDRESS 0x10
+#define PORT_MUX_CTRL_NUM     1
+#define PORT_MUX_CTRL_INC     0x4
+#define PORT_MUX_CTRL_TYPE    REG_TYPE_RW
+#define PORT_MUX_CTRL_DEFAULT 0x0
+	/*[field] PORT4_PCS_SEL*/
+	#define PORT_MUX_CTRL_PORT4_PCS_SEL
+	#define PORT_MUX_CTRL_PORT4_PCS_SEL_OFFSET  0
+	#define PORT_MUX_CTRL_PORT4_PCS_SEL_LEN     1
+	#define PORT_MUX_CTRL_PORT4_PCS_SEL_DEFAULT 0x0
+	/*[field] PORT5_PCS_SEL*/
+	#define PORT_MUX_CTRL_PORT5_PCS_SEL
+	#define PORT_MUX_CTRL_PORT5_PCS_SEL_OFFSET  1
+	#define PORT_MUX_CTRL_PORT5_PCS_SEL_LEN     2
+	#define PORT_MUX_CTRL_PORT5_PCS_SEL_DEFAULT 0x0
+	/*[field] PORT5_GMAC_SEL*/
+	#define PORT_MUX_CTRL_PORT5_GMAC_SEL
+	#define PORT_MUX_CTRL_PORT5_GMAC_SEL_OFFSET  3
+	#define PORT_MUX_CTRL_PORT5_GMAC_SEL_LEN     1
+	#define PORT_MUX_CTRL_PORT5_GMAC_SEL_DEFAULT 0x0
+	/*[field] PORT6_PCS_SEL*/
+	#define PORT_MUX_CTRL_PORT6_PCS_SEL
+	#define PORT_MUX_CTRL_PORT6_PCS_SEL_OFFSET  4
+	#define PORT_MUX_CTRL_PORT6_PCS_SEL_LEN     1
+	#define PORT_MUX_CTRL_PORT6_PCS_SEL_DEFAULT 0x0
+	/*[field] PORT6_GMAC_SEL*/
+	#define PORT_MUX_CTRL_PORT6_GMAC_SEL
+	#define PORT_MUX_CTRL_PORT6_GMAC_SEL_OFFSET  5
+	#define PORT_MUX_CTRL_PORT6_GMAC_SEL_LEN     1
+	#define PORT_MUX_CTRL_PORT6_GMAC_SEL_DEFAULT 0x0
+
+struct port_mux_ctrl {
+	a_uint32_t  port4_pcs_sel:1;
+	a_uint32_t  port5_pcs_sel:2;
+	a_uint32_t  port5_gmac_sel:1;
+	a_uint32_t  port6_pcs_sel:1;
+	a_uint32_t  port6_gmac_sel:1;
+	a_uint32_t  _reserved0:26;
+};
+
+union port_mux_ctrl_u {
+	a_uint32_t val;
+	struct port_mux_ctrl bf;
+};
+struct cppe_port_mux_ctrl {
+	a_uint32_t  port3_pcs_sel:2;
+	a_uint32_t  port4_pcs_sel:2;
+	a_uint32_t  port5_pcs_sel:2;
+	a_uint32_t  port5_gmac_sel:1;
+	a_uint32_t  pcs0_ch4_sel:1;
+	a_uint32_t  pcs0_ch0_sel:1;
+	a_uint32_t  _reserved0:23;
+};
+
+union cppe_port_mux_ctrl_u {
+	a_uint32_t val;
+	struct cppe_port_mux_ctrl bf;
+};
+
+/*[register] MODULE_INI_DONE_INT*/
+#define MODULE_INI_DONE_INT
+#define MODULE_INI_DONE_INT_ADDRESS 0x20
+#define MODULE_INI_DONE_INT_NUM     1
+#define MODULE_INI_DONE_INT_INC     0x4
+#define MODULE_INI_DONE_INT_TYPE    REG_TYPE_RW
+#define MODULE_INI_DONE_INT_DEFAULT 0x0
+	/*[field] L3_INI_DONE_INT*/
+	#define MODULE_INI_DONE_INT_L3_INI_DONE_INT
+	#define MODULE_INI_DONE_INT_L3_INI_DONE_INT_OFFSET  0
+	#define MODULE_INI_DONE_INT_L3_INI_DONE_INT_LEN     1
+	#define MODULE_INI_DONE_INT_L3_INI_DONE_INT_DEFAULT 0x0
+	/*[field] ACL_INI_DONE_INT*/
+	#define MODULE_INI_DONE_INT_ACL_INI_DONE_INT
+	#define MODULE_INI_DONE_INT_ACL_INI_DONE_INT_OFFSET  1
+	#define MODULE_INI_DONE_INT_ACL_INI_DONE_INT_LEN     1
+	#define MODULE_INI_DONE_INT_ACL_INI_DONE_INT_DEFAULT 0x0
+	/*[field] L2_INI_DONE_INT*/
+	#define MODULE_INI_DONE_INT_L2_INI_DONE_INT
+	#define MODULE_INI_DONE_INT_L2_INI_DONE_INT_OFFSET  2
+	#define MODULE_INI_DONE_INT_L2_INI_DONE_INT_LEN     1
+	#define MODULE_INI_DONE_INT_L2_INI_DONE_INT_DEFAULT 0x0
+	/*[field] ING_RATE_INI_DONE_INT*/
+	#define MODULE_INI_DONE_INT_ING_RATE_INI_DONE_INT
+	#define MODULE_INI_DONE_INT_ING_RATE_INI_DONE_INT_OFFSET  3
+	#define MODULE_INI_DONE_INT_ING_RATE_INI_DONE_INT_LEN     1
+	#define MODULE_INI_DONE_INT_ING_RATE_INI_DONE_INT_DEFAULT 0x0
+	/*[field] BM_INI_DONE_INT*/
+	#define MODULE_INI_DONE_INT_BM_INI_DONE_INT
+	#define MODULE_INI_DONE_INT_BM_INI_DONE_INT_OFFSET  4
+	#define MODULE_INI_DONE_INT_BM_INI_DONE_INT_LEN     1
+	#define MODULE_INI_DONE_INT_BM_INI_DONE_INT_DEFAULT 0x0
+	/*[field] TM_INI_DONE_INT*/
+	#define MODULE_INI_DONE_INT_TM_INI_DONE_INT
+	#define MODULE_INI_DONE_INT_TM_INI_DONE_INT_OFFSET  5
+	#define MODULE_INI_DONE_INT_TM_INI_DONE_INT_LEN     1
+	#define MODULE_INI_DONE_INT_TM_INI_DONE_INT_DEFAULT 0x0
+	/*[field] QM_INI_DONE_INT*/
+	#define MODULE_INI_DONE_INT_QM_INI_DONE_INT
+	#define MODULE_INI_DONE_INT_QM_INI_DONE_INT_OFFSET  6
+	#define MODULE_INI_DONE_INT_QM_INI_DONE_INT_LEN     1
+	#define MODULE_INI_DONE_INT_QM_INI_DONE_INT_DEFAULT 0x0
+	/*[field] IV_INI_DONE_INT*/
+	#define MODULE_INI_DONE_INT_IV_INI_DONE_INT
+	#define MODULE_INI_DONE_INT_IV_INI_DONE_INT_OFFSET  7
+	#define MODULE_INI_DONE_INT_IV_INI_DONE_INT_LEN     1
+	#define MODULE_INI_DONE_INT_IV_INI_DONE_INT_DEFAULT 0x0
+	/*[field] PTX_INI_DONE_INT*/
+	#define MODULE_INI_DONE_INT_PTX_INI_DONE_INT
+	#define MODULE_INI_DONE_INT_PTX_INI_DONE_INT_OFFSET  8
+	#define MODULE_INI_DONE_INT_PTX_INI_DONE_INT_LEN     1
+	#define MODULE_INI_DONE_INT_PTX_INI_DONE_INT_DEFAULT 0x0
+
+struct module_ini_done_int {
+	a_uint32_t  l3_ini_done_int:1;
+	a_uint32_t  acl_ini_done_int:1;
+	a_uint32_t  l2_ini_done_int:1;
+	a_uint32_t  ing_rate_ini_done_int:1;
+	a_uint32_t  bm_ini_done_int:1;
+	a_uint32_t  tm_ini_done_int:1;
+	a_uint32_t  qm_ini_done_int:1;
+	a_uint32_t  iv_ini_done_int:1;
+	a_uint32_t  ptx_ini_done_int:1;
+	a_uint32_t  _reserved0:23;
+};
+
+union module_ini_done_int_u {
+	a_uint32_t val;
+	struct module_ini_done_int bf;
+};
+
+/*[register] MODULE_CPU_DONE_INT*/
+#define MODULE_CPU_DONE_INT
+#define MODULE_CPU_DONE_INT_ADDRESS 0x24
+#define MODULE_CPU_DONE_INT_NUM     1
+#define MODULE_CPU_DONE_INT_INC     0x4
+#define MODULE_CPU_DONE_INT_TYPE    REG_TYPE_RW
+#define MODULE_CPU_DONE_INT_DEFAULT 0x0
+	/*[field] QM_CPU_OP_DONE_INT*/
+	#define MODULE_CPU_DONE_INT_QM_CPU_OP_DONE_INT
+	#define MODULE_CPU_DONE_INT_QM_CPU_OP_DONE_INT_OFFSET  0
+	#define MODULE_CPU_DONE_INT_QM_CPU_OP_DONE_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_QM_CPU_OP_DONE_INT_DEFAULT 0x0
+	/*[field] L2_FDB_RD_RESULT_VLD_INT*/
+	#define MODULE_CPU_DONE_INT_L2_FDB_RD_RESULT_VLD_INT
+	#define MODULE_CPU_DONE_INT_L2_FDB_RD_RESULT_VLD_INT_OFFSET  1
+	#define MODULE_CPU_DONE_INT_L2_FDB_RD_RESULT_VLD_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L2_FDB_RD_RESULT_VLD_INT_DEFAULT 0x0
+	/*[field] L2_FDB_WR_RESULT_VLD_INT*/
+	#define MODULE_CPU_DONE_INT_L2_FDB_WR_RESULT_VLD_INT
+	#define MODULE_CPU_DONE_INT_L2_FDB_WR_RESULT_VLD_INT_OFFSET  2
+	#define MODULE_CPU_DONE_INT_L2_FDB_WR_RESULT_VLD_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L2_FDB_WR_RESULT_VLD_INT_DEFAULT 0x0
+	/*[field] L2_FDB_RD_CMD_OVERFLOW_INT*/
+	#define MODULE_CPU_DONE_INT_L2_FDB_RD_CMD_OVERFLOW_INT
+	#define MODULE_CPU_DONE_INT_L2_FDB_RD_CMD_OVERFLOW_INT_OFFSET  3
+	#define MODULE_CPU_DONE_INT_L2_FDB_RD_CMD_OVERFLOW_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L2_FDB_RD_CMD_OVERFLOW_INT_DEFAULT 0x0
+	/*[field] L2_FDB_WR_CMD_OVERFLOW_INT*/
+	#define MODULE_CPU_DONE_INT_L2_FDB_WR_CMD_OVERFLOW_INT
+	#define MODULE_CPU_DONE_INT_L2_FDB_WR_CMD_OVERFLOW_INT_OFFSET  4
+	#define MODULE_CPU_DONE_INT_L2_FDB_WR_CMD_OVERFLOW_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L2_FDB_WR_CMD_OVERFLOW_INT_DEFAULT 0x0
+	/*[field] L3_HOST_WR_CMD_OVERFLOW_INT*/
+	#define MODULE_CPU_DONE_INT_L3_HOST_WR_CMD_OVERFLOW_INT
+	#define MODULE_CPU_DONE_INT_L3_HOST_WR_CMD_OVERFLOW_INT_OFFSET  8
+	#define MODULE_CPU_DONE_INT_L3_HOST_WR_CMD_OVERFLOW_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L3_HOST_WR_CMD_OVERFLOW_INT_DEFAULT 0x0
+	/*[field] L3_HOST_RD_CMD_OVERFLOW_INT*/
+	#define MODULE_CPU_DONE_INT_L3_HOST_RD_CMD_OVERFLOW_INT
+	#define MODULE_CPU_DONE_INT_L3_HOST_RD_CMD_OVERFLOW_INT_OFFSET  9
+	#define MODULE_CPU_DONE_INT_L3_HOST_RD_CMD_OVERFLOW_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L3_HOST_RD_CMD_OVERFLOW_INT_DEFAULT 0x0
+	/*[field] L3_HOST_WR_RESULT_VLD_INT*/
+	#define MODULE_CPU_DONE_INT_L3_HOST_WR_RESULT_VLD_INT
+	#define MODULE_CPU_DONE_INT_L3_HOST_WR_RESULT_VLD_INT_OFFSET  10
+	#define MODULE_CPU_DONE_INT_L3_HOST_WR_RESULT_VLD_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L3_HOST_WR_RESULT_VLD_INT_DEFAULT 0x0
+	/*[field] L3_HOST_RD_RESULT_VLD_INT*/
+	#define MODULE_CPU_DONE_INT_L3_HOST_RD_RESULT_VLD_INT
+	#define MODULE_CPU_DONE_INT_L3_HOST_RD_RESULT_VLD_INT_OFFSET  11
+	#define MODULE_CPU_DONE_INT_L3_HOST_RD_RESULT_VLD_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L3_HOST_RD_RESULT_VLD_INT_DEFAULT 0x0
+	/*[field] L3_FLOW_WR_CMD_OVERFLOW_INT*/
+	#define MODULE_CPU_DONE_INT_L3_FLOW_WR_CMD_OVERFLOW_INT
+	#define MODULE_CPU_DONE_INT_L3_FLOW_WR_CMD_OVERFLOW_INT_OFFSET  12
+	#define MODULE_CPU_DONE_INT_L3_FLOW_WR_CMD_OVERFLOW_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L3_FLOW_WR_CMD_OVERFLOW_INT_DEFAULT 0x0
+	/*[field] L3_FLOW_RD_CMD_OVERFLOW_INT*/
+	#define MODULE_CPU_DONE_INT_L3_FLOW_RD_CMD_OVERFLOW_INT
+	#define MODULE_CPU_DONE_INT_L3_FLOW_RD_CMD_OVERFLOW_INT_OFFSET  13
+	#define MODULE_CPU_DONE_INT_L3_FLOW_RD_CMD_OVERFLOW_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L3_FLOW_RD_CMD_OVERFLOW_INT_DEFAULT 0x0
+	/*[field] L3_FLOW_WR_RESULT_VLD_INT*/
+	#define MODULE_CPU_DONE_INT_L3_FLOW_WR_RESULT_VLD_INT
+	#define MODULE_CPU_DONE_INT_L3_FLOW_WR_RESULT_VLD_INT_OFFSET  14
+	#define MODULE_CPU_DONE_INT_L3_FLOW_WR_RESULT_VLD_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L3_FLOW_WR_RESULT_VLD_INT_DEFAULT 0x0
+	/*[field] L3_FLOW_RD_RESULT_VLD_INT*/
+	#define MODULE_CPU_DONE_INT_L3_FLOW_RD_RESULT_VLD_INT
+	#define MODULE_CPU_DONE_INT_L3_FLOW_RD_RESULT_VLD_INT_OFFSET  15
+	#define MODULE_CPU_DONE_INT_L3_FLOW_RD_RESULT_VLD_INT_LEN     1
+	#define MODULE_CPU_DONE_INT_L3_FLOW_RD_RESULT_VLD_INT_DEFAULT 0x0
+
+struct module_cpu_done_int {
+	a_uint32_t  qm_cpu_op_done_int:1;
+	a_uint32_t  l2_fdb_rd_result_vld_int:1;
+	a_uint32_t  l2_fdb_wr_result_vld_int:1;
+	a_uint32_t  l2_fdb_rd_cmd_overflow_int:1;
+	a_uint32_t  l2_fdb_wr_cmd_overflow_int:1;
+	a_uint32_t  _reserved0:3;
+	a_uint32_t  l3_host_wr_cmd_overflow_int:1;
+	a_uint32_t  l3_host_rd_cmd_overflow_int:1;
+	a_uint32_t  l3_host_wr_result_vld_int:1;
+	a_uint32_t  l3_host_rd_result_vld_int:1;
+	a_uint32_t  l3_flow_wr_cmd_overflow_int:1;
+	a_uint32_t  l3_flow_rd_cmd_overflow_int:1;
+	a_uint32_t  l3_flow_wr_result_vld_int:1;
+	a_uint32_t  l3_flow_rd_result_vld_int:1;
+	a_uint32_t  _reserved1:16;
+};
+
+union module_cpu_done_int_u {
+	a_uint32_t val;
+	struct module_cpu_done_int bf;
+};
+
+/*[register] PORT_LINK_INT*/
+#define PORT_LINK_INT
+#define PORT_LINK_INT_ADDRESS 0x28
+#define PORT_LINK_INT_NUM     1
+#define PORT_LINK_INT_INC     0x4
+#define PORT_LINK_INT_TYPE    REG_TYPE_RW
+#define PORT_LINK_INT_DEFAULT 0x0
+	/*[field] PORT1_LINK_CHG_INT*/
+	#define PORT_LINK_INT_PORT1_LINK_CHG_INT
+	#define PORT_LINK_INT_PORT1_LINK_CHG_INT_OFFSET  0
+	#define PORT_LINK_INT_PORT1_LINK_CHG_INT_LEN     1
+	#define PORT_LINK_INT_PORT1_LINK_CHG_INT_DEFAULT 0x0
+	/*[field] PORT2_LINK_CHG_INT*/
+	#define PORT_LINK_INT_PORT2_LINK_CHG_INT
+	#define PORT_LINK_INT_PORT2_LINK_CHG_INT_OFFSET  1
+	#define PORT_LINK_INT_PORT2_LINK_CHG_INT_LEN     1
+	#define PORT_LINK_INT_PORT2_LINK_CHG_INT_DEFAULT 0x0
+	/*[field] PORT3_LINK_CHG_INT*/
+	#define PORT_LINK_INT_PORT3_LINK_CHG_INT
+	#define PORT_LINK_INT_PORT3_LINK_CHG_INT_OFFSET  2
+	#define PORT_LINK_INT_PORT3_LINK_CHG_INT_LEN     1
+	#define PORT_LINK_INT_PORT3_LINK_CHG_INT_DEFAULT 0x0
+	/*[field] PORT4_LINK_CHG_INT*/
+	#define PORT_LINK_INT_PORT4_LINK_CHG_INT
+	#define PORT_LINK_INT_PORT4_LINK_CHG_INT_OFFSET  3
+	#define PORT_LINK_INT_PORT4_LINK_CHG_INT_LEN     1
+	#define PORT_LINK_INT_PORT4_LINK_CHG_INT_DEFAULT 0x0
+	/*[field] PORT5_0_LINK_CHG_INT*/
+	#define PORT_LINK_INT_PORT5_0_LINK_CHG_INT
+	#define PORT_LINK_INT_PORT5_0_LINK_CHG_INT_OFFSET  4
+	#define PORT_LINK_INT_PORT5_0_LINK_CHG_INT_LEN     1
+	#define PORT_LINK_INT_PORT5_0_LINK_CHG_INT_DEFAULT 0x0
+	/*[field] PORT5_1_LINK_CHG_INT*/
+	#define PORT_LINK_INT_PORT5_1_LINK_CHG_INT
+	#define PORT_LINK_INT_PORT5_1_LINK_CHG_INT_OFFSET  5
+	#define PORT_LINK_INT_PORT5_1_LINK_CHG_INT_LEN     1
+	#define PORT_LINK_INT_PORT5_1_LINK_CHG_INT_DEFAULT 0x0
+	/*[field] PORT6_LINK_CHG_INT*/
+	#define PORT_LINK_INT_PORT6_LINK_CHG_INT
+	#define PORT_LINK_INT_PORT6_LINK_CHG_INT_OFFSET  6
+	#define PORT_LINK_INT_PORT6_LINK_CHG_INT_LEN     1
+	#define PORT_LINK_INT_PORT6_LINK_CHG_INT_DEFAULT 0x0
+	/*[field] XGMAC0_AN_DONE_INT*/
+	#define PORT_LINK_INT_XGMAC0_AN_DONE_INT
+	#define PORT_LINK_INT_XGMAC0_AN_DONE_INT_OFFSET  8
+	#define PORT_LINK_INT_XGMAC0_AN_DONE_INT_LEN     1
+	#define PORT_LINK_INT_XGMAC0_AN_DONE_INT_DEFAULT 0x0
+	/*[field] XGMAC1_AN_DONE_INT*/
+	#define PORT_LINK_INT_XGMAC1_AN_DONE_INT
+	#define PORT_LINK_INT_XGMAC1_AN_DONE_INT_OFFSET  9
+	#define PORT_LINK_INT_XGMAC1_AN_DONE_INT_LEN     1
+	#define PORT_LINK_INT_XGMAC1_AN_DONE_INT_DEFAULT 0x0
+
+struct port_link_int {
+	a_uint32_t  port1_link_chg_int:1;
+	a_uint32_t  port2_link_chg_int:1;
+	a_uint32_t  port3_link_chg_int:1;
+	a_uint32_t  port4_link_chg_int:1;
+	a_uint32_t  port5_0_link_chg_int:1;
+	a_uint32_t  port5_1_link_chg_int:1;
+	a_uint32_t  port6_link_chg_int:1;
+	a_uint32_t  _reserved0:1;
+	a_uint32_t  xgmac0_an_done_int:1;
+	a_uint32_t  xgmac1_an_done_int:1;
+	a_uint32_t  _reserved1:22;
+};
+
+union port_link_int_u {
+	a_uint32_t val;
+	struct port_link_int bf;
+};
+
+/*[register] MODULE_INI_DONE_INT_MASK*/
+#define MODULE_INI_DONE_INT_MASK
+#define MODULE_INI_DONE_INT_MASK_ADDRESS 0x30
+#define MODULE_INI_DONE_INT_MASK_NUM     1
+#define MODULE_INI_DONE_INT_MASK_INC     0x4
+#define MODULE_INI_DONE_INT_MASK_TYPE    REG_TYPE_RW
+#define MODULE_INI_DONE_INT_MASK_DEFAULT 0x1ff
+	/*[field] L3_INI_DONE_INT_MASK*/
+	#define MODULE_INI_DONE_INT_MASK_L3_INI_DONE_INT_MASK
+	#define MODULE_INI_DONE_INT_MASK_L3_INI_DONE_INT_MASK_OFFSET  0
+	#define MODULE_INI_DONE_INT_MASK_L3_INI_DONE_INT_MASK_LEN     1
+	#define MODULE_INI_DONE_INT_MASK_L3_INI_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] ACL_INI_DONE_INT_MASK*/
+	#define MODULE_INI_DONE_INT_MASK_ACL_INI_DONE_INT_MASK
+	#define MODULE_INI_DONE_INT_MASK_ACL_INI_DONE_INT_MASK_OFFSET  1
+	#define MODULE_INI_DONE_INT_MASK_ACL_INI_DONE_INT_MASK_LEN     1
+	#define MODULE_INI_DONE_INT_MASK_ACL_INI_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] L2_INI_DONE_INT_MASK*/
+	#define MODULE_INI_DONE_INT_MASK_L2_INI_DONE_INT_MASK
+	#define MODULE_INI_DONE_INT_MASK_L2_INI_DONE_INT_MASK_OFFSET  2
+	#define MODULE_INI_DONE_INT_MASK_L2_INI_DONE_INT_MASK_LEN     1
+	#define MODULE_INI_DONE_INT_MASK_L2_INI_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] ING_RATE_INI_DONE_INT_MASK*/
+	#define MODULE_INI_DONE_INT_MASK_ING_RATE_INI_DONE_INT_MASK
+	#define MODULE_INI_DONE_INT_MASK_ING_RATE_INI_DONE_INT_MASK_OFFSET  3
+	#define MODULE_INI_DONE_INT_MASK_ING_RATE_INI_DONE_INT_MASK_LEN     1
+	#define MODULE_INI_DONE_INT_MASK_ING_RATE_INI_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] BM_INI_DONE_INT_MASK*/
+	#define MODULE_INI_DONE_INT_MASK_BM_INI_DONE_INT_MASK
+	#define MODULE_INI_DONE_INT_MASK_BM_INI_DONE_INT_MASK_OFFSET  4
+	#define MODULE_INI_DONE_INT_MASK_BM_INI_DONE_INT_MASK_LEN     1
+	#define MODULE_INI_DONE_INT_MASK_BM_INI_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] TM_INI_DONE_INT_MASK*/
+	#define MODULE_INI_DONE_INT_MASK_TM_INI_DONE_INT_MASK
+	#define MODULE_INI_DONE_INT_MASK_TM_INI_DONE_INT_MASK_OFFSET  5
+	#define MODULE_INI_DONE_INT_MASK_TM_INI_DONE_INT_MASK_LEN     1
+	#define MODULE_INI_DONE_INT_MASK_TM_INI_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] QM_INI_DONE_INT_MASK*/
+	#define MODULE_INI_DONE_INT_MASK_QM_INI_DONE_INT_MASK
+	#define MODULE_INI_DONE_INT_MASK_QM_INI_DONE_INT_MASK_OFFSET  6
+	#define MODULE_INI_DONE_INT_MASK_QM_INI_DONE_INT_MASK_LEN     1
+	#define MODULE_INI_DONE_INT_MASK_QM_INI_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] IV_INI_DONE_INT_MASK*/
+	#define MODULE_INI_DONE_INT_MASK_IV_INI_DONE_INT_MASK
+	#define MODULE_INI_DONE_INT_MASK_IV_INI_DONE_INT_MASK_OFFSET  7
+	#define MODULE_INI_DONE_INT_MASK_IV_INI_DONE_INT_MASK_LEN     1
+	#define MODULE_INI_DONE_INT_MASK_IV_INI_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] PTX_INI_DONE_INT_MASK*/
+	#define MODULE_INI_DONE_INT_MASK_PTX_INI_DONE_INT_MASK
+	#define MODULE_INI_DONE_INT_MASK_PTX_INI_DONE_INT_MASK_OFFSET  8
+	#define MODULE_INI_DONE_INT_MASK_PTX_INI_DONE_INT_MASK_LEN     1
+	#define MODULE_INI_DONE_INT_MASK_PTX_INI_DONE_INT_MASK_DEFAULT 0x1
+
+struct module_ini_done_int_mask {
+	a_uint32_t  l3_ini_done_int_mask:1;
+	a_uint32_t  acl_ini_done_int_mask:1;
+	a_uint32_t  l2_ini_done_int_mask:1;
+	a_uint32_t  ing_rate_ini_done_int_mask:1;
+	a_uint32_t  bm_ini_done_int_mask:1;
+	a_uint32_t  tm_ini_done_int_mask:1;
+	a_uint32_t  qm_ini_done_int_mask:1;
+	a_uint32_t  iv_ini_done_int_mask:1;
+	a_uint32_t  ptx_ini_done_int_mask:1;
+	a_uint32_t  _reserved0:23;
+};
+
+union module_ini_done_int_mask_u {
+	a_uint32_t val;
+	struct module_ini_done_int_mask bf;
+};
+
+/*[register] MODULE_CPU_DONE_INT_MASK*/
+#define MODULE_CPU_DONE_INT_MASK
+#define MODULE_CPU_DONE_INT_MASK_ADDRESS 0x34
+#define MODULE_CPU_DONE_INT_MASK_NUM     1
+#define MODULE_CPU_DONE_INT_MASK_INC     0x4
+#define MODULE_CPU_DONE_INT_MASK_TYPE    REG_TYPE_RW
+#define MODULE_CPU_DONE_INT_MASK_DEFAULT 0xff1f
+	/*[field] QM_CPU_OP_DONE_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_QM_CPU_OP_DONE_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_QM_CPU_OP_DONE_INT_MASK_OFFSET  0
+	#define MODULE_CPU_DONE_INT_MASK_QM_CPU_OP_DONE_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_QM_CPU_OP_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] L2_FDB_RD_RESULT_VLD_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_RD_RESULT_VLD_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_RD_RESULT_VLD_INT_MASK_OFFSET  1
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_RD_RESULT_VLD_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_RD_RESULT_VLD_INT_MASK_DEFAULT 0x1
+	/*[field] L2_FDB_WR_RESULT_VLD_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_WR_RESULT_VLD_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_WR_RESULT_VLD_INT_MASK_OFFSET  2
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_WR_RESULT_VLD_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_WR_RESULT_VLD_INT_MASK_DEFAULT 0x1
+	/*[field] L2_FDB_RD_CMD_OVERFLOW_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_RD_CMD_OVERFLOW_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_RD_CMD_OVERFLOW_INT_MASK_OFFSET  3
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_RD_CMD_OVERFLOW_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_RD_CMD_OVERFLOW_INT_MASK_DEFAULT 0x1
+	/*[field] L2_FDB_WR_CMD_OVERFLOW_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_WR_CMD_OVERFLOW_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_WR_CMD_OVERFLOW_INT_MASK_OFFSET  4
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_WR_CMD_OVERFLOW_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L2_FDB_WR_CMD_OVERFLOW_INT_MASK_DEFAULT 0x1
+	/*[field] L3_HOST_WR_CMD_OVERFLOW_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_WR_CMD_OVERFLOW_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_WR_CMD_OVERFLOW_INT_MASK_OFFSET  8
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_WR_CMD_OVERFLOW_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_WR_CMD_OVERFLOW_INT_MASK_DEFAULT 0x1
+	/*[field] L3_HOST_RD_CMD_OVERFLOW_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_RD_CMD_OVERFLOW_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_RD_CMD_OVERFLOW_INT_MASK_OFFSET  9
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_RD_CMD_OVERFLOW_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_RD_CMD_OVERFLOW_INT_MASK_DEFAULT 0x1
+	/*[field] L3_HOST_WR_RESULT_VLD_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_WR_RESULT_VLD_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_WR_RESULT_VLD_INT_MASK_OFFSET  10
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_WR_RESULT_VLD_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_WR_RESULT_VLD_INT_MASK_DEFAULT 0x1
+	/*[field] L3_HOST_RD_RESULT_VLD_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_RD_RESULT_VLD_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_RD_RESULT_VLD_INT_MASK_OFFSET  11
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_RD_RESULT_VLD_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L3_HOST_RD_RESULT_VLD_INT_MASK_DEFAULT 0x1
+	/*[field] L3_FLOW_WR_CMD_OVERFLOW_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_WR_CMD_OVERFLOW_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_WR_CMD_OVERFLOW_INT_MASK_OFFSET  12
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_WR_CMD_OVERFLOW_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_WR_CMD_OVERFLOW_INT_MASK_DEFAULT 0x1
+	/*[field] L3_FLOW_RD_CMD_OVERFLOW_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_RD_CMD_OVERFLOW_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_RD_CMD_OVERFLOW_INT_MASK_OFFSET  13
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_RD_CMD_OVERFLOW_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_RD_CMD_OVERFLOW_INT_MASK_DEFAULT 0x1
+	/*[field] L3_FLOW_WR_RESULT_VLD_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_WR_RESULT_VLD_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_WR_RESULT_VLD_INT_MASK_OFFSET  14
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_WR_RESULT_VLD_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_WR_RESULT_VLD_INT_MASK_DEFAULT 0x1
+	/*[field] L3_FLOW_RD_RESULT_VLD_INT_MASK*/
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_RD_RESULT_VLD_INT_MASK
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_RD_RESULT_VLD_INT_MASK_OFFSET  15
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_RD_RESULT_VLD_INT_MASK_LEN     1
+	#define MODULE_CPU_DONE_INT_MASK_L3_FLOW_RD_RESULT_VLD_INT_MASK_DEFAULT 0x1
+
+struct module_cpu_done_int_mask {
+	a_uint32_t  qm_cpu_op_done_int_mask:1;
+	a_uint32_t  l2_fdb_rd_result_vld_int_mask:1;
+	a_uint32_t  l2_fdb_wr_result_vld_int_mask:1;
+	a_uint32_t  l2_fdb_rd_cmd_overflow_int_mask:1;
+	a_uint32_t  l2_fdb_wr_cmd_overflow_int_mask:1;
+	a_uint32_t  _reserved0:3;
+	a_uint32_t  l3_host_wr_cmd_overflow_int_mask:1;
+	a_uint32_t  l3_host_rd_cmd_overflow_int_mask:1;
+	a_uint32_t  l3_host_wr_result_vld_int_mask:1;
+	a_uint32_t  l3_host_rd_result_vld_int_mask:1;
+	a_uint32_t  l3_flow_wr_cmd_overflow_int_mask:1;
+	a_uint32_t  l3_flow_rd_cmd_overflow_int_mask:1;
+	a_uint32_t  l3_flow_wr_result_vld_int_mask:1;
+	a_uint32_t  l3_flow_rd_result_vld_int_mask:1;
+	a_uint32_t  _reserved1:16;
+};
+
+union module_cpu_done_int_mask_u {
+	a_uint32_t val;
+	struct module_cpu_done_int_mask bf;
+};
+
+/*[register] PORT_LINK_INT_MASK*/
+#define PORT_LINK_INT_MASK
+#define PORT_LINK_INT_MASK_ADDRESS 0x38
+#define PORT_LINK_INT_MASK_NUM     1
+#define PORT_LINK_INT_MASK_INC     0x4
+#define PORT_LINK_INT_MASK_TYPE    REG_TYPE_RW
+#define PORT_LINK_INT_MASK_DEFAULT 0x37f
+	/*[field] PORT1_LINK_CHG_INT_MASK*/
+	#define PORT_LINK_INT_MASK_PORT1_LINK_CHG_INT_MASK
+	#define PORT_LINK_INT_MASK_PORT1_LINK_CHG_INT_MASK_OFFSET  0
+	#define PORT_LINK_INT_MASK_PORT1_LINK_CHG_INT_MASK_LEN     1
+	#define PORT_LINK_INT_MASK_PORT1_LINK_CHG_INT_MASK_DEFAULT 0x1
+	/*[field] PORT2_LINK_CHG_INT_MASK*/
+	#define PORT_LINK_INT_MASK_PORT2_LINK_CHG_INT_MASK
+	#define PORT_LINK_INT_MASK_PORT2_LINK_CHG_INT_MASK_OFFSET  1
+	#define PORT_LINK_INT_MASK_PORT2_LINK_CHG_INT_MASK_LEN     1
+	#define PORT_LINK_INT_MASK_PORT2_LINK_CHG_INT_MASK_DEFAULT 0x1
+	/*[field] PORT3_LINK_CHG_INT_MASK*/
+	#define PORT_LINK_INT_MASK_PORT3_LINK_CHG_INT_MASK
+	#define PORT_LINK_INT_MASK_PORT3_LINK_CHG_INT_MASK_OFFSET  2
+	#define PORT_LINK_INT_MASK_PORT3_LINK_CHG_INT_MASK_LEN     1
+	#define PORT_LINK_INT_MASK_PORT3_LINK_CHG_INT_MASK_DEFAULT 0x1
+	/*[field] PORT4_LINK_CHG_INT_MASK*/
+	#define PORT_LINK_INT_MASK_PORT4_LINK_CHG_INT_MASK
+	#define PORT_LINK_INT_MASK_PORT4_LINK_CHG_INT_MASK_OFFSET  3
+	#define PORT_LINK_INT_MASK_PORT4_LINK_CHG_INT_MASK_LEN     1
+	#define PORT_LINK_INT_MASK_PORT4_LINK_CHG_INT_MASK_DEFAULT 0x1
+	/*[field] PORT5_0_LINK_CHG_INT_MASK*/
+	#define PORT_LINK_INT_MASK_PORT5_0_LINK_CHG_INT_MASK
+	#define PORT_LINK_INT_MASK_PORT5_0_LINK_CHG_INT_MASK_OFFSET  4
+	#define PORT_LINK_INT_MASK_PORT5_0_LINK_CHG_INT_MASK_LEN     1
+	#define PORT_LINK_INT_MASK_PORT5_0_LINK_CHG_INT_MASK_DEFAULT 0x1
+	/*[field] PORT5_1_LINK_CHG_INT_MASK*/
+	#define PORT_LINK_INT_MASK_PORT5_1_LINK_CHG_INT_MASK
+	#define PORT_LINK_INT_MASK_PORT5_1_LINK_CHG_INT_MASK_OFFSET  5
+	#define PORT_LINK_INT_MASK_PORT5_1_LINK_CHG_INT_MASK_LEN     1
+	#define PORT_LINK_INT_MASK_PORT5_1_LINK_CHG_INT_MASK_DEFAULT 0x1
+	/*[field] PORT6_LINK_CHG_INT_MASK*/
+	#define PORT_LINK_INT_MASK_PORT6_LINK_CHG_INT_MASK
+	#define PORT_LINK_INT_MASK_PORT6_LINK_CHG_INT_MASK_OFFSET  6
+	#define PORT_LINK_INT_MASK_PORT6_LINK_CHG_INT_MASK_LEN     1
+	#define PORT_LINK_INT_MASK_PORT6_LINK_CHG_INT_MASK_DEFAULT 0x1
+	/*[field] XGMAC0_AN_DONE_INT_MASK*/
+	#define PORT_LINK_INT_MASK_XGMAC0_AN_DONE_INT_MASK
+	#define PORT_LINK_INT_MASK_XGMAC0_AN_DONE_INT_MASK_OFFSET  8
+	#define PORT_LINK_INT_MASK_XGMAC0_AN_DONE_INT_MASK_LEN     1
+	#define PORT_LINK_INT_MASK_XGMAC0_AN_DONE_INT_MASK_DEFAULT 0x1
+	/*[field] XGMAC1_AN_DONE_INT_MASK*/
+	#define PORT_LINK_INT_MASK_XGMAC1_AN_DONE_INT_MASK
+	#define PORT_LINK_INT_MASK_XGMAC1_AN_DONE_INT_MASK_OFFSET  9
+	#define PORT_LINK_INT_MASK_XGMAC1_AN_DONE_INT_MASK_LEN     1
+	#define PORT_LINK_INT_MASK_XGMAC1_AN_DONE_INT_MASK_DEFAULT 0x1
+
+struct port_link_int_mask {
+	a_uint32_t  port1_link_chg_int_mask:1;
+	a_uint32_t  port2_link_chg_int_mask:1;
+	a_uint32_t  port3_link_chg_int_mask:1;
+	a_uint32_t  port4_link_chg_int_mask:1;
+	a_uint32_t  port5_0_link_chg_int_mask:1;
+	a_uint32_t  port5_1_link_chg_int_mask:1;
+	a_uint32_t  port6_link_chg_int_mask:1;
+	a_uint32_t  _reserved0:1;
+	a_uint32_t  xgmac0_an_done_int_mask:1;
+	a_uint32_t  xgmac1_an_done_int_mask:1;
+	a_uint32_t  _reserved1:22;
+};
+
+union port_link_int_mask_u {
+	a_uint32_t val;
+	struct port_link_int_mask bf;
+};
+
+/*[register] PORT_PHY_STATUS_0*/
+#define PORT_PHY_STATUS_0
+#define PORT_PHY_STATUS_0_ADDRESS 0x40
+#define PORT_PHY_STATUS_0_NUM     1
+#define PORT_PHY_STATUS_0_INC     0x4
+#define PORT_PHY_STATUS_0_TYPE    REG_TYPE_RO
+#define PORT_PHY_STATUS_0_DEFAULT 0x0
+	/*[field] PORT1_PHY_STATUS*/
+	#define PORT_PHY_STATUS_0_PORT1_PHY_STATUS
+	#define PORT_PHY_STATUS_0_PORT1_PHY_STATUS_OFFSET  0
+	#define PORT_PHY_STATUS_0_PORT1_PHY_STATUS_LEN     8
+	#define PORT_PHY_STATUS_0_PORT1_PHY_STATUS_DEFAULT 0x0
+	/*[field] PORT2_PHY_STATUS*/
+	#define PORT_PHY_STATUS_0_PORT2_PHY_STATUS
+	#define PORT_PHY_STATUS_0_PORT2_PHY_STATUS_OFFSET  8
+	#define PORT_PHY_STATUS_0_PORT2_PHY_STATUS_LEN     8
+	#define PORT_PHY_STATUS_0_PORT2_PHY_STATUS_DEFAULT 0x0
+	/*[field] PORT3_PHY_STATUS*/
+	#define PORT_PHY_STATUS_0_PORT3_PHY_STATUS
+	#define PORT_PHY_STATUS_0_PORT3_PHY_STATUS_OFFSET  16
+	#define PORT_PHY_STATUS_0_PORT3_PHY_STATUS_LEN     8
+	#define PORT_PHY_STATUS_0_PORT3_PHY_STATUS_DEFAULT 0x0
+	/*[field] PORT4_PHY_STATUS*/
+	#define PORT_PHY_STATUS_0_PORT4_PHY_STATUS
+	#define PORT_PHY_STATUS_0_PORT4_PHY_STATUS_OFFSET  24
+	#define PORT_PHY_STATUS_0_PORT4_PHY_STATUS_LEN     8
+	#define PORT_PHY_STATUS_0_PORT4_PHY_STATUS_DEFAULT 0x0
+
+struct port_phy_status_0 {
+	a_uint32_t  port1_phy_status:8;
+	a_uint32_t  port2_phy_status:8;
+	a_uint32_t  port3_phy_status:8;
+	a_uint32_t  port4_phy_status:8;
+};
+
+union port_phy_status_0_u {
+	a_uint32_t val;
+	struct port_phy_status_0 bf;
+};
+
+/*[register] PORT_PHY_STATUS_1*/
+#define PORT_PHY_STATUS_1
+#define PORT_PHY_STATUS_1_ADDRESS 0x44
+#define PORT_PHY_STATUS_1_NUM     1
+#define PORT_PHY_STATUS_1_INC     0x4
+#define PORT_PHY_STATUS_1_TYPE    REG_TYPE_RO
+#define PORT_PHY_STATUS_1_DEFAULT 0x0
+	/*[field] PORT5_0_PHY_STATUS*/
+	#define PORT_PHY_STATUS_1_PORT5_0_PHY_STATUS
+	#define PORT_PHY_STATUS_1_PORT5_0_PHY_STATUS_OFFSET  0
+	#define PORT_PHY_STATUS_1_PORT5_0_PHY_STATUS_LEN     8
+	#define PORT_PHY_STATUS_1_PORT5_0_PHY_STATUS_DEFAULT 0x0
+	/*[field] PORT5_1_PHY_STATUS*/
+	#define PORT_PHY_STATUS_1_PORT5_1_PHY_STATUS
+	#define PORT_PHY_STATUS_1_PORT5_1_PHY_STATUS_OFFSET  8
+	#define PORT_PHY_STATUS_1_PORT5_1_PHY_STATUS_LEN     8
+	#define PORT_PHY_STATUS_1_PORT5_1_PHY_STATUS_DEFAULT 0x0
+	/*[field] PORT6_PHY_STATUS*/
+	#define PORT_PHY_STATUS_1_PORT6_PHY_STATUS
+	#define PORT_PHY_STATUS_1_PORT6_PHY_STATUS_OFFSET  16
+	#define PORT_PHY_STATUS_1_PORT6_PHY_STATUS_LEN     8
+	#define PORT_PHY_STATUS_1_PORT6_PHY_STATUS_DEFAULT 0x0
+
+struct port_phy_status_1 {
+	a_uint32_t  port5_0_phy_status:8;
+	a_uint32_t  port5_1_phy_status:8;
+	a_uint32_t  port6_phy_status:8;
+	a_uint32_t  _reserved0:8;
+};
+
+union port_phy_status_1_u {
+	a_uint32_t val;
+	struct port_phy_status_1 bf;
+};
+
+/*[register] PORT1_STATUS*/
+#define PORT1_STATUS
+#define PORT1_STATUS_ADDRESS 0x50
+#define PORT1_STATUS_NUM     1
+#define PORT1_STATUS_INC     0x4
+#define PORT1_STATUS_TYPE    REG_TYPE_RO
+#define PORT1_STATUS_DEFAULT 0x0
+	/*[field] PORT1_STATUS*/
+	#define PORT1_STATUS_PORT1_STATUS
+	#define PORT1_STATUS_PORT1_STATUS_OFFSET  0
+	#define PORT1_STATUS_PORT1_STATUS_LEN     32
+	#define PORT1_STATUS_PORT1_STATUS_DEFAULT 0x0
+
+struct port1_status {
+	a_uint32_t  port1_status:32;
+};
+
+union port1_status_u {
+	a_uint32_t val;
+	struct port1_status bf;
+};
+
+/*[register] PORT2_STATUS*/
+#define PORT2_STATUS
+#define PORT2_STATUS_ADDRESS 0x54
+#define PORT2_STATUS_NUM     1
+#define PORT2_STATUS_INC     0x4
+#define PORT2_STATUS_TYPE    REG_TYPE_RO
+#define PORT2_STATUS_DEFAULT 0x0
+	/*[field] PORT2_STATUS*/
+	#define PORT2_STATUS_PORT2_STATUS
+	#define PORT2_STATUS_PORT2_STATUS_OFFSET  0
+	#define PORT2_STATUS_PORT2_STATUS_LEN     32
+	#define PORT2_STATUS_PORT2_STATUS_DEFAULT 0x0
+
+struct port2_status {
+	a_uint32_t  port2_status:32;
+};
+
+union port2_status_u {
+	a_uint32_t val;
+	struct port2_status bf;
+};
+
+/*[register] PORT3_STATUS*/
+#define PORT3_STATUS
+#define PORT3_STATUS_ADDRESS 0x58
+#define PORT3_STATUS_NUM     1
+#define PORT3_STATUS_INC     0x4
+#define PORT3_STATUS_TYPE    REG_TYPE_RO
+#define PORT3_STATUS_DEFAULT 0x0
+	/*[field] PORT3_STATUS*/
+	#define PORT3_STATUS_PORT3_STATUS
+	#define PORT3_STATUS_PORT3_STATUS_OFFSET  0
+	#define PORT3_STATUS_PORT3_STATUS_LEN     32
+	#define PORT3_STATUS_PORT3_STATUS_DEFAULT 0x0
+
+struct port3_status {
+	a_uint32_t  port3_status:32;
+};
+
+union port3_status_u {
+	a_uint32_t val;
+	struct port3_status bf;
+};
+
+/*[register] PORT4_STATUS*/
+#define PORT4_STATUS
+#define PORT4_STATUS_ADDRESS 0x5c
+#define PORT4_STATUS_NUM     1
+#define PORT4_STATUS_INC     0x4
+#define PORT4_STATUS_TYPE    REG_TYPE_RO
+#define PORT4_STATUS_DEFAULT 0x0
+	/*[field] PORT4_STATUS*/
+	#define PORT4_STATUS_PORT4_STATUS
+	#define PORT4_STATUS_PORT4_STATUS_OFFSET  0
+	#define PORT4_STATUS_PORT4_STATUS_LEN     32
+	#define PORT4_STATUS_PORT4_STATUS_DEFAULT 0x0
+
+struct port4_status {
+	a_uint32_t  port4_status:32;
+};
+
+union port4_status_u {
+	a_uint32_t val;
+	struct port4_status bf;
+};
+
+/*[register] PORT5_STATUS*/
+#define PORT5_STATUS
+#define PORT5_STATUS_ADDRESS 0x60
+#define PORT5_STATUS_NUM     1
+#define PORT5_STATUS_INC     0x4
+#define PORT5_STATUS_TYPE    REG_TYPE_RO
+#define PORT5_STATUS_DEFAULT 0x0
+	/*[field] PORT5_STATUS*/
+	#define PORT5_STATUS_PORT5_STATUS
+	#define PORT5_STATUS_PORT5_STATUS_OFFSET  0
+	#define PORT5_STATUS_PORT5_STATUS_LEN     8
+	#define PORT5_STATUS_PORT5_STATUS_DEFAULT 0x0
+	/*[field] PORT1_MAC_SPEED*/
+	#define PORT5_STATUS_PORT1_MAC_SPEED
+	#define PORT5_STATUS_PORT1_MAC_SPEED_OFFSET  16
+	#define PORT5_STATUS_PORT1_MAC_SPEED_LEN     2
+	#define PORT5_STATUS_PORT1_MAC_SPEED_DEFAULT 0x0
+	/*[field] PORT2_MAC_SPEED*/
+	#define PORT5_STATUS_PORT2_MAC_SPEED
+	#define PORT5_STATUS_PORT2_MAC_SPEED_OFFSET  18
+	#define PORT5_STATUS_PORT2_MAC_SPEED_LEN     2
+	#define PORT5_STATUS_PORT2_MAC_SPEED_DEFAULT 0x0
+	/*[field] PORT3_MAC_SPEED*/
+	#define PORT5_STATUS_PORT3_MAC_SPEED
+	#define PORT5_STATUS_PORT3_MAC_SPEED_OFFSET  20
+	#define PORT5_STATUS_PORT3_MAC_SPEED_LEN     2
+	#define PORT5_STATUS_PORT3_MAC_SPEED_DEFAULT 0x0
+	/*[field] PORT4_MAC_SPEED*/
+	#define PORT5_STATUS_PORT4_MAC_SPEED
+	#define PORT5_STATUS_PORT4_MAC_SPEED_OFFSET  22
+	#define PORT5_STATUS_PORT4_MAC_SPEED_LEN     2
+	#define PORT5_STATUS_PORT4_MAC_SPEED_DEFAULT 0x0
+
+struct port5_status {
+	a_uint32_t  port5_status:8;
+	a_uint32_t  _reserved0:8;
+	a_uint32_t  port1_mac_speed:2;
+	a_uint32_t  port2_mac_speed:2;
+	a_uint32_t  port3_mac_speed:2;
+	a_uint32_t  port4_mac_speed:2;
+	a_uint32_t  _reserved1:8;
+};
+
+union port5_status_u {
+	a_uint32_t val;
+	struct port5_status bf;
+};
+
+/*[register] PORT6_STATUS*/
+#define PORT6_STATUS
+#define PORT6_STATUS_ADDRESS 0x64
+#define PORT6_STATUS_NUM     1
+#define PORT6_STATUS_INC     0x4
+#define PORT6_STATUS_TYPE    REG_TYPE_RO
+#define PORT6_STATUS_DEFAULT 0x0
+	/*[field] PORT6_STATUS*/
+	#define PORT6_STATUS_PORT6_STATUS
+	#define PORT6_STATUS_PORT6_STATUS_OFFSET  0
+	#define PORT6_STATUS_PORT6_STATUS_LEN     8
+	#define PORT6_STATUS_PORT6_STATUS_DEFAULT 0x0
+
+struct port6_status {
+	a_uint32_t  port6_status:8;
+	a_uint32_t  _reserved0:24;
+};
+
+union port6_status_u {
+	a_uint32_t val;
+	struct port6_status bf;
+};
+
+/*[register] RESERVED_REGS_0*/
+#define RESERVED_REGS_0
+#define RESERVED_REGS_0_ADDRESS 0x70
+#define RESERVED_REGS_0_NUM     1
+#define RESERVED_REGS_0_INC     0x4
+#define RESERVED_REGS_0_TYPE    REG_TYPE_RW
+#define RESERVED_REGS_0_DEFAULT 0x0
+	/*[field] SPARE_REGS_0*/
+	#define RESERVED_REGS_0_SPARE_REGS_0
+	#define RESERVED_REGS_0_SPARE_REGS_0_OFFSET  0
+	#define RESERVED_REGS_0_SPARE_REGS_0_LEN     32
+	#define RESERVED_REGS_0_SPARE_REGS_0_DEFAULT 0x0
+
+struct reserved_regs_0 {
+	a_uint32_t  spare_regs_0:32;
+};
+
+union reserved_regs_0_u {
+	a_uint32_t val;
+	struct reserved_regs_0 bf;
+};
+
+/*[register] RESERVED_REGS_1*/
+#define RESERVED_REGS_1
+#define RESERVED_REGS_1_ADDRESS 0x74
+#define RESERVED_REGS_1_NUM     1
+#define RESERVED_REGS_1_INC     0x4
+#define RESERVED_REGS_1_TYPE    REG_TYPE_RW
+#define RESERVED_REGS_1_DEFAULT 0x0
+	/*[field] SPARE_REGS_1*/
+	#define RESERVED_REGS_1_SPARE_REGS_1
+	#define RESERVED_REGS_1_SPARE_REGS_1_OFFSET  0
+	#define RESERVED_REGS_1_SPARE_REGS_1_LEN     32
+	#define RESERVED_REGS_1_SPARE_REGS_1_DEFAULT 0x0
+
+struct reserved_regs_1 {
+	a_uint32_t  spare_regs_1:32;
+};
+
+union reserved_regs_1_u {
+	a_uint32_t val;
+	struct reserved_regs_1 bf;
+};
+
+/*[register] RESERVED_REGS_2*/
+#define RESERVED_REGS_2
+#define RESERVED_REGS_2_ADDRESS 0x78
+#define RESERVED_REGS_2_NUM     1
+#define RESERVED_REGS_2_INC     0x4
+#define RESERVED_REGS_2_TYPE    REG_TYPE_RW
+#define RESERVED_REGS_2_DEFAULT 0x0
+	/*[field] SPARE_REGS_2*/
+	#define RESERVED_REGS_2_SPARE_REGS_2
+	#define RESERVED_REGS_2_SPARE_REGS_2_OFFSET  0
+	#define RESERVED_REGS_2_SPARE_REGS_2_LEN     32
+	#define RESERVED_REGS_2_SPARE_REGS_2_DEFAULT 0x0
+
+struct reserved_regs_2 {
+	a_uint32_t  spare_regs_2:32;
+};
+
+union reserved_regs_2_u {
+	a_uint32_t val;
+	struct reserved_regs_2 bf;
+};
+
+/*[register] RESERVED_REGS_3*/
+#define RESERVED_REGS_3
+#define RESERVED_REGS_3_ADDRESS 0x7c
+#define RESERVED_REGS_3_NUM     1
+#define RESERVED_REGS_3_INC     0x4
+#define RESERVED_REGS_3_TYPE    REG_TYPE_RW
+#define RESERVED_REGS_3_DEFAULT 0x0
+	/*[field] SPARE_REGS_3*/
+	#define RESERVED_REGS_3_SPARE_REGS_3
+	#define RESERVED_REGS_3_SPARE_REGS_3_OFFSET  0
+	#define RESERVED_REGS_3_SPARE_REGS_3_LEN     32
+	#define RESERVED_REGS_3_SPARE_REGS_3_DEFAULT 0x0
+
+struct reserved_regs_3 {
+	a_uint32_t  spare_regs_3:32;
+};
+
+union reserved_regs_3_u {
+	a_uint32_t val;
+	struct reserved_regs_3 bf;
+};
+
+/*[register] DBG_DATA_SEL*/
+#define DBG_DATA_SEL
+#define DBG_DATA_SEL_ADDRESS 0x80
+#define DBG_DATA_SEL_NUM     1
+#define DBG_DATA_SEL_INC     0x4
+#define DBG_DATA_SEL_TYPE    REG_TYPE_RW
+#define DBG_DATA_SEL_DEFAULT 0x0
+	/*[field] DBG_DATA_SEL_DESP*/
+	#define DBG_DATA_SEL_DBG_DATA_SEL_DESP
+	#define DBG_DATA_SEL_DBG_DATA_SEL_DESP_OFFSET  0
+	#define DBG_DATA_SEL_DBG_DATA_SEL_DESP_LEN     5
+	#define DBG_DATA_SEL_DBG_DATA_SEL_DESP_DEFAULT 0x0
+	/*[field] DBG_DATA_SEL_SWITCH*/
+	#define DBG_DATA_SEL_DBG_DATA_SEL_SWITCH
+	#define DBG_DATA_SEL_DBG_DATA_SEL_SWITCH_OFFSET  5
+	#define DBG_DATA_SEL_DBG_DATA_SEL_SWITCH_LEN     1
+	#define DBG_DATA_SEL_DBG_DATA_SEL_SWITCH_DEFAULT 0x0
+
+struct dbg_data_sel {
+	a_uint32_t  dbg_data_sel_desp:5;
+	a_uint32_t  dbg_data_sel_switch:1;
+	a_uint32_t  _reserved0:26;
+};
+
+union dbg_data_sel_u {
+	a_uint32_t val;
+	struct dbg_data_sel bf;
+};
+
+
+
+#endif

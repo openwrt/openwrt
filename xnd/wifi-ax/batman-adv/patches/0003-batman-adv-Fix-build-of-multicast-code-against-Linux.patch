@@ -1,0 +1,36 @@
+From: Sven Eckelmann <sven@narfation.org>
+Date: Fri, 14 May 2021 19:34:35 +0200
+Subject: batman-adv: Fix build of multicast code against Linux < 5.13
+
+Fixes: 007b4c4b031f ("batman-adv: convert ifmcaddr6 to RCU")
+Signed-off-by: Sven Eckelmann <sven@narfation.org>
+
+diff --git a/net/batman-adv/multicast.c b/net/batman-adv/multicast.c
+index 1d63c8cbbfe7b16e360e91bcf3bb77ec7b12893b..ece9fb5dd81bfadbdbe15363dfd8fd257dbe942f 100644
+--- a/net/batman-adv/multicast.c
++++ b/net/batman-adv/multicast.c
+@@ -454,9 +454,14 @@ batadv_mcast_mla_softif_get_ipv6(struct net_device *dev,
+ 		return 0;
+ 	}
+ 
++#if LINUX_VERSION_IS_LESS(5, 13, 0)
++	read_lock_bh(&in6_dev->lock);
++	for (pmc6 = in6_dev->mc_list; pmc6; pmc6 = pmc6->next) {
++#else
+ 	for (pmc6 = rcu_dereference(in6_dev->mc_list);
+ 	     pmc6;
+ 	     pmc6 = rcu_dereference(pmc6->next)) {
++#endif
+ 		if (IPV6_ADDR_MC_SCOPE(&pmc6->mca_addr) <
+ 		    IPV6_ADDR_SCOPE_LINKLOCAL)
+ 			continue;
+@@ -485,6 +490,9 @@ batadv_mcast_mla_softif_get_ipv6(struct net_device *dev,
+ 		hlist_add_head(&new->list, mcast_list);
+ 		ret++;
+ 	}
++#if LINUX_VERSION_IS_LESS(5, 13, 0)
++	read_unlock_bh(&in6_dev->lock);
++#endif
+ 	rcu_read_unlock();
+ 
+ 	return ret;

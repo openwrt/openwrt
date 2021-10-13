@@ -1,0 +1,20 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+USE_PROCD=1
+PROG=/usr/bin/ucode
+
+start_service() {
+	[ -f /etc/ucentral/capabilities.json ] || {
+		mkdir -p /etc/ucentral/
+		ucode -m ubus -E board=/etc/board.json /usr/share/ucentral/capabilities.uc > /etc/ucentral/capabilities.json 
+	}
+
+	/usr/share/ucentral/ucentral.uc /etc/ucentral/ucentral.cfg.0000000001 > /dev/null
+
+	procd_open_instance
+	procd_set_param command "$PROG" -m uci -m fs -i /usr/share/ucentral/firstcontact.uc
+	procd_set_param respawn 1 10 0
+	procd_close_instance
+}

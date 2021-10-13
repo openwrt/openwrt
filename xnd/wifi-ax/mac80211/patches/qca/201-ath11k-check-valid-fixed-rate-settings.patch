@@ -1,0 +1,117 @@
+From 17eca27915e8ae91ee4df1abaa3534c9adf51fb2 Mon Sep 17 00:00:00 2001
+From: Lavanya Suresh <lavaks@codeaurora.org>
+Date: Thu, 6 Aug 2020 00:44:45 +0530
+Subject: [PATCH] ath11k: Validate fixed rate settings in MU MIMO case
+
+Fixed NSS rates are allowed only when MU MIMO is disabled,
+for VHT and HE. In case of MU MIMO enable, valid rates needs
+to be given for all lower NSS.
+
+VHT cap is updated in arvif from beacon data, to have updated
+configs in vdev level structure.
+
+Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 58 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1062,8 +1062,10 @@ static int ath11k_mac_setup_bcn_tmpl(str
+ 	struct ieee80211_mutable_offsets offs = {};
+ 	struct sk_buff *bcn;
+ 	struct ieee80211_mgmt *mgmt;
++	struct ieee80211_vht_cap *vht_cap;
+ 	u8 *ies;
+ 	int ret;
++	const u8 *vht_cap_ie;
+ 
+ 	if (arvif->vdev_type != WMI_VDEV_TYPE_AP)
+ 		return 0;
+@@ -1080,6 +1082,12 @@ static int ath11k_mac_setup_bcn_tmpl(str
+ 	if (cfg80211_find_ie(WLAN_EID_RSN, ies, (skb_tail_pointer(bcn) - ies)))
+ 		arvif->rsnie_present = true;
+ 
++	vht_cap_ie = cfg80211_find_ie(WLAN_EID_VHT_CAPABILITY, ies, (skb_tail_pointer(bcn) - ies));
++	if (vht_cap_ie && vht_cap_ie[1] >= sizeof(*vht_cap)) {
++		vht_cap = (void *)(vht_cap_ie + 2);
++		arvif->vht_cap = vht_cap->vht_cap_info;
++	}
++
+ 	if (cfg80211_find_vendor_ie(WLAN_OUI_MICROSOFT,
+ 				    WLAN_OUI_TYPE_MICROSOFT_WPA,
+ 				    ies, (skb_tail_pointer(bcn) - ies)))
+@@ -6977,6 +6985,53 @@ exit:
+ 	return ret;
+ }
+ 
++static bool
++ath11k_mac_check_fixed_rate_settings_for_mumimo(struct ath11k_vif *arvif, const u16 *vht_mcs_mask, const u16 *he_mcs_mask)
++{
++	struct ath11k *ar = arvif->ar;
++	struct ieee80211_he_cap_elem he_cap_elem = {0};
++	int nss_idx;
++	int he_nss;
++	int vht_nss;
++
++	vht_nss =  ath11k_mac_max_vht_nss(vht_mcs_mask);
++
++	if (vht_nss != 1) {
++               for (nss_idx = vht_nss-1; nss_idx >= 0; nss_idx--) {
++			if (vht_mcs_mask[nss_idx])
++				continue;
++
++			if (arvif->vht_cap & IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE) {
++				ath11k_warn(ar->ab, "vht fixed NSS rate is allowed only when MU MIMO is disabled\n");
++				return false;
++			}
++		}
++	}
++
++	if (!arvif->vif->bss_conf.he_support)
++		return true;
++
++	he_nss =  ath11k_mac_max_he_nss(he_mcs_mask);
++
++	if (he_nss == 1)
++		return true;
++
++	memcpy(&he_cap_elem, &arvif->vif->bss_conf.he_cap_elem, sizeof(he_cap_elem));
++
++	for (nss_idx = he_nss-1; nss_idx >= 0; nss_idx--) {
++		if (he_mcs_mask[nss_idx])
++			continue;
++
++		if ((he_cap_elem.phy_cap_info[HECAP_PHYDWORD_2] & IEEE80211_HE_PHY_CAP2_UL_MU_FULL_MU_MIMO) ||
++		    (he_cap_elem.phy_cap_info[HECAP_PHYDWORD_4] & IEEE80211_HE_PHY_CAP4_MU_BEAMFORMER)) {
++			ath11k_warn(ar->ab, "he fixed NSS rate is allowed only when MU MIMO is disabled\n");
++			return false;
++		}
++	}
++
++	return true;
++}
++
+ static int
+ ath11k_mac_op_set_bitrate_mask(struct ieee80211_hw *hw,
+ 			       struct ieee80211_vif *vif,
+@@ -7047,6 +7102,9 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 	} else {
+ 		rate = WMI_FIXED_RATE_NONE;
+ 
++		if(!ath11k_mac_check_fixed_rate_settings_for_mumimo(arvif, vht_mcs_mask, he_mcs_mask))
++                       return -EINVAL;
++
+ 		if (!ath11k_mac_validate_vht_he_fixed_rate_settings(ar, band, mask))
+ 			ath11k_warn(ar->ab,
+ 				    "could not update fixed rate settings to all peers due to mcs/nss incompaitiblity\n");
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -257,6 +257,7 @@ struct ath11k_vif {
+ 	int txpower;
+ 	bool rsnie_present;
+ 	bool wpaie_present;
++	u32 vht_cap;
+ 	struct ieee80211_chanctx_conf chanctx;
+ 	struct dentry *debugfs_twt;
+ 	struct ath11k_mgmt_frame_stats mgmt_stats;

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+[ "${INTERFACE:0:4}" == "wlan" ] || exit 0
+
+[ "$ACTION" == remove ] && {
+	ratelimit deliface $INTERFACE
+	exit 0
+}
+
+[ "$ACTION" == add ] && {
+	ratelimit waitiface $INTERFACE &
+	exit 0
+}

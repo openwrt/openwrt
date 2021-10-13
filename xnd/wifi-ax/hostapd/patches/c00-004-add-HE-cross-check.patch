@@ -1,0 +1,111 @@
+From abf4cf45aa1decf409f22a0ce8202a756a05ab43 Mon Sep 17 00:00:00 2001
+From: Miles Hu <milehu@codeaurora.org>
+Date: Sun, 9 Jun 2019 17:44:09 -0700
+Subject: [PATCH] hostapd: add HE cross check
+
+Cross check between firmware and hostapd config capabilities.
+
+Signed-off-by: Miles Hu <milehu@codeaurora.org>
+---
+ src/ap/hw_features.c         | 53 ++++++++++++++++++++++++++++++++++++++++++++
+ src/common/ieee802_11_defs.h | 12 +++++++++-
+ 2 files changed, 64 insertions(+), 1 deletion(-)
+
+Index: hostapd-2021-02-08/src/ap/hw_features.c
+===================================================================
+--- hostapd-2021-02-08.orig/src/ap/hw_features.c
++++ hostapd-2021-02-08/src/ap/hw_features.c
+@@ -660,8 +660,63 @@ static int ieee80211ac_supported_vht_cap
+ 
+ 
+ #ifdef CONFIG_IEEE80211AX
++static int _ieee80211he_cap_check(u8 *hw, u32 offset, u8 bits)
++{
++	if (bits & hw[offset])
++		return 1;
++
++	return 0;
++}
++
+ static int ieee80211ax_supported_he_capab(struct hostapd_iface *iface)
+ {
++	struct hostapd_hw_modes *mode = iface->current_mode;
++	struct he_capabilities *hw = &mode->he_capab[IEEE80211_MODE_AP];
++	struct hostapd_config *conf = iface->conf;
++
++#define HE_CAP_CHECK(hw_cap, cap, bytes, conf) \
++	do { \
++		if (conf && !_ieee80211he_cap_check(hw_cap, bytes, cap)) { \
++			wpa_printf(MSG_ERROR, "Driver does not support configured" \
++				     " HE capability [%s]", #cap); \
++			return 0; \
++		} \
++	} while (0)
++
++#define HE_CAP_CHECK2(hw_cap, cap, bytes, cap1, bytes1, conf) \
++	do { \
++		if (conf && !(_ieee80211he_cap_check(hw_cap, bytes, cap) || \
++		     _ieee80211he_cap_check(hw_cap, bytes1, cap1))) { \
++			wpa_printf(MSG_ERROR, "Driver does not support configured HE" \
++				   " capability [%s-%s]", #cap, #cap1); \
++			return 0; \
++		} \
++	} while (0)
++
++	HE_CAP_CHECK(hw->phy_cap, HE_PHYCAP_SU_BEAMFORMER_CAPAB,
++		     HE_PHYCAP_SU_BEAMFORMER_CAPAB_IDX,
++		     conf->he_phy_capab.he_su_beamformer);
++	HE_CAP_CHECK(hw->phy_cap, HE_PHYCAP_SU_BEAMFORMEE_CAPAB,
++		     HE_PHYCAP_SU_BEAMFORMEE_CAPAB_IDX,
++		     conf->he_phy_capab.he_su_beamformee);
++	HE_CAP_CHECK(hw->phy_cap, HE_PHYCAP_MU_BEAMFORMER_CAPAB,
++		     HE_PHYCAP_MU_BEAMFORMER_CAPAB_IDX,
++		     conf->he_phy_capab.he_mu_beamformer);
++	HE_CAP_CHECK(hw->phy_cap, HE_PHYCAP_SPR_SR_CAPB,
++		     HE_PHYCAP_SPR_SR_CAPB_IDX,
++		     (!(conf->spr.sr_control & SPATIAL_REUSE_SRP_DISALLOWED) &&
++		      (conf->spr.sr_control &
++		       (SPATIAL_REUSE_NON_SRG_OFFSET_PRESENT |
++			SPATIAL_REUSE_SRG_INFORMATION_PRESENT))));
++
++	HE_CAP_CHECK2(hw->phy_cap, HE_PHYCAP_UL_MUMIMO_CAPB,
++		      HE_PHYCAP_UL_MUMIMO_CAPB_IDX, HE_PHYCAP_UL_MUOFDMA_CAPB,
++		      HE_PHYCAP_UL_MUOFDMA_CAPB_IDX, conf->he_mu_edca.he_qos_info);
++
++	HE_CAP_CHECK2(hw->mac_cap, HE_MACCAP_TWT_REQUESTER, HE_MACCAP_TWT_REQUESTER_IDX,
++		      HE_MACCAP_TWT_RESPONDER, HE_MACCAP_TWT_RESPONDER_IDX,
++		      conf->he_op.he_twt_required);
++
+ 	return 1;
+ }
+ #endif /* CONFIG_IEEE80211AX */
+Index: hostapd-2021-02-08/src/common/ieee802_11_defs.h
+===================================================================
+--- hostapd-2021-02-08.orig/src/common/ieee802_11_defs.h
++++ hostapd-2021-02-08/src/common/ieee802_11_defs.h
+@@ -2233,7 +2233,10 @@ struct ieee80211_spatial_reuse {
+ 
+ /* HE Capabilities Information defines */
+ 
+-#define HE_MACCAP_TWT_RESPONDER			((u8) BIT(2))
++#define HE_MACCAP_TWT_REQUESTER_IDX     0
++#define HE_MACCAP_TWT_REQUESTER         ((u8) BIT(1))
++#define HE_MACCAP_TWT_RESPONDER_IDX     0
++#define HE_MACCAP_TWT_RESPONDER		((u8) BIT(2))
+ 
+ #define HE_PHYCAP_CHANNEL_WIDTH_SET_IDX		0
+ #define HE_PHYCAP_CHANNEL_WIDTH_MASK		((u8) (BIT(1) | BIT(2) | \
+@@ -2250,6 +2253,13 @@ struct ieee80211_spatial_reuse {
+ #define HE_PHYCAP_MU_BEAMFORMER_CAPAB_IDX	4
+ #define HE_PHYCAP_MU_BEAMFORMER_CAPAB		((u8) BIT(1))
+ 
++#define HE_PHYCAP_UL_MUMIMO_CAPB_IDX	2
++#define HE_PHYCAP_UL_MUMIMO_CAPB	((u8) BIT(6))
++#define HE_PHYCAP_UL_MUOFDMA_CAPB_IDX	2
++#define HE_PHYCAP_UL_MUOFDMA_CAPB	((u8) BIT(7))
++#define HE_PHYCAP_SPR_SR_CAPB_IDX	7
++#define HE_PHYCAP_SPR_SR_CAPB		((u8) BIT(0))
++
+ #define HE_PHYCAP_PPE_THRESHOLD_PRESENT_IDX	6
+ #define HE_PHYCAP_PPE_THRESHOLD_PRESENT		((u8) BIT(7))
+ 

@@ -1,0 +1,26 @@
+From 21f7c5f3662e87ef971f6e9575ccecea656e4059 Mon Sep 17 00:00:00 2001
+From: Aloka Dixit <alokad@codeaurora.org>
+Date: Thu, 17 Sep 2020 14:17:14 -0700
+Subject: [PATCH] ath11k: Fix extended capability bit for Enhanced Multi BSSID
+ Advertisement
+
+This patch sets the correct bit 83 in extended capabilities element for
+EMA (Enhanced Multi BSSID Advertisement) support which is incorrectly
+set as bit 91.
+
+Signed-off-by: Aloka Dixit <alokad@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8013,7 +8013,7 @@ static const u8 ath11k_if_types_ext_capa
+ 	[2] = WLAN_EXT_CAPA3_MULTI_BSSID_SUPPORT,
+ 	[7] = WLAN_EXT_CAPA8_OPMODE_NOTIF,
+ 	[9] = WLAN_EXT_CAPA10_TWT_RESPONDER_SUPPORT,
+-	[11] = WLAN_EXT_CAPA11_EMA_SUPPORT,
++	[10] = WLAN_EXT_CAPA11_EMA_SUPPORT,
+ };
+ 
+ static const struct wiphy_iftype_ext_capab ath11k_iftypes_ext_capa[] = {

@@ -1,0 +1,97 @@
+#!/bin/sh
+
+# This UCI-Defaults script will split the batadv proto network interfaces
+# in batadv_hardif and batadv proto. The configuration options from
+# /etc/config/batman-adv will be moved to the latter.
+
+. /lib/functions.sh
+
+proto_batadv_to_batadv_hardif() {
+    local section="$1"
+    local proto
+    local mesh
+    local routing_algo
+
+    config_get proto "${section}" proto
+    config_get mesh "${section}" mesh
+    config_get routing_algo "${section}" routing_algo
+
+    if [ -z "$mesh" -o "${proto}" != "batadv" ]; then
+        continue
+    fi
+
+    uci set network."${section}".proto="batadv_hardif"
+    uci rename network."${section}".mesh="master"
+    uci delete network."${section}".routing_algo
+
+    # create new section or adjust existing one
+    uci set network."${mesh}"=interface
+    uci set network."${mesh}".proto=batadv
+    [ -n "${routing_algo}" ]  && uci set network."${mesh}".routing_algo="${routing_algo}"
+}
+
+mv_batadv_config_section() {
+    local section="$1"
+    local aggregated_ogms
+    local ap_isolation
+    local bonding
+    local bridge_loop_avoidance
+    local distributed_arp_table
+    local fragmentation
+    local gw_bandwidth
+    local gw_mode
+    local gw_sel_class
+    local hop_penalty
+    local isolation_mark
+    local log_level
+    local multicast_mode
+    local network_coding
+    local orig_interval
+
+    config_get aggregated_ogms "${section}" aggregated_ogms
+    config_get ap_isolation "${section}" ap_isolation
+    config_get bonding "${section}" bonding
+    config_get bridge_loop_avoidance "${section}" bridge_loop_avoidance
+    config_get distributed_arp_table "${section}" distributed_arp_table
+    config_get fragmentation "${section}" fragmentation
+    config_get gw_bandwidth "${section}" gw_bandwidth
+    config_get gw_mode "${section}" gw_mode
+    config_get gw_sel_class "${section}" gw_sel_class
+    config_get hop_penalty "${section}" hop_penalty
+    config_get isolation_mark "${section}" isolation_mark
+    config_get log_level "${section}" log_level
+    config_get multicast_mode "${section}" multicast_mode
+    config_get network_coding "${section}" network_coding
+    config_get orig_interval "${section}" orig_interval
+
+    # update section in case it exists
+    [ -n "${aggregated_ogms}" ]  && uci set network."${section}".aggregated_ogms="${aggregated_ogms}"
+    [ -n "${ap_isolation}" ]  && uci set network."${section}".ap_isolation="${ap_isolation}"
+    [ -n "${bonding}" ]  && uci set network."${section}".bonding="${bonding}"
+    [ -n "${bridge_loop_avoidance}" ]  && uci set network."${section}".bridge_loop_avoidance="${bridge_loop_avoidance}"
+    [ -n "${distributed_arp_table}" ]  && uci set network."${section}".distributed_arp_table="${distributed_arp_table}"
+    [ -n "${fragmentation}" ]  && uci set network."${section}".fragmentation="${fragmentation}"
+    [ -n "${gw_bandwidth}" ]  && uci set network."${section}".gw_bandwidth="${gw_bandwidth}"
+    [ -n "${gw_mode}" ]  && uci set network."${section}".gw_mode="${gw_mode}"
+    [ -n "${gw_sel_class}" ]  && uci set network."${section}".gw_sel_class="${gw_sel_class}"
+    [ -n "${hop_penalty}" ]  && uci set network."${section}".hop_penalty="${hop_penalty}"
+    [ -n "${isolation_mark}" ]  && uci set network."${section}".isolation_mark="${isolation_mark}"
+    [ -n "${log_level}" ]  && uci set network."${section}".log_level="${log_level}"
+    [ -n "${multicast_mode}" ]  && uci set network."${section}".multicast_mode="${multicast_mode}"
+    [ -n "${network_coding}" ]  && uci set network."${section}".network_coding="${network_coding}"
+    [ -n "${orig_interval}" ]  && uci set network."${section}".orig_interval="${orig_interval}"
+}
+
+if [ -f /etc/config/batman-adv ]; then
+    config_load network
+    config_foreach proto_batadv_to_batadv_hardif 'interface'
+    uci commit network
+
+    config_load batman-adv
+    config_foreach mv_batadv_config_section 'mesh'
+    uci commit network
+
+    rm -f /etc/config/batman-adv
+fi
+
+exit 0

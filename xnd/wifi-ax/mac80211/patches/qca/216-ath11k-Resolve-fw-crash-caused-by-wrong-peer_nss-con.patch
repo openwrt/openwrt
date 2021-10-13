@@ -1,0 +1,54 @@
+From 53edf992fc30f55d76720d220c58663c34bca746 Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Mon, 12 Oct 2020 00:18:50 +0530
+Subject: [PATCH] ath11k: Resolve fw crash caused by wrong peer_nss config
+
+During peer assoc the he peer nss is computed based
+on minimum of sta->rx_nss and max_nss of ap. Because
+of unsupported mcs range, ap's max_nss wrongly calculated
+and configurated to firmware. This cause firmware crash
+when ap assoc with sta which has higher nss compare to
+own(ap) nss.
+
+Ex: AP which has NSS 2x2 assoc with sta 4x4, max_nss
+is calculated as 8 which exceeds ap's capablity.
+
+Also copied HE caps to supported band while hw
+register which is useful for computing nss in mac80211.
+
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1944,11 +1944,7 @@ static void ath11k_peer_assoc_h_he(struc
+ 	for (i = 0, max_nss = 0, he_mcs = 0; i < NL80211_HE_NSS_MAX; i++) {
+ 		he_mcs = __le16_to_cpu(he_tx_mcs) >> (2 * i) & 3;
+ 
+-		/* In case of fixed rates, MCS Range in he_tx_mcs might have
+-		 * unsupported range, with he_mcs_mask set, so check either of them
+-		 * to find nss.
+-		 */
+-		if (he_mcs != IEEE80211_HE_MCS_NOT_SUPPORTED ||
++		if (he_mcs != IEEE80211_HE_MCS_NOT_SUPPORTED &&
+ 		    he_mcs_mask[i])
+ 			max_nss = i + 1;
+ 	}
+@@ -5104,6 +5100,7 @@ static int ath11k_mac_copy_he_cap(struct
+ 	for (i = 0; i < NUM_NL80211_IFTYPES; i++) {
+ 		struct ieee80211_sta_he_cap *he_cap = &data[idx].he_cap;
+ 		struct ath11k_band_cap *band_cap = &cap->band[band];
++		struct ieee80211_supported_band *sband = &ar->mac.sbands[band];
+ 		struct ieee80211_he_cap_elem *he_cap_elem =
+ 				&he_cap->he_cap_elem;
+ 
+@@ -5155,6 +5152,7 @@ static int ath11k_mac_copy_he_cap(struct
+ 
+ 		ath11k_mac_set_hemcsmap(ar, cap, he_cap);
+ 
++		memcpy(&sband->he_cap, he_cap, sizeof(*he_cap));
+ 		memset(he_cap->ppe_thres, 0, sizeof(he_cap->ppe_thres));
+ 		if (he_cap_elem->phy_cap_info[6] &
+ 		    IEEE80211_HE_PHY_CAP6_PPE_THRESHOLD_PRESENT)

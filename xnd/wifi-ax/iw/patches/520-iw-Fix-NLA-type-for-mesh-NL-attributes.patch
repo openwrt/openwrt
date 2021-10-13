@@ -1,0 +1,38 @@
+From 26ba35709392f1cc582dfb336d43eae04ab9589d Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Date: Wed, 25 Nov 2020 11:46:56 +0530
+Subject: [PATCH] iw: Fix NLA type for mesh NL attributes
+
+type of mesh attributes NL80211_STA_INFO_CONNECTED_TO_AS and
+NL80211_STA_INFO_CONNECTED_TO_GATE are given as NLA_FLAG.
+Kernel provides these as a u8, not a flag. Due to this type
+conflict, station dump command is failing with below error in mesh.
+
+$iw dev mesh0 station dump
+Failed to parse nested attributes!
+
+Fix this by changing these attribute's type to NLA_U8.
+
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+---
+ station.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/station.c b/station.c
+index 1f35e4a..9c02af6 100644
+--- a/station.c
++++ b/station.c
+@@ -330,8 +330,8 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
+ 		[NL80211_STA_INFO_TX_DURATION] = {.type = NLA_U64},
+ 		[NL80211_STA_INFO_AIRTIME_WEIGHT] = {.type = NLA_U16},
+ 		[NL80211_STA_INFO_AIRTIME_LINK_METRIC] = { .type = NLA_U32 },
+-		[NL80211_STA_INFO_CONNECTED_TO_AS] = { .type = NLA_FLAG },
+-		[NL80211_STA_INFO_CONNECTED_TO_GATE] = { .type = NLA_FLAG },
++		[NL80211_STA_INFO_CONNECTED_TO_AS] = { .type = NLA_U8 },
++		[NL80211_STA_INFO_CONNECTED_TO_GATE] = { .type = NLA_U8 },
+ 	};
+ 	char *chain;
+ 	struct timeval now;
+-- 
+2.7.4
+

@@ -1,0 +1,50 @@
+{
+	"uuid": 2,
+	"interfaces": [
+		{
+			"name": "WAN",
+			"role": "upstream",
+			"services": [ "lldp" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"WAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "dynamic"
+			}
+		},
+		{
+			"name": "LAN",
+			"role": "downstream",
+			"services": [ "lldp", "ssh" ],
+			"ethernet": [
+				{
+					"select-ports": [
+						"LAN*"
+					]
+				}
+			],
+			"ipv4": {
+				"addressing": "static",
+				"subnet": "192.168.1.1/24",
+				"dhcp": {
+					"lease-first": 10,
+					"lease-count": 100,
+					"lease-time": "6h"
+				}
+			}
+		}
+	],
+	"services": {
+		"lldp": {
+			"describe": "uCentral",
+			"location": "universe"
+		},
+		"ssh": {
+			"port": 22
+		}
+	}
+}

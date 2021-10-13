@@ -1,0 +1,113 @@
+From 5a2004916edc118717e266f31c6daea4abdd2de2 Mon Sep 17 00:00:00 2001
+From: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+Date: Wed, 5 Aug 2020 11:56:07 +0530
+Subject: [PATCH] ath11k: frame-size warning fix
+
+Below warning is fixed
+
+drivers/net/wireless/ath/ath11k/mac.c:2977:1: warning: the frame
+size of 1184 bytes is larger than 1024 bytes [-Wframe-larger-than=]
+ }
+^
+
+Signed-off-by: Karthikeyan Kathirvel <kathirve@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 52 +++++++++++++++++++++--------------
+ 1 file changed, 31 insertions(+), 21 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -3238,7 +3238,7 @@ static int ath11k_mac_op_hw_scan(struct
+ 	struct ath11k *ar = hw->priv;
+ 	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct cfg80211_scan_request *req = &hw_req->req;
+-	struct scan_req_params arg;
++	struct scan_req_params *arg;
+ 	int ret = 0;
+ 	int i;
+ 
+@@ -3265,41 +3265,47 @@ static int ath11k_mac_op_hw_scan(struct
+ 	if (ret)
+ 		goto exit;
+ 
+-	memset(&arg, 0, sizeof(arg));
+-	ath11k_wmi_start_scan_init(ar, &arg);
+-	arg.vdev_id = arvif->vdev_id;
+-	arg.scan_id = ATH11K_SCAN_ID;
++	arg = kzalloc(sizeof(*arg), GFP_KERNEL);
++	if (!arg) {
++		ret = -ENOMEM;
++		goto exit;
++	}
++
++	ath11k_wmi_start_scan_init(ar, arg);
++	arg->vdev_id = arvif->vdev_id;
++	arg->scan_id = ATH11K_SCAN_ID;
+ 
+ 	if (req->ie_len) {
+-		arg.extraie.len = req->ie_len;
+-		arg.extraie.ptr = kzalloc(req->ie_len, GFP_KERNEL);
+-		memcpy(arg.extraie.ptr, req->ie, req->ie_len);
++		arg->extraie.len = req->ie_len;
++		arg->extraie.ptr = kzalloc(req->ie_len, GFP_KERNEL);
++		if (arg->extraie.ptr)
++			memcpy(arg->extraie.ptr, req->ie, req->ie_len);
+ 	}
+ 
+ 	if (req->n_ssids) {
+-		arg.num_ssids = req->n_ssids;
+-		for (i = 0; i < arg.num_ssids; i++) {
+-			arg.ssid[i].length  = req->ssids[i].ssid_len;
+-			memcpy(&arg.ssid[i].ssid, req->ssids[i].ssid,
++		arg->num_ssids = req->n_ssids;
++		for (i = 0; i < arg->num_ssids; i++) {
++			arg->ssid[i].length  = req->ssids[i].ssid_len;
++			memcpy(&arg->ssid[i].ssid, req->ssids[i].ssid,
+ 			       req->ssids[i].ssid_len);
+ 		}
+ 	} else {
+-		arg.scan_flags |= WMI_SCAN_FLAG_PASSIVE;
++		arg->scan_flags |= WMI_SCAN_FLAG_PASSIVE;
+ 	}
+ 
+ 	if (req->n_channels)
+-		ath11k_mac_update_scan_params(req, &arg);
++		ath11k_mac_update_scan_params(req, arg);
+ 
+ 	if (req->chandef) {
+-		arg.scan_f_wide_band = true;
+-		arg.scan_f_passive = true;
+-		arg.chandef = req->chandef;
+-		ret = ath11k_wmi_update_scan_chan_list(ar, &arg);
++		arg->scan_f_wide_band = true;
++		arg->scan_f_passive = true;
++		arg->chandef = req->chandef;
++		ret = ath11k_wmi_update_scan_chan_list(ar, arg);
+ 		if (ret)
+ 			goto exit;
+ 	}
+ 
+-	ret = ath11k_start_scan(ar, &arg);
++	ret = ath11k_start_scan(ar, arg);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to start hw scan: %d\n", ret);
+ 		spin_lock_bh(&ar->data_lock);
+@@ -3309,12 +3315,15 @@ static int ath11k_mac_op_hw_scan(struct
+ 
+ 	/* Add a 200ms margin to account for event/command processing */
+ 	ieee80211_queue_delayed_work(ar->hw, &ar->scan.timeout,
+-				     msecs_to_jiffies(arg.max_scan_time +
++				     msecs_to_jiffies(arg->max_scan_time +
+ 						      ATH11K_MAC_SCAN_TIMEOUT_MSECS));
+ 
+ exit:
+-	if (req->ie_len)
+-		kfree(arg.extraie.ptr);
++	if (arg) {
++		if (arg->extraie.ptr)
++			kfree(arg->extraie.ptr);
++		kfree(arg);
++	}
+ 
+ 	mutex_unlock(&ar->conf_mutex);
+ 	return ret;

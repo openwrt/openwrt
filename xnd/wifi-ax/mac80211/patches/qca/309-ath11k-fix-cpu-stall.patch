@@ -1,0 +1,89 @@
+From: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+Subject: [PATCH] ath11k: avoid RCU cpu stall
+
+The following problems can result in RCU CPU stall warning
+1. A CPU looping in an RCU read-side critical section
+2. A CPU looping with interrupts disabled
+3. A CPU looping with preemption disabled
+4. A CPU looping with bottom halves disabled
+scenario 1:
+As per the above step 4, avoid spin_lock_bh() while
+reporting low_ack to user.
+
+scenario 2:
+As per the above step 1 & 4, avoid rcu_read_lock() while
+reporting mgmt rx through bottom halve disable call ieee80211_rx_ni()
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+---
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -7429,6 +7429,7 @@ static void ath11k_mgmt_rx_event(struct
+ 	struct ieee80211_vif *vif;
+ 	struct ath11k_vif *arvif;
+ 	struct ath11k_mgmt_frame_stats *mgmt_stats;
++	struct ieee80211_hw *hw;
+ 	u16 frm_type = 0;
+ 
+ 	if (ath11k_pull_mgmt_rx_params_tlv(ab, skb, &rx_ev) != 0) {
+@@ -7459,6 +7460,8 @@ static void ath11k_mgmt_rx_event(struct
+ 		goto exit;
+ 	}
+ 
++	hw = ar->hw;
++
+ 	if (rx_ev.status & WMI_RX_STATUS_ERR_MIC)
+ 		status->flag |= RX_FLAG_MMIC_ERROR;
+ 
+@@ -7559,8 +7562,11 @@ skip_mgmt_stats:
+ 		   status->freq, status->band, status->signal,
+ 		   status->rate_idx);
+ 
+-	ieee80211_rx_ni(ar->hw, skb);
++	rcu_read_unlock();
++
++	ieee80211_rx_ni(hw, skb);
+ 
++	return;
+ exit:
+ 	rcu_read_unlock();
+ }
+@@ -7913,6 +7919,7 @@ static void ath11k_peer_sta_kickout_even
+ 	struct ieee80211_sta *sta;
+ 	struct ath11k_peer *peer;
+ 	struct ath11k *ar;
++	u32 vdev_id;
+ 
+ 	if (ath11k_pull_peer_sta_kickout_ev(ab, skb, &arg) != 0) {
+ 		ath11k_warn(ab, "failed to extract peer sta kickout event");
+@@ -7926,15 +7933,20 @@ static void ath11k_peer_sta_kickout_even
+ 	peer = ath11k_peer_find_by_addr(ab, arg.mac_addr);
+ 
+ 	if (!peer) {
++		spin_unlock_bh(&ab->base_lock);
+ 		ath11k_warn(ab, "peer not found %pM\n",
+ 			    arg.mac_addr);
+ 		goto exit;
+ 	}
+ 
+-	ar = ath11k_mac_get_ar_by_vdev_id(ab, peer->vdev_id);
++	vdev_id = peer->vdev_id;
++
++	spin_unlock_bh(&ab->base_lock);
++
++	ar = ath11k_mac_get_ar_by_vdev_id(ab, vdev_id);
+ 	if (!ar) {
+ 		ath11k_warn(ab, "invalid vdev id in peer sta kickout ev %d",
+-			    peer->vdev_id);
++			    vdev_id);
+ 		goto exit;
+ 	}
+ 
+@@ -7949,7 +7961,6 @@ static void ath11k_peer_sta_kickout_even
+ 	ieee80211_report_low_ack(sta, 10);
+ 
+ exit:
+-	spin_unlock_bh(&ab->base_lock);
+ 	rcu_read_unlock();
+ }
+ 

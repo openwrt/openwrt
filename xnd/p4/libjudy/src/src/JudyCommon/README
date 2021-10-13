@@ -1,0 +1,66 @@
+# @(#) $Revision: 4.24 $ $Source: /judy/src/JudyCommon/README $
+#
+# This tree contains sources for Judy common files.  These include shared
+# header files, ifdef'd common source files for Judy1/JudyL functions, and
+# shared utility functions.
+
+
+# SHARED HEADER FILES:
+
+JudyPrivate.h		global private header file for all Judy internal
+			sources
+
+JudyPrivateBranch.h	global private header file for all Judy internal
+			sources, specifically for branch-related
+			declarations
+
+JudyPrivate1L.h		global private header file for Judy internal
+			sources that generate both Judy1 and JudyL
+			object files, via -DJUDY1 or -DJUDYL, using
+			common names for JP Types, plus some other
+			generic declarations too
+
+
+# IFDEF'D COMMON SOURCE FILES FOR JUDY1/JUDYL FUNCTIONS:
+#
+# See Judy(3C) manual entry about these sources for exported functions.
+
+JudyGet.c		common code for Judy1Test() and JudyLGet()
+JudyIns.c		common code for Judy1Set() and JudyLIns()
+JudyDel.c		common code for Judy1Unset() and JudyLDel()
+JudyFirst.c		common code for Judy1 and JudyL
+JudyPrevNext.c		common code for Judy1, JudyL; Judy*Prev(), Judy*Next()
+JudyPrevNextEmpty.c	common code for Judy1, JudyL; Judy*PrevEmpty(),
+			Judy*NextEmpty()
+JudyCount.c		common code for Judy1 and JudyL
+JudyByCount.c		common code for Judy1 and JudyL
+JudyFreeArray.c		common code for Judy1 and JudyL
+JudyMemUsed.c		common code for Judy1 and JudyL
+JudyMemActive.c		common code for Judy1 and JudyL
+
+JudyInsArray.c		common code for Judy1 and JudyL
+
+
+# SHARED UTILITY FUNCTIONS:
+
+JudyMalloc.c		source file
+
+JudyTables.c		static definitions of translation tables; a main
+			program is #ifdef-embedded to generate these tables
+
+# Common code for Judy1 and JudyL that is compiled twice with -DJUDY1 or
+# -DJUDYL:
+
+JudyInsertBranch.c	insert a linear branch between a branch and a leaf
+JudyCreateBranch.c	create and copy all types of branches
+
+JudyCascade.c		handles overflow insertion of an Index, including
+			common Decode bytes and branch creation
+
+JudyDecascade.c		handles underflow deletion of an Index, including
+			common Decode bytes and branch deletion
+
+JudyMallocIF.c		a Judy malloc/free interface, for statistics and
+			debugging
+
+JudyPrintJP.c		debug/trace code #included in other *.c files

@@ -1,0 +1,24 @@
+# @(#) $Revision: 4.8 $ $Source: /judy/src/apps/demo/README $
+
+# Demo programs to be included with the Judy distribution.
+
+README_deliver	delivered with files from this directory, renamed to "README"
+
+run_demo	simple Judy example script; explains, shows source code,
+		compiles and runs it
+
+Makefile_deliver
+		delivered as "Makefile"; by default, makes all the demo
+		programs; the libJudy.a and Judy.h locations might have
+		to be changed (via cc -I options)
+		NOTE:  This file contains "#ifdef" directives that look
+		to make like comments, but don't expect the makefile to
+		run prior to unifdef'ing in the makefile.  That is, use
+		the constructed version for a given platform.
+
+funhist.c	function histogram program
+
+interL.c	interactive JudyL program
+interSL.c	interactive JudySL program
+
+JudySort.c	JudySL version of "sort -u"

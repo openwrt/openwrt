@@ -1,0 +1,164 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+wrapper() {
+	echo calling $*
+	$*
+}
+
+TC() {
+	wrapper tc $*
+}
+
+IP() {
+	wrapper ip $*
+}
+
+get_id() {
+	addr=$1
+	hashval="0x$(echo "$addr" | md5sum | head -c8)"
+	mask=0x4ff
+	echo $(($hashval & $mask))
+}
+
+delclient() {
+	local ifb=rateifb$1
+	local iface=$1
+	local mac=$2
+	local id=$3
+	
+	logger "ratelimit: delete old client entries"
+
+	[ -z "$id" ] && id=$(get_id ${mac//:})
+
+	TC filter del dev $iface protocol all parent 1: prio 1 u32 match ether dst $mac flowid 1:$id
+	TC class del dev $iface parent 1:1 classid 1:$id
+	
+	TC filter del dev $ifb protocol all parent 1: prio 1 u32 match ether src $mac flowid 1:$id
+	TC class del dev $ifb parent 1:1 classid 1:$id
+}
+
+ingress=
+egress=
+
+getrate() {
+	config_get ssid $1 ssid
+	[ "$ssid" == "$2" ] || return
+	config_get ingress $1 ingress
+	config_get egress $1 egress
+}
+
+addclient() {
+	local ifb=rateifb$1
+	local iface=$1
+	local mac=$2
+	local ssid=$(cat /tmp/ratelimit.$iface)
+
+	logger "ratelimit: adding client"
+
+	config_load ratelimit
+	config_foreach getrate rate $ssid
+
+	[ -z "$egress" -o -z $ingress ] && {
+		logger "ratelimit: no valid rates"
+		exit 1
+	}
+
+	local id=$(get_id ${mac//:})
+
+	logger "ratelimit: add new client entries for $2 $egress $ingress"
+
+	TC class add dev $iface parent 1:1 classid 1:$id htb rate 1mbit ceil ${egress}mbit burst 2k prio 1
+	TC qdisc add dev $iface parent 1:$id handle $id: sfq perturb 10
+	TC filter add dev $iface protocol all parent 1: prio 1 u32 match ether dst $mac flowid 1:$id
+	
+	TC class add dev $ifb parent 1:1 classid 1:$id htb rate 1mbit ceil ${ingress}mbit burst 2k prio 1
+	TC filter add dev $ifb protocol all parent 1: prio 1 u32 match ether src $mac flowid 1:$id
+}
+
+deliface() {
+	local ifb=rateifb$1
+	local iface=$1
+
+	[ -d /sys/class/net/$ifb/ ] || return 0
+
+	logger "ratelimit: deleting old iface settings"
+
+	IP link set $ifb down
+	IP link del $ifb
+
+	TC qdisc del dev $iface root &2> /dev/null
+
+	rm -f /tmp/ratelimit.$iface
+	[ -f /tmp/run/hostapd-cli-$iface.pid ] && kill "$(cat /tmp/run/hostapd-cli-$iface.pid)"
+}
+
+found=0
+find_ssid() {
+	config_get ssid $1 ssid
+	[ "$ssid" == "$2" ] || return
+	found=1
+}
+
+addiface() {
+	local ifb=rateifb$1
+	local iface=$1
+	local ssid
+
+
+	[ -d /sys/class/net/$ifb/ ] && {
+		return 0
+	}
+
+	sleep 2
+	ssid=$(ubus call network.wireless status | jsonfilter -e '@[*].interfaces[@.ifname="'"$iface"'"].config.ssid')
+	[ -z "$ssid" ] && {
+		logger "ratelimit: failed to lookup ssid"
+		exit 1
+	}
+	config_load ratelimit
+	config_foreach find_ssid rate $ssid
+	[ "$found" -eq 0 ] && exit 0
+	logger "ratelimit: adding new iface settings"
+
+	echo -n $ssid > /tmp/ratelimit.$iface
+
+	IP link add name $ifb type ifb
+	IP link set $ifb up
+
+	sleep 1
+
+	TC qdisc add dev $iface root handle 1: htb default 30
+	TC class add dev $iface parent 1: classid 1:1 htb rate 1000mbit burst 6k
+	TC qdisc add dev $iface ingress
+	TC filter add dev $iface parent ffff: protocol all prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev $ifb
+
+	TC qdisc add dev $ifb root handle 1: htb default 10
+	TC class add dev $ifb parent 1: classid 1:1 htb rate 100mbit
+	hostapd_cli -a /usr/libexec/ratelimit.sh -i $iface -P /tmp/run/hostapd-cli-$iface.pid -B
+       
+	for sta in $(ubus call wifi station | jsonfilter -e '@[*][*].mac'); do
+		addclient $iface $sta
+	done
+}
+
+waitiface() {
+	local iface=$1
+
+	ubus -t 75 wait_for hostapd.$1
+
+	[ $? -eq 0 ] || exit 0
+
+	addiface $iface
+}
+
+flush() {
+	for a in `ls /sys/class/net/ | grep rateifb`; do
+		deliface ${a:7}
+	done
+}
+
+cmd=$1
+shift
+$cmd $@

@@ -1,0 +1,32 @@
+From e227e5896dc8fe69d63334819c5fbada9caddc50 Mon Sep 17 00:00:00 2001
+From: Miles Hu <milehu@codeaurora.org>
+Date: Tue, 14 Jan 2020 14:29:53 -0800
+Subject: [PATCH] tid fix
+
+---
+ drivers/net/wireless/ath/ath11k/hal_rx.c | 2 +-
+ drivers/net/wireless/ath/ath11k/hal_rx.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/hal_rx.c
++++ b/drivers/net/wireless/ath/ath11k/hal_rx.c
+@@ -935,7 +935,7 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
+ 				   __le32_to_cpu(eu_stats->info1));
+ 		ppdu_info->tid =
+ 			ffs(FIELD_GET(HAL_RX_PPDU_END_USER_STATS_INFO6_TID_BITMAP,
+-				      __le32_to_cpu(eu_stats->info6))) - 1;
++				      __le32_to_cpu(eu_stats->rsvd2[0]))) - 1;
+ 		ppdu_info->tcp_msdu_count =
+ 			FIELD_GET(HAL_RX_PPDU_END_USER_STATS_INFO4_TCP_MSDU_CNT,
+ 				  __le32_to_cpu(eu_stats->info4));
+--- a/drivers/net/wireless/ath/ath11k/hal_rx.h
++++ b/drivers/net/wireless/ath/ath11k/hal_rx.h
+@@ -157,7 +157,7 @@ struct hal_rx_mon_ppdu_info {
+ 	u8 ldpc;
+ 	u8 beamformed;
+ 	u8 rssi_comb;
+-	u8 tid;
++	u16 tid;
+ 	u8 fc_valid;
+ 	u16 ht_flags;
+ 	u16 vht_flags;

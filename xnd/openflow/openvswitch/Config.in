@@ -1,0 +1,8 @@
+menu "Configuration"
+	depends on PACKAGE_openvswitch
+
+	config	OPENVSWITCH_WITH_LIBUNBOUND
+		bool
+		default y
+		prompt "Build with libunbound library."
+endmenu

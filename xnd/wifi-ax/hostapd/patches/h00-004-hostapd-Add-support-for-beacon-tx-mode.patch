@@ -1,0 +1,252 @@
+Index: hostapd-2021-02-20-59e9794c/hostapd/config_file.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/hostapd/config_file.c
++++ hostapd-2021-02-20-59e9794c/hostapd/config_file.c
+@@ -4590,6 +4590,15 @@ static int hostapd_config_fill(struct ho
+ 		bss->disable_11ac = !!atoi(pos);
+ 	} else if (os_strcmp(buf, "disable_11ax") == 0) {
+ 		bss->disable_11ax = !!atoi(pos);
++	} else if (os_strcmp(buf, "beacon_tx_mode") == 0) {
++		int val = atoi(pos);
++
++		if (val < 0 || val > 2) {
++			wpa_printf(MSG_ERROR, "Line %d: invalid beacon_tx_mode %d",
++				   line, val);
++			return 1;
++		}
++		bss->beacon_tx_mode = val;
+ #ifdef CONFIG_PASN
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	} else if (os_strcmp(buf, "force_kdk_derivation") == 0) {
+Index: hostapd-2021-02-20-59e9794c/src/ap/ap_config.h
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/ap/ap_config.h
++++ hostapd-2021-02-20-59e9794c/src/ap/ap_config.h
+@@ -894,6 +894,7 @@ struct hostapd_bss_config {
+ 
+ 	unsigned int unsol_bcast_probe_resp_interval;
+ 	u8 rnr_beacon;
++	int beacon_tx_mode;
+ };
+ 
+ /**
+Index: hostapd-2021-02-20-59e9794c/src/ap/beacon.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/ap/beacon.c
++++ hostapd-2021-02-20-59e9794c/src/ap/beacon.c
+@@ -1861,6 +1861,8 @@ int ieee802_11_build_ap_params(struct ho
+ 		params->dtim_period = hapd->conf->dtim_period;
+ 	}
+ 
++	params->beacon_tx_mode = hapd->conf->beacon_tx_mode;
++
+ 	return 0;
+ }
+ 
+Index: hostapd-2021-02-20-59e9794c/src/drivers/driver.h
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/drivers/driver.h
++++ hostapd-2021-02-20-59e9794c/src/drivers/driver.h
+@@ -1206,6 +1206,12 @@ struct wpa_driver_associate_params {
+ 	 * Disable HE40MHz coexistence scan
+ 	 */
+ 	int disable_40mhz_scan;
++	/**
++	 * Beacon Tx mode - To configure STAGGERED or BURST mode
++	 * 1 = STAGGERED beacon tx mode
++	 * 2 = BURST beacon tx mode
++	 */
++	int beacon_tx_mode;
+ };
+ 
+ enum hide_ssid {
+@@ -1650,6 +1656,13 @@ struct wpa_driver_ap_params {
+ 	 * rnr_ie_count - Number of offsets in rnr_ie_offsets
+ 	 */
+ 	int rnr_ie_count;
++
++	/**
++	 * Beacon Tx mode - To configure STAGGERED or BURST mode
++	 * 1 = STAGGERED beacon tx mode
++	 * 2 = BURST beacon tx mode
++	 */
++	int beacon_tx_mode;
+ };
+ 
+ struct wpa_driver_mesh_bss_params {
+@@ -1689,6 +1702,7 @@ struct wpa_driver_mesh_join_params {
+ 	unsigned int flags;
+ 	bool handle_dfs;
+ 	int mcast_rate;
++	int beacon_tx_mode;
+ };
+ 
+ struct wpa_driver_set_key_params {
+Index: hostapd-2021-02-20-59e9794c/src/drivers/driver_nl80211.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/drivers/driver_nl80211.c
++++ hostapd-2021-02-20-59e9794c/src/drivers/driver_nl80211.c
+@@ -4543,6 +4543,7 @@ static int wpa_driver_nl80211_set_ap(voi
+ 	wpa_printf(MSG_DEBUG, "nl80211: beacon_rate=%u", params->beacon_rate);
+ 	wpa_printf(MSG_DEBUG, "nl80211: rate_type=%d", params->rate_type);
+ 	wpa_printf(MSG_DEBUG, "nl80211: dtim_period=%d", params->dtim_period);
++	wpa_printf(MSG_DEBUG, "nl80211: beacon_tx_mode=%d", params->beacon_tx_mode);
+ 	wpa_printf(MSG_DEBUG, "nl80211: ssid=%s",
+ 		   wpa_ssid_txt(params->ssid, params->ssid_len));
+ 	if (!(msg = nl80211_bss_msg(bss, 0, cmd)) ||
+@@ -4554,7 +4555,9 @@ static int wpa_driver_nl80211_set_ap(voi
+ 	    nl80211_put_beacon_rate(msg, drv->capa.flags, drv->capa.flags2,
+ 				    params) ||
+ 	    nl80211_put_dtim_period(msg, params->dtim_period) ||
+-	    nla_put(msg, NL80211_ATTR_SSID, params->ssid_len, params->ssid))
++	    nla_put(msg, NL80211_ATTR_SSID, params->ssid_len, params->ssid) ||
++	    (params->beacon_tx_mode &&
++	     nla_put_u32(msg, NL80211_ATTR_BEACON_TX_MODE, params->beacon_tx_mode)))
+ 		goto fail;
+ 	if (params->proberesp && params->proberesp_len) {
+ 		wpa_hexdump(MSG_DEBUG, "nl80211: proberesp (offload)",
+@@ -10663,7 +10666,9 @@ static int nl80211_join_mesh(struct i802
+ 	    nl80211_put_mesh_id(msg, params->meshid, params->meshid_len) ||
+ 	    nl80211_put_beacon_int(msg, params->beacon_int) ||
+ 	    nl80211_put_mcast_rate(msg, params->mcast_rate) ||
+-	    nl80211_put_dtim_period(msg, params->dtim_period))
++	    nl80211_put_dtim_period(msg, params->dtim_period) ||
++	    (params->beacon_tx_mode &&
++	     nla_put_u32(msg, NL80211_ATTR_BEACON_TX_MODE, params->beacon_tx_mode)))
+ 		goto fail;
+ 
+ 	wpa_printf(MSG_DEBUG, "  * flags=%08X", params->flags);
+Index: hostapd-2021-02-20-59e9794c/src/drivers/nl80211_copy.h
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/drivers/nl80211_copy.h
++++ hostapd-2021-02-20-59e9794c/src/drivers/nl80211_copy.h
+@@ -2608,6 +2608,10 @@ enum nl80211_commands {
+  *	for co-located APs and neighbor APs in ESS to be added in all
+  *	EMA beacons.
+  *
++ * @NL80211_ATTR_BEACON_TX_MODE: used to configure the beacon tx mode as
++ * 	staggered mode or burst mode in %NL80211_CMD_START_AP from
++ * 	user-space.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3121,6 +3125,8 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_RNR_OFFSETS,
+ 
++	NL80211_ATTR_BEACON_TX_MODE,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -7371,4 +7377,13 @@ enum nl80211_rnr_ies_attributes {
+ 	__NL80211_RNR_IES_ATTR_LAST,
+ 	NL80211_RNR_IES_ATTR_MAX = __NL80211_RNR_IES_ATTR_LAST - 1
+ };
++
++/**
++ * enum nl80211_beacon_tx_mode - Beacon Tx Mode enum.
++ * 	Used to configure beacon staggered mode or beacon burst mode.
++ */
++enum nl80211_beacon_tx_mode {
++	NL80211_BEACON_STAGGERED_MODE = 1,
++	NL80211_BEACON_BURST_MODE = 2,
++};
+ #endif /* __LINUX_NL80211_H */
+Index: hostapd-2021-02-20-59e9794c/hostapd/hostapd.conf
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/hostapd/hostapd.conf
++++ hostapd-2021-02-20-59e9794c/hostapd/hostapd.conf
+@@ -250,6 +250,9 @@ rts_threshold=-1
+ # it.
+ fragm_threshold=-1
+ 
++# Beacon Tx mode; 1 = STAGGERED beacon tx mode; 2 = BURST beacon tx mode.
++beacon_tx_mode=1
++
+ # Rate configuration
+ # Default is to enable all rates supported by the hardware. This configuration
+ # item allows this list be filtered so that only the listed rates will be left
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/config.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/config.c
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/config.c
+@@ -2740,6 +2740,7 @@ static const struct parse_data ssid_fiel
+ 	{ INT_RANGE(transition_disable, 0, 255) },
+ 	{ INT_RANGE(sae_pk, 0, 2) },
+ 	{ INT_RANGE(disable_40mhz_scan, 0, 1)},
++	{ INT_RANGE(beacon_tx_mode, 1, 2)},
+ };
+ 
+ #undef OFFSET
+@@ -3249,6 +3250,7 @@ void wpa_config_set_network_defaults(str
+ #endif /* CONFIG_MACSEC */
+ 	ssid->mac_addr = -1;
+ 	ssid->max_oper_chwidth = DEFAULT_MAX_OPER_CHWIDTH;
++	ssid->beacon_tx_mode = DEFAULT_BEACON_TX_MODE;
+ }
+ 
+ 
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/config_file.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/config_file.c
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/config_file.c
+@@ -888,6 +888,7 @@ static void wpa_config_write_network(FIL
+ 	INT(disable_he);
+ #endif /* CONFIG_HE_OVERRIDES */
+ 	INT(disable_40mhz_scan);
++	INT(beacon_tx_mode);
+ #undef STR
+ #undef INT
+ #undef INT_DEF
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/config_ssid.h
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/config_ssid.h
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/config_ssid.h
+@@ -47,6 +47,7 @@
+ #define DEFAULT_AMPDU_DENSITY -1 /* no change */
+ #define DEFAULT_USER_SELECTED_SIM 1
+ #define DEFAULT_MAX_OPER_CHWIDTH -1
++#define DEFAULT_BEACON_TX_MODE 0
+ 
+ struct psk_list_entry {
+ 	struct dl_list list;
+@@ -1177,6 +1178,13 @@ struct wpa_ssid {
+ 	 * disable_40mhz_scan - Disable 40MHz coex scan
+ 	 */
+ 	int disable_40mhz_scan;
++
++	/**
++	 * beacon_tx_mode - Beacon Tx mode
++	 * 1 = STAGGERED MODE
++	 * 2 = BURST MODE
++	 */
++	int beacon_tx_mode;
+ };
+ 
+ #endif /* CONFIG_SSID_H */
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/mesh.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/mesh.c
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/mesh.c
+@@ -668,6 +668,7 @@ int wpa_supplicant_join_mesh(struct wpa_
+ 		params->dtim_period = ssid->dtim_period;
+ 	else if (wpa_s->conf->dtim_period > 0)
+ 		params->dtim_period = wpa_s->conf->dtim_period;
++	params->beacon_tx_mode = ssid->beacon_tx_mode;
+ 	params->conf.max_peer_links = wpa_s->conf->max_peer_links;
+ 	if (ssid->mesh_rssi_threshold < DEFAULT_MESH_RSSI_THRESHOLD) {
+ 		params->conf.rssi_threshold = ssid->mesh_rssi_threshold;
+Index: hostapd-2021-02-20-59e9794c/wpa_supplicant/wpa_cli.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/wpa_supplicant/wpa_cli.c
++++ hostapd-2021-02-20-59e9794c/wpa_supplicant/wpa_cli.c
+@@ -1489,6 +1489,7 @@ static const char *network_fields[] = {
+ #endif /* CONFIG_HS20 */
+ 	"mac_addr", "pbss", "wps_disabled",
+ 	"disable_40mhz_scan",
++	"beacon_tx_mode",
+ };
+ 
+ 

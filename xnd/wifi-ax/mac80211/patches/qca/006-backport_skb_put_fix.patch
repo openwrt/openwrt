@@ -1,0 +1,73 @@
+--- a/backport-include/linux/skbuff.h
++++ b/backport-include/linux/skbuff.h
+@@ -356,7 +356,7 @@ static inline void *__skb_put_zero(struc
+ 	return tmp;
+ }
+ 
+-static inline void *skb_put_zero(struct sk_buff *skb, unsigned int len)
++static inline void *backport_skb_put_zero(struct sk_buff *skb, unsigned int len)
+ {
+ 	void *tmp = skb_put(skb, len);
+ 
+@@ -364,9 +364,10 @@ static inline void *skb_put_zero(struct
+ 
+ 	return tmp;
+ }
++#define skb_put_zero LINUX_BACKPORT(skb_put_zero)
+ 
+-static inline void *skb_put_data(struct sk_buff *skb, const void *data,
+-				 unsigned int len)
++static inline void *backport_skb_put_data(struct sk_buff *skb, const void *data,
++					  unsigned int len)
+ {
+ 	void *tmp = skb_put(skb, len);
+ 
+@@ -374,11 +375,14 @@ static inline void *skb_put_data(struct
+ 
+ 	return tmp;
+ }
++#define skb_put_data LINUX_BACKPORT(skb_put_data)
+ 
+-static inline void skb_put_u8(struct sk_buff *skb, u8 val)
++static inline void backport_skb_put_u8(struct sk_buff *skb, u8 val)
+ {
+ 	*(u8 *)skb_put(skb, 1) = val;
+ }
++#define skb_put_u8 LINUX_BACKPORT(skb_put_u8)
++
+ #endif
+ 
+ #if LINUX_VERSION_IS_LESS(4,20,0)
+--- a/backport-include/linux/pci.h
++++ b/backport-include/linux/pci.h
+@@ -138,6 +138,7 @@ static inline int pci_vfs_assigned(struc
+ 
+ #endif /* LINUX_VERSION_IS_LESS(3,10,0) */
+ 
++#ifndef CONFIG_QRTR_MHI
+ #if LINUX_VERSION_IS_LESS(4,8,0)
+ #define pci_alloc_irq_vectors LINUX_BACKPORT(pci_alloc_irq_vectors)
+ #ifdef CONFIG_PCI_MSI
+@@ -156,6 +157,7 @@ static inline void pci_free_irq_vectors(
+ {
+ }
+ #endif
++#endif
+ 
+ #if LINUX_VERSION_IS_LESS(3,14,0)
+ #define pci_enable_msi_range LINUX_BACKPORT(pci_enable_msi_range)
+--- a/compat/backport-4.8.c
++++ b/compat/backport-4.8.c
+@@ -146,6 +146,7 @@ next_desc:
+ }
+ EXPORT_SYMBOL_GPL(cdc_parse_cdc_header);
+ 
++#ifndef CONFIG_QRTR_MHI
+ #ifdef CONFIG_PCI
+ #ifdef CONFIG_PCI_MSI
+ 
+@@ -194,3 +195,4 @@ int pci_alloc_irq_vectors(struct pci_dev
+ EXPORT_SYMBOL_GPL(pci_alloc_irq_vectors);
+ #endif /* CONFIG_PCI_MSI */
+ #endif /* CONFIG_PCI */
++#endif /* CONFIG_QRTR_MHI */

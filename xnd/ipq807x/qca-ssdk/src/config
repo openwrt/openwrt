@@ -1,0 +1,345 @@
+#CPU=mips
+
+OS=linux
+
+ifeq ($(KVER),$(filter 3.14%,$(KVER)))
+OS_VER=3_14
+endif
+
+ifeq ($(KVER),$(filter 4.4%,$(KVER)))
+OS_VER=4_4
+endif
+
+ifeq ($(KVER),$(filter 4.1%,$(KVER)))
+OS_VER=4_1
+endif
+
+ifeq ($(KVER),$(filter 4.9%,$(KVER)))
+OS_VER=4_9
+endif
+
+ifeq ($(KVER),$(filter 5.4%,$(KVER)))
+OS_VER=5_4
+endif
+
+ifeq ($(KVER), 3.4.0)
+OS_VER=3_4
+endif
+
+ifeq ($(KVER), 3.18)
+OS_VER=3_18
+endif
+
+ifeq ($(KVER), 3.18.21)
+OS_VER=3_18
+endif
+
+ifeq ($(KVER), 3.4.103)
+OS_VER=3_4
+endif
+
+ifeq ($(KVER), 3.3.8)
+OS_VER=3_2
+endif
+
+ifeq ($(ARCH), arm)
+BOARD=ipq806x
+endif
+
+ifeq ($(ARCH), mips)
+BOARD=ar71xx
+endif
+
+ifeq ($(BOARD), ar71xx)
+BOARD_NAME=BOARD_AR71XX
+endif
+
+ifeq ($(BOARD), ipq806x)
+BOARD_NAME=BOARD_IPQ806X
+endif
+
+OS_SUB=31
+
+ifndef OS_VER
+OS_VER=2_6
+endif
+# OS subversion, 2.6.31 for WASP (db120)
+#OS_SUB=31
+# GCC version, 3 or 4
+#GCC_VER=4
+
+#For MIPS Linux2.6
+  #pb45
+  #TOOL_PATH=/disk/pb45/sw/build/gcc-3.4.4-2.16.1/build_mips_nofpu/bin
+  #SYS_PATH=/disk/pb45/sw/linux/kernels/mips-linux-2.6.15
+
+  #ap81
+# compatiable with OpenWRT
+ifndef  TOOL_PATH
+TOOL_PATH=/disk/ap81fus/sw/build/gcc-3.4.4-2.16.1/build_mips/bin
+endif
+ifndef SYS_PATH
+SYS_PATH=/disk/ap81fus/sw/linux/kernels/mips-linux-2.6.15
+endif
+ifeq ($(ARCH), mips)
+  CPU_CFLAG=-Wstrict-prototypes -fomit-frame-pointer -G 0 -mno-abicalls -fno-common -fno-strict-aliasing -O2 -fno-pic -pipe -mabi=32 -march=mips32r2 -DMODULE -mlong-calls -DEXPORT_SYMTAB -D$(BOARD_NAME)
+endif
+
+
+#db120
+ifeq ($(BOARD_TYPE),db12x)
+OS_SUB=31
+GCC_VER=4
+TOOL_PATH=$(TOPDIR)/build/gcc-4.3.3/build_mips/staging_dir/usr/bin
+SYS_PATH=$(TOPDIR)/linux/kernels/mips-linux-2.6.31
+CPU_CFLAG=-Wstrict-prototypes -fomit-frame-pointer -G 0 -mno-abicalls -fno-strict-aliasing -O2 -fno-pic -pipe -mabi=32 -march=mips32r2 -DMODULE -mlong-calls -DEXPORT_SYMTAB
+endif
+
+ifeq ($(ARCH), arm)
+ifeq ($(KVER), 3.4.0)
+  CPU_CFLAG=-D__LINUX_ARM_ARCH__=7  -DMODULE -fno-common -DCONFIG_MMU -D$(BOARD_NAME)
+endif
+ifeq ($(KVER), 3.4.103)
+  CPU_CFLAG=-D__LINUX_ARM_ARCH__=7  -DMODULE -fno-common -DCONFIG_MMU -D$(BOARD_NAME)
+endif
+ifeq ($(KVER), 3.18.21)
+  CPU_CFLAG=-D__LINUX_ARM_ARCH__=7  -DMODULE -fno-common -DCONFIG_MMU -D$(BOARD_NAME)
+endif
+ifeq ($(KVER),$(filter 4.4% 5.4%,$(KVER)))
+  CPU_CFLAG=-D__LINUX_ARM_ARCH__=7  -DMODULE -fno-common -DCONFIG_MMU -D$(BOARD_NAME)
+endif
+
+ifeq ($(KVER),$(filter 3.14%,$(KVER)))
+  CPU_CFLAG= -DMODULE -nostdinc -D$(BOARD_NAME) -mlittle-endian -Wundef -Wstrict-prototypes -Wno-trigraphs -Werror -fno-strict-aliasing -fno-common -Wno-format-security -fno-delete-null-pointer-checks -O2 -fno-dwarf2-cfi-asm -mabi=aapcs-linux -mno-thumb-interwork -mfpu=vfp -funwind-tables -marm -D__LINUX_ARM_ARCH__=7 -march=armv7-a -msoft-float -Uarm -Wframe-larger-than=1024 -fno-stack-protector -Wno-unused-but-set-variable -fomit-frame-pointer -g -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -Werror=implicit-int -DCC_HAVE_ASM_GOTO    -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(mem)"
+endif
+
+ifeq ($(KVER),$(filter 4.9% 4.4% 5.4%,$(KVER)))
+  CPU_CFLAG= -DMODULE -nostdinc -D$(BOARD_NAME) -mlittle-endian -Wundef -Wstrict-prototypes -Wno-trigraphs -Werror -fno-strict-aliasing -fno-common -Wno-format-security -fno-delete-null-pointer-checks -O2 -fno-dwarf2-cfi-asm -mabi=aapcs-linux -mno-thumb-interwork -mfpu=vfp -funwind-tables -marm -D__LINUX_ARM_ARCH__=7 -march=armv7-a -msoft-float -Uarm -Wframe-larger-than=2048 -fno-stack-protector -Wno-unused-but-set-variable -fomit-frame-pointer -g -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -Werror=implicit-int -DCC_HAVE_ASM_GOTO    -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(mem)"
+endif
+
+ifeq ($(KVER),$(filter 3.18%,$(KVER)))
+  CPU_CFLAG= -DMODULE -nostdinc -D$(BOARD_NAME) -mlittle-endian -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Wno-format-security -fno-delete-null-pointer-checks -O2 -fno-dwarf2-cfi-asm -mabi=aapcs-linux -mno-thumb-interwork -mfpu=vfp -funwind-tables -marm -D__LINUX_ARM_ARCH__=7 -march=armv7-a -msoft-float -Uarm -Wframe-larger-than=1024 -fno-stack-protector -Wno-unused-but-set-variable -fomit-frame-pointer -g -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -Werror=implicit-int -DCC_HAVE_ASM_GOTO    -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(mem)"
+endif
+endif
+
+ifeq ($(ARCH), arm64)
+ifeq ($(KVER),$(filter 4.1% 4.4% 4.9% 5.4%,$(KVER)))
+  CPU_CFLAG=  -DMODULE -Os -pipe -march=armv8-a -mcpu=cortex-a53+crypto -fno-caller-saves -fno-strict-aliasing -Werror -fno-common -Wno-format-security -Wno-pointer-sign -Wno-unused-but-set-variable -Wno-error=unused-result -mcmodel=large
+endif
+endif
+
+ifeq ($(BOARD_TYPE), ap136)
+OS_SUB=31
+GCC_VER=4
+TOOL_PATH=$(TOPDIR)/build/gcc-4.3.3/build_mips/staging_dir/usr/bin
+SYS_PATH=$(TOPDIR)/linux/kernels/mips-linux-2.6.31
+CPU_CFLAG=-Wstrict-prototypes -fomit-frame-pointer -G 0 -mno-abicalls -fno-strict-aliasing -O2 -fno-pic -pipe -mabi=32 -march=mips32r2 -DMODULE -mlong-calls -DEXPORT_SYMTAB
+endif
+
+#For MIPS Linux2.4
+  #TOOL_PATH=/home/perforce/kernel2.4/5.3.1.20/tools/gcc-3.3.3-2.4.25/toolchain_mips/bin
+  #SYS_PATH=/home/perforce/kernel2.4/5.3.1.20/src/kernels/mips-linux-2.4.25
+
+  #TOOLPREFIX=$(CPU)-$(OS)-
+  #CPU_CFLAG=-Wstrict-prototypes -Wundef -fomit-frame-pointer -G 0 -mno-abicalls -Wno-trigraphs -fno-strict-aliasing -fno-common -ffreestanding -O2 -fno-pic -pipe -mabi=32 -march=r4600 -Wa,-32 -Wa,-march=r4600 -Wa,--trap -DMODULE -mlong-calls -DEXPORT_SYMTAB
+
+ifeq ($(SWCONFIG_FEATURE), disable)
+SWCONFIG=FALSE
+else
+SWCONFIG=TRUE
+endif
+
+KERNEL_MODE=TRUE
+#compatiable with OpenWRT
+ifeq ($(SWITCH_SSDK_MODE),user)
+KERNEL_MODE=FLASE
+endif
+
+#FAL=FALSE or not define FAL, FAL will not be included in SSDK
+FAL=TRUE
+
+#CHIP_TYPE can be defined as ATHENA, GARUDA, SHIVA, HORUS, ISIS, ISISC, DESS, HPPE, CPPE, MP and ALL_CHIP(ALL_CHIP means GARUDA, SHIVA, HORUS, ISIS, ISISC, DESS and HPPE CPPE MP)
+ifndef CHIP_TYPE
+CHIP_TYPE=ALL_CHIP
+endif
+
+#UK_IF=FALSE or not define UK_IF, UK_IF will not be included in SSDK
+#when UK_IF=TRUE one of UK_NETLINK,UK_IOCTL must be defined as TRUE
+UK_IF=TRUE
+#UK_IOCTL=TRUE define user-kernel space communication based on ioctl
+UK_IOCTL=TRUE
+UK_MINOR_DEV=254
+
+#API_LOCK=FALSE or not define API_LOCK, API_LOCK will not be included in SSDK
+API_LOCK=FALSE
+
+#REG_ACCESS_SPEEDUP=FALSE or not define REG_ACCESS_SPEEDUP, REG_ACCESS_SPEEDUP will not be enabled, now only ISIS supports
+REG_ACCESS_SPEEDUP=FALSE
+
+#ALL supported features:
+#ACL FDB IGMP LEAKY LED MIB MIRROR MISC PORTCONTROL PORTVLAN QOS RATE STP VLAN
+#IN_X=FALSE or not define IN_X, X will not be included in SSDK
+IN_ACL=TRUE
+IN_FDB=TRUE
+IN_IGMP=TRUE
+IN_LEAKY=TRUE
+IN_LED=TRUE
+IN_MIB=TRUE
+IN_MIRROR=TRUE
+IN_MISC=TRUE
+IN_PORTCONTROL=TRUE
+IN_PORTVLAN=TRUE
+IN_QOS=TRUE
+IN_RATE=TRUE
+IN_STP=TRUE
+IN_VLAN=TRUE
+IN_REDUCED_ACL=FALSE
+IN_COSMAP=TRUE
+IN_IP=TRUE
+IN_NAT=TRUE
+IN_TRUNK=TRUE
+IN_SEC=TRUE
+IN_PPPOE=TRUE
+ifeq ($(HNAT_FEATURE), enable)
+IN_NAT_HELPER=TRUE
+else
+IN_NAT_HELPER=FALSE
+endif
+ifeq ($(RFS_FEATURE), enable)
+IN_RFS=TRUE
+else
+IN_RFS=FALSE
+endif
+IN_INTERFACECONTROL=TRUE
+IN_MACBLOCK=FALSE
+#The PHY CHIP defined according to the switch CHIP
+ifeq (ALL_CHIP, $(CHIP_TYPE))
+IN_AQUANTIA_PHY=TRUE
+IN_QCA803X_PHY=TRUE
+IN_QCA808X_PHY=TRUE
+IN_PHY_I2C_MODE=TRUE
+IN_MALIBU_PHY=TRUE
+IN_SFP_PHY=TRUE
+IN_SFP=TRUE
+else ifeq (HPPE, $(CHIP_TYPE))
+IN_AQUANTIA_PHY=TRUE
+IN_QCA803X_PHY=TRUE
+IN_QCA808X_PHY=TRUE
+IN_PHY_I2C_MODE=TRUE
+IN_SFP_PHY=TRUE
+IN_MALIBU_PHY=TRUE
+else ifeq (CPPE, $(CHIP_TYPE))
+IN_QCA808X_PHY=TRUE
+IN_PHY_I2C_MODE=TRUE
+IN_MALIBU_PHY=TRUE
+else ifeq (DESS, $(CHIP_TYPE))
+IN_MALIBU_PHY=TRUE
+else ifeq (MP, $(CHIP_TYPE))
+IN_QCA803X_PHY=TRUE
+IN_QCA808X_PHY=TRUE
+else
+IN_QCA803X_PHY=FALSE
+IN_QCA808X_PHY=FALSE
+IN_AQUANTIA_PHY=FALSE
+IN_MALIBU_PHY=FALSE
+IN_SFP_PHY=FALSE
+IN_SFP=FALSE
+endif
+ifeq ($(SFE_FEATURE), enable)
+IN_SFE=TRUE
+else
+IN_SFE=FALSE
+endif
+#QCA808X PHY features
+ifeq ($(IN_QCA808X_PHY), TRUE)
+ifeq ($(PTP_FEATURE), enable)
+IN_PTP=TRUE
+else
+IN_PTP=FALSE
+endif
+endif
+#IN_PHY_I2C_MODE depends on IN_SFP_PHY
+ifeq ($(IN_PHY_I2C_MODE), TRUE)
+IN_SFP_PHY=TRUE
+endif
+ifneq (, $(filter HPPE CPPE ALL_CHIP, $(CHIP_TYPE)))
+IN_FLOW=TRUE
+IN_RSS_HASH=TRUE
+IN_QM=TRUE
+IN_VSI=TRUE
+IN_CTRLPKT=TRUE
+IN_SERVCODE=TRUE
+IN_BM=TRUE
+IN_SHAPER=TRUE
+IN_POLICER=TRUE
+endif
+ifneq (, $(filter HPPE CPPE MP ALL_CHIP, $(CHIP_TYPE)))
+IN_UNIPHY=TRUE
+endif
+#MINI SSDK enabled
+ifeq ($(MINI_SSDK), enable)
+IN_FDB_MINI=TRUE
+IN_MISC_MINI=TRUE
+IN_PORTCONTROL_MINI=TRUE
+IN_QOS_MINI=TRUE
+IN_COSMAP_MINI=TRUE
+IN_PORTVLAN_MINI=TRUE
+IN_VLAN_MINI=TRUE
+IN_VSI_MINI=TRUE
+IN_BM_MINI=TRUE
+IN_SHAPER_MINI=TRUE
+IN_POLICER_MINI=TRUE
+IN_FLOW_MINI=TRUE
+IN_QM_MINI=TRUE
+IN_UNIPHY_MINI=TRUE
+IN_IP_MINI=TRUE
+IN_SFP=FALSE
+#disable modules for MINI HPPE/CPPE
+ifneq (, $(filter HPPE CPPE, $(CHIP_TYPE)))
+IN_SERVCODE=FALSE
+IN_PPPOE=FALSE
+IN_NAT=FALSE
+IN_COSMAP=FALSE
+IN_RATE=FALSE
+IN_IGMP=FALSE
+IN_LEAKY=FALSE
+IN_LED=FALSE
+IN_INTERFACECONTROL=FALSE
+endif
+endif
+ifneq ($(HK_CHIP), enable)
+CHIP_TYPE=NONHK_CHIP
+endif
+
+ifeq (MP, $(CHIP_TYPE))
+ifeq (disable, $(ISISC_ENABLE))
+IN_ACL=FALSE
+IN_FDB=FALSE
+IN_IGMP=FALSE
+IN_LEAKY=FALSE
+IN_LED=FALSE
+IN_MIRROR=FALSE
+IN_MISC=FALSE
+IN_PORTVLAN=FALSE
+IN_QOS=FALSE
+IN_RATE=FALSE
+IN_STP=FALSE
+IN_VLAN=FALSE
+IN_REDUCED_ACL=FALSE
+IN_COSMAP=FALSE
+IN_IP=FALSE
+IN_NAT=FALSE
+IN_FLOW=FALSE
+IN_TRUNK=FALSE
+IN_RSS_HASH=FALSE
+IN_SEC=FALSE
+IN_QM=FALSE
+IN_PPPOE=FALSE
+IN_VSI=FALSE
+IN_CTRLPKT=FALSE
+IN_SERVCODE=FALSE
+IN_BM=FALSE
+IN_SHAPER=FALSE
+IN_POLICER=FALSE
+endif
+endif

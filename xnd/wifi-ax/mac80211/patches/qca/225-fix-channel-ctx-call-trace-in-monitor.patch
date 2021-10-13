@@ -1,0 +1,87 @@
+Subject: [PATCH] ath11k: fix channel ctx call trace in monitor
+
+Channel context not created in the radio, so that monitor vdev
+start failed due to channel context null.
+
+Call Trace:
+
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 3216 at /local/mnt/workspace/periyasa/4_4_ipq6018_27Oct2020/qsdk/build_dir/target-arm_cortex-a7_musl-1.1.16_eabi/linux-ipq_ipq60xx/backports-20200908-4.4.60-9a94b73e75/drivers/net/wireless/ath/ath11k/mac.c:807 ath11k_mac_op_add_chanctx+0x5a0/0x86c [ath11k]()
+Modules linked in: ath9k ath9k_common iptable_nat ath9k_hw ath11k_pci ath11k_ahb ath11k ath10k_pci ath10k_core ath nf_nat_pptp nf_nat_ipv4 nf_nat_amanda nf_conntrack_pptp nf_conntrack_ipv4 nf_conntrack_amanda mac80211 ipt_REJECT ipt_MASQUERADE cfg80211 xt_time xt_tcpudp xt_tcpmss
+CPU: 0 PID: 3216 Comm: ifconfig Not tainted 4.4.60 #11
+Hardware name: Generic DT based system
+[<80116dac>] (unwind_backtrace) from [<80113700>] (show_stack+0x10/0x14)
+[<80113700>] (show_stack) from [<80317eb4>] (dump_stack+0x7c/0x9c)
+[<80317eb4>] (dump_stack) from [<801239e0>] (warn_slowpath_common+0x80/0xac)
+[<801239e0>] (warn_slowpath_common) from [<80123a9c>] (warn_slowpath_null+0x18/0x20)
+[<80123a9c>] (warn_slowpath_null) from [<c5fab68c>] (ath11k_mac_op_add_chanctx+0x5a0/0x86c [ath11k])
+[<c5fab68c>] (ath11k_mac_op_add_chanctx [ath11k]) from [<c5fad764>] (ath11k_mac_op_unassign_vif_chanctx+0x368/0x64c [ath11k])
+[<c5fad764>] (ath11k_mac_op_unassign_vif_chanctx [ath11k]) from [<c5fadda0>] (ath11k_mac_op_config+0x78/0x1c4 [ath11k])
+[<c5fadda0>] (ath11k_mac_op_config [ath11k]) from [<c5bb5974>] (ieee80211_hw_config+0x23c/0x2c0 [mac80211])
+[<c5bb5974>] (ieee80211_hw_config [mac80211]) from [<c5bc9df4>] (ieee80211_do_open+0x688/0x8cc [mac80211])
+[<c5bc9df4>] (ieee80211_do_open [mac80211]) from [<8054969c>] (__dev_open+0xa0/0xf4)
+[<8054969c>] (__dev_open) from [<805498e8>] (__dev_change_flags+0x8c/0x130)
+[<805498e8>] (__dev_change_flags) from [<805499a4>] (dev_change_flags+0x18/0x48)
+[<805499a4>] (dev_change_flags) from [<805acb10>] (devinet_ioctl+0x2d8/0x648)
+[<805acb10>] (devinet_ioctl) from [<8052e5ac>] (sock_ioctl+0x224/0x278)
+[<8052e5ac>] (sock_ioctl) from [<801f3204>] (do_vfs_ioctl+0x4f0/0x5b0)
+[<801f3204>] (do_vfs_ioctl) from [<801f32f8>] (SyS_ioctl+0x34/0x5c)
+[<801f32f8>] (SyS_ioctl) from [<80101b80>] (ret_fast_syscall+0x0/0x34)
+---[ end trace 9a32f5c3b9a0b9bd ]---
+ath11k c000000.wifi: failed to start monitor vdev: -2
+
+Signed-off-by: Karthikeyan Periyasamy <periyasa@codeaurora.org>
+---
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -766,25 +766,19 @@ static inline int ath11k_mac_vdev_setup_
+ 	return ar->last_wmi_vdev_start_status ? -EINVAL : 0;
+ }
+ 
+-static int ath11k_mac_monitor_vdev_start(struct ath11k *ar, int vdev_id)
++static int ath11k_mac_monitor_vdev_start(struct ath11k *ar, int vdev_id,
++					 struct cfg80211_chan_def *chandef)
+ {
+ 	struct vdev_up_params params = {
+ 		.vdev_id = vdev_id,
+ 		.bssid = ar->mac_addr,
+ 	};
+-	struct cfg80211_chan_def *chandef = NULL;
+ 	struct ieee80211_channel *channel = NULL;
+ 	struct wmi_vdev_start_req_arg arg = {};
+ 	int ret = 0;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+ 
+-	ieee80211_iter_chan_contexts_atomic(ar->hw,
+-					    ath11k_mac_get_any_chandef_iter,
+-					    &chandef);
+-
+-	if (WARN_ON_ONCE(!chandef))
+-		return -ENOENT;
+ 	channel = chandef->chan;
+ 	arg.vdev_id = vdev_id;
+ 	arg.channel.freq = channel->center_freq;
+@@ -979,6 +973,7 @@ static int ath11k_mac_monitor_vdev_delet
+ 
+ static int ath11k_mac_monitor_start(struct ath11k *ar)
+ {
++	struct cfg80211_chan_def *chandef = NULL;
+ 	int ret;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+@@ -986,7 +981,13 @@ static int ath11k_mac_monitor_start(stru
+ 	if (ar->monitor_started)
+ 		return 0;
+ 
+-	ret = ath11k_mac_monitor_vdev_start(ar, ar->monitor_vdev_id);
++	ieee80211_iter_chan_contexts_atomic(ar->hw,
++					    ath11k_mac_get_any_chandef_iter,
++					    &chandef);
++	if (!chandef)
++		return 0;
++
++	ret = ath11k_mac_monitor_vdev_start(ar, ar->monitor_vdev_id, chandef);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to start monitor vdev: %d\n", ret);
+ 		ath11k_mac_monitor_vdev_delete(ar);

@@ -1,0 +1,370 @@
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -4143,10 +4143,12 @@ static int hostapd_config_fill(struct ho
+ #ifdef CONFIG_MBO
+ 	} else if (os_strcmp(buf, "mbo") == 0) {
+ 		bss->mbo_enabled = atoi(pos);
+-	} else if (os_strcmp(buf, "mbo_cell_data_conn_pref") == 0) {
+-		bss->mbo_cell_data_conn_pref = atoi(pos);
++	} else if (os_strcmp(buf, "mbo_ap_cap_ind") == 0) {
++		bss->mbo_ap_cap_ind = atoi(pos);
+ 	} else if (os_strcmp(buf, "oce") == 0) {
+ 		bss->oce = atoi(pos);
++	} else if (os_strcmp(buf, "mbo_cell_data_conn_pref") == 0) {
++		bss->mbo_cell_data_conn_pref = atoi(pos);
+ #endif /* CONFIG_MBO */
+ #ifdef CONFIG_TESTING_OPTIONS
+ #define PARSE_TEST_PROBABILITY(_val)				\
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -882,10 +882,11 @@ static int hostapd_ctrl_iface_bss_tm_req
+ 	if (pos) {
+ 		pos += 10;
+ 		req_mode |= WNM_BSS_TM_REQ_BSS_TERMINATION_INCLUDED;
+-		/* TODO: TSF configurable/learnable */
++		/* TODO: TSF learnable */
+ 		bss_term_dur[0] = 4; /* Subelement ID */
+ 		bss_term_dur[1] = 10; /* Length */
+-		os_memset(&bss_term_dur[2], 0, 8);
++		bss_term_dur[2] = atoi(pos); /* TSF */
++		os_memset(&bss_term_dur[3], 0, 7);
+ 		end = os_strchr(pos, ',');
+ 		if (end == NULL) {
+ 			wpa_printf(MSG_DEBUG, "Invalid bss_term data");
+@@ -895,7 +896,7 @@ static int hostapd_ctrl_iface_bss_tm_req
+ 		WPA_PUT_LE16(&bss_term_dur[10], atoi(end));
+ 	}
+ 
+-	nei_len = ieee802_11_parse_candidate_list(cmd, nei_rep,
++	nei_len = ieee802_11_parse_candidate_list(cmd, sta, nei_rep,
+ 						  sizeof(nei_rep));
+ 	if (nei_len < 0)
+ 		return -1;
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -714,6 +714,11 @@ struct hostapd_bss_config {
+ 	 *  - Set BIT(2) to enable OCE in AP mode
+ 	 */
+ 	unsigned int oce;
++	/**
++	 *  Set BIT(6) to advertise cellular data aware capability
++	 *  in AP mode
++	 */
++	unsigned int mbo_ap_cap_ind;
+ 	int mbo_cell_data_conn_pref;
+ #endif /* CONFIG_MBO */
+ 
+--- a/src/ap/gas_serv.c
++++ b/src/ap/gas_serv.c
+@@ -19,6 +19,7 @@
+ #include "dpp_hostapd.h"
+ #include "sta_info.h"
+ #include "gas_serv.h"
++#include "neighbor_db.h"
+ 
+ 
+ #ifdef CONFIG_DPP
+@@ -603,6 +604,28 @@ static void anqp_add_domain_name(struct
+ 	}
+ }
+ 
++static void anqp_add_neighbor_report(struct hostapd_data *hapd,
++				     struct wpabuf *buf)
++{
++	if (anqp_add_override(hapd, buf, ANQP_NEIGHBOR_REPORT))
++		return;
++
++	if (hapd->conf->radio_measurements[0] &
++	      WLAN_RRM_CAPS_NEIGHBOR_REPORT) {
++		u8* len, *nei_len;
++		len = gas_anqp_add_element(buf, ANQP_NEIGHBOR_REPORT);
++		wpabuf_put_u8(buf, WLAN_EID_NEIGHBOR_REPORT);
++		nei_len = (u8 *)wpabuf_put(buf, 1);
++
++		if (hostapd_prepare_neighbor_buf(hapd, hapd->own_addr,
++						 buf)) {
++			buf->used -= 2;
++			return;
++		}
++		*nei_len = ((u8 *)wpabuf_put(buf, 0) - nei_len - 1);
++		gas_anqp_set_element_len(buf, len);
++	}
++}
+ 
+ #ifdef CONFIG_FILS
+ static void anqp_add_fils_realm_info(struct hostapd_data *hapd,
+@@ -1028,6 +1051,8 @@ gas_serv_build_gas_resp_payload(struct h
+ 		anqp_add_elem(hapd, buf, ANQP_TDLS_CAPABILITY);
+ 	if (request & ANQP_REQ_EMERGENCY_NAI)
+ 		anqp_add_elem(hapd, buf, ANQP_EMERGENCY_NAI);
++	if (request & ANQP_REQ_NEIGHBOR_REPORT)
++		anqp_add_neighbor_report(hapd, buf);
+ 
+ 	for (i = 0; i < num_extra_req; i++) {
+ #ifdef CONFIG_FILS
+@@ -1172,6 +1197,12 @@ static void rx_anqp_query_list_id(struct
+ 			     "Emergency NAI",
+ 			     get_anqp_elem(hapd, info_id) != NULL, qi);
+ 		break;
++	case ANQP_NEIGHBOR_REPORT:
++		set_anqp_req(ANQP_REQ_NEIGHBOR_REPORT,
++			     "Neighbor report",
++			     (hapd->conf->radio_measurements[0] &
++			     WLAN_RRM_CAPS_NEIGHBOR_REPORT), qi);
++		break;
+ 	default:
+ #ifdef CONFIG_FILS
+ 		if (info_id == ANQP_FILS_REALM_INFO &&
+--- a/src/ap/gas_serv.h
++++ b/src/ap/gas_serv.h
+@@ -40,6 +40,8 @@
+ 	(1 << (ANQP_TDLS_CAPABILITY - ANQP_QUERY_LIST))
+ #define ANQP_REQ_EMERGENCY_NAI \
+ 	(1 << (ANQP_EMERGENCY_NAI - ANQP_QUERY_LIST))
++#define ANQP_REQ_NEIGHBOR_REPORT \
++	(1 << (ANQP_NEIGHBOR_REPORT - ANQP_QUERY_LIST))
+ /*
+  * First 15 Hotspot 2.0 vendor specific ANQP-elements can be included in the
+  * optimized bitmap.
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -132,6 +132,9 @@ static inline void sae_clear_retransmit_
+ }
+ #endif /* CONFIG_SAE */
+ 
++u8 * hostapd_eid_rm_enabled_capab(struct hostapd_data *hapd,
++						u8 *eid, size_t len);
++
+ #ifdef CONFIG_MBO
+ 
+ u8 * hostapd_eid_mbo(struct hostapd_data *hapd, u8 *eid, size_t len);
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -801,11 +801,13 @@ u8 * hostapd_eid_mbo(struct hostapd_data
+ 	    !OCE_STA_CFON_ENABLED(hapd) && !OCE_AP_ENABLED(hapd))
+ 		return eid;
+ 
+-	if (hapd->conf->mbo_enabled) {
++	if (hapd->conf->mbo_enabled && hapd->conf->oce & OCE_AP) {
+ 		*mbo_pos++ = MBO_ATTR_ID_AP_CAPA_IND;
+ 		*mbo_pos++ = 1;
+-		/* Not Cellular aware */
+-		*mbo_pos++ = 0;
++		if (hapd->conf->mbo_ap_cap_ind & MBO_AP_CAPA_CELL_AWARE)
++			*mbo_pos++ = MBO_AP_CAPA_CELL_AWARE;
++		else
++			*mbo_pos++ = 0;
+ 	}
+ 
+ 	if (hapd->conf->mbo_enabled && hapd->mbo_assoc_disallow) {
+--- a/src/ap/neighbor_db.c
++++ b/src/ap/neighbor_db.c
+@@ -160,6 +160,24 @@ fail:
+ 	return -1;
+ }
+ 
++int hostapd_prepare_neighbor_buf(struct hostapd_data *hapd,
++				 const u8 *bssid, struct wpabuf *nrbuf)
++{
++	struct hostapd_neighbor_entry *nr;
++
++	nr = hostapd_neighbor_get(hapd, bssid, NULL);
++	if (!nr)
++		return -1;
++
++	if (wpabuf_tailroom(nrbuf) < wpabuf_len(nr->nr)) {
++		wpa_printf(MSG_ERROR,
++			   "Invalid buf size for Neighbor Report\n");
++		return -1;
++	}
++
++	wpabuf_put_buf(nrbuf, nr->nr);
++	return 0;
++}
+ 
+ int hostapd_neighbor_remove(struct hostapd_data *hapd, const u8 *bssid,
+ 			    const struct wpa_ssid_value *ssid)
+--- a/src/ap/neighbor_db.h
++++ b/src/ap/neighbor_db.h
+@@ -19,6 +19,8 @@ int hostapd_neighbor_set(struct hostapd_
+ 			 const struct wpabuf *nr, const struct wpabuf *lci,
+ 			 const struct wpabuf *civic, int stationary);
+ void hostapd_neighbor_set_own_report(struct hostapd_data *hapd);
++int hostapd_prepare_neighbor_buf(struct hostapd_data *hapd,
++				 const u8 *bssid, struct wpabuf *nrbuf);
+ int hostapd_neighbor_remove(struct hostapd_data *hapd, const u8 *bssid,
+ 			    const struct wpa_ssid_value *ssid);
+ void hostapd_free_neighbor_db(struct hostapd_data *hapd);
+--- a/src/ap/wnm_ap.c
++++ b/src/ap/wnm_ap.c
+@@ -20,6 +20,7 @@
+ #include "ap/wpa_auth.h"
+ #include "mbo_ap.h"
+ #include "wnm_ap.h"
++#include "neighbor_db.h"
+ 
+ #define MAX_TFS_IE_LEN  1024
+ 
+@@ -366,11 +367,27 @@ static int ieee802_11_send_bss_trans_mgm
+ 						  u8 dialog_token)
+ {
+ 	struct ieee80211_mgmt *mgmt;
+-	size_t len;
++	size_t len, nr_len = 0;
+ 	u8 *pos;
++	u8 req_mode = 0;
+ 	int res;
+ 
+-	mgmt = os_zalloc(sizeof(*mgmt));
++#ifdef CONFIG_MBO
++	u8 *nr_pos;
++	struct hostapd_neighbor_entry *nr;
++	struct wpabuf *nrbuf = NULL;
++	if (hapd->conf->mbo_enabled) {
++		dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry,
++				 list)
++			/* ID and length */
++			nr_len += wpabuf_len(nr->nr) + 1 + 1;
++
++		nrbuf = wpabuf_alloc(nr_len);
++		if (nrbuf == NULL)
++			return -1;
++	}
++#endif
++	mgmt = os_zalloc(sizeof(*mgmt) + nr_len);
+ 	if (mgmt == NULL)
+ 		return -1;
+ 	os_memcpy(mgmt->da, addr, ETH_ALEN);
+@@ -381,7 +398,11 @@ static int ieee802_11_send_bss_trans_mgm
+ 	mgmt->u.action.category = WLAN_ACTION_WNM;
+ 	mgmt->u.action.u.bss_tm_req.action = WNM_BSS_TRANS_MGMT_REQ;
+ 	mgmt->u.action.u.bss_tm_req.dialog_token = dialog_token;
+-	mgmt->u.action.u.bss_tm_req.req_mode = 0;
++#ifdef CONFIG_MBO
++	if (hapd->conf->mbo_enabled)
++		req_mode |= WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED;
++#endif
++	mgmt->u.action.u.bss_tm_req.req_mode = req_mode;
+ 	mgmt->u.action.u.bss_tm_req.disassoc_timer = host_to_le16(0);
+ 	mgmt->u.action.u.bss_tm_req.validity_interval = 1;
+ 	pos = mgmt->u.action.u.bss_tm_req.variable;
+@@ -394,6 +415,25 @@ static int ieee802_11_send_bss_trans_mgm
+ 		   le_to_host16(mgmt->u.action.u.bss_tm_req.disassoc_timer),
+ 		   mgmt->u.action.u.bss_tm_req.validity_interval);
+ 
++#ifdef CONFIG_MBO
++	if (hapd->conf->mbo_enabled) {
++		dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry,
++				 list) {
++			wpabuf_put_u8(nrbuf, WLAN_EID_NEIGHBOR_REPORT);
++			/* Length to be filled */
++			nr_pos = (u8 *)wpabuf_put(nrbuf, 1);
++			if (hostapd_prepare_neighbor_buf(hapd, nr->bssid,
++							 nrbuf) < 0) {
++				res = -1;
++			}
++			/* Fill in the length field */
++			*nr_pos = ((u8 *)wpabuf_put(nrbuf, 0) - nr_pos - 1);
++		}
++		os_memcpy(pos, nrbuf->buf, nr_len);
++		pos += nr_len;
++		wpabuf_free(nrbuf);
++	}
++#endif
+ 	len = pos - &mgmt->u.action.category;
+ 	res = hostapd_drv_send_action(hapd, hapd->iface->freq, 0,
+ 				      mgmt->da, &mgmt->u.action.category, len);
+--- a/src/common/ieee802_11_common.c
++++ b/src/common/ieee802_11_common.c
+@@ -2290,11 +2290,21 @@ bool is_6ghz_psc_frequency(int freq)
+ }
+ 
+ 
+-int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
+-				    size_t nei_rep_len)
++int ieee802_11_parse_candidate_list(const char *pos, struct sta_info *sta,
++				    u8 *nei_rep, size_t nei_rep_len)
+ {
+ 	u8 *nei_pos = nei_rep;
+ 	const char *end;
++#ifdef CONFIG_MBO
++	u8 non_pref_chan = 0;
++	u8 *pref_pos = NULL;
++	int i;
++
++	struct mbo_non_pref_chan_info *info = NULL;
++
++	if (sta && sta->non_pref_chan)
++		info = sta->non_pref_chan;
++#endif
+ 
+ 	/*
+ 	 * BSS Transition Candidate List Entries - Neighbor Report elements
+@@ -2350,6 +2360,9 @@ int ieee802_11_parse_candidate_list(cons
+ 		pos++;
+ 
+ 		*nei_pos++ = atoi(pos); /* Channel Number */
++#ifdef CONFIG_MBO
++		non_pref_chan = atoi(pos);
++#endif
+ 		pos = os_strchr(pos, ',');
+ 		if (pos == NULL) {
+ 			wpa_printf(MSG_DEBUG, "Missing PHY Type");
+@@ -2381,6 +2394,25 @@ int ieee802_11_parse_candidate_list(cons
+ 					   "Invalid neighbor subelement info");
+ 				return -1;
+ 			}
++#ifdef CONFIG_MBO
++			if (info) {
++				for (i = 0; i < (len / 2); i++)
++					if (nei_pos[i] == WNM_NEIGHBOR_BSS_TRANSITION_CANDIDATE &&
++					    nei_pos[i + 1] == 0x1) /* length */
++						pref_pos = (nei_pos + i + 2);
++
++			/* If STA had updated MBO non-pref chan report,
++			 * use the same candidate preference value in the
++			 * BSS Transition Candidate sub-element.
++			 */
++				for ( ; info ; info = info->next)
++					for (i = 0; i < info->num_channels; i++)
++						if (non_pref_chan == info->channels[i])
++							*pref_pos = info->pref;
++
++				info = sta->non_pref_chan;
++			}
++#endif
+ 			nei_pos += len / 2;
+ 			pos = end;
+ 		}
+--- a/src/common/ieee802_11_common.h
++++ b/src/common/ieee802_11_common.h
+@@ -11,6 +11,7 @@
+ 
+ #include "defs.h"
+ #include "ieee802_11_defs.h"
++#include "ap/sta_info.h"
+ 
+ struct element {
+ 	u8 id;
+@@ -265,8 +266,8 @@ bool is_6ghz_freq(int freq);
+ bool is_6ghz_op_class(u8 op_class);
+ bool is_6ghz_psc_frequency(int freq);
+ 
+-int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
+-				    size_t nei_rep_len);
++int ieee802_11_parse_candidate_list(const char *pos, struct sta_info *sta,
++				    u8 *nei_rep, size_t nei_rep_len);
+ 
+ int ieee802_11_ext_capab(const u8 *ie, unsigned int capab);
+ int op_class_to_bandwidth(u8 op_class);
+--- a/wpa_supplicant/wnm_sta.c
++++ b/wpa_supplicant/wnm_sta.c
+@@ -1630,7 +1630,7 @@ int wnm_send_bss_transition_mgmt_query(s
+ 			return ret;
+ 		}
+ 
+-		ret = ieee802_11_parse_candidate_list(btm_candidates,
++		ret = ieee802_11_parse_candidate_list(btm_candidates, NULL,
+ 						      wpabuf_put(buf, 0),
+ 						      max_len);
+ 		if (ret < 0) {

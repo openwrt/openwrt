@@ -1,0 +1,163 @@
+Index: hostapd-2021-02-20-59e9794c/hostapd/config_file.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/hostapd/config_file.c
++++ hostapd-2021-02-20-59e9794c/hostapd/config_file.c
+@@ -2458,6 +2458,8 @@ static int hostapd_config_fill(struct ho
+ 		conf->ieee80211d = atoi(pos);
+ 	} else if (os_strcmp(buf, "ieee80211h") == 0) {
+ 		conf->ieee80211h = atoi(pos);
++	} else if (os_strcmp(buf, "dfs_test_mode") == 0) {
++		conf->dfs_test_mode = atoi(pos);
+ 	} else if (os_strcmp(buf, "ieee8021x") == 0) {
+ 		bss->ieee802_1x = atoi(pos);
+ 	} else if (os_strcmp(buf, "eapol_version") == 0) {
+Index: hostapd-2021-02-20-59e9794c/src/ap/ap_config.h
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/ap/ap_config.h
++++ hostapd-2021-02-20-59e9794c/src/ap/ap_config.h
+@@ -979,6 +979,7 @@ struct hostapd_config {
+ 	int ieee80211d;
+ 
+ 	int ieee80211h; /* DFS */
++	int dfs_test_mode;
+ 
+ 	/*
+ 	 * Local power constraint is an octet encoded as an unsigned integer in
+Index: hostapd-2021-02-20-59e9794c/src/ap/dfs.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/ap/dfs.c
++++ hostapd-2021-02-20-59e9794c/src/ap/dfs.c
+@@ -18,6 +18,8 @@
+ #include "drivers/driver.h"
+ #include "dfs.h"
+ #include "crypto/crypto.h"
++#include "beacon.h"
++#include "eloop.h"
+ 
+ 
+ static int dfs_get_used_n_chans(struct hostapd_iface *iface, int *seg1)
+@@ -1036,6 +1038,73 @@ static int hostapd_dfs_start_channel_swi
+ 	return err;
+ }
+ 
++void hostapd_dfs_test_mode_csa_timeout(void *eloop_data, void *user_data)
++{
++	struct hostapd_data *hapd = eloop_data;
++
++	wpa_printf(MSG_INFO, "Stopping CSA in dfs test mode");
++	hostapd_cleanup_cs_params(hapd);
++	ieee802_11_set_beacon(hapd);
++}
++
++static int hostapd_dfs_testmode_set_beacon_csa(struct hostapd_iface *iface)
++{
++	struct hostapd_data *hapd = iface->bss[0];
++	struct csa_settings csa_settings;
++	int secondary_channel;
++	u8 vht_oper_centr_freq_seg0_idx;
++	u8 vht_oper_centr_freq_seg1_idx;
++	int err = 0;
++
++	eloop_cancel_timeout(hostapd_dfs_test_mode_csa_timeout, hapd, NULL);
++	secondary_channel = iface->conf->secondary_channel;
++	vht_oper_centr_freq_seg0_idx =
++			iface->conf->vht_oper_centr_freq_seg0_idx;
++	vht_oper_centr_freq_seg1_idx =
++			iface->conf->vht_oper_centr_freq_seg1_idx;
++
++	/* Setup CSA request */
++	os_memset(&csa_settings, 0, sizeof(csa_settings));
++	err = hostapd_set_freq_params(&csa_settings.freq_params,
++				      iface->conf->hw_mode,
++				      iface->freq,
++				      iface->conf->channel,
++				      iface->conf->ieee80211n,
++				      iface->conf->ieee80211ac,
++				      secondary_channel,
++				      iface->conf->vht_oper_chwidth,
++				      vht_oper_centr_freq_seg0_idx,
++				      vht_oper_centr_freq_seg1_idx,
++				      iface->current_mode->vht_capab);
++
++	if (err) {
++		wpa_printf(MSG_ERROR, "DFS failed to calculate CSA freq params");
++		goto fail;
++	}
++
++	if (!(hapd->iface->drv_flags & WPA_DRIVER_FLAGS_AP_CSA)) {
++		wpa_printf(MSG_INFO, "CSA is not supported");
++		hostapd_disable_iface(iface);
++		return -1;
++	}
++
++	hapd->cs_freq_params = csa_settings.freq_params;
++	hapd->cs_count = 3;
++	hapd->cs_block_tx = 1;
++	err = ieee802_11_set_beacon(hapd);
++	if (err)
++		goto fail;
++	wpa_printf(MSG_DEBUG, "CSA beacon configured for dfs mode, count %d",
++		   hapd->cs_count);
++	hapd->csa_in_progress = 1;
++	eloop_register_timeout(HOSTAPD_DFS_TEST_MODE_CSA_DUR, 0,
++			       hostapd_dfs_test_mode_csa_timeout, hapd, NULL);
++	return 0;
++
++fail:
++	hostapd_disable_iface(iface);
++	return err;
++}
+ 
+ static int hostapd_dfs_start_channel_switch(struct hostapd_iface *iface)
+ {
+@@ -1071,6 +1140,9 @@ static int hostapd_dfs_start_channel_swi
+ 	if (iface->dfs_domain == HOSTAPD_DFS_REGION_ETSI)
+ 		skip_radar = 0;
+ 
++	if (iface->conf->dfs_test_mode)
++		return hostapd_dfs_testmode_set_beacon_csa(iface);
++
+ 	/* Perform channel switch/CSA */
+ 	channel = dfs_get_valid_channel(iface, &secondary_channel,
+ 					&oper_centr_freq_seg0_idx,
+@@ -1208,6 +1280,12 @@ int hostapd_dfs_radar_detected(struct ho
+ 	if (!res)
+ 		return 0;
+ 
++	if (iface->conf->dfs_test_mode) {
++		set_dfs_state(iface, freq, ht_enabled, chan_offset,
++			      chan_width, cf1, cf2,
++			      HOSTAPD_CHAN_DFS_AVAILABLE);
++	}
++
+ 	/* Skip if reported radar event not overlapped our channels */
+ 	res = dfs_are_channels_overlapped(iface, freq, chan_width, cf1, cf2);
+ 	if (!res)
+Index: hostapd-2021-02-20-59e9794c/src/ap/dfs.h
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/ap/dfs.h
++++ hostapd-2021-02-20-59e9794c/src/ap/dfs.h
+@@ -9,6 +9,11 @@
+ #ifndef DFS_H
+ #define DFS_H
+ 
++/* CSA beacon duration in seconds for dfs testing mode */
++#define HOSTAPD_DFS_TEST_MODE_CSA_DUR 1
++
++void hostapd_dfs_test_mode_csa_timeout(void *eloop_data, void *user_data);
++
+ int hostapd_handle_dfs(struct hostapd_iface *iface);
+ 
+ int hostapd_dfs_complete_cac(struct hostapd_iface *iface, int success, int freq,
+Index: hostapd-2021-02-20-59e9794c/src/ap/hostapd.c
+===================================================================
+--- hostapd-2021-02-20-59e9794c.orig/src/ap/hostapd.c
++++ hostapd-2021-02-20-59e9794c/src/ap/hostapd.c
+@@ -2866,6 +2866,7 @@ int hostapd_disable_iface(struct hostapd
+ 		hostapd_cleanup_cs_params(hapd_iface->bss[j]);
+ #endif /* NEED_AP_MLME */
+ 
++	eloop_cancel_timeout(hostapd_dfs_test_mode_csa_timeout, hapd_iface, NULL);
+ 	/* same as hostapd_interface_deinit without deinitializing ctrl-iface */
+ 	for (j = 0; j < hapd_iface->num_bss; j++) {
+ 		struct hostapd_data *hapd = hapd_iface->bss[j];

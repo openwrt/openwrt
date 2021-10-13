@@ -1,0 +1,158 @@
+From c6e29601fc643c84ada00fc065e1d54353a4f6a3 Mon Sep 17 00:00:00 2001
+From: Muna Sinada <msinada@codeaurora.org>
+Date: Thu, 8 Oct 2020 04:59:37 -0700
+Subject: [PATCH] iw: Add HE UL MU fixed rate setting
+
+Adding mcs fixed rate settings for HE UL MU traffic, which
+encompasses both UL-OFDMA and UL-MUMIO.
+
+Signed-off-by: Muna Sinada <msinada@codeaurora.org>
+---
+ bitrate.c | 51 +++++++++++++++++++++++++++++++++++++++++++++------
+ nl80211.h |  1 +
+ 2 files changed, 46 insertions(+), 6 deletions(-)
+
+--- a/bitrate.c
++++ b/bitrate.c
+@@ -155,6 +155,7 @@ int set_bitrates(struct nl_msg *msg,
+ 	bool have_ht_mcs_24 = false, have_ht_mcs_5 = false;
+ 	bool have_vht_mcs_24 = false, have_vht_mcs_5 = false;
+ 	bool have_he_mcs_24 = false, have_he_mcs_5 = false;
++	bool have_he_ul_mcs_24 = false, have_he_ul_mcs_5 = false;
+ 	bool have_he_mcs_6 = false;
+ 	uint8_t ht_mcs_24[77], ht_mcs_5[77];
+ 	int n_ht_mcs_24 = 0, n_ht_mcs_5 = 0;
+@@ -163,16 +164,20 @@ int set_bitrates(struct nl_msg *msg,
+ 	struct nl80211_txrate_he txrate_he_24 = {};
+ 	struct nl80211_txrate_he txrate_he_5 = {};
+ 	struct nl80211_txrate_he txrate_he_6 = {};
++	struct nl80211_txrate_he txrate_he_ul_24 = {};
++	struct nl80211_txrate_he txrate_he_ul_5 = {};
+ 	uint8_t *mcs = NULL;
+ 	int *n_mcs = NULL;
+ 	char *vht_argv_5[VHT_ARGC_MAX] = {}; char *vht_argv_24[VHT_ARGC_MAX] = {};
+ 	char *he_argv_5[VHT_ARGC_MAX] = {}; char *he_argv_24[VHT_ARGC_MAX] = {};
+ 	char *he_argv_6[VHT_ARGC_MAX] = {};
+-	char **vht_argv = NULL, **he_argv = NULL;
++	char *he_ul_argv_5[VHT_ARGC_MAX] = {}; char *he_ul_argv_24[VHT_ARGC_MAX] = {};
++	char **vht_argv = NULL, **he_argv = NULL, **he_ul_argv = NULL;
+ 	int vht_argc_5 = 0; int vht_argc_24 = 0;
+ 	int he_argc_5 = 0; int he_argc_24 = 0;
+ 	int he_argc_6 = 0;
+-	int *vht_argc = NULL, *he_argc = NULL;
++	int he_ul_argc_5 = 0; int he_ul_argc_24 = 0;
++	int *vht_argc = NULL, *he_argc = NULL, *he_ul_argc = NULL;
+ 	int sgi_24 = 0, sgi_5 = 0, lgi_24 = 0, lgi_5 = 0;
+ 	int has_he_gi_24 = 0, has_he_gi_5 = 0, has_he_ltf_24 = 0, has_he_ltf_5 = 0;
+ 	int has_he_gi_6 = 0, has_he_ltf_6 = 0;
+@@ -188,6 +193,7 @@ int set_bitrates(struct nl_msg *msg,
+ 		S_GI,
+ 		S_HE_GI,
+ 		S_HE_LTF,
++		S_HE_UL,
+ 	} parser_state = S_NONE;
+ 
+ 	for (i = 0; i < argc; i++) {
+@@ -289,6 +295,20 @@ int set_bitrates(struct nl_msg *msg,
+ 		} else if (strcmp(argv[i], "he-ltf-6") == 0) {
+ 			has_he_ltf_6 = 1;
+ 			parser_state = S_HE_LTF;
++		} else if (strcmp(argv[i], "he-ul-mcs-2.4") == 0) {
++                         if (have_he_ul_mcs_24)
++                                return 1;
++                        parser_state = S_HE_UL;
++                        he_ul_argv = he_ul_argv_24;
++                        he_ul_argc = &he_ul_argc_24;
++                        have_he_ul_mcs_24 = true;
++		} else if (strcmp(argv[i], "he-ul-mcs-5") == 0) {
++			if (have_he_ul_mcs_5)
++                                return 1;
++                        parser_state = S_HE_UL;
++                        he_ul_argv = he_ul_argv_5;
++                        he_ul_argc = &he_ul_argc_5;
++                        have_he_ul_mcs_5 = true;
+ 		} else switch (parser_state) {
+ 		case S_LEGACY:
+ 			tmpd = strtod(argv[i], &end);
+@@ -329,6 +349,11 @@ int set_bitrates(struct nl_msg *msg,
+ 				return 1;
+ 			he_ltf = he_ltf >> 1;
+ 			break;
++		case S_HE_UL:
++			if (*he_ul_argc >= VHT_ARGC_MAX)
++				return 1;
++			he_ul_argv[(*he_ul_argc)++] = argv [i];
++			break;
+ 		default:
+ 			if (attr != NL80211_ATTR_TX_RATES)
+ 				goto next;
+@@ -372,12 +397,20 @@ next:
+ 			return 1;
+ 	}
+ 
++	if (have_he_ul_mcs_24)
++                if (!setup_he(&txrate_he_ul_24, he_ul_argc_24, he_ul_argv_24))
++                        return -EINVAL;
++
++        if (have_he_ul_mcs_5)
++                if (!setup_he(&txrate_he_ul_5, he_ul_argc_5, he_ul_argv_5))
++                        return -EINVAL;
++
+ 	nl_rates = nla_nest_start(msg, attr);
+ 	if (!nl_rates)
+ 		goto nla_put_failure;
+ 
+ 	if (have_legacy_24 || have_ht_mcs_24 || have_vht_mcs_24 || have_he_mcs_24 ||
+-	    sgi_24 || lgi_24 || has_he_gi_24 || has_he_ltf_24) {
++	    sgi_24 || lgi_24 || has_he_gi_24 || has_he_ltf_24 || have_he_ul_mcs_24) {
+ 		nl_band = nla_nest_start(msg, NL80211_BAND_2GHZ);
+ 		if (!nl_band)
+ 			goto nla_put_failure;
+@@ -398,11 +431,14 @@ next:
+ 			nla_put_u8(msg, NL80211_TXRATE_HE_GI, he_gi);
+ 		if (has_he_ltf_24)
+ 			nla_put_u8(msg, NL80211_TXRATE_HE_LTF, he_ltf);
++		if (have_he_ul_mcs_24)
++                        nla_put(msg, NL80211_TXRATE_HE_UL, sizeof(txrate_he_ul_24),
++                                &txrate_he_ul_24);
+ 		nla_nest_end(msg, nl_band);
+ 	}
+ 
+ 	if (have_legacy_5 || have_ht_mcs_5 || have_vht_mcs_5 || have_he_mcs_5 ||
+-	    sgi_5 || lgi_5 || has_he_gi_5 || has_he_ltf_5) {
++	    sgi_5 || lgi_5 || has_he_gi_5 || has_he_ltf_5 || have_he_ul_mcs_5) {
+ 		nl_band = nla_nest_start(msg, NL80211_BAND_5GHZ);
+ 		if (!nl_band)
+ 			goto nla_put_failure;
+@@ -423,6 +459,9 @@ next:
+ 			nla_put_u8(msg, NL80211_TXRATE_HE_GI, he_gi);
+ 		if (has_he_ltf_5)
+ 			nla_put_u8(msg, NL80211_TXRATE_HE_LTF, he_ltf);
++		if (have_he_ul_mcs_5)
++                        nla_put(msg, NL80211_TXRATE_HE_UL, sizeof(txrate_he_ul_5),
++                                &txrate_he_ul_5);
+ 		nla_nest_end(msg, nl_band);
+ 	}
+ 
+@@ -456,9 +495,9 @@ static int handle_bitrates(struct nl8021
+ }
+ 
+ #define DESCR_LEGACY "[legacy-<2.4|5> <legacy rate in Mbps>*]"
+-#define DESCR DESCR_LEGACY " [ht-mcs-<2.4|5> <MCS index>*] [vht-mcs-<2.4|5>  [he-mcs-<2.4|5|6> <NSS:MCSx,MCSy... | NSS:MCSx-MCSy>*] [sgi-2.4|lgi-2.4] [sgi-5|lgi-5]"
++#define DESCR DESCR_LEGACY " [ht-mcs-<2.4|5> <MCS index>*] [vht-mcs-<2.4|5>  [he-mcs-<2.4|5|6> <NSS:MCSx,MCSy... | NSS:MCSx-MCSy>*] [sgi-2.4|lgi-2.4] [sgi-5|lgi-5] [he-ul-mcs-<2.4|5> <NSS:MCS>]"
+ 
+-COMMAND(set, bitrates, "[legacy-<2.4|5> <legacy rate in Mbps>*] [ht-mcs-<2.4|5> <MCS index>*] [vht-mcs-<2.4|5> [he-mcs-<2.4|5|6> <NSS:MCSx,MCSy... | NSS:MCSx-MCSy>*] [sgi-2.4|lgi-2.4] [sgi-5|lgi-5] [he-gi-<2.4|5|6> <0.8|1.6|3.2>] [he-ltf-<2.4|5|6> <1|2|4>]",
++COMMAND(set, bitrates, "[legacy-<2.4|5> <legacy rate in Mbps>*] [ht-mcs-<2.4|5> <MCS index>*] [vht-mcs-<2.4|5> [he-mcs-<2.4|5|6> <NSS:MCSx,MCSy... | NSS:MCSx-MCSy>*] [sgi-2.4|lgi-2.4] [sgi-5|lgi-5] [he-gi-<2.4|5|6> <0.8|1.6|3.2>] [he-ltf-<2.4|5|6> <1|2|4>] [he-ul-mcs-<2.4|5> <NSS:MCS>]",
+ 	NL80211_CMD_SET_TX_BITRATE_MASK, 0, CIB_NETDEV, handle_bitrates,
+ 	"Sets up the specified rate masks.\n"
+ 	"Not passing any arguments would clear the existing mask (if any).");
+--- a/nl80211.h
++++ b/nl80211.h
+@@ -4817,6 +4817,7 @@ enum nl80211_tx_rate_attributes {
+ 	NL80211_TXRATE_HE,
+ 	NL80211_TXRATE_HE_GI,
+ 	NL80211_TXRATE_HE_LTF,
++	NL80211_TXRATE_HE_UL,
+ 
+ 	/* keep last */
+ 	__NL80211_TXRATE_AFTER_LAST,

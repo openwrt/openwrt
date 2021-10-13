@@ -1,0 +1,73 @@
+ drivers/net/wireless/ath/ath11k/dp_tx.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -319,6 +319,8 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
+ 	struct ieee80211_tx_info *info;
+ 	struct ath11k_skb_cb *skb_cb;
+ 	struct ath11k *ar;
++	struct ieee80211_vif *vif;
++	u8 flags = 0;
+ 
+ 	spin_lock_bh(&tx_ring->tx_idr_lock);
+ 	msdu = idr_find(&tx_ring->txbuf_idr, ts->msdu_id);
+@@ -342,6 +344,14 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
+ 
+ 	dma_unmap_single(ab->dev, skb_cb->paddr, msdu->len, DMA_TO_DEVICE);
+ 
++	if (!skb_cb->vif) {
++		dev_kfree_skb_any(msdu);
++		return;
++	}
++
++	flags = skb_cb->flags;
++	vif = skb_cb->vif;
++
+ 	memset(&info->status, 0, sizeof(info->status));
+ 
+ 	if (ts->acked) {
+@@ -354,8 +364,10 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
+ 			info->flags |= IEEE80211_TX_STAT_NOACK_TRANSMITTED;
+ 		}
+ 	}
+-
+-	ieee80211_tx_status(ar->hw, msdu);
++	if (flags & ATH11K_SKB_HW_80211_ENCAP)
++		ieee80211_tx_status_8023(ar->hw, vif, msdu);
++	else
++		ieee80211_tx_status(ar->hw, msdu);
+ }
+ 
+ static void
+@@ -423,6 +435,8 @@ static void ath11k_dp_tx_complete_msdu(s
+ 	struct ath11k_skb_cb *skb_cb;
+ 	struct ath11k_peer *peer;
+ 	struct ath11k_sta *arsta;
++	struct ieee80211_vif *vif;
++	u8 flags = 0;
+ 
+ 	if (WARN_ON_ONCE(ts->buf_rel_source != HAL_WBM_REL_SRC_MODULE_TQM)) {
+ 		/* Must not happen */
+@@ -445,6 +459,9 @@ static void ath11k_dp_tx_complete_msdu(s
+ 		goto exit;
+ 	}
+ 
++	flags = skb_cb->flags;
++	vif = skb_cb->vif;
++
+ 	info = IEEE80211_SKB_CB(msdu);
+ 	memset(&info->status, 0, sizeof(info->status));
+ 
+@@ -506,7 +523,10 @@ static void ath11k_dp_tx_complete_msdu(s
+ 	status.info = info;
+ 	status.rate = &arsta->last_txrate;
+ 	rcu_read_unlock();
+-	ieee80211_tx_status_ext(ar->hw, &status);
++	if (flags & ATH11K_SKB_HW_80211_ENCAP)
++		ieee80211_tx_status_8023(ar->hw, vif, msdu);
++	else
++		ieee80211_tx_status_ext(ar->hw, &status);
+ 	spin_unlock_bh(&ab->base_lock);
+ 	return;
+ exit:

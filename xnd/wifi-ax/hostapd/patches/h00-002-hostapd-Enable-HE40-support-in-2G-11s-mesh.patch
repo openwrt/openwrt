@@ -1,0 +1,189 @@
+From 42bd9677183c6a71c56c9f36d32e2fb626fdb535 Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Tue, 8 Dec 2020 00:28:00 +0530
+Subject: [PATCH] hostapd: Enable HE40 support in 2G 11s mesh
+
+This patch adds support for HE40 in 2G 11s mesh if
+the driver advertise HE_PHYCAP_CHANNEL_WIDTH_SET_40MHZ_IN_2G
+support in HE capability.
+
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+---
+ wpa_supplicant/wpa_supplicant.c | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+Index: hostapd-2021-02-18/wpa_supplicant/wpa_supplicant.c
+===================================================================
+--- hostapd-2021-02-18.orig/wpa_supplicant/wpa_supplicant.c
++++ hostapd-2021-02-18/wpa_supplicant/wpa_supplicant.c
+@@ -2378,6 +2378,57 @@ static int drv_supports_vht(struct wpa_s
+ 	return mode->vht_capab != 0;
+ }
+ 
++static void ibss_mesh_setup_2G_he40(struct hostapd_freq_params *freq,
++				    struct hostapd_hw_modes *mode,
++				    struct wpa_supplicant *wpa_s,
++				    const struct wpa_ssid *ssid,
++				    int ieee80211_mode)
++{
++	struct wpa_scan_results *scan_res;
++	int he40plus2G[] = { 2412, 2417, 2422, 2427, 2432, 2437};
++	int i, res;
++	u8 pri_chan, sec_chan;
++
++	freq->vht_enabled = vht_supported(mode);
++	freq->sec_channel_offset = -1;
++
++	if (mode->he_capab[ieee80211_mode].phy_cap[HE_PHYCAP_CHANNEL_WIDTH_SET_IDX] &
++	    HE_PHYCAP_CHANNEL_WIDTH_SET_40MHZ_IN_2G)
++		freq->bandwidth = 40;
++
++	/* Setting channel offset as 1 for channel 1 to 6 and -1 for
++	 * channel 7 to 11
++	 */
++	for (i = 0; i < ARRAY_SIZE(he40plus2G); i++) {
++		if (freq->freq == he40plus2G[i])
++			freq->sec_channel_offset = 1;
++	}
++
++	freq->center_freq1 = freq->freq + freq->sec_channel_offset * 10;
++	freq->center_freq2 = 0;
++
++	if (ssid->disable_40mhz_scan) {
++		wpa_printf(MSG_DEBUG, "IBSSS: 40MHz Coex scan disabled");
++		return;
++	}
++
++	scan_res = wpa_supplicant_get_scan_results(wpa_s, NULL, 0);
++	if (scan_res == NULL)
++		goto HE20;
++
++	pri_chan = freq->channel;
++	sec_chan = pri_chan + freq->sec_channel_offset * 4;
++	res = check_40mhz_2g4(mode, scan_res, pri_chan, sec_chan);
++	wpa_scan_results_free(scan_res);
++	if (!res)
++		goto HE20;
++	return;
++HE20:
++	freq->sec_channel_offset = 0;
++	freq->bandwidth = 20;
++	freq->center_freq1 = freq->freq + freq->sec_channel_offset * 10;
++}
++
+ static bool ibss_mesh_is_80mhz_avail(int channel, struct hostapd_hw_modes *mode)
+ {
+ 	int i;
+@@ -2498,6 +2549,11 @@ void ibss_mesh_setup_freq(struct wpa_sup
+ 		else
+ #endif /* CONFIG_HE_OVERRIDES */
+ 			freq->he_enabled = mode->he_capab[ieee80211_mode].he_supported;
++
++		if (freq->he_enabled)
++			ibss_mesh_setup_2G_he40(freq, mode, wpa_s,
++						ssid, ieee80211_mode);
++		return;
+ 	}
+ 
+ 	for (chan_idx = 0; chan_idx < mode->num_channels; chan_idx++) {
+Index: hostapd-2021-02-18/src/drivers/driver.h
+===================================================================
+--- hostapd-2021-02-18.orig/src/drivers/driver.h
++++ hostapd-2021-02-18/src/drivers/driver.h
+@@ -1203,6 +1203,11 @@ struct wpa_driver_associate_params {
+ 	 * 2 = both hunting-and-pecking loop and hash-to-element enabled
+ 	 */
+ 	int sae_pwe;
++
++	/**
++	 * Disable HE40MHz coexistence scan
++	 */
++	int disable_40mhz_scan;
+ };
+ 
+ enum hide_ssid {
+Index: hostapd-2021-02-18/wpa_supplicant/config.c
+===================================================================
+--- hostapd-2021-02-18.orig/wpa_supplicant/config.c
++++ hostapd-2021-02-18/wpa_supplicant/config.c
+@@ -2804,6 +2804,7 @@ static const struct parse_data ssid_fiel
+ 	{ INT_RANGE(beacon_prot, 0, 1) },
+ 	{ INT_RANGE(transition_disable, 0, 255) },
+ 	{ INT_RANGE(sae_pk, 0, 2) },
++	{ INT_RANGE(disable_40mhz_scan, 0, 1)},
+ };
+ 
+ #undef OFFSET
+Index: hostapd-2021-02-18/wpa_supplicant/config_file.c
+===================================================================
+--- hostapd-2021-02-18.orig/wpa_supplicant/config_file.c
++++ hostapd-2021-02-18/wpa_supplicant/config_file.c
+@@ -885,7 +885,7 @@ static void wpa_config_write_network(FIL
+ #ifdef CONFIG_HE_OVERRIDES
+ 	INT(disable_he);
+ #endif /* CONFIG_HE_OVERRIDES */
+-
++	INT(disable_40mhz_scan);
+ #undef STR
+ #undef INT
+ #undef INT_DEF
+Index: hostapd-2021-02-18/wpa_supplicant/config_ssid.h
+===================================================================
+--- hostapd-2021-02-18.orig/wpa_supplicant/config_ssid.h
++++ hostapd-2021-02-18/wpa_supplicant/config_ssid.h
+@@ -1165,6 +1165,11 @@ struct wpa_ssid {
+ 	 * configuration.
+ 	 */
+ 	bool was_recently_reconfigured;
++
++	/**
++	 * disable_40mhz_scan - Disable 40MHz coex scan
++	 */
++	int disable_40mhz_scan;
+ };
+ 
+ #endif /* CONFIG_SSID_H */
+Index: hostapd-2021-02-18/wpa_supplicant/wpa_cli.c
+===================================================================
+--- hostapd-2021-02-18.orig/wpa_supplicant/wpa_cli.c
++++ hostapd-2021-02-18/wpa_supplicant/wpa_cli.c
+@@ -1482,7 +1482,8 @@ static const char *network_fields[] = {
+ #ifdef CONFIG_HS20
+ 	"update_identifier",
+ #endif /* CONFIG_HS20 */
+-	"mac_addr", "pbss", "wps_disabled"
++	"mac_addr", "pbss", "wps_disabled",
++	"disable_40mhz_scan",
+ };
+ 
+ 
+Index: hostapd-2021-02-18/wpa_supplicant/wpa_supplicant.conf
+===================================================================
+--- hostapd-2021-02-18.orig/wpa_supplicant/wpa_supplicant.conf
++++ hostapd-2021-02-18/wpa_supplicant/wpa_supplicant.conf
+@@ -158,6 +158,9 @@ ap_scan=1
+ # 1 = deny unless in accept list
+ macaddr_acl=0
+ 
++# Disable 40MHz co-existence scan in Mesh
++#disable_40mhz_scan=1
++
+ # Accept/deny lists are read from separate files (containing list of
+ # MAC addresses, one per line). Use absolute path name to make sure that the
+ # files can be read on SIGHUP configuration reloads.
+@@ -1983,6 +1986,15 @@ network={
+ 	psk="very secret passphrase"
+ }
+ 
++# Disable 40MHz Co-existence scan in mesh
++network={
++	ssid="OpenWrt"
++        key_mgmt=SAE
++        mode=5
++        frequency=2437
++        psk="1234567890"
++	disable_40mhz_scan=1
++}
+ 
+ # Catch all example that allows more or less all configuration modes
+ network={

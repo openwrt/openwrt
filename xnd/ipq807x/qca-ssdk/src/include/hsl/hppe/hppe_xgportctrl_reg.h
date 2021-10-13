@@ -1,0 +1,1627 @@
+/*
+ * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all copies.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+ * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+
+/**
+ * @defgroup
+ * @{
+ */
+#ifndef HPPE_XGPORTCTRL_REG_H
+#define HPPE_XGPORTCTRL_REG_H
+
+/*[register] MAC_TX_CONFIGURATION*/
+#define MAC_TX_CONFIGURATION
+#define MAC_TX_CONFIGURATION_ADDRESS 0x0
+#define MAC_TX_CONFIGURATION_NUM     2
+#define MAC_TX_CONFIGURATION_INC     0x4000
+#define MAC_TX_CONFIGURATION_TYPE    REG_TYPE_RW
+#define MAC_TX_CONFIGURATION_DEFAULT 0x4000000
+	/*[field] TE*/
+	#define MAC_TX_CONFIGURATION_TE
+	#define MAC_TX_CONFIGURATION_TE_OFFSET  0
+	#define MAC_TX_CONFIGURATION_TE_LEN     1
+	#define MAC_TX_CONFIGURATION_TE_DEFAULT 0x0
+	/*[field] DDIC*/
+	#define MAC_TX_CONFIGURATION_DDIC
+	#define MAC_TX_CONFIGURATION_DDIC_OFFSET  1
+	#define MAC_TX_CONFIGURATION_DDIC_LEN     1
+	#define MAC_TX_CONFIGURATION_DDIC_DEFAULT 0x0
+	/*[field] ISM*/
+	#define MAC_TX_CONFIGURATION_ISM
+	#define MAC_TX_CONFIGURATION_ISM_OFFSET  3
+	#define MAC_TX_CONFIGURATION_ISM_LEN     1
+	#define MAC_TX_CONFIGURATION_ISM_DEFAULT 0x0
+	/*[field] ISR*/
+	#define MAC_TX_CONFIGURATION_ISR
+	#define MAC_TX_CONFIGURATION_ISR_OFFSET  4
+	#define MAC_TX_CONFIGURATION_ISR_LEN     4
+	#define MAC_TX_CONFIGURATION_ISR_DEFAULT 0x0
+	/*[field] IPG*/
+	#define MAC_TX_CONFIGURATION_IPG
+	#define MAC_TX_CONFIGURATION_IPG_OFFSET  8
+	#define MAC_TX_CONFIGURATION_IPG_LEN     3
+	#define MAC_TX_CONFIGURATION_IPG_DEFAULT 0x0
+	/*[field] IFP*/
+	#define MAC_TX_CONFIGURATION_IFP
+	#define MAC_TX_CONFIGURATION_IFP_OFFSET  11
+	#define MAC_TX_CONFIGURATION_IFP_LEN     1
+	#define MAC_TX_CONFIGURATION_IFP_DEFAULT 0x0
+	/*[field] JD*/
+	#define MAC_TX_CONFIGURATION_JD
+	#define MAC_TX_CONFIGURATION_JD_OFFSET  16
+	#define MAC_TX_CONFIGURATION_JD_LEN     1
+	#define MAC_TX_CONFIGURATION_JD_DEFAULT 0x0
+	/*[field] SARC*/
+	#define MAC_TX_CONFIGURATION_SARC
+	#define MAC_TX_CONFIGURATION_SARC_OFFSET  20
+	#define MAC_TX_CONFIGURATION_SARC_LEN     3
+	#define MAC_TX_CONFIGURATION_SARC_DEFAULT 0x0
+	/*[field] VNE*/
+	#define MAC_TX_CONFIGURATION_VNE
+	#define MAC_TX_CONFIGURATION_VNE_OFFSET  24
+	#define MAC_TX_CONFIGURATION_VNE_LEN     1
+	#define MAC_TX_CONFIGURATION_VNE_DEFAULT 0x0
+	/*[field] VNM*/
+	#define MAC_TX_CONFIGURATION_VNM
+	#define MAC_TX_CONFIGURATION_VNM_OFFSET  25
+	#define MAC_TX_CONFIGURATION_VNM_LEN     1
+	#define MAC_TX_CONFIGURATION_VNM_DEFAULT 0x0
+	/*[field] G9991EN*/
+	#define MAC_TX_CONFIGURATION_G9991EN
+	#define MAC_TX_CONFIGURATION_G9991EN_OFFSET  28
+	#define MAC_TX_CONFIGURATION_G9991EN_LEN     1
+	#define MAC_TX_CONFIGURATION_G9991EN_DEFAULT 0x0
+	/*[field] SS*/
+	#define MAC_TX_CONFIGURATION_SS
+	#define MAC_TX_CONFIGURATION_SS_OFFSET  29
+	#define MAC_TX_CONFIGURATION_SS_LEN     2
+	#define MAC_TX_CONFIGURATION_SS_DEFAULT 0x0
+	/*[field] USS*/
+	#define MAC_TX_CONFIGURATION_USS
+	#define MAC_TX_CONFIGURATION_USS_OFFSET  31
+	#define MAC_TX_CONFIGURATION_USS_LEN     1
+	#define MAC_TX_CONFIGURATION_USS_DEFAULT 0x0
+
+struct mac_tx_configuration {
+	a_uint32_t  te:1;
+	a_uint32_t  ddic:1;
+	a_uint32_t  _reserved0:1;
+	a_uint32_t  ism:1;
+	a_uint32_t  isr:4;
+	a_uint32_t  ipg:3;
+	a_uint32_t  ifp:1;
+	a_uint32_t  _reserved1:4;
+	a_uint32_t  jd:1;
+	a_uint32_t  _reserved2:3;
+	a_uint32_t  sarc:3;
+	a_uint32_t  _reserved3:1;
+	a_uint32_t  vne:1;
+	a_uint32_t  vnm:1;
+	a_uint32_t  _reserved4:2;
+	a_uint32_t  g9991en:1;
+	a_uint32_t  ss:2;
+	a_uint32_t  uss:1;
+};
+
+union mac_tx_configuration_u {
+	a_uint32_t val;
+	struct mac_tx_configuration bf;
+};
+
+/*[register] MAC_RX_CONFIGURATION*/
+#define MAC_RX_CONFIGURATION
+#define MAC_RX_CONFIGURATION_ADDRESS 0x4
+#define MAC_RX_CONFIGURATION_NUM     2
+#define MAC_RX_CONFIGURATION_INC     0x4000
+#define MAC_RX_CONFIGURATION_TYPE    REG_TYPE_RW
+#define MAC_RX_CONFIGURATION_DEFAULT 0x0
+	/*[field] RE*/
+	#define MAC_RX_CONFIGURATION_RE
+	#define MAC_RX_CONFIGURATION_RE_OFFSET  0
+	#define MAC_RX_CONFIGURATION_RE_LEN     1
+	#define MAC_RX_CONFIGURATION_RE_DEFAULT 0x0
+	/*[field] ACS*/
+	#define MAC_RX_CONFIGURATION_ACS
+	#define MAC_RX_CONFIGURATION_ACS_OFFSET  1
+	#define MAC_RX_CONFIGURATION_ACS_LEN     1
+	#define MAC_RX_CONFIGURATION_ACS_DEFAULT 0x0
+	/*[field] CST*/
+	#define MAC_RX_CONFIGURATION_CST
+	#define MAC_RX_CONFIGURATION_CST_OFFSET  2
+	#define MAC_RX_CONFIGURATION_CST_LEN     1
+	#define MAC_RX_CONFIGURATION_CST_DEFAULT 0x0
+	/*[field] DCRCC*/
+	#define MAC_RX_CONFIGURATION_DCRCC
+	#define MAC_RX_CONFIGURATION_DCRCC_OFFSET  3
+	#define MAC_RX_CONFIGURATION_DCRCC_LEN     1
+	#define MAC_RX_CONFIGURATION_DCRCC_DEFAULT 0x0
+	/*[field] SPEN*/
+	#define MAC_RX_CONFIGURATION_SPEN
+	#define MAC_RX_CONFIGURATION_SPEN_OFFSET  4
+	#define MAC_RX_CONFIGURATION_SPEN_LEN     1
+	#define MAC_RX_CONFIGURATION_SPEN_DEFAULT 0x0
+	/*[field] USP*/
+	#define MAC_RX_CONFIGURATION_USP
+	#define MAC_RX_CONFIGURATION_USP_OFFSET  5
+	#define MAC_RX_CONFIGURATION_USP_LEN     1
+	#define MAC_RX_CONFIGURATION_USP_DEFAULT 0x0
+	/*[field] GMPSLCE*/
+	#define MAC_RX_CONFIGURATION_GMPSLCE
+	#define MAC_RX_CONFIGURATION_GMPSLCE_OFFSET  6
+	#define MAC_RX_CONFIGURATION_GMPSLCE_LEN     1
+	#define MAC_RX_CONFIGURATION_GMPSLCE_DEFAULT 0x0
+	/*[field] WD*/
+	#define MAC_RX_CONFIGURATION_WD
+	#define MAC_RX_CONFIGURATION_WD_OFFSET  7
+	#define MAC_RX_CONFIGURATION_WD_LEN     1
+	#define MAC_RX_CONFIGURATION_WD_DEFAULT 0x0
+	/*[field] JE*/
+	#define MAC_RX_CONFIGURATION_JE
+	#define MAC_RX_CONFIGURATION_JE_OFFSET  8
+	#define MAC_RX_CONFIGURATION_JE_LEN     1
+	#define MAC_RX_CONFIGURATION_JE_DEFAULT 0x0
+	/*[field] IPC*/
+	#define MAC_RX_CONFIGURATION_IPC
+	#define MAC_RX_CONFIGURATION_IPC_OFFSET  9
+	#define MAC_RX_CONFIGURATION_IPC_LEN     1
+	#define MAC_RX_CONFIGURATION_IPC_DEFAULT 0x0
+	/*[field] LM*/
+	#define MAC_RX_CONFIGURATION_LM
+	#define MAC_RX_CONFIGURATION_LM_OFFSET  10
+	#define MAC_RX_CONFIGURATION_LM_LEN     1
+	#define MAC_RX_CONFIGURATION_LM_DEFAULT 0x0
+	/*[field] S2KP*/
+	#define MAC_RX_CONFIGURATION_S2KP
+	#define MAC_RX_CONFIGURATION_S2KP_OFFSET  11
+	#define MAC_RX_CONFIGURATION_S2KP_LEN     1
+	#define MAC_RX_CONFIGURATION_S2KP_DEFAULT 0x0
+	/*[field] HDSMS*/
+	#define MAC_RX_CONFIGURATION_HDSMS
+	#define MAC_RX_CONFIGURATION_HDSMS_OFFSET  12
+	#define MAC_RX_CONFIGURATION_HDSMS_LEN     3
+	#define MAC_RX_CONFIGURATION_HDSMS_DEFAULT 0x0
+	/*[field] GPSL*/
+	#define MAC_RX_CONFIGURATION_GPSL
+	#define MAC_RX_CONFIGURATION_GPSL_OFFSET  16
+	#define MAC_RX_CONFIGURATION_GPSL_LEN     14
+	#define MAC_RX_CONFIGURATION_GPSL_DEFAULT 0x0
+	/*[field] ELEN*/
+	#define MAC_RX_CONFIGURATION_ELEN
+	#define MAC_RX_CONFIGURATION_ELEN_OFFSET  30
+	#define MAC_RX_CONFIGURATION_ELEN_LEN     1
+	#define MAC_RX_CONFIGURATION_ELEN_DEFAULT 0x0
+	/*[field] ARPEN*/
+	#define MAC_RX_CONFIGURATION_ARPEN
+	#define MAC_RX_CONFIGURATION_ARPEN_OFFSET  31
+	#define MAC_RX_CONFIGURATION_ARPEN_LEN     1
+	#define MAC_RX_CONFIGURATION_ARPEN_DEFAULT 0x0
+
+struct mac_rx_configuration {
+	a_uint32_t  re:1;
+	a_uint32_t  acs:1;
+	a_uint32_t  cst:1;
+	a_uint32_t  dcrcc:1;
+	a_uint32_t  spen:1;
+	a_uint32_t  usp:1;
+	a_uint32_t  gmpslce:1;
+	a_uint32_t  wd:1;
+	a_uint32_t  je:1;
+	a_uint32_t  ipc:1;
+	a_uint32_t  lm:1;
+	a_uint32_t  s2kp:1;
+	a_uint32_t  hdsms:3;
+	a_uint32_t  _reserved0:1;
+	a_uint32_t  gpsl:14;
+	a_uint32_t  elen:1;
+	a_uint32_t  arpen:1;
+};
+
+union mac_rx_configuration_u {
+	a_uint32_t val;
+	struct mac_rx_configuration bf;
+};
+
+/*[register] MAC_PACKET_FILTER*/
+#define MAC_PACKET_FILTER
+#define MAC_PACKET_FILTER_ADDRESS 0x8
+#define MAC_PACKET_FILTER_NUM     2
+#define MAC_PACKET_FILTER_INC     0x4000
+#define MAC_PACKET_FILTER_TYPE    REG_TYPE_RW
+#define MAC_PACKET_FILTER_DEFAULT 0x0
+	/*[field] PR*/
+	#define MAC_PACKET_FILTER_PR
+	#define MAC_PACKET_FILTER_PR_OFFSET  0
+	#define MAC_PACKET_FILTER_PR_LEN     1
+	#define MAC_PACKET_FILTER_PR_DEFAULT 0x0
+	/*[field] HUC*/
+	#define MAC_PACKET_FILTER_HUC
+	#define MAC_PACKET_FILTER_HUC_OFFSET  1
+	#define MAC_PACKET_FILTER_HUC_LEN     1
+	#define MAC_PACKET_FILTER_HUC_DEFAULT 0x0
+	/*[field] HMC*/
+	#define MAC_PACKET_FILTER_HMC
+	#define MAC_PACKET_FILTER_HMC_OFFSET  2
+	#define MAC_PACKET_FILTER_HMC_LEN     1
+	#define MAC_PACKET_FILTER_HMC_DEFAULT 0x0
+	/*[field] DAIF*/
+	#define MAC_PACKET_FILTER_DAIF
+	#define MAC_PACKET_FILTER_DAIF_OFFSET  3
+	#define MAC_PACKET_FILTER_DAIF_LEN     1
+	#define MAC_PACKET_FILTER_DAIF_DEFAULT 0x0
+	/*[field] PM*/
+	#define MAC_PACKET_FILTER_PM
+	#define MAC_PACKET_FILTER_PM_OFFSET  4
+	#define MAC_PACKET_FILTER_PM_LEN     1
+	#define MAC_PACKET_FILTER_PM_DEFAULT 0x0
+	/*[field] DBF*/
+	#define MAC_PACKET_FILTER_DBF
+	#define MAC_PACKET_FILTER_DBF_OFFSET  5
+	#define MAC_PACKET_FILTER_DBF_LEN     1
+	#define MAC_PACKET_FILTER_DBF_DEFAULT 0x0
+	/*[field] PCF*/
+	#define MAC_PACKET_FILTER_PCF
+	#define MAC_PACKET_FILTER_PCF_OFFSET  6
+	#define MAC_PACKET_FILTER_PCF_LEN     2
+	#define MAC_PACKET_FILTER_PCF_DEFAULT 0x0
+	/*[field] SAIF*/
+	#define MAC_PACKET_FILTER_SAIF
+	#define MAC_PACKET_FILTER_SAIF_OFFSET  8
+	#define MAC_PACKET_FILTER_SAIF_LEN     1
+	#define MAC_PACKET_FILTER_SAIF_DEFAULT 0x0
+	/*[field] SAF*/
+	#define MAC_PACKET_FILTER_SAF
+	#define MAC_PACKET_FILTER_SAF_OFFSET  9
+	#define MAC_PACKET_FILTER_SAF_LEN     1
+	#define MAC_PACKET_FILTER_SAF_DEFAULT 0x0
+	/*[field] HPF*/
+	#define MAC_PACKET_FILTER_HPF
+	#define MAC_PACKET_FILTER_HPF_OFFSET  10
+	#define MAC_PACKET_FILTER_HPF_LEN     1
+	#define MAC_PACKET_FILTER_HPF_DEFAULT 0x0
+	/*[field] VTFE*/
+	#define MAC_PACKET_FILTER_VTFE
+	#define MAC_PACKET_FILTER_VTFE_OFFSET  16
+	#define MAC_PACKET_FILTER_VTFE_LEN     1
+	#define MAC_PACKET_FILTER_VTFE_DEFAULT 0x0
+	/*[field] IPFE*/
+	#define MAC_PACKET_FILTER_IPFE
+	#define MAC_PACKET_FILTER_IPFE_OFFSET  20
+	#define MAC_PACKET_FILTER_IPFE_LEN     1
+	#define MAC_PACKET_FILTER_IPFE_DEFAULT 0x0
+	/*[field] DNTU*/
+	#define MAC_PACKET_FILTER_DNTU
+	#define MAC_PACKET_FILTER_DNTU_OFFSET  21
+	#define MAC_PACKET_FILTER_DNTU_LEN     1
+	#define MAC_PACKET_FILTER_DNTU_DEFAULT 0x0
+	/*[field] VUCC*/
+	#define MAC_PACKET_FILTER_VUCC
+	#define MAC_PACKET_FILTER_VUCC_OFFSET  22
+	#define MAC_PACKET_FILTER_VUCC_LEN     1
+	#define MAC_PACKET_FILTER_VUCC_DEFAULT 0x0
+	/*[field] RA*/
+	#define MAC_PACKET_FILTER_RA
+	#define MAC_PACKET_FILTER_RA_OFFSET  31
+	#define MAC_PACKET_FILTER_RA_LEN     1
+	#define MAC_PACKET_FILTER_RA_DEFAULT 0x0
+
+struct mac_packet_filter {
+	a_uint32_t  pr:1;
+	a_uint32_t  huc:1;
+	a_uint32_t  hmc:1;
+	a_uint32_t  daif:1;
+	a_uint32_t  pm:1;
+	a_uint32_t  dbf:1;
+	a_uint32_t  pcf:2;
+	a_uint32_t  saif:1;
+	a_uint32_t  saf:1;
+	a_uint32_t  hpf:1;
+	a_uint32_t  _reserved0:5;
+	a_uint32_t  vtfe:1;
+	a_uint32_t  _reserved1:3;
+	a_uint32_t  ipfe:1;
+	a_uint32_t  dntu:1;
+	a_uint32_t  vucc:1;
+	a_uint32_t  _reserved2:8;
+	a_uint32_t  ra:1;
+};
+
+union mac_packet_filter_u {
+	a_uint32_t val;
+	struct mac_packet_filter bf;
+};
+
+/*[register] MAC_WATCHDOG_TIMEOUT*/
+#define MAC_WATCHDOG_TIMEOUT
+#define MAC_WATCHDOG_TIMEOUT_ADDRESS 0xc
+#define MAC_WATCHDOG_TIMEOUT_NUM     2
+#define MAC_WATCHDOG_TIMEOUT_INC     0x4000
+#define MAC_WATCHDOG_TIMEOUT_TYPE    REG_TYPE_RW
+#define MAC_WATCHDOG_TIMEOUT_DEFAULT 0x0
+	/*[field] WTO*/
+	#define MAC_WATCHDOG_TIMEOUT_WTO
+	#define MAC_WATCHDOG_TIMEOUT_WTO_OFFSET  0
+	#define MAC_WATCHDOG_TIMEOUT_WTO_LEN     4
+	#define MAC_WATCHDOG_TIMEOUT_WTO_DEFAULT 0x0
+	/*[field] PWE*/
+	#define MAC_WATCHDOG_TIMEOUT_PWE
+	#define MAC_WATCHDOG_TIMEOUT_PWE_OFFSET  8
+	#define MAC_WATCHDOG_TIMEOUT_PWE_LEN     1
+	#define MAC_WATCHDOG_TIMEOUT_PWE_DEFAULT 0x0
+
+struct mac_watchdog_timeout {
+	a_uint32_t  wto:4;
+	a_uint32_t  _reserved0:4;
+	a_uint32_t  pwe:1;
+	a_uint32_t  _reserved1:23;
+};
+
+union mac_watchdog_timeout_u {
+	a_uint32_t val;
+	struct mac_watchdog_timeout bf;
+};
+
+/*[register] MAC_VLAN_TAG*/
+#define MAC_VLAN_TAG
+#define MAC_VLAN_TAG_ADDRESS 0x50
+#define MAC_VLAN_TAG_NUM     2
+#define MAC_VLAN_TAG_INC     0x4000
+#define MAC_VLAN_TAG_TYPE    REG_TYPE_RW
+#define MAC_VLAN_TAG_DEFAULT 0x1b800000
+	/*[field] VL*/
+	#define MAC_VLAN_TAG_VL
+	#define MAC_VLAN_TAG_VL_OFFSET  0
+	#define MAC_VLAN_TAG_VL_LEN     16
+	#define MAC_VLAN_TAG_VL_DEFAULT 0x0
+	/*[field] ETV*/
+	#define MAC_VLAN_TAG_ETV
+	#define MAC_VLAN_TAG_ETV_OFFSET  16
+	#define MAC_VLAN_TAG_ETV_LEN     1
+	#define MAC_VLAN_TAG_ETV_DEFAULT 0x0
+	/*[field] VTIM*/
+	#define MAC_VLAN_TAG_VTIM
+	#define MAC_VLAN_TAG_VTIM_OFFSET  17
+	#define MAC_VLAN_TAG_VTIM_LEN     1
+	#define MAC_VLAN_TAG_VTIM_DEFAULT 0x0
+	/*[field] ESVL*/
+	#define MAC_VLAN_TAG_ESVL
+	#define MAC_VLAN_TAG_ESVL_OFFSET  18
+	#define MAC_VLAN_TAG_ESVL_LEN     1
+	#define MAC_VLAN_TAG_ESVL_DEFAULT 0x0
+	/*[field] ERSVLM*/
+	#define MAC_VLAN_TAG_ERSVLM
+	#define MAC_VLAN_TAG_ERSVLM_OFFSET  19
+	#define MAC_VLAN_TAG_ERSVLM_LEN     1
+	#define MAC_VLAN_TAG_ERSVLM_DEFAULT 0x0
+	/*[field] DOVLTC*/
+	#define MAC_VLAN_TAG_DOVLTC
+	#define MAC_VLAN_TAG_DOVLTC_OFFSET  20
+	#define MAC_VLAN_TAG_DOVLTC_LEN     1
+	#define MAC_VLAN_TAG_DOVLTC_DEFAULT 0x0
+	/*[field] EVLS*/
+	#define MAC_VLAN_TAG_EVLS
+	#define MAC_VLAN_TAG_EVLS_OFFSET  21
+	#define MAC_VLAN_TAG_EVLS_LEN     2
+	#define MAC_VLAN_TAG_EVLS_DEFAULT 0x0
+	/*[field] EVLRXS*/
+	#define MAC_VLAN_TAG_EVLRXS
+	#define MAC_VLAN_TAG_EVLRXS_OFFSET  24
+	#define MAC_VLAN_TAG_EVLRXS_LEN     1
+	#define MAC_VLAN_TAG_EVLRXS_DEFAULT 0x1
+	/*[field] VTHM*/
+	#define MAC_VLAN_TAG_VTHM
+	#define MAC_VLAN_TAG_VTHM_OFFSET  25
+	#define MAC_VLAN_TAG_VTHM_LEN     1
+	#define MAC_VLAN_TAG_VTHM_DEFAULT 0x1
+	/*[field] EDVLP*/
+	#define MAC_VLAN_TAG_EDVLP
+	#define MAC_VLAN_TAG_EDVLP_OFFSET  26
+	#define MAC_VLAN_TAG_EDVLP_LEN     1
+	#define MAC_VLAN_TAG_EDVLP_DEFAULT 0x0
+	/*[field] ERIVLT*/
+	#define MAC_VLAN_TAG_ERIVLT
+	#define MAC_VLAN_TAG_ERIVLT_OFFSET  27
+	#define MAC_VLAN_TAG_ERIVLT_LEN     1
+	#define MAC_VLAN_TAG_ERIVLT_DEFAULT 0x1
+	/*[field] EIVLS*/
+	#define MAC_VLAN_TAG_EIVLS
+	#define MAC_VLAN_TAG_EIVLS_OFFSET  28
+	#define MAC_VLAN_TAG_EIVLS_LEN     2
+	#define MAC_VLAN_TAG_EIVLS_DEFAULT 0x1
+	/*[field] EIVLRXS*/
+	#define MAC_VLAN_TAG_EIVLRXS
+	#define MAC_VLAN_TAG_EIVLRXS_OFFSET  31
+	#define MAC_VLAN_TAG_EIVLRXS_LEN     1
+	#define MAC_VLAN_TAG_EIVLRXS_DEFAULT 0x0
+
+struct mac_vlan_tag {
+	a_uint32_t  vl:16;
+	a_uint32_t  etv:1;
+	a_uint32_t  vtim:1;
+	a_uint32_t  esvl:1;
+	a_uint32_t  ersvlm:1;
+	a_uint32_t  dovltc:1;
+	a_uint32_t  evls:2;
+	a_uint32_t  _reserved0:1;
+	a_uint32_t  evlrxs:1;
+	a_uint32_t  vthm:1;
+	a_uint32_t  edvlp:1;
+	a_uint32_t  erivlt:1;
+	a_uint32_t  eivls:2;
+	a_uint32_t  _reserved1:1;
+	a_uint32_t  eivlrxs:1;
+};
+
+union mac_vlan_tag_u {
+	a_uint32_t val;
+	struct mac_vlan_tag bf;
+};
+
+/*[register] MAC_RX_ETH_TYPE_MATCH*/
+#define MAC_RX_ETH_TYPE_MATCH
+#define MAC_RX_ETH_TYPE_MATCH_ADDRESS 0x6c
+#define MAC_RX_ETH_TYPE_MATCH_NUM     2
+#define MAC_RX_ETH_TYPE_MATCH_INC     0x4000
+#define MAC_RX_ETH_TYPE_MATCH_TYPE    REG_TYPE_RW
+#define MAC_RX_ETH_TYPE_MATCH_DEFAULT 0x0
+	/*[field] ET*/
+	#define MAC_RX_ETH_TYPE_MATCH_ET
+	#define MAC_RX_ETH_TYPE_MATCH_ET_OFFSET  0
+	#define MAC_RX_ETH_TYPE_MATCH_ET_LEN     16
+	#define MAC_RX_ETH_TYPE_MATCH_ET_DEFAULT 0x0
+
+struct mac_rx_eth_type_match {
+	a_uint32_t  et:16;
+	a_uint32_t  _reserved0:16;
+};
+
+union mac_rx_eth_type_match_u {
+	a_uint32_t val;
+	struct mac_rx_eth_type_match bf;
+};
+
+/*[register] MAC_Q0_TX_FLOW_CTRL*/
+#define MAC_Q0_TX_FLOW_CTRL
+#define MAC_Q0_TX_FLOW_CTRL_ADDRESS 0x70
+#define MAC_Q0_TX_FLOW_CTRL_NUM     2
+#define MAC_Q0_TX_FLOW_CTRL_INC     0x4000
+#define MAC_Q0_TX_FLOW_CTRL_TYPE    REG_TYPE_RW
+#define MAC_Q0_TX_FLOW_CTRL_DEFAULT 0x2
+	/*[field] FCB*/
+	#define MAC_Q0_TX_FLOW_CTRL_FCB
+	#define MAC_Q0_TX_FLOW_CTRL_FCB_OFFSET  0
+	#define MAC_Q0_TX_FLOW_CTRL_FCB_LEN     1
+	#define MAC_Q0_TX_FLOW_CTRL_FCB_DEFAULT 0x0
+	/*[field] TFE*/
+	#define MAC_Q0_TX_FLOW_CTRL_TFE
+	#define MAC_Q0_TX_FLOW_CTRL_TFE_OFFSET  1
+	#define MAC_Q0_TX_FLOW_CTRL_TFE_LEN     1
+	#define MAC_Q0_TX_FLOW_CTRL_TFE_DEFAULT 0x1
+	/*[field] PLT*/
+	#define MAC_Q0_TX_FLOW_CTRL_PLT
+	#define MAC_Q0_TX_FLOW_CTRL_PLT_OFFSET  4
+	#define MAC_Q0_TX_FLOW_CTRL_PLT_LEN     3
+	#define MAC_Q0_TX_FLOW_CTRL_PLT_DEFAULT 0x0
+	/*[field] DAPQ*/
+	#define MAC_Q0_TX_FLOW_CTRL_DAPQ
+	#define MAC_Q0_TX_FLOW_CTRL_DAPQ_OFFSET  7
+	#define MAC_Q0_TX_FLOW_CTRL_DAPQ_LEN     1
+	#define MAC_Q0_TX_FLOW_CTRL_DAPQ_DEFAULT 0x0
+	/*[field] PT*/
+	#define MAC_Q0_TX_FLOW_CTRL_PT
+	#define MAC_Q0_TX_FLOW_CTRL_PT_OFFSET  16
+	#define MAC_Q0_TX_FLOW_CTRL_PT_LEN     16
+	#define MAC_Q0_TX_FLOW_CTRL_PT_DEFAULT 0x0
+
+struct mac_q0_tx_flow_ctrl {
+	a_uint32_t  fcb:1;
+	a_uint32_t  tfe:1;
+	a_uint32_t  _reserved0:2;
+	a_uint32_t  plt:3;
+	a_uint32_t  dapq:1;
+	a_uint32_t  _reserved1:8;
+	a_uint32_t  pt:16;
+};
+
+union mac_q0_tx_flow_ctrl_u {
+	a_uint32_t val;
+	struct mac_q0_tx_flow_ctrl bf;
+};
+
+/*[register] MAC_RX_FLOW_CTRL*/
+#define MAC_RX_FLOW_CTRL
+#define MAC_RX_FLOW_CTRL_ADDRESS 0x90
+#define MAC_RX_FLOW_CTRL_NUM     2
+#define MAC_RX_FLOW_CTRL_INC     0x4000
+#define MAC_RX_FLOW_CTRL_TYPE    REG_TYPE_RW
+#define MAC_RX_FLOW_CTRL_DEFAULT 0x80e
+	/*[field] RFE*/
+	#define MAC_RX_FLOW_CTRL_RFE
+	#define MAC_RX_FLOW_CTRL_RFE_OFFSET  0
+	#define MAC_RX_FLOW_CTRL_RFE_LEN     1
+	#define MAC_RX_FLOW_CTRL_RFE_DEFAULT 0x0
+	/*[field] UP*/
+	#define MAC_RX_FLOW_CTRL_UP
+	#define MAC_RX_FLOW_CTRL_UP_OFFSET  1
+	#define MAC_RX_FLOW_CTRL_UP_LEN     1
+	#define MAC_RX_FLOW_CTRL_UP_DEFAULT 0x7
+	/*[field] PFCE*/
+	#define MAC_RX_FLOW_CTRL_PFCE
+	#define MAC_RX_FLOW_CTRL_PFCE_OFFSET  8
+	#define MAC_RX_FLOW_CTRL_PFCE_LEN     1
+	#define MAC_RX_FLOW_CTRL_PFCE_DEFAULT 0x0
+
+struct mac_rx_flow_ctrl {
+	a_uint32_t  rfe:1;
+	a_uint32_t  up:1;
+	a_uint32_t  _reserved0:6;
+	a_uint32_t  pfce:1;
+	a_uint32_t  _reserved1:23;
+};
+
+union mac_rx_flow_ctrl_u {
+	a_uint32_t val;
+	struct mac_rx_flow_ctrl bf;
+};
+
+/*[register] MAC_INTERRUPT_STATUS*/
+#define MAC_INTERRUPT_STATUS
+#define MAC_INTERRUPT_STATUS_ADDRESS 0xb0
+#define MAC_INTERRUPT_STATUS_NUM     2
+#define MAC_INTERRUPT_STATUS_INC     0x4000
+#define MAC_INTERRUPT_STATUS_TYPE    REG_TYPE_RW
+#define MAC_INTERRUPT_STATUS_DEFAULT 0x0
+	/*[field] SMI*/
+	#define MAC_INTERRUPT_STATUS_SMI
+	#define MAC_INTERRUPT_STATUS_SMI_OFFSET  1
+	#define MAC_INTERRUPT_STATUS_SMI_LEN     1
+	#define MAC_INTERRUPT_STATUS_SMI_DEFAULT 0x0
+	/*[field] PMTIS*/
+	#define MAC_INTERRUPT_STATUS_PMTIS
+	#define MAC_INTERRUPT_STATUS_PMTIS_OFFSET  4
+	#define MAC_INTERRUPT_STATUS_PMTIS_LEN     1
+	#define MAC_INTERRUPT_STATUS_PMTIS_DEFAULT 0x0
+	/*[field] LPIIS*/
+	#define MAC_INTERRUPT_STATUS_LPIIS
+	#define MAC_INTERRUPT_STATUS_LPIIS_OFFSET  5
+	#define MAC_INTERRUPT_STATUS_LPIIS_LEN     1
+	#define MAC_INTERRUPT_STATUS_LPIIS_DEFAULT 0x0
+	/*[field] MMCRXIS*/
+	#define MAC_INTERRUPT_STATUS_MMCRXIS
+	#define MAC_INTERRUPT_STATUS_MMCRXIS_OFFSET  9
+	#define MAC_INTERRUPT_STATUS_MMCRXIS_LEN     1
+	#define MAC_INTERRUPT_STATUS_MMCRXIS_DEFAULT 0x0
+	/*[field] MMCTXIS*/
+	#define MAC_INTERRUPT_STATUS_MMCTXIS
+	#define MAC_INTERRUPT_STATUS_MMCTXIS_OFFSET  10
+	#define MAC_INTERRUPT_STATUS_MMCTXIS_LEN     1
+	#define MAC_INTERRUPT_STATUS_MMCTXIS_DEFAULT 0x0
+	/*[field] TSIS*/
+	#define MAC_INTERRUPT_STATUS_TSIS
+	#define MAC_INTERRUPT_STATUS_TSIS_OFFSET  12
+	#define MAC_INTERRUPT_STATUS_TSIS_LEN     1
+	#define MAC_INTERRUPT_STATUS_TSIS_DEFAULT 0x0
+	/*[field] TXESIS*/
+	#define MAC_INTERRUPT_STATUS_TXESIS
+	#define MAC_INTERRUPT_STATUS_TXESIS_OFFSET  13
+	#define MAC_INTERRUPT_STATUS_TXESIS_LEN     1
+	#define MAC_INTERRUPT_STATUS_TXESIS_DEFAULT 0x0
+	/*[field] RXESIS*/
+	#define MAC_INTERRUPT_STATUS_RXESIS
+	#define MAC_INTERRUPT_STATUS_RXESIS_OFFSET  14
+	#define MAC_INTERRUPT_STATUS_RXESIS_LEN     1
+	#define MAC_INTERRUPT_STATUS_RXESIS_DEFAULT 0x0
+	/*[field] GPIIS*/
+	#define MAC_INTERRUPT_STATUS_GPIIS
+	#define MAC_INTERRUPT_STATUS_GPIIS_OFFSET  15
+	#define MAC_INTERRUPT_STATUS_GPIIS_LEN     1
+	#define MAC_INTERRUPT_STATUS_GPIIS_DEFAULT 0x0
+	/*[field] LS*/
+	#define MAC_INTERRUPT_STATUS_LS
+	#define MAC_INTERRUPT_STATUS_LS_OFFSET  24
+	#define MAC_INTERRUPT_STATUS_LS_LEN     2
+	#define MAC_INTERRUPT_STATUS_LS_DEFAULT 0x0
+
+struct mac_interrupt_status {
+	a_uint32_t  smi:1;
+	a_uint32_t  _reserved0:2;
+	a_uint32_t  pmtis:1;
+	a_uint32_t  lpiis:1;
+	a_uint32_t  _reserved1:3;
+	a_uint32_t  mmcrxis:1;
+	a_uint32_t  mmctxis:1;
+	a_uint32_t  _reserved2:1;
+	a_uint32_t  tsis:1;
+	a_uint32_t  txesis:1;
+	a_uint32_t  rxesis:1;
+	a_uint32_t  gpiis:1;
+	a_uint32_t  _reserved3:8;
+	a_uint32_t  ls:2;
+	a_uint32_t  _reserved4:6;
+};
+
+union mac_interrupt_status_u {
+	a_uint32_t val;
+	struct mac_interrupt_status bf;
+};
+
+/*[register] MAC_INTERRUPT_ENABLE*/
+#define MAC_INTERRUPT_ENABLE
+#define MAC_INTERRUPT_ENABLE_ADDRESS 0xb4
+#define MAC_INTERRUPT_ENABLE_NUM     2
+#define MAC_INTERRUPT_ENABLE_INC     0x4000
+#define MAC_INTERRUPT_ENABLE_TYPE    REG_TYPE_RO
+#define MAC_INTERRUPT_ENABLE_DEFAULT 0x0
+	/*[field] PMTIE*/
+	#define MAC_INTERRUPT_ENABLE_PMTIE
+	#define MAC_INTERRUPT_ENABLE_PMTIE_OFFSET  4
+	#define MAC_INTERRUPT_ENABLE_PMTIE_LEN     1
+	#define MAC_INTERRUPT_ENABLE_PMTIE_DEFAULT 0x0
+	/*[field] LPIIE*/
+	#define MAC_INTERRUPT_ENABLE_LPIIE
+	#define MAC_INTERRUPT_ENABLE_LPIIE_OFFSET  5
+	#define MAC_INTERRUPT_ENABLE_LPIIE_LEN     1
+	#define MAC_INTERRUPT_ENABLE_LPIIE_DEFAULT 0x0
+	/*[field] TSIE*/
+	#define MAC_INTERRUPT_ENABLE_TSIE
+	#define MAC_INTERRUPT_ENABLE_TSIE_OFFSET  12
+	#define MAC_INTERRUPT_ENABLE_TSIE_LEN     1
+	#define MAC_INTERRUPT_ENABLE_TSIE_DEFAULT 0x0
+	/*[field] TXESIE*/
+	#define MAC_INTERRUPT_ENABLE_TXESIE
+	#define MAC_INTERRUPT_ENABLE_TXESIE_OFFSET  13
+	#define MAC_INTERRUPT_ENABLE_TXESIE_LEN     1
+	#define MAC_INTERRUPT_ENABLE_TXESIE_DEFAULT 0x0
+	/*[field] RXESIE*/
+	#define MAC_INTERRUPT_ENABLE_RXESIE
+	#define MAC_INTERRUPT_ENABLE_RXESIE_OFFSET  14
+	#define MAC_INTERRUPT_ENABLE_RXESIE_LEN     1
+	#define MAC_INTERRUPT_ENABLE_RXESIE_DEFAULT 0x0
+
+struct mac_interrupt_enable {
+	a_uint32_t  pmtie:1;
+	a_uint32_t  lpiie:1;
+	a_uint32_t  _reserved0:6;
+	a_uint32_t  tsie:1;
+	a_uint32_t  txesie:1;
+	a_uint32_t  rxesie:1;
+	a_uint32_t  _reserved1:17;
+};
+
+union mac_interrupt_enable_u {
+	a_uint32_t val;
+	struct mac_interrupt_enable bf;
+};
+
+/*[register] MAC_RX_TX_STATUS*/
+#define MAC_RX_TX_STATUS
+#define MAC_RX_TX_STATUS_ADDRESS 0xb8
+#define MAC_RX_TX_STATUS_NUM     2
+#define MAC_RX_TX_STATUS_INC     0x4000
+#define MAC_RX_TX_STATUS_TYPE    REG_TYPE_RW
+#define MAC_RX_TX_STATUS_DEFAULT 0x0
+	/*[field] TJT*/
+	#define MAC_RX_TX_STATUS_TJT
+	#define MAC_RX_TX_STATUS_TJT_OFFSET  0
+	#define MAC_RX_TX_STATUS_TJT_LEN     1
+	#define MAC_RX_TX_STATUS_TJT_DEFAULT 0x0
+	/*[field] RWT*/
+	#define MAC_RX_TX_STATUS_RWT
+	#define MAC_RX_TX_STATUS_RWT_OFFSET  8
+	#define MAC_RX_TX_STATUS_RWT_LEN     1
+	#define MAC_RX_TX_STATUS_RWT_DEFAULT 0x0
+
+struct mac_rx_tx_status {
+	a_uint32_t  tjt:1;
+	a_uint32_t  _reserved0:7;
+	a_uint32_t  rwt:1;
+	a_uint32_t  _reserved1:23;
+};
+
+union mac_rx_tx_status_u {
+	a_uint32_t val;
+	struct mac_rx_tx_status bf;
+};
+
+/*[register] MAC_LPI_CONTROL_STATUS*/
+#define MAC_LPI_CONTROL_STATUS
+#define MAC_LPI_CONTROL_STATUS_ADDRESS 0xd0
+#define MAC_LPI_CONTROL_STATUS_NUM     2
+#define MAC_LPI_CONTROL_STATUS_INC     0x4000
+#define MAC_LPI_CONTROL_STATUS_TYPE    REG_TYPE_RW
+#define MAC_LPI_CONTROL_STATUS_DEFAULT 0x0
+	/*[field] TLPIEN*/
+	#define MAC_LPI_CONTROL_STATUS_TLPIEN
+	#define MAC_LPI_CONTROL_STATUS_TLPIEN_OFFSET  0
+	#define MAC_LPI_CONTROL_STATUS_TLPIEN_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_TLPIEN_DEFAULT 0x0
+	/*[field] TLPIEX*/
+	#define MAC_LPI_CONTROL_STATUS_TLPIEX
+	#define MAC_LPI_CONTROL_STATUS_TLPIEX_OFFSET  1
+	#define MAC_LPI_CONTROL_STATUS_TLPIEX_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_TLPIEX_DEFAULT 0x0
+	/*[field] RLPIEN*/
+	#define MAC_LPI_CONTROL_STATUS_RLPIEN
+	#define MAC_LPI_CONTROL_STATUS_RLPIEN_OFFSET  2
+	#define MAC_LPI_CONTROL_STATUS_RLPIEN_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_RLPIEN_DEFAULT 0x0
+	/*[field] RLPIEX*/
+	#define MAC_LPI_CONTROL_STATUS_RLPIEX
+	#define MAC_LPI_CONTROL_STATUS_RLPIEX_OFFSET  3
+	#define MAC_LPI_CONTROL_STATUS_RLPIEX_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_RLPIEX_DEFAULT 0x0
+	/*[field] TLPIST*/
+	#define MAC_LPI_CONTROL_STATUS_TLPIST
+	#define MAC_LPI_CONTROL_STATUS_TLPIST_OFFSET  8
+	#define MAC_LPI_CONTROL_STATUS_TLPIST_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_TLPIST_DEFAULT 0x0
+	/*[field] RLPIST*/
+	#define MAC_LPI_CONTROL_STATUS_RLPIST
+	#define MAC_LPI_CONTROL_STATUS_RLPIST_OFFSET  9
+	#define MAC_LPI_CONTROL_STATUS_RLPIST_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_RLPIST_DEFAULT 0x0
+	/*[field] RXRSTP*/
+	#define MAC_LPI_CONTROL_STATUS_RXRSTP
+	#define MAC_LPI_CONTROL_STATUS_RXRSTP_OFFSET  10
+	#define MAC_LPI_CONTROL_STATUS_RXRSTP_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_RXRSTP_DEFAULT 0x0
+	/*[field] TXRSTP*/
+	#define MAC_LPI_CONTROL_STATUS_TXRSTP
+	#define MAC_LPI_CONTROL_STATUS_TXRSTP_OFFSET  11
+	#define MAC_LPI_CONTROL_STATUS_TXRSTP_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_TXRSTP_DEFAULT 0x0
+	/*[field] LPITXEN*/
+	#define MAC_LPI_CONTROL_STATUS_LPITXEN
+	#define MAC_LPI_CONTROL_STATUS_LPITXEN_OFFSET  16
+	#define MAC_LPI_CONTROL_STATUS_LPITXEN_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_LPITXEN_DEFAULT 0x0
+	/*[field] PLS*/
+	#define MAC_LPI_CONTROL_STATUS_PLS
+	#define MAC_LPI_CONTROL_STATUS_PLS_OFFSET  17
+	#define MAC_LPI_CONTROL_STATUS_PLS_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_PLS_DEFAULT 0x0
+	/*[field] PLSDIS*/
+	#define MAC_LPI_CONTROL_STATUS_PLSDIS
+	#define MAC_LPI_CONTROL_STATUS_PLSDIS_OFFSET  18
+	#define MAC_LPI_CONTROL_STATUS_PLSDIS_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_PLSDIS_DEFAULT 0x0
+	/*[field] LPITXA*/
+	#define MAC_LPI_CONTROL_STATUS_LPITXA
+	#define MAC_LPI_CONTROL_STATUS_LPITXA_OFFSET  19
+	#define MAC_LPI_CONTROL_STATUS_LPITXA_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_LPITXA_DEFAULT 0x0
+	/*[field] LPITE*/
+	#define MAC_LPI_CONTROL_STATUS_LPITE
+	#define MAC_LPI_CONTROL_STATUS_LPITE_OFFSET  20
+	#define MAC_LPI_CONTROL_STATUS_LPITE_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_LPITE_DEFAULT 0x0
+	/*[field] LPITCSE*/
+	#define MAC_LPI_CONTROL_STATUS_LPITCSE
+	#define MAC_LPI_CONTROL_STATUS_LPITCSE_OFFSET  21
+	#define MAC_LPI_CONTROL_STATUS_LPITCSE_LEN     1
+	#define MAC_LPI_CONTROL_STATUS_LPITCSE_DEFAULT 0x0
+
+struct mac_lpi_control_status {
+	a_uint32_t  tlpien:1;
+	a_uint32_t  tlpiex:1;
+	a_uint32_t  rlpien:1;
+	a_uint32_t  rlpiex:1;
+	a_uint32_t  _reserved0:4;
+	a_uint32_t  tlpist:1;
+	a_uint32_t  rlpist:1;
+	a_uint32_t  rxrstp:1;
+	a_uint32_t  txrstp:1;
+	a_uint32_t  _reserved1:4;
+	a_uint32_t  lpitxen:1;
+	a_uint32_t  pls:1;
+	a_uint32_t  plsdis:1;
+	a_uint32_t  lpitxa:1;
+	a_uint32_t  lpite:1;
+	a_uint32_t  lpitcse:1;
+	a_uint32_t  _reserved2:10;
+};
+
+union mac_lpi_control_status_u {
+	a_uint32_t val;
+	struct mac_lpi_control_status bf;
+};
+
+/*[register] MAC_LPI_TIMERS_CONTROL*/
+#define MAC_LPI_TIMERS_CONTROL
+#define MAC_LPI_TIMERS_CONTROL_ADDRESS 0xd4
+#define MAC_LPI_TIMERS_CONTROL_NUM     2
+#define MAC_LPI_TIMERS_CONTROL_INC     0x4000
+#define MAC_LPI_TIMERS_CONTROL_TYPE    REG_TYPE_RO
+#define MAC_LPI_TIMERS_CONTROL_DEFAULT 0x0
+	/*[field] TWT*/
+	#define MAC_LPI_TIMERS_CONTROL_TWT
+	#define MAC_LPI_TIMERS_CONTROL_TWT_OFFSET  0
+	#define MAC_LPI_TIMERS_CONTROL_TWT_LEN     16
+	#define MAC_LPI_TIMERS_CONTROL_TWT_DEFAULT 0x0
+	/*[field] LST*/
+	#define MAC_LPI_TIMERS_CONTROL_LST
+	#define MAC_LPI_TIMERS_CONTROL_LST_OFFSET  16
+	#define MAC_LPI_TIMERS_CONTROL_LST_LEN     10
+	#define MAC_LPI_TIMERS_CONTROL_LST_DEFAULT 0x0
+
+struct mac_lpi_timers_control {
+	a_uint32_t  twt:16;
+	a_uint32_t  lst:10;
+	a_uint32_t  _reserved0:6;
+};
+
+union mac_lpi_timers_control_u {
+	a_uint32_t val;
+	struct mac_lpi_timers_control bf;
+};
+
+/*[register] MAC_LPI_AUTO_ENTRY_TIMER*/
+#define MAC_LPI_AUTO_ENTRY_TIMER
+#define MAC_LPI_AUTO_ENTRY_TIMER_ADDRESS 0xd8
+#define MAC_LPI_AUTO_ENTRY_TIMER_NUM     2
+#define MAC_LPI_AUTO_ENTRY_TIMER_INC     0x4000
+#define MAC_LPI_AUTO_ENTRY_TIMER_TYPE    REG_TYPE_RO
+#define MAC_LPI_AUTO_ENTRY_TIMER_DEFAULT 0x0
+	/*[field] LPIET*/
+	#define MAC_LPI_AUTO_ENTRY_TIMER_LPIET
+	#define MAC_LPI_AUTO_ENTRY_TIMER_LPIET_OFFSET  3
+	#define MAC_LPI_AUTO_ENTRY_TIMER_LPIET_LEN     17
+	#define MAC_LPI_AUTO_ENTRY_TIMER_LPIET_DEFAULT 0x0
+
+struct mac_lpi_auto_entry_timer {
+	a_uint32_t  lpiet:17;
+	a_uint32_t  _reserved0:12;
+};
+
+union mac_lpi_auto_entry_timer_u {
+	a_uint32_t val;
+	struct mac_lpi_auto_entry_timer bf;
+};
+
+/*[register] MAC_1US_TIC_COUNTER*/
+#define MAC_1US_TIC_COUNTER
+#define MAC_1US_TIC_COUNTER_ADDRESS 0xdc
+#define MAC_1US_TIC_COUNTER_NUM     2
+#define MAC_1US_TIC_COUNTER_INC     0x4000
+#define MAC_1US_TIC_COUNTER_TYPE    REG_TYPE_RO
+#define MAC_1US_TIC_COUNTER_DEFAULT 0x0
+	/*[field] TIC_1US_CNTR*/
+	#define MAC_1US_TIC_COUNTER_TIC_1US_CNTR
+	#define MAC_1US_TIC_COUNTER_TIC_1US_CNTR_OFFSET  0
+	#define MAC_1US_TIC_COUNTER_TIC_1US_CNTR_LEN     12
+	#define MAC_1US_TIC_COUNTER_TIC_1US_CNTR_DEFAULT 0x0
+
+struct mac_1us_tic_counter {
+	a_uint32_t  tic_1us_cntr:12;
+	a_uint32_t  _reserved0:20;
+};
+
+union mac_1us_tic_counter_u {
+	a_uint32_t val;
+	struct mac_1us_tic_counter bf;
+};
+
+/*[register] MAC_ADDRESS0_HIGH*/
+#define MAC_ADDRESS0_HIGH
+#define MAC_ADDRESS0_HIGH_ADDRESS 0x300
+#define MAC_ADDRESS0_HIGH_NUM     2
+#define MAC_ADDRESS0_HIGH_INC     0x4000
+#define MAC_ADDRESS0_HIGH_TYPE    REG_TYPE_RO
+#define MAC_ADDRESS0_HIGH_DEFAULT 0x0
+	/*[field] ADDRHI*/
+	#define MAC_ADDRESS0_HIGH_ADDRHI
+	#define MAC_ADDRESS0_HIGH_ADDRHI_OFFSET  0
+	#define MAC_ADDRESS0_HIGH_ADDRHI_LEN     16
+	#define MAC_ADDRESS0_HIGH_ADDRHI_DEFAULT 0x0
+	/*[field] DCS*/
+	#define MAC_ADDRESS0_HIGH_DCS
+	#define MAC_ADDRESS0_HIGH_DCS_OFFSET  16
+	#define MAC_ADDRESS0_HIGH_DCS_LEN     1
+	#define MAC_ADDRESS0_HIGH_DCS_DEFAULT 0x0
+	/*[field] AE*/
+	#define MAC_ADDRESS0_HIGH_AE
+	#define MAC_ADDRESS0_HIGH_AE_OFFSET  31
+	#define MAC_ADDRESS0_HIGH_AE_LEN     1
+	#define MAC_ADDRESS0_HIGH_AE_DEFAULT 0x0
+
+struct mac_address0_high {
+	a_uint32_t  addrhi:16;
+	a_uint32_t  dcs:1;
+	a_uint32_t  _reserved0:14;
+	a_uint32_t  ae:1;
+};
+
+union mac_address0_high_u {
+	a_uint32_t val;
+	struct mac_address0_high bf;
+};
+
+/*[register] MAC_ADDRESS0_LOW*/
+#define MAC_ADDRESS0_LOW
+#define MAC_ADDRESS0_LOW_ADDRESS 0x304
+#define MAC_ADDRESS0_LOW_NUM     2
+#define MAC_ADDRESS0_LOW_INC     0x4000
+#define MAC_ADDRESS0_LOW_TYPE    REG_TYPE_RO
+#define MAC_ADDRESS0_LOW_DEFAULT 0x0
+	/*[field] ADDRLO*/
+	#define MAC_ADDRESS0_LOW_ADDRLO
+	#define MAC_ADDRESS0_LOW_ADDRLO_OFFSET  0
+	#define MAC_ADDRESS0_LOW_ADDRLO_LEN     32
+	#define MAC_ADDRESS0_LOW_ADDRLO_DEFAULT 0x0
+
+struct mac_address0_low {
+	a_uint32_t  addrlo:32;
+};
+
+union mac_address0_low_u {
+	a_uint32_t val;
+	struct mac_address0_low bf;
+};
+
+/*[register] MMC_RECEIVE_INTERRUPT*/
+#define MMC_RECEIVE_INTERRUPT
+#define MMC_RECEIVE_INTERRUPT_ADDRESS 0x804
+#define MMC_RECEIVE_INTERRUPT_NUM     2
+#define MMC_RECEIVE_INTERRUPT_INC     0x4000
+#define MMC_RECEIVE_INTERRUPT_TYPE    REG_TYPE_RO
+#define MMC_RECEIVE_INTERRUPT_DEFAULT 0x0
+	/*[field] RXGBFRMIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXGBFRMIS
+	#define MMC_RECEIVE_INTERRUPT_RXGBFRMIS_OFFSET  0
+	#define MMC_RECEIVE_INTERRUPT_RXGBFRMIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXGBFRMIS_DEFAULT 0x0
+	/*[field] RXGBOCTIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXGBOCTIS
+	#define MMC_RECEIVE_INTERRUPT_RXGBOCTIS_OFFSET  1
+	#define MMC_RECEIVE_INTERRUPT_RXGBOCTIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXGBOCTIS_DEFAULT 0x0
+	/*[field] RXGOCTIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXGOCTIS
+	#define MMC_RECEIVE_INTERRUPT_RXGOCTIS_OFFSET  2
+	#define MMC_RECEIVE_INTERRUPT_RXGOCTIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXGOCTIS_DEFAULT 0x0
+	/*[field] RXBCGFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXBCGFIS
+	#define MMC_RECEIVE_INTERRUPT_RXBCGFIS_OFFSET  3
+	#define MMC_RECEIVE_INTERRUPT_RXBCGFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXBCGFIS_DEFAULT 0x0
+	/*[field] RXMCGFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXMCGFIS
+	#define MMC_RECEIVE_INTERRUPT_RXMCGFIS_OFFSET  4
+	#define MMC_RECEIVE_INTERRUPT_RXMCGFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXMCGFIS_DEFAULT 0x0
+	/*[field] RXCRCERFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXCRCERFIS
+	#define MMC_RECEIVE_INTERRUPT_RXCRCERFIS_OFFSET  5
+	#define MMC_RECEIVE_INTERRUPT_RXCRCERFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXCRCERFIS_DEFAULT 0x0
+	/*[field] RXRUNTFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXRUNTFIS
+	#define MMC_RECEIVE_INTERRUPT_RXRUNTFIS_OFFSET  6
+	#define MMC_RECEIVE_INTERRUPT_RXRUNTFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXRUNTFIS_DEFAULT 0x0
+	/*[field] RXJABERFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXJABERFIS
+	#define MMC_RECEIVE_INTERRUPT_RXJABERFIS_OFFSET  7
+	#define MMC_RECEIVE_INTERRUPT_RXJABERFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXJABERFIS_DEFAULT 0x0
+	/*[field] RXUSIZEGFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXUSIZEGFIS
+	#define MMC_RECEIVE_INTERRUPT_RXUSIZEGFIS_OFFSET  8
+	#define MMC_RECEIVE_INTERRUPT_RXUSIZEGFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXUSIZEGFIS_DEFAULT 0x0
+	/*[field] RXOSIZEGFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXOSIZEGFIS
+	#define MMC_RECEIVE_INTERRUPT_RXOSIZEGFIS_OFFSET  9
+	#define MMC_RECEIVE_INTERRUPT_RXOSIZEGFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXOSIZEGFIS_DEFAULT 0x0
+	/*[field] RX64OCTGBFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RX64OCTGBFIS
+	#define MMC_RECEIVE_INTERRUPT_RX64OCTGBFIS_OFFSET  10
+	#define MMC_RECEIVE_INTERRUPT_RX64OCTGBFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RX64OCTGBFIS_DEFAULT 0x0
+	/*[field] RX65T127OCTGBFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RX65T127OCTGBFIS
+	#define MMC_RECEIVE_INTERRUPT_RX65T127OCTGBFIS_OFFSET  11
+	#define MMC_RECEIVE_INTERRUPT_RX65T127OCTGBFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RX65T127OCTGBFIS_DEFAULT 0x0
+	/*[field] RX128T255OCTGBFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RX128T255OCTGBFIS
+	#define MMC_RECEIVE_INTERRUPT_RX128T255OCTGBFIS_OFFSET  12
+	#define MMC_RECEIVE_INTERRUPT_RX128T255OCTGBFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RX128T255OCTGBFIS_DEFAULT 0x0
+	/*[field] RX256T511OCTGBFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RX256T511OCTGBFIS
+	#define MMC_RECEIVE_INTERRUPT_RX256T511OCTGBFIS_OFFSET  13
+	#define MMC_RECEIVE_INTERRUPT_RX256T511OCTGBFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RX256T511OCTGBFIS_DEFAULT 0x0
+	/*[field] RX512T1023OCTGBFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RX512T1023OCTGBFIS
+	#define MMC_RECEIVE_INTERRUPT_RX512T1023OCTGBFIS_OFFSET  14
+	#define MMC_RECEIVE_INTERRUPT_RX512T1023OCTGBFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RX512T1023OCTGBFIS_DEFAULT 0x0
+	/*[field] RX1024TMAXOCTGBFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RX1024TMAXOCTGBFIS
+	#define MMC_RECEIVE_INTERRUPT_RX1024TMAXOCTGBFIS_OFFSET  15
+	#define MMC_RECEIVE_INTERRUPT_RX1024TMAXOCTGBFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RX1024TMAXOCTGBFIS_DEFAULT 0x0
+	/*[field] RXUCGFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXUCGFIS
+	#define MMC_RECEIVE_INTERRUPT_RXUCGFIS_OFFSET  16
+	#define MMC_RECEIVE_INTERRUPT_RXUCGFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXUCGFIS_DEFAULT 0x0
+	/*[field] RXLENERFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXLENERFIS
+	#define MMC_RECEIVE_INTERRUPT_RXLENERFIS_OFFSET  17
+	#define MMC_RECEIVE_INTERRUPT_RXLENERFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXLENERFIS_DEFAULT 0x0
+	/*[field] RXORANGEFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXORANGEFIS
+	#define MMC_RECEIVE_INTERRUPT_RXORANGEFIS_OFFSET  18
+	#define MMC_RECEIVE_INTERRUPT_RXORANGEFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXORANGEFIS_DEFAULT 0x0
+	/*[field] RXPAUSFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXPAUSFIS
+	#define MMC_RECEIVE_INTERRUPT_RXPAUSFIS_OFFSET  19
+	#define MMC_RECEIVE_INTERRUPT_RXPAUSFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXPAUSFIS_DEFAULT 0x0
+	/*[field] RXFOVFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXFOVFIS
+	#define MMC_RECEIVE_INTERRUPT_RXFOVFIS_OFFSET  20
+	#define MMC_RECEIVE_INTERRUPT_RXFOVFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXFOVFIS_DEFAULT 0x0
+	/*[field] RXVLANGBFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXVLANGBFIS
+	#define MMC_RECEIVE_INTERRUPT_RXVLANGBFIS_OFFSET  21
+	#define MMC_RECEIVE_INTERRUPT_RXVLANGBFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXVLANGBFIS_DEFAULT 0x0
+	/*[field] RXWDOGFIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXWDOGFIS
+	#define MMC_RECEIVE_INTERRUPT_RXWDOGFIS_OFFSET  22
+	#define MMC_RECEIVE_INTERRUPT_RXWDOGFIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXWDOGFIS_DEFAULT 0x0
+	/*[field] RXDISFCGBIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXDISFCGBIS
+	#define MMC_RECEIVE_INTERRUPT_RXDISFCGBIS_OFFSET  23
+	#define MMC_RECEIVE_INTERRUPT_RXDISFCGBIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXDISFCGBIS_DEFAULT 0x0
+	/*[field] RXDISOCGBIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXDISOCGBIS
+	#define MMC_RECEIVE_INTERRUPT_RXDISOCGBIS_OFFSET  24
+	#define MMC_RECEIVE_INTERRUPT_RXDISOCGBIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXDISOCGBIS_DEFAULT 0x0
+	/*[field] RXLPIUSCIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXLPIUSCIS
+	#define MMC_RECEIVE_INTERRUPT_RXLPIUSCIS_OFFSET  25
+	#define MMC_RECEIVE_INTERRUPT_RXLPIUSCIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXLPIUSCIS_DEFAULT 0x0
+	/*[field] RXLPITRCIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXLPITRCIS
+	#define MMC_RECEIVE_INTERRUPT_RXLPITRCIS_OFFSET  26
+	#define MMC_RECEIVE_INTERRUPT_RXLPITRCIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXLPITRCIS_DEFAULT 0x0
+	/*[field] RXPRMMCIS*/
+	#define MMC_RECEIVE_INTERRUPT_RXPRMMCIS
+	#define MMC_RECEIVE_INTERRUPT_RXPRMMCIS_OFFSET  31
+	#define MMC_RECEIVE_INTERRUPT_RXPRMMCIS_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_RXPRMMCIS_DEFAULT 0x0
+
+struct mmc_receive_interrupt {
+	a_uint32_t  rxgbfrmis:1;
+	a_uint32_t  rxgboctis:1;
+	a_uint32_t  rxgoctis:1;
+	a_uint32_t  rxbcgfis:1;
+	a_uint32_t  rxmcgfis:1;
+	a_uint32_t  rxcrcerfis:1;
+	a_uint32_t  rxruntfis:1;
+	a_uint32_t  rxjaberfis:1;
+	a_uint32_t  rxusizegfis:1;
+	a_uint32_t  rxosizegfis:1;
+	a_uint32_t  rx64octgbfis:1;
+	a_uint32_t  rx65t127octgbfis:1;
+	a_uint32_t  rx128t255octgbfis:1;
+	a_uint32_t  rx256t511octgbfis:1;
+	a_uint32_t  rx512t1023octgbfis:1;
+	a_uint32_t  rx1024tmaxoctgbfis:1;
+	a_uint32_t  rxucgfis:1;
+	a_uint32_t  rxlenerfis:1;
+	a_uint32_t  rxorangefis:1;
+	a_uint32_t  rxpausfis:1;
+	a_uint32_t  rxfovfis:1;
+	a_uint32_t  rxvlangbfis:1;
+	a_uint32_t  rxwdogfis:1;
+	a_uint32_t  rxdisfcgbis:1;
+	a_uint32_t  rxdisocgbis:1;
+	a_uint32_t  rxlpiuscis:1;
+	a_uint32_t  rxlpitrcis:1;
+	a_uint32_t  _reserved0:4;
+	a_uint32_t  rxprmmcis:1;
+};
+
+union mmc_receive_interrupt_u {
+	a_uint32_t val;
+	struct mmc_receive_interrupt bf;
+};
+
+/*[register] MMC_TRANSMIT_INTERRUPT*/
+#define MMC_TRANSMIT_INTERRUPT
+#define MMC_TRANSMIT_INTERRUPT_ADDRESS 0x808
+#define MMC_TRANSMIT_INTERRUPT_NUM     2
+#define MMC_TRANSMIT_INTERRUPT_INC     0x4000
+#define MMC_TRANSMIT_INTERRUPT_TYPE    REG_TYPE_RO
+#define MMC_TRANSMIT_INTERRUPT_DEFAULT 0x0
+	/*[field] TXGBOCTIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXGBOCTIS
+	#define MMC_TRANSMIT_INTERRUPT_TXGBOCTIS_OFFSET  0
+	#define MMC_TRANSMIT_INTERRUPT_TXGBOCTIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXGBOCTIS_DEFAULT 0x0
+	/*[field] TXGBFRMIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXGBFRMIS
+	#define MMC_TRANSMIT_INTERRUPT_TXGBFRMIS_OFFSET  1
+	#define MMC_TRANSMIT_INTERRUPT_TXGBFRMIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXGBFRMIS_DEFAULT 0x0
+	/*[field] TXBCGFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXBCGFIS
+	#define MMC_TRANSMIT_INTERRUPT_TXBCGFIS_OFFSET  2
+	#define MMC_TRANSMIT_INTERRUPT_TXBCGFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXBCGFIS_DEFAULT 0x0
+	/*[field] TXMCGFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXMCGFIS
+	#define MMC_TRANSMIT_INTERRUPT_TXMCGFIS_OFFSET  3
+	#define MMC_TRANSMIT_INTERRUPT_TXMCGFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXMCGFIS_DEFAULT 0x0
+	/*[field] TX64OCTGBFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TX64OCTGBFIS
+	#define MMC_TRANSMIT_INTERRUPT_TX64OCTGBFIS_OFFSET  4
+	#define MMC_TRANSMIT_INTERRUPT_TX64OCTGBFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TX64OCTGBFIS_DEFAULT 0x0
+	/*[field] TX65T127OCTGBFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TX65T127OCTGBFIS
+	#define MMC_TRANSMIT_INTERRUPT_TX65T127OCTGBFIS_OFFSET  5
+	#define MMC_TRANSMIT_INTERRUPT_TX65T127OCTGBFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TX65T127OCTGBFIS_DEFAULT 0x0
+	/*[field] TX128T255OCTGBFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TX128T255OCTGBFIS
+	#define MMC_TRANSMIT_INTERRUPT_TX128T255OCTGBFIS_OFFSET  6
+	#define MMC_TRANSMIT_INTERRUPT_TX128T255OCTGBFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TX128T255OCTGBFIS_DEFAULT 0x0
+	/*[field] TX256T511OCTGBFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TX256T511OCTGBFIS
+	#define MMC_TRANSMIT_INTERRUPT_TX256T511OCTGBFIS_OFFSET  7
+	#define MMC_TRANSMIT_INTERRUPT_TX256T511OCTGBFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TX256T511OCTGBFIS_DEFAULT 0x0
+	/*[field] TX512T1023OCTGBFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TX512T1023OCTGBFIS
+	#define MMC_TRANSMIT_INTERRUPT_TX512T1023OCTGBFIS_OFFSET  8
+	#define MMC_TRANSMIT_INTERRUPT_TX512T1023OCTGBFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TX512T1023OCTGBFIS_DEFAULT 0x0
+	/*[field] TX1024TMAXOCTGBFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TX1024TMAXOCTGBFIS
+	#define MMC_TRANSMIT_INTERRUPT_TX1024TMAXOCTGBFIS_OFFSET  9
+	#define MMC_TRANSMIT_INTERRUPT_TX1024TMAXOCTGBFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TX1024TMAXOCTGBFIS_DEFAULT 0x0
+	/*[field] TXUCGBFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXUCGBFIS
+	#define MMC_TRANSMIT_INTERRUPT_TXUCGBFIS_OFFSET  10
+	#define MMC_TRANSMIT_INTERRUPT_TXUCGBFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXUCGBFIS_DEFAULT 0x0
+	/*[field] TXMCGBFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXMCGBFIS
+	#define MMC_TRANSMIT_INTERRUPT_TXMCGBFIS_OFFSET  11
+	#define MMC_TRANSMIT_INTERRUPT_TXMCGBFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXMCGBFIS_DEFAULT 0x0
+	/*[field] TXBCGBFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXBCGBFIS
+	#define MMC_TRANSMIT_INTERRUPT_TXBCGBFIS_OFFSET  12
+	#define MMC_TRANSMIT_INTERRUPT_TXBCGBFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXBCGBFIS_DEFAULT 0x0
+	/*[field] TXUFLOWERFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXUFLOWERFIS
+	#define MMC_TRANSMIT_INTERRUPT_TXUFLOWERFIS_OFFSET  13
+	#define MMC_TRANSMIT_INTERRUPT_TXUFLOWERFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXUFLOWERFIS_DEFAULT 0x0
+	/*[field] TXGOCTIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXGOCTIS
+	#define MMC_TRANSMIT_INTERRUPT_TXGOCTIS_OFFSET  14
+	#define MMC_TRANSMIT_INTERRUPT_TXGOCTIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXGOCTIS_DEFAULT 0x0
+	/*[field] TXGFRMIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXGFRMIS
+	#define MMC_TRANSMIT_INTERRUPT_TXGFRMIS_OFFSET  15
+	#define MMC_TRANSMIT_INTERRUPT_TXGFRMIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXGFRMIS_DEFAULT 0x0
+	/*[field] TXPAUSFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXPAUSFIS
+	#define MMC_TRANSMIT_INTERRUPT_TXPAUSFIS_OFFSET  16
+	#define MMC_TRANSMIT_INTERRUPT_TXPAUSFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXPAUSFIS_DEFAULT 0x0
+	/*[field] TXVLANGFIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXVLANGFIS
+	#define MMC_TRANSMIT_INTERRUPT_TXVLANGFIS_OFFSET  17
+	#define MMC_TRANSMIT_INTERRUPT_TXVLANGFIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXVLANGFIS_DEFAULT 0x0
+	/*[field] TXLPIUSCIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXLPIUSCIS
+	#define MMC_TRANSMIT_INTERRUPT_TXLPIUSCIS_OFFSET  18
+	#define MMC_TRANSMIT_INTERRUPT_TXLPIUSCIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXLPIUSCIS_DEFAULT 0x0
+	/*[field] TXLPITRCIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXLPITRCIS
+	#define MMC_TRANSMIT_INTERRUPT_TXLPITRCIS_OFFSET  19
+	#define MMC_TRANSMIT_INTERRUPT_TXLPITRCIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXLPITRCIS_DEFAULT 0x0
+	/*[field] TXPRMMCIS*/
+	#define MMC_TRANSMIT_INTERRUPT_TXPRMMCIS
+	#define MMC_TRANSMIT_INTERRUPT_TXPRMMCIS_OFFSET  31
+	#define MMC_TRANSMIT_INTERRUPT_TXPRMMCIS_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_TXPRMMCIS_DEFAULT 0x0
+
+struct mmc_transmit_interrupt {
+	a_uint32_t  txgboctis:1;
+	a_uint32_t  txgbfrmis:1;
+	a_uint32_t  txbcgfis:1;
+	a_uint32_t  txmcgfis:1;
+	a_uint32_t  tx64octgbfis:1;
+	a_uint32_t  tx65t127octgbfis:1;
+	a_uint32_t  tx128t255octgbfis:1;
+	a_uint32_t  tx256t511octgbfis:1;
+	a_uint32_t  tx512t1023octgbfis:1;
+	a_uint32_t  tx1024tmaxoctgbfis:1;
+	a_uint32_t  txucgbfis:1;
+	a_uint32_t  txmcgbfis:1;
+	a_uint32_t  txbcgbfis:1;
+	a_uint32_t  txuflowerfis:1;
+	a_uint32_t  txgoctis:1;
+	a_uint32_t  txgfrmis:1;
+	a_uint32_t  txpausfis:1;
+	a_uint32_t  txvlangfis:1;
+	a_uint32_t  txlpiuscis:1;
+	a_uint32_t  txlpitrcis:1;
+	a_uint32_t  _reserved0:11;
+	a_uint32_t  txprmmcis:1;
+};
+
+union mmc_transmit_interrupt_u {
+	a_uint32_t val;
+	struct mmc_transmit_interrupt bf;
+};
+
+/*[register] MMC_RECEIVE_INTERRUPT_ENABLE*/
+#define MMC_RECEIVE_INTERRUPT_ENABLE
+#define MMC_RECEIVE_INTERRUPT_ENABLE_ADDRESS 0x80c
+#define MMC_RECEIVE_INTERRUPT_ENABLE_NUM     2
+#define MMC_RECEIVE_INTERRUPT_ENABLE_INC     0x4000
+#define MMC_RECEIVE_INTERRUPT_ENABLE_TYPE    REG_TYPE_RO
+#define MMC_RECEIVE_INTERRUPT_ENABLE_DEFAULT 0x0
+	/*[field] RXGBFRMIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGBFRMIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGBFRMIE_OFFSET  0
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGBFRMIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGBFRMIE_DEFAULT 0x0
+	/*[field] RXGBOCTIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGBOCTIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGBOCTIE_OFFSET  1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGBOCTIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGBOCTIE_DEFAULT 0x0
+	/*[field] RXGOCTIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGOCTIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGOCTIE_OFFSET  2
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGOCTIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXGOCTIE_DEFAULT 0x0
+	/*[field] RXBCGFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXBCGFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXBCGFIE_OFFSET  3
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXBCGFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXBCGFIE_DEFAULT 0x0
+	/*[field] RXMCGFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXMCGFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXMCGFIE_OFFSET  4
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXMCGFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXMCGFIE_DEFAULT 0x0
+	/*[field] RXCRCERFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXCRCERFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXCRCERFIE_OFFSET  5
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXCRCERFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXCRCERFIE_DEFAULT 0x0
+	/*[field] RXRUNTFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXRUNTFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXRUNTFIE_OFFSET  6
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXRUNTFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXRUNTFIE_DEFAULT 0x0
+	/*[field] RXJABERFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXJABERFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXJABERFIE_OFFSET  7
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXJABERFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXJABERFIE_DEFAULT 0x0
+	/*[field] RXUSIZEGFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXUSIZEGFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXUSIZEGFIE_OFFSET  8
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXUSIZEGFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXUSIZEGFIE_DEFAULT 0x0
+	/*[field] RXOSIZEGFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXOSIZEGFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXOSIZEGFIE_OFFSET  9
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXOSIZEGFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXOSIZEGFIE_DEFAULT 0x0
+	/*[field] RX64OCTGBFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX64OCTGBFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX64OCTGBFIE_OFFSET  10
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX64OCTGBFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX64OCTGBFIE_DEFAULT 0x0
+	/*[field] RX65T127OCTGBFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX65T127OCTGBFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX65T127OCTGBFIE_OFFSET  11
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX65T127OCTGBFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX65T127OCTGBFIE_DEFAULT 0x0
+	/*[field] RX128T255OCTGBFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX128T255OCTGBFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX128T255OCTGBFIE_OFFSET  12
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX128T255OCTGBFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX128T255OCTGBFIE_DEFAULT 0x0
+	/*[field] RX256T511OCTGBFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX256T511OCTGBFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX256T511OCTGBFIE_OFFSET  13
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX256T511OCTGBFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX256T511OCTGBFIE_DEFAULT 0x0
+	/*[field] RX512T1023OCTGBFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX512T1023OCTGBFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX512T1023OCTGBFIE_OFFSET  14
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX512T1023OCTGBFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX512T1023OCTGBFIE_DEFAULT 0x0
+	/*[field] RX1024TMAXOCTGBFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX1024TMAXOCTGBFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX1024TMAXOCTGBFIE_OFFSET  15
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX1024TMAXOCTGBFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RX1024TMAXOCTGBFIE_DEFAULT 0x0
+	/*[field] RXUCGFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXUCGFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXUCGFIE_OFFSET  16
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXUCGFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXUCGFIE_DEFAULT 0x0
+	/*[field] RXLENERFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLENERFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLENERFIE_OFFSET  17
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLENERFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLENERFIE_DEFAULT 0x0
+	/*[field] RXORANGEFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXORANGEFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXORANGEFIE_OFFSET  18
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXORANGEFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXORANGEFIE_DEFAULT 0x0
+	/*[field] RXPAUSFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXPAUSFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXPAUSFIE_OFFSET  19
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXPAUSFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXPAUSFIE_DEFAULT 0x0
+	/*[field] RXFOVFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXFOVFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXFOVFIE_OFFSET  20
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXFOVFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXFOVFIE_DEFAULT 0x0
+	/*[field] RXVLANGBFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXVLANGBFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXVLANGBFIE_OFFSET  21
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXVLANGBFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXVLANGBFIE_DEFAULT 0x0
+	/*[field] RXWDOGFIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXWDOGFIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXWDOGFIE_OFFSET  22
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXWDOGFIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXWDOGFIE_DEFAULT 0x0
+	/*[field] RXDISFCIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXDISFCIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXDISFCIE_OFFSET  23
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXDISFCIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXDISFCIE_DEFAULT 0x0
+	/*[field] RXDISOCIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXDISOCIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXDISOCIE_OFFSET  24
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXDISOCIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXDISOCIE_DEFAULT 0x0
+	/*[field] RXLPIUSCIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLPIUSCIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLPIUSCIE_OFFSET  25
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLPIUSCIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLPIUSCIE_DEFAULT 0x0
+	/*[field] RXLPITRCIE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLPITRCIE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLPITRCIE_OFFSET  26
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLPITRCIE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXLPITRCIE_DEFAULT 0x0
+	/*[field] RXPRMMCISE*/
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXPRMMCISE
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXPRMMCISE_OFFSET  31
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXPRMMCISE_LEN     1
+	#define MMC_RECEIVE_INTERRUPT_ENABLE_RXPRMMCISE_DEFAULT 0x0
+
+struct mmc_receive_interrupt_enable {
+	a_uint32_t  rxgbfrmie:1;
+	a_uint32_t  rxgboctie:1;
+	a_uint32_t  rxgoctie:1;
+	a_uint32_t  rxbcgfie:1;
+	a_uint32_t  rxmcgfie:1;
+	a_uint32_t  rxcrcerfie:1;
+	a_uint32_t  rxruntfie:1;
+	a_uint32_t  rxjaberfie:1;
+	a_uint32_t  rxusizegfie:1;
+	a_uint32_t  rxosizegfie:1;
+	a_uint32_t  rx64octgbfie:1;
+	a_uint32_t  rx65t127octgbfie:1;
+	a_uint32_t  rx128t255octgbfie:1;
+	a_uint32_t  rx256t511octgbfie:1;
+	a_uint32_t  rx512t1023octgbfie:1;
+	a_uint32_t  rx1024tmaxoctgbfie:1;
+	a_uint32_t  rxucgfie:1;
+	a_uint32_t  rxlenerfie:1;
+	a_uint32_t  rxorangefie:1;
+	a_uint32_t  rxpausfie:1;
+	a_uint32_t  rxfovfie:1;
+	a_uint32_t  rxvlangbfie:1;
+	a_uint32_t  rxwdogfie:1;
+	a_uint32_t  rxdisfcie:1;
+	a_uint32_t  rxdisocie:1;
+	a_uint32_t  rxlpiuscie:1;
+	a_uint32_t  rxlpitrcie:1;
+	a_uint32_t  _reserved0:4;
+	a_uint32_t  rxprmmcise:1;
+};
+
+union mmc_receive_interrupt_enable_u {
+	a_uint32_t val;
+	struct mmc_receive_interrupt_enable bf;
+};
+
+/*[register] MMC_TRANSMIT_INTERRUPT_ENABLE*/
+#define MMC_TRANSMIT_INTERRUPT_ENABLE
+#define MMC_TRANSMIT_INTERRUPT_ENABLE_ADDRESS 0x810
+#define MMC_TRANSMIT_INTERRUPT_ENABLE_NUM     2
+#define MMC_TRANSMIT_INTERRUPT_ENABLE_INC     0x4000
+#define MMC_TRANSMIT_INTERRUPT_ENABLE_TYPE    REG_TYPE_RO
+#define MMC_TRANSMIT_INTERRUPT_ENABLE_DEFAULT 0x0
+	/*[field] TXGBOCTIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGBOCTIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGBOCTIE_OFFSET  0
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGBOCTIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGBOCTIE_DEFAULT 0x0
+	/*[field] TXGBFRMIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGBFRMIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGBFRMIE_OFFSET  1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGBFRMIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGBFRMIE_DEFAULT 0x0
+	/*[field] TXBCGFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXBCGFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXBCGFIE_OFFSET  2
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXBCGFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXBCGFIE_DEFAULT 0x0
+	/*[field] TXMCGFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXMCGFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXMCGFIE_OFFSET  3
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXMCGFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXMCGFIE_DEFAULT 0x0
+	/*[field] TX64OCTGBFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX64OCTGBFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX64OCTGBFIE_OFFSET  4
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX64OCTGBFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX64OCTGBFIE_DEFAULT 0x0
+	/*[field] TX65T127OCTGBFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX65T127OCTGBFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX65T127OCTGBFIE_OFFSET  5
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX65T127OCTGBFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX65T127OCTGBFIE_DEFAULT 0x0
+	/*[field] TX128T255OCTGBFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX128T255OCTGBFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX128T255OCTGBFIE_OFFSET  6
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX128T255OCTGBFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX128T255OCTGBFIE_DEFAULT 0x0
+	/*[field] TX256T511OCTGBFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX256T511OCTGBFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX256T511OCTGBFIE_OFFSET  7
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX256T511OCTGBFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX256T511OCTGBFIE_DEFAULT 0x0
+	/*[field] TX512T1023OCTGBFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX512T1023OCTGBFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX512T1023OCTGBFIE_OFFSET  8
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX512T1023OCTGBFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX512T1023OCTGBFIE_DEFAULT 0x0
+	/*[field] TX1024TMAXOCTGBFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX1024TMAXOCTGBFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX1024TMAXOCTGBFIE_OFFSET  9
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX1024TMAXOCTGBFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TX1024TMAXOCTGBFIE_DEFAULT 0x0
+	/*[field] TXUCGBFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXUCGBFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXUCGBFIE_OFFSET  10
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXUCGBFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXUCGBFIE_DEFAULT 0x0
+	/*[field] TXMCGBFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXMCGBFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXMCGBFIE_OFFSET  11
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXMCGBFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXMCGBFIE_DEFAULT 0x0
+	/*[field] TXBCGBFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXBCGBFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXBCGBFIE_OFFSET  12
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXBCGBFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXBCGBFIE_DEFAULT 0x0
+	/*[field] TXUFLOWERFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXUFLOWERFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXUFLOWERFIE_OFFSET  13
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXUFLOWERFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXUFLOWERFIE_DEFAULT 0x0
+	/*[field] TXGOCTIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGOCTIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGOCTIE_OFFSET  14
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGOCTIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGOCTIE_DEFAULT 0x0
+	/*[field] TXGFRMIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGFRMIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGFRMIE_OFFSET  15
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGFRMIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXGFRMIE_DEFAULT 0x0
+	/*[field] TXPAUSFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXPAUSFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXPAUSFIE_OFFSET  16
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXPAUSFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXPAUSFIE_DEFAULT 0x0
+	/*[field] TXVLANGFIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXVLANGFIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXVLANGFIE_OFFSET  17
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXVLANGFIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXVLANGFIE_DEFAULT 0x0
+	/*[field] TXLPIUSCIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXLPIUSCIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXLPIUSCIE_OFFSET  18
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXLPIUSCIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXLPIUSCIE_DEFAULT 0x0
+	/*[field] TXLPITRCIE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXLPITRCIE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXLPITRCIE_OFFSET  19
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXLPITRCIE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXLPITRCIE_DEFAULT 0x0
+	/*[field] TXPRMMCISE*/
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXPRMMCISE
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXPRMMCISE_OFFSET  31
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXPRMMCISE_LEN     1
+	#define MMC_TRANSMIT_INTERRUPT_ENABLE_TXPRMMCISE_DEFAULT 0x0
+
+struct mmc_transmit_interrupt_enable {
+	a_uint32_t  txgboctie:1;
+	a_uint32_t  txgbfrmie:1;
+	a_uint32_t  txbcgfie:1;
+	a_uint32_t  txmcgfie:1;
+	a_uint32_t  tx64octgbfie:1;
+	a_uint32_t  tx65t127octgbfie:1;
+	a_uint32_t  tx128t255octgbfie:1;
+	a_uint32_t  tx256t511octgbfie:1;
+	a_uint32_t  tx512t1023octgbfie:1;
+	a_uint32_t  tx1024tmaxoctgbfie:1;
+	a_uint32_t  txucgbfie:1;
+	a_uint32_t  txmcgbfie:1;
+	a_uint32_t  txbcgbfie:1;
+	a_uint32_t  txuflowerfie:1;
+	a_uint32_t  txgoctie:1;
+	a_uint32_t  txgfrmie:1;
+	a_uint32_t  txpausfie:1;
+	a_uint32_t  txvlangfie:1;
+	a_uint32_t  txlpiuscie:1;
+	a_uint32_t  txlpitrcie:1;
+	a_uint32_t  _reserved0:11;
+	a_uint32_t  txprmmcise:1;
+};
+
+union mmc_transmit_interrupt_enable_u {
+	a_uint32_t val;
+	struct mmc_transmit_interrupt_enable bf;
+};
+
+#endif
