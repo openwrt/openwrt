@@ -111,8 +111,6 @@ UBOOT_TARGETS := \
 
 UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE:.fip=.bin)
 
-Build/Exports:=$(Host/Exports)
-
 define Build/fip-image
 	$(STAGING_DIR_HOST)/bin/fiptool create \
 		--soc-fw $(STAGING_DIR_IMAGE)/$(BUILD_SUBTARGET)-$(BL2_BOOTDEV)-$(BL2_DDRBLOB)ddr-bl31.bin \
