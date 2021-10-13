@@ -60,7 +60,7 @@ define Package/iptables/config
 
   config IPTABLES_NFTABLES
 	bool "Enable Nftables support"
-	default n
+	default y
 	help
 		This enable nftables support in iptables.
 endef
@@ -108,7 +108,7 @@ endef
 define Package/iptables-nft
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool nft
-  DEPENDS:=iptables @IPTABLES_NFTABLES +libxtables-nft
+  DEPENDS:=+iptables @IPTABLES_NFTABLES +libxtables-nft
 endef
 
 define Package/iptables-nft/description
