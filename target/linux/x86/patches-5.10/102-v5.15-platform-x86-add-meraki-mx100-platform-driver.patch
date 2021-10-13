@@ -22,11 +22,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  3 files changed, 246 insertions(+)
  create mode 100644 drivers/platform/x86/meraki-mx100.c
 
-diff --git a/drivers/platform/x86/Kconfig b/drivers/platform/x86/Kconfig
-index 6ad35158ae4ef..432d72170b003 100644
 --- a/drivers/platform/x86/Kconfig
 +++ b/drivers/platform/x86/Kconfig
-@@ -302,6 +302,19 @@ config ASUS_NB_WMI
+@@ -267,6 +267,19 @@ config ASUS_NB_WMI
  	  If you have an ACPI-WMI compatible Asus Notebook, say Y or M
  	  here.
  
@@ -46,11 +44,9 @@ index 6ad35158ae4ef..432d72170b003 100644
  config EEEPC_LAPTOP
  	tristate "Eee PC Hotkey Driver"
  	depends on ACPI
-diff --git a/drivers/platform/x86/Makefile b/drivers/platform/x86/Makefile
-index 5edfdc2ea7f29..9bb3c3f773864 100644
 --- a/drivers/platform/x86/Makefile
 +++ b/drivers/platform/x86/Makefile
-@@ -39,6 +39,9 @@ obj-$(CONFIG_ASUS_NB_WMI)	+= asus-nb-wmi.o
+@@ -33,6 +33,9 @@ obj-$(CONFIG_ASUS_NB_WMI)	+= asus-nb-wmi
  obj-$(CONFIG_EEEPC_LAPTOP)	+= eeepc-laptop.o
  obj-$(CONFIG_EEEPC_WMI)		+= eeepc-wmi.o
  
@@ -58,11 +54,8 @@ index 5edfdc2ea7f29..9bb3c3f773864 100644
 +obj-$(CONFIG_MERAKI_MX100)	+= meraki-mx100.o
 +
  # Dell
- obj-$(CONFIG_X86_PLATFORM_DRIVERS_DELL)		+= dell/
- 
-diff --git a/drivers/platform/x86/meraki-mx100.c b/drivers/platform/x86/meraki-mx100.c
-new file mode 100644
-index 0000000000000..3751ed36a980a
+ obj-$(CONFIG_DCDBAS)			+= dcdbas.o
+ obj-$(CONFIG_DELL_SMBIOS)		+= dell-smbios.o
 --- /dev/null
 +++ b/drivers/platform/x86/meraki-mx100.c
 @@ -0,0 +1,230 @@
@@ -296,5 +289,3 @@ index 0000000000000..3751ed36a980a
 +MODULE_DESCRIPTION("Cisco Meraki MX100 Platform Driver");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:meraki-mx100");
--- 
-cgit 1.2.3-1.el7
