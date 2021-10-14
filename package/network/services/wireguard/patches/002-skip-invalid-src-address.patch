@@ -1,0 +1,71 @@
+Index: wireguard-linux-compat-1.0.20200611/src/socket.c
+===================================================================
+--- wireguard-linux-compat-1.0.20200611.orig/src/socket.c
++++ wireguard-linux-compat-1.0.20200611/src/socket.c
+@@ -17,6 +17,34 @@
+ #include <net/udp_tunnel.h>
+ #include <net/ipv6.h>
+ 
++static int check_src_valid(struct net_device* device,__be32 src)
++{
++	struct in_device* in_dev;
++	struct in_ifaddr* if_info;
++	in_dev = (struct in_device *)device->ip_ptr;
++	if_info = in_dev->ifa_list;
++	for (;if_info;if_info=if_info->ifa_next){
++		if(src == if_info->ifa_address){
++			net_dbg_ratelimited("invalid src address %pI4\n",&src);
++			return -1;
++		}
++	}
++	return 0;
++}
++
++static int check_src6_valid(struct net_device* device, struct in6_addr src)
++{
++	struct inet6_dev *net_dev6 = in6_dev_get(device);
++	struct list_head *p;
++    	list_for_each(p, &net_dev6->addr_list) {
++		struct inet6_ifaddr *ifa = list_entry(p, struct inet6_ifaddr, if_list);
++		if( 0 == ipv6_addr_cmp( &src, &ifa->addr)){
++			net_dbg_ratelimited("invalid src6 address %pI6\n",&ifa->addr);
++			return -1;
++		}
++	}
++	return 0;
++}
+ static int send4(struct wg_device *wg, struct sk_buff *skb,
+ 		 struct endpoint *endpoint, u8 ds, struct dst_cache *cache)
+ {
+@@ -82,10 +110,12 @@ static int send4(struct wg_device *wg, s
+ 	}
+ 
+ 	skb->ignore_df = 1;
+-	udp_tunnel_xmit_skb(rt, sock, skb, fl.saddr, fl.daddr, ds,
+-			    ip4_dst_hoplimit(&rt->dst), 0, fl.fl4_sport,
+-			    fl.fl4_dport, false, false);
+-	goto out;
++	if(0 == check_src_valid(skb->dev,fl.saddr)){
++		udp_tunnel_xmit_skb(rt, sock, skb, fl.saddr, fl.daddr, ds,
++		    ip4_dst_hoplimit(&rt->dst), 0, fl.fl4_sport,
++		    fl.fl4_dport, false, false);
++		goto out;
++	}
+ 
+ err:
+ 	kfree_skb(skb);
+@@ -149,10 +179,12 @@ static int send6(struct wg_device *wg, s
+ 	}
+ 
+ 	skb->ignore_df = 1;
+-	udp_tunnel6_xmit_skb(dst, sock, skb, skb->dev, &fl.saddr, &fl.daddr, ds,
++	if(0 == check_src6_valid(skb->dev,fl.saddr)){
++		udp_tunnel6_xmit_skb(dst, sock, skb, skb->dev, &fl.saddr, &fl.daddr, ds,
+ 			     ip6_dst_hoplimit(dst), 0, fl.fl6_sport,
+ 			     fl.fl6_dport, false);
+-	goto out;
++		goto out;
++	}
+ 
+ err:
+ 	kfree_skb(skb);
