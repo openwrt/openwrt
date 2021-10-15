@@ -386,4 +386,16 @@ menu "Global build settings"
 
 	endchoice
 
+	config SECCOMP
+		bool "Enable SECCOMP"
+		select KERNEL_SECCOMP
+		select PACKAGE_procd-seccomp
+		depends on (aarch64 || arm || armeb || mips || mipsel || i386 || powerpc || x86_64)
+		depends on !TARGET_uml
+		default y
+		help
+		  This option enables seccomp kernel features to safely
+		  execute untrusted bytecode and selects the seccomp-variants
+		  of procd
+
 endmenu
