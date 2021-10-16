@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lua
 PKG_VERSION:=5.1.5
-PKG_RELEASE:=8
+PKG_RELEASE:=9
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
@@ -134,8 +134,12 @@ define Host/Install
 		INSTALL_TOP="$(STAGING_DIR_HOSTPKG)" \
 		install
 
-	$(LN) $(STAGING_DIR_HOSTPKG)/bin/lua5.1 $(STAGING_DIR_HOSTPKG)/bin/lua
-	$(LN) $(STAGING_DIR_HOSTPKG)/bin/luac5.1 $(STAGING_DIR_HOSTPKG)/bin/luac
+	$(INSTALL_DIR) $(STAGING_DIR_HOSTPKG)/lib/pkgconfig
+	$(CP) $(HOST_BUILD_DIR)/etc/lua.pc $(STAGING_DIR_HOSTPKG)/lib/pkgconfig/lua5.1.pc
+
+	$(LN) lua5.1 $(STAGING_DIR_HOSTPKG)/bin/lua
+	$(LN) luac5.1 $(STAGING_DIR_HOSTPKG)/bin/luac
+	$(LN) lua5.1.pc $(STAGING_DIR_HOSTPKG)/lib/pkgconfig/lua.pc
 endef
 
 define Build/InstallDev

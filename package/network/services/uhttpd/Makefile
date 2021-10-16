@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uhttpd.git
@@ -85,7 +85,7 @@ endif
 
 TARGET_LDFLAGS += -lcrypt
 
-CMAKE_OPTIONS = -DTLS_SUPPORT=on
+CMAKE_OPTIONS += -DTLS_SUPPORT=on
 
 define Package/uhttpd/install
 	$(INSTALL_DIR) $(1)/etc/init.d

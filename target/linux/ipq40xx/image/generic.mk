@@ -35,7 +35,7 @@ define Device/DniImage
 	IMAGES += factory.img
 	IMAGE/factory.img := append-kernel | pad-offset 64k 64 | append-uImage-fakehdr filesystem | append-rootfs | pad-rootfs | netgear-dni
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
-		append-rootfs | pad-rootfs | append-metadata | check-size
+		append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 
 define Build/append-rootfshdr
@@ -106,7 +106,7 @@ define Device/8dev_habanero-dvk
 	IMAGE_SIZE := 30976k
 	SOC := qcom-ipq4019
 	DEVICE_PACKAGES := ipq-wifi-8dev_habanero-dvk
-	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | append-metadata | check-size
+	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += 8dev_habanero-dvk
 
@@ -207,7 +207,7 @@ define Device/avm_fritzbox-4040
 	UBOOT_PARTITION_SIZE := 524288
 	IMAGES += eva.bin
 	IMAGE/eva.bin := append-uboot | pad-to $$$$(UBOOT_PARTITION_SIZE) | append-kernel | append-rootfs | pad-rootfs
-	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 	DEVICE_PACKAGES := fritz-tffs fritz-caldata
 endef
 TARGET_DEVICES += avm_fritzbox-4040
@@ -365,6 +365,7 @@ define Device/edgecore_ecw5211
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
 	DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-usb-acm
 endef
 TARGET_DEVICES += edgecore_ecw5211
@@ -418,6 +419,7 @@ define Device/engenius_emd1
 	IMAGES += factory.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
+	DEVICE_PACKAGES := ipq-wifi-engenius_emd1
 endef
 TARGET_DEVICES += engenius_emd1
 
@@ -432,6 +434,7 @@ define Device/engenius_emr3500
 	IMAGES += factory.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
+	DEVICE_PACKAGES := ipq-wifi-engenius_emr3500
 endef
 TARGET_DEVICES += engenius_emr3500
 
@@ -492,7 +495,7 @@ endef
 TARGET_DEVICES += glinet_gl-ap1300
 
 define Device/glinet_gl-b1300
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	DEVICE_VENDOR := GL.iNet
 	DEVICE_MODEL := GL-B1300
 	BOARD_NAME := gl-b1300
@@ -504,7 +507,7 @@ endef
 TARGET_DEVICES += glinet_gl-b1300
 
 define Device/glinet_gl-s1300
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	DEVICE_VENDOR := GL.iNet
 	DEVICE_MODEL := GL-S1300
 	SOC := qcom-ipq4029
@@ -701,7 +704,7 @@ define Device/plasmacloud_pa1200
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA1200
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-plasmacloud-pa1200
+	DEVICE_PACKAGES := ipq-wifi-plasmacloud_pa1200
 endef
 TARGET_DEVICES += plasmacloud_pa1200
 
@@ -717,7 +720,7 @@ define Device/plasmacloud_pa2200
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA2200
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-plasmacloud-pa2200
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-plasmacloud_pa2200
 endef
 TARGET_DEVICES += plasmacloud_pa2200
 
@@ -822,7 +825,7 @@ define Device/zyxel_wre6606
 	DEVICE_DTS_CONFIG := config@4
 	SOC := qcom-ipq4018
 	IMAGE_SIZE := 13184k
-	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
 endef
 TARGET_DEVICES += zyxel_wre6606

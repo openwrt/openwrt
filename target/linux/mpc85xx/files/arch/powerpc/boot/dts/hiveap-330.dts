@@ -165,7 +165,8 @@
 			status = "okay";
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
-			mtd-mac-address = <&hwinfo 0>;
+			nvmem-cells = <&macaddr_hwinfo_0>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		enet1: ethernet@b1000 {
@@ -176,8 +177,9 @@
 			status = "okay";
 			phy-handle = <&phy1>;
 			phy-connection-type = "rgmii-id";
-			mtd-mac-address = <&hwinfo 0>;
-			mtd-mac-address-increment = <1>;
+			nvmem-cells = <&macaddr_hwinfo_0>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <1>;
 		};
 
 		gpio0: gpio-controller@fc00 {
@@ -234,3 +236,13 @@
 	};
 };
 /include/ "fsl/p1020si-post.dtsi"
+
+&hwinfo {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_hwinfo_0: macaddr@0 {
+		reg = <0x0 0x6>;
+	};
+};

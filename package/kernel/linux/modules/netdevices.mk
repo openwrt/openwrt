@@ -657,7 +657,7 @@ define KernelPackage/igb
     CONFIG_IGB_HWMON=y \
     CONFIG_IGB_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igb/igb.ko
-  AUTOLOAD:=$(call AutoLoad,35,igb)
+  AUTOLOAD:=$(call AutoLoad,35,igb,1)
 endef
 
 define KernelPackage/igb/description
@@ -1199,7 +1199,8 @@ define KernelPackage/qlcnic
   TITLE:=QLogic QLE8240 and QLE8242 device support
   KCONFIG:= \
 	CONFIG_QLCNIC \
-	CONFIG_QLCNIC_HWMON=y
+	CONFIG_QLCNIC_HWMON=y \
+	CONFIG_QLCNIC_SRIOV=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/qlogic/qlcnic/qlcnic.ko
   AUTOLOAD:=$(call AutoProbe,qlcnic)
 endef

@@ -13,7 +13,7 @@ platform_check_image() {
 	kobol,helios4|\
 	solidrun,clearfog-base-a1|\
 	solidrun,clearfog-pro-a1)
-		platform_check_image_sdcard "$1"
+		legacy_sdcard_check_image "$1"
 		;;
 	*)
 		return 0
@@ -30,7 +30,7 @@ platform_do_upgrade() {
 	kobol,helios4|\
 	solidrun,clearfog-base-a1|\
 	solidrun,clearfog-pro-a1)
-		platform_do_upgrade_sdcard "$1"
+		legacy_sdcard_do_upgrade "$1"
 		;;
 	linksys,wrt1200ac|\
 	linksys,wrt1900ac-v1|\
@@ -51,7 +51,7 @@ platform_copy_config() {
 	kobol,helios4|\
 	solidrun,clearfog-base-a1|\
 	solidrun,clearfog-pro-a1)
-		platform_copy_config_sdcard
+		legacy_sdcard_copy_config
 		;;
 	linksys,wrt1200ac|\
 	linksys,wrt1900ac-v1|\

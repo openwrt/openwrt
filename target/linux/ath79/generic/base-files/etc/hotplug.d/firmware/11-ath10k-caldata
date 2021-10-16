@@ -23,7 +23,9 @@ case "$FIRMWARE" in
 		;;
 	comfast,cf-wr650ac-v1|\
 	comfast,cf-wr650ac-v2|\
+	devolo,dlan-pro-1200plus-ac|\
 	devolo,magic-2-wifi|\
+	joyit,jt-or750i|\
 	qxwlan,e1700ac-v2-8m|\
 	qxwlan,e1700ac-v2-16m|\
 	qxwlan,e600gac-v2-8m|\
@@ -42,6 +44,7 @@ case "$FIRMWARE" in
 	ubnt,nanostation-ac-loco|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2|\
+	ubnt,rocket-5ac-lite|\
 	ubnt,unifiac-pro|\
 	yuncore,a770)
 		caldata_extract "art" 0x5000 0x844
@@ -139,7 +142,8 @@ case "$FIRMWARE" in
 		;;
 	tplink,eap245-v1|\
 	tplink,re450-v2|\
-	tplink,re450-v3)
+	tplink,re450-v3|\
+	tplink,re455-v1)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) 1)
 		;;
@@ -200,6 +204,7 @@ case "$FIRMWARE" in
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
+	nec,wf1200cr|\
 	nec,wg1200cr)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
@@ -224,9 +229,16 @@ case "$FIRMWARE" in
 	tplink,archer-c60-v2|\
 	tplink,archer-c60-v3|\
 	tplink,archer-c6-v2|\
-	tplink,archer-c6-v2-us)
+	tplink,archer-c6-v2-us|\
+	tplink,tl-wa1201-v2)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) -1)
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		;;
+	tplink,cpe710-v1)
+		caldata_extract "art" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary info 0x8)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
@@ -244,6 +256,11 @@ case "$FIRMWARE" in
 	tplink,eap245-v3)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) 1)
+		;;
+	xiaomi,aiot-ac2350)
+		caldata_extract "art" 0x5000 0x2f20
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9984/hw1.0/board.bin
 		;;
 	yuncore,a782|\
 	yuncore,xd4200)

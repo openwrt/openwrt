@@ -5,6 +5,10 @@
 / {
 	compatible = "netgear,wndr3800ch", "qca,ar7161";
 	model = "Netgear WNDR3800CH";
+
+	aliases {
+		label-mac-device = &eth0;
+	};
 };
 
 &partitions {
@@ -35,3 +39,40 @@
 	};
 };
 
+&ath9k0 {
+	nvmem-cells = <&macaddr_art_c>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ath9k1 {
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth1 {
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_art_0: macaddr@0 {
+		reg = <0x0 0x6>;
+	};
+
+	macaddr_art_6: macaddr@6 {
+		reg = <0x6 0x6>;
+	};
+
+	macaddr_art_c: macaddr@c {
+		reg = <0xc 0x6>;
+	};
+};

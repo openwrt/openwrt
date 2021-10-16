@@ -401,7 +401,7 @@ define Device/ubnt_unifi-ac-hd
 	BLOCKSIZE := 64k
 	IMAGE_SIZE := 14784k
 	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
-	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | check-size
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += ubnt_unifi-ac-hd
 

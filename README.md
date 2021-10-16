@@ -57,8 +57,8 @@ packages to OpenWrt, please find the fitting repository below.
 * [OpenWrt Packages](https://github.com/openwrt/packages): Community repository
   of ported packages.
 
-* [OpenWrt Routing](https://github.com/openwrt-routing/packages): Packages
-  specifically focused on (mesh) routing.
+* [OpenWrt Routing](https://github.com/openwrt/routing): Packages specifically
+  focused on (mesh) routing.
 
 ## Support Information
 
@@ -74,13 +74,13 @@ For a list of supported devices see the [OpenWrt Hardware Database](https://open
 ### Support Community
 
 * [Forum](https://forum.openwrt.org): For usage, projects, discussions and hardware advise.
-* [Support Chat](https://webchat.freenode.net/#openwrt): Channel `#openwrt` on freenode.net.
+* [Support Chat](https://webchat.oftc.net/#openwrt): Channel `#openwrt` on **oftc.net**.
 
 ### Developer Community
 
 * [Bug Reports](https://bugs.openwrt.org): Report bugs in OpenWrt
 * [Dev Mailing List](https://lists.openwrt.org/mailman/listinfo/openwrt-devel): Send patches
-* [Dev Chat](https://webchat.freenode.net/#openwrt-devel): Channel `#openwrt-devel` on freenode.net.
+* [Dev Chat](https://webchat.oftc.net/#openwrt-devel): Channel `#openwrt-devel` on **oftc.net**.
 
 ## License
 

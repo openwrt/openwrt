@@ -61,6 +61,9 @@ zyxel,gs1900-8hp-v1|\
 zyxel,gs1900-8hp-v2)
 	ucidef_set_poe 70 "$lan_list"
 	;;
+zyxel,gs1900-24hp-v2)
+	ucidef_set_poe 170 "$lan_list"
+	;;
 esac
 
 board_config_flush

@@ -15,7 +15,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1600,13 +1600,8 @@ ieee80211_have_rx_timestamp(struct ieee8
+@@ -1587,13 +1587,8 @@ ieee80211_have_rx_timestamp(struct ieee8
  {
  	WARN_ON_ONCE(status->flag & RX_FLAG_MACTIME_START &&
  		     status->flag & RX_FLAG_MACTIME_END);

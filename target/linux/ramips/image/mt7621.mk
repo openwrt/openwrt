@@ -286,12 +286,11 @@ define Device/dlink_dir-8xx-a1
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := D-Link
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
-  KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr 96
+  KERNEL := $$(KERNEL) | uimage-sgehdr
   IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
-	pad-rootfs | append-metadata | check-size
-  IMAGE/factory.bin := append-kernel | append-rootfs | uimage-padhdr 96 |\
-	check-size
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+  IMAGE/factory.bin := append-kernel | append-rootfs | check-size
 endef
 
 define Device/dlink_dir-8xx-r1
@@ -300,9 +299,8 @@ define Device/dlink_dir-8xx-r1
   DEVICE_VENDOR := D-Link
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
   KERNEL_INITRAMFS := $$(KERNEL)
-  IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs |\
-	pad-rootfs | append-metadata | check-size
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
 endef
 
 define Device/dlink_dir-xx60-a1
@@ -315,7 +313,7 @@ define Device/dlink_dir-xx60-a1
   DEVICE_VENDOR := D-Link
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
 	kmod-usb-ledtrig-usbport
-  KERNEL := $$(KERNEL) | uimage-padhdr 96
+  KERNEL := $$(KERNEL) | uimage-sgehdr
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
@@ -343,10 +341,24 @@ define Device/dlink_dir-2660-a1
 endef
 TARGET_DEVICES += dlink_dir-2660-a1
 
+define Device/dlink_dir-853-a3
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-853
+  DEVICE_VARIANT := A3
+endef
+TARGET_DEVICES += dlink_dir-853-a3
+
+define Device/dlink_dir-853-r1
+  $(Device/dlink_dir-8xx-r1)
+  DEVICE_MODEL := DIR-853
+  DEVICE_VARIANT := R1
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += dlink_dir-853-r1
+
 define Device/dlink_dir-860l-b1
   $(Device/dsa-migration)
   $(Device/seama)
-  BLOCKSIZE := 64k
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
   LOADER_TYPE := bin
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | relocate-kernel | \
@@ -387,9 +399,10 @@ define Device/dlink_dir-882-r1
   DEVICE_MODEL := DIR-882
   DEVICE_VARIANT := R1
   DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | append-rootfs | check-size | \
-	  sign-dlink-ru 57c5375741c30ca9ebcb36713db4ba51 \
-	  ab0dff19af8842cdb70a86b4b68d23f7
+	sign-dlink-ru 57c5375741c30ca9ebcb36713db4ba51 \
+	ab0dff19af8842cdb70a86b4b68d23f7
 endef
 TARGET_DEVICES += dlink_dir-882-r1
 
@@ -440,7 +453,7 @@ define Device/edimax_re23s
   DEVICE_ALT0_MODEL := Gemini RE23S
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN76 -f 0x70000 -S 0x01100000 | pad-rootfs | \
-	append-metadata | check-size
+	check-size | append-metadata
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN76 -f 0x70000 -S 0x01100000 | pad-rootfs | \
@@ -694,6 +707,15 @@ define Device/iodata_wn-dx1200gr
 endef
 TARGET_DEVICES += iodata_wn-dx1200gr
 
+define Device/iodata_wn-dx2033gr
+  $(Device/iodata_nand)
+  DEVICE_MODEL := WN-DX2033GR
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
+	uImage lzma -M 0x434f4d42 -n '3.10(XID.0)b30' | iodata-mstc-header
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += iodata_wn-dx2033gr
+
 define Device/iodata_wn-gx300gr
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -824,7 +846,7 @@ define Device/linksys_ea7xxx
 	uboot-envtools
   UBINIZE_OPTS := -E 5
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | check-size | linksys-image type=$$$$(LINKSYS_HWNAME)
 endef
@@ -861,6 +883,14 @@ define Device/linksys_ea8100-v1
   LINKSYS_HWNAME := EA8100
 endef
 TARGET_DEVICES += linksys_ea8100-v1
+
+define Device/linksys_ea8100-v2
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA8100
+  DEVICE_VARIANT := v2
+  LINKSYS_HWNAME := EA8100v2
+endef
+TARGET_DEVICES += linksys_ea8100-v2
 
 define Device/linksys_re6500
   $(Device/dsa-migration)
@@ -901,8 +931,8 @@ define Device/MikroTik
   KERNEL_NAME := vmlinuz
   KERNEL := kernel-bin | append-dtb-elf
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | \
-	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata | \
-	check-size
+	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | \
+	append-metadata
 endef
 
 define Device/mikrotik_routerboard-750gr3
@@ -1036,7 +1066,7 @@ define Device/netgear_r6700-v2
   DEVICE_ALT0_MODEL := Nighthawk AC2400
   DEVICE_ALT0_VARIANT := v1
   DEVICE_ALT1_VENDOR := NETGEAR
-  DEVICE_ALT1_MODEL := R7200
+  DEVICE_ALT1_MODEL := Nighthawk AC2100
   DEVICE_ALT1_VARIANT := v1
   SERCOMM_HWNAME := R6950
   SERCOMM_HWID := BZV
@@ -1070,6 +1100,43 @@ define Device/netgear_r6850
   DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += netgear_r6850
+
+define Device/netgear_r6900-v2
+  $(Device/netgear_sercomm_nand)
+  DEVICE_MODEL := R6900
+  DEVICE_VARIANT := v2
+  SERCOMM_HWNAME := R6950
+  SERCOMM_HWID := BZV
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x1032
+  IMAGE_SIZE := 40960k
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += netgear_r6900-v2
+
+define Device/netgear_r7200
+  $(Device/netgear_sercomm_nand)
+  DEVICE_MODEL := R7200
+  SERCOMM_HWNAME := R6950
+  SERCOMM_HWID := BZV
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x1032
+  IMAGE_SIZE := 40960k
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += netgear_r7200
+
+define Device/netgear_r7450
+  $(Device/netgear_sercomm_nand)
+  DEVICE_MODEL := R7450
+  SERCOMM_HWNAME := R6950
+  SERCOMM_HWID := BZV
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x1032
+  IMAGE_SIZE := 40960k
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += netgear_r7450
 
 define Device/netgear_wac104
   $(Device/netgear_sercomm_nand)
@@ -1167,6 +1234,20 @@ define Device/samknows_whitebox-v8
 endef
 TARGET_DEVICES += samknows_whitebox-v8
 
+define Device/sercomm_na502
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 20480k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  UBINIZE_OPTS := -E 5
+  KERNEL_SIZE := 4096k
+  DEVICE_VENDOR := SERCOMM
+  DEVICE_MODEL := NA502
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-mt7603 kmod-usb3
+endef
+TARGET_DEVICES += sercomm_na502
+
 define Device/storylink_sap-g3200u3
   $(Device/dsa-migration)
   IMAGE_SIZE := 7872k
@@ -1185,6 +1266,18 @@ define Device/telco-electronics_x1
   DEVICE_PACKAGES := kmod-usb3 kmod-mt76
 endef
 TARGET_DEVICES += telco-electronics_x1
+
+define Device/tenbay_t-mb5eu-v01
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Tenbay
+  DEVICE_MODEL := T-MB5EU-V01
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES += kmod-mt7915e kmod-usb3
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 15808k
+  SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
+endef
+TARGET_DEVICES += tenbay_t-mb5eu-v01
 
 define Device/thunder_timecloud
   $(Device/dsa-migration)
@@ -1229,6 +1322,19 @@ define Device/tplink_archer-a6-v3
   IMAGE_SIZE := 15744k
 endef
 TARGET_DEVICES += tplink_archer-a6-v3
+
+define Device/tplink_archer-c6-v3
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := Archer C6
+  DEVICE_VARIANT := V3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
+	kmod-mt7663-firmware-ap kmod-mt7663-firmware-sta
+  TPLINK_BOARD_ID := ARCHER-C6-V3
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_archer-c6-v3
 
 define Device/tplink_archer-c6u-v1
   $(Device/dsa-migration)
@@ -1338,6 +1444,16 @@ define Device/ubnt_unifi-nanohd
   IMAGE_SIZE := 15552k
 endef
 TARGET_DEVICES += ubnt_unifi-nanohd
+
+define Device/ubnt_usw-flex
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi Switch Flex
+  DEVICE_DTS_CONFIG := config@1
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 7360k
+endef
+TARGET_DEVICES += ubnt_usw-flex
 
 define Device/unielec_u7621-01-16m
   $(Device/dsa-migration)

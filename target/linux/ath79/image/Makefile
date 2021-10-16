@@ -81,7 +81,15 @@ define Device/Default
   COMPILE :=
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size
+	append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+
+define Device/loader-okli-uimage
+  LOADER_TYPE := bin
+  COMPILE := loader-$(1).bin loader-$(1).uImage
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | \
+	lzma | uImage lzma
 endef
 
 include $(SUBTARGET).mk

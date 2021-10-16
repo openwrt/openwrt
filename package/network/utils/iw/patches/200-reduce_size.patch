@@ -187,23 +187,29 @@
  };
  
  static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data,
-@@ -2326,6 +2331,7 @@ void print_ies(unsigned char *ie, int ie
- 		    ieprinters[ie[0]].flags & BIT(ptype)) {
- 			print_ie(&ieprinters[ie[0]],
- 				 ie[0], ie[1], ie + 2, &ie_buffer);
+@@ -2080,8 +2085,10 @@ static void print_wifi_wps(const uint8_t
+ 
+ static const struct ie_print wifiprinters[] = {
+ 	[1] = { "WPA", print_wifi_wpa, 2, 255, BIT(PRINT_SCAN), },
 +#ifdef IW_FULL
- 		} else if (ie[0] == 221 /* vendor */) {
- 			print_vendor(ie[1], ie + 2, unknown, ptype);
- 		} else if (ie[0] == 255 /* extension */) {
-@@ -2337,6 +2343,7 @@ void print_ies(unsigned char *ie, int ie
- 			for (i=0; i<ie[1]; i++)
- 				printf(" %.2x", ie[2+i]);
- 			printf("\n");
+ 	[2] = { "WMM", print_wifi_wmm, 1, 255, BIT(PRINT_SCAN), },
+ 	[4] = { "WPS", print_wifi_wps, 0, 255, BIT(PRINT_SCAN), },
 +#endif
- 		}
- 		ielen -= ie[1] + 2;
- 		ie += ie[1] + 2;
-@@ -2377,6 +2384,7 @@ static void print_capa_non_dmg(__u16 cap
+ };
+ 
+ static inline void print_p2p(const uint8_t type, uint8_t len,
+@@ -2244,6 +2251,10 @@ static void print_vendor(unsigned char l
+ 		return;
+ 	}
+ 
++#ifdef IW_FULL
++	return;
++#endif
++
+ 	if (len >= 4 && memcmp(data, wfa_oui, 3) == 0) {
+ 		if (data[3] < ARRAY_SIZE(wfa_printers) &&
+ 		    wfa_printers[data[3]].name &&
+@@ -2377,6 +2388,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" ESS");
  	if (capa & WLAN_CAPABILITY_IBSS)
  		printf(" IBSS");
@@ -211,7 +217,7 @@
  	if (capa & WLAN_CAPABILITY_CF_POLLABLE)
  		printf(" CfPollable");
  	if (capa & WLAN_CAPABILITY_CF_POLL_REQUEST)
-@@ -2405,6 +2413,7 @@ static void print_capa_non_dmg(__u16 cap
+@@ -2405,6 +2417,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" DelayedBACK");
  	if (capa & WLAN_CAPABILITY_IMM_BACK)
  		printf(" ImmediateBACK");
@@ -219,7 +225,7 @@
  }
  
  static int print_bss_handler(struct nl_msg *msg, void *arg)
-@@ -2489,8 +2498,10 @@ static int print_bss_handler(struct nl_m
+@@ -2489,8 +2502,10 @@ static int print_bss_handler(struct nl_m
  	if (bss[NL80211_BSS_FREQUENCY]) {
  		int freq = nla_get_u32(bss[NL80211_BSS_FREQUENCY]);
  		printf("\tfreq: %d\n", freq);
@@ -230,7 +236,7 @@
  	}
  	if (bss[NL80211_BSS_BEACON_INTERVAL])
  		printf("\tbeacon interval: %d TUs\n",
-@@ -2684,6 +2695,7 @@ static int handle_stop_sched_scan(struct
+@@ -2684,6 +2699,7 @@ static int handle_stop_sched_scan(struct
  	return 0;
  }
  
@@ -238,7 +244,7 @@
  COMMAND(scan, sched_start,
  	SCHED_SCAN_OPTIONS,
  	NL80211_CMD_START_SCHED_SCAN, 0, CIB_NETDEV, handle_start_sched_scan,
-@@ -2694,3 +2706,4 @@ COMMAND(scan, sched_start,
+@@ -2694,3 +2710,4 @@ COMMAND(scan, sched_start,
  COMMAND(scan, sched_stop, "",
  	NL80211_CMD_STOP_SCHED_SCAN, 0, CIB_NETDEV, handle_stop_sched_scan,
  	"Stop an ongoing scheduled scan.");

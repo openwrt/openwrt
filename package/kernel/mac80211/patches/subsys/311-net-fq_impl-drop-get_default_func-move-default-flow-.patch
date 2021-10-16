@@ -68,7 +68,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int fq_init(struct fq *fq, int flows_cnt)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -857,7 +857,6 @@ enum txq_info_flags {
+@@ -846,7 +846,6 @@ enum txq_info_flags {
   */
  struct txq_info {
  	struct fq_tin tin;
@@ -132,7 +132,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	codel_vars_init(&txqi->def_cvars);
  	codel_stats_init(&txqi->cstats);
  	__skb_queue_head_init(&txqi->frags);
-@@ -3310,8 +3297,7 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3332,8 +3319,7 @@ static bool ieee80211_amsdu_aggregate(st
  	 */
  
  	tin = &txqi->tin;

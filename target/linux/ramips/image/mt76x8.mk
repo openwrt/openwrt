@@ -100,6 +100,13 @@ define Device/d-team_pbr-d1
 endef
 TARGET_DEVICES += d-team_pbr-d1
 
+define Device/dlink_dap-1325-a1
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-1325 A1
+endef
+TARGET_DEVICES += dlink_dap-1325-a1
+
 define Device/duzun_dm06
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := DuZun
@@ -268,6 +275,23 @@ define Device/mercury_mac1200r-v2
   SUPPORTED_DEVICES += mac1200rv2
 endef
 TARGET_DEVICES += mercury_mac1200r-v2
+
+define Device/minew_g1-c
+  IMAGE_SIZE := 15744k
+  DEVICE_VENDOR := Minew
+  DEVICE_MODEL := G1-C
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-serial-cp210x
+  SUPPORTED_DEVICES += minew-g1c
+endef
+TARGET_DEVICES += minew_g1-c
+
+define Device/motorola_mwr03
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Motorola
+  DEVICE_MODEL := MWR03
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += motorola_mwr03
 
 define Device/netgear_r6020
   $(Device/netgear_sercomm_nor)

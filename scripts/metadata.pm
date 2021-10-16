@@ -290,6 +290,7 @@ sub parse_package_metadata($) {
 		};
 		/^Config:\s*(.*)\s*$/ and $pkg->{config} = "$1\n".get_multiline(*FILE, "\t");
 		/^Prereq-Check:/ and $pkg->{prereq} = 1;
+		/^Maintainer: \s*(.+)\s*$/ and $pkg->{maintainer} = [ split /, /, $1 ];
 		/^Require-User:\s*(.*?)\s*$/ and do {
 			my @ugspecs = split /\s+/, $1;
 

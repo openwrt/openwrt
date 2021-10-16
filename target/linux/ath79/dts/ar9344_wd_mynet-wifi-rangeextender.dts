@@ -144,10 +144,10 @@
 &eth0 {
 	status = "okay";
 
-	pll-data = <0x0e000000 0x3c000101 0x3c001313>;
+	pll-data = <0x02000000 0x00000101 0x00001313>;
 
 	/* ethernet MAC is stored in nvram */
-	phy-mode = "rgmii";
+	phy-mode = "rgmii-id";
 	phy-handle = <&phy4>;
 
 	gmac-config {
