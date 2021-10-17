@@ -145,7 +145,7 @@ define Device/ubnt_aircube-ac
   SOC := ar9342
   DEVICE_MODEL := airCube AC
   UBNT_CHIP := ar9342
-  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct kmod-leds-ubnt
 endef
 TARGET_DEVICES += ubnt_aircube-ac
 
