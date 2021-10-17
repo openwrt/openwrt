@@ -1,0 +1,72 @@
+From d8390507a9544f5d58f879df79e5273fa5a20f44 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Nicol=C3=B2=20Veronese?= <nicveronese@gmail.com>
+Date: Sun, 17 Oct 2021 02:35:10 +0200
+Subject: [PATCH 2/2] leds: add DT binding for UBNT LED controller
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Nicolò Veronese <nicveronese@gmail.com>
+---
+ .../bindings/leds/leds-ubnt-acb.txt           | 49 +++++++++++++++++++
+ 1 file changed, 49 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/leds/leds-ubnt-acb.txt
+
+diff --git a/Documentation/devicetree/bindings/leds/leds-ubnt-acb.txt b/Documentation/devicetree/bindings/leds/leds-ubnt-acb.txt
+new file mode 100644
+index 000000000..e2a505da1
+--- /dev/null
++++ b/Documentation/devicetree/bindings/leds/leds-ubnt-acb.txt
+@@ -0,0 +1,49 @@
++* Ubiquiti Aircube LED Device Driver.
++
++The driver can be used for controllers with a very simple serial protocol:
++- one LED is controlled by a single byte on MOSI
++- the value of the byte gives the brightness between two values (lowest to
++  highest)
++
++The value for lowest and highest brightness is dependent on the device and
++therefore on the compatible string.
++
++Depending on the compatible string some special functions (like hardware
++accelerated blinking) might can be supported too.
++
++Required properties:
++ - compatible: should be set to "ubnt,acb-leds"
++ - address-cells : Must be 1
++ - size-cells : Must be 0
++
++ - gpio-sck: GPIO spec for the SCK line to use
++ - gpio-mosi: GPIO spec for the MOSI line to use
++ - gpio-cs: GPIO to use for chipselect lines
++ 
++Each led is represented as a child node of the ubnt,acb-leds that
++describes the initial behavior for each LED physically and currently only one
++LED child nodes can be supported.
++
++Required properties for the LED child node:
++- label : See Documentation/devicetree/bindings/leds/common.txt
++- linux,default-trigger : See Documentation/devicetree/bindings/leds/common.txt
++- default-state: See Documentation/devicetree/bindings/leds/common.txt
++		Only "on" and "off" are supported.
++
++Example:
++
++	led-controller {
++		compatible = "ubnt,acb-leds";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		sck-gpios = <&gpio 11 0>;
++		mosi-gpios = <&gpio 15 0>;
++		cs-gpios = <&gpio 14 0>;
++
++		led@0 {
++			reg = <0>;
++			label = "ubnt:white:status";
++			default-state = "on";
++		};
++	};
+-- 
+2.32.0
+
