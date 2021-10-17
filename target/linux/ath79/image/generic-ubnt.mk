@@ -155,6 +155,7 @@ define Device/ubnt_aircube-isp
   DEVICE_MODEL := airCube ISP
   UBNT_CHIP := qca9533
   SUPPORTED_DEVICES += ubnt,acb-isp
+  DEVICE_PACKAGES += kmod-leds-ubnt
 endef
 TARGET_DEVICES += ubnt_aircube-isp
 
