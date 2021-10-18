@@ -35,6 +35,7 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x9000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary ORGDATA 0x32)
 		;;
+	glinet,gl-b2200 |\
 	engenius,eap2200 |\
 	openmesh,a62 |\
 	plasmacloud,pa2200)
@@ -57,6 +58,7 @@ case "$FIRMWARE" in
 	ezviz,cs-w3-wd1200g-eup |\
 	glinet,gl-ap1300 |\
 	glinet,gl-b1300 |\
+	glinet,gl-b2200 |\
 	glinet,gl-s1300 |\
 	linksys,ea6350v3 |\
 	mobipromo,cm520-79f |\
@@ -170,6 +172,7 @@ case "$FIRMWARE" in
 	ezviz,cs-w3-wd1200g-eup |\
 	glinet,gl-ap1300 |\
 	glinet,gl-b1300 |\
+	glinet,gl-b2200 |\
 	glinet,gl-s1300 |\
 	linksys,ea6350v3 |\
 	mobipromo,cm520-79f |\
