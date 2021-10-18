@@ -37,7 +37,8 @@ define Device/glinet_gl-ar300m-nand
   ATH_SOC := qca9531
   DEVICE_TITLE := GL-AR300M (NAND)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport
-  KERNEL_SIZE := 2048k
+#  KERNEL_SIZE := 2048k
+  KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
@@ -70,7 +71,8 @@ define Device/glinet_gl-ar750s-nor-nand
   ATH_SOC := qca9563
   DEVICE_TITLE := GL.iNet GL-AR750S (NOR/NAND)
   DEVICE_PACKAGES := kmod-usb2 kmod-ath10k ath10k-firmware-qca9887 block-mount PCI_SUPPORT
-  KERNEL_SIZE := 2048k
+#  KERNEL_SIZE := 2048k
+  KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
@@ -94,7 +96,8 @@ define Device/glinet_gl-e750-nor-nand
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-E750 (NOR/NAND)
   DEVICE_PACKAGES := kmod-usb2 kmod-ath10k ath10k-firmware-qca9887 block-mount PCI_SUPPORT
-  KERNEL_SIZE := 2048k
+#  KERNEL_SIZE := 2048k
+  KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
@@ -118,7 +121,8 @@ define Device/glinet_gl-x750-nor-nand
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-X750 (NOR/NAND)
   DEVICE_PACKAGES := kmod-usb2 kmod-ath10k ath10k-firmware-qca9887 block-mount PCI_SUPPORT
-  KERNEL_SIZE := 2048k
+#  KERNEL_SIZE := 2048k
+  KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
@@ -142,7 +146,8 @@ define Device/glinet_gl-xe300-nor-nand
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-XE300 (NOR/NAND)
   DEVICE_PACKAGES := kmod-usb2 block-mount kmod-usb-serial-ch341
-  KERNEL_SIZE := 2048k
+#  KERNEL_SIZE := 2048k
+  KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
@@ -205,7 +210,8 @@ define Device/glinet_gl-x1200-nor-nand
   ATH_SOC := qca9563
   DEVICE_TITLE := GL.iNet GL-X1200 (NOR/NAND)
   DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct-htt block-mount PCI_SUPPORT
-  KERNEL_SIZE := 2048k
+#  KERNEL_SIZE := 2048k
+  KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
