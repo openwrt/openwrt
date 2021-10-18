@@ -26,7 +26,7 @@ define Package/firewall4
 	+kmod-nft-nat +kmod-nft-nat6 \
 	+nftables-json \
 	+ucode +ucode-mod-fs +ucode-mod-ubus +ucode-mod-uci
-  CONFLICTS:=firewall
+  PROVIDES:=uci-firewall
 endef
 
 define Package/firewall4/description
