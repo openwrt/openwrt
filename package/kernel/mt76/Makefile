@@ -8,9 +8,9 @@ PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2021-10-12
-PKG_SOURCE_VERSION:=83598c2e872fd8af29976a5f11afe94e620d6f4f
-PKG_MIRROR_HASH:=f179375318c44fb058403aed98056c4df8df7541e4c9d093ec5c22a2eda9475e
+PKG_SOURCE_DATE:=2021-10-20
+PKG_SOURCE_VERSION:=b649678c18cac4b7c85d7d7d86d17e9e4c9b7641
+PKG_MIRROR_HASH:=83bfe5c5e820bc8f2cbe95fa140a232336ac69c86c6df226738e910b3df525ed
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_USE_NINJA:=0
@@ -152,6 +152,14 @@ define KernelPackage/mt76-connac
   FILES:= $(PKG_BUILD_DIR)/mt76-connac-lib.ko
 endef
 
+define KernelPackage/mt76-sdio
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7615/MT79xx SDIO driver common code
+  HIDDEN:=1
+  DEPENDS+=+kmod-mt76-core +kmod-mmc
+  FILES:= $(PKG_BUILD_DIR)/mt76-sdio.ko
+endef
+
 define KernelPackage/mt7615-common
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7615 wireless driver common code
@@ -196,9 +204,8 @@ endef
 define KernelPackage/mt7663s
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7663s wireless driver
-  DEPENDS+=+kmod-mmc +kmod-mt7615-common +kmod-mt7663-usb-sdio
+  DEPENDS+=+kmod-mt76-sdio +kmod-mt7615-common +kmod-mt7663-usb-sdio
   FILES:= \
-	$(PKG_BUILD_DIR)/mt76-sdio.ko \
 	$(PKG_BUILD_DIR)/mt7615/mt7663s.ko
   AUTOLOAD:=$(call AutoProbe,mt7663s)
 endef
@@ -219,10 +226,25 @@ define KernelPackage/mt7915e
   AUTOLOAD:=$(call AutoProbe,mt7915e)
 endef
 
+define KernelPackage/mt7921-common
+  TITLE:=MediaTek MT7615 wireless driver common code
+  HIDDEN:=1
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-core +kmod-mt76-connac
+  FILES:= $(PKG_BUILD_DIR)/mt7921/mt7921-common.ko
+endef
+
+define KernelPackage/mt7921s
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7921s wireless driver
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-connac +kmod-mt76-sdio +kmod-mt7921-common
+  FILES:= $(PKG_BUILD_DIR)/mt7921/mt7921s.ko
+  AUTOLOAD:=$(call AutoProbe,mt7921s)
+endef
+
 define KernelPackage/mt7921e
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7921e wireless driver
-  DEPENDS+=@PCI_SUPPORT +kmod-mt76-connac
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-connac +kmod-mt7921-common
   FILES:= $(PKG_BUILD_DIR)/mt7921/mt7921e.ko
   AUTOLOAD:=$(call AutoProbe,mt7921e)
 endef
@@ -288,6 +310,9 @@ endif
 ifdef CONFIG_PACKAGE_kmod-mt76-connac
   PKG_MAKE_FLAGS += CONFIG_MT76_CONNAC_LIB=m
 endif
+ifdef CONFIG_PACKAGE_kmod-mt76-sdio
+  PKG_MAKE_FLAGS += CONFIG_MT76_SDIO=m
+endif
 ifdef CONFIG_PACKAGE_kmod-mt7615-common
   PKG_MAKE_FLAGS += CONFIG_MT7615_COMMON=m
 endif
@@ -302,7 +327,6 @@ ifdef CONFIG_PACKAGE_kmod-mt7663-usb-sdio
   PKG_MAKE_FLAGS += CONFIG_MT7663_USB_SDIO_COMMON=m
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7663s
-  PKG_MAKE_FLAGS += CONFIG_MT76_SDIO=m
   PKG_MAKE_FLAGS += CONFIG_MT7663S=m
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7663u
@@ -310,6 +334,12 @@ ifdef CONFIG_PACKAGE_kmod-mt7663u
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7915e
   PKG_MAKE_FLAGS += CONFIG_MT7915E=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt7921-common
+  PKG_MAKE_FLAGS += CONFIG_MT7921_COMMON=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt7921s
+  PKG_MAKE_FLAGS += CONFIG_MT7921S=m
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7921e
   PKG_MAKE_FLAGS += CONFIG_MT7921E=m
@@ -433,6 +463,7 @@ $(eval $(call KernelPackage,mt76x2u))
 $(eval $(call KernelPackage,mt76x2))
 $(eval $(call KernelPackage,mt7603))
 $(eval $(call KernelPackage,mt76-connac))
+$(eval $(call KernelPackage,mt76-sdio))
 $(eval $(call KernelPackage,mt7615-common))
 $(eval $(call KernelPackage,mt7615-firmware))
 $(eval $(call KernelPackage,mt7615e))
@@ -442,6 +473,8 @@ $(eval $(call KernelPackage,mt7663-usb-sdio))
 $(eval $(call KernelPackage,mt7663u))
 $(eval $(call KernelPackage,mt7663s))
 $(eval $(call KernelPackage,mt7915e))
+$(eval $(call KernelPackage,mt7921-common))
+$(eval $(call KernelPackage,mt7921s))
 $(eval $(call KernelPackage,mt7921e))
 $(eval $(call KernelPackage,mt76))
 $(eval $(call BuildPackage,mt76-test))
