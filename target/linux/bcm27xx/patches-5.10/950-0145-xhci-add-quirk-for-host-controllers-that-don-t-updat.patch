@@ -23,7 +23,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.org>
 
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -274,8 +274,10 @@ static void xhci_pci_quirks(struct devic
+@@ -276,8 +276,10 @@ static void xhci_pci_quirks(struct devic
  			pdev->device == 0x3432)
  		xhci->quirks |= XHCI_BROKEN_STREAMS;
  
@@ -37,7 +37,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.org>
  		pdev->device == PCI_DEVICE_ID_ASMEDIA_1042_XHCI)
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -556,7 +556,10 @@ void xhci_find_new_dequeue_state(struct
+@@ -562,7 +562,10 @@ void xhci_find_new_dequeue_state(struct
  	struct xhci_virt_ep *ep = &dev->eps[ep_index];
  	struct xhci_ring *ep_ring;
  	struct xhci_segment *new_seg;
@@ -48,7 +48,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.org>
  	dma_addr_t addr;
  	u64 hw_dequeue;
  	bool cycle_found = false;
-@@ -594,7 +597,28 @@ void xhci_find_new_dequeue_state(struct
+@@ -600,7 +603,28 @@ void xhci_find_new_dequeue_state(struct
  	hw_dequeue = xhci_get_hw_deq(xhci, dev, ep_index, stream_id);
  	new_seg = ep_ring->deq_seg;
  	new_deq = ep_ring->dequeue;
