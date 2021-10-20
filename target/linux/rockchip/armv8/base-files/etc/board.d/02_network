@@ -9,11 +9,13 @@ rockchip_setup_interfaces()
 
 	case "$board" in
 	friendlyarm,nanopi-r2s | \
+	friendlyarm,nanopi-r2c | \
 	friendlyelec,nanopi-r2 | \
 	friendlyelec,nanopi-r4s)
 		ucidef_set_interface_wan 'eth0'
 		ucidef_set_interface "lan" device  "eth1" protocol "static" ipaddr "192.168.2.1"
 		;;
+    friendlyelec,nanopi-neo3 | \
 	friendlyelec,nanopc-t4 | \
 	friendlyelec,nanopi-m4 | \
 	friendlyelec,nanopi-neo4 | \

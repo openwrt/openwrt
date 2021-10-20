@@ -16,8 +16,34 @@ function init_firewall() {
 }
 
 function init_network() {
-	uci set network.globals.ula_prefix='fd00:cc:10::/48'
+	uci set network.globals.ula_prefix='fd00:ab:cd::/48'
 	uci commit network
+}
+
+function disable_ipv6() {
+	uci set 'network.lan.ipv6=off'
+	uci set 'network.lan.delegate=0'
+	uci set 'network.lan.force_link=0'
+
+	uci set 'network.wan.ipv6=0'
+	uci set 'network.wan.delegate=0'
+	uci delete 'network.wan6'
+	uci commit network
+
+	uci set 'dhcp.lan.dhcpv6=disabled'
+	uci set 'dhcp.lan.ra=disabled'
+	uci commit dhcp
+}
+
+function init_lcd2usb() {
+	if [ -f /usr/bin/lcd2usb_echo ]; then
+		sed -i '/^exit 0.*/d' /etc/rc.local
+		cat >> /etc/rc.local <<EOL
+[ -f /usr/bin/lcd2usb_echo ] && (sleep 10 && /usr/bin/lcd2usb_echo)&
+exit 0
+EOL
+		/usr/bin/lcd2usb_echo&
+	fi
 }
 
 function init_system() {
@@ -54,7 +80,7 @@ function init_luci_stat() {
 function init_watchcat() {
 	uci -q delete watchcat.@watchcat[-1]
 	uci commit watchcat
-	service watchcat reload
+	/etc/init.d/watchcat reload
 }
 
 function init_openssh() {
@@ -63,7 +89,7 @@ function init_openssh() {
 
 	sed "s/^#PermitRootLogin.*/PermitRootLogin yes/g" $conf -i.orig
 	sed "s/^#\s*Banner/Banner/g" $conf -i
-	service sshd restart
+	/etc/init.d/sshd reload
 }
 
 function init_theme() {
@@ -84,6 +110,18 @@ function init_root_home() {
 	grep "^root.*bash" /etc/passwd >/dev/null && return 0
 	sed "s/^\(root.*\/\)ash/\1bash/g" /etc/passwd -i-
 }
+
+function init_button() {
+	local CONF=/etc/triggerhappy/triggers.d/example.conf
+	grep "BTN_1" ${CONF} >/dev/null && return 0 
+	[ -f ${CONF} ] && echo 'BTN_1 1 /sbin/reboot' >> ${CONF}
+}
+
+function clean_fstab() {
+	while uci -q del fstab.@mount[-1]; do true; done
+	uci commit fstab
+}
+
 
 # ---------------------------------------------------------
 # Refer: package/network/services/odhcpd/files/odhcpd.defaults
@@ -107,6 +145,7 @@ HOSTNAME="FriendlyWrt"
 if [ "${1,,}" = "all" ]; then
 	init_network
 	init_firewall
+	init_lcd2usb
 	init_system
 	init_samba4
 	init_ttyd
@@ -115,5 +154,7 @@ if [ "${1,,}" = "all" ]; then
 	init_openssh
 	init_theme
 	init_root_home
+	init_button
+	clean_fstab
 fi
 
