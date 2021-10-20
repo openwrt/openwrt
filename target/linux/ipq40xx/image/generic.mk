@@ -355,6 +355,7 @@ define Device/edgecore_ecw5211
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
 	DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-usb-acm
 endef
 TARGET_DEVICES += edgecore_ecw5211
@@ -408,6 +409,7 @@ define Device/engenius_emd1
 	IMAGES += factory.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
+	DEVICE_PACKAGES := ipq-wifi-engenius_emd1
 endef
 TARGET_DEVICES += engenius_emd1
 
@@ -422,6 +424,7 @@ define Device/engenius_emr3500
 	IMAGES += factory.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
+	DEVICE_PACKAGES := ipq-wifi-engenius_emr3500
 endef
 TARGET_DEVICES += engenius_emr3500
 
@@ -676,7 +679,7 @@ define Device/plasmacloud_pa1200
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA1200
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-plasmacloud-pa1200
+	DEVICE_PACKAGES := ipq-wifi-plasmacloud_pa1200
 endef
 TARGET_DEVICES += plasmacloud_pa1200
 
@@ -692,7 +695,7 @@ define Device/plasmacloud_pa2200
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA2200
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-plasmacloud-pa2200
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-plasmacloud_pa2200
 endef
 TARGET_DEVICES += plasmacloud_pa2200
 
