@@ -73,3 +73,41 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	PRINT("MULTI-TID-AGG-TX-QOS-%d", ((cap[5] << 1) | (cap[4] >> 7)) & 0x7);
  
+--- a/drivers/net/wireless/mac80211_hwsim.c
++++ b/drivers/net/wireless/mac80211_hwsim.c
+@@ -2818,7 +2818,7 @@ static const struct ieee80211_sband_ifty
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+ 					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
+-				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMDSU_IN_AMPDU,
++				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
+ 				.phy_cap_info[1] =
+ 					IEEE80211_HE_PHY_CAP1_PREAMBLE_PUNC_RX_MASK |
+ 					IEEE80211_HE_PHY_CAP1_DEVICE_CLASS_A |
+@@ -2862,7 +2862,7 @@ static const struct ieee80211_sband_ifty
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+ 					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
+-				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMDSU_IN_AMPDU,
++				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
+ 				.phy_cap_info[1] =
+ 					IEEE80211_HE_PHY_CAP1_PREAMBLE_PUNC_RX_MASK |
+ 					IEEE80211_HE_PHY_CAP1_DEVICE_CLASS_A |
+@@ -2908,7 +2908,7 @@ static const struct ieee80211_sband_ifty
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+ 					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
+-				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMDSU_IN_AMPDU,
++				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
+ 				.phy_cap_info[0] =
+ 					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G |
+ 					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G |
+@@ -2956,7 +2956,7 @@ static const struct ieee80211_sband_ifty
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+ 					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
+-				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMDSU_IN_AMPDU,
++				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
+ 				.phy_cap_info[0] =
+ 					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G |
+ 					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G |
