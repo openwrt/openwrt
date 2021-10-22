@@ -23,25 +23,47 @@
 			};
 
 			partition@80000 {
-				compatible = "mikrotik,routerboot-partitions";
+				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
 				label = "RouterBoot";
 				reg = <0x80000 0x40000>;
 
-				hard_config {
-					read-only;
-					size = <0x2000>;
-				};
-
-				dtb_config {
+				partition@0 {
+					label = "bootloader1";
+					reg = <0x0 0xe000>;
 					read-only;
 				};
 
-				soft_config {
+				partition@e000 {
+					label = "hard_config";
+					reg = <0xe000 0x2000>;
+					read-only;
+				};
+
+				partition@10000 {
+					label = "dtb_config";
+					reg = <0x10000 0x10000>;
+					read-only;
+				};
+
+				partition@20000 {
+					label = "bios";
+					reg = <0x20000 0x1000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "bootloader2";
+					reg = <0x30000 0xd000>;
+					read-only;
+				};
+
+				partition@3d000 {
+					label = "soft_config";
+					reg = <0x3d000 0x1000>;
 				};
 			};
-
 		};
 	};
 };
