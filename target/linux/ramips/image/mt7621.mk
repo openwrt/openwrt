@@ -908,6 +908,7 @@ endef
 TARGET_DEVICES += d-team_newifi-d2
 
 define Device/d-team_pbr-m1
+  $(Device/uimage-lzma-loader)
   $(Device/dsa-migration)
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := PandoraBox
