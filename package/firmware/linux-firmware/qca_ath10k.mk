@@ -33,7 +33,7 @@ define Package/ath10k-board-qca4019/install
 		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/
 endef
 $(eval $(call BuildPackage,ath10k-board-qca4019))
-Package/ath10k-firmware-qca4019 = $(call Package/firmware-default,ath10k qca4019 firmware,+ath10k-board-qca4019)
+Package/ath10k-firmware-qca4019 = $(call Package/firmware-default,ath10k qca4019 firmware)
 define Package/ath10k-firmware-qca4019/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA4019/hw1.0
 	$(INSTALL_DATA) \
