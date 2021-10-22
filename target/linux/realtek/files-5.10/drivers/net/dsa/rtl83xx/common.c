@@ -1342,7 +1342,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 			struct fib6_entry_notifier_info *fen6_info = ptr;
 			pr_warn("%s: FIB_RULE ADD/DELL for IPv6 not supported\n", __func__);
 			kfree(fib_work);
-			return notifier_from_errno(-EINVAL);
+			return NOTIFY_DONE;
 		}
 		break;
 
