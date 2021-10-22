@@ -33,7 +33,6 @@ define Package/mtd-utils/Default
   SECTION:=utils
   CATEGORY:=Utilities
   URL:=http://www.linux-mtd.infradead.org/
-  DEPENDS:=@NAND_SUPPORT
 endef
 
 define Package/ubi-utils
@@ -48,6 +47,7 @@ endef
 define Package/nand-utils
  $(call Package/mtd-utils/Default)
   TITLE:=Utilities for nand flash erase/read/write/test
+  DEPENDS:=@NAND_SUPPORT
 endef
 
 define Package/nand-utils/description
