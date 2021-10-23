@@ -812,6 +812,25 @@ dnsmasq_ipset_add() {
 	xappend "--ipset=$domains/$ipsets"
 }
 
+dhcp_serverdyn_add() {
+	local cfg="$1"
+	local interface domain intf_dns dns
+
+	config_get interface "$cfg" interface
+	[ -n "${interface}" ] || return 0
+
+	config_get domain "$cfg" domain
+	[ -n "${domain}" ] || return 0
+
+	network_get_dnsserver intf_dns ${interface}
+	[ -n "${intf_dns}" ] || return 0
+
+	for dns in ${intf_dns}
+	do
+		append_server "/${domain}/${dns}"
+	done
+}
+
 dnsmasq_start()
 {
 	local cfg="$1"
@@ -1085,6 +1104,8 @@ dnsmasq_start()
 	config_foreach filter_dnsmasq domain dhcp_domain_add "$cfg"
 	config_foreach filter_dnsmasq hostrecord dhcp_hostrecord_add "$cfg"
 	[ -n "$BOOT" ] || config_foreach filter_dnsmasq relay dhcp_relay_add "$cfg"
+
+	config_foreach filter_dnsmasq serverdyn dhcp_serverdyn_add "$cfg"
 
 	echo >> $CONFIGFILE_TMP
 	config_foreach filter_dnsmasq srvhost dhcp_srv_add "$cfg"
