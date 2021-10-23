@@ -203,7 +203,7 @@ start_qemu_armvirt() {
 		)
 	}
 
-	sudo "$qemu_exe" -machine "$mach" -cpu "$cpu" -nographic \
+	"$qemu_exe" -machine "$mach" -cpu "$cpu" -nographic \
 		-kernel "$kernel" \
 		"${o_qemu_extra[@]}"
 }
