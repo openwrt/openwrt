@@ -58,22 +58,18 @@ CONFIGURE_ARGS += \
 	--without-emacs
 
 HOST_CONFIGURE_ARGS += \
-	--disable-shared \
-	--enable-static \
+	--enable-shared \
+	--disable-static \
 	--disable-libasprintf \
 	--disable-rpath \
 	--disable-java \
 	--disable-openmp \
 	--without-emacs \
-	--without-libxml2-prefix
+	--with-included-libxml \
+	--with-pic
 
 HOST_CONFIGURE_VARS += \
-	EMACS="no" \
-	am_cv_lib_iconv=no \
-	am_cv_func_iconv=no \
-	ac_cv_header_iconv_h=no \
-
-HOST_CFLAGS += $(HOST_FPIC)
+	EMACS="no"
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib/libintl-full/include
