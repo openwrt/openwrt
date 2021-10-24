@@ -24,7 +24,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
 
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
-@@ -80,6 +80,14 @@
+@@ -79,6 +79,14 @@
  #define SPFI_INTERRUPT_SDE			BIT(1)
  #define SPFI_INTERRUPT_SDTRIG			BIT(0)
  
@@ -39,7 +39,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  /*
   * There are four parallel FIFOs of 16 bytes each.  The word buffer
   * (*_32BIT_VALID_DATA) accesses all four FIFOs at once, resulting in an
-@@ -141,6 +149,23 @@ static inline void spfi_reset(struct img
+@@ -136,6 +144,23 @@ static inline void spfi_reset(struct img
  	spfi_writel(spfi, 0, SPFI_CONTROL);
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  static int spfi_wait_all_done(struct img_spfi *spfi)
  {
  	unsigned long timeout = jiffies + msecs_to_jiffies(50);
-@@ -149,19 +174,9 @@ static int spfi_wait_all_done(struct img
+@@ -144,19 +169,9 @@ static int spfi_wait_all_done(struct img
  		return 0;
  
  	while (time_before(jiffies, timeout)) {
@@ -85,7 +85,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  		cpu_relax();
  	}
  
-@@ -293,6 +308,8 @@ static int img_spfi_start_pio(struct spi
+@@ -288,6 +303,8 @@ static int img_spfi_start_pio(struct spi
  	}
  
  	ret = spfi_wait_all_done(spfi);
@@ -94,7 +94,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  	if (ret < 0)
  		return ret;
  
-@@ -308,8 +325,10 @@ static void img_spfi_dma_rx_cb(void *dat
+@@ -303,8 +320,10 @@ static void img_spfi_dma_rx_cb(void *dat
  
  	spin_lock_irqsave(&spfi->lock, flags);
  	spfi->rx_dma_busy = false;
@@ -106,7 +106,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  	spin_unlock_irqrestore(&spfi->lock, flags);
  }
  
-@@ -322,8 +341,10 @@ static void img_spfi_dma_tx_cb(void *dat
+@@ -317,8 +336,10 @@ static void img_spfi_dma_tx_cb(void *dat
  
  	spin_lock_irqsave(&spfi->lock, flags);
  	spfi->tx_dma_busy = false;

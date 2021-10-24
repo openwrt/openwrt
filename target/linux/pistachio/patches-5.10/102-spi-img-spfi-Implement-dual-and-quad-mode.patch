@@ -28,7 +28,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
 
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
-@@ -37,7 +37,8 @@
+@@ -36,7 +36,8 @@
  #define SPFI_CONTROL_SOFT_RESET			BIT(11)
  #define SPFI_CONTROL_SEND_DMA			BIT(10)
  #define SPFI_CONTROL_GET_DMA			BIT(9)
@@ -38,7 +38,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  #define SPFI_CONTROL_TMODE_SHIFT		5
  #define SPFI_CONTROL_TMODE_MASK			0x7
  #define SPFI_CONTROL_TMODE_SINGLE		0
-@@ -48,6 +49,10 @@
+@@ -47,6 +48,10 @@
  #define SPFI_TRANSACTION			0x18
  #define SPFI_TRANSACTION_TSIZE_SHIFT		16
  #define SPFI_TRANSACTION_TSIZE_MASK		0xffff
@@ -49,7 +49,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  
  #define SPFI_PORT_STATE				0x1c
  #define SPFI_PORT_STATE_DEV_SEL_SHIFT		20
-@@ -84,6 +89,7 @@
+@@ -83,6 +88,7 @@
   */
  #define SPFI_32BIT_FIFO_SIZE			64
  #define SPFI_8BIT_FIFO_SIZE			16
@@ -57,7 +57,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  
  struct img_spfi {
  	struct device *dev;
-@@ -100,6 +106,8 @@ struct img_spfi {
+@@ -99,6 +105,8 @@ struct img_spfi {
  	struct dma_chan *tx_ch;
  	bool tx_dma_busy;
  	bool rx_dma_busy;
@@ -65,8 +65,8 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
 +	bool complete;
  };
  
- struct img_spfi_device_data {
-@@ -120,9 +128,11 @@ static inline void spfi_start(struct img
+ static inline u32 spfi_readl(struct img_spfi *spfi, u32 reg)
+@@ -115,9 +123,11 @@ static inline void spfi_start(struct img
  {
  	u32 val;
  
@@ -81,7 +81,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  }
  
  static inline void spfi_reset(struct img_spfi *spfi)
-@@ -135,12 +145,21 @@ static int spfi_wait_all_done(struct img
+@@ -130,12 +140,21 @@ static int spfi_wait_all_done(struct img
  {
  	unsigned long timeout = jiffies + msecs_to_jiffies(50);
  
@@ -103,7 +103,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  			return 0;
  		}
  		cpu_relax();
-@@ -494,9 +513,32 @@ static void img_spfi_config(struct spi_m
+@@ -441,9 +460,32 @@ static void img_spfi_config(struct spi_m
  			    struct spi_transfer *xfer)
  {
  	struct img_spfi *spfi = spi_master_get_devdata(spi->master);
@@ -137,7 +137,7 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  	 * output = spfi_clk * (BITCLK / 512), where BITCLK must be a
  	 * power of 2 up to 128
  	 */
-@@ -509,20 +551,52 @@ static void img_spfi_config(struct spi_m
+@@ -456,20 +498,52 @@ static void img_spfi_config(struct spi_m
  	val |= div << SPFI_DEVICE_PARAMETER_BITCLK_SHIFT;
  	spfi_writel(spfi, val, SPFI_DEVICE_PARAMETER(spi->chip_select));
  

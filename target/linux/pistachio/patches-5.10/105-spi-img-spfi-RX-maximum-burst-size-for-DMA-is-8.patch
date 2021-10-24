@@ -29,7 +29,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
 
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
-@@ -343,12 +343,11 @@ static int img_spfi_start_dma(struct spi
+@@ -338,12 +338,11 @@ static int img_spfi_start_dma(struct spi
  		if (xfer->len % 4 == 0) {
  			rxconf.src_addr = spfi->phys + SPFI_RX_32BIT_VALID_DATA;
  			rxconf.src_addr_width = 4;
@@ -43,7 +43,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  		dmaengine_slave_config(spfi->rx_ch, &rxconf);
  
  		rxdesc = dmaengine_prep_slave_sg(spfi->rx_ch, xfer->rx_sg.sgl,
-@@ -367,12 +366,11 @@ static int img_spfi_start_dma(struct spi
+@@ -362,12 +361,11 @@ static int img_spfi_start_dma(struct spi
  		if (xfer->len % 4 == 0) {
  			txconf.dst_addr = spfi->phys + SPFI_TX_32BIT_VALID_DATA;
  			txconf.dst_addr_width = 4;

@@ -15,7 +15,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
 
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
-@@ -434,18 +434,23 @@ static int img_spfi_prepare(struct spi_m
+@@ -429,18 +429,23 @@ static int img_spfi_prepare(struct spi_m
  	struct img_spfi *spfi = spi_master_get_devdata(master);
  	u32 val;
  
@@ -44,7 +44,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  	spfi_writel(spfi, val, SPFI_PORT_STATE);
  
  	return 0;
-@@ -545,11 +550,15 @@ static void img_spfi_config(struct spi_m
+@@ -492,11 +497,15 @@ static void img_spfi_config(struct spi_m
  	div = DIV_ROUND_UP(clk_get_rate(spfi->spfi_clk), xfer->speed_hz);
  	div = clamp(512 / (1 << get_count_order(div)), 1, 128);
  
