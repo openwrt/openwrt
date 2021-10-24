@@ -1,0 +1,111 @@
+From c26e09569669195e92fcc117e288576d6493bd27 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Mon, 18 Oct 2021 00:37:05 +0200
+Subject: [PATCH 5/7] net: dsa: qca8k: add support for mdb_add/del
+
+Add support for mdb add/dell function. The ARL table is used to insert
+the rule. A new search function is introduced to search the rule and add
+additional port to it. If every port is removed from the rule, it's
+removed. It's set STATIC in the ARL table (aka it doesn't age) to not be
+flushed by fast age function.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 67 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index 05b12f26f45e..d8a40d466c8c 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -446,6 +446,23 @@ qca8k_fdb_flush(struct qca8k_priv *priv)
+ 	mutex_unlock(&priv->reg_mutex);
+ }
+ 
++static int
++qca8k_fdb_search(struct qca8k_priv *priv, struct qca8k_fdb *fdb, const u8 *mac, u16 vid)
++{
++	int ret;
++
++	mutex_lock(&priv->reg_mutex);
++	qca8k_fdb_write(priv, vid, 0, mac, 0);
++	ret = qca8k_fdb_access(priv, QCA8K_FDB_SEARCH, -1);
++	if (ret < 0)
++		goto exit;
++
++	ret = qca8k_fdb_read(priv, fdb);
++exit:
++	mutex_unlock(&priv->reg_mutex);
++	return ret;
++}
++
+ static int
+ qca8k_vlan_access(struct qca8k_priv *priv, enum qca8k_vlan_cmd cmd, u16 vid)
+ {
+@@ -1787,6 +1804,54 @@ qca8k_port_fdb_dump(struct dsa_switch *ds, int port,
+ 	return 0;
+ }
+ 
++static void
++qca8k_port_mdb_add(struct dsa_switch *ds, int port,
++		    const struct switchdev_obj_port_mdb *mdb)
++{
++	struct qca8k_priv *priv = ds->priv;
++	struct qca8k_fdb fdb = { 0 };
++	const u8 *addr = mdb->addr;
++	u8 port_mask = BIT(port);
++	u16 vid = mdb->vid;
++	int ret;
++
++	/* Check if entry already exist */
++	ret = qca8k_fdb_search(priv, &fdb, addr, vid);
++//	if (ret < 0)
++//		return ret;
++
++	/* Add port to fdb portmask */
++	fdb.port_mask |= port_mask;
++
++	qca8k_port_fdb_insert(priv, addr, fdb.port_mask, vid);
++}
++
++static int
++qca8k_port_mdb_del(struct dsa_switch *ds, int port,
++		    const struct switchdev_obj_port_mdb *mdb)
++{
++	struct qca8k_priv *priv = ds->priv;
++	struct qca8k_fdb fdb = { 0 };
++	const u8 *addr = mdb->addr;
++	u8 port_mask = BIT(port);
++	u16 vid = mdb->vid;
++	int ret;
++
++	/* Check if entry already exist */
++	ret = qca8k_fdb_search(priv, &fdb, addr, vid);
++	if (ret < 0)
++		return ret;
++
++	/* Only port in the rule is this port. Remove rule */
++	if (fdb.port_mask == port_mask)
++		return qca8k_fdb_del(priv, addr, port_mask, vid);
++
++	/* Remove port from port mask */
++	fdb.port_mask &= ~port_mask;
++
++	return qca8k_port_fdb_insert(priv, addr, fdb.port_mask, vid);
++}
++
+ static int
+ qca8k_port_mirror_add(struct dsa_switch *ds, int port,
+ 		      struct dsa_mall_mirror_tc_entry *mirror,
+@@ -1989,6 +2054,8 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.port_fdb_add		= qca8k_port_fdb_add,
+ 	.port_fdb_del		= qca8k_port_fdb_del,
+ 	.port_fdb_dump		= qca8k_port_fdb_dump,
++	.port_mdb_add		= qca8k_port_mdb_add,
++	.port_mdb_del		= qca8k_port_mdb_del,
+ 	.port_mirror_add	= qca8k_port_mirror_add,
+ 	.port_mirror_del	= qca8k_port_mirror_del,
+ 	.port_vlan_filtering	= qca8k_port_vlan_filtering,
+-- 
+2.32.0
+
