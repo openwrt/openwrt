@@ -1,0 +1,59 @@
+From 6b8d1fab6a529f758d89153dc35cb63e783575cf Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sat, 9 Oct 2021 02:54:27 +0200
+Subject: [PATCH 1/7] net: dsa: qca8k: add support for port fast aging
+
+The switch doesn't support fast aging but it does support the flush of
+the ARL table for a specific port. Add this function to simulate
+fast aging and proprely support stp state set.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 11 +++++++++++
+ drivers/net/dsa/qca8k.h |  1 +
+ 2 files changed, 12 insertions(+)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index aae0cfcd0ce8..ddbf1ff9489e 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -1650,6 +1650,16 @@ qca8k_port_bridge_leave(struct dsa_switch *ds, int port, struct net_device *br)
+ 		  QCA8K_PORT_LOOKUP_MEMBER, BIT(QCA8K_CPU_PORT));
+ }
+ 
++static void
++qca8k_port_fast_age(struct dsa_switch *ds, int port)
++{
++	struct qca8k_priv *priv = ds->priv;
++
++	mutex_lock(&priv->reg_mutex);
++	qca8k_fdb_access(priv, QCA8K_FDB_FLUSH_PORT, port);
++	mutex_unlock(&priv->reg_mutex);
++}
++
+ static int
+ qca8k_port_enable(struct dsa_switch *ds, int port,
+ 		  struct phy_device *phy)
+@@ -1859,6 +1869,7 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.port_stp_state_set	= qca8k_port_stp_state_set,
+ 	.port_bridge_join	= qca8k_port_bridge_join,
+ 	.port_bridge_leave	= qca8k_port_bridge_leave,
++	.port_fast_age		= qca8k_port_fast_age,
+ 	.port_fdb_add		= qca8k_port_fdb_add,
+ 	.port_fdb_del		= qca8k_port_fdb_del,
+ 	.port_fdb_dump		= qca8k_port_fdb_dump,
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index 2d0c41e8cb75..c5a265962e64 100644
+--- a/drivers/net/dsa/qca8k.h
++++ b/drivers/net/dsa/qca8k.h
+@@ -243,6 +243,7 @@ enum qca8k_fdb_cmd {
+ 	QCA8K_FDB_FLUSH	= 1,
+ 	QCA8K_FDB_LOAD = 2,
+ 	QCA8K_FDB_PURGE = 3,
++	QCA8K_FDB_FLUSH_PORT = 5,
+ 	QCA8K_FDB_NEXT = 6,
+ 	QCA8K_FDB_SEARCH = 7,
+ };
+-- 
+2.32.0
+

@@ -1,0 +1,30 @@
+From 8088602442b8df3554334a4bda3ca414315a6ab9 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Mon, 18 Oct 2021 02:41:42 +0200
+Subject: [PATCH 4/7] net: dsa: qca8k: add min/max ageing time
+
+Add min and max ageing value for qca8k switch.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index f3b2fc85e546..05b12f26f45e 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -1174,6 +1174,10 @@ qca8k_setup(struct dsa_switch *ds)
+ 	/* We don't have interrupts for link changes, so we need to poll */
+ 	ds->pcs_poll = true;
+ 
++	/* Set min a max ageing value supported */
++	ds->ageing_time_min = 7000;
++	ds->ageing_time_max = 458745000;
++
+ 	return 0;
+ }
+ 
+-- 
+2.32.0
+
