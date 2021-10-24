@@ -606,7 +606,7 @@ define Device/meraki_mr33
 	SOC := qcom-ipq4029
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
+	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct kmod-leds-gpio
 endef
 TARGET_DEVICES += meraki_mr33
 
