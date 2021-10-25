@@ -1,0 +1,11 @@
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -1590,6 +1590,8 @@ static int sfp_module_parse_power(struct
+ 
+ static int sfp_sm_mod_hpower(struct sfp *sfp, bool enable)
+ {
++	if (sfp->id.ext.sff8472_compliance == SFP_SFF8472_COMPLIANCE_NONE)
++		return 0;
+ 	u8 val;
+ 	int err;
+ 
