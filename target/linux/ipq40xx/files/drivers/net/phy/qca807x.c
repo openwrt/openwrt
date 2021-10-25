@@ -64,6 +64,8 @@
 
 #define QCA807X_CHIP_CONFIGURATION				0x1f
 #define QCA807X_BT_BX_REG_SEL					BIT(15)
+#define QCA807X_BT_BX_REG_SEL_FIBER				0
+#define QCA807X_BT_BX_REG_SEL_COPPER				1
 #define QCA807X_CHIP_CONFIGURATION_MODE_CFG_MASK		GENMASK(3, 0)
 #define QCA807X_CHIP_CONFIGURATION_MODE_QSGMII_SGMII		4
 #define QCA807X_CHIP_CONFIGURATION_MODE_PSGMII_FIBER		3
@@ -400,19 +402,9 @@ static int qca807x_gpio(struct phy_device *phydev)
 }
 #endif
 
-static int qca807x_read_copper_status(struct phy_device *phydev, bool combo_port)
+static int qca807x_read_copper_status(struct phy_device *phydev)
 {
-	int ss, err, page, old_link = phydev->link;
-
-	/* Only combo port has dual pages */
-	if (combo_port) {
-		/* Check whether copper page is set and set if needed */
-		page = phy_read(phydev, QCA807X_CHIP_CONFIGURATION);
-		if (!(page & QCA807X_BT_BX_REG_SEL)) {
-			page |= QCA807X_BT_BX_REG_SEL;
-			phy_write(phydev, QCA807X_CHIP_CONFIGURATION, page);
-		}
-	}
+	int ss, err, old_link = phydev->link;
 
 	/* Update the link, but return if there was an error */
 	err = genphy_update_link(phydev);
@@ -487,16 +479,9 @@ static int qca807x_read_copper_status(struct phy_device *phydev, bool combo_port
 	return 0;
 }
 
-static int qca807x_read_fiber_status(struct phy_device *phydev, bool combo_port)
+static int qca807x_read_fiber_status(struct phy_device *phydev)
 {
-	int ss, err, page, lpa, old_link = phydev->link;
-
-	/* Check whether fiber page is set and set if needed */
-	page = phy_read(phydev, QCA807X_CHIP_CONFIGURATION);
-	if (page & QCA807X_BT_BX_REG_SEL) {
-		page &= ~QCA807X_BT_BX_REG_SEL;
-		phy_write(phydev, QCA807X_CHIP_CONFIGURATION, page);
-	}
+	int ss, err, lpa, old_link = phydev->link;
 
 	/* Update the link, but return if there was an error */
 	err = genphy_update_link(phydev);
@@ -559,28 +544,17 @@ static int qca807x_read_fiber_status(struct phy_device *phydev, bool combo_port)
 
 static int qca807x_read_status(struct phy_device *phydev)
 {
-	int val;
-
-	/* Check for Combo port */
-	if (phy_read(phydev, QCA807X_CHIP_CONFIGURATION)) {
-		/* Check for fiber mode first */
-		if (linkmode_test_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->supported)) {
-			/* Check for actual detected media */
-			val = phy_read(phydev, QCA807X_MEDIA_SELECT_STATUS);
-			if (val & QCA807X_MEDIA_DETECTED_COPPER) {
-				qca807x_read_copper_status(phydev, true);
-			} else if ((val & QCA807X_MEDIA_DETECTED_1000_BASE_X) ||
-				   (val & QCA807X_MEDIA_DETECTED_100_BASE_FX)) {
-				qca807x_read_fiber_status(phydev, true);
-			}
-		} else {
-			qca807x_read_copper_status(phydev, true);
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->supported)) {
+		switch (phydev->port) {
+		case PORT_FIBRE:
+			return qca807x_read_fiber_status(phydev);
+		case PORT_TP:
+			return qca807x_read_copper_status(phydev);
+		default:
+			return -EINVAL;
 		}
-	} else {
-		qca807x_read_copper_status(phydev, false);
-	}
-
-	return 0;
+	} else
+		return qca807x_read_copper_status(phydev);
 }
 
 static int qca807x_config_intr(struct phy_device *phydev)
@@ -683,9 +657,63 @@ static int qca807x_led_config(struct phy_device *phydev)
 		return 0;
 }
 
+static int qca807x_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
+{
+	struct phy_device *phydev = upstream;
+	__ETHTOOL_DECLARE_LINK_MODE_MASK(support) = { 0, };
+	phy_interface_t iface;
+	int ret;
+
+	sfp_parse_support(phydev->sfp_bus, id, support);
+	iface = sfp_select_interface(phydev->sfp_bus, support);
+
+	dev_info(&phydev->mdio.dev, "%s SFP module inserted\n", phy_modes(iface));
+
+	switch (iface) {
+	case PHY_INTERFACE_MODE_1000BASEX:
+	case PHY_INTERFACE_MODE_100BASEX:
+		/* Set PHY mode to PSGMII combo (1/4 copper + combo ports) mode */
+		ret = phy_modify(phydev,
+				 QCA807X_CHIP_CONFIGURATION,
+				 QCA807X_CHIP_CONFIGURATION_MODE_CFG_MASK,
+				 QCA807X_CHIP_CONFIGURATION_MODE_PSGMII_FIBER);
+		/* Enable fiber mode autodection (1000Base-X or 100Base-FX) */
+		ret = phy_set_bits_mmd(phydev,
+				       MDIO_MMD_AN,
+				       QCA807X_MMD7_FIBER_MODE_AUTO_DETECTION,
+				       QCA807X_MMD7_FIBER_MODE_AUTO_DETECTION_EN);
+		/* Select fiber page */
+		ret = phy_clear_bits(phydev,
+				     QCA807X_CHIP_CONFIGURATION,
+				     QCA807X_BT_BX_REG_SEL);
+
+		phydev->port = PORT_FIBRE;
+		break;
+	default:
+		dev_err(&phydev->mdio.dev, "Incompatible SFP module inserted\n");
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
+static void qca807x_sfp_remove(void *upstream)
+{
+	struct phy_device *phydev = upstream;
+
+	/* Select copper page */
+	phy_set_bits(phydev,
+		     QCA807X_CHIP_CONFIGURATION,
+		     QCA807X_BT_BX_REG_SEL);
+
+	phydev->port = PORT_TP;
+}
+
 static const struct sfp_upstream_ops qca807x_sfp_ops = {
 	.attach = phy_sfp_attach,
 	.detach = phy_sfp_detach,
+	.module_insert = qca807x_sfp_insert,
+	.module_remove = qca807x_sfp_remove,
 };
 
 static int qca807x_config(struct phy_device *phydev)
@@ -696,28 +724,7 @@ static int qca807x_config(struct phy_device *phydev)
 
 	/* Check for Combo port */
 	if (phy_read(phydev, QCA807X_CHIP_CONFIGURATION)) {
-		int fiber_mode_autodect;
 		int psgmii_serdes;
-		int chip_config;
-
-		if (of_property_read_bool(node, "qcom,fiber-enable")) {
-			/* Enable fiber mode autodection (1000Base-X or 100Base-FX) */
-			fiber_mode_autodect = phy_read_mmd(phydev, MDIO_MMD_AN,
-							   QCA807X_MMD7_FIBER_MODE_AUTO_DETECTION);
-			fiber_mode_autodect |= QCA807X_MMD7_FIBER_MODE_AUTO_DETECTION_EN;
-			phy_write_mmd(phydev, MDIO_MMD_AN, QCA807X_MMD7_FIBER_MODE_AUTO_DETECTION,
-				      fiber_mode_autodect);
-
-			/* Enable 4 copper + combo port mode */
-			chip_config = phy_read(phydev, QCA807X_CHIP_CONFIGURATION);
-			chip_config &= ~QCA807X_CHIP_CONFIGURATION_MODE_CFG_MASK;
-			chip_config |= FIELD_PREP(QCA807X_CHIP_CONFIGURATION_MODE_CFG_MASK,
-						  QCA807X_CHIP_CONFIGURATION_MODE_PSGMII_FIBER);
-			phy_write(phydev, QCA807X_CHIP_CONFIGURATION, chip_config);
-
-			linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->supported);
-			linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->advertising);
-		}
 
 		/* Prevent PSGMII going into hibernation via PSGMII self test */
 		psgmii_serdes = phy_read_mmd(phydev, MDIO_MMD_PCS, PSGMII_MMD3_SERDES_CONTROL);
@@ -761,9 +768,10 @@ static int qca807x_probe(struct phy_device *phydev)
 	}
 
 	/* Attach SFP bus on combo port*/
-	if (of_property_read_bool(node, "qcom,fiber-enable")) {
-		if (phy_read(phydev, QCA807X_CHIP_CONFIGURATION))
-			ret = phy_sfp_probe(phydev, &qca807x_sfp_ops);
+	if (phy_read(phydev, QCA807X_CHIP_CONFIGURATION)) {
+		ret = phy_sfp_probe(phydev, &qca807x_sfp_ops);
+		linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->supported);
+		linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, phydev->advertising);
 	}
 
 	return ret;
