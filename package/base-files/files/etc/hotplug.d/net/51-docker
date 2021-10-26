@@ -1,0 +1,6 @@
+#!/bin/sh
+
+[ "${ACTION}" = "add" ] || exit 0
+[ "${DEVICENAME}" = "docker0" ] || exit 0
+
+/usr/bin/setup_docker_firewall.sh start &
