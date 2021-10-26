@@ -186,7 +186,8 @@ define Device/glinet_gl-x300b-nor-nand
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-X300B (NOR/NAND)
   DEVICE_PACKAGES := kmod-usb2 block-mount
-  KERNEL_SIZE := 2048k
+#  KERNEL_SIZE := 2048k
+  KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   VID_HDR_OFFSET := 2048
