@@ -1,0 +1,18 @@
+diff --git a/libtextstyle/configure.ac b/libtextstyle/configure.ac
+index df14033ab..0ee8226cb 100644
+--- a/libtextstyle/configure.ac
++++ b/libtextstyle/configure.ac
+@@ -17,11 +17,10 @@ dnl along with this program.  If not, se
+ dnl Process this file with autoconf to produce a configure script.
+ 
+ AC_PREREQ([2.63])
+-AC_INIT
++AC_INIT([libtextstyle],
++	m4_esyscmd([. ./version.sh; echo -n $VERSION_NUMBER]))
+ AC_CONFIG_SRCDIR([version.sh])
+ AC_CONFIG_AUX_DIR([build-aux])
+-. $srcdir/version.sh
+-gl_INIT_PACKAGE([libtextstyle], [$VERSION_NUMBER])
+ AM_INIT_AUTOMAKE([1.13 silent-rules])
+ AM_CONFIG_HEADER([config.h])
+ 
