@@ -160,12 +160,54 @@ detect_mac80211() {
 
 		get_band_defaults "$dev"
 
+		[ -n "$htmode" ] && ht_capab="set wireless.radio${devidx}.htmode=$htmode"
+
 		path="$(iwinfo nl80211 path "$dev")"
+		if [ -x /usr/bin/readlink -a -h /sys/class/ieee80211/${dev} ]; then
+			product=`cat $(readlink -f /sys/class/ieee80211/${dev}/device)/uevent | grep PRODUCT= | cut -d= -f 2`
+		else
+			product=""
+		fi
 		if [ -n "$path" ]; then
 			dev_id="set wireless.radio${devidx}.path='$path'"
 		else
 			dev_id="set wireless.radio${devidx}.macaddr=$(cat /sys/class/ieee80211/${dev}/macaddress)"
 		fi
+
+		# {{ added by friendlyelec
+		case "${product}" in
+		"bda/b812/210" | \
+		"bda/c820/200")
+			mode_band='g'
+			ht_capab="set wireless.radio${devidx}.htmode=HT20"
+			channel=7
+			country="set wireless.radio${devidx}.country='00'"
+			;;
+
+		"bda/8812/0")
+			country=""
+			;;
+
+		"bda/c811/200" | \
+		"e8d/7612/100")
+			country="set wireless.radio${devidx}.country='CN'"
+			;;
+
+		*)
+			country=""
+			;;
+
+		esac
+
+		ssid_suffix=$(cat /sys/class/ieee80211/${dev}/macaddress | cut -d':' -f1,2,6)
+		if [ -z ${ssid_suffix} -o ${ssid_suffix} = "00:00:00" ]; then
+			if [ -f /sys/class/net/eth0/address ]; then
+				ssid_suffix=$(cat /sys/class/net/eth0/address | cut -d':' -f1,2,6)
+			else
+				ssid_suffix="1234"
+			fi
+		fi
+		# }}
 
 		uci -q batch <<-EOF
 			set wireless.radio${devidx}=wifi-device
@@ -174,14 +216,17 @@ detect_mac80211() {
 			set wireless.radio${devidx}.channel=${channel}
 			set wireless.radio${devidx}.band=${mode_band}
 			set wireless.radio${devidx}.htmode=$htmode
-			set wireless.radio${devidx}.disabled=1
+			${ht_capab}
+			${country}
+			set wireless.radio${devidx}.disabled=0
 
 			set wireless.default_radio${devidx}=wifi-iface
 			set wireless.default_radio${devidx}.device=radio${devidx}
 			set wireless.default_radio${devidx}.network=lan
 			set wireless.default_radio${devidx}.mode=ap
-			set wireless.default_radio${devidx}.ssid=OpenWrt
-			set wireless.default_radio${devidx}.encryption=none
+			set wireless.default_radio${devidx}.ssid=FriendlyWrt-${ssid_suffix}
+			set wireless.default_radio${devidx}.encryption=psk2
+			set wireless.default_radio${devidx}.key=password
 EOF
 		uci -q commit wireless
 
