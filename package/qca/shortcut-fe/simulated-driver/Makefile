@@ -21,6 +21,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/shortcut-fe
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=c7dd8173b178affc9d8da22f51610243be994e1c
+PKG_MIRROR_HASH:=31dae51cd3eff2dc3c63cf5d1ca24a47d03e73eca12bdefccfad840f78afa4f7
 
 PKG_EXTMOD_SUBDIRS:=simulated-driver
 

@@ -7,6 +7,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/shortcut-fe
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=c7dd8173b178affc9d8da22f51610243be994e1c
+PKG_MIRROR_HASH:=9b74061c58165234783cb22df876a1a8b08d7b35f84e2e3c0eb11eb30d3cbb02
 
 include $(INCLUDE_DIR)/package.mk
 

@@ -20,6 +20,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/shortcut-fe
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=c7dd8173b178affc9d8da22f51610243be994e1c
+PKG_MIRROR_HASH:=0a768ed934b991a456275ed886e0b877dc61e62e001b6d04005b65d40a84a25a
 
 PKG_EXTMOD_SUBDIRS:=shortcut-fe
 

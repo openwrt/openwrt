@@ -8,6 +8,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/ssdk-shell
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=903af84df4b5f5e07544d5dd0a4d74517f4ea167
+PKG_MIRROR_HASH:=a87378a5392e4b724172fec78f4586a7bd70a9103a28959c0118ed862c620717
 
 include $(INCLUDE_DIR)/package.mk
 

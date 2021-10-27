@@ -7,6 +7,7 @@ PKG_RELEASE:=2
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/nss-drv
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=3cfb9f43536e77ae05a141cce18a242b85e834ab
+PKG_MIRROR_HASH:=99a9cbaa6ea8ac20cf306f93a653da67f3a656ed847f7b115726f57e02a36fa8
 
 NSS_CLIENTS_DIR:=$(TOPDIR)/qca/src/qca-nss-clients
 

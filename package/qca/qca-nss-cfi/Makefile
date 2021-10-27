@@ -7,6 +7,7 @@ PKG_RELEASE:=2
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/nss-cfi
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=1cac964ec6641668921c168e6fabebd97ad78416
+PKG_MIRROR_HASH:=ca70e3a847af1609e9451bf04bbc79c6351f4733eb2266e7d995a496049d605d
 
 include $(INCLUDE_DIR)/package.mk
 

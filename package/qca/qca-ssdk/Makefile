@@ -8,6 +8,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/qca-ssdk
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=92db8b868f7173646d45aeffef6acc891dcbd09c
+PKG_MIRROR_HASH:=f7da17486b4e46f942cdb390e57e8ffe7131c5f74198c09e9d8cf3fdccb58c1e
 
 LOCAL_VARIANT=$(patsubst qca-ssdk-%,%,$(patsubst qca-ssdk-%,%,$(BUILD_VARIANT)))
 include $(INCLUDE_DIR)/package.mk

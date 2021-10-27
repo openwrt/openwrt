@@ -7,6 +7,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/nss-gmac
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=a550810922de3be4bbc1234d9945d5f5eeed2ea9
+PKG_MIRROR_HASH:=bdea3c94a3f1f72abb9fb610595bec751b8200b83dbd93ad20f52bcbb195fcc6
 
 include $(INCLUDE_DIR)/package.mk
 

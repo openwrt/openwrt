@@ -7,6 +7,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/qca-nss-ecm
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=9ab9e66a6c12572843d80ae61cba77e59c7b99bf
+PKG_MIRROR_HASH:=54564750b4c1e6a2563523fb301695852d4bb111528f3bf73164872cdbe1700f
 
 LOCAL_VARIANT=$(patsubst qca-nss-ecm-%,%,$(patsubst qca-nss-ecm-%,%,$(BUILD_VARIANT)))
 include $(INCLUDE_DIR)/package.mk

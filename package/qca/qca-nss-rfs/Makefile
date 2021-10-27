@@ -7,6 +7,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_URL:=https://source.codeaurora.org/quic/qsdk/oss/lklm/qca-rfs
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=12f459e35770bdaec2b911863059ca882d93f309
+PKG_MIRROR_HASH:=a0ec8ca71f4661a4f24467aaf240f7371d66359162b9feb814a2e2678d129fec
 
 include $(INCLUDE_DIR)/package.mk
 
