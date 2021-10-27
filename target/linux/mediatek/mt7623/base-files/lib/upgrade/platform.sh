@@ -86,6 +86,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r2)
 		export_bootdevice
 		export_partdevice rootdev 0
+		blockdev --rereadpt /dev/$rootdev || return 1
 		export_partdevice fitpart 3
 		[ "$fitpart" ] || return 1
 		dd if=/dev/zero of=/dev/$fitpart bs=4096 count=1 2>/dev/null

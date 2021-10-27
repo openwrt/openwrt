@@ -12,6 +12,7 @@ platform_do_upgrade() {
 		export_partdevice rootdev 0
 		case "$rootdev" in
 		mmc*)
+			blockdev --rereadpt /dev/$rootdev || return 1
 			local fitpart=$(get_partition_by_name $rootdev "production")
 			[ "$fitpart" ] || return 1
 			dd if=/dev/zero of=/dev/$fitpart bs=4096 count=1 2>/dev/null
