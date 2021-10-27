@@ -1198,8 +1198,7 @@ ar40xx_init_port(struct ar40xx_priv *priv, int port)
 {
 	u32 t;
 
-	ar40xx_rmw(priv, AR40XX_REG_PORT_STATUS(port),
-			AR40XX_PORT_AUTO_LINK_EN, 0);
+	ar40xx_write(priv, AR40XX_REG_PORT_STATUS(port), 0);
 
 	ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0);
 
