@@ -107,28 +107,41 @@
  static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata,
  			      bool going_down)
  {
-@@ -377,6 +413,10 @@ static void ieee80211_do_stop(struct iee
- 	bool cancel_scan;
- 	struct cfg80211_nan_func *func;
+@@ -690,8 +726,24 @@ static void ieee80211_teardown_sdata(str
+ 		ieee80211_mesh_teardown_sdata(sdata);
+ }
  
 +#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++static int ieee80211_init(struct net_device *dev)
++{
++	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++
++	ieee80211_create_nss_virtif(sdata, dev);
++
++	return 0;
++}
++#endif
++
+ static void ieee80211_uninit(struct net_device *dev)
+ {
++#ifdef CPTCFG_MAC80211_NSS_SUPPORT
++	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++
 +	ieee80211_destroy_nss_virtif(sdata);
 +#endif
-+
- 	clear_bit(SDATA_STATE_RUNNING, &sdata->state);
+ 	ieee80211_teardown_sdata(IEEE80211_DEV_TO_SUB_IF(dev));
+ }
  
- 	cancel_scan = rcu_access_pointer(local->scan_sdata) == sdata;
-@@ -1372,6 +1412,10 @@ int ieee80211_do_open(struct wireless_de
- 		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
- 	}
+@@ -755,6 +807,9 @@ static const struct net_device_ops ieee8
  
+ 	.ndo_open		= ieee80211_open,
+ 	.ndo_stop		= ieee80211_stop,
 +#ifdef CPTCFG_MAC80211_NSS_SUPPORT
-+	ieee80211_create_nss_virtif(sdata, dev);
++	.ndo_init		= ieee80211_init,
 +#endif
-+
- 	return 0;
-  err_del_interface:
- 	drv_remove_interface(local, sdata);
+ 	.ndo_uninit		= ieee80211_uninit,
+ 	.ndo_start_xmit		= ieee80211_subif_start_xmit,
+ 	.ndo_set_rx_mode	= ieee80211_set_multicast_list,
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
 @@ -32,6 +32,56 @@
@@ -188,7 +201,7 @@
  static inline void ieee80211_rx_stats(struct net_device *dev, u32 len)
  {
  	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
-@@ -2604,6 +2654,12 @@ static void ieee80211_deliver_skb_to_loc
+@@ -2601,6 +2651,12 @@ static void ieee80211_deliver_skb_to_loc
  			ether_addr_copy(ehdr->h_dest, sdata->vif.addr);
  
  		/* deliver to local stack */
@@ -201,7 +214,7 @@
  		if (rx->list)
  #if LINUX_VERSION_IS_GEQ(4,19,0)
  			list_add_tail(&skb->list, rx->list);
-@@ -4461,6 +4517,12 @@ static void ieee80211_rx_8023(struct iee
+@@ -4458,6 +4514,12 @@ static void ieee80211_rx_8023(struct iee
  	/* deliver to local stack */
  	skb->protocol = eth_type_trans(skb, fast_rx->dev);
  	memset(skb->cb, 0, sizeof(skb->cb));
@@ -245,7 +258,7 @@
  
  				/*
  				 * Since queue is stopped, queue up frames for
-@@ -4193,6 +4208,29 @@ out:
+@@ -4215,6 +4230,29 @@ out:
  netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
  				       struct net_device *dev)
  {
