@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
       return selfsigned(&rng, argv + 2);
   }
 
-  fprintf(stderr, "PX5G X.509 Certificate Generator Utilit using WolfSSL\n\n");
+  fprintf(stderr, "PX5G X.509 Certificate Generator Utility using WolfSSL\n\n");
   fprintf(stderr, "Usage: [eckey|rsakey|selfsigned]\n");
   return 1;
 }
