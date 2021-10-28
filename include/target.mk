@@ -33,11 +33,6 @@ else
 DEFAULT_PACKAGES+=busybox procd
 endif
 
-# include ujail on systems with enough storage
-ifeq ($(CONFIG_SMALL_FLASH),)
-DEFAULT_PACKAGES+=procd-ujail
-endif
-
 # include seccomp ld-preload hooks if kernel supports it
 ifneq ($(CONFIG_SECCOMP),)
 DEFAULT_PACKAGES+=procd-seccomp
