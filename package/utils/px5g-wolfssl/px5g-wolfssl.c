@@ -352,3 +352,4 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "Usage: [eckey|rsakey|selfsigned]\n");
   return 1;
 }
+
