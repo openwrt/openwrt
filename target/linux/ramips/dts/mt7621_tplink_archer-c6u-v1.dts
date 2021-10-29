@@ -142,7 +142,6 @@
 
 &pcie0 {
 	mt76@0,0 {
-		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 0x0>;
 		nvmem-cells = <&macaddr_config_8>;
@@ -153,7 +152,6 @@
 
 &pcie1 {
 	mt76@0,0 {
-		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 0x8000>;
 		nvmem-cells = <&macaddr_config_8>;

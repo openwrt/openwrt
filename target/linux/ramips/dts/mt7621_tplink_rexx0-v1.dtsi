@@ -145,7 +145,6 @@
 
 &pcie0 {
 	wifi@0,0 {
-		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 0x0>;
 		nvmem-cells = <&macaddr_config_10008>;
@@ -157,7 +156,6 @@
 
 &pcie1 {
 	wifi@0,0 {
-		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 0x8000>;
 		nvmem-cells = <&macaddr_config_10008>;
