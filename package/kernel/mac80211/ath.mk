@@ -313,6 +313,7 @@ define KernelPackage/ath11k/config
        config ATH11K_MEM_PROFILE_512M
                bool "Use limits for the 512MB memory size instead of 1GB"
                depends on PACKAGE_kmod-ath11k
+               default y if TARGET_ipq807x
 
 endef
 
