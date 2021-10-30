@@ -35,7 +35,7 @@ define autoreconf
 		$(patsubst %,rm -f %;,$(2)) \
 		$(foreach p,$(3), \
 			if [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
-				[ -d $(p)/autom4te.cache ] && rm -rf autom4te.cache; \
+				[ -d $(p)/autom4te.cache ] && rm -rf $(p)/autom4te.cache; \
 				[ -e $(p)/config.rpath ] || \
 						ln -s $(SCRIPT_DIR)/config.rpath $(p)/config.rpath; \
 				touch NEWS AUTHORS COPYING ABOUT-NLS ChangeLog; \
