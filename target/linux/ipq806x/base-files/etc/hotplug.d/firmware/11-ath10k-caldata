@@ -13,23 +13,13 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x1000 0x2f20
 		;;
 	asrock,g10)
-		if [ -b "$(find_mtd_part 0:art)" ]; then
-			caldata_extract "0:art" 0x1000 0x2f20
-		else
-			# XXX: drop upper case after kernel v5.4 is gone (qcom-smem)
-			caldata_extract "0:ART" 0x1000 0x2f20
-		fi
+		caldata_extract "0:art" 0x1000 0x2f20
 		;;
 	buffalo,wxr-2533dhp)
 		caldata_extract "ART" 0x1000 0x2f20
 		;;
 	edgecore,ecw5410)
-		if [ -b "$(find_mtd_part 0:art)" ]; then
-			caldata_extract "0:art" 0x1000 0x2f20
-		else
-			# XXX: drop upper case after kernel v5.4 is gone (qcom-smem)
-			caldata_extract "0:ART" 0x1000 0x2f20
-		fi
+		caldata_extract "0:art" 0x1000 0x2f20
 		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
@@ -56,14 +46,8 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		;;
 	zyxel,nbg6817)
-		if [ -b "$(find_mtd_part 0:art)" ]; then
-			caldata_extract "0:art" 0x1000 0x2f20
-			ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 1)
-		else
-			# XXX: drop upper case after kernel v5.4 is gone (qcom-smem)
-			caldata_extract "0:ART" 0x1000 0x2f20
-			ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:APPSBLENV ethaddr) 1)
-		fi
+		caldata_extract "0:art" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 1)
 		;;
 	esac
 	;;
@@ -73,12 +57,7 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x5000 0x2f20
 		;;
 	asrock,g10)
-		if [ -b "$(find_mtd_part 0:art)" ]; then
-			caldata_extract "0:art" 0x5000 0x2f20
-		else
-			# XXX: drop upper case after kernel v5.4 is gone (qcom-smem)
-			caldata_extract "0:ART" 0x5000 0x2f20
-		fi
+		caldata_extract "0:art" 0x5000 0x2f20
 		;;
 	buffalo,wxr-2533dhp)
 		caldata_extract "ART" 0x5000 0x2f20
@@ -108,26 +87,15 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x5000 0x2f20
 		;;
 	zyxel,nbg6817)
-		if [ -b "$(find_mtd_part 0:art)" ]; then
-			caldata_extract "0:art" 0x5000 0x2f20
-			ath10k_patch_mac $(mtd_get_mac_ascii 0:appsblenv ethaddr)
-		else
-			# XXX: drop upper case after kernel v5.4 is gone (qcom-smem)
-			caldata_extract "0:ART" 0x5000 0x2f20
-			ath10k_patch_mac $(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
-		fi
+		caldata_extract "0:art" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii 0:appsblenv ethaddr)
 		;;
 	esac
 	;;
 "ath10k/pre-cal-pci-0002:01:00.0.bin")
 	case $board in
 	edgecore,ecw5410)
-		if [ -b "$(find_mtd_part 0:art)" ]; then
-			caldata_extract "0:art" 0x5000 0x2f20
-		else
-			# XXX: drop upper case after kernel v5.4 is gone (qcom-smem)
-			caldata_extract "0:ART" 0x5000 0x2f20
-		fi
+		caldata_extract "0:art" 0x5000 0x2f20
 		;;
 	esac
 	;;
