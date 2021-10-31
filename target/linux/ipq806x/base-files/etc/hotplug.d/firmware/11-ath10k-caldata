@@ -12,8 +12,7 @@ case "$FIRMWARE" in
 	askey,rt4230w-rev6)
 		caldata_extract "0:ART" 0x1000 0x2f20
 		;;
-	asrock,g10 |\
-	edgecore,ecw5410)
+	asrock,g10)
 		caldata_extract "0:art" 0x1000 0x2f20
 		;;
 	buffalo,wxr-2533dhp |\
@@ -56,6 +55,9 @@ case "$FIRMWARE" in
 	nec,wg2600hp3 |\
 	tplink,vr2600v)
 		caldata_extract "ART" 0x5000 0x2f20
+		;;
+	edgecore,ecw5410)
+		caldata_extract "0:art" 0x1000 0x2f20
 		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
