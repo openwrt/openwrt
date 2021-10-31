@@ -149,6 +149,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
 		;;
+	haier,hw-l1w)
+		ucidef_add_switch "switch0" \
+			"1:lan:2" "2:lan:1" "0:wan" "6@eth0"
+		;;
 	head-weblink,hdrm200)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "0:wan" "6@eth0"
@@ -327,6 +331,10 @@ ramips_setup_macs()
 	glinet,gl-mt750)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4000)" 1)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
+	haier,hw-l1w)
+		wan_mac=$(mtd_get_mac_binary factory 0xffee)
+		label_mac=$wan_mac
 		;;
 	hiwifi,hc5661|\
 	hiwifi,hc5761|\
