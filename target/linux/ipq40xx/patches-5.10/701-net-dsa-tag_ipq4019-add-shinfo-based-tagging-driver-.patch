@@ -1,0 +1,188 @@
+From 29a0c2fae991cab142575c92276c0afdeb260ebe Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <j4g8y7@gmail.com>
+Date: Thu, 28 Oct 2021 21:44:52 +0200
+Subject: [PATCH] net: dsa: tag_ipq4019: add shinfo based tagging driver for
+ IPQ40xx
+
+This change adds a tagging protocol driver for the built-in
+ethernet switch of the Qualcomm Atheros IPQ4019 SoCs.
+
+In comparison to the existing tagging protocols this hardware
+requires a slightly different approach because the switch does
+not use in-band tags.
+
+On the receive path, the source port information is embedded
+into the RX descriptors of the ethernet MAC hardware. Similarly,
+the destination port mask must be sent via the TX descriptors
+of the ethernet MAC when a packet is sent towards the switch.
+
+In order to support this special requirements, this patch
+adds a new tagging protocol driver.
+
+The driver extracts the source port information directly
+from the 'receive return descriptor' of the ethernet MAC.
+It is possible because that descriptor is part of the skb
+received from the ethernet driver.
+
+Unfortunatley, it is not possible to put the destination
+port information directly to the TX descriptors, because
+those are handled internally by the driver of the ethernet
+hardware.
+
+To overcome this limitation, this tagging driver uses the
+DSA specific fields in skb->shinfo to send the destination
+port information to the ethernet driver.
+
+A similar tagging driver is exist but that uses skb
+extensions which causes unnecessary overhead.
+
+Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
+---
+ include/linux/dsa/ipq4019.h | 11 ++++++
+ include/net/dsa.h           |  2 +
+ net/dsa/Kconfig             |  6 +++
+ net/dsa/Makefile            |  1 +
+ net/dsa/tag_ipq4019.c       | 79 +++++++++++++++++++++++++++++++++++++
+ 5 files changed, 99 insertions(+)
+ create mode 100644 include/linux/dsa/ipq4019.h
+ create mode 100644 net/dsa/tag_ipq4019.c
+
+--- /dev/null
++++ b/include/linux/dsa/ipq4019.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++
++#ifndef DSA_IPQ40XX_H
++#define DSA_IPQ40XX_H
++
++struct ipq40xx_dsa_tag_data {
++	u8 from_cpu;
++	u8 dp;
++};
++
++#endif /* DSA_IPQ40XX_H */
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -46,6 +46,7 @@ struct phylink_link_state;
+ #define DSA_TAG_PROTO_AR9331_VALUE		16
+ #define DSA_TAG_PROTO_RTL4_A_VALUE		17
+ #define DSA_TAG_PROTO_BRCM_LEGACY_VALUE		22
++#define DSA_TAG_PROTO_IPQ4019_VALUE		24
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+@@ -67,6 +68,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_OCELOT		= DSA_TAG_PROTO_OCELOT_VALUE,
+ 	DSA_TAG_PROTO_AR9331		= DSA_TAG_PROTO_AR9331_VALUE,
+ 	DSA_TAG_PROTO_RTL4_A		= DSA_TAG_PROTO_RTL4_A_VALUE,
++	DSA_TAG_PROTO_IPQ4019	= DSA_TAG_PROTO_IPQ4019_VALUE,
+ };
+ 
+ struct packet_type;
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -63,6 +63,12 @@ config NET_DSA_TAG_BRCM_PREPEND
+ 	  Broadcom switches which places the tag before the Ethernet header
+ 	  (prepended).
+ 
++config NET_DSA_TAG_IPQ4019
++	tristate "Tag driver for Qualcomm Atheros IPQ4019 SoC built-in switch"
++	help
++	  Say Y or M if you want to enable support for tagging frames for
++	  the built-in switch of the Qualcomm Atheros IPQ4019 SoC-s.
++
+ config NET_DSA_TAG_GSWIP
+ 	tristate "Tag driver for Lantiq / Intel GSWIP switches"
+ 	help
+--- a/net/dsa/Makefile
++++ b/net/dsa/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_NET_DSA_TAG_BRCM_COMMON) +=
+ obj-$(CONFIG_NET_DSA_TAG_DSA) += tag_dsa.o
+ obj-$(CONFIG_NET_DSA_TAG_EDSA) += tag_edsa.o
+ obj-$(CONFIG_NET_DSA_TAG_GSWIP) += tag_gswip.o
++obj-$(CONFIG_NET_DSA_TAG_IPQ4019) += tag_ipq4019.o
+ obj-$(CONFIG_NET_DSA_TAG_KSZ) += tag_ksz.o
+ obj-$(CONFIG_NET_DSA_TAG_RTL4_A) += tag_rtl4_a.o
+ obj-$(CONFIG_NET_DSA_TAG_LAN9303) += tag_lan9303.o
+--- /dev/null
++++ b/net/dsa/tag_ipq4019.c
+@@ -0,0 +1,79 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++/* Copyright (c) 2021, Gabor Juhos <j4g8y7@gmail.com> */
++
++#include <linux/bitfield.h>
++#include <linux/dsa/ipq4019.h>
++
++#include "dsa_priv.h"
++
++/* Receive Return Descriptor */
++struct edma_rrd {
++	u16 rrd0;
++	u16 rrd1;
++	u16 rrd2;
++	u16 rrd3;
++	u16 rrd4;
++	u16 rrd5;
++	u16 rrd6;
++	u16 rrd7;
++} __packed;
++
++#define EDMA_RRD_SIZE			sizeof(struct edma_rrd)
++
++#define EDMA_RRD1_PORT_ID_MASK		GENMASK(14, 12)
++
++static struct sk_buff *ipq4019_sh_tag_xmit(struct sk_buff *skb,
++					   struct net_device *dev)
++{
++	struct dsa_port *dp = dsa_slave_to_port(dev);
++	struct ipq40xx_dsa_tag_data *tag_data;
++
++	BUILD_BUG_ON(sizeof_field(struct skb_shared_info, dsa_tag_data) <
++		     sizeof(struct ipq40xx_dsa_tag_data));
++
++	skb_shinfo(skb)->dsa_tag_proto = DSA_TAG_PROTO_IPQ4019;
++	tag_data = (struct ipq40xx_dsa_tag_data *)skb_shinfo(skb)->dsa_tag_data;
++
++	tag_data->from_cpu = 1;
++	/* set the destination port information */
++	tag_data->dp = BIT(dp->index);
++
++	return skb;
++}
++
++static struct sk_buff *ipq4019_sh_tag_rcv(struct sk_buff *skb,
++					  struct net_device *dev,
++					  struct packet_type *pt)
++{
++	struct edma_rrd *rrd;
++	int offset;
++	int port;
++
++	offset = EDMA_RRD_SIZE + ETH_HLEN;
++	if (unlikely(skb_headroom(skb) < offset))
++		return NULL;
++
++	rrd = (struct edma_rrd *)(skb->data - offset);
++	port = FIELD_GET(EDMA_RRD1_PORT_ID_MASK, rrd->rrd1);
++
++	skb->dev = dsa_master_find_slave(dev, 0, port);
++	if (!skb->dev)
++		return NULL;
++
++	return skb;
++}
++
++const struct dsa_device_ops ipq4019_sh_tag_dsa_ops = {
++	.name	= "ipq4019-sh",
++	.proto	= DSA_TAG_PROTO_IPQ4019,
++	.xmit	= ipq4019_sh_tag_xmit,
++	.rcv	= ipq4019_sh_tag_rcv,
++};
++
++MODULE_LICENSE("GPL v2");
++MODULE_DESCRIPTION("DSA tag driver for the IPQ4019 SoC built-in ethernet switch");
++MODULE_AUTHOR("Gabor Juhos <j4g8y7@gmail.com>");
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_IPQ4019);
++
++module_dsa_tag_driver(ipq4019_sh_tag_dsa_ops);
