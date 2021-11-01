@@ -1011,7 +1011,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			 "no valid MAC address supplied, using a random one\n");
 --- a/drivers/net/ethernet/renesas/sh_eth.c
 +++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -3194,7 +3194,6 @@ static struct sh_eth_plat_data *sh_eth_p
+@@ -3195,7 +3195,6 @@ static struct sh_eth_plat_data *sh_eth_p
  {
  	struct device_node *np = dev->of_node;
  	struct sh_eth_plat_data *pdata;
@@ -1019,7 +1019,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int ret;
  
  	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
-@@ -3206,9 +3205,7 @@ static struct sh_eth_plat_data *sh_eth_p
+@@ -3207,9 +3206,7 @@ static struct sh_eth_plat_data *sh_eth_p
  		return NULL;
  	pdata->phy_interface = ret;
  
@@ -1302,7 +1302,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int irq;
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -4469,7 +4469,7 @@ int stmmac_dvr_probe(struct device *devi
+@@ -4471,7 +4471,7 @@ int stmmac_dvr_probe(struct device *devi
  	priv->wol_irq = res->wol_irq;
  	priv->lpi_irq = res->lpi_irq;
  
@@ -1450,7 +1450,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		of_id = of_match_device(w5100_of_match, &spi->dev);
 --- a/drivers/net/ethernet/wiznet/w5100.c
 +++ b/drivers/net/ethernet/wiznet/w5100.c
-@@ -1157,7 +1157,7 @@ int w5100_probe(struct device *dev, cons
+@@ -1159,7 +1159,7 @@ int w5100_probe(struct device *dev, cons
  	INIT_WORK(&priv->setrx_work, w5100_setrx_work);
  	INIT_WORK(&priv->restart_work, w5100_restart_work);
  
@@ -1764,7 +1764,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			break;
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -1416,7 +1416,7 @@ int dsa_slave_create(struct dsa_port *po
+@@ -1414,7 +1414,7 @@ int dsa_slave_create(struct dsa_port *po
  	slave_dev->hw_features |= NETIF_F_HW_TC;
  	slave_dev->features |= NETIF_F_LLTX;
  	slave_dev->ethtool_ops = &dsa_slave_ethtool_ops;

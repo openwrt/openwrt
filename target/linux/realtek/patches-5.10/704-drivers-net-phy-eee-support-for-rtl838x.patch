@@ -12,7 +12,7 @@
  		return phy_ethtool_ksettings_set(pl->phydev, kset);
  	}
  
-@@ -1700,8 +1705,11 @@ int phylink_ethtool_get_eee(struct phyli
+@@ -1726,8 +1731,11 @@ int phylink_ethtool_get_eee(struct phyli
  
  	ASSERT_RTNL();
  
@@ -25,7 +25,7 @@
  
  	return ret;
  }
-@@ -1718,8 +1726,11 @@ int phylink_ethtool_set_eee(struct phyli
+@@ -1744,8 +1752,11 @@ int phylink_ethtool_set_eee(struct phyli
  
  	ASSERT_RTNL();
  

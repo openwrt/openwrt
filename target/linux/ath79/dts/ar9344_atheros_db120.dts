@@ -207,7 +207,7 @@
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
-		qca,disable-2ghz;
+		ieee80211-freq-limit = <4900000 5990000>;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};

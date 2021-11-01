@@ -1600,6 +1600,12 @@ static int ag71xx_probe(struct platform_device *pdev)
 			return -ENOMEM;
 	}
 
+	/* ensure that HW is in manual polling mode before interrupts are
+	 * activated. Otherwise ag71xx_interrupt might call napi_schedule
+	 * before it is initialized by netif_napi_add.
+	 */
+	ag71xx_int_disable(ag, AG71XX_INT_POLL);
+
 	dev->irq = platform_get_irq(pdev, 0);
 	err = devm_request_irq(&pdev->dev, dev->irq, ag71xx_interrupt,
 			       0x0, dev_name(&pdev->dev), dev);

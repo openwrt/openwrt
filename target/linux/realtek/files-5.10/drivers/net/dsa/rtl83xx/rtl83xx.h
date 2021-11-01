@@ -74,6 +74,11 @@ inline u32 rtl_table_data_r(struct table_reg *r, int i);
 inline void rtl_table_data_w(struct table_reg *r, u32 v, int i);
 
 void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv);
+
+int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
+
+int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_priv *priv);
+
 int read_phy(u32 port, u32 page, u32 reg, u32 *val);
 int write_phy(u32 port, u32 page, u32 reg, u32 val);
 

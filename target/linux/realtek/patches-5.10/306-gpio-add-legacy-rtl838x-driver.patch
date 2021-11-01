@@ -1,0 +1,25 @@
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -514,6 +514,12 @@ config GPIO_RTL8231
+ 	help
+ 	  Say yes here to support Realtek RTL8231 GPIO expansion chips.
+ 
++config GPIO_RTL838X
++	tristate "RTL838X GPIO"
++	depends on RTL838X
++	help
++	Say yes here to support RTL838X GPIO on RTL93xx SoCs.
++
+ config GPIO_SAMA5D2_PIOBU
+ 	tristate "SAMA5D2 PIOBU GPIO support"
+ 	depends on MFD_SYSCON
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -127,6 +127,7 @@ obj-$(CONFIG_GPIO_RDC321X)		+= gpio-rdc3
+ obj-$(CONFIG_GPIO_REALTEK_OTTO)		+= gpio-realtek-otto.o
+ obj-$(CONFIG_GPIO_REG)			+= gpio-reg.o
+ obj-$(CONFIG_GPIO_RTL8231)		+= gpio-rtl8231.o
++obj-$(CONFIG_GPIO_RTL838X)		+= gpio-rtl838x.o
+ obj-$(CONFIG_ARCH_SA1100)		+= gpio-sa1100.o
+ obj-$(CONFIG_GPIO_SAMA5D2_PIOBU)	+= gpio-sama5d2-piobu.o
+ obj-$(CONFIG_GPIO_SCH311X)		+= gpio-sch311x.o

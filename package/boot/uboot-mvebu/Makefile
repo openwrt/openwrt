@@ -53,8 +53,6 @@ UBOOT_TARGETS:= \
 	espressobin \
 	uDPU
 
-Build/Exports:=$(Host/Exports)
-
 define Build/Configure
 	# enable additional options beyond <device>_defconfig
 	echo CONFIG_CMD_SETEXPR=y >> $(PKG_BUILD_DIR)/configs/$(UBOOT_CONFIG)_defconfig

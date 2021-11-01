@@ -18,6 +18,7 @@ endif
 CMAKE_BINARY_DIR = $(PKG_BUILD_DIR)$(if $(CMAKE_BINARY_SUBDIR),/$(CMAKE_BINARY_SUBDIR))
 CMAKE_SOURCE_DIR = $(PKG_BUILD_DIR)$(if $(CMAKE_SOURCE_SUBDIR),/$(CMAKE_SOURCE_SUBDIR))
 HOST_CMAKE_SOURCE_DIR = $(HOST_BUILD_DIR)$(if $(CMAKE_SOURCE_SUBDIR),/$(CMAKE_SOURCE_SUBDIR))
+HOST_CMAKE_BINARY_DIR = $(HOST_BUILD_DIR)$(if $(CMAKE_BINARY_SUBDIR),/$(CMAKE_BINARY_SUBDIR))
 MAKE_PATH = $(firstword $(CMAKE_BINARY_SUBDIR) .)
 
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
@@ -56,15 +57,15 @@ ifeq ($(HOST_USE_NINJA),1)
   CMAKE_HOST_OPTIONS += -DCMAKE_GENERATOR="Ninja"
 
   define Host/Compile/Default
-	+$(NINJA) -C $(HOST_BUILD_DIR) $(1)
+	+$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) $(1)
   endef
 
   define Host/Install/Default
-	+$(NINJA) -C $(HOST_BUILD_DIR) install
+	+$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) install
   endef
 
   define Host/Uninstall/Default
-	+$(NINJA) -C $(HOST_BUILD_DIR) uninstall
+	+$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) uninstall
   endef
 endif
 
@@ -133,7 +134,8 @@ endef
 Build/InstallDev = $(if $(CMAKE_INSTALL),$(Build/InstallDev/cmake))
 
 define Host/Configure/Default
-	(cd $(HOST_BUILD_DIR); \
+	mkdir -p "$(HOST_CMAKE_BINARY_DIR)"
+	(cd $(HOST_CMAKE_BINARY_DIR); \
 		CFLAGS="$(HOST_CFLAGS)" \
 		CXXFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)" \
