@@ -29,7 +29,7 @@ define Package/qosify
   CATEGORY:=Kernel modules
   SUBMENU:=Network Support
   TITLE:=A simple QoS solution based eBPF + CAKE
-  DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +tc-full @!BPF_TOOLCHAIN_NONE
+  DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +tc-full $(BPF_DEPENDS)
 endef
 
 define Build/Compile

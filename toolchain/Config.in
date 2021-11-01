@@ -46,9 +46,11 @@ menuconfig TARGET_OPTIONS
 			bool "None"
 
 		config BPF_TOOLCHAIN_HOST
+			select USE_LLVM_HOST
 			bool "Use host LLVM toolchain"
 
 		config BPF_TOOLCHAIN_BUILD_LLVM
+			select USE_LLVM_BUILD
 			bool "Build LLVM toolchain for eBPF"
 			help
 			  If enabled, a LLVM toolchain for building eBPF binaries will be built.
@@ -291,6 +293,17 @@ config GDB_PYTHON
 	
 	help
 	  Enable the python bindings for GDB to allow using python in the gdb shell.
+
+config HAS_BPF_TOOLCHAIN
+	bool
+
+config USE_LLVM_HOST
+	select HAS_BPF_TOOLCHAIN
+	bool
+
+config USE_LLVM_BUILD
+	select HAS_BPF_TOOLCHAIN
+	bool
 
 config USE_GLIBC
 	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && (arc)
