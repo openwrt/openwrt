@@ -37,13 +37,31 @@ menuconfig TARGET_OPTIONS
 
 		  Most people will answer N.
 
-config BUILD_LLVM_BPF
-	bool "Build LLVM toolchain for eBPF" if DEVEL
-	help
-	  If enabled, a LLVM toolchain for building eBPF binaries will be built.
-	  If this is not enabled, eBPF packages can only be built if the host
-	  has a suitable toolchain
 
+	choice BPF_TOOLCHAIN
+		prompt "BPF toolchain" if DEVEL
+		default BPF_TOOLCHAIN_NONE
+
+		config BPF_TOOLCHAIN_NONE
+			bool "None"
+
+		config BPF_TOOLCHAIN_HOST
+			bool "Use host LLVM toolchain"
+
+		config BPF_TOOLCHAIN_BUILD_LLVM
+			bool "Build LLVM toolchain for eBPF"
+			help
+			  If enabled, a LLVM toolchain for building eBPF binaries will be built.
+			  If this is not enabled, eBPF packages can only be built if the host
+			  has a suitable toolchain
+	endchoice
+
+	config BPF_TOOLCHAIN_HOST_PATH
+		string
+		depends on BPF_TOOLCHAIN_HOST
+		prompt "Host LLVM toolchain path (prefix)" if DEVEL
+		default "/usr/local/opt/llvm" if HOST_OS_MACOS
+		default ""
 
 menuconfig EXTERNAL_TOOLCHAIN
 	bool
