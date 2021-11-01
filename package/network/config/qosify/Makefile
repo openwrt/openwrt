@@ -25,9 +25,8 @@ include $(INCLUDE_DIR)/cmake.mk
 include $(INCLUDE_DIR)/bpf.mk
 
 define Package/qosify
-  SECTION:=kernel
-  CATEGORY:=Kernel modules
-  SUBMENU:=Network Support
+  SECTION:=net
+  CATEGORY:=Network
   TITLE:=A simple QoS solution based eBPF + CAKE
   DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +tc-full $(BPF_DEPENDS)
 endef
