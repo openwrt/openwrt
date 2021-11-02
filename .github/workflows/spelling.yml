@@ -4,8 +4,6 @@ on:
     branches: ["**"]
     tags-ignore: ["**"]
   pull_request_target:
-  issue_comment:
-    types: [created]
 
 jobs:
   spelling:
@@ -34,7 +32,6 @@ jobs:
       id: spelling
       uses: check-spelling/check-spelling@0.0.20-alpha2
       with:
-        experimental_apply_changes_via_bot: 1
         suppress_push_for_open_pull_request: 1
         extra_dictionaries:
           cspell:cpp/cpp.txt
@@ -70,28 +67,5 @@ jobs:
     - name: comment
       uses: check-spelling/check-spelling@0.0.20-alpha2
       with:
-        experimental_apply_changes_via_bot: 1
         custom_task: comment
         internal_state_directory: /tmp/data
-
-  update:
-    name: Update PR
-    permissions:
-      contents: write
-      pull-requests: write
-    runs-on: ubuntu-latest
-    if: ${{
-        github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request &&
-        contains(github.event.comment.body, '@check-spelling-bot apply')
-      }}
-    concurrency:
-      group: spelling-update-${{ github.event.issue.number }}
-      cancel-in-progress: false
-    steps:
-    - name: checkout
-      uses: actions/checkout@v2
-    - name: check-spelling
-      uses: check-spelling/check-spelling@0.0.20-alpha2
-      with:
-        experimental_apply_changes_via_bot: 1
