@@ -22,6 +22,7 @@ LLVM_STRIP:=$(LLVM_PATH)/llvm-strip$(LLVM_VER)
 
 BPF_KARCH:=mips
 BPF_ARCH:=mips$(if $(CONFIG_BIG_ENDIAN),,el)
+BPF_TARGET:=bpf$(if $(CONFIG_BIG_ENDIAN),eb,el)
 
 BPF_HEADERS_DIR:=$(STAGING_DIR)/bpf-headers
 
@@ -59,9 +60,9 @@ BPF_CFLAGS := \
 define CompileBPF
 	$(CLANG) -g -target $(BPF_ARCH)-linux-gnu $(BPF_CFLAGS) $(2) \
 		-c $(1) -o $(patsubst %.c,%.bc,$(1))
-	$(LLVM_OPT) -O2 -mtriple=bpf-pc-linux < $(patsubst %.c,%.bc,$(1)) > $(patsubst %.c,%.opt,$(1))
+	$(LLVM_OPT) -O2 -mtriple=$(BPF_TARGET) < $(patsubst %.c,%.bc,$(1)) > $(patsubst %.c,%.opt,$(1))
 	$(LLVM_DIS) < $(patsubst %.c,%.opt,$(1)) > $(patsubst %.c,%.S,$(1))
-	$(LLVM_LLC) -march=bpf -filetype=obj -o $(patsubst %.c,%.o,$(1)) < $(patsubst %.c,%.S,$(1))
+	$(LLVM_LLC) -march=$(BPF_TARGET) -filetype=obj -o $(patsubst %.c,%.o,$(1)) < $(patsubst %.c,%.S,$(1))
 	$(LLVM_STRIP) --strip-debug $(patsubst %.c,%.o,$(1))
 endef
 
