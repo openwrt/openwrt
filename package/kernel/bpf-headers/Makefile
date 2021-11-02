@@ -41,6 +41,8 @@ define Package/bpf-headers
   HIDDEN:=1
 endef
 
+PKG_CONFIG_PATH:=
+
 export HOST_EXTRACFLAGS=-I$(STAGING_DIR_HOST)/include
 
 KERNEL_MAKE := \
