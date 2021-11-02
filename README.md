@@ -11,6 +11,9 @@ full customization, to use the device in ways never envisioned.
 
 Sunshine!
 
+## How to Build OpenWrt for FriendlyElec devices
+See [FriendlyElec WiKi](http://wiki.friendlyarm.com/wiki/index.php/How_to_Build_OpenWrt)
+
 ## Development
 
 To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case
