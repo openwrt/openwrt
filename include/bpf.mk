@@ -5,7 +5,7 @@ ifneq ($(CONFIG_BPF_TOOLCHAIN_HOST),)
   ifneq ($(BPF_TOOLCHAIN_HOST_PATH),)
     BPF_PATH:=$(BPF_TOOLCHAIN_HOST_PATH)/bin:$(PATH)
   else
-    BPF_PATH:=$(BPF_PATH)
+    BPF_PATH:=$(PATH)
   endif
   CLANG:=$(firstword $(shell PATH='$(BPF_PATH)' which clang clang-13 clang-12 clang-11))
   LLVM_VER:=$(subst clang,,$(notdir $(CLANG)))
