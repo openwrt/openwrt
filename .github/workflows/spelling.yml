@@ -36,6 +36,8 @@ jobs:
       with:
         experimental_apply_changes_via_bot: 1
         suppress_push_for_open_pull_request: 1
+        extra_dictionaries:
+          cspell:cpp/cpp.txt
         post_comment: 0
     - name: store-comment
       if: failure()
