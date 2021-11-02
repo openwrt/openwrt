@@ -28,7 +28,7 @@ define Package/qosify
   SECTION:=net
   CATEGORY:=Network
   TITLE:=A simple QoS solution based eBPF + CAKE
-  DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +tc-full $(BPF_DEPENDS)
+  DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +kmod-sched-bpf +tc-full $(BPF_DEPENDS)
 endef
 
 define Build/Compile
