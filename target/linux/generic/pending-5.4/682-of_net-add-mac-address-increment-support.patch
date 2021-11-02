@@ -16,11 +16,11 @@ early has to be increased.
 Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 ---
  drivers/of/of_net.c | 59 ++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 45 insertions(+), 14 deletions(-)
+ 1 file changed, 58 insertions(+), 14 deletions(-)
 
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -109,27 +109,52 @@ static int of_get_mac_addr_nvmem(struct
+@@ -109,27 +109,65 @@ static int of_get_mac_addr_nvmem(struct
   * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
   * but is all zeros.
   *
@@ -70,8 +70,21 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +		return ret;
 +
 +found:
-+	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc))
-+		addr[inc_idx] += mac_inc;
++	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc)) {
++		unsigned int val;
++		if (inc_idx == 3) {
++			addr[inc_idx] += mac_inc;
++		} else if (inc_idx == 4) {
++			val = (addr[3] << 8) + addr[4] + mac_inc;
++			addr[3] = (val >> 8) & 0xff;
++			addr[4] = (val >> 0) & 0xff;
++		} else if (inc_idx == 5) {
++			val = (addr[3] << 16) + (addr[4] << 8) + addr[5] + mac_inc;
++			addr[3] = (val >> 16) & 0xff;
++			addr[4] = (val >> 8) & 0xff;
++			addr[5] = (val >> 0) & 0xff;
++		}
++	}
  
 -	return of_get_mac_addr_nvmem(np, addr);
 +	return ret;
