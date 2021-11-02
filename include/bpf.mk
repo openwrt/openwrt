@@ -10,7 +10,7 @@ ifneq ($(CONFIG_BPF_TOOLCHAIN_HOST),)
   CLANG:=$(firstword $(shell PATH='$(BPF_PATH)' which clang clang-13 clang-12 clang-11))
   LLVM_VER:=$(subst clang,,$(notdir $(CLANG)))
 else
-  CLANG:=$(STAGING_DIR_HOST)/bin/clang
+  CLANG:=$(STAGING_DIR_HOST)/llvm-bpf/bin/clang
   LLVM_VER:=
 endif
 
