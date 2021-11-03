@@ -23,6 +23,7 @@ PKG_BUILD_DEPENDS:=bpf-headers
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 include $(INCLUDE_DIR)/bpf.mk
+include $(INCLUDE_DIR)/nls.mk
 
 define Package/qosify
   SECTION:=net
