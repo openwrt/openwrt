@@ -9,7 +9,6 @@ define Device/Default
   KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_LOADADDR := 0x80080000
-  KERNEL_ENTRY_POINT := 0x80080000
   DEVICE_DTS = freescale/$(subst _,-,$(1))
   IMAGE_SIZE := 64m
   IMAGE/sysupgrade.bin = \
