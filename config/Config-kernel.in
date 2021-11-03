@@ -147,6 +147,13 @@ config KERNEL_KASAN_EXTRA
 	  compile time.
 	  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81715 has more
 
+if KERNEL_KASAN
+	config KERNEL_KASAN_GENERIC
+	def_bool y
+
+	config KERNEL_KASAN_SW_TAGS
+	def_bool n
+endif
 
 choice
 	prompt "Instrumentation type"
