@@ -7,6 +7,13 @@ define Package/ibt-firmware/install
 endef
 $(eval $(call BuildPackage,ibt-firmware))
 
+Package/iwlwifi-firmware-ax200 = $(call Package/firmware-default,Intel AX200 firmware)
+define Package/iwlwifi-firmware-ax200/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-cc-a0-62.ucode $(1)/lib/firmware
+endef
+$(eval $(call BuildPackage,iwlwifi-firmware-ax200))
+
 Package/iwl3945-firmware = $(call Package/firmware-default,Intel IWL3945 firmware)
 define Package/iwl3945-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware
