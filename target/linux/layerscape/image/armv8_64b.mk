@@ -8,7 +8,11 @@ define Device/Default
   FILESYSTEMS := squashfs
   KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+ifdef CONFIG_LINUX_5_4
   KERNEL_LOADADDR := 0x80080000
+else
+  KERNEL_LOADADDR := 0x80000000
+endif
   DEVICE_DTS = freescale/$(subst _,-,$(1))
   IMAGE_SIZE := 64m
   IMAGE/sysupgrade.bin = \
