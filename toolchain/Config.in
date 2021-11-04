@@ -40,6 +40,7 @@ menuconfig TARGET_OPTIONS
 
 	choice BPF_TOOLCHAIN
 		prompt "BPF toolchain" if DEVEL
+		default BPF_TOOLCHAIN_BUILD_LLVM if BUILDBOT
 		default BPF_TOOLCHAIN_NONE
 
 		config BPF_TOOLCHAIN_NONE
@@ -302,6 +303,7 @@ config USE_LLVM_HOST
 	bool
 
 config USE_LLVM_BUILD
+	default y if !DEVEL && BUILDBOT
 	select HAS_BPF_TOOLCHAIN
 	bool
 
