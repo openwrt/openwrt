@@ -1,10 +1,10 @@
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
 @@ -57,6 +57,7 @@ struct br_ip_list {
- #define BR_MRP_LOST_CONT	BIT(18)
  #define BR_MRP_LOST_IN_CONT	BIT(19)
- #define BR_BPDU_FILTER		BIT(20)
-+#define BR_OFFLOAD		BIT(21)
+ #define BR_TX_FWD_OFFLOAD	BIT(20)
+ #define BR_BPDU_FILTER		BIT(21)
++#define BR_OFFLOAD		BIT(22)
  
  #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
  
@@ -169,12 +169,12 @@
 +	if (br_offload_input(p, skb))
 +		return RX_HANDLER_CONSUMED;
 +
- 	if (p->flags & BR_VLAN_TUNNEL) {
- 		if (br_handle_ingress_vlan_tunnel(skb, p,
- 						  nbp_vlan_group_rcu(p)))
+ 	if (p->flags & BR_VLAN_TUNNEL)
+ 		br_handle_ingress_vlan_tunnel(skb, p, nbp_vlan_group_rcu(p))
+ 
 --- /dev/null
 +++ b/net/bridge/br_offload.c
-@@ -0,0 +1,436 @@
+@@ -0,0 +1,438 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +#include <linux/kernel.h>
 +#include <linux/workqueue.h>
@@ -580,7 +580,8 @@
 +}
 +
 +
-+int br_offload_set_cache_size(struct net_bridge *br, unsigned long val)
++int br_offload_set_cache_size(struct net_bridge *br, unsigned long val,
++			       struct netlink_ext_ack *extack)
 +{
 +	br->offload_cache_size = val;
 +	br_offload_check_gc(br);
@@ -588,7 +589,8 @@
 +	return 0;
 +}
 +
-+int br_offload_set_cache_reserved(struct net_bridge *br, unsigned long val)
++int br_offload_set_cache_reserved(struct net_bridge *br, unsigned long val,
++				   struct netlink_ext_ack *extack)
 +{
 +	br->offload_cache_reserved = val;
 +	br_offload_check_gc(br);
@@ -657,8 +659,8 @@
 +	u32				offload_cache_reserved;
 +
  #ifdef CONFIG_NET_SWITCHDEV
- 	int offload_fwd_mark;
- #endif
+ 	/* Counter used to make sure that hardware domains get unique
+ 	 * identifiers in case a bridge spans multiple switchdev instances.
 @@ -501,6 +517,10 @@ struct br_input_skb_cb {
  #ifdef CONFIG_NETFILTER_FAMILY_BRIDGE
  	u8 br_netfilter_broute:1;
@@ -669,10 +671,10 @@
 +	int input_ifindex;
  
  #ifdef CONFIG_NET_SWITCHDEV
- 	int offload_fwd_mark;
+ 	/* Set if TX data plane offloading is used towards at least one
 --- /dev/null
 +++ b/net/bridge/br_private_offload.h
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,23 @@
 +#ifndef __BR_OFFLOAD_H
 +#define __BR_OFFLOAD_H
 +
@@ -682,8 +684,10 @@
 +void br_offload_fdb_update(const struct net_bridge_fdb_entry *fdb);
 +int br_offload_init(void);
 +void br_offload_fini(void);
-+int br_offload_set_cache_size(struct net_bridge *br, unsigned long val);
-+int br_offload_set_cache_reserved(struct net_bridge *br, unsigned long val);
++int br_offload_set_cache_size(struct net_bridge *br, unsigned long val,
++			       struct netlink_ext_ack *extack);
++int br_offload_set_cache_reserved(struct net_bridge *br, unsigned long val,
++			 	   struct netlink_ext_ack *extack);
 +
 +static inline void br_offload_skb_disable(struct sk_buff *skb)
 +{
@@ -804,9 +808,9 @@
  
  	__vlan_hwaccel_put_tag(skb, p->br->vlan_proto, vlan->vid);
 +	br_offload_skb_disable(skb);
- 
- 	return 0;
  }
+ 
+ int br_handle_egress_vlan_tunnel(struct sk_buff *skb,
 @@ -203,6 +205,7 @@ int br_handle_egress_vlan_tunnel(struct
  	if (err)
  		return err;

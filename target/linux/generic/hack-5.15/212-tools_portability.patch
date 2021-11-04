@@ -69,9 +69,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/tools/include/linux/types.h
 +++ b/tools/include/linux/types.h
 @@ -7,8 +7,12 @@
- #include <stdint.h>
- 
  #define __SANE_USERSPACE_TYPES__	/* For PPC64, to get LL64 types */
+ #endif
+ 
 +#ifndef __linux__
 +#include <tools/linux_types.h>
 +#else
