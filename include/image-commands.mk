@@ -187,6 +187,19 @@ define Build/elecom-product-header
 	mv $(fw).new $(fw)
 endef
 
+define Build/elecom-wrc-gs-factory
+	$(eval product=$(word 1,$(1)))
+	$(eval version=$(word 2,$(1)))
+	$(eval hash_opt=$(word 3,$(1)))
+	$(MKHASH) md5 $(hash_opt) $@ >> $@
+	( \
+		echo -n "ELECOM $(product) v$(version)" | \
+			dd bs=32 count=1 conv=sync; \
+		dd if=$@; \
+	) > $@.new
+	mv $@.new $@
+endef
+
 define Build/elx-header
 	$(eval hw_id=$(word 1,$(1)))
 	$(eval xor_pattern=$(word 2,$(1)))

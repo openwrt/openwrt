@@ -512,6 +512,16 @@ define Device/tplink_re305-v1
 endef
 TARGET_DEVICES += tplink_re305-v1
 
+define Device/tplink_re305-v3
+  $(Device/tplink-safeloader)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := RE305
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-mt76x2
+  TPLINK_BOARD_ID := RE305-V3
+endef
+TARGET_DEVICES += tplink_re305-v3
+
 define Device/tplink_tl-mr3020-v3
   $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
@@ -830,6 +840,14 @@ define Device/xiaomi_mi-router-4c
   DEVICE_PACKAGES := uboot-envtools
 endef
 TARGET_DEVICES += xiaomi_mi-router-4c
+
+define Device/xiaomi_miwifi-3c
+  IMAGE_SIZE := 15104k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := MiWiFi 3C
+  DEVICE_PACKAGES := uboot-envtools
+endef
+TARGET_DEVICES += xiaomi_miwifi-3c
 
 define Device/xiaomi_miwifi-nano
   IMAGE_SIZE := 16064k

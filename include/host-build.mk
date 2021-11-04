@@ -180,7 +180,7 @@ ifndef DUMP
     clean-build: host-clean-build
   endif
 
-  $(DL_DIR)/$(FILE): FORCE
+  $(call check_download_integrity)
 
   $(_host_target)host-prepare: $(HOST_STAMP_PREPARED)
   $(_host_target)host-configure: $(HOST_STAMP_CONFIGURED)

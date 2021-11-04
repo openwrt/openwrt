@@ -1,0 +1,85 @@
+From: Christian Lamparter <chunkeey@gmail.com>
+Date: Sat, 12 Sep 2020 22:11:12 +0200
+Subject: bcm53xx: Meraki MR32 use hw i2c
+
+replace the i2c-gpio provided i2c functionality with the
+hardware in the SoC. This can be activated once the
+internal i2c works as well as the bit-banged i2c-gpio.
+
+Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
+
+--- a/arch/arm/boot/dts/bcm53016-meraki-mr32.dts
++++ b/arch/arm/boot/dts/bcm53016-meraki-mr32.dts
+@@ -85,40 +85,6 @@
+ 			max-brightness = <255>;
+ 		};
+ 	};
+-
+-	i2c {
+-		/*
+-		 * The platform provided I2C does not budge.
+-		 * This is a replacement until I can figure
+-		 * out what are the missing bits...
+-		 */
+-
+-		compatible = "i2c-gpio";
+-		sda-gpios = <&chipcommon 5 GPIO_ACTIVE_HIGH>;
+-		scl-gpios = <&chipcommon 4 GPIO_ACTIVE_HIGH>;
+-		i2c-gpio,delay-us = <10>; /* close to 100 kHz */
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		current_sense: ina219@45 {
+-			compatible = "ti,ina219";
+-			reg = <0x45>;
+-			shunt-resistor = <60000>; /* = 60 mOhms */
+-		};
+-
+-		eeprom: eeprom@50 {
+-			compatible = "atmel,24c64";
+-			reg = <0x50>;
+-			pagesize = <32>;
+-			read-only;
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+-
+-			mac_address: mac-address@66 {
+-				reg = <0x66 0x6>;
+-			};
+-		};
+-	};
+ };
+ 
+ &uart0 {
+@@ -229,3 +195,31 @@
+ 		};
+ 	};
+ };
++
++&i2c0 {
++	status = "okay";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinmux_i2c>;
++
++	clock-frequency = <100000>;
++
++	current_sense: ina219@45 {
++		compatible = "ti,ina219";
++		reg = <0x45>;
++		shunt-resistor = <60000>; /* = 60 mOhms */
++	};
++
++	eeprom: eeprom@50 {
++		compatible = "atmel,24c64";
++		reg = <0x50>;
++		pagesize = <32>;
++		read-only;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		mac_address: mac-address@66 {
++			reg = <0x66 0x6>;
++		};
++	};
++};

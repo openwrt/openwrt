@@ -89,13 +89,13 @@ platform_do_upgrade() {
 		blockdev --rereadpt /dev/$rootdev || return 1
 		export_partdevice fitpart 3
 		[ "$fitpart" ] || return 1
-		dd if=/dev/zero of=/dev/$fitpart bs=4096 count=1 2>/dev/null
+		dd if=/dev/zero of=$fitpart bs=4096 count=1 2>/dev/null
 		blockdev --rereadpt /dev/$rootdev
-		get_image "$1" | dd of=/dev/$fitpart
+		get_image "$1" | dd of=$fitpart
 		blockdev --rereadpt /dev/$rootdev
-		local datapart=$(get_partition_by_name $rootdev "rootfs_data")
+		local datapart=$(find_mmc_part "rootfs_data" $rootdev)
 		[ "$datapart" ] || return 0
-		dd if=/dev/zero of=/dev/$datapart bs=4096 count=1 2>/dev/null
+		dd if=/dev/zero of=$datapart bs=4096 count=1 2>/dev/null
 		echo $datapart > /tmp/sysupgrade.datapart
 		;;
 
@@ -175,7 +175,7 @@ platform_copy_config_mmc() {
 	[ -e "$UPGRADE_BACKUP" ] || return
 	local datapart=$(cat /tmp/sysupgrade.datapart)
 	[ "$datapart" ] || echo "no rootfs_data partition, cannot keep configuration." >&2
-	dd if="$UPGRADE_BACKUP" of=/dev/$datapart
+	dd if="$UPGRADE_BACKUP" of=$datapart
 	sync
 }
 

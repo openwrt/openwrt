@@ -320,11 +320,41 @@
 
 &pcie0 {
 	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "pci168c,0040";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cells = <&macaddr_PRODUCTDATA_12>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
 };
 
 &pcie1 {
 	status = "okay";
 	max-link-speed = <1>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "pci168c,0040";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cells = <&macaddr_PRODUCTDATA_c>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
 };
 
 &qcom_pinmux {
@@ -394,5 +424,13 @@
 
 	macaddr_PRODUCTDATA_6: macaddr@6 {
 		reg = <0x6 0x6>;
+	};
+
+	macaddr_PRODUCTDATA_c: macaddr@c {
+		reg = <0xc 0x6>;
+	};
+
+	macaddr_PRODUCTDATA_12: macaddr@12 {
+		reg = <0x12 0x6>;
 	};
 };

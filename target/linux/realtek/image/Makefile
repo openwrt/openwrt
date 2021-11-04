@@ -10,7 +10,7 @@ DEVICE_VARS += ZYXEL_VERS
 
 define Build/zyxel-vers
        ( echo VERS;\
-       for hw in $(1); do\
+       for hw in $(ZYXEL_VERS); do\
                echo -n "V9.99($$hw.0) | ";\
                date -d @$(SOURCE_DATE_EPOCH) +%m/%d/%Y;\
        done ) >> $@
@@ -117,7 +117,7 @@ define Device/zyxel_gs1900
   IMAGE_SIZE := 6976k
   DEVICE_VENDOR := ZyXEL
   UIMAGE_MAGIC := 0x83800000
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers $$$$(ZYXEL_VERS) | \
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers | \
 	uImage gzip
 endef
 
