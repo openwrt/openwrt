@@ -1,0 +1,85 @@
+Index: linux-5.4.155/drivers/of/of_net.c
+===================================================================
+--- linux-5.4.155.orig/drivers/of/of_net.c
++++ linux-5.4.155/drivers/of/of_net.c
+@@ -12,6 +12,7 @@
+ #include <linux/export.h>
+ #include <linux/device.h>
+ #include <linux/nvmem-consumer.h>
++#include <linux/mtd/mtd.h>
+ 
+ /**
+  * of_get_phy_mode - Get phy mode for given device_node
+@@ -110,6 +111,51 @@ free:
+ 	return -ENOMEM;
+ }
+ 
++static int of_get_mac_address_mtd(struct device_node *np, u8 *addr)
++{
++#ifdef CONFIG_MTD
++	struct platform_device *pdev = of_find_device_by_node(np);
++	struct device_node *mtd_np = NULL;
++	size_t retlen;
++	int size, ret;
++	struct mtd_info *mtd;
++	const char *part;
++	const __be32 *list;
++	phandle phandle;
++	u8 mac[ETH_ALEN];
++
++	list = of_get_property(np, "mtd-mac-address", &size);
++	if (!list || (size != (2 * sizeof(*list))))
++		return -ENODEV;
++
++	phandle = be32_to_cpup(list++);
++	if (phandle)
++		mtd_np = of_find_node_by_phandle(phandle);
++
++	if (!mtd_np)
++		return -ENODEV;
++
++	part = of_get_property(mtd_np, "label", NULL);
++	if (!part)
++		part = mtd_np->name;
++
++	mtd = get_mtd_device_nm(part);
++	if (IS_ERR(mtd))
++		return -ENODEV;
++
++	ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, mac);
++	put_mtd_device(mtd);
++
++	if (!is_valid_ether_addr(mac))
++		return -EINVAL;
++
++	memcpy(addr, mac, ETH_ALEN);
++
++	return 0;
++#endif
++	return -EINVAL;
++}
++
+ /**
+  * Search the device tree for the best MAC address to use.  'mac-address' is
+  * checked first, because that is supposed to contain to "most recent" MAC
+@@ -130,6 +176,9 @@ free:
+  * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
+  * but is all zeros.
+  *
++ * If a mtd-mac-address property exists, try to fetch the MAC address from the
++ * specified mtd device.
++ *
+  * DT can tell the system to increment the mac-address after is extracted by
+  * using:
+  * - mac-address-increment-byte to decide what byte to increase
+@@ -170,6 +219,10 @@ int of_get_mac_address(struct device_nod
+ 	if (!ret)
+ 		goto found;
+ 
++	ret = of_get_mac_address_mtd(np, addr);
++	if (!ret)
++		goto found;
++
+ 	ret = of_get_mac_addr_nvmem(np, addr);
+ 	if (ret)
+ 		return ret;
