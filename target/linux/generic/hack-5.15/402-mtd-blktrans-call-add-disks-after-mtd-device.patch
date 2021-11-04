@@ -51,7 +51,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	list_for_each_entry(tr, &blktrans_majors, list) {
 +		list_for_each_entry_safe(dev, next, &tr->devs, list) {
-+			if (dev->disk->flags & GENHD_FL_UP)
++			if (disk_live(dev->disk))
 +				continue;
 +
 +			device_add_disk(&dev->mtd->dev, dev->disk, NULL);
@@ -88,11 +88,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		del_mtd_device(mtd);
 --- a/include/linux/mtd/blktrans.h
 +++ b/include/linux/mtd/blktrans.h
-@@ -76,6 +76,6 @@ extern int deregister_mtd_blktrans(struc
+@@ -76,6 +76,7 @@ extern int deregister_mtd_blktrans(struc
  extern int add_mtd_blktrans_dev(struct mtd_blktrans_dev *dev);
  extern int del_mtd_blktrans_dev(struct mtd_blktrans_dev *dev);
  extern int mtd_blktrans_cease_background(struct mtd_blktrans_dev *dev);
--
 +extern void register_mtd_blktrans_devs(void);
  
- #endif /* __MTD_TRANS_H__ */
+ /**
+  * module_mtd_blktrans() - Helper macro for registering a mtd blktrans driver

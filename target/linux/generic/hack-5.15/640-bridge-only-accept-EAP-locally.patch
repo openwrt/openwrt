@@ -41,7 +41,7 @@ Signed-off-by: Etienne Champetier <champetier.etienne@gmail.com>
  	bridge_id			bridge_id;
 --- a/net/bridge/br_sysfs_br.c
 +++ b/net/bridge/br_sysfs_br.c
-@@ -164,6 +164,30 @@ static ssize_t group_fwd_mask_store(stru
+@@ -164,6 +164,31 @@ static ssize_t group_fwd_mask_store(stru
  }
  static DEVICE_ATTR_RW(group_fwd_mask);
  
@@ -53,7 +53,8 @@ Signed-off-by: Etienne Champetier <champetier.etienne@gmail.com>
 +	return sprintf(buf, "%u\n", br->disable_eap_hack);
 +}
 +
-+static int set_disable_eap_hack(struct net_bridge *br, unsigned long val)
++static int set_disable_eap_hack(struct net_bridge *br, unsigned long val,
++				 struct netlink_ext_ack *extack)
 +{
 +	br->disable_eap_hack = !!val;
 +
