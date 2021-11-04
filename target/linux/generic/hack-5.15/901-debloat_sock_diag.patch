@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -104,6 +104,9 @@ source "net/mptcp/Kconfig"
+@@ -98,6 +98,9 @@ source "net/mptcp/Kconfig"
  
  endif # if INET
  
@@ -74,10 +74,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	}
 +}
 +
- struct dst_entry *__sk_dst_check(struct sock *sk, u32 cookie)
- {
- 	struct dst_entry *dst = __sk_dst_get(sk);
-@@ -1834,9 +1848,11 @@ static void __sk_free(struct sock *sk)
+ INDIRECT_CALLABLE_DECLARE(struct dst_entry *ip6_dst_check(struct dst_entry *,
+ 							  u32));
+ INDIRECT_CALLABLE_DECLARE(struct dst_entry *ipv4_dst_check(struct dst_entry *,
+@@ -1816,9 +1830,11 @@ static void __sk_free(struct sock *sk)
  	if (likely(sk->sk_net_refcnt))
  		sock_inuse_add(sock_net(sk), -1);
  
