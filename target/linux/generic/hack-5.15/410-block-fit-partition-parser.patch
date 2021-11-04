@@ -6,9 +6,9 @@
  #define ADDPART_FLAG_WHOLEDISK	2
 +#define ADDPART_FLAG_READONLY	4
 +#define ADDPART_FLAG_ROOTDEV	8
- void delete_partition(struct hd_struct *part);
- int bdev_add_partition(struct block_device *bdev, int partno,
- 		sector_t start, sector_t length);
+ int bdev_add_partition(struct gendisk *disk, int partno, sector_t start,
+ 		sector_t length);
+ int bdev_del_partition(struct gendisk *disk, int partno);
 --- a/block/partitions/Kconfig
 +++ b/block/partitions/Kconfig
 @@ -101,6 +101,13 @@ config ATARI_PARTITION
@@ -92,17 +92,17 @@
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
 @@ -396,7 +396,11 @@ int ubiblock_create(struct ubi_volume_in
- 	dev->leb_size = vi->usable_leb_size;
  
- 	/* Initialize the gendisk of this ubiblock device */
+ 	gd->fops = &ubiblock_ops;
+ 	gd->major = ubiblock_major;
 +#ifdef CONFIG_FIT_PARTITION
-+	gd = alloc_disk(0);
++	gd->minors = 0;
 +#else
- 	gd = alloc_disk(1);
+ 	gd->minors = 1;
 +#endif
- 	if (!gd) {
- 		pr_err("UBI: block: alloc_disk failed\n");
- 		ret = -ENODEV;
+ 	gd->first_minor = idr_alloc(&ubiblock_minor_idr, dev, 0, 0, GFP_KERNEL);
+ 	if (gd->first_minor < 0) {
+ 		dev_err(disk_to_dev(gd),
 @@ -413,6 +417,9 @@ int ubiblock_create(struct ubi_volume_in
  		goto out_put_disk;
  	}
@@ -118,7 +118,7 @@
 @@ -706,6 +706,9 @@ int efi_partition(struct parsed_partitio
  	gpt_entry *ptes = NULL;
  	u32 i;
- 	unsigned ssz = bdev_logical_block_size(state->bdev) / 512;
+ 	unsigned ssz = queue_logical_block_size(state->disk->queue) / 512;
 +#ifdef CONFIG_FIT_PARTITION
 +	u32 extra_slot = 64;
 +#endif
