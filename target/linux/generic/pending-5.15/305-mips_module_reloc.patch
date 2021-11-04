@@ -270,7 +270,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int apply_r_mips_none(struct module *me, u32 *location,
  			     u32 base, Elf_Addr v, bool rela)
 @@ -54,9 +261,40 @@ static int apply_r_mips_32(struct module
- 	return 0;
+ 	*location = base + v;
  }
  
 +static Elf_Addr add_plt_entry_to(unsigned *plt_offset,
@@ -302,8 +302,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +}
 +
- static int apply_r_mips_26(struct module *me, u32 *location,
- 			   u32 base, Elf_Addr v, bool rela)
+ static int apply_r_mips_26(struct module *me, u32 *location, u32 base,
+ 			   Elf_Addr v)
  {
 +	u32 ofs = base & 0x03ffffff;
 +

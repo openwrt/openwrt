@@ -15,9 +15,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +/* Do not check the TCP window for incoming packets  */
 +static int nf_ct_tcp_no_window_check __read_mostly = 1;
 +
- /* "Be conservative in what you do,
-     be liberal in what you accept from others."
-     If it's non-zero, we mark only out of window RST segments as INVALID. */
+   /* FIXME: Examine ipfilter's timeouts and conntrack transitions more
+      closely.  They're more complex. --RR */
+ 
 @@ -476,6 +479,9 @@ static bool tcp_in_window(const struct n
  	s32 receiver_offset;
  	bool res, in_recv_win;

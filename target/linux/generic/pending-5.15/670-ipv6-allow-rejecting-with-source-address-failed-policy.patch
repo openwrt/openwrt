@@ -110,7 +110,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		return -EINVAL;
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -95,6 +95,8 @@ static int		ip6_pkt_discard(struct sk_bu
+@@ -94,6 +94,8 @@ static int		ip6_pkt_discard(struct sk_bu
  static int		ip6_pkt_discard_out(struct net *net, struct sock *sk, struct sk_buff *skb);
  static int		ip6_pkt_prohibit(struct sk_buff *skb);
  static int		ip6_pkt_prohibit_out(struct net *net, struct sock *sk, struct sk_buff *skb);
@@ -119,7 +119,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static void		ip6_link_failure(struct sk_buff *skb);
  static void		ip6_rt_update_pmtu(struct dst_entry *dst, struct sock *sk,
  					   struct sk_buff *skb, u32 mtu,
-@@ -310,6 +312,18 @@ static const struct rt6_info ip6_prohibi
+@@ -309,6 +311,18 @@ static const struct rt6_info ip6_prohibi
  	.rt6i_flags	= (RTF_REJECT | RTF_NONEXTHOP),
  };
  
@@ -138,7 +138,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static const struct rt6_info ip6_blk_hole_entry_template = {
  	.dst = {
  		.__refcnt	= ATOMIC_INIT(1),
-@@ -1031,6 +1045,7 @@ static const int fib6_prop[RTN_MAX + 1]
+@@ -1030,6 +1044,7 @@ static const int fib6_prop[RTN_MAX + 1]
  	[RTN_BLACKHOLE]	= -EINVAL,
  	[RTN_UNREACHABLE] = -EHOSTUNREACH,
  	[RTN_PROHIBIT]	= -EACCES,
@@ -146,7 +146,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	[RTN_THROW]	= -EAGAIN,
  	[RTN_NAT]	= -EINVAL,
  	[RTN_XRESOLVE]	= -EINVAL,
-@@ -1066,6 +1081,10 @@ static void ip6_rt_init_dst_reject(struc
+@@ -1065,6 +1080,10 @@ static void ip6_rt_init_dst_reject(struc
  		rt->dst.output = ip6_pkt_prohibit_out;
  		rt->dst.input = ip6_pkt_prohibit;
  		break;

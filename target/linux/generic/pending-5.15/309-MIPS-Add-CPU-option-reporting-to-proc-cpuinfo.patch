@@ -17,7 +17,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/arch/mips/kernel/proc.c
 +++ b/arch/mips/kernel/proc.c
-@@ -138,6 +138,120 @@ static int show_cpuinfo(struct seq_file
+@@ -138,6 +138,116 @@ static int show_cpuinfo(struct seq_file
  		seq_printf(m, "micromips kernel\t: %s\n",
  		      (read_c0_config3() & MIPS_CONF3_ISA_OE) ?  "yes" : "no");
  	}
@@ -45,10 +45,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		seq_printf(m, "%s", " 3k_cache");
 +	if (cpu_has_4k_cache)
 +		seq_printf(m, "%s", " 4k_cache");
-+	if (cpu_has_6k_cache)
-+		seq_printf(m, "%s", " 6k_cache");
-+	if (cpu_has_8k_cache)
-+		seq_printf(m, "%s", " 8k_cache");
 +	if (cpu_has_tx39_cache)
 +		seq_printf(m, "%s", " tx39_cache");
 +	if (cpu_has_octeon_cache)

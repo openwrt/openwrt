@@ -66,6 +66,6 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	early_security_init();
  	setup_arch(&command_line);
 +	mangle_bootargs(command_line);
- 	setup_boot_config(command_line);
+ 	setup_boot_config();
  	setup_command_line(command_line);
  	setup_nr_cpu_ids();

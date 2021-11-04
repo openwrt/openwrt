@@ -48,6 +48,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (!mount_ubi_rootfs())
 +		return;
 +#endif
- #ifdef CONFIG_BLOCK
- 	{
- 		int err = create_dev("/dev/root", ROOT_DEV);
+ 	if (ROOT_DEV == 0 && root_device_name && root_fs_names) {
+ 		if (mount_nodev_root() == 0)
+ 			return;
