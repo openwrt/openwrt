@@ -14,11 +14,9 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  arch/arm/boot/dts/bcm5301x.dtsi | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/bcm5301x.dtsi b/arch/arm/boot/dts/bcm5301x.dtsi
-index f92089290ccd..ec5de636796e 100644
 --- a/arch/arm/boot/dts/bcm5301x.dtsi
 +++ b/arch/arm/boot/dts/bcm5301x.dtsi
-@@ -408,7 +408,7 @@ uart2: serial@18008000 {
+@@ -408,7 +408,7 @@
  	i2c0: i2c@18009000 {
  		compatible = "brcm,iproc-i2c";
  		reg = <0x18009000 0x50>;
@@ -27,6 +25,3 @@ index f92089290ccd..ec5de636796e 100644
  		#address-cells = <1>;
  		#size-cells = <0>;
  		clock-frequency = <100000>;
--- 
-2.25.1
-
