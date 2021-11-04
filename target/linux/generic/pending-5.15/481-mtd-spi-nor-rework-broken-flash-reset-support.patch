@@ -62,36 +62,6 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	spi_nor_unlock_and_unprep(nor);
  
  	return ret;
-@@ -1872,7 +1894,9 @@ static int spi_nor_lock(struct mtd_info
- 	if (ret)
- 		return ret;
- 
-+	spi_nor_check_set_addr_width(nor, ofs + len);
- 	ret = nor->params->locking_ops->lock(nor, ofs, len);
-+	spi_nor_check_set_addr_width(nor, 0);
- 
- 	spi_nor_unlock_and_unprep(nor);
- 	return ret;
-@@ -1887,7 +1911,9 @@ static int spi_nor_unlock(struct mtd_inf
- 	if (ret)
- 		return ret;
- 
-+	spi_nor_check_set_addr_width(nor, ofs + len);
- 	ret = nor->params->locking_ops->unlock(nor, ofs, len);
-+	spi_nor_check_set_addr_width(nor, 0);
- 
- 	spi_nor_unlock_and_unprep(nor);
- 	return ret;
-@@ -1902,7 +1928,9 @@ static int spi_nor_is_locked(struct mtd_
- 	if (ret)
- 		return ret;
- 
-+	spi_nor_check_set_addr_width(nor, ofs + len);
- 	ret = nor->params->locking_ops->is_locked(nor, ofs, len);
-+	spi_nor_check_set_addr_width(nor, 0);
- 
- 	spi_nor_unlock_and_unprep(nor);
- 	return ret;
 @@ -2095,6 +2123,10 @@ static int spi_nor_read(struct mtd_info
  	if (ret)
  		return ret;
@@ -147,12 +117,44 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	}
  
  	return 0;
+--- a/drivers/mtd/spi-nor/swp.c
++++ b/drivers/mtd/spi-nor/swp.c
+@@ -1872,7 +1894,9 @@ static int spi_nor_lock(struct mtd_info
+ 	if (ret)
+ 		return ret;
+ 
++	spi_nor_check_set_addr_width(nor, ofs + len);
+ 	ret = nor->params->locking_ops->lock(nor, ofs, len);
++	spi_nor_check_set_addr_width(nor, 0);
+ 
+ 	spi_nor_unlock_and_unprep(nor);
+ 	return ret;
+@@ -1887,7 +1911,9 @@ static int spi_nor_unlock(struct mtd_inf
+ 	if (ret)
+ 		return ret;
+ 
++	spi_nor_check_set_addr_width(nor, ofs + len);
+ 	ret = nor->params->locking_ops->unlock(nor, ofs, len);
++	spi_nor_check_set_addr_width(nor, 0);
+ 
+ 	spi_nor_unlock_and_unprep(nor);
+ 	return ret;
+@@ -1902,7 +1928,9 @@ static int spi_nor_is_locked(struct mtd_
+ 	if (ret)
+ 		return ret;
+ 
++	spi_nor_check_set_addr_width(nor, ofs + len);
+ 	ret = nor->params->locking_ops->is_locked(nor, ofs, len);
++	spi_nor_check_set_addr_width(nor, 0);
+ 
+ 	spi_nor_unlock_and_unprep(nor);
+ 	return ret;
 --- a/drivers/mtd/spi-nor/core.h
 +++ b/drivers/mtd/spi-nor/core.h
 @@ -400,6 +400,7 @@ extern const struct spi_nor_manufacturer
- extern const struct spi_nor_manufacturer spi_nor_xmc;
- extern const struct spi_nor_manufacturer spi_nor_xtx;
- 
+ void spi_nor_spimem_setup_op(const struct spi_nor *nor,
+ 			     struct spi_mem_op *op,
+ 			     const enum spi_nor_protocol proto);
 +int spi_nor_check_set_addr_width(struct spi_nor *nor, loff_t addr);
  int spi_nor_write_enable(struct spi_nor *nor);
  int spi_nor_write_disable(struct spi_nor *nor);

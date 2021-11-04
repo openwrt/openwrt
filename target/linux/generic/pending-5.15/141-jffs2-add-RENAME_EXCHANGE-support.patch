@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 @@ -851,6 +864,12 @@ static int jffs2_rename (struct inode *o
  	if (flags & RENAME_WHITEOUT)
  		/* Replace with whiteout */
- 		ret = jffs2_whiteout(old_dir_i, old_dentry);
+ 		ret = jffs2_whiteout(mnt_userns, old_dir_i, old_dentry);
 +	else if (flags & RENAME_EXCHANGE)
 +		/* Replace the original */
 +		ret = jffs2_do_link(c, JFFS2_INODE_INFO(old_dir_i),

@@ -50,14 +50,23 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	if (err)
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -241,8 +241,10 @@ void bcma_prepare_core(struct bcma_bus *
+@@ -236,13 +236,17 @@ EXPORT_SYMBOL(bcma_core_irq);
+ 
+ void bcma_prepare_core(struct bcma_bus *bus, struct bcma_device *core)
+ {
+-	device_initialize(&core->dev);
++	struct device *dev = &core->dev;
++
++	device_initialize(dev);
+ 	core->dev.release = bcma_release_core_dev;
  	core->dev.bus = &bcma_bus_type;
- 	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
+-	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
++	dev_set_name(dev, "bcma%d:%d", bus->num, core->core_index);
  	core->dev.parent = bus->dev;
 -	if (bus->dev)
 +	if (bus->dev) {
  		bcma_of_fill_device(bus->dev, core);
-+		dma_coerce_mask_and_coherent(&core->dev, bus->dev->coherent_dma_mask);
++		dma_coerce_mask_and_coherent(dev, bus->dev->coherent_dma_mask);
 +	}
  
  	switch (bus->hosttype) {
