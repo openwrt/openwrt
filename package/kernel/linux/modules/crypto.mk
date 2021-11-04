@@ -447,13 +447,23 @@ endef
 $(eval $(call KernelPackage,crypto-kpp))
 
 
+define KernelPackage/crypto-lib-blake2s-generic
+  TITLE:=BLAKE2s hash function library generic
+  DEPENDS:=@(!CONFIG_arm&&!TARGET_x86)
+  KCONFIG:=CONFIG_CRYPTO_LIB_BLAKE2S_GENERIC
+  HIDDEN:=1
+  FILES:= $(LINUX_DIR)/lib/crypto/libblake2s-generic.ko
+  $(call AddDepends/crypto,+PACKAGE_kmod-crypto-hash:kmod-crypto-hash)
+endef
+
+$(eval $(call KernelPackage,crypto-lib-blake2s-generic))
+
 define KernelPackage/crypto-lib-blake2s
   TITLE:=BLAKE2s hash function library
+  DEPENDS:=+kmod-crypto-lib-blake2s-generic
   KCONFIG:=CONFIG_CRYPTO_LIB_BLAKE2S
   HIDDEN:=1
-  FILES:= \
-	$(LINUX_DIR)/lib/crypto/libblake2s.ko \
-	$(LINUX_DIR)/lib/crypto/libblake2s-generic.ko
+  FILES:= $(LINUX_DIR)/lib/crypto/libblake2s.ko
   $(call AddDepends/crypto,+PACKAGE_kmod-crypto-hash:kmod-crypto-hash)
 endef
 
@@ -465,6 +475,16 @@ define KernelPackage/crypto-lib-blake2s/x86/64
   KCONFIG+=CONFIG_CRYPTO_BLAKE2S_X86
   FILES+=$(LINUX_DIR)/arch/x86/crypto/blake2s-x86_64.ko
 endef
+
+define KernelPackage/crypto-lib-blake2s/arm
+  KCONFIG+=CONFIG_CRYPTO_BLAKE2S_ARM
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/blake2s-arm.ko
+endef
+
+ifdef KernelPackage/crypto-lib-blake2s/$(ARCH)
+  KernelPackage/crypto-lib-blake2s/$(CRYPTO_TARGET)=\
+	  $(KernelPackage/crypto-lib-blake2s/$(ARCH))
+endif
 
 $(eval $(call KernelPackage,crypto-lib-blake2s))
 
@@ -683,7 +703,7 @@ define KernelPackage/crypto-misc
 	CONFIG_CRYPTO_KHAZAD \
 	CONFIG_CRYPTO_SERPENT \
 	CONFIG_CRYPTO_TEA \
-	CONFIG_CRYPTO_TGR192 \
+	CONFIG_CRYPTO_TGR192@lt5.12 \
 	CONFIG_CRYPTO_TWOFISH \
 	CONFIG_CRYPTO_TWOFISH_COMMON \
 	CONFIG_CRYPTO_TWOFISH_586 \
@@ -696,7 +716,7 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/cast6_generic.ko \
 	$(LINUX_DIR)/crypto/khazad.ko \
 	$(LINUX_DIR)/crypto/tea.ko \
-	$(LINUX_DIR)/crypto/tgr192.ko \
+	$(LINUX_DIR)/crypto/tgr192.ko@lt5.12 \
 	$(LINUX_DIR)/crypto/twofish_common.ko \
 	$(LINUX_DIR)/crypto/wp512.ko \
 	$(LINUX_DIR)/crypto/twofish_generic.ko \
@@ -704,7 +724,7 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/blowfish_generic.ko \
 	$(LINUX_DIR)/crypto/serpent_generic.ko
   AUTOLOAD:=$(call AutoLoad,10,anubis camellia_generic cast_common \
-	cast5_generic cast6_generic khazad tea tgr192 twofish_common \
+	cast5_generic cast6_generic khazad tea tgr192@lt5.12 twofish_common \
 	wp512 blowfish_common serpent_generic)
   ifndef CONFIG_TARGET_x86
 	AUTOLOAD+= $(call AutoLoad,10,twofish_generic blowfish_generic)
