@@ -1,6 +1,7 @@
 BPF_DEPENDS := @HAS_BPF_TOOLCHAIN
+LLVM_VER:=
 
-ifneq ($(CONFIG_BPF_TOOLCHAIN_HOST),)
+ifneq ($(CONFIG_USE_LLVM_HOST),)
   BPF_TOOLCHAIN_HOST_PATH:=$(call qstrip,$(CONFIG_BPF_TOOLCHAIN_HOST_PATH))
   ifneq ($(BPF_TOOLCHAIN_HOST_PATH),)
     BPF_PATH:=$(BPF_TOOLCHAIN_HOST_PATH)/bin:$(PATH)
@@ -9,9 +10,12 @@ ifneq ($(CONFIG_BPF_TOOLCHAIN_HOST),)
   endif
   CLANG:=$(firstword $(shell PATH='$(BPF_PATH)' which clang clang-13 clang-12 clang-11))
   LLVM_VER:=$(subst clang,,$(notdir $(CLANG)))
-else
+endif
+ifneq ($(CONFIG_USE_LLVM_PREBUILT),)
+  CLANG:=$(TOPDIR)/llvm-bpf/bin/clang
+endif
+ifneq ($(CONFIG_USE_LLVM_BUILD),)
   CLANG:=$(STAGING_DIR_HOST)/llvm-bpf/bin/clang
-  LLVM_VER:=
 endif
 
 LLVM_PATH:=$(dir $(CLANG))

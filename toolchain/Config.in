@@ -41,10 +41,16 @@ menuconfig TARGET_OPTIONS
 	choice BPF_TOOLCHAIN
 		prompt "BPF toolchain" if DEVEL
 		default BPF_TOOLCHAIN_BUILD_LLVM if BUILDBOT
+		default BPF_TOOLCHAIN_PREBUILT if HAS_PREBUILT_LLVM_TOOLCHAIN
 		default BPF_TOOLCHAIN_NONE
 
 		config BPF_TOOLCHAIN_NONE
 			bool "None"
+
+		config BPF_TOOLCHAIN_PREBUILT
+			bool "Use prebuilt LLVM toolchain"
+			depends on HAS_PREBUILT_LLVM_TOOLCHAIN
+			select USE_LLVM_PREBUILT
 
 		config BPF_TOOLCHAIN_HOST
 			select USE_LLVM_HOST
@@ -298,8 +304,16 @@ config GDB_PYTHON
 config HAS_BPF_TOOLCHAIN
 	bool
 
+config HAS_PREBUILT_LLVM_TOOLCHAIN
+	def_bool $(shell, [ -f llvm-bpf/.llvm-version ] && echo y || echo n)
+
 config USE_LLVM_HOST
 	select HAS_BPF_TOOLCHAIN
+	bool
+
+config USE_LLVM_PREBUILT
+	select HAS_BPF_TOOLCHAIN
+	default y if !DEVEL && !BUILDBOT && HAS_PREBUILT_LLVM_TOOLCHAIN
 	bool
 
 config USE_LLVM_BUILD
