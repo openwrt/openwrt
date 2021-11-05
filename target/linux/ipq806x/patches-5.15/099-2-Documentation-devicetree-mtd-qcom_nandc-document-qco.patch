@@ -9,34 +9,32 @@ read/write confituation to boots partitions.
 
 Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 ---
- Documentation/devicetree/bindings/mtd/qcom_nandc.txt | 11 +++++++++++
+ Documentation/devicetree/bindings/mtd/qcom,nandc.yaml | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
---- a/Documentation/devicetree/bindings/mtd/qcom_nandc.txt
-+++ b/Documentation/devicetree/bindings/mtd/qcom_nandc.txt
-@@ -52,6 +52,15 @@ Optional properties:
- 			be used according to chip requirement and available
- 			OOB size.
- 
-+EBI2 specific properties:
-+- nand-is-boot-medium:	nand contains boot partitions and different ecc configuration
-+			should be used for these partitions.
-+- qcom,boot_pages_size:	should contain the size of the total boot partitions
-+			where the boot layout read/write specific configuration
-+			should be used. The boot layout is considered from the
-+			start of the nand to the value set in this binding.
-+			Only used in combination with 'nand-is-boot-medium'.
+--- a/Documentation/devicetree/bindings/mtd/qcom,nandc.yaml
++++ b/Documentation/devicetree/bindings/mtd/qcom,nandc.yaml
+@@ -77,6 +77,14 @@ Optional properties:
+           description:
+             Must contain the ADM data type CRCI block instance number
+             specified for the NAND controller on the given platform
 +
- Each nandcs device node may optionally contain a 'partitions' sub-node, which
- further contains sub-nodes describing the flash partition mapping. See
- partition.txt for more detail.
-@@ -80,6 +89,9 @@ nand-controller@1ac00000 {
- 		nand-ecc-strength = <4>;
- 		nand-bus-width = <8>;
++        qcom,boot_pages_size:
++          description:
++            Should contain the size of the total boot partitions
++            where the boot layout read/write specific configuration
++            should be used. The boot layout is considered from the
++            start of the nand to the value set in this binding.
++            Only used in combination with 'nand-is-boot-medium'.
  
-+		nand-is-boot-medium;
-+		qcom,boot_pages_size: <0x58a0000>;
+   - if:
+       properties:
+@@ -135,6 +135,9 @@ nand-controller@1ac00000 {
+         nand-ecc-strength = <4>;
+         nand-bus-width = <8>;
+ 
++        nand-is-boot-medium;
++        qcom,boot_pages_size: <0x58a0000>;
 +
- 		partitions {
- 			compatible = "fixed-partitions";
- 			#address-cells = <1>;
+         partitions {
+           compatible = "fixed-partitions";
