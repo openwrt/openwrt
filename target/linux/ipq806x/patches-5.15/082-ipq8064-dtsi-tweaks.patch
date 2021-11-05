@@ -1,33 +1,6 @@
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -20,7 +20,7 @@
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 
--		cpu@0 {
-+		cpu0: cpu@0 {
- 			compatible = "qcom,krait";
- 			enable-method = "qcom,kpss-acc-v1";
- 			device_type = "cpu";
-@@ -30,7 +30,7 @@
- 			qcom,saw = <&saw0>;
- 		};
- 
--		cpu@1 {
-+		cpu1: cpu@1 {
- 			compatible = "qcom,krait";
- 			enable-method = "qcom,kpss-acc-v1";
- 			device_type = "cpu";
-@@ -67,7 +67,7 @@
- 			no-map;
- 		};
- 
--		smem@41000000 {
-+		smem: smem@41000000 {
- 			reg = <0x41000000 0x200000>;
- 			no-map;
- 		};
-@@ -128,6 +128,7 @@
+@@ -352,6 +352,7 @@
  			gpio-ranges = <&qcom_pinmux 0 0 69>;
  			#gpio-cells = <2>;
  			interrupt-controller;
@@ -35,7 +8,7 @@
  			#interrupt-cells = <2>;
  			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
  
-@@ -155,6 +156,7 @@
+@@ -379,6 +380,7 @@
  					function = "pcie3_rst";
  					drive-strength = <12>;
  					bias-disable;
@@ -43,7 +16,40 @@
  				};
  			};
  
-@@ -190,6 +192,7 @@
+@@ -411,12 +413,9 @@
+ 			};
+ 
+ 			nand_pins: nand_pins {
+-				mux {
++				disable {
+ 					pins = "gpio34", "gpio35", "gpio36",
+-					       "gpio37", "gpio38", "gpio39",
+-					       "gpio40", "gpio41", "gpio42",
+-					       "gpio43", "gpio44", "gpio45",
+-					       "gpio46", "gpio47";
++					       "gpio37", "gpio38";
+ 					function = "nand";
+ 					drive-strength = <10>;
+ 					bias-disable;
+@@ -424,6 +423,8 @@
+ 
+ 				pullups {
+ 					pins = "gpio39";
++					function = "nand";
++					drive-strength = <10>;
+ 					bias-pull-up;
+ 				};
+ 
+@@ -431,6 +432,8 @@
+ 					pins = "gpio40", "gpio41", "gpio42",
+ 					       "gpio43", "gpio44", "gpio45",
+ 					       "gpio46", "gpio47";
++					function = "nand";
++					drive-strength = <10>;
+ 					bias-bus-hold;
+ 				};
+ 			};
+@@ -439,6 +442,7 @@
  		intc: interrupt-controller@2000000 {
  			compatible = "qcom,msm-qgic2";
  			interrupt-controller;
@@ -51,7 +57,7 @@
  			#interrupt-cells = <3>;
  			reg = <0x02000000 0x1000>,
  			      <0x02002000 0x1000>;
-@@ -219,21 +222,23 @@
+@@ -468,11 +472,13 @@
  		acc0: clock-controller@2088000 {
  			compatible = "qcom,kpss-acc-v1";
  			reg = <0x02088000 0x1000>, <0x02008000 0x1000>;
@@ -62,6 +68,10 @@
  			compatible = "qcom,kpss-acc-v1";
  			reg = <0x02098000 0x1000>, <0x02008000 0x1000>;
 +			clock-output-names = "acpu1_aux";
+ 		};
+ 
+ 		adm_dma: dma-controller@18300000 {
+@@ -496,13 +502,13 @@
  		};
  
  		saw0: regulator@2089000 {
@@ -77,16 +87,7 @@
  			reg = <0x02099000 0x1000>, <0x02009000 0x1000>;
  			regulator;
  		};
-@@ -251,7 +256,7 @@
- 
- 			syscon-tcsr = <&tcsr>;
- 
--			serial@12490000 {
-+			gsbi2_serial: serial@12490000 {
- 				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
- 				reg = <0x12490000 0x1000>,
- 				      <0x12480000 0x1000>;
-@@ -261,7 +266,7 @@
+@@ -533,7 +533,7 @@
  				status = "disabled";
  			};
  
@@ -95,35 +96,20 @@
  				compatible = "qcom,i2c-qup-v1.1.1";
  				reg = <0x124a0000 0x1000>;
  				interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>;
-@@ -326,7 +331,7 @@
+@@ -676,9 +682,6 @@
+ 			compatible = "qcom,ipq806x-nand";
+ 			reg = <0x1ac00000 0x800>;
  
- 			syscon-tcsr = <&tcsr>;
- 
--			serial@1a240000 {
-+			gsbi5_serial: serial@1a240000 {
- 				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
- 				reg = <0x1a240000 0x1000>,
- 				      <0x1a200000 0x1000>;
-@@ -397,7 +402,7 @@
- 			status = "disabled";
- 		};
- 
--		sata@29000000 {
-+		sata: sata@29000000 {
- 			compatible = "qcom,ipq806x-ahci", "generic-ahci";
- 			reg = <0x29000000 0x180>;
- 
-@@ -430,13 +435,35 @@
- 			reg = <0x00700000 0x1000>;
- 			#address-cells = <1>;
- 			#size-cells = <1>;
-+
-+			tsens_calib: calib@400 {
-+				reg = <0x400 0xb>;
-+			};
-+			tsens_backup: backup@410 {
-+				reg = <0x410 0xb>;
-+			};
+-			pinctrl-0 = <&nand_pins>;
+-			pinctrl-names = "default";
+-
+ 			clocks = <&gcc EBI2_CLK>,
+ 				 <&gcc EBI2_AON_CLK>;
+ 			clock-names = "core", "aon";
+@@ -733,10 +736,13 @@
+ 			tsens_calib_backup: calib_backup@410 {
+ 				reg = <0x410 0xb>;
+ 			};
 +			speedbin_efuse: speedbin@0c0 {
 +				reg = <0x0c0 0x4>;
 +			};
@@ -135,22 +121,53 @@
  			reg = <0x00900000 0x4000>;
  			#clock-cells = <1>;
  			#reset-cells = <1>;
-+			#power-domain-cells = <1>;
+@@ -768,10 +774,45 @@
+ 			clocks = <&gcc RPM_MSG_RAM_H_CLK>;
+ 			clock-names = "ram";
+ 
++			#address-cells = <1>;
++			#size-cells = <0>;
 +
-+			tsens: thermal-sensor@900000 {
-+				compatible = "qcom,ipq8064-tsens";
+ 			rpmcc: clock-controller {
+ 				compatible = "qcom,rpmcc-ipq806x", "qcom,rpmcc";
+ 				#clock-cells = <1>;
+ 			};
 +
-+				nvmem-cells = <&tsens_calib>, <&tsens_backup>;
-+				nvmem-cell-names = "calib", "calib_backup";
-+				interrupts = <GIC_SPI 178 IRQ_TYPE_LEVEL_HIGH>;
-+				interrupt-names = "uplow";
-+				#thermal-sensor-cells = <1>;
-+				#qcom,sensors = <11>;
++			regulators {
++				compatible = "qcom,rpm-smb208-regulators";
++
++				smb208_s1a: s1a {
++					regulator-min-microvolt = <1050000>;
++					regulator-max-microvolt = <1150000>;
++
++					qcom,switch-mode-frequency = <1200000>;
++				};
++
++				smb208_s1b: s1b {
++					regulator-min-microvolt = <1050000>;
++					regulator-max-microvolt = <1150000>;
++
++					qcom,switch-mode-frequency = <1200000>;
++				};
++
++				smb208_s2a: s2a {
++					regulator-min-microvolt = < 800000>;
++					regulator-max-microvolt = <1250000>;
++
++					qcom,switch-mode-frequency = <1200000>;
++				};
++
++				smb208_s2b: s2b {
++					regulator-min-microvolt = < 800000>;
++					regulator-max-microvolt = <1250000>;
++
++					qcom,switch-mode-frequency = <1200000>;
++				};
 +			};
  		};
  
  		tcsr: syscon@1a400000 {
-@@ -622,7 +649,7 @@
+@@ -965,7 +1006,7 @@
  
  		gmac0: ethernet@37000000 {
  			device_type = "network";
@@ -159,7 +176,7 @@
  			reg = <0x37000000 0x200000>;
  			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL_HIGH>;
  			interrupt-names = "macirq";
-@@ -645,7 +672,7 @@
+@@ -989,7 +1030,7 @@
  
  		gmac1: ethernet@37200000 {
  			device_type = "network";
@@ -168,7 +185,7 @@
  			reg = <0x37200000 0x200000>;
  			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL_HIGH>;
  			interrupt-names = "macirq";
-@@ -668,7 +695,7 @@
+@@ -1013,7 +1054,7 @@
  
  		gmac2: ethernet@37400000 {
  			device_type = "network";
@@ -177,7 +194,7 @@
  			reg = <0x37400000 0x200000>;
  			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH>;
  			interrupt-names = "macirq";
-@@ -691,7 +718,7 @@
+@@ -1037,7 +1078,7 @@
  
  		gmac3: ethernet@37600000 {
  			device_type = "network";
@@ -186,24 +203,34 @@
  			reg = <0x37600000 0x200000>;
  			interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>;
  			interrupt-names = "macirq";
-@@ -740,13 +767,13 @@
- 			qcom,ee = <0>;
+@@ -1050,8 +1050,6 @@
+ 			clocks = <&gcc USB30_0_UTMI_CLK>;
+ 			clock-names = "ref";
+ 			#phy-cells = <0>;
+-
+-			status = "disabled";
  		};
  
--		amba {
+ 		ss_phy_0: usb3phy@100f8830 {
+@@ -1055,8 +1055,6 @@
+			clocks = <&gcc USB30_0_MASTER_CLK>;
+ 			clock-names = "ref";
+ 			#phy-cells = <0>;
+-
+-			status = "disabled";
+ 		};
+ 
+ 		usb3_0: usb3@100f8800 {
+@@ -1176,7 +1217,7 @@
+ 		};
+ 
+ 		amba: amba {
 -			compatible = "simple-bus";
-+		amba: amba {
 +			compatible = "arm,amba-bus";
  			#address-cells = <1>;
  			#size-cells = <1>;
  			ranges;
- 
--			sdcc@12400000 {
-+			sdcc1: sdcc@12400000 {
- 				status          = "disabled";
- 				compatible      = "arm,pl18x", "arm,primecell";
- 				arm,primecell-periphid = <0x00051180>;
-@@ -760,13 +787,12 @@
+@@ -1195,7 +1236,6 @@
  				non-removable;
  				cap-sd-highspeed;
  				cap-mmc-highspeed;
@@ -211,10 +238,3 @@
  				vmmc-supply = <&vsdcc_fixed>;
  				dmas = <&sdcc1bam 2>, <&sdcc1bam 1>;
  				dma-names = "tx", "rx";
- 			};
- 
--			sdcc@12180000 {
-+			sdcc3: sdcc@12180000 {
- 				compatible      = "arm,pl18x", "arm,primecell";
- 				arm,primecell-periphid = <0x00051180>;
- 				status          = "disabled";
