@@ -906,7 +906,6 @@ define Device/zyxel_nbg6617
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k | check-size $$$$(ROOTFS_SIZE) | zyxel-ras-image separate-kernel
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | check-size $$$$(ROOTFS_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
-	DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_nbg6617
 
