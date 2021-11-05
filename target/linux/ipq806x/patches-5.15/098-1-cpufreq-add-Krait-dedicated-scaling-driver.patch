@@ -75,7 +75,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  ##################################################################################
 --- /dev/null
 +++ b/drivers/cpufreq/qcom-cpufreq-krait.c
-@@ -0,0 +1,603 @@
+@@ -0,0 +1,629 @@
 +// SPDX-License-Identifier: GPL-2.0
 +
 +#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
@@ -96,11 +96,13 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +
 +#include "cpufreq-dt.h"
 +
-+static struct platform_device *l2_pdev;
++static struct device *l2_dev;
++static struct mutex lock;
 +
 +struct private_data {
 +	struct opp_table *opp_table;
 +	struct device *cpu_dev;
++	struct device *l2_dev;
 +	const char *reg_name;
 +	bool have_static_opps;
 +};
@@ -114,8 +116,10 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +	unsigned int level;
 +	int cpu, ret;
 +
-+	if (l2_pdev) {
++	if (l2_dev) {
 +		int policy_cpu = policy->cpu;
++
++		mutex_lock(&lock);
 +
 +		/* find the max freq across all core */
 +		for_each_present_cpu(cpu)
@@ -127,9 +131,10 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +		opp = dev_pm_opp_find_freq_exact(priv->cpu_dev, target_freq,
 +						 true);
 +		if (IS_ERR(opp)) {
-+			dev_err(&l2_pdev->dev, "failed to find OPP for %ld\n",
++			dev_err(l2_dev, "failed to find OPP for %ld\n",
 +				target_freq);
-+			return PTR_ERR(opp);
++			ret = PTR_ERR(opp);
++			goto l2_scale_fail;
 +		}
 +		level = dev_pm_opp_get_level(opp);
 +		dev_pm_opp_put(opp);
@@ -143,21 +148,25 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +		 */
 +		if (unlikely(index == 0 && level != 0)) {
 +			dev_err(priv->cpu_dev, "Krait CPU can't operate at idle freq with L2 at 1GHz");
-+			return -EINVAL;
++			ret = -EINVAL;
++			goto l2_scale_fail;
 +		}
 +
-+		opp = dev_pm_opp_find_level_exact(&l2_pdev->dev, level);
++		opp = dev_pm_opp_find_level_exact(l2_dev, level);
 +		if (IS_ERR(opp)) {
-+			dev_err(&l2_pdev->dev,
++			dev_err(l2_dev,
 +				"failed to find level OPP for %d\n", level);
-+			return PTR_ERR(opp);
++			ret = PTR_ERR(opp);
++			goto l2_scale_fail;
 +		}
 +		target_freq = dev_pm_opp_get_freq(opp);
 +		dev_pm_opp_put(opp);
 +
-+		ret = dev_pm_opp_set_rate(&l2_pdev->dev, target_freq);
++		ret = dev_pm_opp_set_rate(l2_dev, target_freq);
 +		if (ret)
-+			return ret;
++			goto l2_scale_fail;
++
++		mutex_unlock(&lock);
 +	}
 +
 +	ret = dev_pm_opp_set_rate(priv->cpu_dev, freq * 1000);
@@ -168,6 +177,10 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +			    policy->cpuinfo.max_freq);
 +
 +	return 0;
++l2_scale_fail:
++	mutex_unlock(&lock);
++
++	return ret;
 +}
 +
 +/*
@@ -346,7 +359,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +	 * give platform code chance to provide it for us.
 +	 */
 +	ret = dev_pm_opp_get_opp_count(cpu_dev);
-+	if (ret <= 0) {
++	if (ret < 0) {
 +		dev_dbg(cpu_dev, "OPP table is not ready, deferring probe\n");
 +		ret = -EPROBE_DEFER;
 +		goto out_free_opp;
@@ -549,6 +562,19 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +	dev_pm_opp_put(opp);
 +
 +	/*
++	 * Check if we have at least opp-level 1, 0 should always be set to
++	 * the idle freq
++	 */
++	opp = dev_pm_opp_find_level_exact(dev, 1);
++	if (IS_ERR(opp)) {
++		ret = PTR_ERR(opp);
++		dev_err(dev,
++			"Invalid configuration found of l2 opp. Can't find opp-level 1");
++		goto invalid_conf;
++	}
++	dev_pm_opp_put(opp);
++
++	/*
 +	 * Check opp-level configuration
 +	 * At least 2 level must be set or the cache will always be scaled
 +	 * the idle freq causing some performance problem
@@ -561,17 +587,12 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +		return -ENODEV;
 +	}
 +
-+	/*
-+	 * Check if we have at least opp-level 1, 0 should always be set to
-+	 * the idle freq
-+	 */
-+	opp = dev_pm_opp_find_level_exact(dev, 1);
-+	if (IS_ERR(opp)) {
-+		dev_err(dev,
-+			"Invalid configuration found of l2 opp. Can't find opp-level 1");
++	/* With opp error assume cpufreq still has to be registred. Defer probe. */
++	ret = dev_pm_opp_get_opp_count(cpu_dev);
++	if (ret < 0) {
++		ret = -EPROBE_DEFER;
 +		goto invalid_conf;
 +	}
-+	dev_pm_opp_put(opp);
 +
 +	/*
 +	 * Check if we have at least opp-level 1 in the cpu opp, 0 should always
@@ -579,16 +600,20 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +	 */
 +	opp = dev_pm_opp_find_level_exact(cpu_dev, 1);
 +	if (IS_ERR(opp)) {
-+		dev_err(dev,
-+			"Invalid configuration found of cpu opp. Can't find opp-level 1");
++		ret = PTR_ERR(opp);
++		if (ret != -EPROBE_DEFER)
++			dev_err(dev,
++				"Invalid configuration found of cpu opp. Can't find opp-level 1");
 +		goto invalid_conf;
 +	}
 +	dev_pm_opp_put(opp);
 +
 +	platform_set_drvdata(pdev, data);
 +
++	mutex_init(&lock);
++
 +	/* The l2 scaling is enabled by linking the cpufreq driver */
-+	l2_pdev = pdev;
++	l2_dev = dev;
 +
 +	return 0;
 +
@@ -597,7 +622,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +	dev_pm_opp_put_regulators(table);
 +	dev_pm_opp_unregister_set_opp_helper(table);
 +
-+	return -EINVAL;
++	return ret;
 +};
 +
 +static int krait_cache_remove(struct platform_device *pdev)
@@ -673,6 +698,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +	.probe		= krait_cpufreq_probe,
 +	.remove		= krait_cpufreq_remove,
 +};
++
 +module_platform_driver(krait_cpufreq_platdrv);
 +
 +MODULE_ALIAS("platform:krait-cpufreq");
