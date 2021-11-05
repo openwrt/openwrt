@@ -228,7 +228,7 @@
  #include "cpufreq-dt.h"
  
 @@ -68,6 +69,13 @@ static int set_target(struct cpufreq_pol
- 			return -EINVAL;
+ 			goto l2_scale_fail;
  		}
  
 +		/*
@@ -236,8 +236,8 @@
 +		 */
 +		ret = scale_fabrics(target_freq);
 +		if (ret)
-+			return ret;
++			goto l2_scale_fail;
 +
- 		opp = dev_pm_opp_find_level_exact(&l2_pdev->dev, level);
+ 		opp = dev_pm_opp_find_level_exact(l2_dev, level);
  		if (IS_ERR(opp)) {
- 			dev_err(&l2_pdev->dev,
+ 			dev_err(l2_dev,
