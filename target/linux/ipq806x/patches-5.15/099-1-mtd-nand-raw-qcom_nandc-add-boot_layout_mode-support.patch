@@ -52,10 +52,10 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  };
  
  /*
-@@ -460,12 +475,14 @@ struct qcom_nand_host {
-  * @ecc_modes - ecc mode for NAND
+@@ -475,13 +490,15 @@ struct qcom_nand_host {
   * @is_bam - whether NAND controller is using BAM
   * @is_qpic - whether NAND CTRL is part of qpic IP
+  * @qpic_v2 - flag to indicate QPIC IP version 2
 + * @has_boot_pages - whether NAND has different ecc settings for boot pages
   * @dev_cmd_reg_start - NAND_DEV_CMD_* registers starting offset
   */
@@ -63,6 +63,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	u32 ecc_modes;
  	bool is_bam;
  	bool is_qpic;
+ 	bool qpic_v2;
 +	bool has_boot_pages;
  	u32 dev_cmd_reg_start;
  };
@@ -71,8 +72,8 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	data_size1 = mtd->writesize - host->cw_size * (ecc->steps - 1);
  	oob_size1 = host->bbm_size;
  
--	if (cw == (ecc->steps - 1)) {
-+	if (cw == (ecc->steps - 1) && !host->boot_pages_conf) {
+-	if (qcom_nandc_is_last_cw(ecc, cw)) {
++	if (qcom_nandc_is_last_cw(ecc, cw) && !host->boot_pages_conf) {
  		data_size2 = ecc->size - data_size1 -
  			     ((ecc->steps - 1) * 4);
  		oob_size2 = (ecc->steps * 4) + host->ecc_bytes_hw +
@@ -80,8 +81,8 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	}
  
  	for_each_set_bit(cw, &uncorrectable_cws, ecc->steps) {
--		if (cw == (ecc->steps - 1)) {
-+		if (cw == (ecc->steps - 1) && !host->boot_pages_conf) {
+-		if (qcom_nandc_is_last_cw(ecc, cw)) {
++		if (qcom_nandc_is_last_cw(ecc, cw) && !host->boot_pages_conf) {
  			data_size = ecc->size - ((ecc->steps - 1) * 4);
  			oob_size = (ecc->steps * 4) + host->ecc_bytes_hw;
  		} else {
@@ -89,8 +90,8 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	for (i = 0; i < ecc->steps; i++) {
  		int data_size, oob_size;
  
--		if (i == (ecc->steps - 1)) {
-+		if (i == (ecc->steps - 1) && !host->boot_pages_conf) {
+-		if (qcom_nandc_is_last_cw(ecc, i)) {
++		if (qcom_nandc_is_last_cw(ecc, i) && !host->boot_pages_conf) {
  			data_size = ecc->size - ((ecc->steps - 1) << 2);
  			oob_size = (ecc->steps << 2) + host->ecc_bytes_hw +
  				   host->spare_bytes;
@@ -169,8 +170,8 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	for (i = 0; i < ecc->steps; i++) {
  		int data_size, oob_size;
  
--		if (i == (ecc->steps - 1)) {
-+		if (i == (ecc->steps - 1) && !host->boot_pages_conf) {
+-		if (qcom_nandc_is_last_cw(ecc, i)) {
++		if (qcom_nandc_is_last_cw(ecc, i) && !host->boot_pages_conf) {
  			data_size = ecc->size - ((ecc->steps - 1) << 2);
  			oob_size = (ecc->steps << 2) + host->ecc_bytes_hw +
  				   host->spare_bytes;
@@ -188,8 +189,8 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  		data_size1 = mtd->writesize - host->cw_size * (ecc->steps - 1);
  		oob_size1 = host->bbm_size;
  
--		if (i == (ecc->steps - 1)) {
-+		if (i == (ecc->steps - 1) && !host->boot_pages_conf) {
+-		if (qcom_nandc_is_last_cw(ecc, i)) {
++		if (qcom_nandc_is_last_cw(ecc, i) && !host->boot_pages_conf) {
  			data_size2 = ecc->size - data_size1 -
  				     ((ecc->steps - 1) << 2);
  			oob_size2 = (ecc->steps << 2) + host->ecc_bytes_hw +
