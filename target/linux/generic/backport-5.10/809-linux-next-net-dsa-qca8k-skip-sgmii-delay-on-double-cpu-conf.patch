@@ -1,0 +1,62 @@
+From b4aafb93eb6063adad1e1d5143a990be8aefebcd Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Fri, 5 Nov 2021 23:16:52 +0100
+Subject: [PATCH 02/18] net: dsa: qca8k: skip sgmii delay on double cpu conf
+
+With a dual cpu configuration rgmii+sgmii, skip configuring sgmii delay
+as it does cause no traffic. Configure only rgmii delay in this
+configuration in this configuration.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ drivers/net/dsa/qca8k.c | 12 ++++++++++--
+ drivers/net/dsa/qca8k.h |  1 +
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index a429c9750add..4c368817a914 100644
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -1041,8 +1041,13 @@ qca8k_parse_port_config(struct qca8k_priv *priv)
+ 			if (mode == PHY_INTERFACE_MODE_RGMII ||
+ 			    mode == PHY_INTERFACE_MODE_RGMII_ID ||
+ 			    mode == PHY_INTERFACE_MODE_RGMII_TXID ||
+-			    mode == PHY_INTERFACE_MODE_RGMII_RXID)
++			    mode == PHY_INTERFACE_MODE_RGMII_RXID) {
++				if (priv->ports_config.rgmii_tx_delay[cpu_port_index] ||
++				    priv->ports_config.rgmii_rx_delay[cpu_port_index])
++					priv->ports_config.skip_sgmii_delay = true;
++
+ 				break;
++			}
+ 
+ 			if (of_property_read_bool(port_dn, "qca,sgmii-txclk-falling-edge"))
+ 				priv->ports_config.sgmii_tx_clk_falling_edge = true;
+@@ -1457,8 +1462,11 @@ qca8k_phylink_mac_config(struct dsa_switch *ds, int port, unsigned int mode,
+ 
+ 		/* From original code is reported port instability as SGMII also
+ 		 * require delay set. Apply advised values here or take them from DT.
++		 * In dual CPU configuration, apply only delay to rgmii as applying
++		 * it also to the SGMII line cause no traffic to the entire switch.
+ 		 */
+-		if (state->interface == PHY_INTERFACE_MODE_SGMII)
++		if (state->interface == PHY_INTERFACE_MODE_SGMII &&
++		    !priv->ports_config.skip_sgmii_delay)
+ 			qca8k_mac_config_setup_internal_delay(priv, cpu_port_index, reg);
+ 
+ 		break;
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index 128b8cf85e08..57c4c0d93558 100644
+--- a/drivers/net/dsa/qca8k.h
++++ b/drivers/net/dsa/qca8k.h
+@@ -275,6 +275,7 @@ struct qca8k_ports_config {
+ 	bool sgmii_rx_clk_falling_edge;
+ 	bool sgmii_tx_clk_falling_edge;
+ 	bool sgmii_enable_pll;
++	bool skip_sgmii_delay;
+ 	u8 rgmii_rx_delay[QCA8K_NUM_CPU_PORTS]; /* 0: CPU port0, 1: CPU port6 */
+ 	u8 rgmii_tx_delay[QCA8K_NUM_CPU_PORTS]; /* 0: CPU port0, 1: CPU port6 */
+ };
+-- 
+2.32.0
+
