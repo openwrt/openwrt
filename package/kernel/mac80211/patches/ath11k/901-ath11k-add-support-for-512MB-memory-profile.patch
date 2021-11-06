@@ -34,7 +34,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	  Use limits for the 512MB memory size instead of 1GB.
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -746,6 +746,7 @@ struct ath11k_base {
+@@ -750,6 +750,7 @@ struct ath11k_base {
  	struct timer_list mon_reap_timer;
  
  	struct completion htc_suspend;
@@ -70,7 +70,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #define DP_RX_BUFFER_SIZE	2048
 --- a/drivers/net/wireless/ath/ath11k/dp_tx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
-@@ -262,6 +262,7 @@ tcl_ring_sel:
+@@ -270,6 +270,7 @@ tcl_ring_sel:
  			skb->data, skb->len);
  
  	atomic_inc(&ar->dp.num_tx_pending);
@@ -78,7 +78,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
  	return 0;
  
-@@ -308,6 +309,7 @@ static void ath11k_dp_tx_free_txbuf(stru
+@@ -316,6 +317,7 @@ static void ath11k_dp_tx_free_txbuf(stru
  	ar = ab->pdevs[mac_id].ar;
  	if (atomic_dec_and_test(&ar->dp.num_tx_pending))
  		wake_up(&ar->dp.tx_empty_waitq);
@@ -86,7 +86,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  }
  
  static void
-@@ -339,6 +341,7 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
+@@ -347,6 +349,7 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
  
  	if (atomic_dec_and_test(&ar->dp.num_tx_pending))
  		wake_up(&ar->dp.tx_empty_waitq);
@@ -94,7 +94,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
  	dma_unmap_single(ab->dev, skb_cb->paddr, msdu->len, DMA_TO_DEVICE);
  
-@@ -600,6 +603,7 @@ void ath11k_dp_tx_completion_handler(str
+@@ -608,6 +611,7 @@ void ath11k_dp_tx_completion_handler(str
  			wake_up(&ar->dp.tx_empty_waitq);
  
  		ath11k_dp_tx_complete_msdu(ar, msdu, &ts);
