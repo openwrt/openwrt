@@ -933,7 +933,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
 --- a/drivers/net/ethernet/microchip/lan743x_main.c
 +++ b/drivers/net/ethernet/microchip/lan743x_main.c
-@@ -2835,7 +2835,6 @@ static int lan743x_pcidev_probe(struct p
+@@ -2837,7 +2837,6 @@ static int lan743x_pcidev_probe(struct p
  {
  	struct lan743x_adapter *adapter = NULL;
  	struct net_device *netdev = NULL;
@@ -941,7 +941,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int ret = -ENODEV;
  
  	netdev = devm_alloc_etherdev(&pdev->dev,
-@@ -2852,9 +2851,7 @@ static int lan743x_pcidev_probe(struct p
+@@ -2854,9 +2853,7 @@ static int lan743x_pcidev_probe(struct p
  			      NETIF_MSG_IFDOWN | NETIF_MSG_TX_QUEUED;
  	netdev->max_mtu = LAN743X_MAX_FRAME_SIZE;
  
