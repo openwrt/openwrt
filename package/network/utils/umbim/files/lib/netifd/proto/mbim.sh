@@ -203,18 +203,29 @@ _proto_mbim_setup() {
 	[ -z "$dhcpv6" ] && dhcpv6=1
 
 	[ "$iptype" != "ipv6" ] && {
+		ipv4address=$(_proto_mbim_get_field ipv4address "$mbimconfig")
 		if [ -n "$ipv4address" ]; then
 			json_init
 			json_add_string name "${interface}_4"
 			json_add_string ifname "@$interface"
 			json_add_string proto "static"
+
 			json_add_array ipaddr
-			json_add_string "" "$ipv4address"
+			for address in $ipv4address; do
+				json_add_string "" "$address"
+			done
 			json_close_array
-			json_add_string gateway "$ipv4gateway"
-			json_add_array dns
-			[ "$peerdns" = 0 ] || json_add_string "" "$ipv4dnsserver"
-			json_close_array
+
+			json_add_string gateway $(_proto_mbim_get_field ipv4gateway "$mbimconfig")
+
+			[ "$peerdns" = 0 ] || {
+				json_add_array dns
+				for server in $(_proto_mbim_get_field ipv4dnsserver "$mbimconfig"); do
+					json_add_string "" "$server"
+				done
+				json_close_array
+			}
+
 			proto_add_dynamic_defaults
 			[ -n "$zone" ] && json_add_string zone "$zone"
 			[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
@@ -235,18 +246,29 @@ _proto_mbim_setup() {
 	}
 
 	[ "$iptype" != "ipv4" ] && {
+		ipv6address=$(_proto_mbim_get_field ipv6address "$mbimconfig")
 		if [ -n "$ipv6address" ]; then
 			json_init
 			json_add_string name "${interface}_6"
 			json_add_string ifname "@$interface"
 			json_add_string proto "static"
+
 			json_add_array ip6addr
-			json_add_string "" "$ipv6address"
+			for address in $ipv6address; do
+				json_add_string "" "$address"
+			done
 			json_close_array
-			json_add_string ip6gw "$ipv6gateway"
-			json_add_array dns
-			[ "$peerdns" = 0 ] || json_add_string "" "$ipv6dnsserver"
-			json_close_array
+
+			json_add_string ip6gw $(_proto_mbim_get_field ipv6gateway "$mbimconfig")
+
+			[ "$peerdns" = 0 ] || {
+				json_add_array dns
+				for server in $(_proto_mbim_get_field ipv6dnsserver "$mbimconfig"); do
+					json_add_string "" "$server"
+				done
+				json_close_array
+			}
+
 			proto_add_dynamic_defaults
 			[ -n "$zone" ] && json_add_string zone "$zone"
 			[ -n "$ip6table" ] && json_add_string ip6table "$ip6table"
