@@ -258,6 +258,12 @@ _proto_mbim_setup() {
 			done
 			json_close_array
 
+			json_add_array ip6prefix
+			for address in $ipv6address; do
+				json_add_string "" "$address"
+			done
+			json_close_array
+
 			json_add_string ip6gw $(_proto_mbim_get_field ipv6gateway "$mbimconfig")
 
 			[ "$peerdns" = 0 ] || {
