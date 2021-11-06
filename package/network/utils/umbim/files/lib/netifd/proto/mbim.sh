@@ -203,11 +203,11 @@ _proto_mbim_setup() {
 	[ -z "$dhcpv6" ] && dhcpv6=1
 
 	[ "$iptype" != "ipv6" ] && {
+		json_init
+		json_add_string name "${interface}_4"
+		json_add_string ifname "@$interface"
 		ipv4address=$(_proto_mbim_get_field ipv4address "$mbimconfig")
 		if [ -n "$ipv4address" ]; then
-			json_init
-			json_add_string name "${interface}_4"
-			json_add_string ifname "@$interface"
 			json_add_string proto "static"
 
 			json_add_array ipaddr
@@ -225,32 +225,23 @@ _proto_mbim_setup() {
 				done
 				json_close_array
 			}
-
-			proto_add_dynamic_defaults
-			[ -n "$zone" ] && json_add_string zone "$zone"
-			[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
-			json_close_object
-			ubus call network add_dynamic "$(json_dump)"
 		elif [ "$dhcp" != 0 ]; then
 			echo "mbim[$$]" "Starting DHCP on $ifname"
-			json_init
-			json_add_string name "${interface}_4"
-			json_add_string ifname "@$interface"
 			json_add_string proto "dhcp"
-			proto_add_dynamic_defaults
-			[ -n "$zone" ] && json_add_string zone "$zone"
-			[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
-			json_close_object
-			ubus call network add_dynamic "$(json_dump)"
 		fi
+		proto_add_dynamic_defaults
+		[ -n "$zone" ] && json_add_string zone "$zone"
+		[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
 	}
 
 	[ "$iptype" != "ipv4" ] && {
+		json_init
+		json_add_string name "${interface}_6"
+		json_add_string ifname "@$interface"
 		ipv6address=$(_proto_mbim_get_field ipv6address "$mbimconfig")
 		if [ -n "$ipv6address" ]; then
-			json_init
-			json_add_string name "${interface}_6"
-			json_add_string ifname "@$interface"
 			json_add_string proto "static"
 
 			json_add_array ip6addr
@@ -274,25 +265,16 @@ _proto_mbim_setup() {
 				done
 				json_close_array
 			}
-
-			proto_add_dynamic_defaults
-			[ -n "$zone" ] && json_add_string zone "$zone"
-			[ -n "$ip6table" ] && json_add_string ip6table "$ip6table"
-			json_close_object
-			ubus call network add_dynamic "$(json_dump)"
 		elif [ "$dhcpv6" != 0 ]; then
 			echo "mbim[$$]" "Starting DHCPv6 on $ifname"
-			json_init
-			json_add_string name "${interface}_6"
-			json_add_string ifname "@$interface"
 			json_add_string proto "dhcpv6"
 			json_add_string extendprefix 1
-			proto_add_dynamic_defaults
-			[ -n "$zone" ] && json_add_string zone "$zone"
-			[ -n "$ip6table" ] && json_add_string ip6table "$ip6table"
-			json_close_object
-			ubus call network add_dynamic "$(json_dump)"
 		fi
+		proto_add_dynamic_defaults
+		[ -n "$zone" ] && json_add_string zone "$zone"
+		[ -n "$ip6table" ] && json_add_string ip6table "$ip6table"
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
 	}
 
 	[ -z "$mtu" ] && {
