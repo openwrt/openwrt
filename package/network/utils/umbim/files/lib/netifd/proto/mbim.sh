@@ -193,7 +193,6 @@ _proto_mbim_setup() {
 	echo "mbim[$$]" "Setting up $ifname"
 	local mbimconfig="$(umbim $DBG -n -t $tid -d $device config)"
 	echo "$mbimconfig"
-	eval $(echo "$mbimconfig" | sed 's/: /=/g')
 	tid=$((tid + 1))
 
 	proto_init_update "$ifname" 1
