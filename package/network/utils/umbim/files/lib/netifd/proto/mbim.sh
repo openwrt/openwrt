@@ -26,6 +26,18 @@ proto_mbim_init_config() {
 	proto_config_add_defaults
 }
 
+_proto_mbim_get_field() {
+        local field="$1"
+        shift
+        local mbimconfig="$@"
+        echo "$mbimconfig" | while read -r line; do
+                variable=${line%%:*}
+                [ "$variable" = "$field" ] || continue;
+                value=${line##* }
+                echo -n "$value "
+        done
+}
+
 _proto_mbim_setup() {
 	local interface="$1"
 	local tid=2
