@@ -217,18 +217,19 @@ _proto_mbim_setup() {
 			json_close_array
 
 			json_add_string gateway $(_proto_mbim_get_field ipv4gateway "$mbimconfig")
-
-			[ "$peerdns" = 0 ] || {
-				json_add_array dns
-				for server in $(_proto_mbim_get_field ipv4dnsserver "$mbimconfig"); do
-					json_add_string "" "$server"
-				done
-				json_close_array
-			}
 		elif [ "$dhcp" != 0 ]; then
 			echo "mbim[$$]" "Starting DHCP on $ifname"
 			json_add_string proto "dhcp"
 		fi
+
+		[ "$peerdns" = 0 ] || {
+			json_add_array dns
+			for server in $(_proto_mbim_get_field ipv4dnsserver "$mbimconfig"); do
+				json_add_string "" "$server"
+			done
+			json_close_array
+		}
+
 		proto_add_dynamic_defaults
 		[ -n "$zone" ] && json_add_string zone "$zone"
 		[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
@@ -258,18 +259,20 @@ _proto_mbim_setup() {
 
 			json_add_string ip6gw $(_proto_mbim_get_field ipv6gateway "$mbimconfig")
 
-			[ "$peerdns" = 0 ] || {
-				json_add_array dns
-				for server in $(_proto_mbim_get_field ipv6dnsserver "$mbimconfig"); do
-					json_add_string "" "$server"
-				done
-				json_close_array
-			}
 		elif [ "$dhcpv6" != 0 ]; then
 			echo "mbim[$$]" "Starting DHCPv6 on $ifname"
 			json_add_string proto "dhcpv6"
 			json_add_string extendprefix 1
 		fi
+
+		[ "$peerdns" = 0 ] || {
+			json_add_array dns
+			for server in $(_proto_mbim_get_field ipv6dnsserver "$mbimconfig"); do
+				json_add_string "" "$server"
+			done
+			json_close_array
+		}
+
 		proto_add_dynamic_defaults
 		[ -n "$zone" ] && json_add_string zone "$zone"
 		[ -n "$ip6table" ] && json_add_string ip6table "$ip6table"
