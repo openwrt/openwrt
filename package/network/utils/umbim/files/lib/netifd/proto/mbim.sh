@@ -179,7 +179,9 @@ _proto_mbim_setup() {
 	local zone="$(fw3 -q network "$interface" 2>/dev/null)"
 
 	echo "mbim[$$]" "Setting up $ifname"
-	eval $(umbim $DBG -n -t $tid -d $device config | sed 's/: /=/g')
+	local mbimconfig="$(umbim $DBG -n -t $tid -d $device config)"
+	echo "$mbimconfig"
+	eval $(echo "$mbimconfig" | sed 's/: /=/g')
 	tid=$((tid + 1))
 
 	proto_init_update "$ifname" 1
