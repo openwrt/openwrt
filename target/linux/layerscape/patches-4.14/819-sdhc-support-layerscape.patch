@@ -497,7 +497,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  		.name = "sdhci-esdhc",
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -2152,7 +2152,7 @@ static void sdhci_send_tuning(struct sdh
+@@ -2158,7 +2158,7 @@ static void sdhci_send_tuning(struct sdh
  
  }
  
@@ -506,7 +506,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  {
  	int i;
  
-@@ -2169,13 +2169,13 @@ static void __sdhci_execute_tuning(struc
+@@ -2175,13 +2175,13 @@ static void __sdhci_execute_tuning(struc
  			pr_debug("%s: Tuning timeout, falling back to fixed sampling clock\n",
  				 mmc_hostname(host->mmc));
  			sdhci_abort_tuning(host, opcode);
@@ -522,7 +522,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  			break;
  		}
  
-@@ -2187,6 +2187,7 @@ static void __sdhci_execute_tuning(struc
+@@ -2193,6 +2193,7 @@ static void __sdhci_execute_tuning(struc
  	pr_info("%s: Tuning failed, falling back to fixed sampling clock\n",
  		mmc_hostname(host->mmc));
  	sdhci_reset_tuning(host);
@@ -530,7 +530,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  }
  
  int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
-@@ -2248,7 +2249,7 @@ int sdhci_execute_tuning(struct mmc_host
+@@ -2254,7 +2255,7 @@ int sdhci_execute_tuning(struct mmc_host
  
  	sdhci_start_tuning(host);
  

@@ -1289,7 +1289,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		xhci->quirks |= XHCI_BROKEN_PORT_PED;
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -2016,10 +2016,12 @@ static int finish_td(struct xhci_hcd *xh
+@@ -2022,10 +2022,12 @@ static int finish_td(struct xhci_hcd *xh
  	union xhci_trb *ep_trb, struct xhci_transfer_event *event,
  	struct xhci_virt_ep *ep, int *status)
  {
@@ -1302,7 +1302,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	u32 trb_comp_code;
  	int ep_index;
  
-@@ -2042,14 +2044,30 @@ static int finish_td(struct xhci_hcd *xh
+@@ -2048,14 +2050,30 @@ static int finish_td(struct xhci_hcd *xh
  	if (trb_comp_code == COMP_STALL_ERROR ||
  		xhci_requires_manual_halt_cleanup(xhci, ep_ctx,
  						trb_comp_code)) {
