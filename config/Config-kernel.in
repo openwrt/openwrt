@@ -173,6 +173,7 @@ config KERNEL_KASAN_EXTRA
 CONFIG KERNEL_KASAN_VMALLOC
 	bool "Back mappings in vmalloc space with real shadow memory"
 	depends on KERNEL_KASAN
+	help
 	  By default, the shadow region for vmalloc space is the read-only
 	  zero page. This means that KASAN cannot detect errors involving
 	  vmalloc space.
