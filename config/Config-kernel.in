@@ -170,7 +170,7 @@ config KERNEL_KASAN_EXTRA
 	  compile time.
 	  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81715 has more
 
-CONFIG KERNEL_KASAN_VMALLOC
+config KERNEL_KASAN_VMALLOC
 	bool "Back mappings in vmalloc space with real shadow memory"
 	depends on KERNEL_KASAN
 	help
