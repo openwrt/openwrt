@@ -122,7 +122,7 @@ static void rt5350_tx_dma(struct fe_tx_dma *txd)
 
 static void rt5350_fe_reset(void)
 {
-	fe_reset(RT305X_RESET_FE);
+	fe_reset(RT305X_RESET_FE | RT305X_RESET_ESW);
 }
 
 static struct fe_soc_data rt3050_data = {

@@ -18,7 +18,7 @@
 #include <linux/platform_device.h>
 #include <asm/mach-ralink/ralink_regs.h>
 #include <linux/of_irq.h>
-#include <linux/reset.h>
+
 #include <linux/switch.h>
 
 #include "mtk_eth_soc.h"
@@ -173,7 +173,6 @@
 #define RT5350_ESW_REG_PXTPC(_x)	(0x150 + (4 * _x))
 #define RT5350_EWS_REG_LED_POLARITY	0x168
 #define RT5350_RESET_EPHY		BIT(24)
-#define RT305X_RESET_ESW        BIT(23)
 
 enum {
 	/* Global attributes. */
@@ -792,8 +791,6 @@ static int esw_apply_config(struct switch_dev *dev)
 		esw_set_vmsc(esw, 0, RT305X_ESW_PORTS_ALL);
 	}
 
-	fe_reset(RT5350_RESET_EPHY);
-
 	return 0;
 }
 
@@ -804,6 +801,7 @@ static int esw_reset_switch(struct switch_dev *dev)
 	esw->global_vlan_enable = 0;
 	memset(esw->ports, 0, sizeof(esw->ports));
 	memset(esw->vlans, 0, sizeof(esw->vlans));
+	esw_hw_init(esw);
 
 	return 0;
 }
@@ -1352,8 +1350,6 @@ static int esw_probe(struct platform_device *pdev)
 	struct switch_dev *swdev;
 	struct rt305x_esw *esw;
 	int ret;
-
-	fe_reset(RT305X_RESET_ESW);
 
 	esw = devm_kzalloc(&pdev->dev, sizeof(*esw), GFP_KERNEL);
 	if (!esw)
