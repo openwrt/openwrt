@@ -121,7 +121,7 @@
 #define PSGMII_QSGMII_DRIVE_CONTROL_1			0xb
 #define PSGMII_QSGMII_TX_DRIVER_MASK			GENMASK(7, 4)
 #define PSGMII_MODE_CTRL				0x6d
-#define PSGMII_MODE_CTRL_AZ_WORKAROUND_MASK		GENMASK(3, 0)
+#define PSGMII_MODE_CTRL_AZ_WORKAROUND_MASK		BIT(0)
 #define PSGMII_MMD3_SERDES_CONTROL			0x805a
 
 struct qca807x_gpio_priv {
@@ -780,17 +780,14 @@ static int qca807x_probe(struct phy_device *phydev)
 static int qca807x_psgmii_config(struct phy_device *phydev)
 {
 	struct device_node *node = phydev->mdio.dev.of_node;
-	int psgmii_az, tx_amp, ret = 0;
+	int tx_amp, ret = 0;
 	u32 tx_driver_strength;
 
 	/* Workaround to enable AZ transmitting ability */
-	if (of_property_read_bool(node, "qcom,psgmii-az")) {
-		psgmii_az = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, PSGMII_MODE_CTRL);
-		psgmii_az &= ~PSGMII_MODE_CTRL_AZ_WORKAROUND_MASK;
-		psgmii_az |= FIELD_PREP(PSGMII_MODE_CTRL_AZ_WORKAROUND_MASK, 0xc);
-		ret = phy_write_mmd(phydev, MDIO_MMD_PMAPMD, PSGMII_MODE_CTRL, psgmii_az);
-		psgmii_az = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, PSGMII_MODE_CTRL);
-	}
+	ret = phy_clear_bits_mmd(phydev,
+				 MDIO_MMD_PMAPMD,
+				 PSGMII_MODE_CTRL,
+				 PSGMII_MODE_CTRL_AZ_WORKAROUND_MASK);
 
 	/* PSGMII/QSGMII TX amp set to DT defined value instead of default 600mV */
 	if (!of_property_read_u32(node, "qcom,tx-driver-strength", &tx_driver_strength)) {
