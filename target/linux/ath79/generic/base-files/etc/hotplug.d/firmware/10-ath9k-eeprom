@@ -146,13 +146,7 @@ case "$FIRMWARE" in
 "ath9k-eeprom-pci-0000:00:11.0.bin")
 	case $board in
 	buffalo,wzr-600dhp|\
-	buffalo,wzr-hp-ag300h|\
-	netgear,wndr3700|\
-	netgear,wndr3700-v2|\
-	netgear,wndr3800|\
-	netgear,wndr3800ch|\
-	netgear,wndrmac-v1|\
-	netgear,wndrmac-v2)
+	buffalo,wzr-hp-ag300h)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
 	dlink,dir-825-b1)
@@ -170,13 +164,7 @@ case "$FIRMWARE" in
 "ath9k-eeprom-pci-0000:00:12.0.bin")
 	case $board in
 	buffalo,wzr-600dhp|\
-	buffalo,wzr-hp-ag300h|\
-	netgear,wndr3700|\
-	netgear,wndr3700-v2|\
-	netgear,wndr3800|\
-	netgear,wndr3800ch|\
-	netgear,wndrmac-v1|\
-	netgear,wndrmac-v2)
+	buffalo,wzr-hp-ag300h)
 		caldata_extract "art" 0x5000 0xeb8
 		;;
 	dlink,dir-825-b1)

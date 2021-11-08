@@ -252,10 +252,10 @@ endef
 TARGET_DEVICES += buffalo_wtr-m2133hp
 
 define Device/cellc_rtl30vw
-	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL_SUFFIX := -fit-zImage.itb
 	KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
-	KERNEL_NAME := Image
+	KERNEL = kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
+	KERNEL_NAME := zImage
 	KERNEL_IN_UBI :=
 	IMAGES := nand-factory.bin nand-sysupgrade.bin
 	IMAGE/nand-factory.bin := append-rootfshdr | append-ubi | qsdk-ipq-factory-nand-askey
@@ -308,6 +308,7 @@ define Device/compex_wpj428
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/cpximg-6a04.bin := append-kernel | append-rootfs | pad-rootfs | mkmylofw_32m 0x8A2 3
 	DEVICE_PACKAGES := kmod-gpio-beeper
+	DEFAULT := n
 endef
 TARGET_DEVICES += compex_wpj428
 
@@ -327,6 +328,7 @@ define Device/devolo_magic-2-wifi-next
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := ipq-wifi-devolo_magic-2-wifi-next
+	DEFAULT := n
 endef
 TARGET_DEVICES += devolo_magic-2-wifi-next
 
@@ -435,6 +437,7 @@ define Device/engenius_emr3500
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
 	DEVICE_PACKAGES := ipq-wifi-engenius_emr3500
+	DEFAULT := n
 endef
 TARGET_DEVICES += engenius_emr3500
 
@@ -794,6 +797,7 @@ define Device/qcom_ap-dk01.1-c1
 	IMAGE_SIZE := 26624k
 	$(call Device/FitImage)
 	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata
+	DEFAULT := n
 endef
 TARGET_DEVICES += qcom_ap-dk01.1-c1
 
@@ -810,6 +814,7 @@ define Device/qcom_ap-dk04.1-c1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := ap-dk04.1-c1
+	DEFAULT := n
 endef
 TARGET_DEVICES += qcom_ap-dk04.1-c1
 
@@ -824,6 +829,7 @@ define Device/qxwlan_e2600ac-c1
 	IMAGE_SIZE := 31232k
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
+	DEFAULT := n
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c1
 
@@ -851,6 +857,7 @@ define Device/unielec_u4019-32m
 	KERNEL_SIZE := 4096k
 	IMAGE_SIZE := 31232k
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEFAULT := n
 endef
 TARGET_DEVICES += unielec_u4019-32m
 
@@ -873,6 +880,7 @@ define Device/zyxel_nbg6617
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k | check-size $$$$(ROOTFS_SIZE) | zyxel-ras-image separate-kernel
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | check-size $$$$(ROOTFS_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
+	DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_nbg6617
 

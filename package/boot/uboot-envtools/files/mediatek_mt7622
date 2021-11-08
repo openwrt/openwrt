@@ -22,7 +22,7 @@ bananapi,bpi-r64)
 	export_partdevice rootdev 0
 	case "$rootdev" in
 	mmc*)
-		local envdev=/dev/$(get_partition_by_name $rootdev ubootenv)
+		local envdev=$(find_mmc_part "ubootenv" $rootdev)
 		ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
 		ubootenv_add_uci_config "$envdev" "0x80000" "0x80000" "0x80000" "1"
 		;;
