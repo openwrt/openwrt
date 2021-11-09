@@ -233,6 +233,12 @@ define KernelPackage/mt7921-common
   FILES:= $(PKG_BUILD_DIR)/mt7921/mt7921-common.ko
 endef
 
+define Package/mt7915e-firmware-update
+  CATEGORY:=Kernel modules
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7915e firmware update
+endef
+
 define KernelPackage/mt7921s
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7921s wireless driver
@@ -438,6 +444,13 @@ define KernelPackage/mt7915e/install
 		$(1)/lib/firmware/mediatek
 endef
 
+define Package/mt7915e-firmware-update/install-overlay
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
+	$(INSTALL_DATA) ./files/bin/mt7915/rebb/mt7915_patch_e2_hdr.bin $(1)/lib/firmware/mediatek/mt7915_rom_patch.bin
+	$(INSTALL_DATA) ./files/bin/mt7915/rebb/7915_WACPU_RAM_CODE_release.bin $(1)/lib/firmware/mediatek/mt7915_wa.bin
+	$(INSTALL_DATA) ./files/bin/mt7915/rebb/WIFI_RAM_CODE_7915_E2.bin $(1)/lib/firmware/mediatek/mt7915_wm.bin
+endef
+
 define KernelPackage/mt7921e/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	cp \
@@ -473,6 +486,7 @@ $(eval $(call KernelPackage,mt7663-usb-sdio))
 $(eval $(call KernelPackage,mt7663u))
 $(eval $(call KernelPackage,mt7663s))
 $(eval $(call KernelPackage,mt7915e))
+$(eval $(call BuildPackage,mt7915e-firmware-update))
 $(eval $(call KernelPackage,mt7921-common))
 $(eval $(call KernelPackage,mt7921s))
 $(eval $(call KernelPackage,mt7921e))
