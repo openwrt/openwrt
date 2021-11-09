@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
 
-RAMFS_COPY_BIN="bcm4908img"
+RAMFS_COPY_BIN="bcm4908img expr"
 
 PART_NAME=firmware
 
@@ -129,7 +129,7 @@ platform_calc_new_cferam() {
 	umount $dir
 	rm -fr $dir
 
-	idx=$(((idx + inc) % 1000))
+	idx=$(($(expr $idx + $inc) % 1000))
 
 	echo $(printf "cferam.%03d" $idx)
 }

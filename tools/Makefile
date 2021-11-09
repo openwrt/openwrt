@@ -125,6 +125,9 @@ define PrepareStaging
 	); done
 endef
 
+$(BIN_DIR):
+	mkdir -p $@
+
 # preparatory work
 $(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
 	$(call PrepareStaging,$(STAGING_DIR))
@@ -145,8 +148,8 @@ endif
 
 endif
 
-$(curdir)//prepare = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared
-$(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared
+$(curdir)//prepare = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $(BIN_DIR)
+$(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $(BIN_DIR)
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq

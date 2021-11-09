@@ -114,12 +114,35 @@ config KERNEL_UBSAN_ALIGNMENT
 	  Enabling this option on architectures that support unaligned
 	  accesses may produce a lot of false positives.
 
+config KERNEL_UBSAN_BOUNDS
+	bool "Perform array index bounds checking"
+	depends on KERNEL_UBSAN
+	help
+	  This option enables detection of directly indexed out of bounds array
+	  accesses, where the array size is known at compile time. Note that
+	  this does not protect array overflows via bad calls to the
+	  {str,mem}*cpy() family of functions (that is addressed by
+	  FORTIFY_SOURCE).
+
 config KERNEL_UBSAN_NULL
 	bool "Enable checking of null pointers"
 	depends on KERNEL_UBSAN
 	help
 	  This option enables detection of memory accesses via a
 	  null pointer.
+
+config KERNEL_UBSAN_TRAP
+	bool "On Sanitizer warnings, abort the running kernel code"
+	depends on KERNEL_UBSAN
+	help
+	  Building kernels with Sanitizer features enabled tends to grow the
+	  kernel size by around 5%, due to adding all the debugging text on
+	  failure paths. To avoid this, Sanitizer instrumentation can just
+	  issue a trap. This reduces the kernel size overhead but turns all
+	  warnings (including potentially harmless conditions) into full
+	  exceptions that abort the running kernel code (regardless of context,
+	  locks held, etc), which may destabilize the system. For some system
+	  builders this is an acceptable trade-off.
 
 config KERNEL_KASAN
 	bool "Compile the kernel with KASan: runtime memory debugger"
@@ -147,6 +170,30 @@ config KERNEL_KASAN_EXTRA
 	  compile time.
 	  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81715 has more
 
+config KERNEL_KASAN_VMALLOC
+	bool "Back mappings in vmalloc space with real shadow memory"
+	depends on KERNEL_KASAN
+	help
+	  By default, the shadow region for vmalloc space is the read-only
+	  zero page. This means that KASAN cannot detect errors involving
+	  vmalloc space.
+
+	  Enabling this option will hook in to vmap/vmalloc and back those
+	  mappings with real shadow memory allocated on demand. This allows
+	  for KASAN to detect more sorts of errors (and to support vmapped
+	  stacks), but at the cost of higher memory usage.
+
+	  This option depends on HAVE_ARCH_KASAN_VMALLOC, but we can't
+	  depend on that in here, so it is possible that enabling this
+	  will have no effect.
+
+if KERNEL_KASAN
+	config KERNEL_KASAN_GENERIC
+	def_bool y
+
+	config KERNEL_KASAN_SW_TAGS
+	def_bool n
+endif
 
 choice
 	prompt "Instrumentation type"

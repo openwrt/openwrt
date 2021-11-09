@@ -6,6 +6,17 @@ include $(INCLUDE_DIR)/image.mk
 DEVICE_VARS += ASUS_PRODUCTID ASUS_BUILD_NO ASUS_FW_REV ASUS_EXT_NO
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
 
+define Image/Prepare
+	cp bootfs-generic.its $(KDIR)/
+endef
+
+define Build/bootfs
+	cat $@ | $(STAGING_DIR_HOST)/bin/lzma e -eos -si -so > $@.tmp
+	mv $@.tmp $@
+	sed -i "s=\$${kernel}=$@=" $(KDIR)/bootfs-generic.its
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/bootfs-generic.its $(KDIR)/bootfs-generic.itb
+endef
+
 define Build/bcm4908asus
 	$(STAGING_DIR_HOST)/bin/bcm4908asus create -i $@ \
 		-p $(ASUS_PRODUCTID) -b $(ASUS_BUILD_NO) -f $(ASUS_FW_REV) \

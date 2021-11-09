@@ -27,7 +27,7 @@ lastdir=$(word $(words $(subst /, ,$(1))),$(subst /, ,$(1)))
 diralias=$(if $(findstring $(1),$(call lastdir,$(1))),,$(call lastdir,$(1)))
 
 subdir_make_opts = \
-	-r -C $(1) \
+	$(if $(SUBDIR_MAKE_DEBUG),-d) -r -C $(1) \
 		BUILD_SUBDIR="$(1)" \
 		BUILD_VARIANT="$(4)" \
 		ALL_VARIANTS="$(5)"
