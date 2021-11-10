@@ -134,25 +134,25 @@
    
 		led_10g_1_green: 10g_1-green {
 			label = "green:10g_1";
-			gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
+			gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led_10g_1_amber: 10g_1-amber {
 			label = "amber:10g_1";
-			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
 		};
 
 		led_10g_2_green: 10g_2-green {
 			label = "green:10g_2";
-			gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+			gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led_10g_2_amber: 10g_2-amber {
 			label = "amber:10g_2";
-			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
 		};
 	};
@@ -265,25 +265,25 @@
 			bias-pull-down;
 		}; 
 		led_10g_1_green {
-			pins = "gpio51";
-			function = "gpio";
-			drive-strength = <8>;
-			bias-pull-down;
-		};
-		led_10g_1_amber {
-			pins = "gpio52";
-			function = "gpio";
-			drive-strength = <8>;
-			bias-pull-down;
-		}; 
-		led_10g_2_green {
 			pins = "gpio54";
 			function = "gpio";
 			drive-strength = <8>;
 			bias-pull-down;
 		};
-		led_10g_2_amber {
+		led_10g_1_amber {
 			pins = "gpio56";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		}; 
+		led_10g_2_green {
+			pins = "gpio51";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+		led_10g_2_amber {
+			pins = "gpio52";
 			function = "gpio";
 			drive-strength = <8>;
 			bias-pull-down;
