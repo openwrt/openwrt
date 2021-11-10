@@ -1,0 +1,37 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 10 Nov 2021 22:17:13 +0100
+Subject: [PATCH] mac80211: drop check for DONT_REORDER in
+ __ieee80211_select_queue
+
+When __ieee80211_select_queue is called, skb->cb has not been cleared yet,
+which means that info->control.flags can contain garbage.
+In some cases this leads to IEEE80211_TX_CTRL_DONT_REORDER being set, causing
+packets marked for other queues to randomly end up in BE instead.
+
+This flag only needs to be checked in ieee80211_select_queue_80211, since
+the radiotap parser is the only piece of code that sets it
+
+Fixes: 66d06c84730c ("mac80211: adhere to Tx control flag that prevents frame reordering")
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/wme.c
++++ b/net/mac80211/wme.c
+@@ -143,7 +143,6 @@ u16 ieee80211_select_queue_80211(struct
+ u16 __ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
+ 			     struct sta_info *sta, struct sk_buff *skb)
+ {
+-	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 	struct mac80211_qos_map *qos_map;
+ 	bool qos;
+ 
+@@ -156,7 +155,7 @@ u16 __ieee80211_select_queue(struct ieee
+ 	else
+ 		qos = false;
+ 
+-	if (!qos || (info->control.flags & IEEE80211_TX_CTRL_DONT_REORDER)) {
++	if (!qos) {
+ 		skb->priority = 0; /* required for correct WPA/11i MIC */
+ 		return IEEE80211_AC_BE;
+ 	}
