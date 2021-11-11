@@ -243,7 +243,7 @@ define KernelPackage/sound-soc-imx-sgtl5000
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-sgtl5000.ko \
 	$(LINUX_DIR)/sound/soc/fsl/snd-soc-imx-sgtl5000.ko
   AUTOLOAD:=$(call AutoLoad,57,snd-soc-sgtl5000 snd-soc-imx-sgtl5000)
-  DEPENDS:=@TARGET_imx +kmod-sound-soc-imx
+  DEPENDS:=@TARGET_imx +kmod-sound-soc-imx +kmod-regmap-i2c
   $(call AddDepends/sound)
 endef
 
