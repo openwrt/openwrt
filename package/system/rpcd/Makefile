@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rpcd
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/rpcd.git
@@ -82,6 +82,11 @@ define BuildPlugin
 
   define Package/rpcd-mod-$(1)/description
     $(3)
+  endef
+
+  define Package/rpcd-mod-$(1)/postinst
+#!/bin/sh
+[ -n "$$$${IPKG_INSTROOT}" ] || /etc/init.d/rpcd reload
   endef
 
   define Package/rpcd-mod-$(1)/install
