@@ -47,6 +47,7 @@ ALLWIFIBOARDS:= \
 	mikrotik_sxtsq-5-ac \
 	mobipromo_cm520-79f \
 	nec_wg2600hp3 \
+	p2w_r619ac \
 	plasmacloud_pa1200 \
 	plasmacloud_pa2200 \
 	qxwlan_e2600ac
@@ -132,6 +133,7 @@ $(eval $(call generate-ipq-wifi-package,mikrotik_hap-ac2,Mikrotik hAP ac2))
 $(eval $(call generate-ipq-wifi-package,mikrotik_sxtsq-5-ac,MikroTik SXTsq 5 ac))
 $(eval $(call generate-ipq-wifi-package,mobipromo_cm520-79f,MobiPromo CM520-79F))
 $(eval $(call generate-ipq-wifi-package,nec_wg2600hp3,NEC Platforms WG2600HP3))
+$(eval $(call generate-ipq-wifi-package,p2w_r619ac,P&W R619AC))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa1200,Plasma Cloud PA1200))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa2200,Plasma Cloud PA2200))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
