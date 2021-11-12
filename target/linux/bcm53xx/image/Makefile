@@ -167,6 +167,15 @@ define Device/asus_rt-ac87u
 endef
 TARGET_DEVICES += asus_rt-ac87u
 
+define Device/asus_rt-ac88u
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC88U
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC88U
+  BROKEN := y
+endef
+TARGET_DEVICES += asus_rt-ac88u
+
 define Device/asus_rt-n18u
   $(call Device/asus)
   DEVICE_MODEL := RT-N18U
