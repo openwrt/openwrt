@@ -39,7 +39,7 @@ define Device/friendlyarm_nanopi-neo-air
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO Air
   DEVICE_PACKAGES := kmod-leds-gpio kmod-brcmfmac \
-	cypress-firmware-43430-sdio wpad-basic-wolfssl
+	brcmfmac-firmware-43430a0-sdio wpad-basic-wolfssl
   SOC := sun8i-h3
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo-air
