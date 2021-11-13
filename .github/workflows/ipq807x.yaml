@@ -28,8 +28,9 @@ jobs:
                 echo "CONFIG_PACKAGE_nss-firmware-ipq8074=y\n" >> .config
                 echo "CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe=y\n" >> .config
                 echo "CONFIG_PACKAGE_kmod-qca-nss-ecm=y\n" >> .config
+                echo "CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr=y\n" >> .config
                 make defconfig
-            
+
             - name: Download package sources
               run: make download V=s
 
