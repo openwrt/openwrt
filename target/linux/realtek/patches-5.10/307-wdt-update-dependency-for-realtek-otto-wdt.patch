@@ -1,0 +1,17 @@
+Index: linux-5.10.76/drivers/watchdog/Kconfig
+===================================================================
+--- linux-5.10.76.orig/drivers/watchdog/Kconfig
++++ linux-5.10.76/drivers/watchdog/Kconfig
+@@ -997,10 +997,10 @@ config RTD119X_WATCHDOG
+ 
+ config REALTEK_OTTO_WDT
+ 	tristate "Realtek Otto MIPS watchdog support"
+-	depends on MACH_REALTEK_RTL || COMPILE_TEST
++	depends on RTL838X
+ 	depends on COMMON_CLK
+ 	select WATCHDOG_CORE
+-	default MACH_REALTEK_RTL
++	default RTL838X
+ 	help
+ 	  Say Y here to include support for the watchdog timer on Realtek
+ 	  RTL838x, RTL839x, RTL930x SoCs. This watchdog has pretimeout
