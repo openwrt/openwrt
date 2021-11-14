@@ -56,6 +56,10 @@ write_lldpd_conf()
 	[ -e $LLDPD_CONFS_DIR ] || ln -s /etc/lldpd.d $LLDPD_CONFS_DIR
 }
 
+service_triggers() {
+	procd_add_reload_trigger "lldpd"
+}
+
 start_service() {
 
 	local enable_cdp
