@@ -1,6 +1,8 @@
 BPF_DEPENDS := @HAS_BPF_TOOLCHAIN
 LLVM_VER:=
 
+CLANG_MIN_VER:=12
+
 ifneq ($(CONFIG_USE_LLVM_HOST),)
   BPF_TOOLCHAIN_HOST_PATH:=$(call qstrip,$(CONFIG_BPF_TOOLCHAIN_HOST_PATH))
   ifneq ($(BPF_TOOLCHAIN_HOST_PATH),)
@@ -60,6 +62,14 @@ BPF_CFLAGS := \
 	-Wno-uninitialized -Wno-unused-variable \
 	-Wno-unused-label \
 	-O2 -emit-llvm -Xclang -disable-llvm-passes
+
+ifeq ($(DUMP),)
+  CLANG_VER:=$(shell $(CLANG) -dM -E - < /dev/null | grep __clang_major__ | cut -d' ' -f3)
+  CLANG_VER_VALID:=$(shell [ "$(CLANG_VER)" -ge "$(CLANG_MIN_VER)" ] && echo 1 )
+  ifeq ($(CLANG_VER_VALID),)
+    $(error ERROR: LLVM/clang version too old. Minimum required: $(CLANG_MIN_VER), found: $(CLANG_VER))
+  endif
+endif
 
 define CompileBPF
 	$(CLANG) -g -target $(BPF_ARCH)-linux-gnu $(BPF_CFLAGS) $(2) \

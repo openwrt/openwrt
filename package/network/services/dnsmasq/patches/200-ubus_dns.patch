@@ -60,17 +60,17 @@
 +		*dest = blobmsg_get_string(val);
 +}
 +
-+static bool ubus_dns_doctor(const char *name, int ttl, void *p, int af)
++static int ubus_dns_doctor(const char *name, int ttl, void *p, int af)
 +{
 +	struct blob_buf *b;
 +	char *addr;
 +
 +	if (!name)
-+		return false;
++		return 0;
 +
 +	b = ubus_dns_notify_prepare();
 +	if (!b)
-+		return false;
++		return 0;
 +
 +	blobmsg_add_string(b, "name", name);
 +
@@ -80,7 +80,7 @@
 +
 +	addr = blobmsg_alloc_string_buffer(b, "address", INET6_ADDRSTRLEN);
 +	if (!addr)
-+		return false;
++		return 0;
 +
 +	inet_ntop(af, p, addr, INET6_ADDRSTRLEN);
 +	blobmsg_add_string_buffer(b);
@@ -89,14 +89,14 @@
 +	ubus_dns_notify("dns_result", ubus_dns_doctor_cb, &addr);
 +
 +	if (!addr)
-+		return false;
++		return 0;
 +
 +	return inet_pton(af, addr, p) == 1;
 +}
 +#else
-+static bool ubus_dns_doctor(const char *name, int ttl, void *p, int af)
++static int ubus_dns_doctor(const char *name, int ttl, void *p, int af)
 +{
-+	return false;
++	return 0;
 +}
 +#endif
 +
@@ -162,7 +162,7 @@
        ttl = find_soa(header, qlen, doctored);
 --- a/src/ubus.c
 +++ b/src/ubus.c
-@@ -72,6 +72,14 @@ static struct ubus_object ubus_object =
+@@ -72,6 +72,13 @@ static struct ubus_object ubus_object =
    .subscribe_cb = ubus_subscribe_cb,
  };
  
@@ -170,23 +170,35 @@
 +   { .name = "dnsmasq.dns" };
 +
 +static struct ubus_object ubus_dns_object = {
-+	.name = "dnsmasq.dns",
 +	.type = &ubus_dns_object_type,
 +};
 +
  static void ubus_subscribe_cb(struct ubus_context *ctx, struct ubus_object *obj)
  {
    (void)ctx;
-@@ -112,6 +120,8 @@ char *ubus_init()
+@@ -105,13 +112,21 @@ static void ubus_disconnect_cb(struct ub
+ char *ubus_init()
+ {
+   struct ubus_context *ubus = NULL;
++  char *dns_name;
+   int ret = 0;
+ 
+   if (!(ubus = ubus_connect(NULL)))
+     return NULL;
    
++  dns_name = whine_malloc(strlen(daemon->ubus_name) + 5);
++  sprintf(dns_name, "%s.dns", daemon->ubus_name);
++
    ubus_object.name = daemon->ubus_name;
++  ubus_dns_object.name = dns_name;
++
    ret = ubus_add_object(ubus, &ubus_object);
 +  if (!ret)
 +    ret = ubus_add_object(ubus, &ubus_dns_object);
    if (ret)
      {
        ubus_destroy(ubus);
-@@ -181,6 +191,17 @@ void check_ubus_listeners()
+@@ -181,6 +196,17 @@ void check_ubus_listeners()
        } \
    } while (0)
  
@@ -204,7 +216,7 @@
  static int ubus_handle_metrics(struct ubus_context *ctx, struct ubus_object *obj,
  			       struct ubus_request_data *req, const char *method,
  			       struct blob_attr *msg)
-@@ -328,6 +349,50 @@ fail:
+@@ -328,6 +354,50 @@ fail:
        } \
    } while (0)
  
