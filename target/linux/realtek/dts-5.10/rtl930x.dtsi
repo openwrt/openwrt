@@ -80,11 +80,10 @@
 		interrupt-controller;
 	};
 
-	osc: oscillator {
+	lx_clk: lx_clk {
 		compatible = "fixed-clock";
-		#clock-cells = <1>;
+		#clock-cells = <0>;
 		clock-frequency  = <175000000>;
-		clock-output-names = "osc";
 	};
 
 	soc: soc {
@@ -119,7 +118,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <8>;
 			interrupt-names = "ostimer";
-			clocks = <&osc 0>;
+			clocks = <&lx_clk>;
 		};
 
 		spi0: spi@1200 {
@@ -134,7 +133,7 @@
 			compatible = "ns16550a";
 			reg = <0x2000 0x100>;
 
-			clock-frequency = <175000000>;
+			clocks = <&lx_clk>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <30>;
@@ -149,7 +148,7 @@
 			compatible = "ns16550a";
 			reg = <0x2100 0x100>;
 
-			clock-frequency = <175000000>;
+			clocks = <&lx_clk>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <31>;
