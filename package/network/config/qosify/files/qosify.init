@@ -71,6 +71,20 @@ add_interface() {
 	json_close_object
 }
 
+add_alias() {
+	local cfg="$1"
+
+	config_get value "$cfg" value
+	config_get ingress "$cfg" ingress
+	config_get egress "$cfg" egress
+
+	json_add_array "$cfg"
+	json_add_string ingress "${ingress:-$value}"
+	json_add_string egress "${egress:-$value}"
+	json_close_array
+}
+
+
 reload_service() {
 	json_init
 
@@ -80,6 +94,10 @@ reload_service() {
 
 	json_add_object interfaces
 	config_foreach add_interface interface
+	json_close_object
+
+	json_add_object aliases
+	config_foreach add_alias alias
 	json_close_object
 
 	json_add_object devices
