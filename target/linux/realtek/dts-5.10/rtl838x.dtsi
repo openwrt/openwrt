@@ -153,6 +153,20 @@
 			status = "disabled";
 		};
 
+		watchdog0: watchdog@3150 {
+			compatible = "realtek,rtl8380-wdt";
+			reg = <0x3150 0xc>;
+
+			realtek,reset-mode = "soc";
+
+			clocks = <&lx_clk>;
+			timeout-sec = <30>;
+
+			interrupt-parent = <&intc>;
+			interrupt-names = "phase1", "phase2";
+			interrupts = <19>, <18>;
+		};
+
 		gpio0: gpio-controller@3500 {
 			compatible = "realtek,rtl8380-gpio", "realtek,otto-gpio";
 			reg = <0x3500 0x20>;
