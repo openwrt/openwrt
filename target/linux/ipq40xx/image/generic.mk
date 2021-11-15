@@ -946,6 +946,7 @@ define Device/p2w_r619ac-64m
 	DEVICE_VARIANT := 64M NAND
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
+	SUPPORTED_DEVICES += p2w,r619ac
 endef
 TARGET_DEVICES += p2w_r619ac-64m
 
