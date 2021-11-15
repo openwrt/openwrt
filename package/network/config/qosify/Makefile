@@ -27,8 +27,8 @@ include $(INCLUDE_DIR)/bpf.mk
 include $(INCLUDE_DIR)/nls.mk
 
 define Package/qosify
-  SECTION:=net
-  CATEGORY:=Network
+  SECTION:=utils
+  CATEGORY:=Base system
   TITLE:=A simple QoS solution based eBPF + CAKE
   DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +kmod-sched-bpf +kmod-ifb +tc-full $(BPF_DEPENDS)
 endef
