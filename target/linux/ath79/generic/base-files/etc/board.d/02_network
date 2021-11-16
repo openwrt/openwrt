@@ -130,7 +130,8 @@ ath79_setup_interfaces()
 	pcs,cr3000|\
 	tplink,archer-c58-v1|\
 	tplink,archer-c59-v1|\
-	tplink,archer-c59-v2)
+	tplink,archer-c59-v2|\
+	wd,mynet-n600)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
@@ -595,6 +596,7 @@ ath79_setup_macs()
 		;;
 	dlink,dir-859-a1|\
 	qihoo,c301|\
+	wd,mynet-n600|\
 	wd,mynet-n750)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")

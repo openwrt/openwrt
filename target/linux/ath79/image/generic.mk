@@ -2336,6 +2336,18 @@ define Device/wallys_dr531
 endef
 TARGET_DEVICES += wallys_dr531
 
+define Device/wd_mynet-n600
+  $(Device/seama)
+  SOC := ar9344
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := My Net N600
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES := kmod-usb2
+  SEAMA_SIGNATURE := wrgnd16_wd_db600
+  SUPPORTED_DEVICES += mynet-n600
+endef
+TARGET_DEVICES += wd_mynet-n600
+
 define Device/wd_mynet-n750
   $(Device/seama)
   SOC := ar9344
