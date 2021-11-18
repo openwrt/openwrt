@@ -41,21 +41,22 @@ CMAKE_HOST_OPTIONS += \
 	-DLLVM_TOOLCHAIN_TOOLS="llvm-objcopy;llvm-objdump;llvm-readelf;llvm-strip;llvm-ar;llvm-as;llvm-dis;llvm-link;llvm-nm;llvm-ranlib;llc;opt" \
 	-DCMAKE_SKIP_RPATH=OFF
 
-ifneq ($(CONFIG_SDK_LLVM_BPF),)
-  define Host/Install/Bin
+$(BIN_DIR)/llvm-bpf-$(PKG_VERSION).tar.xz: $(HOST_STAMP_INSTALLED)
 	echo "$(PKG_VERSION)" > $(CMAKE_HOST_INSTALL_PREFIX)/.llvm-version
 	STRIP_KMOD= PATCHELF= STRIP=strip $(SCRIPT_DIR)/rstrip.sh $(STAGING_DIR_HOST)/llvm-bpf
 	tar -C $(STAGING_DIR_HOST) \
 		-I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' \
-		-cf $(BIN_DIR)/llvm-bpf-$(PKG_VERSION).tar.xz llvm-bpf $(LLVM_BPF_PREFIX)
-  endef
+		-cf $@.tmp llvm-bpf $(LLVM_BPF_PREFIX)
+	mv $@.tmp $@
+
+ifneq ($(CONFIG_SDK_LLVM_BPF),)
+compile: $(BIN_DIR)/llvm-bpf-$(PKG_VERSION).tar.xz
 endif
 
 define Host/Install
 	rm -rf $(STAGING_DIR_HOST)/llvm-bpf*
 	$(Host/Install/Default)
 	ln -s $(LLVM_BPF_PREFIX) $(STAGING_DIR_HOST)/llvm-bpf
-	$(Host/Install/Bin)
 endef
 
 define Host/Uninstall
