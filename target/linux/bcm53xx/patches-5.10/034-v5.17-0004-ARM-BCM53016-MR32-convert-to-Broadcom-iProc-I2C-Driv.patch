@@ -1,16 +1,35 @@
+From de7880016665afe7fa7d40e1fafa859260d53ba1 Mon Sep 17 00:00:00 2001
 From: Christian Lamparter <chunkeey@gmail.com>
-Date: Sat, 12 Sep 2020 22:11:12 +0200
-Subject: bcm53xx: Meraki MR32 use hw i2c
+Date: Thu, 28 Oct 2021 09:03:44 +0200
+Subject: [PATCH] ARM: BCM53016: MR32: convert to Broadcom iProc I2C Driver
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-replace the i2c-gpio provided i2c functionality with the
-hardware in the SoC. This can be activated once the
-internal i2c works as well as the bit-banged i2c-gpio.
+replaces the bit-banged i2c-gpio provided i2c functionality
+with the hardware in the SoC.
 
+During review of the MR32, Florian Fainelli pointed out that the
+SoC has a real I2C-controller. Furthermore, the connected pins
+(SDA and SCL) would line up perfectly for use. Back then I couldn't
+get it working though and I left it with i2c-gpio (which worked).
+
+Now we know the reason: the interrupt was incorrectly specified.
+(Hence, this patch depends on Florian Fainelli's
+"ARM: dts: BCM5301X: Fix I2C controller interrupt" patch).
+
+Cc: Florian Fainelli <f.fainelli@gmail.com>
+Cc: Rafał Miłecki <zajec5@gmail.com>
+Cc: Matthew Hagan <mnhagan88@gmail.com>
 Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm/boot/dts/bcm53016-meraki-mr32.dts | 62 ++++++++++------------
+ 1 file changed, 28 insertions(+), 34 deletions(-)
 
 --- a/arch/arm/boot/dts/bcm53016-meraki-mr32.dts
 +++ b/arch/arm/boot/dts/bcm53016-meraki-mr32.dts
-@@ -85,40 +85,6 @@
+@@ -84,40 +84,6 @@
  			max-brightness = <255>;
  		};
  	};
@@ -51,7 +70,7 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  };
  
  &uart0 {
-@@ -229,3 +195,31 @@
+@@ -228,3 +194,31 @@
  		};
  	};
  };
