@@ -27,7 +27,7 @@ LLVM_OPT:=$(LLVM_PATH)/opt$(LLVM_VER)
 LLVM_STRIP:=$(LLVM_PATH)/llvm-strip$(LLVM_VER)
 
 BPF_KARCH:=mips
-BPF_ARCH:=mips$(if $(CONFIG_BIG_ENDIAN),,el)
+BPF_ARCH:=mips$(if $(CONFIG_ARCH_64BIT),64)$(if $(CONFIG_BIG_ENDIAN),,el)
 BPF_TARGET:=bpf$(if $(CONFIG_BIG_ENDIAN),eb,el)
 
 BPF_HEADERS_DIR:=$(STAGING_DIR)/bpf-headers
@@ -49,7 +49,7 @@ BPF_KERNEL_INCLUDE := \
 
 BPF_CFLAGS := \
 	$(BPF_KERNEL_INCLUDE) -I$(PKG_BUILD_DIR) \
-	-D__KERNEL__ -D__BPF_TRACING__ \
+	-D__KERNEL__ -D__BPF_TRACING__ -DCONFIG_GENERIC_CSUM \
 	-D__TARGET_ARCH_${BPF_KARCH} \
 	-m$(if $(CONFIG_BIG_ENDIAN),big,little)-endian \
 	-fno-stack-protector -Wall \
