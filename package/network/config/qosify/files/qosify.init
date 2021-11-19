@@ -15,6 +15,16 @@ add_option() {
 	[ -n "$val" ] && json_add_$type "$name" "$val"
 }
 
+add_flow_config() {
+	local cfg="$1"
+
+	add_option string dscp_prio
+	add_option string dscp_bulk
+	add_option int bulk_trigger_timeout
+	add_option int bulk_trigger_pps
+	add_option int prio_max_avg_pkt_len
+}
+
 add_defaults() {
 	cfg="$1"
 
@@ -27,15 +37,11 @@ add_defaults() {
 	done
 	json_close_array
 
+	add_flow_config "$cfg"
 	add_option int timeout
-	add_option string dscp_prio
-	add_option string dscp_bulk
 	add_option string dscp_icmp
 	add_option string dscp_default_udp
 	add_option string dscp_default_tcp
-	add_option int bulk_trigger_timeout
-	add_option int bulk_trigger_pps
-	add_option int prio_max_avg_pkt_len
 }
 
 add_interface() {
@@ -71,17 +77,18 @@ add_interface() {
 	json_close_object
 }
 
-add_alias() {
+add_class() {
 	local cfg="$1"
 
 	config_get value "$cfg" value
 	config_get ingress "$cfg" ingress
 	config_get egress "$cfg" egress
 
-	json_add_array "$cfg"
+	json_add_object "$cfg"
 	json_add_string ingress "${ingress:-$value}"
 	json_add_string egress "${egress:-$value}"
-	json_close_array
+	add_flow_config "$cfg"
+	json_close_object
 }
 
 
@@ -96,8 +103,9 @@ reload_service() {
 	config_foreach add_interface interface
 	json_close_object
 
-	json_add_object aliases
-	config_foreach add_alias alias
+	json_add_object classes
+	config_foreach add_class class
+	config_foreach add_class alias
 	json_close_object
 
 	json_add_object devices
