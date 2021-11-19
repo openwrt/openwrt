@@ -111,7 +111,7 @@ define Device/netgear
   DEVICE_VENDOR := NETGEAR
   KERNEL := kernel-bin | bootfs
   IMAGES := chk
-  IMAGE/chk := append-rootfs | pkgtb
+  IMAGE/chk := append-rootfs | pkgtb | netgear-chk
   NETGEAR_REGION := 1
 endef
 
