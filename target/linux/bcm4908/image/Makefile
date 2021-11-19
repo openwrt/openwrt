@@ -107,4 +107,20 @@ define Device/tplink_archer-c2300-v1
 endef
 TARGET_DEVICES += tplink_archer-c2300-v1
 
+define Device/netgear
+  DEVICE_VENDOR := NETGEAR
+  KERNEL := kernel-bin | bootfs
+  IMAGES := chk
+  IMAGE/chk := append-rootfs | pkgtb
+  NETGEAR_REGION := 1
+endef
+
+define Device/netgear_raxe500
+  DEVICE_MODEL := RAXE500
+  $(Device/netgear)
+  PKGTB_ITS := pkgtb-bcm4908.its
+  NETGEAR_BOARD_ID := U12H449T00_NETGEAR
+endef
+# TARGET_DEVICES += netgear_raxe500
+
 $(eval $(call BuildImage))
