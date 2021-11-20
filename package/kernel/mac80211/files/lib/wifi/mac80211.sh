@@ -136,6 +136,17 @@ get_band_defaults() {
 }
 
 detect_mac80211() {
+	local ssid encryption key country disabled
+	local enable_2ghz enable_5ghz enable_6ghz enable_60ghz
+
+	/bin/board_detect
+
+	. /usr/share/libubox/jshn.sh
+	json_load_file "/etc/board.json"
+	json_select wireless
+	json_get_vars ssid encryption key country enable_2ghz enable_5ghz enable_6ghz enable_60ghz
+	json_cleanup
+
 	devidx=0
 	config_load wireless
 	while :; do
@@ -167,6 +178,14 @@ detect_mac80211() {
 			dev_id="set wireless.radio${devidx}.macaddr=$(cat /sys/class/ieee80211/${dev}/macaddress)"
 		fi
 
+		disabled=1
+		case "$mode_band" in
+			2g)  [ "$enable_2ghz" = "1" ]  && disabled=0 ;;
+			5g)  [ "$enable_5ghz" = "1" ]  && disabled=0 ;;
+			6g)  [ "$enable_6ghz" = "1" ]  && disabled=0 ;;
+			60g) [ "$enable_60ghz" = "1" ] && disabled=0 ;;
+		esac
+
 		uci -q batch <<-EOF
 			set wireless.radio${devidx}=wifi-device
 			set wireless.radio${devidx}.type=mac80211
@@ -174,17 +193,20 @@ detect_mac80211() {
 			set wireless.radio${devidx}.channel=${channel}
 			set wireless.radio${devidx}.band=${mode_band}
 			set wireless.radio${devidx}.htmode=$htmode
-			set wireless.radio${devidx}.disabled=1
+			set wireless.radio${devidx}.disabled=$disabled
 
 			set wireless.default_radio${devidx}=wifi-iface
 			set wireless.default_radio${devidx}.device=radio${devidx}
 			set wireless.default_radio${devidx}.network=lan
 			set wireless.default_radio${devidx}.mode=ap
-			set wireless.default_radio${devidx}.ssid=OpenWrt
-			set wireless.default_radio${devidx}.encryption=none
+			set wireless.default_radio${devidx}.ssid="${ssid:-OpenWrt}"
+			set wireless.default_radio${devidx}.encryption="${encryption:-none}"
 EOF
+		[ "$key" ] && uci set wireless.default_radio${devidx}.key="${key}"
+		[ "$country" ] && uci set wireless.radio${devidx}.country="${country}"
 		uci -q commit wireless
 
 		devidx=$(($devidx + 1))
 	done
+	reload_config
 }
