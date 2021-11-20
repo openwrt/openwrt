@@ -8,6 +8,9 @@
 
 /* RTL8231 registers for LED control */
 #define RTL8231_LED_FUNC0			0x0000
+#define RTL8231_LED_FUNC1			0x0001
+#define RTL8231_READY_MASK			0x03f0
+#define RTL8231_READY_VALUE			0x0370
 #define RTL8231_GPIO_PIN_SEL(gpio)		((0x0002) + ((gpio) >> 4))
 #define RTL8231_GPIO_DIR(gpio)			((0x0005) + ((gpio) >> 4))
 #define RTL8231_GPIO_DATA(gpio)			((0x001C) + ((gpio) >> 4))
@@ -238,6 +241,8 @@ void rtl8231_gpio_set(struct gpio_chip *gc, unsigned int offset, int value)
 
 int rtl8231_init(struct rtl8231_gpios *gpios)
 {
+	u32 ret;
+
 	pr_info("%s called, MDIO bus ID: %d\n", __func__, gpios->smi_bus_id);
 
 	gpios->reg_cached = 0;
@@ -250,6 +255,10 @@ int rtl8231_init(struct rtl8231_gpios *gpios)
 		sw_w32_mask(0, 1, RTL838X_EXTRA_GPIO_CTRL);
 		sw_w32_mask(3, 1, RTL838X_DMY_REG5);
 	}
+
+	ret = rtl8231_read(gpios, RTL8231_LED_FUNC1);
+	if ((ret & 0x80000000) || ((ret & RTL8231_READY_MASK) != RTL8231_READY_VALUE))
+		return -ENXIO;
 
 	/* Select GPIO functionality and force input direction for pins 0-36 */
 	rtl8231_write(gpios, RTL8231_GPIO_PIN_SEL(0), 0xffff);
@@ -307,7 +316,11 @@ static int rtl8231_gpio_probe(struct platform_device *pdev)
 		return err;
 	}
 
-	rtl8231_init(gpios);
+	err = rtl8231_init(gpios);
+	if (err) {
+		dev_err(dev, "no device found at bus address %d\n", gpios->smi_bus_id);
+		return err;
+	}
 
 	gpios->dev = dev;
 	gpios->gc.base = -1;
