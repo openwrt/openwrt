@@ -69,6 +69,10 @@ define Device/mikrotik_routerboard-wapr-2nd
   $(Device/mikrotik_nor)
   SOC := qca9533
   DEVICE_MODEL := RouterBOARD wAPR-2nD (wAP R)
+  DEVICE_ALT0_VENDOR := MikroTik
+  DEVICE_ALT0_MODEL := RouterBOARD wAP LR8/LR9 kit
+  DEVICE_ALT1_VENDOR := MikroTik
+  DEVICE_ALT1_MODEL := RouterBOARD wAP 4G/4G US/LTE kit
   DEVICE_PACKAGES += rssileds
   IMAGE_SIZE := 16256k
 endef
