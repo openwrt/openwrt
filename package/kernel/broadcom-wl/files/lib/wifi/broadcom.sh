@@ -451,7 +451,15 @@ EOF
 
 
 detect_broadcom() {
-	local i=-1
+	local ssid encryption key country enable_2ghz enable_5ghz disabled i=-1
+
+	/bin/board_detect
+
+	. /usr/share/libubox/jshn.sh
+	json_load_file "/etc/board.json"
+	json_select wireless
+	json_get_vars ssid encryption key country enable_2ghz enable_5ghz
+	json_cleanup
 
 	while grep -qs "^ *wl$((++i)):" /proc/net/dev; do
 		local channel type
@@ -460,21 +468,29 @@ detect_broadcom() {
 		[ "$type" = broadcom ] && continue
 		channel=`wlc ifname wl${i} channel`
 
+		disabled=1
+		if [ $((channel)) -gt 14 ]; then
+			[ "$enable_5ghz" = "1" ] && disabled=0
+		else
+			[ "$enable_2ghz" = "1" ] && disabled=0
+		fi
 		uci -q batch <<-EOF
 			set wireless.wl${i}=wifi-device
 			set wireless.wl${i}.type=broadcom
 			set wireless.wl${i}.channel=${channel:-11}
 			set wireless.wl${i}.txantenna=3
 			set wireless.wl${i}.rxantenna=3
-			set wireless.wl${i}.disabled=1
+			set wireless.wl${i}.disabled=$disabled
 
 			set wireless.default_wl${i}=wifi-iface
 			set wireless.default_wl${i}.device=wl${i}
 			set wireless.default_wl${i}.network=lan
 			set wireless.default_wl${i}.mode=ap
-			set wireless.default_wl${i}.ssid=OpenWrt${i#0}
-			set wireless.default_wl${i}.encryption=none
+			set wireless.default_wl${i}.ssid=${ssid:-OpenWrt${i#0}}
+			set wireless.default_wl${i}.encryption=${encryption:-none}
 EOF
+		[ "$key" ] && uci set wireless.default_wl${i}.key="${key}"
+		[ "$country" ] && uci set wireless.wl${i}.country="${country}"
 		uci -q commit wireless
 	done
 }
