@@ -168,6 +168,7 @@ wifi_config() {
 			echo "$driver: Hardware detection not supported" >&2
 		fi
 	); done
+	wifi_updown "reconf"
 }
 
 start_net() {(

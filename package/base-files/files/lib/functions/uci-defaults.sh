@@ -626,6 +626,70 @@ ucidef_set_hostname() {
 	json_select ..
 }
 
+ucidef_set_wireless() {
+	local ssid="$1"
+	local encryption="$2"
+	local key="$3"
+
+	json_select_object wireless
+		json_add_string ssid "$ssid"
+		[ -n "$encryption" ] && json_add_string encryption "$encryption"
+		[ -n "$key" ] && json_add_string key "$key"
+	json_select ..
+}
+
+ucidef_enable_wireless() {
+	local bands="$1"
+	local enable_2ghz
+	local enable_5ghz
+	local enable_6ghz
+	local enable_60ghz
+
+	case "$bands" in
+		*2*|*b*)
+			enable_2ghz=1
+			;;
+		all)
+			enable_2ghz=1
+			enable_5ghz=1
+			enable_6ghz=1
+			enable_60ghz=1
+			;;
+	esac
+
+	case "${bands//a[dy]/}" in
+		*5*|*a*)
+			enable_5ghz=1
+			;;
+	esac
+
+	case "${bands/60/}" in
+		*6*|*ax*)
+			enable_6ghz=1
+			;;
+	esac
+
+	case "$bands" in
+		*60*|*ad*|*ay*)
+			enable_60ghz=1
+			;;
+	esac
+
+	json_select_object wireless
+	[ "$enable_2ghz" = "1" ] && json_add_boolean enable_2ghz 1
+	[ "$enable_5ghz" = "1" ] && json_add_boolean enable_5ghz 1
+	[ "$enable_6ghz" = "1" ] && json_add_boolean enable_6ghz 1
+	[ "$enable_60ghz" = "1" ] && json_add_boolean enable_60ghz 1
+	json_select ..
+}
+
+ucidef_set_country() {
+	local country="$1"
+	json_select_object wireless
+		json_add_string country "$country"
+	json_select ..
+}
+
 ucidef_set_ntpserver() {
 	local server
 
