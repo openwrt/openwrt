@@ -100,6 +100,8 @@ hostapd_common_add_device_config() {
 	config_add_string require_mode
 	config_add_boolean legacy_rates
 	config_add_int cell_density
+	config_add_int cell_density_rates
+	config_add_int cell_density_rssi
 	config_add_int rts_threshold
 	config_add_int rssi_reject_assoc_rssi
 	config_add_int rssi_ignore_probe_request
@@ -120,8 +122,8 @@ hostapd_prepare_device_config() {
 	local base_cfg=
 
 	json_get_vars country country3 country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
-		acs_chan_bias local_pwr_constraint spectrum_mgmt_required airtime_mode cell_density \
-		rts_threshold beacon_rate rssi_reject_assoc_rssi rssi_ignore_probe_request maxassoc
+		acs_chan_bias local_pwr_constraint spectrum_mgmt_required airtime_mode cell_density cell_density_rates \
+		cell_density_rssi rts_threshold beacon_rate rssi_reject_assoc_rssi rssi_ignore_probe_request maxassoc
 
 	hostapd_set_log_options base_cfg
 
@@ -131,6 +133,8 @@ hostapd_prepare_device_config() {
 	set_default legacy_rates 0
 	set_default airtime_mode 0
 	set_default cell_density 0
+	set_default cell_density_rates "$cell_density"
+	set_default cell_density_rssi "$cell_density"
 
 	[ -n "$country" ] && {
 		append base_cfg "country_code=$country" "$N"
@@ -161,24 +165,24 @@ hostapd_prepare_device_config() {
 	fi
 	case "$hwmode" in
 		b)
-			if [ "$cell_density" -eq 1 ]; then
+			if [ "$cell_density_rates" -eq 1 ]; then
 				set_default rate_list "5500 11000"
 				set_default basic_rate_list "5500 11000"
-			elif [ "$cell_density" -ge 2 ]; then
+			elif [ "$cell_density_rates" -ge 2 ]; then
 				set_default rate_list "11000"
 				set_default basic_rate_list "11000"
 			fi
 		;;
 		g)
-			if [ "$cell_density" -eq 0 ] || [ "$cell_density" -eq 1 ]; then
+			if [ "$cell_density_rates" -eq 0 ] || [ "$cell_density_rates" -eq 1 ]; then
 				if [ "$legacy_rates" -eq 0 ]; then
 					set_default rate_list "6000 9000 12000 18000 24000 36000 48000 54000"
 					set_default basic_rate_list "6000 12000 24000"
-				elif [ "$cell_density" -eq 1 ]; then
+				elif [ "$cell_density_rates" -eq 1 ]; then
 					set_default rate_list "5500 6000 9000 11000 12000 18000 24000 36000 48000 54000"
 					set_default basic_rate_list "5500 11000"
 				fi
-			elif [ "$cell_density" -ge 3 ] && [ "$legacy_rates" -ne 0 ] || [ "$cell_density" -eq 2 ]; then
+			elif [ "$cell_density_rates" -ge 3 ] && [ "$legacy_rates" -ne 0 ] || [ "$cell_density_rates" -eq 2 ]; then
 				if [ "$legacy_rates" -eq 0 ]; then
 					set_default rate_list "12000 18000 24000 36000 48000 54000"
 					set_default basic_rate_list "12000 24000"
@@ -186,24 +190,47 @@ hostapd_prepare_device_config() {
 					set_default rate_list "11000 12000 18000 24000 36000 48000 54000"
 					set_default basic_rate_list "11000"
 				fi
-			elif [ "$cell_density" -ge 3 ]; then
+			elif [ "$cell_density_rates" -ge 3 ]; then
 				set_default rate_list "24000 36000 48000 54000"
 				set_default basic_rate_list "24000"
 			fi
 		;;
 		a)
-			if [ "$cell_density" -eq 1 ]; then
+			if [ "$cell_density_rates" -eq 1 ]; then
 				set_default rate_list "6000 9000 12000 18000 24000 36000 48000 54000"
 				set_default basic_rate_list "6000 12000 24000"
-			elif [ "$cell_density" -eq 2 ]; then
+			elif [ "$cell_density_rates" -eq 2 ]; then
 				set_default rate_list "12000 18000 24000 36000 48000 54000"
 				set_default basic_rate_list "12000 24000"
-			elif [ "$cell_density" -ge 3 ]; then
+			elif [ "$cell_density_rates" -ge 3 ]; then
 				set_default rate_list "24000 36000 48000 54000"
 				set_default basic_rate_list "24000"
 			fi
 		;;
 	esac
+
+	if [ "$cell_density_rssi" -eq 1 ]; then
+		set_default rssi_reject_assoc_rssi -80
+		set_default rssi_ignore_probe_request -80
+	elif [ "$cell_density_rssi" -eq 2 ]; then
+		set_default rssi_reject_assoc_rssi -75
+		set_default rssi_ignore_probe_request -75
+	elif [ "$cell_density_rssi" -eq 3 ]; then
+		set_default rssi_reject_assoc_rssi -70
+		set_default rssi_ignore_probe_request -70
+	elif [ "$cell_density_rssi" -eq 4 ]; then
+		set_default rssi_reject_assoc_rssi -67
+		set_default rssi_ignore_probe_request -67
+	elif [ "$cell_density_rssi" -eq 5 ]; then
+		set_default rssi_reject_assoc_rssi -65
+		set_default rssi_ignore_probe_request -65
+	elif [ "$cell_density_rssi" -eq 6 ]; then
+		set_default rssi_reject_assoc_rssi -62
+		set_default rssi_ignore_probe_request -62
+	elif [ "$cell_density_rssi" -ge 7 ]; then
+		set_default rssi_reject_assoc_rssi -60
+		set_default rssi_ignore_probe_request -60
+	fi
 
 	for r in $rate_list; do
 		hostapd_add_rate rlist "$r"
