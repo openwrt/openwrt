@@ -24,11 +24,6 @@ config KERNEL_PRINTK
 	bool "Enable support for printk"
 	default y
 
-config KERNEL_CRASHLOG
-	bool "Crash logging"
-	depends on !(arm || powerpc || sparc || TARGET_uml || i386 || x86_64)
-	default y
-
 config KERNEL_SWAP
 	bool "Support for paging of anonymous memory (swap)"
 	default y if !SMALL_FLASH
