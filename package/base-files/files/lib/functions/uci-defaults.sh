@@ -642,6 +642,41 @@ ucidef_set_hostname() {
 	json_select ..
 }
 
+ucidef_set_wireless() {
+	local band="$1"
+	local ssid="$2"
+	local encryption="$3"
+	local key="$4"
+
+	case "$band" in
+	all|2g|5g|6g) ;;
+	*) return;;
+	esac
+	[ -z "$ssid" ] && return
+
+	json_select_object wlan
+		json_select_object defaults
+			json_select_object ssids
+				json_select_object "$band"
+					json_add_string ssid "$ssid"
+					[ -n "$encryption" ] && json_add_string encryption "$encryption"
+					[ -n "$key" ] && json_add_string key "$key"
+				json_select ..
+			json_select ..
+		json_select ..
+	json_select ..
+}
+
+ucidef_set_country() {
+	local country="$1"
+
+	json_select_object wlan
+		json_select_object defaults
+			json_add_string country "$country"
+		json_select ..
+	json_select ..
+}
+
 ucidef_set_ntpserver() {
 	local server
 
