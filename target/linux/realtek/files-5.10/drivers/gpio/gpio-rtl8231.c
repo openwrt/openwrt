@@ -311,7 +311,7 @@ static int rtl8231_gpio_probe(struct platform_device *pdev)
 	rtl8231_init(gpios);
 
 	gpios->dev = dev;
-	gpios->gc.base = 160;
+	gpios->gc.base = -1;
 	gpios->gc.ngpio = 37;
 	gpios->gc.label = "rtl8231";
 	gpios->gc.parent = dev;
