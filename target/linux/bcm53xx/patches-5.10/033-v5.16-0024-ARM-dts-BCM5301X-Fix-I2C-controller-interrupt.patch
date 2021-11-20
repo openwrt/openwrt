@@ -1,6 +1,6 @@
-From beda1bbdb19baa8319ed81fa370fe0c5b91d05df Mon Sep 17 00:00:00 2001
+From 6e238362b9793bf334c9bed2291b571cbbc75b0b Mon Sep 17 00:00:00 2001
 From: Florian Fainelli <f.fainelli@gmail.com>
-Date: Tue, 26 Oct 2021 11:36:22 -0700
+Date: Wed, 27 Oct 2021 12:37:29 -0700
 Subject: [PATCH] ARM: dts: BCM5301X: Fix I2C controller interrupt
 
 The I2C interrupt controller line is off by 32 because the datasheet
@@ -9,6 +9,8 @@ Interrupts and are starting at offset 32. The ARM GIC binding expects
 the SPI interrupts to be numbered from 0 relative to the SPI base.
 
 Fixes: bb097e3e0045 ("ARM: dts: BCM5301X: Add I2C support to the DT")
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Tested-by: Christian Lamparter <chunkeey@gmail.com>
 Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  arch/arm/boot/dts/bcm5301x.dtsi | 2 +-

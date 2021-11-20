@@ -753,6 +753,32 @@ define Device/openmesh_a62
 endef
 TARGET_DEVICES += openmesh_a62
 
+define Device/p2w_r619ac
+	$(call Device/FitzImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := P&W
+	DEVICE_MODEL := R619AC
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@10
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-p2w_r619ac
+endef
+
+define Device/p2w_r619ac-64m
+	$(call Device/p2w_r619ac)
+	DEVICE_VARIANT := 64M NAND
+	IMAGES += nand-factory.bin
+	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += p2w_r619ac-64m
+
+define Device/p2w_r619ac-128m
+	$(call Device/p2w_r619ac)
+	DEVICE_VARIANT := 128M NAND
+endef
+TARGET_DEVICES += p2w_r619ac-128m
+
 define Device/plasmacloud_pa1200
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Plasma Cloud
@@ -880,7 +906,6 @@ define Device/zyxel_nbg6617
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k | check-size $$$$(ROOTFS_SIZE) | zyxel-ras-image separate-kernel
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | check-size $$$$(ROOTFS_SIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
 	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
-	DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_nbg6617
 

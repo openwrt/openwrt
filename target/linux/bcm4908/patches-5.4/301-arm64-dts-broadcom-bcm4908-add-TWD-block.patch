@@ -39,12 +39,12 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  		};
  
  		gpio0: gpio-controller@500 {
-@@ -329,7 +338,7 @@
+@@ -330,7 +339,7 @@
  
- 		reboot {
- 			compatible = "syscon-reboot";
--			regmap = <&timer>;
-+			regmap = <&twd>;
- 			offset = <0x34>;
- 			mask = <1>;
- 		};
+ 	reboot {
+ 		compatible = "syscon-reboot";
+-		regmap = <&timer>;
++		regmap = <&twd>;
+ 		offset = <0x34>;
+ 		mask = <1>;
+ 	};

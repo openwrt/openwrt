@@ -349,6 +349,19 @@ config KERNEL_PREEMPT_TRACER
 	  enabled. This option and the irqs-off timing option can be
 	  used together or separately.)
 
+config KERNEL_HIST_TRIGGERS
+	bool "Histogram triggers"
+	depends on KERNEL_FTRACE
+	help
+	  Hist triggers allow one or more arbitrary trace event fields to be
+	  aggregated into hash tables and dumped to stdout by reading a
+	  debugfs/tracefs file. They're useful for gathering quick and dirty
+	  (though precise) summaries of event activity as an initial guide for
+	  further investigation using more advanced tools.
+
+	  Inter-event tracing of quantities such as latencies is also
+	  supported using hist triggers under this option.
+
 config KERNEL_DEBUG_KERNEL
 	bool
 	default n

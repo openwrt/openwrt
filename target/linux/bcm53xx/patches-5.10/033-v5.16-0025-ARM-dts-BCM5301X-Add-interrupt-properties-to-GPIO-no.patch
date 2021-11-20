@@ -1,0 +1,26 @@
+From acead95bf77a34cae7ff04dd99387046310cca0d Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Thu, 28 Oct 2021 09:46:53 -0700
+Subject: [PATCH] ARM: dts: BCM5301X: Add interrupt properties to GPIO node
+
+The GPIO controller is also an interrupt controller provider and is
+currently missing the appropriate 'interrupt-controller' and
+'#interrupt-cells' properties to denote that.
+
+Fixes: fb026d3de33b ("ARM: BCM5301X: Add Broadcom's bus-axi to the DTS file")
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm/boot/dts/bcm5301x.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm5301x.dtsi
++++ b/arch/arm/boot/dts/bcm5301x.dtsi
+@@ -242,6 +242,8 @@
+ 
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
+ 		};
+ 
+ 		pcie0: pcie@12000 {
