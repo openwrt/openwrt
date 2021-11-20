@@ -14,11 +14,13 @@
 
 #define USEC_TIMEOUT 5000
 
+#define RTL8231_SMI_BUS_ID_MAX			0x1F
+
 struct rtl8231_gpios {
 	struct gpio_chip gc;
 	struct device *dev;
 	u32 id;
-	int smi_bus_id;
+	u32 smi_bus_id;
 	u16 reg_shadow[0x20];
 	u32 reg_cached;
 	int ext_gpio_indrt_access;
@@ -30,13 +32,11 @@ extern struct rtl83xx_soc_info soc_info;
 static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
 {
 	u32 t = 0, n = 0;
-	u8 bus_id = gpios->smi_bus_id;
 
 	reg &= 0x1f;
-	bus_id &= 0x1f;
 
 	/* Calculate read register address */
-	t = (bus_id << 2) | (reg << 7);
+	t = (gpios->smi_bus_id << 2) | (reg << 7);
 
 	/* Set execution bit: cleared when operation completed */
 	t |= 1;
@@ -52,7 +52,8 @@ static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
 	if (n >= USEC_TIMEOUT)
 		return 0x80000000;
 	
-	pr_debug("%s: %x, %x, %x\n", __func__, bus_id, reg, (t & 0xffff0000) >> 16);
+	pr_debug("%s: %x, %x, %x\n", __func__, gpios->smi_bus_id,
+		reg, (t & 0xffff0000) >> 16);
 
 	return (t & 0xffff0000) >> 16;
 }
@@ -60,13 +61,11 @@ static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
 static int rtl8231_write(struct rtl8231_gpios *gpios, u32 reg, u32 data)
 {
 	u32 t = 0, n = 0;
-	u8 bus_id = gpios->smi_bus_id;
 
-	pr_debug("%s: %x, %x, %x\n", __func__, bus_id, reg, data);
+	pr_debug("%s: %x, %x, %x\n", __func__, gpios->smi_bus_id, reg, data);
 	reg &= 0x1f;
-	bus_id &= 0x1f;
 
-	t = (bus_id << 2) | (reg << 7) | (data << 16);
+	t = (gpios->smi_bus_id << 2) | (reg << 7) | (data << 16);
 	/* Set write bit */
 	t |= 2;
 
@@ -278,7 +277,6 @@ static int rtl8231_gpio_probe(struct platform_device *pdev)
 	struct device_node *np = dev->of_node;
 	struct rtl8231_gpios *gpios;
 	int err;
-	u32 indirect_bus_id;
 
 	pr_info("Probing RTL8231 GPIOs\n");
 
@@ -300,13 +298,14 @@ static int rtl8231_gpio_probe(struct platform_device *pdev)
 		gpios->ext_gpio_indrt_access = RTL839X_EXT_GPIO_INDRT_ACCESS;
 	}
 
-	/*
-	 * We use a default MDIO bus ID for the 8231 of 0, which can be overriden
-	 * by the indirect-access-bus-id property in the dts.
-	 */
-	gpios->smi_bus_id = 0;
-	of_property_read_u32(np, "indirect-access-bus-id", &indirect_bus_id);
-	gpios->smi_bus_id = indirect_bus_id;
+	err = of_property_read_u32(np, "indirect-access-bus-id", &gpios->smi_bus_id);
+	if (!err && gpios->smi_bus_id > RTL8231_SMI_BUS_ID_MAX)
+		err = -EINVAL;
+
+	if (err) {
+		dev_err(dev, "invalid or missing indirect-access-bus-id\n");
+		return err;
+	}
 
 	rtl8231_init(gpios);
 
