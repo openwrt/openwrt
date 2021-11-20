@@ -748,10 +748,22 @@ ath79_setup_macs()
 	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 }
 
+ath79_setup_wireless()
+{
+	local board="$1"
+
+	case "$board" in
+	tplink,tl-wdr4300-v1-il)
+		ucidef_set_country "IL"
+		;;
+	esac
+}
+
 board_config_update
 board=$(board_name)
 ath79_setup_interfaces $board
 ath79_setup_macs $board
+ath79_setup_wireless $board
 board_config_flush
 
 exit 0
