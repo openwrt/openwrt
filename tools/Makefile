@@ -156,7 +156,13 @@ $(curdir)/ := .config prereq
 
 $(curdir)/install: $(curdir)/compile
 
+ifneq ($(and $(CONFIG_USE_LLVM_BUILD),$(CONFIG_SDK_LLVM_BPF)),)
+TOOLS_CHECK_STAMP_LOCATION:=
+else
+TOOLS_CHECK_STAMP_LOCATION:=$(STAGING_DIR_HOST)
+endif
+
 tools_enabled = $(foreach tool,$(sort $(tools-y) $(tools-)),$(if $(filter $(tool),$(tools-y)),y,n))
 $(eval $(call stampfile,$(curdir),tools,compile,,_$(subst $(space),,$(tools_enabled)),$(STAGING_DIR_HOST)))
-$(eval $(call stampfile,$(curdir),tools,check,$(TMP_DIR)/.build,,$(STAGING_DIR_HOST)))
+$(eval $(call stampfile,$(curdir),tools,check,$(TMP_DIR)/.build,,$(TOOLS_CHECK_STAMP_LOCATION)))
 $(eval $(call subdir,$(curdir)))
