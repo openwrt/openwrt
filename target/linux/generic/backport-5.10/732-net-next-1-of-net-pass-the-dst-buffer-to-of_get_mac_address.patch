@@ -1283,7 +1283,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return PTR_ERR(plat_dat);
 --- a/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.c
-@@ -1396,7 +1396,7 @@ static int rk_gmac_probe(struct platform
+@@ -1387,7 +1387,7 @@ static int rk_gmac_probe(struct platform
  	if (ret)
  		return ret;
  
@@ -1360,7 +1360,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int irq;
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -4904,7 +4904,7 @@ int stmmac_dvr_probe(struct device *devi
+@@ -4957,7 +4957,7 @@ int stmmac_dvr_probe(struct device *devi
  	priv->wol_irq = res->wol_irq;
  	priv->lpi_irq = res->lpi_irq;
  
