@@ -41,7 +41,7 @@ CMAKE_HOST_OPTIONS += \
 	-DLLVM_TOOLCHAIN_TOOLS="llvm-objcopy;llvm-objdump;llvm-readelf;llvm-strip;llvm-ar;llvm-as;llvm-dis;llvm-link;llvm-nm;llvm-ranlib;llc;opt" \
 	-DCMAKE_SKIP_RPATH=OFF
 
-$(BIN_DIR)/llvm-bpf-$(PKG_VERSION).tar.xz: $(HOST_STAMP_INSTALLED)
+$(BIN_DIR)/$(LLVM_BPF_PREFIX).tar.xz: $(HOST_STAMP_INSTALLED)
 	echo "$(PKG_VERSION)" > $(CMAKE_HOST_INSTALL_PREFIX)/.llvm-version
 	STRIP_KMOD= PATCHELF= STRIP=strip $(SCRIPT_DIR)/rstrip.sh $(STAGING_DIR_HOST)/llvm-bpf
 	tar -C $(STAGING_DIR_HOST) \
@@ -50,7 +50,7 @@ $(BIN_DIR)/llvm-bpf-$(PKG_VERSION).tar.xz: $(HOST_STAMP_INSTALLED)
 	mv $@.tmp $@
 
 ifneq ($(CONFIG_SDK_LLVM_BPF),)
-compile: $(BIN_DIR)/llvm-bpf-$(PKG_VERSION).tar.xz
+compile: $(BIN_DIR)/$(LLVM_BPF_PREFIX).tar.xz
 endif
 
 define Host/Install
