@@ -20,24 +20,6 @@ endef
 
 $(eval $(call KernelPackage,rtc-sunxi))
 
-define KernelPackage/rtc-sun6i
-    SUBMENU:=$(OTHER_MENU)
-    TITLE:=Sun6i SoC built-in RTC support
-    DEPENDS:=@TARGET_sunxi
-    $(call AddDepends/rtc)
-    KCONFIG:= \
-	CONFIG_RTC_DRV_SUN6I \
-	CONFIG_RTC_CLASS=y
-    FILES:=$(LINUX_DIR)/drivers/rtc/rtc-sun6i.ko
-    AUTOLOAD:=$(call AutoLoad,50,rtc-sun6i)
-endef
-
-define KernelPackage/rtc-sun6i/description
- Support for the AllWinner sun6i SoC's onboard RTC
-endef
-
-$(eval $(call KernelPackage,rtc-sun6i))
-
 define KernelPackage/sunxi-ir
     SUBMENU:=$(OTHER_MENU)
     TITLE:=Sunxi SoC built-in IR support (A20)
