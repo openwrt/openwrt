@@ -573,3 +573,95 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  &nandcs {
  	partitions {
  		compatible = "fixed-partitions";
+--- a/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
++++ b/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
+@@ -91,6 +91,43 @@
+ 	};
+ };
+ 
++&srab {
++	status = "okay";
++
++	ports {
++		port@0 {
++			reg = <0>;
++			label = "wan";
++		};
++
++		port@1 {
++			reg = <1>;
++			label = "lan1";
++		};
++
++		port@2 {
++			reg = <2>;
++			label = "lan2";
++		};
++
++		port@3 {
++			reg = <3>;
++			label = "lan3";
++		};
++
++		port@4 {
++			reg = <4>;
++			label = "lan4";
++		};
++
++		port@5 {
++			reg = <5>;
++			label = "cpu";
++			ethernet = <&gmac0>;
++		};
++	};
++};
++
+ &spi_nor {
+ 	status = "okay";
+ 
+--- a/arch/arm/boot/dts/bcm4709-tplink-archer-c9-v1.dts
++++ b/arch/arm/boot/dts/bcm4709-tplink-archer-c9-v1.dts
+@@ -102,6 +102,43 @@
+ 	vcc-gpio = <&chipcommon 12 GPIO_ACTIVE_HIGH>;
+ };
+ 
++&srab {
++	status = "okay";
++
++	ports {
++		port@0 {
++			reg = <0>;
++			label = "wan";
++		};
++
++		port@1 {
++			reg = <1>;
++			label = "lan1";
++		};
++
++		port@2 {
++			reg = <2>;
++			label = "lan2";
++		};
++
++		port@3 {
++			reg = <3>;
++			label = "lan3";
++		};
++
++		port@4 {
++			reg = <4>;
++			label = "lan4";
++		};
++
++		port@5 {
++			reg = <5>;
++			label = "cpu";
++			ethernet = <&gmac0>;
++		};
++	};
++};
++
+ &spi_nor {
+ 	status = "okay";
+ 
