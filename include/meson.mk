@@ -56,7 +56,7 @@ MESON_CPU:="$(CPU_TYPE)$(if $(CPU_SUBTYPE),+$(CPU_SUBTYPE))"
 endif
 
 define Meson
-	$(2) $(STAGING_DIR_HOST)/bin/$(PYTHON) $(STAGING_DIR_HOST)/bin/meson $(1)
+	$(2) $(STAGING_DIR_HOST)/bin/$(PYTHON) $(STAGING_DIR_HOST)/bin/meson.py $(1)
 endef
 
 define Meson/CreateNativeFile
