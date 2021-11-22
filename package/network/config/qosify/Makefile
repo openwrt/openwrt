@@ -44,7 +44,14 @@ define Package/qosify/conffiles
 endef
 
 define Package/qosify/install
-	$(INSTALL_DIR) $(1)/lib/bpf $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config $(1)/etc/hotplug.d/net $(1)/etc/qosify
+	$(INSTALL_DIR) \
+		$(1)/lib/bpf \
+		$(1)/usr/sbin \
+		$(1)/etc/init.d \
+		$(1)/etc/config \
+		$(1)/etc/qosify \
+		$(1)/etc/hotplug.d/net \
+		$(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/qosify-bpf.o $(1)/lib/bpf
 	$(INSTALL_BIN) \
 		$(PKG_INSTALL_DIR)/usr/bin/qosify \
@@ -54,6 +61,7 @@ define Package/qosify/install
 	$(INSTALL_DATA) ./files/qosify-defaults.conf $(1)/etc/qosify/00-defaults.conf
 	$(INSTALL_DATA) ./files/qosify.conf $(1)/etc/config/qosify
 	$(INSTALL_DATA) ./files/qosify.hotplug $(1)/etc/hotplug.d/net/10-qosify
+	$(INSTALL_DATA) ./files/qosify.hotplug $(1)/etc/hotplug.d/iface/10-qosify
 endef
 
 $(eval $(call BuildPackage,qosify))
