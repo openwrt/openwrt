@@ -29,7 +29,7 @@ Tested-by: Simon Wunderlich <simon.wunderlich@openmesh.com>
  struct wpa_driver_set_key_params {
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -10043,6 +10043,18 @@ static int nl80211_put_mesh_id(struct nl
+@@ -10058,6 +10058,18 @@ static int nl80211_put_mesh_id(struct nl
  }
  
  
@@ -48,7 +48,7 @@ Tested-by: Simon Wunderlich <simon.wunderlich@openmesh.com>
  static int nl80211_put_mesh_config(struct nl_msg *msg,
  				   struct wpa_driver_mesh_bss_params *params)
  {
-@@ -10104,6 +10116,7 @@ static int nl80211_join_mesh(struct i802
+@@ -10119,6 +10131,7 @@ static int nl80211_join_mesh(struct i802
  	    nl80211_put_basic_rates(msg, params->basic_rates) ||
  	    nl80211_put_mesh_id(msg, params->meshid, params->meshid_len) ||
  	    nl80211_put_beacon_int(msg, params->beacon_int) ||
