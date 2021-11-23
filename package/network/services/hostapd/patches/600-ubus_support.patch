@@ -147,9 +147,9 @@
  
  	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
  	 * is used */
-@@ -4543,6 +4560,14 @@ static void handle_assoc(struct hostapd_
- 					    pos, left, rssi, omit_rsnxe);
- 	os_free(tmp);
+@@ -4477,6 +4494,14 @@ static void handle_assoc(struct hostapd_
+ 	}
+ #endif /* CONFIG_FILS */
  
 +	ubus_resp = hostapd_ubus_handle_event(hapd, &req);
 +	if (ubus_resp) {
@@ -159,9 +159,9 @@
 +		goto fail;
 +	}
 +
+  fail:
+ 
  	/*
- 	 * Remove the station in case tranmission of a success response fails
- 	 * (the STA was added associated to the driver) or if the station was
 @@ -4570,6 +4595,7 @@ static void handle_disassoc(struct hosta
  	wpa_printf(MSG_DEBUG, "disassocation: STA=" MACSTR " reason_code=%d",
  		   MAC2STR(mgmt->sa),
