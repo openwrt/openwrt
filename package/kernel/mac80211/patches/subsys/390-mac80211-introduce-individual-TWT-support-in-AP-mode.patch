@@ -187,7 +187,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	INIT_WORK(&sdata->csa_finalize_work, ieee80211_csa_finalize_work);
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -3208,6 +3208,68 @@ ieee80211_rx_h_mgmt_check(struct ieee802
+@@ -3209,6 +3209,68 @@ ieee80211_rx_h_mgmt_check(struct ieee802
  	return RX_CONTINUE;
  }
  
@@ -256,7 +256,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static ieee80211_rx_result debug_noinline
  ieee80211_rx_h_action(struct ieee80211_rx_data *rx)
  {
-@@ -3487,6 +3549,17 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -3488,6 +3550,17 @@ ieee80211_rx_h_action(struct ieee80211_r
  		    !mesh_path_sel_is_hwmp(sdata))
  			break;
  		goto queue;
