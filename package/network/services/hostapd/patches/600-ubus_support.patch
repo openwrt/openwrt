@@ -147,9 +147,9 @@
  
  	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
  	 * is used */
-@@ -4543,6 +4560,14 @@ static void handle_assoc(struct hostapd_
- 					    pos, left, rssi, omit_rsnxe);
- 	os_free(tmp);
+@@ -4477,6 +4494,14 @@ static void handle_assoc(struct hostapd_
+ 	}
+ #endif /* CONFIG_FILS */
  
 +	ubus_resp = hostapd_ubus_handle_event(hapd, &req);
 +	if (ubus_resp) {
@@ -159,9 +159,9 @@
 +		goto fail;
 +	}
 +
+  fail:
+ 
  	/*
- 	 * Remove the station in case tranmission of a success response fails
- 	 * (the STA was added associated to the driver) or if the station was
 @@ -4570,6 +4595,7 @@ static void handle_disassoc(struct hosta
  	wpa_printf(MSG_DEBUG, "disassocation: STA=" MACSTR " reason_code=%d",
  		   MAC2STR(mgmt->sa),
@@ -235,22 +235,22 @@
  		wpabuf_free(sta->p2p_ie);
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -424,6 +424,7 @@ void ap_handle_timer(void *eloop_ctx, vo
+@@ -423,6 +423,7 @@ void ap_handle_timer(void *eloop_ctx, vo
+ 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
  			       HOSTAPD_LEVEL_INFO, "deauthenticated due to "
  			       "local deauth request");
- 		ap_free_sta(hapd, sta);
 +		hostapd_ubus_notify(hapd, "local-deauth", sta->addr);
+ 		ap_free_sta(hapd, sta);
  		return;
  	}
- 
-@@ -579,6 +580,7 @@ skip_poll:
+@@ -578,6 +579,7 @@ skip_poll:
+ 		mlme_deauthenticate_indication(
  			hapd, sta,
  			WLAN_REASON_PREV_AUTH_NOT_VALID);
- 		ap_free_sta(hapd, sta);
 +		hostapd_ubus_notify(hapd, "inactive-deauth", sta->addr);
+ 		ap_free_sta(hapd, sta);
  		break;
  	}
- }
 @@ -1294,6 +1296,7 @@ void ap_sta_set_authorized(struct hostap
  					  buf, ip_addr, keyid_buf);
  	} else {
