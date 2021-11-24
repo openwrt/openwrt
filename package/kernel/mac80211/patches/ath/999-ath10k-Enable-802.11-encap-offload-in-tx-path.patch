@@ -286,7 +286,7 @@ Improves TCP throughput when the feature is enabled.
  /*
   * TODO:
   * Figure out how to handle WMI_VDEV_SUBTYPE_P2P_DEVICE,
-@@ -5564,15 +5619,7 @@ static int ath10k_add_interface(struct i
+@@ -5565,15 +5620,7 @@ static int ath10k_add_interface(struct i
  
  	arvif->def_wep_key_idx = -1;
  
@@ -303,7 +303,7 @@ Improves TCP throughput when the feature is enabled.
  
  	/* Configuring number of spatial stream for monitor interface is causing
  	 * target assert in qca9888 and qca6174.
-@@ -9255,6 +9302,7 @@ static const struct ieee80211_ops ath10k
+@@ -9256,6 +9303,7 @@ static const struct ieee80211_ops ath10k
  	.config				= ath10k_config,
  	.add_interface			= ath10k_add_interface,
  	.remove_interface		= ath10k_remove_interface,
@@ -311,7 +311,7 @@ Improves TCP throughput when the feature is enabled.
  	.configure_filter		= ath10k_configure_filter,
  	.bss_info_changed		= ath10k_bss_info_changed,
  	.set_coverage_class		= ath10k_mac_op_set_coverage_class,
-@@ -9881,6 +9929,9 @@ int ath10k_mac_register(struct ath10k *a
+@@ -9882,6 +9930,9 @@ int ath10k_mac_register(struct ath10k *a
  	ieee80211_hw_set(ar->hw, SUPPORTS_TX_FRAG);
  	ieee80211_hw_set(ar->hw, REPORTS_LOW_ACK);
  

@@ -37,7 +37,7 @@
  struct ieee80211_local;
  
  /* Maximum number of broadcast/multicast frames to buffer when some of the
-@@ -997,6 +1001,10 @@ struct ieee80211_sub_if_data {
+@@ -1007,6 +1011,10 @@ struct ieee80211_sub_if_data {
  	} debugfs;
  #endif
  
@@ -107,7 +107,7 @@
  static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata,
  			      bool going_down)
  {
-@@ -690,8 +726,24 @@ static void ieee80211_teardown_sdata(str
+@@ -692,8 +728,24 @@ static void ieee80211_teardown_sdata(str
  		ieee80211_mesh_teardown_sdata(sdata);
  }
  
@@ -132,7 +132,7 @@
  	ieee80211_teardown_sdata(IEEE80211_DEV_TO_SUB_IF(dev));
  }
  
-@@ -755,6 +807,9 @@ static const struct net_device_ops ieee8
+@@ -757,6 +809,9 @@ static const struct net_device_ops ieee8
  
  	.ndo_open		= ieee80211_open,
  	.ndo_stop		= ieee80211_stop,
@@ -201,7 +201,7 @@
  static inline void ieee80211_rx_stats(struct net_device *dev, u32 len)
  {
  	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
-@@ -2601,6 +2651,12 @@ static void ieee80211_deliver_skb_to_loc
+@@ -2597,6 +2647,12 @@ static void ieee80211_deliver_skb_to_loc
  			ether_addr_copy(ehdr->h_dest, sdata->vif.addr);
  
  		/* deliver to local stack */
@@ -214,7 +214,7 @@
  		if (rx->list)
  #if LINUX_VERSION_IS_GEQ(4,19,0)
  			list_add_tail(&skb->list, rx->list);
-@@ -4458,6 +4514,12 @@ static void ieee80211_rx_8023(struct iee
+@@ -4527,6 +4583,12 @@ static void ieee80211_rx_8023(struct iee
  	/* deliver to local stack */
  	skb->protocol = eth_type_trans(skb, fast_rx->dev);
  	memset(skb->cb, 0, sizeof(skb->cb));
@@ -229,7 +229,7 @@
  		list_add_tail(&skb->list, rx->list);
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -36,6 +36,11 @@
+@@ -37,6 +37,11 @@
  #include "wme.h"
  #include "rate.h"
  
@@ -241,7 +241,7 @@
  /* misc utils */
  
  static inline void ieee80211_tx_stats(struct net_device *dev, u32 len)
-@@ -1697,6 +1702,16 @@ static bool ieee80211_tx_frags(struct ie
+@@ -1696,6 +1701,16 @@ static bool ieee80211_tx_frags(struct ie
  					return true;
  				}
  			} else {
@@ -258,7 +258,7 @@
  
  				/*
  				 * Since queue is stopped, queue up frames for
-@@ -4215,6 +4230,29 @@ out:
+@@ -4375,6 +4390,29 @@ out:
  netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
  				       struct net_device *dev)
  {
