@@ -1,0 +1,316 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/include/ "fsl/p1020si-pre.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+/ {
+	model = "Aerohive HiveAP-370";
+	compatible = "aerohive,hiveap-370";
+
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+		label-mac-device = &enet1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_status: status {
+			label = "ap370:white:status";
+			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			linux,default-trigger = "default-on";
+		};
+	};
+
+	chosen {
+		bootargs-override = "console=ttyS0,9600";
+	};
+
+	memory {
+		device_type = "memory";
+	};
+
+	board_lbc: lbc: localbus@ffe05000 {
+		reg = <0x0 0xffe05000 0x0 0x1000>;
+		ranges = <0x0 0x0 0x0 0xffa00000 0x100000>;
+
+		nand@0,0 {
+			#address-cells = <0x1>;
+			#size-cells = <0x1>;
+			compatible = "fsl,elbc-fcm-nand";
+			reg = <0x0 0x0 0x4000000>;
+			bank-width = <0x2>;
+			device-width = <0x1>;
+			nand-ecc-mode = "none";
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					reg = <0x0 0x20000>;
+					label = "0Uboot";
+					read-only;
+				};
+
+				partition@20000 {
+					reg = <0x20000 0x200000>;
+					label = "Uboot";
+					read-only;
+				};
+
+				partition@220000 {
+					reg = <0x220000 0x200000>;
+					label = "Uboot-backup";
+					read-only;
+				};
+
+				partition@420000 {
+					reg = <0x420000 0x40000>;
+					label = "Uboot Env";
+					read-only;
+				};
+
+				partition@460000 {
+					reg = <0x460000 0x40000>;
+					label = "Boot Info";
+					read-only;
+				};
+
+				partition@4a0000 {
+					reg = <0x4a0000 0x40000>;
+					label = "Static Boot Info";
+					read-only;
+				};
+
+				hwinfo: partition@4e0000 {
+					reg = <0x4e0000 0x40000>;
+					label = "Hardware Info";
+					read-only;
+				};
+
+				partition@520000 {
+					reg = <0x520000 0x4080000>;
+					label = "kernel";
+				};
+
+				partition@45A0000 {
+					reg = <0x45a0000 0x3ba60000>;
+					label = "ubi";
+				};
+			};
+		};
+	};
+
+	board_soc: soc: soc@ffe00000 {
+		device_type = "soc";
+		compatible = "fsl,p1020-immr", "simple-bus";
+		ranges = <0x0 0x0 0xffe00000 0x100000>;
+		bus-frequency = <0x0>;
+
+		i2c@3000 {
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			cell-index = <0x0>;
+			compatible = "fsl-i2c";
+			reg = <0x3000 0x100>;
+			interrupts = <0x2b 0x2>;
+			interrupt-parent = <0x2>;
+			dfsrr;
+			rtc@68 {
+				compatible = "dallas,ds1339";
+				reg = <0x68>;
+			};
+		};
+
+		i2c@3100 {
+			tpm@29 {
+				compatible = "atmel,at97sc3204t";
+				reg = <0x29>;
+			};
+
+			/* Most likely SoC boot config */
+			eeprom@51 {
+				compatible = "eeprom";
+				reg = <0x51>;
+			};
+		};
+
+		mdio@24000 {
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			compatible = "fsl,etsec2-mdio";
+			reg = <0x24000 0x1000 0xb0030 0x4>;
+			phy0: ethernet-phy@0 {
+				interrupt-parent = <0x2>;
+				interrupts = <0x3 0x3>;
+				reg = <0x1>;
+				linux,phandle = <0x3>;
+			};
+			phy1: ethernet-phy@1 {
+				interrupt-parent = <0x2>;
+				interrupts = <0x3 0x3>;
+				reg = <0x3>;
+				linux,phandle = <0x4>;
+			};
+		};
+
+		mdio@25000 {
+			status = "disabled";
+		};
+
+		mdio@26000 {
+			status = "disabled";
+		};
+
+		enet0: ethernet@b0000 {
+			status = "disabled";
+		};
+
+		enet1: ethernet@b1000 {
+			status = "okay";
+			model = "eTSEC";
+			compatible = "fsl,etsec2-mdio";
+			phy-handle = <&phy0>;
+			phy-connection-type = "rgmii-id";
+			nvmem-cells = <&macaddr_hwinfo_0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		enet2: ethernet@b2000 {
+			status = "okay";
+			model = "eTSEC";
+			compatible = "fsl,etsec2-mdio";
+			phy-handle = <&phy1>;
+			phy-connection-type = "rgmii-id";
+			nvmem-cells = <&macaddr_hwinfo_0>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <1>;
+		};
+
+		gpio0: gpio-controller@fc00 {
+			#gpio-cells = <0x2>;
+			compatible = "fsl,mpc8572-gpio";
+			reg = <0xfc00 0x100>;
+			interrupts = <0x2f 0x2>;
+			interrupt-parent = <0x2>;
+			gpio-controller;
+			available = <0x3 0x5 0x8 0xa 0xb 0xc 0xd 0xf>;
+		};
+
+		usb@22000 {
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			compatible = "fsl-usb2-dr";
+			reg = <0x22000 0x1000>;
+			interrupt-parent = <0x2>;
+			interrupts = <0x1c 0x2>;
+			phy_type = "ulpi";
+		};
+
+		usb@23000 {
+			status = "disabled";
+		};
+
+		crypto@30000 {
+			compatible = "fsl,sec3.3", "fsl,sec3.1", "fsl,sec3.0", "fsl,sec2.4", "fsl,sec2.2", "fsl,sec2.1", "fsl,sec2.0";
+			reg = <0x30000 0x10000>;
+			interrupts = <0x2d 0x2 0x3a 0x2>;
+			interrupt-parent = <0x2>;
+			fsl,num-channels = <0x4>;
+			fsl,channel-fifo-len = <0x18>;
+			fsl,exec-units-mask = <0x97c>;
+			fsl,descriptor-types-mask = <0x3a30abf>;
+			fsl,multi-host-mode = "dual";
+			fsl,channel-remap = <0x1>;
+		};
+		pic@40000 {
+			interrupt-controller;
+			#address-cells = <0x0>;
+			#interrupt-cells = <0x2>;
+			reg = <0x40000 0x40000>;
+			compatible = "chrp,open-pic";
+			device_type = "open-pic";
+			linux,phandle = <0x2>;
+		};
+		message@41400 {
+			compatible = "fsl,p1020-msg", "fsl,mpic-msg";
+			reg = <0x41400 0x200>;
+			interrupts = <0xb0 0x2 0xb1 0x2 0xb2 0x2 0xb3 0x2>;
+			interrupt-parent = <0x2>;
+		};
+		message@42400 {
+			compatible = "fsl,p1020-msg", "fsl,mpic-msg";
+			reg = <0x42400 0x200>;
+			interrupts = <0xb4 0x2 0xb5 0x2 0xb6 0x2 0xb7 0x2>;
+			interrupt-parent = <0x2>;
+		};
+		msi@41600 {
+			compatible = "fsl,p1020-msi", "fsl,mpic-msi";
+			reg = <0x41600 0x80>;
+			msi-available-ranges = <0x0 0x100>;
+			interrupts = <0xe0 0x0 0xe1 0x0 0xe2 0x0 0xe3 0x0 0xe4 0x0 0xe5 0x0 0xe6 0x0 0xe7 0x0>;
+			interrupt-parent = <0x2>;
+		};
+		global-utilities@e0000 {
+			compatible = "fsl,p2020-guts";
+			reg = <0xe0000 0x1000>;
+			fsl,has-rstcr;
+		};
+	};
+
+	pci0: pcie@ffe09000 {
+		reg = <0x0 0xffe09000 0x0 0x1000>;
+		ranges = <0x2000000 0x0 0xa0000000 0x0 0xa0000000 0x0 0x20000000
+		0x1000000 0x0 0x00000000 0x0 0xffc30000 0x0 0x10000>;
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xa0000000
+			0x2000000 0x0 0xa0000000
+			0x0 0x20000000
+
+			0x1000000 0x0 0x0
+			0x1000000 0x0 0x0
+			0x0 0x100000>;
+		};
+	};
+
+	pci1: pcie@ffe0a000 {
+		reg = <0x0 0xffe0a000 0x0 0x1000>;
+		ranges = <0x2000000 0x0 0xc0000000 0x0 0xc0000000 0x0 0x20000000
+		0x1000000 0x0 0x00000000 0x0 0xffc20000 0x0 0x10000>;
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xc0000000
+			0x2000000 0x0 0xc0000000
+			0x0 0x20000000
+
+			0x1000000 0x0 0x0
+			0x1000000 0x0 0x0
+			0x0 0x100000>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			gpios = <&gpio0 8 1>; /* active low */
+			linux,code = <0x198>; /* KEY_RESTART */
+		};
+	};
+};
+
+&hwinfo {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_hwinfo_0: macaddr@0 {
+		reg = <0x0 0x6>;
+	};
+};
+
+/include/ "fsl/p1020si-post.dtsi"
