@@ -17,6 +17,7 @@ LLVM_TAR := $(BIN_DIR)/$(LLVM_BPF_PREFIX).tar.xz
 $(LLVM_TAR): $(HOST_STAMP_INSTALLED)
 	tar -C $(STAGING_DIR_HOST) \
 		-I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-cf $@.tmp llvm-bpf $(LLVM_BPF_PREFIX)
 	mv $@.tmp $@
 
