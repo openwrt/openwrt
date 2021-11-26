@@ -19,6 +19,9 @@
 	};
 
 	leds {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_sys_led>;
+
 		compatible = "gpio-leds";
 
 		led_power: power {
