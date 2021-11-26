@@ -396,20 +396,8 @@ platform_img_from_safeloader() {
 	echo -n $dir/os-image
 }
 
-platform_img_from_seama() {
-	local dir="/tmp/sysupgrade-bcm53xx"
-	local offset=$(oseama info "$1" -e 0 | grep "Entity offset:" | sed "s/.*:\s*//")
-	local size=$(oseama info "$1" -e 0 | grep "Entity size:" | sed "s/.*:\s*//")
-
-	# Busybox doesn't support required iflag-s
-	# echo -n dd iflag=skip_bytes,count_bytes skip=$offset count=$size
-
-	rm -fR $dir
-	mkdir -p $dir
-	dd if="$1" of=$dir/image-noheader.bin bs=$offset skip=1
-	dd if=$dir/image-noheader.bin of=$dir/image-entity.bin bs=$size count=1
-
-	echo -n $dir/image-entity.bin
+platform_img_from_seama_cmd() {
+	echo -n oseama extract "$1" -e 0
 }
 
 platform_other_do_upgrade() {
@@ -438,7 +426,7 @@ platform_other_do_upgrade() {
 		"lxl")		cmd=$(platform_trx_from_lxl_cmd "$trx");;
 		"lxlold")	cmd=$(platform_trx_from_lxlold_cmd "$trx");;
 		"safeloader")	trx=$(platform_img_from_safeloader "$trx"); PART_NAME=os-image;;
-		"seama")	trx=$(platform_img_from_seama "$trx");;
+		"seama")	cmd=$(platform_img_from_seama_cmd "$trx");;
 	esac
 
 	default_do_upgrade "$trx" "$cmd"
