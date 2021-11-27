@@ -1,0 +1,83 @@
+From aadf7c81a0771b8f1c97dabca6a48bae1b387779 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Tue, 28 Sep 2021 12:05:43 +0300
+Subject: [PATCH 023/120] ath11k: fix some sleeping in atomic bugs
+
+The ath11k_dbring_bufs_replenish() and ath11k_dbring_fill_bufs()
+take a "gfp" parameter but they since they take spinlocks, the
+allocations they do have to be atomic.  This causes a bug because
+ath11k_dbring_buf_setup passes GFP_KERNEL for the gfp flags.
+
+The fix is to use GFP_ATOMIC and remove the unused parameters.
+
+Fixes: bd6478559e27 ("ath11k: Add direct buffer ring support")
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20210812070434.GE31863@kili
+---
+ drivers/net/wireless/ath/ath11k/dbring.c | 16 +++++++---------
+ 1 file changed, 7 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dbring.c
++++ b/drivers/net/wireless/ath/ath11k/dbring.c
+@@ -8,8 +8,7 @@
+ 
+ static int ath11k_dbring_bufs_replenish(struct ath11k *ar,
+ 					struct ath11k_dbring *ring,
+-					struct ath11k_dbring_element *buff,
+-					gfp_t gfp)
++					struct ath11k_dbring_element *buff)
+ {
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct hal_srng *srng;
+@@ -35,7 +34,7 @@ static int ath11k_dbring_bufs_replenish(
+ 		goto err;
+ 
+ 	spin_lock_bh(&ring->idr_lock);
+-	buf_id = idr_alloc(&ring->bufs_idr, buff, 0, ring->bufs_max, gfp);
++	buf_id = idr_alloc(&ring->bufs_idr, buff, 0, ring->bufs_max, GFP_ATOMIC);
+ 	spin_unlock_bh(&ring->idr_lock);
+ 	if (buf_id < 0) {
+ 		ret = -ENOBUFS;
+@@ -72,8 +71,7 @@ err:
+ }
+ 
+ static int ath11k_dbring_fill_bufs(struct ath11k *ar,
+-				   struct ath11k_dbring *ring,
+-				   gfp_t gfp)
++				   struct ath11k_dbring *ring)
+ {
+ 	struct ath11k_dbring_element *buff;
+ 	struct hal_srng *srng;
+@@ -92,11 +90,11 @@ static int ath11k_dbring_fill_bufs(struc
+ 	size = sizeof(*buff) + ring->buf_sz + align - 1;
+ 
+ 	while (num_remain > 0) {
+-		buff = kzalloc(size, gfp);
++		buff = kzalloc(size, GFP_ATOMIC);
+ 		if (!buff)
+ 			break;
+ 
+-		ret = ath11k_dbring_bufs_replenish(ar, ring, buff, gfp);
++		ret = ath11k_dbring_bufs_replenish(ar, ring, buff);
+ 		if (ret) {
+ 			ath11k_warn(ar->ab, "failed to replenish db ring num_remain %d req_ent %d\n",
+ 				    num_remain, req_entries);
+@@ -176,7 +174,7 @@ int ath11k_dbring_buf_setup(struct ath11
+ 	ring->hp_addr = ath11k_hal_srng_get_hp_addr(ar->ab, srng);
+ 	ring->tp_addr = ath11k_hal_srng_get_tp_addr(ar->ab, srng);
+ 
+-	ret = ath11k_dbring_fill_bufs(ar, ring, GFP_KERNEL);
++	ret = ath11k_dbring_fill_bufs(ar, ring);
+ 
+ 	return ret;
+ }
+@@ -322,7 +320,7 @@ int ath11k_dbring_buffer_release_event(s
+ 		}
+ 
+ 		memset(buff, 0, size);
+-		ath11k_dbring_bufs_replenish(ar, ring, buff, GFP_ATOMIC);
++		ath11k_dbring_bufs_replenish(ar, ring, buff);
+ 	}
+ 
+ 	spin_unlock_bh(&srng->lock);

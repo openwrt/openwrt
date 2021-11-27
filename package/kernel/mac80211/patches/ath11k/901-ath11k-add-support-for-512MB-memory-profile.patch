@@ -34,17 +34,17 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	  Use limits for the 512MB memory size instead of 1GB.
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -752,6 +752,7 @@ struct ath11k_base {
+@@ -773,6 +773,7 @@ struct ath11k_base {
  	struct timer_list mon_reap_timer;
  
  	struct completion htc_suspend;
 +	atomic_t num_max_allowed;
  
- 	/* must be last */
- 	u8 drv_priv[0] __aligned(sizeof(void *));
+ 	struct {
+ 		enum ath11k_bdf_search bdf_search;
 --- a/drivers/net/wireless/ath/ath11k/dp.h
 +++ b/drivers/net/wireless/ath/ath11k/dp.h
-@@ -175,8 +175,9 @@ struct ath11k_pdev_dp {
+@@ -177,8 +177,9 @@ struct ath11k_pdev_dp {
  
  #define DP_WBM_RELEASE_RING_SIZE	64
  #define DP_TCL_DATA_RING_SIZE		512
@@ -55,7 +55,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #define DP_TCL_CMD_RING_SIZE		32
  #define DP_TCL_STATUS_RING_SIZE		32
  #define DP_REO_DST_RING_MAX		4
-@@ -189,9 +190,9 @@ struct ath11k_pdev_dp {
+@@ -191,9 +192,9 @@ struct ath11k_pdev_dp {
  #define DP_RXDMA_BUF_RING_SIZE		4096
  #define DP_RXDMA_REFILL_RING_SIZE	2048
  #define DP_RXDMA_ERR_DST_RING_SIZE	1024
@@ -70,7 +70,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #define DP_RX_BUFFER_SIZE	2048
 --- a/drivers/net/wireless/ath/ath11k/dp_tx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
-@@ -270,6 +270,7 @@ tcl_ring_sel:
+@@ -268,6 +268,7 @@ tcl_ring_sel:
  			skb->data, skb->len);
  
  	atomic_inc(&ar->dp.num_tx_pending);
@@ -78,7 +78,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
  	return 0;
  
-@@ -316,6 +317,7 @@ static void ath11k_dp_tx_free_txbuf(stru
+@@ -312,6 +313,7 @@ static void ath11k_dp_tx_free_txbuf(stru
  	ar = ab->pdevs[mac_id].ar;
  	if (atomic_dec_and_test(&ar->dp.num_tx_pending))
  		wake_up(&ar->dp.tx_empty_waitq);
@@ -86,7 +86,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  }
  
  static void
-@@ -347,6 +349,7 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
+@@ -341,6 +343,7 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
  
  	if (atomic_dec_and_test(&ar->dp.num_tx_pending))
  		wake_up(&ar->dp.tx_empty_waitq);
@@ -94,7 +94,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
  	dma_unmap_single(ab->dev, skb_cb->paddr, msdu->len, DMA_TO_DEVICE);
  
-@@ -608,6 +611,7 @@ void ath11k_dp_tx_completion_handler(str
+@@ -598,6 +601,7 @@ void ath11k_dp_tx_completion_handler(str
  			wake_up(&ar->dp.tx_empty_waitq);
  
  		ath11k_dp_tx_complete_msdu(ar, msdu, &ts);
@@ -104,7 +104,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
 --- a/drivers/net/wireless/ath/ath11k/hw.h
 +++ b/drivers/net/wireless/ath/ath11k/hw.h
-@@ -9,11 +9,30 @@
+@@ -10,11 +10,30 @@
  #include "wmi.h"
  
  /* Target configuration defines */
@@ -135,7 +135,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
  /* Num of peers for Single Radio mode */
  #define TARGET_NUM_PEERS_SINGLE		(TARGET_NUM_PEERS_PDEV)
-@@ -24,9 +43,6 @@
+@@ -25,9 +44,6 @@
  /* Num of peers for DBS_SBS */
  #define TARGET_NUM_PEERS_DBS_SBS	(3 * TARGET_NUM_PEERS_PDEV)
  
@@ -147,7 +147,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #define TARGET_NUM_TIDS(x)	(2 * TARGET_NUM_PEERS(x) + \
 --- a/drivers/net/wireless/ath/ath11k/qmi.c
 +++ b/drivers/net/wireless/ath/ath11k/qmi.c
-@@ -2775,7 +2775,7 @@ int ath11k_qmi_init_service(struct ath11
+@@ -2784,7 +2784,7 @@ int ath11k_qmi_init_service(struct ath11
  	memset(&ab->qmi.target_mem, 0, sizeof(struct target_mem_chunk));
  	ab->qmi.ab = ab;
  

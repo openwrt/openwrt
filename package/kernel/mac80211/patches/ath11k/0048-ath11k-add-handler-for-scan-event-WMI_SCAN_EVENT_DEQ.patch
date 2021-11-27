@@ -1,0 +1,45 @@
+From 441b3b5911f8ead7f2fe2336587b340a33044d58 Mon Sep 17 00:00:00 2001
+From: Wen Gong <wgong@codeaurora.org>
+Date: Tue, 28 Sep 2021 14:00:45 +0300
+Subject: [PATCH 048/120] ath11k: add handler for scan event
+ WMI_SCAN_EVENT_DEQUEUED
+
+When wlan interface is up, 11d scan is sent to the firmware, and the
+firmware needs to spend couple of seconds to complete the 11d scan. If
+immediately a normal scan from user space arrives to ath11k, then the
+normal scan request is also sent to the firmware, but the scan started
+event will be reported to ath11k until the 11d scan complete. When timed
+out for the scan started in ath11k, ath11k stops the normal scan and the
+firmware reports WMI_SCAN_EVENT_DEQUEUED to ath11k for the normal scan.
+ath11k has no handler for the event and then timed out for the scan
+completed in ath11k_scan_stop(), and ath11k prints the following error
+message.
+
+[ 1491.604750] ath11k_pci 0000:02:00.0: failed to receive scan abort comple: timed out
+[ 1491.604756] ath11k_pci 0000:02:00.0: failed to stop scan: -110
+[ 1491.604758] ath11k_pci 0000:02:00.0: failed to start hw scan: -110
+
+Add a handler for WMI_SCAN_EVENT_DEQUEUED and then complete the scan to
+get rid of the above error message.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-01720.1-QCAHSPSWPL_V1_V2_SILICONZ_LITE-1
+
+Signed-off-by: Wen Gong <wgong@codeaurora.org>
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20210914164226.38843-1-jouni@codeaurora.org
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -6370,6 +6370,8 @@ static void ath11k_scan_event(struct ath
+ 		ath11k_wmi_event_scan_start_failed(ar);
+ 		break;
+ 	case WMI_SCAN_EVENT_DEQUEUED:
++		__ath11k_mac_scan_finish(ar);
++		break;
+ 	case WMI_SCAN_EVENT_PREEMPTED:
+ 	case WMI_SCAN_EVENT_RESTARTED:
+ 	case WMI_SCAN_EVENT_FOREIGN_CHAN_EXIT:

@@ -1,0 +1,55 @@
+From 28a523281def6e894a0d6557d7ac9a5dd4977753 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Sat, 27 Nov 2021 13:20:21 +0100
+Subject: [PATCH 2/2] Revert "ath11k: add caldata file for multiple radios"
+
+This reverts commit e82dfe7b5608592c270cc69100cb4322069f949d.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/qmi.c | 13 ++-----------
+ 1 file changed, 2 insertions(+), 11 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2037,7 +2037,6 @@ err_free_req:
+ 
+ static int ath11k_qmi_load_bdf_qmi(struct ath11k_base *ab)
+ {
+-	struct device *dev = ab->dev;
+ 	char filename[ATH11K_QMI_MAX_BDF_FILE_NAME_SIZE];
+ 	const struct firmware *fw_entry;
+ 	struct ath11k_board_data bd;
+@@ -2071,14 +2070,6 @@ static int ath11k_qmi_load_bdf_qmi(struc
+ 		goto out;
+ 
+ 	file_type = ATH11K_QMI_FILE_TYPE_CALDATA;
+-
+-	/* cal-<bus>-<id>.bin */
+-	snprintf(filename, sizeof(filename), "cal-%s-%s.bin",
+-		 ath11k_bus_str(ab->hif.bus), dev_name(dev));
+-	fw_entry = ath11k_core_firmware_request(ab, filename);
+-	if (!IS_ERR(fw_entry))
+-		goto success;
+-
+ 	fw_entry = ath11k_core_firmware_request(ab, ATH11K_DEFAULT_CAL_FILE);
+ 	if (IS_ERR(fw_entry)) {
+ 		ret = PTR_ERR(fw_entry);
+@@ -2088,7 +2079,6 @@ static int ath11k_qmi_load_bdf_qmi(struc
+ 		goto out;
+ 	}
+ 
+-success:
+ 	fw_size = min_t(u32, ab->hw_params.fw.board_size, fw_entry->size);
+ 	ret = ath11k_qmi_load_file_target_mem(ab, fw_entry->data, fw_size, file_type);
+ 	if (ret < 0) {
+@@ -2096,7 +2086,8 @@ success:
+ 		goto out_qmi_cal;
+ 	}
+ 
+-	ath11k_dbg(ab, ATH11K_DBG_QMI, "qmi caldata type: %u\n", file_type);
++	ath11k_dbg(ab, ATH11K_DBG_QMI, "qmi caldata downloaded: type: %u\n",
++		   file_type);
+ 
+ out_qmi_cal:
+ 	release_firmware(fw_entry);

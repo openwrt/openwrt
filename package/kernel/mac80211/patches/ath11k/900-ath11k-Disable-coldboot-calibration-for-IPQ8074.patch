@@ -13,10 +13,10 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -67,7 +67,7 @@ static const struct ath11k_hw_params ath
- 		.supports_monitor = true,
+@@ -77,7 +77,7 @@ static const struct ath11k_hw_params ath
  		.supports_shadow_regs = false,
  		.idle_ps = false,
+ 		.supports_sta_ps = false,
 -		.cold_boot_calib = true,
 +		.cold_boot_calib = false,
  		.supports_suspend = false,
