@@ -99,6 +99,22 @@ endef
 $(eval $(call KernelPackage,ledtrig-oneshot))
 
 
+define KernelPackage/ledtrig-pattern
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED Pattern Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_PATTERN
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-pattern.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-pattern)
+endef
+
+define KernelPackage/ledtrig-pattern/description
+ This allows LEDs to be controlled by a software or hardware pattern
+ which is a series of tuples, of brightness and duration (ms).
+endef
+
+$(eval $(call KernelPackage,ledtrig-pattern))
+
+
 define KernelPackage/leds-apu
   SUBMENU:=$(LEDS_MENU)
   TITLE:=PC Engines APU1 LED support

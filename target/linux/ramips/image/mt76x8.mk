@@ -758,6 +758,16 @@ define Device/wavlink_wl-wn575a3
 endef
 TARGET_DEVICES += wavlink_wl-wn575a3
 
+define Device/wavlink_wl-wn576a2
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN576A2
+  DEVICE_ALT0_VENDOR := Silvercrest
+  DEVICE_ALT0_MODEL := SWV 733 B1
+  DEVICE_PACKAGES := kmod-mt76x0e
+endef
+TARGET_DEVICES += wavlink_wl-wn576a2
+
 define Device/wavlink_wl-wn577a2
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Wavlink

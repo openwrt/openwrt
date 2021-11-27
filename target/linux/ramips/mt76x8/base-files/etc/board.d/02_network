@@ -129,7 +129,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:wan" "6@eth0"
 		;;
-	tplink,tl-wr902ac-v3)
+	tplink,tl-wr902ac-v3|\
+	wavlink,wl-wn576a2)
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
@@ -229,7 +230,8 @@ ramips_setup_macs()
 	onion,omega2|\
 	onion,omega2p|\
 	vocore,vocore2|\
-	vocore,vocore2-lite)
+	vocore,vocore2-lite|\
+	wavlink,wl-wn576a2)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	rakwireless,rak633|\

@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nftables
 PKG_VERSION:=1.0.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://netfilter.org/projects/$(PKG_NAME)/files
@@ -60,6 +60,12 @@ endif
 
 TARGET_CFLAGS += -flto
 TARGET_LDFLAGS += -flto
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/include
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/*.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/nftables $(1)/usr/include/
+endef
 
 define Package/nftables/install/Default
 	$(INSTALL_DIR) $(1)/usr/sbin

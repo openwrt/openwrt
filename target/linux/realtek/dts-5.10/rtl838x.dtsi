@@ -65,7 +65,13 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyS0,38400";
+		bootargs = "console=ttyS0,115200";
+	};
+
+	lx_clk: lx_clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <200000000>;
 	};
 
 	cpuintc: cpuintc {
@@ -116,7 +122,7 @@
 			compatible = "ns16550a";
 			reg = <0x2000 0x100>;
 
-			clock-frequency = <200000000>;
+			clocks = <&lx_clk>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <31>;
@@ -134,7 +140,7 @@
 			compatible = "ns16550a";
 			reg = <0x2100 0x100>;
 
-			clock-frequency = <200000000>;
+			clocks = <&lx_clk>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <30>;
@@ -145,6 +151,20 @@
 			no-loopback-test;
 
 			status = "disabled";
+		};
+
+		watchdog0: watchdog@3150 {
+			compatible = "realtek,rtl8380-wdt";
+			reg = <0x3150 0xc>;
+
+			realtek,reset-mode = "soc";
+
+			clocks = <&lx_clk>;
+			timeout-sec = <30>;
+
+			interrupt-parent = <&intc>;
+			interrupt-names = "phase1", "phase2";
+			interrupts = <19>, <18>;
 		};
 
 		gpio0: gpio-controller@3500 {

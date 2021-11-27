@@ -70,7 +70,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyS0,38400";
+		bootargs = "console=ttyS0,115200";
 	};
 
 	cpuintc: cpuintc {
@@ -80,11 +80,10 @@
 		interrupt-controller;
 	};
 
-	osc: oscillator {
+	lx_clk: lx_clk {
 		compatible = "fixed-clock";
-		#clock-cells = <1>;
+		#clock-cells = <0>;
 		clock-frequency  = <175000000>;
-		clock-output-names = "osc";
 	};
 
 	soc: soc {
@@ -110,7 +109,9 @@
 				<10 &cpuintc 1>, /* TC3 */
 				<9 &cpuintc 1>,  /* TC2 */
 				<8 &cpuintc 1>,  /* TC1 */
-				<7 &cpuintc 5>;  /* TC0 */
+				<7 &cpuintc 5>,  /* TC0 */
+				<6 &cpuintc 5>,  /* WDT_IP2 */
+				<5 &cpuintc 4>;  /* WDT_IP1 */
 		};
 
 		timer: timer@3200 {
@@ -119,7 +120,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <8>;
 			interrupt-names = "ostimer";
-			clocks = <&osc 0>;
+			clocks = <&lx_clk>;
 		};
 
 		spi0: spi@1200 {
@@ -134,7 +135,7 @@
 			compatible = "ns16550a";
 			reg = <0x2000 0x100>;
 
-			clock-frequency = <175000000>;
+			clocks = <&lx_clk>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <30>;
@@ -149,7 +150,7 @@
 			compatible = "ns16550a";
 			reg = <0x2100 0x100>;
 
-			clock-frequency = <175000000>;
+			clocks = <&lx_clk>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <31>;
@@ -160,6 +161,20 @@
 			no-loopback-test;
 
 			status = "disabled";
+		};
+
+		watchdog0: watchdog@3260 {
+			compatible = "realtek,rtl9300-wdt";
+			reg = <0x3260 0xc>;
+
+			realtek,reset-mode = "soc";
+
+			clocks = <&lx_clk>;
+			timeout-sec = <30>;
+
+			interrupt-parent = <&intc>;
+			interrupt-names = "phase1", "phase2";
+			interrupts = <5>, <6>;
 		};
 
 		gpio0: gpio-controller@3500 {

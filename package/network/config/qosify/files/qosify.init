@@ -72,7 +72,46 @@ add_interface() {
 	add_option boolean autorate_ingress
 	add_option string ingress_options
 	add_option string egress_options
-	add_option string options
+
+	config_get user_options "$cfg" options
+
+	config_get otype "$cfg" overhead_type
+	options=
+	case "$otype" in
+		none);;
+		manual)
+			config_get overhead "$cfg" overhead
+			[ -n "$overhead" ] && append options "overhead $overhead"
+
+			config_get encap "$cfg" overhead_encap
+			[ -n "$encap" ] && append options "$encap"
+		;;
+		conservative|\
+		pppoa-vcmux|\
+		pppoa-llc|\
+		pppoe-vcmux|\
+		pppoe-llcsnap|\
+		bridged-vcmux|\
+		bridged-llcsnap|\
+		ipoa-vcmux|\
+		ipoa-llcsnap|\
+		pppoe-ptm|\
+		bridged-ptm|\
+		docsis|\
+		ethernet)
+			append options "$otype"
+		;;
+	esac
+
+	config_get mpu "$cfg" overhead_mpu
+	[ -n "$mpu" ] && append options "mpu $mpu"
+
+	config_get ovlan "$cfg" overhead_vlan
+	[ "${ovlan:-0}" -ge 2 ] && append options "ether-vlan"
+	[ "${ovlan:-0}" -ge 1 ] && append options "ether-vlan"
+
+	[ -n "$user_options" ] && append options "$user_options"
+	[ -n "$options" ] && json_add_string options "$options"
 
 	json_close_object
 }

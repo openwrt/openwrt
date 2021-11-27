@@ -630,6 +630,7 @@ static const struct rtl838x_reg rtl931x_reg = {
 static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 {
 	u32 int_saved, nbuf;
+	u32 reset_mask;
 	int i, pos;
 	
 	pr_info("RESETTING %x, CPU_PORT %d\n", priv->family_id, priv->cpu_port);
@@ -662,15 +663,17 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 		sw_w32(0xffffffff, priv->r->dma_if_intr_sts);
 	}
 
-	/* Reset NIC  */
+	/* Reset NIC (SW_NIC_RST) and queues (SW_Q_RST) */
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
-		sw_w32(0x4, priv->r->rst_glb_ctrl);
+		reset_mask = 0x6;
 	else
-		sw_w32(0x8, priv->r->rst_glb_ctrl);
+		reset_mask = 0xc;
+
+	sw_w32(reset_mask, priv->r->rst_glb_ctrl);
 
 	do { /* Wait for reset of NIC and Queues done */
 		udelay(20);
-	} while (sw_r32(priv->r->rst_glb_ctrl) & 0xc);
+	} while (sw_r32(priv->r->rst_glb_ctrl) & reset_mask);
 	mdelay(100);
 
 	/* Setup Head of Line */
