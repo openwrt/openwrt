@@ -493,13 +493,16 @@ define Device/ezviz_cs-w3-wd1200g-eup
 	DEVICE_VENDOR := EZVIZ
 	DEVICE_MODEL := CS-W3-WD1200G
 	DEVICE_VARIANT := EUP
-	DEVICE_DTS_CONFIG := config@4
 	IMAGE_SIZE := 14848k
+	KERNEL_SIZE = 6m
 	SOC := qcom-ipq4018
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
 		append-metadata
 	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers \
 		ipq-wifi-ezviz_cs-w3-wd1200g-eup
+	DEVICE_COMPAT_VERSION := 2.0
+	DEVICE_COMPAT_MESSAGE := uboot's bootcmd has to be updated (see wiki). \
+		Upgrade via sysupgrade mechanism is not possible.
 endef
 TARGET_DEVICES += ezviz_cs-w3-wd1200g-eup
 
