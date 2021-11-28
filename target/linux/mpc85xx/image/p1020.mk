@@ -68,6 +68,18 @@ define Device/enterasys_ws-ap3710i
 endef
 TARGET_DEVICES += enterasys_ws-ap3710i
 
+define Device/extreme-networks_ws-ap3825i
+  DEVICE_VENDOR := Extreme Networks
+  DEVICE_MODEL := WS-AP3825i
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  BLOCKSIZE := 128k
+  DTB_SIZE := 20480
+  KERNEL = kernel-bin | lzma | dtb | fit lzma $(KDIR)/image-$$(DEVICE_DTS).dtb
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += extreme-networks_ws-ap3825i
+
 define Device/ocedo_panda
   DEVICE_VENDOR := OCEDO
   DEVICE_MODEL := Panda
