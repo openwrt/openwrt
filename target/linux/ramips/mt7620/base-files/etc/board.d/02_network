@@ -138,6 +138,7 @@ ramips_setup_interfaces()
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
 	engenius,esr600|\
+	lava,lr-25g001|\
 	sitecom,wlr-4100-v1-002)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "0@eth0"
@@ -172,13 +173,6 @@ ramips_setup_interfaces()
 	iptime,a104ns)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "0:wan" "6@eth0"
-		;;
-	lava,lr-25g001)
-		ucidef_add_switch "switch0" \
-			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
-		ucidef_add_switch "switch1" \
-			"5:lan" "6@eth0"
-		ucidef_add_switch_attr "switch1" "enable" "false"
 		;;
 	lenovo,newifi-y1|\
 	xiaomi,miwifi-mini)
