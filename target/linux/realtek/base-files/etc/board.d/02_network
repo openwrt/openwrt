@@ -17,10 +17,7 @@ ucidef_set_poe() {
 board=$(board_name)
 board_config_update
 
-lan_list=""
-for lan in /sys/class/net/lan*; do
-	lan_list="$lan_list $(basename $lan)"
-done
+lan_list=$(ls -1 -v -d /sys/class/net/lan* | xargs -n1 basename | xargs)
 ucidef_set_bridge_device switch
 ucidef_set_interface_lan "$lan_list"
 
