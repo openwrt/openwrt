@@ -1,0 +1,60 @@
+From jrtc27 at jrtc27.com  Sat Mar 20 21:43:05 2021
+From: jrtc27 at jrtc27.com (Jessica Clarke)
+Date: Sat, 20 Mar 2021 20:43:05 +0000
+Subject: [PATCH] Support building on macOS/arm64
+Message-ID: <20210320204305.82040-1-jrtc27@jrtc27.com>
+
+On Arm-based Macs, -no_pie is ignored and gives a linker warning.
+Moreover, the build falls over with:
+
+  ld: Absolute addressing not allowed in arm64 code but used in '_image_type_ptr_aisimage' referencing '_image_type_aisimage'
+
+for dumpimage and mkimage, since we put data structs in text sections
+not data sections and so cannot have dynamic relocations. Instead, move
+the sections to __DATA and drop disabling PIE.
+
+Signed-off-by: Jessica Clarke <jrtc27 at jrtc27.com>
+---
+ Makefile          | 5 -----
+ tools/imagetool.h | 4 ++--
+ 2 files changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 3ebb38b113..df3354d9f8 100644
+--- a/Makefile
++++ b/Makefile
+@@ -324,11 +324,6 @@ HOSTCC       = $(call os_x_before, 10, 5, "cc", "gcc")
+ KBUILD_HOSTCFLAGS  += $(call os_x_before, 10, 4, "-traditional-cpp")
+ KBUILD_HOSTLDFLAGS += $(call os_x_before, 10, 5, "-multiply_defined suppress")
+ 
+-# since Lion (10.7) ASLR is on by default, but we use linker generated lists
+-# in some host tools which is a problem then ... so disable ASLR for these
+-# tools
+-KBUILD_HOSTLDFLAGS += $(call os_x_before, 10, 7, "", "-Xlinker -no_pie")
+-
+ # macOS Mojave (10.14.X) 
+ # Undefined symbols for architecture x86_64: "_PyArg_ParseTuple"
+ KBUILD_HOSTLDFLAGS += $(call os_x_after, 10, 14, "-lpython -dynamclib", "")
+diff --git a/tools/imagetool.h b/tools/imagetool.h
+index 8726792c8c..2801ea9e9f 100644
+--- a/tools/imagetool.h
++++ b/tools/imagetool.h
+@@ -273,14 +273,14 @@ int rockchip_copy_image(int fd, struct image_tool_params *mparams);
+ 
+ #define INIT_SECTION(name)  do {					\
+ 		unsigned long name ## _len;				\
+-		char *__cat(pstart_, name) = getsectdata("__TEXT",	\
++		char *__cat(pstart_, name) = getsectdata("__DATA",	\
+ 			#name, &__cat(name, _len));			\
+ 		char *__cat(pstop_, name) = __cat(pstart_, name) +	\
+ 			__cat(name, _len);				\
+ 		__cat(__start_, name) = (void *)__cat(pstart_, name);	\
+ 		__cat(__stop_, name) = (void *)__cat(pstop_, name);	\
+ 	} while (0)
+-#define SECTION(name)   __attribute__((section("__TEXT, " #name)))
++#define SECTION(name)   __attribute__((section("__DATA, " #name)))
+ 
+ struct image_type_params **__start_image_type, **__stop_image_type;
+ #else
+-- 
+2.31.0
