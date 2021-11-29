@@ -17,7 +17,7 @@ Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/qmi.c
 +++ b/drivers/net/wireless/ath/ath11k/qmi.c
-@@ -1840,9 +1840,11 @@ static int ath11k_qmi_assign_target_mem_
+@@ -1912,9 +1912,11 @@ static int ath11k_qmi_assign_target_mem_
  
  static int ath11k_qmi_request_target_cap(struct ath11k_base *ab)
  {
@@ -29,7 +29,7 @@ Signed-off-by: Lavanya Suresh <lavaks@codeaurora.org>
  	int ret = 0;
  	int r;
  
-@@ -1885,10 +1887,13 @@ static int ath11k_qmi_request_target_cap
+@@ -1957,10 +1959,13 @@ static int ath11k_qmi_request_target_cap
  		ab->qmi.target.chip_family = resp.chip_info.chip_family;
  	}
  

@@ -147,7 +147,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #define TARGET_NUM_TIDS(x)	(2 * TARGET_NUM_PEERS(x) + \
 --- a/drivers/net/wireless/ath/ath11k/qmi.c
 +++ b/drivers/net/wireless/ath/ath11k/qmi.c
-@@ -2784,7 +2784,7 @@ int ath11k_qmi_init_service(struct ath11
+@@ -2835,7 +2835,7 @@ int ath11k_qmi_init_service(struct ath11
  	memset(&ab->qmi.target_mem, 0, sizeof(struct target_mem_chunk));
  	ab->qmi.ab = ab;
  
@@ -174,7 +174,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +
  enum ath11k_qmi_file_type {
  	ATH11K_QMI_FILE_TYPE_BDF_GOLDEN,
- 	ATH11K_QMI_FILE_TYPE_CALDATA,
+ 	ATH11K_QMI_FILE_TYPE_CALDATA = 2,
 --- a/local-symbols
 +++ b/local-symbols
 @@ -144,6 +144,7 @@ WCN36XX_DEBUGFS=
