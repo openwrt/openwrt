@@ -46,10 +46,6 @@ ALLWIFIBOARDS:= \
 	linksys_ea8300 \
 	linksys_mr8300-v0 \
 	luma_wrtq-329acn \
-	mikrotik_cap-ac \
-	mikrotik_hap-ac2 \
-	mikrotik_hap-ac3 \
-	mikrotik_sxtsq-5-ac \
 	mobipromo_cm520-79f \
 	nec_wg2600hp3 \
 	p2w_r619ac \
@@ -140,10 +136,6 @@ $(eval $(call generate-ipq-wifi-package,glinet_gl-s1300,GL.iNet GL-S1300))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
 $(eval $(call generate-ipq-wifi-package,linksys_mr8300-v0,Linksys MR8300))
 $(eval $(call generate-ipq-wifi-package,luma_wrtq-329acn,Luma WRTQ-329ACN))
-$(eval $(call generate-ipq-wifi-package,mikrotik_cap-ac,Mikrotik cAP ac))
-$(eval $(call generate-ipq-wifi-package,mikrotik_hap-ac2,Mikrotik hAP ac2))
-$(eval $(call generate-ipq-wifi-package,mikrotik_hap-ac3,Mikrotik hAP ac3))
-$(eval $(call generate-ipq-wifi-package,mikrotik_sxtsq-5-ac,MikroTik SXTsq 5 ac))
 $(eval $(call generate-ipq-wifi-package,mobipromo_cm520-79f,MobiPromo CM520-79F))
 $(eval $(call generate-ipq-wifi-package,nec_wg2600hp3,NEC Platforms WG2600HP3))
 $(eval $(call generate-ipq-wifi-package,p2w_r619ac,P&W R619AC))
