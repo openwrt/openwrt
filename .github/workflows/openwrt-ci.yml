@@ -82,6 +82,53 @@ jobs:
           # ===============================================================
           # 
 
+          # 设置固件大小:
+          cat >> .config <<EOF
+          CONFIG_TARGET_KERNEL_PARTSIZE=30
+          CONFIG_TARGET_ROOTFS_PARTSIZE=800
+          EOF
+          # 设置x64固件:
+          cat >> .config <<EOF
+          CONFIG_TARGET_x86=y
+          CONFIG_TARGET_x86_64=y
+          CONFIG_TARGET_x86_64_Generic=y
+          EOF
+          # LuCI主题:
+          cat >> .config <<EOF
+          CONFIG_PACKAGE_luci=y
+          CONFIG_PACKAGE_luci-base=y
+          CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
+          CONFIG_PACKAGE_luci-theme-bootstrap=y
+          EOF
+          # LuCI插件选择:
+          cat >> .config <<EOF
+          CONFIG_PACKAGE_luci-app-airplay2=y
+   
+          CONFIG_PACKAGE_luci-app-samba4=y
+          CONFIG_PACKAGE_luci-i18n-samba4-zh-cn=y
+          CONFIG_PACKAGE_samba4-server=y
+
+          CONFIG_PACKAGE_luci-app-aria2=y
+          CONFIG_PACKAGE_luci-i18n-aria2-zh-cn=y
+          CONFIG_PACKAGE_luci-app-ariang=y
+
+          CONFIG_PACKAGE_luci-app-ddns=y
+          CONFIG_PACKAGE_luci-i18n-ddns-zh-cn=y
+          
+          CONFIG_PACKAGE_luci-app-firewall=y
+          CONFIG_PACKAGE_luci-i18n-firewall-zh-cn=y
+
+          CONFIG_PACKAGE_luci-app-upnp=y
+          CONFIG_PACKAGE_luci-i18n-upnp-zh-cn=y
+
+          CONFIG_PACKAGE_luci-app-vsftpd=y
+          CONFIG_PACKAGE_block-mount=y
+          CONFIG_PACKAGE_automount=y
+          CONFIG_PACKAGE_antfs-mount=y
+          EOF
+
+
+
           sed -i 's/^[ \t]*//g' ./.config
           make defconfig
 
