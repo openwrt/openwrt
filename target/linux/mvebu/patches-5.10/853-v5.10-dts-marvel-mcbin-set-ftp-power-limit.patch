@@ -1,0 +1,51 @@
+From 7969051270285d4e373a9a54afae6f4c6ca36249 Mon Sep 17 00:00:00 2001
+From: "S.Teruyama" <teruyama@springboard-inc.jp>
+Date: Sun, 28 Nov 2021 18:05:24 +0900
+Subject: [PATCH] mvebu: backport sftp-power-limit
+
+Signed-off-by: Shuichiro Teruyama <teruyama@springboard-inc.jp>
+
+The Macchitobin board is capable of supplying power up to 2W to SFP
+modules. Make that explicit in the device-tree. Without this property
+current kernel does not allow SFP modules that require more than 1W.
+Signed-off-by: Baruch Siach baruch@tkos.co.il
+v2: Fix power measure scale (RMK)
+---
+ ...dts-marvel-mcbin-set-ftp-power-limit.patch | 24 +++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+ create mode 100644 target/linux/mvebu/patches-5.10/853-v5.10-dts-marvel-mcbin-set-ftp-power-limit.patch
+
+diff --git a/target/linux/mvebu/patches-5.10/853-v5.10-dts-marvel-mcbin-set-ftp-power-limit.patch b/target/linux/mvebu/patches-5.10/853-v5.10-dts-marvel-mcbin-set-ftp-power-limit.patch
+new file mode 100644
+index 0000000000..4fae7b8bd2
+--- /dev/null
++++ b/target/linux/mvebu/patches-5.10/853-v5.10-dts-marvel-mcbin-set-ftp-power-limit.patch
+@@ -0,0 +1,25 @@
++--- a/arch/arm64/boot/dts/marvell/armada-8040-mcbin.dtsi
+++++ b/arch/arm64/boot/dts/marvell/armada-8040-mcbin.dtsi
++@@ -76,6 +76,7 @@ 
++ 		tx-fault-gpio  = <&cp1_gpio1 26 GPIO_ACTIVE_HIGH>;
++ 		pinctrl-names = "default";
++ 		pinctrl-0 = <&cp1_sfpp0_pins>;
+++		maximum-power-milliwatt = <2000>;
++ 	};
++ 
++ 	sfp_eth1: sfp-eth1 {
++@@ -88,6 +89,7 @@ 
++ 		tx-fault-gpio = <&cp0_gpio2 30 GPIO_ACTIVE_HIGH>;
++ 		pinctrl-names = "default";
++ 		pinctrl-0 = <&cp1_sfpp1_pins &cp0_sfpp1_pins>;
+++		maximum-power-milliwatt = <2000>;
++ 	};
++ 
++ 	sfp_eth3: sfp-eth3 {
++@@ -100,6 +102,7 @@ 
++ 		tx-fault-gpio = <&cp0_gpio2 19 GPIO_ACTIVE_HIGH>;
++ 		pinctrl-names = "default";
++ 		pinctrl-0 = <&cp0_sfp_1g_pins &cp1_sfp_1g_pins>;
+++		maximum-power-milliwatt = <2000>;
++ 	};
++ };
+-- 
+2.25.1
+
