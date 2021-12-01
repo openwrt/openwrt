@@ -1,10 +1,7 @@
-From 2dbf0c6e0eebf523008c15794434d2d1a9b1260e Mon Sep 17 00:00:00 2001
-Message-Id: <2dbf0c6e0eebf523008c15794434d2d1a9b1260e.1636018117.git.sander@svanheule.net>
-In-Reply-To: <cover.1636018117.git.sander@svanheule.net>
-References: <cover.1636018117.git.sander@svanheule.net>
+From 293903b9dfe43520f01374dc1661be11d6838c49 Mon Sep 17 00:00:00 2001
 From: Sander Vanheule <sander@svanheule.net>
-Date: Sun, 3 Oct 2021 09:25:27 +0200
-Subject: [PATCH v3 2/2] watchdog: Add Realtek Otto watchdog timer
+Date: Thu, 18 Nov 2021 17:29:52 +0100
+Subject: watchdog: Add Realtek Otto watchdog timer
 
 Realtek MIPS SoCs (platform name Otto) have a watchdog timer with
 pretimeout notifitication support. The WDT can (partially) hard reset,
@@ -22,12 +19,15 @@ supported platforms. This means that the phase2 interrupt will only fire
 at the same time as reset, so implementing phase2 is of little use.
 
 Signed-off-by: Sander Vanheule <sander@svanheule.net>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+Link: https://lore.kernel.org/r/6d060bccbdcc709cfa79203485db85aad3c3beb5.1637252610.git.sander@svanheule.net
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
  MAINTAINERS                         |   7 +
- drivers/watchdog/Kconfig            |  13 +
+ drivers/watchdog/Kconfig            |  13 ++
  drivers/watchdog/Makefile           |   1 +
- drivers/watchdog/realtek_otto_wdt.c | 361 ++++++++++++++++++++++++++++
- 4 files changed, 382 insertions(+)
+ drivers/watchdog/realtek_otto_wdt.c | 384 ++++++++++++++++++++++++++++++++++++
+ 4 files changed, 405 insertions(+)
  create mode 100644 drivers/watchdog/realtek_otto_wdt.c
 
 --- a/MAINTAINERS
@@ -80,7 +80,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  
 --- /dev/null
 +++ b/drivers/watchdog/realtek_otto_wdt.c
-@@ -0,0 +1,361 @@
+@@ -0,0 +1,384 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +
 +/*
@@ -150,7 +150,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +	struct watchdog_device wdev;
 +	struct device *dev;
 +	void __iomem *base;
-+	struct clk *clk;
++	unsigned int clk_rate_khz;
 +	int irq_phase1;
 +};
 +
@@ -189,12 +189,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +
 +static int otto_wdt_tick_ms(struct otto_wdt_ctrl *ctrl, int prescale)
 +{
-+	unsigned int rate_khz = clk_get_rate(ctrl->clk) / 1000;
-+
-+	if (!rate_khz)
-+		return 0;
-+
-+	return DIV_ROUND_CLOSEST(1 << (25 + prescale), rate_khz);
++	return DIV_ROUND_CLOSEST(1 << (25 + prescale), ctrl->clk_rate_khz);
 +}
 +
 +/*
@@ -323,6 +318,34 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +		WDIOF_PRETIMEOUT,
 +};
 +
++static void otto_wdt_clock_action(void *data)
++{
++	clk_disable_unprepare(data);
++}
++
++static int otto_wdt_probe_clk(struct otto_wdt_ctrl *ctrl)
++{
++	struct clk *clk = devm_clk_get(ctrl->dev, NULL);
++	int ret;
++
++	if (IS_ERR(clk))
++		return dev_err_probe(ctrl->dev, PTR_ERR(clk), "Failed to get clock\n");
++
++	ret = clk_prepare_enable(clk);
++	if (ret)
++		return dev_err_probe(ctrl->dev, ret, "Failed to enable clock\n");
++
++	ret = devm_add_action_or_reset(ctrl->dev, otto_wdt_clock_action, clk);
++	if (ret)
++		return ret;
++
++	ctrl->clk_rate_khz = clk_get_rate(clk) / 1000;
++	if (ctrl->clk_rate_khz == 0)
++		return dev_err_probe(ctrl->dev, -ENXIO, "Failed to get clock rate\n");
++
++	return 0;
++}
++
 +static int otto_wdt_probe_reset_mode(struct otto_wdt_ctrl *ctrl)
 +{
 +	static const char *mode_property = "realtek,reset-mode";
@@ -380,13 +403,13 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +			ctrl->base + OTTO_WDT_REG_INTR);
 +	iowrite32(OTTO_WDT_CTRL_DEFAULT, ctrl->base + OTTO_WDT_REG_CTRL);
 +
-+	ctrl->clk = devm_clk_get(dev, NULL);
-+	if (IS_ERR(ctrl->clk))
-+		return dev_err_probe(dev, PTR_ERR(ctrl->clk), "Failed to get clock\n");
++	ret = otto_wdt_probe_clk(ctrl);
++	if (ret)
++		return ret;
 +
 +	ctrl->irq_phase1 = platform_get_irq_byname(pdev, "phase1");
 +	if (ctrl->irq_phase1 < 0)
-+		return dev_err_probe(dev, ctrl->irq_phase1, "phase1 IRQ not found\n");
++		return ctrl->irq_phase1;
 +
 +	ret = devm_request_irq(dev, ctrl->irq_phase1, otto_wdt_phase1_isr, 0,
 +			"realtek-otto-wdt", ctrl);
@@ -403,7 +426,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +
 +	/*
 +	 * Since pretimeout cannot be disabled, min. timeout is twice the
-+	 * subsystem resolution. max. timeout is ca. 43s at a bus clock of 200MHz.
++	 * subsystem resolution. Max. timeout is ca. 43s at a bus clock of 200MHz.
 +	 */
 +	ctrl->wdev.min_timeout = 2;
 +	max_tick_ms = otto_wdt_tick_ms(ctrl, OTTO_WDT_PRESCALE_MAX);
