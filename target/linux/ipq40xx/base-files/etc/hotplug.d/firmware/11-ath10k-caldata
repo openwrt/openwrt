@@ -9,6 +9,9 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case "$board" in
+	glinet,gl-b2200)
+		caldata_extract "ART" 0x9000 0x2f20
+		;;
 	meraki,mr33)
 		caldata_extract_ubi "ART" 0x9000 0x844
 		caldata_valid "4408" || caldata_extract "ART" 0x9000 0x844
@@ -64,6 +67,7 @@ case "$FIRMWARE" in
 	ezviz,cs-w3-wd1200g-eup |\
 	glinet,gl-ap1300 |\
 	glinet,gl-b1300 |\
+	glinet,gl-b2200 |\
 	glinet,gl-s1300 |\
 	linksys,ea6350v3 |\
 	mobipromo,cm520-79f |\
@@ -186,6 +190,7 @@ case "$FIRMWARE" in
 	ezviz,cs-w3-wd1200g-eup |\
 	glinet,gl-ap1300 |\
 	glinet,gl-b1300 |\
+	glinet,gl-b2200 |\
 	glinet,gl-s1300 |\
 	linksys,ea6350v3 |\
 	mobipromo,cm520-79f |\
