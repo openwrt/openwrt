@@ -35,11 +35,8 @@ void __init plat_mem_setup(void)
 
 	set_io_port_base(KSEG1);
 
-	if (fw_passed_dtb) /* UHI interface */
-		dtb = (void *)fw_passed_dtb;
-	else if (&__dtb_start[0] != &__dtb_end[0])
-		dtb = (void *)__dtb_start;
-	else
+	dtb = get_fdt();
+	if (!dtb)
 		panic("no dtb found");
 
 	/*
