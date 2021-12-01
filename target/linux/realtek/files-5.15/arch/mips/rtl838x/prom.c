@@ -25,7 +25,6 @@
 #include <mach-rtl83xx.h>
 
 extern char arcs_cmdline[];
-extern const char __appended_dtb;
 
 struct rtl83xx_soc_info soc_info;
 const void *fdt;
