@@ -1377,7 +1377,7 @@ void rtl930x_fast_age(struct dsa_switch *ds, int port)
 
 static int rtl83xx_vlan_filtering(struct dsa_switch *ds, int port,
 				  bool vlan_filtering,
-				  struct switchdev_trans *trans)
+				  struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1436,68 +1436,68 @@ static int rtl83xx_vlan_prepare(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void rtl83xx_vlan_add(struct dsa_switch *ds, int port,
-			    const struct switchdev_obj_port_vlan *vlan)
+static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
+			    const struct switchdev_obj_port_vlan *vlan,
+			    struct netlink_ext_ack *extack)
 {
 	struct rtl838x_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int v;
+	int err;
 
-	pr_debug("%s port %d, vid_begin %d, vid_end %d, flags %x\n", __func__,
-		port, vlan->vid_begin, vlan->vid_end, vlan->flags);
+	pr_debug("%s port %d, vid %d, flags %x\n",
+		__func__, port, vlan->vid, vlan->flags);
 
-	if (vlan->vid_begin > 4095 || vlan->vid_end > 4095) {
-		dev_err(priv->dev, "VLAN out of range: %d - %d",
-			vlan->vid_begin, vlan->vid_end);
-		return;
+	if (vlan->vid > 4095) {
+		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
+		return -ENOTSUPP;
 	}
+
+	err = rtl83xx_vlan_prepare(ds, port, vlan);
+	if (err)
+		return err;
 
 	mutex_lock(&priv->reg_mutex);
 
-	if (vlan->flags & BRIDGE_VLAN_INFO_PVID) {
-		for (v = vlan->vid_begin; v <= vlan->vid_end; v++) {
-			if (!v)
-				continue;
-			/* Set both inner and outer PVID of the port */
-			priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, v);
-			priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, v);
-			priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
-							PBVLAN_MODE_UNTAG_AND_PRITAG);
-			priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
-							PBVLAN_MODE_UNTAG_AND_PRITAG);
+	if (vlan->flags & BRIDGE_VLAN_INFO_PVID && vlan->vid) {
+		/* Set both inner and outer PVID of the port */
+		priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, vlan->vid);
+		priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, vlan->vid);
+		priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
+						PBVLAN_MODE_UNTAG_AND_PRITAG);
+		priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
+						PBVLAN_MODE_UNTAG_AND_PRITAG);
 
-			priv->ports[port].pvid = vlan->vid_end;
-		}
+		priv->ports[port].pvid = vlan->vid;
 	}
 
-	for (v = vlan->vid_begin; v <= vlan->vid_end; v++) {
-		/* Get port memberships of this vlan */
-		priv->r->vlan_tables_read(v, &info);
+	/* Get port memberships of this vlan */
+	priv->r->vlan_tables_read(vlan->vid, &info);
 
-		/* new VLAN? */
-		if (!info.tagged_ports) {
-			info.fid = 0;
-			info.hash_mc_fid = false;
-			info.hash_uc_fid = false;
-			info.profile_id = 0;
-		}
-
-		/* sanitize untagged_ports - must be a subset */
-		if (info.untagged_ports & ~info.tagged_ports)
-			info.untagged_ports = 0;
-
-		info.tagged_ports |= BIT_ULL(port);
-		if (vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED)
-			info.untagged_ports |= BIT_ULL(port);
-
-		priv->r->vlan_set_untagged(v, info.untagged_ports);
-		pr_debug("Untagged ports, VLAN %d: %llx\n", v, info.untagged_ports);
-
-		priv->r->vlan_set_tagged(v, &info);
-		pr_debug("Tagged ports, VLAN %d: %llx\n", v, info.tagged_ports);
+	/* new VLAN? */
+	if (!info.tagged_ports) {
+		info.fid = 0;
+		info.hash_mc_fid = false;
+		info.hash_uc_fid = false;
+		info.profile_id = 0;
 	}
+
+	/* sanitize untagged_ports - must be a subset */
+	if (info.untagged_ports & ~info.tagged_ports)
+		info.untagged_ports = 0;
+
+	info.tagged_ports |= BIT_ULL(port);
+	if (vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED)
+		info.untagged_ports |= BIT_ULL(port);
+
+	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
+	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
+
+	priv->r->vlan_set_tagged(vlan->vid, &info);
+	pr_debug("Tagged ports, VLAN %d: %llx\n", vlan->vid, info.tagged_ports);
 
 	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
 }
 
 static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
@@ -1505,44 +1505,41 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int v;
 	u16 pvid;
 
-	pr_debug("%s: port %d, vid_begin %d, vid_end %d, flags %x\n", __func__,
-		port, vlan->vid_begin, vlan->vid_end, vlan->flags);
+	pr_debug("%s: port %d, vid %d, flags %x\n",
+		__func__, port, vlan->vid, vlan->flags);
 
-	if (vlan->vid_begin > 4095 || vlan->vid_end > 4095) {
-		dev_err(priv->dev, "VLAN out of range: %d - %d",
-			vlan->vid_begin, vlan->vid_end);
+	if (vlan->vid > 4095) {
+		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
 		return -ENOTSUPP;
 	}
 
 	mutex_lock(&priv->reg_mutex);
 	pvid = priv->ports[port].pvid;
 
-	for (v = vlan->vid_begin; v <= vlan->vid_end; v++) {
-		/* Reset to default if removing the current PVID */
-		if (v == pvid) {
-			priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, 0);
-			priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, 0);
-			priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
-							PBVLAN_MODE_UNTAG_AND_PRITAG);
-			priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
-							PBVLAN_MODE_UNTAG_AND_PRITAG);
-		}
-		/* Get port memberships of this vlan */
-		priv->r->vlan_tables_read(v, &info);
-
-		/* remove port from both tables */
-		info.untagged_ports &= (~BIT_ULL(port));
-		info.tagged_ports &= (~BIT_ULL(port));
-
-		priv->r->vlan_set_untagged(v, info.untagged_ports);
-		pr_debug("Untagged ports, VLAN %d: %llx\n", v, info.untagged_ports);
-
-		priv->r->vlan_set_tagged(v, &info);
-		pr_debug("Tagged ports, VLAN %d: %llx\n", v, info.tagged_ports);
+	/* Reset to default if removing the current PVID */
+	if (vlan->vid == pvid) {
+		priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, 0);
+		priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, 0);
+		priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
+						PBVLAN_MODE_UNTAG_AND_PRITAG);
+		priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
+						PBVLAN_MODE_UNTAG_AND_PRITAG);
 	}
+	/* Get port memberships of this vlan */
+	priv->r->vlan_tables_read(vlan->vid, &info);
+
+	/* remove port from both tables */
+	info.untagged_ports &= (~BIT_ULL(port));
+	info.tagged_ports &= (~BIT_ULL(port));
+
+	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
+	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
+
+	priv->r->vlan_set_tagged(vlan->vid, &info);
+	pr_debug("Tagged ports, VLAN %d: %llx\n", vlan->vid, info.tagged_ports);
+
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -1744,18 +1741,7 @@ static int rtl83xx_port_fdb_dump(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtl83xx_port_mdb_prepare(struct dsa_switch *ds, int port,
-					const struct switchdev_obj_port_mdb *mdb)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	if (priv->id >= 0x9300)
-		return -EOPNOTSUPP;
-
-	return 0;
-}
-
-static void rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
+static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 			const struct switchdev_obj_port_mdb *mdb)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -1766,11 +1752,14 @@ static void rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
 	int mc_group;
 
+	if (priv->id >= 0x9300)
+		return -EOPNOTSUPP;
+
 	pr_debug("In %s port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
 
 	if (priv->is_lagmember[port]) {
 		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
-		return;
+		return -EINVAL;
 	}
 
 	mutex_lock(&priv->reg_mutex);
@@ -1822,6 +1811,8 @@ out:
 	mutex_unlock(&priv->reg_mutex);
 	if (err)
 		dev_err(ds->dev, "failed to add MDB entry\n");
+
+	return err;
 }
 
 int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
@@ -1968,11 +1959,11 @@ static void rtl83xx_port_mirror_del(struct dsa_switch *ds, int port,
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, unsigned long flags, struct netlink_ext_ack *extack)
+static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, struct switchdev_brport_flags flags, struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	unsigned long features = 0;
-	pr_debug("%s: %d %lX\n", __func__, port, flags);
+	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
 	if (priv->r->enable_learning)
 		features |= BR_LEARNING;
 	if (priv->r->enable_flood)
@@ -1981,28 +1972,28 @@ static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, unsign
 		features |= BR_MCAST_FLOOD;
 	if (priv->r->enable_bcast_flood)
 		features |= BR_BCAST_FLOOD;
-	if (flags & ~(features))
+	if (flags.mask & ~(features))
 		return -EINVAL;
 
 	return 0;
 }
 
-static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, unsigned long flags, struct netlink_ext_ack *extack)
+static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, struct switchdev_brport_flags flags, struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	pr_debug("%s: %d %lX\n", __func__, port, flags);
-	if (priv->r->enable_learning)
-		priv->r->enable_learning(port, !!(flags & BR_LEARNING));
+	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
+	if (priv->r->enable_learning && (flags.mask & BR_LEARNING))
+		priv->r->enable_learning(port, !!(flags.val & BR_LEARNING));
 
-	if (priv->r->enable_flood)
-		priv->r->enable_flood(port, !!(flags & BR_FLOOD));
+	if (priv->r->enable_flood && (flags.mask & BR_FLOOD))
+		priv->r->enable_flood(port, !!(flags.val & BR_FLOOD));
 
-	if (priv->r->enable_mcast_flood)
-		priv->r->enable_mcast_flood(port, !!(flags & BR_MCAST_FLOOD));
+	if (priv->r->enable_mcast_flood && (flags.mask & BR_MCAST_FLOOD))
+		priv->r->enable_mcast_flood(port, !!(flags.val & BR_MCAST_FLOOD));
 
-	if (priv->r->enable_bcast_flood)
-		priv->r->enable_bcast_flood(port, !!(flags & BR_BCAST_FLOOD));
+	if (priv->r->enable_bcast_flood && (flags.mask & BR_BCAST_FLOOD))
+		priv->r->enable_bcast_flood(port, !!(flags.val & BR_BCAST_FLOOD));
 
 	return 0;
 }
@@ -2185,7 +2176,6 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_fast_age		= rtl83xx_fast_age,
 
 	.port_vlan_filtering	= rtl83xx_vlan_filtering,
-	.port_vlan_prepare	= rtl83xx_vlan_prepare,
 	.port_vlan_add		= rtl83xx_vlan_add,
 	.port_vlan_del		= rtl83xx_vlan_del,
 
@@ -2193,7 +2183,6 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_fdb_del		= rtl83xx_port_fdb_del,
 	.port_fdb_dump		= rtl83xx_port_fdb_dump,
 
-	.port_mdb_prepare	= rtl83xx_port_mdb_prepare,
 	.port_mdb_add		= rtl83xx_port_mdb_add,
 	.port_mdb_del		= rtl83xx_port_mdb_del,
 
@@ -2238,7 +2227,6 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_fast_age		= rtl930x_fast_age,
 
 	.port_vlan_filtering	= rtl83xx_vlan_filtering,
-	.port_vlan_prepare	= rtl83xx_vlan_prepare,
 	.port_vlan_add		= rtl83xx_vlan_add,
 	.port_vlan_del		= rtl83xx_vlan_del,
 
@@ -2246,7 +2234,6 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_fdb_del		= rtl83xx_port_fdb_del,
 	.port_fdb_dump		= rtl83xx_port_fdb_dump,
 
-	.port_mdb_prepare	= rtl83xx_port_mdb_prepare,
 	.port_mdb_add		= rtl83xx_port_mdb_add,
 	.port_mdb_del		= rtl83xx_port_mdb_del,
 
