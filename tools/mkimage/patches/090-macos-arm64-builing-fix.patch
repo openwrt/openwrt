@@ -1,0 +1,47 @@
+This patch fixes compilation issues on MacOS arm64.
+Based on discussion 
+https://github.com/u-boot/u-boot/commit/3b142045e8a7f0ab17b6099e9226296af45967d0
+
+diff --git a/Makefile b/Makefile
+index b4f1cbc..551041f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -324,11 +324,6 @@ HOSTCC       = $(call os_x_before, 10, 5, "cc", "gcc")
+ KBUILD_HOSTCFLAGS  += $(call os_x_before, 10, 4, "-traditional-cpp")
+ KBUILD_HOSTLDFLAGS += $(call os_x_before, 10, 5, "-multiply_defined suppress")
+ 
+-# since Lion (10.7) ASLR is on by default, but we use linker generated lists
+-# in some host tools which is a problem then ... so disable ASLR for these
+-# tools
+-KBUILD_HOSTLDFLAGS += $(call os_x_before, 10, 7, "", "-Xlinker -no_pie")
+-
+ # macOS Mojave (10.14.X) 
+ # Undefined symbols for architecture x86_64: "_PyArg_ParseTuple"
+ KBUILD_HOSTLDFLAGS += $(call os_x_after, 10, 14, "-lpython -dynamclib", "")
+diff --git a/tools/imagetool.h b/tools/imagetool.h
+index 8726792..d1b72ef 100644
+--- a/tools/imagetool.h
++++ b/tools/imagetool.h
+@@ -270,17 +270,20 @@ int rockchip_copy_image(int fd, struct image_tool_params *mparams);
+  *  b) we need a API call to get the respective section symbols */
+ #if defined(__MACH__)
+ #include <mach-o/getsect.h>
++#include <mach-o/dyld.h>
+ 
+ #define INIT_SECTION(name)  do {					\
+ 		unsigned long name ## _len;				\
+-		char *__cat(pstart_, name) = getsectdata("__TEXT",	\
++		char *__cat(pstart_, name) = getsectdata("__DATA",	\
+ 			#name, &__cat(name, _len));			\
++			__cat(pstart_, name) +=				\
++				_dyld_get_image_vmaddr_slide(0);	\
+ 		char *__cat(pstop_, name) = __cat(pstart_, name) +	\
+ 			__cat(name, _len);				\
+ 		__cat(__start_, name) = (void *)__cat(pstart_, name);	\
+ 		__cat(__stop_, name) = (void *)__cat(pstop_, name);	\
+ 	} while (0)
+-#define SECTION(name)   __attribute__((section("__TEXT, " #name)))
++#define SECTION(name)   __attribute__((section("__DATA, " #name)))
+ 
+ struct image_type_params **__start_image_type, **__stop_image_type;
+ #else
