@@ -1407,6 +1407,14 @@ define Device/jjplus_ja76pf2
 endef
 TARGET_DEVICES += jjplus_ja76pf2
 
+define Device/jjplus_jwap230
+  SOC := qca9558
+  DEVICE_VENDOR := jjPlus
+  DEVICE_MODEL := JWAP230
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += jjplus_jwap230
+
 define Device/joyit_jt-or750i
   SOC := qca9531
   DEVICE_VENDOR := Joy-IT
