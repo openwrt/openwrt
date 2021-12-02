@@ -265,6 +265,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:4" "3:lan:3" "4:lan:2" "5:lan:1" "1:wan"
 		;;
+	embeddedwireless,balin)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "5:lan:1" "4:lan:2" "3:wan"
+		;;
 	embeddedwireless,dorin)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
