@@ -69,22 +69,6 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  		},
  	},
  };
-@@ -1293,6 +1295,7 @@ static struct clk_rcg sdc1_src = {
- 			.parent_names = gcc_pxo_pll8,
- 			.num_parents = 2,
- 			.ops = &clk_rcg_ops,
-+			.flags = CLK_SET_RATE_GATE,
- 		},
- 	}
- };
-@@ -1341,6 +1344,7 @@ static struct clk_rcg sdc3_src = {
- 			.parent_names = gcc_pxo_pll8,
- 			.num_parents = 2,
- 			.ops = &clk_rcg_ops,
-+			.flags = CLK_SET_RATE_GATE,
- 		},
- 	}
- };
 @@ -1424,6 +1428,7 @@ static struct clk_rcg tsif_ref_src = {
  			.parent_names = gcc_pxo_pll8,
  			.num_parents = 2,
