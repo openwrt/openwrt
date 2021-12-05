@@ -81,7 +81,7 @@ else
 endif
 
 GCC_CONFIGURE:= \
-	SHELL="$(BASH)" \
+	SHELL="$(BASH)" BUILD_CONFIG="bootstrap-lto" \
 	$(if $(shell gcc --version 2>&1 | grep -E "Apple.(LLVM|clang)"), \
 		CFLAGS="-O2 -fbracket-depth=512 -pipe" \
 		CXXFLAGS="-O2 -fbracket-depth=512 -pipe" \
