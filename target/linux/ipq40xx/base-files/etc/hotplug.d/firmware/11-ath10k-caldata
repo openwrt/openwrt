@@ -9,6 +9,9 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case "$board" in
+	glinet,gl-b2200)
+		caldata_extract "ART" 0x9000 0x2f20
+		;;
 	meraki,mr33)
 		caldata_extract_ubi "ART" 0x9000 0x844
 		caldata_valid "4408" || caldata_extract "ART" 0x9000 0x844
@@ -61,9 +64,9 @@ case "$FIRMWARE" in
 	8dev,jalapeno |\
 	alfa-network,ap120c-ac |\
 	cilab,meshpoint-one |\
-	ezviz,cs-w3-wd1200g-eup |\
 	glinet,gl-ap1300 |\
 	glinet,gl-b1300 |\
+	glinet,gl-b2200 |\
 	glinet,gl-s1300 |\
 	linksys,ea6350v3 |\
 	mobipromo,cm520-79f |\
@@ -149,15 +152,11 @@ case "$FIRMWARE" in
 		caldata_valid "202f" || caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 2)
 		;;
-	mikrotik,hap-ac2)
+	mikrotik,hap-ac2 |\
+	mikrotik,hap-ac3)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x0 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x0 0x2f20 )
-		;;
-	netgear,ex6100v2 |\
-	netgear,ex6150v2)
-		caldata_extract "ART" 0x1000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary dnidata 0x0)
 		;;
 	netgear,rbr50|\
 	netgear,rbs50|\
@@ -169,6 +168,10 @@ case "$FIRMWARE" in
 	netgear,wac510)
 		caldata_extract "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary "0:MANUDATA" 0x6)
+		;;
+	teltonika,rutx10)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 2)
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
@@ -183,9 +186,9 @@ case "$FIRMWARE" in
 	8dev,jalapeno |\
 	alfa-network,ap120c-ac |\
 	cilab,meshpoint-one |\
-	ezviz,cs-w3-wd1200g-eup |\
 	glinet,gl-ap1300 |\
 	glinet,gl-b1300 |\
+	glinet,gl-b2200 |\
 	glinet,gl-s1300 |\
 	linksys,ea6350v3 |\
 	mobipromo,cm520-79f |\
@@ -271,16 +274,12 @@ case "$FIRMWARE" in
 		caldata_valid "202f" || caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 3)
 		;;
-	mikrotik,hap-ac2|\
+	mikrotik,hap-ac2 |\
+	mikrotik,hap-ac3 |\
 	mikrotik,sxtsq-5-ac)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x8000 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x0 0x2f20 )
-		;;
-	netgear,ex6100v2 |\
-	netgear,ex6150v2)
-		caldata_extract "ART" 0x5000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary dnidata 0xc)
 		;;
 	netgear,rbr50|\
 	netgear,rbs50|\
@@ -292,6 +291,10 @@ case "$FIRMWARE" in
 	netgear,wac510)
 		caldata_extract "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:MANUDATA" 0x6) 16)
+		;;
+	teltonika,rutx10)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 3)
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)

@@ -46,6 +46,17 @@ define Build/append-rootfshdr
 	dd if=$@.new bs=64 count=1 >> $(IMAGE_KERNEL)
 endef
 
+define Build/append-rutx-metadata
+	echo \
+		'{ \
+			"device_code": [".*"], \
+			"hwver": [".*"], \
+			"batch": [".*"], \
+			"serial": [".*"], \
+			"supported_devices":["teltonika,rutx"] \
+		}' | fwtool -I - $@
+endef
+
 define Build/mkmylofw_32m
 	$(eval device_id=$(word 1,$(1)))
 	$(eval revision=$(word 2,$(1)))
@@ -79,6 +90,16 @@ define Build/qsdk-ipq-factory-nand-askey
 		ubifs $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
+endef
+
+define Build/qsdk-ipq-app-gpt
+	cp $@ $@.tmp 2>/dev/null || true
+	ptgen -g -o $@.tmp -a 1 -l 1024 \
+			-t 0x2e -N 0:HLOS -r -p 32M \
+			-t 0x83 -N rootfs -r -p 128M \
+				-N rootfs_data -p 512M
+	cat $@.tmp >> $@
+	rm $@.tmp
 endef
 
 define Build/SenaoFW
@@ -472,13 +493,16 @@ define Device/ezviz_cs-w3-wd1200g-eup
 	DEVICE_VENDOR := EZVIZ
 	DEVICE_MODEL := CS-W3-WD1200G
 	DEVICE_VARIANT := EUP
-	DEVICE_DTS_CONFIG := config@4
 	IMAGE_SIZE := 14848k
+	KERNEL_SIZE = 6m
 	SOC := qcom-ipq4018
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
 		append-metadata
 	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers \
 		ipq-wifi-ezviz_cs-w3-wd1200g-eup
+	DEVICE_COMPAT_VERSION := 2.0
+	DEVICE_COMPAT_MESSAGE := uboot's bootcmd has to be updated (see wiki). \
+		Upgrade via sysupgrade mechanism is not possible.
 endef
 TARGET_DEVICES += ezviz_cs-w3-wd1200g-eup
 
@@ -508,6 +532,24 @@ define Device/glinet_gl-b1300
 	IMAGE/sysupgrade.bin := append-kernel |append-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += glinet_gl-b1300
+
+define Device/glinet_gl-b2200
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := GL.iNet
+	DEVICE_MODEL := GL-B2200
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c3
+	KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+	IMAGES := emmc.img.gz sysupgrade.bin
+	IMAGE/emmc.img.gz := qsdk-ipq-app-gpt |\
+		pad-to 1024k | append-kernel |\
+		pad-to 33792k | append-rootfs |\
+		append-metadata | gzip
+	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-glinet_gl-b2200 \
+		kmod-fs-ext4 kmod-mmc kmod-spi-dev mkf2fs e2fsprogs kmod-fs-f2fs
+endef
+TARGET_DEVICES += glinet_gl-b2200
 
 define Device/glinet_gl-s1300
 	$(call Device/FitzImage)
@@ -872,6 +914,22 @@ define Device/qxwlan_e2600ac-c2
 	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
+
+define Device/teltonika_rutx10
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Teltonika
+	DEVICE_MODEL := RUTX10
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@5
+	KERNEL_INSTALL := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	FILESYSTEMS := squashfs
+	IMAGE/nand-factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
+	DEVICE_PACKAGES := ipq-wifi-teltonika_rutx kmod-bluetooth
+endef
+TARGET_DEVICES += teltonika_rutx10
 
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)

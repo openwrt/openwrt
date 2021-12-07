@@ -31,16 +31,12 @@ define U-Boot/am335x_evm
   BUILD_DEVICES:=ti_am335x-evm ti_am335x-bone-black
 endef
 
-define U-Boot/omap3_overo
-  NAME:=Gumstix Overo
-endef
-
 define U-Boot/omap3_beagle
   NAME:=BeagleBoard
   BUILD_DEVICES:=ti_omap3-beagle
 endef
 
-UBOOT_TARGETS:=omap4_panda am335x_evm omap3_overo omap3_beagle
+UBOOT_TARGETS:=omap4_panda am335x_evm omap3_beagle
 
 define Build/InstallDev
 	$(foreach device,$(BUILD_DEVICES), \

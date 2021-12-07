@@ -26,7 +26,6 @@ ramips_setup_interfaces()
 	tplink,re220-v2|\
 	tplink,re305-v1|\
 	tplink,re305-v3|\
-	tplink,tl-mr3020-v3|\
 	tplink,tl-wr802n-v4|\
 	tplink,tl-wa801nd-v5|\
 	widora,neo-16m|\
@@ -34,6 +33,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0"
 		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_set_interface_lan "eth0"
+		;;
+	tplink,tl-mr3020-v3)
+		ucidef_add_switch "switch0" \
+			"0:lan" "6@eth0"
 		;;
 	asus,rt-n10p-v3|\
 	asus,rt-n11p-b1|\

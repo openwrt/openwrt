@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nftables
-PKG_VERSION:=1.0.0
-PKG_RELEASE:=2
+PKG_VERSION:=1.0.1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://netfilter.org/projects/$(PKG_NAME)/files
-PKG_HASH:=58bf547daf967a2b88ecb4f425f126006ebde22711db806b25c1d6cf84fe45f4
+PKG_HASH:=3ceeba625818e81a0be293e9dd486c3ef799ebd92165270f1e57e9a201efa423
 PKG_MAINTAINER:=
 PKG_LICENSE:=GPL-2.0
 
@@ -65,6 +65,9 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/*.so* $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/nftables $(1)/usr/include/
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libnftables.pc \
+		$(1)/usr/lib/pkgconfig/
 endef
 
 define Package/nftables/install/Default

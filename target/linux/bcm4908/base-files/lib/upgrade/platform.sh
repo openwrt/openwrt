@@ -4,6 +4,10 @@ RAMFS_COPY_BIN="bcm4908img expr"
 
 PART_NAME=firmware
 
+BCM4908_FW_FORMAT=
+BCM4908_FW_BOARD_ID=
+BCM4908_FW_INT_IMG_FORMAT=
+
 # $(1): file to read from
 # $(2): offset in bytes
 # $(3): length in bytes
@@ -34,7 +38,12 @@ platform_identify() {
 	magic=$(get_hex_u32_be "$1" 0)
 	case "$magic" in
 		2a23245e)
-			echo "chk"
+			local header_len=$((0x$(get_hex_u32_be "$1" 4)))
+			local board_id_len=$(($header_len - 40))
+
+			BCM4908_FW_FORMAT="chk"
+			BCM4908_FW_BOARD_ID=$(dd if="$1" skip=40 bs=1 count=$board_id_len 2>/dev/null | hexdump -v -e '1/1 "%c"')
+			BCM4908_FW_INT_IMG_FORMAT="bcm4908img"
 			return
 		;;
 	esac
@@ -44,12 +53,22 @@ platform_identify() {
 	magic=$(get_content "$1" $((size - 20 - 64 + 8)) 12)
 	case "$magic" in
 		GT-AC5300)
-			echo "asus"
+			local size=$(wc -c "$1" | cut -d ' ' -f 1)
+
+			BCM4908_FW_FORMAT="asus"
+			BCM4908_FW_BOARD_ID=$(get_content "$1" $((size - 20 - 64 + 8)) 12)
+			BCM4908_FW_INT_IMG_FORMAT="bcm4908img"
 			return
 		;;
 	esac
 
-	echo "unknown"
+	# Detecting native format is a bit complex (it may start with CFE or
+	# JFFS2) so just use bcm4908img instead of bash hacks.
+	# Make it the last attempt as bcm4908img detects also vendor formats.
+	bcm4908img info -i "$1" > /dev/null && {
+		BCM4908_FW_FORMAT="bcm4908img"
+		return
+	}
 }
 
 platform_check_image() {
@@ -58,43 +77,51 @@ platform_check_image() {
 	local expected_image=$(platform_expected_image)
 	local error=0
 
-	bcm4908img info -i "$1" > /dev/null || {
-		echo "Failed to validate BCM4908 image" >&2
+	platform_identify "$1"
+	[ -z "$BCM4908_FW_FORMAT" ] && {
+		echo "Invalid image type. Please use firmware specific for this device."
 		notify_firmware_broken
 		return 1
 	}
+	echo "Found $BCM4908_FW_FORMAT firmware for device ${BCM4908_FW_BOARD_ID:----}"
 
-	bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" || {
-		# OpenWrt images have 1-openwrt dummy file in the bootfs.
-		# Don't allow backup if it's missing
-		notify_firmware_no_backup
+	local expected_image="$(platform_expected_image)"
+	[ -n "$expected_image" -a -n "$BCM4908_FW_BOARD_ID" -a "$BCM4908_FW_FORMAT $BCM4908_FW_BOARD_ID" != "$expected_image" ] && {
+		echo "Firmware doesn't match device ($expected_image)"
+		error=1
 	}
 
-	case "$(platform_identify "$1")" in
-		asus)
-			local size=$(wc -c "$1" | cut -d ' ' -f 1)
-			local productid=$(get_content "$1" $((size - 20 - 64 + 8)) 12)
-
-			[ -n "$expected_image" -a "asus $productid" != "$expected_image" ] && {
-				echo "Firmware productid mismatch ($productid)" >&2
-				error=1
+	case "$BCM4908_FW_FORMAT" in
+		"bcm4908img")
+			bcm4908img info -i "$1" > /dev/null || {
+				echo "Failed to validate BCM4908 image" >&2
+				notify_firmware_broken
+				return 1
 			}
-		;;
-		chk)
-			local header_len=$((0x$(get_hex_u32_be "$1" 4)))
-			local board_id_len=$(($header_len - 40))
-			local board_id=$(dd if="$1" skip=40 bs=1 count=$board_id_len 2>/dev/null | hexdump -v -e '1/1 "%c"')
 
-			[ -n "$expected_image" -a "chk $board_id" != "$expected_image" ] && {
-				echo "Firmware board_id mismatch ($board_id)" >&2
-				error=1
+			bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" || {
+				# OpenWrt images have 1-openwrt dummy file in the bootfs.
+				# Don't allow backup if it's missing
+				notify_firmware_no_backup
 			}
-		;;
+			;;
 		*)
-			echo "Invalid image type. Please use firmware specific for this device." >&2
-			notify_firmware_broken
-			error=1
-		;;
+			case "$BCM4908_FW_INT_IMG_FORMAT" in
+				"bcm4908img")
+					bcm4908img info -i "$1" > /dev/null || {
+						echo "Failed to validate BCM4908 image" >&2
+						notify_firmware_broken
+						return 1
+					}
+
+					bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" || {
+						# OpenWrt images have 1-openwrt dummy file in the bootfs.
+						# Don't allow backup if it's missing
+						notify_firmware_no_backup
+					}
+					;;
+			esac
+			;;
 	esac
 
 	return $error
@@ -189,10 +216,27 @@ platform_do_upgrade_ubi() {
 }
 
 platform_do_upgrade() {
-	# Try NAND aware UBI upgrade for OpenWrt images
-	# Below call will exit on success
-	bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" && platform_do_upgrade_ubi "$1"
+	platform_identify "$1"
 
+	# Try NAND aware UBI upgrade for OpenWrt images
+	case "$BCM4908_FW_FORMAT" in
+		"bcm4908img")
+			bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" && platform_do_upgrade_ubi "$1"
+			;;
+		*)
+			case "$BCM4908_FW_INT_IMG_FORMAT" in
+				"bcm4908img")
+					bcm4908img bootfs -i "$1" ls | grep -q "1-openwrt" && platform_do_upgrade_ubi "$1"
+					;;
+				*)
+					echo "NAND aware sysupgrade is unsupported for $BCM4908_FW_FORMAT format"
+					;;
+			esac
+			;;
+	esac
+
+	# Above calls exit on success.
+	# If we got here it isn't OpenWrt image or something went wrong.
 	echo "Writing whole image to NAND flash. All erase counters will be lost."
 
 	# Find cferam name for new firmware

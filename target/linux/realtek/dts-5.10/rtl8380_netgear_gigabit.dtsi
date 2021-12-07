@@ -22,6 +22,12 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
+
+	gpio-restart {
+		compatible = "gpio-restart";
+		gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		open-source;
+	};
 };
 
 &gpio0 {
