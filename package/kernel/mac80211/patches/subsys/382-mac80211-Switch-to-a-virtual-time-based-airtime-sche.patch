@@ -765,7 +765,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  struct sta_info;
  
-@@ -515,7 +522,6 @@ struct ieee80211_fragment_cache {
+@@ -516,7 +523,6 @@ struct ieee80211_fragment_cache {
   * @tid_seq: per-TID sequence numbers for sending to this STA
   * @airtime: per-AC struct airtime_info describing airtime statistics for this
   *	station
@@ -773,7 +773,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * @ampdu_mlme: A-MPDU state machine state
   * @mesh: mesh STA information
   * @debugfs_dir: debug filesystem directory dentry
-@@ -646,7 +652,6 @@ struct sta_info {
+@@ -647,7 +653,6 @@ struct sta_info {
  	u16 tid_seq[IEEE80211_QOS_CTL_TID_MASK + 1];
  
  	struct airtime_info airtime[IEEE80211_NUM_ACS];
