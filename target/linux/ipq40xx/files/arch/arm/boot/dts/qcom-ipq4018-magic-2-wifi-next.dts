@@ -24,9 +24,6 @@
 			pinctrl-names = "default";
 			reset-gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
 			reset-delay-us = <2000>;
-
-			/delete-node/ ethernet-phy@0;
-			/delete-node/ ethernet-phy@1;
 		};
 
 		crypto@8e3a000 {
@@ -150,6 +147,14 @@
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
 };
 
 &wifi0 {

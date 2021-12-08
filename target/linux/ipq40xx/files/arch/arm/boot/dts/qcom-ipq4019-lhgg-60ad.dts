@@ -47,12 +47,6 @@
 
 		mdio@90000 {
 			status = "okay";
-
-			/delete-node/ ethernet-phy@1;
-			/delete-node/ ethernet-phy@2;
-			/delete-node/ ethernet-phy@3;
-			/delete-node/ ethernet-phy@4;
-			/delete-node/ psgmii-phy@5;
 		};
 
 		counter@4a1000 {
@@ -246,4 +240,24 @@
 			reg = <0x00010000 0 0 0 0>;
 		};
 	};
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&ethphy4 {
+	status = "disabled";
+};
+
+&psgmiiphy {
+	status = "disabled";
 };

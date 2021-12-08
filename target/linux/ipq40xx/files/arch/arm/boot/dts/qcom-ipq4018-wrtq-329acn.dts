@@ -47,10 +47,6 @@
 
 		mdio@90000 {
 			status = "okay";
-
-			/delete-node/ ethernet-phy@0;
-			/delete-node/ ethernet-phy@1;
-			/delete-node/ ethernet-phy@3;
 		};
 
 		tcsr@1949000 {
@@ -246,6 +242,18 @@
 
 &usb3_ss_phy {
 	status = "okay";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
 };
 
 &wifi0 {
