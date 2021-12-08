@@ -20,8 +20,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 (limited to 'drivers/net/ethernet/marvell/mvneta.c')
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index aba452e8abfe6..2368ae3f0e10d 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
 @@ -248,12 +248,39 @@
@@ -64,7 +62,7 @@ index aba452e8abfe6..2368ae3f0e10d 100644
  #define MVNETA_LPI_CTRL_0                        0x2cc0
  #define MVNETA_LPI_CTRL_1                        0x2cc4
  #define      MVNETA_LPI_REQUEST_ENABLE           BIT(0)
-@@ -4906,11 +4933,74 @@ static void mvneta_map_vlan_prio_to_rxq(struct mvneta_port *pp, u8 pri, u8 rxq)
+@@ -4931,11 +4958,74 @@ static void mvneta_map_vlan_prio_to_rxq(
  	mvreg_write(pp, MVNETA_VLAN_PRIO_TO_RXQ, val);
  }
  
@@ -140,7 +138,7 @@ index aba452e8abfe6..2368ae3f0e10d 100644
  	u8 num_tc;
  
  	if (mqprio->qopt.hw != TC_MQPRIO_HW_OFFLOAD_TCS)
-@@ -4924,6 +5014,7 @@ static int mvneta_setup_mqprio(struct net_device *dev,
+@@ -4949,6 +5039,7 @@ static int mvneta_setup_mqprio(struct ne
  	mvneta_clear_rx_prio_map(pp);
  
  	if (!num_tc) {
@@ -148,7 +146,7 @@ index aba452e8abfe6..2368ae3f0e10d 100644
  		netdev_reset_tc(dev);
  		return 0;
  	}
-@@ -4944,6 +5035,33 @@ static int mvneta_setup_mqprio(struct net_device *dev,
+@@ -4969,6 +5060,33 @@ static int mvneta_setup_mqprio(struct ne
  		}
  	}
  
@@ -182,6 +180,3 @@ index aba452e8abfe6..2368ae3f0e10d 100644
  	return 0;
  }
  
--- 
-cgit 1.2.3-1.el7
-

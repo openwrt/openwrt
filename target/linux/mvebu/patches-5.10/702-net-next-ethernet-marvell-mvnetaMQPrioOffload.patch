@@ -16,8 +16,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 (limited to 'drivers/net/ethernet/marvell/mvneta.c')
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index 80e4b500695e6..46b7604805f76 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
 @@ -38,6 +38,7 @@
@@ -28,7 +26,7 @@ index 80e4b500695e6..46b7604805f76 100644
  #include <linux/bpf_trace.h>
  
  /* Registers */
-@@ -4908,14 +4909,14 @@ static void mvneta_setup_rx_prio_map(struct mvneta_port *pp)
+@@ -4933,14 +4934,14 @@ static void mvneta_setup_rx_prio_map(str
  }
  
  static int mvneta_setup_mqprio(struct net_device *dev,
@@ -46,7 +44,7 @@ index 80e4b500695e6..46b7604805f76 100644
  
  	if (num_tc > rxq_number)
  		return -EINVAL;
-@@ -4926,13 +4927,15 @@ static int mvneta_setup_mqprio(struct net_device *dev,
+@@ -4951,13 +4952,15 @@ static int mvneta_setup_mqprio(struct ne
  		return 0;
  	}
  
@@ -66,6 +64,3 @@ index 80e4b500695e6..46b7604805f76 100644
  
  	return 0;
  }
--- 
-cgit 1.2.3-1.el7
-
