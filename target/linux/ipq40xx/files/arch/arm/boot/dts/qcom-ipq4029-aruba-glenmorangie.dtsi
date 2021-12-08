@@ -21,13 +21,6 @@
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
 
-			/delete-node/ ethernet-phy@0;
-			/delete-node/ ethernet-phy@1;
-			/delete-node/ ethernet-phy@2;
-			/delete-node/ ethernet-phy@3;
-			/delete-node/ ethernet-phy@4;
-			/delete-node/ psgmii-phy@5;
-
 			ethernet-phy@5 {
 				reg = <0x5>;
 			};
@@ -219,6 +212,30 @@
 			};
 		};
 	};
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&ethphy4 {
+	status = "disabled";
+};
+
+&psgmiiphy {
+	status = "disabled";
 };
 
 &wifi0 {
