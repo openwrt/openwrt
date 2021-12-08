@@ -201,7 +201,7 @@
  static inline void ieee80211_rx_stats(struct net_device *dev, u32 len)
  {
  	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
-@@ -2597,6 +2647,12 @@ static void ieee80211_deliver_skb_to_loc
+@@ -2598,6 +2648,12 @@ static void ieee80211_deliver_skb_to_loc
  			ether_addr_copy(ehdr->h_dest, sdata->vif.addr);
  
  		/* deliver to local stack */
@@ -214,7 +214,7 @@
  		if (rx->list)
  #if LINUX_VERSION_IS_GEQ(4,19,0)
  			list_add_tail(&skb->list, rx->list);
-@@ -4527,6 +4583,12 @@ static void ieee80211_rx_8023(struct iee
+@@ -4529,6 +4585,12 @@ static void ieee80211_rx_8023(struct iee
  	/* deliver to local stack */
  	skb->protocol = eth_type_trans(skb, fast_rx->dev);
  	memset(skb->cb, 0, sizeof(skb->cb));
