@@ -1,0 +1,39 @@
+From 06f77e83cf977fd9d0d83d81bbdf864a42edf5d8 Mon Sep 17 00:00:00 2001
+From: Russell King <rmk+kernel@armlinux.org.uk>
+Date: Thu, 30 Jan 2020 22:42:38 +0000
+Subject: [PATCH 02/41] net: dpaa2-mac: add support for more 10G modes
+
+Phylink documentation says:
+ * Note that the PHY may be able to transform from one connection
+ * technology to another, so, eg, don't clear 1000BaseX just
+ * because the MAC is unable to BaseX mode. This is more about
+ * clearing unsupported speeds and duplex settings. The port modes
+ * should not be cleared; phylink_set_port_modes() will help with this.
+
+So add the missing 10G modes.
+
+Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
+---
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c b/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
+index 828c177df03d..f0fda0deadbf 100644
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
+@@ -115,6 +115,12 @@ static void dpaa2_mac_validate(struct phylink_config *config,
+ 	case PHY_INTERFACE_MODE_10GBASER:
+ 	case PHY_INTERFACE_MODE_USXGMII:
+ 		phylink_set(mask, 10000baseT_Full);
++		phylink_set(mask, 10000baseKR_Full);
++		phylink_set(mask, 10000baseCR_Full);
++		phylink_set(mask, 10000baseSR_Full);
++		phylink_set(mask, 10000baseLR_Full);
++		phylink_set(mask, 10000baseLRM_Full);
++		phylink_set(mask, 10000baseER_Full);
+ 		if (state->interface == PHY_INTERFACE_MODE_10GBASER)
+ 			break;
+ 		phylink_set(mask, 5000baseT_Full);
+-- 
+2.20.1
+
