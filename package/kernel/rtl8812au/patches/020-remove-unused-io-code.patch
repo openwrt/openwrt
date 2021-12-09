@@ -1,0 +1,27 @@
+--- a/os_dep/osdep_service.c	2021-11-08 21:32:54.000000000 +0100
++++ b/os_dep/osdep_service.c	2021-12-08 14:23:30.201252703 +0100
+@@ -2096,6 +2096,12 @@
+ }
+ 
+ #ifdef PLATFORM_LINUX
++#define _PLATFORM_LINUX_WRITEBACK
++#undef PLATFORM_LINUX
++#endif
++
++#ifdef PLATFORM_LINUX
++
+ /*
+ * Open a file with the specific @param path, @param flag, @param mode
+ * @param fpp the pointer of struct file pointer to get struct file pointer while file opening is success
+@@ -2387,6 +2393,11 @@
+ #endif
+ }
+ 
++#ifdef _PLATFORM_LINUX_WRITEBACK
++#define PLATFORM_LINUX
++#undef _PLATFORM_LINUX_WRITEBACK
++#endif
++
+ #ifdef PLATFORM_LINUX
+ struct net_device *rtw_alloc_etherdev_with_old_priv(int sizeof_priv, void *old_priv)
+ {
