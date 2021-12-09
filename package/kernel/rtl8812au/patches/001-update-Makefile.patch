@@ -1,0 +1,75 @@
+--- a/Makefile	2021-12-08 10:14:46.088933697 +0100
++++ b/Makefile	2021-12-08 10:28:28.355027158 +0100
+@@ -1,5 +1,5 @@
+ EXTRA_CFLAGS += $(USER_EXTRA_CFLAGS) -fno-pie
+-EXTRA_CFLAGS += -O3
++EXTRA_CFLAGS += -O1
+ EXTRA_CFLAGS += -Wno-unused-variable
+ #EXTRA_CFLAGS += -Wno-unused-value
+ EXTRA_CFLAGS += -Wno-unused-label
+@@ -18,7 +18,7 @@
+ #endif
+ 
+ EXTRA_CFLAGS += -I$(src)/include
+-EXTRA_LDFLAGS += --strip-all -O3
++EXTRA_LDFLAGS += --strip-debug -O1
+ 
+ ########################## WIFI IC ############################
+ CONFIG_RTL8812A = y
+@@ -1129,13 +1129,22 @@
+ EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
+ EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
+ SUBARCH := $(shell uname -m | sed -e "s/i.86/i386/; s/ppc/powerpc/; s/armv.l/arm/; s/aarch64/arm64/;")
++ifndef ARCH
+ ARCH ?= $(SUBARCH)
++endif
++ifndef CROSS_COMPILE
+ CROSS_COMPILE ?=
+-KVER  := $(shell uname -r)
++endif
++ifndef KVER
++KVER ?= $(shell uname -r)
++endif
++ifndef KSRC
+ KSRC := /lib/modules/$(KVER)/build
++endif
++ifndef MODDESTDIR
+ MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/
++endif
+ INSTALL_PREFIX :=
+-STAGINGMODDIR := /lib/modules/$(KVER)/kernel/drivers/staging
+ endif
+ 
+ ifeq ($(CONFIG_PLATFORM_ARM_RPI), y)
+@@ -2151,12 +2160,14 @@
+ 
+ endif
+ 
+-USER_MODULE_NAME ?=
++USER_MODULE_NAME ?= rtl$(MODULE_NAME) 
+ ifneq ($(USER_MODULE_NAME),)
+ MODULE_NAME := $(USER_MODULE_NAME)
+ endif
+ 
+ ifneq ($(KERNELRELEASE),)
++KERNELRELEASE := $(shell uname -r)
++endif
+ 
+ ########### this part for *.mk ############################
+ include $(src)/hal/phydm/phydm.mk
+@@ -2228,9 +2239,6 @@
+ 
+-obj-$(CONFIG_88XXAU) := $(MODULE_NAME).o
++obj-m := $(MODULE_NAME).o
+ 
+-else
+-
+-export CONFIG_88XXAU = m
+ 
+ all: modules
+ 
+@@ -2333,4 +2333,3 @@
+ 	rm -fr Module.symvers ; rm -fr Module.markers ; rm -fr modules.order
+ 	rm -fr *.mod.c *.mod *.o .*.cmd *.ko *~
+ 	rm -fr .tmp_versions
+-endif
