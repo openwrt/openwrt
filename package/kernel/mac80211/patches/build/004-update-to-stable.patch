@@ -1,0 +1,242 @@
+From 22d5a9add83b05e124db81936ae87e258d335cca Mon Sep 17 00:00:00 2001
+From: Yaara Baruch <yaara.baruch@intel.com>
+Date: Sat, 16 Oct 2021 11:43:56 +0300
+Subject: iwlwifi: change all JnP to NO-160 configuration
+
+[ Upstream commit 70382b0897eeecfcd35ba5f6161dbceeb556ea1e ]
+
+JnP should not have the 160 MHz.
+
+Signed-off-by: Yaara Baruch <yaara.baruch@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/iwlwifi.20211016114029.ee163f4a7513.I7f87bd969a0b038c7f3a1a962d9695ffd18c5da1@changeid
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/net/wireless/intel/iwlwifi/pcie/drv.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+(limited to 'drivers/net/wireless/intel')
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/drv.c b/drivers/net/wireless/intel/iwlwifi/pcie/drv.c
+index e3996ff99bad5..3b974388d834d 100644
+--- a/drivers/net/wireless/intel/iwlwifi/pcie/drv.c
++++ b/drivers/net/wireless/intel/iwlwifi/pcie/drv.c
+@@ -931,9 +931,9 @@ static const struct iwl_dev_info iwl_dev_info_table[] = {
+ 		      IWL_CFG_ANY, IWL_CFG_ANY, IWL_CFG_NO_CDB,
+ 		      iwl_qu_b0_hr1_b0, iwl_ax101_name),
+ 	_IWL_DEV_INFO(IWL_CFG_ANY, IWL_CFG_ANY,
+-		      IWL_CFG_MAC_TYPE_QU, SILICON_C_STEP,
++		      IWL_CFG_MAC_TYPE_QU, SILICON_B_STEP,
+ 		      IWL_CFG_RF_TYPE_HR2, IWL_CFG_ANY,
+-		      IWL_CFG_ANY, IWL_CFG_ANY, IWL_CFG_NO_CDB,
++		      IWL_CFG_NO_160, IWL_CFG_ANY, IWL_CFG_NO_CDB,
+ 		      iwl_qu_b0_hr_b0, iwl_ax203_name),
+ 
+ 	/* Qu C step */
+@@ -945,7 +945,7 @@ static const struct iwl_dev_info iwl_dev_info_table[] = {
+ 	_IWL_DEV_INFO(IWL_CFG_ANY, IWL_CFG_ANY,
+ 		      IWL_CFG_MAC_TYPE_QU, SILICON_C_STEP,
+ 		      IWL_CFG_RF_TYPE_HR2, IWL_CFG_ANY,
+-		      IWL_CFG_ANY, IWL_CFG_ANY, IWL_CFG_NO_CDB,
++		      IWL_CFG_NO_160, IWL_CFG_ANY, IWL_CFG_NO_CDB,
+ 		      iwl_qu_c0_hr_b0, iwl_ax203_name),
+ 
+ 	/* QuZ */
+-- 
+cgit 1.2.3-1.el7
+
+
+From b94d328763785738d052d176c345d8cc9d999e9a Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sun, 17 Oct 2021 11:43:40 +0300
+Subject: iwlwifi: mvm: disable RX-diversity in powersave
+
+[ Upstream commit e5322b9ab5f63536c41301150b7ce64605ce52cc ]
+
+Just like we have default SMPS mode as dynamic in powersave,
+we should not enable RX-diversity in powersave, to reduce
+power consumption when connected to a non-MIMO AP.
+
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20211017113927.fc896bc5cdaa.I1d11da71b8a5cbe921a37058d5f578f1b14a2023@changeid
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/net/wireless/intel/iwlwifi/mvm/utils.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+(limited to 'drivers/net/wireless/intel')
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/utils.c b/drivers/net/wireless/intel/iwlwifi/mvm/utils.c
+index 4a3d2971a98b7..ec8a223f90e85 100644
+--- a/drivers/net/wireless/intel/iwlwifi/mvm/utils.c
++++ b/drivers/net/wireless/intel/iwlwifi/mvm/utils.c
+@@ -405,6 +405,9 @@ bool iwl_mvm_rx_diversity_allowed(struct iwl_mvm *mvm,
+ 
+ 	lockdep_assert_held(&mvm->mutex);
+ 
++	if (iwlmvm_mod_params.power_scheme != IWL_POWER_SCHEME_CAM)
++		return false;
++
+ 	if (num_of_ant(iwl_mvm_get_valid_rx_ant(mvm)) == 1)
+ 		return false;
+ 
+-- 
+cgit 1.2.3-1.el7
+
+
+From f2fd84b3674862cca60e5a6fcdaf6bdea1e5f755 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sat, 16 Oct 2021 11:43:55 +0300
+Subject: iwlwifi: mvm: reset PM state on unsuccessful resume
+
+[ Upstream commit 2f629a7772e2a7bdaff25178917a40073f79702c ]
+
+If resume fails for some reason, we need to set the PM state
+back to normal so we're able to send commands during firmware
+reset, rather than failing all of them because we're in D3.
+
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Fixes: 708a39aaca22 ("iwlwifi: mvm: don't send commands during suspend\resume transition")
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/iwlwifi.20211016114029.7ceb9eaca9f6.If0cbef38c6d07ec1ddce125878a4bdadcb35d2c9@changeid
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/net/wireless/intel/iwlwifi/mvm/d3.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+(limited to 'drivers/net/wireless/intel')
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/d3.c b/drivers/net/wireless/intel/iwlwifi/mvm/d3.c
+index 9f706fffb5922..d3013a51a5096 100644
+--- a/drivers/net/wireless/intel/iwlwifi/mvm/d3.c
++++ b/drivers/net/wireless/intel/iwlwifi/mvm/d3.c
+@@ -2336,7 +2336,6 @@ static int __iwl_mvm_resume(struct iwl_mvm *mvm, bool test)
+ 		iwl_fw_dbg_collect_desc(&mvm->fwrt, &iwl_dump_desc_assert,
+ 					false, 0);
+ 		ret = 1;
+-		mvm->trans->system_pm_mode = IWL_PLAT_PM_MODE_DISABLED;
+ 		goto err;
+ 	}
+ 
+@@ -2385,6 +2384,7 @@ static int __iwl_mvm_resume(struct iwl_mvm *mvm, bool test)
+ 		}
+ 	}
+ 
++	/* after the successful handshake, we're out of D3 */
+ 	mvm->trans->system_pm_mode = IWL_PLAT_PM_MODE_DISABLED;
+ 
+ 	/*
+@@ -2455,6 +2455,9 @@ out:
+ 	 */
+ 	set_bit(IWL_MVM_STATUS_HW_RESTART_REQUESTED, &mvm->status);
+ 
++	/* regardless of what happened, we're now out of D3 */
++	mvm->trans->system_pm_mode = IWL_PLAT_PM_MODE_DISABLED;
++
+ 	return 1;
+ }
+ 
+-- 
+cgit 1.2.3-1.el7
+
+
+From b0b49d055533682b8efd93a673b24f1a6fb69588 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sat, 16 Oct 2021 11:43:57 +0300
+Subject: iwlwifi: pnvm: don't kmemdup() more than we have
+
+[ Upstream commit 0f892441d8c353144e3669b7991fa5fe0bd353e9 ]
+
+We shouldn't kmemdup() more data than we have, that might
+cause the code to crash. Fix that by updating the length
+before the kmemdup.
+
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/iwlwifi.20211016114029.ab0e64c3fba9.Ic6a3295fc384750b51b4270bf0b7d94984a139f2@changeid
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/net/wireless/intel/iwlwifi/fw/pnvm.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+(limited to 'drivers/net/wireless/intel')
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/pnvm.c b/drivers/net/wireless/intel/iwlwifi/fw/pnvm.c
+index dde22bdc87039..9b0eee53488ab 100644
+--- a/drivers/net/wireless/intel/iwlwifi/fw/pnvm.c
++++ b/drivers/net/wireless/intel/iwlwifi/fw/pnvm.c
+@@ -284,16 +284,15 @@ int iwl_pnvm_load(struct iwl_trans *trans,
+ 	/* First attempt to get the PNVM from BIOS */
+ 	package = iwl_uefi_get_pnvm(trans, &len);
+ 	if (!IS_ERR_OR_NULL(package)) {
++		/* we need only the data */
++		len -= sizeof(*package);
+ 		data = kmemdup(package->data, len, GFP_KERNEL);
+ 
+ 		/* free package regardless of whether kmemdup succeeded */
+ 		kfree(package);
+ 
+-		if (data) {
+-			/* we need only the data size */
+-			len -= sizeof(*package);
++		if (data)
+ 			goto parse;
+-		}
+ 	}
+ 
+ 	/* If it's not available, try from the filesystem */
+-- 
+cgit 1.2.3-1.el7
+
+
+From 493a9e6367a1ca1c0ddd5d8b35a5089d6908e803 Mon Sep 17 00:00:00 2001
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Sat, 16 Oct 2021 11:43:58 +0300
+Subject: iwlwifi: pnvm: read EFI data only if long enough
+
+[ Upstream commit e864a77f51d0d8113b49cf7d030bc9dc911c8176 ]
+
+If the data we get from EFI is not even long enough for
+the package struct we expect then ignore it entirely.
+
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Fixes: a1a6a4cf49ec ("iwlwifi: pnvm: implement reading PNVM from UEFI")
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/iwlwifi.20211016114029.33feba783518.I54a5cf33975d0330792b3d208b225d479e168f32@changeid
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ drivers/net/wireless/intel/iwlwifi/fw/pnvm.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+(limited to 'drivers/net/wireless/intel')
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/pnvm.c b/drivers/net/wireless/intel/iwlwifi/fw/pnvm.c
+index 9b0eee53488ab..069fcbc46d2ba 100644
+--- a/drivers/net/wireless/intel/iwlwifi/fw/pnvm.c
++++ b/drivers/net/wireless/intel/iwlwifi/fw/pnvm.c
+@@ -284,9 +284,13 @@ int iwl_pnvm_load(struct iwl_trans *trans,
+ 	/* First attempt to get the PNVM from BIOS */
+ 	package = iwl_uefi_get_pnvm(trans, &len);
+ 	if (!IS_ERR_OR_NULL(package)) {
+-		/* we need only the data */
+-		len -= sizeof(*package);
+-		data = kmemdup(package->data, len, GFP_KERNEL);
++		if (len >= sizeof(*package)) {
++			/* we need only the data */
++			len -= sizeof(*package);
++			data = kmemdup(package->data, len, GFP_KERNEL);
++		} else {
++			data = NULL;
++		}
+ 
+ 		/* free package regardless of whether kmemdup succeeded */
+ 		kfree(package);
+-- 
+cgit 1.2.3-1.el7
+
