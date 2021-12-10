@@ -912,6 +912,15 @@ define Device/linksys_ea7xxx
 	append-ubi | check-size | linksys-image type=$$$$(LINKSYS_HWNAME)
 endef
 
+define Device/linksys_ea6350-v4
+	$(Device/linksys_ea7xxx)
+	DEVICE_MODEL := EA6350
+	DEVICE_VARIANT := v4
+	LINKSYS_HWNAME := EA6350
+	DEVICE_PACKAGES += kmod-mt7603 kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += linksys_ea6350-v4
+
 define Device/linksys_ea7300-v1
   $(Device/linksys_ea7xxx)
   DEVICE_MODEL := EA7300
