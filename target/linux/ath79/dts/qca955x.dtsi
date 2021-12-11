@@ -265,6 +265,9 @@
 			phys = <&usb_phy0>;
 
 			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		usb1: usb@1b400000 {
@@ -283,6 +286,9 @@
 			phys = <&usb_phy1>;
 
 			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		nand: nand@1b800200 {

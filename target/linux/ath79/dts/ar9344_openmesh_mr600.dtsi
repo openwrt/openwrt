@@ -129,6 +129,9 @@
 		nvmem-cells = <&macaddr_art_0>;
 		nvmem-cell-names = "mac-address";
 		mac-address-increment = <8>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
 	};
 };
 
