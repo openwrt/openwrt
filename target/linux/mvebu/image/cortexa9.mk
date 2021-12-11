@@ -31,6 +31,24 @@ define Device/buffalo_ls421de
 endef
 TARGET_DEVICES += buffalo_ls421de
 
+define Device/ctera_c200-v2
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  BLOCKSIZE := 128k
+  DEVICE_VENDOR := Ctera
+  DEVICE_MODEL := C200
+  DEVICE_VARIANT := V2
+  SOC := armada-370
+  KERNEL := kernel-bin | append-dtb | uImage none | ctera-firmware
+  KERNEL_IN_UBI :=
+  KERNEL_SUFFIX := -factory.firm
+  DEVICE_PACKAGES :=  \
+    kmod-gpio-button-hotplug kmod-hwmon-drivetemp kmod-hwmon-nct7802 \
+    kmod-rtc-s35390a kmod-usb3 kmod-usb-ledtrig-usbport
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += ctera_c200-v2
+
 define Device/cznic_turris-omnia
   DEVICE_VENDOR := CZ.NIC
   DEVICE_MODEL := Turris Omnia
