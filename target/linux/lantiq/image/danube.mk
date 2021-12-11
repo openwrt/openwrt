@@ -183,7 +183,7 @@ TARGET_DEVICES += audiocodes_mp-252
 
 define Device/bt_homehub-v2b
   $(Device/NAND)
-  DEVICE_VENDOR := British Telecom
+  DEVICE_VENDOR := British Telecom (BT)
   DEVICE_MODEL := Home Hub 2
   DEVICE_VARIANT := Type B
   BOARD_NAME := BTHOMEHUBV2B
