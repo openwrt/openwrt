@@ -5,9 +5,11 @@ include $(INCLUDE_DIR)/image.mk
 
 DEVICE_VARS += ASUS_PRODUCTID ASUS_BUILD_NO ASUS_FW_REV ASUS_EXT_NO
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
+DEVICE_VARS += PKGTB_ITS
 
 define Image/Prepare
 	cp bootfs-generic.its $(KDIR)/
+	sed -i "s=\$$$${dts_dir}=$(DTS_DIR)=" $(KDIR)/bootfs-generic.its
 endef
 
 define Build/bootfs
@@ -47,6 +49,14 @@ endef
 define Build/bcm4908lzma
 	$(STAGING_DIR_HOST)/bin/lzma e -lc1 -lp2 -pb2 -d22 $@ $@.new
 	mv $@.new $@
+endef
+
+define Build/pkgtb
+	mv $@ $@.rootfs
+	cp $(PKGTB_ITS) $@.its
+	sed -i "s=\$${bootfs}=$(KDIR)/bootfs-generic.itb=" $@.its
+	sed -i "s=\$${rootfs}=$@.rootfs=" $@.its
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@
 endef
 
 define Device/Default
@@ -96,5 +106,21 @@ define Device/tplink_archer-c2300-v1
   BROKEN := y
 endef
 TARGET_DEVICES += tplink_archer-c2300-v1
+
+define Device/netgear
+  DEVICE_VENDOR := NETGEAR
+  KERNEL := kernel-bin | bootfs
+  IMAGES := chk
+  IMAGE/chk := append-rootfs | pkgtb | netgear-chk
+  NETGEAR_REGION := 1
+endef
+
+define Device/netgear_raxe500
+  DEVICE_MODEL := RAXE500
+  $(Device/netgear)
+  PKGTB_ITS := pkgtb-bcm4908.its
+  NETGEAR_BOARD_ID := U12H449T00_NETGEAR
+endef
+# TARGET_DEVICES += netgear_raxe500
 
 $(eval $(call BuildImage))

@@ -1,8 +1,9 @@
 define Device/avm_fritz7312
-  $(Device/AVM)
+  $(Device/AVM_preloader)
   DEVICE_MODEL := FRITZ!Box 7312
   SOC := ar9
   IMAGE_SIZE := 15744k
+  LOADER_FLASH_OFFS := 0x31000
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
@@ -12,12 +13,13 @@ endef
 TARGET_DEVICES += avm_fritz7312
 
 define Device/avm_fritz7320
-  $(Device/AVM)
+  $(Device/AVM_preloader)
   DEVICE_MODEL := FRITZ!Box 7320
   DEVICE_ALT0_VENDOR := 1&1
   DEVICE_ALT0_MODEL := HomeServer
   SOC := ar9
   IMAGE_SIZE := 15744k
+  LOADER_FLASH_OFFS := 0x31000
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-wolfssl \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \

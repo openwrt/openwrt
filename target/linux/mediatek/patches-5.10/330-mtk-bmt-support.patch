@@ -23,7 +23,7 @@
  obj-y	+= raw/
 --- /dev/null
 +++ b/drivers/mtd/nand/mtk_bmt.c
-@@ -0,0 +1,781 @@
+@@ -0,0 +1,788 @@
 +/*
 + * Copyright (c) 2017 MediaTek Inc.
 + * Author: Xiangsheng Hou <xiangsheng.hou@mediatek.com>
@@ -43,7 +43,7 @@
 +#include <linux/gfp.h>
 +#include <linux/kernel.h>
 +#include <linux/of.h>
-+#include <linux/mtd/nand.h>
++#include <linux/mtd/mtd.h>
 +#include <linux/mtd/partitions.h>
 +#include <linux/mtd/mtk_bmt.h>
 +#include <linux/module.h>
@@ -89,7 +89,9 @@
 +			  struct mtd_oob_ops *ops);
 +	int (*_write_oob) (struct mtd_info *mtd, loff_t to,
 +			   struct mtd_oob_ops *ops);
-+	const struct nand_ops *nand_ops;
++	int (*_erase) (struct mtd_info *mtd, struct erase_info *instr);
++	int (*_block_isbad) (struct mtd_info *mtd, loff_t ofs);
++	int (*_block_markbad) (struct mtd_info *mtd, loff_t ofs);
 +
 +	struct bbbt *bbt;
 +
@@ -145,12 +147,13 @@
 +
 +static inline int bbt_nand_erase(u16 block)
 +{
-+	struct nand_device *nand = mtd_to_nanddev(bmtd.mtd);
-+	loff_t addr = (loff_t)block << bmtd.blk_shift;
-+	struct nand_pos pos;
++	struct mtd_info *mtd = bmtd.mtd;
++	struct erase_info instr = {
++		.addr = (loff_t)block << bmtd.blk_shift,
++		.len = bmtd.blk_size,
++	};
 +
-+	nanddev_offs_to_pos(nand, addr, &pos);
-+	return bmtd.nand_ops->erase(nand, &pos);
++	return bmtd._erase(mtd, &instr);
 +}
 +
 +/* -------- Bad Blocks Management -------- */
@@ -544,76 +547,80 @@
 +	return 0;
 +}
 +
-+
-+
 +static int
-+mtk_bmt_erase(struct nand_device *nand, const struct nand_pos *pos)
++mtk_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 +{
-+	struct nand_pos new_pos = *pos;
++	struct erase_info mapped_instr = {
++		.len = bmtd.blk_size,
++	};
 +	int retry_count = 0;
++	u64 start_addr, end_addr;
++	int ret;
++	u16 orig_block, block;
++
++	start_addr = instr->addr & (~mtd->erasesize_mask);
++	end_addr = instr->addr + instr->len;
++
++	while (start_addr < end_addr) {
++		orig_block = start_addr >> bmtd.blk_shift;
++		block = get_mapping_block_index(orig_block);
++		mapped_instr.addr = (loff_t)block << bmtd.blk_shift;
++		ret = bmtd._erase(mtd, &mapped_instr);
++		if (ret) {
++			update_bmt(orig_block);
++			if (retry_count++ < 10)
++				continue;
++			instr->fail_addr = start_addr;
++			break;
++		}
++		start_addr += mtd->erasesize;
++		retry_count = 0;
++	}
++
++	return ret;
++}
++static int
++mtk_bmt_block_isbad(struct mtd_info *mtd, loff_t ofs)
++{
++	int retry_count = 0;
++	u16 orig_block = ofs >> bmtd.blk_shift;
++	u16 block;
 +	int ret;
 +
 +retry:
-+	new_pos.eraseblock = get_mapping_block_index(pos->eraseblock);
-+
-+	ret = bmtd.nand_ops->erase(nand, &new_pos);
++	block = get_mapping_block_index(orig_block);
++	ret = bmtd._block_isbad(mtd, (loff_t)block << bmtd.blk_shift);
 +	if (ret) {
-+		update_bmt(pos->eraseblock);
++		update_bmt(orig_block);
 +		if (retry_count++ < 10)
 +			goto retry;
 +	}
-+
-+	return ret;
-+}
-+
-+static bool
-+mtk_bmt_isbad(struct nand_device *nand, const struct nand_pos *pos)
-+{
-+	struct nand_pos new_pos = *pos;
-+	int retry_count = 0;
-+	bool ret;
-+
-+retry:
-+	new_pos.eraseblock = get_mapping_block_index(pos->eraseblock);
-+
-+	ret = bmtd.nand_ops->isbad(nand, &new_pos);
-+	if (ret) {
-+		update_bmt(pos->eraseblock);
-+		if (retry_count++ < 10)
-+			goto retry;
-+	}
-+
 +	return ret;
 +}
 +
 +static int
-+mtk_bmt_markbad(struct nand_device *nand, const struct nand_pos *pos)
++mtk_bmt_block_markbad(struct mtd_info *mtd, loff_t ofs)
 +{
-+	struct nand_pos new_pos = *pos;
-+
-+	new_pos.eraseblock = get_mapping_block_index(new_pos.eraseblock);
-+	update_bmt(pos->eraseblock);
-+
-+	return bmtd.nand_ops->markbad(nand, &new_pos);
++	u16 orig_block = ofs >> bmtd.blk_shift;
++	u16 block = get_mapping_block_index(orig_block);
++	update_bmt(orig_block);
++	return bmtd._block_markbad(mtd, (loff_t)block << bmtd.blk_shift);
 +}
 +
 +static void
 +mtk_bmt_replace_ops(struct mtd_info *mtd)
 +{
-+	static const struct nand_ops mtk_bmt_nand_ops = {
-+		.erase = mtk_bmt_erase,
-+		.isbad = mtk_bmt_isbad,
-+		.markbad = mtk_bmt_markbad,
-+	};
-+	struct nand_device *nand = mtd_to_nanddev(mtd);
-+
-+	bmtd.nand_ops = nand->ops;
 +	bmtd._read_oob = mtd->_read_oob;
 +	bmtd._write_oob = mtd->_write_oob;
++	bmtd._erase = mtd->_erase;
++	bmtd._block_isbad = mtd->_block_isbad;
++	bmtd._block_markbad = mtd->_block_markbad;
 +
 +	mtd->_read_oob = mtk_bmt_read;
 +	mtd->_write_oob = mtk_bmt_write;
-+	nand->ops = &mtk_bmt_nand_ops;
++	mtd->_erase = mtk_bmt_mtd_erase;
++	mtd->_block_isbad = mtk_bmt_block_isbad;
++	mtd->_block_markbad = mtk_bmt_block_markbad;
 +}
 +
 +static int mtk_bmt_debug_mark_good(void *data, u64 val)
@@ -653,8 +660,6 @@
 +
 +void mtk_bmt_detach(struct mtd_info *mtd)
 +{
-+	struct nand_device *nand = mtd_to_nanddev(mtd);
-+
 +	if (bmtd.mtd != mtd)
 +		return;
 +
@@ -667,8 +672,10 @@
 +
 +	mtd->_read_oob = bmtd._read_oob;
 +	mtd->_write_oob = bmtd._write_oob;
++	mtd->_erase = bmtd._erase;
++	mtd->_block_isbad = bmtd._block_isbad;
++	mtd->_block_markbad = bmtd._block_markbad;
 +	mtd->size = bmtd.total_blks << bmtd.blk_shift;
-+	nand->ops = bmtd.nand_ops;
 +
 +	memset(&bmtd, 0, sizeof(bmtd));
 +}

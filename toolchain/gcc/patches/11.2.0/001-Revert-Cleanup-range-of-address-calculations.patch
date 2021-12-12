@@ -1,0 +1,160 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 16 Nov 2021 10:39:51 +0100
+Subject: [PATCH] Revert "Cleanup range of address calculations."
+
+This reverts commit 47923622c663ffad8b14aa93706183290d4f6791.
+This commit is causing issues with offset of struct members.
+
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=103255
+---
+ delete mode 100644 gcc/testsuite/gcc.dg/tree-ssa/pr78655.c
+
+--- a/gcc/gimple-range.cc
++++ b/gcc/gimple-range.cc
+@@ -431,9 +431,8 @@ gimple_ranger::range_of_range_op (irange
+       m_cache.register_dependency (lhs, op2);
+     }
+ 
+-  if (gimple_code (s) == GIMPLE_ASSIGN
+-      && gimple_assign_rhs_code (s) == ADDR_EXPR)
+-    return range_of_address (r, s);
++  if (range_of_non_trivial_assignment (r, s))
++    return true;
+ 
+   if (range_of_expr (range1, op1, s))
+     {
+@@ -447,84 +446,48 @@ gimple_ranger::range_of_range_op (irange
+   return true;
+ }
+ 
+-// Calculate the range of an assignment containing an ADDR_EXPR.
++// Calculate the range of a non-trivial assignment.  That is, is one
++// inolving arithmetic on an SSA name (for example, an ADDR_EXPR).
+ // Return the range in R.
+-// If a range cannot be calculated, set it to VARYING and return true.
++//
++// If a range cannot be calculated, return false.
+ 
+ bool
+-gimple_ranger::range_of_address (irange &r, gimple *stmt)
++gimple_ranger::range_of_non_trivial_assignment (irange &r, gimple *stmt)
+ {
+-  gcc_checking_assert (gimple_code (stmt) == GIMPLE_ASSIGN);
+-  gcc_checking_assert (gimple_assign_rhs_code (stmt) == ADDR_EXPR);
++  if (gimple_code (stmt) != GIMPLE_ASSIGN)
++    return false;
+ 
+-  bool strict_overflow_p;
+-  tree expr = gimple_assign_rhs1 (stmt);
+-  poly_int64 bitsize, bitpos;
+-  tree offset;
+-  machine_mode mode;
+-  int unsignedp, reversep, volatilep;
+-  tree base = get_inner_reference (TREE_OPERAND (expr, 0), &bitsize,
+-				   &bitpos, &offset, &mode, &unsignedp,
+-				   &reversep, &volatilep);
+-
+-
+-  if (base != NULL_TREE
+-      && TREE_CODE (base) == MEM_REF
+-      && TREE_CODE (TREE_OPERAND (base, 0)) == SSA_NAME)
++  tree base = gimple_range_base_of_assignment (stmt);
++  if (base)
+     {
+-      tree ssa = TREE_OPERAND (base, 0);
+-      gcc_checking_assert (irange::supports_type_p (TREE_TYPE (ssa)));
+-      range_of_expr (r, ssa, stmt);
+-      range_cast (r, TREE_TYPE (gimple_assign_rhs1 (stmt)));
+-
+-      poly_offset_int off = 0;
+-      bool off_cst = false;
+-      if (offset == NULL_TREE || TREE_CODE (offset) == INTEGER_CST)
++      if (TREE_CODE (base) == MEM_REF)
+ 	{
+-	  off = mem_ref_offset (base);
+-	  if (offset)
+-	    off += poly_offset_int::from (wi::to_poly_wide (offset),
+-					  SIGNED);
+-	  off <<= LOG2_BITS_PER_UNIT;
+-	  off += bitpos;
+-	  off_cst = true;
++	  if (TREE_CODE (TREE_OPERAND (base, 0)) == SSA_NAME)
++	    {
++	      int_range_max range1;
++	      tree ssa = TREE_OPERAND (base, 0);
++	      if (range_of_expr (range1, ssa, stmt))
++		{
++		  tree type = TREE_TYPE (ssa);
++		  range_operator *op = range_op_handler (POINTER_PLUS_EXPR,
++							 type);
++		  int_range<2> offset (TREE_OPERAND (base, 1),
++				       TREE_OPERAND (base, 1));
++		  op->fold_range (r, type, range1, offset);
++		  return true;
++		}
++	    }
++	  return false;
+ 	}
+-      /* If &X->a is equal to X, the range of X is the result.  */
+-      if (off_cst && known_eq (off, 0))
+-	  return true;
+-      else if (flag_delete_null_pointer_checks
+-	       && !TYPE_OVERFLOW_WRAPS (TREE_TYPE (expr)))
+-	{
+-	 /* For -fdelete-null-pointer-checks -fno-wrapv-pointer we don't
+-	 allow going from non-NULL pointer to NULL.  */
+-	   if(!range_includes_zero_p (&r))
+-	    return true;
+-	}
+-      /* If MEM_REF has a "positive" offset, consider it non-NULL
+-	 always, for -fdelete-null-pointer-checks also "negative"
+-	 ones.  Punt for unknown offsets (e.g. variable ones).  */
+-      if (!TYPE_OVERFLOW_WRAPS (TREE_TYPE (expr))
+-	  && off_cst
+-	  && known_ne (off, 0)
+-	  && (flag_delete_null_pointer_checks || known_gt (off, 0)))
++      if (gimple_assign_rhs_code (stmt) == ADDR_EXPR)
+ 	{
++	  // Handle "= &a"  and return non-zero.
+ 	  r = range_nonzero (TREE_TYPE (gimple_assign_rhs1 (stmt)));
+ 	  return true;
+ 	}
+-      r = int_range<2> (TREE_TYPE (gimple_assign_rhs1 (stmt)));
+-      return true;
+-    }
+-
+-  // Handle "= &a".
+-  if (tree_single_nonzero_warnv_p (expr, &strict_overflow_p))
+-    {
+-      r = range_nonzero (TREE_TYPE (gimple_assign_rhs1 (stmt)));
+-      return true;
+     }
+-
+-  // Otherwise return varying.
+-  r = int_range<2> (TREE_TYPE (gimple_assign_rhs1 (stmt)));
+-  return true;
++  return false;
+ }
+ 
+ // Calculate a range for phi statement S and return it in R.
+--- a/gcc/gimple-range.h
++++ b/gcc/gimple-range.h
+@@ -62,7 +62,7 @@ protected:
+   ranger_cache m_cache;
+ private:
+   bool range_of_phi (irange &r, gphi *phi);
+-  bool range_of_address (irange &r, gimple *s);
++  bool range_of_non_trivial_assignment (irange &r, gimple *s);
+   bool range_of_builtin_call (irange &r, gcall *call);
+   bool range_with_loop_info (irange &r, tree name);
+   void range_of_ssa_name_with_loop_info (irange &, tree, class loop *,
+--- a/gcc/range-op.cc
++++ b/gcc/range-op.cc
+@@ -3447,7 +3447,6 @@ pointer_table::pointer_table ()
+   set (GT_EXPR, op_gt);
+   set (GE_EXPR, op_ge);
+   set (SSA_NAME, op_identity);
+-  set (INTEGER_CST, op_integer_cst);
+   set (ADDR_EXPR, op_addr);
+   set (NOP_EXPR, op_convert);
+   set (CONVERT_EXPR, op_convert);

@@ -12,12 +12,9 @@ platform_do_upgrade() {
 		export_partdevice rootdev 0
 		case "$rootdev" in
 		mmc*)
-			sync
-			export UPGRADE_MMC_PARTDEV=$(find_mmc_part "production" $rootdev)
-			[ "$UPGRADE_MMC_PARTDEV" ] || return 1
-			export UPGRADE_MMC_IMAGE_BLOCKS=$(($(get_image "$1" | fwtool -i /dev/null -T - | dd of=$UPGRADE_MMC_PARTDEV bs=512 2>&1 | grep "records out" | cut -d' ' -f1)))
-			[ "$UPGRADE_MMC_IMAGE_BLOCKS" ] || return 0
-			dd if=/dev/zero of=$UPGRADE_MMC_PARTDEV bs=512 seek=$UPGRADE_MMC_IMAGE_BLOCKS count=8
+			CI_ROOTDEV="$rootdev"
+			CI_KERNPART="production"
+			emmc_do_upgrade "$1"
 			;;
 		*)
 			CI_KERNPART="fit"
@@ -86,23 +83,13 @@ platform_check_image() {
 	return 0
 }
 
-platform_copy_config_mmc() {
-	if [ ! -e "$UPGRADE_BACKUP" ] ||
-	   [ ! -e "$UPGRADE_MMC_PARTDEV" ] ||
-	   [ ! "$UPGRADE_MMC_IMAGE_BLOCKS" ]; then
-		return
-	fi
-	dd if="$UPGRADE_BACKUP" of="$UPGRADE_MMC_PARTDEV" bs=512 seek=$UPGRADE_MMC_IMAGE_BLOCKS
-	sync
-}
-
 platform_copy_config() {
 	case "$(board_name)" in
 	bananapi,bpi-r64)
 		export_bootdevice
 		export_partdevice rootdev 0
 		if echo $rootdev | grep -q mmc; then
-			platform_copy_config_mmc
+			emmc_copy_config
 		fi
 		;;
 	esac

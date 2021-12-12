@@ -7,6 +7,14 @@
 board=$(board_name)
 
 case "$FIRMWARE" in
+"ath10k/cal-pci-0000:01:00.0.bin")
+	case "$board" in
+	meraki,mr52)
+		CI_UBIPART=art
+		caldata_extract_ubi "ART" 0x1000 0x844
+		;;
+	esac
+	;;
 "ath10k/pre-cal-pci-0000:01:00.0.bin")
 	case $board in
 	askey,rt4230w-rev6)
@@ -25,6 +33,10 @@ case "$FIRMWARE" in
 	linksys,ea8500)
 		caldata_extract "art" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 1)
+		;;
+	meraki,mr42)
+		CI_UBIPART=art
+		caldata_extract_ubi "ART" 0x1000 0x2f20
 		;;
 	netgear,d7800 |\
 	netgear,r7500v2 |\
@@ -64,6 +76,11 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 2)
 		;;
+	meraki,mr42 |\
+	meraki,mr52)
+		CI_UBIPART=art
+		caldata_extract_ubi "ART" 0x5000 0x2f20
+		;;
 	netgear,d7800 |\
 	netgear,r7500v2 |\
 	netgear,r7800 |\
@@ -80,10 +97,22 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
+"ath10k/cal-pci-0002:01:00.0.bin")
+	case "$board" in
+	meraki,mr42)
+		CI_UBIPART=art
+		caldata_extract_ubi "ART" 0x9000 0x844
+		;;
+	esac
+	;;
 "ath10k/pre-cal-pci-0002:01:00.0.bin")
 	case $board in
 	edgecore,ecw5410)
 		caldata_extract "0:art" 0x5000 0x2f20
+		;;
+	meraki,mr52)
+		CI_UBIPART=art
+		caldata_extract_ubi "ART" 0x9000 0x2f20
 		;;
 	esac
 	;;

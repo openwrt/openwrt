@@ -84,14 +84,11 @@ platform_do_upgrade() {
 
 	case "$board" in
 	bananapi,bpi-r2)
-		sync
 		export_bootdevice
 		export_partdevice fitpart 3
 		[ "$fitpart" ] || return 1
-		export UPGRADE_MMC_PARTDEV="/dev/$fitpart"
-		export UPGRADE_MMC_IMAGE_BLOCKS=$(($(get_image "$1" | fwtool -i /dev/null -T - | dd of=$UPGRADE_MMC_PARTDEV bs=512 2>&1 | grep "records out" | cut -d' ' -f1)))
-		[ "$UPGRADE_MMC_IMAGE_BLOCKS" ] || return 0
-		dd if=/dev/zero of=$UPGRADE_MMC_PARTDEV bs=512 seek=$UPGRADE_MMC_IMAGE_BLOCKS count=8
+		EMMC_KERN_DEV="/dev/$fitpart"
+		emmc_do_upgrade "$1"
 		;;
 
 	unielec,u7623-02-emmc-512m)
@@ -166,20 +163,10 @@ platform_check_image() {
 	return 0
 }
 
-platform_copy_config_mmc() {
-	if [ ! -e "$UPGRADE_BACKUP" ] ||
-	   [ ! -e "$UPGRADE_MMC_PARTDEV" ] ||
-	   [ ! "$UPGRADE_MMC_IMAGE_BLOCKS" ]; then
-		return
-	fi
-	dd if="$UPGRADE_BACKUP" of="$UPGRADE_MMC_PARTDEV" bs=512 seek=$UPGRADE_MMC_IMAGE_BLOCKS
-	sync
-}
-
 platform_copy_config() {
 	case "$(board_name)" in
 	bananapi,bpi-r2)
-		platform_copy_config_mmc
+		emmc_copy_config
 		;;
 	unielec,u7623-02-emmc-512m)
 		# platform_do_upgrade() will have set $recoverydev

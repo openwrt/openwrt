@@ -1283,7 +1283,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return PTR_ERR(plat_dat);
 --- a/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.c
-@@ -1396,7 +1396,7 @@ static int rk_gmac_probe(struct platform
+@@ -1392,7 +1392,7 @@ static int rk_gmac_probe(struct platform
  	if (ret)
  		return ret;
  
@@ -1360,7 +1360,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int irq;
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -4904,7 +4904,7 @@ int stmmac_dvr_probe(struct device *devi
+@@ -4957,7 +4957,7 @@ int stmmac_dvr_probe(struct device *devi
  	priv->wol_irq = res->wol_irq;
  	priv->lpi_irq = res->lpi_irq;
  
@@ -1501,7 +1501,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			if (ret)
 --- a/drivers/net/ethernet/ti/davinci_emac.c
 +++ b/drivers/net/ethernet/ti/davinci_emac.c
-@@ -1687,7 +1687,6 @@ davinci_emac_of_get_pdata(struct platfor
+@@ -1699,7 +1699,6 @@ davinci_emac_of_get_pdata(struct platfor
  	const struct of_device_id *match;
  	const struct emac_platform_data *auxdata;
  	struct emac_platform_data *pdata = NULL;
@@ -1509,7 +1509,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (!IS_ENABLED(CONFIG_OF) || !pdev->dev.of_node)
  		return dev_get_platdata(&pdev->dev);
-@@ -1699,11 +1698,8 @@ davinci_emac_of_get_pdata(struct platfor
+@@ -1711,11 +1710,8 @@ davinci_emac_of_get_pdata(struct platfor
  	np = pdev->dev.of_node;
  	pdata->version = EMAC_VERSION_2;
  
