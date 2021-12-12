@@ -111,7 +111,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	schedule_and_wake_txq(local, txqi);
  
-@@ -3219,6 +3220,7 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3223,6 +3224,7 @@ static bool ieee80211_amsdu_aggregate(st
  	u8 max_subframes = sta->sta.max_amsdu_subframes;
  	int max_frags = local->hw.max_tx_fragments;
  	int max_amsdu_len = sta->sta.max_amsdu_len;
@@ -119,7 +119,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int orig_truesize;
  	__be16 len;
  	void *data;
-@@ -3241,6 +3243,8 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3245,6 +3247,8 @@ static bool ieee80211_amsdu_aggregate(st
  		max_amsdu_len = min_t(int, max_amsdu_len,
  				      sta->sta.max_rc_amsdu_len);
  
@@ -128,7 +128,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spin_lock_bh(&fq->lock);
  
  	/* TODO: Ideally aggregation should be done on dequeue to remain
-@@ -3248,7 +3252,8 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3252,7 +3256,8 @@ static bool ieee80211_amsdu_aggregate(st
  	 */
  
  	tin = &txqi->tin;

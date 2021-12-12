@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (likely(sta)) {
  		if (!IS_ERR(sta))
  			tx->sta = sta;
-@@ -3544,6 +3544,7 @@ begin:
+@@ -3556,6 +3556,7 @@ begin:
  	tx.local = local;
  	tx.skb = skb;
  	tx.sdata = vif_to_sdata(info->control.vif);
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (txq->sta) {
  		tx.sta = container_of(txq->sta, struct sta_info, sta);
-@@ -3588,7 +3589,7 @@ begin:
+@@ -3600,7 +3601,7 @@ begin:
  
  		if (tx.key &&
  		    (tx.key->conf.flags & IEEE80211_KEY_FLAG_GENERATE_IV))
@@ -65,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		ieee80211_xmit_fast_finish(sta->sdata, sta, pn_offs,
  					   tx.key, skb);
-@@ -4047,6 +4048,7 @@ ieee80211_build_data_template(struct iee
+@@ -4059,6 +4060,7 @@ ieee80211_build_data_template(struct iee
  	hdr = (void *)skb->data;
  	tx.sta = sta_info_get(sdata, hdr->addr1);
  	tx.skb = skb;
@@ -199,7 +199,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	len = skb->len - hdrlen;
  
  	if (info->control.hw_key)
-@@ -663,7 +662,7 @@ static int gcmp_encrypt_skb(struct ieee8
+@@ -666,7 +665,7 @@ static int gcmp_encrypt_skb(struct ieee8
  		return 0;
  	}
  
@@ -208,7 +208,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	len = skb->len - hdrlen;
  
  	if (info->control.hw_key)
-@@ -805,7 +804,6 @@ static ieee80211_tx_result
+@@ -811,7 +810,6 @@ static ieee80211_tx_result
  ieee80211_crypto_cs_encrypt(struct ieee80211_tx_data *tx,
  			    struct sk_buff *skb)
  {
@@ -216,7 +216,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_key *key = tx->key;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	int hdrlen;
-@@ -821,8 +819,7 @@ ieee80211_crypto_cs_encrypt(struct ieee8
+@@ -827,8 +825,7 @@ ieee80211_crypto_cs_encrypt(struct ieee8
  		     pskb_expand_head(skb, iv_len, 0, GFP_ATOMIC)))
  		return TX_DROP;
  

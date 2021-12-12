@@ -94,7 +94,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		ret = dev_alloc_name(ndev, ndev->name);
 --- a/net/mac80211/mesh_pathtbl.c
 +++ b/net/mac80211/mesh_pathtbl.c
-@@ -106,13 +106,15 @@ void mesh_path_assign_nexthop(struct mes
+@@ -109,13 +109,15 @@ void mesh_path_assign_nexthop(struct mes
  static void prepare_for_gate(struct sk_buff *skb, char *dst_addr,
  			     struct mesh_path *gate_mpath)
  {
@@ -227,7 +227,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (likely(sta)) {
  		if (!IS_ERR(sta))
-@@ -2239,7 +2238,7 @@ netdev_tx_t ieee80211_monitor_start_xmit
+@@ -2243,7 +2242,7 @@ netdev_tx_t ieee80211_monitor_start_xmit
  		goto fail;
  
  	hdr = (struct ieee80211_hdr *)(skb->data + len_rthdr);
@@ -236,7 +236,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (skb->len < len_rthdr + hdrlen)
  		goto fail;
-@@ -2458,7 +2457,7 @@ static struct sk_buff *ieee80211_build_h
+@@ -2462,7 +2461,7 @@ static struct sk_buff *ieee80211_build_h
  	struct ieee80211_chanctx_conf *chanctx_conf;
  	struct ieee80211_sub_if_data *ap_sdata;
  	enum nl80211_band band;
@@ -245,7 +245,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (IS_ERR(sta))
  		sta = NULL;
-@@ -2757,7 +2756,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -2761,7 +2760,9 @@ static struct sk_buff *ieee80211_build_h
  	}
  
  	skb_pull(skb, skip_header_bytes);
@@ -255,7 +255,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/*
  	 * So we need to modify the skb header and hence need a copy of
-@@ -2790,6 +2791,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -2794,6 +2795,9 @@ static struct sk_buff *ieee80211_build_h
  		memcpy(skb_push(skb, meshhdrlen), &mesh_hdr, meshhdrlen);
  #endif
  
@@ -265,7 +265,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ieee80211_is_data_qos(fc)) {
  		__le16 *qos_control;
  
-@@ -2966,6 +2970,8 @@ void ieee80211_check_fast_xmit(struct st
+@@ -2970,6 +2974,8 @@ void ieee80211_check_fast_xmit(struct st
  		fc |= cpu_to_le16(IEEE80211_STYPE_QOS_DATA);
  	}
  
@@ -274,7 +274,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* We store the key here so there's no point in using rcu_dereference()
  	 * but that's fine because the code that changes the pointers will call
  	 * this function after doing so. For a single CPU that would be enough,
-@@ -3544,7 +3550,7 @@ begin:
+@@ -3556,7 +3562,7 @@ begin:
  	tx.local = local;
  	tx.skb = skb;
  	tx.sdata = vif_to_sdata(info->control.vif);
@@ -283,7 +283,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (txq->sta) {
  		tx.sta = container_of(txq->sta, struct sta_info, sta);
-@@ -4048,7 +4054,7 @@ ieee80211_build_data_template(struct iee
+@@ -4060,7 +4066,7 @@ ieee80211_build_data_template(struct iee
  	hdr = (void *)skb->data;
  	tx.sta = sta_info_get(sdata, hdr->addr1);
  	tx.skb = skb;
