@@ -5604,7 +5604,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	 * them, we have to fall back to INTx or other interrupts, e.g., a
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -3431,6 +3431,13 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_A
+@@ -3432,6 +3432,13 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_A
   */
  DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_TI, 0xb005, quirk_no_bus_reset);
  

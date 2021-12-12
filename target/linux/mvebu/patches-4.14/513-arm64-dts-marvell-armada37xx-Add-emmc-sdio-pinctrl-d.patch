@@ -1,4 +1,4 @@
-From eefe328439642101774f0f5c4ea0dc6ba1cfb687 Mon Sep 17 00:00:00 2001
+From d2314a5265eb43e754a26050caa2b31527cc1770 Mon Sep 17 00:00:00 2001
 From: Ding Tao <miyatsu@qq.com>
 Date: Fri, 26 Oct 2018 11:50:27 +0000
 Subject: [PATCH] arm64: dts: marvell: armada37xx: Add emmc/sdio pinctrl
@@ -35,6 +35,6 @@ Signed-off-by: Gregory CLEMENT <gregory.clement@bootlin.com>
 +					function = "sdio";
 +				};
 +
- 			};
- 
- 			eth0: ethernet@30000 {
+ 				pcie_reset_pins: pcie-reset-pins {
+ 					groups = "pcie1";
+ 					function = "gpio";

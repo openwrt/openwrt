@@ -12,8 +12,6 @@ packets.
 
 Signed-off-by: Sven Eckelmann <sven.eckelmann@openmesh.com>
 Signed-off-by: David S. Miller <davem@davemloft.net>
----
- rename net/batman-adv/packet.h => include/uapi/linux/batadv_packet.h (99%)
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
@@ -237,19 +235,20 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  struct net_device;
 --- a/net/batman-adv/multicast.c
 +++ b/net/batman-adv/multicast.c
-@@ -54,11 +54,11 @@
+@@ -54,12 +54,12 @@
  #include <net/if_inet6.h>
  #include <net/ip.h>
  #include <net/ipv6.h>
 +#include <uapi/linux/batadv_packet.h>
  
+ #include "bridge_loop_avoidance.h"
  #include "hard-interface.h"
  #include "hash.h"
  #include "log.h"
 -#include "packet.h"
+ #include "send.h"
  #include "translation-table.h"
  #include "tvlv.h"
- 
 --- a/net/batman-adv/netlink.c
 +++ b/net/batman-adv/netlink.c
 @@ -39,6 +39,7 @@

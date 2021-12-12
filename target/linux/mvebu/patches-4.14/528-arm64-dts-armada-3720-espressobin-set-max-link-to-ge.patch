@@ -62,9 +62,9 @@ Signed-off-by: Tomasz Maciej Nowak <tmn505@gmail.com>
 
 --- a/arch/arm64/boot/dts/marvell/armada-3720-espressobin.dts
 +++ b/arch/arm64/boot/dts/marvell/armada-3720-espressobin.dts
-@@ -83,6 +83,8 @@
- /* J9 */
- &pcie0 {
+@@ -86,6 +86,8 @@
+ 	pinctrl-0 = <&pcie_reset_pins &pcie_clkreq_pins>;
+ 	reset-gpios = <&gpiosb 3 GPIO_ACTIVE_LOW>;
  	status = "okay";
 +
 +	max-link-speed = <1>;
