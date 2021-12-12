@@ -34,10 +34,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_set_interface_lan "eth0"
 		;;
-	tplink,tl-mr3020-v3)
-		ucidef_add_switch "switch0" \
-			"0:lan" "6@eth0"
-		;;
 	asus,rt-n10p-v3|\
 	asus,rt-n11p-b1|\
 	asus,rt-n12-vp-b1|\
@@ -61,10 +57,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
-	duzun,dm06)
-		ucidef_add_switch "switch0" \
-			"1:lan" "0:wan" "6@eth0"
-		;;
+	duzun,dm06|\
 	glinet,gl-mt300n-v2)
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
@@ -123,6 +116,10 @@ ramips_setup_interfaces()
 	rakwireless,rak633)
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
+		;;
+	tplink,tl-mr3020-v3)
+		ucidef_add_switch "switch0" \
+			"0:lan" "6@eth0"
 		;;
 	tplink,tl-mr6400-v4)
 		ucidef_add_switch "switch0" \
