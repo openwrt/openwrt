@@ -637,6 +637,25 @@ define Device/hiwifi_hc5962
 endef
 TARGET_DEVICES += hiwifi_hc5962
 
+define Device/humax_e10
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15936k
+  DEVICE_VENDOR := HUMAX
+  DEVICE_MODEL := E10
+  DEVICE_ALT0_VENDOR := HUMAX
+  DEVICE_ALT0_MODEL := QUANTUM E10
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m EA03 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	check-size | append-metadata
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | \
+	edimax-header -s CSYS -m EA03 -f 0x70000 -S 0x01100000 | \
+	check-size | zip upg -P f013c26cf0a320fb71d03356dcb6bb63
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+endef
+TARGET_DEVICES += humax_e10
+
 define Device/iodata_wn-ax1167gr
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
