@@ -1,0 +1,227 @@
+--- a/mc_osdep.h
++++ b/mc_osdep.h
+@@ -73,7 +73,11 @@ static inline struct net_bridge_port *os
+ 
+ static inline void os_br_forward(const struct net_bridge_port *to, struct sk_buff *skb)
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	br_forward(to, skb, false, false);
++#else
+ 	br_forward(to, skb, NULL);
++#endif
+ }
+ 
+ static inline void mc_ipv6_addr_copy(struct in6_addr *a1, const struct in6_addr *a2)
+@@ -141,7 +145,11 @@ static inline int mc_ipv6_skip_exthdr(co
+ 	(void)pos; \
+ 	hlist_for_each_entry(tpos, head, member)
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++#define os_br_fdb_get(a, b) br_fdb_find_rcu(a, b, 0)
++#else
+ #define os_br_fdb_get(a, b) __br_fdb_get(a, b, 0)
++#endif
+ #else
+ 
+ #define os_hlist_for_each_entry_rcu(tpos, pos, head, member) \
+--- a/mc_forward.c
++++ b/mc_forward.c
+@@ -111,7 +111,11 @@ static void mc_translate_hook(struct net
+ 		if (forward)
+ 			os_br_forward(pdst, skb);
+ 		else
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++			br_forward(pdst, skb, false, true);
++#else
+ 			br_deliver(pdst, skb);
++#endif
+ 	}
+ out:
+ 	if (!pdst || pdst == (struct net_bridge_port *)-1)
+@@ -201,7 +205,11 @@ static void mc_flood_hook(__be32 ifindex
+ 	if (forward)
+ 		os_br_forward(br_port, skb);
+ 	else
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++		br_forward(br_port, skb, false, true);
++#else
+ 		br_deliver(br_port, skb);
++#endif
+ 
+ out:
+ 	dev_put(dev);
+@@ -466,7 +474,11 @@ static int __mc_process(const struct net
+ 	if (!fdb)
+ 		return -EINVAL;
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	if (mc_rcv(mc, skb, fdb->key.addr.addr, src->dev)) {
++#else
+ 	if (mc_rcv(mc, skb, fdb->addr.addr, src->dev)) {
++#endif
+ 		kfree_skb(skb);
+ 		return 0;
+ 	}
+--- a/mc_netfilter.c
++++ b/mc_netfilter.c
+@@ -335,8 +335,14 @@ static struct nf_hook_ops mc_hook_ops[]
+ int __init mc_netfilter_init(void)
+ {
+ 	int ret = 0;
++
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	ret = nf_register_net_hook(&init_net,&mc_hook_ops[0]);
++	ret |= nf_register_net_hook(&init_net,&mc_hook_ops[1]);
++#else
+ 	ret = nf_register_hook(&mc_hook_ops[0]);
+ 	ret |= nf_register_hook(&mc_hook_ops[1]);
++#endif
+ 	return ret;
+ }
+ 
+@@ -345,7 +351,12 @@ int __init mc_netfilter_init(void)
+  */
+ void mc_netfilter_exit(void)
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	nf_unregister_net_hook(&init_net,&mc_hook_ops[0]);
++	nf_unregister_net_hook(&init_net,&mc_hook_ops[1]);
++#else
+ 	nf_unregister_hook(&mc_hook_ops[0]);
+ 	nf_unregister_hook(&mc_hook_ops[1]);
++#endif
+ }
+ 
+--- a/mc_snooping.c
++++ b/mc_snooping.c
+@@ -657,9 +657,17 @@ static void mc_rtimer_reset(struct mc_st
+ /* mc_mdb_expired
+  *	mdb expired
+  */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++static void mc_mdb_expired(struct timer_list *tl)
++#else
+ static void mc_mdb_expired(unsigned long data)
++#endif
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	struct mc_mdb_entry *mdb = from_timer(mdb, tl, etimer);
++#else
+ 	struct mc_mdb_entry *mdb = (struct mc_mdb_entry *)data;
++#endif
+ 	struct mc_struct *mc = mdb->mc;
+ 	struct mc_port_group *pg;
+ 	struct hlist_node *pgh;
+@@ -693,7 +701,11 @@ static struct mc_mdb_entry *mc_mdb_creat
+ 		mdb->group = *group;
+ 		mdb->mc = mc;
+ 		mdb->ageing_query = jiffies;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++		timer_setup(&mdb->etimer, mc_mdb_expired, 0);
++#else
+ 		setup_timer(&mdb->etimer, mc_mdb_expired, (unsigned long)mdb);
++#endif
+ 		hlist_add_head_rcu(&mdb->hlist, head);
+ 	} else {
+ 		MC_PRINT("%s: No memory\n", __func__);
+@@ -2869,10 +2881,18 @@ static void mc_dev_rcu_free(struct rcu_h
+ 	kfree(mc);
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++static void mc_router_cleanup(struct timer_list *tl)
++#else
+ static void mc_router_cleanup(unsigned long data)
++#endif
+ {
+ 	int delay_reset = 0;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	struct mc_struct *mc = from_timer(mc, tl, rtimer);
++#else
+ 	struct mc_struct *mc = (struct mc_struct *)data;
++#endif
+ 	unsigned long next_timer = jiffies + mc->querier_interval;
+ 	struct hlist_node *h;
+ 	struct mc_querier_entry *qe;
+@@ -2916,10 +2936,18 @@ static void mc_router_cleanup(unsigned l
+ 	spin_unlock_bh(&mc->lock);
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++static void mc_mdb_query(struct timer_list *tl)
++#else
+ static void mc_mdb_query(unsigned long data)
++#endif
+ {
+ 	int i;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	struct mc_struct *mc = from_timer(mc, tl, qtimer);
++#else
+ 	struct mc_struct *mc = (struct mc_struct *)data;
++#endif
+ 	unsigned long next_timer = jiffies + mc->local_query_interval;
+ 
+ 	if (mc->timeout_gmi_enable)
+@@ -2963,10 +2991,18 @@ out:
+ /* mc_mdb_cleanup
+  *	clean up a mdb
+  */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++static void mc_mdb_cleanup(struct timer_list *tl)
++#else
+ static void mc_mdb_cleanup(unsigned long data)
++#endif
+ {
+ 	int i;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	struct mc_struct *mc = from_timer(mc, tl, agingtimer);
++#else
+ 	struct mc_struct *mc = (struct mc_struct *)data;
++#endif
+ 	struct mc_querier_entry *igmp_root_qe = mc->rp.igmp_root_qe;
+ 	unsigned long next_timer, now = jiffies;
+ 	unsigned long igmp_expire_time = mc->membership_interval;
+@@ -3142,12 +3178,22 @@ static void mc_acl_table_init(struct mc_
+ /* mc_event_delay
+  *	send a event out
+  */
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++static void mc_event_delay(struct timer_list *tl)
++#else
+ static void mc_event_delay(unsigned long data)
++#endif
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	struct mc_struct *mc = from_timer(mc, tl, evtimer);
++
++	mc_netlink_event_send(mc, MC_EVENT_MDB_UPDATED,	0, NULL);
++#else
+ 	mc_netlink_event_send((struct mc_struct *)data,
+ 			MC_EVENT_MDB_UPDATED,
+ 			0,
+ 			NULL);
++#endif
+ }
+ 
+ /* mc_attach
+@@ -3201,6 +3247,12 @@ int mc_attach(struct net_device *dev)
+ 
+ 
+ 	mc_acl_table_init(mc);
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
++	timer_setup(&mc->qtimer, mc_mdb_query, 0);
++	timer_setup(&mc->agingtimer, mc_mdb_cleanup, 0);
++	timer_setup(&mc->rtimer, mc_router_cleanup, 0);
++	timer_setup(&mc->evtimer, mc_event_delay, 0);
++#else
+ 	setup_timer(&mc->qtimer, mc_mdb_query,
+ 			(unsigned long)mc);
+ 	setup_timer(&mc->agingtimer, mc_mdb_cleanup,
+@@ -3209,6 +3261,7 @@ int mc_attach(struct net_device *dev)
+ 			(unsigned long)mc);
+ 	setup_timer(&mc->evtimer, mc_event_delay,
+ 			(unsigned long)mc);
++#endif
+ 
+ 	/*Make the mc ready before publishing it*/
+ 	if (mc_open(mc) < 0) {

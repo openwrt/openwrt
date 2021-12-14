@@ -43,7 +43,7 @@ define KernelPackage/qca-nss-ecm/Default
 	+kmod-shortcut-fe-drv \
 	+kmod-ipsec
 ifneq ($(CONFIG_PACKAGE_kmod-qca-ovsmgr),)
-  DEPENDS+:=+PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr
+  DEPENDS:=+PACKAGE_kmod-qca-ovsmgr:kmod-qca-ovsmgr
 endif
   TITLE:=QCA NSS Enhanced Connection Manager (ECM)
   FILES:=$(PKG_BUILD_DIR)/*.ko $(FILES_EXAMPLES)
@@ -78,6 +78,7 @@ endef
 define KernelPackage/qca-nss-ecm-standard
   $(call KernelPackage/qca-nss-ecm/Default)
   VARIANT:=standard
+  DEPENDS+=+PACKAGE_kmod-qca-mcs:kmod-qca-mcs
 endef
 
 define KernelPackage/qca-nss-ecm-standard/description

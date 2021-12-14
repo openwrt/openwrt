@@ -1,0 +1,28 @@
+--- a/include/linux/if_bridge,h
++++ b/include/linux/if_bridge.h
+@@ -178,6 +178,7 @@ struct br_fdb_event {
+ };
+ extern void br_fdb_register_notify(struct notifier_block *nb);
+ extern void br_fdb_unregister_notify(struct notifier_block *nb);
++extern bool br_is_hairpin_enabled(struct net_device *dev);
+ 
+ typedef struct net_bridge_port *br_get_dst_hook_t(
+ 		const struct net_bridge_port *src,
+--- a/net/bridge/br_if.c
++++ b/net/bridge/br_if.c
+@@ -867,4 +867,15 @@ out:
+ 	return netdev;
+ }
+ EXPORT_SYMBOL_GPL(br_port_dev_get);
++
++/* API to know if hairpin feature is enabled/disabled on this bridge port */
++bool br_is_hairpin_enabled(struct net_device *dev)
++{
++	struct net_bridge_port *port = br_port_get_check_rcu(dev);
++
++	if (likely(port))
++		return port->flags & BR_HAIRPIN_MODE;
++	return false;
++}
++EXPORT_SYMBOL_GPL(br_is_hairpin_enabled);
+ /* QCA NSS ECM support - End */
