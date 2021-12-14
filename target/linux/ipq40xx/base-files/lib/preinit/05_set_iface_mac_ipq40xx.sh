@@ -15,11 +15,11 @@ preinit_set_mac_address() {
 		base_mac=$(cat /sys/class/net/eth0/address)
 		ip link set dev eth1 address $(macaddr_add "$base_mac" 1)
 		;;
-	linksys,ea8300|\
+	linksys,ea8300| \
 	linksys,mr8300)
 		base_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		ip link set dev eth0 address "$base_mac"
-		ip link set dev eth1 address $(macaddr_add "$base_mac" 1)
+		ip link set dev lan1 address $(macaddr_add "$base_mac" 1)
+		ip link set dev eth0 address $(macaddr_setbit "$base_mac" 7)
 		;;
 	meraki,mr33)
 		mac_lan=$(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66)

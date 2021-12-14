@@ -7,6 +7,10 @@
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
+	aliases {
+		ethernet1 = &swport5;
+	};
+
 	soc {
 		rng@22000 {
 			status = "okay";
@@ -224,6 +228,24 @@
 };
 
 &cryptobam {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&swport5 {
 	status = "okay";
 };
 

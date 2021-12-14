@@ -26,6 +26,10 @@
 			status = "okay";
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
+
+			ethphy: ethernet-phy@0 {
+				reg = <0x0>;
+			};
 		};
 
 		tcsr@1949000 {
@@ -237,8 +241,32 @@
 	status = "okay";
 };
 
-&ethphy0 {
-	status = "disabled";
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "AVM-FRITZRepeater-1200";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "AVM-FRITZRepeater-1200";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	/delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&ethphy>;
+	phy-mode = "rgmii-id";
 };
 
 &ethphy1 {
@@ -259,14 +287,4 @@
 
 &psgmiiphy {
 	status = "disabled";
-};
-
-&wifi0 {
-	status = "okay";
-	qcom,ath10k-calibration-variant = "AVM-FRITZRepeater-1200";
-};
-
-&wifi1 {
-	status = "okay";
-	qcom,ath10k-calibration-variant = "AVM-FRITZRepeater-1200";
 };

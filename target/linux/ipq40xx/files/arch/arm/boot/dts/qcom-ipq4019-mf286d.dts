@@ -217,6 +217,12 @@
 	status = "okay";
 };
 
+&gmac {
+	status = "okay";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_config_0>;
+};
+
 &nand {
 	pinctrl-0 = <&nand_pins>;
 	pinctrl-names = "default";
@@ -317,6 +323,36 @@
 
 &qpic_bam {
 	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+
+	label = "lan4";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan3";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&swport5 {
+	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_config_0>;
+	mac-address-increment = <1>;
 };
 
 &tlmm {
