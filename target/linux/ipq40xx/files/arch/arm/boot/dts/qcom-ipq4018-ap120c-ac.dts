@@ -14,6 +14,7 @@
 		led-failsafe = &status;
 		led-running = &status;
 		led-upgrade = &status;
+		ethernet1 = &swport5;
 	};
 
 	keys {
@@ -317,6 +318,24 @@
 };
 
 &usb3_hs_phy {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&swport5 {
 	status = "okay";
 };
 

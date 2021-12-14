@@ -18,6 +18,10 @@
 		bootargs-append = " root=/dev/mmcblk0p2 rw rootwait clk_ignore_unused";
 	};
 
+	aliases {
+		ethernet1 = &swport4;
+	};
+
 	soc {
 		rng@22000 {
 			status = "okay";
@@ -344,6 +348,26 @@
 			ieee80211-freq-limit = <5450000 5900000>;
 		};
 	};
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "wan";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
 };
 
 &wifi0 {

@@ -220,3 +220,20 @@
 &mdio {
 	status = "okay";
 };
+
+&gmac {
+       status = "okay";
+};
+
+&switch {
+       status = "okay";
+
+       /delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+       status = "okay";
+
+       label = "lan";
+       phy-mode = "rgmii";
+};

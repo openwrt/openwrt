@@ -386,3 +386,41 @@
 	status = "okay";
 	qcom,ath10k-calibration-variant = "Meraki-MR33";
 };
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	/delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&ethphy1>;
+	phy-mode = "rgmii-rxid";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&ethphy4 {
+	status = "disabled";
+};
+
+&psgmiiphy {
+	status = "disabled";
+};

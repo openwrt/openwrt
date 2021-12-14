@@ -21,7 +21,7 @@
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
 
-			ethernet-phy@5 {
+			ethphy: ethernet-phy@5 {
 				reg = <0x5>;
 			};
 		};
@@ -212,6 +212,24 @@
 			};
 		};
 	};
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	/delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&ethphy>;
+	phy-mode = "rgmii-id";
 };
 
 &ethphy0 {
