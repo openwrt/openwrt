@@ -14,8 +14,8 @@ proto_6rd_setup() {
 	local iface="$2"
 	local link="6rd-$cfg"
 
-	local mtu df ttl tos ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink zone
-	json_get_vars mtu df ttl tos ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink zone
+	local mtu df ttl tos ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink zone pvtwan
+	json_get_vars mtu df ttl tos ipaddr peeraddr ip6prefix ip6prefixlen ip4prefixlen tunlink zone pvtwan
 
 	[ -z "$ip6prefix" -o -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -34,6 +34,16 @@ proto_6rd_setup() {
 
 		if ! network_get_ipaddr ipaddr "$wanif"; then
 			proto_notify_error "$cfg" "NO_WAN_LINK"
+			return
+		fi
+	}
+
+	local pvtwanip=$ipaddr
+	[ -n "$pvtwan" ] && {
+		local ipaddr=`wget -O - -q http://whatismyip.akamai.com`
+		if [ $? -gt 0 ]
+		then
+			proto_notify_error "$cfg" "NO_WAN_IP"
 			return
 		fi
 	}
@@ -63,7 +73,13 @@ proto_6rd_setup() {
 	json_add_boolean df "${df:-1}"
 	json_add_int ttl "${ttl:-64}"
 	[ -n "$tos" ] && json_add_string tos "$tos"
-	json_add_string local "$ipaddr"
+	if [ -n "$pvtwan" ]
+	then
+		json_add_string local "$pvtwanip"
+	else
+		json_add_string local "$ipaddr"
+	fi
+	json_add_string remote "$peeraddr"
 	[ -n "$tunlink" ] && json_add_string link "$tunlink"
 
 	json_add_object 'data'
@@ -99,6 +115,7 @@ proto_6rd_init_config() {
 	proto_config_add_string "ip4prefixlen"
 	proto_config_add_string "tunlink"
 	proto_config_add_string "zone"
+	proto_config_add_string "pvtwan"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
