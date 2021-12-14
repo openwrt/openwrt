@@ -1,6 +1,6 @@
 --- a/frontends/nss/ecm_nss_ipv4.c
 +++ b/frontends/nss/ecm_nss_ipv4.c
-@@ -2324,6 +2324,8 @@ sync_conntrack:
+@@ -2340,6 +2340,8 @@ sync_conntrack:
  				set_bit(IPS_ASSURED_BIT, &ct->status);
  
  				timeouts = nf_ct_timeout_lookup(ct);
@@ -11,7 +11,7 @@
  				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
 --- a/frontends/nss/ecm_nss_ipv6.c
 +++ b/frontends/nss/ecm_nss_ipv6.c
-@@ -2042,6 +2042,8 @@ sync_conntrack:
+@@ -2058,6 +2058,8 @@ sync_conntrack:
  				set_bit(IPS_ASSURED_BIT, &ct->status);
  
  				timeouts = nf_ct_timeout_lookup(ct);

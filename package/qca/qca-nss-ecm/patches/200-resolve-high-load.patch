@@ -4,7 +4,7 @@ task should be interruptible.
 
 --- a/frontends/nss/ecm_nss_ipv4.c
 +++ b.frontends/nss/ecm_nss_ipv4.c
-@@ -2411,7 +2411,7 @@ static void ecm_nss_ipv4_stats_sync_req_
+@@ -2427,7 +2427,7 @@ static void ecm_nss_ipv4_stats_sync_req_
  	}
  	spin_unlock_bh(&ecm_nss_ipv4_lock);
  
@@ -13,7 +13,7 @@ task should be interruptible.
  
  	/*
  	 * If index is 0, we are starting a new round, but if we still have time remain
-@@ -2425,7 +2425,7 @@ static void ecm_nss_ipv4_stats_sync_req_
+@@ -2441,7 +2441,7 @@ static void ecm_nss_ipv4_stats_sync_req_
  		}
  
  		if (ecm_nss_ipv4_next_req_time > current_jiffies) {
@@ -24,7 +24,7 @@ task should be interruptible.
  		ecm_nss_ipv4_next_req_time = ecm_nss_ipv4_roll_check_jiffies + ECM_NSS_IPV4_STATS_SYNC_PERIOD;
 --- a/frontends/nss/ecm_nss_ipv6.c
 +++ b.frontends/nss/ecm_nss_ipv6.c
-@@ -2128,7 +2128,7 @@ static void ecm_nss_ipv6_stats_sync_req_
+@@ -2144,7 +2144,7 @@ static void ecm_nss_ipv6_stats_sync_req_
  	}
  	spin_unlock_bh(&ecm_nss_ipv6_lock);
  
@@ -33,7 +33,7 @@ task should be interruptible.
  
  	/*
  	 * If index is 0, we are starting a new round, but if we still have time remain
-@@ -2142,7 +2142,7 @@ static void ecm_nss_ipv6_stats_sync_req_
+@@ -2158,7 +2158,7 @@ static void ecm_nss_ipv6_stats_sync_req_
  		}
  
  		if (ecm_nss_ipv6_next_req_time > current_jiffies) {

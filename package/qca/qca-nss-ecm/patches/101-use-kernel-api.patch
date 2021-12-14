@@ -1,0 +1,85 @@
+--- a/frontends/nss/ecm_nss_ported_ipv4.c
++++ b/frontends/nss/ecm_nss_ported_ipv4.c
+@@ -2155,7 +2155,7 @@ unsigned int ecm_nss_ported_ipv4_process
+ 		}
+ 
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+-		if ((is_vxlan_dev(in_dev) || is_vxlan_dev(out_dev)) && is_routed) {
++		if ((netif_is_vxlan(in_dev) || netif_is_vxlan(out_dev)) && is_routed) {
+ 			DEBUG_TRACE("VxLAN outer connection, make src and dest idents same\n");
+ 			src_port = src_port_nat = dest_port;
+ 		}
+--- a/frontends/nss/ecm_nss_common.h
++++ b/frontends/nss/ecm_nss_common.h
+@@ -99,7 +99,7 @@ static inline int32_t ecm_nss_common_get
+ 	/*
+ 	 * Find VxLAN dev type based on type, 0 for outer & 1 for inner.
+ 	 */
+-	if (is_vxlan_dev(dev)) {
++	if (netif_is_vxlan(dev)) {
+ 		if (!type) {
+ 			return NSS_VXLAN_INTERFACE;
+ 		}
+--- a/frontends/nss/ecm_nss_multicast_ipv4.c
++++ b/frontends/nss/ecm_nss_multicast_ipv4.c
+@@ -2789,7 +2789,7 @@ unsigned int ecm_nss_multicast_ipv4_conn
+ 	if ((in_dev->type == ECM_ARPHRD_IPSEC_TUNNEL_TYPE) ||
+ 	    (in_dev->type == ARPHRD_SIT) || (in_dev->type == ARPHRD_PPP) ||
+ 	    (in_dev->type == ARPHRD_TUNNEL6) ||
+-	    (is_vxlan_dev(in_dev)) || (is_vxlan_dev(out_dev))) {
++	    (netif_is_vxlan(in_dev)) || (netif_is_vxlan(out_dev))) {
+ 		DEBUG_TRACE("in_dev: %p, in_type: %d, out_dev: %p, out_type: %d",
+ 				in_dev, in_dev->type, out_dev, out_dev->type);
+ 		return NF_ACCEPT;
+--- a/frontends/nss/ecm_nss_ipv6.c
++++ b/frontends/nss/ecm_nss_ipv6.c
+@@ -1086,10 +1086,10 @@ static unsigned int ecm_nss_ipv6_ip_proc
+ 			 * Eth1 ---> Bridge ---> VxLAN0(Bridge Port) ---> Eth0(WAN)
+ 			 * The packets from VxLAN0 to Eth0 will be routed.
+ 			 *
+-			 * is_vxlan_dev API is used to identify the VxLAN device &
++			 * netif_is_vxlan API is used to identify the VxLAN device &
+ 			 * is_routed flag is used to identify the outer flow.
+ 			 */
+-			if (is_routed && is_vxlan_dev(in_dev)) {
++			if (is_routed && netif_is_vxlan(in_dev)) {
+ 				DEBUG_TRACE("%p: Untracked CT for VxLAN\n", skb);
+ 				ECM_IP_ADDR_TO_NIN6_ADDR(orig_tuple.src.u3.in6, ip_hdr.src_addr);
+ 				ECM_IP_ADDR_TO_NIN6_ADDR(orig_tuple.dst.u3.in6, ip_hdr.dest_addr);
+--- a/frontends/nss/ecm_nss_ported_ipv6.c
++++ b/frontends/nss/ecm_nss_ported_ipv6.c
+@@ -2037,7 +2037,7 @@ unsigned int ecm_nss_ported_ipv6_process
+ 		}
+ 
+ #ifdef ECM_INTERFACE_VXLAN_ENABLE
+-		if ((is_vxlan_dev(in_dev) || is_vxlan_dev(out_dev)) && is_routed) {
++		if ((netif_is_vxlan(in_dev) || netif_is_vxlan(out_dev)) && is_routed) {
+ 			DEBUG_TRACE("VxLAN outer connection, make src and dest idents same.\n");
+ 			src_port = dest_port;
+ 		}
+--- a/frontends/nss/ecm_nss_ipv4.c
++++ b/frontends/nss/ecm_nss_ipv4.c
+@@ -1096,10 +1096,10 @@ static unsigned int ecm_nss_ipv4_ip_proc
+ 			 * Eth1 ---> Bridge ---> VxLAN0(Bridge Port) ---> Eth0(WAN)
+ 			 * The packets from VxLAN0 to Eth0 will be routed.
+ 			 *
+-			 * is_vxlan_dev API is used to identify the VxLAN device &
++			 * netif_is_vxlan API is used to identify the VxLAN device &
+ 			 * is_routed flag is used to identify the outer flow.
+ 			 */
+-			if (is_routed && is_vxlan_dev(in_dev)) {
++			if (is_routed && netif_is_vxlan(in_dev)) {
+ 				DEBUG_TRACE("%p: Untracked CT for VxLAN\n", skb);
+ 				ECM_IP_ADDR_TO_NIN4_ADDR(orig_tuple.src.u3.ip, ip_hdr.src_addr);
+ 				ECM_IP_ADDR_TO_NIN4_ADDR(orig_tuple.dst.u3.ip, ip_hdr.dest_addr);
+--- a/frontends/nss/ecm_nss_multicast_ipv6.c
++++ b/frontends/nss/ecm_nss_multicast_ipv6.c
+@@ -2684,7 +2684,7 @@ unsigned int ecm_nss_multicast_ipv6_conn
+ 	if ((in_dev->type == ECM_ARPHRD_IPSEC_TUNNEL_TYPE) ||
+ 	    (in_dev->type == ARPHRD_SIT) || (in_dev->type == ARPHRD_PPP) ||
+ 	    (in_dev->type == ARPHRD_TUNNEL6) ||
+-	    (is_vxlan_dev(in_dev)) || (is_vxlan_dev(out_dev))) {
++	    (netif_is_vxlan(in_dev)) || (netif_is_vxlan(out_dev))) {
+ 		DEBUG_TRACE("in_dev: %p, in_type: %d, out_dev: %p, out_type: %d",
+ 				in_dev, in_dev->type, out_dev, out_dev->type);
+ 		return NF_ACCEPT;
