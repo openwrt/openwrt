@@ -460,6 +460,8 @@ define Device/netgear_wnr3500l-v2
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H172T00_NETGEAR
   NETGEAR_REGION := 1
+  KERNEL_NAME = vmlinux-nodictionary.lzma
+  IMAGE/chk := append-rootfs | trx-without-loader | netgear-chk
 endef
 TARGET_DEVICES += netgear_wnr3500l-v2
 
