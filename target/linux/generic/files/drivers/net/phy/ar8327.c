@@ -693,6 +693,7 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 
 	/* enable CPU port and disable mirror port */
 	t = AR8327_FWD_CTRL0_CPU_PORT_EN |
+	    AR8327_FWD_CTRL0_IGMP_COPY_EN |
 	    AR8327_FWD_CTRL0_MIRROR_PORT;
 	ar8xxx_write(priv, AR8327_REG_FWD_CTRL0, t);
 
@@ -854,13 +855,13 @@ ar8327_set_port_igmp(struct ar8xxx_priv *priv, int port, int enable)
 
 	if (enable) {
 		ar8xxx_rmw(priv, AR8327_REG_FWD_CTRL1,
-			   BIT(port) << AR8327_FWD_CTRL1_MC_FLOOD_S,
+			   BIT(port) << AR8327_FWD_CTRL1_IGMP_S,
 			   BIT(port) << AR8327_FWD_CTRL1_IGMP_S);
 		ar8xxx_reg_set(priv, reg_frame_ack, val_frame_ack);
 	} else {
 		ar8xxx_rmw(priv, AR8327_REG_FWD_CTRL1,
 			   BIT(port) << AR8327_FWD_CTRL1_IGMP_S,
-			   BIT(port) << AR8327_FWD_CTRL1_MC_FLOOD_S);
+			   0);
 		ar8xxx_reg_clear(priv, reg_frame_ack, val_frame_ack);
 	}
 }
