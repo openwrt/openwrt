@@ -261,3 +261,21 @@
 &psgmiiphy {
 	status = "disabled";
 };
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	/delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&ethphy0>;
+	phy-mode = "rgmii-id";
+};

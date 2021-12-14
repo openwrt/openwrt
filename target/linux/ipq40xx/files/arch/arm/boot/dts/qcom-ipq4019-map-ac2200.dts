@@ -15,6 +15,7 @@
 		led-failsafe = &led_red0;
 		led-running = &led_blue0;
 		led-upgrade = &led_red0;
+		ethernet1 = &swport4;
 	};
 
 	soc {
@@ -339,4 +340,24 @@
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "wan";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
 };
