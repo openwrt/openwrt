@@ -127,11 +127,18 @@
 	pinctrl-0 = <&i2c_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	at24@50 {
+
+	eeprom@50 {
 		compatible = "atmel,24c64";
 		pagesize = <32>;
 		reg = <0x50>;
 		read-only; /* This holds our MAC & Meraki board-data */
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac_address: mac-address@66 {
+			reg = <0x66 0x6>;
+		};
 	};
 };
 
@@ -277,6 +284,9 @@
 			compatible = "qcom,ath10k";
 			status = "okay";
 			reg = <0x00010000 0 0 0 0>;
+			nvmem-cells = <&mac_address>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <1>;
 		};
 	};
 };
@@ -380,15 +390,23 @@
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "Meraki-MR33";
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <2>;
 };
 
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "Meraki-MR33";
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <3>;
 };
 
 &gmac {
 	status = "okay";
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {

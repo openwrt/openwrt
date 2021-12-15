@@ -13,7 +13,6 @@ case "$FIRMWARE" in
 	meraki,mr74)
 		caldata_extract_ubi "ART" 0x9000 0x844
 		caldata_valid "4408" || caldata_extract "ART" 0x9000 0x844
-		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 1)
 		;;
 	esac
 	;;
@@ -117,7 +116,6 @@ case "$FIRMWARE" in
 	meraki,mr74)
 		caldata_extract_ubi "ART" 0x1000 0x2f20
 		caldata_valid "202f" || caldata_extract "ART" 0x1000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 2)
 		;;
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
@@ -214,7 +212,6 @@ case "$FIRMWARE" in
 	meraki,mr74)
 		caldata_extract_ubi "ART" 0x5000 0x2f20
 		caldata_valid "202f" || caldata_extract "ART" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 3)
 		;;
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
