@@ -21,10 +21,6 @@ preinit_set_mac_address() {
 		ip link set dev lan1 address $(macaddr_add "$base_mac" 1)
 		ip link set dev eth0 address $(macaddr_setbit "$base_mac" 7)
 		;;
-	meraki,mr33)
-		mac_lan=$(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66)
-		[ -n "$mac_lan" ] && ip link set dev eth0 address "$mac_lan"
-		;;
 	zyxel,nbg6617)
 		base_mac=$(cat /sys/class/net/eth0/address)
 		ip link set dev eth0 address $(macaddr_add "$base_mac" 2)
