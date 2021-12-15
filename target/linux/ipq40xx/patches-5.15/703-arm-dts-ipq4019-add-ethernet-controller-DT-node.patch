@@ -1,0 +1,81 @@
+From 44327d7098d4f32c24ec8c528e5aff6e030956bc Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 20 Oct 2021 13:21:45 +0200
+Subject: [PATCH] arm: dts: ipq4019: add ethernet controller DT node
+
+Since IPQ40xx SoC built-in ethernet controller now has a driver,
+add its DT node so it can be used.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ arch/arm/boot/dts/qcom-ipq4019.dtsi | 48 +++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+--- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
+@@ -38,6 +38,7 @@
+ 		spi1 = &blsp1_spi2;
+ 		i2c0 = &blsp1_i2c3;
+ 		i2c1 = &blsp1_i2c4;
++		ethernet0 = &gmac;
+ 	};
+ 
+ 	cpus {
+@@ -589,6 +590,57 @@
+ 			status = "disabled";
+ 		};
+ 
++		gmac: ethernet@c080000 {
++			compatible = "qcom,ipq4019-ess-edma";
++			reg = <0xc080000 0x8000>;
++			resets = <&gcc ESS_RESET>;
++			reset-names = "ess_rst";
++			clocks = <&gcc GCC_ESS_CLK>;
++			clock-names = "ess_clk";
++			interrupts = <GIC_SPI  65 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  66 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  67 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  68 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  69 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  70 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  71 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  72 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  73 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  74 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  75 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  76 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  77 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  78 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  79 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI  80 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 240 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 241 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 242 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 243 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 244 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 245 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 246 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 247 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 248 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 249 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 250 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 251 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 252 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 253 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 254 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 255 IRQ_TYPE_EDGE_RISING>;
++
++			status = "disabled";
++
++			phy-mode = "internal";
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++				pause;
++				asym-pause;
++			};
++		};
++
+ 		mdio: mdio@90000 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
