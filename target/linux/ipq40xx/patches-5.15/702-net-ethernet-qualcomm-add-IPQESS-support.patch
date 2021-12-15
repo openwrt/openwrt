@@ -1,0 +1,43 @@
+From 4f488235f498db43f2412116dea6e02c7fb20216 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 1 Nov 2021 12:36:51 +0100
+Subject: [PATCH] net: ethernet: qualcomm: add IPQESS support
+
+Allow compiling the IPQESS driver that supports the
+Qualcomm IPQ40xx SoC built-in ethernet controller.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/net/ethernet/qualcomm/Kconfig  | 11 +++++++++++
+ drivers/net/ethernet/qualcomm/Makefile |  1 +
+ 2 files changed, 12 insertions(+)
+
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -60,6 +60,17 @@ config QCOM_EMAC
+ 	  low power, Receive-Side Scaling (RSS), and IEEE 1588-2008
+ 	  Precision Clock Synchronization Protocol.
+ 
++config QCOM_IPQ4019_ESS_EDMA
++	tristate "Qualcomm Atheros IPQ4019 ESS EDMA support"
++	depends on OF
++	select PHYLINK
++	help
++	  This driver supports the Qualcomm Atheros IPQ40xx built-in
++	  ESS EDMA ethernet controller.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called ipqess.
++
+ source "drivers/net/ethernet/qualcomm/rmnet/Kconfig"
+ 
+ endif # NET_VENDOR_QUALCOMM
+--- a/drivers/net/ethernet/qualcomm/Makefile
++++ b/drivers/net/ethernet/qualcomm/Makefile
+@@ -10,5 +10,6 @@ obj-$(CONFIG_QCA7000_UART) += qcauart.o
+ qcauart-objs := qca_uart.o
+ 
+ obj-y += emac/
++obj-y += ipqess/
+ 
+ obj-$(CONFIG_RMNET) += rmnet/
