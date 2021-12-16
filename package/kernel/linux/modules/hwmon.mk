@@ -348,6 +348,21 @@ endef
 $(eval $(call KernelPackage,hwmon-nct6775))
 
 
+define KernelPackage/hwmon-nct7802
+  TITLE:=NCT7802Y and compatibles monitoring support
+  KCONFIG:=CONFIG_SENSORS_NCT7802
+  FILES:=$(LINUX_DIR)/drivers/hwmon/nct7802.ko
+  AUTOLOAD:=$(call AutoProbe,nct7802)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-nct7802/description
+ Kernel module for NCT7802Y thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-nct7802))
+
+
 define KernelPackage/hwmon-pc87360
   TITLE:=PC87360 monitoring support
   KCONFIG:=CONFIG_SENSORS_PC87360
