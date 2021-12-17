@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tfa-layerscape
-PKG_VERSION:=LSDK-20.12
+PKG_VERSION:=LSDK-21.08
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/atf
-PKG_SOURCE_VERSION:=LSDK-20.12
-PKG_MIRROR_HASH:=8e3a0bd33c00657beeb2df88a881b1831aeb790751cacd4c4fdf33ffa01e956e
+PKG_SOURCE_VERSION:=LSDK-21.08
+PKG_MIRROR_HASH:=500da1f5743255b2c301b89fba4df31d05a7dfbc731fbf137a88caf86f5568d0
 PKG_BUILD_DEPENDS:=tfa-layerscape/host
 
 include $(INCLUDE_DIR)/host-build.mk
@@ -27,14 +27,14 @@ define Host/Compile
 		CFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)"
 	$(MAKE) -C \
-		$(HOST_BUILD_DIR)/plat/nxp/tools \
+		$(HOST_BUILD_DIR)/tools/nxp \
 		CFLAGS="$(HOST_CFLAGS)"
 endef
 
 define Host/Install
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/fiptool/fiptool $(STAGING_DIR_HOST)/bin/fiptool-layerscape
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/plat/nxp/tools/create_pbl $(STAGING_DIR_HOST)/bin/tfa-create-pbl
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/plat/nxp/tools/byte_swap $(STAGING_DIR_HOST)/bin/tfa-byte-swap
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/nxp/create_pbl $(STAGING_DIR_HOST)/bin/tfa-create-pbl
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/tools/nxp/byte_swap $(STAGING_DIR_HOST)/bin/tfa-byte-swap
 endef
 
 define Package/tfa-generic

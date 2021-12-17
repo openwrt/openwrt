@@ -15,11 +15,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 (limited to 'drivers/net/ethernet/marvell/mvneta.c')
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index 46b7604805f76..d3ce87e69d2a8 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -4915,7 +4915,9 @@ static int mvneta_setup_mqprio(struct net_device *dev,
+@@ -4940,7 +4940,9 @@ static int mvneta_setup_mqprio(struct ne
  	u8 num_tc;
  	int i;
  
@@ -30,6 +28,3 @@ index 46b7604805f76..d3ce87e69d2a8 100644
  	num_tc = mqprio->qopt.num_tc;
  
  	if (num_tc > rxq_number)
--- 
-cgit 1.2.3-1.el7
-

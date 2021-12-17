@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1825,15 +1825,15 @@ static int invoke_tx_handlers_late(struc
+@@ -1821,15 +1821,15 @@ static int invoke_tx_handlers_late(struc
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(tx->skb);
  	ieee80211_tx_result res = TX_CONTINUE;
  

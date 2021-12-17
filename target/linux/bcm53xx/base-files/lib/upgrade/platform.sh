@@ -143,7 +143,9 @@ platform_other_check_image() {
 	echo "Found $BCM53XX_FW_FORMAT firmware for device $BCM53XX_FW_BOARD_ID"
 
 	local expected_image="$(platform_expected_image)"
-	[ -n "$expected_image" -a -n "$BCM53XX_FW_BOARD_ID" -a "$expected_image" != "$BCM53XX_FW_FORMAT $BCM53XX_FW_BOARD_ID" ] && {
+	local tmp_format=$BCM53XX_FW_FORMAT
+	[ "$tmp_format" = "lxlold" ] && tmp_format="lxl"
+	[ -n "$expected_image" -a -n "$BCM53XX_FW_BOARD_ID" -a "$expected_image" != "$tmp_format $BCM53XX_FW_BOARD_ID" ] && {
 		echo "Firmware doesn't match device ($expected_image)"
 		error=1
 	}
