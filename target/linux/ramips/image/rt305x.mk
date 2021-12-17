@@ -433,6 +433,7 @@ endef
 TARGET_DEVICES += dlink_dir-615-d
 
 define Device/dlink_dir-615-h1
+  $(Device/uimage-lzma-loader)
   SOC := rt3352
   BLOCKSIZE := 4k
   IMAGES += factory.bin

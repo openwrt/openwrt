@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,658 @@
+@@ -0,0 +1,656 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -278,8 +278,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		hook->used = true;
 +	}
 +	spin_unlock_bh(&hooks_lock);
-+
-+	cond_resched();
 +}
 +
 +static void

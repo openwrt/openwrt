@@ -933,7 +933,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
 --- a/drivers/net/ethernet/microchip/lan743x_main.c
 +++ b/drivers/net/ethernet/microchip/lan743x_main.c
-@@ -2837,7 +2837,6 @@ static int lan743x_pcidev_probe(struct p
+@@ -2831,7 +2831,6 @@ static int lan743x_pcidev_probe(struct p
  {
  	struct lan743x_adapter *adapter = NULL;
  	struct net_device *netdev = NULL;
@@ -941,7 +941,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int ret = -ENODEV;
  
  	netdev = devm_alloc_etherdev(&pdev->dev,
-@@ -2854,9 +2853,7 @@ static int lan743x_pcidev_probe(struct p
+@@ -2848,9 +2847,7 @@ static int lan743x_pcidev_probe(struct p
  			      NETIF_MSG_IFDOWN | NETIF_MSG_TX_QUEUED;
  	netdev->max_mtu = LAN743X_MAX_FRAME_SIZE;
  
@@ -1283,7 +1283,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return PTR_ERR(plat_dat);
 --- a/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.c
-@@ -1396,7 +1396,7 @@ static int rk_gmac_probe(struct platform
+@@ -1392,7 +1392,7 @@ static int rk_gmac_probe(struct platform
  	if (ret)
  		return ret;
  
@@ -1360,7 +1360,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int irq;
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -4904,7 +4904,7 @@ int stmmac_dvr_probe(struct device *devi
+@@ -4990,7 +4990,7 @@ int stmmac_dvr_probe(struct device *devi
  	priv->wol_irq = res->wol_irq;
  	priv->lpi_irq = res->lpi_irq;
  
@@ -1371,7 +1371,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	dev_set_drvdata(device, priv->dev);
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -394,7 +394,7 @@ static int stmmac_of_get_mac_mode(struct
+@@ -395,7 +395,7 @@ static int stmmac_of_get_mac_mode(struct
   * set some private fields that will be used by the main at runtime.
   */
  struct plat_stmmacenet_data *
@@ -1380,7 +1380,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  {
  	struct device_node *np = pdev->dev.of_node;
  	struct plat_stmmacenet_data *plat;
-@@ -406,12 +406,12 @@ stmmac_probe_config_dt(struct platform_d
+@@ -407,12 +407,12 @@ stmmac_probe_config_dt(struct platform_d
  	if (!plat)
  		return ERR_PTR(-ENOMEM);
  
@@ -1398,7 +1398,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	phy_mode = device_get_phy_mode(&pdev->dev);
-@@ -643,7 +643,7 @@ void stmmac_remove_config_dt(struct plat
+@@ -644,7 +644,7 @@ void stmmac_remove_config_dt(struct plat
  }
  #else
  struct plat_stmmacenet_data *
@@ -1501,7 +1501,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			if (ret)
 --- a/drivers/net/ethernet/ti/davinci_emac.c
 +++ b/drivers/net/ethernet/ti/davinci_emac.c
-@@ -1687,7 +1687,6 @@ davinci_emac_of_get_pdata(struct platfor
+@@ -1699,7 +1699,6 @@ davinci_emac_of_get_pdata(struct platfor
  	const struct of_device_id *match;
  	const struct emac_platform_data *auxdata;
  	struct emac_platform_data *pdata = NULL;
@@ -1509,7 +1509,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (!IS_ENABLED(CONFIG_OF) || !pdev->dev.of_node)
  		return dev_get_platdata(&pdev->dev);
-@@ -1699,11 +1698,8 @@ davinci_emac_of_get_pdata(struct platfor
+@@ -1711,11 +1710,8 @@ davinci_emac_of_get_pdata(struct platfor
  	np = pdev->dev.of_node;
  	pdata->version = EMAC_VERSION_2;
  

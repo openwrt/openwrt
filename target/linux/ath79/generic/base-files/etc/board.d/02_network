@@ -65,6 +65,7 @@ ath79_setup_interfaces()
 	tplink,cpe610-v2|\
 	tplink,cpe710-v1|\
 	tplink,eap225-outdoor-v1|\
+	tplink,eap225-v1|\
 	tplink,eap225-v3|\
 	tplink,eap245-v1|\
 	tplink,re350k-v1|\
@@ -129,7 +130,8 @@ ath79_setup_interfaces()
 	pcs,cr3000|\
 	tplink,archer-c58-v1|\
 	tplink,archer-c59-v1|\
-	tplink,archer-c59-v2)
+	tplink,archer-c59-v2|\
+	wd,mynet-n600)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
@@ -265,6 +267,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:4" "3:lan:3" "4:lan:2" "5:lan:1" "1:wan"
 		;;
+	embeddedwireless,balin)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "5:lan:1" "4:lan:2" "3:wan"
+		;;
 	embeddedwireless,dorin)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
@@ -300,6 +306,10 @@ ath79_setup_interfaces()
 	wd,mynet-n750)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+		;;
+	jjplus,jwap230)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "5:wan:1" "1:lan:2" "6@eth1"
 		;;
 	joyit,jt-or750i)
 		ucidef_set_interface_wan "eth1"
@@ -586,6 +596,7 @@ ath79_setup_macs()
 		;;
 	dlink,dir-859-a1|\
 	qihoo,c301|\
+	wd,mynet-n600|\
 	wd,mynet-n750)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")

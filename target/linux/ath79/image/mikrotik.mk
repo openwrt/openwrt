@@ -69,7 +69,7 @@ define Device/mikrotik_routerboard-wapr-2nd
   $(Device/mikrotik_nor)
   SOC := qca9533
   DEVICE_MODEL := RouterBOARD wAPR-2nD (wAP R)
-  DEVICE_PACKAGES += rssileds
+  DEVICE_PACKAGES += kmod-usb2 rssileds
   IMAGE_SIZE := 16256k
 endef
 TARGET_DEVICES += mikrotik_routerboard-wapr-2nd

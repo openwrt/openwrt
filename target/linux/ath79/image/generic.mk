@@ -845,20 +845,13 @@ endef
 TARGET_DEVICES += dlink_dap-2680-a1
 
 define Device/dlink_dap-2695-a1
+  $(Device/dlink_dap-2xxx)
   SOC := qca9558
-  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DAP-2695
   DEVICE_VARIANT := A1
-  IMAGES := factory.img sysupgrade.bin
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
   IMAGE_SIZE := 15360k
-  IMAGE/default := append-kernel | pad-offset 65536 160
-  IMAGE/factory.img := $$(IMAGE/default) | append-rootfs | wrgg-pad-rootfs | \
-	mkwrggimg | check-size
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | mkwrggimg | append-rootfs | \
-	wrgg-pad-rootfs | check-size | append-metadata
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
-  KERNEL_INITRAMFS := $$(KERNEL) | mkwrggimg
   DAP_SIGNATURE := wapac02_dkbs_dap2695
   SUPPORTED_DEVICES += dap-2695-a1
 endef
@@ -1034,6 +1027,15 @@ define Device/elecom_wrc-300ghbk2-i
 	add-elecom-factory-initramfs RN51 WRC-300GHBK2-I
 endef
 TARGET_DEVICES += elecom_wrc-300ghbk2-i
+
+define Device/embeddedwireless_balin
+  SOC := ar9344
+  DEVICE_VENDOR := Embedded Wireless
+  DEVICE_MODEL := Balin
+  DEVICE_PACKAGES := kmod-usb-chipidea2
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += embeddedwireless_balin
 
 define Device/embeddedwireless_dorin
   SOC := ar9331
@@ -1404,6 +1406,14 @@ define Device/jjplus_ja76pf2
   SUPPORTED_DEVICES += ja76pf2
 endef
 TARGET_DEVICES += jjplus_ja76pf2
+
+define Device/jjplus_jwap230
+  SOC := qca9558
+  DEVICE_VENDOR := jjPlus
+  DEVICE_MODEL := JWAP230
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += jjplus_jwap230
 
 define Device/joyit_jt-or750i
   SOC := qca9531
@@ -2325,6 +2335,18 @@ define Device/wallys_dr531
   SUPPORTED_DEVICES += dr531
 endef
 TARGET_DEVICES += wallys_dr531
+
+define Device/wd_mynet-n600
+  $(Device/seama)
+  SOC := ar9344
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := My Net N600
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES := kmod-usb2
+  SEAMA_SIGNATURE := wrgnd16_wd_db600
+  SUPPORTED_DEVICES += mynet-n600
+endef
+TARGET_DEVICES += wd_mynet-n600
 
 define Device/wd_mynet-n750
   $(Device/seama)

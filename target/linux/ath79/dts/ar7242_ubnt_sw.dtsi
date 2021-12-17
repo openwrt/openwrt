@@ -41,8 +41,8 @@
 
 	gpio_spi {
 		compatible = "spi-gpio";
-		#address-cells = <0x1>;
-		ranges;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		sck-gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		mosi-gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
