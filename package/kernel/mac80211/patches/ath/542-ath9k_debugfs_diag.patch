@@ -125,9 +125,9 @@
  		REG_SET_BIT(ah, AR_BTCOEX_WL_LNADIV, AR_BTCOEX_WL_LNADIV_FORCE_ON);
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -536,6 +536,11 @@ irqreturn_t ath_isr(int irq, void *dev)
- 	if (test_bit(ATH_OP_HW_RESET, &common->op_flags))
+@@ -538,6 +538,11 @@ irqreturn_t ath_isr(int irq, void *dev)
  		return IRQ_HANDLED;
+ 	}
  
 +	if (test_bit(ATH_DIAG_TRIGGER_ERROR, &ah->diag)) {
 +		status |= ATH9K_INT_FATAL;

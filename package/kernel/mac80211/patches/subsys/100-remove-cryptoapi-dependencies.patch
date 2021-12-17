@@ -439,7 +439,7 @@
  }
  
  
-@@ -543,13 +542,13 @@ ieee80211_crypto_ccmp_decrypt(struct iee
+@@ -546,13 +545,13 @@ ieee80211_crypto_ccmp_decrypt(struct iee
  			u8 aad[2 * AES_BLOCK_SIZE];
  			u8 b_0[AES_BLOCK_SIZE];
  			/* hardware didn't decrypt/verify MIC */
@@ -455,7 +455,7 @@
  				return RX_DROP_UNUSABLE;
  		}
  
-@@ -646,7 +645,7 @@ static int gcmp_encrypt_skb(struct ieee8
+@@ -649,7 +648,7 @@ static int gcmp_encrypt_skb(struct ieee8
  	u8 *pos;
  	u8 pn[6];
  	u64 pn64;
@@ -464,7 +464,7 @@
  	u8 j_0[AES_BLOCK_SIZE];
  
  	if (info->control.hw_key &&
-@@ -703,8 +702,10 @@ static int gcmp_encrypt_skb(struct ieee8
+@@ -706,8 +705,10 @@ static int gcmp_encrypt_skb(struct ieee8
  
  	pos += IEEE80211_GCMP_HDR_LEN;
  	gcmp_special_blocks(skb, pn, j_0, aad);
@@ -477,7 +477,7 @@
  }
  
  ieee80211_tx_result
-@@ -1133,9 +1134,9 @@ ieee80211_crypto_aes_gmac_encrypt(struct
+@@ -1139,9 +1140,9 @@ ieee80211_crypto_aes_gmac_encrypt(struct
  	struct ieee80211_key *key = tx->key;
  	struct ieee80211_mmie_16 *mmie;
  	struct ieee80211_hdr *hdr;
@@ -489,7 +489,7 @@
  
  	if (WARN_ON(skb_queue_len(&tx->skbs) != 1))
  		return TX_DROP;
-@@ -1181,7 +1182,7 @@ ieee80211_crypto_aes_gmac_decrypt(struct
+@@ -1187,7 +1188,7 @@ ieee80211_crypto_aes_gmac_decrypt(struct
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  	struct ieee80211_key *key = rx->key;
  	struct ieee80211_mmie_16 *mmie;
