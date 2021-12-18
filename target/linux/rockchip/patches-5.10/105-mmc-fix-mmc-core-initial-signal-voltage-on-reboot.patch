@@ -1,0 +1,36 @@
+From a06e0d43ed9943f070c2271189f8eb4784658452 Mon Sep 17 00:00:00 2001
+From: xiaobo <peterwillcn@gmail.com>
+Date: Fri, 17 Dec 2021 23:17:53 +0800
+Subject: [PATCH] mmc: fix mmc core initial signal voltage on reboot
+
+Some boards have SD card connectors where the power rail cannot be switched
+off by the driver. If the card has not been power cycled, it may still be
+using 1.8V signaling after a warm re-boot. Bootroms expecting 3.3V signaling
+will fail to boot from a UHS card that continue to use 1.8V signaling.
+
+Set initial signal voltage in mmc_power_off() to allow re-boot to function.
+
+This fixes re-boot with UHS cards on Rockchip RK3288, RK3399 boards.
+
+original author Jonas Karlman <jonas@kwiboo.se>
+
+Signed-off-by: xiaobo <peterwillcn@gmail.com>
+---
+ drivers/mmc/core/core.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index d42037f0f10d..795e454dc4e3 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -1350,6 +1350,7 @@ void mmc_power_off(struct mmc_host *host)
+ 		return;
+
+ 	mmc_pwrseq_power_off(host);
++	mmc_set_initial_signal_voltage(host);
+
+ 	host->ios.clock = 0;
+ 	host->ios.vdd = 0;
+--
+2.34.1
+
