@@ -1,0 +1,308 @@
+Index: linux-5.4.152/drivers/leds/Kconfig
+===================================================================
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -835,6 +835,13 @@ config LEDS_RESET
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called leds-reset.
+ 
++config LEDS_UBNT_ACB
++	tristate "LED support for UBNT Aircube LED controller"
++	depends on GPIOLIB || COMPILE_TEST
++	help
++	  This option enables support for the LED controller included
++	  in Ubiquiti Aircube ISP or Aircpube AC
++
+ comment "LED Triggers"
+ source "drivers/leds/trigger/Kconfig"
+ 
+Index: linux-5.4.152/drivers/leds/Makefile
+===================================================================
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -86,6 +86,7 @@ obj-$(CONFIG_LEDS_TI_LMU_COMMON)	+= leds
+ obj-$(CONFIG_LEDS_LM3697)		+= leds-lm3697.o
+ obj-$(CONFIG_LEDS_LM36274)		+= leds-lm36274.o
+ obj-$(CONFIG_LEDS_RESET)		+= leds-reset.o
++obj-$(CONFIG_LEDS_UBNT_ACB)		+= leds-ubnt-acb.o
+ 
+ # LED SPI Drivers
+ obj-$(CONFIG_LEDS_CR0014114)		+= leds-cr0014114.o
+Index: linux-5.4.152/drivers/leds/leds-ubnt-acb.c
+===================================================================
+--- /dev/null
++++ b/drivers/leds/leds-ubnt-acb.c
+@@ -0,0 +1,273 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Driver for LEDs on Ubiquiti SONiX SPI Controller,
++ * based on leds-spi-byte.c
++ *
++ * Copyright 2021 Nicolò Veronese <nicveronese@gmail.com>
++ */
++#include <linux/io.h>
++#include <linux/leds.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/spinlock.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <uapi/linux/uleds.h>
++
++#define UBNT_MAX_LEDS 1
++#define UBNT_BITBANG_DATA_DELAY 5000
++#define UBNT_BITBANG_CS_DELAY	1000
++#define UBNT_GPIO_HI 1
++#define UBNT_GPIO_LOW 0
++
++
++struct ubnt_led_devtype {
++	u8	max_brightness;
++};
++
++struct ubnt_leds {
++	struct device			*dev;
++	const struct ubnt_led_devtype	*config;
++
++	struct gpio_desc		*sck;
++	struct gpio_desc		*mosi;
++	struct gpio_desc		*cs;
++
++	struct mutex			lock;
++	struct ubnt_led			*led[UBNT_MAX_LEDS];
++};
++
++struct ubnt_led {
++	int			id;
++	struct ubnt_leds	*parent;
++	struct led_classdev	cdev;
++	char			name[LED_MAX_NAME_SIZE];
++};
++
++static int ubnt_bb_write(struct ubnt_leds *pdata, uint8_t value)
++{
++	uint8_t bits;
++	uint8_t oldbit = (!(value & 0x80)) << 7;
++
++	/* Enable CS */
++	ndelay(UBNT_BITBANG_CS_DELAY);
++	gpiod_set_value_cansleep(pdata->cs, UBNT_GPIO_HI);
++	ndelay(UBNT_BITBANG_CS_DELAY);
++
++	/* Transfer data */
++	/* clock starts at inactive polarity */
++	for (bits = 8; likely(bits); bits--) {
++		uint8_t bit = value & 0x80;
++
++		/* setup MSB (to peripheral) on trailing edge */
++		if (bit != oldbit) {
++			gpiod_set_value_cansleep(pdata->mosi, bit);
++			oldbit = bit;
++		}
++
++		ndelay(UBNT_BITBANG_DATA_DELAY);	/* T(setup) */
++
++		gpiod_set_value_cansleep(pdata->sck, UBNT_GPIO_HI);
++
++		ndelay(UBNT_BITBANG_DATA_DELAY);
++		gpiod_set_value_cansleep(pdata->sck, UBNT_GPIO_LOW);
++
++		value <<= 1;
++	}
++
++	/* Disable CS */
++
++	ndelay(UBNT_BITBANG_CS_DELAY);
++	gpiod_set_value_cansleep(pdata->cs, UBNT_GPIO_LOW);
++	ndelay(UBNT_BITBANG_CS_DELAY);
++
++	/* State after call: SCK Low, Data high */
++
++	return 0;
++}
++
++static int ubnt_set_brightness(struct led_classdev *cdev,
++					    enum led_brightness brightness)
++{
++	int ret;
++	u8 value = (u8) brightness;
++	struct ubnt_led *led = container_of(cdev, struct ubnt_led, cdev);
++	struct ubnt_leds *pdata = led->parent;
++
++	if(value > led->cdev.max_brightness) {
++		value = led->cdev.max_brightness;
++	}
++
++	mutex_lock(&pdata->lock);
++
++	ret = ubnt_bb_write(pdata, value);
++
++	mutex_unlock(&pdata->lock);
++
++	return ret;
++}
++
++static int ubnt_gpio_request(struct device *dev, struct ubnt_leds *pdata)
++{
++	pdata->mosi = devm_gpiod_get(dev, "mosi", GPIOD_OUT_LOW);
++	if (IS_ERR(pdata->mosi))
++		return PTR_ERR(pdata->mosi);
++
++	pdata->sck = devm_gpiod_get(dev, "sck", GPIOD_OUT_LOW);
++	if (IS_ERR(pdata->sck))
++		return PTR_ERR(pdata->sck);
++
++	pdata->cs = devm_gpiod_get(dev, "cs", GPIOD_OUT_HIGH);
++	return PTR_ERR_OR_ZERO(pdata->cs);
++}
++
++static int ubnt_leds_probe(struct platform_device *pdev)
++{
++	int		status;
++
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev_of_node(&pdev->dev);
++	struct device_node *child;
++
++	struct ubnt_leds *pdata;
++
++	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
++	if (!pdata)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, pdata);
++
++	pdata->dev = &pdev->dev;
++	pdata->config = device_get_match_data(dev);
++	mutex_init(&pdata->lock);
++
++	status = ubnt_gpio_request(dev, pdata);
++	if (status)
++		return status;
++
++	if (of_get_available_child_count(np) != 1) {
++		dev_err(dev, "Device must have exactly one LED sub-node.");
++		return -EINVAL;
++	}
++
++	for_each_available_child_of_node(np, child) {
++		int rc;
++		u32 reg;
++		struct led_init_data init_data = {};
++		struct ubnt_led *led;
++		const char *state;
++
++		rc = of_property_read_u32(child, "reg", &reg);
++		if (rc) {
++			dev_err(dev, "Failed to read led 'reg' property\n");
++			goto put_child_node;
++		}
++
++		led = devm_kzalloc(dev, sizeof(*led), GFP_KERNEL);
++		if (!led)
++			return -ENOMEM;
++
++		pdata->led[reg] = led;
++		pdata->led[reg]->id = reg;
++		pdata->led[reg]->cdev.max_brightness = pdata->config->max_brightness;
++		pdata->led[reg]->cdev.brightness_set_blocking =	ubnt_set_brightness;
++		pdata->led[reg]->parent = pdata;
++
++		if (!of_property_read_string(child, "default-state", &state)) {
++			if (!strcmp(state, "on")) {
++				pdata->led[reg]->cdev.brightness = pdata->led[reg]->cdev.max_brightness;
++			} else if (!strcmp(state, "off")) {
++				pdata->led[reg]->cdev.brightness = LED_OFF;
++			} else {
++				dev_err(dev, "default-state can only be 'on' or 'off'");
++				return -EINVAL;
++			}
++		} else {
++			pdata->led[reg]->cdev.brightness = LED_OFF;
++		}
++
++		rc = ubnt_set_brightness(&pdata->led[reg]->cdev, pdata->led[reg]->cdev.brightness);
++
++		if (rc < 0) {
++			dev_err(dev, "Failed to LED set default from devicetree\n");
++			goto put_child_node;
++		}
++
++		init_data.fwnode = of_fwnode_handle(child);
++
++		rc = devm_led_classdev_register_ext(dev, &pdata->led[reg]->cdev, &init_data);
++
++		put_child_node:
++		if (rc < 0) {
++			of_node_put(child);
++			return rc;
++		}
++
++		dev_dbg(dev, "registered LED %s\n", led->cdev.name);
++	}
++
++	return 0;
++}
++
++static int ubnt_leds_remove(struct platform_device *pdev)
++{
++	u32 i;
++	struct ubnt_leds *pdata;
++
++	pdata = platform_get_drvdata(pdev);
++
++	if (IS_ERR(pdata)) {
++		printk(KERN_ERR "Platform get drvdata returned NULL\n");
++		return -1;
++	}
++
++	for (i = 0 ; pdata->led[i] ; i++) {
++		ubnt_set_brightness(&pdata->led[i]->cdev, LED_OFF);
++	}
++
++	mutex_destroy(&pdata->lock);
++
++	/* Unregisetr GPIOs */
++	if (pdata->mosi) {
++		gpiod_put(pdata->mosi);
++	}
++	if (pdata->sck) {
++		gpiod_put(pdata->sck);
++	}
++	if (pdata->cs) {
++		gpiod_put(pdata->cs);
++	}
++
++	printk(KERN_NOTICE "Bye, bye\n");
++
++	return 0;
++}
++
++static const struct ubnt_led_devtype ubnt_led_acb = {
++	.max_brightness = 0x3F,
++};
++
++static const struct of_device_id ubnt_leds_of_match[] = {
++	{ .compatible = "ubnt,acb-leds", .data = &ubnt_led_acb },
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, ubnt_leds_of_match);
++
++static struct platform_driver ubnt_led_driver = {
++	.probe = ubnt_leds_probe,
++	.remove = ubnt_leds_remove,
++	.driver = {
++		.name = "leds-acb",
++		.of_match_table = ubnt_leds_of_match,
++	},
++};
++
++module_platform_driver(ubnt_led_driver);
++
++MODULE_AUTHOR("Nicolò Veronese <nicveronese@gmail.com>");
++MODULE_AUTHOR("Christian Mauderer <oss@c-mauderer.de>");
++MODULE_DESCRIPTION("LED driver for UBNT ACB controllers");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:leds-ubnt-acb");
