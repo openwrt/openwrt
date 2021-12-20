@@ -2195,6 +2195,18 @@ define Device/rosinson_wr818
 endef
 TARGET_DEVICES += rosinson_wr818
 
+define Device/ruckus_zf7363
+  SOC := ar7161
+  DEVICE_VENDOR := Ruckus
+  DEVICE_MODEL := ZF7363
+  IMAGE_SIZE := 7168k
+  BLOCKSIZE := 256k
+  #TODO: add ruckus_fw_header (ath79: add support for Ruckus R500 #4241)
+  KERNEL := kernel-bin | append-dtb | lzma-no-dict | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+endef
+TARGET_DEVICES += ruckus_zf7363
+
 define Device/samsung_wam250
   SOC := ar9344
   DEVICE_VENDOR := Samsung

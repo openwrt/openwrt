@@ -1,0 +1,278 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar7100.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "ruckus,zf7363", "qca,ar7161";
+	model = "Ruckus ZF7363";
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_green: power_green {
+			label = "green:power";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_red: power_red {
+			label = "red:power";
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		// DIR (Zone Director) LED - Indicates Zone director connection status
+		dir {
+			label = "green:dir";
+			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan2g_green {
+			label = "green:wlan2g";
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan2g_orange {
+			label = "orange:wlan2g";
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan5g_green {
+			label = "green:wlan5g";
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wlan5g_orange {
+			label = "orange:wlan5g";
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		};
+
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		/* TODO: gpio 10 freezes system
+		// Hard Reset?
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+		*/
+
+		// OPT
+		opt {
+			label = "opt";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/* TODO
+	rtl8363s { // RTL8363S Switch
+		compatible = "realtek,rtl8363s";
+		gpio-sda = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		gpio-sck = <&gpio 8 GPIO_ACTIVE_HIGH>;
+		realtek,initvals = <0x06 0x0108>;
+
+		mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			phy-mask = <0x10>;
+
+			phy1: ethernet-phy@1 {
+				reg = <1>;
+				phy-mode = "rgmii";
+			};
+		};
+	};
+	*/
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			// 0x000000000000-0x000000040000 : "u-boot"
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0000000 0x40000>;
+				read-only;
+			};
+
+			// 0x000000040000-0x000000740000 : "rcks_wlan.main"
+			partition@40000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				openwrt,offset = <0xA0>;
+				openwrt,partition-magic = <0x52434B53>;
+				reg = <0x40000 0x700000>;
+				read-only;
+			};
+
+			// 0x000000740000-0x000000860000 : "rcks_wlan.bkup"
+			partition@740000 {
+				label = "firmware-backup";
+				reg = <0x740000 0x120000>;
+				read-only;
+			};
+
+			// 0x000000860000-0x000000e40000 : "v54_$rootfs$_2"
+			partition@860000 {
+				label = "reserved-space";
+				reg = <0x860000 0x5e0000>;
+				read-only;
+			};
+
+			// 0x000000e40000-0x000000f80000 : "datafs"
+			partition@e40000 {
+				label = "config-data";
+				reg = <0xe40000 0x140000>;
+				read-only;
+			};
+
+			// 0x000000f80000-0x000000fc0000 : "u-boot-env"
+			partition@f80000 {
+				label = "u-boot-env";
+				reg = <0xf80000 0x40000>;
+				read-only;
+			};
+
+			// 0x000000fc0000-0x000001000000 : "Board Data"
+			art: partition@fc0000 {
+				label = "art";
+				reg = <0xfc0000 0x40000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	// WiFi 2.4G
+	macaddr_art_60: macaddr@60 {
+		reg = <0x60 0x6>;
+	};
+
+	// eth2/eth0 (Stock/OpenWrt)
+	macaddr_art_66: macaddr@66 {
+		reg = <0x66 0x6>;
+	};
+
+	// eth1/eth1 (Stock/OpenWrt)
+	macaddr_art_6c: macaddr@6c {
+		reg = <0x6c 0x6>;
+	};
+
+	// WiFi 5G
+	macaddr_art_76: macaddr@76 {
+		reg = <0x76 0x6>;
+	};
+
+	// eth0/eth2 (Stock/OpenWrt)
+	macaddr_art_8058: macaddr@8058 {
+		reg = <0x8058 0x6>;
+	};
+
+	// label_mac
+	macaddr_art_807e: macaddr@807e {
+		reg = <0x807e 0x6>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	ath9k0: wifi@0,11 { // 2.4 GHz
+		compatible = "pci168c,0029";
+		nvmem-cells = <&macaddr_art_60>;
+		nvmem-cell-names = "mac-address";
+		reg = <0x8800 0 0 0 0>;
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+
+	ath9k1: wifi@0,12 { // 5 GHz
+		compatible = "pci168c,0029";
+		nvmem-cells = <&macaddr_art_76>;
+		nvmem-cell-names = "mac-address";
+		reg = <0x9000 0 0 0 0>;
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	/*
+	  | reg: label | Stock | OpenWrt |    Comment         |
+	  | ---------- | ----- | ------- | ------------------ |
+	  | 0: wan     | eth2  | eth0    | working, PoE in    |
+	  | ?: opt     | eth0  | eth2    | not working        |
+	  | 2: lan     | eth1  | eth1    | working on 100Mbps |
+	*/
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	phy2: ethernet-phy@2 {
+		reg = <2>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_66>;
+	nvmem-cell-names = "mac-address";
+
+	phy-mode = "rgmii";
+	phy-handle = <&phy0>;
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_6c>;
+	nvmem-cell-names = "mac-address";
+
+	phy-mode = "rgmii";
+	phy-handle = <&phy2>;
+
+	fixed-link {
+		speed = <100>;
+		full-duplex;
+	};
+};
