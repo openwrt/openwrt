@@ -1,0 +1,247 @@
+--- a/drivers/leds/leds-iei-wt61p803-puzzle.c
++++ b/drivers/leds/leds-iei-wt61p803-puzzle.c
+@@ -9,10 +9,13 @@
+ #include <linux/mfd/iei-wt61p803-puzzle.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/property.h>
+ #include <linux/slab.h>
+ 
++#define IEI_LEDS_MAX		4
++
+ enum iei_wt61p803_puzzle_led_state {
+ 	IEI_LED_OFF = 0x30,
+ 	IEI_LED_ON = 0x31,
+@@ -34,6 +37,9 @@ struct iei_wt61p803_puzzle_led {
+ 	unsigned char response_buffer[IEI_WT61P803_PUZZLE_BUF_SIZE];
+ 	struct mutex lock; /* mutex to protect led_power_state */
+ 	int led_power_state;
++	int id;
++	bool blinking;
++	bool active_low;
+ };
+ 
+ static inline struct iei_wt61p803_puzzle_led *cdev_to_iei_wt61p803_puzzle_led
+@@ -51,10 +57,20 @@ static int iei_wt61p803_puzzle_led_brigh
+ 	size_t reply_size;
+ 	int ret;
+ 
++	mutex_lock(&priv->lock);
++	if (priv->blinking) {
++		if (brightness == LED_OFF)
++			priv->blinking = false;
++		else
++			return 0;
++	}
++	mutex_unlock(&priv->lock);
++
+ 	led_power_cmd[0] = IEI_WT61P803_PUZZLE_CMD_HEADER_START;
+ 	led_power_cmd[1] = IEI_WT61P803_PUZZLE_CMD_LED;
+-	led_power_cmd[2] = IEI_WT61P803_PUZZLE_CMD_LED_POWER;
+-	led_power_cmd[3] = brightness == LED_OFF ? IEI_LED_OFF : IEI_LED_ON;
++	led_power_cmd[2] = IEI_WT61P803_PUZZLE_CMD_LED_SET(priv->id);
++	led_power_cmd[3] = ((brightness == LED_OFF) ^ priv->active_low) ?
++				IEI_LED_OFF : IEI_LED_ON;
+ 
+ 	ret = iei_wt61p803_puzzle_write_command(priv->mcu, led_power_cmd,
+ 						sizeof(led_power_cmd),
+@@ -90,39 +106,164 @@ static enum led_brightness iei_wt61p803_
+ 	return led_state;
+ }
+ 
++static int iei_wt61p803_puzzle_led_set_blink(struct led_classdev *cdev,
++					     unsigned long *delay_on,
++					     unsigned long *delay_off)
++{
++	struct iei_wt61p803_puzzle_led *priv = cdev_to_iei_wt61p803_puzzle_led(cdev);
++	unsigned char led_blink_cmd[5] = {};
++	unsigned char resp_buf[IEI_WT61P803_PUZZLE_BUF_SIZE];
++	size_t reply_size;
++	int ret = 0;
++
++	/* set defaults */
++	if (!*delay_on && !*delay_off) {
++		*delay_on = 500;
++		*delay_off = 500;
++	}
++
++	/* minimum delay for soft-driven blinking is 50ms to keep load low */
++	if (*delay_on < 50)
++		*delay_on = 50;
++
++	if (*delay_off < 50)
++		*delay_off = 50;
++
++	if (*delay_on != *delay_off)
++		return -EINVAL;
++
++	/* aggressively offload blinking to hardware, if possible */
++	if (*delay_on < 100) {
++		return -EINVAL;
++	} else if (*delay_on < 200) {
++		*delay_on = 100;
++		*delay_off = 100;
++	} else if (*delay_on <= 500) {
++		*delay_on = 500;
++		*delay_off = 500;
++	} else {
++		return -EINVAL;
++	}
++
++	led_blink_cmd[0] = IEI_WT61P803_PUZZLE_CMD_HEADER_START;
++	led_blink_cmd[1] = IEI_WT61P803_PUZZLE_CMD_LED;
++	led_blink_cmd[2] = IEI_WT61P803_PUZZLE_CMD_LED_SET(priv->id);
++	led_blink_cmd[3] = (*delay_on == 100)?IEI_LED_BLINK_5HZ:IEI_LED_BLINK_1HZ;
++
++	ret = iei_wt61p803_puzzle_write_command(priv->mcu, led_blink_cmd,
++						sizeof(led_blink_cmd),
++						resp_buf,
++						&reply_size);
++
++	if (ret)
++		return ret;
++
++	if (reply_size != 3)
++		return -EIO;
++
++	if (!(resp_buf[0] == IEI_WT61P803_PUZZLE_CMD_HEADER_START &&
++	      resp_buf[1] == IEI_WT61P803_PUZZLE_CMD_RESPONSE_OK &&
++	      resp_buf[2] == IEI_WT61P803_PUZZLE_CHECKSUM_RESPONSE_OK))
++		return -EIO;
++
++	mutex_lock(&priv->lock);
++	priv->blinking = true;
++	mutex_unlock(&priv->lock);
++
++	return ret;
++}
++
++static int iei_wt61p803_puzzle_led_set_dt_default(struct led_classdev *cdev,
++				     struct device_node *np)
++{
++	const char *state;
++	int ret = 0;
++
++	state = of_get_property(np, "default-state", NULL);
++	if (state) {
++		if (!strcmp(state, "on")) {
++			ret =
++			iei_wt61p803_puzzle_led_brightness_set_blocking(
++				cdev, cdev->max_brightness);
++		} else  {
++			ret = iei_wt61p803_puzzle_led_brightness_set_blocking(
++				cdev, LED_OFF);
++		}
++	}
++
++	return ret;
++}
++
+ static int iei_wt61p803_puzzle_led_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
++	struct device_node *np = dev_of_node(dev);
++	struct device_node *child;
+ 	struct iei_wt61p803_puzzle *mcu = dev_get_drvdata(dev->parent);
+ 	struct iei_wt61p803_puzzle_led *priv;
+-	struct led_init_data init_data = {};
+-	struct fwnode_handle *child;
+ 	int ret;
++	u32 reg;
+ 
+-	if (device_get_child_node_count(dev) != 1)
++	if (device_get_child_node_count(dev) > IEI_LEDS_MAX)
+ 		return -EINVAL;
+ 
+-	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+-	if (!priv)
+-		return -ENOMEM;
+-
+-	priv->mcu = mcu;
+-	priv->led_power_state = 1;
+-	mutex_init(&priv->lock);
+-	dev_set_drvdata(dev, priv);
+-
+-	child = device_get_next_child_node(dev, NULL);
+-	init_data.fwnode = child;
+-
+-	priv->cdev.brightness_set_blocking = iei_wt61p803_puzzle_led_brightness_set_blocking;
+-	priv->cdev.brightness_get = iei_wt61p803_puzzle_led_brightness_get;
+-	priv->cdev.max_brightness = 1;
++	for_each_available_child_of_node(np, child) {
++		struct led_init_data init_data = {};
+ 
+-	ret = devm_led_classdev_register_ext(dev, &priv->cdev, &init_data);
+-	if (ret)
+-		dev_err(dev, "Could not register LED\n");
++		ret = of_property_read_u32(child, "reg", &reg);
++		if (ret) {
++			dev_err(dev, "Failed to read led 'reg' property\n");
++			goto put_child_node;
++		}
++
++		if (reg > IEI_LEDS_MAX) {
++			dev_err(dev, "Invalid led reg %u\n", reg);
++			ret = -EINVAL;
++			goto put_child_node;
++		}
++
++		priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++		if (!priv) {
++			ret = -ENOMEM;
++			goto put_child_node;
++		}
++
++		mutex_init(&priv->lock);
++
++		dev_set_drvdata(dev, priv);
++
++		if (of_property_read_bool(child, "active-low"))
++			priv->active_low = true;
++
++		priv->mcu = mcu;
++		priv->id = reg;
++		priv->led_power_state = 1;
++		priv->blinking = false;
++		init_data.fwnode = of_fwnode_handle(child);
++
++		priv->cdev.brightness_set_blocking = iei_wt61p803_puzzle_led_brightness_set_blocking;
++		priv->cdev.brightness_get = iei_wt61p803_puzzle_led_brightness_get;
++		priv->cdev.blink_set = iei_wt61p803_puzzle_led_set_blink;
++
++		priv->cdev.max_brightness = 1;
++
++		ret = iei_wt61p803_puzzle_led_set_dt_default(&priv->cdev, child);
++		if (ret) {
++			dev_err(dev, "Could apply default from DT\n");
++			goto put_child_node;
++		}
++
++		ret = devm_led_classdev_register_ext(dev, &priv->cdev, &init_data);
++		if (ret) {
++			dev_err(dev, "Could not register LED\n");
++			goto put_child_node;
++		}
++	}
++
++	return ret;
+ 
+-	fwnode_handle_put(child);
++put_child_node:
++	of_node_put(child);
+ 	return ret;
+ }
+ 
+--- a/include/linux/mfd/iei-wt61p803-puzzle.h
++++ b/include/linux/mfd/iei-wt61p803-puzzle.h
+@@ -36,7 +36,7 @@
+ #define IEI_WT61P803_PUZZLE_CMD_FUNCTION_OTHER_POWER_LOSS 0x41 /* A */
+ 
+ #define IEI_WT61P803_PUZZLE_CMD_LED			0x52 /* R */
+-#define IEI_WT61P803_PUZZLE_CMD_LED_POWER		0x31 /* 1 */
++#define IEI_WT61P803_PUZZLE_CMD_LED_SET(n)		(0x30 | (n))
+ 
+ #define IEI_WT61P803_PUZZLE_CMD_TEMP			0x54 /* T */
+ #define IEI_WT61P803_PUZZLE_CMD_TEMP_ALL		0x41 /* A */
