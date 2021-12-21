@@ -8,6 +8,7 @@
 #include "cn9130.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "iEi Puzzle-M902";
@@ -47,6 +48,16 @@
 	memory@00000000 {
 		device_type = "memory";
 		reg = <0x0 0x0 0x0 0x80000000>;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&cp0_gpio2 4 GPIO_ACTIVE_LOW>;
+		};
 	};
 
 	cp2_reg_usb3_vbus0: cp2_usb3_vbus@0 {
