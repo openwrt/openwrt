@@ -56,23 +56,12 @@
 
 #include "routerboot.h"
 
-#define RB_SOFTCONFIG_VER		"0.03"
+#define RB_SOFTCONFIG_VER		"0.04"
 #define RB_SC_PR_PFX			"[rb_softconfig] "
 
-/*
- * mtd operations before 4.17 are asynchronous, not handled by this code
- * Also make the driver act read-only if 4K_SECTORS are not enabled, since they
- * are require to handle partial erasing of the small soft_config partition.
- */
-#if defined(CONFIG_MTD_SPI_NOR_USE_4K_SECTORS)
- #define RB_SC_HAS_WRITE_SUPPORT	true
- #define RB_SC_WMODE			S_IWUSR
- #define RB_SC_RMODE			S_IRUSR
-#else
- #define RB_SC_HAS_WRITE_SUPPORT	false
- #define RB_SC_WMODE			0
- #define RB_SC_RMODE			S_IRUSR
-#endif
+#define RB_SC_HAS_WRITE_SUPPORT	true
+#define RB_SC_WMODE			S_IWUSR
+#define RB_SC_RMODE			S_IRUSR
 
 /* ID values for software settings */
 #define RB_SCID_UART_SPEED		0x01	// u32*1
