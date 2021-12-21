@@ -203,7 +203,7 @@
 			#gpio-cells = <2>;
 			gpio-controller;
 			qca,no-eeprom;
-			qca,disable-5ghz;
+			ieee80211-freq-limit = <2402000 2482000>;
 			nvmem-cells = <&macaddr_ath9k_cal_f100>;
 			nvmem-cell-names = "mac-address";
 			mac-address-increment = <2>;

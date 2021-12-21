@@ -9,6 +9,7 @@ REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
 	case "$(board_name)" in
+	globalscale,mochabin|\
 	iei,puzzle-m901|\
 	iei,puzzle-m902|\
 	marvell,armada8040-mcbin-doubleshot|\
@@ -27,6 +28,7 @@ platform_do_upgrade() {
 	iei,puzzle-m902)
 		platform_do_upgrade_emmc "$1"
 		;;
+	globalscale,mochabin|\
 	marvell,armada8040-mcbin-doubleshot|\
 	marvell,armada8040-mcbin-singleshot)
 		legacy_sdcard_do_upgrade "$1"
@@ -38,6 +40,7 @@ platform_do_upgrade() {
 }
 platform_copy_config() {
 	case "$(board_name)" in
+	globalscale,mochabin|\
 	iei,puzzle-m901|\
 	iei,puzzle-m902|\
 	marvell,armada8040-mcbin-doubleshot|\

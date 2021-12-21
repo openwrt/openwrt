@@ -216,6 +216,7 @@
 		nand-on-flash-bbt;
 		nand-ecc-strength = <3>;
 		nand-ecc-step-size = <256>;
+		nand-use-soft-ecc-engine;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -255,7 +256,7 @@
 		compatible = "pci168c,002d";
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
-		qca,disable-5ghz;
+		ieee80211-freq-limit = <2402000 2482000>;
 	};
 };
 

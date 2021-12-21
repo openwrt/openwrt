@@ -359,6 +359,9 @@
 			reg = <0x00010000 0 0 0 0>;
 
 			qcom,ath10k-calibration-variant = "NEC-Platforms-WG2600HP3";
+
+			nvmem-cells = <&macaddr_PRODUCTDATA_12>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
@@ -379,6 +382,9 @@
 
 			ieee80211-freq-limit = <2400000 2483000>;
 			qcom,ath10k-calibration-variant = "NEC-Platforms-WG2600HP3";
+
+			nvmem-cells = <&macaddr_PRODUCTDATA_c>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
@@ -450,5 +456,13 @@
 
 	macaddr_factory_6: macaddr@6 {
 		reg = <0x6 0x6>;
+	};
+
+	macaddr_PRODUCTDATA_c: macaddr@c {
+		reg = <0xc 0x6>;
+	};
+
+	macaddr_PRODUCTDATA_12: macaddr@12 {
+		reg = <0x12 0x6>;
 	};
 };

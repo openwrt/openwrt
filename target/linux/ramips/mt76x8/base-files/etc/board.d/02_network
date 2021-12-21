@@ -25,7 +25,7 @@ ramips_setup_interfaces()
 	tplink,re200-v4|\
 	tplink,re220-v2|\
 	tplink,re305-v1|\
-	tplink,tl-mr3020-v3|\
+	tplink,re305-v3|\
 	tplink,tl-wr802n-v4|\
 	tplink,tl-wa801nd-v5|\
 	widora,neo-16m|\
@@ -57,10 +57,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
-	duzun,dm06)
-		ucidef_add_switch "switch0" \
-			"1:lan" "0:wan" "6@eth0"
-		;;
+	duzun,dm06|\
 	glinet,gl-mt300n-v2)
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
@@ -120,6 +117,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
+	tplink,tl-mr3020-v3)
+		ucidef_add_switch "switch0" \
+			"0:lan" "6@eth0"
+		;;
 	tplink,tl-mr6400-v4)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
@@ -128,7 +129,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:wan" "6@eth0"
 		;;
-	tplink,tl-wr902ac-v3)
+	tplink,tl-wr902ac-v3|\
+	wavlink,wl-wn576a2)
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
@@ -148,6 +150,10 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-4c)
 		ucidef_add_switch "switch0" \
 			"4:lan:1" "2:lan:2" "1:wan" "6@eth0"
+		;;
+	xiaomi,miwifi-3c)
+		ucidef_add_switch "switch0" \
+			"0:wan" "2:lan:2" "4:lan:1" "6@eth0"
 		;;
 	xiaomi,miwifi-nano)
 		ucidef_add_switch "switch0" \
@@ -224,7 +230,8 @@ ramips_setup_macs()
 	onion,omega2|\
 	onion,omega2p|\
 	vocore,vocore2|\
-	vocore,vocore2-lite)
+	vocore,vocore2-lite|\
+	wavlink,wl-wn576a2)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	rakwireless,rak633|\

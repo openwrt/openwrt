@@ -1,7 +1,7 @@
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -135,6 +135,26 @@ static int of_get_mac_address_mtd(struct
- 	return -EINVAL;
+@@ -89,6 +89,27 @@ static int of_get_mac_addr_nvmem(struct
+ 	return 0;
  }
  
 +static int of_add_mac_address(struct device_node *np, u8* addr)
@@ -24,12 +24,13 @@
 +	kfree(prop);
 +	return -ENOMEM;
 +}
- 
++
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
-@@ -210,6 +230,7 @@ found:
- 	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc))
- 		addr[inc_idx] += mac_inc;
+  * checked first, because that is supposed to contain to "most recent" MAC
+@@ -165,6 +186,7 @@ found:
+ 		addr[5] = (mac_val >> 0) & 0xff;
+ 	}
  
 +	of_add_mac_address(np, addr);
  	return ret;

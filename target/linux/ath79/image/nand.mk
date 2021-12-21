@@ -1,13 +1,25 @@
+define Build/dw-headers
+	head -c 4 $@ >> $@.tmp && \
+	head -c 8 /dev/zero >> $@.tmp && \
+	tail -c +9 $@ >> $@.tmp && \
+	( \
+		header_crc="$$(head -c 68 $@.tmp | gzip -c | \
+			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
+		printf "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
+			dd of=$@.tmp bs=4 count=1 seek=1 conv=notrunc \
+	)
+	mv $@.tmp $@
+endef
+
 # attention: only zlib compression is allowed for the boot fs
 define Build/zyxel-buildkerneljffs
-	rm -rf  $(KDIR_TMP)/zyxelnbg6716
-	mkdir -p $(KDIR_TMP)/zyxelnbg6716/image/boot
-	cp $@ $(KDIR_TMP)/zyxelnbg6716/image/boot/vmlinux.lzma.uImage
+	mkdir -p $@.tmp/boot
+	cp $@ $@.tmp/boot/vmlinux.lzma.uImage
 	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
 		--big-endian --squash-uids -v -e 128KiB -q -f -n -x lzma -x rtime \
 		-o $@ \
-		-d $(KDIR_TMP)/zyxelnbg6716/image
-	rm -rf $(KDIR_TMP)/zyxelnbg6716
+		-d $@.tmp
+	rm -rf $@.tmp
 endef
 
 define Build/zyxel-factory
@@ -76,6 +88,41 @@ define Device/domywifi_dw33d
 	check-size
 endef
 TARGET_DEVICES += domywifi_dw33d
+
+define Device/dongwon_dw02-412h
+  SOC := qca9557
+  DEVICE_VENDOR := Dongwon T&I
+  DEVICE_MODEL := DW02-412H
+  DEVICE_ALT0_VENDOR := KT
+  DEVICE_ALT0_MODEL := GiGA WiFi home
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  KERNEL_SIZE := 8192k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | dw-headers
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | dw-headers
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/dongwon_dw02-412h-64m
+  $(Device/dongwon_dw02-412h)
+  DEVICE_VARIANT := (64M)
+  DEVICE_ALT0_VARIANT := (64M)
+  IMAGE_SIZE := 49152k
+endef
+TARGET_DEVICES += dongwon_dw02-412h-64m
+
+define Device/dongwon_dw02-412h-128m
+  $(Device/dongwon_dw02-412h)
+  DEVICE_VARIANT := (128M)
+  DEVICE_ALT0_VARIANT := (128M)
+  IMAGE_SIZE := 114688k
+endef
+TARGET_DEVICES += dongwon_dw02-412h-128m
 
 define Device/glinet_gl-ar300m-common-nand
   SOC := qca9531
@@ -167,6 +214,17 @@ define Device/netgear_ath79_nand
   IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
   UBINIZE_OPTS := -E 5
 endef
+
+define Device/netgear_r6100
+  SOC := ar9344
+  DEVICE_MODEL := R6100
+  UIMAGE_MAGIC := 0x36303030
+  NETGEAR_BOARD_ID := R6100
+  NETGEAR_HW_ID := 29764434+0+128+128+2x2+2x2
+  $(Device/netgear_ath79_nand)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += netgear_r6100
 
 define Device/netgear_wndr3700-v4
   SOC := ar9344

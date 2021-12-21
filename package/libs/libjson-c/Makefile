@@ -27,9 +27,7 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 CMAKE_HOST_OPTIONS += \
-	-DCMAKE_SKIP_RPATH=FALSE \
-	-DCMAKE_MACOSX_RPATH=1 \
-	-DCMAKE_INSTALL_RPATH="${STAGING_DIR_HOST}/lib"
+	-DBUILD_SHARED_LIBS=FALSE
 
 define Package/libjson-c
   SECTION:=libs

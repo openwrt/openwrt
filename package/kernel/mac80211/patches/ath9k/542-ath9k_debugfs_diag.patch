@@ -94,7 +94,7 @@
  struct ath_gen_timer *ath_gen_timer_alloc(struct ath_hw *ah,
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1882,6 +1882,20 @@ u32 ath9k_hw_get_tsf_offset(struct times
+@@ -1881,6 +1881,20 @@ u32 ath9k_hw_get_tsf_offset(struct times
  }
  EXPORT_SYMBOL(ath9k_hw_get_tsf_offset);
  
@@ -115,7 +115,7 @@
  int ath9k_hw_reset(struct ath_hw *ah, struct ath9k_channel *chan,
  		   struct ath9k_hw_cal_data *caldata, bool fastcc)
  {
-@@ -2090,6 +2104,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -2089,6 +2103,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  		ar9003_hw_disable_phy_restart(ah);
  
  	ath9k_hw_apply_gpio_override(ah);
@@ -125,9 +125,9 @@
  		REG_SET_BIT(ah, AR_BTCOEX_WL_LNADIV, AR_BTCOEX_WL_LNADIV_FORCE_ON);
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -536,6 +536,11 @@ irqreturn_t ath_isr(int irq, void *dev)
- 	if (test_bit(ATH_OP_HW_RESET, &common->op_flags))
+@@ -538,6 +538,11 @@ irqreturn_t ath_isr(int irq, void *dev)
  		return IRQ_HANDLED;
+ 	}
  
 +	if (test_bit(ATH_DIAG_TRIGGER_ERROR, &ah->diag)) {
 +		status |= ATH9K_INT_FATAL;

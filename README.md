@@ -60,6 +60,9 @@ packages to OpenWrt, please find the fitting repository below.
 * [OpenWrt Routing](https://github.com/openwrt/routing): Packages specifically
   focused on (mesh) routing.
 
+* [OpenWrt Video](https://github.com/openwrt/video): Packages specifically
+  focused on display servers and clients (Xorg and Wayland).
+
 ## Support Information
 
 For a list of supported devices see the [OpenWrt Hardware Database](https://openwrt.org/supported_devices)

@@ -78,9 +78,9 @@
 +			opp-microvolt = <1150000>;
 +			clock-latency-ns = <100000>;
 +			opp-level = <2>;
- 		};
- 	};
- 
++		};
++	};
++
 +	opp_table0: opp_table0 {
 +		compatible = "operating-points-v2-kryo-cpu";
 +		nvmem-cells = <&speedbin_efuse>;
@@ -152,9 +152,9 @@
 +			opp-supported-hw = <0x1>;
 +			clock-latency-ns = <100000>;
 +			opp-level = <2>;
-+		};
-+	};
-+
+ 		};
+ 	};
+ 
 +	thermal-zones {
 +		tsens_tz_sensor0 {
 +			polling-delay-passive = <0>;
@@ -563,7 +563,7 @@
  		saw0: regulator@2089000 {
  			compatible = "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
  			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;
-@@ -243,6 +739,17 @@
+@@ -243,6 +739,52 @@
  			regulator;
  		};
  
@@ -578,10 +578,99 @@
 +			reg = <0x12100000 0x10000>;
 +		};
 +
++		gsbi1: gsbi@12440000 {
++			compatible = "qcom,gsbi-v1.0.0";
++			cell-index = <1>;
++			reg = <0x12440000 0x100>;
++			clocks = <&gcc GSBI1_H_CLK>;
++			clock-names = "iface";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++			status = "disabled";
++
++			syscon-tcsr = <&tcsr>;
++
++			gsbi1_serial: serial@12450000 {
++				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
++				reg = <0x12450000 0x100>,
++				      <0x12400000 0x03>;
++				interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&gcc GSBI1_UART_CLK>, <&gcc GSBI1_H_CLK>;
++				clock-names = "core", "iface";
++				status = "disabled";
++			};
++
++			gsbi1_i2c: i2c@12460000 {
++				compatible = "qcom,i2c-qup-v1.1.1";
++				reg = <0x12460000 0x1000>;
++				interrupts = <GIC_SPI 194 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&gcc GSBI1_QUP_CLK>, <&gcc GSBI1_H_CLK>;
++				clock-names = "core", "iface";
++				#address-cells = <1>;
++				#size-cells = <0>;
++				status = "disabled";
++			};
++		};
++
  		gsbi2: gsbi@12480000 {
  			compatible = "qcom,gsbi-v1.0.0";
  			cell-index = <2>;
-@@ -478,6 +985,95 @@
+@@ -368,6 +910,33 @@
+ 			};
+ 		};
+ 
++		gsbi6: gsbi@16500000 {
++			status = "disabled";
++			compatible = "qcom,gsbi-v1.0.0";
++			cell-index = <6>;
++			reg = <0x16500000 0x100>;
++			clocks = <&gcc GSBI6_H_CLK>;
++			clock-names = "iface";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++
++			syscon-tcsr = <&tcsr>;
++
++			gsbi6_i2c: i2c@16580000 {
++				compatible = "qcom,i2c-qup-v1.1.1";
++				reg = <0x16580000 0x1000>;
++				interrupts = <GIC_SPI 157 IRQ_TYPE_LEVEL_HIGH>;
++
++				clocks = <&gcc GSBI6_QUP_CLK>, <&gcc GSBI6_H_CLK>;
++				clock-names = "core", "iface";
++				status = "disabled";
++
++				#address-cells = <1>;
++				#size-cells = <0>;
++			};
++		};
++
+ 		gsbi7: gsbi@16600000 {
+ 			status = "disabled";
+ 			compatible = "qcom,gsbi-v1.0.0";
+@@ -389,6 +958,19 @@
+ 				clock-names = "core", "iface";
+ 				status = "disabled";
+ 			};
++
++			gsbi7_i2c: i2c@16680000 {
++ 				compatible = "qcom,i2c-qup-v1.1.1";
++ 				reg = <0x16680000 0x1000>;
++				interrupts = <GIC_SPI 159 IRQ_TYPE_LEVEL_HIGH>;
++
++ 				clocks = <&gcc GSBI7_QUP_CLK>, <&gcc GSBI7_H_CLK>;
++ 				clock-names = "core", "iface";
++				status = "disabled";
++
++ 				#address-cells = <1>;
++				#size-cells = <0>;
++			};
+ 		};
+ 
+ 		sata_phy: sata-phy@1b400000 {
+@@ -478,6 +1060,95 @@
  			#reset-cells = <1>;
  		};
  
@@ -677,7 +766,7 @@
  		pcie0: pci@1b500000 {
  			compatible = "qcom,pcie-ipq8064";
  			reg = <0x1b500000 0x1000
-@@ -739,6 +1335,59 @@
+@@ -739,6 +1410,59 @@
  			status = "disabled";
  		};
  
@@ -737,7 +826,7 @@
  		vsdcc_fixed: vsdcc-regulator {
  			compatible = "regulator-fixed";
  			regulator-name = "SDCC Power";
-@@ -814,4 +1463,17 @@
+@@ -814,4 +1538,17 @@
  			};
  		};
  	};

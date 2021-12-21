@@ -42,64 +42,70 @@
 			bank-width = <2>;
 			device-width = <1>;
 
-			partition@0 {
-				reg = <0x0 0x40000>;
-				label = "dtb";
-			};
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			partition@40000 {
-				reg = <0x40000 0x40000>;
-				label = "initrd";
-			};
+				partition@0 {
+					reg = <0x0 0x40000>;
+					label = "dtb";
+				};
 
-			partition@80000 {
-				reg = <0x80000 0x27c0000>;
-				label = "rootfs";
-			};
+				partition@40000 {
+					reg = <0x40000 0x40000>;
+					label = "initrd";
+				};
 
-			partition@2840000 {
-				reg = <0x2840000 0x800000>;
-				label = "kernel";
-			};
+				partition@80000 {
+					reg = <0x80000 0x27c0000>;
+					label = "rootfs";
+				};
 
-			partition@3040000 {
-				reg = <0x3040000 0xec0000>;
-				label = "stock-jffs2";
-				read-only;
-			};
+				partition@2840000 {
+					reg = <0x2840000 0x800000>;
+					label = "kernel";
+				};
 
-			hwinfo: partition@3f00000 {
-				reg = <0x3f00000 0x20000>;
-				label = "hw-info";
-				read-only;
-			};
+				partition@3040000 {
+					reg = <0x3040000 0xec0000>;
+					label = "stock-jffs2";
+					read-only;
+				};
 
-			partition@3f20000 {
-				reg = <0x3f20000 0x20000>;
-				label = "boot-info";
-				read-only;
-			};
+				hwinfo: partition@3f00000 {
+					reg = <0x3f00000 0x20000>;
+					label = "hw-info";
+					read-only;
+				};
 
-			partition@3f40000 {
-				reg = <0x3f40000 0x20000>;
-				label = "boot-info-backup";
-				read-only;
-			};
+				partition@3f20000 {
+					reg = <0x3f20000 0x20000>;
+					label = "boot-info";
+					read-only;
+				};
 
-			partition@3f60000 {
-				reg = <0x3f60000 0x20000>;
-				label = "u-boot-env";
-			};
+				partition@3f40000 {
+					reg = <0x3f40000 0x20000>;
+					label = "boot-info-backup";
+					read-only;
+				};
 
-			partition@3f80000 {
-				reg = <0x3f80000 0x80000>;
-				label = "u-boot";
-				read-only;
-			};
+				partition@3f60000 {
+					reg = <0x3f60000 0x20000>;
+					label = "u-boot-env";
+				};
 
-			firmware@0 {
-				reg = <0x0 0x3040000>;
-				label = "firmware";
+				partition@3f80000 {
+					reg = <0x3f80000 0x80000>;
+					label = "u-boot";
+					read-only;
+				};
+
+				firmware@0 {
+					reg = <0x0 0x3040000>;
+					label = "firmware";
+				};
 			};
 		};
 	};

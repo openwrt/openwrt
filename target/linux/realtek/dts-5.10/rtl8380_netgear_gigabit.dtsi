@@ -8,10 +8,6 @@
 / {
 	compatible = "realtek,rtl838x-soc";
 
-	chosen {
-		bootargs = "console=ttyS0,115200";
-	};
-
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -25,6 +21,12 @@
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
+	};
+
+	gpio-restart {
+		compatible = "gpio-restart";
+		gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		open-source;
 	};
 };
 

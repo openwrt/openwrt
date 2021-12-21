@@ -1,7 +1,7 @@
-From 639dba857aa554f2a78572adc4cf3c32de9ec2e2 Mon Sep 17 00:00:00 2001
+From 844c273286f328acf0dab5fbd5d864366b4904dc Mon Sep 17 00:00:00 2001
 From: Ansuel Smith <ansuelsmth@gmail.com>
 Date: Tue, 30 Mar 2021 18:21:14 +0200
-Subject: [PATCH 2/2] of_net: add mac-address-increment support
+Subject: [PATCH] of_net: add mac-address-increment support
 
 Lots of embedded devices use the mac-address of other interface
 extracted from nvmem cells and increments it by one or two. Add two
@@ -15,28 +15,30 @@ early has to be increased.
 
 Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 ---
- drivers/of/of_net.c | 59 ++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 45 insertions(+), 14 deletions(-)
+ drivers/of/of_net.c | 43 +++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 39 insertions(+), 4 deletions(-)
 
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
-@@ -160,31 +160,56 @@ static int of_get_mac_address_mtd(struct
-  * If a mtd-mac-address property exists, try to fetch the MAC address from the
-  * specified mtd device.
+@@ -109,27 +109,62 @@ static int of_get_mac_addr_nvmem(struct
+  * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
+  * but is all zeros.
   *
 + * DT can tell the system to increment the mac-address after is extracted by
 + * using:
 + * - mac-address-increment-byte to decide what byte to increase
 + *   (if not defined is increased the last byte)
-+ * - mac-address-increment to decide how much to increase. The value will
-+ *   not overflow to other bytes if the increment is over 255.
-+ *   (example 00:01:02:03:04:ff + 1 == 00:01:02:03:04:00)
++ * - mac-address-increment to decide how much to increase. The value WILL
++ *   overflow to other bytes if the increment is over 255 or the total
++ *   increment will exceed 255 of the current byte.
++ *   (example 00:01:02:03:04:ff + 1 == 00:01:02:03:05:00)
++ *   (example 00:01:02:03:04:fe + 5 == 00:01:02:03:05:03)
 + *
   * Return: 0 on success and errno in case of error.
  */
  int of_get_mac_address(struct device_node *np, u8 *addr)
  {
-+	u32 inc_idx, mac_inc;
++	u32 inc_idx, mac_inc, mac_val;
  	int ret;
  
 +	/* Check first if the increment byte is present and valid.
@@ -64,19 +66,22 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	if (!ret)
 -		return 0;
 +		goto found;
- 
- 	ret = of_get_mac_address_mtd(np, addr);
- 	if (!ret)
--		return 0;
-+		goto found;
 +
 +	ret = of_get_mac_addr_nvmem(np, addr);
 +	if (ret)
 +		return ret;
 +
 +found:
-+	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc))
-+		addr[inc_idx] += mac_inc;
++	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc)) {
++		/* Convert to a contiguous value */
++		mac_val = (addr[3] << 16) + (addr[4] << 8) + addr[5];
++		mac_val += mac_inc << 8 * (5-inc_idx);
++
++		/* Apply the incremented value handling overflow case */
++		addr[3] = (mac_val >> 16) & 0xff;
++		addr[4] = (mac_val >> 8) & 0xff;
++		addr[5] = (mac_val >> 0) & 0xff;
++	}
  
 -	return of_get_mac_addr_nvmem(np, addr);
 +	return ret;

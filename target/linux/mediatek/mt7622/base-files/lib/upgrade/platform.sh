@@ -1,5 +1,5 @@
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN='fw_printenv fw_setenv blockdev'
+RAMFS_COPY_BIN='fw_printenv fw_setenv fwtool'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_do_upgrade() {
@@ -12,16 +12,9 @@ platform_do_upgrade() {
 		export_partdevice rootdev 0
 		case "$rootdev" in
 		mmc*)
-			local fitpart=$(get_partition_by_name $rootdev "production")
-			[ "$fitpart" ] || return 1
-			dd if=/dev/zero of=/dev/$fitpart bs=4096 count=1 2>/dev/null
-			blockdev --rereadpt /dev/$rootdev
-			get_image "$1" | dd of=/dev/$fitpart
-			blockdev --rereadpt /dev/$rootdev
-			local datapart=$(get_partition_by_name $rootdev "rootfs_data")
-			[ "$datapart" ] || return 0
-			dd if=/dev/zero of=/dev/$datapart bs=4096 count=1 2>/dev/null
-			echo $datapart > /tmp/sysupgrade.datapart
+			CI_ROOTDEV="$rootdev"
+			CI_KERNPART="production"
+			emmc_do_upgrade "$1"
 			;;
 		*)
 			CI_KERNPART="fit"
@@ -90,21 +83,13 @@ platform_check_image() {
 	return 0
 }
 
-platform_copy_config_mmc() {
-	[ -e "$UPGRADE_BACKUP" ] || return
-	local datapart=$(cat /tmp/sysupgrade.datapart)
-	[ "$datapart" ] || echo "no rootfs_data partition, cannot keep configuration." >&2
-	dd if="$UPGRADE_BACKUP" of=/dev/$datapart
-	sync
-}
-
 platform_copy_config() {
 	case "$(board_name)" in
 	bananapi,bpi-r64)
 		export_bootdevice
 		export_partdevice rootdev 0
 		if echo $rootdev | grep -q mmc; then
-			platform_copy_config_mmc
+			emmc_copy_config
 		fi
 		;;
 	esac

@@ -52,6 +52,8 @@ drv_mac80211_init_device_config() {
 		he_spr_sr_control \
 		he_twt_required
 	config_add_int \
+		beamformer_antennas \
+		beamformee_antennas \
 		vht_max_a_mpdu_len_exp \
 		vht_max_mpdu \
 		vht_link_adapt \
@@ -293,6 +295,8 @@ mac80211_hostapd_setup_base() {
 			mu_beamformee:1 \
 			vht_txop_ps:1 \
 			htc_vht:1 \
+			beamformee_antennas:4 \
+			beamformer_antennas:4 \
 			rx_antenna_pattern:1 \
 			tx_antenna_pattern:1 \
 			vht_max_a_mpdu_len_exp:7 \
@@ -332,6 +336,18 @@ mac80211_hostapd_setup_base() {
 			RX-STBC-12:0x700:0x200:1 \
 			RX-STBC-123:0x700:0x300:1 \
 			RX-STBC-1234:0x700:0x400:1 \
+
+		[ "$(($vht_cap & 0x800))" -gt 0 -a "$su_beamformer" -gt 0 ] && {
+			cap_ant="$(( ( ($vht_cap >> 16) & 3 ) + 1 ))"
+			[ "$cap_ant" -gt "$beamformer_antennas" ] && cap_ant="$beamformer_antennas"
+			[ "$cap_ant" -gt 1 ] && vht_capab="$vht_capab[SOUNDING-DIMENSION-$cap_ant]"
+		}
+
+		[ "$(($vht_cap & 0x1000))" -gt 0 -a "$su_beamformee" -gt 0 ] && {
+			cap_ant="$(( ( ($vht_cap >> 13) & 3 ) + 1 ))"
+			[ "$cap_ant" -gt "$beamformee_antennas" ] && cap_ant="$beamformee_antennas"
+			[ "$cap_ant" -gt 1 ] && vht_capab="$vht_capab[BF-ANTENNA-$cap_ant]"
+		}
 
 		# supported Channel widths
 		vht160_hw=0
@@ -860,6 +876,7 @@ mac80211_setup_adhoc() {
 	mcval=
 	[ -n "$mcast_rate" ] && wpa_supplicant_add_rate mcval "$mcast_rate"
 
+	iw dev "$ifname" set type ibss
 	iw dev "$ifname" ibss join "$ssid" $freq $iw_htmode fixed-freq $bssid \
 		beacon-interval $beacon_int \
 		${brstr:+basic-rates $brstr} \
