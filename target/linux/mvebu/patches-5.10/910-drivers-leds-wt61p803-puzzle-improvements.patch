@@ -1,6 +1,6 @@
 --- a/drivers/leds/leds-iei-wt61p803-puzzle.c
 +++ b/drivers/leds/leds-iei-wt61p803-puzzle.c
-@@ -9,10 +9,13 @@
+@@ -9,9 +9,13 @@
  #include <linux/mfd/iei-wt61p803-puzzle.h>
  #include <linux/mod_devicetable.h>
  #include <linux/module.h>
@@ -8,34 +8,34 @@
  #include <linux/platform_device.h>
  #include <linux/property.h>
  #include <linux/slab.h>
- 
-+#define IEI_LEDS_MAX		4
++#include <linux/workqueue.h>
 +
++#define IEI_LEDS_MAX		4
+ 
  enum iei_wt61p803_puzzle_led_state {
  	IEI_LED_OFF = 0x30,
- 	IEI_LED_ON = 0x31,
-@@ -34,6 +37,9 @@ struct iei_wt61p803_puzzle_led {
+@@ -33,7 +37,11 @@ struct iei_wt61p803_puzzle_led {
+ 	struct iei_wt61p803_puzzle *mcu;
  	unsigned char response_buffer[IEI_WT61P803_PUZZLE_BUF_SIZE];
  	struct mutex lock; /* mutex to protect led_power_state */
++	struct work_struct work;
  	int led_power_state;
 +	int id;
-+	bool blinking;
++	u8 blinking;
 +	bool active_low;
  };
  
  static inline struct iei_wt61p803_puzzle_led *cdev_to_iei_wt61p803_puzzle_led
-@@ -51,10 +57,20 @@ static int iei_wt61p803_puzzle_led_brigh
+@@ -51,10 +59,18 @@ static int iei_wt61p803_puzzle_led_brigh
  	size_t reply_size;
  	int ret;
  
-+	mutex_lock(&priv->lock);
 +	if (priv->blinking) {
 +		if (brightness == LED_OFF)
-+			priv->blinking = false;
++			priv->blinking = 0;
 +		else
 +			return 0;
 +	}
-+	mutex_unlock(&priv->lock);
 +
  	led_power_cmd[0] = IEI_WT61P803_PUZZLE_CMD_HEADER_START;
  	led_power_cmd[1] = IEI_WT61P803_PUZZLE_CMD_LED;
@@ -43,22 +43,40 @@
 -	led_power_cmd[3] = brightness == LED_OFF ? IEI_LED_OFF : IEI_LED_ON;
 +	led_power_cmd[2] = IEI_WT61P803_PUZZLE_CMD_LED_SET(priv->id);
 +	led_power_cmd[3] = ((brightness == LED_OFF) ^ priv->active_low) ?
-+				IEI_LED_OFF : IEI_LED_ON;
++				IEI_LED_OFF : priv->blinking?priv->blinking:IEI_LED_ON;
  
  	ret = iei_wt61p803_puzzle_write_command(priv->mcu, led_power_cmd,
  						sizeof(led_power_cmd),
-@@ -90,39 +106,164 @@ static enum led_brightness iei_wt61p803_
+@@ -90,39 +106,166 @@ static enum led_brightness iei_wt61p803_
  	return led_state;
  }
  
++static void iei_wt61p803_puzzle_led_apply_blink(struct work_struct *work)
++{
++	struct iei_wt61p803_puzzle_led *priv = container_of(work, struct iei_wt61p803_puzzle_led, work);
++	unsigned char led_blink_cmd[5] = {};
++	unsigned char resp_buf[IEI_WT61P803_PUZZLE_BUF_SIZE];
++	size_t reply_size;
++
++	led_blink_cmd[0] = IEI_WT61P803_PUZZLE_CMD_HEADER_START;
++	led_blink_cmd[1] = IEI_WT61P803_PUZZLE_CMD_LED;
++	led_blink_cmd[2] = IEI_WT61P803_PUZZLE_CMD_LED_SET(priv->id);
++	led_blink_cmd[3] = priv->blinking;
++
++	iei_wt61p803_puzzle_write_command(priv->mcu, led_blink_cmd,
++					  sizeof(led_blink_cmd),
++					  resp_buf,
++					  &reply_size);
++
++	return;
++}
++
 +static int iei_wt61p803_puzzle_led_set_blink(struct led_classdev *cdev,
 +					     unsigned long *delay_on,
 +					     unsigned long *delay_off)
 +{
 +	struct iei_wt61p803_puzzle_led *priv = cdev_to_iei_wt61p803_puzzle_led(cdev);
-+	unsigned char led_blink_cmd[5] = {};
-+	unsigned char resp_buf[IEI_WT61P803_PUZZLE_BUF_SIZE];
-+	size_t reply_size;
++	u8 blink_mode = 0;
 +	int ret = 0;
 +
 +	/* set defaults */
@@ -67,56 +85,38 @@
 +		*delay_off = 500;
 +	}
 +
-+	/* minimum delay for soft-driven blinking is 50ms to keep load low */
-+	if (*delay_on < 50)
-+		*delay_on = 50;
++	/* minimum delay for soft-driven blinking is 100ms to keep load low */
++	if (*delay_on < 100)
++		*delay_on = 100;
 +
-+	if (*delay_off < 50)
-+		*delay_off = 50;
++	if (*delay_off < 100)
++		*delay_off = 100;
 +
-+	if (*delay_on != *delay_off)
-+		return -EINVAL;
-+
-+	/* aggressively offload blinking to hardware, if possible */
-+	if (*delay_on < 100) {
-+		return -EINVAL;
-+	} else if (*delay_on < 200) {
++	/* offload blinking to hardware, if possible */
++	if (*delay_on != *delay_off) {
++		ret = -EINVAL;
++	} else if (*delay_on == 100) {
++		blink_mode = IEI_LED_BLINK_5HZ;
 +		*delay_on = 100;
 +		*delay_off = 100;
 +	} else if (*delay_on <= 500) {
++		blink_mode = IEI_LED_BLINK_1HZ;
 +		*delay_on = 500;
 +		*delay_off = 500;
 +	} else {
-+		return -EINVAL;
++		ret = -EINVAL;
 +	}
 +
-+	led_blink_cmd[0] = IEI_WT61P803_PUZZLE_CMD_HEADER_START;
-+	led_blink_cmd[1] = IEI_WT61P803_PUZZLE_CMD_LED;
-+	led_blink_cmd[2] = IEI_WT61P803_PUZZLE_CMD_LED_SET(priv->id);
-+	led_blink_cmd[3] = (*delay_on == 100)?IEI_LED_BLINK_5HZ:IEI_LED_BLINK_1HZ;
-+
-+	ret = iei_wt61p803_puzzle_write_command(priv->mcu, led_blink_cmd,
-+						sizeof(led_blink_cmd),
-+						resp_buf,
-+						&reply_size);
-+
-+	if (ret)
-+		return ret;
-+
-+	if (reply_size != 3)
-+		return -EIO;
-+
-+	if (!(resp_buf[0] == IEI_WT61P803_PUZZLE_CMD_HEADER_START &&
-+	      resp_buf[1] == IEI_WT61P803_PUZZLE_CMD_RESPONSE_OK &&
-+	      resp_buf[2] == IEI_WT61P803_PUZZLE_CHECKSUM_RESPONSE_OK))
-+		return -EIO;
-+
 +	mutex_lock(&priv->lock);
-+	priv->blinking = true;
++	priv->blinking = blink_mode;
 +	mutex_unlock(&priv->lock);
++
++	if (blink_mode)
++		schedule_work(&priv->work);
 +
 +	return ret;
 +}
++
 +
 +static int iei_wt61p803_puzzle_led_set_dt_default(struct led_classdev *cdev,
 +				     struct device_node *np)
@@ -204,7 +204,7 @@
 +		priv->mcu = mcu;
 +		priv->id = reg;
 +		priv->led_power_state = 1;
-+		priv->blinking = false;
++		priv->blinking = 0;
 +		init_data.fwnode = of_fwnode_handle(child);
 +
 +		priv->cdev.brightness_set_blocking = iei_wt61p803_puzzle_led_brightness_set_blocking;
@@ -212,6 +212,8 @@
 +		priv->cdev.blink_set = iei_wt61p803_puzzle_led_set_blink;
 +
 +		priv->cdev.max_brightness = 1;
++
++		INIT_WORK(&priv->work, iei_wt61p803_puzzle_led_apply_blink);
 +
 +		ret = iei_wt61p803_puzzle_led_set_dt_default(&priv->cdev, child);
 +		if (ret) {
@@ -245,3 +247,25 @@
  
  #define IEI_WT61P803_PUZZLE_CMD_TEMP			0x54 /* T */
  #define IEI_WT61P803_PUZZLE_CMD_TEMP_ALL		0x41 /* A */
+--- a/drivers/mfd/iei-wt61p803-puzzle.c
++++ b/drivers/mfd/iei-wt61p803-puzzle.c
+@@ -176,6 +176,9 @@ static int iei_wt61p803_puzzle_recv_buf(
+ 	struct iei_wt61p803_puzzle *mcu = serdev_device_get_drvdata(serdev);
+ 	int ret;
+ 
++	print_hex_dump_debug("puzzle-mcu rx: ", DUMP_PREFIX_NONE,
++			     16, 1, data, size, false);
++
+ 	ret = iei_wt61p803_puzzle_process_resp(mcu, data, size);
+ 	/* Return the number of processed bytes if function returns error,
+ 	 * discard the remaining incoming data, since the frame this data
+@@ -246,6 +249,9 @@ int iei_wt61p803_puzzle_write_command(st
+ 
+ 	cmd[size - 1] = iei_wt61p803_puzzle_checksum(cmd, size - 1);
+ 
++	print_hex_dump_debug("puzzle-mcu tx: ", DUMP_PREFIX_NONE,
++			     16, 1, cmd, size, false);
++
+ 	/* Initialize reply struct */
+ 	reinit_completion(&mcu->reply->received);
+ 	mcu->reply->size = 0;
