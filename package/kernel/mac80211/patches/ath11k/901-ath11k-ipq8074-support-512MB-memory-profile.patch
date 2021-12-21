@@ -1,0 +1,225 @@
+From 20ad5a47dd5093a8eb934a64f398d16d4952de91 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 15 Dec 2021 19:44:52 +0100
+Subject: [PATCH] ath11k: ipq8074: support 512MB memory profile
+
+ath11k is really memory intensive for devices with less that 1GB of ram,
+so lets port the QSDK patch that adds a profile for devices with 512MB
+of RAM.
+
+Signed-off-by: Csaba Sipos <metro4@freemail.hu>
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ ...ipq8074-support-512MB-memory-profile.patch | 156 ++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/Kconfig       |  12 ++
+ drivers/net/wireless/ath/ath11k/core.c        |   6 +
+ local-symbols                                 |   2 +
+ 4 files changed, 176 insertions(+)
+ create mode 100644 0001-ath11k-ipq8074-support-512MB-memory-profile.patch
+
+--- /dev/null
++++ b/0001-ath11k-ipq8074-support-512MB-memory-profile.patch
+@@ -0,0 +1,156 @@
++From 139700b384cb76e1092c4fbfcd5ae113e2c265b9 Mon Sep 17 00:00:00 2001
++From: Robert Marko <robimarko@gmail.com>
++Date: Wed, 15 Dec 2021 19:44:52 +0100
++Subject: [PATCH] ath11k: ipq8074: support 512MB memory profile
++
++ath11k is really memory intensive for devices with less that 1GB of ram,
++so lets port the QSDK patch that adds a profile for devices with 512MB
++of RAM.
++
++Signed-off-by: Csaba Sipos <metro4@freemail.hu>
++Signed-off-by: Robert Marko <robimarko@gmail.com>
++---
++ ...ipq8074-support-512MB-memory-profile.patch | 73 +++++++++++++++++++
++ drivers/net/wireless/ath/ath11k/Kconfig       | 14 ++++
++ drivers/net/wireless/ath/ath11k/core.c        |  6 ++
++ local-symbols                                 |  2 +
++ 4 files changed, 95 insertions(+)
++ create mode 100644 0001-ath11k-ipq8074-support-512MB-memory-profile.patch
++
++diff --git a/0001-ath11k-ipq8074-support-512MB-memory-profile.patch b/0001-ath11k-ipq8074-support-512MB-memory-profile.patch
++new file mode 100644
++index 0000000..700bc47
++--- /dev/null
+++++ b/0001-ath11k-ipq8074-support-512MB-memory-profile.patch
++@@ -0,0 +1,73 @@
+++From 651782fb01d2b97c9ea1307dcfa2b9c357049673 Mon Sep 17 00:00:00 2001
+++From: Robert Marko <robimarko@gmail.com>
+++Date: Wed, 15 Dec 2021 19:44:52 +0100
+++Subject: [PATCH] ath11k: ipq8074: support 512MB memory profile
+++
+++ath11k is really memory intensive for devices with less that 1GB of ram,
+++so lets port the QSDK patch that adds a profile for devices with 512MB
+++of RAM.
+++
+++Signed-off-by: Csaba Sipos <metro4@freemail.hu>
+++Signed-off-by: Robert Marko <robimarko@gmail.com>
+++---
+++ drivers/net/wireless/ath/ath11k/Kconfig | 12 ++++++++++++
+++ drivers/net/wireless/ath/ath11k/core.c  |  6 ++++++
+++ local-symbols                           |  2 ++
+++ 3 files changed, 20 insertions(+)
+++
+++diff --git a/drivers/net/wireless/ath/ath11k/Kconfig b/drivers/net/wireless/ath/ath11k/Kconfig
+++index df6ba99..9935829 100644
+++--- a/drivers/net/wireless/ath/ath11k/Kconfig
++++++ b/drivers/net/wireless/ath/ath11k/Kconfig
+++@@ -60,3 +60,15 @@ config ATH11K_SPECTRAL
+++ 	  Enable ath11k spectral scan support
+++ 
+++ 	  Say Y to enable access to the FFT/spectral data via debugfs.
++++
++++config ATH11K_MEM_PROFILE_512MB
++++	bool "Atheros ath11k 512MB memory profile"
++++	depends on ATH11K && ATH11K_MEM_PROFILE_1GB=n
++++	help
++++	  Use limits for the 512MB memory size instead of 1GB.
++++
++++config ATH11K_MEM_PROFILE_1GB
++++	bool "Atheros ath11k 1GB memory profile"
++++	depends on ATH11K && ATH11K_MEM_PROFILE_512MB=n
++++	help
++++	  Use limits for the 1GB memory size.
+++diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+++index 3275b40..15fb1d4 100644
+++--- a/drivers/net/wireless/ath/ath11k/core.c
++++++ b/drivers/net/wireless/ath/ath11k/core.c
+++@@ -79,9 +79,15 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+++ 		.idle_ps = false,
+++ 		.supports_sta_ps = false,
+++ 		.cold_boot_calib = false,
++++#ifdef CPTCFG_ATH11K_MEM_PROFILE_1GB
+++ 		.fw_mem_mode = 0,
+++ 		.num_vdevs = 16 + 1,
+++ 		.num_peers = 512,
++++#elif CPTCFG_ATH11K_MEM_PROFILE_512MB
++++		.fw_mem_mode = 1,
++++		.num_vdevs = 8,
++++		.num_peers = 128,
++++#endif
+++ 		.supports_suspend = false,
+++ 		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
+++ 		.fix_l1ss = true,
+++diff --git a/local-symbols b/local-symbols
+++index 040f262..efea822 100644
+++--- a/local-symbols
++++++ b/local-symbols
+++@@ -148,6 +148,8 @@ ATH11K_DEBUG=
+++ ATH11K_DEBUGFS=
+++ ATH11K_TRACING=
+++ ATH11K_SPECTRAL=
++++ATH11K_MEM_PROFILE_512MB=
++++ATH11K_MEM_PROFILE_1GB=
+++ WLAN_VENDOR_ATMEL=
+++ ATMEL=
+++ PCI_ATMEL=
+++-- 
+++2.33.1
+++
++diff --git a/drivers/net/wireless/ath/ath11k/Kconfig b/drivers/net/wireless/ath/ath11k/Kconfig
++index df6ba99..33b2e11 100644
++--- a/drivers/net/wireless/ath/ath11k/Kconfig
+++++ b/drivers/net/wireless/ath/ath11k/Kconfig
++@@ -60,3 +60,17 @@ config ATH11K_SPECTRAL
++ 	  Enable ath11k spectral scan support
++ 
++ 	  Say Y to enable access to the FFT/spectral data via debugfs.
+++
+++config ATH11K_MEM_PROFILE_512MB
+++	bool "Atheros ath11k 512MB memory profile"
+++	depends on ATH11K && ATH11K_MEM_PROFILE_1GB=n
+++	default n
+++	help
+++	  Use limits for the 512MB memory size instead of 1GB.
+++
+++config ATH11K_MEM_PROFILE_1GB
+++	bool "Atheros ath11k 1GB memory profile"
+++	depends on ATH11K && ATH11K_MEM_PROFILE_512MB=n
+++	default n
+++	help
+++	  Use limits for the 1GB memory size.
++diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
++index 3275b40..15fb1d4 100644
++--- a/drivers/net/wireless/ath/ath11k/core.c
+++++ b/drivers/net/wireless/ath/ath11k/core.c
++@@ -79,9 +79,15 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
++ 		.idle_ps = false,
++ 		.supports_sta_ps = false,
++ 		.cold_boot_calib = false,
+++#ifdef CPTCFG_ATH11K_MEM_PROFILE_1GB
++ 		.fw_mem_mode = 0,
++ 		.num_vdevs = 16 + 1,
++ 		.num_peers = 512,
+++#elif CPTCFG_ATH11K_MEM_PROFILE_512MB
+++		.fw_mem_mode = 1,
+++		.num_vdevs = 8,
+++		.num_peers = 128,
+++#endif
++ 		.supports_suspend = false,
++ 		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
++ 		.fix_l1ss = true,
++diff --git a/local-symbols b/local-symbols
++index 040f262..efea822 100644
++--- a/local-symbols
+++++ b/local-symbols
++@@ -148,6 +148,8 @@ ATH11K_DEBUG=
++ ATH11K_DEBUGFS=
++ ATH11K_TRACING=
++ ATH11K_SPECTRAL=
+++ATH11K_MEM_PROFILE_512MB=
+++ATH11K_MEM_PROFILE_1GB=
++ WLAN_VENDOR_ATMEL=
++ ATMEL=
++ PCI_ATMEL=
++-- 
++2.33.1
++
+--- a/drivers/net/wireless/ath/ath11k/Kconfig
++++ b/drivers/net/wireless/ath/ath11k/Kconfig
+@@ -60,3 +60,15 @@ config ATH11K_SPECTRAL
+ 	  Enable ath11k spectral scan support
+ 
+ 	  Say Y to enable access to the FFT/spectral data via debugfs.
++
++config ATH11K_MEM_PROFILE_512MB
++	bool "Atheros ath11k 512MB memory profile"
++	depends on ATH11K
++	help
++	  Use limits for the 512MB memory size instead of 1GB.
++
++config ATH11K_MEM_PROFILE_1GB
++	bool "Atheros ath11k 1GB memory profile"
++	depends on ATH11K
++	help
++	  Use limits for the 1GB memory size.
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -79,9 +79,15 @@ static const struct ath11k_hw_params ath
+ 		.idle_ps = false,
+ 		.supports_sta_ps = false,
+ 		.cold_boot_calib = false,
++#ifdef CPTCFG_ATH11K_MEM_PROFILE_1GB
+ 		.fw_mem_mode = 0,
+ 		.num_vdevs = 16 + 1,
+ 		.num_peers = 512,
++#elif CPTCFG_ATH11K_MEM_PROFILE_512MB
++		.fw_mem_mode = 1,
++		.num_vdevs = 8,
++		.num_peers = 128,
++#endif
+ 		.supports_suspend = false,
+ 		.hal_desc_sz = sizeof(struct hal_rx_desc_ipq8074),
+ 		.fix_l1ss = true,
+--- a/local-symbols
++++ b/local-symbols
+@@ -148,6 +148,8 @@ ATH11K_DEBUG=
+ ATH11K_DEBUGFS=
+ ATH11K_TRACING=
+ ATH11K_SPECTRAL=
++ATH11K_MEM_PROFILE_512MB=
++ATH11K_MEM_PROFILE_1GB=
+ WLAN_VENDOR_ATMEL=
+ ATMEL=
+ PCI_ATMEL=
