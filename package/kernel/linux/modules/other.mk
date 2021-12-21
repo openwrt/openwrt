@@ -1294,3 +1294,21 @@ define KernelPackage/qcom-qmi-helpers/description
 endef
 
 $(eval $(call KernelPackage,qcom-qmi-helpers))
+
+define KernelPackage/mhi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Modem Host Interface (MHI) bus
+  DEPENDS:=@LINUX_5_15
+  KCONFIG:=CONFIG_MHI_BUS \
+           CONFIG_MHI_BUS_DEBUG=y \
+           CONFIG_MHI_BUS_PCI_GENERIC=n \
+           CONFIG_MHI_NET=n
+  FILES:=$(LINUX_DIR)/drivers/bus/mhi/core/mhi.ko
+  AUTOLOAD:=$(call AutoProbe,mhi)
+endef
+
+define KernelPackage/mhi/description
+  Bus driver for MHI protocol.
+endef
+
+$(eval $(call KernelPackage,mhi))
