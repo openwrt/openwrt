@@ -108,6 +108,7 @@ GCC_CONFIGURE:= \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 \
 			--with-abi=$(call qstrip,$(CONFIG_MIPS64_ABI))) \
 		$(if $(CONFIG_arc),--with-cpu=$(CONFIG_CPU_TYPE)) \
+		$(if $(CONFIG_powerpc64), $(if $(CONFIG_USE_MUSL),--with-abi=elfv2)) \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
 		--with-mpfr=$(TOPDIR)/staging_dir/host \
 		--with-mpc=$(TOPDIR)/staging_dir/host \
