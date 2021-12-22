@@ -22,10 +22,6 @@
 		label-mac-device = &enet0;
 	};
 
-	chosen {
-		bootargs-override = "console=ttyS0,9600";
-	};
-
 	memory {
 		device_type = "memory";
 	};
@@ -47,36 +43,41 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
+				firmware@0 {
+					reg = <0x0 0x3f00000>;
+					label = "firmware";
+					/*
+					 * This unknown/invalid compatible prevents
+					 * openwrt's mtdsplit_fit to go off a tangent if it
+					 * finds a magic value inside the uncompressed kernel
+					 * at a blocksized aligned place.
+					 */
+					compatible = "areohive,hiveap-330-image";
+				};
+
 				partition@0 {
 					reg = <0x0 0x40000>;
 					label = "dtb";
 				};
 
 				partition@40000 {
-					reg = <0x40000 0x40000>;
-					label = "initrd";
-				};
-
-				partition@80000 {
-					reg = <0x80000 0x27c0000>;
-					label = "rootfs";
-				};
-
-				partition@2840000 {
-					reg = <0x2840000 0x800000>;
+					compatible = "openwrt,uimage", "denx,uimage";
+					reg = <0x40000 0x3ec0000>;
 					label = "kernel";
 				};
 
-				partition@3040000 {
-					reg = <0x3040000 0xec0000>;
-					label = "stock-jffs2";
-					read-only;
-				};
-
-				hwinfo: partition@3f00000 {
+				partition@3f00000 {
 					reg = <0x3f00000 0x20000>;
 					label = "hw-info";
 					read-only;
+
+					compatible = "nvmem-cells";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_hwinfo_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
 				};
 
 				partition@3f20000 {
@@ -100,11 +101,6 @@
 					reg = <0x3f80000 0x80000>;
 					label = "u-boot";
 					read-only;
-				};
-
-				firmware@0 {
-					reg = <0x0 0x3040000>;
-					label = "firmware";
 				};
 			};
 		};
@@ -242,13 +238,3 @@
 	};
 };
 /include/ "fsl/p1020si-post.dtsi"
-
-&hwinfo {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_hwinfo_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-};
