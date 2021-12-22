@@ -1,0 +1,18 @@
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+case "$(board_name)" in
+	aerohive,hiveap-330)
+		if [ "$(uci get system.@system[0].compat_version)" -ne "2.0" ] ; then
+			uboot_part="$(find_mtd_chardev "u-boot")";
+			uboot_env_part="$(find_mtd_chardev "u-boot-env")";
+			if strings "$uboot_part" | grep -m1 -q owrt_boot &&
+				strings "$uboot_env_part" | grep -m1 -q owrt_boot; then
+					uci set system.@system[0].compat_version="2.0"
+					uci commit system
+			fi
+		fi
+		;;
+esac
+
+exit 0

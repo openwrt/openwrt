@@ -3,6 +3,7 @@
 define Profile/Default
   NAME:=Default Profile
   PRIORITY:=1
+  PACKAGES := uboot-envtools kmod-mtd-rw
 endef
 
 define Profile/Default/Description

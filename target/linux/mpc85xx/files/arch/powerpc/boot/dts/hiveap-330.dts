@@ -53,24 +53,9 @@
 				};
 
 				partition@40000 {
-					reg = <0x40000 0x40000>;
-					label = "initrd";
-				};
-
-				partition@80000 {
-					reg = <0x80000 0x27c0000>;
-					label = "rootfs";
-				};
-
-				partition@2840000 {
-					reg = <0x2840000 0x800000>;
+					compatible = "openwrt,uimage", "denx,uimage";
+					reg = <0x40000 0x3ec0000>;
 					label = "kernel";
-				};
-
-				partition@3040000 {
-					reg = <0x3040000 0xec0000>;
-					label = "stock-jffs2";
-					read-only;
 				};
 
 				hwinfo: partition@3f00000 {
@@ -103,7 +88,7 @@
 				};
 
 				firmware@0 {
-					reg = <0x0 0x3040000>;
+					reg = <0x0 0x3f00000>;
 					label = "firmware";
 				};
 			};
