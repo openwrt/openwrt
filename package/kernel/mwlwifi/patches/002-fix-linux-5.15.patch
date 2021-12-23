@@ -1,0 +1,39 @@
+From f36e371aa6d55e3ecd1249d0d15479312e69c768 Mon Sep 17 00:00:00 2001
+From: Marty Jones <mj8263788@gmail.com>
+Date: Tue, 14 Sep 2021 04:29:47 -0400
+Subject: [PATCH] fix linux 5.15
+
+Signed-off-by: Marty Jones <mj8263788@gmail.com>
+---
+ hif/pcie/pcie.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -1294,8 +1294,10 @@ static void pcie_bf_mimo_ctrl_decode(str
+ 	char *buf = &str_buf[0];
+ 	mm_segment_t oldfs;
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
+ 	oldfs = get_fs();
+ 	set_fs(KERNEL_DS);
++#endif
+ 
+ 	buf += sprintf(buf, "\nMAC: %pM\n", bf_mimo_ctrl->rec_mac);
+ 	buf += sprintf(buf, "SU_0_MU_1: %d\n", bf_mimo_ctrl->type);
+@@ -1315,7 +1317,9 @@ static void pcie_bf_mimo_ctrl_decode(str
+ 			  filename, (unsigned int)fp_data);
+ 	}
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
+ 	set_fs(oldfs);
++#endif
+ }
+ 
+ static void pcie_process_account(struct ieee80211_hw *hw)
+@@ -1641,5 +1645,4 @@ MODULE_DESCRIPTION(PCIE_DRV_DESC);
+ MODULE_VERSION(PCIE_DRV_VERSION);
+ MODULE_AUTHOR("Marvell Semiconductor, Inc.");
+ MODULE_LICENSE("GPL v2");
+-MODULE_SUPPORTED_DEVICE(PCIE_DEV_NAME);
+ MODULE_DEVICE_TABLE(pci, pcie_id_tbl);

@@ -12,6 +12,8 @@ SUBTARGETS:=generic legacy geode 64
 
 KERNEL_PATCHVER:=5.10
 
+KERNEL_TESTING_PATCHVER:=5.15
+
 KERNELNAME:=bzImage
 
 include $(INCLUDE_DIR)/target.mk
