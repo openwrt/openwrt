@@ -1,0 +1,14 @@
+Index: backports-5.8-1/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+===================================================================
+--- backports-5.8-1.orig/drivers/net/wireless/marvell/mwifiex/cfg80211.c
++++ backports-5.8-1/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+@@ -4438,7 +4438,8 @@ int mwifiex_register_cfg80211(struct mwi
+				country_code =
+					mwifiex_11d_code_2_region(
+						adapter->region_code);
+-				if (country_code &&
++				// do not load the firmware region
++				if (0 && country_code &&
+				    regulatory_hint(wiphy, country_code))
+					mwifiex_dbg(priv->adapter, ERROR,
+						    "regulatory_hint() failed\n");

@@ -68,10 +68,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif
 --- a/tools/include/linux/types.h
 +++ b/tools/include/linux/types.h
-@@ -10,8 +10,12 @@
- #define __SANE_USERSPACE_TYPES__	/* For PPC64, to get LL64 types */
- #endif
+@@ -6,12 +6,13 @@
+ #include <stddef.h>
+ #include <stdint.h>
  
+-#ifndef __SANE_USERSPACE_TYPES__
+ #define __SANE_USERSPACE_TYPES__	/* For PPC64, to get LL64 types */
+-#endif
+-
 +#ifndef __linux__
 +#include <tools/linux_types.h>
 +#else

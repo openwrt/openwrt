@@ -8,28 +8,48 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/netfilter/nf_conntrack_proto_tcp.c
 +++ b/net/netfilter/nf_conntrack_proto_tcp.c
-@@ -465,6 +465,9 @@ static bool tcp_in_window(struct nf_conn
+@@ -31,6 +31,9 @@
+ #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
+ #include <net/netfilter/ipv6/nf_conntrack_ipv6.h>
+ 
++/* Do not check the TCP window for incoming packets  */
++static int nf_ct_tcp_no_window_check __read_mostly = 1;
++
+   /* FIXME: Examine ipfilter's timeouts and conntrack transitions more
+      closely.  They're more complex. --RR */
+ 
+@@ -465,6 +468,9 @@ static bool tcp_in_window(struct nf_conn
  	s32 receiver_offset;
  	bool res, in_recv_win;
  
-+	if (net->ct.sysctl_no_window_check)
++	if (nf_ct_tcp_no_window_check)
 +		return true;
 +
  	/*
  	 * Get the required data from the packet.
  	 */
-@@ -1151,7 +1154,7 @@ int nf_conntrack_tcp_packet(struct nf_co
+@@ -1151,7 +1157,7 @@ int nf_conntrack_tcp_packet(struct nf_co
  		 IP_CT_TCP_FLAG_DATA_UNACKNOWLEDGED &&
  		 timeouts[new_state] > timeouts[TCP_CONNTRACK_UNACK])
  		timeout = timeouts[TCP_CONNTRACK_UNACK];
 -	else if (ct->proto.tcp.last_win == 0 &&
-+	else if (!net->ct.sysctl_no_window_check && ct->proto.tcp.last_win == 0 &&
++		else if (!nf_ct_tcp_no_window_check && ct->proto.tcp.last_win == 0 &&
  		 timeouts[new_state] > timeouts[TCP_CONNTRACK_RETRANS])
  		timeout = timeouts[TCP_CONNTRACK_RETRANS];
  	else
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -671,6 +671,7 @@ enum nf_ct_sysctl_index {
+@@ -28,6 +28,9 @@
+ #endif
+ #include <linux/rculist_nulls.h>
+ 
++/* Do not check the TCP window for incoming packets  */
++static int nf_ct_tcp_no_window_check __read_mostly = 1;
++
+ static bool enable_hooks __read_mostly;
+ MODULE_PARM_DESC(enable_hooks, "Always enable conntrack hooks");
+ module_param(enable_hooks, bool, 0000);
+@@ -671,6 +674,7 @@ enum nf_ct_sysctl_index {
  	NF_SYSCTL_CT_LWTUNNEL,
  #endif
  
@@ -37,13 +57,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	__NF_SYSCTL_CT_LAST_SYSCTL,
  };
  
-@@ -1026,6 +1027,13 @@ static struct ctl_table nf_ct_sysctl_tab
+@@ -1026,6 +1030,13 @@ static struct ctl_table nf_ct_sysctl_tab
  		.proc_handler	= nf_hooks_lwtunnel_sysctl_handler,
  	},
  #endif
 +	[NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK] = {
 +		.procname       = "nf_conntrack_tcp_no_window_check",
-+		.data           = &init_net.ct.sysctl_no_window_check,
++		.data           = &nf_ct_tcp_no_window_check,
 +		.maxlen         = sizeof(unsigned int),
 +		.mode           = 0644,
 +		.proc_handler   = proc_dointvec,
@@ -51,29 +71,3 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	{}
  };
  
-@@ -1153,6 +1161,7 @@ static int nf_conntrack_standalone_init_
- #ifdef CONFIG_NF_CONNTRACK_EVENTS
- 	table[NF_SYSCTL_CT_EVENTS].data = &net->ct.sysctl_events;
- #endif
-+	table[NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK].data = &net->ct.sysctl_no_window_check;
- #ifdef CONFIG_NF_CONNTRACK_TIMESTAMP
- 	table[NF_SYSCTL_CT_TIMESTAMP].data = &net->ct.sysctl_tstamp;
- #endif
-@@ -1222,6 +1231,7 @@ static int nf_conntrack_pernet_init(stru
- 	int ret;
- 
- 	net->ct.sysctl_checksum = 1;
-+	net->ct.sysctl_no_window_check = 1;
- 
- 	ret = nf_conntrack_standalone_init_sysctl(net);
- 	if (ret < 0)
---- a/include/net/netns/conntrack.h
-+++ b/include/net/netns/conntrack.h
-@@ -109,6 +109,7 @@ struct netns_ct {
- 	u8			sysctl_auto_assign_helper;
- 	u8			sysctl_tstamp;
- 	u8			sysctl_checksum;
-+	u8			sysctl_no_window_check;
- 
- 	struct ct_pcpu __percpu *pcpu_lists;
- 	struct ip_conntrack_stat __percpu *stat;

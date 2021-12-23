@@ -3,8 +3,8 @@ Subject: try auto-mounting ubi0:rootfs in init/do_mounts.c
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- init/do_mounts.c | 26 +++++++++++++++++++++++++-
- 1 file changed, 25 insertions(+), 1 deletion(-)
+ init/do_mounts.c | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
 
 --- a/init/do_mounts.c
 +++ b/init/do_mounts.c
@@ -38,14 +38,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #ifdef CONFIG_ROOT_NFS
  
  #define NFSROOT_TIMEOUT_MIN	5
-@@ -580,6 +601,10 @@ void __init mount_root(void)
- 		return;
+@@ -584,6 +605,11 @@ void __init mount_root(void)
+ 		if (mount_nodev_root() == 0)
+ 			return;
  	}
- #endif
++
 +#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
 +	if (!mount_ubi_rootfs())
 +		return;
 +#endif
- 	if (ROOT_DEV == 0 && root_device_name && root_fs_names) {
- 		if (mount_nodev_root() == 0)
- 			return;
+ #ifdef CONFIG_BLOCK
+ 	{
+ 		int err = create_dev("/dev/root", ROOT_DEV);
