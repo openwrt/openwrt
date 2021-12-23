@@ -1,0 +1,39 @@
+From 6e3c0ce00126e4ae9eddb6c6f57de67ccf3e683b Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Tue, 14 Dec 2021 15:11:15 -0800
+Subject: [PATCH 101/108] mtd: rawnand: brcmnand: Assign soc as early as
+ possible
+
+In order to key off the brcmnand_probe() code in subsequent changes
+depending upon ctlr->soc, assign that variable as early as possible,
+instead of much later when we have checked that it is non-NULL.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/nand/raw/brcmnand/brcmnand.c b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+index 7a1673b1b1af..fcea5a7443e8 100644
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+@@ -3008,6 +3008,7 @@ int brcmnand_probe(struct platform_device *pdev, struct brcmnand_soc *soc)
+ 
+ 	dev_set_drvdata(dev, ctrl);
+ 	ctrl->dev = dev;
++	ctrl->soc = soc;
+ 
+ 	init_completion(&ctrl->done);
+ 	init_completion(&ctrl->dma_done);
+@@ -3148,8 +3149,6 @@ int brcmnand_probe(struct platform_device *pdev, struct brcmnand_soc *soc)
+ 	 * interesting ways
+ 	 */
+ 	if (soc) {
+-		ctrl->soc = soc;
+-
+ 		ret = devm_request_irq(dev, ctrl->irq, brcmnand_irq, 0,
+ 				       DRV_NAME, ctrl);
+ 
+-- 
+2.25.1
+

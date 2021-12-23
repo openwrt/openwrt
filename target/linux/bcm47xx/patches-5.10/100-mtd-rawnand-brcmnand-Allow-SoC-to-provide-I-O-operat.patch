@@ -1,0 +1,111 @@
+From a126431d8647ae3bbdc4efe854494aaa2b09eb2b Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Mon, 13 Dec 2021 15:57:14 -0800
+Subject: [PATCH 100/108] mtd: rawnand: brcmnand: Allow SoC to provide I/O
+ operations
+
+Allow a brcmnand_soc instance to provide a custom set of I/O operations
+which we will require when using this driver on a BCMA bus which is not
+directly memory mapped I/O. Update the nand_{read,write}_reg accordingly
+to use the SoC operations if provided.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 14 ++++++++++++--
+ drivers/mtd/nand/raw/brcmnand/brcmnand.h | 23 +++++++++++++++++++++++
+ 2 files changed, 35 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/nand/raw/brcmnand/brcmnand.c b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+index f75929783b94..7a1673b1b1af 100644
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+@@ -594,13 +594,18 @@ enum {
+ 
+ static inline u32 nand_readreg(struct brcmnand_controller *ctrl, u32 offs)
+ {
++	if (brcmnand_soc_has_ops(ctrl->soc))
++		return brcmnand_soc_read(ctrl->soc, offs);
+ 	return brcmnand_readl(ctrl->nand_base + offs);
+ }
+ 
+ static inline void nand_writereg(struct brcmnand_controller *ctrl, u32 offs,
+ 				 u32 val)
+ {
+-	brcmnand_writel(val, ctrl->nand_base + offs);
++	if (brcmnand_soc_has_ops(ctrl->soc))
++		brcmnand_soc_write(ctrl->soc, val, offs);
++	else
++		brcmnand_writel(val, ctrl->nand_base + offs);
+ }
+ 
+ static int brcmnand_revision_init(struct brcmnand_controller *ctrl)
+@@ -766,13 +771,18 @@ static inline void brcmnand_rmw_reg(struct brcmnand_controller *ctrl,
+ 
+ static inline u32 brcmnand_read_fc(struct brcmnand_controller *ctrl, int word)
+ {
++	if (brcmnand_soc_has_ops(ctrl->soc))
++		return brcmnand_soc_read(ctrl->soc, ~0);
+ 	return __raw_readl(ctrl->nand_fc + word * 4);
+ }
+ 
+ static inline void brcmnand_write_fc(struct brcmnand_controller *ctrl,
+ 				     int word, u32 val)
+ {
+-	__raw_writel(val, ctrl->nand_fc + word * 4);
++	if (brcmnand_soc_has_ops(ctrl->soc))
++		brcmnand_soc_write(ctrl->soc, val, ~0);
++	else
++		__raw_writel(val, ctrl->nand_fc + word * 4);
+ }
+ 
+ static inline void edu_writel(struct brcmnand_controller *ctrl,
+diff --git a/drivers/mtd/nand/raw/brcmnand/brcmnand.h b/drivers/mtd/nand/raw/brcmnand/brcmnand.h
+index eb498fbe505e..a3f2ad5f6572 100644
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.h
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.h
+@@ -11,12 +11,19 @@
+ 
+ struct platform_device;
+ struct dev_pm_ops;
++struct brcmnand_io_ops;
+ 
+ struct brcmnand_soc {
+ 	bool (*ctlrdy_ack)(struct brcmnand_soc *soc);
+ 	void (*ctlrdy_set_enabled)(struct brcmnand_soc *soc, bool en);
+ 	void (*prepare_data_bus)(struct brcmnand_soc *soc, bool prepare,
+ 				 bool is_param);
++	const struct brcmnand_io_ops *ops;
++};
++
++struct brcmnand_io_ops {
++	u32 (*read_reg)(struct brcmnand_soc *soc, u32 offset);
++	void (*write_reg)(struct brcmnand_soc *soc, u32 val, u32 offset);
+ };
+ 
+ static inline void brcmnand_soc_data_bus_prepare(struct brcmnand_soc *soc,
+@@ -58,6 +65,22 @@ static inline void brcmnand_writel(u32 val, void __iomem *addr)
+ 		writel_relaxed(val, addr);
+ }
+ 
++static inline bool brcmnand_soc_has_ops(struct brcmnand_soc *soc)
++{
++	return soc && soc->ops && soc->ops->read_reg && soc->ops->write_reg;
++}
++
++static inline u32 brcmnand_soc_read(struct brcmnand_soc *soc, u32 offset)
++{
++	return soc->ops->read_reg(soc, offset);
++}
++
++static inline void brcmnand_soc_write(struct brcmnand_soc *soc, u32 val,
++				      u32 offset)
++{
++	soc->ops->write_reg(soc, val, offset);
++}
++
+ int brcmnand_probe(struct platform_device *pdev, struct brcmnand_soc *soc);
+ int brcmnand_remove(struct platform_device *pdev);
+ 
+-- 
+2.25.1
+

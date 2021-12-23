@@ -1,0 +1,67 @@
+From af12e12d0d7369c11848c47bfae5ffd16664dfe6 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Tue, 14 Dec 2021 15:51:14 -0800
+Subject: [PATCH 103/108] mtd: rawnand: brcmnand: Move OF operations out of
+ brcmnand_init_cs()
+
+In order to initialize a given chip select object for use by the
+brcmnand driver, move all of the Device Tree specific routines outside
+of brcmnand_init_cs() in order to make it usable in a platform data
+configuration which will be necessary for supporting BCMA chips.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 20 +++++++++++---------
+ 1 file changed, 11 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/mtd/nand/raw/brcmnand/brcmnand.c b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+index 35f8d8e02d4a..60a7f375df83 100644
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+@@ -2760,7 +2760,7 @@ static const struct nand_controller_ops brcmnand_controller_ops = {
+ 	.attach_chip = brcmnand_attach_chip,
+ };
+ 
+-static int brcmnand_init_cs(struct brcmnand_host *host, struct device_node *dn)
++static int brcmnand_init_cs(struct brcmnand_host *host)
+ {
+ 	struct brcmnand_controller *ctrl = host->ctrl;
+ 	struct device *dev = ctrl->dev;
+@@ -2769,16 +2769,9 @@ static int brcmnand_init_cs(struct brcmnand_host *host, struct device_node *dn)
+ 	int ret;
+ 	u16 cfg_offs;
+ 
+-	ret = of_property_read_u32(dn, "reg", &host->cs);
+-	if (ret) {
+-		dev_err(dev, "can't get chip-select\n");
+-		return -ENXIO;
+-	}
+-
+ 	mtd = nand_to_mtd(&host->chip);
+ 	chip = &host->chip;
+ 
+-	nand_set_flash_node(chip, dn);
+ 	nand_set_controller_data(chip, host);
+ 	mtd->name = devm_kasprintf(dev, GFP_KERNEL, "brcmnand.%d",
+ 				   host->cs);
+@@ -3179,7 +3172,16 @@ int brcmnand_probe(struct platform_device *pdev, struct brcmnand_soc *soc)
+ 			host->pdev = pdev;
+ 			host->ctrl = ctrl;
+ 
+-			ret = brcmnand_init_cs(host, child);
++			ret = of_property_read_u32(dn, "reg", &host->cs);
++			if (ret) {
++				dev_err(dev, "can't get chip-select\n");
++				devm_kfree(dev, host);
++				continue;
++			}
++
++			nand_set_flash_node(&host->chip, dn);
++
++			ret = brcmnand_init_cs(host);
+ 			if (ret) {
+ 				devm_kfree(dev, host);
+ 				continue; /* Try all chip-selects */
+-- 
+2.25.1
+
