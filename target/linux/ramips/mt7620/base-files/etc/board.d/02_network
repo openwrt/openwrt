@@ -100,7 +100,8 @@ ramips_setup_interfaces()
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan:5" "6@eth0"
 		;;
 	comfast,cf-wr800n|\
-	hnet,c108)
+	hnet,c108|\
+	humax,e2)
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
