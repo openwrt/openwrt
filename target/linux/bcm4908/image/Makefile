@@ -9,6 +9,7 @@ DEVICE_VARS += PKGTB_ITS
 
 define Image/Prepare
 	cp bootfs-generic.its $(KDIR)/
+	sed -i "s=\$$$${images_dir}=$(STAGING_DIR_IMAGE)=" $(KDIR)/bootfs-generic.its
 	sed -i "s=\$$$${dts_dir}=$(DTS_DIR)=" $(KDIR)/bootfs-generic.its
 endef
 
