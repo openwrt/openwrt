@@ -1,0 +1,11 @@
+--- fstools.orig/libblkid-tiny/ntfs.c
++++ fstools/libblkid-tiny/ntfs.c
+@@ -214,7 +214,7 @@ static int probe_ntfs(blkid_probe pr, const struct blkid_idmag *mag)
+ 
+ const struct blkid_idinfo ntfs_idinfo =
+ {
+-	.name		= "ntfs",
++	.name		= "ntfs3",
+ 	.usage		= BLKID_USAGE_FILESYSTEM,
+ 	.probefunc	= probe_ntfs,
+ 	.magics		=
