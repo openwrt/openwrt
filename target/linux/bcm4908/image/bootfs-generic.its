@@ -7,6 +7,21 @@
 	#address-cells = <1>;
 
 	images {
+		atf {
+			description = "ATF";
+			data = /incbin/("${images_dir}/bl31.bin");
+			type = "firmware";
+			arch = "arm64";
+			os = "arm-trusted-firmware";
+			compression = "none";
+			load = <0x4000>;
+			entry = <0x4000>;
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
 		kernel {
 			description = "Linux kernel";
 			data = /incbin/("${kernel}");
