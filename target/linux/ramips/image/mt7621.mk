@@ -637,6 +637,25 @@ define Device/hiwifi_hc5962
 endef
 TARGET_DEVICES += hiwifi_hc5962
 
+define Device/humax_e10
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15936k
+  DEVICE_VENDOR := HUMAX
+  DEVICE_MODEL := E10
+  DEVICE_ALT0_VENDOR := HUMAX
+  DEVICE_ALT0_MODEL := QUANTUM E10
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m EA03 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	check-size | append-metadata
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | \
+	edimax-header -s CSYS -m EA03 -f 0x70000 -S 0x01100000 | \
+	check-size | zip upg -P f013c26cf0a320fb71d03356dcb6bb63
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+endef
+TARGET_DEVICES += humax_e10
+
 define Device/iodata_wn-ax1167gr
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -735,6 +754,17 @@ define Device/iodata_wnpr2600g
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += iodata_wnpr2600g
+
+define Device/iptime_a3004ns-dual
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16128k
+  UIMAGE_NAME := a3004nd
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A3004NS-dual
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt76x2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += iptime_a3004ns-dual
 
 define Device/iptime_a6ns-m
   $(Device/dsa-migration)
@@ -1688,6 +1718,18 @@ define Device/zbtlink_zbt-we3526
 	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += zbtlink_zbt-we3526
+
+define Device/zbtlink_zbt-wg1602-16m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1602
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+	kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1602-16m
 
 define Device/zbtlink_zbt-wg2626
   $(Device/dsa-migration)

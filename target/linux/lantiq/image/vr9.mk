@@ -204,7 +204,7 @@ TARGET_DEVICES += avm_fritz7430
 define Device/bt_homehub-v5a
   $(Device/dsa-migration)
   $(Device/NAND)
-  DEVICE_VENDOR := British Telecom
+  DEVICE_VENDOR := British Telecom (BT)
   DEVICE_MODEL := Home Hub 5
   DEVICE_VARIANT := Type A
   BOARD_NAME := BTHOMEHUBV5A

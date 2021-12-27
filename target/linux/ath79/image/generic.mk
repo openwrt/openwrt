@@ -1036,6 +1036,15 @@ define Device/elecom_wrc-300ghbk2-i
 endef
 TARGET_DEVICES += elecom_wrc-300ghbk2-i
 
+define Device/embeddedwireless_balin
+  SOC := ar9344
+  DEVICE_VENDOR := Embedded Wireless
+  DEVICE_MODEL := Balin
+  DEVICE_PACKAGES := kmod-usb-chipidea2
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += embeddedwireless_balin
+
 define Device/embeddedwireless_dorin
   SOC := ar9331
   DEVICE_VENDOR := Embedded Wireless
@@ -1405,6 +1414,14 @@ define Device/jjplus_ja76pf2
   SUPPORTED_DEVICES += ja76pf2
 endef
 TARGET_DEVICES += jjplus_ja76pf2
+
+define Device/jjplus_jwap230
+  SOC := qca9558
+  DEVICE_VENDOR := jjPlus
+  DEVICE_MODEL := JWAP230
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += jjplus_jwap230
 
 define Device/joyit_jt-or750i
   SOC := qca9531
@@ -2326,6 +2343,18 @@ define Device/wallys_dr531
   SUPPORTED_DEVICES += dr531
 endef
 TARGET_DEVICES += wallys_dr531
+
+define Device/wd_mynet-n600
+  $(Device/seama)
+  SOC := ar9344
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := My Net N600
+  IMAGE_SIZE := 15872k
+  DEVICE_PACKAGES := kmod-usb2
+  SEAMA_SIGNATURE := wrgnd16_wd_db600
+  SUPPORTED_DEVICES += mynet-n600
+endef
+TARGET_DEVICES += wd_mynet-n600
 
 define Device/wd_mynet-n750
   $(Device/seama)

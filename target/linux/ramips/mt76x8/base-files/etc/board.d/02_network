@@ -26,7 +26,6 @@ ramips_setup_interfaces()
 	tplink,re220-v2|\
 	tplink,re305-v1|\
 	tplink,re305-v3|\
-	tplink,tl-mr3020-v3|\
 	tplink,tl-wr802n-v4|\
 	tplink,tl-wa801nd-v5|\
 	widora,neo-16m|\
@@ -58,10 +57,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
-	duzun,dm06)
-		ucidef_add_switch "switch0" \
-			"1:lan" "0:wan" "6@eth0"
-		;;
+	duzun,dm06|\
 	glinet,gl-mt300n-v2)
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
@@ -120,6 +116,10 @@ ramips_setup_interfaces()
 	rakwireless,rak633)
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
+		;;
+	tplink,tl-mr3020-v3)
+		ucidef_add_switch "switch0" \
+			"0:lan" "6@eth0"
 		;;
 	tplink,tl-mr6400-v4)
 		ucidef_add_switch "switch0" \

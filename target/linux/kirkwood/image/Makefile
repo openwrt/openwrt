@@ -7,6 +7,63 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR:=0x8000
 
+# Some info about Ctera firmware:
+# 1. It's simple tar file (GNU standard), but it must have ".firm" suffix.
+# 2. It contains two images: kernel and romdisk. Both are required.
+# 3. Every image has header and trailer file.
+# 4. The struct of tar firmware is: header kernel trailer header romdisk trailer
+# 5. In header file are some strings used to describe image. It was decoded from
+#    factory image.
+# 6. Version format in header file is restricted by Original FW.
+# 7. Trailer file contains MD5 sum string of header and image file.
+# 8. Firmware file must have <=24MB size.
+
+define Build/ctera-firmware
+	mkdir -p $@.tmp
+
+	# Prepare header and trailer file for kernel
+	echo "# CTera firmware information file" > $@.tmp/header
+	echo "image_type=kernel" >> $@.tmp/header
+	echo "arch=Kirkwood" >> $@.tmp/header
+	echo "board=Any" >> $@.tmp/header
+	echo "version=3.1.22.30669" >> $@.tmp/header
+	echo "kernel_cmd=console=ttyS0,115200 earlyprintk" >> $@.tmp/header
+	echo "date=$$(date $(if $(SOURCE_DATE_EPOCH),-d@$(SOURCE_DATE_EPOCH)))" \
+		>> $@.tmp/header
+
+	cp $@ $@.tmp/kernel
+
+	echo "MD5=$$(cat $@.tmp/header $@.tmp/kernel | $(MKHASH) md5)" \
+		> $@.tmp/trailer
+
+	tar $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		-H gnu -C $@.tmp -cf $@.tar header kernel trailer
+
+	# Prepare header and trailer file for fake romdisk
+	echo "# CTera firmware information file" > $@.tmp/header
+	echo "image_type=romdisk" >> $@.tmp/header
+	echo "initrd=yes" >> $@.tmp/header
+	echo "arch=Kirkwood" >> $@.tmp/header
+	echo "board=Any" >> $@.tmp/header
+	echo "version=3.1.22.30669" >> $@.tmp/header
+	echo "date=$$(date $(if $(SOURCE_DATE_EPOCH),-d@$(SOURCE_DATE_EPOCH)))" \
+		>> $@.tmp/header
+
+	rm -f $@
+	touch $@
+	$(call Build/append-uImage-fakehdr, ramdisk)
+	cp $@ $@.tmp/romdisk
+
+	echo "MD5=$$(cat $@.tmp/header $@.tmp/romdisk | $(MKHASH) md5)" \
+		> $@.tmp/trailer
+
+	tar $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		-H gnu -C $@.tmp -rf $@.tar header romdisk trailer
+
+	mv $@.tar $@
+	rm -rf $@.tmp
+endef
+
 define Device/kernel-size-migration
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := Partition design has changed compared to \
@@ -69,6 +126,19 @@ define Device/cloudengines_pogoplugv4
 	kmod-gpio-button-hotplug
 endef
 TARGET_DEVICES += cloudengines_pogoplugv4
+
+define Device/ctera_c200-v1
+  DEVICE_VENDOR := Ctera
+  DEVICE_MODEL := C200
+  DEVICE_VARIANT := V1
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-gpio-button-hotplug \
+	kmod-hwmon-lm63 kmod-rtc-s35390a kmod-usb-ledtrig-usbport
+  KERNEL := kernel-bin | append-dtb | uImage none | ctera-firmware
+  KERNEL_IN_UBI :=
+  KERNEL_SUFFIX := -factory.firm
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += ctera_c200-v1
 
 define Device/globalscale_sheevaplug
   DEVICE_VENDOR := Globalscale

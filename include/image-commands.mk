@@ -395,7 +395,7 @@ define Build/patch-cmdline
 endef
 
 # Convert a raw image into a $1 type image.
-# E.g. | qemu-image vdi
+# E.g. | qemu-image vdi <optional extra arguments to qemu-img binary>
 define Build/qemu-image
 	if command -v qemu-img; then \
 		qemu-img convert -f raw -O $1 $@ $@.new; \
@@ -524,12 +524,14 @@ define Build/xor-image
 endef
 
 define Build/zip
+	rm -rf $@.tmp
 	mkdir $@.tmp
-	mv $@ $@.tmp/$(1)
+	mv $@ $@.tmp/$(word 1,$(1))
 
-	zip -j -X \
+	$(STAGING_DIR_HOST)/bin/zip -j -X \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="$(SOURCE_DATE_EPOCH)") \
-		$@ $@.tmp/$(if $(1),$(1),$@)
+		$(wordlist 2,$(words $(1)),$(1)) \
+		$@ $@.tmp/$(if $(word 1,$(1)),$(word 1,$(1)),$$(basename $@))
 	rm -rf $@.tmp
 endef
 
