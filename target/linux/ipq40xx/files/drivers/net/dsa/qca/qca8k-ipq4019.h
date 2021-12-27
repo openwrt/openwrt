@@ -8,18 +8,11 @@
 #ifndef __QCA8K_H
 #define __QCA8K_H
 
-#include <linux/delay.h>
 #include <linux/regmap.h>
-#include <linux/gpio.h>
 
-#define QCA8K_NUM_PORTS					7
-#define QCA8K_NUM_CPU_PORTS				2
+#define QCA8K_NUM_PORTS					6
+#define QCA8K_CPU_PORT					0
 #define QCA8K_MAX_MTU					9000
-
-#define PHY_ID_QCA8327					0x004dd034
-#define QCA8K_ID_QCA8327				0x12
-#define PHY_ID_QCA8337					0x004dd036
-#define QCA8K_ID_QCA8337				0x13
 
 #define QCA8K_BUSY_WAIT_TIMEOUT				2000
 
@@ -33,46 +26,26 @@
 #define   QCA8K_MASK_CTRL_REV_ID(x)			((x) >> 0)
 #define   QCA8K_MASK_CTRL_DEVICE_ID_MASK		GENMASK(15, 8)
 #define   QCA8K_MASK_CTRL_DEVICE_ID(x)			((x) >> 8)
-#define QCA8K_REG_PORT0_PAD_CTRL			0x004
-#define   QCA8K_PORT0_PAD_SGMII_RXCLK_FALLING_EDGE	BIT(19)
-#define   QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE	BIT(18)
-#define QCA8K_REG_PORT5_PAD_CTRL			0x008
-#define QCA8K_REG_PORT6_PAD_CTRL			0x00c
-#define   QCA8K_PORT_PAD_RGMII_EN			BIT(26)
-#define   QCA8K_PORT_PAD_RGMII_TX_DELAY_MASK		GENMASK(23, 22)
-#define   QCA8K_PORT_PAD_RGMII_TX_DELAY(x)		((x) << 22)
-#define   QCA8K_PORT_PAD_RGMII_RX_DELAY_MASK		GENMASK(21, 20)
-#define   QCA8K_PORT_PAD_RGMII_RX_DELAY(x)		((x) << 20)
-#define	  QCA8K_PORT_PAD_RGMII_TX_DELAY_EN		BIT(25)
-#define   QCA8K_PORT_PAD_RGMII_RX_DELAY_EN		BIT(24)
-#define   QCA8K_MAX_DELAY				3
-#define   QCA8K_PORT_PAD_SGMII_EN			BIT(7)
-#define QCA8K_REG_PWS					0x010
-#define   QCA8K_PWS_POWER_ON_SEL			BIT(31)
-/* This reg is only valid for QCA832x and toggle the package
- * type from 176 pin (by default) to 148 pin used on QCA8327
+#define QCA8K_REG_RGMII_CTRL				0x004
+#define   QCA8K_RGMII_CTRL_RGMII_RXC			GENMASK(1, 0)
+#define   QCA8K_RGMII_CTRL_RGMII_TXC			GENMASK(9, 8)
+/* Some kind of CLK selection
+ * 0: gcc_ess_dly2ns
+ * 1: gcc_ess_clk
  */
-#define   QCA8327_PWS_PACKAGE148_EN			BIT(30)
-#define   QCA8K_PWS_LED_OPEN_EN_CSR			BIT(24)
-#define   QCA8K_PWS_SERDES_AEN_DIS			BIT(7)
+#define   QCA8K_RGMII_CTRL_CLK				BIT(10)
+#define   QCA8K_RGMII_CTRL_DELAY_RMII0			GENMASK(17, 16)
+#define   QCA8K_RGMII_CTRL_INVERT_RMII0_REF_CLK		BIT(18)
+#define   QCA8K_RGMII_CTRL_DELAY_RMII1			GENMASK(20, 19)
+#define   QCA8K_RGMII_CTRL_INVERT_RMII1_REF_CLK		BIT(21)
+#define   QCA8K_RGMII_CTRL_INVERT_RMII0_MASTER_EN	BIT(24)
+#define   QCA8K_RGMII_CTRL_INVERT_RMII1_MASTER_EN	BIT(25)
 #define QCA8K_REG_MODULE_EN				0x030
 #define   QCA8K_MODULE_EN_MIB				BIT(0)
 #define QCA8K_REG_MIB					0x034
 #define   QCA8K_MIB_FLUSH				BIT(24)
 #define   QCA8K_MIB_CPU_KEEP				BIT(20)
 #define   QCA8K_MIB_BUSY				BIT(17)
-#define QCA8K_MDIO_MASTER_CTRL				0x3c
-#define   QCA8K_MDIO_MASTER_BUSY			BIT(31)
-#define   QCA8K_MDIO_MASTER_EN				BIT(30)
-#define   QCA8K_MDIO_MASTER_READ			BIT(27)
-#define   QCA8K_MDIO_MASTER_WRITE			0
-#define   QCA8K_MDIO_MASTER_SUP_PRE			BIT(26)
-#define   QCA8K_MDIO_MASTER_PHY_ADDR(x)			((x) << 21)
-#define   QCA8K_MDIO_MASTER_REG_ADDR(x)			((x) << 16)
-#define   QCA8K_MDIO_MASTER_DATA(x)			(x)
-#define   QCA8K_MDIO_MASTER_DATA_MASK			GENMASK(15, 0)
-#define   QCA8K_MDIO_MASTER_MAX_PORTS			5
-#define   QCA8K_MDIO_MASTER_MAX_REG			32
 #define QCA8K_GOL_MAC_ADDR0				0x60
 #define QCA8K_GOL_MAC_ADDR1				0x64
 #define QCA8K_MAX_FRAME_SIZE				0x78
@@ -108,11 +81,6 @@
 #define   QCA8K_SGMII_MODE_CTRL_BASEX			(0 << 22)
 #define   QCA8K_SGMII_MODE_CTRL_PHY			(1 << 22)
 #define   QCA8K_SGMII_MODE_CTRL_MAC			(2 << 22)
-
-/* MAC_PWR_SEL registers */
-#define QCA8K_REG_MAC_PWR_SEL				0x0e4
-#define   QCA8K_MAC_PWR_RGMII1_1_8V			BIT(18)
-#define   QCA8K_MAC_PWR_RGMII0_1_8V			BIT(19)
 
 /* EEE control registers */
 #define QCA8K_REG_EEE_CTRL				0x100
@@ -228,9 +196,15 @@
 /* MIB registers */
 #define QCA8K_PORT_MIB_COUNTER(_i)			(0x1000 + (_i) * 0x100)
 
-/* QCA specific MII registers */
-#define MII_ATH_MMD_ADDR				0x0d
-#define MII_ATH_MMD_DATA				0x0e
+/* IPQ4019 PSGMII PHY registers */
+#define PSGMIIPHY_MODE_CONTROL				0x1b4
+#define   PSGMIIPHY_MODE_ATHR_CSCO_MODE_25M		BIT(0)
+#define PSGMIIPHY_TX_CONTROL				0x288
+#define   PSGMIIPHY_TX_CONTROL_MAGIC_VALUE		0x8380
+#define PSGMIIPHY_VCO_CALIBRATION_CONTROL_REGISTER_1	0x9c
+#define   PSGMIIPHY_REG_PLL_VCO_CALIB_RESTART		BIT(14)
+#define PSGMIIPHY_VCO_CALIBRATION_CONTROL_REGISTER_2	0xa0
+#define   PSGMIIPHY_REG_PLL_VCO_CALIB_READY		BIT(0)
 
 enum {
 	QCA8K_PORT_SPEED_10M = 0,
@@ -260,29 +234,7 @@ struct ar8xxx_port_status {
 	int enabled;
 };
 
-struct qca8k_match_data {
-	u8 id;
-	bool reduced_package;
-};
-
-enum {
-	QCA8K_CPU_PORT0,
-	QCA8K_CPU_PORT6,
-};
-
-struct qca8k_ports_config {
-	bool sgmii_rx_clk_falling_edge;
-	bool sgmii_tx_clk_falling_edge;
-	bool sgmii_enable_pll;
-	u8 rgmii_rx_delay[QCA8K_NUM_CPU_PORTS]; /* 0: CPU port0, 1: CPU port6 */
-	u8 rgmii_tx_delay[QCA8K_NUM_CPU_PORTS]; /* 0: CPU port0, 1: CPU port6 */
-};
-
 struct qca8k_priv {
-	u8 switch_id;
-	u8 switch_revision;
-	bool legacy_phy_port_mapping;
-	struct qca8k_ports_config ports_config;
 	struct regmap *regmap;
 	struct mii_bus *bus;
 	struct ar8xxx_port_status port_sts[QCA8K_NUM_PORTS];
@@ -290,8 +242,12 @@ struct qca8k_priv {
 	struct mutex reg_mutex;
 	struct device *dev;
 	struct dsa_switch_ops ops;
-	struct gpio_desc *reset_gpio;
 	unsigned int port_mtu[QCA8K_NUM_PORTS];
+
+	/* IPQ4019 specific */
+	struct regmap *psgmii;
+	bool psgmii_calibrated;
+	struct phy_device *psgmii_ethphy;
 };
 
 struct qca8k_mib_desc {
