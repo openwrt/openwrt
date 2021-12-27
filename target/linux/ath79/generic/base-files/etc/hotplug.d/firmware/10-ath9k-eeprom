@@ -12,6 +12,9 @@ case "$FIRMWARE" in
 	8dev,lima)
 		caldata_extract "art" 0x1000 0x800
 		;;
+	asus,rp-ac66)
+		caldata_extract "art" 0x1000 0x440
+		;;
 	avm,fritz1750e|\
 	avm,fritz4020|\
 	avm,fritz450e|\
