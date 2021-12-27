@@ -432,14 +432,14 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 
 	/* RRM */
 	rrm_table = blobmsg_open_table(&b, "rrm");
-	blobmsg_add_u64(&b, "neighbor_report_tx", hapd->iface->openwrt_stats.rrm.neighbor_report_tx);
+	blobmsg_add_u64(&b, "neighbor_report_tx", hapd->openwrt_stats.rrm.neighbor_report_tx);
 	blobmsg_close_table(&b, rrm_table);
 
 	/* WNM */
 	wnm_table = blobmsg_open_table(&b, "wnm");
-	blobmsg_add_u64(&b, "bss_transition_query_rx", hapd->iface->openwrt_stats.wnm.bss_transition_query_rx);
-	blobmsg_add_u64(&b, "bss_transition_request_tx", hapd->iface->openwrt_stats.wnm.bss_transition_request_tx);
-	blobmsg_add_u64(&b, "bss_transition_response_rx", hapd->iface->openwrt_stats.wnm.bss_transition_response_rx);
+	blobmsg_add_u64(&b, "bss_transition_query_rx", hapd->openwrt_stats.wnm.bss_transition_query_rx);
+	blobmsg_add_u64(&b, "bss_transition_request_tx", hapd->openwrt_stats.wnm.bss_transition_request_tx);
+	blobmsg_add_u64(&b, "bss_transition_response_rx", hapd->openwrt_stats.wnm.bss_transition_response_rx);
 	blobmsg_close_table(&b, wnm_table);
 
 	/* Airtime */
@@ -1291,7 +1291,8 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 
 static int
 hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent, bool abridged,
-		    u16 disassoc_timer, u8 validity_period, struct blob_attr *neighbors)
+		    u16 disassoc_timer, u8 validity_period, u8 dialog_token,
+		    struct blob_attr *neighbors)
 {
 	struct blob_attr *cur;
 	struct sta_info *sta;
@@ -1351,7 +1352,7 @@ hostapd_bss_tr_send(struct hostapd_data *hapd, u8 *addr, bool disassoc_imminent,
 		req_mode |= WNM_BSS_TM_REQ_DISASSOC_IMMINENT;
 
 	if (wnm_send_bss_tm_req(hapd, sta, req_mode, disassoc_timer, validity_period, NULL,
-				NULL, nr, nr_len, NULL, 0))
+				dialog_token, NULL, nr, nr_len, NULL, 0))
 		return UBUS_STATUS_UNKNOWN_ERROR;
 
 	return 0;
@@ -1364,6 +1365,7 @@ enum {
 	BSS_TR_VALID_PERIOD,
 	BSS_TR_NEIGHBORS,
 	BSS_TR_ABRIDGED,
+	BSS_TR_DIALOG_TOKEN,
 	__BSS_TR_DISASSOC_MAX
 };
 
@@ -1374,6 +1376,7 @@ static const struct blobmsg_policy bss_tr_policy[__BSS_TR_DISASSOC_MAX] = {
 	[BSS_TR_VALID_PERIOD] = { "validity_period", BLOBMSG_TYPE_INT32 },
 	[BSS_TR_NEIGHBORS] = { "neighbors", BLOBMSG_TYPE_ARRAY },
 	[BSS_TR_ABRIDGED] = { "abridged", BLOBMSG_TYPE_BOOL },
+	[BSS_TR_DIALOG_TOKEN] = { "dialog_token", BLOBMSG_TYPE_INT32 },
 };
 
 static int
@@ -1387,6 +1390,7 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	u32 da_timer = 0;
 	u32 valid_period = 0;
 	u8 addr[ETH_ALEN];
+	u32 dialog_token = 1;
 	bool abridged;
 	bool da_imminent;
 
@@ -1404,11 +1408,14 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	if (tb[BSS_TR_VALID_PERIOD])
 		valid_period = blobmsg_get_u32(tb[BSS_TR_VALID_PERIOD]);
 
+	if (tb[BSS_TR_DIALOG_TOKEN])
+		dialog_token = blobmsg_get_u32(tb[BSS_TR_DIALOG_TOKEN]);
+
 	da_imminent = !!(tb[BSS_TR_DA_IMMINENT] && blobmsg_get_bool(tb[BSS_TR_DA_IMMINENT]));
 	abridged = !!(tb[BSS_TR_ABRIDGED] && blobmsg_get_bool(tb[BSS_TR_ABRIDGED]));
 
 	return hostapd_bss_tr_send(hapd, addr, da_imminent, abridged, da_timer, valid_period,
-				   tb[BSS_TR_NEIGHBORS]);
+				   dialog_token, tb[BSS_TR_NEIGHBORS]);
 }
 
 enum {
@@ -1452,7 +1459,7 @@ hostapd_wnm_disassoc_imminent(struct ubus_context *ctx, struct ubus_object *obj,
 	abridged = !!(tb[WNM_DISASSOC_ABRIDGED] && blobmsg_get_bool(tb[WNM_DISASSOC_ABRIDGED]));
 
 	return hostapd_bss_tr_send(hapd, addr, true, abridged, duration, duration,
-				   tb[WNM_DISASSOC_NEIGHBORS]);
+				   1, tb[WNM_DISASSOC_NEIGHBORS]);
 }
 #endif
 
@@ -1843,13 +1850,30 @@ void hostapd_ubus_notify_radar_detected(struct hostapd_iface *iface, int frequen
 	}
 }
 
+#ifdef CONFIG_WNM_AP
+static void hostapd_ubus_notify_bss_transition_add_candidate_list(
+	const u8 *candidate_list, u16 candidate_list_len)
+{
+	char *cl_str;
+	int i;
+
+	if (candidate_list_len == 0)
+		return;
+
+	cl_str = blobmsg_alloc_string_buffer(&b, "candidate-list", candidate_list_len * 2 + 1);
+	for (i = 0; i < candidate_list_len; i++)
+		snprintf(&cl_str[i*2], 3, "%02X", candidate_list[i]);
+	blobmsg_add_string_buffer(&b);
+
+}
+#endif
+
 void hostapd_ubus_notify_bss_transition_response(
 	struct hostapd_data *hapd, const u8 *addr, u8 dialog_token, u8 status_code,
 	u8 bss_termination_delay, const u8 *target_bssid,
 	const u8 *candidate_list, u16 candidate_list_len)
 {
 #ifdef CONFIG_WNM_AP
-	char *cl_str;
 	u16 i;
 
 	if (!hapd->ubus.obj.has_subscribers)
@@ -1865,13 +1889,45 @@ void hostapd_ubus_notify_bss_transition_response(
 	blobmsg_add_u8(&b, "bss-termination-delay", bss_termination_delay);
 	if (target_bssid)
 		blobmsg_add_macaddr(&b, "target-bssid", target_bssid);
-	if (candidate_list_len > 0) {
-		cl_str = blobmsg_alloc_string_buffer(&b, "candidate-list", candidate_list_len * 2 + 1);
-		for (i = 0; i < candidate_list_len; i++)
-			snprintf(&cl_str[i*2], 3, "%02X", candidate_list[i]);
-		blobmsg_add_string_buffer(&b);
-	}
+	
+	hostapd_ubus_notify_bss_transition_add_candidate_list(candidate_list, candidate_list_len);
 
 	ubus_notify(ctx, &hapd->ubus.obj, "bss-transition-response", b.head, -1);
+#endif
+}
+
+int hostapd_ubus_notify_bss_transition_query(
+	struct hostapd_data *hapd, const u8 *addr, u8 dialog_token, u8 reason,
+	const u8 *candidate_list, u16 candidate_list_len)
+{
+#ifdef CONFIG_WNM_AP
+	struct ubus_event_req ureq = {};
+	char *cl_str;
+	u16 i;
+
+	if (!hapd->ubus.obj.has_subscribers)
+		return 0;
+
+	if (!addr)
+		return 0;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", addr);
+	blobmsg_add_u8(&b, "dialog-token", dialog_token);
+	blobmsg_add_u8(&b, "reason", reason);
+	hostapd_ubus_notify_bss_transition_add_candidate_list(candidate_list, candidate_list_len);
+
+	if (!hapd->ubus.notify_response) {
+		ubus_notify(ctx, &hapd->ubus.obj, "bss-transition-query", b.head, -1);
+		return 0;
+	}
+
+	if (ubus_notify_async(ctx, &hapd->ubus.obj, "bss-transition-query", b.head, &ureq.nreq))
+		return 0;
+
+	ureq.nreq.status_cb = ubus_event_cb;
+	ubus_complete_request(ctx, &ureq.nreq.req, 100);
+
+	return ureq.resp;
 #endif
 }

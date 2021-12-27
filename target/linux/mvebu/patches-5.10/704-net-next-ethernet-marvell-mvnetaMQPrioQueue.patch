@@ -20,8 +20,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 (limited to 'drivers/net/ethernet/marvell/mvneta.c')
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index d3ce87e69d2a8..aba452e8abfe6 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
 @@ -493,7 +493,6 @@ struct mvneta_port {
@@ -32,7 +30,7 @@ index d3ce87e69d2a8..aba452e8abfe6 100644
  
  	phy_interface_t phy_interface;
  	struct device_node *dn;
-@@ -4897,13 +4896,12 @@ static void mvneta_clear_rx_prio_map(struct mvneta_port *pp)
+@@ -4922,13 +4921,12 @@ static void mvneta_clear_rx_prio_map(str
  	mvreg_write(pp, MVNETA_VLAN_PRIO_TO_RXQ, 0);
  }
  
@@ -50,7 +48,7 @@ index d3ce87e69d2a8..aba452e8abfe6 100644
  
  	mvreg_write(pp, MVNETA_VLAN_PRIO_TO_RXQ, val);
  }
-@@ -4912,8 +4910,8 @@ static int mvneta_setup_mqprio(struct net_device *dev,
+@@ -4937,8 +4935,8 @@ static int mvneta_setup_mqprio(struct ne
  			       struct tc_mqprio_qopt_offload *mqprio)
  {
  	struct mvneta_port *pp = netdev_priv(dev);
@@ -60,7 +58,7 @@ index d3ce87e69d2a8..aba452e8abfe6 100644
  
  	if (mqprio->qopt.hw != TC_MQPRIO_HW_OFFLOAD_TCS)
  		return 0;
-@@ -4923,21 +4921,28 @@ static int mvneta_setup_mqprio(struct net_device *dev,
+@@ -4948,21 +4946,28 @@ static int mvneta_setup_mqprio(struct ne
  	if (num_tc > rxq_number)
  		return -EINVAL;
  
@@ -75,12 +73,12 @@ index d3ce87e69d2a8..aba452e8abfe6 100644
 -	memcpy(pp->prio_tc_map, mqprio->qopt.prio_tc_map,
 -	       sizeof(pp->prio_tc_map));
 +	netdev_set_num_tc(dev, mqprio->qopt.num_tc);
-+
+ 
+-	mvneta_setup_rx_prio_map(pp);
 +	for (tc = 0; tc < mqprio->qopt.num_tc; tc++) {
 +		netdev_set_tc_queue(dev, tc, mqprio->qopt.count[tc],
 +				    mqprio->qopt.offset[tc]);
- 
--	mvneta_setup_rx_prio_map(pp);
++
 +		for (rxq = mqprio->qopt.offset[tc];
 +		     rxq < mqprio->qopt.count[tc] + mqprio->qopt.offset[tc];
 +		     rxq++) {
@@ -97,6 +95,3 @@ index d3ce87e69d2a8..aba452e8abfe6 100644
  
  	return 0;
  }
--- 
-cgit 1.2.3-1.el7
-
