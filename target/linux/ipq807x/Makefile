@@ -13,6 +13,7 @@ KERNEL_PATCHVER:=5.15
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
 	kmod-usb3 kmod-usb-dwc3 kmod-usb-dwc3-qcom \
-	kmod-leds-gpio kmod-gpio-button-hotplug
+	kmod-leds-gpio kmod-gpio-button-hotplug \
+	ath11k-firmware-ipq8074
 
 $(eval $(call BuildTarget))
