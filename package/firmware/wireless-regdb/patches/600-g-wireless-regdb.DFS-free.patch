@@ -1,0 +1,114 @@
+Index: wireless-regdb-2021.08.28/db.txt
+===================================================================
+--- wireless-regdb-2021.08.28.orig/db.txt
++++ wireless-regdb-2021.08.28/db.txt
+@@ -10,21 +10,20 @@ wmmrule ETSI:
+
+ # This is the world regulatory domain
+ country 00:
+-	(2402 - 2472 @ 40), (20)
++	(2402 - 2472 @ 40), (26)
+	# Channel 12 - 13.
+-	(2457 - 2482 @ 20), (20), NO-IR, AUTO-BW
++	(2457 - 2482 @ 20), (26), NO-IR, AUTO-BW
+	# Channel 14. Only JP enables this and for 802.11b only
+-	(2474 - 2494 @ 20), (20), NO-IR, NO-OFDM
++	(2474 - 2494 @ 20), (26), NO-IR, NO-OFDM
+	# Channel 36 - 48
+-	(5170 - 5250 @ 80), (20), AUTO-BW
+	# Channel 52 - 64
+-	(5250 - 5330 @ 80), (20), NO-IR, DFS, AUTO-BW
++	(5150 - 5330 @ 160), (26), AUTO-BW
+	# Channel 100 - 144
+-	(5490 - 5730 @ 160), (20), NO-IR, DFS
++	(5490 - 5730 @ 160), (26), NO-IR
+	# Channel 149 - 165
+-	(5735 - 5835 @ 80), (20), NO-IR
++	(5735 - 5835 @ 80), (26), NO-IR
+	# IEEE 802.11ad (60GHz), channels 1..3
+-	(57240 - 63720 @ 2160), (0)
++	(57240 - 63720 @ 2160), (40)
+
+ # AD as part of CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+ # and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+@@ -221,16 +220,16 @@ country BG: DFS-ETSI
+	(2400 - 2483.5 @ 40), (100 mW)
+	# 5 GHz Radio Local Area Networks (RLANs), ref:
+	# II.H01 of the List, BDS EN 301 893
+-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, AUTO-BW, wmmrule=ETSI
+-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, DFS, AUTO-BW, wmmrule=ETSI
++	# Channel 32 - 68
++	(5150 - 5350 @ 160), (500 mW), AUTO-BW, wmmrule=ETSI
+	# II.H01 of the List, I.54 from the List, BDS EN 301 893
+-	(5470 - 5725 @ 160), (500 mW), DFS, wmmrule=ETSI
+-	# short range devices (ETSI EN 300 440-1)
++	# Channel  96 - 173
++	# Channel 100 - 173
++	(5470 - 5875 @ 160), (500 mW), wmmrule=ETSI
+	# I.43 of the List, BDS EN 300 440-2, BDS EN 300 440-1
+-	(5725 - 5875 @ 80), (25 mW)
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+	# II.H03 of the List, BDS EN 302 567-2
+-	(57000 - 66000 @ 2160), (40)
++	(57000 - 71000 @ 2160), (40)
+
+ country BH: DFS-JP
+	(2402 - 2482 @ 40), (20)
+@@ -450,13 +449,13 @@ country CZ: DFS-ETSI
+ # https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Telekommunikation/Unternehmen_Institutionen/Frequenzen/Allgemeinzuteilungen/2011_08_MGWS_pdf.pdf
+ country DE: DFS-ETSI
+	(2400 - 2483.5 @ 40), (100 mW)
+-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, AUTO-BW, wmmrule=ETSI
+-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, DFS, AUTO-BW, wmmrule=ETSI
+-	(5470 - 5725 @ 160), (500 mW), DFS, wmmrule=ETSI
+-	# short range devices (ETSI EN 300 440-1)
+-	(5725 - 5875 @ 80), (25 mW)
++	# Channel 32 - 68
++	(5150 - 5350 @ 160), (500 mW), AUTO-BW, wmmrule=ETSI
++	# Channel  96 - 173
++	# Channel 100 - 173
++	(5470 - 5875 @ 160), (500 mW), wmmrule=ETSI
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+-	(57000 - 66000 @ 2160), (40)
++	(57000 - 71000 @ 2160), (40)
+
+ # DK as part of EU/CEPT accepted decisions 2005/513/EC (5GHz RLAN, EN 301 893)
+ # and 2006/771/EC (amended by 2008/432/EC, Short-Range Devices, EN 300 440)
+@@ -511,14 +510,11 @@ country EC: DFS-FCC
+ # EE: https://www.ttja.ee/et/ettevottele-organisatsioonile/sideteenused/raadioseadmed/wifi-seade
+ # EE: https://www.itu.int/ITU-D/study_groups/SGP_1998-2002/JGRES09/pdf/estonia.pdf
+ country EE: DFS-ETSI
+-	(2400 - 2483.5 @ 40), (100 mW)
+-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, AUTO-BW, wmmrule=ETSI
+-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, DFS, AUTO-BW, wmmrule=ETSI
+-	(5470 - 5725 @ 160), (500 mW), DFS, wmmrule=ETSI
+-	# short range devices (ETSI EN 300 440-1)
+-	(5725 - 5875 @ 80), (25 mW)
++	(2400 - 2494 @ 40), (200 mW)
++	(5150 - 5350 @ 160), (500 mW), AUTO-BW, wmmrule=ETSI
++	(5470 - 5875 @ 160), (500 mW), wmmrule=ETSI
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+-	(57000 - 66000 @ 2160), (40)
++	(57000 - 71000 @ 2160), (40)
+
+ # https://www.tra.gov.eg/en/industry/importing-of-equipment/Pages/Regulations-for-use-of-Wireless-Networks-Devices.aspx
+ country EG: DFS-ETSI
+@@ -577,13 +573,13 @@ country FM: DFS-FCC
+ # Harmonized CEPT countries (July 2019): https://www.ecodocdb.dk/download/25c41779-cd6e/Rec7003e.pdf
+ country FR: DFS-ETSI
+-	(2400 - 2483.5 @ 40), (100 mW)
++	(2400 - 2483.5 @ 40), (800 mW)
+-	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, AUTO-BW, wmmrule=ETSI
+-	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, DFS, AUTO-BW, wmmrule=ETSI
+-	(5470 - 5725 @ 160), (500 mW), DFS, wmmrule=ETSI
+-	# short range devices (ETSI EN 300 440-1)
+-	(5725 - 5875 @ 80), (25 mW)
++	# Channel 32 - 68
++	(5150 - 5350 @ 160), (1100 mW), AUTO-BW, wmmrule=ETSI
++	# Channel  96 - 173
++	# Channel 100 - 173
++	(5470 - 5875 @ 160), (1100 mW), wmmrule=ETSI
+	# 60 GHz band channels 1-4 (ETSI EN 302 567)
+-	(57000 - 66000 @ 2160), (40)
++	(57000 - 71000 @ 2160), (40)
+

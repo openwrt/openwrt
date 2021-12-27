@@ -1,0 +1,96 @@
+Index: mwlwifi-2020-02-06-a2fd00bb/hif/fwcmd.c
+===================================================================
+--- mwlwifi-2020-02-06-a2fd00bb.orig/hif/fwcmd.c
++++ mwlwifi-2020-02-06-a2fd00bb/hif/fwcmd.c
+@@ -1141,6 +1141,9 @@ int mwl_fwcmd_max_tx_power(struct ieee80
+	int i, tmp;
+	int rc = 0;
+
++	// do not set tx power
++	return rc;
++
+	if ((priv->chip_type != MWL8997) && (priv->forbidden_setting))
+		return rc;
+
+@@ -1188,6 +1191,13 @@ int mwl_fwcmd_max_tx_power(struct ieee80
+		else
+			sub_ch = EXT_CH_BELOW_CTRL_CH;
+		break;
++	case NL80211_CHAN_WIDTH_160:
++		width = CH_160_MHZ_WIDTH;
++		if (conf->chandef.center_freq1 > channel->center_freq)
++			sub_ch = EXT_CH_ABOVE_CTRL_CH;
++		else
++			sub_ch = EXT_CH_BELOW_CTRL_CH;
++		break;
+	default:
+		return -EINVAL;
+	}
+@@ -1250,6 +1260,9 @@ int mwl_fwcmd_tx_power(struct ieee80211_
+	int i, tmp;
+	int rc = 0;
+
++	// do not set tx power
++	return rc;
++
+	if ((priv->chip_type != MWL8997) && (priv->forbidden_setting))
+		return rc;
+
+@@ -1297,6 +1310,13 @@ int mwl_fwcmd_tx_power(struct ieee80211_
+		else
+			sub_ch = EXT_CH_BELOW_CTRL_CH;
+		break;
++	case NL80211_CHAN_WIDTH_160:
++		width = CH_160_MHZ_WIDTH;
++		if (conf->chandef.center_freq1 > channel->center_freq)
++			sub_ch = EXT_CH_ABOVE_CTRL_CH;
++		else
++			sub_ch = EXT_CH_BELOW_CTRL_CH;
++		break;
+	default:
+		return -EINVAL;
+	}
+@@ -3163,6 +3183,10 @@ int mwl_fwcmd_set_cdd(struct ieee80211_h
+	struct mwl_priv *priv = hw->priv;
+	struct hostcmd_cmd_set_cdd *pcmd;
+
++	// force-enable Cyclic delay diversity
++	// https://en.wikipedia.org/wiki/Cyclic_delay_diversity
++	priv->cdd = 1;
++
+	pcmd = (struct hostcmd_cmd_set_cdd *)&priv->pcmd_buf[0];
+
+	mutex_lock(&priv->fwcmd_mutex);
+@@ -3438,6 +3462,9 @@ int mwl_fwcmd_get_fw_region_code_sc4(str
+	struct hostcmd_cmd_get_fw_region_code_sc4 *pcmd;
+	u16 cmd;
+
++	// do not load the firmware region
++	return -EIO;
++
+	pcmd = (struct hostcmd_cmd_get_fw_region_code_sc4 *)&priv->pcmd_buf[0];
+
+	mutex_lock(&priv->fwcmd_mutex);
+@@ -3478,6 +3505,9 @@ int mwl_fwcmd_get_pwr_tbl_sc4(struct iee
+	int status;
+	u16 cmd;
+
++	// do not load the regulatory power table
++	return -EIO;
++
+	pcmd = (struct hostcmd_cmd_get_device_pwr_tbl_sc4 *)&priv->pcmd_buf[0];
+
+	mutex_lock(&priv->fwcmd_mutex);
+Index: mwlwifi-2020-02-06-a2fd00bb/core.c
+===================================================================
+--- mwlwifi-2020-02-06-a2fd00bb.orig/core.c
++++ mwlwifi-2020-02-06-a2fd00bb/core.c
+@@ -127,7 +127,7 @@ struct region_code_mapping {
+ static const struct region_code_mapping regmap[] = {
+	{"US", 0x10}, /* US FCC */
+	{"CA", 0x20}, /* Canada */
+-	{"FR", 0x30}, /* France */
++	{"FR", 0x30}, /* France   */
+	{"ES", 0x31}, /* Spain  */
+	{"GB", 0x32}, /* France */
+	{"JP", 0x40}, /* Japan  */

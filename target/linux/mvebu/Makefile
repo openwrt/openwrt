@@ -11,6 +11,8 @@ SUBTARGETS:=cortexa9 cortexa53 cortexa72
 
 KERNEL_PATCHVER:=5.10
 
+KERNEL_TESTING_PATCHVER:=5.15
+
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += uboot-envtools kmod-gpio-button-hotplug
