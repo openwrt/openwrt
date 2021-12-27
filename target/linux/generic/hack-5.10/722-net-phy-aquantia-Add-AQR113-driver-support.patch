@@ -19,7 +19,7 @@ Add a new entry for AQR113 PHY_ID
  #define PHY_ID_AQCS109	0x03a1b5c2
  #define PHY_ID_AQR405	0x03a1b4b0
 @@ -817,6 +818,14 @@ static struct phy_driver aqr_driver[] =
- 	.read_status	= aqr_read_status,
+ 	.read_status	= aqr107_read_status,
  },
  {
 +	PHY_ID_MATCH_MODEL(PHY_ID_AQR113),
