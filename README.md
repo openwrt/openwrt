@@ -1,3 +1,6 @@
+This is proivded "as is" without any warranty! I'm not responsible for any damages resulting from using these files.
+This is a fork of OpenWrt 21.02 with a commit for the Deco M4.
+
 ![OpenWrt logo](include/logo.png)
 
 OpenWrt Project is a Linux operating system targeting embedded devices. Instead

@@ -362,6 +362,17 @@ define Device/tplink_cpe610-v2
 endef
 TARGET_DEVICES += tplink_cpe610-v2
 
+define Device/tplink_deco-m4r-v1v2
+  $(Device/tplink-safeloader-uimage)
+  SOC := qca9563
+  IMAGE_SIZE := 13824k
+  DEVICE_TITLE := TP-Link Deco M4R v1v2
+  TPLINK_BOARD_ID := DECO-M4R-V1V2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  SUPPORTED_DEVICES += deco-m4r-v1v2
+endef
+TARGET_DEVICES += tplink_deco-m4r-v1v2
+
 define Device/tplink-eap2x5
   $(Device/tplink-safeloader)
   LOADER_TYPE := elf
