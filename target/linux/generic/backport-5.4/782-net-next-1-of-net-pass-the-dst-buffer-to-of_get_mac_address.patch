@@ -334,7 +334,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
 --- a/drivers/net/ethernet/broadcom/bcmsysport.c
 +++ b/drivers/net/ethernet/broadcom/bcmsysport.c
-@@ -2420,7 +2420,6 @@ static int bcm_sysport_probe(struct plat
+@@ -2423,7 +2423,6 @@ static int bcm_sysport_probe(struct plat
  	struct bcm_sysport_priv *priv;
  	struct device_node *dn;
  	struct net_device *dev;
@@ -342,7 +342,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u32 txq, rxq;
  	int ret;
  
-@@ -2502,12 +2501,10 @@ static int bcm_sysport_probe(struct plat
+@@ -2505,12 +2504,10 @@ static int bcm_sysport_probe(struct plat
  	}
  
  	/* Initialize netdevice members */
