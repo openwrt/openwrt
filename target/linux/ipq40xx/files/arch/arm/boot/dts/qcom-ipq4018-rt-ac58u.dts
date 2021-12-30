@@ -21,10 +21,6 @@
 		led-upgrade = &led_power;
 	};
 
-	chosen {
-		bootargs-append = " ubi.mtd=UBI_DEV";
-	};
-
 	soc {
 		rng@22000 {
 			status = "okay";
@@ -272,12 +268,7 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				/*
-				 * TODO: change to label = "ubi" once we drop 4.14.
-				 *       also drop the bootargs-append and all the
-				 *	 userspace CI_UBIPART="UBI_DEV" remains.
-				 */
-				label = "UBI_DEV";
+				label = "ubi";
 				reg = <0x00000000 0x08000000>;
 			};
 		};

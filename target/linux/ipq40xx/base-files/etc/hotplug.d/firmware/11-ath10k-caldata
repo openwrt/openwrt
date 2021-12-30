@@ -26,6 +26,9 @@ case "$FIRMWARE" in
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
+	asus,rt-ac42u)
+		caldata_extract_ubi "Factory" 0x9000 0x2f20
+		;;
 	avm,fritzrepeater-3000)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
@@ -81,11 +84,9 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary mfginfo 0x1D)
 		;;
-	asus,map-ac2200)
-		caldata_extract_ubi "Factory" 0x1000 0x2f20
-		;;
+	asus,map-ac2200 |\
+	asus,rt-ac42u |\
 	asus,rt-ac58u)
-		CI_UBIPART=UBI_DEV
 		caldata_extract_ubi "Factory" 0x1000 0x2f20
 		;;
 	avm,fritzbox-4040)
@@ -203,11 +204,8 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary mfginfo 0x1D) 1)
 		;;
-	asus,map-ac2200)
-		caldata_extract_ubi "Factory" 0x5000 0x2f20
-		;;
+	asus,map-ac2200 |\
 	asus,rt-ac58u)
-		CI_UBIPART=UBI_DEV
 		caldata_extract_ubi "Factory" 0x5000 0x2f20
 		;;
 	avm,fritzbox-4040)
