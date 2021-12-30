@@ -18,6 +18,8 @@
 #include <asm/addrspace.h>
 #include <asm/page.h>
 #include <asm/cpu.h>
+#include <asm/smp-ops.h>
+#include <asm/mips-cps.h>
 
 #include <mach-rtl83xx.h>
 
@@ -179,5 +181,23 @@ void __init prom_init(void)
 
 	pr_info("SoC Type: %s\n", get_system_type());
 
+	/* Early detection of CMP support */
+	if(soc_info.family == RTL9310_FAMILY_ID) {
+		mips_cm_probe();
+		mips_cpc_probe();
+	}
+
 	prom_init_cmdline();
+
+#ifdef  CONFIG_MIPS_CPS
+	if (!register_cps_smp_ops()) {
+		return;
+	}
+#endif
+#ifdef CONFIG_MIPS_MT_SMP
+	if (!register_vsmp_smp_ops()) {
+		return;
+	}
+#endif
+	register_up_smp_ops();
 }
