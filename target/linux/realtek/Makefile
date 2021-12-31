@@ -7,7 +7,7 @@ BOARD:=realtek
 BOARDNAME:=Realtek MIPS
 DEVICE_TYPE:=basic
 FEATURES:=ramdisk squashfs
-SUBTARGETS:=rtl838x
+SUBTARGETS:=rtl838x rtl839x
 
 KERNEL_PATCHVER:=5.10
 
