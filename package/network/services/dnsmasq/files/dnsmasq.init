@@ -972,7 +972,18 @@ dnsmasq_start()
 	config_list_foreach "$cfg" "addnhosts" append_addnhosts
 	config_list_foreach "$cfg" "bogusnxdomain" append_bogusnxdomain
 	append_parm "$cfg" "leasefile" "--dhcp-leasefile" "/tmp/dhcp.leases"
-	append_parm "$cfg" "serversfile" "--servers-file"
+	local serversfile
+	config_get serversfile "$cfg" "serversfile"
+	if [ -n "$serversfile" ]; then
+		xappend "--servers-file=$serversfile"
+		local serversfile_dir="$(dirname "$serversfile")"
+		if [ "$serversfile_dir" = "/tmp" ]; then
+			log_once "Please move serversfile to a directory other than /tmp if the file is going to be replaced"
+			append EXTRA_MOUNT "$serversfile"
+		else
+			append EXTRA_MOUNT "$serversfile_dir"
+		fi
+	fi
 	append_parm "$cfg" "tftp_root" "--tftp-root"
 	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
 	append_parm "$cfg" "local_ttl" "--local-ttl"
