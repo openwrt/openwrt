@@ -35,6 +35,17 @@ define U-Boot/nanopi-r2s-rk3328
   OF_PLATDATA:=$(1)
 endef
 
+define U-Boot/nanopi-r2c-rk3328
+  BUILD_SUBTARGET:=armv8
+  NAME:=NanoPi R2C
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r2c
+  DEPENDS:=+PACKAGE_u-boot-nanopi-r2c-rk3328:arm-trusted-firmware-rockchip
+  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
+  ATF:=rk3328_bl31.elf
+  OF_PLATDATA:=nanopi-r2s-rk3328
+endef
+
 
 # RK3399 boards
 
@@ -72,7 +83,8 @@ UBOOT_TARGETS := \
   nanopi-r4s-rk3399 \
   rock-pi-4-rk3399 \
   rockpro64-rk3399 \
-  nanopi-r2s-rk3328
+  nanopi-r2s-rk3328 \
+  nanopi-r2c-rk3328
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
