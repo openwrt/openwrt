@@ -35,8 +35,8 @@ extern struct rtl83xx_soc_info soc_info;
  * available in total for all queues.
  */
 #define MAX_RXRINGS	32
-#define MAX_RXLEN	200
-#define MAX_ENTRIES	(200 * 8)
+#define MAX_RXLEN	300
+#define MAX_ENTRIES	(300 * 8)
 #define TXRINGS		2
 #define TXRINGLEN	160
 #define NOTIFY_EVENTS	10
