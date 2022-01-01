@@ -23,6 +23,19 @@ define Device/UbiFit
 	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+define Device/edimax_cax1800
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Edimax
+	DEVICE_MODEL := CAX1800
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ac03
+	SOC := ipq8070
+	DEVICE_PACKAGES := ipq-wifi-edimax_cax1800
+endef
+TARGET_DEVICES += edimax_cax1800
+
 define Device/redmi_ax6
 	$(call Device/xiaomi_ax3600)
 	DEVICE_VENDOR := Redmi

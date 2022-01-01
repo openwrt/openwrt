@@ -34,6 +34,7 @@ ALLWIFIBOARDS:= \
 	dlink_dap2610 \
 	edgecore_ecw5410 \
 	edgecore_oap100 \
+	edimax_cax1800 \
 	engenius_eap2200 \
 	engenius_emd1 \
 	engenius_emr3500 \
@@ -134,6 +135,7 @@ $(eval $(call generate-ipq-wifi-package,devolo_magic-2-wifi-next,devolo Magic 2 
 $(eval $(call generate-ipq-wifi-package,dlink_dap2610,D-Link DAP-2610))
 $(eval $(call generate-ipq-wifi-package,edgecore_ecw5410,Edgecore ECW5410))
 $(eval $(call generate-ipq-wifi-package,edgecore_oap100,Edgecore OAP100))
+$(eval $(call generate-ipq-wifi-package,edimax_cax1800,Edimax CAX1800))
 $(eval $(call generate-ipq-wifi-package,engenius_eap2200,EnGenius EAP2200))
 $(eval $(call generate-ipq-wifi-package,engenius_emd1,EnGenius EMD1))
 $(eval $(call generate-ipq-wifi-package,engenius_emr3500,EnGenius EMR3500))
