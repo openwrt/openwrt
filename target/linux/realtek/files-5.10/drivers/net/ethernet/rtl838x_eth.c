@@ -331,7 +331,6 @@ bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 /*
  * Discard the RX ring-buffers, called as part of the net-ISR
  * when the buffer runs over
- * Caller needs to hold priv->lock
  */
 static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
 {
@@ -439,7 +438,6 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 
 	pr_debug("IRQ: %08x\n", status);
 
-	spin_lock(&priv->lock);
 	/*  Ignore TX interrupt */
 	if ((status & 0xf0000)) {
 		/* Clear ISR */
@@ -482,7 +480,6 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 		rtl839x_l2_notification_handler(priv);
 	}
 
-	spin_unlock(&priv->lock);
 	return IRQ_HANDLED;
 }
 
@@ -497,7 +494,6 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 
 	pr_debug("In %s, status_tx: %08x, status_rx: %08x, status_rx_r: %08x\n",
 		__func__, status_tx, status_rx, status_rx_r);
-	spin_lock(&priv->lock);
 
 	/*  Ignore TX interrupt */
 	if (status_tx) {
@@ -528,7 +524,6 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 		rtl838x_rb_cleanup(priv, status_rx_r);
 	}
 
-	spin_unlock(&priv->lock);
 	return IRQ_HANDLED;
 }
 
