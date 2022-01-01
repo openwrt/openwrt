@@ -45,6 +45,11 @@ platform_do_upgrade() {
 	edimax,cax1800)
 		nand_do_upgrade "$1"
 		;;
+	qnap,301w)
+		kernelname="0:HLOS"
+		rootfsname="rootfs"
+		mmc_do_upgrade "$1"
+		;;
 	redmi,ax6|\
 	xiaomi,ax3600)
 		# Make sure that UART is enabled
