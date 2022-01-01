@@ -42,6 +42,9 @@ platform_pre_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	edimax,cax1800)
+		nand_do_upgrade "$1"
+		;;
 	redmi,ax6|\
 	xiaomi,ax3600)
 		# Make sure that UART is enabled
