@@ -23,6 +23,14 @@ define Device/UbiFit
 	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+define Device/redmi_ax6
+	$(call Device/xiaomi_ax3600)
+	DEVICE_VENDOR := Redmi
+	DEVICE_MODEL := AX6
+	DEVICE_PACKAGES := ipq-wifi-redmi_ax6
+endef
+TARGET_DEVICES += redmi_ax6
+
 define Device/xiaomi_ax3600
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

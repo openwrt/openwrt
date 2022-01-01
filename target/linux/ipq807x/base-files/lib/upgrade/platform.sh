@@ -10,6 +10,7 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	redmi,ax6|\
 	xiaomi,ax3600)
 		part_num="$(fw_printenv -n flag_boot_rootfs)"
 		if [ "$part_num" -eq "0" ]; then
