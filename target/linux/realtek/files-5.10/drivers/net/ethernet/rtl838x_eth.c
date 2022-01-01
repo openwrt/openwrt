@@ -165,6 +165,13 @@ static void rtl931x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 	}
 }
 
+static void rtl93xx_header_vlan_set(struct p_hdr *h, int vlan)
+{
+	h->cpu_tag[2] |= BIT(4); // Enable VLAN forwarding offload
+	h->cpu_tag[2] |= (vlan >> 8) & 0xf;
+	h->cpu_tag[3] |= (vlan & 0xff) << 8;
+}
+
 struct rtl838x_rx_q {
 	int id;
 	struct rtl838x_eth_priv *priv;
@@ -189,6 +196,7 @@ struct rtl838x_eth_priv {
 	u16 rxringlen;
 	u8 smi_bus[MAX_PORTS];
 	u8 smi_addr[MAX_PORTS];
+	u32 sds_id[MAX_PORTS];
 	bool smi_bus_isc45[MAX_SMI_BUSSES];
 	bool phy_is_internal[MAX_PORTS];
 };
@@ -199,8 +207,12 @@ extern int rtl839x_read_sds_phy(int phy_addr, int phy_reg);
 extern int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v);
 extern int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
 extern int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+extern int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg);
+extern int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
 extern int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 extern int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
+extern int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 
 /*
  * On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of 
@@ -234,8 +246,11 @@ void rtl931x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
 	u32 reg = RTL931X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
+	u32 v = sw_r32(reg);
 
+	v = (v >> pos) & 0x3ff;
 	sw_w32_mask(0x3ff << pos, released << pos, reg);
+	sw_w32(v, reg);
 }
 
 struct dsa_tag {
@@ -302,8 +317,9 @@ bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	t->port = (h->cpu_tag[0] >> 8) & 0x3f;
 	t->crc_error = h->cpu_tag[1] & BIT(6);
 
-	pr_debug("Reason %d, port %d, queue %d\n", t->reason, t->port, t->queue);
-	if (t->reason >= 19 && t->reason <= 27)
+	if (t->reason != 63)
+		pr_info("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
+	if (t->reason >= 19 && t->reason <= 27)	// NIC_RX_REASON_RMA
 		t->l2_offloaded = 0;
 	else
 		t->l2_offloaded = 1;
@@ -1722,16 +1738,6 @@ static int rtl839x_mdio_reset(struct mii_bus *bus)
 	return 0;
 }
 
-static int rtl931x_mdio_reset(struct mii_bus *bus)
-{
-	sw_w32(0x00000000, RTL931X_SMI_PORT_POLLING_CTRL);
-	sw_w32(0x00000000, RTL931X_SMI_PORT_POLLING_CTRL + 4);
-
-	pr_debug("%s called\n", __func__);
-
-	return 0;
-}
-
 static int rtl930x_mdio_reset(struct mii_bus *bus)
 {
 	int i;
@@ -1847,6 +1853,12 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
 			smi_addr[0] = 0;
 			smi_addr[1] = pn;
+		}
+
+		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
+			priv->sds_id[pn] = -1;
+		else {
+			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
 		}
 
 		if (pn < MAX_PORTS) {
