@@ -134,6 +134,7 @@
 #define RTL838X_EEE_TX_TIMER_GELITE_CTRL	(0xaa08)
 
 #define RTL930X_L2_UNKN_UC_FLD_PMSK		(0x9064)
+#define RTL931X_L2_UNKN_UC_FLD_PMSK		(0xC8F4)
 
 #define RTL839X_MAC_GLB_CTRL			(0x02a8)
 #define RTL839X_SCHED_LB_TICK_TKN_CTRL		(0x60f8)
@@ -182,6 +183,7 @@
 #define RTL930X_RMA_CTRL_1			(0x9E64)
 #define RTL930X_RMA_CTRL_2			(0x9E68)
 
+#define RTL931X_VLAN_APP_PKT_CTRL		(0x96b0)
 #define RTL931X_RMA_CTRL_0			(0x8800)
 #define RTL931X_RMA_CTRL_1			(0x8804)
 #define RTL931X_RMA_CTRL_2			(0x8808)
@@ -194,6 +196,19 @@
 
 /* Registers of the internal Serdes of the 8390 */
 #define RTL839X_SDS12_13_XSG0			(0xB800)
+
+/* Chip configuration registers of the RTL9310 */
+#define RTL931X_MEM_ENCAP_INIT			(0x4854)
+#define RTL931X_MEM_MIB_INIT			(0x7E18)
+#define RTL931X_MEM_ACL_INIT			(0x40BC)
+#define RTL931X_MEM_ALE_INIT_0			(0x83F0)
+#define RTL931X_MEM_ALE_INIT_1			(0x83F4)
+#define RTL931X_MEM_ALE_INIT_2			(0x82E4)
+#define RTL931X_MDX_CTRL_RSVD			(0x0fcc)
+#define RTL931X_PS_SOC_CTRL			(0x13f8)
+#define RTL931X_SMI_10GPHY_POLLING_SEL2		(0xCF8)
+#define RTL931X_SMI_10GPHY_POLLING_SEL3		(0xCFC)
+#define RTL931X_SMI_10GPHY_POLLING_SEL4		(0xD00)
 
 /* Registers of the internal Serdes of the 8380 */
 #define RTL838X_SDS4_FIB_REG0			(0xF800)
