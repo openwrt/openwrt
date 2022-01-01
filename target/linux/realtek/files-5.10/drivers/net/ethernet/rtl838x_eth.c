@@ -280,16 +280,17 @@ bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 
 bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
-	t->reason = h->cpu_tag[4] & 0x1f;
+	t->reason = h->cpu_tag[5] & 0x1f;
 	t->queue = (h->cpu_tag[3] & 0xe000) >> 13;
 	t->port = h->cpu_tag[1] & 0x3f;
 	t->crc_error = h->cpu_tag[3] & BIT(2);
 
 	pr_debug("Reason: %d\n", t->reason);
-	if ((t->reason != 7) && (t->reason != 8)) // NIC_RX_REASON_RMA_USR
-		t->l2_offloaded = 1;
-	else
+	if ((t->reason >= 7 && t->reason <= 13) || // NIC_RX_REASON_RMA
+	    (t->reason >= 23 && t->reason <= 25))  // NIC_RX_REASON_SPECIAL_TRAP
 		t->l2_offloaded = 0;
+	else
+		t->l2_offloaded = 1;
 
 	return t->l2_offloaded;
 }
