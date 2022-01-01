@@ -4,8 +4,7 @@ define KernelPackage/linkstation-poweroff
   TITLE:=Buffalo LinkStation power off driver
   KCONFIG:= \
 	CONFIG_POWER_RESET=y \
-	CONFIG_POWER_RESET_LINKSTATION \
-	CONFIG_POWER_RESET_QNAP=n
+	CONFIG_POWER_RESET_LINKSTATION
 
   FILES:=$(LINUX_DIR)/drivers/power/reset/linkstation-poweroff.ko
   AUTOLOAD:=$(call AutoLoad,31,linkstation-poweroff,1)
