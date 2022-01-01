@@ -26,8 +26,12 @@ define Device/DniImage
 	NETGEAR_HW_ID :=
 	UBINIZE_OPTS := -E 5
 	IMAGES += factory.img
-	IMAGE/factory.img := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-ubi | netgear-dni
-	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | append-metadata
+	IMAGE/factory.img := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+		append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | \
+		append-ubi | netgear-dni
+	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
+		append-metadata
 endef
 
 define Device/TpSafeImage
@@ -37,16 +41,21 @@ define Device/TpSafeImage
 	TPLINK_BOARD_ID :=
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
-	IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata
+	IMAGE/sysupgrade.bin := append-rootfs | \
+		tplink-safeloader sysupgrade | append-metadata
 endef
 
 define Device/ZyXELImage
 	KERNEL_SUFFIX := -uImage
-	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $$(KERNEL_SIZE)
+	KERNEL = kernel-bin | append-dtb | uImage none | \
+		pad-to $$(KERNEL_SIZE)
 	KERNEL_NAME := zImage
 	IMAGES += factory.bin
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to $$$$(BLOCKSIZE) | zyxel-ras-image separate-kernel
-	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | \
+		pad-to $$$$(BLOCKSIZE) | zyxel-ras-image separate-kernel
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | \
+		pad-to $$$$(BLOCKSIZE) | sysupgrade-tar rootfs=$$$$@ | \
+		append-metadata
 endef
 
 define Device/askey_rt4230w-rev6
@@ -112,7 +121,8 @@ define Device/edgecore_ecw5410
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@v2.0-ap160
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-edgecore_ecw5410
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct \
+		ipq-wifi-edgecore_ecw5410
 endef
 TARGET_DEVICES += edgecore_ecw5410
 
@@ -125,10 +135,12 @@ define Device/linksys_ea7500-v1
 	PAGESIZE := 2048
 	BLOCKSIZE := 128k
 	KERNEL_SIZE := 3072k
-	KERNEL = kernel-bin | append-dtb | uImage none | append-uImage-fakehdr filesystem
+	KERNEL = kernel-bin | append-dtb | uImage none | \
+		append-uImage-fakehdr filesystem
 	UBINIZE_OPTS := -E 5
 	IMAGES := factory.bin sysupgrade.bin
-	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | pad-to $$$$(PAGESIZE)
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+		append-ubi | pad-to $$$$(PAGESIZE)
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 endef
 TARGET_DEVICES += linksys_ea7500-v1
@@ -141,12 +153,14 @@ define Device/linksys_ea8500
 	PAGESIZE := 2048
 	BLOCKSIZE := 128k
 	KERNEL_SIZE := 3072k
-	KERNEL = kernel-bin | append-dtb | uImage none | append-uImage-fakehdr filesystem
+	KERNEL = kernel-bin | append-dtb | uImage none | \
+		append-uImage-fakehdr filesystem
 	BOARD_NAME := ea8500
 	SUPPORTED_DEVICES += ea8500
 	UBINIZE_OPTS := -E 5
 	IMAGES += factory.bin
-	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+		append-ubi
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 endef
 TARGET_DEVICES += linksys_ea8500
@@ -193,7 +207,8 @@ define Device/nec_wg2600hp
 	SOC := qcom-ipq8064
 	BLOCKSIZE := 64k
 	BOARD_NAME := wg2600hp
-	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+		pad-rootfs | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 endef
 TARGET_DEVICES += nec_wg2600hp
@@ -205,9 +220,11 @@ define Device/nec_wg2600hp3
 	SOC := qcom-ipq8062
 	BLOCKSIZE := 64k
 	IMAGES := sysupgrade.bin
-	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform -kmod-usb-ohci -kmod-usb2 \
-		-kmod-usb-ledtrig-usbport -kmod-usb-phy-qcom-dwc3 -kmod-usb3 -kmod-usb-dwc3-qcom \
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+		pad-rootfs | append-metadata
+	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform \
+		-kmod-usb-ohci -kmod-usb2 -kmod-usb-ledtrig-usbport \
+		-kmod-usb-phy-qcom-dwc3 -kmod-usb3 -kmod-usb-dwc3-qcom \
 		ath10k-firmware-qca9984-ct ipq-wifi-nec_wg2600hp3
 endef
 TARGET_DEVICES += nec_wg2600hp3
@@ -258,7 +275,8 @@ define Device/netgear_r7500v2
 	PAGESIZE := 2048
 	BOARD_NAME := r7500v2
 	SUPPORTED_DEVICES += r7500v2
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct ath10k-firmware-qca988x-ct
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct \
+		ath10k-firmware-qca988x-ct
 endef
 TARGET_DEVICES += netgear_r7500v2
 
@@ -397,7 +415,9 @@ define Device/tplink_vr2600v
 	BOARD_NAME := vr2600v
 	SUPPORTED_DEVICES += vr2600v
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
-	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata
+	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | \
+		pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | \
+		append-metadata
 endef
 TARGET_DEVICES += tplink_vr2600v
 
@@ -409,7 +429,8 @@ define Device/ubnt_unifi-ac-hd
 	BLOCKSIZE := 64k
 	IMAGE_SIZE := 14784k
 	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
-	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+		append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += ubnt_unifi-ac-hd
 
@@ -424,7 +445,8 @@ define Device/zyxel_nbg6817
 	RAS_ROOTFS_SIZE := 20934k
 	RAS_VERSION := "V1.99(OWRT.9999)C0"
 	SUPPORTED_DEVICES += nbg6817
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct e2fsprogs kmod-fs-ext4 losetup
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct e2fsprogs \
+		kmod-fs-ext4 losetup
 	$(call Device/ZyXELImage)
 endef
 TARGET_DEVICES += zyxel_nbg6817
