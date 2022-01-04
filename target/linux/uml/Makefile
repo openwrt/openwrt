@@ -13,8 +13,7 @@ BOARD:=uml
 BOARDNAME:=User Mode Linux
 FEATURES:=squashfs ext4 audio
 
-KERNEL_PATCHVER:=5.4
-KERNEL_TESTING_PATCHVER:=5.10
+KERNEL_PATCHVER:=5.10
 
 include $(INCLUDE_DIR)/target.mk
 
