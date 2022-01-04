@@ -58,9 +58,11 @@
 #include <asm/byteorder.h>
 #include <crypto/algapi.h>
 #include <crypto/b128ops.h>
+#include <crypto/gcm.h>
 #include <crypto/gf128mul.h>
 #include <crypto/scatterwalk.h>
 #include <crypto/xts.h>
+#include <crypto/internal/aead.h>
 #include <crypto/internal/hash.h>
 #include <crypto/internal/skcipher.h>
 
@@ -132,6 +134,7 @@ struct aes_ctx {
     u32 (*temp)[AES_BLOCK_WORDS];
     u8 block[AES_BLOCK_SIZE];
     u8 hash[AES_BLOCK_SIZE];
+    struct gf128mul_4k *gf128;
 };
 
 extern int disable_deudma;
@@ -1565,6 +1568,308 @@ static struct shash_alg ifxdeu_cbcmac_aes_alg = {
         }
 };
 
+/*! \fn int aes_set_key_aead (struct crypto_aead *aead, const uint8_t *in_key, unsigned int key_len)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief sets the AES keys for aead gcm
+ *  \param aead linux crypto aead
+ *  \param in_key input key
+ *  \param key_len key lengths of 16, 24 and 32 bytes supported
+ *  \return -EINVAL - bad key length, 0 - SUCCESS
+*/
+int aes_set_key_aead (struct crypto_aead *aead, const u8 *in_key, unsigned int key_len)
+{
+    struct aes_ctx *ctx = crypto_aead_ctx(aead);
+    int err;
+
+    err = aes_set_key(&aead->base, in_key, key_len);
+    if (err) return err;
+
+    memset(ctx->block, 0, sizeof(ctx->block));
+    memset(ctx->lastbuffer, 0, AES_BLOCK_SIZE);
+    ifx_deu_aes_ctr(ctx, ctx->block, ctx->block,
+                       ctx->lastbuffer, AES_BLOCK_SIZE, CRYPTO_DIR_ENCRYPT, 0);
+    if (ctx->gf128) gf128mul_free_4k(ctx->gf128);
+    ctx->gf128 = gf128mul_init_4k_lle((be128 *)ctx->block);
+
+    return err;
+}
+
+/*! \fn int gcm_aes_setauthsize (struct crypto_aead *aead, unsigned int authsize)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief sets the AES keys for aead gcm
+ *  \param aead linux crypto aead
+ *  \param in_key input authsize
+ *  \return -EINVAL - bad authsize length, 0 - SUCCESS
+*/
+int gcm_aes_setauthsize (struct crypto_aead *aead, unsigned int authsize)
+{
+    return crypto_gcm_check_authsize(authsize);
+}
+
+/*! \fn int gcm_aes_encrypt(struct aead_request *req)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief GCM AES encrypt using linux crypto aead
+ *  \param req aead request
+ *  \return err
+*/
+int gcm_aes_encrypt(struct aead_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    struct skcipher_request request;
+    int err;
+    unsigned int enc_bytes, nbytes;
+    be128 lengths;
+    u8 iv[AES_BLOCK_SIZE];
+
+    lengths.a = cpu_to_be64(req->assoclen * 8);
+    lengths.b = cpu_to_be64(req->cryptlen * 8);
+
+    memset(ctx->hash, 0, sizeof(ctx->hash));
+    memset(ctx->block, 0, sizeof(ctx->block));
+    memcpy(iv, req->iv, GCM_AES_IV_SIZE);
+    *(__be32 *)((void *)iv + GCM_AES_IV_SIZE) = cpu_to_be32(1);
+    ifx_deu_aes_ctr(ctx, ctx->block, ctx->block,
+                       iv, 16, CRYPTO_DIR_ENCRYPT, 0);
+
+    request.cryptlen = req->cryptlen + req->assoclen;
+    request.src = req->src;
+    request.dst = req->dst;
+    request.base = req->base;
+
+    crypto_skcipher_alg(crypto_skcipher_reqtfm(&request))->walksize = AES_BLOCK_SIZE;
+
+    if (req->assoclen && (req->assoclen < AES_BLOCK_SIZE))
+        crypto_skcipher_alg(crypto_skcipher_reqtfm(&request))->walksize = req->assoclen;
+
+    err = skcipher_walk_virt(&walk, &request, false);
+
+    //process assoc data if available
+    if (req->assoclen > 0) {
+        unsigned int assoc_remain, ghashlen;
+
+        assoc_remain = req->assoclen;
+        ghashlen = min(req->assoclen, walk.nbytes);
+        while ((nbytes = enc_bytes = ghashlen) && (ghashlen >= AES_BLOCK_SIZE)) {
+            u8 *temp;
+            if (nbytes > req->assoclen) nbytes = enc_bytes = req->assoclen;
+            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
+            memcpy(walk.dst.virt.addr, walk.src.virt.addr, enc_bytes);
+            assoc_remain -= enc_bytes;
+            temp = walk.dst.virt.addr;
+            while (enc_bytes > 0) {
+                u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)temp);
+                gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+                enc_bytes -= AES_BLOCK_SIZE;
+                temp += 16;
+            }
+            if (assoc_remain < AES_BLOCK_SIZE) walk.stride = assoc_remain;
+            if (assoc_remain == 0) walk.stride = AES_BLOCK_SIZE;
+            enc_bytes = nbytes - (nbytes % AES_BLOCK_SIZE);
+            err = skcipher_walk_done(&walk, (walk.nbytes - enc_bytes));
+            ghashlen = min(assoc_remain, walk.nbytes);
+        }
+
+        if ((enc_bytes = ghashlen)) {
+            memcpy(ctx->lastbuffer, walk.src.virt.addr, enc_bytes);
+            memset(ctx->lastbuffer + enc_bytes, 0, (AES_BLOCK_SIZE - enc_bytes));
+            memcpy(walk.dst.virt.addr, walk.src.virt.addr, ghashlen);
+            u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)ctx->lastbuffer);
+            gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+            walk.stride = AES_BLOCK_SIZE;
+            err = skcipher_walk_done(&walk, (walk.nbytes - ghashlen));
+        }
+    }
+
+    //crypt and hash
+    while ((nbytes = enc_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+        u8 *temp;
+        enc_bytes -= (nbytes % AES_BLOCK_SIZE);
+        ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+                       iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        temp = walk.dst.virt.addr;
+        while (enc_bytes) {
+            u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)temp);
+            gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+            enc_bytes -= AES_BLOCK_SIZE;
+            temp += 16;
+        }
+        err = skcipher_walk_done(&walk, nbytes);
+    }
+
+    /* crypt and hash remaining bytes < AES_BLOCK_SIZE */
+    if ((enc_bytes = walk.nbytes)) {
+        ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+                       iv, walk.nbytes, CRYPTO_DIR_ENCRYPT, 0);
+        memcpy(ctx->lastbuffer, walk.dst.virt.addr, enc_bytes);
+        memset(ctx->lastbuffer + enc_bytes, 0, (AES_BLOCK_SIZE - enc_bytes));
+        u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)ctx->lastbuffer);
+        gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+        err = skcipher_walk_done(&walk, 0);
+    }
+
+    //finalize and copy hash
+    u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)&lengths);
+    gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+    u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)ctx->block);
+    scatterwalk_map_and_copy(ctx->hash, req->dst, req->cryptlen + req->assoclen, crypto_aead_authsize(crypto_aead_reqtfm(req)), 1);
+
+    aead_request_complete(req, 0);
+
+    return err;
+}
+
+/*! \fn int gcm_aes_decrypt(struct aead_request *req)
+ *  \ingroup IFX_AES_FUNCTIONS
+ *  \brief GCM AES decrypt using linux crypto aead
+ *  \param req aead request
+ *  \return err
+*/
+int gcm_aes_decrypt(struct aead_request *req)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+    struct skcipher_walk walk;
+    struct skcipher_request request;
+    int err;
+    unsigned int dec_bytes, nbytes, authsize;
+    be128 lengths;
+    u8 iv[AES_BLOCK_SIZE];
+
+    authsize = crypto_aead_authsize(crypto_aead_reqtfm(req));
+
+    lengths.a = cpu_to_be64(req->assoclen * 8);
+    lengths.b = cpu_to_be64((req->cryptlen - authsize) * 8);
+
+    memset(ctx->hash, 0, sizeof(ctx->hash));
+    memset(ctx->block, 0, sizeof(ctx->block));
+    memcpy(iv, req->iv, GCM_AES_IV_SIZE);
+    *(__be32 *)((void *)iv + GCM_AES_IV_SIZE) = cpu_to_be32(1);
+    ifx_deu_aes_ctr(ctx, ctx->block, ctx->block,
+                       iv, 16, CRYPTO_DIR_ENCRYPT, 0);
+
+    request.cryptlen = req->cryptlen + req->assoclen - authsize;
+    request.src = req->src;
+    request.dst = req->dst;
+    request.base = req->base;
+    crypto_skcipher_alg(crypto_skcipher_reqtfm(&request))->walksize = AES_BLOCK_SIZE;
+
+    if (req->assoclen && (req->assoclen < AES_BLOCK_SIZE))
+        crypto_skcipher_alg(crypto_skcipher_reqtfm(&request))->walksize = req->assoclen;
+
+    err = skcipher_walk_virt(&walk, &request, false);
+
+    //process assoc data if available
+    if (req->assoclen > 0) {
+        unsigned int assoc_remain, ghashlen;
+
+        assoc_remain = req->assoclen;
+        ghashlen = min(req->assoclen, walk.nbytes);
+        while ((nbytes = dec_bytes = ghashlen) && (ghashlen >= AES_BLOCK_SIZE)) {
+            u8 *temp;
+            if (nbytes > req->assoclen) nbytes = dec_bytes = req->assoclen;
+            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
+            memcpy(walk.dst.virt.addr, walk.src.virt.addr, dec_bytes);
+            assoc_remain -= dec_bytes;
+            temp = walk.dst.virt.addr;
+            while (dec_bytes > 0) {
+                u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)temp);
+                gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+                dec_bytes -= AES_BLOCK_SIZE;
+                temp += 16;
+            }
+            if (assoc_remain < AES_BLOCK_SIZE) walk.stride = assoc_remain;
+            if (assoc_remain == 0) walk.stride = AES_BLOCK_SIZE;
+            dec_bytes = nbytes - (nbytes % AES_BLOCK_SIZE);
+            err = skcipher_walk_done(&walk, (walk.nbytes - dec_bytes));
+            ghashlen = min(assoc_remain, walk.nbytes);
+        }
+
+        if ((dec_bytes = ghashlen)) {
+            memcpy(ctx->lastbuffer, walk.src.virt.addr, dec_bytes);
+            memset(ctx->lastbuffer + dec_bytes, 0, (AES_BLOCK_SIZE - dec_bytes));
+            memcpy(walk.dst.virt.addr, walk.src.virt.addr, ghashlen);
+            u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)ctx->lastbuffer);
+            gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+            walk.stride = AES_BLOCK_SIZE;
+            err = skcipher_walk_done(&walk, (walk.nbytes - ghashlen));
+        }
+    }
+
+    //crypt and hash
+    while ((nbytes = dec_bytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+        u8 *temp;
+        dec_bytes -= (nbytes % AES_BLOCK_SIZE);
+        temp = walk.src.virt.addr;
+        while (dec_bytes) {
+            u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)temp);
+            gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+            dec_bytes -= AES_BLOCK_SIZE;
+            temp += 16;
+        }
+        dec_bytes = nbytes - (nbytes % AES_BLOCK_SIZE);
+        ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+                       iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
+        nbytes &= AES_BLOCK_SIZE - 1;
+        err = skcipher_walk_done(&walk, nbytes);
+    }
+
+    /* crypt and hash remaining bytes < AES_BLOCK_SIZE */
+    if ((dec_bytes = walk.nbytes)) {
+        memcpy(ctx->lastbuffer, walk.src.virt.addr, dec_bytes);
+        memset(ctx->lastbuffer + dec_bytes, 0, (AES_BLOCK_SIZE - dec_bytes));
+        u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)ctx->lastbuffer);
+        gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+        ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+                       iv, walk.nbytes, CRYPTO_DIR_DECRYPT, 0);
+        err = skcipher_walk_done(&walk, 0);
+    }
+
+    //finalize and copy hash
+    u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)&lengths);
+    gf128mul_4k_lle((be128 *)ctx->hash, ctx->gf128);
+    u128_xor((u128 *)ctx->hash, (u128 *)ctx->hash, (u128 *)ctx->block);
+
+    scatterwalk_map_and_copy(ctx->lastbuffer, req->src, req->cryptlen + req->assoclen - authsize, authsize, 0);
+    err = crypto_memneq(ctx->lastbuffer, ctx->hash, authsize) ? -EBADMSG : 0;
+
+    aead_request_complete(req, 0);
+
+    return err;
+}
+
+/*! \fn void aes_gcm_exit_tfm(struct crypto_tfm *tfm)
+ *  \ingroup IFX_aes_cbcmac_FUNCTIONS
+ *  \brief free pointers in aes_ctx
+ *  \param tfm linux crypto shash transform
+*/
+static void aes_gcm_exit_tfm(struct crypto_tfm *tfm)
+{
+    struct aes_ctx *ctx = crypto_tfm_ctx(tfm);
+    if (ctx->gf128) gf128mul_free_4k(ctx->gf128);
+}
+
+/*
+ * \brief AES function mappings
+*/
+struct aead_alg ifxdeu_gcm_aes_alg = {
+    .base.cra_name           =   "gcm(aes)",
+    .base.cra_driver_name    =   "ifxdeu-gcm(aes)",
+    .base.cra_priority       =   400,
+    .base.cra_flags          =   CRYPTO_ALG_TYPE_SKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY,
+    .base.cra_blocksize      =   1,
+    .base.cra_ctxsize        =   sizeof(struct aes_ctx),
+    .base.cra_module         =   THIS_MODULE,
+    .base.cra_list           =   LIST_HEAD_INIT(ifxdeu_gcm_aes_alg.base.cra_list),
+    .base.cra_exit           =   aes_gcm_exit_tfm,
+    .ivsize                  =   GCM_AES_IV_SIZE,
+    .maxauthsize             =   AES_BLOCK_SIZE,
+    .chunksize               =   AES_BLOCK_SIZE,
+    .setkey                  =   aes_set_key_aead,
+    .encrypt                 =   gcm_aes_encrypt,
+    .decrypt                 =   gcm_aes_decrypt,
+    .setauthsize             =   gcm_aes_setauthsize,
+};
 
 /*! \fn int ifxdeu_init_aes (void)
  *  \ingroup IFX_AES_FUNCTIONS
@@ -1604,12 +1909,19 @@ int ifxdeu_init_aes (void)
     if ((ret = crypto_register_shash(&ifxdeu_cbcmac_aes_alg)))
         goto cbcmac_aes_err;
 
+    if ((ret = crypto_register_aead(&ifxdeu_gcm_aes_alg)))
+        goto gcm_aes_err;
+
     CRTCL_SECT_INIT;
 
 
     printk (KERN_NOTICE "IFX DEU AES initialized%s%s.\n", disable_multiblock ? "" : " (multiblock)", disable_deudma ? "" : " (DMA)");
     return ret;
 
+gcm_aes_err:
+    crypto_unregister_aead(&ifxdeu_gcm_aes_alg);
+    printk (KERN_ERR "IFX gcm_aes initialization failed!\n");
+    return ret;
 cbcmac_aes_err:
     crypto_unregister_shash(&ifxdeu_cbcmac_aes_alg);
     printk (KERN_ERR "IFX cbcmac_aes initialization failed!\n");
@@ -1663,4 +1975,5 @@ void ifxdeu_fini_aes (void)
     crypto_unregister_skcipher (&ifxdeu_ctr_basic_aes_alg);
     crypto_unregister_skcipher (&ifxdeu_ctr_rfc3686_aes_alg);
     crypto_unregister_shash (&ifxdeu_cbcmac_aes_alg);
+    crypto_unregister_aead (&ifxdeu_gcm_aes_alg);
 }
