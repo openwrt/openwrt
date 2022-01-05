@@ -16,6 +16,15 @@
 		led-upgrade = &led_sys;
 	};
 
+	chosen {
+		/*
+		 * Some u-boot/opboot adds "ubi.mtd=rootfs root=mtd:ubi_rootfs" to
+		 * kernel command line. But we use different partition names,
+		 * so we have to set correct parameters.
+		 */
+		bootargs-append = " ubi.mtd=ubi root=/dev/ubiblock0_1";
+	};
+
 	soc {
 		rng@22000 {
 			status = "okay";
