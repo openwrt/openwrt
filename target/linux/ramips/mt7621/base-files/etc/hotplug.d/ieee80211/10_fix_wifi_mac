@@ -10,6 +10,12 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
+	beeline,smartbox-flash)
+		hw_mac_addr_ra0="$(mtd_get_mac_ascii u-boot-env ra0macaddr)"
+		hw_mac_addr_rax0="$(mtd_get_mac_ascii u-boot-env rax0macaddr)"
+		[ "$PHYNBR" = "0" ] && echo -n $hw_mac_addr_ra0 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && echo -n $hw_mac_addr_rax0 > /sys${DEVPATH}/macaddress
+		;;
 	dlink,dir-853-a3)
 		[ "$PHYNBR" = "0" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0xe000)" \
