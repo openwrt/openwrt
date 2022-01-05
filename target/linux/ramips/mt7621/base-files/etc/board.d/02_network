@@ -38,6 +38,7 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	asiarf,ap7621-nv1|\
+	beeline,smartbox-flash|\
 	glinet,gl-mt1300|\
 	iptime,a3002mesh|\
 	jcg,q20|\
@@ -114,6 +115,11 @@ ramips_setup_macs()
 	asus,rt-ac85p)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
+	beeline,smartbox-flash)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env eth2macaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env eth3macaddr)
+		label_mac=$lan_mac
 		;;
 	buffalo,wsr-1166dhp)
 		local index="$(find_mtd_index "board_data")"
