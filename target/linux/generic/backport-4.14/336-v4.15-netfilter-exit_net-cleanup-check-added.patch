@@ -44,7 +44,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static int __init nf_tables_module_init(void)
 --- a/net/netfilter/nfnetlink_log.c
 +++ b/net/netfilter/nfnetlink_log.c
-@@ -1093,10 +1093,15 @@ static int __net_init nfnl_log_net_init(
+@@ -1094,10 +1094,15 @@ static int __net_init nfnl_log_net_init(
  
  static void __net_exit nfnl_log_net_exit(struct net *net)
  {
@@ -62,7 +62,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static struct pernet_operations nfnl_log_net_ops = {
 --- a/net/netfilter/nfnetlink_queue.c
 +++ b/net/netfilter/nfnetlink_queue.c
-@@ -1510,10 +1510,15 @@ static int __net_init nfnl_queue_net_ini
+@@ -1511,10 +1511,15 @@ static int __net_init nfnl_queue_net_ini
  
  static void __net_exit nfnl_queue_net_exit(struct net *net)
  {

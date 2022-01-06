@@ -85,7 +85,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  #include <linux/of_net.h>
  #include "lan78xx.h"
  
-@@ -1766,6 +1767,7 @@ done:
+@@ -1768,6 +1769,7 @@ done:
  
  static int lan78xx_mdio_init(struct lan78xx_net *dev)
  {
@@ -93,7 +93,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	int ret;
  
  	dev->mdiobus = mdiobus_alloc();
-@@ -1795,7 +1797,9 @@ static int lan78xx_mdio_init(struct lan7
+@@ -1797,7 +1799,9 @@ static int lan78xx_mdio_init(struct lan7
  		break;
  	}
  
