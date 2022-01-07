@@ -1,6 +1,6 @@
 --- a/block/blk.h
 +++ b/block/blk.h
-@@ -361,6 +361,7 @@ char *disk_name(struct gendisk *hd, int
+@@ -354,6 +354,7 @@ void blk_free_ext_minor(unsigned int min
  #define ADDPART_FLAG_NONE	0
  #define ADDPART_FLAG_RAID	1
  #define ADDPART_FLAG_WHOLEDISK	2
@@ -52,7 +52,7 @@
 +int parse_fit_partitions(struct parsed_partitions *state, u64 start_sector, u64 nr_sectors, int *slot, int add_remain);
 --- a/block/partitions/core.c
 +++ b/block/partitions/core.c
-@@ -10,6 +10,10 @@
+@@ -11,6 +11,10 @@
  #include <linux/vmalloc.h>
  #include <linux/blktrace_api.h>
  #include <linux/raid/detect.h>
@@ -63,7 +63,7 @@
  #include "check.h"
  
  static int (*check_part[])(struct parsed_partitions *) = {
-@@ -46,6 +50,9 @@ static int (*check_part[])(struct parsed
+@@ -47,6 +51,9 @@ static int (*check_part[])(struct parsed
  #ifdef CONFIG_EFI_PARTITION
  	efi_partition,		/* this must come before msdos */
  #endif
@@ -73,13 +73,13 @@
  #ifdef CONFIG_SGI_PARTITION
  	sgi_partition,
  #endif
-@@ -694,6 +701,11 @@ static bool blk_add_partition(struct gen
+@@ -597,6 +604,11 @@ static bool blk_add_partition(struct gen
  	    (state->parts[p].flags & ADDPART_FLAG_RAID))
- 		md_autodetect_dev(part_to_dev(part)->devt);
+ 		md_autodetect_dev(part->bd_dev);
  
 +#ifdef CONFIG_FIT_PARTITION
 +	if ((state->parts[p].flags & ADDPART_FLAG_ROOTDEV) && ROOT_DEV == 0)
-+		ROOT_DEV = part_to_dev(part)->devt;
++		ROOT_DEV = part->bd_dev;
 +#endif
 +
  	return true;
@@ -87,7 +87,7 @@
  
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -396,7 +396,11 @@ int ubiblock_create(struct ubi_volume_in
+@@ -419,7 +419,11 @@ int ubiblock_create(struct ubi_volume_in
  
  	gd->fops = &ubiblock_ops;
  	gd->major = ubiblock_major;
@@ -99,8 +99,8 @@
  	gd->first_minor = idr_alloc(&ubiblock_minor_idr, dev, 0, 0, GFP_KERNEL);
  	if (gd->first_minor < 0) {
  		dev_err(disk_to_dev(gd),
-@@ -413,6 +417,9 @@ int ubiblock_create(struct ubi_volume_in
- 		goto out_put_disk;
+@@ -428,6 +432,9 @@ int ubiblock_create(struct ubi_volume_in
+ 		goto out_cleanup_disk;
  	}
  	gd->private_data = dev;
 +#ifdef CONFIG_FIT_PARTITION
@@ -111,7 +111,7 @@
  	dev->gd = gd;
 --- a/block/partitions/efi.c
 +++ b/block/partitions/efi.c
-@@ -706,6 +706,9 @@ int efi_partition(struct parsed_partitio
+@@ -716,6 +716,9 @@ int efi_partition(struct parsed_partitio
  	gpt_entry *ptes = NULL;
  	u32 i;
  	unsigned ssz = queue_logical_block_size(state->disk->queue) / 512;
@@ -121,7 +121,7 @@
  
  	if (!find_valid_gpt(state, &gpt, &ptes) || !gpt || !ptes) {
  		kfree(gpt);
-@@ -739,6 +742,11 @@ int efi_partition(struct parsed_partitio
+@@ -749,6 +752,11 @@ int efi_partition(struct parsed_partitio
  				ARRAY_SIZE(ptes[i].partition_name));
  		utf16_le_to_7bit(ptes[i].partition_name, label_max, info->volname);
  		state->parts[i + 1].has_info = true;
@@ -147,7 +147,7 @@
  	__le64 signature;
 --- a/drivers/mtd/mtdblock.c
 +++ b/drivers/mtd/mtdblock.c
-@@ -334,7 +334,11 @@ static void mtdblock_remove_dev(struct m
+@@ -338,7 +338,11 @@ static void mtdblock_remove_dev(struct m
  static struct mtd_blktrans_ops mtdblock_tr = {
  	.name		= "mtdblock",
  	.major		= MTD_BLOCK_MAJOR,
@@ -161,8 +161,8 @@
  	.flush		= mtdblock_flush,
 --- a/drivers/mtd/mtd_blkdevs.c
 +++ b/drivers/mtd/mtd_blkdevs.c
-@@ -407,18 +407,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
- 	gd->first_minor = (new->devnum) << tr->part_bits;
+@@ -346,18 +346,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
+ 	gd->minors = 1 << tr->part_bits;
  	gd->fops = &mtd_block_ops;
  
 -	if (tr->part_bits)
@@ -184,7 +184,7 @@
  
 --- a/block/partitions/msdos.c
 +++ b/block/partitions/msdos.c
-@@ -563,6 +563,15 @@ static void parse_minix(struct parsed_pa
+@@ -564,6 +564,15 @@ static void parse_minix(struct parsed_pa
  #endif /* CONFIG_MINIX_SUBPARTITION */
  }
  
@@ -200,7 +200,7 @@
  static struct {
  	unsigned char id;
  	void (*parse)(struct parsed_partitions *, sector_t, sector_t, int);
-@@ -574,6 +583,7 @@ static struct {
+@@ -575,6 +584,7 @@ static struct {
  	{UNIXWARE_PARTITION, parse_unixware},
  	{SOLARIS_X86_PARTITION, parse_solaris_x86},
  	{NEW_SOLARIS_X86_PARTITION, parse_solaris_x86},
