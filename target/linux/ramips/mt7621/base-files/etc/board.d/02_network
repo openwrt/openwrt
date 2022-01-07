@@ -34,6 +34,7 @@ ramips_setup_interfaces()
 	xiaomi,redmi-router-ac2100)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
+	actiontec,web7200|\
 	asiarf,ap7621-001|\
 	humax,e10|\
 	winstars,ws-wn583a6)
@@ -116,6 +117,11 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
+	actiontec,web7200)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env "AeiBaseMACAddr")
+		label_mac=$wan_mac
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
 	ampedwireless,ally-00x19k)
 		lan_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
 		label_mac=$lan_mac

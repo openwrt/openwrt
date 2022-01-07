@@ -110,10 +110,43 @@ define Build/zytrx-header
 	mv $@.new $@
 endef
 
+RELOCATE_LOADADDR = 0x81000000
+
+define Build/fit-relocate
+	$(TOPDIR)/scripts/mkits.sh \
+		-D $(DEVICE_NAME) -o $@.its -k $@ \
+		$(if $(word 2,$(1)),-d $(word 2,$(1))) -C $(word 1,$(1)) \
+		$(if $(word 3,$(1)),-r $(IMAGE_ROOTFS) -f $(subst _,$(comma),$(DEVICE_NAME))) \
+		-a $(RELOCATE_LOADADDR) -e $(RELOCATE_LOADADDR) \
+		$(if $(DEVICE_FDT_NUM),-n $(DEVICE_FDT_NUM)) \
+		-c $(if $(DEVICE_DTS_CONFIG),$(DEVICE_DTS_CONFIG),"config-1") \
+		-A $(LINUX_KARCH) -v $(LINUX_VERSION)
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage $(if $(word 3,$(1)),-E -B 0x1000 -p 0x1000) -f $@.its $@.new
+	@mv $@.new $@
+endef
+
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
+
+define Device/actiontec_web7200
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Actiontec
+  DEVICE_MODEL := EB7200
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915e kmod-usb3 uboot-envtools kmod-i2c-core
+  LOADER_TYPE := bin
+  KERNEL_SIZE := 4096k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  KERNEL_INITRAMFS := kernel-bin | lzma | loader-kernel | gzip | fit-relocate gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL := kernel-bin | relocate-kernel | lzma | fit-relocate lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi
+endef
+TARGET_DEVICES += actiontec_web7200
 
 define Device/adslr_g7
   $(Device/dsa-migration)

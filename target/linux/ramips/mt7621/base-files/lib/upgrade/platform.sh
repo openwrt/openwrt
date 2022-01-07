@@ -49,6 +49,7 @@ platform_do_upgrade() {
 	esac
 
 	case "$board" in
+	actiontec,web7200|\
 	ampedwireless,ally-00x19k|\
 	ampedwireless,ally-r1900k|\
 	asus,rt-ac65p|\
