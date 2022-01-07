@@ -80,7 +80,7 @@
  
 +#ifdef CONFIG_FIT_PARTITION
 +	if ((state->parts[p].flags & ADDPART_FLAG_ROOTDEV) && ROOT_DEV == 0)
-+		ROOT_DEV = part_to_dev(part)->devt;
++		ROOT_DEV = part->bd_dev;
 +
 +	if (state->parts[p].flags & ADDPART_FLAG_READONLY)
 +		part->policy = true;
@@ -104,7 +104,7 @@
  	if (gd->first_minor < 0) {
  		dev_err(disk_to_dev(gd),
 @@ -413,6 +417,9 @@ int ubiblock_create(struct ubi_volume_in
- 		goto out_put_disk;
+ 		goto out_cleanup_disk;
  	}
  	gd->private_data = dev;
 +#ifdef CONFIG_FIT_PARTITION
@@ -166,7 +166,7 @@
 --- a/drivers/mtd/mtd_blkdevs.c
 +++ b/drivers/mtd/mtd_blkdevs.c
 @@ -407,18 +407,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
- 	gd->first_minor = (new->devnum) << tr->part_bits;
+ 	gd->minors = 1 << tr->part_bits;
  	gd->fops = &mtd_block_ops;
  
 -	if (tr->part_bits)
