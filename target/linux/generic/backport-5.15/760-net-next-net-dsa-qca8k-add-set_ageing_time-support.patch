@@ -16,9 +16,11 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h |  3 +++
  2 files changed, 28 insertions(+)
 
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index d988df913ae02..45e769b9166b8 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -1261,6 +1261,10 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1257,6 +1257,10 @@ qca8k_setup(struct dsa_switch *ds)
  	/* We don't have interrupts for link changes, so we need to poll */
  	ds->pcs_poll = true;
  
@@ -29,10 +31,11 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return 0;
  }
  
-@@ -1801,6 +1805,26 @@ qca8k_port_fast_age(struct dsa_switch *d
+@@ -1796,6 +1800,26 @@ qca8k_port_fast_age(struct dsa_switch *ds, int port)
+ 	mutex_unlock(&priv->reg_mutex);
  }
  
- static int
++static int
 +qca8k_set_ageing_time(struct dsa_switch *ds, unsigned int msecs)
 +{
 +	struct qca8k_priv *priv = ds->priv;
@@ -52,11 +55,10 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +				  QCA8K_ATU_AGE_TIME(val));
 +}
 +
-+static int
+ static int
  qca8k_port_enable(struct dsa_switch *ds, int port,
  		  struct phy_device *phy)
- {
-@@ -2006,6 +2030,7 @@ static const struct dsa_switch_ops qca8k
+@@ -1995,6 +2019,7 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
  	.get_strings		= qca8k_get_strings,
  	.get_ethtool_stats	= qca8k_get_ethtool_stats,
  	.get_sset_count		= qca8k_get_sset_count,
@@ -64,6 +66,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.get_mac_eee		= qca8k_get_mac_eee,
  	.set_mac_eee		= qca8k_set_mac_eee,
  	.port_enable		= qca8k_port_enable,
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index a533b8cf143be..40ec8012622f7 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -175,6 +175,9 @@
@@ -76,3 +80,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #define QCA8K_REG_GLOBAL_FW_CTRL0			0x620
  #define   QCA8K_GLOBAL_FW_CTRL0_CPU_PORT_EN		BIT(10)
  #define QCA8K_REG_GLOBAL_FW_CTRL1			0x624
+-- 
+cgit 1.2.3-1.el7
+

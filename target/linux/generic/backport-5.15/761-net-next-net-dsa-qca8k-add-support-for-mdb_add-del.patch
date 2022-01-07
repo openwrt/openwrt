@@ -18,12 +18,15 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.c | 99 +++++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 99 insertions(+)
 
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index 45e769b9166b8..67742fbd80409 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -436,6 +436,81 @@ qca8k_fdb_flush(struct qca8k_priv *priv)
+@@ -435,6 +435,81 @@ qca8k_fdb_flush(struct qca8k_priv *priv)
+ 	mutex_unlock(&priv->reg_mutex);
  }
  
- static int
++static int
 +qca8k_fdb_search_and_insert(struct qca8k_priv *priv, u8 port_mask,
 +			    const u8 *mac, u16 vid)
 +{
@@ -98,15 +101,14 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +	return ret;
 +}
 +
-+static int
+ static int
  qca8k_vlan_access(struct qca8k_priv *priv, enum qca8k_vlan_cmd cmd, u16 vid)
  {
- 	u32 reg;
-@@ -1929,6 +2004,28 @@ qca8k_port_fdb_dump(struct dsa_switch *d
+@@ -1925,6 +2000,28 @@ qca8k_port_fdb_dump(struct dsa_switch *ds, int port,
  	return 0;
  }
  
-+static void
++static int
 +qca8k_port_mdb_add(struct dsa_switch *ds, int port,
 +		   const struct switchdev_obj_port_mdb *mdb)
 +{
@@ -114,7 +116,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +	const u8 *addr = mdb->addr;
 +	u16 vid = mdb->vid;
 +
-+	qca8k_fdb_search_and_insert(priv, BIT(port), addr, vid);
++	return qca8k_fdb_search_and_insert(priv, BIT(port), addr, vid);
 +}
 +
 +static int
@@ -130,13 +132,16 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +
  static int
  qca8k_port_vlan_filtering(struct dsa_switch *ds, int port, bool vlan_filtering,
- 			  struct switchdev_trans *trans)
-@@ -2044,6 +2141,8 @@ static const struct dsa_switch_ops qca8k
+ 			  struct netlink_ext_ack *extack)
+@@ -2033,6 +2130,8 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
  	.port_fdb_add		= qca8k_port_fdb_add,
  	.port_fdb_del		= qca8k_port_fdb_del,
  	.port_fdb_dump		= qca8k_port_fdb_dump,
 +	.port_mdb_add		= qca8k_port_mdb_add,
 +	.port_mdb_del		= qca8k_port_mdb_del,
  	.port_vlan_filtering	= qca8k_port_vlan_filtering,
- 	.port_vlan_prepare	= qca8k_port_vlan_prepare,
  	.port_vlan_add		= qca8k_port_vlan_add,
+ 	.port_vlan_del		= qca8k_port_vlan_del,
+-- 
+cgit 1.2.3-1.el7
+

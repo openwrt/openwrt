@@ -14,6 +14,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h | 153 ++++++++++++++++++++++++++----------------------
  2 files changed, 130 insertions(+), 121 deletions(-)
 
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index bfffc1fb7016d..0eceb9cba2dc8 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
 @@ -9,6 +9,7 @@
@@ -24,7 +26,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #include <net/dsa.h>
  #include <linux/of_net.h>
  #include <linux/of_mdio.h>
-@@ -319,18 +320,18 @@ qca8k_fdb_read(struct qca8k_priv *priv,
+@@ -319,18 +320,18 @@ qca8k_fdb_read(struct qca8k_priv *priv, struct qca8k_fdb *fdb)
  	}
  
  	/* vid - 83:72 */
@@ -52,7 +54,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	return 0;
  }
-@@ -343,18 +344,18 @@ qca8k_fdb_write(struct qca8k_priv *priv,
+@@ -343,18 +344,18 @@ qca8k_fdb_write(struct qca8k_priv *priv, u16 vid, u8 port_mask, const u8 *mac,
  	int i;
  
  	/* vid - 83:72 */
@@ -80,7 +82,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* load the array into the ARL table */
  	for (i = 0; i < 3; i++)
-@@ -372,7 +373,7 @@ qca8k_fdb_access(struct qca8k_priv *priv
+@@ -372,7 +373,7 @@ qca8k_fdb_access(struct qca8k_priv *priv, enum qca8k_fdb_cmd cmd, int port)
  	reg |= cmd;
  	if (port >= 0) {
  		reg |= QCA8K_ATU_FUNC_PORT_EN;
@@ -89,7 +91,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	/* Write the function register triggering the table access */
-@@ -454,7 +455,7 @@ qca8k_vlan_access(struct qca8k_priv *pri
+@@ -454,7 +455,7 @@ qca8k_vlan_access(struct qca8k_priv *priv, enum qca8k_vlan_cmd cmd, u16 vid)
  	/* Set the command and VLAN index */
  	reg = QCA8K_VTU_FUNC1_BUSY;
  	reg |= cmd;
@@ -98,7 +100,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* Write the function register triggering the table access */
  	ret = qca8k_write(priv, QCA8K_REG_VTU_FUNC1, reg);
-@@ -500,13 +501,11 @@ qca8k_vlan_add(struct qca8k_priv *priv,
+@@ -500,13 +501,11 @@ qca8k_vlan_add(struct qca8k_priv *priv, u8 port, u16 vid, bool untagged)
  	if (ret < 0)
  		goto out;
  	reg |= QCA8K_VTU_FUNC0_VALID | QCA8K_VTU_FUNC0_IVL_EN;
@@ -115,7 +117,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	ret = qca8k_write(priv, QCA8K_REG_VTU_FUNC0, reg);
  	if (ret)
-@@ -534,15 +533,13 @@ qca8k_vlan_del(struct qca8k_priv *priv,
+@@ -534,15 +533,13 @@ qca8k_vlan_del(struct qca8k_priv *priv, u8 port, u16 vid)
  	ret = qca8k_read(priv, QCA8K_REG_VTU_FUNC0, &reg);
  	if (ret < 0)
  		goto out;
@@ -134,7 +136,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  		if ((reg & mask) != mask) {
  			del = false;
-@@ -1014,7 +1011,7 @@ qca8k_parse_port_config(struct qca8k_pri
+@@ -1014,7 +1011,7 @@ qca8k_parse_port_config(struct qca8k_priv *priv)
  				 mode == PHY_INTERFACE_MODE_RGMII_TXID)
  				delay = 1;
  
@@ -143,7 +145,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				dev_err(priv->dev, "rgmii tx delay is limited to a max value of 3ns, setting to the max value");
  				delay = 3;
  			}
-@@ -1030,7 +1027,7 @@ qca8k_parse_port_config(struct qca8k_pri
+@@ -1030,7 +1027,7 @@ qca8k_parse_port_config(struct qca8k_priv *priv)
  				 mode == PHY_INTERFACE_MODE_RGMII_RXID)
  				delay = 2;
  
@@ -207,7 +209,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				  QCA8K_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
  				  QCA8K_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
  				  QCA8K_PORT_HOL_CTRL1_WRED_EN,
-@@ -1269,8 +1264,8 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1265,8 +1260,8 @@ qca8k_setup(struct dsa_switch *ds)
  		mask = QCA8K_GLOBAL_FC_GOL_XON_THRES(288) |
  		       QCA8K_GLOBAL_FC_GOL_XOFF_THRES(496);
  		qca8k_rmw(priv, QCA8K_REG_GLOBAL_FC_THRESH,
@@ -218,35 +220,34 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			  mask);
  	}
  
-@@ -1918,11 +1913,11 @@ qca8k_port_vlan_filtering(struct dsa_swi
+@@ -1912,11 +1907,11 @@ qca8k_port_vlan_filtering(struct dsa_switch *ds, int port, bool vlan_filtering,
  
  	if (vlan_filtering) {
- 		qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
--			  QCA8K_PORT_LOOKUP_VLAN_MODE,
-+			  QCA8K_PORT_LOOKUP_VLAN_MODE_MASK,
- 			  QCA8K_PORT_LOOKUP_VLAN_MODE_SECURE);
+ 		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
+-				QCA8K_PORT_LOOKUP_VLAN_MODE,
++				QCA8K_PORT_LOOKUP_VLAN_MODE_MASK,
+ 				QCA8K_PORT_LOOKUP_VLAN_MODE_SECURE);
  	} else {
- 		qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
--			  QCA8K_PORT_LOOKUP_VLAN_MODE,
-+			  QCA8K_PORT_LOOKUP_VLAN_MODE_MASK,
- 			  QCA8K_PORT_LOOKUP_VLAN_MODE_NONE);
+ 		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
+-				QCA8K_PORT_LOOKUP_VLAN_MODE,
++				QCA8K_PORT_LOOKUP_VLAN_MODE_MASK,
+ 				QCA8K_PORT_LOOKUP_VLAN_MODE_NONE);
  	}
  
-@@ -1953,11 +1948,9 @@ qca8k_port_vlan_add(struct dsa_switch *d
- 		dev_err(priv->dev, "Failed to add VLAN to port %d (%d)", port, ret);
+@@ -1940,10 +1935,9 @@ qca8k_port_vlan_add(struct dsa_switch *ds, int port,
+ 	}
  
  	if (pvid) {
 -		int shift = 16 * (port % 2);
 -
- 		qca8k_rmw(priv, QCA8K_EGRESS_VLAN(port),
--			  0xfff << shift,
--			  vlan->vid_end << shift);
-+			  QCA8K_EGREES_VLAN_PORT_MASK(port),
-+			  QCA8K_EGREES_VLAN_PORT(port, vlan->vid_end));
- 		qca8k_write(priv, QCA8K_REG_PORT_VLAN_CTRL0(port),
- 			    QCA8K_PORT_VLAN_CVID(vlan->vid_end) |
- 			    QCA8K_PORT_VLAN_SVID(vlan->vid_end));
-@@ -2050,7 +2043,7 @@ static int qca8k_read_switch_id(struct q
+ 		ret = qca8k_rmw(priv, QCA8K_EGRESS_VLAN(port),
+-				0xfff << shift, vlan->vid << shift);
++				QCA8K_EGREES_VLAN_PORT_MASK(port),
++				QCA8K_EGREES_VLAN_PORT(port, vlan->vid));
+ 		if (ret)
+ 			return ret;
+ 
+@@ -2037,7 +2031,7 @@ static int qca8k_read_switch_id(struct qca8k_priv *priv)
  	if (ret < 0)
  		return -ENODEV;
  
@@ -255,7 +256,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (id != data->id) {
  		dev_err(priv->dev, "Switch id detected %x but expected %x", id, data->id);
  		return -ENODEV;
-@@ -2059,7 +2052,7 @@ static int qca8k_read_switch_id(struct q
+@@ -2046,7 +2040,7 @@ static int qca8k_read_switch_id(struct qca8k_priv *priv)
  	priv->switch_id = id;
  
  	/* Save revision to communicate to the internal PHY driver */
@@ -264,6 +265,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	return 0;
  }
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index 128b8cf85e080..085885275398b 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -30,9 +30,9 @@
@@ -506,3 +509,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #define QCA8K_EGRESS_VLAN(x)				(0x0c70 + (4 * (x / 2)))
  
  /* L3 registers */
+-- 
+cgit 1.2.3-1.el7
+

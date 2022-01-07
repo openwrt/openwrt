@@ -14,6 +14,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.c | 14 ++++++++------
  1 file changed, 8 insertions(+), 6 deletions(-)
 
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index ae02043a52079..f63a432916360 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
 @@ -1086,12 +1086,6 @@ qca8k_setup(struct dsa_switch *ds)
@@ -29,7 +31,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	ret = qca8k_setup_mdio_bus(priv);
  	if (ret)
  		return ret;
-@@ -2085,6 +2079,14 @@ qca8k_sw_probe(struct mdio_device *mdiod
+@@ -2073,6 +2067,14 @@ qca8k_sw_probe(struct mdio_device *mdiodev)
  		gpiod_set_value_cansleep(priv->reset_gpio, 0);
  	}
  
@@ -44,3 +46,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* Check the detected switch id */
  	ret = qca8k_read_switch_id(priv);
  	if (ret)
+-- 
+cgit 1.2.3-1.el7
+
