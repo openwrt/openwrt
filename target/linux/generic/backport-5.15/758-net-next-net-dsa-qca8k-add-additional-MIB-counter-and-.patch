@@ -17,9 +17,11 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h |  4 ++++
  2 files changed, 24 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index d64a9af186beb..bedaaa6b9a1df 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -70,6 +70,8 @@ static const struct qca8k_mib_desc ar832
+@@ -70,6 +70,8 @@ static const struct qca8k_mib_desc ar8327_mib[] = {
  	MIB_DESC(1, 0x9c, "TxExcDefer"),
  	MIB_DESC(1, 0xa0, "TxDefer"),
  	MIB_DESC(1, 0xa4, "TxLateCol"),
@@ -28,7 +30,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  /* The 32bit switch registers are accessed indirectly. To achieve this we need
-@@ -1605,12 +1607,16 @@ qca8k_phylink_mac_link_up(struct dsa_swi
+@@ -1601,12 +1603,16 @@ qca8k_phylink_mac_link_up(struct dsa_switch *ds, int port, unsigned int mode,
  static void
  qca8k_get_strings(struct dsa_switch *ds, int port, u32 stringset, uint8_t *data)
  {
@@ -46,7 +48,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		strncpy(data + i * ETH_GSTRING_LEN, ar8327_mib[i].name,
  			ETH_GSTRING_LEN);
  }
-@@ -1620,12 +1626,15 @@ qca8k_get_ethtool_stats(struct dsa_switc
+@@ -1616,12 +1622,15 @@ qca8k_get_ethtool_stats(struct dsa_switch *ds, int port,
  			uint64_t *data)
  {
  	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
@@ -63,7 +65,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		mib = &ar8327_mib[i];
  		reg = QCA8K_PORT_MIB_COUNTER(port) + mib->offset;
  
-@@ -1648,10 +1657,15 @@ qca8k_get_ethtool_stats(struct dsa_switc
+@@ -1644,10 +1653,15 @@ qca8k_get_ethtool_stats(struct dsa_switch *ds, int port,
  static int
  qca8k_get_sset_count(struct dsa_switch *ds, int port, int sset)
  {
@@ -80,7 +82,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static int
-@@ -2146,14 +2160,17 @@ static SIMPLE_DEV_PM_OPS(qca8k_pm_ops,
+@@ -2150,14 +2164,17 @@ static SIMPLE_DEV_PM_OPS(qca8k_pm_ops,
  static const struct qca8k_match_data qca8327 = {
  	.id = QCA8K_ID_QCA8327,
  	.reduced_package = true,
@@ -98,6 +100,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct of_device_id qca8k_of_match[] = {
+diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
+index 085885275398b..91c94dfc9789d 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -21,6 +21,9 @@
@@ -118,3 +122,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  enum {
+-- 
+cgit 1.2.3-1.el7
+

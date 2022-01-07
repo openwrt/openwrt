@@ -23,6 +23,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.c | 107 +++++++++++++++++++++---------------------------
  1 file changed, 47 insertions(+), 60 deletions(-)
 
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index f63a432916360..d64a9af186beb 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
 @@ -10,6 +10,7 @@
@@ -33,7 +35,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #include <net/dsa.h>
  #include <linux/of_net.h>
  #include <linux/of_mdio.h>
-@@ -152,6 +153,25 @@ qca8k_set_page(struct mii_bus *bus, u16
+@@ -152,6 +153,25 @@ qca8k_set_page(struct mii_bus *bus, u16 page)
  static int
  qca8k_read(struct qca8k_priv *priv, u32 reg, u32 *val)
  {
@@ -116,7 +118,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static const struct regmap_range qca8k_readable_ranges[] = {
  	regmap_reg_range(0x0000, 0x00e4), /* Global control */
  	regmap_reg_range(0x0100, 0x0168), /* EEE control */
-@@ -282,26 +276,19 @@ static struct regmap_config qca8k_regmap
+@@ -282,26 +276,19 @@ static struct regmap_config qca8k_regmap_config = {
  	.max_register = 0x16ac, /* end MIB - Port6 range */
  	.reg_read = qca8k_regmap_read,
  	.reg_write = qca8k_regmap_write,
@@ -166,7 +168,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (ret)
  		goto exit;
  
-@@ -597,9 +584,9 @@ qca8k_port_set_status(struct qca8k_priv
+@@ -597,9 +584,9 @@ qca8k_port_set_status(struct qca8k_priv *priv, int port, int enable)
  		mask |= QCA8K_PORT_STATUS_LINK_AUTO;
  
  	if (enable)
@@ -178,7 +180,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static u32
-@@ -861,8 +848,8 @@ qca8k_setup_mdio_bus(struct qca8k_priv *
+@@ -861,8 +848,8 @@ qca8k_setup_mdio_bus(struct qca8k_priv *priv)
  		 * a dt-overlay and driver reload changed the configuration
  		 */
  
@@ -221,7 +223,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			if (ret)
  				return ret;
  
-@@ -1745,9 +1732,9 @@ qca8k_port_bridge_join(struct dsa_switch
+@@ -1741,9 +1728,9 @@ qca8k_port_bridge_join(struct dsa_switch *ds, int port, struct net_device *br)
  		/* Add this port to the portvlan mask of the other ports
  		 * in the bridge
  		 */
@@ -234,7 +236,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (ret)
  			return ret;
  		if (i != port)
-@@ -1777,9 +1764,9 @@ qca8k_port_bridge_leave(struct dsa_switc
+@@ -1773,9 +1760,9 @@ qca8k_port_bridge_leave(struct dsa_switch *ds, int port, struct net_device *br)
  		/* Remove this port to the portvlan mask of the other ports
  		 * in the bridge
  		 */
@@ -247,3 +249,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	/* Set the cpu port to be the only one in the portvlan mask of
+-- 
+cgit 1.2.3-1.el7
+
