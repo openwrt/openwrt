@@ -12,6 +12,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.c | 2 --
  1 file changed, 2 deletions(-)
 
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index 0eceb9cba2dc8..ae02043a52079 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
 @@ -1086,8 +1086,6 @@ qca8k_setup(struct dsa_switch *ds)
@@ -23,3 +25,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* Start by setting up the register mapping */
  	priv->regmap = devm_regmap_init(ds->dev, NULL, priv,
  					&qca8k_regmap_config);
+-- 
+cgit 1.2.3-1.el7
+
