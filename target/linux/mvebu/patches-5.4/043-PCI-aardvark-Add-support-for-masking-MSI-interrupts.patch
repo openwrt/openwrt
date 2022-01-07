@@ -1,0 +1,119 @@
+From 5ad4ef19f74e75ce3703f28d519b146fe8047aec Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>
+Date: Fri, 2 Jul 2021 16:44:10 +0200
+Subject: [PATCH 43/55] PCI: aardvark: Add support for masking MSI interrupts
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We should not unmask MSIs at setup, but only when kernel asks for them
+to be unmasked.
+
+At setup, mask all MSIs, and implement IRQ chip callbacks for masking
+and unmasking particular MSIs.
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+Signed-off-by: Marek Behún <kabel@kernel.org>
+---
+ drivers/pci/controller/pci-aardvark.c | 52 ++++++++++++++++++++++++---
+ 1 file changed, 48 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
+index 33f56aae5cee..85850f2d6676 100644
+--- a/drivers/pci/controller/pci-aardvark.c
++++ b/drivers/pci/controller/pci-aardvark.c
+@@ -285,6 +285,7 @@ struct advk_pcie {
+ 	struct irq_domain *msi_inner_domain;
+ 	struct irq_chip msi_bottom_irq_chip;
+ 	struct irq_chip msi_irq_chip;
++	raw_spinlock_t msi_irq_lock;
+ 	struct msi_domain_info msi_domain_info;
+ 	DECLARE_BITMAP(msi_used, MSI_IRQ_NUM);
+ 	struct mutex msi_used_lock;
+@@ -577,12 +578,10 @@ static void advk_pcie_setup_hw(struct advk_pcie *pcie)
+ 	advk_writel(pcie, PCIE_ISR1_ALL_MASK, PCIE_ISR1_REG);
+ 	advk_writel(pcie, PCIE_IRQ_ALL_MASK, HOST_CTRL_INT_STATUS_REG);
+ 
+-	/* Disable All ISR0/1 Sources */
++	/* Disable All ISR0/1 and MSI Sources */
+ 	advk_writel(pcie, PCIE_ISR0_ALL_MASK, PCIE_ISR0_MASK_REG);
+ 	advk_writel(pcie, PCIE_ISR1_ALL_MASK, PCIE_ISR1_MASK_REG);
+-
+-	/* Unmask all MSIs */
+-	advk_writel(pcie, ~(u32)PCIE_MSI_ALL_MASK, PCIE_MSI_MASK_REG);
++	advk_writel(pcie, PCIE_MSI_ALL_MASK, PCIE_MSI_MASK_REG);
+ 
+ 	/* Unmask summary MSI interrupt */
+ 	reg = advk_readl(pcie, PCIE_ISR0_MASK_REG);
+@@ -1196,6 +1195,46 @@ static int advk_msi_set_affinity(struct irq_data *irq_data,
+ 	return -EINVAL;
+ }
+ 
++static void advk_msi_irq_mask(struct irq_data *d)
++{
++	struct advk_pcie *pcie = d->domain->host_data;
++	irq_hw_number_t hwirq = irqd_to_hwirq(d);
++	unsigned long flags;
++	u32 mask;
++
++	raw_spin_lock_irqsave(&pcie->msi_irq_lock, flags);
++	mask = advk_readl(pcie, PCIE_MSI_MASK_REG);
++	mask |= BIT(hwirq);
++	advk_writel(pcie, mask, PCIE_MSI_MASK_REG);
++	raw_spin_unlock_irqrestore(&pcie->msi_irq_lock, flags);
++}
++
++static void advk_msi_irq_unmask(struct irq_data *d)
++{
++	struct advk_pcie *pcie = d->domain->host_data;
++	irq_hw_number_t hwirq = irqd_to_hwirq(d);
++	unsigned long flags;
++	u32 mask;
++
++	raw_spin_lock_irqsave(&pcie->msi_irq_lock, flags);
++	mask = advk_readl(pcie, PCIE_MSI_MASK_REG);
++	mask &= ~BIT(hwirq);
++	advk_writel(pcie, mask, PCIE_MSI_MASK_REG);
++	raw_spin_unlock_irqrestore(&pcie->msi_irq_lock, flags);
++}
++
++static void advk_msi_top_irq_mask(struct irq_data *d)
++{
++	pci_msi_mask_irq(d);
++	irq_chip_mask_parent(d);
++}
++
++static void advk_msi_top_irq_unmask(struct irq_data *d)
++{
++	pci_msi_unmask_irq(d);
++	irq_chip_unmask_parent(d);
++}
++
+ static int advk_msi_irq_domain_alloc(struct irq_domain *domain,
+ 				     unsigned int virq,
+ 				     unsigned int nr_irqs, void *args)
+@@ -1290,6 +1329,7 @@ static int advk_pcie_init_msi_irq_domain(struct advk_pcie *pcie)
+ 	struct msi_domain_info *msi_di;
+ 	phys_addr_t msi_msg_phys;
+ 
++	raw_spin_lock_init(&pcie->msi_irq_lock);
+ 	mutex_init(&pcie->msi_used_lock);
+ 
+ 	bottom_ic = &pcie->msi_bottom_irq_chip;
+@@ -1297,9 +1337,13 @@ static int advk_pcie_init_msi_irq_domain(struct advk_pcie *pcie)
+ 	bottom_ic->name = "MSI";
+ 	bottom_ic->irq_compose_msi_msg = advk_msi_irq_compose_msi_msg;
+ 	bottom_ic->irq_set_affinity = advk_msi_set_affinity;
++	bottom_ic->irq_mask = advk_msi_irq_mask;
++	bottom_ic->irq_unmask = advk_msi_irq_unmask;
+ 
+ 	msi_ic = &pcie->msi_irq_chip;
+ 	msi_ic->name = "advk-MSI";
++	msi_ic->irq_mask = advk_msi_top_irq_mask;
++	msi_ic->irq_unmask = advk_msi_top_irq_unmask;
+ 
+ 	msi_di = &pcie->msi_domain_info;
+ 	msi_di->flags = MSI_FLAG_USE_DEF_DOM_OPS | MSI_FLAG_USE_DEF_CHIP_OPS |
+-- 
+2.34.1
+

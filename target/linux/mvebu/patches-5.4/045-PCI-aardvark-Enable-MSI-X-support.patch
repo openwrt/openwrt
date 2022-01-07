@@ -1,0 +1,43 @@
+From 0e75cb288a42e6b200affbd679bf924866466a38 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>
+Date: Fri, 2 Apr 2021 14:05:24 +0200
+Subject: [PATCH 45/55] PCI: aardvark: Enable MSI-X support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+According to PCI 3.0 specification, sending both MSI and MSI-X interrupts
+is done by DWORD memory write operation to doorbell message address. The
+write operation for MSI has zero upper 16 bits and the MSI interrupt number
+in the lower 16 bits, while the write operation for MSI-X contains a 32-bit
+value from MSI-X table.
+
+Since the driver only uses interrupt numbers from range 0..31, the upper
+16 bits of the DWORD memory write operation to doorbell message address
+are zero even for MSI-X interrupts. Thus we can enable MSI-X interrupts.
+
+Testing proves that kernel can correctly receive MSI-X interrupts from PCIe
+cards which supports both MSI and MSI-X interrupts.
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+Signed-off-by: Marek Behún <kabel@kernel.org>
+---
+ drivers/pci/controller/pci-aardvark.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
+index f2f63760b232..93ce68b405a8 100644
+--- a/drivers/pci/controller/pci-aardvark.c
++++ b/drivers/pci/controller/pci-aardvark.c
+@@ -1351,7 +1351,7 @@ static int advk_pcie_init_msi_irq_domain(struct advk_pcie *pcie)
+ 
+ 	msi_di = &pcie->msi_domain_info;
+ 	msi_di->flags = MSI_FLAG_USE_DEF_DOM_OPS | MSI_FLAG_USE_DEF_CHIP_OPS |
+-		MSI_FLAG_MULTI_PCI_MSI;
++			MSI_FLAG_MULTI_PCI_MSI | MSI_FLAG_PCI_MSIX;
+ 	msi_di->chip = msi_ic;
+ 
+ 	pcie->msi_inner_domain =
+-- 
+2.34.1
+

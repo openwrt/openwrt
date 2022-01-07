@@ -1,0 +1,64 @@
+From 9b3827308e4ffc480dcc6b969383f2ec37129220 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>
+Date: Wed, 2 Dec 2020 18:29:29 +0100
+Subject: [PATCH 37/55] PCI: aardvark: Add support for DEVCAP2, DEVCTL2,
+ LNKCAP2 and LNKCTL2 registers on emulated bridge
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+PCI aardvark hardware supports access to DEVCAP2, DEVCTL2, LNKCAP2 and
+LNKCTL2 configuration registers of PCIe core via PCIE_CORE_PCIEXP_CAP.
+Export them via emulated software root bridge.
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+Signed-off-by: Marek Behún <kabel@kernel.org>
+---
+ drivers/pci/controller/pci-aardvark.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
+index a96f85fb9f98..69ed432a7278 100644
+--- a/drivers/pci/controller/pci-aardvark.c
++++ b/drivers/pci/controller/pci-aardvark.c
+@@ -875,8 +875,13 @@ advk_pci_bridge_emul_pcie_conf_read(struct pci_bridge_emul *bridge,
+ 	case PCI_CAP_LIST_ID:
+ 	case PCI_EXP_DEVCAP:
+ 	case PCI_EXP_DEVCTL:
++	case PCI_EXP_DEVCAP2:
++	case PCI_EXP_DEVCTL2:
++	case PCI_EXP_LNKCAP2:
++	case PCI_EXP_LNKCTL2:
+ 		*value = advk_readl(pcie, PCIE_CORE_PCIEXP_CAP + reg);
+ 		return PCI_BRIDGE_EMUL_HANDLED;
++
+ 	default:
+ 		return PCI_BRIDGE_EMUL_NOT_HANDLED;
+ 	}
+@@ -890,10 +895,6 @@ advk_pci_bridge_emul_pcie_conf_write(struct pci_bridge_emul *bridge,
+ 	struct advk_pcie *pcie = bridge->data;
+ 
+ 	switch (reg) {
+-	case PCI_EXP_DEVCTL:
+-		advk_writel(pcie, new, PCIE_CORE_PCIEXP_CAP + reg);
+-		break;
+-
+ 	case PCI_EXP_LNKCTL:
+ 		advk_writel(pcie, new, PCIE_CORE_PCIEXP_CAP + reg);
+ 		if (new & PCI_EXP_LNKCTL_RL)
+@@ -915,6 +916,12 @@ advk_pci_bridge_emul_pcie_conf_write(struct pci_bridge_emul *bridge,
+ 		advk_writel(pcie, new, PCIE_ISR0_REG);
+ 		break;
+ 
++	case PCI_EXP_DEVCTL:
++	case PCI_EXP_DEVCTL2:
++	case PCI_EXP_LNKCTL2:
++		advk_writel(pcie, new, PCIE_CORE_PCIEXP_CAP + reg);
++		break;
++
+ 	default:
+ 		break;
+ 	}
+-- 
+2.34.1
+

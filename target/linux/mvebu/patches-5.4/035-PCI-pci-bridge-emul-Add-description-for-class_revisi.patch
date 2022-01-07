@@ -1,0 +1,47 @@
+From ac952eed0e5db283fb23f4bafb7bfccb4db1e581 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>
+Date: Wed, 2 Dec 2020 18:16:01 +0100
+Subject: [PATCH 35/55] PCI: pci-bridge-emul: Add description for
+ class_revision field
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The current assignment to the class_revision member
+
+  class_revision |= cpu_to_le32(PCI_CLASS_BRIDGE_PCI << 16);
+
+can make the reader think that class is at high 16 bits of the member and
+revision at low 16 bits.
+
+In reality, class is at high 24 bits, but the class for PCI Bridge Normal
+Decode is PCI_CLASS_BRIDGE_PCI << 8.
+
+Change the assignment and add a comment to make this clearer.
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+Signed-off-by: Marek Behún <kabel@kernel.org>
+---
+ drivers/pci/pci-bridge-emul.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/pci/pci-bridge-emul.c b/drivers/pci/pci-bridge-emul.c
+index 3026346ccb18..4412707c76ba 100644
+--- a/drivers/pci/pci-bridge-emul.c
++++ b/drivers/pci/pci-bridge-emul.c
+@@ -275,7 +275,11 @@ int pci_bridge_emul_init(struct pci_bridge_emul *bridge,
+ {
+ 	BUILD_BUG_ON(sizeof(bridge->conf) != PCI_BRIDGE_CONF_END);
+ 
+-	bridge->conf.class_revision |= cpu_to_le32(PCI_CLASS_BRIDGE_PCI << 16);
++	/*
++	 * class_revision: Class is high 24 bits and revision is low 8 bit of this member,
++	 * while class for PCI Bridge Normal Decode has the 24-bit value: PCI_CLASS_BRIDGE_PCI << 8
++	 */
++	bridge->conf.class_revision |= cpu_to_le32((PCI_CLASS_BRIDGE_PCI << 8) << 8);
+ 	bridge->conf.header_type = PCI_HEADER_TYPE_BRIDGE;
+ 	bridge->conf.cache_line_size = 0x10;
+ 	bridge->conf.status = cpu_to_le16(PCI_STATUS_CAP_LIST);
+-- 
+2.34.1
+
