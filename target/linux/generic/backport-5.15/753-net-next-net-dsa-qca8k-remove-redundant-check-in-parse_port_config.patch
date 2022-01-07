@@ -16,9 +16,11 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
+index a429c9750add1..bfffc1fb7016d 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -983,7 +983,7 @@ qca8k_parse_port_config(struct qca8k_pri
+@@ -983,7 +983,7 @@ qca8k_parse_port_config(struct qca8k_priv *priv)
  	u32 delay;
  
  	/* We have 2 CPU port. Check them */
@@ -27,3 +29,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		/* Skip every other port */
  		if (port != 0 && port != 6)
  			continue;
+-- 
+cgit 1.2.3-1.el7
+
