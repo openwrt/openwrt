@@ -12,6 +12,9 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+actiontec,web7200)
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x20000" "0x20000"
+	;;
 alfa-network,ac1200rm|\
 alfa-network,awusfree1|\
 alfa-network,quad-e4g|\
