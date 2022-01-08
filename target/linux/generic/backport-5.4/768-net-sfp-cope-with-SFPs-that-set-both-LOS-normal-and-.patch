@@ -1,0 +1,94 @@
+From da5bc1832b325b15e4cca3b63861ecf48be870ef Mon Sep 17 00:00:00 2001
+From: Russell King <rmk+kernel@armlinux.org.uk>
+Date: Sun, 10 Jan 2021 10:58:32 +0000
+Subject: [PATCH] net: sfp: cope with SFPs that set both LOS normal and LOS
+ inverted
+
+The SFP MSA defines two option bits in byte 65 to indicate how the
+Rx_LOS signal on SFP pin 8 behaves:
+
+bit 2 - Loss of Signal implemented, signal inverted from standard
+        definition in SFP MSA (often called "Signal Detect").
+bit 1 - Loss of Signal implemented, signal as defined in SFP MSA
+        (often called "Rx_LOS").
+
+Clearly, setting both bits results in a meaningless situation: it would
+mean that LOS is implemented in both the normal sense (1 = signal loss)
+and inverted sense (0 = signal loss).
+
+Unfortunately, there are modules out there which set both bits, which
+will be initially interpret as "inverted" sense, and then, if the LOS
+signal changes state, we will toggle between LINK_UP and WAIT_LOS
+states.
+
+Change our LOS handling to give well defined behaviour: only interpret
+these bits as meaningful if exactly one is set, otherwise treat it as
+if LOS is not implemented.
+
+Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://lore.kernel.org/r/E1kyYQa-0004iR-CU@rmk-PC.armlinux.org.uk
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/sfp.c | 36 ++++++++++++++++++++++--------------
+ 1 file changed, 22 insertions(+), 14 deletions(-)
+
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -1430,15 +1430,19 @@ static void sfp_sm_link_down(struct sfp
+ 
+ static void sfp_sm_link_check_los(struct sfp *sfp)
+ {
+-	unsigned int los = sfp->state & SFP_F_LOS;
++	const __be16 los_inverted = cpu_to_be16(SFP_OPTIONS_LOS_INVERTED);
++	const __be16 los_normal = cpu_to_be16(SFP_OPTIONS_LOS_NORMAL);
++	__be16 los_options = sfp->id.ext.options & (los_inverted | los_normal);
++	bool los = false;
+ 
+ 	/* If neither SFP_OPTIONS_LOS_INVERTED nor SFP_OPTIONS_LOS_NORMAL
+-	 * are set, we assume that no LOS signal is available.
++	 * are set, we assume that no LOS signal is available. If both are
++	 * set, we assume LOS is not implemented (and is meaningless.)
+ 	 */
+-	if (sfp->id.ext.options & cpu_to_be16(SFP_OPTIONS_LOS_INVERTED))
+-		los ^= SFP_F_LOS;
+-	else if (!(sfp->id.ext.options & cpu_to_be16(SFP_OPTIONS_LOS_NORMAL)))
+-		los = 0;
++	if (los_options == los_inverted)
++		los = !(sfp->state & SFP_F_LOS);
++	else if (los_options == los_normal)
++		los = !!(sfp->state & SFP_F_LOS);
+ 
+ 	if (los)
+ 		sfp_sm_next(sfp, SFP_S_WAIT_LOS, 0);
+@@ -1448,18 +1452,22 @@ static void sfp_sm_link_check_los(struct
+ 
+ static bool sfp_los_event_active(struct sfp *sfp, unsigned int event)
+ {
+-	return (sfp->id.ext.options & cpu_to_be16(SFP_OPTIONS_LOS_INVERTED) &&
+-		event == SFP_E_LOS_LOW) ||
+-	       (sfp->id.ext.options & cpu_to_be16(SFP_OPTIONS_LOS_NORMAL) &&
+-		event == SFP_E_LOS_HIGH);
++	const __be16 los_inverted = cpu_to_be16(SFP_OPTIONS_LOS_INVERTED);
++	const __be16 los_normal = cpu_to_be16(SFP_OPTIONS_LOS_NORMAL);
++	__be16 los_options = sfp->id.ext.options & (los_inverted | los_normal);
++
++	return (los_options == los_inverted && event == SFP_E_LOS_LOW) ||
++	       (los_options == los_normal && event == SFP_E_LOS_HIGH);
+ }
+ 
+ static bool sfp_los_event_inactive(struct sfp *sfp, unsigned int event)
+ {
+-	return (sfp->id.ext.options & cpu_to_be16(SFP_OPTIONS_LOS_INVERTED) &&
+-		event == SFP_E_LOS_HIGH) ||
+-	       (sfp->id.ext.options & cpu_to_be16(SFP_OPTIONS_LOS_NORMAL) &&
+-		event == SFP_E_LOS_LOW);
++	const __be16 los_inverted = cpu_to_be16(SFP_OPTIONS_LOS_INVERTED);
++	const __be16 los_normal = cpu_to_be16(SFP_OPTIONS_LOS_NORMAL);
++	__be16 los_options = sfp->id.ext.options & (los_inverted | los_normal);
++
++	return (los_options == los_inverted && event == SFP_E_LOS_HIGH) ||
++	       (los_options == los_normal && event == SFP_E_LOS_LOW);
+ }
+ 
+ static void sfp_sm_fault(struct sfp *sfp, unsigned int next_state, bool warn)

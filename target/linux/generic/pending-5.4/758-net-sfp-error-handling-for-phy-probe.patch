@@ -55,7 +55,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  static void sfp_sm_link_up(struct sfp *sfp)
-@@ -1529,21 +1531,24 @@ static void sfp_sm_fault(struct sfp *sfp
+@@ -1537,21 +1539,24 @@ static void sfp_sm_fault(struct sfp *sfp
   * Clause 45 copper SFP+ modules (10G) appear to switch their interface
   * mode according to the negotiated line speed.
   */
@@ -83,7 +83,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  static int sfp_module_parse_power(struct sfp *sfp)
-@@ -2025,7 +2030,10 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -2033,7 +2038,10 @@ static void sfp_sm_main(struct sfp *sfp,
  	init_done:	/* TX_FAULT deasserted or we timed out with TX_FAULT
  			 * clear.  Probe for the PHY and check the LOS state.
  			 */
