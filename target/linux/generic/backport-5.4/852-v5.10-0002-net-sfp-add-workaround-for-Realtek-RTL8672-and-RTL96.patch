@@ -102,7 +102,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	err = sfp_read(sfp, true, 0, &sfp->diag, sizeof(sfp->diag));
  	if (err < 0) {
  		if (sfp->hwmon_tries--) {
-@@ -1579,26 +1585,30 @@ static int sfp_sm_mod_hpower(struct sfp
+@@ -1587,26 +1593,30 @@ static int sfp_sm_mod_hpower(struct sfp
  	return 0;
  }
  
@@ -149,7 +149,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int sfp_sm_mod_probe(struct sfp *sfp, bool report)
-@@ -1609,11 +1619,11 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1617,11 +1627,11 @@ static int sfp_sm_mod_probe(struct sfp *
  	u8 check;
  	int ret;
  
@@ -165,7 +165,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	ret = sfp_read(sfp, false, 0, &id.base, sizeof(id.base));
  	if (ret < 0) {
-@@ -1627,6 +1637,33 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1635,6 +1645,33 @@ static int sfp_sm_mod_probe(struct sfp *
  		return -EAGAIN;
  	}
  
@@ -199,7 +199,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	/* Cotsworks do not seem to update the checksums when they
  	 * do the final programming with the final module part number,
  	 * serial number and date code.
-@@ -1650,9 +1687,6 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1658,9 +1695,6 @@ static int sfp_sm_mod_probe(struct sfp *
  		}
  	}
  

@@ -43,7 +43,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	err = sfp_add_phy(sfp->sfp_bus, phy);
  	if (err) {
  		phy_device_remove(phy);
-@@ -1503,10 +1510,32 @@ static void sfp_sm_fault(struct sfp *sfp
+@@ -1511,10 +1518,32 @@ static void sfp_sm_fault(struct sfp *sfp
  	}
  }
  
@@ -78,7 +78,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  }
  
  static int sfp_module_parse_power(struct sfp *sfp)
-@@ -1566,6 +1595,13 @@ static int sfp_sm_mod_hpower(struct sfp
+@@ -1574,6 +1603,13 @@ static int sfp_sm_mod_hpower(struct sfp
  		return -EAGAIN;
  	}
  

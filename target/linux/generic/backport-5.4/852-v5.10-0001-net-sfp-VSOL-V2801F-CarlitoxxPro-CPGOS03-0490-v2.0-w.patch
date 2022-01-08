@@ -68,7 +68,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  		msgs[1].len = this_len;
  
-@@ -1569,6 +1579,28 @@ static int sfp_sm_mod_hpower(struct sfp
+@@ -1577,6 +1587,28 @@ static int sfp_sm_mod_hpower(struct sfp
  	return 0;
  }
  
@@ -97,7 +97,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int sfp_sm_mod_probe(struct sfp *sfp, bool report)
  {
  	/* SFP module inserted - read I2C data */
-@@ -1577,14 +1609,20 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1585,14 +1617,20 @@ static int sfp_sm_mod_probe(struct sfp *
  	u8 check;
  	int ret;
  
@@ -120,7 +120,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		dev_err(sfp->dev, "EEPROM short read: %d\n", ret);
  		return -EAGAIN;
  	}
-@@ -1612,6 +1650,21 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1620,6 +1658,21 @@ static int sfp_sm_mod_probe(struct sfp *
  		}
  	}
  
