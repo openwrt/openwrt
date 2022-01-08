@@ -1,0 +1,19 @@
+diff --git a/bfd/plugin.c b/bfd/plugin.c
+index 6cfa2b66470..3bab8febe88 100644
+--- a/bfd/plugin.c
++++ b/bfd/plugin.c
+@@ -291,6 +291,14 @@ bfd_plugin_close_file_descriptor (bfd *abfd, int fd)
+ 	     && !bfd_is_thin_archive (abfd->my_archive))
+ 	abfd = abfd->my_archive;
+ 
++      /* Close the file descriptor if there is no archive plugin file
++	 descriptor.  */
++      if (abfd->archive_plugin_fd == -1)
++	{
++	  close (fd);
++	  return;
++	}
++
+       abfd->archive_plugin_fd_open_count--;
+       /* Dup the archive plugin file descriptor for later use, which
+ 	 will be closed by _bfd_archive_close_and_cleanup.  */
