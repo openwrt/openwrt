@@ -305,6 +305,20 @@ define Device/netgear_wndr4500-v3
 endef
 TARGET_DEVICES += netgear_wndr4500-v3
 
+define Device/zte_mf286
+  SOC := qca9563
+  DEVICE_VENDOR := ZTE
+  DEVICE_MODEL := MF286
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
+	ath10k-firmware-qca988x-ct kmod-usb-net-qmi-wwan kmod-usb-serial-option \
+	uqmi
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zte_mf286
+
 define Device/zyxel_nbg6716
   SOC := qca9558
   DEVICE_VENDOR := ZyXEL
