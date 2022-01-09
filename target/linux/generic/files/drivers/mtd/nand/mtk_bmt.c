@@ -22,6 +22,7 @@
 #include <linux/mtd/mtk_bmt.h>
 #include <linux/module.h>
 #include <linux/debugfs.h>
+#include <linux/bits.h>
 
 #define MAIN_SIGNATURE_OFFSET   0
 #define OOB_SIGNATURE_OFFSET    1
@@ -128,6 +129,51 @@ static inline int bbt_nand_erase(u16 block)
 	};
 
 	return bmtd._erase(mtd, &instr);
+}
+
+static inline int bbt_nand_copy(u16 dest_blk, u16 src_blk, loff_t max_offset)
+{
+	int pages = bmtd.blk_size >> bmtd.pg_shift;
+	loff_t src = (loff_t)src_blk << bmtd.blk_shift;
+	loff_t dest = (loff_t)dest_blk << bmtd.blk_shift;
+	loff_t offset = 0;
+	uint8_t oob[64];
+	int i, ret;
+
+	for (i = 0; i < pages; i++) {
+		struct mtd_oob_ops rd_ops = {
+			.mode = MTD_OPS_PLACE_OOB,
+			.oobbuf = oob,
+			.ooblen = min_t(int, bmtd.mtd->oobsize / pages, sizeof(oob)),
+			.datbuf = nand_data_buf,
+			.len = bmtd.pg_size,
+		};
+		struct mtd_oob_ops wr_ops = {
+			.mode = MTD_OPS_PLACE_OOB,
+			.oobbuf = oob,
+			.datbuf = nand_data_buf,
+			.len = bmtd.pg_size,
+		};
+
+		if (offset >= max_offset)
+			break;
+
+		ret = bmtd._read_oob(bmtd.mtd, src + offset, &rd_ops);
+		if (ret < 0 && !mtd_is_bitflip(ret))
+			return ret;
+
+		if (!rd_ops.retlen)
+			break;
+
+		ret = bmtd._write_oob(bmtd.mtd, dest + offset, &wr_ops);
+		if (ret < 0)
+			return ret;
+
+		wr_ops.ooblen = rd_ops.oobretlen;
+		offset += rd_ops.retlen;
+	}
+
+	return 0;
 }
 
 /* -------- Bad Blocks Management -------- */
@@ -389,7 +435,7 @@ error:
 /* We met a bad block, mark it as bad and map it to a valid block in pool,
  * if it's a write failure, we need to write the data to mapped block
  */
-static bool update_bmt(u16 block)
+static bool update_bmt(u16 block, int copy_len)
 {
 	u16 mapped_blk;
 	struct bbbt *bbt;
@@ -401,6 +447,12 @@ static bool update_bmt(u16 block)
 
 	/* Map new bad block to available block in pool */
 	bbt->bb_tbl[block] = mapped_blk;
+
+	/* Erase new block */
+	bbt_nand_erase(mapped_blk);
+	if (copy_len > 0)
+		bbt_nand_copy(mapped_blk, block, copy_len);
+
 	bmtd.bmt_blk_idx = upload_bmt(bbt, bmtd.bmt_blk_idx);
 
 	return true;
@@ -426,12 +478,14 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 	struct mtd_oob_ops cur_ops = *ops;
 	int retry_count = 0;
 	loff_t cur_from;
-	int ret;
+	int ret = 0;
 
 	ops->retlen = 0;
 	ops->oobretlen = 0;
 
 	while (ops->retlen < ops->len || ops->oobretlen < ops->ooblen) {
+		int cur_ret;
+
 		u32 offset = from & (bmtd.blk_size - 1);
 		u32 block = from >> bmtd.blk_shift;
 		u32 cur_block;
@@ -443,9 +497,11 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 		cur_ops.retlen = 0;
 		cur_ops.len = min_t(u32, mtd->erasesize - offset,
 					 ops->len - ops->retlen);
-		ret = bmtd._read_oob(mtd, cur_from, &cur_ops);
-		if (ret < 0) {
-			update_bmt(block);
+		cur_ret = bmtd._read_oob(mtd, cur_from, &cur_ops);
+		if (cur_ret < 0)
+			ret = cur_ret;
+		if (cur_ret < 0 && !mtd_is_bitflip(cur_ret)) {
+			update_bmt(block, mtd->erasesize);
 			if (retry_count++ < 10)
 				continue;
 
@@ -467,7 +523,7 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 		retry_count = 0;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int
@@ -496,7 +552,7 @@ mtk_bmt_write(struct mtd_info *mtd, loff_t to,
 					 ops->len - ops->retlen);
 		ret = bmtd._write_oob(mtd, cur_to, &cur_ops);
 		if (ret < 0) {
-			update_bmt(block);
+			update_bmt(block, offset);
 			if (retry_count++ < 10)
 				continue;
 
@@ -541,7 +597,7 @@ mtk_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 		mapped_instr.addr = (loff_t)block << bmtd.blk_shift;
 		ret = bmtd._erase(mtd, &mapped_instr);
 		if (ret) {
-			update_bmt(orig_block);
+			update_bmt(orig_block, 0);
 			if (retry_count++ < 10)
 				continue;
 			instr->fail_addr = start_addr;
@@ -565,7 +621,7 @@ retry:
 	block = get_mapping_block_index(orig_block);
 	ret = bmtd._block_isbad(mtd, (loff_t)block << bmtd.blk_shift);
 	if (ret) {
-		update_bmt(orig_block);
+		update_bmt(orig_block, bmtd.blk_size);
 		if (retry_count++ < 10)
 			goto retry;
 	}
@@ -577,7 +633,7 @@ mtk_bmt_block_markbad(struct mtd_info *mtd, loff_t ofs)
 {
 	u16 orig_block = ofs >> bmtd.blk_shift;
 	u16 block = get_mapping_block_index(orig_block);
-	update_bmt(orig_block);
+	update_bmt(orig_block, bmtd.blk_size);
 	return bmtd._block_markbad(mtd, (loff_t)block << bmtd.blk_shift);
 }
 
@@ -611,7 +667,7 @@ static int mtk_bmt_debug_mark_bad(void *data, u64 val)
 {
 	u32 block = val >> bmtd.blk_shift;
 
-	update_bmt(block);
+	update_bmt(block, bmtd.blk_size);
 
 	return 0;
 }
