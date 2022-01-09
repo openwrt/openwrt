@@ -90,6 +90,9 @@ static struct bmt_desc {
 	/* How many pages needs to store 'struct bbbt' */
 	u32 bmt_pgs;
 
+	const __be32 *remap_range;
+	int remap_range_len;
+
 	/* to compensate for driver level remapping */
 	u8 oob_offset;
 } bmtd = {0};
@@ -458,17 +461,32 @@ static bool update_bmt(u16 block, int copy_len)
 	return true;
 }
 
+static bool
+mapping_block_in_range(int block)
+{
+	const __be32 *cur = bmtd.remap_range;
+	u32 addr = block << bmtd.blk_shift;
+	int i;
+
+	if (!cur || !bmtd.remap_range_len)
+		return true;
+
+	for (i = 0; i < bmtd.remap_range_len; i++, cur += 2)
+		if (addr >= be32_to_cpu(cur[0]) && addr < be32_to_cpu(cur[1]))
+			return true;
+
+	return false;
+}
+
 u16 get_mapping_block_index(int block)
 {
-	int mapping_block;
+	if (block >= bmtd.pool_lba)
+		return block;
 
-	if (block < bmtd.pool_lba)
-		mapping_block = bmtd.bbt->bb_tbl[block];
-	else
-		mapping_block = block;
-	BBT_LOG("0x%x mapped to 0x%x", block, mapping_block);
+	if (!mapping_block_in_range(block))
+		return block;
 
-	return mapping_block;
+	return bmtd.bbt->bb_tbl[block];
 }
 
 static int
@@ -838,6 +856,10 @@ int mtk_bmt_attach(struct mtd_info *mtd)
 	if (of_property_read_u32(np, "mediatek,bmt-table-size",
 				 &bmt_table_size) != 0)
 		bmt_table_size = 0x2000U;
+
+	bmtd.remap_range = of_get_property(np, "mediatek,bmt-remap-range",
+					   &bmtd.remap_range_len);
+	bmtd.remap_range_len /= 8;
 
 	bmtd.mtd = mtd;
 	mtk_bmt_replace_ops(mtd);
