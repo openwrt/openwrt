@@ -497,6 +497,7 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 	int retry_count = 0;
 	loff_t cur_from;
 	int ret = 0;
+	int max_bitflips = 0;
 
 	ops->retlen = 0;
 	ops->oobretlen = 0;
@@ -518,12 +519,14 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 		cur_ret = bmtd._read_oob(mtd, cur_from, &cur_ops);
 		if (cur_ret < 0)
 			ret = cur_ret;
+		else
+			max_bitflips = max_t(int, max_bitflips, cur_ret);
 		if (cur_ret < 0 && !mtd_is_bitflip(cur_ret)) {
 			update_bmt(block, mtd->erasesize);
 			if (retry_count++ < 10)
 				continue;
 
-			return ret;
+			goto out;
 		}
 
 		ops->retlen += cur_ops.retlen;
@@ -541,7 +544,11 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 		retry_count = 0;
 	}
 
-	return ret;
+out:
+	if (ret < 0)
+		return ret;
+
+	return max_bitflips;
 }
 
 static int
