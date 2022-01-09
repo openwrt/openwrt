@@ -529,6 +529,10 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 			goto out;
 		}
 
+		if (cur_ret >= mtd->bitflip_threshold &&
+		    mapping_block_in_range(block))
+			update_bmt(block, mtd->erasesize);
+
 		ops->retlen += cur_ops.retlen;
 		ops->oobretlen += cur_ops.oobretlen;
 
