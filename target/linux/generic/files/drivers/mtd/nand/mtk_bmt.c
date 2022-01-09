@@ -672,8 +672,103 @@ static int mtk_bmt_debug_mark_bad(void *data, u64 val)
 	return 0;
 }
 
+static unsigned long *
+mtk_bmt_get_mapping_mask(void)
+{
+	struct bbmt *bbmt = bmt_tbl(bmtd.bbt);
+	int main_blocks = bmtd.mtd->size >> bmtd.blk_shift;
+	unsigned long *used;
+	int i, k;
+
+	used = kcalloc(sizeof(unsigned long), BIT_WORD(bmtd.bmt_blk_idx) + 1, GFP_KERNEL);
+	if (!used)
+		return NULL;
+
+	for (i = 1; i < main_blocks; i++) {
+		if (bmtd.bbt->bb_tbl[i] == i)
+			continue;
+
+		for (k = 0; k < bmtd.bmt_blk_idx; k++) {
+			if (bmtd.bbt->bb_tbl[i] != bbmt[k].block)
+				continue;
+
+			set_bit(k, used);
+			break;
+		}
+	}
+
+	return used;
+}
+
+static int mtk_bmt_debug(void *data, u64 val)
+{
+	struct bbmt *bbmt = bmt_tbl(bmtd.bbt);
+	struct mtd_info *mtd = bmtd.mtd;
+	unsigned long *used;
+	int main_blocks = mtd->size >> bmtd.blk_shift;
+	int n_remap = 0;
+	int i;
+
+	used = mtk_bmt_get_mapping_mask();
+	if (!used)
+		return -ENOMEM;
+
+	switch (val) {
+	case 0:
+		for (i = 1; i < main_blocks; i++) {
+			if (bmtd.bbt->bb_tbl[i] == i)
+				continue;
+
+			printk("remap [%x->%x]\n", i, bmtd.bbt->bb_tbl[i]);
+			n_remap++;
+		}
+		for (i = 0; i <= bmtd.bmt_blk_idx; i++) {
+			char c;
+
+			switch (bbmt[i].mapped) {
+			case NO_MAPPED:
+				continue;
+			case NORMAL_MAPPED:
+				c = 'm';
+				if (test_bit(i, used))
+					c = 'M';
+				break;
+			case BMT_MAPPED:
+				c = 'B';
+				break;
+			default:
+				c = 'X';
+				break;
+			}
+			printk("[%x:%c] = 0x%x\n", i, c, bbmt[i].block);
+		}
+		break;
+	case 100:
+		for (i = 0; i <= bmtd.bmt_blk_idx; i++) {
+			if (bbmt[i].mapped != NORMAL_MAPPED)
+				continue;
+
+			if (test_bit(i, used))
+				continue;
+
+			n_remap++;
+			bbmt[i].mapped = NO_MAPPED;
+			printk("free block [%d:%x]\n", i, bbmt[i].block);
+		}
+		if (n_remap)
+			bmtd.bmt_blk_idx = upload_bmt(bmtd.bbt, bmtd.bmt_blk_idx);
+		break;
+	}
+
+	kfree(used);
+
+	return 0;
+}
+
+
 DEFINE_DEBUGFS_ATTRIBUTE(fops_mark_good, NULL, mtk_bmt_debug_mark_good, "%llu\n");
 DEFINE_DEBUGFS_ATTRIBUTE(fops_mark_bad, NULL, mtk_bmt_debug_mark_bad, "%llu\n");
+DEFINE_DEBUGFS_ATTRIBUTE(fops_debug, NULL, mtk_bmt_debug, "%llu\n");
 
 static void
 mtk_bmt_add_debugfs(void)
@@ -686,6 +781,7 @@ mtk_bmt_add_debugfs(void)
 
 	debugfs_create_file_unsafe("mark_good", S_IWUSR, dir, NULL, &fops_mark_good);
 	debugfs_create_file_unsafe("mark_bad", S_IWUSR, dir, NULL, &fops_mark_bad);
+	debugfs_create_file_unsafe("debug", S_IWUSR, dir, NULL, &fops_debug);
 }
 
 void mtk_bmt_detach(struct mtd_info *mtd)
