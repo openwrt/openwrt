@@ -1,0 +1,285 @@
+diff --git a/arch/arm64/boot/dts/qcom/ipq6018.dtsi b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+index 5d713e13f..537578f44 100644
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -9,6 +9,8 @@
+ #include <dt-bindings/clock/qcom,gcc-ipq6018.h>
+ #include <dt-bindings/reset/qcom,gcc-ipq6018.h>
+ #include <dt-bindings/clock/qcom,apss-ipq.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
+ 
+ / {
+ 	#address-cells = <2>;
+@@ -27,6 +29,24 @@
+ 			clock-frequency = <24000000>;
+ 			#clock-cells = <0>;
+ 		};
++
++		bias_pll_cc_clk: bias-pll-cc-clk {
++			compatible = "fixed-clock";
++			clock-frequency = <300000000>;
++			#clock-cells = <0>;
++		};
++
++		bias_pll_nss_noc_clk: bias-pll-nss-noc-clk {
++			compatible = "fixed-clock";
++			clock-frequency = <416500000>;
++			#clock-cells = <0>;
++		};
++
++		usb3phy_0_cc_pipe_clk: usb3phy-0-cc-pipe-clk {
++			compatible = "fixed-clock";
++			clock-frequency = <125000000>;
++			#clock-cells = <0>;
++		};
+ 	};
+ 
+ 	cpus: cpus {
+@@ -156,6 +176,26 @@
+ 			no-map;
+ 		};
+ 
++		nss@40000000 {
++			no-map;
++			reg = <0x0 0x40000000 0x0 0x01000000>;
++		};
++
++		tzapp:tzapp@49B00000 {  /* TZAPPS */
++			no-map;
++			reg = <0x0 0x49B00000 0x0 0x00600000>;
++		};
++
++		uboot@4A100000 {
++			no-map;
++			reg = <0x0 0x4A100000 0x0 0x00400000>;
++		};
++
++		sbl@4A500000 {
++			no-map;
++			reg = <0x0 0x4A500000 0x0 0x00100000>;
++		};
++
+ 		tz: memory@4a600000 {
+ 			reg = <0x0 0x4a600000 0x0 0x00400000>;
+ 			no-map;
+@@ -170,6 +210,11 @@
+ 			reg = <0x0 0x4ab00000 0x0 0x05500000>;
+ 			no-map;
+ 		};
++
++		m3_region: m3_dump@50100000 {
++			no-map;
++			reg = <0x0 0x50100000 0x0 0x100000>;
++		};
+ 	};
+ 
+ 	smem {
+@@ -247,8 +292,16 @@
+ 		gcc: gcc@1800000 {
+ 			compatible = "qcom,gcc-ipq6018";
+ 			reg = <0x0 0x01800000 0x0 0x80000>;
+-			clocks = <&xo>, <&sleep_clk>;
+-			clock-names = "xo", "sleep_clk";
++			clocks = <&xo>,
++				<&sleep_clk>,
++				<&bias_pll_cc_clk>,
++				<&bias_pll_nss_noc_clk>,
++				<&usb3phy_0_cc_pipe_clk>;
++			clock-names = "xo",
++					"sleep_clk",
++					"bias_pll_cc_clk",
++					"bias_pll_nss_noc_clk",
++					"usb3phy_0_cc_pipe_clk";
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 		};
+@@ -455,11 +508,15 @@
+ 			clocks = <&gcc GCC_SYS_NOC_PCIE0_AXI_CLK>,
+ 				 <&gcc GCC_PCIE0_AXI_M_CLK>,
+ 				 <&gcc GCC_PCIE0_AXI_S_CLK>,
++				 <&gcc GCC_PCIE0_AXI_S_CLK>,
++				 <&gcc GCC_PCIE0_AHB_CLK>,
+ 				 <&gcc GCC_PCIE0_AXI_S_BRIDGE_CLK>,
+ 				 <&gcc PCIE0_RCHNG_CLK>;
+ 			clock-names = "iface",
+ 				      "axi_m",
+ 				      "axi_s",
++				      "ahb",
++				      "aux",
+ 				      "axi_bridge",
+ 				      "rchng";
+ 
+@@ -637,7 +694,7 @@
+ 		};
+ 
+ 		usb2: usb2@7000000 {
+-			compatible = "qcom,ipq6018-dwc3", "qcom,dwc3";
++			compatible = "qcom,dwc3";
+ 			reg = <0x0 0x070F8800 0x0 0x400>;
+ 			#address-cells = <2>;
+ 			#size-cells = <2>;
+@@ -656,7 +713,7 @@
+ 			resets = <&gcc GCC_USB1_BCR>;
+ 			status = "disabled";
+ 
+-			dwc_1: usb@7000000 {
++			dwc_1: dwc3@7000000 {
+ 			       compatible = "snps,dwc3";
+ 			       reg = <0x0 0x7000000 0x0 0xcd00>;
+ 			       interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL_HIGH>;
+@@ -667,10 +724,141 @@
+ 			       snps,hird-threshold = /bits/ 8 <0x0>;
+ 			       snps,dis_u2_susphy_quirk;
+ 			       snps,dis_u3_susphy_quirk;
++			       snps,ref-clock-adjustment = <0xA87F0>;
++			       snps,ref-clock-period-ns = <0x29>;
+ 			       dr_mode = "host";
+ 			};
+ 		};
+ 
++		ssphy_0: ssphy@78000 {
++			compatible = "qcom,ipq6018-qmp-usb3-phy";
++			reg = <0x0 0x00078000 0x0 0x1c4>;
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			clocks = <&gcc GCC_USB0_AUX_CLK>,
++				 <&gcc GCC_USB0_PHY_CFG_AHB_CLK>, <&xo>;
++			clock-names = "aux", "cfg_ahb", "ref";
++
++			resets = <&gcc GCC_USB0_PHY_BCR>,
++				 <&gcc GCC_USB3PHY_0_PHY_BCR>;
++			reset-names = "phy","common";
++			status = "disabled";
++
++			usb0_ssphy: phy@78200 {
++				reg = <0x0 0x00078200 0x0 0x130>, /* Tx */
++				      <0x0 0x00078400 0x0 0x200>, /* Rx */
++				      <0x0 0x00078800 0x0 0x1F8>, /* PCS */
++				      <0x0 0x00078600 0x0 0x044>; /* PCS misc */
++				#phy-cells = <0>;
++				#clock-cells = <1>;
++				clocks = <&gcc GCC_USB0_PIPE_CLK>;
++				clock-names = "pipe0";
++				clock-output-names = "gcc_usb0_pipe_clk_src";
++			};
++		};
++
++		qusb_phy_0: qusb@79000 {
++			compatible = "qcom,ipq6018-qusb2-phy";
++			reg = <0x0 0x00079000 0x0 0x180>;
++			#phy-cells = <0>;
++
++			clocks = <&gcc GCC_USB0_PHY_CFG_AHB_CLK>,
++				<&xo>;
++			clock-names = "cfg_ahb", "ref";
++
++			resets = <&gcc GCC_QUSB2_0_PHY_BCR>;
++			status = "disabled";
++		};
++
++		usb3: usb3@8A00000 {
++			compatible = "qcom,dwc3";
++			reg = <0x0 0x08AF8800 0x0 0x400>;
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			clocks = <&gcc GCC_SYS_NOC_USB0_AXI_CLK>,
++				<&gcc GCC_USB0_MASTER_CLK>,
++				<&gcc GCC_USB0_SLEEP_CLK>,
++				<&gcc GCC_USB0_MOCK_UTMI_CLK>;
++			clock-names = "sys_noc_axi",
++				"master",
++				"sleep",
++				"mock_utmi";
++
++			assigned-clocks = <&gcc GCC_SYS_NOC_USB0_AXI_CLK>,
++					  <&gcc GCC_USB0_MASTER_CLK>,
++					  <&gcc GCC_USB0_MOCK_UTMI_CLK>;
++			assigned-clock-rates = <133330000>,
++					       <133330000>,
++					       <24000000>;
++
++			resets = <&gcc GCC_USB0_BCR>;
++			status = "disabled";
++
++			dwc_0: dwc3@8A00000 {
++				compatible = "snps,dwc3";
++				reg = <0x0 0x8A00000 0x0 0xcd00>;
++				interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>;
++				phys = <&qusb_phy_0>, <&usb0_ssphy>;
++				phy-names = "usb2-phy", "usb3-phy";
++				tx-fifo-resize;
++				snps,is-utmi-l1-suspend;
++				snps,hird-threshold = /bits/ 8 <0x0>;
++				snps,dis_u2_susphy_quirk;
++				snps,dis_u3_susphy_quirk;
++				snps,ref-clock-adjustment = <0xA87F0>;
++				snps,ref-clock-period-ns = <0x29>;
++				dr_mode = "host";
++			};
++		};
++
++		sdhc_1: sdhci@7804000 {
++			compatible = "qcom,sdhci-msm-v4";
++			reg = <0x0 0x7804000 0x0 0x1000>, <0x0 0x7805000 0x0 0x1000>;
++			reg-names = "hc_mem", "cmdq_mem";
++
++			interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "hc_irq", "pwr_irq";
++
++			clocks = <&xo>,
++				<&gcc GCC_SDCC1_AHB_CLK>,
++				<&gcc GCC_SDCC1_APPS_CLK>;
++			clock-names = "xo", "iface", "core";
++			max-frequency = <192000000>;
++			mmc-ddr-1_8v;
++			mmc-hs200-1_8v;
++			mmc-hs400-1_8v;
++			bus-width = <8>;
++			non-removable;
++
++			status = "disabled";
++		};
++
++		sdhc_2: sdhci_sd@780400 {
++			compatible = "qcom,sdhci-msm-v4";
++			reg = <0x0 0x7804000 0x0 0x1000>;
++			reg-names = "hc_mem";
++
++			interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "hc_irq", "pwr_irq";
++
++			clocks = <&xo>,
++				<&gcc GCC_SDCC1_AHB_CLK>,
++				<&gcc GCC_SDCC1_APPS_CLK>;
++			clock-names = "xo", "iface", "core";
++			max-frequency = <192000000>;
++			mmc-ddr-1_8v;
++			mmc-hs200-1_8v;
++			mmc-hs400-1_8v;
++			bus-width = <4>;
++			vqmmc-supply = <&ipq6018_l2>;
++			status = "disabled";
++		};
+ 	};
+ 
+ 	wcss: wcss-smp2p {
+@@ -715,6 +903,12 @@
+ 					regulator-max-microvolt = <1062500>;
+ 					regulator-always-on;
+ 				};
++
++				ipq6018_l2: l2 {
++					regulator-min-microvolt = <1800000>;
++					regulator-max-microvolt = <3300000>;
++					regulator-always-on;
++				};
+ 			};
+ 		};
+ 	};
