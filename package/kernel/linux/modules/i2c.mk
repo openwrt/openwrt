@@ -185,6 +185,20 @@ endef
 
 $(eval $(call KernelPackage,i2c-mux-gpio))
 
+I2C_MUX_PINCTRL_MODULES:= \
+  CONFIG_I2C_MUX_PINCTRL:drivers/i2c/muxes/i2c-mux-pinctrl
+
+define KernelPackage/i2c-mux-pinctrl
+  $(call i2c_defaults,$(I2C_MUX_PINCTRL_MODULES),51)
+  TITLE:=pinctrl-based I2C multiplexer
+  DEPENDS:=+kmod-i2c-mux
+endef
+
+define KernelPackage/i2c-mux-pinctrl/description
+ Kernel modules for GENERIC_PINCTRL I2C bus mux/switching devices
+endef
+
+$(eval $(call KernelPackage,i2c-mux-pinctrl))
 
 I2C_MUX_PCA9541_MODULES:= \
   CONFIG_I2C_MUX_PCA9541:drivers/i2c/muxes/i2c-mux-pca9541
