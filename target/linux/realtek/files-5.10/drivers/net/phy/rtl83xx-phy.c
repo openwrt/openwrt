@@ -312,6 +312,52 @@ int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v)
 	return 0;
 }
 
+int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg)
+{
+	int i;
+	u32 cmd = phy_addr << 2 | page << 7 | phy_reg << 13 | 1;
+
+	pr_debug("%s: phy_addr(SDS-ID) %d, phy_reg: %d\n", __func__, phy_addr, phy_reg);
+	sw_w32(cmd, RTL931X_SERDES_INDRT_ACCESS_CTRL);
+
+	for (i = 0; i < 100; i++) {
+		if (!(sw_r32(RTL931X_SERDES_INDRT_ACCESS_CTRL) & 0x1))
+			break;
+		mdelay(1);
+	}
+
+	if (i >= 100)
+		return -EIO;
+
+	pr_debug("%s: returning %04x\n", __func__, sw_r32(RTL931X_SERDES_INDRT_DATA_CTRL) & 0xffff);
+	return sw_r32(RTL931X_SERDES_INDRT_DATA_CTRL) & 0xffff;
+}
+
+int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v)
+{
+	int i;
+	u32 cmd;
+
+	cmd = phy_addr << 2 | page << 7 | phy_reg << 13;
+	sw_w32(cmd, RTL931X_SERDES_INDRT_ACCESS_CTRL);
+
+	sw_w32(v, RTL931X_SERDES_INDRT_DATA_CTRL);
+		
+	cmd =  sw_r32(RTL931X_SERDES_INDRT_ACCESS_CTRL) | 0x3;
+	sw_w32(cmd, RTL931X_SERDES_INDRT_ACCESS_CTRL);
+
+	for (i = 0; i < 100; i++) {
+		if (!(sw_r32(RTL931X_SERDES_INDRT_ACCESS_CTRL) & 0x1))
+			break;
+		mdelay(1);
+	}
+
+	if (i >= 100)
+		return -EIO;
+
+	return 0;
+}
+
 /*
  * On the RTL838x SoCs, the internal SerDes is accessed through direct access to
  * standard PHY registers, where a 32 bit register holds a 16 bit word as found
