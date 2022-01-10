@@ -172,11 +172,11 @@ define Device/unielec_u7623-02-emmc-512m-legacy
   DEVICE_PACKAGES := kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 kmod-mmc \
 	mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk \
 	partx-utils
-  IMAGES := sysupgrade-emmc.bin.gz
-  IMAGE/sysupgrade-emmc.bin.gz := append-kernel |\
-				    pad-to 4864k | fat-recovery-fs |\
-				    pad-to 7936k | append-rootfs |\
-				    gzip | append-metadata
+  IMAGES := sysupgrade.bin.gz
+  IMAGE/sysupgrade.bin.gz := append-kernel |\
+				pad-to 4864k | fat-recovery-fs |\
+				pad-to 7936k | append-rootfs |\
+				gzip | append-metadata
   SUPPORTED_DEVICES := unielec,u7623-02-emmc-512m
 endef
 TARGET_DEVICES += unielec_u7623-02-emmc-512m-legacy
