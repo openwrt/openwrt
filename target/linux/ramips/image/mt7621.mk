@@ -912,6 +912,15 @@ define Device/linksys_ea7xxx
 	append-ubi | check-size | linksys-image type=$$$$(LINKSYS_HWNAME)
 endef
 
+define Device/linksys_ea6350-v4
+	$(Device/linksys_ea7xxx)
+	DEVICE_MODEL := EA6350
+	DEVICE_VARIANT := v4
+	LINKSYS_HWNAME := EA6350
+	DEVICE_PACKAGES += kmod-mt7603 kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += linksys_ea6350-v4
+
 define Device/linksys_ea7300-v1
   $(Device/linksys_ea7xxx)
   DEVICE_MODEL := EA7300
@@ -1283,6 +1292,23 @@ define Device/planex_vr500
   SUPPORTED_DEVICES += vr500
 endef
 TARGET_DEVICES += planex_vr500
+
+define Device/raisecom_msg1500-x-00
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 129280k
+  UBINIZE_OPTS := -E 5
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_VENDOR := RAISECOM
+  DEVICE_MODEL := MSG1500
+  DEVICE_VARIANT := X.00
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
+	kmod-usb-ledtrig-usbport uboot-envtools
+endef
+TARGET_DEVICES += raisecom_msg1500-x-00
 
 define Device/samknows_whitebox-v8
   $(Device/dsa-migration)

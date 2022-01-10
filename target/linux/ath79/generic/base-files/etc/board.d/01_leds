@@ -48,6 +48,16 @@ alfa-network,r36a)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x10"
 	;;
+asus,rp-ac66)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_rssimon "wlan1" "200000" "1"
+	ucidef_set_led_rssi "rssilow-wlan0" "RSSILOW" "blue:rssilow-wlan0" "wlan0" "1" "1"
+	ucidef_set_led_rssi "rssimedium-wlan0" "RSSIMEDIUM" "red:rssimedium-wlan0" "wlan0" "1" "79"
+	ucidef_set_led_rssi "rssihigh-wlan0" "RSSIHIGH" "green:rssihigh-wlan0" "wlan0" "70" "100"
+	ucidef_set_led_rssi "rssilow-wlan1" "RSSILOW" "blue:rssilow-wlan1" "wlan1" "1" "1"
+	ucidef_set_led_rssi "rssimedium-wlan1" "RSSIMEDIUM" "red:rssimedium-wlan1" "wlan1" "1" "79"
+	ucidef_set_led_rssi "rssihigh-wlan1" "RSSIHIGH" "green:rssihigh-wlan1" "wlan1" "70" "100"
+	;;
 avm,fritz1750e)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
 	ucidef_set_rssimon "wlan1" "200000" "1"
@@ -260,6 +270,14 @@ openmesh,om2p-v4|\
 openmesh,om2p-hs-v4)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth0"
 	ucidef_set_led_switch "lan" "LAN" "blue:lan" "switch0" "0x02"
+	;;
+openmesh,om5p-ac-v1)
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
+	;;
+openmesh,om5p-an)
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
+	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x02"
 	;;
 pcs,cr3000)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
