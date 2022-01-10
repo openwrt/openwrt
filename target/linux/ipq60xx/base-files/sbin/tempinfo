@@ -1,0 +1,8 @@
+#!/bin/sh
+
+cpu_temp="$(cat /sys/devices/virtual/thermal/thermal_zone0/temp)"
+wifi0_temp="$(cat /sys/class/net/wifi0/thermal/temp)"
+wifi1_temp="$(cat /sys/class/net/wifi1/thermal/temp)"
+wifi2_temp="$(cat /sys/class/net/wifi2/thermal/temp)"
+
+echo -n "CPU: ${cpu_temp}°C, WiFi0: ${wifi0_temp}°C, WiFi1: ${wifi1_temp}°C, WiFi2: ${wifi2_temp}°C" 

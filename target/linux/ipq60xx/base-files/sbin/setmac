@@ -1,0 +1,223 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+GETMAC="getmac"
+art_mtd="0:ART"
+
+baseadr=""
+eth0adr=""
+eth1adr=""
+eth2adr=""
+eth3adr=""
+eth4adr=""
+eth5adr=""
+
+
+usage() {
+	echo "setmac < eth0 | eth1 | eth2 | eth3 | eth4 | eth5 | wl0 | wl2> <mac>"
+	echo "example: setmac eth0 00:11:22:33:44:55"
+}
+
+
+get_eth0_mac_from_base()
+{
+	h=$(echo 0x`echo $baseadr|tr -d ':'`)
+	eth0adr=`printf "%012X\n" $((h+1)) | sed 's/[0-9A-F][0-9A-F]\B/&:/g'`
+}
+
+get_eth0_mac_from_art()
+{
+	eth0adr="`${GETMAC} eth0`"
+}
+
+get_eth1_mac_from_art()
+{
+	eth1adr="`${GETMAC} eth1`"
+}
+
+get_eth2_mac_from_art()
+{
+	eth2adr="`${GETMAC} eth2`"
+}
+
+get_eth3_mac_from_art()
+{
+	eth3adr="`${GETMAC} eth3`"
+}
+
+get_eth4_mac_from_art()
+{
+	eth4adr="`${GETMAC} eth4`"
+}
+
+get_eth5_mac_from_art()
+{
+	eth5adr="`${GETMAC} eth5`"
+}
+
+set_mac()
+{
+	for NUM in 0 1 2 3 4 5;do
+		#A="`eval echo '${eth'$NUM'adr}' | awk -F ':' '{print $1}'`"
+		A="`eval echo '${eth'$NUM'adr:0:2}'`"
+		B="`eval echo '${eth'$NUM'adr:3:2}'`"
+		C="`eval echo '${eth'$NUM'adr:6:2}'`"
+		D="`eval echo '${eth'$NUM'adr:9:2}'`"
+		E="`eval echo '${eth'$NUM'adr:12:2}'`"
+		F="`eval echo '${eth'$NUM'adr:15:2}'`"
+		str="${str}\x$A\x$B\x$C\x$D\x$E\x$F"
+	done
+
+	# pad 0xff to /tmp/macaddr
+	for i in `seq 25 64`; do
+		str="${str}\xff"
+	done
+
+	# echo "@@ str=$str"
+
+	echo -n -e ${str} > /tmp/macaddr
+	# hexdump -C /tmp/macaddr
+
+	art_partition=$(find_mtd_part $art_mtd)
+	[ -z "$art_partition" ] && art_partition=$(find_mmc_part 0:ART)
+
+	# Find the partition and set the MAC addresses in the flash
+	dd if=/tmp/macaddr of=$art_partition bs=64 conv=sync 2>/dev/null
+	rm -f /tmp/macaddr
+}
+
+setmac_wifi() {
+    . /lib/read_caldata_to_fs.sh;
+    . /lib/functions.sh;
+
+#wifi0,偏移１4,写６个，wifi1偏移２０，写６个，checksum:10,2byte，wifi2同d01
+    case $1 in
+        wl0|wifi0) artoff=$((0x1000)); wl1_mac=$(macaddr_sub $2 1);;
+        wl2|wifi2) artoff=$((0x33000));;
+    *) return;;
+    esac;
+    artdev=$(find_mtd_part 0:ART);
+	
+	backcsum=0
+	i=0
+	for data in ` hexdump -v -e '/2 "%02X\n"' -n $((0x100)) -s $artoff -v $artdev`
+	do
+		backcsum=$((backcsum^0x$data))
+	done
+	backcsum=$((backcsum^0xffff))
+	
+    str='';
+    for octet in $(echo $2 | sed 's/:/ /g'); do
+        str="$str\x$octet";
+    done;
+    for octet in $(echo $wl1_mac | sed 's/:/ /g'); do
+        str="$str\x$octet";
+    done;
+    case $1 in
+	wl0|wifi0) 
+		echo -n -e "$str" | dd of=$artdev bs=1 seek=$((artoff+14)) conv=notrunc 2>/dev/null
+    	#set nvMacflag to set wifi mac
+		echo -n -e "\x01\x00" | dd of=$artdev bs=1 seek=$((artoff+0x3e)) conv=notrunc 2>/dev/null
+		;;
+	wl2|wifi2) echo -n -e "$str" | dd of=$artdev bs=1 seek=$((artoff+6)) conv=notrunc 2>/dev/null;;
+    *) return;;
+    esac;
+    #csum=$(csum=0; u16=0; hexdump -e '1/2 "%u\n"' -n $((0x20000)) -s $artoff -v $artdev | while read line; do [ $((u16++)) -eq 5 ] && line=$((0xffff)); csum=$((csum^line)); [ $u16 -eq $((0x20000/2)) ] && printf '%x\n' $csum; done);
+	csum=0
+	i=0
+    case $1 in
+	wl0|wifi0) csum_pos=10;;
+	wl2|wifi2) csum_pos=2;;
+    *) return;;
+    esac;
+ 
+	for data in ` hexdump -v -e '/2 "%02X\n"' -n $((0x100)) -s $artoff -v $artdev`
+	do
+		if [ $i = $csum_pos ];then
+			csum=$((csum^0xffff))
+		else
+			csum=$((csum^0x$data))
+		fi		
+		i=$((i+2))
+	done
+	csum=$((csum^$backcsum))
+	#printf 'write: %x\n' $csum
+	case $1 in
+	wl0|wifi0|wl1|wifi1) echo -ne $(printf '\x%x\x%x' $(($csum&0xff)) $((($csum&0xff00)>>8))) | dd of=$artdev bs=1 seek=$((artoff+10)) conv=notrunc 2>/dev/null;;
+	wl2|wifi2) echo -ne $(printf '\x%x\x%x' $(($csum&0xff)) $((($csum&0xff00)>>8))) | dd of=$artdev bs=1 seek=$((artoff+2)) conv=notrunc 2>/dev/null;;
+    *) return;;
+    esac;
+    do_load_ipq4019_board_bin 2>/dev/null;
+    uci -q commit wireless;
+}
+
+[ ! $# -eq 2 ] && usage && exit 0
+
+case $1 in
+	eth0)
+		eth0adr=$2
+		get_eth1_mac_from_art
+		get_eth2_mac_from_art
+		get_eth3_mac_from_art
+		get_eth4_mac_from_art
+		get_eth5_mac_from_art
+		set_mac
+	;;
+	eth1)
+		eth1adr=$2
+		get_eth0_mac_from_art
+		get_eth2_mac_from_art
+		get_eth3_mac_from_art
+		get_eth4_mac_from_art
+		get_eth5_mac_from_art
+		set_mac
+	;;
+	eth2)
+		eth2adr=$2
+		get_eth0_mac_from_art
+		get_eth1_mac_from_art
+		get_eth3_mac_from_art
+		get_eth4_mac_from_art
+		get_eth5_mac_from_art
+		set_mac
+	;;
+	eth3)
+		eth3adr=$2
+		get_eth0_mac_from_art
+		get_eth1_mac_from_art
+		get_eth2_mac_from_art
+		get_eth4_mac_from_art
+		get_eth5_mac_from_art
+		set_mac
+	;;
+	eth4)
+		eth4adr=$2
+		get_eth0_mac_from_art
+		get_eth1_mac_from_art
+		get_eth2_mac_from_art
+		get_eth3_mac_from_art
+		get_eth5_mac_from_art
+		set_mac
+	;;
+	eth5)
+		eth5adr=$2
+		get_eth0_mac_from_art
+		get_eth1_mac_from_art
+		get_eth2_mac_from_art
+		get_eth3_mac_from_art
+		get_eth4_mac_from_art
+		set_mac
+	;;
+	wl0|wifi0)
+        	setmac_wifi wl0 "$2"
+	;;
+    	wl2|wifi2)
+        	setmac_wifi wl2 "$2"
+    	;; 
+	*)
+		usage
+	;;
+esac
+
