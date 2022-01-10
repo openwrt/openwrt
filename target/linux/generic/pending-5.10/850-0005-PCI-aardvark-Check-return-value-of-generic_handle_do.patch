@@ -1,0 +1,36 @@
+From 69c1f2c6f45a556361fd8e8d2d4eb20e2c8d3d95 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>
+Date: Thu, 18 Mar 2021 17:04:32 +0100
+Subject: [PATCH] PCI: aardvark: Check return value of
+ generic_handle_domain_irq() when processing INTx IRQ
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It is possible that we receive spurious INTx interrupt. Check for the
+return value of generic_handle_domain_irq() when processing INTx IRQ.
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+Signed-off-by: Marek Behún <kabel@kernel.org>
+---
+ drivers/pci/controller/pci-aardvark.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
+index 01dfe70d9c2c..4be05b52d835 100644
+--- a/drivers/pci/controller/pci-aardvark.c
++++ b/drivers/pci/controller/pci-aardvark.c
+@@ -1437,7 +1437,9 @@ static void advk_pcie_handle_int(struct advk_pcie *pcie)
+ 			    PCIE_ISR1_REG);
+ 
+ 		virq = irq_find_mapping(pcie->irq_domain, i);
+-		generic_handle_irq(virq);
++		if (generic_handle_irq(virq) == -EINVAL)
++			dev_err_ratelimited(&pcie->pdev->dev, "unexpected INT%c IRQ\n",
++					    (char)i + 'A');
+ 	}
+ }
+ 
+-- 
+2.34.1
+
