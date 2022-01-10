@@ -1,12 +1,14 @@
-From 6615eeb39f7a110a196f20acbfb3a017da4d75d2 Mon Sep 17 00:00:00 2001
+From 49293bbc50cb7d44223eb49e0f7cb38e7dac2361 Mon Sep 17 00:00:00 2001
 From: Aleksander Jan Bajkowski <olek2@wp.pl>
-Date: Fri, 14 May 2021 21:25:08 +0200
-Subject: [PATCH 4/5] MIPS: lantiq: dma: make a burst length configurable in
- drivers
+Date: Tue, 14 Sep 2021 23:21:01 +0200
+Subject: [PATCH 4/5] MIPS: lantiq: dma: make the burst length configurable by
+ the drivers
 
-Make a burst length configurable in drivers.
+Make the burst length configurable by the drivers.
 
 Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  .../include/asm/mach-lantiq/xway/xway_dma.h   |  2 +-
  arch/mips/lantiq/xway/dma.c                   | 38 ++++++++++++++++---

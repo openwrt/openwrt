@@ -735,7 +735,7 @@ static int metrics(struct ubus_context *ctx, struct ubus_object *obj,
 	vector_t vector = VECTOR_UNKNOWN;
 
 #ifndef INCLUDE_DSL_CPE_API_DANUBE
-	fd = open(DSL_CPE_DEVICE_NAME "0", O_RDWR, 0644);
+	fd = open(DSL_CPE_DEVICE_NAME "/0", O_RDWR, 0644);
 #else
 	fd = open(DSL_CPE_DEVICE_NAME, O_RDWR, 0644);
 #endif

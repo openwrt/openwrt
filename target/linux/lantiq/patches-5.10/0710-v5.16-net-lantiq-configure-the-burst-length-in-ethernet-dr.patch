@@ -1,11 +1,12 @@
-From ec1a17a11aced3cd756e59d91ad6f50b7a2fabfb Mon Sep 17 00:00:00 2001
+From 14d4e308e0aa0b78dc7a059716861a4380de3535 Mon Sep 17 00:00:00 2001
 From: Aleksander Jan Bajkowski <olek2@wp.pl>
-Date: Sun, 16 May 2021 15:52:06 +0200
-Subject: [PATCH 5/5] net: lantiq: configure burst length for ethernet
+Date: Tue, 14 Sep 2021 23:21:02 +0200
+Subject: [PATCH 5/5] net: lantiq: configure the burst length in ethernet
+ drivers
 
-Configure the burst length for Ethernet. This improves Ethernet
-performance by 58%. According to the vendor BSP, 8W burst length
-is supported by ar9 and newer SoCs.
+Configure the burst length in Ethernet drivers. This improves
+Ethernet performance by 58%. According to the vendor BSP,
+8W burst length is supported by ar9 and newer SoCs.
 
 The NAT benchmark results on xRX200 (Down/Up):
 * 2W: 330 Mb/s
@@ -15,6 +16,7 @@ The NAT benchmark results on xRX200 (Down/Up):
 Tested on xRX200 and xRX330.
 
 Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/lantiq_etop.c   | 21 ++++++++++++++++++---
  drivers/net/ethernet/lantiq_xrx200.c | 21 ++++++++++++++++++---
@@ -37,7 +39,7 @@ Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  	int err;
  
 -	ltq_dma_init_port(DMA_PORT_ETOP);
-+	ltq_dma_init_port(DMA_PORT_ETOP, priv->tx_burst_len, priv->rx_burst_len);
++	ltq_dma_init_port(DMA_PORT_ETOP, priv->tx_burst_len, rx_burst_len);
  
  	priv->txch.dma.nr = tx;
  	priv->txch.dma.dev = &priv->pdev->dev;
@@ -99,7 +101,7 @@ Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  	int i;
  
 -	ltq_dma_init_port(DMA_PORT_ETOP);
-+	ltq_dma_init_port(DMA_PORT_ETOP, priv->tx_burst_len, priv->rx_burst_len);
++	ltq_dma_init_port(DMA_PORT_ETOP, priv->tx_burst_len, rx_burst_len);
  
  	ch_rx->dma.nr = XRX200_DMA_RX;
  	ch_rx->dma.dev = priv->dev;

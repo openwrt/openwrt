@@ -21,6 +21,7 @@ case "$FIRMWARE" in
 	avm,fritzdvbc)
 		caldata_extract "urlader" 0x198a 0x844
 		;;
+	asus,rp-ac66|\
 	comfast,cf-wr650ac-v1|\
 	comfast,cf-wr650ac-v2|\
 	devolo,dlan-pro-1200plus-ac|\
@@ -164,6 +165,10 @@ case "$FIRMWARE" in
 	;;
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case $board in
+	openmesh,om5p-ac-v1)
+		caldata_extract "ART" 0x5000 0x844
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
+		;;
 	sitecom,wlr-8100)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 1)
