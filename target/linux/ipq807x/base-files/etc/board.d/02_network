@@ -21,6 +21,9 @@ ipq807x_setup_interfaces()
 	xiaomi,ax3600)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3" "eth0"
 		;;
+	xiaomi,ax9000)
+		ucidef_set_interfaces_lan_wan "eth0 eth1 eth2 eth3" "eth4"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;
