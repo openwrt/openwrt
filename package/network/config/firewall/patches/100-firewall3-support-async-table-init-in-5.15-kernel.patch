@@ -1,0 +1,181 @@
+From patchwork Fri Jan  7 17:22:17 2022
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Ansuel Smith <ansuelsmth@gmail.com>
+X-Patchwork-Id: 1576740
+Return-Path: 
+ <openwrt-devel-bounces+incoming=patchwork.ozlabs.org@lists.openwrt.org>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@bilbo.ozlabs.org
+Authentication-Results: bilbo.ozlabs.org;
+	dkim=pass (2048-bit key;
+ secure) header.d=lists.infradead.org header.i=@lists.infradead.org
+ header.a=rsa-sha256 header.s=bombadil.20210309 header.b=cIRA6W0N;
+	dkim=fail reason="signature verification failed" (2048-bit key;
+ unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256
+ header.s=20210112 header.b=jjiYex+M;
+	dkim-atps=neutral
+Authentication-Results: ozlabs.org;
+ spf=none (no SPF record) smtp.mailfrom=lists.openwrt.org
+ (client-ip=2607:7c80:54:e::133; helo=bombadil.infradead.org;
+ envelope-from=openwrt-devel-bounces+incoming=patchwork.ozlabs.org@lists.openwrt.org;
+ receiver=<UNKNOWN>)
+Received: from bombadil.infradead.org (bombadil.infradead.org
+ [IPv6:2607:7c80:54:e::133])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest
+ SHA256)
+	(No client certificate requested)
+	by bilbo.ozlabs.org (Postfix) with ESMTPS id 4JVqqt2vVPz9sSs
+	for <incoming@patchwork.ozlabs.org>; Sat,  8 Jan 2022 04:25:45 +1100 (AEDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=lists.infradead.org; s=bombadil.20210309; h=Sender:
+	Content-Transfer-Encoding:Content-Type:List-Subscribe:List-Help:List-Post:
+	List-Archive:List-Unsubscribe:List-Id:MIME-Version:Message-Id:Date:Subject:Cc
+	:To:From:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:In-Reply-To:References:
+	List-Owner; bh=QyEmVMdbAFbCEYr7bWmu2X3evs08hReSysxmfprhazw=; b=cIRA6W0NDJc+fe
+	OaJB2UdVyQOluFM5insPalMOiu6/N4dReBdhKPYj2afV1S5W82jVsE1C7tNwKvwCuY5Gc+cX1IG0B
+	qk/JOQKidBIq8c+ZYhCEDwrWOJhHysfTDy26AwQLUhwCa21Jl3VcYBJ1GEmndjodAPNOhlRxu/tkN
+	Xf7tRmILSI4mD0LIr8MH8DRxY1eM7FkHn+MYxFiKxnSeFquaRq8IaIkPVUlo66fRb4OIsHrp0BjUd
+	INLq7auc0R0Pu9tbu0BSqjKdrdoZY9Rdku0S8+t77jmQ0dJM6mt0NuGCC1JygsGpylDJ2jclBCL1g
+	4o6/dyjVOouYbc3xsTFA==;
+Received: from localhost ([::1] helo=bombadil.infradead.org)
+	by bombadil.infradead.org with esmtp (Exim 4.94.2 #2 (Red Hat Linux))
+	id 1n5swl-004jSX-L8; Fri, 07 Jan 2022 17:22:35 +0000
+Received: from mail-wr1-x436.google.com ([2a00:1450:4864:20::436])
+ by bombadil.infradead.org with esmtps (Exim 4.94.2 #2 (Red Hat Linux))
+ id 1n5swg-004jSB-8y
+ for openwrt-devel@lists.openwrt.org; Fri, 07 Jan 2022 17:22:31 +0000
+Received: by mail-wr1-x436.google.com with SMTP id s1so12363043wra.6
+ for <openwrt-devel@lists.openwrt.org>; Fri, 07 Jan 2022 09:22:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20210112;
+ h=from:to:cc:subject:date:message-id:mime-version
+ :content-transfer-encoding;
+ bh=jHAF0TmC4uqAZcm3hHrfLPN8i/R/flyQ+xyr6CmRVNU=;
+ b=jjiYex+Mtdkz/YnRZkCgDvwU3OpwTQjD9zlkZraz5owN630v3zxD4Gd3SCVancXEhE
+ yL3BGigDo9WRc23URHcTPKMEmP4eF4EiQSDYBx5wsGF5vqQv8jtoDHFwIVygGByRwdRK
+ j2SxK3ifROSsAEW+52YzNJCdVy3rPdDNsEsxnjvFXuFXi79PELhxKEUIskCEP+bA9jBA
+ GUiBucNw9UdlOLVmNveu7lTaddRQSS07Z8bs/qMrhictiZ6xRQ36MTYHsINWC5VjV+RE
+ orKa1zI/cIbxTlnLG3qbh0SYUPU/eD3TFtv9ijAId7HW40/N0o6/xQqQASUlDWEYRpZZ
+ ScFA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=1e100.net; s=20210112;
+ h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+ :content-transfer-encoding;
+ bh=jHAF0TmC4uqAZcm3hHrfLPN8i/R/flyQ+xyr6CmRVNU=;
+ b=FnnYiSCrn7t/nNWWiuA3ytapf45VbeKo/MPqnDofo4McRqsqCF5IvyQzpo4jJ4CxZR
+ /B9jjbSAR2yaSXIK62p724GjZ4BOcrIwe22uPac4tlcm4YHb1z33LC5bA4V1VkAnJEn2
+ Y1GMp1WQ2TMR9L+USj1c9gqC8Vy2Ul7kaKx27WGq7DcS/Dna1ugQLtnK15J1hGDhmPuK
+ Wwc6790FRk2mIaVnFoWscQBFErxf46TyJ4kuoEbvtfQ9BhTe4rq9hq6QafeJVLgmdm/R
+ wlSuD0vl37AI2aTbx/BwogHEwHHLp+pvhIYFUCun9p3T62Ln9PlHxXm6OKCsyBXwLHZe
+ TFiw==
+X-Gm-Message-State: AOAM530wzRV4BSc5nkBOrMFDanpw5/yWnQndLQ9Iq9GrOwz6X9fIJppH
+ Loc2huCRcGJ0Y7tnCuTDNO09W+oqEwQ=
+X-Google-Smtp-Source: 
+ ABdhPJzZSl3tZNLV78qxUkuHU/7lShAPaOBbHBoOpcqOuXsCj/G6FU24GzHFSDqfcn4Oi6jtnpXhow==
+X-Received: by 2002:a5d:4d06:: with SMTP id z6mr54735503wrt.117.1641576147956;
+ Fri, 07 Jan 2022 09:22:27 -0800 (PST)
+Received: from localhost.localdomain
+ (host-87-16-248-7.retail.telecomitalia.it. [87.16.248.7])
+ by smtp.googlemail.com with ESMTPSA id b5sm5170248wrr.19.2022.01.07.09.22.27
+ (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+ Fri, 07 Jan 2022 09:22:27 -0800 (PST)
+From: Ansuel Smith <ansuelsmth@gmail.com>
+To: openwrt-devel@lists.openwrt.org
+Cc: Ansuel Smith <ansuelsmth@gmail.com>
+Subject: [firewall3 PATCH] firewall3: support async table init in 5.15+ kernel
+Date: Fri,  7 Jan 2022 18:22:17 +0100
+Message-Id: <20220107172217.21567-1-ansuelsmth@gmail.com>
+X-Mailer: git-send-email 2.33.1
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20220107_092230_337536_6D8247AD 
+X-CRM114-Status: GOOD (  13.30  )
+X-Spam-Score: -0.2 (/)
+X-Spam-Report: Spam detection software,
+ running on the system "bombadil.infradead.org",
+ has NOT identified this incoming email as spam.  The original
+ message has been attached to this so you can view it or label
+ similar future email.  If you have any questions, see
+ the administrator of that system for details.
+ Content preview:  With 5.15+ tables are init in an async way. Firewall3 use
+ the proc entry ip_tables_names to check if a table exist. With this new
+ implemenation,
+ the proc entry can contain wrong data in the case where [...]
+ Content analysis details:   (-0.2 points, 5.0 required)
+ pts rule name              description
+ ---- ----------------------
+ --------------------------------------------------
+ -0.0 RCVD_IN_DNSWL_NONE     RBL: Sender listed at https://www.dnswl.org/,
+ no trust [2a00:1450:4864:20:0:0:0:436 listed in]
+ [list.dnswl.org]
+ -0.0 SPF_PASS               SPF: sender matches SPF record
+ 0.0 SPF_HELO_NONE          SPF: HELO does not publish an SPF Record
+ 0.0 FREEMAIL_FROM          Sender email is commonly abused enduser mail
+ provider [ansuelsmth[at]gmail.com]
+ -0.1 DKIM_VALID_AU          Message has a valid DKIM or DK signature from
+ author's domain
+ -0.1 DKIM_VALID Message has at least one valid DKIM or DK signature
+ 0.1 DKIM_SIGNED            Message has a DKIM or DK signature,
+ not necessarily
+ valid
+ -0.1 DKIM_VALID_EF          Message has a valid DKIM or DK signature from
+ envelope-from domain
+X-BeenThere: openwrt-devel@lists.openwrt.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: OpenWrt Development List <openwrt-devel.lists.openwrt.org>
+List-Unsubscribe: <https://lists.openwrt.org/mailman/options/openwrt-devel>,
+ <mailto:openwrt-devel-request@lists.openwrt.org?subject=unsubscribe>
+List-Archive: <http://lists.openwrt.org/pipermail/openwrt-devel/>
+List-Post: <mailto:openwrt-devel@lists.openwrt.org>
+List-Help: <mailto:openwrt-devel-request@lists.openwrt.org?subject=help>
+List-Subscribe: <https://lists.openwrt.org/mailman/listinfo/openwrt-devel>,
+ <mailto:openwrt-devel-request@lists.openwrt.org?subject=subscribe>
+Sender: "openwrt-devel" <openwrt-devel-bounces@lists.openwrt.org>
+Errors-To: 
+ openwrt-devel-bounces+incoming=patchwork.ozlabs.org@lists.openwrt.org
+
+With 5.15+ tables are init in an async way. Firewall3 use the proc entry
+ip_tables_names to check if a table exist. With this new implemenation,
+the proc entry can contain wrong data in the case where a table is
+present but never used/init and firewall3 would uncorrectly think that
+the table is not available. This cause some connection problem as from a
+normal boot the proc entry contains only the "filter" table and
+lacks "raw","mangle" and "nat".
+
+To fix this "poke" the tables to init them by simply open and closing
+them without doing any operation. This simple operation is sufficient to
+make the missing tables appear in the proc entry.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+---
+ main.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/main.c
++++ b/main.c
+@@ -266,6 +266,21 @@ start(void)
+ 			continue;
+ 		}
+ 
++		/* From 5.15+ tables are created async as soon as the first rule
++		 * is created or any operation is requested. This cause the
++		 * *_tables_names to report wrong data / missing tables.
++		 * Poke ipt to init the tables so fw3_has_table correctly detects
++		 * them with the proc entires.
++		 */
++		for (table = FW3_TABLE_FILTER; table <= FW3_TABLE_RAW; table++)
++		{
++
++			if (!(handle = fw3_ipt_open(family, table)))
++				continue;
++
++			fw3_ipt_close(handle);
++		}
++
+ 		for (table = FW3_TABLE_FILTER; table <= FW3_TABLE_RAW; table++)
+ 		{
+ 			if (!fw3_has_table(family == FW3_FAMILY_V6, fw3_flag_names[table]))
