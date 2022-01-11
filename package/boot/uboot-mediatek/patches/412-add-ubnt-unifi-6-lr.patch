@@ -1,12 +1,13 @@
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr_defconfig
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,141 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
 +CONFIG_TARGET_MT7622=y
 +CONFIG_SYS_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_SYS_LOAD_ADDR=0x40080000
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
@@ -348,7 +349,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1105,6 +1105,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1134,6 +1134,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
@@ -411,7 +412,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- a/common/board_r.c
 +++ b/common/board_r.c
-@@ -77,6 +77,7 @@
+@@ -78,6 +78,7 @@
  #ifdef CONFIG_EFI_SETUP_EARLY
  #include <efi_loader.h>
  #endif
@@ -419,7 +420,7 @@
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -416,6 +417,21 @@ static int initr_onenand(void)
+@@ -417,6 +418,21 @@ static int initr_onenand(void)
  }
  #endif
  
