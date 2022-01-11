@@ -35,10 +35,15 @@
 #define BMT_TABLE_MAX	(BB_TABLE_MAX * BBPOOL_RATIO / 100)
 #define BMT_TBL_DEF_VAL	0x0
 
-/*
- * Burner Bad Block Table
- * --------- Only support SLC Nand Chips!!!!!!!!!!! ----------
- */
+struct mtk_bmt_ops {
+	char *sig;
+	unsigned int sig_len;
+	int (*init)(struct device_node *np);
+	bool (*remap_block)(u16 block, u16 mapped_block, int copy_len);
+	void (*unmap_block)(u16 block);
+	u16 (*get_mapping_block)(int block);
+	int (*debug)(void *data, u64 val);
+};
 
 struct bbbt {
 	char signature[3];
@@ -67,6 +72,8 @@ static struct bmt_desc {
 	int (*_erase) (struct mtd_info *mtd, struct erase_info *instr);
 	int (*_block_isbad) (struct mtd_info *mtd, loff_t ofs);
 	int (*_block_markbad) (struct mtd_info *mtd, loff_t ofs);
+
+	const struct mtk_bmt_ops *ops;
 
 	struct bbbt *bbt;
 
@@ -198,8 +205,8 @@ static int write_bmt(u16 block, unsigned char *dat)
 	struct mtd_oob_ops ops = {
 		.mode = MTD_OPS_PLACE_OOB,
 		.ooboffs = OOB_SIGNATURE_OFFSET + bmtd.oob_offset,
-		.oobbuf = "bmt",
-		.ooblen = 3,
+		.oobbuf = bmtd.ops->sig,
+		.ooblen = bmtd.ops->sig_len,
 		.datbuf = dat,
 		.len = bmtd.bmt_pgs << bmtd.pg_shift,
 	};
@@ -438,7 +445,7 @@ error:
 /* We met a bad block, mark it as bad and map it to a valid block in pool,
  * if it's a write failure, we need to write the data to mapped block
  */
-static bool update_bmt(u16 block, int copy_len)
+static bool remap_block_v2(u16 block, u16 mapped_block, int copy_len)
 {
 	u16 mapped_blk;
 	struct bbbt *bbt;
@@ -478,7 +485,8 @@ mapping_block_in_range(int block)
 	return false;
 }
 
-u16 get_mapping_block_index(int block)
+static u16
+get_mapping_block_index_v2(int block)
 {
 	if (block >= bmtd.pool_lba)
 		return block;
@@ -498,6 +506,7 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 	loff_t cur_from;
 	int ret = 0;
 	int max_bitflips = 0;
+	int start, end;
 
 	ops->retlen = 0;
 	ops->oobretlen = 0;
@@ -509,7 +518,7 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 		u32 block = from >> bmtd.blk_shift;
 		u32 cur_block;
 
-		cur_block = get_mapping_block_index(block);
+		cur_block = bmtd.ops->get_mapping_block(block);
 		cur_from = ((loff_t)cur_block << bmtd.blk_shift) + offset;
 
 		cur_ops.oobretlen = 0;
@@ -522,7 +531,7 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 		else
 			max_bitflips = max_t(int, max_bitflips, cur_ret);
 		if (cur_ret < 0 && !mtd_is_bitflip(cur_ret)) {
-			update_bmt(block, mtd->erasesize);
+			bmtd.ops->remap_block(block, cur_block, mtd->erasesize);
 			if (retry_count++ < 10)
 				continue;
 
@@ -530,8 +539,8 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 		}
 
 		if (cur_ret >= mtd->bitflip_threshold &&
-		    mapping_block_in_range(block))
-			update_bmt(block, mtd->erasesize);
+		    mapping_block_in_range(block, &start, &end))
+			bmtd.ops->remap_block(block, cur_block, mtd->erasesize);
 
 		ops->retlen += cur_ops.retlen;
 		ops->oobretlen += cur_ops.oobretlen;
@@ -572,7 +581,7 @@ mtk_bmt_write(struct mtd_info *mtd, loff_t to,
 		u32 block = to >> bmtd.blk_shift;
 		u32 cur_block;
 
-		cur_block = get_mapping_block_index(block);
+		cur_block = bmtd.ops->get_mapping_block(block);
 		cur_to = ((loff_t)cur_block << bmtd.blk_shift) + offset;
 
 		cur_ops.oobretlen = 0;
@@ -581,7 +590,7 @@ mtk_bmt_write(struct mtd_info *mtd, loff_t to,
 					 ops->len - ops->retlen);
 		ret = bmtd._write_oob(mtd, cur_to, &cur_ops);
 		if (ret < 0) {
-			update_bmt(block, offset);
+			bmtd.ops->remap_block(block, cur_block, offset);
 			if (retry_count++ < 10)
 				continue;
 
@@ -622,11 +631,11 @@ mtk_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	while (start_addr < end_addr) {
 		orig_block = start_addr >> bmtd.blk_shift;
-		block = get_mapping_block_index(orig_block);
+		block = bmtd.ops->get_mapping_block(orig_block);
 		mapped_instr.addr = (loff_t)block << bmtd.blk_shift;
 		ret = bmtd._erase(mtd, &mapped_instr);
 		if (ret) {
-			update_bmt(orig_block, 0);
+			bmtd.ops->remap_block(orig_block, block, 0);
 			if (retry_count++ < 10)
 				continue;
 			instr->fail_addr = start_addr;
@@ -647,10 +656,10 @@ mtk_bmt_block_isbad(struct mtd_info *mtd, loff_t ofs)
 	int ret;
 
 retry:
-	block = get_mapping_block_index(orig_block);
+	block = bmtd.ops->get_mapping_block(orig_block);
 	ret = bmtd._block_isbad(mtd, (loff_t)block << bmtd.blk_shift);
 	if (ret) {
-		update_bmt(orig_block, bmtd.blk_size);
+		bmtd.ops->remap_block(orig_block, block, bmtd.blk_size);
 		if (retry_count++ < 10)
 			goto retry;
 	}
@@ -661,8 +670,10 @@ static int
 mtk_bmt_block_markbad(struct mtd_info *mtd, loff_t ofs)
 {
 	u16 orig_block = ofs >> bmtd.blk_shift;
-	u16 block = get_mapping_block_index(orig_block);
-	update_bmt(orig_block, bmtd.blk_size);
+	u16 block = bmtd.ops->get_mapping_block(orig_block);
+
+	bmtd.ops->remap_block(orig_block, block, bmtd.blk_size);
+
 	return bmtd._block_markbad(mtd, (loff_t)block << bmtd.blk_shift);
 }
 
@@ -682,12 +693,16 @@ mtk_bmt_replace_ops(struct mtd_info *mtd)
 	mtd->_block_markbad = mtk_bmt_block_markbad;
 }
 
-static int mtk_bmt_debug_mark_good(void *data, u64 val)
+static void
+unmap_block_v2(u16 block)
 {
-	u32 block = val >> bmtd.blk_shift;
-
 	bmtd.bbt->bb_tbl[block] = block;
 	bmtd.bmt_blk_idx = upload_bmt(bmtd.bbt, bmtd.bmt_blk_idx);
+}
+
+static int mtk_bmt_debug_mark_good(void *data, u64 val)
+{
+	 bmtd.ops->unmap_block(val >> bmtd.blk_shift);
 
 	return 0;
 }
@@ -695,8 +710,9 @@ static int mtk_bmt_debug_mark_good(void *data, u64 val)
 static int mtk_bmt_debug_mark_bad(void *data, u64 val)
 {
 	u32 block = val >> bmtd.blk_shift;
+	u16 cur_block = bmtd.ops->get_mapping_block(block);
 
-	update_bmt(block, bmtd.blk_size);
+	bmtd.ops->remap_block(block, cur_block, bmtd.blk_size);
 
 	return 0;
 }
@@ -729,7 +745,7 @@ mtk_bmt_get_mapping_mask(void)
 	return used;
 }
 
-static int mtk_bmt_debug(void *data, u64 val)
+static int mtk_bmt_debug_v2(void *data, u64 val)
 {
 	struct bbmt *bbmt = bmt_tbl(bmtd.bbt);
 	struct mtd_info *mtd = bmtd.mtd;
@@ -794,6 +810,11 @@ static int mtk_bmt_debug(void *data, u64 val)
 	return 0;
 }
 
+static int mtk_bmt_debug(void *data, u64 val)
+{
+	return bmtd.ops->debug(data, val);
+}
+
 
 DEFINE_DEBUGFS_ATTRIBUTE(fops_mark_good, NULL, mtk_bmt_debug_mark_good, "%llu\n");
 DEFINE_DEBUGFS_ATTRIBUTE(fops_mark_bad, NULL, mtk_bmt_debug_mark_bad, "%llu\n");
@@ -835,26 +856,11 @@ void mtk_bmt_detach(struct mtd_info *mtd)
 	memset(&bmtd, 0, sizeof(bmtd));
 }
 
-/* total_blocks - The total count of blocks that the Nand Chip has */
-int mtk_bmt_attach(struct mtd_info *mtd)
+static int mtk_bmt_init_v2(struct device_node *np)
 {
-	struct device_node *np;
-	struct bbbt *bbt;
-	u32 bufsz;
-	u32 block;
-	u16 total_blocks, pmt_block;
-	int ret = 0;
 	u32 bmt_pool_size, bmt_table_size;
-
-	if (bmtd.mtd)
-		return -ENOSPC;
-
-	np = mtd_get_of_node(mtd);
-	if (!np)
-		return 0;
-
-	if (!of_property_read_bool(np, "mediatek,bmt-v2"))
-		return 0;
+	u32 bufsz, block;
+	u16 pmt_block;
 
 	if (of_property_read_u32(np, "mediatek,bmt-pool-size",
 				 &bmt_pool_size) != 0)
@@ -868,22 +874,11 @@ int mtk_bmt_attach(struct mtd_info *mtd)
 				 &bmt_table_size) != 0)
 		bmt_table_size = 0x2000U;
 
-	bmtd.remap_range = of_get_property(np, "mediatek,bmt-remap-range",
-					   &bmtd.remap_range_len);
-	bmtd.remap_range_len /= 8;
-
-	bmtd.mtd = mtd;
-	mtk_bmt_replace_ops(mtd);
-
 	bmtd.table_size = bmt_table_size;
-	bmtd.blk_size = mtd->erasesize;
-	bmtd.blk_shift = ffs(bmtd.blk_size) - 1;
-	bmtd.pg_size = mtd->writesize;
-	bmtd.pg_shift = ffs(bmtd.pg_size) - 1;
-	total_blocks = mtd->size >> bmtd.blk_shift;
-	pmt_block = total_blocks - bmt_pool_size - 2;
 
-	mtd->size = pmt_block << bmtd.blk_shift;
+	pmt_block = bmtd.total_blks - bmt_pool_size - 2;
+
+	bmtd.mtd->size = pmt_block << bmtd.blk_shift;
 
 	/*
 	 *  ---------------------------------------
@@ -899,66 +894,103 @@ int mtk_bmt_attach(struct mtd_info *mtd)
 	 */
 
 	bmtd.pool_lba = (u16)(pmt_block + 2);
-	bmtd.total_blks = total_blocks;
 	bmtd.bb_max = bmtd.total_blks * BBPOOL_RATIO / 100;
 
-	/* 3 buffers we need */
 	bufsz = round_up(sizeof(struct bbbt) +
 			 bmt_table_size * sizeof(struct bbmt), bmtd.pg_size);
 	bmtd.bmt_pgs = bufsz >> bmtd.pg_shift;
 
 	nand_bbt_buf = kzalloc(bufsz, GFP_KERNEL);
-	nand_data_buf = kzalloc(bmtd.pg_size, GFP_KERNEL);
+	if (!nand_bbt_buf)
+		return -ENOMEM;
 
-	if (!nand_bbt_buf || !nand_data_buf) {
+	memset(nand_bbt_buf, 0xff, bufsz);
+
+	/* Scanning start from the first page of the last block
+	 * of whole flash
+	 */
+	bmtd.bbt = scan_bmt(bmtd.total_blks - 1);
+	if (!bmtd.bbt) {
+		/* BMT not found */
+		if (bmtd.total_blks > BB_TABLE_MAX + BMT_TABLE_MAX) {
+			pr_info("nand: FATAL: Too many blocks, can not support!\n");
+			return -1;
+		}
+
+		bmtd.bbt = (struct bbbt *)nand_bbt_buf;
+		memset(bmt_tbl(bmtd.bbt), BMT_TBL_DEF_VAL,
+		       bmtd.table_size * sizeof(struct bbmt));
+
+		if (scan_bad_blocks(bmtd.bbt))
+			return -1;
+
+		/* BMT always in the last valid block in pool */
+		bmtd.bmt_blk_idx = upload_bmt(bmtd.bbt, bmtd.bmt_blk_idx);
+		block = bmt_tbl(bmtd.bbt)[bmtd.bmt_blk_idx].block;
+		pr_notice("[BBT] BMT.v2 is written into PBA:0x%x\n", block);
+
+		if (bmtd.bmt_blk_idx == 0)
+			pr_info("nand: Warning: no available block in BMT pool!\n");
+		else if (bmtd.bmt_blk_idx == (u16)-1)
+			return -1;
+	}
+
+	return 0;
+}
+
+int mtk_bmt_attach(struct mtd_info *mtd)
+{
+	static const struct mtk_bmt_ops v2_ops = {
+		.sig = "bmt",
+		.sig_len = 3,
+		.init = mtk_bmt_init_v2,
+		.remap_block = remap_block_v2,
+		.unmap_block = unmap_block_v2,
+		.get_mapping_block = get_mapping_block_index_v2,
+		.debug = mtk_bmt_debug_v2,
+	};
+	struct device_node *np;
+	int ret = 0;
+
+	if (bmtd.mtd)
+		return -ENOSPC;
+
+	np = mtd_get_of_node(mtd);
+	if (!np)
+		return 0;
+
+	if (of_property_read_bool(np, "mediatek,bmt-v2"))
+		bmtd.ops = &v2_ops;
+	else
+		return 0;
+
+	bmtd.remap_range = of_get_property(np, "mediatek,bmt-remap-range",
+					   &bmtd.remap_range_len);
+	bmtd.remap_range_len /= 8;
+
+	bmtd.mtd = mtd;
+	mtk_bmt_replace_ops(mtd);
+
+	bmtd.blk_size = mtd->erasesize;
+	bmtd.blk_shift = ffs(bmtd.blk_size) - 1;
+	bmtd.pg_size = mtd->writesize;
+	bmtd.pg_shift = ffs(bmtd.pg_size) - 1;
+	bmtd.total_blks = mtd->size >> bmtd.blk_shift;
+
+	nand_data_buf = kzalloc(bmtd.pg_size, GFP_KERNEL);
+	if (!nand_data_buf) {
 		pr_info("nand: FATAL ERR: allocate buffer failed!\n");
 		ret = -1;
 		goto error;
 	}
 
-	memset(nand_bbt_buf, 0xff, bufsz);
 	memset(nand_data_buf, 0xff, bmtd.pg_size);
 
-	BBT_LOG("bbtbuf=0x%p(0x%x) dat=0x%p(0x%x)",
-			nand_bbt_buf, bufsz, nand_data_buf, bmtd.pg_size);
-	BBT_LOG("pool_lba=0x%x total_blks=0x%x bb_max=0x%x",
-			bmtd.pool_lba, bmtd.total_blks, bmtd.bb_max);
+	ret = bmtd.ops->init(np);
+	if (ret)
+		goto error;
 
-	/* Scanning start from the first page of the last block
-	 * of whole flash
-	 */
-	bbt = scan_bmt(bmtd.total_blks - 1);
-	if (!bbt) {
-		/* BMT not found */
-		if (bmtd.total_blks > BB_TABLE_MAX + BMT_TABLE_MAX) {
-			pr_info("nand: FATAL: Too many blocks, can not support!\n");
-			ret = -1;
-			goto error;
-		}
-
-		bbt = (struct bbbt *)nand_bbt_buf;
-		memset(bmt_tbl(bbt), BMT_TBL_DEF_VAL, bmtd.table_size * sizeof(struct bbmt));
-
-		if (scan_bad_blocks(bbt)) {
-			ret = -1;
-			goto error;
-		}
-
-		/* BMT always in the last valid block in pool */
-		bmtd.bmt_blk_idx = upload_bmt(bbt, bmtd.bmt_blk_idx);
-		block = bmt_tbl(bbt)[bmtd.bmt_blk_idx].block;
-		pr_notice("[BBT] BMT.v2 is written into PBA:0x%x\n", block);
-
-		if (bmtd.bmt_blk_idx == 0)
-			pr_info("nand: Warning: no available block in BMT pool!\n");
-		else if (bmtd.bmt_blk_idx == (u16)-1) {
-			ret = -1;
-			goto error;
-		}
-	}
 	mtk_bmt_add_debugfs();
-
-	bmtd.bbt = bbt;
 	return 0;
 
 error:
