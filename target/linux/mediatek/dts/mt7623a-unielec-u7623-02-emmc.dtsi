@@ -328,6 +328,10 @@
 	pinctrl-0 = <&pcie_default>;
 	status = "okay";
 
+	pcie@0,0 {
+		status = "okay";
+	};
+
 	pcie@1,0 {
 		status = "okay";
 	};
@@ -335,6 +339,10 @@
 	pcie@2,0 {
 		status = "okay";
 	};
+};
+
+&pcie0_phy {
+	status = "okay";
 };
 
 &pcie1_phy {
