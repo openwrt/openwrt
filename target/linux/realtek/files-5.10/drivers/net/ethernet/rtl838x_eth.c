@@ -2209,14 +2209,13 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	spin_lock_init(&priv->lock);
 
-	/* obtain device IRQ number */
-	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-	if (!res) {
+	/* Obtain device IRQ number */
+	dev->irq = platform_get_irq(pdev, 0);
+	if (dev->irq < 0) {
 		dev_err(&pdev->dev, "cannot obtain IRQ, using default 24\n");
 		dev->irq = 24;
-	} else {
-		dev->irq = res->start;
 	}
+
 	dev->ethtool_ops = &rtl838x_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
 	dev->max_mtu = 1536;
