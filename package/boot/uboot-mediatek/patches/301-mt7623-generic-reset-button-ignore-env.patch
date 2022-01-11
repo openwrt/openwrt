@@ -1,14 +1,3 @@
---- a/board/mediatek/mt7623/Kconfig
-+++ b/board/mediatek/mt7623/Kconfig
-@@ -10,4 +10,8 @@ config MTK_BROM_HEADER_INFO
- 	string
- 	default "lk=1"
- 
-+config RESET_BUTTON_LABEL
-+	string "Button to trigger factory reset"
-+	default "reset"
-+
- endif
 --- a/board/mediatek/mt7623/mt7623_rfb.c
 +++ b/board/mediatek/mt7623/mt7623_rfb.c
 @@ -4,8 +4,17 @@

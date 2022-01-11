@@ -38,11 +38,11 @@
  	env_relocate();
  	return 0;
  }
---- a/board/mediatek/mt7622/Kconfig
-+++ b/board/mediatek/mt7622/Kconfig
-@@ -14,4 +14,8 @@ config MTK_BROM_HEADER_INFO
- 	string
- 	default "media=nor"
+--- a/arch/arm/mach-mediatek/Kconfig
++++ b/arch/arm/mach-mediatek/Kconfig
+@@ -115,4 +115,8 @@ config MTK_BROM_HEADER_INFO
+ 	default "media=emmc" if TARGET_MT8516 || TARGET_MT8365 || TARGET_MT8183
+ 	default "lk=1" if TARGET_MT7623
  
 +config RESET_BUTTON_LABEL
 +	string "Button to trigger factory reset"
