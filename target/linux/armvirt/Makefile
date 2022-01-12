@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 BOARD:=armvirt
 BOARDNAME:=QEMU ARM Virtual Machine
 FEATURES:=fpu pci pcie rtc usb boot-part rootfs-part
-FEATURES+=cpiogz ext4 ramdisk squashfs targz
+FEATURES+=cpiogz ext4 ramdisk squashfs targz vmdk
 
 KERNEL_PATCHVER:=5.15
 
