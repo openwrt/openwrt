@@ -239,6 +239,26 @@ static int rtl930x_setup(struct dsa_switch *ds)
 	return 0;
 }
 
+static int rtl93xx_get_sds(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	struct device_node *dn;
+	u32 sds_num;
+
+	if (!dev)
+		return -1;
+	if (dev->of_node) {
+		dn = dev->of_node;
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			sds_num = -1;
+	} else {
+		dev_err(dev, "No DT node.\n");
+		return -1;
+	}
+
+	return sds_num;
+}
+
 static void rtl83xx_phylink_validate(struct dsa_switch *ds, int port,
 				     unsigned long *supported,
 				     struct phylink_link_state *state)
@@ -594,7 +614,7 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	int sds_num, sds_mode;
 	u32 reg;
 
-	pr_debug("%s port %d, mode %x, phy-mode: %s, speed %d, link %d\n", __func__,
+	pr_info("%s port %d, mode %x, phy-mode: %s, speed %d, link %d\n", __func__,
 		port, mode, phy_modes(state->interface), state->speed, state->link);
 
 	// Nothing to be done for the CPU-port
@@ -604,9 +624,9 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	reg &= ~(0xf << 3);
 
-	// On the RTL930X, ports 24 to 27 are using an internal SerDes
-	if (port >=24 && port <= 27) {
-		sds_num = port - 18; // Port 24 mapped to SerDes 6, 25 to 7 ...
+	sds_num = priv->ports[port].sds_num;
+	pr_info("%s SDS is %d\n", __func__, sds_num);
+	if (sds_num >= 0) {
 		switch (state->interface) {
 		case PHY_INTERFACE_MODE_HSGMII:
 			sds_mode = 0x12;
@@ -780,6 +800,8 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_SABLK_CTRL);
 		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_DABLK_CTRL);
 	}
+
+	priv->ports[port].sds_num = rtl93xx_get_sds(phydev);
 
 	return 0;
 }
