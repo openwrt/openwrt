@@ -1,0 +1,87 @@
+From 7b108ebc5f9ac82487ad17dea0ae7163285d906f Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Wed, 12 Jan 2022 10:59:31 +0800
+Subject: [PATCH 305/308] common: bouncebuf: Add arch_addr_aligned() hook for
+ rk3399
+
+As described in rk3399-u-boot.dtsi ("mmc to sram can't do dma"),
+this restrict can be sorted out by adding a hook and returning
+the non-DRAM area as Unaligned (0) in rk3399's implementation.
+
+Then we can enable DMA mode and save about 200ms of SPL boot.
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ arch/arm/dts/rk3399-u-boot.dtsi        |  3 ---
+ arch/arm/mach-rockchip/rk3399/rk3399.c | 13 +++++++++++++
+ common/bouncebuf.c                     |  9 +++++++--
+ 3 files changed, 20 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/dts/rk3399-u-boot.dtsi b/arch/arm/dts/rk3399-u-boot.dtsi
+index 73922c328a..57e1a7feab 100644
+--- a/arch/arm/dts/rk3399-u-boot.dtsi
++++ b/arch/arm/dts/rk3399-u-boot.dtsi
+@@ -119,9 +119,6 @@
+ 
+ &sdmmc {
+ 	u-boot,dm-pre-reloc;
+-
+-	/* mmc to sram can't do dma, prevent aborts transferring TF-A parts */
+-	u-boot,spl-fifo-mode;
+ };
+ 
+ &spi1 {
+diff --git a/arch/arm/mach-rockchip/rk3399/rk3399.c b/arch/arm/mach-rockchip/rk3399/rk3399.c
+index 869d2159be..fc0292e6be 100644
+--- a/arch/arm/mach-rockchip/rk3399/rk3399.c
++++ b/arch/arm/mach-rockchip/rk3399/rk3399.c
+@@ -111,6 +111,19 @@ int arch_cpu_init(void)
+ 	return 0;
+ }
+ 
++int arch_addr_aligned(void *ubuf)
++{
++#define DRAM_END	0xf8000000
++
++	if ((uintptr_t)ubuf < DRAM_END) {
++		/* Aligned for DRAM area */
++		return 1;
++	}
++
++	debug("Unsupported buffer for DMA transfer\n");
++	return 0;
++}
++
+ #ifdef CONFIG_DEBUG_UART_BOARD_INIT
+ void board_debug_uart_init(void)
+ {
+diff --git a/common/bouncebuf.c b/common/bouncebuf.c
+index 6d98920de6..5f510a04ec 100644
+--- a/common/bouncebuf.c
++++ b/common/bouncebuf.c
+@@ -13,6 +13,12 @@
+ #include <bouncebuf.h>
+ #include <asm/cache.h>
+ 
++__weak int arch_addr_aligned(void *ubuf)
++{
++	/* Aligned */
++	return 1;
++}
++
+ static int addr_aligned(struct bounce_buffer *state)
+ {
+ 	const ulong align_mask = ARCH_DMA_MINALIGN - 1;
+@@ -29,8 +35,7 @@ static int addr_aligned(struct bounce_buffer *state)
+ 		return 0;
+ 	}
+ 
+-	/* Aligned */
+-	return 1;
++	return arch_addr_aligned(state->user_buffer);
+ }
+ 
+ int bounce_buffer_start_extalign(struct bounce_buffer *state, void *data,
+-- 
+2.34.1
+

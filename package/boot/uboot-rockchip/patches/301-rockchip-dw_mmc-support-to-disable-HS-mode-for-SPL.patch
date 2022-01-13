@@ -1,0 +1,31 @@
+From baecb10c4b34be29ca0aac97158d4cdbc84d76a0 Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Wed, 1 Dec 2021 16:45:27 +0800
+Subject: [PATCH 301/308] rockchip: dw_mmc: support to disable HS mode for SPL
+
+For rk3399, the highspeed mode doesn't work because of
+the signal voltage remains at 1.8V after reboot.
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ drivers/mmc/rockchip_dw_mmc.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/mmc/rockchip_dw_mmc.c b/drivers/mmc/rockchip_dw_mmc.c
+index d7d5361fd5..49ad73fdff 100644
+--- a/drivers/mmc/rockchip_dw_mmc.c
++++ b/drivers/mmc/rockchip_dw_mmc.c
+@@ -145,6 +145,10 @@ static int rockchip_dwmmc_probe(struct udevice *dev)
+ 	}
+ #endif
+ 	dwmci_setup_cfg(&plat->cfg, host, priv->minmax[1], priv->minmax[0]);
++#ifdef CONFIG_SPL_BUILD
++	if (dev_read_bool(dev, "u-boot,spl-broken-hs"))
++		plat->cfg.host_caps &= ~MMC_MODE_HS;
++#endif
+ 	host->mmc = &plat->mmc;
+ 	host->mmc->priv = &priv->host;
+ 	host->mmc->dev = dev;
+-- 
+2.34.1
+
