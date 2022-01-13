@@ -443,7 +443,7 @@ struct rtl838x_port {
 	enum phy_type phy;
 	bool is10G;
 	bool is2G5;
-	u8 sds_num;
+	int sds_num;
 	const struct dsa_port *dp;
 };
 
