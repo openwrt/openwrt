@@ -1,0 +1,44 @@
+From 5cb2965481744e1fe9853cc6b3365a094ef189b2 Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Sat, 25 Dec 2021 17:29:30 +0800
+Subject: [PATCH] utils: wait hotplug done for bpfilter read error
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ utils.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/utils.c b/utils.c
+index 17d5bf9..928f17c 100644
+--- a/utils.c
++++ b/utils.c
+@@ -774,11 +774,13 @@ fw3_hotplug(bool add, void *zone, void *device)
+ {
+ 	struct fw3_zone *z = zone;
+ 	struct fw3_device *d = device;
++	int status;
++	pid_t pid;
+ 
+ 	if (!*d->network)
+ 		return false;
+ 
+-	switch (fork())
++	switch ((pid = fork()))
+ 	{
+ 	case -1:
+ 		warn("Unable to fork(): %s\n", strerror(errno));
+@@ -788,6 +790,11 @@ fw3_hotplug(bool add, void *zone, void *device)
+ 		break;
+ 
+ 	default:
++		/* wait hotplug done to avoid bpfilter error */
++		waitpid(pid, &status, 0);
++		if (WEXITSTATUS(status))
++			warn("Failed to run %s for %s", FW3_HOTPLUG, d->name);
++
+ 		return true;
+ 	}
+ 
+-- 
+2.34.1
+
