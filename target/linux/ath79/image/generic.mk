@@ -334,6 +334,7 @@ define Device/asus_rp-ac66
   SOC := qca9563
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RP-AC66
+  IMAGE_SIZE := 15488k
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs
