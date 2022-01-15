@@ -232,6 +232,8 @@ define Device/asus_rt-ac58u
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ASUS
 	DEVICE_MODEL := RT-AC58U
+	DEVICE_ALT0_VENDOR := ASUS
+	DEVICE_ALT0_MODEL := RT-ACRH13
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
