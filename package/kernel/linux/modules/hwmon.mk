@@ -353,7 +353,7 @@ define KernelPackage/hwmon-nct7802
   KCONFIG:=CONFIG_SENSORS_NCT7802
   FILES:=$(LINUX_DIR)/drivers/hwmon/nct7802.ko
   AUTOLOAD:=$(call AutoProbe,nct7802)
-  $(call AddDepends/hwmon,+kmod-i2c-core)
+  $(call AddDepends/hwmon,+kmod-regmap-i2c)
 endef
 
 define KernelPackage/hwmon-nct7802/description
