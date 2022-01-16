@@ -169,13 +169,16 @@
 	dr_mode = "host";
 };
 
-&EBC0 {
-	ndfc: ndfc@1,0 {
+&ndfc {
+	status = "okay";
+	/* 128 MiB Nand Flash */
+	nand {
+		nand-is-boot-medium;
 
-		status = "okay";
-		/* 128 MiB Nand Flash */
-		nand {
-			nand-is-boot-medium;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partition@0 {
 				label = "uboot";
