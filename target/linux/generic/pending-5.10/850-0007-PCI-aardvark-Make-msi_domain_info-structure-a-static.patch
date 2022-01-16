@@ -15,8 +15,6 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 16 ++++++++--------
  1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index c7bd6b123857..b5e5c922ad0d 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
 @@ -281,7 +281,6 @@ struct advk_pcie {
@@ -27,7 +25,7 @@ index c7bd6b123857..b5e5c922ad0d 100644
  	DECLARE_BITMAP(msi_used, MSI_IRQ_NUM);
  	struct mutex msi_used_lock;
  	u16 msi_msg;
-@@ -1291,20 +1290,20 @@ static struct irq_chip advk_msi_irq_chip = {
+@@ -1291,20 +1290,20 @@ static struct irq_chip advk_msi_irq_chip
  	.name = "advk-MSI",
  };
  
@@ -54,7 +52,7 @@ index c7bd6b123857..b5e5c922ad0d 100644
  	msi_msg_phys = virt_to_phys(&pcie->msi_msg);
  
  	advk_writel(pcie, lower_32_bits(msi_msg_phys),
-@@ -1320,7 +1319,8 @@ static int advk_pcie_init_msi_irq_domain(struct advk_pcie *pcie)
+@@ -1320,7 +1319,8 @@ static int advk_pcie_init_msi_irq_domain
  
  	pcie->msi_domain =
  		pci_msi_create_irq_domain(of_node_to_fwnode(node),
@@ -64,6 +62,3 @@ index c7bd6b123857..b5e5c922ad0d 100644
  	if (!pcie->msi_domain) {
  		irq_domain_remove(pcie->msi_inner_domain);
  		return -ENOMEM;
--- 
-2.34.1
-

@@ -30,11 +30,9 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 16 ++++++----------
  1 file changed, 6 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 1c6980a78975..e68773527171 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1187,7 +1187,7 @@ static void advk_msi_irq_compose_msi_msg(struct irq_data *data,
+@@ -1187,7 +1187,7 @@ static void advk_msi_irq_compose_msi_msg
  
  	msg->address_lo = lower_32_bits(msi_msg);
  	msg->address_hi = upper_32_bits(msi_msg);
@@ -43,7 +41,7 @@ index 1c6980a78975..e68773527171 100644
  }
  
  static int advk_msi_set_affinity(struct irq_data *irq_data,
-@@ -1204,15 +1204,11 @@ static int advk_msi_irq_domain_alloc(struct irq_domain *domain,
+@@ -1204,15 +1204,11 @@ static int advk_msi_irq_domain_alloc(str
  	int hwirq, i;
  
  	mutex_lock(&pcie->msi_used_lock);
@@ -63,7 +61,7 @@ index 1c6980a78975..e68773527171 100644
  
  	for (i = 0; i < nr_irqs; i++)
  		irq_domain_set_info(domain, virq + i, hwirq + i,
-@@ -1230,7 +1226,7 @@ static void advk_msi_irq_domain_free(struct irq_domain *domain,
+@@ -1230,7 +1226,7 @@ static void advk_msi_irq_domain_free(str
  	struct advk_pcie *pcie = domain->host_data;
  
  	mutex_lock(&pcie->msi_used_lock);
@@ -72,6 +70,3 @@ index 1c6980a78975..e68773527171 100644
  	mutex_unlock(&pcie->msi_used_lock);
  }
  
--- 
-2.34.1
-

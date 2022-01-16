@@ -27,11 +27,9 @@ Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
  drivers/pci/pci-bridge-emul.c | 6 +++++-
  1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pci/pci-bridge-emul.c b/drivers/pci/pci-bridge-emul.c
-index db97cddfc85e..a4af1a533d71 100644
 --- a/drivers/pci/pci-bridge-emul.c
 +++ b/drivers/pci/pci-bridge-emul.c
-@@ -265,7 +265,11 @@ int pci_bridge_emul_init(struct pci_bridge_emul *bridge,
+@@ -265,7 +265,11 @@ int pci_bridge_emul_init(struct pci_brid
  {
  	BUILD_BUG_ON(sizeof(bridge->conf) != PCI_BRIDGE_CONF_END);
  
@@ -44,6 +42,3 @@ index db97cddfc85e..a4af1a533d71 100644
  	bridge->conf.header_type = PCI_HEADER_TYPE_BRIDGE;
  	bridge->conf.cache_line_size = 0x10;
  	bridge->conf.status = cpu_to_le16(PCI_STATUS_CAP_LIST);
--- 
-2.34.1
-

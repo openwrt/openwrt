@@ -31,8 +31,6 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 69 ++++++++++++++++++++++++++-
  1 file changed, 67 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 85a632537b70..b6e723c5725c 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
 @@ -280,6 +280,7 @@ struct advk_pcie {
@@ -43,7 +41,7 @@ index 85a632537b70..b6e723c5725c 100644
  	struct irq_domain *irq_domain;
  	struct irq_chip irq_chip;
  	raw_spinlock_t irq_lock;
-@@ -1441,6 +1442,44 @@ static void advk_pcie_remove_irq_domain(struct advk_pcie *pcie)
+@@ -1441,6 +1442,44 @@ static void advk_pcie_remove_irq_domain(
  	irq_domain_remove(pcie->irq_domain);
  }
  
@@ -88,7 +86,7 @@ index 85a632537b70..b6e723c5725c 100644
  static void advk_pcie_handle_pme(struct advk_pcie *pcie)
  {
  	u32 requester = advk_readl(pcie, PCIE_MSG_LOG_REG) >> 16;
-@@ -1463,7 +1502,7 @@ static void advk_pcie_handle_pme(struct advk_pcie *pcie)
+@@ -1463,7 +1502,7 @@ static void advk_pcie_handle_pme(struct
  		if (!(le16_to_cpu(pcie->bridge.pcie_conf.rootctl) & PCI_EXP_RTCTL_PMEIE))
  			return;
  
@@ -97,7 +95,7 @@ index 85a632537b70..b6e723c5725c 100644
  		if (generic_handle_irq(virq) == -EINVAL)
  			dev_err_ratelimited(&pcie->pdev->dev, "unhandled PME IRQ\n");
  	}
-@@ -1520,7 +1559,7 @@ static void advk_pcie_handle_int(struct advk_pcie *pcie)
+@@ -1520,7 +1559,7 @@ static void advk_pcie_handle_int(struct
  		 * Aardvark HW returns zero for PCI_ERR_ROOT_AER_IRQ, so use
  		 * PCIe interrupt 0
  		 */
@@ -106,7 +104,7 @@ index 85a632537b70..b6e723c5725c 100644
  		if (generic_handle_irq(virq) == -EINVAL)
  			dev_err_ratelimited(&pcie->pdev->dev, "unhandled ERR IRQ\n");
  	}
-@@ -1566,6 +1605,21 @@ static void advk_pcie_irq_handler(struct irq_desc *desc)
+@@ -1566,6 +1605,21 @@ static void advk_pcie_irq_handler(struct
  	chained_irq_exit(chip, desc);
  }
  
@@ -128,7 +126,7 @@ index 85a632537b70..b6e723c5725c 100644
  static void __maybe_unused advk_pcie_disable_phy(struct advk_pcie *pcie)
  {
  	phy_power_off(pcie->phy);
-@@ -1769,14 +1823,24 @@ static int advk_pcie_probe(struct platform_device *pdev)
+@@ -1769,14 +1823,24 @@ static int advk_pcie_probe(struct platfo
  		return ret;
  	}
  
@@ -153,7 +151,7 @@ index 85a632537b70..b6e723c5725c 100644
  		advk_pcie_remove_msi_irq_domain(pcie);
  		advk_pcie_remove_irq_domain(pcie);
  		return ret;
-@@ -1828,6 +1892,7 @@ static int advk_pcie_remove(struct platform_device *pdev)
+@@ -1828,6 +1892,7 @@ static int advk_pcie_remove(struct platf
  	irq_set_chained_handler_and_data(pcie->irq, NULL, NULL);
  
  	/* Remove IRQ domains */
@@ -161,6 +159,3 @@ index 85a632537b70..b6e723c5725c 100644
  	advk_pcie_remove_msi_irq_domain(pcie);
  	advk_pcie_remove_irq_domain(pcie);
  
--- 
-2.34.1
-

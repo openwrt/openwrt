@@ -16,11 +16,9 @@ Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
  drivers/pci/controller/pci-aardvark.c | 21 +++++++++++++++++++++
  1 file changed, 21 insertions(+)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 12eae05f3d10..08b34accfe2f 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1709,6 +1709,27 @@ static int advk_pcie_remove(struct platform_device *pdev)
+@@ -1708,6 +1708,27 @@ static int advk_pcie_remove(struct platf
  	val &= ~(PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER);
  	advk_writel(pcie, val, PCIE_CORE_CMD_STATUS_REG);
  
@@ -48,6 +46,3 @@ index 12eae05f3d10..08b34accfe2f 100644
  	/* Remove IRQ domains */
  	advk_pcie_remove_msi_irq_domain(pcie);
  	advk_pcie_remove_irq_domain(pcie);
--- 
-2.34.1
-
