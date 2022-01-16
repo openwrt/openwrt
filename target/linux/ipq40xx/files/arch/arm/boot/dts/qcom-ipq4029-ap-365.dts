@@ -185,6 +185,13 @@
 				label = "mfginfo";
 				reg = <0x390000 0x10000>;
 				read-only;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_mfginfo_1d: macaddr@1d {
+					reg = <0x1d 0x6>;
+				};
 			};
 
 			partition@3a0000 {
