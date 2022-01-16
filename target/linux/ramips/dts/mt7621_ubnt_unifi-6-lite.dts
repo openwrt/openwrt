@@ -73,15 +73,38 @@
 	};
 };
 
+&gmac0 {
+	nvmem-cells = <&macaddr_eeprom_0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &wlan_2g {
+	mediatek,mtd-eeprom = <&factory 0x0>;
+
 	nvmem-cells = <&macaddr_eeprom_0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wlan_5g {
 	mediatek,mtd-eeprom = <&factory 0x20000>;
+
 	nvmem-cells = <&macaddr_eeprom_6>;
 	nvmem-cell-names = "mac-address";
+
+	/* This is a workaround.
+	 *
+	 * Ubiquiti uses a +2 offset in the first octet relative
+	 * to the 2.4 GHz WMAC. Other octets are identical.
+	 *
+	 * The vendor firmware increases the last octet by 2 for each
+	 * VAP.
+	 *
+	 * This is in conflict on how mac80211 addresses subsequent VAPs.
+	 * mac80211 increases the first octet by two for each VAP, leading
+	 * to conflicting MAC addresses for subsequent interfaces.
+	 */
+	mac-address-increment = <1>;
+
 	ieee80211-freq-limit = <5000000 6000000>;
 };
 

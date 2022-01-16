@@ -80,7 +80,9 @@ platform_do_upgrade() {
 	openmesh,om2p-hs-v3|\
 	openmesh,om2p-hs-v4|\
 	openmesh,om2p-lc|\
-	openmesh,om5p)
+	openmesh,om5p|\
+	openmesh,om5p-ac-v1|\
+	openmesh,om5p-an)
 		PART_NAME="inactive"
 		platform_do_upgrade_openmesh "$1"
 		;;

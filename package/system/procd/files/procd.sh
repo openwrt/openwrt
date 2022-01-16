@@ -198,7 +198,6 @@ _procd_add_jail() {
 		netns)	json_add_boolean "netns" "1";;
 		userns)	json_add_boolean "userns" "1";;
 		cgroupsns)	json_add_boolean "cgroupsns" "1";;
-		console)	json_add_boolean "console" "1";;
 		esac
 	done
 	json_add_object "mount"
@@ -393,12 +392,16 @@ procd_get_mountpoints() {
 	) | sort -u
 }
 
-_procd_add_start_mount_trigger() {
-	_procd_add_action_mount_trigger start $(procd_get_mountpoints "$@")
+_procd_add_restart_mount_trigger() {
+	local mountpoints="$(procd_get_mountpoints "$@")"
+	[ "${mountpoints//[[:space:]]}" ] &&
+		_procd_add_action_mount_trigger restart $mountpoints
 }
 
 _procd_add_reload_mount_trigger() {
-	_procd_add_action_mount_trigger reload $(procd_get_mountpoints "$@")
+	local mountpoints="$(procd_get_mountpoints "$@")"
+	[ "${mountpoints//[[:space:]]}" ] &&
+		_procd_add_action_mount_trigger reload $mountpoints
 }
 
 _procd_add_raw_trigger() {
@@ -636,7 +639,7 @@ _procd_wrapper \
 	procd_add_reload_trigger \
 	procd_add_reload_interface_trigger \
 	procd_add_reload_mount_trigger \
-	procd_add_start_mount_trigger \
+	procd_add_restart_mount_trigger \
 	procd_open_trigger \
 	procd_close_trigger \
 	procd_open_instance \

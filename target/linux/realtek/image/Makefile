@@ -10,7 +10,7 @@ DEVICE_VARS += ZYXEL_VERS
 
 define Build/zyxel-vers
        ( echo VERS;\
-       for hw in $(1); do\
+       for hw in $(ZYXEL_VERS); do\
                echo -n "V9.99($$hw.0) | ";\
                date -d @$(SOURCE_DATE_EPOCH) +%m/%d/%Y;\
        done ) >> $@
@@ -20,7 +20,7 @@ define Device/Default
   PROFILES = Default
   KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
   KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip
-  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_DIR := ../dts-$(KERNEL_PATCHVER)
   DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
@@ -117,7 +117,7 @@ define Device/zyxel_gs1900
   IMAGE_SIZE := 6976k
   DEVICE_VENDOR := ZyXEL
   UIMAGE_MAGIC := 0x83800000
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers $$$$(ZYXEL_VERS) | \
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers | \
 	uImage gzip
 endef
 
@@ -152,5 +152,14 @@ define Device/zyxel_gs1900-8hp-v2
   DEVICE_PACKAGES += lua-rs232
 endef
 TARGET_DEVICES += zyxel_gs1900-8hp-v2
+
+define Device/zyxel_gs1900-24hp-v2
+  $(Device/zyxel_gs1900)
+  SOC := rtl8382
+  DEVICE_MODEL := GS1900-24HP
+  DEVICE_VARIANT := v2
+  ZYXEL_VERS := ABTP
+endef
+TARGET_DEVICES += zyxel_gs1900-24hp-v2
 
 $(eval $(call BuildImage))

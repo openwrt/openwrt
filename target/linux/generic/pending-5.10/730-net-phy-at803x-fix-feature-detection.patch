@@ -20,7 +20,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/drivers/net/phy/at803x.c
 +++ b/drivers/net/phy/at803x.c
-@@ -935,6 +935,34 @@ static int at803x_set_tunable(struct phy
+@@ -1032,6 +1032,34 @@ static int at803x_set_tunable(struct phy
  	}
  }
  
@@ -55,7 +55,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  static int at803x_cable_test_result_trans(u16 status)
  {
  	switch (FIELD_GET(AT803X_CDT_STATUS_STAT_MASK, status)) {
-@@ -1156,7 +1184,7 @@ static struct phy_driver at803x_driver[]
+@@ -1364,7 +1392,7 @@ static struct phy_driver at803x_driver[]
  	.resume			= at803x_resume,
  	.read_page		= at803x_read_page,
  	.write_page		= at803x_write_page,

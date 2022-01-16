@@ -1,0 +1,39 @@
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
+@@ -23,6 +23,7 @@ platform-$(CONFIG_PIC32MZDA)		+= pic32/
+ platform-$(CONFIG_MACH_PISTACHIO)	+= pistachio/
+ platform-$(CONFIG_RALINK)		+= ralink/
+ platform-$(CONFIG_MIKROTIK_RB532)	+= rb532/
++platform-$(CONFIG_RTL838X)		+= rtl838x/
+ platform-$(CONFIG_SGI_IP22)		+= sgi-ip22/
+ platform-$(CONFIG_SGI_IP27)		+= sgi-ip27/
+ platform-$(CONFIG_SGI_IP28)		+= sgi-ip22/
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -632,6 +632,26 @@ config RALINK
+ 	select ARCH_HAS_RESET_CONTROLLER
+ 	select RESET_CONTROLLER
+ 
++config RTL838X
++	bool "Realtek based platforms"
++	select DMA_NONCOHERENT
++	select IRQ_MIPS_CPU
++	select CSRC_R4K
++	select CEVT_R4K
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_HAS_CPU_MIPS32_R2
++	select SYS_SUPPORTS_BIG_ENDIAN
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_MIPS16
++	select SYS_HAS_EARLY_PRINTK
++	select SYS_HAS_EARLY_PRINTK_8250
++	select USE_GENERIC_EARLY_PRINTK_8250
++	select BOOT_RAW
++	select PINCTRL
++	select ARCH_HAS_RESET_CONTROLLER
++	select RESET_CONTROLLER
++	select USE_OF
++
+ config SGI_IP22
+ 	bool "SGI IP22 (Indy/Indigo2)"
+ 	select ARC_MEMORY

@@ -182,22 +182,6 @@ endef
 $(eval $(call KernelPackage,eeprom-at25))
 
 
-define KernelPackage/gpio-dev
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Generic GPIO char device support
-  DEPENDS:=@GPIO_SUPPORT
-  KCONFIG:=CONFIG_GPIO_DEVICE
-  FILES:=$(LINUX_DIR)/drivers/char/gpio_dev.ko
-  AUTOLOAD:=$(call AutoLoad,40,gpio_dev)
-endef
-
-define KernelPackage/gpio-dev/description
- Kernel module to allows control of GPIO pins using a character device.
-endef
-
-$(eval $(call KernelPackage,gpio-dev))
-
-
 define KernelPackage/gpio-f7188x
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Fintek F718xx/F818xx GPIO Support
@@ -1008,7 +992,7 @@ $(eval $(call KernelPackage,ptp))
 define KernelPackage/ptp-qoriq
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Freescale QorIQ PTP support
-  DEPENDS:=@TARGET_mpc85xx +kmod-ptp
+  DEPENDS:=@(TARGET_mpc85xx||TARGET_qoriq) +kmod-ptp
   KCONFIG:=CONFIG_PTP_1588_CLOCK_QORIQ
   FILES:=$(LINUX_DIR)/drivers/ptp/ptp-qoriq.ko
   AUTOLOAD:=$(call AutoProbe,ptp-qoriq)

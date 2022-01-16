@@ -16,6 +16,7 @@ platform_do_upgrade() {
 	netgear,r7500 |\
 	netgear,r7500v2 |\
 	netgear,r7800 |\
+	netgear,xr500 |\
 	qcom,ipq8064-ap148 |\
 	qcom,ipq8064-ap161)
 		nand_do_upgrade "$1"
@@ -43,6 +44,11 @@ platform_do_upgrade() {
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
 		platform_do_upgrade_linksys "$1"
+		;;
+	meraki,mr42 |\
+	meraki,mr52)
+		CI_KERNPART="bootkernel2"
+		nand_do_upgrade "$1"
 		;;
 	tplink,ad7200 |\
 	tplink,c2600)

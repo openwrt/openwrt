@@ -8,9 +8,8 @@ BOARDNAME:=MT7623
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
 KERNELNAME:=Image dtbs zImage
-FEATURES+=usb
-KERNEL_PATCHVER:=5.10
-DEFAULT_PACKAGES+=blockdev uboot-envtools
+FEATURES+=display usbgadget
+DEFAULT_PACKAGES+=uboot-envtools
 
 define Target/Description
 	Build firmware images for MediaTek mt7623 ARM based boards.

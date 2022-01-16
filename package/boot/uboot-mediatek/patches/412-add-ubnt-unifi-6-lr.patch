@@ -348,14 +348,14 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1008,6 +1008,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1105,6 +1105,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
 +	mt7622-ubnt-unifi-6-lr.dtb \
  	mt7623n-bananapi-bpi-r2.dtb \
  	mt7629-rfb.dtb \
- 	mt8512-bm1-emmc.dtb \
+ 	mt8183-pumpkin.dtb \
 --- /dev/null
 +++ b/ubnt_unifi-6-lr_env
 @@ -0,0 +1,50 @@
@@ -419,7 +419,7 @@
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -410,6 +411,21 @@ static int initr_onenand(void)
+@@ -416,6 +417,21 @@ static int initr_onenand(void)
  }
  #endif
  
@@ -441,7 +441,7 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -697,6 +713,9 @@ static init_fnc_t init_sequence_r[] = {
+@@ -705,6 +721,9 @@ static init_fnc_t init_sequence_r[] = {
  #ifdef CONFIG_CMD_ONENAND
  	initr_onenand,
  #endif

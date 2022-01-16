@@ -58,8 +58,11 @@ platform_do_upgrade() {
 	dlink,dir-2660-a1|\
 	dlink,dir-853-a3|\
 	hiwifi,hc5962|\
+	iptime,a3004t|\
+	iptime,t5004|\
 	jcg,q20|\
 	linksys,e5600|\
+	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
 	linksys,ea7500-v2|\
@@ -71,9 +74,13 @@ platform_do_upgrade() {
 	netgear,r6700-v2|\
 	netgear,r6800|\
 	netgear,r6850|\
+	netgear,r6900-v2|\
+	netgear,r7200|\
+	netgear,r7450|\
 	netgear,wac104|\
 	netgear,wac124|\
 	netis,wf2881|\
+	raisecom,msg1500-x-00|\
 	sercomm,na502|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
@@ -84,7 +91,8 @@ platform_do_upgrade() {
 		;;
 	iodata,wn-ax1167gr2|\
 	iodata,wn-ax2033gr|\
-	iodata,wn-dx1167r)
+	iodata,wn-dx1167r|\
+	iodata,wn-dx2033gr)
 		iodata_mstc_upgrade_prepare "0xfe75"
 		nand_do_upgrade "$1"
 		;;

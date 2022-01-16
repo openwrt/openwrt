@@ -30,6 +30,7 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	asiarf,ap7621-001|\
+	humax,e10|\
 	winstars,ws-wn583a6)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
@@ -66,6 +67,9 @@ ramips_setup_interfaces()
 		;;
 	ubnt,edgerouter-x-sfp)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4 eth5" "eth0"
+		;;
+	ubnt,usw-flex)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
 	zyxel,nr7101)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
@@ -131,6 +135,10 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
+	iptime,t5004)
+		lan_mac=$(mtd_get_mac_ascii config ethaddr)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		;;
 	jcg,y2|\
 	wavlink,wl-wn531a6|\
 	winstars,ws-wn583a6|\
@@ -140,6 +148,7 @@ ramips_setup_macs()
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	linksys,e5600|\
+	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
 	linksys,ea7500-v2|\
@@ -156,6 +165,11 @@ ramips_setup_macs()
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add $label_mac 1)
+		;;
+	raisecom,msg1500-x-00)
+		lan_mac=$(mtd_get_mac_ascii Config protest_lan_mac)
+		wan_mac=$(mtd_get_mac_ascii Config protest_wan_mac)
+		label_mac=$lan_mac
 		;;
 	esac
 

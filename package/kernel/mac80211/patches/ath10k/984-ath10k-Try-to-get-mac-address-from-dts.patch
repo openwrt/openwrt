@@ -16,8 +16,6 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  drivers/net/wireless/ath/ath10k/core.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/drivers/net/wireless/ath/ath10k/core.c b/drivers/net/wireless/ath/ath10k/core.c
-index 5f4e12196..9ed7b9883 100644
 --- a/drivers/net/wireless/ath/ath10k/core.c
 +++ b/drivers/net/wireless/ath/ath10k/core.c
 @@ -8,6 +8,7 @@
@@ -28,7 +26,7 @@ index 5f4e12196..9ed7b9883 100644
  #include <linux/property.h>
  #include <linux/dmi.h>
  #include <linux/ctype.h>
-@@ -3062,6 +3068,8 @@ static int ath10k_core_probe_fw(struct ath10k *ar)
+@@ -3303,6 +3304,8 @@ static int ath10k_core_probe_fw(struct a
  
  	device_get_mac_address(ar->dev, ar->mac_addr, sizeof(ar->mac_addr));
  
@@ -37,6 +35,3 @@ index 5f4e12196..9ed7b9883 100644
  	ret = ath10k_core_init_firmware_features(ar);
  	if (ret) {
  		ath10k_err(ar, "fatal problem with firmware features: %d\n",
--- 
-2.27.0
-

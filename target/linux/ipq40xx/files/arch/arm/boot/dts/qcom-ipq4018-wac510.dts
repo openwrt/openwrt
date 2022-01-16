@@ -273,12 +273,30 @@
 				label = "0:MANUDATA";
 				reg = <0x001e0000 0x00010000>;
 				read-only;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_manudata_6: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
 			};
 
 			partition@1f0000 {
 				label = "0:ART";
 				reg = <0x001f0000 0x00010000>;
 				read-only;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				precal_art_1000: precal@1000 {
+					reg = <0x1000 0x2f20>;
+				};
+
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
 			};
 		};
 	};
@@ -348,13 +366,16 @@
 
 &wifi0 {
 	status = "okay";
-
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_manudata_6>;
 	qcom,ath10k-calibration-variant = "Netgear-WAC510";
 };
 
 &wifi1 {
 	status = "okay";
-
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_manudata_6>;
+	mac-address-increment = <16>;
 	qcom,ath10k-calibration-variant = "Netgear-WAC510";
 };
 

@@ -97,11 +97,14 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 			[ -f "$stat" ] || continue
 
 			local pid name state ppid rest
-			read pid name state ppid rest < $stat
-			name="${name#(}"; name="${name%)}"
+			read pid rest < $stat
+			name="${rest#\(}" ; rest="${name##*\) }" ; name="${name%\)*}"
+			set -- $rest ; state="$1" ; ppid="$2"
 
 			# Skip PID1, our parent, ourself and our children
 			[ $pid -ne 1 -a $pid -ne $proc_ppid -a $pid -ne $$ -a $ppid -ne $$ ] || continue
+
+			[ -f "/proc/$pid/cmdline" ] || continue
 
 			local cmdline
 			read cmdline < /proc/$pid/cmdline

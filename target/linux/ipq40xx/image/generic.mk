@@ -46,6 +46,21 @@ define Build/append-rootfshdr
 	dd if=$@.new bs=64 count=1 >> $(IMAGE_KERNEL)
 endef
 
+define Build/append-rutx-metadata
+	echo \
+		'{ \
+			"device_code": [".*"], \
+			"hwver": [".*"], \
+			"batch": [".*"], \
+			"serial": [".*"], \
+			"supported_devices":["teltonika,rutx"] \
+		}' | fwtool -I - $@
+endef
+
+define Build/copy-file
+	cat "$(1)" > "$@"
+endef
+
 define Build/mkmylofw_32m
 	$(eval device_id=$(word 1,$(1)))
 	$(eval revision=$(word 2,$(1)))
@@ -79,6 +94,16 @@ define Build/qsdk-ipq-factory-nand-askey
 		ubifs $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
+endef
+
+define Build/qsdk-ipq-app-gpt
+	cp $@ $@.tmp 2>/dev/null || true
+	ptgen -g -o $@.tmp -a 1 -l 1024 \
+			-t 0x2e -N 0:HLOS -r -p 32M \
+			-t 0x83 -N rootfs -r -p 128M \
+				-N rootfs_data -p 512M
+	cat $@.tmp >> $@
+	rm $@.tmp
 endef
 
 define Build/SenaoFW
@@ -175,10 +200,40 @@ define Device/asus_map-ac2200
 endef
 TARGET_DEVICES += asus_map-ac2200
 
+# WARNING: this is an initramfs image that gets you half of the way there
+#          you need to delete the jffs2 ubi volume and sysupgrade to the final image
+# to get a "trx" you can flash via web UI for ac42u/ac58u:
+# - change call Device/FitImageLzma to Device/FitImage
+# - add the following below UIMAGE_NAME
+#   UIMAGE_MAGIC := 0x27051956
+#   IMAGES += factory.trx
+#   IMAGE/factory.trx := copy-file $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE) | uImage none
+define Device/asus_rt-ac42u
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := ASUS
+	DEVICE_MODEL := RT-AC42U
+	DEVICE_ALT0_VENDOR := ASUS
+	DEVICE_ALT0_MODEL := RT-ACRH17
+	SOC := qcom-ipq4019
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DTB_SIZE := 65536
+	IMAGE_SIZE := 20439364
+	FILESYSTEMS := squashfs
+#	RT-AC82U is nowhere to be found online
+#	Rather, this device is a/k/a RT-AC42U
+#	But we'll go with what the vendor firmware has...
+	UIMAGE_NAME:=$(shell echo -e '\03\01\01\01RT-AC82U')
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-asus_rt-ac42u kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += asus_rt-ac42u
+
 define Device/asus_rt-ac58u
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ASUS
 	DEVICE_MODEL := RT-AC58U
+	DEVICE_ALT0_VENDOR := ASUS
+	DEVICE_ALT0_MODEL := RT-ACRH13
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
@@ -252,10 +307,10 @@ endef
 TARGET_DEVICES += buffalo_wtr-m2133hp
 
 define Device/cellc_rtl30vw
-	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL_SUFFIX := -fit-zImage.itb
 	KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
-	KERNEL_NAME := Image
+	KERNEL = kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
+	KERNEL_NAME := zImage
 	KERNEL_IN_UBI :=
 	IMAGES := nand-factory.bin nand-sysupgrade.bin
 	IMAGE/nand-factory.bin := append-rootfshdr | append-ubi | qsdk-ipq-factory-nand-askey
@@ -308,6 +363,7 @@ define Device/compex_wpj428
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/cpximg-6a04.bin := append-kernel | append-rootfs | pad-rootfs | mkmylofw_32m 0x8A2 3
 	DEVICE_PACKAGES := kmod-gpio-beeper
+	DEFAULT := n
 endef
 TARGET_DEVICES += compex_wpj428
 
@@ -327,6 +383,7 @@ define Device/devolo_magic-2-wifi-next
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := ipq-wifi-devolo_magic-2-wifi-next
+	DEFAULT := n
 endef
 TARGET_DEVICES += devolo_magic-2-wifi-next
 
@@ -365,6 +422,7 @@ define Device/edgecore_ecw5211
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
 	DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-usb-acm
 endef
 TARGET_DEVICES += edgecore_ecw5211
@@ -418,6 +476,7 @@ define Device/engenius_emd1
 	IMAGES += factory.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
+	DEVICE_PACKAGES := ipq-wifi-engenius_emd1
 endef
 TARGET_DEVICES += engenius_emd1
 
@@ -432,6 +491,8 @@ define Device/engenius_emr3500
 	IMAGES += factory.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
+	DEVICE_PACKAGES := ipq-wifi-engenius_emr3500
+	DEFAULT := n
 endef
 TARGET_DEVICES += engenius_emr3500
 
@@ -466,13 +527,16 @@ define Device/ezviz_cs-w3-wd1200g-eup
 	DEVICE_VENDOR := EZVIZ
 	DEVICE_MODEL := CS-W3-WD1200G
 	DEVICE_VARIANT := EUP
-	DEVICE_DTS_CONFIG := config@4
 	IMAGE_SIZE := 14848k
+	KERNEL_SIZE = 6m
 	SOC := qcom-ipq4018
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
 		append-metadata
 	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers \
 		ipq-wifi-ezviz_cs-w3-wd1200g-eup
+	DEVICE_COMPAT_VERSION := 2.0
+	DEVICE_COMPAT_MESSAGE := uboot's bootcmd has to be updated (see wiki). \
+		Upgrade via sysupgrade mechanism is not possible.
 endef
 TARGET_DEVICES += ezviz_cs-w3-wd1200g-eup
 
@@ -492,7 +556,7 @@ endef
 TARGET_DEVICES += glinet_gl-ap1300
 
 define Device/glinet_gl-b1300
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	DEVICE_VENDOR := GL.iNet
 	DEVICE_MODEL := GL-B1300
 	BOARD_NAME := gl-b1300
@@ -503,8 +567,26 @@ define Device/glinet_gl-b1300
 endef
 TARGET_DEVICES += glinet_gl-b1300
 
+define Device/glinet_gl-b2200
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := GL.iNet
+	DEVICE_MODEL := GL-B2200
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c3
+	KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+	IMAGES := emmc.img.gz sysupgrade.bin
+	IMAGE/emmc.img.gz := qsdk-ipq-app-gpt |\
+		pad-to 1024k | append-kernel |\
+		pad-to 33792k | append-rootfs |\
+		append-metadata | gzip
+	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-glinet_gl-b2200 \
+		kmod-fs-ext4 kmod-mmc kmod-spi-dev mkf2fs e2fsprogs kmod-fs-f2fs
+endef
+TARGET_DEVICES += glinet_gl-b2200
+
 define Device/glinet_gl-s1300
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	DEVICE_VENDOR := GL.iNet
 	DEVICE_MODEL := GL-S1300
 	SOC := qcom-ipq4029
@@ -643,6 +725,64 @@ define Device/netgear_ex6150v2
 endef
 TARGET_DEVICES += netgear_ex6150v2
 
+define Device/netgear_orbi
+	$(call Device/DniImage)
+	SOC := qcom-ipq4019
+	DEVICE_VENDOR := NETGEAR
+	IMAGE/factory.img := append-kernel | pad-offset 128k 64 | \
+		append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | \
+		append-rootfs | pad-rootfs | netgear-dni
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
+		sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct e2fsprogs kmod-fs-ext4 losetup
+endef
+
+define Device/netgear_rbx50
+	$(call Device/netgear_orbi)
+	NETGEAR_HW_ID := 29765352+0+4000+512+2x2+2x2+4x4
+	KERNEL_SIZE := 3932160
+	ROOTFS_SIZE := 32243712
+	IMAGE_SIZE := 36175872
+endef
+
+define Device/netgear_rbr50
+	$(call Device/netgear_rbx50)
+	DEVICE_MODEL := RBR50
+	DEVICE_VARIANT := v1
+	NETGEAR_BOARD_ID := RBR50
+endef
+TARGET_DEVICES += netgear_rbr50
+
+define Device/netgear_rbs50
+	$(call Device/netgear_rbx50)
+	DEVICE_MODEL := RBS50
+	DEVICE_VARIANT := v1
+	NETGEAR_BOARD_ID := RBS50
+endef
+TARGET_DEVICES += netgear_rbs50
+
+define Device/netgear_srx60
+	$(call Device/netgear_orbi)
+	NETGEAR_HW_ID := 29765352+0+4096+512+2x2+2x2+4x4
+	KERNEL_SIZE := 3932160
+	ROOTFS_SIZE := 32243712
+	IMAGE_SIZE := 36175872
+endef
+
+define Device/netgear_srr60
+	$(call Device/netgear_srx60)
+	DEVICE_MODEL := SRR60
+	NETGEAR_BOARD_ID := SRR60
+endef
+TARGET_DEVICES += netgear_srr60
+
+define Device/netgear_srs60
+	$(call Device/netgear_srx60)
+	DEVICE_MODEL := SRS60
+	NETGEAR_BOARD_ID := SRS60
+endef
+TARGET_DEVICES += netgear_srs60
+
 define Device/netgear_wac510
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -689,6 +829,32 @@ define Device/openmesh_a62
 endef
 TARGET_DEVICES += openmesh_a62
 
+define Device/p2w_r619ac
+	$(call Device/FitzImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := P&W
+	DEVICE_MODEL := R619AC
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@10
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-p2w_r619ac
+endef
+
+define Device/p2w_r619ac-64m
+	$(call Device/p2w_r619ac)
+	DEVICE_VARIANT := 64M NAND
+	IMAGES += nand-factory.bin
+	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += p2w_r619ac-64m
+
+define Device/p2w_r619ac-128m
+	$(call Device/p2w_r619ac)
+	DEVICE_VARIANT := 128M NAND
+endef
+TARGET_DEVICES += p2w_r619ac-128m
+
 define Device/plasmacloud_pa1200
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Plasma Cloud
@@ -701,7 +867,7 @@ define Device/plasmacloud_pa1200
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA1200
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-plasmacloud-pa1200
+	DEVICE_PACKAGES := ipq-wifi-plasmacloud_pa1200
 endef
 TARGET_DEVICES += plasmacloud_pa1200
 
@@ -717,7 +883,7 @@ define Device/plasmacloud_pa2200
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA2200
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-plasmacloud-pa2200
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-plasmacloud_pa2200
 endef
 TARGET_DEVICES += plasmacloud_pa2200
 
@@ -733,6 +899,7 @@ define Device/qcom_ap-dk01.1-c1
 	IMAGE_SIZE := 26624k
 	$(call Device/FitImage)
 	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata
+	DEFAULT := n
 endef
 TARGET_DEVICES += qcom_ap-dk01.1-c1
 
@@ -749,6 +916,7 @@ define Device/qcom_ap-dk04.1-c1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := ap-dk04.1-c1
+	DEFAULT := n
 endef
 TARGET_DEVICES += qcom_ap-dk04.1-c1
 
@@ -763,6 +931,7 @@ define Device/qxwlan_e2600ac-c1
 	IMAGE_SIZE := 31232k
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
+	DEFAULT := n
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c1
 
@@ -780,6 +949,22 @@ define Device/qxwlan_e2600ac-c2
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
 
+define Device/teltonika_rutx10
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Teltonika
+	DEVICE_MODEL := RUTX10
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@5
+	KERNEL_INSTALL := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	FILESYSTEMS := squashfs
+	IMAGE/nand-factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
+	DEVICE_PACKAGES := ipq-wifi-teltonika_rutx kmod-bluetooth
+endef
+TARGET_DEVICES += teltonika_rutx10
+
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Unielec
@@ -790,6 +975,7 @@ define Device/unielec_u4019-32m
 	KERNEL_SIZE := 4096k
 	IMAGE_SIZE := 31232k
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEFAULT := n
 endef
 TARGET_DEVICES += unielec_u4019-32m
 

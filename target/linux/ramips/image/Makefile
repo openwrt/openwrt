@@ -89,6 +89,16 @@ define Build/mkdlinkfw-factory
 	mv $@.new $@
 endef
 
+define Build/mkdlinkfw-loader
+	-$(STAGING_DIR_HOST)/bin/mkdlinkfw \
+		-k $(KDIR)/loader-$(DEVICE_NAME).bin \
+		-r $@ \
+		-o $@.new \
+		$(if $(DLINK_IMAGE_OFFSET), -O $(DLINK_IMAGE_OFFSET)) \
+		-s $(DLINK_FIRMWARE_SIZE)
+	mv $@.new $@
+endef
+
 define Build/netis-tail
 	echo -n $(1) >> $@
 	echo -n $(UIMAGE_NAME)-yun | $(MKHASH) md5 | \
@@ -144,6 +154,12 @@ define Build/uimage-padhdr
 	mv $@.new $@
 endef
 
+define Build/uimage-sgehdr
+	uimage_sgehdr -i $@ -o $@.new -m $(DEVICE_MODEL) \
+		-h $(DEVICE_VARIANT) -s V1.00000
+	mv $@.new $@
+endef
+
 define Build/umedia-header
 	fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
 endef
@@ -182,6 +198,7 @@ define Device/netgear_sercomm_nor
 endef
 
 define Device/seama
+  BLOCKSIZE := 64k
   SEAMA_MTDBLOCK := 2
   IMAGES += factory.bin
 

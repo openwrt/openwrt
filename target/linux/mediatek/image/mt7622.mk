@@ -190,6 +190,7 @@ define Device/mediatek_mt7622-rfb1-ubi
   DEVICE_DTS := mt7622-rfb1-ubi
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3
+  BOARD_NAME := mediatek,mt7622-rfb1-ubi
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -201,6 +202,16 @@ define Device/mediatek_mt7622-rfb1-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
+
+define Device/totolink_a8000ru
+  DEVICE_VENDOR := TOTOLINK
+  DEVICE_MODEL := A8000RU
+  DEVICE_DTS := mt7622-totolink-a8000ru
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := swconfig
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += totolink_a8000ru
 
 define Device/ubnt_unifi-6-lr
   DEVICE_VENDOR := Ubiquiti

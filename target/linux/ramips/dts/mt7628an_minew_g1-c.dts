@@ -16,11 +16,6 @@
 		led-upgrade = &led_system;
 	};
 
-	memory@0 {
-		device_type = "memory";
-		reg = <0x0 0x8000000>;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
@@ -135,6 +130,8 @@
 
 &wmac {
 	status = "okay";
+
+	mediatek,mtd-eeprom = <&factory 0x0>;
 };
 
 &sdhci {

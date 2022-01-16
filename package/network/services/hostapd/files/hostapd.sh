@@ -72,6 +72,15 @@ hostapd_append_wpa_key_mgmt() {
 		;;
 	esac
 
+	[ "$fils" -gt 0 ] && {
+		case "$auth_type" in
+			eap*)
+				append wpa_key_mgmt FILS-SHA256
+				[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt FT-FILS-SHA256
+			;;
+		esac
+	}
+
 	[ "$auth_osen" = "1" ] && append wpa_key_mgmt "OSEN"
 }
 
@@ -359,6 +368,9 @@ hostapd_common_add_bss_config() {
 
 	config_add_int eap_server
 	config_add_string eap_user_file ca_cert server_cert private_key private_key_passwd server_id
+
+	config_add_boolean fils
+	config_add_string fils_dhcp
 }
 
 hostapd_set_vlan_file() {
@@ -531,8 +543,9 @@ hostapd_set_bss_options() {
 		airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast proxy_arp per_sta_vif \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id \
-		vendor_elements
+		vendor_elements fils
 
+	set_default fils 0
 	set_default isolate 0
 	set_default maxassoc 0
 	set_default max_inactivity 0
@@ -553,6 +566,8 @@ hostapd_set_bss_options() {
 	set_default airtime_bss_weight 0
 	set_default airtime_bss_limit 0
 	set_default eap_server 0
+
+	/usr/sbin/hostapd -vfils || fils=0
 
 	append bss_conf "ctrl_interface=/var/run/hostapd"
 	if [ "$isolate" -gt 0 ]; then
@@ -654,7 +669,9 @@ hostapd_set_bss_options() {
 				auth_server auth_secret auth_port \
 				dae_client dae_secret dae_port \
 				ownip radius_client_addr \
-				eap_reauth_period request_cui
+				eap_reauth_period request_cui \
+				erp_domain mobility_domain \
+				fils_realm fils_dhcp
 
 			# radius can provide VLAN ID for clients
 			vlan_possible=1
@@ -663,6 +680,30 @@ hostapd_set_bss_options() {
 			[ -n "$auth_server" ] || json_get_var auth_server server
 			[ -n "$auth_port" ] || json_get_var auth_port port
 			[ -n "$auth_secret" ] || json_get_var auth_secret key
+
+			[ "$fils" -gt 0 ] && {
+				set_default erp_domain "$mobility_domain"
+				set_default erp_domain "$(echo "$ssid" | md5sum | head -c 8)"
+				set_default fils_realm "$erp_domain"
+
+				append bss_conf "erp_send_reauth_start=1" "$N"
+				append bss_conf "erp_domain=$erp_domain" "$N"
+				append bss_conf "fils_realm=$fils_realm" "$N"
+				append bss_conf "fils_cache_id=$(echo "$fils_realm" | md5sum | head -c 4)" "$N"
+
+				[ "$fils_dhcp" = "*" ] && {
+					json_get_values network network
+					fils_dhcp=
+					for net in $network; do
+						fils_dhcp="$(ifstatus "$net" | jsonfilter -e '@.data.dhcpserver')"
+						[ -n "$fils_dhcp" ] && break
+					done
+
+					[ -z "$fils_dhcp" -a -n "$network_bridge" -a -n "$network_ifname" ] && \
+						fils_dhcp="$(udhcpc -B -n -q -s /lib/netifd/dhcp-get-server.sh -t 1 -i "$network_ifname" 2>/dev/null)"
+				}
+				[ -n "$fils_dhcp" ] && append bss_conf "dhcp_server=$fils_dhcp" "$N"
+			}
 
 			set_default auth_port 1812
 			set_default dae_port 3799
@@ -753,7 +794,7 @@ hostapd_set_bss_options() {
 	}
 
 	append bss_conf "ssid=$ssid" "$N"
-	[ -n "$network_bridge" ] && append bss_conf "bridge=$network_bridge" "$N"
+	[ -n "$network_bridge" ] && append bss_conf "bridge=$network_bridge${N}wds_bridge=" "$N"
 	[ -n "$network_ifname" ] && append bss_conf "snoop_iface=$network_ifname" "$N"
 	[ -n "$iapp_interface" ] && {
 		local ifname
@@ -853,6 +894,10 @@ hostapd_set_bss_options() {
 				done
 			fi
 		fi
+		if [ "$fils" -gt 0 ]; then
+			json_get_vars fils_realm
+			set_default fils_realm "$(echo "$ssid" | md5sum | head -c 8)"
+		fi
 
 		append bss_conf "wpa_disable_eapol_key_retries=$wpa_disable_eapol_key_retries" "$N"
 
@@ -877,7 +922,7 @@ hostapd_set_bss_options() {
 		fi
 
 		append bss_conf "okc=$auth_cache" "$N"
-		[ "$auth_cache" = 0 ] && append bss_conf "disable_pmksa_caching=1" "$N"
+		[ "$auth_cache" = 0 -a "$fils" = 0 ] && append bss_conf "disable_pmksa_caching=1" "$N"
 
 		# RSN -> allow management frame protection
 		case "$ieee80211w" in
@@ -973,7 +1018,6 @@ hostapd_set_bss_options() {
 		[ -n "$iw_network_auth_type" ] && \
 			append bss_conf "network_auth_type=$iw_network_auth_type" "$N"
 		[ -n "$iw_gas_address3" ] && append bss_conf "gas_address3=$iw_gas_address3" "$N"
-		[ -n "$iw_qos_map_set" ] && append bss_conf "qos_map_set=$iw_qos_map_set" "$N"
 
 		json_for_each_item append_iw_roaming_consortium iw_roaming_consortium
 		json_for_each_item append_iw_anqp_elem iw_anqp_elem
@@ -992,6 +1036,12 @@ hostapd_set_bss_options() {
 			append bss_conf "anqp_3gpp_cell_net=$iw_anqp_3gpp_cell_net_conf" "$N"
 	fi
 
+	set_default iw_qos_map_set 0,0,2,16,1,1,255,255,18,22,24,38,40,40,44,46,48,56
+	case "$iw_qos_map_set" in
+		*,*);;
+		*) iw_qos_map_set="";;
+	esac
+	[ -n "$iw_qos_map_set" ] && append bss_conf "qos_map_set=$iw_qos_map_set" "$N"
 
 	local hs20 disable_dgaf osen anqp_domain_id hs20_deauth_req_timeout \
 		osu_ssid hs20_wan_metrics hs20_operating_class hs20_t_c_filename hs20_t_c_timestamp \
@@ -1026,6 +1076,7 @@ hostapd_set_bss_options() {
 
 	if [ "$eap_server" = "1" ]; then
 		append bss_conf "eap_server=1" "$N"
+		append bss_conf "eap_server_erp=1" "$N"
 		[ -n "$eap_user_file" ] && append bss_conf "eap_user_file=$eap_user_file" "$N"
 		[ -n "$ca_cert" ] && append bss_conf "ca_cert=$ca_cert" "$N"
 		[ -n "$server_cert" ] && append bss_conf "server_cert=$server_cert" "$N"
@@ -1166,8 +1217,8 @@ wpa_supplicant_set_fixed_freq() {
 	append network_data "frequency=$freq" "$N$T"
 	case "$htmode" in
 		NOHT) append network_data "disable_ht=1" "$N$T";;
-		HT20|VHT20) append network_data "disable_ht40=1" "$N$T";;
-		HT40*|VHT40*|VHT80*|VHT160*) append network_data "ht40=1" "$N$T";;
+		HE20|HT20|VHT20) append network_data "disable_ht40=1" "$N$T";;
+		HT40*|VHT40|VHT80|VHT160|HE40|HE80|HE160) append network_data "ht40=1" "$N$T";;
 	esac
 	case "$htmode" in
 		VHT*) append network_data "vht=1" "$N$T";;
@@ -1192,7 +1243,7 @@ wpa_supplicant_add_network() {
 	json_get_vars \
 		ssid bssid key \
 		basic_rate mcast_rate \
-		ieee80211w ieee80211r \
+		ieee80211w ieee80211r fils \
 		multi_ap \
 		default_disabled
 
@@ -1284,6 +1335,7 @@ wpa_supplicant_add_network() {
 
 			json_get_vars eap_type identity anonymous_identity ca_cert ca_cert_usesystem
 
+			[ "$fils" -gt 0 ] && append network_data "erp=1" "$N$T"
 			if [ "$ca_cert_usesystem" -eq "1" -a -f "/etc/ssl/certs/ca-certificates.crt" ]; then
 				append network_data "ca_cert=\"/etc/ssl/certs/ca-certificates.crt\"" "$N$T"
 			else

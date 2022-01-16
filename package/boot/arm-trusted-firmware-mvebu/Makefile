@@ -112,6 +112,7 @@ TFA_MAKE_FLAGS += \
 		MV_DDR_PATH=$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
 		WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
 		WTMI_IMG=$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE)/wtmi_app.bin \
+		CRYPTOPP_PATH=$(STAGING_DIR_IMAGE)/$(CRYPTOPP_NAME) \
 		USE_COHERENT_MEM=0 \
 		FIP_ALIGN=0x100 \
 		DDR_TOPOLOGY=$(DDR_TOPOLOGY) \
@@ -123,39 +124,52 @@ TFA_MAKE_FLAGS += \
 		mrvl_uart
 
 A3700_UTILS_NAME:=a3700-utils
-A3700_UTILS_RELEASE:=2efdb10f
+A3700_UTILS_RELEASE:=97f01f5f
 A3700_UTILS_SOURCE=$(A3700_UTILS_NAME)-$(A3700_UTILS_RELEASE).tar.bz2
 
 define Download/a3700-utils
   FILE:=$(A3700_UTILS_SOURCE)
   PROTO:=git
   URL:=https://github.com/MarvellEmbeddedProcessors/A3700-utils-marvell.git
-  VERSION:=2efdb10f3524c534d276002adf81fec06e0f1cf2
-  MIRROR_HASH:=4476e1bacfa7abb4a1303c6cf3aa7d067038b24090dfd5da13ca2a72a0d5c7a4
+  VERSION:=97f01f5feaf9ef6168e2a2096abaf56371939e58
+  MIRROR_HASH:=1e391c4dafb7b3363a17282e229d056a95575c0f4fb2f71e21db8044668aea78
   SUBDIR:=$(A3700_UTILS_NAME)
 endef
 
+CRYPTOPP_NAME:=cryptopp
+CRYPTOPP_RELEASE:=f210224
+CRYPTOPP_SOURCE=$(CRYPTOPP_NAME)-$(CRYPTOPP_RELEASE).tar.bz2
+
+define Download/cryptopp
+  FILE:=$(CRYPTOPP_SOURCE)
+  PROTO:=git
+  URL:=https://github.com/weidai11/cryptopp.git
+  VERSION:=f2102243e6fdd48c0b2a393a0993cca228f20573
+  MIRROR_HASH:=74ec9e48ee04b9f2d9a1d8c4f2392ed0ab52780d7af0f70405d7bbb23d1504fa
+  SUBDIR:=$(CRYPTOPP_NAME)
+endef
+
 MV_DDR_NAME:=mv-ddr-marvell
-MV_DDR_RELEASE:=02e23dbc
+MV_DDR_RELEASE:=efcad0e2
 MV_DDR_SOURCE:=$(MV_DDR_NAME)-$(MV_DDR_RELEASE).tar.bz2
 
 define Download/mv-ddr-marvell
   FILE:=$(MV_DDR_SOURCE)
   PROTO:=git
   URL:=https://github.com/MarvellEmbeddedProcessors/mv-ddr-marvell.git
-  VERSION:=02e23dbcf8dd22e038986052d99319a0eba8f25f
-  MIRROR_HASH:=d87dcc288b3895d1a1a78908fc607976d500b317ef81edfe667035579df0b440
+  VERSION:=efcad0e2fae66a8b6f84a4dd2326f5add67569d5
+  MIRROR_HASH:=99363f928ee1239fd42d651b495d163a60cdab00c24770a3c5e192efa7169d62
   SUBDIR:=$(MV_DDR_NAME)
 endef
 
 MOX_BB_NAME:=mox-boot-builder
-MOX_BB_RELEASE:=v2021.04.09
+MOX_BB_RELEASE:=v2021.09.07
 MOX_BB_SOURCE:=$(MOX_BB_NAME)-$(MOX_BB_RELEASE).tar.bz2
 
 define Download/mox-boot-builder
   FILE:=$(MOX_BB_SOURCE)
   URL:=https://gitlab.nic.cz/turris/mox-boot-builder/-/archive/$(MOX_BB_RELEASE)
-  HASH:=f0ed4fa25006e36a07d4256f633e3f25d6f8898dbe2e081e578251a182885520
+  HASH:=fd5fe276a3b0dee3177d61c017907a8eb23cd2169478fa78e9a3a836cfe3a4a8
 endef
 
 CM3_GCC_NAME:=gcc-arm
@@ -166,11 +180,16 @@ CM3_GCC_SOURCE=$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION).tar.xz
 define Download/cm3-gcc
   FILE:=$(CM3_GCC_SOURCE)
   URL:=https://developer.arm.com/-/media/Files/downloads/gnu-a/$(CM3_GCC_RELEASE)/binrel
+ifeq ($(HOST_ARCH),aarch64)
+  HASH:=1a42eecafa03dc6f32b8ae49ffcd15114dc818efbd72292fa6bab58233940bb9
+else
   HASH:=bf7ee185936d22d787b80c8da573f72ead5675695331fb8b590f0133ef1f6bb9
+endif
 endef
 
 define Build/Clean
 	rm -rf \
+		$(STAGING_DIR_IMAGE)/$(CRYPTOPP_NAME) \
 		$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
 		$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
 		$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
@@ -182,11 +201,13 @@ define Build/Prepare
 	$(eval $(call Download,a3700-utils))
 	$(eval $(call Download,mv-ddr-marvell))
 	$(eval $(call Download,mox-boot-builder))
+	$(eval $(call Download,cryptopp))
 	$(eval $(call Download,cm3-gcc))
 
 	$(call Build/Prepare/Default,)
 
 	mkdir -p $(STAGING_DIR_IMAGE)
+	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(CRYPTOPP_SOURCE)
 	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(A3700_UTILS_SOURCE)
 	echo "master" > $(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME)/branch.txt
 	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME),./patches-a3700-utils)
@@ -202,6 +223,7 @@ define Build/Compile
 	+$(MAKE) \
 		CROSS_CM3=$(STAGING_DIR_IMAGE)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
 		WTMI_VERSION=$(MOX_BB_RELEASE) \
+		CRYPTOPP_PATH=$PWD/cryptopp/ \
 		-C $(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
 		wtmi_app.bin
 	$(call Build/Compile/Default)
