@@ -18,11 +18,9 @@ Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
  drivers/pci/controller/pci-aardvark.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index b3d89cb449b6..271ebecee965 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1737,6 +1737,10 @@ static int advk_pcie_remove(struct platform_device *pdev)
+@@ -1736,6 +1736,10 @@ static int advk_pcie_remove(struct platf
  	/* Free config space for emulated root bridge */
  	pci_bridge_emul_cleanup(&pcie->bridge);
  
@@ -33,6 +31,3 @@ index b3d89cb449b6..271ebecee965 100644
  	/* Disable outbound address windows mapping */
  	for (i = 0; i < OB_WIN_COUNT; i++)
  		advk_pcie_disable_ob_win(pcie, i);
--- 
-2.34.1
-

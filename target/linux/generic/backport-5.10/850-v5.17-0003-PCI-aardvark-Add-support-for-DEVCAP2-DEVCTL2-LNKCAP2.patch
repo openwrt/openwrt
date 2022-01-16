@@ -19,11 +19,9 @@ Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
  drivers/pci/controller/pci-aardvark.c | 15 +++++++++++----
  1 file changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index c5300d49807a..25af189a1052 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -884,8 +884,13 @@ advk_pci_bridge_emul_pcie_conf_read(struct pci_bridge_emul *bridge,
+@@ -882,8 +882,13 @@ advk_pci_bridge_emul_pcie_conf_read(stru
  	case PCI_CAP_LIST_ID:
  	case PCI_EXP_DEVCAP:
  	case PCI_EXP_DEVCTL:
@@ -37,7 +35,7 @@ index c5300d49807a..25af189a1052 100644
  	default:
  		return PCI_BRIDGE_EMUL_NOT_HANDLED;
  	}
-@@ -899,10 +904,6 @@ advk_pci_bridge_emul_pcie_conf_write(struct pci_bridge_emul *bridge,
+@@ -897,10 +902,6 @@ advk_pci_bridge_emul_pcie_conf_write(str
  	struct advk_pcie *pcie = bridge->data;
  
  	switch (reg) {
@@ -48,7 +46,7 @@ index c5300d49807a..25af189a1052 100644
  	case PCI_EXP_LNKCTL:
  		advk_writel(pcie, new, PCIE_CORE_PCIEXP_CAP + reg);
  		if (new & PCI_EXP_LNKCTL_RL)
-@@ -924,6 +925,12 @@ advk_pci_bridge_emul_pcie_conf_write(struct pci_bridge_emul *bridge,
+@@ -922,6 +923,12 @@ advk_pci_bridge_emul_pcie_conf_write(str
  		advk_writel(pcie, new, PCIE_ISR0_REG);
  		break;
  
@@ -61,6 +59,3 @@ index c5300d49807a..25af189a1052 100644
  	default:
  		break;
  	}
--- 
-2.34.1
-

@@ -29,8 +29,6 @@ Reviewed-by: Miquel Raynal <miquel.raynal@bootlin.com>
  drivers/phy/marvell/phy-mvebu-a3700-comphy.c | 62 +++++++++-----------
  1 file changed, 29 insertions(+), 33 deletions(-)
 
-diff --git a/drivers/phy/marvell/phy-mvebu-a3700-comphy.c b/drivers/phy/marvell/phy-mvebu-a3700-comphy.c
-index 6781488cfc58..dbb2d4308851 100644
 --- a/drivers/phy/marvell/phy-mvebu-a3700-comphy.c
 +++ b/drivers/phy/marvell/phy-mvebu-a3700-comphy.c
 @@ -20,7 +20,6 @@
@@ -115,7 +113,7 @@ index 6781488cfc58..dbb2d4308851 100644
  };
  
  static int mvebu_a3700_comphy_smc(unsigned long function, unsigned long lane,
-@@ -120,7 +114,7 @@ static int mvebu_a3700_comphy_smc(unsigned long function, unsigned long lane,
+@@ -120,7 +114,7 @@ static int mvebu_a3700_comphy_smc(unsign
  	}
  }
  
@@ -124,7 +122,7 @@ index 6781488cfc58..dbb2d4308851 100644
  					  enum phy_mode mode,
  					  int submode)
  {
-@@ -132,7 +126,6 @@ static int mvebu_a3700_comphy_get_fw_mode(int lane, int port,
+@@ -132,7 +126,6 @@ static int mvebu_a3700_comphy_get_fw_mod
  
  	for (i = 0; i < n; i++) {
  		if (mvebu_a3700_comphy_modes[i].lane == lane &&
@@ -132,7 +130,7 @@ index 6781488cfc58..dbb2d4308851 100644
  		    mvebu_a3700_comphy_modes[i].mode == mode &&
  		    mvebu_a3700_comphy_modes[i].submode == submode)
  			break;
-@@ -153,7 +146,7 @@ static int mvebu_a3700_comphy_set_mode(struct phy *phy, enum phy_mode mode,
+@@ -153,7 +146,7 @@ static int mvebu_a3700_comphy_set_mode(s
  	if (submode == PHY_INTERFACE_MODE_1000BASEX)
  		submode = PHY_INTERFACE_MODE_SGMII;
  
@@ -141,7 +139,7 @@ index 6781488cfc58..dbb2d4308851 100644
  						 submode);
  	if (fw_mode < 0) {
  		dev_err(lane->dev, "invalid COMPHY mode\n");
-@@ -172,9 +165,10 @@ static int mvebu_a3700_comphy_power_on(struct phy *phy)
+@@ -172,9 +165,10 @@ static int mvebu_a3700_comphy_power_on(s
  	struct mvebu_a3700_comphy_lane *lane = phy_get_drvdata(phy);
  	u32 fw_param;
  	int fw_mode;
@@ -153,7 +151,7 @@ index 6781488cfc58..dbb2d4308851 100644
  						 lane->mode, lane->submode);
  	if (fw_mode < 0) {
  		dev_err(lane->dev, "invalid COMPHY mode\n");
-@@ -191,17 +185,18 @@ static int mvebu_a3700_comphy_power_on(struct phy *phy)
+@@ -191,17 +185,18 @@ static int mvebu_a3700_comphy_power_on(s
  		fw_param = COMPHY_FW_MODE(fw_mode);
  		break;
  	case PHY_MODE_ETHERNET:
@@ -174,7 +172,7 @@ index 6781488cfc58..dbb2d4308851 100644
  						 COMPHY_FW_SPEED_3_125G);
  			break;
  		default:
-@@ -212,8 +207,7 @@ static int mvebu_a3700_comphy_power_on(struct phy *phy)
+@@ -212,8 +207,7 @@ static int mvebu_a3700_comphy_power_on(s
  		break;
  	case PHY_MODE_PCIE:
  		dev_dbg(lane->dev, "set lane %d to PCIe mode\n", lane->id);
@@ -184,7 +182,7 @@ index 6781488cfc58..dbb2d4308851 100644
  					  phy->attrs.bus_width);
  		break;
  	default:
-@@ -247,17 +241,20 @@ static struct phy *mvebu_a3700_comphy_xlate(struct device *dev,
+@@ -247,17 +241,20 @@ static struct phy *mvebu_a3700_comphy_xl
  					    struct of_phandle_args *args)
  {
  	struct mvebu_a3700_comphy_lane *lane;
@@ -209,7 +207,7 @@ index 6781488cfc58..dbb2d4308851 100644
  
  	return phy;
  }
-@@ -302,7 +299,6 @@ static int mvebu_a3700_comphy_probe(struct platform_device *pdev)
+@@ -302,7 +299,6 @@ static int mvebu_a3700_comphy_probe(stru
  		lane->mode = PHY_MODE_INVALID;
  		lane->submode = PHY_INTERFACE_MODE_NA;
  		lane->id = lane_id;
@@ -217,6 +215,3 @@ index 6781488cfc58..dbb2d4308851 100644
  		phy_set_drvdata(phy, lane);
  	}
  
--- 
-2.34.1
-

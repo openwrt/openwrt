@@ -18,11 +18,9 @@ Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
  drivers/pci/controller/pci-aardvark.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 271ebecee965..e5c88f1c177b 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1741,6 +1741,11 @@ static int advk_pcie_remove(struct platform_device *pdev)
+@@ -1740,6 +1740,11 @@ static int advk_pcie_remove(struct platf
  	if (pcie->reset_gpio)
  		gpiod_set_value_cansleep(pcie->reset_gpio, 1);
  
@@ -34,6 +32,3 @@ index 271ebecee965..e5c88f1c177b 100644
  	/* Disable outbound address windows mapping */
  	for (i = 0; i < OB_WIN_COUNT; i++)
  		advk_pcie_disable_ob_win(pcie, i);
--- 
-2.34.1
-

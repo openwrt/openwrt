@@ -16,11 +16,9 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index aa5629b8b5c9..3c0b6b931061 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1003,8 +1003,12 @@ static bool advk_pcie_valid_device(struct advk_pcie *pcie, struct pci_bus *bus,
+@@ -1003,8 +1003,12 @@ static bool advk_pcie_valid_device(struc
  		return false;
  
  	/*
@@ -35,6 +33,3 @@ index aa5629b8b5c9..3c0b6b931061 100644
  	 */
  	if (!pci_is_root_bus(bus) && !advk_pcie_link_up(pcie))
  		return false;
--- 
-2.34.1
-

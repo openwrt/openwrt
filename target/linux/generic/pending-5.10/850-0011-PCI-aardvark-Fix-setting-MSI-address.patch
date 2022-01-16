@@ -26,8 +26,6 @@ Cc: stable@vger.kernel.org # f21a8b1b6837 ("PCI: aardvark: Move to MSI handling 
  drivers/pci/controller/pci-aardvark.c | 21 +++++++++------------
  1 file changed, 9 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 43db884c81a1..76a65c592b5c 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
 @@ -284,7 +284,6 @@ struct advk_pcie {
@@ -38,7 +36,7 @@ index 43db884c81a1..76a65c592b5c 100644
  	int link_gen;
  	struct pci_bridge_emul bridge;
  	struct gpio_desc *reset_gpio;
-@@ -479,6 +478,7 @@ static void advk_pcie_disable_ob_win(struct advk_pcie *pcie, u8 win_num)
+@@ -479,6 +478,7 @@ static void advk_pcie_disable_ob_win(str
  
  static void advk_pcie_setup_hw(struct advk_pcie *pcie)
  {
@@ -46,7 +44,7 @@ index 43db884c81a1..76a65c592b5c 100644
  	u32 reg;
  	int i;
  
-@@ -567,6 +567,11 @@ static void advk_pcie_setup_hw(struct advk_pcie *pcie)
+@@ -567,6 +567,11 @@ static void advk_pcie_setup_hw(struct ad
  	reg |= LANE_COUNT_1;
  	advk_writel(pcie, reg, PCIE_CORE_CTRL0_REG);
  
@@ -58,7 +56,7 @@ index 43db884c81a1..76a65c592b5c 100644
  	/* Enable MSI */
  	reg = advk_readl(pcie, PCIE_CORE_CTRL2_REG);
  	reg |= PCIE_CORE_CTRL2_MSI_ENABLE;
-@@ -1182,10 +1187,10 @@ static void advk_msi_irq_compose_msi_msg(struct irq_data *data,
+@@ -1182,10 +1187,10 @@ static void advk_msi_irq_compose_msi_msg
  					 struct msi_msg *msg)
  {
  	struct advk_pcie *pcie = irq_data_get_irq_chip_data(data);
@@ -72,7 +70,7 @@ index 43db884c81a1..76a65c592b5c 100644
  	msg->data = data->hwirq;
  }
  
-@@ -1344,18 +1349,10 @@ static struct msi_domain_info advk_msi_domain_info = {
+@@ -1344,18 +1349,10 @@ static struct msi_domain_info advk_msi_d
  static int advk_pcie_init_msi_irq_domain(struct advk_pcie *pcie)
  {
  	struct device *dev = &pcie->pdev->dev;
@@ -91,6 +89,3 @@ index 43db884c81a1..76a65c592b5c 100644
  	pcie->msi_inner_domain =
  		irq_domain_add_linear(NULL, MSI_IRQ_NUM,
  				      &advk_msi_domain_ops, pcie);
--- 
-2.34.1
-

@@ -18,11 +18,9 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 10 ++++++----
  1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index e641ad566488..5c887772fa97 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -578,15 +578,17 @@ static void advk_pcie_setup_hw(struct advk_pcie *pcie)
+@@ -578,15 +578,17 @@ static void advk_pcie_setup_hw(struct ad
  	advk_writel(pcie, PCIE_IRQ_ALL_MASK, HOST_CTRL_INT_STATUS_REG);
  
  	/* Disable All ISR0/1 Sources */
@@ -44,6 +42,3 @@ index e641ad566488..5c887772fa97 100644
  	/* Enable summary interrupt for GIC SPI source */
  	reg = PCIE_IRQ_ALL_MASK & (~PCIE_IRQ_ENABLE_INTS_MASK);
  	advk_writel(pcie, reg, HOST_CTRL_INT_MASK_REG);
--- 
-2.34.1
-

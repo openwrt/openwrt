@@ -15,11 +15,9 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index e090276ef902..aa5629b8b5c9 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1618,7 +1618,7 @@ static int advk_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+@@ -1618,7 +1618,7 @@ static int advk_pcie_map_irq(const struc
  		return of_irq_parse_and_map_pci(dev, slot, pin);
  }
  
@@ -28,6 +26,3 @@ index e090276ef902..aa5629b8b5c9 100644
  {
  	phy_power_off(pcie->phy);
  	phy_exit(pcie->phy);
--- 
-2.34.1
-

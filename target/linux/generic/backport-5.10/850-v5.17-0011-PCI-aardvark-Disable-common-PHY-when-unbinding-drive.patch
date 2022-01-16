@@ -16,11 +16,9 @@ Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
  drivers/pci/controller/pci-aardvark.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index e5c88f1c177b..2a82c4652c28 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1750,6 +1750,9 @@ static int advk_pcie_remove(struct platform_device *pdev)
+@@ -1749,6 +1749,9 @@ static int advk_pcie_remove(struct platf
  	for (i = 0; i < OB_WIN_COUNT; i++)
  		advk_pcie_disable_ob_win(pcie, i);
  
@@ -30,6 +28,3 @@ index e5c88f1c177b..2a82c4652c28 100644
  	return 0;
  }
  
--- 
-2.34.1
-

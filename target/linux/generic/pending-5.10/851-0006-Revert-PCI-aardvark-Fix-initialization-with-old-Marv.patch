@@ -21,11 +21,9 @@ Acked-by: Miquel Raynal <miquel.raynal@bootlin.com>
  drivers/pci/controller/pci-aardvark.c | 4 +---
  1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 319dd830e36e..4e64142b9ec4 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1635,9 +1635,7 @@ static int advk_pcie_enable_phy(struct advk_pcie *pcie)
+@@ -1635,9 +1635,7 @@ static int advk_pcie_enable_phy(struct a
  	}
  
  	ret = phy_power_on(pcie->phy);
@@ -36,6 +34,3 @@ index 319dd830e36e..4e64142b9ec4 100644
  		phy_exit(pcie->phy);
  		return ret;
  	}
--- 
-2.34.1
-
