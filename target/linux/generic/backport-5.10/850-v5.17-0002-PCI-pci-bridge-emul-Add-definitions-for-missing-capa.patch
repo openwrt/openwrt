@@ -19,11 +19,9 @@ Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
  drivers/pci/pci-bridge-emul.c | 43 +++++++++++++++++++++++++++++++++++
  1 file changed, 43 insertions(+)
 
-diff --git a/drivers/pci/pci-bridge-emul.c b/drivers/pci/pci-bridge-emul.c
-index a4af1a533d71..0d1177e52a43 100644
 --- a/drivers/pci/pci-bridge-emul.c
 +++ b/drivers/pci/pci-bridge-emul.c
-@@ -251,6 +251,49 @@ struct pci_bridge_reg_behavior pcie_cap_regs_behavior[PCI_CAP_PCIE_SIZEOF / 4] =
+@@ -251,6 +251,49 @@ struct pci_bridge_reg_behavior pcie_cap_
  		.ro = GENMASK(15, 0) | PCI_EXP_RTSTA_PENDING,
  		.w1c = PCI_EXP_RTSTA_PME,
  	},
@@ -73,6 +71,3 @@ index a4af1a533d71..0d1177e52a43 100644
  };
  
  /*
--- 
-2.34.1
-

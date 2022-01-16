@@ -23,8 +23,6 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 26 ++++++++++++--------------
  1 file changed, 12 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 4be05b52d835..c7bd6b123857 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
 @@ -281,8 +281,6 @@ struct advk_pcie {
@@ -36,7 +34,7 @@ index 4be05b52d835..c7bd6b123857 100644
  	struct msi_domain_info msi_domain_info;
  	DECLARE_BITMAP(msi_used, MSI_IRQ_NUM);
  	struct mutex msi_used_lock;
-@@ -1197,6 +1195,12 @@ static int advk_msi_set_affinity(struct irq_data *irq_data,
+@@ -1197,6 +1195,12 @@ static int advk_msi_set_affinity(struct
  	return -EINVAL;
  }
  
@@ -49,7 +47,7 @@ index 4be05b52d835..c7bd6b123857 100644
  static int advk_msi_irq_domain_alloc(struct irq_domain *domain,
  				     unsigned int virq,
  				     unsigned int nr_irqs, void *args)
-@@ -1213,7 +1217,7 @@ static int advk_msi_irq_domain_alloc(struct irq_domain *domain,
+@@ -1213,7 +1217,7 @@ static int advk_msi_irq_domain_alloc(str
  
  	for (i = 0; i < nr_irqs; i++)
  		irq_domain_set_info(domain, virq + i, hwirq + i,
@@ -58,7 +56,7 @@ index 4be05b52d835..c7bd6b123857 100644
  				    domain->host_data, handle_simple_irq,
  				    NULL, NULL);
  
-@@ -1283,29 +1287,23 @@ static const struct irq_domain_ops advk_pcie_irq_domain_ops = {
+@@ -1283,29 +1287,23 @@ static const struct irq_domain_ops advk_
  	.xlate = irq_domain_xlate_onecell,
  };
  
@@ -93,6 +91,3 @@ index 4be05b52d835..c7bd6b123857 100644
  
  	msi_msg_phys = virt_to_phys(&pcie->msi_msg);
  
--- 
-2.34.1
-

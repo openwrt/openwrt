@@ -18,8 +18,6 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 54 ++++++++++++++++++++++++---
  1 file changed, 49 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 5c887772fa97..43db884c81a1 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
 @@ -281,6 +281,7 @@ struct advk_pcie {
@@ -30,7 +28,7 @@ index 5c887772fa97..43db884c81a1 100644
  	DECLARE_BITMAP(msi_used, MSI_IRQ_NUM);
  	struct mutex msi_used_lock;
  	u16 msi_msg;
-@@ -577,12 +578,10 @@ static void advk_pcie_setup_hw(struct advk_pcie *pcie)
+@@ -577,12 +578,10 @@ static void advk_pcie_setup_hw(struct ad
  	advk_writel(pcie, PCIE_ISR1_ALL_MASK, PCIE_ISR1_REG);
  	advk_writel(pcie, PCIE_IRQ_ALL_MASK, HOST_CTRL_INT_STATUS_REG);
  
@@ -45,7 +43,7 @@ index 5c887772fa97..43db884c81a1 100644
  
  	/* Unmask summary MSI interrupt */
  	reg = advk_readl(pcie, PCIE_ISR0_MASK_REG);
-@@ -1196,10 +1195,52 @@ static int advk_msi_set_affinity(struct irq_data *irq_data,
+@@ -1196,10 +1195,52 @@ static int advk_msi_set_affinity(struct
  	return -EINVAL;
  }
  
@@ -98,7 +96,7 @@ index 5c887772fa97..43db884c81a1 100644
  };
  
  static int advk_msi_irq_domain_alloc(struct irq_domain *domain,
-@@ -1289,7 +1330,9 @@ static const struct irq_domain_ops advk_pcie_irq_domain_ops = {
+@@ -1289,7 +1330,9 @@ static const struct irq_domain_ops advk_
  };
  
  static struct irq_chip advk_msi_irq_chip = {
@@ -109,7 +107,7 @@ index 5c887772fa97..43db884c81a1 100644
  };
  
  static struct msi_domain_info advk_msi_domain_info = {
-@@ -1303,6 +1346,7 @@ static int advk_pcie_init_msi_irq_domain(struct advk_pcie *pcie)
+@@ -1303,6 +1346,7 @@ static int advk_pcie_init_msi_irq_domain
  	struct device *dev = &pcie->pdev->dev;
  	phys_addr_t msi_msg_phys;
  
@@ -117,6 +115,3 @@ index 5c887772fa97..43db884c81a1 100644
  	mutex_init(&pcie->msi_used_lock);
  
  	msi_msg_phys = virt_to_phys(&pcie->msi_msg);
--- 
-2.34.1
-

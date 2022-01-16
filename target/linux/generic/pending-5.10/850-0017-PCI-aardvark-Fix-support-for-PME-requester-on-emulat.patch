@@ -38,11 +38,9 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 94 +++++++++++++++------------
  1 file changed, 52 insertions(+), 42 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index e2b66b0e8fb3..85a632537b70 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -597,6 +597,11 @@ static void advk_pcie_setup_hw(struct advk_pcie *pcie)
+@@ -597,6 +597,11 @@ static void advk_pcie_setup_hw(struct ad
  	reg &= ~PCIE_ISR0_MSI_INT_PENDING;
  	advk_writel(pcie, reg, PCIE_ISR0_MASK_REG);
  
@@ -54,7 +52,7 @@ index e2b66b0e8fb3..85a632537b70 100644
  	/* Enable summary interrupt for GIC SPI source */
  	reg = PCIE_IRQ_ALL_MASK & (~PCIE_IRQ_ENABLE_INTS_MASK);
  	advk_writel(pcie, reg, HOST_CTRL_INT_MASK_REG);
-@@ -863,22 +868,11 @@ advk_pci_bridge_emul_pcie_conf_read(struct pci_bridge_emul *bridge,
+@@ -863,22 +868,11 @@ advk_pci_bridge_emul_pcie_conf_read(stru
  		*value = PCI_EXP_SLTSTA_PDS << 16;
  		return PCI_BRIDGE_EMUL_HANDLED;
  
@@ -82,7 +80,7 @@ index e2b66b0e8fb3..85a632537b70 100644
  
  	case PCI_EXP_LNKCAP: {
  		u32 val = advk_readl(pcie, PCIE_CORE_PCIEXP_CAP + reg);
-@@ -933,22 +927,19 @@ advk_pci_bridge_emul_pcie_conf_write(struct pci_bridge_emul *bridge,
+@@ -933,22 +927,19 @@ advk_pci_bridge_emul_pcie_conf_write(str
  			advk_pcie_wait_for_retrain(pcie);
  		break;
  
@@ -116,7 +114,7 @@ index e2b66b0e8fb3..85a632537b70 100644
  
  	case PCI_EXP_DEVCTL:
  	case PCI_EXP_DEVCTL2:
-@@ -1450,6 +1441,34 @@ static void advk_pcie_remove_irq_domain(struct advk_pcie *pcie)
+@@ -1450,6 +1441,34 @@ static void advk_pcie_remove_irq_domain(
  	irq_domain_remove(pcie->irq_domain);
  }
  
@@ -151,7 +149,7 @@ index e2b66b0e8fb3..85a632537b70 100644
  static void advk_pcie_handle_msi(struct advk_pcie *pcie)
  {
  	u32 msi_val, msi_mask, msi_status, msi_idx;
-@@ -1489,18 +1508,9 @@ static void advk_pcie_handle_int(struct advk_pcie *pcie)
+@@ -1489,18 +1508,9 @@ static void advk_pcie_handle_int(struct
  	isr1_mask = advk_readl(pcie, PCIE_ISR1_MASK_REG);
  	isr1_status = isr1_val & ((~isr1_mask) & PCIE_ISR1_ALL_MASK);
  
@@ -173,6 +171,3 @@ index e2b66b0e8fb3..85a632537b70 100644
  
  	/* Process ERR interrupt */
  	if (isr0_status & PCIE_ISR0_ERR_MASK) {
--- 
-2.34.1
-

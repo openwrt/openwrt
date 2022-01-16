@@ -17,11 +17,9 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 20 +++++++++++---------
  1 file changed, 11 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 44d9c8c4d258..efd7e53b5e06 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -933,19 +933,21 @@ advk_pci_bridge_emul_pcie_conf_write(struct pci_bridge_emul *bridge,
+@@ -933,19 +933,21 @@ advk_pci_bridge_emul_pcie_conf_write(str
  			advk_pcie_wait_for_retrain(pcie);
  		break;
  
@@ -52,6 +50,3 @@ index 44d9c8c4d258..efd7e53b5e06 100644
  		break;
  
  	case PCI_EXP_DEVCTL:
--- 
-2.34.1
-

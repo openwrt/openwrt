@@ -16,11 +16,9 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/pci/controller/pci-aardvark.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pci/controller/pci-aardvark.c b/drivers/pci/controller/pci-aardvark.c
-index 01dfe70d9c2c..4be05b52d835 100644
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1437,7 +1437,9 @@ static void advk_pcie_handle_int(struct advk_pcie *pcie)
+@@ -1437,7 +1437,9 @@ static void advk_pcie_handle_int(struct
  			    PCIE_ISR1_REG);
  
  		virq = irq_find_mapping(pcie->irq_domain, i);
@@ -31,6 +29,3 @@ index 01dfe70d9c2c..4be05b52d835 100644
  	}
  }
  
--- 
-2.34.1
-
