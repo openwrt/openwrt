@@ -257,7 +257,7 @@ int write_phy(u32 port, u32 page, u32 reg, u32 val)
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
 	struct device *dev = priv->dev;
-	struct device_node *dn, *mii_np = dev->of_node;
+	struct device_node *dn, *phy_node, *mii_np = dev->of_node;
 	struct mii_bus *bus;
 	int ret;
 	u32 pn;
@@ -303,29 +303,54 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		return ret;
 	}
 
-	dn = mii_np;
-	for_each_node_by_name(dn, "ethernet-phy") {
+	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
+	if (!dn) {
+		dev_err(priv->dev, "No RTL switch node in DTS\n");
+		return -ENODEV;
+	}
+
+	for_each_node_by_name(dn, "port") {
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
+		pr_info("%s found port %d\n", __func__, pn);
+		phy_node = of_parse_phandle(dn, "phy-handle", 0);
+		if (!phy_node) {
+			if (pn != priv->cpu_port)
+				dev_err(priv->dev, "Port node %d misses phy-handle\n", pn);
+			continue;
+		}
+
 		// Check for the integrated SerDes of the RTL8380M first
-		if (of_property_read_bool(dn, "phy-is-integrated") && priv->id == 0x8380 && pn >= 24) {
+		if (of_property_read_bool(phy_node, "phy-is-integrated")
+		    && priv->id == 0x8380 && pn >= 24) {
 			pr_debug("----> FÓUND A SERDES\n");
 			priv->ports[pn].phy = PHY_RTL838X_SDS;
 			continue;
 		}
 
-		if (of_property_read_bool(dn, "phy-is-integrated") && !of_property_read_bool(dn, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8218B_INT;
-			continue;
+		if (priv->id >= 0x9300) {
+			priv->ports[pn].phy_is_integrated = false;
+			if (of_property_read_bool(phy_node, "phy-is-integrated")) {
+				priv->ports[pn].phy_is_integrated = true;
+				priv->ports[pn].phy = PHY_RTL930X_SDS;
+			}
+		} else {
+			if (of_property_read_bool(phy_node, "phy-is-integrated")
+				&& !of_property_read_bool(phy_node, "sfp")) {
+				priv->ports[pn].phy = PHY_RTL8218B_INT;
+				continue;
+			}
 		}
 
-		if (!of_property_read_bool(dn, "phy-is-integrated") && of_property_read_bool(dn, "sfp")) {
+		if (!of_property_read_bool(phy_node, "phy-is-integrated")
+		    && of_property_read_bool(phy_node, "sfp")) {
 			priv->ports[pn].phy = PHY_RTL8214FC;
 			continue;
 		}
 
-		if (!of_property_read_bool(dn, "phy-is-integrated") && !of_property_read_bool(dn, "sfp")) {
+		if (!of_property_read_bool(phy_node, "phy-is-integrated")
+		    && !of_property_read_bool(phy_node, "sfp")) {
 			priv->ports[pn].phy = PHY_RTL8218B_EXT;
 			continue;
 		}
