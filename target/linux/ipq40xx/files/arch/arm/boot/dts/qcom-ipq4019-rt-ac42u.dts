@@ -138,6 +138,7 @@
 		led-3 {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
 			gpios = <&tlmm 52 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
@@ -145,6 +146,7 @@
 		led-4 {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WLAN;
+			function-enumerator = <1>;
 			gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -152,29 +154,29 @@
 		led-5 {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
 			gpios = <&tlmm 45 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "switch0";
 		};
 
 		led-6 {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
 			gpios = <&tlmm 43 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "switch0";
 		};
 
 		led-7 {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
 			gpios = <&tlmm 42 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "switch0";
 		};
 
 		led-8 {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
 			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "switch0";
 		};
 	};
 };
