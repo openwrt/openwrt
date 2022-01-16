@@ -11,19 +11,14 @@ platform_check_image() {
 		local ubidev=$(nand_find_ubi $CI_UBIPART)
 		local asus_root=$(nand_find_volume $ubidev jffs2)
 
-		[ -n "$asus_root" ] || return 0
+		if [ -n "$asus_root" ]; then
+			ubirmvol /dev/ubi0 --name=jffs2
+		fi
 
-		cat << EOF
-jffs2 partition is still present.
-There's probably no space left
-to install the filesystem.
-
-You need to delete the jffs2 partition first:
-# ubirmvol /dev/ubi0 --name=jffs2
-
-Once this is done. Retry.
-EOF
-		return 1
+		if [ -n "$(nand_find_volume $ubidev linux2)" ]; then
+			ubirmvol /dev/ubi0 --name=linux2
+		fi
+		return 0
 		;;
 	zte,mf18a |\
 	zte,mf286d |\
