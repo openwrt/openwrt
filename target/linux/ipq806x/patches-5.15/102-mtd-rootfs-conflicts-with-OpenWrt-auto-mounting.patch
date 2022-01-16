@@ -5,20 +5,21 @@ Subject: [PATCH 61/69] mtd: "rootfs" conflicts with OpenWrt auto mounting
 
 Signed-off-by: John Crispin <john@phrozen.org>
 ---
- drivers/mtd/parsers/qcomsmempart.c | 4 ++++
+ drivers/mtd/mtdpart.c | 4 ++++
  1 file changed, 4 insertions(+)
 
---- a/drivers/mtd/parsers/qcomsmempart.c
-+++ b/drivers/mtd/parsers/qcomsmempart.c
-@@ -132,6 +132,11 @@ static int parse_qcomsmem_part(struct mt
- 		parts[i].offset = le32_to_cpu(pentry->offset) * mtd->erasesize;
- 		parts[i].mask_flags = pentry->attr;
- 		parts[i].size = le32_to_cpu(pentry->length) * mtd->erasesize;
-+
-+		/* "rootfs" conflicts with OpenWrt auto mounting */
-+		if (mtd_type_is_nand(mtd) && !strcmp(name, "rootfs"))
-+			parts[i].name = "ubi";
-+
- 		pr_debug("%d: %s offs=0x%08x size=0x%08x attr:0x%08x\n",
- 			 i, pentry->name, le32_to_cpu(pentry->offset),
- 			 le32_to_cpu(pentry->length), pentry->attr);
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -139,7 +139,11 @@
+ 
+ 	/* allocate the partition structure */
+ 	child = kzalloc(sizeof(*child), GFP_KERNEL);
++	/* "rootfs" conflicts with OpenWrt auto mounting */
++	if (mtd_type_is_nand(parent) && !strcmp(part->name, "rootfs"))
++		name = "ubi";
++	else
++		name = kstrdup(part->name, GFP_KERNEL);
+-	name = kstrdup(part->name, GFP_KERNEL);
+ 	if (!name || !child) {
+ 		printk(KERN_ERR"memory allocation error while creating partitions for \"%s\"\n",
+ 		       parent->name);
