@@ -263,8 +263,6 @@
 	fan0: fan@1b {
 		compatible = "microchip,tc654";
 		reg = <0x1b>;
-		cooling-min-level = <0>;
-		cooling-max-level = <255>;
 		#cooling-cells = <2>; /* min followed by max */
 
 		gpios = <&GPIO0 16 GPIO_ACTIVE_LOW>; /* fan status */
