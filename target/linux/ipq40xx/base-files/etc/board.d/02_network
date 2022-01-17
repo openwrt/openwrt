@@ -67,11 +67,15 @@ ipq40xx_setup_interfaces()
 		;;
 	avm,fritzbox-4040|\
 	linksys,ea6350v3|\
-	linksys,ea8300|\
-	linksys,mr8300)
+	linksys,ea8300)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
+		;;
+	linksys,mr8300)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "0u@eth1" "5:wan"
 		;;
 	avm,fritzbox-7530)
 		ucidef_add_switch "switch0" \
