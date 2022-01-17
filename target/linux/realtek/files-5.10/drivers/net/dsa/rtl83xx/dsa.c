@@ -345,6 +345,7 @@ static void rtl93xx_phylink_validate(struct dsa_switch *ds, int port,
 	    state->interface != PHY_INTERFACE_MODE_QSGMII &&
 	    state->interface != PHY_INTERFACE_MODE_XGMII &&
 	    state->interface != PHY_INTERFACE_MODE_HSGMII &&
+	    state->interface != PHY_INTERFACE_MODE_10GBASER &&
 	    state->interface != PHY_INTERFACE_MODE_10GKR &&
 	    state->interface != PHY_INTERFACE_MODE_USXGMII &&
 	    state->interface != PHY_INTERFACE_MODE_INTERNAL &&
@@ -389,6 +390,9 @@ static void rtl93xx_phylink_validate(struct dsa_switch *ds, int port,
 		phylink_set(mask, 10000baseSR_Full);
 		phylink_set(mask, 10000baseCR_Full);
 	}
+
+	if (state->interface == PHY_INTERFACE_MODE_USXGMII)
+		phylink_set(mask, 10000baseT_Full);
 
 	phylink_set(mask, 10baseT_Half);
 	phylink_set(mask, 10baseT_Full);
@@ -736,9 +740,6 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	if (priv->family_id == RTL9310_FAMILY_ID)
 		return rtl931x_phylink_mac_config(ds, port, mode, state);
 
-	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
-	reg &= ~(0xf << 3);
-
 	sds_num = priv->ports[port].sds_num;
 	pr_info("%s SDS is %d\n", __func__, sds_num);
 	if (sds_num >= 0) {
@@ -747,15 +748,14 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 			sds_mode = 0x12;
 			break;
 		case PHY_INTERFACE_MODE_1000BASEX:
-			sds_mode = 0x1b;  // 10G 1000X Auto
+			sds_mode = 0x04;
 			break;
 		case PHY_INTERFACE_MODE_XGMII:
 			sds_mode = 0x10;
 			break;
+		case PHY_INTERFACE_MODE_10GBASER:
 		case PHY_INTERFACE_MODE_10GKR:
-			sds_mode = 0x1a;
-			// We need to use media sel for fibre media:
-			reg |= BIT(16);
+			sds_mode = 0x1b; // 10G 1000X Auto
 			break;
 		case PHY_INTERFACE_MODE_USXGMII:
 			sds_mode = 0x0d;
@@ -767,6 +767,9 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 		}
 		rtl9300_sds_rst(sds_num, sds_mode);
 	}
+
+	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
+	reg &= ~(0xf << 3);
 
 	switch (state->speed) {
 	case SPEED_10000:
@@ -805,8 +808,17 @@ static void rtl83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 				     phy_interface_t interface)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	u32 v;
+
 	/* Stop TX/RX to port */
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
+
+	// No longer force link
+	if (priv->family_id == RTL9300_FAMILY_ID)
+		v = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN;
+	else if (priv->family_id == RTL9310_FAMILY_ID)
+		v = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN;
+	sw_w32_mask(v, 0, priv->r->mac_port_ctrl(port));
 }
 
 static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
