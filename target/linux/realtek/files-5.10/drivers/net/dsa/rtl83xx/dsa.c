@@ -142,8 +142,12 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 		priv->r->vlan_set_tagged(i, &info);
 
 	// reset PVIDs; defaults to 1 on reset
-	for (i = 0; i <= priv->ds->num_ports; i++)
-		sw_w32(0, priv->r->vlan_port_pb + (i << 2));
+	for (i = 0; i <= priv->ds->num_ports; i++) {
+		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_INNER, 0);
+		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_OUTER, 0);
+		priv->r->vlan_port_pvidmode_set(i, PBVLAN_TYPE_INNER, PBVLAN_MODE_UNTAG_AND_PRITAG);
+		priv->r->vlan_port_pvidmode_set(i, PBVLAN_TYPE_OUTER, PBVLAN_MODE_UNTAG_AND_PRITAG);
+	}
 
 	// Set forwarding action based on inner VLAN tag
 	for (i = 0; i < priv->cpu_port; i++)
@@ -1223,15 +1227,15 @@ static int rtl83xx_vlan_filtering(struct dsa_switch *ds, int port,
 		 * The Egress filter used 1 bit per state (0: DISABLED, 1: ENABLED)
 		 */
 		if (port != priv->cpu_port)
-			sw_w32_mask(0b10 << ((port % 16) << 1), 0b01 << ((port % 16) << 1),
-				    priv->r->vlan_port_igr_filter + ((port >> 4) << 2));
-		sw_w32_mask(0, BIT(port % 32), priv->r->vlan_port_egr_filter + ((port >> 5) << 2));
+			priv->r->set_vlan_igr_filter(port, IGR_DROP);
+
+		priv->r->set_vlan_egr_filter(port, EGR_ENABLE);
 	} else {
 		/* Disable ingress and egress filtering */
 		if (port != priv->cpu_port)
-			sw_w32_mask(0b11 << ((port % 16) << 1), 0,
-				    priv->r->vlan_port_igr_filter + ((port >> 4) << 2));
-		sw_w32_mask(BIT(port % 32), 0, priv->r->vlan_port_egr_filter + ((port >> 5) << 2));
+			priv->r->set_vlan_igr_filter(port, IGR_FORWARD);
+
+		priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
 	}
 
 	/* Do we need to do something to the CPU-Port, too? */
@@ -1289,7 +1293,13 @@ static void rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 			if (!v)
 				continue;
 			/* Set both inner and outer PVID of the port */
-			sw_w32((v << 16) | v << 2, priv->r->vlan_port_pb + (port << 2));
+			priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, v);
+			priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, v);
+			priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
+							PBVLAN_MODE_UNTAG_AND_PRITAG);
+			priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
+							PBVLAN_MODE_UNTAG_AND_PRITAG);
+
 			priv->ports[port].pvid = vlan->vid_end;
 		}
 	}
@@ -1346,9 +1356,14 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 
 	for (v = vlan->vid_begin; v <= vlan->vid_end; v++) {
 		/* Reset to default if removing the current PVID */
-		if (v == pvid)
-			sw_w32(0, priv->r->vlan_port_pb + (port << 2));
-
+		if (v == pvid) {
+			priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, 0);
+			priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, 0);
+			priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
+							PBVLAN_MODE_UNTAG_AND_PRITAG);
+			priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
+							PBVLAN_MODE_UNTAG_AND_PRITAG);
+		}
 		/* Get port memberships of this vlan */
 		priv->r->vlan_tables_read(v, &info);
 

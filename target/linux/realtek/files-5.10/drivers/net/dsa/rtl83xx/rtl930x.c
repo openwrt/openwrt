@@ -688,7 +688,6 @@ void rtl9300_dump_debug(void)
 irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
-	u32 status = sw_r32(RTL930X_ISR_GLB);
 	u32 ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
 	u32 link;
 	int i;
@@ -2317,6 +2316,34 @@ static void rtl930x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
+void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0x3, mode, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+	else
+		sw_w32_mask(0x3 << 14, mode << 14 ,RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+}
+
+void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0xfff << 2, pvid << 2, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+	else
+		sw_w32_mask(0xfff << 16, pvid << 16, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+}
+
+static void rtl930x_set_igr_filter(int port,  enum igr_filter state)
+{
+	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
+		    RTL930X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
+}
+
+static void rtl930x_set_egr_filter(int port,  enum egr_filter state)
+{
+	sw_w32_mask(0x1 << (port % 0x1D), state << (port % 0x1D),
+		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
+}
+
 const struct rtl838x_reg rtl930x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -2349,6 +2376,8 @@ const struct rtl838x_reg rtl930x_reg = {
 	.vlan_profile_dump = rtl930x_vlan_profile_dump,
 	.vlan_profile_setup = rtl930x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl930x_vlan_fwd_on_inner,
+	.set_vlan_igr_filter = rtl930x_set_igr_filter,
+	.set_vlan_egr_filter = rtl930x_set_egr_filter,
 	.stp_get = rtl930x_stp_get,
 	.stp_set = rtl930x_stp_set,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
@@ -2367,10 +2396,9 @@ const struct rtl838x_reg rtl930x_reg = {
 	.write_l2_entry_using_hash = rtl930x_write_l2_entry_using_hash,
 	.read_cam = rtl930x_read_cam,
 	.write_cam = rtl930x_write_cam,
-	.vlan_port_egr_filter = RTL930X_VLAN_PORT_EGR_FLTR,
-	.vlan_port_igr_filter = RTL930X_VLAN_PORT_IGR_FLTR,
-	.vlan_port_pb = RTL930X_VLAN_PORT_PB_VLAN,
 	.vlan_port_tag_sts_ctrl = RTL930X_VLAN_PORT_TAG_STS_CTRL,
+	.vlan_port_pvidmode_set = rtl930x_vlan_port_pvidmode_set,
+	.vlan_port_pvid_set = rtl930x_vlan_port_pvid_set,
 	.trk_mbr_ctr = rtl930x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL930X_RMA_BPDU_FLD_PMSK,
 	.init_eee = rtl930x_init_eee,

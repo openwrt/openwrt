@@ -342,6 +342,50 @@ void rtl931x_print_matrix(void)
 	pr_info("CPU_PORT> %16llx\n", ptr[52]);
 }
 
+
+static int rtl931x_set_ageing_time(unsigned long msec)
+{
+	int t = sw_r32(RTL931X_L2_AGE_CTRL);
+
+	t &= 0x1FFFFF;
+	t = (t * 8) / 10;
+	pr_debug("L2 AGING time: %d sec\n", t);
+
+	t = (msec / 100 + 7) / 8;
+	t = t > 0x1FFFFF ? 0x1FFFFF : t;
+	sw_w32_mask(0x1FFFFF, t, RTL931X_L2_AGE_CTRL);
+	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL931X_L2_PORT_AGE_CTRL));
+	return 0;
+}
+
+void rtl931x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0x3 << 12, mode << 12, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+	else
+		sw_w32_mask(0x3 << 26, mode << 26, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+}
+
+void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0xfff, pvid, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+	else
+		sw_w32_mask(0xfff << 14, pvid << 14, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
+}
+
+static void rtl931x_set_igr_filter(int port, enum igr_filter state)
+{
+	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
+		    RTL931X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
+}
+
+static void rtl931x_set_egr_filter(int port,  enum egr_filter state)
+{
+	sw_w32_mask(0x1 << (port % 0x20), state << (port % 0x20),
+		    RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
+}
+
 const struct rtl838x_reg rtl931x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -384,10 +428,11 @@ const struct rtl838x_reg rtl931x_reg = {
 	.mac_tx_pause_sts = RTL931X_MAC_TX_PAUSE_STS,
 	.read_l2_entry_using_hash = rtl931x_read_l2_entry_using_hash,
 	.read_cam = rtl931x_read_cam,
-	.vlan_port_egr_filter = RTL931X_VLAN_PORT_EGR_FLTR,
-	.vlan_port_igr_filter = RTL931X_VLAN_PORT_IGR_FLTR,
-//	.vlan_port_pb = does not exist
 	.vlan_port_tag_sts_ctrl = RTL931X_VLAN_PORT_TAG_CTRL,
+	.vlan_port_pvidmode_set = rtl931x_vlan_port_pvidmode_set,
+	.vlan_port_pvid_set = rtl931x_vlan_port_pvid_set,
 	.trk_mbr_ctr = rtl931x_trk_mbr_ctr,
+	.set_vlan_igr_filter = rtl931x_set_igr_filter,
+	.set_vlan_egr_filter = rtl931x_set_egr_filter,
 };
 
