@@ -1581,6 +1581,35 @@ static int rtl838x_l3_setup(struct rtl838x_switch_priv *priv)
 	return 0;
 }
 
+void rtl838x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0x3, mode, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+	else
+		sw_w32_mask(0x3 << 14, mode << 14, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+}
+
+void rtl838x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0xfff << 2, pvid << 2, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+	else
+		sw_w32_mask(0xfff << 16, pvid << 16, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+}
+
+static void rtl838x_set_igr_filter(int port, enum igr_filter state)
+{
+	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
+		    RTL838X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
+}
+
+static void rtl838x_set_egr_filter(int port, enum egr_filter state)
+{
+	sw_w32_mask(0x1 << (port % 0x1d), state << (port % 0x1d),
+		    RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
+}
+
+
 const struct rtl838x_reg rtl838x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -1615,6 +1644,8 @@ const struct rtl838x_reg rtl838x_reg = {
 	.vlan_profile_dump = rtl838x_vlan_profile_dump,
 	.vlan_profile_setup = rtl838x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl838x_vlan_fwd_on_inner,
+	.set_vlan_igr_filter = rtl838x_set_igr_filter,
+	.set_vlan_egr_filter = rtl838x_set_egr_filter,
 	.stp_get = rtl838x_stp_get,
 	.stp_set = rtl838x_stp_set,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
@@ -1632,10 +1663,9 @@ const struct rtl838x_reg rtl838x_reg = {
 	.write_l2_entry_using_hash = rtl838x_write_l2_entry_using_hash,
 	.read_cam = rtl838x_read_cam,
 	.write_cam = rtl838x_write_cam,
-	.vlan_port_egr_filter = RTL838X_VLAN_PORT_EGR_FLTR,
-	.vlan_port_igr_filter = RTL838X_VLAN_PORT_IGR_FLTR,
-	.vlan_port_pb = RTL838X_VLAN_PORT_PB_VLAN,
 	.vlan_port_tag_sts_ctrl = RTL838X_VLAN_PORT_TAG_STS_CTRL,
+	.vlan_port_pvidmode_set = rtl838x_vlan_port_pvidmode_set,
+	.vlan_port_pvid_set = rtl838x_vlan_port_pvid_set,
 	.trk_mbr_ctr = rtl838x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL838X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL838X_SPCL_TRAP_EAPOL_CTRL,
