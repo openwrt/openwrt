@@ -147,12 +147,34 @@
 #define RTL930X_MAC_LINK_MEDIA_STS		(0xCB14)
 
 /* MAC link state bits */
-#define FORCE_EN				(1 << 0)
-#define FORCE_LINK_EN				(1 << 1)
-#define NWAY_EN					(1 << 2)
-#define DUPLX_MODE				(1 << 3)
-#define TX_PAUSE_EN				(1 << 6)
-#define RX_PAUSE_EN				(1 << 7)
+#define RTL838X_FORCE_EN			(1 << 0)
+#define RTL838X_FORCE_LINK_EN			(1 << 1)
+#define RTL838X_NWAY_EN				(1 << 2)
+#define RTL838X_DUPLEX_MODE			(1 << 3)
+#define RTL838X_TX_PAUSE_EN			(1 << 6)
+#define RTL838X_RX_PAUSE_EN			(1 << 7)
+#define RTL838X_MAC_FORCE_FC_EN			(1 << 8)
+
+#define RTL839X_FORCE_EN			(1 << 0)
+#define RTL839X_FORCE_LINK_EN			(1 << 1)
+#define RTL839X_DUPLEX_MODE			(1 << 2)
+#define RTL839X_TX_PAUSE_EN			(1 << 5)
+#define RTL839X_RX_PAUSE_EN			(1 << 6)
+#define RTL839X_MAC_FORCE_FC_EN			(1 << 7)
+
+#define RTL930X_FORCE_EN			(1 << 0)
+#define RTL930X_FORCE_LINK_EN			(1 << 1)
+#define RTL930X_DUPLEX_MODE			(1 << 2)
+#define RTL930X_TX_PAUSE_EN			(1 << 7)
+#define RTL930X_RX_PAUSE_EN			(1 << 8)
+#define RTL930X_MAC_FORCE_FC_EN			(1 << 9)
+
+#define RTL931X_FORCE_EN			(1 << 9)
+#define RTL931X_FORCE_LINK_EN			(1 << 0)
+#define RTL931X_DUPLEX_MODE			(1 << 2)
+#define RTL931X_MAC_FORCE_FC_EN			(1 << 4)
+#define RTL931X_TX_PAUSE_EN			(1 << 16)
+#define RTL931X_RX_PAUSE_EN			(1 << 17)
 
 /* EEE */
 #define RTL838X_MAC_EEE_ABLTY			(0xa1a8)
@@ -433,6 +455,7 @@ enum phy_type {
 	PHY_RTL8218B_EXT = 3,
 	PHY_RTL8214FC = 4,
 	PHY_RTL839X_SDS = 5,
+	PHY_RTL930X_SDS = 6,
 };
 
 struct rtl838x_port {
@@ -441,6 +464,7 @@ struct rtl838x_port {
 	u16 pvid;
 	bool eee_enabled;
 	enum phy_type phy;
+	bool phy_is_integrated;
 	bool is10G;
 	bool is2G5;
 	int sds_num;
@@ -453,7 +477,12 @@ struct rtl838x_vlan_info {
 	u8 profile_id;
 	bool hash_mc_fid;
 	bool hash_uc_fid;
-	u8 fid;
+	u8 fid; // AKA MSTI
+
+	// The following fields are used only by the RTL931X
+	int if_id;		// Interface (index in L3_EGR_INTF_IDX)
+	u16 multicast_grp_mask;
+	int l2_tunnel_list_id;
 };
 
 enum l2_entry_type {
@@ -488,6 +517,15 @@ struct rtl838x_l2_entry {
 	u16 mc_mac_index;
 	u16 nh_route_id;
 	bool nh_vlan_target;  // Only RTL83xx: VLAN used for next hop
+
+	// The following is only valid on RTL931x
+	bool is_open_flow;
+	bool is_pe_forward;
+	bool is_local_forward;
+	bool is_remote_forward;
+	bool is_l2_tunnel;
+	int l2_tunnel_id;
+	int l2_tunnel_list_id;
 };
 
 enum fwd_rule_action {
@@ -498,6 +536,17 @@ enum fwd_rule_action {
 enum pie_phase {
 	PHASE_VACL = 0,
 	PHASE_IACL = 1,
+};
+
+enum igr_filter {
+	IGR_FORWARD = 0,
+	IGR_DROP = 1,
+	IGR_TRAP = 2,
+};
+
+enum egr_filter {
+	EGR_DISABLE = 0,
+	EGR_ENABLE = 1,
 };
 
 /* Intermediate representation of a  Packet Inspection Engine Rule
