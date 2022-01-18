@@ -228,6 +228,8 @@
 #define RTL930X_L2_BC_FLD_PMSK			(0x9068)
 #define RTL930X_L2_UNKN_UC_FLD_PMSK		(0x9064)
 #define RTL838X_L2_LRN_CONSTRT_EN		(0x3368)
+#define RTL838X_L2_PORT_LRN_CONSTRT		(0x32A0)
+#define RTL839X_L2_PORT_LRN_CONSTRT		(0x3914)
 
 #define RTL838X_L2_PORT_NEW_SALRN(p)		(0x328c + (((p >> 4) << 2)))
 #define RTL839X_L2_PORT_NEW_SALRN(p)		(0x38F0 + (((p >> 4) << 2)))
@@ -868,6 +870,10 @@ struct rtl838x_reg {
 	void (*vlan_port_pvid_set)(int port, enum pbvlan_type type, int pvid);
 	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
 	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
+	void (*enable_learning)(int port, bool enable);
+	void (*enable_flood)(int port, bool enable);
+	void (*enable_mcast_flood)(int port, bool enable);
+	void (*enable_bcast_flood)(int port, bool enable);
 	void (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	int  (*mac_force_mode_ctrl)(int port);
@@ -922,7 +928,6 @@ struct rtl838x_reg {
 	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
 	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
-
 };
 
 struct rtl838x_switch_priv {

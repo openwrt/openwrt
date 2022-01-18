@@ -1927,6 +1927,45 @@ static void rtl83xx_port_mirror_del(struct dsa_switch *ds, int port,
 	mutex_unlock(&priv->reg_mutex);
 }
 
+static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, unsigned long flags, struct netlink_ext_ack *extack)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned long features = 0;
+	pr_debug("%s: %d %lX\n", __func__, port, flags);
+	if (priv->r->enable_learning)
+		features |= BR_LEARNING;
+	if (priv->r->enable_flood)
+		features |= BR_FLOOD;
+	if (priv->r->enable_mcast_flood)
+		features |= BR_MCAST_FLOOD;
+	if (priv->r->enable_bcast_flood)
+		features |= BR_BCAST_FLOOD;
+	if (flags & ~(features))
+		return -EINVAL;
+
+	return 0;
+}
+
+static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, unsigned long flags, struct netlink_ext_ack *extack)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	pr_debug("%s: %d %lX\n", __func__, port, flags);
+	if (priv->r->enable_learning)
+		priv->r->enable_learning(port, !!(flags & BR_LEARNING));
+
+	if (priv->r->enable_flood)
+		priv->r->enable_flood(port, !!(flags & BR_FLOOD));
+
+	if (priv->r->enable_mcast_flood)
+		priv->r->enable_mcast_flood(port, !!(flags & BR_MCAST_FLOOD));
+
+	if (priv->r->enable_bcast_flood)
+		priv->r->enable_bcast_flood(port, !!(flags & BR_BCAST_FLOOD));
+
+	return 0;
+}
+
 static bool rtl83xx_lag_can_offload(struct dsa_switch *ds,
 				      struct net_device *lag,
 				      struct netdev_lag_upper_info *info)
@@ -2123,6 +2162,9 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_lag_change	= rtl83xx_port_lag_change,
 	.port_lag_join		= rtl83xx_port_lag_join,
 	.port_lag_leave		= rtl83xx_port_lag_leave,
+
+	.port_pre_bridge_flags	= rtl83xx_port_pre_bridge_flags,
+	.port_bridge_flags	= rtl83xx_port_bridge_flags,
 };
 
 const struct dsa_switch_ops rtl930x_switch_ops = {
@@ -2171,4 +2213,6 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_lag_join		= rtl83xx_port_lag_join,
 	.port_lag_leave		= rtl83xx_port_lag_leave,
 
+	.port_pre_bridge_flags	= rtl83xx_port_pre_bridge_flags,
+	.port_bridge_flags	= rtl83xx_port_bridge_flags,
 };

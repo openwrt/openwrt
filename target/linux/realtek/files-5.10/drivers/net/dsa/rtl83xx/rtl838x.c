@@ -512,6 +512,46 @@ static void rtl838x_l2_learning_setup(void)
 	sw_w32(0, RTL838X_SPCL_TRAP_ARP_CTRL);
 }
 
+static void rtl838x_enable_learning(int port, bool enable)
+{
+	// Limit learning to maximum: 32k entries, after that just flood (bits 0-1)
+
+	if (enable)  {
+		// flood after 32k entries
+		sw_w32((0x3fff << 2) | 0, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	} else {
+		// just forward
+		sw_w32(0, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	}
+}
+
+static void rtl838x_enable_flood(int port, bool enable)
+{
+	u32 flood_mask = sw_r32(RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+
+	if (enable)  {
+		// flood
+		flood_mask &= ~3;
+		flood_mask |= 0;
+		sw_w32(flood_mask, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	} else {
+		// drop (bit 1)
+		flood_mask &= ~3;
+		flood_mask |= 1;
+		sw_w32(flood_mask, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	}
+}
+
+static void rtl838x_enable_mcast_flood(int port, bool enable)
+{
+
+}
+
+static void rtl838x_enable_bcast_flood(int port, bool enable)
+{
+
+}
+
 static void rtl838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
@@ -1653,6 +1693,10 @@ const struct rtl838x_reg rtl838x_reg = {
 	.vlan_fwd_on_inner = rtl838x_vlan_fwd_on_inner,
 	.set_vlan_igr_filter = rtl838x_set_igr_filter,
 	.set_vlan_egr_filter = rtl838x_set_egr_filter,
+	.enable_learning = rtl838x_enable_learning,
+	.enable_flood = rtl838x_enable_flood,
+	.enable_mcast_flood = rtl838x_enable_mcast_flood,
+	.enable_bcast_flood = rtl838x_enable_bcast_flood,
 	.stp_get = rtl838x_stp_get,
 	.stp_set = rtl838x_stp_set,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
