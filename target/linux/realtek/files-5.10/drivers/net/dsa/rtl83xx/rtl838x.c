@@ -1609,6 +1609,13 @@ static void rtl838x_set_egr_filter(int port, enum egr_filter state)
 		    RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
+void rtl838x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+{
+	algoidx &= 1; // RTL838X only supports 2 concurrent algorithms
+	sw_w32_mask(1 << (group % 8), algoidx << (group % 8),
+		    RTL838X_TRK_HASH_IDX_CTRL + ((group >> 3) << 2));
+	sw_w32(algomsk, RTL838X_TRK_HASH_CTRL + (algoidx << 2));
+}
 
 const struct rtl838x_reg rtl838x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
@@ -1687,6 +1694,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.route_read = rtl838x_route_read,
 	.route_write = rtl838x_route_write,
 	.l3_setup = rtl838x_l3_setup,
+	.set_distribution_algorithm = rtl838x_set_distribution_algorithm,
 };
 
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)

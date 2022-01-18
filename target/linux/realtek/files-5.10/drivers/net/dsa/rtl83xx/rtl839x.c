@@ -1733,6 +1733,12 @@ static void rtl839x_set_egr_filter(int port,  enum egr_filter state)
 			RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
+void rtl839x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+{
+	sw_w32_mask(3 << ((group & 0xf) << 1), algoidx << ((group & 0xf) << 1),
+		    RTL839X_TRK_HASH_IDX_CTRL + ((group >> 4) << 2));
+	sw_w32(algomsk, RTL839X_TRK_HASH_CTRL + (algoidx << 2));
+}
 
 const struct rtl838x_reg rtl839x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
@@ -1811,4 +1817,5 @@ const struct rtl838x_reg rtl839x_reg = {
 	.route_read = rtl839x_route_read,
 	.route_write = rtl839x_route_write,
 	.l3_setup = rtl839x_l3_setup,
+	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
 };

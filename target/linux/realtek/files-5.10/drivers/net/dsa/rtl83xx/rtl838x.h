@@ -320,10 +320,46 @@
 #define RTL839X_IGR_BWCTRL_CTRL_LB_THR		(0x1614)
 
 /* Link aggregation (Trunking) */
-#define RTL839X_TRK_MBR_CTR			(0x2200)
-#define RTL838X_TRK_MBR_CTR			(0x3E00)
-#define RTL930X_TRK_MBR_CTRL			(0xA41C)
-#define RTL931X_TRK_MBR_CTRL			(0xB8D0)
+#define TRUNK_DISTRIBUTION_ALGO_SPA_BIT         0x01
+#define TRUNK_DISTRIBUTION_ALGO_SMAC_BIT        0x02
+#define TRUNK_DISTRIBUTION_ALGO_DMAC_BIT        0x04
+#define TRUNK_DISTRIBUTION_ALGO_SIP_BIT         0x08
+#define TRUNK_DISTRIBUTION_ALGO_DIP_BIT         0x10
+#define TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT  0x20
+#define TRUNK_DISTRIBUTION_ALGO_DST_L4PORT_BIT  0x40
+#define TRUNK_DISTRIBUTION_ALGO_MASKALL         0x7F
+
+#define TRUNK_DISTRIBUTION_ALGO_L2_SPA_BIT         0x01
+#define TRUNK_DISTRIBUTION_ALGO_L2_SMAC_BIT        0x02
+#define TRUNK_DISTRIBUTION_ALGO_L2_DMAC_BIT        0x04
+#define TRUNK_DISTRIBUTION_ALGO_L2_VLAN_BIT         0x08
+#define TRUNK_DISTRIBUTION_ALGO_L2_MASKALL         0xF
+
+#define TRUNK_DISTRIBUTION_ALGO_L3_SPA_BIT         0x01
+#define TRUNK_DISTRIBUTION_ALGO_L3_SMAC_BIT        0x02
+#define TRUNK_DISTRIBUTION_ALGO_L3_DMAC_BIT        0x04
+#define TRUNK_DISTRIBUTION_ALGO_L3_VLAN_BIT         0x08
+#define TRUNK_DISTRIBUTION_ALGO_L3_SIP_BIT         0x10
+#define TRUNK_DISTRIBUTION_ALGO_L3_DIP_BIT         0x20
+#define TRUNK_DISTRIBUTION_ALGO_L3_SRC_L4PORT_BIT  0x40
+#define TRUNK_DISTRIBUTION_ALGO_L3_DST_L4PORT_BIT  0x80
+#define TRUNK_DISTRIBUTION_ALGO_L3_PROTO_BIT  0x100
+#define TRUNK_DISTRIBUTION_ALGO_L3_FLOW_LABEL_BIT  0x200
+#define TRUNK_DISTRIBUTION_ALGO_L3_MASKALL         0x3FF
+
+#define RTL838X_TRK_MBR_CTR                     (0x3E00)
+#define RTL838X_TRK_HASH_IDX_CTRL               (0x3E20)
+#define RTL838X_TRK_HASH_CTRL                   (0x3E24)
+
+#define RTL839X_TRK_MBR_CTR                     (0x2200)
+#define RTL839X_TRK_HASH_IDX_CTRL               (0x2280)
+#define RTL839X_TRK_HASH_CTRL                   (0x2284)
+
+#define RTL930X_TRK_MBR_CTRL                    (0xA41C)
+#define RTL930X_TRK_HASH_CTRL                   (0x9F80)
+
+#define RTL931X_TRK_MBR_CTRL                    (0xB8D0)
+#define RTL931X_TRK_HASH_CTRL                   (0xBA70)
 
 /* Attack prevention */
 #define RTL838X_ATK_PRVNT_PORT_EN		(0x5B00)
@@ -885,6 +921,8 @@ struct rtl838x_reg {
 	void (*get_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
+	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
+
 };
 
 struct rtl838x_switch_priv {
@@ -912,6 +950,9 @@ struct rtl838x_switch_priv {
 	int n_lags;
 	u64 lags_port_members[MAX_LAGS];
 	struct net_device *lag_devs[MAX_LAGS];
+	u32 lag_primary[MAX_LAGS];
+	u32 is_lagmember[57];
+	u64 lagmembers;
 	struct notifier_block nb;  // TODO: change to different name
 	struct notifier_block ne_nb;
 	struct notifier_block fib_nb;
