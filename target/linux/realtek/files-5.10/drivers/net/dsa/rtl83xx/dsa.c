@@ -1039,25 +1039,11 @@ static int rtl93xx_get_mac_eee(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-/*
- * Set Switch L2 Aging time, t is time in milliseconds
- * t = 0: aging is disabled
- */
-static int rtl83xx_set_l2aging(struct dsa_switch *ds, u32 t)
+static int rtl83xx_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int t_max = priv->family_id == RTL8380_FAMILY_ID ? 0x7fffff : 0x1FFFFF;
 
-	/* Convert time in mseconds to internal value */
-	if (t > 0x10000000) { /* Set to maximum */
-		t = t_max;
-	} else {
-		if (priv->family_id == RTL8380_FAMILY_ID)
-			t = ((t * 625) / 1000 + 127) / 128;
-		else
-			t = (t * 5 + 2) / 3;
-	}
-	sw_w32(t, priv->r->l2_ctrl_1);
+	priv->r->set_ageing_time(msec);
 	return 0;
 }
 
@@ -2137,7 +2123,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_mac_eee		= rtl83xx_get_mac_eee,
 	.set_mac_eee		= rtl83xx_set_mac_eee,
 
-	.set_ageing_time	= rtl83xx_set_l2aging,
+	.set_ageing_time	= rtl83xx_set_ageing_time,
 	.port_bridge_join	= rtl83xx_port_bridge_join,
 	.port_bridge_leave	= rtl83xx_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,
@@ -2190,7 +2176,7 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.get_mac_eee		= rtl93xx_get_mac_eee,
 	.set_mac_eee		= rtl83xx_set_mac_eee,
 
-	.set_ageing_time	= rtl83xx_set_l2aging,
+	.set_ageing_time	= rtl83xx_set_ageing_time,
 	.port_bridge_join	= rtl83xx_port_bridge_join,
 	.port_bridge_leave	= rtl83xx_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,

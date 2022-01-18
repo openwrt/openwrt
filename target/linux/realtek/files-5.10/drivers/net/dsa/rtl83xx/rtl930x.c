@@ -2332,6 +2332,22 @@ void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 		sw_w32_mask(0xfff << 16, pvid << 16, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
+static int rtl930x_set_ageing_time(unsigned long msec)
+{
+	int t = sw_r32(RTL930X_L2_AGE_CTRL);
+
+	t &= 0x1FFFFF;
+	t = (t * 7) / 10;
+	pr_debug("L2 AGING time: %d sec\n", t);
+
+	t = (msec / 100 + 6) / 7;
+	t = t > 0x1FFFFF ? 0x1FFFFF : t;
+	sw_w32_mask(0x1FFFFF, t, RTL930X_L2_AGE_CTRL);
+	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL930X_L2_PORT_AGE_CTRL));
+
+	return 0;
+}
+
 static void rtl930x_set_igr_filter(int port,  enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
@@ -2401,6 +2417,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.l2_ctrl_0 = RTL930X_L2_CTRL,
 	.l2_ctrl_1 = RTL930X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL930X_L2_PORT_AGE_CTRL,
+	.set_ageing_time = rtl930x_set_ageing_time,
 	.smi_poll_ctrl = RTL930X_SMI_POLL_CTRL, // TODO: Difference to RTL9300_SMI_PRVTE_POLLING_CTRL
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.exec_tbl0_cmd = rtl930x_exec_tbl0_cmd,

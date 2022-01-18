@@ -439,6 +439,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_ctrl_0 = RTL931X_L2_CTRL,
 	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL931X_L2_PORT_AGE_CTRL,
+	.set_ageing_time = rtl931x_set_ageing_time,
 	// .smi_poll_ctrl does not exist
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.exec_tbl0_cmd = rtl931x_exec_tbl0_cmd,
