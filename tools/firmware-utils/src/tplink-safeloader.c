@@ -2483,22 +2483,18 @@ static struct device_info boards[] = {
 		.vendor = "",
 		.support_list =
 			"SupportList:\n"
-			"{product_name:M4R,product_ver:1.0.0,special_id:55530000}\n"
-			"{product_name:M4R,product_ver:1.0.0,special_id:45550000}\n"
-			"{product_name:M4R,product_ver:1.0.0,special_id:43410000}\n"
-			"{product_name:M4R,product_ver:1.0.0,special_id:4A500000}\n"
-			"{product_name:M4R,product_ver:1.0.0,special_id:41550000}\n"
-			"{product_name:M4R,product_ver:1.0.0,special_id:4B520000}\n"
-			"{product_name:M4R,product_ver:1.0.0,special_id:49440000}\n"
-			"{product_name:M4R,product_ver:2.0.0,special_id:55530000}\n"
-			"{product_name:M4R,product_ver:2.0.0,special_id:45550000}\n"
-			"{product_name:M4R,product_ver:2.0.0,special_id:43410000}\n"
-			"{product_name:M4R,product_ver:2.0.0,special_id:4A500000}\n"
-			"{product_name:M4R,product_ver:2.0.0,special_id:41550000}\n"
-			"{product_name:M4R,product_ver:2.0.0,special_id:4B520000}\n"
-			"{product_name:M4R,product_ver:2.0.0,special_id:54570000}\n"
-			"{product_name:M4R,product_ver:2.0.0,special_id:42340000}\n"
-			"{product_name:M4R,product_ver:2.0.0,special_id:49440000}\n",
+			"{product_name:P9,product_ver:1.0.0,special_id:55530000}\n",
+			"{product_name:P9,product_ver:1.0.0,special_id:45550000}\n",
+			"{product_name:P9,product_ver:1.0.0,special_id:43410000}\n",
+			"{product_name:P9,product_ver:1.0.0,special_id:4A500000}\n",
+			"{product_name:P9,product_ver:1.0.0,special_id:41550000}\n",
+			"{product_name:P9,product_ver:1.0.0,special_id:4B520000}\n",
+			"{product_name:P9,product_ver:2.0.0,special_id:55530000}\n",
+			"{product_name:P9,product_ver:2.0.0,special_id:45550000}\n",
+			"{product_name:P9,product_ver:2.0.0,special_id:43410000}\n",
+			"{product_name:P9,product_ver:2.0.0,special_id:4A500000}\n",
+			"{product_name:P9,product_ver:2.0.0,special_id:41550000}\n",
+			"{product_name:P9,product_ver:2.0.0,special_id:4B520000}\n",
 		.part_trail = 0x00,
 		.soft_ver = NULL,
 
