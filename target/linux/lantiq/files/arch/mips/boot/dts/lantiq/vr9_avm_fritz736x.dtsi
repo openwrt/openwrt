@@ -33,13 +33,13 @@
 
 		dect {
 			label = "dect";
-			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_PHONE>;
 		};
 
 		wifi {
 			label = "wifi";
-			gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 		};
 	};

@@ -986,6 +986,19 @@ config KERNEL_IP_MROUTE
 	  Multicast routing requires a multicast routing daemon in
 	  addition to kernel support.
 
+if KERNEL_IP_MROUTE
+
+	config KERNEL_IP_MROUTE_MULTIPLE_TABLES
+		def_bool y
+
+	config KERNEL_IP_PIMSM_V1
+		def_bool y
+
+	config KERNEL_IP_PIMSM_V2
+		def_bool y
+
+endif
+
 #
 # IPv6 configuration
 #
@@ -1008,8 +1021,15 @@ if KERNEL_IPV6
 		  Multicast routing requires a multicast routing daemon in
 		  addition to kernel support.
 
-	config KERNEL_IPV6_PIMSM_V2
-		def_bool n
+	if KERNEL_IPV6_MROUTE
+
+		config KERNEL_IPV6_MROUTE_MULTIPLE_TABLES
+			def_bool y
+
+		config KERNEL_IPV6_PIMSM_V2
+			def_bool y
+
+	endif
 
 	config KERNEL_IPV6_SEG6_LWTUNNEL
 		bool "Enable support for lightweight tunnels"

@@ -1022,7 +1022,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +			vall |= (u32)oobptr[j] << (j * 8);
 +
 +		for (j = 0; j < 4; j++)
-+			valm |= (u32)oobptr[j + 4] << ((j - 4) * 8);
++			valm |= (u32)oobptr[j + 4] << (j * 8);
 +
 +		nfi_write32(nfc, NFI_FDML(i), vall);
 +		nfi_write32(nfc, NFI_FDMM(i), valm);
