@@ -53,6 +53,13 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
 		;;
+	comfast,cf-wr758ac-v1|\
+	comfast,cf-wr758ac-v2|\
+	tplink,tl-wr902ac-v3|\
+	wavlink,wl-wn576a2)
+		ucidef_add_switch "switch0" \
+			"4:lan" "6@eth0"
+		;;
 	cudy,wr1000)
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
@@ -128,13 +135,6 @@ ramips_setup_interfaces()
 	tplink,tl-mr6400-v5)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:wan" "6@eth0"
-		;;
-	joowin,jw-wr758ac-v1|\
-	joowin,jw-wr758ac-v2|\
-	tplink,tl-wr902ac-v3|\
-	wavlink,wl-wn576a2)
-		ucidef_add_switch "switch0" \
-			"4:lan" "6@eth0"
 		;;
 	vocore,vocore2|\
 	vocore,vocore2-lite)
