@@ -386,6 +386,46 @@ static void rtl931x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
+void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+{
+	u32 l3shift = 0;
+	u32 newmask = 0;
+
+	/* TODO: for now we set algoidx to 0 */
+	algoidx=0;
+
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SIP_BIT) {
+		l3shift = 4;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SIP_BIT;
+	}
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_DIP_BIT) {
+		l3shift = 4;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_DIP_BIT;
+	}
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT) {
+		l3shift = 4;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SRC_L4PORT_BIT;
+	}
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT) {
+		l3shift = 4;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SRC_L4PORT_BIT;
+	}
+
+	if (l3shift == 4) {
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SMAC_BIT;
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_DMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_DMAC_BIT;
+	} else {
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_SMAC_BIT;
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_DMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_DMAC_BIT;
+	}
+
+	sw_w32(newmask << l3shift, RTL931X_TRK_HASH_CTRL + (algoidx << 2));
+}
+
 const struct rtl838x_reg rtl931x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -434,5 +474,6 @@ const struct rtl838x_reg rtl931x_reg = {
 	.trk_mbr_ctr = rtl931x_trk_mbr_ctr,
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
 	.set_vlan_egr_filter = rtl931x_set_egr_filter,
+	.set_distribution_algorithm = rtl931x_set_distribution_algorithm,
 };
 
