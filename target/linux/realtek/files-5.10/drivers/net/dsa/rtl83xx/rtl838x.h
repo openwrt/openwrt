@@ -851,8 +851,8 @@ struct rtl838x_reg {
 	u64 (*traffic_get)(int source);
 	int l2_ctrl_0;
 	int l2_ctrl_1;
-	int l2_port_aging_out;
 	int smi_poll_ctrl;
+	u32 l2_port_aging_out;
 	int l2_tbl_flush_ctrl;
 	void (*exec_tbl0_cmd)(u32 cmd);
 	void (*exec_tbl1_cmd)(u32 cmd);
@@ -880,6 +880,7 @@ struct rtl838x_reg {
 	int  (*mac_port_ctrl)(int port);
 	int  (*l2_port_new_salrn)(int port);
 	int  (*l2_port_new_sa_fwd)(int port);
+	int (*set_ageing_time)(unsigned long msec);
 	int mir_ctrl;
 	int mir_dpm;
 	int mir_spm;
