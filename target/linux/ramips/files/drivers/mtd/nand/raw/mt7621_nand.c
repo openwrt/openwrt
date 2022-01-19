@@ -759,7 +759,7 @@ static int mt7621_nfc_setup_interface(struct nand_chip *nand, int csline,
 
 	acccon = ACCTIMING(tpoecs, tprecs, tc2r, tw2r, twh, twst, trlt);
 
-	dev_info(nfc->dev, "Using programmed access timing: %08x\n", acccon);
+	dev_dbg(nfc->dev, "Using programmed access timing: %08x\n", acccon);
 
 	nfi_write32(nfc, NFI_ACCCON, acccon);
 
