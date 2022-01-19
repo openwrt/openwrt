@@ -11,8 +11,10 @@
 #define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
 #define RTL839X_MAC_PORT_CTRL(port)		(0x8004 + (((port) << 7)))
 #define RTL930X_MAC_PORT_CTRL(port)		(0x3260 + (((port) << 6)))
+#define RTL931X_MAC_PORT_CTRL			(0x6004)
+
 #define RTL930X_MAC_L2_PORT_CTRL(port)		(0x3268 + (((port) << 6)))
-#define RTL931X_MAC_PORT_CTRL(port)		(0x6004 + (((port) << 7)))
+#define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
 
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 
@@ -132,7 +134,7 @@
 #define RTL838X_MAC_LINK_SPD_STS(p)		(0xa190 + (((p >> 4) << 2)))
 #define RTL839X_MAC_LINK_SPD_STS(p)		(0x03a0 + (((p >> 4) << 2)))
 #define RTL930X_MAC_LINK_SPD_STS(p)		(0xCB18 + (((p >> 3) << 2)))
-#define RTL931X_MAC_LINK_SPD_STS(p)		(0x0ED0 + (((p >> 3) << 2)))
+#define RTL931X_MAC_LINK_SPD_STS		(0x0ED0)
 #define RTL838X_MAC_LINK_DUP_STS		(0xa19c)
 #define RTL839X_MAC_LINK_DUP_STS		(0x03b0)
 #define RTL930X_MAC_LINK_DUP_STS		(0xCB28)
@@ -245,15 +247,11 @@
 #define RTL930X_L2_PORT_SABLK_CTRL		(0x905c)
 #define RTL930X_L2_PORT_DABLK_CTRL		(0x9060)
 
-#define RTL838X_RMA_BPDU_FLD_PMSK		(0x4348)
-#define RTL930X_RMA_BPDU_FLD_PMSK		(0x9F18)
-#define RTL931X_RMA_BPDU_FLD_PMSK		(0x8950)
-#define RTL839X_RMA_BPDU_FLD_PMSK		(0x125C)
-
 #define RTL838X_L2_PORT_LM_ACT(p)		(0x3208 + ((p) << 2))
 #define RTL838X_VLAN_PORT_FWD			(0x3A78)
 #define RTL839X_VLAN_PORT_FWD			(0x27AC)
 #define RTL930X_VLAN_PORT_FWD			(0x834C)
+#define RTL931X_VLAN_PORT_FWD			(0x95CC)
 #define RTL838X_VLAN_FID_CTRL			(0x3aa8)
 
 /* Port Mirroring */
@@ -370,10 +368,76 @@
 #define RTL838X_ATK_PRVNT_STS			(0x5B1C)
 
 /* 802.1X */
+#define RTL838X_RMA_BPDU_FLD_PMSK		(0x4348)
+#define RTL930X_RMA_BPDU_FLD_PMSK		(0x9F18)
+#define RTL931X_RMA_BPDU_FLD_PMSK		(0x8950)
+#define RTL839X_RMA_BPDU_FLD_PMSK		(0x125C)
+
+#define RTL838X_SPCL_TRAP_CTRL			(0x6980)
 #define RTL838X_SPCL_TRAP_EAPOL_CTRL		(0x6988)
-#define RTL839X_SPCL_TRAP_EAPOL_CTRL		(0x105C)
 #define RTL838X_SPCL_TRAP_ARP_CTRL		(0x698C)
+#define RTL838X_SPCL_TRAP_IGMP_CTRL		(0x6984)
+#define RTL838X_SPCL_TRAP_IPV6_CTRL		(0x6994)
+#define RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x6998)
+
+#define RTL839X_SPCL_TRAP_CTRL			(0x1054)
+#define RTL839X_SPCL_TRAP_EAPOL_CTRL		(0x105C)
 #define RTL839X_SPCL_TRAP_ARP_CTRL		(0x1060)
+#define RTL839X_SPCL_TRAP_IGMP_CTRL		(0x1058)
+#define RTL839X_SPCL_TRAP_IPV6_CTRL		(0x1064)
+#define RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x1068)
+#define RTL839X_SPCL_TRAP_SWITCH_IPV4_ADDR_CTRL	(0x106C)
+#define RTL839X_SPCL_TRAP_CRC_CTRL		(0x1070)
+/* special port action controls */
+/* 
+    values:
+	0 = FORWARD (default)
+	1 = DROP
+	2 = TRAP2CPU
+	3 = FLOOD IN ALL PORT
+
+	Register encoding.
+	offset = CTRL + (port >> 4) << 2
+	value/mask = 3 << ((port&0xF) << 1)
+*/
+
+typedef enum {
+	BPDU = 0,
+	PTP,
+	PTP_UDP,
+	PTP_ETH2,
+	LLTP,
+	EAPOL,
+	GRATARP,
+} rma_ctrl_t;
+
+typedef enum {
+	FORWARD = 0,
+	DROP,
+	TRAP2CPU,
+	FLOODALL,
+	TRAP2MASTERCPU,
+	COPY2CPU,
+} action_type_t;
+
+#define RTL838X_RMA_BPDU_CTRL			(0x4330) 
+#define RTL839X_RMA_BPDU_CTRL			(0x122C)
+#define RTL930X_RMA_BPDU_CTRL			(0x9E7C)
+#define RTL931X_RMA_BPDU_CTRL			(0x881C)
+
+#define RTL838X_RMA_PTP_CTRL			(0x4338) 
+#define RTL839X_RMA_PTP_CTRL			(0x123C)
+#define RTL930X_RMA_PTP_CTRL			(0x9E88)
+#define RTL931X_RMA_PTP_CTRL			(0x8834)
+
+#define RTL838X_RMA_LLTP_CTRL			(0x4340) 
+#define RTL839X_RMA_LLTP_CTRL			(0x124C)
+#define RTL930X_RMA_LLTP_CTRL			(0x9EFC)
+#define RTL931X_RMA_LLTP_CTRL			(0x8918)
+
+#define RTL930X_RMA_EAPOL_CTRL			(0x9F08)
+#define RTL931X_RMA_EAPOL_CTRL			(0x8930)
+#define RTL931X_TRAP_ARP_GRAT_PORT_ACT		(0x8C04)
 
 /* QoS */
 #define RTL838X_QM_INTPRI2QID_CTRL		(0x5F00)
@@ -414,23 +478,37 @@
 #define RTL838X_METER_GLB_CTRL			(0x4B08)
 #define RTL839X_METER_GLB_CTRL			(0x1300)
 #define RTL930X_METER_GLB_CTRL			(0xa0a0)
+#define RTL931X_METER_GLB_CTRL			(0x411C)
+
 #define RTL839X_ACL_CTRL			(0x1288)
+
 #define RTL838X_ACL_BLK_LOOKUP_CTRL		(0x6100)
 #define RTL839X_ACL_BLK_LOOKUP_CTRL		(0x1280)
 #define RTL930X_PIE_BLK_LOOKUP_CTRL		(0xa5a0)
+#define RTL931X_PIE_BLK_LOOKUP_CTRL		(0x4180)
+
 #define RTL838X_ACL_BLK_PWR_CTRL		(0x6104)
 #define RTL839X_PS_ACL_PWR_CTRL			(0x049c)
+
 #define RTL838X_ACL_BLK_TMPLTE_CTRL(block)	(0x6108 + ((block) << 2))
 #define RTL839X_ACL_BLK_TMPLTE_CTRL(block)	(0x128c + ((block) << 2))
 #define RTL930X_PIE_BLK_TMPLTE_CTRL(block)	(0xa624 + ((block) << 2))
+#define RTL931X_PIE_BLK_TMPLTE_CTRL(block)	(0x4214 + ((block) << 2))
+
 #define RTL838X_ACL_BLK_GROUP_CTRL		(0x615C)
 #define RTL839X_ACL_BLK_GROUP_CTRL		(0x12ec)
+
 #define RTL838X_ACL_CLR_CTRL			(0x6168)
 #define RTL839X_ACL_CLR_CTRL			(0x12fc)
 #define RTL930X_PIE_CLR_CTRL			(0xa66c)
+#define RTL931X_PIE_CLR_CTRL			(0x42D8)
+
 #define RTL838X_DMY_REG27			(0x3378)
+
 #define RTL838X_ACL_PORT_LOOKUP_CTRL(p)		(0x616C + (((p) << 2)))
 #define RTL930X_ACL_PORT_LOOKUP_CTRL(p)		(0xA784 + (((p) << 2)))
+#define RTL931X_ACL_PORT_LOOKUP_CTRL(p)		(0x44F8 + (((p) << 2)))
+
 #define RTL930X_PIE_BLK_PHASE_CTRL		(0xA5A4)
 
 // PIE actions
@@ -477,6 +555,7 @@
 #define PIE_BLOCK_SIZE 128
 #define MAX_PIE_ENTRIES (18 * PIE_BLOCK_SIZE)
 #define N_FIXED_FIELDS 12
+#define N_FIXED_FIELDS_RTL931X 14
 #define MAX_COUNTERS 2048
 #define MAX_ROUTES 512
 #define MAX_HOST_ROUTES 1536
@@ -929,6 +1008,7 @@ struct rtl838x_reg {
 	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
 	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
+	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 };
 
 struct rtl838x_switch_priv {
