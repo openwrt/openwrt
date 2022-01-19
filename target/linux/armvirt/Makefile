@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 
 BOARD:=armvirt
 BOARDNAME:=QEMU ARM Virtual Machine
-FEATURES:=fpu pci rtc usb
+FEATURES:=fpu pci pcie rtc usb boot-part rootfs-part
 FEATURES+=cpiogz ext4 ramdisk squashfs targz
 
 KERNEL_PATCHVER:=5.15
@@ -14,5 +14,8 @@ KERNEL_PATCHVER:=5.15
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += mkf2fs e2fsprogs
+# blkid used for resolving PARTUUID
+# in sysupgrade
+DEFAULT_PACKAGES += blkid
 
 $(eval $(call BuildTarget))
