@@ -1304,9 +1304,27 @@ void rtl83xx_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
+void rtl931x_fast_age(struct dsa_switch *ds, int port)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	pr_info("%s port %d\n", __func__, port);
+	mutex_lock(&priv->reg_mutex);
+	sw_w32(port << 11, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+
+	sw_w32(BIT(24) | BIT(28), RTL931X_L2_TBL_FLUSH_CTRL);
+
+	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT (28));
+
+	mutex_unlock(&priv->reg_mutex);
+}
+
 void rtl930x_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		return rtl931x_fast_age(ds, port);
 
 	pr_debug("FAST AGE port %d\n", port);
 	mutex_lock(&priv->reg_mutex);
