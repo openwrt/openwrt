@@ -1797,6 +1797,26 @@ void rtl839x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 	sw_w32(algomsk, RTL839X_TRK_HASH_CTRL + (algoidx << 2));
 }
 
+void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+{
+	switch(type) {
+	case BPDU:
+		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+			    RTL839X_RMA_BPDU_CTRL + ((port >> 4) << 2));
+	break;
+	case PTP:
+		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+			    RTL839X_RMA_PTP_CTRL + ((port >> 4) << 2));
+	break;
+	case LLTP:
+		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+			    RTL839X_RMA_LLTP_CTRL + ((port >> 4) << 2));
+	break;
+	default:
+	break;
+	}
+}
+
 const struct rtl838x_reg rtl839x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -1880,4 +1900,5 @@ const struct rtl838x_reg rtl839x_reg = {
 	.route_write = rtl839x_route_write,
 	.l3_setup = rtl839x_l3_setup,
 	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
+	.set_receive_management_action = rtl839x_set_receive_management_action,
 };
