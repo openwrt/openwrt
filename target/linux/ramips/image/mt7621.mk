@@ -263,6 +263,21 @@ define Build/initrd-kernel
 	$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $@
 endef
 
+define Build/xwrt_fm10-factory
+  -[ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) ] && \
+  mkdir -p "$(1).tmp" && \
+  $(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) "$(1).tmp/UploadBrush-bin.img" && \
+  binmd5=$$($(STAGING_DIR_HOST)/bin/mkhash md5 "$(1).tmp/UploadBrush-bin.img" | head -c32) && \
+  oemmd5=$$(echo -n TB-HNR02-V02-MT7621-CPE-FM10 | $(STAGING_DIR_HOST)/bin/mkhash md5 | head -c32) && \
+  echo -n $${binmd5}$${oemmd5} | $(STAGING_DIR_HOST)/bin/mkhash md5 | head -c32 >"$(1).tmp/bin_random_oem.txt" && \
+  echo -n V4.4-201910201745 >"$(1).tmp/version.txt" && \
+  $(TAR) -czf $(1).tmp.tgz -C "$(1).tmp" UploadBrush-bin.img bin_random_oem.txt version.txt && \
+  $(STAGING_DIR_HOST)/bin/openssl aes-256-cbc -e -salt -in $(1).tmp.tgz -out "$(1)" -k QiLunSmartWL && \
+  printf %32s FM10 >>"$(1)" && \
+  rm -rf "$(1).tmp" $(1).tmp.tgz && \
+  $(CP) $(1) $(BIN_DIR)/
+endef
+
 define Build/xwrt_wr1800k-factory
   -[ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) ] && \
   mkdir -p "$(1).tmp" && \
@@ -2848,6 +2863,25 @@ define Device/xzwifi_creativebox-v1
 	kmod-usb3 -wpad-basic-mbedtls -uboot-envtools
 endef
 TARGET_DEVICES += xzwifi_creativebox-v1
+
+define Device/xwrt_fm10-ax-nand
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 129408k
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size
+  KERNEL_INITRAMFS := $$(KERNEL) | xwrt_fm10-factory $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := FM10-AX
+  DEVICE_VARIANT := NAND
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += xwrt_fm10-ax-nand
 
 define Device/xwrt_wr1800k-ax-nand
   $(Device/dsa-migration)

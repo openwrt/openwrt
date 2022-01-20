@@ -1,0 +1,252 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "xwrt,fm10-ax-nand", "mediatek,mt7621-soc";
+	model = "FM10-AX-NAND";
+
+	aliases {
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&led1_pins &led2_pins>;
+
+		RGB4G_B {
+			label = "RGB_4G_B";
+			gpios = <&aw9523 2 GPIO_ACTIVE_LOW>;
+		};
+
+		RGB4G_G {
+			label = "RGB_4G_G";
+			gpios = <&aw9523 0 GPIO_ACTIVE_LOW>;
+		};
+
+		RGB4G_R {
+			label = "RGB_4G_R";
+			gpios = <&aw9523 1 GPIO_ACTIVE_LOW>;
+		};
+
+		RGBSYS_R {
+			label = "RGB_SYS_R";
+			gpios = <&aw9523 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		RGBSYS_B {
+			label = "RGB_SYS_B";
+			gpios = <&aw9523 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		RGBSYS_G {
+			label = "RGB_SYS_G";
+			gpios = <&aw9523 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		RGB5G_R {
+			label = "RGB_5G_R";
+			gpios = <&aw9523 10 GPIO_ACTIVE_LOW>;
+		};
+
+		RGB5G_G {
+			label = "RGB_5G_G";
+			gpios = <&aw9523 11 GPIO_ACTIVE_LOW>;
+		};
+
+		RGB5G_B {
+			label = "RGB_5G_B";
+			gpios = <&aw9523 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <50>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&button_pins>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&aw9523 4 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	i2c-gpio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "i2c-gpio";
+		gpios = <&gpio 3 GPIO_ACTIVE_HIGH &gpio 4 GPIO_ACTIVE_HIGH>;
+		i2c-gpio,delay-us = <10>;
+
+		aw9523: gpio-expander@5b {
+			compatible = "awinic,aw9523-pinctrl";
+			reg = <0x5b>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			gpio-ranges = <&aw9523 0 0 16>;
+
+			reset-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+
+			button_pins: button-pins {
+				pins = "gpio4";
+				function = "gpio";
+				bias-pull-up;
+				drive-open-drain;
+				input-enable;
+			};
+
+			led1_pins: led1-pins {
+				pins = "gpio0", "gpio1", "gpio2", "gpio9", "gpio10", "gpio11";
+				function = "gpio";
+				input-disable;
+				output-low;
+			};
+
+			led2_pins: led2-pins {
+				pins = "gpio5", "gpio6", "gpio7";
+				function = "gpio";
+				input-disable;
+				output-high;
+			};
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "Bootloader";
+			reg = <0x0 0x80000>;
+		};
+
+		partition@80000 {
+			label = "Config";
+			reg = <0x80000 0x80000>;
+		};
+
+		factory: partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x80000>;
+			read-only;
+		};
+
+		partition@180000 {
+			label = "kernel";
+			reg = <0x180000 0x400000>;
+		};
+
+		partition@580000 {
+			label = "ubi";
+			reg = <0x580000 0x7180000>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0000>;
+		mtd-mac-address = <&factory 0x4>;
+		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cell-names = "mac-address";
+		mediatek,disable-radar-background;
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&factory 0x4>;
+	mac-address-increment = <(-2)>;
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan4g";
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&factory 0x4>;
+	mac-address-increment = <(-1)>;
+	phy-mode = "rgmii-txid";
+	phy-handle = <&phy4>;
+};
+
+&mdio {
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "wan";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "jtag", "uart3";
+		function = "gpio";
+	};
+
+	uart2 {
+		groups = "uart2";
+		function = "uart2";
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_4: macaddr@4 {
+		reg = <0x4 0x6>;
+	};
+};
