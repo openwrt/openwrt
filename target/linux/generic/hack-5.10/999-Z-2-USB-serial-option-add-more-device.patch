@@ -1,0 +1,110 @@
+From c39ed14d107ffa590718ff39961cc78a7f8c9f2a Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Wed, 7 Dec 2022 00:30:14 +0800
+Subject: [PATCH 3/3] USB: serial: option: add more device
+
+---
+ drivers/net/usb/qmi_wwan.c  |  4 ++++
+ drivers/usb/serial/option.c | 43 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 47 insertions(+)
+
+diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
+index e240e6809..40efd9499 100644
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -1019,6 +1019,7 @@ static const struct usb_device_id products[] = {
+ 		USB_DEVICE_AND_INTERFACE_INFO(0x03f0, 0x581d, USB_CLASS_VENDOR_SPEC, 1, 7),
+ 		.driver_info = (unsigned long)&qmi_wwan_info,
+ 	},
++	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0900)},   /* Quectel RM500U-CN */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0125)},	/* Quectel EC25, EC20 R2.0  Mini PCIe */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0306)},	/* Quectel EP06/EG06/EM06 */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0512)},	/* Quectel EG12/EM12 */
+@@ -1028,6 +1029,9 @@ static const struct usb_device_id products[] = {
+ 	{QMI_MATCH_FF_FF_FF(0x05c6, 0xf601)},   /* MeigLink SLM750 */
+ 
+ 	/* 3. Combined interface devices matching on interface number */
++	{QMI_QUIRK_SET_DTR(0x1c9e, 0x9b3c, 4)}, /* longsung U9300W/C */
++	{QMI_QUIRK_SET_DTR(0x2020, 0x2040, 4)}, /* BroadMobi 817C */
++	{QMI_FIXED_INTF(0x1c9e, 0x9b05, 4)},    /* U8300 QMI Drivers */
+ 	{QMI_FIXED_INTF(0x0408, 0xea42, 4)},	/* Yota / Megafon M100-1 */
+ 	{QMI_FIXED_INTF(0x05c6, 0x6001, 3)},	/* 4G LTE usb-modem U901 */
+ 	{QMI_FIXED_INTF(0x05c6, 0x7000, 0)},
+diff --git a/drivers/usb/serial/option.c b/drivers/usb/serial/option.c
+index fd2fc8e29..bbb5f6fce 100644
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -395,6 +395,9 @@ static void option_instat_callback(struct urb *urb);
+  * Mobidata, etc sell under their own brand names.
+  */
+ #define LONGCHEER_VENDOR_ID			0x1c9e
++#define LONGSUNG_VENDOR_ID			0x1c9e
++#define LONGSUNG_U9300_PRODUCT_ID		0x9b3c
++#define LONGSUNG_U8300_PRODUCT_ID		0x9b05
+ 
+ /* 4G Systems products */
+ /* This is the 4G XS Stick W14 a.k.a. Mobilcom Debitel Surf-Stick *
+@@ -648,6 +651,9 @@ static const struct option_blacklist_info net_intf6_blacklist = {
+ 
+ 
+ static const struct usb_device_id option_ids[] = {
++	{ USB_DEVICE(LONGSUNG_VENDOR_ID, LONGSUNG_U9300_PRODUCT_ID) }, /* LongSung U9300 LTE modem */
++	{ USB_DEVICE(LONGSUNG_VENDOR_ID, LONGSUNG_U8300_PRODUCT_ID) }, /* LongSung U8300 LTE modem */
++	{ USB_DEVICE( 0x2020, 0x2040 ) },
+ #if 1 //Added by Quectel
+ 	{ USB_DEVICE(0x2C7C, 0x0125) }, /* Quectel EC20 R2.0/EC20 R2.1/EC25/EG25-G/EM05 */
+ 	{ USB_DEVICE(0x2C7C, 0x0121) }, /* Quectel EC21/EG21-G */
+@@ -679,6 +685,16 @@ static const struct usb_device_id option_ids[] = {
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_LIGHT) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x12) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x03, 0x12) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x06, 0x12) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x14) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x13) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x03) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x0a) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x06) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x01) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x0900, 0xff, 0x00, 0x00) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_QUAD) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_QUAD_LIGHT) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_NDIS) },
+@@ -2337,6 +2353,33 @@ static int option_probe(struct usb_serial *serial,
+ 	if (iface_desc->bInterfaceClass == USB_CLASS_MASS_STORAGE)
+ 		return -ENODEV;
+ 
++	if(serial->dev->descriptor.idVendor == cpu_to_le16(LONGSUNG_VENDOR_ID) &&
++			serial->dev->descriptor.idProduct == cpu_to_le16(LONGSUNG_U9300_PRODUCT_ID) &&
++			serial->interface->cur_altsetting->desc.bInterfaceNumber == 0){
++		printk("GZZ Discover the 0th interface for 9300 ndis\n");
++		return -ENODEV;
++	}
++
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(LONGSUNG_VENDOR_ID) &&
++			serial->dev->descriptor.idProduct == cpu_to_le16(LONGSUNG_U9300_PRODUCT_ID) &&
++			serial->interface->cur_altsetting->desc.bInterfaceNumber == 4){
++		printk(KERN_INFO"Discover the 4th interface for U9300 NDIS\n");
++		return -ENODEV;
++	}
++
++	if(serial->dev->descriptor.idVendor == cpu_to_le16(LONGSUNG_VENDOR_ID) &&
++			serial->dev->descriptor.idProduct == cpu_to_le16(LONGSUNG_U8300_PRODUCT_ID) &&
++			serial->interface->cur_altsetting->desc.bInterfaceNumber == 4){
++		printk("GZZ Discover the 0th interface for 8300 ndis\n");
++		return -ENODEV;
++	}
++	if(serial->dev->descriptor.idVendor == cpu_to_le16(0x2020) &&
++			serial->dev->descriptor.idProduct == cpu_to_le16(0x2040) &&
++			serial->interface->cur_altsetting->desc.bInterfaceNumber == 4){
++		printk(KERN_INFO"BM817C Ethernet Adapter");
++		return -ENODEV;
++	}
++
+ 	/*
+ 	 * Don't bind reserved interfaces (like network ones) which often have
+ 	 * the same class/subclass/protocol as the serial interfaces.  Look at
+-- 
+2.17.1
+

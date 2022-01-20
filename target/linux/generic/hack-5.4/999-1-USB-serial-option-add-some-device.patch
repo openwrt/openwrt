@@ -1,0 +1,114 @@
+From 11a8e02c9dfcff1ee427ea47886971cd0aff667d Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Fri, 21 Jan 2022 04:04:35 +0800
+Subject: [PATCH] USB: serial: option: add some device
+
+---
+ drivers/usb/serial/option.c | 77 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
+
+diff --git a/drivers/usb/serial/option.c b/drivers/usb/serial/option.c
+index 49dad30ddcdd..f4d7fb838647 100644
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -571,6 +571,41 @@ static void option_instat_callback(struct urb *urb);
+ #define WETELECOM_PRODUCT_6802			0x6802
+ #define WETELECOM_PRODUCT_WMD300		0x6803
+ 
++struct option_blacklist_info {
++	/* bitmask of interface numbers blacklisted for send_setup */
++	const unsigned long sendsetup;
++	/* bitmask of interface numbers that are reserved */
++	const unsigned long reserved;
++};
++
++static const struct option_blacklist_info net_intf0_blacklist = {
++	.reserved = BIT(0),
++};
++
++static const struct option_blacklist_info net_intf1_blacklist = {
++	.reserved = BIT(1),
++};
++
++static const struct option_blacklist_info net_intf2_blacklist = {
++	.reserved = BIT(2),
++};
++
++static const struct option_blacklist_info net_intf3_blacklist = {
++	.reserved = BIT(3),
++};
++
++static const struct option_blacklist_info net_intf4_blacklist = {
++	.reserved = BIT(4),
++};
++
++static const struct option_blacklist_info net_intf5_blacklist = {
++	.reserved = BIT(5),
++};
++
++static const struct option_blacklist_info net_intf6_blacklist = {
++	.reserved = BIT(6),
++};
++
+ 
+ /* Device flags */
+ 
+@@ -591,6 +626,34 @@ static void option_instat_callback(struct urb *urb);
+ 
+ 
+ static const struct usb_device_id option_ids[] = {
++#if 1 //Added by Quectel
++	{ USB_DEVICE(0x2C7C, 0x0125) }, /* Quectel EC20 R2.0/EC20 R2.1/EC25/EG25-G/EM05 */
++	{ USB_DEVICE(0x2C7C, 0x0121) }, /* Quectel EC21/EG21-G */
++	{ USB_DEVICE(0x2C7C, 0x0191) }, /* Quectel EG91 */
++	{ USB_DEVICE(0x2C7C, 0x0195) }, /* Quectel EG95 */
++	{ USB_DEVICE(0x2C7C, 0x0306) }, /* Quectel EG06/EP06/EM06 */
++	{ USB_DEVICE(0x2C7C, 0x0512) }, /* Quectel EG12/EM12/EG18 */
++	{ USB_DEVICE(0x2C7C, 0x0296) }, /* Quectel BG96 */
++	{ USB_DEVICE(0x2C7C, 0x0700) }, /* Quectel BG95/BG77/BG600L-M3/BC69 */
++	{ USB_DEVICE(0x2C7C, 0x0435) }, /* Quectel AG35 */
++	{ USB_DEVICE(0x2C7C, 0x0415) }, /* Quectel AG15 */
++	{ USB_DEVICE(0x2C7C, 0x0452) }, /* Quectel AG520R */
++	{ USB_DEVICE(0x2C7C, 0x0455) }, /* Quectel AG550R */
++	{ USB_DEVICE(0x2C7C, 0x0620) }, /* Quectel EG20 */
++	{ USB_DEVICE(0x2C7C, 0x0800) }, /* Quectel RG500Q/RM500Q/RG510Q/RM510Q */
++	{ USB_DEVICE(0x2C7C, 0x0900),
++		.driver_info = RSVD(7) }, /* Quectel RG500U/RM500U */
++#endif
++	{ USB_DEVICE(0x1782, 0x4038),
++		.driver_info = RSVD(6) }, /* Hisense 5G */
++	{ USB_DEVICE(0x1782, 0x4039),
++		.driver_info = RSVD(6) }, /* Hisense 5G */
++	{ USB_DEVICE(0x2cb7, 0x0a06),                                           /* Fibocom FM650 series RNDIS */
++	  .driver_info = RSVD(6) },
++	{ USB_DEVICE(0x2cb7, 0x0a05),                                           /* Fibocom FM650 series NCM */
++	  .driver_info = RSVD(6) },
++	{ USB_DEVICE(0x2cb7, 0x0a04),                                           /* Fibocom FM650 series ECM */
++	  .driver_info = RSVD(5) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_LIGHT) },
+@@ -2200,6 +2263,20 @@ static int option_probe(struct usb_serial *serial,
+ 	if (device_flags & NUMEP2 && iface_desc->bNumEndpoints != 2)
+ 		return -ENODEV;
+ 
++#if 1 //Added by Quectel
++	//Quectel modules’s interface 4 can be used as USB network device
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(0x2C7C) && serial->dev->descriptor.idProduct != cpu_to_le16(0x0900)) {
++		//some interfaces can be used as USB Network device (ecm, rndis, mbim)
++		if (serial->interface->cur_altsetting->desc.bInterfaceClass != 0xFF) {
++			return -ENODEV;
++		}
++		//interface 4 can be used as USB Network device (qmi)
++		else if (serial->interface->cur_altsetting->desc.bInterfaceNumber >= 4) {
++			return -ENODEV;
++		}
++	}
++#endif
++
+ 	/* Store the device flags so we can use them during attach. */
+ 	usb_set_serial_data(serial, (void *)device_flags);
+ 
+-- 
+2.17.1
+

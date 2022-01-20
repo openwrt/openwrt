@@ -1,0 +1,105 @@
+From 6cc160b8bbc5cf0b2bd4fcaeaaa51e5673a994aa Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Fri, 21 Jan 2022 04:32:01 +0800
+Subject: [PATCH] USB: serial: option: add more device
+
+---
+ drivers/net/usb/qmi_wwan.c  |  4 ++++
+ drivers/usb/serial/option.c | 43 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 47 insertions(+)
+
+diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
+index f510e8219470..25875d58902e 100644
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -1088,8 +1088,12 @@ static const struct usb_device_id products[] = {
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0512)},	/* Quectel EG12/EM12 */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0620)},	/* Quectel EM160R-GL */
+ 	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0800)},	/* Quectel RM500Q-GL */
++	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0900)},	/* Quectel RM500U-CN */
+ 
+ 	/* 3. Combined interface devices matching on interface number */
++	{QMI_QUIRK_SET_DTR(0x1c9e, 0x9b3c, 4)}, /* longsung U9300W/C */
++	{QMI_QUIRK_SET_DTR(0x2020, 0x2040, 4)}, /* BroadMobi 817C */
++	{QMI_FIXED_INTF(0x1c9e, 0x9b05, 4)},    /* U8300 QMI Drivers */
+ 	{QMI_FIXED_INTF(0x0408, 0xea42, 4)},	/* Yota / Megafon M100-1 */
+ 	{QMI_FIXED_INTF(0x05c6, 0x6001, 3)},	/* 4G LTE usb-modem U901 */
+ 	{QMI_FIXED_INTF(0x05c6, 0x7000, 0)},
+diff --git a/drivers/usb/serial/option.c b/drivers/usb/serial/option.c
+index f4d7fb838647..10f9cab3c093 100644
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -386,6 +386,9 @@ static void option_instat_callback(struct urb *urb);
+  * Mobidata, etc sell under their own brand names.
+  */
+ #define LONGCHEER_VENDOR_ID			0x1c9e
++#define LONGSUNG_VENDOR_ID			0x1c9e
++#define LONGSUNG_U9300_PRODUCT_ID		0x9b3c
++#define LONGSUNG_U8300_PRODUCT_ID		0x9b05
+ 
+ /* 4G Systems products */
+ /* This is the 4G XS Stick W14 a.k.a. Mobilcom Debitel Surf-Stick *
+@@ -626,6 +629,9 @@ static const struct option_blacklist_info net_intf6_blacklist = {
+ 
+ 
+ static const struct usb_device_id option_ids[] = {
++	{ USB_DEVICE(LONGSUNG_VENDOR_ID, LONGSUNG_U9300_PRODUCT_ID) }, /* LongSung U9300 LTE modem */
++	{ USB_DEVICE(LONGSUNG_VENDOR_ID, LONGSUNG_U8300_PRODUCT_ID) }, /* LongSung U8300 LTE modem */
++	{ USB_DEVICE( 0x2020, 0x2040 ) },
+ #if 1 //Added by Quectel
+ 	{ USB_DEVICE(0x2C7C, 0x0125) }, /* Quectel EC20 R2.0/EC20 R2.1/EC25/EG25-G/EM05 */
+ 	{ USB_DEVICE(0x2C7C, 0x0121) }, /* Quectel EC21/EG21-G */
+@@ -657,6 +663,16 @@ static const struct usb_device_id option_ids[] = {
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_LIGHT) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x12) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x03, 0x12) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x06, 0x12) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x14) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x13) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x03) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x0a) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x06) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x8101, 0xff, 0x02, 0x01) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c, 0x0900, 0xff, 0x00, 0x00) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_QUAD) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_QUAD_LIGHT) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_NDIS) },
+@@ -2248,6 +2264,33 @@ static int option_probe(struct usb_serial *serial,
+ 	if (iface_desc->bInterfaceClass == USB_CLASS_MASS_STORAGE)
+ 		return -ENODEV;
+ 
++	if(serial->dev->descriptor.idVendor == cpu_to_le16(LONGSUNG_VENDOR_ID) &&
++			serial->dev->descriptor.idProduct == cpu_to_le16(LONGSUNG_U9300_PRODUCT_ID) &&
++			serial->interface->cur_altsetting->desc.bInterfaceNumber == 0){
++		printk("GZZ Discover the 0th interface for 9300 ndis\n");
++		return -ENODEV;
++	}
++
++	if (serial->dev->descriptor.idVendor == cpu_to_le16(LONGSUNG_VENDOR_ID) &&
++			serial->dev->descriptor.idProduct == cpu_to_le16(LONGSUNG_U9300_PRODUCT_ID) &&
++			serial->interface->cur_altsetting->desc.bInterfaceNumber == 4){
++		printk(KERN_INFO"Discover the 4th interface for U9300 NDIS\n");
++		return -ENODEV;
++	}
++
++	if(serial->dev->descriptor.idVendor == cpu_to_le16(LONGSUNG_VENDOR_ID) &&
++			serial->dev->descriptor.idProduct == cpu_to_le16(LONGSUNG_U8300_PRODUCT_ID) &&
++			serial->interface->cur_altsetting->desc.bInterfaceNumber == 4){
++		printk("GZZ Discover the 0th interface for 8300 ndis\n");
++		return -ENODEV;
++	}
++	if(serial->dev->descriptor.idVendor == cpu_to_le16(0x2020) &&
++			serial->dev->descriptor.idProduct == cpu_to_le16(0x2040) &&
++			serial->interface->cur_altsetting->desc.bInterfaceNumber == 4){
++		printk(KERN_INFO"BM817C Ethernet Adapter");
++		return -ENODEV;
++	}
++
+ 	/*
+ 	 * Don't bind reserved interfaces (like network ones) which often have
+ 	 * the same class/subclass/protocol as the serial interfaces.  Look at
+-- 
+2.17.1
+

@@ -1,0 +1,43 @@
+From 984f5f2eac1d52b409fc4357d74437c5c181475d Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Tue, 11 Aug 2020 17:45:21 +0800
+Subject: [PATCH] USB: serial: option: Add support for Neoway N720
+
+N720 is a Cat. 4 LTE modem. There are three interface
+mappings to meet different needs:
+ID 2949:8241(Rndis + Modem + Nmea + At_port + Diag + Rmnet)
+ID 2949:8243(Rmnet + Modem + Nmea + At_port + Diag + ADB)
+ID 2949:8247(Modem + Nmea + At_port + Diag + Rmnet)
+---
+ drivers/usb/serial/option.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -532,6 +532,12 @@ static void option_instat_callback(struc
+ #define MEDIATEK_PRODUCT_FPDC_1COM		0x0043
+ #define MEDIATEK_PRODUCT_FPDC_2COM		0x0033
+ 
++/* Neoway products */
++#define NEOWAY_VENDOR_ID			0x2949
++#define NEOWAY_PRODUCT_N720_8241		0x8241
++#define NEOWAY_PRODUCT_N720_8243		0x8243
++#define NEOWAY_PRODUCT_N720_8247		0x8247
++
+ /* Cellient products */
+ #define CELLIENT_VENDOR_ID			0x2692
+ #define CELLIENT_PRODUCT_MEN200			0x9005
+@@ -2031,6 +2037,13 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(MEDIATEK_VENDOR_ID, MEDIATEK_PRODUCT_7106_2COM, 0x02, 0x02, 0x01) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(MEDIATEK_VENDOR_ID, MEDIATEK_PRODUCT_DC_4COM2, 0xff, 0x02, 0x01) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(MEDIATEK_VENDOR_ID, MEDIATEK_PRODUCT_DC_4COM2, 0xff, 0x00, 0x00) },
++	/* Neoway N720 4G Modem */
++	{ USB_DEVICE(NEOWAY_VENDOR_ID, NEOWAY_PRODUCT_N720_8241),
++	  .driver_info = RSVD(0) | RSVD(1) | RSVD(6) },
++	{ USB_DEVICE(NEOWAY_VENDOR_ID, NEOWAY_PRODUCT_N720_8243),
++	  .driver_info = RSVD(0) | RSVD(5) },
++	{ USB_DEVICE(NEOWAY_VENDOR_ID, NEOWAY_PRODUCT_N720_8247),
++	  .driver_info = RSVD(4) },
+ 	{ USB_DEVICE(CELLIENT_VENDOR_ID, CELLIENT_PRODUCT_MEN200) },
+ 	{ USB_DEVICE(CELLIENT_VENDOR_ID, CELLIENT_PRODUCT_MPL200),
+ 	  .driver_info = RSVD(1) | RSVD(4) },
