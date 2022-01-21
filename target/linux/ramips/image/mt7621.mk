@@ -277,6 +277,25 @@ define Device/xiaomi_mir3p
 endef
 TARGET_DEVICES += xiaomi_mir3p
 
+define Device/xiaomi_mi-router-cr660x
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 128512k
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router CR660x
+  DEVICE_PACKAGES += kmod-mt7915e wpad-openssl uboot-envtools
+  SUPPORTED_DEVICES += xiaomi,mi-router-cr6606
+endef
+TARGET_DEVICES += xiaomi_mi-router-cr660x
+
 define Device/xiaomi_mir3g
   DTS := MIR3G
   BLOCKSIZE := 128k
