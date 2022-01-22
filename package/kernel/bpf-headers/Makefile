@@ -14,6 +14,9 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=linux
 PKG_PATCHVER:=5.10
+# Manually include kernel version and hash from kernel details file
+include $(INCLUDE_DIR)/kernel-$(PKG_PATCHVER)
+
 PKG_VERSION:=$(PKG_PATCHVER)$(strip $(LINUX_VERSION-$(PKG_PATCHVER)))
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=$(LINUX_SITE)
