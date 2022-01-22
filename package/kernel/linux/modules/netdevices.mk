@@ -417,6 +417,22 @@ endef
 $(eval $(call KernelPackage,switch-rtl8367b))
 
 
+define KernelPackage/switch-ar8xxx
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Atheros AR8216/8327 switch support
+  DEPENDS:=+kmod-swconfig
+  KCONFIG:=CONFIG_AR8216_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/ar8xxx.ko
+  AUTOLOAD:=$(call AutoLoad,43,ar8xxx,1)
+endef
+
+define KernelPackage/switch-ar8xxx/description
+ Atheros AR8216/8327 switch support
+endef
+
+$(eval $(call KernelPackage,switch-ar8xxx))
+
+
 define KernelPackage/natsemi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=National Semiconductor DP8381x series
