@@ -58,10 +58,10 @@ define Build/mt7623-mbr
 			-t 0x41	-N uboot	-p 3584k@320k \
 			-t 0xea	-N recovery	-p 40M@4M \
 		$(if $(findstring sdmmc,$1), \
-			-t 0x2e -N production	-p 208M@48M \
+			-t 0x2e -N production	-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@48M \
 		) \
 		$(if $(findstring emmc,$1), \
-			-t 0x2e -N production	-p 976M@48M \
+			-t 0x2e -N production	-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@48M \
 		)
 
 	echo -en \
