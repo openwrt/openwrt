@@ -962,6 +962,18 @@ define Device/sitecom_wl-351
 endef
 TARGET_DEVICES += sitecom_wl-351
 
+define Device/sitecom_wlr-4100-1001
+  SOC := rt3352
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Sitecom
+  DEVICE_MODEL := WLR-4100 v1 001
+  DEVICE_PACKAGES := kmod-switch-rtl8367b kmod-swconfig swconfig kmod-mdio-gpio
+  SUPPORTED_DEVICES += wlr-4100-1001
+  DEFAULT := n
+endef
+TARGET_DEVICES += sitecom_wlr-4100-1001
+
 define Device/skyline_sl-r7205
   SOC := rt3052
   BLOCKSIZE := 64k
