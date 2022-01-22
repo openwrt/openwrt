@@ -11,7 +11,7 @@ ifeq ($(HOST_OS),Linux)
 ARCH:=x86_64
 BOARD:=uml
 BOARDNAME:=User Mode Linux
-FEATURES:=squashfs ext4 audio
+FEATURES:=audio ext4 rootfs-part squashfs
 
 KERNEL_PATCHVER:=5.10
 
