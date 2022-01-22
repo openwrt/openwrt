@@ -48,10 +48,10 @@ define Build/mt7622-gpt
 				-N recovery	-r	-p 32M@6M \
 		$(if $(findstring sdmmc,$1), \
 				-N install	-r	-p 7M@38M \
-			-t 0x2e -N production		-p 211M@45M \
+			-t 0x2e -N production		-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@45M \
 		) \
 		$(if $(findstring emmc,$1), \
-			-t 0x2e -N production		-p 980M@40M \
+			-t 0x2e -N production		-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@40M \
 		)
 	cat $@.tmp >> $@
 	rm $@.tmp
