@@ -474,6 +474,7 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 speed;
 	u64 link;
+	u64 media;
 
 	if (port < 0 || port > priv->cpu_port)
 		return -EINVAL;
@@ -489,8 +490,18 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
 	if (link & BIT_ULL(port))
 		state->link = 1;
-	pr_debug("%s: link state port %d: %llx, media %08x\n", __func__, port,
-		 link & BIT_ULL(port), sw_r32(RTL930X_MAC_LINK_MEDIA_STS));
+
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		media = priv->r->get_port_reg_le(RTL931X_MAC_LINK_MEDIA_STS);
+
+	if (priv->family_id == RTL9300_FAMILY_ID)
+		media = sw_r32(RTL930X_MAC_LINK_MEDIA_STS);
+
+	if (media & BIT_ULL(port))
+		state->link = 1;
+
+	pr_debug("%s: link state port %d: %llx, media %llx\n", __func__, port,
+		 link & BIT_ULL(port), media);
 
 	state->duplex = 0;
 	if (priv->r->get_port_reg_le(priv->r->mac_link_dup_sts) & BIT_ULL(port))
@@ -1052,7 +1063,8 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_DABLK_CTRL);
 	}
 
-	priv->ports[port].sds_num = rtl93xx_get_sds(phydev);
+	if (priv->ports[port].sds_num < 0)
+		priv->ports[port].sds_num = rtl93xx_get_sds(phydev);
 
 	return 0;
 }
