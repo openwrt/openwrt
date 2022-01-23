@@ -2,6 +2,15 @@
 #
 # Copyright (C) 2020 Tobias Maedel
 
+define Device/friendlyarm_nanopi-neo3
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi NEO3
+  SOC := rk3328
+  UBOOT_DEVICE_NAME := nanopi-r2s-rk3328
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r2s | pine64-img | gzip | append-metadata
+endef
+TARGET_DEVICES += friendlyarm_nanopi-neo3
+
 define Device/friendlyarm_nanopi-r2s
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R2S

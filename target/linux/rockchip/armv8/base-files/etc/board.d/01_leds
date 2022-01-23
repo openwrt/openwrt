@@ -8,6 +8,9 @@ boardname="${board##*,}"
 board_config_update
 
 case $board in
+friendlyarm,nanopi-neo3)
+	ucidef_set_led_netdev "stat" "STAT" "$boardname:green:stat" "eth0"
+	;;
 friendlyarm,nanopi-r2s)
 	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
 	ucidef_set_led_netdev "lan" "LAN" "$boardname:green:lan" "eth1"

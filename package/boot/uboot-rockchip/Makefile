@@ -28,7 +28,8 @@ define U-Boot/nanopi-r2s-rk3328
   BUILD_SUBTARGET:=armv8
   NAME:=NanoPi R2S
   BUILD_DEVICES:= \
-    friendlyarm_nanopi-r2s
+    friendlyarm_nanopi-r2s \
+    friendlyarm_nanopi-neo3
   DEPENDS:=+PACKAGE_u-boot-nanopi-r2s-rk3328:arm-trusted-firmware-rockchip
   PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
   ATF:=rk3328_bl31.elf
