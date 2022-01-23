@@ -22,6 +22,7 @@ ctera,c200-v1|\
 globalscale,sheevaplug|\
 iom,iconnect-1.1|\
 iom,ix2-200|\
+netgear,readynas-duo-v2|\
 raidsonic,ib-nas62x0|\
 seagate,blackarmor-nas220|\
 seagate,dockstar|\
@@ -29,6 +30,9 @@ seagate,goflexhome|\
 seagate,goflexnet|\
 zyxel,nsa310s)
 	ucidef_set_interface_lan "eth0" "dhcp"
+	;;
+endian,4i-edge-200)
+	ucidef_set_interface_lan "port1 port2 port3 port4 eth1"
 	;;
 linksys,e4200-v2|\
 linksys,ea3500|\

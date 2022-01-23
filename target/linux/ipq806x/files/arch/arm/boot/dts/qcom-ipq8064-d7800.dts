@@ -7,8 +7,15 @@
 	compatible = "netgear,d7800", "qcom,ipq8064";
 
 	memory@0 {
-		reg = <0x42000000 0xe000000>;
+		reg = <0x42000000 0x1e000000>;
 		device_type = "memory";
+	};
+
+	reserved-memory {
+		rsvd@5fe00000 {
+			reg = <0x5fe00000 0x200000>;
+			reusable;
+		};
 	};
 
 	aliases {
@@ -215,6 +222,13 @@
 			mac-address-increment = <(2)>;
 		};
 	};
+};
+
+&pcie2 {
+	status = "okay";
+	reset-gpio = <&qcom_pinmux 63 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pcie2_pins>;
+	pinctrl-names = "default";
 };
 
 &nand_controller {

@@ -527,24 +527,27 @@ $(eval $(call KernelPackage,sound-soc-hifiberry-dac))
 
 
 define KernelPackage/sound-soc-hifiberry-dacplus
-  TITLE:=Support for HifiBerry DAC+ / DAC+ Pro
+  TITLE:=Support for HifiBerry DAC+ / DAC+ Pro / Amp2
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS \
-    CONFIG_SND_SOC_PCM512x
+    CONFIG_SND_SOC_PCM512x \
+    CONFIG_SND_SOC_PCM512x_I2C
   FILES:= \
     $(LINUX_DIR)/drivers/clk/clk-hifiberry-dacpro.ko \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplus.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,clk-hifiberry-dacpro snd-soc-pcm512x \
-    snd-soc-hifiberry-dacplus)
+    snd-soc-pcm512x-i2c snd-soc-hifiberry-dacplus)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
-    +kmod-i2c-bcm2835
+    +kmod-i2c-bcm2835 \
+    +kmod-regmap-i2c
   $(call AddDepends/sound)
 endef
 
 define KernelPackage/sound-soc-hifiberry-dacplus/description
-  This package contains support for HifiBerry DAC+ / DAC+ Pro
+  This package contains support for HifiBerry DAC+ / DAC+ Pro / Amp2
 endef
 
 $(eval $(call KernelPackage,sound-soc-hifiberry-dacplus))

@@ -57,6 +57,10 @@ define Build/append-rutx-metadata
 		}' | fwtool -I - $@
 endef
 
+define Build/copy-file
+	cat "$(1)" > "$@"
+endef
+
 define Build/mkmylofw_32m
 	$(eval device_id=$(word 1,$(1)))
 	$(eval revision=$(word 2,$(1)))
@@ -196,14 +200,42 @@ define Device/asus_map-ac2200
 endef
 TARGET_DEVICES += asus_map-ac2200
 
+# WARNING: this is an initramfs image that gets you half of the way there
+#          you need to delete the jffs2 ubi volume and sysupgrade to the final image
+# to get a "trx" you can flash via web UI for ac42u/ac58u:
+# - change call Device/FitImageLzma to Device/FitImage
+# - add the following below UIMAGE_NAME
+#   UIMAGE_MAGIC := 0x27051956
+#   IMAGES += factory.trx
+#   IMAGE/factory.trx := copy-file $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE) | uImage none
+define Device/asus_rt-ac42u
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := ASUS
+	DEVICE_MODEL := RT-AC42U
+	DEVICE_ALT0_VENDOR := ASUS
+	DEVICE_ALT0_MODEL := RT-ACRH17
+	SOC := qcom-ipq4019
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 20439364
+	FILESYSTEMS := squashfs
+#	RT-AC82U is nowhere to be found online
+#	Rather, this device is a/k/a RT-AC42U
+#	But we'll go with what the vendor firmware has...
+	UIMAGE_NAME:=$(shell echo -e '\03\01\01\01RT-AC82U')
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-asus_rt-ac42u kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += asus_rt-ac42u
+
 define Device/asus_rt-ac58u
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ASUS
 	DEVICE_MODEL := RT-AC58U
+	DEVICE_ALT0_VENDOR := ASUS
+	DEVICE_ALT0_MODEL := RT-ACRH13
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DTB_SIZE := 65536
 	IMAGE_SIZE := 20439364
 	FILESYSTEMS := squashfs
 #	Someone - in their infinite wisdom - decided to put the firmware

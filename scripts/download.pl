@@ -54,10 +54,8 @@ sub localmirrors {
 
 sub which($) {
 	my $prog = shift;
-	my $res = `which $prog`;
+	my $res = `command -v $prog`;
 	$res or return undef;
-	$res =~ /^no / and return undef;
-	$res =~ /not found/ and return undef;
 	return $res;
 }
 

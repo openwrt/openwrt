@@ -196,6 +196,10 @@ define Build/check-size
 	}
 endef
 
+define Build/copy-file
+	cat "$(1)" > "$@"
+endef
+
 define Build/elecom-product-header
 	$(eval product=$(word 1,$(1)))
 	$(eval fw=$(if $(word 2,$(1)),$(word 2,$(1)),$@))
