@@ -375,6 +375,15 @@ define Device/dlink_dir-878-a1
 endef
 TARGET_DEVICES += dlink_dir-878-a1
 
+define Device/dlink_dir-878-r1
+  $(Device/dlink_dir-8xx-r1)
+  DEVICE_MODEL := DIR-878
+  DEVICE_VARIANT := R1
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+  IMAGE/factory.bin := append-kernel | append-rootfs | check-size 
+endef
+
+TARGET_DEVICES += dlink_dir-878-r1
 define Device/dlink_dir-882-a1
   $(Device/dlink_dir-8xx-a1)
   DEVICE_MODEL := DIR-882
