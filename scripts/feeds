@@ -499,6 +499,8 @@ sub install_target {
 	my $feed = shift;
 	my $name = shift;
 
+	$feed = lookup_target($feed, $name);
+
 	$installed_targets{$name} and return 0;
 
 	$feed = $feed_cache{$feed->[1]}->[2];
