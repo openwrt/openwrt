@@ -170,7 +170,7 @@ define Device/unielec_u7623-02-emmc-512m-legacy
   KERNEL := kernel-bin | append-dtb | uImage none
   KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
   DEVICE_PACKAGES := kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 kmod-mmc \
-	mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci-mtk \
+	mkf2fs e2fsprogs kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-ata-ahci \
 	partx-utils
   IMAGES := sysupgrade.bin.gz
   IMAGE/sysupgrade.bin.gz := append-kernel |\
