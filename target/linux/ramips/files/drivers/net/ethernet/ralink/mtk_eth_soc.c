@@ -41,6 +41,10 @@
 #include "mdio.h"
 #include "ethtool.h"
 
+#if IS_ENABLED(CONFIG_NET_DSA)
+#include <net/dsa.h>
+#endif
+
 #if defined(CONFIG_SOC_MT7620)
 #define	DMA_FWD_REG		MT7620A_GDMA1_FWD_CFG
 #define	MAX_RX_LENGTH		2048
@@ -786,6 +790,41 @@ err_out:
 	return -1;
 }
 
+#if IS_ENABLED(CONFIG_NET_DSA)
+#define MTK_HDR_LEN 4
+
+static netdev_features_t fe_features_check(struct sk_buff *skb,
+					   struct net_device *dev,
+					   netdev_features_t features)
+{
+	/* No point in doing any of this if neither checksum nor GSO are
+	 * being requested for this frame. We can rule out both by just
+	 * checking for CHECKSUM_PARTIAL
+	 */
+	if (skb->ip_summed != CHECKSUM_PARTIAL)
+		return features;
+
+	/* DSA tag might break existing offload checks as offload feature flags
+	 * are copied to slave ports and this driver does not use csum_start. */
+	if (netdev_uses_dsa(dev)) {
+		const struct dsa_device_ops *tag_ops = dev->dsa_ptr->tag_ops;
+
+		/* If tag is Mediatek, checksum should work */
+		if (tag_ops->proto == DSA_TAG_PROTO_MTK)
+			/* However, make sure that it is not stacking another
+			 * L2 protocol, possibly a second incompatible DSA tag
+			 * 802.1Q does not increase the mac header size because
+			 * it is embedded inside mediatek tag */
+			if (skb_mac_header_len(skb) <= ETH_HLEN + MTK_HDR_LEN)
+				return features;
+
+		features &= ~(NETIF_F_CSUM_MASK | NETIF_F_GSO_MASK);
+	}
+
+	return features;
+}
+#endif
+
 static inline int fe_skb_padto(struct sk_buff *skb, struct fe_priv *priv)
 {
 	unsigned int len;
@@ -1490,6 +1529,9 @@ static const struct net_device_ops fe_netdev_ops = {
 	.ndo_vlan_rx_kill_vid	= fe_vlan_rx_kill_vid,
 #ifdef CONFIG_NET_POLL_CONTROLLER
 	.ndo_poll_controller	= fe_poll_controller,
+#endif
+#if IS_ENABLED(CONFIG_NET_DSA)
+	.ndo_features_check     = fe_features_check,
 #endif
 };
 
