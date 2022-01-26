@@ -473,7 +473,7 @@ $(call Package/iptables/Default)
   TITLE:=IPv6 header matching modules
 endef
 
-define Package/ip6tables-mod-extra/description
+define Package/ip6tables-extra/description
 iptables header matching modules for IPv6
 endef
 
