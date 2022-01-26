@@ -242,23 +242,56 @@ endef
 $(eval $(call KernelPackage,gpio-f7188x))
 
 
-define KernelPackage/gpio-mcp23s08
+define KernelPackage/pinctrl-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
-  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +kmod-regmap-i2c
-  KCONFIG:= \
-	CONFIG_GPIO_MCP23S08 \
-	CONFIG_PINCTRL_MCP23S08
-  FILES:= \
-	$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08.ko
+  HIDDEN:=1
+  DEPENDS:=@GPIO_SUPPORT +kmod-regmap-core
+  KCONFIG:=CONFIG_PINCTRL_MCP23S08
+  FILES:=$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08.ko
   AUTOLOAD:=$(call AutoLoad,40,pinctrl-mcp23s08)
 endef
 
-define KernelPackage/gpio-mcp23s08/description
- Kernel module for Microchip MCP23xxx SPI/I2C I/O expander
+define KernelPackage/pinctrl-mcp23s08/description
+  Kernel module for Microchip MCP23xxx I/O expander
 endef
 
-$(eval $(call KernelPackage,gpio-mcp23s08))
+$(eval $(call KernelPackage,pinctrl-mcp23s08))
+
+
+define KernelPackage/pinctrl-mcp23s08-i2c
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Microchip MCP23xxx I/O expander (I2C)
+  DEPENDS:=@GPIO_SUPPORT \
+	+kmod-pinctrl-mcp23s08 \
+	+kmod-i2c-core \
+	+kmod-regmap-i2c
+  KCONFIG:=CONFIG_PINCTRL_MCP23S08_I2C
+  FILES:=$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08_i2c.ko
+  AUTOLOAD:=$(call AutoLoad,40,pinctrl-mcp23s08-i2c)
+endef
+
+define KernelPackage/pinctrl-mcp23s08-i2c/description
+  Kernel module for Microchip MCP23xxx I/O expander via I2C
+endef
+
+$(eval $(call KernelPackage,pinctrl-mcp23s08-i2c))
+
+
+define KernelPackage/pinctrl-mcp23s08-spi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Microchip MCP23xxx I/O expander (SPI)
+  DEPENDS:=@GPIO_SUPPORT +kmod-pinctrl-mcp23s08
+  KCONFIG:=CONFIG_PINCTRL_MCP23S08_SPI
+  FILES:=$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08_spi.ko
+  AUTOLOAD:=$(call AutoLoad,40,pinctrl-mcp23s08-spi)
+endef
+
+define KernelPackage/pinctrl-mcp23s08-spi/description
+  Kernel module for Microchip MCP23xxx I/O expander via SPI
+endef
+
+$(eval $(call KernelPackage,pinctrl-mcp23s08-spi))
 
 
 define KernelPackage/gpio-nxp-74hc164
