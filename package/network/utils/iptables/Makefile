@@ -49,6 +49,10 @@ $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool
   MENU:=1
   DEPENDS+= +kmod-ipt-core +libip4tc +IPV6:libip6tc +libxtables
+  ALTERNATIVES:=\
+    200:/usr/sbin/iptables:/usr/sbin/xtables-legacy-multi \
+    200:/usr/sbin/iptables-restore:/usr/sbin/xtables-legacy-multi \
+    200:/usr/sbin/iptables-save:/usr/sbin/xtables-legacy-multi
 endef
 
 define Package/iptables/config
@@ -109,6 +113,10 @@ define Package/iptables-nft
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool nft
   DEPENDS:=@IPTABLES_NFTABLES +libxtables-nft +libip4tc +IPV6:libip6tc +kmod-ipt-core +kmod-nft-compat
+  ALTERNATIVES:=\
+    300:/usr/sbin/iptables:/usr/sbin/xtables-nft-multi \
+    300:/usr/sbin/iptables-restore:/usr/sbin/xtables-nft-multi \
+    300:/usr/sbin/iptables-save:/usr/sbin/xtables-nft-multi
 endef
 
 define Package/iptables-nft/description
@@ -450,12 +458,20 @@ $(call Package/iptables/Default)
   CATEGORY:=Network
   TITLE:=IPv6 firewall administration tool
   MENU:=1
+  ALTERNATIVES:=\
+    200:/usr/sbin/ip6tables:/usr/sbin/xtables-legacy-multi \
+    200:/usr/sbin/ip6tables-restore:/usr/sbin/xtables-legacy-multi \
+    200:/usr/sbin/ip6tables-save:/usr/sbin/xtables-legacy-multi
 endef
 
 define Package/ip6tables-nft
 $(call Package/iptables/Default)
   DEPENDS:=@IPV6 +kmod-ip6tables +iptables-nft
   TITLE:=IP firewall administration tool nft
+  ALTERNATIVES:=\
+    300:/usr/sbin/ip6tables:/usr/sbin/xtables-nft-multi \
+    300:/usr/sbin/ip6tables-restore:/usr/sbin/xtables-nft-multi \
+    300:/usr/sbin/ip6tables-save:/usr/sbin/xtables-nft-multi
 endef
 
 define Package/ip6tables-nft/description
@@ -598,7 +614,6 @@ endef
 define Package/iptables/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/xtables-legacy-multi $(1)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables{,-restore,-save} $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/lib/iptables
 endef
 
@@ -611,7 +626,6 @@ endef
 
 define Package/ip6tables/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables{,-restore,-save} $(1)/usr/sbin/
 endef
 
 define Package/ip6tables-nft/install
