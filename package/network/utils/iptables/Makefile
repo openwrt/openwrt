@@ -41,7 +41,7 @@ endef
 
 define Package/iptables/Module
 $(call Package/iptables/Default)
-  DEPENDS:=iptables $(1)
+  DEPENDS:=+iptables $(1)
 endef
 
 define Package/iptables
@@ -108,7 +108,7 @@ endef
 define Package/iptables-nft
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool nft
-  DEPENDS:=iptables @IPTABLES_NFTABLES +libxtables-nft
+  DEPENDS:=@IPTABLES_NFTABLES +libxtables-nft +libip4tc +IPV6:libip6tc +kmod-ipt-core +kmod-nft-compat
 endef
 
 define Package/iptables-nft/description
@@ -454,7 +454,7 @@ endef
 
 define Package/ip6tables-nft
 $(call Package/iptables/Default)
-  DEPENDS:=ip6tables @IPTABLES_NFTABLES +libxtables-nft
+  DEPENDS:=@IPV6 +kmod-ip6tables +iptables-nft
   TITLE:=IP firewall administration tool nft
 endef
 
@@ -522,7 +522,7 @@ define Package/libxtables-nft
  CATEGORY:=Libraries
  TITLE:=IPv4/IPv6 firewall - shared xtables nft library
  ABI_VERSION:=12
- DEPENDS:=libxtables
+ DEPENDS:=+libxtables
 endef
 
 TARGET_CPPFLAGS := \
