@@ -460,11 +460,11 @@ endef
 
 define Package/ip6tables-nft/description
 Extra ip6tables nftables nft binaries.
-  iptables-nft
-  iptables-nft-restore
-  iptables-nft-save
-  iptables-translate
-  iptables-restore-translate
+  ip6tables-nft
+  ip6tables-nft-restore
+  ip6tables-nft-save
+  ip6tables-translate
+  ip6tables-restore-translate
 endef
 
 define Package/ip6tables-extra
