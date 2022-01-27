@@ -63,7 +63,8 @@ ramips_setup_interfaces()
 	mikrotik,routerboard-760igs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
 		;;
-	tplink,eap235-wall-v1)
+	tplink,eap235-wall-v1|\
+	tplink,eap615-wall-v1)
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
 		;;
 	ubnt,edgerouter-x)
