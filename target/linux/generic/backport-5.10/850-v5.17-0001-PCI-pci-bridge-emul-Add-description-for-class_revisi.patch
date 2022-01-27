@@ -29,7 +29,7 @@ Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
 
 --- a/drivers/pci/pci-bridge-emul.c
 +++ b/drivers/pci/pci-bridge-emul.c
-@@ -265,7 +265,11 @@ int pci_bridge_emul_init(struct pci_brid
+@@ -284,7 +284,11 @@ int pci_bridge_emul_init(struct pci_brid
  {
  	BUILD_BUG_ON(sizeof(bridge->conf) != PCI_BRIDGE_CONF_END);
  
