@@ -8,15 +8,20 @@
 #include "mt6323.dtsi"
 
 / {
-	compatible = "unielec,u7623-02-emmc", "mediatek,mt7623";
+	compatible = "unielec,u7623-02", "mediatek,mt7623";
 
 	aliases {
-		serial2 = &uart2;
+		serial0 = &uart2;
+		ethernet0 = &gmac0;
+		mmc0 = &mmc0;
+		led-boot = &led3_green;
+		led-failsafe = &led3_green;
+		led-running = &led3_green;
+		led-upgrade = &led3_green;
 	};
 
 	chosen {
-		bootargs = "root=/dev/mmcblk0p2 rootfstype=squashfs,f2fs console=ttyS0,115200 blkdevparts=mmcblk0:3M@6M(recovery),256M@9M(root)";
-		stdout-path = "serial2:115200n8";
+		stdout-path = "serial0:115200n8";
 	};
 
 	cpus {
@@ -81,7 +86,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&led_pins_unielec>;
 
-		led3 {
+		led3_green: led3 {
 			label = "u7623-01:green:led3";
 			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
 		};
