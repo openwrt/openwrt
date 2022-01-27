@@ -80,7 +80,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  
  	case PCI_EXP_LNKCAP: {
  		u32 val = advk_readl(pcie, PCIE_CORE_PCIEXP_CAP + reg);
-@@ -933,22 +927,19 @@ advk_pci_bridge_emul_pcie_conf_write(str
+@@ -932,22 +926,19 @@ advk_pci_bridge_emul_pcie_conf_write(str
  			advk_pcie_wait_for_retrain(pcie);
  		break;
  
@@ -114,7 +114,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  
  	case PCI_EXP_DEVCTL:
  	case PCI_EXP_DEVCTL2:
-@@ -1450,6 +1441,34 @@ static void advk_pcie_remove_irq_domain(
+@@ -1452,6 +1443,34 @@ static void advk_pcie_remove_irq_domain(
  	irq_domain_remove(pcie->irq_domain);
  }
  
@@ -149,7 +149,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  static void advk_pcie_handle_msi(struct advk_pcie *pcie)
  {
  	u32 msi_val, msi_mask, msi_status, msi_idx;
-@@ -1489,18 +1508,9 @@ static void advk_pcie_handle_int(struct
+@@ -1491,18 +1510,9 @@ static void advk_pcie_handle_int(struct
  	isr1_mask = advk_readl(pcie, PCIE_ISR1_MASK_REG);
  	isr1_status = isr1_val & ((~isr1_mask) & PCIE_ISR1_ALL_MASK);
  
