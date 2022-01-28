@@ -36,6 +36,14 @@ define U-Boot/helios4
   UBOOT_IMAGE:=u-boot-spl.kwb
 endef
 
+define U-Boot/omnia
+  NAME:=Turris Omnia
+  BUILD_DEVICES:=cznic_turris-omnia
+  BUILD_SUBTARGET:=cortexa9
+  UBOOT_CONFIG:=turris_omnia
+  UBOOT_IMAGE:=u-boot-spl.kwb
+endef
+
 define U-Boot/espressobin
   NAME:=Marvell ESPRESSObin
   BUILD_SUBTARGET:=cortexa53
@@ -50,6 +58,7 @@ endef
 UBOOT_TARGETS:= \
 	clearfog \
 	helios4 \
+	omnia \
 	espressobin \
 	uDPU
 
