@@ -113,7 +113,7 @@ endef
 define Build/relocate-kernel
 	rm -rf $@.relocate
 	$(CP) ../../generic/image/relocate $@.relocate
-	$(MAKE) -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
+	$(MAKE) -C $@.relocate KERNEL_ADDR=$(if $(1),$(1),$(KERNEL_LOADADDR)) CROSS_COMPILE=$(TARGET_CROSS)
 	( \
 		dd if=$@.relocate/loader.bin bs=32 conv=sync && \
 		perl -e '@s = stat("$@"); print pack("V", @s[7])' && \
