@@ -198,4 +198,4 @@ prereq: $(STAGING_DIR_HOST)/bin/mkhash
 
 # Install ldconfig stub
 $(eval $(call TestHostCommand,ldconfig-stub,Failed to install stub, \
-	$(LN) /bin/true $(STAGING_DIR_HOST)/bin/ldconfig))
+	$(LN) $(if $(findstring Darwin,$(HOST_OS)),/usr/bin/true,/bin/true) $(STAGING_DIR_HOST)/bin/ldconfig))
