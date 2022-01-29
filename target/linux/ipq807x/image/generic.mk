@@ -17,6 +17,20 @@ define Device/UbiFit
 	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+define Device/edgecore_eap102
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Edgecore
+	DEVICE_MODEL := EAP102
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ac02
+	SOC := ipq8071
+	DEVICE_PACKAGES := ipq-wifi-edgecore_eap102
+	IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += edgecore_eap102
+
 define Device/edimax_cax1800
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

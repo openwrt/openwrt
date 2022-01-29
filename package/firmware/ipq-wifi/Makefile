@@ -27,6 +27,7 @@ endef
 ALLWIFIBOARDS:= \
 	aruba_ap-365 \
 	devolo_magic-2-wifi-next \
+	edgecore_eap102 \
 	edgecore_ecw5410 \
 	edgecore_oap100 \
 	edimax_cax1800 \
@@ -123,6 +124,7 @@ endef
 
 $(eval $(call generate-ipq-wifi-package,aruba_ap-365,Aruba AP-365))
 $(eval $(call generate-ipq-wifi-package,devolo_magic-2-wifi-next,devolo Magic 2 WiFi next))
+$(eval $(call generate-ipq-wifi-package,edgecore_eap102,Edgecore EAP102))
 $(eval $(call generate-ipq-wifi-package,edgecore_ecw5410,Edgecore ECW5410))
 $(eval $(call generate-ipq-wifi-package,edgecore_oap100,Edgecore OAP100))
 $(eval $(call generate-ipq-wifi-package,edimax_cax1800,Edimax CAX1800))
