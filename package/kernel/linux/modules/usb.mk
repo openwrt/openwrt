@@ -1203,7 +1203,7 @@ $(eval $(call KernelPackage,usb-net-kaweth))
 
 define KernelPackage/usb-net-lan78xx
   TITLE:=USB-To-Ethernet Microchip LAN78XX convertors
-  DEPENDS:=+kmod-fixed-phy +kmod-phy-microchip
+  DEPENDS:=+kmod-fixed-phy +kmod-phy-microchip +PACKAGE_kmod-of-mdio:kmod-of-mdio
   KCONFIG:=CONFIG_USB_LAN78XX
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/lan78xx.ko
   AUTOLOAD:=$(call AutoProbe,lan78xx)
