@@ -10,6 +10,18 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	edgecore,eap102)
+		active="$(fw_printenv -n active)"
+		if [ "$active" -eq "1" ]; then
+			CI_UBIPART="rootfs2"
+		else
+			CI_UBIPART="rootfs1"
+		fi
+		# force altbootcmd which handles partition change in u-boot
+		fw_setenv bootcount 3
+		fw_setenv upgrade_available 1
+		nand_do_upgrade "$1"
+		;;
 	edimax,cax1800)
 		nand_do_upgrade "$1"
 		;;

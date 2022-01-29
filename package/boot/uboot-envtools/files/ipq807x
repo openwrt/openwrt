@@ -8,6 +8,11 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+edgecore,eap102)
+	idx="$(find_mtd_index 0:appsblenv)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000" "1"
+	;;
 edimax,cax1800|\
 redmi,ax6|\
 xiaomi,ax3600|\
