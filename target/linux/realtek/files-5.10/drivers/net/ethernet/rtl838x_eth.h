@@ -194,6 +194,11 @@
 #define RTL930X_SMI_PORT0_15_POLLING_SEL	(0xCA08)
 #define RTL930X_SMI_PORT16_27_POLLING_SEL	(0xCA0C)
 
+#define RTL930X_SMI_10GPHY_POLLING_REG0_CFG	(0xCBB4)
+#define RTL930X_SMI_10GPHY_POLLING_REG9_CFG	(0xCBB8)
+#define RTL930X_SMI_10GPHY_POLLING_REG10_CFG	(0xCBBC)
+#define RTL930X_SMI_PRVTE_POLLING_CTRL		(0xCA10)
+
 /* Registers of the internal Serdes of the 8390 */
 #define RTL839X_SDS12_13_XSG0			(0xB800)
 
@@ -290,7 +295,11 @@ inline u32 rtl839x_get_mac_link_sts(int p)
 
 inline u32 rtl930x_get_mac_link_sts(int port)
 {
-	return (sw_r32(RTL930X_MAC_LINK_STS) & BIT(port));
+	u32 link = sw_r32(RTL930X_MAC_LINK_STS);
+
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	pr_info("%s link state is %08x\n", __func__, link);
+	return link & BIT(port);
 }
 
 inline u32 rtl931x_get_mac_link_sts(int p)
