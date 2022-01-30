@@ -199,6 +199,7 @@ struct rtl838x_eth_priv {
 	u32 sds_id[MAX_PORTS];
 	bool smi_bus_isc45[MAX_SMI_BUSSES];
 	bool phy_is_internal[MAX_PORTS];
+	phy_interface_t interfaces[MAX_PORTS];
 };
 
 extern int rtl838x_phy_init(struct rtl838x_eth_priv *priv);
@@ -1468,11 +1469,12 @@ static void rtl838x_mac_pcs_get_state(struct phylink_config *config,
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	int port = priv->cpu_port;
 
-	pr_debug("In %s\n", __func__);
+	pr_info("In %s\n", __func__);
 
 	state->link = priv->r->get_mac_link_sts(port) ? 1 : 0;
 	state->duplex = priv->r->get_mac_link_dup_sts(port) ? 1 : 0;
 
+	pr_info("%s link status is %d\n", __func__, state->link);
 	speed = priv->r->get_mac_link_spd_sts(port);
 	switch (speed) {
 	case 0:
@@ -1785,6 +1787,9 @@ static int rtl839x_mdio_reset(struct mii_bus *bus)
 	return 0;
 }
 
+u8 mac_type_bit[RTL930X_CPU_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6,
+				     8, 8, 8, 8, 10, 10, 10, 10, 12, 15, 18, 21};
+
 static int rtl930x_mdio_reset(struct mii_bus *bus)
 {
 	int i;
@@ -1793,10 +1798,16 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 	u32 c45_mask = 0;
 	u32 poll_sel[2];
 	u32 poll_ctrl = 0;
+	u32 private_poll_mask = 0;
+	u32 v;
+	bool uses_usxgmii = false; // For the Aquantia PHYs
+	bool uses_hisgmii = false; // For the RTL8221/8226
 
 	// Mapping of port to phy-addresses on an SMI bus
 	poll_sel[0] = poll_sel[1] = 0;
-	for (i = 0; i < 28; i++) {
+	for (i = 0; i < RTL930X_CPU_PORT; i++) {
+		if (priv->smi_bus[i] > 3)
+			continue;
 		pos = (i % 6) * 5;
 		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos,
 			    RTL930X_SMI_PORT0_5_ADDR + (i / 6) * 4);
@@ -1810,8 +1821,8 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 	sw_w32(poll_sel[0], RTL930X_SMI_PORT0_15_POLLING_SEL);
 	sw_w32(poll_sel[1], RTL930X_SMI_PORT16_27_POLLING_SEL);
 
-	// Enable polling on the respective SMI busses
-	sw_w32_mask(0, poll_ctrl, RTL930X_SMI_GLB_CTRL);
+	// Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+)
+	sw_w32_mask(poll_ctrl, 0, RTL930X_SMI_GLB_CTRL);
 
 	// Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus
 	for (i = 0; i < 4; i++)
@@ -1821,17 +1832,66 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 	pr_info("c45_mask: %08x\n", c45_mask);
 	sw_w32_mask(0, c45_mask, RTL930X_SMI_GLB_CTRL);
 
-	// Ports 24 to 27 are 2.5 or 10Gig, set this type (1) or (0) for internal SerDes
-	for (i = 24; i < 28; i++) {
-		pos = (i - 24) * 3 + 12;
-		if (priv->phy_is_internal[i])
-			sw_w32_mask(0x7 << pos, 0 << pos, RTL930X_SMI_MAC_TYPE_CTRL);
-		else
-			sw_w32_mask(0x7 << pos, 1 << pos, RTL930X_SMI_MAC_TYPE_CTRL);
+	// Set the MAC type of each port according to the PHY-interface
+	// Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0
+	v = 0;
+	for (i = 0; i < RTL930X_CPU_PORT; i++) {
+		switch (priv->interfaces[i]) {
+		case PHY_INTERFACE_MODE_10GBASER:
+			break;			// Serdes: Value = 0
+
+		case PHY_INTERFACE_MODE_HSGMII:
+			private_poll_mask |= BIT(i);
+			// fallthrough
+		case PHY_INTERFACE_MODE_USXGMII:
+			v |= BIT(mac_type_bit[i]);
+			uses_usxgmii = true;
+			break;
+
+		case PHY_INTERFACE_MODE_QSGMII:
+			private_poll_mask |= BIT(i);
+			v |= 3 << mac_type_bit[i];
+			break;
+
+		default:
+			break;
+		}
+	}
+	sw_w32(v, RTL930X_SMI_MAC_TYPE_CTRL);
+
+	// Set the private polling mask for all Realtek PHYs (i.e. not the 10GBit Aquantia ones)
+	sw_w32(private_poll_mask, RTL930X_SMI_PRVTE_POLLING_CTRL);
+
+	/* The following magic values are found in the port configuration, they seem to
+	 * define different ways of polling a PHY. The below is for the Aquantia PHYs of
+	 * the XGS1250 and the RTL8226 of the XGS1210 */
+	if (uses_usxgmii) {
+		sw_w32(0x01010000, RTL930X_SMI_10GPHY_POLLING_REG0_CFG);
+		sw_w32(0x01E7C400, RTL930X_SMI_10GPHY_POLLING_REG9_CFG);
+		sw_w32(0x01E7E820, RTL930X_SMI_10GPHY_POLLING_REG10_CFG);
+	}
+	if (uses_hisgmii) {
+		sw_w32(0x011FA400, RTL930X_SMI_10GPHY_POLLING_REG0_CFG);
+		sw_w32(0x013FA412, RTL930X_SMI_10GPHY_POLLING_REG9_CFG);
+		sw_w32(0x017FA414, RTL930X_SMI_10GPHY_POLLING_REG10_CFG);
 	}
 
-	// TODO: Set up RTL9300_SMI_10GPHY_POLLING_SEL_0 for Aquantia PHYs on e.g. XGS 1250
-
+	pr_debug("%s: RTL930X_SMI_GLB_CTRL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_GLB_CTRL));
+	pr_debug("%s: RTL930X_SMI_PORT0_15_POLLING_SEL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_PORT0_15_POLLING_SEL));
+	pr_debug("%s: RTL930X_SMI_PORT16_27_POLLING_SEL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_PORT16_27_POLLING_SEL));
+	pr_debug("%s: RTL930X_SMI_MAC_TYPE_CTRL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_MAC_TYPE_CTRL));
+	pr_debug("%s: RTL930X_SMI_10GPHY_POLLING_REG0_CFG %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG0_CFG));
+	pr_debug("%s: RTL930X_SMI_10GPHY_POLLING_REG9_CFG %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG9_CFG));
+	pr_debug("%s: RTL930X_SMI_10GPHY_POLLING_REG10_CFG %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG10_CFG));
+	pr_debug("%s: RTL930X_SMI_PRVTE_POLLING_CTRL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_PRVTE_POLLING_CTRL));
 	return 0;
 }
 
@@ -2016,6 +2076,23 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		if (of_property_read_bool(dn, "phy-is-integrated")) {
 			priv->phy_is_internal[pn] = true;
 		}
+	}
+
+	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
+	if (!dn) {
+		dev_err(&priv->pdev->dev, "No RTL switch node in DTS\n");
+		return -ENODEV;
+	}
+
+	for_each_node_by_name(dn, "port") {
+		if (of_property_read_u32(dn, "reg", &pn))
+			continue;
+		pr_info("%s Looking at port %d\n", __func__, pn);
+		if (pn > priv->cpu_port)
+			continue;
+		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
+			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
+		pr_info("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
 	}
 
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
@@ -2322,6 +2399,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	phylink = phylink_create(&priv->phylink_config, pdev->dev.fwnode,
 				 phy_mode, &rtl838x_phylink_ops);
+
 	if (IS_ERR(phylink)) {
 		err = PTR_ERR(phylink);
 		goto err_free;
