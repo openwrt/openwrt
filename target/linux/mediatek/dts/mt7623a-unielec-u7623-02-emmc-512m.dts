@@ -11,7 +11,7 @@
 	compatible = "unielec,u7623-02-emmc-512m", "unielec,u7623-02", "mediatek,mt7623";
 
 	chosen {
-		bootargs = "root=/dev/mmcblk0p2 rootfstype=squashfs,f2fs console=ttyS0,115200 blkdevparts=mmcblk0:3M@6M(recovery),256M@9M(root)";
+		bootargs = "earlycon=uart8250,mmio32,0x11004000 console=ttyS0,115200 blkdevparts=mmcblk0:3M@6M(recovery),256M@9M(root) rootfstype=squashfs root=/dev/mmcblk0p2";
 	};
 
 	memory@80000000 {
