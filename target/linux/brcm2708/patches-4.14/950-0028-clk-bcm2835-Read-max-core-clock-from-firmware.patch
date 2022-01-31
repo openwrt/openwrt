@@ -50,7 +50,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	spinlock_t regs_lock; /* spinlock for all clocks */
  
  	/*
-@@ -1032,6 +1036,30 @@ static unsigned long bcm2835_clock_get_r
+@@ -1027,6 +1031,30 @@ static unsigned long bcm2835_clock_get_r
  	return bcm2835_clock_rate_from_divisor(clock, parent_rate, div);
  }
  
@@ -81,7 +81,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  static void bcm2835_clock_wait_busy(struct bcm2835_clock *clock)
  {
  	struct bcm2835_cprman *cprman = clock->cprman;
-@@ -1321,7 +1349,7 @@ static int bcm2835_vpu_clock_is_on(struc
+@@ -1316,7 +1344,7 @@ static int bcm2835_vpu_clock_is_on(struc
   */
  static const struct clk_ops bcm2835_vpu_clock_clk_ops = {
  	.is_prepared = bcm2835_vpu_clock_is_on,
@@ -90,7 +90,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	.set_rate = bcm2835_clock_set_rate,
  	.determine_rate = bcm2835_clock_determine_rate,
  	.set_parent = bcm2835_clock_set_parent,
-@@ -2203,6 +2231,7 @@ static int bcm2835_clk_probe(struct plat
+@@ -2198,6 +2226,7 @@ static int bcm2835_clk_probe(struct plat
  	struct resource *res;
  	const struct bcm2835_clk_desc *desc;
  	const size_t asize = ARRAY_SIZE(clk_desc_array);
@@ -98,7 +98,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	size_t i;
  	u32 clk_id;
  	int ret;
-@@ -2220,6 +2249,14 @@ static int bcm2835_clk_probe(struct plat
+@@ -2215,6 +2244,14 @@ static int bcm2835_clk_probe(struct plat
  	if (IS_ERR(cprman->regs))
  		return PTR_ERR(cprman->regs);
  
