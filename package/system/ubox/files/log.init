@@ -9,8 +9,6 @@ PIDCOUNT=0
 USE_PROCD=1
 PROG=/sbin/logread
 
-extra_command "start_file" "Start writing to log file"
-
 validate_log_section()
 {
 	uci_load_validate system system "$1" "$2" \
@@ -90,7 +88,7 @@ start_service_remote()
 
 register_mount_trigger()
 {
-	[ -n "${log_file}" ] && procd_add_action_mount_trigger start_file "${log_file}"
+	[ -n "${log_file}" ] && procd_add_action_mount_trigger start "${log_file}"
 }
 
 service_triggers()
@@ -107,12 +105,6 @@ start_service()
 	config_foreach validate_log_daemon system start_service_daemon
 	config_foreach validate_log_section system start_service_file
 	config_foreach validate_log_section system start_service_remote
-}
-
-start_file()
-{
-	config_load system
-	config_foreach validate_log_section system start_service_file
 }
 
 boot() {
