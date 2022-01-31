@@ -1,7 +1,7 @@
-define Build/dw-headers
-	head -c 4 $@ >> $@.tmp && \
-	head -c 8 /dev/zero >> $@.tmp && \
-	tail -c +9 $@ >> $@.tmp && \
+define Build/dongwon-header
+	head -c 4 $@ > $@.tmp
+	head -c 8 /dev/zero >> $@.tmp
+	tail -c +9 $@ >> $@.tmp
 	( \
 		header_crc="$$(head -c 68 $@.tmp | gzip -c | \
 			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
@@ -99,8 +99,8 @@ define Device/dongwon_dw02-412h
   KERNEL_SIZE := 8192k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | dw-headers
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | dw-headers
+  KERNEL := $$(KERNEL) | dongwon-header
+  KERNEL_INITRAMFS := $$(KERNEL)
   UBINIZE_OPTS := -E 5
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
