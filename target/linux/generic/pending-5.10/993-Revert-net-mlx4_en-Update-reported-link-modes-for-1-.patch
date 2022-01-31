@@ -1,0 +1,38 @@
+From abf85745d2ded0ecd29e5b04a7d8a6fb6d62aff8 Mon Sep 17 00:00:00 2001
+From: nasbdh9 <nabsdh9@gmail.com>
+Date: Mon, 31 Jan 2022 16:57:18 +0800
+Subject: [PATCH] Revert "net/mlx4_en: Update reported link modes for 1/10G"
+
+This reverts commit 6d22a96d12d736971d5b3e5007956fec5724f27e.
+---
+ drivers/net/ethernet/mellanox/mlx4/en_ethtool.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/mellanox/mlx4/en_ethtool.c b/drivers/net/ethernet/mellanox/mlx4/en_ethtool.c
+index 01275c376721..3616b77caa0a 100644
+--- a/drivers/net/ethernet/mellanox/mlx4/en_ethtool.c
++++ b/drivers/net/ethernet/mellanox/mlx4/en_ethtool.c
+@@ -663,7 +663,7 @@ void __init mlx4_en_init_ptys2ethtool_map(void)
+ 	MLX4_BUILD_PTYS2ETHTOOL_CONFIG(MLX4_1000BASE_T, SPEED_1000,
+ 				       ETHTOOL_LINK_MODE_1000baseT_Full_BIT);
+ 	MLX4_BUILD_PTYS2ETHTOOL_CONFIG(MLX4_1000BASE_CX_SGMII, SPEED_1000,
+-				       ETHTOOL_LINK_MODE_1000baseX_Full_BIT);
++				       ETHTOOL_LINK_MODE_1000baseKX_Full_BIT);
+ 	MLX4_BUILD_PTYS2ETHTOOL_CONFIG(MLX4_1000BASE_KX, SPEED_1000,
+ 				       ETHTOOL_LINK_MODE_1000baseKX_Full_BIT);
+ 	MLX4_BUILD_PTYS2ETHTOOL_CONFIG(MLX4_10GBASE_T, SPEED_10000,
+@@ -675,9 +675,9 @@ void __init mlx4_en_init_ptys2ethtool_map(void)
+ 	MLX4_BUILD_PTYS2ETHTOOL_CONFIG(MLX4_10GBASE_KR, SPEED_10000,
+ 				       ETHTOOL_LINK_MODE_10000baseKR_Full_BIT);
+ 	MLX4_BUILD_PTYS2ETHTOOL_CONFIG(MLX4_10GBASE_CR, SPEED_10000,
+-				       ETHTOOL_LINK_MODE_10000baseCR_Full_BIT);
++				       ETHTOOL_LINK_MODE_10000baseKR_Full_BIT);
+ 	MLX4_BUILD_PTYS2ETHTOOL_CONFIG(MLX4_10GBASE_SR, SPEED_10000,
+-				       ETHTOOL_LINK_MODE_10000baseSR_Full_BIT);
++				       ETHTOOL_LINK_MODE_10000baseKR_Full_BIT);
+ 	MLX4_BUILD_PTYS2ETHTOOL_CONFIG(MLX4_20GBASE_KR2, SPEED_20000,
+ 				       ETHTOOL_LINK_MODE_20000baseMLD2_Full_BIT,
+ 				       ETHTOOL_LINK_MODE_20000baseKR2_Full_BIT);
+-- 
+2.25.1
+
