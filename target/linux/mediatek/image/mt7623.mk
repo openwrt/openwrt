@@ -57,12 +57,7 @@ define Build/mt7623-mbr
 	ptgen -o $@.tmp -h 4 -s 63 -a 0 -l 1024 \
 			-t 0x41	-N uboot	-p 1M@$(UBOOT_OFFSET) \
 			-t 0xea	-N recovery	-p 40M@4M \
-		$(if $(findstring sdmmc,$1), \
-			-t 0x2e -N production	-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@48M \
-		) \
-		$(if $(findstring emmc,$1), \
-			-t 0x2e -N production	-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@48M \
-		)
+			-t 0x2e -N production	-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@48M
 
 	echo -en \
 		$(if $(findstring sdmmc,$1),"SDMMC_BOOT\x00\x00\x01\x00\x00\x00\x00\x02\x00\x00") \
