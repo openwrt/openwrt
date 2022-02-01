@@ -1662,12 +1662,15 @@ static int rtl930x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 		return rtl930x_read_sds_phy(priv->sds_id[mii_id], 0, regnum);
 
 	if (regnum & MII_ADDR_C45) {
-		regnum &= ~MII_ADDR_C45;
-		err = rtl930x_read_mmd_phy(mii_id, regnum >> 16, regnum & 0xffff, &val);
-		pr_debug("MMD: %d register %d read %x, err %d\n", mii_id, regnum & 0xffff, val, err);
+		err = rtl930x_read_mmd_phy(mii_id,
+					   mdiobus_c45_devad(regnum),
+					   regnum, &val);
+		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
+			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+			 val, err);
 	} else {
 		err = rtl930x_read_phy(mii_id, 0, regnum, &val);
-		pr_debug("PHY: %d register %d read %x, err %d\n", mii_id, regnum, val, err);
+		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
 	}
 	if (err)
 		return err;
@@ -1692,12 +1695,16 @@ static int rtl931x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 		}
 	} else {
 		if (regnum & MII_ADDR_C45) {
-			regnum &= ~MII_ADDR_C45;
-			err = rtl931x_read_mmd_phy(mii_id, regnum >> 16, regnum & 0xffff, &val);
+			err = rtl931x_read_mmd_phy(mii_id,
+						   mdiobus_c45_devad(regnum),
+						   regnum, &val);
+			pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
+				 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+				 val, err);
 		} else {
 			err = rtl931x_read_phy(mii_id, 0, regnum, &val);
+			pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
 		}
-		pr_debug("%s: phy %d, register %d value %x\n", __func__, mii_id, regnum, val);
 	}
 
 	if (err)
@@ -1710,6 +1717,7 @@ static int rtl838x_mdio_write(struct mii_bus *bus, int mii_id,
 {
 	u32 offset = 0;
 	struct rtl838x_eth_priv *priv = bus->priv;
+	int err;
 
 	if (mii_id >= 24 && mii_id <= 27 && priv->id == 0x8380) {
 		if (mii_id == 26)
@@ -1717,45 +1725,65 @@ static int rtl838x_mdio_write(struct mii_bus *bus, int mii_id,
 		sw_w32(value, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
 		return 0;
 	}
-	return rtl838x_write_phy(mii_id, 0, regnum, value);
+	err = rtl838x_write_phy(mii_id, 0, regnum, value);
+	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+	return err;
 }
 
 static int rtl839x_mdio_write(struct mii_bus *bus, int mii_id,
 			      int regnum, u16 value)
 {
 	struct rtl838x_eth_priv *priv = bus->priv;
+	int err;
 
 	if (mii_id >= 48 && mii_id <= 49 && priv->id == 0x8393)
 		return rtl839x_write_sds_phy(mii_id, regnum, value);
 
-	return rtl839x_write_phy(mii_id, 0, regnum, value);
+	err = rtl839x_write_phy(mii_id, 0, regnum, value);
+	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+	return err;
 }
 
 static int rtl930x_mdio_write(struct mii_bus *bus, int mii_id,
 			      int regnum, u16 value)
 {
 	struct rtl838x_eth_priv *priv = bus->priv;
+	int err;
 
 	if (priv->sds_id[mii_id] >= 0)
 		return rtl930x_write_sds_phy(priv->sds_id[mii_id], 0, regnum, value);
 
-	if (regnum & MII_ADDR_C45) {
-		regnum &= ~MII_ADDR_C45;
-		return rtl930x_write_mmd_phy(mii_id, regnum >> 16, regnum & 0xffff, value);
-	}
+	if (regnum & MII_ADDR_C45)
+		return rtl930x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
+					     regnum, value);
 
-	return rtl930x_write_phy(mii_id, 0, regnum, value);
+	err = rtl930x_write_phy(mii_id, 0, regnum, value);
+	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+	return err;
 }
 
 static int rtl931x_mdio_write(struct mii_bus *bus, int mii_id,
 			      int regnum, u16 value)
 {
 	struct rtl838x_eth_priv *priv = bus->priv;
+	int err;
 
-	if (priv->sds_id[mii_id] >= 0)
+	if (priv->sds_id[mii_id] >= 0 && mii_id >= 52)
 		return rtl931x_write_sds_phy(priv->sds_id[mii_id], 0, regnum, value);
 
-	return rtl931x_write_phy(mii_id, 0, regnum, value);
+	if (regnum & MII_ADDR_C45) {
+		err = rtl931x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
+					    regnum, value);
+		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
+			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+			 value, err);
+
+		return err;
+	}
+
+	err = rtl931x_write_phy(mii_id, 0, regnum, value);
+	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+	return err;
 }
 
 static int rtl838x_mdio_reset(struct mii_bus *bus)
@@ -2033,14 +2061,14 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		priv->mii_bus->read = rtl930x_mdio_read;
 		priv->mii_bus->write = rtl930x_mdio_write;
 		priv->mii_bus->reset = rtl930x_mdio_reset;
-	//	priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45; TODO for linux 5.9
+		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->mii_bus->name = "rtl931x-eth-mdio";
 		priv->mii_bus->read = rtl931x_mdio_read;
 		priv->mii_bus->write = rtl931x_mdio_write;
 		priv->mii_bus->reset = rtl931x_mdio_reset;
-//		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;  TODO for linux 5.9
+		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
 		break;
 	}
 	priv->mii_bus->priv = priv;
