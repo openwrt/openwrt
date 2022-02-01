@@ -370,7 +370,13 @@ int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 {
 	int err = 0;
 	u32 v;
-	int type = 2; // TODO:2, for C45 PHYs need to set to 1 sometimes
+	/* Select PHY register type
+	 * If select 1G/10G MMD register type, registers EXT_PAGE, MAIN_PAGE and REG settings are don’t care.
+	 * 0x0  Normal register (Clause 22)
+	 * 0x1: 1G MMD register (MMD via Clause 22 registers 13 and 14)
+	 * 0x2: 10G MMD register (MMD via Clause 45)
+	 */
+	int type = (regnum & MII_ADDR_C45)?2:1;
 
 	mutex_lock(&smi_lock);
 
@@ -378,7 +384,7 @@ int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	sw_w32(port << 5, RTL931X_SMI_INDRT_ACCESS_BC_PHYID_CTRL);
 
 	// Set MMD device number and register to write to
-	sw_w32(devnum << 16 | (regnum & 0xffff), RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
+	sw_w32(devnum << 16 | mdiobus_c45_regad(regnum), RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
 
 	v = type << 2 | BIT(0); // MMD-access-type | EXEC
 	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
@@ -393,7 +399,8 @@ int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 
 	*val = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_3) >> 16;
 
-	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, *val, err);
+	pr_debug("%s: port %d, dev: %x, regnum: %x, val: %x (err %d)\n", __func__,
+		 port, devnum, mdiobus_c45_regad(regnum), *val, err);
 
 	mutex_unlock(&smi_lock);
 
@@ -407,18 +414,21 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	int err = 0;
 	u32 v;
-	int type = 1; // TODO: For C45 PHYs need to set to 2
+	int type = (regnum & MII_ADDR_C45)?2:1;
+	u64 pm;
 
 	mutex_lock(&smi_lock);
 
-	// Set PHY to access via port-number
-	sw_w32(port << 5, RTL931X_SMI_INDRT_ACCESS_BC_PHYID_CTRL);
+	// Set PHY to access via port-mask
+	pm = (u64)1 << port;
+	sw_w32((u32)pm, RTL931X_SMI_INDRT_ACCESS_CTRL_2);
+	sw_w32((u32)(pm >> 32), RTL931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
 
 	// Set data to write
 	sw_w32_mask(0xffff, val, RTL931X_SMI_INDRT_ACCESS_CTRL_3);
 
 	// Set MMD device number and register to write to
-	sw_w32(devnum << 16 | (regnum & 0xffff), RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
+	sw_w32(devnum << 16 | mdiobus_c45_regad(regnum), RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
 
 	v = BIT(4) | type << 2 | BIT(0); // WRITE | MMD-access-type | EXEC
 	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
@@ -427,7 +437,8 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 		v = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0);
 	} while (v & BIT(0));
 
-	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, val, err);
+	pr_debug("%s: port %d, dev: %x, regnum: %x, val: %x (err %d)\n", __func__,
+		 port, devnum, mdiobus_c45_regad(regnum), val, err);
 	mutex_unlock(&smi_lock);
 	return err;
 }
