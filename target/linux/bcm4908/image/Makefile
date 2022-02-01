@@ -87,7 +87,7 @@ endef
 TARGET_DEVICES += asus_gt-ac5300
 
 define Device/netgear_r8000p
-  DEVICE_VENDOR := Netgear
+  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := R8000P
   DEVICE_DTS := broadcom/bcm4908/bcm4906-netgear-r8000p
   IMAGES := bin
