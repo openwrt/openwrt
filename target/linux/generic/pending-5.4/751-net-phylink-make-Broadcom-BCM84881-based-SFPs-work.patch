@@ -20,7 +20,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1842,10 +1842,20 @@ static void phylink_sfp_link_up(void *up
+@@ -1847,10 +1847,20 @@ static void phylink_sfp_link_up(void *up
  	phylink_run_resolve(pl);
  }
  
@@ -41,7 +41,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int ret;
  
  	/*
-@@ -1857,9 +1867,13 @@ static int phylink_sfp_connect_phy(void
+@@ -1862,9 +1872,13 @@ static int phylink_sfp_connect_phy(void
  	 */
  	phy_support_asym_pause(phy);
  

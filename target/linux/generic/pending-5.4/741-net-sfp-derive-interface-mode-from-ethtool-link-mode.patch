@@ -29,7 +29,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		dev_err(&phydev->mdio.dev, "incompatible SFP module inserted\n");
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1718,7 +1718,7 @@ static int phylink_sfp_module_insert(voi
+@@ -1723,7 +1723,7 @@ static int phylink_sfp_module_insert(voi
  
  	linkmode_copy(support1, support);
  

@@ -37,7 +37,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  #define phylink_printk(level, pl, fmt, ...) \
-@@ -1688,7 +1691,7 @@ static void phylink_sfp_detach(void *ups
+@@ -1693,7 +1696,7 @@ static void phylink_sfp_detach(void *ups
  	pl->netdev->sfp_bus = NULL;
  }
  
@@ -46,7 +46,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			      const unsigned long *supported,
  			      const unsigned long *advertising)
  {
-@@ -1762,7 +1765,7 @@ static int phylink_sfp_config(struct phy
+@@ -1767,7 +1770,7 @@ static int phylink_sfp_config(struct phy
  			     phy_modes(config.interface));
  	}
  
@@ -55,7 +55,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (changed && !test_bit(PHYLINK_DISABLE_STOPPED,
  				 &pl->phylink_disable_state))
-@@ -1775,15 +1778,20 @@ static int phylink_sfp_module_insert(voi
+@@ -1780,15 +1783,20 @@ static int phylink_sfp_module_insert(voi
  				     const struct sfp_eeprom_id *id)
  {
  	struct phylink *pl = upstream;
@@ -80,7 +80,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static int phylink_sfp_module_start(void *upstream)
-@@ -1791,10 +1799,19 @@ static int phylink_sfp_module_start(void
+@@ -1796,10 +1804,19 @@ static int phylink_sfp_module_start(void
  	struct phylink *pl = upstream;
  
  	/* If this SFP module has a PHY, start the PHY now. */
@@ -103,7 +103,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static void phylink_sfp_module_stop(void *upstream)
-@@ -1828,10 +1845,26 @@ static void phylink_sfp_link_up(void *up
+@@ -1833,10 +1850,26 @@ static void phylink_sfp_link_up(void *up
  static int phylink_sfp_connect_phy(void *upstream, struct phy_device *phy)
  {
  	struct phylink *pl = upstream;

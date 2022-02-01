@@ -94,7 +94,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		case MLO_AN_PHY:
  			link_state = pl->phy_state;
  			phylink_resolve_flow(pl, &link_state);
-@@ -649,7 +650,7 @@ struct phylink *phylink_create(struct ph
+@@ -654,7 +655,7 @@ struct phylink *phylink_create(struct ph
  		return ERR_PTR(ret);
  	}
  
@@ -103,7 +103,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		ret = phylink_parse_fixedlink(pl, fwnode);
  		if (ret < 0) {
  			kfree(pl);
-@@ -657,6 +658,8 @@ struct phylink *phylink_create(struct ph
+@@ -662,6 +663,8 @@ struct phylink *phylink_create(struct ph
  		}
  	}
  
@@ -112,7 +112,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	ret = phylink_register_sfp(pl, fwnode);
  	if (ret < 0) {
  		kfree(pl);
-@@ -770,8 +773,8 @@ static int phylink_bringup_phy(struct ph
+@@ -775,8 +778,8 @@ static int phylink_bringup_phy(struct ph
  static int phylink_attach_phy(struct phylink *pl, struct phy_device *phy,
  			      phy_interface_t interface)
  {
@@ -123,7 +123,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		     phy_interface_mode_is_8023z(interface))))
  		return -EINVAL;
  
-@@ -838,8 +841,8 @@ int phylink_of_phy_connect(struct phylin
+@@ -843,8 +846,8 @@ int phylink_of_phy_connect(struct phylin
  	int ret;
  
  	/* Fixed links and 802.3z are handled without needing a PHY */
@@ -134,7 +134,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	     phy_interface_mode_is_8023z(pl->link_interface)))
  		return 0;
  
-@@ -850,7 +853,7 @@ int phylink_of_phy_connect(struct phylin
+@@ -855,7 +858,7 @@ int phylink_of_phy_connect(struct phylin
  		phy_node = of_parse_phandle(dn, "phy-device", 0);
  
  	if (!phy_node) {
@@ -143,7 +143,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			return -ENODEV;
  		return 0;
  	}
-@@ -913,7 +916,7 @@ int phylink_fixed_state_cb(struct phylin
+@@ -918,7 +921,7 @@ int phylink_fixed_state_cb(struct phylin
  	/* It does not make sense to let the link be overriden unless we use
  	 * MLO_AN_FIXED
  	 */
@@ -152,7 +152,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		return -EINVAL;
  
  	mutex_lock(&pl->state_mutex);
-@@ -963,7 +966,7 @@ void phylink_start(struct phylink *pl)
+@@ -968,7 +971,7 @@ void phylink_start(struct phylink *pl)
  	ASSERT_RTNL();
  
  	phylink_info(pl, "configuring for %s/%s link mode\n",
@@ -161,7 +161,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		     phy_modes(pl->link_config.interface));
  
  	/* Always set the carrier off */
-@@ -986,7 +989,7 @@ void phylink_start(struct phylink *pl)
+@@ -991,7 +994,7 @@ void phylink_start(struct phylink *pl)
  	clear_bit(PHYLINK_DISABLE_STOPPED, &pl->phylink_disable_state);
  	phylink_run_resolve(pl);
  
@@ -170,7 +170,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		int irq = gpiod_to_irq(pl->link_gpio);
  
  		if (irq > 0) {
-@@ -1001,7 +1004,7 @@ void phylink_start(struct phylink *pl)
+@@ -1006,7 +1009,7 @@ void phylink_start(struct phylink *pl)
  		if (irq <= 0)
  			mod_timer(&pl->link_poll, jiffies + HZ);
  	}
@@ -179,7 +179,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		mod_timer(&pl->link_poll, jiffies + HZ);
  	if (pl->phydev)
  		phy_start(pl->phydev);
-@@ -1128,7 +1131,7 @@ int phylink_ethtool_ksettings_get(struct
+@@ -1133,7 +1136,7 @@ int phylink_ethtool_ksettings_get(struct
  
  	linkmode_copy(kset->link_modes.supported, pl->supported);
  
@@ -188,7 +188,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	case MLO_AN_FIXED:
  		/* We are using fixed settings. Report these as the
  		 * current link settings - and note that these also
-@@ -1200,7 +1203,7 @@ int phylink_ethtool_ksettings_set(struct
+@@ -1205,7 +1208,7 @@ int phylink_ethtool_ksettings_set(struct
  		/* If we have a fixed link (as specified by firmware), refuse
  		 * to change link parameters.
  		 */
@@ -197,7 +197,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		    (s->speed != pl->link_config.speed ||
  		     s->duplex != pl->link_config.duplex))
  			return -EINVAL;
-@@ -1212,7 +1215,7 @@ int phylink_ethtool_ksettings_set(struct
+@@ -1217,7 +1220,7 @@ int phylink_ethtool_ksettings_set(struct
  		__clear_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, config.advertising);
  	} else {
  		/* If we have a fixed link, refuse to enable autonegotiation */
@@ -206,7 +206,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			return -EINVAL;
  
  		config.speed = SPEED_UNKNOWN;
-@@ -1254,7 +1257,7 @@ int phylink_ethtool_ksettings_set(struct
+@@ -1259,7 +1262,7 @@ int phylink_ethtool_ksettings_set(struct
  	 * configuration. For a fixed link, this isn't able to change any
  	 * parameters, which just leaves inband mode.
  	 */
@@ -215,7 +215,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	    !test_bit(PHYLINK_DISABLE_STOPPED, &pl->phylink_disable_state)) {
  		phylink_mac_config(pl, &pl->link_config);
  		phylink_mac_an_restart(pl);
-@@ -1344,7 +1347,7 @@ int phylink_ethtool_set_pauseparam(struc
+@@ -1349,7 +1352,7 @@ int phylink_ethtool_set_pauseparam(struc
  				   pause->tx_pause);
  	} else if (!test_bit(PHYLINK_DISABLE_STOPPED,
  			     &pl->phylink_disable_state)) {
@@ -224,7 +224,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		case MLO_AN_FIXED:
  			/* Should we allow fixed links to change against the config? */
  			phylink_resolve_flow(pl, config);
-@@ -1551,7 +1554,7 @@ static int phylink_mii_read(struct phyli
+@@ -1556,7 +1559,7 @@ static int phylink_mii_read(struct phyli
  	struct phylink_link_state state;
  	int val = 0xffff;
  
@@ -233,7 +233,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	case MLO_AN_FIXED:
  		if (phy_id == 0) {
  			phylink_get_fixed_state(pl, &state);
-@@ -1579,7 +1582,7 @@ static int phylink_mii_read(struct phyli
+@@ -1584,7 +1587,7 @@ static int phylink_mii_read(struct phyli
  static int phylink_mii_write(struct phylink *pl, unsigned int phy_id,
  			     unsigned int reg, unsigned int val)
  {
@@ -242,7 +242,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	case MLO_AN_FIXED:
  		break;
  
-@@ -1753,10 +1756,10 @@ static int phylink_sfp_module_insert(voi
+@@ -1758,10 +1761,10 @@ static int phylink_sfp_module_insert(voi
  		linkmode_copy(pl->link_config.advertising, config.advertising);
  	}
  

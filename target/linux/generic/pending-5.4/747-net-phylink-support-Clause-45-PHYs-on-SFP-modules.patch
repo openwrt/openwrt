@@ -18,7 +18,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -712,7 +712,8 @@ static void phylink_phy_change(struct ph
+@@ -717,7 +717,8 @@ static void phylink_phy_change(struct ph
  		    phy_duplex_to_str(phydev->duplex));
  }
  
@@ -28,7 +28,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  {
  	struct phylink_link_state config;
  	__ETHTOOL_DECLARE_LINK_MODE_MASK(supported);
-@@ -730,7 +731,7 @@ static int phylink_bringup_phy(struct ph
+@@ -735,7 +736,7 @@ static int phylink_bringup_phy(struct ph
  	memset(&config, 0, sizeof(config));
  	linkmode_copy(supported, phy->supported);
  	linkmode_copy(config.advertising, phy->advertising);
@@ -37,7 +37,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  
  	ret = phylink_validate(pl, supported, &config);
  	if (ret)
-@@ -746,6 +747,7 @@ static int phylink_bringup_phy(struct ph
+@@ -751,6 +752,7 @@ static int phylink_bringup_phy(struct ph
  	mutex_lock(&phy->lock);
  	mutex_lock(&pl->state_mutex);
  	pl->phydev = phy;
@@ -45,7 +45,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	linkmode_copy(pl->supported, supported);
  	linkmode_copy(pl->link_config.advertising, config.advertising);
  
-@@ -808,7 +810,7 @@ int phylink_connect_phy(struct phylink *
+@@ -813,7 +815,7 @@ int phylink_connect_phy(struct phylink *
  	if (ret < 0)
  		return ret;
  
@@ -54,7 +54,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	if (ret)
  		phy_detach(phy);
  
-@@ -861,7 +863,7 @@ int phylink_of_phy_connect(struct phylin
+@@ -866,7 +868,7 @@ int phylink_of_phy_connect(struct phylin
  	if (!phy_dev)
  		return -ENODEV;
  
@@ -63,7 +63,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	if (ret)
  		phy_detach(phy_dev);
  
-@@ -1814,13 +1816,22 @@ static void phylink_sfp_link_up(void *up
+@@ -1819,13 +1821,22 @@ static void phylink_sfp_link_up(void *up
  static int phylink_sfp_connect_phy(void *upstream, struct phy_device *phy)
  {
  	struct phylink *pl = upstream;

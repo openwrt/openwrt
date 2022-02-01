@@ -16,7 +16,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1772,6 +1772,26 @@ static int phylink_sfp_module_insert(voi
+@@ -1777,6 +1777,26 @@ static int phylink_sfp_module_insert(voi
  	return ret;
  }
  
@@ -43,7 +43,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  static void phylink_sfp_link_down(void *upstream)
  {
  	struct phylink *pl = upstream;
-@@ -1807,6 +1827,8 @@ static const struct sfp_upstream_ops sfp
+@@ -1812,6 +1832,8 @@ static const struct sfp_upstream_ops sfp
  	.attach = phylink_sfp_attach,
  	.detach = phylink_sfp_detach,
  	.module_insert = phylink_sfp_module_insert,
