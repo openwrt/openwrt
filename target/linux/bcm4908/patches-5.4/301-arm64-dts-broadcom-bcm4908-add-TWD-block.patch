@@ -17,16 +17,10 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908.dtsi
-@@ -273,9 +273,18 @@
- 		#size-cells = <1>;
- 		ranges = <0x00 0x00 0xff800000 0x3000>;
- 
--		timer: timer@400 {
--			compatible = "brcm,bcm6328-timer", "syscon";
--			reg = <0x400 0x3c>;
-+		twd: timer-mfd@400 {
-+			compatible = "brcm,bcm4908-twd", "brcm,twd", "simple-mfd", "syscon";
-+			reg = <0x400 0x4c>;
+@@ -276,6 +276,15 @@
+ 		twd: timer-mfd@400 {
+ 			compatible = "brcm,bcm4908-twd", "simple-mfd", "syscon";
+ 			reg = <0x400 0x4c>;
 +			ranges = <0x0 0x400 0x4c>;
 +
 +			#address-cells = <1>;
@@ -39,12 +33,3 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  		};
  
  		gpio0: gpio-controller@500 {
-@@ -330,7 +339,7 @@
- 
- 	reboot {
- 		compatible = "syscon-reboot";
--		regmap = <&timer>;
-+		regmap = <&twd>;
- 		offset = <0x34>;
- 		mask = <1>;
- 	};
