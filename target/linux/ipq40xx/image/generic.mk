@@ -784,7 +784,7 @@ TARGET_DEVICES += netgear_srs60
 define Device/netgear_wac510
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
-	DEVICE_VENDOR := Netgear
+	DEVICE_VENDOR := NETGEAR
 	DEVICE_MODEL := WAC510
 	SOC := qcom-ipq4018
 	DEVICE_DTS_CONFIG := config@5
