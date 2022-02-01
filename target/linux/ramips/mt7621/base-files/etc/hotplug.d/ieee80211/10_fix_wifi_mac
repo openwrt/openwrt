@@ -25,12 +25,6 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1 > /sys${DEVPATH}/macaddress
 		;;
-	iptime,ax2004m)
-		if [ "$PHYNBR" = "1" ]; then
-			base_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 3)
-			macaddr_setbit_la "$base_mac" > /sys${DEVPATH}/macaddress
-		fi
-		;;
 	jcg,q20)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0x4)" > /sys${DEVPATH}/macaddress

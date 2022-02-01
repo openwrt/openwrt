@@ -295,11 +295,6 @@ define Build/install-dtb
 	)
 endef
 
-define Build/iptime-crc32
-	$(STAGING_DIR_HOST)/bin/iptime-crc32 $(1) $@ $@.new
-	mv $@.new $@
-endef
-
 define Build/iptime-naspkg
 	$(STAGING_DIR_HOST)/bin/iptime-naspkg $(1) $@ $@.new
 	mv $@.new $@

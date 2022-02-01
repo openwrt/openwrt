@@ -817,26 +817,6 @@ define Device/iptime_a8004t
 endef
 TARGET_DEVICES += iptime_a8004t
 
-define Device/iptime_ax2004m
-  $(Device/dsa-migration)
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 121344k
-  UBINIZE_OPTS := -E 5
-  KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGES += recovery.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size | iptime-crc32 ax2004m
-  DEVICE_VENDOR := ipTIME
-  DEVICE_MODEL := AX2004M
-  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
-endef
-TARGET_DEVICES += iptime_ax2004m
-
 define Device/iptime_t5004
   $(Device/dsa-migration)
   BLOCKSIZE := 128k
