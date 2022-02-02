@@ -2400,6 +2400,67 @@ void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 	sw_w32(newmask << l3shift, RTL930X_TRK_HASH_CTRL + (algoidx << 2));
 }
 
+static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
+{
+	int i, pos;
+	u32 v, pm = 0, set;
+	u32 setlen;
+	const __be32 *led_set;
+	char set_name[9];
+	struct device_node *node;
+
+	pr_info("%s called\n", __func__);
+	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+	if (!node) {
+		pr_info("%s No compatible LED node found\n", __func__);
+		return;
+	}
+
+	for (i= 0; i < priv->cpu_port; i++) {
+		pos = (i << 1) % 32;
+		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
+
+		if (!priv->ports[i].phy)
+			continue;
+
+		v = 0x1;
+		if (priv->ports[i].is10G)
+			v = 0x3;
+		if (priv->ports[i].phy_is_integrated)
+			v = 0x1;
+		sw_w32_mask(0x3 << pos, v << pos, RTL930X_LED_PORT_NUM_CTRL(i));
+
+		pm |= BIT(i);
+
+		set = priv->ports[i].led_set;
+		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
+	}
+
+	for (i = 0; i < 4; i++) {
+		sprintf(set_name, "led_set%d", i);
+		led_set = of_get_property(node, set_name, &setlen);
+		if (!led_set || setlen != 16)
+			break;
+		v = be32_to_cpup(led_set) << 16 | be32_to_cpup(led_set + 1);
+		sw_w32(v, RTL930X_LED_SET0_0_CTRL - 4 - i * 8);
+		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
+		sw_w32(v, RTL930X_LED_SET0_0_CTRL - i * 8);
+	}
+
+	// Set LED mode to serial (0x1)
+	sw_w32_mask(0x3, 0x1, RTL930X_LED_GLB_CTRL);
+
+	// Set port type masks
+	sw_w32(pm, RTL930X_LED_PORT_COPR_MASK_CTRL);
+	sw_w32(pm, RTL930X_LED_PORT_FIB_MASK_CTRL);
+	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
+
+	for (i = 0; i < 24; i++)
+		pr_info("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
+}
+
 const struct rtl838x_reg rtl930x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -2486,4 +2547,5 @@ const struct rtl838x_reg rtl930x_reg = {
 	.set_l3_router_mac = rtl930x_set_l3_router_mac,
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
 	.set_distribution_algorithm = rtl930x_set_distribution_algorithm,
+	.led_init = rtl930x_led_init,
 };

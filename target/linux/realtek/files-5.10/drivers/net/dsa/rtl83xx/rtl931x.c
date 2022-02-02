@@ -1424,7 +1424,7 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 	// 4: Ingress Flow Table 3, 5: Egress flow table 0
 	for (i = 0; i < priv->n_pie_blocks; i++) {
 		int pos = (i % 10) * 3;
-		u32 r = RTL930X_PIE_BLK_PHASE_CTRL + 4 * (i / 10);
+		u32 r = RTL931X_PIE_BLK_PHASE_CTRL + 4 * (i / 10);
 
 		if (i < priv->n_pie_blocks / 2)
 			sw_w32_mask(0x7 << pos, 0, r);
@@ -1527,6 +1527,68 @@ void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 	sw_w32(newmask << l3shift, RTL931X_TRK_HASH_CTRL + (algoidx << 2));
 }
 
+static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
+{
+	int i, pos;
+	u32 v, set;
+	u64 pm_copper = 0, pm_fiber = 0;
+	u32 setlen;
+	const __be32 *led_set;
+	char set_name[9];
+	struct device_node *node;
+
+	pr_info("%s called\n", __func__);
+	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+	if (!node) {
+		pr_info("%s No compatible LED node found\n", __func__);
+		return;
+	}
+
+	for (i= 0; i < priv->cpu_port; i++) {
+		pos = (i << 1) % 32;
+		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
+
+		if (!priv->ports[i].phy)
+			continue;
+
+		v = 0x1; // Found on the EdgeCore, but we do not have any HW description
+		sw_w32_mask(0x3 << pos, v << pos, RTL931X_LED_PORT_NUM_CTRL(i));
+
+		if (priv->ports[i].phy_is_integrated)
+		pm_fiber |= BIT_ULL(i);
+			else
+		pm_copper |= BIT_ULL(i);
+
+		set = priv->ports[i].led_set;
+		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
+	}
+
+	for (i = 0; i < 4; i++) {
+		sprintf(set_name, "led_set%d", i);
+		pr_info(">%s<\n", set_name);
+		led_set = of_get_property(node, set_name, &setlen);
+		if (!led_set || setlen != 16)
+			break;
+		v = be32_to_cpup(led_set) << 16 | be32_to_cpup(led_set + 1);
+		sw_w32(v, RTL931X_LED_SET0_0_CTRL - 4 - i * 8);
+		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
+		sw_w32(v, RTL931X_LED_SET0_0_CTRL - i * 8);
+	}
+
+	// Set LED mode to serial (0x1)
+	sw_w32_mask(0x3, 0x1, RTL931X_LED_GLB_CTRL);
+
+	rtl839x_set_port_reg_le(pm_copper, RTL931X_LED_PORT_COPR_MASK_CTRL);
+	rtl839x_set_port_reg_le(pm_fiber, RTL931X_LED_PORT_FIB_MASK_CTRL);
+	rtl839x_set_port_reg_le(pm_copper | pm_fiber, RTL931X_LED_PORT_COMBO_MASK_CTRL);
+
+	for (i = 0; i < 32; i++)
+		pr_info("%s %08x: %08x\n",__func__, 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
+
+}
+
 const struct rtl838x_reg rtl931x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -1594,5 +1656,6 @@ const struct rtl838x_reg rtl931x_reg = {
 	.pie_rule_rm = rtl931x_pie_rule_rm,
 	.l2_learning_setup = rtl931x_l2_learning_setup,
 	.l3_setup = rtl931x_l3_setup,
+	.led_init = rtl931x_led_init,
 };
 

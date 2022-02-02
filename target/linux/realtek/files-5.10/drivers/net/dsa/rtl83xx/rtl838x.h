@@ -518,6 +518,7 @@ typedef enum {
 #define RTL931X_ACL_PORT_LOOKUP_CTRL(p)		(0x44F8 + (((p) << 2)))
 
 #define RTL930X_PIE_BLK_PHASE_CTRL		(0xA5A4)
+#define RTL931X_PIE_BLK_PHASE_CTRL		(0x4184)
 
 // PIE actions
 #define PIE_ACT_COPY_TO_PORT	2
@@ -553,6 +554,23 @@ typedef enum {
 #define RTL930X_L3_HW_LU_KEY_IP_CTRL		(0xACA0)
 #define RTL930X_L3_HW_LU_CTRL			(0xACC0)
 #define RTL930X_L3_IP_ROUTE_CTRL		0xab44
+
+/* Port LED Control */
+#define RTL930X_LED_PORT_NUM_CTRL(p)		(0xCC04 + (((p >> 4) << 2)))
+#define RTL930X_LED_SET0_0_CTRL			(0xCC28)
+#define RTL930X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0xCC2C + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0xCC34 + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_COPR_MASK_CTRL		(0xCC3C)
+#define RTL930X_LED_PORT_FIB_MASK_CTRL		(0xCC40)
+#define RTL930X_LED_PORT_COMBO_MASK_CTRL	(0xCC44)
+
+#define RTL931X_LED_PORT_NUM_CTRL(p)		(0x0604 + (((p >> 4) << 2)))
+#define RTL931X_LED_SET0_0_CTRL			(0x0630)
+#define RTL931X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0x0634 + (((p >> 4) << 2)))
+#define RTL931X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0x0644 + (((p >> 4) << 2)))
+#define RTL931X_LED_PORT_COPR_MASK_CTRL		(0x0654)
+#define RTL931X_LED_PORT_FIB_MASK_CTRL		(0x065c)
+#define RTL931X_LED_PORT_COMBO_MASK_CTRL	(0x0664)
 
 #define MAX_VLANS 4096
 #define MAX_LAGS 16
@@ -605,6 +623,7 @@ struct rtl838x_port {
 	bool is10G;
 	bool is2G5;
 	int sds_num;
+	int led_set;
 	const struct dsa_port *dp;
 };
 
@@ -1017,6 +1036,7 @@ struct rtl838x_reg {
 	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
 	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
+	void (*led_init)(struct rtl838x_switch_priv *priv);
 };
 
 struct rtl838x_switch_priv {

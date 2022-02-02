@@ -8,6 +8,7 @@
 #include <net/netevent.h>
 #include <linux/inetdevice.h>
 #include <linux/rhashtable.h>
+#include <linux/of_net.h>
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl83xx.h"
@@ -310,6 +311,9 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	}
 
 	for_each_node_by_name(dn, "port") {
+		phy_interface_t interface;
+		u32 led_set;
+
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
@@ -320,6 +324,28 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 				dev_err(priv->dev, "Port node %d misses phy-handle\n", pn);
 			continue;
 		}
+
+		pr_info("%s port %d has phandle\n", __func__, pn);
+		if (of_property_read_u32(phy_node, "sds", &priv->ports[pn].sds_num))
+			priv->ports[pn].sds_num = -1;
+		else {
+			pr_info("%s sds port %d is %d\n", __func__, pn,
+				priv->ports[pn].sds_num);
+		}
+		pr_info("%s port %d has SDS\n", __func__, priv->ports[pn].sds_num);
+
+		if (of_get_phy_mode(dn, &interface))
+			interface = PHY_INTERFACE_MODE_NA;
+		if (interface == PHY_INTERFACE_MODE_HSGMII)
+			priv->ports[pn].is2G5 = true;
+		if (interface == PHY_INTERFACE_MODE_USXGMII)
+			priv->ports[pn].is2G5 = priv->ports[pn].is10G = true;
+		if (interface == PHY_INTERFACE_MODE_10GBASER)
+			priv->ports[pn].is10G = true;
+
+		if (of_property_read_u32(dn, "led-set", &led_set))
+			led_set = 0;
+		priv->ports[pn].led_set = led_set;
 
 		// Check for the integrated SerDes of the RTL8380M first
 		if (of_property_read_bool(phy_node, "phy-is-integrated")
@@ -354,12 +380,6 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			priv->ports[pn].phy = PHY_RTL8218B_EXT;
 			continue;
 		}
-	}
-
-	// TODO: Do this needs to come from the .dts
-	if (priv->family_id == RTL9300_FAMILY_ID) {
-		priv->ports[24].is2G5 = true;
-		priv->ports[25].is2G5 = true;
 	}
 
 	/* Disable MAC polling the PHY so that we can start configuration */
