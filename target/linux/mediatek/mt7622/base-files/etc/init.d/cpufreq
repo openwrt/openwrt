@@ -1,0 +1,11 @@
+#!/bin/sh /etc/rc.common
+
+START=15
+
+boot() {
+  case $(board_name) in
+    linksys,e8450*)
+    echo 437500 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq || true
+    ;;
+  esac
+}
