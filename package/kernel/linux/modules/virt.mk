@@ -72,3 +72,28 @@ define KernelPackage/kvm-amd/description
 endef
 
 $(eval $(call KernelPackage,kvm-amd))
+
+define KernelPackage/vfio-mdev
+  SUBMENU:=Virtualization
+  TITLE:=VFIO driver support to to virtualize devices
+  DEPENDS:=@TARGET_x86_64
+  KCONFIG:=	\
+	  CONFIG_IOMMU_API=y	\
+	  CONFIG_MMU=y	\
+	  CONFIG_VFIO=y	\
+	  CONFIG_VFIO_NOIOMMU=y	\
+	  CONFIG_VFIO_PCI=y	\
+	  CONFIG_VFIO_PCI_IGD=y	\
+	  CONFIG_VFIO_MDEV	\
+	  CONFIG_VFIO_MDEV_DEVICE
+  FILES:=	\
+	  $(LINUX_DIR)/drivers/vfio/mdev/mdev.ko	\
+          $(LINUX_DIR)/drivers/vfio/mdev/vfio_mdev.ko
+  AUTOLOAD:=$(call AutoProbe,mdev vfio_mdev)
+endef
+
+define KernelPackage/vfio-mdev/description
+  Provides a framework to virtualize devices.
+endef
+
+$(eval $(call KernelPackage,vfio-mdev))
