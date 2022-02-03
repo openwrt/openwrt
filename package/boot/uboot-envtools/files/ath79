@@ -122,7 +122,9 @@ qihoo,c301)
 wallys,dr531)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0xf800" "0x10000"
 	;;
-zte,mf286)
+zte,mf286|\
+zte,mf286a|\
+zte,mf286r)
 	ubootenv_add_uci_config "/dev/mtd7" "0x0" "0x20000" "0x10000"
 	;;
 esac
