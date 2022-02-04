@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-// TODO: not really used
-struct rtl838x_phy_priv {
+struct rtl83xx_shared_private {
 	char *name;
 };
 
