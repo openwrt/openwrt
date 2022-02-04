@@ -172,6 +172,12 @@ define AT91Bootstrap/sama5d2_ptc_eksd_uboot
   BUILD_DEVICES:=microchip_sama5d2-ptc-ek
 endef
 
+define AT91Bootstrap/sama7g5eksd_uboot
+  TITLE:=AT91Bootstrap for SAMA7G5-EK (SDCard)
+  BUILD_SUBTARGET:=sama7
+  BUILD_DEVICES:=microchip_sama7g5-ek
+endef
+
 AT91BOOTSTRAP_TARGETS := \
 	at91sam9x5eknf_uboot \
 	at91sam9x5eksd_uboot \
@@ -192,7 +198,8 @@ AT91BOOTSTRAP_TARGETS := \
 	sama5d27_wlsom1_eksd_uboot \
 	sama5d27_wlsom1_ekdf_qspi_uboot \
 	sama5d2_ptc_eknf_uboot \
-	sama5d2_ptc_eksd_uboot
+	sama5d2_ptc_eksd_uboot \
+	sama7g5eksd_uboot
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
