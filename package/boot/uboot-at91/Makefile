@@ -143,6 +143,12 @@ define U-Boot/sama5d2_ptc_ek_mmc
   BUILD_DEVICES:=microchip_sama5d2-ptc-ek
 endef
 
+define U-Boot/sama7g5ek_mmc1
+  NAME:=SAMA7G5-EK (SDCard)
+  BUILD_SUBTARGET:=sama7
+  BUILD_DEVICES:=microchip_sama7g5-ek
+endef
+
 UBOOT_TARGETS := \
 	at91sam9m10g45ek_nandflash \
 	at91sam9x5ek_nandflash \
@@ -162,7 +168,8 @@ UBOOT_TARGETS := \
 	sama5d27_wlsom1_ek_mmc \
 	sama5d27_wlsom1_ek_qspiflash \
 	sama5d2_ptc_ek_nandflash \
-	sama5d2_ptc_ek_mmc
+	sama5d2_ptc_ek_mmc \
+	sama7g5ek_mmc1
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
