@@ -549,6 +549,14 @@ define Device/elecom_wrc-2533ghbk-i
 endef
 TARGET_DEVICES += elecom_wrc-2533ghbk-i
 
+define Device/elecom_wrc-2533gs2
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 11264k
+  DEVICE_MODEL := WRC-2533GS2
+  ELECOM_HWNAME := WRC-2533GS2
+endef
+TARGET_DEVICES += elecom_wrc-2533gs2
+
 define Device/elecom_wrc-2533gst
   $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 11264k
