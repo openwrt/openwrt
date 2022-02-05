@@ -1,0 +1,48 @@
+From 4322e53e3d1b61a9faa06c2e12feb1605bee2795 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 31 Dec 2021 20:38:06 +0100
+Subject: [PATCH 145/158] arm64: dts: ipq8074: add cooling cells to CPU nodes
+
+Since there is CPU Freq support as well as thermal sensor support
+now for the IPQ8074, add cooling cells to CPU nodes so that they can
+be used as cooling devices using CPU Freq.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -37,6 +37,7 @@
+ 			enable-method = "psci";
+ 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
+ 			clock-names = "cpu";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		CPU1: cpu@1 {
+@@ -47,6 +48,7 @@
+ 			next-level-cache = <&L2_0>;
+ 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
+ 			clock-names = "cpu";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		CPU2: cpu@2 {
+@@ -57,6 +59,7 @@
+ 			next-level-cache = <&L2_0>;
+ 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
+ 			clock-names = "cpu";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		CPU3: cpu@3 {
+@@ -67,6 +70,7 @@
+ 			next-level-cache = <&L2_0>;
+ 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
+ 			clock-names = "cpu";
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		L2_0: l2-cache {

@@ -1,0 +1,22 @@
+From ffd5d39b8e1828558c34d44e4ffe4e33f979803c Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 6 May 2022 23:55:44 +0200
+Subject: [PATCH 108/158] dt-bindings: clock: qcom: ipq8074: add USB GDSCs
+
+Add bindings for the USB GDSCs found in IPQ8074 GCC.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ include/dt-bindings/clock/qcom,gcc-ipq8074.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/include/dt-bindings/clock/qcom,gcc-ipq8074.h
++++ b/include/dt-bindings/clock/qcom,gcc-ipq8074.h
+@@ -368,4 +368,7 @@
+ #define GCC_PCIE1_AXI_MASTER_STICKY_ARES	130
+ #define GCC_PCIE0_AXI_SLAVE_STICKY_ARES		131
+ 
++#define USB0_GDSC				0
++#define USB1_GDSC				1
++
+ #endif

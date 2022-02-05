@@ -1,0 +1,60 @@
+From 3df1bd091d125bb4fbe8ddb6fdb5adec53ca3ea0 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 18 May 2022 16:36:42 +0200
+Subject: [PATCH 133/158] arm64: dts: qcom: add PMP8074 DTSI
+
+PMP8074 is a companion PMIC to the Qualcomm IPQ8074 series that is
+controlled via SPMI.
+
+Since we now have support for the regulators inside of it add DTSI
+for it.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+Changes in v5:
+* Remove #address-cells and #size-cells as they are not required for
+regulator subnodes
+---
+ arch/arm64/boot/dts/qcom/pmp8074.dtsi | 36 +++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/pmp8074.dtsi
+
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/pmp8074.dtsi
+@@ -0,0 +1,36 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#include <dt-bindings/spmi/spmi.h>
++
++&spmi_bus {
++	pmic@1 {
++		compatible = "qcom,spmi-pmic";
++		reg = <0x1 SPMI_USID>;
++
++		regulators {
++			compatible = "qcom,pmp8074-regulators";
++
++			s3: s3 {
++				regulator-name = "vdd_s3";
++				regulator-min-microvolt = <592000>;
++				regulator-max-microvolt = <1064000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++
++			s4: s4 {
++				regulator-name = "vdd_s4";
++				regulator-min-microvolt = <712000>;
++				regulator-max-microvolt = <992000>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++
++			l11: l11 {
++				regulator-name = "l11";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++			};
++		};
++	};
++};

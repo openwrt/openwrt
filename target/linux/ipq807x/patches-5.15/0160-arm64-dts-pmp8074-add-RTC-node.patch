@@ -1,0 +1,34 @@
+From cedb36fcb06bdedba556c07d15b13c33e540ba4f Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 20 May 2022 20:57:46 +0200
+Subject: [PATCH 160/162] arm64: dts: pmp8074: add RTC node
+
+PMP8074 has a PM8941 compatible RTC, so add the required DT node for it.
+
+It is left disabled by default as PMIC itself has no built-in battery
+backup and thus losing power means losing time, so allow boards that
+have the optional battery backup connected to enable the RTC.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/pmp8074.dtsi | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/pmp8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/pmp8074.dtsi
+@@ -28,6 +28,15 @@
+ 				     <0 0xca 0 IRQ_TYPE_NONE>,
+ 				     <0 0xcb 0 IRQ_TYPE_NONE>;
+ 		};
++
++		pmp8074_rtc:rtc@6000 {
++			compatible = "qcom,pm8941-rtc";
++			reg = <0x6000>;
++			reg-names = "rtc", "alarm";
++			interrupts = <0x0 0x61 0x1 IRQ_TYPE_NONE>;
++
++			status = "disabled";
++		};
+ 	};
+ 
+ 	pmic@1 {

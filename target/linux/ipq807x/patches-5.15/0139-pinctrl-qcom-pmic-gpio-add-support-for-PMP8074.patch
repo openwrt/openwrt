@@ -1,0 +1,23 @@
+From bb477ff10b0560c237b692f76889ca6deb7530b8 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Thu, 19 May 2022 15:12:00 +0200
+Subject: [PATCH 139/158] pinctrl: qcom-pmic-gpio: add support for PMP8074
+
+PMP8074 has 12 GPIO-s with holes on GPIO1 and GPIO12.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/pinctrl/qcom/pinctrl-spmi-gpio.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c
++++ b/drivers/pinctrl/qcom/pinctrl-spmi-gpio.c
+@@ -1167,6 +1167,8 @@ static const struct of_device_id pmic_gp
+ 	{ .compatible = "qcom,pmi8998-gpio", .data = (void *) 14 },
+ 	{ .compatible = "qcom,pmk8350-gpio", .data = (void *) 4 },
+ 	{ .compatible = "qcom,pmm8155au-gpio", .data = (void *) 10 },
++	/* pmp8074 has 12 GPIOs with holes on 1 and 12 */
++	{ .compatible = "qcom,pmp8074-gpio", .data = (void *) 12 },
+ 	{ .compatible = "qcom,pmr735a-gpio", .data = (void *) 4 },
+ 	{ .compatible = "qcom,pmr735b-gpio", .data = (void *) 4 },
+ 	/* pms405 has 12 GPIOs with holes on 1, 9, and 10 */

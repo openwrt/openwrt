@@ -1,0 +1,24 @@
+From d359828a9dda050ee667edcab99c4092fd67e7a1 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Mon, 25 Apr 2022 20:19:14 +0200
+Subject: [PATCH 104/158] dt-bindings: clock: qcom: ipq8074: add PPE crypto
+ clock
+
+Add binding for the PPE crypto clock in IPQ8074.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+---
+ include/dt-bindings/clock/qcom,gcc-ipq8074.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/dt-bindings/clock/qcom,gcc-ipq8074.h
++++ b/include/dt-bindings/clock/qcom,gcc-ipq8074.h
+@@ -233,6 +233,7 @@
+ #define GCC_PCIE0_AXI_S_BRIDGE_CLK		224
+ #define GCC_PCIE0_RCHNG_CLK_SRC			225
+ #define GCC_PCIE0_RCHNG_CLK			226
++#define GCC_CRYPTO_PPE_CLK			227
+ 
+ #define GCC_BLSP1_BCR				0
+ #define GCC_BLSP1_QUP1_BCR			1

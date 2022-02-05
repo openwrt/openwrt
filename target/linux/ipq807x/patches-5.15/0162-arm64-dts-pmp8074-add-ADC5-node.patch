@@ -1,0 +1,94 @@
+From 3d4eb6c9f5fcb27aacba63fc320ef08e60337610 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 20 May 2022 21:15:19 +0200
+Subject: [PATCH 162/162] arm64: dts: pmp8074: add ADC5 node
+
+PMP8074 has a built in rev2 of the SPMI ADC5 that provides ADC readings
+for the reference ground, 1.2V reference, VPH_PWR, PMIC die temperature,
+XO temperature, 3 PA thermistors.
+
+GPIO-s 2, 4, 6 and 10 can also be configured as ADC inputs.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/pmp8074.dtsi | 63 +++++++++++++++++++++++++++
+ 1 file changed, 63 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/pmp8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/pmp8074.dtsi
+@@ -1,5 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ 
++#include <dt-bindings/iio/qcom,spmi-vadc.h>
+ #include <dt-bindings/spmi/spmi.h>
+ 
+ &spmi_bus {
+@@ -29,6 +30,68 @@
+ 				     <0 0xcb 0 IRQ_TYPE_NONE>;
+ 		};
+ 
++		pmp8074_adc: adc@3100 {
++			compatible = "qcom,spmi-adc-rev2";
++			reg = <0x3100>;
++			interrupts = <0x0 0x31 0x0 IRQ_TYPE_EDGE_RISING>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			#io-channel-cells = <1>;
++
++			ref_gnd@0 {
++				reg = <ADC5_REF_GND>;
++				qcom,pre-scaling = <1 1>;
++			};
++
++			vref_1p25@1 {
++				reg = <ADC5_1P25VREF>;
++				qcom,pre-scaling = <1 1>;
++			};
++
++			vref_vadc@2 {
++				reg = <ADC5_VREF_VADC>;
++				qcom,pre-scaling = <1 1>;
++			};
++
++			die_temp@6 {
++				reg = <ADC5_DIE_TEMP>;
++				qcom,pre-scaling = <1 1>;
++			};
++
++			xo_therm@4c {
++				reg = <ADC5_XO_THERM_100K_PU>;
++				qcom,ratiometric;
++				qcom,hw-settle-time = <200>;
++				qcom,pre-scaling = <1 1>;
++			};
++
++			pa_therm1@4d {
++				reg = <ADC5_AMUX_THM1_100K_PU>;
++				qcom,ratiometric;
++				qcom,hw-settle-time = <200>;
++				qcom,pre-scaling = <1 1>;
++			};
++
++			pa_therm2@4e {
++				reg = <ADC5_AMUX_THM2_100K_PU>;
++				qcom,ratiometric;
++				qcom,hw-settle-time = <200>;
++				qcom,pre-scaling = <1 1>;
++			};
++
++			pa_therm3@4f {
++				reg = <ADC5_AMUX_THM3_100K_PU>;
++				qcom,ratiometric;
++				qcom,hw-settle-time = <200>;
++				qcom,pre-scaling = <1 1>;
++			};
++
++			vph_pwr@83 {
++				reg = <ADC5_VPH_PWR>;
++				qcom,pre-scaling = <1 3>;
++			};
++		};
++
+ 		pmp8074_rtc:rtc@6000 {
+ 			compatible = "qcom,pm8941-rtc";
+ 			reg = <0x6000>;

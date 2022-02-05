@@ -1,0 +1,45 @@
+From 3ca5ee9ebb3397ffe7668bbd3d2d118fc304c833 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 6 May 2022 23:43:56 +0200
+Subject: [PATCH 107/158] dt-bindings: clocks: qcom,gcc-ipq8074: support power
+ domains
+
+GCC inside of IPQ8074 also provides power management via built-in GDSCs.
+In order to do so, '#power-domain-cells' must be set to 1.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+Changes in v4:
+* Alphabetically sort the cells properties
+---
+ .../devicetree/bindings/clock/qcom,gcc-ipq8074.yaml          | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/Documentation/devicetree/bindings/clock/qcom,gcc-ipq8074.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,gcc-ipq8074.yaml
+@@ -24,6 +24,9 @@ properties:
+   '#clock-cells':
+     const: 1
+ 
++  '#power-domain-cells':
++    const: 1
++
+   '#reset-cells':
+     const: 1
+ 
+@@ -38,6 +41,7 @@ required:
+   - compatible
+   - reg
+   - '#clock-cells'
++  - '#power-domain-cells'
+   - '#reset-cells'
+ 
+ additionalProperties: false
+@@ -48,6 +52,7 @@ examples:
+       compatible = "qcom,gcc-ipq8074";
+       reg = <0x01800000 0x80000>;
+       #clock-cells = <1>;
++      #power-domain-cells = <1>;
+       #reset-cells = <1>;
+     };
+ ...

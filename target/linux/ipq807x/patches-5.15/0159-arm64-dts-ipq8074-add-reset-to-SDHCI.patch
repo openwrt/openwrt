@@ -1,0 +1,23 @@
+From 7117b0c9f1f6ecd630e29ed8b6bf530dd38370cb Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Thu, 19 May 2022 23:10:40 +0200
+Subject: [PATCH] arm64: dts: ipq8074: add reset to SDHCI
+
+Add reset to SDHCI controller so it can be reset to avoid timeout issues
+after software reset due to bootloader set configuration.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -480,6 +480,7 @@
+ 				 <&gcc GCC_SDCC1_AHB_CLK>,
+ 				 <&gcc GCC_SDCC1_APPS_CLK>;
+ 			clock-names = "xo", "iface", "core";
++			resets = <&gcc GCC_SDCC1_BCR>;
+ 			max-frequency = <384000000>;
+ 			mmc-ddr-1_8v;
+ 			mmc-hs200-1_8v;

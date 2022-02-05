@@ -1,0 +1,49 @@
+From 752b6ba0016927816cce11629131eafd629c0b7f Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Thu, 19 May 2022 15:13:07 +0200
+Subject: [PATCH 140/158] arm64: dts: pmp8074: add GPIO node
+
+PMP8074 provides 12 GPIO-s with holes at GPIO1 and GPIO12, so add the
+required DT node for it.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/pmp8074.dtsi | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/pmp8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/pmp8074.dtsi
+@@ -3,6 +3,33 @@
+ #include <dt-bindings/spmi/spmi.h>
+ 
+ &spmi_bus {
++	pmic@0 {
++		compatible = "qcom,pmp8074", "qcom,spmi-pmic";
++		reg = <0x0 SPMI_USID>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		pmp8074_gpios: gpio@c000 {
++			compatible = "qcom,pmp8074-gpio", "qcom,spmi-gpio";
++			reg = <0xc000>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&pmp8074_gpios 0 0 12>;
++			interrupts = <0 0xc0 0 IRQ_TYPE_NONE>,
++				     <0 0xc1 0 IRQ_TYPE_NONE>,
++				     <0 0xc2 0 IRQ_TYPE_NONE>,
++				     <0 0xc3 0 IRQ_TYPE_NONE>,
++				     <0 0xc4 0 IRQ_TYPE_NONE>,
++				     <0 0xc5 0 IRQ_TYPE_NONE>,
++				     <0 0xc6 0 IRQ_TYPE_NONE>,
++				     <0 0xc7 0 IRQ_TYPE_NONE>,
++				     <0 0xc8 0 IRQ_TYPE_NONE>,
++				     <0 0xc9 0 IRQ_TYPE_NONE>,
++				     <0 0xca 0 IRQ_TYPE_NONE>,
++				     <0 0xcb 0 IRQ_TYPE_NONE>;
++		};
++	};
++
+ 	pmic@1 {
+ 		compatible = "qcom,pmp8074", "qcom,spmi-pmic";
+ 		reg = <0x1 SPMI_USID>;

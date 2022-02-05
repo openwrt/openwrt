@@ -1,0 +1,56 @@
+From 401c13f309458f0b2757645951aeaad2caba90f8 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 29 Apr 2022 13:25:04 +0200
+Subject: [PATCH 116/158] dt-bindings: mailbox: qcom: set correct #clock-cells
+
+IPQ6018 and IPQ8074 require #clock-cells to be set to 1 as their APSS
+clock driver provides multiple clock outputs.
+
+So allow setting 1 as #clock-cells and check that its set to 1 for IPQ6018
+and IPQ8074, check others for 0 as its currently.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+---
+Changes in v3:
+* Drop not needed blank line
+
+Changes in v2:
+* Correct subject name
+---
+ .../bindings/mailbox/qcom,apcs-kpss-global.yaml | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/mailbox/qcom,apcs-kpss-global.yaml
++++ b/Documentation/devicetree/bindings/mailbox/qcom,apcs-kpss-global.yaml
+@@ -48,7 +48,7 @@ properties:
+     const: 1
+ 
+   '#clock-cells':
+-    const: 0
++    enum: [0, 1]
+ 
+   clock-names:
+     minItems: 2
+@@ -94,6 +94,21 @@ allOf:
+       properties:
+         clocks:
+           maxItems: 3
++  - if:
++      properties:
++        compatible:
++          enum:
++            - qcom,ipq6018-apcs-apps-global
++            - qcom,ipq8074-apcs-apps-global
++    then:
++      properties:
++        '#clock-cells':
++          const: 1
++    else:
++      properties:
++        '#clock-cells':
++          const: 0
++
+ examples:
+ 
+   # Example apcs with msm8996

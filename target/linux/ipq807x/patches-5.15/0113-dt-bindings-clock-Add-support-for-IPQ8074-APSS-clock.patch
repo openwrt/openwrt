@@ -1,0 +1,40 @@
+From 1e188b08a016226ac94e86b6f352b8da39c430ff Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Tue, 28 Dec 2021 20:36:45 +0100
+Subject: [PATCH 113/158] dt-bindings: clock: Add support for IPQ8074 APSS
+ clock controller
+
+Add dt-binding for the IPQ8074 APSS clock controller which provides
+clocks to the CPU cores.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+---
+Changes in v4:
+* Dual license the bindings
+* Update the copyright year
+
+Changes in v2:
+* Correct subject
+---
+ include/dt-bindings/clock/qcom,apss-ipq8074.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+ create mode 100644 include/dt-bindings/clock/qcom,apss-ipq8074.h
+
+--- /dev/null
++++ b/include/dt-bindings/clock/qcom,apss-ipq8074.h
+@@ -0,0 +1,14 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++/*
++ * Copyright (c) 2022, The Linux Foundation. All rights reserved.
++ */
++
++#ifndef _DT_BINDINGS_CLOCK_QCA_APSS_IPQ8074_H
++#define _DT_BINDINGS_CLOCK_QCA_APSS_IPQ8074_H
++
++#define APSS_PLL_EARLY				0
++#define APSS_PLL				1
++#define APCS_ALIAS0_CLK_SRC			2
++#define APCS_ALIAS0_CORE_CLK			3
++
++#endif

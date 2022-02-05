@@ -1,0 +1,26 @@
+From a12e8e9de91b6314a1595c362ab976074df02f9b Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Thu, 19 May 2022 14:54:13 +0200
+Subject: [PATCH 138/158] arm64: dts: pmp8074: add PMP8074 compatible
+
+According to the bindings, each SPMI PMIC should have both the IC specifc
+as well as the generic SPMI PMIC compatible.
+
+So add the one specific to PMP8074.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/pmp8074.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/qcom/pmp8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/pmp8074.dtsi
+@@ -4,7 +4,7 @@
+ 
+ &spmi_bus {
+ 	pmic@1 {
+-		compatible = "qcom,spmi-pmic";
++		compatible = "qcom,pmp8074", "qcom,spmi-pmic";
+ 		reg = <0x1 SPMI_USID>;
+ 
+ 		regulators {

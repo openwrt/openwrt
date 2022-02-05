@@ -1,0 +1,27 @@
+From fd6e79633c24c8501f6b554cdd0dc4b490ceb468 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 20 May 2022 21:48:04 +0200
+Subject: [PATCH 161/162] iio: adc: qcom-spmi-adc5: add VREF VADC channel to
+ ADC5 rev2
+
+ADC5 rev2 channel 2 is the ADC5_VREF_VADC channel which measures the
+ADC LDO that is used is the reference for ADC-s.
+
+Add support for it so it can be utilized.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/iio/adc/qcom-spmi-adc5.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/iio/adc/qcom-spmi-adc5.c
++++ b/drivers/iio/adc/qcom-spmi-adc5.c
+@@ -589,6 +589,8 @@ static const struct adc5_channels adc5_c
+ 					SCALE_HW_CALIB_DEFAULT)
+ 	[ADC5_1P25VREF]		= ADC5_CHAN_VOLT("vref_1p25", 0,
+ 					SCALE_HW_CALIB_DEFAULT)
++	[ADC5_VREF_VADC]	= ADC5_CHAN_VOLT("vref_vadc", 0,
++					SCALE_HW_CALIB_DEFAULT)
+ 	[ADC5_VPH_PWR]		= ADC5_CHAN_VOLT("vph_pwr", 1,
+ 					SCALE_HW_CALIB_DEFAULT)
+ 	[ADC5_VBAT_SNS]		= ADC5_CHAN_VOLT("vbat_sns", 1,

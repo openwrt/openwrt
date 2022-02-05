@@ -1,0 +1,44 @@
+From e4e878ecedaaf0dd2d676f096bdc401e6ef62ba7 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Sat, 7 May 2022 00:02:31 +0200
+Subject: [PATCH 111/158] arm64: dts: ipq8074: add USB power domains
+
+Add USB power domains provided by GCC GDSCs.
+Add the required #power-domain-cells to the GCC as well.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+Changes in v4:
+* Alphabetically sort the GCC cells properties
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -382,6 +382,7 @@
+ 			compatible = "qcom,gcc-ipq8074";
+ 			reg = <0x01800000 0x80000>;
+ 			#clock-cells = <0x1>;
++			#power-domain-cells = <1>;
+ 			#reset-cells = <0x1>;
+ 		};
+ 
+@@ -610,6 +611,8 @@
+ 						<133330000>,
+ 						<19200000>;
+ 
++			power-domains = <&gcc USB0_GDSC>;
++
+ 			resets = <&gcc GCC_USB0_BCR>;
+ 			status = "disabled";
+ 
+@@ -650,6 +653,8 @@
+ 						<133330000>,
+ 						<19200000>;
+ 
++			power-domains = <&gcc USB1_GDSC>;
++
+ 			resets = <&gcc GCC_USB1_BCR>;
+ 			status = "disabled";
+ 

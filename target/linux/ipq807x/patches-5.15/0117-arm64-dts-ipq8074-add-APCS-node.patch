@@ -1,0 +1,36 @@
+From d7617bdacc58137a594e90f54275a98d0aa1f458 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Tue, 28 Dec 2021 21:07:17 +0100
+Subject: [PATCH 117/158] arm64: dts: ipq8074: add APCS node
+
+APCS now has support for providing the APSS clocks as the child device
+for IPQ8074.
+
+So, add the required DT node for it as it will later be used as the CPU
+clocksource.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+Changes in v3:
+* Node does not currently exist in the upstream kernel, so add it instead
+of modifying.
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -886,5 +886,13 @@
+ 				      "axi_m_sticky";
+ 			status = "disabled";
+ 		};
++
++		apcs_glb: mailbox@b111000 {
++			compatible = "qcom,ipq8074-apcs-apps-global";
++			reg = <0x0b111000 0x6000>;
++
++			#clock-cells = <1>;
++			#mbox-cells = <1>;
++		};
+ 	};
+ };
