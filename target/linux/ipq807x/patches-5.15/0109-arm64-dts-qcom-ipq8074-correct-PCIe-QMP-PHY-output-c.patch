@@ -1,0 +1,40 @@
+From 0311903940046649e20bd23bca837169eb4525dc Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 16 Nov 2022 22:48:41 +0100
+Subject: [PATCH] arm64: dts: qcom: ipq8074: correct PCIe QMP PHY output clock
+ names
+
+Current PCIe QMP PHY output name were changed in ("arm64: dts: qcom: Fix
+IPQ8074 PCIe PHY nodes") however it did not account for the fact that GCC
+driver is relying on the old names to match them as they are being used as
+the parent for the gcc_pcie0_pipe_clk and gcc_pcie1_pipe_clk.
+
+This broke parenting as GCC could not find the parent clock, so fix it by
+changing to the names that driver is expecting.
+
+Fixes: 942bcd33ed45 ("arm64: dts: qcom: Fix IPQ8074 PCIe PHY nodes")
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -257,7 +257,7 @@
+ 				#clock-cells = <0>;
+ 				clocks = <&gcc GCC_PCIE0_PIPE_CLK>;
+ 				clock-names = "pipe0";
+-				clock-output-names = "pcie_0_pipe_clk";
++				clock-output-names = "pcie20_phy0_pipe_clk";
+ 			};
+ 		};
+ 
+@@ -285,7 +285,7 @@
+ 				#clock-cells = <0>;
+ 				clocks = <&gcc GCC_PCIE1_PIPE_CLK>;
+ 				clock-names = "pipe0";
+-				clock-output-names = "pcie_1_pipe_clk";
++				clock-output-names = "pcie20_phy1_pipe_clk";
+ 			};
+ 		};
+ 

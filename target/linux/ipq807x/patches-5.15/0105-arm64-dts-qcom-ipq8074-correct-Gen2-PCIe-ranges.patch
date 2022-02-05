@@ -1,0 +1,29 @@
+From 52a48e8ed546339122983329410be801a2b9adf5 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Wed, 16 Nov 2022 22:48:35 +0100
+Subject: [PATCH] arm64: dts: qcom: ipq8074: correct Gen2 PCIe ranges
+
+Current ranges property set in Gen2 PCIe node is incorrect, replace it
+with the downstream 5.4 QCA kernel value.
+
+Fixes: 33057e1672fe ("ARM: dts: ipq8074: Add pcie nodes")
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -808,9 +808,9 @@
+ 			phy-names = "pciephy";
+ 
+ 			ranges = <0x81000000 0 0x10200000 0x10200000
+-				  0 0x100000   /* downstream I/O */
+-				  0x82000000 0 0x10300000 0x10300000
+-				  0 0xd00000>; /* non-prefetchable memory */
++				  0 0x10000>,   /* downstream I/O */
++				 <0x82000000 0 0x10220000 0x10220000
++				  0 0xfde0000>; /* non-prefetchable memory */
+ 
+ 			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "msi";
