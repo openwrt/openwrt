@@ -1256,3 +1256,19 @@ define KernelPackage/f71808e-wdt/description
 endef
 
 $(eval $(call KernelPackage,f71808e-wdt))
+
+
+define KernelPackage/qmi-helpers
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Qualcomm QMI Helpers
+  KCONFIG:=CONFIG_QCOM_QMI_HELPERS
+  FILES:=$(LINUX_DIR)/drivers/soc/qcom/qmi_helpers.ko
+  AUTOLOAD:=$(call AutoProbe,qcom-helpers,1)
+endef
+
+define KernelPackage/qmi-helpers/description
+  Kernel module for the Qualcomm QMI helpers support found on some Qualcomm
+  SoCs.
+endef
+
+$(eval $(call KernelPackage,qmi-helpers))

@@ -1,0 +1,15 @@
+This makes it possible to select QCOM_QMI_HELPERS directly. We 
+need this to be able to compile this into the kernel and make use of it 
+from backports.
+
+--- a/drivers/soc/qcom/Kconfig
++++ b/drivers/soc/qcom/Kconfig
+@@ -92,7 +92,7 @@
+ 	select QCOM_QMI_HELPERS
+ 
+ config QCOM_QMI_HELPERS
+-	tristate
++	tristate "Qualcomm QMI Helper"
+ 	depends on NET
+ 
+ config QCOM_RMTFS_MEM
