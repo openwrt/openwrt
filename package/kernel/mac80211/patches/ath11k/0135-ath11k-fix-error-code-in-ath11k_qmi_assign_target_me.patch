@@ -1,0 +1,33 @@
+From a02147c5ad403fec02e1d7c60cf9401725fbcbe4 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Wed, 12 Jan 2022 10:15:11 +0200
+Subject: [PATCH 135/241] ath11k: fix error code in
+ ath11k_qmi_assign_target_mem_chunk()
+
+The "ret" vairable is not set at this point.  It could be uninitialized
+or zero.  The correct thing to return is -ENODEV.
+
+Fixes: 6ac04bdc5edb ("ath11k: Use reserved host DDR addresses from DT for PCI devices")
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220111071445.GA11243@kili
+---
+ drivers/net/wireless/ath/ath11k/qmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.c b/drivers/net/wireless/ath/ath11k/qmi.c
+index 42c2ad3e3668..d0701e8eca9c 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -1932,7 +1932,7 @@ static int ath11k_qmi_assign_target_mem_chunk(struct ath11k_base *ab)
+ 			if (!hremote_node) {
+ 				ath11k_dbg(ab, ATH11K_DBG_QMI,
+ 					   "qmi fail to get hremote_node\n");
+-				return ret;
++				return -ENODEV;
+ 			}
+ 
+ 			ret = of_address_to_resource(hremote_node, 0, &res);
+-- 
+2.37.1
+

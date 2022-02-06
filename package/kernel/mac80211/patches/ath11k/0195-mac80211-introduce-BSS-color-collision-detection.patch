@@ -1,0 +1,44 @@
+From 5130b81ac9fa9e642a975b213e0b4489d70b21ba Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 25 Mar 2022 11:42:41 +0100
+Subject: [PATCH 195/241] mac80211: introduce BSS color collision detection
+
+Add ieee80211_rx_check_bss_color_collision routine in order to introduce
+BSS color collision detection in mac80211 if it is not supported in HW/FW
+(e.g. for mt7915 chipset).
+Add IEEE80211_HW_DETECTS_COLOR_COLLISION flag to let the driver notify
+BSS color collision detection is supported in HW/FW. Set this for ath11k
+which apparently didn't need this code.
+
+Tested-by: Peter Chiu <Chui-Hao.Chiu@mediatek.com>
+Co-developed-by: Ryder Lee <ryder.lee@mediatek.com>
+Signed-off-by: Ryder Lee <ryder.lee@mediatek.com>
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://lore.kernel.org/r/a05eeeb1841a84560dc5aaec77894fcb69a54f27.1648204871.git.lorenzo@kernel.org
+[clarify commit message a bit, move flag to mac80211]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index c7e19483f5bc..bae233a79e84 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8727,9 +8727,12 @@ static int __ath11k_mac_register(struct ath11k *ar)
+ 
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_CQM_RSSI_LIST);
+ 	wiphy_ext_feature_set(ar->hw->wiphy, NL80211_EXT_FEATURE_STA_TX_PWR);
+-	if (test_bit(WMI_TLV_SERVICE_BSS_COLOR_OFFLOAD, ar->ab->wmi_ab.svc_map))
++	if (test_bit(WMI_TLV_SERVICE_BSS_COLOR_OFFLOAD,
++		     ar->ab->wmi_ab.svc_map)) {
+ 		wiphy_ext_feature_set(ar->hw->wiphy,
+ 				      NL80211_EXT_FEATURE_BSS_COLOR);
++		ieee80211_hw_set(ar->hw, DETECTS_COLOR_COLLISION);
++	}
+ 
+ 	ar->hw->wiphy->cipher_suites = cipher_suites;
+ 	ar->hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
+-- 
+2.37.1
+

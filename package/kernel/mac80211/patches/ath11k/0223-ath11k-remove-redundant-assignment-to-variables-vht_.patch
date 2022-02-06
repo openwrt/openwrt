@@ -1,0 +1,53 @@
+From b09aa14044127a5c81baa629b663310ddcf13fdc Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.i.king@gmail.com>
+Date: Mon, 9 May 2022 14:57:32 +0300
+Subject: [PATCH 223/241] ath11k: remove redundant assignment to variables
+ vht_mcs and he_mcs
+
+The variables vht_mcs and he_mcs are being initialized in the
+start of for-loops however they are re-assigned new values in
+the loop and not used outside the loop. The initializations
+are redundant and can be removed.
+
+Cleans up clang scan warnings:
+
+warning: Although the value stored to 'vht_mcs' is used in the
+enclosing expression, the value is never actually read from
+'vht_mcs' [deadcode.DeadStores]
+
+warning: Although the value stored to 'he_mcs' is used in the
+enclosing expression, the value is never actually read from
+'he_mcs' [deadcode.DeadStores]
+
+Signed-off-by: Colin Ian King <colin.i.king@gmail.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220507184155.26939-1-colin.i.king@gmail.com
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 81eb38aac5d5..76a9e4ecc501 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1951,7 +1951,7 @@ static void ath11k_peer_assoc_h_vht(struct ath11k *ar,
+ 	/* Calculate peer NSS capability from VHT capabilities if STA
+ 	 * supports VHT.
+ 	 */
+-	for (i = 0, max_nss = 0, vht_mcs = 0; i < NL80211_VHT_NSS_MAX; i++) {
++	for (i = 0, max_nss = 0; i < NL80211_VHT_NSS_MAX; i++) {
+ 		vht_mcs = __le16_to_cpu(vht_cap->vht_mcs.rx_mcs_map) >>
+ 			  (2 * i) & 3;
+ 
+@@ -2272,7 +2272,7 @@ static void ath11k_peer_assoc_h_he(struct ath11k *ar,
+ 	/* Calculate peer NSS capability from HE capabilities if STA
+ 	 * supports HE.
+ 	 */
+-	for (i = 0, max_nss = 0, he_mcs = 0; i < NL80211_HE_NSS_MAX; i++) {
++	for (i = 0, max_nss = 0; i < NL80211_HE_NSS_MAX; i++) {
+ 		he_mcs = he_tx_mcs >> (2 * i) & 3;
+ 
+ 		/* In case of fixed rates, MCS Range in he_tx_mcs might have
+-- 
+2.37.1
+

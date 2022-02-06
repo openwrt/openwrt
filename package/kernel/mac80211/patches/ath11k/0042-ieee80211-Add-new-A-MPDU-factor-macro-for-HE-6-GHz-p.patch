@@ -1,0 +1,33 @@
+From 4e79d90f7265af68f5bf1ec6c2c0de7ee39eacbf Mon Sep 17 00:00:00 2001
+From: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Date: Tue, 28 Sep 2021 14:00:45 +0300
+Subject: [PATCH 042/241] ieee80211: Add new A-MPDU factor macro for HE 6 GHz
+ peer caps
+
+Add IEEE80211_HE_6GHZ_MAX_AMPDU_FACTOR as per IEEE Std 802.11ax-2021,
+9.4.2.263 to use for peer max A-MPDU factor in 6 GHz band.
+
+Signed-off-by: Pradeep Kumar Chitrapu <pradeepc@codeaurora.org>
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+Acked-by: Johannes Berg <johannes@sipsolutions.net>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20210913175510.193005-1-jouni@codeaurora.org
+---
+ include/linux/ieee80211.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/linux/ieee80211.h b/include/linux/ieee80211.h
+index 694264503119..a1a7eda35cb5 100644
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -2084,6 +2084,7 @@ int ieee80211_get_vht_max_nss(struct ieee80211_vht_cap *cap,
+ 
+ #define IEEE80211_HE_VHT_MAX_AMPDU_FACTOR	20
+ #define IEEE80211_HE_HT_MAX_AMPDU_FACTOR	16
++#define IEEE80211_HE_6GHZ_MAX_AMPDU_FACTOR	13
+ 
+ /* 802.11ax HE PHY capabilities */
+ #define IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_IN_2G		0x02
+-- 
+2.37.1
+

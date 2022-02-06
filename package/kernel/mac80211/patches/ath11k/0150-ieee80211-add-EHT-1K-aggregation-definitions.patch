@@ -1,0 +1,112 @@
+From 48c2eb7e0b4b61f334cfaa56956c56eba47ec86c Mon Sep 17 00:00:00 2001
+From: Mordechay Goodstein <mordechay.goodstein@intel.com>
+Date: Mon, 14 Feb 2022 17:29:52 +0100
+Subject: [PATCH 150/241] ieee80211: add EHT 1K aggregation definitions
+
+We add the fields for parsing extended ADDBA request/respond,
+and new max 1K aggregation for limit ADDBA request/respond.
+
+Adjust drivers to use the proper macro, IEEE80211_MAX_AMPDU_BUF ->
+IEEE80211_MAX_AMPDU_BUF_HE.
+
+Signed-off-by: Mordechay Goodstein <mordechay.goodstein@intel.com>
+Link: https://lore.kernel.org/r/20220214173004.b8b447ce95b7.I0ee2554c94e89abc7a752b0f7cc7fd79c273efea@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c            | 2 +-
+ drivers/net/wireless/intel/iwlwifi/mvm/ops.c     | 4 ++--
+ drivers/net/wireless/mediatek/mt76/mt7915/init.c | 4 ++--
+ include/linux/ieee80211.h                        | 6 +++++-
+ net/mac80211/agg-rx.c                            | 2 +-
+ 5 files changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index c872d0011820..e9c50ac4ef6f 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8488,7 +8488,7 @@ static int __ath11k_mac_register(struct ath11k *ar)
+ 	ar->hw->queues = ATH11K_HW_MAX_QUEUES;
+ 	ar->hw->wiphy->tx_queue_len = ATH11K_QUEUE_LEN;
+ 	ar->hw->offchannel_tx_hw_queue = ATH11K_HW_MAX_QUEUES - 1;
+-	ar->hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF;
++	ar->hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF_HE;
+ 
+ 	ar->hw->vif_data_size = sizeof(struct ath11k_vif);
+ 	ar->hw->sta_data_size = sizeof(struct ath11k_sta);
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/ops.c b/drivers/net/wireless/intel/iwlwifi/mvm/ops.c
+index c77d98c88811..eeb81808db08 100644
+--- a/drivers/net/wireless/intel/iwlwifi/mvm/ops.c
++++ b/drivers/net/wireless/intel/iwlwifi/mvm/ops.c
+@@ -761,12 +761,12 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
+ 	if (!hw)
+ 		return NULL;
+ 
+-	hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF;
++	hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF_HE;
+ 
+ 	if (cfg->max_tx_agg_size)
+ 		hw->max_tx_aggregation_subframes = cfg->max_tx_agg_size;
+ 	else
+-		hw->max_tx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF;
++		hw->max_tx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF_HE;
+ 
+ 	op_mode = hw->priv;
+ 
+diff --git a/drivers/net/wireless/mediatek/mt76/mt7915/init.c b/drivers/net/wireless/mediatek/mt76/mt7915/init.c
+index b171027e0cfa..1ae42ef147c8 100644
+--- a/drivers/net/wireless/mediatek/mt76/mt7915/init.c
++++ b/drivers/net/wireless/mediatek/mt76/mt7915/init.c
+@@ -217,8 +217,8 @@ mt7915_init_wiphy(struct ieee80211_hw *hw)
+ 	struct wiphy *wiphy = hw->wiphy;
+ 
+ 	hw->queues = 4;
+-	hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF;
+-	hw->max_tx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF;
++	hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF_HE;
++	hw->max_tx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF_HE;
+ 	hw->netdev_features = NETIF_F_RXCSUM;
+ 
+ 	hw->radiotap_timestamp.units_pos =
+diff --git a/include/linux/ieee80211.h b/include/linux/ieee80211.h
+index a1a7eda35cb5..a39981041a71 100644
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -1023,6 +1023,8 @@ struct ieee80211_tpc_report_ie {
+ #define IEEE80211_ADDBA_EXT_FRAG_LEVEL_MASK	GENMASK(2, 1)
+ #define IEEE80211_ADDBA_EXT_FRAG_LEVEL_SHIFT	1
+ #define IEEE80211_ADDBA_EXT_NO_FRAG		BIT(0)
++#define IEEE80211_ADDBA_EXT_BUF_SIZE_MASK	GENMASK(7, 5)
++#define IEEE80211_ADDBA_EXT_BUF_SIZE_SHIFT	10
+ 
+ struct ieee80211_addba_ext_ie {
+ 	u8 data;
+@@ -1697,10 +1699,12 @@ struct ieee80211_ht_operation {
+  * A-MPDU buffer sizes
+  * According to HT size varies from 8 to 64 frames
+  * HE adds the ability to have up to 256 frames.
++ * EHT adds the ability to have up to 1K frames.
+  */
+ #define IEEE80211_MIN_AMPDU_BUF		0x8
+ #define IEEE80211_MAX_AMPDU_BUF_HT	0x40
+-#define IEEE80211_MAX_AMPDU_BUF		0x100
++#define IEEE80211_MAX_AMPDU_BUF_HE	0x100
++#define IEEE80211_MAX_AMPDU_BUF_EHT	0x400
+ 
+ 
+ /* Spatial Multiplexing Power Save Modes (for capability) */
+diff --git a/net/mac80211/agg-rx.c b/net/mac80211/agg-rx.c
+index ef729b1e39ea..e43176794149 100644
+--- a/net/mac80211/agg-rx.c
++++ b/net/mac80211/agg-rx.c
+@@ -310,7 +310,7 @@ void ___ieee80211_start_rx_ba_session(struct sta_info *sta,
+ 	}
+ 
+ 	if (sta->sta.he_cap.has_he)
+-		max_buf_size = IEEE80211_MAX_AMPDU_BUF;
++		max_buf_size = IEEE80211_MAX_AMPDU_BUF_HE;
+ 	else
+ 		max_buf_size = IEEE80211_MAX_AMPDU_BUF_HT;
+ 
+-- 
+2.37.1
+

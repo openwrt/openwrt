@@ -1,0 +1,148 @@
+From 637bced83efa2851e4752b9f15e9bd4b1c64718b Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Date: Wed, 6 Apr 2022 15:11:05 +0530
+Subject: [PATCH 203/241] ath11k: Update WBM idle ring HP after FW mode on
+
+Currently, WBM idle ring HP is updated much before the shadow
+configuration is sent to the FW. Any update to the shadow
+registers before FW mode on request would not be reflected
+on to the actual HW registers failing to bring up the device.
+Send FW mode ON QMI request before WBM idle ring HP update
+to fix this problem.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.1.0.1-00573-QCAMSLSWPLZ-1
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-01720.1-QCAHSPSWPL_V1_V2_SILICONZ_LITE-1
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.5.0.1-01100-QCAHKSWPL_SILICONZ-1
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.4.0.1-00192-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220406094107.17878-12-quic_mpubbise@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/ce.c   |  4 +--
+ drivers/net/wireless/ath/ath11k/core.c | 45 ++++++++++++++++++--------
+ 2 files changed, 32 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/ce.c b/drivers/net/wireless/ath/ath11k/ce.c
+index aaa7b05ff49d..c14c51f38709 100644
+--- a/drivers/net/wireless/ath/ath11k/ce.c
++++ b/drivers/net/wireless/ath/ath11k/ce.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: BSD-3-Clause-Clear
+ /*
+  * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
++ * Copyright (c) 2021, Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #include "dp_rx.h"
+@@ -918,9 +919,6 @@ int ath11k_ce_init_pipes(struct ath11k_base *ab)
+ 	int i;
+ 	int ret;
+ 
+-	ath11k_ce_get_shadow_config(ab, &ab->qmi.ce_cfg.shadow_reg_v2,
+-				    &ab->qmi.ce_cfg.shadow_reg_v2_len);
+-
+ 	for (i = 0; i < ab->hw_params.ce_count; i++) {
+ 		pipe = &ab->ce.ce_pipe[i];
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index 9928fdc28902..d37c144244d6 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -1129,21 +1129,14 @@ static void ath11k_core_pdev_destroy(struct ath11k_base *ab)
+ 	ath11k_debugfs_pdev_destroy(ab);
+ }
+ 
+-static int ath11k_core_start(struct ath11k_base *ab,
+-			     enum ath11k_firmware_mode mode)
++static int ath11k_core_start(struct ath11k_base *ab)
+ {
+ 	int ret;
+ 
+-	ret = ath11k_qmi_firmware_start(ab, mode);
+-	if (ret) {
+-		ath11k_err(ab, "failed to attach wmi: %d\n", ret);
+-		return ret;
+-	}
+-
+ 	ret = ath11k_wmi_attach(ab);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to attach wmi: %d\n", ret);
+-		goto err_firmware_stop;
++		return ret;
+ 	}
+ 
+ 	ret = ath11k_htc_init(ab);
+@@ -1243,8 +1236,23 @@ static int ath11k_core_start(struct ath11k_base *ab,
+ 	ath11k_hif_stop(ab);
+ err_wmi_detach:
+ 	ath11k_wmi_detach(ab);
+-err_firmware_stop:
+-	ath11k_qmi_firmware_stop(ab);
++
++	return ret;
++}
++
++static int ath11k_core_start_firmware(struct ath11k_base *ab,
++				      enum ath11k_firmware_mode mode)
++{
++	int ret;
++
++	ath11k_ce_get_shadow_config(ab, &ab->qmi.ce_cfg.shadow_reg_v2,
++				    &ab->qmi.ce_cfg.shadow_reg_v2_len);
++
++	ret = ath11k_qmi_firmware_start(ab, mode);
++	if (ret) {
++		ath11k_err(ab, "failed to send firmware start: %d\n", ret);
++		return ret;
++	}
+ 
+ 	return ret;
+ }
+@@ -1274,16 +1282,22 @@ int ath11k_core_qmi_firmware_ready(struct ath11k_base *ab)
+ {
+ 	int ret;
+ 
++	ret = ath11k_core_start_firmware(ab, ATH11K_FIRMWARE_MODE_NORMAL);
++	if (ret) {
++		ath11k_err(ab, "failed to start firmware: %d\n", ret);
++		return ret;
++	}
++
+ 	ret = ath11k_ce_init_pipes(ab);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to initialize CE: %d\n", ret);
+-		return ret;
++		goto err_firmware_stop;
+ 	}
+ 
+ 	ret = ath11k_dp_alloc(ab);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to init DP: %d\n", ret);
+-		return ret;
++		goto err_firmware_stop;
+ 	}
+ 
+ 	switch (ath11k_crypto_mode) {
+@@ -1304,7 +1318,7 @@ int ath11k_core_qmi_firmware_ready(struct ath11k_base *ab)
+ 		set_bit(ATH11K_FLAG_RAW_MODE, &ab->dev_flags);
+ 
+ 	mutex_lock(&ab->core_lock);
+-	ret = ath11k_core_start(ab, ATH11K_FIRMWARE_MODE_NORMAL);
++	ret = ath11k_core_start(ab);
+ 	if (ret) {
+ 		ath11k_err(ab, "failed to start core: %d\n", ret);
+ 		goto err_dp_free;
+@@ -1333,6 +1347,9 @@ int ath11k_core_qmi_firmware_ready(struct ath11k_base *ab)
+ err_dp_free:
+ 	ath11k_dp_free(ab);
+ 	mutex_unlock(&ab->core_lock);
++err_firmware_stop:
++	ath11k_qmi_firmware_stop(ab);
++
+ 	return ret;
+ }
+ 
+-- 
+2.37.1
+

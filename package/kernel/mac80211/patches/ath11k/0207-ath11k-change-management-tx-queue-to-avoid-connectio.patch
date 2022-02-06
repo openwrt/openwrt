@@ -1,0 +1,51 @@
+From 4c7745ab20884b875df37bf89345ddb0944ae60b Mon Sep 17 00:00:00 2001
+From: Wen Gong <quic_wgong@quicinc.com>
+Date: Fri, 29 Apr 2022 16:15:02 +0300
+Subject: [PATCH 207/241] ath11k: change management tx queue to avoid
+ connection timed out
+
+In the phase of wlan load, it has hw scan and 11d scan which sent to
+firmware by ath11k, then hw scan and 11d scan will use about 14 seconds,
+and meanwhile ath11k_reg_update_chan_list() is running in workqueue of
+ath11k_base, and wait for 11d scan/hw scan finished. When the hw scan
+finished, mac80211 will start to connect and send management packet,
+at this moment, ath11k_reg_update_chan_list() is still waiting for 11d
+scan finished, so wmi_mgmt_tx_work of ath11k will not run and thus the
+tx management packet also not send out and lead authentication timed
+out.
+
+log:
+INFO kernel: [  187.885322] wlan0: authenticate with 72:6c:57:43:9f:90
+INFO kernel: [  187.937266] wlan0: send auth to 72:6c:57:43:9f:90 (try 1/3)
+INFO kernel: [  188.626944] wlan0: send auth to 72:6c:57:43:9f:90 (try 2/3)
+INFO kernel: [  189.650999] wlan0: send auth to 72:6c:57:43:9f:90 (try 3/3)
+INFO kernel: [  190.651917] wlan0: authentication with 72:6c:57:43:9f:90 timed out
+
+Change wmi_mgmt_tx_work to another queue workqueue_aux of ath11k_base,
+then connection success.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3
+
+Signed-off-by: Wen Gong <quic_wgong@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220428023320.4007-1-quic_wgong@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 7b73b0d52f56..cae4780b05fd 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5599,7 +5599,7 @@ static int ath11k_mac_mgmt_tx(struct ath11k *ar, struct sk_buff *skb,
+ 
+ 	skb_queue_tail(q, skb);
+ 	atomic_inc(&ar->num_pending_mgmt_tx);
+-	queue_work(ar->ab->workqueue, &ar->wmi_mgmt_tx_work);
++	queue_work(ar->ab->workqueue_aux, &ar->wmi_mgmt_tx_work);
+ 
+ 	return 0;
+ }
+-- 
+2.37.1
+

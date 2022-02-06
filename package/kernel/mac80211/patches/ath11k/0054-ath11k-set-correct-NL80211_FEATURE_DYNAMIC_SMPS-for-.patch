@@ -1,0 +1,103 @@
+From e570ce7ada86a79c968acaec97e125a71752e53b Mon Sep 17 00:00:00 2001
+From: Wen Gong <wgong@codeaurora.org>
+Date: Thu, 28 Oct 2021 10:46:28 +0300
+Subject: [PATCH 054/241] ath11k: set correct NL80211_FEATURE_DYNAMIC_SMPS for
+ WCN6855
+
+Commit 6f4d70308e5e ("ath11k: support SMPS configuration for 6 GHz") changed
+"if (ht_cap & WMI_HT_CAP_DYNAMIC_SMPS)" to "if (ht_cap &
+WMI_HT_CAP_DYNAMIC_SMPS || ar->supports_6ghz)" which means
+NL80211_FEATURE_DYNAMIC_SMPS is enabled for all chips which support 6 GHz.
+However, WCN6855 supports 6 GHz but it does not support feature
+NL80211_FEATURE_DYNAMIC_SMPS, and this can lead to MU-MIMO test failures for
+WCN6855.
+
+Disable NL80211_FEATURE_DYNAMIC_SMPS for WCN6855 since its ht_cap does not
+support WMI_HT_CAP_DYNAMIC_SMPS. Enable the feature only on QCN9074 as that's
+the only other device supporting 6 GHz band.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-01720.1-QCAHSPSWPL_V1_V2_SILICONZ_LITE-1
+
+Signed-off-by: Wen Gong <wgong@codeaurora.org>
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/20210914163726.38604-3-jouni@codeaurora.org
+---
+ drivers/net/wireless/ath/ath11k/core.c | 5 +++++
+ drivers/net/wireless/ath/ath11k/hw.h   | 1 +
+ drivers/net/wireless/ath/ath11k/mac.c  | 3 ++-
+ 3 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index b65c4c7b3094..91a3f7a66496 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -83,6 +83,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.wakeup_mhi = false,
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX,
+ 		.hal_params = &ath11k_hw_hal_params_ipq8074,
++		.supports_dynamic_smps_6ghz = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -133,6 +134,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.wakeup_mhi = false,
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX,
+ 		.hal_params = &ath11k_hw_hal_params_ipq8074,
++		.supports_dynamic_smps_6ghz = false,
+ 	},
+ 	{
+ 		.name = "qca6390 hw2.0",
+@@ -182,6 +184,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.wakeup_mhi = true,
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX_QCA6390,
+ 		.hal_params = &ath11k_hw_hal_params_qca6390,
++		.supports_dynamic_smps_6ghz = false,
+ 	},
+ 	{
+ 		.name = "qcn9074 hw1.0",
+@@ -231,6 +234,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.wakeup_mhi = false,
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX,
+ 		.hal_params = &ath11k_hw_hal_params_ipq8074,
++		.supports_dynamic_smps_6ghz = true,
+ 	},
+ 	{
+ 		.name = "wcn6855 hw2.0",
+@@ -280,6 +284,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.wakeup_mhi = true,
+ 		.max_tx_ring = DP_TCL_NUM_RING_MAX_QCA6390,
+ 		.hal_params = &ath11k_hw_hal_params_qca6390,
++		.supports_dynamic_smps_6ghz = false,
+ 	},
+ };
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
+index 5a21dac8dc91..9db79dcb5444 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -177,6 +177,7 @@ struct ath11k_hw_params {
+ 	bool wakeup_mhi;
+ 	u8 max_tx_ring;
+ 	const struct ath11k_hw_hal_params *hal_params;
++	bool supports_dynamic_smps_6ghz;
+ };
+ 
+ struct ath11k_hw_ops {
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index d0ea6ea97418..8505ca4f8de5 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -7693,7 +7693,8 @@ static int __ath11k_mac_register(struct ath11k *ar)
+ 	 * for each band for a dual band capable radio. It will be tricky to
+ 	 * handle it when the ht capability different for each band.
+ 	 */
+-	if (ht_cap & WMI_HT_CAP_DYNAMIC_SMPS || ar->supports_6ghz)
++	if (ht_cap & WMI_HT_CAP_DYNAMIC_SMPS ||
++	    (ar->supports_6ghz && ab->hw_params.supports_dynamic_smps_6ghz))
+ 		ar->hw->wiphy->features |= NL80211_FEATURE_DYNAMIC_SMPS;
+ 
+ 	ar->hw->wiphy->max_scan_ssids = WLAN_SCAN_PARAMS_MAX_SSID;
+-- 
+2.37.1
+

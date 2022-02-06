@@ -1,0 +1,145 @@
+From fc9101187cee2c36760240553f6506335b74e4f8 Mon Sep 17 00:00:00 2001
+From: Wen Gong <quic_wgong@quicinc.com>
+Date: Tue, 18 Jan 2022 23:13:55 -0500
+Subject: [PATCH 138/241] ath11k: avoid firmware crash when reg set for
+ QCA6390/WCN6855
+
+For the NL80211_REGDOM_SET_BY_USER hint from cfg80211, it set the new
+alpha2 code to ath11k, then ath11k send WMI_SET_INIT_COUNTRY_CMDID to
+firmware for all chips currently. When test with WCN6855/QCA6390 chips,
+this WMI CMD leads firmware crash.
+
+For AP based chips(ipq8074/qcn9074), WMI_SET_INIT_COUNTRY_CMDID is used
+to send to firmware, for STATION based chips(WCN6855/QCA6390), it need to
+use another WMI CMD WMI_SET_CURRENT_COUNTRY_CMDID.
+
+Add flag current_cc_support in hardware parameters, it is used to
+distinguish AP/STA platform. After that, the firmware will work
+normal and the regulatory feature works well for QCA6390/WCN6855.
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03003-QCAHSPSWPL_V1_V2_SILICONZ_LITE-2
+
+Signed-off-by: Wen Gong <quic_wgong@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220119041355.32014-1-quic_wgong@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.c |  6 ++++++
+ drivers/net/wireless/ath/ath11k/hw.h   |  1 +
+ drivers/net/wireless/ath/ath11k/reg.c  | 25 +++++++++++++++++--------
+ 3 files changed, 24 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index 7a6ce9f1fa80..ffe342539871 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -98,6 +98,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.alloc_cacheable_memory = true,
+ 		.supports_rssi_stats = false,
+ 		.fw_wmi_diag_event = false,
++		.current_cc_support = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -162,6 +163,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.alloc_cacheable_memory = true,
+ 		.supports_rssi_stats = false,
+ 		.fw_wmi_diag_event = false,
++		.current_cc_support = false,
+ 	},
+ 	{
+ 		.name = "qca6390 hw2.0",
+@@ -225,6 +227,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.alloc_cacheable_memory = false,
+ 		.supports_rssi_stats = true,
+ 		.fw_wmi_diag_event = true,
++		.current_cc_support = true,
+ 	},
+ 	{
+ 		.name = "qcn9074 hw1.0",
+@@ -288,6 +291,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.alloc_cacheable_memory = true,
+ 		.supports_rssi_stats = false,
+ 		.fw_wmi_diag_event = false,
++		.current_cc_support = false,
+ 	},
+ 	{
+ 		.name = "wcn6855 hw2.0",
+@@ -351,6 +355,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.alloc_cacheable_memory = false,
+ 		.supports_rssi_stats = true,
+ 		.fw_wmi_diag_event = true,
++		.current_cc_support = true,
+ 	},
+ 	{
+ 		.name = "wcn6855 hw2.1",
+@@ -413,6 +418,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.wakeup_mhi = true,
+ 		.supports_rssi_stats = true,
+ 		.fw_wmi_diag_event = true,
++		.current_cc_support = true,
+ 	},
+ };
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
+index 0d524c952245..985321e0e938 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -192,6 +192,7 @@ struct ath11k_hw_params {
+ 	bool alloc_cacheable_memory;
+ 	bool supports_rssi_stats;
+ 	bool fw_wmi_diag_event;
++	bool current_cc_support;
+ };
+ 
+ struct ath11k_hw_ops {
+diff --git a/drivers/net/wireless/ath/ath11k/reg.c b/drivers/net/wireless/ath/ath11k/reg.c
+index 1f8a81987187..35c33661ee91 100644
+--- a/drivers/net/wireless/ath/ath11k/reg.c
++++ b/drivers/net/wireless/ath/ath11k/reg.c
+@@ -46,6 +46,7 @@ ath11k_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
+ {
+ 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
+ 	struct wmi_init_country_params init_country_param;
++	struct wmi_set_current_country_params set_current_param = {};
+ 	struct ath11k *ar = hw->priv;
+ 	int ret;
+ 
+@@ -74,18 +75,26 @@ ath11k_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request)
+ 		return;
+ 	}
+ 
+-	/* Set the country code to the firmware and wait for
++	/* Set the country code to the firmware and will receive
+ 	 * the WMI_REG_CHAN_LIST_CC EVENT for updating the
+ 	 * reg info
+ 	 */
+-	init_country_param.flags = ALPHA_IS_SET;
+-	memcpy(&init_country_param.cc_info.alpha2, request->alpha2, 2);
+-	init_country_param.cc_info.alpha2[2] = 0;
++	if (ar->ab->hw_params.current_cc_support) {
++		memcpy(&set_current_param.alpha2, request->alpha2, 2);
++		ret = ath11k_wmi_send_set_current_country_cmd(ar, &set_current_param);
++		if (ret)
++			ath11k_warn(ar->ab,
++				    "failed set current country code: %d\n", ret);
++	} else {
++		init_country_param.flags = ALPHA_IS_SET;
++		memcpy(&init_country_param.cc_info.alpha2, request->alpha2, 2);
++		init_country_param.cc_info.alpha2[2] = 0;
+ 
+-	ret = ath11k_wmi_send_init_country_cmd(ar, init_country_param);
+-	if (ret)
+-		ath11k_warn(ar->ab,
+-			    "INIT Country code set to fw failed : %d\n", ret);
++		ret = ath11k_wmi_send_init_country_cmd(ar, init_country_param);
++		if (ret)
++			ath11k_warn(ar->ab,
++				    "INIT Country code set to fw failed : %d\n", ret);
++	}
+ 
+ 	ath11k_mac_11d_scan_stop(ar);
+ 	ar->regdom_set_by_user = true;
+-- 
+2.37.1
+

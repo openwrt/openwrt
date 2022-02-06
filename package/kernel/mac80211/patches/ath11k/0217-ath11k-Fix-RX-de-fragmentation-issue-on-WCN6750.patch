@@ -1,0 +1,125 @@
+From 206e9e7ecdca54e7f89cf25e728ef112fbad2e20 Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Date: Wed, 4 May 2022 14:09:00 +0530
+Subject: [PATCH 217/241] ath11k: Fix RX de-fragmentation issue on WCN6750
+
+The offset of REO register where the RX fragment destination ring
+is configured is different in WCN6750 as compared to WCN6855.
+Due to this differnce in offsets, on WCN6750, fragment destination
+ring will be configured incorrectly, leading to RX fragments not
+getting delivered to the driver. Fix this by defining HW specific
+offsets for the REO MISC CTL register.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.1.0.1-00887-QCAMSLSWPLZ-1
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-01720.1-QCAHSPSWPL_V1_V2_SILICONZ_LITE-1
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.5.0.1-01100-QCAHKSWPL_SILICONZ-1
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.4.0.1-00192-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220504083900.31513-1-quic_mpubbise@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/hal.h |  2 +-
+ drivers/net/wireless/ath/ath11k/hw.c  | 23 +++++++++++++++++++++--
+ drivers/net/wireless/ath/ath11k/hw.h  |  1 +
+ 3 files changed, 23 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/hal.h b/drivers/net/wireless/ath/ath11k/hal.h
+index 1aadb1566df8..110c337ddf33 100644
+--- a/drivers/net/wireless/ath/ath11k/hal.h
++++ b/drivers/net/wireless/ath/ath11k/hal.h
+@@ -121,7 +121,7 @@ struct ath11k_base;
+ #define HAL_REO1_DEST_RING_CTRL_IX_1		0x00000008
+ #define HAL_REO1_DEST_RING_CTRL_IX_2		0x0000000c
+ #define HAL_REO1_DEST_RING_CTRL_IX_3		0x00000010
+-#define HAL_REO1_MISC_CTL			0x00000630
++#define HAL_REO1_MISC_CTL(ab)			ab->hw_params.regs->hal_reo1_misc_ctl
+ #define HAL_REO1_RING_BASE_LSB(ab)		ab->hw_params.regs->hal_reo1_ring_base_lsb
+ #define HAL_REO1_RING_BASE_MSB(ab)		ab->hw_params.regs->hal_reo1_ring_base_msb
+ #define HAL_REO1_RING_ID(ab)			ab->hw_params.regs->hal_reo1_ring_id
+diff --git a/drivers/net/wireless/ath/ath11k/hw.c b/drivers/net/wireless/ath/ath11k/hw.c
+index 09ce357f0f0d..96db85c55585 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.c
++++ b/drivers/net/wireless/ath/ath11k/hw.c
+@@ -771,10 +771,10 @@ static void ath11k_hw_wcn6855_reo_setup(struct ath11k_base *ab)
+ 		FIELD_PREP(HAL_REO1_GEN_ENABLE_AGING_FLUSH_ENABLE, 1);
+ 	ath11k_hif_write32(ab, reo_base + HAL_REO1_GEN_ENABLE, val);
+ 
+-	val = ath11k_hif_read32(ab, reo_base + HAL_REO1_MISC_CTL);
++	val = ath11k_hif_read32(ab, reo_base + HAL_REO1_MISC_CTL(ab));
+ 	val &= ~HAL_REO1_MISC_CTL_FRAGMENT_DST_RING;
+ 	val |= FIELD_PREP(HAL_REO1_MISC_CTL_FRAGMENT_DST_RING, HAL_SRNG_RING_ID_REO2SW1);
+-	ath11k_hif_write32(ab, reo_base + HAL_REO1_MISC_CTL, val);
++	ath11k_hif_write32(ab, reo_base + HAL_REO1_MISC_CTL(ab), val);
+ 
+ 	ath11k_hif_write32(ab, reo_base + HAL_REO1_AGING_THRESH_IX_0(ab),
+ 			   HAL_DEFAULT_REO_TIMEOUT_USEC);
+@@ -1983,6 +1983,9 @@ const struct ath11k_hw_regs ipq8074_regs = {
+ 
+ 	/* Shadow register area */
+ 	.hal_shadow_base_addr = 0x0,
++
++	/* REO misc control register, not used in IPQ8074 */
++	.hal_reo1_misc_ctl = 0x0,
+ };
+ 
+ const struct ath11k_hw_regs qca6390_regs = {
+@@ -2065,6 +2068,9 @@ const struct ath11k_hw_regs qca6390_regs = {
+ 
+ 	/* Shadow register area */
+ 	.hal_shadow_base_addr = 0x000008fc,
++
++	/* REO misc control register, not used in QCA6390 */
++	.hal_reo1_misc_ctl = 0x0,
+ };
+ 
+ const struct ath11k_hw_regs qcn9074_regs = {
+@@ -2147,6 +2153,9 @@ const struct ath11k_hw_regs qcn9074_regs = {
+ 
+ 	/* Shadow register area */
+ 	.hal_shadow_base_addr = 0x0,
++
++	/* REO misc control register, not used in QCN9074 */
++	.hal_reo1_misc_ctl = 0x0,
+ };
+ 
+ const struct ath11k_hw_regs wcn6855_regs = {
+@@ -2229,6 +2238,11 @@ const struct ath11k_hw_regs wcn6855_regs = {
+ 
+ 	/* Shadow register area */
+ 	.hal_shadow_base_addr = 0x000008fc,
++
++	/* REO misc control register, used for fragment
++	 * destination ring config in WCN6855.
++	 */
++	.hal_reo1_misc_ctl = 0x00000630,
+ };
+ 
+ const struct ath11k_hw_regs wcn6750_regs = {
+@@ -2311,6 +2325,11 @@ const struct ath11k_hw_regs wcn6750_regs = {
+ 
+ 	/* Shadow register area */
+ 	.hal_shadow_base_addr = 0x00000504,
++
++	/* REO misc control register, used for fragment
++	 * destination ring config in WCN6750.
++	 */
++	.hal_reo1_misc_ctl = 0x000005d8,
+ };
+ 
+ const struct ath11k_hw_hal_params ath11k_hw_hal_params_ipq8074 = {
+diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
+index 09f07214128c..9fe37dd174a3 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -380,6 +380,7 @@ struct ath11k_hw_regs {
+ 	u32 pcie_pcs_osc_dtct_config_base;
+ 
+ 	u32 hal_shadow_base_addr;
++	u32 hal_reo1_misc_ctl;
+ };
+ 
+ extern const struct ath11k_hw_regs ipq8074_regs;
+-- 
+2.37.1
+

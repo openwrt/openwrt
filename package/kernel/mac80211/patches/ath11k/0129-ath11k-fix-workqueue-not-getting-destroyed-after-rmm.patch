@@ -1,0 +1,49 @@
+From 147b0828afaadbce8a66d0fb961b8f1b60c5826f Mon Sep 17 00:00:00 2001
+From: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Date: Mon, 10 Jan 2022 16:24:14 +0200
+Subject: [PATCH 129/241] ath11k: fix workqueue not getting destroyed after
+ rmmod
+
+Currently, ath11k_core_alloc() creates a single thread workqueue.
+This workqueue is not detroyed during clean up when ath11k modules
+are unloaded from the kernel and is left as it is.
+If workqueue is not destroyed, it could lead to kernel
+memory scarcity in a longer run. This could affect self and
+other drivers workability as well.
+
+Add destroy workqueue in ath11k_core_free().
+
+Tested on: IPQ8074 WLAN.HK.2.4.0.1-01746-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/1640231787-17408-1-git-send-email-quic_adisi@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index 33855383b0aa..7a6ce9f1fa80 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: BSD-3-Clause-Clear
+ /*
+  * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
++ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #include <linux/module.h>
+@@ -1404,6 +1405,9 @@ EXPORT_SYMBOL(ath11k_core_deinit);
+ 
+ void ath11k_core_free(struct ath11k_base *ab)
+ {
++	flush_workqueue(ab->workqueue);
++	destroy_workqueue(ab->workqueue);
++
+ 	kfree(ab);
+ }
+ EXPORT_SYMBOL(ath11k_core_free);
+-- 
+2.37.1
+

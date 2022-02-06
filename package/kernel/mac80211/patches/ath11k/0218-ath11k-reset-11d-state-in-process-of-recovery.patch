@@ -1,0 +1,88 @@
+From ae102d02c90ed81cc4a96950e641ce49d13d6867 Mon Sep 17 00:00:00 2001
+From: Wen Gong <quic_wgong@quicinc.com>
+Date: Wed, 4 May 2022 23:46:36 -0400
+Subject: [PATCH 218/241] ath11k: reset 11d state in process of recovery
+
+When doing simulate_fw_crash operation periodically with a short interval
+time such as 10 seconds, it is easy happened WMI command timed out for
+WMI_SCAN_CHAN_LIST_CMDID in ath11k_reg_update_chan_list().
+
+log:
+[42287.610053] ath11k_pci 0000:01:00.0: wmi command 12291 timeout
+[42287.610064] ath11k_pci 0000:01:00.0: failed to send WMI_SCAN_CHAN_LIST cmd
+[42287.610073] ath11k_pci 0000:01:00.0: failed to perform regd update : -11
+
+Note that this issue does not occur with a longer interval such as 20 seconds.
+
+The reason the issue occurs with a shorter interval is the following steps:
+1) Upon initial boot, or after device recovery, the initial hw scan plus
+the 11d scan will run, and when 6 GHz support is present, these scans
+can take up to 12 seconds to complete, so ath11k_reg_update_chan_list()
+is still waiting the completion of ar->completed_11d_scan.
+2) If a simulate_fw_crash operation is received during this time, those
+scans do not complete, and ath11k_core_pre_reconfigure_recovery()
+complete the ar->completed_11d_scan, then ath11k_reg_update_chan_list()
+wakeup and start to send WMI_SCAN_CHAN_LIST_CMDID, but firmware is crashed
+at this moment, so wmi timed out occur.
+
+To address this issue, reset the 11d state during device recovery so that
+WMI_SCAN_CHAN_LIST_CMDID does not timed out for short interval time such
+as 10 seconds.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3
+
+Fixes: 1f682dc9fb37 ("ath11k: reduce the wait time of 11d scan and hw scan while add interface")
+Signed-off-by: Wen Gong <quic_wgong@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220505034636.29582-1-quic_wgong@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.c | 1 +
+ drivers/net/wireless/ath/ath11k/mac.c  | 5 +++++
+ drivers/net/wireless/ath/ath11k/reg.c  | 3 +++
+ 3 files changed, 9 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index d7593f6a238c..ad41bf8a16cd 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -1625,6 +1625,7 @@ static void ath11k_core_pre_reconfigure_recovery(struct ath11k_base *ab)
+ 
+ 		ieee80211_stop_queues(ar->hw);
+ 		ath11k_mac_drain_tx(ar);
++		ar->state_11d = ATH11K_11D_IDLE;
+ 		complete(&ar->completed_11d_scan);
+ 		complete(&ar->scan.started);
+ 		complete(&ar->scan.completed);
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index cae4780b05fd..17b65f82cdf5 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -6154,6 +6154,11 @@ void ath11k_mac_11d_scan_stop(struct ath11k *ar)
+ 	ath11k_dbg(ar->ab, ATH11K_DBG_MAC, "mac stop 11d vdev id %d\n",
+ 		   ar->vdev_id_11d_scan);
+ 
++	if (ar->state_11d == ATH11K_11D_PREPARING) {
++		ar->state_11d = ATH11K_11D_IDLE;
++		complete(&ar->completed_11d_scan);
++	}
++
+ 	if (ar->vdev_id_11d_scan != ATH11K_11D_INVALID_VDEV_ID) {
+ 		vdev_id = ar->vdev_id_11d_scan;
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/reg.c b/drivers/net/wireless/ath/ath11k/reg.c
+index 2370f227cf57..5bc93848005e 100644
+--- a/drivers/net/wireless/ath/ath11k/reg.c
++++ b/drivers/net/wireless/ath/ath11k/reg.c
+@@ -137,6 +137,9 @@ int ath11k_reg_update_chan_list(struct ath11k *ar, bool wait)
+ 			   "reg hw scan wait left time %d\n", left);
+ 	}
+ 
++	if (ar->state == ATH11K_STATE_RESTARTING)
++		return 0;
++
+ 	bands = hw->wiphy->bands;
+ 	for (band = 0; band < NUM_NL80211_BANDS; band++) {
+ 		if (!bands[band])
+-- 
+2.37.1
+

@@ -1,0 +1,36 @@
+From 749ff93e1fad1aebb88cce68350a57d7f5f0d5b9 Mon Sep 17 00:00:00 2001
+From: Wen Gong <quic_wgong@quicinc.com>
+Date: Wed, 9 Feb 2022 01:08:16 -0500
+Subject: [PATCH 146/241] ath11k: fix uninitialized rate_idx in
+ ath11k_dp_tx_update_txcompl()
+
+The rate_idx which passed to ath11k_debugfs_sta_add_tx_stats() by
+ath11k_dp_tx_update_txcompl() is not initialized, add initialization
+for it.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03003-QCAHSPSWPL_V1_V2_SILICONZ_LITE-2
+
+Fixes: 1b8bb94c0612 ("ath11k: report tx bitrate for iw wlan station dump")
+Signed-off-by: Wen Gong <quic_wgong@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220209060816.423-1-quic_wgong@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/dp_tx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp_tx.c b/drivers/net/wireless/ath/ath11k/dp_tx.c
+index 6d19547d78be..c7d7631efa5a 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -427,7 +427,7 @@ void ath11k_dp_tx_update_txcompl(struct ath11k *ar, struct hal_tx_status *ts)
+ 	struct ath11k_sta *arsta;
+ 	struct ieee80211_sta *sta;
+ 	u16 rate, ru_tones;
+-	u8 mcs, rate_idx, ofdma;
++	u8 mcs, rate_idx = 0, ofdma;
+ 	int ret;
+ 
+ 	spin_lock_bh(&ab->base_lock);
+-- 
+2.37.1
+

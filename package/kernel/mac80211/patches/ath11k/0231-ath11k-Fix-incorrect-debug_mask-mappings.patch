@@ -1,0 +1,40 @@
+From 0ad9af494fdcceb47209da251cf094fc3e41883d Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Date: Thu, 2 Jun 2022 17:26:21 +0530
+Subject: [PATCH 231/241] ath11k: Fix incorrect debug_mask mappings
+
+Currently a couple of debug_mask entries are mapped to the same value,
+this could enable unintended driver logging. If enabling DP_TX logs was
+the intention, then this could also enable PCI logs flooding the dmesg
+buffer or vice versa. Fix this by correctly assigning the debug masks.
+
+Found during code review.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.1.0.1-00887-QCAMSLSWPLZ-1
+
+Fixes: aa2092a9bab3f ("ath11k: add raw mode and software crypto support")
+Signed-off-by: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220602115621.15339-1-quic_mpubbise@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/debug.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/debug.h b/drivers/net/wireless/ath/ath11k/debug.h
+index fbbd5fe02aa8..91545640c47b 100644
+--- a/drivers/net/wireless/ath/ath11k/debug.h
++++ b/drivers/net/wireless/ath/ath11k/debug.h
+@@ -23,8 +23,8 @@ enum ath11k_debug_mask {
+ 	ATH11K_DBG_TESTMODE	= 0x00000400,
+ 	ATH11k_DBG_HAL		= 0x00000800,
+ 	ATH11K_DBG_PCI		= 0x00001000,
+-	ATH11K_DBG_DP_TX	= 0x00001000,
+-	ATH11K_DBG_DP_RX	= 0x00002000,
++	ATH11K_DBG_DP_TX	= 0x00002000,
++	ATH11K_DBG_DP_RX	= 0x00004000,
+ 	ATH11K_DBG_ANY		= 0xffffffff,
+ };
+ 
+-- 
+2.37.1
+

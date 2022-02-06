@@ -1,0 +1,58 @@
+From 4e657edb3617c26d56e6bf0c2cf38333178e3cf0 Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Date: Wed, 6 Apr 2022 15:11:03 +0530
+Subject: [PATCH 201/241] ath11k: Do not put HW in DBS mode for WCN6750
+
+Though WCN6750 is a single PDEV device, it is not a
+DBS solution. So, do not put HW in DBS mode for WCN6750.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.1.0.1-00573-QCAMSLSWPLZ-1
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-01720.1-QCAHSPSWPL_V1_V2_SILICONZ_LITE-1
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.5.0.1-01100-QCAHKSWPL_SILICONZ-1
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.4.0.1-00192-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220406094107.17878-10-quic_mpubbise@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.c | 2 +-
+ drivers/net/wireless/ath/ath11k/wmi.c  | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index 2597b1474ee0..9928fdc28902 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -1218,7 +1218,7 @@ static int ath11k_core_start(struct ath11k_base *ab,
+ 	}
+ 
+ 	/* put hardware to DBS mode */
+-	if (ab->hw_params.single_pdev_only) {
++	if (ab->hw_params.single_pdev_only && ab->hw_params.num_rxmda_per_pdev > 1) {
+ 		ret = ath11k_wmi_set_hw_mode(ab, WMI_HOST_HW_MODE_DBS);
+ 		if (ret) {
+ 			ath11k_err(ab, "failed to send dbs mode: %d\n", ret);
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index dcf31bdad47e..d7243819d9bd 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: BSD-3-Clause-Clear
+ /*
+  * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
++ * Copyright (c) 2021, Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ #include <linux/skbuff.h>
+ #include <linux/ctype.h>
+@@ -8225,7 +8226,7 @@ int ath11k_wmi_attach(struct ath11k_base *ab)
+ 	ab->wmi_ab.preferred_hw_mode = WMI_HOST_HW_MODE_MAX;
+ 
+ 	/* It's overwritten when service_ext_ready is handled */
+-	if (ab->hw_params.single_pdev_only)
++	if (ab->hw_params.single_pdev_only && ab->hw_params.num_rxmda_per_pdev > 1)
+ 		ab->wmi_ab.preferred_hw_mode = WMI_HOST_HW_MODE_SINGLE;
+ 
+ 	/* TODO: Init remaining wmi soc resources required */
+-- 
+2.37.1
+

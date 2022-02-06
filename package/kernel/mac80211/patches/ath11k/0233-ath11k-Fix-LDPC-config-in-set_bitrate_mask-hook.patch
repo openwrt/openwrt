@@ -1,0 +1,72 @@
+From d9ea756f93f970929b0e09a836fe83d2ebc32369 Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Date: Thu, 2 Jun 2022 18:11:42 +0530
+Subject: [PATCH 233/241] ath11k: Fix LDPC config in set_bitrate_mask hook
+
+Currently ar->ht_cap_info is not set anywhere in the code, this could
+result in LDPC config computed wrongly in the set_bitrate_mask() hook
+and eventually sending wrong config to the target. Fix this by checking
+the LDPC support from the band HT capabilities of the radio instead.
+
+Furthermore, it looks like firmwares running on the ath11k hardware
+do not set WMI_HT_CAP_LDPC for advertising the TX LDPC capability,
+WMI_HT_CAP_TX_LDPC is set instead and this should be checked for
+getting hardware's TX LDPC support. This is true for QCA6390, WCN6855
+& WCN6750 hardware.
+
+Also, remove unused variables ht_cap_info & vht_cap_info from
+struct ath11k{}.
+
+Found this during code review.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.1.0.1-00887-QCAMSLSWPLZ-1
+
+Signed-off-by: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220602124142.29909-1-quic_mpubbise@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.h | 2 --
+ drivers/net/wireless/ath/ath11k/mac.c  | 4 +++-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index ea31016437b0..2bd5eb9df4d4 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -582,8 +582,6 @@ struct ath11k {
+ 	struct ath11k_pdev_wmi *wmi;
+ 	struct ath11k_pdev_dp dp;
+ 	u8 mac_addr[ETH_ALEN];
+-	u32 ht_cap_info;
+-	u32 vht_cap_info;
+ 	struct ath11k_he ar_he;
+ 	enum ath11k_state state;
+ 	bool supports_6ghz;
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 0d2e2cb4f640..9e16470cd302 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -7794,6 +7794,7 @@ ath11k_mac_op_set_bitrate_mask(struct ieee80211_hw *hw,
+ {
+ 	struct ath11k_vif *arvif = (void *)vif->drv_priv;
+ 	struct cfg80211_chan_def def;
++	struct ath11k_pdev_cap *cap;
+ 	struct ath11k *ar = arvif->ar;
+ 	enum nl80211_band band;
+ 	const u8 *ht_mcs_mask;
+@@ -7814,10 +7815,11 @@ ath11k_mac_op_set_bitrate_mask(struct ieee80211_hw *hw,
+ 		return -EPERM;
+ 
+ 	band = def.chan->band;
++	cap = &ar->pdev->cap;
+ 	ht_mcs_mask = mask->control[band].ht_mcs;
+ 	vht_mcs_mask = mask->control[band].vht_mcs;
+ 	he_mcs_mask = mask->control[band].he_mcs;
+-	ldpc = !!(ar->ht_cap_info & WMI_HT_CAP_LDPC);
++	ldpc = !!(cap->band[band].ht_cap_info & WMI_HT_CAP_TX_LDPC);
+ 
+ 	sgi = mask->control[band].gi;
+ 	if (sgi == NL80211_TXRATE_FORCE_LGI)
+-- 
+2.37.1
+

@@ -1,0 +1,46 @@
+From d787856c830963ad93f23d0570ae0349d78c505f Mon Sep 17 00:00:00 2001
+From: Yang Yingliang <yangyingliang@huawei.com>
+Date: Mon, 10 Jan 2022 16:24:13 +0200
+Subject: [PATCH 128/241] ath11k: add missing of_node_put() to avoid leak
+
+The node pointer is returned by of_find_node_by_type()
+or of_parse_phandle() with refcount incremented. Calling
+of_node_put() to aovid the refcount leak.
+
+Fixes: 6ac04bdc5edb ("ath11k: Use reserved host DDR addresses from DT for PCI devices")
+Reported-by: Hulk Robot <hulkci@huawei.com>
+Signed-off-by: Yang Yingliang <yangyingliang@huawei.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20211221114003.335557-1-yangyingliang@huawei.com
+---
+ drivers/net/wireless/ath/ath11k/mhi.c | 1 +
+ drivers/net/wireless/ath/ath11k/qmi.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mhi.c b/drivers/net/wireless/ath/ath11k/mhi.c
+index f4400b25c5cf..8b2143802816 100644
+--- a/drivers/net/wireless/ath/ath11k/mhi.c
++++ b/drivers/net/wireless/ath/ath11k/mhi.c
+@@ -332,6 +332,7 @@ static int ath11k_mhi_read_addr_from_dt(struct mhi_controller *mhi_ctrl)
+ 		return -ENOENT;
+ 
+ 	ret = of_address_to_resource(np, 0, &res);
++	of_node_put(np);
+ 	if (ret)
+ 		return ret;
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.c b/drivers/net/wireless/ath/ath11k/qmi.c
+index 65d3c6ba35ae..42c2ad3e3668 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -1936,6 +1936,7 @@ static int ath11k_qmi_assign_target_mem_chunk(struct ath11k_base *ab)
+ 			}
+ 
+ 			ret = of_address_to_resource(hremote_node, 0, &res);
++			of_node_put(hremote_node);
+ 			if (ret) {
+ 				ath11k_dbg(ab, ATH11K_DBG_QMI,
+ 					   "qmi fail to get reg from hremote\n");
+-- 
+2.37.1
+

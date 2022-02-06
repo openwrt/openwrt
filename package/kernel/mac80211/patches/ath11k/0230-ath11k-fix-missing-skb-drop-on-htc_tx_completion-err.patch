@@ -1,0 +1,42 @@
+From 846e97093eacb40c31b908e9c1c71a6c7216b143 Mon Sep 17 00:00:00 2001
+From: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+Date: Sat, 28 May 2022 16:25:16 +0200
+Subject: [PATCH 230/241] ath11k: fix missing skb drop on htc_tx_completion
+ error
+
+On htc_tx_completion error the skb is not dropped. This is wrong since
+the completion_handler logic expect the skb to be consumed anyway even
+when an error is triggered. Not freeing the skb on error is a memory
+leak since the skb won't be freed anywere else. Correctly free the
+packet on eid >= ATH11K_HTC_EP_COUNT before returning.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.5.0.1-01208-QCAHKSWPL_SILICONZ-1
+
+Fixes: f951380a6022 ("ath11k: Disabling credit flow for WMI path")
+Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220528142516.20819-2-ansuelsmth@gmail.com
+---
+ drivers/net/wireless/ath/ath11k/htc.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/htc.c b/drivers/net/wireless/ath/ath11k/htc.c
+index 069c29a4fac7..ca3aedc0252d 100644
+--- a/drivers/net/wireless/ath/ath11k/htc.c
++++ b/drivers/net/wireless/ath/ath11k/htc.c
+@@ -258,8 +258,10 @@ void ath11k_htc_tx_completion_handler(struct ath11k_base *ab,
+ 	u8 eid;
+ 
+ 	eid = ATH11K_SKB_CB(skb)->eid;
+-	if (eid >= ATH11K_HTC_EP_COUNT)
++	if (eid >= ATH11K_HTC_EP_COUNT) {
++		dev_kfree_skb_any(skb);
+ 		return;
++	}
+ 
+ 	ep = &htc->endpoint[eid];
+ 	spin_lock_bh(&htc->tx_lock);
+-- 
+2.37.1
+

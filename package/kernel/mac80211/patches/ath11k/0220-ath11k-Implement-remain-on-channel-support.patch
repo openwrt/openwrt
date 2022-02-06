@@ -1,0 +1,199 @@
+From 4fe4f144c8ad8925962dfd6a916d90f92e9ec081 Mon Sep 17 00:00:00 2001
+From: Baochen Qiang <quic_bqiang@quicinc.com>
+Date: Mon, 9 May 2022 14:57:31 +0300
+Subject: [PATCH 220/241] ath11k: Implement remain-on-channel support
+
+Add remain on channel support, it is needed in several
+scenarios such as Passpoint etc.
+
+Currently this is supported by QCA6390, WCN6855, IPQ8074,
+IPQ6018 and QCN9074.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-01720.1-QCAHSPSWPL_V1_V2_SILICONZ_LITE-1
+
+Signed-off-by: Baochen Qiang <quic_bqiang@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220506013614.1580274-2-quic_bqiang@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.c |   1 +
+ drivers/net/wireless/ath/ath11k/mac.c  | 115 +++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/wmi.c  |   4 +
+ 3 files changed, 120 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index ad41bf8a16cd..c17779e10d67 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -1629,6 +1629,7 @@ static void ath11k_core_pre_reconfigure_recovery(struct ath11k_base *ab)
+ 		complete(&ar->completed_11d_scan);
+ 		complete(&ar->scan.started);
+ 		complete(&ar->scan.completed);
++		complete(&ar->scan.on_channel);
+ 		complete(&ar->peer_assoc_done);
+ 		complete(&ar->peer_delete_done);
+ 		complete(&ar->install_key_done);
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 8899e30640e7..81eb38aac5d5 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8349,6 +8349,118 @@ static int ath11k_mac_op_set_bios_sar_specs(struct ieee80211_hw *hw,
+ 	return ret;
+ }
+ 
++static int ath11k_mac_op_cancel_remain_on_channel(struct ieee80211_hw *hw,
++						  struct ieee80211_vif *vif)
++{
++	struct ath11k *ar = hw->priv;
++
++	mutex_lock(&ar->conf_mutex);
++
++	spin_lock_bh(&ar->data_lock);
++	ar->scan.roc_notify = false;
++	spin_unlock_bh(&ar->data_lock);
++
++	ath11k_scan_abort(ar);
++
++	mutex_unlock(&ar->conf_mutex);
++
++	cancel_delayed_work_sync(&ar->scan.timeout);
++
++	return 0;
++}
++
++static int ath11k_mac_op_remain_on_channel(struct ieee80211_hw *hw,
++					   struct ieee80211_vif *vif,
++					   struct ieee80211_channel *chan,
++					   int duration,
++					   enum ieee80211_roc_type type)
++{
++	struct ath11k *ar = hw->priv;
++	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct scan_req_params arg;
++	int ret;
++	u32 scan_time_msec;
++
++	mutex_lock(&ar->conf_mutex);
++
++	spin_lock_bh(&ar->data_lock);
++	switch (ar->scan.state) {
++	case ATH11K_SCAN_IDLE:
++		reinit_completion(&ar->scan.started);
++		reinit_completion(&ar->scan.completed);
++		reinit_completion(&ar->scan.on_channel);
++		ar->scan.state = ATH11K_SCAN_STARTING;
++		ar->scan.is_roc = true;
++		ar->scan.vdev_id = arvif->vdev_id;
++		ar->scan.roc_freq = chan->center_freq;
++		ar->scan.roc_notify = true;
++		ret = 0;
++		break;
++	case ATH11K_SCAN_STARTING:
++	case ATH11K_SCAN_RUNNING:
++	case ATH11K_SCAN_ABORTING:
++		ret = -EBUSY;
++		break;
++	}
++	spin_unlock_bh(&ar->data_lock);
++
++	if (ret)
++		goto exit;
++
++	scan_time_msec = ar->hw->wiphy->max_remain_on_channel_duration * 2;
++
++	memset(&arg, 0, sizeof(arg));
++	ath11k_wmi_start_scan_init(ar, &arg);
++	arg.num_chan = 1;
++	arg.chan_list = kcalloc(arg.num_chan, sizeof(*arg.chan_list),
++				GFP_KERNEL);
++	if (!arg.chan_list) {
++		ret = -ENOMEM;
++		goto exit;
++	}
++
++	arg.vdev_id = arvif->vdev_id;
++	arg.scan_id = ATH11K_SCAN_ID;
++	arg.chan_list[0] = chan->center_freq;
++	arg.dwell_time_active = scan_time_msec;
++	arg.dwell_time_passive = scan_time_msec;
++	arg.max_scan_time = scan_time_msec;
++	arg.scan_flags |= WMI_SCAN_FLAG_PASSIVE;
++	arg.scan_flags |= WMI_SCAN_FILTER_PROBE_REQ;
++	arg.burst_duration = duration;
++
++	ret = ath11k_start_scan(ar, &arg);
++	if (ret) {
++		ath11k_warn(ar->ab, "failed to start roc scan: %d\n", ret);
++
++		spin_lock_bh(&ar->data_lock);
++		ar->scan.state = ATH11K_SCAN_IDLE;
++		spin_unlock_bh(&ar->data_lock);
++		goto free_chan_list;
++	}
++
++	ret = wait_for_completion_timeout(&ar->scan.on_channel, 3 * HZ);
++	if (ret == 0) {
++		ath11k_warn(ar->ab, "failed to switch to channel for roc scan\n");
++		ret = ath11k_scan_stop(ar);
++		if (ret)
++			ath11k_warn(ar->ab, "failed to stop scan: %d\n", ret);
++		ret = -ETIMEDOUT;
++		goto free_chan_list;
++	}
++
++	ieee80211_queue_delayed_work(ar->hw, &ar->scan.timeout,
++				     msecs_to_jiffies(duration));
++
++	ret = 0;
++
++free_chan_list:
++	kfree(arg.chan_list);
++exit:
++	mutex_unlock(&ar->conf_mutex);
++	return ret;
++}
++
+ static const struct ieee80211_ops ath11k_ops = {
+ 	.tx				= ath11k_mac_op_tx,
+ 	.start                          = ath11k_mac_op_start,
+@@ -8401,6 +8513,8 @@ static const struct ieee80211_ops ath11k_ops = {
+ #endif
+ 
+ 	.set_sar_specs			= ath11k_mac_op_set_bios_sar_specs,
++	.remain_on_channel		= ath11k_mac_op_remain_on_channel,
++	.cancel_remain_on_channel	= ath11k_mac_op_cancel_remain_on_channel,
+ };
+ 
+ static void ath11k_mac_update_ch_list(struct ath11k *ar,
+@@ -8990,6 +9104,7 @@ int ath11k_mac_allocate(struct ath11k_base *ab)
+ 		init_completion(&ar->bss_survey_done);
+ 		init_completion(&ar->scan.started);
+ 		init_completion(&ar->scan.completed);
++		init_completion(&ar->scan.on_channel);
+ 		init_completion(&ar->thermal.wmi_sync);
+ 
+ 		INIT_DELAYED_WORK(&ar->scan.timeout, ath11k_scan_timeout_work);
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 63463b6c63be..0eb2e5ef45d2 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -5264,6 +5264,8 @@ static void ath11k_wmi_event_scan_started(struct ath11k *ar)
+ 		break;
+ 	case ATH11K_SCAN_STARTING:
+ 		ar->scan.state = ATH11K_SCAN_RUNNING;
++		if (ar->scan.is_roc)
++			ieee80211_ready_on_channel(ar->hw);
+ 		complete(&ar->scan.started);
+ 		break;
+ 	}
+@@ -5346,6 +5348,8 @@ static void ath11k_wmi_event_scan_foreign_chan(struct ath11k *ar, u32 freq)
+ 	case ATH11K_SCAN_RUNNING:
+ 	case ATH11K_SCAN_ABORTING:
+ 		ar->scan_channel = ieee80211_get_channel(ar->hw->wiphy, freq);
++		if (ar->scan.is_roc && ar->scan.roc_freq == freq)
++			complete(&ar->scan.on_channel);
+ 		break;
+ 	}
+ }
+-- 
+2.37.1
+

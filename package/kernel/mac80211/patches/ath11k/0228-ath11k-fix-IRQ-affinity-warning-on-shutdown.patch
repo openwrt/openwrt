@@ -1,0 +1,36 @@
+From 6a0e255b802590de4a09fbcf8962b09a13040944 Mon Sep 17 00:00:00 2001
+From: Johan Hovold <johan+linaro@kernel.org>
+Date: Mon, 23 May 2022 16:32:58 +0200
+Subject: [PATCH 228/241] ath11k: fix IRQ affinity warning on shutdown
+
+Make sure to clear the IRQ affinity hint also on shutdown to avoid
+triggering a WARN_ON_ONCE() in __free_irq() when stopping MHI while
+using a single MSI vector.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3
+
+Fixes: e94b07493da3 ("ath11k: Set IRQ affinity to CPU0 in case of one MSI vector")
+Signed-off-by: Johan Hovold <johan+linaro@kernel.org>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220523143258.24818-1-johan+linaro@kernel.org
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index dedf1b88ddf6..487a303b3077 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -920,7 +920,9 @@ static void ath11k_pci_remove(struct pci_dev *pdev)
+ static void ath11k_pci_shutdown(struct pci_dev *pdev)
+ {
+ 	struct ath11k_base *ab = pci_get_drvdata(pdev);
++	struct ath11k_pci *ab_pci = ath11k_pci_priv(ab);
+ 
++	ath11k_pci_set_irq_affinity_hint(ab_pci, NULL);
+ 	ath11k_pci_power_down(ab);
+ }
+ 
+-- 
+2.37.1
+

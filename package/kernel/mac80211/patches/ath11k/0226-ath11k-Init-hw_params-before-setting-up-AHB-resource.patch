@@ -1,0 +1,47 @@
+From 6f8d93f9a8e7f923156562edc0d6e3b1357aa525 Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Date: Tue, 17 May 2022 11:22:41 +0530
+Subject: [PATCH 226/241] ath11k: Init hw_params before setting up AHB
+ resources
+
+As part of adding the support of WCN6750 to ath11k, bus_params
+were moved to hw_params and this regressed the initialization
+of WCN6750. By the time AHB resources are setup for WCN6750,
+hw_params will not be initialized and therefore initialization
+for WCN6750 will fail. This is applicable only for WCN6750,
+no other device is impacted.
+
+Fix this by moving the initialization of hw_params before
+setting up AHB resources.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.1.0.1-00887-QCAMSLSWPLZ-1
+
+Fixes: 00402f49d26f ("ath11k: Add support for WCN6750 device")
+Signed-off-by: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220517055241.15885-1-quic_mpubbise@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/ahb.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/ahb.c b/drivers/net/wireless/ath/ath11k/ahb.c
+index fa11807f48a9..d7d33d5cdfc5 100644
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -976,11 +976,11 @@ static int ath11k_ahb_probe(struct platform_device *pdev)
+ 	ab->hw_rev = hw_rev;
+ 	platform_set_drvdata(pdev, ab);
+ 
+-	ret = ath11k_ahb_setup_resources(ab);
++	ret = ath11k_core_pre_init(ab);
+ 	if (ret)
+ 		goto err_core_free;
+ 
+-	ret = ath11k_core_pre_init(ab);
++	ret = ath11k_ahb_setup_resources(ab);
+ 	if (ret)
+ 		goto err_core_free;
+ 
+-- 
+2.37.1
+

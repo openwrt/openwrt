@@ -1,0 +1,71 @@
+From 55542aba991c946bdefd767c45840c515f167880 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Tue, 2 Aug 2022 14:17:27 +0200
+Subject: [PATCH] Revert "ath11k: Use memset_startat() for clearing queue
+ descriptors"
+
+This reverts commit d5549e9a6b863fe10388a55ab5dfc12b0a1473d3.
+
+memset_startat() was added in kernel 5.16, so avoid using it for now.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/hal_rx.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/hal_rx.c b/drivers/net/wireless/ath/ath11k/hal_rx.c
+index 7f39c6fb7408..49e5ba5ddd68 100644
+--- a/drivers/net/wireless/ath/ath11k/hal_rx.c
++++ b/drivers/net/wireless/ath/ath11k/hal_rx.c
+@@ -29,7 +29,8 @@ static int ath11k_hal_reo_cmd_queue_stats(struct hal_tlv_hdr *tlv,
+ 		  FIELD_PREP(HAL_TLV_HDR_LEN, sizeof(*desc));
+ 
+ 	desc = (struct hal_reo_get_queue_stats *)tlv->value;
+-	memset_startat(desc, 0, queue_addr_lo);
++	memset(&desc->queue_addr_lo, 0,
++	       (sizeof(*desc) - sizeof(struct hal_reo_cmd_hdr)));
+ 
+ 	desc->cmd.info0 &= ~HAL_REO_CMD_HDR_INFO0_STATUS_REQUIRED;
+ 	if (cmd->flag & HAL_REO_CMD_FLG_NEED_STATUS)
+@@ -61,7 +62,8 @@ static int ath11k_hal_reo_cmd_flush_cache(struct ath11k_hal *hal, struct hal_tlv
+ 		  FIELD_PREP(HAL_TLV_HDR_LEN, sizeof(*desc));
+ 
+ 	desc = (struct hal_reo_flush_cache *)tlv->value;
+-	memset_startat(desc, 0, cache_addr_lo);
++	memset(&desc->cache_addr_lo, 0,
++	       (sizeof(*desc) - sizeof(struct hal_reo_cmd_hdr)));
+ 
+ 	desc->cmd.info0 &= ~HAL_REO_CMD_HDR_INFO0_STATUS_REQUIRED;
+ 	if (cmd->flag & HAL_REO_CMD_FLG_NEED_STATUS)
+@@ -99,7 +101,8 @@ static int ath11k_hal_reo_cmd_update_rx_queue(struct hal_tlv_hdr *tlv,
+ 		  FIELD_PREP(HAL_TLV_HDR_LEN, sizeof(*desc));
+ 
+ 	desc = (struct hal_reo_update_rx_queue *)tlv->value;
+-	memset_startat(desc, 0, queue_addr_lo);
++	memset(&desc->queue_addr_lo, 0,
++	       (sizeof(*desc) - sizeof(struct hal_reo_cmd_hdr)));
+ 
+ 	desc->cmd.info0 &= ~HAL_REO_CMD_HDR_INFO0_STATUS_REQUIRED;
+ 	if (cmd->flag & HAL_REO_CMD_FLG_NEED_STATUS)
+@@ -763,17 +766,15 @@ void ath11k_hal_reo_qdesc_setup(void *vaddr, int tid, u32 ba_window_size,
+ 	 * size changes and also send WMI message to FW to change the REO
+ 	 * queue descriptor in Rx peer entry as part of dp_rx_tid_update.
+ 	 */
+-	memset(ext_desc, 0, sizeof(*ext_desc));
++	memset(ext_desc, 0, 3 * sizeof(*ext_desc));
+ 	ath11k_hal_reo_set_desc_hdr(&ext_desc->desc_hdr, HAL_DESC_REO_OWNED,
+ 				    HAL_DESC_REO_QUEUE_EXT_DESC,
+ 				    REO_QUEUE_DESC_MAGIC_DEBUG_PATTERN_1);
+ 	ext_desc++;
+-	memset(ext_desc, 0, sizeof(*ext_desc));
+ 	ath11k_hal_reo_set_desc_hdr(&ext_desc->desc_hdr, HAL_DESC_REO_OWNED,
+ 				    HAL_DESC_REO_QUEUE_EXT_DESC,
+ 				    REO_QUEUE_DESC_MAGIC_DEBUG_PATTERN_2);
+ 	ext_desc++;
+-	memset(ext_desc, 0, sizeof(*ext_desc));
+ 	ath11k_hal_reo_set_desc_hdr(&ext_desc->desc_hdr, HAL_DESC_REO_OWNED,
+ 				    HAL_DESC_REO_QUEUE_EXT_DESC,
+ 				    REO_QUEUE_DESC_MAGIC_DEBUG_PATTERN_3);
+-- 
+2.37.1
+

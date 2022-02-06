@@ -1,0 +1,31 @@
+From 9dd86f58c5418a9fd0f8de0e3cbffc5afe9ec631 Mon Sep 17 00:00:00 2001
+From: Wen Gong <quic_wgong@quicinc.com>
+Date: Mon, 21 Mar 2022 13:03:23 +0200
+Subject: [PATCH 171/241] ath11k: remove unused ATH11K_BD_IE_BOARD_EXT
+
+Currently ATH11K_BD_IE_BOARD_EXT is not used, so remove it.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3
+
+Signed-off-by: Wen Gong <quic_wgong@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220319023543.14288-2-quic_wgong@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/hw.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
+index debfcf193236..5681f571280f 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -293,7 +293,6 @@ enum ath11k_bd_ie_board_type {
+ enum ath11k_bd_ie_type {
+ 	/* contains sub IEs of enum ath11k_bd_ie_board_type */
+ 	ATH11K_BD_IE_BOARD = 0,
+-	ATH11K_BD_IE_BOARD_EXT = 1,
+ };
+ 
+ struct ath11k_hw_regs {
+-- 
+2.37.1
+

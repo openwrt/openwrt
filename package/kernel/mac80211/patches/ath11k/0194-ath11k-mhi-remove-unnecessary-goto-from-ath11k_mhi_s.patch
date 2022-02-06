@@ -1,0 +1,58 @@
+From f674a254ee322aed6268302488ea591c3ad052bc Mon Sep 17 00:00:00 2001
+From: Kalle Valo <quic_kvalo@quicinc.com>
+Date: Tue, 5 Apr 2022 11:26:44 +0300
+Subject: [PATCH 194/241] ath11k: mhi: remove unnecessary goto from
+ ath11k_mhi_start()
+
+No need to have goto for a return statement, so simplify the code. While at it,
+print warning messages if power up calls fail.
+
+No functional changes.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03003-QCAHSPSWPL_V1_V2_SILICONZ_LITE-2
+
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220401173042.17467-4-kvalo@kernel.org
+---
+ drivers/net/wireless/ath/ath11k/mhi.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mhi.c b/drivers/net/wireless/ath/ath11k/mhi.c
+index defdf641df0b..c44df17719f6 100644
+--- a/drivers/net/wireless/ath/ath11k/mhi.c
++++ b/drivers/net/wireless/ath/ath11k/mhi.c
+@@ -465,22 +465,24 @@ void ath11k_mhi_unregister(struct ath11k_pci *ab_pci)
+ 
+ int ath11k_mhi_start(struct ath11k_pci *ab_pci)
+ {
++	struct ath11k_base *ab = ab_pci->ab;
+ 	int ret;
+ 
+ 	ab_pci->mhi_ctrl->timeout_ms = MHI_TIMEOUT_DEFAULT_MS;
+ 
+ 	ret = mhi_prepare_for_power_up(ab_pci->mhi_ctrl);
+-	if (ret)
+-		goto out;
++	if (ret) {
++		ath11k_warn(ab, "failed to prepare mhi: %d", ret);
++		return ret;
++	}
+ 
+ 	ret = mhi_sync_power_up(ab_pci->mhi_ctrl);
+-	if (ret)
+-		goto out;
++	if (ret) {
++		ath11k_warn(ab, "failed to power up mhi: %d", ret);
++		return ret;
++	}
+ 
+ 	return 0;
+-
+-out:
+-	return ret;
+ }
+ 
+ void ath11k_mhi_stop(struct ath11k_pci *ab_pci)
+-- 
+2.37.1
+

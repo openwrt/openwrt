@@ -1,0 +1,75 @@
+From 5d7f1e8b59d884cccfcf805dd55bcc881c24b80c Mon Sep 17 00:00:00 2001
+From: P Praneesh <ppranees@codeaurora.org>
+Date: Fri, 12 Nov 2021 11:02:24 +0200
+Subject: [PATCH 069/241] ath11k: remove usage quota while processing rx
+ packets
+
+The usage of quota variable inside ath11k_dp_rx_process_received_packets()
+is redundant. Since we would queue only max packets to the list before
+calling this function so it would never exceed quota. Hence removing
+usage of quota variable.
+
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.4.0.1.r2-00012-QCAHKSWPL_SILICONZ-1
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.4.0.1-01695-QCAHKSWPL_SILICONZ-1
+
+Co-developed-by: Sriram R <srirrama@codeaurora.org>
+Signed-off-by: Sriram R <srirrama@codeaurora.org>
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+Signed-off-by: P Praneesh <ppranees@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1630560820-21905-7-git-send-email-ppranees@codeaurora.org
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp_rx.c b/drivers/net/wireless/ath/ath11k/dp_rx.c
+index 8dde2268646c..5a8ca9e064e9 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2600,7 +2600,7 @@ static int ath11k_dp_rx_process_msdu(struct ath11k *ar,
+ static void ath11k_dp_rx_process_received_packets(struct ath11k_base *ab,
+ 						  struct napi_struct *napi,
+ 						  struct sk_buff_head *msdu_list,
+-						  int *quota, int mac_id)
++						  int mac_id)
+ {
+ 	struct sk_buff *msdu;
+ 	struct ath11k *ar;
+@@ -2635,7 +2635,6 @@ static void ath11k_dp_rx_process_received_packets(struct ath11k_base *ab,
+ 		}
+ 
+ 		ath11k_dp_rx_deliver_msdu(ar, napi, msdu, &rx_status);
+-		(*quota)--;
+ 	}
+ 
+ 	rcu_read_unlock();
+@@ -2652,7 +2651,6 @@ int ath11k_dp_process_rx(struct ath11k_base *ab, int ring_id,
+ 	int total_msdu_reaped = 0;
+ 	struct hal_srng *srng;
+ 	struct sk_buff *msdu;
+-	int quota = budget;
+ 	bool done = false;
+ 	int buf_id, mac_id;
+ 	struct ath11k *ar;
+@@ -2759,8 +2757,7 @@ int ath11k_dp_process_rx(struct ath11k_base *ab, int ring_id,
+ 		if (!num_buffs_reaped[i])
+ 			continue;
+ 
+-		ath11k_dp_rx_process_received_packets(ab, napi, &msdu_list[i],
+-						      &quota, i);
++		ath11k_dp_rx_process_received_packets(ab, napi, &msdu_list[i], i);
+ 
+ 		ar = ab->pdevs[i].ar;
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
+@@ -2769,7 +2766,7 @@ int ath11k_dp_process_rx(struct ath11k_base *ab, int ring_id,
+ 					   ab->hw_params.hal_params->rx_buf_rbm);
+ 	}
+ exit:
+-	return budget - quota;
++	return total_msdu_reaped;
+ }
+ 
+ static void ath11k_dp_rx_update_peer_stats(struct ath11k_sta *arsta,
+-- 
+2.37.1
+

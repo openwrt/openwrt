@@ -1,0 +1,35 @@
+From b7f1d44d693054034bd6fe72538fa42cd5e2095c Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <quic_seevalam@quicinc.com>
+Date: Thu, 11 Nov 2021 11:22:47 +0530
+Subject: [PATCH 062/241] ath11k: Fix 'unused-but-set-parameter' error
+
+Below compilation error is reported when built with W=1,
+
+drivers/net/wireless/ath/ath11k/mac.c:5408:22: error: parameter 'changed_flags' set but not used [-Werror,-Wunused-but-set-parameter]
+
+changed_flags is set, but left unused. So, remove unnecessary set.
+Compile tested only.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Signed-off-by: Seevalamuthu Mariappan <quic_seevalam@quicinc.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+Link: https://lore.kernel.org/r/1636609967-5114-1-git-send-email-quic_seevalam@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 765fd86df4a9..813e4d10d7d5 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5977,7 +5977,6 @@ static void ath11k_mac_op_configure_filter(struct ieee80211_hw *hw,
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
+-	changed_flags &= SUPPORTED_FILTERS;
+ 	*total_flags &= SUPPORTED_FILTERS;
+ 	ar->filter_flags = *total_flags;
+ 
+-- 
+2.37.1
+

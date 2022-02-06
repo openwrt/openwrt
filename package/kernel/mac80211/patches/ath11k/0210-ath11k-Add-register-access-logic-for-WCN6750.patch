@@ -1,0 +1,198 @@
+From 9a79133428651b86a9a19ea060591f7f5e7703de Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Date: Fri, 29 Apr 2022 22:34:57 +0530
+Subject: [PATCH 210/241] ath11k: Add register access logic for WCN6750
+
+WCN6750 uses static window mapping to access the HW registers.
+Unlike QCN9074 which uses 3rd window for UMAC and 2nd window
+for CE register access, WCN6750 uses 1st window for UMAC
+and 2nd window for CE registers.
+
+Also, refactor the code so that WCN6750 can use the existing
+ath11k_pci_read32/write32() APIs for accessing the registers.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.1.0.1-00887-QCAMSLSWPLZ-1
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-01720.1-QCAHSPSWPL_V1_V2_SILICONZ_LITE-1
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.5.0.1-01100-QCAHKSWPL_SILICONZ-1
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.4.0.1-00192-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220429170502.20080-5-quic_mpubbise@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.c | 14 +++++++
+ drivers/net/wireless/ath/ath11k/hw.h   |  2 +
+ drivers/net/wireless/ath/ath11k/pcic.c | 54 +++++++++-----------------
+ 3 files changed, 35 insertions(+), 35 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index 7912c1d3f0d5..79a9b467fb97 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -108,6 +108,8 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_mem_region = true,
+ 		.static_window_map = false,
+ 		.hybrid_bus_type = false,
++		.dp_window_idx = 0,
++		.ce_window_idx = 0,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -181,6 +183,8 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_mem_region = true,
+ 		.static_window_map = false,
+ 		.hybrid_bus_type = false,
++		.dp_window_idx = 0,
++		.ce_window_idx = 0,
+ 	},
+ 	{
+ 		.name = "qca6390 hw2.0",
+@@ -253,6 +257,8 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_mem_region = false,
+ 		.static_window_map = false,
+ 		.hybrid_bus_type = false,
++		.dp_window_idx = 0,
++		.ce_window_idx = 0,
+ 	},
+ 	{
+ 		.name = "qcn9074 hw1.0",
+@@ -325,6 +331,8 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_mem_region = false,
+ 		.static_window_map = true,
+ 		.hybrid_bus_type = false,
++		.dp_window_idx = 3,
++		.ce_window_idx = 2,
+ 	},
+ 	{
+ 		.name = "wcn6855 hw2.0",
+@@ -397,6 +405,8 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_mem_region = false,
+ 		.static_window_map = false,
+ 		.hybrid_bus_type = false,
++		.dp_window_idx = 0,
++		.ce_window_idx = 0,
+ 	},
+ 	{
+ 		.name = "wcn6855 hw2.1",
+@@ -467,6 +477,8 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_mem_region = false,
+ 		.static_window_map = false,
+ 		.hybrid_bus_type = false,
++		.dp_window_idx = 0,
++		.ce_window_idx = 0,
+ 	},
+ 	{
+ 		.name = "wcn6750 hw1.0",
+@@ -534,6 +546,8 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_mem_region = false,
+ 		.static_window_map = true,
+ 		.hybrid_bus_type = true,
++		.dp_window_idx = 1,
++		.ce_window_idx = 2,
+ 	},
+ };
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
+index 95be5c6e57a6..aa0fc8dba5df 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -202,6 +202,8 @@ struct ath11k_hw_params {
+ 	bool fixed_mem_region;
+ 	bool static_window_map;
+ 	bool hybrid_bus_type;
++	u8 dp_window_idx;
++	u8 ce_window_idx;
+ };
+ 
+ struct ath11k_hw_ops {
+diff --git a/drivers/net/wireless/ath/ath11k/pcic.c b/drivers/net/wireless/ath/ath11k/pcic.c
+index 7a920d65023f..46cf96d3e1d2 100644
+--- a/drivers/net/wireless/ath/ath11k/pcic.c
++++ b/drivers/net/wireless/ath/ath11k/pcic.c
+@@ -134,16 +134,13 @@ EXPORT_SYMBOL(ath11k_pcic_init_msi_config);
+ static inline u32 ath11k_pcic_get_window_start(struct ath11k_base *ab,
+ 					       u32 offset)
+ {
+-	u32 window_start;
++	u32 window_start = 0;
+ 
+-	/* If offset lies within DP register range, use 3rd window */
+ 	if ((offset ^ HAL_SEQ_WCSS_UMAC_OFFSET) < ATH11K_PCI_WINDOW_RANGE_MASK)
+-		window_start = 3 * ATH11K_PCI_WINDOW_START;
+-	/* If offset lies within CE register range, use 2nd window */
+-	else if ((offset ^ HAL_CE_WFSS_CE_REG_BASE) < ATH11K_PCI_WINDOW_RANGE_MASK)
+-		window_start = 2 * ATH11K_PCI_WINDOW_START;
+-	else
+-		window_start = ATH11K_PCI_WINDOW_START;
++		window_start = ab->hw_params.dp_window_idx * ATH11K_PCI_WINDOW_START;
++	else if ((offset ^ HAL_SEQ_WCSS_UMAC_CE0_SRC_REG(ab)) <
++		 ATH11K_PCI_WINDOW_RANGE_MASK)
++		window_start = ab->hw_params.ce_window_idx * ATH11K_PCI_WINDOW_START;
+ 
+ 	return window_start;
+ }
+@@ -162,19 +159,12 @@ void ath11k_pcic_write32(struct ath11k_base *ab, u32 offset, u32 value)
+ 
+ 	if (offset < ATH11K_PCI_WINDOW_START) {
+ 		iowrite32(value, ab->mem  + offset);
+-	} else {
+-		if (ab->hw_params.static_window_map)
+-			window_start = ath11k_pcic_get_window_start(ab, offset);
+-		else
+-			window_start = ATH11K_PCI_WINDOW_START;
+-
+-		if (window_start == ATH11K_PCI_WINDOW_START &&
+-		    ab->pci.ops->window_write32) {
+-			ab->pci.ops->window_write32(ab, offset, value);
+-		} else {
+-			iowrite32(value, ab->mem + window_start +
+-				  (offset & ATH11K_PCI_WINDOW_RANGE_MASK));
+-		}
++	} else if (ab->hw_params.static_window_map) {
++		window_start = ath11k_pcic_get_window_start(ab, offset);
++		iowrite32(value, ab->mem + window_start +
++			  (offset & ATH11K_PCI_WINDOW_RANGE_MASK));
++	} else if (ab->pci.ops->window_write32) {
++		ab->pci.ops->window_write32(ab, offset, value);
+ 	}
+ 
+ 	if (test_bit(ATH11K_FLAG_DEVICE_INIT_DONE, &ab->dev_flags) &&
+@@ -185,7 +175,8 @@ void ath11k_pcic_write32(struct ath11k_base *ab, u32 offset, u32 value)
+ 
+ u32 ath11k_pcic_read32(struct ath11k_base *ab, u32 offset)
+ {
+-	u32 val, window_start;
++	u32 val = 0;
++	u32 window_start;
+ 	int ret = 0;
+ 
+ 	/* for offset beyond BAR + 4K - 32, may
+@@ -197,19 +188,12 @@ u32 ath11k_pcic_read32(struct ath11k_base *ab, u32 offset)
+ 
+ 	if (offset < ATH11K_PCI_WINDOW_START) {
+ 		val = ioread32(ab->mem + offset);
+-	} else {
+-		if (ab->hw_params.static_window_map)
+-			window_start = ath11k_pcic_get_window_start(ab, offset);
+-		else
+-			window_start = ATH11K_PCI_WINDOW_START;
+-
+-		if (window_start == ATH11K_PCI_WINDOW_START &&
+-		    ab->pci.ops->window_read32) {
+-			val = ab->pci.ops->window_read32(ab, offset);
+-		} else {
+-			val = ioread32(ab->mem + window_start +
+-				       (offset & ATH11K_PCI_WINDOW_RANGE_MASK));
+-		}
++	} else if (ab->hw_params.static_window_map) {
++		window_start = ath11k_pcic_get_window_start(ab, offset);
++		val = ioread32(ab->mem + window_start +
++			       (offset & ATH11K_PCI_WINDOW_RANGE_MASK));
++	} else if (ab->pci.ops->window_read32) {
++		val = ab->pci.ops->window_read32(ab, offset);
+ 	}
+ 
+ 	if (test_bit(ATH11K_FLAG_DEVICE_INIT_DONE, &ab->dev_flags) &&
+-- 
+2.37.1
+

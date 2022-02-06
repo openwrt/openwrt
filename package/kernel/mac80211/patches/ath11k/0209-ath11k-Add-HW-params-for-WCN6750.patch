@@ -1,0 +1,199 @@
+From 07add8ac8d533a19feccc71c3636d04c7495aa43 Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Date: Fri, 29 Apr 2022 22:34:56 +0530
+Subject: [PATCH 209/241] ath11k: Add HW params for WCN6750
+
+WCN6750 is a PCIe based solution that is attached to and enumerated
+by the WPSS (Wireless Processor SubSystem) Q6 processor.
+
+Though it is a PCIe device, since it is not attached to APSS processor
+(Application Processor SubSystem), APSS will be unaware of such a decice
+and hence it is registered to the APSS processor as a platform device(AHB).
+Because of this hybrid nature, it is called as a hybrid bus device.
+
+A new variable hybrid_bus_type is defined in hw_params to indicate the
+hybrid nature of the device.
+
+Add HW params for WCN6750.
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.1.0.1-00887-QCAMSLSWPLZ-1
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-01720.1-QCAHSPSWPL_V1_V2_SILICONZ_LITE-1
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.5.0.1-01100-QCAHKSWPL_SILICONZ-1
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.4.0.1-00192-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220429170502.20080-4-quic_mpubbise@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.c | 73 ++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath11k/core.h |  1 +
+ drivers/net/wireless/ath/ath11k/hw.h   |  1 +
+ drivers/net/wireless/ath/ath11k/qmi.h  |  2 +
+ 4 files changed, 77 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index cdb6a7c1bead..7912c1d3f0d5 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -107,6 +107,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_bdf_addr = true,
+ 		.fixed_mem_region = true,
+ 		.static_window_map = false,
++		.hybrid_bus_type = false,
+ 	},
+ 	{
+ 		.hw_rev = ATH11K_HW_IPQ6018_HW10,
+@@ -179,6 +180,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_bdf_addr = true,
+ 		.fixed_mem_region = true,
+ 		.static_window_map = false,
++		.hybrid_bus_type = false,
+ 	},
+ 	{
+ 		.name = "qca6390 hw2.0",
+@@ -250,6 +252,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_bdf_addr = false,
+ 		.fixed_mem_region = false,
+ 		.static_window_map = false,
++		.hybrid_bus_type = false,
+ 	},
+ 	{
+ 		.name = "qcn9074 hw1.0",
+@@ -321,6 +324,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_bdf_addr = false,
+ 		.fixed_mem_region = false,
+ 		.static_window_map = true,
++		.hybrid_bus_type = false,
+ 	},
+ 	{
+ 		.name = "wcn6855 hw2.0",
+@@ -392,6 +396,7 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_bdf_addr = false,
+ 		.fixed_mem_region = false,
+ 		.static_window_map = false,
++		.hybrid_bus_type = false,
+ 	},
+ 	{
+ 		.name = "wcn6855 hw2.1",
+@@ -461,6 +466,74 @@ static const struct ath11k_hw_params ath11k_hw_params[] = {
+ 		.fixed_bdf_addr = false,
+ 		.fixed_mem_region = false,
+ 		.static_window_map = false,
++		.hybrid_bus_type = false,
++	},
++	{
++		.name = "wcn6750 hw1.0",
++		.hw_rev = ATH11K_HW_WCN6750_HW10,
++		.fw = {
++			.dir = "WCN6750/hw1.0",
++			.board_size = 256 * 1024,
++			.cal_offset = 128 * 1024,
++		},
++		.max_radios = 1,
++		.bdf_addr = 0x4B0C0000,
++		.ring_mask = &ath11k_hw_ring_mask_qca6390,
++		.internal_sleep_clock = false,
++		.qmi_service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_WCN6750,
++		.host_ce_config = ath11k_host_ce_config_qca6390,
++		.ce_count = 9,
++		.target_ce_config = ath11k_target_ce_config_wlan_qca6390,
++		.target_ce_count = 9,
++		.svc_to_ce_map = ath11k_target_service_to_ce_map_wlan_qca6390,
++		.svc_to_ce_map_len = 14,
++		.rfkill_pin = 0,
++		.rfkill_cfg = 0,
++		.rfkill_on_level = 0,
++		.single_pdev_only = true,
++		.rxdma1_enable = false,
++		.num_rxmda_per_pdev = 1,
++		.rx_mac_buf_ring = true,
++		.vdev_start_delay = true,
++		.htt_peer_map_v2 = false,
++
++		.spectral = {
++			.fft_sz = 0,
++			.fft_pad_sz = 0,
++			.summary_pad_sz = 0,
++			.fft_hdr_len = 0,
++			.max_fft_bins = 0,
++		},
++
++		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
++					BIT(NL80211_IFTYPE_AP),
++		.supports_monitor = false,
++		.supports_shadow_regs = true,
++		.idle_ps = true,
++		.supports_sta_ps = true,
++		.cold_boot_calib = false,
++		.fw_mem_mode = 0,
++		.num_vdevs = 16 + 1,
++		.num_peers = 512,
++		.supports_suspend = false,
++		.supports_regdb = true,
++		.fix_l1ss = false,
++		.credit_flow = true,
++		.max_tx_ring = DP_TCL_NUM_RING_MAX_QCA6390,
++		.hal_params = &ath11k_hw_hal_params_qca6390,
++		.supports_dynamic_smps_6ghz = false,
++		.alloc_cacheable_memory = false,
++		.supports_rssi_stats = true,
++		.fw_wmi_diag_event = false,
++		.current_cc_support = true,
++		.dbr_debug_support = false,
++		.global_reset = false,
++		.bios_sar_capa = NULL,
++		.m3_fw_support = false,
++		.fixed_bdf_addr = false,
++		.fixed_mem_region = false,
++		.static_window_map = true,
++		.hybrid_bus_type = true,
+ 	},
+ };
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index d8ab28413d95..fdea44627125 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -140,6 +140,7 @@ enum ath11k_hw_rev {
+ 	ATH11K_HW_QCN9074_HW10,
+ 	ATH11K_HW_WCN6855_HW20,
+ 	ATH11K_HW_WCN6855_HW21,
++	ATH11K_HW_WCN6750_HW10,
+ };
+ 
+ enum ath11k_firmware_mode {
+diff --git a/drivers/net/wireless/ath/ath11k/hw.h b/drivers/net/wireless/ath/ath11k/hw.h
+index 85ff05c7c90d..95be5c6e57a6 100644
+--- a/drivers/net/wireless/ath/ath11k/hw.h
++++ b/drivers/net/wireless/ath/ath11k/hw.h
+@@ -201,6 +201,7 @@ struct ath11k_hw_params {
+ 	bool fixed_bdf_addr;
+ 	bool fixed_mem_region;
+ 	bool static_window_map;
++	bool hybrid_bus_type;
+ };
+ 
+ struct ath11k_hw_ops {
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.h b/drivers/net/wireless/ath/ath11k/qmi.h
+index 61678de56ac7..e0201e184733 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -1,6 +1,7 @@
+ /* SPDX-License-Identifier: BSD-3-Clause-Clear */
+ /*
+  * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
++ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #ifndef ATH11K_QMI_H
+@@ -20,6 +21,7 @@
+ #define ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_QCA6390	0x01
+ #define ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_IPQ8074	0x02
+ #define ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_QCN9074	0x07
++#define ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_WCN6750	0x03
+ #define ATH11K_QMI_WLANFW_MAX_TIMESTAMP_LEN_V01	32
+ #define ATH11K_QMI_RESP_LEN_MAX			8192
+ #define ATH11K_QMI_WLANFW_MAX_NUM_MEM_SEG_V01	52
+-- 
+2.37.1
+

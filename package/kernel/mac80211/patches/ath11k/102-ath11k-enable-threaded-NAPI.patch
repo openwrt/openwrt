@@ -1,0 +1,49 @@
+From b6779c07ef378b77fdd6a67cf6edd460ea2a1623 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Tue, 2 Aug 2022 12:45:52 +0200
+Subject: [PATCH 240/241] ath11k: enable threaded NAPI
+
+Unlike traditional NAPI poll which runs in softirq context and on the
+core which scheduled the NAPI, threaded NAPI makes use of kernel threads
+which are under direct control of the scheduler and helps in balancing the
+NAPI processing load across multiple CPUs, this helps in improving
+throughput.
+
+In the case of IPQ8074 it increased the throughput at 80MHz by about
+200Mbps.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.5.0.1-01201-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/ahb.c  | 1 +
+ drivers/net/wireless/ath/ath11k/pcic.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/ahb.c b/drivers/net/wireless/ath/ath11k/ahb.c
+index c47414710138..41e51719b816 100644
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -359,6 +359,7 @@ static void ath11k_ahb_ext_irq_enable(struct ath11k_base *ab)
+ 		struct ath11k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
+ 
+ 		if (!irq_grp->napi_enabled) {
++			dev_set_threaded(&irq_grp->napi_ndev, true);
+ 			napi_enable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = true;
+ 		}
+diff --git a/drivers/net/wireless/ath/ath11k/pcic.c b/drivers/net/wireless/ath/ath11k/pcic.c
+index 1adf20ebef27..6e84a8f20bb7 100644
+--- a/drivers/net/wireless/ath/ath11k/pcic.c
++++ b/drivers/net/wireless/ath/ath11k/pcic.c
+@@ -414,6 +414,7 @@ void ath11k_pcic_ext_irq_enable(struct ath11k_base *ab)
+ 		struct ath11k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
+ 
+ 		if (!irq_grp->napi_enabled) {
++			dev_set_threaded(&irq_grp->napi_ndev, true);
+ 			napi_enable(&irq_grp->napi);
+ 			irq_grp->napi_enabled = true;
+ 		}
+-- 
+2.37.1
+

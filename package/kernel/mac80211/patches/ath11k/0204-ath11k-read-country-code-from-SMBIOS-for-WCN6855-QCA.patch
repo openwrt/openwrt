@@ -1,0 +1,151 @@
+From 45611ba553615a143283ab6679cc61eee40f6bd6 Mon Sep 17 00:00:00 2001
+From: Wen Gong <quic_wgong@quicinc.com>
+Date: Wed, 20 Apr 2022 22:35:01 -0400
+Subject: [PATCH 204/241] ath11k: read country code from SMBIOS for
+ WCN6855/QCA6390
+
+This read the country code from SMBIOS and send the country code
+to firmware, firmware will indicate the regulatory domain info of the
+country code and then ath11k will use the info.
+
+dmesg:
+[ 1242.637173] ath11k_pci 0000:02:00.0: chip_id 0x2 chip_family 0xb board_id 0xff soc_id 0x400c0200
+[ 1242.637176] ath11k_pci 0000:02:00.0: fw_version 0x110b09e5 fw_build_timestamp 2021-06-22 09:32 fw_build_id QC_IMAGE_VERSION_STRING=WLAN.HSP.1.1-02533-QCAHSPSWPL_V1_V2_SILICONZ_LITE-1
+[ 1242.637253] ath11k_pci 0000:02:00.0: worldwide regdomain setting from SMBIOS
+[ 1242.637259] ath11k_pci 0000:02:00.0: bdf variant name not found.
+[ 1242.637261] ath11k_pci 0000:02:00.0: SMBIOS bdf variant name not set.
+[ 1242.637263] ath11k_pci 0000:02:00.0: DT bdf variant name not set.
+[ 1242.927543] ath11k_pci 0000:02:00.0: set current country pdev id 0 alpha2 00
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3
+
+Signed-off-by: Wen Gong <quic_wgong@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220421023501.32167-1-quic_wgong@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.c | 26 ++++++++++++++++++++--
+ drivers/net/wireless/ath/ath11k/core.h | 30 ++++++++++++++++++++++++--
+ drivers/net/wireless/ath/ath11k/mac.c  | 11 ++++++++++
+ 3 files changed, 63 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.c b/drivers/net/wireless/ath/ath11k/core.c
+index d37c144244d6..616d6facf6c8 100644
+--- a/drivers/net/wireless/ath/ath11k/core.c
++++ b/drivers/net/wireless/ath/ath11k/core.c
+@@ -549,7 +549,7 @@ int ath11k_core_resume(struct ath11k_base *ab)
+ }
+ EXPORT_SYMBOL(ath11k_core_resume);
+ 
+-static void ath11k_core_check_bdfext(const struct dmi_header *hdr, void *data)
++static void ath11k_core_check_cc_code_bdfext(const struct dmi_header *hdr, void *data)
+ {
+ 	struct ath11k_base *ab = data;
+ 	const char *magic = ATH11K_SMBIOS_BDF_EXT_MAGIC;
+@@ -571,6 +571,28 @@ static void ath11k_core_check_bdfext(const struct dmi_header *hdr, void *data)
+ 		return;
+ 	}
+ 
++	spin_lock_bh(&ab->base_lock);
++
++	switch (smbios->country_code_flag) {
++	case ATH11K_SMBIOS_CC_ISO:
++		ab->new_alpha2[0] = (smbios->cc_code >> 8) & 0xff;
++		ab->new_alpha2[1] = smbios->cc_code & 0xff;
++		ath11k_dbg(ab, ATH11K_DBG_BOOT, "boot smbios cc_code %c%c\n",
++			   ab->new_alpha2[0], ab->new_alpha2[1]);
++		break;
++	case ATH11K_SMBIOS_CC_WW:
++		ab->new_alpha2[0] = '0';
++		ab->new_alpha2[1] = '0';
++		ath11k_dbg(ab, ATH11K_DBG_BOOT, "boot smbios worldwide regdomain\n");
++		break;
++	default:
++		ath11k_dbg(ab, ATH11K_DBG_BOOT, "boot ignore smbios country code setting %d\n",
++			   smbios->country_code_flag);
++		break;
++	}
++
++	spin_unlock_bh(&ab->base_lock);
++
+ 	if (!smbios->bdf_enabled) {
+ 		ath11k_dbg(ab, ATH11K_DBG_BOOT, "bdf variant name not found.\n");
+ 		return;
+@@ -610,7 +632,7 @@ static void ath11k_core_check_bdfext(const struct dmi_header *hdr, void *data)
+ int ath11k_core_check_smbios(struct ath11k_base *ab)
+ {
+ 	ab->qmi.target.bdf_ext[0] = '\0';
+-	dmi_walk(ath11k_core_check_bdfext, ab);
++	dmi_walk(ath11k_core_check_cc_code_bdfext, ab);
+ 
+ 	if (ab->qmi.target.bdf_ext[0] == '\0')
+ 		return -ENODATA;
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index fa299bfb4efc..7a505531acf9 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -169,12 +169,38 @@ struct ath11k_ext_irq_grp {
+ 	struct net_device napi_ndev;
+ };
+ 
++enum ath11k_smbios_cc_type {
++	/* disable country code setting from SMBIOS */
++	ATH11K_SMBIOS_CC_DISABLE = 0,
++
++	/* set country code by ANSI country name, based on ISO3166-1 alpha2 */
++	ATH11K_SMBIOS_CC_ISO = 1,
++
++	/* worldwide regdomain */
++	ATH11K_SMBIOS_CC_WW = 2,
++};
++
+ struct ath11k_smbios_bdf {
+ 	struct dmi_header hdr;
+-	u32 padding;
++
++	u8 features_disabled;
++
++	/* enum ath11k_smbios_cc_type */
++	u8 country_code_flag;
++
++	/* To set specific country, you need to set country code
++	 * flag=ATH11K_SMBIOS_CC_ISO first, then if country is United
++	 * States, then country code value = 0x5553 ("US",'U' = 0x55, 'S'=
++	 * 0x53). To set country to INDONESIA, then country code value =
++	 * 0x4944 ("IN", 'I'=0x49, 'D'=0x44). If country code flag =
++	 * ATH11K_SMBIOS_CC_WW, then you can use worldwide regulatory
++	 * setting.
++	 */
++	u16 cc_code;
++
+ 	u8 bdf_enabled;
+ 	u8 bdf_ext[];
+-};
++} __packed;
+ 
+ #define HEHANDLE_CAP_PHYINFO_SIZE       3
+ #define HECAP_PHYINFO_SIZE              9
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index f2188b2b80d5..7b73b0d52f56 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8846,6 +8846,17 @@ static int __ath11k_mac_register(struct ath11k *ar)
+ 		goto err_unregister_hw;
+ 	}
+ 
++	if (ab->hw_params.current_cc_support && ab->new_alpha2[0]) {
++		struct wmi_set_current_country_params set_current_param = {};
++
++		memcpy(&set_current_param.alpha2, ab->new_alpha2, 2);
++		memcpy(&ar->alpha2, ab->new_alpha2, 2);
++		ret = ath11k_wmi_send_set_current_country_cmd(ar, &set_current_param);
++		if (ret)
++			ath11k_warn(ar->ab,
++				    "failed set cc code for mac register: %d\n", ret);
++	}
++
+ 	ret = ath11k_debugfs_register(ar);
+ 	if (ret) {
+ 		ath11k_err(ar->ab, "debugfs registration failed: %d\n", ret);
+-- 
+2.37.1
+

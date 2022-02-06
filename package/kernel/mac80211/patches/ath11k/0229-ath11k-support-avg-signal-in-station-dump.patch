@@ -1,0 +1,90 @@
+From bbb26374dfb4553b9c12241476d669fea6315007 Mon Sep 17 00:00:00 2001
+From: Thiraviyam Mariyappan <quic_tmariyap@quicinc.com>
+Date: Thu, 19 May 2022 18:27:41 +0530
+Subject: [PATCH 229/241] ath11k: support avg signal in station dump
+
+Currently mac80211 doesn't calculate average signal when RSS(Receive side
+scaling) is enabled from the driver, so average signal isn't printed in
+the station dump. To address this issue, calculate the average signal
+from RSSI within driver and display in the station dump.
+
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.5.0.1-01208-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Thiraviyam Mariyappan <quic_tmariyap@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/1652965061-30457-1-git-send-email-quic_tmariyap@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/core.h  | 4 ++++
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 3 +++
+ drivers/net/wireless/ath/ath11k/mac.c   | 5 +++++
+ 3 files changed, 12 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index 95bca0b078b1..ea31016437b0 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -14,6 +14,7 @@
+ #include <linux/dmi.h>
+ #include <linux/ctype.h>
+ #include <linux/rhashtable.h>
++#include <linux/average.h>
+ #include "qmi.h"
+ #include "htc.h"
+ #include "wmi.h"
+@@ -464,6 +465,8 @@ struct ath11k_per_ppdu_tx_stats {
+ 	u32 retry_bytes;
+ };
+ 
++DECLARE_EWMA(avg_rssi, 10, 8)
++
+ struct ath11k_sta {
+ 	struct ath11k_vif *arvif;
+ 
+@@ -482,6 +485,7 @@ struct ath11k_sta {
+ 	u64 rx_duration;
+ 	u64 tx_duration;
+ 	u8 rssi_comb;
++	struct ewma_avg_rssi avg_rssi;
+ 	s8 rssi_beacon;
+ 	s8 chain_signal[IEEE80211_MAX_CHAINS];
+ 	struct ath11k_htt_tx_stats *tx_stats;
+diff --git a/drivers/net/wireless/ath/ath11k/dp_rx.c b/drivers/net/wireless/ath/ath11k/dp_rx.c
+index 049774cc158c..e16beb96c37c 100644
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2765,6 +2765,9 @@ static void ath11k_dp_rx_update_peer_stats(struct ath11k_sta *arsta,
+ 	if (!rx_stats)
+ 		return;
+ 
++	arsta->rssi_comb = ppdu_info->rssi_comb;
++	ewma_avg_rssi_add(&arsta->avg_rssi, ppdu_info->rssi_comb);
++
+ 	num_msdu = ppdu_info->tcp_msdu_count + ppdu_info->tcp_ack_msdu_count +
+ 		   ppdu_info->udp_msdu_count + ppdu_info->other_msdu_count;
+ 
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 0b5c7ed506bf..0d2e2cb4f640 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -4478,6 +4478,7 @@ static int ath11k_mac_station_add(struct ath11k *ar,
+ 		}
+ 	}
+ 
++	ewma_avg_rssi_init(&arsta->avg_rssi);
+ 	return 0;
+ 
+ free_tx_stats:
+@@ -8155,6 +8156,10 @@ static void ath11k_mac_op_sta_statistics(struct ieee80211_hw *hw,
+ 		sinfo->signal = db2dbm ? signal : signal + ATH11K_DEFAULT_NOISE_FLOOR;
+ 		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_SIGNAL);
+ 	}
++
++	sinfo->signal_avg = ewma_avg_rssi_read(&arsta->avg_rssi) +
++		ATH11K_DEFAULT_NOISE_FLOOR;
++	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_SIGNAL_AVG);
+ }
+ 
+ #if IS_ENABLED(CONFIG_IPV6)
+-- 
+2.37.1
+

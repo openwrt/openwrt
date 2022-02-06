@@ -1,0 +1,97 @@
+From df74fa0dc8cb3e1427acff085782197ae08f03b2 Mon Sep 17 00:00:00 2001
+From: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Date: Thu, 2 Jun 2022 18:43:50 +0530
+Subject: [PATCH 234/241] ath11k: Fix warnings reported by checkpatch
+
+Fix warnings reported by checkpatch tool. Below are the errors fixed,
+
+drivers/net/wireless/ath/ath11k/hal_rx.c:760: 'recevied' may be misspelled - perhaps 'received?
+drivers/net/wireless/ath/ath11k/qmi.c:2232: Prefer strscpy over strlcpy
+drivers/net/wireless/ath/ath11k/qmi.c:2238: Prefer strscpy over strlcpy
+drivers/net/wireless/ath/ath11k/qmi.c:2662: Prefer strscpy over strlcpy
+drivers/net/wireless/ath/ath11k/mac.c:7836: 'atleast' may be misspelled - perhaps 'at least'?
+drivers/net/wireless/ath/ath11k/wmi.c:6566: 'succeded' may be misspelled - perhaps 'succeeded'?
+
+Tested-on: WCN6750 hw1.0 AHB WLAN.MSL.1.0.1-00887-QCAMSLSWPLZ-1
+
+Signed-off-by: Manikanta Pubbisetty <quic_mpubbise@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220602131350.29486-1-quic_mpubbise@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/hal_rx.c | 2 +-
+ drivers/net/wireless/ath/ath11k/mac.c    | 2 +-
+ drivers/net/wireless/ath/ath11k/qmi.c    | 6 +++---
+ drivers/net/wireless/ath/ath11k/wmi.c    | 2 +-
+ 4 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/hal_rx.c b/drivers/net/wireless/ath/ath11k/hal_rx.c
+index 4bb1fbaed0c9..7f39c6fb7408 100644
+--- a/drivers/net/wireless/ath/ath11k/hal_rx.c
++++ b/drivers/net/wireless/ath/ath11k/hal_rx.c
+@@ -757,7 +757,7 @@ void ath11k_hal_reo_qdesc_setup(void *vaddr, int tid, u32 ba_window_size,
+ 
+ 	/* TODO: HW queue descriptors are currently allocated for max BA
+ 	 * window size for all QOS TIDs so that same descriptor can be used
+-	 * later when ADDBA request is recevied. This should be changed to
++	 * later when ADDBA request is received. This should be changed to
+ 	 * allocate HW queue descriptors based on BA window size being
+ 	 * negotiated (0 for non BA cases), and reallocate when BA window
+ 	 * size changes and also send WMI message to FW to change the REO
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 9e16470cd302..3f60cc4f5d1b 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -7829,7 +7829,7 @@ ath11k_mac_op_set_bitrate_mask(struct ieee80211_hw *hw,
+ 	he_ltf = mask->control[band].he_ltf;
+ 
+ 	/* mac80211 doesn't support sending a fixed HT/VHT MCS alone, rather it
+-	 * requires passing atleast one of used basic rates along with them.
++	 * requires passing at least one of used basic rates along with them.
+ 	 * Fixed rate setting across different preambles(legacy, HT, VHT) is
+ 	 * not supported by the FW. Hence use of FIXED_RATE vdev param is not
+ 	 * suitable for setting single HT/VHT rates.
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.c b/drivers/net/wireless/ath/ath11k/qmi.c
+index 61ead37a944a..00136601cb7d 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2229,13 +2229,13 @@ static int ath11k_qmi_request_target_cap(struct ath11k_base *ab)
+ 
+ 	if (resp.fw_version_info_valid) {
+ 		ab->qmi.target.fw_version = resp.fw_version_info.fw_version;
+-		strlcpy(ab->qmi.target.fw_build_timestamp,
++		strscpy(ab->qmi.target.fw_build_timestamp,
+ 			resp.fw_version_info.fw_build_timestamp,
+ 			sizeof(ab->qmi.target.fw_build_timestamp));
+ 	}
+ 
+ 	if (resp.fw_build_id_valid)
+-		strlcpy(ab->qmi.target.fw_build_id, resp.fw_build_id,
++		strscpy(ab->qmi.target.fw_build_id, resp.fw_build_id,
+ 			sizeof(ab->qmi.target.fw_build_id));
+ 
+ 	if (resp.eeprom_read_timeout_valid) {
+@@ -2659,7 +2659,7 @@ static int ath11k_qmi_wlanfw_wlan_cfg_send(struct ath11k_base *ab)
+ 	memset(&resp, 0, sizeof(resp));
+ 
+ 	req->host_version_valid = 1;
+-	strlcpy(req->host_version, ATH11K_HOST_VERSION_STRING,
++	strscpy(req->host_version, ATH11K_HOST_VERSION_STRING,
+ 		sizeof(req->host_version));
+ 
+ 	req->tgt_cfg_valid = 1;
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 84d1c7054013..f69918b9452a 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -6563,7 +6563,7 @@ static int ath11k_reg_chan_list_event(struct ath11k_base *ab, struct sk_buff *sk
+ 
+ fallback:
+ 	/* Fallback to older reg (by sending previous country setting
+-	 * again if fw has succeded and we failed to process here.
++	 * again if fw has succeeded and we failed to process here.
+ 	 * The Regdomain should be uniform across driver and fw. Since the
+ 	 * FW has processed the command and sent a success status, we expect
+ 	 * this function to succeed as well. If it doesn't, CTRY needs to be
+-- 
+2.37.1
+

@@ -1,0 +1,96 @@
+From 58a5c122cfac4448e15c5c08590422b9155a5d43 Mon Sep 17 00:00:00 2001
+From: Wen Gong <quic_wgong@quicinc.com>
+Date: Fri, 29 Apr 2022 16:15:02 +0300
+Subject: [PATCH 206/241] ath11k: fix warning of not found station for bssid in
+ message
+
+When test connect/disconnect to an AP frequently with WCN6855, sometimes
+it show below log.
+
+[  277.040121] wls1: deauthenticating from 8c:21:0a:b3:5a:64 by local choice (Reason: 3=DEAUTH_LEAVING)
+[  277.050906] ath11k_pci 0000:05:00.0: wmi stats vdev id 0 mac 00:03:7f:29:61:11
+[  277.050944] ath11k_pci 0000:05:00.0: wmi stats bssid 8c:21:0a:b3:5a:64 vif         pK-error
+[  277.050954] ath11k_pci 0000:05:00.0: not found station for bssid 8c:21:0a:b3:5a:64
+[  277.050961] ath11k_pci 0000:05:00.0: failed to parse rssi chain -71
+[  277.050967] ath11k_pci 0000:05:00.0: failed to pull fw stats: -71
+[  277.050976] ath11k_pci 0000:05:00.0: wmi stats vdev id 0 mac 00:03:7f:29:61:11
+[  277.050983] ath11k_pci 0000:05:00.0: wmi stats bssid 8c:21:0a:b3:5a:64 vif         pK-error
+[  277.050989] ath11k_pci 0000:05:00.0: not found station for bssid 8c:21:0a:b3:5a:64
+[  277.050995] ath11k_pci 0000:05:00.0: failed to parse rssi chain -71
+[  277.051000] ath11k_pci 0000:05:00.0: failed to pull fw stats: -71
+[  278.064050] ath11k_pci 0000:05:00.0: failed to request fw stats: -110
+
+Reason is:
+When running disconnect operation, sta_info removed from local->sta_hash
+by __sta_info_destroy_part1() from __sta_info_flush(), after this,
+ieee80211_find_sta_by_ifaddr() which called by
+ath11k_wmi_tlv_fw_stats_data_parse() and ath11k_wmi_tlv_rssi_chain_parse()
+cannot find this station, then failed log printed.
+
+steps are like this:
+1. when disconnect from AP, __sta_info_destroy() called __sta_info_destroy_part1()
+and __sta_info_destroy_part2().
+
+2. in __sta_info_destroy_part1(),  it has "sta_info_hash_del(local, sta)"
+and "list_del_rcu(&sta->list)", it will remove the ieee80211_sta from the
+list of ieee80211_hw.
+
+3. in __sta_info_destroy_part2(), it called drv_sta_state()->ath11k_mac_op_sta_state(),
+then peer->sta is clear at this moment.
+
+4. in __sta_info_destroy_part2(), it then called sta_set_sinfo()->drv_sta_statistics()
+->ath11k_mac_op_sta_statistics(), then WMI_REQUEST_STATS_CMDID sent to firmware.
+
+5. WMI_UPDATE_STATS_EVENTID reported from firmware, at this moment, the
+ieee80211_sta can not be found again because it has remove from list in
+step2 and also peer->sta is clear in step3.
+
+6. in __sta_info_destroy_part2(), it then called cleanup_single_sta()->
+sta_info_free()->kfree(sta), at this moment, the ieee80211_sta is freed
+in memory, then the failed log will not happen because function
+ath11k_mac_op_sta_state() will not be called.
+
+Actually this print log is not a real error, it is only to skip parse the
+info, so change to skip print by default debug setting.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3
+
+Signed-off-by: Wen Gong <quic_wgong@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220428022426.2927-1-quic_wgong@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/wmi.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/wmi.c b/drivers/net/wireless/ath/ath11k/wmi.c
+index 598ec061694f..1410114d1d5c 100644
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -5794,9 +5794,9 @@ static int ath11k_wmi_tlv_rssi_chain_parse(struct ath11k_base *ab,
+ 					   arvif->bssid,
+ 					   NULL);
+ 	if (!sta) {
+-		ath11k_warn(ab, "not found station for bssid %pM\n",
+-			    arvif->bssid);
+-		ret = -EPROTO;
++		ath11k_dbg(ab, ATH11K_DBG_WMI,
++			   "not found station of bssid %pM for rssi chain\n",
++			   arvif->bssid);
+ 		goto exit;
+ 	}
+ 
+@@ -5894,8 +5894,9 @@ static int ath11k_wmi_tlv_fw_stats_data_parse(struct ath11k_base *ab,
+ 					   "wmi stats vdev id %d snr %d\n",
+ 					   src->vdev_id, src->beacon_snr);
+ 			} else {
+-				ath11k_warn(ab, "not found station for bssid %pM\n",
+-					    arvif->bssid);
++				ath11k_dbg(ab, ATH11K_DBG_WMI,
++					   "not found station of bssid %pM for vdev stat\n",
++					   arvif->bssid);
+ 			}
+ 		}
+ 
+-- 
+2.37.1
+

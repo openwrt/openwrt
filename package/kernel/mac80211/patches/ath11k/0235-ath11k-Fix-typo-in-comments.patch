@@ -1,0 +1,31 @@
+From 524d998009bd8cd2a131dc76bb739d2c8cb9603f Mon Sep 17 00:00:00 2001
+From: Zhang Jiaming <jiaming@nfschina.com>
+Date: Mon, 4 Jul 2022 11:00:04 +0800
+Subject: [PATCH 235/241] ath11k: Fix typo in comments
+
+There is a typo(isn't') in comments.
+It maybe 'isn't' instead of 'isn't''.
+
+Signed-off-by: Zhang Jiaming <jiaming@nfschina.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220704030004.16484-1-jiaming@nfschina.com
+---
+ drivers/net/wireless/ath/ath11k/hal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/hal.c b/drivers/net/wireless/ath/ath11k/hal.c
+index 1dba7b9e0bda..bda71ab5a1f2 100644
+--- a/drivers/net/wireless/ath/ath11k/hal.c
++++ b/drivers/net/wireless/ath/ath11k/hal.c
+@@ -1165,7 +1165,7 @@ void ath11k_hal_srng_shadow_update_hp_tp(struct ath11k_base *ab,
+ 	lockdep_assert_held(&srng->lock);
+ 
+ 	/* check whether the ring is emptry. Update the shadow
+-	 * HP only when then ring isn't' empty.
++	 * HP only when then ring isn't empty.
+ 	 */
+ 	if (srng->ring_dir == HAL_SRNG_DIR_SRC &&
+ 	    *srng->u.src_ring.tp_addr != srng->u.src_ring.hp)
+-- 
+2.37.1
+

@@ -1,0 +1,68 @@
+From 6a36dcf719424ca32284569e9289bf1859334b77 Mon Sep 17 00:00:00 2001
+From: Baochen Qiang <quic_bqiang@quicinc.com>
+Date: Tue, 17 May 2022 08:48:44 +0800
+Subject: [PATCH 225/241] ath11k: Fix warning on variable 'sar' dereference
+ before check
+
+We are seeing below warning:
+warn: variable dereferenced before check 'sar'
+
+Fix it by moving ahead pointer check on 'sar'.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3
+
+Fixes: 652f69ed9c1b ("ath11k: Add support for SAR")
+Reported-by: kernel test robot <lkp@intel.com>
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Baochen Qiang <quic_bqiang@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220517004844.2412660-1-quic_bqiang@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 76a9e4ecc501..0b5c7ed506bf 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8291,11 +8291,15 @@ static int ath11k_mac_op_set_bios_sar_specs(struct ieee80211_hw *hw,
+ 					    const struct cfg80211_sar_specs *sar)
+ {
+ 	struct ath11k *ar = hw->priv;
+-	const struct cfg80211_sar_sub_specs *sspec = sar->sub_specs;
++	const struct cfg80211_sar_sub_specs *sspec;
+ 	int ret, index;
+ 	u8 *sar_tbl;
+ 	u32 i;
+ 
++	if (!sar || sar->type != NL80211_SAR_TYPE_POWER ||
++	    sar->num_sub_specs == 0)
++		return -EINVAL;
++
+ 	mutex_lock(&ar->conf_mutex);
+ 
+ 	if (!test_bit(WMI_TLV_SERVICE_BIOS_SAR_SUPPORT, ar->ab->wmi_ab.svc_map) ||
+@@ -8304,12 +8308,6 @@ static int ath11k_mac_op_set_bios_sar_specs(struct ieee80211_hw *hw,
+ 		goto exit;
+ 	}
+ 
+-	if (!sar || sar->type != NL80211_SAR_TYPE_POWER ||
+-	    sar->num_sub_specs == 0) {
+-		ret = -EINVAL;
+-		goto exit;
+-	}
+-
+ 	ret = ath11k_wmi_pdev_set_bios_geo_table_param(ar);
+ 	if (ret) {
+ 		ath11k_warn(ar->ab, "failed to set geo table: %d\n", ret);
+@@ -8322,6 +8320,7 @@ static int ath11k_mac_op_set_bios_sar_specs(struct ieee80211_hw *hw,
+ 		goto exit;
+ 	}
+ 
++	sspec = sar->sub_specs;
+ 	for (i = 0; i < sar->num_sub_specs; i++) {
+ 		if (sspec->freq_range_index >= (BIOS_SAR_TABLE_LEN >> 1)) {
+ 			ath11k_warn(ar->ab, "Ignore bad frequency index %u, max allowed %u\n",
+-- 
+2.37.1
+

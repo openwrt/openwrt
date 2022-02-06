@@ -1,0 +1,45 @@
+From 06c10fab9d02daf24a1a47bbb6cb73b66fbb283a Mon Sep 17 00:00:00 2001
+From: YueHaibing <yuehaibing@huawei.com>
+Date: Mon, 11 Apr 2022 10:08:43 +0800
+Subject: [PATCH 200/241] ath11k: Fix build warning without CONFIG_IPV6
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+drivers/net/wireless/ath/ath11k/mac.c:8175:13: error: ‘ath11k_mac_op_ipv6_changed’ defined but not used [-Werror=unused-function]
+ static void ath11k_mac_op_ipv6_changed(struct ieee80211_hw *hw,
+             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Wrap it with #ifdef block to fix this.
+
+Fixes: c3c36bfe998b ("ath11k: support ARP and NS offload")
+Signed-off-by: YueHaibing <yuehaibing@huawei.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20220411020843.10284-1-yuehaibing@huawei.com
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index fe9dc26e84a3..f2188b2b80d5 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8152,6 +8152,7 @@ static void ath11k_mac_op_sta_statistics(struct ieee80211_hw *hw,
+ 	}
+ }
+ 
++#if IS_ENABLED(CONFIG_IPV6)
+ static void ath11k_generate_ns_mc_addr(struct ath11k *ar,
+ 				       struct ath11k_arp_ns_offload *offload)
+ {
+@@ -8246,6 +8247,7 @@ static void ath11k_mac_op_ipv6_changed(struct ieee80211_hw *hw,
+ 	/* generate ns multicast address */
+ 	ath11k_generate_ns_mc_addr(ar, offload);
+ }
++#endif
+ 
+ static void ath11k_mac_op_set_rekey_data(struct ieee80211_hw *hw,
+ 					 struct ieee80211_vif *vif,
+-- 
+2.37.1
+
