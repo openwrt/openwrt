@@ -249,15 +249,13 @@
 				read-only;
 			};
 
-			kernel@320000 {
-				label = "kernel";
-				reg = <0x320000 0x300000>;
+			partition@320000 {
+				label = "firmware";
+				reg = <0x320000 0xc60000>;
+				compatible = "denx,uimage";
 			};
 
-			rootfs@620000 {
-				label = "rootfs";
-				reg = <0x620000 0x960000>;
-			};
+			/* hole 0xf80000 - 0xfaf100 */
 
 			defaultmac: default-mac@0xfaf100 {
 				label = "default-mac";
