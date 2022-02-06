@@ -44,11 +44,9 @@ https://lore.kernel.org/linux-usb/20220111221205.14662-1-paweldembicki@gmail.com
  drivers/usb/serial/option.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/usb/serial/option.c b/drivers/usb/serial/option.c
-index 42420bfc983c..962e9943fc20 100644
 --- a/drivers/usb/serial/option.c
 +++ b/drivers/usb/serial/option.c
-@@ -1649,6 +1649,8 @@ static const struct usb_device_id option_ids[] = {
+@@ -1649,6 +1649,8 @@ static const struct usb_device_id option
  	  .driver_info = RSVD(2) },
  	{ USB_DEVICE_INTERFACE_CLASS(ZTE_VENDOR_ID, 0x1476, 0xff) },	/* GosunCn ZTE WeLink ME3630 (ECM/NCM mode) */
  	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x1481, 0xff, 0x00, 0x00) }, /* ZTE MF871A */
@@ -57,6 +55,3 @@ index 42420bfc983c..962e9943fc20 100644
  	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x1533, 0xff, 0xff, 0xff) },
  	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x1534, 0xff, 0xff, 0xff) },
  	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x1535, 0xff, 0xff, 0xff) },
--- 
-2.25.1
-
