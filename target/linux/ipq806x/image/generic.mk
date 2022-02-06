@@ -408,7 +408,7 @@ define Device/tplink_vr2600v
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
-	KERNEL_SIZE := 3072k
+	IMAGE_SIZE := 12672k
 	SOC := qcom-ipq8064
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
@@ -416,8 +416,7 @@ define Device/tplink_vr2600v
 	SUPPORTED_DEVICES += vr2600v
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | \
-		pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | \
-		append-metadata
+		append-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += tplink_vr2600v
 
