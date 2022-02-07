@@ -1,0 +1,33 @@
+From f0d3b1463d00b79039f04a377262444640b00240 Mon Sep 17 00:00:00 2001
+From: Dongming Han <handongming@gl-inet.com>
+Date: Mon, 7 Feb 2022 10:47:52 +0800
+Subject: [PATCH] mtd: spinand: add support for Gigadevice GD5F1GQ5UExxG
+
+---
+ drivers/mtd/nand/spi/gigadevice.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/mtd/nand/spi/gigadevice.c b/drivers/mtd/nand/spi/gigadevice.c
+index 33c67403c..dfbe18f5b 100644
+--- a/drivers/mtd/nand/spi/gigadevice.c
++++ b/drivers/mtd/nand/spi/gigadevice.c
+@@ -284,6 +284,16 @@ static const struct spinand_info gigadevice_spinand_table[] = {
+ 		     SPINAND_HAS_QE_BIT,
+ 		     SPINAND_ECCINFO(&gd5fxgq4_variant2_ooblayout,
+ 				     gd5fxgq4uexxg_ecc_get_status)),
++	SPINAND_INFO("GD5F1GQ5UExxG",
++		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x51),
++		     NAND_MEMORG(1, 2048, 128, 64, 1024, 20, 1, 1, 1),
++		     NAND_ECCREQ(4, 512),
++		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
++					      &write_cache_variants,
++					      &update_cache_variants),
++		     SPINAND_HAS_QE_BIT,
++		     SPINAND_ECCINFO(&gd5fxgq4_variant2_ooblayout,
++				     gd5fxgq4uexxg_ecc_get_status)),
+ 	SPINAND_INFO("GD5F1GQ4UFxxG",
+ 		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE, 0xb1, 0x48),
+ 		     NAND_MEMORG(1, 2048, 128, 64, 1024, 20, 1, 1, 1),
+-- 
+2.17.1
+
