@@ -817,26 +817,6 @@ define Device/iptime_a8004t
 endef
 TARGET_DEVICES += iptime_a8004t
 
-define Device/iptime_ax2004m
-  $(Device/dsa-migration)
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 121344k
-  UBINIZE_OPTS := -E 5
-  KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGES += recovery.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size | iptime-crc32 ax2004m
-  DEVICE_VENDOR := ipTIME
-  DEVICE_MODEL := AX2004M
-  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
-endef
-TARGET_DEVICES += iptime_ax2004m
-
 define Device/iptime_t5004
   $(Device/dsa-migration)
   BLOCKSIZE := 128k
@@ -1740,6 +1720,40 @@ define Device/xiaomi_mi-router-ac2100
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += xiaomi_mi-router-ac2100
+
+define Device/xiaomi_mi-router-cr660x
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Xiaomi
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  UBINIZE_OPTS := -E 5
+  IMAGE_SIZE := 128512k
+  IMAGES += firmware.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/firmware.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_PACKAGES += kmod-mt7915e uboot-envtools
+endef
+
+define Device/xiaomi_mi-router-cr6606
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router CR6606
+endef
+TARGET_DEVICES += xiaomi_mi-router-cr6606
+
+define Device/xiaomi_mi-router-cr6608
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router CR6608
+endef
+TARGET_DEVICES += xiaomi_mi-router-cr6608
+
+define Device/xiaomi_mi-router-cr6609
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router CR6609
+endef
+TARGET_DEVICES += xiaomi_mi-router-cr6609
 
 define Device/xiaomi_redmi-router-ac2100
   $(Device/xiaomi_nand_separate)

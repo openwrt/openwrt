@@ -1165,6 +1165,18 @@ define Device/wavlink_wl-wn530hg4
 endef
 TARGET_DEVICES += wavlink_wl-wn530hg4
 
+define Device/wavlink_wl-wn535k1
+  SOC := mt7620a
+  IMAGE_SIZE := 7360k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN535K1
+  DEVICE_ALT0_VENDOR := Talius
+  DEVICE_ALT0_MODEL := TAL-WMESH1
+  KERNEL_INITRAMFS_SUFFIX := -WN535K1$$(KERNEL_SUFFIX)
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+endef
+TARGET_DEVICES += wavlink_wl-wn535k1
+
 define Device/wavlink_wl-wn579x3
   SOC := mt7620a
   IMAGE_SIZE := 7744k

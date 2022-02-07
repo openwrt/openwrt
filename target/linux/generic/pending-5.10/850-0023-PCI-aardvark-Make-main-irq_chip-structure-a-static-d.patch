@@ -41,7 +41,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  	raw_spinlock_t irq_lock;
  	struct irq_domain *msi_domain;
  	struct irq_domain *msi_inner_domain;
-@@ -1336,14 +1335,19 @@ static void advk_pcie_irq_unmask(struct
+@@ -1338,14 +1337,19 @@ static void advk_pcie_irq_unmask(struct
  	raw_spin_unlock_irqrestore(&pcie->irq_lock, flags);
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  	irq_set_chip_data(virq, pcie);
  
  	return 0;
-@@ -1402,7 +1406,6 @@ static int advk_pcie_init_irq_domain(str
+@@ -1404,7 +1408,6 @@ static int advk_pcie_init_irq_domain(str
  	struct device *dev = &pcie->pdev->dev;
  	struct device_node *node = dev->of_node;
  	struct device_node *pcie_intc_node;
@@ -71,7 +71,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  	int ret = 0;
  
  	raw_spin_lock_init(&pcie->irq_lock);
-@@ -1413,28 +1416,14 @@ static int advk_pcie_init_irq_domain(str
+@@ -1415,28 +1418,14 @@ static int advk_pcie_init_irq_domain(str
  		return -ENODEV;
  	}
  

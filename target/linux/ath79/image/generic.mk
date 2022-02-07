@@ -334,7 +334,7 @@ define Device/asus_rp-ac66
   SOC := qca9563
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RP-AC66
-  IMAGE_SIZE := 15488k
+  IMAGE_SIZE := 16000k
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs
@@ -1579,6 +1579,23 @@ define Device/netgear_ex7300
   DEVICE_MODEL := EX7300
 endef
 TARGET_DEVICES += netgear_ex7300
+
+define Device/netgear_ex7300-v2
+  $(Device/netgear_generic)
+  SOC := qcn5502
+  DEVICE_MODEL := EX7300
+  DEVICE_VARIANT := v2
+  UIMAGE_MAGIC := 0x27051956
+  NETGEAR_BOARD_ID := EX7300v2series
+  NETGEAR_HW_ID := 29765907+16+0+128
+  IMAGE_SIZE := 14528k
+  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+	netgear-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | check-size | append-metadata
+  IMAGE/factory.img := $$(IMAGE/default) | check-size | netgear-dni
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9984-ct
+endef
+TARGET_DEVICES += netgear_ex7300-v2
 
 define Device/netgear_wndr3x00
   $(Device/netgear_generic)
