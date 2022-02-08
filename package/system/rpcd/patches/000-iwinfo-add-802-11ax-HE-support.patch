@@ -1,0 +1,95 @@
+From 7a560a1a5769146ab072f8e0165940459d3e16f7 Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Sat, 17 Apr 2021 23:42:30 +0200
+Subject: [PATCH] iwinfo: add 802.11ax HE support
+
+Expose 802.11ax HE rate as well as HW / HT mode information. This is
+required to add 802.11ax support to LuCI.
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+---
+ iwinfo.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+--- a/iwinfo.c
++++ b/iwinfo.c
+@@ -260,6 +260,21 @@ rpc_iwinfo_call_htmodes(const char *name
+ 		if (modes & IWINFO_HTMODE_VHT160)
+ 			blobmsg_add_string(&buf, NULL, "VHT160");
+ 
++		if (modes & IWINFO_HTMODE_HE20)
++			blobmsg_add_string(&buf, NULL, "HE20");
++
++		if (modes & IWINFO_HTMODE_HE40)
++			blobmsg_add_string(&buf, NULL, "HE40");
++
++		if (modes & IWINFO_HTMODE_HE80)
++			blobmsg_add_string(&buf, NULL, "HE80");
++
++		if (modes & IWINFO_HTMODE_HE80_80)
++			blobmsg_add_string(&buf, NULL, "HE80+80");
++
++		if (modes & IWINFO_HTMODE_HE160)
++			blobmsg_add_string(&buf, NULL, "HE160");
++
+ 		blobmsg_close_array(&buf, c);
+ 	}
+ }
+@@ -280,6 +295,9 @@ rpc_iwinfo_call_hwmodes(const char *name
+ 		if (modes & IWINFO_80211_AC)
+ 			blobmsg_add_string(&buf, NULL, "ac");
+ 
++		if (modes & IWINFO_80211_AX)
++			blobmsg_add_string(&buf, NULL, "ax");
++
+ 		if (modes & IWINFO_80211_A)
+ 			blobmsg_add_string(&buf, NULL, "a");
+ 
+@@ -332,6 +350,26 @@ static void rpc_iwinfo_call_hw_ht_mode()
+ 			htmode_str = "VHT160";
+ 			hwmode_str = "ac";
+ 			break;
++		case IWINFO_HTMODE_HE20:
++			htmode_str = "HE20";
++			hwmode_str = "ax";
++			break;
++		case IWINFO_HTMODE_HE40:
++			htmode_str = "HE40";
++			hwmode_str = "ax";
++			break;
++		case IWINFO_HTMODE_HE80:
++			htmode_str = "HE80";
++			hwmode_str = "ax";
++			break;
++		case IWINFO_HTMODE_HE80_80:
++			htmode_str = "HE80+80";
++			hwmode_str = "ax";
++			break;
++		case IWINFO_HTMODE_HE160:
++			htmode_str = "HE160";
++			hwmode_str = "ax";
++			break;
+ 		case IWINFO_HTMODE_NOHT:
+ 			htmode_str = "20";
+ 			hwmode_str = "a/g";
+@@ -491,6 +529,7 @@ rpc_iwinfo_add_rateinfo(struct iwinfo_ra
+ {
+ 	blobmsg_add_u8(&buf, "ht", r->is_ht);
+ 	blobmsg_add_u8(&buf, "vht", r->is_vht);
++	blobmsg_add_u8(&buf, "he", r->is_he);
+ 	blobmsg_add_u32(&buf, "mhz", r->mhz);
+ 	blobmsg_add_u32(&buf, "rate", r->rate);
+ 
+@@ -504,6 +543,12 @@ rpc_iwinfo_add_rateinfo(struct iwinfo_ra
+ 		blobmsg_add_u32(&buf, "nss", r->nss);
+ 		blobmsg_add_u8(&buf, "short_gi", r->is_short_gi);
+ 	}
++	else if (r->is_he) {
++		blobmsg_add_u32(&buf, "mcs", r->mcs);
++		blobmsg_add_u32(&buf, "nss", r->nss);
++		blobmsg_add_u32(&buf, "he_gi", r->he_gi);
++		blobmsg_add_u32(&buf, "he_dcm", r->he_dcm);
++	}
+ }
+ 
+ static int
