@@ -22,7 +22,34 @@ extern struct mutex smi_lock;
 
 #define PHY_PAGE_2	2
 #define PHY_PAGE_4	4
-#define PARK_PAGE	0x1f
+
+/* all Clause-22 RealTek MDIO PHYs use register 0x1f for page select */
+#define RTL8XXX_PAGE_SELECT		0x1f
+
+#define RTL8XXX_PAGE_MAIN		0x0000
+#define RTL821X_PAGE_PORT		0x0266
+#define RTL821X_PAGE_POWER		0x0a40
+#define RTL821X_PAGE_GPHY		0x0a42
+#define RTL821X_PAGE_MAC		0x0a43
+#define RTL821X_PAGE_STATE		0x0b80
+#define RTL821X_PAGE_PATCH		0x0b82
+
+/*
+ * Using the special page 0xfff with the MDIO controller found in
+ * RealTek SoCs allows to access the PHY in RAW mode, ie. bypassing
+ * the cache and paging engine of the MDIO controller.
+ */
+#define RTL83XX_PAGE_RAW		0x0fff
+
+/* internal RTL821X PHY uses register 0x1d to select media page */
+#define RTL821XINT_MEDIA_PAGE_SELECT	0x1d
+/* external RTL821X PHY uses register 0x1e to select media page */
+#define RTL821XEXT_MEDIA_PAGE_SELECT	0x1e
+
+#define RTL821X_MEDIA_PAGE_AUTO		0
+#define RTL821X_MEDIA_PAGE_COPPER	1
+#define RTL821X_MEDIA_PAGE_FIBRE	3
+#define RTL821X_MEDIA_PAGE_INTERNAL	8
 
 #define RTL9300_PHY_ID_MASK 0xf0ffffff
 
@@ -103,12 +130,12 @@ static void rtl8380_int_phy_on_off(struct phy_device *phydev, bool on)
 static void rtl8380_rtl8214fc_on_off(struct phy_device *phydev, bool on)
 {
 	/* fiber ports */
-	phy_write_paged(phydev, 4095, 30, 3);
-	phy_modify(phydev, 16, BIT(11), on?0:BIT(11));
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
+	phy_modify(phydev, 0x10, BIT(11), on?0:BIT(11));
 
 	/* copper ports */
-	phy_write_paged(phydev, 4095, 30, 1);
-	phy_modify_paged(phydev, 0xa40, 16, BIT(11), on?0:BIT(11));
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BIT(11), on?0:BIT(11));
 }
 
 static void rtl8380_phy_reset(struct phy_device *phydev)
@@ -400,12 +427,12 @@ static int rtl8393_read_status(struct phy_device *phydev)
 
 static int rtl8226_read_page(struct phy_device *phydev)
 {
-	return __phy_read(phydev, 0x1f);
+	return __phy_read(phydev, RTL8XXX_PAGE_SELECT);
 }
 
 static int rtl8226_write_page(struct phy_device *phydev, int page)
 {
-	return __phy_write(phydev, 0x1f, page);
+	return __phy_write(phydev, RTL8XXX_PAGE_SELECT, page);
 }
 
 static int rtl8226_read_status(struct phy_device *phydev)
@@ -641,6 +668,25 @@ out:
 	return NULL;
 }
 
+static void rtl821x_phy_setup_package_broadcast(struct phy_device *phydev, bool enable)
+{
+	int mac = phydev->mdio.addr;
+
+	/* select main page 0 */
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+	/* write to 0x8 to register 0x1d on main page 0 */
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	/* select page 0x266 */
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
+	/* set phy id and target broadcast bitmap in register 0x16 on page 0x266 */
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, 0x16, (enable?0xff00:0x00) | mac);
+	/* return to main page 0 */
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+	/* write to 0x0 to register 0x1d on main page 0 */
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	mdelay(1);
+}
+
 static int rtl8390_configure_generic(struct phy_device *phydev)
 {
 	int mac = phydev->mdio.addr;
@@ -714,13 +760,13 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 
 	/* Ready PHY for patch */
 	for (p = 0; p < 8; p++) {
-		phy_package_port_write_paged(phydev, p, 0xfff, 0x1f, 0x0b82);
-		phy_package_port_write_paged(phydev, p, 0xfff, 0x10, 0x0010);
+		phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
+		phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW, 0x10, 0x0010);
 	}
 	msleep(500);
 	for (p = 0; p < 8; p++) {
 		for (i = 0; i < 100 ; i++) {
-			val = phy_package_port_read_paged(phydev, p, 0x0b80, 0x10);
+			val = phy_package_port_read_paged(phydev, p, RTL821X_PAGE_STATE, 0x10);
 			if (val & 0x40)
 				break;
 		}
@@ -734,14 +780,14 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	for (p = 0; p < 8; p++) {
 		i = 0;
 		while (rtl838x_6275B_intPhy_perport[i * 2]) {
-			phy_package_port_write_paged(phydev, p, 0xfff,
+			phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW,
 				rtl838x_6275B_intPhy_perport[i * 2],
 				rtl838x_6275B_intPhy_perport[i * 2 + 1]);
 			i++;
 		}
 		i = 0;
 		while (rtl8218b_6276B_hwEsd_perport[i * 2]) {
-			phy_package_port_write_paged(phydev, p, 0xfff,
+			phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW,
 				rtl8218b_6276B_hwEsd_perport[i * 2],
 				rtl8218b_6276B_hwEsd_perport[i * 2 + 1]);
 			i++;
@@ -806,9 +852,9 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	msleep(100);
 
 	/* Get Chip revision */
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0);
-	phy_write_paged(phydev, 0xfff, 0x1b, 0x4);
-	val = phy_read_paged(phydev, 0xfff, 0x1c);
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, 0x1b, 0x4);
+	val = phy_read_paged(phydev, RTL83XX_PAGE_RAW, 0x1c);
 
 	phydev_info(phydev, "Detected chip revision %04x\n", val);
 
@@ -816,22 +862,22 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	while (rtl8380_rtl8218b_perchip[i * 3]
 		&& rtl8380_rtl8218b_perchip[i * 3 + 1]) {
 			phy_package_port_write_paged(phydev, rtl8380_rtl8218b_perchip[i * 3],
-					  0xfff, rtl8380_rtl8218b_perchip[i * 3 + 1],
+					  RTL83XX_PAGE_RAW, rtl8380_rtl8218b_perchip[i * 3 + 1],
 					  rtl8380_rtl8218b_perchip[i * 3 + 2]);
 		i++;
 	}
 
 	/* Enable PHY */
 	for (i = 0; i < 8; i++) {
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x1f, 0x0000);
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x00, 0x1140);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x00, 0x1140);
 	}
 	mdelay(100);
 
 	/* Request patch */
 	for (i = 0; i < 8; i++) {
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x1f, 0x0b82);
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x10, 0x0010);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x10, 0x0010);
 	}
 
 	mdelay(300);
@@ -839,7 +885,7 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	/* Verify patch readiness */
 	for (i = 0; i < 8; i++) {
 		for (l = 0; l < 100; l++) {
-			val = phy_package_port_read_paged(phydev, i, 0xb80, 0x10);
+			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_STATE, 0x10);
 			if (val & 0x40)
 				break;
 		}
@@ -850,15 +896,9 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	}
 
 	/* Use Broadcast ID method for patching */
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0000);
-	phy_write_paged(phydev, 0xfff, 0x1d, 0x0008);
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0266);
-	phy_write_paged(phydev, 0xfff, 0x16, 0xff00 + mac);
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0000);
-	phy_write_paged(phydev, 0xfff, 0x1d, 0x0000);
-	mdelay(1);
+	rtl821x_phy_setup_package_broadcast(phydev, true);
 
-	phy_write_paged(phydev, 0xfff, 30, 8);
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, 30, 8);
 	phy_write_paged(phydev, 0x26e, 17, 0xb);
 	phy_write_paged(phydev, 0x26e, 16, 0x2);
 	mdelay(1);
@@ -868,19 +908,13 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 
 	i = 0;
 	while (rtl8218B_6276B_rtl8380_perport[i * 2]) {
-		phy_write_paged(phydev, 0xfff, rtl8218B_6276B_rtl8380_perport[i * 2],
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, rtl8218B_6276B_rtl8380_perport[i * 2],
 				  rtl8218B_6276B_rtl8380_perport[i * 2 + 1]);
 		i++;
 	}
 
 	/*Disable broadcast ID*/
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0000);
-	phy_write_paged(phydev, 0xfff, 0x1d, 0x0008);
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0266);
-	phy_write_paged(phydev, 0xfff, 0x16, 0x00 + mac);
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0000);
-	phy_write_paged(phydev, 0xfff, 0x1d, 0x0000);
-	mdelay(1);
+	rtl821x_phy_setup_package_broadcast(phydev, false);
 
 	return 0;
 }
@@ -908,25 +942,25 @@ static void rtl8380_rtl8214fc_media_set(struct phy_device *phydev, bool set_fibr
 	int val, media, power;
 
 	pr_info("%s: port %d, set_fibre: %d\n", __func__, mac, set_fibre);
-	phy_package_write_paged(phydev, 0xfff, 29, 8);
-	val = phy_package_read_paged(phydev, 0x266, reg[mac % 4]);
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	val = phy_package_read_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4]);
 
 	media = (val >> 10) & 0x3;
 	pr_info("Current media %x\n", media);
 	if (media & 0x2) {
 		pr_info("Powering off COPPER\n");
-		phy_package_write_paged(phydev, 0xfff, 29, 1);
+		phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 		/* Ensure power is off */
-		power = phy_package_read_paged(phydev, 0xa40, 16);
+		power = phy_package_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
 		if (!(power & (1 << 11)))
-			phy_package_write_paged(phydev, 0xa40, 16, power | (1 << 11));
+			phy_package_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power | (1 << 11));
 	} else {
 		pr_info("Powering off FIBRE");
-		phy_package_write_paged(phydev, 0xfff, 29, 3);
+		phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
 		/* Ensure power is off */
-		power = phy_package_read_paged(phydev, 0xa40, 16);
+		power = phy_package_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
 		if (!(power & (1 << 11)))
-			phy_package_write_paged(phydev, 0xa40, 16, power | (1 << 11));
+			phy_package_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power | (1 << 11));
 	}
 
 	if (set_fibre) {
@@ -936,27 +970,27 @@ static void rtl8380_rtl8214fc_media_set(struct phy_device *phydev, bool set_fibr
 		val |= 1 << 10;
 		val |= 1 << 11;
 	}
-	phy_package_write_paged(phydev, 0xfff, 29, 8);
-	phy_package_write_paged(phydev, 0x266, reg[mac % 4], val);
-	phy_package_write_paged(phydev, 0xfff, 29, 0);
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	phy_package_write_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4], val);
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	if (set_fibre) {
 		pr_info("Powering on FIBRE");
-		phy_package_write_paged(phydev, 0xfff, 29, 3);
+		phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
 		/* Ensure power is off */
-		power = phy_package_read_paged(phydev, 0xa40, 16);
+		power = phy_package_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
 		if (power & (1 << 11))
-			phy_package_write_paged(phydev, 0xa40, 16, power & ~(1 << 11));
+			phy_package_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power & ~(1 << 11));
 	} else {
 		pr_info("Powering on COPPER\n");
-		phy_package_write_paged(phydev, 0xfff, 29, 1);
+		phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 		/* Ensure power is off */
-		power = phy_package_read_paged(phydev, 0xa40, 16);
+		power = phy_package_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
 		if (power & (1 << 11))
-			phy_package_write_paged(phydev, 0xa40, 16, power & ~(1 << 11));
+			phy_package_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power & ~(1 << 11));
 	}
 
-	phy_package_write_paged(phydev, 0xfff, 29, 0);
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 }
 
 static bool rtl8380_rtl8214fc_media_is_fibre(struct phy_device *phydev)
@@ -966,9 +1000,9 @@ static bool rtl8380_rtl8214fc_media_is_fibre(struct phy_device *phydev)
 	static int reg[] = {16, 19, 20, 21};
 	u32 val;
 
-	phy_package_write_paged(phydev, 0xfff, 29, 8);
-	val = phy_package_read_paged(phydev, 0x266, reg[mac % 4]);
-	phy_package_write_paged(phydev, 0xfff, 29, 0);
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	val = phy_package_read_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4]);
+	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 	if (val & (1 << 11))
 		return false;
 	return true;
@@ -1008,7 +1042,7 @@ void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 
 	pr_debug("In %s %d, enable %d\n", __func__, phydev->mdio.addr, enable);
 	/* Set GPHY page to copper */
-	phy_write_paged(phydev, 0xa42, 30, 0x0001);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
 	val = phy_read(phydev, 0);
 	an_enabled = val & BIT(12);
@@ -1019,12 +1053,12 @@ void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 	phy_write_mmd(phydev, 7, 60, enable ? 0x6 : 0);
 
 	/* 500M EEE ability */
-	val = phy_read_paged(phydev, 0xa42, 20);
+	val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
 	if (enable)
 		val |= BIT(7);
 	else
 		val &= ~BIT(7);
-	phy_write_paged(phydev, 0xa42, 20, val);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
 
 	/* Restart AN if enabled */
 	if (an_enabled) {
@@ -1034,7 +1068,7 @@ void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 	}
 
 	/* GPHY page back to auto*/
-	phy_write_paged(phydev, 0xa42, 30, 0);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 }
 
 static int rtl8218b_get_eee(struct phy_device *phydev,
@@ -1046,21 +1080,21 @@ static int rtl8218b_get_eee(struct phy_device *phydev,
 	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
 
 	/* Set GPHY page to copper */
-	phy_write_paged(phydev, 0xa42, 29, 0x0001);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
 	val = phy_read_paged(phydev, 7, 60);
 	if (e->eee_enabled) {
 		// Verify vs MAC-based EEE
 		e->eee_enabled = !!(val & BIT(7));
 		if (!e->eee_enabled) {
-			val = phy_read_paged(phydev, 0x0A43, 25);
+			val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
 			e->eee_enabled = !!(val & BIT(4));
 		}
 	}
 	pr_debug("%s: enabled: %d\n", __func__, e->eee_enabled);
 
 	/* GPHY page to auto */
-	phy_write_paged(phydev, 0xa42, 29, 0x0000);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	return 0;
 }
@@ -1074,7 +1108,7 @@ static int rtl8218d_get_eee(struct phy_device *phydev,
 	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
 
 	/* Set GPHY page to copper */
-	phy_write_paged(phydev, 0xa42, 30, 0x0001);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
 	val = phy_read_paged(phydev, 7, 60);
 	if (e->eee_enabled)
@@ -1082,7 +1116,7 @@ static int rtl8218d_get_eee(struct phy_device *phydev,
 	pr_debug("%s: enabled: %d\n", __func__, e->eee_enabled);
 
 	/* GPHY page to auto */
-	phy_write_paged(phydev, 0xa42, 30, 0x0000);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	return 0;
 }
@@ -1105,28 +1139,28 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 	poll_state = disable_polling(port);
 
 	/* Set GPHY page to copper */
-	phy_write_paged(phydev, 0xa42, 29, 0x0001);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
 	// Get auto-negotiation status
 	val = phy_read(phydev, 0);
 	an_enabled = val & BIT(12);
 
 	pr_info("%s: aneg: %d\n", __func__, an_enabled);
-	val = phy_read_paged(phydev, 0x0A43, 25);
+	val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
 	val &= ~BIT(5);  // Use MAC-based EEE
-	phy_write_paged(phydev, 0x0A43, 25, val);
+	phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
 
 	/* Enable 100M (bit 1) / 1000M (bit 2) EEE */
 	phy_write_paged(phydev, 7, 60, e->eee_enabled ? 0x6 : 0);
 
 	/* 500M EEE ability */
-	val = phy_read_paged(phydev, 0xa42, 20);
+	val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
 	if (e->eee_enabled)
 		val |= BIT(7);
 	else
 		val &= ~BIT(7);
 
-	phy_write_paged(phydev, 0xa42, 20, val);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
 
 	/* Restart AN if enabled */
 	if (an_enabled) {
@@ -1137,7 +1171,7 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 	}
 
 	/* GPHY page back to auto*/
-	phy_write_paged(phydev, 0xa42, 29, 0);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	resume_polling(poll_state);
 
@@ -1170,7 +1204,7 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	poll_state = disable_polling(port);
 
 	/* Set GPHY page to copper */
-	phy_write(phydev, 30, 0x0001);
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 	val = phy_read(phydev, 0);
 	an_enabled = val & BIT(12);
 
@@ -1181,9 +1215,9 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 		phy_write(phydev, 13, 0x4007);
 		phy_write(phydev, 14, 0x0006);
 
-		val = phy_read_paged(phydev, 0x0A43, 25);
+		val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
 		val |= BIT(4);
-		phy_write_paged(phydev, 0x0A43, 25, val);
+		phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
 	} else {
 		/* 100/1000M EEE Capability */
 		phy_write(phydev, 13, 0x0007);
@@ -1191,9 +1225,9 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 		phy_write(phydev, 13, 0x0007);
 		phy_write(phydev, 14, 0x0000);
 
-		val = phy_read_paged(phydev, 0x0A43, 25);
+		val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
 		val &= ~BIT(4);
-		phy_write_paged(phydev, 0x0A43, 25, val);
+		phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
 	}
 
 	/* Restart AN if enabled */
@@ -1204,7 +1238,7 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	}
 
 	/* GPHY page back to auto*/
-	phy_write_paged(phydev, 0xa42, 30, 0);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	pr_info("%s done\n", __func__);
 	resume_polling(poll_state);
@@ -1247,7 +1281,7 @@ static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
 	phydev_info(phydev, "Detected external RTL8214C\n");
 
 	/* GPHY auto conf */
-	phy_write_paged(phydev, 0xa42, 29, 0);
+	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 	return 0;
 }
 
@@ -1267,10 +1301,9 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
 
 	/* Read internal PHY id */
-	phy_write_paged(phydev, 0, 30, 0x0001);
-	phy_write_paged(phydev, 0, 31, 0x0a42);
-	phy_write_paged(phydev, 31, 27, 0x0002);
-	val = phy_read_paged(phydev, 31, 28);
+	phy_write_paged(phydev, 0, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+	phy_write_paged(phydev, 0x1f, 0x1b, 0x0002);
+	val = phy_read_paged(phydev, 0x1f, 0x1c);
 	if (val != 0x6276) {
 		phydev_err(phydev, "Expected external RTL8214FC, found PHY-ID %x\n", val);
 		return -1;
@@ -1293,8 +1326,8 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 		   + h->parts[1].start;
 
 	/* detect phy version */
-	phy_write_paged(phydev, 0xfff, 27, 0x0004);
-	val = phy_read_paged(phydev, 0xfff, 28);
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, 27, 0x0004);
+	val = phy_read_paged(phydev, RTL83XX_PAGE_RAW, 28);
 
 	val = phy_read(phydev, 16);
 	if (val & (1 << 11))
@@ -1303,7 +1336,7 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 		rtl8380_phy_reset(phydev);
 
 	msleep(100);
-	phy_write_paged(phydev, 0, 30, 0x0001);
+	phy_write_paged(phydev, 0, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
 	i = 0;
 	while (rtl8380_rtl8214fc_perchip[i * 3]
@@ -1314,10 +1347,10 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 			val = phy_read_paged(phydev, 0x260, 13);
 			val = (val & 0x1f00) | (rtl8380_rtl8214fc_perchip[i * 3 + 2]
 				& 0xe0ff);
-			phy_write_paged(phydev, 0xfff,
+			phy_write_paged(phydev, RTL83XX_PAGE_RAW,
 					rtl8380_rtl8214fc_perchip[i * 3 + 1], val);
 		} else {
-			phy_write_paged(phydev, 0xfff,
+			phy_write_paged(phydev, RTL83XX_PAGE_RAW,
 					rtl8380_rtl8214fc_perchip[i * 3 + 1],
 					rtl8380_rtl8214fc_perchip[i * 3 + 2]);
 		}
@@ -1326,21 +1359,21 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 
 	/* Force copper medium */
 	for (i = 0; i < 4; i++) {
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x1f, 0x0000);
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x1e, 0x0001);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 	}
 
 	/* Enable PHY */
 	for (i = 0; i < 4; i++) {
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x1f, 0x0000);
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x00, 0x1140);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x00, 0x1140);
 	}
 	mdelay(100);
 
 	/* Disable Autosensing */
 	for (i = 0; i < 4; i++) {
 		for (l = 0; l < 100; l++) {
-			val = phy_package_port_read_paged(phydev, i, 0x0a42, 0x10);
+			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_GPHY, 0x10);
 			if ((val & 0x7) >= 3)
 				break;
 		}
@@ -1352,15 +1385,15 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 
 	/* Request patch */
 	for (i = 0; i < 4; i++) {
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x1f, 0x0b82);
-		phy_package_port_write_paged(phydev, i, 0xfff, 0x10, 0x0010);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
+		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x10, 0x0010);
 	}
 	mdelay(300);
 
 	/* Verify patch readiness */
 	for (i = 0; i < 4; i++) {
 		for (l = 0; l < 100; l++) {
-			val = phy_package_port_read_paged(phydev, i, 0xb80, 0x10);
+			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_STATE, 0x10);
 			if (val & 0x40)
 				break;
 		}
@@ -1370,34 +1403,22 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 		}
 	}
 	/* Use Broadcast ID method for patching */
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0000);
-	phy_write_paged(phydev, 0xfff, 0x1d, 0x0008);
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0266);
-	phy_write_paged(phydev, 0xfff, 0x16, 0xff00 + mac);
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0000);
-	phy_write_paged(phydev, 0xfff, 0x1d, 0x0000);
-	mdelay(1);
+	rtl821x_phy_setup_package_broadcast(phydev, true);
 
 	i = 0;
 	while (rtl8380_rtl8214fc_perport[i * 2]) {
-		phy_write_paged(phydev, 0xfff, rtl8380_rtl8214fc_perport[i * 2],
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, rtl8380_rtl8214fc_perport[i * 2],
 				  rtl8380_rtl8214fc_perport[i * 2 + 1]);
 		i++;
 	}
 
 	/*Disable broadcast ID*/
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0000);
-	phy_write_paged(phydev, 0xfff, 0x1d, 0x0008);
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0266);
-	phy_write_paged(phydev, 0xfff, 0x16, 0x00 + mac);
-	phy_write_paged(phydev, 0xfff, 0x1f, 0x0000);
-	phy_write_paged(phydev, 0xfff, 0x1d, 0x0000);
-	mdelay(1);
+	rtl821x_phy_setup_package_broadcast(phydev, false);
 
 	/* Auto medium selection */
 	for (i = 0; i < 4; i++) {
-		phy_write_paged(phydev, 0xfff, 0x1f, 0x0000);
-		phy_write_paged(phydev, 0xfff, 0x1e, 0x0000);
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 	}
 
 	return 0;
