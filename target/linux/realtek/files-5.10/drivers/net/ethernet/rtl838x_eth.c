@@ -880,7 +880,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	unsigned long flags;
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 	struct ring_b *ring = priv->membase;
-	int i, err;
+	int i;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
 		__func__, priv->rxrings, priv->rxringlen, TXRINGS, TXRINGLEN);
@@ -896,12 +896,6 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	}
 
 	rtl838x_hw_ring_setup(priv);
-	err = request_irq(ndev->irq, priv->r->net_irq, IRQF_SHARED, ndev->name, ndev);
-	if (err) {
-		netdev_err(ndev, "%s: could not acquire interrupt: %d\n",
-			   __func__, err);
-		return err;
-	}
 	phylink_start(priv->phylink);
 
 	for (i = 0; i < priv->rxrings; i++)
@@ -932,7 +926,6 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		sw_w32((0x2 << 3) | 0x2,  RTL930X_VLAN_APP_PKT_CTRL);
 		break;
 
-
 	case RTL9310_FAMILY_ID:
 		rtl93xx_hw_en_rxtx(priv);
 
@@ -945,7 +938,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		// Set PCIE_PWR_DOWN
 		sw_w32_mask(0, BIT(1), RTL931X_PS_SOC_CTRL);
 		break;
-    }
+	}
 
 	netif_tx_start_all_queues(ndev);
 
@@ -1026,17 +1019,13 @@ static int rtl838x_eth_stop(struct net_device *ndev)
 
 	pr_info("in %s\n", __func__);
 
-	spin_lock_irqsave(&priv->lock, flags);
 	phylink_stop(priv->phylink);
 	rtl838x_hw_stop(priv);
-	free_irq(ndev->irq, ndev);
 
 	for (i = 0; i < priv->rxrings; i++)
 		napi_disable(&priv->rx_qs[i].napi);
 
 	netif_tx_stop_all_queues(ndev);
-
-	spin_unlock_irqrestore(&priv->lock, flags);
 
 	return 0;
 }
@@ -1265,7 +1254,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	bool dsa = netdev_uses_dsa(dev);
 	struct dsa_tag tag;
 
-	spin_lock_irqsave(&priv->lock, flags);
 	last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 	pr_debug("---------------------------------------------------------- RX - %d\n", r);
 
@@ -1290,7 +1278,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		if (dsa)
 			len += 4;
 
-		skb = alloc_skb(len + 4, GFP_KERNEL);
+		skb = netdev_alloc_skb(dev, len + 4);
 		skb_reserve(skb, NET_IP_ALIGN);
 
 		if (likely(skb)) {
@@ -1341,6 +1329,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		}
 
 		/* Reset header structure */
+		spin_lock_irqsave(&priv->lock, flags);
 		memset(h, 0, sizeof(struct p_hdr));
 		h->buf = data;
 		h->size = RING_BUFFER;
@@ -1349,12 +1338,12 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 			| (ring->c_rx[r] == (priv->rxringlen - 1) ? WRAP : 0x1);
 		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
+		spin_unlock_irqrestore(&priv->lock, flags);
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
 
 	// Update counters
 	priv->r->update_cntr(r, 0);
 
-	spin_unlock_irqrestore(&priv->lock, flags);
 	return work_done;
 }
 
@@ -2208,12 +2197,12 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	for_each_node_by_name(dn, "port") {
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
-		pr_info("%s Looking at port %d\n", __func__, pn);
+		pr_debug("%s Looking at port %d\n", __func__, pn);
 		if (pn > priv->cpu_port)
 			continue;
 		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
 			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
-		pr_info("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
+		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
 	}
 
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
@@ -2407,13 +2396,6 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	spin_lock_init(&priv->lock);
 
-	/* Obtain device IRQ number */
-	dev->irq = platform_get_irq(pdev, 0);
-	if (dev->irq < 0) {
-		dev_err(&pdev->dev, "cannot obtain IRQ, using default 24\n");
-		dev->irq = 24;
-	}
-
 	dev->ethtool_ops = &rtl838x_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
 	dev->max_mtu = 1536;
@@ -2458,6 +2440,21 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	}
 	priv->rxringlen = rxringlen;
 	priv->rxrings = rxrings;
+
+	/* Obtain device IRQ number */
+	dev->irq = platform_get_irq(pdev, 0);
+	if (dev->irq < 0) {
+		dev_err(&pdev->dev, "cannot obtain network-device IRQ\n");
+		goto err_free;
+	}
+
+	err = devm_request_irq(&pdev->dev, dev->irq, priv->r->net_irq,
+			       IRQF_SHARED, dev->name, dev);
+	if (err) {
+		dev_err(&pdev->dev, "%s: could not acquire interrupt: %d\n",
+			   __func__, err);
+		goto err_free;
+	}
 
 	rtl8380_init_mac(priv);
 
