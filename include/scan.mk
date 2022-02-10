@@ -88,7 +88,7 @@ $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 			gsub(/\//, "_", info); \
 			dir=$$0; \
 			pkg=""; \
-			if($$NF in override) \
+			if ($$NF in override) \
 				pkg=override[$$NF]; \
 			print "$$(eval $$(call PackageDir," info "," dir "," pkg "))"; \
 		} ' < $<; \
