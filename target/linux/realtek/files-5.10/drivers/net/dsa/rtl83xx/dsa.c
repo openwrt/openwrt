@@ -1409,7 +1409,6 @@ static int rtl83xx_vlan_prepare(struct dsa_switch *ds, int port,
 	priv->r->vlan_set_tagged(1, &info);
 	pr_debug("SET: Tagged ports, VLAN %d: %llx\n", 1, info.tagged_ports);
 
-	mutex_unlock(&priv->reg_mutex);
 	return 0;
 }
 
