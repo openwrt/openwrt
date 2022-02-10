@@ -283,7 +283,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto err;
 --- a/net/core/net-procfs.c
 +++ b/net/core/net-procfs.c
-@@ -320,10 +320,12 @@ static int __net_init dev_proc_net_init(
+@@ -350,10 +350,12 @@ static int __net_init dev_proc_net_init(
  
  	if (!proc_create("dev", S_IRUGO, net->proc_net, &dev_seq_fops))
  		goto out;
@@ -298,7 +298,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto out_softnet;
  
  	if (wext_proc_init(net))
-@@ -332,9 +334,11 @@ static int __net_init dev_proc_net_init(
+@@ -362,9 +364,11 @@ static int __net_init dev_proc_net_init(
  out:
  	return rc;
  out_ptype:
@@ -312,7 +312,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  out_dev:
  	remove_proc_entry("dev", net->proc_net);
  	goto out;
-@@ -344,8 +348,10 @@ static void __net_exit dev_proc_net_exit
+@@ -374,8 +378,10 @@ static void __net_exit dev_proc_net_exit
  {
  	wext_proc_exit(net);
  
