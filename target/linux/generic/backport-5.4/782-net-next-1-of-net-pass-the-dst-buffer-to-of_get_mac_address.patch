@@ -607,7 +607,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		/*
 --- a/drivers/net/ethernet/freescale/fman/mac.c
 +++ b/drivers/net/ethernet/freescale/fman/mac.c
-@@ -605,7 +605,6 @@ static int mac_probe(struct platform_dev
+@@ -616,7 +616,6 @@ static int mac_probe(struct platform_dev
  	struct platform_device	*of_dev;
  	struct resource		 res;
  	struct mac_priv_s	*priv;
@@ -615,7 +615,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u32			 val;
  	u8			fman_id;
  	int			phy_if;
-@@ -723,13 +722,12 @@ static int mac_probe(struct platform_dev
+@@ -734,13 +733,12 @@ static int mac_probe(struct platform_dev
  	priv->cell_index = (u8)val;
  
  	/* Get the MAC address */
@@ -1492,7 +1492,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		}
 --- a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
 +++ b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
-@@ -1663,7 +1663,7 @@ static int axienet_probe(struct platform
+@@ -1665,7 +1665,7 @@ static int axienet_probe(struct platform
  	struct device_node *np;
  	struct axienet_local *lp;
  	struct net_device *ndev;
@@ -1501,7 +1501,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct resource *ethres;
  	u32 value;
  
-@@ -1835,13 +1835,14 @@ static int axienet_probe(struct platform
+@@ -1837,13 +1837,14 @@ static int axienet_probe(struct platform
  		dev_info(&pdev->dev, "Ethernet core IRQ not defined\n");
  
  	/* Retrieve the MAC address */

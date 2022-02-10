@@ -1,12 +1,13 @@
 --- /dev/null
 +++ b/configs/mt7622_linksys_e8450_defconfig
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,136 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
 +CONFIG_TARGET_MT7622=y
 +CONFIG_SYS_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_SYS_LOAD_ADDR=0x40080000
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -336,7 +337,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1104,6 +1104,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1133,6 +1133,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-rfb.dtb \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \

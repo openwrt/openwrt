@@ -1,7 +1,7 @@
-define Build/dw-headers
-	head -c 4 $@ >> $@.tmp && \
-	head -c 8 /dev/zero >> $@.tmp && \
-	tail -c +9 $@ >> $@.tmp && \
+define Build/dongwon-header
+	head -c 4 $@ > $@.tmp
+	head -c 8 /dev/zero >> $@.tmp
+	tail -c +9 $@ >> $@.tmp
 	( \
 		header_crc="$$(head -c 68 $@.tmp | gzip -c | \
 			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
@@ -99,8 +99,8 @@ define Device/dongwon_dw02-412h
   KERNEL_SIZE := 8192k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | dw-headers
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | dw-headers
+  KERNEL := $$(KERNEL) | dongwon-header
+  KERNEL_INITRAMFS := $$(KERNEL)
   UBINIZE_OPTS := -E 5
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
@@ -304,6 +304,20 @@ define Device/netgear_wndr4500-v3
   $(Device/netgear_ath79_nand)
 endef
 TARGET_DEVICES += netgear_wndr4500-v3
+
+define Device/zte_mf286
+  SOC := qca9563
+  DEVICE_VENDOR := ZTE
+  DEVICE_MODEL := MF286
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
+	ath10k-firmware-qca988x-ct kmod-usb-net-qmi-wwan kmod-usb-serial-option \
+	uqmi
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zte_mf286
 
 define Device/zyxel_nbg6716
   SOC := qca9558

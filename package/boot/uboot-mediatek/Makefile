@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2021.10
-PKG_HASH:=cde723e19262e646f2670d25e5ec4b1b368490de950d4e26275a988c36df0bd4
+PKG_VERSION:=2022.01
+PKG_HASH:=81b4543227db228c03f8a1bf5ddbc813b0bb8f6555ce46064ef721a6fc680413
 PKG_BUILD_DEPENDS:=arm-trusted-firmware-tools/host
 
 include $(INCLUDE_DIR)/u-boot.mk
@@ -78,7 +78,7 @@ endef
 
 define U-Boot/mt7623a_unielec_u7623
   NAME:=UniElec U7623 (mt7623)
-  BUILD_DEVICES:=unielec_u7623-emmc unielec_u7623-02-emmc-512m-legacy
+  BUILD_DEVICES:=unielec_u7623-02
   BUILD_SUBTARGET:=mt7623
   UBOOT_CONFIG:=mt7623a_unielec_u7623_02
 endef

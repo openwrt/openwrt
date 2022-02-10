@@ -19,7 +19,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/drivers/base/regmap/regmap.c
 +++ b/drivers/base/regmap/regmap.c
-@@ -841,6 +841,7 @@ struct regmap *__regmap_init(struct devi
+@@ -842,6 +842,7 @@ struct regmap *__regmap_init(struct devi
  	if (!bus) {
  		map->reg_read  = config->reg_read;
  		map->reg_write = config->reg_write;

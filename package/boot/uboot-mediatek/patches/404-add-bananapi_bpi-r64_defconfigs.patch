@@ -1,12 +1,13 @@
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-sdmmc_defconfig
-@@ -0,0 +1,158 @@
+@@ -0,0 +1,159 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
 +CONFIG_TARGET_MT7622=y
 +CONFIG_SYS_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_SYS_LOAD_ADDR=0x40080000
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -246,13 +247,14 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-emmc_defconfig
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,146 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
 +CONFIG_TARGET_MT7622=y
 +CONFIG_SYS_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_SYS_LOAD_ADDR=0x40080000
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -453,12 +455,13 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-snand_defconfig
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,140 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
 +CONFIG_SYS_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_SYS_LOAD_ADDR=0x40080000
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y

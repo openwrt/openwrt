@@ -33,6 +33,15 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		/* hw_margin_ms is actually 280s but driver limits it to 60s */
+		hw_margin_ms = <60000>;
+		always-running;
+	};
 };
 
 &spi0 {

@@ -169,13 +169,16 @@
 	dr_mode = "host";
 };
 
-&EBC0 {
-	ndfc: ndfc@1,0 {
+&ndfc {
+	status = "okay";
+	/* 128 MiB Nand Flash */
+	nand {
+		nand-is-boot-medium;
 
-		status = "okay";
-		/* 128 MiB Nand Flash */
-		nand {
-			nand-is-boot-medium;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partition@0 {
 				label = "uboot";
@@ -244,6 +247,25 @@
 				label = "wifi_data";
 				reg = <0x07fc0000 0x00040000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_wifi_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+				macaddr_wifi_c: macaddr@c {
+					reg = <0xc 0x6>;
+				};
+
+				calibration_wifi_1000: calibration@1000 {
+					reg = <0x1000 0x440>;
+				};
+
+				calibration_wifi_5000: calibration@5000 {
+					reg = <0x5000 0x440>;
+				};
 			};
 		};
 	};
@@ -263,8 +285,6 @@
 	fan0: fan@1b {
 		compatible = "microchip,tc654";
 		reg = <0x1b>;
-		cooling-min-level = <0>;
-		cooling-max-level = <255>;
 		#cooling-cells = <2>; /* min followed by max */
 
 		gpios = <&GPIO0 16 GPIO_ACTIVE_LOW>; /* fan status */
@@ -456,8 +476,8 @@
 					compatible = "pci168c,0030";
 					reg = <0x00430000 0 0 0 0>;
 					interrupts = <3>; /* INTC */
-					qca,no-eeprom;
-					/* wifi CAL & MAC is stored in nvram */
+					nvmem-cell-names = "mac-address", "calibration";
+					nvmem-cells = <&macaddr_wifi_0>, <&calibration_wifi_1000>;
 
 					/*
 					 * Because this was such a pain.
@@ -479,8 +499,8 @@
 					compatible = "pci168c,0033";
 					reg = <0x00440000 0 0 0 0>;
 					interrupts = <4>; /* INTD */
-					qca,no-eeprom;
-					/* wifi CAL & MAC is stored in nvram */
+					nvmem-cell-names = "mac-address", "calibration";
+					nvmem-cells = <&macaddr_wifi_c>, <&calibration_wifi_5000>;
 				};
 			};
 
