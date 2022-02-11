@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "qca955x.dtsi"
+
+/ {
+	compatible = "avm,fritzx490-wasp", "qca,qca9558";
+	model = "AVM FRITZ!Box x490 WASP (Wireless Assist)";
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+};
+
+&uart {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+		qca,no-eeprom;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-mode = "rgmii";
+
+	pll-data = <0xa6000000 0x00000101 0x00001616>;
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+};
+
+&gpio {
+	status = "okay";
+};

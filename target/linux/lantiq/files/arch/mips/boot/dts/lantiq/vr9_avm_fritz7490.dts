@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "vr9_avm_fritzxx90.dtsi"
+
+/ {
+	compatible = "avm,fritz7490", "lantiq,xway", "lantiq,vr9";
+	model = "AVM FRITZ!Box 7490";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x20000000>;
+	};
+};
+
+&eth0 {
+	mtd-mac-address = <&urlader 0xcc>;
+	mtd-mac-address-increment = <1>;
+};

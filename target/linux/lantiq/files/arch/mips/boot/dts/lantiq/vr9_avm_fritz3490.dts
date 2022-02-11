@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "vr9_avm_fritzxx90.dtsi"
+
+/ {
+	compatible = "avm,fritz3490", "lantiq,xway", "lantiq,vr9";
+	model = "AVM FRITZ!Box 3490";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x10000000>;
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_wasp_reset {
+			gpio-export,name = "wasp:reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio 34 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&eth0 {
+	mtd-mac-address = <&urlader 0xcc>;
+	mtd-mac-address-increment = <1>;
+};

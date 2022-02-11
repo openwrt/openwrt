@@ -10,6 +10,27 @@ DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
 DEVICE_VARS += OPENMESH_CE_TYPE
 
+define Build/avm-wasp-checksum
+       $(STAGING_DIR_HOST)/bin/avm-wasp-checksum \
+               -i "$@" -o "$@.new" -m $(word 1,$(1))
+       mv "$@.new" "$@"
+endef
+
+define Build/avm-wasp-loader-compile
+       rm -rf $@.src
+       $(MAKE) -C lzma-loader \
+               PKG_BUILD_DIR="$@.src" \
+               TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
+               LZMA_TEXT_START=0x81a00000 LOADADDR=0x80020000 \
+               $(1) compile loader.$(LOADER_TYPE)
+       mv "$@.$(LOADER_TYPE)" "$@"
+       rm -rf $@.src
+endef
+
+define Build/avm-wasp-loader
+       $(call Build/avm-wasp-loader-compile,LOADER_DATA="$@")
+endef
+
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
   $(eval product=$(word 2,$(1)))
@@ -399,6 +420,20 @@ define Device/avm_fritz4020
 endef
 TARGET_DEVICES += avm_fritz4020
 
+define Device/avm_fritz3390_wasp
+  SOC := ar9342
+  DEVICE_VENDOR := AVM
+  DEVICE_MODEL := FRITZ!Box 3390 WASP (Wireless Assist)
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma-no-dict | \
+      avm-wasp-loader | pad-to 4096 | pad-extra 208 | avm-wasp-checksum 3390
+  LOADER_TYPE := bin
+  KERNEL_INITRAMFS := $$(KERNEL)
+  DEVICE_PACKAGES := kmod-owl-loader -uboot-envtools -swconfig -ppp -kmod-ppp \
+	-dnsmasq -odhcpd-ipv6only
+  IMAGE_SIZE := 11000k
+endef
+TARGET_DEVICES += avm_fritz3390_wasp
+
 define Device/avm_fritz450e
   $(Device/avm)
   SOC := qca9556
@@ -417,6 +452,21 @@ define Device/avm_fritzdvbc
 	ath10k-firmware-qca988x-ct -swconfig
 endef
 TARGET_DEVICES += avm_fritzdvbc
+
+define Device/avm_fritzx490_wasp
+  SOC := qca9558
+  DEVICE_VENDOR := AVM
+  DEVICE_MODEL := FRITZ!Box 3490/5490/7490 WASP (Wireless Assist)
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma-no-dict | \
+      avm-wasp-loader | pad-to 4096 | pad-extra 208 | avm-wasp-checksum x490
+  LOADER_TYPE := bin
+  KERNEL_INITRAMFS := $$(KERNEL)
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct-full-htt \
+	kmod-owl-loader wasp_downloader wpad -wpad-basic-wolfssl \
+	-uboot-envtools -swconfig -ppp -kmod-ppp -dnsmasq -odhcpd-ipv6only
+  IMAGE_SIZE := 11000k
+endef
+TARGET_DEVICES += avm_fritzx490_wasp
 
 define Device/belkin_f9x-v2
   $(Device/loader-okli-uimage)

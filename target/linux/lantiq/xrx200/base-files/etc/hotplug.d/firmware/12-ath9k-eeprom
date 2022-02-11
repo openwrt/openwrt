@@ -5,6 +5,7 @@
 . /lib/functions/caldata.sh
 
 case "$FIRMWARE" in
+	"ath9k-eeprom-ahb-18100000.wmac.bin" | \
 	"ath9k-eeprom-pci-0000:00:0e.0.bin" | \
 	"ath9k-eeprom-pci-0000:01:00.0.bin" | \
 	"ath9k-eeprom-pci-0000:02:00.0.bin")
@@ -13,7 +14,13 @@ case "$FIRMWARE" in
 		case "$board" in
 			avm,fritz3370-rev2-hynix|\
 			avm,fritz3370-rev2-micron|\
-			avm,fritz7362sl)
+			avm,fritz3490|\
+			avm,fritz3490-micron|\
+			avm,fritz5490|\
+			avm,fritz5490-micron|\
+			avm,fritz7362sl|\
+			avm,fritz7490|\
+			avm,fritz7490-micron)
 				caldata_extract_reverse "urlader" 0x1541 0x440
 				;;
 			avm,fritz3390)

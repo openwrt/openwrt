@@ -5,9 +5,16 @@
 . /lib/functions/caldata.sh
 
 case "$FIRMWARE" in
+"ath10k/cal-pci-0000:00:00.0.bin"|\
 "ath10k/cal-pci-0000:02:00.0.bin")
 	board=$(board_name)
 	case $board in
+		avm,fritz3490|avm,fritz3490-micron|avm,fritz5490|avm,fritz5490-micron|avm,fritz7490|avm,fritz7490-micron)
+			[ ! -d /lib/firmware/ath10k ] && mkdir /lib/firmware/ath10k
+			offset=$(hexdump -v -e '1/1 "%02x"' $(find_mtd_chardev "urlader") | awk '{print index($0, "4408")}')
+			let "offset = ($offset - 1) / 2"
+			caldata_extract "urlader" $offset 0x844
+			;;
 		bt,homehub-v5a)
 			caldata_extract_ubi "caldata" 0x5000 0x844
 			ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary_ubi caldata 0x110c) 3)

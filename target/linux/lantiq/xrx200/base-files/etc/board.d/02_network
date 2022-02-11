@@ -15,7 +15,13 @@ lantiq_setup_interfaces()
 	arcadyan,vg3503j)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
-	arcadyan,arv7519rw22)
+	arcadyan,arv7519rw22|\
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
+	avm,fritz5490|\
+	avm,fritz5490-micron|\
+	avm,fritz7490|\
+	avm,fritz7490-micron)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
 	arcadyan,vgv7510kw22-brn|\
@@ -64,10 +70,16 @@ lantiq_setup_dsl()
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
 	avm,fritz3390|\
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
+	avm,fritz5490|\
+	avm,fritz5490-micron|\
 	avm,fritz7360sl|\
 	avm,fritz7362sl|\
 	avm,fritz7412|\
-	avm,fritz7430)
+	avm,fritz7430|\
+	avm,fritz7490|\
+	avm,fritz7490-micron)
 		annex="b"
 		;;
 	esac
@@ -114,7 +126,13 @@ lantiq_setup_macs()
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
 		;;
 	avm,fritz3390|\
-	avm,fritz7362sl)
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
+	avm,fritz5490|\
+	avm,fritz5490-micron|\
+	avm,fritz7362sl|\
+	avm,fritz7490|\
+	avm,fritz7490-micron)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macdsl -i $(find_mtd_part "tffs (1)"))
 		;;

@@ -3862,7 +3862,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie_vr9.h
-@@ -0,0 +1,269 @@
+@@ -0,0 +1,270 @@
 +/****************************************************************************
 +                              Copyright (c) 2010
 +                            Lantiq Deutschland GmbH
@@ -3900,6 +3900,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define IFX_RCU_AHB_BE_PCIE_M                    0x00000001  /* Configure AHB master port that connects to PCIe RC in big endian */
 +#define IFX_RCU_AHB_BE_PCIE_S                    0x00000010  /* Configure AHB slave port that connects to PCIe RC in little endian */
 +#define IFX_RCU_AHB_BE_XBAR_M                    0x00000002  /* Configure AHB master port that connects to XBAR in big endian */
++#define IFX_RCU_AHB_BE_XBAR_S                    0x00000008  /* Configure AHB slave port that connects to XBAR in big endian */
 +#define CONFIG_IFX_PCIE_PHY_36MHZ_MODE
 +
 +#define IFX_PMU1_MODULE_PCIE_PHY   (0)

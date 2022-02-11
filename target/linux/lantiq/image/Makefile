@@ -122,7 +122,7 @@ endef
 
 define Device/AVM
   DEVICE_VENDOR := AVM
-  KERNEL := kernel-bin | append-dtb | lzma | eva-image
+  KERNEL := kernel-bin | append-dtb | lzma | eva-image | pad-to 256
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-avm-fakeroot | \
 	append-rootfs | pad-rootfs | check-size | append-metadata
