@@ -367,6 +367,7 @@
 			nvmem-cell-names = "calibration";
 			nvmem-cells = <&cal_art_9000>;
 			qcom,ath10k-calibration-variant = "GL-B2200";
+			ieee80211-freq-limit = <5450000 5900000>;
 		};
 	};
 };
@@ -383,4 +384,5 @@
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_5000>;
 	qcom,ath10k-calibration-variant = "GL-B2200";
+	ieee80211-freq-limit = <5100000 5400000>;
 };
