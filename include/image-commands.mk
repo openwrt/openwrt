@@ -542,7 +542,6 @@ define Build/zip
 	mkdir $@.tmp
 	mv $@ $@.tmp/$(word 1,$(1))
 	TZ=UTC $(STAGING_DIR_HOST)/bin/zip -j -X \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="$(SOURCE_DATE_EPOCH)") \
 		$(wordlist 2,$(words $(1)),$(1)) \
 		$@ $@.tmp/$(if $(word 1,$(1)),$(word 1,$(1)),$$(basename $@))
 	rm -rf $@.tmp
