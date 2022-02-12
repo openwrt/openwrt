@@ -1487,6 +1487,16 @@ define Device/unielec_u7621-06-64m
 endef
 TARGET_DEVICES += unielec_u7621-06-64m
 
+define Device/dual-q_h721
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Dual-Q
+  DEVICE_MODEL := H721
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic-wolfssl
+endef
+TARGET_DEVICES += dual-q_h721
+
 define Device/wavlink_wl-wn531a6
   $(Device/dsa-migration)
   DEVICE_VENDOR := Wavlink
