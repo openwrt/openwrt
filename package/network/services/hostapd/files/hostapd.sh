@@ -1272,7 +1272,7 @@ wpa_supplicant_add_network() {
 	json_get_vars \
 		ssid bssid key \
 		basic_rate mcast_rate \
-		ieee80211w ieee80211r fils \
+		ieee80211w ieee80211r fils ocv \
 		multi_ap \
 		default_disabled
 
@@ -1323,6 +1323,8 @@ wpa_supplicant_add_network() {
 		[ "$multi_ap" = 1 ] && append network_data "multi_ap_backhaul_sta=1" "$N$T"
 		[ "$default_disabled" = 1 ] && append network_data "disabled=1" "$N$T"
 	}
+
+	[ -n "$ocv" ] && append network_data "ocv=$ocv" "$N$T"
 
 	case "$auth_type" in
 		none) ;;
