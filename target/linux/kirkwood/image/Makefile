@@ -158,6 +158,14 @@ define Device/globalscale_sheevaplug
 endef
 TARGET_DEVICES += globalscale_sheevaplug
 
+define Device/iodata_hdl2-a
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := HDL2-A (2.0/4.0/6.0)
+  DEVICE_PACKAGES := e2fsprogs fdisk kmod-fs-ext4 kmod-rtc-rs5c372a
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += iodata_hdl2-a
+
 define Device/iom_iconnect-1.1
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := Iconnect

@@ -1,0 +1,164 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "kirkwood.dtsi"
+#include "kirkwood-6282.dtsi"
+
+/ {
+	chosen {
+		/*
+		 * The kernel and rootfs are stored to the storage
+		 * connected SATA port, port1 or port2. The path to
+		 * the partition (/dev/sdXN) which contains root data
+		 * will be assigned dynamically, GPT partition name is
+		 * required instead.
+		 */
+		bootargs-append = " root=PARTLABEL=rootfs";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+};
+
+&pinctrl {
+	pmx_board_model: pmx-board-model {
+		marvell,pins = "mpp39", "mpp40", "mpp41", "mpp42",
+			       "mpp43";
+		marvell,function = "gpio";
+	};
+};
+
+&eth0 {
+	status = "okay";
+};
+
+&eth0port {
+	phy-handle = <&ethphy0>;
+};
+
+&gpio1 {
+	/*
+	 * these pins are used for board-model detection
+	 * on stock firmware of HDL-A/HDL2-A
+	 *   0: HDL2-A
+	 *   1: HDL-A
+	 */
+	board-model {
+		pinctrl-0 = <&pmx_board_model>;
+		pinctrl-names = "default";
+
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_HIGH>, <8 GPIO_ACTIVE_HIGH>,
+			<9 GPIO_ACTIVE_HIGH>, <10 GPIO_ACTIVE_HIGH>,
+			<11 GPIO_ACTIVE_HIGH>;
+		input;
+		line-name = "board-model";
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	rtc@32 {
+		compatible = "ricoh,rs5c372a";
+		reg = <0x32>;
+	};
+};
+
+&mdio {
+	status = "okay";
+
+	ethphy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <40000000>;
+		reg = <0>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x00000 0x70000>;
+				read-only;
+			};
+
+			partition@1 {
+				label = "u-boot-env";
+				reg = <0x70000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&rtc {
+	status = "disabled";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+
+	/*
+	 * UART1 is used to connect to Renesas R8C/25 MCU
+	 * but there is no driver.
+	 * This MCU has the following functions:
+	 *
+	 * - LED
+	 *   - Status
+	 *   - HDD
+	 *
+	 * - Keys
+	 *   - Reset
+	 *   - Power
+	 *
+	 * - Beep Speaker
+	 *   - controlled by MML (Music Macro Language) syntax
+	 *
+	 * - Temperature sensor
+	 *
+	 * - Fan Control
+	 *
+	 * - Power Off
+	 *
+	 * - Reset
+	 */
+};
+
+&usb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	hub@1 {
+		compatible = "usb409,005a";
+		reg = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+		};
+
+		port@2 {
+			reg = <2>;
+		};
+	};
+};

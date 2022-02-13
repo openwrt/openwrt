@@ -1,4 +1,4 @@
-RAMFS_COPY_BIN='fw_printenv fw_setenv strings'
+RAMFS_COPY_BIN='fdisk fw_printenv fw_setenv mkfs.ext3 mkfs.ext4 strings'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 PART_NAME=firmware
@@ -8,6 +8,10 @@ platform_check_image() {
 	local board="$(board_name)"
 
 	case "$board" in
+	iodata,hdl2-a)
+		iodata_check_image "$1" || return 1
+		return 0
+		;;
 	netgear,readynas-duo-v2)
 		# let's store how rootfs is mounted
 		cp /proc/mounts /tmp/mounts
@@ -33,6 +37,9 @@ platform_do_upgrade() {
 			echo "active_bank partition missed!"
 			return 1
 		fi
+		;;
+	iodata,hdl2-a)
+		iodata_do_upgrade "l2a" "$1"
 		;;
 	iptime,nas1)
 		default_do_upgrade "$1"
