@@ -9,16 +9,18 @@
  * option) any later version.
  */
 
+#include <dt-bindings/leds/common.h>
+
 /include/ "fsl/p1020si-pre.dtsi"
 / {
 	model = "Aerohive HiveAP-330";
 	compatible = "aerohive,hiveap-330";
 
 	aliases {
-		led-boot = &tricolor_green;
-		led-failsafe = &tricolor_red;
-		led-running = &tricolor_green;
-		led-upgrade = &tricolor_red;
+		led-boot = &led_power_green;
+		led-failsafe = &led_fault_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_fault_red;
 		label-mac-device = &enet0;
 	};
 
@@ -119,21 +121,66 @@
 				compatible = "national,lp5521";
 				reg = <0x32>;
 				clock-mode = /bits/ 8 <2>;
-				tricolor_red: chan0 {
-					chan-name = "hiveap-330:red:tricolor0";
+#if 1
+				led_fault_red: led@0 {
+					reg = <0>;
+					chan-name = "fault:red";
 					led-cur = /bits/ 8 <0x2f>;
 					max-cur = /bits/ 8 <0x5f>;
+					color = <LED_COLOR_ID_RED>;
+					function = LED_FUNCTION_FAULT;
 				};
-				tricolor_green:chan1 {
-					chan-name = "hiveap-330:green:tricolor0";
+				led_power_green: led@1 {
+					reg = <1>;
+					chan-name = "power:green";
 					led-cur = /bits/ 8 <0x2f>;
 					max-cur = /bits/ 8 <0x5f>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_POWER;
 				};
-				chan2 {
-					chan-name = "hiveap-330:blue:tricolor0";
+				led@2{
+					reg = <2>;
+					chan-name = "blue";
 					led-cur = /bits/ 8 <0x2f>;
 					max-cur = /bits/ 8 <0x5f>;
+					color = <LED_COLOR_ID_BLUE>;
 				};
+#else
+				/*
+				 * openwrt isn't ready to handle multi-intensity leds yet
+				 * # echo 255 255 255 > /sys/class/leds/tricolor/multi_intensity
+				 * # echo 255 > /sys/class/leds/tricolor/brightness
+				 */
+
+				rgbled-0 {
+					function = LED_FUNCTION_POWER;
+					color = <LED_COLOR_ID_RGB>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						chan-name = "tricolor";
+						led-cur = /bits/ 8 <0x2f>;
+						max-cur = /bits/ 8 <0x5f>;
+						color = <LED_COLOR_ID_RED>;
+					};
+					led@1 {
+						reg = <1>;
+						chan-name = "tricolor";
+						led-cur = /bits/ 8 <0x2f>;
+						max-cur = /bits/ 8 <0x5f>;
+						color = <LED_COLOR_ID_GREEN>;
+					};
+					led@2{
+						reg = <2>;
+						chan-name = "tricolor";
+						led-cur = /bits/ 8 <0x2f>;
+						max-cur = /bits/ 8 <0x5f>;
+						color = <LED_COLOR_ID_BLUE>;
+					};
+				};
+#endif
 			};
 
 			/* Most likely SoC boot config */
