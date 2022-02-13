@@ -183,10 +183,14 @@
 #endif
 			};
 
-			/* Most likely SoC boot config */
 			eeprom@51 {
-				compatible = "eeprom";
+				/*
+				 * 1Kbit I2C/SMBus EEPROM with SHA-1 Engine
+				 * Aerohive calls it "dallas".
+				 */
+				compatible = "adi,ds28cn01";
 				reg = <0x51>;
+				read-only;
 			};
 		};
 
