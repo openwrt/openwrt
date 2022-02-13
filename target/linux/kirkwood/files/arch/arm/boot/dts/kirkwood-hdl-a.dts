@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "kirkwood-hdlx-a.dtsi"
+
+/ {
+	model = "I-O DATA HDL-A (1.0/2.0/3.0)";
+	compatible = "iodata,hdl-a", "marvell,kirkwood-88f6282", "marvell,kirkwood";
+};
+
+&sata {
+	status = "okay";
+	nr-ports = <1>;
+};

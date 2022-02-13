@@ -8,6 +8,7 @@ platform_check_image() {
 	local board="$(board_name)"
 
 	case "$board" in
+	iodata,hdl-a|\
 	iodata,hdl2-a)
 		iodata_check_image "$1" || return 1
 		return 0
@@ -38,6 +39,7 @@ platform_do_upgrade() {
 			return 1
 		fi
 		;;
+	iodata,hdl-a|\
 	iodata,hdl2-a)
 		iodata_do_upgrade "l2a" "$1"
 		;;
