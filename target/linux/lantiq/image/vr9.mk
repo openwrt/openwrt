@@ -208,6 +208,30 @@ define Device/avm_fritz7430
 endef
 TARGET_DEVICES += avm_fritz7430
 
+define Device/avm_fritz7490
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 7490
+  DEVICE_VARIANT := Other NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs -kmod-owl-loader
+endef
+TARGET_DEVICES += avm_fritz7490
+
+define Device/avm_fritz7490-micron
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 7490
+  DEVICE_VARIANT := Micron NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs -kmod-owl-loader
+endef
+TARGET_DEVICES += avm_fritz7490-micron
+
 define Device/bt_homehub-v5a
   $(Device/dsa-migration)
   $(Device/NAND)
