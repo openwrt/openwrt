@@ -149,6 +149,42 @@ define Device/avm_fritz3390
 endef
 TARGET_DEVICES += avm_fritz3390
 
+define Device/avm_fritz5490
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 5490
+  DEVICE_ALT0_VENDOR := AVM
+  DEVICE_ALT0_MODEL := FRITZ!Box 5491
+  DEVICE_VARIANT := Other NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-switch-qca8k kmod-usb3 fritz-tffs \
+	-ltq-vdsl-vr9-vectoring-fw-installer -kmod-ltq-vdsl-vr9-mei \
+	-kmod-ltq-vdsl-vr9 -kmod-ltq-atm-vr9 -kmod-ltq-ptm-vr9 \
+	-ltq-vdsl-vr9-app -kmod-owl-loader \
+	-dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+endef
+TARGET_DEVICES += avm_fritz5490
+
+define Device/avm_fritz5490-micron
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 5490
+  DEVICE_ALT0_VENDOR := AVM
+  DEVICE_ALT0_MODEL := FRITZ!Box 5491
+  DEVICE_VARIANT := Micron NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-switch-qca8k kmod-usb3 fritz-tffs \
+	-ltq-vdsl-vr9-vectoring-fw-installer -kmod-ltq-vdsl-vr9-mei \
+	-kmod-ltq-vdsl-vr9 -kmod-ltq-atm-vr9 -kmod-ltq-ptm-vr9 \
+	-ltq-vdsl-vr9-app -kmod-owl-loader \
+	-dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+endef
+TARGET_DEVICES += avm_fritz5490-micron
+
 define Device/avm_fritz7360sl
   $(Device/dsa-migration)
   $(Device/AVM)
