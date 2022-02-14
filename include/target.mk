@@ -12,6 +12,7 @@ DEVICE_TYPE?=router
 # Default packages - the really basic set
 DEFAULT_PACKAGES:=\
 	base-files \
+	apk \
 	ca-bundle \
 	dropbear \
 	fstools \
@@ -21,7 +22,6 @@ DEFAULT_PACKAGES:=\
 	logd \
 	mtd \
 	netifd \
-	opkg \
 	uci \
 	uclient-fetch \
 	urandom-seed \
