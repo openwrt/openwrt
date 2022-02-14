@@ -98,6 +98,12 @@ $(curdir)/index: FORCE
 		echo '}}' >> index.json; \
 		sed -i 's/, }}/}}/' index.json; \
 		gzip -9nc Packages > Packages.gz; \
+		$(STAGING_DIR_HOST)/bin/apk mkndx \
+			--root $(TOPDIR) \
+			--keys-dir $(TOPDIR) \
+			--sign $(BUILD_KEY_APK_SEC) \
+			--output packages.adb \
+			*.apk; \
 	); done
 ifdef CONFIG_SIGNED_PACKAGES
 	@echo Signing package index...

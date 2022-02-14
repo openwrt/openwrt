@@ -66,7 +66,7 @@ make4.1+ perl python3.7+ rsync subversion unzip which
 
 The main repository uses multiple sub-repositories to manage packages of
 different categories. All packages are installed via the OpenWrt package
-manager called `opkg`. If you're looking to develop the web interface or port
+manager called `apk`. If you're looking to develop the web interface or port
 packages to OpenWrt, please find the fitting repository below.
 
 * [LuCI Web Interface](https://github.com/openwrt/luci): Modern and modular
