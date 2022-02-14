@@ -3,49 +3,49 @@
 #include "mt7621_elecom_wrc-gs-2pci.dtsi"
 
 / {
-	compatible = "elecom,wrc-1750gst2", "mediatek,mt7621-soc";
-	model = "ELECOM WRC-1750GST2";
+	compatible = "elecom,wrc-2533gs2", "mediatek,mt7621-soc";
+	model = "ELECOM WRC-2533GS2";
 };
 
 &partitions {
 	partition@50000 {
 		compatible = "denx,uimage";
 		label = "firmware";
-		reg = <0x50000 0x1800000>;
+		reg = <0x50000 0xb00000>;
 	};
 
-	partition@1850000 {
+	partition@b50000 {
 		label = "tm_pattern";
-		reg = <0x1850000 0x400000>;
+		reg = <0xb50000 0x380000>;
 		read-only;
 	};
 
-	partition@1c50000 {
+	partition@ed0000 {
 		label = "tm_key";
-		reg = <0x1c50000 0x100000>;
+		reg = <0xed0000 0x80000>;
 		read-only;
 	};
 
-	partition@1d50000 {
+	partition@f50000 {
 		label = "nvram";
-		reg = <0x1d50000 0xb0000>;
+		reg = <0xf50000 0x30000>;
 		read-only;
 	};
 
-	partition@1e00000 {
+	partition@f80000 {
 		label = "user_data";
-		reg = <0x1e00000 0x200000>;
+		reg = <0xf80000 0x80000>;
 		read-only;
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cells = <&macaddr_factory_fff4>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wan {
-	nvmem-cells = <&macaddr_factory_e006>;
+	nvmem-cells = <&macaddr_factory_fffa>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -54,11 +54,11 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	macaddr_factory_e000: macaddr@e000 {
-		reg = <0xe000 0x6>;
+	macaddr_factory_fff4: macaddr@fff4 {
+		reg = <0xfff4 0x6>;
 	};
 
-	macaddr_factory_e006: macaddr@e006 {
-		reg = <0xe006 0x6>;
+	macaddr_factory_fffa: macaddr@fffa {
+		reg = <0xfffa 0x6>;
 	};
 };
