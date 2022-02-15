@@ -20,6 +20,7 @@ proto_mbim_init_config() {
 	proto_config_add_string username
 	proto_config_add_string password
 	proto_config_add_boolean dhcp
+	proto_config_add_string pdptype
 	proto_config_add_defaults
 }
 
@@ -28,8 +29,8 @@ _proto_mbim_setup() {
 	local tid=2
 	local ret
 
-	local device apn pincode delay allow_roaming allow_partner dhcp $PROTO_DEFAULT_OPTIONS
-	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner dhcp $PROTO_DEFAULT_OPTIONS
+	local device apn pincode delay allow_roaming allow_partner dhcp pdptype $PROTO_DEFAULT_OPTIONS
+	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner dhcp pdptype $PROTO_DEFAULT_OPTIONS
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
@@ -147,8 +148,11 @@ _proto_mbim_setup() {
 	}
 	tid=$((tid + 1))
 
+	pdptype=$(echo "$pdptype" | awk '{print tolower($0)}')
+	[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] || pdptype="ipv4v6"
+
 	echo "mbim[$$]" "Connect to network"
-	while ! umbim $DBG -n -t $tid -d $device connect "$apn" "$auth" "$username" "$password"; do
+	while ! umbim $DBG -n -t $tid -d $device connect "$pdptype:$apn" "$auth" "$username" "$password"; do
 		tid=$((tid + 1))
 		sleep 1;
 	done
@@ -164,56 +168,64 @@ _proto_mbim_setup() {
 		proto_init_update "$ifname" 1
 		proto_send_update "$interface"
 
-		json_init
-		json_add_string name "${interface}_4"
-		json_add_string ifname "@$interface"
-		json_add_string proto "static"
-		json_add_array ipaddr
-		json_add_string "" "$ipv4address"
-		json_close_array
-		json_add_string gateway "$ipv4gateway"
-		json_add_array dns
-		json_add_string "" "$ipv4dnsserver"
-		json_close_array
-		proto_add_dynamic_defaults
-		json_close_object
-		ubus call network add_dynamic "$(json_dump)"
+		[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv4v6" ] && {
+			json_init
+			json_add_string name "${interface}_4"
+			json_add_string ifname "@$interface"
+			json_add_string proto "static"
+			json_add_array ipaddr
+			json_add_string "" "$ipv4address"
+			json_close_array
+			json_add_string gateway "$ipv4gateway"
+			json_add_array dns
+			json_add_string "" "$ipv4dnsserver"
+			json_close_array
+			proto_add_dynamic_defaults
+			json_close_object
+			ubus call network add_dynamic "$(json_dump)"
+		}
 
-		json_init
-		json_add_string name "${interface}_6"
-		json_add_string ifname "@$interface"
-		json_add_string proto "static"
-		json_add_array ip6addr
-		json_add_string "" "$ipv6address"
-		json_close_array
-		json_add_string ip6gw "$ipv6gateway"
-		json_add_array dns
-		json_add_string "" "$ipv6dnsserver"
-		json_close_array
-		proto_add_dynamic_defaults
-		json_close_object
-		ubus call network add_dynamic "$(json_dump)"
+		[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && {
+			json_init
+			json_add_string name "${interface}_6"
+			json_add_string ifname "@$interface"
+			json_add_string proto "static"
+			json_add_array ip6addr
+			json_add_string "" "$ipv6address"
+			json_close_array
+			json_add_string ip6gw "$ipv6gateway"
+			json_add_array dns
+			json_add_string "" "$ipv6dnsserver"
+			json_close_array
+			proto_add_dynamic_defaults
+			json_close_object
+			ubus call network add_dynamic "$(json_dump)"
+		}
 	else
 		echo "mbim[$$]" "Starting DHCP on $ifname"
 		proto_init_update "$ifname" 1
 		proto_send_update "$interface"
 
-		json_init
-		json_add_string name "${interface}_4"
-		json_add_string ifname "@$interface"
-		json_add_string proto "dhcp"
-		proto_add_dynamic_defaults
-		json_close_object
-		ubus call network add_dynamic "$(json_dump)"
+		[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv4v6" ] && {
+			json_init
+			json_add_string name "${interface}_4"
+			json_add_string ifname "@$interface"
+			json_add_string proto "dhcp"
+			proto_add_dynamic_defaults
+			json_close_object
+			ubus call network add_dynamic "$(json_dump)"
+		}
 
-		json_init
-		json_add_string name "${interface}_6"
-		json_add_string ifname "@$interface"
-		json_add_string proto "dhcpv6"
-		json_add_string extendprefix 1
-		proto_add_dynamic_defaults
-		json_close_object
-		ubus call network add_dynamic "$(json_dump)"
+		[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && {
+			json_init
+			json_add_string name "${interface}_6"
+			json_add_string ifname "@$interface"
+			json_add_string proto "dhcpv6"
+			json_add_string extendprefix 1
+			proto_add_dynamic_defaults
+			json_close_object
+			ubus call network add_dynamic "$(json_dump)"
+		}
 	fi
 
 	uci_set_state network $interface tid "$tid"
