@@ -131,6 +131,25 @@ endef
 $(eval $(call KernelPackage,leds-apu))
 
 
+define KernelPackage/leds-pca955x
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED driver for PCA955x I2C chips
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
+  KCONFIG:=CONFIG_LEDS_PCA955X \
+    CONFIG_LEDS_PCA955X_GPIO=y
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-pca955x.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-pca955x,1)
+endef
+
+define KernelPackage/leds-pca955x/description
+ This option enables support for LEDs connected to PCA955x
+ LED driver chips accessed via the I2C bus.  Supported
+ devices include PCA9550, PCA9551, PCA9552, and PCA9553.
+endef
+
+$(eval $(call KernelPackage,leds-pca955x))
+
+
 define KernelPackage/leds-pca963x
   SUBMENU:=$(LEDS_MENU)
   TITLE:=PCA963x LED support
