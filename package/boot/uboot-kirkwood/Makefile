@@ -29,6 +29,11 @@ define U-Boot/dockstar_second_stage
   BUILD_DEVICES:=seagate_dockstar
 endef
 
+define U-Boot/dns325
+  NAME:=D-Link DNS-325 A1
+  BUILD_DEVICES:=dlink_dns-325-a1
+endef
+
 define U-Boot/goflexhome
   NAME:=the Seagate GoFlexHome/GoFlexNet
   BUILD_DEVICES:=seagate_goflexhome seagate_goflexnet
@@ -104,6 +109,7 @@ UBOOT_TARGETS := \
 	goflexhome \
 	ib62x0 ib62x0_second_stage \
 	iconnect iconnect_second_stage \
+	dns325 \
 	l-50 \
 	nas220 \
 	nsa310 \

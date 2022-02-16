@@ -140,6 +140,17 @@ define Device/ctera_c200-v1
 endef
 TARGET_DEVICES += ctera_c200-v1
 
+define Device/dlink_dns-325-a1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DNS-325
+  DEVICE_VARIANT := A1
+  DEVICE_DTS := kirkwood-dns325
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-hwmon-lm75 kmod-hwmon-gpiofan \
+	kmod-usb-ledtrig-usbport kmod-gpio-button-hotplug block-mount mdadm \
+	kmod-fs-ext4 e2fsprogs partx-utils fdisk
+endef
+TARGET_DEVICES += dlink_dns-325-a1
+
 define Device/endian_4i-edge-200
   DEVICE_VENDOR := Endian
   DEVICE_MODEL := 4i Edge 200

@@ -1,0 +1,75 @@
+--- a/configs/dns325_defconfig
++++ b/configs/dns325_defconfig
+@@ -27,7 +27,7 @@ CONFIG_CMD_FAT=y
+ CONFIG_CMD_JFFS2=y
+ CONFIG_CMD_MTDPARTS=y
+ CONFIG_MTDIDS_DEFAULT="nand0=orion_nand"
+-CONFIG_MTDPARTS_DEFAULT="mtdparts=orion_nand:896k(u-boot),128k(u-boot-env),5m(kernel),-(rootfs)"
++CONFIG_MTDPARTS_DEFAULT="mtdparts=orion_nand:0xe0000@0x0(u-boot),0x20000@0xe0000(u-boot-env),-@0x100000(ubi)"
+ CONFIG_CMD_UBI=y
+ CONFIG_ISO_PARTITION=y
+ CONFIG_OF_CONTROL=y
+--- a/include/configs/dns325.h
++++ b/include/configs/dns325.h
+@@ -66,46 +66,12 @@
+  */
+ 
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+-	"stdin=serial\0" \
+-	"stdout=serial\0" \
+-	"stderr=serial\0" \
+-	"loadaddr=0x800000\0" \
+-	"autoload=no\0" \
+-	"console=ttyS0,115200\0" \
+-	"mtdparts="CONFIG_MTDPARTS_DEFAULT \
+-	"optargs=\0" \
+-	"bootenv=uEnv.txt\0" \
+-	"importbootenv=echo Importing environment ...; " \
+-		"env import -t ${loadaddr} ${filesize}\0" \
+-	"loadbootenv=fatload usb 0 ${loadaddr} ${bootenv}\0" \
+-	"setbootargs=setenv bootargs console=${console} " \
+-		"${optargs} " \
+-		"${mtdparts} " \
+-		"root=${bootenvroot} " \
+-		"rootfstype=${bootenvrootfstype}\0" \
+-	"subbootcmd=run setbootargs; " \
+-		"if run bootenvloadimage; then " \
+-			"bootm ${loadaddr};" \
+-		"fi;\0" \
+-	"nandroot=ubi0:rootfs ubi.mtd=rootfs\0" \
+-	"nandrootfstype=ubifs\0" \
+-	"nandloadimage=nand read ${loadaddr} kernel\0" \
+-	"setnandbootenv=echo Booting from nand ...; " \
+-		"setenv bootenvroot ${nandroot}; " \
+-		"setenv bootenvrootfstype ${nandrootfstype}; " \
+-		"setenv bootenvloadimage ${nandloadimage}\0"
++	"mtdids="CONFIG_MTDIDS_DEFAULT "\0" \
++	"mtdparts="CONFIG_MTDPARTS_DEFAULT "\0"
+ 
+ #define CONFIG_BOOTCOMMAND \
+-	"if test -n ${bootenv} && usb start; then " \
+-		"if run loadbootenv; then " \
+-			"echo Loaded environment ${bootenv} from usb;" \
+-			"run importbootenv;" \
+-		"fi;" \
+-		"if test -n ${bootenvcmd}; then " \
+-			"echo Running bootenvcmd ...;" \
+-			"run bootenvcmd;" \
+-		"fi;" \
+-	"fi;" \
+-	"run setnandbootenv subbootcmd;"
++	"ubi part ubi; " \
++	"ubi read 0x800000 kernel; " \
++	"bootm 0x800000"
+ 
+ #endif /* _CONFIG_DNS325_H */
+--- a/board/d-link/dns325/dns325.c
++++ b/board/d-link/dns325/dns325.c
+@@ -86,6 +86,7 @@ int board_early_init_f(void)
+ 	kw_gpio_set_blink(DNS325_GPIO_LED_POWER , 1);
+ 
+ 	kw_gpio_set_value(DNS325_GPIO_SATA0_EN , 1);
++	kw_gpio_set_value(DNS325_GPIO_SATA1_EN , 1);
+ 	return 0;
+ }
+ 
