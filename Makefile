@@ -133,6 +133,10 @@ ifneq ($(CONFIG_CCACHE),)
 	$(STAGING_DIR_HOST)/bin/ccache -s
 endif
 
-.PHONY: clean dirclean prereq prepare world package/symlinks package/symlinks-install package/symlinks-clean
+publish: 
+	rsync -avc --progress --stats bin root@vpn.theleadbetters.com:/var/lib/docker/volumes/htpc_opkg-repo/_data/
+
+
+.PHONY: clean dirclean prereq prepare world package/symlinks package/symlinks-install package/symlinks-clean publish
 
 endif
