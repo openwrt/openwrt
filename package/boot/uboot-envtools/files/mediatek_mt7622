@@ -16,6 +16,10 @@ linksys,e8450-ubi)
 	ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x1f000" "0x1f000" "1"
 	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x1f000" "0x1f000" "1"
 	;;
+iptime,ax8004m|\
+iptime,ax8004m-ubi)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x2000" "0x2000"
+	;;
 bananapi,bpi-r64)
 	. /lib/upgrade/common.sh
 	export_bootdevice

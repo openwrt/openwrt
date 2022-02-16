@@ -1,0 +1,376 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR MIT)
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "mt7622.dtsi"
+#include "mt6380.dtsi"
+
+/ {
+	compatible = "iptime,ax8004m", "mediatek,mt7622";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_cpu;
+		led-failsafe = &led_cpu;
+		led-running = &led_cpu;
+		led-upgrade = &led_cpu;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n1 swiotlb=512";
+	};
+
+	cpus {
+		cpu@0 {
+			proc-supply = <&mt6380_vcpu_reg>;
+			sram-supply = <&mt6380_vm_reg>;
+		};
+
+		cpu@1 {
+			proc-supply = <&mt6380_vcpu_reg>;
+			sram-supply = <&mt6380_vm_reg>;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		factory {
+			label = "factory";
+			linux,code = <BTN_0>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 102 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_cpu: cpu {
+			label = "orange:cpu";
+			gpios = <&pio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan2g {
+			label = "orange:wlan2g";
+			gpios = <&pio 16 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		wlan5g {
+			label = "orange:wlan5g";
+			gpios = <&pio 17 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1radio";
+		};
+	};
+
+	memory {
+		reg = <0 0x40000000 0 0x40000000>;
+	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-5V";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&btif {
+	// This device doesn't have an antenna, but it actually works.
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		switch@0 {
+			compatible = "mediatek,mt7531";
+			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&pio>;
+			interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
+			reset-gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					label = "lan1";
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan2";
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan3";
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan4";
+				};
+
+				wan: port@4 {
+					reg = <4>;
+					label = "wan";
+					mtd-mac-address = <&factory 0x0004>;
+					mtd-mac-address-increment = <1>;
+				};
+
+				port@6 {
+					reg = <6>;
+					label = "cpu";
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+		};
+
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_pins>;
+	status = "okay";
+};
+
+&pio {
+	pcie0_pins: pcie0-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie0_pad_perst",
+				 "pcie0_1_waken",
+				 "pcie0_1_clkreq";
+		};
+	};
+
+	pcie1_pins: pcie1-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie1_pad_perst",
+				 "pcie1_0_waken",
+				 "pcie1_0_clkreq";
+		};
+	};
+
+	pmic_bus_pins: pmic-bus-pins {
+		mux {
+			function = "pmic";
+			groups = "pmic_bus";
+		};
+	};
+
+	pwm7_pins: pwm1-2-pins {
+		mux {
+			function = "pwm";
+			groups = "pwm_ch7_2";
+		};
+	};
+
+	wled_pins: wled-pins {
+		mux {
+			function = "led";
+			groups = "wled";
+		};
+	};
+
+	serial_nand_pins: serial-nand-pins {
+		mux {
+			function = "flash";
+			groups = "snfi";
+		};
+	};
+
+	uart0_pins: uart0-pins {
+		mux {
+			function = "uart";
+			groups = "uart0_0_tx_rx" ;
+		};
+	};
+
+	watchdog_pins: watchdog-pins {
+		mux {
+			function = "watchdog";
+			groups = "watchdog";
+		};
+	};
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm7_pins>;
+	status = "okay";
+};
+
+&pwrap {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmic_bus_pins>;
+
+	status = "okay";
+};
+
+&slot0 {
+	wmac1: mt7915@0,0 {
+		reg = <0x0 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		mediatek,mtd-eeprom = <&factory 0x05000>;
+	};
+};
+
+&snand {
+	pinctrl-names = "default";
+	pinctrl-0 = <&serial_nand_pins>;
+	status = "okay";
+
+	mediatek,bmt-v2;
+	mediatek,bmt-table-size = <0x1000>;
+	mediatek,quad-spi;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "Preloader";
+			reg = <0x0000000 0x0080000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "ATF";
+			reg = <0x0080000 0x0040000>;
+			read-only;
+		};
+
+		partition@c0000 {
+			label = "Bootloader";
+			reg = <0x00c0000 0x0080000>;
+			read-only;
+		};
+
+		partition@140000 {
+			label = "Config";
+			reg = <0x0140000 0x0080000>;
+		};
+
+		factory: partition@1c0000 {
+			label = "Factory";
+			reg = <0x01c0000 0x0040000>;
+			read-only;
+		};
+	};
+
+};
+
+&ssusb {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_5v>;
+	status = "okay";
+};
+
+&u3phy {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+&watchdog {
+	pinctrl-names = "default";
+	pinctrl-0 = <&watchdog_pins>;
+	status = "okay";
+};
+
+&wmac {
+	mediatek,mtd-eeprom = <&factory 0x0000>;
+	status = "okay";
+};
+
+&wan {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <1>;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <3>;
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_4: macaddr@0 {
+		reg = <0x4 0x6>;
+	};
+};
+

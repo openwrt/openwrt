@@ -34,6 +34,14 @@ platform_do_upgrade() {
 			nand_do_upgrade "$1"
 		fi
 		;;
+	iptime,ax8004m)
+		if grep -q boot_from=firmware2 /proc/cmdline; then
+			PART_NAME=firmware2
+		else
+			PART_NAME=firmware1
+		fi
+		default_do_upgrade "$1"
+		;;
 	linksys,e8450-ubi)
 		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
@@ -46,6 +54,7 @@ platform_do_upgrade() {
 		fi
 		default_do_upgrade "$1"
 		;;
+	iptime,ax8004m-ubi|\
 	mediatek,mt7622-rfb1-ubi|\
 	totolink,a8000ru)
 		nand_do_upgrade "$1"
@@ -68,6 +77,7 @@ platform_check_image() {
 	buffalo,wsr-2533dhp2)
 		buffalo_check_image "$board" "$magic" "$1" || return 1
 		;;
+	iptime,ax8004m-ubi|\
 	mediatek,mt7622-rfb1-ubi|\
 	totolink,a8000ru)
 		nand_do_platform_check "$board" "$1"

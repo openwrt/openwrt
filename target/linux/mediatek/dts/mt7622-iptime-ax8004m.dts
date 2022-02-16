@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR MIT)
+
+/dts-v1/;
+#include "mt7622-iptime-ax8004m.dtsi"
+
+/ {
+	model = "ipTIME AX8004M";
+};
+
+&snand {
+	partitions {
+		partition@200000 {
+			label = "firmware1";
+			compatible = "denx,fit";
+			openwrt,cmdline-match = "boot_from=firmware1";
+			reg = <0x0200000 0x2000000>;
+		};
+
+		partition@2200000 {
+			label = "firmware2";
+			compatible = "denx,fit";
+			openwrt,cmdline-match = "boot_from=firmware2";
+			reg = <0x2200000 0x2000000>;
+		};
+
+		partition@2600000 {
+			label = "data";
+			reg = <0x4200000 0x3000000>;
+		};
+	};
+};
+
