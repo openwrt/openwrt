@@ -1,13 +1,16 @@
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Tue, 9 Nov 2021 11:34:28 +0100
-Subject: [PATCH] watchdog: bcm7038_wdt: allow building on ARCH_BCM4908
+Date: Wed, 9 Feb 2022 21:32:02 +0100
+Subject: [PATCH] watchdog: allow building BCM7038_WDT for BCM4908
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-The same hardware block is present on BCM4908 SoCs family.
+BCM4908 is a SoCs family that shares a lot of hardware with BCM63xx
+including the watchdog block. Allow building this driver for it.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
 ---
  drivers/watchdog/Kconfig | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
