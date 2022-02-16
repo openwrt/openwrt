@@ -742,6 +742,25 @@ hostapd_set_bss_options() {
 		;;
 	esac
 
+	case "$auth_type" in
+		none|owe|psk|sae|psk-sae|wep)
+			json_get_vars \
+			auth_server auth_port auth_secret \
+			ownip radius_client_addr
+
+			[ -n "$auth_server" ] &&  {
+				set_default auth_port 1812
+
+				append bss_conf "auth_server_addr=$auth_server" "$N"
+				append bss_conf "auth_server_port=$auth_port" "$N"
+				[ -n "$auth_secret" ] && append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+				[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
+				[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
+				append bss_conf "macaddr_acl=2" "$N"
+			}
+		;;
+	esac
+
 	local auth_algs=$((($auth_mode_shared << 1) | $auth_mode_open))
 	append bss_conf "auth_algs=${auth_algs:-1}" "$N"
 	append bss_conf "wpa=$wpa" "$N"
