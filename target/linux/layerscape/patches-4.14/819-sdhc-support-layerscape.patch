@@ -131,7 +131,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  };
  
  /**
-@@ -500,13 +550,20 @@ static void esdhc_clock_enable(struct sd
+@@ -504,13 +554,20 @@ static void esdhc_clock_enable(struct sd
  	}
  }
  
@@ -152,7 +152,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	u32 temp;
  
  	host->mmc->actual_clock = 0;
-@@ -520,27 +577,14 @@ static void esdhc_of_set_clock(struct sd
+@@ -524,27 +581,14 @@ static void esdhc_of_set_clock(struct sd
  	if (esdhc->vendor_ver < VENDOR_V_23)
  		pre_div = 2;
  
@@ -187,7 +187,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  
  	temp = sdhci_readl(host, ESDHC_SYSTEM_CONTROL);
  	temp &= ~(ESDHC_CLOCK_SDCLKEN | ESDHC_CLOCK_IPGEN | ESDHC_CLOCK_HCKEN |
-@@ -553,9 +597,30 @@ static void esdhc_of_set_clock(struct sd
+@@ -557,9 +601,30 @@ static void esdhc_of_set_clock(struct sd
  	while (host->max_clk / pre_div / div > clock && div < 16)
  		div++;
  
@@ -218,7 +218,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	pre_div >>= 1;
  	div--;
  
-@@ -565,6 +630,29 @@ static void esdhc_of_set_clock(struct sd
+@@ -569,6 +634,29 @@ static void esdhc_of_set_clock(struct sd
  		| (pre_div << ESDHC_PREDIV_SHIFT));
  	sdhci_writel(host, temp, ESDHC_SYSTEM_CONTROL);
  
@@ -248,7 +248,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	/* Wait max 20 ms */
  	timeout = ktime_add_ms(ktime_get(), 20);
  	while (1) {
-@@ -580,6 +668,7 @@ static void esdhc_of_set_clock(struct sd
+@@ -584,6 +672,7 @@ static void esdhc_of_set_clock(struct sd
  		udelay(10);
  	}
  
@@ -256,7 +256,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	temp |= ESDHC_CLOCK_SDCLKEN;
  	sdhci_writel(host, temp, ESDHC_SYSTEM_CONTROL);
  }
-@@ -608,6 +697,8 @@ static void esdhc_pltfm_set_bus_width(st
+@@ -612,6 +701,8 @@ static void esdhc_pltfm_set_bus_width(st
  
  static void esdhc_reset(struct sdhci_host *host, u8 mask)
  {
@@ -265,7 +265,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	u32 val;
  
  	sdhci_reset(host, mask);
-@@ -619,6 +710,12 @@ static void esdhc_reset(struct sdhci_hos
+@@ -623,6 +714,12 @@ static void esdhc_reset(struct sdhci_hos
  		val = sdhci_readl(host, ESDHC_TBCTL);
  		val &= ~ESDHC_TB_EN;
  		sdhci_writel(host, val, ESDHC_TBCTL);
@@ -278,7 +278,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	}
  }
  
-@@ -630,6 +727,7 @@ static void esdhc_reset(struct sdhci_hos
+@@ -634,6 +731,7 @@ static void esdhc_reset(struct sdhci_hos
  static const struct of_device_id scfg_device_ids[] = {
  	{ .compatible = "fsl,t1040-scfg", },
  	{ .compatible = "fsl,ls1012a-scfg", },
@@ -286,7 +286,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	{ .compatible = "fsl,ls1046a-scfg", },
  	{}
  };
-@@ -692,23 +790,91 @@ static int esdhc_signal_voltage_switch(s
+@@ -696,23 +794,91 @@ static int esdhc_signal_voltage_switch(s
  	}
  }
  
@@ -383,7 +383,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  }
  
  #ifdef CONFIG_PM_SLEEP
-@@ -757,7 +923,7 @@ static const struct sdhci_ops sdhci_esdh
+@@ -761,7 +927,7 @@ static const struct sdhci_ops sdhci_esdh
  	.adma_workaround = esdhc_of_adma_workaround,
  	.set_bus_width = esdhc_pltfm_set_bus_width,
  	.reset = esdhc_reset,
@@ -392,7 +392,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  };
  
  static const struct sdhci_ops sdhci_esdhc_le_ops = {
-@@ -774,7 +940,7 @@ static const struct sdhci_ops sdhci_esdh
+@@ -778,7 +944,7 @@ static const struct sdhci_ops sdhci_esdh
  	.adma_workaround = esdhc_of_adma_workaround,
  	.set_bus_width = esdhc_pltfm_set_bus_width,
  	.reset = esdhc_reset,
@@ -401,7 +401,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  };
  
  static const struct sdhci_pltfm_data sdhci_esdhc_be_pdata = {
-@@ -800,8 +966,20 @@ static struct soc_device_attribute soc_i
+@@ -804,8 +970,20 @@ static struct soc_device_attribute soc_i
  	{ },
  };
  
@@ -422,7 +422,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	struct sdhci_pltfm_host *pltfm_host;
  	struct sdhci_esdhc *esdhc;
  	struct device_node *np;
-@@ -821,6 +999,24 @@ static void esdhc_init(struct platform_d
+@@ -825,6 +1003,24 @@ static void esdhc_init(struct platform_d
  	else
  		esdhc->quirk_incorrect_hostver = false;
  
@@ -447,7 +447,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	np = pdev->dev.of_node;
  	clk = of_clk_get(np, 0);
  	if (!IS_ERR(clk)) {
-@@ -848,6 +1044,12 @@ static void esdhc_init(struct platform_d
+@@ -852,6 +1048,12 @@ static void esdhc_init(struct platform_d
  	}
  }
  
@@ -460,7 +460,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  static int sdhci_esdhc_probe(struct platform_device *pdev)
  {
  	struct sdhci_host *host;
-@@ -871,6 +1073,7 @@ static int sdhci_esdhc_probe(struct plat
+@@ -875,6 +1077,7 @@ static int sdhci_esdhc_probe(struct plat
  	host->mmc_host_ops.start_signal_voltage_switch =
  		esdhc_signal_voltage_switch;
  	host->mmc_host_ops.execute_tuning = esdhc_execute_tuning;
@@ -468,7 +468,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	host->tuning_delay = 1;
  
  	esdhc_init(pdev, host);
-@@ -879,6 +1082,11 @@ static int sdhci_esdhc_probe(struct plat
+@@ -883,6 +1086,11 @@ static int sdhci_esdhc_probe(struct plat
  
  	pltfm_host = sdhci_priv(host);
  	esdhc = sdhci_pltfm_priv(pltfm_host);
@@ -480,7 +480,7 @@ Signed-off-by: Yinbo Zhu <yinbo.zhu@nxp.com>
  	if (esdhc->vendor_ver == VENDOR_V_22)
  		host->quirks2 |= SDHCI_QUIRK2_HOST_NO_CMD23;
  
-@@ -925,14 +1133,6 @@ static int sdhci_esdhc_probe(struct plat
+@@ -929,14 +1137,6 @@ static int sdhci_esdhc_probe(struct plat
  	return ret;
  }
  
