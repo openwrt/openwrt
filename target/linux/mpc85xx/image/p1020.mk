@@ -15,7 +15,7 @@ define Device/aerohive_hiveap-330
   DEVICE_MODEL := HiveAP-330
   DEVICE_ALT0_VENDOR := Aerohive
   DEVICE_ALT0_MODEL := HiveAP-350
-  DEVICE_PACKAGES := kmod-tpm-i2c-atmel
+  DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-hwmon-lm70
   BLOCKSIZE := 128k
   KERNEL := kernel-bin | uImage none
   KERNEL_INITRAMFS := kernel-bin | MultiImage none

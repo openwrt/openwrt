@@ -24,6 +24,7 @@
 		led-running = &led_power_green;
 		led-upgrade = &led_fault_red;
 		label-mac-device = &enet0;
+		spi0 = &spi0;
 	};
 
 	memory {
@@ -112,6 +113,14 @@
 
 	board_soc: soc: soc@ffe00000 {
 		ranges = <0x0 0x0 0xffe00000 0x100000>;
+
+		spi0: spi@7000 {
+			temperature-sensor@1 {
+				compatible = "ti,tmp125";
+				reg = <1>;
+				spi-max-frequency = <5000000>;
+			};
+		};
 
 		i2c@3100 {
 			tpm@29 {
