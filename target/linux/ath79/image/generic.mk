@@ -298,6 +298,16 @@ define Device/alfa-network_r36a
 endef
 TARGET_DEVICES += alfa-network_r36a
 
+define Device/alfa-network_tube-2hq
+  SOC := qca9531
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := Tube-2HQ
+  DEVICE_PACKAGES := rssileds -swconfig
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += tube-2hq
+endef
+TARGET_DEVICES += alfa-network_tube-2hq
+
 define Device/allnet_all-wap02860ac
   $(Device/senao_loader_okli)
   SOC := qca9558
