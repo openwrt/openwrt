@@ -1,0 +1,79 @@
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -1582,6 +1582,21 @@ mt7530_hw_vlan_update(struct mt7530_priv *priv, u16 vid,
+ 	mt7530_vlan_cmd(priv, MT7530_VTCR_WR_VID, vid);
+ }
+ 
++static int
++mt7530_setup_vlan0(struct mt7530_priv *priv)
++{
++	u32 val;
++
++	/* Validate the entry with independent learning, keep the original
++	 * ingress tag attribute.
++	 */
++	val = IVL_MAC | EG_CON | PORT_MEM(MT7530_ALL_MEMBERS) | FID(FID_BRIDGED) |
++	      VLAN_VALID;
++	mt7530_write(priv, MT7530_VAWD1, val);
++
++	return mt7530_vlan_cmd(priv, MT7530_VTCR_WR_VID, 0);
++}
++
+ static void
+ mt7530_port_vlan_add(struct dsa_switch *ds, int port,
+ 		     const struct switchdev_obj_port_vlan *vlan)
+@@ -1595,6 +1610,9 @@ mt7530_port_vlan_add(struct dsa_switch *ds, int port,
+ 	mutex_lock(&priv->reg_mutex);
+ 
+ 	for (vid = vlan->vid_begin; vid <= vlan->vid_end; ++vid) {
++		if (!vid)
++			continue;
++
+ 		mt7530_hw_vlan_entry_init(&new_entry, port, untagged);
+ 		mt7530_hw_vlan_update(priv, vid, &new_entry,
+ 				      mt7530_hw_vlan_add);
+@@ -1624,6 +1642,9 @@ mt7530_port_vlan_del(struct dsa_switch *ds, int port,
+ 	mutex_lock(&priv->reg_mutex);
+ 
+ 	for (vid = vlan->vid_begin; vid <= vlan->vid_end; ++vid) {
++		if (!vid)
++			continue;
++
+ 		mt7530_hw_vlan_entry_init(&target_entry, port, 0);
+ 		mt7530_hw_vlan_update(priv, vid, &target_entry,
+ 				      mt7530_hw_vlan_del);
+@@ -2148,6 +2169,11 @@ mt7530_setup(struct dsa_switch *ds)
+ 			   PVC_EG_TAG(MT7530_VLAN_EG_CONSISTENT));
+ 	}
+ 
++	/* Setup VLAN ID 0 for VLAN-unaware bridges */
++	ret = mt7530_setup_vlan0(priv);
++	if (ret)
++		return ret;
++
+ 	/* Setup port 5 */
+ 	priv->p5_intf_sel = P5_DISABLED;
+ 	interface = PHY_INTERFACE_MODE_NA;
+@@ -2318,6 +2344,11 @@ mt7531_setup(struct dsa_switch *ds)
+ 			   PVC_EG_TAG(MT7530_VLAN_EG_CONSISTENT));
+ 	}
+ 
++	/* Setup VLAN ID 0 for VLAN-unaware bridges */
++	ret = mt7530_setup_vlan0(priv);
++	if (ret)
++		return ret;
++
+ 	ds->configure_vlan_while_not_filtering = true;
+ 	ds->assisted_learning_on_cpu_port = true;
+ 	ds->mtu_enforcement_ingress = true;
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -144,6 +144,8 @@ enum mt7530_vlan_cmd {
+ #define  PORT_STAG			BIT(31)
+ /* Independent VLAN Learning */
+ #define  IVL_MAC			BIT(30)
++/* Egress Tag Consistent */
++#define  EG_CON				BIT(29)
+ /* Per VLAN Egress Tag Control */
+ #define  VTAG_EN			BIT(28)
+ /* VLAN Member Control */
