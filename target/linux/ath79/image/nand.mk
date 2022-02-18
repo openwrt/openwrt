@@ -234,6 +234,23 @@ define Device/netgear_wndr4500-v3
 endef
 TARGET_DEVICES += netgear_wndr4500-v3
 
+define Device/perenio_peacg01
+  SOC := qca9531
+  DEVICE_VENDOR := Perenio
+  DEVICE_MODEL := PEACG01
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-usb2 kmod-i2c-core
+  SUPPORTED_DEVICES += PEACG01
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 131072k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  BLOCKSIZE := 128k
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += perenio_peacg01
+
 define Device/zyxel_nbg6716
   SOC := qca9558
   DEVICE_VENDOR := ZyXEL

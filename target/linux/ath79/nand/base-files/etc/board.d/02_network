@@ -9,7 +9,8 @@ ath79_setup_interfaces()
 
 	case "$board" in
 	aerohive,hiveap-121|\
-	glinet,gl-e750)
+	glinet,gl-e750|\
+	perenio,peacg01)
 		ucidef_set_interface_lan "eth0"
 		;;
 	domywifi,dw33d)
