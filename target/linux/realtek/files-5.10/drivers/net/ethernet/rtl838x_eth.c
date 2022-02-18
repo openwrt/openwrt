@@ -1254,8 +1254,9 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	bool dsa = netdev_uses_dsa(dev);
 	struct dsa_tag tag;
 
-	last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 	pr_debug("---------------------------------------------------------- RX - %d\n", r);
+	spin_lock_irqsave(&priv->lock, flags);
+	last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 
 	do {
 		if ((ring->rx_r[r][ring->c_rx[r]] & 0x1)) {
@@ -1329,7 +1330,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		}
 
 		/* Reset header structure */
-		spin_lock_irqsave(&priv->lock, flags);
 		memset(h, 0, sizeof(struct p_hdr));
 		h->buf = data;
 		h->size = RING_BUFFER;
@@ -1338,11 +1338,12 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 			| (ring->c_rx[r] == (priv->rxringlen - 1) ? WRAP : 0x1);
 		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
-		spin_unlock_irqrestore(&priv->lock, flags);
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
 
 	// Update counters
 	priv->r->update_cntr(r, 0);
+
+	spin_unlock_irqrestore(&priv->lock, flags);
 
 	return work_done;
 }
