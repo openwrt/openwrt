@@ -38,10 +38,6 @@
 			reset-delay-us = <2000>;
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@194b000 {
 			/* select hostmode */
 			compatible = "qcom,tcsr";
@@ -81,17 +77,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			switch_lan_bmp = <0x10>;
-			switch_wan_bmp = <0x20>;
-
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -260,22 +245,6 @@
 
 &cryptobam {
 	status = "okay";
-};
-
-&gmac0 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <2 0x20>;
-};
-
-&gmac1 {
-	qcom,phy_mdio_addr = <3>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <1 0x10>;
 };
 
 &usb3_ss_phy {

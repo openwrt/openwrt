@@ -130,14 +130,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
 	};
 };
 
@@ -223,17 +215,6 @@
 
 &cryptobam {
 	status = "okay";
-};
-
-&gmac0 {
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_config_0>;
-};
-
-&gmac1 {
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_config_0>;
-	mac-address-increment = <1>;
 };
 
 &nand {

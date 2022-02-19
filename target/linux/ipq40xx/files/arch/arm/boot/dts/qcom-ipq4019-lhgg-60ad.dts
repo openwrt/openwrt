@@ -85,19 +85,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			switch_mac_mode = <0x3>; /* mac mode for RGMII RMII */
-			switch_lan_bmp = <0x0>; /* lan port bitmap */
-			switch_wan_bmp = <0x10>; /* wan port bitmap */
-		};
-
-		edma@c080000 {
-			status = "okay";
-			phy-mode = "rgmii-id";
-			qcom,num_gmac = <1>;
-			qcom,single-phy;
-		};
 	};
 
 	keys {
@@ -259,10 +246,4 @@
 			reg = <0x00010000 0 0 0 0>;
 		};
 	};
-};
-
-&gmac0 {
-	qcom,phy_mdio_addr = <0>;
-	qcom,poll_required = <1>;
-	vlan_tag = <0 0x20>;
 };

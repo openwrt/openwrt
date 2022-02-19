@@ -53,10 +53,6 @@
 			/delete-node/ ethernet-phy@3;
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -94,17 +90,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-
-			switch_lan_bmp = <0x1e>;
-			switch_wan_bmp = <0x20>;
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -222,16 +207,6 @@
 
 &cryptobam {
 	status = "okay";
-};
-
-&gmac0 {
-	qcom,phy_mdio_addr = <2>;
-	qcom,poll_required = <1>;
-};
-
-&gmac1 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
 };
 
 &tlmm {

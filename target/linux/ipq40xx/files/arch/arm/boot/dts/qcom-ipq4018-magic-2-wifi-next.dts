@@ -29,52 +29,12 @@
 			/delete-node/ ethernet-phy@1;
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		crypto@8e3a000 {
 			status = "okay";
 		};
 
 		watchdog@b017000 {
 			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-			switch_lan_bmp = <0x3e>;
-			switch_wan_bmp = <0x0>;
-		};
-
-		edma@c080000 {
-			status = "okay";
-			qcom,num_gmac = <3>;
-
-			gmac0 {
-				qcom,phy_mdio_addr = <3>;
-				qcom,poll_required = <1>;
-				/delete-property/ qcom,forced_speed;
-				/delete-property/ qcom,forced_duplex;
-				vlan_tag = <1 0x10>;
-			};
-
-			gmac1 {
-				qcom,phy_mdio_addr = <2>;
-				qcom,poll_required = <1>;
-				/delete-property/ qcom,forced_speed;
-				/delete-property/ qcom,forced_duplex;
-				vlan_tag = <1 0x08>;
-			};
-
-			gmac2 {
-				local-mac-address = [00 00 00 00 00 00];
-				qcom,phy_mdio_addr = <4>;
-				qcom,poll_required = <1>;
-				/delete-property/ qcom,forced_speed;
-				/delete-property/ qcom,forced_duplex;
-				vlan_tag = <1 0x20>;
-			};
 		};
 
 		gpio_export {

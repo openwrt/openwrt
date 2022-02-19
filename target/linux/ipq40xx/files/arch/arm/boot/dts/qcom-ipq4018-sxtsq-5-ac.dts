@@ -65,17 +65,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-			phy-mode = "rgmii";
-			qcom,num_gmac = <1>;
-			qcom,single-phy;
-		};
 	};
 
 	keys {
@@ -226,14 +215,6 @@
 	status = "okay";
 
 	qcom,ath10k-calibration-variant = "MikroTik-SXTsq-5-ac";
-};
-
-&gmac0 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <1 0x20>;
 };
 
 &mdio {
