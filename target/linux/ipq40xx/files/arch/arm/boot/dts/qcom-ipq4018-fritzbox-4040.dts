@@ -14,7 +14,6 @@
 		led-failsafe = &flash;
 		led-running = &power;
 		led-upgrade = &flash;
-		label-mac-device = &gmac0;
 	};
 
 	soc {
@@ -23,10 +22,6 @@
 		};
 
 		mdio@90000 {
-			status = "okay";
-		};
-
-		ess-psgmii@98000 {
 			status = "okay";
 		};
 
@@ -67,14 +62,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};

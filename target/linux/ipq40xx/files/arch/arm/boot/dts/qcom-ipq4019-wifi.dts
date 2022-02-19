@@ -25,20 +25,6 @@
 		device_type = "memory";
 		reg = <0x80000000 0x20000000>; /* 512MB */
 	};
-
-	soc {
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-	};
 };
 
 &tlmm {
@@ -337,20 +323,6 @@
 	pinctrl-0 = <&serial_1_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-};
-
-&gmac0 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <2 0x20>;
-};
-
-&gmac1 {
-	qcom,phy_mdio_addr = <3>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <1 0x10>;
 };
 
 &mdio {
