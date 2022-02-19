@@ -227,6 +227,7 @@ struct rt305x_esw {
 	unsigned int		reg_initval_fct2;
 	unsigned int		reg_initval_fpa2;
 	unsigned int		reg_led_polarity;
+	bool			eee_disable;
 
 	struct switch_dev	swdev;
 	bool			global_vlan_enable;
@@ -654,6 +655,15 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		for (i = 0; i < 5; i++) {
 			rt305x_mii_write(esw, i, 31, 0x8000);
 			rt305x_mii_write(esw, i,  0, 0x3100);
+
+			/* disable EEE */
+			if (esw->eee_disable) {
+				rt305x_mii_write(esw, i, 13, 0x7);
+				rt305x_mii_write(esw, i, 14, 0x3c);
+				rt305x_mii_write(esw, i, 13, 0x4007);
+				rt305x_mii_write(esw, i, 14, 0x0);
+			}
+
 			rt305x_mii_write(esw, i, 30, 0xa000);
 			rt305x_mii_write(esw, i, 31, 0xa000);
 			rt305x_mii_write(esw, i, 16, 0x0606);
@@ -1434,6 +1444,8 @@ static int esw_probe(struct platform_device *pdev)
 	reg_init = of_get_property(np, "mediatek,led_polarity", NULL);
 	if (reg_init)
 		esw->reg_led_polarity = be32_to_cpu(*reg_init);
+
+	esw->eee_disable = of_property_read_bool(np, "mediatek,eee-disable");
 
 	esw->rst_esw = devm_reset_control_get(&pdev->dev, "esw");
 	if (IS_ERR(esw->rst_esw))
