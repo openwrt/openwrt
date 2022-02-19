@@ -1,0 +1,10 @@
+diff --git a/root/etc/hotplug.d/iface/20-firewall b/root/etc/hotplug.d/iface/20-firewall
+index d0f030b..9a8132c 100644
+--- a/root/etc/hotplug.d/iface/20-firewall
++++ b/root/etc/hotplug.d/iface/20-firewall
+@@ -14,4 +14,4 @@ has_zone() {
+ has_zone || exit 0
+ 
+ logger -t firewall "Reloading firewall due to $ACTION of $INTERFACE ($DEVICE)"
+-fw4 -q reload
++fw4 -q reload &

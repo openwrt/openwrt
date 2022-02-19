@@ -1,0 +1,12 @@
+diff --git a/root/sbin/fw4 b/root/sbin/fw4
+index 3e7388b..4952ed0 100755
+--- a/root/sbin/fw4
++++ b/root/sbin/fw4
+@@ -33,6 +33,7 @@ start() {
+ 		ACTION=start \
+ 			ucode -S -i $MAIN | nft $VERBOSE -f /proc/self/fd/0
+ 	} 1000>$LOCK
++	test -f /etc/firewall.include && sh /etc/firewall.include
+ }
+ 
+ print() {
