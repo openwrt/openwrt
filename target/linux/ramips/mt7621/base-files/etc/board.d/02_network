@@ -67,6 +67,9 @@ ramips_setup_interfaces()
 	tplink,eap615-wall-v1)
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
 		;;
+	tplink,tl-wpa8631p-v3)
+		ucidef_set_interface_lan "lan1 lan2 lan3 plc0"
+		;;
 	ubnt,edgerouter-x)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
 		;;
