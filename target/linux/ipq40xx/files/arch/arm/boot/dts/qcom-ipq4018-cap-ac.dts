@@ -61,16 +61,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-			qcom,poll_required = <0>;
-			qcom,num_gmac = <1>;
-		};
 	};
 
 	keys {
@@ -220,10 +210,6 @@
 
 &mdio {
 	status = "okay";
-};
-
-&gmac0 {
-	vlan_tag = <0 0x3f>;
 };
 
 &ethphy3 {
