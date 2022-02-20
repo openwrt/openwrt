@@ -2,11 +2,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ksmbd
 PKG_VERSION:=3.4.7
-PKG_RELEASE:=1
+PKG_RELEASE:=20230303
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/cifsd-team/ksmbd/releases/download/$(PKG_VERSION)
-PKG_HASH:=ed9ecb2232046054bf0c1fef41690890f99d93b1d72b7e7d158746ac9be18c7f
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/ptpt52/ksmbd/tar.gz/$(PKG_RELEASE)?
+PKG_HASH:=785b62ccb81f15911a6060fc106fcaf1027864423f922d65e712160f88c8db0a
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=COPYING
