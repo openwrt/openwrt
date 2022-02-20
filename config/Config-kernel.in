@@ -373,6 +373,20 @@ config KERNEL_DEBUG_INFO
 	help
 	  This will compile your kernel and modules with debug information.
 
+config KERNEL_DEBUG_INFO_REDUCED
+	bool "Reduce debugging information"
+	default y
+	depends on KERNEL_DEBUG_INFO
+	help
+	  If you say Y here gcc is instructed to generate less debugging
+	  information for structure types. This means that tools that
+	  need full debugging information (like kgdb or systemtap) won't
+	  be happy. But if you merely need debugging information to
+	  resolve line numbers there is no loss. Advantage is that
+	  build directory object sizes shrink dramatically over a full
+	  DEBUG_INFO build and compile times are reduced too.
+	  Only works with newer gcc versions.
+
 config KERNEL_DEBUG_LL_UART_NONE
 	bool
 	default n
