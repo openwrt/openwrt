@@ -39,11 +39,6 @@
 		gpio-controller;
 	};
 
-	gpio-restart {
-		compatible = "gpio-restart";
-		gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
