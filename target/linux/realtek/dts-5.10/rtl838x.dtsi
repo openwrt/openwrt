@@ -169,15 +169,6 @@
 		};
 	};
 
-	gpio1: rtl8231-gpio {
-		compatible = "realtek,rtl8231-gpio";
-		#gpio-cells = <2>;
-		indirect-access-bus-id = <0>;
-		gpio-controller;
-
-		status = "disabled";
-	};
-
 	pinmux: pinmux@1b001000 {
 		compatible = "pinctrl-single";
 		reg = <0x1b001000 0x4>;
