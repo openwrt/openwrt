@@ -51,18 +51,12 @@ static irqreturn_t rtl9300_timer_interrupt(int irq, void *dev_id)
 {
 	struct rtl9300_clk_dev *rtl_clk = dev_id;
 	struct clock_event_device *clk = &rtl_clk->clkdev;
-//	int cpu = smp_processor_id();
-	static atomic_t count = ATOMIC_INIT(0);
-	unsigned int c;
-	u32 v = readl(rtl_clk->base + RTL9300_TC_INT);
 
-	c = (unsigned int)atomic_inc_return(&count);
+	u32 v = readl(rtl_clk->base + RTL9300_TC_INT);
 
 	// Acknowledge the IRQ
 	v |= RTL9300_TC_INT_IP;
 	writel(v, rtl_clk->base + RTL9300_TC_INT);
-	if (readl(rtl_clk->base + RTL9300_TC_INT) & RTL9300_TC_INT_IP)
-		dump_stack();
 
 	clk->event_handler(clk);
 	return IRQ_HANDLED;
@@ -76,10 +70,7 @@ static void rtl9300_clock_stop(void __iomem *base)
 
 	// Acknowledge possibly pending IRQ
 	v = readl(base + RTL9300_TC_INT);
-//	if (v & RTL9300_TC_INT_IP)
-		writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
-	if (readl(base + RTL9300_TC_INT) & RTL9300_TC_INT_IP)
-		dump_stack();
+	writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
 }
 
 static void rtl9300_timer_start(void __iomem *base, bool periodic)
@@ -142,10 +133,7 @@ static void rtl9300_clock_setup(void __iomem *base)
 
 	// Acknowledge possibly pending IRQ
 	v = readl(base + RTL9300_TC_INT);
-//	if (v & RTL9300_TC_INT_IP)
-		writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
-	if (readl(base + RTL9300_TC_INT) & RTL9300_TC_INT_IP)
-		dump_stack();
+	writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
 
 	// Setup maximum period (for use as clock-source)
 	writel(0x0fffffff, base + RTL9300_TC_DATA);
