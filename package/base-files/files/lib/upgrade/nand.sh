@@ -193,18 +193,15 @@ nand_upgrade_prepare_ubi() {
 
 	# create rootfs_data for non-ubifs rootfs
 	if [ "$rootfs_type" != "ubifs" ]; then
-		local availeb=$(cat /sys/devices/virtual/ubi/$ubidev/avail_eraseblocks)
-		local ebsize=$(cat /sys/devices/virtual/ubi/$ubidev/eraseblock_size)
-		local avail_size=$((availeb * ebsize))
 		local rootfs_data_size_param="-m"
-		if [ -n "$rootfs_data_max" ] &&
-		   [ "$rootfs_data_max" != "0" ] &&
-		   [ "$rootfs_data_max" -le "$avail_size" ]; then
+		if [ -n "$rootfs_data_max" ]; then
 			rootfs_data_size_param="-s $rootfs_data_max"
 		fi
 		if ! ubimkvol /dev/$ubidev -N rootfs_data $rootfs_data_size_param; then
-			echo "cannot initialize rootfs_data volume"
-			return 1
+			if ! ubimkvol /dev/$ubidev -N rootfs_data -m; then
+				echo "cannot initialize rootfs_data volume"
+				return 1
+			fi
 		fi
 	fi
 	sync

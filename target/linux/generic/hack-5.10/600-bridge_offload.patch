@@ -428,7 +428,7 @@
 +		goto out;
 +
 +	inp = br_port_get_rcu(dev);
-+	if (!p)
++	if (!inp)
 +		goto out;
 +
 +	vg = nbp_vlan_group_rcu(inp);

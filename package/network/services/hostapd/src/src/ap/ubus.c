@@ -322,6 +322,16 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 		for (i = 0; i < ARRAY_SIZE(sta->rrm_enabled_capa); i++)
 			blobmsg_add_u32(&b, "", sta->rrm_enabled_capa[i]);
 		blobmsg_close_array(&b, r);
+
+		r = blobmsg_open_array(&b, "extended_capabilities");
+		/* Check if client advertises extended capabilities */
+		if (sta->ext_capability && sta->ext_capability[0] > 0) {
+			for (i = 0; i < sta->ext_capability[0]; i++) {
+				blobmsg_add_u32(&b, "", sta->ext_capability[1 + i]);
+			}
+		}
+		blobmsg_close_array(&b, r);
+
 		blobmsg_add_u32(&b, "aid", sta->aid);
 #ifdef CONFIG_TAXONOMY
 		r = blobmsg_alloc_string_buffer(&b, "signature", 1024);

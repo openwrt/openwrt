@@ -1546,6 +1546,8 @@ TARGET_DEVICES += ubnt_edgerouter-x
 define Device/ubnt_edgerouter-x-sfp
   $(Device/ubnt_edgerouter_common)
   DEVICE_MODEL := EdgeRouter X SFP
+  DEVICE_ALT0_VENDOR := Ubiquiti
+  DEVICE_ALT0_MODEL := EdgePoint R6
   DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-sfp
   SUPPORTED_DEVICES += ubnt-erx-sfp ubiquiti,edgerouterx-sfp
 endef

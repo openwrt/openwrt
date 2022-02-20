@@ -526,7 +526,7 @@ hostapd_set_bss_options() {
 
 	wireless_vif_parse_encryption
 
-	local bss_conf bss_md5sum
+	local bss_conf bss_md5sum ft_key
 	local wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey wpa_key_mgmt
 
 	json_get_vars \
@@ -876,10 +876,10 @@ hostapd_set_bss_options() {
 				set_default pmk_r1_push 0
 
 				[ -n "$r0kh" -a -n "$r1kh" ] || {
-					key=`echo -n "$mobility_domain/$auth_secret" | md5sum | awk '{print $1}'`
+					ft_key=`echo -n "$mobility_domain/${auth_secret:-${key}}" | md5sum | awk '{print $1}'`
 
-					set_default r0kh "ff:ff:ff:ff:ff:ff,*,$key"
-					set_default r1kh "00:00:00:00:00:00,00:00:00:00:00:00,$key"
+					set_default r0kh "ff:ff:ff:ff:ff:ff,*,$ft_key"
+					set_default r1kh "00:00:00:00:00:00,00:00:00:00:00:00,$ft_key"
 				}
 
 				[ -n "$r1_key_holder" ] && append bss_conf "r1_key_holder=$r1_key_holder" "$N"
