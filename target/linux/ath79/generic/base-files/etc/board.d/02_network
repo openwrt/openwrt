@@ -259,6 +259,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:wan" "3:lan" "4:lan"
 		;;
+        devolo,dlan-pro-500-wp)
+		ucidef_set_interface_lan "eth0 eth1.1"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
 	dlink,dap-2695-a1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:wan" "6@eth1"
