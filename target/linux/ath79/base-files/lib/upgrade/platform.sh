@@ -98,6 +98,7 @@ platform_do_upgrade() {
 	glinet,gl-ar300m-nand|\
 	glinet,gl-ar750s-nor-nand|\
 	glinet,gl-e750-nor-nand|\
+	glinet,gl-s200-nor-nand|\
 	glinet,gl-x1200-nor-nand|\
 	glinet,gl-x300b-nor-nand|\
 	glinet,gl-x750-nor-nand)

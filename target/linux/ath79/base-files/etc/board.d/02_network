@@ -187,7 +187,9 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan"
         ;;
-	glinet,gl-s200)
+	glinet,gl-s200|\
+	glinet,gl-s200-nor|\
+	glinet,gl-s200-nor-nand)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	iodata,etg3-r|\

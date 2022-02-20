@@ -42,11 +42,16 @@
 		};
 
 		white_led {
-			label = "gl-s200:white";
+			label = "gl-s200:green";
 			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};
 
+		orange_led {
+			label = "gl-s200:orange";
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
 	};
 
 	gpio-export {
@@ -64,6 +69,20 @@
 			gpio-export,output = <1>;
 			gpio-export,direction_may_change;
 			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_zigbee_upgrade {
+			gpio-export,name = "gpio11";
+			gpio-export,output = <1>;
+			gpio-export,direction_may_change;
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_zwave_upgrade {
+			gpio-export,name = "gpio17";
+			gpio-export,output = <1>;
+			gpio-export,direction_may_change;
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 		};
 	 };
 };
@@ -93,7 +112,8 @@
 
 &spi {
 	status = "okay";
-	num-cs = <0>;
+	num-cs = <2>;
+	cs-gpios = <0>, <0>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -120,11 +140,22 @@
 				label = "art";
 				reg = <0x050000 0x010000>;
 			};
+		};
+	};
 
-			partition@60000 {
-				compatible = "denx,uimage";
-				label = "firmware";
-				reg = <0x060000 0xfa0000>;
+	flash_nand: flash@1 {
+		compatible = "spinand,glinet";
+		reg = <1>;
+		spi-max-frequency = <25000000>;
+		
+		nand_partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			nand_ubi: partition@0 {
+				label = "nand_ubi";
+				reg = <0x000000 0x8000000>;
 			};
 		};
 	};

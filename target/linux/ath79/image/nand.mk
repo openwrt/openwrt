@@ -24,6 +24,30 @@ define Device/glinet_gl-mifi
 endef
 TARGET_DEVICES += glinet_gl-mifi
 
+define Device/glinet_gl-s200-nor
+  ATH_SOC := qca9531
+  DEVICE_TITLE := GL.iNet GL-S200 (NOR)
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-serial-ch341
+  IMAGE_SIZE := 16000k
+  SUPPORTED_DEVICES += gl-s200 glinet,gl-s200
+endef
+TARGET_DEVICES += glinet_gl-s200-nor
+
+define Device/glinet_gl-s200-nor-nand
+  ATH_SOC := qca9531
+  DEVICE_TITLE := GL.iNet GL-S200 (NOR/NAND)
+  DEVICE_PACKAGES := kmod-usb2 block-mount kmod-usb-serial-ch341
+  KERNEL_SIZE := 4096k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  IMAGES := factory.img sysupgrade.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar-compat-1806 | append-gl-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | append-gl-metadata
+  SUPPORTED_DEVICES += gl-s200 glinet,gl-s200
+endef
+TARGET_DEVICES += glinet_gl-s200-nor-nand
+
 define Device/glinet_gl-ar300m-nor
   ATH_SOC := qca9531
   DEVICE_TITLE := GL.iNet GL-AR300M (NOR)

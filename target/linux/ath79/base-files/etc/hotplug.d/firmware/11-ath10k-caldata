@@ -117,7 +117,6 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
-	glinet,gl-s200|\
 	glinet,gl-ar750|\
 	glinet,gl-ar750s|\
 	glinet,gl-ar750s-nor|\
