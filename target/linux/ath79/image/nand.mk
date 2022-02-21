@@ -344,3 +344,10 @@ define Device/zyxel_nbg6716
   UBINIZE_OPTS := -E 5
 endef
 TARGET_DEVICES += zyxel_nbg6716
+
+define Device/zyxel_emg2926_q10a
+  $(Device/zyxel_nbg6716)
+  DEVICE_MODEL := EMG2926-Q10A
+  RAS_BOARD := AAVK-EMG2926Q10A
+endef
+TARGET_DEVICES += zyxel_emg2926_q10a
