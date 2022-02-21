@@ -47,26 +47,11 @@ endef
 define Package/iptables
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool
-  MENU:=1
   DEPENDS+= +kmod-ipt-core +libip4tc +IPV6:libip6tc +libxtables
   ALTERNATIVES:=\
     200:/usr/sbin/iptables:/usr/sbin/xtables-legacy-multi \
     200:/usr/sbin/iptables-restore:/usr/sbin/xtables-legacy-multi \
     200:/usr/sbin/iptables-save:/usr/sbin/xtables-legacy-multi
-endef
-
-define Package/iptables/config
-  config IPTABLES_CONNLABEL
-	bool "Enable Connlabel support"
-	default n
-	help
-		This enable connlabel support in iptables.
-
-  config IPTABLES_NFTABLES
-	bool "Enable Nftables support"
-	default y
-	help
-		This enable nftables support in iptables.
 endef
 
 define Package/iptables/description
@@ -525,8 +510,23 @@ define Package/libxtables
  SECTION:=libs
  CATEGORY:=Libraries
  TITLE:=IPv4/IPv6 firewall - shared xtables library
+ MENU:=1
  ABI_VERSION:=12
  DEPENDS:=+IPTABLES_CONNLABEL:libnetfilter-conntrack
+endef
+
+define Package/libxtables/config
+  config IPTABLES_CONNLABEL
+	bool "Enable Connlabel support"
+	default n
+	help
+		This enable connlabel support in iptables.
+
+  config IPTABLES_NFTABLES
+	bool "Enable Nftables support"
+	default y
+	help
+		This enable nftables support in iptables.
 endef
 
 define Package/libxtables-nft
