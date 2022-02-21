@@ -63,8 +63,8 @@ $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MARK, $(P_XT)
 # conntrack
 
 # kernel only
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_DEFRAG,CONFIG_NF_DEFRAG_IPV4, $(P_V4)nf_defrag_ipv4),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_CONNTRACK, $(P_XT)nf_conntrack),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_DEFRAG_IPV4, $(P_V4)nf_defrag_ipv4),))
 
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_STATE, $(P_XT)xt_state))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_TARGET_CT, $(P_XT)xt_CT))
@@ -152,7 +152,7 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NF_REJECT6,CONFIG_NF_REJECT_IPV6, $(P_V6)nf
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT6,CONFIG_IP6_NF_IPTABLES, $(P_V6)ip6_tables),))
 
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_DEFRAG_IPV6, $(P_V6)nf_defrag_ipv6),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_DEFRAG,CONFIG_NF_DEFRAG_IPV6, $(P_V6)nf_defrag_ipv6),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_IPV6,CONFIG_IP6_NF_FILTER, $(P_V6)ip6table_filter),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_IPV6,CONFIG_IP6_NF_MANGLE, $(P_V6)ip6table_mangle),))
@@ -240,14 +240,14 @@ $(eval $(call nf_add,IPT_NFQUEUE,CONFIG_NETFILTER_XT_TARGET_NFQUEUE, $(P_XT)xt_N
 $(eval $(call nf_add,IPT_DEBUG,CONFIG_NETFILTER_XT_TARGET_TRACE, $(P_XT)xt_TRACE))
 
 # tproxy
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_SOCKET,CONFIG_NF_SOCKET_IPV4, $(P_V4)nf_socket_ipv4),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_SOCKET6,CONFIG_NF_SOCKET_IPV6, $(P_V6)nf_socket_ipv6),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_TPROXY,CONFIG_NF_TPROXY_IPV4, $(P_V4)nf_tproxy_ipv4),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_TPROXY,CONFIG_NF_TPROXY_IPV6, $(P_V6)nf_tproxy_ipv6),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_TPROXY,CONFIG_NF_SOCKET_IPV4, $(P_V4)nf_socket_ipv4),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_TPROXY,CONFIG_NF_SOCKET_IPV6, $(P_V6)nf_socket_ipv6),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_TPROXY6,CONFIG_NF_TPROXY_IPV6, $(P_V6)nf_tproxy_ipv6),))
 
+$(eval $(if $(NF_KMOD),$(call nf_add,NFT_SOCKET,CONFIG_NFT_SOCKET, $(P_XT)nft_socket),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_TPROXY,CONFIG_NFT_TPROXY, $(P_XT)nft_tproxy),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NFT_TPROXY,CONFIG_NFT_SOCKET, $(P_XT)nft_socket),))
 
 $(eval $(call nf_add,IPT_TPROXY,CONFIG_NETFILTER_XT_MATCH_SOCKET, $(P_XT)xt_socket))
 $(eval $(call nf_add,IPT_TPROXY,CONFIG_NETFILTER_XT_TARGET_TPROXY, $(P_XT)xt_TPROXY))
