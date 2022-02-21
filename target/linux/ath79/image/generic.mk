@@ -330,6 +330,21 @@ define Device/aruba_ap-105
 endef
 TARGET_DEVICES += aruba_ap-105
 
+define Device/asus_pl-ac56
+  SOC := qca9563
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := PL-AC56
+  DEVICE_VARIANT := A1
+  IMAGE_SIZE := 15488k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct \
+	open-plc-utils open-plc-utils-hpavkey open-plc-utils-modpib \
+	open-plc-utils-plchost open-plc-utils-plctool
+endef
+TARGET_DEVICES += asus_pl-ac56
+
 define Device/asus_rp-ac66
   SOC := qca9563
   DEVICE_VENDOR := ASUS

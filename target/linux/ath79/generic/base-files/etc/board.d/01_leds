@@ -48,6 +48,11 @@ alfa-network,r36a)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x10"
 	;;
+asus,pl-ac56)
+	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x3e"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan2g" "wlan1" "link"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan5g" "wlan0" "link"
+	;;
 asus,rp-ac66)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_rssimon "wlan1" "200000" "1"

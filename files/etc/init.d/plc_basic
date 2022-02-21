@@ -1,0 +1,282 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+# Notes:
+# Have to have the latest Asus firmware flashed before using OpenWrt
+# with this script, otherwise the pib in the plc partition can differ.
+#
+# The script will look for plc_firmware.nvm by default in the
+# /lib/plc directory.
+# Hint for most stable FW: extract MAC-7500-v2.8.0-01-NW6__-X-CS.nvm from:
+# https://update.devolo.com/linux2/apt/pool/main/d/devolo-firmware-qca7500/
+# devolo-firmware-qca7500_2.8.0.01-1+1_i386.deb
+#
+# Pairing buttons have to have pressed for at least half a second,
+# it doesn't matter on which plc device first.
+#
+# If no changes made to the config here below (nmk, etc.), it is possible
+# to pair the devices without the button-pairing requirement, simply by
+# pressing reset on the slave device. This will default to the firmware
+# settings, which is also how this script is setting up the master device,
+# i.e. configuring it to firmware defaults.
+#
+# Notes about flashing devices:
+# The main device PL-AC56 has no firmware (nvm) storage, only a
+# calibration file (pib), which will be copied from the plc partition.
+# The slave device PL-E56P has its own nvm and pib files stored
+# and the nvm can/should be flashed to the same version, as the parent
+# device, e.g. with the same file from above.
+#
+# Briefly it is done first by looking up the Mac Address of the slave
+# device on the parent device, by looking at the station-Mac:
+# plctool -i br-lan -m
+# If the br-lan is not including the vlan (it should), use eth0.2 instead.
+# Then backup the pib of the slave device:
+# plctool -i br-lan -p /tmp/backup.pib station_mac_address
+# Then flash the new firmware (nvm), together with the backed up pib:
+# plctool -i br-lan -N nvm_file -P /tmp/backup.pib station_mac_address
+# Maybe it needs a reboot too, after finished flashing:
+# plctool -i br-lan -R station_mac_address
+# Maybe it is needed to pair the devices again after this.
+#
+# There are some tools for measuring performance, like plcrate, which
+# can generate traffic between devices, or psgraph, etc.
+
+START=96
+STOP=10
+
+. /lib/functions/system.sh
+
+p="plc_basic:"
+fwpath="/lib/plc"
+
+# create config file on first start
+if [ ! -f /etc/config/plc -o "$(uci show plc 2>/dev/null)" = "" ]; then
+	touch /etc/config/plc
+	uci set plc.config=config
+	uci commit plc
+fi
+
+echo -n "$p plcenable "
+plcenable=$(uci get plc.config.Enabled 2>/dev/null)
+if [ -z "${plcenable}" ]; then
+	plcenable=0
+	echo -n "$p setting to "
+	uci set plc.config.Enabled=${plcenable}
+fi
+echo $plcenable
+
+countrycode=$(uci get plc.config.Countrycode 2>/dev/null)
+if [ -z "${countrycode}" ]; then
+	countrycode="EU"
+	uci set plc.config.Countrycode=${countrycode}
+fi
+
+echo -n "$p plcnetwork "
+plcnetwork=$(uci get plc.config.Network 2>/dev/null)
+if [ -z "${plcnetwork}" ]; then
+	plcnetwork="lan"
+	echo -n "$p setting to "
+	uci set plc.config.Network=${plcnetwork}
+fi
+echo $plcnetwork
+
+plcbridge=br-${plcnetwork}
+echo "$p plcbridge $plcbridge"
+
+board=$(board_name)
+echo "$p board name $board"
+case $board in
+	asus,pl-ac56)
+		region=$countrycode
+		pibregion="CEB"
+
+		# check if we have a pib in plc partition
+		ident="$(dd if=/dev/mtd7 skip=528 count=11 iflag=skip_bytes,count_bytes \
+			2>/dev/null)"
+		expect="PIB-QCA7500"
+		if [[ $ident != $expect ]]; then
+			echo "$p Fatal: PIB file is not in PLC partition, or differs:"
+			echo "$p instead of \"$expect\" this is found there: \"$ident\""
+			echo "$p You have to restore the partitions either manually,"
+			echo "$p or reflashing the latest Asus FW, pair the PLC devices,"
+			echo "$p then flash OpenWRT again."
+			exit 1
+		fi
+
+		pibpath="$fwpath/QCA7500-WallAdapter_EN50561-1.pib"
+		nvmpath="$fwpath/plc_firmware.nvm"
+		# get pib from plc partition
+		dd if=/dev/mtd7 of=$fwpath/QCA7500-WallAdapter_EN50561-1.pib \
+		bs=22344 skip=16 count=22344 iflag=skip_bytes,count_bytes 2>/dev/null
+
+		# default vlan2 device = lan4
+		plcinterface=$(uci get network.lan4.device)
+		echo "$p plcinterface $plcinterface"
+		[ -z "$plcinterface" ] && exit 1
+	;;
+	*)
+	# no known bootable PLC adapters in board
+	exit 1
+	;;
+esac
+
+mtd_get_key() {
+	local mtdname="$1"
+	local key="$2"
+	local part
+	local value_dirty
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "$p mtd_get_key: partition $mtdname not found!" >&2
+		return
+	fi
+	value_dirty=$(strings "$part" | sed -n 's/^'"$key"'=//p')
+	echo "$p $value_dirty"
+}
+
+start() {
+	# set the mac
+	echo -n "$p plcmac "
+	mac=$(uci get plc.config.Mac 2>/dev/null)
+	if [ -z "$mac" ]; then
+		mac=$(mtd_get_mac_binary art 0xd18e)
+		echo -n "$p setting from art "
+		uci set plc.config.Mac=${mac}
+	fi
+	echo $mac
+	if [ ! -z "$mac" ]; then
+		modpib -M $mac $pibpath
+	fi
+
+	# set the nmk
+	echo -n "$p plcnmk "
+	if [ -z "$(uci get plc.config.Nmk 2>/dev/null)" ]; then
+		nmk=$(hexdump -v -n 16 -s 0xd194 \
+		-e '15/1 "%02x:" 1/1 "%02x"' $(find_mtd_part "art"))
+		echo -n "$p setting from art "
+		uci set plc.config.Nmk=${nmk}
+	fi
+
+	uci set plc.config.NmkSelected=true
+	networkpwd=$(uci get plc.config.NetworkPasswd 2>/dev/null)
+	nmkselected=$(uci get plc.config.NmkSelected 2>/dev/null)
+	if [ 'true' = "${nmkselected}" ]; then
+		nmk=$(uci get plc.config.Nmk 2>/dev/null)
+	elif [ ! -z ${networkpwd} ]; then
+		nmk=$(hpavkey -M ${networkpwd})
+	else
+		nmk=''
+		uci set plc.config.Nmk=${nmk}
+		uci set plc.config.NmkSelected=false
+		uci set plc.config.NetworkPasswd=HomePlugAV
+	fi
+	echo $nmk
+	if [ ! -z "$nmk" ]; then
+ 		modpib -N $nmk $pibpath
+	fi
+
+	# set the dak
+	dek=$(uci get plc.config.Dek 2>/dev/null)
+	if [ -z "${dek}" ]; then
+		dak=$(uci get plc.config.Dak 2>/dev/null)
+		if [ -z "${dak}" ]; then
+			dek=HomePlugAV
+			if [ ! -z "${dek}" ]; then
+				dak=$(hpavkey -D ${dek})
+				uci set plc.config.Dek=$dek
+				uci set plc.config.Dak=$dak
+			else
+				uci set plc.config.Dek=''
+			fi
+		else
+			uci set plc.config.Dak=''
+		fi
+	else
+		dak=$(hpavkey -D ${dek})
+		uci get plc.config.Dak=$dak
+	fi
+	if [ ! -z "$dak" ]; then
+		modpib -D ${dak} $pibpath
+	fi
+
+	# set USR (not MFG for now)
+	USR=$(uci get plc.config.AdapterName 2>/dev/null)
+	if [ -z "${USR}" ]; then
+		USR=$(uci get system.@system[0].hostname)
+		uci set plc.config.AdapterName=$USR
+	fi
+	modpib -U "${USR}" ${pibpath} # for now not using  -S ${MFG}
+
+	# plc_enable gpio is active low
+	echo 0 > /sys/class/gpio/gpio14/value
+	plcenable=1
+	uci set plc.config.Enabled=$plcenable
+	echo "$p plcenable 1"
+
+	# commit any (possible initial) changes to the config
+	if [ ! -z "$(uci changes plc)" ]; then
+		uci commit plc
+	fi
+
+	# no rush
+	sleep 1
+
+	# boot up plchost
+	if [ "${plcenable}" -eq 1 ]; then
+		# plchost junks user.nvm and user.pib files..
+		cd $fwpath
+		echo "$p start plchost"
+		#plchost -i $plcinterface -N $nvmpath -P $pibpath 2>&1 |
+		#( while read line; do
+		#	echo "$line"
+		#	if [ $(expr match "$line" '.*is running.*') -gt 0 ]; then
+		#		echo "$p Adding ${plcinterface} to ${plcbridge}"
+		#		#brctl addif ${plcbridge} ${plcinterface}
+		#	fi
+		#done
+		#) &
+		plchost -i $plcinterface -N $nvmpath -P $pibpath &
+		( i=0; while [ $i -le 20 ]; do
+			sleep 3
+			if [[ "$(plctool -i $plcinterface -m)" =~ "station->MAC" ]]; then
+				# no rush
+				sleep 1
+				echo "$p Adding ${plcinterface} to ${plcbridge}"
+				brctl addif ${plcbridge} ${plcinterface}
+				exit 0
+			fi
+			i=$((i+1))
+		done
+		echo "$p Timeout waiting for plchost..."
+		echo "$p not configuring $plcbridge"
+		exit 1
+		) &
+	fi
+}
+
+stop() {
+	# remove adapter from it's network bridge
+	echo "$p Removing ${plcinterface} from ${plcbridge}"
+	brctl delif ${plcbridge} ${plcinterface}
+	killall -9 plchost
+
+	# no rush
+	sleep 1
+
+	# resets the adapter (resp all adapters!) into bootloader mode
+	#plctool -i $plcinterface -R
+	plctool -i $plcinterface -R $(uci get plc.config.Mac)
+
+	# plc_enable gpio is active low
+	echo 1 > /sys/class/gpio/gpio14/value
+	plcenable=0
+	uci set plc.config.Enabled=$plcenable
+	echo "$p plcenable 0"
+
+	# commit any (possible initial) changes to the config
+	if [ ! -z "$(uci changes plc)" ]; then
+		uci commit plc
+	fi
+}

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo "${BUTTON} ${ACTION}" > /dev/console
+
+echo "Stopping Powerline via plc_basic" > /dev/console
+/etc/init.d/plc_basic stop
+
+/etc/rc.button/reset
