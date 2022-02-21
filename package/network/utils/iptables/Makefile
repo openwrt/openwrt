@@ -44,17 +44,18 @@ $(call Package/iptables/Default)
   DEPENDS:=+libxtables $(1)
 endef
 
-define Package/iptables
+define Package/iptables-legacy
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool
   DEPENDS+= +kmod-ipt-core +libip4tc +IPV6:libip6tc +libxtables
+  PROVIDES:=iptables
   ALTERNATIVES:=\
     200:/usr/sbin/iptables:/usr/sbin/xtables-legacy-multi \
     200:/usr/sbin/iptables-restore:/usr/sbin/xtables-legacy-multi \
     200:/usr/sbin/iptables-save:/usr/sbin/xtables-legacy-multi
 endef
 
-define Package/iptables/description
+define Package/iptables-legacy/description
 IP firewall administration tool.
 
  Matches:
@@ -98,6 +99,7 @@ define Package/iptables-nft
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool nft
   DEPENDS:=@IPTABLES_NFTABLES +libnftnl +libxtables-nft +libip4tc +IPV6:libip6tc +kmod-ipt-core +kmod-nft-compat
+  PROVIDES:=iptables
   ALTERNATIVES:=\
     300:/usr/sbin/iptables:/usr/sbin/xtables-nft-multi \
     300:/usr/sbin/iptables-restore:/usr/sbin/xtables-nft-multi \
@@ -437,11 +439,12 @@ define Package/iptables-mod-checksum/description
 iptables extension for the CHECKSUM calculation target
 endef
 
-define Package/ip6tables
+define Package/ip6tables-legacy
 $(call Package/iptables/Default)
-  DEPENDS:=@IPV6 +kmod-ip6tables +iptables
+  DEPENDS:=@IPV6 +kmod-ip6tables +iptables-legacy
   CATEGORY:=Network
   TITLE:=IPv6 firewall administration tool
+  PROVIDES:=ip6tables
   ALTERNATIVES:=\
     200:/usr/sbin/ip6tables:/usr/sbin/xtables-legacy-multi \
     200:/usr/sbin/ip6tables-restore:/usr/sbin/xtables-legacy-multi \
@@ -452,6 +455,7 @@ define Package/ip6tables-nft
 $(call Package/iptables/Default)
   DEPENDS:=@IPV6 +kmod-ip6tables +iptables-nft
   TITLE:=IP firewall administration tool nft
+  PROVIDES:=ip6tables
   ALTERNATIVES:=\
     300:/usr/sbin/ip6tables:/usr/sbin/xtables-nft-multi \
     300:/usr/sbin/ip6tables-restore:/usr/sbin/xtables-nft-multi \
@@ -608,7 +612,7 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext*.so $(1)/usr/lib/
 endef
 
-define Package/iptables/install
+define Package/iptables-legacy/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/xtables-legacy-multi $(1)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables-legacy{,-restore,-save} $(1)/usr/sbin/
@@ -622,7 +626,7 @@ define Package/iptables-nft/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables{,-restore}-translate $(1)/usr/sbin/
 endef
 
-define Package/ip6tables/install
+define Package/ip6tables-legacy/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables-legacy{,-restore,-save} $(1)/usr/sbin/
 endef
@@ -674,7 +678,7 @@ $(eval $(call BuildPackage,libxtables))
 $(eval $(call BuildPackage,libxtables-nft))
 $(eval $(call BuildPackage,libip4tc))
 $(eval $(call BuildPackage,libip6tc))
-$(eval $(call BuildPackage,iptables))
+$(eval $(call BuildPackage,iptables-legacy))
 $(eval $(call BuildPackage,iptables-nft))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-extra,$(IPT_CONNTRACK_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-label,$(IPT_CONNTRACK_LABEL-m)))
@@ -698,7 +702,7 @@ $(eval $(call BuildPlugin,iptables-mod-nflog,$(IPT_NFLOG-m)))
 $(eval $(call BuildPlugin,iptables-mod-trace,$(IPT_DEBUG-m)))
 $(eval $(call BuildPlugin,iptables-mod-nfqueue,$(IPT_NFQUEUE-m)))
 $(eval $(call BuildPlugin,iptables-mod-checksum,$(IPT_CHECKSUM-m)))
-$(eval $(call BuildPackage,ip6tables))
+$(eval $(call BuildPackage,ip6tables-legacy))
 $(eval $(call BuildPackage,ip6tables-nft))
 $(eval $(call BuildPlugin,ip6tables-extra,$(IPT_IPV6_EXTRA-m)))
 $(eval $(call BuildPlugin,ip6tables-mod-nat,$(IPT_NAT6-m)))
