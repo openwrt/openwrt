@@ -22,9 +22,13 @@ system_config() {
 	echo "$hostname" > /proc/sys/kernel/hostname
 	[ -z "$conloglevel" -a -z "$buffersize" ] || dmesg ${conloglevel:+-n $conloglevel} ${buffersize:+-s $buffersize}
 	echo "$timezone" > /tmp/TZ
-	[ -n "$zonename" ] && [ -f "/usr/share/zoneinfo/${zonename// /_}" ] \
-		&& ln -sf "/usr/share/zoneinfo/${zonename// /_}" /tmp/localtime \
-		&& rm -f /tmp/TZ
+	if [ -n "$zonename" ] && [ -f "/usr/share/zoneinfo/${zonename// /_}" ]; then
+		ln -sf "/usr/share/zoneinfo/${zonename// /_}" /tmp/localtime
+		rm -f /tmp/TZ
+	elif [ -n "$timezone" ] && [ -f "/usr/share/zoneinfo/${timezone%%,*}" ]; then
+		ln -sf "/usr/share/zoneinfo/${timezone%%,*}" /tmp/localtime
+		rm -f /tmp/TZ
+	fi
 
 	# apply timezone to kernel
 	hwclock -u --systz
