@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/target.mk
 KERNELNAME:=Image dtbs
 
 DEFAULT_PACKAGES += \
-	bcm4908img \
+	bcm4908img fdt-utils uboot-envtools \
 	kmod-gpio-button-hotplug \
 	kmod-usb-ohci kmod-usb2 kmod-usb3
 

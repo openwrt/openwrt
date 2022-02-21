@@ -9,11 +9,10 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
 PKG_VERSION:=1.9.1
-PKG_RELEASE:=3
+PKG_RELEASE:=3.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.us.tcpdump.org/release/ \
-        http://www.tcpdump.org/release/
+PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_HASH:=635237637c5b619bcceba91900666b64d56ecb7be63f298f601ec786ce087094
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -44,6 +43,19 @@ endef
 define Package/libpcap/config
 	source "$(SOURCE)/Config.in"
 endef
+
+define Package/rpcapd
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=Capture daemon to be controlled by a remote libpcap application
+  URL:=http://www.tcpdump.org/
+  DEPENDS+= +libpcap
+endef
+
+ifdef CONFIG_PACKAGE_rpcapd
+	CMAKE_OPTIONS += \
+		-DENABLE_REMOTE=ON
+endif
 
 CMAKE_OPTIONS += \
 	-DBUILD_SHARED_LIBS=ON \
@@ -84,4 +96,10 @@ define Package/libpcap/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcap.so.* $(1)/usr/lib/
 endef
 
+define Package/rpcapd/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/rpcapd $(1)/usr/bin/
+endef
+
 $(eval $(call BuildPackage,libpcap))
+$(eval $(call BuildPackage,rpcapd))
