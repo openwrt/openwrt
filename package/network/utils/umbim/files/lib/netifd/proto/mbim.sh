@@ -149,10 +149,13 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	pdptype=$(echo "$pdptype" | awk '{print tolower($0)}')
-	[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] || pdptype="ipv4v6"
 
+	local req_pdptype="" # Pass "default" PDP type to umbim if unconfigured
+	[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && req_pdptype="$pdptype:"
+
+	local connect_state
 	echo "mbim[$$]" "Connect to network"
-	umbim $DBG -n -t $tid -d $device connect "$pdptype:$apn" "$auth" "$username" "$password" || {
+	connect_state=$(umbim $DBG -n -t $tid -d $device connect "$req_pdptype$apn" "$auth" "$username" "$password") || {
 		echo "mbim[$$]" "Failed to connect bearer"
 		tid=$((tid + 1))
 		umbim $DBG -t $tid -d "$device" disconnect
@@ -160,6 +163,9 @@ _proto_mbim_setup() {
 		return 1
 	}
 	tid=$((tid + 1))
+
+	echo "$connect_state"
+	local iptype="$(echo "$connect_state" | grep iptype: | awk '{print $4}')"
 
 	echo "mbim[$$]" "Connected"
 
@@ -171,7 +177,7 @@ _proto_mbim_setup() {
 		proto_init_update "$ifname" 1
 		proto_send_update "$interface"
 
-		[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv4v6" ] && {
+		[ "$iptype" != "ipv6" ] && {
 			json_init
 			json_add_string name "${interface}_4"
 			json_add_string ifname "@$interface"
@@ -188,7 +194,7 @@ _proto_mbim_setup() {
 			ubus call network add_dynamic "$(json_dump)"
 		}
 
-		[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && {
+		[ "$iptype" != "ipv4" ] && {
 			json_init
 			json_add_string name "${interface}_6"
 			json_add_string ifname "@$interface"
