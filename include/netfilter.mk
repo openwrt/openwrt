@@ -243,12 +243,13 @@ $(eval $(call nf_add,IPT_DEBUG,CONFIG_NETFILTER_XT_TARGET_TRACE, $(P_XT)xt_TRACE
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_TPROXY,CONFIG_NF_TPROXY_IPV4, $(P_V4)nf_tproxy_ipv4),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_TPROXY,CONFIG_NF_TPROXY_IPV6, $(P_V6)nf_tproxy_ipv6),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_TPROXY,CONFIG_NF_SOCKET_IPV4, $(P_V4)nf_socket_ipv4),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_TPROXY,CONFIG_NF_SOCKET_IPV6, $(P_V6)nf_socket_ipv6),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_TPROXY,CONFIG_NFT_TPROXY, $(P_XT)nft_tproxy),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NFT_TPROXY,CONFIG_NFT_SOCKET, $(P_XT)nft_socket),))
 
 $(eval $(call nf_add,IPT_TPROXY,CONFIG_NETFILTER_XT_MATCH_SOCKET, $(P_XT)xt_socket))
-$(eval $(call nf_add,IPT_TPROXY,CONFIG_NF_SOCKET_IPV4, $(P_V4)nf_socket_ipv4))
-$(eval $(call nf_add,IPT_TPROXY,CONFIG_NF_SOCKET_IPV6, $(P_V6)nf_socket_ipv6))
 $(eval $(call nf_add,IPT_TPROXY,CONFIG_NETFILTER_XT_TARGET_TPROXY, $(P_XT)xt_TPROXY))
 
 # led
