@@ -101,7 +101,7 @@ ifneq ($(DISTRO_PKG_CONFIG),)
 scripts/config/%onf: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
 endif
 scripts/config/%onf: CFLAGS+= -O2
-scripts/config/%onf:
+scripts/config/%onf: FORCE
 	@$(_SINGLE)$(SUBMAKE) $(if $(findstring s,$(OPENWRT_VERBOSE)),,-s) \
 		-C scripts/config $(notdir $@)
 
