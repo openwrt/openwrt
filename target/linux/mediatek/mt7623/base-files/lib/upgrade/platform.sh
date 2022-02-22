@@ -1,6 +1,4 @@
-
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN='fwtool'
 
 # Legacy full system upgrade including preloader for MediaTek SoCs on eMMC or SD
 legacy_mtk_mmc_full_upgrade() {
