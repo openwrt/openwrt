@@ -118,7 +118,7 @@ define KernelPackage/nf-conntrack
         CONFIG_NF_CONNTRACK_MARK=y \
         CONFIG_NF_CONNTRACK_ZONES=y \
 	$(KCONFIG_NF_CONNTRACK)
-  DEPENDS:=+kmod-nf-defrag
+  DEPENDS:=+kmod-nf-defrag +IPV6:kmod-nf-defrag6
   FILES:=$(foreach mod,$(NF_CONNTRACK-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_CONNTRACK-m)))
 endef
@@ -1257,7 +1257,7 @@ $(eval $(call KernelPackage,nft-compat))
 define KernelPackage/nft-socket
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables socket support
-  DEPENDS:=+kmod-nft-core +kmod-nf-socket +kmod-nf-socket6
+  DEPENDS:=+kmod-nft-core +kmod-nf-socket +IPV6:kmod-nf-socket6
   FILES:=$(foreach mod,$(NFT_SOCKET-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_SOCKET-m)))
   KCONFIG:=$(KCONFIG_NFT_SOCKET)
@@ -1268,7 +1268,7 @@ $(eval $(call KernelPackage,nft-socket))
 define KernelPackage/nft-tproxy
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables tproxy support
-  DEPENDS:=+kmod-nft-core +kmod-nf-defrag +kmod-nf-defrag6 +kmod-nf-tproxy +kmod-nf-tproxy6
+  DEPENDS:=+kmod-nft-core +kmod-nf-defrag +kmod-nf-tproxy +IPV6:kmod-nf-defrag6 +IPV6:kmod-nf-tproxy6
   FILES:=$(foreach mod,$(NFT_TPROXY-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_TPROXY-m)))
   KCONFIG:=$(KCONFIG_NFT_TPROXY)
