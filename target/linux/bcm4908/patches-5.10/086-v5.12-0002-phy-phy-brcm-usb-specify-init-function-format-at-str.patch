@@ -20,7 +20,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
 
 --- a/drivers/phy/broadcom/phy-brcm-usb.c
 +++ b/drivers/phy/broadcom/phy-brcm-usb.c
-@@ -35,7 +35,7 @@ struct value_to_name_map {
+@@ -36,7 +36,7 @@ struct value_to_name_map {
  };
  
  struct match_chip_info {
@@ -29,7 +29,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  	u8 required_regs[BRCM_REGS_MAX + 1];
  	u8 optional_reg;
  };
-@@ -428,7 +428,6 @@ static int brcm_usb_phy_probe(struct pla
+@@ -458,7 +458,6 @@ static int brcm_usb_phy_probe(struct pla
  	struct device_node *dn = pdev->dev.of_node;
  	int err;
  	const char *mode;
@@ -37,7 +37,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  	const struct match_chip_info *info;
  	struct regmap *rmap;
  	int x;
-@@ -444,8 +443,8 @@ static int brcm_usb_phy_probe(struct pla
+@@ -474,8 +473,8 @@ static int brcm_usb_phy_probe(struct pla
  	info = of_device_get_match_data(&pdev->dev);
  	if (!info)
  		return -ENOENT;
