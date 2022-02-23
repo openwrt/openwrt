@@ -496,7 +496,7 @@ define Device/buffalo_wzr-hp-g300nh
   SOC := ar9132
   BUFFALO_PRODUCT := WZR-HP-G300NH
   BUFFALO_HWVER := 1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-gpio-nxp-74hc153
+  DEVICE_PACKAGES := kmod-gpio-cascade kmod-mux-gpio kmod-usb2 kmod-usb-ledtrig-usbport
   BLOCKSIZE := 128k
   IMAGE_SIZE := 32128k
   SUPPORTED_DEVICES += wzr-hp-g300nh
@@ -1204,7 +1204,7 @@ define Device/glinet_6408
   SOC := ar9331
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := 6408
-  DEVICE_PACKAGES := kmod-usb2
+  DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 8000k
   TPLINK_HWID := 0x08000001
   IMAGES := sysupgrade.bin
@@ -1217,7 +1217,7 @@ define Device/glinet_6416
   SOC := ar9331
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := 6416
-  DEVICE_PACKAGES := kmod-usb2
+  DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 16192k
   TPLINK_HWID := 0x08000001
   IMAGES := sysupgrade.bin

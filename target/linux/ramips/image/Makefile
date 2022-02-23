@@ -22,7 +22,6 @@ ldrplatform-$(CONFIG_TARGET_ramips_mt7621) := mt7621
 ldrflashstart-y := 0x1c000000
 ldrflashstart-$(CONFIG_TARGET_ramips_mt7621) := 0x1fc00000
 
-KERNEL_LOADADDR := $(loadaddr-y)
 LOADER_PLATFORM := $(ldrplatform-y)
 LOADER_FLASH_START := $(ldrflashstart-y)
 
@@ -176,6 +175,7 @@ endef
 define Device/Default
   PROFILES = Default
   KERNEL := $(KERNEL_DTB) | uImage lzma
+  KERNEL_LOADADDR := $(loadaddr-y)
   SOC := $(DEFAULT_SOC)
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(SOC)_$(1)

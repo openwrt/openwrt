@@ -142,6 +142,7 @@ define Device/linksys_ea7500-v1
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 		append-ubi | pad-to $$$$(PAGESIZE)
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea7500-v1
 
@@ -162,6 +163,7 @@ define Device/linksys_ea8500
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 		append-ubi
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea8500
 
@@ -242,6 +244,9 @@ define Device/netgear_d7800
 	BOARD_NAME := d7800
 	SUPPORTED_DEVICES += d7800
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+	DEVICE_COMPAT_VERSION := 2.0
+	DEVICE_COMPAT_MESSAGE := Sysupgrade does not work due to rootfs ubi partition size change. \
+		Use factory image with the TFTP recovery flash routine.
 endef
 TARGET_DEVICES += netgear_d7800
 

@@ -26,7 +26,7 @@ define Build/iodata-factory
 		mv $(factory_bin).new $(factory_bin); \
 		$(CP) $(factory_bin) $(BIN_DIR)/; \
 	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(fw_size))" >&2; \
 	fi
 endef
 
@@ -66,7 +66,7 @@ define Build/ubnt-erx-factory-image
 		\
 		$(CP) $(1) $(BIN_DIR)/; \
 	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(KERNEL_SIZE))" >&2; \
 	fi
 endef
 
@@ -549,6 +549,14 @@ define Device/elecom_wrc-2533ghbk-i
 endef
 TARGET_DEVICES += elecom_wrc-2533ghbk-i
 
+define Device/elecom_wrc-2533gs2
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 11264k
+  DEVICE_MODEL := WRC-2533GS2
+  ELECOM_HWNAME := WRC-2533GS2
+endef
+TARGET_DEVICES += elecom_wrc-2533gs2
+
 define Device/elecom_wrc-2533gst
   $(Device/elecom_wrc-gs)
   IMAGE_SIZE := 11264k
@@ -757,6 +765,16 @@ define Device/iodata_wnpr2600g
 endef
 TARGET_DEVICES += iodata_wnpr2600g
 
+define Device/iptime_a3002mesh
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 16128k
+  UIMAGE_NAME := a3002me
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A3002MESH
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += iptime_a3002mesh
+
 define Device/iptime_a3004ns-dual
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -792,7 +810,7 @@ define Device/iptime_a6004ns-m
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A6004NS-M
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
-        kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += iptime_a6004ns-m
 
@@ -816,6 +834,26 @@ define Device/iptime_a8004t
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
 endef
 TARGET_DEVICES += iptime_a8004t
+
+define Device/iptime_ax2004m
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 121344k
+  UBINIZE_OPTS := -E 5
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += recovery.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size | iptime-crc32 ax2004m
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := AX2004M
+  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
+endef
+TARGET_DEVICES += iptime_ax2004m
 
 define Device/iptime_t5004
   $(Device/dsa-migration)
@@ -924,11 +962,11 @@ define Device/linksys_ea7xxx
 endef
 
 define Device/linksys_ea6350-v4
-	$(Device/linksys_ea7xxx)
-	DEVICE_MODEL := EA6350
-	DEVICE_VARIANT := v4
-	LINKSYS_HWNAME := EA6350
-	DEVICE_PACKAGES += kmod-mt7603 kmod-mt7663-firmware-ap
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA6350
+  DEVICE_VARIANT := v4
+  LINKSYS_HWNAME := EA6350
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7663-firmware-ap
 endef
 TARGET_DEVICES += linksys_ea6350-v4
 
@@ -1518,6 +1556,8 @@ TARGET_DEVICES += ubnt_edgerouter-x
 define Device/ubnt_edgerouter-x-sfp
   $(Device/ubnt_edgerouter_common)
   DEVICE_MODEL := EdgeRouter X SFP
+  DEVICE_ALT0_VENDOR := Ubiquiti
+  DEVICE_ALT0_MODEL := EdgePoint R6
   DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-sfp
   SUPPORTED_DEVICES += ubnt-erx-sfp ubiquiti,edgerouterx-sfp
 endef

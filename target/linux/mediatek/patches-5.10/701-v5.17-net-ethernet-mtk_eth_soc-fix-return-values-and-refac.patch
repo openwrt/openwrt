@@ -103,7 +103,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int mtk_mdio_write(struct mii_bus *bus, int phy_addr,
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -340,11 +340,17 @@
+@@ -341,11 +341,17 @@
  /* PHY Indirect Access Control registers */
  #define MTK_PHY_IAC		0x10004
  #define PHY_IAC_ACCESS		BIT(31)
