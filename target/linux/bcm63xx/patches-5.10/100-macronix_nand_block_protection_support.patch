@@ -1,0 +1,18 @@
+bcm63xx: fix booting with Kernel 5.10
+
+This is a workaround to make the target overall bootable. With this more
+people should be able to test the Kernel 5.10 and report further issues.
+
+Suggested-by: Daniel González Cabanelas <dgcbueu@gmail.com>
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+--- a/drivers/mtd/nand/raw/nand_macronix.c
++++ b/drivers/mtd/nand/raw/nand_macronix.c
+@@ -323,7 +323,7 @@ static int macronix_nand_init(struct nan
+ 
+ 	macronix_nand_fix_broken_get_timings(chip);
+ 	macronix_nand_onfi_init(chip);
+-	macronix_nand_block_protection_support(chip);
++	//macronix_nand_block_protection_support(chip);
+ 	macronix_nand_deep_power_down_support(chip);
+ 
+ 	return 0;
