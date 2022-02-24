@@ -353,6 +353,8 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NFT_QUEUE,CONFIG_NFT_QUEUE, $(P_XT)nft_queu
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_SOCKET,CONFIG_NFT_SOCKET, $(P_XT)nft_socket),))
 
+$(eval $(if $(NF_KMOD),$(call nf_add,NFT_TPROXY,CONFIG_NFT_TPROXY, $(P_XT)nft_tproxy),))
+
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_COMPAT,CONFIG_NFT_COMPAT, $(P_XT)nft_compat),))
 
 # userland only
