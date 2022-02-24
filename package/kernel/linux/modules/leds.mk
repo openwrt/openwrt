@@ -84,6 +84,22 @@ endef
 $(eval $(call KernelPackage,ledtrig-oneshot))
 
 
+define KernelPackage/ledtrig-pattern
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED Pattern Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_PATTERN
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-pattern.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-pattern)
+endef
+
+define KernelPackage/ledtrig-pattern/description
+ This allows LEDs to be controlled by a software or hardware pattern
+ which is a series of tuples, of brightness and duration (ms).
+endef
+
+$(eval $(call KernelPackage,ledtrig-pattern))
+
+
 define KernelPackage/leds-pca963x
   SUBMENU:=$(LEDS_MENU)
   TITLE:=PCA963x LED support
@@ -114,3 +130,17 @@ define KernelPackage/leds-pwm/description
 endef
 
 $(eval $(call KernelPackage,leds-pwm))
+
+define KernelPackage/leds-uleds
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=Userspace LEDs
+  KCONFIG:=CONFIG_LEDS_USER
+  FILES:=$(LINUX_DIR)/drivers/leds/uleds.ko
+  AUTOLOAD:=$(call AutoLoad,60,uleds,1)
+endef
+
+define KernelPackage/leds-uleds/description
+ This option enables support for userspace LEDs.
+endef
+
+$(eval $(call KernelPackage,leds-uleds))

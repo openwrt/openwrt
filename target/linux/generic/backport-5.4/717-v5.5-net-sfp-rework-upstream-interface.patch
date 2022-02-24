@@ -117,7 +117,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  {
  	struct fwnode_reference_args ref;
  	struct sfp_bus *bus;
-@@ -557,7 +563,39 @@ struct sfp_bus *sfp_register_upstream_no
+@@ -562,7 +568,39 @@ struct sfp_bus *sfp_register_upstream_no
  	if (!bus)
  		return ERR_PTR(-ENOMEM);
  
@@ -157,7 +157,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	bus->upstream_ops = ops;
  	bus->upstream = upstream;
  
-@@ -570,33 +608,33 @@ struct sfp_bus *sfp_register_upstream_no
+@@ -575,33 +613,33 @@ struct sfp_bus *sfp_register_upstream_no
  	}
  	rtnl_unlock();
  

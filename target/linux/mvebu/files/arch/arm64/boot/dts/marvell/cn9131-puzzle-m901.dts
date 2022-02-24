@@ -8,6 +8,7 @@
 #include "cn9130.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "iEi Puzzle-M901";
@@ -31,11 +32,25 @@
 		gpio2 = &cp0_gpio2;
 		gpio3 = &cp1_gpio1;
 		gpio4 = &cp1_gpio2;
+		led-boot = &led_power;
+		led-failsafe = &led_info;
+		led-running = &led_power;
+		led-upgrade = &led_info;
 	};
 
 	memory@00000000 {
 		device_type = "memory";
 		reg = <0x0 0x0 0x0 0x80000000>;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&cp0_gpio2 4 GPIO_ACTIVE_LOW>;
+		};
 	};
 };
 
@@ -45,6 +60,75 @@
 
 &cp0_uart0 {
 	status = "okay";
+
+	puzzle-mcu {
+		compatible = "iei,wt61p803-puzzle";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		current-speed = <115200>;
+		enable-beep;
+		status = "okay";
+
+		leds {
+			compatible = "iei,wt61p803-puzzle-leds";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			led@0 {
+				reg = <0>;
+				label = "white:network";
+				active-low;
+			};
+
+			led@1 {
+				reg = <1>;
+				label = "green:cloud";
+				active-low;
+			};
+
+			led_info: led@2 {
+				reg = <2>;
+				label = "orange:info";
+				active-low;
+			};
+
+			led_power: led@3 {
+				reg = <3>;
+				label = "yellow:power";
+				active-low;
+				default-state = "on";
+			};
+		};
+
+		hwmon {
+			compatible = "iei,wt61p803-puzzle-hwmon";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			chassis_fan_group0: fan-group@0 {
+				#cooling-cells = <2>;
+				reg = <0x00>;
+				cooling-levels = <64 102 170 230 250>;
+			};
+		};
+	};
+};
+
+&ap_thermal_cpu1 {
+	trips {
+		cpu_active: cpu-active {
+			temperature = <44000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+	cooling-maps {
+		fan-map {
+			trip = <&cpu_active>;
+			cooling-device = <&chassis_fan_group0 64 THERMAL_NO_LIMIT>;
+		};
+	};
 };
 
 /* on-board eMMC - U9 */
@@ -85,21 +169,21 @@
 	status = "okay";
 	phy-mode = "2500base-x";
 	phys = <&cp0_comphy2 0>;
-	managed = "in-band-status";
+	phy = <&cp0_nbaset_phy0>;
 };
 
 &cp0_eth1 {
 	status = "okay";
 	phy-mode = "2500base-x";
 	phys = <&cp0_comphy4 1>;
-	managed = "in-band-status";
+	phy = <&cp0_nbaset_phy1>;
 };
 
 &cp0_eth2 {
 	status = "okay";
 	phy-mode = "2500base-x";
 	phys = <&cp0_comphy5 2>;
-	managed = "in-band-status";
+	phy = <&cp0_nbaset_phy2>;
 };
 
 &cp0_gpio1 {
@@ -250,21 +334,21 @@
 	status = "okay";
 	phy-mode = "2500base-x";
 	phys = <&cp1_comphy2 0>;
-	managed = "in-band-status";
+	phy = <&cp1_nbaset_phy0>;
 };
 
 &cp1_eth1 {
 	status = "okay";
 	phy-mode = "2500base-x";
 	phys = <&cp1_comphy4 1>;
-	managed = "in-band-status";
+	phy = <&cp1_nbaset_phy1>;
 };
 
 &cp1_eth2 {
 	status = "okay";
 	phy-mode = "2500base-x";
 	phys = <&cp1_comphy5 2>;
-	managed = "in-band-status";
+	phy = <&cp1_nbaset_phy2>;
 };
 
 &cp1_sata0 {
