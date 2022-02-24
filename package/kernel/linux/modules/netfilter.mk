@@ -1217,6 +1217,17 @@ endef
 
 $(eval $(call KernelPackage,nft-queue))
 
+define KernelPackage/nft-socket
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter nf_tables socket support
+  DEPENDS:=+kmod-nft-core +kmod-nf-socket
+  FILES:=$(foreach mod,$(NFT_SOCKET-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_SOCKET-m)))
+  KCONFIG:=$(KCONFIG_NFT_SOCKET)
+endef
+
+$(eval $(call KernelPackage,nft-socket))
+
 define KernelPackage/nft-compat
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables compat support
