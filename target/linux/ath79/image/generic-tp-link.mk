@@ -12,6 +12,18 @@ define Device/tplink_archer-a7-v5
 endef
 TARGET_DEVICES += tplink_archer-a7-v5
 
+define Device/tplink_archer-a9-v6
+  $(Device/tplink-safeloader-uimage)
+  SOC := qcn5502
+  IMAGE_SIZE := 15360k
+  DEVICE_MODEL := Archer A9
+  DEVICE_VARIANT := v6
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
+	ath10k-firmware-qca9984-ct
+  TPLINK_BOARD_ID := ARCHER-A9-V6
+endef
+TARGET_DEVICES += tplink_archer-a9-v6
+
 define Device/tplink_archer-c2-v3
   $(Device/tplink-safeloader-uimage)
   SOC := qca9563
