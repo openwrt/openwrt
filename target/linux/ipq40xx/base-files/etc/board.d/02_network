@@ -53,9 +53,9 @@ ipq40xx_setup_interfaces()
 		;;
 	glinet,gl-b1300th |\
 	glinet,gl-b1300)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		ucidef_add_switch "switch0" \
-			"0u@eth0" "3:lan" "4:lan"
+			"0u@eth1" "3:lan" "4:lan"
 		;;
 	qxwlan,e2600ac-c1 |\
 	qxwlan,e2600ac-c2)
@@ -87,6 +87,11 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
+    glinet,gl-b1300th |\
+    glinet,gl-b1300)
+        wan_mac=$(mtd_get_mac_binary ART 0)
+        lan_mac=$(macaddr_add "$wan_mac" 1)
+        ;;
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
