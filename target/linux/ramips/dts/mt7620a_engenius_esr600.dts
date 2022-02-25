@@ -134,8 +134,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
 
-	nvmem-cells = <&macaddr_iNIC_rf_4>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&iNIC_rf 0x4>;
 
 	port@5 {
 		status = "okay";
@@ -145,6 +144,7 @@
 
 	mdio-bus {
 		status = "okay";
+		mediatek,mdio-mode;
 
 		ethernet-phy@0 {
 			reg = <0>;
@@ -155,13 +155,9 @@
 				0x7c 0x0000007e /* PORT0 STATUS */
 				0x0c 0x05600000 /* PORT6 PAD MODE CTRL */
 				0x94 0x0000007e /* PORT6 STATUS */
-			>;
+				>;
 		};
 	};
-};
-
-&gsw {
-	mediatek,ephy-base = /bits/ 8 <8>;
 };
 
 &state_default {
@@ -193,14 +189,4 @@
 
 &ohci {
 	status = "okay";
-};
-
-&iNIC_rf {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_iNIC_rf_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
 };

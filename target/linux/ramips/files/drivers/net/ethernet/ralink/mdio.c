@@ -232,8 +232,7 @@ int fe_mdio_init(struct fe_priv *priv)
 	mii_np = of_get_child_by_name(priv->dev->of_node, "mdio-bus");
 	if (!mii_np) {
 		dev_err(priv->dev, "no %s child node found", "mdio-bus");
-		err = 0;
-		goto err_no_bus;
+		return -ENODEV;
 	}
 
 	if (!of_device_is_available(mii_np)) {
@@ -265,8 +264,6 @@ err_free_bus:
 	kfree(priv->mii_bus);
 err_put_node:
 	of_node_put(mii_np);
-err_no_bus:
-	dev_err(priv->dev, "%s disabled", "mdio-bus");
 	priv->mii_bus = NULL;
 	return err;
 }

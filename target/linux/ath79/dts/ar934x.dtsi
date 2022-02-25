@@ -78,7 +78,7 @@
 
 			gpio: gpio@18040000 {
 				compatible = "qca,ar9340-gpio";
-				reg = <0x18040000 0x28>;
+				reg = <0x18040000 0x2c>;
 
 				interrupts = <2>;
 				ngpios = <23>;
@@ -175,9 +175,6 @@
 			phys = <&usb_phy>;
 
 			status = "disabled";
-
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		nand: nand@1b000200 {

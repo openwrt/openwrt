@@ -86,32 +86,24 @@
 			label = "ir-remote";
 			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		wps5g {
 			label = "wps5g";
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		wps2g {
 			label = "wps2g";
 			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 	};
 };
@@ -186,47 +178,18 @@
 		nand-bus-width = <8>;
 		nand-ecc-step-size = <512>;
 
-		nand-is-boot-medium;
-		qcom,boot_pages_size = <0x1200000>;
-
 		partitions {
-			compatible = "qcom,smem-part";
+			compatible = "qcom,smem";
 		};
 	};
 };
 
 &pcie0 {
 	status = "okay";
-
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi5g: wifi@1,0 {
-			reg = <0x00010000 0 0 0 0>;
-			compatible = "qcom,ath10k";
-			qcom,ath10k-calibration-variant = "ASRock-G10";
-		};
-	};
 };
 
 &pcie1 {
 	status = "okay";
-
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi2g: wifi@1,0 {
-			reg = <0x00010000 0 0 0 0>;
-			compatible = "qcom,ath10k";
-			qcom,ath10k-calibration-variant = "ASRock-G10";
-		};
-	};
 };
 
 &qcom_pinmux {

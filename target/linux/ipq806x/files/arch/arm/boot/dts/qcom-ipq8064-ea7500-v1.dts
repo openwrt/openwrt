@@ -32,16 +32,12 @@
 			label = "reset";
 			gpios = <&qcom_pinmux 68 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		wps {
 			label = "wps";
 			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 	};
 

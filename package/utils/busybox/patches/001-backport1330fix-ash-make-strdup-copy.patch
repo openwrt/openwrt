@@ -1,0 +1,40 @@
+From 67cc582d4289c5de521d11b08307c8ab26ee1e28 Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Sun, 3 Jan 2021 10:55:39 +0100
+Subject: ash: make a strdup copy of $HISTFILE for line editing
+
+Otherwise if $HISTFILE is unset or reassigned, bad things can happen.
+
+function                                             old     new   delta
+ash_main                                            1210    1218      +8
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ shell/ash.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/shell/ash.c b/shell/ash.c
+index f16d7fb6a..ecbfbf091 100644
+--- a/shell/ash.c
++++ b/shell/ash.c
+@@ -14499,7 +14499,7 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
+ 
+ 	if (sflag || minusc == NULL) {
+ #if MAX_HISTORY > 0 && ENABLE_FEATURE_EDITING_SAVEHISTORY
+-		if (iflag) {
++		if (line_input_state) {
+ 			const char *hp = lookupvar("HISTFILE");
+ 			if (!hp) {
+ 				hp = lookupvar("HOME");
+@@ -14513,7 +14513,7 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
+ 				}
+ 			}
+ 			if (hp)
+-				line_input_state->hist_file = hp;
++				line_input_state->hist_file = xstrdup(hp);
+ # if ENABLE_FEATURE_SH_HISTFILESIZE
+ 			hp = lookupvar("HISTFILESIZE");
+ 			line_input_state->max_history = size_from_HISTFILESIZE(hp);
+-- 
+cgit v1.2.1
+

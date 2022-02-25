@@ -34,8 +34,9 @@
 
 	aliases {
 		serial1 = &gsbi1_serial;
-		ethernet0 = &gmac2;
-		ethernet1 = &gmac3;
+		mdio-gpio0 = &mdio0;
+		ethernet0 = &gmac3;
+		ethernet1 = &gmac2;
 
 		led-boot = &led_power_green;
 		led-failsafe = &led_power_red;
@@ -56,8 +57,6 @@
 			label = "reset";
 			gpios = <&qcom_pinmux 25 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 	};
 
@@ -185,7 +184,7 @@
 			reg = <0>;
 
 			partitions {
-				compatible = "qcom,smem-part";
+				compatible = "qcom,smem";
 			};
 		};
 	};
@@ -259,51 +258,59 @@
 	};
 };
 
-&nand_controller {
-	status = "okay";
+&soc {
+	nand@1ac00000 {
+		status = "okay";
 
-	pinctrl-0 = <&nand_pins>;
-	pinctrl-names = "default";
+		pinctrl-0 = <&nand_pins>;
+		pinctrl-names = "default";
 
-	nand@0 {
-		compatible = "qcom,nandcs";
+		nand@0 {
+			compatible = "qcom,nandcs";
 
-		reg = <0>;
+			reg = <0>;
 
-		nand-ecc-strength = <4>;
-		nand-bus-width = <8>;
-		nand-ecc-step-size = <512>;
+			nand-ecc-strength = <4>;
+			nand-bus-width = <8>;
+			nand-ecc-step-size = <512>;
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			rootfs1@0 {
-				label = "rootfs1";
-				reg = <0x0000000 0x4000000>;
-			};
+				rootfs1@0 {
+					label = "rootfs1";
+					reg = <0x0000000 0x4000000>;
+				};
 
-			rootfs2@4000000 {
-				label = "rootfs2";
-				reg = <0x4000000 0x4000000>;
+				rootfs2@4000000 {
+					label = "rootfs2";
+					reg = <0x4000000 0x4000000>;
+				};
 			};
 		};
 	};
-};
 
-&mdio0 {
-	status = "okay";
+	mdio1: mdio {
+		compatible = "virtual,mdio-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	pinctrl-0 = <&mdio0_pins>;
-	pinctrl-names = "default";
+		status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+		pinctrl-0 = <&mdio0_pins>;
+		pinctrl-names = "default";
 
-	phy1: ethernet-phy@1 {
-		reg = <1>;
+		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
+
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+		};
+
+		phy1: ethernet-phy@1 {
+			reg = <1>;
+		};
 	};
 };
 
@@ -321,7 +328,7 @@
 	status = "okay";
 
 	qcom,id = <3>;
-	mdiobus = <&mdio0>;
+	mdiobus = <&mdio1>;
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy0>;

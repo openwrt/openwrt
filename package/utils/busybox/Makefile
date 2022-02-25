@@ -1,22 +1,28 @@
-# SPDX-License-Identifier: GPL-2.0-or-later
 #
-# Copyright (C) 2006-2021 OpenWrt.org
+# Copyright (C) 2006-2020 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.35.0
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_VERSION:=1.33.0
+PKG_RELEASE:=2
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://www.busybox.net/downloads \
 		http://sources.buildroot.net
-PKG_HASH:=faeeb244c35a348a334f4a59e44626ee870fb07b6884d68c10ae8bc19f83a694
+PKG_HASH:=d568681c91a85edc6710770cebc1e80e042ad74d305b5c2e6d57a5f3de3b8fbd
 
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam
 PKG_BUILD_PARALLEL:=1
 PKG_CHECK_FORMAT_SECURITY:=0
+
+#Busybox use it's own PIE config flag and LDFLAGS are used with ld, not gcc.
+PKG_ASLR_PIE:=0
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=LICENSE archival/libarchive/bz/LICENSE
@@ -32,7 +38,7 @@ endif
 include $(INCLUDE_DIR)/package.mk
 
 ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_BUSYBOX_' $(TOPDIR)/.config | $(MKHASH) md5)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_BUSYBOX_' $(TOPDIR)/.config | mkhash md5)
 endif
 
 # All files provided by busybox will serve as fallback alternatives by opkg.
@@ -70,33 +76,25 @@ define Package/busybox/config
 	source "$(SOURCE)/Config.in"
 endef
 
-ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOG)$(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOGD_CFG),)
-define Package/busybox/conffiles/syslog
-/etc/syslog.conf
-endef
-endif
-
-ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_CROND),)
-define Package/busybox/conffiles/crond
-/etc/crontabs/
-endef
-endif
-
+ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_SYSLOG
 define Package/busybox/conffiles
-$(Package/busybox/conffiles/syslog)
-$(Package/busybox/conffiles/crond)
+/etc/syslog.conf
 endef
 
 Package/busybox-selinux/conffiles = $(Package/busybox/conffiles)
+endif
+
+# don't create a version string containing the actual timestamp
+export KCONFIG_NOTIMESTAMP=1
+
 
 ifndef CONFIG_USE_MUSL
 LDLIBS:=m crypt
 endif
 
 LDLIBS += $(call BUSYBOX_IF_ENABLED,PAM,pam pam_misc pthread)
-
 ifeq ($(CONFIG_USE_GLIBC),y)
-  LDLIBS += $(call BUSYBOX_IF_ENABLED,NSLOOKUP,resolv)
+  LDLIBS += $(call BUSYBOX_IF_ENABLED,NSLOOKUP_OPENWRT,resolv)
 endif
 
 ifeq ($(BUILD_VARIANT),selinux)
@@ -141,12 +139,8 @@ define Package/busybox/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
-ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOG)$(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOGD_CFG),)
-	touch $(1)/etc/syslog.conf
-endif
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_CROND),)
 	$(INSTALL_BIN) ./files/cron $(1)/etc/init.d/cron
-	$(INSTALL_DIR) $(1)/etc/crontabs
 endif
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_NTPD),)
 	$(INSTALL_BIN) ./files/sysntpd $(1)/etc/init.d/sysntpd

@@ -3,7 +3,6 @@ set_preinit_iface() {
 
 	case $(board_name) in
 	aruba,ap-303| \
-	asus,rt-ac42u| \
 	asus,rt-ac58u| \
 	avm,fritzbox-4040| \
 	ezviz,cs-w3-wd1200g-eup| \

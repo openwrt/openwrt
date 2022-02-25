@@ -5,5 +5,4 @@ pkg-config.real \
 --keep-system-libs \
 --define-variable=prefix="${STAGING_PREFIX}" \
 --define-variable=exec_prefix="${STAGING_PREFIX}" \
---define-variable=bindir="${STAGING_PREFIX}/bin" \
-$PKG_CONFIG_EXTRAARGS "$@"
+--define-variable=bindir="${STAGING_PREFIX}/bin" "$@"

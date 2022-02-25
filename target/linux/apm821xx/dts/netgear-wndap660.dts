@@ -10,31 +10,23 @@
 };
 
 &LEDS {
-	led-5 {
-		color = <LED_COLOR_ID_GREEN>;
-		function = LED_FUNCTION_LAN;
-		function-enumerator = <1>;
+	lan1-link1000 {
+		label = "wndap660:green:lan1-link1000";
 		gpios = <&GPIO0 22 GPIO_ACTIVE_HIGH>;
 	};
 
-	led-6 {
-		color = <LED_COLOR_ID_AMBER>;
-		function = LED_FUNCTION_LAN;
-		function-enumerator = <0>;
+	lan1-link100 {
+		label = "wndap660:amber:lan1-link100";
 		gpios = <&GPIO0 23 GPIO_ACTIVE_HIGH>;
 	};
 
-	led-7 {
-		color = <LED_COLOR_ID_GREEN>;
-		function = LED_FUNCTION_LAN;
-		function-enumerator = <2>;
+	lan2-link1000 {
+		label = "wndap660:green:lan2-link1000";
 		gpios = <&GPIO0 9 GPIO_ACTIVE_HIGH>;
 	};
 
-	led-8 {
-		color = <LED_COLOR_ID_AMBER>;
-		function = LED_FUNCTION_LAN;
-		function-enumerator = <1>;
+	lan2-link100 {
+		label = "wndap660:amber:lan2-link100";
 		gpios = <&GPIO0 10 GPIO_ACTIVE_HIGH>;
 	};
 };

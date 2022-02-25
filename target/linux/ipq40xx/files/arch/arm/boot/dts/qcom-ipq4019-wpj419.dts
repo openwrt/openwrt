@@ -49,7 +49,7 @@
 	};
 
 	chosen {
-		bootargs-append = " ubi.mtd=ubi root=/dev/ubiblock0_1";
+		bootargs-append = " ubi.mtd=ubi root=/dev/ubiblock0_1 clk_ignore_unused";
 	};
 
 	soc {
@@ -206,17 +206,6 @@
 						label = "0:ART";
 						reg = <0x170000 0x010000>;
 						read-only;
-						compatible = "nvmem-cells";
-						#address-cells = <1>;
-						#size-cells = <1>;
-
-						precal_art_1000: precal@1000 {
-							reg = <0x1000 0x2f20>;
-						};
-
-						precal_art_5000: precal@5000 {
-							reg = <0x5000 0x2f20>;
-						};
 					};
 				};
 			};
@@ -389,12 +378,8 @@
 
 &wifi0 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_art_1000>;
 };
 
 &wifi1 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_art_5000>;
 };

@@ -55,7 +55,7 @@
 
 #define SYSC_REG_CHIP_REV_ID	0x0c
 #define SYSC_REG_CFG1		0x14
-#define PCIE_RC_MODE		BIT(8)
+#define RST_CTRL_MCM		BIT(2)
 #define SYSC_PAD_RGMII2_MDIO	0x58
 #define SYSC_GPIO_MODE		0x60
 
@@ -88,12 +88,16 @@ enum {
 	GSW_ATTR_PORT_UNTAG,
 };
 
+enum {
+	PORT4_EPHY = 0,
+	PORT4_EXT,
+};
+
 struct mt7620_gsw {
 	struct device		*dev;
 	void __iomem		*base;
 	int			irq;
-	bool			ephy_disable;
-	bool			port4_ephy;
+	int			port4;
 	unsigned long int	autopoll;
 	u16			ephy_base;
 };

@@ -23,7 +23,6 @@
 #include <linux/clk.h>
 #include <linux/string.h>
 #include <linux/reset.h>
-#include <linux/version.h>
 #include "edma.h"
 #include "ess_edma.h"
 
@@ -906,6 +905,8 @@ static int edma_axi_probe(struct platform_device *pdev)
 	}
 
 	for_each_available_child_of_node(np, pnp) {
+		const char *mac_addr;
+
 		/* this check is needed if parent and daughter dts have
 		 * different number of gmac nodes
 		 */
@@ -914,7 +915,9 @@ static int edma_axi_probe(struct platform_device *pdev)
 			break;
 		}
 
-		of_get_mac_address(pnp, edma_netdev[idx_mac]->dev_addr);
+		mac_addr = of_get_mac_address(pnp);
+		if (!IS_ERR(mac_addr))
+			memcpy(edma_netdev[idx_mac]->dev_addr, mac_addr, ETH_ALEN);
 
 		idx_mac++;
 	}
@@ -1185,17 +1188,10 @@ static int edma_axi_probe(struct platform_device *pdev)
 
 	for (i = 0; i < edma_cinfo->num_gmac; i++) {
 		if (adapter[i]->poll_required) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,5,0)
-			phy_interface_t phy_mode;
-
-			err = of_get_phy_mode(np, &phy_mode);
-			if (err)
-				phy_mode = PHY_INTERFACE_MODE_SGMII;
-#else
 			int phy_mode = of_get_phy_mode(np);
+
 			if (phy_mode < 0)
 				phy_mode = PHY_INTERFACE_MODE_SGMII;
-#endif
 			adapter[i]->phydev =
 				phy_connect(edma_netdev[i],
 					    (const char *)adapter[i]->phy_id,

@@ -8,8 +8,6 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ltq-dsl-base
 PKG_RELEASE:=3
 
-PKG_FLAGS:=nonshared
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ltq-dsl-base

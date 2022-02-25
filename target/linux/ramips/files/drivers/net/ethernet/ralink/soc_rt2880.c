@@ -19,6 +19,8 @@
 #include "mtk_eth_soc.h"
 #include "mdio_rt2880.h"
 
+#define RT2880_RESET_FE			BIT(18)
+
 static void rt2880_init_data(struct fe_soc_data *data,
 			     struct net_device *netdev)
 {
@@ -29,6 +31,11 @@ static void rt2880_init_data(struct fe_soc_data *data,
 	netdev->hw_features = NETIF_F_SG | NETIF_F_HW_VLAN_CTAG_TX;
 	/* this should work according to the datasheet but actually does not*/
 	/* netdev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM; */
+}
+
+void rt2880_fe_reset(void)
+{
+	fe_reset(RT2880_RESET_FE);
 }
 
 static int rt2880_fwd_config(struct fe_priv *priv)
@@ -48,6 +55,7 @@ static int rt2880_fwd_config(struct fe_priv *priv)
 
 struct fe_soc_data rt2880_data = {
 	.init_data = rt2880_init_data,
+	.reset_fe = rt2880_fe_reset,
 	.fwd_config = rt2880_fwd_config,
 	.pdma_glo_cfg = FE_PDMA_SIZE_8DWORDS,
 	.checksum_bit = RX_DMA_L4VALID,

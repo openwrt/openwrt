@@ -196,7 +196,7 @@ $(eval $(call KernelPackage,input-touchscreen-ads7846))
 define KernelPackage/keyboard-imx
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=IMX keypad support
-  DEPENDS:=@(TARGET_mxs||TARGET_imx) +kmod-input-matrixkmap
+  DEPENDS:=@(TARGET_mxs||TARGET_imx6) +kmod-input-matrixkmap
   KCONFIG:= \
 	CONFIG_KEYBOARD_IMX \
 	CONFIG_INPUT_KEYBOARD=y

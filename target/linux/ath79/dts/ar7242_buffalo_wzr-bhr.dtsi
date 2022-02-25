@@ -107,6 +107,8 @@
 &spi {
 	status = "okay";
 
+	cs-gpios = <0>, <0>;
+
 	flash0: flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;

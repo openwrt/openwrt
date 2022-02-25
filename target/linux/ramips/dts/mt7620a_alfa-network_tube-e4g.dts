@@ -103,8 +103,7 @@
 };
 
 &ethernet {
-	nvmem-cells = <&macaddr_factory_28>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&factory 0x28>;
 };
 
 &gpio1 {
@@ -113,6 +112,10 @@
 
 &gpio2 {
 	status = "okay";
+};
+
+&gsw {
+	mediatek,port4 = "ephy";
 };
 
 &ohci {
@@ -178,14 +181,4 @@
 
 &wmac {
 	status = "disabled";
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_28: macaddr@28 {
-		reg = <0x28 0x6>;
-	};
 };

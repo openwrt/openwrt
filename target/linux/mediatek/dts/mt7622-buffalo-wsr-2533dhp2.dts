@@ -218,9 +218,8 @@
 
 		phy-connection-type = "2500base-x";
 
-		nvmem-cells = <&macaddr_factory_4>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(-1)>;
+		mtd-mac-address = <&factory 0x4>;
+		mtd-mac-address-increment = <(-1)>;
 
 		fixed-link {
 			speed = <2500>;
@@ -280,7 +279,7 @@
 
 			partition@200000 {
 				compatible = "brcm,trx";
-				brcm,trx-magic = <0x32504844>;
+				trx-magic = <0x32504844>;
 				label = "firmware";
 				reg = <0x200000 0x3a00000>;
 			};
@@ -337,14 +336,4 @@
 
 &rtc {
 	status = "disabled";
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
 };

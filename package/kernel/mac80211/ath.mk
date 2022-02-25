@@ -1,5 +1,5 @@
 PKG_DRIVERS += \
-	ath ath5k ath6kl ath6kl-sdio ath6kl-usb ath9k ath9k-common ath9k-htc ath10k ath10k-smallbuffers \
+	ath ath5k ath6kl ath6kl-sdio ath6kl-usb ath9k ath9k-common ath9k-htc ath10k \
 	carl9170 owl-loader ar5523 wil6210
 
 PKG_CONFIG_DEPENDS += \
@@ -34,7 +34,7 @@ ifdef CONFIG_PACKAGE_MAC80211_TRACING
 	WIL6210_TRACING
 endif
 
-config-$(call config_package,ath) += ATH_CARDS ATH_COMMON
+config-$(call config_package,ath) += ATH_CARDS ATH_COMMON ATH_REG_DYNAMIC_USER_REG_HINTS
 config-$(CONFIG_PACKAGE_ATH_DEBUG) += ATH_DEBUG ATH10K_DEBUG ATH9K_STATION_STATISTICS
 config-$(CONFIG_PACKAGE_ATH_DFS) += ATH9K_DFS_CERTIFIED ATH10K_DFS_CERTIFIED
 config-$(CONFIG_PACKAGE_ATH_SPECTRAL) += ATH9K_COMMON_SPECTRAL ATH10K_SPECTRAL
@@ -45,7 +45,7 @@ config-$(call config_package,owl-loader) += ATH9K_PCI_NO_EEPROM
 config-$(CONFIG_TARGET_ath79) += ATH9K_AHB
 config-$(CONFIG_TARGET_ipq40xx) += ATH10K_AHB
 config-$(CONFIG_PCI) += ATH9K_PCI
-config-$(CONFIG_ATH_USER_REGD) += ATH_USER_REGD ATH_REG_DYNAMIC_USER_REG_HINTS
+config-$(CONFIG_ATH_USER_REGD) += ATH_USER_REGD
 config-$(CONFIG_ATH9K_HWRNG) += ATH9K_HWRNG
 config-$(CONFIG_ATH9K_SUPPORT_PCOEM) += ATH9K_PCOEM
 config-$(CONFIG_ATH9K_TX99) += ATH9K_TX99
@@ -55,7 +55,6 @@ config-$(CONFIG_ATH10K_THERMAL) += ATH10K_THERMAL
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k) += ATH10K ATH10K_PCI
-config-$(call config_package,ath10k-smallbuffers) += ATH10K ATH10K_PCI ATH10K_SMALLBUFFERS
 
 config-$(call config_package,ath5k) += ATH5K
 ifdef CONFIG_TARGET_ath25
@@ -261,7 +260,6 @@ define KernelPackage/ath10k
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath10k/ath10k_core.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath10k/ath10k_pci.ko
   AUTOLOAD:=$(call AutoProbe,ath10k_pci)
-  VARIANT:=regular
 endef
 
 define KernelPackage/ath10k/description
@@ -275,18 +273,12 @@ define KernelPackage/ath10k/config
        config ATH10K_LEDS
                bool "Enable LED support"
                default y
-               depends on PACKAGE_kmod-ath10k || PACKAGE_kmod-ath10k-smallbuffers
+               depends on PACKAGE_kmod-ath10k
 
        config ATH10K_THERMAL
                bool "Enable thermal sensors and throttling support"
-               depends on PACKAGE_kmod-ath10k || PACKAGE_kmod-ath10k-smallbuffers
+               depends on PACKAGE_kmod-ath10k
 
-endef
-
-define KernelPackage/ath10k-smallbuffers
-  $(call KernelPackage/ath10k)
-  TITLE+= (small buffers for low-RAM devices)
-  VARIANT:=smallbuffers
 endef
 
 define KernelPackage/carl9170

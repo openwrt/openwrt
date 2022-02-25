@@ -110,6 +110,10 @@
 	};
 };
 
+&bch {
+	status = "okay";
+};
+
 &btif {
 	status = "okay";
 };
@@ -144,10 +148,6 @@
 		switch@0 {
 			compatible = "mediatek,mt7531";
 			reg = <0>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			interrupt-parent = <&pio>;
-			interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
 			reset-gpios = <&pio 54 0>;
 
 			ports {
@@ -342,11 +342,18 @@
 	};
 };
 
-&snand {
-	mediatek,quad-spi;
+&snfi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&serial_nand_pins>;
 	status = "okay";
+
+	snand: spi_nand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		spi-max-frequency = <104000000>;
+		reg = <0>;
+	};
 };
 
 &spi0 {

@@ -65,8 +65,6 @@ _proto_mbim_setup() {
 	echo "mbim[$$]" "Reading capabilities"
 	umbim $DBG -n -d $device caps || {
 		echo "mbim[$$]" "Failed to read modem caps"
-		tid=$((tid + 1))
-		umbim $DBG -t $tid -d "$device" disconnect
 		proto_notify_error "$interface" PIN_FAILED
 		return 1
 	}
@@ -76,8 +74,6 @@ _proto_mbim_setup() {
 		echo "mbim[$$]" "Sending pin"
 		umbim $DBG -n -t $tid -d $device unlock "$pincode" || {
 			echo "mbim[$$]" "Unable to verify PIN"
-			tid=$((tid + 1))
-			umbim $DBG -t $tid -d "$device" disconnect
 			proto_notify_error "$interface" PIN_FAILED
 			proto_block_restart "$interface"
 			return 1
@@ -86,11 +82,8 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Checking pin"
-	umbim $DBG -n -t $tid -d $device pinstate
-	[ $? -eq 2 ] && {
+	umbim $DBG -n -t $tid -d $device pinstate || {
 		echo "mbim[$$]" "PIN required"
-		tid=$((tid + 1))
-		umbim $DBG -t $tid -d "$device" disconnect
 		proto_notify_error "$interface" PIN_FAILED
 		proto_block_restart "$interface"
 		return 1
@@ -98,35 +91,29 @@ _proto_mbim_setup() {
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Checking subscriber"
-	umbim $DBG -n -t $tid -d $device subscriber || {
+ 	umbim $DBG -n -t $tid -d $device subscriber || {
 		echo "mbim[$$]" "Subscriber init failed"
-		tid=$((tid + 1))
-		umbim $DBG -t $tid -d "$device" disconnect
 		proto_notify_error "$interface" NO_SUBSCRIBER
 		return 1
 	}
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Register with network"
-	umbim $DBG -n -t $tid -d $device registration || {
+  	umbim $DBG -n -t $tid -d $device registration || {
 		echo "mbim[$$]" "Subscriber registration failed"
-		tid=$((tid + 1))
-		umbim $DBG -t $tid -d "$device" disconnect
 		proto_notify_error "$interface" NO_REGISTRATION
 		return 1
 	}
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Attach to network"
-	umbim $DBG -n -t $tid -d $device attach || {
+   	umbim $DBG -n -t $tid -d $device attach || {
 		echo "mbim[$$]" "Failed to attach to network"
-		tid=$((tid + 1))
-		umbim $DBG -t $tid -d "$device" disconnect
 		proto_notify_error "$interface" ATTACH_FAILED
 		return 1
 	}
 	tid=$((tid + 1))
-
+ 
 	echo "mbim[$$]" "Connect to network"
 	while ! umbim $DBG -n -t $tid -d $device connect "$apn" "$auth" "$username" "$password"; do
 		tid=$((tid + 1))
@@ -154,7 +141,6 @@ _proto_mbim_setup() {
 	json_add_string proto "dhcpv6"
 	json_add_string extendprefix 1
 	proto_add_dynamic_defaults
-	json_close_object
 	ubus call network add_dynamic "$(json_dump)"
 }
 
@@ -169,7 +155,7 @@ proto_mbim_setup() {
 		sleep 15
 	}
 
-	return $ret
+	return $rt
 }
 
 proto_mbim_teardown() {
@@ -183,7 +169,7 @@ proto_mbim_teardown() {
 
 	echo "mbim[$$]" "Stopping network"
 	[ -n "$tid" ] && {
-		umbim $DBG -t $tid -d "$device" disconnect
+		umbim $DBG -t$tid -d "$device" disconnect
 		uci_revert_state network $interface tid
 	}
 

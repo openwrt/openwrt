@@ -137,8 +137,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii2_pins &mdio_pins>;
 
-	nvmem-cells = <&macaddr_factory_4>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&factory 0x4>;
 
 	port@4 {
 		status = "okay";
@@ -158,8 +157,7 @@
 };
 
 &gsw {
-	mediatek,port4-gmac;
-	mediatek,ephy-base = /bits/ 8 <8>;
+	mediatek,port4 = "gmac";
 };
 
 &wmac {
@@ -172,14 +170,4 @@
 
 &ohci {
 	status = "okay";
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
 };

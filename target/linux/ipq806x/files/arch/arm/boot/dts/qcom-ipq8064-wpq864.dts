@@ -83,8 +83,6 @@
 			label = "reset";
 			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 	};
 
@@ -117,9 +115,6 @@
 		nand-ecc-strength = <4>;
 		nand-bus-width = <8>;
 		nand-ecc-step-size = <512>;
-
-		nand-is-boot-medium;
-		qcom,boot_pages_size = <0x1180000>;
 
 		partitions {
 			compatible = "fixed-partitions";

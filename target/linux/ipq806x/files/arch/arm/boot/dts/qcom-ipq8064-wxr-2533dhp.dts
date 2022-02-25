@@ -91,40 +91,30 @@
 			label = "power";
 			gpios = <&qcom_pinmux 58 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_POWER>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		wps {
 			label = "wps";
 			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		eject {
 			label = "eject";
 			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_EJECTCD>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		guest {
 			label = "guest";
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		ap {
@@ -132,8 +122,6 @@
 			gpios = <&qcom_pinmux 55 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
 			linux,input-type = <EV_SW>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		router {
@@ -141,8 +129,6 @@
 			gpios = <&qcom_pinmux 56 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
 			linux,input-type = <EV_SW>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		auto {
@@ -150,8 +136,6 @@
 			gpios = <&qcom_pinmux 57 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
 			linux,input-type = <EV_SW>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 	};
 };
@@ -229,8 +213,7 @@
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
 
-	nvmem-cells = <&macaddr_ART_6>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&ART 6>;
 
 	fixed-link {
 		speed = <1000>;
@@ -244,8 +227,7 @@
 	phy-mode = "sgmii";
 	qcom,id = <2>;
 
-	nvmem-cells = <&macaddr_ART_0>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&ART 0>;
 
 	fixed-link {
 		speed = <1000>;
@@ -340,38 +322,10 @@
 					read-only;
 				};
 
-				ART@180000 {
+				ART: ART@180000 {
 					label = "ART";
 					reg = <0x180000 0x40000>;
 					read-only;
-
-					compatible = "nvmem-cells";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					macaddr_ART_0: macaddr@0 {
-						reg = <0x0 0x6>;
-					};
-
-					macaddr_ART_6: macaddr@6 {
-						reg = <0x6 0x6>;
-					};
-
-					macaddr_ART_18: macaddr@18 {
-						reg = <0x18 0x6>;
-					};
-
-					macaddr_ART_1e: macaddr@1e {
-						reg = <0x1e 0x6>;
-					};
-
-					precal_ART_1000: precal@1000 {
-						reg = <0x1000 0x2f20>;
-					};
-
-					precal_ART_5000: precal@5000 {
-						reg = <0x5000 0x2f20>;
-					};
 				};
 
 				BOOTCONFIG@1c0000 {
@@ -423,41 +377,11 @@
 
 &pcie0 {
 	status = "okay";
-
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			compatible = "pci168c,0040";
-			reg = <0x00010000 0 0 0 0>;
-
-			nvmem-cells = <&macaddr_ART_1e>, <&precal_ART_1000>;
-			nvmem-cell-names = "mac-address", "pre-calibration";
-		};
-	};
 };
 
 &pcie1 {
 	status = "okay";
 	max-link-speed = <1>;
-
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			compatible = "pci168c,0040";
-			reg = <0x00010000 0 0 0 0>;
-
-			nvmem-cells = <&macaddr_ART_18>, <&precal_ART_5000>;
-			nvmem-cell-names = "mac-address", "pre-calibration";
-		};
-	};
 };
 
 &qcom_pinmux {

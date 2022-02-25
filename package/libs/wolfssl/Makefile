@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
-PKG_VERSION:=5.1.1-stable
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_VERSION:=4.7.0-stable
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/wolfSSL/wolfssl/archive/v$(PKG_VERSION)
-PKG_HASH:=d3e0544dbe7e9587c0f6538cdc671b6492663bb7a4281819538abe6c99cdbd92
+PKG_HASH:=b0e740b31d4d877d540ad50cc539a8873fc41af02bd3091c4357b403f7106e31
 
 PKG_FIXUP:=libtool libtool-abiver
 PKG_INSTALL:=1
@@ -31,8 +31,7 @@ PKG_CONFIG_DEPENDS:=\
 	CONFIG_WOLFSSL_HAS_DH CONFIG_WOLFSSL_HAS_DTLS \
 	CONFIG_WOLFSSL_HAS_ECC25519 CONFIG_WOLFSSL_HAS_OCSP \
 	CONFIG_WOLFSSL_HAS_SESSION_TICKET CONFIG_WOLFSSL_HAS_TLSV10 \
-	CONFIG_WOLFSSL_HAS_TLSV13 CONFIG_WOLFSSL_HAS_WPAS CONFIG_WOLFSSL_HAS_CERTGEN \
-	CONFIG_WOLFSSL_HAS_OPENVPN CONFIG_WOLFSSL_ALT_NAMES
+	CONFIG_WOLFSSL_HAS_TLSV13 CONFIG_WOLFSSL_HAS_WPAS CONFIG_WOLFSSL_HAS_CERTGEN
 
 PKG_ABI_VERSION=$(patsubst %-stable,%,$(PKG_VERSION)).$(call version_abbrev,$(call confvar,$(PKG_CONFIG_DEPENDS)))
 
@@ -59,24 +58,16 @@ define Package/libwolfssl/config
 	source "$(SOURCE)/Config.in"
 endef
 
-TARGET_CFLAGS += \
-	$(FPIC) \
-	-fomit-frame-pointer \
-	-flto \
-	-DFP_MAX_BITS=8192 \
-	$(if $(CONFIG_WOLFSSL_ALT_NAMES),-DWOLFSSL_ALT_NAMES)
-
+TARGET_CFLAGS += $(FPIC) -DFP_MAX_BITS=8192 -fomit-frame-pointer -flto
 TARGET_LDFLAGS += -flto
 
 # --enable-stunnel needed for OpenSSL API compatibility bits
 CONFIGURE_ARGS += \
-	--enable-reproducible-build \
 	--enable-lighty \
 	--enable-opensslall \
 	--enable-opensslextra \
 	--enable-sni \
 	--enable-stunnel \
-	--enable-altcertchains \
 	--disable-crypttests \
 	--disable-examples \
 	--disable-jobserver \
@@ -93,7 +84,6 @@ CONFIGURE_ARGS += \
 	--$(if $(CONFIG_WOLFSSL_HAS_DTLS),enable,disable)-dtls \
 	--$(if $(CONFIG_WOLFSSL_HAS_ECC25519),enable,disable)-curve25519 \
 	--$(if $(CONFIG_WOLFSSL_HAS_AFALG),enable,disable)-afalg \
-	--$(if $(CONFIG_WOLFSSL_HAS_OPENVPN),enable,disable)-openvpn \
 	--enable-devcrypto=$(if $(CONFIG_WOLFSSL_HAS_DEVCRYPTO_CBC),cbc\
 			  ,$(if $(CONFIG_WOLFSSL_HAS_DEVCRYPTO_AES),aes\
 			  ,$(if $(CONFIG_WOLFSSL_HAS_DEVCRYPTO_FULL),yes,no)))
@@ -105,7 +95,7 @@ endif
 
 ifeq ($(CONFIG_WOLFSSL_HAS_WPAS),y)
 CONFIGURE_ARGS += \
-	--enable-wpas --enable-fortress --enable-fastmath
+	--enable-wpas --enable-sha512 --enable-fortress --enable-fastmath
 endif
 
 define Build/InstallDev

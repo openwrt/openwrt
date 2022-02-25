@@ -73,10 +73,6 @@ set_state() {
 		status_led_blink_preinit_regular
 		;;
 
-	upgrade)
-		status_led_blink_preinit_regular
-		;;
-
 	done)
 		status_led_on
 		;;

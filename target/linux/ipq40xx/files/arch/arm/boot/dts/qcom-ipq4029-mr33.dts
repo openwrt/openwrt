@@ -16,7 +16,6 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
-#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Meraki MR33 Access Point";
@@ -167,40 +166,30 @@
 		reg = <0x30>;
 		clock-mode = /bits/8 <2>;
 		enable-gpio = <&tlmm 48 GPIO_ACTIVE_HIGH>;
-		#address-cells = <1>;
-		#size-cells = <0>;
 
 		/* RGB led */
-		status_red: chan@0 {
+		status_red: chan0 {
 			chan-name = "red:status";
 			led-cur = /bits/ 8 <0x20>;
 			max-cur = /bits/ 8 <0x60>;
-			reg = <0>;
-			color = <LED_COLOR_ID_RED>;
 		};
 
-		status_green: chan@1 {
+		status_green: chan1 {
 			chan-name = "green:status";
 			led-cur = /bits/ 8 <0x20>;
 			max-cur = /bits/ 8 <0x60>;
-			reg = <1>;
-			color = <LED_COLOR_ID_GREEN>;
 		};
 
-		chan@2 {
+		chan2 {
 			chan-name = "blue:status";
 			led-cur = /bits/ 8 <0x20>;
 			max-cur = /bits/ 8 <0x60>;
-			reg = <2>;
-			color = <LED_COLOR_ID_BLUE>;
 		};
 
-		chan@3 {
+		chan3 {
 			chan-name = "white:status";
 			led-cur = /bits/ 8 <0x20>;
 			max-cur = /bits/ 8 <0x60>;
-			reg = <3>;
-			color = <LED_COLOR_ID_WHITE>;
 		};
 	};
 };

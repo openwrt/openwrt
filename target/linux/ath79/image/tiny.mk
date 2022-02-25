@@ -21,7 +21,8 @@ define Device/dlink_dir-615-e4
   FACTORY_IMAGE_SIZE := 3456k
   IMAGES += factory.bin
   IMAGE/default := append-kernel | append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | check-size | append-metadata
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | \
+	check-size
   IMAGE/factory.bin := $$(IMAGE/default) | \
 	check-size $$$$(FACTORY_IMAGE_SIZE) | pad-to $$$$(FACTORY_IMAGE_SIZE) | \
 	append-string "AP99-AR7240-RT-091105-05"
@@ -73,7 +74,7 @@ define Device/pqi_air-pen
   SOC := ar9330
   DEVICE_VENDOR := PQI
   DEVICE_MODEL := Air-Pen
-  DEVICE_PACKAGES := kmod-usb-chipidea2
+  DEVICE_PACKAGES := kmod-usb2
   IMAGE_SIZE := 7680k
   SUPPORTED_DEVICES += pqi-air-pen
 endef

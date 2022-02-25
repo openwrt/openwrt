@@ -48,10 +48,10 @@ define Build/mt7622-gpt
 				-N recovery	-r	-p 32M@6M \
 		$(if $(findstring sdmmc,$1), \
 				-N install	-r	-p 7M@38M \
-			-t 0x2e -N production		-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@45M \
+			-t 0x2e -N production		-p 211M@45M \
 		) \
 		$(if $(findstring emmc,$1), \
-			-t 0x2e -N production		-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@40M \
+			-t 0x2e -N production		-p 980M@40M \
 		)
 	cat $@.tmp >> $@
 	rm $@.tmp
@@ -76,17 +76,15 @@ define Device/bananapi_bpi-r64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
   DEVICE_DTS_OVERLAY := mt7622-bananapi-bpi-r64-pcie1 mt7622-bananapi-bpi-r64-sata
   DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
-  ARTIFACTS := emmc-preloader.bin emmc-bl31-uboot.fip sdcard.img.gz snand-preloader.bin snand-bl31-uboot.fip
+  ARTIFACTS := sdcard.img.gz snand-preloader.bin snand-bl31-uboot.fip
   IMAGES := sysupgrade.itb
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
-  ARTIFACT/emmc-preloader.bin	:= bl2 emmc-2ddr
-  ARTIFACT/emmc-bl31-uboot.fip	:= bl31-uboot bananapi_bpi-r64-emmc
   ARTIFACT/snand-preloader.bin	:= bl2 snand-2ddr
   ARTIFACT/snand-bl31-uboot.fip	:= bl31-uboot bananapi_bpi-r64-snand
   ARTIFACT/sdcard.img.gz	:= mt7622-gpt sdmmc |\
 				   pad-to 512k | bl2 sdmmc-2ddr |\
 				   pad-to 2048k | bl31-uboot bananapi_bpi-r64-sdmmc |\
-				   pad-to 6144k | append-image-stage initramfs-recovery.itb |\
+				   pad-to 6144k | append-image initramfs-recovery.itb |\
 				   pad-to 38912k | mt7622-gpt emmc |\
 				   pad-to 39424k | bl2 emmc-2ddr |\
 				   pad-to 40960k | bl31-uboot bananapi_bpi-r64-emmc |\
@@ -190,7 +188,6 @@ define Device/mediatek_mt7622-rfb1-ubi
   DEVICE_DTS := mt7622-rfb1-ubi
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3
-  BOARD_NAME := mediatek,mt7622-rfb1-ubi
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -202,16 +199,6 @@ define Device/mediatek_mt7622-rfb1-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
-
-define Device/totolink_a8000ru
-  DEVICE_VENDOR := TOTOLINK
-  DEVICE_MODEL := A8000RU
-  DEVICE_DTS := mt7622-totolink-a8000ru
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := swconfig
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-endef
-TARGET_DEVICES += totolink_a8000ru
 
 define Device/ubnt_unifi-6-lr
   DEVICE_VENDOR := Ubiquiti

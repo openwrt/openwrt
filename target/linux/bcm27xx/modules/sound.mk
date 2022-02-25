@@ -26,6 +26,8 @@ define KernelPackage/sound-soc-bcm2835-i2s
   TITLE:=SoC Audio support for the Broadcom 2835 I2S module
   KCONFIG:= \
     CONFIG_SND_BCM2835_SOC_I2S \
+    CONFIG_SND_SOC_AD193X_SPI=n \
+    CONFIG_SND_SOC_AD193X_I2C=n \
     CONFIG_SND_SOC_DMAENGINE_PCM=y \
     CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
   FILES:= \
@@ -363,26 +365,6 @@ endef
 $(eval $(call KernelPackage,sound-soc-audioinjector-pi-soundcard))
 
 
-define KernelPackage/sound-soc-chipdip-dac
-  TITLE:=Support for ChipDip DAC
-  KCONFIG:= \
-    CONFIG_SND_BCM2708_SOC_CHIPDIP_DAC
-  FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-chipdip-dac.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-chipdip-dac)
-  DEPENDS:= \
-    kmod-sound-soc-bcm2835-i2s \
-    @LINUX_5_10
-  $(call AddDepends/sound)
-endef
-
-define KernelPackage/sound-soc-chipdip-dac/description
-  This package contains support for ChipDip DAC
-endef
-
-$(eval $(call KernelPackage,sound-soc-chipdip-dac))
-
-
 define KernelPackage/sound-soc-digidac1-soundcard
   TITLE:=Support for RRA DigiDAC1
   KCONFIG:= \
@@ -527,27 +509,24 @@ $(eval $(call KernelPackage,sound-soc-hifiberry-dac))
 
 
 define KernelPackage/sound-soc-hifiberry-dacplus
-  TITLE:=Support for HifiBerry DAC+ / DAC+ Pro / Amp2
+  TITLE:=Support for HifiBerry DAC+ / DAC+ Pro
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS \
-    CONFIG_SND_SOC_PCM512x \
-    CONFIG_SND_SOC_PCM512x_I2C
+    CONFIG_SND_SOC_PCM512x
   FILES:= \
     $(LINUX_DIR)/drivers/clk/clk-hifiberry-dacpro.ko \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplus.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko
   AUTOLOAD:=$(call AutoLoad,68,clk-hifiberry-dacpro snd-soc-pcm512x \
-    snd-soc-pcm512x-i2c snd-soc-hifiberry-dacplus)
+    snd-soc-hifiberry-dacplus)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
-    +kmod-i2c-bcm2835 \
-    +kmod-regmap-i2c
+    +kmod-i2c-bcm2835
   $(call AddDepends/sound)
 endef
 
 define KernelPackage/sound-soc-hifiberry-dacplus/description
-  This package contains support for HifiBerry DAC+ / DAC+ Pro / Amp2
+  This package contains support for HifiBerry DAC+ / DAC+ Pro
 endef
 
 $(eval $(call KernelPackage,sound-soc-hifiberry-dacplus))

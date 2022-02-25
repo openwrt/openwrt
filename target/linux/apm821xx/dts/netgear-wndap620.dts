@@ -10,16 +10,13 @@
 };
 
 &LEDS {
-	led-5 {
-		function = LED_FUNCTION_LAN;
-		function-enumerator = <1>;
-		color = <LED_COLOR_ID_GREEN>;
+	link1000 {
+		label = "wndap620:green:link1000";
 		gpios = <&GPIO0 9 GPIO_ACTIVE_HIGH>;
 	};
 
-	led-6 {
-		function = LED_FUNCTION_LAN;
-		color = <LED_COLOR_ID_AMBER>;
+	link100 {
+		label = "wndap620:amber:link100";
 		gpios = <&GPIO0 10 GPIO_ACTIVE_HIGH>;
 	};
 };

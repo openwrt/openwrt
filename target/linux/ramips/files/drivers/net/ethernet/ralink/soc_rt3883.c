@@ -19,6 +19,13 @@
 #include "mtk_eth_soc.h"
 #include "mdio_rt2880.h"
 
+#define RT3883_RSTCTRL_FE		BIT(21)
+
+static void rt3883_fe_reset(void)
+{
+	fe_reset(RT3883_RSTCTRL_FE);
+}
+
 static int rt3883_fwd_config(struct fe_priv *priv)
 {
 	int ret;
@@ -47,6 +54,7 @@ static void rt3883_init_data(struct fe_soc_data *data,
 
 static struct fe_soc_data rt3883_data = {
 	.init_data = rt3883_init_data,
+	.reset_fe = rt3883_fe_reset,
 	.fwd_config = rt3883_fwd_config,
 	.pdma_glo_cfg = FE_PDMA_SIZE_8DWORDS,
 	.rx_int = FE_RX_DONE_INT,

@@ -65,15 +65,12 @@ platform_do_upgrade() {
 	jjplus,ja76pf2)
 		redboot_fis_do_upgrade "$1" linux
 		;;
-	openmesh,a40|\
-	openmesh,a60|\
 	openmesh,mr600-v1|\
 	openmesh,mr600-v2|\
 	openmesh,mr900-v1|\
 	openmesh,mr900-v2|\
 	openmesh,mr1750-v1|\
 	openmesh,mr1750-v2|\
-	openmesh,om2p-v1|\
 	openmesh,om2p-v2|\
 	openmesh,om2p-v4|\
 	openmesh,om2p-hs-v1|\
@@ -81,10 +78,7 @@ platform_do_upgrade() {
 	openmesh,om2p-hs-v3|\
 	openmesh,om2p-hs-v4|\
 	openmesh,om2p-lc|\
-	openmesh,om5p|\
-	openmesh,om5p-ac-v1|\
-	openmesh,om5p-ac-v2|\
-	openmesh,om5p-an)
+	openmesh,om5p)
 		PART_NAME="inactive"
 		platform_do_upgrade_openmesh "$1"
 		;;

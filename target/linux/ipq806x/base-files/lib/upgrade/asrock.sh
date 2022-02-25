@@ -1,7 +1,7 @@
 . /lib/functions.sh
 
 asrock_bootconfig_mangle() {
-	local mtdnum="$(find_mtd_index 0:bootconfig)"
+	local mtdnum="$( find_mtd_index 0:BOOTCONFIG )"
 
 	if [ -z "$mtdnum" ]; then
 		echo "cannot find bootconfig mtd partition"

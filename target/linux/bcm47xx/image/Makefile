@@ -146,20 +146,17 @@ define Device/Default
 endef
 
 define Device/standard
-  DEVICE_VENDOR := Generic
-  DEVICE_MODEL := Image with LZMA loader and LZMA compressed kernel
+  DEVICE_TITLE := Image with LZMA loader and LZMA compressed kernel
 endef
 
 define Device/standard-noloader-gz
-  DEVICE_VENDOR := Generic
-  DEVICE_MODEL := Image with gzipped kernel
+  DEVICE_TITLE := Image with gzipped kernel
   KERNEL_NAME = vmlinux.gz
   IMAGE/trx := append-rootfs | trx-without-loader
 endef
 
 define Device/standard-noloader-nodictionarylzma
-  DEVICE_VENDOR := Generic
-  DEVICE_MODEL := Image with LZMA compressed kernel matching CFE decompressor
+  DEVICE_TITLE := Image with LZMA compressed kernel matching CFE decompressor
   KERNEL_NAME = vmlinux-nodictionary.lzma
   IMAGE/trx := append-rootfs | trx-without-loader
 endef

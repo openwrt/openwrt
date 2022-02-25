@@ -13,8 +13,5 @@ boot() {
 	linksys,mr8300)
 		mtd resetbc s_env || true
 		;;
-	netgear,wac510)
-		fw_setenv boot_cnt=0
-		;;
 	esac
 }

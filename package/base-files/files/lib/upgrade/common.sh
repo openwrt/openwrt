@@ -65,9 +65,16 @@ _v() {
 	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo "$*" >&2
 }
 
+_vn() {
+	[ -n "$VERBOSE" ] && [ "$VERBOSE" -ge 1 ] && echo -n "$*" >&2
+}
+
 v() {
 	_v "$(date) upgrade: $@"
-	logger -p info -t upgrade "$@"
+}
+
+vn() {
+	_vn "$(date) upgrade: $@"
 }
 
 json_string() {
@@ -88,7 +95,8 @@ get_image() { # <source> [ <command> ]
 	if [ -z "$cmd" ]; then
 		local magic="$(dd if="$from" bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"')"
 		case "$magic" in
-			1f8b) cmd="busybox zcat";;
+			1f8b) cmd="zcat";;
+			425a) cmd="bzcat";;
 			*) cmd="cat";;
 		esac
 	fi
@@ -220,6 +228,15 @@ hex_le32_to_cpu() {
 	echo "$@"
 }
 
+get_partition_by_name() {
+	for partname in /sys/class/block/$1/*/name; do
+		[ "$(cat ${partname})" = "$2" ] && {
+			basename ${partname%%/name}
+			break
+		}
+	done
+}
+
 get_partitions() { # <device> <filename>
 	local disk="$1"
 	local filename="$2"
@@ -245,7 +262,7 @@ get_partitions() { # <device> <filename>
 				local type="$1"
 				local lba="$(( $(hex_le32_to_cpu $4) * 0x100000000 + $(hex_le32_to_cpu $3) ))"
 				local end="$(( $(hex_le32_to_cpu $6) * 0x100000000 + $(hex_le32_to_cpu $5) ))"
-				local num="$(( $end - $lba + 1 ))"
+				local num="$(( $end - $lba ))"
 
 				[ "$type" = "00000000000000000000000000000000" ] && continue
 

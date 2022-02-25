@@ -1,0 +1,28 @@
+From cfcafdd27c74dc187fe96a9cfa88b1aef53540a0 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Mon, 1 Feb 2021 23:46:43 +0000
+Subject: [PATCH 2/2] Tweak f1204a875e0f16fd645df965db346fc56d2ab1dd
+
+This gets, eg, v2.65test1 and v2.65test11 in the correct order.
+
+Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
+---
+ bld/get-version | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bld/get-version b/bld/get-version
+index 1d7e7f0..1f51768 100755
+--- a/bld/get-version
++++ b/bld/get-version
+@@ -31,7 +31,7 @@ else
+      vers=`cat $1/VERSION | sed 's/[(), ]/,/ g' | tr ',' '\n' | grep ^v[0-9]`
+ 
+      if [ $? -eq 0 ]; then
+-         echo "${vers}" | sort -k1.2,1.5r -k 1.6,1.6 -k1.8,1.9r -k1.10,1.11r | head -n 1 | sed 's/^v//'
++         echo "${vers}" | sort -k1.2,1.5Vr -k1.6,1.6 -k1.8,1.9Vr -k1.10,1.11Vr | head -n 1 | sed 's/^v//'
+      else
+          cat $1/VERSION
+      fi
+-- 
+2.24.3 (Apple Git-128)
+

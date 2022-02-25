@@ -25,7 +25,7 @@ define Package/kobs-ng
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Application for writing bootstreams to NAND flash
-  DEPENDS:=@TARGET_imx
+  DEPENDS:=@TARGET_imx6
 endef
 
 define Package/kobs-ng/description

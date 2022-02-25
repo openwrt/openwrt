@@ -7,15 +7,8 @@
 	compatible = "netgear,d7800", "qcom,ipq8064";
 
 	memory@0 {
-		reg = <0x42000000 0x1e000000>;
+		reg = <0x42000000 0xe000000>;
 		device_type = "memory";
-	};
-
-	reserved-memory {
-		rsvd@5fe00000 {
-			reg = <0x5fe00000 0x200000>;
-			reusable;
-		};
 	};
 
 	aliases {
@@ -40,24 +33,18 @@
 			label = "wifi";
 			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 
 		wps {
 			label = "wps";
 			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
-			debounce-interval = <60>;
-			wakeup-source;
 		};
 	};
 
@@ -182,22 +169,6 @@
 	reset-gpio = <&qcom_pinmux 3 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&pcie0_pins>;
 	pinctrl-names = "default";
-
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			compatible = "pci168c,0040";
-			reg = <0x00010000 0 0 0 0>;
-
-			nvmem-cells = <&macaddr_art_6>, <&precal_art_1000>;
-			nvmem-cell-names = "mac-address", "pre-calibration";
-			mac-address-increment = <(1)>;
-		};
-	};
 };
 
 &pcie1 {
@@ -206,29 +177,6 @@
 	pinctrl-0 = <&pcie1_pins>;
 	pinctrl-names = "default";
 	max-link-speed = <1>;
-
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			compatible = "pci168c,0040";
-			reg = <0x00010000 0 0 0 0>;
-
-			nvmem-cells = <&macaddr_art_6>, <&precal_art_5000>;
-			nvmem-cell-names = "mac-address", "pre-calibration";
-			mac-address-increment = <(2)>;
-		};
-	};
-};
-
-&pcie2 {
-	status = "okay";
-	reset-gpio = <&qcom_pinmux 63 GPIO_ACTIVE_HIGH>;
-	pinctrl-0 = <&pcie2_pins>;
-	pinctrl-names = "default";
 };
 
 &nand_controller {
@@ -247,9 +195,6 @@
 		nand-ecc-strength = <4>;
 		nand-bus-width = <8>;
 		nand-ecc-step-size = <512>;
-
-		nand-is-boot-medium;
-		qcom,boot_pages_size = <0x1180000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -274,29 +219,10 @@
 				read-only;
 			};
 
-			art@1200000 {
+			art: art@1200000 {
 				label = "art";
 				reg = <0x1200000 0x0140000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				macaddr_art_0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
-
-				macaddr_art_6: macaddr@6 {
-					reg = <0x6 0x6>;
-				};
-
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
-
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
-				};
 			};
 
 			artbak: art@1340000 {
@@ -312,7 +238,13 @@
 
 			ubi@1880000 {
 				label = "ubi";
-				reg = <0x1880000 0x6080000>;
+				reg = <0x1880000 0x1C00000>;
+			};
+
+			netgear@3480000 {
+				label = "netgear";
+				reg = <0x3480000 0x4480000>;
+				read-only;
 			};
 
 			reserve@7900000 {
@@ -356,8 +288,7 @@
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
 
-	nvmem-cells = <&macaddr_art_6>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&art 6>;
 
 	fixed-link {
 		speed = <1000>;
@@ -370,8 +301,7 @@
 	phy-mode = "sgmii";
 	qcom,id = <2>;
 
-	nvmem-cells = <&macaddr_art_0>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&art 0>;
 
 	fixed-link {
 		speed = <1000>;

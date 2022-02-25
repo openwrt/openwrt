@@ -7,13 +7,13 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=linux4sam-2021.10
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_VERSION:=linux4sam-2020.04
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/linux4sam/u-boot-at91.git
-PKG_MIRROR_HASH:=f1190062f2012b182b45b78263a4cce4ada9b7b8d6f5a66d68fa51437105fc8c
-PKG_SOURCE_VERSION:=39854ce82232cdc05c20158d0439bdbc40991e4a
+PKG_MIRROR_HASH:=4f106d215c01c4d024c4612bbd3ef189188d19abc1ab2cc316b257d308534feb
+PKG_SOURCE_VERSION:=0e1d1b6efb7f8e27c372279a906fcd2524df09da
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -47,18 +47,6 @@ define U-Boot/at91sam9x5ek_mmc
                  atmel_at91sam9x35ek
 endef
 
-define U-Boot/sam9x60ek_nandflash
-  NAME:=SAM9X60-EK board (NandFlash)
-  BUILD_SUBTARGET:=sam9x
-  BUILD_DEVICES:=microchip_sam9x60ek
-endef
-
-define U-Boot/sam9x60ek_mmc
-  NAME:=SAM9X60-EK board (SDcard)
-  BUILD_SUBTARGET:=sam9x
-  BUILD_DEVICES:=microchip_sam9x60ek
-endef
-
 define U-Boot/sama5d3_xplained_nandflash
   NAME:=SAMA5D3 Xplained board (NandFlash)
   BUILD_SUBTARGET:=sama5
@@ -69,12 +57,6 @@ define U-Boot/sama5d3_xplained_mmc
   NAME:=SAMA5D3 Xplained board (SDcard)
   BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=microchip_sama5d3-xplained
-endef
-
-define U-Boot/sama5d2_icp_mmc
-  NAME:=SAMA5D2 ICP board (SDCard)
-  BUILD_SUBTARGET:=sama5
-  BUILD_DEVICES:=microchip_sama5d2-icp
 endef
 
 define U-Boot/sama5d2_xplained_spiflash
@@ -119,18 +101,6 @@ define U-Boot/sama5d27_som1_ek_qspiflash
   BUILD_DEVICES:=microchip_sama5d27-som1-ek
 endef
 
-define U-Boot/sama5d27_wlsom1_ek_mmc
-  NAME:=SAMA5D27 WLSOM1 Ek (SDCard)
-  BUILD_SUBTARGET:=sama5
-  BUILD_DEVICES:=microchip_sama5d27-wlsom1-ek
-endef
-
-define U-Boot/sama5d27_wlsom1_ek_qspiflash
-  NAME:=SAMA5D27 WLSOM1 Ek (QSPI Flash)
-  BUILD_SUBTARGET:=sama5
-  BUILD_DEVICES:=microchip_sama5d27-wlsom1-ek
-endef
-
 define U-Boot/sama5d2_ptc_ek_nandflash
   NAME:=SAMA5D2 PTC Ek (Nand Flash)
   BUILD_SUBTARGET:=sama5
@@ -143,21 +113,12 @@ define U-Boot/sama5d2_ptc_ek_mmc
   BUILD_DEVICES:=microchip_sama5d2-ptc-ek
 endef
 
-define U-Boot/sama7g5ek_mmc1
-  NAME:=SAMA7G5-EK (SDCard)
-  BUILD_SUBTARGET:=sama7
-  BUILD_DEVICES:=microchip_sama7g5-ek
-endef
-
 UBOOT_TARGETS := \
 	at91sam9m10g45ek_nandflash \
 	at91sam9x5ek_nandflash \
 	at91sam9x5ek_mmc \
-	sam9x60ek_nandflash \
-	sam9x60ek_mmc \
 	sama5d3_xplained_nandflash \
 	sama5d3_xplained_mmc \
-	sama5d2_icp_mmc \
 	sama5d2_xplained_mmc \
 	sama5d2_xplained_spiflash \
 	sama5d4_xplained_mmc \
@@ -165,11 +126,8 @@ UBOOT_TARGETS := \
 	sama5d4_xplained_nandflash\
 	sama5d27_som1_ek_mmc1 \
 	sama5d27_som1_ek_qspiflash \
-	sama5d27_wlsom1_ek_mmc \
-	sama5d27_wlsom1_ek_qspiflash \
 	sama5d2_ptc_ek_nandflash \
-	sama5d2_ptc_ek_mmc \
-	sama7g5ek_mmc1
+	sama5d2_ptc_ek_mmc
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \

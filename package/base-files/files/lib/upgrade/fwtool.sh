@@ -81,12 +81,12 @@ fwtool_check_image() {
 	done
 
 	v "Device $device not supported by this image"
-	local devices="Supported devices:"
+	vn "Supported devices:"
 	for k in $dev_keys; do
 		json_get_var dev "$k"
-		devices="$devices $dev"
+		_vn " $dev"
 	done
-	v "$devices"
+	_v
 
 	return 1
 }

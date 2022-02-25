@@ -16,8 +16,6 @@
 		led-running = &led_dome_blue;
 		led-upgrade = &led_dome_blue;
 		mdio-gpio0 = &mdio0;
-		ethernet0 = &gmac2;
-		ethernet1 = &gmac1;
 	};
 
 	leds {
@@ -46,7 +44,6 @@
 			gpios = <&qcom_pinmux 68 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
-			wakeup-source;
 		};
 	};
 };
@@ -232,38 +229,38 @@
 
 	pinctrl-0 = <&mdio0_pins>;
 	pinctrl-names = "default";
+};
 
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-	};
+&gmac2 {
+	status = "okay";
 
-	phy5: ethernet-phy@5 {
-		reg = <5>;
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+	qcom,emulation = <0>;
+	mdiobus = <&mdio0>;
+
+	mtd-mac-address = <&eeprom 0x0>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
 	};
 };
 
 &gmac1 {
 	status = "okay";
 
-	mdiobus = <&mdio0>;
-	phy-handle = <&phy5>;
 	phy-mode = "sgmii";
 	qcom,id = <1>;
-
-	nvmem-cells = <&macaddr_eeprom_6>;
-	nvmem-cell-names = "mac-address";
-};
-
-&gmac2 {
-	status = "okay";
-
+	qcom,emulation = <0>;
 	mdiobus = <&mdio0>;
-	phy-handle = <&phy4>;
-	phy-mode = "sgmii";
-	qcom,id = <2>;
 
-	nvmem-cells = <&macaddr_eeprom_0>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&eeprom 0x6>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &pcie0 {
@@ -300,18 +297,4 @@
 
 &usb3_1 {
 	status = "okay";
-};
-
-&eeprom {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_eeprom_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_eeprom_6: macaddr@6 {
-		reg = <0x6 0x6>;
-	};
 };

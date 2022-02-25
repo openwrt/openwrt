@@ -99,22 +99,6 @@ endef
 $(eval $(call KernelPackage,ledtrig-oneshot))
 
 
-define KernelPackage/ledtrig-pattern
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Pattern Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_PATTERN
-  FILES:=$(LED_TRIGGER_DIR)/ledtrig-pattern.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-pattern)
-endef
-
-define KernelPackage/ledtrig-pattern/description
- This allows LEDs to be controlled by a software or hardware pattern
- which is a series of tuples, of brightness and duration (ms).
-endef
-
-$(eval $(call KernelPackage,ledtrig-pattern))
-
-
 define KernelPackage/leds-apu
   SUBMENU:=$(LEDS_MENU)
   TITLE:=PC Engines APU1 LED support
@@ -161,52 +145,3 @@ define KernelPackage/leds-pwm/description
 endef
 
 $(eval $(call KernelPackage,leds-pwm))
-
-
-define KernelPackage/leds-tlc591xx
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED driver for TLC59108 and TLC59116 controllers
-  DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c
-  KCONFIG:=CONFIG_LEDS_TLC591XX
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-tlc591xx.ko
-  AUTOLOAD:=$(call AutoLoad,60,leds-tlc591xx,1)
-endef
-
-define KernelPackage/leds-tlc591xx/description
- This option enables support for Texas Instruments TLC59108
- and TLC59116 LED controllers.
-endef
-
-$(eval $(call KernelPackage,leds-tlc591xx))
-
-
-define KernelPackage/leds-uleds
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=Userspace LEDs
-  KCONFIG:=CONFIG_LEDS_USER
-  FILES:=$(LINUX_DIR)/drivers/leds/uleds.ko
-  AUTOLOAD:=$(call AutoLoad,60,uleds,1)
-endef
-
-define KernelPackage/leds-uleds/description
- This option enables support for userspace LEDs.
-endef
-
-$(eval $(call KernelPackage,leds-uleds))
-
-
-define KernelPackage/input-leds
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=Input device LED support
-  DEPENDS:=+kmod-input-core
-  KCONFIG:=CONFIG_INPUT_LEDS
-  FILES:=$(LINUX_DIR)/drivers/input/input-leds.ko
-  AUTOLOAD:=$(call AutoLoad,50,input-leds,1)
-endef
-
-define KernelPackage/input-leds/description
- Provides support for LEDs on input devices- for example,
- keyboard num/caps/scroll lock.
-endef
-
-$(eval $(call KernelPackage,input-leds))

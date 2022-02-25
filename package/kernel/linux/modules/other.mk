@@ -182,6 +182,22 @@ endef
 $(eval $(call KernelPackage,eeprom-at25))
 
 
+define KernelPackage/gpio-dev
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Generic GPIO char device support
+  DEPENDS:=@GPIO_SUPPORT
+  KCONFIG:=CONFIG_GPIO_DEVICE
+  FILES:=$(LINUX_DIR)/drivers/char/gpio_dev.ko
+  AUTOLOAD:=$(call AutoLoad,40,gpio_dev)
+endef
+
+define KernelPackage/gpio-dev/description
+ Kernel module to allows control of GPIO pins using a character device.
+endef
+
+$(eval $(call KernelPackage,gpio-dev))
+
+
 define KernelPackage/gpio-f7188x
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Fintek F718xx/F818xx GPIO Support
@@ -770,41 +786,6 @@ endef
 $(eval $(call KernelPackage,mtdram))
 
 
-define KernelPackage/ramoops
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Ramoops (pstore-ram)
-  DEFAULT:=m if ALL_KMODS
-  KCONFIG:=CONFIG_PSTORE_RAM
-  DEPENDS:=+kmod-pstore +kmod-reed-solomon
-  FILES:= $(LINUX_DIR)/fs/pstore/ramoops.ko
-  AUTOLOAD:=$(call AutoLoad,30,ramoops,1)
-endef
-
-define KernelPackage/ramoops/description
- Kernel module for pstore-ram (ramoops) crash log storage
-endef
-
-$(eval $(call KernelPackage,ramoops))
-
-
-define KernelPackage/reed-solomon
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Reed-Solomon error correction
-  DEFAULT:=m if ALL_KMODS
-  KCONFIG:=CONFIG_REED_SOLOMON \
-	CONFIG_REED_SOLOMON_DEC8=y \
-	CONFIG_REED_SOLOMON_ENC8=y
-  FILES:= $(LINUX_DIR)/lib/reed_solomon/reed_solomon.ko
-  AUTOLOAD:=$(call AutoLoad,30,reed_solomon,1)
-endef
-
-define KernelPackage/reed-solomon/description
- Kernel module for Reed-Solomon error correction
-endef
-
-$(eval $(call KernelPackage,reed-solomon))
-
-
 define KernelPackage/serial-8250
   SUBMENU:=$(OTHER_MENU)
   TITLE:=8250 UARTs
@@ -1027,7 +1008,7 @@ $(eval $(call KernelPackage,ptp))
 define KernelPackage/ptp-qoriq
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Freescale QorIQ PTP support
-  DEPENDS:=@(TARGET_mpc85xx||TARGET_qoriq) +kmod-ptp
+  DEPENDS:=@TARGET_mpc85xx +kmod-ptp
   KCONFIG:=CONFIG_PTP_1588_CLOCK_QORIQ
   FILES:=$(LINUX_DIR)/drivers/ptp/ptp-qoriq.ko
   AUTOLOAD:=$(call AutoProbe,ptp-qoriq)

@@ -16,7 +16,7 @@ PKG_HASH:=4458d8de7849df44ccab15e16b1548b285224dbba5f08fac070c1c0e0bcc4cfa
 
 HOST_BUILD_PARALLEL := 1
 
-BUILD_PROGRAMS = date readlink touch ln chown
+BUILD_PROGRAMS = date readlink touch ln
 
 include $(INCLUDE_DIR)/host-build.mk
 

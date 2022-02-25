@@ -20,9 +20,8 @@ define KernelPackage/kvm-x86
   TITLE:=Kernel-based Virtual Machine (KVM) support
   DEPENDS:=@TARGET_x86_generic||TARGET_x86_64 +kmod-irqbypass
   KCONFIG:=\
-	  CONFIG_KVM \
-	  CONFIG_KVM_MMU_AUDIT=n \
-	  CONFIG_VIRTUALIZATION=y
+	  CONFIG_VIRTUALIZATION=y \
+	  CONFIG_KVM
   FILES:= $(LINUX_DIR)/arch/$(LINUX_KARCH)/kvm/kvm.ko
   AUTOLOAD:=$(call AutoProbe,kvm.ko)
 endef

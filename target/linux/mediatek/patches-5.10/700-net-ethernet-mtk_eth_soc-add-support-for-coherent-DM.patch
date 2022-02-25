@@ -9,7 +9,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
-@@ -364,7 +364,7 @@
+@@ -357,7 +357,7 @@
  		};
  
  		cci_control2: slave-if@5000 {
@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			interface-type = "ace";
  			reg = <0x5000 0x1000>;
  		};
-@@ -977,6 +977,8 @@
+@@ -969,6 +969,8 @@
  		power-domains = <&scpsys MT7622_POWER_DOMAIN_ETHSYS>;
  		mediatek,ethsys = <&ethsys>;
  		mediatek,sgmiisys = <&sgmiisys>;
@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/mfd/syscon.h>
  #include <linux/regmap.h>
  #include <linux/clk.h>
-@@ -2494,6 +2495,13 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -2482,6 +2483,13 @@ static int mtk_hw_init(struct mtk_eth *e
  	if (ret)
  		goto err_disable_pm;
  
@@ -51,7 +51,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
  		ret = device_reset(eth->dev);
  		if (ret) {
-@@ -3104,6 +3112,16 @@ static int mtk_probe(struct platform_dev
+@@ -3061,6 +3069,16 @@ static int mtk_probe(struct platform_dev
  		}
  	}
  
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  					  GFP_KERNEL);
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -456,6 +456,12 @@
+@@ -437,6 +437,12 @@
  #define RSTCTRL_FE		BIT(6)
  #define RSTCTRL_PPE		BIT(31)
  

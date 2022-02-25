@@ -32,8 +32,10 @@ define Device/netgear_generic
   KERNEL := kernel-bin | append-dtb | lzma -d20 | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | uImage lzma
   IMAGES += factory.img
-  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	netgear-squashfs | append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | check-size | append-metadata
-  IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size
+  IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | netgear-squashfs | \
+	append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | append-metadata | \
+	check-size
+  IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | \
+	check-size
 endef

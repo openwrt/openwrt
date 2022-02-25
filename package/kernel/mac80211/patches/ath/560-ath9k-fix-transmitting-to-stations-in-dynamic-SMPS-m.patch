@@ -1,0 +1,49 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 14 Feb 2021 19:45:50 +0100
+Subject: [PATCH] ath9k: fix transmitting to stations in dynamic SMPS mode
+
+When transmitting to a receiver in dynamic SMPS mode, all transmissions that
+use multiple spatial streams need to be sent using CTS-to-self or RTS/CTS to
+give the receiver's extra chains some time to wake up.
+This fixes the tx rate getting stuck at <= MCS7 for some clients, especially
+Intel ones, which make aggressive use of SMPS.
+
+Cc: stable@vger.kernel.org
+Reported-by: Martin Kennedy <hurricos@gmail.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -179,7 +179,8 @@ struct ath_frame_info {
+ 	s8 txq;
+ 	u8 keyix;
+ 	u8 rtscts_rate;
+-	u8 retries : 7;
++	u8 retries : 6;
++	u8 dyn_smps : 1;
+ 	u8 baw_tracked : 1;
+ 	u8 tx_power;
+ 	enum ath9k_key_type keytype:2;
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -1271,6 +1271,11 @@ static void ath_buf_set_rate(struct ath_
+ 				 is_40, is_sgi, is_sp);
+ 			if (rix < 8 && (tx_info->flags & IEEE80211_TX_CTL_STBC))
+ 				info->rates[i].RateFlags |= ATH9K_RATESERIES_STBC;
++			if (rix >= 8 && fi->dyn_smps) {
++				info->rates[i].RateFlags |=
++					ATH9K_RATESERIES_RTS_CTS;
++				info->flags |= ATH9K_TXDESC_CTSENA;
++			}
+ 
+ 			info->txpower[i] = ath_get_rate_txpower(sc, bf, rix,
+ 								is_40, false);
+@@ -2114,6 +2119,7 @@ static void setup_frame_info(struct ieee
+ 		fi->keyix = an->ps_key;
+ 	else
+ 		fi->keyix = ATH9K_TXKEYIX_INVALID;
++	fi->dyn_smps = sta && sta->smps_mode == IEEE80211_SMPS_DYNAMIC;
+ 	fi->keytype = keytype;
+ 	fi->framelen = framelen;
+ 	fi->tx_power = txpower;

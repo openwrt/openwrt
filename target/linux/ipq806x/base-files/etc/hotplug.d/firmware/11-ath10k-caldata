@@ -7,80 +7,93 @@
 board=$(board_name)
 
 case "$FIRMWARE" in
-"ath10k/cal-pci-0000:01:00.0.bin")
-	case "$board" in
-	meraki,mr52)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x1000 0x844
-		;;
-	esac
-	;;
 "ath10k/pre-cal-pci-0000:01:00.0.bin")
 	case $board in
-	askey,rt4230w-rev6)
+	asrock,g10)
 		caldata_extract "0:ART" 0x1000 0x2f20
 		;;
-	asrock,g10)
-		caldata_extract "0:art" 0x1000 0x2f20
+	buffalo,wxr-2533dhp)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary ART 0x1e)
+		;;
+	edgecore,ecw5410)
+		caldata_extract "0:ART" 0x1000 0x2f20
 		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
 		caldata_extract "art" 0x1000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 1)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) +1)
 		;;
-	meraki,mr42)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x1000 0x2f20
+	nec,wg2600hp |\
+	nec,wg2600hp3)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary PRODUCTDATA 0x12)
+		;;
+	netgear,d7800 |\
+	netgear,r7500v2 |\
+	netgear,r7800)
+		caldata_extract "art" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x6) +1)
+		;;
+	tplink,ad7200 |\
+	tplink,c2600)
+		caldata_extract "radio" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary default-mac 0x8) -1)
+		;;
+	tplink,vr2600v)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary default-mac 0x0) -1)
 		;;
 	zyxel,nbg6817)
-		caldata_extract "0:art" 0x1000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 1)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:APPSBLENV ethaddr) +1)
 		;;
 	esac
 	;;
 "ath10k/pre-cal-pci-0001:01:00.0.bin")
 	case $board in
-	askey,rt4230w-rev6)
+	asrock,g10)
 		caldata_extract "0:ART" 0x5000 0x2f20
 		;;
-	asrock,g10)
-		caldata_extract "0:art" 0x5000 0x2f20
-		;;
-	edgecore,ecw5410)
-		caldata_extract "0:art" 0x1000 0x2f20
+	buffalo,wxr-2533dhp)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary ART 0x18)
 		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
 		caldata_extract "art" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 2)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) +2)
 		;;
-	meraki,mr42 |\
-	meraki,mr52)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x5000 0x2f20
+	nec,wg2600hp |\
+	nec,wg2600hp3)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary PRODUCTDATA 0xc)
+		;;
+	netgear,d7800 |\
+	netgear,r7500v2 |\
+	netgear,r7800)
+		caldata_extract "art" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x6) +2)
+		;;
+	tplink,ad7200 |\
+	tplink,c2600)
+		caldata_extract "radio" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary default-mac 0x8)
+		;;
+	tplink,vr2600v)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_binary default-mac 0x0)
 		;;
 	zyxel,nbg6817)
-		caldata_extract "0:art" 0x5000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_ascii 0:appsblenv ethaddr)
-		;;
-	esac
-	;;
-"ath10k/cal-pci-0002:01:00.0.bin")
-	case "$board" in
-	meraki,mr42)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x9000 0x844
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
 		;;
 	esac
 	;;
 "ath10k/pre-cal-pci-0002:01:00.0.bin")
 	case $board in
 	edgecore,ecw5410)
-		caldata_extract "0:art" 0x5000 0x2f20
-		;;
-	meraki,mr52)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x9000 0x2f20
+		caldata_extract "0:ART" 0x5000 0x2f20
 		;;
 	esac
 	;;
