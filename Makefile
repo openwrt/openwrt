@@ -133,7 +133,7 @@ ifneq ($(CONFIG_CCACHE),)
 	$(STAGING_DIR_HOST)/bin/ccache -s
 endif
 
-publish: 
+publish: FORCE
 	rsync -avc --progress --stats bin root@vpn.theleadbetters.com:/var/lib/docker/volumes/htpc_opkg-repo/_data/
 
 
