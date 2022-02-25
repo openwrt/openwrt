@@ -2,6 +2,7 @@
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
+DEVICE_VARS += TPLINK_BOARD_ID
 
 define Device/FitImage
 	KERNEL_SUFFIX := -fit-uImage.itb
@@ -962,6 +963,21 @@ define Device/teltonika_rutx10
 	DEVICE_PACKAGES := ipq-wifi-teltonika_rutx kmod-bluetooth
 endef
 TARGET_DEVICES += teltonika_rutx10
+
+define Device/tplink_deco-m5
+        $(call Device/FitImage)
+        DEVICE_VENDOR := TP-Link
+        DEVICE_MODEL := Deco-M5
+        SOC := qcom-ipq4019
+        DEVICE_PACKAGES := ipq-wifi-tplink_deco-m5
+        TPLINK_BOARD_ID := DECO-M5
+        IMAGE_SIZE := 16640k
+        IMAGES += factory.bin
+        IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+        IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += tplink_deco-m5
+
 
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)

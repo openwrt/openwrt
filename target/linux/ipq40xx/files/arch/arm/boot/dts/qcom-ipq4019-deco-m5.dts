@@ -1,0 +1,349 @@
+// SPDX-License-Identifier: ISC
+/* Copyright (c) 2015, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022
+ */
+
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "TP-Link Deco M5";
+	compatible = "tplink,deco-m5", "qcom,ipq4019";
+
+	chosen {
+		bootargs-append = " root=/dev/mtdblock16";
+	};
+
+	aliases {
+		led-boot = &led_blue;
+		led-failsafe = &led_red;
+		led-running = &led_green;
+		led-upgrade = &led_red;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_red: rgb_red {
+			label = "rgb:red";
+			gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
+		};
+
+		led_green: rgb_green {
+			label = "rgb:green";
+			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+		};
+
+		led_blue: rgb_blue {
+			label = "rgb:blue";
+			gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	soc {
+		pinctrl@1000000 {
+			serial_0_pins: serial_0_pinmux {
+				pinmux {
+					pins = "gpio16", "gpio17";
+					function = "blsp_uart0";
+					bias-disable;
+				};
+			};
+
+			serial_1_pins: serial_1_pinmux {
+				pinmux {
+					pins = "gpio8", "gpio9", "gpio10", "gpio11";
+					function = "blsp_uart1";
+					bias-disable;
+				};
+			};
+
+			spi_0_pins: spi_0_pinmux {
+				pinmux {
+					pins = "gpio13", "gpio14", "gpio15";
+					function = "blsp_spi0";
+				};
+				pinmux_cs {
+					pins = "gpio12";
+					function = "gpio";
+				};
+				pinconf {
+					pins = "gpio13", "gpio14", "gpio15";
+					drive-strength = <12>;
+					bias-disable;
+				};
+				pinconf_cs {
+					pins = "gpio12";
+					drive-strength = <2>;
+					bias-disable;
+					output-high;
+				};
+			};
+
+			i2c_0_pins: i2c_0_pinmux {
+				pinmux {
+					pins = "gpio20", "gpio21";
+					function = "blsp_i2c0";
+				};
+				pinconf {
+					pins = "gpio20", "gpio21";
+					drive-strength = <16>;
+					bias-disable;
+				};
+			};
+
+			wifi_pins: wifi_pinmux {
+				pinmux_1 {
+					pins = "gpio37";
+					function = "gpio";
+					drive-strength = <6>;
+					bias-pull-up;
+					output-high;
+				};
+
+				pinmux_2 {
+					pins = "gpio42";
+					function = "gpio";
+					drive-strength = <6>;
+					bias-pull-up;
+					output-high;
+				};
+
+				pinmux_3 {
+					pins = "gpio43";
+					function = "gpio";
+					drive-strength = <6>;
+					bias-pull-up;
+				};
+			};
+		};
+
+		blsp_dma {
+			status = "okay";
+		};
+
+		spi_0: spi@78b5000 {
+			pinctrl-0 = <&spi_0_pins>;
+			pinctrl-names = "default";
+			status = "okay";
+			cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+
+			flash@0 {
+				reg = <0>;
+				compatible = "jedec,spi-nor";
+				spi-max-frequency = <24000000>;
+				broken-flash-reset;
+
+				partitions {
+					#address-cells = <1>;
+					#size-cells = <1>;
+					compatible = "fixed-partitions";
+
+					partition@0 {
+						label = "0:SBL1";
+						reg = <0x00000000 0x00030000>;
+						read-only;
+					};
+					partition@30000 {
+						label = "0:BOOTCONFIG";
+						reg = <0x00030000 0x00010000>;
+						read-only;
+					};
+					partition@40000 {
+						label = "0:MIBIB";
+						reg = <0x00040000 0x00010000>;
+						read-only;
+					};
+					partition@50000 {
+						label = "0:BOOTCONFIG1";
+						reg = <0x00050000 0x00010000>;
+						read-only;
+					};
+					partition@60000 {
+						label = "0:QSEE";
+						reg = <0x00060000 0x00060000>;
+						read-only;
+					};
+					partition@c0000 {
+						label = "0:CDT";
+						reg = <0x000c0000 0x00010000>;
+						read-only;
+					};
+					partition@d0000 {
+						label = "0:DDRPARAMS";
+						reg = <0x000d0000 0x00010000>;
+						read-only;
+					};
+					partition@e0000 {
+						label = "0:APPSBLENV";
+						reg = <0x000e0000 0x00010000>;
+						read-only;
+					};
+					partition@f0000 {
+						label = "0:APPSBL";
+						reg = <0x000f0000 0x00080000>;
+						read-only;
+					};
+					partition@170000 {
+						label = "0:ART";
+						reg = <0x00170000 0x00010000>;
+						read-only;
+					};
+					partition@180000 {
+						label = "OPAQUE";
+						reg = <0x00180000 0x000c0000>;
+						read-only;
+					};
+					partition@240000 {
+						label = "0:HLOS";
+						reg = <0x00240000 0x00300000>;
+						read-only;
+					};
+					partition@540000 {
+						label = "0:rootfs";
+						reg = <0x00540000 0x007d0000>;
+						read-only;
+					};
+					partition@d10000 {
+						label = "0:APPSBL_1";
+						reg = <0x00d10000 0x00080000>;
+						read-only;
+					};
+					partition@d90000 {
+						label = "firmware";
+						compatible = "denx,fit";
+						reg = <0x00d90000 0x01270000>;
+					};
+				};
+			};
+		};
+
+		i2c_0: i2c@78b7000 {
+			pinctrl-0 = <&i2c_0_pins>;
+			pinctrl-names = "default";
+			status = "okay";
+		};
+
+		serial_0: serial@78af000 {
+			pinctrl-0 = <&serial_0_pins>;
+			pinctrl-names = "default";
+			status = "okay";
+		};
+
+		serial_1: serial@78b0000 {
+			pinctrl-0 = <&serial_1_pins>;
+			pinctrl-names = "default";
+			status = "okay";
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+			status = "okay";
+		};
+
+		usb2: usb2@60f8800 {
+			status = "okay";
+		};
+
+		usb2_hs_phy: hsphy@a8000 {
+			status = "okay";
+		};
+
+		usb3: usb3@8af8800 {
+			status = "okay";
+		};
+
+		usb3_hs_phy: hsphy@a6000 {
+			status = "okay";
+		};
+
+		usb3_ss_phy: ssphy@9a000 {
+			status = "okay";
+		};
+
+		crypto@8e3a000 {
+			status = "okay";
+		};
+
+		cryptobam: dma@8e04000 {
+			status = "okay";
+		};
+
+		watchdog@b017000 {
+			status = "okay";
+		};
+
+		edma@c080000 {
+			status = "okay";
+
+			gmac0 {
+				qcom,poll_required = <0x1>;
+				qcom,phy_mdio_addr = <0x4>;
+				vlan_tag = <0x2 0x20>;
+			};
+
+			gmac1 {
+				qcom,poll_required = <0x1>;
+				qcom,phy_mdio_addr = <0x3>;
+				vlan_tag = <0x1 0x1e>;
+			};
+		};
+
+        ess-switch@c000000 {
+			status = "okay";
+		};
+
+        ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+        ess-psgmii@98000 {
+			status = "okay";
+		};
+
+        mdio@90000 {
+			status = "okay";
+		};
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+
+		wifi_0: wifi@a000000 {
+			pinctrl-0 = <&wifi_pins>;
+			pinctrl-names = "default";
+			qcom,ath10k-calibration-variant = "TP-Link_Deco_M5";
+			status = "okay";
+		};
+
+		wifi_1: wifi@a800000 {
+			qcom,ath10k-calibration-variant = "TP-Link_Deco_M5";
+			status = "okay";
+		};
+	};
+};
