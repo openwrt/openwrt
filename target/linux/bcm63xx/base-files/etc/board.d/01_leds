@@ -27,10 +27,9 @@ adb,a4001n1)
 	ucidef_set_led_usbdev "usb" "USB" "green:3g" "1-1"
 	;;
 adb,pdg-a4001n-a-000-1a1-ax|\
+technicolor,tg582n|\
 technicolor,tg582n-telecom-italia)
 	ucidef_set_led_netdev "wlan0" "WIFI" "green:wifi" "wlan0"
-	ucidef_set_led_usbdev "usb1" "USB1" "green:service" "1-1"
-	ucidef_set_led_usbdev "usb2" "USB2" "red:service" "2-1"
 	;;
 adb,av4202n)
 	ucidef_set_led_netdev "wlan0" "WLAN" "blue:wifi" "wlan0"
@@ -91,10 +90,6 @@ sercomm,ad1018-nor)
 sercomm,h500-s-lowi|\
 sercomm,h500-s-vfes)
 	ucidef_set_led_netdev "wan" "WAN" "green:internet" "eth0.2"
-	;;
-technicolor,tg582n)
-	ucidef_set_led_netdev "wlan0" "WIFI" "green:wifi" "wlan0"
-	ucidef_set_led_usbdev "usb" "USB" "red:power" "1-1"
 	;;
 telsey,cpva502plus)
 	ucidef_set_led_netdev "lan" "LAN" "amber:link" "eth0"

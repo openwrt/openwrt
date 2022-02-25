@@ -94,7 +94,8 @@ proto_qmi_setup() {
 		fi
 	done
 
-	if uqmi -s -d "$device" --get-pin-status | grep '"Not supported"\|"Invalid QMI command"' > /dev/null; then
+	if uqmi -s -d "$device" --uim-get-sim-state | grep -q '"Not supported"\|"Invalid QMI command"' &&
+	   uqmi -s -d "$device" --get-pin-status | grep -q '"Not supported"\|"Invalid QMI command"' ; then
 		[ -n "$pincode" ] && {
 			uqmi -s -d "$device" --verify-pin1 "$pincode" > /dev/null || uqmi -s -d "$device" --uim-verify-pin1 "$pincode" > /dev/null || {
 				echo "Unable to verify PIN"
@@ -105,7 +106,8 @@ proto_qmi_setup() {
 		}
 	else
 		. /usr/share/libubox/jshn.sh
-		json_load "$(uqmi -s -d "$device" --get-pin-status)"
+		json_load "$(uqmi -s -d "$device" --get-pin-status)" 2>&1 | grep -q Failed &&
+			json_load "$(uqmi -s -d "$device" --uim-get-sim-state)"
 		json_get_var pin1_status pin1_status
 		json_get_var pin1_verify_tries pin1_verify_tries
 
@@ -144,7 +146,7 @@ proto_qmi_setup() {
 				echo "PIN already verified"
 				;;
 			*)
-				echo "PIN status failed ($pin1_status)"
+				echo "PIN status failed (${pin1_status:-sim_not_present})"
 				proto_notify_error "$interface" PIN_STATUS_FAILED
 				proto_block_restart "$interface"
 				return 1
@@ -209,19 +211,36 @@ proto_qmi_setup() {
 
 	uqmi -s -d "$device" --sync > /dev/null 2>&1
 
+	uqmi -s -d "$device" --network-register > /dev/null 2>&1
+
 	echo "Waiting for network registration"
+	sleep 1
 	local registration_timeout=0
-	while uqmi -s -d "$device" --get-serving-system | grep '"searching"' > /dev/null; do
-		[ -e "$device" ] || return 1
-		if [ "$registration_timeout" -lt "$timeout" -o "$timeout" = "0" ]; then
-			let registration_timeout++
-			sleep 1;
+	local registration_state=""
+	while true; do
+		registration_state=$(uqmi -s -d "$device" --get-serving-system 2>/dev/null | jsonfilter -e "@.registration" 2>/dev/null)
+
+		[ "$registration_state" = "registered" ] && break
+
+		if [ "$registration_state" = "searching" ] || [ "$registration_state" = "not_registered" ]; then
+			if [ "$registration_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
+				[ "$registration_state" = "searching" ] || {
+					echo "Device stopped network registration. Restart network registration"
+					uqmi -s -d "$device" --network-register > /dev/null 2>&1
+				}
+				let registration_timeout++
+				sleep 1
+				continue
+			fi
+			echo "Network registration failed, registration timeout reached"
 		else
-			echo "Network registration failed"
-			proto_notify_error "$interface" NETWORK_REGISTRATION_FAILED
-			proto_block_restart "$interface"
-			return 1
+			# registration_state is 'registration_denied' or 'unknown' or ''
+			echo "Network registration failed (reason: '$registration_state')"
 		fi
+
+		proto_notify_error "$interface" NETWORK_REGISTRATION_FAILED
+		proto_block_restart "$interface"
+		return 1
 	done
 
 	[ -n "$modes" ] && uqmi -s -d "$device" --set-network-modes "$modes" > /dev/null 2>&1

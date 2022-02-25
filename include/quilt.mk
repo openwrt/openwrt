@@ -159,7 +159,7 @@ define Quilt/Template
 		false; \
 	}
 	@[ -n "$$$$(ls $(1)/patches/series)" -o \
-	   "$$$$(cat $(1)/patches/series | mkhash md5)" = "$$(sort $(1)/patches/series | mkhash md5)" ] || { \
+	   "$$$$(cat $(1)/patches/series | $(MKHASH) md5)" = "$$(sort $(1)/patches/series | $(MKHASH) md5)" ] || { \
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}

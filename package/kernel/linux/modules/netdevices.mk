@@ -196,6 +196,21 @@ endef
 
 $(eval $(call KernelPackage,et131x))
 
+define KernelPackage/phy-microchip
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Microchip Ethernet PHY driver
+   KCONFIG:=CONFIG_MICROCHIP_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/microchip.ko
+   AUTOLOAD:=$(call AutoLoad,18,microchip,1)
+endef
+
+define KernelPackage/phy-microchip/description
+   Supports the LAN88XX PHYs.
+endef
+
+$(eval $(call KernelPackage,phy-microchip))
+
 
 define KernelPackage/phylib-broadcom
    SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -657,7 +672,7 @@ define KernelPackage/igb
     CONFIG_IGB_HWMON=y \
     CONFIG_IGB_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igb/igb.ko
-  AUTOLOAD:=$(call AutoLoad,35,igb)
+  AUTOLOAD:=$(call AutoLoad,35,igb,1)
 endef
 
 define KernelPackage/igb/description
@@ -885,6 +900,22 @@ endef
 $(eval $(call KernelPackage,macvlan))
 
 
+define KernelPackage/ipvlan
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=IP-VLAN support
+  KCONFIG:=CONFIG_IPVLAN
+  FILES:=$(LINUX_DIR)/drivers/net/ipvlan/ipvlan.ko
+  AUTOLOAD:=$(call AutoProbe,ipvlan)
+endef
+
+define KernelPackage/ipvlan/description
+ A kernel module which allows one to create virtual interfaces that
+ map packets to or from specific IP addresses to a particular interface
+endef
+
+$(eval $(call KernelPackage,ipvlan))
+
+
 define KernelPackage/tulip
   TITLE:=Tulip family network device support
   DEPENDS:=@PCI_SUPPORT +kmod-mii
@@ -1003,13 +1034,28 @@ endef
 
 $(eval $(call KernelPackage,forcedeth))
 
+define KernelPackage/fixed-phy
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MDIO Bus/PHY emulation with fixed speed/link PHYs
+  DEPENDS:=+kmod-libphy
+  KCONFIG:=CONFIG_FIXED_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko
+  AUTOLOAD:=$(call AutoProbe,fixed_phy)
+endef
+
+define KernelPackage/fixed-phy/description
+ Kernel driver for "fixed" MDIO Bus to cover the boards
+ and devices that use PHYs that are not connected to the real MDIO bus.
+endef
+
+$(eval $(call KernelPackage,fixed-phy))
+
 define KernelPackage/of-mdio
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=OpenFirmware MDIO support
-  DEPENDS:=+kmod-libphy @!TARGET_x86
+  DEPENDS:=+kmod-libphy +kmod-fixed-phy @!TARGET_x86
   KCONFIG:=CONFIG_OF_MDIO
   FILES:= \
-	$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko \
 	$(LINUX_DIR)/drivers/of/of_mdio.ko@lt5.10 \
 	$(LINUX_DIR)/drivers/net/mdio/of_mdio.ko@ge5.10
   AUTOLOAD:=$(call AutoLoad,41,of_mdio)
@@ -1175,6 +1221,26 @@ define KernelPackage/mlx5-core/description
 endef
 
 $(eval $(call KernelPackage,mlx5-core))
+
+
+define KernelPackage/qlcnic
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=@PCI_SUPPORT +kmod-hwmon-core
+  TITLE:=QLogic QLE8240 and QLE8242 device support
+  KCONFIG:= \
+	CONFIG_QLCNIC \
+	CONFIG_QLCNIC_HWMON=y \
+	CONFIG_QLCNIC_SRIOV=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/qlogic/qlcnic/qlcnic.ko
+  AUTOLOAD:=$(call AutoProbe,qlcnic)
+endef
+
+define KernelPackage/qlcnic/description
+  This driver supports QLogic QLE8240 and QLE8242 Converged Ethernet
+  devices.
+endef
+
+$(eval $(call KernelPackage,qlcnic))
 
 
 define KernelPackage/sfp

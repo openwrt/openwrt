@@ -209,10 +209,10 @@ add_group_and_user() {
 	if [ -n "$rusers" ]; then
 		local tuple oIFS="$IFS"
 		for tuple in $rusers; do
-			local uid gid uname gname
+			local uid gid uname gname addngroups addngroup addngname addngid
 
 			IFS=":"
-			set -- $tuple; uname="$1"; gname="$2"
+			set -- $tuple; uname="$1"; gname="$2"; addngroups="$3"
 			IFS="="
 			set -- $uname; uname="$1"; uid="$2"
 			set -- $gname; gname="$1"; gid="$2"
@@ -232,7 +232,24 @@ add_group_and_user() {
 				group_add_user "$gname" "$uname"
 			fi
 
-			unset uid gid uname gname
+			if [ -n "$uname" ] &&  [ -n "$addngroups" ]; then
+				oIFS="$IFS"
+				IFS=","
+				for addngroup in $addngroups ; do
+					IFS="="
+					set -- $addngroup; addngname="$1"; addngid="$2"
+					if [ -n "$addngid" ]; then
+						group_exists "$addngname" || group_add "$addngname" "$addngid"
+					else
+						group_add_next "$addngname"
+					fi
+
+					group_add_user "$addngname" "$uname"
+				done
+				IFS="$oIFS"
+			fi
+
+			unset uid gid uname gname addngroups addngroup addngname addngid
 		done
 	fi
 }
@@ -311,6 +328,25 @@ find_mtd_part() {
 
 	[ -d /dev/mtdblock ] && PREFIX=/dev/mtdblock/
 	echo "${INDEX:+$PREFIX$INDEX}"
+}
+
+find_mmc_part() {
+	local DEVNAME PARTNAME ROOTDEV
+
+	if grep -q "$1" /proc/mtd; then
+		echo "" && return 0
+	fi
+
+	if [ -n "$2" ]; then
+		ROOTDEV="$2"
+	else
+		ROOTDEV="mmcblk*"
+	fi
+
+	for DEVNAME in /sys/block/$ROOTDEV/mmcblk*p*; do
+		PARTNAME="$(grep PARTNAME ${DEVNAME}/uevent | cut -f2 -d'=')"
+		[ "$PARTNAME" = "$1" ] && echo "/dev/$(basename $DEVNAME)" && return 0
+	done
 }
 
 group_add() {

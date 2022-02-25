@@ -12,9 +12,9 @@ PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
-PKG_SOURCE_DATE:=2021-03-21
-PKG_SOURCE_VERSION:=7ee456346baca29af40a6d1a5071e57f32ebf762
-PKG_MIRROR_HASH:=aad23bc8f0548a46e60e4967b3f6645f03bad61c395269244c3509cc41f2c3d0
+PKG_MIRROR_HASH:=af4ca76197b89943c85e4e2d27a1036f43337d475971d0041cb525bcbca075c1
+PKG_SOURCE_DATE:=2022-02-19
+PKG_SOURCE_VERSION:=ad652490d47916a27c01e3dd8f9eafcecbb4bc7f
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -32,7 +32,7 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell echo $(CONFIG_TARGET_INIT_PATH) | mkhash md5)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell echo $(CONFIG_TARGET_INIT_PATH) | $(MKHASH) md5)
 endif
 
 CMAKE_OPTIONS += -DEARLY_PATH="$(TARGET_INIT_PATH)"
@@ -68,29 +68,21 @@ define Package/procd-ujail
   SECTION:=base
   CATEGORY:=Base system
   DEPENDS:=@KERNEL_NAMESPACES +@KERNEL_UTS_NS +@KERNEL_IPC_NS +@KERNEL_PID_NS \
-	  +libubox +libubus +libblobmsg-json
+	  +libubox +libubus +libuci +libblobmsg-json
   TITLE:=OpenWrt process jail helper
-endef
-
-define Package/procd-ujail-console
-  SECTION:=base
-  CATEGORY:=Base system
-  DEPENDS:=+procd-ujail +libubus +libubox
-  TITLE:=OpenWrt process jail console
 endef
 
 define Package/procd-seccomp
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@(aarch64||arm||armeb||mips||mipsel||i386||powerpc||x86_64) @!TARGET_uml \
-	  @KERNEL_SECCOMP +libubox +libblobmsg-json
+  DEPENDS:=@SECCOMP +libubox +libblobmsg-json
   TITLE:=OpenWrt process seccomp helper + utrace
 endef
 
 define Package/uxc
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+procd-ujail +libubus +libubox +libblobmsg-json
+  DEPENDS:=+procd-ujail +libubus +libubox +libblobmsg-json +blockd +PACKAGE_uxc:rpcd
   TITLE:=OpenWrt container management
   MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 endef
@@ -147,11 +139,6 @@ define Package/procd-ujail/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ujail $(1)/sbin/
 endef
 
-define Package/procd-ujail-console/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ujail-console $(1)/sbin/
-endef
-
 define Package/procd-seccomp/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/lib
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libpreload-seccomp.so $(1)/lib
@@ -174,6 +161,5 @@ endef
 $(eval $(call BuildPackage,procd))
 $(eval $(call BuildPackage,procd-selinux))
 $(eval $(call BuildPackage,procd-ujail))
-$(eval $(call BuildPackage,procd-ujail-console))
 $(eval $(call BuildPackage,procd-seccomp))
 $(eval $(call BuildPackage,uxc))

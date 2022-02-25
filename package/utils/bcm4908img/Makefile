@@ -3,7 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bcm4908img
-PKG_RELEASE:=1
+PKG_RELEASE:=3
+
+PKG_FLAGS:=nonshared
 
 PKG_BUILD_DEPENDS := bcm4908img/host
 

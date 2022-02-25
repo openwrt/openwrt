@@ -48,7 +48,7 @@
  
  	/* Pull of_node from the master device node */
  	mtd_node = mtd_get_of_node(master);
-@@ -93,7 +127,9 @@ static int parse_fixed_partitions(struct
+@@ -95,7 +129,9 @@ static int parse_fixed_partitions(struct
  		return 0;
  
  	parts = kcalloc(nr_parts, sizeof(*parts), GFP_KERNEL);
@@ -59,7 +59,7 @@
  		return -ENOMEM;
  
  	i = 0;
-@@ -145,6 +181,11 @@ static int parse_fixed_partitions(struct
+@@ -147,6 +183,11 @@ static int parse_fixed_partitions(struct
  		if (of_property_read_bool(pp, "slc-mode"))
  			parts[i].add_flags |= MTD_SLC_ON_MLC_EMULATION;
  
@@ -71,7 +71,7 @@
  		i++;
  	}
  
-@@ -154,6 +195,11 @@ static int parse_fixed_partitions(struct
+@@ -156,6 +197,11 @@ static int parse_fixed_partitions(struct
  	if (quirks && quirks->post_parse)
  		quirks->post_parse(master, parts, nr_parts);
  
@@ -83,7 +83,7 @@
  	*pparts = parts;
  	return nr_parts;
  
-@@ -164,6 +210,7 @@ ofpart_fail:
+@@ -166,6 +212,7 @@ ofpart_fail:
  ofpart_none:
  	of_node_put(pp);
  	kfree(parts);

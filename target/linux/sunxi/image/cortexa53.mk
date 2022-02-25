@@ -40,6 +40,15 @@ define Device/friendlyarm_nanopi-neo2
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo2
 
+define Device/friendlyarm_nanopi-r1s-h5
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := Nanopi R1S H5
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-usb-net-rtl8152
+  SUPPORTED_DEVICES:=nanopi-r1s-h5
+  $(Device/sun50i-h5)
+endef
+TARGET_DEVICES += friendlyarm_nanopi-r1s-h5
+
 define Device/libretech_all-h3-cc-h5
   DEVICE_VENDOR := Libre Computer
   DEVICE_MODEL := ALL-H3-CC
@@ -52,7 +61,7 @@ TARGET_DEVICES += libretech_all-h3-cc-h5
 define Device/olimex_a64-olinuxino
   DEVICE_VENDOR := Olimex
   DEVICE_MODEL := A64-Olinuxino
-  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bu-firmware
   $(Device/sun50i-a64)
   SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-olinuxino
 endef
@@ -62,7 +71,7 @@ define Device/olimex_a64-olinuxino-emmc
   DEVICE_VENDOR := Olimex
   DEVICE_MODEL := A64-Olinuxino
   DEVICE_VARIANT := eMMC
-  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bu-firmware
   $(Device/sun50i-a64)
   SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-olinuxino-emmc
 endef
@@ -71,7 +80,7 @@ TARGET_DEVICES += olimex_a64-olinuxino-emmc
 define Device/pine64_pine64-plus
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := Pine64+
-  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bu-firmware
   $(Device/sun50i-a64)
 endef
 TARGET_DEVICES += pine64_pine64-plus
@@ -79,7 +88,7 @@ TARGET_DEVICES += pine64_pine64-plus
 define Device/pine64_sopine-baseboard
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := SoPine
-  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bs-firmware
+  DEVICE_PACKAGES := kmod-rtl8723bs rtl8723bu-firmware
   $(Device/sun50i-a64)
 endef
 TARGET_DEVICES += pine64_sopine-baseboard

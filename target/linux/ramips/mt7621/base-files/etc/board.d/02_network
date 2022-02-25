@@ -8,23 +8,11 @@ ramips_setup_interfaces()
 	local board="$1"
 
 	case $board in
-	asiarf,ap7621-001|\
-	winstars,ws-wn583a6)
-		ucidef_set_interfaces_lan_wan "lan" "wan"
-		;;
-	asiarf,ap7621-nv1|\
-	glinet,gl-mt1300|\
-	lenovo,newifi-d1|\
-	mikrotik,routerboard-m33g|\
-	xiaomi,mi-router-3g|\
-	xiaomi,mi-router-3g-v2|\
-	xiaomi,mi-router-4|\
-	xiaomi,mi-router-4a-gigabit)
-		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
-		;;
+	ampedwireless,ally-00x19k|\
 	edimax,re23s|\
 	mikrotik,routerboard-m11g|\
 	netgear,ex6150|\
+	sercomm,na502|\
 	thunder,timecloud|\
 	tplink,re350-v1|\
 	tplink,re500-v1|\
@@ -33,12 +21,33 @@ ramips_setup_interfaces()
 	ubnt,unifi-nanohd)
 		ucidef_set_interface_lan "lan"
 		;;
+	ampedwireless,ally-r1900k|\
 	gehua,ghl-r-001|\
 	hiwifi,hc5962|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-ac2100|\
+	xiaomi,mi-router-cr6606|\
+	xiaomi,mi-router-cr6608|\
+	xiaomi,mi-router-cr6609|\
 	xiaomi,redmi-router-ac2100)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	asiarf,ap7621-001|\
+	humax,e10|\
+	winstars,ws-wn583a6)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
+	asiarf,ap7621-nv1|\
+	glinet,gl-mt1300|\
+	iptime,a3002mesh|\
+	jcg,q20|\
+	lenovo,newifi-d1|\
+	mikrotik,routerboard-m33g|\
+	xiaomi,mi-router-3g|\
+	xiaomi,mi-router-3g-v2|\
+	xiaomi,mi-router-4|\
+	xiaomi,mi-router-4a-gigabit)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	gnubee,gb-pc1|\
 	gnubee,gb-pc2)
@@ -63,6 +72,12 @@ ramips_setup_interfaces()
 	ubnt,edgerouter-x-sfp)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4 eth5" "eth0"
 		;;
+	ubnt,usw-flex)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
+		;;
+	zyxel,nr7101)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	zyxel,wap6805)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "qtn" ifname "eth1" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.0"
@@ -81,6 +96,15 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
+	ampedwireless,ally-00x19k)
+		lan_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
+		label_mac=$lan_mac
+		;;
+	ampedwireless,ally-r1900k)
+		lan_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
+		wan_mac=$(mtd_get_mac_ascii hwconfig HW.WAN.MAC.Address)
+		label_mac=$lan_mac
+		;;
 	asus,rt-ac65p|\
 	asus,rt-ac85p)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
@@ -115,6 +139,10 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
+	iptime,t5004)
+		lan_mac=$(mtd_get_mac_ascii config ethaddr)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		;;
 	jcg,y2|\
 	wavlink,wl-wn531a6|\
 	winstars,ws-wn583a6|\
@@ -123,9 +151,13 @@ ramips_setup_macs()
 	zbtlink,zbt-wg3526-32m)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
+	linksys,e5600|\
+	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
-	linksys,ea7500-v2)
+	linksys,ea7500-v2|\
+	linksys,ea8100-v1|\
+	linksys,ea8100-v2)
 		lan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		wan_mac=$lan_mac
 		label_mac=$lan_mac
@@ -137,6 +169,11 @@ ramips_setup_macs()
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add $label_mac 1)
+		;;
+	raisecom,msg1500-x-00)
+		lan_mac=$(mtd_get_mac_ascii Config protest_lan_mac)
+		wan_mac=$(mtd_get_mac_ascii Config protest_wan_mac)
+		label_mac=$lan_mac
 		;;
 	esac
 

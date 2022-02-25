@@ -29,6 +29,8 @@ $(BIN_DIR)/$(IB_NAME).tar.xz: clean
 	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host/lib \
 		$(PKG_BUILD_DIR)/target $(PKG_BUILD_DIR)/scripts $(IB_DTSDIR)
 	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
+	$(SED) 's/^CONFIG_BINARY_FOLDER=.*/# CONFIG_BINARY_FOLDER is not set/' $(PKG_BUILD_DIR)/.config
+	$(SED) 's/^CONFIG_DOWNLOAD_FOLDER=.*/# CONFIG_DOWNLOAD_FOLDER is not set/' $(PKG_BUILD_DIR)/.config
 	$(CP) -L \
 		$(INCLUDE_DIR) $(SCRIPT_DIR) \
 		$(TOPDIR)/rules.mk \
@@ -44,12 +46,16 @@ ifeq ($(CONFIG_IB_STANDALONE),)
 	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories.conf
 endif
 
-ifeq ($(CONFIG_BUILDBOT),)
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/packages
+	# create an empty package index so `opkg` doesn't report an error
+	touch $(PKG_BUILD_DIR)/packages/Packages
+	$(INSTALL_DATA) ./files/README.md $(PKG_BUILD_DIR)/packages/
+
 	echo ''                                                        >> $(PKG_BUILD_DIR)/repositories.conf
 	echo '## This is the local package repository, do not remove!' >> $(PKG_BUILD_DIR)/repositories.conf
 	echo 'src imagebuilder file:packages'                          >> $(PKG_BUILD_DIR)/repositories.conf
 
+ifeq ($(CONFIG_BUILDBOT),)
   ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
 		\( -name 'libc_*.ipk' -or -name 'kernel_*.ipk' -or -name 'kmod-*.ipk' \) \

@@ -9,13 +9,31 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=at91bootstrap
-PKG_VERSION:=v3.9.3
+PKG_VERSION:=v4.0.1
+PKG_MIRROR_HASH:=3d45a4bcb52162097d4cdf042b8fe1ccf53e88b512e7541f42a23f2a73692a69
+PKG_SOURCE_VERSION:=4d41296e9ae12379555fb46a941897e7264600a2
+BINARIES_DIR:=build/binaries
+
+AT91BOOTSTRAP_V4=y
+ifdef CONFIG_PACKAGE_at91bootstrap-sama5d4_xplaineddf_uboot_secure
+  AT91BOOTSTRAP_V4=n
+else ifdef CONFIG_TARGET_at91_sam9x
+  ifndef CONFIG_TARGET_at91_sam9x_DEVICE_microchip_sam9x60ek
+    AT91BOOTSTRAP_V4=n
+  endif
+endif
+
+ifeq ($(AT91BOOTSTRAP_V4),n)
+  PKG_VERSION=v3.10.4
+  PKG_MIRROR_HASH=6fe61fe90838e785917383bb9e887fa05e1bd061a6725954242f504e38b5c426
+  PKG_SOURCE_VERSION=404846dd283894367a015ca59189bcf927d92e11
+  BINARIES_DIR=binaries
+endif
+
 PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/linux4sam/at91bootstrap.git
-PKG_MIRROR_HASH:=06753d673756edc9753932db00f4e5b8c1f9fa7708337c4d6ce280573efb86b4
-PKG_SOURCE_VERSION:=d96833a4b6680b237708eb4dc9f10708b9e709d8
 PKG_BUILD_DIR = \
 	$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
@@ -38,6 +56,30 @@ define AT91Bootstrap/at91sam9x5eksd_uboot
   NAME:=AT91Bootstrap for AT91SAM9X5-EK board (SDcard)
   BUILD_SUBTARGET:=sam9x
   BUILD_DEVICES:=atmel_at91sam9x25ek atmel_at91sam9x35ek
+endef
+
+define AT91Bootstrap/sam9x60eknf_uboot
+  NAME:=AT91Bootstrap for SAM9X60-EK board (NandFlash)
+  BUILD_SUBTARGET:=sam9x
+  BUILD_DEVICES:=microchip_sam9x60ek
+endef
+
+define AT91Bootstrap/sam9x60eksd_uboot
+  NAME:=AT91Bootstrap for SAM9X60-EK board (SDcard)
+  BUILD_SUBTARGET:=sam9x
+  BUILD_DEVICES:=microchip_sam9x60ek
+endef
+
+define AT91Bootstrap/sama5d2_icpdf_qspi_uboot
+  TITLE:=AT91Bootstrap for SAMA5D2 ICP board (QSPI Flash)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d2-icp
+endef
+
+define AT91Bootstrap/sama5d2_icpsd_uboot
+  TITLE:=AT91Bootstrap for SAMA5D2 ICP board (SDcard)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d2-icp
 endef
 
 define AT91Bootstrap/sama5d2_xplaineddf_uboot
@@ -106,6 +148,18 @@ define AT91Bootstrap/sama5d27_som1_ekqspi_uboot
   BUILD_DEVICES:=microchip_sama5d27-som1-ek
 endef
 
+define AT91Bootstrap/sama5d27_wlsom1_eksd_uboot
+  TITLE:=AT91Bootstrap for SAMA5D27 WLSOM1 Ek (SDcard0)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d27-wlsom1-ek
+endef
+
+define AT91Bootstrap/sama5d27_wlsom1_ekdf_qspi_uboot
+  TITLE:=AT91Bootstrap for SAMA5D27 WLSOM1 Ek (QSPI Flash)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d27-wlsom1-ek
+endef
+
 define AT91Bootstrap/sama5d2_ptc_eknf_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 PTC EK (Nand Flash)
   BUILD_SUBTARGET:=sama5
@@ -118,9 +172,19 @@ define AT91Bootstrap/sama5d2_ptc_eksd_uboot
   BUILD_DEVICES:=microchip_sama5d2-ptc-ek
 endef
 
+define AT91Bootstrap/sama7g5eksd_uboot
+  TITLE:=AT91Bootstrap for SAMA7G5-EK (SDCard)
+  BUILD_SUBTARGET:=sama7
+  BUILD_DEVICES:=microchip_sama7g5-ek
+endef
+
 AT91BOOTSTRAP_TARGETS := \
 	at91sam9x5eknf_uboot \
 	at91sam9x5eksd_uboot \
+	sam9x60eknf_uboot \
+	sam9x60eksd_uboot \
+	sama5d2_icpdf_qspi_uboot \
+	sama5d2_icpsd_uboot \
 	sama5d2_xplaineddf_uboot \
 	sama5d2_xplaineddf_qspi_uboot \
 	sama5d2_xplainedsd_uboot \
@@ -131,8 +195,11 @@ AT91BOOTSTRAP_TARGETS := \
 	sama5d4_xplainedsd_uboot_secure \
 	sama5d27_som1_eksd1_uboot \
 	sama5d27_som1_ekqspi_uboot \
+	sama5d27_wlsom1_eksd_uboot \
+	sama5d27_wlsom1_ekdf_qspi_uboot \
 	sama5d2_ptc_eknf_uboot \
-	sama5d2_ptc_eksd_uboot
+	sama5d2_ptc_eksd_uboot \
+	sama7g5eksd_uboot
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \

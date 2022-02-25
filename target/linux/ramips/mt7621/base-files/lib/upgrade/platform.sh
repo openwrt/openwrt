@@ -27,6 +27,12 @@ platform_do_upgrade() {
 			fi
 		}
 		;;
+	ampedwireless,ally-00x19k|\
+	ampedwireless,ally-r1900k)
+		if [ "$(fw_printenv --lock / -n bootImage 2>/dev/null)" != "0" ]; then
+			fw_setenv --lock / bootImage 0 || exit 1
+		fi
+		;;
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
@@ -43,34 +49,54 @@ platform_do_upgrade() {
 	esac
 
 	case "$board" in
+	ampedwireless,ally-00x19k|\
+	ampedwireless,ally-r1900k|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	dlink,dir-1960-a1|\
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
+	dlink,dir-853-a3|\
 	hiwifi,hc5962|\
+	iptime,a3004t|\
+	iptime,ax2004m|\
+	iptime,t5004|\
+	jcg,q20|\
+	linksys,e5600|\
+	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
 	linksys,ea7500-v2|\
+	linksys,ea8100-v1|\
+	linksys,ea8100-v2|\
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
 	netgear,r6700-v2|\
 	netgear,r6800|\
 	netgear,r6850|\
+	netgear,r6900-v2|\
+	netgear,r7200|\
+	netgear,r7450|\
 	netgear,wac104|\
 	netgear,wac124|\
 	netis,wf2881|\
+	raisecom,msg1500-x-00|\
+	sercomm,na502|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
 	xiaomi,mi-router-ac2100|\
+	xiaomi,mi-router-cr6606|\
+	xiaomi,mi-router-cr6608|\
+	xiaomi,mi-router-cr6609|\
 	xiaomi,redmi-router-ac2100)
 		nand_do_upgrade "$1"
 		;;
 	iodata,wn-ax1167gr2|\
 	iodata,wn-ax2033gr|\
-	iodata,wn-dx1167r)
+	iodata,wn-dx1167r|\
+	iodata,wn-dx2033gr)
 		iodata_mstc_upgrade_prepare "0xfe75"
 		nand_do_upgrade "$1"
 		;;
@@ -81,6 +107,12 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
+		;;
+	zyxel,nr7101)
+		fw_setenv CheckBypass 0
+		fw_setenv Image1Stable 0
+		CI_KERNPART="Kernel"
+		nand_do_upgrade "$1"
 		;;
 	zyxel,wap6805)
 		local kernel2_mtd="$(find_mtd_part Kernel2)"

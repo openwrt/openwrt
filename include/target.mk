@@ -33,6 +33,16 @@ else
 DEFAULT_PACKAGES+=busybox procd
 endif
 
+# include ujail on systems with enough storage
+ifeq ($(CONFIG_SMALL_FLASH),)
+DEFAULT_PACKAGES+=procd-ujail
+endif
+
+# include seccomp ld-preload hooks if kernel supports it
+ifneq ($(CONFIG_SECCOMP),)
+DEFAULT_PACKAGES+=procd-seccomp
+endif
+
 # For the basic set
 DEFAULT_PACKAGES.basic:=
 # For nas targets
@@ -44,10 +54,9 @@ DEFAULT_PACKAGES.nas:=\
 # For router targets
 DEFAULT_PACKAGES.router:=\
 	dnsmasq \
-	firewall \
-	ip6tables \
-	iptables \
-	kmod-ipt-offload \
+	firewall4 \
+	nftables \
+	kmod-nft-offload \
 	odhcp6c \
 	odhcpd-ipv6only \
 	ppp \
@@ -224,6 +233,7 @@ ifeq ($(DUMP),1)
   endif
   ifeq ($(ARCH),powerpc64)
     CPU_TYPE ?= powerpc64
+    CPU_CFLAGS_e5500:=-mcpu=e5500
     CPU_CFLAGS_powerpc64:=-mcpu=powerpc64
   endif
   ifeq ($(ARCH),sparc)

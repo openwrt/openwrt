@@ -54,10 +54,8 @@ sub localmirrors {
 
 sub which($) {
 	my $prog = shift;
-	my $res = `which $prog`;
+	my $res = `command -v $prog`;
 	$res or return undef;
-	$res =~ /^no / and return undef;
-	$res =~ /not found/ and return undef;
 	return $res;
 }
 
@@ -65,8 +63,8 @@ sub hash_cmd() {
 	my $len = length($file_hash);
 	my $cmd;
 
-	$len == 64 and return "mkhash sha256";
-	$len == 32 and return "mkhash md5";
+	$len == 64 and return "$ENV{'MKHASH'} sha256";
+	$len == 32 and return "$ENV{'MKHASH'} md5";
 	return undef;
 }
 
@@ -296,4 +294,3 @@ while (!-f "$target/$filename") {
 }
 
 $SIG{INT} = \&cleanup;
-

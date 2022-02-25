@@ -179,6 +179,23 @@ endef
 
 $(eval $(call KernelPackage,usb-gadget-eth))
 
+define KernelPackage/usb-gadget-ncm
+  TITLE:=USB Network Control Model (NCM) Gadget support
+  KCONFIG:=CONFIG_USB_G_NCM
+  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite \
+	+kmod-usb-gadget-eth
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ncm.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_ncm.ko
+  AUTOLOAD:=$(call AutoLoad,52,usb_f_ncm)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-gadget-ncm/description
+  Kernel support for USB Network Control Model (NCM) Gadget
+endef
+
+$(eval $(call KernelPackage,usb-gadget-ncm))
 
 define KernelPackage/usb-gadget-serial
   TITLE:=USB Serial Gadget support
@@ -1184,6 +1201,23 @@ endef
 $(eval $(call KernelPackage,usb-net-kaweth))
 
 
+define KernelPackage/usb-net-lan78xx
+  TITLE:=USB-To-Ethernet Microchip LAN78XX convertors
+  DEPENDS:=+kmod-fixed-phy +kmod-phy-microchip +PACKAGE_kmod-of-mdio:kmod-of-mdio
+  KCONFIG:=CONFIG_USB_LAN78XX
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/lan78xx.ko
+  AUTOLOAD:=$(call AutoProbe,lan78xx)
+  $(call AddDepends/usb-net)
+endef
+
+define KernelPackage/usb-net-lan78xx/description
+ Kernel module for Microchip LAN78XX based USB 2 & USB 3
+ 10/100/1000 Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,usb-net-lan78xx))
+
+
 define KernelPackage/usb-net-pegasus
   TITLE:=Kernel module for USB-to-Ethernet Pegasus convertors
   KCONFIG:=CONFIG_USB_PEGASUS
@@ -1212,6 +1246,22 @@ define KernelPackage/usb-net-mcs7830/description
 endef
 
 $(eval $(call KernelPackage,usb-net-mcs7830))
+
+
+define KernelPackage/usb-net-smsc75xx
+  TITLE:=SMSC LAN75XX based USB 2.0 Gigabit ethernet devices
+  DEPENDS:=+!LINUX_5_4:kmod-libphy
+  KCONFIG:=CONFIG_USB_NET_SMSC75XX
+  FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/smsc75xx.ko
+  AUTOLOAD:=$(call AutoProbe,smsc75xx)
+  $(call AddDepends/usb-net, +kmod-lib-crc16)
+endef
+
+define KernelPackage/usb-net-smsc75xx/description
+ Kernel module for SMSC LAN75XX based devices
+endef
+
+$(eval $(call KernelPackage,usb-net-smsc75xx))
 
 
 define KernelPackage/usb-net-smsc95xx
@@ -1323,6 +1373,7 @@ $(eval $(call KernelPackage,usb-net-rtl8150))
 
 define KernelPackage/usb-net-rtl8152
   TITLE:=Kernel module for USB-to-Ethernet Realtek convertors
+  DEPENDS:=+r8152-firmware +kmod-crypto-sha256 +kmod-usb-net-cdc-ncm
   KCONFIG:=CONFIG_USB_RTL8152
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/r8152.ko
   AUTOLOAD:=$(call AutoProbe,r8152)
@@ -1661,7 +1712,8 @@ define KernelPackage/usb3
 	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3 \
 	+TARGET_ramips_mt7621:kmod-usb-xhci-mtk \
-	+(TARGET_apm821xx_nand&&LINUX_5_10):kmod-usb-xhci-pci-renesas
+	+TARGET_apm821xx_nand:kmod-usb-xhci-pci-renesas \
+	+TARGET_mvebu_cortexa9:kmod-usb-xhci-pci-renesas
   KCONFIG:= \
 	CONFIG_USB_PCI=y \
 	CONFIG_USB_XHCI_PCI \

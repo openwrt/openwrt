@@ -27,14 +27,17 @@ define Build/loader-common
 endef
 
 define Build/loader-kernel
-	$(call Build/loader-common,LOADER_DATA="$@")
+	$(call Build/loader-common, \
+		LOADER_DATA="$@" \
+		BOARD="$(DEVICE_NAME)" )
 endef
 
 define Build/loader-okli-compile
 	$(call Build/loader-common, \
 		FLASH_OFFS=$(LOADER_FLASH_OFFS) \
 		FLASH_MAX=$(LOADER_FLASH_MAX) \
-		KERNEL_MAGIC=$(LOADER_KERNEL_MAGIC) )
+		KERNEL_MAGIC=$(LOADER_KERNEL_MAGIC) \
+		BOARD="$(DEVICE_NAME)" )
 endef
 
 # Arguments: <output name> <kernel offset>
@@ -46,6 +49,10 @@ endef
 
 define Build/append-loader-okli
 	cat "$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE)" >> "$@"
+endef
+
+define Build/append-loader-okli-uimage
+	cat "$(KDIR)/loader-$(word 1,$(1)).uImage" >> "$@"
 endef
 
 define Build/relocate-kernel
@@ -70,10 +77,22 @@ define Device/Default
   BLOCKSIZE := 64k
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  LOADER_KERNEL_MAGIC :=
+  LOADER_FLASH_MAX :=
+  LOADER_FLASH_OFFS :=
+  LOADER_TYPE :=
   COMPILE :=
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | append-metadata | check-size
+	append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+
+define Device/loader-okli-uimage
+  LOADER_TYPE := bin
+  COMPILE := loader-$(1).bin loader-$(1).uImage
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  COMPILE/loader-$(1).uImage := append-loader-okli $(1) | pad-to 64k | \
+	lzma | uImage lzma
 endef
 
 include $(SUBTARGET).mk

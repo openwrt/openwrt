@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=5.11.0
-PKG_RELEASE:=4
+PKG_VERSION:=5.15.0
+PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/net/iproute2
-PKG_HASH:=c5e2ea108212b3445051b35953ec267f9f3469e1d5c67ac034ab559849505c54
+PKG_HASH:=38e3e4a5f9a7f5575c015027a10df097c149111eeb739993128e5b2b35b291ff
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=iptables
 PKG_LICENSE:=GPL-2.0
@@ -232,9 +232,11 @@ endef
 
 $(eval $(call BuildPackage,ip-tiny))
 $(eval $(call BuildPackage,ip-full))
+# build tc-mod-iptables before its dependents, to avoid
+# spurious rebuilds when building multiple variants.
+$(eval $(call BuildPackage,tc-mod-iptables))
 $(eval $(call BuildPackage,tc-tiny))
 $(eval $(call BuildPackage,tc-full))
-$(eval $(call BuildPackage,tc-mod-iptables))
 $(eval $(call BuildPackage,genl))
 $(eval $(call BuildPackage,ip-bridge))
 $(eval $(call BuildPackage,ss))

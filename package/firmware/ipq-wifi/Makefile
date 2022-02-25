@@ -27,6 +27,7 @@ endef
 ALLWIFIBOARDS:= \
 	8dev_habanero-dvk \
 	aruba_ap-303 \
+	asus_rt-ac42u \
 	avm_fritzrepeater-1200 \
 	buffalo_wtr-m2133hp \
 	cellc_rtl30vw \
@@ -39,16 +40,23 @@ ALLWIFIBOARDS:= \
 	engenius_emr3500 \
 	ezviz_cs-w3-wd1200g-eup \
 	glinet_gl-ap1300 \
+	glinet_gl-b2200 \
 	glinet_gl-s1300 \
 	linksys_ea8300 \
 	linksys_mr8300-v0 \
 	luma_wrtq-329acn \
+	mikrotik_cap-ac \
 	mikrotik_hap-ac2 \
+	mikrotik_hap-ac3 \
+	mikrotik_sxtsq-5-ac \
 	mobipromo_cm520-79f \
 	nec_wg2600hp3 \
+	p2w_r619ac \
 	plasmacloud_pa1200 \
 	plasmacloud_pa2200 \
-	qxwlan_e2600ac
+	qxwlan_e2600ac \
+	teltonika_rutx \
+	zte_mf286d
 
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
@@ -111,6 +119,7 @@ endef
 
 $(eval $(call generate-ipq-wifi-package,8dev_habanero-dvk,8devices Habanero DVK))
 $(eval $(call generate-ipq-wifi-package,aruba_ap-303,Aruba AP-303))
+$(eval $(call generate-ipq-wifi-package,asus_rt-ac42u,ASUS RT-AC42U))
 $(eval $(call generate-ipq-wifi-package,avm_fritzrepeater-1200,AVM FRITZRepeater 1200))
 $(eval $(call generate-ipq-wifi-package,buffalo_wtr-m2133hp,Buffalo WTR-M2133HP))
 $(eval $(call generate-ipq-wifi-package,cellc_rtl30vw, Cell C RTL30VW))
@@ -123,15 +132,22 @@ $(eval $(call generate-ipq-wifi-package,engenius_emd1,EnGenius EMD1))
 $(eval $(call generate-ipq-wifi-package,engenius_emr3500,EnGenius EMR3500))
 $(eval $(call generate-ipq-wifi-package,ezviz_cs-w3-wd1200g-eup,EZVIZ CS-W3-WD1200G EUP))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-ap1300,GL.iNet GL-AP1300))
+$(eval $(call generate-ipq-wifi-package,glinet_gl-b2200,GL.iNet GL-B2200))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-s1300,GL.iNet GL-S1300))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
 $(eval $(call generate-ipq-wifi-package,linksys_mr8300-v0,Linksys MR8300))
 $(eval $(call generate-ipq-wifi-package,luma_wrtq-329acn,Luma WRTQ-329ACN))
+$(eval $(call generate-ipq-wifi-package,mikrotik_cap-ac,Mikrotik cAP ac))
 $(eval $(call generate-ipq-wifi-package,mikrotik_hap-ac2,Mikrotik hAP ac2))
+$(eval $(call generate-ipq-wifi-package,mikrotik_hap-ac3,Mikrotik hAP ac3))
+$(eval $(call generate-ipq-wifi-package,mikrotik_sxtsq-5-ac,MikroTik SXTsq 5 ac))
 $(eval $(call generate-ipq-wifi-package,mobipromo_cm520-79f,MobiPromo CM520-79F))
 $(eval $(call generate-ipq-wifi-package,nec_wg2600hp3,NEC Platforms WG2600HP3))
+$(eval $(call generate-ipq-wifi-package,p2w_r619ac,P&W R619AC))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa1200,Plasma Cloud PA1200))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa2200,Plasma Cloud PA2200))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
+$(eval $(call generate-ipq-wifi-package,teltonika_rutx,Teltonika RUTX))
+$(eval $(call generate-ipq-wifi-package,zte_mf286d,ZTE MF286D))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))

@@ -171,7 +171,7 @@
  #define UDP_CORK	1	/* Never send partially complete segments */
 --- a/net/netfilter/nf_conntrack_core.c
 +++ b/net/netfilter/nf_conntrack_core.c
-@@ -273,8 +273,8 @@ nf_ct_get_tuple(const struct sk_buff *sk
+@@ -271,8 +271,8 @@ nf_ct_get_tuple(const struct sk_buff *sk
  
  	switch (l3num) {
  	case NFPROTO_IPV4:
@@ -214,7 +214,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -909,10 +910,10 @@ static void tcp_v6_send_response(const s
+@@ -924,10 +925,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -267,7 +267,7 @@
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -949,7 +949,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -948,7 +948,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  
@@ -545,7 +545,7 @@
  		 * XXX skbs on the gro_list have all been parsed and pulled
 --- a/include/net/addrconf.h
 +++ b/include/net/addrconf.h
-@@ -45,7 +45,7 @@ struct prefix_info {
+@@ -47,7 +47,7 @@ struct prefix_info {
  	__be32			reserved2;
  
  	struct in6_addr		prefix;
@@ -706,7 +706,7 @@
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -4074,14 +4074,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4083,14 +4083,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -754,7 +754,7 @@
  	ptr = ip6hoff + sizeof(struct ipv6hdr);
 --- a/include/net/neighbour.h
 +++ b/include/net/neighbour.h
-@@ -274,8 +274,10 @@ static inline bool neigh_key_eq128(const
+@@ -275,8 +275,10 @@ static inline bool neigh_key_eq128(const
  	const u32 *n32 = (const u32 *)n->primary_key;
  	const u32 *p32 = pkey;
  

@@ -1,13 +1,25 @@
+define Build/dongwon-header
+	head -c 4 $@ > $@.tmp
+	head -c 8 /dev/zero >> $@.tmp
+	tail -c +9 $@ >> $@.tmp
+	( \
+		header_crc="$$(head -c 68 $@.tmp | gzip -c | \
+			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
+		printf "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
+			dd of=$@.tmp bs=4 count=1 seek=1 conv=notrunc \
+	)
+	mv $@.tmp $@
+endef
+
 # attention: only zlib compression is allowed for the boot fs
 define Build/zyxel-buildkerneljffs
-	rm -rf  $(KDIR_TMP)/zyxelnbg6716
-	mkdir -p $(KDIR_TMP)/zyxelnbg6716/image/boot
-	cp $@ $(KDIR_TMP)/zyxelnbg6716/image/boot/vmlinux.lzma.uImage
+	mkdir -p $@.tmp/boot
+	cp $@ $@.tmp/boot/vmlinux.lzma.uImage
 	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
 		--big-endian --squash-uids -v -e 128KiB -q -f -n -x lzma -x rtime \
 		-o $@ \
-		-d $(KDIR_TMP)/zyxelnbg6716/image
-	rm -rf $(KDIR_TMP)/zyxelnbg6716
+		-d $@.tmp
+	rm -rf $@.tmp
 endef
 
 define Build/zyxel-factory
@@ -77,6 +89,41 @@ define Device/domywifi_dw33d
 endef
 TARGET_DEVICES += domywifi_dw33d
 
+define Device/dongwon_dw02-412h
+  SOC := qca9557
+  DEVICE_VENDOR := Dongwon T&I
+  DEVICE_MODEL := DW02-412H
+  DEVICE_ALT0_VENDOR := KT
+  DEVICE_ALT0_MODEL := GiGA WiFi home
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  KERNEL_SIZE := 8192k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL := $$(KERNEL) | dongwon-header
+  KERNEL_INITRAMFS := $$(KERNEL)
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/dongwon_dw02-412h-64m
+  $(Device/dongwon_dw02-412h)
+  DEVICE_VARIANT := (64M)
+  DEVICE_ALT0_VARIANT := (64M)
+  IMAGE_SIZE := 49152k
+endef
+TARGET_DEVICES += dongwon_dw02-412h-64m
+
+define Device/dongwon_dw02-412h-128m
+  $(Device/dongwon_dw02-412h)
+  DEVICE_VARIANT := (128M)
+  DEVICE_ALT0_VARIANT := (128M)
+  IMAGE_SIZE := 114688k
+endef
+TARGET_DEVICES += dongwon_dw02-412h-128m
+
 define Device/glinet_gl-ar300m-common-nand
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
@@ -102,7 +149,6 @@ TARGET_DEVICES += glinet_gl-ar300m-nand
 define Device/glinet_gl-ar300m-nor
   $(Device/glinet_gl-ar300m-common-nand)
   DEVICE_VARIANT := NOR
-  BLOCKSIZE := 64k
   SUPPORTED_DEVICES += glinet,gl-ar300m-nand gl-ar300m
 endef
 TARGET_DEVICES += glinet_gl-ar300m-nor
@@ -128,7 +174,6 @@ TARGET_DEVICES += glinet_gl-ar750s-nor-nand
 define Device/glinet_gl-ar750s-nor
   $(Device/glinet_gl-ar750s-common)
   DEVICE_VARIANT := NOR
-  BLOCKSIZE := 64k
   SUPPORTED_DEVICES += gl-ar750s glinet,gl-ar750s glinet,gl-ar750s-nor-nand
 endef
 TARGET_DEVICES += glinet_gl-ar750s-nor
@@ -150,6 +195,22 @@ define Device/glinet_gl-e750
 endef
 TARGET_DEVICES += glinet_gl-e750
 
+define Device/glinet_gl-xe300
+  SOC := qca9531
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-XE300
+  DEVICE_PACKAGES := kmod-usb2 block-mount kmod-usb-serial-ch341
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 131072k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  BLOCKSIZE := 128k
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += glinet_gl-xe300
+
 # fake rootfs is mandatory, pad-offset 129 equals (2 * uimage_header + 0xff)
 define Device/netgear_ath79_nand
   DEVICE_VENDOR := NETGEAR
@@ -166,10 +227,20 @@ define Device/netgear_ath79_nand
   IMAGES := sysupgrade.bin factory.img
   IMAGE/factory.img := append-kernel | append-ubi | netgear-dni | \
 	check-size
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | \
-	check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
   UBINIZE_OPTS := -E 5
 endef
+
+define Device/netgear_r6100
+  SOC := ar9344
+  DEVICE_MODEL := R6100
+  UIMAGE_MAGIC := 0x36303030
+  NETGEAR_BOARD_ID := R6100
+  NETGEAR_HW_ID := 29764434+0+128+128+2x2+2x2
+  $(Device/netgear_ath79_nand)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += netgear_r6100
 
 define Device/netgear_wndr3700-v4
   SOC := ar9344
@@ -234,6 +305,20 @@ define Device/netgear_wndr4500-v3
 endef
 TARGET_DEVICES += netgear_wndr4500-v3
 
+define Device/zte_mf286
+  SOC := qca9563
+  DEVICE_VENDOR := ZTE
+  DEVICE_MODEL := MF286
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
+	ath10k-firmware-qca988x-ct kmod-usb-net-qmi-wwan kmod-usb-serial-option \
+	uqmi
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zte_mf286
+
 define Device/zyxel_nbg6716
   SOC := qca9558
   DEVICE_VENDOR := ZyXEL
@@ -246,8 +331,9 @@ define Device/zyxel_nbg6716
   KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  KERNEL := kernel-bin | append-dtb | uImage none | zyxel-buildkerneljffs | \
-	check-size 4096k
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none | \
+	zyxel-buildkerneljffs | check-size 4096k
   IMAGES := sysupgrade.tar sysupgrade-4M-Kernel.bin factory.bin
   IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | \
 	sysupgrade-tar rootfs=$$$$@ | append-metadata

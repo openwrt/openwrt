@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
-PKG_VERSION:=2021.01
+PKG_VERSION:=2022.01
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
@@ -17,7 +17,7 @@ PKG_SOURCE_URL:= \
     https://ftp.denx.de/pub/u-boot \
     https://mirror.cyberbits.eu/u-boot \
     ftp://ftp.denx.de/pub/u-boot
-PKG_HASH:=b407e1510a74e863b8b5cb42a24625344f0e0c2fc7582d8c866bd899367d0454
+PKG_HASH:=81b4543227db228c03f8a1bf5ddbc813b0bb8f6555ce46064ef721a6fc680413
 PKG_SOURCE_SUBDIR:=$(PKG_DISTNAME)-$(PKG_VERSION)
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_DISTNAME)-$(PKG_VERSION)
 
@@ -73,9 +73,13 @@ define Package/uboot-envtools/install
 	$(INSTALL_DIR) $(1)/lib
 	$(INSTALL_DATA) ./files/uboot-envtools.sh $(1)/lib
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(if $(wildcard ./files/$(BOARD)), \
-		$(INSTALL_DATA) ./files/$(BOARD) \
-		$(1)/etc/uci-defaults/30_uboot-envtools \
+	$(if $(wildcard ./files/$(BOARD)_$(SUBTARGET)), \
+		$(INSTALL_DATA) ./files/$(BOARD)_$(SUBTARGET) \
+		$(1)/etc/uci-defaults/30_uboot-envtools, \
+		$(if $(wildcard ./files/$(BOARD)), \
+			$(INSTALL_DATA) ./files/$(BOARD) \
+			$(1)/etc/uci-defaults/30_uboot-envtools \
+		) \
 	)
 endef
 
