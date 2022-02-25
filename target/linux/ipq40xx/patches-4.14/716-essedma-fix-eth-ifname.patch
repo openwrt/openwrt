@@ -1,0 +1,14 @@
+Index: b/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
+===================================================================
+--- a/drivers/net/ethernet/qualcomm/essedma/edma_axi.c	2021-12-01 18:24:07.591030789 +0800
++++ b/drivers/net/ethernet/qualcomm/essedma/edma_axi.c	2021-12-01 18:24:07.591030789 +0800
+@@ -1003,6 +1003,9 @@ static int edma_axi_probe(struct platfor
+ 			*(edma_netdev[i]->dev_addr + 5));
+ 		}
+ 
++        memcpy(edma_netdev[0]->name,"eth1",5);
++        memcpy(edma_netdev[1]->name,"eth0",5);
++
+ 		err = register_netdev(edma_netdev[i]);
+ 		if (err)
+ 			goto err_register;

@@ -1,0 +1,99 @@
+Index: b/drivers/mtd/ubi/build.c
+===================================================================
+--- a/drivers/mtd/ubi/build.c	2021-12-29 12:16:10.527804496 +0800
++++ b/drivers/mtd/ubi/build.c	2021-12-29 12:16:56.132707767 +0800
+@@ -1171,7 +1171,71 @@ static struct mtd_info * __init open_mtd
+ 
+ 	return mtd;
+ }
++/*
++ * This function tries attaching mtd partitions by name
++ * during boot.
++ */
++
++static void __init ubi_auto_attach_by_name(char *mtd_name)
++{
++	int err;
++	struct mtd_info *mtd;
++	loff_t offset = 0;
++	size_t len;
++	char magic[4];
++
++	/* try attaching mtd device named "ubi" or "data" */
++	mtd = open_mtd_device(mtd_name);
++
++	if (IS_ERR(mtd))
++		return;
++
++	/* get the first not bad block */
++	if (mtd_can_have_bb(mtd))
++		while (mtd_block_isbad(mtd, offset)) {
++			offset += mtd->erasesize;
++
++			if (offset > mtd->size) {
++				pr_err("UBI error: Failed to find a non-bad "
++				       "block on mtd%d\n", mtd->index);
++				goto cleanup;
++			}
++		}
+ 
++	/* check if the read from flash was successful */
++	err = mtd_read(mtd, offset, 4, &len, (void *) magic);
++	if ((err && !mtd_is_bitflip(err)) || len != 4) {
++		pr_err("UBI error: unable to read from mtd%d\n", mtd->index);
++		goto cleanup;
++	}
++
++	/* check for a valid ubi magic */
++	if (strncmp(magic, "UBI#", 4)) {
++		pr_err("UBI error: no valid UBI magic found inside mtd%d\n", mtd->index);
++		goto cleanup;
++	}
++
++	/* don't auto-add media types where UBI doesn't makes sense */
++	if (mtd->type != MTD_NANDFLASH &&
++	    mtd->type != MTD_NORFLASH &&
++	    mtd->type != MTD_DATAFLASH &&
++	    mtd->type != MTD_MLCNANDFLASH)
++		goto cleanup;
++
++	mutex_lock(&ubi_devices_mutex);
++	pr_notice("UBI: auto-attach mtd%d\n", mtd->index);
++	err = ubi_attach_mtd_dev(mtd, UBI_DEV_NUM_AUTO, 0, 0);
++	mutex_unlock(&ubi_devices_mutex);
++	if (err < 0) {
++		pr_err("UBI error: cannot attach mtd%d\n", mtd->index);
++		goto cleanup;
++	}
++
++	return;
++
++cleanup:
++	put_mtd_device(mtd);
++}
+ /*
+  * This function tries attaching mtd partitions named either "ubi" or "data"
+  * during boot.
+@@ -1238,7 +1302,7 @@ static void __init ubi_auto_attach(void)
+ cleanup:
+ 	put_mtd_device(mtd);
+ }
+-
++extern char *saved_command_line;
+ static int __init ubi_init(void)
+ {
+ 	int err, i, k;
+@@ -1324,6 +1388,13 @@ static int __init ubi_init(void)
+ 
+ 	/* auto-attach mtd devices only if built-in to the kernel and no ubi.mtd
+ 	 * parameter was given */
++        if(saved_command_line){
++            if(strstr(saved_command_line,"mountdata")){
++                pr_notice("UBI: mount data\n");
++                ubi_auto_attach_by_name("data");
++            }
++        }
++
+ 	if (IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
+ 	    !ubi_is_module() && !mtd_devs)
+ 		ubi_auto_attach();

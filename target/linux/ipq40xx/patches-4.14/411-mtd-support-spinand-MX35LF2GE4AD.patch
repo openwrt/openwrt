@@ -1,0 +1,13 @@
+--- a/drivers/mtd/nand/spinand/mxic.c
++++ b/drivers/mtd/nand/spinand/mxic.c
+@@ -50,6 +50,10 @@ static const struct mxic_spinand_info mx
+                  NAND_MEMORG(1, 4096, 128, 64, 2048, 1, 1, 1),
+                  NAND_ECCREQ(8, 512),
+ 			     SPINAND_RW_COMMON),
++    MXIC_SPI_NAND_INFO("MX35LF2GE4AD",0x26,
++                 NAND_MEMORG(1, 2048, 64, 64, 2048, 1, 1, 1),
++                 NAND_ECCREQ(8, 512),
++			     SPINAND_RW_COMMON),
+ };
+ 
+ static int mxic_spinand_get_dummy(struct spinand_device *spinand,

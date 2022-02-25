@@ -215,8 +215,8 @@ define Device/glinet_gl-b1300th
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	DEVICE_DTS := qcom-ipq4018-gl-b1300th
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
+	BLOCKSIZE := 256k
+	PAGESIZE := 4096
 	DEVICE_TITLE := GL.iNet GL-B1300TH
 	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
 	IMAGE_SIZE := 131072k

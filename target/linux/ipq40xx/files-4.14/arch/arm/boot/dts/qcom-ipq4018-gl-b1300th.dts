@@ -23,12 +23,22 @@
 	model = "GL.iNet GL-B1300TH";
 	compatible = "glinet,gl-b1300th", "qcom,ipq4019";
 
-	aliases {
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
-	};
+	gl_hw {
+		compatible = "gl-hw-info";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		model = "b1300th";
+		wan = "eth0";
+		lan = "eth1";
+		reset-button = "gpio-63";
+		factory_data {
+			device_mac = <&art 0>;
+			device_ddns = <&art 0x10>;
+			device_sn_bak = <&art 0x20>;
+			device_sn = <&art 0x30>;
+		};
+ 	};
 
 	memory {
 		device_type = "memory";
@@ -119,23 +129,8 @@
 
 	leds {
 		compatible = "gpio-leds";
-
-		power: power {
-			label = "gl-b1300th:green:power";
-			gpios = <&tlmm 4 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
-		};
-
-		mesh {
-			label = "gl-b1300th:green:mesh";
-			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
-		};
-
-		wlan {
-			label = "gl-b1300th:green:wlan";
-			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
-		};
 	};
+
 };
 
 &blsp_dma {
@@ -149,7 +144,7 @@
 &blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>, <&tlmm 59 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>, <&tlmm 4 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 
 	m25p80@0 {
@@ -192,14 +187,13 @@
 			partition5@e0000 {
 				label = "APPSBLENV"; /* uboot env*/
 				reg = <0x000e0000 0x00010000>;
-				read-only;
 			};
 			partition5@f0000 {
 				label = "APPSBL"; /* uboot */
 				reg = <0x000f0000 0x00080000>;
 				read-only;
 			};
-			partition5@170000 {
+            art: partition5@170000 {
 				label = "ART";
 				reg = <0x00170000 0x00010000>;
 				read-only;
@@ -220,8 +214,16 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "ubi";
+				label = "ubi0";
 				reg = <0x00000000 0x08000000>;
+			};
+			partition@08000000 {
+				label = "ubi1";
+				reg = <0x08000000 0x08000000>;
+			};
+			partition@10000000 {
+				label = "data";
+				reg = <0x10000000 0x10000000>;
 			};
 		};
 	};
@@ -242,6 +244,27 @@
 		};
 	};
 
+	i2c_0_pins: i2c_0_pinmux {
+		pinmux {
+			function = "blsp_i2c0";
+			pins = "gpio58", "gpio59";
+		};
+		pinconf {
+			pins = "gpio58", "gpio59";
+			drive-strength = <16>;
+			bias-pull-up;
+		};
+    };
+
+    thd_pins: thd_pins {
+		thd_ret_dfu {
+			function = "gpio";
+			pins = "gpio0", "gpio1";
+			drive-strength = <2>;
+			bias-pull-up;
+        };
+    };
+
 	spi_0_pins: spi_0_pinmux {
 		pin {
 			function = "blsp_spi0";
@@ -251,12 +274,23 @@
 		};
 		pin_cs {
 			function = "gpio";
-			pins = "gpio54", "gpio59";
+			pins = "gpio54", "gpio4";
 			drive-strength = <2>;
 			bias-disable;
 			output-high;
 		};
 	};
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+    pinctrl-0 = <&i2c_0_pins>;
+    pinctrl-names = "default";
+
+    rtc@32 {
+            compatible = "sd2068";
+            reg = <0x32>;
+    };
 };
 
 &usb2_hs_phy {
