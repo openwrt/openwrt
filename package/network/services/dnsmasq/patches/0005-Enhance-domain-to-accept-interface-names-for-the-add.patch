@@ -1,0 +1,237 @@
+From 3ab6dd1c37da3f4ea0e369a1ecdf275697f01ecc Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sat, 5 Mar 2022 18:07:07 +0000
+Subject: [PATCH 05/10] Enhance --domain to accept, interface names for the
+ address range.
+
+This allows hosts get a domain which relects the interface they
+are attached to in a way which doesn't require hard-coding addresses.
+
+Thanks to Sten Spans for the idea.
+---
+ CHANGELOG     |  6 ++++++
+ man/dnsmasq.8 |  7 ++++++-
+ src/dnsmasq.h |  2 ++
+ src/domain.c  | 31 ++++++++++++++++++++++++-------
+ src/network.c | 47 ++++++++++++++++++++++++++++++++++++++++++++++-
+ src/option.c  | 10 ++++++++--
+ 6 files changed, 92 insertions(+), 11 deletions(-)
+
+diff --git a/CHANGELOG b/CHANGELOG
+index e6fe8fd..87d6c2b 100644
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -49,6 +49,12 @@ version 2.87
+ 
+ 	Add --conf-script configuration option.
+ 
++	Enhance --domain to accept, for instance,
++	--domain=net2.thekelleys.org.uk,eth2 so that hosts get a domain
++	which relects the interface they are attached to in a way which
++	doesn't require hard-coding addresses. Thanks to Sten Spans for
++	the idea.
++
+ 	
+ version 2.86
+ 	Handle DHCPREBIND requests in the DHCPv6 server code.
+diff --git a/man/dnsmasq.8 b/man/dnsmasq.8
+index ca155f0..f68a286 100644
+--- a/man/dnsmasq.8
++++ b/man/dnsmasq.8
+@@ -1935,7 +1935,7 @@ is the address of the relay and the second, as before, specifies an extra subnet
+ addresses may be allocated from.
+ 
+ .TP
+-.B \-s, --domain=<domain>[,<address range>[,local]]
++.B \-s, --domain=<domain>[[,<address range>[,local]]|<interface>]
+ Specifies DNS domains for the DHCP server. Domains may be be given 
+ unconditionally (without the IP range) or for limited IP ranges. This has two effects;
+ firstly it causes the DHCP server to return the domain to any hosts
+@@ -1969,6 +1969,11 @@ additional flag "local" may be supplied which has the effect of adding
+ is identical to
+ .B --domain=thekelleys.org.uk,192.168.0.0/24
+ .B --local=/thekelleys.org.uk/ --local=/0.168.192.in-addr.arpa/
++
++The address range can also be given as a network interface name, in which case
++all of the subnets currently assigned to the interface are used in matching the
++address. This allows hosts on different physical subnets to be given different
++domains in a way which updates automatically as the interface addresses change.
+ .TP
+ .B --dhcp-fqdn
+ In the default mode, dnsmasq inserts the unqualified names of
+diff --git a/src/dnsmasq.h b/src/dnsmasq.h
+index 51a1aa6..bfc0fd4 100644
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -975,6 +975,8 @@ struct dhcp_bridge {
+ 
+ struct cond_domain {
+   char *domain, *prefix; /* prefix is text-prefix on domain name */
++  char *interface;       /* These two set when domain comes from interface. */
++  struct addrlist *al;
+   struct in_addr start, end;
+   struct in6_addr start6, end6;
+   int is6, indexed, prefixlen;
+diff --git a/src/domain.c b/src/domain.c
+index 7166433..a893ce5 100644
+--- a/src/domain.c
++++ b/src/domain.c
+@@ -230,9 +230,17 @@ int is_rev_synth(int flag, union all_addr *addr, char *name)
+ 
+ static int match_domain(struct in_addr addr, struct cond_domain *c)
+ {
+-  if (!c->is6 &&
+-      ntohl(addr.s_addr) >= ntohl(c->start.s_addr) &&
+-      ntohl(addr.s_addr) <= ntohl(c->end.s_addr))
++  if (c->interface)
++    {
++      struct addrlist *al;
++      for (al = c->al; al; al = al->next)
++	if (!(al->flags & ADDRLIST_IPV6) &&
++	    is_same_net_prefix(addr, al->addr.addr4, al->prefixlen))
++	  return 1;
++    }
++  else if (!c->is6 &&
++	   ntohl(addr.s_addr) >= ntohl(c->start.s_addr) &&
++	   ntohl(addr.s_addr) <= ntohl(c->end.s_addr))
+     return 1;
+ 
+   return 0;
+@@ -259,12 +267,21 @@ char *get_domain(struct in_addr addr)
+ 
+ static int match_domain6(struct in6_addr *addr, struct cond_domain *c)
+ {
+-  u64 addrpart = addr6part(addr);
+-  
+-  if (c->is6)
++    
++  /* subnet from interface address. */
++  if (c->interface)
++    {
++      struct addrlist *al;
++      for (al = c->al; al; al = al->next)
++	if (al->flags & ADDRLIST_IPV6 &&
++	    is_same_net6(addr, &al->addr.addr6, al->prefixlen))
++	  return 1;
++    }
++  else if (c->is6)
+     {
+       if (c->prefixlen >= 64)
+ 	{
++	  u64 addrpart = addr6part(addr);
+ 	  if (is_same_net6(addr, &c->start6, 64) &&
+ 	      addrpart >= addr6part(&c->start6) &&
+ 	      addrpart <= addr6part(&c->end6))
+@@ -273,7 +290,7 @@ static int match_domain6(struct in6_addr *addr, struct cond_domain *c)
+       else if (is_same_net6(addr, &c->start6, c->prefixlen))
+ 	return 1;
+     }
+-
++    
+   return 0;
+ }
+ 
+diff --git a/src/network.c b/src/network.c
+index 4453b05..6166484 100644
+--- a/src/network.c
++++ b/src/network.c
+@@ -231,6 +231,7 @@ static int iface_allowed(struct iface_param *param, int if_index, char *label,
+ 			 union mysockaddr *addr, struct in_addr netmask, int prefixlen, int iface_flags) 
+ {
+   struct irec *iface;
++  struct cond_domain *cond;
+   int loopback;
+   struct ifreq ifr;
+   int tftp_ok = !!option_bool(OPT_TFTP);
+@@ -453,7 +454,37 @@ static int iface_allowed(struct iface_param *param, int if_index, char *label,
+ 	      }
+ 	  }
+     }
+- 
++
++  /* Update addresses for domain=<domain>,<interface> */
++  for (cond = daemon->cond_domain; cond; cond = cond->next)
++    if (cond->interface && strncmp(label, cond->interface, IF_NAMESIZE) == 0)
++      {
++	struct addrlist *al;
++
++	if (param->spare)
++	  {
++	    al = param->spare;
++	    param->spare = al->next;
++	  }
++	else
++	  al = whine_malloc(sizeof(struct addrlist));
++
++	if (addr->sa.sa_family == AF_INET)
++	  {
++	    al->addr.addr4 = addr->in.sin_addr;
++	    al->flags = 0;
++	  }
++	else
++	  {
++	    al->addr.addr6 =  addr->in6.sin6_addr;
++	    al->flags = ADDRLIST_IPV6;
++	  }
++
++	al->prefixlen = prefixlen;
++	al->next = cond->al;
++	cond->al = al;
++      }
++  
+   /* check whether the interface IP has been added already 
+      we call this routine multiple times. */
+   for (iface = daemon->interfaces; iface; iface = iface->next) 
+@@ -691,6 +722,7 @@ int enumerate_interfaces(int reset)
+   int errsave, ret = 1;
+   struct addrlist *addr, *tmp;
+   struct interface_name *intname;
++  struct cond_domain *cond;
+   struct irec *iface;
+ #ifdef HAVE_AUTH
+   struct auth_zone *zone;
+@@ -750,6 +782,19 @@ again:
+       intname->addr = NULL;
+     }
+ 
++  /* remove addresses stored against cond-domains. */
++  for (cond = daemon->cond_domain; cond; cond = cond->next)
++    {
++      for (addr = cond->al; addr; addr = tmp)
++	{
++	  tmp = addr->next;
++	  addr->next = spare;
++	  spare = addr;
++      }
++      
++      cond->al = NULL;
++    }
++  
+   /* Remove list of addresses of local interfaces */
+   for (addr = daemon->interface_addrs; addr; addr = tmp)
+     {
+diff --git a/src/option.c b/src/option.c
+index c354ddf..39e1179 100644
+--- a/src/option.c
++++ b/src/option.c
+@@ -2492,9 +2492,15 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
+ 			  else if (!inet_pton(AF_INET6, arg, &new->end6))
+ 			    ret_err_free(gen_err, new);
+ 			}
+-		      else 
++		      else if (option == 's')
++			{
++			  /* subnet from interface. */
++			  new->interface = opt_string_alloc(comma);
++			  new->al = NULL;
++			}
++		      else
+ 			ret_err_free(gen_err, new);
+-
++		      
+ 		      if (option != 's' && prefstr)
+ 			{
+ 			  if (!(new->prefix = canonicalise_opt(prefstr)) ||
+-- 
+2.35.3
+

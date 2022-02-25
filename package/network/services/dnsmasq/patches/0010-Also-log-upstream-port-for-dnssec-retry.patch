@@ -1,0 +1,28 @@
+From 9b801c4e72fba61bb5ea45ec873a3b6653fa61fd Mon Sep 17 00:00:00 2001
+From: Dominik Derigs <dl6er@dl6er.de>
+Date: Sat, 2 Apr 2022 21:45:47 +0200
+Subject: [PATCH 10/10] Also log upstream port for dnssec-retry
+
+Signed-off-by: DL6ER <dl6er@dl6er.de>
+---
+ src/forward.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/forward.c b/src/forward.c
+index c17541b..b522c1f 100644
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -527,8 +527,8 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
+ 		}
+ #ifdef HAVE_DNSSEC
+ 	      else
+-		log_query_mysockaddr(F_NOEXTRA | F_DNSSEC, daemon->namebuff, &srv->addr,
+-				     "dnssec-retry", (forward->flags & FREC_DNSKEY_QUERY) ? T_DNSKEY : T_DS);
++		log_query_mysockaddr(F_NOEXTRA | F_DNSSEC | F_SERVER, daemon->namebuff, &srv->addr,
++				     (forward->flags & FREC_DNSKEY_QUERY) ? "dnssec-retry[DNSKEY]" : "dnssec-retry[DS]", 0);
+ #endif
+ 
+ 	      srv->queries++;
+-- 
+2.35.3
+

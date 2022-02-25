@@ -1,0 +1,353 @@
+From b7f62475d03336c5c58d633fc795894896c33b1f Mon Sep 17 00:00:00 2001
+From: Conrad Kostecki <ck@conrad-kostecki.de>
+Date: Wed, 2 Mar 2022 19:28:26 +0000
+Subject: [PATCH 04/10] Update German translation.
+
+---
+ po/de.po | 110 ++++++++++++++++++++++++++-----------------------------
+ 1 file changed, 52 insertions(+), 58 deletions(-)
+
+diff --git a/po/de.po b/po/de.po
+index 1f1c058..7173712 100644
+--- a/po/de.po
++++ b/po/de.po
+@@ -2,7 +2,7 @@
+ #
+ # This revised version is (C) Copyright by
+ # Matthias Andree <matthias.andree@gmx.de>, 2010 - 2021.
+-# Conrad Kostecki <ck@conrad-kostecki.de>, 2014 - 2020.
++# Conrad Kostecki <conrad@kostecki.com>, 2014 - 2022.
+ # It is subject to the GNU General Public License v2,
+ # or at your option, any later version.
+ #
+@@ -10,17 +10,18 @@
+ # Simon Kelley <simon@thekelleys.org.uk>, 2005.
+ msgid ""
+ msgstr ""
+-"Project-Id-Version: dnsmasq 2.85rc2\n"
++"Project-Id-Version: dnsmasq 2.87test8\n"
+ "Report-Msgid-Bugs-To: \n"
+ "POT-Creation-Date: 2021-03-20 00:00+0000\n"
+-"PO-Revision-Date: 2021-03-27 15:30+0100\n"
+-"Last-Translator: Matthias Andree <matthias.andree@gmx.de>\n"
++"PO-Revision-Date: 2022-02-28 14:49+0100\n"
++"Last-Translator: Conrad Kostecki <conrad@kostecki.com>\n"
+ "Language-Team: German <de@li.org>\n"
+ "Language: de\n"
+ "MIME-Version: 1.0\n"
+ "Content-Type: text/plain; charset=UTF-8\n"
+ "Content-Transfer-Encoding: 8bit\n"
+ "Plural-Forms: nplurals=2; plural=(n != 1);\n"
++"X-Generator: Poedit 3.0.1\n"
+ 
+ #: cache.c:572
+ msgid "Internal error in cache."
+@@ -243,7 +244,7 @@ msgstr "RFC3993 \"subscriber-id\" auf Marke abbilden."
+ 
+ #: option.c:400
+ msgid "Specify vendor class to match for PXE requests."
+-msgstr "Herstellerklasse für Vergleich von PXE-Anforderungen angeben"
++msgstr "Herstellerklasse für Vergleich von PXE-Anforderungen angeben."
+ 
+ #: option.c:401
+ msgid "Don't do DHCP for hosts with tag set."
+@@ -726,11 +727,11 @@ msgstr "Spezifiziere IPSets, zu denen passende Domains hinzugefügt werden solle
+ 
+ #: option.c:517
+ msgid "Enable filtering of DNS queries with connection-track marks."
+-msgstr ""
++msgstr "Aktivieren Sie das Filtern von DNS-Abfragen mit \"connection-track\"-Markierungen."
+ 
+ #: option.c:518
+ msgid "Set allowed DNS patterns for a connection-track mark."
+-msgstr ""
++msgstr "Legen Sie zulässige DNS-Muster für eine \"connection-track\"-Markierung fest."
+ 
+ #: option.c:519
+ msgid "Specify a domain and address range for synthesised names"
+@@ -819,12 +820,11 @@ msgstr "Rufe dhcp-script auf, wenn der Ablauf des Leases sich ändert."
+ 
+ #: option.c:540
+ msgid "Send Cisco Umbrella identifiers including remote IP."
+-msgstr ""
++msgstr "Senden Sie Cisco Umbrella-Identifikatoren einschließlich der Remote-IP."
+ 
+ #: option.c:541
+-#, fuzzy
+ msgid "Do not log routine TFTP."
+-msgstr "Protokolliere kein Routine-DHCP."
++msgstr "Protokolliere kein Routine-TFTP."
+ 
+ #: option.c:771
+ #, c-format
+@@ -867,11 +867,11 @@ msgstr "Fehlerhafter Schnittestellenname"
+ 
+ #: option.c:1192
+ msgid "inappropriate vendor:"
+-msgstr ""
++msgstr "Ungeeigneter Anbieter:"
+ 
+ #: option.c:1199
+ msgid "inappropriate encap:"
+-msgstr ""
++msgstr "Ungeeignete Kapselung:"
+ 
+ #: option.c:1225
+ msgid "unsupported encapsulation for IPv6 option"
+@@ -952,28 +952,24 @@ msgid "recompile with HAVE_LUASCRIPT defined to enable Lua scripts"
+ msgstr "Neuübersetzung mit HAVE_LUASCRIPT nötig, um benutzerdefinierte Lua-Skripte auszuführen"
+ 
+ #: option.c:2291 option.c:2327
+-#, fuzzy
+ msgid "bad prefix length"
+-msgstr "fehlerhaftes Präfix"
++msgstr "fehlerhafte Präfixlänge"
+ 
+ #: option.c:2303 option.c:2348 option.c:2398
+ msgid "bad prefix"
+ msgstr "fehlerhaftes Präfix"
+ 
+ #: option.c:2418
+-#, fuzzy
+ msgid "prefix length too small"
+-msgstr "Die Präfixlänge muss mindestens 64 sein"
++msgstr "Präfixlänge ist zu klein"
+ 
+ #: option.c:2697
+-#, fuzzy
+ msgid "Bad address in --address"
+-msgstr "Adresse in Gebrauch"
++msgstr "Fehlerhafte Adresse in --address"
+ 
+ #: option.c:2751
+-#, fuzzy
+ msgid "bad IPv4 prefix"
+-msgstr "fehlerhaftes IPv6-Präfix"
++msgstr "fehlerhaftes IPv4-Präfix"
+ 
+ #: option.c:2756 option.c:3569
+ msgid "bad IPv6 prefix"
+@@ -984,9 +980,8 @@ msgid "recompile with HAVE_IPSET defined to enable ipset directives"
+ msgstr "Neuübersetzung mit HAVE_IPSET nötig, um IPSet-Direktiven zu aktivieren"
+ 
+ #: option.c:2843 option.c:2861
+-#, fuzzy
+ msgid "recompile with HAVE_CONNTRACK defined to enable connmark-allowlist directives"
+-msgstr "Neuübersetzung mit HAVE_IPSET nötig, um IPSet-Direktiven zu aktivieren"
++msgstr "Neukompilierung mit HAVE_CONNTRACK notwendig, um connmark-allowlist-Direktiven zu aktivieren"
+ 
+ #: option.c:3119
+ msgid "bad port range"
+@@ -1131,7 +1126,7 @@ msgstr "unzulässige Wichtung"
+ 
+ #: option.c:4661
+ msgid "Bad host-record"
+-msgstr "fehlerhafter \"host-record\""
++msgstr "Fehlerhafter \"host-record\""
+ 
+ #: option.c:4700
+ msgid "Bad name in host-record"
+@@ -1314,9 +1309,9 @@ msgid "Maximum number of concurrent DNS queries reached (max: %d)"
+ msgstr "Höchstzahl an nebenläufiger DNS-Anfragen erreicht (max. %d)"
+ 
+ #: forward.c:2496
+-#, fuzzy, c-format
++#, c-format
+ msgid "Maximum number of concurrent DNS queries to %s reached (max: %d)"
+-msgstr "Höchstzahl an nebenläufiger DNS-Anfragen erreicht (max. %d)"
++msgstr "Maximale Anzahl gleichzeitiger DNS-Abfragen, die erreicht %s (max. %d)"
+ 
+ #: network.c:670
+ #, c-format
+@@ -1403,9 +1398,9 @@ msgid "domain"
+ msgstr "Domäne"
+ 
+ #: network.c:1607
+-#, fuzzy, c-format
++#, c-format
+ msgid "using nameserver %s#%d for %s %s%s %s"
+-msgstr "Benutze Namensserver %s#%d für %s %s %s"
++msgstr "benutze Namensserver %s#%d für %s %s %s %s"
+ 
+ #: network.c:1611
+ #, c-format
+@@ -1423,14 +1418,14 @@ msgid "using nameserver %s#%d"
+ msgstr "Benutze Namensserver %s#%d"
+ 
+ #: network.c:1630
+-#, fuzzy, c-format
++#, c-format
+ msgid "using only locally-known addresses for %s"
+-msgstr "Benutze nur lokal-bekannte Adressen für %s %s"
++msgstr "benutze nur lokal-bekannte Adressen für %s"
+ 
+ #: network.c:1633
+-#, fuzzy, c-format
++#, c-format
+ msgid "using standard nameservers for %s"
+-msgstr "Benutze standard Namensserver für %s %s"
++msgstr "benutze standard Namensserver für %s"
+ 
+ #: network.c:1637
+ #, c-format
+@@ -1534,9 +1529,9 @@ msgid "DBus not available: set HAVE_DBUS in src/config.h"
+ msgstr "DBus nicht verfügbar: setzen Sie HAVE_DBUS in src/config.h"
+ 
+ #: dnsmasq.c:456 dnsmasq.c:1228
+-#, fuzzy, c-format
++#, c-format
+ msgid "UBus error: %s"
+-msgstr "DBus-Fehler: %s"
++msgstr "UBus-Fehler: %s"
+ 
+ #: dnsmasq.c:459
+ msgid "UBus not available: set HAVE_UBUS in src/config.h"
+@@ -1696,9 +1691,8 @@ msgid "connected to system DBus"
+ msgstr "Mit System-DBus verbunden"
+ 
+ #: dnsmasq.c:1225
+-#, fuzzy
+ msgid "connected to system UBus"
+-msgstr "Mit System-UBus verbunden"
++msgstr "mit System-UBus verbunden"
+ 
+ #: dnsmasq.c:1391
+ #, c-format
+@@ -2151,7 +2145,7 @@ msgstr "Datei %s nicht gefunden für %s"
+ #: tftp.c:602
+ #, c-format
+ msgid "ignoring packet from %s (TID mismatch)"
+-msgstr ""
++msgstr "Paket von %s wird ignoriert (TID-Nichtübereinstimmung)"
+ 
+ #: tftp.c:646
+ #, c-format
+@@ -2378,95 +2372,95 @@ msgstr "Aktualisierung von ipset %s fehlgeschlagen: %s"
+ #: pattern.c:29
+ #, c-format
+ msgid "[pattern.c:%d] Assertion failure: %s"
+-msgstr ""
++msgstr "[pattern.c:%d] Assertion failure: %s"
+ 
+ #: pattern.c:142
+ #, c-format
+ msgid "Invalid DNS name: Invalid character %c."
+-msgstr ""
++msgstr "Ungültiger DNS-Name: Ungültiges Zeichen %c."
+ 
+ #: pattern.c:151
+ msgid "Invalid DNS name: Empty label."
+-msgstr ""
++msgstr "Ungültiger DNS-Name: Leeres Label."
+ 
+ #: pattern.c:156
+ msgid "Invalid DNS name: Label starts with hyphen."
+-msgstr ""
++msgstr "Ungültiger DNS-Name: Label beginnt mit Bindestrich."
+ 
+ #: pattern.c:170
+ msgid "Invalid DNS name: Label ends with hyphen."
+-msgstr ""
++msgstr "Ungültiger DNS-Name: Bezeichnung endet mit Bindestrich."
+ 
+ #: pattern.c:176
+ #, c-format
+ msgid "Invalid DNS name: Label is too long (%zu)."
+-msgstr ""
++msgstr "Ungültiger DNS-Name: Label ist zu lang (%zu)."
+ 
+ #: pattern.c:184
+ #, c-format
+ msgid "Invalid DNS name: Not enough labels (%zu)."
+-msgstr ""
++msgstr "Ungültiger DNS-Name: Nicht genügend Labels (%zu)."
+ 
+ #: pattern.c:189
+ msgid "Invalid DNS name: Final label is fully numeric."
+-msgstr ""
++msgstr "Ungültiger DNS-Name: Das endgültige Label ist vollständig numerisch."
+ 
+ #: pattern.c:199
+ msgid "Invalid DNS name: \"local\" pseudo-TLD."
+-msgstr ""
++msgstr "Ungültiger DNS-Name: \"lokale\" Pseudo-TLD."
+ 
+ #: pattern.c:204
+ #, c-format
+ msgid "DNS name has invalid length (%zu)."
+-msgstr ""
++msgstr "Der DNS-Name hat eine ungültige Länge (%zu)."
+ 
+ #: pattern.c:258
+ #, c-format
+ msgid "Invalid DNS name pattern: Invalid character %c."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: Ungültiges Zeichen %c."
+ 
+ #: pattern.c:267
+ msgid "Invalid DNS name pattern: Empty label."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: Leeres Label."
+ 
+ #: pattern.c:272
+ msgid "Invalid DNS name pattern: Label starts with hyphen."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: Bezeichnung beginnt mit Bindestrich."
+ 
+ #: pattern.c:285
+ msgid "Invalid DNS name pattern: Wildcard character used more than twice per label."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: Platzhalterzeichen werden mehr als zweimal pro Label verwendet."
+ 
+ #: pattern.c:295
+ msgid "Invalid DNS name pattern: Label ends with hyphen."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: Bezeichnung endet mit Bindestrich."
+ 
+ #: pattern.c:301
+ #, c-format
+ msgid "Invalid DNS name pattern: Label is too long (%zu)."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: Label ist zu lang (%zu)."
+ 
+ #: pattern.c:309
+ #, c-format
+ msgid "Invalid DNS name pattern: Not enough labels (%zu)."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: Nicht genügend Labels (%zu)."
+ 
+ #: pattern.c:314
+ msgid "Invalid DNS name pattern: Wildcard within final two labels."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: Platzhalter innerhalb der letzten beiden Labels."
+ 
+ #: pattern.c:319
+ msgid "Invalid DNS name pattern: Final label is fully numeric."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: Das endgültige Label ist vollständig numerisch."
+ 
+ #: pattern.c:329
+ msgid "Invalid DNS name pattern: \"local\" pseudo-TLD."
+-msgstr ""
++msgstr "Ungültiges DNS-Namensmuster: \"lokale\" Pseudo-TLD."
+ 
+ #: pattern.c:334
+ #, c-format
+ msgid "DNS name pattern has invalid length after removing wildcards (%zu)."
+-msgstr ""
++msgstr "Das DNS-Namensmuster hat nach dem Entfernen von Platzhaltern (%zu) eine ungültige Länge."
+ 
+ #: dnssec.c:206
+ msgid "system time considered valid, now checking DNSSEC signature timestamps."
+@@ -2600,7 +2594,7 @@ msgstr "Von System-UBus trennen"
+ #: ubus.c:179 ubus.c:326
+ #, c-format
+ msgid "UBus command failed: %d (%s)"
+-msgstr ""
++msgstr "UBus-Befehl fehlgeschlagen: %d (%s)"
+ 
+ #: hash-questions.c:40
+ msgid "Failed to create SHA-256 hash object"
+-- 
+2.35.3
+

@@ -1,0 +1,30 @@
+From c27cfeaa7b9bfa09b347f3f26390af39177190db Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Thu, 24 Feb 2022 23:18:54 +0000
+Subject: [PATCH 03/10] Fix memory leak when DBUS connection fails.
+
+---
+ src/dbus.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/dbus.c b/src/dbus.c
+index 0c55ea5..bf6b661 100644
+--- a/src/dbus.c
++++ b/src/dbus.c
+@@ -761,8 +761,11 @@ char *dbus_init(void)
+ 
+   dbus_error_init (&dbus_error);
+   if (!(connection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbus_error)))
+-    return NULL;
+-    
++    {
++      dbus_error_free(&dbus_error);
++      return NULL;
++    }
++  
+   dbus_connection_set_exit_on_disconnect(connection, FALSE);
+   dbus_connection_set_watch_functions(connection, add_watch, remove_watch, 
+ 				      NULL, NULL, NULL);
+-- 
+2.35.3
+

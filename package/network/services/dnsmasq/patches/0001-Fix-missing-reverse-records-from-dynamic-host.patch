@@ -1,0 +1,35 @@
+From f4c87b504b444efb05892b8c7fc295e886f70789 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 18 Feb 2022 20:53:56 +0000
+Subject: [PATCH 01/10] Fix missing reverse-records from --dynamic-host.
+
+Thanks to Sten Spans for spotting the bug.
+---
+ src/rfc1035.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/rfc1035.c b/src/rfc1035.c
+index 34eaf0a..60ef272 100644
+--- a/src/rfc1035.c
++++ b/src/rfc1035.c
+@@ -1597,7 +1597,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
+ 		    
+ 		    if (addrlist)
+ 		      break;
+-		    else
++		    else if (!(intr->flags & INP4))
+ 		      while (intr->next && strcmp(intr->intr, intr->next->intr) == 0)
+ 			intr = intr->next;
+ 		  }
+@@ -1612,7 +1612,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
+ 		    
+ 		    if (addrlist)
+ 		      break;
+-		    else
++		    else if (!(intr->flags & INP6))
+ 		      while (intr->next && strcmp(intr->intr, intr->next->intr) == 0)
+ 			intr = intr->next;
+ 		  }
+-- 
+2.35.3
+

@@ -1,0 +1,49 @@
+From 1a98d1a94fbc920e5f01bad5fe95b4766e5f661e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E8=A2=81=E5=BB=BA=E9=B9=8F?= <yuanjianpeng@xiaomi.com>
+Date: Mon, 18 Apr 2022 15:25:54 +0100
+Subject: [PATCH 09/10] Add inode compare while checking resolv file change
+
+Fix a bug found on OpenWrt when IPv4/6 dual stack enabled:
+
+The resolv file is located on tmpfs whose mtime resolution
+is 1 second. If the resolv file is updated twice within one
+second dnsmasq may can't notice the second update.
+
+netifd updates the resolv file with method: write temp then move,
+so adding an inode check fixes this bug.
+---
+ src/dnsmasq.c | 3 ++-
+ src/dnsmasq.h | 1 +
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/dnsmasq.c b/src/dnsmasq.c
+index 7cfb493..858c731 100644
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -1665,9 +1665,10 @@ static void poll_resolv(int force, int do_reload, time_t now)
+     else
+       {
+ 	res->logged = 0;
+-	if (force || (statbuf.st_mtime != res->mtime))
++	if (force || (statbuf.st_mtime != res->mtime || statbuf.st_ino != res->ino))
+           {
+             res->mtime = statbuf.st_mtime;
++	    res->ino = statbuf.st_ino;
+ 	    if (difftime(statbuf.st_mtime, last_change) > 0.0)
+ 	      {
+ 		last_change = statbuf.st_mtime;
+diff --git a/src/dnsmasq.h b/src/dnsmasq.h
+index bfc0fd4..0c21cde 100644
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -665,6 +665,7 @@ struct resolvc {
+   struct resolvc *next;
+   int is_default, logged;
+   time_t mtime;
++  ino_t ino;
+   char *name;
+ #ifdef HAVE_INOTIFY
+   int wd; /* inotify watch descriptor */
+-- 
+2.35.3
+

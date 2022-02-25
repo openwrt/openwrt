@@ -1,0 +1,56 @@
+From 191924576ca105939c5275134ffcb8a2cb629bb2 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Tue, 22 Mar 2022 13:47:05 +0000
+Subject: [PATCH 07/10] Add DNSMASQ_DATA_MISSING envvar to lease-change script.
+
+---
+ man/dnsmasq.8 | 8 +++++++-
+ src/helper.c  | 6 ++++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/man/dnsmasq.8 b/man/dnsmasq.8
+index 67c8055..fea89fa 100644
+--- a/man/dnsmasq.8
++++ b/man/dnsmasq.8
+@@ -1712,7 +1712,13 @@ If dnsmasq was compiled with HAVE_BROKEN_RTC, then
+ the length of the lease (in seconds) is stored in
+ DNSMASQ_LEASE_LENGTH, otherwise the time of lease expiry is stored in
+ DNSMASQ_LEASE_EXPIRES. The number of seconds until lease expiry is
+-always stored in DNSMASQ_TIME_REMAINING. 
++always stored in DNSMASQ_TIME_REMAINING.
++
++DNSMASQ_DATA_MISSING is set to "1" during "old" events for existing
++leases generated at startup to indicate that data not stored in the
++persistent lease database will not be present. This comprises everything
++other than IP address, hostname, MAC address, DUID, IAID and lease length
++or expiry time.
+ 
+ If a lease used to have a hostname, which is
+ removed, an "old" event is generated with the new state of the lease, 
+diff --git a/src/helper.c b/src/helper.c
+index 39e4b89..14330f3 100644
+--- a/src/helper.c
++++ b/src/helper.c
+@@ -421,6 +421,9 @@ int create_helper(int event_fd, int err_fd, uid_t uid, gid_t gid, long max_fd)
+ 	      
+ 	      end = extradata + data.ed_len;
+ 	      buf = extradata;
++
++	      lua_pushnumber(lua, data.ed_len == 0 ? 1 : 0);
++	      lua_setfield(lua, -2, "data_missing");
+ 	      
+ 	      if (!is6)
+ 		buf = grab_extradata_lua(buf, end, "vendor_class");
+@@ -599,6 +602,9 @@ int create_helper(int event_fd, int err_fd, uid_t uid, gid_t gid, long max_fd)
+ 	  
+ 	  end = extradata + data.ed_len;
+ 	  buf = extradata;
++
++	  if (data.ed_len == 0)
++	    my_setenv("DNSMASQ_DATA_MISSING", "1", &err);
+ 	  
+ 	  if (!is6)
+ 	    buf = grab_extradata(buf, end, "DNSMASQ_VENDOR_CLASS", &err);
+-- 
+2.35.3
+
