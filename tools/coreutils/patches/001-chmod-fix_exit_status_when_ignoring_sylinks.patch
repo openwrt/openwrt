@@ -1,0 +1,82 @@
+From e8b56ebd536e82b15542a00c888109471936bfda Mon Sep 17 00:00:00 2001
+From: =?utf8?q?P=C3=A1draig=20Brady?= <P@draigBrady.com>
+Date: Fri, 24 Sep 2021 20:57:41 +0100
+Subject: [PATCH] chmod: fix exit status when ignoring symlinks
+
+* src/chmod.c: Reorder enum so CH_NOT_APPLIED
+can be treated as a non error.
+* tests/chmod/ignore-symlink.sh: A new test.
+* tests/local.mk: Reference the new test.
+Fixes https://bugs.gnu.org/50784
+---
+ src/chmod.c                   |  4 ++--
+ tests/chmod/ignore-symlink.sh | 31 +++++++++++++++++++++++++++++++
+ tests/local.mk                |  1 +
+ 4 files changed, 40 insertions(+), 2 deletions(-)
+ create mode 100755 tests/chmod/ignore-symlink.sh
+
+--- a/src/chmod.c
++++ b/src/chmod.c
+@@ -44,8 +44,8 @@ struct change_status
+   enum
+     {
+       CH_NO_STAT,
+-      CH_NOT_APPLIED,
+       CH_FAILED,
++      CH_NOT_APPLIED,
+       CH_NO_CHANGE_REQUESTED,
+       CH_SUCCEEDED
+     }
+@@ -322,7 +322,7 @@ process_file (FTS *fts, FTSENT *ent)
+   if ( ! recurse)
+     fts_set (fts, ent, FTS_SKIP);
+ 
+-  return CH_NO_CHANGE_REQUESTED <= ch.status;
++  return CH_NOT_APPLIED <= ch.status;
+ }
+ 
+ /* Recursively change the modes of the specified FILES (the last entry
+--- /dev/null
++++ b/tests/chmod/ignore-symlink.sh
+@@ -0,0 +1,31 @@
++#!/bin/sh
++# Test for proper exit code of chmod on a processed symlink.
++
++# Copyright (C) 2021 Free Software Foundation, Inc.
++
++# This program is free software: you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation, either version 3 of the License, or
++# (at your option) any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++. "${srcdir=.}/tests/init.sh"; path_prepend_ ./src
++print_ver_ chmod
++
++mkdir dir || framework_failure_
++touch dir/f || framework_failure_
++ln -s f dir/l || framework_failure_
++
++# This operation ignores symlinks but should succeed.
++chmod u+w -R dir 2> out || fail=1
++
++compare /dev/null out || fail=1
++
++Exit $fail
+--- a/tests/local.mk
++++ b/tests/local.mk
+@@ -456,6 +456,7 @@ all_tests =					\
+   tests/chmod/c-option.sh			\
+   tests/chmod/equal-x.sh			\
+   tests/chmod/equals.sh				\
++  tests/chmod/ignore-symlink.sh			\
+   tests/chmod/inaccessible.sh			\
+   tests/chmod/octal.sh				\
+   tests/chmod/setgid.sh				\
