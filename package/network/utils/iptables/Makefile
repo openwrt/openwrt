@@ -47,7 +47,7 @@ endef
 define Package/iptables-legacy
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool
-  DEPENDS+= +kmod-ipt-core +libip4tc +IPV6:libip6tc +libxtables
+  DEPENDS+= +kmod-ipt-core +libip4tc +IPV6:libip6tc +libiptext +IPV6:libiptext6 +libxtables
   PROVIDES:=iptables
   ALTERNATIVES:=\
     200:/usr/sbin/iptables:/usr/sbin/xtables-legacy-multi \
@@ -98,7 +98,7 @@ endef
 define Package/iptables-nft
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool nft
-  DEPENDS:=@IPTABLES_NFTABLES +libnftnl +libxtables-nft +libip4tc +IPV6:libip6tc +kmod-ipt-core +kmod-nft-compat
+  DEPENDS:=@IPTABLES_NFTABLES +libnftnl +libiptext +IPV6:libiptext6 +libiptext-nft +kmod-ipt-core +kmod-nft-compat
   PROVIDES:=iptables
   ALTERNATIVES:=\
     300:/usr/sbin/iptables:/usr/sbin/xtables-nft-multi \
@@ -497,7 +497,6 @@ $(call Package/iptables/Default)
   CATEGORY:=Libraries
   TITLE:=IPv4 firewall - shared libiptc library
   ABI_VERSION:=2
-  DEPENDS:=+libxtables
 endef
 
 define Package/libip6tc
@@ -506,7 +505,33 @@ $(call Package/iptables/Default)
   CATEGORY:=Libraries
   TITLE:=IPv6 firewall - shared libiptc library
   ABI_VERSION:=2
-  DEPENDS:=+libxtables
+endef
+
+define Package/libiptext
+ $(call Package/iptables/Default)
+ SECTION:=libs
+ CATEGORY:=Libraries
+ TITLE:=IPv4 firewall - shared libiptext library
+ ABI_VERSION:=0
+ DEPENDS:=+libxtables
+endef
+
+define Package/libiptext6
+ $(call Package/iptables/Default)
+ SECTION:=libs
+ CATEGORY:=Libraries
+ TITLE:=IPv6 firewall - shared libiptext library
+ ABI_VERSION:=0
+ DEPENDS:=+libxtables
+endef
+
+define Package/libiptext-nft
+ $(call Package/iptables/Default)
+ SECTION:=libs
+ CATEGORY:=Libraries
+ TITLE:=IPv4/IPv6 firewall - shared libiptext nft library
+ ABI_VERSION:=0
+ DEPENDS:=@IPTABLES_NFTABLES +libxtables
 endef
 
 define Package/libxtables
@@ -531,15 +556,6 @@ define Package/libxtables/config
 	default y
 	help
 		This enable nftables support in iptables.
-endef
-
-define Package/libxtables-nft
- $(call Package/iptables/Default)
- SECTION:=libs
- CATEGORY:=Libraries
- TITLE:=IPv4/IPv6 firewall - shared xtables nft library
- ABI_VERSION:=12
- DEPENDS:=@IPTABLES_NFTABLES +libxtables
 endef
 
 TARGET_CPPFLAGS := \
@@ -640,24 +656,32 @@ endef
 define Package/libip4tc/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libip4tc.so.* $(1)/usr/lib/
-	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext4.so $(1)/usr/lib/
 endef
 
 define Package/libip6tc/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libip6tc.so.* $(1)/usr/lib/
+endef
+
+define Package/libiptext/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext.so $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext4.so $(1)/usr/lib/
+endef
+
+define Package/libiptext6/install
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext6.so $(1)/usr/lib/
+endef
+
+define Package/libiptext-nft/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext_*.so $(1)/usr/lib/
 endef
 
 define Package/libxtables/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.so.* $(1)/usr/lib/
-	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext.so $(1)/usr/lib/
-endef
-
-define Package/libxtables-nft/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext_*.so $(1)/usr/lib/
 endef
 
 define BuildPlugin
@@ -675,9 +699,11 @@ define BuildPlugin
 endef
 
 $(eval $(call BuildPackage,libxtables))
-$(eval $(call BuildPackage,libxtables-nft))
 $(eval $(call BuildPackage,libip4tc))
 $(eval $(call BuildPackage,libip6tc))
+$(eval $(call BuildPackage,libiptext))
+$(eval $(call BuildPackage,libiptext6))
+$(eval $(call BuildPackage,libiptext-nft))
 $(eval $(call BuildPackage,iptables-legacy))
 $(eval $(call BuildPackage,iptables-nft))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-extra,$(IPT_CONNTRACK_EXTRA-m)))
