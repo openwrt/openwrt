@@ -2,9 +2,9 @@
 
 START=99
 
-. "$IPKG_INSTROOT/lib/upgrade/asrock.sh"
-
 boot() {
+	. /lib/upgrade/asrock.sh
+
 	case $(board_name) in
 	asrock,g10)
 		asrock_bootconfig_mangle "bootcheck" && reboot
