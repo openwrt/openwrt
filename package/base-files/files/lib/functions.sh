@@ -353,6 +353,10 @@ find_mmc_part() {
 	find_blkdev_part_common "mmcblk" "p" $@
 }
 
+find_scsi_part() {
+	find_blkdev_part_common "sd" "" $@
+}
+
 group_add() {
 	local name="$1"
 	local gid="$2"
