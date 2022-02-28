@@ -330,23 +330,27 @@ find_mtd_part() {
 	echo "${INDEX:+$PREFIX$INDEX}"
 }
 
-find_mmc_part() {
+find_blkdev_part_common() {
 	local DEVNAME PARTNAME ROOTDEV
 
-	if grep -q "$1" /proc/mtd; then
+	if grep -q "$3" /proc/mtd; then
 		echo "" && return 0
 	fi
 
-	if [ -n "$2" ]; then
-		ROOTDEV="$2"
+	if [ -n "$4" ]; then
+		ROOTDEV="$4"
 	else
-		ROOTDEV="mmcblk*"
+		ROOTDEV="${1}*"
 	fi
 
-	for DEVNAME in /sys/block/$ROOTDEV/mmcblk*p*; do
+	for DEVNAME in /sys/block/$ROOTDEV/${ROOTDEV}${2}*; do
 		PARTNAME="$(grep PARTNAME ${DEVNAME}/uevent | cut -f2 -d'=')"
-		[ "$PARTNAME" = "$1" ] && echo "/dev/$(basename $DEVNAME)" && return 0
+		[ "$PARTNAME" = "$3" ] && echo "/dev/$(basename $DEVNAME)" && return 0
 	done
+}
+
+find_mmc_part() {
+	find_blkdev_part_common "mmcblk" "p" $@
 }
 
 group_add() {
