@@ -67,9 +67,10 @@ define prepare_rootfs
 	@mkdir -p $(1)/etc/rc.d
 	@mkdir -p $(1)/var/lock
 	@( \
+		export IPKG_INSTROOT=$(1); \
 		cd $(1); \
 		for script in ./usr/lib/opkg/info/*.postinst; do \
-			IPKG_INSTROOT=$(1) $$(command -v bash) $$script; \
+			$$(command -v bash) $$script; \
 			ret=$$?; \
 			if [ $$ret -ne 0 ]; then \
 				echo "postinst script $$script has failed with exit code $$ret" >&2; \
@@ -79,10 +80,10 @@ define prepare_rootfs
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
 			if ! echo " $(3) " | grep -q " $$(basename $$script) "; then \
-				IPKG_INSTROOT=$(1) $$(command -v bash) ./etc/rc.common $$script enable; \
+				$$(command -v bash) ./etc/rc.common $$script enable; \
 				echo "Enabling" $$(basename $$script); \
 			else \
-				IPKG_INSTROOT=$(1) $$(command -v bash) ./etc/rc.common $$script disable; \
+				$$(command -v bash) ./etc/rc.common $$script disable; \
 				echo "Disabling" $$(basename $$script); \
 			fi; \
 		done || true \
