@@ -1,0 +1,28 @@
+From 758c56cd078a343a083ffb03abc3ab107d62c471 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 27 Feb 2022 23:33:25 -0800
+Subject: [PATCH] firmware-utils: fix compilation with macOS
+
+__bswap_32 is a GNU extension.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ src/avm-wasp-checksum.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/avm-wasp-checksum.c b/src/avm-wasp-checksum.c
+index 8c112f3..41a425e 100644
+--- a/src/avm-wasp-checksum.c
++++ b/src/avm-wasp-checksum.c
+@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
+ 		}
+ 	}
+ 	if (model == MODEL_X490)
+-		crc = __bswap_32(crc);
++		crc = bswap_32(crc);
+ 	fwrite(&crc, sizeof(uint32_t), 1, out_fp);
+ 	if (ferror(out_fp)) {
+ 		fprintf(stderr, "Error writing checksum to output file: %s\n", outfile);
+-- 
+2.35.1
+
