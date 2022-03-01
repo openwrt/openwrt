@@ -1,12 +1,12 @@
 
 ## fix ant
 ant=$(hexdump -v -n 1 -s $((0x34)) -e '1/1 "%02x"' /dev/mtd2)
-[ "$ant" = "11" ] || {
+[ "$ant" = "33" ] || {
 	cat /dev/mtd2 >/tmp/ft.img
 	new_ant()
 	{
 		dd if=/tmp/ft.img bs=1 count=$((0x34)) 2>/dev/null
-		echo -ne '\x11'
+		echo -ne '\x33'
 		dd if=/tmp/ft.img bs=1 skip=$((0x35)) 2>/dev/null
 	}
 	new_ant >/tmp/ft.img.new && \
