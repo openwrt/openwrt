@@ -107,6 +107,28 @@ $(call Package/iptables/Default)
   DEPENDS:=@IPTABLES_NFTABLES +libnftnl +libiptext +IPV6:libiptext6 +libiptext-nft +kmod-nft-compat
 endef
 
+define Package/arptables-nft
+$(call Package/iptables/Default)
+  DEPENDS:=+kmod-nft-arp +xtables-nft +kmod-arptables
+  TITLE:=ARP firewall administration tool nft
+  PROVIDES:=arptables
+  ALTERNATIVES:=\
+    300:/usr/sbin/arptables:/usr/sbin/xtables-nft-multi \
+    300:/usr/sbin/arptables-restore:/usr/sbin/xtables-nft-multi \
+    300:/usr/sbin/arptables-save:/usr/sbin/xtables-nft-multi
+endef
+
+define Package/ebtables-nft
+$(call Package/iptables/Default)
+  DEPENDS:=+kmod-nft-bridge +xtables-nft +kmod-ebtables
+  TITLE:=Bridge firewall administration tool nft
+  PROVIDES:=ebtables
+  ALTERNATIVES:=\
+    300:/usr/sbin/ebtables:/usr/sbin/xtables-nft-multi \
+    300:/usr/sbin/ebtables-restore:/usr/sbin/xtables-nft-multi \
+    300:/usr/sbin/ebtables-save:/usr/sbin/xtables-nft-multi
+endef
+
 define Package/iptables-nft
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool nft
@@ -666,6 +688,20 @@ define Package/xtables-nft/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/xtables-nft-multi $(1)/usr/sbin/
 endef
 
+define Package/arptables-nft/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/arptables-nft{,-restore,-save} $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/lib/iptables
+	$(CP) $(PKG_BUILD_DIR)/extensions/libarpt_*.so $(1)/usr/lib/iptables/
+endef
+
+define Package/ebtables-nft/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ebtables-nft{,-restore,-save} $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/lib/iptables
+	$(CP) $(PKG_BUILD_DIR)/extensions/libebt_*.so $(1)/usr/lib/iptables/
+endef
+
 define Package/iptables-nft/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables-nft{,-restore,-save} $(1)/usr/sbin/
@@ -737,6 +773,8 @@ $(eval $(call BuildPackage,libiptext-nft))
 $(eval $(call BuildPackage,xtables-legacy))
 $(eval $(call BuildPackage,iptables-legacy))
 $(eval $(call BuildPackage,xtables-nft))
+$(eval $(call BuildPackage,arptables-nft))
+$(eval $(call BuildPackage,ebtables-nft))
 $(eval $(call BuildPackage,iptables-nft))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-extra,$(IPT_CONNTRACK_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-label,$(IPT_CONNTRACK_LABEL-m)))
