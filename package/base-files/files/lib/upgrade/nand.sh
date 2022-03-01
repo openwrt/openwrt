@@ -237,6 +237,7 @@ nand_do_upgrade_success() {
 		echo "sysupgrade successful"
 	fi
 	umount -a
+	echo "wait 30s to reboot" && sleep 30
 	reboot -f
 }
 
