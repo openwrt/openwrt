@@ -1,0 +1,17 @@
+--- a/drivers/mtd/spi-nor/core.c
++++ b/drivers/mtd/spi-nor/core.c
+@@ -3258,6 +3258,14 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	if (info->flags & SPI_NOR_4B_OPCODES)
+ 		nor->flags |= SNOR_F_4B_OPCODES;
+ 
++	/* overwrite and force to spi-3byte-addressing */
++	if (of_property_read_bool(np, "spi-3byte-addressing")) {
++		nor->addr_width = 3;
++		if (nor->mtd.size > 0x1000000)
++			nor->mtd.size = 0x1000000;
++		nor->flags &= ~SNOR_F_4B_OPCODES;
++	}
++
+ 	ret = spi_nor_set_addr_width(nor);
+ 	if (ret)
+ 		return ret;
