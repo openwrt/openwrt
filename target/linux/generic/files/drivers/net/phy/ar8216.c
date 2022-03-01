@@ -2433,7 +2433,9 @@ static int
 ar8xxx_phy_config_init(struct phy_device *phydev)
 {
 	struct ar8xxx_priv *priv = phydev->priv;
+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	struct net_device *dev = phydev->attached_dev;
+#endif
 	int ret;
 
 	if (WARN_ON(!priv))
