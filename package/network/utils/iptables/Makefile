@@ -44,10 +44,16 @@ $(call Package/iptables/Default)
   DEPENDS:=+libxtables $(1)
 endef
 
-define Package/iptables-legacy
+define Package/xtables-legacy
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool
   DEPENDS+= +kmod-ipt-core +libip4tc +IPV6:libip6tc +libiptext +IPV6:libiptext6 +libxtables
+endef
+
+define Package/iptables-legacy
+$(call Package/iptables/Default)
+  TITLE:=IP firewall administration tool
+  DEPENDS+= +xtables-legacy
   PROVIDES:=iptables
   ALTERNATIVES:=\
     200:/usr/sbin/iptables:/usr/sbin/xtables-legacy-multi \
@@ -451,7 +457,7 @@ endef
 
 define Package/ip6tables-legacy
 $(call Package/iptables/Default)
-  DEPENDS:=@IPV6 +kmod-ip6tables +iptables-legacy
+  DEPENDS:=@IPV6 +kmod-ip6tables +xtables-legacy
   CATEGORY:=Network
   TITLE:=IPv6 firewall administration tool
   PROVIDES:=ip6tables
@@ -638,9 +644,13 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext*.so $(1)/usr/lib/
 endef
 
-define Package/iptables-legacy/install
+define Package/xtables-legacy/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/xtables-legacy-multi $(1)/usr/sbin/
+endef
+
+define Package/iptables-legacy/install
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables-legacy{,-restore,-save} $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/lib/iptables
 endef
@@ -714,6 +724,7 @@ $(eval $(call BuildPackage,libip6tc))
 $(eval $(call BuildPackage,libiptext))
 $(eval $(call BuildPackage,libiptext6))
 $(eval $(call BuildPackage,libiptext-nft))
+$(eval $(call BuildPackage,xtables-legacy))
 $(eval $(call BuildPackage,iptables-legacy))
 $(eval $(call BuildPackage,iptables-nft))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-extra,$(IPT_CONNTRACK_EXTRA-m)))
