@@ -20,30 +20,36 @@ PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ebtables
+define Package/ebtables-legacy
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Firewall
   DEPENDS:=+kmod-ebtables
   TITLE:=Ethernet bridge firewall administration utility
   URL:=http://ebtables.sourceforge.net/
+  PROVIDES:=ebtables
+  ALTERNATIVES:=\
+    200:/usr/sbin/ebtables:/usr/sbin/ebtables-legacy
 endef
 
-define Package/ebtables-utils
-  $(call Package/ebtables)
-  DEPENDS += ebtables
+define Package/ebtables-legacy-utils
+  $(call Package/ebtables-legacy)
+  DEPENDS:=ebtables-legacy
   TITLE:=ebtables save/restore utilities
+  PROVIDES:=ebtables-utils
+  ALTERNATIVES:=\
+    200:/usr/sbin/ebtables-restore:/usr/sbin/ebtables-legacy-restore
 endef
 
-define Package/ebtables/description
+define Package/ebtables-legacy/description
 	The ebtables program is a filtering tool for a bridging firewall. The
 	filtering is focussed on the Link Layer Ethernet frame fields. Apart
 	from filtering, it also gives the ability to alter the Ethernet MAC
 	addresses and implement a brouter.
 endef
 
-define Package/ebtables-utils/description
-	$(call Package/ebtables/description)
+define Package/ebtables-legacy-utils/description
+	$(call Package/ebtables-legacy/description)
 endef
 
 MAKE_VARS += EXT_LIBSI="$(LIBGCC_S)"
@@ -52,21 +58,22 @@ MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LIBDIR="/usr/lib/ebtables"
 
-define Package/ebtables/install
+define Package/ebtables-legacy/install
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ethertypes $(1)/etc/
 	$(INSTALL_DIR) $(1)/usr/lib/ebtables
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib*.so $(1)/usr/lib/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/extensions/*.so $(1)/usr/lib/ebtables/
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables $(1)/usr/sbin/ebtables-legacy
 endef
 
-define Package/ebtables-utils/install
+define Package/ebtables-legacy-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables-save $(1)/usr/sbin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables-restore $(1)/usr/sbin/
+	#ebtables-save depends on perl and is just broken
+	#$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables-save $(1)/usr/sbin/ebtables-legacy-save
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables-restore $(1)/usr/sbin/ebtables-legacy-restore
 endef
 
-$(eval $(call BuildPackage,ebtables))
-$(eval $(call BuildPackage,ebtables-utils))
+$(eval $(call BuildPackage,ebtables-legacy))
+$(eval $(call BuildPackage,ebtables-legacy-utils))
