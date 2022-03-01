@@ -48,6 +48,14 @@ alfa-network,r36a)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x10"
 	;;
+alfa-network,tube-2hq)
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "signal1" "SIGNAL1" "red:signal1" "wlan0" "1" "100"
+	ucidef_set_led_rssi "signal2" "SIGNAL2" "orange:signal2" "wlan0" "25" "100"
+	ucidef_set_led_rssi "signal3" "SIGNAL3" "green:signal3" "wlan0" "50" "100"
+	ucidef_set_led_rssi "signal4" "SIGNAL4" "green:signal4" "wlan0" "75" "100"
+	;;
 asus,rp-ac66)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_rssimon "wlan1" "200000" "1"
@@ -316,6 +324,9 @@ tplink,archer-c7-v5)
 	ucidef_set_led_switch "lan2" "LAN2" "green:lan2" "switch0" "0x08"
 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x10"
 	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x20"
+	;;
+tplink,archer-a9-v6)
+	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x02"
 	;;
 tplink,archer-c2-v3|\
 tplink,tl-wr1043nd-v4|\

@@ -1,6 +1,13 @@
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += TPLINK_BOARD_ID
 
+define Device/kernel-size-migration
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := *** Kernel partition size has changed from earlier \
+	versions. You need to sysupgrade with the OpenWrt factory image and \
+	use the force flag when image check fails. Settings will be lost. ***
+endef
+
 define Build/buffalo-rootfs-cksum
 	( \
 		echo -ne "\x$$(od -A n -t u1 $@ | tr -s ' ' '\n' | \
@@ -128,13 +135,14 @@ TARGET_DEVICES += edgecore_ecw5410
 
 define Device/linksys_ea7500-v1
 	$(call Device/LegacyImage)
+	$(Device/kernel-size-migration)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := EA7500
 	DEVICE_VARIANT := v1
 	SOC := qcom-ipq8064
 	PAGESIZE := 2048
 	BLOCKSIZE := 128k
-	KERNEL_SIZE := 3072k
+	KERNEL_SIZE := 4096k
 	KERNEL = kernel-bin | append-dtb | uImage none | \
 		append-uImage-fakehdr filesystem
 	UBINIZE_OPTS := -E 5
@@ -142,18 +150,18 @@ define Device/linksys_ea7500-v1
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 		append-ubi | pad-to $$$$(PAGESIZE)
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
-	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea7500-v1
 
 define Device/linksys_ea8500
 	$(call Device/LegacyImage)
+	$(Device/kernel-size-migration)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := EA8500
 	SOC := qcom-ipq8064
 	PAGESIZE := 2048
 	BLOCKSIZE := 128k
-	KERNEL_SIZE := 3072k
+	KERNEL_SIZE := 4096k
 	KERNEL = kernel-bin | append-dtb | uImage none | \
 		append-uImage-fakehdr filesystem
 	BOARD_NAME := ea8500
@@ -163,7 +171,6 @@ define Device/linksys_ea8500
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 		append-ubi
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
-	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea8500
 
