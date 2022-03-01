@@ -7,7 +7,8 @@ define Package/mt7601u-firmware/install
 endef
 $(eval $(call BuildPackage,mt7601u-firmware))
 
-Package/mt76x2-firmware = $(call Package/firmware-default,MediaTek MT76x2 firmware)
+Package/mt76x2-firmware = $(call Package/firmware-default,MediaTek MT76x2 firmware, \
+	@!PACKAGE_kmod-mt76x2-common)
 define Package/mt76x2-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) \
