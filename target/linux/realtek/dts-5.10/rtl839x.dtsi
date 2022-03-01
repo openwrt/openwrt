@@ -65,7 +65,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyS0,38400";
+		bootargs = "console=ttyS0,115200";
 	};
 
 	lx_clk: lx_clk {
@@ -140,7 +140,7 @@
 			status = "disabled";
 		};
 
-		gpio0: gpio-controller@b3500 {
+		gpio0: gpio-controller@3500 {
 			compatible = "realtek,rtl8390-gpio", "realtek,otto-gpio";
 			reg = <0x3500 0x20>;
 
@@ -170,7 +170,7 @@
 
 	};
 
-	pinmux: pinmux@1b001000 {
+	pinmux@1b000004 {
 		compatible = "pinctrl-single";
 		reg = <0x1b000004 0x4>;
 
@@ -185,7 +185,7 @@
 	};
 
 	/* LED_GLB_CTRL */
-	pinmux_led: pinmux@1b00a000 {
+	pinmux@1b0000e4 {
 		compatible = "pinctrl-single";
 		reg = <0x1b0000e4 0x4>;
 

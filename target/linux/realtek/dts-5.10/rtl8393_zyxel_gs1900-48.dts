@@ -21,10 +21,6 @@
 		reg = <0x0 0x8000000>;
 	};
 
-	chosen {
-		bootargs = "console=ttyS0,115200";
-	};
-
 	leds {
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinmux_disable_sys_led>;
@@ -32,7 +28,7 @@
 
 		led_sys: sys {
 			label = "green:sys";
-			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -41,8 +37,6 @@
 		#gpio-cells = <2>;
 		indirect-access-bus-id = <3>;
 		gpio-controller;
-
-		status = "okay";
 	};
 
 	gpio-restart {

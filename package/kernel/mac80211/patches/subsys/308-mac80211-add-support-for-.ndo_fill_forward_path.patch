@@ -22,24 +22,27 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  struct ieee80211_ops {
  	void (*tx)(struct ieee80211_hw *hw,
-@@ -4265,6 +4267,11 @@ struct ieee80211_ops {
+@@ -4265,6 +4267,13 @@ struct ieee80211_ops {
  			      struct ieee80211_twt_setup *twt);
  	void (*twt_teardown_request)(struct ieee80211_hw *hw,
  				     struct ieee80211_sta *sta, u8 flowid);
++#if LINUX_VERSION_IS_GEQ(5,10,0)
 +	int (*net_fill_forward_path)(struct ieee80211_hw *hw,
 +				     struct ieee80211_vif *vif,
 +				     struct ieee80211_sta *sta,
 +				     struct net_device_path_ctx *ctx,
 +				     struct net_device_path *path);
++#endif
  };
  
  /**
 --- a/net/mac80211/driver-ops.h
 +++ b/net/mac80211/driver-ops.h
-@@ -1483,4 +1483,26 @@ static inline void drv_twt_teardown_requ
+@@ -1483,4 +1483,28 @@ static inline void drv_twt_teardown_requ
  	trace_drv_return_void(local);
  }
- 
+
++#if LINUX_VERSION_IS_GEQ(5,10,0)
 +static inline int drv_net_fill_forward_path(struct ieee80211_local *local,
 +					    struct ieee80211_sub_if_data *sdata,
 +					    struct ieee80211_sta *sta,
@@ -61,6 +64,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +
 +	return ret;
 +}
++#endif
 +
  #endif /* __MAC80211_DRIVER_OPS */
 --- a/net/mac80211/ieee80211_i.h
@@ -143,7 +147,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static const struct net_device_ops ieee80211_dataif_8023_ops = {
  #if LINUX_VERSION_IS_LESS(4,10,0)
  	.ndo_change_mtu = __change_mtu,
-@@ -839,7 +899,9 @@ static const struct net_device_ops ieee8
+@@ -839,7 +901,9 @@ static const struct net_device_ops ieee8
  #else
  	.ndo_get_stats64 = bp_ieee80211_get_stats64,
  #endif
@@ -156,16 +160,18 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static bool ieee80211_iftype_supports_hdr_offload(enum nl80211_iftype iftype)
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
-@@ -2892,6 +2892,13 @@ TRACE_EVENT(drv_twt_teardown_request,
+@@ -2892,6 +2892,15 @@ TRACE_EVENT(drv_twt_teardown_request,
  	)
  );
- 
+
++#if LINUX_VERSION_IS_GEQ(5,10,0)
 +DEFINE_EVENT(sta_event, drv_net_fill_forward_path,
 +	TP_PROTO(struct ieee80211_local *local,
 +		 struct ieee80211_sub_if_data *sdata,
 +		 struct ieee80211_sta *sta),
 +	TP_ARGS(local, sdata, sta)
 +);
++#endif
 +
  #endif /* !__MAC80211_DRIVER_TRACE || TRACE_HEADER_MULTI_READ */
  

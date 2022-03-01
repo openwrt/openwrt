@@ -24,11 +24,6 @@
 #define RTL9300_TC_INT_IP	BIT(16)
 #define RTL9300_TC_INT_IE	BIT(20)
 
-// Clocksource is using timer 0, clock event uses timer 1
-#define TIMER_CLK_SRC		0
-#define TIMER_CLK_EVT		0
-#define TIMER_BLK_EVT		(TIMER_CLK_EVT << 4)
-
 // Timer modes
 #define TIMER_MODE_REPEAT	1
 #define TIMER_MODE_ONCE		0
@@ -38,38 +33,30 @@
 
 #define N_BITS			28
 
-#define RTL9300_TC1_IRQ		8
 #define RTL9300_CLOCK_RATE	87500000
-#define RTL9300_TC0_BASE	(void *)0xb8003200
 
-int irq_tc0 = 7;
+struct rtl9300_clk_dev {
+	struct clock_event_device clkdev;
+	void __iomem *base;
+};
 
 static void __iomem *rtl9300_tc_base(struct clock_event_device *clk)
 {
-	struct irq_desc *desc = irq_to_desc(clk->irq);
-	int tc = desc->irq_data.hwirq - irq_tc0;
+	struct rtl9300_clk_dev *rtl_clk = container_of(clk, struct rtl9300_clk_dev, clkdev);
 
-	return RTL9300_TC0_BASE + (tc << 4);
+	return rtl_clk->base;
 }
 
 static irqreturn_t rtl9300_timer_interrupt(int irq, void *dev_id)
 {
-	struct clock_event_device *clk = dev_id;
-//	int cpu = smp_processor_id();
-	struct irq_desc *desc = irq_to_desc(irq);
-	int tc = desc->irq_data.hwirq - irq_tc0;
-	void __iomem *base = RTL9300_TC0_BASE + (tc << 4);
-	static atomic_t count = ATOMIC_INIT(0);
-	unsigned int c;
-	u32 v = readl(base + RTL9300_TC_INT);
+	struct rtl9300_clk_dev *rtl_clk = dev_id;
+	struct clock_event_device *clk = &rtl_clk->clkdev;
 
-	c = (unsigned int)atomic_inc_return(&count);
+	u32 v = readl(rtl_clk->base + RTL9300_TC_INT);
 
 	// Acknowledge the IRQ
 	v |= RTL9300_TC_INT_IP;
-	writel(v, base + RTL9300_TC_INT);
-	if (readl(base + RTL9300_TC_INT) & RTL9300_TC_INT_IP)
-		dump_stack();
+	writel(v, rtl_clk->base + RTL9300_TC_INT);
 
 	clk->event_handler(clk);
 	return IRQ_HANDLED;
@@ -83,10 +70,7 @@ static void rtl9300_clock_stop(void __iomem *base)
 
 	// Acknowledge possibly pending IRQ
 	v = readl(base + RTL9300_TC_INT);
-//	if (v & RTL9300_TC_INT_IP)
-		writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
-	if (readl(base + RTL9300_TC_INT) & RTL9300_TC_INT_IP)
-		dump_stack();
+	writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
 }
 
 static void rtl9300_timer_start(void __iomem *base, bool periodic)
@@ -149,23 +133,21 @@ static void rtl9300_clock_setup(void __iomem *base)
 
 	// Acknowledge possibly pending IRQ
 	v = readl(base + RTL9300_TC_INT);
-//	if (v & RTL9300_TC_INT_IP)
-		writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
-	if (readl(base + RTL9300_TC_INT) & RTL9300_TC_INT_IP)
-		dump_stack();
+	writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
 
 	// Setup maximum period (for use as clock-source)
 	writel(0x0fffffff, base + RTL9300_TC_DATA);
 }
 
-static DEFINE_PER_CPU(struct clock_event_device, rtl9300_clockevent);
+static DEFINE_PER_CPU(struct rtl9300_clk_dev, rtl9300_clockevent);
 static DEFINE_PER_CPU(char [18], rtl9300_clock_name);
 
 void rtl9300_clockevent_init(void)
 {
 	int cpu = smp_processor_id();
 	int irq;
-	struct clock_event_device *cd = &per_cpu(rtl9300_clockevent, cpu);
+	struct rtl9300_clk_dev *rtl_clk = &per_cpu(rtl9300_clockevent, cpu);
+	struct clock_event_device *cd = &rtl_clk->clkdev;
 	unsigned char *name = per_cpu(rtl9300_clock_name, cpu);
 	unsigned long flags =  IRQF_PERCPU | IRQF_TIMER;
 	struct device_node *node;
@@ -182,7 +164,13 @@ void rtl9300_clockevent_init(void)
 	irq = irq_of_parse_and_map(node, cpu);
 	pr_info("%s using IRQ %d\n", __func__, irq);
 
-	rtl9300_clock_setup(RTL9300_TC0_BASE + TIMER_BLK_EVT + (cpu << 4));
+	rtl_clk->base = of_iomap(node, cpu);
+	if (!rtl_clk->base) {
+		pr_err("cannot map timer for cpu %d", cpu);
+		return;
+	}
+
+	rtl9300_clock_setup(rtl_clk->base);
 
 	sprintf(name, "rtl9300-counter-%d", cpu);
 	cd->name		= name;
@@ -205,8 +193,8 @@ void rtl9300_clockevent_init(void)
 
 	irq_set_affinity(irq, cd->cpumask);
 
-	if (request_irq(irq, rtl9300_timer_interrupt, flags, name, cd))
+	if (request_irq(irq, rtl9300_timer_interrupt, flags, name, rtl_clk))
 		pr_err("Failed to request irq %d (%s)\n", irq, name);
 
-	writel(RTL9300_TC_INT_IE, RTL9300_TC0_BASE + TIMER_BLK_EVT + (cpu << 4) + RTL9300_TC_INT);
+	writel(RTL9300_TC_INT_IE, rtl_clk->base + RTL9300_TC_INT);
 }

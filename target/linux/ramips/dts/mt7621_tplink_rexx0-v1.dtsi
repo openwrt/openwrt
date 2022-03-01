@@ -167,6 +167,10 @@
 	};
 };
 
+&ethernet {
+	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
+};
+
 &gmac0 {
 	nvmem-cells = <&macaddr_config_10008>;
 	nvmem-cell-names = "mac-address";

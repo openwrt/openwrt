@@ -1,6 +1,4 @@
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN='fw_printenv fw_setenv fwtool'
-RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_do_upgrade() {
 	local board=$(board_name)

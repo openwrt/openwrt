@@ -1,7 +1,7 @@
 define Device/generic
   DEVICE_VENDOR := Generic
   DEVICE_MODEL := x86/Geode
-  DEVICE_PACKAGES += kmod-crypto-cbc kmod-crypto-ebc kmod-crypto-hw-geode \
+  DEVICE_PACKAGES += kmod-crypto-cbc kmod-crypto-ecb kmod-crypto-hw-geode \
 	kmod-ledtrig-gpio
   GRUB2_VARIANT := legacy
 endef

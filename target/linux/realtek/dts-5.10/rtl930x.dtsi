@@ -25,7 +25,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyS0,38400";
+		bootargs = "console=ttyS0,115200";
 	};
 
 	cpuintc: cpuintc {
@@ -59,12 +59,10 @@
 
 		rtl9300clock: rtl9300clock@3200 {
 			compatible = "realtek,rtl9300clock";
-			reg = <0xb8003200 0x10>;
-			#address-cells = <0>;
-			#interrupt-cells = <1>;
+			reg = <0x3200 0x10>, <0x3210 0x10>;
 
 			interrupt-parent = <&intc>;
-			interrupts = <7 1>, <8 2>;
+			interrupts = <7 5>, <8 5>;
 		};
 
 		spi0: spi@1200 {
