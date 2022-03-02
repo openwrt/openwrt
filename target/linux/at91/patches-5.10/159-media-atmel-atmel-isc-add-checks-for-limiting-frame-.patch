@@ -15,11 +15,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-isc-base.c | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index d987a8891bd9..02f1d1c6b06e 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -1338,6 +1338,12 @@ static int isc_try_fmt(struct isc_device *isc, struct v4l2_format *f,
+@@ -1338,6 +1338,12 @@ static int isc_try_fmt(struct isc_device
  
  	v4l2_fill_pix_format(pixfmt, &format.format);
  
@@ -32,7 +30,7 @@ index d987a8891bd9..02f1d1c6b06e 100644
  	pixfmt->field = V4L2_FIELD_NONE;
  	pixfmt->bytesperline = (pixfmt->width * isc->try_config.bpp) >> 3;
  	pixfmt->sizeimage = pixfmt->bytesperline * pixfmt->height;
-@@ -1373,6 +1379,12 @@ static int isc_set_fmt(struct isc_device *isc, struct v4l2_format *f)
+@@ -1373,6 +1379,12 @@ static int isc_set_fmt(struct isc_device
  	if (ret < 0)
  		return ret;
  
@@ -45,6 +43,3 @@ index d987a8891bd9..02f1d1c6b06e 100644
  	isc->fmt = *f;
  
  	if (isc->try_config.sd_format && isc->config.sd_format &&
--- 
-2.32.0
-

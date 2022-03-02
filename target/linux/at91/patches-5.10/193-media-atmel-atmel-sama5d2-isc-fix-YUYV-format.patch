@@ -20,11 +20,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  .../media/platform/atmel/atmel-sama5d2-isc.c    | 17 +++++++++++++++++
  1 file changed, 17 insertions(+)
 
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index d6fd22b127fd..4f09db71d152 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -255,6 +255,23 @@ static void isc_sama5d2_config_rlp(struct isc_device *isc)
+@@ -255,6 +255,23 @@ static void isc_sama5d2_config_rlp(struc
  	struct regmap *regmap = isc->regmap;
  	u32 rlp_mode = isc->config.rlp_cfg_mode;
  
@@ -48,6 +46,3 @@ index d6fd22b127fd..4f09db71d152 100644
  	regmap_update_bits(regmap, ISC_RLP_CFG + isc->offsets.rlp,
  			   ISC_RLP_CFG_MODE_MASK, rlp_mode);
  }
--- 
-2.32.0
-

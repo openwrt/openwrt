@@ -32,11 +32,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  drivers/net/ethernet/cadence/macb_main.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index 4ce302e03735..d5bd640d3fa4 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -464,7 +464,7 @@ static void macb_set_tx_clk(struct macb *bp, int speed)
+@@ -464,7 +464,7 @@ static void macb_set_tx_clk(struct macb
  {
  	long ferr, rate, rate_rounded;
  
@@ -45,6 +43,3 @@ index 4ce302e03735..d5bd640d3fa4 100644
  		return;
  
  	switch (speed) {
--- 
-2.32.0
-

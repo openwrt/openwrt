@@ -23,11 +23,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-isc.h      | 28 +++++++++++--------
  2 files changed, 25 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index cfe60b2882ac..a6b62e009c38 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -2324,8 +2324,14 @@ int isc_pipeline_init(struct isc_device *isc)
+@@ -2324,8 +2324,14 @@ int isc_pipeline_init(struct isc_device
  	struct regmap_field *regs;
  	unsigned int i;
  
@@ -43,7 +41,7 @@ index cfe60b2882ac..a6b62e009c38 100644
  		REG_FIELD(ISC_WB_CTRL, 0, 0),
  		REG_FIELD(ISC_CFA_CTRL, 0, 0),
  		REG_FIELD(ISC_CC_CTRL, 0, 0),
-@@ -2333,6 +2339,7 @@ int isc_pipeline_init(struct isc_device *isc)
+@@ -2333,6 +2339,7 @@ int isc_pipeline_init(struct isc_device
  		REG_FIELD(ISC_GAM_CTRL, 1, 1),
  		REG_FIELD(ISC_GAM_CTRL, 2, 2),
  		REG_FIELD(ISC_GAM_CTRL, 3, 3),
@@ -51,7 +49,7 @@ index cfe60b2882ac..a6b62e009c38 100644
  		REG_FIELD(ISC_CSC_CTRL + isc->offsets.csc, 0, 0),
  		REG_FIELD(ISC_CBC_CTRL + isc->offsets.cbc, 0, 0),
  		REG_FIELD(ISC_SUB422_CTRL + isc->offsets.sub422, 0, 0),
-@@ -2351,7 +2358,7 @@ int isc_pipeline_init(struct isc_device *isc)
+@@ -2351,7 +2358,7 @@ int isc_pipeline_init(struct isc_device
  }
  
  /* regmap configuration */
@@ -60,8 +58,6 @@ index cfe60b2882ac..a6b62e009c38 100644
  const struct regmap_config isc_regmap_config = {
  	.reg_bits       = 32,
  	.reg_stride     = 4,
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 513b2b920b1f..86edeea2d5cd 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -67,17 +67,21 @@ struct isc_format {
@@ -106,6 +102,3 @@ index 513b2b920b1f..86edeea2d5cd 100644
  
  /*
   * struct isc_reg_offsets - ISC device register offsets
--- 
-2.32.0
-

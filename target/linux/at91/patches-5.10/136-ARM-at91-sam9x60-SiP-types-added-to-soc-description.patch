@@ -14,11 +14,9 @@ Link: https://lore.kernel.org/r/20201008125028.21071-1-nicolas.ferre@microchip.c
  drivers/soc/atmel/soc.h | 3 +++
  2 files changed, 9 insertions(+)
 
-diff --git a/drivers/soc/atmel/soc.c b/drivers/soc/atmel/soc.c
-index 5d06ee70a36b..698d21f50516 100644
 --- a/drivers/soc/atmel/soc.c
 +++ b/drivers/soc/atmel/soc.c
-@@ -69,6 +69,12 @@ static const struct at91_soc __initconst socs[] = {
+@@ -69,6 +69,12 @@ static const struct at91_soc __initconst
  #endif
  #ifdef CONFIG_SOC_SAM9X60
  	AT91_SOC(SAM9X60_CIDR_MATCH, SAM9X60_EXID_MATCH, "sam9x60", "sam9x60"),
@@ -31,11 +29,9 @@ index 5d06ee70a36b..698d21f50516 100644
  #endif
  #ifdef CONFIG_SOC_SAMA5
  	AT91_SOC(SAMA5D2_CIDR_MATCH, SAMA5D21CU_EXID_MATCH,
-diff --git a/drivers/soc/atmel/soc.h b/drivers/soc/atmel/soc.h
-index ee652e4841a5..5849846a69d6 100644
 --- a/drivers/soc/atmel/soc.h
 +++ b/drivers/soc/atmel/soc.h
-@@ -60,6 +60,9 @@ at91_soc_init(const struct at91_soc *socs);
+@@ -60,6 +60,9 @@ at91_soc_init(const struct at91_soc *soc
  #define AT91SAM9CN11_EXID_MATCH		0x00000009
  
  #define SAM9X60_EXID_MATCH		0x00000000
@@ -45,6 +41,3 @@ index ee652e4841a5..5849846a69d6 100644
  
  #define AT91SAM9XE128_CIDR_MATCH	0x329973a0
  #define AT91SAM9XE256_CIDR_MATCH	0x329a93a0
--- 
-2.32.0
-

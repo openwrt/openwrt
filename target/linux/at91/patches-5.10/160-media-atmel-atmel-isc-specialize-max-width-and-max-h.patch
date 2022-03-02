@@ -16,11 +16,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  .../media/platform/atmel/atmel-sama5d2-isc.c  |  7 +++--
  3 files changed, 25 insertions(+), 19 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 02f1d1c6b06e..ed0048e79f3b 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -1216,8 +1216,8 @@ static void isc_try_fse(struct isc_device *isc,
+@@ -1216,8 +1216,8 @@ static void isc_try_fse(struct isc_devic
  	 * just use the maximum ISC can receive.
  	 */
  	if (ret) {
@@ -31,7 +29,7 @@ index 02f1d1c6b06e..ed0048e79f3b 100644
  	} else {
  		pad_cfg->try_crop.width = fse.max_width;
  		pad_cfg->try_crop.height = fse.max_height;
-@@ -1294,10 +1294,10 @@ static int isc_try_fmt(struct isc_device *isc, struct v4l2_format *f,
+@@ -1294,10 +1294,10 @@ static int isc_try_fmt(struct isc_device
  	isc->try_config.sd_format = sd_fmt;
  
  	/* Limit to Atmel ISC hardware capabilities */
@@ -46,7 +44,7 @@ index 02f1d1c6b06e..ed0048e79f3b 100644
  
  	/*
  	 * The mbus format is the one the subdev outputs.
-@@ -1339,10 +1339,10 @@ static int isc_try_fmt(struct isc_device *isc, struct v4l2_format *f,
+@@ -1339,10 +1339,10 @@ static int isc_try_fmt(struct isc_device
  	v4l2_fill_pix_format(pixfmt, &format.format);
  
  	/* Limit to Atmel ISC hardware capabilities */
@@ -61,7 +59,7 @@ index 02f1d1c6b06e..ed0048e79f3b 100644
  
  	pixfmt->field = V4L2_FIELD_NONE;
  	pixfmt->bytesperline = (pixfmt->width * isc->try_config.bpp) >> 3;
-@@ -1380,10 +1380,10 @@ static int isc_set_fmt(struct isc_device *isc, struct v4l2_format *f)
+@@ -1380,10 +1380,10 @@ static int isc_set_fmt(struct isc_device
  		return ret;
  
  	/* Limit to Atmel ISC hardware capabilities */
@@ -76,8 +74,6 @@ index 02f1d1c6b06e..ed0048e79f3b 100644
  
  	isc->fmt = *f;
  
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index bb43d3a93052..f208fb691ac9 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -10,9 +10,6 @@
@@ -110,8 +106,6 @@ index bb43d3a93052..f208fb691ac9 100644
  };
  
  extern struct isc_format formats_list[];
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index cba6e6c8810b..39fc8d4f9bdc 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 @@ -49,8 +49,8 @@
@@ -125,7 +119,7 @@ index cba6e6c8810b..39fc8d4f9bdc 100644
  
  #define ISC_CLK_MAX_DIV		255
  
-@@ -216,6 +216,9 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -216,6 +216,9 @@ static int atmel_isc_probe(struct platfo
  	isc->gamma_table = isc_sama5d2_gamma_table;
  	isc->gamma_max = 2;
  
@@ -135,6 +129,3 @@ index cba6e6c8810b..39fc8d4f9bdc 100644
  	ret = isc_pipeline_init(isc);
  	if (ret)
  		return ret;
--- 
-2.32.0
-

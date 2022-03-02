@@ -12,11 +12,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/cadence/macb_main.c | 24 ++++++++++++++++++------
  1 file changed, 18 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index eacf907a365d..c8d66f966a8b 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4307,8 +4307,10 @@ static int fu540_c000_clk_init(struct platform_device *pdev, struct clk **pclk,
+@@ -4307,8 +4307,10 @@ static int fu540_c000_clk_init(struct pl
  		return err;
  
  	mgmt = devm_kzalloc(&pdev->dev, sizeof(*mgmt), GFP_KERNEL);
@@ -29,7 +27,7 @@ index eacf907a365d..c8d66f966a8b 100644
  
  	init.name = "sifive-gemgxl-mgmt";
  	init.ops = &fu540_c000_ops;
-@@ -4319,16 +4321,26 @@ static int fu540_c000_clk_init(struct platform_device *pdev, struct clk **pclk,
+@@ -4319,16 +4321,26 @@ static int fu540_c000_clk_init(struct pl
  	mgmt->hw.init = &init;
  
  	*tx_clk = devm_clk_register(&pdev->dev, &mgmt->hw);
@@ -60,6 +58,3 @@ index eacf907a365d..c8d66f966a8b 100644
  }
  
  static int fu540_c000_init(struct platform_device *pdev)
--- 
-2.32.0
-

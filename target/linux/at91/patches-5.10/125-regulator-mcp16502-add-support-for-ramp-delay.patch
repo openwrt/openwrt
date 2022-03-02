@@ -13,8 +13,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  drivers/regulator/mcp16502.c | 89 +++++++++++++++++++++++++++++++++++-
  1 file changed, 87 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/regulator/mcp16502.c b/drivers/regulator/mcp16502.c
-index 48eb64bc4018..f81afeeddb19 100644
 --- a/drivers/regulator/mcp16502.c
 +++ b/drivers/regulator/mcp16502.c
 @@ -22,8 +22,9 @@
@@ -42,7 +40,7 @@ index 48eb64bc4018..f81afeeddb19 100644
  static unsigned int mcp16502_of_map_mode(unsigned int mode)
  {
  	if (mode == REGULATOR_MODE_NORMAL || mode == REGULATOR_MODE_IDLE)
-@@ -271,6 +278,80 @@ static int mcp16502_get_status(struct regulator_dev *rdev)
+@@ -271,6 +278,80 @@ static int mcp16502_get_status(struct re
  	return REGULATOR_STATUS_UNDEFINED;
  }
  
@@ -123,7 +121,7 @@ index 48eb64bc4018..f81afeeddb19 100644
  #ifdef CONFIG_SUSPEND
  /*
   * mcp16502_suspend_get_target_reg() - get the reg of the target suspend PMIC
-@@ -365,6 +446,8 @@ static const struct regulator_ops mcp16502_buck_ops = {
+@@ -365,6 +446,8 @@ static const struct regulator_ops mcp165
  	.disable			= regulator_disable_regmap,
  	.is_enabled			= regulator_is_enabled_regmap,
  	.get_status			= mcp16502_get_status,
@@ -132,7 +130,7 @@ index 48eb64bc4018..f81afeeddb19 100644
  
  	.set_mode			= mcp16502_set_mode,
  	.get_mode			= mcp16502_get_mode,
-@@ -389,6 +472,8 @@ static const struct regulator_ops mcp16502_ldo_ops = {
+@@ -389,6 +472,8 @@ static const struct regulator_ops mcp165
  	.disable			= regulator_disable_regmap,
  	.is_enabled			= regulator_is_enabled_regmap,
  	.get_status			= mcp16502_get_status,
@@ -141,6 +139,3 @@ index 48eb64bc4018..f81afeeddb19 100644
  
  #ifdef CONFIG_SUSPEND
  	.set_suspend_voltage		= mcp16502_set_suspend_voltage,
--- 
-2.32.0
-

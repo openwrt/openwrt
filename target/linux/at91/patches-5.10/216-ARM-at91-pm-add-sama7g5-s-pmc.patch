@@ -12,11 +12,9 @@ Link: https://lore.kernel.org/r/20210415105010.569620-22-claudiu.beznea@microchi
  arch/arm/mach-at91/pm.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index 653350eec9b6..687ce8582b4f 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
-@@ -912,6 +912,11 @@ static const struct pmc_info pmc_infos[] __initconst = {
+@@ -912,6 +912,11 @@ static const struct pmc_info pmc_infos[]
  		.mckr = 0x28,
  		.version = AT91_PMC_V2,
  	},
@@ -28,7 +26,7 @@ index 653350eec9b6..687ce8582b4f 100644
  };
  
  static const struct of_device_id atmel_pmc_ids[] __initconst = {
-@@ -927,6 +932,7 @@ static const struct of_device_id atmel_pmc_ids[] __initconst = {
+@@ -927,6 +932,7 @@ static const struct of_device_id atmel_p
  	{ .compatible = "atmel,sama5d4-pmc", .data = &pmc_infos[1] },
  	{ .compatible = "atmel,sama5d2-pmc", .data = &pmc_infos[1] },
  	{ .compatible = "microchip,sam9x60-pmc", .data = &pmc_infos[4] },
@@ -36,6 +34,3 @@ index 653350eec9b6..687ce8582b4f 100644
  	{ /* sentinel */ },
  };
  
--- 
-2.32.0
-

@@ -19,11 +19,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 11 +++++++++++
  3 files changed, 20 insertions(+)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 90a62d43fdb1..7862d6bf850d 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -1059,6 +1059,10 @@ static int isc_try_configure_pipeline(struct isc_device *isc)
+@@ -1059,6 +1059,10 @@ static int isc_try_configure_pipeline(st
  	default:
  		isc->try_config.bits_pipeline = 0x0;
  	}
@@ -34,8 +32,6 @@ index 90a62d43fdb1..7862d6bf850d 100644
  	return 0;
  }
  
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index b34737c09a5b..f59b2426ae74 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -235,6 +235,9 @@ struct isc_reg_offsets {
@@ -57,8 +53,6 @@ index b34737c09a5b..f59b2426ae74 100644
  	};
  
  	struct isc_reg_offsets		offsets;
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index b8c1b57ed820..26c971a380ca 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 @@ -54,6 +54,10 @@
@@ -72,7 +66,7 @@ index b8c1b57ed820..26c971a380ca 100644
  /* This is a list of the formats that the ISC can *output* */
  static const struct isc_format sama5d2_controller_formats[] = {
  	{
-@@ -257,6 +261,11 @@ static void isc_sama5d2_config_rlp(struct isc_device *isc)
+@@ -257,6 +261,11 @@ static void isc_sama5d2_config_rlp(struc
  			   ISC_RLP_CFG_MODE_MASK, rlp_mode);
  }
  
@@ -84,7 +78,7 @@ index b8c1b57ed820..26c971a380ca 100644
  /* Gamma table with gamma 1/2.2 */
  static const u32 isc_sama5d2_gamma_table[][GAMMA_ENTRIES] = {
  	/* 0 --> gamma 1/1.8 */
-@@ -431,6 +440,8 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -431,6 +440,8 @@ static int atmel_isc_probe(struct platfo
  	isc->config_rlp = isc_sama5d2_config_rlp;
  	isc->config_ctrls = isc_sama5d2_config_ctrls;
  
@@ -93,6 +87,3 @@ index b8c1b57ed820..26c971a380ca 100644
  	isc->offsets.csc = ISC_SAMA5D2_CSC_OFFSET;
  	isc->offsets.cbc = ISC_SAMA5D2_CBC_OFFSET;
  	isc->offsets.sub422 = ISC_SAMA5D2_SUB422_OFFSET;
--- 
-2.32.0
-

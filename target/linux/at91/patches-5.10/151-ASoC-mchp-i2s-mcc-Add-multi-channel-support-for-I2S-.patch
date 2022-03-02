@@ -16,8 +16,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/atmel/mchp-i2s-mcc.c | 38 ++++++++++++++++++++++++++++++++++
  1 file changed, 38 insertions(+)
 
-diff --git a/sound/soc/atmel/mchp-i2s-mcc.c b/sound/soc/atmel/mchp-i2s-mcc.c
-index 6a754cef9607..dca4fd1e2dfd 100644
 --- a/sound/soc/atmel/mchp-i2s-mcc.c
 +++ b/sound/soc/atmel/mchp-i2s-mcc.c
 @@ -16,6 +16,7 @@
@@ -28,7 +26,7 @@ index 6a754cef9607..dca4fd1e2dfd 100644
  
  #include <sound/core.h>
  #include <sound/pcm.h>
-@@ -225,6 +226,10 @@ static const struct regmap_config mchp_i2s_mcc_regmap_config = {
+@@ -225,6 +226,10 @@ static const struct regmap_config mchp_i
  	.max_register = MCHP_I2SMCC_VERSION,
  };
  
@@ -47,7 +45,7 @@ index 6a754cef9607..dca4fd1e2dfd 100644
  	struct snd_dmaengine_dai_dma_data	playback;
  	struct snd_dmaengine_dai_dma_data	capture;
  	unsigned int				fmt;
-@@ -549,6 +555,17 @@ static int mchp_i2s_mcc_hw_params(struct snd_pcm_substream *substream,
+@@ -549,6 +555,17 @@ static int mchp_i2s_mcc_hw_params(struct
  	}
  
  	if (dev->fmt & (SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_LEFT_J)) {
@@ -65,7 +63,7 @@ index 6a754cef9607..dca4fd1e2dfd 100644
  		switch (channels) {
  		case 1:
  			if (is_playback)
-@@ -558,6 +575,12 @@ static int mchp_i2s_mcc_hw_params(struct snd_pcm_substream *substream,
+@@ -558,6 +575,12 @@ static int mchp_i2s_mcc_hw_params(struct
  			break;
  		case 2:
  			break;
@@ -78,7 +76,7 @@ index 6a754cef9607..dca4fd1e2dfd 100644
  		default:
  			dev_err(dev->dev, "unsupported number of audio channels\n");
  			return -EINVAL;
-@@ -869,12 +892,22 @@ static const struct snd_soc_component_driver mchp_i2s_mcc_component = {
+@@ -869,12 +892,22 @@ static const struct snd_soc_component_dr
  };
  
  #ifdef CONFIG_OF
@@ -101,7 +99,7 @@ index 6a754cef9607..dca4fd1e2dfd 100644
  	},
  	{ /* sentinel */ }
  };
-@@ -932,6 +965,11 @@ static int mchp_i2s_mcc_probe(struct platform_device *pdev)
+@@ -932,6 +965,11 @@ static int mchp_i2s_mcc_probe(struct pla
  		dev->gclk = NULL;
  	}
  
@@ -113,6 +111,3 @@ index 6a754cef9607..dca4fd1e2dfd 100644
  	dev->dev = &pdev->dev;
  	dev->regmap = regmap;
  	platform_set_drvdata(pdev, dev);
--- 
-2.32.0
-

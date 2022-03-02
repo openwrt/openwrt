@@ -12,11 +12,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  drivers/regulator/core.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
-index dfdd42b9d773..0b7a23cdbcac 100644
 --- a/drivers/regulator/core.c
 +++ b/drivers/regulator/core.c
-@@ -4063,6 +4063,9 @@ int regulator_set_voltage_time(struct regulator *regulator,
+@@ -4063,6 +4063,9 @@ int regulator_set_voltage_time(struct re
  		if (i < rdev->desc->linear_min_sel)
  			continue;
  
@@ -26,6 +24,3 @@ index dfdd42b9d773..0b7a23cdbcac 100644
  		voltage = regulator_list_voltage(regulator, i);
  		if (voltage < 0)
  			return -EINVAL;
--- 
-2.32.0
-

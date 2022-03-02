@@ -15,8 +15,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/atmel/mchp-i2s-mcc.c | 76 +++++++++++++++++++++++++---------
  1 file changed, 56 insertions(+), 20 deletions(-)
 
-diff --git a/sound/soc/atmel/mchp-i2s-mcc.c b/sound/soc/atmel/mchp-i2s-mcc.c
-index 0818fa864f0e..188484e84f94 100644
 --- a/sound/soc/atmel/mchp-i2s-mcc.c
 +++ b/sound/soc/atmel/mchp-i2s-mcc.c
 @@ -176,7 +176,7 @@
@@ -28,7 +26,7 @@ index 0818fa864f0e..188484e84f94 100644
  
  #define MCHP_I2SMCC_MRB_DMACHUNK_MASK		GENMASK(9, 8)
  #define MCHP_I2SMCC_MRB_DMACHUNK(no_words) \
-@@ -230,6 +230,7 @@ static const struct regmap_config mchp_i2s_mcc_regmap_config = {
+@@ -230,6 +230,7 @@ static const struct regmap_config mchp_i
  
  struct mchp_i2s_mcc_soc_data {
  	unsigned int	data_pin_pair_num;
@@ -45,7 +43,7 @@ index 0818fa864f0e..188484e84f94 100644
  	irqreturn_t ret = IRQ_NONE;
  
  	regmap_read(dev->regmap, MCHP_I2SMCC_IMRA, &imra);
-@@ -275,24 +276,36 @@ static irqreturn_t mchp_i2s_mcc_interrupt(int irq, void *dev_id)
+@@ -275,24 +276,36 @@ static irqreturn_t mchp_i2s_mcc_interrup
  	 * Tx/Rx ready interrupts are enabled when stopping only, to assure
  	 * availability and to disable clocks if necessary
  	 */
@@ -92,7 +90,7 @@ index 0818fa864f0e..188484e84f94 100644
  
  	return ret;
  }
-@@ -664,6 +677,10 @@ static int mchp_i2s_mcc_hw_params(struct snd_pcm_substream *substream,
+@@ -664,6 +677,10 @@ static int mchp_i2s_mcc_hw_params(struct
  		}
  	}
  
@@ -103,7 +101,7 @@ index 0818fa864f0e..188484e84f94 100644
  	/*
  	 * If we are already running, the wanted setup must be
  	 * the same with the one that's currently ongoing
-@@ -726,8 +743,13 @@ static int mchp_i2s_mcc_hw_free(struct snd_pcm_substream *substream,
+@@ -726,8 +743,13 @@ static int mchp_i2s_mcc_hw_free(struct s
  		if (err == 0) {
  			dev_warn_once(dev->dev,
  				      "Timeout waiting for Tx ready\n");
@@ -119,7 +117,7 @@ index 0818fa864f0e..188484e84f94 100644
  			dev->tx_rdy = 1;
  		}
  	} else {
-@@ -737,8 +759,12 @@ static int mchp_i2s_mcc_hw_free(struct snd_pcm_substream *substream,
+@@ -737,8 +759,12 @@ static int mchp_i2s_mcc_hw_free(struct s
  		if (err == 0) {
  			dev_warn_once(dev->dev,
  				      "Timeout waiting for Rx ready\n");
@@ -134,7 +132,7 @@ index 0818fa864f0e..188484e84f94 100644
  			dev->rx_rdy = 1;
  		}
  	}
-@@ -765,7 +791,7 @@ static int mchp_i2s_mcc_trigger(struct snd_pcm_substream *substream, int cmd,
+@@ -765,7 +791,7 @@ static int mchp_i2s_mcc_trigger(struct s
  	struct mchp_i2s_mcc_dev *dev = snd_soc_dai_get_drvdata(dai);
  	bool is_playback = (substream->stream == SNDRV_PCM_STREAM_PLAYBACK);
  	u32 cr = 0;
@@ -143,7 +141,7 @@ index 0818fa864f0e..188484e84f94 100644
  	u32 sr;
  	int err;
  
-@@ -789,7 +815,10 @@ static int mchp_i2s_mcc_trigger(struct snd_pcm_substream *substream, int cmd,
+@@ -789,7 +815,10 @@ static int mchp_i2s_mcc_trigger(struct s
  			 * Enable Tx Ready interrupts on all channels
  			 * to assure all data is sent
  			 */
@@ -155,7 +153,7 @@ index 0818fa864f0e..188484e84f94 100644
  		} else if (!is_playback && (sr & MCHP_I2SMCC_SR_RXEN)) {
  			cr = MCHP_I2SMCC_CR_RXDIS;
  			dev->rx_rdy = 0;
-@@ -797,7 +826,10 @@ static int mchp_i2s_mcc_trigger(struct snd_pcm_substream *substream, int cmd,
+@@ -797,7 +826,10 @@ static int mchp_i2s_mcc_trigger(struct s
  			 * Enable Rx Ready interrupts on all channels
  			 * to assure all data is received
  			 */
@@ -167,7 +165,7 @@ index 0818fa864f0e..188484e84f94 100644
  		}
  		break;
  	default:
-@@ -815,7 +847,10 @@ static int mchp_i2s_mcc_trigger(struct snd_pcm_substream *substream, int cmd,
+@@ -815,7 +847,10 @@ static int mchp_i2s_mcc_trigger(struct s
  		}
  	}
  
@@ -179,7 +177,7 @@ index 0818fa864f0e..188484e84f94 100644
  	regmap_write(dev->regmap, MCHP_I2SMCC_CR, cr);
  
  	return 0;
-@@ -903,6 +938,7 @@ static struct mchp_i2s_mcc_soc_data mchp_i2s_mcc_sam9x60 = {
+@@ -903,6 +938,7 @@ static struct mchp_i2s_mcc_soc_data mchp
  
  static struct mchp_i2s_mcc_soc_data mchp_i2s_mcc_sama7g5 = {
  	.data_pin_pair_num = 4,
@@ -187,6 +185,3 @@ index 0818fa864f0e..188484e84f94 100644
  };
  
  static const struct of_device_id mchp_i2s_mcc_dt_ids[] = {
--- 
-2.32.0
-

@@ -24,11 +24,9 @@ Link: https://lore.kernel.org/r/20210930154219.2214051-2-claudiu.beznea@microchi
  arch/arm/boot/dts/at91-sama7g5ek.dts | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
-index 8b13b031a167..f0772fa01751 100644
 --- a/arch/arm/boot/dts/at91-sama7g5ek.dts
 +++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
-@@ -196,11 +196,13 @@ vddioddr: VDD_DDR {
+@@ -196,11 +196,13 @@
  
  					regulator-state-standby {
  						regulator-on-in-suspend;
@@ -42,6 +40,3 @@ index 8b13b031a167..f0772fa01751 100644
  						regulator-mode = <4>;
  					};
  				};
--- 
-2.32.0
-

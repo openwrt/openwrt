@@ -15,8 +15,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  drivers/regulator/mcp16502.c | 43 ++++++++++++++++++++++--------------
  1 file changed, 27 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/regulator/mcp16502.c b/drivers/regulator/mcp16502.c
-index ab78f831f5bf..48eb64bc4018 100644
 --- a/drivers/regulator/mcp16502.c
 +++ b/drivers/regulator/mcp16502.c
 @@ -54,13 +54,9 @@
@@ -58,7 +56,7 @@ index ab78f831f5bf..48eb64bc4018 100644
  static unsigned int mcp16502_of_map_mode(unsigned int mode)
  {
  	if (mode == REGULATOR_MODE_NORMAL || mode == REGULATOR_MODE_IDLE)
-@@ -144,22 +157,20 @@ static void mcp16502_gpio_set_mode(struct mcp16502 *mcp, int mode)
+@@ -144,22 +157,20 @@ static void mcp16502_gpio_set_mode(struc
  }
  
  /*
@@ -86,7 +84,7 @@ index ab78f831f5bf..48eb64bc4018 100644
  	default:
  		return -EINVAL;
  	}
-@@ -179,7 +190,7 @@ static unsigned int mcp16502_get_mode(struct regulator_dev *rdev)
+@@ -179,7 +190,7 @@ static unsigned int mcp16502_get_mode(st
  	unsigned int val;
  	int ret, reg;
  
@@ -95,7 +93,7 @@ index ab78f831f5bf..48eb64bc4018 100644
  	if (reg < 0)
  		return reg;
  
-@@ -210,7 +221,7 @@ static int _mcp16502_set_mode(struct regulator_dev *rdev, unsigned int mode,
+@@ -210,7 +221,7 @@ static int _mcp16502_set_mode(struct reg
  	int val;
  	int reg;
  
@@ -104,7 +102,7 @@ index ab78f831f5bf..48eb64bc4018 100644
  	if (reg < 0)
  		return reg;
  
-@@ -269,10 +280,10 @@ static int mcp16502_suspend_get_target_reg(struct regulator_dev *rdev)
+@@ -269,10 +280,10 @@ static int mcp16502_suspend_get_target_r
  {
  	switch (pm_suspend_target_state) {
  	case PM_SUSPEND_STANDBY:
@@ -117,6 +115,3 @@ index ab78f831f5bf..48eb64bc4018 100644
  	default:
  		dev_err(&rdev->dev, "invalid suspend target: %d\n",
  			pm_suspend_target_state);
--- 
-2.32.0
-

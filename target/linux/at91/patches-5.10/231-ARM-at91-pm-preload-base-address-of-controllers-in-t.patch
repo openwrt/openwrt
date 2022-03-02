@@ -34,8 +34,6 @@ Link: https://lore.kernel.org/r/20210930154219.2214051-4-claudiu.beznea@microchi
  arch/arm/mach-at91/pm_suspend.S | 25 ++++++++++++++++++++++++-
  1 file changed, 24 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
-index 34f251fdb743..fdb4f63ecde4 100644
 --- a/arch/arm/mach-at91/pm_suspend.S
 +++ b/arch/arm/mach-at91/pm_suspend.S
 @@ -1014,6 +1014,10 @@ ENTRY(at91_pm_suspend_in_sram)
@@ -93,6 +91,3 @@ index 34f251fdb743..fdb4f63ecde4 100644
  
  	/* Active the self-refresh mode */
  	at91_sramc_self_refresh_ena
--- 
-2.32.0
-

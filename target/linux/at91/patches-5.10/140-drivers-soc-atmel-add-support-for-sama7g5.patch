@@ -13,8 +13,6 @@ Link: https://lore.kernel.org/r/1611318097-8970-8-git-send-email-claudiu.beznea@
  drivers/soc/atmel/soc.h |  6 ++++++
  2 files changed, 24 insertions(+)
 
-diff --git a/drivers/soc/atmel/soc.c b/drivers/soc/atmel/soc.c
-index f9052f45cb3e..bc8e72fd431a 100644
 --- a/drivers/soc/atmel/soc.c
 +++ b/drivers/soc/atmel/soc.c
 @@ -27,8 +27,10 @@
@@ -28,11 +26,10 @@ index f9052f45cb3e..bc8e72fd431a 100644
  
  static const struct at91_soc socs[] __initconst = {
  #ifdef CONFIG_SOC_AT91RM9200
-@@ -220,6 +222,20 @@ static const struct at91_soc socs[] __initconst = {
- 	AT91_SOC(SAMV70Q19_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
+@@ -221,6 +223,20 @@ static const struct at91_soc socs[] __in
  		 AT91_CIDR_VERSION_MASK, SAMV70Q19_EXID_MATCH,
  		 "samv70q19", "samv7"),
-+#endif
+ #endif
 +#ifdef CONFIG_SOC_SAMA7
 +	AT91_SOC(SAMA7G5_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
 +		 AT91_CIDR_VERSION_MASK_SAMA7G5, SAMA7G51_EXID_MATCH,
@@ -46,10 +43,11 @@ index f9052f45cb3e..bc8e72fd431a 100644
 +	AT91_SOC(SAMA7G5_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
 +		 AT91_CIDR_VERSION_MASK_SAMA7G5, SAMA7G54_EXID_MATCH,
 +		 "sama7g54", "sama7g5"),
- #endif
++#endif
  	{ /* sentinel */ },
  };
-@@ -258,6 +274,7 @@ static int __init at91_get_cidr_exid_from_chipid(u32 *cidr, u32 *exid)
+ 
+@@ -258,6 +274,7 @@ static int __init at91_get_cidr_exid_fro
  	void __iomem *regs;
  	static const struct of_device_id chipids[] = {
  		{ .compatible = "atmel,sama5d2-chipid" },
@@ -57,7 +55,7 @@ index f9052f45cb3e..bc8e72fd431a 100644
  		{ },
  	};
  
-@@ -345,6 +362,7 @@ static const struct of_device_id at91_soc_allowed_list[] __initconst = {
+@@ -345,6 +362,7 @@ static const struct of_device_id at91_so
  	{ .compatible = "atmel,at91sam9", },
  	{ .compatible = "atmel,sama5", },
  	{ .compatible = "atmel,samv7", },
@@ -65,11 +63,9 @@ index f9052f45cb3e..bc8e72fd431a 100644
  	{ }
  };
  
-diff --git a/drivers/soc/atmel/soc.h b/drivers/soc/atmel/soc.h
-index 02198a4de22b..93c212533ff0 100644
 --- a/drivers/soc/atmel/soc.h
 +++ b/drivers/soc/atmel/soc.h
-@@ -48,6 +48,7 @@ at91_soc_init(const struct at91_soc *socs);
+@@ -48,6 +48,7 @@ at91_soc_init(const struct at91_soc *soc
  #define AT91SAM9X5_CIDR_MATCH		0x019a05a0
  #define AT91SAM9N12_CIDR_MATCH		0x019a07a0
  #define SAM9X60_CIDR_MATCH		0x019b35a0
@@ -77,7 +73,7 @@ index 02198a4de22b..93c212533ff0 100644
  
  #define AT91SAM9M11_EXID_MATCH		0x00000001
  #define AT91SAM9M10_EXID_MATCH		0x00000002
-@@ -69,6 +70,11 @@ at91_soc_init(const struct at91_soc *socs);
+@@ -69,6 +70,11 @@ at91_soc_init(const struct at91_soc *soc
  #define SAM9X60_D1G_EXID_MATCH		0x00000010
  #define SAM9X60_D6K_EXID_MATCH		0x00000011
  
@@ -89,6 +85,3 @@ index 02198a4de22b..93c212533ff0 100644
  #define AT91SAM9XE128_CIDR_MATCH	0x329973a0
  #define AT91SAM9XE256_CIDR_MATCH	0x329a93a0
  #define AT91SAM9XE512_CIDR_MATCH	0x329aa3a0
--- 
-2.32.0
-

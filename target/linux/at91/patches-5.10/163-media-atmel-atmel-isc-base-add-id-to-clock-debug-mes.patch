@@ -13,11 +13,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-isc-base.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 6c709f6a408c..f9190fccb482 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -281,8 +281,8 @@ static int isc_clk_enable(struct clk_hw *hw)
+@@ -281,8 +281,8 @@ static int isc_clk_enable(struct clk_hw
  	unsigned long flags;
  	unsigned int status;
  
@@ -28,6 +26,3 @@ index 6c709f6a408c..f9190fccb482 100644
  
  	spin_lock_irqsave(&isc_clk->lock, flags);
  	regmap_update_bits(regmap, ISC_CLKCFG,
--- 
-2.32.0
-

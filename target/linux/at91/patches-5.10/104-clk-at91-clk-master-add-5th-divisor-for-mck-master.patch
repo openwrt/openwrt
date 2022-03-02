@@ -18,8 +18,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/pmc.h        | 2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/at91/clk-master.c b/drivers/clk/at91/clk-master.c
-index bd0d8a69a2cf..aafd003b30cf 100644
 --- a/drivers/clk/at91/clk-master.c
 +++ b/drivers/clk/at91/clk-master.c
 @@ -15,7 +15,7 @@
@@ -31,11 +29,9 @@ index bd0d8a69a2cf..aafd003b30cf 100644
  
  #define PMC_MCR			0x30
  #define PMC_MCR_ID_MSK		GENMASK(3, 0)
-diff --git a/drivers/clk/at91/pmc.h b/drivers/clk/at91/pmc.h
-index 7b86affc6d7c..0a9364bde339 100644
 --- a/drivers/clk/at91/pmc.h
 +++ b/drivers/clk/at91/pmc.h
-@@ -48,7 +48,7 @@ extern const struct clk_master_layout at91sam9x5_master_layout;
+@@ -48,7 +48,7 @@ extern const struct clk_master_layout at
  
  struct clk_master_characteristics {
  	struct clk_range output;
@@ -44,6 +40,3 @@ index 7b86affc6d7c..0a9364bde339 100644
  	u8 have_div3_pres;
  };
  
--- 
-2.32.0
-

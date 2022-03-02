@@ -17,8 +17,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-8-claudiu.beznea@microchip
  arch/arm/mach-at91/pm_suspend.S | 397 +++++++++++++++++---------------
  1 file changed, 205 insertions(+), 192 deletions(-)
 
-diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
-index 3d20c9880fee..960ad29cce51 100644
 --- a/arch/arm/mach-at91/pm_suspend.S
 +++ b/arch/arm/mach-at91/pm_suspend.S
 @@ -75,98 +75,147 @@ tmp3	.req	r6
@@ -467,6 +465,3 @@ index 3d20c9880fee..960ad29cce51 100644
  
  .pmc_base:
  	.word 0
--- 
-2.32.0
-
