@@ -1,0 +1,21 @@
+--- a/backport-include/linux/lockdep.h
++++ b/backport-include/linux/lockdep.h
+@@ -3,6 +3,18 @@
+ #include_next <linux/lockdep.h>
+ #include <linux/version.h>
+ 
++#ifndef LOCK_STATE_UNKNOWN
++#define LOCK_STATE_UNKNOWN -1
++#endif
++
++#ifndef LOCK_STATE_NOT_HELD
++#define LOCK_STATE_NOT_HELD 0
++#endif
++
++#ifndef LOCK_STATE_HELD
++#define LOCK_STATE_HELD 1
++#endif
++
+ #if LINUX_VERSION_IS_LESS(4,15,0)
+ #ifndef CONFIG_LOCKDEP
+ struct lockdep_map { };
