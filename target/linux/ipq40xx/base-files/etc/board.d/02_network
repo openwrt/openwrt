@@ -19,8 +19,7 @@ ipq40xx_setup_interfaces()
 	luma,wrtq-329acn|\
 	netgear,wac510|\
 	plasmacloud,pa1200|\
-	plasmacloud,pa2200|\
-	tplink,deco-m5)
+	plasmacloud,pa2200)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	aruba,ap-303|\
@@ -139,6 +138,11 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "3:lan" "4:lan" "0u@eth1" "5:wan"
+		;;
+	tplink,deco-m5)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		ucidef_add_switch "switch0" \
+			"1" "1"
 		;;
 	unielec,u4019-32m)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"

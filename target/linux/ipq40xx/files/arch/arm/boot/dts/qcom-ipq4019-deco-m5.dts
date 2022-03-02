@@ -1,9 +1,20 @@
-// SPDX-License-Identifier: ISC
 /* Copyright (c) 2015, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022
+ * Copyright (c) 2021, Frank Veltmans <veltmans.frank@gmail.com>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
  */
-
-
+ 
 #include "qcom-ipq4019.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -11,7 +22,7 @@
 
 / {
 	model = "TP-Link Deco M5";
-	compatible = "tplink,deco-m5", "qcom,ipq4019";
+	compatible = "tp-link,deco-m5", "qcom,ipq4019";
 
 	chosen {
 		bootargs-append = " root=/dev/mtdblock16";
@@ -27,8 +38,8 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
-			label = "reset";
+		key_reset {
+			label = "key:reset";
 			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
@@ -131,7 +142,7 @@
 			};
 		};
 
-		blsp_dma {
+		blsp_dma: dma@7884000 {
 			status = "okay";
 		};
 
@@ -141,91 +152,91 @@
 			status = "okay";
 			cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
 
-			flash@0 {
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
 				reg = <0>;
 				compatible = "jedec,spi-nor";
 				spi-max-frequency = <24000000>;
-				broken-flash-reset;
-
+				
 				partitions {
 					#address-cells = <1>;
 					#size-cells = <1>;
 					compatible = "fixed-partitions";
 
-					partition@0 {
+					partition0@0 {
 						label = "0:SBL1";
 						reg = <0x00000000 0x00030000>;
 						read-only;
 					};
-					partition@30000 {
+					partition1@30000 {
 						label = "0:BOOTCONFIG";
 						reg = <0x00030000 0x00010000>;
 						read-only;
 					};
-					partition@40000 {
+					partition2@40000 {
 						label = "0:MIBIB";
 						reg = <0x00040000 0x00010000>;
 						read-only;
 					};
-					partition@50000 {
+					partition3@50000 {
 						label = "0:BOOTCONFIG1";
 						reg = <0x00050000 0x00010000>;
 						read-only;
 					};
-					partition@60000 {
+					partition4@60000 {
 						label = "0:QSEE";
 						reg = <0x00060000 0x00060000>;
 						read-only;
 					};
-					partition@c0000 {
+					partition5@c0000 {
 						label = "0:CDT";
 						reg = <0x000c0000 0x00010000>;
 						read-only;
 					};
-					partition@d0000 {
+					partition6@d0000 {
 						label = "0:DDRPARAMS";
 						reg = <0x000d0000 0x00010000>;
 						read-only;
 					};
-					partition@e0000 {
+					partition7@e0000 {
 						label = "0:APPSBLENV";
 						reg = <0x000e0000 0x00010000>;
 						read-only;
 					};
-					partition@f0000 {
+					partition8@f0000 {
 						label = "0:APPSBL";
 						reg = <0x000f0000 0x00080000>;
 						read-only;
 					};
-					partition@170000 {
+					partition9@170000 {
 						label = "0:ART";
 						reg = <0x00170000 0x00010000>;
 						read-only;
 					};
-					partition@180000 {
+					partition10@180000 {
 						label = "OPAQUE";
 						reg = <0x00180000 0x000c0000>;
 						read-only;
 					};
-					partition@240000 {
+					partition11@240000 {
 						label = "0:HLOS";
 						reg = <0x00240000 0x00300000>;
 						read-only;
 					};
-					partition@540000 {
+					partition12@540000 {
 						label = "0:rootfs";
 						reg = <0x00540000 0x007d0000>;
 						read-only;
 					};
-					partition@d10000 {
+					partition13@d10000 {
 						label = "0:APPSBL_1";
 						reg = <0x00d10000 0x00080000>;
 						read-only;
 					};
-					partition@d90000 {
+					partition14@d90000 {
 						label = "firmware";
-						compatible = "denx,fit";
-						reg = <0x00d90000 0x01270000>;
+						reg = <0x00d90000 0x01040000>;
 					};
 				};
 			};
@@ -248,22 +259,22 @@
 			pinctrl-names = "default";
 			status = "okay";
 		};
-
+		
 		tcsr@194b000 {
 			compatible = "qcom,tcsr";
 			reg = <0x194b000 0x100>;
 			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
 			status = "okay";
 		};
-
+		
 		usb2: usb2@60f8800 {
 			status = "okay";
 		};
-
+		
 		usb2_hs_phy: hsphy@a8000 {
 			status = "okay";
 		};
-
+		
 		usb3: usb3@8af8800 {
 			status = "okay";
 		};
@@ -271,7 +282,7 @@
 		usb3_hs_phy: hsphy@a6000 {
 			status = "okay";
 		};
-
+		
 		usb3_ss_phy: ssphy@9a000 {
 			status = "okay";
 		};
@@ -287,7 +298,7 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
+		
 		edma@c080000 {
 			status = "okay";
 
@@ -337,12 +348,12 @@
 		wifi_0: wifi@a000000 {
 			pinctrl-0 = <&wifi_pins>;
 			pinctrl-names = "default";
-			qcom,ath10k-calibration-variant = "TP-Link_Deco_M5";
+			qcom,ath10k-calibration-variant = "TP-Link_Deco_M5_EU_v3.0";
 			status = "okay";
 		};
 
 		wifi_1: wifi@a800000 {
-			qcom,ath10k-calibration-variant = "TP-Link_Deco_M5";
+			qcom,ath10k-calibration-variant = "TP-Link_Deco_M5_EU_v3.0";
 			status = "okay";
 		};
 	};
