@@ -24,11 +24,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/atmel/atmel-classd.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/sound/soc/atmel/atmel-classd.c b/sound/soc/atmel/atmel-classd.c
-index b1a28a9382fb..6023369e0f1a 100644
 --- a/sound/soc/atmel/atmel-classd.c
 +++ b/sound/soc/atmel/atmel-classd.c
-@@ -48,7 +48,7 @@ static struct atmel_classd_pdata *atmel_classd_dt_init(struct device *dev)
+@@ -48,7 +48,7 @@ static struct atmel_classd_pdata *atmel_
  {
  	struct device_node *np = dev->of_node;
  	struct atmel_classd_pdata *pdata;
@@ -37,7 +35,7 @@ index b1a28a9382fb..6023369e0f1a 100644
  	int ret;
  
  	if (!np) {
-@@ -60,8 +60,8 @@ static struct atmel_classd_pdata *atmel_classd_dt_init(struct device *dev)
+@@ -60,8 +60,8 @@ static struct atmel_classd_pdata *atmel_
  	if (!pdata)
  		return ERR_PTR(-ENOMEM);
  
@@ -48,6 +46,3 @@ index b1a28a9382fb..6023369e0f1a 100644
  		pdata->pwm_type = CLASSD_MR_PWMTYP_DIFF;
  	else
  		pdata->pwm_type = CLASSD_MR_PWMTYP_SINGLE;
--- 
-2.32.0
-

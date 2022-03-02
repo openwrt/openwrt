@@ -20,8 +20,6 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  .../media/platform/atmel/atmel-sama5d2-isc.c  | 45 ++++++++++++++++++
  3 files changed, 56 insertions(+), 47 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index a017572c870c..46d384332a58 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
 @@ -176,48 +176,6 @@ struct isc_format formats_list[] = {
@@ -73,7 +71,7 @@ index a017572c870c..46d384332a58 100644
  #define ISC_IS_FORMAT_RAW(mbus_code) \
  	(((mbus_code) & 0xf000) == 0x3000)
  
-@@ -691,7 +649,7 @@ static void isc_set_pipeline(struct isc_device *isc, u32 pipeline)
+@@ -691,7 +649,7 @@ static void isc_set_pipeline(struct isc_
  
  	regmap_write(regmap, ISC_CFA_CFG, bay_cfg | ISC_CFA_CFG_EITPOL);
  
@@ -82,7 +80,7 @@ index a017572c870c..46d384332a58 100644
  	regmap_bulk_write(regmap, ISC_GAM_BENTRY, gamma, GAMMA_ENTRIES);
  	regmap_bulk_write(regmap, ISC_GAM_GENTRY, gamma, GAMMA_ENTRIES);
  	regmap_bulk_write(regmap, ISC_GAM_RENTRY, gamma, GAMMA_ENTRIES);
-@@ -2085,7 +2043,8 @@ static int isc_ctrl_init(struct isc_device *isc)
+@@ -2085,7 +2043,8 @@ static int isc_ctrl_init(struct isc_devi
  
  	v4l2_ctrl_new_std(hdl, ops, V4L2_CID_BRIGHTNESS, -1024, 1023, 1, 0);
  	v4l2_ctrl_new_std(hdl, ops, V4L2_CID_CONTRAST, -2048, 2047, 1, 256);
@@ -92,8 +90,6 @@ index a017572c870c..46d384332a58 100644
  	isc->awb_ctrl = v4l2_ctrl_new_std(hdl, &isc_awb_ops,
  					  V4L2_CID_AUTO_WHITE_BALANCE,
  					  0, 1, 1, 1);
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 24b784b893d6..a85b99274e34 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -186,6 +186,10 @@ struct isc_ctrls {
@@ -128,8 +124,6 @@ index 24b784b893d6..a85b99274e34 100644
  extern const struct regmap_config isc_regmap_config;
  extern const struct v4l2_async_notifier_operations isc_async_ops;
  
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index a3304f49e499..1b537cd1e09e 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 @@ -54,6 +54,48 @@
@@ -181,7 +175,7 @@ index a3304f49e499..1b537cd1e09e 100644
  static int isc_parse_dt(struct device *dev, struct isc_device *isc)
  {
  	struct device_node *np = dev->of_node;
-@@ -171,6 +213,9 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -171,6 +213,9 @@ static int atmel_isc_probe(struct platfo
  		return ret;
  	}
  
@@ -191,6 +185,3 @@ index a3304f49e499..1b537cd1e09e 100644
  	ret = isc_pipeline_init(isc);
  	if (ret)
  		return ret;
--- 
-2.32.0
-

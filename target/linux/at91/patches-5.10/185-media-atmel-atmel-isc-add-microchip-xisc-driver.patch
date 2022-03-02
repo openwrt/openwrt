@@ -23,11 +23,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  6 files changed, 671 insertions(+), 1 deletion(-)
  create mode 100644 drivers/media/platform/atmel/atmel-sama7g5-isc.c
 
-diff --git a/drivers/media/platform/Makefile b/drivers/media/platform/Makefile
-index 62b6cdc8c730..fd15c76402c9 100644
 --- a/drivers/media/platform/Makefile
 +++ b/drivers/media/platform/Makefile
-@@ -64,6 +64,7 @@ obj-$(CONFIG_VIDEO_RCAR_VIN)		+= rcar-vin/
+@@ -64,6 +64,7 @@ obj-$(CONFIG_VIDEO_RCAR_VIN)		+= rcar-vi
  
  obj-$(CONFIG_VIDEO_ATMEL_ISC)		+= atmel/
  obj-$(CONFIG_VIDEO_ATMEL_ISI)		+= atmel/
@@ -35,8 +33,6 @@ index 62b6cdc8c730..fd15c76402c9 100644
  
  obj-$(CONFIG_VIDEO_STM32_DCMI)		+= stm32/
  
-diff --git a/drivers/media/platform/atmel/Kconfig b/drivers/media/platform/atmel/Kconfig
-index 1850fe7f9360..99b51213f871 100644
 --- a/drivers/media/platform/atmel/Kconfig
 +++ b/drivers/media/platform/atmel/Kconfig
 @@ -12,6 +12,17 @@ config VIDEO_ATMEL_ISC
@@ -57,8 +53,6 @@ index 1850fe7f9360..99b51213f871 100644
  config VIDEO_ATMEL_ISI
  	tristate "ATMEL Image Sensor Interface (ISI) support"
  	depends on VIDEO_V4L2 && OF
-diff --git a/drivers/media/platform/atmel/Makefile b/drivers/media/platform/atmel/Makefile
-index 2dba38994a70..c5c01556c653 100644
 --- a/drivers/media/platform/atmel/Makefile
 +++ b/drivers/media/platform/atmel/Makefile
 @@ -1,5 +1,7 @@
@@ -69,11 +63,9 @@ index 2dba38994a70..c5c01556c653 100644
  obj-$(CONFIG_VIDEO_ATMEL_ISI) += atmel-isi.o
  obj-$(CONFIG_VIDEO_ATMEL_ISC) += atmel-isc.o
 +obj-$(CONFIG_VIDEO_ATMEL_XISC) += atmel-xisc.o
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index dcb321ad10b8..46c6e3e20f33 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -600,7 +600,7 @@ static int isc_configure(struct isc_device *isc)
+@@ -600,7 +600,7 @@ static int isc_configure(struct isc_devi
  	mask = ISC_PFE_CFG0_BPS_MASK | ISC_PFE_CFG0_HPOL_LOW |
  	       ISC_PFE_CFG0_VPOL_LOW | ISC_PFE_CFG0_PPOL_LOW |
  	       ISC_PFE_CFG0_MODE_MASK | ISC_PFE_CFG0_CCIR_CRC |
@@ -82,8 +74,6 @@ index dcb321ad10b8..46c6e3e20f33 100644
  
  	regmap_update_bits(regmap, ISC_PFE_CFG0, mask, pfe_cfg0);
  
-diff --git a/drivers/media/platform/atmel/atmel-isc-regs.h b/drivers/media/platform/atmel/atmel-isc-regs.h
-index 5f99bf7717c1..d06b72228d4f 100644
 --- a/drivers/media/platform/atmel/atmel-isc-regs.h
 +++ b/drivers/media/platform/atmel/atmel-isc-regs.h
 @@ -26,6 +26,7 @@
@@ -185,9 +175,6 @@ index 5f99bf7717c1..d06b72228d4f 100644
  /* Histogram Entry */
  #define ISC_HIS_ENTRY	0x00000410
  
-diff --git a/drivers/media/platform/atmel/atmel-sama7g5-isc.c b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
-new file mode 100644
-index 000000000000..f2785131ff56
 --- /dev/null
 +++ b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
 @@ -0,0 +1,630 @@
@@ -821,6 +808,3 @@ index 000000000000..f2785131ff56
 +MODULE_AUTHOR("Eugen Hristev <eugen.hristev@microchip.com>");
 +MODULE_DESCRIPTION("The V4L2 driver for Microchip-XISC");
 +MODULE_LICENSE("GPL v2");
--- 
-2.32.0
-

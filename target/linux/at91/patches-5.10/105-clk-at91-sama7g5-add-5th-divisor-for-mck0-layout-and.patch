@@ -16,11 +16,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama7g5.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index d3c3469d47d9..d685e22b2014 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
-@@ -775,13 +775,13 @@ static const struct clk_pll_characteristics pll_characteristics = {
+@@ -775,13 +775,13 @@ static const struct clk_pll_characterist
  /* MCK0 characteristics. */
  static const struct clk_master_characteristics mck0_characteristics = {
  	.output = { .min = 140000000, .max = 200000000 },
@@ -36,6 +34,3 @@ index d3c3469d47d9..d685e22b2014 100644
  	.pres_shift = 4,
  	.offset = 0x28,
  };
--- 
-2.32.0
-

@@ -15,11 +15,9 @@ Link: https://lore.kernel.org/r/20210415105010.569620-3-claudiu.beznea@microchip
  arch/arm/mach-at91/pm.c | 15 ++++++++++++---
  1 file changed, 12 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index 3fa223c21618..f182d8bf6f82 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
-@@ -214,6 +214,8 @@ static int at91_sam9x60_config_pmc_ws(void __iomem *pmc, u32 mode, u32 polarity)
+@@ -214,6 +214,8 @@ static int at91_sam9x60_config_pmc_ws(vo
   */
  static int at91_pm_begin(suspend_state_t state)
  {
@@ -28,7 +26,7 @@ index 3fa223c21618..f182d8bf6f82 100644
  	switch (state) {
  	case PM_SUSPEND_MEM:
  		soc_pm.data.mode = soc_pm.data.suspend_mode;
-@@ -227,7 +229,16 @@ static int at91_pm_begin(suspend_state_t state)
+@@ -227,7 +229,16 @@ static int at91_pm_begin(suspend_state_t
  		soc_pm.data.mode = -1;
  	}
  
@@ -46,7 +44,7 @@ index 3fa223c21618..f182d8bf6f82 100644
  }
  
  /*
-@@ -296,8 +307,6 @@ static int at91_suspend_finish(unsigned long val)
+@@ -296,8 +307,6 @@ static int at91_suspend_finish(unsigned
  static void at91_pm_suspend(suspend_state_t state)
  {
  	if (soc_pm.data.mode == AT91_PM_BACKUP) {
@@ -55,6 +53,3 @@ index 3fa223c21618..f182d8bf6f82 100644
  		cpu_suspend(0, at91_suspend_finish);
  
  		/* The SRAM is lost between suspend cycles */
--- 
-2.32.0
-

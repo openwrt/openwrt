@@ -18,11 +18,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/cadence/macb_main.c | 15 ++++++++-------
  1 file changed, 8 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index d5bd640d3fa4..a8d266d72779 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -3837,6 +3837,13 @@ static int macb_init(struct platform_device *pdev)
+@@ -3837,6 +3837,13 @@ static int macb_init(struct platform_dev
  	return 0;
  }
  
@@ -36,7 +34,7 @@ index d5bd640d3fa4..a8d266d72779 100644
  #if defined(CONFIG_OF)
  /* 1518 rounded up */
  #define AT91ETHER_MAX_RBUFF_SZ	0x600
-@@ -4352,13 +4359,6 @@ static int fu540_c000_init(struct platform_device *pdev)
+@@ -4352,13 +4359,6 @@ static int fu540_c000_init(struct platfo
  	return macb_init(pdev);
  }
  
@@ -50,7 +48,7 @@ index d5bd640d3fa4..a8d266d72779 100644
  static const struct macb_usrio_config sama7g5_usrio = {
  	.mii = 0,
  	.rmii = 1,
-@@ -4507,6 +4507,7 @@ static const struct macb_config default_gem_config = {
+@@ -4507,6 +4507,7 @@ static const struct macb_config default_
  	.dma_burst_length = 16,
  	.clk_init = macb_clk_init,
  	.init = macb_init,
@@ -58,6 +56,3 @@ index d5bd640d3fa4..a8d266d72779 100644
  	.jumbo_max_len = 10240,
  };
  
--- 
-2.32.0
-

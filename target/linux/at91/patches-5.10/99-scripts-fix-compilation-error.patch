@@ -8,11 +8,9 @@ Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
  scripts/Makefile | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/scripts/Makefile b/scripts/Makefile
-index 9adb6d247818..035c1fe113ad 100644
 --- a/scripts/Makefile
 +++ b/scripts/Makefile
-@@ -21,7 +21,7 @@ HOSTCFLAGS_asn1_compiler.o = -I$(srctree)/include
+@@ -21,7 +21,7 @@ HOSTCFLAGS_asn1_compiler.o = -I$(srctree
  HOSTCFLAGS_sign-file.o = $(CRYPTO_CFLAGS)
  HOSTLDLIBS_sign-file = $(CRYPTO_LIBS)
  HOSTCFLAGS_extract-cert.o = $(CRYPTO_CFLAGS)
@@ -21,6 +19,3 @@ index 9adb6d247818..035c1fe113ad 100644
  
  ifdef CONFIG_UNWINDER_ORC
  ifeq ($(ARCH),x86_64)
--- 
-2.25.1
-

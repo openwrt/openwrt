@@ -17,11 +17,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/clk-master.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/at91/clk-master.c b/drivers/clk/at91/clk-master.c
-index 9a2c8e64cacf..2093e13b5068 100644
 --- a/drivers/clk/at91/clk-master.c
 +++ b/drivers/clk/at91/clk-master.c
-@@ -344,7 +344,7 @@ static int clk_master_pres_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -344,7 +344,7 @@ static int clk_master_pres_set_rate(stru
  
  	else if (pres == 3)
  		pres = MASTER_PRES_MAX;
@@ -30,7 +28,7 @@ index 9a2c8e64cacf..2093e13b5068 100644
  		pres = ffs(pres) - 1;
  
  	spin_lock_irqsave(master->lock, flags);
-@@ -757,7 +757,7 @@ static int clk_sama7g5_master_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -757,7 +757,7 @@ static int clk_sama7g5_master_set_rate(s
  
  	if (div == 3)
  		div = MASTER_PRES_MAX;
@@ -39,6 +37,3 @@ index 9a2c8e64cacf..2093e13b5068 100644
  		div = ffs(div) - 1;
  
  	spin_lock_irqsave(master->lock, flags);
--- 
-2.32.0
-

@@ -15,8 +15,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama7g5.c | 55 ++++++++++++++++++--------------------
  1 file changed, 26 insertions(+), 29 deletions(-)
 
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index d7c2b731ad20..335e9c943c65 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
 @@ -280,7 +280,7 @@ static const struct {
@@ -118,7 +116,7 @@ index d7c2b731ad20..335e9c943c65 100644
  
  	{ .n  = "tcb0_ch0_gclk",
  	  .id = 88,
-@@ -961,9 +961,8 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -961,9 +961,8 @@ static void __init sama7g5_pmc_setup(str
  	parent_names[0] = md_slck_name;
  	parent_names[1] = td_slck_name;
  	parent_names[2] = "mainck";
@@ -129,7 +127,7 @@ index d7c2b731ad20..335e9c943c65 100644
  		u32 *mux_table;
  
  		mux_table = kmalloc_array(num_parents, sizeof(*mux_table),
-@@ -971,10 +970,10 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -971,10 +970,10 @@ static void __init sama7g5_pmc_setup(str
  		if (!mux_table)
  			goto err_free;
  
@@ -143,7 +141,7 @@ index d7c2b731ad20..335e9c943c65 100644
  				   sama7g5_mckx[i].ep_count);
  
  		hw = at91_clk_sama7g5_register_master(regmap, sama7g5_mckx[i].n,
-@@ -997,20 +996,19 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -997,20 +996,19 @@ static void __init sama7g5_pmc_setup(str
  	parent_names[0] = md_slck_name;
  	parent_names[1] = td_slck_name;
  	parent_names[2] = "mainck";
@@ -171,7 +169,7 @@ index d7c2b731ad20..335e9c943c65 100644
  						    &programmable_layout,
  						    sama7g5_prog_mux_table);
  		if (IS_ERR(hw))
-@@ -1047,9 +1045,8 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -1047,9 +1045,8 @@ static void __init sama7g5_pmc_setup(str
  	parent_names[0] = md_slck_name;
  	parent_names[1] = td_slck_name;
  	parent_names[2] = "mainck";
@@ -182,7 +180,7 @@ index d7c2b731ad20..335e9c943c65 100644
  		u32 *mux_table;
  
  		mux_table = kmalloc_array(num_parents, sizeof(*mux_table),
-@@ -1057,10 +1054,10 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -1057,10 +1054,10 @@ static void __init sama7g5_pmc_setup(str
  		if (!mux_table)
  			goto err_free;
  
@@ -196,6 +194,3 @@ index d7c2b731ad20..335e9c943c65 100644
  				   sama7g5_gck[i].pp_count);
  
  		hw = at91_clk_register_generated(regmap, &pmc_pcr_lock,
--- 
-2.32.0
-

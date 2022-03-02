@@ -16,8 +16,6 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-at91-pio4.c | 27 +++++++++++++++++++++++++++
  1 file changed, 27 insertions(+)
 
-diff --git a/drivers/pinctrl/pinctrl-at91-pio4.c b/drivers/pinctrl/pinctrl-at91-pio4.c
-index d267367d94b9..f202cdb6dc3c 100644
 --- a/drivers/pinctrl/pinctrl-at91-pio4.c
 +++ b/drivers/pinctrl/pinctrl-at91-pio4.c
 @@ -36,6 +36,7 @@
@@ -57,7 +55,7 @@ index d267367d94b9..f202cdb6dc3c 100644
  };
  
  static const char * const atmel_functions[] = {
-@@ -760,6 +765,13 @@ static int atmel_conf_pin_config_group_get(struct pinctrl_dev *pctldev,
+@@ -760,6 +765,13 @@ static int atmel_conf_pin_config_group_g
  			return -EINVAL;
  		arg = 1;
  		break;
@@ -71,7 +69,7 @@ index d267367d94b9..f202cdb6dc3c 100644
  	case ATMEL_PIN_CONFIG_DRIVE_STRENGTH:
  		if (!(res & ATMEL_PIO_DRVSTR_MASK))
  			return -EINVAL;
-@@ -793,6 +805,10 @@ static int atmel_conf_pin_config_group_set(struct pinctrl_dev *pctldev,
+@@ -793,6 +805,10 @@ static int atmel_conf_pin_config_group_s
  		dev_dbg(pctldev->dev, "%s: pin=%u, config=0x%lx\n",
  			__func__, pin_id, configs[i]);
  
@@ -82,7 +80,7 @@ index d267367d94b9..f202cdb6dc3c 100644
  		switch (param) {
  		case PIN_CONFIG_BIAS_DISABLE:
  			conf &= (~ATMEL_PIO_PUEN_MASK);
-@@ -850,6 +866,13 @@ static int atmel_conf_pin_config_group_set(struct pinctrl_dev *pctldev,
+@@ -850,6 +866,13 @@ static int atmel_conf_pin_config_group_s
  					ATMEL_PIO_SODR);
  			}
  			break;
@@ -96,7 +94,7 @@ index d267367d94b9..f202cdb6dc3c 100644
  		case ATMEL_PIN_CONFIG_DRIVE_STRENGTH:
  			switch (arg) {
  			case ATMEL_PIO_DRVSTR_LO:
-@@ -901,6 +924,8 @@ static void atmel_conf_pin_config_dbg_show(struct pinctrl_dev *pctldev,
+@@ -901,6 +924,8 @@ static void atmel_conf_pin_config_dbg_sh
  		seq_printf(s, "%s ", "open-drain");
  	if (conf & ATMEL_PIO_SCHMITT_MASK)
  		seq_printf(s, "%s ", "schmitt");
@@ -105,7 +103,7 @@ index d267367d94b9..f202cdb6dc3c 100644
  	if (conf & ATMEL_PIO_DRVSTR_MASK) {
  		switch ((conf & ATMEL_PIO_DRVSTR_MASK) >> ATMEL_PIO_DRVSTR_OFFSET) {
  		case ATMEL_PIO_DRVSTR_ME:
-@@ -994,6 +1019,7 @@ static const struct atmel_pioctrl_data atmel_sama5d2_pioctrl_data = {
+@@ -994,6 +1019,7 @@ static const struct atmel_pioctrl_data a
  static const struct atmel_pioctrl_data microchip_sama7g5_pioctrl_data = {
  	.nbanks			= 5,
  	.last_bank_count	= 8, /* sama7g5 has only PE0 to PE7 */
@@ -113,7 +111,7 @@ index d267367d94b9..f202cdb6dc3c 100644
  };
  
  static const struct of_device_id atmel_pctrl_of_match[] = {
-@@ -1039,6 +1065,7 @@ static int atmel_pinctrl_probe(struct platform_device *pdev)
+@@ -1039,6 +1065,7 @@ static int atmel_pinctrl_probe(struct pl
  		atmel_pioctrl->npins -= ATMEL_PIO_NPINS_PER_BANK;
  		atmel_pioctrl->npins += atmel_pioctrl_data->last_bank_count;
  	}
@@ -121,6 +119,3 @@ index d267367d94b9..f202cdb6dc3c 100644
  
  	atmel_pioctrl->reg_base = devm_platform_ioremap_resource(pdev, 0);
  	if (IS_ERR(atmel_pioctrl->reg_base))
--- 
-2.32.0
-

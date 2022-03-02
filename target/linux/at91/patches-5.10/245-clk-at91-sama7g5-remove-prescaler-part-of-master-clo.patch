@@ -23,11 +23,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama7g5.c | 11 +----------
  1 file changed, 1 insertion(+), 10 deletions(-)
 
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index c66bde6f7b47..fd9d17eabf54 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
-@@ -992,16 +992,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -992,16 +992,7 @@ static void __init sama7g5_pmc_setup(str
  	}
  
  	parent_names[0] = "cpupll_divpmcck";
@@ -45,6 +43,3 @@ index c66bde6f7b47..fd9d17eabf54 100644
  					  &mck0_layout, &mck0_characteristics,
  					  &pmc_mck0_lock, CLK_GET_RATE_NOCACHE, 5);
  	if (IS_ERR(hw))
--- 
-2.32.0
-

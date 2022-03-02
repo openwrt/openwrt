@@ -13,8 +13,6 @@ Link: https://lore.kernel.org/r/1611061165-30180-1-git-send-email-claudiu.beznea
  drivers/clocksource/timer-microchip-pit64b.c | 86 ++++++++++++++++----
  1 file changed, 71 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/clocksource/timer-microchip-pit64b.c b/drivers/clocksource/timer-microchip-pit64b.c
-index 59e11ca8ee73..ab623b25a47b 100644
 --- a/drivers/clocksource/timer-microchip-pit64b.c
 +++ b/drivers/clocksource/timer-microchip-pit64b.c
 @@ -71,10 +71,24 @@ struct mchp_pit64b_clkevt {
@@ -43,7 +41,7 @@ index 59e11ca8ee73..ab623b25a47b 100644
  /* Base address for clocksource timer. */
  static void __iomem *mchp_pit64b_cs_base;
  /* Default cycles for clockevent timer. */
-@@ -116,6 +130,36 @@ static inline void mchp_pit64b_reset(struct mchp_pit64b_timer *timer,
+@@ -116,6 +130,36 @@ static inline void mchp_pit64b_reset(str
  	writel_relaxed(MCHP_PIT64B_CR_START, timer->base + MCHP_PIT64B_CR);
  }
  
@@ -80,7 +78,7 @@ index 59e11ca8ee73..ab623b25a47b 100644
  static u64 mchp_pit64b_clksrc_read(struct clocksource *cs)
  {
  	return mchp_pit64b_cnt_read(mchp_pit64b_cs_base);
-@@ -128,7 +172,7 @@ static u64 mchp_pit64b_sched_read_clk(void)
+@@ -128,7 +172,7 @@ static u64 mchp_pit64b_sched_read_clk(vo
  
  static int mchp_pit64b_clkevt_shutdown(struct clock_event_device *cedev)
  {
@@ -89,7 +87,7 @@ index 59e11ca8ee73..ab623b25a47b 100644
  
  	writel_relaxed(MCHP_PIT64B_CR_SWRST, timer->base + MCHP_PIT64B_CR);
  
-@@ -137,7 +181,7 @@ static int mchp_pit64b_clkevt_shutdown(struct clock_event_device *cedev)
+@@ -137,7 +181,7 @@ static int mchp_pit64b_clkevt_shutdown(s
  
  static int mchp_pit64b_clkevt_set_periodic(struct clock_event_device *cedev)
  {
@@ -98,7 +96,7 @@ index 59e11ca8ee73..ab623b25a47b 100644
  
  	mchp_pit64b_reset(timer, mchp_pit64b_ce_cycles, MCHP_PIT64B_MR_CONT,
  			  MCHP_PIT64B_IER_PERIOD);
-@@ -148,7 +192,7 @@ static int mchp_pit64b_clkevt_set_periodic(struct clock_event_device *cedev)
+@@ -148,7 +192,7 @@ static int mchp_pit64b_clkevt_set_period
  static int mchp_pit64b_clkevt_set_next_event(unsigned long evt,
  					     struct clock_event_device *cedev)
  {
@@ -107,7 +105,7 @@ index 59e11ca8ee73..ab623b25a47b 100644
  
  	mchp_pit64b_reset(timer, evt, MCHP_PIT64B_MR_ONE_SHOT,
  			  MCHP_PIT64B_IER_PERIOD);
-@@ -158,21 +202,16 @@ static int mchp_pit64b_clkevt_set_next_event(unsigned long evt,
+@@ -158,21 +202,16 @@ static int mchp_pit64b_clkevt_set_next_e
  
  static void mchp_pit64b_clkevt_suspend(struct clock_event_device *cedev)
  {
@@ -133,7 +131,7 @@ index 59e11ca8ee73..ab623b25a47b 100644
  }
  
  static irqreturn_t mchp_pit64b_interrupt(int irq, void *dev_id)
-@@ -296,20 +335,37 @@ static int __init mchp_pit64b_init_mode(struct mchp_pit64b_timer *timer,
+@@ -296,20 +335,37 @@ done:
  static int __init mchp_pit64b_init_clksrc(struct mchp_pit64b_timer *timer,
  					  u32 clk_rate)
  {
@@ -173,6 +171,3 @@ index 59e11ca8ee73..ab623b25a47b 100644
  
  		return ret;
  	}
--- 
-2.32.0
-

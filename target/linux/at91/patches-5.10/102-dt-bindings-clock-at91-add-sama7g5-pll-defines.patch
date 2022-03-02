@@ -17,8 +17,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  include/dt-bindings/clock/at91.h | 10 ++++++++++
  2 files changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index a092a940baa4..7ef7963126b6 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
 @@ -182,13 +182,13 @@ static const struct {
@@ -37,7 +35,7 @@ index a092a940baa4..7ef7963126b6 100644
  	},
  
  	[PLL_ID_ETH] = {
-@@ -835,7 +835,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -835,7 +835,7 @@ static void __init sama7g5_pmc_setup(str
  	if (IS_ERR(regmap))
  		return;
  
@@ -46,8 +44,6 @@ index a092a940baa4..7ef7963126b6 100644
  					nck(sama7g5_systemck),
  					nck(sama7g5_periphck),
  					nck(sama7g5_gck), 8);
-diff --git a/include/dt-bindings/clock/at91.h b/include/dt-bindings/clock/at91.h
-index eba17106608b..fab313f62e8f 100644
 --- a/include/dt-bindings/clock/at91.h
 +++ b/include/dt-bindings/clock/at91.h
 @@ -25,6 +25,16 @@
@@ -67,6 +63,3 @@ index eba17106608b..fab313f62e8f 100644
  #ifndef AT91_PMC_MOSCS
  #define AT91_PMC_MOSCS		0		/* MOSCS Flag */
  #define AT91_PMC_LOCKA		1		/* PLLA Lock */
--- 
-2.32.0
-

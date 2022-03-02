@@ -15,11 +15,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama7g5.c | 61 +++++++++++++++++++++++++++++---------
  1 file changed, 47 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index 29d9781e6712..e0c4d2eb9f59 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
-@@ -89,11 +89,40 @@ static const struct clk_pll_layout pll_layout_divio = {
+@@ -89,11 +89,40 @@ static const struct clk_pll_layout pll_l
  	.endiv_shift	= 30,
  };
  
@@ -203,7 +201,7 @@ index 29d9781e6712..e0c4d2eb9f59 100644
  /* MCK0 characteristics. */
  static const struct clk_master_characteristics mck0_characteristics = {
  	.output = { .min = 50000000, .max = 200000000 },
-@@ -921,7 +954,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -921,7 +954,7 @@ static void __init sama7g5_pmc_setup(str
  				hw = sam9x60_clk_register_frac_pll(regmap,
  					&pmc_pll_lock, sama7g5_plls[i][j].n,
  					sama7g5_plls[i][j].p, parent_hw, i,
@@ -212,7 +210,7 @@ index 29d9781e6712..e0c4d2eb9f59 100644
  					sama7g5_plls[i][j].l,
  					sama7g5_plls[i][j].f);
  				break;
-@@ -930,7 +963,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -930,7 +963,7 @@ static void __init sama7g5_pmc_setup(str
  				hw = sam9x60_clk_register_div_pll(regmap,
  					&pmc_pll_lock, sama7g5_plls[i][j].n,
  					sama7g5_plls[i][j].p, i,
@@ -221,6 +219,3 @@ index 29d9781e6712..e0c4d2eb9f59 100644
  					sama7g5_plls[i][j].l,
  					sama7g5_plls[i][j].f);
  				break;
--- 
-2.32.0
-

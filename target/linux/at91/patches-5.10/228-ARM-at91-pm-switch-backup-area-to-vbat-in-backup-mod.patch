@@ -17,8 +17,6 @@ Link: https://lore.kernel.org/r/20210830100927.22711-1-claudiu.beznea@microchip.
  arch/arm/mach-at91/pm.c | 52 +++++++++++++++++++++++++++++++++++++++++
  1 file changed, 52 insertions(+)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index d92afca64b49..8711d6824c1f 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
 @@ -47,12 +47,26 @@ struct at91_pm_bu {
@@ -56,7 +54,7 @@ index d92afca64b49..8711d6824c1f 100644
  	void *memcs;
  };
  
-@@ -356,9 +371,36 @@ static int at91_suspend_finish(unsigned long val)
+@@ -356,9 +371,36 @@ static int at91_suspend_finish(unsigned
  	return 0;
  }
  
@@ -117,6 +115,3 @@ index d92afca64b49..8711d6824c1f 100644
  }
  
  static int __init at91_pm_modes_select(char *str)
--- 
-2.32.0
-

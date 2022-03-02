@@ -16,11 +16,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 3 +++
  3 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index ed0048e79f3b..07ba439eb7e9 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -724,8 +724,7 @@ static int isc_configure(struct isc_device *isc)
+@@ -724,8 +724,7 @@ static int isc_configure(struct isc_devi
  	rlp_mode = isc->config.rlp_cfg_mode;
  	pipeline = isc->config.bits_pipeline;
  
@@ -30,8 +28,6 @@ index ed0048e79f3b..07ba439eb7e9 100644
  
  	pfe_cfg0  |= subdev->pfe_cfg0 | ISC_PFE_CFG0_MODE_PROGRESSIVE;
  	mask = ISC_PFE_CFG0_BPS_MASK | ISC_PFE_CFG0_HPOL_LOW |
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index f208fb691ac9..88ec4268de11 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -149,6 +149,7 @@ struct isc_ctrls {
@@ -50,11 +46,9 @@ index f208fb691ac9..88ec4268de11 100644
  
  	struct device		*dev;
  	struct v4l2_device	v4l2_dev;
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index 39fc8d4f9bdc..12edeb07b618 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -219,6 +219,9 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -219,6 +219,9 @@ static int atmel_isc_probe(struct platfo
  	isc->max_width = ISC_SAMA5D2_MAX_SUPPORT_WIDTH;
  	isc->max_height = ISC_SAMA5D2_MAX_SUPPORT_HEIGHT;
  
@@ -64,6 +58,3 @@ index 39fc8d4f9bdc..12edeb07b618 100644
  	ret = isc_pipeline_init(isc);
  	if (ret)
  		return ret;
--- 
-2.32.0
-

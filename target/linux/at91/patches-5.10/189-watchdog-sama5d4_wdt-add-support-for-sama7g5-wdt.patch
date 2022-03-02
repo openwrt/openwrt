@@ -18,11 +18,9 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  drivers/watchdog/sama5d4_wdt.c | 10 ++++++++--
  1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/watchdog/sama5d4_wdt.c b/drivers/watchdog/sama5d4_wdt.c
-index e5d11d6a2600..ec20ad4e534f 100644
 --- a/drivers/watchdog/sama5d4_wdt.c
 +++ b/drivers/watchdog/sama5d4_wdt.c
-@@ -268,8 +268,10 @@ static int sama5d4_wdt_probe(struct platform_device *pdev)
+@@ -268,8 +268,10 @@ static int sama5d4_wdt_probe(struct plat
  	wdd->min_timeout = MIN_WDT_TIMEOUT;
  	wdd->max_timeout = MAX_WDT_TIMEOUT;
  	wdt->last_ping = jiffies;
@@ -35,7 +33,7 @@ index e5d11d6a2600..ec20ad4e534f 100644
  
  	watchdog_set_drvdata(wdd, wdt);
  
-@@ -329,6 +331,10 @@ static const struct of_device_id sama5d4_wdt_of_match[] = {
+@@ -329,6 +331,10 @@ static const struct of_device_id sama5d4
  	{
  		.compatible = "microchip,sam9x60-wdt",
  	},
@@ -46,6 +44,3 @@ index e5d11d6a2600..ec20ad4e534f 100644
  	{ }
  };
  MODULE_DEVICE_TABLE(of, sama5d4_wdt_of_match);
--- 
-2.32.0
-

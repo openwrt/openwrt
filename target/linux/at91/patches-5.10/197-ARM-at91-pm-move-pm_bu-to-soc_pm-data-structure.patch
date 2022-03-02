@@ -12,8 +12,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-2-claudiu.beznea@microchip
  arch/arm/mach-at91/pm.c | 34 +++++++++++++++++++++-------------
  1 file changed, 21 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index 2dee383f9050..3fa223c21618 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
 @@ -27,10 +27,25 @@
@@ -42,7 +40,7 @@ index 2dee383f9050..3fa223c21618 100644
  	struct at91_pm_data data;
  };
  
-@@ -71,13 +86,6 @@ static int at91_pm_valid_state(suspend_state_t state)
+@@ -71,13 +86,6 @@ static int at91_pm_valid_state(suspend_s
  
  static int canary = 0xA5A5A5A5;
  
@@ -56,7 +54,7 @@ index 2dee383f9050..3fa223c21618 100644
  struct wakeup_source_info {
  	unsigned int pmc_fsmr_bit;
  	unsigned int shdwc_mr_bit;
-@@ -288,7 +296,7 @@ static int at91_suspend_finish(unsigned long val)
+@@ -288,7 +296,7 @@ static int at91_suspend_finish(unsigned
  static void at91_pm_suspend(suspend_state_t state)
  {
  	if (soc_pm.data.mode == AT91_PM_BACKUP) {
@@ -65,7 +63,7 @@ index 2dee383f9050..3fa223c21618 100644
  
  		cpu_suspend(0, at91_suspend_finish);
  
-@@ -672,16 +680,16 @@ static int __init at91_pm_backup_init(void)
+@@ -672,16 +680,16 @@ static int __init at91_pm_backup_init(vo
  		goto securam_fail;
  	}
  
@@ -87,6 +85,3 @@ index 2dee383f9050..3fa223c21618 100644
  
  	return 0;
  
--- 
-2.32.0
-

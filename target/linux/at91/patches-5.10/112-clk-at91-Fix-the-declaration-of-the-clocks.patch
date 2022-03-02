@@ -34,22 +34,18 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama5d4.c     |  3 ++-
  9 files changed, 28 insertions(+), 28 deletions(-)
 
-diff --git a/drivers/clk/at91/at91rm9200.c b/drivers/clk/at91/at91rm9200.c
-index 0fad1009f315..428a6f4b9ebc 100644
 --- a/drivers/clk/at91/at91rm9200.c
 +++ b/drivers/clk/at91/at91rm9200.c
-@@ -215,5 +215,4 @@ static void __init at91rm9200_pmc_setup(struct device_node *np)
+@@ -215,5 +215,4 @@ err_free:
   * deferring properly. Once this is fixed, this can be switched to a platform
   * driver.
   */
 -CLK_OF_DECLARE_DRIVER(at91rm9200_pmc, "atmel,at91rm9200-pmc",
 -		      at91rm9200_pmc_setup);
 +CLK_OF_DECLARE(at91rm9200_pmc, "atmel,at91rm9200-pmc", at91rm9200_pmc_setup);
-diff --git a/drivers/clk/at91/at91sam9260.c b/drivers/clk/at91/at91sam9260.c
-index ceb5495f723a..b29843bea278 100644
 --- a/drivers/clk/at91/at91sam9260.c
 +++ b/drivers/clk/at91/at91sam9260.c
-@@ -491,26 +491,26 @@ static void __init at91sam9260_pmc_setup(struct device_node *np)
+@@ -491,26 +491,26 @@ static void __init at91sam9260_pmc_setup
  {
  	at91sam926x_pmc_setup(np, &at91sam9260_data);
  }
@@ -84,44 +80,36 @@ index ceb5495f723a..b29843bea278 100644
 -		      at91sam9g20_pmc_setup);
 +
 +CLK_OF_DECLARE(at91sam9g20_pmc, "atmel,at91sam9g20-pmc", at91sam9g20_pmc_setup);
-diff --git a/drivers/clk/at91/at91sam9g45.c b/drivers/clk/at91/at91sam9g45.c
-index 0214333dedd3..15da0dfe3ef2 100644
 --- a/drivers/clk/at91/at91sam9g45.c
 +++ b/drivers/clk/at91/at91sam9g45.c
-@@ -228,5 +228,4 @@ static void __init at91sam9g45_pmc_setup(struct device_node *np)
+@@ -228,5 +228,4 @@ err_free:
   * The TCB is used as the clocksource so its clock is needed early. This means
   * this can't be a platform driver.
   */
 -CLK_OF_DECLARE_DRIVER(at91sam9g45_pmc, "atmel,at91sam9g45-pmc",
 -		      at91sam9g45_pmc_setup);
 +CLK_OF_DECLARE(at91sam9g45_pmc, "atmel,at91sam9g45-pmc", at91sam9g45_pmc_setup);
-diff --git a/drivers/clk/at91/at91sam9n12.c b/drivers/clk/at91/at91sam9n12.c
-index f9db5316a7f1..7fe435f4b46b 100644
 --- a/drivers/clk/at91/at91sam9n12.c
 +++ b/drivers/clk/at91/at91sam9n12.c
-@@ -255,5 +255,4 @@ static void __init at91sam9n12_pmc_setup(struct device_node *np)
+@@ -255,5 +255,4 @@ err_free:
   * The TCB is used as the clocksource so its clock is needed early. This means
   * this can't be a platform driver.
   */
 -CLK_OF_DECLARE_DRIVER(at91sam9n12_pmc, "atmel,at91sam9n12-pmc",
 -		      at91sam9n12_pmc_setup);
 +CLK_OF_DECLARE(at91sam9n12_pmc, "atmel,at91sam9n12-pmc", at91sam9n12_pmc_setup);
-diff --git a/drivers/clk/at91/at91sam9rl.c b/drivers/clk/at91/at91sam9rl.c
-index 66736e03cfef..ecbabf5162bd 100644
 --- a/drivers/clk/at91/at91sam9rl.c
 +++ b/drivers/clk/at91/at91sam9rl.c
-@@ -186,4 +186,5 @@ static void __init at91sam9rl_pmc_setup(struct device_node *np)
+@@ -186,4 +186,5 @@ static void __init at91sam9rl_pmc_setup(
  err_free:
  	kfree(at91sam9rl_pmc);
  }
 -CLK_OF_DECLARE_DRIVER(at91sam9rl_pmc, "atmel,at91sam9rl-pmc", at91sam9rl_pmc_setup);
 +
 +CLK_OF_DECLARE(at91sam9rl_pmc, "atmel,at91sam9rl-pmc", at91sam9rl_pmc_setup);
-diff --git a/drivers/clk/at91/at91sam9x5.c b/drivers/clk/at91/at91sam9x5.c
-index 79b9d3667228..5cce48c64ea2 100644
 --- a/drivers/clk/at91/at91sam9x5.c
 +++ b/drivers/clk/at91/at91sam9x5.c
-@@ -302,33 +302,33 @@ static void __init at91sam9g15_pmc_setup(struct device_node *np)
+@@ -302,33 +302,33 @@ static void __init at91sam9g15_pmc_setup
  {
  	at91sam9x5_pmc_setup(np, at91sam9g15_periphck, true);
  }
@@ -165,38 +153,29 @@ index 79b9d3667228..5cce48c64ea2 100644
 -		      at91sam9x35_pmc_setup);
 +
 +CLK_OF_DECLARE(at91sam9x35_pmc, "atmel,at91sam9x35-pmc", at91sam9x35_pmc_setup);
-diff --git a/drivers/clk/at91/sama5d2.c b/drivers/clk/at91/sama5d2.c
-index 9a5cbc7cd55a..3d1f78176c3e 100644
 --- a/drivers/clk/at91/sama5d2.c
 +++ b/drivers/clk/at91/sama5d2.c
-@@ -372,4 +372,5 @@ static void __init sama5d2_pmc_setup(struct device_node *np)
+@@ -372,4 +372,5 @@ static void __init sama5d2_pmc_setup(str
  err_free:
  	kfree(sama5d2_pmc);
  }
 -CLK_OF_DECLARE_DRIVER(sama5d2_pmc, "atmel,sama5d2-pmc", sama5d2_pmc_setup);
 +
 +CLK_OF_DECLARE(sama5d2_pmc, "atmel,sama5d2-pmc", sama5d2_pmc_setup);
-diff --git a/drivers/clk/at91/sama5d3.c b/drivers/clk/at91/sama5d3.c
-index 87009ee8effc..d376257807d2 100644
 --- a/drivers/clk/at91/sama5d3.c
 +++ b/drivers/clk/at91/sama5d3.c
-@@ -255,4 +255,4 @@ static void __init sama5d3_pmc_setup(struct device_node *np)
+@@ -255,4 +255,4 @@ err_free:
   * The TCB is used as the clocksource so its clock is needed early. This means
   * this can't be a platform driver.
   */
 -CLK_OF_DECLARE_DRIVER(sama5d3_pmc, "atmel,sama5d3-pmc", sama5d3_pmc_setup);
 +CLK_OF_DECLARE(sama5d3_pmc, "atmel,sama5d3-pmc", sama5d3_pmc_setup);
-diff --git a/drivers/clk/at91/sama5d4.c b/drivers/clk/at91/sama5d4.c
-index 57fff790188b..5cbaac68da44 100644
 --- a/drivers/clk/at91/sama5d4.c
 +++ b/drivers/clk/at91/sama5d4.c
-@@ -286,4 +286,5 @@ static void __init sama5d4_pmc_setup(struct device_node *np)
+@@ -286,4 +286,5 @@ static void __init sama5d4_pmc_setup(str
  err_free:
  	kfree(sama5d4_pmc);
  }
 -CLK_OF_DECLARE_DRIVER(sama5d4_pmc, "atmel,sama5d4-pmc", sama5d4_pmc_setup);
 +
 +CLK_OF_DECLARE(sama5d4_pmc, "atmel,sama5d4-pmc", sama5d4_pmc_setup);
--- 
-2.32.0
-

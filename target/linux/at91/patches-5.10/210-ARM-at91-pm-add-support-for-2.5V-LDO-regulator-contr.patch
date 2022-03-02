@@ -15,8 +15,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-15-claudiu.beznea@microchi
  arch/arm/mach-at91/pm_suspend.S | 29 +++++++++++++++++++++++++++++
  2 files changed, 30 insertions(+)
 
-diff --git a/arch/arm/mach-at91/pm.h b/arch/arm/mach-at91/pm.h
-index 666474088d55..53bdc9000e44 100644
 --- a/arch/arm/mach-at91/pm.h
 +++ b/arch/arm/mach-at91/pm.h
 @@ -13,6 +13,7 @@
@@ -27,8 +25,6 @@ index 666474088d55..53bdc9000e44 100644
  
  #define AT91_MEMCTRL_MC		0
  #define AT91_MEMCTRL_SDRAMC	1
-diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
-index 8b0b8619ee8a..9c9e08fd8300 100644
 --- a/arch/arm/mach-at91/pm_suspend.S
 +++ b/arch/arm/mach-at91/pm_suspend.S
 @@ -83,6 +83,29 @@ tmp3	.req	r6
@@ -81,6 +77,3 @@ index 8b0b8619ee8a..9c9e08fd8300 100644
  	ldr	pmc, .pmc_base
  
  	at91_plla_enable
--- 
-2.32.0
-

@@ -12,11 +12,9 @@ Link: https://lore.kernel.org/r/20210415105010.569620-6-claudiu.beznea@microchip
  arch/arm/mach-at91/pm.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index e9f9fb410761..96f2be0a53cb 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
-@@ -674,7 +674,7 @@ static int __init at91_pm_backup_init(void)
+@@ -674,7 +674,7 @@ static int __init at91_pm_backup_init(vo
  {
  	struct gen_pool *sram_pool;
  	struct device_node *np;
@@ -25,6 +23,3 @@ index e9f9fb410761..96f2be0a53cb 100644
  	int ret = -ENODEV;
  
  	if (!IS_ENABLED(CONFIG_SOC_SAMA5D2))
--- 
-2.32.0
-

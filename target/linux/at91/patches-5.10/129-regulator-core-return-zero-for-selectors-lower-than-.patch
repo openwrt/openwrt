@@ -19,11 +19,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  drivers/regulator/helpers.c |  5 +++--
  2 files changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
-index 0b7a23cdbcac..65ecf872b4e0 100644
 --- a/drivers/regulator/core.c
 +++ b/drivers/regulator/core.c
-@@ -2984,9 +2984,10 @@ static int _regulator_list_voltage(struct regulator_dev *rdev,
+@@ -2984,9 +2984,10 @@ static int _regulator_list_voltage(struc
  		return rdev->desc->fixed_uV;
  
  	if (ops->list_voltage) {
@@ -36,7 +34,7 @@ index 0b7a23cdbcac..65ecf872b4e0 100644
  		if (lock)
  			regulator_lock(rdev);
  		ret = ops->list_voltage(rdev, selector);
-@@ -3136,9 +3137,10 @@ int regulator_list_hardware_vsel(struct regulator *regulator,
+@@ -3136,9 +3137,10 @@ int regulator_list_hardware_vsel(struct
  	struct regulator_dev *rdev = regulator->rdev;
  	const struct regulator_ops *ops = rdev->desc->ops;
  
@@ -49,11 +47,9 @@ index 0b7a23cdbcac..65ecf872b4e0 100644
  	if (ops->set_voltage_sel != regulator_set_voltage_sel_regmap)
  		return -EOPNOTSUPP;
  
-diff --git a/drivers/regulator/helpers.c b/drivers/regulator/helpers.c
-index 974f1a63993d..f42b394a0c46 100644
 --- a/drivers/regulator/helpers.c
 +++ b/drivers/regulator/helpers.c
-@@ -647,9 +647,10 @@ int regulator_list_voltage_table(struct regulator_dev *rdev,
+@@ -647,9 +647,10 @@ int regulator_list_voltage_table(struct
  		return -EINVAL;
  	}
  
@@ -66,6 +62,3 @@ index 974f1a63993d..f42b394a0c46 100644
  
  	return rdev->desc->volt_table[selector];
  }
--- 
-2.32.0
-

@@ -12,11 +12,9 @@ Link: https://lore.kernel.org/r/20210908094329.182477-1-claudiu.beznea@microchip
  arch/arm/boot/dts/sama7g5.dtsi | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
-index e50806cf7660..6c58c151c6d9 100644
 --- a/arch/arm/boot/dts/sama7g5.dtsi
 +++ b/arch/arm/boot/dts/sama7g5.dtsi
-@@ -159,6 +159,11 @@ ps_wdt: watchdog@e001d180 {
+@@ -159,6 +159,11 @@
  			clocks = <&clk32k 0>;
  		};
  
@@ -28,6 +26,3 @@ index e50806cf7660..6c58c151c6d9 100644
  		sdmmc0: mmc@e1204000 {
  			compatible = "microchip,sama7g5-sdhci", "microchip,sam9x60-sdhci";
  			reg = <0xe1204000 0x4000>;
--- 
-2.32.0
-

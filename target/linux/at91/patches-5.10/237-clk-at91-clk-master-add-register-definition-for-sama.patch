@@ -25,8 +25,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/clk-master.c | 50 ++++++++++++++++-------------------
  1 file changed, 23 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/clk/at91/clk-master.c b/drivers/clk/at91/clk-master.c
-index f75549fff023..88f7af1bfff6 100644
 --- a/drivers/clk/at91/clk-master.c
 +++ b/drivers/clk/at91/clk-master.c
 @@ -17,15 +17,7 @@
@@ -45,7 +43,7 @@ index f75549fff023..88f7af1bfff6 100644
  
  #define MASTER_MAX_ID		4
  
-@@ -687,20 +679,22 @@ static void clk_sama7g5_master_set(struct clk_master *master,
+@@ -687,20 +679,22 @@ static void clk_sama7g5_master_set(struc
  {
  	unsigned long flags;
  	unsigned int val, cparent;
@@ -76,7 +74,7 @@ index f75549fff023..88f7af1bfff6 100644
  
  	/* Wait here only if parent is being changed. */
  	while ((cparent != master->parent) && !clk_master_ready(master))
-@@ -725,10 +719,12 @@ static void clk_sama7g5_master_disable(struct clk_hw *hw)
+@@ -725,10 +719,12 @@ static void clk_sama7g5_master_disable(s
  
  	spin_lock_irqsave(master->lock, flags);
  
@@ -93,7 +91,7 @@ index f75549fff023..88f7af1bfff6 100644
  
  	spin_unlock_irqrestore(master->lock, flags);
  }
-@@ -741,12 +737,12 @@ static int clk_sama7g5_master_is_enabled(struct clk_hw *hw)
+@@ -741,12 +737,12 @@ static int clk_sama7g5_master_is_enabled
  
  	spin_lock_irqsave(master->lock, flags);
  
@@ -109,7 +107,7 @@ index f75549fff023..88f7af1bfff6 100644
  }
  
  static int clk_sama7g5_master_set_rate(struct clk_hw *hw, unsigned long rate,
-@@ -842,10 +838,10 @@ at91_clk_sama7g5_register_master(struct regmap *regmap,
+@@ -842,10 +838,10 @@ at91_clk_sama7g5_register_master(struct
  	master->mux_table = mux_table;
  
  	spin_lock_irqsave(master->lock, flags);
@@ -124,6 +122,3 @@ index f75549fff023..88f7af1bfff6 100644
  	spin_unlock_irqrestore(master->lock, flags);
  
  	hw = &master->hw;
--- 
-2.32.0
-
