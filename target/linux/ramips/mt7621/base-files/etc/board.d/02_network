@@ -157,6 +157,12 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "6@eth0"
 		;;
+	xwrt,nxc2009e-v100)
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
+		ucidef_add_switch "switch1" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "5@eth1"
+		;;
 	xwrt,nxc200p|\
 	xwrt,puppies)
 		ucidef_add_switch "switch0" \

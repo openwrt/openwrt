@@ -1,0 +1,256 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "xwrt,nxc2009e-v100", "mediatek,mt7621-soc";
+	model = "NXC2009E-V100";
+
+	aliases {
+		led-status = &led_sys;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: sys {
+			label = "led_sys";
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		port0_M_led {
+			label = "port0_M_led";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		port1_M_led {
+			label = "port1_M_led";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		port2_M_led {
+			label = "port2_M_led";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		port3_M_led {
+			label = "port3_M_led";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		port4_M_led {
+			label = "port4_M_led";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		port5_M_led {
+			label = "port5_M_led";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		port6_M_led {
+			label = "port6_M_led";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		port7_M_led {
+			label = "port7_M_led";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		port8_M_led {
+			label = "port8_M_led";
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		pse_on {
+			gpio-export,name = "pse_on";
+			gpio-export,output = <1>;
+			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	i2c-gpio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "i2c-gpio";
+		gpios = <&gpio 3 GPIO_ACTIVE_HIGH &gpio 4 GPIO_ACTIVE_HIGH>;
+		i2c-gpio,delay-us = <2>;
+	};
+
+	gsw150: gsw150@10 {
+		compatible = "intel,gsw150";
+		//reg = <0x10>;
+		status = "okay";
+		//mediatek,ethsys = <&ethsys>;
+		mediatek,mdio = <&mdio>;
+		mediatek,smi-addr = <16>;
+		//mediatek,reset-pin = <&pio 54 0>;
+	};
+};
+
+&sdhci {
+	status = "disabled";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+			};
+
+			partition@40000 {
+				label = "product";
+				reg = <0x40000 0x10000>;
+			};
+
+			factory: partition@50000 {
+				label = "factory";
+				reg = <0x50000 0x40000>;
+			};
+
+			partition@90000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x90000 0xf70000>;
+			};
+		};
+	};
+};
+
+&ethernet {
+	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+};
+
+&gsw {
+	compatible = "mediatek,mt753x";
+	status = "okay";
+
+	mediatek,mdio = <&mdio>;
+	mediatek,portmap = "llllw";
+	mt7530,direct-phy-access;
+	resets = <&rstctrl 2>;
+	reset-names = "mcm";
+	mediatek,mcm;
+	//mediatek,ethsys = <&sysc>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "rgmii";
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+	*/
+
+	port6: port@6 {
+		compatible = "mediatek,mt753x-port";
+		reg = <6>;
+		phy-mode = "trgmii";
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+};
+
+&switch0 {
+	/* must delete compatible property */
+	/delete-property/ compatible;
+};
+
+&gmac1 {
+	status = "okay";
+	phy-mode = "rgmii-rxid";
+	label = "eth1";
+	nvmem-cells = <&macaddr_factory_22>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <5>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+	};
+};
+
+&gmac0 {
+	label = "eth0";
+	nvmem-cells = <&macaddr_factory_22>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "trgmii";
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "wdt", "jtag", "uart2", "uart3";
+		function = "gpio";
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_22: macaddr@22 {
+		reg = <0x22 0x6>;
+	};
+};

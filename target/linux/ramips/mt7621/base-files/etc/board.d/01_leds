@@ -225,6 +225,17 @@ xwrt,ms1201k)
 	ucidef_set_led_netdev "wlan5g" "WiFi 5.8GHz" "wifi_5g:status" "wlan1"
 	ucidef_set_led_switch "eth" "eth" "eth:status" "switch0" "0x11"
 	;;
+xwrt,nxc2009e-v100)
+	ucidef_set_led_switch "port0_M_led" "port0_M_led" "port0_M_led" "switch1" "0x01" "0x0e" "link"
+	ucidef_set_led_switch "port1_M_led" "port1_M_led" "port1_M_led" "switch1" "0x02" "0x0e" "link"
+	ucidef_set_led_switch "port2_M_led" "port2_M_led" "port2_M_led" "switch1" "0x04" "0x0e" "link"
+	ucidef_set_led_switch "port3_M_led" "port3_M_led" "port3_M_led" "switch1" "0x08" "0x0e" "link"
+	ucidef_set_led_switch "port4_M_led" "port4_M_led" "port4_M_led" "switch0" "0x01" "0x0e" "link"
+	ucidef_set_led_switch "port5_M_led" "port5_M_led" "port5_M_led" "switch0" "0x02" "0x0e" "link"
+	ucidef_set_led_switch "port6_M_led" "port6_M_led" "port6_M_led" "switch0" "0x04" "0x0e" "link"
+	ucidef_set_led_switch "port7_M_led" "port7_M_led" "port7_M_led" "switch0" "0x08" "0x0e" "link"
+	ucidef_set_led_switch "port8_M_led" "port8_M_led" "port8_M_led" "switch0" "0x10" "0x0e" "link"
+	;;
 xwrt,wr1800k-ax-nand)
 	ucidef_set_led_netdev "wan" "wan" "ether:blue" "wan" "link"
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "wlan:green" "wlan0" "link"
