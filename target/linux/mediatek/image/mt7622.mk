@@ -203,6 +203,15 @@ define Device/mediatek_mt7622-rfb1-ubi
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
+define Device/ruijie_rg-ew3200gx-pro
+  DEVICE_VENDOR := Ruijie
+  DEVICE_MODEL := RG-EW3200GX PRO
+  DEVICE_DTS := mt7622-ruijie-rg-ew3200gx-pro
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += ruijie_rg-ew3200gx-pro
+
 define Device/totolink_a8000ru
   DEVICE_VENDOR := TOTOLINK
   DEVICE_MODEL := A8000RU
