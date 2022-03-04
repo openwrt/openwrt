@@ -1,0 +1,28 @@
+From c3ad93d4ea45d5cdd9908b2b89affb989f77a46c Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Tue, 27 Sep 2022 15:58:51 +0800
+Subject: [PATCH] switch-add-mt7531
+
+---
+ drivers/net/phy/Kconfig  | 2 ++
+ drivers/net/phy/Makefile | 1 +
+ 2 files changed, 3 insertions(+)
+
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -135,6 +135,8 @@ config RTL8367B_PHY
+ 
+ endif # RTL8366_SMI
+ 
++source "drivers/net/phy/mtk/mt753x/Kconfig"
++
+ comment "MII PHY device drivers"
+ 
+ config AMD_PHY
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -100,3 +100,4 @@ obj-$(CONFIG_STE10XP)		+= ste10Xp.o
+ obj-$(CONFIG_TERANETICS_PHY)	+= teranetics.o
+ obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
+ obj-$(CONFIG_XILINX_GMII2RGMII) += xilinx_gmii2rgmii.o
++obj-$(CONFIG_MT753X_GSW)	+= mtk/mt753x/
