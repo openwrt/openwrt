@@ -151,8 +151,12 @@ static int mt753x_get_port_pvid(struct switch_dev *dev, int port, int *val)
 	if (port >= MT753X_NUM_PORTS)
 		return -EINVAL;
 
+	mutex_lock(&gsw->reg_mutex);
+
 	*val = mt753x_reg_read(gsw, PPBV1(port));
 	*val &= GRP_PORT_VID_M;
+
+	mutex_unlock(&gsw->reg_mutex);
 
 	return 0;
 }
@@ -184,6 +188,8 @@ static int mt753x_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 	if (val->port_vlan < 0 || val->port_vlan >= MT753X_NUM_VLANS)
 		return -EINVAL;
 
+	mutex_lock(&gsw->reg_mutex);
+
 	mt753x_vlan_ctrl(gsw, VTCR_READ_VLAN_ENTRY, val->port_vlan);
 
 	member = mt753x_reg_read(gsw, VAWD1);
@@ -191,6 +197,8 @@ static int mt753x_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 	member >>= PORT_MEM_S;
 
 	etags = mt753x_reg_read(gsw, VAWD2);
+
+	mutex_unlock(&gsw->reg_mutex);
 
 	for (i = 0; i < MT753X_NUM_PORTS; i++) {
 		struct switch_port *p;
@@ -281,7 +289,11 @@ static int mt753x_get_port_link(struct switch_dev *dev, int port,
 	if (port < 0 || port >= MT753X_NUM_PORTS)
 		return -EINVAL;
 
+	mutex_lock(&gsw->reg_mutex);
+
 	pmsr = mt753x_reg_read(gsw, PMSR(port));
+
+	mutex_unlock(&gsw->reg_mutex);
 
 	link->link = pmsr & MAC_LNK_STS;
 	link->duplex = pmsr & MAC_DPX_STS;
@@ -362,7 +374,9 @@ static int mt753x_get_port_mib(struct switch_dev *dev,
 
 		len += snprintf(buf + len, sizeof(buf) - len,
 				"%-11s: ", mt753x_mibs[i].name);
+		mutex_lock(&gsw->reg_mutex);
 		counter = get_mib_counter(gsw, i, val->port_vlan);
+		mutex_unlock(&gsw->reg_mutex);
 		len += snprintf(buf + len, sizeof(buf) - len, "%llu\n",
 				counter);
 	}
@@ -380,8 +394,12 @@ static int mt753x_get_port_stats(struct switch_dev *dev, int port,
 	if (port < 0 || port >= MT753X_NUM_PORTS)
 		return -EINVAL;
 
+	mutex_lock(&gsw->reg_mutex);
+
 	stats->tx_bytes = get_mib_counter(gsw, MT753X_PORT_MIB_TXB_ID, port);
 	stats->rx_bytes = get_mib_counter(gsw, MT753X_PORT_MIB_RXB_ID, port);
+
+	mutex_unlock(&gsw->reg_mutex);
 
 	return 0;
 }
@@ -467,7 +485,9 @@ static int mt753x_sw_get_mib(struct switch_dev *dev,
 		u64 counter;
 		len += snprintf(buf + len, sizeof(buf) - len,
 				"%-11s: ", mt7620_mibs[i].name);
+		mutex_lock(&gsw->reg_mutex);
 		counter = get_mib_counter_7620(gsw, i);
+		mutex_unlock(&gsw->reg_mutex);
 		len += snprintf(buf + len, sizeof(buf) - len, "%llu\n",
 				counter);
 	}
@@ -589,6 +609,8 @@ static int mt753x_get_arl_table(struct switch_dev *dev,
 	int ret;
 	u32 atc;
 
+	mutex_lock(&gsw->reg_mutex);
+
 	ret = snprintf(buf, size, "address resolution table\n");
 	if (ret >= size || ret <= 0) {
 		gsw->arl_buf[0] = 0;
@@ -632,6 +654,8 @@ static int mt753x_get_arl_table(struct switch_dev *dev,
 		 count < MT753X_NUM_ARL_RECORDS &&
 		 retry_times > 0);
 out:
+	mutex_unlock(&gsw->reg_mutex);
+
 	val->value.s = gsw->arl_buf;
 	val->len = strlen(gsw->arl_buf);
 

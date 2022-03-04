@@ -459,6 +459,9 @@ static int mt753x_probe(struct platform_device *pdev)
 	gsw->host_bus = mdio_bus;
 	gsw->dev = &pdev->dev;
 	mutex_init(&gsw->mii_lock);
+#ifdef CONFIG_SWCONFIG
+	mutex_init(&gsw->reg_mutex);
+#endif
 
 	/* Switch hard reset */
 	if (mt753x_hw_reset(gsw))
@@ -537,6 +540,10 @@ static int mt753x_probe(struct platform_device *pdev)
 	return 0;
 
 fail:
+#ifdef CONFIG_SWCONFIG
+	mutex_destroy(&gsw->reg_mutex);
+#endif
+	mutex_destroy(&gsw->mii_lock);
 	devm_kfree(&pdev->dev, gsw);
 
 	return ret;
@@ -554,7 +561,9 @@ static int mt753x_remove(struct platform_device *pdev)
 
 #ifdef CONFIG_SWCONFIG
 	mt753x_swconfig_destroy(gsw);
+	mutex_destroy(&gsw->reg_mutex);
 #endif
+	mutex_destroy(&gsw->mii_lock);
 
 	mt753x_remove_gsw(gsw);
 

@@ -55,6 +55,9 @@ struct gsw_mt753x {
 	struct mii_bus *host_bus;
 	struct mii_bus *gphy_bus;
 	struct mutex mii_lock;	/* MII access lock */
+#ifdef CONFIG_SWCONFIG
+	struct mutex reg_mutex; /* protect among processes for registers access with swconfig api */
+#endif
 	u32 smi_addr;
 	u32 phy_base;
 	int direct_phy_access;
