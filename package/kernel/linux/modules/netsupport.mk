@@ -986,6 +986,24 @@ endef
 $(eval $(call KernelPackage,tcp-hybla))
 
 
+define KernelPackage/tcp-scalable
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=TCP-Scalable congestion control algorithm
+  KCONFIG:=CONFIG_TCP_CONG_SCALABLE
+  FILES:=$(LINUX_DIR)/net/ipv4/tcp_scalable.ko
+  AUTOLOAD:=$(call AutoProbe,tcp-scalable)
+endef
+
+define KernelPackage/tcp-scalable/description
+  Scalable TCP is a sender-side only change to TCP which uses a
+	MIMD congestion control algorithm which has some nice scaling
+	properties, though is known to have fairness issues.
+	See http://www.deneholme.net/tom/scalable/
+endef
+
+$(eval $(call KernelPackage,tcp-scalable))
+
+
 define KernelPackage/ax25
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=AX25 support
