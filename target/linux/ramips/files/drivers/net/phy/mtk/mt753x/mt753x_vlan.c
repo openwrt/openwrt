@@ -82,6 +82,7 @@ void mt753x_apply_vlan_config(struct gsw_mt753x *gsw)
 	int i, j;
 	u8 tag_ports;
 	u8 untag_ports;
+	bool is_mirror = false;
 
 	/* set all ports as security mode */
 	for (i = 0; i < MT753X_NUM_PORTS; i++)
@@ -150,6 +151,28 @@ void mt753x_apply_vlan_config(struct gsw_mt753x *gsw)
 		val &= ~GRP_PORT_VID_M;
 		val |= pvid;
 		mt753x_reg_write(gsw, PPBV1(i), val);
+	}
+
+	/* set mirroring source port */
+	for (i = 0; i < MT753X_NUM_PORTS; i++) {
+		u32 val = mt753x_reg_read(gsw, PCR(i));
+		if (gsw->port_entries[i].mirror_rx) {
+			val |= MIRROR_SRC_RX_BIT;
+			is_mirror = true;
+		}
+		if (gsw->port_entries[i].mirror_tx) {
+			val |= MIRROR_SRC_TX_BIT;
+		}
+		mt753x_reg_write(gsw, PCR(i), val);
+	}
+
+	/* set mirroring monitor port */
+	if (is_mirror) {
+		u32 val = mt753x_reg_read(gsw, REG_ESW_WT_MAC_MFC);
+		val |= MIRROR_ENABLE;
+		val &= ~MIRROR_DEST_MASK;
+		val |= gsw->mirror_dest_port;
+		mt753x_reg_write(gsw, REG_ESW_WT_MAC_MFC, val);
 	}
 }
 

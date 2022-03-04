@@ -291,4 +291,163 @@
 #define HWSTRAP				0x7800
 #define MHWSTRAP			0x7804
 
+
+#define MT7620_MIB_COUNTER_BASE_PORT	0x4000
+#define MT7620_MIB_COUNTER_PORT_OFFSET	0x100
+#define MT7620_MIB_COUNTER_BASE	0x1010
+
+/* PPE Accounting Group #0 Byte Counter */
+#define MT7620_MIB_STATS_PPE_AC_BCNT0	0x000
+
+/* PPE Accounting Group #0 Packet Counter */
+#define MT7620_MIB_STATS_PPE_AC_PCNT0	0x004
+
+/* PPE Accounting Group #63 Byte Counter */
+#define MT7620_MIB_STATS_PPE_AC_BCNT63	0x1F8
+
+/* PPE Accounting Group #63 Packet Counter */
+#define MT7620_MIB_STATS_PPE_AC_PCNT63	0x1FC
+
+/* PPE Meter Group #0 */
+#define MT7620_MIB_STATS_PPE_MTR_CNT0	0x200
+
+/* PPE Meter Group #63 */
+#define MT7620_MIB_STATS_PPE_MTR_CNT63	0x2FC
+
+/* Transmit good byte count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_TX_GBCNT	0x300
+
+/* Transmit good packet count for CPU GDM (exclude flow control frames) */
+#define MT7620_MIB_STATS_GDM1_TX_GPCNT	0x304
+
+/* Transmit abort count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_TX_SKIPCNT	0x308
+
+/* Transmit collision count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_TX_COLCNT	0x30C
+
+/* Received good byte count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_RX_GBCNT1	0x320
+
+/* Transmit good packet count for CPU GDM (exclude flow control frames) */
+#define MT7620_MIB_STATS_GDM1_TX_GPCNT	0x304
+
+/* Transmit abort count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_TX_SKIPCNT	0x308
+
+/* Transmit collision count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_TX_COLCNT	0x30C
+
+/* Received good byte count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_RX_GBCNT1	0x320
+
+/* Received good packet count for CPU GDM (exclude flow control frame) */
+#define MT7620_MIB_STATS_GDM1_RX_GPCNT1	0x324
+
+/* Received overflow error packet count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_RX_OERCNT	0x328
+
+/* Received FCS error packet count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_RX_FERCNT	0x32C
+
+/* Received too short error packet count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_RX_SERCNT	0x330
+
+/* Received too long error packet count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_RX_LERCNT	0x334
+
+/* Received IP/TCP/UDP checksum error packet count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_RX_CERCNT	0x338
+
+/* Received flow control pkt count for CPU GDM */
+#define MT7620_MIB_STATS_GDM1_RX_FCCNT	0x33C
+
+/* Transmit good byte count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_TX_GBCNT	0x340
+
+/* Transmit good packet count for PPE GDM (exclude flow control frames) */
+#define MT7620_MIB_STATS_GDM2_TX_GPCNT	0x344
+
+/* Transmit abort count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_TX_SKIPCNT	0x348
+
+/* Transmit collision count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_TX_COLCNT	0x34C
+
+/* Received good byte count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_RX_GBCNT	0x360
+
+/* Received good packet count for PPE GDM (exclude flow control frame) */
+#define MT7620_MIB_STATS_GDM2_RX_GPCNT	0x364
+
+/* Received overflow error packet count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_RX_OERCNT	0x368
+
+/* Received FCS error packet count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_RX_FERCNT	0x36C
+
+/* Received too short error packet count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_RX_SERCNT	0x370
+
+/* Received too long error packet count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_RX_LERCNT	0x374
+
+/* Received IP/TCP/UDP checksum error packet count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_RX_CERCNT	0x378
+
+/* Received flow control pkt count for PPE GDM */
+#define MT7620_MIB_STATS_GDM2_RX_FCCNT	0x37C
+
+/* Tx Packet Counter of Port n */
+#define MT7620_MIB_STATS_PORT_TGPCN	0x10
+
+/* Tx Bad Octet Counter of Port n */
+#define MT7620_MIB_STATS_PORT_TBOCN	0x14
+
+/* Tx Good Octet Counter of Port n */
+#define MT7620_MIB_STATS_PORT_TGOCN	0x18
+
+/* Tx Event Packet Counter of Port n */
+#define MT7620_MIB_STATS_PORT_TEPCN	0x1C
+
+/* Rx Packet Counter of Port n */
+#define MT7620_MIB_STATS_PORT_RGPCN	0x20
+
+/* Rx Bad Octet Counter of Port n */
+#define MT7620_MIB_STATS_PORT_RBOCN	0x24
+
+/* Rx Good Octet Counter of Port n */
+#define MT7620_MIB_STATS_PORT_RGOCN	0x28
+
+/* Rx Event Packet Counter of Port n */
+#define MT7620_MIB_STATS_PORT_REPC1N	0x2C
+
+/* Rx Event Packet Counter of Port n */
+#define MT7620_MIB_STATS_PORT_REPC2N	0x30
+
+#define MIRROR_SRC_RX_BIT	BIT(8)
+#define MIRROR_SRC_TX_BIT	BIT(9)
+
+/* registers */
+#define REG_ESW_WT_MAC_MFC	0x10
+#define MIRROR_ENABLE	BIT(3)
+#define MIRROR_DEST_MASK	0x07
+
+#define REG_ATRD_VALID        0xff000000U
+#define REG_ATRD_PORT_MASK    0xff0U
+
+#define REG_ESW_WT_MAC_ATC  0x80
+#define REG_ESW_TABLE_ATRD  0x8C
+#define REG_ESW_TABLE_TSRA1 0x84
+#define REG_ESW_TABLE_TSRA2 0x88
+
+#define REG_MAC_ATC_START  0x8004
+#define REG_MAC_ATC_NEXT   0x8005
+
+#define REG_MAC_ATC_BUSY      0x8000U
+#define REG_MAC_ATC_SRCH_HIT  0x2000U
+#define REG_MAC_ATC_SRCH_END  0x4000U
+#define REG_ATRD_VALID        0xff000000U
+#define REG_ATRD_PORT_MASK    0xff0U
+
 #endif /* _MT753X_REGS_H_ */

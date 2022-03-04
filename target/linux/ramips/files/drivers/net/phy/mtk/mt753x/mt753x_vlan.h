@@ -15,6 +15,8 @@ struct gsw_mt753x;
 
 struct mt753x_port_entry {
 	u16	pvid;
+	bool	mirror_rx;
+	bool	mirror_tx;
 };
 
 struct mt753x_vlan_entry {

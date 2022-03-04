@@ -77,6 +77,7 @@ struct gsw_mt753x {
 #ifdef CONFIG_SWCONFIG
 	struct switch_dev swdev;
 	u32 cpu_port;
+	u8 mirror_dest_port;
 #endif
 
 	int global_vlan_enable;
@@ -91,6 +92,12 @@ struct gsw_mt753x {
 			  u16 val);
 
 	struct list_head list;
+
+#ifdef CONFIG_SWCONFIG
+#define ARL_LINE_LENGTH	30
+#define MT753X_NUM_ARL_RECORDS	2048
+	char arl_buf[MT753X_NUM_ARL_RECORDS * ARL_LINE_LENGTH + 1];
+#endif
 };
 
 struct chip_rev {
