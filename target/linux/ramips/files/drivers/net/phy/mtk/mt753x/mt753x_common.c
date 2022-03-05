@@ -25,6 +25,12 @@ void mt753x_irq_enable(struct gsw_mt753x *gsw)
 	val = BIT(MT753X_NUM_PHYS) - 1;
 
 	mt753x_reg_write(gsw, SYS_INT_EN, val);
+
+	if (gsw->model != MT7531) {
+		val = mt753x_reg_read(gsw, MT7530_TOP_SIG_CTRL);
+		val |= TOP_SIG_CTRL_NORMAL;
+		mt753x_reg_write(gsw, MT7530_TOP_SIG_CTRL, val);
+	}
 }
 
 static void display_port_link_status(struct gsw_mt753x *gsw, u32 port)
@@ -68,6 +74,7 @@ void mt753x_irq_worker(struct work_struct *work)
 	gsw = container_of(work, struct gsw_mt753x, irq_worker);
 
 	sts = mt753x_reg_read(gsw, SYS_INT_STS);
+	mt753x_reg_write(gsw, SYS_INT_STS, sts);
 
 	/* Check for changed PHY link status */
 	for (i = 0; i < MT753X_NUM_PHYS; i++) {
@@ -83,8 +90,6 @@ void mt753x_irq_worker(struct work_struct *work)
 			display_port_link_status(gsw, i);
 		}
 	}
-
-	mt753x_reg_write(gsw, SYS_INT_STS, sts);
 
 	enable_irq(gsw->irq);
 }

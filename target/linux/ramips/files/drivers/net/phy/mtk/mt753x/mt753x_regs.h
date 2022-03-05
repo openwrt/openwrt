@@ -259,6 +259,10 @@
 #define SW_SYS_RST			BIT(1)
 #define SW_REG_RST			BIT(0)
 
+/* Register for TOP signal control */
+#define MT7530_TOP_SIG_CTRL		0x7808
+#define TOP_SIG_CTRL_NORMAL		(BIT(17) | BIT(16))
+
 #define SYS_INT_EN			0x7008
 #define SYS_INT_STS			0x700c
 #define MAC_PC_INT			BIT(16)

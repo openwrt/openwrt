@@ -68,9 +68,6 @@ struct gsw_mt753x {
 	struct mt753x_port_cfg port5_cfg;
 	struct mt753x_port_cfg port6_cfg;
 
-	int phy_status_poll;
-	struct mt753x_phy phys[MT753X_NUM_PHYS];
-
 	int phy_link_sts;
 
 	int irq;

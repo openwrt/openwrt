@@ -507,6 +507,8 @@ static int mt753x_probe(struct platform_device *pdev)
 		goto fail;
 	}
 
+	INIT_WORK(&gsw->irq_worker, mt753x_irq_worker);
+
 	gsw->irq = platform_get_irq(pdev, 0);
 	if (gsw->irq >= 0) {
 		ret = devm_request_irq(gsw->dev, gsw->irq, mt753x_irq_handler,
@@ -517,13 +519,11 @@ static int mt753x_probe(struct platform_device *pdev)
 			goto fail;
 		}
 
-		INIT_WORK(&gsw->irq_worker, mt753x_irq_worker);
+		/* disable irq before hw init done */
+		disable_irq(gsw->irq);
 	}
 
 	platform_set_drvdata(pdev, gsw);
-
-	gsw->phy_status_poll = of_property_read_bool(gsw->dev->of_node,
-						     "mediatek,phy-poll");
 
 	mt753x_add_gsw(gsw);
 
@@ -534,8 +534,10 @@ static int mt753x_probe(struct platform_device *pdev)
 	if (sw->post_init)
 		sw->post_init(gsw);
 
-	if (gsw->irq >= 0)
+	if (gsw->irq >= 0) {
 		mt753x_irq_enable(gsw);
+		enable_irq(gsw->irq);
+	}
 
 	return 0;
 
