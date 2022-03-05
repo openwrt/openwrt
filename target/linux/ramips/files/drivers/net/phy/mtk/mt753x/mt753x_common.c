@@ -65,13 +65,13 @@ static void display_port_link_status(struct gsw_mt753x *gsw, u32 port)
 	}
 }
 
-void mt753x_irq_worker(struct work_struct *work)
+irqreturn_t mt753x_irq_thread_fn(int irq, void *dev_id)
 {
-	struct gsw_mt753x *gsw;
+	struct gsw_mt753x *gsw = dev_id;
+	bool handled = false;
+
 	u32 sts, physts, laststs;
 	int i;
-
-	gsw = container_of(work, struct gsw_mt753x, irq_worker);
 
 	sts = mt753x_reg_read(gsw, SYS_INT_STS);
 	mt753x_reg_write(gsw, SYS_INT_STS, sts);
@@ -80,6 +80,8 @@ void mt753x_irq_worker(struct work_struct *work)
 	for (i = 0; i < MT753X_NUM_PHYS; i++) {
 		if (!(sts & PHY_LC_INT(i)))
 			continue;
+
+		handled = true;
 
 		laststs = gsw->phy_link_sts & BIT(i);
 		physts = !!(gsw->mii_read(gsw, i, MII_BMSR) & BMSR_LSTATUS);
@@ -91,5 +93,5 @@ void mt753x_irq_worker(struct work_struct *work)
 		}
 	}
 
-	enable_irq(gsw->irq);
+	return IRQ_RETVAL(handled);
 }

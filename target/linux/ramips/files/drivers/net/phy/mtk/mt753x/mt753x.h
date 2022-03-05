@@ -72,7 +72,6 @@ struct gsw_mt753x {
 
 	int irq;
 	int reset_pin;
-	struct work_struct irq_worker;
 
 #ifdef CONFIG_SWCONFIG
 	struct switch_dev swdev;
@@ -133,7 +132,7 @@ int mt753x_mmd_ind_read(struct gsw_mt753x *gsw, int addr, int devad, u16 reg);
 void mt753x_mmd_ind_write(struct gsw_mt753x *gsw, int addr, int devad, u16 reg,
 			  u16 val);
 
-void mt753x_irq_worker(struct work_struct *work);
+irqreturn_t mt753x_irq_thread_fn(int irq, void *dev_id);
 void mt753x_irq_enable(struct gsw_mt753x *gsw);
 
 /* MDIO Indirect Access Registers */

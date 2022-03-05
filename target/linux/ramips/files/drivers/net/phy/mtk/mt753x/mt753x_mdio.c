@@ -421,17 +421,6 @@ static int mt753x_hw_reset(struct gsw_mt753x *gsw)
 	return 0;
 }
 
-static irqreturn_t mt753x_irq_handler(int irq, void *dev)
-{
-	struct gsw_mt753x *gsw = dev;
-
-	disable_irq_nosync(gsw->irq);
-
-	schedule_work(&gsw->irq_worker);
-
-	return IRQ_HANDLED;
-}
-
 static int mt753x_probe(struct platform_device *pdev)
 {
 	struct gsw_mt753x *gsw;
@@ -507,18 +496,14 @@ static int mt753x_probe(struct platform_device *pdev)
 		goto fail;
 	}
 
-	INIT_WORK(&gsw->irq_worker, mt753x_irq_worker);
-
 	gsw->irq = platform_get_irq(pdev, 0);
 	if (gsw->irq >= 0) {
-		ret = devm_request_irq(gsw->dev, gsw->irq, mt753x_irq_handler,
-				       0, dev_name(gsw->dev), gsw);
+		ret = request_threaded_irq(gsw->irq, NULL, mt753x_irq_thread_fn, IRQF_ONESHOT, dev_name(gsw->dev), gsw);
 		if (ret) {
 			dev_err(gsw->dev, "Failed to request irq %d\n",
 				gsw->irq);
 			goto fail;
 		}
-
 		/* disable irq before hw init done */
 		disable_irq(gsw->irq);
 	}
@@ -556,7 +541,7 @@ static int mt753x_remove(struct platform_device *pdev)
 	struct gsw_mt753x *gsw = platform_get_drvdata(pdev);
 
 	if (gsw->irq >= 0)
-		cancel_work_sync(&gsw->irq_worker);
+		free_irq(gsw->irq, gsw);
 
 	if (gsw->reset_pin >= 0)
 		devm_gpio_free(&pdev->dev, gsw->reset_pin);
