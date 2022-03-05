@@ -433,9 +433,21 @@
 #define MIRROR_SRC_TX_BIT	BIT(9)
 
 /* registers */
-#define REG_ESW_WT_MAC_MFC	0x10
-#define MIRROR_ENABLE	BIT(3)
+#define MT7530_MFC	0x10
+#define MT7530_MIRROR_ENABLE	BIT(3)
+
 #define MIRROR_DEST_MASK	0x07
+#define MIRROR_DEST_PORT(x)	((x) & 0x7)
+
+#define MT7531_CFC	0x4
+#define MT7531_MIRROR_ENABLE	BIT(19)
+#define MT7531_MIRROR_MASK	(MIRROR_DEST_MASK << 16)
+#define MT7531_MIRROR_DEST_PORT(port)	(((port) & MIRROR_DEST_MASK) << 16)
+
+#define MT753X_MIRROR_REG(gsw)		(((gsw->model) == MT7531) ? MT7531_CFC : MT7530_MFC)
+#define MT753X_MIRROR_EN(gsw)            (((gsw->model) == MT7531) ? MT7531_MIRROR_ENABLE : MT7530_MIRROR_ENABLE)
+#define MT753X_MIRROR_MASK(gsw)          (((gsw->model) == MT7531) ? MT7531_MIRROR_MASK : MIRROR_DEST_MASK)
+#define MT753X_MIRROR_PORT_SET(gsw, port) (((gsw->model) == MT7531) ? MT7531_MIRROR_DEST_PORT(port) : MIRROR_DEST_PORT(port))
 
 #define REG_ATRD_VALID        0xff000000U
 #define REG_ATRD_PORT_MASK    0xff0U

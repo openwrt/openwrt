@@ -153,26 +153,37 @@ void mt753x_apply_vlan_config(struct gsw_mt753x *gsw)
 		mt753x_reg_write(gsw, PPBV1(i), val);
 	}
 
+	/* FIXME: MT7530 only supports one monitor port, but MT7631 supports multi,
+	 *        but here just supports one for now.
+	 */
+
 	/* set mirroring source port */
 	for (i = 0; i < MT753X_NUM_PORTS; i++) {
 		u32 val = mt753x_reg_read(gsw, PCR(i));
+		val &= ~(MIRROR_SRC_RX_BIT | MIRROR_SRC_TX_BIT);
 		if (gsw->port_entries[i].mirror_rx) {
 			val |= MIRROR_SRC_RX_BIT;
 			is_mirror = true;
 		}
 		if (gsw->port_entries[i].mirror_tx) {
 			val |= MIRROR_SRC_TX_BIT;
+			is_mirror = true;
 		}
 		mt753x_reg_write(gsw, PCR(i), val);
 	}
 
 	/* set mirroring monitor port */
 	if (is_mirror) {
-		u32 val = mt753x_reg_read(gsw, REG_ESW_WT_MAC_MFC);
-		val |= MIRROR_ENABLE;
-		val &= ~MIRROR_DEST_MASK;
-		val |= gsw->mirror_dest_port;
-		mt753x_reg_write(gsw, REG_ESW_WT_MAC_MFC, val);
+		u32 val = mt753x_reg_read(gsw, MT753X_MIRROR_REG(gsw));
+		val |= MT753X_MIRROR_EN(gsw);
+		val &= ~MT753X_MIRROR_MASK(gsw);
+		val |= MT753X_MIRROR_PORT_SET(gsw, gsw->mirror_dest_port);
+		mt753x_reg_write(gsw, MT753X_MIRROR_REG(gsw), val);
+	} else {
+		u32 val = mt753x_reg_read(gsw, MT753X_MIRROR_REG(gsw));
+		val &= ~MT753X_MIRROR_EN(gsw);
+		val &= ~MT753X_MIRROR_MASK(gsw);
+		mt753x_reg_write(gsw, MT753X_MIRROR_REG(gsw), val);
 	}
 }
 
