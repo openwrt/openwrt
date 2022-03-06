@@ -171,7 +171,7 @@ $(eval $(call BuildPackage,iwlwifi-firmware-iwl9260))
 Package/iwlwifi-firmware-ax200 = $(call Package/firmware-default,Intel AX200 firmware)
 define Package/iwlwifi-firmware-ax200/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-cc-a0-62.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-cc-a0-66.ucode $(1)/lib/firmware
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-ax200))
 
