@@ -1,0 +1,18 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -137,6 +137,8 @@ endif # RTL8366_SMI
+ 
+ source "drivers/net/phy/mtk/mt753x/Kconfig"
+ 
++source "drivers/net/phy/intel/gsw150/Kconfig"
++
+ comment "MII PHY device drivers"
+ 
+ config AMD_PHY
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -97,3 +97,4 @@ obj-$(CONFIG_TERANETICS_PHY)	+= teraneti
+ obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
+ obj-$(CONFIG_XILINX_GMII2RGMII) += xilinx_gmii2rgmii.o
+ obj-$(CONFIG_MT753X_GSW)	+= mtk/mt753x/
++obj-$(CONFIG_GSW150_SUPPORT)	+= intel/gsw150/

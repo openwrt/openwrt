@@ -1,0 +1,28 @@
+From 3529487052755cbff449122d742383d901122768 Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Tue, 27 Sep 2022 16:01:36 +0800
+Subject: [PATCH] switch-add-gsw150
+
+---
+ drivers/net/phy/Kconfig  | 2 ++
+ drivers/net/phy/Makefile | 1 +
+ 2 files changed, 3 insertions(+)
+
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -137,6 +137,8 @@ endif # RTL8366_SMI
+ 
+ source "drivers/net/phy/mtk/mt753x/Kconfig"
+ 
++source "drivers/net/phy/intel/gsw150/Kconfig"
++
+ comment "MII PHY device drivers"
+ 
+ config AMD_PHY
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -101,3 +101,4 @@ obj-$(CONFIG_TERANETICS_PHY)	+= teraneti
+ obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
+ obj-$(CONFIG_XILINX_GMII2RGMII) += xilinx_gmii2rgmii.o
+ obj-$(CONFIG_MT753X_GSW)	+= mtk/mt753x/
++obj-$(CONFIG_GSW150_SUPPORT)	+= intel/gsw150/
