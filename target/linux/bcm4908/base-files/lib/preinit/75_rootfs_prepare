@@ -20,7 +20,7 @@ rootfs_create() {
 
 rootfs_prepare() {
 	# Do nothing on CFE devices
-	ubinfo /dev/ubi0 -N metadata1 > /dev/null 2>&1 || exit 0
+	ubinfo /dev/ubi0 -N metadata1 > /dev/null 2>&1 || return
 
 	# Find UBI volume device (e.g. ubi0_123)
 	local ubivol="$(grep rootfs_data /sys/devices/virtual/ubi/ubi*/ubi*/name | sed -n 's/.*\(ubi\d*_\d*\).*/\1/p')"
