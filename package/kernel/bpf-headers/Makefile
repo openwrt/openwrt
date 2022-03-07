@@ -106,6 +106,9 @@ define Build/InstallDev
 		$(PKG_BUILD_DIR)/scripts \
 		$(PKG_BUILD_DIR)/user_headers \
 		$(1)/bpf-headers
+	$(CP) \
+		$(CURDIR)/files/stdarg.h \
+		$(1)/bpf-headers/include
 endef
 
 $(eval $(call BuildPackage,bpf-headers))
