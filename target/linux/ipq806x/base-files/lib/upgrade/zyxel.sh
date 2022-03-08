@@ -92,6 +92,12 @@ zyxel_do_upgrade() {
 	zyxel,nbg6817)
 		local dualflagmtd="$(find_mtd_part 0:DUAL_FLAG)"
 		[ -b $dualflagmtd ] || return 1
+		local dualflag=`dd if=$dualflagmtd bs=1 count=1 | hexdump -e '2/1 "%X"'`
+		if [ "$dualflag" == "FF" ]; then
+			kernel="/dev/mmcblk0p4"
+		elif [ "$dualflag" == "01" ]; then
+			kernel="/dev/mmcblk0p7"
+		fi
 
 		case "$rootfs" in
 			"/dev/mmcblk0p5")
@@ -107,7 +113,7 @@ zyxel_do_upgrade() {
 				rootfs="/dev/mmcblk0p5"
 			;;
 			*)
-				return 1
+				[ -z $kernel ] && return 1
 			;;
 		esac
 		;;
