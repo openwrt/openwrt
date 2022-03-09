@@ -214,6 +214,7 @@ struct mt7621_nfc {
 	struct clk *nfi_clk;
 	struct device *dev;
 
+	u32 nfi_base;
 	void __iomem *nfi_regs;
 	void __iomem *ecc_regs;
 
@@ -860,6 +861,8 @@ static int mt7621_nfc_ecc_init(struct mt7621_nfc *nfc)
 		     (decode_block_size << DEC_CS_S) |
 		     (DEC_CON_EL << DEC_CON_S) | DEC_EMPTY_EN;
 
+	ecc_write32(nfc, ECC_FDMADDR, nfc->nfi_base + NFI_FDML(0));
+
 	mt7621_ecc_encoder_op(nfc, false);
 	ecc_write32(nfc, ECC_ENCCNFG, ecc_enccfg);
 
@@ -1277,6 +1280,7 @@ static int mt7621_nfc_probe(struct platform_device *pdev)
 	nfc->dev = dev;
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "nfi");
+	nfc->nfi_base = res->start;
 	nfc->nfi_regs = devm_ioremap_resource(dev, res);
 	if (IS_ERR(nfc->nfi_regs)) {
 		ret = PTR_ERR(nfc->nfi_regs);
