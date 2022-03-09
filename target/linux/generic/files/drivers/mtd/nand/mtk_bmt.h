@@ -19,7 +19,7 @@ struct mtk_bmt_ops {
 	int (*init)(struct device_node *np);
 	bool (*remap_block)(u16 block, u16 mapped_block, int copy_len);
 	void (*unmap_block)(u16 block);
-	u16 (*get_mapping_block)(int block);
+	int (*get_mapping_block)(int block);
 	int (*debug)(void *data, u64 val);
 };
 

@@ -306,7 +306,7 @@ static bool remap_block_v2(u16 block, u16 mapped_block, int copy_len)
 	return true;
 }
 
-static u16 get_mapping_block_index_v2(int block)
+static int get_mapping_block_index_v2(int block)
 {
 	int start, end;
 
