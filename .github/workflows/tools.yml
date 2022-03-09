@@ -121,9 +121,14 @@ jobs:
           cd "$WORKPATH"
           make tools/install -j$(nproc) BUILD_LOG=1
 
+      - name: Move logs to GITHUB_WORKSPACE
+        if: failure()
+        run: |
+          cp -r "$WORKPATH/logs" "$GITHUB_WORKSPACE"
+
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.os }}-logs
-          path: "$WORKPATH/logs"
+          path: "logs"
