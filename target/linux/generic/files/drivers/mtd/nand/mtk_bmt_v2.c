@@ -285,21 +285,21 @@ error:
  */
 static bool remap_block_v2(u16 block, u16 mapped_block, int copy_len)
 {
-	u16 mapped_blk;
+	u16 new_block;
 	struct bbbt *bbt;
 
 	bbt = bmtd.bbt;
-	mapped_blk = find_valid_block_in_pool(bbt);
-	if (mapped_blk == 0)
+	new_block = find_valid_block_in_pool(bbt);
+	if (new_block == 0)
 		return false;
 
 	/* Map new bad block to available block in pool */
-	bbt->bb_tbl[block] = mapped_blk;
+	bbt->bb_tbl[block] = new_block;
 
 	/* Erase new block */
-	bbt_nand_erase(mapped_blk);
+	bbt_nand_erase(new_block);
 	if (copy_len > 0)
-		bbt_nand_copy(mapped_blk, block, copy_len);
+		bbt_nand_copy(new_block, mapped_block, copy_len);
 
 	bmtd.bmt_blk_idx = upload_bmt(bbt, bmtd.bmt_blk_idx);
 
