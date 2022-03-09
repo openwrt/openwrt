@@ -14,8 +14,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-9-claudiu.beznea@microchip
  arch/arm/mach-at91/pm_suspend.S | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
-index 960ad29cce51..1f63bbfad728 100644
 --- a/arch/arm/mach-at91/pm_suspend.S
 +++ b/arch/arm/mach-at91/pm_suspend.S
 @@ -422,7 +422,7 @@ sr_dis_exit:
@@ -36,6 +34,3 @@ index 960ad29cce51..1f63bbfad728 100644
  	/* step 1. */
  	ldr	tmp1, [pmc, #AT91_PMC_PLL_UPDT]
  	bic	tmp1, tmp1, #AT91_PMC_PLL_UPDT_ID
--- 
-2.32.0
-

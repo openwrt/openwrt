@@ -1359,6 +1359,17 @@ define Device/raisecom_msg1500-x-00
 endef
 TARGET_DEVICES += raisecom_msg1500-x-00
 
+define Device/renkforce_ws-wn530hp3-a
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Renkforce
+  DEVICE_MODEL := WS-WN530HP3-A
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 65536 | append-rootfs | \
+	check-size | append-metadata
+  IMAGE_SIZE := 15040k
+endef
+TARGET_DEVICES += renkforce_ws-wn530hp3-a
+
 define Device/samknows_whitebox-v8
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
@@ -1545,6 +1556,17 @@ define Device/tplink_re650-v1
   IMAGE_SIZE := 14208k
 endef
 TARGET_DEVICES += tplink_re650-v1
+
+define Device/tplink_tl-wpa8631p-v3
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := TL-WPA8631P
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  TPLINK_BOARD_ID := TL-WPA8631P-V3
+  IMAGE_SIZE := 7232k
+endef
+TARGET_DEVICES += tplink_tl-wpa8631p-v3
 
 define Device/ubnt_edgerouter_common
   $(Device/dsa-migration)

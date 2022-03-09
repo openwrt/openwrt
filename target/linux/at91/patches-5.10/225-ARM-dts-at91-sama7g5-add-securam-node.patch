@@ -12,11 +12,9 @@ Link: https://lore.kernel.org/r/20210823131915.23857-4-claudiu.beznea@microchip.
  arch/arm/boot/dts/sama7g5.dtsi | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
-index ecabab4343b6..3a4315ac0eb0 100644
 --- a/arch/arm/boot/dts/sama7g5.dtsi
 +++ b/arch/arm/boot/dts/sama7g5.dtsi
-@@ -75,6 +75,17 @@ soc {
+@@ -75,6 +75,17 @@
  		#size-cells = <1>;
  		ranges;
  
@@ -34,6 +32,3 @@ index ecabab4343b6..3a4315ac0eb0 100644
  		secumod: secumod@e0004000 {
  			compatible = "microchip,sama7g5-secumod", "atmel,sama5d2-secumod", "syscon";
  			reg = <0xe0004000 0x4000>;
--- 
-2.32.0
-

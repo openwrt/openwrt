@@ -16,11 +16,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/clk-master.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clk/at91/clk-master.c b/drivers/clk/at91/clk-master.c
-index 6da9ae34313a..e67bcd03a827 100644
 --- a/drivers/clk/at91/clk-master.c
 +++ b/drivers/clk/at91/clk-master.c
-@@ -386,7 +386,7 @@ static unsigned long clk_master_pres_recalc_rate(struct clk_hw *hw,
+@@ -386,7 +386,7 @@ static unsigned long clk_master_pres_rec
  
  	val &= master->layout->mask;
  	pres = (val >> master->layout->pres_shift) & MASTER_PRES_MASK;
@@ -29,6 +27,3 @@ index 6da9ae34313a..e67bcd03a827 100644
  		pres = 3;
  	else
  		pres = (1 << pres);
--- 
-2.32.0
-

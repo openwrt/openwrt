@@ -15,11 +15,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/atmel/atmel-i2s.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/sound/soc/atmel/atmel-i2s.c b/sound/soc/atmel/atmel-i2s.c
-index d870f56c44cf..7483c474ccd7 100644
 --- a/sound/soc/atmel/atmel-i2s.c
 +++ b/sound/soc/atmel/atmel-i2s.c
-@@ -581,8 +581,8 @@ static int atmel_i2s_sama5d2_mck_init(struct atmel_i2s_dev *dev,
+@@ -581,8 +581,8 @@ static int atmel_i2s_sama5d2_mck_init(st
  		err = PTR_ERR(muxclk);
  		if (err == -EPROBE_DEFER)
  			return -EPROBE_DEFER;
@@ -30,6 +28,3 @@ index d870f56c44cf..7483c474ccd7 100644
  		return 0;
  	}
  
--- 
-2.32.0
-

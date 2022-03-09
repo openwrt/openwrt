@@ -21,11 +21,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 15 +++++++++++++++
  3 files changed, 23 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 07ba439eb7e9..6c709f6a408c 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -654,13 +654,7 @@ static void isc_set_pipeline(struct isc_device *isc, u32 pipeline)
+@@ -654,13 +654,7 @@ static void isc_set_pipeline(struct isc_
  	regmap_bulk_write(regmap, ISC_GAM_GENTRY, gamma, GAMMA_ENTRIES);
  	regmap_bulk_write(regmap, ISC_GAM_RENTRY, gamma, GAMMA_ENTRIES);
  
@@ -40,8 +38,6 @@ index 07ba439eb7e9..6c709f6a408c 100644
  
  	regmap_write(regmap, ISC_CBC_BRIGHT, ctrls->brightness);
  	regmap_write(regmap, ISC_CBC_CONTRAST, ctrls->contrast);
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 88ec4268de11..ebdb9ed791a7 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -191,6 +191,9 @@ struct isc_ctrls {
@@ -65,8 +61,6 @@ index 88ec4268de11..ebdb9ed791a7 100644
  };
  
  extern struct isc_format formats_list[];
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index 12edeb07b618..19d0f750636c 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 @@ -54,6 +54,19 @@
@@ -89,7 +83,7 @@ index 12edeb07b618..19d0f750636c 100644
  /* Gamma table with gamma 1/2.2 */
  static const u32 isc_sama5d2_gamma_table[][GAMMA_ENTRIES] = {
  	/* 0 --> gamma 1/1.8 */
-@@ -219,6 +232,8 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -219,6 +232,8 @@ static int atmel_isc_probe(struct platfo
  	isc->max_width = ISC_SAMA5D2_MAX_SUPPORT_WIDTH;
  	isc->max_height = ISC_SAMA5D2_MAX_SUPPORT_HEIGHT;
  
@@ -98,6 +92,3 @@ index 12edeb07b618..19d0f750636c 100644
  	/* sama5d2-isc - 8 bits per beat */
  	isc->dcfg = ISC_DCFG_YMBSIZE_BEATS8 | ISC_DCFG_CMBSIZE_BEATS8;
  
--- 
-2.32.0
-

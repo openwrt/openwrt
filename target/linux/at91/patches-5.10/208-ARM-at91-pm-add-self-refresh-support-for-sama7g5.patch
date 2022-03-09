@@ -14,8 +14,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-13-claudiu.beznea@microchi
  arch/arm/mach-at91/pm_suspend.S      | 199 +++++++++++++++++++++++++++
  3 files changed, 203 insertions(+)
 
-diff --git a/arch/arm/mach-at91/pm.h b/arch/arm/mach-at91/pm.h
-index bfb260be371e..666474088d55 100644
 --- a/arch/arm/mach-at91/pm.h
 +++ b/arch/arm/mach-at91/pm.h
 @@ -12,6 +12,7 @@
@@ -34,8 +32,6 @@ index bfb260be371e..666474088d55 100644
  	unsigned long uhp_udp_mask;
  	unsigned int memctrl;
  	unsigned int mode;
-diff --git a/arch/arm/mach-at91/pm_data-offsets.c b/arch/arm/mach-at91/pm_data-offsets.c
-index 82089ff258c0..40bd4e8fe40a 100644
 --- a/arch/arm/mach-at91/pm_data-offsets.c
 +++ b/arch/arm/mach-at91/pm_data-offsets.c
 @@ -8,6 +8,8 @@ int main(void)
@@ -47,8 +43,6 @@ index 82089ff258c0..40bd4e8fe40a 100644
  	DEFINE(PM_DATA_MEMCTRL,	offsetof(struct at91_pm_data, memctrl));
  	DEFINE(PM_DATA_MODE,		offsetof(struct at91_pm_data, mode));
  	DEFINE(PM_DATA_SHDWC,		offsetof(struct at91_pm_data, shdwc));
-diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
-index 7669b32d5257..84418120ba67 100644
 --- a/arch/arm/mach-at91/pm_suspend.S
 +++ b/arch/arm/mach-at91/pm_suspend.S
 @@ -87,6 +87,200 @@ tmp3	.req	r6
@@ -278,6 +272,3 @@ index 7669b32d5257..84418120ba67 100644
  .shdwc:
  	.word 0
  .sfrbu:
--- 
-2.32.0
-

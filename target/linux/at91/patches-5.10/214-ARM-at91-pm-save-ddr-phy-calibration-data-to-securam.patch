@@ -21,8 +21,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-20-claudiu.beznea@microchi
  arch/arm/mach-at91/pm.c | 60 ++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 59 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index b047a1f2ddfb..fd3beaeec17d 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
 @@ -10,6 +10,7 @@
@@ -93,7 +91,7 @@ index b047a1f2ddfb..fd3beaeec17d 100644
  	flush_cache_all();
  	outer_disable();
  
-@@ -688,12 +709,40 @@ static bool __init at91_is_pm_mode_active(int pm_mode)
+@@ -688,12 +709,40 @@ static bool __init at91_is_pm_mode_activ
  		soc_pm.data.suspend_mode == pm_mode);
  }
  
@@ -135,7 +133,7 @@ index b047a1f2ddfb..fd3beaeec17d 100644
  
  	if (!IS_ENABLED(CONFIG_SOC_SAMA5D2))
  		return -EPERM;
-@@ -728,6 +777,15 @@ static int __init at91_pm_backup_init(void)
+@@ -728,6 +777,15 @@ static int __init at91_pm_backup_init(vo
  	soc_pm.bu->suspended = 0;
  	soc_pm.bu->canary = __pa_symbol(&canary);
  	soc_pm.bu->resume = __pa_symbol(cpu_resume);
@@ -151,6 +149,3 @@ index b047a1f2ddfb..fd3beaeec17d 100644
  
  	return 0;
  
--- 
-2.32.0
-

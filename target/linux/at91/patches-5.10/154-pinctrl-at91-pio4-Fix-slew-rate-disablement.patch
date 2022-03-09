@@ -23,11 +23,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-at91-pio4.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-at91-pio4.c b/drivers/pinctrl/pinctrl-at91-pio4.c
-index a5d328808e4c..4c01d8471ffa 100644
 --- a/drivers/pinctrl/pinctrl-at91-pio4.c
 +++ b/drivers/pinctrl/pinctrl-at91-pio4.c
-@@ -801,6 +801,10 @@ static int atmel_conf_pin_config_group_set(struct pinctrl_dev *pctldev,
+@@ -801,6 +801,10 @@ static int atmel_conf_pin_config_group_s
  
  	conf = atmel_pin_config_read(pctldev, pin_id);
  
@@ -38,7 +36,7 @@ index a5d328808e4c..4c01d8471ffa 100644
  	for (i = 0; i < num_configs; i++) {
  		unsigned int param = pinconf_to_config_param(configs[i]);
  		unsigned int arg = pinconf_to_config_argument(configs[i]);
-@@ -808,10 +812,6 @@ static int atmel_conf_pin_config_group_set(struct pinctrl_dev *pctldev,
+@@ -808,10 +812,6 @@ static int atmel_conf_pin_config_group_s
  		dev_dbg(pctldev->dev, "%s: pin=%u, config=0x%lx\n",
  			__func__, pin_id, configs[i]);
  
@@ -49,6 +47,3 @@ index a5d328808e4c..4c01d8471ffa 100644
  		switch (param) {
  		case PIN_CONFIG_BIAS_DISABLE:
  			conf &= (~ATMEL_PIO_PUEN_MASK);
--- 
-2.32.0
-

@@ -13,11 +13,9 @@ Link: https://lore.kernel.org/r/20210415105010.569620-18-claudiu.beznea@microchi
  arch/arm/mach-at91/pm.c | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index 96f2be0a53cb..622d68724c3f 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
-@@ -548,6 +548,7 @@ static const struct of_device_id ramc_ids[] __initconst = {
+@@ -548,6 +548,7 @@ static const struct of_device_id ramc_id
  	{ .compatible = "atmel,at91sam9260-sdramc", .data = &ramc_infos[1] },
  	{ .compatible = "atmel,at91sam9g45-ddramc", .data = &ramc_infos[2] },
  	{ .compatible = "atmel,sama5d3-ddramc", .data = &ramc_infos[3] },
@@ -40,6 +38,3 @@ index 96f2be0a53cb..622d68724c3f 100644
  
  		idx++;
  	}
--- 
-2.32.0
-

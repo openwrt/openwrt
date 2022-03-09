@@ -18,7 +18,7 @@ Link: https://lore.kernel.org/linux-mtd/20210418214616.239574-3-hauke@hauke-m.de
 
 --- a/drivers/mtd/parsers/parser_trx.c
 +++ b/drivers/mtd/parsers/parser_trx.c
-@@ -78,13 +78,20 @@ static int parser_trx_parse(struct mtd_i
+@@ -51,13 +51,20 @@ static int parser_trx_parse(struct mtd_i
  			    const struct mtd_partition **pparts,
  			    struct mtd_part_parser_data *data)
  {
@@ -39,7 +39,7 @@ Link: https://lore.kernel.org/linux-mtd/20210418214616.239574-3-hauke@hauke-m.de
  	parts = kcalloc(TRX_PARSER_MAX_PARTS, sizeof(struct mtd_partition),
  			GFP_KERNEL);
  	if (!parts)
-@@ -97,7 +104,7 @@ static int parser_trx_parse(struct mtd_i
+@@ -70,7 +77,7 @@ static int parser_trx_parse(struct mtd_i
  		return err;
  	}
  

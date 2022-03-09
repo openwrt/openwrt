@@ -15,11 +15,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/pmc.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/at91/pmc.c b/drivers/clk/at91/pmc.c
-index 517973062719..5aa9c1f1c886 100644
 --- a/drivers/clk/at91/pmc.c
 +++ b/drivers/clk/at91/pmc.c
-@@ -148,8 +148,9 @@ static struct syscore_ops pmc_syscore_ops = {
+@@ -148,8 +148,9 @@ static struct syscore_ops pmc_syscore_op
  	.resume = at91_pmc_resume,
  };
  
@@ -39,6 +37,3 @@ index 517973062719..5aa9c1f1c886 100644
  	if (!np)
  		return -ENODEV;
  
--- 
-2.32.0
-

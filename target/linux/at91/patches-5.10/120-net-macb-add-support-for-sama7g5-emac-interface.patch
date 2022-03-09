@@ -12,11 +12,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/cadence/macb_main.c | 9 +++++++++
  1 file changed, 9 insertions(+)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index ebcc46d8aa9d..4ce302e03735 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4468,6 +4468,14 @@ static const struct macb_config sama7g5_gem_config = {
+@@ -4468,6 +4468,14 @@ static const struct macb_config sama7g5_
  	.usrio = &sama7g5_usrio,
  };
  
@@ -31,7 +29,7 @@ index ebcc46d8aa9d..4ce302e03735 100644
  static const struct of_device_id macb_dt_ids[] = {
  	{ .compatible = "cdns,at32ap7000-macb" },
  	{ .compatible = "cdns,at91sam9260-macb", .data = &at91sam9260_config },
-@@ -4486,6 +4494,7 @@ static const struct of_device_id macb_dt_ids[] = {
+@@ -4486,6 +4494,7 @@ static const struct of_device_id macb_dt
  	{ .compatible = "cdns,zynq-gem", .data = &zynq_config },
  	{ .compatible = "sifive,fu540-c000-gem", .data = &fu540_c000_config },
  	{ .compatible = "microchip,sama7g5-gem", .data = &sama7g5_gem_config },
@@ -39,6 +37,3 @@ index ebcc46d8aa9d..4ce302e03735 100644
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, macb_dt_ids);
--- 
-2.32.0
-

@@ -21,11 +21,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 9 +++++++++
  3 files changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 18136e58a754..865410e10e70 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -655,9 +655,7 @@ static void isc_set_pipeline(struct isc_device *isc, u32 pipeline)
+@@ -655,9 +655,7 @@ static void isc_set_pipeline(struct isc_
  	regmap_bulk_write(regmap, ISC_GAM_RENTRY, gamma, GAMMA_ENTRIES);
  
  	isc->config_csc(isc);
@@ -36,8 +34,6 @@ index 18136e58a754..865410e10e70 100644
  }
  
  static int isc_update_profile(struct isc_device *isc)
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index db6b4d469dff..65c3059afb8e 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -202,6 +202,8 @@ struct isc_reg_offsets {
@@ -57,11 +53,9 @@ index db6b4d469dff..65c3059afb8e 100644
  	};
  
  	struct isc_reg_offsets		offsets;
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index 2ad6227aa2f5..770d62b483d0 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -73,6 +73,14 @@ static void isc_sama5d2_config_csc(struct isc_device *isc)
+@@ -73,6 +73,14 @@ static void isc_sama5d2_config_csc(struc
  		     0xFEE | (0x80 << 16));
  }
  
@@ -76,7 +70,7 @@ index 2ad6227aa2f5..770d62b483d0 100644
  /* Gamma table with gamma 1/2.2 */
  static const u32 isc_sama5d2_gamma_table[][GAMMA_ENTRIES] = {
  	/* 0 --> gamma 1/1.8 */
-@@ -239,6 +247,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -239,6 +247,7 @@ static int atmel_isc_probe(struct platfo
  	isc->max_height = ISC_SAMA5D2_MAX_SUPPORT_HEIGHT;
  
  	isc->config_csc = isc_sama5d2_config_csc;
@@ -84,6 +78,3 @@ index 2ad6227aa2f5..770d62b483d0 100644
  
  	isc->offsets.csc = ISC_SAMA5D2_CSC_OFFSET;
  
--- 
-2.32.0
-

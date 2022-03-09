@@ -18,11 +18,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  drivers/regulator/helpers.c | 3 ++-
  2 files changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
-index 043b5f63b94a..dfdd42b9d773 100644
 --- a/drivers/regulator/core.c
 +++ b/drivers/regulator/core.c
-@@ -2984,7 +2984,8 @@ static int _regulator_list_voltage(struct regulator_dev *rdev,
+@@ -2984,7 +2984,8 @@ static int _regulator_list_voltage(struc
  		return rdev->desc->fixed_uV;
  
  	if (ops->list_voltage) {
@@ -32,7 +30,7 @@ index 043b5f63b94a..dfdd42b9d773 100644
  			return -EINVAL;
  		if (lock)
  			regulator_lock(rdev);
-@@ -3135,7 +3136,8 @@ int regulator_list_hardware_vsel(struct regulator *regulator,
+@@ -3135,7 +3136,8 @@ int regulator_list_hardware_vsel(struct
  	struct regulator_dev *rdev = regulator->rdev;
  	const struct regulator_ops *ops = rdev->desc->ops;
  
@@ -42,7 +40,7 @@ index 043b5f63b94a..dfdd42b9d773 100644
  		return -EINVAL;
  	if (ops->set_voltage_sel != regulator_set_voltage_sel_regmap)
  		return -EOPNOTSUPP;
-@@ -4058,6 +4060,9 @@ int regulator_set_voltage_time(struct regulator *regulator,
+@@ -4058,6 +4060,9 @@ int regulator_set_voltage_time(struct re
  
  	for (i = 0; i < rdev->desc->n_voltages; i++) {
  		/* We only look for exact voltage matches here */
@@ -52,11 +50,9 @@ index 043b5f63b94a..dfdd42b9d773 100644
  		voltage = regulator_list_voltage(regulator, i);
  		if (voltage < 0)
  			return -EINVAL;
-diff --git a/drivers/regulator/helpers.c b/drivers/regulator/helpers.c
-index e4bb09bbd3fa..974f1a63993d 100644
 --- a/drivers/regulator/helpers.c
 +++ b/drivers/regulator/helpers.c
-@@ -647,7 +647,8 @@ int regulator_list_voltage_table(struct regulator_dev *rdev,
+@@ -647,7 +647,8 @@ int regulator_list_voltage_table(struct
  		return -EINVAL;
  	}
  
@@ -66,6 +62,3 @@ index e4bb09bbd3fa..974f1a63993d 100644
  		return -EINVAL;
  
  	return rdev->desc->volt_table[selector];
--- 
-2.32.0
-

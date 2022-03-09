@@ -12,11 +12,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/cadence/macb_main.c | 17 +++++++++++++++++
  1 file changed, 17 insertions(+)
 
-diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
-index c8d66f966a8b..ebcc46d8aa9d 100644
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4359,6 +4359,14 @@ static const struct macb_usrio_config macb_default_usrio = {
+@@ -4359,6 +4359,14 @@ static const struct macb_usrio_config ma
  	.refclk = MACB_BIT(CLKEN),
  };
  
@@ -31,7 +29,7 @@ index c8d66f966a8b..ebcc46d8aa9d 100644
  static const struct macb_config fu540_c000_config = {
  	.caps = MACB_CAPS_GIGABIT_MODE_AVAILABLE | MACB_CAPS_JUMBO |
  		MACB_CAPS_GEM_HAS_PTP,
-@@ -4452,6 +4460,14 @@ static const struct macb_config zynq_config = {
+@@ -4452,6 +4460,14 @@ static const struct macb_config zynq_con
  	.usrio = &macb_default_usrio,
  };
  
@@ -46,7 +44,7 @@ index c8d66f966a8b..ebcc46d8aa9d 100644
  static const struct of_device_id macb_dt_ids[] = {
  	{ .compatible = "cdns,at32ap7000-macb" },
  	{ .compatible = "cdns,at91sam9260-macb", .data = &at91sam9260_config },
-@@ -4469,6 +4485,7 @@ static const struct of_device_id macb_dt_ids[] = {
+@@ -4469,6 +4485,7 @@ static const struct of_device_id macb_dt
  	{ .compatible = "cdns,zynqmp-gem", .data = &zynqmp_config},
  	{ .compatible = "cdns,zynq-gem", .data = &zynq_config },
  	{ .compatible = "sifive,fu540-c000-gem", .data = &fu540_c000_config },
@@ -54,6 +52,3 @@ index c8d66f966a8b..ebcc46d8aa9d 100644
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, macb_dt_ids);
--- 
-2.32.0
-

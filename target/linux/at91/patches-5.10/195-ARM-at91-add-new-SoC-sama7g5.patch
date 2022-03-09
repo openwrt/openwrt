@@ -15,8 +15,6 @@ Link: https://lore.kernel.org/r/20210719080317.1045832-2-claudiu.beznea@microchi
  arch/arm/mach-at91/Kconfig | 18 ++++++++++++++++++
  1 file changed, 18 insertions(+)
 
-diff --git a/arch/arm/mach-at91/Kconfig b/arch/arm/mach-at91/Kconfig
-index ccd7e80ce943..b09bb2279f7f 100644
 --- a/arch/arm/mach-at91/Kconfig
 +++ b/arch/arm/mach-at91/Kconfig
 @@ -57,6 +57,16 @@ config SOC_SAMA5D4
@@ -49,6 +47,3 @@ index ccd7e80ce943..b09bb2279f7f 100644
 +	select SOC_SAM_V7
 +	select SRAM if PM
  endif
--- 
-2.32.0
-

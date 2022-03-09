@@ -19,11 +19,9 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  drivers/dma/at_xdmac.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/dma/at_xdmac.c b/drivers/dma/at_xdmac.c
-index 90afba0b36fe..85fe260ccd07 100644
 --- a/drivers/dma/at_xdmac.c
 +++ b/drivers/dma/at_xdmac.c
-@@ -865,7 +865,7 @@ at_xdmac_interleaved_queue_desc(struct dma_chan *chan,
+@@ -865,7 +865,7 @@ at_xdmac_interleaved_queue_desc(struct d
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
  	 */
@@ -32,7 +30,7 @@ index 90afba0b36fe..85fe260ccd07 100644
  					| AT_XDMAC_CC_DIF(0)
  					| AT_XDMAC_CC_SIF(0)
  					| AT_XDMAC_CC_MBSIZE_SIXTEEN
-@@ -1047,7 +1047,7 @@ at_xdmac_prep_dma_memcpy(struct dma_chan *chan, dma_addr_t dest, dma_addr_t src,
+@@ -1047,7 +1047,7 @@ at_xdmac_prep_dma_memcpy(struct dma_chan
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
  	 */
@@ -41,7 +39,7 @@ index 90afba0b36fe..85fe260ccd07 100644
  					| AT_XDMAC_CC_DAM_INCREMENTED_AM
  					| AT_XDMAC_CC_SAM_INCREMENTED_AM
  					| AT_XDMAC_CC_DIF(0)
-@@ -1153,7 +1153,7 @@ static struct at_xdmac_desc *at_xdmac_memset_create_desc(struct dma_chan *chan,
+@@ -1153,7 +1153,7 @@ static struct at_xdmac_desc *at_xdmac_me
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
  	 */
@@ -50,6 +48,3 @@ index 90afba0b36fe..85fe260ccd07 100644
  					| AT_XDMAC_CC_DAM_UBS_AM
  					| AT_XDMAC_CC_SAM_INCREMENTED_AM
  					| AT_XDMAC_CC_DIF(0)
--- 
-2.32.0
-

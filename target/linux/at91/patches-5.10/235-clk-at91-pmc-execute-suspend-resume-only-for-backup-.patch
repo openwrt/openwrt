@@ -18,8 +18,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/pmc.c | 39 +++++++++++++++++++++++++++++++++++++++
  1 file changed, 39 insertions(+)
 
-diff --git a/drivers/clk/at91/pmc.c b/drivers/clk/at91/pmc.c
-index b2806946a77a..517973062719 100644
 --- a/drivers/clk/at91/pmc.c
 +++ b/drivers/clk/at91/pmc.c
 @@ -8,6 +8,7 @@
@@ -30,7 +28,7 @@ index b2806946a77a..517973062719 100644
  #include <linux/mfd/syscon.h>
  #include <linux/platform_device.h>
  #include <linux/regmap.h>
-@@ -110,13 +111,35 @@ struct pmc_data *pmc_data_allocate(unsigned int ncore, unsigned int nsystem,
+@@ -110,13 +111,35 @@ struct pmc_data *pmc_data_allocate(unsig
  }
  
  #ifdef CONFIG_PM
@@ -89,6 +87,3 @@ index b2806946a77a..517973062719 100644
  	register_syscore_ops(&pmc_syscore_ops);
  
  	return 0;
--- 
-2.32.0
-

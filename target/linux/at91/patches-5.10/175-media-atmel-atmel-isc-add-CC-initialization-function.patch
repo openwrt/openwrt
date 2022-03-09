@@ -22,11 +22,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 14 ++++++++++++++
  3 files changed, 18 insertions(+)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index a6b62e009c38..ffce8de2cf4d 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -661,6 +661,7 @@ static void isc_set_pipeline(struct isc_device *isc, u32 pipeline)
+@@ -661,6 +661,7 @@ static void isc_set_pipeline(struct isc_
  
  	isc->config_csc(isc);
  	isc->config_cbc(isc);
@@ -34,8 +32,6 @@ index a6b62e009c38..ffce8de2cf4d 100644
  }
  
  static int isc_update_profile(struct isc_device *isc)
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 86edeea2d5cd..293746664cef 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -224,6 +224,8 @@ struct isc_reg_offsets {
@@ -55,11 +51,9 @@ index 86edeea2d5cd..293746664cef 100644
  	};
  
  	struct isc_reg_offsets		offsets;
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index ed575eb3726d..903920b74965 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -83,6 +83,19 @@ static void isc_sama5d2_config_cbc(struct isc_device *isc)
+@@ -83,6 +83,19 @@ static void isc_sama5d2_config_cbc(struc
  		     isc->ctrls.contrast);
  }
  
@@ -79,7 +73,7 @@ index ed575eb3726d..903920b74965 100644
  /* Gamma table with gamma 1/2.2 */
  static const u32 isc_sama5d2_gamma_table[][GAMMA_ENTRIES] = {
  	/* 0 --> gamma 1/1.8 */
-@@ -251,6 +264,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -251,6 +264,7 @@ static int atmel_isc_probe(struct platfo
  
  	isc->config_csc = isc_sama5d2_config_csc;
  	isc->config_cbc = isc_sama5d2_config_cbc;
@@ -87,6 +81,3 @@ index ed575eb3726d..903920b74965 100644
  
  	isc->offsets.csc = ISC_SAMA5D2_CSC_OFFSET;
  	isc->offsets.cbc = ISC_SAMA5D2_CBC_OFFSET;
--- 
-2.32.0
-

@@ -23,8 +23,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama7g5.c | 14 +++++++-------
  1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index 9e1ec48c4474..cf8c079aa086 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
 @@ -35,7 +35,7 @@ static DEFINE_SPINLOCK(pmc_pll_lock);
@@ -45,7 +43,7 @@ index 9e1ec48c4474..cf8c079aa086 100644
   * PLL type identifiers
   * @PLL_TYPE_FRAC:	fractional PLL identifier
   * @PLL_TYPE_DIV:	divider PLL identifier
-@@ -118,7 +118,7 @@ static const struct clk_pll_characteristics pll_characteristics = {
+@@ -118,7 +118,7 @@ static const struct clk_pll_characterist
  	.output = pll_outputs,
  };
  
@@ -90,6 +88,3 @@ index 9e1ec48c4474..cf8c079aa086 100644
   * Generic clock description
   * @n:			clock name
   * @pp:			PLL parents
--- 
-2.32.0
-

@@ -14,8 +14,6 @@ Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
  drivers/power/reset/at91-sama5d2_shdwc.c | 72 ++++++++++++++++++------
  1 file changed, 54 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/power/reset/at91-sama5d2_shdwc.c b/drivers/power/reset/at91-sama5d2_shdwc.c
-index d9cf91e5b06d..125e592af445 100644
 --- a/drivers/power/reset/at91-sama5d2_shdwc.c
 +++ b/drivers/power/reset/at91-sama5d2_shdwc.c
 @@ -78,9 +78,15 @@ struct pmc_reg_config {
@@ -34,7 +32,7 @@ index d9cf91e5b06d..125e592af445 100644
  };
  
  struct shdwc {
-@@ -262,6 +268,10 @@ static const struct reg_config sama5d2_reg_config = {
+@@ -262,6 +268,10 @@ static const struct reg_config sama5d2_r
  	.pmc = {
  		.mckr		= 0x30,
  	},
@@ -45,7 +43,7 @@ index d9cf91e5b06d..125e592af445 100644
  };
  
  static const struct reg_config sam9x60_reg_config = {
-@@ -275,6 +285,23 @@ static const struct reg_config sam9x60_reg_config = {
+@@ -275,6 +285,23 @@ static const struct reg_config sam9x60_r
  	.pmc = {
  		.mckr		= 0x28,
  	},
@@ -69,7 +67,7 @@ index d9cf91e5b06d..125e592af445 100644
  };
  
  static const struct of_device_id at91_shdwc_of_match[] = {
-@@ -285,6 +312,10 @@ static const struct of_device_id at91_shdwc_of_match[] = {
+@@ -285,6 +312,10 @@ static const struct of_device_id at91_sh
  	{
  		.compatible = "microchip,sam9x60-shdwc",
  		.data = &sam9x60_reg_config,
@@ -80,7 +78,7 @@ index d9cf91e5b06d..125e592af445 100644
  	}, {
  		/*sentinel*/
  	}
-@@ -294,6 +325,7 @@ MODULE_DEVICE_TABLE(of, at91_shdwc_of_match);
+@@ -294,6 +325,7 @@ MODULE_DEVICE_TABLE(of, at91_shdwc_of_ma
  static const struct of_device_id at91_pmc_ids[] = {
  	{ .compatible = "atmel,sama5d2-pmc" },
  	{ .compatible = "microchip,sam9x60-pmc" },
@@ -88,7 +86,7 @@ index d9cf91e5b06d..125e592af445 100644
  	{ /* Sentinel. */ }
  };
  
-@@ -355,30 +387,34 @@ static int __init at91_shdwc_probe(struct platform_device *pdev)
+@@ -355,30 +387,34 @@ static int __init at91_shdwc_probe(struc
  		goto clk_disable;
  	}
  
@@ -141,6 +139,3 @@ index d9cf91e5b06d..125e592af445 100644
  	return 0;
  
  unmap:
--- 
-2.32.0
-

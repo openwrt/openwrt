@@ -19,11 +19,9 @@ Link: https://lore.kernel.org/r/20210915074836.6574-2-claudiu.beznea@microchip.c
  arch/arm/boot/dts/at91-sama7g5ek.dts | 28 ++++++++++++++++++++++------
  1 file changed, 22 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
-index f0772fa01751..30b67cad5f14 100644
 --- a/arch/arm/boot/dts/at91-sama7g5ek.dts
 +++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
-@@ -355,7 +355,10 @@ &gmac0 {
+@@ -355,7 +355,10 @@
  	#address-cells = <1>;
  	#size-cells = <0>;
  	pinctrl-names = "default";
@@ -35,7 +33,7 @@ index f0772fa01751..30b67cad5f14 100644
  	phy-mode = "rgmii-id";
  	status = "okay";
  
-@@ -370,7 +373,9 @@ &gmac1 {
+@@ -370,7 +373,9 @@
  	#address-cells = <1>;
  	#size-cells = <0>;
  	pinctrl-names = "default";
@@ -46,7 +44,7 @@ index f0772fa01751..30b67cad5f14 100644
  	phy-mode = "rmii";
  	status = "okay";
  
-@@ -425,14 +430,20 @@ pinctrl_gmac0_default: gmac0_default {
+@@ -425,14 +430,20 @@
  			 <PIN_PA15__G0_TXEN>,
  			 <PIN_PA30__G0_RXCK>,
  			 <PIN_PA18__G0_RXDV>,
@@ -69,7 +67,7 @@ index f0772fa01751..30b67cad5f14 100644
  		bias-pull-up;
  	};
  
-@@ -449,8 +460,13 @@ pinctrl_gmac1_default: gmac1_default {
+@@ -449,8 +460,13 @@
  			 <PIN_PD25__G1_RX0>,
  			 <PIN_PD26__G1_RX1>,
  			 <PIN_PD27__G1_RXER>,
@@ -85,6 +83,3 @@ index f0772fa01751..30b67cad5f14 100644
  			 <PIN_PD29__G1_MDIO>;
  		bias-disable;
  	};
--- 
-2.32.0
-

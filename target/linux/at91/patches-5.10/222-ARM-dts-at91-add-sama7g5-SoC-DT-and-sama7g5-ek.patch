@@ -25,11 +25,9 @@ Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
  create mode 100644 arch/arm/boot/dts/sama7g5-pinfunc.h
  create mode 100644 arch/arm/boot/dts/sama7g5.dtsi
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index ce66ffd5a1bb..2345a2304bd0 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -78,6 +78,8 @@ dtb-$(CONFIG_ARCH_ATLAS6) += \
+@@ -79,6 +79,8 @@ dtb-$(CONFIG_ARCH_ATLAS6) += \
  	atlas6-evb.dtb
  dtb-$(CONFIG_ARCH_ATLAS7) += \
  	atlas7-evb.dtb
@@ -38,9 +36,6 @@ index ce66ffd5a1bb..2345a2304bd0 100644
  dtb-$(CONFIG_ARCH_AXXIA) += \
  	axm5516-amarillo.dtb
  dtb-$(CONFIG_ARCH_BCM2835) += \
-diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
-new file mode 100644
-index 000000000000..4cbed98cc2f4
 --- /dev/null
 +++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
 @@ -0,0 +1,656 @@
@@ -700,9 +695,6 @@ index 000000000000..4cbed98cc2f4
 +	vin-supply = <&vdd_3v3>;
 +	status = "okay";
 +};
-diff --git a/arch/arm/boot/dts/sama7g5-pinfunc.h b/arch/arm/boot/dts/sama7g5-pinfunc.h
-new file mode 100644
-index 000000000000..22fe9e522a97
 --- /dev/null
 +++ b/arch/arm/boot/dts/sama7g5-pinfunc.h
 @@ -0,0 +1,923 @@
@@ -1629,9 +1621,6 @@ index 000000000000..22fe9e522a97
 +#define PIN_PE7__TIOA4			PINMUX_PIN(PIN_PE7, 3, 3)
 +#define PIN_PE7__ISC_D11		PINMUX_PIN(PIN_PE7, 5, 2)
 +#define PIN_PE7__G1_TSUCOMP		PINMUX_PIN(PIN_PE7, 7, 1)
-diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
-new file mode 100644
-index 000000000000..cc6be6db7b80
 --- /dev/null
 +++ b/arch/arm/boot/dts/sama7g5.dtsi
 @@ -0,0 +1,528 @@
@@ -2163,6 +2152,3 @@ index 000000000000..cc6be6db7b80
 +		};
 +	};
 +};
--- 
-2.32.0
-

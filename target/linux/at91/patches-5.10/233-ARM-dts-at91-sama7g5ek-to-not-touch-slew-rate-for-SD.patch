@@ -23,11 +23,9 @@ Link: https://lore.kernel.org/r/20210915074836.6574-3-claudiu.beznea@microchip.c
  arch/arm/boot/dts/at91-sama7g5ek.dts | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
-index 30b67cad5f14..f3d6aaa3a78d 100644
 --- a/arch/arm/boot/dts/at91-sama7g5ek.dts
 +++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
-@@ -558,6 +558,7 @@ cmd_data {
+@@ -558,6 +558,7 @@
  				 <PIN_PA8__SDMMC0_DAT5>,
  				 <PIN_PA9__SDMMC0_DAT6>,
  				 <PIN_PA10__SDMMC0_DAT7>;
@@ -35,7 +33,7 @@ index 30b67cad5f14..f3d6aaa3a78d 100644
  			bias-pull-up;
  		};
  
-@@ -565,6 +566,7 @@ ck_cd_rstn_vddsel {
+@@ -565,6 +566,7 @@
  			pinmux = <PIN_PA0__SDMMC0_CK>,
  				 <PIN_PA2__SDMMC0_RSTN>,
  				 <PIN_PA11__SDMMC0_DS>;
@@ -43,7 +41,7 @@ index 30b67cad5f14..f3d6aaa3a78d 100644
  			bias-pull-up;
  		};
  	};
-@@ -576,6 +578,7 @@ cmd_data {
+@@ -576,6 +578,7 @@
  				 <PIN_PC0__SDMMC1_DAT1>,
  				 <PIN_PC1__SDMMC1_DAT2>,
  				 <PIN_PC2__SDMMC1_DAT3>;
@@ -51,7 +49,7 @@ index 30b67cad5f14..f3d6aaa3a78d 100644
  			bias-pull-up;
  		};
  
-@@ -584,6 +587,7 @@ ck_cd_rstn_vddsel {
+@@ -584,6 +587,7 @@
  				 <PIN_PB28__SDMMC1_RSTN>,
  				 <PIN_PC5__SDMMC1_1V8SEL>,
  				 <PIN_PC4__SDMMC1_CD>;
@@ -59,7 +57,7 @@ index 30b67cad5f14..f3d6aaa3a78d 100644
  			bias-pull-up;
  		};
  	};
-@@ -595,11 +599,13 @@ cmd_data {
+@@ -595,11 +599,13 @@
  				 <PIN_PD6__SDMMC2_DAT1>,
  				 <PIN_PD7__SDMMC2_DAT2>,
  				 <PIN_PD8__SDMMC2_DAT3>;
@@ -73,6 +71,3 @@ index 30b67cad5f14..f3d6aaa3a78d 100644
  			bias-pull-up;
  		};
  	};
--- 
-2.32.0
-

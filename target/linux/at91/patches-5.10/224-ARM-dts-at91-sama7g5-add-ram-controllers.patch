@@ -13,11 +13,9 @@ Link: https://lore.kernel.org/r/20210823131915.23857-3-claudiu.beznea@microchip.
  arch/arm/boot/dts/sama7g5.dtsi | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
-index cc6be6db7b80..ecabab4343b6 100644
 --- a/arch/arm/boot/dts/sama7g5.dtsi
 +++ b/arch/arm/boot/dts/sama7g5.dtsi
-@@ -515,6 +515,18 @@ spi11: spi@400 {
+@@ -515,6 +515,18 @@
  			};
  		};
  
@@ -36,6 +34,3 @@ index cc6be6db7b80..ecabab4343b6 100644
  		gic: interrupt-controller@e8c11000 {
  			compatible = "arm,cortex-a7-gic";
  			#interrupt-cells = <3>;
--- 
-2.32.0
-

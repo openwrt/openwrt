@@ -18,8 +18,6 @@ Link: https://lore.kernel.org/r/1611318097-8970-6-git-send-email-claudiu.beznea@
  drivers/soc/atmel/soc.h |   7 +-
  2 files changed, 140 insertions(+), 66 deletions(-)
 
-diff --git a/drivers/soc/atmel/soc.c b/drivers/soc/atmel/soc.c
-index 03f3c742716c..f9052f45cb3e 100644
 --- a/drivers/soc/atmel/soc.c
 +++ b/drivers/soc/atmel/soc.c
 @@ -25,135 +25,200 @@
@@ -284,7 +282,7 @@ index 03f3c742716c..f9052f45cb3e 100644
  		 "samv70q19", "samv7"),
  #endif
  	{ /* sentinel */ },
-@@ -191,8 +256,12 @@ static int __init at91_get_cidr_exid_from_chipid(u32 *cidr, u32 *exid)
+@@ -191,8 +256,12 @@ static int __init at91_get_cidr_exid_fro
  {
  	struct device_node *np;
  	void __iomem *regs;
@@ -298,7 +296,7 @@ index 03f3c742716c..f9052f45cb3e 100644
  	if (!np)
  		return -ENODEV;
  
-@@ -235,7 +304,7 @@ struct soc_device * __init at91_soc_init(const struct at91_soc *socs)
+@@ -235,7 +304,7 @@ struct soc_device * __init at91_soc_init
  	}
  
  	for (soc = socs; soc->name; soc++) {
@@ -307,7 +305,7 @@ index 03f3c742716c..f9052f45cb3e 100644
  			continue;
  
  		if (!(cidr & AT91_CIDR_EXT) || soc->exid_match == exid)
-@@ -254,7 +323,7 @@ struct soc_device * __init at91_soc_init(const struct at91_soc *socs)
+@@ -254,7 +323,7 @@ struct soc_device * __init at91_soc_init
  	soc_dev_attr->family = soc->family;
  	soc_dev_attr->soc_id = soc->name;
  	soc_dev_attr->revision = kasprintf(GFP_KERNEL, "%X",
@@ -316,7 +314,7 @@ index 03f3c742716c..f9052f45cb3e 100644
  	soc_dev = soc_device_register(soc_dev_attr);
  	if (IS_ERR(soc_dev)) {
  		kfree(soc_dev_attr->revision);
-@@ -266,7 +335,7 @@ struct soc_device * __init at91_soc_init(const struct at91_soc *socs)
+@@ -266,7 +335,7 @@ struct soc_device * __init at91_soc_init
  	if (soc->family)
  		pr_info("Detected SoC family: %s\n", soc->family);
  	pr_info("Detected SoC: %s, revision %X\n", soc->name,
@@ -325,8 +323,6 @@ index 03f3c742716c..f9052f45cb3e 100644
  
  	return soc_dev;
  }
-diff --git a/drivers/soc/atmel/soc.h b/drivers/soc/atmel/soc.h
-index 5849846a69d6..02198a4de22b 100644
 --- a/drivers/soc/atmel/soc.h
 +++ b/drivers/soc/atmel/soc.h
 @@ -16,14 +16,19 @@
@@ -350,6 +346,3 @@ index 5849846a69d6..02198a4de22b 100644
  		.exid_match = (__exid),				\
  		.name = (__name),				\
  		.family = (__family),				\
--- 
-2.32.0
-

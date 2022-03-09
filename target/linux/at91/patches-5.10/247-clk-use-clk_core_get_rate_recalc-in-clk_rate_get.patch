@@ -16,11 +16,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/clk.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index b8a0e3d23698..6e64332fd26d 100644
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -3082,7 +3082,10 @@ static int clk_rate_get(void *data, u64 *val)
+@@ -3082,7 +3082,10 @@ static int clk_rate_get(void *data, u64
  {
  	struct clk_core *core = data;
  
@@ -32,6 +30,3 @@ index b8a0e3d23698..6e64332fd26d 100644
  	return 0;
  }
  
--- 
-2.32.0
-

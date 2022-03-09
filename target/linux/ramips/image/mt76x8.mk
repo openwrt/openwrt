@@ -68,7 +68,7 @@ define Device/buffalo_wcr-1166ds
   BUFFALO_TAG_VERSION := 9.99
   BUFFALO_TAG_MINOR := 9.99
   IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
+  IMAGE/sysupgrade.bin := trx -M 0x746f435c | pad-rootfs | append-metadata
   IMAGE/factory.bin := trx -M 0x746f435c | pad-rootfs | append-metadata | \
 	buffalo-enc WCR-1166DS $$(BUFFALO_TAG_VERSION) -l | \
 	buffalo-tag-dhp WCR-1166DS JP JP | buffalo-enc-tag -l | buffalo-dhp-image
