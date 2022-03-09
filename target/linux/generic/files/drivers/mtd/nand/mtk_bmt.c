@@ -92,6 +92,17 @@ bool mapping_block_in_range(int block, int *start, int *end)
 	return false;
 }
 
+static bool
+mtk_bmt_remap_block(u32 block, u32 mapped_block, int copy_len)
+{
+	int start, end;
+
+	if (!mapping_block_in_range(block, &start, &end))
+		return false;
+
+	return bmtd.ops->remap_block(block, mapped_block, copy_len);
+}
+
 static int
 mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 	     struct mtd_oob_ops *ops)
@@ -101,7 +112,6 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 	loff_t cur_from;
 	int ret = 0;
 	int max_bitflips = 0;
-	int start, end;
 
 	ops->retlen = 0;
 	ops->oobretlen = 0;
@@ -129,16 +139,15 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 		else
 			max_bitflips = max_t(int, max_bitflips, cur_ret);
 		if (cur_ret < 0 && !mtd_is_bitflip(cur_ret)) {
-			bmtd.ops->remap_block(block, cur_block, mtd->erasesize);
-			if (retry_count++ < 10)
+			if (mtk_bmt_remap_block(block, cur_block, mtd->erasesize) &&
+				retry_count++ < 10)
 				continue;
 
 			goto out;
 		}
 
-		if (cur_ret >= mtd->bitflip_threshold &&
-		    mapping_block_in_range(block, &start, &end))
-			bmtd.ops->remap_block(block, cur_block, mtd->erasesize);
+		if (cur_ret >= mtd->bitflip_threshold)
+			mtk_bmt_remap_block(block, cur_block, mtd->erasesize);
 
 		ops->retlen += cur_ops.retlen;
 		ops->oobretlen += cur_ops.oobretlen;
@@ -191,8 +200,8 @@ mtk_bmt_write(struct mtd_info *mtd, loff_t to,
 					 ops->len - ops->retlen);
 		ret = bmtd._write_oob(mtd, cur_to, &cur_ops);
 		if (ret < 0) {
-			bmtd.ops->remap_block(block, cur_block, offset);
-			if (retry_count++ < 10)
+			if (mtk_bmt_remap_block(block, cur_block, offset) &&
+			    retry_count++ < 10)
 				continue;
 
 			return ret;
@@ -239,8 +248,8 @@ mtk_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 		mapped_instr.addr = (loff_t)block << bmtd.blk_shift;
 		ret = bmtd._erase(mtd, &mapped_instr);
 		if (ret) {
-			bmtd.ops->remap_block(orig_block, block, 0);
-			if (retry_count++ < 10)
+			if (mtk_bmt_remap_block(orig_block, block, 0) &&
+			    retry_count++ < 10)
 				continue;
 			instr->fail_addr = start_addr;
 			break;
@@ -263,8 +272,8 @@ retry:
 	block = bmtd.ops->get_mapping_block(orig_block);
 	ret = bmtd._block_isbad(mtd, (loff_t)block << bmtd.blk_shift);
 	if (ret) {
-		bmtd.ops->remap_block(orig_block, block, bmtd.blk_size);
-		if (retry_count++ < 10)
+		if (mtk_bmt_remap_block(orig_block, block, bmtd.blk_size) &&
+		    retry_count++ < 10)
 			goto retry;
 	}
 	return ret;
@@ -280,7 +289,7 @@ mtk_bmt_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	if (block < 0)
 		return -EIO;
 
-	bmtd.ops->remap_block(orig_block, block, bmtd.blk_size);
+	mtk_bmt_remap_block(orig_block, block, bmtd.blk_size);
 
 	return bmtd._block_markbad(mtd, (loff_t)block << bmtd.blk_shift);
 }
@@ -317,7 +326,7 @@ static int mtk_bmt_debug_mark_bad(void *data, u64 val)
 	if (cur_block < 0)
 		return -EIO;
 
-	bmtd.ops->remap_block(block, cur_block, bmtd.blk_size);
+	mtk_bmt_remap_block(block, cur_block, bmtd.blk_size);
 
 	return 0;
 }

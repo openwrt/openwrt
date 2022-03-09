@@ -93,7 +93,7 @@ static bool remap_block_bbt(u16 block, u16 mapped_blk, int copy_len)
 	if (copy_len > 0)
 		bbt_nand_copy(new_blk, mapped_blk, copy_len);
 
-	return false;
+	return true;
 }
 
 static void
