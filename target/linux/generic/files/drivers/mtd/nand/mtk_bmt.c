@@ -111,9 +111,12 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 
 		u32 offset = from & (bmtd.blk_size - 1);
 		u32 block = from >> bmtd.blk_shift;
-		u32 cur_block;
+		int cur_block;
 
 		cur_block = bmtd.ops->get_mapping_block(block);
+		if (cur_block < 0)
+			return -EIO;
+
 		cur_from = ((loff_t)cur_block << bmtd.blk_shift) + offset;
 
 		cur_ops.oobretlen = 0;
@@ -174,9 +177,12 @@ mtk_bmt_write(struct mtd_info *mtd, loff_t to,
 	while (ops->retlen < ops->len || ops->oobretlen < ops->ooblen) {
 		u32 offset = to & (bmtd.blk_size - 1);
 		u32 block = to >> bmtd.blk_shift;
-		u32 cur_block;
+		int cur_block;
 
 		cur_block = bmtd.ops->get_mapping_block(block);
+		if (cur_block < 0)
+			return -EIO;
+
 		cur_to = ((loff_t)cur_block << bmtd.blk_shift) + offset;
 
 		cur_ops.oobretlen = 0;
@@ -219,7 +225,8 @@ mtk_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 	int retry_count = 0;
 	u64 start_addr, end_addr;
 	int ret;
-	u16 orig_block, block;
+	u16 orig_block;
+	int block;
 
 	start_addr = instr->addr & (~mtd->erasesize_mask);
 	end_addr = instr->addr + instr->len;
@@ -227,6 +234,8 @@ mtk_bmt_mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 	while (start_addr < end_addr) {
 		orig_block = start_addr >> bmtd.blk_shift;
 		block = bmtd.ops->get_mapping_block(orig_block);
+		if (block < 0)
+			return -EIO;
 		mapped_instr.addr = (loff_t)block << bmtd.blk_shift;
 		ret = bmtd._erase(mtd, &mapped_instr);
 		if (ret) {
@@ -265,7 +274,11 @@ static int
 mtk_bmt_block_markbad(struct mtd_info *mtd, loff_t ofs)
 {
 	u16 orig_block = ofs >> bmtd.blk_shift;
-	u16 block = bmtd.ops->get_mapping_block(orig_block);
+	int block;
+
+	block = bmtd.ops->get_mapping_block(orig_block);
+	if (block < 0)
+		return -EIO;
 
 	bmtd.ops->remap_block(orig_block, block, bmtd.blk_size);
 
@@ -298,7 +311,11 @@ static int mtk_bmt_debug_mark_good(void *data, u64 val)
 static int mtk_bmt_debug_mark_bad(void *data, u64 val)
 {
 	u32 block = val >> bmtd.blk_shift;
-	u16 cur_block = bmtd.ops->get_mapping_block(block);
+	int cur_block;
+
+	cur_block = bmtd.ops->get_mapping_block(block);
+	if (cur_block < 0)
+		return -EIO;
 
 	bmtd.ops->remap_block(block, cur_block, bmtd.blk_size);
 

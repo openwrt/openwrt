@@ -39,7 +39,7 @@ bbt_set_block_state(u16 block, bool bad)
 	write_bmt(bmtd.bmt_blk_idx, bmtd.bbt_buf);
 }
 
-static u16
+static int
 get_mapping_block_index_bbt(int block)
 {
 	int start, end, ofs;
