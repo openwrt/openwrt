@@ -85,6 +85,16 @@ define Device/netgear_gs310tp-v1
 endef
 TARGET_DEVICES += netgear_gs310tp-v1
 
+define Device/panasonic_m8eg-pn28080k
+  SOC := rtl8380
+  IMAGE_SIZE := 16384k
+  DEVICE_VENDOR := Panasonic
+  DEVICE_MODEL := Switch-M8eG
+  DEVICE_VARIANT := PN28080K
+  DEVICE_PACKAGES := kmod-i2c-mux-pca954x
+endef
+TARGET_DEVICES += panasonic_m8eg-pn28080k
+
 define Device/zyxel_gs1900
   SOC := rtl8380
   IMAGE_SIZE := 6976k
