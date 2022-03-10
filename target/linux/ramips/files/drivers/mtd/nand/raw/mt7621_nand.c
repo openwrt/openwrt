@@ -18,6 +18,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/rawnand.h>
 #include <linux/mtd/partitions.h>
+#include <linux/mtd/mtk_bmt.h>
 #include <linux/platform_device.h>
 #include <asm/addrspace.h>
 
@@ -1254,9 +1255,12 @@ static int mt7621_nfc_init_chip(struct mt7621_nfc *nfc)
 	if (ret)
 		return ret;
 
+	mtk_bmt_attach(mtd);
+
 	ret = mtd_device_register(mtd, NULL, 0);
 	if (ret) {
 		dev_err(nfc->dev, "Failed to register MTD: %d\n", ret);
+		mtk_bmt_detach(mtd);
 		nand_cleanup(nand);
 		return ret;
 	}
@@ -1328,6 +1332,7 @@ static int mt7621_nfc_remove(struct platform_device *pdev)
 	struct nand_chip *nand = &nfc->nand;
 	struct mtd_info *mtd = nand_to_mtd(nand);
 
+	mtk_bmt_detach(mtd);
 	mtd_device_unregister(mtd);
 	nand_cleanup(nand);
 	clk_disable_unprepare(nfc->nfi_clk);
