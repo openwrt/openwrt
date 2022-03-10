@@ -23,6 +23,9 @@ struct mtk_bmt_ops {
 	int (*debug)(void *data, u64 val);
 };
 
+struct bbbt;
+struct nmbm_instance;
+
 struct bmt_desc {
 	struct mtd_info *mtd;
 	unsigned char *bbt_buf;
@@ -38,7 +41,10 @@ struct bmt_desc {
 
 	const struct mtk_bmt_ops *ops;
 
-	struct bbbt *bbt;
+	union {
+		struct bbbt *bbt;
+		struct nmbm_instance *ni;
+	};
 
 	struct dentry *debugfs_dir;
 
@@ -70,6 +76,7 @@ struct bmt_desc {
 extern struct bmt_desc bmtd;
 extern const struct mtk_bmt_ops mtk_bmt_v2_ops;
 extern const struct mtk_bmt_ops mtk_bmt_bbt_ops;
+extern const struct mtk_bmt_ops mtk_bmt_nmbm_ops;
 
 static inline u32 blk_pg(u16 block)
 {
