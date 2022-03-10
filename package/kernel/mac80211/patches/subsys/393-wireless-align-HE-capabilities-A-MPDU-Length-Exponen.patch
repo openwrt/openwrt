@@ -1,0 +1,148 @@
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Fri, 9 Apr 2021 12:40:20 +0300
+Subject: [PATCH] wireless: align HE capabilities A-MPDU Length Exponent
+ Extension
+
+The A-MPDU length exponent extension is defined differently in
+802.11ax D6.1, align with that.
+
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Link: https://lore.kernel.org/r/iwlwifi.20210409123755.c2a257d3e2df.I3455245d388c52c61dace7e7958dbed7e807cfb6@changeid
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1290,9 +1290,8 @@ static void ath11k_peer_assoc_h_he(struc
+ 	 * request, then use MAX_AMPDU_LEN_FACTOR as 16 to calculate max_ampdu
+ 	 * length.
+ 	 */
+-	ampdu_factor = (he_cap->he_cap_elem.mac_cap_info[3] &
+-			IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK) >>
+-			IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_SHIFT;
++	ampdu_factor = u8_get_bits(he_cap->he_cap_elem.mac_cap_info[3],
++				   IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK);
+ 
+ 	if (ampdu_factor) {
+ 		if (sta->vht_cap.vht_supported)
+--- a/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
++++ b/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
+@@ -596,7 +596,7 @@ static struct ieee80211_sband_iftype_dat
+ 					IEEE80211_HE_MAC_CAP2_32BIT_BA_BITMAP,
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+-					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
++					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_2,
+ 				.mac_cap_info[4] =
+ 					IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU |
+ 					IEEE80211_HE_MAC_CAP4_MULTI_TID_AGG_TX_QOS_B39,
+@@ -680,7 +680,7 @@ static struct ieee80211_sband_iftype_dat
+ 					IEEE80211_HE_MAC_CAP2_BSR,
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+-					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
++					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_2,
+ 				.mac_cap_info[4] =
+ 					IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
+ 				.mac_cap_info[5] =
+--- a/drivers/net/wireless/mac80211_hwsim.c
++++ b/drivers/net/wireless/mac80211_hwsim.c
+@@ -2747,7 +2747,7 @@ static const struct ieee80211_sband_ifty
+ 					IEEE80211_HE_MAC_CAP2_ACK_EN,
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+-					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
++					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_3,
+ 				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
+ 				.phy_cap_info[1] =
+ 					IEEE80211_HE_PHY_CAP1_PREAMBLE_PUNC_RX_MASK |
+@@ -2791,7 +2791,7 @@ static const struct ieee80211_sband_ifty
+ 					IEEE80211_HE_MAC_CAP2_ACK_EN,
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+-					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
++					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_3,
+ 				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
+ 				.phy_cap_info[1] =
+ 					IEEE80211_HE_PHY_CAP1_PREAMBLE_PUNC_RX_MASK |
+@@ -2837,7 +2837,7 @@ static const struct ieee80211_sband_ifty
+ 					IEEE80211_HE_MAC_CAP2_ACK_EN,
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+-					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
++					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_3,
+ 				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
+ 				.phy_cap_info[0] =
+ 					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G |
+@@ -2885,7 +2885,7 @@ static const struct ieee80211_sband_ifty
+ 					IEEE80211_HE_MAC_CAP2_ACK_EN,
+ 				.mac_cap_info[3] =
+ 					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+-					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
++					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_3,
+ 				.mac_cap_info[4] = IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU,
+ 				.phy_cap_info[0] =
+ 					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G |
+--- a/drivers/net/wireless/mediatek/mt76/mt7915/init.c
++++ b/drivers/net/wireless/mediatek/mt76/mt7915/init.c
+@@ -425,7 +425,7 @@ mt7915_init_he_caps(struct mt7915_phy *p
+ 			IEEE80211_HE_MAC_CAP0_HTC_HE;
+ 		he_cap_elem->mac_cap_info[3] =
+ 			IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
+-			IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_RESERVED;
++			IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_3;
+ 		he_cap_elem->mac_cap_info[4] =
+ 			IEEE80211_HE_MAC_CAP4_AMSDU_IN_AMPDU;
+ 
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -2051,17 +2051,15 @@ int ieee80211_get_vht_max_nss(struct iee
+  * A-MDPU Length Exponent field in the HT capabilities, VHT capabilities and the
+  * same field in the HE capabilities.
+  */
+-#define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_USE_VHT	0x00
+-#define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_1		0x08
+-#define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2		0x10
+-#define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_RESERVED	0x18
++#define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_0		0x00
++#define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_1		0x08
++#define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_2		0x10
++#define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_3		0x18
+ #define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK		0x18
+ #define IEEE80211_HE_MAC_CAP3_AMSDU_FRAG			0x20
+ #define IEEE80211_HE_MAC_CAP3_FLEX_TWT_SCHED			0x40
+ #define IEEE80211_HE_MAC_CAP3_RX_CTRL_FRAME_TO_MULTIBSS		0x80
+ 
+-#define IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_SHIFT		3
+-
+ #define IEEE80211_HE_MAC_CAP4_BSRP_BQRP_A_MPDU_AGG		0x01
+ #define IEEE80211_HE_MAC_CAP4_QTP				0x02
+ #define IEEE80211_HE_MAC_CAP4_BQR				0x04
+--- a/net/mac80211/debugfs_sta.c
++++ b/net/mac80211/debugfs_sta.c
+@@ -711,17 +711,17 @@ static ssize_t sta_he_capa_read(struct f
+ 	PFLAG(MAC, 3, OFDMA_RA, "OFDMA-RA");
+ 
+ 	switch (cap[3] & IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK) {
+-	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_USE_VHT:
+-		PRINT("MAX-AMPDU-LEN-EXP-USE-VHT");
++	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_0:
++		PRINT("MAX-AMPDU-LEN-EXP-USE-EXT-0");
+ 		break;
+-	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_1:
+-		PRINT("MAX-AMPDU-LEN-EXP-VHT-1");
++	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_1:
++		PRINT("MAX-AMPDU-LEN-EXP-VHT-EXT-1");
+ 		break;
+-	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2:
+-		PRINT("MAX-AMPDU-LEN-EXP-VHT-2");
++	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_2:
++		PRINT("MAX-AMPDU-LEN-EXP-VHT-EXT-2");
+ 		break;
+-	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_RESERVED:
+-		PRINT("MAX-AMPDU-LEN-EXP-RESERVED");
++	case IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_EXT_3:
++		PRINT("MAX-AMPDU-LEN-EXP-VHT-EXT-3");
+ 		break;
+ 	}
+ 

@@ -100,12 +100,9 @@ case "$FIRMWARE" in
 		ath10k_patch_mac $(mtd_get_mac_binary art 0xc)
 		;;
 	openmesh,mr1750-v1|\
-	openmesh,mr1750-v2)
-		caldata_extract "ART" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
-		;;
+	openmesh,mr1750-v2|\
 	openmesh,om5p-ac-v2)
-		caldata_extract "art" 0x5000 0x844
+		caldata_extract "ART" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
 		;;
 	qihoo,c301)
@@ -242,6 +239,11 @@ case "$FIRMWARE" in
 	tplink,eap245-v3)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) +1)
+		;;
+	xiaomi,aiot-ac2350)
+		caldata_extract "art" 0x5000 0x2f20
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9984/hw1.0/board.bin
 		;;
 	yuncore,a782|\
 	yuncore,xd4200)

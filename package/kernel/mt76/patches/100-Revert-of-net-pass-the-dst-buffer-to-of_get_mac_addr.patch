@@ -1,0 +1,26 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 23 Nov 2021 17:01:45 +0100
+Subject: [PATCH] Revert "of: net: pass the dst buffer to of_get_mac_address()"
+
+This reverts commit 4932c5d80153c336c77dbe8d7af9f8fdd879d01f.
+---
+
+--- a/eeprom.c
++++ b/eeprom.c
+@@ -105,9 +105,15 @@ mt76_eeprom_override(struct mt76_phy *ph
+ {
+ 	struct mt76_dev *dev = phy->dev;
+ 
++#ifdef CONFIG_OF
+ 	struct device_node *np = dev->dev->of_node;
++	const u8 *mac = NULL;
+ 
+-	of_get_mac_address(np, phy->macaddr);
++	if (np)
++		mac = of_get_mac_address(np);
++	if (!IS_ERR_OR_NULL(mac))
++		ether_addr_copy(phy->macaddr, mac);
++#endif
+ 
+ 	if (!is_valid_ether_addr(phy->macaddr)) {
+ 		eth_random_addr(phy->macaddr);

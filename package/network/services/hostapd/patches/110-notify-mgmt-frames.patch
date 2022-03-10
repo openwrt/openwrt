@@ -63,7 +63,7 @@ Signed-off-by: Raphaël Mélotte <raphael.melotte@mind.be>
  
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -4878,6 +4878,28 @@ static int handle_action(struct hostapd_
+@@ -4869,6 +4869,28 @@ static int handle_action(struct hostapd_
  	return 1;
  }
  
@@ -92,7 +92,7 @@ Signed-off-by: Raphaël Mélotte <raphael.melotte@mind.be>
  
  /**
   * ieee802_11_mgmt - process incoming IEEE 802.11 management frames
-@@ -4969,6 +4991,9 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -4960,6 +4982,9 @@ int ieee802_11_mgmt(struct hostapd_data
  	if (hapd->iconf->track_sta_max_num)
  		sta_track_add(hapd->iface, mgmt->sa, ssi_signal);
  
