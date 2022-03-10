@@ -256,9 +256,11 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	 * last external data refernced.
 	 */
 	if (fit_size > 0x1000) {
+		enum mtdsplit_part_type type;
+
 		/* Search for the rootfs partition after the FIT image */
 		ret = mtd_find_rootfs_from(mtd, fit_offset + fit_size, mtd->size,
-					   &rootfs_offset, NULL);
+					   &rootfs_offset, &type);
 		if (ret) {
 			pr_info("no rootfs found after FIT image in \"%s\"\n",
 				mtd->name);
@@ -275,7 +277,10 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 		parts[0].offset = fit_offset;
 		parts[0].size = mtd_rounddown_to_eb(fit_size, mtd) + mtd->erasesize;
 
-		parts[1].name = ROOTFS_PART_NAME;
+		if (type == MTDSPLIT_PART_TYPE_UBI)
+			parts[1].name = UBI_PART_NAME;
+		else
+			parts[1].name = ROOTFS_PART_NAME;
 		parts[1].offset = rootfs_offset;
 		parts[1].size = rootfs_size;
 
