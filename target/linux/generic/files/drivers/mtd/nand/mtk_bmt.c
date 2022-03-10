@@ -392,6 +392,8 @@ int mtk_bmt_attach(struct mtd_info *mtd)
 
 	if (of_property_read_bool(np, "mediatek,bmt-v2"))
 		bmtd.ops = &mtk_bmt_v2_ops;
+	else if (of_property_read_bool(np, "mediatek,nmbm"))
+		bmtd.ops = &mtk_bmt_nmbm_ops;
 	else if (of_property_read_bool(np, "mediatek,bbt"))
 		bmtd.ops = &mtk_bmt_bbt_ops;
 	else
@@ -410,14 +412,14 @@ int mtk_bmt_attach(struct mtd_info *mtd)
 	bmtd.pg_shift = ffs(bmtd.pg_size) - 1;
 	bmtd.total_blks = mtd->size >> bmtd.blk_shift;
 
-	bmtd.data_buf = kzalloc(bmtd.pg_size, GFP_KERNEL);
+	bmtd.data_buf = kzalloc(bmtd.pg_size + bmtd.mtd->oobsize, GFP_KERNEL);
 	if (!bmtd.data_buf) {
 		pr_info("nand: FATAL ERR: allocate buffer failed!\n");
 		ret = -1;
 		goto error;
 	}
 
-	memset(bmtd.data_buf, 0xff, bmtd.pg_size);
+	memset(bmtd.data_buf, 0xff, bmtd.pg_size + bmtd.mtd->oobsize);
 
 	ret = bmtd.ops->init(np);
 	if (ret)
