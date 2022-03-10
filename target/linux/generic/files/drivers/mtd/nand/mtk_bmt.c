@@ -310,9 +310,32 @@ mtk_bmt_replace_ops(struct mtd_info *mtd)
 	mtd->_block_markbad = mtk_bmt_block_markbad;
 }
 
+static int mtk_bmt_debug_repair(void *data, u64 val)
+{
+	int block = val >> bmtd.blk_shift;
+	int prev_block, new_block;
+
+	prev_block = bmtd.ops->get_mapping_block(block);
+	if (prev_block < 0)
+		return -EIO;
+
+	bmtd.ops->unmap_block(block);
+	new_block = bmtd.ops->get_mapping_block(block);
+	if (new_block < 0)
+		return -EIO;
+
+	if (prev_block == new_block)
+		return 0;
+
+	bbt_nand_erase(new_block);
+	bbt_nand_copy(new_block, prev_block, bmtd.blk_size);
+
+	return 0;
+}
+
 static int mtk_bmt_debug_mark_good(void *data, u64 val)
 {
-	 bmtd.ops->unmap_block(val >> bmtd.blk_shift);
+	bmtd.ops->unmap_block(val >> bmtd.blk_shift);
 
 	return 0;
 }
@@ -337,6 +360,7 @@ static int mtk_bmt_debug(void *data, u64 val)
 }
 
 
+DEFINE_DEBUGFS_ATTRIBUTE(fops_repair, NULL, mtk_bmt_debug_repair, "%llu\n");
 DEFINE_DEBUGFS_ATTRIBUTE(fops_mark_good, NULL, mtk_bmt_debug_mark_good, "%llu\n");
 DEFINE_DEBUGFS_ATTRIBUTE(fops_mark_bad, NULL, mtk_bmt_debug_mark_bad, "%llu\n");
 DEFINE_DEBUGFS_ATTRIBUTE(fops_debug, NULL, mtk_bmt_debug, "%llu\n");
@@ -350,6 +374,7 @@ mtk_bmt_add_debugfs(void)
 	if (!dir)
 		return;
 
+	debugfs_create_file_unsafe("repair", S_IWUSR, dir, NULL, &fops_repair);
 	debugfs_create_file_unsafe("mark_good", S_IWUSR, dir, NULL, &fops_mark_good);
 	debugfs_create_file_unsafe("mark_bad", S_IWUSR, dir, NULL, &fops_mark_bad);
 	debugfs_create_file_unsafe("debug", S_IWUSR, dir, NULL, &fops_debug);
