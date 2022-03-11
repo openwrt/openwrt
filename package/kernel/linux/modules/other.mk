@@ -71,7 +71,6 @@ define KernelPackage/ath3k
   KCONFIG:= \
 	CONFIG_BT_ATH3K \
 	CONFIG_BT_HCIUART_ATH3K=y
-  $(call AddDepends/bluetooth)
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/ath3k.ko
   AUTOLOAD:=$(call AutoProbe,ath3k)
@@ -107,7 +106,6 @@ define KernelPackage/btmrvl
   KCONFIG:= \
 	CONFIG_BT_MRVL \
 	CONFIG_BT_MRVL_SDIO
-  $(call AddDepends/bluetooth)
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/btmrvl.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btmrvl_sdio.ko
