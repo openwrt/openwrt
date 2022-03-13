@@ -23,6 +23,9 @@ ath79_setup_interfaces()
 	mikrotik,routerboard-wapr-2nd)
 		ucidef_set_interface_lan "eth0"
 		;;
+	mikrotik,routerboard-sxtr)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
