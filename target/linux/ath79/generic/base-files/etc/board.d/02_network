@@ -195,7 +195,8 @@ ath79_setup_interfaces()
 		;;
 	buffalo,wzr-hp-g300nh-rb|\
 	buffalo,wzr-hp-g300nh-s|\
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "5@eth0"
@@ -605,7 +606,8 @@ ath79_setup_macs()
 	dlink,dap-3662-a1)
 		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
 		wan_mac=$(mtd_get_mac_text "caldata" 0xffb4)
 		label_mac=$wan_mac
