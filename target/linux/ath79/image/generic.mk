@@ -320,6 +320,41 @@ define Device/allnet_all-wap02860ac
 endef
 TARGET_DEVICES += allnet_all-wap02860ac
 
+define Device/araknis_an-300-ap-i-n
+  $(Device/senao_loader_okli)
+  SOC := ar9344
+  DEVICE_VENDOR := Araknis
+  DEVICE_MODEL := AN-300-AP-I-N
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-an300
+endef
+TARGET_DEVICES += araknis_an-300-ap-i-n
+
+define Device/araknis_an-500-ap-i-ac
+  $(Device/senao_loader_okli)
+  SOC := qca9557
+  DEVICE_VENDOR := Araknis
+  DEVICE_MODEL := AN-500-AP-I-AC
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-generic-v1-an500
+endef
+TARGET_DEVICES += araknis_an-500-ap-i-ac
+
+define Device/araknis_an-700-ap-i-ac
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := Araknis
+  DEVICE_MODEL := AN-700-AP-I-AC
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-generic-v1-an700
+endef
+TARGET_DEVICES += araknis_an-700-ap-i-ac
+
 define Device/arduino_yun
   SOC := ar9331
   DEVICE_VENDOR := Arduino

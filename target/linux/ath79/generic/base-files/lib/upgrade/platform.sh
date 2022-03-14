@@ -48,6 +48,9 @@ platform_do_upgrade() {
 		redboot_fis_do_upgrade "$1" vmlinux_2
 		;;
 	allnet,all-wap02860ac|\
+	araknis,an-300-ap-i-n|\
+	araknis,an-500-ap-i-ac|\
+	araknis,an-700-ap-i-ac|\
 	engenius,eap1200h|\
 	engenius,eap300-v2|\
 	engenius,eap600|\
