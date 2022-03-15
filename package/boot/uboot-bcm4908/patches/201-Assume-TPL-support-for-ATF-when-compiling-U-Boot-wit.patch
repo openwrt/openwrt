@@ -19,8 +19,9 @@ deal with compiling SPL or TPL.
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
  arch/arm/mach-bcmbca/bcm4908/cpu.c | 2 +-
+ arch/arm/mach-bcmbca/bcm4912/cpu.c | 2 +-
  board/broadcom/bcmbca/board.c      | 4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ 3 files changed, 4 insertions(+), 4 deletions(-)
 
 --- a/arch/arm/mach-bcmbca/bcm4908/cpu.c
 +++ b/arch/arm/mach-bcmbca/bcm4908/cpu.c
@@ -33,6 +34,17 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  void boot_secondary_cpu(unsigned long vector)
  {
  	uint32_t cpu, nr_cpus = QUAD_CPUS;
+--- a/arch/arm/mach-bcmbca/bcm4912/cpu.c
++++ b/arch/arm/mach-bcmbca/bcm4912/cpu.c
+@@ -174,7 +174,7 @@ int bcmbca_get_boot_device(void)
+ 	return BOOT_DEVICE_NONE;
+ }
+ 
+-#if !defined(CONFIG_TPL_ATF)
++#if defined(CONFIG_TPL) && !defined(CONFIG_TPL_ATF)
+ void boot_secondary_cpu(unsigned long vector)
+ {
+ 	uint32_t cpu, nr_cpus = 4;
 --- a/board/broadcom/bcmbca/board.c
 +++ b/board/broadcom/bcmbca/board.c
 @@ -103,7 +103,7 @@ void board_spinor_init(void)
