@@ -25,8 +25,14 @@ define U-Boot/bcm4908
   UBOOT_CONFIG:=bcm94908
 endef
 
+define U-Boot/bcm4912
+  NAME:=Broadcom's BCM4912
+  UBOOT_CONFIG:=bcm94912
+endef
+
 UBOOT_TARGETS := \
-	bcm4908
+	bcm4908 \
+	bcm4912
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
