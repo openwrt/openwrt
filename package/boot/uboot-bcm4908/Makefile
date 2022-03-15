@@ -32,10 +32,10 @@ define Build/Prepare
 	$(call Build/Prepare/Default)
 	mkdir -p $(PKG_BUILD_DIR)/include/generated/
 	( cd $(PKG_BUILD_DIR)/board/broadcom/bcmbca/httpd/html/ && \
-	  xxd -i index.html > ../../../../../include/generated/index.h && \
-	  xxd -i flashing.html > ../../../../../include/generated/flashing.h && \
-	  xxd -i fail.html > ../../../../../include/generated/fail.h && \
-	  xxd -i 404.html > ../../../../../include/generated/404.h )
+	  $(STAGING_DIR_HOST)/bin/xxd -i index.html > ../../../../../include/generated/index.h && \
+	  $(STAGING_DIR_HOST)/bin/xxd -i flashing.html > ../../../../../include/generated/flashing.h && \
+	  $(STAGING_DIR_HOST)/bin/xxd -i fail.html > ../../../../../include/generated/fail.h && \
+	  $(STAGING_DIR_HOST)/bin/xxd -i 404.html > ../../../../../include/generated/404.h )
 endef
 
 define Build/InstallDev
