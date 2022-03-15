@@ -10,10 +10,11 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -413,32 +413,72 @@ static int sfp_i2c_write(struct sfp *sfp
+@@ -413,32 +413,78 @@ static int sfp_i2c_write(struct sfp *sfp
  	return ret == ARRAY_SIZE(msgs) ? len : 0;
  }
  
++#ifdef CONFIG_MDIO_SMBUS
 +static int sfp_smbus_read(struct sfp *sfp, bool a2, u8 dev_addr, void *buf,
 +			  size_t len)
 +{
@@ -42,6 +43,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 +
 +	return sfp->i2c_mii->write(sfp->i2c_mii, bus_addr, dev_addr, val);
 +}
++#endif
 +
  static int sfp_i2c_configure(struct sfp *sfp, struct i2c_adapter *i2c)
  {
@@ -69,6 +71,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 +
 +		mii->name = "SFP I2C Bus";
 +	} else if (i2c_check_functionality(i2c, I2C_FUNC_SMBUS_BYTE_DATA)) {
++#ifdef CONFIG_MDIO_SMBUS
 +		sfp->read = sfp_smbus_read;
 +		sfp->write = sfp_smbus_write;
 +
@@ -79,6 +82,9 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 -	i2c_mii->name = "SFP I2C Bus";
 -	i2c_mii->phy_mask = ~0;
 +		mii->name = "SFP SMBus";
++#else
++		return -EINVAL;
++#endif
 +	} else {
 +		return -EINVAL;
 +	}
