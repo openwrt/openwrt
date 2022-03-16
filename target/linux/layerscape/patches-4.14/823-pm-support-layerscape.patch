@@ -25,7 +25,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@nxp.com>
 
 --- a/drivers/firmware/psci.c
 +++ b/drivers/firmware/psci.c
-@@ -437,8 +437,18 @@ CPUIDLE_METHOD_OF_DECLARE(psci, "psci",
+@@ -452,8 +452,18 @@ CPUIDLE_METHOD_OF_DECLARE(psci, "psci",
  
  static int psci_system_suspend(unsigned long unused)
  {
@@ -46,7 +46,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@nxp.com>
  }
  
  static int psci_system_suspend_enter(suspend_state_t state)
-@@ -562,6 +572,8 @@ static void __init psci_0_2_set_function
+@@ -577,6 +587,8 @@ static void __init psci_0_2_set_function
  	arm_pm_restart = psci_sys_reset;
  
  	pm_power_off = psci_sys_poweroff;

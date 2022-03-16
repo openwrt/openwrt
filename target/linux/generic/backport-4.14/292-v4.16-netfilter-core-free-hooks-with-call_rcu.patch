@@ -107,7 +107,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static unsigned int accept_all(void *priv,
  			       struct sk_buff *skb,
  			       const struct nf_hook_state *state)
-@@ -291,9 +316,8 @@ int nf_register_net_hook(struct net *net
+@@ -292,9 +317,8 @@ int nf_register_net_hook(struct net *net
  #ifdef HAVE_JUMP_LABEL
  	static_key_slow_inc(&nf_hooks_needed[reg->pf][reg->hooknum]);
  #endif
@@ -118,7 +118,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	return 0;
  }
  EXPORT_SYMBOL(nf_register_net_hook);
-@@ -361,10 +385,8 @@ void nf_unregister_net_hook(struct net *
+@@ -362,10 +386,8 @@ void nf_unregister_net_hook(struct net *
  	if (!p)
  		return;
  

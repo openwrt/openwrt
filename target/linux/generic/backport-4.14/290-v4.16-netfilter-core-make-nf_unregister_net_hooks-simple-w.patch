@@ -22,7 +22,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/net/netfilter/core.c
 +++ b/net/netfilter/core.c
-@@ -395,63 +395,10 @@ EXPORT_SYMBOL(nf_register_net_hooks);
+@@ -396,63 +396,10 @@ EXPORT_SYMBOL(nf_register_net_hooks);
  void nf_unregister_net_hooks(struct net *net, const struct nf_hook_ops *reg,
  			     unsigned int hookcount)
  {

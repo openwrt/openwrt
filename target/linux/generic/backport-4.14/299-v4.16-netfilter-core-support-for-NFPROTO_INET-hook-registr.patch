@@ -39,9 +39,9 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (!pp)
  		return -EINVAL;
  
-@@ -343,17 +344,16 @@ int nf_register_net_hook(struct net *net
+@@ -344,17 +345,16 @@ int nf_register_net_hook(struct net *net
+ 		return PTR_ERR(new_hooks);
  
- 	hooks_validate(new_hooks);
  #ifdef CONFIG_NETFILTER_INGRESS
 -	if (reg->pf == NFPROTO_NETDEV && reg->hooknum == NF_NETDEV_INGRESS)
 +	if (pf == NFPROTO_NETDEV && reg->hooknum == NF_NETDEV_INGRESS)
@@ -59,7 +59,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  /*
   * nf_remove_net_hook - remove a hook from blob
-@@ -394,12 +394,13 @@ static void nf_remove_net_hook(struct nf
+@@ -395,12 +395,13 @@ static void nf_remove_net_hook(struct nf
  	}
  }
  
@@ -75,7 +75,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (!pp)
  		return;
  
-@@ -411,7 +412,7 @@ void nf_unregister_net_hook(struct net *
+@@ -412,7 +413,7 @@ void nf_unregister_net_hook(struct net *
  		return;
  	}
  
@@ -84,7 +84,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	p = __nf_hook_entries_try_shrink(pp);
  	mutex_unlock(&nf_hook_mutex);
-@@ -421,8 +422,42 @@ void nf_unregister_net_hook(struct net *
+@@ -422,8 +423,42 @@ void nf_unregister_net_hook(struct net *
  	nf_queue_nf_hook_drop(net);
  	nf_hook_entries_free(p);
  }

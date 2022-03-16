@@ -13,7 +13,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/net/netfilter/core.c
 +++ b/net/netfilter/core.c
-@@ -365,7 +365,7 @@ EXPORT_SYMBOL(nf_register_net_hook);
+@@ -366,7 +366,7 @@ EXPORT_SYMBOL(nf_register_net_hook);
   * Therefore replace the to-be-removed hook with a dummy hook.
   */
  static void nf_remove_net_hook(struct nf_hook_entries *old,
@@ -22,7 +22,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  {
  	struct nf_hook_ops **orig_ops;
  	bool found = false;
-@@ -383,14 +383,14 @@ static void nf_remove_net_hook(struct nf
+@@ -384,14 +384,14 @@ static void nf_remove_net_hook(struct nf
  
  	if (found) {
  #ifdef CONFIG_NETFILTER_INGRESS
@@ -40,7 +40,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	}
  }
  
-@@ -411,7 +411,7 @@ void nf_unregister_net_hook(struct net *
+@@ -412,7 +412,7 @@ void nf_unregister_net_hook(struct net *
  		return;
  	}
  
