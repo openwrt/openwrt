@@ -776,6 +776,17 @@ define Device/vocore_vocore2-lite
 endef
 TARGET_DEVICES += vocore_vocore2-lite
 
+define Device/wavlink_wl-wn531a3
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN531A3
+  DEVICE_ALT0_VENDOR := Wavlink
+  DEVICE_ALT0_MODEL := QUANTUM D4
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += wl-wn531a3
+endef
+TARGET_DEVICES += wavlink_wl-wn531a3
+
 define Device/wavlink_wl-wn570ha1
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Wavlink
