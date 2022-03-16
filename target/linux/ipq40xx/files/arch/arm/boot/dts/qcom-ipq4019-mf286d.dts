@@ -117,10 +117,24 @@
 
 		usb2@60f8800 {
 			status = "okay";
+
+			dwc3@6000000 {
+				usb2-susphy-quirk;
+				usb2-host-discon-quirk;
+				usb2-host-discon-phy-misc-reg = <0x24>;
+				usb2-host-discon-mask = <0x100>;
+			};
 		};
 
 		usb3@8af8800 {
 			status = "okay";
+
+			dwc3@8a00000 {
+				usb2-susphy-quirk;
+				usb2-host-discon-quirk;
+				usb2-host-discon-phy-misc-reg = <0x24>;
+				usb2-host-discon-mask = <0x100>;
+			};
 		};
 
 		crypto@8e3a000 {
