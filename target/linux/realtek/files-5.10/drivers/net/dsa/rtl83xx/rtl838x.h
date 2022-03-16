@@ -11,8 +11,10 @@
 #define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
 #define RTL839X_MAC_PORT_CTRL(port)		(0x8004 + (((port) << 7)))
 #define RTL930X_MAC_PORT_CTRL(port)		(0x3260 + (((port) << 6)))
+#define RTL931X_MAC_PORT_CTRL			(0x6004)
+
 #define RTL930X_MAC_L2_PORT_CTRL(port)		(0x3268 + (((port) << 6)))
-#define RTL931X_MAC_PORT_CTRL(port)		(0x6004 + (((port) << 7)))
+#define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
 
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 
@@ -86,6 +88,7 @@
 
 #define RTL931X_VLAN_PROFILE_SET(idx)		(0x9800 + (((idx) * 28)))
 #define RTL931X_VLAN_CTRL			(0x94E4)
+#define RTL931X_VLAN_PORT_IGR_CTRL		(0x94E8)
 #define RTL931X_VLAN_PORT_IGR_FLTR		(0x96B4)
 #define RTL931X_VLAN_PORT_EGR_FLTR		(0x96C4)
 #define RTL931X_VLAN_PORT_TAG_CTRL		(0x4860)
@@ -131,7 +134,7 @@
 #define RTL838X_MAC_LINK_SPD_STS(p)		(0xa190 + (((p >> 4) << 2)))
 #define RTL839X_MAC_LINK_SPD_STS(p)		(0x03a0 + (((p >> 4) << 2)))
 #define RTL930X_MAC_LINK_SPD_STS(p)		(0xCB18 + (((p >> 3) << 2)))
-#define RTL931X_MAC_LINK_SPD_STS(p)		(0x0ED0 + (((p >> 3) << 2)))
+#define RTL931X_MAC_LINK_SPD_STS		(0x0ED0)
 #define RTL838X_MAC_LINK_DUP_STS		(0xa19c)
 #define RTL839X_MAC_LINK_DUP_STS		(0x03b0)
 #define RTL930X_MAC_LINK_DUP_STS		(0xCB28)
@@ -145,14 +148,37 @@
 #define RTL930X_MAC_RX_PAUSE_STS		(0xCB30)
 #define RTL931X_MAC_RX_PAUSE_STS		(0x0F00)
 #define RTL930X_MAC_LINK_MEDIA_STS		(0xCB14)
+#define RTL931X_MAC_LINK_MEDIA_STS		(0x0EC8)
 
 /* MAC link state bits */
-#define FORCE_EN				(1 << 0)
-#define FORCE_LINK_EN				(1 << 1)
-#define NWAY_EN					(1 << 2)
-#define DUPLX_MODE				(1 << 3)
-#define TX_PAUSE_EN				(1 << 6)
-#define RX_PAUSE_EN				(1 << 7)
+#define RTL838X_FORCE_EN			(1 << 0)
+#define RTL838X_FORCE_LINK_EN			(1 << 1)
+#define RTL838X_NWAY_EN				(1 << 2)
+#define RTL838X_DUPLEX_MODE			(1 << 3)
+#define RTL838X_TX_PAUSE_EN			(1 << 6)
+#define RTL838X_RX_PAUSE_EN			(1 << 7)
+#define RTL838X_MAC_FORCE_FC_EN			(1 << 8)
+
+#define RTL839X_FORCE_EN			(1 << 0)
+#define RTL839X_FORCE_LINK_EN			(1 << 1)
+#define RTL839X_DUPLEX_MODE			(1 << 2)
+#define RTL839X_TX_PAUSE_EN			(1 << 5)
+#define RTL839X_RX_PAUSE_EN			(1 << 6)
+#define RTL839X_MAC_FORCE_FC_EN			(1 << 7)
+
+#define RTL930X_FORCE_EN			(1 << 0)
+#define RTL930X_FORCE_LINK_EN			(1 << 1)
+#define RTL930X_DUPLEX_MODE			(1 << 2)
+#define RTL930X_TX_PAUSE_EN			(1 << 7)
+#define RTL930X_RX_PAUSE_EN			(1 << 8)
+#define RTL930X_MAC_FORCE_FC_EN			(1 << 9)
+
+#define RTL931X_FORCE_EN			(1 << 9)
+#define RTL931X_FORCE_LINK_EN			(1 << 0)
+#define RTL931X_DUPLEX_MODE			(1 << 2)
+#define RTL931X_MAC_FORCE_FC_EN			(1 << 4)
+#define RTL931X_TX_PAUSE_EN			(1 << 16)
+#define RTL931X_RX_PAUSE_EN			(1 << 17)
 
 /* EEE */
 #define RTL838X_MAC_EEE_ABLTY			(0xa1a8)
@@ -192,6 +218,7 @@
 #define RTL838X_TBL_ACCESS_L2_DATA(idx)		(0x6908 + ((idx) << 2))
 #define RTL839X_TBL_ACCESS_L2_DATA(idx)		(0x1184 + ((idx) << 2))
 #define RTL930X_TBL_ACCESS_L2_DATA(idx)		(0xab08 + ((idx) << 2))
+
 #define RTL838X_L2_TBL_FLUSH_CTRL		(0x3370)
 #define RTL839X_L2_TBL_FLUSH_CTRL		(0x3ba0)
 #define RTL930X_L2_TBL_FLUSH_CTRL		(0x9404)
@@ -200,11 +227,19 @@
 #define RTL838X_L2_LRN_CONSTRT			(0x329C)
 #define RTL839X_L2_LRN_CONSTRT			(0x3910)
 #define RTL930X_L2_LRN_CONSTRT_CTRL		(0x909c)
+#define RTL931X_L2_LRN_CONSTRT_CTRL		(0xC964)
+
 #define RTL838X_L2_FLD_PMSK			(0x3288)
 #define RTL839X_L2_FLD_PMSK			(0x38EC)
 #define RTL930X_L2_BC_FLD_PMSK			(0x9068)
+#define RTL931X_L2_BC_FLD_PMSK			(0xC8FC)
+
 #define RTL930X_L2_UNKN_UC_FLD_PMSK		(0x9064)
+#define RTL931X_L2_UNKN_UC_FLD_PMSK		(0xC8F4)
+
 #define RTL838X_L2_LRN_CONSTRT_EN		(0x3368)
+#define RTL838X_L2_PORT_LRN_CONSTRT		(0x32A0)
+#define RTL839X_L2_PORT_LRN_CONSTRT		(0x3914)
 
 #define RTL838X_L2_PORT_NEW_SALRN(p)		(0x328c + (((p >> 4) << 2)))
 #define RTL839X_L2_PORT_NEW_SALRN(p)		(0x38F0 + (((p >> 4) << 2)))
@@ -220,15 +255,11 @@
 #define RTL930X_L2_PORT_SABLK_CTRL		(0x905c)
 #define RTL930X_L2_PORT_DABLK_CTRL		(0x9060)
 
-#define RTL838X_RMA_BPDU_FLD_PMSK		(0x4348)
-#define RTL930X_RMA_BPDU_FLD_PMSK		(0x9F18)
-#define RTL931X_RMA_BPDU_FLD_PMSK		(0x8950)
-#define RTL839X_RMA_BPDU_FLD_PMSK		(0x125C)
-
 #define RTL838X_L2_PORT_LM_ACT(p)		(0x3208 + ((p) << 2))
 #define RTL838X_VLAN_PORT_FWD			(0x3A78)
 #define RTL839X_VLAN_PORT_FWD			(0x27AC)
 #define RTL930X_VLAN_PORT_FWD			(0x834C)
+#define RTL931X_VLAN_PORT_FWD			(0x95CC)
 #define RTL838X_VLAN_FID_CTRL			(0x3aa8)
 
 /* Port Mirroring */
@@ -297,10 +328,46 @@
 #define RTL839X_IGR_BWCTRL_CTRL_LB_THR		(0x1614)
 
 /* Link aggregation (Trunking) */
-#define RTL839X_TRK_MBR_CTR			(0x2200)
-#define RTL838X_TRK_MBR_CTR			(0x3E00)
-#define RTL930X_TRK_MBR_CTRL			(0xA41C)
-#define RTL931X_TRK_MBR_CTRL			(0xB8D0)
+#define TRUNK_DISTRIBUTION_ALGO_SPA_BIT         0x01
+#define TRUNK_DISTRIBUTION_ALGO_SMAC_BIT        0x02
+#define TRUNK_DISTRIBUTION_ALGO_DMAC_BIT        0x04
+#define TRUNK_DISTRIBUTION_ALGO_SIP_BIT         0x08
+#define TRUNK_DISTRIBUTION_ALGO_DIP_BIT         0x10
+#define TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT  0x20
+#define TRUNK_DISTRIBUTION_ALGO_DST_L4PORT_BIT  0x40
+#define TRUNK_DISTRIBUTION_ALGO_MASKALL         0x7F
+
+#define TRUNK_DISTRIBUTION_ALGO_L2_SPA_BIT         0x01
+#define TRUNK_DISTRIBUTION_ALGO_L2_SMAC_BIT        0x02
+#define TRUNK_DISTRIBUTION_ALGO_L2_DMAC_BIT        0x04
+#define TRUNK_DISTRIBUTION_ALGO_L2_VLAN_BIT         0x08
+#define TRUNK_DISTRIBUTION_ALGO_L2_MASKALL         0xF
+
+#define TRUNK_DISTRIBUTION_ALGO_L3_SPA_BIT         0x01
+#define TRUNK_DISTRIBUTION_ALGO_L3_SMAC_BIT        0x02
+#define TRUNK_DISTRIBUTION_ALGO_L3_DMAC_BIT        0x04
+#define TRUNK_DISTRIBUTION_ALGO_L3_VLAN_BIT         0x08
+#define TRUNK_DISTRIBUTION_ALGO_L3_SIP_BIT         0x10
+#define TRUNK_DISTRIBUTION_ALGO_L3_DIP_BIT         0x20
+#define TRUNK_DISTRIBUTION_ALGO_L3_SRC_L4PORT_BIT  0x40
+#define TRUNK_DISTRIBUTION_ALGO_L3_DST_L4PORT_BIT  0x80
+#define TRUNK_DISTRIBUTION_ALGO_L3_PROTO_BIT  0x100
+#define TRUNK_DISTRIBUTION_ALGO_L3_FLOW_LABEL_BIT  0x200
+#define TRUNK_DISTRIBUTION_ALGO_L3_MASKALL         0x3FF
+
+#define RTL838X_TRK_MBR_CTR                     (0x3E00)
+#define RTL838X_TRK_HASH_IDX_CTRL               (0x3E20)
+#define RTL838X_TRK_HASH_CTRL                   (0x3E24)
+
+#define RTL839X_TRK_MBR_CTR                     (0x2200)
+#define RTL839X_TRK_HASH_IDX_CTRL               (0x2280)
+#define RTL839X_TRK_HASH_CTRL                   (0x2284)
+
+#define RTL930X_TRK_MBR_CTRL                    (0xA41C)
+#define RTL930X_TRK_HASH_CTRL                   (0x9F80)
+
+#define RTL931X_TRK_MBR_CTRL                    (0xB8D0)
+#define RTL931X_TRK_HASH_CTRL                   (0xBA70)
 
 /* Attack prevention */
 #define RTL838X_ATK_PRVNT_PORT_EN		(0x5B00)
@@ -309,10 +376,76 @@
 #define RTL838X_ATK_PRVNT_STS			(0x5B1C)
 
 /* 802.1X */
+#define RTL838X_RMA_BPDU_FLD_PMSK		(0x4348)
+#define RTL930X_RMA_BPDU_FLD_PMSK		(0x9F18)
+#define RTL931X_RMA_BPDU_FLD_PMSK		(0x8950)
+#define RTL839X_RMA_BPDU_FLD_PMSK		(0x125C)
+
+#define RTL838X_SPCL_TRAP_CTRL			(0x6980)
 #define RTL838X_SPCL_TRAP_EAPOL_CTRL		(0x6988)
-#define RTL839X_SPCL_TRAP_EAPOL_CTRL		(0x105C)
 #define RTL838X_SPCL_TRAP_ARP_CTRL		(0x698C)
+#define RTL838X_SPCL_TRAP_IGMP_CTRL		(0x6984)
+#define RTL838X_SPCL_TRAP_IPV6_CTRL		(0x6994)
+#define RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x6998)
+
+#define RTL839X_SPCL_TRAP_CTRL			(0x1054)
+#define RTL839X_SPCL_TRAP_EAPOL_CTRL		(0x105C)
 #define RTL839X_SPCL_TRAP_ARP_CTRL		(0x1060)
+#define RTL839X_SPCL_TRAP_IGMP_CTRL		(0x1058)
+#define RTL839X_SPCL_TRAP_IPV6_CTRL		(0x1064)
+#define RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x1068)
+#define RTL839X_SPCL_TRAP_SWITCH_IPV4_ADDR_CTRL	(0x106C)
+#define RTL839X_SPCL_TRAP_CRC_CTRL		(0x1070)
+/* special port action controls */
+/* 
+    values:
+	0 = FORWARD (default)
+	1 = DROP
+	2 = TRAP2CPU
+	3 = FLOOD IN ALL PORT
+
+	Register encoding.
+	offset = CTRL + (port >> 4) << 2
+	value/mask = 3 << ((port&0xF) << 1)
+*/
+
+typedef enum {
+	BPDU = 0,
+	PTP,
+	PTP_UDP,
+	PTP_ETH2,
+	LLTP,
+	EAPOL,
+	GRATARP,
+} rma_ctrl_t;
+
+typedef enum {
+	FORWARD = 0,
+	DROP,
+	TRAP2CPU,
+	FLOODALL,
+	TRAP2MASTERCPU,
+	COPY2CPU,
+} action_type_t;
+
+#define RTL838X_RMA_BPDU_CTRL			(0x4330) 
+#define RTL839X_RMA_BPDU_CTRL			(0x122C)
+#define RTL930X_RMA_BPDU_CTRL			(0x9E7C)
+#define RTL931X_RMA_BPDU_CTRL			(0x881C)
+
+#define RTL838X_RMA_PTP_CTRL			(0x4338) 
+#define RTL839X_RMA_PTP_CTRL			(0x123C)
+#define RTL930X_RMA_PTP_CTRL			(0x9E88)
+#define RTL931X_RMA_PTP_CTRL			(0x8834)
+
+#define RTL838X_RMA_LLTP_CTRL			(0x4340) 
+#define RTL839X_RMA_LLTP_CTRL			(0x124C)
+#define RTL930X_RMA_LLTP_CTRL			(0x9EFC)
+#define RTL931X_RMA_LLTP_CTRL			(0x8918)
+
+#define RTL930X_RMA_EAPOL_CTRL			(0x9F08)
+#define RTL931X_RMA_EAPOL_CTRL			(0x8930)
+#define RTL931X_TRAP_ARP_GRAT_PORT_ACT		(0x8C04)
 
 /* QoS */
 #define RTL838X_QM_INTPRI2QID_CTRL		(0x5F00)
@@ -353,24 +486,39 @@
 #define RTL838X_METER_GLB_CTRL			(0x4B08)
 #define RTL839X_METER_GLB_CTRL			(0x1300)
 #define RTL930X_METER_GLB_CTRL			(0xa0a0)
+#define RTL931X_METER_GLB_CTRL			(0x411C)
+
 #define RTL839X_ACL_CTRL			(0x1288)
+
 #define RTL838X_ACL_BLK_LOOKUP_CTRL		(0x6100)
 #define RTL839X_ACL_BLK_LOOKUP_CTRL		(0x1280)
 #define RTL930X_PIE_BLK_LOOKUP_CTRL		(0xa5a0)
+#define RTL931X_PIE_BLK_LOOKUP_CTRL		(0x4180)
+
 #define RTL838X_ACL_BLK_PWR_CTRL		(0x6104)
 #define RTL839X_PS_ACL_PWR_CTRL			(0x049c)
+
 #define RTL838X_ACL_BLK_TMPLTE_CTRL(block)	(0x6108 + ((block) << 2))
 #define RTL839X_ACL_BLK_TMPLTE_CTRL(block)	(0x128c + ((block) << 2))
 #define RTL930X_PIE_BLK_TMPLTE_CTRL(block)	(0xa624 + ((block) << 2))
+#define RTL931X_PIE_BLK_TMPLTE_CTRL(block)	(0x4214 + ((block) << 2))
+
 #define RTL838X_ACL_BLK_GROUP_CTRL		(0x615C)
 #define RTL839X_ACL_BLK_GROUP_CTRL		(0x12ec)
+
 #define RTL838X_ACL_CLR_CTRL			(0x6168)
 #define RTL839X_ACL_CLR_CTRL			(0x12fc)
 #define RTL930X_PIE_CLR_CTRL			(0xa66c)
+#define RTL931X_PIE_CLR_CTRL			(0x42D8)
+
 #define RTL838X_DMY_REG27			(0x3378)
+
 #define RTL838X_ACL_PORT_LOOKUP_CTRL(p)		(0x616C + (((p) << 2)))
 #define RTL930X_ACL_PORT_LOOKUP_CTRL(p)		(0xA784 + (((p) << 2)))
+#define RTL931X_ACL_PORT_LOOKUP_CTRL(p)		(0x44F8 + (((p) << 2)))
+
 #define RTL930X_PIE_BLK_PHASE_CTRL		(0xA5A4)
+#define RTL931X_PIE_BLK_PHASE_CTRL		(0x4184)
 
 // PIE actions
 #define PIE_ACT_COPY_TO_PORT	2
@@ -407,6 +555,23 @@
 #define RTL930X_L3_HW_LU_CTRL			(0xACC0)
 #define RTL930X_L3_IP_ROUTE_CTRL		0xab44
 
+/* Port LED Control */
+#define RTL930X_LED_PORT_NUM_CTRL(p)		(0xCC04 + (((p >> 4) << 2)))
+#define RTL930X_LED_SET0_0_CTRL			(0xCC28)
+#define RTL930X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0xCC2C + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0xCC34 + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_COPR_MASK_CTRL		(0xCC3C)
+#define RTL930X_LED_PORT_FIB_MASK_CTRL		(0xCC40)
+#define RTL930X_LED_PORT_COMBO_MASK_CTRL	(0xCC44)
+
+#define RTL931X_LED_PORT_NUM_CTRL(p)		(0x0604 + (((p >> 4) << 2)))
+#define RTL931X_LED_SET0_0_CTRL			(0x0630)
+#define RTL931X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0x0634 + (((p >> 4) << 2)))
+#define RTL931X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0x0644 + (((p >> 4) << 2)))
+#define RTL931X_LED_PORT_COPR_MASK_CTRL		(0x0654)
+#define RTL931X_LED_PORT_FIB_MASK_CTRL		(0x065c)
+#define RTL931X_LED_PORT_COMBO_MASK_CTRL	(0x0664)
+
 #define MAX_VLANS 4096
 #define MAX_LAGS 16
 #define MAX_PRIOS 8
@@ -416,6 +581,7 @@
 #define PIE_BLOCK_SIZE 128
 #define MAX_PIE_ENTRIES (18 * PIE_BLOCK_SIZE)
 #define N_FIXED_FIELDS 12
+#define N_FIXED_FIELDS_RTL931X 14
 #define MAX_COUNTERS 2048
 #define MAX_ROUTES 512
 #define MAX_HOST_ROUTES 1536
@@ -433,6 +599,18 @@ enum phy_type {
 	PHY_RTL8218B_EXT = 3,
 	PHY_RTL8214FC = 4,
 	PHY_RTL839X_SDS = 5,
+	PHY_RTL930X_SDS = 6,
+};
+
+enum pbvlan_type {
+	PBVLAN_TYPE_INNER = 0,
+	PBVLAN_TYPE_OUTER,
+};
+
+enum pbvlan_mode {
+	PBVLAN_MODE_UNTAG_AND_PRITAG = 0,
+	PBVLAN_MODE_UNTAG_ONLY,
+	PBVLAN_MODE_ALL_PKT,
 };
 
 struct rtl838x_port {
@@ -441,9 +619,11 @@ struct rtl838x_port {
 	u16 pvid;
 	bool eee_enabled;
 	enum phy_type phy;
+	bool phy_is_integrated;
 	bool is10G;
 	bool is2G5;
-	u8 sds_num;
+	int sds_num;
+	int led_set;
 	const struct dsa_port *dp;
 };
 
@@ -453,7 +633,12 @@ struct rtl838x_vlan_info {
 	u8 profile_id;
 	bool hash_mc_fid;
 	bool hash_uc_fid;
-	u8 fid;
+	u8 fid; // AKA MSTI
+
+	// The following fields are used only by the RTL931X
+	int if_id;		// Interface (index in L3_EGR_INTF_IDX)
+	u16 multicast_grp_mask;
+	int l2_tunnel_list_id;
 };
 
 enum l2_entry_type {
@@ -488,6 +673,15 @@ struct rtl838x_l2_entry {
 	u16 mc_mac_index;
 	u16 nh_route_id;
 	bool nh_vlan_target;  // Only RTL83xx: VLAN used for next hop
+
+	// The following is only valid on RTL931x
+	bool is_open_flow;
+	bool is_pe_forward;
+	bool is_local_forward;
+	bool is_remote_forward;
+	bool is_l2_tunnel;
+	int l2_tunnel_id;
+	int l2_tunnel_list_id;
 };
 
 enum fwd_rule_action {
@@ -498,6 +692,17 @@ enum fwd_rule_action {
 enum pie_phase {
 	PHASE_VACL = 0,
 	PHASE_IACL = 1,
+};
+
+enum igr_filter {
+	IGR_FORWARD = 0,
+	IGR_DROP = 1,
+	IGR_TRAP = 2,
+};
+
+enum egr_filter {
+	EGR_DISABLE = 0,
+	EGR_ENABLE = 1,
 };
 
 /* Intermediate representation of a  Packet Inspection Engine Rule
@@ -752,8 +957,8 @@ struct rtl838x_reg {
 	u64 (*traffic_get)(int source);
 	int l2_ctrl_0;
 	int l2_ctrl_1;
-	int l2_port_aging_out;
 	int smi_poll_ctrl;
+	u32 l2_port_aging_out;
 	int l2_tbl_flush_ctrl;
 	void (*exec_tbl0_cmd)(u32 cmd);
 	void (*exec_tbl1_cmd)(u32 cmd);
@@ -767,12 +972,21 @@ struct rtl838x_reg {
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	void (*vlan_profile_dump)(int index);
 	void (*vlan_profile_setup)(int profile);
+	void (*vlan_port_pvidmode_set)(int port, enum pbvlan_type type, enum pbvlan_mode mode);
+	void (*vlan_port_pvid_set)(int port, enum pbvlan_type type, int pvid);
+	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
+	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
+	void (*enable_learning)(int port, bool enable);
+	void (*enable_flood)(int port, bool enable);
+	void (*enable_mcast_flood)(int port, bool enable);
+	void (*enable_bcast_flood)(int port, bool enable);
 	void (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
 	int  (*l2_port_new_salrn)(int port);
 	int  (*l2_port_new_sa_fwd)(int port);
+	int (*set_ageing_time)(unsigned long msec);
 	int mir_ctrl;
 	int mir_dpm;
 	int mir_spm;
@@ -785,9 +999,6 @@ struct rtl838x_reg {
 	void (*write_l2_entry_using_hash)(u32 hash, u32 pos, struct rtl838x_l2_entry *e);
 	u64 (*read_cam)(int idx, struct rtl838x_l2_entry *e);
 	void (*write_cam)(int idx, struct rtl838x_l2_entry *e);
-	int vlan_port_egr_filter;
-	int vlan_port_igr_filter;
-	int vlan_port_pb;
 	int vlan_port_tag_sts_ctrl;
 	int (*rtl838x_vlan_port_tag_sts_ctrl)(int port);
 	int (*trk_mbr_ctr)(int group);
@@ -823,6 +1034,9 @@ struct rtl838x_reg {
 	void (*get_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
+	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
+	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
+	void (*led_init)(struct rtl838x_switch_priv *priv);
 };
 
 struct rtl838x_switch_priv {
@@ -850,11 +1064,15 @@ struct rtl838x_switch_priv {
 	int n_lags;
 	u64 lags_port_members[MAX_LAGS];
 	struct net_device *lag_devs[MAX_LAGS];
+	u32 lag_primary[MAX_LAGS];
+	u32 is_lagmember[57];
+	u64 lagmembers;
 	struct notifier_block nb;  // TODO: change to different name
 	struct notifier_block ne_nb;
 	struct notifier_block fib_nb;
 	bool eee_enabled;
 	unsigned long int mc_group_bm[MAX_MC_GROUPS >> 5];
+	int mc_group_saves[MAX_MC_GROUPS];
 	int n_pie_blocks;
 	struct rhashtable tc_ht;
 	unsigned long int pie_use_bm[MAX_PIE_ENTRIES >> 5];

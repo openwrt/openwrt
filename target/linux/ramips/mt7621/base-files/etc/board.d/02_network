@@ -26,6 +26,9 @@ ramips_setup_interfaces()
 	hiwifi,hc5962|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-ac2100|\
+	xiaomi,mi-router-cr6606|\
+	xiaomi,mi-router-cr6608|\
+	xiaomi,mi-router-cr6609|\
 	xiaomi,redmi-router-ac2100)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -36,9 +39,11 @@ ramips_setup_interfaces()
 		;;
 	asiarf,ap7621-nv1|\
 	glinet,gl-mt1300|\
+	iptime,a3002mesh|\
 	jcg,q20|\
 	lenovo,newifi-d1|\
 	mikrotik,routerboard-m33g|\
+	renkforce,ws-wn530hp3-a|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3g-v2|\
 	xiaomi,mi-router-4|\
@@ -59,8 +64,12 @@ ramips_setup_interfaces()
 	mikrotik,routerboard-760igs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
 		;;
-	tplink,eap235-wall-v1)
+	tplink,eap235-wall-v1|\
+	tplink,eap615-wall-v1)
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
+		;;
+	tplink,tl-wpa8631p-v3)
+		ucidef_set_interface_lan "lan1 lan2 lan3 plc0"
 		;;
 	ubnt,edgerouter-x)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"

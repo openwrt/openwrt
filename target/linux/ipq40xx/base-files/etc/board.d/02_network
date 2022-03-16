@@ -50,6 +50,10 @@ ipq40xx_setup_interfaces()
 	openmesh,a62)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	mikrotik,cap-ac)
+		ucidef_add_switch "switch0" \
+			"0t@eth0" "4:lan" "5:wan"
+		;;
 	asus,rt-ac42u|\
 	asus,rt-ac58u|\
 	mikrotik,hap-ac2|\
@@ -63,11 +67,15 @@ ipq40xx_setup_interfaces()
 		;;
 	avm,fritzbox-4040|\
 	linksys,ea6350v3|\
-	linksys,ea8300|\
-	linksys,mr8300)
+	linksys,ea8300)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
+		;;
+	linksys,mr8300)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "0u@eth1" "5:wan"
 		;;
 	avm,fritzbox-7530)
 		ucidef_add_switch "switch0" \
@@ -136,6 +144,11 @@ ipq40xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "0u@eth1" "5:wan"
 		;;
+	zte,mf286d)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "2:lan:4" "3:lan:3" "4:lan:2" "0u@eth1" "5:wan"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;
@@ -190,6 +203,7 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
+	mikrotik,cap-ac |\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3)
 		wan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)

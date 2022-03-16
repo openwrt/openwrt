@@ -13,6 +13,10 @@ ath79_setup_interfaces()
 	allnet,all-wap02860ac|\
 	alfa-network,ap121f|\
 	alfa-network,pi-wifi4|\
+	alfa-network,tube-2hq|\
+	araknis,an-300-ap-i-n|\
+	araknis,an-500-ap-i-ac|\
+	araknis,an-700-ap-i-ac|\
 	arduino,yun|\
 	aruba,ap-105|\
 	asus,rp-ac66|\
@@ -44,6 +48,7 @@ ath79_setup_interfaces()
 	meraki,mr16|\
 	netgear,ex6400|\
 	netgear,ex7300|\
+	netgear,ex7300-v2|\
 	ocedo,koala|\
 	ocedo,raccoon|\
 	onion,omega|\
@@ -84,6 +89,7 @@ ath79_setup_interfaces()
 	ubnt,lap-120|\
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac|\
+	ubnt,nanobeam-ac-xc|\
 	ubnt,nanobridge-m|\
 	ubnt,nanostation-ac-loco|\
 	ubnt,nanostation-loco-m|\
@@ -188,6 +194,7 @@ ath79_setup_interfaces()
 	compex,wpj531-16m|\
 	openmesh,a40|\
 	openmesh,a60|\
+	openmesh,om2p-v1|\
 	openmesh,om2p-v4|\
 	openmesh,om2p-hs-v4|\
 	plasmacloud,pa300|\
@@ -333,6 +340,7 @@ ath79_setup_interfaces()
 		;;
 	mercury,mw4530r-v1|\
 	tplink,archer-a7-v5|\
+	tplink,archer-a9-v6|\
 	tplink,archer-c6-v2|\
 	tplink,archer-c6-v2-us|\
 	tplink,archer-c7-v4|\
@@ -440,6 +448,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "5:lan:4"
 		;;
+	tplink,tl-wr841hp-v2|\
 	tplink,tl-wr842n-v2|\
 	tplink,tl-wr941hp-v1)
 		ucidef_set_interface_wan "eth1"
@@ -525,6 +534,7 @@ ath79_setup_macs()
 	alfa-network,n5q|\
 	alfa-network,pi-wifi4|\
 	alfa-network,r36a|\
+	alfa-network,tube-2hq|\
 	engenius,eap300-v2|\
 	engenius,ens202ext-v1)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
@@ -685,6 +695,7 @@ ath79_setup_macs()
 		label_mac=$lan_mac
 		;;
 	tplink,archer-a7-v5|\
+	tplink,archer-a9-v6|\
 	tplink,archer-c7-v4|\
 	tplink,archer-c7-v5|\
 	tplink,tl-wr1043nd-v4|\
@@ -711,6 +722,7 @@ ath79_setup_macs()
 		;;
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac-gen2|\
+	ubnt,nanobeam-ac-xc|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2)
 		label_mac=$(mtd_get_mac_binary art 0x5006)

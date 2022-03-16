@@ -217,7 +217,6 @@ define Device/asus_rt-ac42u
 	SOC := qcom-ipq4019
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DTB_SIZE := 65536
 	IMAGE_SIZE := 20439364
 	FILESYSTEMS := squashfs
 #	RT-AC82U is nowhere to be found online
@@ -237,7 +236,6 @@ define Device/asus_rt-ac58u
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DTB_SIZE := 65536
 	IMAGE_SIZE := 20439364
 	FILESYSTEMS := squashfs
 #	Someone - in their infinite wisdom - decided to put the firmware
@@ -978,6 +976,19 @@ define Device/unielec_u4019-32m
 	DEFAULT := n
 endef
 TARGET_DEVICES += unielec_u4019-32m
+
+define Device/zte_mf286d
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := ZTE
+	DEVICE_MODEL := MF286D
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_IN_UBI := 1
+	DEVICE_PACKAGES := ipq-wifi-zte_mf286d kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += zte_mf286d
 
 define Device/zyxel_nbg6617
 	$(call Device/FitImageLzma)

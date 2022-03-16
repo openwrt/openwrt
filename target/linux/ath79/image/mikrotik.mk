@@ -46,6 +46,23 @@ define Device/mikrotik_routerboard-lhg-2nd
 endef
 TARGET_DEVICES += mikrotik_routerboard-lhg-2nd
 
+define Device/mikrotik_routerboard-lhg-5nd
+  $(Device/mikrotik_nor)
+  SOC := ar9344
+  DEVICE_MODEL := RouterBOARD LHG 5nD (LHG 5)
+  DEVICE_PACKAGES += rssileds
+  IMAGE_SIZE := 16256k
+endef
+TARGET_DEVICES += mikrotik_routerboard-lhg-5nd
+
+define Device/mikrotik_routerboard-mapl-2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := RouterBOARD mAPL-2nD (mAP lite)
+  IMAGE_SIZE := 16256k
+endef
+TARGET_DEVICES += mikrotik_routerboard-mapl-2nd
+
 define Device/mikrotik_routerboard-sxt-5nd-r2
   $(Device/mikrotik_nand)
   SOC := ar9344

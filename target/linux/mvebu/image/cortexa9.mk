@@ -78,6 +78,20 @@ define Device/globalscale_mirabox
 endef
 TARGET_DEVICES += globalscale_mirabox
 
+define Device/iptime_nas1dual
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := NAS1dual
+  DEVICE_PACKAGES := kmod-hwmon-drivetemp kmod-hwmon-gpiofan kmod-usb3
+  SOC := armada-385
+  KERNEL := kernel-bin | append-dtb | iptime-naspkg nas1dual
+  KERNEL_SIZE := 6144k
+  IMAGES := sysupgrade.bin
+  IMAGE_SIZE := 64256k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += iptime_nas1dual
+
 define Device/kobol_helios4
   DEVICE_VENDOR := Kobol
   DEVICE_MODEL := Helios4

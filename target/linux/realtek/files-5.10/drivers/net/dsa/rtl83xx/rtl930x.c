@@ -688,7 +688,6 @@ void rtl9300_dump_debug(void)
 irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
-	u32 status = sw_r32(RTL930X_ISR_GLB);
 	u32 ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
 	u32 link;
 	int i;
@@ -2317,6 +2316,151 @@ static void rtl930x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
+void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0x3, mode, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+	else
+		sw_w32_mask(0x3 << 14, mode << 14 ,RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+}
+
+void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0xfff << 2, pvid << 2, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+	else
+		sw_w32_mask(0xfff << 16, pvid << 16, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+}
+
+static int rtl930x_set_ageing_time(unsigned long msec)
+{
+	int t = sw_r32(RTL930X_L2_AGE_CTRL);
+
+	t &= 0x1FFFFF;
+	t = (t * 7) / 10;
+	pr_debug("L2 AGING time: %d sec\n", t);
+
+	t = (msec / 100 + 6) / 7;
+	t = t > 0x1FFFFF ? 0x1FFFFF : t;
+	sw_w32_mask(0x1FFFFF, t, RTL930X_L2_AGE_CTRL);
+	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL930X_L2_PORT_AGE_CTRL));
+
+	return 0;
+}
+
+static void rtl930x_set_igr_filter(int port,  enum igr_filter state)
+{
+	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
+		    RTL930X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
+}
+
+static void rtl930x_set_egr_filter(int port,  enum egr_filter state)
+{
+	sw_w32_mask(0x1 << (port % 0x1D), state << (port % 0x1D),
+		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
+}
+
+void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+{
+	u32 l3shift = 0;
+	u32 newmask = 0;
+
+	/* TODO: for now we set algoidx to 0 */
+	algoidx = 0;
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SIP_BIT) {
+		l3shift = 4;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SIP_BIT;
+	}
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_DIP_BIT) {
+		l3shift = 4;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_DIP_BIT;
+	}
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT) {
+		l3shift = 4;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SRC_L4PORT_BIT;
+	}
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT) {
+		l3shift = 4;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SRC_L4PORT_BIT;
+	}
+
+	if (l3shift == 4) {
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SMAC_BIT;
+
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_DMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_DMAC_BIT;
+	} else  {
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_SMAC_BIT;
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_DMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_DMAC_BIT;
+	}
+
+	sw_w32(newmask << l3shift, RTL930X_TRK_HASH_CTRL + (algoidx << 2));
+}
+
+static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
+{
+	int i, pos;
+	u32 v, pm = 0, set;
+	u32 setlen;
+	const __be32 *led_set;
+	char set_name[9];
+	struct device_node *node;
+
+	pr_info("%s called\n", __func__);
+	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+	if (!node) {
+		pr_info("%s No compatible LED node found\n", __func__);
+		return;
+	}
+
+	for (i= 0; i < priv->cpu_port; i++) {
+		pos = (i << 1) % 32;
+		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
+
+		if (!priv->ports[i].phy)
+			continue;
+
+		v = 0x1;
+		if (priv->ports[i].is10G)
+			v = 0x3;
+		if (priv->ports[i].phy_is_integrated)
+			v = 0x1;
+		sw_w32_mask(0x3 << pos, v << pos, RTL930X_LED_PORT_NUM_CTRL(i));
+
+		pm |= BIT(i);
+
+		set = priv->ports[i].led_set;
+		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
+	}
+
+	for (i = 0; i < 4; i++) {
+		sprintf(set_name, "led_set%d", i);
+		led_set = of_get_property(node, set_name, &setlen);
+		if (!led_set || setlen != 16)
+			break;
+		v = be32_to_cpup(led_set) << 16 | be32_to_cpup(led_set + 1);
+		sw_w32(v, RTL930X_LED_SET0_0_CTRL - 4 - i * 8);
+		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
+		sw_w32(v, RTL930X_LED_SET0_0_CTRL - i * 8);
+	}
+
+	// Set LED mode to serial (0x1)
+	sw_w32_mask(0x3, 0x1, RTL930X_LED_GLB_CTRL);
+
+	// Set port type masks
+	sw_w32(pm, RTL930X_LED_PORT_COPR_MASK_CTRL);
+	sw_w32(pm, RTL930X_LED_PORT_FIB_MASK_CTRL);
+	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
+
+	for (i = 0; i < 24; i++)
+		pr_info("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
+}
+
 const struct rtl838x_reg rtl930x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -2334,6 +2478,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.l2_ctrl_0 = RTL930X_L2_CTRL,
 	.l2_ctrl_1 = RTL930X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL930X_L2_PORT_AGE_CTRL,
+	.set_ageing_time = rtl930x_set_ageing_time,
 	.smi_poll_ctrl = RTL930X_SMI_POLL_CTRL, // TODO: Difference to RTL9300_SMI_PRVTE_POLLING_CTRL
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.exec_tbl0_cmd = rtl930x_exec_tbl0_cmd,
@@ -2349,6 +2494,8 @@ const struct rtl838x_reg rtl930x_reg = {
 	.vlan_profile_dump = rtl930x_vlan_profile_dump,
 	.vlan_profile_setup = rtl930x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl930x_vlan_fwd_on_inner,
+	.set_vlan_igr_filter = rtl930x_set_igr_filter,
+	.set_vlan_egr_filter = rtl930x_set_egr_filter,
 	.stp_get = rtl930x_stp_get,
 	.stp_set = rtl930x_stp_set,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
@@ -2367,10 +2514,9 @@ const struct rtl838x_reg rtl930x_reg = {
 	.write_l2_entry_using_hash = rtl930x_write_l2_entry_using_hash,
 	.read_cam = rtl930x_read_cam,
 	.write_cam = rtl930x_write_cam,
-	.vlan_port_egr_filter = RTL930X_VLAN_PORT_EGR_FLTR,
-	.vlan_port_igr_filter = RTL930X_VLAN_PORT_IGR_FLTR,
-	.vlan_port_pb = RTL930X_VLAN_PORT_PB_VLAN,
 	.vlan_port_tag_sts_ctrl = RTL930X_VLAN_PORT_TAG_STS_CTRL,
+	.vlan_port_pvidmode_set = rtl930x_vlan_port_pvidmode_set,
+	.vlan_port_pvid_set = rtl930x_vlan_port_pvid_set,
 	.trk_mbr_ctr = rtl930x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL930X_RMA_BPDU_FLD_PMSK,
 	.init_eee = rtl930x_init_eee,
@@ -2400,4 +2546,6 @@ const struct rtl838x_reg rtl930x_reg = {
 	.get_l3_router_mac = rtl930x_get_l3_router_mac,
 	.set_l3_router_mac = rtl930x_set_l3_router_mac,
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
+	.set_distribution_algorithm = rtl930x_set_distribution_algorithm,
+	.led_init = rtl930x_led_init,
 };

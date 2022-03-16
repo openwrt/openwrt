@@ -118,8 +118,9 @@
 		wan_port: port@0 {
 			status = "okay";
 			label = "wan";
-			nvmem-cells = <&macaddr_factory_28>;
+			nvmem-cells = <&macaddr_factory_4>;
 			nvmem-cell-names = "mac-address";
+			mac-address-increment = <(-2)>;
 		};
 
 		port@1 {
@@ -204,9 +205,5 @@
 
 	macaddr_factory_4: macaddr@4 {
 		reg = <0x4 0x6>;
-	};
-
-	macaddr_factory_28: macaddr@28 {
-		reg = <0x28 0x6>;
 	};
 };

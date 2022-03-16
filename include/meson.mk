@@ -98,7 +98,7 @@ define Host/Configure/Meson
 		--native-file $(HOST_BUILD_DIR)/openwrt-native.txt \
 		$(MESON_HOST_ARGS) \
 		$(MESON_HOST_BUILD_DIR) \
-		$(HOST_BUILD_DIR), \
+		$(MESON_HOST_BUILD_DIR)/.., \
 		$(MESON_HOST_VARS))
 endef
 

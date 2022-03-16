@@ -30,19 +30,7 @@
   * enum nl80211_commands - supported nl80211 commands
   *
   * @NL80211_CMD_UNSPEC: unspecified command to catch errors
-@@ -360,10 +337,7 @@
-  * @NL80211_CMD_DEL_INTERFACE: Virtual interface was deleted, has attributes
-  *	%NL80211_ATTR_IFINDEX and %NL80211_ATTR_WIPHY. Can also be sent from
-  *	userspace to request deletion of a virtual interface, then requires
-- *	attribute %NL80211_ATTR_IFINDEX. If multiple BSSID advertisements are
-- *	enabled using %NL80211_ATTR_MBSSID_CONFIG, %NL80211_ATTR_MBSSID_ELEMS,
-- *	and if this command is used for the transmitting interface, then all
-- *	the non-transmitting interfaces are deleted as well.
-+ *	attribute %NL80211_ATTR_IFINDEX.
-  *
-  * @NL80211_CMD_GET_KEY: Get sequence counter information for a key specified
-  *	by %NL80211_ATTR_KEY_IDX and/or %NL80211_ATTR_MAC.
-@@ -1226,12 +1200,6 @@
+@@ -1226,12 +1203,6 @@
   * @NL80211_CMD_COLOR_CHANGE_COMPLETED: Notify userland that the color change
   *	has completed
   *
@@ -55,7 +43,7 @@
   * @NL80211_CMD_MAX: highest used command number
   * @__NL80211_CMD_AFTER_LAST: internal use
   */
-@@ -1472,8 +1440,6 @@ enum nl80211_commands {
+@@ -1472,8 +1443,6 @@ enum nl80211_commands {
  	NL80211_CMD_COLOR_CHANGE_ABORTED,
  	NL80211_CMD_COLOR_CHANGE_COMPLETED,
  
@@ -64,37 +52,26 @@
  	/* add new commands above here */
  
  	/* used to define NL80211_CMD_MAX below */
-@@ -2627,17 +2593,8 @@ enum nl80211_commands {
-  * @NL80211_ATTR_COLOR_CHANGE_ELEMS: Nested set of attributes containing the IE
-  *	information for the time while performing a color switch.
+@@ -2639,6 +2608,9 @@ enum nl80211_commands {
+  *	Mandatory parameter for the transmitting interface to enable MBSSID.
+  *	Optional for the non-transmitting interfaces.
   *
-- * @NL80211_ATTR_MBSSID_CONFIG: Nested attribute for multiple BSSID
-- *	advertisements (MBSSID) parameters in AP mode.
-- *	Kernel uses this attribute to indicate the driver's support for MBSSID
-- *	and enhanced multi-BSSID advertisements (EMA AP) to the userspace.
-- *	Userspace should use this attribute to configure per interface MBSSID
-- *	parameters.
-- *	See &enum nl80211_mbssid_config_attributes for details.
-- *
-- * @NL80211_ATTR_MBSSID_ELEMS: Nested parameter to pass multiple BSSID elements.
-- *	Mandatory parameter for the transmitting interface to enable MBSSID.
-- *	Optional for the non-transmitting interfaces.
 + * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
 + *	transmit power to stay within regulatory limits. u32, dBi.
-  *
++ *
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
-@@ -3142,8 +3099,7 @@ enum nl80211_attrs {
- 	NL80211_ATTR_COLOR_CHANGE_COLOR,
- 	NL80211_ATTR_COLOR_CHANGE_ELEMS,
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3145,6 +3117,8 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_MBSSID_CONFIG,
+ 	NL80211_ATTR_MBSSID_ELEMS,
  
--	NL80211_ATTR_MBSSID_CONFIG,
--	NL80211_ATTR_MBSSID_ELEMS,
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
- 
++
  	/* add attributes here, update the policy in nl80211.c */
  
-@@ -4978,7 +4934,6 @@ enum nl80211_txrate_gi {
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -4978,7 +4952,6 @@ enum nl80211_txrate_gi {
   * @NL80211_BAND_60GHZ: around 60 GHz band (58.32 - 69.12 GHz)
   * @NL80211_BAND_6GHZ: around 6 GHz band (5.9 - 7.2 GHz)
   * @NL80211_BAND_S1GHZ: around 900MHz, supported by S1G PHYs
@@ -102,7 +79,7 @@
   * @NUM_NL80211_BANDS: number of bands, avoid using this in userspace
   *	since newer kernel versions may support more bands
   */
-@@ -4988,7 +4943,6 @@ enum nl80211_band {
+@@ -4988,7 +4961,6 @@ enum nl80211_band {
  	NL80211_BAND_60GHZ,
  	NL80211_BAND_6GHZ,
  	NL80211_BAND_S1GHZ,
@@ -110,7 +87,7 @@
  
  	NUM_NL80211_BANDS,
  };
-@@ -6046,11 +6000,6 @@ enum nl80211_feature_flags {
+@@ -6046,11 +6018,6 @@ enum nl80211_feature_flags {
   * @NL80211_EXT_FEATURE_BSS_COLOR: The driver supports BSS color collision
   *	detection and change announcemnts.
   *
@@ -122,7 +99,7 @@
   * @NUM_NL80211_EXT_FEATURES: number of extended features.
   * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
   */
-@@ -6116,7 +6065,6 @@ enum nl80211_ext_feature_index {
+@@ -6116,7 +6083,6 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_SECURE_RTT,
  	NL80211_EXT_FEATURE_PROT_RANGE_NEGO_AND_MEASURE,
  	NL80211_EXT_FEATURE_BSS_COLOR,
@@ -130,67 +107,24 @@
  
  	/* add new features before the definition below */
  	NUM_NL80211_EXT_FEATURES,
-@@ -7406,60 +7354,4 @@ enum nl80211_sar_specs_attrs {
- 	NL80211_SAR_ATTR_SPECS_MAX = __NL80211_SAR_ATTR_SPECS_LAST - 1,
- };
- 
--/**
-- * enum nl80211_mbssid_config_attributes - multiple BSSID (MBSSID) and enhanced
-- * multi-BSSID advertisements (EMA) in AP mode.
-- * Kernel uses some of these attributes to advertise driver's support for
-- * MBSSID and EMA.
-- * Remaining attributes should be used by the userspace to configure the
-- * features.
-- *
-- * @__NL80211_MBSSID_CONFIG_ATTR_INVALID: Invalid
-- *
-- * @NL80211_MBSSID_CONFIG_ATTR_MAX_INTERFACES: Used by the kernel to advertise
-- *	the maximum number of MBSSID interfaces supported by the driver.
-- *	Driver should indicate MBSSID support by setting
-- *	wiphy->mbssid_max_interfaces to a value more than or equal to 2.
-- *
-- * @NL80211_MBSSID_CONFIG_ATTR_MAX_EMA_PROFILE_PERIODICITY: Used by the kernel
-- *	to advertise the maximum profile periodicity supported by the driver
-- *	if EMA is enabled. Driver should indicate EMA support to the userspace
+@@ -7424,7 +7390,7 @@ enum nl80211_sar_specs_attrs {
+  * @NL80211_MBSSID_CONFIG_ATTR_MAX_EMA_PROFILE_PERIODICITY: Used by the kernel
+  *	to advertise the maximum profile periodicity supported by the driver
+  *	if EMA is enabled. Driver should indicate EMA support to the userspace
 - *	by setting wiphy->ema_max_profile_periodicity to
-- *	a non-zero value.
-- *
-- * @NL80211_MBSSID_CONFIG_ATTR_INDEX: Mandatory parameter to pass the index of
-- *	this BSS (u8) in the multiple BSSID set.
-- *	Value must be set to 0 for the transmitting interface and non-zero for
-- *	all non-transmitting interfaces. The userspace will be responsible
-- *	for using unique indices for the interfaces.
-- *	Range: 0 to wiphy->mbssid_max_interfaces-1.
-- *
-- * @NL80211_MBSSID_CONFIG_ATTR_TX_IFINDEX: Mandatory parameter for
-- *	a non-transmitted profile which provides the interface index (u32) of
-- *	the transmitted profile. The value must match one of the interface
-- *	indices advertised by the kernel. Optional if the interface being set up
-- *	is the transmitting one, however, if provided then the value must match
-- *	the interface index of the same.
-- *
-- * @NL80211_MBSSID_CONFIG_ATTR_EMA: Flag used to enable EMA AP feature.
-- *	Setting this flag is permitted only if the driver advertises EMA support
++ *	by setting wiphy->mbssid_max_ema_profile_periodicity to
+  *	a non-zero value.
+  *
+  * @NL80211_MBSSID_CONFIG_ATTR_INDEX: Mandatory parameter to pass the index of
+@@ -7443,7 +7409,7 @@ enum nl80211_sar_specs_attrs {
+  *
+  * @NL80211_MBSSID_CONFIG_ATTR_EMA: Flag used to enable EMA AP feature.
+  *	Setting this flag is permitted only if the driver advertises EMA support
 - *	by setting wiphy->ema_max_profile_periodicity to non-zero.
-- *
-- * @__NL80211_MBSSID_CONFIG_ATTR_LAST: Internal
-- * @NL80211_MBSSID_CONFIG_ATTR_MAX: highest attribute
-- */
--enum nl80211_mbssid_config_attributes {
--	__NL80211_MBSSID_CONFIG_ATTR_INVALID,
--
--	NL80211_MBSSID_CONFIG_ATTR_MAX_INTERFACES,
--	NL80211_MBSSID_CONFIG_ATTR_MAX_EMA_PROFILE_PERIODICITY,
--	NL80211_MBSSID_CONFIG_ATTR_INDEX,
--	NL80211_MBSSID_CONFIG_ATTR_TX_IFINDEX,
--	NL80211_MBSSID_CONFIG_ATTR_EMA,
--
--	/* keep last */
--	__NL80211_MBSSID_CONFIG_ATTR_LAST,
--	NL80211_MBSSID_CONFIG_ATTR_MAX = __NL80211_MBSSID_CONFIG_ATTR_LAST - 1,
--};
--
- #endif /* __LINUX_NL80211_H */
++ *	by setting wiphy->mbssid_max_ema_profile_periodicity to non-zero.
+  *
+  * @__NL80211_MBSSID_CONFIG_ATTR_LAST: Internal
+  * @NL80211_MBSSID_CONFIG_ATTR_MAX: highest attribute
 --- a/info.c
 +++ b/info.c
 @@ -701,7 +701,6 @@ broken_combination:

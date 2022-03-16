@@ -29,8 +29,6 @@ Acked-by: Miquel Raynal <miquel.raynal@bootlin.com>
  drivers/usb/host/xhci-plat.h  |  1 -
  4 files changed, 1 insertion(+), 68 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-mvebu.c b/drivers/usb/host/xhci-mvebu.c
-index 8ca1a235d164..60651a50770f 100644
 --- a/drivers/usb/host/xhci-mvebu.c
 +++ b/drivers/usb/host/xhci-mvebu.c
 @@ -8,7 +8,6 @@
@@ -41,10 +39,11 @@ index 8ca1a235d164..60651a50770f 100644
  
  #include <linux/usb.h>
  #include <linux/usb/hcd.h>
-@@ -75,47 +74,6 @@ int xhci_mvebu_mbus_init_quirk(struct usb_hcd *hcd)
+@@ -74,47 +73,6 @@ int xhci_mvebu_mbus_init_quirk(struct us
+ 
  	return 0;
  }
- 
+-
 -int xhci_mvebu_a3700_plat_setup(struct usb_hcd *hcd)
 -{
 -	struct xhci_hcd *xhci = hcd_to_xhci(hcd);
@@ -85,15 +84,12 @@ index 8ca1a235d164..60651a50770f 100644
 -
 -	return 0;
 -}
--
+ 
  int xhci_mvebu_a3700_init_quirk(struct usb_hcd *hcd)
  {
- 	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
-diff --git a/drivers/usb/host/xhci-mvebu.h b/drivers/usb/host/xhci-mvebu.h
-index 01bf3fcb3eca..3be021793cc8 100644
 --- a/drivers/usb/host/xhci-mvebu.h
 +++ b/drivers/usb/host/xhci-mvebu.h
-@@ -12,7 +12,6 @@ struct usb_hcd;
+@@ -12,18 +12,12 @@ struct usb_hcd;
  
  #if IS_ENABLED(CONFIG_USB_XHCI_MVEBU)
  int xhci_mvebu_mbus_init_quirk(struct usb_hcd *hcd);
@@ -101,23 +97,20 @@ index 01bf3fcb3eca..3be021793cc8 100644
  int xhci_mvebu_a3700_init_quirk(struct usb_hcd *hcd);
  #else
  static inline int xhci_mvebu_mbus_init_quirk(struct usb_hcd *hcd)
-@@ -20,11 +19,6 @@ static inline int xhci_mvebu_mbus_init_quirk(struct usb_hcd *hcd)
+ {
  	return 0;
  }
- 
+-
 -static inline int xhci_mvebu_a3700_plat_setup(struct usb_hcd *hcd)
 -{
 -	return 0;
 -}
--
+ 
  static inline int xhci_mvebu_a3700_init_quirk(struct usb_hcd *hcd)
  {
- 	return 0;
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index c1edcc9b13ce..4d34f6005381 100644
 --- a/drivers/usb/host/xhci-plat.c
 +++ b/drivers/usb/host/xhci-plat.c
-@@ -44,16 +44,6 @@ static void xhci_priv_plat_start(struct usb_hcd *hcd)
+@@ -44,16 +44,6 @@ static void xhci_priv_plat_start(struct
  		priv->plat_start(hcd);
  }
  
@@ -134,7 +127,7 @@ index c1edcc9b13ce..4d34f6005381 100644
  static int xhci_priv_init_quirk(struct usb_hcd *hcd)
  {
  	struct xhci_plat_priv *priv = hcd_to_xhci_priv(hcd);
-@@ -121,7 +111,6 @@ static const struct xhci_plat_priv xhci_plat_marvell_armada = {
+@@ -121,7 +111,6 @@ static const struct xhci_plat_priv xhci_
  };
  
  static const struct xhci_plat_priv xhci_plat_marvell_armada3700 = {
@@ -142,7 +135,7 @@ index c1edcc9b13ce..4d34f6005381 100644
  	.init_quirk = xhci_mvebu_a3700_init_quirk,
  };
  
-@@ -341,14 +330,7 @@ static int xhci_plat_probe(struct platform_device *pdev)
+@@ -341,14 +330,7 @@ static int xhci_plat_probe(struct platfo
  
  	hcd->tpl_support = of_usb_host_tpl_support(sysdev->of_node);
  	xhci->shared_hcd->tpl_support = hcd->tpl_support;
@@ -158,8 +151,6 @@ index c1edcc9b13ce..4d34f6005381 100644
  		hcd->skip_phy_initialization = 1;
  
  	if (priv && (priv->quirks & XHCI_SG_TRB_CACHE_SIZE_QUIRK))
-diff --git a/drivers/usb/host/xhci-plat.h b/drivers/usb/host/xhci-plat.h
-index 561d0b7bce09..1fb149d1fbce 100644
 --- a/drivers/usb/host/xhci-plat.h
 +++ b/drivers/usb/host/xhci-plat.h
 @@ -13,7 +13,6 @@
@@ -170,6 +161,3 @@ index 561d0b7bce09..1fb149d1fbce 100644
  	void (*plat_start)(struct usb_hcd *);
  	int (*init_quirk)(struct usb_hcd *);
  	int (*suspend_quirk)(struct usb_hcd *);
--- 
-2.34.1
-

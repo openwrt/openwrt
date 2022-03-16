@@ -70,6 +70,11 @@ zyxel,nr7101)
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x80000"
 	;;
+xiaomi,mi-router-cr6606|\
+xiaomi,mi-router-cr6608|\
+xiaomi,mi-router-cr6609)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
+	;;
 esac
 
 config_load ubootenv

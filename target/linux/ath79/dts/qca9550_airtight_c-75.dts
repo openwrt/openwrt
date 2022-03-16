@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "AirTight Networks C-75";
@@ -11,9 +12,10 @@
 
 	aliases {
 		label-mac-device = &eth0;
-		led-boot = &led_power;
-		led-failsafe = &led_power;
-		led-upgrade = &led_power;
+		led-boot = &led_power_amber;
+		led-running = &led_power_green;
+		led-failsafe = &led_power_amber;
+		led-upgrade = &led_power_amber;
 	};
 
 	keys {
@@ -29,10 +31,18 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_power: power {
+		led_power_amber: power-amber {
 			label = "amber:power";
-			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: power-green {
+			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan2g {

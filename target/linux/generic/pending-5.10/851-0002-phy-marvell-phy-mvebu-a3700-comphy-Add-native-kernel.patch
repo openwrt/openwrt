@@ -57,8 +57,6 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  drivers/phy/marvell/phy-mvebu-a3700-comphy.c | 1351 ++++++++++++++++--
  1 file changed, 1234 insertions(+), 117 deletions(-)
 
-diff --git a/drivers/phy/marvell/phy-mvebu-a3700-comphy.c b/drivers/phy/marvell/phy-mvebu-a3700-comphy.c
-index dbb2d4308851..cbda47c33b98 100644
 --- a/drivers/phy/marvell/phy-mvebu-a3700-comphy.c
 +++ b/drivers/phy/marvell/phy-mvebu-a3700-comphy.c
 @@ -5,12 +5,16 @@
@@ -87,32 +85,6 @@ index dbb2d4308851..cbda47c33b98 100644
 +#include <linux/spinlock.h>
  
 -#define MVEBU_A3700_COMPHY_LANES		3
--
--/* COMPHY Fast SMC function identifiers */
--#define COMPHY_SIP_POWER_ON			0x82000001
--#define COMPHY_SIP_POWER_OFF			0x82000002
--#define COMPHY_SIP_PLL_LOCK			0x82000003
--
--#define COMPHY_FW_MODE_SATA			0x1
--#define COMPHY_FW_MODE_SGMII			0x2
--#define COMPHY_FW_MODE_2500BASEX		0x3
--#define COMPHY_FW_MODE_USB3H			0x4
--#define COMPHY_FW_MODE_USB3D			0x5
--#define COMPHY_FW_MODE_PCIE			0x6
--#define COMPHY_FW_MODE_USB3			0xa
--
--#define COMPHY_FW_SPEED_1_25G			0 /* SGMII 1G */
--#define COMPHY_FW_SPEED_2_5G			1
--#define COMPHY_FW_SPEED_3_125G			2 /* 2500BASE-X */
--#define COMPHY_FW_SPEED_5G			3
--#define COMPHY_FW_SPEED_MAX			0x3F
--
--#define COMPHY_FW_MODE(mode)			((mode) << 12)
--#define COMPHY_FW_NET(mode, idx, speed)		(COMPHY_FW_MODE(mode) | \
--						 ((idx) << 8) |	\
--						 ((speed) << 2))
--#define COMPHY_FW_PCIE(mode, speed, width)	(COMPHY_FW_NET(mode, 0, speed) | \
--						 ((width) << 18))
 +#define PLL_SET_DELAY_US		600
 +#define COMPHY_PLL_SLEEP		1000
 +#define COMPHY_PLL_TIMEOUT		150000
@@ -267,7 +239,32 @@ index dbb2d4308851..cbda47c33b98 100644
 + */
 +#define COMPHY_RESERVED_REG		0x0E
 +#define PHYCTRL_FRM_PIN_BIT		BIT(13)
-+
+ 
+-/* COMPHY Fast SMC function identifiers */
+-#define COMPHY_SIP_POWER_ON			0x82000001
+-#define COMPHY_SIP_POWER_OFF			0x82000002
+-#define COMPHY_SIP_PLL_LOCK			0x82000003
+-
+-#define COMPHY_FW_MODE_SATA			0x1
+-#define COMPHY_FW_MODE_SGMII			0x2
+-#define COMPHY_FW_MODE_2500BASEX		0x3
+-#define COMPHY_FW_MODE_USB3H			0x4
+-#define COMPHY_FW_MODE_USB3D			0x5
+-#define COMPHY_FW_MODE_PCIE			0x6
+-#define COMPHY_FW_MODE_USB3			0xa
+-
+-#define COMPHY_FW_SPEED_1_25G			0 /* SGMII 1G */
+-#define COMPHY_FW_SPEED_2_5G			1
+-#define COMPHY_FW_SPEED_3_125G			2 /* 2500BASE-X */
+-#define COMPHY_FW_SPEED_5G			3
+-#define COMPHY_FW_SPEED_MAX			0x3F
+-
+-#define COMPHY_FW_MODE(mode)			((mode) << 12)
+-#define COMPHY_FW_NET(mode, idx, speed)		(COMPHY_FW_MODE(mode) | \
+-						 ((idx) << 8) |	\
+-						 ((speed) << 2))
+-#define COMPHY_FW_PCIE(mode, speed, width)	(COMPHY_FW_NET(mode, 0, speed) | \
+-						 ((width) << 18))
 +/* South Bridge PHY Configuration Registers */
 +#define COMPHY_PHY_REG(lane, reg)	(((1 - (lane)) * 0x28) + ((reg) & 0x3f))
 +
@@ -385,10 +382,8 @@ index dbb2d4308851..cbda47c33b98 100644
 +	bool invert_tx;
 +	bool invert_rx;
 +	bool needs_reset;
- };
- 
--static int mvebu_a3700_comphy_smc(unsigned long function, unsigned long lane,
--				  unsigned long mode)
++};
++
 +struct gbe_phy_init_data_fix {
 +	u16 addr;
 +	u16 value;
@@ -405,8 +400,10 @@ index dbb2d4308851..cbda47c33b98 100644
 +	{ 0x0C3, 0x8000 }, { 0x0E2, 0x5550 }, { 0x0E3, 0x12A4 },
 +	{ 0x0E4, 0x7D00 }, { 0x0E6, 0x0C83 }, { 0x101, 0xFCC0 },
 +	{ 0x104, 0x0C10 }
-+};
-+
+ };
+ 
+-static int mvebu_a3700_comphy_smc(unsigned long function, unsigned long lane,
+-				  unsigned long mode)
 +/* 40M1G25 mode init data */
 +static u16 gbe_phy_init[512] = {
 +	/* 0       1       2       3       4       5       6       7 */
@@ -479,25 +476,16 @@ index dbb2d4308851..cbda47c33b98 100644
 +};
 +
 +static inline void comphy_reg_set(void __iomem *addr, u32 data, u32 mask)
-+{
-+	u32 val;
-+
-+	val = readl(addr);
-+	val = (val & ~mask) | (data & mask);
-+	writel(val, addr);
-+}
-+
-+static inline void comphy_reg_set16(void __iomem *addr, u16 data, u16 mask)
  {
 -	struct arm_smccc_res res;
 -	s32 ret;
-+	u16 val;
++	u32 val;
  
 -	arm_smccc_smc(function, lane, mode, 0, 0, 0, 0, 0, &res);
 -	ret = res.a0;
-+	val = readw(addr);
++	val = readl(addr);
 +	val = (val & ~mask) | (data & mask);
-+	writew(val, addr);
++	writel(val, addr);
 +}
  
 -	switch (ret) {
@@ -505,6 +493,15 @@ index dbb2d4308851..cbda47c33b98 100644
 -		return 0;
 -	case SMCCC_RET_NOT_SUPPORTED:
 -		return -EOPNOTSUPP;
++static inline void comphy_reg_set16(void __iomem *addr, u16 data, u16 mask)
++{
++	u16 val;
++
++	val = readw(addr);
++	val = (val & ~mask) | (data & mask);
++	writew(val, addr);
++}
++
 +/* Used for accessing lane 2 registers (SATA/USB3 PHY) */
 +static void comphy_set_indirect(struct mvebu_a3700_comphy_priv *priv,
 +				u32 offset, u16 data, u16 mask)
@@ -951,8 +948,9 @@ index dbb2d4308851..cbda47c33b98 100644
 +	}
 +
 +	return 0;
-+}
-+
+ }
+ 
+-static int mvebu_a3700_comphy_get_fw_mode(int lane,
 +static int
 +mvebu_a3700_comphy_usb3_power_on(struct mvebu_a3700_comphy_lane *lane)
 +{
@@ -1281,14 +1279,13 @@ index dbb2d4308851..cbda47c33b98 100644
 +	}
 +
 +	return 0;
- }
- 
--static int mvebu_a3700_comphy_get_fw_mode(int lane,
++}
++
 +static bool mvebu_a3700_comphy_check_mode(int lane,
  					  enum phy_mode mode,
  					  int submode)
  {
-@@ -122,7 +1170,7 @@ static int mvebu_a3700_comphy_get_fw_mode(int lane,
+@@ -122,7 +1170,7 @@ static int mvebu_a3700_comphy_get_fw_mod
  
  	/* Unused PHY mux value is 0x0 */
  	if (mode == PHY_MODE_INVALID)
@@ -1297,7 +1294,7 @@ index dbb2d4308851..cbda47c33b98 100644
  
  	for (i = 0; i < n; i++) {
  		if (mvebu_a3700_comphy_modes[i].lane == lane &&
-@@ -132,27 +1180,30 @@ static int mvebu_a3700_comphy_get_fw_mode(int lane,
+@@ -132,27 +1180,30 @@ static int mvebu_a3700_comphy_get_fw_mod
  	}
  
  	if (i == n)
@@ -1338,7 +1335,7 @@ index dbb2d4308851..cbda47c33b98 100644
  	/* Just remember the mode, ->power_on() will do the real setup */
  	lane->mode = mode;
  	lane->submode = submode;
-@@ -163,76 +1214,68 @@ static int mvebu_a3700_comphy_set_mode(struct phy *phy, enum phy_mode mode,
+@@ -163,76 +1214,68 @@ static int mvebu_a3700_comphy_set_mode(s
  static int mvebu_a3700_comphy_power_on(struct phy *phy)
  {
  	struct mvebu_a3700_comphy_lane *lane = phy_get_drvdata(phy);
@@ -1450,7 +1447,7 @@ index dbb2d4308851..cbda47c33b98 100644
  	.set_mode	= mvebu_a3700_comphy_set_mode,
  	.owner		= THIS_MODULE,
  };
-@@ -256,13 +1299,75 @@ static struct phy *mvebu_a3700_comphy_xlate(struct device *dev,
+@@ -256,13 +1299,75 @@ static struct phy *mvebu_a3700_comphy_xl
  		return ERR_PTR(-EINVAL);
  	}
  
@@ -1526,7 +1523,7 @@ index dbb2d4308851..cbda47c33b98 100644
  
  	for_each_available_child_of_node(pdev->dev.of_node, child) {
  		struct mvebu_a3700_comphy_lane *lane;
-@@ -277,7 +1382,7 @@ static int mvebu_a3700_comphy_probe(struct platform_device *pdev)
+@@ -277,7 +1382,7 @@ static int mvebu_a3700_comphy_probe(stru
  			continue;
  		}
  
@@ -1535,7 +1532,7 @@ index dbb2d4308851..cbda47c33b98 100644
  			dev_err(&pdev->dev, "invalid 'reg' property\n");
  			continue;
  		}
-@@ -295,11 +1400,21 @@ static int mvebu_a3700_comphy_probe(struct platform_device *pdev)
+@@ -295,11 +1400,21 @@ static int mvebu_a3700_comphy_probe(stru
  			return PTR_ERR(phy);
  		}
  
@@ -1557,7 +1554,7 @@ index dbb2d4308851..cbda47c33b98 100644
  	}
  
  	provider = devm_of_phy_provider_register(&pdev->dev,
-@@ -323,5 +1438,7 @@ static struct platform_driver mvebu_a3700_comphy_driver = {
+@@ -323,5 +1438,7 @@ static struct platform_driver mvebu_a370
  module_platform_driver(mvebu_a3700_comphy_driver);
  
  MODULE_AUTHOR("Miquèl Raynal <miquel.raynal@bootlin.com>");
@@ -1565,6 +1562,3 @@ index dbb2d4308851..cbda47c33b98 100644
 +MODULE_AUTHOR("Marek Behún <kabel@kernel.org>");
  MODULE_DESCRIPTION("Common PHY driver for A3700");
  MODULE_LICENSE("GPL v2");
--- 
-2.34.1
-

@@ -38,15 +38,15 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -109,6 +109,8 @@ config HBMC_AM654
- 	 This is the driver for HyperBus controller on TI's AM65x and
- 	 other SoCs
+@@ -116,6 +116,8 @@ config STM32_FLASH
+ 	 This is the driver of embedded flash for some STMicroelectronics
+ 	 STM32 MCU.
  
 +source "drivers/mtd/mtk-snand/Kconfig"
 +
  source "drivers/mtd/nand/Kconfig"
  
- source "drivers/mtd/spi/Kconfig"
+ config SYS_NAND_MAX_CHIPS
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
 @@ -39,3 +39,5 @@ obj-$(CONFIG_$(SPL_TPL_)SPI_FLASH_SUPPOR
@@ -1145,7 +1145,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +}
 --- /dev/null
 +++ b/drivers/mtd/mtk-snand/mtk-snand-mtd.c
-@@ -0,0 +1,526 @@
+@@ -0,0 +1,524 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2020 MediaTek Inc. All Rights Reserved.
@@ -1225,9 +1225,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	else
 +		instr->state = MTD_ERASE_DONE;
 +
-+	if (!ret)
-+		mtd_erase_callback(instr);
-+	else
++	if (ret)
 +		ret = -EIO;
 +
 +	return ret;

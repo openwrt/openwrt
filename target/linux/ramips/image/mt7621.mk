@@ -26,7 +26,7 @@ define Build/iodata-factory
 		mv $(factory_bin).new $(factory_bin); \
 		$(CP) $(factory_bin) $(BIN_DIR)/; \
 	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(fw_size))" >&2; \
 	fi
 endef
 
@@ -66,7 +66,7 @@ define Build/ubnt-erx-factory-image
 		\
 		$(CP) $(1) $(BIN_DIR)/; \
 	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
+		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(KERNEL_SIZE))" >&2; \
 	fi
 endef
 
@@ -395,6 +395,16 @@ define Device/dlink_dir-882-r1
 endef
 TARGET_DEVICES += dlink_dir-882-r1
 
+define Device/dual-q_h721
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Dual-Q
+  DEVICE_MODEL := H721
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic-wolfssl
+endef
+TARGET_DEVICES += dual-q_h721
+
 define Device/d-team_newifi-d2
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -548,6 +558,14 @@ define Device/elecom_wrc-2533ghbk-i
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += elecom_wrc-2533ghbk-i
+
+define Device/elecom_wrc-2533gs2
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 11264k
+  DEVICE_MODEL := WRC-2533GS2
+  ELECOM_HWNAME := WRC-2533GS2
+endef
+TARGET_DEVICES += elecom_wrc-2533gs2
 
 define Device/elecom_wrc-2533gst
   $(Device/elecom_wrc-gs)
@@ -757,6 +775,16 @@ define Device/iodata_wnpr2600g
 endef
 TARGET_DEVICES += iodata_wnpr2600g
 
+define Device/iptime_a3002mesh
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 16128k
+  UIMAGE_NAME := a3002me
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A3002MESH
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+endef
+TARGET_DEVICES += iptime_a3002mesh
+
 define Device/iptime_a3004ns-dual
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -792,7 +820,7 @@ define Device/iptime_a6004ns-m
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A6004NS-M
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
-        kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += iptime_a6004ns-m
 
@@ -816,6 +844,26 @@ define Device/iptime_a8004t
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
 endef
 TARGET_DEVICES += iptime_a8004t
+
+define Device/iptime_ax2004m
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 121344k
+  UBINIZE_OPTS := -E 5
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += recovery.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size | iptime-crc32 ax2004m
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := AX2004M
+  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
+endef
+TARGET_DEVICES += iptime_ax2004m
 
 define Device/iptime_t5004
   $(Device/dsa-migration)
@@ -924,11 +972,11 @@ define Device/linksys_ea7xxx
 endef
 
 define Device/linksys_ea6350-v4
-	$(Device/linksys_ea7xxx)
-	DEVICE_MODEL := EA6350
-	DEVICE_VARIANT := v4
-	LINKSYS_HWNAME := EA6350
-	DEVICE_PACKAGES += kmod-mt7603 kmod-mt7663-firmware-ap
+  $(Device/linksys_ea7xxx)
+  DEVICE_MODEL := EA6350
+  DEVICE_VARIANT := v4
+  LINKSYS_HWNAME := EA6350
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7663-firmware-ap
 endef
 TARGET_DEVICES += linksys_ea6350-v4
 
@@ -1321,6 +1369,17 @@ define Device/raisecom_msg1500-x-00
 endef
 TARGET_DEVICES += raisecom_msg1500-x-00
 
+define Device/renkforce_ws-wn530hp3-a
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Renkforce
+  DEVICE_MODEL := WS-WN530HP3-A
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 65536 | append-rootfs | \
+	check-size | append-metadata
+  IMAGE_SIZE := 15040k
+endef
+TARGET_DEVICES += renkforce_ws-wn530hp3-a
+
 define Device/samknows_whitebox-v8
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
@@ -1461,6 +1520,19 @@ define Device/tplink_eap235-wall-v1
 endef
 TARGET_DEVICES += tplink_eap235-wall-v1
 
+define Device/tplink_eap615-wall-v1
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := EAP615-Wall
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7915e
+  TPLINK_BOARD_ID := EAP615-WALL-V1
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  IMAGE_SIZE := 13248k
+endef
+TARGET_DEVICES += tplink_eap615-wall-v1
+
 define Device/tplink_re350-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
@@ -1495,6 +1567,17 @@ define Device/tplink_re650-v1
 endef
 TARGET_DEVICES += tplink_re650-v1
 
+define Device/tplink_tl-wpa8631p-v3
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := TL-WPA8631P
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  TPLINK_BOARD_ID := TL-WPA8631P-V3
+  IMAGE_SIZE := 7232k
+endef
+TARGET_DEVICES += tplink_tl-wpa8631p-v3
+
 define Device/ubnt_edgerouter_common
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1518,6 +1601,8 @@ TARGET_DEVICES += ubnt_edgerouter-x
 define Device/ubnt_edgerouter-x-sfp
   $(Device/ubnt_edgerouter_common)
   DEVICE_MODEL := EdgeRouter X SFP
+  DEVICE_ALT0_VENDOR := Ubiquiti
+  DEVICE_ALT0_MODEL := EdgePoint R6
   DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-sfp
   SUPPORTED_DEVICES += ubnt-erx-sfp ubiquiti,edgerouterx-sfp
 endef
@@ -1721,6 +1806,40 @@ define Device/xiaomi_mi-router-ac2100
 endef
 TARGET_DEVICES += xiaomi_mi-router-ac2100
 
+define Device/xiaomi_mi-router-cr660x
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Xiaomi
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  UBINIZE_OPTS := -E 5
+  IMAGE_SIZE := 128512k
+  IMAGES += firmware.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/firmware.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_PACKAGES += kmod-mt7915e uboot-envtools
+endef
+
+define Device/xiaomi_mi-router-cr6606
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router CR6606
+endef
+TARGET_DEVICES += xiaomi_mi-router-cr6606
+
+define Device/xiaomi_mi-router-cr6608
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router CR6608
+endef
+TARGET_DEVICES += xiaomi_mi-router-cr6608
+
+define Device/xiaomi_mi-router-cr6609
+  $(Device/xiaomi_mi-router-cr660x)
+  DEVICE_MODEL := Mi Router CR6609
+endef
+TARGET_DEVICES += xiaomi_mi-router-cr6609
+
 define Device/xiaomi_redmi-router-ac2100
   $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Redmi Router AC2100
@@ -1801,6 +1920,18 @@ define Device/zbtlink_zbt-wg1602-16m
 	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += zbtlink_zbt-wg1602-16m
+
+define Device/zbtlink_zbt-wg1608-16m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1608
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt7615e \
+	kmod-mt7663-firmware-ap kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1608-16m
 
 define Device/zbtlink_zbt-wg2626
   $(Device/dsa-migration)

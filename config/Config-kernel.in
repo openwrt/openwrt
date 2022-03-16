@@ -1043,6 +1043,16 @@ if KERNEL_IPV6
 endif
 
 #
+# Miscellaneous network configuration
+#
+
+config KERNEL_NET_L3_MASTER_DEV
+	bool "L3 Master device support"
+	help
+	  This module provides glue between core networking code and device
+	  drivers to support L3 master devices like VRF.
+
+#
 # NFS related symbols
 #
 config KERNEL_IP_PNP

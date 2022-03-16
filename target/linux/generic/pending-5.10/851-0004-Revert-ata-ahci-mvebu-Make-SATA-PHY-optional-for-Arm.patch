@@ -26,8 +26,6 @@ Acked-by: Miquel Raynal <miquel.raynal@bootlin.com>
  drivers/ata/libahci_platform.c | 2 +-
  3 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/ata/ahci.h b/drivers/ata/ahci.h
-index d1f284f0c83d..3a3e67350e50 100644
 --- a/drivers/ata/ahci.h
 +++ b/drivers/ata/ahci.h
 @@ -240,8 +240,6 @@ enum {
@@ -39,11 +37,9 @@ index d1f284f0c83d..3a3e67350e50 100644
  	AHCI_HFLAG_NO_SXS		= (1 << 28), /* SXS not supported */
  
  	/* ap->flags bits */
-diff --git a/drivers/ata/ahci_mvebu.c b/drivers/ata/ahci_mvebu.c
-index 3ad46d26d9d5..d4bba3ace45d 100644
 --- a/drivers/ata/ahci_mvebu.c
 +++ b/drivers/ata/ahci_mvebu.c
-@@ -227,7 +227,7 @@ static const struct ahci_mvebu_plat_data ahci_mvebu_armada_380_plat_data = {
+@@ -227,7 +227,7 @@ static const struct ahci_mvebu_plat_data
  
  static const struct ahci_mvebu_plat_data ahci_mvebu_armada_3700_plat_data = {
  	.plat_config = ahci_mvebu_armada_3700_config,
@@ -52,11 +48,9 @@ index 3ad46d26d9d5..d4bba3ace45d 100644
  };
  
  static const struct of_device_id ahci_mvebu_of_match[] = {
-diff --git a/drivers/ata/libahci_platform.c b/drivers/ata/libahci_platform.c
-index 0910441321f7..250b82e30aa3 100644
 --- a/drivers/ata/libahci_platform.c
 +++ b/drivers/ata/libahci_platform.c
-@@ -59,7 +59,7 @@ int ahci_platform_enable_phys(struct ahci_host_priv *hpriv)
+@@ -59,7 +59,7 @@ int ahci_platform_enable_phys(struct ahc
  		}
  
  		rc = phy_power_on(hpriv->phys[i]);
@@ -65,6 +59,3 @@ index 0910441321f7..250b82e30aa3 100644
  			phy_exit(hpriv->phys[i]);
  			goto disable_phys;
  		}
--- 
-2.34.1
-

@@ -11,7 +11,7 @@ board=$(board_name)
 boardname="${board##*,}"
 
 case "$board" in
-ctera,c200-v2
+ctera,c200-v2)
 	ucidef_set_led_usbport "usb2" "USB2" "green:usb-2" "usb1-port1" "usb2-port1"
 	ucidef_set_led_usbport "usb3" "USB3" "green:usb-1" "usb1-port2" "usb2-port2"
 	;;

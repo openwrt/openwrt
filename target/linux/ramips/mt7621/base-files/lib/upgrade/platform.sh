@@ -59,6 +59,7 @@ platform_do_upgrade() {
 	dlink,dir-853-a3|\
 	hiwifi,hc5962|\
 	iptime,a3004t|\
+	iptime,ax2004m|\
 	iptime,t5004|\
 	jcg,q20|\
 	linksys,e5600|\
@@ -86,6 +87,9 @@ platform_do_upgrade() {
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
 	xiaomi,mi-router-ac2100|\
+	xiaomi,mi-router-cr6606|\
+	xiaomi,mi-router-cr6608|\
+	xiaomi,mi-router-cr6609|\
 	xiaomi,redmi-router-ac2100)
 		nand_do_upgrade "$1"
 		;;
