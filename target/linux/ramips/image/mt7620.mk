@@ -819,22 +819,6 @@ define Device/netgear_wn3000rp-v3
 endef
 TARGET_DEVICES += netgear_wn3000rp-v3
 
-define Device/netgear_wn3100rp-v2
-  SOC := mt7620a
-  IMAGE_SIZE := 7872k
-  NETGEAR_HW_ID := 29764883+8+0+32+2x2+0
-  NETGEAR_BOARD_ID := WN3100RPv2
-  BLOCKSIZE := 4k
-  IMAGES += factory.bin
-  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
-	append-uImage-fakehdr filesystem
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | netgear-dni
-  DEVICE_VENDOR := NETGEAR
-  DEVICE_MODEL := WN3100RP
-  DEVICE_VARIANT := v2
-endef
-TARGET_DEVICES += netgear_wn3100rp-v2
-
 define Device/netis_wf2770
   SOC := mt7620a
   IMAGE_SIZE := 16064k
