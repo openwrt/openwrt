@@ -14,7 +14,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4307,8 +4307,10 @@ static int fu540_c000_clk_init(struct pl
+@@ -4330,8 +4330,10 @@ static int fu540_c000_clk_init(struct pl
  		return err;
  
  	mgmt = devm_kzalloc(&pdev->dev, sizeof(*mgmt), GFP_KERNEL);
@@ -27,7 +27,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	init.name = "sifive-gemgxl-mgmt";
  	init.ops = &fu540_c000_ops;
-@@ -4319,16 +4321,26 @@ static int fu540_c000_clk_init(struct pl
+@@ -4342,16 +4344,26 @@ static int fu540_c000_clk_init(struct pl
  	mgmt->hw.init = &init;
  
  	*tx_clk = devm_clk_register(&pdev->dev, &mgmt->hw);
