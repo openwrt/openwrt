@@ -114,9 +114,9 @@
 #define AGETIMER_1_SEC 0xBF
 
 /* Define Duplex Mode */
-#define DUPLEX_AUTO 0
-#define DUPLEX_FULL 1
-#define DUPLEX_HALF 3
+#define PHY_DUPLEX_AUTO 0
+#define PHY_DUPLEX_FULL 1
+#define PHY_DUPLEX_HALF 3
 
 #define INSTR 0
 #define IPV6 1
@@ -580,7 +580,7 @@ typedef struct {
 } gsw_igmp_t;
 
 typedef struct {
-	ethsw_core_init_t *ecint;
+	//ethsw_core_init_t *ecint;
 	gsw_devtype_t edev;
 	gsw_igmp_t iflag;
 	tft_tbl_t ptft;

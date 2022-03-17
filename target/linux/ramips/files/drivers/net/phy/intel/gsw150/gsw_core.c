@@ -2591,20 +2591,20 @@ GSW_return_t GSW_PortLinkCfgSet(void *pdev,
 			return s;
 		if (parm->bDuplexForce == 1) {
 			if (parm->eDuplex == GSW_DUPLEX_FULL)
-				fd = DUPLEX_FULL;
+				fd = PHY_DUPLEX_FULL;
 			else if (parm->eDuplex == GSW_DUPLEX_HALF)
-				fd = DUPLEX_HALF;
+				fd = PHY_DUPLEX_HALF;
 			else
-				fd = DUPLEX_AUTO;
+				fd = PHY_DUPLEX_AUTO;
 		} else {
-			fd = DUPLEX_AUTO;
+			fd = PHY_DUPLEX_AUTO;
 		}
 		if (parm->bSpeedForce == 1) {
 			switch (parm->eSpeed) {
 			case GSW_PORT_SPEED_10:
-				if (fd == DUPLEX_HALF)
+				if (fd == PHY_DUPLEX_HALF)
 					pc = PHY_AN_ADV_10HDX;
-				else if (fd == DUPLEX_FULL)
+				else if (fd == PHY_DUPLEX_FULL)
 					pc = PHY_AN_ADV_10FDX;
 				else
 					pc = (PHY_AN_ADV_10FDX
@@ -2638,9 +2638,9 @@ GSW_return_t GSW_PortLinkCfgSet(void *pdev,
 				break;
 
 			case GSW_PORT_SPEED_100:
-				if (fd == DUPLEX_HALF)
+				if (fd == PHY_DUPLEX_HALF)
 					pc = PHY_AN_ADV_100HDX;
-				else if (fd == DUPLEX_FULL)
+				else if (fd == PHY_DUPLEX_FULL)
 					pc = PHY_AN_ADV_100FDX;
 				else
 					pc = (PHY_AN_ADV_100FDX
@@ -2678,9 +2678,9 @@ GSW_return_t GSW_PortLinkCfgSet(void *pdev,
 				/* ToDo*/
 				return GSW_statusNoSupport;
 			case GSW_PORT_SPEED_1000:
-				if (fd == DUPLEX_HALF)
+				if (fd == PHY_DUPLEX_HALF)
 					pc = PHY_AN_ADV_1000HDX;
-				else if (fd == DUPLEX_FULL)
+				else if (fd == PHY_DUPLEX_FULL)
 					pc = PHY_AN_ADV_1000FDX;
 				else
 					pc = (PHY_AN_ADV_1000FDX
@@ -2724,10 +2724,10 @@ GSW_return_t GSW_PortLinkCfgSet(void *pdev,
 			              | PHY_AN_ADV_10FDX
 			              | PHY_AN_ADV_100HDX
 			              | PHY_AN_ADV_100FDX);
-			if (fd == DUPLEX_HALF) {
+			if (fd == PHY_DUPLEX_HALF) {
 				md.nData |= (PHY_AN_ADV_10HDX
 				             | PHY_AN_ADV_100HDX);
-			} else if (fd == DUPLEX_FULL) {
+			} else if (fd == PHY_DUPLEX_FULL) {
 				md.nData |= (PHY_AN_ADV_10FDX
 				             | PHY_AN_ADV_100FDX);
 			} else {
@@ -2748,9 +2748,9 @@ GSW_return_t GSW_PortLinkCfgSet(void *pdev,
 				return s;
 			md.nData &= ~(PHY_AN_ADV_1000HDX
 			              | PHY_AN_ADV_1000FDX);
-			if (fd == DUPLEX_HALF) {
+			if (fd == PHY_DUPLEX_HALF) {
 				md.nData |= (PHY_AN_ADV_1000HDX);
-			} else if (fd == DUPLEX_FULL) {
+			} else if (fd == PHY_DUPLEX_FULL) {
 				md.nData |= (PHY_AN_ADV_1000HDX
 				             | PHY_AN_ADV_1000FDX);
 			} else {

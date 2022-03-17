@@ -56,6 +56,17 @@
 #ifndef _ETHSW_INIT_H_
 #define _ETHSW_INIT_H_
 
+#include <linux/list.h>
+#include <linux/mutex.h>
+#include <linux/netdevice.h>
+#include <linux/of_mdio.h>
+#include <linux/workqueue.h>
+#include <linux/gpio/consumer.h>
+
+#ifdef CONFIG_SWCONFIG
+#include <linux/switch.h>
+#endif
+
 #define GSW_API_MODULE_NAME "F2X SWITCH API"
 #define SWAPI_DRV_VERSION "1.0.5"
 /* Switch Features  */
@@ -198,4 +209,39 @@ typedef struct {
 #include "gsw_api_func.h"
 #include "gsw_swreg.h"
 #include "gsw708x_reg.h"
+
+enum {
+	GROUND_MODE = 0,
+	POWER_MODE
+};
+
+#define LED_ALL_DEFAULT 0
+#define LED_ALL_ON 1
+#define LED_ALL_BLINK 2
+#define LED_ALL_OFF 3
+
+struct intel_gsw {
+	struct device	*dev;
+	struct mii_bus	*bus;
+	u32 smi_addr;
+	int reset_pin;
+	ethsw_api_dev_t pd;
+
+#ifdef CONFIG_SWCONFIG
+	struct switch_dev swdev;
+	u32 cpu_port;
+	struct mutex reg_mutex;
+#endif
+};
+
+#define GSW_SGMII_PORT	0x4
+#define RGMII_PORT0	0x5
+#define RGMII_PORT1	0x6
+#define INTEL_PHY_PORT_NUM 5
+#define INTEL_SWITCH_PORT_NUM 7
+
+#define INTEL_NUM_VLANS	4096
+
+#define PHY_CTRL_ENABLE_POWER_DOWN	(1 << 11)
+
 #endif    /* _ETHSW_INIT_H_ */

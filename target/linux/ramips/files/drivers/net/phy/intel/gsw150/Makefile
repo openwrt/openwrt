@@ -27,5 +27,6 @@ gsw150-objs   += gsw_pce.o
 gsw150-objs   += gsw_vlan.o
 gsw150-objs   += gsw_qos.o
 gsw150-objs   += gsw_multi.o
+gsw150-objs   += gsw_swconfig.o
 
 #ccflags-y = -Wall -Wstrict-prototypes -Wno-trigraphs -Wframe-larger-than=4096 -Werror

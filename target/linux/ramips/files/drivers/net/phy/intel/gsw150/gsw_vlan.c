@@ -75,7 +75,6 @@ extern GSW_return_t pctrl_addr_opmod(void *p, u16 ad, u16 op);
 /**************************************************************************/
 /*      LOCAL DECLARATIONS:                                               */
 /**************************************************************************/
-static u16 vlan_rd_index;
 static GSW_return_t vlan_map_tbl_rd(void *pdev, pctbl_prog_t *pt);
 static GSW_return_t vlan_map_tbl_wr(void *pdev, pctbl_prog_t *pt);
 static GSW_return_t eg_port_tbl_wr(void *pdev, pctbl_prog_t *pt);
@@ -645,37 +644,15 @@ GSW_return_t GSW_VLAN_PortMemberRead(void *pdev,
 	ethsw_api_dev_t *pd = (ethsw_api_dev_t *)pdev;
 	SWAPI_ASSERT(pd == NULL);
 
-	if (parm->bInitial == 1) {
-		vlan_rd_index = 0; /* Start from the index 0 */
-		pt.table = PCE_VLANMAP_INDEX;
-		pt.pcindex = vlan_rd_index;
-		pt.opmode = PCE_OPMODE_ADRD;
-		s = vlan_map_tbl_rd(pdev, &pt);
-		if (s != GSW_statusOk)
-			return s;
-		parm->nVId = vlan_rd_index;
-		parm->nPortId = pt.val[1];
-		parm->nTagId = pt.val[2];
-		parm->bInitial = 0;
-		parm->bLast = 0;
-	}
-	if (parm->bLast != 1) {
-		if (vlan_rd_index < VLAN_MAP_TBL_SIZE) {
-			vlan_rd_index++;
-			pt.table = PCE_VLANMAP_INDEX;
-			pt.pcindex = vlan_rd_index;
-			pt.opmode = PCE_OPMODE_ADRD;
-			s = vlan_map_tbl_rd(pdev, &pt);
-			if (s != GSW_statusOk)
-				return s;
-			parm->nVId = vlan_rd_index;
-			parm->nPortId = pt.val[1];
-			parm->nTagId = pt.val[2];
-		} else {
-			parm->bLast = 1;
-			vlan_rd_index = 0;
-		}
-	}
+	pt.table = PCE_VLANMAP_INDEX;
+	pt.pcindex = parm->nVId;
+	pt.opmode = PCE_OPMODE_ADRD;
+	s = vlan_map_tbl_rd(pdev, &pt);
+	if (s != GSW_statusOk)
+		return s;
+	parm->nPortId = pt.val[1];
+	parm->nTagId = pt.val[2];
+
 	return GSW_statusOk;
 }
 
