@@ -662,6 +662,50 @@ out:
 	return 0;
 }
 
+static int mt753x_get_port_power(struct switch_dev *dev,
+                              const struct switch_attr *attr,
+                              struct switch_val *val)
+{
+	u32 reg;
+	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
+
+	if (val->port_vlan >= MT753X_NUM_PHYS)
+		return -EINVAL;
+
+	mutex_lock(&gsw->reg_mutex);
+	reg = gsw->mii_read(gsw, val->port_vlan, MII_BMCR);
+	mutex_unlock(&gsw->reg_mutex);
+	val->value.i = (reg & BMCR_PDOWN) ? 0 : 1;
+
+	return 0;
+}
+
+static int mt753x_set_port_power(struct switch_dev *dev,
+                              const struct switch_attr *attr,
+                              struct switch_val *val)
+{
+	u32 reg;
+	struct gsw_mt753x *gsw = container_of(dev, struct gsw_mt753x, swdev);
+
+	if (val->port_vlan >= MT753X_NUM_PHYS)
+		return -EINVAL;
+
+	mutex_lock(&gsw->reg_mutex);
+
+	if (val->value.i == 0) {
+		reg = gsw->mii_read(gsw, val->port_vlan, MII_BMCR);
+		reg |= BMCR_PDOWN;
+		gsw->mii_write(gsw, val->port_vlan, MII_BMCR, reg);
+	} else {
+		reg = gsw->mii_read(gsw, val->port_vlan, MII_BMCR);
+		reg &= ~BMCR_PDOWN;
+		gsw->mii_write(gsw, val->port_vlan, MII_BMCR, reg);
+	}
+
+	mutex_unlock(&gsw->reg_mutex);
+
+	return 0;
+}
 
 static const struct switch_attr mt753x_global[] = {
 	{
@@ -714,6 +758,13 @@ static const struct switch_attr mt753x_port[] = {
 		.description = "Enable mirroring of TX packets",
 		.set = mt753x_set_port_mirror_tx,
 		.get = mt753x_get_port_mirror_tx,
+		.max = 1,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "phy_cfg",
+		.description = "Phy config for port (1: enable, 0: disable)",
+		.get = mt753x_get_port_power,
+		.set = mt753x_set_port_power,
 		.max = 1,
 	},
 };
