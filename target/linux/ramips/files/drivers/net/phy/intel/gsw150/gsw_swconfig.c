@@ -356,6 +356,44 @@ static int intel_get_port_mib(struct switch_dev *dev,
 	return 0;
 }
 
+int intel_get_single_phy_power(struct intel_gsw *gsw, int port_num);
+
+void intel_disable_single_phy(struct intel_gsw *gsw, int port_num);
+
+void intel_enable_single_phy(struct intel_gsw *gsw, int port_num);
+
+static int intel_get_port_power(struct switch_dev *dev,
+                              const struct switch_attr *attr,
+                              struct switch_val *val)
+{
+	struct intel_gsw *gsw = container_of(dev, struct intel_gsw, swdev);
+
+	if (val->port_vlan >= INTEL_SWITCH_PORT_NUM)
+		return -EINVAL;
+
+	val->value.i = intel_get_single_phy_power(gsw, val->port_vlan);
+
+	return 0;
+}
+
+static int intel_set_port_power(struct switch_dev *dev,
+                              const struct switch_attr *attr,
+                              struct switch_val *val)
+{
+	struct intel_gsw *gsw = container_of(dev, struct intel_gsw, swdev);
+
+	if (val->port_vlan >= INTEL_SWITCH_PORT_NUM)
+		return -EINVAL;
+
+	if (val->value.i == 0) {
+		intel_disable_single_phy(gsw, val->port_vlan);
+	} else {
+		intel_enable_single_phy(gsw, val->port_vlan);
+	}
+
+	return 0;
+}
+
 static struct switch_attr intel_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -376,6 +414,14 @@ static struct switch_attr intel_port[] = {
 		.get = intel_get_port_mib,
 		.set = NULL,
 	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "phy_cfg",
+		.description = "Phy config for port (1: enable, 0: disable)",
+		.get = intel_get_port_power,
+		.set = intel_set_port_power,
+		.max = 1,
+	}
 };
 
 static struct switch_attr intel_vlan[] = {
@@ -525,22 +571,37 @@ void intel_ifg_init(void)
 	              MAC_CTRL_1_IPG_SIZE,
 	              0xa);
 }
+#endif
 
-void intel_disable_single_phy(int port_num)
+int intel_get_single_phy_power(struct intel_gsw *gsw, int port_num)
 {
 	GSW_MDIO_data_t parm;
-	int i;
 
-	i = port_num;
-	SF_MDIO_LOCK();
 	parm.nAddressReg = 0;
-	parm.nAddressDev = i;
-	intel_phy_rd(&parm);
-	parm.nData |= PHY_CTRL_ENABLE_POWER_DOWN;
-	intel_phy_wr(&parm);
-	SF_MDIO_UNLOCK();
+	parm.nAddressDev = port_num;
+	mutex_lock(&gsw->reg_mutex);
+	intel_phy_rd(gsw, &parm);
+	mutex_unlock(&gsw->reg_mutex);
+
+	if ((parm.nData & PHY_CTRL_ENABLE_POWER_DOWN)) {
+		return 0;
+	}
+
+	return 1; /* power up */
 }
-#endif
+
+void intel_disable_single_phy(struct intel_gsw *gsw, int port_num)
+{
+	GSW_MDIO_data_t parm;
+
+	parm.nAddressReg = 0;
+	parm.nAddressDev = port_num;
+	mutex_lock(&gsw->reg_mutex);
+	intel_phy_rd(gsw, &parm);
+	parm.nData |= PHY_CTRL_ENABLE_POWER_DOWN;
+	intel_phy_wr(gsw, &parm);
+	mutex_unlock(&gsw->reg_mutex);
+}
 
 void intel_disable_all_phy(struct intel_gsw *gsw)
 {
@@ -556,26 +617,19 @@ void intel_disable_all_phy(struct intel_gsw *gsw)
 	}
 }
 
-#if 0
-void intel_enable_single_phy(struct sf_eswitch_priv *pesw_priv, int port_num)
+void intel_enable_single_phy(struct intel_gsw *gsw, int port_num)
 {
 	GSW_MDIO_data_t parm;
-	int i;
 
-	SF_MDIO_LOCK();
 	parm.nAddressReg = 0;
-	i = port_num;
-	if (!check_port_in_portlist(pesw_priv, i)) {
-		SF_MDIO_UNLOCK();
-		return;
-	}
-	parm.nAddressDev = i;
-	intel_phy_rd(&parm);
+	parm.nAddressDev = port_num;
+
+	mutex_lock(&gsw->reg_mutex);
+	intel_phy_rd(gsw, &parm);
 	parm.nData &= ~PHY_CTRL_ENABLE_POWER_DOWN;
-	intel_phy_wr(&parm);
-	SF_MDIO_UNLOCK();
+	intel_phy_wr(gsw, &parm);
+	mutex_unlock(&gsw->reg_mutex);
 }
-#endif
 
 void intel_enable_all_phy(struct intel_gsw *gsw)
 {
