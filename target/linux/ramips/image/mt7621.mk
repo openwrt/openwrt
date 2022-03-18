@@ -2,6 +2,7 @@
 # MT7621 Profiles
 #
 
+include ./common-sercomm.mk
 include ./common-tp-link.mk
 
 DEFAULT_SOC := mt7621
@@ -284,6 +285,19 @@ define Device/beeline_smartbox-flash
 	uboot-envtools
 endef
 TARGET_DEVICES += beeline_smartbox-flash
+
+define Device/beeline_smartbox-giga
+  $(Device/sercomm_dxx)
+  IMAGE_SIZE := 24576k
+  SERCOMM_HWID := DBE
+  SERCOMM_HWVER := 10100
+  SERCOMM_SWVER := 1001
+  DEVICE_VENDOR := Beeline
+  DEVICE_MODEL := SmartBox GIGA
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 uboot-envtools
+endef
+TARGET_DEVICES += beeline_smartbox-giga
 
 define Device/buffalo_wsr-1166dhp
   $(Device/dsa-migration)

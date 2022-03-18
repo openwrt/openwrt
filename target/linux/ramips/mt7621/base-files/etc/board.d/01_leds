@@ -23,7 +23,8 @@ asus,rt-n56u-b1)
 	ucidef_set_led_netdev "lan" "LAN link" "blue:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN link" "blue:wan" "wan"
 	;;
-beeline,smartbox-flash)
+beeline,smartbox-flash|\
+beeline,smartbox-giga)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
 cudy,wr2100)
