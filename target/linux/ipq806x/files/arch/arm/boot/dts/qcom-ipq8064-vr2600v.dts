@@ -257,7 +257,8 @@
 				partition@320000 {
 					label = "firmware";
 					reg = <0x320000 0xc60000>;
-					compatible = "denx,uimage";
+					compatible = "openwrt,uimage";
+					openwrt,offset = <512>; /* account for pad-extra 512 */
 				};
 
 				/* hole 0xf80000 - 0xfaf100 */

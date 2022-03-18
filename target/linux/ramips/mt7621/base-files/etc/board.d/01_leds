@@ -134,6 +134,13 @@ xiaomi,redmi-router-ac2100)
 youhua,wr1200js)
 	ucidef_set_led_netdev "internet" "INTERNET" "green:wan" "wan"
 	;;
+zbtlink,zbt-wg1608-16m)
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan-1" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan-2" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN3" "green:lan-3" "lan3"
+	ucidef_set_led_netdev "lan4" "LAN4" "green:lan-4" "lan4"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	;;
 esac
 
 board_config_flush

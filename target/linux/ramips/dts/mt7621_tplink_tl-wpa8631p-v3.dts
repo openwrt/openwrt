@@ -7,7 +7,7 @@
 
 / {
 	compatible = "tplink,tl-wpa8631p-v3", "mediatek,mt7621-soc";
-	model = "TP-Link WPA8631P v3";
+	model = "TP-Link TL-WPA8631P v3";
 
 	aliases {
 		label-mac-device = &gmac0;
@@ -75,15 +75,15 @@
 		};
 	};
 
-        gpio-export {
-                compatible = "gpio-export";
+	gpio-export {
+		compatible = "gpio-export";
 
-                led_control {
-                        gpio-export,name = "tp-link:led:control";
-                        gpio-export,output = <0>;
-                        gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
-                };
-        };
+		led_control {
+			gpio-export,name = "tp-link:led:control";
+			gpio-export,output = <0>;
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
+		};
+	};
 };
 
 &spi0 {
@@ -158,6 +158,10 @@
 		mac-address-increment = <1>;
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
+};
+
+&ethernet {
+	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
 };
 
 &gmac0 {

@@ -38,6 +38,15 @@ define Device/alfa-network_awusfree1
 endef
 TARGET_DEVICES += alfa-network_awusfree1
 
+define Device/asus_rt-ac1200
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Asus
+  DEVICE_MODEL := RT-AC1200
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += asus_rt-ac1200
+
 define Device/asus_rt-n10p-v3
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Asus

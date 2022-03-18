@@ -314,6 +314,21 @@ define Device/dlink_dwr-960
 endef
 TARGET_DEVICES += dlink_dwr-960
 
+define Device/dlink_dwr-961-a1
+  $(Device/amit_jboot)
+  SOC := mt7620a
+  IMAGE_SIZE := 16256k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DWR-961
+  DEVICE_VARIANT := A1
+  DLINK_ROM_ID := DLK6E3813001
+  DLINK_FAMILY_MEMBER := 0x6E38
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  DEVICE_PACKAGES += kmod-mt76x2 kmod-usb-net-qmi-wwan kmod-usb-serial-option \
+	uqmi
+endef
+TARGET_DEVICES += dlink_dwr-961-a1
+
 define Device/domywifi_dm202
   SOC := mt7620a
   IMAGE_SIZE := 16064k
@@ -803,6 +818,22 @@ define Device/netgear_wn3000rp-v3
   SUPPORTED_DEVICES += wn3000rpv3
 endef
 TARGET_DEVICES += netgear_wn3000rp-v3
+
+define Device/netgear_wn3100rp-v2
+  SOC := mt7620a
+  IMAGE_SIZE := 7872k
+  NETGEAR_HW_ID := 29764883+8+0+32+2x2+0
+  NETGEAR_BOARD_ID := WN3100RPv2
+  BLOCKSIZE := 4k
+  IMAGES += factory.bin
+  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
+	append-uImage-fakehdr filesystem
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | netgear-dni
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WN3100RP
+  DEVICE_VARIANT := v2
+endef
+TARGET_DEVICES += netgear_wn3100rp-v2
 
 define Device/netis_wf2770
   SOC := mt7620a

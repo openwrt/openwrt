@@ -285,7 +285,7 @@ proto_qmi_setup() {
 		fi
 
 		# Check data connection state
-		connstat=$(uqmi -s -d "$device" --get-data-status)
+		connstat=$(uqmi -s -d "$device" --set-client-id wds,"$cid_4" --get-data-status)
 		[ "$connstat" == '"connected"' ] || {
 			echo "No data link!"
 			uqmi -s -d "$device" --set-client-id wds,"$cid_4" --release-client-id wds > /dev/null 2>&1
@@ -322,7 +322,7 @@ proto_qmi_setup() {
 		fi
 
 		# Check data connection state
-		connstat=$(uqmi -s -d "$device" --get-data-status)
+		connstat=$(uqmi -s -d "$device" --set-client-id wds,"$cid_6" --get-data-status)
 		[ "$connstat" == '"connected"' ] || {
 			echo "No data link!"
 			uqmi -s -d "$device" --set-client-id wds,"$cid_6" --release-client-id wds > /dev/null 2>&1

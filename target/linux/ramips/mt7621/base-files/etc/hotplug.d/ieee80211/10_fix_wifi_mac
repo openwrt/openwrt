@@ -15,7 +15,8 @@ case "$board" in
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0xe000)" \
 				> /sys${DEVPATH}/macaddress
 		;;
-	dlink,dir-853-r1)
+	dlink,dir-853-r1|\
+	phicomm,k2p)
 		if [ "$PHYNBR" = "0" ]; then
 			base_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" -1)
 			macaddr_setbit_la "$base_mac" > /sys${DEVPATH}/macaddress
@@ -41,6 +42,10 @@ case "$board" in
 	jcg,q20)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0x4)" > /sys${DEVPATH}/macaddress
+		;;
+	jcg,y2)
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_setbit_la "$(mtd_get_mac_binary factory 0x4)" > /sys${DEVPATH}/macaddress
 		;;
 	linksys,e5600|\
 	linksys,ea6350-v4|\
