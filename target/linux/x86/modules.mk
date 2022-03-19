@@ -88,7 +88,7 @@ define KernelPackage/meraki-mx100
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Cisco Meraki MX100 Platform Driver
   DEPENDS:=@TARGET_x86 @!LINUX_5_4 +kmod-tg3 +kmod-gpio-button-hotplug +kmod-leds-gpio \
-    +kmod-usb-ledtrig-usbport +kmod-itco-wdt
+    +kmod-usb-ledtrig-usbport +nu801 +kmod-itco-wdt
   KCONFIG:=CONFIG_MERAKI_MX100
   FILES:=$(LINUX_DIR)/drivers/platform/x86/meraki-mx100.ko
   AUTOLOAD:=$(call AutoLoad,60,meraki-mx100,1)
