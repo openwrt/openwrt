@@ -1,0 +1,127 @@
+name: qemu
+on: [push]
+jobs:
+  build:
+    name: Build OpenWrt
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+       include:
+         - name: armvirt-64
+         - name: malta-32
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install \
+            build-essential \
+            ccache \
+            clang-12 \
+            ecj \
+            fastjar \
+            file \
+            g++ \
+            gawk \
+            gettext \
+            git \
+            java-propose-classpath \
+            libelf-dev \
+            libncurses-dev \
+            libssl-dev \
+            mkisofs \
+            python3 \
+            python3-dev \
+            python3-distutils \
+            python3-setuptools \
+            qemu-utils \
+            rsync \
+            subversion \
+            swig \
+            unzip \
+            wget \
+            xsltproc \
+            zlib1g-dev
+
+      - name: Create config (armvirt-64)
+        if: ${{ matrix.name == 'armvirt-64' }}
+        run: |
+          echo CONFIG_TARGET_armvirt=y >> .config
+          echo CONFIG_TARGET_armvirt_64=y >> .config
+          echo CONFIG_TARGET_armvirt_64_Default=y >> .config
+          echo CONFIG_FEED_luci=y >> .config
+          echo CONFIG_FEED_packages=y >> .config
+          echo CONFIG_FEED_routing=y >> .config
+          echo CONFIG_FEED_telephony=y >> .config
+
+      - name: Create config (malta-32)
+        if: ${{ matrix.name == 'malta-32' }}
+        run: |
+          echo CONFIG_TARGET_malta=y >> .config
+          echo CONFIG_TARGET_malta_be=y >> .config
+          echo CONFIG_TARGET_malta_be_Default=y >> .config
+          echo CONFIG_FEED_luci=y >> .config
+          echo CONFIG_FEED_packages=y >> .config
+          echo CONFIG_FEED_routing=y >> .config
+          echo CONFIG_FEED_telephony=y >> .config
+
+      - name: Create defconfig
+        run: make defconfig
+
+      - name: diffconfig
+        run: ./scripts/diffconfig.sh
+
+      - name: Compile
+        run: make -j$(nproc) BUILD_LOG=1
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.name }}-logs
+          path: "logs"
+
+      - name: Upload images
+        if: success()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.name }}-bin
+          path: "bin"
+
+  test:
+    name: Test OpenWrt
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+       include:
+         - name: armvirt-64
+           target: armvirt
+           subtarget: 64
+         - name: malta-32
+           target: malta
+           subtarget: be
+    needs: [build]
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install \
+            python3-pexpect \
+            qemu-system-arm \
+            qemu-system-mips
+
+      - name: Download a single artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.name }}-bin
+          path: "bin"
+
+      - name: Run test
+        run: ./.github/workflows/qemu-start.py ${{ matrix.target }} ${{ matrix.subtarget }}
+
