@@ -670,7 +670,7 @@
  		if (!dp->ds->ops->port_fdb_add || !dp->ds->ops->port_fdb_del)
 --- a/net/dsa/switch.c
 +++ b/net/dsa/switch.c
-@@ -178,6 +178,47 @@ static int dsa_switch_fdb_del(struct dsa
+@@ -193,6 +193,47 @@ static int dsa_switch_fdb_del(struct dsa
  	return ds->ops->port_fdb_del(ds, port, info->addr, info->vid);
  }
  
@@ -718,7 +718,7 @@
  static bool dsa_switch_mdb_match(struct dsa_switch *ds, int port,
  				 struct dsa_notifier_mdb_info *info)
  {
-@@ -325,6 +366,15 @@ static int dsa_switch_event(struct notif
+@@ -340,6 +381,15 @@ static int dsa_switch_event(struct notif
  	case DSA_NOTIFIER_FDB_DEL:
  		err = dsa_switch_fdb_del(ds, info);
  		break;
