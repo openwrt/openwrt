@@ -8,6 +8,10 @@ omap_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	centurysystems,ma-e350-n-mmc|\
+	centurysystems,ma-e350-n-nand)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
 		[ -d /sys/class/net/eth1 ] && ucidef_set_interface_wan 'eth1'
@@ -23,6 +27,12 @@ omap_setup_macs()
 	local label_mac=""
 
 	case $board in
+	centurysystems,ma-e350-n-mmc|\
+	centurysystems,ma-e350-n-nand)
+		lan_mac=$(nvmem_get_mac_binary hw_param 0x0 1)
+		wan_mac=$(nvmem_get_mac_binary hw_param 0x6 1)
+		label_mac=$lan_mac
+		;;
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac

@@ -29,6 +29,25 @@ define Build/omap-sdcard
 	rm -f $@.boot
 endef
 
+define Build/centurysys-sdcard
+	rm -f $@.boot
+
+	echo "#!/bin/sh" > $@.autoexec
+	echo "global.linux.bootargs.base=\"\"" >> $@.autoexec
+	echo "bootm /boot/uImage" >> $@.autoexec
+
+	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
+
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::/uImage
+	mcopy -i $@.boot $@.autoexec ::/autoexec.sh
+	./gen_omap_sdcard_img.sh $@ \
+		$@.boot \
+		$(IMAGE_ROOTFS) \
+		$(CONFIG_OMAP_SD_BOOT_PARTSIZE) \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+	rm -f $@.boot
+endef
+
 define Device/Default
   PROFILES := Default
   KERNEL_NAME := zImage
@@ -39,6 +58,42 @@ define Device/Default
 endef
 
 #uboot-omap-am335x_evm uboot-omap-omap3_beagle uboot-omap-omap4_panda
+
+define Device/centurysystems_ma-e350-n-mmc
+  DEVICE_VENDOR := Century Systems
+  DEVICE_MODEL := FutureNet MA-E350/N
+  DEVICE_VARIANT := (MMC)
+  DEVICE_DTS := am335x-ma-e350-n-mmc
+  DEVICE_DTS_DIR := ../dts-$(KERNEL_PATCHVER)
+  KERNEL_LOADADDR := 0x80008000
+  KERNEL := kernel-bin | append-dtb | uImage none
+  IMAGE/sdcard.img.gz := centurysys-sdcard | append-metadata | gzip
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-leds-tca6507 kmod-usb-acm
+endef
+
+TARGET_DEVICES += centurysystems_ma-e350-n-mmc
+
+define Device/centurysystems_ma-e350-n-nand
+  DEVICE_VENDOR := Century Systems
+  DEVICE_MODEL := FutureNet MA-E350/N
+  DEVICE_VARIANT := (NAND)
+  DEVICE_DTS := am335x-ma-e350-n-nand
+  DEVICE_DTS_DIR := ../dts-$(KERNEL_PATCHVER)
+  KERNEL_LOADADDR := 0x80008000
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_IN_UBI := 1
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  UBINIZE_OPTS := -E 5
+  FILESYSTEMS := squashfs
+  IMAGES := sysupgrade.bin nand.ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/nand.ubi := append-ubi
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-leds-tca6507 kmod-usb-acm
+endef
+
+TARGET_DEVICES += centurysystems_ma-e350-n-nand
 
 define Device/ti_am335x-evm
   DEVICE_VENDOR := Texas Instruments
