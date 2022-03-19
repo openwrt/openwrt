@@ -118,10 +118,10 @@ define Build/InstallDev/libbpf
 	$(INSTALL_DIR) $(1)/usr/include/bpf
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/bpf/*.h $(1)/usr/include/bpf/
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib$(LIB_SUFFIX)/libbpf.{a,so*} \
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbpf.{a,so*} \
 		$(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib$(LIB_SUFFIX)/pkgconfig/libbpf.pc \
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libbpf.pc \
 		$(1)/usr/lib/pkgconfig/
 	$(SED) 's,/usr/include,$$$${prefix}/include,g' \
 		$(1)/usr/lib/pkgconfig/libbpf.pc
@@ -141,7 +141,7 @@ endef
 
 define Package/libbpf/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib$(LIB_SUFFIX)/libbpf.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbpf.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libbpf))
