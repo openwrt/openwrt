@@ -1562,9 +1562,10 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	for (i = 0; i <= priv->cpu_port; i++)
 		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
-	/* Enable link and media change interrupts. Are the SERDES masks needed? */
-	sw_w32_mask(0, 3, priv->r->isr_glb_src);
+	/* Enable link change interrupt on all SoC generations */
+	sw_w32_mask(0, BIT(0), priv->r->isr_glb_src);
 
+	/* Set IMR mask and clear ISR for all ports for link change IRQ */
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
 
@@ -1572,18 +1573,55 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
 	switch (priv->family_id) {
 	case RTL8380_FAMILY_ID:
+		/* Enable Media Change IRQ */
+		sw_w32_mask(0, BIT(1), priv->r->isr_glb_src);
+
+		sw_w32(priv->irq_mask, RTL838X_IMR_PORT_MEDIA_CHG);
+		sw_w32(priv->irq_mask, RTL838X_ISR_PORT_MEDIA_CHG);
+
 		err = request_irq(priv->link_state_irq, rtl838x_switch_irq,
 				IRQF_SHARED, "rtl838x-link-state", priv->ds);
 		break;
 	case RTL8390_FAMILY_ID:
+		/* Enable Media Chang Interrupt */
+		sw_w32_mask(0, BIT(1), priv->r->isr_glb_src);
+		priv->r->set_port_reg_le(priv->irq_mask, RTL839X_IMR_PORT_MEDIA_CHG);
+		priv->r->set_port_reg_le(priv->irq_mask, RTL839X_ISR_PORT_MEDIA_CHG);
+
 		err = request_irq(priv->link_state_irq, rtl839x_switch_irq,
 				IRQF_SHARED, "rtl839x-link-state", priv->ds);
 		break;
 	case RTL9300_FAMILY_ID:
+		/* Enable also the SERDES link fault/RX error/UPD IRQs */
+		sw_w32_mask(0, BIT(1) | BIT(21) | BIT(17), priv->r->isr_glb_src);
+
+		/* Set IMR mask for each port for link fault/RX error/UPD */
+		sw_w32(priv->irq_mask, RTL930X_IMR_SERDES_LINK_FAULT_P);
+		sw_w32(priv->irq_mask, RTL930X_ISR_SERDES_LINK_FAULT_P);
+		sw_w32(priv->irq_mask, RTL930X_IMR_SERDES_RX_SYM_ERR);
+		sw_w32(priv->irq_mask, RTL930X_ISR_SERDES_RX_SYM_ERR);
+		sw_w32(priv->irq_mask, RTL930X_IMR_SDS_UPD_PHYSTS);
+		sw_w32(priv->irq_mask, RTL930X_ISR_SDS_UPD_PHYSTS);
+
 		err = request_irq(priv->link_state_irq, rtl930x_switch_irq,
 				IRQF_SHARED, "rtl930x-link-state", priv->ds);
 		break;
 	case RTL9310_FAMILY_ID:
+		/* Enable SERDES Error/UPD/RXIDLE IRQ for all SERDES 0-13 */
+		sw_w32_mask(0, BIT(1) | BIT(8) | BIT(15), priv->r->isr_glb_src);
+
+		/* Set IMR mask for SDS for SerDes errors and clear ISR */
+		sw_w32(0x3fff, RTL931X_IMR_SERDES_ERR);
+		sw_w32(0x3fff, RTL931X_ISR_SERDES_ERR);
+
+		/* Set IMR mask for each port for UPD Phy-Status */
+		priv->r->set_port_reg_le(priv->irq_mask, RTL931X_IMR_SDS_UPD_PHYSTS);
+		priv->r->set_port_reg_le(priv->irq_mask, RTL931X_ISR_SDS_UPD_PHYSTS);
+
+		/* Set IMR mask for each SDS for RXIDLE */
+		sw_w32(0xfff, RTL931X_IMR_SERDES_RXIDLE);
+		sw_w32(0xfff, RTL931X_ISR_SERDES_RXIDLE);
+
 		err = request_irq(priv->link_state_irq, rtl931x_switch_irq,
 				IRQF_SHARED, "rtl931x-link-state", priv->ds);
 		break;
