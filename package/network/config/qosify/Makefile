@@ -34,6 +34,8 @@ define Package/qosify
   DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +kmod-sched-bpf +kmod-ifb +tc-full $(BPF_DEPENDS)
 endef
 
+TARGET_CFLAGS += -Wno-error=deprecated-declarations
+
 define Build/Compile
 	$(call CompileBPF,$(PKG_BUILD_DIR)/qosify-bpf.c)
 	$(Build/Compile/Default)

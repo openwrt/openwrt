@@ -963,6 +963,18 @@ define Device/teltonika_rutx10
 endef
 TARGET_DEVICES += teltonika_rutx10
 
+define Device/tel_x1pro
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Telco
+	DEVICE_MODEL := X1 Pro
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 31232k
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += tel_x1pro
+
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Unielec
