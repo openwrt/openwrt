@@ -1784,6 +1784,7 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 	struct dsa_switch *ds = dev_id;
 	u32 status = sw_r32(RTL838X_ISR_GLB_SRC);
 	u32 ports = sw_r32(RTL838X_ISR_PORT_LINK_STS_CHG);
+	u32 ports_m = sw_r32(RTL838X_ISR_PORT_MEDIA_CHG);
 	u32 link;
 	int i;
 
@@ -1791,7 +1792,7 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 	sw_w32(ports, RTL838X_ISR_PORT_LINK_STS_CHG);
 	pr_info("RTL8380 Link change: status: %x, ports %x\n", status, ports);
 
-	for (i = 0; i < 28; i++) {
+	for (i = 0; i < RTL838X_CPU_PORT; i++) {
 		if (ports & BIT(i)) {
 			link = sw_r32(RTL838X_MAC_LINK_STS);
 			if (link & BIT(i))
@@ -1800,6 +1801,12 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 				dsa_port_phylink_mac_change(ds, i, false);
 		}
 	}
+
+	if (ports_m) {
+		sw_w32(ports_m, RTL839X_ISR_PORT_MEDIA_CHG);
+		pr_info("%s media change detected: %08x\n", __func__, ports_m);
+	}
+
 	return IRQ_HANDLED;
 }
 

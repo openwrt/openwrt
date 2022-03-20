@@ -274,6 +274,7 @@ irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 	u32 status = sw_r32(RTL931X_ISR_GLB_SRC);
 	u64 ports = rtl839x_get_port_reg_le(RTL931X_ISR_PORT_LINK_STS_CHG);
 	u64 link;
+	u32 sds;
 	int i;
 
 	/* Clear status */
@@ -285,7 +286,7 @@ irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 	link = rtl839x_get_port_reg_le(RTL931X_MAC_LINK_STS);
 	pr_debug("RTL931X Link change: status: %x, link status %016llx\n", status, link);
 
-	for (i = 0; i < 56; i++) {
+	for (i = 0; i < RTL931X_CPU_PORT; i++) {
 		if (ports & BIT_ULL(i)) {
 			if (link & BIT_ULL(i)) {
 				pr_info("%s port %d up\n", __func__, i);
@@ -296,6 +297,28 @@ irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 			}
 		}
 	}
+
+	// Handle SDS Errors
+	sds = sw_r32(RTL931X_ISR_SERDES_ERR);
+	if (sds) {
+		pr_info("%s error on SDS: %08x\n", __func__, sds);
+		sw_w32(sds, RTL931X_ISR_SERDES_ERR);
+	}
+
+	// Handle SDS RX Idle
+	sds = sw_r32(RTL931X_ISR_SERDES_RXIDLE);
+	if (sds) {
+		pr_info("%s RXIDLE on SDS: %08x\n", __func__, sds);
+		sw_w32(sds, RTL931X_ISR_SERDES_RXIDLE);
+	}
+
+	// Handle SDS PHYSTS errors
+	ports = rtl839x_get_port_reg_le(RTL931X_ISR_SDS_UPD_PHYSTS);
+	if (ports) {
+		pr_info("%s SDS_UPD_PHYSTS: %016llx\n", __func__, ports);
+		rtl839x_set_port_reg_le(ports, RTL931X_ISR_SDS_UPD_PHYSTS);
+	}
+
 	return IRQ_HANDLED;
 }
 
