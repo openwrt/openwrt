@@ -1654,6 +1654,21 @@ define Device/netgear_ex7300-v2
 endef
 TARGET_DEVICES += netgear_ex7300-v2
 
+define Device/netgear_wndap360
+  $(Device/netgear_generic)
+  SOC := ar7161
+  DEVICE_MODEL := WNDAP360
+  DEVICE_PACKAGES := kmod-leds-reset kmod-owl-loader
+  IMAGE_SIZE := 7744k
+  BLOCKSIZE := 256k
+  KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+endef
+TARGET_DEVICES += netgear_wndap360
+
 define Device/netgear_wndr3x00
   $(Device/netgear_generic)
   SOC := ar7161
