@@ -12,9 +12,7 @@
 #include <linux/of.h>
 #include <linux/phy.h>
 #include <linux/bitfield.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)
 #include <linux/ethtool_netlink.h>
-#endif
 #include <linux/gpio.h>
 #include <linux/sfp.h>
 
@@ -191,7 +189,6 @@ static int qca807x_set_tunable(struct phy_device *phydev,
 	}
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)
 static bool qca807x_distance_valid(int result)
 {
 	switch (result) {
@@ -324,16 +321,11 @@ static int qca807x_cable_test_start(struct phy_device *phydev)
 
 	return ret;
 }
-#endif
 
 #ifdef CONFIG_GPIOLIB
 static int qca807x_gpio_get_direction(struct gpio_chip *gc, unsigned int offset)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,5,0)
 	return GPIO_LINE_DIRECTION_OUT;
-#else
-	return GPIOF_DIR_OUT;
-#endif
 }
 
 static int qca807x_gpio_get_reg(unsigned int offset)
@@ -804,9 +796,7 @@ static struct phy_driver qca807x_drivers[] = {
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_QCA8072),
 		.name           = "Qualcomm QCA8072",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)
 		.flags		= PHY_POLL_CABLE_TEST,
-#endif
 		/* PHY_GBIT_FEATURES */
 		.probe		= qca807x_probe,
 		.config_init	= qca807x_config,
@@ -822,17 +812,13 @@ static struct phy_driver qca807x_drivers[] = {
 		.set_tunable	= qca807x_set_tunable,
 		.resume		= genphy_resume,
 		.suspend	= genphy_suspend,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)
 		.cable_test_start	= qca807x_cable_test_start,
 		.cable_test_get_status	= qca807x_cable_test_get_status,
-#endif
 	},
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_QCA8075),
 		.name           = "Qualcomm QCA8075",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)
 		.flags		= PHY_POLL_CABLE_TEST,
-#endif
 		/* PHY_GBIT_FEATURES */
 		.probe		= qca807x_probe,
 		.config_init	= qca807x_config,
@@ -848,10 +834,8 @@ static struct phy_driver qca807x_drivers[] = {
 		.set_tunable	= qca807x_set_tunable,
 		.resume		= genphy_resume,
 		.suspend	= genphy_suspend,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,8,0)
 		.cable_test_start	= qca807x_cable_test_start,
 		.cable_test_get_status	= qca807x_cable_test_get_status,
-#endif
 	},
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_QCA807X_PSGMII),
