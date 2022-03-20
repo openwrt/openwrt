@@ -604,22 +604,23 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	struct dsa_switch *ds = dev_id;
 	u32 status = sw_r32(RTL839X_ISR_GLB_SRC);
 	u64 ports = rtl839x_get_port_reg_le(RTL839X_ISR_PORT_LINK_STS_CHG);
+	u64 ports_m = rtl839x_get_port_reg_le(RTL839X_ISR_PORT_MEDIA_CHG);
 	u64 link;
 	int i;
 
 	/* Clear status */
 	rtl839x_set_port_reg_le(ports, RTL839X_ISR_PORT_LINK_STS_CHG);
+	rtl839x_set_port_reg_le(ports_m, RTL839X_ISR_PORT_MEDIA_CHG);
 	pr_debug("RTL8390 Link change: status: %x, ports %llx\n", status, ports);
 
+	link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
 	for (i = 0; i < RTL839X_CPU_PORT; i++) {
-		if (ports & BIT_ULL(i)) {
-			link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
-			if (link & BIT_ULL(i))
-				dsa_port_phylink_mac_change(ds, i, true);
-			else
-				dsa_port_phylink_mac_change(ds, i, false);
-		}
+		if (ports & BIT_ULL(i))
+			dsa_port_phylink_mac_change(ds, i, !!(link & BIT_ULL(i)));
+		else if (ports_m & BIT_ULL(i))
+			dsa_port_phylink_mac_change(ds, i, !!(link & BIT_ULL(i)));
 	}
+
 	return IRQ_HANDLED;
 }
 

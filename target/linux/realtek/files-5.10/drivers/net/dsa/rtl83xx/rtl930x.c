@@ -695,7 +695,7 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 	/* Clear status */
 	sw_w32(ports, RTL930X_ISR_PORT_LINK_STS_CHG);
 
-	for (i = 0; i < 28; i++) {
+	for (i = 0; i < RTL930X_CPU_PORT; i++) {
 		if (ports & BIT(i)) {
 			/* Read the register twice because of issues with latency at least
 			 * with the external RTL8226 PHY on the XGS1210 */
@@ -706,6 +706,27 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 			else
 				dsa_port_phylink_mac_change(ds, i, false);
 		}
+	}
+
+	// Handle SDS link faults
+	ports = sw_r32(RTL930X_ISR_SERDES_LINK_FAULT_P);
+	if (ports) {
+		pr_info("%s link faults: %08x\n", __func__, ports);
+		sw_w32(ports, RTL930X_ISR_SERDES_LINK_FAULT_P);
+	}
+
+	// Handle SDS RX symbol errors
+	ports = sw_r32(RTL930X_ISR_SERDES_RX_SYM_ERR);
+	if (ports) {
+		pr_info("%s RX symbol errors: %08x\n", __func__, ports);
+		sw_w32(ports, RTL930X_ISR_SERDES_RX_SYM_ERR);
+	}
+
+	// Handle SDS PHYSTS errors
+	ports = sw_r32(RTL930X_ISR_SDS_UPD_PHYSTS);
+	if (ports) {
+		pr_info("%s SDS_UPD_PHYSTS: %08x\n", __func__, ports);
+		sw_w32(ports, RTL930X_ISR_SDS_UPD_PHYSTS);
 	}
 
 	return IRQ_HANDLED;
