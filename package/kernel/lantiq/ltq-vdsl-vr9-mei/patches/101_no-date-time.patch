@@ -1,6 +1,6 @@
 --- a/src/drv_mei_cpe_linux.c
 +++ b/src/drv_mei_cpe_linux.c
-@@ -1503,8 +1503,8 @@ struct proc_entry {
+@@ -1505,8 +1505,8 @@ struct proc_entry {
  static void MEI_GetVersionProc(struct seq_file *s)
  {
     seq_printf(s, "%s" MEI_DRV_CRLF, &MEI_WHATVERSION[4]);
@@ -11,3 +11,13 @@
  }
  
  /**
+@@ -4233,7 +4233,9 @@ module_exit (MEI_module_exit);
+ #ifdef MODULE
+ MODULE_AUTHOR("www.lantiq.com");
+ MODULE_DESCRIPTION("MEI CPE Driver - www.lantiq.com");
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,11,0))
+ MODULE_SUPPORTED_DEVICE("MEI CPE Interface");
++#endif
+ MODULE_LICENSE ("GPL");
+ #endif /* #ifdef MODULE*/
+ 
