@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -2434,6 +2434,12 @@ config MIPS_VPE_LOADER
+@@ -2429,6 +2429,12 @@ config MIPS_VPE_LOADER
  	  Includes a loader for loading an elf relocatable object
  	  onto another VPE and running it.
  
@@ -15,7 +15,7 @@
  	default "y"
 --- a/arch/mips/include/asm/vpe.h
 +++ b/arch/mips/include/asm/vpe.h
-@@ -127,4 +127,13 @@ void cleanup_tc(struct tc *tc);
+@@ -124,4 +124,13 @@ void cleanup_tc(struct tc *tc);
  
  int __init vpe_module_init(void);
  void __exit vpe_module_exit(void);

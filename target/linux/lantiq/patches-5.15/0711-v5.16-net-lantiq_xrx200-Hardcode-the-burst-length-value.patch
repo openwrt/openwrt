@@ -52,7 +52,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	ch_rx->dma.nr = XRX200_DMA_RX;
  	ch_rx->dma.dev = priv->dev;
-@@ -587,18 +586,6 @@ static int xrx200_probe(struct platform_
+@@ -578,18 +577,6 @@ static int xrx200_probe(struct platform_
  	if (err)
  		eth_hw_addr_random(net_dev);
  

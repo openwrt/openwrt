@@ -196,11 +196,11 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int xrx200_probe(struct platform_device *pdev)
-@@ -554,6 +569,7 @@ static int xrx200_probe(struct platform_
+@@ -553,6 +568,7 @@ static int xrx200_probe(struct platform_
  	net_dev->min_mtu = ETH_ZLEN;
  	net_dev->max_mtu = XRX200_DMA_DATA_LEN - xrx200_max_frame_len(0);
  	priv->rx_buf_size = xrx200_buffer_size(ETH_DATA_LEN);
 +	priv->rx_skb_size = xrx200_skb_size(priv->rx_buf_size);
  
  	/* load the memory ranges */
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	priv->pmac_reg = devm_platform_get_and_ioremap_resource(pdev, 0, NULL);

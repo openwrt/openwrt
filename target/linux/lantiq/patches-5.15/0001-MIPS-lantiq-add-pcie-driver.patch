@@ -242,7 +242,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie.c
-@@ -0,0 +1,1092 @@
+@@ -0,0 +1,1091 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -1332,7 +1332,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Chuanhua.Lei@infineon.com");
-+MODULE_SUPPORTED_DEVICE("Infineon builtin PCIe RC module");
 +MODULE_DESCRIPTION("Infineon builtin PCIe RC driver");
 +
 --- /dev/null
@@ -1764,7 +1763,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif /* IFXMIPS_PCIE_AR10_H */
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie_msi.c
-@@ -0,0 +1,392 @@
+@@ -0,0 +1,391 @@
 +/******************************************************************************
 +**
 +** FILE NAME    : ifxmips_pcie_msi.c
@@ -2154,7 +2153,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Chuanhua.Lei@infineon.com");
-+MODULE_SUPPORTED_DEVICE("Infineon PCIe IP builtin MSI PIC module");
 +MODULE_DESCRIPTION("Infineon PCIe IP builtin MSI PIC driver");
 +
 --- /dev/null
@@ -4134,7 +4132,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- a/arch/mips/pci/pci-legacy.c
 +++ b/arch/mips/pci/pci-legacy.c
-@@ -313,3 +313,30 @@ char *__init pcibios_setup(char *str)
+@@ -305,3 +305,30 @@ char *__init pcibios_setup(char *str)
  		return pcibios_plat_setup(str);
  	return str;
  }
@@ -5481,7 +5479,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	  (transaction layer end-to-end CRC checking).
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1420,6 +1420,8 @@ void pci_walk_bus(struct pci_bus *top, i
+@@ -1480,6 +1480,8 @@ void pci_walk_bus(struct pci_bus *top, i
  		  void *userdata);
  int pci_cfg_space_size(struct pci_dev *dev);
  unsigned char pci_bus_max_busnr(struct pci_bus *bus);
@@ -5492,7 +5490,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  					 unsigned long type);
 --- a/include/linux/pci_ids.h
 +++ b/include/linux/pci_ids.h
-@@ -1079,6 +1079,12 @@
+@@ -1085,6 +1085,12 @@
  #define PCI_DEVICE_ID_SGI_IOC3		0x0003
  #define PCI_DEVICE_ID_SGI_LITHIUM	0x1002
  

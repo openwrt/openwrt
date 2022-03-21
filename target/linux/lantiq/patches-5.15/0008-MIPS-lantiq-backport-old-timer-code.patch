@@ -186,7 +186,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-y += vmmc.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/timer.c
-@@ -0,0 +1,846 @@
+@@ -0,0 +1,852 @@
 +#ifndef CONFIG_SOC_AMAZON_SE
 +
 +#include <linux/kernel.h>
@@ -883,7 +883,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	if (!access_ok((void __user *)arg, sizeof(struct gptu_ioctl_param)))
 +		return -EFAULT;
-+	copy_from_user(&param, (void __user *)arg, sizeof(param));
++	if (copy_from_user(&param, (void __user *)arg, sizeof(param)))
++		return -EFAULT;
 +
 +	if ((((cmd == GPTU_REQUEST_TIMER || cmd == GPTU_SET_TIMER
 +	       || GPTU_SET_COUNTER) && param.timer < 2)
@@ -898,9 +899,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +				     (unsigned long) param.pid,
 +				     (unsigned long) param.sig);
 +		if (ret > 0) {
-+			copy_to_user(&((struct gptu_ioctl_param *) arg)->
-+				      timer, &ret, sizeof(&ret));
-+			ret = 0;
++			if (copy_to_user(&((struct gptu_ioctl_param *) arg)->
++					 timer, &ret, sizeof(&ret)))
++				ret = -EFAULT;
++			else
++				ret = 0;
 +		}
 +		break;
 +	case GPTU_FREE_TIMER:
@@ -914,21 +917,20 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		break;
 +	case GPTU_GET_COUNT_VALUE:
 +		ret = lq_get_count_value(param.timer, &param.value);
-+		if (!ret)
-+			copy_to_user(&((struct gptu_ioctl_param *) arg)->
-+				      value, &param.value,
-+				      sizeof(param.value));
++		if (!ret && copy_to_user(&((struct gptu_ioctl_param *) arg)->
++		    value, &param.value,sizeof(param.value)))
++			ret = -EFAULT;
 +		break;
 +	case GPTU_CALCULATE_DIVIDER:
 +		param.value = lq_cal_divider(param.value);
 +		if (param.value == 0)
 +			ret = -EINVAL;
-+		else {
-+			copy_to_user(&((struct gptu_ioctl_param *) arg)->
++		else if (copy_to_user(&((struct gptu_ioctl_param *) arg)->
 +				      value, &param.value,
-+				      sizeof(param.value));
++				      sizeof(param.value)))
++			ret = -EFAULT;
++		else
 +			ret = 0;
-+		}
 +		break;
 +	case GPTU_SET_TIMER:
 +		ret = lq_set_timer(param.timer, param.value,
@@ -942,17 +944,21 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +				 (unsigned long) param.pid,
 +				 (unsigned long) param.sig);
 +		if (ret > 0) {
-+			copy_to_user(&((struct gptu_ioctl_param *) arg)->
-+				      timer, &ret, sizeof(&ret));
-+			ret = 0;
++			if (copy_to_user(&((struct gptu_ioctl_param *) arg)->
++					 timer, &ret, sizeof(&ret)))
++				ret = -EFAULT;
++			else
++				ret = 0;
 +		}
 +		break;
 +	case GPTU_SET_COUNTER:
 +		lq_set_counter(param.timer, param.flag, param.value, 0, 0);
 +		if (ret > 0) {
-+			copy_to_user(&((struct gptu_ioctl_param *) arg)->
-+				      timer, &ret, sizeof(&ret));
-+			ret = 0;
++			if (copy_to_user(&((struct gptu_ioctl_param *) arg)->
++					 timer, &ret, sizeof(&ret)))
++				ret = -EFAULT;
++			else
++				ret = 0;
 +		}
 +		break;
 +	default:

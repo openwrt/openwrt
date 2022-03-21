@@ -134,7 +134,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.ndo_set_mac_address	= eth_mac_addr,
  	.ndo_validate_addr	= eth_validate_addr,
  };
-@@ -454,7 +504,7 @@ static int xrx200_probe(struct platform_
+@@ -453,7 +503,7 @@ static int xrx200_probe(struct platform_
  	net_dev->netdev_ops = &xrx200_netdev_ops;
  	SET_NETDEV_DEV(net_dev, dev);
  	net_dev->min_mtu = ETH_ZLEN;
@@ -142,4 +142,4 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +	net_dev->max_mtu = XRX200_DMA_DATA_LEN - VLAN_ETH_HLEN - ETH_FCS_LEN;
  
  	/* load the memory ranges */
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	priv->pmac_reg = devm_platform_get_and_ioremap_resource(pdev, 0, NULL);
