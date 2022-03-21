@@ -31,7 +31,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -874,7 +874,9 @@ advk_pci_bridge_emul_pcie_conf_read(stru
+@@ -867,7 +867,9 @@ advk_pci_bridge_emul_pcie_conf_read(stru
  	case PCI_EXP_RTSTA: {
  		u32 isr0 = advk_readl(pcie, PCIE_ISR0_REG);
  		u32 msglog = advk_readl(pcie, PCIE_MSG_LOG_REG);

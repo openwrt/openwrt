@@ -8,7 +8,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/netfilter/nf_conntrack_proto_tcp.c
 +++ b/net/netfilter/nf_conntrack_proto_tcp.c
-@@ -476,6 +479,9 @@ static bool tcp_in_window(const struct n
+@@ -465,6 +465,9 @@ static bool tcp_in_window(struct nf_conn
  	s32 receiver_offset;
  	bool res, in_recv_win;
  
@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/*
  	 * Get the required data from the packet.
  	 */
-@@ -1130,7 +1136,7 @@ int nf_conntrack_tcp_packet(struct nf_co
+@@ -1151,7 +1154,7 @@ int nf_conntrack_tcp_packet(struct nf_co
  		 IP_CT_TCP_FLAG_DATA_UNACKNOWLEDGED &&
  		 timeouts[new_state] > timeouts[TCP_CONNTRACK_UNACK])
  		timeout = timeouts[TCP_CONNTRACK_UNACK];
@@ -29,16 +29,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	else
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -660,6 +663,7 @@ enum nf_ct_sysctl_index {
- 	NF_SYSCTL_CT_PROTO_TIMEOUT_GRE_STREAM,
+@@ -671,6 +671,7 @@ enum nf_ct_sysctl_index {
+ 	NF_SYSCTL_CT_LWTUNNEL,
  #endif
  
 +	NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK,
  	__NF_SYSCTL_CT_LAST_SYSCTL,
  };
  
-@@ -1014,6 +1018,13 @@ static struct ctl_table nf_ct_sysctl_tab
- 		.proc_handler   = proc_dointvec_jiffies,
+@@ -1026,6 +1027,13 @@ static struct ctl_table nf_ct_sysctl_tab
+ 		.proc_handler	= nf_hooks_lwtunnel_sysctl_handler,
  	},
  #endif
 +	[NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK] = {
@@ -51,7 +51,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	{}
  };
  
-@@ -1164,6 +1164,7 @@ static int nf_conntrack_standalone_init_sysctl(struct net *net)
+@@ -1153,6 +1161,7 @@ static int nf_conntrack_standalone_init_
  #ifdef CONFIG_NF_CONNTRACK_EVENTS
  	table[NF_SYSCTL_CT_EVENTS].data = &net->ct.sysctl_events;
  #endif
@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef CONFIG_NF_CONNTRACK_TIMESTAMP
  	table[NF_SYSCTL_CT_TIMESTAMP].data = &net->ct.sysctl_tstamp;
  #endif
-@@ -1220,6 +1220,7 @@
+@@ -1222,6 +1231,7 @@ static int nf_conntrack_pernet_init(stru
  	int ret;
  
  	net->ct.sysctl_checksum = 1;

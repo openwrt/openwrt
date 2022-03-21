@@ -251,7 +251,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  	PTR_L a0,	arg0
  	PTR_L a1,	arg1
  	PTR_L a2,	arg2
-@@ -96,7 +97,7 @@ done:
+@@ -98,7 +99,7 @@ done:
  #endif
  	/* jump to kexec_start_address */
  	j		s1
@@ -260,7 +260,7 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  
  #ifdef CONFIG_SMP
  /*
-@@ -182,9 +183,15 @@ kexec_indirection_page:
+@@ -181,9 +182,15 @@ kexec_indirection_page:
  	PTR_WD		0
  	.size		kexec_indirection_page, PTRSIZE
  

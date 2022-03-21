@@ -30,7 +30,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -97,6 +97,10 @@
+@@ -98,6 +98,10 @@
  #define PCIE_MSG_PM_PME_MASK			BIT(7)
  #define PCIE_ISR0_MASK_REG			(CONTROL_BASE_ADDR + 0x44)
  #define     PCIE_ISR0_MSI_INT_PENDING		BIT(24)
@@ -41,7 +41,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  #define     PCIE_ISR0_INTX_ASSERT(val)		BIT(16 + (val))
  #define     PCIE_ISR0_INTX_DEASSERT(val)	BIT(20 + (val))
  #define     PCIE_ISR0_ALL_MASK			GENMASK(31, 0)
-@@ -785,11 +789,15 @@ advk_pci_bridge_emul_base_conf_read(stru
+@@ -778,11 +782,15 @@ advk_pci_bridge_emul_base_conf_read(stru
  	case PCI_INTERRUPT_LINE: {
  		/*
  		 * From the whole 32bit register we support reading from HW only
@@ -58,7 +58,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  		if (advk_readl(pcie, PCIE_CORE_CTRL1_REG) & HOT_RESET_GEN)
  			val |= PCI_BRIDGE_CTL_BUS_RESET << 16;
  		else
-@@ -815,6 +823,19 @@ advk_pci_bridge_emul_base_conf_write(str
+@@ -808,6 +816,19 @@ advk_pci_bridge_emul_base_conf_write(str
  		break;
  
  	case PCI_INTERRUPT_LINE:
@@ -78,7 +78,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  		if (mask & (PCI_BRIDGE_CTL_BUS_RESET << 16)) {
  			u32 val = advk_readl(pcie, PCIE_CORE_CTRL1_REG);
  			if (new & (PCI_BRIDGE_CTL_BUS_RESET << 16))
-@@ -1466,6 +1487,19 @@ static void advk_pcie_handle_int(struct
+@@ -1459,6 +1480,19 @@ static void advk_pcie_handle_int(struct
  	isr1_mask = advk_readl(pcie, PCIE_ISR1_MASK_REG);
  	isr1_status = isr1_val & ((~isr1_mask) & PCIE_ISR1_ALL_MASK);
  

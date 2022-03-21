@@ -40,7 +40,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -597,6 +597,11 @@ static void advk_pcie_setup_hw(struct ad
+@@ -590,6 +590,11 @@ static void advk_pcie_setup_hw(struct ad
  	reg &= ~PCIE_ISR0_MSI_INT_PENDING;
  	advk_writel(pcie, reg, PCIE_ISR0_MASK_REG);
  
@@ -52,7 +52,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  	/* Enable summary interrupt for GIC SPI source */
  	reg = PCIE_IRQ_ALL_MASK & (~PCIE_IRQ_ENABLE_INTS_MASK);
  	advk_writel(pcie, reg, HOST_CTRL_INT_MASK_REG);
-@@ -863,22 +868,11 @@ advk_pci_bridge_emul_pcie_conf_read(stru
+@@ -856,22 +861,11 @@ advk_pci_bridge_emul_pcie_conf_read(stru
  		*value = PCI_EXP_SLTSTA_PDS << 16;
  		return PCI_BRIDGE_EMUL_HANDLED;
  
@@ -80,7 +80,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  
  	case PCI_EXP_LNKCAP: {
  		u32 val = advk_readl(pcie, PCIE_CORE_PCIEXP_CAP + reg);
-@@ -932,22 +926,19 @@ advk_pci_bridge_emul_pcie_conf_write(str
+@@ -925,22 +919,19 @@ advk_pci_bridge_emul_pcie_conf_write(str
  			advk_pcie_wait_for_retrain(pcie);
  		break;
  
@@ -114,7 +114,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  
  	case PCI_EXP_DEVCTL:
  	case PCI_EXP_DEVCTL2:
-@@ -1452,6 +1443,34 @@ static void advk_pcie_remove_irq_domain(
+@@ -1445,6 +1436,34 @@ static void advk_pcie_remove_irq_domain(
  	irq_domain_remove(pcie->irq_domain);
  }
  
@@ -149,7 +149,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  static void advk_pcie_handle_msi(struct advk_pcie *pcie)
  {
  	u32 msi_val, msi_mask, msi_status, msi_idx;
-@@ -1491,18 +1510,9 @@ static void advk_pcie_handle_int(struct
+@@ -1484,18 +1503,9 @@ static void advk_pcie_handle_int(struct
  	isr1_mask = advk_readl(pcie, PCIE_ISR1_MASK_REG);
  	isr1_status = isr1_val & ((~isr1_mask) & PCIE_ISR1_ALL_MASK);
  

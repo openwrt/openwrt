@@ -1,14 +1,14 @@
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -7,6 +7,7 @@
- #include <linux/rhashtable.h>
+@@ -6,6 +6,7 @@
  #include <linux/if_ether.h>
+ #include <linux/rhashtable.h>
  #include <linux/ip.h>
 +#include <linux/ipv6.h>
  #include <net/flow_offload.h>
  #include <net/pkt_cls.h>
  #include <net/dsa.h>
-@@ -20,6 +21,11 @@ struct mtk_flow_data {
+@@ -19,6 +20,11 @@ struct mtk_flow_data {
  			__be32 src_addr;
  			__be32 dst_addr;
  		} v4;
@@ -20,7 +20,7 @@
  	};
  
  	__be16 src_port;
-@@ -64,6 +70,14 @@ mtk_flow_set_ipv4_addr(struct mtk_foe_en
+@@ -63,6 +69,14 @@ mtk_flow_set_ipv4_addr(struct mtk_foe_en
  					    data->v4.dst_addr, data->dst_port);
  }
  
@@ -35,7 +35,7 @@
  static void
  mtk_flow_offload_mangle_eth(const struct flow_action_entry *act, void *eth)
  {
-@@ -254,6 +268,9 @@ mtk_flow_offload_replace(struct mtk_eth
+@@ -256,6 +270,9 @@ mtk_flow_offload_replace(struct mtk_eth
  	case FLOW_DISSECTOR_KEY_IPV4_ADDRS:
  		offload_type = MTK_PPE_PKT_TYPE_IPV4_HNAPT;
  		break;
@@ -45,7 +45,7 @@
  	default:
  		return -EOPNOTSUPP;
  	}
-@@ -289,6 +306,17 @@ mtk_flow_offload_replace(struct mtk_eth
+@@ -291,6 +308,17 @@ mtk_flow_offload_replace(struct mtk_eth
  		mtk_flow_set_ipv4_addr(&foe, &data, false);
  	}
  

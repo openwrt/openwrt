@@ -20,7 +20,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -578,15 +578,17 @@ static void advk_pcie_setup_hw(struct ad
+@@ -571,15 +571,17 @@ static void advk_pcie_setup_hw(struct ad
  	advk_writel(pcie, PCIE_IRQ_ALL_MASK, HOST_CTRL_INT_STATUS_REG);
  
  	/* Disable All ISR0/1 Sources */

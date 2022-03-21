@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1384,6 +1384,17 @@ config SYSCTL_ARCH_UNALIGN_ALLOW
+@@ -1438,6 +1438,17 @@ config SYSCTL_ARCH_UNALIGN_ALLOW
  	  the unaligned access emulation.
  	  see arch/parisc/kernel/unaligned.c for reference
  
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/kernel/kallsyms.c
 +++ b/kernel/kallsyms.c
-@@ -77,6 +77,11 @@ static unsigned int kallsyms_expand_symb
+@@ -80,6 +80,11 @@ static unsigned int kallsyms_expand_symb
  	 * For every byte on the compressed symbol data, copy the table
  	 * entry for that byte.
  	 */
@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	while (len) {
  		tptr = &kallsyms_token_table[kallsyms_token_index[*data]];
  		data++;
-@@ -109,6 +114,9 @@ tail:
+@@ -112,6 +117,9 @@ tail:
   */
  static char kallsyms_get_symbol_type(unsigned int off)
  {
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		}
 --- a/scripts/link-vmlinux.sh
 +++ b/scripts/link-vmlinux.sh
-@@ -186,6 +186,10 @@ kallsyms()
+@@ -260,6 +260,10 @@ kallsyms()
  		kallsymopt="${kallsymopt} --base-relative"
  	fi
  
