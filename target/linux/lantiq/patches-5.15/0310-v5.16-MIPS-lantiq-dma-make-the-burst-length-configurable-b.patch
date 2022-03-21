@@ -26,7 +26,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #endif
 --- a/arch/mips/lantiq/xway/dma.c
 +++ b/arch/mips/lantiq/xway/dma.c
-@@ -181,7 +181,7 @@ ltq_dma_free(struct ltq_dma_channel *ch)
+@@ -182,7 +182,7 @@ ltq_dma_free(struct ltq_dma_channel *ch)
  EXPORT_SYMBOL_GPL(ltq_dma_free);
  
  void
@@ -35,7 +35,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  {
  	ltq_dma_w32(p, LTQ_DMA_PS);
  	switch (p) {
-@@ -190,16 +190,44 @@ ltq_dma_init_port(int p)
+@@ -191,16 +191,44 @@ ltq_dma_init_port(int p)
  		 * Tell the DMA engine to swap the endianness of data frames and
  		 * drop packets if the channel arbitration fails.
  		 */

@@ -110,7 +110,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			break;
  		}
  		dev_kfree_skb_any(skb);
-@@ -504,7 +517,8 @@ static int xrx200_probe(struct platform_
+@@ -503,7 +516,8 @@ static int xrx200_probe(struct platform_
  	net_dev->netdev_ops = &xrx200_netdev_ops;
  	SET_NETDEV_DEV(net_dev, dev);
  	net_dev->min_mtu = ETH_ZLEN;
@@ -119,4 +119,4 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +	priv->rx_buf_size = xrx200_buffer_size(ETH_DATA_LEN);
  
  	/* load the memory ranges */
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	priv->pmac_reg = devm_platform_get_and_ioremap_resource(pdev, 0, NULL);
