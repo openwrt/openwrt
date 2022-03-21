@@ -1,12 +1,7 @@
-From 6948a6654ffc878fc0258b363da77e7fd775b2d9 Mon Sep 17 00:00:00 2001
+From 108dc8741c203e9d6ce4e973367f1bac20c7192b Mon Sep 17 00:00:00 2001
 From: Tobias Waldekranz <tobias@waldekranz.com>
 Date: Mon, 24 Jan 2022 22:09:44 +0100
-Subject: [PATCH 5.10 2/2] net: dsa: Avoid cross-chip syncing of VLAN filtering
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-commit 108dc8741c203e9d6ce4e973367f1bac20c7192b upstream.
+Subject: net: dsa: Avoid cross-chip syncing of VLAN filtering
 
 Changes to VLAN filtering are not applicable to cross-chip
 notifications.
@@ -34,25 +29,28 @@ Fixes: d371b7c92d19 ("net: dsa: Unset vlan_filtering when ports leave the bridge
 Signed-off-by: Tobias Waldekranz <tobias@waldekranz.com>
 Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
 Signed-off-by: David S. Miller <davem@davemloft.net>
-Signed-off-by: Marek Behún <kabel@kernel.org>
 ---
  net/dsa/switch.c | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
+diff --git a/net/dsa/switch.c b/net/dsa/switch.c
+index 9f9b70d6070a3..517cc83d13cc8 100644
 --- a/net/dsa/switch.c
 +++ b/net/dsa/switch.c
-@@ -162,9 +162,11 @@ static int dsa_switch_bridge_leave(struc
+@@ -180,9 +180,11 @@ static int dsa_switch_bridge_leave(struct dsa_switch *ds,
  						info->sw_index, info->port,
- 						info->br);
+ 						info->bridge);
  
 -	err = dsa_switch_sync_vlan_filtering(ds, info);
 -	if (err)
 -		return err;
-+	if (dst->index == info->tree_index && ds->index == info->sw_index) {
++	if (ds->dst->index == info->tree_index && ds->index == info->sw_index) {
 +		err = dsa_switch_sync_vlan_filtering(ds, info);
 +		if (err)
 +			return err;
 +	}
  
- 	return 0;
+ 	return dsa_tag_8021q_bridge_leave(ds, info);
  }
+-- 
+cgit 
