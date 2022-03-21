@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -2993,6 +2993,8 @@ static const struct seq_operations locks
+@@ -2929,6 +2929,8 @@ static const struct seq_operations locks
  
  static int __init proc_locks_init(void)
  {
@@ -147,7 +147,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				IPC_MSG_IDS, sysvipc_msg_proc_show);
 --- a/ipc/sem.c
 +++ b/ipc/sem.c
-@@ -266,6 +266,8 @@ void sem_exit_ns(struct ipc_namespace *n
+@@ -268,6 +268,8 @@ void sem_exit_ns(struct ipc_namespace *n
  void __init sem_init(void)
  {
  	sem_init_ns(&init_ipc_ns);
@@ -169,7 +169,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				"       key      shmid perms       size  cpid  lpid nattch   uid   gid  cuid  cgid      atime      dtime      ctime        rss       swap\n",
 --- a/ipc/util.c
 +++ b/ipc/util.c
-@@ -140,6 +140,9 @@ void __init ipc_init_proc_interface(cons
+@@ -141,6 +141,9 @@ void __init ipc_init_proc_interface(cons
  	struct proc_dir_entry *pde;
  	struct ipc_proc_iface *iface;
  
@@ -224,7 +224,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!root_irq_dir)
 --- a/kernel/time/timer_list.c
 +++ b/kernel/time/timer_list.c
-@@ -370,6 +370,8 @@ static int __init init_timer_list_procfs
+@@ -350,6 +350,8 @@ static int __init init_timer_list_procfs
  {
  	struct proc_dir_entry *pe;
  
@@ -235,7 +235,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!pe)
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -3572,6 +3572,8 @@ static const struct seq_operations vmall
+@@ -3962,6 +3962,8 @@ static const struct seq_operations vmall
  
  static int __init proc_vmalloc_init(void)
  {
@@ -246,7 +246,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				&vmalloc_op,
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
-@@ -2044,10 +2044,12 @@ void __init init_mm_internals(void)
+@@ -2083,10 +2083,12 @@ void __init init_mm_internals(void)
  	start_shepherd_timer();
  #endif
  #ifdef CONFIG_PROC_FS
@@ -286,7 +286,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto err;
 --- a/net/core/net-procfs.c
 +++ b/net/core/net-procfs.c
-@@ -320,10 +320,12 @@ static int __net_init dev_proc_net_init(
+@@ -317,10 +317,12 @@ static int __net_init dev_proc_net_init(
  	if (!proc_create_net("dev", 0444, net->proc_net, &dev_seq_ops,
  			sizeof(struct seq_net_private)))
  		goto out;
@@ -301,7 +301,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			sizeof(struct seq_net_private)))
  		goto out_softnet;
  
-@@ -333,9 +335,11 @@ static int __net_init dev_proc_net_init(
+@@ -330,9 +332,11 @@ static int __net_init dev_proc_net_init(
  out:
  	return rc;
  out_ptype:
@@ -315,7 +315,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  out_dev:
  	remove_proc_entry("dev", net->proc_net);
  	goto out;
-@@ -345,8 +349,10 @@ static void __net_exit dev_proc_net_exit
+@@ -342,8 +346,10 @@ static void __net_exit dev_proc_net_exit
  {
  	wext_proc_exit(net);
  
@@ -330,7 +330,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -3699,6 +3699,8 @@ static __net_initdata struct pernet_oper
+@@ -3855,6 +3855,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -341,7 +341,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -2986,11 +2986,13 @@ static const struct seq_operations fib_r
+@@ -3019,11 +3019,13 @@ static const struct seq_operations fib_r
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -357,7 +357,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			fib_triestat_seq_show, NULL))
  		goto out2;
  
-@@ -3001,17 +3003,21 @@ int __net_init fib_proc_init(struct net
+@@ -3034,17 +3036,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:
@@ -385,7 +385,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/proc.c
 +++ b/net/ipv4/proc.c
-@@ -528,5 +528,8 @@ static __net_initdata struct pernet_oper
+@@ -553,5 +553,8 @@ static __net_initdata struct pernet_oper
  
  int __init ip_misc_proc_init(void)
  {
@@ -396,7 +396,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -410,6 +410,9 @@ static struct pernet_operations ip_rt_pr
+@@ -387,6 +387,9 @@ static struct pernet_operations ip_rt_pr
  
  static int __init ip_rt_proc_init(void)
  {

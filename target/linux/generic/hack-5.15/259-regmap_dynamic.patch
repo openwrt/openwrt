@@ -94,7 +94,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	select REGMAP
  	tristate
  	depends on SPI
-
 --- a/drivers/base/regmap/Makefile
 +++ b/drivers/base/regmap/Makefile
 @@ -2,10 +2,14 @@
@@ -126,7 +125,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/mutex.h>
  #include <linux/err.h>
  #include <linux/property.h>
-@@ -3298,3 +3299,5 @@ static int __init regmap_initcall(void)
+@@ -3341,3 +3342,5 @@ static int __init regmap_initcall(void)
  	return 0;
  }
  postcore_initcall(regmap_initcall);
@@ -134,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +MODULE_LICENSE("GPL");
 --- a/include/linux/regmap.h
 +++ b/include/linux/regmap.h
-@@ -179,7 +179,7 @@ struct reg_sequence {
+@@ -180,7 +180,7 @@ struct reg_sequence {
  	__ret ?: __tmp; \
  })
  
