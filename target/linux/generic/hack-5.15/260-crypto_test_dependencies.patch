@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	tristate "Userspace cryptographic algorithm configuration"
 --- a/crypto/algboss.c
 +++ b/crypto/algboss.c
-@@ -230,8 +230,12 @@ static int cryptomgr_schedule_test(struc
+@@ -211,8 +211,12 @@ static int cryptomgr_schedule_test(struc
  	type = alg->cra_flags;
  
  	/* Do not test internal algorithms. */

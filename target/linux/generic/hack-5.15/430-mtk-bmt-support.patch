@@ -1,8 +1,8 @@
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
-@@ -15,6 +15,10 @@ config MTD_NAND_ECC
-        bool
-        depends on MTD_NAND_CORE
+@@ -46,6 +46,10 @@ config MTD_NAND_ECC_SW_BCH
+ 	  ECC codes. They are used with NAND devices requiring more than 1 bit
+ 	  of error correction.
  
 +config MTD_NAND_MTK_BMT
 +	bool "Support MediaTek NAND Bad-block Management Table"
