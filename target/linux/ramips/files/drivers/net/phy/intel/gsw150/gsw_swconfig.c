@@ -356,6 +356,26 @@ static int intel_get_port_mib(struct switch_dev *dev,
 	return 0;
 }
 
+static int intel_get_port_stats(struct switch_dev *dev, int port,
+                                struct switch_port_stats *stats)
+{
+	GSW_RMON_Port_cnt_t parm;
+	struct intel_gsw *gsw = container_of(dev, struct intel_gsw, swdev);
+
+	if (port < 0 || port >= INTEL_SWITCH_PORT_NUM)
+		return -EINVAL;
+
+	parm.nPortId = port;
+	mutex_lock(&gsw->reg_mutex);
+	intel_count_rd(gsw, &parm);
+	mutex_unlock(&gsw->reg_mutex);
+
+	stats->tx_bytes = parm.nTxGoodBytes;
+	stats->rx_bytes = parm.nRxGoodBytes;
+
+	return 0;
+}
+
 int intel_get_single_phy_power(struct intel_gsw *gsw, int port_num);
 
 void intel_disable_single_phy(struct intel_gsw *gsw, int port_num);
@@ -363,8 +383,8 @@ void intel_disable_single_phy(struct intel_gsw *gsw, int port_num);
 void intel_enable_single_phy(struct intel_gsw *gsw, int port_num);
 
 static int intel_get_port_power(struct switch_dev *dev,
-                              const struct switch_attr *attr,
-                              struct switch_val *val)
+                                const struct switch_attr *attr,
+                                struct switch_val *val)
 {
 	struct intel_gsw *gsw = container_of(dev, struct intel_gsw, swdev);
 
@@ -377,8 +397,8 @@ static int intel_get_port_power(struct switch_dev *dev,
 }
 
 static int intel_set_port_power(struct switch_dev *dev,
-                              const struct switch_attr *attr,
-                              struct switch_val *val)
+                                const struct switch_attr *attr,
+                                struct switch_val *val)
 {
 	struct intel_gsw *gsw = container_of(dev, struct intel_gsw, swdev);
 
@@ -453,6 +473,7 @@ struct switch_dev_ops intel_switch_ops = {
 	.get_port_pvid = intel_get_port_pvid,
 	.set_port_pvid = intel_set_port_pvid,
 	.get_port_link = intel_get_port_link,
+	.get_port_stats = intel_get_port_stats,
 	.apply_config = intel_apply_vlan_config,
 	.reset_switch = intel_reset_vlan,
 };
