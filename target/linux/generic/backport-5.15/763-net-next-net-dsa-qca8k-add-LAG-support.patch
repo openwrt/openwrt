@@ -23,11 +23,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h |  33 +++++++++
  2 files changed, 210 insertions(+)
 
-diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
-index bd9d756f40011..6516df08a5d5f 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -1336,6 +1336,9 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1340,6 +1340,9 @@ qca8k_setup(struct dsa_switch *ds)
  	ds->ageing_time_min = 7000;
  	ds->ageing_time_max = 458745000;
  
@@ -37,7 +35,7 @@ index bd9d756f40011..6516df08a5d5f 100644
  	return 0;
  }
  
-@@ -2203,6 +2206,178 @@ qca8k_get_tag_protocol(struct dsa_switch *ds, int port,
+@@ -2207,6 +2210,178 @@ qca8k_get_tag_protocol(struct dsa_switch
  	return DSA_TAG_PROTO_QCA;
  }
  
@@ -216,7 +214,7 @@ index bd9d756f40011..6516df08a5d5f 100644
  static const struct dsa_switch_ops qca8k_switch_ops = {
  	.get_tag_protocol	= qca8k_get_tag_protocol,
  	.setup			= qca8k_setup,
-@@ -2236,6 +2411,8 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
+@@ -2240,6 +2415,8 @@ static const struct dsa_switch_ops qca8k
  	.phylink_mac_link_down	= qca8k_phylink_mac_link_down,
  	.phylink_mac_link_up	= qca8k_phylink_mac_link_up,
  	.get_phy_flags		= qca8k_get_phy_flags,
@@ -225,8 +223,6 @@ index bd9d756f40011..6516df08a5d5f 100644
  };
  
  static int qca8k_read_switch_id(struct qca8k_priv *priv)
-diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
-index 7c87a968c0104..ab4a417b25a9c 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -15,6 +15,8 @@
@@ -290,6 +286,3 @@ index 7c87a968c0104..ab4a417b25a9c 100644
  	bool legacy_phy_port_mapping;
  	struct qca8k_ports_config ports_config;
  	struct regmap *regmap;
--- 
-cgit 1.2.3-1.el7
-

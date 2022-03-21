@@ -67,11 +67,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/switch.c   | 14 +++++++++++
  4 files changed, 96 insertions(+), 4 deletions(-)
 
-diff --git a/include/net/dsa.h b/include/net/dsa.h
-index bdf308a5c55ee..8b496c7e62ef8 100644
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -82,12 +82,15 @@ enum dsa_tag_protocol {
+@@ -80,12 +80,15 @@ enum dsa_tag_protocol {
  };
  
  struct dsa_switch;
@@ -87,7 +85,7 @@ index bdf308a5c55ee..8b496c7e62ef8 100644
  	unsigned int needed_headroom;
  	unsigned int needed_tailroom;
  	const char *name;
-@@ -337,6 +340,8 @@ struct dsa_switch {
+@@ -329,6 +332,8 @@ struct dsa_switch {
  	 */
  	void *priv;
  
@@ -96,7 +94,7 @@ index bdf308a5c55ee..8b496c7e62ef8 100644
  	/*
  	 * Configuration data for this switch.
  	 */
-@@ -689,6 +694,13 @@ struct dsa_switch_ops {
+@@ -584,6 +589,13 @@ struct dsa_switch_ops {
  						  enum dsa_tag_protocol mprot);
  	int	(*change_tag_protocol)(struct dsa_switch *ds, int port,
  				       enum dsa_tag_protocol proto);
@@ -110,11 +108,9 @@ index bdf308a5c55ee..8b496c7e62ef8 100644
  
  	/* Optional switch-wide initialization and destruction methods */
  	int	(*setup)(struct dsa_switch *ds);
-diff --git a/net/dsa/dsa2.c b/net/dsa/dsa2.c
-index 8814fa0e44c84..cf65661686209 100644
 --- a/net/dsa/dsa2.c
 +++ b/net/dsa/dsa2.c
-@@ -248,8 +248,12 @@ static struct dsa_switch_tree *dsa_tree_alloc(int index)
+@@ -230,8 +230,12 @@ static struct dsa_switch_tree *dsa_tree_
  
  static void dsa_tree_free(struct dsa_switch_tree *dst)
  {
@@ -128,16 +124,16 @@ index 8814fa0e44c84..cf65661686209 100644
  	list_del(&dst->list);
  	kfree(dst);
  }
-@@ -822,7 +826,7 @@ static int dsa_switch_setup_tag_protocol(struct dsa_switch *ds)
- 	int err;
+@@ -805,7 +809,7 @@ static int dsa_switch_setup_tag_protocol
+ 	int port, err;
  
  	if (tag_ops->proto == dst->default_proto)
 -		return 0;
 +		goto connect;
  
- 	dsa_switch_for_each_cpu_port(cpu_dp, ds) {
- 		rtnl_lock();
-@@ -836,6 +840,17 @@ static int dsa_switch_setup_tag_protocol(struct dsa_switch *ds)
+ 	for (port = 0; port < ds->num_ports; port++) {
+ 		if (!dsa_is_cpu_port(ds, port))
+@@ -821,6 +825,17 @@ static int dsa_switch_setup_tag_protocol
  		}
  	}
  
@@ -155,7 +151,7 @@ index 8814fa0e44c84..cf65661686209 100644
  	return 0;
  }
  
-@@ -1136,6 +1151,46 @@ static void dsa_tree_teardown(struct dsa_switch_tree *dst)
+@@ -1132,6 +1147,46 @@ static void dsa_tree_teardown(struct dsa
  	dst->setup = false;
  }
  
@@ -202,7 +198,7 @@ index 8814fa0e44c84..cf65661686209 100644
  /* Since the dsa/tagging sysfs device attribute is per master, the assumption
   * is that all DSA switches within a tree share the same tagger, otherwise
   * they would have formed disjoint trees (different "dsa,member" values).
-@@ -1168,12 +1223,15 @@ int dsa_tree_change_tag_proto(struct dsa_switch_tree *dst,
+@@ -1164,12 +1219,15 @@ int dsa_tree_change_tag_proto(struct dsa
  			goto out_unlock;
  	}
  
@@ -220,7 +216,7 @@ index 8814fa0e44c84..cf65661686209 100644
  
  	rtnl_unlock();
  
-@@ -1260,6 +1318,7 @@ static int dsa_port_parse_cpu(struct dsa_port *dp, struct net_device *master,
+@@ -1257,6 +1315,7 @@ static int dsa_port_parse_cpu(struct dsa
  	struct dsa_switch_tree *dst = ds->dst;
  	const struct dsa_device_ops *tag_ops;
  	enum dsa_tag_protocol default_proto;
@@ -228,7 +224,7 @@ index 8814fa0e44c84..cf65661686209 100644
  
  	/* Find out which protocol the switch would prefer. */
  	default_proto = dsa_get_tag_protocol(dp, master);
-@@ -1307,6 +1366,12 @@ static int dsa_port_parse_cpu(struct dsa_port *dp, struct net_device *master,
+@@ -1304,6 +1363,12 @@ static int dsa_port_parse_cpu(struct dsa
  		 */
  		dsa_tag_driver_put(tag_ops);
  	} else {
@@ -241,8 +237,6 @@ index 8814fa0e44c84..cf65661686209 100644
  		dst->tag_ops = tag_ops;
  	}
  
-diff --git a/net/dsa/dsa_priv.h b/net/dsa/dsa_priv.h
-index 38ce5129a33dc..0db2b26b0c83c 100644
 --- a/net/dsa/dsa_priv.h
 +++ b/net/dsa/dsa_priv.h
 @@ -37,6 +37,7 @@ enum {
@@ -253,11 +247,9 @@ index 38ce5129a33dc..0db2b26b0c83c 100644
  	DSA_NOTIFIER_MRP_ADD,
  	DSA_NOTIFIER_MRP_DEL,
  	DSA_NOTIFIER_MRP_ADD_RING_ROLE,
-diff --git a/net/dsa/switch.c b/net/dsa/switch.c
-index 9c92edd969612..06948f5368296 100644
 --- a/net/dsa/switch.c
 +++ b/net/dsa/switch.c
-@@ -647,6 +647,17 @@ static int dsa_switch_change_tag_proto(struct dsa_switch *ds,
+@@ -616,6 +616,17 @@ static int dsa_switch_change_tag_proto(s
  	return 0;
  }
  
@@ -275,7 +267,7 @@ index 9c92edd969612..06948f5368296 100644
  static int dsa_switch_mrp_add(struct dsa_switch *ds,
  			      struct dsa_notifier_mrp_info *info)
  {
-@@ -766,6 +777,9 @@ static int dsa_switch_event(struct notifier_block *nb,
+@@ -735,6 +746,9 @@ static int dsa_switch_event(struct notif
  	case DSA_NOTIFIER_TAG_PROTO:
  		err = dsa_switch_change_tag_proto(ds, info);
  		break;
@@ -285,6 +277,3 @@ index 9c92edd969612..06948f5368296 100644
  	case DSA_NOTIFIER_MRP_ADD:
  		err = dsa_switch_mrp_add(ds, info);
  		break;
--- 
-cgit 1.2.3-1.el7
-

@@ -14,11 +14,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/slave.c | 4 +---
  1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/net/dsa/slave.c b/net/dsa/slave.c
-index 88bcdba92fa7..22241afcac81 100644
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -2022,14 +2022,12 @@ int dsa_slave_create(struct dsa_port *port)
+@@ -1997,14 +1997,12 @@ int dsa_slave_create(struct dsa_port *po
  	}
  
  	rtnl_lock();
@@ -34,6 +32,3 @@ index 88bcdba92fa7..22241afcac81 100644
  	ret = register_netdevice(slave_dev);
  	if (ret) {
  		netdev_err(master, "error %d registering interface %s\n",
--- 
-2.34.1
-

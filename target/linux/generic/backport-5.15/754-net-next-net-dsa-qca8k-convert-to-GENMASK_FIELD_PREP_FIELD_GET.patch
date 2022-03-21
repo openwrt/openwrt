@@ -14,8 +14,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h | 153 ++++++++++++++++++++++++++----------------------
  2 files changed, 130 insertions(+), 121 deletions(-)
 
-diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
-index bfffc1fb7016d..0eceb9cba2dc8 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
 @@ -9,6 +9,7 @@
@@ -26,7 +24,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  #include <net/dsa.h>
  #include <linux/of_net.h>
  #include <linux/of_mdio.h>
-@@ -319,18 +320,18 @@ qca8k_fdb_read(struct qca8k_priv *priv, struct qca8k_fdb *fdb)
+@@ -319,18 +320,18 @@ qca8k_fdb_read(struct qca8k_priv *priv,
  	}
  
  	/* vid - 83:72 */
@@ -54,7 +52,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  
  	return 0;
  }
-@@ -343,18 +344,18 @@ qca8k_fdb_write(struct qca8k_priv *priv, u16 vid, u8 port_mask, const u8 *mac,
+@@ -343,18 +344,18 @@ qca8k_fdb_write(struct qca8k_priv *priv,
  	int i;
  
  	/* vid - 83:72 */
@@ -82,7 +80,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  
  	/* load the array into the ARL table */
  	for (i = 0; i < 3; i++)
-@@ -372,7 +373,7 @@ qca8k_fdb_access(struct qca8k_priv *priv, enum qca8k_fdb_cmd cmd, int port)
+@@ -372,7 +373,7 @@ qca8k_fdb_access(struct qca8k_priv *priv
  	reg |= cmd;
  	if (port >= 0) {
  		reg |= QCA8K_ATU_FUNC_PORT_EN;
@@ -91,7 +89,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  	}
  
  	/* Write the function register triggering the table access */
-@@ -454,7 +455,7 @@ qca8k_vlan_access(struct qca8k_priv *priv, enum qca8k_vlan_cmd cmd, u16 vid)
+@@ -454,7 +455,7 @@ qca8k_vlan_access(struct qca8k_priv *pri
  	/* Set the command and VLAN index */
  	reg = QCA8K_VTU_FUNC1_BUSY;
  	reg |= cmd;
@@ -100,7 +98,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  
  	/* Write the function register triggering the table access */
  	ret = qca8k_write(priv, QCA8K_REG_VTU_FUNC1, reg);
-@@ -500,13 +501,11 @@ qca8k_vlan_add(struct qca8k_priv *priv, u8 port, u16 vid, bool untagged)
+@@ -500,13 +501,11 @@ qca8k_vlan_add(struct qca8k_priv *priv,
  	if (ret < 0)
  		goto out;
  	reg |= QCA8K_VTU_FUNC0_VALID | QCA8K_VTU_FUNC0_IVL_EN;
@@ -117,7 +115,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  
  	ret = qca8k_write(priv, QCA8K_REG_VTU_FUNC0, reg);
  	if (ret)
-@@ -534,15 +533,13 @@ qca8k_vlan_del(struct qca8k_priv *priv, u8 port, u16 vid)
+@@ -534,15 +533,13 @@ qca8k_vlan_del(struct qca8k_priv *priv,
  	ret = qca8k_read(priv, QCA8K_REG_VTU_FUNC0, &reg);
  	if (ret < 0)
  		goto out;
@@ -136,7 +134,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  
  		if ((reg & mask) != mask) {
  			del = false;
-@@ -1014,7 +1011,7 @@ qca8k_parse_port_config(struct qca8k_priv *priv)
+@@ -1014,7 +1011,7 @@ qca8k_parse_port_config(struct qca8k_pri
  				 mode == PHY_INTERFACE_MODE_RGMII_TXID)
  				delay = 1;
  
@@ -145,7 +143,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  				dev_err(priv->dev, "rgmii tx delay is limited to a max value of 3ns, setting to the max value");
  				delay = 3;
  			}
-@@ -1030,7 +1027,7 @@ qca8k_parse_port_config(struct qca8k_priv *priv)
+@@ -1030,7 +1027,7 @@ qca8k_parse_port_config(struct qca8k_pri
  				 mode == PHY_INTERFACE_MODE_RGMII_RXID)
  				delay = 2;
  
@@ -209,7 +207,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  				  QCA8K_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
  				  QCA8K_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
  				  QCA8K_PORT_HOL_CTRL1_WRED_EN,
-@@ -1265,8 +1260,8 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1269,8 +1264,8 @@ qca8k_setup(struct dsa_switch *ds)
  		mask = QCA8K_GLOBAL_FC_GOL_XON_THRES(288) |
  		       QCA8K_GLOBAL_FC_GOL_XOFF_THRES(496);
  		qca8k_rmw(priv, QCA8K_REG_GLOBAL_FC_THRESH,
@@ -220,7 +218,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  			  mask);
  	}
  
-@@ -1912,11 +1907,11 @@ qca8k_port_vlan_filtering(struct dsa_switch *ds, int port, bool vlan_filtering,
+@@ -1916,11 +1911,11 @@ qca8k_port_vlan_filtering(struct dsa_swi
  
  	if (vlan_filtering) {
  		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
@@ -234,7 +232,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  				QCA8K_PORT_LOOKUP_VLAN_MODE_NONE);
  	}
  
-@@ -1940,10 +1935,9 @@ qca8k_port_vlan_add(struct dsa_switch *ds, int port,
+@@ -1944,10 +1939,9 @@ qca8k_port_vlan_add(struct dsa_switch *d
  	}
  
  	if (pvid) {
@@ -247,7 +245,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  		if (ret)
  			return ret;
  
-@@ -2037,7 +2031,7 @@ static int qca8k_read_switch_id(struct qca8k_priv *priv)
+@@ -2041,7 +2035,7 @@ static int qca8k_read_switch_id(struct q
  	if (ret < 0)
  		return -ENODEV;
  
@@ -256,7 +254,7 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  	if (id != data->id) {
  		dev_err(priv->dev, "Switch id detected %x but expected %x", id, data->id);
  		return -ENODEV;
-@@ -2046,7 +2040,7 @@ static int qca8k_read_switch_id(struct qca8k_priv *priv)
+@@ -2050,7 +2044,7 @@ static int qca8k_read_switch_id(struct q
  	priv->switch_id = id;
  
  	/* Save revision to communicate to the internal PHY driver */
@@ -265,8 +263,6 @@ index bfffc1fb7016d..0eceb9cba2dc8 100644
  
  	return 0;
  }
-diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
-index 128b8cf85e080..085885275398b 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -30,9 +30,9 @@
@@ -509,6 +505,3 @@ index 128b8cf85e080..085885275398b 100644
  #define QCA8K_EGRESS_VLAN(x)				(0x0c70 + (4 * (x / 2)))
  
  /* L3 registers */
--- 
-cgit 1.2.3-1.el7
-

@@ -15,11 +15,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h |   1 +
  2 files changed, 217 insertions(+)
 
-diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
-index 199cf4f761c0..0ce5b7ca0b7f 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -867,6 +867,199 @@ qca8k_port_set_status(struct qca8k_priv *priv, int port, int enable)
+@@ -867,6 +867,199 @@ qca8k_port_set_status(struct qca8k_priv
  		regmap_clear_bits(priv->regmap, QCA8K_REG_PORT_STATUS(port), mask);
  }
  
@@ -219,7 +217,7 @@ index 199cf4f761c0..0ce5b7ca0b7f 100644
  static u32
  qca8k_port_to_phy(int port)
  {
-@@ -989,6 +1182,12 @@ qca8k_internal_mdio_write(struct mii_bus *slave_bus, int phy, int regnum, u16 da
+@@ -989,6 +1182,12 @@ qca8k_internal_mdio_write(struct mii_bus
  {
  	struct qca8k_priv *priv = slave_bus->priv;
  	struct mii_bus *bus = priv->bus;
@@ -232,7 +230,7 @@ index 199cf4f761c0..0ce5b7ca0b7f 100644
  
  	return qca8k_mdio_write(bus, phy, regnum, data);
  }
-@@ -998,6 +1197,12 @@ qca8k_internal_mdio_read(struct mii_bus *slave_bus, int phy, int regnum)
+@@ -998,6 +1197,12 @@ qca8k_internal_mdio_read(struct mii_bus
  {
  	struct qca8k_priv *priv = slave_bus->priv;
  	struct mii_bus *bus = priv->bus;
@@ -253,7 +251,7 @@ index 199cf4f761c0..0ce5b7ca0b7f 100644
  
  	/* Check if the legacy mapping should be used and the
  	 * port is not correctly mapped to the right PHY in the
-@@ -1014,6 +1220,11 @@ qca8k_phy_write(struct dsa_switch *ds, int port, int regnum, u16 data)
+@@ -1014,6 +1220,11 @@ qca8k_phy_write(struct dsa_switch *ds, i
  	if (priv->legacy_phy_port_mapping)
  		port = qca8k_port_to_phy(port) % PHY_MAX_ADDR;
  
@@ -265,7 +263,7 @@ index 199cf4f761c0..0ce5b7ca0b7f 100644
  	return qca8k_mdio_write(priv->bus, port, regnum, data);
  }
  
-@@ -1030,6 +1241,11 @@ qca8k_phy_read(struct dsa_switch *ds, int port, int regnum)
+@@ -1030,6 +1241,11 @@ qca8k_phy_read(struct dsa_switch *ds, in
  	if (priv->legacy_phy_port_mapping)
  		port = qca8k_port_to_phy(port) % PHY_MAX_ADDR;
  
@@ -277,8 +275,6 @@ index 199cf4f761c0..0ce5b7ca0b7f 100644
  	ret = qca8k_mdio_read(priv->bus, port, regnum);
  
  	if (ret < 0)
-diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
-index 2d7d084db089..c6f6abd2108e 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -14,6 +14,7 @@
@@ -289,6 +285,3 @@ index 2d7d084db089..c6f6abd2108e 100644
  #define QCA8K_ETHERNET_TIMEOUT				100
  
  #define QCA8K_NUM_PORTS					7
--- 
-2.34.1
-

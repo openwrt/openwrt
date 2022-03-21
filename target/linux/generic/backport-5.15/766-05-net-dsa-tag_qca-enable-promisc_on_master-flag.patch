@@ -15,11 +15,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/tag_qca.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/net/dsa/tag_qca.c b/net/dsa/tag_qca.c
-index 34e565e00ece..f8df49d5956f 100644
 --- a/net/dsa/tag_qca.c
 +++ b/net/dsa/tag_qca.c
-@@ -68,6 +68,7 @@ static const struct dsa_device_ops qca_netdev_ops = {
+@@ -68,6 +68,7 @@ static const struct dsa_device_ops qca_n
  	.xmit	= qca_tag_xmit,
  	.rcv	= qca_tag_rcv,
  	.needed_headroom = QCA_HDR_LEN,
@@ -27,6 +25,3 @@ index 34e565e00ece..f8df49d5956f 100644
  };
  
  MODULE_LICENSE("GPL");
--- 
-2.34.1
-

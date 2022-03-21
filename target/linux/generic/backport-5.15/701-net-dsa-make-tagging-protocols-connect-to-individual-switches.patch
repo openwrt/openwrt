@@ -65,11 +65,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/tag_sja1105.c      | 67 ++++++++++++++++------------------------------
  6 files changed, 109 insertions(+), 113 deletions(-)
 
-diff --git a/include/net/dsa.h b/include/net/dsa.h
-index 64d71968aa91a..f16959444ae12 100644
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -82,15 +82,14 @@ enum dsa_tag_protocol {
+@@ -80,15 +80,14 @@ enum dsa_tag_protocol {
  };
  
  struct dsa_switch;
@@ -87,11 +85,9 @@ index 64d71968aa91a..f16959444ae12 100644
  	unsigned int needed_headroom;
  	unsigned int needed_tailroom;
  	const char *name;
-diff --git a/net/dsa/dsa2.c b/net/dsa/dsa2.c
-index cf65661686209..c18b22c0bf55e 100644
 --- a/net/dsa/dsa2.c
 +++ b/net/dsa/dsa2.c
-@@ -248,12 +248,8 @@ static struct dsa_switch_tree *dsa_tree_alloc(int index)
+@@ -230,12 +230,8 @@ static struct dsa_switch_tree *dsa_tree_
  
  static void dsa_tree_free(struct dsa_switch_tree *dst)
  {
@@ -105,7 +101,7 @@ index cf65661686209..c18b22c0bf55e 100644
  	list_del(&dst->list);
  	kfree(dst);
  }
-@@ -841,17 +837,29 @@ static int dsa_switch_setup_tag_protocol(struct dsa_switch *ds)
+@@ -826,17 +822,29 @@ static int dsa_switch_setup_tag_protocol
  	}
  
  connect:
@@ -136,7 +132,7 @@ index cf65661686209..c18b22c0bf55e 100644
  }
  
  static int dsa_switch_setup(struct dsa_switch *ds)
-@@ -1160,13 +1168,6 @@ static int dsa_tree_bind_tag_proto(struct dsa_switch_tree *dst,
+@@ -1156,13 +1164,6 @@ static int dsa_tree_bind_tag_proto(struc
  
  	dst->tag_ops = tag_ops;
  
@@ -150,7 +146,7 @@ index cf65661686209..c18b22c0bf55e 100644
  	/* Notify the switches from this tree about the connection
  	 * to the new tagger
  	 */
-@@ -1176,16 +1177,14 @@ static int dsa_tree_bind_tag_proto(struct dsa_switch_tree *dst,
+@@ -1172,16 +1173,14 @@ static int dsa_tree_bind_tag_proto(struc
  		goto out_disconnect;
  
  	/* Notify the old tagger about the disconnection from this tree */
@@ -171,7 +167,7 @@ index cf65661686209..c18b22c0bf55e 100644
  	dst->tag_ops = old_tag_ops;
  
  	return err;
-@@ -1318,7 +1317,6 @@ static int dsa_port_parse_cpu(struct dsa_port *dp, struct net_device *master,
+@@ -1315,7 +1314,6 @@ static int dsa_port_parse_cpu(struct dsa
  	struct dsa_switch_tree *dst = ds->dst;
  	const struct dsa_device_ops *tag_ops;
  	enum dsa_tag_protocol default_proto;
@@ -179,7 +175,7 @@ index cf65661686209..c18b22c0bf55e 100644
  
  	/* Find out which protocol the switch would prefer. */
  	default_proto = dsa_get_tag_protocol(dp, master);
-@@ -1366,12 +1364,6 @@ static int dsa_port_parse_cpu(struct dsa_port *dp, struct net_device *master,
+@@ -1363,12 +1361,6 @@ static int dsa_port_parse_cpu(struct dsa
  		 */
  		dsa_tag_driver_put(tag_ops);
  	} else {
@@ -192,8 +188,6 @@ index cf65661686209..c18b22c0bf55e 100644
  		dst->tag_ops = tag_ops;
  	}
  
-diff --git a/net/dsa/dsa_priv.h b/net/dsa/dsa_priv.h
-index 0db2b26b0c83c..edfaae7b59672 100644
 --- a/net/dsa/dsa_priv.h
 +++ b/net/dsa/dsa_priv.h
 @@ -38,6 +38,7 @@ enum {
@@ -204,11 +198,9 @@ index 0db2b26b0c83c..edfaae7b59672 100644
  	DSA_NOTIFIER_MRP_ADD,
  	DSA_NOTIFIER_MRP_DEL,
  	DSA_NOTIFIER_MRP_ADD_RING_ROLE,
-diff --git a/net/dsa/switch.c b/net/dsa/switch.c
-index 06948f5368296..393f2d8a860a9 100644
 --- a/net/dsa/switch.c
 +++ b/net/dsa/switch.c
-@@ -647,15 +647,58 @@ static int dsa_switch_change_tag_proto(struct dsa_switch *ds,
+@@ -616,15 +616,58 @@ static int dsa_switch_change_tag_proto(s
  	return 0;
  }
  
@@ -270,7 +262,7 @@ index 06948f5368296..393f2d8a860a9 100644
  }
  
  static int dsa_switch_mrp_add(struct dsa_switch *ds,
-@@ -780,6 +823,9 @@ static int dsa_switch_event(struct notifier_block *nb,
+@@ -749,6 +792,9 @@ static int dsa_switch_event(struct notif
  	case DSA_NOTIFIER_TAG_PROTO_CONNECT:
  		err = dsa_switch_connect_tag_proto(ds, info);
  		break;
@@ -280,6 +272,3 @@ index 06948f5368296..393f2d8a860a9 100644
  	case DSA_NOTIFIER_MRP_ADD:
  		err = dsa_switch_mrp_add(ds, info);
  		break;
--- 
-cgit 1.2.3-1.el7
-

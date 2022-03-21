@@ -17,8 +17,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/tag_qca.c           | 39 ++++++++++++++++++++++++++++++++++---
  2 files changed, 43 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/dsa/tag_qca.h b/include/linux/dsa/tag_qca.h
-index 1fff57f2937b..4359fb0221cf 100644
 --- a/include/linux/dsa/tag_qca.h
 +++ b/include/linux/dsa/tag_qca.h
 @@ -72,4 +72,11 @@ struct mib_ethhdr {
@@ -33,8 +31,6 @@ index 1fff57f2937b..4359fb0221cf 100644
 +};
 +
  #endif /* __TAG_QCA_H */
-diff --git a/net/dsa/tag_qca.c b/net/dsa/tag_qca.c
-index be792cf687d9..57d2e00f1e5d 100644
 --- a/net/dsa/tag_qca.c
 +++ b/net/dsa/tag_qca.c
 @@ -5,6 +5,7 @@
@@ -45,7 +41,7 @@ index be792cf687d9..57d2e00f1e5d 100644
  #include <linux/dsa/tag_qca.h>
  
  #include "dsa_priv.h"
-@@ -32,6 +33,9 @@ static struct sk_buff *qca_tag_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -32,6 +33,9 @@ static struct sk_buff *qca_tag_xmit(stru
  
  static struct sk_buff *qca_tag_rcv(struct sk_buff *skb, struct net_device *dev)
  {
@@ -55,7 +51,7 @@ index be792cf687d9..57d2e00f1e5d 100644
  	u8 ver, pk_type;
  	__be16 *phdr;
  	int port;
-@@ -39,6 +43,8 @@ static struct sk_buff *qca_tag_rcv(struct sk_buff *skb, struct net_device *dev)
+@@ -39,6 +43,8 @@ static struct sk_buff *qca_tag_rcv(struc
  
  	BUILD_BUG_ON(sizeof(struct qca_mgmt_ethhdr) != QCA_HDR_MGMT_HEADER_LEN + QCA_HDR_LEN);
  
@@ -64,7 +60,7 @@ index be792cf687d9..57d2e00f1e5d 100644
  	if (unlikely(!pskb_may_pull(skb, QCA_HDR_LEN)))
  		return NULL;
  
-@@ -53,13 +59,19 @@ static struct sk_buff *qca_tag_rcv(struct sk_buff *skb, struct net_device *dev)
+@@ -53,13 +59,19 @@ static struct sk_buff *qca_tag_rcv(struc
  	/* Get pk type */
  	pk_type = FIELD_GET(QCA_HDR_RECV_TYPE, hdr);
  
@@ -87,7 +83,7 @@ index be792cf687d9..57d2e00f1e5d 100644
  
  	/* Remove QCA tag and recalculate checksum */
  	skb_pull_rcsum(skb, QCA_HDR_LEN);
-@@ -75,9 +87,30 @@ static struct sk_buff *qca_tag_rcv(struct sk_buff *skb, struct net_device *dev)
+@@ -75,9 +87,30 @@ static struct sk_buff *qca_tag_rcv(struc
  	return skb;
  }
  
@@ -118,6 +114,3 @@ index be792cf687d9..57d2e00f1e5d 100644
  	.xmit	= qca_tag_xmit,
  	.rcv	= qca_tag_rcv,
  	.needed_headroom = QCA_HDR_LEN,
--- 
-2.34.1
-

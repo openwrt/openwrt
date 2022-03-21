@@ -15,15 +15,12 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.c | 55 ++++++++++++++++++++++++++++++++---------
  1 file changed, 43 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
-index a1b76dcd2eb6..52ec2800dd89 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -411,6 +411,43 @@ qca8k_regmap_update_bits_eth(struct qca8k_priv *priv, u32 reg, u32 mask, u32 wri
- 	return qca8k_write_eth(priv, reg, &val, sizeof(val));
+@@ -412,6 +412,43 @@ qca8k_regmap_update_bits_eth(struct qca8
  }
  
-+static int
+ static int
 +qca8k_bulk_read(struct qca8k_priv *priv, u32 reg, u32 *val, int len)
 +{
 +	int i, count = len / sizeof(u32), ret;
@@ -60,10 +57,11 @@ index a1b76dcd2eb6..52ec2800dd89 100644
 +	return 0;
 +}
 +
- static int
++static int
  qca8k_regmap_read(void *ctx, uint32_t reg, uint32_t *val)
  {
-@@ -546,17 +583,13 @@ qca8k_busy_wait(struct qca8k_priv *priv, u32 reg, u32 mask)
+ 	struct qca8k_priv *priv = (struct qca8k_priv *)ctx;
+@@ -546,17 +583,13 @@ qca8k_busy_wait(struct qca8k_priv *priv,
  static int
  qca8k_fdb_read(struct qca8k_priv *priv, struct qca8k_fdb *fdb)
  {
@@ -86,7 +84,7 @@ index a1b76dcd2eb6..52ec2800dd89 100644
  
  	/* vid - 83:72 */
  	fdb->vid = FIELD_GET(QCA8K_ATU_VID_MASK, reg[2]);
-@@ -580,7 +613,6 @@ qca8k_fdb_write(struct qca8k_priv *priv, u16 vid, u8 port_mask, const u8 *mac,
+@@ -580,7 +613,6 @@ qca8k_fdb_write(struct qca8k_priv *priv,
  		u8 aging)
  {
  	u32 reg[3] = { 0 };
@@ -94,7 +92,7 @@ index a1b76dcd2eb6..52ec2800dd89 100644
  
  	/* vid - 83:72 */
  	reg[2] = FIELD_PREP(QCA8K_ATU_VID_MASK, vid);
-@@ -597,8 +629,7 @@ qca8k_fdb_write(struct qca8k_priv *priv, u16 vid, u8 port_mask, const u8 *mac,
+@@ -597,8 +629,7 @@ qca8k_fdb_write(struct qca8k_priv *priv,
  	reg[0] |= FIELD_PREP(QCA8K_ATU_ADDR5_MASK, mac[5]);
  
  	/* load the array into the ARL table */
@@ -104,6 +102,3 @@ index a1b76dcd2eb6..52ec2800dd89 100644
  }
  
  static int
--- 
-2.34.1
-

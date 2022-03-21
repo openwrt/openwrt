@@ -41,8 +41,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h |  13 +++
  2 files changed, 238 insertions(+)
 
-diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
-index ec062b9a918d..e3a215f04559 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
 @@ -20,6 +20,7 @@
@@ -53,7 +51,7 @@ index ec062b9a918d..e3a215f04559 100644
  
  #include "qca8k.h"
  
-@@ -170,6 +171,194 @@ qca8k_rmw(struct qca8k_priv *priv, u32 reg, u32 mask, u32 write_val)
+@@ -170,6 +171,194 @@ qca8k_rmw(struct qca8k_priv *priv, u32 r
  	return regmap_update_bits(priv->regmap, reg, mask, write_val);
  }
  
@@ -248,7 +246,7 @@ index ec062b9a918d..e3a215f04559 100644
  static int
  qca8k_regmap_read(void *ctx, uint32_t reg, uint32_t *val)
  {
-@@ -178,6 +367,9 @@ qca8k_regmap_read(void *ctx, uint32_t reg, uint32_t *val)
+@@ -178,6 +367,9 @@ qca8k_regmap_read(void *ctx, uint32_t re
  	u16 r1, r2, page;
  	int ret;
  
@@ -258,7 +256,7 @@ index ec062b9a918d..e3a215f04559 100644
  	qca8k_split_addr(reg, &r1, &r2, &page);
  
  	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
-@@ -201,6 +393,9 @@ qca8k_regmap_write(void *ctx, uint32_t reg, uint32_t val)
+@@ -201,6 +393,9 @@ qca8k_regmap_write(void *ctx, uint32_t r
  	u16 r1, r2, page;
  	int ret;
  
@@ -268,7 +266,7 @@ index ec062b9a918d..e3a215f04559 100644
  	qca8k_split_addr(reg, &r1, &r2, &page);
  
  	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
-@@ -225,6 +420,9 @@ qca8k_regmap_update_bits(void *ctx, uint32_t reg, uint32_t mask, uint32_t write_
+@@ -225,6 +420,9 @@ qca8k_regmap_update_bits(void *ctx, uint
  	u32 val;
  	int ret;
  
@@ -278,7 +276,7 @@ index ec062b9a918d..e3a215f04559 100644
  	qca8k_split_addr(reg, &r1, &r2, &page);
  
  	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
-@@ -2394,7 +2592,30 @@ qca8k_master_change(struct dsa_switch *ds, const struct net_device *master,
+@@ -2393,7 +2591,30 @@ qca8k_master_change(struct dsa_switch *d
  	if (dp->index != 0)
  		return;
  
@@ -309,7 +307,7 @@ index ec062b9a918d..e3a215f04559 100644
  }
  
  static const struct dsa_switch_ops qca8k_switch_ops = {
-@@ -2433,6 +2654,7 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
+@@ -2432,6 +2653,7 @@ static const struct dsa_switch_ops qca8k
  	.port_lag_join		= qca8k_port_lag_join,
  	.port_lag_leave		= qca8k_port_lag_leave,
  	.master_state_change	= qca8k_master_change,
@@ -317,7 +315,7 @@ index ec062b9a918d..e3a215f04559 100644
  };
  
  static int qca8k_read_switch_id(struct qca8k_priv *priv)
-@@ -2512,6 +2734,9 @@ qca8k_sw_probe(struct mdio_device *mdiodev)
+@@ -2511,6 +2733,9 @@ qca8k_sw_probe(struct mdio_device *mdiod
  	if (!priv->ds)
  		return -ENOMEM;
  
@@ -327,8 +325,6 @@ index ec062b9a918d..e3a215f04559 100644
  	priv->ds->dev = &mdiodev->dev;
  	priv->ds->num_ports = QCA8K_NUM_PORTS;
  	priv->ds->priv = priv;
-diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
-index b81aad98a116..75c28689a652 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -11,6 +11,10 @@
@@ -365,6 +361,3 @@ index b81aad98a116..75c28689a652 100644
  };
  
  struct qca8k_mib_desc {
--- 
-2.34.1
-

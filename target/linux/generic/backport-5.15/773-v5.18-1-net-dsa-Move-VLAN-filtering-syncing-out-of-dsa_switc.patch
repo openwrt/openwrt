@@ -15,11 +15,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/switch.c | 38 +++++++++++++++++++++++++-------------
  1 file changed, 25 insertions(+), 13 deletions(-)
 
-diff --git a/net/dsa/switch.c b/net/dsa/switch.c
-index e3c7d2627a619..9f9b70d6070a3 100644
 --- a/net/dsa/switch.c
 +++ b/net/dsa/switch.c
-@@ -113,25 +113,14 @@ static int dsa_switch_bridge_join(struct dsa_switch *ds,
+@@ -113,25 +113,14 @@ static int dsa_switch_bridge_join(struct
  	return dsa_tag_8021q_bridge_join(ds, info);
  }
  
@@ -47,7 +45,7 @@ index e3c7d2627a619..9f9b70d6070a3 100644
  	if (ds->needs_standalone_vlan_filtering && !br_vlan_enabled(info->br)) {
  		change_vlan_filtering = true;
  		vlan_filtering = true;
-@@ -172,6 +161,29 @@ static int dsa_switch_bridge_leave(struct dsa_switch *ds,
+@@ -172,6 +161,29 @@ static int dsa_switch_bridge_leave(struc
  			return err;
  	}
  
@@ -77,5 +75,3 @@ index e3c7d2627a619..9f9b70d6070a3 100644
  	return dsa_tag_8021q_bridge_leave(ds, info);
  }
  
--- 
-cgit 

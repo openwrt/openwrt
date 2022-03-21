@@ -26,11 +26,9 @@ Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
  drivers/pinctrl/qcom/pinctrl-msm.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/qcom/pinctrl-msm.c b/drivers/pinctrl/qcom/pinctrl-msm.c
-index 8476a8ac4451..a42ff4b22a04 100644
 --- a/drivers/pinctrl/qcom/pinctrl-msm.c
 +++ b/drivers/pinctrl/qcom/pinctrl-msm.c
-@@ -1157,7 +1157,7 @@ static int msm_gpio_irq_set_affinity(struct irq_data *d,
+@@ -1157,7 +1157,7 @@ static int msm_gpio_irq_set_affinity(str
  	if (d->parent_data && test_bit(d->hwirq, pctrl->skip_wake_irqs))
  		return irq_chip_set_affinity_parent(d, dest, force);
  
@@ -39,7 +37,7 @@ index 8476a8ac4451..a42ff4b22a04 100644
  }
  
  static int msm_gpio_irq_set_vcpu_affinity(struct irq_data *d, void *vcpu_info)
-@@ -1168,7 +1168,7 @@ static int msm_gpio_irq_set_vcpu_affinity(struct irq_data *d, void *vcpu_info)
+@@ -1168,7 +1168,7 @@ static int msm_gpio_irq_set_vcpu_affinit
  	if (d->parent_data && test_bit(d->hwirq, pctrl->skip_wake_irqs))
  		return irq_chip_set_vcpu_affinity_parent(d, vcpu_info);
  

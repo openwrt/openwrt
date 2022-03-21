@@ -33,13 +33,11 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/switch.c | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/net/dsa/switch.c b/net/dsa/switch.c
-index 9f9b70d6070a3..517cc83d13cc8 100644
 --- a/net/dsa/switch.c
 +++ b/net/dsa/switch.c
-@@ -180,9 +180,11 @@ static int dsa_switch_bridge_leave(struct dsa_switch *ds,
+@@ -180,9 +180,11 @@ static int dsa_switch_bridge_leave(struc
  						info->sw_index, info->port,
- 						info->bridge);
+ 						info->br);
  
 -	err = dsa_switch_sync_vlan_filtering(ds, info);
 -	if (err)
@@ -52,5 +50,3 @@ index 9f9b70d6070a3..517cc83d13cc8 100644
  
  	return dsa_tag_8021q_bridge_leave(ds, info);
  }
--- 
-cgit 

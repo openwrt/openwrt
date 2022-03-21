@@ -24,8 +24,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h |  17 ++++++-
  2 files changed, 121 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
-index e3a215f04559..199cf4f761c0 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
 @@ -830,7 +830,10 @@ qca8k_mib_init(struct qca8k_priv *priv)
@@ -40,7 +38,7 @@ index e3a215f04559..199cf4f761c0 100644
  	if (ret)
  		goto exit;
  
-@@ -1901,6 +1904,97 @@ qca8k_get_strings(struct dsa_switch *ds, int port, u32 stringset, uint8_t *data)
+@@ -1901,6 +1904,97 @@ qca8k_get_strings(struct dsa_switch *ds,
  			ETH_GSTRING_LEN);
  }
  
@@ -138,7 +136,7 @@ index e3a215f04559..199cf4f761c0 100644
  static void
  qca8k_get_ethtool_stats(struct dsa_switch *ds, int port,
  			uint64_t *data)
-@@ -1912,6 +2006,10 @@ qca8k_get_ethtool_stats(struct dsa_switch *ds, int port,
+@@ -1912,6 +2006,10 @@ qca8k_get_ethtool_stats(struct dsa_switc
  	u32 hi = 0;
  	int ret;
  
@@ -149,7 +147,7 @@ index e3a215f04559..199cf4f761c0 100644
  	match_data = of_device_get_match_data(priv->dev);
  
  	for (i = 0; i < match_data->mib_count; i++) {
-@@ -2593,9 +2691,11 @@ qca8k_master_change(struct dsa_switch *ds, const struct net_device *master,
+@@ -2592,9 +2690,11 @@ qca8k_master_change(struct dsa_switch *d
  		return;
  
  	mutex_lock(&priv->mgmt_eth_data.mutex);
@@ -161,7 +159,7 @@ index e3a215f04559..199cf4f761c0 100644
  	mutex_unlock(&priv->mgmt_eth_data.mutex);
  }
  
-@@ -2609,6 +2709,7 @@ static int qca8k_connect_tag_protocol(struct dsa_switch *ds,
+@@ -2608,6 +2708,7 @@ static int qca8k_connect_tag_protocol(st
  		tagger_data = ds->tagger_data;
  
  		tagger_data->rw_reg_ack_handler = qca8k_rw_reg_ack_handler;
@@ -169,7 +167,7 @@ index e3a215f04559..199cf4f761c0 100644
  
  		break;
  	default:
-@@ -2737,6 +2838,9 @@ qca8k_sw_probe(struct mdio_device *mdiodev)
+@@ -2736,6 +2837,9 @@ qca8k_sw_probe(struct mdio_device *mdiod
  	mutex_init(&priv->mgmt_eth_data.mutex);
  	init_completion(&priv->mgmt_eth_data.rw_done);
  
@@ -179,8 +177,6 @@ index e3a215f04559..199cf4f761c0 100644
  	priv->ds->dev = &mdiodev->dev;
  	priv->ds->num_ports = QCA8K_NUM_PORTS;
  	priv->ds->priv = priv;
-diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
-index 75c28689a652..2d7d084db089 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -67,7 +67,7 @@
@@ -228,6 +224,3 @@ index 75c28689a652..2d7d084db089 100644
  };
  
  struct qca8k_mib_desc {
--- 
-2.34.1
-

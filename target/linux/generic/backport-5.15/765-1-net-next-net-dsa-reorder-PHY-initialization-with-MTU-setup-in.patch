@@ -20,11 +20,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/slave.c | 14 +++++++-------
  1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/net/dsa/slave.c b/net/dsa/slave.c
-index 88f7b8686dac..88bcdba92fa7 100644
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -2011,13 +2011,6 @@ int dsa_slave_create(struct dsa_port *port)
+@@ -1986,13 +1986,6 @@ int dsa_slave_create(struct dsa_port *po
  	port->slave = slave_dev;
  	dsa_slave_setup_tagger(slave_dev);
  
@@ -38,20 +36,17 @@ index 88f7b8686dac..88bcdba92fa7 100644
  	netif_carrier_off(slave_dev);
  
  	ret = dsa_slave_phy_setup(slave_dev);
-@@ -2028,6 +2021,13 @@ int dsa_slave_create(struct dsa_port *port)
- 		goto out_gcells;
+@@ -2004,6 +1997,13 @@ int dsa_slave_create(struct dsa_port *po
  	}
  
-+	rtnl_lock();
+ 	rtnl_lock();
 +	ret = dsa_slave_change_mtu(slave_dev, ETH_DATA_LEN);
 +	rtnl_unlock();
 +	if (ret && ret != -EOPNOTSUPP)
 +		dev_warn(ds->dev, "nonfatal error %d setting MTU to %d on port %d\n",
 +			 ret, ETH_DATA_LEN, port->index);
 +
- 	rtnl_lock();
++	rtnl_lock();
  
  	ret = register_netdevice(slave_dev);
--- 
-2.34.1
-
+ 	if (ret) {
