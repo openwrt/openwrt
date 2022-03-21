@@ -1,0 +1,60 @@
+From patchwork Mon Mar 21 23:22:23 2022
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Daniel Golle <daniel@makrotopia.org>
+X-Patchwork-Id: 1607954
+Return-Path: <u-boot-bounces@lists.denx.de>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@bilbo.ozlabs.org
+Date: Mon, 21 Mar 2022 23:22:23 +0000
+From: Daniel Golle <daniel@makrotopia.org>
+To: u-boot@lists.denx.de
+Cc: Simon Glass <sjg@chromium.org>, Alexandru Gagniuc <mr.nuke.me@gmail.com>,
+ Patrick Delaunay <patrick.delaunay@foss.st.com>,
+ Heinrich Schuchardt <xypron.glpk@gmx.de>
+Subject: [PATCH] image-fdt: save name of FIT configuration in '/chosen' node
+Message-ID: <YjkIr8wmz1XEOVNh@makrotopia.org>
+MIME-Version: 1.0
+Content-Disposition: inline
+X-BeenThere: u-boot@lists.denx.de
+X-Mailman-Version: 2.1.39
+Precedence: list
+List-Id: U-Boot discussion <u-boot.lists.denx.de>
+List-Unsubscribe: <https://lists.denx.de/options/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=unsubscribe>
+List-Archive: <https://lists.denx.de/pipermail/u-boot/>
+List-Post: <mailto:u-boot@lists.denx.de>
+List-Help: <mailto:u-boot-request@lists.denx.de?subject=help>
+List-Subscribe: <https://lists.denx.de/listinfo/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=subscribe>
+Errors-To: u-boot-bounces@lists.denx.de
+Sender: "U-Boot" <u-boot-bounces@lists.denx.de>
+
+It can be useful for the OS (Linux) to know which configuration has
+been chosen by U-Boot when launching a FIT image.
+Store the name of the FIT configuration node used in a new string
+attribute called 'bootconf' in the '/chosen' node in device tree.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ boot/image-fdt.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/boot/image-fdt.c b/boot/image-fdt.c
+index 692a9ad3e4..4017bc94a6 100644
+--- a/boot/image-fdt.c
++++ b/boot/image-fdt.c
+@@ -601,6 +601,12 @@ int image_setup_libfdt(bootm_headers_t *images, void *blob,
+ 		goto err;
+ 	}
+ 
++	/* Store name of configuration node as bootconf in /chosen node */
++	if (images->fit_uname_cfg)
++		fdt_find_and_setprop(blob, "/chosen", "bootconf",
++					images->fit_uname_cfg,
++					strlen(images->fit_uname_cfg) + 1, 1);
++
+ 	/* Update ethernet nodes */
+ 	fdt_fixup_ethernet(blob);
+ #if CONFIG_IS_ENABLED(CMD_PSTORE)
