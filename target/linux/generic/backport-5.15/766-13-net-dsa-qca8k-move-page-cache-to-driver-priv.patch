@@ -14,11 +14,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h |  9 +++++++++
  2 files changed, 29 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
-index 0ce5b7ca0b7f..86d3742b1038 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -75,12 +75,6 @@ static const struct qca8k_mib_desc ar8327_mib[] = {
+@@ -75,12 +75,6 @@ static const struct qca8k_mib_desc ar832
  	MIB_DESC(1, 0xac, "TXUnicast"),
  };
  
@@ -31,7 +29,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  static void
  qca8k_split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
  {
-@@ -134,11 +128,13 @@ qca8k_mii_write32(struct mii_bus *bus, int phy_id, u32 regnum, u32 val)
+@@ -134,11 +128,13 @@ qca8k_mii_write32(struct mii_bus *bus, i
  }
  
  static int
@@ -47,7 +45,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  		return 0;
  
  	ret = bus->write(bus, 0x18, 0, page);
-@@ -148,7 +144,7 @@ qca8k_set_page(struct mii_bus *bus, u16 page)
+@@ -148,7 +144,7 @@ qca8k_set_page(struct mii_bus *bus, u16
  		return ret;
  	}
  
@@ -56,7 +54,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	usleep_range(1000, 2000);
  	return 0;
  }
-@@ -374,7 +370,7 @@ qca8k_regmap_read(void *ctx, uint32_t reg, uint32_t *val)
+@@ -374,7 +370,7 @@ qca8k_regmap_read(void *ctx, uint32_t re
  
  	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
  
@@ -65,7 +63,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	if (ret < 0)
  		goto exit;
  
-@@ -400,7 +396,7 @@ qca8k_regmap_write(void *ctx, uint32_t reg, uint32_t val)
+@@ -400,7 +396,7 @@ qca8k_regmap_write(void *ctx, uint32_t r
  
  	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
  
@@ -74,7 +72,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	if (ret < 0)
  		goto exit;
  
-@@ -427,7 +423,7 @@ qca8k_regmap_update_bits(void *ctx, uint32_t reg, uint32_t mask, uint32_t write_
+@@ -427,7 +423,7 @@ qca8k_regmap_update_bits(void *ctx, uint
  
  	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
  
@@ -83,7 +81,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	if (ret < 0)
  		goto exit;
  
-@@ -1098,8 +1094,9 @@ qca8k_mdio_busy_wait(struct mii_bus *bus, u32 reg, u32 mask)
+@@ -1098,8 +1094,9 @@ qca8k_mdio_busy_wait(struct mii_bus *bus
  }
  
  static int
@@ -94,7 +92,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	u16 r1, r2, page;
  	u32 val;
  	int ret;
-@@ -1116,7 +1113,7 @@ qca8k_mdio_write(struct mii_bus *bus, int phy, int regnum, u16 data)
+@@ -1116,7 +1113,7 @@ qca8k_mdio_write(struct mii_bus *bus, in
  
  	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
  
@@ -103,7 +101,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	if (ret)
  		goto exit;
  
-@@ -1135,8 +1132,9 @@ qca8k_mdio_write(struct mii_bus *bus, int phy, int regnum, u16 data)
+@@ -1135,8 +1132,9 @@ exit:
  }
  
  static int
@@ -114,7 +112,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	u16 r1, r2, page;
  	u32 val;
  	int ret;
-@@ -1152,7 +1150,7 @@ qca8k_mdio_read(struct mii_bus *bus, int phy, int regnum)
+@@ -1152,7 +1150,7 @@ qca8k_mdio_read(struct mii_bus *bus, int
  
  	mutex_lock_nested(&bus->mdio_lock, MDIO_MUTEX_NESTED);
  
@@ -131,7 +129,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	int ret;
  
  	/* Use mdio Ethernet when available, fallback to legacy one on error */
-@@ -1189,14 +1186,13 @@ qca8k_internal_mdio_write(struct mii_bus *slave_bus, int phy, int regnum, u16 da
+@@ -1189,14 +1186,13 @@ qca8k_internal_mdio_write(struct mii_bus
  	if (!ret)
  		return 0;
  
@@ -147,7 +145,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	int ret;
  
  	/* Use mdio Ethernet when available, fallback to legacy one on error */
-@@ -1204,7 +1200,7 @@ qca8k_internal_mdio_read(struct mii_bus *slave_bus, int phy, int regnum)
+@@ -1204,7 +1200,7 @@ qca8k_internal_mdio_read(struct mii_bus
  	if (ret >= 0)
  		return ret;
  
@@ -156,7 +154,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  }
  
  static int
-@@ -1225,7 +1221,7 @@ qca8k_phy_write(struct dsa_switch *ds, int port, int regnum, u16 data)
+@@ -1225,7 +1221,7 @@ qca8k_phy_write(struct dsa_switch *ds, i
  	if (!ret)
  		return ret;
  
@@ -165,7 +163,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  }
  
  static int
-@@ -1246,7 +1242,7 @@ qca8k_phy_read(struct dsa_switch *ds, int port, int regnum)
+@@ -1246,7 +1242,7 @@ qca8k_phy_read(struct dsa_switch *ds, in
  	if (ret >= 0)
  		return ret;
  
@@ -174,7 +172,7 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  
  	if (ret < 0)
  		return 0xffff;
-@@ -3042,6 +3038,8 @@ qca8k_sw_probe(struct mdio_device *mdiodev)
+@@ -3041,6 +3037,8 @@ qca8k_sw_probe(struct mdio_device *mdiod
  		return PTR_ERR(priv->regmap);
  	}
  
@@ -183,8 +181,6 @@ index 0ce5b7ca0b7f..86d3742b1038 100644
  	/* Check the detected switch id */
  	ret = qca8k_read_switch_id(priv);
  	if (ret)
-diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
-index c6f6abd2108e..57368acae41b 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -363,6 +363,14 @@ struct qca8k_ports_config {
@@ -210,6 +206,3 @@ index c6f6abd2108e..57368acae41b 100644
  };
  
  struct qca8k_mib_desc {
--- 
-2.34.1
-

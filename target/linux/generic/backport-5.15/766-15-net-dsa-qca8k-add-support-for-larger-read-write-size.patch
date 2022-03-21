@@ -28,11 +28,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.c | 61 +++++++++++++++++++++++++++--------------
  1 file changed, 41 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
-index 0cce3a6030af..a1b76dcd2eb6 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -222,7 +222,9 @@ static void qca8k_rw_reg_ack_handler(struct dsa_switch *ds, struct sk_buff *skb)
+@@ -222,7 +222,9 @@ static void qca8k_rw_reg_ack_handler(str
  	if (cmd == MDIO_READ) {
  		mgmt_eth_data->data[0] = mgmt_ethhdr->mdio_data;
  
@@ -43,7 +41,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  		if (len > QCA_HDR_MGMT_DATA1_LEN)
  			memcpy(mgmt_eth_data->data + 1, skb->data,
  			       QCA_HDR_MGMT_DATA2_LEN);
-@@ -232,16 +234,30 @@ static void qca8k_rw_reg_ack_handler(struct dsa_switch *ds, struct sk_buff *skb)
+@@ -232,16 +234,30 @@ static void qca8k_rw_reg_ack_handler(str
  }
  
  static struct sk_buff *qca8k_alloc_mdio_header(enum mdio_cmd cmd, u32 reg, u32 *val,
@@ -75,7 +73,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  	skb_reset_mac_header(skb);
  	skb_set_network_header(skb, skb->len);
  
-@@ -254,7 +270,7 @@ static struct sk_buff *qca8k_alloc_mdio_header(enum mdio_cmd cmd, u32 reg, u32 *
+@@ -254,7 +270,7 @@ static struct sk_buff *qca8k_alloc_mdio_
  	hdr |= FIELD_PREP(QCA_HDR_XMIT_CONTROL, QCA_HDR_XMIT_TYPE_RW_REG);
  
  	mgmt_ethhdr->command = FIELD_PREP(QCA_HDR_MGMT_ADDR, reg);
@@ -84,7 +82,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  	mgmt_ethhdr->command |= FIELD_PREP(QCA_HDR_MGMT_CMD, cmd);
  	mgmt_ethhdr->command |= FIELD_PREP(QCA_HDR_MGMT_CHECK_CODE,
  					   QCA_HDR_MGMT_CHECK_CODE_VAL);
-@@ -264,7 +280,9 @@ static struct sk_buff *qca8k_alloc_mdio_header(enum mdio_cmd cmd, u32 reg, u32 *
+@@ -264,7 +280,9 @@ static struct sk_buff *qca8k_alloc_mdio_
  
  	mgmt_ethhdr->hdr = htons(hdr);
  
@@ -95,7 +93,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  
  	return skb;
  }
-@@ -277,7 +295,7 @@ static void qca8k_mdio_header_fill_seq_num(struct sk_buff *skb, u32 seq_num)
+@@ -277,7 +295,7 @@ static void qca8k_mdio_header_fill_seq_n
  	mgmt_ethhdr->seq = FIELD_PREP(QCA_HDR_MGMT_SEQ_NUM, seq_num);
  }
  
@@ -104,7 +102,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  {
  	struct qca8k_mgmt_eth_data *mgmt_eth_data = &priv->mgmt_eth_data;
  	struct sk_buff *skb;
-@@ -285,7 +303,7 @@ static int qca8k_read_eth(struct qca8k_priv *priv, u32 reg, u32 *val)
+@@ -285,7 +303,7 @@ static int qca8k_read_eth(struct qca8k_p
  	int ret;
  
  	skb = qca8k_alloc_mdio_header(MDIO_READ, reg, NULL,
@@ -113,7 +111,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  	if (!skb)
  		return -ENOMEM;
  
-@@ -313,6 +331,9 @@ static int qca8k_read_eth(struct qca8k_priv *priv, u32 reg, u32 *val)
+@@ -313,6 +331,9 @@ static int qca8k_read_eth(struct qca8k_p
  					  msecs_to_jiffies(QCA8K_ETHERNET_TIMEOUT));
  
  	*val = mgmt_eth_data->data[0];
@@ -123,7 +121,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  	ack = mgmt_eth_data->ack;
  
  	mutex_unlock(&mgmt_eth_data->mutex);
-@@ -326,15 +347,15 @@ static int qca8k_read_eth(struct qca8k_priv *priv, u32 reg, u32 *val)
+@@ -326,15 +347,15 @@ static int qca8k_read_eth(struct qca8k_p
  	return 0;
  }
  
@@ -142,7 +140,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  	if (!skb)
  		return -ENOMEM;
  
-@@ -380,14 +401,14 @@ qca8k_regmap_update_bits_eth(struct qca8k_priv *priv, u32 reg, u32 mask, u32 wri
+@@ -380,14 +401,14 @@ qca8k_regmap_update_bits_eth(struct qca8
  	u32 val = 0;
  	int ret;
  
@@ -159,7 +157,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  }
  
  static int
-@@ -398,7 +419,7 @@ qca8k_regmap_read(void *ctx, uint32_t reg, uint32_t *val)
+@@ -398,7 +419,7 @@ qca8k_regmap_read(void *ctx, uint32_t re
  	u16 r1, r2, page;
  	int ret;
  
@@ -168,7 +166,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  		return 0;
  
  	qca8k_split_addr(reg, &r1, &r2, &page);
-@@ -424,7 +445,7 @@ qca8k_regmap_write(void *ctx, uint32_t reg, uint32_t val)
+@@ -424,7 +445,7 @@ qca8k_regmap_write(void *ctx, uint32_t r
  	u16 r1, r2, page;
  	int ret;
  
@@ -177,7 +175,7 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  		return 0;
  
  	qca8k_split_addr(reg, &r1, &r2, &page);
-@@ -959,21 +980,21 @@ qca8k_phy_eth_command(struct qca8k_priv *priv, bool read, int phy,
+@@ -959,21 +980,21 @@ qca8k_phy_eth_command(struct qca8k_priv
  	}
  
  	/* Prealloc all the needed skb before the lock */
@@ -206,6 +204,3 @@ index 0cce3a6030af..a1b76dcd2eb6 100644
  		ret = -ENOMEM;
  		goto err_read_skb;
  	}
--- 
-2.34.1
-

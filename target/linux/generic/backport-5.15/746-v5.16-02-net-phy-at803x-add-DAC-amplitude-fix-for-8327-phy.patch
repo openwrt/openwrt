@@ -19,7 +19,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 --- a/drivers/net/phy/at803x.c
 +++ b/drivers/net/phy/at803x.c
 @@ -87,6 +87,8 @@
- #define AT803X_PSSR_MR_AN_COMPLETE	0x0200
+ #define AT803X_PSSR_MR_AN_COMPLETE		0x0200
  
  #define AT803X_DEBUG_REG_0			0x00
 +#define QCA8327_DEBUG_MANU_CTRL_EN		BIT(2)
@@ -27,7 +27,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #define AT803X_DEBUG_RX_CLK_DLY_EN		BIT(15)
  
  #define AT803X_DEBUG_REG_5			0x05
-@@ -1222,9 +1224,37 @@ static int qca83xx_config_init(struct ph
+@@ -1314,9 +1316,37 @@ static int qca83xx_config_init(struct ph
  		break;
  	}
  
@@ -65,7 +65,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int qca83xx_resume(struct phy_device *phydev)
  {
  	int ret, val;
-@@ -1379,6 +1409,7 @@ static struct phy_driver at803x_driver[]
+@@ -1471,6 +1501,7 @@ static struct phy_driver at803x_driver[]
  	.phy_id_mask		= QCA8K_PHY_ID_MASK,
  	.name			= "Qualcomm Atheros 8337 internal PHY",
  	/* PHY_GBIT_FEATURES */
@@ -73,7 +73,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.probe			= at803x_probe,
  	.flags			= PHY_IS_INTERNAL,
  	.config_init		= qca83xx_config_init,
-@@ -1394,6 +1425,7 @@ static struct phy_driver at803x_driver[]
+@@ -1486,6 +1517,7 @@ static struct phy_driver at803x_driver[]
  	.phy_id_mask		= QCA8K_PHY_ID_MASK,
  	.name			= "Qualcomm Atheros 8327-A internal PHY",
  	/* PHY_GBIT_FEATURES */
@@ -81,7 +81,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.probe			= at803x_probe,
  	.flags			= PHY_IS_INTERNAL,
  	.config_init		= qca83xx_config_init,
-@@ -1409,6 +1441,7 @@ static struct phy_driver at803x_driver[]
+@@ -1501,6 +1533,7 @@ static struct phy_driver at803x_driver[]
  	.phy_id_mask		= QCA8K_PHY_ID_MASK,
  	.name			= "Qualcomm Atheros 8327-B internal PHY",
  	/* PHY_GBIT_FEATURES */

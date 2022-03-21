@@ -42,11 +42,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/switch.c   | 15 +++++++++++++++
  5 files changed, 123 insertions(+)
 
-diff --git a/include/net/dsa.h b/include/net/dsa.h
-index 57b3e4e7413b..43c4153ef53a 100644
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -278,6 +278,10 @@ struct dsa_port {
+@@ -291,6 +291,10 @@ struct dsa_port {
  	struct list_head	mdbs;
  
  	bool setup;
@@ -57,7 +55,7 @@ index 57b3e4e7413b..43c4153ef53a 100644
  };
  
  /* TODO: ideally DSA ports would have a single dp->link_dp member,
-@@ -478,6 +482,12 @@ static inline bool dsa_port_is_unused(struct dsa_port *dp)
+@@ -456,6 +460,12 @@ static inline bool dsa_port_is_unused(st
  	return dp->type == DSA_PORT_TYPE_UNUSED;
  }
  
@@ -70,7 +68,7 @@ index 57b3e4e7413b..43c4153ef53a 100644
  static inline bool dsa_is_unused_port(struct dsa_switch *ds, int p)
  {
  	return dsa_to_port(ds, p)->type == DSA_PORT_TYPE_UNUSED;
-@@ -1036,6 +1046,13 @@ struct dsa_switch_ops {
+@@ -916,6 +926,13 @@ struct dsa_switch_ops {
  	int	(*tag_8021q_vlan_add)(struct dsa_switch *ds, int port, u16 vid,
  				      u16 flags);
  	int	(*tag_8021q_vlan_del)(struct dsa_switch *ds, int port, u16 vid);
@@ -84,11 +82,9 @@ index 57b3e4e7413b..43c4153ef53a 100644
  };
  
  #define DSA_DEVLINK_PARAM_DRIVER(_id, _name, _type, _cmodes)		\
-diff --git a/net/dsa/dsa2.c b/net/dsa/dsa2.c
-index 3d21521453fe..ff998c0ede02 100644
 --- a/net/dsa/dsa2.c
 +++ b/net/dsa/dsa2.c
-@@ -1279,6 +1279,52 @@ int dsa_tree_change_tag_proto(struct dsa_switch_tree *dst,
+@@ -1275,6 +1275,52 @@ out_unlock:
  	return err;
  }
  
@@ -141,19 +137,17 @@ index 3d21521453fe..ff998c0ede02 100644
  static struct dsa_port *dsa_port_touch(struct dsa_switch *ds, int index)
  {
  	struct dsa_switch_tree *dst = ds->dst;
-diff --git a/net/dsa/dsa_priv.h b/net/dsa/dsa_priv.h
-index 760306f0012f..2bbfa9efe9f8 100644
 --- a/net/dsa/dsa_priv.h
 +++ b/net/dsa/dsa_priv.h
-@@ -40,6 +40,7 @@ enum {
- 	DSA_NOTIFIER_TAG_PROTO_DISCONNECT,
+@@ -45,6 +45,7 @@ enum {
+ 	DSA_NOTIFIER_MRP_DEL_RING_ROLE,
  	DSA_NOTIFIER_TAG_8021Q_VLAN_ADD,
  	DSA_NOTIFIER_TAG_8021Q_VLAN_DEL,
 +	DSA_NOTIFIER_MASTER_STATE_CHANGE,
  };
  
  /* DSA_NOTIFIER_AGEING_TIME */
-@@ -109,6 +110,12 @@ struct dsa_notifier_tag_8021q_vlan_info {
+@@ -127,6 +128,12 @@ struct dsa_notifier_tag_8021q_vlan_info
  	u16 vid;
  };
  
@@ -166,7 +160,7 @@ index 760306f0012f..2bbfa9efe9f8 100644
  struct dsa_switchdev_event_work {
  	struct dsa_switch *ds;
  	int port;
-@@ -482,6 +489,12 @@ int dsa_tree_change_tag_proto(struct dsa_switch_tree *dst,
+@@ -548,6 +555,12 @@ int dsa_tree_change_tag_proto(struct dsa
  			      struct net_device *master,
  			      const struct dsa_device_ops *tag_ops,
  			      const struct dsa_device_ops *old_tag_ops);
@@ -179,11 +173,9 @@ index 760306f0012f..2bbfa9efe9f8 100644
  int dsa_bridge_num_get(const struct net_device *bridge_dev, int max);
  void dsa_bridge_num_put(const struct net_device *bridge_dev, int bridge_num);
  
-diff --git a/net/dsa/slave.c b/net/dsa/slave.c
-index 22241afcac81..2b5b0f294233 100644
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -2346,6 +2346,36 @@ static int dsa_slave_netdevice_event(struct notifier_block *nb,
+@@ -2320,6 +2320,36 @@ static int dsa_slave_netdevice_event(str
  		err = dsa_port_lag_change(dp, info->lower_state_info);
  		return notifier_from_errno(err);
  	}
@@ -220,20 +212,18 @@ index 22241afcac81..2b5b0f294233 100644
  	case NETDEV_GOING_DOWN: {
  		struct dsa_port *dp, *cpu_dp;
  		struct dsa_switch_tree *dst;
-@@ -2357,6 +2387,8 @@ static int dsa_slave_netdevice_event(struct notifier_block *nb,
+@@ -2331,6 +2361,8 @@ static int dsa_slave_netdevice_event(str
  		cpu_dp = dev->dsa_ptr;
  		dst = cpu_dp->ds->dst;
  
 +		dsa_tree_master_admin_state_change(dst, dev, false);
 +
  		list_for_each_entry(dp, &dst->ports, list) {
- 			if (!dsa_port_is_user(dp))
+ 			if (!dsa_is_user_port(dp->ds, dp->index))
  				continue;
-diff --git a/net/dsa/switch.c b/net/dsa/switch.c
-index 517cc83d13cc..4866b58649e4 100644
 --- a/net/dsa/switch.c
 +++ b/net/dsa/switch.c
-@@ -697,6 +697,18 @@ dsa_switch_disconnect_tag_proto(struct dsa_switch *ds,
+@@ -722,6 +722,18 @@ dsa_switch_mrp_del_ring_role(struct dsa_
  	return 0;
  }
  
@@ -252,7 +242,7 @@ index 517cc83d13cc..4866b58649e4 100644
  static int dsa_switch_event(struct notifier_block *nb,
  			    unsigned long event, void *info)
  {
-@@ -770,6 +782,9 @@ static int dsa_switch_event(struct notifier_block *nb,
+@@ -813,6 +825,9 @@ static int dsa_switch_event(struct notif
  	case DSA_NOTIFIER_TAG_8021Q_VLAN_DEL:
  		err = dsa_switch_tag_8021q_vlan_del(ds, info);
  		break;
@@ -262,6 +252,3 @@ index 517cc83d13cc..4866b58649e4 100644
  	default:
  		err = -EOPNOTSUPP;
  		break;
--- 
-2.34.1
-

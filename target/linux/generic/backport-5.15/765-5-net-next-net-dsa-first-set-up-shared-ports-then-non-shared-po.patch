@@ -25,11 +25,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/dsa2.c | 50 +++++++++++++++++++++++++++++++++++++-------------
  1 file changed, 37 insertions(+), 13 deletions(-)
 
-diff --git a/net/dsa/dsa2.c b/net/dsa/dsa2.c
-index 52fb1958b535..ea0f02a24b8b 100644
 --- a/net/dsa/dsa2.c
 +++ b/net/dsa/dsa2.c
-@@ -1003,23 +1003,28 @@ static void dsa_tree_teardown_switches(struct dsa_switch_tree *dst)
+@@ -999,23 +999,28 @@ static void dsa_tree_teardown_switches(s
  		dsa_switch_teardown(dp->ds);
  }
  
@@ -68,7 +66,7 @@ index 52fb1958b535..ea0f02a24b8b 100644
  		}
  	}
  
-@@ -1028,7 +1033,21 @@ static int dsa_tree_setup_switches(struct dsa_switch_tree *dst)
+@@ -1024,7 +1029,21 @@ static int dsa_tree_setup_switches(struc
  teardown:
  	dsa_tree_teardown_ports(dst);
  
@@ -91,7 +89,7 @@ index 52fb1958b535..ea0f02a24b8b 100644
  
  	return err;
  }
-@@ -1115,10 +1134,14 @@ static int dsa_tree_setup(struct dsa_switch_tree *dst)
+@@ -1111,10 +1130,14 @@ static int dsa_tree_setup(struct dsa_swi
  	if (err)
  		goto teardown_cpu_ports;
  
@@ -107,7 +105,7 @@ index 52fb1958b535..ea0f02a24b8b 100644
  	err = dsa_tree_setup_lags(dst);
  	if (err)
  		goto teardown_master;
-@@ -1131,8 +1154,9 @@ static int dsa_tree_setup(struct dsa_switch_tree *dst)
+@@ -1127,8 +1150,9 @@ static int dsa_tree_setup(struct dsa_swi
  
  teardown_master:
  	dsa_tree_teardown_master(dst);
@@ -118,6 +116,3 @@ index 52fb1958b535..ea0f02a24b8b 100644
  	dsa_tree_teardown_switches(dst);
  teardown_cpu_ports:
  	dsa_tree_teardown_cpu_ports(dst);
--- 
-2.34.1
-

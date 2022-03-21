@@ -13,8 +13,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/tag_qca.c           |  4 ++++
  2 files changed, 14 insertions(+)
 
-diff --git a/include/linux/dsa/tag_qca.h b/include/linux/dsa/tag_qca.h
-index f366422ab7a0..1fff57f2937b 100644
 --- a/include/linux/dsa/tag_qca.h
 +++ b/include/linux/dsa/tag_qca.h
 @@ -62,4 +62,14 @@ struct qca_mgmt_ethhdr {
@@ -32,11 +30,9 @@ index f366422ab7a0..1fff57f2937b 100644
 +} __packed;
 +
  #endif /* __TAG_QCA_H */
-diff --git a/net/dsa/tag_qca.c b/net/dsa/tag_qca.c
-index f17ed5be20c2..be792cf687d9 100644
 --- a/net/dsa/tag_qca.c
 +++ b/net/dsa/tag_qca.c
-@@ -57,6 +57,10 @@ static struct sk_buff *qca_tag_rcv(struct sk_buff *skb, struct net_device *dev)
+@@ -57,6 +57,10 @@ static struct sk_buff *qca_tag_rcv(struc
  	if (pk_type == QCA_HDR_RECV_TYPE_RW_REG_ACK)
  		return NULL;
  
@@ -47,6 +43,3 @@ index f17ed5be20c2..be792cf687d9 100644
  	/* Remove QCA tag and recalculate checksum */
  	skb_pull_rcsum(skb, QCA_HDR_LEN);
  	dsa_strip_etype_header(skb, QCA_HDR_LEN);
--- 
-2.34.1
-

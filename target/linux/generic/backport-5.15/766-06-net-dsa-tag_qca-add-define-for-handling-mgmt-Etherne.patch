@@ -19,8 +19,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/tag_qca.c           | 15 ++++++++++---
  2 files changed, 56 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/dsa/tag_qca.h b/include/linux/dsa/tag_qca.h
-index c02d2d39ff4a..f366422ab7a0 100644
 --- a/include/linux/dsa/tag_qca.h
 +++ b/include/linux/dsa/tag_qca.h
 @@ -12,10 +12,54 @@
@@ -78,11 +76,9 @@ index c02d2d39ff4a..f366422ab7a0 100644
 +} __packed;
 +
  #endif /* __TAG_QCA_H */
-diff --git a/net/dsa/tag_qca.c b/net/dsa/tag_qca.c
-index f8df49d5956f..f17ed5be20c2 100644
 --- a/net/dsa/tag_qca.c
 +++ b/net/dsa/tag_qca.c
-@@ -32,10 +32,12 @@ static struct sk_buff *qca_tag_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -32,10 +32,12 @@ static struct sk_buff *qca_tag_xmit(stru
  
  static struct sk_buff *qca_tag_rcv(struct sk_buff *skb, struct net_device *dev)
  {
@@ -98,7 +94,7 @@ index f8df49d5956f..f17ed5be20c2 100644
  
  	if (unlikely(!pskb_may_pull(skb, QCA_HDR_LEN)))
  		return NULL;
-@@ -48,6 +50,13 @@ static struct sk_buff *qca_tag_rcv(struct sk_buff *skb, struct net_device *dev)
+@@ -48,6 +50,13 @@ static struct sk_buff *qca_tag_rcv(struc
  	if (unlikely(ver != QCA_HDR_VERSION))
  		return NULL;
  
@@ -112,6 +108,3 @@ index f8df49d5956f..f17ed5be20c2 100644
  	/* Remove QCA tag and recalculate checksum */
  	skb_pull_rcsum(skb, QCA_HDR_LEN);
  	dsa_strip_etype_header(skb, QCA_HDR_LEN);
--- 
-2.34.1
-

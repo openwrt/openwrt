@@ -17,9 +17,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  2 files changed, 22 insertions(+), 15 deletions(-)
  create mode 100644 include/linux/dsa/tag_qca.h
 
-diff --git a/include/linux/dsa/tag_qca.h b/include/linux/dsa/tag_qca.h
-new file mode 100644
-index 000000000000..c02d2d39ff4a
 --- /dev/null
 +++ b/include/linux/dsa/tag_qca.h
 @@ -0,0 +1,21 @@
@@ -44,8 +41,6 @@ index 000000000000..c02d2d39ff4a
 +#define QCA_HDR_XMIT_DP_BIT		GENMASK(6, 0)
 +
 +#endif /* __TAG_QCA_H */
-diff --git a/net/dsa/tag_qca.c b/net/dsa/tag_qca.c
-index 55fa6b96b4eb..34e565e00ece 100644
 --- a/net/dsa/tag_qca.c
 +++ b/net/dsa/tag_qca.c
 @@ -5,24 +5,10 @@
@@ -74,6 +69,3 @@ index 55fa6b96b4eb..34e565e00ece 100644
  static struct sk_buff *qca_tag_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	struct dsa_port *dp = dsa_slave_to_port(dev);
--- 
-2.34.1
-

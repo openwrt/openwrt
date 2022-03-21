@@ -28,11 +28,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/dsa/master.c | 4 ++--
  2 files changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/net/dsa/dsa2.c b/net/dsa/dsa2.c
-index a0d84f9f864f..52fb1958b535 100644
 --- a/net/dsa/dsa2.c
 +++ b/net/dsa/dsa2.c
-@@ -1038,6 +1038,8 @@ static int dsa_tree_setup_master(struct dsa_switch_tree *dst)
+@@ -1034,6 +1034,8 @@ static int dsa_tree_setup_master(struct
  	struct dsa_port *dp;
  	int err;
  
@@ -41,7 +39,7 @@ index a0d84f9f864f..52fb1958b535 100644
  	list_for_each_entry(dp, &dst->ports, list) {
  		if (dsa_port_is_cpu(dp)) {
  			err = dsa_master_setup(dp->master, dp);
-@@ -1046,6 +1048,8 @@ static int dsa_tree_setup_master(struct dsa_switch_tree *dst)
+@@ -1042,6 +1044,8 @@ static int dsa_tree_setup_master(struct
  		}
  	}
  
@@ -50,7 +48,7 @@ index a0d84f9f864f..52fb1958b535 100644
  	return 0;
  }
  
-@@ -1053,9 +1057,13 @@ static void dsa_tree_teardown_master(struct dsa_switch_tree *dst)
+@@ -1049,9 +1053,13 @@ static void dsa_tree_teardown_master(str
  {
  	struct dsa_port *dp;
  
@@ -64,11 +62,9 @@ index a0d84f9f864f..52fb1958b535 100644
  }
  
  static int dsa_tree_setup_lags(struct dsa_switch_tree *dst)
-diff --git a/net/dsa/master.c b/net/dsa/master.c
-index f4efb244f91d..2199104ca7df 100644
 --- a/net/dsa/master.c
 +++ b/net/dsa/master.c
-@@ -267,9 +267,9 @@ static void dsa_master_set_promiscuity(struct net_device *dev, int inc)
+@@ -267,9 +267,9 @@ static void dsa_master_set_promiscuity(s
  	if (!ops->promisc_on_master)
  		return;
  
@@ -80,6 +76,3 @@ index f4efb244f91d..2199104ca7df 100644
  }
  
  static ssize_t tagging_show(struct device *d, struct device_attribute *attr,
--- 
-2.34.1
-

@@ -15,15 +15,12 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/qca8k.h |  5 ++++
  2 files changed, 54 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/net/dsa/qca8k.c b/drivers/net/dsa/qca8k.c
-index 86d3742b1038..0cce3a6030af 100644
 --- a/drivers/net/dsa/qca8k.c
 +++ b/drivers/net/dsa/qca8k.c
-@@ -88,6 +88,44 @@ qca8k_split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
- 	*page = regaddr & 0x3ff;
+@@ -89,6 +89,44 @@ qca8k_split_addr(u32 regaddr, u16 *r1, u
  }
  
-+static int
+ static int
 +qca8k_set_lo(struct qca8k_priv *priv, int phy_id, u32 regnum, u16 lo)
 +{
 +	u16 *cached_lo = &priv->mdio_cache.lo;
@@ -61,10 +58,11 @@ index 86d3742b1038..0cce3a6030af 100644
 +	return 0;
 +}
 +
- static int
++static int
  qca8k_mii_read32(struct mii_bus *bus, int phy_id, u32 regnum, u32 *val)
  {
-@@ -111,7 +149,7 @@ qca8k_mii_read32(struct mii_bus *bus, int phy_id, u32 regnum, u32 *val)
+ 	int ret;
+@@ -111,7 +149,7 @@ qca8k_mii_read32(struct mii_bus *bus, in
  }
  
  static void
@@ -73,7 +71,7 @@ index 86d3742b1038..0cce3a6030af 100644
  {
  	u16 lo, hi;
  	int ret;
-@@ -119,12 +157,9 @@ qca8k_mii_write32(struct mii_bus *bus, int phy_id, u32 regnum, u32 val)
+@@ -119,12 +157,9 @@ qca8k_mii_write32(struct mii_bus *bus, i
  	lo = val & 0xffff;
  	hi = (u16)(val >> 16);
  
@@ -88,7 +86,7 @@ index 86d3742b1038..0cce3a6030af 100644
  }
  
  static int
-@@ -400,7 +435,7 @@ qca8k_regmap_write(void *ctx, uint32_t reg, uint32_t val)
+@@ -400,7 +435,7 @@ qca8k_regmap_write(void *ctx, uint32_t r
  	if (ret < 0)
  		goto exit;
  
@@ -97,7 +95,7 @@ index 86d3742b1038..0cce3a6030af 100644
  
  exit:
  	mutex_unlock(&bus->mdio_lock);
-@@ -433,7 +468,7 @@ qca8k_regmap_update_bits(void *ctx, uint32_t reg, uint32_t mask, uint32_t write_
+@@ -433,7 +468,7 @@ qca8k_regmap_update_bits(void *ctx, uint
  
  	val &= ~mask;
  	val |= write_val;
@@ -106,7 +104,7 @@ index 86d3742b1038..0cce3a6030af 100644
  
  exit:
  	mutex_unlock(&bus->mdio_lock);
-@@ -1117,14 +1152,14 @@ qca8k_mdio_write(struct qca8k_priv *priv, int phy, int regnum, u16 data)
+@@ -1117,14 +1152,14 @@ qca8k_mdio_write(struct qca8k_priv *priv
  	if (ret)
  		goto exit;
  
@@ -123,7 +121,7 @@ index 86d3742b1038..0cce3a6030af 100644
  
  	mutex_unlock(&bus->mdio_lock);
  
-@@ -1154,7 +1189,7 @@ qca8k_mdio_read(struct qca8k_priv *priv, int phy, int regnum)
+@@ -1154,7 +1189,7 @@ qca8k_mdio_read(struct qca8k_priv *priv,
  	if (ret)
  		goto exit;
  
@@ -132,7 +130,7 @@ index 86d3742b1038..0cce3a6030af 100644
  
  	ret = qca8k_mdio_busy_wait(bus, QCA8K_MDIO_MASTER_CTRL,
  				   QCA8K_MDIO_MASTER_BUSY);
-@@ -1165,7 +1200,7 @@ qca8k_mdio_read(struct qca8k_priv *priv, int phy, int regnum)
+@@ -1165,7 +1200,7 @@ qca8k_mdio_read(struct qca8k_priv *priv,
  
  exit:
  	/* even if the busy_wait timeouts try to clear the MASTER_EN */
@@ -141,7 +139,7 @@ index 86d3742b1038..0cce3a6030af 100644
  
  	mutex_unlock(&bus->mdio_lock);
  
-@@ -3039,6 +3074,8 @@ qca8k_sw_probe(struct mdio_device *mdiodev)
+@@ -3038,6 +3073,8 @@ qca8k_sw_probe(struct mdio_device *mdiod
  	}
  
  	priv->mdio_cache.page = 0xffff;
@@ -150,8 +148,6 @@ index 86d3742b1038..0cce3a6030af 100644
  
  	/* Check the detected switch id */
  	ret = qca8k_read_switch_id(priv);
-diff --git a/drivers/net/dsa/qca8k.h b/drivers/net/dsa/qca8k.h
-index 57368acae41b..c3d3c2269b1d 100644
 --- a/drivers/net/dsa/qca8k.h
 +++ b/drivers/net/dsa/qca8k.h
 @@ -369,6 +369,11 @@ struct qca8k_mdio_cache {
@@ -166,6 +162,3 @@ index 57368acae41b..c3d3c2269b1d 100644
  };
  
  struct qca8k_priv {
--- 
-2.34.1
-
