@@ -25,7 +25,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -281,8 +281,6 @@ struct advk_pcie {
+@@ -274,8 +274,6 @@ struct advk_pcie {
  	raw_spinlock_t irq_lock;
  	struct irq_domain *msi_domain;
  	struct irq_domain *msi_inner_domain;
@@ -34,7 +34,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  	struct msi_domain_info msi_domain_info;
  	DECLARE_BITMAP(msi_used, MSI_IRQ_NUM);
  	struct mutex msi_used_lock;
-@@ -1199,6 +1197,12 @@ static int advk_msi_set_affinity(struct
+@@ -1192,6 +1190,12 @@ static int advk_msi_set_affinity(struct
  	return -EINVAL;
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  static int advk_msi_irq_domain_alloc(struct irq_domain *domain,
  				     unsigned int virq,
  				     unsigned int nr_irqs, void *args)
-@@ -1215,7 +1219,7 @@ static int advk_msi_irq_domain_alloc(str
+@@ -1208,7 +1212,7 @@ static int advk_msi_irq_domain_alloc(str
  
  	for (i = 0; i < nr_irqs; i++)
  		irq_domain_set_info(domain, virq + i, hwirq + i,
@@ -56,7 +56,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  				    domain->host_data, handle_simple_irq,
  				    NULL, NULL);
  
-@@ -1285,29 +1289,23 @@ static const struct irq_domain_ops advk_
+@@ -1278,29 +1282,23 @@ static const struct irq_domain_ops advk_
  	.xlate = irq_domain_xlate_onecell,
  };
  

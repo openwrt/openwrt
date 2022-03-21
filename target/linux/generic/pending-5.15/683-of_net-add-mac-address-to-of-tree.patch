@@ -26,9 +26,9 @@
 +}
 +
  /**
-  * Search the device tree for the best MAC address to use.  'mac-address' is
-  * checked first, because that is supposed to contain to "most recent" MAC
-@@ -171,6 +192,7 @@ found:
+  * of_get_mac_address()
+  * @np:		Caller's Device Node
+@@ -175,6 +196,7 @@ found:
  		addr[5] = (mac_val >> 0) & 0xff;
  	}
  

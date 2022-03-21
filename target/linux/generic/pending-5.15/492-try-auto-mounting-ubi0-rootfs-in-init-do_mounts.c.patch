@@ -8,7 +8,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/init/do_mounts.c
 +++ b/init/do_mounts.c
-@@ -474,7 +474,30 @@ retry:
+@@ -447,7 +447,30 @@ retry:
  out:
  	put_page(page);
  }
@@ -40,7 +40,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #ifdef CONFIG_ROOT_NFS
  
  #define NFSROOT_TIMEOUT_MIN	5
-@@ -567,6 +590,10 @@ void __init mount_root(void)
+@@ -580,6 +603,10 @@ void __init mount_root(void)
  		return;
  	}
  #endif

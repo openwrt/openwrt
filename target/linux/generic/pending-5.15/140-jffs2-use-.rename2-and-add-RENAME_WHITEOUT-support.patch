@@ -8,7 +8,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/fs/jffs2/dir.c
 +++ b/fs/jffs2/dir.c
-@@ -609,8 +609,8 @@ static int jffs2_rmdir (struct inode *di
+@@ -614,8 +614,8 @@ static int jffs2_rmdir (struct inode *di
  	return ret;
  }
  
@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct jffs2_inode_info *f, *dir_f;
  	struct jffs2_sb_info *c;
-@@ -748,7 +749,11 @@ static int jffs2_mknod (struct inode *di
+@@ -754,7 +754,11 @@ static int jffs2_mknod (struct user_name
  	mutex_unlock(&dir_f->sem);
  	jffs2_complete_reservation(c);
  
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
  
   fail:
-@@ -756,6 +761,19 @@ static int jffs2_mknod (struct inode *di
+@@ -762,6 +766,19 @@ static int jffs2_mknod (struct user_name
  	return ret;
  }
  
@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int jffs2_rename (struct user_namespace *mnt_userns,
  			 struct inode *old_dir_i, struct dentry *old_dentry,
  			 struct inode *new_dir_i, struct dentry *new_dentry,
-@@ -766,7 +782,7 @@ static int jffs2_rename (struct inode *o
+@@ -773,7 +790,7 @@ static int jffs2_rename (struct user_nam
  	uint8_t type;
  	uint32_t now;
  
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return -EINVAL;
  
  	/* The VFS will check for us and prevent trying to rename a
-@@ -832,9 +848,14 @@ static int jffs2_rename (struct inode *o
+@@ -839,9 +856,14 @@ static int jffs2_rename (struct user_nam
  	if (d_is_dir(old_dentry) && !victim_f)
  		inc_nlink(new_dir_i);
  
