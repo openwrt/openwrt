@@ -95,10 +95,11 @@ tone_vdsl_b="0x1" # B43
 tone_adsl_bv="0x81" # B43 + B43c
 tone_vdsl_bv="0x5" # B43 + V43
 
-# create ADSL autoboot script. Used for SNR margin tweak
+# create DSL autoboot script. Used for SNR margin tweak and to set MAC address for vectoring error reports
 autoboot_script() {
     echo "[WaitForConfiguration]={
 locs 0 $1
+dsmmcs $2
 }
 
 [WaitForLinkActivate]={
@@ -166,6 +167,12 @@ lowlevel_cfg() {
     0" > /tmp/lowlevel.cfg
 }
 
+get_macaddr() {
+	local name
+	config_get name $1 name
+	[ "$name" = "dsl0" ] && config_get $2 $1 macaddr
+}
+
 service_triggers() {
 	procd_add_reload_trigger network
 }
@@ -183,6 +190,7 @@ start_service() {
 	local mode
 	local lowlevel
 	local snr
+	local macaddr
 
 	config_load network
 	config_get tone dsl tone
@@ -191,6 +199,7 @@ start_service() {
 	config_get xfer_mode dsl xfer_mode
 	config_get line_mode dsl line_mode
 	config_get snr dsl ds_snr_offset
+	config_foreach get_macaddr device macaddr
 
 	eval "xtse=\"\${xtse_xdsl_$annex}\""
 
@@ -289,11 +298,10 @@ start_service() {
 		lowlevel="-l /tmp/lowlevel.cfg"
 	}
 
-	[ -z "${snr}" ] || {
-	    # for SNR offset setting
-	    autoboot_script "$snr"
-	    autoboot="-a /tmp/dsl.scr -A /tmp/dsl.scr"
-	}
+	[ -z "${snr}" ] && snr=0
+	[ -z "${macaddr}" ] && macaddr="00:00:00:00:00:00"
+	autoboot_script "$snr" "$macaddr"
+	autoboot="-a /tmp/dsl.scr -A /tmp/dsl.scr"
 
 	procd_open_instance
 	procd_set_param command /sbin/vdsl_cpe_control \
