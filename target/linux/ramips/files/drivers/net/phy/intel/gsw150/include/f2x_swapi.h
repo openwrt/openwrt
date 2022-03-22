@@ -2372,6 +2372,8 @@ typedef struct
 	u64	nRxBadBytes;
 	/** Transmit Good Byte Count (64 bit). */
 	u64	nTxGoodBytes;
+	/** Specify what data to read */
+	u64	portDataMask;
 } GSW_RMON_Port_cnt_t;
 
 /** \brief RMON Counters Mode Enumeration.

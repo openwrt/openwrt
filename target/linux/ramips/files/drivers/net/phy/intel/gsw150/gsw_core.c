@@ -3237,6 +3237,7 @@ GSW_return_t GSW_RMON_Port_Get(void *pdev,
 	u32 data, rf = 0, ru = 0, rm = 0, tf = 0, tu = 0, tm = 0;
 	u32 rgbcl = 0, rbbcl = 0, tgbcl = 0;
 	unsigned long long int rgbch = 0, rbbch = 0, tgbch = 0;
+	unsigned long long portDataMask = parm->portDataMask;
 	ethsw_api_dev_t *pd = (ethsw_api_dev_t *)pdev;
 	SWAPI_ASSERT(pd == NULL);
 	s = npport(pdev, pi);
@@ -3257,6 +3258,8 @@ GSW_return_t GSW_RMON_Port_Get(void *pdev,
 	if (s != GSW_statusOk)
 		return s;
 	for (i = 0; i < RMON_COUNTER_OFFSET; i++) {
+		if (portDataMask != 0 && !simple_test_bit(i, (unsigned int *)&portDataMask))
+			continue;
 		memset(&pb, 0, sizeof(bm_tbl_prog_t));
 		pb.bmindex = i;
 		pb.bmtable = pi;

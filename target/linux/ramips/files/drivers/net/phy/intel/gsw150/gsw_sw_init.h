@@ -244,4 +244,33 @@ struct intel_gsw {
 
 #define PHY_CTRL_ENABLE_POWER_DOWN	(1 << 11)
 
+static inline int simple_test_bit(int nr, const unsigned int *addr)
+{
+	return 1U & (addr[nr/32] >> (nr & (32-1)));
+}
+
+static inline void simple_clear_bit(int nr, unsigned int *addr)
+{
+	unsigned int mask = (1U << ((nr) % 32));
+	unsigned int *p = ((unsigned int *)addr) + nr/32;
+	*p &= ~mask;
+}
+
+static inline void simple_set_bit(int nr, unsigned int *addr)
+{
+	unsigned int mask = (1U << ((nr) % 32));
+	unsigned int *p = ((unsigned int *)addr) + nr/32;
+	*p |= mask;
+}
+
+static inline int simple_test_and_set_bit(int nr, unsigned int *addr)
+{
+	unsigned int mask = (1U << ((nr) % 32));
+	unsigned int *p = ((unsigned int *)addr) + nr/32;
+	unsigned int old;
+	old = *p;
+	*p |= mask;
+	return (old & mask) != 0;
+}
+
 #endif    /* _ETHSW_INIT_H_ */

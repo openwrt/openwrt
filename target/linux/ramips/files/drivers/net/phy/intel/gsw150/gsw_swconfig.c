@@ -278,6 +278,7 @@ static int intel_get_port_mib(struct switch_dev *dev,
 	len += snprintf(buf + len, sizeof(buf) - len,
 	                "Port %d MIB counters\n", val->port_vlan);
 
+	parm.portDataMask = 0;
 	parm.nPortId = val->port_vlan;
 	mutex_lock(&gsw->reg_mutex);
 	intel_count_rd(gsw, &parm);
@@ -365,7 +366,12 @@ static int intel_get_port_stats(struct switch_dev *dev, int port,
 	if (port < 0 || port >= INTEL_SWITCH_PORT_NUM)
 		return -EINVAL;
 
+	parm.portDataMask = 0;
 	parm.nPortId = port;
+	simple_set_bit(0x25, (unsigned int *)&parm.portDataMask);
+	simple_set_bit(0x24, (unsigned int *)&parm.portDataMask);
+	simple_set_bit(0x0F, (unsigned int *)&parm.portDataMask);
+	simple_set_bit(0x0E, (unsigned int *)&parm.portDataMask);
 	mutex_lock(&gsw->reg_mutex);
 	intel_count_rd(gsw, &parm);
 	mutex_unlock(&gsw->reg_mutex);
