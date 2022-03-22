@@ -18,6 +18,7 @@
 #include <linux/workqueue.h>
 
 #define SWCONFIG_LED_TIMER_INTERVAL	(HZ / 10)
+#define SWCONFIG_LED_TIMER_INTERVAL_LONG	(HZ)
 #define SWCONFIG_LED_NUM_PORTS		32
 
 #define SWCONFIG_LED_PORT_SPEED_NA	0x01	/* unknown speed */
@@ -380,6 +381,17 @@ swconfig_trig_led_event(struct switch_led_trigger *sw_trig,
 		for (i = 0; i < SWCONFIG_LED_NUM_PORTS; i++) {
 			if (port_mask & (1 << i)) {
 				if (sw_trig->link_speed[i] & speed_mask) {
+					if ((mode & SWCONFIG_LED_MODE_TX) || (mode & SWCONFIG_LED_MODE_RX)) {
+						struct switch_dev *swdev = sw_trig->swdev;
+						if (swdev->ops->get_port_stats) {
+							struct switch_port_stats port_stats;
+
+							memset(&port_stats, '\0', sizeof(port_stats));
+							swdev->ops->get_port_stats(swdev, i, &port_stats);
+							sw_trig->port_tx_traffic[i] = port_stats.tx_bytes;
+							sw_trig->port_rx_traffic[i] = port_stats.rx_bytes;
+						}
+					}
 					traffic += ((mode & SWCONFIG_LED_MODE_TX) ?
 						    sw_trig->port_tx_traffic[i] : 0) +
 						((mode & SWCONFIG_LED_MODE_RX) ?
@@ -427,6 +439,38 @@ swconfig_trig_update_leds(struct switch_led_trigger *sw_trig)
 	}
 	read_unlock(&trigger->leddev_list_lock);
 }
+
+static inline int
+swconfig_trig_get_interval(struct switch_led_trigger *sw_trig)
+{
+	struct list_head *entry;
+	struct led_trigger *trigger;
+
+	trigger = &sw_trig->trig;
+	read_lock(&trigger->leddev_list_lock);
+	list_for_each(entry, &trigger->led_cdevs) {
+		struct led_classdev *led_cdev;
+		struct swconfig_trig_data *trig_data;
+		u8 mode;
+
+		led_cdev = list_entry(entry, struct led_classdev, trig_list);
+		trig_data = led_cdev->trigger_data;
+		if (!trig_data)
+			continue;
+
+		read_lock(&trig_data->lock);
+		mode = trig_data->mode;
+		read_unlock(&trig_data->lock);
+		if ((mode & SWCONFIG_LED_MODE_TX) || (mode & SWCONFIG_LED_MODE_RX)) {
+			read_unlock(&trigger->leddev_list_lock);
+			return SWCONFIG_LED_TIMER_INTERVAL;
+		}
+	}
+	read_unlock(&trigger->leddev_list_lock);
+
+	return SWCONFIG_LED_TIMER_INTERVAL_LONG;
+}
+
 
 static void
 swconfig_led_work_func(struct work_struct *work)
@@ -481,23 +525,15 @@ swconfig_led_work_func(struct work_struct *work)
 				}
 			}
 		}
-
-		if (swdev->ops->get_port_stats) {
-			struct switch_port_stats port_stats;
-
-			memset(&port_stats, '\0', sizeof(port_stats));
-			swdev->ops->get_port_stats(swdev, i, &port_stats);
-			sw_trig->port_tx_traffic[i] = port_stats.tx_bytes;
-			sw_trig->port_rx_traffic[i] = port_stats.rx_bytes;
-		}
 	}
 
 	sw_trig->port_link = link;
 
 	swconfig_trig_update_leds(sw_trig);
 
-	schedule_delayed_work(&sw_trig->sw_led_work,
-			      SWCONFIG_LED_TIMER_INTERVAL);
+	i = swconfig_trig_get_interval(sw_trig);
+
+	schedule_delayed_work(&sw_trig->sw_led_work, i);
 }
 
 static int
