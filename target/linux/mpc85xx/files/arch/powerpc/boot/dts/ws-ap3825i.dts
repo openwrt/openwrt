@@ -31,44 +31,44 @@
 
 		wifi1 {
 			gpios = <&spi_gpio 3 GPIO_ACTIVE_HIGH>;
-			label = "ws-ap3825i:green:radio1";
+			label = "green:radio1";
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wifi2 {
 			gpios = <&spi_gpio 2 GPIO_ACTIVE_HIGH>;
-			label = "ws-ap3825i:green:radio2";
+			label = "green:radio2";
 			linux,default-trigger = "phy1tpt";
 		};
 
 		led_power_green: power_green {
 			gpios = <&spi_gpio 0 GPIO_ACTIVE_HIGH>;
-			label = "ws-ap3825i:green:power";
+			label = "green:power";
 		};
 
 		led_power_red: power_red {
 			gpios = <&spi_gpio 1 GPIO_ACTIVE_HIGH>;
-			label = "ws-ap3825i:red:power";
+			label = "red:power";
 		};
 
-		eth0_red {
+		lan1_red {
 			gpios = <&spi_gpio 6 GPIO_ACTIVE_HIGH>;
-			label = "ws-ap3825i:red:eth0";
+			label = "red:lan1";
 		};
 
-		eth0_green {
+		lan1_green {
 			gpios = <&spi_gpio 4 GPIO_ACTIVE_HIGH>;
-			label = "ws-ap3825i:green:eth0";
+			label = "green:lan1";
 		};
 
-		eth1_red {
+		lan2_red {
 			gpios = <&spi_gpio 7 GPIO_ACTIVE_HIGH>;
-			label = "ws-ap3825i:red:eth1";
+			label = "red:lan2";
 		};
 
-		eth1_green {
+		lan2_green {
 			gpios = <&spi_gpio 5 GPIO_ACTIVE_HIGH>;
-			label = "ws-ap3825i:green:eth1";
+			label = "green:lan2";
 		};
 	};
 
