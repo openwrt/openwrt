@@ -89,8 +89,8 @@ int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, 
 	size_t label_min;
 	struct device_node *np = NULL;
 	const char *bootconf;
-	char *loadable;
-	char *select_rootfs = NULL;
+	const char *loadable;
+	const char *select_rootfs = NULL;
 	bool found;
 	int loadables_rem_len, loadable_len;
 
