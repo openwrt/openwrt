@@ -4,11 +4,14 @@ CFG=$1
 
 [ -n "$CFG" ] || CFG=/etc/board.json
 
-[ -d "/etc/board.d/" -a ! -s "$CFG" ] && {
-	for a in $(ls /etc/board.d/*); do
-		[ -s $a ] || continue;
-		$(. $a)
-	done
-}
+(
+	flock 9 || return 1
+	[ -d "/etc/board.d/" -a ! -s "$CFG" ] && {
+		for a in $(ls /etc/board.d/*); do
+			[ -s $a ] || continue;
+			$(. $a)
+		done
+	}
+) 9>/tmp/lock/board_detect.lock
 
 [ -s "$CFG" ] || return 1
