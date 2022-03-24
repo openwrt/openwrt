@@ -1,0 +1,65 @@
+From ba068938e629eb1a8b423a54405233e685cedb78 Mon Sep 17 00:00:00 2001
+Message-Id: <ba068938e629eb1a8b423a54405233e685cedb78.1647594132.git.chunkeey@gmail.com>
+From: Christian Lamparter <chunkeey@gmail.com>
+Date: Thu, 17 Mar 2022 21:29:28 +0100
+Subject: [PATCH v1 1/2] ata: sata_dwc_460ex: Fix crash due to OOB write
+To: linux-ide@vger.kernel.org
+Cc: Damien Le Moal <damien.lemoal@opensource.wdc.com>,
+    Jens Axboe <axboe@kernel.dk>,
+    Tejun Heo <tj@kernel.org>,
+    Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+
+the driver uses libata's "tag" values from in various arrays.
+Since the mentioned patch bumped the ATA_TAG_INTERNAL to 32,
+the value of the SATA_DWC_QCMD_MAX needs to be bumped to 33.
+
+Otherwise ATA_TAG_INTERNAL cause a crash like this:
+
+| BUG: Kernel NULL pointer dereference at 0x00000000
+| Faulting instruction address: 0xc03ed4b8
+| Oops: Kernel access of bad area, sig: 11 [#1]
+| BE PAGE_SIZE=4K PowerPC 44x Platform
+| CPU: 0 PID: 362 Comm: scsi_eh_1 Not tainted 5.4.163 #0
+| NIP:  c03ed4b8 LR: c03d27e8 CTR: c03ed36c
+| REGS: cfa59950 TRAP: 0300   Not tainted  (5.4.163)
+| MSR:  00021000 <CE,ME>  CR: 42000222  XER: 00000000
+| DEAR: 00000000 ESR: 00000000
+| GPR00: c03d27e8 cfa59a08 cfa55fe0 00000000 0fa46bc0 [...]
+| [..]
+| NIP [c03ed4b8] sata_dwc_qc_issue+0x14c/0x254
+| LR [c03d27e8] ata_qc_issue+0x1c8/0x2dc
+| Call Trace:
+| [cfa59a08] [c003f4e0] __cancel_work_timer+0x124/0x194 (unreliable)
+| [cfa59a78] [c03d27e8] ata_qc_issue+0x1c8/0x2dc
+| [cfa59a98] [c03d2b3c] ata_exec_internal_sg+0x240/0x524
+| [cfa59b08] [c03d2e98] ata_exec_internal+0x78/0xe0
+| [cfa59b58] [c03d30fc] ata_read_log_page.part.38+0x1dc/0x204
+| [cfa59bc8] [c03d324c] ata_identify_page_supported+0x68/0x130
+| [...]
+
+this is because sata_dwc_dma_xfer_complete() NULLs the
+dma_pending's next neighbour "chan" (a *dma_chan struct) in
+this '32' case right here (line ~735):
+> hsdevp->dma_pending[tag] = SATA_DWC_DMA_PENDING_NONE;
+
+Then the next time, a dma gets issued; dma_dwc_xfer_setup() passes
+the NULL'd hsdevp->chan to the dmaengine_slave_config() which then
+causes the crash.
+
+Reported-by: ticerex (OpenWrt Forum)
+Fixes: 28361c403683c ("libata: add extra internal command")
+Cc: stable@kernel.org # 4.18+
+Link: https://forum.openwrt.org/t/my-book-live-duo-reboot-loop/122464
+Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
+---
+--- a/drivers/ata/sata_dwc_460ex.c
++++ b/drivers/ata/sata_dwc_460ex.c
+@@ -145,7 +145,7 @@ struct sata_dwc_device {
+ #endif
+ };
+ 
+-#define SATA_DWC_QCMD_MAX	32
++#define SATA_DWC_QCMD_MAX	33
+ 
+ struct sata_dwc_device_port {
+ 	struct sata_dwc_device	*hsdev;
