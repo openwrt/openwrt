@@ -26,29 +26,6 @@
 		device_type = "memory";
 	};
 
-	led_spi {
-		/*
-		 * This is currently non-functioning because the spi-gpio
-		 * driver refuses to register when presented with this node.
-		 */
-		compatible = "spi-gpio";
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		sck-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
-		mosi-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
-		num-chipselects = <0>;
-
-		spi_gpio: led_gpio@0 {
-			compatible = "fairchild,74hc595";
-			reg = <0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			registers-number = <1>;
-			spi-max-frequency = <100000>;
-		};
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -242,6 +219,31 @@
 				  0x1000000 0x0 0x0
 				  0x1000000 0x0 0x0
 				  0x0 0x100000>;
+		};
+	};
+};
+
+&soc {
+	led_spi {
+		/*
+		 * This is currently non-functioning because the spi-gpio
+		 * driver refuses to register when presented with this node.
+		 */
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <0>;
+
+		spi_gpio: led_gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <1>;
+			spi-max-frequency = <100000>;
 		};
 	};
 };
