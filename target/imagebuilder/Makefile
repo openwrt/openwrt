@@ -57,7 +57,7 @@ else
 	find $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.ipk' -exec $(CP) {} $(PKG_BUILD_DIR)/packages/ \;
 endif
 
-	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
+	$(CP) -L $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
 	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
 		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
 	fi
