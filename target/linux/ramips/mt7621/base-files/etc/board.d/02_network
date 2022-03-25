@@ -43,8 +43,6 @@ ramips_setup_interfaces()
 	hiwifi,hc5962|\
 	netgear,wax202|\
 	sim,simax1800t|\
-	xwrt,wr1800k-ax-norplusemmc|\
-	xwrt,wr1800k-ax-nor|\
 	xwrt,wr1800k-ax-nand|\
 	xiaomi,mi-router-3-pro-nor|\
 	xiaomi,mi-router-3-pro|\
@@ -198,6 +196,12 @@ ramips_setup_interfaces()
 	xwrt,ms1201k)
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
+		;;
+	xwrt,wr1800k-ax-norplusemmc|\
+	xwrt,wr1800k-ax-nor)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"1:lan:1" "2:lan:2" "3:lan:3" "6@eth0"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"

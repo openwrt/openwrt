@@ -2869,6 +2869,8 @@ TARGET_DEVICES += xwrt_wr1800k-ax-nand
 
 define Device/xwrt_wr1800k-ax-norplusemmc
   $(Device/dsa-migration)
+  DEVICE_COMPAT_VERSION := 1.0
+  DEVICE_COMPAT_MESSAGE := Config is compat with swconfig
   DEVICE_VENDOR := XWRT
   DEVICE_MODEL := WR1800K-AX
   DEVICE_VARIANT := NORPLUSEMMC
@@ -2887,6 +2889,8 @@ TARGET_DEVICES += xwrt_wr1800k-ax-norplusemmc
 define Device/xwrt_wr1800k-ax-nor
   $(Device/uimage-lzma-loader)
   $(Device/dsa-migration)
+  DEVICE_COMPAT_VERSION := 1.0
+  DEVICE_COMPAT_MESSAGE := Config is compat with swconfig
   DEVICE_VENDOR := XWRT
   DEVICE_MODEL := WR1800K-AX
   DEVICE_VARIANT := NOR
