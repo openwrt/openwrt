@@ -658,6 +658,7 @@ define Device/tplink_tl-wr1043nd-v4
   DEVICE_VARIANT := v4
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
   TPLINK_HWID := 0x10430004
+  TPLINK_HWREV := 0x1
   TPLINK_BOARD_ID := TLWR1043NDV4
   SUPPORTED_DEVICES += tl-wr1043nd-v4
 endef
