@@ -930,7 +930,7 @@ define Device/qxwlan_e2600ac-c1
 	KERNEL_SIZE := 4096k
 	IMAGE_SIZE := 31232k
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
+	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac-c1
 	DEFAULT := n
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c1
@@ -945,7 +945,7 @@ define Device/qxwlan_e2600ac-c2
 	KERNEL_INSTALL := 1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
+	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac-c2
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
 
