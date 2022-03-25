@@ -11,9 +11,10 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=qosify
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/qosify.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2022-02-20
-PKG_SOURCE_VERSION:=65b42032063f75d8efc37cdb7215a04818be2fa7
-PKG_MIRROR_HASH:=0458a9fd7e90fc64239712435f24e7d74b2a3aefcfb0c5f64a9fd70bfd0fe7ae
+PKG_SOURCE_DATE:=2022-03-22
+PKG_SOURCE_VERSION:=57c7817f91c2ff2f247b2d7eb8554e861c4aec33
+PKG_MIRROR_HASH:=409f7db13a36334557de861a016a8d9f241070b2bbf6f738e992281b36f41cd4
+PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_LICENSE:=GPL-2.0
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -32,6 +33,8 @@ define Package/qosify
   TITLE:=A simple QoS solution based eBPF + CAKE
   DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +kmod-sched-bpf +kmod-ifb +tc-full $(BPF_DEPENDS)
 endef
+
+TARGET_CFLAGS += -Wno-error=deprecated-declarations
 
 define Build/Compile
 	$(call CompileBPF,$(PKG_BUILD_DIR)/qosify-bpf.c)

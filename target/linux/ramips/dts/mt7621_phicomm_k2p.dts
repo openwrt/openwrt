@@ -96,9 +96,15 @@
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0>;
+
+		/* 5 GHz (phy1) does not take the address from calibration data,
+		   but setting it manually here works */
+		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
@@ -149,6 +155,10 @@
 	compatible = "nvmem-cells";
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	macaddr_factory_4: macaddr@4 {
+		reg = <0x4 0x6>;
+	};
 
 	macaddr_factory_e000: macaddr@e000 {
 		reg = <0xe000 0x6>;

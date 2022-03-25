@@ -30,9 +30,9 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/drivers/mtd/parsers/parser_trx.c
 +++ b/drivers/mtd/parsers/parser_trx.c
-@@ -85,6 +85,10 @@ static int parser_trx_parse(struct mtd_i
- 	uint8_t curr_part = 0, i = 0;
- 	int err;
+@@ -92,6 +92,10 @@ static int parser_trx_parse(struct mtd_i
+ 	if (err != 0 && err != -EINVAL)
+ 		pr_err("failed to parse \"brcm,trx-magic\" DT attribute, using default: %d\n", err);
  
 +	/* Don't parse any failsafe / backup partitions */
 +	if (strcmp(mtd->name, "firmware"))

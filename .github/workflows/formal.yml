@@ -43,7 +43,7 @@ jobs:
             fi
 
             subject="$(git show -s --format=%s $commit)"
-            if echo "$subject" | grep -q -e '^[0-9A-Za-z,+/_-]\+: ' -e '^Revert '; then
+            if echo "$subject" | grep -q -e '^[0-9A-Za-z,+/_\.-]\+: ' -e '^Revert '; then
               success "Commit subject line seems ok ($subject)"
             else
               err "Commit subject line MUST start with '<area>: ' ($subject)"

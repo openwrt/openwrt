@@ -107,9 +107,9 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 -				 struct cfg80211_chan_def *chandef);
 +	int (*set_radar_background)(struct ieee80211_hw *hw,
 +				    struct cfg80211_chan_def *chandef);
+ #if LINUX_VERSION_IS_GEQ(5,10,0)
  	int (*net_fill_forward_path)(struct ieee80211_hw *hw,
  				     struct ieee80211_vif *vif,
- 				     struct ieee80211_sta *sta,
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
 @@ -2608,10 +2608,10 @@ enum nl80211_commands {

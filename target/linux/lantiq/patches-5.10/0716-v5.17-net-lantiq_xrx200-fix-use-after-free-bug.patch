@@ -1,0 +1,30 @@
+From dd830aed23c6e07cd8e2a163742bf3d63c9add08 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Sat, 5 Mar 2022 12:20:39 +0100
+Subject: net: lantiq_xrx200: fix use after free bug
+
+The skb->len field is read after the packet is sent to the network
+stack. In the meantime, skb can be freed. This patch fixes this bug.
+
+Fixes: c3e6b2c35b34 ("net: lantiq_xrx200: add ingress SG DMA support")
+Reported-by: Eric Dumazet <eric.dumazet@gmail.com>
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/lantiq_xrx200.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -260,9 +260,9 @@ static int xrx200_hw_receive(struct xrx2
+ 
+ 	if (ctl & LTQ_DMA_EOP) {
+ 		ch->skb_head->protocol = eth_type_trans(ch->skb_head, net_dev);
+-		netif_receive_skb(ch->skb_head);
+ 		net_dev->stats.rx_packets++;
+ 		net_dev->stats.rx_bytes += ch->skb_head->len;
++		netif_receive_skb(ch->skb_head);
+ 		ch->skb_head = NULL;
+ 		ch->skb_tail = NULL;
+ 		ret = XRX200_DMA_PACKET_COMPLETE;

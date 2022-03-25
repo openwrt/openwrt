@@ -15,7 +15,7 @@ define Device/aerohive_hiveap-330
   DEVICE_MODEL := HiveAP-330
   DEVICE_ALT0_VENDOR := Aerohive
   DEVICE_ALT0_MODEL := HiveAP-350
-  DEVICE_PACKAGES := kmod-tpm-i2c-atmel
+  DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-hwmon-lm70
   BLOCKSIZE := 128k
   KERNEL := kernel-bin | uImage none
   KERNEL_INITRAMFS := kernel-bin | MultiImage none
@@ -67,6 +67,18 @@ define Device/enterasys_ws-ap3710i
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += enterasys_ws-ap3710i
+
+define Device/extreme-networks_ws-ap3825i
+  DEVICE_VENDOR := Extreme Networks
+  DEVICE_MODEL := WS-AP3825i
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  BLOCKSIZE := 128k
+  DTB_SIZE := 20480
+  KERNEL = kernel-bin | lzma | dtb | fit lzma $(KDIR)/image-$$(DEVICE_DTS).dtb
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += extreme-networks_ws-ap3825i
 
 define Device/ocedo_panda
   DEVICE_VENDOR := OCEDO

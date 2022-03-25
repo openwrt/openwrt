@@ -191,7 +191,7 @@ define Build/check-size
 	@imagesize="$$(stat -c%s $@)"; \
 	limitsize="$$(($(subst k,* 1024,$(subst m, * 1024k,$(if $(1),$(1),$(IMAGE_SIZE))))))"; \
 	[ $$limitsize -ge $$imagesize ] || { \
-		echo "WARNING: Image file $@ is too big: $$imagesize > $$limitsize" >&2; \
+		$(call ERROR_MESSAGE,    WARNING: Image file $@ is too big: $$imagesize > $$limitsize); \
 		rm -f $@; \
 	}
 endef
@@ -541,9 +541,7 @@ define Build/zip
 	rm -rf $@.tmp
 	mkdir $@.tmp
 	mv $@ $@.tmp/$(word 1,$(1))
-
-	$(STAGING_DIR_HOST)/bin/zip -j -X \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="$(SOURCE_DATE_EPOCH)") \
+	TZ=UTC $(STAGING_DIR_HOST)/bin/zip -j -X \
 		$(wordlist 2,$(words $(1)),$(1)) \
 		$@ $@.tmp/$(if $(word 1,$(1)),$(word 1,$(1)),$$(basename $@))
 	rm -rf $@.tmp

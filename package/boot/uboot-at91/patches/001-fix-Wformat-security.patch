@@ -1,17 +1,46 @@
+From 3b05406c02070df3e7f19399d81ebd35ed6deae5 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 12 Oct 2021 17:43:28 +0300
+Subject: [PATCH] fix -Wformat-security
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ cmd/panic.c                      | 2 +-
+ cmd/version.c                    | 2 +-
+ drivers/pinctrl/pinctrl-uclass.c | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/cmd/panic.c b/cmd/panic.c
+index f13b3f094fab..197e2d0870ff 100644
+--- a/cmd/panic.c
++++ b/cmd/panic.c
+@@ -11,7 +11,7 @@ static int do_panic(struct cmd_tbl *cmdtp, int flag, int argc,
+ {
+ 	char *text = (argc < 2) ? "" : argv[1];
+ 
+-	panic(text);
++	panic("%s\n", text);
+ 
+ 	return CMD_RET_SUCCESS;
+ }
+diff --git a/cmd/version.c b/cmd/version.c
+index 3686b8733249..35b52c48171d 100644
 --- a/cmd/version.c
 +++ b/cmd/version.c
-@@ -18,7 +18,7 @@ static int do_version(cmd_tbl_t *cmdtp,
+@@ -19,7 +19,7 @@ static int do_version(struct cmd_tbl *cmdtp, int flag, int argc,
  {
  	char buf[DISPLAY_OPTIONS_BANNER_LENGTH];
  
 -	printf(display_options_get_banner(false, buf, sizeof(buf)));
-+	printf("%s",display_options_get_banner(false, buf, sizeof(buf)));
++	printf("%s", display_options_get_banner(false, buf, sizeof(buf)));
  #ifdef CC_VERSION_STRING
  	puts(CC_VERSION_STRING "\n");
  #endif
+diff --git a/drivers/pinctrl/pinctrl-uclass.c b/drivers/pinctrl/pinctrl-uclass.c
+index b0f30aa1f758..aa62a890609a 100644
 --- a/drivers/pinctrl/pinctrl-uclass.c
 +++ b/drivers/pinctrl/pinctrl-uclass.c
-@@ -368,7 +368,7 @@ int pinctrl_get_pin_name(struct udevice
+@@ -371,7 +371,7 @@ int pinctrl_get_pin_name(struct udevice *dev, int selector, char *buf,
  	if (!ops->get_pin_name)
  		return -ENOSYS;
  
@@ -20,14 +49,6 @@
  
  	return 0;
  }
---- a/lib/efi_loader/efi_variable.c
-+++ b/lib/efi_loader/efi_variable.c
-@@ -522,7 +522,7 @@ efi_status_t EFIAPI efi_set_variable(u16
- 
- 	if (old_size)
- 		/* APPEND_WRITE */
--		s += sprintf(s, old_val);
-+		s += sprintf(s, "%s", old_val);
- 	else
- 		s += sprintf(s, "(blob)");
- 
+-- 
+2.33.0
+

@@ -376,17 +376,6 @@
  }
  
  IFX_int32_t MEI_PLL_ConfigInit(MEI_DEV_T *pMeiDev)
---- a/src/drv_mei_cpe_dsm.c
-+++ b/src/drv_mei_cpe_dsm.c
-@@ -144,7 +144,7 @@ IFX_void_t MEI_VRX_DSM_DataInit(MEI_DEV_
-    memset((IFX_uint8_t *)&pMeiDev->firmwareFeatures, 0x00, sizeof(IOCTL_MEI_firmwareFeatures_t));
-    pMeiDev->meiFwDlCount = 0;
- 
--   pMeiDev->meiERBbuf.pCallBackFunc = mei_dsm_cb_func_hook;
-+   pMeiDev->meiERBbuf.pCallBackFunc = NULL;
- 
-    PRN_DBG_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_NORMAL,
-             ("MEI_DRV: PP callback function addr = 0x%08X" MEI_DRV_CRLF,
 --- a/src/drv_mei_cpe_download_vrx.c
 +++ b/src/drv_mei_cpe_download_vrx.c
 @@ -3281,12 +3281,14 @@ IFX_int32_t MEI_DEV_IoctlFirmwareDownloa

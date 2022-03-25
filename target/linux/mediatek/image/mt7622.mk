@@ -203,6 +203,15 @@ define Device/mediatek_mt7622-rfb1-ubi
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
+define Device/ruijie_rg-ew3200gx-pro
+  DEVICE_VENDOR := Ruijie
+  DEVICE_MODEL := RG-EW3200GX PRO
+  DEVICE_DTS := mt7622-ruijie-rg-ew3200gx-pro
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += ruijie_rg-ew3200gx-pro
+
 define Device/totolink_a8000ru
   DEVICE_VENDOR := TOTOLINK
   DEVICE_MODEL := A8000RU
@@ -240,3 +249,23 @@ define Device/ubnt_unifi-6-lr-ubootmod
   ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr-ubootmod
+
+define Device/xiaomi_redmi-router-ax6s
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Redmi Router AX6S
+  DEVICE_ALT0_VENDOR := Xiaomi
+  DEVICE_ALT0_MODEL := Router AX3200
+  DEVICE_DTS := mt7622-xiaomi-redmi-router-ax6s
+  DEVICE_DTS_DIR := ../dts
+  BOARD_NAME := xiaomi,redmi-router-ax6s
+  DEVICE_PACKAGES := kmod-mt7915e
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.bin
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += xiaomi_redmi-router-ax6s
