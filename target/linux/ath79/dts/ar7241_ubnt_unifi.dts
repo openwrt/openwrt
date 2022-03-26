@@ -4,9 +4,10 @@
 
 / {
 	compatible = "ubnt,unifi", "qca,ar7241";
-	model = "Ubiquiti UniFi";
+	model = "Ubiquiti UniFi AP";
 
 	aliases {
+		label-mac-device = &eth0;
 		led-boot = &led_dome_green;
 		led-failsafe = &led_dome_green;
 		led-running = &led_dome_green;
