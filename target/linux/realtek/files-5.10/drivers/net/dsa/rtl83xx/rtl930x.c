@@ -2470,7 +2470,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32(v, RTL930X_LED_SET0_0_CTRL - i * 8);
 	}
 
-	// Set LED mode to serial (0x1)
+	// Set LED mode to serial (0x1), color-scan is (0x2), bi-color-scan (0x3)
 	sw_w32_mask(0x3, 0x1, RTL930X_LED_GLB_CTRL);
 
 	// Set port type masks

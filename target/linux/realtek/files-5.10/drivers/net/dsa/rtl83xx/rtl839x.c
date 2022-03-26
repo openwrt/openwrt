@@ -1818,6 +1818,84 @@ void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	}
 }
 
+static void rtl839x_led_init(struct rtl838x_switch_priv *priv)
+{
+	int i, pos;
+	u32 v, set;
+	u64 pm_copper = 0, pm_fiber = 0;
+	u32 setlen;
+	const __be32 *led_set;
+	char set_name[9];
+	struct device_node *node;
+	const char *mode;
+
+	node = of_find_compatible_node(NULL, NULL, "realtek,rtl8390-leds");
+	if (!node) {
+		pr_info("%s No compatible LED node found\n", __func__);
+		return;
+	}
+
+	for (i= 0; i < priv->cpu_port; i++) {
+		pos = (i << 1) % 32;
+		sw_w32_mask(0x3 << pos, 0, RTL839X_LED_FIB_SET_SEL_CTRL(i));
+		sw_w32_mask(0x3 << pos, 0, RTL839X_LED_COPR_SET_SEL_CTRL(i));
+
+		if (!priv->ports[i].phy)
+			continue;
+
+		if (priv->ports[i].phy_is_integrated)
+		pm_fiber |= BIT_ULL(i);
+			else
+		pm_copper |= BIT_ULL(i);
+
+		set = priv->ports[i].led_set;
+		sw_w32_mask(0, set << pos, RTL839X_LED_COPR_SET_SEL_CTRL(i));
+		sw_w32_mask(0, set << pos, RTL839X_LED_FIB_SET_SEL_CTRL(i));
+	}
+
+	sw_w32(0, RTL839X_LED_SET0_0_CTRL);
+	sw_w32(0, RTL839X_LED_SET0_0_CTRL - 4);
+	for (i = 0; i < 4; i++) {
+		pos = (i % 2)?15:0;
+		sprintf(set_name, "led_set%d", i);
+		led_set = of_get_property(node, set_name, &setlen);
+		if (!led_set || setlen != 12)
+			break;
+		v = be32_to_cpup(led_set) | be32_to_cpup(led_set + 1) << 5
+			| be32_to_cpup(led_set + 2)  << 10;
+		sw_w32_mask(0x7fff << pos, v << pos, RTL839X_LED_SET0_0_CTRL - (i / 2) * 4);
+	}
+
+	// Set LED mode
+	v = 0x0; // Default LED mode is serial
+	if (of_property_read_string(node, "led_mode", &mode) == 0) {
+		if (strcmp(mode, "serial") == 0)
+			v = 0x0;
+		else if (strcmp(mode, "color-scan") == 0)
+			v = 0x1;
+		else if (strcmp(mode, "bi-color-scan") == 0)
+			v = 0x2;
+		else
+			pr_err("%s invalid led_mode\n", __func__);
+	}
+	sw_w32_mask(0x3, v, RTL839X_LED_GLB_CTRL);
+
+	if (of_property_read_u32(node, "leds_per_port", &v) == 0) {
+		pr_info("%s got leds_per_port %d\n", __func__, v);
+		v &= 0x3;
+		sw_w32_mask(0x3 << 2, v << 2, RTL839X_LED_GLB_CTRL);
+	}
+
+	rtl839x_set_port_reg_le(pm_copper, RTL839X_LED_COPR_PMASK_CTRL);
+	rtl839x_set_port_reg_le(pm_fiber, RTL839X_LED_FIB_PMASK_CTRL);
+	rtl839x_set_port_reg_le(pm_copper | pm_fiber, RTL839X_LED_COMBO_CTRL);
+
+	sw_w32_mask(0, BIT(5), RTL839X_LED_GLB_CTRL); // Set LED_EN
+
+	for (i = 0; i < 32; i++)
+		pr_info("%s %08x: %08x\n",__func__, 0xbb0000e0 + i * 4, sw_r32(0x00e0 + i * 4));
+}
+
 const struct rtl838x_reg rtl839x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -1902,4 +1980,5 @@ const struct rtl838x_reg rtl839x_reg = {
 	.l3_setup = rtl839x_l3_setup,
 	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
+	.led_init = rtl839x_led_init,
 };
