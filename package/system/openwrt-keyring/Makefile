@@ -34,5 +34,6 @@ define Package/openwrt-keyring/install
 	$(INSTALL_DIR) $(1)/etc/opkg/keys/
 	# Public usign key for 22.03 release builds
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/usign/4d017e6f1ed5d616 $(1)/etc/opkg/keys/
+endef
 
 $(eval $(call BuildPackage,openwrt-keyring))
