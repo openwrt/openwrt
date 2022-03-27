@@ -1,2 +1,2 @@
 BOARDNAME:=Google Chromium
-FEATURES += emmc boot-part rootfs-part
+FEATURES += emmc boot-part rootfs-part source-only
