@@ -517,7 +517,7 @@ endif
 define Device/Build/compile
   $$(_COMPILE_TARGET): $(KDIR)/$(1)
   $(eval $(call Device/Export,$(KDIR)/$(1)))
-  $(KDIR)/$(1):
+  $(KDIR)/$(1): FORCE
 	$$(call concat_cmd,$(COMPILE/$(1)))
 
 endef
