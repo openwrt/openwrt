@@ -218,8 +218,7 @@ define Device/buffalo_wzr-900dhp
 	buffalo-enc WZR-900DHP2 $$(BUFFALO_TAG_VERSION) | \
 	buffalo-tag-dhp WZR-900DHP2 JP jp | buffalo-enc-tag | \
 	buffalo-dhp-image
-  BROKEN := y
-endef
+ endef
 TARGET_DEVICES += buffalo_wzr-900dhp
 
 define Device/buffalo_wzr-1750dhp

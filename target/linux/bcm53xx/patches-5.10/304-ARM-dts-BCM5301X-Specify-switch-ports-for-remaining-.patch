@@ -665,3 +665,47 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  &spi_nor {
  	status = "okay";
  
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
+@@ -107,3 +107,41 @@
+ &usb3_phy {
+ 	status = "okay";
+ };
++
++&srab {
++	status = "okay";
++
++	ports {
++		port@0 {
++			reg = <0>;
++			label = "lan1";
++		};
++
++		port@1 {
++			reg = <1>;
++			label = "lan2";
++		};
++
++		port@2 {
++			reg = <2>;
++			label = "lan3";
++		};
++
++		port@3 {
++			reg = <3>;
++			label = "lan4";
++		};
++
++		port@4 {
++			reg = <4>;
++			label = "wan";
++		};
++
++		port@5 {
++			reg = <5>;
++			label = "cpu";
++			ethernet = <&gmac0>;
++		};
++	};
++};
++
