@@ -572,7 +572,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		.rates = SNDRV_PCM_RATE_CONTINUOUS,
 +		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 +	},
-+	.symmetric_rates = 1,
++	.symmetric_rate = 1,
 +};
 +
 +static struct snd_pcm_hardware ralink_pcm_hardware = {
