@@ -75,16 +75,16 @@ https://bugs.chromium.org/p/chromium/issues/detail?id=688601
  set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
  set_target_properties(zlib PROPERTIES SOVERSION 1)
  
-diff --git a/adler32.c b/adler32.c
-index d0be4380..45ebaa4b 100644
 --- a/adler32.c
 +++ b/adler32.c
-@@ -136,7 +136,12 @@ uLong ZEXPORT adler32(adler, buf, len)
+@@ -136,7 +136,14 @@ uLong ZEXPORT adler32(adler, buf, len)
      const Bytef *buf;
      uInt len;
  {
 +#ifdef ARMv8
 +#  pragma message("Using NEON-ized Adler32.")
++unsigned long NEON_adler32(unsigned long adler, const unsigned char *buf,
++                                  const unsigned int len);
 +    return NEON_adler32(adler, buf, len);
 +#else
      return adler32_z(adler, buf, len);
