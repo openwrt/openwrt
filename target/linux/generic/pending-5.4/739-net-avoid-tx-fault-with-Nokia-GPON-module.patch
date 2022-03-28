@@ -47,7 +47,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  
  #if IS_ENABLED(CONFIG_HWMON)
  	struct sfp_diag diag;
-@@ -1742,6 +1753,12 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -1750,6 +1761,12 @@ static int sfp_sm_mod_probe(struct sfp *
  	if (ret < 0)
  		return ret;
  
@@ -60,7 +60,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	return 0;
  }
  
-@@ -1947,11 +1964,12 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1955,11 +1972,12 @@ static void sfp_sm_main(struct sfp *sfp,
  			break;
  
  		if (sfp->state & SFP_F_TX_FAULT) {
@@ -77,7 +77,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			if (timeout > T_WAIT)
  				timeout -= T_WAIT;
  			else
-@@ -1968,8 +1986,8 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1976,8 +1994,8 @@ static void sfp_sm_main(struct sfp *sfp,
  
  	case SFP_S_INIT:
  		if (event == SFP_E_TIMEOUT && sfp->state & SFP_F_TX_FAULT) {
@@ -88,7 +88,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  			 */
  			sfp_sm_fault(sfp, SFP_S_INIT_TX_FAULT,
  				     sfp->sm_retries == 5);
-@@ -1988,7 +2006,7 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -1996,7 +2014,7 @@ static void sfp_sm_main(struct sfp *sfp,
  	case SFP_S_INIT_TX_FAULT:
  		if (event == SFP_E_TIMEOUT) {
  			sfp_module_tx_fault_reset(sfp);
@@ -97,7 +97,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  		}
  		break;
  
-@@ -2012,7 +2030,7 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -2020,7 +2038,7 @@ static void sfp_sm_main(struct sfp *sfp,
  	case SFP_S_TX_FAULT:
  		if (event == SFP_E_TIMEOUT) {
  			sfp_module_tx_fault_reset(sfp);
