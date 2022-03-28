@@ -61,11 +61,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  drivers/net/dsa/mv88e6xxx/port.h |  2 ++
  4 files changed, 81 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/dsa/mv88e6xxx/chip.c b/drivers/net/dsa/mv88e6xxx/chip.c
-index 1992be77522a..a77c86e0321d 100644
 --- a/drivers/net/dsa/mv88e6xxx/chip.c
 +++ b/drivers/net/dsa/mv88e6xxx/chip.c
-@@ -1586,6 +1586,26 @@ static int mv88e6xxx_port_check_hw_vlan(struct dsa_switch *ds, int port,
+@@ -1586,6 +1586,26 @@ static int mv88e6xxx_port_check_hw_vlan(
  	return 0;
  }
  
@@ -92,7 +90,7 @@ index 1992be77522a..a77c86e0321d 100644
  static int mv88e6xxx_port_vlan_filtering(struct dsa_switch *ds, int port,
  					 bool vlan_filtering,
  					 struct switchdev_trans *trans)
-@@ -1599,7 +1619,16 @@ static int mv88e6xxx_port_vlan_filtering(struct dsa_switch *ds, int port,
+@@ -1599,7 +1619,16 @@ static int mv88e6xxx_port_vlan_filtering
  		return chip->info->max_vid ? 0 : -EOPNOTSUPP;
  
  	mv88e6xxx_reg_lock(chip);
@@ -109,7 +107,7 @@ index 1992be77522a..a77c86e0321d 100644
  	mv88e6xxx_reg_unlock(chip);
  
  	return err;
-@@ -1982,8 +2011,10 @@ static void mv88e6xxx_port_vlan_add(struct dsa_switch *ds, int port,
+@@ -1982,8 +2011,10 @@ static void mv88e6xxx_port_vlan_add(stru
  	struct mv88e6xxx_chip *chip = ds->priv;
  	bool untagged = vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED;
  	bool pvid = vlan->flags & BRIDGE_VLAN_INFO_PVID;
@@ -120,7 +118,7 @@ index 1992be77522a..a77c86e0321d 100644
  	u16 vid;
  
  	if (!chip->info->max_vid)
-@@ -2008,9 +2039,23 @@ static void mv88e6xxx_port_vlan_add(struct dsa_switch *ds, int port,
+@@ -2008,9 +2039,23 @@ static void mv88e6xxx_port_vlan_add(stru
  			dev_err(ds->dev, "p%d: failed to add VLAN %d%c\n", port,
  				vid, untagged ? 'u' : 't');
  
@@ -147,7 +145,7 @@ index 1992be77522a..a77c86e0321d 100644
  
  	mv88e6xxx_reg_unlock(chip);
  }
-@@ -2061,6 +2106,7 @@ static int mv88e6xxx_port_vlan_del(struct dsa_switch *ds, int port,
+@@ -2061,6 +2106,7 @@ static int mv88e6xxx_port_vlan_del(struc
  				   const struct switchdev_obj_port_vlan *vlan)
  {
  	struct mv88e6xxx_chip *chip = ds->priv;
@@ -155,7 +153,7 @@ index 1992be77522a..a77c86e0321d 100644
  	u16 pvid, vid;
  	int err = 0;
  
-@@ -2079,7 +2125,9 @@ static int mv88e6xxx_port_vlan_del(struct dsa_switch *ds, int port,
+@@ -2079,7 +2125,9 @@ static int mv88e6xxx_port_vlan_del(struc
  			goto unlock;
  
  		if (vid == pvid) {
@@ -166,8 +164,6 @@ index 1992be77522a..a77c86e0321d 100644
  			if (err)
  				goto unlock;
  		}
-diff --git a/drivers/net/dsa/mv88e6xxx/chip.h b/drivers/net/dsa/mv88e6xxx/chip.h
-index 51a7ff44478e..843803c3adf2 100644
 --- a/drivers/net/dsa/mv88e6xxx/chip.h
 +++ b/drivers/net/dsa/mv88e6xxx/chip.h
 @@ -224,9 +224,15 @@ struct mv88e6xxx_policy {
@@ -186,11 +182,9 @@ index 51a7ff44478e..843803c3adf2 100644
  	u64 serdes_stats[2];
  	u64 atu_member_violation;
  	u64 atu_miss_violation;
-diff --git a/drivers/net/dsa/mv88e6xxx/port.c b/drivers/net/dsa/mv88e6xxx/port.c
-index dfd9e8292e9a..a7177aa254a8 100644
 --- a/drivers/net/dsa/mv88e6xxx/port.c
 +++ b/drivers/net/dsa/mv88e6xxx/port.c
-@@ -1062,6 +1062,27 @@ int mv88e6xxx_port_set_8021q_mode(struct mv88e6xxx_chip *chip, int port,
+@@ -1062,6 +1062,27 @@ int mv88e6xxx_port_set_8021q_mode(struct
  	return 0;
  }
  
@@ -218,11 +212,9 @@ index dfd9e8292e9a..a7177aa254a8 100644
  int mv88e6xxx_port_set_map_da(struct mv88e6xxx_chip *chip, int port)
  {
  	u16 reg;
-diff --git a/drivers/net/dsa/mv88e6xxx/port.h b/drivers/net/dsa/mv88e6xxx/port.h
-index 44d76ac973f6..3390517df42e 100644
 --- a/drivers/net/dsa/mv88e6xxx/port.h
 +++ b/drivers/net/dsa/mv88e6xxx/port.h
-@@ -364,6 +364,8 @@ int mv88e6390x_port_set_cmode(struct mv88e6xxx_chip *chip, int port,
+@@ -364,6 +364,8 @@ int mv88e6390x_port_set_cmode(struct mv8
  			      phy_interface_t mode);
  int mv88e6185_port_get_cmode(struct mv88e6xxx_chip *chip, int port, u8 *cmode);
  int mv88e6352_port_get_cmode(struct mv88e6xxx_chip *chip, int port, u8 *cmode);
@@ -231,6 +223,3 @@ index 44d76ac973f6..3390517df42e 100644
  int mv88e6xxx_port_set_map_da(struct mv88e6xxx_chip *chip, int port);
  int mv88e6095_port_set_upstream_port(struct mv88e6xxx_chip *chip, int port,
  				     int upstream_port);
--- 
-2.34.1
-
