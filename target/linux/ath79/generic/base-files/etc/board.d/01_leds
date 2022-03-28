@@ -312,7 +312,8 @@ qihoo,c301)
 samsung,wam250)
 	ucidef_set_led_netdev "lan" "LAN" "white:lan" "eth0"
 	;;
-teltonika,rut230-v1)
+teltonika,rut230-v1|\
+teltonika,rut240-v1)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x04"
 	;;

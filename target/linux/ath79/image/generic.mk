@@ -2387,6 +2387,28 @@ define Device/teltonika_rut230-v1
 endef
 TARGET_DEVICES += teltonika_rut230-v1
 
+define Device/teltonika_rut240-v1
+  SOC := ar9331
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT240
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-acm kmod-usb-net-qmi-wwan \
+	uqmi -uboot-envtools
+  IMAGE_SIZE := 15552k
+  TPLINK_HWID := 0x32200002
+  TPLINK_HWREV := 0x1
+  TPLINK_HEADER_VERSION := 1
+  KERNEL := kernel-bin | append-dtb | lzma | teltonika-v1-header
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs |\
+	pad-rootfs | pad-extra 64 | teltonika-fw-fake-checksum 54 | check-size
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata |\
+	check-size
+endef
+TARGET_DEVICES += teltonika_rut240-v1
+
 define Device/teltonika_rut955
   SOC := ar9344
   DEVICE_VENDOR := Teltonika
