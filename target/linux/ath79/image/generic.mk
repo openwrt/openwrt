@@ -2369,6 +2369,8 @@ define Device/teltonika_rut230-v1
   SOC := ar9331
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT230
+  DEVICE_ALT0_VENDOR := Teltonika
+  DEVICE_ALT0_MODEL := RUT240
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb-chipidea2 kmod-usb-acm kmod-usb-net-qmi-wwan \
 	uqmi -uboot-envtools
