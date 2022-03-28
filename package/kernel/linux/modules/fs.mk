@@ -648,6 +648,7 @@ define KernelPackage/fs-ntfs3
   TITLE:=Ntfs3 support
   KCONFIG:= CONFIG_NTFS3_FS CONFIG_NTFS3_FS_POSIX_ACL=y
   FILES:=$(LINUX_DIR)/fs/ntfs3/ntfs3.ko
+  $(call AddDepends/nls)
   AUTOLOAD:=$(call AutoLoad,80,ntfs3)
 endef
 
