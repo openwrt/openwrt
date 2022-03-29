@@ -1,0 +1,13 @@
+diff --git a/package/base-files/files/bin/config_generate b/package/base-files/files/bin/config_generate
+index 3bf48d7216..e0e76f1292 100755
+--- a/package/base-files/files/bin/config_generate
++++ b/package/base-files/files/bin/config_generate
+@@ -100,7 +100,7 @@ generate_network() {
+ 		static)
+ 			local ipad
+ 			case "$1" in
+-				lan) ipad=${ipaddr:-"192.168.1.1"} ;;
++				lan) ipad=${ipaddr:-"192.168.61.1"} ;;
+ 				*) ipad=${ipaddr:-"192.168.$((addr_offset++)).1"} ;;
+ 			esac
+ 

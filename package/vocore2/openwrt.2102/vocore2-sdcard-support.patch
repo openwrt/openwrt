@@ -1,0 +1,11 @@
+--- a/target/linux/ramips/dts/mt7628an_vocore_vocore2.dts
++++ b/target/linux/ramips/dts/mt7628an_vocore_vocore2.dts
+@@ -60,3 +60,8 @@
+ 		};
+ 	};
+ };
++
++&sdhci {
++	status = "okay";
++	mediatek,cd-poll;
++};

@@ -1,0 +1,11 @@
+--- a/target/linux/ramips/dts/VOCORE2.dtsi
++++ b/target/linux/ramips/dts/VOCORE2.dtsi
+@@ -4,7 +4,7 @@
+ 	compatible = "vocore,vocore2", "mediatek,mt7628an-soc";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS2,115200";
++		bootargs = "console=ttyS2,115200 console=tty0 fbcon=rotate:1";
+ 	};
+ };
+ 

@@ -1,0 +1,104 @@
+--- a/target/linux/ramips/modules.mk
++++ b/target/linux/ramips/modules.mk
+@@ -136,3 +136,28 @@
+ endef
+ 
+ $(eval $(call KernelPackage,sound-mt7620))
++
++define KernelPackage/sound-mt7628
++  TITLE:=MT7628 PCM/I2S Alsa Driver
++  DEPENDS:=@TARGET_ramips +kmod-sound-soc-core +kmod-regmap +kmod-dma-ralink @!TARGET_ramips_rt288x
++  KCONFIG:= \
++        CONFIG_SND_RALINK_SOC_I2S \
++        CONFIG_SND_SIMPLE_CARD \
++        CONFIG_SND_SIMPLE_CARD_UTILS \
++        CONFIG_SND_SOC_ES8328 \
++	CONFIG_SND_SOC_ES8328_I2C
++  FILES:= \
++        $(LINUX_DIR)/sound/soc/ralink/snd-soc-ralink-i2s.ko \
++        $(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card.ko \
++        $(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card-utils.ko \
++        $(LINUX_DIR)/sound/soc/codecs/snd-soc-es8328.ko \
++	$(LINUX_DIR)/sound/soc/codecs/snd-soc-es8328-i2c.ko
++  AUTOLOAD:=$(call AutoLoad,90,snd-soc-es8328 snd-soc-es8328-i2c snd-soc-ralink-i2s snd-soc-simple-card)
++  $(call AddDepends/sound)
++endef
++
++define KernelPackage/sound-mt7628/description
++ Alsa modules for ralink i2s controller.
++endef
++
++$(eval $(call KernelPackage,sound-mt7628))
+--- a/target/linux/ramips/dts/VOCORE2.dtsi
++++ b/target/linux/ramips/dts/VOCORE2.dtsi
+@@ -12,9 +12,13 @@
+ &pinctrl {
+ 	state_default: pinctrl0 {
+ 		gpio {
+-			ralink,group = "wled_an", "refclk", "wdt";
++			ralink,group = "wled_an", "wdt";
+ 			ralink,function = "gpio";
+ 		};
++		refclk {
++			ralink,group = "gpio0";
++			ralink,function = "gpio refclk";
++		};
+ 	};
+ };
+ 
+@@ -33,6 +37,7 @@
+ };
+ 
+ &i2s {
++	#sound-dai-cells = <0>;
+ 	status = "okay";
+ };
+ 
+--- a/target/linux/ramips/dts/VOCORE2.dts
++++ b/target/linux/ramips/dts/VOCORE2.dts
+@@ -16,6 +16,45 @@
+ 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+ 		};
+ 	};
++
++	sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "soundcard";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,bitclock-master = <&sound_master>;
++		simple-audio-card,frame-master = <&sound_master>;
++		simple-audio-card,mclk-fs = <272>;
++		simple-audio-card,widgets =
++			"Microphone", "Microphone Jack",
++			"Headphone", "Headphone Jack";
++		simple-audio-card,routing =
++			"LINPUT1", "Microphone Jack",
++			"RINPUT1", "Microphone Jack",
++			"Microphone Jack", "Mic Bias",
++			"Headphone Jack", "LOUT1",
++			"Headphone Jack", "ROUT1";
++
++		simple-audio-card,cpu {
++			sound-dai = <&i2s>;
++		};
++
++		sound_master:simple-audio-card,codec {
++			sound-dai = <&codec>;
++		};
++	};
++};
++
++&i2c {
++	status = "okay";
++
++	codec: es8388@10 {
++		#sound-dai-cells = <0>;
++		compatible = "everest,es8328";
++		reg = <0x10>;
++
++		clocks = <&clkctrl 20>;
++		clock-names = "refclk";
++	};
+ };
+ 
+ &spi0 {

@@ -1,0 +1,224 @@
+--- a/sound/soc/codecs/es8328.c
++++ b/sound/soc/codecs/es8328.c
+@@ -39,6 +39,19 @@
+ 	.list	= rates_12288,
+ };
+ 
++static const unsigned int rates_12000[] = {
++	8000, 12000, 16000, 24000, 32000, 44100, 48000, 96000,
++};
++
++static const int ratios_12000[] = {
++	27, 24, 23, 21, 20, 19, 18, 16,
++};
++
++static const struct snd_pcm_hw_constraint_list constraints_12000 = {
++	.count	= ARRAY_SIZE(rates_12000),
++	.list	= rates_12000,
++};
++
+ static const unsigned int rates_11289[] = {
+ 	8018, 11025, 22050, 44100, 88200,
+ };
+@@ -312,26 +325,7 @@
+ 			ES8328_ADCPOWER_MIC_BIAS_OFF, 1, NULL, 0),
+ 	SND_SOC_DAPM_SUPPLY("Mic Bias Gen", ES8328_ADCPOWER,
+ 			ES8328_ADCPOWER_ADC_BIAS_GEN_OFF, 1, NULL, 0),
+-
+-	SND_SOC_DAPM_SUPPLY("DAC STM", ES8328_CHIPPOWER,
+-			ES8328_CHIPPOWER_DACSTM_RESET, 1, NULL, 0),
+-	SND_SOC_DAPM_SUPPLY("ADC STM", ES8328_CHIPPOWER,
+-			ES8328_CHIPPOWER_ADCSTM_RESET, 1, NULL, 0),
+-
+-	SND_SOC_DAPM_SUPPLY("DAC DIG", ES8328_CHIPPOWER,
+-			ES8328_CHIPPOWER_DACDIG_OFF, 1, NULL, 0),
+-	SND_SOC_DAPM_SUPPLY("ADC DIG", ES8328_CHIPPOWER,
+-			ES8328_CHIPPOWER_ADCDIG_OFF, 1, NULL, 0),
+-
+-	SND_SOC_DAPM_SUPPLY("DAC DLL", ES8328_CHIPPOWER,
+-			ES8328_CHIPPOWER_DACDLL_OFF, 1, NULL, 0),
+-	SND_SOC_DAPM_SUPPLY("ADC DLL", ES8328_CHIPPOWER,
+-			ES8328_CHIPPOWER_ADCDLL_OFF, 1, NULL, 0),
+-
+-	SND_SOC_DAPM_SUPPLY("ADC Vref", ES8328_CHIPPOWER,
+-			ES8328_CHIPPOWER_ADCVREF_OFF, 1, NULL, 0),
+-	SND_SOC_DAPM_SUPPLY("DAC Vref", ES8328_CHIPPOWER,
+-			ES8328_CHIPPOWER_DACVREF_OFF, 1, NULL, 0),
++	SND_SOC_DAPM_SUPPLY("Mic L Mono", ES8328_DACCONTROL21, 7, 0, NULL, 0),
+ 
+ 	SND_SOC_DAPM_DAC("Right DAC", "Right Playback", ES8328_DACPOWER,
+ 			ES8328_DACPOWER_RDAC_OFF, 1),
+@@ -401,14 +395,8 @@
+ 	{ "Left ADC", NULL, "Left ADC Mux" },
+ 	{ "Right ADC", NULL, "Right ADC Mux" },
+ 
+-	{ "ADC DIG", NULL, "ADC STM" },
+-	{ "ADC DIG", NULL, "ADC Vref" },
+-	{ "ADC DIG", NULL, "ADC DLL" },
+-
+-	{ "Left ADC", NULL, "ADC DIG" },
+-	{ "Right ADC", NULL, "ADC DIG" },
+-
+ 	{ "Mic Bias", NULL, "Mic Bias Gen" },
++	{ "Mic Bias", NULL, "Mic L Mono" },
+ 
+ 	{ "Left Line Mux", "Line 1", "LINPUT1" },
+ 	{ "Left Line Mux", "Line 2", "LINPUT2" },
+@@ -435,13 +423,6 @@
+ 	{ "Right Mixer", "Playback Switch", "Right DAC" },
+ 	{ "Right Mixer", "Right Bypass Switch", "Right Line Mux" },
+ 
+-	{ "DAC DIG", NULL, "DAC STM" },
+-	{ "DAC DIG", NULL, "DAC Vref" },
+-	{ "DAC DIG", NULL, "DAC DLL" },
+-
+-	{ "Left DAC", NULL, "DAC DIG" },
+-	{ "Right DAC", NULL, "DAC DIG" },
+-
+ 	{ "Left Out 1", NULL, "Left Mixer" },
+ 	{ "LOUT1", NULL, "Left Out 1" },
+ 	{ "Right Out 1", NULL, "Right Mixer" },
+@@ -481,15 +462,9 @@
+ 	struct snd_soc_codec *codec = dai->codec;
+ 	struct es8328_priv *es8328 = snd_soc_codec_get_drvdata(codec);
+ 	int i;
+-	int reg;
+ 	int wl;
+ 	int ratio;
+ 
+-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+-		reg = ES8328_DACCONTROL2;
+-	else
+-		reg = ES8328_ADCCONTROL5;
+-
+ 	if (es8328->master) {
+ 		if (!es8328->sysclk_constraints) {
+ 			dev_err(codec->dev, "No MCLK configured\n");
+@@ -549,7 +524,10 @@
+ 				ES8328_ADCCONTROL4_ADCWL_MASK,
+ 				wl << ES8328_ADCCONTROL4_ADCWL_SHIFT);
+ 
+-	return snd_soc_update_bits(codec, reg, ES8328_RATEMASK, ratio);
++	// we are using same LRCLK and BCLK for record and playback.
++	snd_soc_update_bits(codec, ES8328_DACCONTROL2, ES8328_RATEMASK, ratio);
++	snd_soc_update_bits(codec, ES8328_ADCCONTROL5, ES8328_RATEMASK, ratio);
++	return 0;
+ }
+ 
+ static int es8328_set_sysclk(struct snd_soc_dai *codec_dai,
+@@ -559,11 +537,19 @@
+ 	struct es8328_priv *es8328 = snd_soc_codec_get_drvdata(codec);
+ 	int mclkdiv2 = 0;
+ 
++	freq = 12000000;	/* fixed for vocore2.*/
+ 	switch (freq) {
+ 	case 0:
+ 		es8328->sysclk_constraints = NULL;
+ 		es8328->mclk_ratios = NULL;
+ 		break;
++	case 24000000:
++		mclkdiv2 = 1;
++		/* fallthru */
++	case 12000000:
++		es8328->sysclk_constraints = &constraints_12000;
++		es8328->mclk_ratios = ratios_12000;
++		break;
+ 	case 22579200:
+ 		mclkdiv2 = 1;
+ 		/* fallthru */
+@@ -770,6 +756,43 @@
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_DEBUG_FS
++static struct snd_soc_codec *es8328_codec;
++static ssize_t es8328_dump_show(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	struct snd_soc_codec *codec = es8328_codec;
++	int reg, count = 0;
++
++	for (reg = 0; reg < 64; reg++) {
++		int val = snd_soc_read(codec, reg);
++		if (val < 0) {
++			count += sprintf(buf + count, "\n");
++			break;
++		}
++		count += sprintf(buf + count, "%02x ", val);
++		if (reg && (reg % 8 == 7))
++			count += sprintf(buf + count, " ");
++		if (reg && (reg % 16 == 15))
++			count += sprintf(buf + count, "\n");
++	}
++
++	return count;
++}
++
++
++static ssize_t es8328_dump_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
++{
++	struct snd_soc_codec *codec = es8328_codec;
++	int reg, val;
++
++	sscanf(buf, "%2x:%2x", &reg, &val);
++	snd_soc_write(codec, reg, val);
++	return count;
++}
++
++static DEVICE_ATTR(dump, S_IRUGO|S_IWUSR, es8328_dump_show, es8328_dump_store);
++#endif
++
+ static int es8328_codec_probe(struct snd_soc_codec *codec)
+ {
+ 	struct es8328_priv *es8328;
+@@ -784,26 +810,33 @@
+ 		return ret;
+ 	}
+ 
+-	/* Setup clocks */
+-	es8328->clk = devm_clk_get(codec->dev, NULL);
+-	if (IS_ERR(es8328->clk)) {
+-		dev_err(codec->dev, "codec clock missing or invalid\n");
+-		ret = PTR_ERR(es8328->clk);
+-		goto clk_fail;
+-	}
+-
+-	ret = clk_prepare_enable(es8328->clk);
+-	if (ret) {
+-		dev_err(codec->dev, "unable to prepare codec clk\n");
+-		goto clk_fail;
+-	}
++	/* default power is all on. */
++	snd_soc_write(codec, ES8328_CHIPPOWER, 0x00);
+ 
++	/* double speed mode is necessary. */
++	snd_soc_write(codec, ES8328_ADCCONTROL5, 0x20);
++	snd_soc_write(codec, ES8328_DACCONTROL2, 0x20);
++
++	/* set sound play volumn to mid for easy use. */
++	snd_soc_write(codec, ES8328_DACCONTROL17, 0x80);
++	snd_soc_write(codec, ES8328_DACCONTROL20, 0x80);
++	snd_soc_write(codec, ES8328_DACCONTROL4, 0x00);
++	snd_soc_write(codec, ES8328_DACCONTROL5, 0x00);
++	snd_soc_write(codec, ES8328_LOUT1VOL, 0x10);
++	snd_soc_write(codec, ES8328_ROUT1VOL, 0x10);
++
++	/* set sound record volumn to max for easy use. */
++	snd_soc_write(codec, ES8328_ADCCONTROL8, 0x00);
++	snd_soc_write(codec, ES8328_ADCCONTROL9, 0x00);
++
++	/* for LINPUT1 - RINPUT1, also enable LINPUT2 - RINPUT2 */
++	snd_soc_write(codec, ES8328_ADCCONTROL2, 0xfc);
++
++#ifdef CONFIG_DEBUG_FS
++	device_create_file(codec->dev, &dev_attr_dump);
++	es8328_codec = codec;
++#endif
+ 	return 0;
+-
+-clk_fail:
+-	regulator_bulk_disable(ARRAY_SIZE(es8328->supplies),
+-			       es8328->supplies);
+-	return ret;
+ }
+ 
+ static int es8328_remove(struct snd_soc_codec *codec)

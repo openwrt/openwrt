@@ -1,0 +1,11 @@
+--- a/feeds/luci/modules/luci-mod-admin-full/luasrc/model/cbi/admin_network/wifi.lua
++++ b/feeds/luci/modules/luci-mod-admin-full/luasrc/model/cbi/admin_network/wifi.lua
+@@ -633,6 +633,8 @@
+ encr:value("none", "No Encryption")
+ encr:value("wep-open",   translate("WEP Open System"), {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"}, {mode="adhoc"}, {mode="ahdemo"}, {mode="wds"})
+ encr:value("wep-shared", translate("WEP Shared Key"),  {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"}, {mode="adhoc"}, {mode="ahdemo"}, {mode="wds"})
++encr:value("psk", "WPA-PSK", {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"}, {mode="adhoc"})
++encr:value("psk2", "WPA2-PSK", {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"}, {mode="adhoc"})
+ 
+ if hwtype == "mac80211" or hwtype == "prism2" then
+ 	local supplicant = fs.access("/usr/sbin/wpa_supplicant")

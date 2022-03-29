@@ -1,0 +1,66 @@
+diff -Nbaur --suppress-blank-empty a/src/video/fbcon/SDL_fbevents.c b/src/video/fbcon/SDL_fbevents.c
+--- a/src/video/fbcon/SDL_fbevents.c	2012-01-19 14:30:06.000000000 +0800
++++ b/src/video/fbcon/SDL_fbevents.c	2019-03-18 16:43:05.990704860 +0800
+@@ -324,6 +324,7 @@
+ 	MOUSE_BM,
+ 	MOUSE_ELO,
+ 	MOUSE_TSLIB,
++	MOUSE_HID,
+ 	NUM_MOUSE_DRVS
+ } mouse_drv = MOUSE_NONE;
+
+@@ -594,6 +595,19 @@
+ 	}
+
+ 	/* STD MICE */
++	if (mousedrv && (SDL_strcmp(mousedrv, "HID") == 0)) {
++		const char hidmice[] = "/dev/input/event0";
++		if (mousedev == NULL)
++			mousedev = hidmice;
++		mouse_fd = open(mousedev, O_RDWR|O_NOCTTY|O_NDELAY);
++		if (mouse_fd >= 0) {
++			mouse_drv = MOUSE_HID;
++			fcntl(mouse_fd, F_SETFL, O_ASYNC|O_NONBLOCK);
++		} else {
++			mouse_drv = MOUSE_NONE;
++		}
++		return mouse_fd;
++	}
+
+ 	if ( mousedev == NULL ) {
+ 		/* FIXME someday... allow multiple mice in this driver */
+@@ -776,6 +790,9 @@
+ 	switch (mouse_drv) {
+ 		case MOUSE_NONE:
+ 			break;  /* carry on to read from device and discard it. */
++		case MOUSE_HID:
++			packetsize = 16;	/* timeval, type, code, value */
++			break;
+ 		case MOUSE_MSC:
+ 			packetsize = 5;
+ 			break;
+@@ -829,6 +846,24 @@
+ 		switch (mouse_drv) {
+ 			case MOUSE_NONE: /* shouldn't actually hit this. */
+ 				break;  /* just throw everything away. */
++			case MOUSE_HID: {
++				Uint16 t = *(Uint16 *)(mousebuf + i + 8);
++				Uint16 c = *(Uint16 *)(mousebuf + i + 10);
++				int v = *(int *)(mousebuf + i + 12);
++				if (t == 2) {		/* EV_REL */
++					if (c == 0)
++						dx = v;
++					if (c == 1)
++						dy = v;
++				} else if (t == 1 && v == 1) {	/* EV_KEY */
++					if (c == 0x110)	/* BTN_LEFT */
++						button |= 0x04;
++					if (c == 0x111)	/* BTN_RIGHT */
++						button |= 0x01;
++					if (c == 0x112)	/* BTN_MIDDLE */
++						button |= 0x02;
++				}
++			break; }
+ 			case MOUSE_MSC:
+ 				/* MSC protocol has 0x80 in high byte */
+ 				if ( (mousebuf[i] & 0xF8) != 0x80 ) {

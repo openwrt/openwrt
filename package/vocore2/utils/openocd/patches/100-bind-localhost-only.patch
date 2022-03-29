@@ -1,0 +1,45 @@
+Subject: Bind to IPv4 localhost by default
+Origin: other, http://openocd.zylin.com/#/c/4331/2
+Last-Update: 2018-01-18
+
+From f8630b0b15e30dc6c51270006a4e075c79cf466a Mon Sep 17 00:00:00 2001
+From: Paul Fertser <fercerpav@gmail.com>
+Date: Sat, 13 Jan 2018 16:22:10 +0300
+Subject: [PATCH] server: bind to IPv4 localhost by default
+
+Since OpenOCD basically allows to perform arbitrary actions on behalf of
+the running user, it makes sense to restrict the exposure by default.
+
+If you need network connectivity and your environment is safe enough,
+use "bindto 0.0.0.0" to switch to the old behaviour.
+
+Change-Id: I4a4044b90d0ecb30118cea96fc92a7bcff0924e0
+Signed-off-by: Paul Fertser <fercerpav@gmail.com>
+---
+
+diff --git a/doc/openocd.texi b/doc/openocd.texi
+index 7f5b72e..5c7f465 100644
+--- a/doc/openocd.texi
++++ b/doc/openocd.texi
+@@ -7017,7 +7017,7 @@
+ 
+ @deffn Command bindto [name]
+ Specify address by name on which to listen for incoming TCP/IP connections.
+-By default, OpenOCD will listen on all available interfaces.
++By default, OpenOCD will listen on the loopback interface only.
+ @end deffn
+ 
+ @anchor{targetstatehandling}
+diff --git a/src/server/server.c b/src/server/server.c
+index 1e52e97..ea1e898 100644
+--- a/src/server/server.c
++++ b/src/server/server.c
+@@ -259,7 +259,7 @@
+ 		c->sin.sin_family = AF_INET;
+ 
+ 		if (bindto_name == NULL)
+-			c->sin.sin_addr.s_addr = INADDR_ANY;
++			c->sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+ 		else {
+ 			hp = gethostbyname(bindto_name);
+ 			if (hp == NULL) {

@@ -1,0 +1,10 @@
+--- a/Makefile
++++ b/Makefile
+@@ -37,6 +37,7 @@
+ 	MACHINETYPE ?= $(shell uname -m)
+ 	build.level = $(shell date)
+ endif # OS
++OSTYPE = linux
+ ifeq ($(OSTYPE),linux)
+ 	OSTYPE = Linux
+ endif

@@ -1,0 +1,27 @@
+config wifi-device	ra0
+	option type     ralink
+	option variant	mt7628
+	option country	CN
+	option hwmode	11g
+	option htmode	HT40
+	option channel  auto
+	option disabled	0
+
+config wifi-iface ap
+	option device   ra0
+	option mode	ap
+	option network  lan
+	option ifname   ra0
+	option ssid	VoCore2
+	option encryption none 
+
+config wifi-iface sta
+	option device   ra0
+	option mode	sta
+	option network  wwan
+	option ifname   apcli0
+	option ssid	""
+	option key	""
+	option encryption psk2
+	option disabled	1
+

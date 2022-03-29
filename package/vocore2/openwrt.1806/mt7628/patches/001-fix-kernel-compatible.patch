@@ -1,0 +1,407 @@
+diff -Naur a/build/Makefile b/build/Makefile
+--- a/build/Makefile	2015-02-27 14:13:11.000000000 +0800
++++ b/build/Makefile	2018-04-15 14:08:52.671111348 +0800
+@@ -1,3 +1,6 @@
++CONFIG_SUPPORT_OPENWRT=y
++CONFIG_RALINK_MT7628=y
++
+ EXTRA_CFLAGS = -Idrivers/net/wireless/mt_wifi/include \
+ 				-Idrivers/net/wireless/mt_wifi/embedded/include \
+ 				-Idrivers/net/wireless/mt_wifi/ate/include
+@@ -6,6 +9,7 @@
+ EXTRA_CFLAGS = -I$(src)/../src/include \
+ 				-I$(src)/../src/embedded/include \
+ 				-I$(src)/../src/ate/include
++EXTRA_CFLAGS += -DCONFIG_SUPPORT_OPENWRT=y -DCONFIG_RALINK_MT7628=y
+ DRV_NAME = mt7628
+ SRC_DIR = ../src/embedded
+ obj-m += $(DRV_NAME).o
+@@ -59,7 +63,8 @@
+ 						$(SRC_DIR)/tx_rx/wdev.o\
+ 						$(SRC_DIR)/tx_rx/wdev_tx.o\
+ 						$(SRC_DIR)/tx_rx/wdev_rx.o\
+-						$(SRC_DIR)/os/linux/rt_profile.o
++						$(SRC_DIR)/os/linux/rt_profile.o\
++						$(SRC_DIR)/os/linux/rt_flash.o
+ 
+ ########################################################
+ # Rate adaptation related files
+@@ -488,7 +493,7 @@
+ #  CFLAGS
+ ##################
+ EXTRA_CFLAGS += -DAGGREGATION_SUPPORT -DPIGGYBACK_SUPPORT -DWMM_SUPPORT  -DLINUX \
+-               -Wall -Wstrict-prototypes -Wno-trigraphs -Werror
++               -Wall -Wstrict-prototypes -Wno-trigraphs 
+ #-DDBG_DIAGNOSE -DDBG_RX_MCS -DDBG_TX_MCS
+ 
+ EXTRA_CFLAGS += -DCONFIG_AP_SUPPORT -DSCAN_SUPPORT -DAP_SCAN_SUPPORT
+diff -Naur a/src/embedded/ap/ap_cfg.c b/src/embedded/ap/ap_cfg.c
+--- a/src/embedded/ap/ap_cfg.c	2015-02-27 14:13:06.000000000 +0800
++++ b/src/embedded/ap/ap_cfg.c	2018-04-15 14:08:52.335091842 +0800
+@@ -6680,7 +6680,6 @@
+ 
+ INT Show_DriverInfo_Proc(RTMP_ADAPTER *pAd, RTMP_STRING *arg)
+ {
+-	MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("driver version: %s (%s %s) .\n", AP_DRIVER_VERSION, __DATE__, __TIME__));
+ 
+ #ifdef CONFIG_ANDES_SUPPORT
+ 	if (pAd->chipCap.MCUType == ANDES) {
+diff -Naur a/src/embedded/common/wsc.c b/src/embedded/common/wsc.c
+--- a/src/embedded/common/wsc.c	2015-02-27 14:13:09.000000000 +0800
++++ b/src/embedded/common/wsc.c	2018-04-15 14:08:52.531103220 +0800
+@@ -9523,7 +9523,7 @@
+ 	//PWSC_UPNP_NODE_INFO pWscUPnPNodeInfo;
+ 	UCHAR		apIdx;
+ 
+-#ifdef LINUX
++#ifdef LINUX_SIG	// FIXME: no need send signal
+ #ifdef WSC_SINGLE_TRIGGER
+ /* +++  added by YYHuang@Ralink, 08/03/12 */
+ /*
+@@ -9547,7 +9547,7 @@
+     }
+ /* ---  added by YYHuang@Ralink, 08/03/12 */
+ #endif /* WSC_SINGLE_TRIGGER */
+-#endif /* LINUX */
++#endif /* LINUX_SIG */
+ 
+ 
+ 	/* TODO: Is it possible ApCli call this fucntion?? */
+diff -Naur a/src/embedded/include/iface/rtmp_rbs.h b/src/embedded/include/iface/rtmp_rbs.h
+--- a/src/embedded/include/iface/rtmp_rbs.h	2015-02-27 14:13:07.000000000 +0800
++++ b/src/embedded/include/iface/rtmp_rbs.h	2018-04-15 14:08:52.471099737 +0800
+@@ -35,7 +35,7 @@
+   *
+   ************************************************************************/
+ 
+-#define RTMP_MAC_IRQ_NUM		4
++#define RTMP_MAC_IRQ_NUM		6
+ 
+ 
+ /*************************************************************************
+diff -Naur a/src/embedded/os/linux/rt_flash.c b/src/embedded/os/linux/rt_flash.c
+--- a/src/embedded/os/linux/rt_flash.c	1970-01-01 08:00:00.000000000 +0800
++++ b/src/embedded/os/linux/rt_flash.c	2018-04-15 14:10:10.819325236 +0800
+@@ -0,0 +1,132 @@
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/version.h>
++#include <linux/err.h>
++#include <linux/slab.h>
++#include <linux/delay.h>
++#include <linux/sched.h>
++#include <linux/backing-dev.h>
++#include <linux/compat.h>
++#include <linux/mount.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/mtd/concat.h>
++#include <linux/mtd/partitions.h>
++
++struct proc_dir_entry *procRegDir;
++/*
++ * Flash API: ra_mtd_read, ra_mtd_write
++ * Arguments:
++ *   - num: specific the mtd number
++ *   - to/from: the offset to read from or written to
++ *   - len: length
++ *   - buf: data to be read/written
++ * Returns:
++ *   - return -errno if failed
++ *   - return the number of bytes read/written if successed
++ */
++int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf)
++{
++	int ret = -1;
++	size_t rdlen, wrlen;
++	struct mtd_info *mtd;
++	struct erase_info ei;
++	u_char *bak = NULL;
++
++	mtd = get_mtd_device_nm(name);
++
++	if (IS_ERR(mtd)) {
++		ret = (int)mtd;
++		goto out;
++	}
++
++	if (len > mtd->erasesize) {
++		put_mtd_device(mtd);
++		ret = -E2BIG;
++		goto out;
++	}
++
++	bak = kzalloc(mtd->erasesize, GFP_KERNEL);
++	if (bak == NULL) {
++		put_mtd_device(mtd);
++		ret = -ENOMEM;
++		goto out;
++	}
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
++	ret = mtd_read(mtd, 0, mtd->erasesize, &rdlen, bak);
++#else
++	ret = mtd->read(mtd, 0, mtd->erasesize, &rdlen, bak);
++#endif
++	if (ret) {
++		goto free_out;
++	}
++
++	if (rdlen != mtd->erasesize)
++		printk("warning: ra_mtd_write_nm: rdlen is not equal to erasesize\n");
++
++	memcpy(bak + to, buf, len);
++
++	ei.mtd = mtd;
++	ei.callback = NULL;
++	ei.addr = 0;
++	ei.len = mtd->erasesize;
++	ei.priv = 0;
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
++	ret = mtd_erase(mtd, &ei);
++#else
++	ret = mtd->erase(mtd, &ei);
++#endif
++	if (ret != 0)
++		goto free_out;
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
++	ret = mtd_write(mtd, 0, mtd->erasesize, &wrlen, bak);
++#else
++	ret = mtd->write(mtd, 0, mtd->erasesize, &wrlen, bak);
++#endif
++
++	udelay(10); /* add delay after write */
++
++free_out:
++	if (mtd)
++		put_mtd_device(mtd);
++
++	if (bak)
++		kfree(bak);
++out:
++	return ret;
++}
++
++int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf)
++{
++	int ret;
++	size_t rdlen = 0;
++	struct mtd_info *mtd;
++
++	mtd = get_mtd_device_nm(name);
++	if (IS_ERR(mtd))
++		return (int)mtd;
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
++	ret = mtd_read(mtd, from, len, &rdlen, buf);
++#else
++	ret = mtd->read(mtd, from, len, &rdlen, buf);
++#endif
++	if (rdlen != len)
++		printk("warning: ra_mtd_read_nm: rdlen is not equal to len\n");
++
++	put_mtd_device(mtd);
++	return ret;
++}
++
++EXPORT_SYMBOL(ra_mtd_write_nm);
++EXPORT_SYMBOL(ra_mtd_read_nm);
++EXPORT_SYMBOL(procRegDir);
++
++MODULE_AUTHOR("Steven Liu <steven_liu@ralinktech.com.tw>");
++MODULE_DESCRIPTION("Ralink APSoC Flash Map");
++MODULE_LICENSE("GPL");
+diff -Naur a/src/embedded/os/linux/rt_proc.c b/src/embedded/os/linux/rt_proc.c
+--- a/src/embedded/os/linux/rt_proc.c	2015-02-27 14:13:06.000000000 +0800
++++ b/src/embedded/os/linux/rt_proc.c	2018-04-15 14:08:52.239086268 +0800
+@@ -29,7 +29,7 @@
+ #include <linux/kernel.h>
+ #include <linux/types.h>
+ #include <linux/proc_fs.h>
+-#include <asm/uaccess.h>
++#include <linux/uaccess.h>
+ 
+ #include "rt_config.h"
+ 
+diff -Naur a/src/embedded/os/linux/rt_profile.c b/src/embedded/os/linux/rt_profile.c
+--- a/src/embedded/os/linux/rt_profile.c	2015-02-27 14:13:06.000000000 +0800
++++ b/src/embedded/os/linux/rt_profile.c	2018-04-15 14:08:52.263087662 +0800
+@@ -236,7 +236,7 @@
+ 		{
+ #ifndef OS_ABL_SUPPORT
+ 			// TODO: need to roll back when convert into OSABL code
+-				 fsize = (ULONG)srcf->f_dentry->d_inode->i_size;
++				 fsize = (ULONG)srcf->f_path.dentry->d_inode->i_size;
+ 				if (buf_size < (fsize + 1))
+ 					buf_size = fsize + 1;
+ #endif /* OS_ABL_SUPPORT */
+diff -Naur a/src/embedded/sniffer/sniffer_radiotap.c b/src/embedded/sniffer/sniffer_radiotap.c
+--- a/src/embedded/sniffer/sniffer_radiotap.c	2015-02-27 14:13:05.000000000 +0800
++++ b/src/embedded/sniffer/sniffer_radiotap.c	2018-04-15 14:08:52.639109490 +0800
+@@ -138,6 +138,9 @@
+ 	/* channel flags */
+ 	varlen += 2;
+ 
++	/* signal and antenna */
++	varlen += 2;
++
+ 	/* MCS */
+ 	if ((PHYMODE == MODE_HTMIX) || (PHYMODE == MODE_HTGREENFIELD)) {
+ 		/* known */
+@@ -206,6 +209,8 @@
+ 	}
+ 
+ 	mtk_rt_hdr->rt_hdr.it_present |= cpu2le32(1 << IEEE80211_RADIOTAP_CHANNEL);
++	mtk_rt_hdr->rt_hdr.it_present |= cpu2le32(1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL);
++	mtk_rt_hdr->rt_hdr.it_present |= cpu2le32(1 << IEEE80211_RADIOTAP_ANTENNA);
+ 
+ 	if ((PHYMODE == MODE_HTMIX) || (PHYMODE == MODE_HTGREENFIELD)) {
+ 		mtk_rt_hdr->rt_hdr.it_present |= cpu2le32(1 << IEEE80211_RADIOTAP_MCS);	
+@@ -278,6 +283,14 @@
+ 	pos += 2;
+ 	varlen += 2;
+ 
++	*pos = MaxRssi;
++	pos++;
++	varlen++;
++
++	*pos = 0;
++	pos++;
++	varlen++;
++
+ 	/* HT MCS */
+ 	if ((PHYMODE == MODE_HTMIX) || (PHYMODE == MODE_HTGREENFIELD)) {
+ 
+@@ -348,7 +361,7 @@
+ 
+ 
+ 	pOSPkt->dev = pOSPkt->dev;
+-	pOSPkt->mac_header = pOSPkt->data;
++	pOSPkt->mac_header = pOSPkt->data - pOSPkt->head;
+ 	pOSPkt->pkt_type = PACKET_OTHERHOST;
+ 	pOSPkt->protocol = __constant_htons(ETH_P_80211_RAW);
+ 	pOSPkt->ip_summed = CHECKSUM_NONE;
+diff -Naur a/src/embedded/sta/sta_cfg.c b/src/embedded/sta/sta_cfg.c
+--- a/src/embedded/sta/sta_cfg.c	2015-02-27 14:13:05.000000000 +0800
++++ b/src/embedded/sta/sta_cfg.c	2018-04-15 14:08:52.507101827 +0800
+@@ -6860,7 +6860,7 @@
+             wrq->u.data.length = strlen(extra) + 1; /* 1: size of '\0' */
+             break;
+         case SHOW_DRVIER_VERION:
+-            snprintf(extra, size, "Driver version-%s, %s %s\n", STA_DRIVER_VERSION, __DATE__, __TIME__ );
++            snprintf(extra, size, "Driver version-%s\n", STA_DRIVER_VERSION);
+             wrq->u.data.length = strlen(extra) + 1; /* 1: size of '\0' */
+             break;
+ #ifdef DOT11_N_SUPPORT
+diff -Naur a/src/embedded/include/os/rt_linux.h b/src/embedded/include/os/rt_linux.h
+--- a/src/embedded/include/os/rt_linux.h	2015-02-27 14:13:06.000000000 +0800
++++ b/src/embedded/include/os/rt_linux.h	2018-04-15 21:44:02.000000000 +0800
+@@ -813,8 +813,8 @@
+ 
+ #endif /* MT7603_FPGA */
+ 
+-#define DBGPRINT(Level, Fmt)    DBGPRINT_RAW(DBG_CAT_ALL, Level, Fmt)
+-#define MTWF_LOG(Category, SubCategory, Level, Fmt)    DBGPRINT_RAW(Category, Level, Fmt)
++#define DBGPRINT(Level, Fmt)
++#define MTWF_LOG(Category, SubCategory, Level, Fmt)
+ 
+ #define DBGPRINT_ERR(Fmt)           \
+ {                                   \
+diff -Naur a/src/embedded/include/os/rt_drv.h b/src/embedded/include/os/rt_drv.h
+--- a/src/embedded/include/os/rt_drv.h	2015-02-27 14:13:06.000000000 +0800
++++ b/src/embedded/include/os/rt_drv.h	2018-04-15 19:21:27.000000000 +0800
+@@ -417,8 +417,8 @@
+ }while(0)
+ #endif /* MT7603_FPGA */
+ 
+-#define DBGPRINT(Level, Fmt)    DBGPRINT_RAW(DBG_CAT_ALL, Level, Fmt)
+-#define MTWF_LOG(Category, SubCategory, Level, Fmt)    DBGPRINT_RAW(Category, Level, Fmt)
++#define DBGPRINT(Level, Fmt) 
++#define MTWF_LOG(Category, SubCategory, Level, Fmt)
+ 
+ 
+ #define DBGPRINT_ERR(Fmt)           \
+diff -Naur a/src/embedded/common/cmm_info.c b/src/embedded/common/cmm_info.c
+--- a/src/embedded/common/cmm_info.c    2015-02-27 14:13:11.000000000 +0800
++++ b/src/embedded/common/cmm_info.c    2018-04-15 14:08:52.595106936 +0800
+@@ -93,12 +93,10 @@
+ {
+ #ifdef CONFIG_AP_SUPPORT
+ 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("Driver version-%s %s %s\n", AP_DRIVER_VERSION, __DATE__, __TIME__));
+ #endif /* CONFIG_AP_SUPPORT */
+ 
+ #ifdef CONFIG_STA_SUPPORT
+ 	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+-		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_OFF, ("Driver version-%s %s %s\n", STA_DRIVER_VERSION, __DATE__, __TIME__));
+ #endif /* CONFIG_STA_SUPPORT */
+ 
+ #ifdef CONFIG_ANDES_SUPPORT
+@@ -3123,7 +3121,7 @@
+ 			Rssi_Quality = (UINT)(((Rssi + 90) * 26)/10);
+ 		else    /* < -84 dbm*/
+ 			Rssi_Quality = 0;
+-		sprintf(msg+strlen(msg),"%-9d", Rssi_Quality);
++		sprintf(msg+strlen(msg),"%-9d", Rssi);
+ 
+ 		/* Wireless Mode*/
+ 		wireless_mode = NetworkTypeInUseSanity(pBss);
+diff -Naur a/src/embedded/os/linux/rt_linux.c b/src/embedded/os/linux/rt_linux.c
+--- a/src/embedded/os/linux/rt_linux.c  2015-02-27 14:13:06.000000000 +0800
++++ b/src/embedded/os/linux/rt_linux.c  2018-04-15 14:08:52.231085804 +0800
+@@ -330,7 +330,7 @@
+ #ifdef RA_MTD_RW_BY_NUM
+ 	ra_mtd_read(MTD_NUM_FACTORY, 0, (size_t) b, p);
+ #else
+-	ra_mtd_read_nm("Factory", a&0xFFFF, (size_t) b, p);
++	ra_mtd_read_nm("factory", a&0xFFFF, (size_t) b, p);
+ #endif
+ #endif /* CONFIG_RALINK_FLASH_API */
+ }
+@@ -346,7 +346,7 @@
+ #ifdef RA_MTD_RW_BY_NUM
+ 	ra_mtd_write(MTD_NUM_FACTORY, 0, (size_t) b, p);
+ #else
+-	ra_mtd_write_nm("Factory", a&0xFFFF, (size_t) b, p);
++	ra_mtd_write_nm("factory", a&0xFFFF, (size_t) b, p);
+ #endif
+ #endif /* CONFIG_RALINK_FLASH_API */
+ }
+@@ -479,7 +479,6 @@
+ 	struct sk_buff *pRxPkt, *pClonedPkt;
+ 
+ 	ASSERT(pkt);
+-	ASSERT(sz < 1530);
+ 	pRxPkt = RTPKT_TO_OSPKT(pkt);
+ 
+ 	/* clone the packet */
+@@ -886,8 +885,11 @@
+ int RtmpOSFileRead(RTMP_OS_FD osfd, char *pDataPtr, int readLen)
+ {
+ 	/* The object must have a read method */
+-	if (osfd->f_op && osfd->f_op->read) {
+-		return osfd->f_op->read(osfd, pDataPtr, readLen, &osfd->f_pos);
++	if (osfd->f_op) {
++		if (osfd->f_op->read)
++			return osfd->f_op->read(osfd, pDataPtr, readLen, &osfd->f_pos);
++		else
++			return kernel_read(osfd, pDataPtr, readLen, &osfd->f_pos);
+ 	} else {
+ 		MTWF_LOG(DBG_CAT_ALL, DBG_SUBCAT_ALL, DBG_LVL_ERROR, ("no file read method\n"));
+ 		return -1;
+@@ -897,7 +899,10 @@
+ 
+ int RtmpOSFileWrite(RTMP_OS_FD osfd, char *pDataPtr, int writeLen)
+ {
+-	return osfd->f_op->write(osfd, pDataPtr, (size_t) writeLen, &osfd->f_pos);
++	if (osfd->f_op && osfd->f_op->write)
++		return osfd->f_op->write(osfd, pDataPtr, (size_t) writeLen, &osfd->f_pos);
++	else
++		return kernel_write(osfd, pDataPtr, (size_t) writeLen, &osfd->f_pos);
+ }
+ 
+ 

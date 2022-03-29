@@ -1,0 +1,11 @@
+--- a/target/linux/ramips/dts/VOCORE2.dts
++++ b/target/linux/ramips/dts/VOCORE2.dts
+@@ -64,3 +64,8 @@
+ 		};
+ 	};
+ };
++
++&sdhci {
++       status = "okay";
++       mediatek,cd-poll;
++};

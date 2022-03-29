@@ -1,0 +1,275 @@
+--- /dev/null
++++ b/target/linux/ramips/patches-4.14/801-mt7628-kernel-wext-oldapi.patch
+@@ -0,0 +1,13 @@
++diff -Naru a/net/wireless/wext-core.c b/net/wireless/wext-core.c
++--- a/net/wireless/wext-core.c	
+++++ b/net/wireless/wext-core.c
++@@ -956,6 +956,9 @@
++ 		else if (private)
++ 			return private(dev, iwr, cmd, info, handler);
++ 	}
+++	/* Old driver API : call driver ioctl handler */
+++	if (dev->netdev_ops->ndo_do_ioctl)
+++		return dev->netdev_ops->ndo_do_ioctl(dev, (struct ifreq *)iwr, cmd);
++ 	return -EOPNOTSUPP;
++ }
++ 
+--- a/package/base-files/files/etc/shadow
++++ b/package/base-files/files/etc/shadow
+@@ -1,4 +1,4 @@
+-root::0:0:99999:7:::
++root:$1$D5k7lRVZ$71Jw2pHBawdA3eafF1DBm0:17641:0:99999:7:::
+ daemon:*:0:0:99999:7:::
+ ftp:*:0:0:99999:7:::
+ network:*:0:0:99999:7:::
+--- a/target/linux/ramips/dts/VOCORE2.dts
++++ b/target/linux/ramips/dts/VOCORE2.dts
+@@ -53,3 +52,8 @@
+ 		};
+ 	};
+ };
++
++&sdhci {
++       status = "okay";
++       mediatek,cd-poll;
++};
+--- a/package/base-files/files/etc/config/fstab
++++ b/package/base-files/files/etc/config/fstab
+@@ -0,0 +1,15 @@
++config 'global'
++	option	anon_swap	'0'
++	option	anon_mount	'0'
++	option	auto_swap	'1'
++	option	auto_mount	'1'
++	option	delay_root	'5'
++	option	check_fs	'0'
++
++config 'mount'
++	option	device	'/dev/sda1'
++	option	enabled	'1'
++
++config 'mount'
++	option  device  '/dev/mmcblk0p1'
++	option  enabled '1'
+--- /dev/null
++++ b/target/linux/ramips/patches-4.14/0306-spi-flash-factory-id.patch
+@@ -0,0 +1,29 @@
++--- a/drivers/mtd/devices/m25p80.c
+++++ b/drivers/mtd/devices/m25p80.c 
++@@ -27,6 +27,18 @@
++ #include <linux/spi/flash.h>
++ #include <linux/mtd/spi-nor.h>
++ 
+++static ssize_t m25p80_fid(struct device *dev, struct device_attribute *attr, char *buf)
+++{
+++	struct spi_device *spi = to_spi_device(dev);
+++	u8 code[5] = {0}, fid[8];
+++
+++	code[0] = 0x4b;
+++	if (spi_write_then_read(spi, &code, 5, fid, 8) < 0)
+++		return sprintf(buf, "\n");
+++	return sprintf(buf, "%08X%08X\n", ((u32 *)fid)[0], ((u32 *)fid)[1]);
+++}
+++static DEVICE_ATTR(fid, S_IRUGO, m25p80_fid, NULL);
+++
++ #define	MAX_CMD_SIZE		6
++ struct m25p {
++ 	struct spi_device	*spi;
++@@ -298,6 +309,7 @@
++ 	if (ret)
++ 		return ret;
++ 
+++	device_create_file(&spi->dev, &dev_attr_fid);
++ 	return mtd_device_register(&nor->mtd, data ? data->parts : NULL,
++ 				   data ? data->nr_parts : 0);
++ }
+--- /dev/null
++++ b/target/linux/ramips/patches-4.14/882-pinctrl-fix-refclk-name.patch
+@@ -0,0 +1,20 @@
++--- a/arch/mips/ralink/mt7620.c
+++++ b/arch/mips/ralink/mt7620.c
++@@ -187,7 +187,7 @@
++ 
++ static struct rt2880_pmx_func gpio_grp_mt7628[] = {
++ 	FUNC("pcie", 3, 11, 1),
++-	FUNC("refclk", 2, 11, 1),
+++	FUNC("gpio refclk", 2, 11, 1),
++ 	FUNC("gpio", 1, 11, 1),
++ 	FUNC("gpio", 0, 11, 1),
++ };
++@@ -331,7 +331,7 @@
++ 				1, MT7628_GPIO_MODE_CS1),
++ 	GRP_G("spis", spis_grp_mt7628, MT7628_GPIO_MODE_MASK,
++ 				1, MT7628_GPIO_MODE_SPIS),
++-	GRP_G("gpio", gpio_grp_mt7628, MT7628_GPIO_MODE_MASK,
+++	GRP_G("gpio0", gpio_grp_mt7628, MT7628_GPIO_MODE_MASK,
++ 				1, MT7628_GPIO_MODE_GPIO),
++ 	GRP_G("wled_an", wled_an_grp_mt7628, MT7628_GPIO_MODE_MASK,
++ 				1, MT7628_GPIO_MODE_WLED_AN),
+--- /dev/null
++++ b/target/linux/ramips/patches-4.14/0307-suppress-mmc-warning.patch
+@@ -0,0 +1,44 @@
++--- a/drivers/mmc/core/core.c
+++++ b/drivers/mmc/core/core.c
++@@ -1450,7 +1450,6 @@
++ 
++ 	ocr &= host->ocr_avail;
++ 	if (!ocr) {
++-		dev_warn(mmc_dev(host), "no support for card's volts\n");
++ 		return 0;
++ 	}
++ 
++--- a/drivers/mmc/core/sd.c
+++++ b/drivers/mmc/core/sd.c
++@@ -1256,8 +1256,5 @@
++ err:
++ 	mmc_detach_bus(host);
++ 
++-	pr_err("%s: error %d whilst initialising SD card\n",
++-		mmc_hostname(host), err);
++-
++ 	return err;
++ }
++--- a/drivers/mmc/core/sdio.c
+++++ b/drivers/mmc/core/sdio.c
++@@ -1182,9 +1182,6 @@
++ err:
++ 	mmc_detach_bus(host);
++ 
++-	pr_err("%s: error %d whilst initialising SDIO card\n",
++-		mmc_hostname(host), err);
++-
++ 	return err;
++ }
++ 
++--- a/drivers/mmc/core/mmc.c
+++++ b/drivers/mmc/core/mmc.c
++@@ -2179,8 +2179,5 @@
++ err:
++ 	mmc_detach_bus(host);
++ 
++-	pr_err("%s: error %d whilst initialising MMC card\n",
++-		mmc_hostname(host), err);
++-
++ 	return err;
++ }
+--- a/package/system/opkg/files/customfeeds.conf
++++ b/package/system/opkg/files/customfeeds.conf
+@@ -1,3 +1,4 @@
+-# add your custom package feeds here
+-#
+-# src/gz example_feed_name http://www.example.com/path/to/files
++src/gz openwrt_pack http://downloads.openwrt.org/releases/18.06.5/packages/mipsel_24kc/packages
++src/gz openwrt_luci http://downloads.openwrt.org/releases/18.06.5/packages/mipsel_24kc/luci
++src/gz openwrt_rout http://downloads.openwrt.org/releases/18.06.5/packages/mipsel_24kc/routing 
++src/gz openwrt_tele http://downloads.openwrt.org/releases/18.06.5/packages/mipsel_24kc/telephony 
+--- a/target/linux/ramips/base-files/etc/board.d/01_leds
++++ b/target/linux/ramips/base-files/etc/board.d/01_leds
+@@ -447,10 +447,10 @@
+ 	set_wifi_led "vocore:green:status"
+ 	;;
+ vocore2)
+-	set_wifi_led "$boardname:fuchsia:status"
++	set_wifi_led "$boardname:fuchsia:status" "ra0"
+ 	;;
+ vocore2lite)
+-	set_wifi_led "$boardname:green:status"
++	set_wifi_led "$boardname:green:status" "ra0"
+ 	;;
+ w502u)
+ 	set_usb_led "$boardname:blue:usb"
+--- a/package/base-files/files/bin/config_generate
++++ b/package/base-files/files/bin/config_generate
+@@ -96,7 +96,7 @@
+ 		static)
+ 			local ipad
+ 			case "$1" in
+-				lan) ipad=${ipaddr:-"192.168.1.1"} ;;
++				lan) ipad=${ipaddr:-"192.168.61.1"} ;;
+ 				*) ipad=${ipaddr:-"192.168.$((addr_offset++)).1"} ;;
+ 			esac
+ 
+@@ -142,6 +142,19 @@
+ 			}
+ 		;;
+ 	esac
++
++	uci -q batch <<-EOF
++		add_list firewall.@zone[1].network="wwan"
++		set firewall.@zone[1].input='ACCEPT'
++		set wireless.ap.ssid=VoCore2-`hexdump -C /dev/mtd2 | head -1 | awk '{print $10$11}'`
++		set network.wan=interface
++		set network.wan.ifname=eth0.2
++		set network.wan.force_link=1
++		set network.wan.proto=dhcp
++		set network.wwan=interface
++		set network.wwan.ifname=apcli0
++		set network.wwan.proto=dhcp
++	EOF
+ }
+ 
+ generate_switch_vlans_ports() {
+--- a/target/linux/ramips/base-files/etc/board.d/02_network
++++ b/target/linux/ramips/base-files/etc/board.d/02_network
+@@ -349,7 +349,7 @@
+ 	vocore2|\
+ 	vocore2lite)
+ 		ucidef_add_switch "switch0" \
+-			"0:lan" "2:lan" "6t@eth0"
++			"0:lan" "6t@eth0"
+ 		;;
+ 	f5d8235-v1|\
+ 	tew-714tru|\
+--- a/package/base-files/files/etc/banner
++++ b/package/base-files/files/etc/banner
+@@ -1,8 +1,9 @@
+-  _______                     ________        __
+- |       |.-----.-----.-----.|  |  |  |.----.|  |_
+- |   -   ||  _  |  -__|     ||  |  |  ||   _||   _|
+- |_______||   __|_____|__|__||________||__|  |____|
+-          |__| W I R E L E S S   F R E E D O M
++    _    __        ______                   ___ 
++   | |  / /____   / ____/____   _____ ___  |__ \
++   | | / // __ \ / /    / __ \ / ___// _ \ __/ /
++   | |/ // /_/ // /___ / /_/ // /   /  __// __/ 
++   |___/ \____/ \____/ \____//_/    \___//____/ 
++
+  -----------------------------------------------------
+  %D %V, %C
+  -----------------------------------------------------
+--- a/toolchain/gdb/Makefile
++++ b/toolchain/gdb/Makefile
+@@ -45,7 +45,7 @@ HOST_CONFIGURE_ARGS = \
+ 	--without-included-gettext \
+ 	--enable-threads \
+ 	--with-expat \
+-	--without-python \
++	--with-python \
+ 	--disable-binutils \
+ 	--disable-ld \
+ 	--disable-gas \
+--- a/target/linux/ramips/dts/VOCORE2.dtsi
++++ b/target/linux/ramips/dts/VOCORE2.dtsi
+@@ -4,7 +4,7 @@
+ 	compatible = "vocore,vocore2", "mediatek,mt7628an-soc";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS2,115200";
++		bootargs = "console=ttyS2,115200 console=tty0 fbcon=rotate:3";
+ 	};
+ };
+ 
+@@ -20,6 +20,13 @@
+ 			ralink,function = "gpio refclk";
+ 		};
+ 	};
++
++	uart2 {
++		uart2 {
++			ralink,group = "uart2";
++			ralink,function = "pwm";
++		};
++	};
+ };
+ 
+ &wmac {

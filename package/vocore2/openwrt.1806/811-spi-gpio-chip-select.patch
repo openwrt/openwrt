@@ -1,0 +1,55 @@
+--- a/drivers/spi/spi-mt7621.c
++++ b/drivers/spi/spi-mt7621.c
+@@ -15,6 +15,7 @@
+ #include <linux/io.h>
+ #include <linux/module.h>
+ #include <linux/of_device.h>
++#include <linux/of_gpio.h>
+ #include <linux/reset.h>
+ #include <linux/spi/spi.h>
+
+@@ -92,9 +93,14 @@
+
+ 	rs->pending_write = 0;
+
++	if (cs >= 2) {	/* gpio chip select mode */
++		enable = (spi->mode & SPI_CS_HIGH) ? enable : !enable;
++		gpio_set_value_cansleep(spi->cs_gpio, enable);
++	} else {
+ 	if (enable)
+ 		polar = BIT(cs);
+ 	mt7621_spi_write(rs, MT7621_SPI_POLAR, polar);
++	}
+ }
+
+ static int mt7621_spi_prepare(struct spi_device *spi, unsigned int speed)
+@@ -311,9 +317,16 @@
+ 		return -EINVAL;
+ 	}
+
++	if (spi->chip_select >= 2 && gpio_is_valid(spi->cs_gpio))
++		gpio_request_one(spi->cs_gpio, GPIOF_OUT_INIT_HIGH, dev_name(&spi->dev));
++
+ 	return 0;
+ }
+
++static void mt7621_spi_cleanup(struct spi_device *spi)
++{
++	gpio_free(spi->cs_gpio);
++}
+ static const struct of_device_id mt7621_spi_match[] = {
+ 	{ .compatible = "ralink,mt7621-spi" },
+ 	{},
+@@ -360,10 +373,11 @@
+ 	master->mode_bits = SPI_LSB_FIRST;
+ 	master->flags = SPI_CONTROLLER_HALF_DUPLEX;
+ 	master->setup = mt7621_spi_setup;
++	master->cleanup = mt7621_spi_cleanup;
+ 	master->transfer_one_message = mt7621_spi_transfer_one_message;
+ 	master->bits_per_word_mask = SPI_BPW_MASK(8);
+ 	master->dev.of_node = pdev->dev.of_node;
+-	master->num_chipselect = 2;
++	master->num_chipselect = of_gpio_named_count(pdev->dev.of_node, "cs-gpios");
+
+ 	dev_set_drvdata(&pdev->dev, master);
+

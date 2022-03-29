@@ -1,0 +1,210 @@
+--- a/Makefile
++++ b/Makefile
+@@ -4,7 +4,7 @@
+ 
+ IWINFO_LIB         = libiwinfo.so
+ IWINFO_LIB_LDFLAGS = $(LDFLAGS) -shared
+-IWINFO_LIB_OBJ     = iwinfo_utils.o iwinfo_wext.o iwinfo_wext_scan.o iwinfo_lib.o
++IWINFO_LIB_OBJ     = iwinfo_utils.o iwinfo_wext.o iwinfo_ralink.o iwinfo_lib.o
+ 
+ IWINFO_LUA         = iwinfo.so
+ IWINFO_LUA_LDFLAGS = $(LDFLAGS) -shared -L. -liwinfo -llua
+--- a/iwinfo_ralink.c
++++ b/iwinfo_ralink.c
+@@ -0,0 +1,196 @@
++/*
++ * iwinfo - Wireless Information Library - Linux Wireless Extension Backend
++ *
++ *   Copyright (C) 2009-2010 Jo-Philipp Wich <xm@subsignal.org>
++ *
++ * The iwinfo library is free software: you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation.
++ *
++ * The iwinfo library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ * See the GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License along
++ * with the iwinfo library. If not, see http://www.gnu.org/licenses/.
++ *
++ * Parts of this code are derived from the Linux wireless tools, iwlib.c,
++ * iwlist.c and iwconfig.c in particular.
++ */
++
++#include "iwinfo.h"
++#include "iwinfo_wext.h"
++
++#include <stdio.h>
++#include <stdarg.h>
++#include <string.h>
++#include <stdlib.h>
++#include <unistd.h>
++
++#define BUFFER_SIZE 0x4000
++
++int system_arg(const char *fmt, ...)
++{
++    char cmd[BUFFER_SIZE];
++    va_list valist;
++
++    va_start(valist, fmt);
++    vsnprintf(cmd, BUFFER_SIZE, fmt, valist);
++    va_end(valist);
++
++    return system(cmd);
++}
++
++int system_s(char *res, int size, const char *cmd)
++{
++    FILE *fp = popen(cmd, "r");
++    if (fp == NULL)
++        return -1;
++    fread(res, size, 1, fp);
++    return pclose(fp);
++}
++
++int system_arg_s(char *res, int size, const char *fmt, ...)
++{
++    char cmd[BUFFER_SIZE];
++    va_list valist;
++
++    va_start(valist, fmt);
++    vsnprintf(cmd, BUFFER_SIZE, fmt, valist);
++    va_end(valist);
++
++    return system_s(res, size, cmd);
++}
++
++char* trimt(char *src)
++{
++    size_t len = strlen(src);
++    char *cp1 = src + len - 1;
++    if(len == 0)
++        return src;
++    while(' ' == *cp1) {
++        *cp1 = '\0';
++        cp1--;
++    }
++    return src;
++}
++
++uint8_t hex2int(char x)
++{
++    if (x >= '0' && x <= '9')
++        return x - '0';
++    if (x >= 'A' && x <= 'F')
++        return x - 'A' + 10;
++    if (x >= 'a' && x <= 'f')
++        return x - 'a' + 10;
++    return 0;
++}
++
++void format_mac(uint8_t *out, const char *mac)
++{
++    out[0] = (hex2int(mac[0]) << 4) + hex2int(mac[1]);
++    out[1] = (hex2int(mac[3]) << 4) + hex2int(mac[4]);
++    out[2] = (hex2int(mac[6]) << 4) + hex2int(mac[7]);
++    out[3] = (hex2int(mac[9]) << 4) + hex2int(mac[10]);
++    out[4] = (hex2int(mac[12]) << 4) + hex2int(mac[13]);
++    out[5] = (hex2int(mac[15]) << 4) + hex2int(mac[16]);
++}
++
++uint8_t format_quality(int8_t rssi)
++{
++    if (rssi >= -50)
++        return 100;
++    else if (rssi >= -80)    /* between -50 ~ -80dbm*/
++        return (24 + ((rssi + 80) * 26) / 10);
++    else if (rssi >= -90)   /* between -80 ~ -90dbm*/
++        return (((rssi + 90) * 26) / 10);
++    /* < -90 dbm*/
++    return 0;
++}
++
++int wext_get_scanlist(const char *ifname, char *buf, int *len)
++{
++    char res[BUFFER_SIZE] = {0};
++
++    system_arg("iwpriv %s set SiteSurvey=1", ifname);
++    sleep(1);
++    system_arg_s(res, BUFFER_SIZE, "iwpriv %s get_site_survey", ifname);
++
++    *len = 0;       // output buffer length is zero.
++
++    char *line, *curt = strdup(res);
++    int count = 0;
++    for (line = strsep(&curt, "\n"); line != NULL; line = strsep(&curt, "\n")) {
++        if (count++ < 2 || *line == 0)
++            continue;
++
++        char pos = 0, *curl = strdup(line), colid = 0;
++        int index[] = {4, 33, 20, 23, 9, 8, -1};
++        struct iwinfo_scanlist_entry *e =
++                (struct iwinfo_scanlist_entry *)(buf + *len);
++        memset(e, 0, sizeof(struct iwinfo_scanlist_entry));
++
++        for (colid = 0; index[colid] >= 0; colid++) {
++            char col[64] = {0};
++
++            memcpy(col, curl + pos, index[colid]);
++            trimt(col);
++            pos += index[colid];
++
++            // channel, ssid, mac, encrypt, signal, proto ...
++            switch (colid) {
++            case 0:         // channel
++                e->channel = atoi(col);
++                break;
++
++            case 1:         // ssid
++                snprintf(e->ssid, sizeof(e->ssid), "%s", col);
++                break;
++
++            case 2:         // mac
++                format_mac(e->mac, col);
++                break;
++
++            case 3:
++                e->crypto.enabled = strstr(col, "NONE") ? 0 : 1;
++
++                if (strstr(col, "TKIP"))
++                    e->crypto.group_ciphers |= IWINFO_CIPHER_TKIP;
++                if (strstr(col, "AES"))
++                    e->crypto.group_ciphers |= IWINFO_CIPHER_CCMP;  // FIXME?
++
++                if (strstr(col, "WPA1"))
++                    e->crypto.wpa_version |= 1;
++                if (strstr(col, "WPA2"))
++                    e->crypto.wpa_version |= 2;
++
++                if (strstr(col, "PSK"))
++                    e->crypto.auth_suites = IWINFO_KMGMT_PSK;
++                // 802.1X and NONE also is a choice of suite, not supported.
++                break;
++
++            case 4:
++                e->signal = atoi(col);
++                e->quality = format_quality(e->signal);
++                e->quality_max = 100;
++                break;
++
++            case 5:         // deal with other..
++                e->mode = IWINFO_OPMODE_MASTER;
++                break;
++
++            default:
++                break;
++            }
++        }
++        free(curl);
++
++        // move to next.
++        *len += sizeof(struct iwinfo_scanlist_entry);
++    }
++    free(curt);
++    return 0;
++}
++
++

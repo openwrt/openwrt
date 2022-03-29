@@ -1,0 +1,22 @@
+Index: hidapi-0.8.0-rc1/libusb/Makefile.linux
+===================================================================
+--- hidapi-0.8.0-rc1.orig/libusb/Makefile.linux
++++ hidapi-0.8.0-rc1/libusb/Makefile.linux
+@@ -22,7 +22,7 @@ COBJS_LIBUSB = hid.o
+ COBJS = $(COBJS_LIBUSB)
+ CPPOBJS   = ../hidtest/hidtest.o
+ OBJS      = $(COBJS) $(CPPOBJS)
+-LIBS_USB  = `pkg-config libusb-1.0 --libs` -lrt -lpthread
++LIBS_USB  = `pkg-config libusb-1.0 --libs` -lrt -lpthread -liconv
+ LIBS      = $(LIBS_USB)
+ INCLUDES ?= -I../hidapi `pkg-config libusb-1.0 --cflags`
+ 
+@@ -33,7 +33,7 @@ hidtest-libusb: $(COBJS_LIBUSB) $(CPPOBJ
+ 
+ # Shared Libs
+ libhidapi-libusb.so: $(COBJS_LIBUSB)
+-	$(CC) $(LDFLAGS) $(LIBS_USB) -shared -fpic -Wl,-soname,$@.0 $^ -o $@
++	$(CC) $(LDFLAGS) $^ $(LIBS_USB) -shared -fpic -Wl,-soname,$@.0 -o $@
+ 
+ # Objects
+ $(COBJS): %.o: %.c

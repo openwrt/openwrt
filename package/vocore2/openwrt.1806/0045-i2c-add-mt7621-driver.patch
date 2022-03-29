@@ -1,0 +1,305 @@
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -868,6 +868,11 @@ config I2C_RALINK
+ 	depends on RALINK && !SOC_MT7621
+ 	select OF_I2C
+ 
++config I2C_MT7621
++	tristate "MT7621/MT7628 I2C Controller"
++	depends on RALINK && (SOC_MT7620 || SOC_MT7621)
++	select OF_I2C
++
+ config HAVE_S3C2410_I2C
+ 	bool
+ 	help
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -85,6 +85,7 @@ obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
+ obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
+ obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
+ obj-$(CONFIG_I2C_RALINK)	+= i2c-ralink.o
++obj-$(CONFIG_I2C_MT7621)	+= i2c-mt7621.o
+ obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
+ obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
+ obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
+--- /dev/null
++++ b/drivers/i2c/busses/i2c-mt7621.c
+@@ -0,0 +1,278 @@
++/*
++ * drivers/i2c/busses/i2c-mt7628.c
++ *
++ * Copyright (C) 2019 Qin Wei <support@vocore.io>
++ *	partially code copy from i2c-mt7621.c
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/i2c.h>
++#include <linux/regmap.h>
++#include <linux/platform_device.h>
++#include <linux/of_platform.h>
++#include <linux/reset.h>
++#include <linux/io.h>
++#include <linux/errno.h>
++#include <linux/clk.h>
++
++#define REG_SM0CFG1		0x20
++#define REG_SM0CTL0		0x40
++#define REG_SM0CTL1		0x44
++#define REG_SM0D0		0x50
++#define REG_SM0D1		0x54
++
++/* REG_SM0CTL0 */
++#define ODRAIN_HIGH_SM0		BIT(31)
++#define VSYNC_SHIFT		28
++#define VSYNC_MASK		0x3
++#define VSYNC_PULSE		(0x1 << VSYNC_SHIFT)
++#define VSYNC_RISING		(0x2 << VSYNC_SHIFT)
++#define CLK_DIV_SHIFT		16
++#define CLK_DIV_MASK		0xfff
++#define DEG_CNT_SHIFT		8
++#define DEG_CNT_MASK		0xff
++#define WAIT_HIGH		BIT(6)
++#define DEG_EN			BIT(5)
++#define CS_STATUA		BIT(4)
++#define SCL_STATUS		BIT(3)
++#define SDA_STATUS		BIT(2)
++#define SM0_EN			BIT(1)
++#define SCL_STRECH		BIT(0)
++
++/* REG_SM0CTL1 */
++#define ACK_SHIFT		16
++#define ACK_MASK		0xff
++#define PGLEN_SHIFT		8
++#define PGLEN_MASK		0x7
++#define SM0_MODE_SHIFT		4
++#define SM0_MODE_MASK		0x7
++#define SM0_MODE_START		0x1
++#define SM0_MODE_WRITE		0x2
++#define SM0_MODE_STOP		0x3
++#define SM0_MODE_READ_NACK	0x4
++#define SM0_MODE_READ_ACK	0x5
++#define SM0_TRI_BUSY		BIT(0)
++
++struct mtk_i2c {
++	void __iomem *base;
++	struct clk *clk;
++	struct device *dev;
++	struct i2c_adapter adap;
++	u32 clk_div;
++	u32 delay;
++};
++
++static int mtk_i2c_trigger(struct mtk_i2c *i2c, u32 mode, u32 c)
++{
++	u32 val, reg = 0;
++
++	val = (mode << SM0_MODE_SHIFT) | ((c - 1) << PGLEN_SHIFT) | SM0_TRI_BUSY;
++	iowrite32(val, i2c->base + REG_SM0CTL1);
++
++	usleep_range(i2c->delay * c, i2c->delay * c + 50);
++	if (mode == SM0_MODE_WRITE || mode == SM0_MODE_READ_ACK) {
++		reg = ioread32(i2c->base + REG_SM0CTL1);
++		val = (reg >> ACK_SHIFT) & ACK_MASK;
++		if (val == 0)
++			return -1;
++	}
++	return 0;
++}
++
++static int mtk_i2c_master_read(struct mtk_i2c *i2c, struct i2c_msg *cur)
++{
++	int used = 0;
++
++	iowrite32(cur->addr * 2 + 1, i2c->base + REG_SM0D0);
++	if (mtk_i2c_trigger(i2c, SM0_MODE_WRITE, 1) < 0)
++		return -1;
++
++	while (used < cur->len) {
++		int size = min(cur->len - used, 8);
++
++		if (used + size == cur->len)	/* last page, send NAK */
++			mtk_i2c_trigger(i2c, SM0_MODE_READ_NACK, size);
++		else
++			mtk_i2c_trigger(i2c, SM0_MODE_READ_ACK, size);
++
++		memcpy(cur->buf + used, i2c->base + REG_SM0D0, size);
++		used += size;
++	}
++	return used;
++}
++
++static int mtk_i2c_master_write(struct mtk_i2c *i2c, struct i2c_msg *cur)
++{
++	int used = 0;
++
++	iowrite32(cur->addr * 2, i2c->base + REG_SM0D0);
++	if (mtk_i2c_trigger(i2c, SM0_MODE_WRITE, 1) < 0)
++		return -1;
++
++	while (used < cur->len) {
++		int size = min(cur->len - used, 8);
++		memcpy(i2c->base + REG_SM0D0, cur->buf + used, size);
++		mtk_i2c_trigger(i2c, SM0_MODE_WRITE, size);
++		used += size;
++	}
++	return used;
++}
++
++static int mtk_i2c_master_xfer(struct i2c_adapter *a, struct i2c_msg *m, int c)
++{
++	struct mtk_i2c *i2c = i2c_get_adapdata(a);
++	int i;
++
++	for (i = 0; i < c; i++) {
++		if (m[i].flags & I2C_M_TEN)
++			return -EINVAL;
++
++		mtk_i2c_trigger(i2c, SM0_MODE_START, 1);
++		if ((m + i)->flags & I2C_M_RD) {
++			if (mtk_i2c_master_read(i2c, m + i) < 0)
++				break;
++		} else {
++			if (mtk_i2c_master_write(i2c, m + i) < 0)
++				break;
++		}
++	}
++	mtk_i2c_trigger(i2c, SM0_MODE_STOP, 1);
++
++	/* can not access one or more address in the i2c_msg */
++	if (i != c)
++		return -ENODEV;
++
++	/* the return value is number of executed messages */
++	return i;
++}
++
++static u32 mtk_i2c_func(struct i2c_adapter *a)
++{
++	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
++}
++
++static const struct i2c_algorithm mtk_i2c_algo = {
++	.master_xfer	= mtk_i2c_master_xfer,
++	.functionality	= mtk_i2c_func,
++};
++
++static const struct of_device_id i2c_mtk_dt_ids[] = {
++	{ .compatible = "mediatek,mt7621-i2c" },
++	{ /* sentinel */ }
++};
++
++MODULE_DEVICE_TABLE(of, i2c_mtk_dt_ids);
++
++static void mtk_i2c_reset(struct mtk_i2c *i2c)
++{
++	u32 reg;
++	device_reset(i2c->adap.dev.parent);
++	reg = ODRAIN_HIGH_SM0 | VSYNC_PULSE | (i2c->clk_div << CLK_DIV_SHIFT) |
++		WAIT_HIGH | SM0_EN;
++	iowrite32(reg, i2c->base + REG_SM0CTL0);
++}
++
++static int mtk_i2c_probe(struct platform_device *pdev)
++{
++	struct resource *res;
++	struct mtk_i2c *i2c;
++	const struct of_device_id *match;
++	int ret;
++	u32 cur_clk;
++
++	match = of_match_device(i2c_mtk_dt_ids, &pdev->dev);
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "no memory resource found\n");
++		return -ENODEV;
++	}
++
++	i2c = devm_kzalloc(&pdev->dev, sizeof(struct mtk_i2c), GFP_KERNEL);
++	if (!i2c) {
++		dev_err(&pdev->dev, "failed to allocate i2c_adapter\n");
++		return -ENOMEM;
++	}
++
++	i2c->base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(i2c->base))
++		return PTR_ERR(i2c->base);
++
++	i2c->clk = devm_clk_get(&pdev->dev, NULL);
++	if (IS_ERR(i2c->clk)) {
++		dev_err(&pdev->dev, "no clock defined\n");
++		return -ENODEV;
++	}
++	clk_prepare_enable(i2c->clk);
++	if (of_property_read_u32(pdev->dev.of_node, "clock-frequency", &cur_clk))
++		cur_clk = 100000;
++	i2c->delay = 10000000 / cur_clk;
++
++	i2c->dev = &pdev->dev;
++
++	i2c->adap.owner = THIS_MODULE;
++	i2c->adap.class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
++	i2c->adap.algo = &mtk_i2c_algo;
++	i2c->adap.dev.parent = &pdev->dev;
++	i2c->adap.dev.of_node = pdev->dev.of_node;
++	strlcpy(i2c->adap.name, dev_name(&pdev->dev), sizeof(i2c->adap.name));
++	i2c_set_adapdata(&i2c->adap, i2c);
++
++	i2c->clk_div = (clk_get_rate(i2c->clk) / cur_clk ) & CLK_DIV_MASK;
++	mtk_i2c_reset(i2c);
++
++	ret = i2c_add_adapter(&i2c->adap);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "failed to add adapter\n");
++		clk_disable_unprepare(i2c->clk);
++		return ret;
++	}
++
++	dev_info(&pdev->dev, "clock %uKHz", cur_clk / 1000);
++	return ret;
++}
++
++static int mtk_i2c_remove(struct platform_device *pdev)
++{
++	struct mtk_i2c *i2c = platform_get_drvdata(pdev);
++	i2c_del_adapter(&i2c->adap);
++	clk_disable_unprepare(i2c->clk);
++	return 0;
++}
++
++static struct platform_driver mtk_i2c_driver = {
++	.probe		= mtk_i2c_probe,
++	.remove		= mtk_i2c_remove,
++	.driver		= {
++		.owner	= THIS_MODULE,
++		.name	= "i2c-mt7628",
++		.of_match_table = i2c_mtk_dt_ids,
++	},
++};
++
++static int __init i2c_mtk_init(void)
++{
++	return platform_driver_register(&mtk_i2c_driver);
++}
++subsys_initcall(i2c_mtk_init);
++
++static void __exit i2c_mtk_exit(void)
++{
++	platform_driver_unregister(&mtk_i2c_driver);
++}
++module_exit(i2c_mtk_exit);
++
++MODULE_AUTHOR("Qin Wei <support@vocore.io>");
++MODULE_DESCRIPTION("MT7628 I2C host driver");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:MT7628-I2C");
