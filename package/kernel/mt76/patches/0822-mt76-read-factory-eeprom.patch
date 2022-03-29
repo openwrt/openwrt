@@ -1,0 +1,14 @@
+diff --git a/mt7603/init.c b/mt7603/init.c
+index 9419659..f9f17ed 100644
+--- a/mt7603/init.c
++++ b/mt7603/init.c
+@@ -277,6 +277,9 @@ mt7603_init_hardware(struct mt7603_dev *dev)
+ 	if (ret < 0)
+ 		return ret;
+ 
++	if (((u8*)dev->mt76.eeprom.data)[MT_EE_NIC_CONF_0] == 0x11)
++		dev->mt76.antenna_mask = 1;
++
+ 	ret = mt7603_dma_init(dev);
+ 	if (ret)
+ 		return ret;
