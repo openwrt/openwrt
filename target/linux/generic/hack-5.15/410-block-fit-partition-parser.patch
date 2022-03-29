@@ -74,16 +74,25 @@
  #ifdef CONFIG_SGI_PARTITION
  	sgi_partition,
  #endif
-@@ -598,6 +605,14 @@ static bool blk_add_partition(struct gen
+@@ -408,6 +415,11 @@ static struct block_device *add_partitio
+ 			goto out_del;
+ 	}
+ 
++#ifdef CONFIG_FIT_PARTITION
++	if (flags & ADDPART_FLAG_READONLY)
++		bdev->bd_read_only = true;
++#endif
++
+ 	/* everything is up and running, commence */
+ 	err = xa_insert(&disk->part_tbl, partno, bdev, GFP_KERNEL);
+ 	if (err)
+@@ -598,6 +610,11 @@ static bool blk_add_partition(struct gen
  	    (state->parts[p].flags & ADDPART_FLAG_RAID))
  		md_autodetect_dev(part->bd_dev);
  
 +#ifdef CONFIG_FIT_PARTITION
 +	if ((state->parts[p].flags & ADDPART_FLAG_ROOTDEV) && ROOT_DEV == 0)
 +		ROOT_DEV = part->bd_dev;
-+
-+	if (state->parts[p].flags & ADDPART_FLAG_READONLY)
-+		set_disk_ro(disk, true);
 +#endif
 +
  	return true;
