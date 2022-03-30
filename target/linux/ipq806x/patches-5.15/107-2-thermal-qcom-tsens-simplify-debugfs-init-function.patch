@@ -17,7 +17,7 @@ Reviewed-by: Thara Gopinath <thara.gopinath@linaro.org>
 
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -692,7 +692,7 @@ static int dbg_version_show(struct seq_f
+@@ -691,7 +691,7 @@ static int dbg_version_show(struct seq_f
  			return ret;
  		seq_printf(s, "%d.%d.%d\n", maj_ver, min_ver, step_ver);
  	} else {
@@ -26,7 +26,7 @@ Reviewed-by: Thara Gopinath <thara.gopinath@linaro.org>
  	}
  
  	return 0;
-@@ -704,21 +704,17 @@ DEFINE_SHOW_ATTRIBUTE(dbg_sensors);
+@@ -703,21 +703,17 @@ DEFINE_SHOW_ATTRIBUTE(dbg_sensors);
  static void tsens_debug_init(struct platform_device *pdev)
  {
  	struct tsens_priv *priv = platform_get_drvdata(pdev);

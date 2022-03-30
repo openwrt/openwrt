@@ -29,7 +29,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
-@@ -150,6 +150,18 @@ config ARM_QCOM_CPUFREQ_HW
+@@ -172,6 +172,18 @@ config ARM_QCOM_CPUFREQ_HW
  	  The driver implements the cpufreq interface for this HW engine.
  	  Say Y if you want to support CPUFreq HW.
  
@@ -48,7 +48,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  config ARM_RASPBERRYPI_CPUFREQ
  	tristate "Raspberry Pi cpufreq support"
  	depends on CLK_RASPBERRYPI || COMPILE_TEST
-@@ -339,4 +351,4 @@ config ARM_PXA2xx_CPUFREQ
+@@ -356,4 +368,4 @@ config ARM_PXA2xx_CPUFREQ
  	help
  	  This add the CPUFreq driver support for Intel PXA2xx SOCs.
  
@@ -65,7 +65,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  obj-$(CONFIG_ARM_RASPBERRYPI_CPUFREQ) 	+= raspberrypi-cpufreq.o
  obj-$(CONFIG_ARM_S3C2410_CPUFREQ)	+= s3c2410-cpufreq.o
  obj-$(CONFIG_ARM_S3C2412_CPUFREQ)	+= s3c2412-cpufreq.o
-@@ -86,6 +87,7 @@ obj-$(CONFIG_ARM_TEGRA186_CPUFREQ)	+= te
+@@ -85,6 +86,7 @@ obj-$(CONFIG_ARM_TEGRA186_CPUFREQ)	+= te
  obj-$(CONFIG_ARM_TEGRA194_CPUFREQ)	+= tegra194-cpufreq.o
  obj-$(CONFIG_ARM_TI_CPUFREQ)		+= ti-cpufreq.o
  obj-$(CONFIG_ARM_VEXPRESS_SPC_CPUFREQ)	+= vexpress-spc-cpufreq.o
