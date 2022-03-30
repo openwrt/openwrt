@@ -4,10 +4,11 @@ on:
   pull_request:
     paths:
       - 'tools/**'
+      - '.github/workflows/tools.yml'
 
 jobs:
   build:
-    name: Build tools on ${{ matrix.os }}
+    name: tools-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: False
@@ -122,13 +123,22 @@ jobs:
           make tools/install -j$(nproc) BUILD_LOG=1
 
       - name: Move logs to GITHUB_WORKSPACE
-        if: failure()
+        if: always()
         run: |
           cp -r "$WORKPATH/logs" "$GITHUB_WORKSPACE"
+          cp -r "$WORKPATH/.config" "$GITHUB_WORKSPACE/config"
+
 
       - name: Upload logs
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.os }}-logs
           path: "logs"
+
+      - name: Upload config
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os }}-config
+          path: "config"
