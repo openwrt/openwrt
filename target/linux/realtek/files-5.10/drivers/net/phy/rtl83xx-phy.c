@@ -1697,7 +1697,6 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	u32 v, cr_0, cr_1, cr_2;
 	u32 m_bit, l_bit;
 
-	pr_info("%s --------------------- serdes %d forcing to %x ...\n", __func__, sds, sds_mode);
 	pr_info("%s: SDS: %d, mode %d\n", __func__, sds, phy_if);
 	switch (phy_if) {
 	case PHY_INTERFACE_MODE_SGMII:
@@ -1740,7 +1739,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 		return;
 	}
 
-	pr_info("%s: SDS mode %x\n", __func__, sds_mode);
+	pr_info("%s --------------------- serdes %d forcing to %x ...\n", __func__, sds, sds_mode);
 	// Power down SerDes
 	rtl9300_sds_field_w(sds, 0x20, 0, 7, 6, 0x3);
 	if (sds == 5) pr_info("%s after %x\n", __func__, rtl930x_read_sds_phy(sds, 0x20, 0));
