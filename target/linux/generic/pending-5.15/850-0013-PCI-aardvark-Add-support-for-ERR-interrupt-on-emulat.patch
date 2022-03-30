@@ -78,7 +78,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  		if (mask & (PCI_BRIDGE_CTL_BUS_RESET << 16)) {
  			u32 val = advk_readl(pcie, PCIE_CORE_CTRL1_REG);
  			if (new & (PCI_BRIDGE_CTL_BUS_RESET << 16))
-@@ -1459,6 +1480,19 @@ static void advk_pcie_handle_int(struct
+@@ -1459,6 +1480,18 @@ static void advk_pcie_handle_int(struct
  	isr1_mask = advk_readl(pcie, PCIE_ISR1_MASK_REG);
  	isr1_status = isr1_val & ((~isr1_mask) & PCIE_ISR1_ALL_MASK);
  
@@ -90,8 +90,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 +		 * Aardvark HW returns zero for PCI_ERR_ROOT_AER_IRQ, so use
 +		 * PCIe interrupt 0
 +		 */
-+		virq = irq_find_mapping(pcie->irq_domain, 0);
-+		if (generic_handle_irq(virq) == -EINVAL)
++		if (generic_handle_domain_irq(pcie->irq_domain, 0) == -EINVAL)
 +			dev_err_ratelimited(&pcie->pdev->dev, "unhandled ERR IRQ\n");
 +	}
 +

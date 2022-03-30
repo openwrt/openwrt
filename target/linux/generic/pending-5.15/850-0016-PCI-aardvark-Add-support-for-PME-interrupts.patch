@@ -25,7 +25,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1484,6 +1484,19 @@ static void advk_pcie_handle_int(struct
+@@ -1484,6 +1484,18 @@ static void advk_pcie_handle_int(struct
  	isr1_mask = advk_readl(pcie, PCIE_ISR1_MASK_REG);
  	isr1_status = isr1_val & ((~isr1_mask) & PCIE_ISR1_ALL_MASK);
  
@@ -37,8 +37,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 +		 * root bridge. Aardvark HW returns zero for PCI_EXP_FLAGS_IRQ,
 +		 * so use PCIe interrupt 0.
 +		 */
-+		virq = irq_find_mapping(pcie->irq_domain, 0);
-+		if (generic_handle_irq(virq) == -EINVAL)
++		if (generic_handle_domain_irq(pcie->irq_domain, 0) == -EINVAL)
 +			dev_err_ratelimited(&pcie->pdev->dev, "unhandled PME IRQ\n");
 +	}
 +

@@ -90,20 +90,20 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  		if (!(le16_to_cpu(pcie->bridge.pcie_conf.rootctl) & PCI_EXP_RTCTL_PMEIE))
  			return;
  
--		virq = irq_find_mapping(pcie->irq_domain, 0);
-+		virq = irq_find_mapping(pcie->rp_irq_domain, 0);
- 		if (generic_handle_irq(virq) == -EINVAL)
+-		if (generic_handle_domain_irq(pcie->irq_domain, 0) == -EINVAL)
++		if (generic_handle_domain_irq(pcie->rp_irq_domain, 0) == -EINVAL)
  			dev_err_ratelimited(&pcie->pdev->dev, "unhandled PME IRQ\n");
  	}
+ 
 @@ -1515,7 +1554,7 @@ static void advk_pcie_handle_int(struct
  		 * Aardvark HW returns zero for PCI_ERR_ROOT_AER_IRQ, so use
  		 * PCIe interrupt 0
  		 */
--		virq = irq_find_mapping(pcie->irq_domain, 0);
-+		virq = irq_find_mapping(pcie->rp_irq_domain, 0);
- 		if (generic_handle_irq(virq) == -EINVAL)
+-		if (generic_handle_domain_irq(pcie->irq_domain, 0) == -EINVAL)
++		if (generic_handle_domain_irq(pcie->rp_irq_domain, 0) == -EINVAL)
  			dev_err_ratelimited(&pcie->pdev->dev, "unhandled ERR IRQ\n");
  	}
+ 
 @@ -1560,6 +1599,21 @@ static void advk_pcie_irq_handler(struct
  	chained_irq_exit(chip, desc);
  }

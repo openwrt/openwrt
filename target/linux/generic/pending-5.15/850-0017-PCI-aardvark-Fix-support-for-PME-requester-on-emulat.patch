@@ -114,14 +114,13 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  
  	case PCI_EXP_DEVCTL:
  	case PCI_EXP_DEVCTL2:
-@@ -1445,6 +1436,34 @@ static void advk_pcie_remove_irq_domain(
+@@ -1445,6 +1436,32 @@ static void advk_pcie_remove_irq_domain(
  	irq_domain_remove(pcie->irq_domain);
  }
  
 +static void advk_pcie_handle_pme(struct advk_pcie *pcie)
 +{
 +	u32 requester = advk_readl(pcie, PCIE_MSG_LOG_REG) >> 16;
-+	int virq;
 +
 +	advk_writel(pcie, PCIE_MSG_PM_PME_MASK, PCIE_ISR0_REG);
 +
@@ -140,8 +139,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 +		if (!(le16_to_cpu(pcie->bridge.pcie_conf.rootctl) & PCI_EXP_RTCTL_PMEIE))
 +			return;
 +
-+		virq = irq_find_mapping(pcie->irq_domain, 0);
-+		if (generic_handle_irq(virq) == -EINVAL)
++		if (generic_handle_domain_irq(pcie->irq_domain, 0) == -EINVAL)
 +			dev_err_ratelimited(&pcie->pdev->dev, "unhandled PME IRQ\n");
 +	}
 +}
@@ -149,7 +147,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  static void advk_pcie_handle_msi(struct advk_pcie *pcie)
  {
  	u32 msi_val, msi_mask, msi_status, msi_idx;
-@@ -1484,18 +1503,9 @@ static void advk_pcie_handle_int(struct
+@@ -1484,17 +1503,9 @@ static void advk_pcie_handle_int(struct
  	isr1_mask = advk_readl(pcie, PCIE_ISR1_MASK_REG);
  	isr1_status = isr1_val & ((~isr1_mask) & PCIE_ISR1_ALL_MASK);
  
@@ -161,8 +159,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 -		 * root bridge. Aardvark HW returns zero for PCI_EXP_FLAGS_IRQ,
 -		 * so use PCIe interrupt 0.
 -		 */
--		virq = irq_find_mapping(pcie->irq_domain, 0);
--		if (generic_handle_irq(virq) == -EINVAL)
+-		if (generic_handle_domain_irq(pcie->irq_domain, 0) == -EINVAL)
 -			dev_err_ratelimited(&pcie->pdev->dev, "unhandled PME IRQ\n");
 -	}
 +	/* Process PME interrupt as the first one to do not miss PME requester id */
