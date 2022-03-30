@@ -87,7 +87,7 @@
  			reg = <0x02099000 0x1000>, <0x02009000 0x1000>;
  			regulator;
  		};
-@@ -533,7 +533,7 @@
+@@ -530,7 +536,7 @@
  				status = "disabled";
  			};
  
@@ -203,7 +203,7 @@
  			reg = <0x37600000 0x200000>;
  			interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>;
  			interrupt-names = "macirq";
-@@ -1050,8 +1050,6 @@
+@@ -1065,8 +1106,6 @@
  			clocks = <&gcc USB30_0_UTMI_CLK>;
  			clock-names = "ref";
  			#phy-cells = <0>;
@@ -211,9 +211,9 @@
 -			status = "disabled";
  		};
  
- 		ss_phy_0: usb3phy@100f8830 {
-@@ -1055,8 +1055,6 @@
-			clocks = <&gcc USB30_0_MASTER_CLK>;
+ 		ss_phy_0: phy@100f8830 {
+@@ -1075,8 +1114,6 @@
+ 			clocks = <&gcc USB30_0_MASTER_CLK>;
  			clock-names = "ref";
  			#phy-cells = <0>;
 -
@@ -221,7 +221,7 @@
  		};
  
  		usb3_0: usb3@100f8800 {
-@@ -1176,7 +1217,7 @@
+@@ -1176,7 +1213,7 @@
  		};
  
  		amba: amba {
@@ -230,7 +230,7 @@
  			#address-cells = <1>;
  			#size-cells = <1>;
  			ranges;
-@@ -1195,7 +1236,6 @@
+@@ -1195,7 +1232,6 @@
  				non-removable;
  				cap-sd-highspeed;
  				cap-mmc-highspeed;

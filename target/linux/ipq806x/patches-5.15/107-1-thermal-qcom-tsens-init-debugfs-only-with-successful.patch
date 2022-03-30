@@ -16,7 +16,7 @@ Acked-by: Thara Gopinath <thara.gopinath@linaro.org>
 
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -918,8 +918,6 @@ int __init init_common(struct tsens_priv
+@@ -917,8 +917,6 @@ int __init init_common(struct tsens_priv
  	if (tsens_version(priv) >= VER_0_1)
  		tsens_enable_irq(priv);
  
@@ -25,7 +25,7 @@ Acked-by: Thara Gopinath <thara.gopinath@linaro.org>
  err_put_device:
  	put_device(&op->dev);
  	return ret;
-@@ -1155,7 +1153,12 @@ static int tsens_probe(struct platform_d
+@@ -1157,7 +1155,12 @@ static int tsens_probe(struct platform_d
  		}
  	}
  

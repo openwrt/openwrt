@@ -233,7 +233,7 @@
  		gsbi2: gsbi@12480000 {
  			compatible = "qcom,gsbi-v1.0.0";
  			cell-index = <2>;
-@@ -568,6 +910,33 @@
+@@ -637,6 +813,33 @@
  			};
  		};
  
@@ -267,7 +267,7 @@
  		gsbi7: gsbi@16600000 {
  			status = "disabled";
  			compatible = "qcom,gsbi-v1.0.0";
-@@ -589,6 +958,19 @@
+@@ -658,6 +861,19 @@
  				clock-names = "core", "iface";
  				status = "disabled";
  			};
@@ -286,8 +286,8 @@
 +			};
  		};
  
- 		sata_phy: sata-phy@1b400000 {
-@@ -761,6 +937,17 @@
+ 		rng@1a500000 {
+@@ -761,6 +977,17 @@
  			};
  		};
  
@@ -305,7 +305,7 @@
  		rpm: rpm@108000 {
  			compatible = "qcom,rpm-ipq8064";
  			reg = <0x108000 0x1000>;
-@@ -828,6 +1015,11 @@
+@@ -828,6 +1055,11 @@
  			clock-output-names = "acpu_l2_aux";
  		};
  
@@ -317,7 +317,7 @@
  		lcc: clock-controller@28000000 {
  			compatible = "qcom,lcc-ipq8064";
  			reg = <0x28000000 0x1000>;
-@@ -835,6 +1027,11 @@
+@@ -835,6 +1067,11 @@
  			#reset-cells = <1>;
  		};
  
@@ -329,7 +329,7 @@
  		pcie0: pci@1b500000 {
  			compatible = "qcom,pcie-ipq8064";
  			reg = <0x1b500000 0x1000
-@@ -1188,6 +1385,21 @@
+@@ -1184,6 +1421,21 @@
  			};
  		};
  
@@ -351,7 +351,7 @@
  		vsdcc_fixed: vsdcc-regulator {
  			compatible = "regulator-fixed";
  			regulator-name = "SDCC Power";
-@@ -1262,4 +1474,17 @@
+@@ -1258,4 +1510,17 @@
  			};
  		};
  	};
