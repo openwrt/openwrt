@@ -37,6 +37,13 @@
 
 #define GSW_REG_PORT_PMCR(x)	(0x3000 + (x * 0x100))
 #define GSW_REG_PORT_STATUS(x)	(0x3008 + (x * 0x100))
+// Global MAC control register
+#define GSW_REG_GMACCR		0x3FE0
+#define GMACCR_JMB_LEN_MASK	0x0F
+#define GMACCR_JMB_LEN_SHIFT	2
+// MAX_RX_PKT_LEN bits 0:1
+#define GMACCR_JMB_ENABLE	0x2
+
 #define GSW_REG_SMACCR0		0x3fE4
 #define GSW_REG_SMACCR1		0x3fE8
 #define GSW_REG_CKGCR		0x3ff0
@@ -51,9 +58,6 @@
 
 #define GSW_REG_MAC_P0_MCR	0x100
 #define GSW_REG_MAC_P1_MCR	0x200
-
-// Global MAC control register
-#define GSW_REG_GMACCR		0x30E0
 
 #define SYSC_REG_CHIP_REV_ID	0x0c
 #define SYSC_REG_CFG1		0x14
