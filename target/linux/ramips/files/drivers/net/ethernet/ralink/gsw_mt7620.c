@@ -179,6 +179,8 @@ static void mt7620_ephy_init(struct mt7620_gsw *gsw)
 
 static void mt7620_mac_init(struct mt7620_gsw *gsw)
 {
+	u32 val;
+
 	/* Internal ethernet requires PCIe RC mode */
 	rt_sysc_w32(rt_sysc_r32(SYSC_REG_CFG1) | PCIE_RC_MODE, SYSC_REG_CFG1);
 
@@ -190,6 +192,12 @@ static void mt7620_mac_init(struct mt7620_gsw *gsw)
 
 	/* Set Port 6 as CPU Port */
 	mtk_switch_w32(gsw, 0x7f7f7fe0, 0x0010);
+
+	val = mtk_switch_r32(gsw, GSW_REG_GMACCR);
+	val &= ~(GMACCR_JMB_LEN_MASK << GMACCR_JMB_LEN_SHIFT);
+	/* Set 2k max frame size and enable MAX_RX_JUMBO */
+	val |= (2 << GMACCR_JMB_LEN_SHIFT) | GMACCR_JMB_ENABLE;
+	mtk_switch_w32(gsw, val, GSW_REG_GMACCR);
 
 	/* Enable MIB stats */
 	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_MIB_CNT_EN) | (1 << 1), GSW_REG_MIB_CNT_EN);
