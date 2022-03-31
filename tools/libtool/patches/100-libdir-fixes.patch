@@ -19,7 +19,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
 
 --- a/build-aux/ltmain.in
 +++ b/build-aux/ltmain.in
-@@ -6049,8 +6049,14 @@ func_mode_link ()
+@@ -6097,8 +6097,14 @@ func_mode_link ()
  	    absdir=$abs_ladir
  	    libdir=$abs_ladir
  	  else
@@ -36,7 +36,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  	  fi
  	  test yes = "$hardcode_automatic" && avoidtemprpath=yes
  	else
-@@ -6448,8 +6454,6 @@ func_mode_link ()
+@@ -6496,8 +6502,6 @@ func_mode_link ()
  		add=$libdir/$linklib
  	      fi
  	    else
@@ -45,7 +45,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  	      # Try looking first in the location we're being installed to.
  	      if test -n "$inst_prefix_dir"; then
  		case $libdir in
-@@ -6604,7 +6608,17 @@ func_mode_link ()
+@@ -6652,7 +6656,17 @@ func_mode_link ()
  		  fi
  		  ;;
  		*)
