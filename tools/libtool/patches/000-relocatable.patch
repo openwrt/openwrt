@@ -34,7 +34,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  
  
  ## -------------------------- ##
-@@ -1901,11 +1908,19 @@ func_require_seen_libtool ()
+@@ -1903,11 +1910,19 @@ func_require_seen_libtool ()
    pkgmacro_files="@pkgmacro_files@"
  
    # Locations for important files:
@@ -61,7 +61,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
    if test -n "$_lt_pkgdatadir"; then
 --- a/m4/libtool.m4
 +++ b/m4/libtool.m4
-@@ -929,9 +929,8 @@ dnl AC_DEFUN([AC_LIBTOOL_RC], [])
+@@ -931,9 +931,8 @@ dnl AC_DEFUN([AC_LIBTOOL_RC], [])
  # ----------------
  m4_defun([_LT_TAG_COMPILER],
  [AC_REQUIRE([AC_PROG_CC])dnl
@@ -72,7 +72,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  _LT_TAGDECL([CC], [compiler], [1], [A language specific compiler])dnl
  _LT_TAGDECL([with_gcc], [GCC], [0], [Is the compiler the GNU compiler?])dnl
  
-@@ -8160,9 +8159,9 @@ m4_defun([_LT_DECL_EGREP],
+@@ -8183,9 +8182,9 @@ m4_defun([_LT_DECL_EGREP],
  [AC_REQUIRE([AC_PROG_EGREP])dnl
  AC_REQUIRE([AC_PROG_FGREP])dnl
  test -z "$GREP" && GREP=grep
@@ -85,7 +85,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  dnl Non-bleeding-edge autoconf doesn't subst GREP, so do it here too
  AC_SUBST([GREP])
  ])
-@@ -8195,9 +8194,8 @@ AC_SUBST([DLLTOOL])
+@@ -8226,9 +8225,8 @@ _LT_DECL([], [FILECMD], [1], [A file(cmd
  # as few characters as possible.  Prefer GNU sed if found.
  m4_defun([_LT_DECL_SED],
  [AC_PROG_SED
