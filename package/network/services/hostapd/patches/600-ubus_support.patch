@@ -424,6 +424,16 @@
  }
  
  
+@@ -352,6 +355,9 @@ void hostapd_handle_radio_measurement(st
+ 		   mgmt->u.action.u.rrm.action, MAC2STR(mgmt->sa));
+ 
+ 	switch (mgmt->u.action.u.rrm.action) {
++	case WLAN_RRM_LINK_MEASUREMENT_REPORT:
++		hostapd_ubus_handle_link_measurement(hapd, buf, len);
++		break;
+ 	case WLAN_RRM_RADIO_MEASUREMENT_REPORT:
+ 		hostapd_handle_radio_msmt_report(hapd, buf, len);
+ 		break;
 --- a/src/ap/wnm_ap.c
 +++ b/src/ap/wnm_ap.c
 @@ -463,7 +463,7 @@ static void ieee802_11_rx_bss_trans_mgmt
