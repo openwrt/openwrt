@@ -119,8 +119,10 @@ versionRegex = (
     (re.compile(r"(.+)[-_](\d\d\d\d)-?(\d\d)-?(\d\d)"), parseVer_ymd),  # xxx-YYYY-MM-DD
     (re.compile(r"(.+)[-_]([0-9a-fA-F]{40,40})"), parseVer_GIT),  # xxx-GIT_SHASUM
     (re.compile(r"(.+)[-_](\d+)\.(\d+)\.(\d+)(\w?)"), parseVer_123),  # xxx-1.2.3a
+    (re.compile(r"(.+)[-_]v(\d+)\.(\d+)\.(\d+)(\w?)"), parseVer_123),  # xxx-v1.2.3a
     (re.compile(r"(.+)[-_](\d+)_(\d+)_(\d+)"), parseVer_123),  # xxx-1_2_3
     (re.compile(r"(.+)[-_](\d+)\.(\d+)(\w?)"), parseVer_12),  # xxx-1.2a
+    (re.compile(r"(.+)[-_]v(\d+)\.(\d+)(\w?)"), parseVer_12),  # xxx-v1.2a
     (re.compile(r"(.+)[-_]r?(\d+)"), parseVer_r),  # xxx-r1111
 )
 
