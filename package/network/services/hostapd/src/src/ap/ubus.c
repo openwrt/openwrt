@@ -1412,6 +1412,34 @@ hostapd_rrm_lm_req(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 
+void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len)
+{
+	const struct ieee80211_mgmt *mgmt = (const struct ieee80211_mgmt *) data;
+	const u8 *pos, *end;
+	u8 token;
+
+	end = data + len;
+	token = mgmt->u.action.u.rrm.dialog_token;
+	pos = mgmt->u.action.u.rrm.variable;
+
+	if (end - pos < 8)
+		return;
+
+	if (!hapd->ubus.obj.has_subscribers)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", mgmt->sa);
+	blobmsg_add_u16(&b, "dialog-token", token);
+	blobmsg_add_u16(&b, "rx-antenna-id", pos[4]);
+	blobmsg_add_u16(&b, "tx-antenna-id", pos[5]);
+	blobmsg_add_u16(&b, "rcpi", pos[6]);
+	blobmsg_add_u16(&b, "rsni", pos[7]);
+
+	ubus_notify(ctx, &hapd->ubus.obj, "link-measurement-report", b.head, -1);
+}
+
+
 #ifdef CONFIG_WNM_AP
 
 static int
