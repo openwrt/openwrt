@@ -995,6 +995,7 @@ hostapd_rrm_print_nr(struct hostapd_neighbor_entry *nr)
 enum {
 	BSS_MGMT_EN_NEIGHBOR,
 	BSS_MGMT_EN_BEACON,
+	BSS_MGMT_EN_LINK_MEASUREMENT,
 #ifdef CONFIG_WNM_AP
 	BSS_MGMT_EN_BSS_TRANSITION,
 #endif
@@ -1021,6 +1022,14 @@ __hostapd_bss_mgmt_enable_f(struct hostapd_data *hapd, int flag)
 		flags = WLAN_RRM_CAPS_BEACON_REPORT_PASSIVE |
 			WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE |
 			WLAN_RRM_CAPS_BEACON_REPORT_TABLE;
+
+		if (bss->radio_measurements[0] & flags == flags)
+			return false;
+
+		bss->radio_measurements[0] |= (u8) flags;
+		return true;
+	case BSS_MGMT_EN_LINK_MEASUREMENT:
+		flags = WLAN_RRM_CAPS_LINK_MEASUREMENT;
 
 		if (bss->radio_measurements[0] & flags == flags)
 			return false;
@@ -1059,6 +1068,7 @@ __hostapd_bss_mgmt_enable(struct hostapd_data *hapd, uint32_t flags)
 static const struct blobmsg_policy bss_mgmt_enable_policy[__BSS_MGMT_EN_MAX] = {
 	[BSS_MGMT_EN_NEIGHBOR] = { "neighbor_report", BLOBMSG_TYPE_BOOL },
 	[BSS_MGMT_EN_BEACON] = { "beacon_report", BLOBMSG_TYPE_BOOL },
+	[BSS_MGMT_EN_LINK_MEASUREMENT] = { "link_measurement", BLOBMSG_TYPE_BOOL },
 #ifdef CONFIG_WNM_AP
 	[BSS_MGMT_EN_BSS_TRANSITION] = { "bss_transition", BLOBMSG_TYPE_BOOL },
 #endif
