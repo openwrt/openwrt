@@ -26,7 +26,7 @@ proto_ncm_init_config() {
 proto_ncm_setup() {
 	local interface="$1"
 
-	local manufacturer initialize setmode connect finalize devname devpath
+	local manufacturer initialize setmode connect finalize devname devpath ifpath
 
 	local device ifname  apn auth username password pincode delay mode pdptype profile $PROTO_DEFAULT_OPTIONS
 	json_get_vars device ifname apn auth username password pincode delay mode pdptype profile $PROTO_DEFAULT_OPTIONS
@@ -59,13 +59,14 @@ proto_ncm_setup() {
 		case "$devname" in
 		'tty'*)
 			devpath="$(readlink -f /sys/class/tty/$devname/device)"
-			ifname="$( ls "$devpath"/../../*/net )"
+			ifpath="$devpath/../../*/net"
 			;;
 		*)
 			devpath="$(readlink -f /sys/class/usbmisc/$devname/device/)"
-			ifname="$( ls "$devpath"/net )"
+			ifpath="$devpath/net"
 			;;
 		esac
+		ifname="$(ls $(ls -1 -d $ifpath | head -n 1))"
 	}
 
 	[ -n "$ifname" ] || {
