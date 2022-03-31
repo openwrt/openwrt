@@ -57,6 +57,10 @@ proto_ncm_setup() {
 	[ -z "$ifname" ] && {
 		devname="$(basename "$device")"
 		case "$devname" in
+		'ttyACM'*)
+			devpath="$(readlink -f /sys/class/tty/$devname/device)"
+			ifpath="$devpath/../*/net"
+			;;
 		'tty'*)
 			devpath="$(readlink -f /sys/class/tty/$devname/device)"
 			ifpath="$devpath/../../*/net"
