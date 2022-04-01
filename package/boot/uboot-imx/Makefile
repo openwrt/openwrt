@@ -30,8 +30,8 @@ endef
 
 define U-Boot/mx6cuboxi
   NAME:=SolidRun Cubox-i boards
-  UBOOT_IMAGE:=SPL u-boot.img
-  UBOOT_MAKE_FLAGS:=SPL u-boot.img
+  UBOOT_IMAGE:=SPL u-boot-dtb.img
+  UBOOT_MAKE_FLAGS:=SPL u-boot-dtb.img
   BUILD_SUBTARGET:=cortexa9
   BUILD_DEVICES:=solidrun_cubox-i
 endef
