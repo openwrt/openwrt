@@ -562,6 +562,12 @@ dhcp_add() {
 	config_get ra_management "$cfg" ra_management
 	config_get ra_preference "$cfg" ra_preference
 	config_get dns "$cfg" dns
+	config_get domain "$cfg" domain
+
+	# Get only the first local domain for IPv4
+	# IPv6 supports a list of domains <https://openwrt.org/docs/techref/odhcpd#dhcp_section>
+	domain=${domain%% *}
+	
 
 	config_list_foreach "$cfg" "interface_name" append_interface_name "$ifname"
 
@@ -593,6 +599,9 @@ dhcp_add() {
 
 	if [ "$dhcpv4" != "disabled" ] ; then
 		xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
+		if [ "$domain" != "" ] ; then
+			xappend "--domain=$domain,$START,$END"
+		fi
 	fi
 
 
