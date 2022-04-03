@@ -32,7 +32,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +		pr_notice("mtd: device %d (%s) set to be root filesystem\n",
 +			  mtd->index, mtd->name);
 +#ifdef CONFIG_FIT_PARTITION
-+		index <<= 1;
++		index <<= 2;
 +#endif
 +		ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, index);
 +	}

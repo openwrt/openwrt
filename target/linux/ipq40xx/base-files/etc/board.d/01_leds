@@ -12,6 +12,12 @@ case "$board" in
 alfa-network,ap120c-ac)
 	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "eth1"
 	;;
+asus,rt-ac42u)
+	ucidef_set_led_switch "lan1" "LAN1" "blue:lan-1" "switch0" "0x02"
+	ucidef_set_led_switch "lan2" "LAN2" "blue:lan-2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "LAN3" "blue:lan-3" "switch0" "0x08"
+	ucidef_set_led_switch "lan4" "LAN4" "blue:lan-4" "switch0" "0x10"
+	;;
 asus,rt-ac58u)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	ucidef_set_led_switch "lan" "LAN" "blue:lan" "switch0" "0x1e"
@@ -22,7 +28,8 @@ avm,fritzbox-4040)
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x1e"
 	;;
 avm,fritzbox-7530 |\
-glinet,gl-b1300)
+glinet,gl-b1300 |\
+mikrotik,lhgg-60ad)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
 edgecore,oap100)
@@ -44,6 +51,22 @@ engenius,ens620ext)
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"
 	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "eth0"
 	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "eth1"
+	;;
+mikrotik,cap-ac)
+	ucidef_set_led_default "power" "POWER" "blue:power" "1"
+	ucidef_set_led_default "user" "USER" "green:user" "0"
+	ucidef_set_led_switch "eth1" "ETH1" "green:eth1" "switch0" "0x20"
+	ucidef_set_led_switch "eth2" "ETH2" "green:eth2" "switch0" "0x10"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"
+	;;
+mikrotik,hap-ac3)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "green:lan1" "switch0" "0x10"
+	ucidef_set_led_switch "lan2" "LAN2" "green:lan2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x04"
+	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x02"
+	ucidef_set_led_gpio "poe" "POE" "red:poe" "452" "0"
 	;;
 mikrotik,sxtsq-5-ac)
 	ucidef_set_rssimon "wlan0" "200000" "1"

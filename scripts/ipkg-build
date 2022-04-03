@@ -58,7 +58,8 @@ pkg_appears_sane() {
 
 		rm "$CONTROL"/conffiles
 		if [ -f "$CONTROL"/conffiles.resolved ]; then
-			mv "$CONTROL"/conffiles.resolved "$CONTROL"/conffiles
+			sort -o "$CONTROL"/conffiles "$CONTROL"/conffiles.resolved
+			rm "$CONTROL"/conffiles.resolved
 			chmod 0644 "$CONTROL"/conffiles
 		fi
 	fi

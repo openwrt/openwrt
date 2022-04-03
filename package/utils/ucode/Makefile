@@ -12,13 +12,13 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/jow-/ucode.git
-PKG_SOURCE_DATE:=2021-10-25
-PKG_SOURCE_VERSION:=a7976c2802a9da737f62bec496c7115211c442a7
-PKG_MIRROR_HASH:=6bc3ddeef41d68fd96894957356472e576c625fcf7277cbb36aa464b8d3c274d
+PKG_SOURCE_DATE:=2022-02-11
+PKG_SOURCE_VERSION:=a29bad9454edcc285f7f37410b6822affede44d1
+PKG_MIRROR_HASH:=eaba0f12c469ef82b772a64f8763e8855dbba81551a78d05f547c0922a7dacad
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
-PKG_ABI_VERSION:=20210730
+PKG_ABI_VERSION:=20220206
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -109,6 +109,17 @@ define Package/ucode-mod-rtnl/description
 endef
 
 
+define Package/ucode-mod-struct
+  $(Package/ucode/default)
+  TITLE+= (struct module)
+  DEPENDS:=ucode
+endef
+
+define Package/ucode-mod-struct/description
+ The struct plugin implemnts Python 3 compatible struct.pack/unpack functionality.
+endef
+
+
 define Package/ucode-mod-ubus
   $(Package/ucode/default)
   TITLE+= (ubus module)
@@ -174,6 +185,11 @@ define Package/ucode-mod-rtnl/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/ucode/rtnl.so $(1)/usr/lib/ucode/
 endef
 
+define Package/ucode-mod-struct/install
+	$(INSTALL_DIR) $(1)/usr/lib/ucode
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/ucode/struct.so $(1)/usr/lib/ucode/
+endef
+
 define Package/ucode-mod-ubus/install
 	$(INSTALL_DIR) $(1)/usr/lib/ucode
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/ucode/ubus.so $(1)/usr/lib/ucode/
@@ -192,5 +208,6 @@ $(eval $(call BuildPackage,ucode-mod-math))
 $(eval $(call BuildPackage,ucode-mod-nl80211))
 $(eval $(call BuildPackage,ucode-mod-resolv))
 $(eval $(call BuildPackage,ucode-mod-rtnl))
+$(eval $(call BuildPackage,ucode-mod-struct))
 $(eval $(call BuildPackage,ucode-mod-ubus))
 $(eval $(call BuildPackage,ucode-mod-uci))

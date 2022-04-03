@@ -12,15 +12,14 @@ case "$FIRMWARE" in
 	8dev,lima)
 		caldata_extract "art" 0x1000 0x800
 		;;
+	asus,rp-ac66)
+		caldata_extract "art" 0x1000 0x440
+		;;
 	avm,fritz1750e|\
 	avm,fritz4020|\
 	avm,fritz450e|\
 	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
-		;;
-	dlink,dap-2695-a1)
-		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_mac $(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
 	dlink,dir-505|\
 	dlink,dir-825-c1|\
@@ -34,6 +33,7 @@ case "$FIRMWARE" in
 	dlink,dir-859-a1|\
 	nec,wf1200cr|\
 	nec,wg1200cr|\
+	wd,mynet-n600|\
 	wd,mynet-n750)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan24mac")
@@ -72,6 +72,7 @@ case "$FIRMWARE" in
 	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
+	araknis,an-300-ap-i-n|\
 	atheros,db120|\
 	engenius,eap600|\
 	engenius,ecb600|\
@@ -127,9 +128,14 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x1000 0x1000
 		;;
 	openmesh,mr600-v1|\
-	openmesh,mr600-v2)
+	openmesh,mr600-v2|\
+	openmesh,om5p-an)
 		caldata_extract "ART" 0x5000 0x440
 		;;
+	openmesh,om2p-v1)
+		caldata_extract "ART" 0x1000 0x440
+		;;
+	wd,mynet-n600|\
 	wd,mynet-n750)
 		caldata_extract "art" 0x5000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")

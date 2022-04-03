@@ -34,8 +34,7 @@ EXCLUDE_DIRS:= \
 	*.install.flags \
 	*.install \
 	*/doc \
-	*/share/locale \
-	*/llvm-bpf*
+	*/share/locale
 
 SDK_DIRS = \
 		$(STAGING_SUBDIR_HOST) \

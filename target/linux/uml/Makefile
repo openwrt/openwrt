@@ -11,10 +11,9 @@ ifeq ($(HOST_OS),Linux)
 ARCH:=x86_64
 BOARD:=uml
 BOARDNAME:=User Mode Linux
-FEATURES:=squashfs ext4 audio
+FEATURES:=audio ext4 rootfs-part squashfs
 
-KERNEL_PATCHVER:=5.4
-KERNEL_TESTING_PATCHVER:=5.10
+KERNEL_PATCHVER:=5.10
 
 include $(INCLUDE_DIR)/target.mk
 

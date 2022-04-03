@@ -564,6 +564,23 @@ endef
 $(eval $(call KernelPackage,veth))
 
 
+define KernelPackage/vrf
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Virtual Routing and Forwarding (Lite)
+  DEPENDS:=@KERNEL_NET_L3_MASTER_DEV
+  KCONFIG:=CONFIG_NET_VRF
+  FILES:=$(LINUX_DIR)/drivers/net/vrf.ko
+  AUTOLOAD:=$(call AutoLoad,30,vrf)
+endef
+
+define KernelPackage/vrf/description
+ This option enables the support for mapping interfaces into VRF's. The
+ support enables VRF devices.
+endef
+
+$(eval $(call KernelPackage,vrf))
+
+
 define KernelPackage/slhc
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   HIDDEN:=1
@@ -969,6 +986,24 @@ endef
 $(eval $(call KernelPackage,tcp-hybla))
 
 
+define KernelPackage/tcp-scalable
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=TCP-Scalable congestion control algorithm
+  KCONFIG:=CONFIG_TCP_CONG_SCALABLE
+  FILES:=$(LINUX_DIR)/net/ipv4/tcp_scalable.ko
+  AUTOLOAD:=$(call AutoProbe,tcp-scalable)
+endef
+
+define KernelPackage/tcp-scalable/description
+  Scalable TCP is a sender-side only change to TCP which uses a
+	MIMD congestion control algorithm which has some nice scaling
+	properties, though is known to have fairness issues.
+	See http://www.deneholme.net/tom/scalable/
+endef
+
+$(eval $(call KernelPackage,tcp-scalable))
+
+
 define KernelPackage/ax25
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=AX25 support
@@ -1076,7 +1111,8 @@ define KernelPackage/sctp
      CONFIG_SCTP_DEFAULT_COOKIE_HMAC_MD5=y
   FILES:= $(LINUX_DIR)/net/sctp/sctp.ko
   AUTOLOAD:= $(call AutoLoad,32,sctp)
-  DEPENDS:=+kmod-lib-crc32c +kmod-crypto-md5 +kmod-crypto-hmac
+  DEPENDS:=+kmod-lib-crc32c +kmod-crypto-md5 +kmod-crypto-hmac \
+    +LINUX_5_15:kmod-udptunnel4 +LINUX_5_15:kmod-udptunnel6
 endef
 
 define KernelPackage/sctp/description
@@ -1258,6 +1294,31 @@ define KernelPackage/netlink-diag/description
 endef
 
 $(eval $(call KernelPackage,netlink-diag))
+
+
+define KernelPackage/inet-diag
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=INET diag support for ss utility
+  KCONFIG:= \
+	CONFIG_INET_DIAG \
+	CONFIG_INET_TCP_DIAG \
+	CONFIG_INET_UDP_DIAG \
+	CONFIG_INET_RAW_DIAG \
+	CONFIG_INET_DIAG_DESTROY=n
+  FILES:= \
+	$(LINUX_DIR)/net/ipv4/inet_diag.ko \
+	$(LINUX_DIR)/net/ipv4/tcp_diag.ko \
+	$(LINUX_DIR)/net/ipv4/udp_diag.ko \
+	$(LINUX_DIR)/net/ipv4/raw_diag.ko
+  AUTOLOAD:=$(call AutoLoad,31,inet_diag tcp_diag udp_diag raw_diag)
+endef
+
+define KernelPackage/inet-diag/description
+Support for INET (TCP, DCCP, etc) socket monitoring interface used by
+native Linux tools such as ss.
+endef
+
+$(eval $(call KernelPackage,inet-diag))
 
 
 define KernelPackage/wireguard

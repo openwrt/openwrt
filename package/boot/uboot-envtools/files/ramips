@@ -52,6 +52,8 @@ ravpower,rp-wd03)
 jcg,q20)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
+beeline,smartbox-flash|\
+linksys,ea6350-v4|\
 linksys,ea7300-v1|\
 linksys,ea7300-v2|\
 linksys,ea7500-v2|\
@@ -68,6 +70,11 @@ zyxel,nr7101)
 	idx="$(find_mtd_index Config)"
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x80000"
+	;;
+xiaomi,mi-router-cr6606|\
+xiaomi,mi-router-cr6608|\
+xiaomi,mi-router-cr6609)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
 	;;
 esac
 

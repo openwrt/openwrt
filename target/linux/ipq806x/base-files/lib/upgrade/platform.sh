@@ -45,6 +45,11 @@ platform_do_upgrade() {
 	linksys,ea8500)
 		platform_do_upgrade_linksys "$1"
 		;;
+	meraki,mr42 |\
+	meraki,mr52)
+		CI_KERNPART="bootkernel2"
+		nand_do_upgrade "$1"
+		;;
 	tplink,ad7200 |\
 	tplink,c2600)
 		PART_NAME="os-image:rootfs"
@@ -52,7 +57,6 @@ platform_do_upgrade() {
 		default_do_upgrade "$1"
 		;;
 	tplink,vr2600v)
-		PART_NAME="kernel:rootfs"
 		MTD_CONFIG_ARGS="-s 0x200000"
 		default_do_upgrade "$1"
 		;;

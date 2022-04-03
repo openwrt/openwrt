@@ -18,7 +18,11 @@ alfa-network,n2q|\
 alfa-network,n5q|\
 alfa-network,pi-wifi4|\
 alfa-network,r36a|\
+alfa-network,tube-2hq|\
 allnet,all-wap02860ac|\
+araknis,an-300-ap-i-n|\
+araknis,an-500-ap-i-ac|\
+araknis,an-700-ap-i-ac|\
 arduino,yun|\
 buffalo,bhr-4grv2|\
 devolo,magic-2-wifi|\
@@ -39,6 +43,7 @@ glinet,gl-ar750s-nor-nand|\
 librerouter,librerouter-v1|\
 netgear,ex6400|\
 netgear,ex7300|\
+netgear,ex7300-v2|\
 netgear,wndr4300-v2|\
 netgear,wndr4500-v3|\
 netgear,wnr1000-v2|\
@@ -57,6 +62,8 @@ openmesh,mr900-v2|\
 openmesh,mr1750-v1|\
 openmesh,mr1750-v2|\
 openmesh,om5p|\
+openmesh,om5p-an|\
+openmesh,om5p-ac-v1|\
 openmesh,om5p-ac-v2|\
 samsung,wam250|\
 ubnt,nanostation-m|\
@@ -101,6 +108,7 @@ netgear,wndr4300tn|\
 netgear,wndr4300sw)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x20000"
 	;;
+openmesh,om2p-v1|\
 openmesh,om2p-v2|\
 openmesh,om2p-v4|\
 openmesh,om2p-hs-v1|\
@@ -117,6 +125,11 @@ qihoo,c301)
 	;;
 wallys,dr531)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0xf800" "0x10000"
+	;;
+zte,mf286|\
+zte,mf286a|\
+zte,mf286r)
+	ubootenv_add_uci_config "/dev/mtd7" "0x0" "0x20000" "0x10000"
 	;;
 esac
 

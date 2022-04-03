@@ -28,12 +28,17 @@
 	status = "okay";
 };
 
-&EBC0 {
-	ndfc@1,0 {
-		status = "okay";
-		/* 32 MiB SLC NAND Flash */
-		nand {
-			nand-is-boot-medium;
+&ndfc {
+	status = "okay";
+	/* 32 MiB SLC NAND Flash */
+
+	nand {
+		nand-is-boot-medium;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partition@0 {
 				label = "u-boot";
@@ -204,10 +209,6 @@
 };
 
 &PCIE0 {
-	status = "okay";
-};
-
-&MSI {
 	status = "okay";
 };
 

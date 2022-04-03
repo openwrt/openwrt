@@ -204,7 +204,7 @@ TARGET_DEVICES += avm_fritz7430
 define Device/bt_homehub-v5a
   $(Device/dsa-migration)
   $(Device/NAND)
-  DEVICE_VENDOR := British Telecom
+  DEVICE_VENDOR := British Telecom (BT)
   DEVICE_MODEL := Home Hub 5
   DEVICE_VARIANT := Type A
   BOARD_NAME := BTHOMEHUBV5A
@@ -282,6 +282,8 @@ define Device/zyxel_p-2812hnu-f3
   DEVICE_VARIANT := F3
   BOARD_NAME := P2812HNUF3
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic-wolfssl kmod-usb-dwc2
+  KERNEL_SIZE := 2048k
   SUPPORTED_DEVICES += P2812HNUF3
+  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_p-2812hnu-f3

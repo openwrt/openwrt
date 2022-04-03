@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rpcd
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/rpcd.git
-PKG_MIRROR_HASH:=98071b4a1ce983a0e738d7e4a2f6e52b7f6db19f99510ddef430093314134ca4
-PKG_SOURCE_DATE:=2021-11-04
-PKG_SOURCE_VERSION:=d11ffe9383ae0ec34836421926364b24c1d891ca
+PKG_MIRROR_HASH:=186a7246c610fecc282b0966213350ff4508b0db88739345e7c79792db0423ce
+PKG_SOURCE_DATE:=2022-02-07
+PKG_SOURCE_VERSION:=909f2a04763dbc745488384b24281eca180452d6
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 
 PKG_LICENSE:=ISC
@@ -72,7 +72,7 @@ endef
 # 3: plugin title/description
 define BuildPlugin
 
-  PKG_CONFIG_DEPENDS += CONFIG_PACKAGE_luci-rpc-mod-$(1)
+  PKG_CONFIG_DEPENDS += CONFIG_PACKAGE_rpcd-mod-$(1)
 
   define Package/rpcd-mod-$(1)
     $(Package/rpcd/default)
@@ -102,3 +102,4 @@ $(eval $(call BuildPackage,rpcd))
 $(eval $(call BuildPlugin,file,,Provides ubus calls for file and directory operations.))
 $(eval $(call BuildPlugin,rpcsys,,Provides ubus calls for sysupgrade and password changing.))
 $(eval $(call BuildPlugin,iwinfo,+libiwinfo,Provides ubus calls for accessing iwinfo data.))
+$(eval $(call BuildPlugin,ucode,+libucode,Allows implementing plugins using ucode scripts.))

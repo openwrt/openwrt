@@ -13,8 +13,13 @@ ath79_setup_interfaces()
 	allnet,all-wap02860ac|\
 	alfa-network,ap121f|\
 	alfa-network,pi-wifi4|\
+	alfa-network,tube-2hq|\
+	araknis,an-300-ap-i-n|\
+	araknis,an-500-ap-i-ac|\
+	araknis,an-700-ap-i-ac|\
 	arduino,yun|\
 	aruba,ap-105|\
+	asus,rp-ac66|\
 	avm,fritz1750e|\
 	avm,fritz300e|\
 	avm,fritzdvbc|\
@@ -43,6 +48,7 @@ ath79_setup_interfaces()
 	meraki,mr16|\
 	netgear,ex6400|\
 	netgear,ex7300|\
+	netgear,ex7300-v2|\
 	ocedo,koala|\
 	ocedo,raccoon|\
 	onion,omega|\
@@ -65,6 +71,7 @@ ath79_setup_interfaces()
 	tplink,cpe610-v2|\
 	tplink,cpe710-v1|\
 	tplink,eap225-outdoor-v1|\
+	tplink,eap225-v1|\
 	tplink,eap225-v3|\
 	tplink,eap245-v1|\
 	tplink,re350k-v1|\
@@ -82,6 +89,7 @@ ath79_setup_interfaces()
 	ubnt,lap-120|\
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac|\
+	ubnt,nanobeam-ac-xc|\
 	ubnt,nanobridge-m|\
 	ubnt,nanostation-ac-loco|\
 	ubnt,nanostation-loco-m|\
@@ -129,7 +137,8 @@ ath79_setup_interfaces()
 	pcs,cr3000|\
 	tplink,archer-c58-v1|\
 	tplink,archer-c59-v1|\
-	tplink,archer-c59-v2)
+	tplink,archer-c59-v2|\
+	wd,mynet-n600)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
@@ -185,6 +194,7 @@ ath79_setup_interfaces()
 	compex,wpj531-16m|\
 	openmesh,a40|\
 	openmesh,a60|\
+	openmesh,om2p-v1|\
 	openmesh,om2p-v4|\
 	openmesh,om2p-hs-v4|\
 	plasmacloud,pa300|\
@@ -265,6 +275,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:4" "3:lan:3" "4:lan:2" "5:lan:1" "1:wan"
 		;;
+	embeddedwireless,balin)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "5:lan:1" "4:lan:2" "3:wan"
+		;;
 	embeddedwireless,dorin)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
@@ -301,6 +315,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 		;;
+	jjplus,jwap230)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "5:wan:1" "1:lan:2" "6@eth1"
+		;;
 	joyit,jt-or750i)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
@@ -322,6 +340,7 @@ ath79_setup_interfaces()
 		;;
 	mercury,mw4530r-v1|\
 	tplink,archer-a7-v5|\
+	tplink,archer-a9-v6|\
 	tplink,archer-c6-v2|\
 	tplink,archer-c6-v2-us|\
 	tplink,archer-c7-v4|\
@@ -429,6 +448,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "5:lan:4"
 		;;
+	tplink,tl-wr841hp-v2|\
 	tplink,tl-wr842n-v2|\
 	tplink,tl-wr941hp-v1)
 		ucidef_set_interface_wan "eth1"
@@ -514,6 +534,7 @@ ath79_setup_macs()
 	alfa-network,n5q|\
 	alfa-network,pi-wifi4|\
 	alfa-network,r36a|\
+	alfa-network,tube-2hq|\
 	engenius,eap300-v2|\
 	engenius,ens202ext-v1)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
@@ -586,6 +607,7 @@ ath79_setup_macs()
 		;;
 	dlink,dir-859-a1|\
 	qihoo,c301|\
+	wd,mynet-n600|\
 	wd,mynet-n750)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
@@ -673,6 +695,7 @@ ath79_setup_macs()
 		label_mac=$lan_mac
 		;;
 	tplink,archer-a7-v5|\
+	tplink,archer-a9-v6|\
 	tplink,archer-c7-v4|\
 	tplink,archer-c7-v5|\
 	tplink,tl-wr1043nd-v4|\
@@ -699,6 +722,7 @@ ath79_setup_macs()
 		;;
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac-gen2|\
+	ubnt,nanobeam-ac-xc|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2)
 		label_mac=$(mtd_get_mac_binary art 0x5006)

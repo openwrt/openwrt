@@ -3,8 +3,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/copy-file
-	cat "$(1)" > "$@"
+DEVICE_VARS += DTB_SIZE
+
+define Build/dtb
+	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb,,--space $(DTB_SIZE))
 endef
 
 define Device/Default

@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=aarch64
 BOARD:=bcm4908
 BOARDNAME:=Broadcom BCM4908 (ARMv8A CPUs Brahma-B53)
-FEATURES:=squashfs nand usb pci pcie gpio
+FEATURES:=squashfs nand usb gpio
 CPU_TYPE:=cortex-a53
 SUBTARGETS:=generic
 
@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/target.mk
 KERNELNAME:=Image dtbs
 
 DEFAULT_PACKAGES += \
-	bcm4908img \
+	bcm4908img fdt-utils uboot-envtools \
 	kmod-gpio-button-hotplug \
 	kmod-usb-ohci kmod-usb2 kmod-usb3
 

@@ -6,8 +6,8 @@ RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {
 	case "$(board_name)" in
+	asus,rt-ac42u |\
 	asus,rt-ac58u)
-		CI_UBIPART="UBI_DEV"
 		local ubidev=$(nand_find_ubi $CI_UBIPART)
 		local asus_root=$(nand_find_volume $ubidev jffs2)
 
@@ -20,6 +20,29 @@ to install the filesystem.
 
 You need to delete the jffs2 partition first:
 # ubirmvol /dev/ubi0 --name=jffs2
+
+Once this is done. Retry.
+EOF
+		return 1
+		;;
+	zte,mf286d)
+		CI_UBIPART="rootfs"
+		local mtdnum="$( find_mtd_index $CI_UBIPART )"
+		[ ! "$mtdnum" ] && return 1
+		ubiattach -m "$mtdnum" || true
+		local ubidev="$( nand_find_ubi $CI_UBIPART )"
+		local ubi_rootfs=$(nand_find_volume $ubidev ubi_rootfs)
+		local ubi_rootfs_data=$(nand_find_volume $ubidev ubi_rootfs_data)
+
+		[ -n "$ubi_rootfs" ] || [ -n "$ubi_rootfs_data" ] || return 0
+
+		cat << EOF
+ubi_rootfs partition is still present.
+
+You need to delete the stock partition first:
+# ubirmvol /dev/ubi0 -N ubi_rootfs
+Please also delete ubi_rootfs_data, if exist:
+# ubirmvol /dev/ubi0 -N ubi_rootfs_data
 
 Once this is done. Retry.
 EOF
@@ -55,6 +78,24 @@ zyxel_do_upgrade() {
 	fi
 }
 
+platform_do_upgrade_mikrotik_nand() {
+	local fw_mtd=$(find_mtd_part kernel)
+	fw_mtd="${fw_mtd/block/}"
+	[ -n "$fw_mtd" ] || return
+
+	local board_dir=$(tar tf "$1" | grep -m 1 '^sysupgrade-.*/$')
+	board_dir=${board_dir%/}
+	[ -n "$board_dir" ] || return
+
+	local kernel_len=$(tar xf "$1" ${board_dir}/kernel -O | wc -c)
+	[ -n "$kernel_len" ] || return
+
+	tar xf "$1" ${board_dir}/kernel -O | ubiformat "$fw_mtd" -y -S $kernel_len -f -
+
+	CI_KERNPART="none"
+	nand_do_upgrade "$1"
+}
+
 platform_do_upgrade() {
 	case "$(board_name)" in
 	8dev,jalapeno |\
@@ -78,6 +119,12 @@ platform_do_upgrade() {
 	qxwlan,e2600ac-c2)
 		nand_do_upgrade "$1"
 		;;
+	glinet,gl-b2200)
+		CI_KERNPART="0:HLOS"
+		CI_ROOTPART="rootfs"
+		CI_DATAPART="rootfs_data"
+		emmc_do_upgrade "$1"
+		;;
 	alfa-network,ap120c-ac)
 		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
 		if [ "$part" = "rootfs1" ]; then
@@ -93,8 +140,8 @@ platform_do_upgrade() {
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
+	asus,rt-ac42u |\
 	asus,rt-ac58u)
-		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
@@ -105,6 +152,13 @@ platform_do_upgrade() {
 	compex,wpj419)
 		nand_do_upgrade "$1"
 		;;
+	google,wifi)
+		export_bootdevice
+		export_partdevice CI_ROOTDEV 0
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		emmc_do_upgrade "$1"
+		;;
 	linksys,ea6350v3 |\
 	linksys,ea8300 |\
 	linksys,mr8300)
@@ -114,10 +168,15 @@ platform_do_upgrade() {
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
+	mikrotik,cap-ac|\
 	mikrotik,hap-ac2|\
+	mikrotik,lhgg-60ad|\
 	mikrotik,sxtsq-5-ac)
 		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
 		default_do_upgrade "$1"
+		;;
+	mikrotik,hap-ac3)
+		platform_do_upgrade_mikrotik_nand "$1"
 		;;
 	netgear,rbr50 |\
 	netgear,rbs50 |\
@@ -132,6 +191,11 @@ platform_do_upgrade() {
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
+	teltonika,rutx10 |\
+	zte,mf286d)
+		CI_UBIPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
 	zyxel,nbg6617)
 		zyxel_do_upgrade "$1"
 		;;
@@ -139,4 +203,14 @@ platform_do_upgrade() {
 		default_do_upgrade "$1"
 		;;
 	esac
+}
+
+platform_copy_config() {
+	case "$(board_name)" in
+	glinet,gl-b2200 |\
+	google,wifi)
+		emmc_copy_config
+		;;
+	esac
+	return 0;
 }

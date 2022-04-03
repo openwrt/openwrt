@@ -81,6 +81,10 @@ dlink,dwr-960)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x2e"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
 	;;
+dlink,dwr-961-a1)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x3c"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x02"
+	;;
 domywifi,dm202|\
 domywifi,dm203|\
 domywifi,dw22d)
@@ -125,6 +129,9 @@ hnet,c108)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	ucidef_set_led_netdev "modem" "modem" "green:modem" "wwan0"
 	;;
+humax,e2)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
+	;;
 iodata,wn-ac1167gr|\
 iodata,wn-ac733gr3)
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy0radio"
@@ -154,7 +161,8 @@ lenovo,newifi-y1s)
 	ucidef_set_led_netdev "wan" "WAN" "blue:internet" "eth0.2" "tx rx"
 	;;
 netgear,ex2700|\
-netgear,wn3000rp-v3)
+netgear,wn3000rp-v3|\
+netgear,wn3100rp-v2)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:router" "wlan0"
 	;;
 netgear,ex3700|\
@@ -198,6 +206,11 @@ tplink,archer-mr200)
 	;;
 tplink,re200-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
+	;;
+wavlink,wl-wn535k1)
+	ucidef_set_led_switch "lan1" "lan2" "green:lan1" "switch0" "0x04"
+	ucidef_set_led_switch "lan2" "lan2" "green:lan2" "switch0" "0x20"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
 	;;
 wavlink,wl-wn579x3)
 	ucidef_set_led_switch "lan" "lan" "blue:lan" "switch0" "0x20"

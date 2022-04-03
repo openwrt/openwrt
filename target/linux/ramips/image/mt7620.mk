@@ -61,13 +61,18 @@ TARGET_DEVICES += alfa-network_tube-e4g
 
 define Device/amit_jboot
   DLINK_IMAGE_OFFSET := 0x10000
-  KERNEL := $(KERNEL_DTB)
-  KERNEL_SIZE := 2048k
+  KERNEL := $(KERNEL_DTB) | uImage lzma -M 0x4f4b4c49
+  LOADER_FLASH_OFFS := 0x20000
+  LOADER_TYPE := bin
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile | pad-to 64k | lzma | \
+	pad-to 65480
   IMAGES += factory.bin
-  IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
-  IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | mkdlinkfw-loader | \
+	pad-rootfs | append-metadata
+  IMAGE/factory.bin := append-kernel | append-rootfs | mkdlinkfw-loader | \
+	pad-rootfs | mkdlinkfw-factory
   DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-ohci
-  DEFAULT := n
 endef
 
 define Device/asus_rp-n53
@@ -194,6 +199,7 @@ define Device/dlink_dir-510l
   $(Device/amit_jboot)
   SOC := mt7620a
   IMAGE_SIZE := 14208k
+  LOADER_FLASH_OFFS := 0x220000
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-510L
   DEVICE_PACKAGES += kmod-mt76x0e
@@ -307,6 +313,21 @@ define Device/dlink_dwr-960
 	kmod-mt76x0e
 endef
 TARGET_DEVICES += dlink_dwr-960
+
+define Device/dlink_dwr-961-a1
+  $(Device/amit_jboot)
+  SOC := mt7620a
+  IMAGE_SIZE := 16256k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DWR-961
+  DEVICE_VARIANT := A1
+  DLINK_ROM_ID := DLK6E3813001
+  DLINK_FAMILY_MEMBER := 0x6E38
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  DEVICE_PACKAGES += kmod-mt76x2 kmod-usb-net-qmi-wwan kmod-usb-serial-option \
+	uqmi
+endef
+TARGET_DEVICES += dlink_dwr-961-a1
 
 define Device/domywifi_dm202
   SOC := mt7620a
@@ -519,6 +540,20 @@ define Device/hnet_c108
   SUPPORTED_DEVICES += c108
 endef
 TARGET_DEVICES += hnet_c108
+
+define Device/humax_e2
+  SOC := mt7620a
+  IMAGE_SIZE := 7744k
+  DEVICE_VENDOR := HUMAX
+  DEVICE_MODEL := E2
+  DEVICE_ALT0_VENDOR := HUMAX
+  DEVICE_ALT0_MODEL := QUANTUM E2
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m RN75 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt76x0e
+endef
+TARGET_DEVICES += humax_e2
 
 define Device/sunvalley_filehub_common
   SOC := mt7620n
@@ -783,6 +818,22 @@ define Device/netgear_wn3000rp-v3
   SUPPORTED_DEVICES += wn3000rpv3
 endef
 TARGET_DEVICES += netgear_wn3000rp-v3
+
+define Device/netgear_wn3100rp-v2
+  SOC := mt7620a
+  IMAGE_SIZE := 7872k
+  NETGEAR_HW_ID := 29764883+8+0+32+2x2+0
+  NETGEAR_BOARD_ID := WN3100RPv2
+  BLOCKSIZE := 4k
+  IMAGES += factory.bin
+  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
+	append-uImage-fakehdr filesystem
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | netgear-dni
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WN3100RP
+  DEVICE_VARIANT := v2
+endef
+TARGET_DEVICES += netgear_wn3100rp-v2
 
 define Device/netis_wf2770
   SOC := mt7620a
@@ -1145,6 +1196,18 @@ define Device/wavlink_wl-wn530hg4
 endef
 TARGET_DEVICES += wavlink_wl-wn530hg4
 
+define Device/wavlink_wl-wn535k1
+  SOC := mt7620a
+  IMAGE_SIZE := 7360k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN535K1
+  DEVICE_ALT0_VENDOR := Talius
+  DEVICE_ALT0_MODEL := TAL-WMESH1
+  KERNEL_INITRAMFS_SUFFIX := -WN535K1$$(KERNEL_SUFFIX)
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+endef
+TARGET_DEVICES += wavlink_wl-wn535k1
+
 define Device/wavlink_wl-wn579x3
   SOC := mt7620a
   IMAGE_SIZE := 7744k
@@ -1153,6 +1216,17 @@ define Device/wavlink_wl-wn579x3
   DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
 endef
 TARGET_DEVICES += wavlink_wl-wn579x3
+
+define Device/wevo_air-duo
+  SOC := mt7620a
+  IMAGE_SIZE := 15040k
+  UIMAGE_NAME := AIR DUO(0.0.0)
+  KERNEL_INITRAMFS_SUFFIX := .upload
+  DEVICE_VENDOR := WeVO
+  DEVICE_MODEL := AIR DUO
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-storage-uas
+endef
+TARGET_DEVICES += wevo_air-duo
 
 define Device/wrtnode_wrtnode
   SOC := mt7620n

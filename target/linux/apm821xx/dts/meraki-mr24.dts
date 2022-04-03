@@ -38,13 +38,17 @@
 	status = "okay";
 };
 
-&EBC0 {
+&ndfc {
 	/* Ikarem has 32MB of NAND */
-	ndfc@1,0 {
-		status = "okay";
-		/* 32 MiB NAND Flash */
-		nand {
-			nand-is-boot-medium;
+	status = "okay";
+
+	nand {
+		nand-is-boot-medium;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partition@0 {
 				label = "u-boot";
@@ -59,10 +63,10 @@
 				 * blocks (64KiB) in order to have spares
 				 * around for bad block management
 				 */
-				label = "u-boot-env";
-				reg = <0x00150000 0x00010000>;
-				read-only;
-			};
+					label = "u-boot-env";
+					reg = <0x00150000 0x00010000>;
+					read-only;
+				};
 
 			partition@160000 {
 				/*
@@ -243,8 +247,4 @@
 			};
 		};
 	};
-};
-
-&MSI {
-	status = "okay";
 };

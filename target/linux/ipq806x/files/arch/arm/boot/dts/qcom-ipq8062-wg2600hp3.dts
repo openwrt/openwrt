@@ -317,6 +317,17 @@
 					label = "ART";
 					reg = <0x02e0000 0x0040000>;
 					read-only;
+					compatible = "nvmem-cells";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_ART_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_ART_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 
 				partition@320000 {
@@ -360,8 +371,8 @@
 
 			qcom,ath10k-calibration-variant = "NEC-Platforms-WG2600HP3";
 
-			nvmem-cells = <&macaddr_PRODUCTDATA_12>;
-			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&macaddr_PRODUCTDATA_12>, <&precal_ART_1000>;
+			nvmem-cell-names = "mac-address", "pre-calibration";
 		};
 	};
 };
@@ -383,8 +394,8 @@
 			ieee80211-freq-limit = <2400000 2483000>;
 			qcom,ath10k-calibration-variant = "NEC-Platforms-WG2600HP3";
 
-			nvmem-cells = <&macaddr_PRODUCTDATA_c>;
-			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&macaddr_PRODUCTDATA_c>, <&precal_ART_5000>;
+			nvmem-cell-names = "mac-address", "pre-calibration";
 		};
 	};
 };

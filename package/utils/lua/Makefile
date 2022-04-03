@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lua
 PKG_VERSION:=5.1.5
-PKG_RELEASE:=9
+PKG_RELEASE:=10
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
@@ -125,7 +125,7 @@ endif
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) \
-		CC="$(HOSTCC) -std=gnu99" \
+		CC="$(HOSTCC) $(HOST_FPIC) -std=gnu99" \
 		$(LUA_OS)
 endef
 

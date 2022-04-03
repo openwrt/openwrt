@@ -3,8 +3,10 @@
 # Copyright (C) 2016 LEDE-Project.org
 #
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv'
+RAMFS_COPY_BIN='fw_printenv fw_setenv strings'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
+
+PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
@@ -26,6 +28,17 @@ platform_do_upgrade() {
 	buffalo,ls421de)
 		nand_do_upgrade "$1"
 		;;
+	ctera,c200-v2)
+	part=$(find_mtd_part "active_bank")
+
+	if [ -n "$part" ]; then
+		CI_KERNPART="$(strings $part | grep bank)"
+		nand_do_upgrade "$1"
+	else
+		echo "active_bank partition missed!"
+		return 1
+	fi
+	;;
 	cznic,turris-omnia|\
 	kobol,helios4|\
 	solidrun,clearfog-base-a1|\

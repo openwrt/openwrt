@@ -24,11 +24,6 @@ config KERNEL_PRINTK
 	bool "Enable support for printk"
 	default y
 
-config KERNEL_CRASHLOG
-	bool "Crash logging"
-	depends on !(arm || powerpc || sparc || TARGET_uml || i386 || x86_64)
-	default y
-
 config KERNEL_SWAP
 	bool "Support for paging of anonymous memory (swap)"
 	default y if !SMALL_FLASH
@@ -426,6 +421,11 @@ config KERNEL_KPROBES
 config KERNEL_KPROBE_EVENTS
 	bool
 	default y if KERNEL_KPROBES
+
+config KERNEL_BPF_KPROBE_OVERRIDE
+	bool
+	depends on KERNEL_KPROBES
+	default n
 
 config KERNEL_AIO
 	bool "Compile the kernel with asynchronous IO support"
@@ -991,6 +991,19 @@ config KERNEL_IP_MROUTE
 	  Multicast routing requires a multicast routing daemon in
 	  addition to kernel support.
 
+if KERNEL_IP_MROUTE
+
+	config KERNEL_IP_MROUTE_MULTIPLE_TABLES
+		def_bool y
+
+	config KERNEL_IP_PIMSM_V1
+		def_bool y
+
+	config KERNEL_IP_PIMSM_V2
+		def_bool y
+
+endif
+
 #
 # IPv6 configuration
 #
@@ -1013,8 +1026,15 @@ if KERNEL_IPV6
 		  Multicast routing requires a multicast routing daemon in
 		  addition to kernel support.
 
-	config KERNEL_IPV6_PIMSM_V2
-		def_bool n
+	if KERNEL_IPV6_MROUTE
+
+		config KERNEL_IPV6_MROUTE_MULTIPLE_TABLES
+			def_bool y
+
+		config KERNEL_IPV6_PIMSM_V2
+			def_bool y
+
+	endif
 
 	config KERNEL_IPV6_SEG6_LWTUNNEL
 		bool "Enable support for lightweight tunnels"
@@ -1026,6 +1046,16 @@ if KERNEL_IPV6
 		def_bool n
 
 endif
+
+#
+# Miscellaneous network configuration
+#
+
+config KERNEL_NET_L3_MASTER_DEV
+	bool "L3 Master device support"
+	help
+	  This module provides glue between core networking code and device
+	  drivers to support L3 master devices like VRF.
 
 #
 # NFS related symbols

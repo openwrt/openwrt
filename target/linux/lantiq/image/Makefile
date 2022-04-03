@@ -49,12 +49,35 @@ define Build/fullimage
 	rm $@.tmp
 endef
 
-DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY
+define Build/loader-okli-compile
+	rm -rf $@.src
+	$(MAKE) -C lzma-loader \
+		PKG_BUILD_DIR="$@.src" \
+		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
+		PLATFORM="lantiq" \
+		LZMA_TEXT_START=0x82000000 \
+		LOADADDR=0x80002000 \
+		FLASH_START=0x10000000 \
+		FLASH_OFFS=$(LOADER_FLASH_OFFS) \
+		FLASH_MAX=0x0 \
+		$(1) compile loader.bin
+	mv "$@.bin" "$@"
+	rm -rf $@.src
+endef
+
+define Build/prepend-loader-okli
+	cat "$(KDIR)/loader-$(word 1,$(1)).bin" "$@" >> "$@.new"
+	mv "$@.new" "$@"
+endef
+
+DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY LOADER_FLASH_OFFS
+
 DTS_DIR := $(DTS_DIR)/lantiq
 
 # Shared device definition: applies to every defined device
 define Device/Default
   PROFILES = Default
+  COMPILE :=
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_NAME = $$(KERNEL_NAME)-initramfs
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
@@ -103,6 +126,16 @@ define Device/AVM
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-avm-fakeroot | \
 	append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+
+define Device/AVM_preloader
+  DEVICE_VENDOR := AVM
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile | lzma | eva-image | \
+	pad-to 64k | append-avm-fakeroot | pad-to 4k
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | \
+	prepend-loader-okli $(1)
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | eva-image
 endef
 
 ifeq ($(SUBTARGET),ase)

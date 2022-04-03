@@ -141,7 +141,7 @@ $(eval $(call KernelPackage,mii))
 define KernelPackage/mdio-devres
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Supports MDIO device registration
-  DEPENDS:=@LINUX_5_10 +kmod-libphy PACKAGE_kmod-of-mdio:kmod-of-mdio
+  DEPENDS:=@(LINUX_5_10||LINUX_5_15) +kmod-libphy PACKAGE_kmod-of-mdio:kmod-of-mdio
   KCONFIG:=CONFIG_MDIO_DEVRES
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/net/phy/mdio_devres.ko
@@ -195,6 +195,21 @@ define KernelPackage/et131x/description
 endef
 
 $(eval $(call KernelPackage,et131x))
+
+define KernelPackage/phy-microchip
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Microchip Ethernet PHY driver
+   KCONFIG:=CONFIG_MICROCHIP_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/microchip.ko
+   AUTOLOAD:=$(call AutoLoad,18,microchip,1)
+endef
+
+define KernelPackage/phy-microchip/description
+   Supports the LAN88XX PHYs.
+endef
+
+$(eval $(call KernelPackage,phy-microchip))
 
 
 define KernelPackage/phylib-broadcom
@@ -562,7 +577,7 @@ $(eval $(call KernelPackage,8139cp))
 define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek +LINUX_5_10:kmod-mdio-devres
+  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek +(LINUX_5_10||LINUX_5_15):kmod-mdio-devres
   KCONFIG:= \
     CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
@@ -688,7 +703,7 @@ $(eval $(call KernelPackage,igbvf))
 define KernelPackage/ixgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +LINUX_5_10:kmod-mdio-devres
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +(LINUX_5_10||LINUX_5_15):kmod-mdio-devres
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=y \
@@ -1019,13 +1034,28 @@ endef
 
 $(eval $(call KernelPackage,forcedeth))
 
+define KernelPackage/fixed-phy
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MDIO Bus/PHY emulation with fixed speed/link PHYs
+  DEPENDS:=+kmod-libphy
+  KCONFIG:=CONFIG_FIXED_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko
+  AUTOLOAD:=$(call AutoProbe,fixed_phy)
+endef
+
+define KernelPackage/fixed-phy/description
+ Kernel driver for "fixed" MDIO Bus to cover the boards
+ and devices that use PHYs that are not connected to the real MDIO bus.
+endef
+
+$(eval $(call KernelPackage,fixed-phy))
+
 define KernelPackage/of-mdio
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=OpenFirmware MDIO support
-  DEPENDS:=+kmod-libphy @!TARGET_x86
+  DEPENDS:=+kmod-libphy +kmod-fixed-phy @!TARGET_x86
   KCONFIG:=CONFIG_OF_MDIO
   FILES:= \
-	$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko \
 	$(LINUX_DIR)/drivers/of/of_mdio.ko@lt5.10 \
 	$(LINUX_DIR)/drivers/net/mdio/of_mdio.ko@ge5.10
   AUTOLOAD:=$(call AutoLoad,41,of_mdio)

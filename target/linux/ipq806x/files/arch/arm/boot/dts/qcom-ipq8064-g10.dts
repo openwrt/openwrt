@@ -172,7 +172,7 @@
 	};
 };
 
-&nand_controller {
+&nand {
 	status = "okay";
 
 	pinctrl-0 = <&nand_pins>;
@@ -186,6 +186,9 @@
 		nand-bus-width = <8>;
 		nand-ecc-step-size = <512>;
 
+		nand-is-boot-medium;
+		qcom,boot_pages_size = <0x1200000>;
+
 		partitions {
 			compatible = "qcom,smem-part";
 		};
@@ -194,10 +197,36 @@
 
 &pcie0 {
 	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi5g: wifi@1,0 {
+			reg = <0x00010000 0 0 0 0>;
+			compatible = "qcom,ath10k";
+			qcom,ath10k-calibration-variant = "ASRock-G10";
+		};
+	};
 };
 
 &pcie1 {
 	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi2g: wifi@1,0 {
+			reg = <0x00010000 0 0 0 0>;
+			compatible = "qcom,ath10k";
+			qcom,ath10k-calibration-variant = "ASRock-G10";
+		};
+	};
 };
 
 &qcom_pinmux {

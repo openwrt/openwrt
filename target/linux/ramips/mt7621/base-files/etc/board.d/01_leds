@@ -11,6 +11,9 @@ asus,rt-n56u-b1)
 	ucidef_set_led_netdev "lan" "LAN link" "blue:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN link" "blue:wan" "wan"
 	;;
+beeline,smartbox-flash)
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
+	;;
 cudy,wr2100)
 	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1"
 	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2"
@@ -55,6 +58,7 @@ gnubee,gb-pc2)
 linksys,e5600)
 	ucidef_set_led_netdev "wan" "wan link" "blue:wan" "wan" "link"
 	;;
+linksys,ea6350-v4|\
 linksys,ea7300-v1|\
 linksys,ea7300-v2|\
 linksys,ea7500-v2|\
@@ -116,14 +120,29 @@ tplink,re650-v1)
 	ucidef_set_led_netdev "eth_act" "LAN act" "green:eth_act" "lan" "tx rx"
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "lan" "link"
 	;;
+tplink,tl-wpa8631p-v3)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
+	;;
 xiaomi,mi-router-ac2100)
 	ucidef_set_led_netdev "wan-blue" "WAN (blue)" "blue:wan" "wan"
+	;;
+xiaomi,mi-router-cr6606|\
+xiaomi,mi-router-cr6608|\
+xiaomi,mi-router-cr6609)
+	ucidef_set_led_netdev "internet" "Internet" "blue:net" "wan"
 	;;
 xiaomi,redmi-router-ac2100)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
 youhua,wr1200js)
 	ucidef_set_led_netdev "internet" "INTERNET" "green:wan" "wan"
+	;;
+zbtlink,zbt-wg1608-16m)
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan-1" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan-2" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN3" "green:lan-3" "lan3"
+	ucidef_set_led_netdev "lan4" "LAN4" "green:lan-4" "lan4"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
 esac
 

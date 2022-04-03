@@ -103,6 +103,7 @@ define Device/ubnt-xm
   IMAGE_SIZE := 7448k
   UBNT_BOARD := XM
   UBNT_CHIP := ar7240
+  UBNT_REVISION := 42.$(UBNT_REVISION)
   UBNT_TYPE := XM
   UBNT_VERSION := 6.0.0
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | uImage lzma
@@ -244,6 +245,15 @@ define Device/ubnt_nanobeam-ac-gen2
   DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct rssileds
 endef
 TARGET_DEVICES += ubnt_nanobeam-ac-gen2
+
+define Device/ubnt_nanobeam-ac-xc
+  $(Device/ubnt-xc)
+  SOC := qca9558
+  DEVICE_MODEL := NanoBeam AC
+  DEVICE_VARIANT := Gen1 (XC)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct rssileds
+endef
+TARGET_DEVICES += ubnt_nanobeam-ac-xc
 
 define Device/ubnt_nanobridge-m
   $(Device/ubnt-xm)
@@ -409,7 +419,7 @@ TARGET_DEVICES += ubnt_routerstation-pro
 
 define Device/ubnt_unifi
   $(Device/ubnt-bz)
-  DEVICE_MODEL := UniFi
+  DEVICE_MODEL := UniFi AP
   SUPPORTED_DEVICES += unifi
 endef
 TARGET_DEVICES += ubnt_unifi

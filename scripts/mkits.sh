@@ -137,7 +137,7 @@ fi
 if [ -n "${ROOTFS}" ]; then
 	dd if="${ROOTFS}" of="${ROOTFS}.pagesync" bs=4096 conv=sync
 	ROOTFS_NODE="
-		rootfs-$ROOTFSNUM {
+		rootfs${REFERENCE_CHAR}$ROOTFSNUM {
 			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} rootfs\";
 			${COMPATIBLE_PROP}
 			data = /incbin/(\"${ROOTFS}.pagesync\");

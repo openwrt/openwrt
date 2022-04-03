@@ -4,6 +4,7 @@
 
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	compatible = "dlink,dir-510l", "ralink,mt7620a-soc";
@@ -85,7 +86,9 @@
 			};
 
 			partition@210000 {
-				compatible = "amit,jimage";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <IH_MAGIC_OKLI>;
+				openwrt,offset = <0x10000>;
 				label = "firmware";
 				reg = <0x210000 0xde0000>;
 			};

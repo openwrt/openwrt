@@ -27,7 +27,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  #include <linux/phy/phy.h>
  #include <linux/platform_device.h>
  #include <linux/interrupt.h>
-@@ -427,7 +428,6 @@ static int brcm_usb_phy_probe(struct pla
+@@ -457,7 +458,6 @@ static int brcm_usb_phy_probe(struct pla
  	struct device_node *dn = pdev->dev.of_node;
  	int err;
  	const char *mode;
@@ -35,7 +35,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  	void (*dvr_init)(struct brcm_usb_init_params *params);
  	const struct match_chip_info *info;
  	struct regmap *rmap;
-@@ -441,8 +441,9 @@ static int brcm_usb_phy_probe(struct pla
+@@ -471,8 +471,9 @@ static int brcm_usb_phy_probe(struct pla
  	priv->ini.family_id = brcmstb_get_family_id();
  	priv->ini.product_id = brcmstb_get_product_id();
  

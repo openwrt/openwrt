@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=5.15-rc6-1
-PKG_RELEASE:=1
-PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.15-rc6/
-PKG_HASH:=9282612c4c02ef9fc9d74405303033f6b53914cd63d631eef0f43155fcd38932
+PKG_VERSION:=5.15.8-1
+PKG_RELEASE:=2
+PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.15.8/
+PKG_HASH:=9f71b659c034f19d156532ec780fcb606cee3c4ccc42e2f8ef18dd3e9f1b6820
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)
@@ -97,7 +97,7 @@ PKG_CONFIG_DEPENDS += \
 define KernelPackage/cfg80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=cfg80211 - wireless configuration API
-  DEPENDS+= +iw +iwinfo +wireless-regdb
+  DEPENDS+= +iw +iwinfo +wireless-regdb +USE_RFKILL:kmod-rfkill
   ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   FILES:= \
 	$(PKG_BUILD_DIR)/compat/compat.ko \
@@ -419,9 +419,15 @@ config-$(call config_package,rsi91x-sdio) += RSI_SDIO
 
 config-$(CONFIG_LEDS_TRIGGERS) += MAC80211_LEDS
 
+C_DEFINES=
+
+ifeq ($(BUILD_VARIANT),smallbuffers)
+	C_DEFINES+= -DCONFIG_ATH10K_SMALLBUFFERS
+endif
+
 MAKE_OPTS:= -C "$(PKG_BUILD_DIR)" \
 	$(KERNEL_MAKE_FLAGS) \
-	EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include $(IREMAP_CFLAGS)" \
+	EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include $(IREMAP_CFLAGS) $(C_DEFINES)" \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=true \
 	KLIB=$(TARGET_MODULES_DIR) \

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-// TODO: not really used
-struct rtl838x_phy_priv {
+struct rtl83xx_shared_private {
 	char *name;
 };
 
@@ -30,6 +29,7 @@ struct __attribute__ ((__packed__)) fw_header {
 #define PHY_ID_RTL8218B_E	0x001cc981
 #define PHY_ID_RTL8218D		0x001cc983
 #define PHY_ID_RTL8218B_I	0x001cca40
+#define PHY_ID_RTL8221B		0x001cc849
 #define PHY_ID_RTL8226		0x001cc838
 #define PHY_ID_RTL8390_GENERIC	0x001ccab0
 #define PHY_ID_RTL8393_I	0x001c8393
@@ -58,3 +58,11 @@ struct __attribute__ ((__packed__)) fw_header {
 /* Registers of the internal Serdes of the 9300 */
 #define RTL930X_SDS_INDACS_CMD			(0x03B0)
 #define RTL930X_SDS_INDACS_DATA			(0x03B4)
+#define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
+
+/*Registers of the internal SerDes of the 9310 */
+#define RTL931X_SERDES_INDRT_ACCESS_CTRL	(0x5638)
+#define RTL931X_SERDES_INDRT_DATA_CTRL		(0x563C)
+#define RTL931X_SERDES_MODE_CTRL		(0x13cc)
+#define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
+#define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))

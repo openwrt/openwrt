@@ -17,6 +17,7 @@ sub target_config_features(@) {
 		/^display$/ and $ret .= "\tselect DISPLAY_SUPPORT\n";
 		/^dt$/ and $ret .= "\tselect USES_DEVICETREE\n";
 		/^dt-overlay$/ and $ret .= "\tselect HAS_DT_OVERLAY_SUPPORT\n";
+		/^emmc$/ and $ret .= "\tselect EMMC_SUPPORT\n";
 		/^ext4$/ and $ret .= "\tselect USES_EXT4\n";
 		/^fpu$/ and $ret .= "\tselect HAS_FPU\n";
 		/^gpio$/ and $ret .= "\tselect GPIO_SUPPORT\n";

@@ -114,11 +114,12 @@
 
 	ethernet-switch@1e {
 		compatible = "brcm,bcm53128";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		reg = <0x1e>;
 
 		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			port0@0 {
 				reg = <0>;
 				label = "lan1";

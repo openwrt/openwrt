@@ -54,10 +54,9 @@ DEFAULT_PACKAGES.nas:=\
 # For router targets
 DEFAULT_PACKAGES.router:=\
 	dnsmasq \
-	firewall \
-	ip6tables \
-	iptables \
-	kmod-ipt-offload \
+	firewall4 \
+	nftables \
+	kmod-nft-offload \
 	odhcp6c \
 	odhcpd-ipv6only \
 	ppp \
@@ -234,6 +233,7 @@ ifeq ($(DUMP),1)
   endif
   ifeq ($(ARCH),powerpc64)
     CPU_TYPE ?= powerpc64
+    CPU_CFLAGS_e5500:=-mcpu=e5500
     CPU_CFLAGS_powerpc64:=-mcpu=powerpc64
   endif
   ifeq ($(ARCH),sparc)

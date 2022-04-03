@@ -5,6 +5,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Netgear WAC510";
@@ -42,14 +43,6 @@
 			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
 		};
 
-		tcsr@194b000 {
-			status = "okay";
-
-			compatible = "qcom,tcsr";
-			reg = <0x194b000 0x100>;
-			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
-		};
-
 		ess_tcsr@1953000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1953000 0x1000>;
@@ -60,14 +53,6 @@
 			compatible = "qcom,tcsr";
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
-		};
-
-		usb2: usb2@60f8800 {
-			status = "okay";
-		};
-
-		usb3: usb3@8af8800 {
-			status = "okay";
 		};
 
 		crypto@8e3a000 {
@@ -119,43 +104,60 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_power_amber: power_amber {
+		led_power_amber: led-0 {
 			label = "amber:power";
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&ssr 6 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
 
-		led_power_green: power_green {
+		led_power_green: led-1 {
 			label = "green:power";
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&ssr 5 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2g_blue {
-			label = "blue:wlan2g";
+		led-2 {
+			/* 2.4GHz blue - activity */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
 			gpios = <&ssr 4 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
-		wlan2g_green {
-			label = "green:wlan2g";
+		led-3 {
+			/* 2.4GHz green - link */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
 			gpios = <&ssr 3 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0radio";
 		};
 
-		wlan5g_blue {
-			label = "blue:wlan5g";
+		led-4 {
+			/* 5GHz blue - activity */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <1>;
 			gpios = <&ssr 2 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
-		wlan5g_green {
-			label = "green:wlan5g";
+		led-5 {
+			/* 5GHz green - link */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <1>;
 			gpios = <&ssr 1 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1radio";
 		};
 
-		act_green {
-			label = "green:act";
+		led-6 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_ACTIVITY;
 			gpios = <&ssr 0 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -273,12 +275,30 @@
 				label = "0:MANUDATA";
 				reg = <0x001e0000 0x00010000>;
 				read-only;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_manudata_6: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
 			};
 
 			partition@1f0000 {
 				label = "0:ART";
 				reg = <0x001f0000 0x00010000>;
 				read-only;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				precal_art_1000: precal@1000 {
+					reg = <0x1000 0x2f20>;
+				};
+
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
 			};
 		};
 	};
@@ -348,24 +368,15 @@
 
 &wifi0 {
 	status = "okay";
-
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_manudata_6>;
 	qcom,ath10k-calibration-variant = "Netgear-WAC510";
 };
 
 &wifi1 {
 	status = "okay";
-
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_manudata_6>;
+	mac-address-increment = <16>;
 	qcom,ath10k-calibration-variant = "Netgear-WAC510";
-};
-
-&usb3_ss_phy {
-	status = "okay";
-};
-
-&usb3_hs_phy {
-	status = "okay";
-};
-
-&usb2_hs_phy {
-	status = "okay";
 };

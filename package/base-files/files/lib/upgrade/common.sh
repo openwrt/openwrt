@@ -155,9 +155,11 @@ export_bootdevice() {
 				fi
 			done
 		;;
+		PARTUUID=????????-????-????-????-??????????0?/PARTNROFF=1 | \
 		PARTUUID=????????-????-????-????-??????????02)
 			uuid="${rootpart#PARTUUID=}"
-			uuid="${uuid%02}00"
+			uuid="${uuid%/PARTNROFF=1}"
+			uuid="${uuid%0?}00"
 			for disk in $(find /dev -type b); do
 				set -- $(dd if=$disk bs=1 skip=568 count=16 2>/dev/null | hexdump -v -e '8/1 "%02x "" "2/1 "%02x""-"6/1 "%02x"')
 				if [ "$4$3$2$1-$6$5-$8$7-$9" = "$uuid" ]; then
@@ -245,7 +247,7 @@ get_partitions() { # <device> <filename>
 				local type="$1"
 				local lba="$(( $(hex_le32_to_cpu $4) * 0x100000000 + $(hex_le32_to_cpu $3) ))"
 				local end="$(( $(hex_le32_to_cpu $6) * 0x100000000 + $(hex_le32_to_cpu $5) ))"
-				local num="$(( $end - $lba ))"
+				local num="$(( $end - $lba + 1 ))"
 
 				[ "$type" = "00000000000000000000000000000000" ] && continue
 

@@ -272,6 +272,12 @@ menu "Target Images"
 		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		select PACKAGE_kmod-e1000
 
+	config VHDX_IMAGES
+		bool "Build Hyper-V image files (VHDX)"
+		depends on TARGET_x86
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		select PACKAGE_kmod-e1000
+
 	config TARGET_IMAGES_GZIP
 		bool "GZip images"
 		depends on TARGET_ROOTFS_EXT4FS || TARGET_x86 || TARGET_armvirt || TARGET_malta
@@ -290,7 +296,7 @@ menu "Target Images"
 
 	config TARGET_ROOTFS_PARTSIZE
 		int "Root filesystem partition size (in MiB)"
-		depends on USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS || TARGET_omap || TARGET_sunxi || TARGET_uml
+		depends on USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS
 		default 104
 		help
 		  Select the root filesystem partition size.

@@ -12,9 +12,9 @@ PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/procd.git
-PKG_MIRROR_HASH:=0ff42d965b6c07fe9d1731395623b78967b83bbeb85deda900dd430a2883643f
-PKG_SOURCE_DATE:=2021-11-11
-PKG_SOURCE_VERSION:=9d1431e1309e1acee06c016acc08cb7650b1d0af
+PKG_MIRROR_HASH:=af4ca76197b89943c85e4e2d27a1036f43337d475971d0041cb525bcbca075c1
+PKG_SOURCE_DATE:=2022-02-19
+PKG_SOURCE_VERSION:=ad652490d47916a27c01e3dd8f9eafcecbb4bc7f
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -24,8 +24,7 @@ PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 PKG_ASLR_PIE_REGULAR:=1
 PKG_CONFIG_DEPENDS:= \
-	CONFIG_TARGET_INIT_PATH CONFIG_KERNEL_SECCOMP \
-	CONFIG_PROCD_SHOW_BOOT CONFIG_PROCD_ZRAM_TMPFS \
+	CONFIG_TARGET_INIT_PATH CONFIG_KERNEL_SECCOMP CONFIG_PROCD_SHOW_BOOT \
 	CONFIG_KERNEL_NAMESPACES CONFIG_PACKAGE_procd-ujail CONFIG_PACKAGE_procd-seccomp
 
 include $(INCLUDE_DIR)/package.mk
@@ -72,13 +71,6 @@ define Package/procd-ujail
   TITLE:=OpenWrt process jail helper
 endef
 
-define Package/procd-ujail-console
-  SECTION:=base
-  CATEGORY:=Base system
-  DEPENDS:=+procd-ujail +libubus +libubox
-  TITLE:=OpenWrt process jail console
-endef
-
 define Package/procd-seccomp
   SECTION:=base
   CATEGORY:=Base system
@@ -103,10 +95,6 @@ config PROCD_SHOW_BOOT
 	default n
 	prompt "Print the shutdown to the console as well as logging it to syslog"
 
-config PROCD_ZRAM_TMPFS
-	bool
-	default n
-	prompt "Mount /tmp using zram."
 endmenu
 endef
 
@@ -116,10 +104,6 @@ endif
 
 ifeq ($(CONFIG_PROCD_SHOW_BOOT),y)
   CMAKE_OPTIONS += -DSHOW_BOOT_ON_CONSOLE=1
-endif
-
-ifeq ($(CONFIG_PROCD_ZRAM_TMPFS),y)
-  CMAKE_OPTIONS += -DZRAM_TMPFS=1
 endif
 
 ifdef CONFIG_PACKAGE_procd-ujail
@@ -137,6 +121,7 @@ define Package/procd/install
 	$(INSTALL_BIN) ./files/reload_config $(1)/sbin/
 	$(INSTALL_CONF) ./files/hotplug*.json $(1)/etc/
 	$(INSTALL_DATA) ./files/procd.sh $(1)/lib/functions/
+	$(INSTALL_BIN) ./files/service $(1)/sbin/service
 endef
 
 Package/procd-selinux/install = $(Package/procd/install)
@@ -144,11 +129,6 @@ Package/procd-selinux/install = $(Package/procd/install)
 define Package/procd-ujail/install
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ujail $(1)/sbin/
-endef
-
-define Package/procd-ujail-console/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ujail-console $(1)/sbin/
 endef
 
 define Package/procd-seccomp/install
@@ -173,6 +153,5 @@ endef
 $(eval $(call BuildPackage,procd))
 $(eval $(call BuildPackage,procd-selinux))
 $(eval $(call BuildPackage,procd-ujail))
-$(eval $(call BuildPackage,procd-ujail-console))
 $(eval $(call BuildPackage,procd-seccomp))
 $(eval $(call BuildPackage,uxc))

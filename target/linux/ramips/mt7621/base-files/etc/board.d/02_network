@@ -26,18 +26,25 @@ ramips_setup_interfaces()
 	hiwifi,hc5962|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-ac2100|\
+	xiaomi,mi-router-cr6606|\
+	xiaomi,mi-router-cr6608|\
+	xiaomi,mi-router-cr6609|\
 	xiaomi,redmi-router-ac2100)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	asiarf,ap7621-001|\
+	humax,e10|\
 	winstars,ws-wn583a6)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	asiarf,ap7621-nv1|\
+	beeline,smartbox-flash|\
 	glinet,gl-mt1300|\
+	iptime,a3002mesh|\
 	jcg,q20|\
 	lenovo,newifi-d1|\
 	mikrotik,routerboard-m33g|\
+	renkforce,ws-wn530hp3-a|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3g-v2|\
 	xiaomi,mi-router-4|\
@@ -58,8 +65,12 @@ ramips_setup_interfaces()
 	mikrotik,routerboard-760igs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
 		;;
-	tplink,eap235-wall-v1)
+	tplink,eap235-wall-v1|\
+	tplink,eap615-wall-v1)
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
+		;;
+	tplink,tl-wpa8631p-v3)
+		ucidef_set_interface_lan "lan1 lan2 lan3 plc0"
 		;;
 	ubnt,edgerouter-x)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
@@ -105,6 +116,11 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
+	beeline,smartbox-flash)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env eth2macaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env eth3macaddr)
+		label_mac=$lan_mac
+		;;
 	buffalo,wsr-1166dhp)
 		local index="$(find_mtd_index "board_data")"
 		wan_mac="$(grep -m1 mac= "/dev/mtd${index}" | cut -d= -f2)"
@@ -134,6 +150,10 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
+	iptime,t5004)
+		lan_mac=$(mtd_get_mac_ascii config ethaddr)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		;;
 	jcg,y2|\
 	wavlink,wl-wn531a6|\
 	winstars,ws-wn583a6|\
@@ -143,6 +163,7 @@ ramips_setup_macs()
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	linksys,e5600|\
+	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
 	linksys,ea7500-v2|\
@@ -159,6 +180,11 @@ ramips_setup_macs()
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add $label_mac 1)
+		;;
+	raisecom,msg1500-x-00)
+		lan_mac=$(mtd_get_mac_ascii Config protest_lan_mac)
+		wan_mac=$(mtd_get_mac_ascii Config protest_wan_mac)
+		label_mac=$lan_mac
 		;;
 	esac
 
