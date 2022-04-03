@@ -137,6 +137,11 @@ define Device/Default
   IMAGE/trx := append-ubi | trx-nand
 endef
 
+define Device/dsa-migration
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
+endef
+
 define Device/asus
   DEVICE_VENDOR := ASUS
   IMAGES := trx
@@ -144,6 +149,7 @@ define Device/asus
 endef
 
 define Device/asus_rt-ac56u
+  $(Device/dsa-migration)
   $(call Device/asus)
   DEVICE_MODEL := RT-AC56U
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
@@ -152,6 +158,7 @@ endef
 TARGET_DEVICES += asus_rt-ac56u
 
 define Device/asus_rt-ac68u
+  $(Device/dsa-migration)
   $(call Device/asus)
   DEVICE_MODEL := RT-AC68U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
@@ -160,6 +167,7 @@ endef
 TARGET_DEVICES += asus_rt-ac68u
 
 define Device/asus_rt-ac87u
+  $(Device/dsa-migration)
   $(call Device/asus)
   DEVICE_MODEL := RT-AC87U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
@@ -168,6 +176,7 @@ endef
 TARGET_DEVICES += asus_rt-ac87u
 
 define Device/asus_rt-ac88u
+  $(Device/dsa-migration)
   $(call Device/asus)
   DEVICE_MODEL := RT-AC88U
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
@@ -177,6 +186,7 @@ endef
 TARGET_DEVICES += asus_rt-ac88u
 
 define Device/asus_rt-n18u
+  $(Device/dsa-migration)
   $(call Device/asus)
   DEVICE_MODEL := RT-N18U
   DEVICE_PACKAGES := $(USB3_PACKAGES)
@@ -196,6 +206,7 @@ define Device/buffalo/Default
 endef
 
 define Device/buffalo_wxr-1900dhp
+  $(Device/dsa-migration)
   $(call Device/buffalo/Default)
   DEVICE_MODEL := WXR-1900DHP
   DEVICE_PACKAGES := $(USB3_PACKAGES)
@@ -203,6 +214,7 @@ endef
 TARGET_DEVICES += buffalo_wxr-1900dhp
 
 define Device/buffalo_wzr-600dhp2
+  $(Device/dsa-migration)
   $(call Device/buffalo/Default)
   DEVICE_MODEL := WZR-600DHP2
   DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
@@ -210,6 +222,7 @@ endef
 TARGET_DEVICES += buffalo_wzr-600dhp2
 
 define Device/buffalo_wzr-900dhp
+  $(Device/dsa-migration)
   $(call Device/buffalo/Default)
   DEVICE_MODEL := WZR-900DHP
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
@@ -231,6 +244,7 @@ endef
 TARGET_DEVICES += buffalo_wzr-900dhp
 
 define Device/buffalo_wzr-1750dhp
+  $(Device/dsa-migration)
   $(call Device/buffalo/Default)
   DEVICE_MODEL := WZR-1750DHP
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
@@ -244,6 +258,7 @@ define Device/dlink
 endef
 
 define Device/dlink_dir-885l
+  $(Device/dsa-migration)
   DEVICE_MODEL := DIR-885L
   DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
   $(Device/dlink)
@@ -252,6 +267,7 @@ endef
 TARGET_DEVICES += dlink_dir-885l
 
 define Device/linksys_ea6300-v1
+  $(Device/dsa-migration)
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA6300
   DEVICE_VARIANT := v1
@@ -260,6 +276,7 @@ endef
 TARGET_DEVICES += linksys_ea6300-v1
 
 define Device/linksys_ea6500-v2
+  $(Device/dsa-migration)
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA6500
   DEVICE_VARIANT := v2
@@ -268,6 +285,7 @@ endef
 TARGET_DEVICES += linksys_ea6500-v2
 
 define Device/linksys_ea9200
+  $(Device/dsa-migration)
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA9200
   DEVICE_VARIANT := v1
@@ -276,6 +294,7 @@ endef
 TARGET_DEVICES += linksys_ea9200
 
 define Device/linksys_ea9500
+  $(Device/dsa-migration)
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA9500
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
@@ -290,6 +309,7 @@ define Device/luxul
 endef
 
 define Device/luxul_abr-4500
+  $(Device/dsa-migration)
   $(Device/luxul)
   DEVICE_MODEL := ABR-4500
   DEVICE_PACKAGES := $(USB3_PACKAGES)
@@ -298,6 +318,7 @@ endef
 TARGET_DEVICES += luxul_abr-4500
 
 define Device/luxul_xap-1610
+  $(Device/dsa-migration)
   $(Device/luxul)
   DEVICE_MODEL := XAP-1610
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0)
@@ -307,6 +328,7 @@ endef
 TARGET_DEVICES += luxul_xap-1610
 
 define Device/luxul_xbr-4500
+  $(Device/dsa-migration)
   $(Device/luxul)
   DEVICE_MODEL := XBR-4500
   DEVICE_PACKAGES := $(USB3_PACKAGES)
@@ -315,6 +337,7 @@ endef
 TARGET_DEVICES += luxul_xbr-4500
 
 define Device/luxul_xwr-3150
+  $(Device/dsa-migration)
   $(Device/luxul)
   DEVICE_MODEL := XWR-3150
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
@@ -324,6 +347,7 @@ endef
 TARGET_DEVICES += luxul_xwr-3150
 
 define Device/meraki_mr32
+  $(Device/dsa-migration)
   DEVICE_VENDOR := Meraki
   DEVICE_MODEL := MR32
   DEVICE_PACKAGES := $(B43) kmod-i2c-bcm-iproc kmod-eeprom-at24 \
@@ -358,6 +382,7 @@ define Device/netgear
 endef
 
 define Device/netgear_r6250
+  $(Device/dsa-migration)
   DEVICE_MODEL := R6250
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
   $(Device/netgear)
@@ -366,6 +391,7 @@ endef
 TARGET_DEVICES += netgear_r6250
 
 define Device/netgear_r6300-v2
+  $(Device/dsa-migration)
   DEVICE_MODEL := R6300
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
@@ -375,6 +401,7 @@ endef
 TARGET_DEVICES += netgear_r6300-v2
 
 define Device/netgear_r7000
+  $(Device/dsa-migration)
   DEVICE_MODEL := R7000
   DEVICE_PACKAGES := $(USB3_PACKAGES)
   $(Device/netgear)
@@ -383,6 +410,7 @@ endef
 TARGET_DEVICES += netgear_r7000
 
 define Device/netgear_r7900
+  $(Device/dsa-migration)
   DEVICE_MODEL := R7900
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
   $(Device/netgear)
@@ -391,6 +419,7 @@ endef
 TARGET_DEVICES += netgear_r7900
 
 define Device/netgear_r8000
+  $(Device/dsa-migration)
   DEVICE_MODEL := R8000
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
   $(Device/netgear)
@@ -399,6 +428,7 @@ endef
 TARGET_DEVICES += netgear_r8000
 
 define Device/netgear_r8500
+  $(Device/dsa-migration)
   DEVICE_MODEL := R8500
   DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
   $(Device/netgear)
@@ -408,6 +438,7 @@ endef
 TARGET_DEVICES += netgear_r8500
 
 define Device/smartrg_sr400ac
+  $(Device/dsa-migration)
   DEVICE_VENDOR := SmartRG
   DEVICE_MODEL := SR400ac
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
@@ -419,6 +450,7 @@ endef
 TARGET_DEVICES += smartrg_sr400ac
 
 define Device/phicomm_k3
+  $(Device/dsa-migration)
   DEVICE_VENDOR := PHICOMM
   DEVICE_MODEL := K3
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
@@ -427,6 +459,7 @@ endef
 TARGET_DEVICES += phicomm_k3
 
 define Device/tenda_ac9
+  $(Device/dsa-migration)
   DEVICE_VENDOR := Tenda
   DEVICE_MODEL := AC9
   DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
@@ -436,6 +469,7 @@ endef
 TARGET_DEVICES += tenda_ac9
 
 define Device/tplink_archer-c5-v2
+  $(Device/dsa-migration)
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer C5
   DEVICE_VARIANT := v2
@@ -448,6 +482,7 @@ endef
 #TARGET_DEVICES += tplink_archer-c5-v2
 
 define Device/tplink_archer-c9-v1
+  $(Device/dsa-migration)
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer C9
   DEVICE_VARIANT := v1
