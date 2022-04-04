@@ -1466,6 +1466,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	priv->ds->dev = dev;
 	priv->ds->priv = priv;
 	priv->ds->ops = &rtl83xx_switch_ops;
+	priv->ds->needs_standalone_vlan_filtering = true;
 	priv->dev = dev;
 
 	mutex_init(&priv->reg_mutex);
