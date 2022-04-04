@@ -1689,8 +1689,8 @@ static int rtl83xx_port_fdb_del(struct dsa_switch *ds, int port,
 
 	idx = rtl83xx_find_l2_hash_entry(priv, seed, true, &e);
 
-	pr_info("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
 	if (idx >= 0) {
+		pr_info("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
 		e.valid = false;
 		dump_l2_entry(&e);
 		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
@@ -1870,8 +1870,8 @@ int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
 
 	idx = rtl83xx_find_l2_hash_entry(priv, seed, true, &e);
 
-	pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
 	if (idx >= 0) {
+		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
 		portmask = rtl83xx_mc_group_del_port(priv, e.mc_portmask_index, port);
 		if (!portmask) {
 			e.valid = false;
