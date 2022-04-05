@@ -640,6 +640,16 @@ define Device/tplink_tl-wpa8630-v1
 endef
 TARGET_DEVICES += tplink_tl-wpa8630-v1
 
+define Device/tplink_tl-wpa8630p-v1
+  $(Device/tplink-8mlzma)
+  SOC := qca9563
+  DEVICE_MODEL := TL-WPA8630P
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  TPLINK_HWID := 0x86310001
+endef
+TARGET_DEVICES += tplink_tl-wpa8630p-v1
+
 define Device/tplink_tl-wpa8630p-v2
   $(Device/tplink-safeloader)
   SOC := qca9563
