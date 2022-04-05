@@ -46,6 +46,7 @@ else
 	if [ -d $(LINUX_DIR)/user_headers ]; then \
 		rm -rf $(LINUX_DIR)/user_headers; \
 	fi
+	$(SED) -i $(LINUX_DIR)/Makefile  -e 's/--build-id=.*/--build-id=none/g'
   endef
 endif
 
