@@ -24,7 +24,7 @@ OLDUMLIST=
 drv_mac80211_init_device_config() {
 	hostapd_common_add_device_config
 
-	config_add_string path phy 'macaddr:macaddr'
+	config_add_string path phy card 'macaddr:macaddr'
 	config_add_string tx_burst
 	config_add_string distance
 	config_add_int beacon_int chanbw frag rts
@@ -570,6 +570,11 @@ find_phy() {
 			grep -i -q "$macaddr" "/sys/class/ieee80211/${phy}/macaddress" && return 0
 		done
 	}
+	[ -n "$card" ] && {
+		for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
+			[ "$card" = "$(cat "/sys/class/ieee80211/${phy}/device/vendor"):$(cat "/sys/class/ieee80211/${phy}/device/device")" ] && return 0
+		done
+	}
 	return 1
 }
 
@@ -1024,7 +1029,7 @@ drv_mac80211_cleanup() {
 drv_mac80211_setup() {
 	json_select config
 	json_get_vars \
-		phy macaddr path \
+		phy macaddr card path \
 		country chanbw distance \
 		txpower antenna_gain \
 		rxantenna txantenna \

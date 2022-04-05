@@ -24,6 +24,17 @@ lookup_phy() {
 			return
 		done
 	}
+
+	local card="$(config_get "$device" card)"
+	[ -n "$card" ] && {
+		for _phy in /sys/class/ieee80211/*; do
+			[ -e "$_phy" ] || continue
+
+			[ "$card" = "$(cat ${_phy}/device/vendor):$(cat ${_phy}/device/device)" ] || continue
+			phy="${_phy##*/}"
+			return
+		done
+	}
 	phy=
 	return
 }
@@ -42,6 +53,11 @@ find_mac80211_phy() {
 	config_get macaddr "$device" macaddr
 	[ -z "$macaddr" ] && {
 		config_set "$device" macaddr "$(cat /sys/class/ieee80211/${phy}/macaddress)"
+	}
+
+	config_get card "$device" card
+	[ -z "$card" ] && {
+		config_set "$device" card "$(cat /sys/class/ieee80211/${phy}/device/vendor):$(cat /sys/class/ieee80211/${phy}/device/device)"
 	}
 
 	return 0
