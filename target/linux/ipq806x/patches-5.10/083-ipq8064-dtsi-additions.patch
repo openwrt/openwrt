@@ -690,7 +690,7 @@
 +		ss_phy_0: ss_phy_0 {
 +			compatible = "qcom,ipq806x-usb-phy-ss";
 +			reg = <0x110f8830 0x30>;
-+			clocks = <&gcc USB30_0_MASTER_CLK>;
++			clocks = <&gcc USB30_1_MASTER_CLK>;
 +			clock-names = "ref";
 +			#phy-cells = <0>;
 +		};
@@ -700,7 +700,7 @@
 +			#address-cells = <1>;
 +			#size-cells = <1>;
 +			reg = <0x110f8800 0x8000>;
-+			clocks = <&gcc USB30_0_MASTER_CLK>;
++			clocks = <&gcc USB30_1_MASTER_CLK>;
 +			clock-names = "core";
 +
 +			ranges;
