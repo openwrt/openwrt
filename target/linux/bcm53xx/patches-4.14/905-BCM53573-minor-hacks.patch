@@ -61,7 +61,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  #include <linux/clockchips.h>
  #include <linux/clocksource.h>
  #include <linux/interrupt.h>
-@@ -845,6 +846,16 @@ static void arch_timer_of_configure_rate
+@@ -860,6 +861,16 @@ static void arch_timer_of_configure_rate
  	if (of_property_read_u32(np, "clock-frequency", &arch_timer_rate))
  		arch_timer_rate = rate;
  

@@ -84,7 +84,7 @@ Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
  static u64 notrace arm64_858921_read_cntvct_el0(void)
  {
  	u64 old, new;
-@@ -346,6 +365,7 @@ static const struct arch_timer_erratum_w
+@@ -353,6 +372,7 @@ static const struct arch_timer_erratum_w
  		.desc = "Freescale erratum a005858",
  		.read_cntp_tval_el0 = fsl_a008585_read_cntp_tval_el0,
  		.read_cntv_tval_el0 = fsl_a008585_read_cntv_tval_el0,
@@ -92,7 +92,7 @@ Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
  		.read_cntvct_el0 = fsl_a008585_read_cntvct_el0,
  		.set_next_event_phys = erratum_set_next_event_tval_phys,
  		.set_next_event_virt = erratum_set_next_event_tval_virt,
-@@ -358,6 +378,7 @@ static const struct arch_timer_erratum_w
+@@ -365,6 +385,7 @@ static const struct arch_timer_erratum_w
  		.desc = "HiSilicon erratum 161010101",
  		.read_cntp_tval_el0 = hisi_161010101_read_cntp_tval_el0,
  		.read_cntv_tval_el0 = hisi_161010101_read_cntv_tval_el0,
@@ -100,7 +100,7 @@ Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
  		.read_cntvct_el0 = hisi_161010101_read_cntvct_el0,
  		.set_next_event_phys = erratum_set_next_event_tval_phys,
  		.set_next_event_virt = erratum_set_next_event_tval_virt,
-@@ -368,6 +389,7 @@ static const struct arch_timer_erratum_w
+@@ -375,6 +396,7 @@ static const struct arch_timer_erratum_w
  		.desc = "HiSilicon erratum 161010101",
  		.read_cntp_tval_el0 = hisi_161010101_read_cntp_tval_el0,
  		.read_cntv_tval_el0 = hisi_161010101_read_cntv_tval_el0,
@@ -108,7 +108,7 @@ Signed-off-by: Christoffer Dall <christoffer.dall@linaro.org>
  		.read_cntvct_el0 = hisi_161010101_read_cntvct_el0,
  		.set_next_event_phys = erratum_set_next_event_tval_phys,
  		.set_next_event_virt = erratum_set_next_event_tval_virt,
-@@ -378,6 +400,7 @@ static const struct arch_timer_erratum_w
+@@ -385,6 +407,7 @@ static const struct arch_timer_erratum_w
  		.match_type = ate_match_local_cap_id,
  		.id = (void *)ARM64_WORKAROUND_858921,
  		.desc = "ARM erratum 858921",

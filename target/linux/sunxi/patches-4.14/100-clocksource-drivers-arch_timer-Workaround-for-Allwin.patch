@@ -173,7 +173,7 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
  	select TIMER_OF if OF
 --- a/drivers/clocksource/arm_arch_timer.c
 +++ b/drivers/clocksource/arm_arch_timer.c
-@@ -317,6 +317,48 @@ static u64 notrace arm64_858921_read_cnt
+@@ -324,6 +324,48 @@ static u64 notrace arm64_1188873_read_cn
  }
  #endif
  
@@ -222,8 +222,8 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
  #ifdef CONFIG_ARM_ARCH_TIMER_OOL_WORKAROUND
  DEFINE_PER_CPU(const struct arch_timer_erratum_workaround *,
  	       timer_unstable_counter_workaround);
-@@ -404,6 +446,19 @@ static const struct arch_timer_erratum_w
- 		.read_cntvct_el0 = arm64_858921_read_cntvct_el0,
+@@ -419,6 +461,19 @@ static const struct arch_timer_erratum_w
+ 		.read_cntvct_el0 = arm64_1188873_read_cntvct_el0,
  	},
  #endif
 +#ifdef CONFIG_SUN50I_ERRATUM_UNKNOWN1
