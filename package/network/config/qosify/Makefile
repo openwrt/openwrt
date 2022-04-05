@@ -31,7 +31,7 @@ define Package/qosify
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=A simple QoS solution based eBPF + CAKE
-  DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +kmod-sched-bpf +kmod-ifb +tc-full $(BPF_DEPENDS)
+  DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +kmod-sched-bpf +kmod-ifb +tc-bpf $(BPF_DEPENDS)
 endef
 
 TARGET_CFLAGS += -Wno-error=deprecated-declarations
