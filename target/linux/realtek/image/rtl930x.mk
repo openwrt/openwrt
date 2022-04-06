@@ -1,5 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+define Device/ubiquiti_usw-aggregation
+  SOC := rtl9303
+  IMAGE_SIZE := 13504k
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := USW-Aggregation
+endef
+TARGET_DEVICES += ubiquiti_usw-aggregation
+
 define Device/zyxel_xgs1250-12
   SOC := rtl9302
   UIMAGE_MAGIC := 0x93001250
