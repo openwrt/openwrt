@@ -1,0 +1,224 @@
+From 97a8baa0df48a892375b7bd4f19aeca4c56e28b2 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Thu, 7 Apr 2022 01:19:35 +0200
+Subject: [PATCH] Kconfig: Add BUILD_ID symbol
+
+The symbol defaults to `sha1` which follows the current behaviour. By
+adding the symbol it becomes possible to modify the `--build-id`
+argument of `ld`. The Build ID is patched to `none` in multiple
+downstream projects to allow reproducibility of Kernels.
+
+A cleaner solution is to introduce a new symbol and change the
+configuration accordingly to either `none` or a specific ID meaningful
+to the downstream project.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ Makefile                             | 4 ++--
+ arch/arm/vdso/Makefile               | 2 +-
+ arch/arm64/kernel/vdso/Makefile      | 2 +-
+ arch/arm64/kernel/vdso32/Makefile    | 2 +-
+ arch/csky/kernel/vdso/Makefile       | 2 +-
+ arch/mips/vdso/Makefile              | 2 +-
+ arch/riscv/kernel/vdso/Makefile      | 2 +-
+ arch/s390/boot/compressed/Makefile   | 2 +-
+ arch/s390/kernel/vdso32/Makefile     | 2 +-
+ arch/s390/kernel/vdso64/Makefile     | 2 +-
+ arch/sparc/vdso/Makefile             | 2 +-
+ arch/x86/entry/vdso/Makefile         | 2 +-
+ init/Kconfig                         | 7 +++++++
+ tools/testing/selftests/bpf/Makefile | 2 +-
+ 14 files changed, 21 insertions(+), 14 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 8c7de9a72..352c60627 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1024,8 +1024,8 @@ KBUILD_CPPFLAGS += $(KCPPFLAGS)
+ KBUILD_AFLAGS   += $(KAFLAGS)
+ KBUILD_CFLAGS   += $(KCFLAGS)
+ 
+-KBUILD_LDFLAGS_MODULE += --build-id=sha1
+-LDFLAGS_vmlinux += --build-id=sha1
++KBUILD_LDFLAGS_MODULE += --build-id=$(CONFIG_BUILD_ID)
++LDFLAGS_vmlinux += --build-id=$(CONFIG_BUILD_ID)
+ 
+ ifeq ($(CONFIG_STRIP_ASM_SYMS),y)
+ LDFLAGS_vmlinux	+= $(call ld-option, -X,)
+diff --git a/arch/arm/vdso/Makefile b/arch/arm/vdso/Makefile
+index ec52b776f..a03c9c914 100644
+--- a/arch/arm/vdso/Makefile
++++ b/arch/arm/vdso/Makefile
+@@ -19,7 +19,7 @@ ccflags-y += -DDISABLE_BRANCH_PROFILING -DBUILD_VDSO32
+ ldflags-$(CONFIG_CPU_ENDIAN_BE8) := --be8
+ ldflags-y := -Bsymbolic --no-undefined -soname=linux-vdso.so.1 \
+ 	    -z max-page-size=4096 -shared $(ldflags-y) \
+-	    --hash-style=sysv --build-id=sha1 \
++	    --hash-style=sysv --build-id=$(CONFIG_BUILD_ID) \
+ 	    -T
+ 
+ obj-$(CONFIG_VDSO) += vdso.o
+diff --git a/arch/arm64/kernel/vdso/Makefile b/arch/arm64/kernel/vdso/Makefile
+index 172452f79..992f0c12f 100644
+--- a/arch/arm64/kernel/vdso/Makefile
++++ b/arch/arm64/kernel/vdso/Makefile
+@@ -24,7 +24,7 @@ btildflags-$(CONFIG_ARM64_BTI_KERNEL) += -z force-bti
+ # routines, as x86 does (see 6f121e548f83 ("x86, vdso: Reimplement vdso.so
+ # preparation in build-time C")).
+ ldflags-y := -shared -soname=linux-vdso.so.1 --hash-style=sysv	\
+-	     -Bsymbolic --build-id=sha1 -n $(btildflags-y) -T
++	     -Bsymbolic --build-id=$(CONFIG_BUILD_ID) -n $(btildflags-y) -T
+ 
+ ccflags-y := -fno-common -fno-builtin -fno-stack-protector -ffixed-x18
+ ccflags-y += -DDISABLE_BRANCH_PROFILING -DBUILD_VDSO
+diff --git a/arch/arm64/kernel/vdso32/Makefile b/arch/arm64/kernel/vdso32/Makefile
+index ed181bedb..10c8b51cf 100644
+--- a/arch/arm64/kernel/vdso32/Makefile
++++ b/arch/arm64/kernel/vdso32/Makefile
+@@ -103,7 +103,7 @@ VDSO_AFLAGS += -D__ASSEMBLY__
+ # From arm vDSO Makefile
+ VDSO_LDFLAGS += -Bsymbolic --no-undefined -soname=linux-vdso.so.1
+ VDSO_LDFLAGS += -z max-page-size=4096 -z common-page-size=4096
+-VDSO_LDFLAGS += -shared --hash-style=sysv --build-id=sha1
++VDSO_LDFLAGS += -shared --hash-style=sysv --build-id=$(CONFIG_BUILD_ID)
+ 
+ 
+ # Borrow vdsomunge.c from the arm vDSO
+diff --git a/arch/csky/kernel/vdso/Makefile b/arch/csky/kernel/vdso/Makefile
+index 0b6909f10..3d183adbd 100644
+--- a/arch/csky/kernel/vdso/Makefile
++++ b/arch/csky/kernel/vdso/Makefile
+@@ -36,7 +36,7 @@ SYSCFLAGS_vdso.so.dbg = $(c_flags)
+ $(obj)/vdso.so.dbg: $(src)/vdso.lds $(obj-vdso) FORCE
+ 	$(call if_changed,vdsold)
+ SYSCFLAGS_vdso.so.dbg = -shared -s -Wl,-soname=linux-vdso.so.1 \
+-	-Wl,--build-id=sha1 -Wl,--hash-style=both
++	-Wl,--build-id=$(CONFIG_BUILD_ID) -Wl,--hash-style=both
+ 
+ $(obj)/vdso-syms.S: $(obj)/vdso.so FORCE
+ 	$(call if_changed,so2s)
+diff --git a/arch/mips/vdso/Makefile b/arch/mips/vdso/Makefile
+index f72658b3a..3c434965f 100644
+--- a/arch/mips/vdso/Makefile
++++ b/arch/mips/vdso/Makefile
+@@ -61,7 +61,7 @@ endif
+ # VDSO linker flags.
+ ldflags-y := -Bsymbolic --no-undefined -soname=linux-vdso.so.1 \
+ 	$(filter -E%,$(KBUILD_CFLAGS)) -shared \
+-	-G 0 --eh-frame-hdr --hash-style=sysv --build-id=sha1 -T
++	-G 0 --eh-frame-hdr --hash-style=sysv --build-id=$(CONFIG_BUILD_ID) -T
+ 
+ CFLAGS_REMOVE_vdso.o = $(CC_FLAGS_FTRACE)
+ 
+diff --git a/arch/riscv/kernel/vdso/Makefile b/arch/riscv/kernel/vdso/Makefile
+index f2e065671..ba046d951 100644
+--- a/arch/riscv/kernel/vdso/Makefile
++++ b/arch/riscv/kernel/vdso/Makefile
+@@ -45,7 +45,7 @@ $(obj)/vdso.o: $(obj)/vdso.so
+ $(obj)/vdso.so.dbg: $(obj)/vdso.lds $(obj-vdso) FORCE
+ 	$(call if_changed,vdsold)
+ LDFLAGS_vdso.so.dbg = -shared -S -soname=linux-vdso.so.1 \
+-	--build-id=sha1 --hash-style=both --eh-frame-hdr
++	--build-id=$(CONFIG_BUILD_ID) --hash-style=both --eh-frame-hdr
+ 
+ # strip rule for the .so file
+ $(obj)/%.so: OBJCOPYFLAGS := -S
+diff --git a/arch/s390/boot/compressed/Makefile b/arch/s390/boot/compressed/Makefile
+index d04e0e7de..a477dda65 100644
+--- a/arch/s390/boot/compressed/Makefile
++++ b/arch/s390/boot/compressed/Makefile
+@@ -26,7 +26,7 @@ OBJCOPYFLAGS :=
+ OBJECTS := $(addprefix $(obj)/,$(obj-y))
+ OBJECTS_ALL := $(addprefix $(obj)/,$(obj-all))
+ 
+-LDFLAGS_vmlinux := --oformat $(LD_BFD) -e startup --build-id=sha1 -T
++LDFLAGS_vmlinux := --oformat $(LD_BFD) -e startup --build-id=$(CONFIG_BUILD_ID) -T
+ $(obj)/vmlinux: $(obj)/vmlinux.lds $(objtree)/arch/s390/boot/startup.a $(OBJECTS_ALL) FORCE
+ 	$(call if_changed,ld)
+ 
+diff --git a/arch/s390/kernel/vdso32/Makefile b/arch/s390/kernel/vdso32/Makefile
+index 245bddfe9..e4138e511 100644
+--- a/arch/s390/kernel/vdso32/Makefile
++++ b/arch/s390/kernel/vdso32/Makefile
+@@ -23,7 +23,7 @@ KBUILD_CFLAGS_32 := $(filter-out -m64,$(KBUILD_CFLAGS))
+ KBUILD_CFLAGS_32 += -m31 -fPIC -shared -fno-common -fno-builtin
+ 
+ LDFLAGS_vdso32.so.dbg += -fPIC -shared -soname=linux-vdso32.so.1 \
+-	--hash-style=both --build-id=sha1 -melf_s390 -T
++	--hash-style=both --build-id=$(CONFIG_BUILD_ID) -melf_s390 -T
+ 
+ $(targets:%=$(obj)/%.dbg): KBUILD_CFLAGS = $(KBUILD_CFLAGS_32)
+ $(targets:%=$(obj)/%.dbg): KBUILD_AFLAGS = $(KBUILD_AFLAGS_32)
+diff --git a/arch/s390/kernel/vdso64/Makefile b/arch/s390/kernel/vdso64/Makefile
+index 9e2b95a22..4b1edc561 100644
+--- a/arch/s390/kernel/vdso64/Makefile
++++ b/arch/s390/kernel/vdso64/Makefile
+@@ -27,7 +27,7 @@ KBUILD_AFLAGS_64 += -m64 -s
+ KBUILD_CFLAGS_64 := $(filter-out -m64,$(KBUILD_CFLAGS))
+ KBUILD_CFLAGS_64 += -m64 -fPIC -shared -fno-common -fno-builtin
+ ldflags-y := -fPIC -shared -soname=linux-vdso64.so.1 \
+-	     --hash-style=both --build-id=sha1 -T
++	     --hash-style=both --build-id=$(CONFIG_BUILD_ID) -T
+ 
+ $(targets:%=$(obj)/%.dbg): KBUILD_CFLAGS = $(KBUILD_CFLAGS_64)
+ $(targets:%=$(obj)/%.dbg): KBUILD_AFLAGS = $(KBUILD_AFLAGS_64)
+diff --git a/arch/sparc/vdso/Makefile b/arch/sparc/vdso/Makefile
+index c5e1545bc..ac8fc8fb8 100644
+--- a/arch/sparc/vdso/Makefile
++++ b/arch/sparc/vdso/Makefile
+@@ -113,7 +113,7 @@ quiet_cmd_vdso = VDSO    $@
+ 		       -T $(filter %.lds,$^) $(filter %.o,$^) && \
+ 		sh $(srctree)/$(src)/checkundef.sh '$(OBJDUMP)' '$@'
+ 
+-VDSO_LDFLAGS = -shared --hash-style=both --build-id=sha1 -Bsymbolic
++VDSO_LDFLAGS = -shared --hash-style=both --build-id=$(CONFIG_BUILD_ID) -Bsymbolic
+ GCOV_PROFILE := n
+ 
+ #
+diff --git a/arch/x86/entry/vdso/Makefile b/arch/x86/entry/vdso/Makefile
+index 693f8b903..404ad90e8 100644
+--- a/arch/x86/entry/vdso/Makefile
++++ b/arch/x86/entry/vdso/Makefile
+@@ -177,7 +177,7 @@ quiet_cmd_vdso = VDSO    $@
+ 		       -T $(filter %.lds,$^) $(filter %.o,$^) && \
+ 		 sh $(srctree)/$(src)/checkundef.sh '$(NM)' '$@'
+ 
+-VDSO_LDFLAGS = -shared --hash-style=both --build-id=sha1 \
++VDSO_LDFLAGS = -shared --hash-style=both --build-id=$(CONFIG_BUILD_ID) \
+ 	$(call ld-option, --eh-frame-hdr) -Bsymbolic
+ GCOV_PROFILE := n
+ 
+diff --git a/init/Kconfig b/init/Kconfig
+index ddcbefe53..27c517a06 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -196,6 +196,13 @@ config LOCALVERSION_AUTO
+ 
+ 	  which is done within the script "scripts/setlocalversion".)
+ 
++config BUILD_ID
++	string "Build ID" if EXPERT
++	default "sha1"
++	help
++	  The build ID can be set to a specific value other than default sha1.
++	  Possible values are described in ld(1).
++
+ config BUILD_SALT
+ 	string "Build ID Salt"
+ 	default ""
+diff --git a/tools/testing/selftests/bpf/Makefile b/tools/testing/selftests/bpf/Makefile
+index 3820608fa..cad3a74ff 100644
+--- a/tools/testing/selftests/bpf/Makefile
++++ b/tools/testing/selftests/bpf/Makefile
+@@ -170,7 +170,7 @@ $(OUTPUT)/%:%.c
+ 
+ $(OUTPUT)/urandom_read: urandom_read.c
+ 	$(call msg,BINARY,,$@)
+-	$(Q)$(CC) $(CFLAGS) $(LDFLAGS) $< $(LDLIBS) -Wl,--build-id=sha1 -o $@
++	$(Q)$(CC) $(CFLAGS) $(LDFLAGS) $< $(LDLIBS) -Wl,--build-id=$(CONFIG_BUILD_ID) -o $@
+ 
+ $(OUTPUT)/bpf_testmod.ko: $(VMLINUX_BTF) $(wildcard bpf_testmod/Makefile bpf_testmod/*.[ch])
+ 	$(call msg,MOD,,$@)
+-- 
+2.35.1
+
