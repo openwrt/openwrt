@@ -18,7 +18,7 @@ PKG_LICENSE:=libselinux-1.0
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 
-HOST_BUILD_DEPENDS:=musl-fts/host pcre/host
+HOST_BUILD_DEPENDS:=libsepol/host musl-fts/host pcre/host
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
