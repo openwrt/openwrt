@@ -344,15 +344,33 @@
 	status = "okay";
 };
 
+&hs_phy_0 {
+	clocks = <&gcc USB30_1_UTMI_CLK>;
+};
+
+&ss_phy_0 {
+	clocks = <&gcc USB30_1_MASTER_CLK>;
+};
+
 &usb3_0 {
 	status = "okay";
 	clocks = <&gcc USB30_1_MASTER_CLK>;
+};
+
+/*
+hs_phy_1: hs_phy_1 {
+	clocks = <&gcc USB30_0_UTMI_CLK>;
+};
+
+ss_phy_1: ss_phy_1 {
+	clocks = <&gcc USB30_0_MASTER_CLK>;
 };
 
 &usb3_1 {
 	status = "okay";
 	clocks = <&gcc USB30_0_MASTER_CLK>;
 };
+*/
 
 &pcie0 {
 	status = "okay";
