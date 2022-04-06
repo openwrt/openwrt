@@ -1,0 +1,133 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+/dts-v1/;
+
+#include "rtl9302_zyxel_xgs12xx.dtsi"
+
+/ {
+	compatible = "zyxel,xgs1210-12", "realtek,rtl838x-soc";
+	model = "Zyxel XGS1210-12 Switch";
+
+	i2c0: i2c-rtl9300 {
+		compatible = "realtek,rtl9300-i2c";
+		reg = <0x1b00036c 0x3c>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sda-pin = <9>;
+		scl-pin = <8>;
+	};
+
+	i2cmux {
+		compatible = "realtek,i2c-mux-rtl9300";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c-parent = <&i2c0>;
+
+		/* i2c of the left SFP+ cage as seen from the front: port 11 */
+		i2c01: i2c-rtl9300-1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <9>;
+			scl-pin = <8>;
+		};
+
+		/* i2c of the right SFP+ cage as seen from the front: port 12 */
+		i2c02: i2c-rtl9300-2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <10>;
+			scl-pin = <8>;
+		};
+	};
+
+	sfp0: sfp-p11 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c01>;
+		los-gpio = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp1: sfp-p12 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c02>;
+		los-gpio = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&partitions {
+	partition@300000 {
+		openwrt,ih-magic = <0x93001210>;
+	};
+};
+
+&mdio0 {
+	/* External single port 1Gbit/2.5Gbit  RTL8226 PHY */
+	phy24: ethernet-phy@24 {
+		reg = <24>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <1 8>;
+		sds = <6>;
+	};
+
+	phy25: ethernet-phy@25 {
+		reg = <25>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <2 9>;
+		sds = <7>;
+	};
+
+	/* SFP+ Ports */
+	phy26: ethernet-phy@26 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		phy-is-integrated;
+		reg = <26>;
+		sds = <8>;
+	};
+
+	phy27: ethernet-phy@27 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		phy-is-integrated;
+		reg = <27>;
+		sds = <9>;
+	};
+};
+
+&switch0_ports {
+	port@24 {
+		reg = <24>;
+		label = "lan9";
+		phy-mode = "hsgmii";
+		phy-handle = <&phy24>;
+		led-set = <1>;
+	};
+	port@25 {
+		reg = <25>;
+		label = "lan10";
+		phy-mode = "hsgmii";
+		phy-handle = <&phy25>;
+		led-set = <1>;
+	};
+
+	port@26 {
+		reg = <26>;
+		label = "lan11";
+		phy-mode = "1000base-x";
+		phy-handle = <&phy26>;
+		sfp = <&sfp0>;
+		led-set = <2>;
+		managed = "in-band-status";
+	};
+	port@27 {
+		reg = <27>;
+		label = "lan12";
+		phy-mode = "1000base-x";
+		phy-handle = <&phy27>;
+		sfp = <&sfp1>;
+		led-set = <2>;
+		managed = "in-band-status";
+	};
+};
