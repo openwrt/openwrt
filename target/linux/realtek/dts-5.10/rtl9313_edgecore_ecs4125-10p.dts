@@ -1,0 +1,351 @@
+/dts-v1/;
+
+#include "rtl931x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "edgecore,ecs4125-10p", "realtek,rtl838x-soc";
+	model = "Edgecore ECS4125-12P Switch";
+/*
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+	};	
+*/
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x10000000>;
+	};
+
+	memory@90000000 {
+		device_type = "memory";
+		reg = <0x90000000 0x30000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	led_set: led_set@0 {
+		compatible = "realtek,rtl9300-leds";
+		led_set0 = <0x0000 0xffff 0x0a00 0x0bab>; // LED set 0: 2.5G/1G, 10/100Mbps
+		led_set1 = <0x0000 0xffff 0x0a20 0x0a03>; // LED set 1: 10G, 1G
+	};
+
+	i2c0: i2c-rtl9310 {
+		compatible = "realtek,rtl9310-i2c";
+		reg = <0x1b001004 0x3c>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sda-pin = <19>;
+		scl-pin = <13>;
+		clock-frequency = <100000>;
+	};
+
+	i2cmux {
+		compatible = "realtek,i2c-mux-rtl9310";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c-parent = <&i2c0>;
+
+		i2c01: i2c-rtl9310-1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <19>;
+			scl-pin = <13>;
+		};
+
+		i2c02: i2c-rtl9310-2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <20>;
+			scl-pin = <13>;
+		};
+
+		i2c03: i2c-rtl9310-3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <15>;
+			scl-pin = <14>;
+
+			lm75a@4f {
+				compatible = "national,lm75a";
+				reg = <0x4f>;
+			};
+
+		};
+	};
+
+	sfp0: sfp-p9 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c01>;
+		los-gpio = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpio = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp1: sfp-p10 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c02>;
+		los-gpio = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpio = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+	};
+
+};
+
+&spi0 {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x100000>;
+			};
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x100000 0x10000>;
+			};
+			partition@120000 {
+				label = "jffs";
+				reg = <0x120000 0x100000>;
+			};
+			partition@220000 {
+				label = "jffs2";
+				reg = <0x220000 0x100000>;
+			};
+			partition@320000 {
+				label = "firmware";
+				reg = <0x320000 0x1e80000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+			};
+			partition@2200000 {
+				label = "runtime2";
+				reg = <0x2200000 0x1e00000>;
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	mdio: mdio-bus {
+		compatible = "realtek,rtl838x-mdio";
+		regmap = <&ethernet0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		
+		/* 8 External RTL8221D PHYs */
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <0 4>;
+			sds = < 2 >;
+		};
+		phy1: ethernet-phy@1 {
+			reg = <8>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <0 2>;
+			sds = < 3 >;
+		};
+		phy2: ethernet-phy@2 {
+			reg = <16>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <0 6>;
+			sds = < 4 >;
+		};
+		phy3: ethernet-phy@3 {
+			reg = <24>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <0 1>;
+			sds = < 5 >;
+		};
+		phy4: ethernet-phy@4 {
+			reg = <32>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <1 4>;
+			sds = < 6 >;
+		};
+		phy5: ethernet-phy@5 {
+			reg = <40>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <1 2>;
+			sds = < 7 >;
+		};
+		phy6: ethernet-phy@6 {
+			reg = <48>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <1 6>;
+			sds = < 8 >;
+		};
+		phy7: ethernet-phy@7 {
+			reg = <50>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <1 1>;
+			sds = < 9 >;
+		};
+
+		/* RTL9313 Internal Serdes */
+		// These do not actually exist, but are still wired
+		// and configured in order to not confuse the LED polling
+		phy52: ethernet-phy@8 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			reg = <52>;
+			rtl9300,smi-address = <2 1>;
+			sds = < 10 >;
+		};
+		phy53: ethernet-phy@9 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			reg = <53>;
+			rtl9300,smi-address = <3 1>;
+			sds = < 11 >;
+		};
+
+		// These 2 ports exist physically
+		phy54: ethernet-phy@10 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			reg = <54>;
+			rtl9300,smi-address = <2 0>;
+			sds = < 12 >;
+		};
+		phy55: ethernet-phy@11 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			reg = <55>;
+			rtl9300,smi-address = <3 0>;
+			sds = < 13 >;
+		};
+
+	};
+};
+
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "lan2";
+			phy-handle = <&phy0>;
+			phy-mode = "hsgmii";
+			led-set = <0>;
+		};
+		port@8 {
+			reg = <8>;
+			label = "lan1";
+			phy-handle = <&phy1>;
+			phy-mode = "hsgmii";
+			led-set = <0>;
+		};
+		port@16 {
+			reg = <16>;
+			label = "lan4";
+			phy-handle = <&phy2>;
+			phy-mode = "hsgmii";
+			led-set = <0>;
+		};
+		port@24 {
+			reg = <24>;
+			label = "lan3";
+			phy-handle = <&phy3>;
+			phy-mode = "hsgmii";
+			led-set = <0>;
+		};
+		port@32 {
+			reg = <32>;
+			label = "lan6";
+			phy-handle = <&phy4>;
+			phy-mode = "hsgmii";
+			led-set = <0>;
+		};
+		port@40 {
+			reg = <40>;
+			label = "lan5";
+			phy-handle = <&phy5>;
+			phy-mode = "hsgmii";
+			led-set = <0>;
+		};
+		port@48 {
+			reg = <48>;
+			label = "lan8";
+			phy-handle = <&phy6>;
+			phy-mode = "hsgmii";
+			led-set = <0>;
+		};
+		port@50 {
+			reg = <50>;
+			label = "lan7";
+			phy-handle = <&phy7>;
+			phy-mode = "hsgmii";
+			led-set = <0>;
+		};
+
+		/* RTL9313 Internal SerDes */
+		port@52 {  // Not physically present
+			reg = <52>;
+			label = "lan9";
+			phy-mode = "1000base-x";
+			phy-handle = <&phy52>;
+			led-set = <0>;
+			managed = "in-band-status";
+		};
+		port@53 {  // Not physically present
+			reg = <53>;
+			label = "lan10";
+			phy-mode = "1000base-x";
+			phy-handle = <&phy53>;
+			led-set = <0>;
+			managed = "in-band-status";
+		};
+		port@54 {  // Left port
+			reg = <54>;
+			label = "lan11";
+			phy-mode = "1000base-x";
+			phy-handle = <&phy54>;
+			sfp = <&sfp0>;
+			led-set = <0>;
+			managed = "in-band-status";
+		};
+		port@55 {  // Right port
+			reg = <55>;
+			label = "lan12";
+			phy-mode = "1000base-x";
+			phy-handle = <&phy55>;
+			led-set = <0>;
+			sfp = <&sfp1>;
+			managed = "in-band-status";
+		};
+
+		/* CPU-Port */
+		port@56 {
+			ethernet = <&ethernet0>;
+			reg = <56>;
+			phy-mode = "qsgmii";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
