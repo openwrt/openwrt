@@ -1,0 +1,69 @@
+--- a/drivers/usb/host/max3421-hcd.c
++++ b/drivers/usb/host/max3421-hcd.c
+@@ -61,7 +61,7 @@
+ #include <linux/spi/spi.h>
+ #include <linux/usb.h>
+ #include <linux/usb/hcd.h>
+-#include <linux/of.h>
++#include <linux/of_gpio.h>
+ 
+ #include <linux/platform_data/max3421-hcd.h>
+ 
+@@ -1383,10 +1383,10 @@
+ 	struct max3421_hcd *max3421_hcd = hcd_to_max3421(hcd);
+ 	int i, i_worked = 1;
+ 
+-	/* set full-duplex SPI mode, low-active interrupt pin: */
++	/* set full-duplex SPI mode, falling edge interrupt pin:
++		- clear MAX3421_PINCTL_INTLEVEL_BIT, MAX3421_PINCTL_POSINT_BIT */
+ 	spi_wr8(hcd, MAX3421_REG_PINCTL,
+-		(BIT(MAX3421_PINCTL_FDUPSPI_BIT) |	/* full-duplex */
+-		 BIT(MAX3421_PINCTL_INTLEVEL_BIT)));	/* low-active irq */
++		(BIT(MAX3421_PINCTL_FDUPSPI_BIT)));	/* full-duplex */
+ 
+ 	while (!kthread_should_stop()) {
+ 		max3421_hcd->rev = spi_rd8(hcd, MAX3421_REG_REVISION);
+@@ -1411,7 +1411,7 @@
+ 			set_current_state(TASK_INTERRUPTIBLE);
+ 			if (test_and_clear_bit(ENABLE_IRQ, &max3421_hcd->todo))
+ 				enable_irq(spi->irq);
+-			schedule();
++			schedule_timeout(1); // Needed for falling-edge trigger
+ 			__set_current_state(TASK_RUNNING);
+ 		}
+ 
+@@ -1833,6 +1833,7 @@
+ 	struct max3421_hcd_platform_data *pdata = NULL;
+ 	int retval;
+ 
++	pr_info("%s called\n", __func__);
+ 	if (spi_setup(spi) < 0) {
+ 		dev_err(&spi->dev, "Unable to setup SPI bus");
+ 		return -EFAULT;
+@@ -1854,6 +1855,17 @@
+ 			goto error;
+ 
+ 		spi->dev.platform_data = pdata;
++
++		pdata->reset_gpio = of_get_named_gpio(dev->of_node, "gpio-reset", 0);
++		if (gpio_is_valid(pdata->reset_gpio)) {
++			retval = devm_gpio_request(dev, pdata->reset_gpio, "max3421-reset");
++			if (retval) {
++				dev_err(dev, "failed to request gpio %d\n", pdata->reset_gpio);
++				goto error;
++			}
++			gpio_direction_output(pdata->reset_gpio, 1);
++			msleep(10);
++		}
+ 	}
+ 
+ 	pdata = spi->dev.platform_data;
+@@ -1908,7 +1920,7 @@
+ 	}
+ 
+ 	retval = request_irq(spi->irq, max3421_irq_handler,
+-			     IRQF_TRIGGER_LOW, "max3421", hcd);
++			     IRQF_TRIGGER_FALLING, "max3421", hcd);
+ 	if (retval < 0) {
+ 		dev_err(&spi->dev, "failed to request irq %d\n", spi->irq);
+ 		goto error;
