@@ -1611,8 +1611,10 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32(v, RTL931X_LED_SET0_0_CTRL - i * 8);
 	}
 
-	// Set LED mode to serial (0x1)
+	// Set LED mode to serial (0x1), color-scan is (0x2), bi-color-scan (0x3)
 	sw_w32_mask(0x3, 0x1, RTL931X_LED_GLB_CTRL);
+	// Set clock, serial requires 0x2, scan-mode requires 0x1 in bits 15 & 16
+	sw_w32_mask(0x3 << 15, 0x2 << 15, RTL931X_LED_GLB_CTRL);
 
 	rtl839x_set_port_reg_le(pm_copper, RTL931X_LED_PORT_COPR_MASK_CTRL);
 	rtl839x_set_port_reg_le(pm_fiber, RTL931X_LED_PORT_FIB_MASK_CTRL);
