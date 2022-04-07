@@ -10,6 +10,7 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	arris,tr4400-v2 |\
 	askey,rt4230w-rev6 |\
 	compex,wpq864|\
 	netgear,d7800 |\
