@@ -146,7 +146,7 @@ mtk_bmt_read(struct mtd_info *mtd, loff_t from,
 			goto out;
 		}
 
-		if (cur_ret >= mtd->bitflip_threshold)
+		if (mtd->bitflip_threshold && cur_ret >= mtd->bitflip_threshold)
 			mtk_bmt_remap_block(block, cur_block, mtd->erasesize);
 
 		ops->retlen += cur_ops.retlen;
