@@ -1636,6 +1636,17 @@ define Device/tplink_re650-v1
 endef
 TARGET_DEVICES += tplink_re650-v1
 
+define Device/tplink_re650-v2
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := RE650
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  TPLINK_BOARD_ID := RE650-V2
+  IMAGE_SIZE := 7994k
+endef
+TARGET_DEVICES += tplink_re650-v2
+
 define Device/tplink_tl-wpa8631p-v3
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
