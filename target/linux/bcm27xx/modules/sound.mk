@@ -932,6 +932,7 @@ define KernelPackage/sound-soc-rpi-cirrus
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM_ADSP
   FILES:= \
+    $(LINUX_DIR)/drivers/mfd/arizona.ko@ge5.15 \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-cirrus.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-arizona.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm-adsp.ko \
