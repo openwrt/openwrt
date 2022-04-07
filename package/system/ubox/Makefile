@@ -33,6 +33,10 @@ define Package/ubox
     100:/sbin/modprobe:/sbin/kmodloader
 endef
 
+define Package/ubox/conffiles
+/etc/modules.conf
+endef
+
 define Package/getrandom
   SECTION:=base
   CATEGORY:=Base system
@@ -53,10 +57,11 @@ define Package/getrandom/install
 endef
 
 define Package/ubox/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/usr/sbin $(1)/lib $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/sbin $(1)/usr/sbin $(1)/lib $(1)/usr/bin $(1)/etc
 
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{kmodloader,validate_data} $(1)/sbin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libvalidate.so $(1)/lib
+	$(INSTALL_DATA) ./files/modules.conf $(1)/etc/modules.conf
 endef
 
 define Package/logd/install
