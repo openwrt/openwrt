@@ -342,11 +342,22 @@
 	};
 };
 
-&snand {
-	mediatek,quad-spi;
+&bch {
+	status = "okay";
+};
+
+&snfi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&serial_nand_pins>;
 	status = "okay";
+
+	snand: flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		nand-ecc-engine = <&snfi>;
+	};
 };
 
 &spi0 {
