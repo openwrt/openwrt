@@ -16,11 +16,9 @@ Link: https://lore.kernel.org/linux-mtd/20220320100001.247905-2-gch981213@gmail.
  drivers/mtd/nand/spi/gigadevice.c | 10 +++++++++-
  1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/nand/spi/gigadevice.c b/drivers/mtd/nand/spi/gigadevice.c
-index 1dd1c5898093..da77ab20296e 100644
 --- a/drivers/mtd/nand/spi/gigadevice.c
 +++ b/drivers/mtd/nand/spi/gigadevice.c
-@@ -39,6 +39,14 @@ static SPINAND_OP_VARIANTS(read_cache_variants_f,
+@@ -39,6 +39,14 @@ static SPINAND_OP_VARIANTS(read_cache_va
  		SPINAND_PAGE_READ_FROM_CACHE_OP_3A(true, 0, 1, NULL, 0),
  		SPINAND_PAGE_READ_FROM_CACHE_OP_3A(false, 0, 0, NULL, 0));
  
@@ -35,7 +33,7 @@ index 1dd1c5898093..da77ab20296e 100644
  static SPINAND_OP_VARIANTS(write_cache_variants,
  		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
  		SPINAND_PROG_LOAD(true, 0, NULL, 0));
-@@ -339,7 +347,7 @@ static const struct spinand_info gigadevice_spinand_table[] = {
+@@ -339,7 +347,7 @@ static const struct spinand_info gigadev
  		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x51),
  		     NAND_MEMORG(1, 2048, 128, 64, 1024, 20, 1, 1, 1),
  		     NAND_ECCREQ(4, 512),
@@ -44,6 +42,3 @@ index 1dd1c5898093..da77ab20296e 100644
  					      &write_cache_variants,
  					      &update_cache_variants),
  		     SPINAND_HAS_QE_BIT,
--- 
-2.35.1
-

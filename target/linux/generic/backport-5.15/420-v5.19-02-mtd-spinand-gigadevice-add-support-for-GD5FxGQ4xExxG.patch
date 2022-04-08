@@ -17,11 +17,9 @@ Link: https://lore.kernel.org/linux-mtd/20220320100001.247905-3-gch981213@gmail.
  drivers/mtd/nand/spi/gigadevice.c | 30 ++++++++++++++++++++++++++++++
  1 file changed, 30 insertions(+)
 
-diff --git a/drivers/mtd/nand/spi/gigadevice.c b/drivers/mtd/nand/spi/gigadevice.c
-index da77ab20296e..85a61d3d8467 100644
 --- a/drivers/mtd/nand/spi/gigadevice.c
 +++ b/drivers/mtd/nand/spi/gigadevice.c
-@@ -333,6 +333,36 @@ static const struct spinand_info gigadevice_spinand_table[] = {
+@@ -333,6 +333,36 @@ static const struct spinand_info gigadev
  		     SPINAND_HAS_QE_BIT,
  		     SPINAND_ECCINFO(&gd5fxgqx_variant2_ooblayout,
  				     gd5fxgq4uexxg_ecc_get_status)),
@@ -58,6 +56,3 @@ index da77ab20296e..85a61d3d8467 100644
  	SPINAND_INFO("GD5F1GQ4UFxxG",
  		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE, 0xb1, 0x48),
  		     NAND_MEMORG(1, 2048, 128, 64, 1024, 20, 1, 1, 1),
--- 
-2.35.1
-

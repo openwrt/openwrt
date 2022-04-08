@@ -18,11 +18,9 @@ Link: https://lore.kernel.org/linux-mtd/20220320100001.247905-5-gch981213@gmail.
  drivers/mtd/nand/spi/gigadevice.c | 48 +++++++++++++++++++++++++++++++
  1 file changed, 48 insertions(+)
 
-diff --git a/drivers/mtd/nand/spi/gigadevice.c b/drivers/mtd/nand/spi/gigadevice.c
-index d519bb85f0e7..fcd1c4e474a2 100644
 --- a/drivers/mtd/nand/spi/gigadevice.c
 +++ b/drivers/mtd/nand/spi/gigadevice.c
-@@ -47,6 +47,14 @@ static SPINAND_OP_VARIANTS(read_cache_variants_1gq5,
+@@ -47,6 +47,14 @@ static SPINAND_OP_VARIANTS(read_cache_va
  		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
  		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
  
@@ -37,10 +35,12 @@ index d519bb85f0e7..fcd1c4e474a2 100644
  static SPINAND_OP_VARIANTS(write_cache_variants,
  		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
  		SPINAND_PROG_LOAD(true, 0, NULL, 0));
-@@ -393,6 +401,46 @@ static const struct spinand_info gigadevice_spinand_table[] = {
+@@ -391,6 +399,46 @@ static const struct spinand_info gigadev
+ 					      &write_cache_variants,
+ 					      &update_cache_variants),
  		     SPINAND_HAS_QE_BIT,
- 		     SPINAND_ECCINFO(&gd5fxgqx_variant2_ooblayout,
- 				     gd5fxgq5xexxg_ecc_get_status)),
++		     SPINAND_ECCINFO(&gd5fxgqx_variant2_ooblayout,
++				     gd5fxgq5xexxg_ecc_get_status)),
 +	SPINAND_INFO("GD5F2GQ5UExxG",
 +		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x52),
 +		     NAND_MEMORG(1, 2048, 128, 64, 2048, 40, 1, 1, 1),
@@ -79,11 +79,6 @@ index d519bb85f0e7..fcd1c4e474a2 100644
 +					      &write_cache_variants,
 +					      &update_cache_variants),
 +		     SPINAND_HAS_QE_BIT,
-+		     SPINAND_ECCINFO(&gd5fxgqx_variant2_ooblayout,
-+				     gd5fxgq5xexxg_ecc_get_status)),
+ 		     SPINAND_ECCINFO(&gd5fxgqx_variant2_ooblayout,
+ 				     gd5fxgq5xexxg_ecc_get_status)),
  };
- 
- static const struct spinand_manufacturer_ops gigadevice_spinand_manuf_ops = {
--- 
-2.35.1
-
