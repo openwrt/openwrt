@@ -1608,7 +1608,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		}
 --- a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
 +++ b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
-@@ -1831,8 +1831,8 @@ static int axienet_probe(struct platform
+@@ -1843,8 +1843,8 @@ static int axienet_probe(struct platform
  	struct device_node *np;
  	struct axienet_local *lp;
  	struct net_device *ndev;
@@ -1618,7 +1618,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int addr_width = 32;
  	u32 value;
  
-@@ -2032,13 +2032,14 @@ static int axienet_probe(struct platform
+@@ -2044,13 +2044,14 @@ static int axienet_probe(struct platform
  		dev_info(&pdev->dev, "Ethernet core IRQ not defined\n");
  
  	/* Retrieve the MAC address */
