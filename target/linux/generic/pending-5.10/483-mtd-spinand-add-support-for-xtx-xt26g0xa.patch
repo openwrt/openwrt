@@ -83,8 +83,8 @@ Signed-off-by: Felix Matouschek <felix@matouschek.org>
 +	if (section)
 +		return -ERANGE;
 +
-+	region->offset = 8;
-+	region->length = 40;
++	region->offset = 48;
++	region->length = 16;
 +
 +	return 0;
 +}
@@ -96,7 +96,7 @@ Signed-off-by: Felix Matouschek <felix@matouschek.org>
 +		return -ERANGE;
 +
 +	region->offset = 1;
-+	region->length = 7;
++	region->length = 47;
 +
 +	return 0;
 +}
