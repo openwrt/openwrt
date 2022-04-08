@@ -514,7 +514,8 @@ ucidef_set_led_switch() {
 
 	_ucidef_set_led_common "$1" "$2" "$3"
 
-	json_add_string trigger "$trigger_name"
+	json_add_string trigger switch
+	json_add_string device "$trigger_name"
 	json_add_string type switch
 	json_add_string mode "$mode"
 	json_add_string port_mask "$port_mask"
