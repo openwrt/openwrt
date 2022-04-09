@@ -179,14 +179,13 @@ mtd_get_mac_binary_ubi() {
 }
 
 mtd_get_part_size() {
-	local part_name=$1
-	local first dev size erasesize name
+	local mtdname="$1"
+	local dev size erasesize name
+
 	while read dev size erasesize name; do
-		name=${name#'"'}; name=${name%'"'}
-		if [ "$name" = "$part_name" ]; then
-			echo $((0x$size))
-			break
-		fi
+		case "$name" in
+			*"$mtdname"*) printf '%d' $((0x${size})); break ;;
+		esac
 	done < /proc/mtd
 }
 
