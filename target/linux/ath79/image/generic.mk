@@ -524,6 +524,19 @@ define Device/buffalo_wzr_ar7161
   SUPPORTED_DEVICES += wzr-hp-ag300h
 endef
 
+define Device/buffalo_wzr-300hp-b0a1
+  $(Device/buffalo_common)
+  SOC := ar7242
+  DEVICE_MODEL := WZR-300HP
+  DEVICE_VARIANT := B0A1
+  BUFFALO_PRODUCT := WZR-300HP
+  BUFFALO_HWVER := 4
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  IMAGE_SIZE := 32320k
+  SUPPORTED_DEVICES += wzr-hp-g300nh2 buffalo,wzr-hp-g302h-a1a0
+endef
+TARGET_DEVICES += buffalo_wzr-300hp-b0a1
+
 define Device/buffalo_wzr-600dhp
   $(Device/buffalo_wzr_ar7161)
   DEVICE_MODEL := WZR-600DHP

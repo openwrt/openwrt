@@ -184,6 +184,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "5@eth0"
 		;;
+	buffalo,wzr-300hp-b0a1|\
 	buffalo,wzr-hp-g302h-a1a0)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "3:lan:4" "4:lan:3" "5:lan:2" "2:wan"
