@@ -278,6 +278,23 @@ macaddr_2bin() {
 	echo -ne \\x${mac//:/\\x}
 }
 
+macaddr_split() {
+	local sub="$1"
+	local mod="${2:-2}"
+	local mac
+
+	[ $((${#sub} % mod)) -eq 1 ] &&
+		mac="${sub%${sub#?}}" &&
+		sub="${sub#?}"
+
+	while [ "${#sub}" -ge 2 ]; do
+		mac="${mac}${mac:+ }${sub%${sub#??}}"
+		sub="${sub#??}"
+	done
+
+	printf '%s' "$mac"
+}
+
 macaddr_canonicalize() {
 	local mac="$1"
 	local canon=""
@@ -287,22 +304,7 @@ macaddr_canonicalize() {
 	[ -n "${mac//[a-fA-F0-9\.: -]/}" ] && return
 
 	for octet in ${mac//[\.:-]/ }; do
-		case "${#octet}" in
-		1)
-			octet="0${octet}"
-			;;
-		2)
-			;;
-		4)
-			octet="${octet:0:2} ${octet:2:2}"
-			;;
-		12)
-			octet="${octet:0:2} ${octet:2:2} ${octet:4:2} ${octet:6:2} ${octet:8:2} ${octet:10:2}"
-			;;
-		*)
-			return
-			;;
-		esac
+		[ "${#octet}" -le 2 ] || octet=$(macaddr_split "$octet")
 		canon=${canon}${canon:+ }${octet}
 	done
 
