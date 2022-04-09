@@ -11,6 +11,15 @@ debug () {
 N="
 "
 
+# class of ASCII printable delimiters
+delimiter="[ ,-./:;\_]"
+
+# class of ASCII block chars, "'` escaped, ] at start
+blockchar="[]\"\'()<>[\`{}]"
+
+# class of ASCII shell operators, ! at end
+operators="[#$%&*+=?@^|~!]"
+
 _C=0
 NO_EXPORT=1
 LOAD_STATE=1
