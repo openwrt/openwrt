@@ -295,21 +295,30 @@ macaddr_split() {
 }
 
 macaddr_canonicalize() {
-	local mac="$1"
-	local canon=""
+	local mac="$@"
+	local hex octet octets canon wc
 
-	mac=$(echo -n $mac | tr -d \")
-	[ ${#mac} -gt 17 ] && return
-	[ -n "${mac//[a-fA-F0-9\.: -]/}" ] && return
+	mac="${mac//[![:xdigit:][:punct:]]/}"
+	mac="${mac//$blockchar/}"
+	mac="${mac//$operators/}"
+	hex="${mac//$delimiter/}"
 
-	for octet in ${mac//[\.:-]/ }; do
+	[ "${#hex}" -ge 6 ] || return
+	[ "${#hex}" -gt 12 ] && mac="${hex:0:12}"
+
+	for octet in ${mac//$delimiter/ }; do
 		[ "${#octet}" -le 2 ] || octet=$(macaddr_split "$octet")
-		canon=${canon}${canon:+ }${octet}
+		octets="${octets}${octets:+ }${octet}"
 	done
 
-	[ ${#canon} -ne 17 ] && return
+	for octet in $octets; do
+		canon="${canon}${canon:+ }0x${octet}"
+		wc=$((wc + 1))
+	done
 
-	printf "%02x:%02x:%02x:%02x:%02x:%02x" 0x${canon// / 0x} 2>/dev/null
+	[ "$wc" -eq 6 ] || return
+
+	printf '%02x:%02x:%02x:%02x:%02x:%02x' $canon
 }
 
 dt_is_enabled() {
