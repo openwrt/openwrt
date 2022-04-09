@@ -64,8 +64,8 @@ find_mtd_chardev() {
 mtd_get_mac_ascii() {
 	local mtdname="$1"
 	local key="$2"
-	local part
-	local mac_dirty
+	local cmd="$3"
+	local part keys var mac
 
 	part=$(find_mtd_part "$mtdname")
 	if [ -z "$part" ]; then
@@ -73,10 +73,22 @@ mtd_get_mac_ascii() {
 		return
 	fi
 
-	mac_dirty=$(strings "$part" | sed -n 's/^'"$key"'=//p')
+	[ -z "$cmd" ] &&
+		case "$mtdname" in
+			 "u"*"boot"*"env"*) cmd="tail -c +5" ;;
+					 *) cmd="cat" ;;
+		esac
 
-	# "canonicalize" mac
-	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
+	keys=$($cmd "$part" | strings -n 12 -)
+
+	for var in $keys; do
+		case "$var" in
+			 "$key"*) mac="$var"; break ;;
+			*"$key"*) mac="$var"; continue ;;
+		esac
+	done
+
+	macaddr_canonicalize "${mac//$key/}"
 }
 
 mtd_get_mac_encrypted_arcadyan() {
