@@ -217,11 +217,25 @@ macaddr_generate_from_mmc_cid() {
 	echo "$(macaddr_unsetbit_mc "$(macaddr_setbit_la "${mac_base}")")"
 }
 
-macaddr_geteui() {
-	local mac=$1
-	local sep=$2
+macaddr_octet() {
+	local mac="$1"
+	local off="${2:-3}"
+	local len="${3:-3}"
+	local sep="$4"
+	local oct=""
 
-	echo ${mac:9:2}$sep${mac:12:2}$sep${mac:15:2}
+	while [ "$off" -ne 0 ]; do
+		mac="${mac#*$delimiter}"
+		off=$((off - 1))
+	done
+
+	while [ "$len" -ne 0 ]; do
+		oct="${oct}${oct:+$sep}${mac%%$delimiter*}"
+		mac="${mac#*$delimiter}"
+		len=$((len - 1))
+	done
+
+	printf '%s' "$oct"
 }
 
 macaddr_setbit() {
