@@ -1,4 +1,4 @@
-Original openwrt with passwall ssrp.
+Official openwrt with passwall ssrp.
 
 Ubuntu 18.04 and 20.04 is prefred.
 
