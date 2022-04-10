@@ -864,7 +864,20 @@ static void rtl83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 				     phy_interface_t interface)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u32 v;
+
+	/* Stop TX/RX to port */
+	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
+
+	// No longer force link
+	sw_w32_mask(0x3, 0, priv->r->mac_force_mode_ctrl(port));
+}
+
+static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
+				     unsigned int mode,
+				     phy_interface_t interface)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u32 v = 0;
 
 	/* Stop TX/RX to port */
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
@@ -874,19 +887,7 @@ static void rtl83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 		v = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN;
 	else if (priv->family_id == RTL9310_FAMILY_ID)
 		v = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN;
-	sw_w32_mask(v, 0, priv->r->mac_port_ctrl(port));
-}
-
-static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
-				     unsigned int mode,
-				     phy_interface_t interface)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	/* Stop TX/RX to port */
-	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
-
-	// No longer force link
-	sw_w32_mask(3, 0, priv->r->mac_force_mode_ctrl(port));
+	sw_w32_mask(v, 0, priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
