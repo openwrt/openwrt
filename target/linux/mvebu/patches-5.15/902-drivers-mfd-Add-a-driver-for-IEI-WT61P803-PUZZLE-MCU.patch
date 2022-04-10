@@ -26,7 +26,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
-@@ -2155,6 +2155,15 @@ config SGI_MFD_IOC3
+@@ -2187,6 +2187,15 @@ config SGI_MFD_IOC3
  	  If you have an SGI Origin, Octane, or a PCI IOC3 card,
  	  then say Y. Otherwise say N.
  
@@ -44,8 +44,8 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  	depends on SPI_MASTER
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -237,6 +237,7 @@ obj-$(CONFIG_MFD_HI655X_PMIC)   += hi655
- obj-$(CONFIG_MFD_DLN2)		+= dln2.o
+@@ -237,6 +237,7 @@ obj-$(CONFIG_MFD_DLN2)		+= dln2.o
+ obj-$(CONFIG_MFD_RT4831)	+= rt4831.o
  obj-$(CONFIG_MFD_RT5033)	+= rt5033.o
  obj-$(CONFIG_MFD_SKY81452)	+= sky81452.o
 +obj-$(CONFIG_MFD_IEI_WT61P803_PUZZLE)	+= iei-wt61p803-puzzle.o

@@ -26,7 +26,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #include <linux/bpf_trace.h>
  
  /* Registers */
-@@ -4933,14 +4934,14 @@ static void mvneta_setup_rx_prio_map(str
+@@ -4947,14 +4948,14 @@ static void mvneta_setup_rx_prio_map(str
  }
  
  static int mvneta_setup_mqprio(struct net_device *dev,
@@ -44,7 +44,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (num_tc > rxq_number)
  		return -EINVAL;
-@@ -4951,13 +4952,15 @@ static int mvneta_setup_mqprio(struct ne
+@@ -4965,13 +4966,15 @@ static int mvneta_setup_mqprio(struct ne
  		return 0;
  	}
  
