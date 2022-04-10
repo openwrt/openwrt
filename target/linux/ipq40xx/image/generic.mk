@@ -214,6 +214,8 @@ define Device/asus_rt-ac42u
 	DEVICE_MODEL := RT-AC42U
 	DEVICE_ALT0_VENDOR := ASUS
 	DEVICE_ALT0_MODEL := RT-ACRH17
+	DEVICE_ALT1_VENDOR := ASUS
+	DEVICE_ALT1_MODEL := RT-AC2200
 	SOC := qcom-ipq4019
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
@@ -269,6 +271,8 @@ define Device/avm_fritzbox-7530
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := AVM
 	DEVICE_MODEL := FRITZ!Box 7530
+	DEVICE_ALT0_VENDOR := AVM
+	DEVICE_ALT0_MODEL := FRITZ!Box 7520
 	SOC := qcom-ipq4019
 	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand
 endef
@@ -928,7 +932,7 @@ define Device/qxwlan_e2600ac-c1
 	KERNEL_SIZE := 4096k
 	IMAGE_SIZE := 31232k
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
+	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac-c1
 	DEFAULT := n
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c1
@@ -943,7 +947,7 @@ define Device/qxwlan_e2600ac-c2
 	KERNEL_INSTALL := 1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac
+	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac-c2
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
 
@@ -972,6 +976,7 @@ define Device/tel_x1pro
 	IMAGE_SIZE := 31232k
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+	DEFAULT := n
 endef
 TARGET_DEVICES += tel_x1pro
 

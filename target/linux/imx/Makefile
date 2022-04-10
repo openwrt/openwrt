@@ -10,7 +10,7 @@ BOARDNAME:=NXP i.MX
 FEATURES:=audio display fpu gpio pcie rtc usb usbgadget squashfs targz nand ubifs boot-part rootfs-part
 SUBTARGETS:=cortexa7 cortexa9
 
-KERNEL_PATCHVER:=5.10
+KERNEL_PATCHVER:=5.15
 
 include $(INCLUDE_DIR)/target.mk
 

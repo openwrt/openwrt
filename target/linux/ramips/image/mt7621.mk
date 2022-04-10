@@ -9,6 +9,10 @@ DEFAULT_SOC := mt7621
 KERNEL_DTB += -d21
 DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME
 
+ifdef CONFIG_LINUX_5_10
+  DTS_CPPFLAGS += -DDTS_LEGACY
+endif
+
 define Build/beeline-trx
 	echo -ne "hsqs" > $@.hsqs
 	$(STAGING_DIR_HOST)/bin/otrx create $@.trx -M 0x746f435d -f $@ \

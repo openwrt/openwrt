@@ -42,6 +42,7 @@ ALLWIFIBOARDS:= \
 	glinet_gl-ap1300 \
 	glinet_gl-b2200 \
 	glinet_gl-s1300 \
+	google_wifi \
 	linksys_ea8300 \
 	linksys_mr8300-v0 \
 	luma_wrtq-329acn \
@@ -54,7 +55,8 @@ ALLWIFIBOARDS:= \
 	p2w_r619ac \
 	plasmacloud_pa1200 \
 	plasmacloud_pa2200 \
-	qxwlan_e2600ac \
+	qxwlan_e2600ac-c1 \
+	qxwlan_e2600ac-c2 \
 	teltonika_rutx \
 	zte_mf286d
 
@@ -134,6 +136,7 @@ $(eval $(call generate-ipq-wifi-package,ezviz_cs-w3-wd1200g-eup,EZVIZ CS-W3-WD12
 $(eval $(call generate-ipq-wifi-package,glinet_gl-ap1300,GL.iNet GL-AP1300))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-b2200,GL.iNet GL-B2200))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-s1300,GL.iNet GL-S1300))
+$(eval $(call generate-ipq-wifi-package,google_wifi,Google WiFi))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
 $(eval $(call generate-ipq-wifi-package,linksys_mr8300-v0,Linksys MR8300))
 $(eval $(call generate-ipq-wifi-package,luma_wrtq-329acn,Luma WRTQ-329ACN))
@@ -146,7 +149,8 @@ $(eval $(call generate-ipq-wifi-package,nec_wg2600hp3,NEC Platforms WG2600HP3))
 $(eval $(call generate-ipq-wifi-package,p2w_r619ac,P&W R619AC))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa1200,Plasma Cloud PA1200))
 $(eval $(call generate-ipq-wifi-package,plasmacloud_pa2200,Plasma Cloud PA2200))
-$(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac,Qxwlan E2600AC))
+$(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac-c1,Qxwlan E2600AC C1))
+$(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac-c2,Qxwlan E2600AC C2))
 $(eval $(call generate-ipq-wifi-package,teltonika_rutx,Teltonika RUTX))
 $(eval $(call generate-ipq-wifi-package,zte_mf286d,ZTE MF286D))
 

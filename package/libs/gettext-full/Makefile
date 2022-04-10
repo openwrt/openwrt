@@ -88,6 +88,11 @@ define Build/InstallDev
 	$(SED) '/read dummy/d' $(STAGING_DIR_HOSTPKG)/bin/gettextize
 endef
 
+define Host/Install
+	$(call Host/Install/Default)
+	$(LN) msgfmt $(STAGING_DIR_HOSTPKG)/bin/gmsgfmt
+endef
+
 define Package/libintl-full/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libintl.so.* $(1)/usr/lib/

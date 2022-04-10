@@ -32,6 +32,13 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1 > /sys${DEVPATH}/macaddress
 		;;
+	hiwifi,hc5962)
+		label_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")
+		[ "$PHYNBR" = "0" ] && [ -n "$label_mac" ] && \
+		echo -n "$label_mac" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && [ -n "$label_mac" ] && \
+		macaddr_unsetbit "$label_mac" 6 > /sys${DEVPATH}/macaddress
+		;;
 	iptime,a3002mesh|\
 	iptime,a3004t)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
