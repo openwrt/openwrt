@@ -78,7 +78,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	/* flush out frame - make sure the deauth was actually sent */
-@@ -4374,7 +4375,7 @@ void ieee80211_mgd_quiesce(struct ieee80
+@@ -4381,7 +4382,7 @@ void ieee80211_mgd_quiesce(struct ieee80
  		 * cfg80211 won't know and won't actually abort those attempts,
  		 * thus we need to do that ourselves.
  		 */
@@ -87,7 +87,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  					       IEEE80211_STYPE_DEAUTH,
  					       WLAN_REASON_DEAUTH_LEAVING,
  					       false, frame_buf);
-@@ -5354,7 +5355,7 @@ int ieee80211_mgd_deauth(struct ieee8021
+@@ -5361,7 +5362,7 @@ int ieee80211_mgd_deauth(struct ieee8021
  			   ieee80211_get_reason_code_string(req->reason_code));
  
  		drv_mgd_prepare_tx(sdata->local, sdata, 0);
@@ -96,7 +96,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  					       IEEE80211_STYPE_DEAUTH,
  					       req->reason_code, tx,
  					       frame_buf);
-@@ -5374,7 +5375,7 @@ int ieee80211_mgd_deauth(struct ieee8021
+@@ -5381,7 +5382,7 @@ int ieee80211_mgd_deauth(struct ieee8021
  			   ieee80211_get_reason_code_string(req->reason_code));
  
  		drv_mgd_prepare_tx(sdata->local, sdata, 0);
@@ -107,7 +107,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  					       frame_buf);
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -1433,7 +1433,8 @@ void ieee80211_send_auth(struct ieee8021
+@@ -1435,7 +1435,8 @@ void ieee80211_send_auth(struct ieee8021
  }
  
  void ieee80211_send_deauth_disassoc(struct ieee80211_sub_if_data *sdata,
@@ -117,7 +117,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				    bool send_frame, u8 *frame_buf)
  {
  	struct ieee80211_local *local = sdata->local;
-@@ -1444,7 +1445,7 @@ void ieee80211_send_deauth_disassoc(stru
+@@ -1446,7 +1447,7 @@ void ieee80211_send_deauth_disassoc(stru
  	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT | stype);
  	mgmt->duration = 0; /* initialize only */
  	mgmt->seq_ctrl = 0; /* initialize only */
