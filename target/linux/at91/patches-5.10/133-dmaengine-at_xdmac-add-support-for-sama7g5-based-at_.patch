@@ -20,8 +20,6 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  drivers/dma/at_xdmac.c | 110 +++++++++++++++++++++++++++++++----------
  1 file changed, 84 insertions(+), 26 deletions(-)
 
-diff --git a/drivers/dma/at_xdmac.c b/drivers/dma/at_xdmac.c
-index 85fe260ccd07..2b096ea04018 100644
 --- a/drivers/dma/at_xdmac.c
 +++ b/drivers/dma/at_xdmac.c
 @@ -38,13 +38,6 @@
@@ -118,7 +116,7 @@ index 85fe260ccd07..2b096ea04018 100644
  }
  
  #define at_xdmac_read(atxdmac, reg) readl_relaxed((atxdmac)->regs + (reg))
-@@ -343,8 +380,10 @@ static void at_xdmac_start_xfer(struct at_xdmac_chan *atchan,
+@@ -343,8 +380,10 @@ static void at_xdmac_start_xfer(struct a
  	first->active_xfer = true;
  
  	/* Tell xdmac where to get the first descriptor. */
@@ -131,7 +129,7 @@ index 85fe260ccd07..2b096ea04018 100644
  	at_xdmac_chan_write(atchan, AT_XDMAC_CNDA, reg);
  
  	/*
-@@ -539,6 +578,7 @@ static int at_xdmac_compute_chan_conf(struct dma_chan *chan,
+@@ -539,6 +578,7 @@ static int at_xdmac_compute_chan_conf(st
  				      enum dma_transfer_direction direction)
  {
  	struct at_xdmac_chan	*atchan = to_at_xdmac_chan(chan);
@@ -139,7 +137,7 @@ index 85fe260ccd07..2b096ea04018 100644
  	int			csize, dwidth;
  
  	if (direction == DMA_DEV_TO_MEM) {
-@@ -546,12 +586,14 @@ static int at_xdmac_compute_chan_conf(struct dma_chan *chan,
+@@ -546,12 +586,14 @@ static int at_xdmac_compute_chan_conf(st
  			AT91_XDMAC_DT_PERID(atchan->perid)
  			| AT_XDMAC_CC_DAM_INCREMENTED_AM
  			| AT_XDMAC_CC_SAM_FIXED_AM
@@ -156,7 +154,7 @@ index 85fe260ccd07..2b096ea04018 100644
  		csize = ffs(atchan->sconfig.src_maxburst) - 1;
  		if (csize < 0) {
  			dev_err(chan2dev(chan), "invalid src maxburst value\n");
-@@ -569,12 +611,14 @@ static int at_xdmac_compute_chan_conf(struct dma_chan *chan,
+@@ -569,12 +611,14 @@ static int at_xdmac_compute_chan_conf(st
  			AT91_XDMAC_DT_PERID(atchan->perid)
  			| AT_XDMAC_CC_DAM_FIXED_AM
  			| AT_XDMAC_CC_SAM_INCREMENTED_AM
@@ -173,7 +171,7 @@ index 85fe260ccd07..2b096ea04018 100644
  		csize = ffs(atchan->sconfig.dst_maxburst) - 1;
  		if (csize < 0) {
  			dev_err(chan2dev(chan), "invalid src maxburst value\n");
-@@ -864,10 +908,12 @@ at_xdmac_interleaved_queue_desc(struct dma_chan *chan,
+@@ -864,10 +908,12 @@ at_xdmac_interleaved_queue_desc(struct d
  	 * ERRATA: Even if useless for memory transfers, the PERID has to not
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
@@ -188,7 +186,7 @@ index 85fe260ccd07..2b096ea04018 100644
  					| AT_XDMAC_CC_MBSIZE_SIXTEEN
  					| AT_XDMAC_CC_TYPE_MEM_TRAN;
  
-@@ -1046,12 +1092,14 @@ at_xdmac_prep_dma_memcpy(struct dma_chan *chan, dma_addr_t dest, dma_addr_t src,
+@@ -1046,12 +1092,14 @@ at_xdmac_prep_dma_memcpy(struct dma_chan
  	 * ERRATA: Even if useless for memory transfers, the PERID has to not
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
@@ -205,7 +203,7 @@ index 85fe260ccd07..2b096ea04018 100644
  					| AT_XDMAC_CC_MBSIZE_SIXTEEN
  					| AT_XDMAC_CC_TYPE_MEM_TRAN;
  	unsigned long		irqflags;
-@@ -1152,12 +1200,14 @@ static struct at_xdmac_desc *at_xdmac_memset_create_desc(struct dma_chan *chan,
+@@ -1152,12 +1200,14 @@ static struct at_xdmac_desc *at_xdmac_me
  	 * ERRATA: Even if useless for memory transfers, the PERID has to not
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
@@ -222,7 +220,7 @@ index 85fe260ccd07..2b096ea04018 100644
  					| AT_XDMAC_CC_MBSIZE_SIXTEEN
  					| AT_XDMAC_CC_MEMSET_HW_MODE
  					| AT_XDMAC_CC_TYPE_MEM_TRAN;
-@@ -1436,7 +1486,7 @@ at_xdmac_tx_status(struct dma_chan *chan, dma_cookie_t cookie,
+@@ -1436,7 +1486,7 @@ at_xdmac_tx_status(struct dma_chan *chan
  	mask = AT_XDMAC_CC_TYPE | AT_XDMAC_CC_DSYNC;
  	value = AT_XDMAC_CC_TYPE_PER_TRAN | AT_XDMAC_CC_DSYNC_PER2MEM;
  	if ((desc->lld.mbr_cfg & mask) == value) {
@@ -231,7 +229,7 @@ index 85fe260ccd07..2b096ea04018 100644
  		while (!(at_xdmac_chan_read(atchan, AT_XDMAC_CIS) & AT_XDMAC_CIS_FIS))
  			cpu_relax();
  	}
-@@ -1494,7 +1544,7 @@ at_xdmac_tx_status(struct dma_chan *chan, dma_cookie_t cookie,
+@@ -1494,7 +1544,7 @@ at_xdmac_tx_status(struct dma_chan *chan
  	 * FIFO flush ensures that data are really written.
  	 */
  	if ((desc->lld.mbr_cfg & mask) == value) {
@@ -240,7 +238,7 @@ index 85fe260ccd07..2b096ea04018 100644
  		while (!(at_xdmac_chan_read(atchan, AT_XDMAC_CIS) & AT_XDMAC_CIS_FIS))
  			cpu_relax();
  	}
-@@ -1760,7 +1810,7 @@ static int at_xdmac_device_pause(struct dma_chan *chan)
+@@ -1760,7 +1810,7 @@ static int at_xdmac_device_pause(struct
  		return 0;
  
  	spin_lock_irqsave(&atchan->lock, flags);
@@ -249,7 +247,7 @@ index 85fe260ccd07..2b096ea04018 100644
  	while (at_xdmac_chan_read(atchan, AT_XDMAC_CC)
  	       & (AT_XDMAC_CC_WRIP | AT_XDMAC_CC_RDIP))
  		cpu_relax();
-@@ -1783,7 +1833,7 @@ static int at_xdmac_device_resume(struct dma_chan *chan)
+@@ -1783,7 +1833,7 @@ static int at_xdmac_device_resume(struct
  		return 0;
  	}
  
@@ -258,7 +256,7 @@ index 85fe260ccd07..2b096ea04018 100644
  	clear_bit(AT_XDMAC_CHAN_IS_PAUSED, &atchan->status);
  	spin_unlock_irqrestore(&atchan->lock, flags);
  
-@@ -1985,6 +2035,10 @@ static int at_xdmac_probe(struct platform_device *pdev)
+@@ -1985,6 +2035,10 @@ static int at_xdmac_probe(struct platfor
  	atxdmac->regs = base;
  	atxdmac->irq = irq;
  
@@ -269,7 +267,7 @@ index 85fe260ccd07..2b096ea04018 100644
  	atxdmac->clk = devm_clk_get(&pdev->dev, "dma_clk");
  	if (IS_ERR(atxdmac->clk)) {
  		dev_err(&pdev->dev, "can't get dma_clk\n");
-@@ -2127,6 +2181,10 @@ static const struct dev_pm_ops atmel_xdmac_dev_pm_ops = {
+@@ -2127,6 +2181,10 @@ static const struct dev_pm_ops atmel_xdm
  static const struct of_device_id atmel_xdmac_dt_ids[] = {
  	{
  		.compatible = "atmel,sama5d4-dma",
@@ -280,6 +278,3 @@ index 85fe260ccd07..2b096ea04018 100644
  	}, {
  		/* sentinel */
  	}
--- 
-2.32.0
-

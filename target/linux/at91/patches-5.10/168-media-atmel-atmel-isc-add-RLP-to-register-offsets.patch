@@ -21,11 +21,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 1 +
  4 files changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index b398cdfdc2c9..25c90b821067 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -726,8 +726,8 @@ static int isc_configure(struct isc_device *isc)
+@@ -726,8 +726,8 @@ static int isc_configure(struct isc_devi
  
  	regmap_update_bits(regmap, ISC_PFE_CFG0, mask, pfe_cfg0);
  
@@ -36,8 +34,6 @@ index b398cdfdc2c9..25c90b821067 100644
  
  	regmap_write(regmap, ISC_DCFG, dcfg);
  
-diff --git a/drivers/media/platform/atmel/atmel-isc-regs.h b/drivers/media/platform/atmel/atmel-isc-regs.h
-index 04839def6ef6..2205484e04fc 100644
 --- a/drivers/media/platform/atmel/atmel-isc-regs.h
 +++ b/drivers/media/platform/atmel/atmel-isc-regs.h
 @@ -204,6 +204,8 @@
@@ -49,8 +45,6 @@ index 04839def6ef6..2205484e04fc 100644
  /* Rounding, Limiting and Packing Configuration Register */
  #define ISC_RLP_CFG     0x000003d0
  
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 9eb85540d89d..4a5293c66f49 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -149,12 +149,14 @@ struct isc_ctrls {
@@ -68,11 +62,9 @@ index 9eb85540d89d..4a5293c66f49 100644
  };
  
  /*
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index 57ea1ae50c44..b01b5b9f229b 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -255,6 +255,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -255,6 +255,7 @@ static int atmel_isc_probe(struct platfo
  	isc->offsets.cbc = ISC_SAMA5D2_CBC_OFFSET;
  	isc->offsets.sub422 = ISC_SAMA5D2_SUB422_OFFSET;
  	isc->offsets.sub420 = ISC_SAMA5D2_SUB420_OFFSET;
@@ -80,6 +72,3 @@ index 57ea1ae50c44..b01b5b9f229b 100644
  
  	/* sama5d2-isc - 8 bits per beat */
  	isc->dcfg = ISC_DCFG_YMBSIZE_BEATS8 | ISC_DCFG_CMBSIZE_BEATS8;
--- 
-2.32.0
-

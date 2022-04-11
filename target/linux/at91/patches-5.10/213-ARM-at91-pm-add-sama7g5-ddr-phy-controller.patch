@@ -14,11 +14,9 @@ Link: https://lore.kernel.org/r/20210415105010.569620-19-claudiu.beznea@microchi
  arch/arm/mach-at91/pm.c | 27 +++++++++++++++++++++------
  1 file changed, 21 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index 622d68724c3f..b047a1f2ddfb 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
-@@ -552,7 +552,12 @@ static const struct of_device_id ramc_ids[] __initconst = {
+@@ -552,7 +552,12 @@ static const struct of_device_id ramc_id
  	{ /*sentinel*/ }
  };
  
@@ -94,6 +92,3 @@ index 622d68724c3f..b047a1f2ddfb 100644
  	if (ret)
  		return;
  
--- 
-2.32.0
-

@@ -12,7 +12,8 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
-enterasys,ws-ap3710i)
+enterasys,ws-ap3710i|\
+extreme-networks,ws-ap3825i)
 	mtd_get_mac_ascii cfg2 RADIOADDR${PHYNBR} > /sys${DEVPATH}/macaddress
 	;;
 ocedo,panda)

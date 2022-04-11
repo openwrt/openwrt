@@ -18,11 +18,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  include/dt-bindings/clock/at91.h |  1 +
  2 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index 927eb3b2b126..a6e20b35960e 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
-@@ -904,7 +904,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -904,7 +904,7 @@ static void __init sama7g5_pmc_setup(str
  	if (IS_ERR(regmap))
  		return;
  
@@ -31,7 +29,7 @@ index 927eb3b2b126..a6e20b35960e 100644
  					nck(sama7g5_systemck),
  					nck(sama7g5_periphck),
  					nck(sama7g5_gck), 8);
-@@ -981,18 +981,17 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -981,18 +981,17 @@ static void __init sama7g5_pmc_setup(str
  		}
  	}
  
@@ -55,8 +53,6 @@ index 927eb3b2b126..a6e20b35960e 100644
  					  &mck0_layout, &mck0_characteristics,
  					  &pmc_mck0_lock, 0);
  	if (IS_ERR(hw))
-diff --git a/include/dt-bindings/clock/at91.h b/include/dt-bindings/clock/at91.h
-index fab313f62e8f..98e1b2ab6403 100644
 --- a/include/dt-bindings/clock/at91.h
 +++ b/include/dt-bindings/clock/at91.h
 @@ -34,6 +34,7 @@
@@ -67,6 +63,3 @@ index fab313f62e8f..98e1b2ab6403 100644
  
  #ifndef AT91_PMC_MOSCS
  #define AT91_PMC_MOSCS		0		/* MOSCS Flag */
--- 
-2.32.0
-

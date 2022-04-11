@@ -298,6 +298,16 @@ define Device/alfa-network_r36a
 endef
 TARGET_DEVICES += alfa-network_r36a
 
+define Device/alfa-network_tube-2hq
+  SOC := qca9531
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := Tube-2HQ
+  DEVICE_PACKAGES := rssileds -swconfig
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += tube-2hq
+endef
+TARGET_DEVICES += alfa-network_tube-2hq
+
 define Device/allnet_all-wap02860ac
   $(Device/senao_loader_okli)
   SOC := qca9558
@@ -309,6 +319,41 @@ define Device/allnet_all-wap02860ac
   SENAO_IMGNAME := senao-allwap02860ac
 endef
 TARGET_DEVICES += allnet_all-wap02860ac
+
+define Device/araknis_an-300-ap-i-n
+  $(Device/senao_loader_okli)
+  SOC := ar9344
+  DEVICE_VENDOR := Araknis
+  DEVICE_MODEL := AN-300-AP-I-N
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-an300
+endef
+TARGET_DEVICES += araknis_an-300-ap-i-n
+
+define Device/araknis_an-500-ap-i-ac
+  $(Device/senao_loader_okli)
+  SOC := qca9557
+  DEVICE_VENDOR := Araknis
+  DEVICE_MODEL := AN-500-AP-I-AC
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-generic-v1-an500
+endef
+TARGET_DEVICES += araknis_an-500-ap-i-ac
+
+define Device/araknis_an-700-ap-i-ac
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := Araknis
+  DEVICE_MODEL := AN-700-AP-I-AC
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-generic-v1-an700
+endef
+TARGET_DEVICES += araknis_an-700-ap-i-ac
 
 define Device/arduino_yun
   SOC := ar9331

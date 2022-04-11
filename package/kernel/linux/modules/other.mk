@@ -71,7 +71,6 @@ define KernelPackage/ath3k
   KCONFIG:= \
 	CONFIG_BT_ATH3K \
 	CONFIG_BT_HCIUART_ATH3K=y
-  $(call AddDepends/bluetooth)
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/ath3k.ko
   AUTOLOAD:=$(call AutoProbe,ath3k)
@@ -107,7 +106,6 @@ define KernelPackage/btmrvl
   KCONFIG:= \
 	CONFIG_BT_MRVL \
 	CONFIG_BT_MRVL_SDIO
-  $(call AddDepends/bluetooth)
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/btmrvl.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btmrvl_sdio.ko
@@ -180,6 +178,32 @@ define KernelPackage/eeprom-at25/description
 endef
 
 $(eval $(call KernelPackage,eeprom-at25))
+
+
+define KernelPackage/google-firmware
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Google firmware drivers (Coreboot, VPD, Memconsole)
+  KCONFIG:= \
+	CONFIG_GOOGLE_FIRMWARE=y \
+	CONFIG_GOOGLE_COREBOOT_TABLE \
+	CONFIG_GOOGLE_MEMCONSOLE \
+	CONFIG_GOOGLE_MEMCONSOLE_COREBOOT \
+	CONFIG_GOOGLE_VPD
+  FILES:= \
+	  $(LINUX_DIR)/drivers/firmware/google/coreboot_table.ko \
+	  $(LINUX_DIR)/drivers/firmware/google/memconsole.ko \
+	  $(LINUX_DIR)/drivers/firmware/google/memconsole-coreboot.ko \
+	  $(LINUX_DIR)/drivers/firmware/google/vpd-sysfs.ko
+  AUTOLOAD:=$(call AutoProbe,coreboot_table memconsole-coreboot vpd-sysfs)
+endef
+
+define KernelPackage/google-firmware/description
+  Kernel modules for Google firmware drivers. Useful for examining firmware and
+  boot details on devices using a Google bootloader based on Coreboot. Provides
+  files like /sys/firmware/log and /sys/firmware/vpd.
+endef
+
+$(eval $(call KernelPackage,google-firmware))
 
 
 define KernelPackage/gpio-f7188x
@@ -933,7 +957,6 @@ $(eval $(call KernelPackage,ikconfig))
 define KernelPackage/zram
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ZRAM
-  DEPENDS:=+kmod-lib-lzo
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
@@ -950,8 +973,31 @@ define KernelPackage/zram/description
  Compressed RAM block device support
 endef
 
-$(eval $(call KernelPackage,zram))
+define KernelPackage/zram/config
+  choice
+    prompt "ZRAM Default compressor"
+    default ZRAM_DEF_COMP_LZORLE
 
+  config ZRAM_DEF_COMP_LZORLE
+            bool "lzo-rle"
+            select PACKAGE_kmod-lib-lzo
+
+  config ZRAM_DEF_COMP_LZO
+            bool "lzo"
+            select PACKAGE_kmod-lib-lzo
+
+  config ZRAM_DEF_COMP_LZ4
+            bool "lz4"
+            select PACKAGE_kmod-lib-lz4
+
+  config ZRAM_DEF_COMP_ZSTD
+            bool "zstd"
+            select PACKAGE_kmod-lib-zstd
+
+  endchoice
+endef
+
+$(eval $(call KernelPackage,zram))
 
 define KernelPackage/pps
   SUBMENU:=$(OTHER_MENU)
@@ -1164,7 +1210,8 @@ $(eval $(call KernelPackage,keys-trusted))
 define KernelPackage/tpm
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TPM Hardware Support
-  DEPENDS:= +kmod-random-core
+  DEPENDS:= +kmod-random-core +(LINUX_5_15):kmod-asn1-decoder \
+	  +(LINUX_5_15):kmod-asn1-encoder +(LINUX_5_15):kmod-oid-registry
   KCONFIG:= CONFIG_TCG_TPM
   FILES:= $(LINUX_DIR)/drivers/char/tpm/tpm.ko
   AUTOLOAD:=$(call AutoLoad,10,tpm,1)
@@ -1291,3 +1338,34 @@ define KernelPackage/f71808e-wdt/description
 endef
 
 $(eval $(call KernelPackage,f71808e-wdt))
+
+define KernelPackage/mhi-bus
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=MHI bus
+  DEPENDS:=@LINUX_5_15
+  KCONFIG:=CONFIG_MHI_BUS \
+           CONFIG_MHI_BUS_DEBUG=y
+  FILES:=$(LINUX_DIR)/drivers/bus/mhi/core/mhi.ko
+  AUTOLOAD:=$(call AutoProbe,mhi)
+endef
+
+define KernelPackage/mhi-bus/description
+  Kernel module for the Qualcomm MHI bus.
+endef
+
+$(eval $(call KernelPackage,mhi-bus))
+
+define KernelPackage/mhi-pci-generic
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=MHI PCI controller driver
+  DEPENDS:=@LINUX_5_15 +kmod-mhi-bus
+  KCONFIG:=CONFIG_MHI_BUS_PCI_GENERIC
+  FILES:=$(LINUX_DIR)/drivers/bus/mhi/mhi_pci_generic.ko
+  AUTOLOAD:=$(call AutoProbe,mhi_pci_generic)
+endef
+
+define KernelPackage/mhi-pci-generic/description
+  Kernel module for the MHI PCI controller driver.
+endef
+
+$(eval $(call KernelPackage,mhi-pci-generic))

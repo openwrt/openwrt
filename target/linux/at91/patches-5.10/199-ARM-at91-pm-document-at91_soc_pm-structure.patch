@@ -12,8 +12,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-4-claudiu.beznea@microchip
  arch/arm/mach-at91/pm.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index f182d8bf6f82..a060bec77f20 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
 @@ -41,6 +41,14 @@ struct at91_pm_bu {
@@ -31,6 +29,3 @@ index f182d8bf6f82..a060bec77f20 100644
  struct at91_soc_pm {
  	int (*config_shdwc_ws)(void __iomem *shdwc, u32 *mode, u32 *polarity);
  	int (*config_pmc_ws)(void __iomem *pmc, u32 mode, u32 polarity);
--- 
-2.32.0
-

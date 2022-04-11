@@ -16,11 +16,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/clk-master.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clk/at91/clk-master.c b/drivers/clk/at91/clk-master.c
-index 88f7af1bfff6..9a2c8e64cacf 100644
 --- a/drivers/clk/at91/clk-master.c
 +++ b/drivers/clk/at91/clk-master.c
-@@ -680,6 +680,8 @@ static void clk_sama7g5_master_set(struct clk_master *master,
+@@ -680,6 +680,8 @@ static void clk_sama7g5_master_set(struc
  	unsigned long flags;
  	unsigned int val, cparent;
  	unsigned int enable = status ? AT91_PMC_MCR_V2_EN : 0;
@@ -29,7 +27,7 @@ index 88f7af1bfff6..9a2c8e64cacf 100644
  
  	spin_lock_irqsave(master->lock, flags);
  
-@@ -689,9 +691,7 @@ static void clk_sama7g5_master_set(struct clk_master *master,
+@@ -689,9 +691,7 @@ static void clk_sama7g5_master_set(struc
  	regmap_update_bits(master->regmap, AT91_PMC_MCR_V2,
  			   enable | AT91_PMC_MCR_V2_CSS | AT91_PMC_MCR_V2_DIV |
  			   AT91_PMC_MCR_V2_CMD | AT91_PMC_MCR_V2_ID_MSK,
@@ -40,6 +38,3 @@ index 88f7af1bfff6..9a2c8e64cacf 100644
  			   AT91_PMC_MCR_V2_ID(master->id));
  
  	cparent = (val & AT91_PMC_MCR_V2_CSS) >> PMC_MCR_CSS_SHIFT;
--- 
-2.32.0
-

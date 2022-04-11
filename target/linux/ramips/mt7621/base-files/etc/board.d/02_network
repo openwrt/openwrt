@@ -38,11 +38,13 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	asiarf,ap7621-nv1|\
+	beeline,smartbox-flash|\
 	glinet,gl-mt1300|\
 	iptime,a3002mesh|\
 	jcg,q20|\
 	lenovo,newifi-d1|\
 	mikrotik,routerboard-m33g|\
+	renkforce,ws-wn530hp3-a|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3g-v2|\
 	xiaomi,mi-router-4|\
@@ -63,8 +65,12 @@ ramips_setup_interfaces()
 	mikrotik,routerboard-760igs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
 		;;
-	tplink,eap235-wall-v1)
+	tplink,eap235-wall-v1|\
+	tplink,eap615-wall-v1)
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
+		;;
+	tplink,tl-wpa8631p-v3)
+		ucidef_set_interface_lan "lan1 lan2 lan3 plc0"
 		;;
 	ubnt,edgerouter-x)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
@@ -109,6 +115,11 @@ ramips_setup_macs()
 	asus,rt-ac85p)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
+	beeline,smartbox-flash)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env eth2macaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env eth3macaddr)
+		label_mac=$lan_mac
 		;;
 	buffalo,wsr-1166dhp)
 		local index="$(find_mtd_index "board_data")"

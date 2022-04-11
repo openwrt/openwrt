@@ -27,6 +27,7 @@ include $(INCLUDE_DIR)/rootfs.mk
 
 include $(INCLUDE_DIR)/version.mk
 export REVISION
+export SOURCE_DATE_EPOCH
 
 define Helptext
 Available Commands:

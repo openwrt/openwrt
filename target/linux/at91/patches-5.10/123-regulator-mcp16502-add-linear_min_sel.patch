@@ -13,11 +13,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  drivers/regulator/mcp16502.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/regulator/mcp16502.c b/drivers/regulator/mcp16502.c
-index 6d0ad74935b3..ab78f831f5bf 100644
 --- a/drivers/regulator/mcp16502.c
 +++ b/drivers/regulator/mcp16502.c
-@@ -93,6 +93,7 @@ static unsigned int mcp16502_of_map_mode(unsigned int mode)
+@@ -93,6 +93,7 @@ static unsigned int mcp16502_of_map_mode
  		.owner			= THIS_MODULE,			\
  		.n_voltages		= MCP16502_VSEL + 1,		\
  		.linear_ranges		= _ranges,			\
@@ -25,6 +23,3 @@ index 6d0ad74935b3..ab78f831f5bf 100644
  		.n_linear_ranges	= ARRAY_SIZE(_ranges),		\
  		.of_match		= of_match_ptr(_name),		\
  		.of_map_mode		= mcp16502_of_map_mode,		\
--- 
-2.32.0
-

@@ -21,11 +21,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  .../media/platform/atmel/atmel-sama5d2-isc.c  |  1 +
  4 files changed, 18 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 5c95aa45cf6c..e010429fc44d 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -601,16 +601,20 @@ static void isc_start_dma(struct isc_device *isc)
+@@ -601,16 +601,20 @@ static void isc_start_dma(struct isc_dev
  			   ISC_PFE_CFG0_COLEN | ISC_PFE_CFG0_ROWEN);
  
  	addr0 = vb2_dma_contig_plane_dma_addr(&isc->cur_frm->vb.vb2_buf, 0);
@@ -51,7 +49,7 @@ index 5c95aa45cf6c..e010429fc44d 100644
  		break;
  	default:
  		break;
-@@ -618,7 +622,8 @@ static void isc_start_dma(struct isc_device *isc)
+@@ -618,7 +622,8 @@ static void isc_start_dma(struct isc_dev
  
  	dctrl_dview = isc->config.dctrl_dview;
  
@@ -61,7 +59,7 @@ index 5c95aa45cf6c..e010429fc44d 100644
  	spin_lock(&isc->awb_lock);
  	regmap_write(regmap, ISC_CTRLEN, ISC_CTRL_CAPTURE);
  	spin_unlock(&isc->awb_lock);
-@@ -731,7 +736,7 @@ static int isc_configure(struct isc_device *isc)
+@@ -731,7 +736,7 @@ static int isc_configure(struct isc_devi
  	regmap_update_bits(regmap, ISC_RLP_CFG + isc->offsets.rlp,
  			   ISC_RLP_CFG_MODE_MASK, rlp_mode);
  
@@ -70,8 +68,6 @@ index 5c95aa45cf6c..e010429fc44d 100644
  
  	/* Set the pipeline */
  	isc_set_pipeline(isc, pipeline);
-diff --git a/drivers/media/platform/atmel/atmel-isc-regs.h b/drivers/media/platform/atmel/atmel-isc-regs.h
-index 0ab280ab59ec..4940998c82a2 100644
 --- a/drivers/media/platform/atmel/atmel-isc-regs.h
 +++ b/drivers/media/platform/atmel/atmel-isc-regs.h
 @@ -247,6 +247,9 @@
@@ -84,8 +80,6 @@ index 0ab280ab59ec..4940998c82a2 100644
  /* DMA Configuration Register */
  #define ISC_DCFG        0x000003e0
  #define ISC_DCFG_IMODE_PACKED8          0x0
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 97ec4c58297e..bea545327d3d 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -151,6 +151,7 @@ struct isc_ctrls {
@@ -104,11 +98,9 @@ index 97ec4c58297e..bea545327d3d 100644
  };
  
  /*
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index db93cb76c08b..bfd56ac5c921 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -257,6 +257,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -257,6 +257,7 @@ static int atmel_isc_probe(struct platfo
  	isc->offsets.sub420 = ISC_SAMA5D2_SUB420_OFFSET;
  	isc->offsets.rlp = ISC_SAMA5D2_RLP_OFFSET;
  	isc->offsets.his = ISC_SAMA5D2_HIS_OFFSET;
@@ -116,6 +108,3 @@ index db93cb76c08b..bfd56ac5c921 100644
  
  	/* sama5d2-isc - 8 bits per beat */
  	isc->dcfg = ISC_DCFG_YMBSIZE_BEATS8 | ISC_DCFG_CMBSIZE_BEATS8;
--- 
-2.32.0
-

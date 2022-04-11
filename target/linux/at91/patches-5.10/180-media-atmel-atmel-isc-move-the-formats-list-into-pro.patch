@@ -17,11 +17,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  .../media/platform/atmel/atmel-sama5d2-isc.c  | 136 ++++++++++++++
  3 files changed, 165 insertions(+), 150 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 67c16ca17672..90a62d43fdb1 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -45,137 +45,6 @@ module_param(sensor_preferred, uint, 0644);
+@@ -45,137 +45,6 @@ module_param(sensor_preferred, uint, 064
  MODULE_PARM_DESC(sensor_preferred,
  		 "Sensor is preferred to output the specified format (1-on 0-off), default 1");
  
@@ -159,7 +157,7 @@ index 67c16ca17672..90a62d43fdb1 100644
  #define ISC_IS_FORMAT_RAW(mbus_code) \
  	(((mbus_code) & 0xf000) == 0x3000)
  
-@@ -919,24 +788,25 @@ static int isc_querycap(struct file *file, void *priv,
+@@ -919,24 +788,25 @@ static int isc_querycap(struct file *fil
  static int isc_enum_fmt_vid_cap(struct file *file, void *priv,
  				 struct v4l2_fmtdesc *f)
  {
@@ -192,7 +190,7 @@ index 67c16ca17672..90a62d43fdb1 100644
  			return 0;
  		}
  		supported_index++;
-@@ -1477,8 +1347,8 @@ static int isc_enum_framesizes(struct file *file, void *fh,
+@@ -1477,8 +1347,8 @@ static int isc_enum_framesizes(struct fi
  		if (isc->user_formats[i]->fourcc == fsize->pixel_format)
  			ret = 0;
  
@@ -203,7 +201,7 @@ index 67c16ca17672..90a62d43fdb1 100644
  			ret = 0;
  
  	if (ret)
-@@ -1514,8 +1384,8 @@ static int isc_enum_frameintervals(struct file *file, void *fh,
+@@ -1514,8 +1384,8 @@ static int isc_enum_frameintervals(struc
  		if (isc->user_formats[i]->fourcc == fival->pixel_format)
  			ret = 0;
  
@@ -214,7 +212,7 @@ index 67c16ca17672..90a62d43fdb1 100644
  			ret = 0;
  
  	if (ret)
-@@ -2126,12 +1996,13 @@ static void isc_async_unbind(struct v4l2_async_notifier *notifier,
+@@ -2126,12 +1996,13 @@ static void isc_async_unbind(struct v4l2
  	v4l2_ctrl_handler_free(&isc->ctrls.handler);
  }
  
@@ -231,7 +229,7 @@ index 67c16ca17672..90a62d43fdb1 100644
  		if (fmt->mbus_code == code) {
  			*index = i;
  			return fmt;
-@@ -2148,7 +2019,7 @@ static int isc_formats_init(struct isc_device *isc)
+@@ -2148,7 +2019,7 @@ static int isc_formats_init(struct isc_d
  	struct isc_format *fmt;
  	struct v4l2_subdev *subdev = isc->current_subdev->sd;
  	unsigned int num_fmts, i, j;
@@ -240,7 +238,7 @@ index 67c16ca17672..90a62d43fdb1 100644
  	struct v4l2_subdev_mbus_code_enum mbus_code = {
  		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
  	};
-@@ -2158,7 +2029,7 @@ static int isc_formats_init(struct isc_device *isc)
+@@ -2158,7 +2029,7 @@ static int isc_formats_init(struct isc_d
  	       NULL, &mbus_code)) {
  		mbus_code.index++;
  
@@ -249,7 +247,7 @@ index 67c16ca17672..90a62d43fdb1 100644
  		if (!fmt) {
  			v4l2_warn(&isc->v4l2_dev, "Mbus code %x not supported\n",
  				  mbus_code.code);
-@@ -2179,7 +2050,7 @@ static int isc_formats_init(struct isc_device *isc)
+@@ -2179,7 +2050,7 @@ static int isc_formats_init(struct isc_d
  	if (!isc->user_formats)
  		return -ENOMEM;
  
@@ -258,8 +256,6 @@ index 67c16ca17672..90a62d43fdb1 100644
  	for (i = 0, j = 0; i < list_size; i++) {
  		if (fmt->sd_support)
  			isc->user_formats[j++] = fmt;
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 24006327c5e4..b34737c09a5b 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -236,6 +236,12 @@ struct isc_reg_offsets {
@@ -290,8 +286,6 @@ index 24006327c5e4..b34737c09a5b 100644
  extern const struct regmap_config isc_regmap_config;
  extern const struct v4l2_async_notifier_operations isc_async_ops;
  
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index 86704a1a24b9..b8c1b57ed820 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 @@ -54,6 +54,137 @@
@@ -432,7 +426,7 @@ index 86704a1a24b9..b8c1b57ed820 100644
  static void isc_sama5d2_config_csc(struct isc_device *isc)
  {
  	struct regmap *regmap = isc->regmap;
-@@ -310,6 +441,11 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -310,6 +441,11 @@ static int atmel_isc_probe(struct platfo
  	isc->offsets.version = ISC_SAMA5D2_VERSION_OFFSET;
  	isc->offsets.his_entry = ISC_SAMA5D2_HIS_ENTRY_OFFSET;
  
@@ -444,6 +438,3 @@ index 86704a1a24b9..b8c1b57ed820 100644
  	/* sama5d2-isc - 8 bits per beat */
  	isc->dcfg = ISC_DCFG_YMBSIZE_BEATS8 | ISC_DCFG_CMBSIZE_BEATS8;
  
--- 
-2.32.0
-

@@ -20,11 +20,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c |  1 +
  4 files changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 25c90b821067..5c95aa45cf6c 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -686,12 +686,13 @@ static void isc_set_histogram(struct isc_device *isc, bool enable)
+@@ -686,12 +686,13 @@ static void isc_set_histogram(struct isc
  	struct isc_ctrls *ctrls = &isc->ctrls;
  
  	if (enable) {
@@ -40,7 +38,7 @@ index 25c90b821067..5c95aa45cf6c 100644
  		regmap_write(regmap, ISC_INTEN, ISC_INT_HISDONE);
  		ctrls->hist_id = ISC_HIS_CFG_MODE_GR;
  		isc_update_profile(isc);
-@@ -700,7 +701,8 @@ static void isc_set_histogram(struct isc_device *isc, bool enable)
+@@ -700,7 +701,8 @@ static void isc_set_histogram(struct isc
  		ctrls->hist_stat = HIST_ENABLED;
  	} else {
  		regmap_write(regmap, ISC_INTDIS, ISC_INT_HISDONE);
@@ -50,7 +48,7 @@ index 25c90b821067..5c95aa45cf6c 100644
  
  		ctrls->hist_stat = HIST_DISABLED;
  	}
-@@ -1836,7 +1838,8 @@ static void isc_awb_work(struct work_struct *w)
+@@ -1836,7 +1838,8 @@ static void isc_awb_work(struct work_str
  			ctrls->awb = ISC_WB_NONE;
  		}
  	}
@@ -60,8 +58,6 @@ index 25c90b821067..5c95aa45cf6c 100644
  	isc_update_profile(isc);
  	/* if awb has been disabled, we don't need to start another histogram */
  	if (ctrls->awb)
-diff --git a/drivers/media/platform/atmel/atmel-isc-regs.h b/drivers/media/platform/atmel/atmel-isc-regs.h
-index 2205484e04fc..0ab280ab59ec 100644
 --- a/drivers/media/platform/atmel/atmel-isc-regs.h
 +++ b/drivers/media/platform/atmel/atmel-isc-regs.h
 @@ -224,6 +224,8 @@
@@ -73,8 +69,6 @@ index 2205484e04fc..0ab280ab59ec 100644
  /* Histogram Control Register */
  #define ISC_HIS_CTRL	0x000003d4
  
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 4a5293c66f49..97ec4c58297e 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -150,6 +150,7 @@ struct isc_ctrls {
@@ -93,11 +87,9 @@ index 4a5293c66f49..97ec4c58297e 100644
  };
  
  /*
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index b01b5b9f229b..db93cb76c08b 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -256,6 +256,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -256,6 +256,7 @@ static int atmel_isc_probe(struct platfo
  	isc->offsets.sub422 = ISC_SAMA5D2_SUB422_OFFSET;
  	isc->offsets.sub420 = ISC_SAMA5D2_SUB420_OFFSET;
  	isc->offsets.rlp = ISC_SAMA5D2_RLP_OFFSET;
@@ -105,6 +97,3 @@ index b01b5b9f229b..db93cb76c08b 100644
  
  	/* sama5d2-isc - 8 bits per beat */
  	isc->dcfg = ISC_DCFG_YMBSIZE_BEATS8 | ISC_DCFG_CMBSIZE_BEATS8;
--- 
-2.32.0
-

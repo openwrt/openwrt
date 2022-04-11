@@ -14,11 +14,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/clk-master.c | 7 +++++--
  1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/at91/clk-master.c b/drivers/clk/at91/clk-master.c
-index 2093e13b5068..6da9ae34313a 100644
 --- a/drivers/clk/at91/clk-master.c
 +++ b/drivers/clk/at91/clk-master.c
-@@ -186,8 +186,8 @@ static int clk_master_div_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -186,8 +186,8 @@ static int clk_master_div_set_rate(struc
  	if (ret)
  		goto unlock;
  
@@ -29,7 +27,7 @@ index 2093e13b5068..6da9ae34313a 100644
  	if (tmp == div)
  		goto unlock;
  
-@@ -384,6 +384,7 @@ static unsigned long clk_master_pres_recalc_rate(struct clk_hw *hw,
+@@ -384,6 +384,7 @@ static unsigned long clk_master_pres_rec
  	regmap_read(master->regmap, master->layout->offset, &val);
  	spin_unlock_irqrestore(master->lock, flags);
  
@@ -37,7 +35,7 @@ index 2093e13b5068..6da9ae34313a 100644
  	pres = (val >> master->layout->pres_shift) & MASTER_PRES_MASK;
  	if (pres == 3 && characteristics->have_div3_pres)
  		pres = 3;
-@@ -403,6 +404,8 @@ static u8 clk_master_pres_get_parent(struct clk_hw *hw)
+@@ -403,6 +404,8 @@ static u8 clk_master_pres_get_parent(str
  	regmap_read(master->regmap, master->layout->offset, &mckr);
  	spin_unlock_irqrestore(master->lock, flags);
  
@@ -46,6 +44,3 @@ index 2093e13b5068..6da9ae34313a 100644
  	return mckr & AT91_PMC_CSS;
  }
  
--- 
-2.32.0
-

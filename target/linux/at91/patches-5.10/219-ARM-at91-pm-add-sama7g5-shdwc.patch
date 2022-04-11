@@ -12,11 +12,9 @@ Link: https://lore.kernel.org/r/20210415105010.569620-25-claudiu.beznea@microchi
  arch/arm/mach-at91/pm.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index 9c8c998cf9f4..a07e14d89ba4 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
-@@ -809,6 +809,7 @@ static int __init at91_pm_backup_init(void)
+@@ -809,6 +809,7 @@ securam_fail:
  static const struct of_device_id atmel_shdwc_ids[] = {
  	{ .compatible = "atmel,sama5d2-shdwc" },
  	{ .compatible = "microchip,sam9x60-shdwc" },
@@ -24,6 +22,3 @@ index 9c8c998cf9f4..a07e14d89ba4 100644
  	{ /* sentinel. */ }
  };
  
--- 
-2.32.0
-

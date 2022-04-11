@@ -44,8 +44,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama7g5.c         |  13 +++-
  4 files changed, 95 insertions(+), 29 deletions(-)
 
-diff --git a/drivers/clk/at91/clk-sam9x60-pll.c b/drivers/clk/at91/clk-sam9x60-pll.c
-index a73d7c96ce1d..d757003004cb 100644
 --- a/drivers/clk/at91/clk-sam9x60-pll.c
 +++ b/drivers/clk/at91/clk-sam9x60-pll.c
 @@ -5,6 +5,7 @@
@@ -72,7 +70,7 @@ index a73d7c96ce1d..d757003004cb 100644
  static inline bool sam9x60_pll_ready(struct regmap *regmap, int id)
  {
  	unsigned int status;
-@@ -329,6 +333,26 @@ static const struct clk_ops sam9x60_frac_pll_ops_chg = {
+@@ -329,6 +333,26 @@ static const struct clk_ops sam9x60_frac
  	.restore_context = sam9x60_frac_pll_restore_context,
  };
  
@@ -99,7 +97,7 @@ index a73d7c96ce1d..d757003004cb 100644
  static int sam9x60_div_pll_set(struct sam9x60_pll_core *core)
  {
  	struct sam9x60_div *div = to_sam9x60_div(core);
-@@ -346,17 +370,7 @@ static int sam9x60_div_pll_set(struct sam9x60_pll_core *core)
+@@ -346,17 +370,7 @@ static int sam9x60_div_pll_set(struct sa
  	if (!!(val & core->layout->endiv_mask) && cdiv == div->div)
  		goto unlock;
  
@@ -118,7 +116,7 @@ index a73d7c96ce1d..d757003004cb 100644
  
  unlock:
  	spin_unlock_irqrestore(core->lock, flags);
-@@ -502,16 +516,7 @@ static int sam9x60_div_pll_set_rate_chg(struct clk_hw *hw, unsigned long rate,
+@@ -502,16 +516,7 @@ static int sam9x60_div_pll_set_rate_chg(
  	if (cdiv == div->div)
  		goto unlock;
  
@@ -136,7 +134,7 @@ index a73d7c96ce1d..d757003004cb 100644
  
  unlock:
  	spin_unlock_irqrestore(core->lock, irqflags);
-@@ -538,6 +543,48 @@ static void sam9x60_div_pll_restore_context(struct clk_hw *hw)
+@@ -538,6 +543,48 @@ static void sam9x60_div_pll_restore_cont
  		sam9x60_div_pll_set(core);
  }
  
@@ -195,7 +193,7 @@ index a73d7c96ce1d..d757003004cb 100644
  {
  	struct sam9x60_div *div;
  	struct clk_hw *hw;
-@@ -656,9 +704,13 @@ sam9x60_clk_register_div_pll(struct regmap *regmap, spinlock_t *lock,
+@@ -656,9 +704,13 @@ sam9x60_clk_register_div_pll(struct regm
  	unsigned int val;
  	int ret;
  
@@ -210,7 +208,7 @@ index a73d7c96ce1d..d757003004cb 100644
  	div = kzalloc(sizeof(*div), GFP_KERNEL);
  	if (!div)
  		return ERR_PTR(-ENOMEM);
-@@ -678,6 +730,7 @@ sam9x60_clk_register_div_pll(struct regmap *regmap, spinlock_t *lock,
+@@ -678,6 +730,7 @@ sam9x60_clk_register_div_pll(struct regm
  	div->core.layout = layout;
  	div->core.regmap = regmap;
  	div->core.lock = lock;
@@ -218,7 +216,7 @@ index a73d7c96ce1d..d757003004cb 100644
  
  	spin_lock_irqsave(div->core.lock, irqflags);
  
-@@ -693,6 +746,9 @@ sam9x60_clk_register_div_pll(struct regmap *regmap, spinlock_t *lock,
+@@ -693,6 +746,9 @@ sam9x60_clk_register_div_pll(struct regm
  	if (ret) {
  		kfree(div);
  		hw = ERR_PTR(ret);
@@ -228,8 +226,6 @@ index a73d7c96ce1d..d757003004cb 100644
  	}
  
  	return hw;
-diff --git a/drivers/clk/at91/pmc.h b/drivers/clk/at91/pmc.h
-index 45df094498ce..207ecccef29f 100644
 --- a/drivers/clk/at91/pmc.h
 +++ b/drivers/clk/at91/pmc.h
 @@ -214,7 +214,8 @@ struct clk_hw * __init
@@ -242,11 +238,9 @@ index 45df094498ce..207ecccef29f 100644
  
  struct clk_hw * __init
  sam9x60_clk_register_frac_pll(struct regmap *regmap, spinlock_t *lock,
-diff --git a/drivers/clk/at91/sam9x60.c b/drivers/clk/at91/sam9x60.c
-index 5f6fa89571b7..5c264185f261 100644
 --- a/drivers/clk/at91/sam9x60.c
 +++ b/drivers/clk/at91/sam9x60.c
-@@ -242,7 +242,7 @@ static void __init sam9x60_pmc_setup(struct device_node *np)
+@@ -242,7 +242,7 @@ static void __init sam9x60_pmc_setup(str
  					    * This feeds CPU. It should not
  					    * be disabled.
  					    */
@@ -255,7 +249,7 @@ index 5f6fa89571b7..5c264185f261 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -260,7 +260,7 @@ static void __init sam9x60_pmc_setup(struct device_node *np)
+@@ -260,7 +260,7 @@ static void __init sam9x60_pmc_setup(str
  					  &pll_div_layout,
  					  CLK_SET_RATE_GATE |
  					  CLK_SET_PARENT_GATE |
@@ -264,7 +258,7 @@ index 5f6fa89571b7..5c264185f261 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -279,7 +279,7 @@ static void __init sam9x60_pmc_setup(struct device_node *np)
+@@ -279,7 +279,7 @@ static void __init sam9x60_pmc_setup(str
  	hw = at91_clk_register_master_div(regmap, "masterck_div",
  					  "masterck_pres", &sam9x60_master_layout,
  					  &mck_characteristics, &mck_lock,
@@ -273,11 +267,9 @@ index 5f6fa89571b7..5c264185f261 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index 970135e19a75..ae52c10af040 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
-@@ -127,6 +127,8 @@ static const struct clk_pll_characteristics pll_characteristics = {
+@@ -127,6 +127,8 @@ static const struct clk_pll_characterist
   * @t:		clock type
   * @f:		clock flags
   * @eid:	export index in sama7g5->chws[] array
@@ -308,7 +300,7 @@ index 970135e19a75..ae52c10af040 100644
  	},
  
  	[PLL_ID_SYS] = {
-@@ -967,7 +975,8 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -967,7 +975,8 @@ static void __init sama7g5_pmc_setup(str
  					sama7g5_plls[i][j].p, i,
  					sama7g5_plls[i][j].c,
  					sama7g5_plls[i][j].l,
@@ -318,6 +310,3 @@ index 970135e19a75..ae52c10af040 100644
  				break;
  
  			default:
--- 
-2.32.0
-

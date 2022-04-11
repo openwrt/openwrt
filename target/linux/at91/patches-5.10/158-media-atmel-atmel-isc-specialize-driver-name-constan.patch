@@ -17,11 +17,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 4 ++--
  3 files changed, 4 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 46d384332a58..d987a8891bd9 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -909,7 +909,7 @@ static int isc_querycap(struct file *file, void *priv,
+@@ -909,7 +909,7 @@ static int isc_querycap(struct file *fil
  {
  	struct isc_device *isc = video_drvdata(file);
  
@@ -30,7 +28,7 @@ index 46d384332a58..d987a8891bd9 100644
  	strscpy(cap->card, "Atmel Image Sensor Controller", sizeof(cap->card));
  	snprintf(cap->bus_info, sizeof(cap->bus_info),
  		 "platform:%s", isc->v4l2_dev.name);
-@@ -2261,7 +2261,7 @@ static int isc_async_complete(struct v4l2_async_notifier *notifier)
+@@ -2261,7 +2261,7 @@ static int isc_async_complete(struct v4l
  	}
  
  	/* Register video device */
@@ -39,8 +37,6 @@ index 46d384332a58..d987a8891bd9 100644
  	vdev->release		= video_device_release_empty;
  	vdev->fops		= &isc_fops;
  	vdev->ioctl_ops		= &isc_ioctl_ops;
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index a85b99274e34..bb43d3a93052 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -255,8 +255,6 @@ struct isc_device {
@@ -52,11 +48,9 @@ index a85b99274e34..bb43d3a93052 100644
  extern struct isc_format formats_list[];
  extern const struct isc_format controller_formats[];
  extern const struct regmap_config isc_regmap_config;
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index 1b537cd1e09e..cba6e6c8810b 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -206,7 +206,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -206,7 +206,7 @@ static int atmel_isc_probe(struct platfo
  		return irq;
  
  	ret = devm_request_irq(dev, irq, isc_interrupt, 0,
@@ -65,7 +59,7 @@ index 1b537cd1e09e..cba6e6c8810b 100644
  	if (ret < 0) {
  		dev_err(dev, "can't register ISR for IRQ %u (ret=%i)\n",
  			irq, ret);
-@@ -378,7 +378,7 @@ static struct platform_driver atmel_isc_driver = {
+@@ -378,7 +378,7 @@ static struct platform_driver atmel_isc_
  	.probe	= atmel_isc_probe,
  	.remove	= atmel_isc_remove,
  	.driver	= {
@@ -74,6 +68,3 @@ index 1b537cd1e09e..cba6e6c8810b 100644
  		.pm		= &atmel_isc_dev_pm_ops,
  		.of_match_table = of_match_ptr(atmel_isc_of_match),
  	},
--- 
-2.32.0
-

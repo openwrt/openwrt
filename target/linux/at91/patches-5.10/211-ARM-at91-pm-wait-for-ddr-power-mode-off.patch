@@ -12,8 +12,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-16-claudiu.beznea@microchi
  arch/arm/mach-at91/pm_suspend.S | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
-index 9c9e08fd8300..7396e18dd7e5 100644
 --- a/arch/arm/mach-at91/pm_suspend.S
 +++ b/arch/arm/mach-at91/pm_suspend.S
 @@ -980,6 +980,11 @@ ulp_exit:
@@ -28,6 +26,3 @@ index 9c9e08fd8300..7396e18dd7e5 100644
  	/* Shutdown */
  	ldr	r0, .shdwc
  	mov	tmp1, #0xA5000000
--- 
-2.32.0
-

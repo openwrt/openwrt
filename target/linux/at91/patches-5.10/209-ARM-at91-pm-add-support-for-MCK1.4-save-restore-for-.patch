@@ -13,8 +13,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-14-claudiu.beznea@microchi
  arch/arm/mach-at91/pm_suspend.S | 126 ++++++++++++++++++++++++++++++++
  1 file changed, 126 insertions(+)
 
-diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
-index 84418120ba67..8b0b8619ee8a 100644
 --- a/arch/arm/mach-at91/pm_suspend.S
 +++ b/arch/arm/mach-at91/pm_suspend.S
 @@ -765,7 +765,122 @@ sr_dis_exit:
@@ -165,6 +163,3 @@ index 84418120ba67..8b0b8619ee8a 100644
  
  ENTRY(at91_pm_suspend_in_sram_sz)
  	.word .-at91_pm_suspend_in_sram
--- 
-2.32.0
-

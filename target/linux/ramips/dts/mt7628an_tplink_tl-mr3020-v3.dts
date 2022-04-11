@@ -75,6 +75,17 @@
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		usbpower {
+			gpio-export,name = "usbpower";
+			gpio-export,output = <1>;
+			gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 &spi0 {
@@ -120,7 +131,7 @@
 
 &state_default {
 	gpio {
-		groups = "i2s", "refclk", "wdt", "p2led_an", "p1led_an", "p0led_an", "wled_an";
+		groups = "i2s", "refclk", "wdt", "p4led_an", "p2led_an", "p1led_an", "p0led_an", "wled_an";
 		function = "gpio";
 	};
 };

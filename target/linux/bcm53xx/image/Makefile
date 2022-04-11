@@ -167,6 +167,15 @@ define Device/asus_rt-ac87u
 endef
 TARGET_DEVICES += asus_rt-ac87u
 
+define Device/asus_rt-ac88u
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC88U
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC88U
+  BROKEN := y
+endef
+TARGET_DEVICES += asus_rt-ac88u
+
 define Device/asus_rt-n18u
   $(call Device/asus)
   DEVICE_MODEL := RT-N18U
@@ -218,7 +227,6 @@ define Device/buffalo_wzr-900dhp
 	buffalo-enc WZR-900DHP2 $$(BUFFALO_TAG_VERSION) | \
 	buffalo-tag-dhp WZR-900DHP2 JP jp | buffalo-enc-tag | \
 	buffalo-dhp-image
-  BROKEN := y
 endef
 TARGET_DEVICES += buffalo_wzr-900dhp
 

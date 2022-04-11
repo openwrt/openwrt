@@ -31,10 +31,11 @@ dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
 
 if [ -n "$GUID" ]; then
     [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$((ROOTFSOFFSET + ROOTFSSIZE))" conv=notrunc count="$sect"
-    mkfs.fat -n kernel -C "$OUTPUT.kernel" -S 512 "$((KERNELSIZE / 1024))"
-    mcopy -s -i "$OUTPUT.kernel" "$KERNELDIR"/* ::/
+    mkfs.fat --invariant -n kernel -C "$OUTPUT.kernel" -S 512 "$((KERNELSIZE / 1024))"
+    [ "$SOURCE_DATE_EPOCH" ] && find "$KERNELDIR"/ -mindepth 1 -execdir touch -hcd "@${SOURCE_DATE_EPOCH}" "{}" +
+    LC_ALL=C mcopy -m -s -i "$OUTPUT.kernel" "$KERNELDIR"/* ::/
 else
-    make_ext4fs -J -L kernel -l "$KERNELSIZE" "$OUTPUT.kernel" "$KERNELDIR"
+    make_ext4fs -J -L kernel -l "$KERNELSIZE" ${SOURCE_DATE_EPOCH:+-T ${SOURCE_DATE_EPOCH}} "$OUTPUT.kernel" "$KERNELDIR"
 fi
 dd if="$OUTPUT.kernel" of="$OUTPUT" bs=512 seek="$KERNELOFFSET" conv=notrunc
 rm -f "$OUTPUT.kernel"

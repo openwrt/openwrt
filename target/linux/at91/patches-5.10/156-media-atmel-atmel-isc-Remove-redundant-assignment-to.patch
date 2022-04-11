@@ -20,11 +20,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-isc-base.c | 1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index ce8e1351fa53..a017572c870c 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -972,7 +972,6 @@ static int isc_enum_fmt_vid_cap(struct file *file, void *priv,
+@@ -972,7 +972,6 @@ static int isc_enum_fmt_vid_cap(struct f
  
  	index -= ARRAY_SIZE(controller_formats);
  
@@ -32,6 +30,3 @@ index ce8e1351fa53..a017572c870c 100644
  	supported_index = 0;
  
  	for (i = 0; i < ARRAY_SIZE(formats_list); i++) {
--- 
-2.32.0
-

@@ -9,21 +9,25 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=expat
 PKG_CPE_ID:=cpe:/a:libexpat:expat
-PKG_VERSION:=2.2.10
+PKG_VERSION:=2.4.7
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_HASH:=b2c160f1b60e92da69de8e12333096aeb0c3bf692d41c60794de278af72135a5
+PKG_HASH:=e149bdd8b90254c62b3d195da53a09bd531a4d63a963b0d8a5268d48dd2f6a65
 PKG_SOURCE_URL:=https://github.com/libexpat/libexpat/releases/download/R_$(subst .,_,$(PKG_VERSION))
 
-HOST_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/cmake.mk
 
-HOST_CONFIGURE_ARGS += \
-	--without-docbook
-
-define Host/Install
-	$(MAKE) -C $(HOST_BUILD_DIR) install
-endef
+CMAKE_HOST_OPTIONS += \
+	-DDOCBOOK_TO_MAN=OFF \
+	-DEXPAT_BUILD_TOOLS=OFF \
+	-DEXPAT_BUILD_EXAMPLES=OFF \
+	-DEXPAT_BUILD_TESTS=OFF \
+	-DEXPAT_BUILD_DOCS=OFF \
+	-DEXPAT_WITH_LIBBSD=OFF \
+	-DEXPAT_ENABLE_INSTALL=ON \
+	-DEXPAT_DTD=ON \
+	-DEXPAT_NS=OFF \
+	-DEXPAT_DEV_URANDOM=OFF
 
 $(eval $(call HostBuild))

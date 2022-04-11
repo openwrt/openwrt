@@ -423,7 +423,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (bgmac->irq < 0)
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4456,7 +4456,6 @@ static int macb_probe(struct platform_de
+@@ -4479,7 +4479,6 @@ static int macb_probe(struct platform_de
  	struct net_device *dev;
  	struct resource *regs;
  	void __iomem *mem;
@@ -431,7 +431,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct macb *bp;
  	int err, val;
  
-@@ -4569,15 +4568,11 @@ static int macb_probe(struct platform_de
+@@ -4592,15 +4591,11 @@ static int macb_probe(struct platform_de
  	if (bp->caps & MACB_CAPS_NEEDS_RSTONUBR)
  		bp->rx_intr_mask |= MACB_BIT(RXUBR);
  
@@ -1595,7 +1595,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	__be32 *p;
  	bool little_endian;
  	int rc = 0;
-@@ -1561,8 +1561,8 @@ static int temac_probe(struct platform_d
+@@ -1563,8 +1563,8 @@ static int temac_probe(struct platform_d
  
  	if (temac_np) {
  		/* Retrieve the MAC address */
@@ -1608,7 +1608,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		}
 --- a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
 +++ b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
-@@ -1831,8 +1831,8 @@ static int axienet_probe(struct platform
+@@ -1843,8 +1843,8 @@ static int axienet_probe(struct platform
  	struct device_node *np;
  	struct axienet_local *lp;
  	struct net_device *ndev;
@@ -1618,7 +1618,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int addr_width = 32;
  	u32 value;
  
-@@ -2032,13 +2032,14 @@ static int axienet_probe(struct platform
+@@ -2044,13 +2044,14 @@ static int axienet_probe(struct platform
  		dev_info(&pdev->dev, "Ethernet core IRQ not defined\n");
  
  	/* Retrieve the MAC address */

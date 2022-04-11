@@ -40,8 +40,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/pmc.h              |  24 ++--
  12 files changed, 558 insertions(+), 181 deletions(-)
 
-diff --git a/drivers/clk/at91/clk-generated.c b/drivers/clk/at91/clk-generated.c
-index b656d25a9767..23cc8297ec4c 100644
 --- a/drivers/clk/at91/clk-generated.c
 +++ b/drivers/clk/at91/clk-generated.c
 @@ -27,6 +27,7 @@ struct clk_generated {
@@ -95,7 +93,7 @@ index b656d25a9767..23cc8297ec4c 100644
  	return 0;
  }
  
-@@ -245,6 +256,23 @@ static int clk_generated_set_rate(struct clk_hw *hw,
+@@ -245,6 +256,23 @@ static int clk_generated_set_rate(struct
  	return 0;
  }
  
@@ -119,7 +117,7 @@ index b656d25a9767..23cc8297ec4c 100644
  static const struct clk_ops generated_ops = {
  	.enable = clk_generated_enable,
  	.disable = clk_generated_disable,
-@@ -254,6 +282,8 @@ static const struct clk_ops generated_ops = {
+@@ -254,6 +282,8 @@ static const struct clk_ops generated_op
  	.get_parent = clk_generated_get_parent,
  	.set_parent = clk_generated_set_parent,
  	.set_rate = clk_generated_set_rate,
@@ -128,7 +126,7 @@ index b656d25a9767..23cc8297ec4c 100644
  };
  
  /**
-@@ -320,8 +350,6 @@ at91_clk_register_generated(struct regmap *regmap, spinlock_t *lock,
+@@ -320,8 +350,6 @@ at91_clk_register_generated(struct regma
  	if (ret) {
  		kfree(gck);
  		hw = ERR_PTR(ret);
@@ -137,8 +135,6 @@ index b656d25a9767..23cc8297ec4c 100644
  	}
  
  	return hw;
-diff --git a/drivers/clk/at91/clk-main.c b/drivers/clk/at91/clk-main.c
-index cfae2f59df66..8601b27c1ae0 100644
 --- a/drivers/clk/at91/clk-main.c
 +++ b/drivers/clk/at91/clk-main.c
 @@ -28,6 +28,7 @@
@@ -165,7 +161,7 @@ index cfae2f59df66..8601b27c1ae0 100644
  	u8 parent;
  };
  
-@@ -120,10 +123,29 @@ static int clk_main_osc_is_prepared(struct clk_hw *hw)
+@@ -120,10 +123,29 @@ static int clk_main_osc_is_prepared(stru
  	return (status & AT91_PMC_MOSCS) && clk_main_parent_select(tmp);
  }
  
@@ -195,7 +191,7 @@ index cfae2f59df66..8601b27c1ae0 100644
  };
  
  struct clk_hw * __init
-@@ -240,12 +262,31 @@ static unsigned long clk_main_rc_osc_recalc_accuracy(struct clk_hw *hw,
+@@ -240,12 +262,31 @@ static unsigned long clk_main_rc_osc_rec
  	return osc->accuracy;
  }
  
@@ -227,7 +223,7 @@ index cfae2f59df66..8601b27c1ae0 100644
  };
  
  struct clk_hw * __init
-@@ -465,12 +506,37 @@ static u8 clk_sam9x5_main_get_parent(struct clk_hw *hw)
+@@ -465,12 +506,37 @@ static u8 clk_sam9x5_main_get_parent(str
  	return clk_main_parent_select(status);
  }
  
@@ -265,8 +261,6 @@ index cfae2f59df66..8601b27c1ae0 100644
  };
  
  struct clk_hw * __init
-diff --git a/drivers/clk/at91/clk-master.c b/drivers/clk/at91/clk-master.c
-index a80427980bf7..f75549fff023 100644
 --- a/drivers/clk/at91/clk-master.c
 +++ b/drivers/clk/at91/clk-master.c
 @@ -37,6 +37,7 @@ struct clk_master {
@@ -277,7 +271,7 @@ index a80427980bf7..f75549fff023 100644
  	u32 *mux_table;
  	u32 mckr;
  	int chg_pid;
-@@ -112,10 +113,52 @@ static unsigned long clk_master_div_recalc_rate(struct clk_hw *hw,
+@@ -112,10 +113,52 @@ static unsigned long clk_master_div_reca
  	return rate;
  }
  
@@ -330,7 +324,7 @@ index a80427980bf7..f75549fff023 100644
  };
  
  static int clk_master_div_set_rate(struct clk_hw *hw, unsigned long rate,
-@@ -125,7 +168,9 @@ static int clk_master_div_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -125,7 +168,9 @@ static int clk_master_div_set_rate(struc
  	const struct clk_master_characteristics *characteristics =
  						master->characteristics;
  	unsigned long flags;
@@ -340,7 +334,7 @@ index a80427980bf7..f75549fff023 100644
  
  	div = DIV_ROUND_CLOSEST(parent_rate, rate);
  	if (div > ARRAY_SIZE(characteristics->divisors))
-@@ -145,11 +190,24 @@ static int clk_master_div_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -145,11 +190,24 @@ static int clk_master_div_set_rate(struc
  		return -EINVAL;
  
  	spin_lock_irqsave(master->lock, flags);
@@ -368,7 +362,7 @@ index a80427980bf7..f75549fff023 100644
  	spin_unlock_irqrestore(master->lock, flags);
  
  	return 0;
-@@ -197,12 +255,25 @@ static int clk_master_div_determine_rate(struct clk_hw *hw,
+@@ -197,12 +255,25 @@ static int clk_master_div_determine_rate
  	return 0;
  }
  
@@ -394,7 +388,7 @@ index a80427980bf7..f75549fff023 100644
  };
  
  static void clk_sama7g5_master_best_diff(struct clk_rate_request *req,
-@@ -272,7 +343,8 @@ static int clk_master_pres_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -272,7 +343,8 @@ static int clk_master_pres_set_rate(stru
  {
  	struct clk_master *master = to_clk_master(hw);
  	unsigned long flags;
@@ -404,7 +398,7 @@ index a80427980bf7..f75549fff023 100644
  
  	pres = DIV_ROUND_CLOSEST(parent_rate, rate);
  	if (pres > MASTER_PRES_MAX)
-@@ -284,15 +356,27 @@ static int clk_master_pres_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -284,15 +356,27 @@ static int clk_master_pres_set_rate(stru
  		pres = ffs(pres) - 1;
  
  	spin_lock_irqsave(master->lock, flags);
@@ -436,7 +430,7 @@ index a80427980bf7..f75549fff023 100644
  }
  
  static unsigned long clk_master_pres_recalc_rate(struct clk_hw *hw,
-@@ -330,11 +414,68 @@ static u8 clk_master_pres_get_parent(struct clk_hw *hw)
+@@ -330,11 +414,68 @@ static u8 clk_master_pres_get_parent(str
  	return mckr & AT91_PMC_CSS;
  }
  
@@ -505,7 +499,7 @@ index a80427980bf7..f75549fff023 100644
  };
  
  static const struct clk_ops master_pres_ops_chg = {
-@@ -344,6 +485,8 @@ static const struct clk_ops master_pres_ops_chg = {
+@@ -344,6 +485,8 @@ static const struct clk_ops master_pres_
  	.recalc_rate = clk_master_pres_recalc_rate,
  	.get_parent = clk_master_pres_get_parent,
  	.set_rate = clk_master_pres_set_rate,
@@ -514,7 +508,7 @@ index a80427980bf7..f75549fff023 100644
  };
  
  static struct clk_hw * __init
-@@ -539,20 +682,21 @@ static int clk_sama7g5_master_set_parent(struct clk_hw *hw, u8 index)
+@@ -539,20 +682,21 @@ static int clk_sama7g5_master_set_parent
  	return 0;
  }
  
@@ -540,7 +534,7 @@ index a80427980bf7..f75549fff023 100644
  			   (master->div << MASTER_DIV_SHIFT) |
  			   PMC_MCR_CMD | PMC_MCR_ID(master->id));
  
-@@ -563,6 +707,13 @@ static int clk_sama7g5_master_enable(struct clk_hw *hw)
+@@ -563,6 +707,13 @@ static int clk_sama7g5_master_enable(str
  		cpu_relax();
  
  	spin_unlock_irqrestore(master->lock, flags);
@@ -554,7 +548,7 @@ index a80427980bf7..f75549fff023 100644
  
  	return 0;
  }
-@@ -620,6 +771,23 @@ static int clk_sama7g5_master_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -620,6 +771,23 @@ static int clk_sama7g5_master_set_rate(s
  	return 0;
  }
  
@@ -578,7 +572,7 @@ index a80427980bf7..f75549fff023 100644
  static const struct clk_ops sama7g5_master_ops = {
  	.enable = clk_sama7g5_master_enable,
  	.disable = clk_sama7g5_master_disable,
-@@ -629,6 +797,8 @@ static const struct clk_ops sama7g5_master_ops = {
+@@ -629,6 +797,8 @@ static const struct clk_ops sama7g5_mast
  	.set_rate = clk_sama7g5_master_set_rate,
  	.get_parent = clk_sama7g5_master_get_parent,
  	.set_parent = clk_sama7g5_master_set_parent,
@@ -587,8 +581,6 @@ index a80427980bf7..f75549fff023 100644
  };
  
  struct clk_hw * __init
-diff --git a/drivers/clk/at91/clk-peripheral.c b/drivers/clk/at91/clk-peripheral.c
-index 7a27ba8e0577..e14fa5ac734c 100644
 --- a/drivers/clk/at91/clk-peripheral.c
 +++ b/drivers/clk/at91/clk-peripheral.c
 @@ -37,6 +37,7 @@ struct clk_sam9x5_peripheral {
@@ -599,7 +591,7 @@ index 7a27ba8e0577..e14fa5ac734c 100644
  	bool auto_div;
  	int chg_pid;
  };
-@@ -155,10 +156,11 @@ static void clk_sam9x5_peripheral_autodiv(struct clk_sam9x5_peripheral *periph)
+@@ -155,10 +156,11 @@ static void clk_sam9x5_peripheral_autodi
  	periph->div = shift;
  }
  
@@ -613,7 +605,7 @@ index 7a27ba8e0577..e14fa5ac734c 100644
  
  	if (periph->id < PERIPHERAL_ID_MIN)
  		return 0;
-@@ -168,15 +170,21 @@ static int clk_sam9x5_peripheral_enable(struct clk_hw *hw)
+@@ -168,15 +170,21 @@ static int clk_sam9x5_peripheral_enable(
  		     (periph->id & periph->layout->pid_mask));
  	regmap_update_bits(periph->regmap, periph->layout->offset,
  			   periph->layout->div_mask | periph->layout->cmd |
@@ -638,7 +630,7 @@ index 7a27ba8e0577..e14fa5ac734c 100644
  static void clk_sam9x5_peripheral_disable(struct clk_hw *hw)
  {
  	struct clk_sam9x5_peripheral *periph = to_clk_sam9x5_peripheral(hw);
-@@ -393,6 +401,23 @@ static int clk_sam9x5_peripheral_set_rate(struct clk_hw *hw,
+@@ -393,6 +401,23 @@ static int clk_sam9x5_peripheral_set_rat
  	return -EINVAL;
  }
  
@@ -662,7 +654,7 @@ index 7a27ba8e0577..e14fa5ac734c 100644
  static const struct clk_ops sam9x5_peripheral_ops = {
  	.enable = clk_sam9x5_peripheral_enable,
  	.disable = clk_sam9x5_peripheral_disable,
-@@ -400,6 +425,8 @@ static const struct clk_ops sam9x5_peripheral_ops = {
+@@ -400,6 +425,8 @@ static const struct clk_ops sam9x5_perip
  	.recalc_rate = clk_sam9x5_peripheral_recalc_rate,
  	.round_rate = clk_sam9x5_peripheral_round_rate,
  	.set_rate = clk_sam9x5_peripheral_set_rate,
@@ -671,7 +663,7 @@ index 7a27ba8e0577..e14fa5ac734c 100644
  };
  
  static const struct clk_ops sam9x5_peripheral_chg_ops = {
-@@ -409,6 +436,8 @@ static const struct clk_ops sam9x5_peripheral_chg_ops = {
+@@ -409,6 +436,8 @@ static const struct clk_ops sam9x5_perip
  	.recalc_rate = clk_sam9x5_peripheral_recalc_rate,
  	.determine_rate = clk_sam9x5_peripheral_determine_rate,
  	.set_rate = clk_sam9x5_peripheral_set_rate,
@@ -680,7 +672,7 @@ index 7a27ba8e0577..e14fa5ac734c 100644
  };
  
  struct clk_hw * __init
-@@ -460,7 +489,6 @@ at91_clk_register_sam9x5_peripheral(struct regmap *regmap, spinlock_t *lock,
+@@ -460,7 +489,6 @@ at91_clk_register_sam9x5_peripheral(stru
  		hw = ERR_PTR(ret);
  	} else {
  		clk_sam9x5_peripheral_autodiv(periph);
@@ -688,8 +680,6 @@ index 7a27ba8e0577..e14fa5ac734c 100644
  	}
  
  	return hw;
-diff --git a/drivers/clk/at91/clk-pll.c b/drivers/clk/at91/clk-pll.c
-index 6ed986d3eee0..249d6a53cedf 100644
 --- a/drivers/clk/at91/clk-pll.c
 +++ b/drivers/clk/at91/clk-pll.c
 @@ -40,6 +40,7 @@ struct clk_pll {
@@ -700,7 +690,7 @@ index 6ed986d3eee0..249d6a53cedf 100644
  };
  
  static inline bool clk_pll_ready(struct regmap *regmap, int id)
-@@ -260,6 +261,42 @@ static int clk_pll_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -260,6 +261,42 @@ static int clk_pll_set_rate(struct clk_h
  	return 0;
  }
  
@@ -752,8 +742,6 @@ index 6ed986d3eee0..249d6a53cedf 100644
  };
  
  struct clk_hw * __init
-diff --git a/drivers/clk/at91/clk-programmable.c b/drivers/clk/at91/clk-programmable.c
-index fcf8f6a1c2c6..6c4b259d31d3 100644
 --- a/drivers/clk/at91/clk-programmable.c
 +++ b/drivers/clk/at91/clk-programmable.c
 @@ -24,6 +24,7 @@ struct clk_programmable {
@@ -764,7 +752,7 @@ index fcf8f6a1c2c6..6c4b259d31d3 100644
  };
  
  #define to_clk_programmable(hw) container_of(hw, struct clk_programmable, hw)
-@@ -177,12 +178,38 @@ static int clk_programmable_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -177,12 +178,38 @@ static int clk_programmable_set_rate(str
  	return 0;
  }
  
@@ -803,7 +791,7 @@ index fcf8f6a1c2c6..6c4b259d31d3 100644
  };
  
  struct clk_hw * __init
-@@ -221,8 +248,6 @@ at91_clk_register_programmable(struct regmap *regmap,
+@@ -221,8 +248,6 @@ at91_clk_register_programmable(struct re
  	if (ret) {
  		kfree(prog);
  		hw = ERR_PTR(ret);
@@ -812,8 +800,6 @@ index fcf8f6a1c2c6..6c4b259d31d3 100644
  	}
  
  	return hw;
-diff --git a/drivers/clk/at91/clk-sam9x60-pll.c b/drivers/clk/at91/clk-sam9x60-pll.c
-index 1f52409475e9..a73d7c96ce1d 100644
 --- a/drivers/clk/at91/clk-sam9x60-pll.c
 +++ b/drivers/clk/at91/clk-sam9x60-pll.c
 @@ -38,12 +38,14 @@ struct sam9x60_pll_core {
@@ -831,7 +817,7 @@ index 1f52409475e9..a73d7c96ce1d 100644
  	u8 div;
  };
  
-@@ -75,9 +77,8 @@ static unsigned long sam9x60_frac_pll_recalc_rate(struct clk_hw *hw,
+@@ -75,9 +77,8 @@ static unsigned long sam9x60_frac_pll_re
  		DIV_ROUND_CLOSEST_ULL((u64)parent_rate * frac->frac, (1 << 22));
  }
  
@@ -842,7 +828,7 @@ index 1f52409475e9..a73d7c96ce1d 100644
  	struct sam9x60_frac *frac = to_sam9x60_frac(core);
  	struct regmap *regmap = core->regmap;
  	unsigned int val, cfrac, cmul;
-@@ -141,6 +142,13 @@ static int sam9x60_frac_pll_prepare(struct clk_hw *hw)
+@@ -141,6 +142,13 @@ unlock:
  	return 0;
  }
  
@@ -856,7 +842,7 @@ index 1f52409475e9..a73d7c96ce1d 100644
  static void sam9x60_frac_pll_unprepare(struct clk_hw *hw)
  {
  	struct sam9x60_pll_core *core = to_sam9x60_pll_core(hw);
-@@ -280,6 +288,25 @@ static int sam9x60_frac_pll_set_rate_chg(struct clk_hw *hw, unsigned long rate,
+@@ -280,6 +288,25 @@ unlock:
  	return ret;
  }
  
@@ -882,7 +868,7 @@ index 1f52409475e9..a73d7c96ce1d 100644
  static const struct clk_ops sam9x60_frac_pll_ops = {
  	.prepare = sam9x60_frac_pll_prepare,
  	.unprepare = sam9x60_frac_pll_unprepare,
-@@ -287,6 +314,8 @@ static const struct clk_ops sam9x60_frac_pll_ops = {
+@@ -287,6 +314,8 @@ static const struct clk_ops sam9x60_frac
  	.recalc_rate = sam9x60_frac_pll_recalc_rate,
  	.round_rate = sam9x60_frac_pll_round_rate,
  	.set_rate = sam9x60_frac_pll_set_rate,
@@ -891,7 +877,7 @@ index 1f52409475e9..a73d7c96ce1d 100644
  };
  
  static const struct clk_ops sam9x60_frac_pll_ops_chg = {
-@@ -296,11 +325,12 @@ static const struct clk_ops sam9x60_frac_pll_ops_chg = {
+@@ -296,11 +325,12 @@ static const struct clk_ops sam9x60_frac
  	.recalc_rate = sam9x60_frac_pll_recalc_rate,
  	.round_rate = sam9x60_frac_pll_round_rate,
  	.set_rate = sam9x60_frac_pll_set_rate_chg,
@@ -906,7 +892,7 @@ index 1f52409475e9..a73d7c96ce1d 100644
  	struct sam9x60_div *div = to_sam9x60_div(core);
  	struct regmap *regmap = core->regmap;
  	unsigned long flags;
-@@ -334,6 +364,13 @@ static int sam9x60_div_pll_prepare(struct clk_hw *hw)
+@@ -334,6 +364,13 @@ unlock:
  	return 0;
  }
  
@@ -920,7 +906,7 @@ index 1f52409475e9..a73d7c96ce1d 100644
  static void sam9x60_div_pll_unprepare(struct clk_hw *hw)
  {
  	struct sam9x60_pll_core *core = to_sam9x60_pll_core(hw);
-@@ -482,6 +519,25 @@ static int sam9x60_div_pll_set_rate_chg(struct clk_hw *hw, unsigned long rate,
+@@ -482,6 +519,25 @@ unlock:
  	return 0;
  }
  
@@ -946,7 +932,7 @@ index 1f52409475e9..a73d7c96ce1d 100644
  static const struct clk_ops sam9x60_div_pll_ops = {
  	.prepare = sam9x60_div_pll_prepare,
  	.unprepare = sam9x60_div_pll_unprepare,
-@@ -489,6 +545,8 @@ static const struct clk_ops sam9x60_div_pll_ops = {
+@@ -489,6 +545,8 @@ static const struct clk_ops sam9x60_div_
  	.recalc_rate = sam9x60_div_pll_recalc_rate,
  	.round_rate = sam9x60_div_pll_round_rate,
  	.set_rate = sam9x60_div_pll_set_rate,
@@ -955,7 +941,7 @@ index 1f52409475e9..a73d7c96ce1d 100644
  };
  
  static const struct clk_ops sam9x60_div_pll_ops_chg = {
-@@ -498,6 +556,8 @@ static const struct clk_ops sam9x60_div_pll_ops_chg = {
+@@ -498,6 +556,8 @@ static const struct clk_ops sam9x60_div_
  	.recalc_rate = sam9x60_div_pll_recalc_rate,
  	.round_rate = sam9x60_div_pll_round_rate,
  	.set_rate = sam9x60_div_pll_set_rate_chg,
@@ -964,8 +950,6 @@ index 1f52409475e9..a73d7c96ce1d 100644
  };
  
  struct clk_hw * __init
-diff --git a/drivers/clk/at91/clk-system.c b/drivers/clk/at91/clk-system.c
-index f83ec0de86c3..80720fd1a9cf 100644
 --- a/drivers/clk/at91/clk-system.c
 +++ b/drivers/clk/at91/clk-system.c
 @@ -20,6 +20,7 @@
@@ -976,7 +960,7 @@ index f83ec0de86c3..80720fd1a9cf 100644
  	u8 id;
  };
  
-@@ -77,10 +78,29 @@ static int clk_system_is_prepared(struct clk_hw *hw)
+@@ -77,10 +78,29 @@ static int clk_system_is_prepared(struct
  	return !!(status & (1 << sys->id));
  }
  
@@ -1006,8 +990,6 @@ index f83ec0de86c3..80720fd1a9cf 100644
  };
  
  struct clk_hw * __init
-diff --git a/drivers/clk/at91/clk-usb.c b/drivers/clk/at91/clk-usb.c
-index 31d5c45e30d7..b0696a928aa9 100644
 --- a/drivers/clk/at91/clk-usb.c
 +++ b/drivers/clk/at91/clk-usb.c
 @@ -24,6 +24,7 @@
@@ -1018,7 +1000,7 @@ index 31d5c45e30d7..b0696a928aa9 100644
  	u32 usbs_mask;
  	u8 num_parents;
  };
-@@ -148,12 +149,38 @@ static int at91sam9x5_clk_usb_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -148,12 +149,38 @@ static int at91sam9x5_clk_usb_set_rate(s
  	return 0;
  }
  
@@ -1057,8 +1039,6 @@ index 31d5c45e30d7..b0696a928aa9 100644
  };
  
  static int at91sam9n12_clk_usb_enable(struct clk_hw *hw)
-diff --git a/drivers/clk/at91/clk-utmi.c b/drivers/clk/at91/clk-utmi.c
-index df9f3fc3b6a6..a22c10d9a1b9 100644
 --- a/drivers/clk/at91/clk-utmi.c
 +++ b/drivers/clk/at91/clk-utmi.c
 @@ -23,6 +23,7 @@ struct clk_utmi {
@@ -1069,7 +1049,7 @@ index df9f3fc3b6a6..a22c10d9a1b9 100644
  };
  
  #define to_clk_utmi(hw) container_of(hw, struct clk_utmi, hw)
-@@ -113,11 +114,30 @@ static unsigned long clk_utmi_recalc_rate(struct clk_hw *hw,
+@@ -113,11 +114,30 @@ static unsigned long clk_utmi_recalc_rat
  	return UTMI_RATE;
  }
  
@@ -1100,7 +1080,7 @@ index df9f3fc3b6a6..a22c10d9a1b9 100644
  };
  
  static struct clk_hw * __init
-@@ -232,10 +252,29 @@ static int clk_utmi_sama7g5_is_prepared(struct clk_hw *hw)
+@@ -232,10 +252,29 @@ static int clk_utmi_sama7g5_is_prepared(
  	return 0;
  }
  
@@ -1130,8 +1110,6 @@ index df9f3fc3b6a6..a22c10d9a1b9 100644
  };
  
  struct clk_hw * __init
-diff --git a/drivers/clk/at91/pmc.c b/drivers/clk/at91/pmc.c
-index b40035b011d0..b2806946a77a 100644
 --- a/drivers/clk/at91/pmc.c
 +++ b/drivers/clk/at91/pmc.c
 @@ -3,6 +3,7 @@
@@ -1151,7 +1129,7 @@ index b40035b011d0..b2806946a77a 100644
  #include "pmc.h"
  
  #define PMC_MAX_IDS 128
-@@ -111,147 +110,19 @@ struct pmc_data *pmc_data_allocate(unsigned int ncore, unsigned int nsystem,
+@@ -111,147 +110,19 @@ struct pmc_data *pmc_data_allocate(unsig
  }
  
  #ifdef CONFIG_PM
@@ -1183,7 +1161,8 @@ index b40035b011d0..b2806946a77a 100644
 - * without alteration in the table, and 0 is for unused clocks.
 - */
 -void pmc_register_id(u8 id)
--{
++static int at91_pmc_suspend(void)
+ {
 -	int i;
 -
 -	for (i = 0; i < PMC_MAX_IDS; i++) {
@@ -1194,14 +1173,16 @@ index b40035b011d0..b2806946a77a 100644
 -		if (registered_ids[i] == id)
 -			break;
 -	}
--}
--
++	return clk_save_context();
+ }
+ 
 -/*
 - * As Programmable Clock 0 is valid on AT91 chips, there is an offset
 - * of 1 between the stored value and the real clock ID.
 - */
 -void pmc_register_pck(u8 pck)
--{
++static void at91_pmc_resume(void)
+ {
 -	int i;
 -
 -	for (i = 0; i < PMC_MAX_PCKS; i++) {
@@ -1215,8 +1196,7 @@ index b40035b011d0..b2806946a77a 100644
 -}
 -
 -static int pmc_suspend(void)
-+static int at91_pmc_suspend(void)
- {
+-{
 -	int i;
 -	u8 num;
 -
@@ -1243,12 +1223,10 @@ index b40035b011d0..b2806946a77a 100644
 -	}
 -
 -	return 0;
-+	return clk_save_context();
- }
- 
+-}
+-
 -static bool pmc_ready(unsigned int mask)
-+static void at91_pmc_resume(void)
- {
+-{
 -	unsigned int status;
 -
 -	regmap_read(pmcreg, AT91_PMC_SR, &status);
@@ -1317,8 +1295,6 @@ index b40035b011d0..b2806946a77a 100644
  
  	register_syscore_ops(&pmc_syscore_ops);
  
-diff --git a/drivers/clk/at91/pmc.h b/drivers/clk/at91/pmc.h
-index a49076c804a9..45df094498ce 100644
 --- a/drivers/clk/at91/pmc.h
 +++ b/drivers/clk/at91/pmc.h
 @@ -13,6 +13,8 @@
@@ -1364,6 +1340,3 @@ index a49076c804a9..45df094498ce 100644
 -#endif
 -
  #endif /* __PMC_H_ */
--- 
-2.32.0
-

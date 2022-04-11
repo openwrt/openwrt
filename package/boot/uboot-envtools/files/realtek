@@ -15,6 +15,7 @@ zyxel,gs1900-8|\
 zyxel,gs1900-8hp-v1|\
 zyxel,gs1900-8hp-v2|\
 zyxel,gs1900-10hp|\
+zyxel,gs1900-24-v1|\
 zyxel,gs1900-24hp-v2)
 	idx="$(find_mtd_index u-boot-env)"
 	[ -n "$idx" ] && \
@@ -22,6 +23,14 @@ zyxel,gs1900-24hp-v2)
 	idx2="$(find_mtd_index u-boot-env2)"
 	[ -n "$idx2" ] && \
 		ubootenv_add_uci_sys_config "/dev/mtd$idx2" "0x0" "0x1000" "0x10000"
+	;;
+iodata,bsh-g24mb)
+	idx="$(find_mtd_index u-boot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000"
+	idx2="$(find_mtd_index u-boot-env2)"
+	[ -n "$idx2" ] && \
+		ubootenv_add_uci_sys_config "/dev/mtd$idx2" "0x0" "0x3800" "0x10000"
 	;;
 *)
 	idx="$(find_mtd_index u-boot-env)"

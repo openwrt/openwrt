@@ -17,8 +17,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/atmel/mchp-i2s-mcc.c | 52 +++++++++++++++++++++++++++++++---
  1 file changed, 48 insertions(+), 4 deletions(-)
 
-diff --git a/sound/soc/atmel/mchp-i2s-mcc.c b/sound/soc/atmel/mchp-i2s-mcc.c
-index dca4fd1e2dfd..0818fa864f0e 100644
 --- a/sound/soc/atmel/mchp-i2s-mcc.c
 +++ b/sound/soc/atmel/mchp-i2s-mcc.c
 @@ -100,6 +100,8 @@
@@ -38,7 +36,7 @@ index dca4fd1e2dfd..0818fa864f0e 100644
  	unsigned int				gclk_use:1;
  	unsigned int				gclk_running:1;
  	unsigned int				tx_rdy:1;
-@@ -589,6 +592,8 @@ static int mchp_i2s_mcc_hw_params(struct snd_pcm_substream *substream,
+@@ -589,6 +592,8 @@ static int mchp_i2s_mcc_hw_params(struct
  		if (!frame_length)
  			frame_length = 2 * params_physical_width(params);
  	} else if (dev->fmt & SND_SOC_DAIFMT_DSP_A) {
@@ -47,7 +45,7 @@ index dca4fd1e2dfd..0818fa864f0e 100644
  		if (dev->tdm_slots) {
  			if (channels % 2 && channels * 2 <= dev->tdm_slots) {
  				/*
-@@ -914,6 +919,45 @@ static const struct of_device_id mchp_i2s_mcc_dt_ids[] = {
+@@ -914,6 +919,45 @@ static const struct of_device_id mchp_i2
  MODULE_DEVICE_TABLE(of, mchp_i2s_mcc_dt_ids);
  #endif
  
@@ -93,7 +91,7 @@ index dca4fd1e2dfd..0818fa864f0e 100644
  static int mchp_i2s_mcc_probe(struct platform_device *pdev)
  {
  	struct mchp_i2s_mcc_dev *dev;
-@@ -966,10 +1010,10 @@ static int mchp_i2s_mcc_probe(struct platform_device *pdev)
+@@ -966,10 +1010,10 @@ static int mchp_i2s_mcc_probe(struct pla
  	}
  
  	dev->soc = of_device_get_match_data(&pdev->dev);
@@ -108,6 +106,3 @@ index dca4fd1e2dfd..0818fa864f0e 100644
  	dev->dev = &pdev->dev;
  	dev->regmap = regmap;
  	platform_set_drvdata(pdev, dev);
--- 
-2.32.0
-

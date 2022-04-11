@@ -18,11 +18,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 1 +
  4 files changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index e010429fc44d..cfe60b2882ac 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -1684,7 +1684,8 @@ static void isc_hist_count(struct isc_device *isc, u32 *min, u32 *max)
+@@ -1684,7 +1684,8 @@ static void isc_hist_count(struct isc_de
  	*min = 0;
  	*max = HIST_ENTRIES;
  
@@ -32,8 +30,6 @@ index e010429fc44d..cfe60b2882ac 100644
  
  	*hist_count = 0;
  	/*
-diff --git a/drivers/media/platform/atmel/atmel-isc-regs.h b/drivers/media/platform/atmel/atmel-isc-regs.h
-index 344668dcfcf4..a15c13e1a833 100644
 --- a/drivers/media/platform/atmel/atmel-isc-regs.h
 +++ b/drivers/media/platform/atmel/atmel-isc-regs.h
 @@ -300,6 +300,8 @@
@@ -45,8 +41,6 @@ index 344668dcfcf4..a15c13e1a833 100644
  /* Histogram Entry */
  #define ISC_HIS_ENTRY	0x00000410
  
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 13ee19d99c2e..513b2b920b1f 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -153,6 +153,7 @@ struct isc_ctrls {
@@ -65,11 +59,9 @@ index 13ee19d99c2e..513b2b920b1f 100644
  };
  
  /*
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index aebf38dde2d2..ed575eb3726d 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -260,6 +260,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -260,6 +260,7 @@ static int atmel_isc_probe(struct platfo
  	isc->offsets.his = ISC_SAMA5D2_HIS_OFFSET;
  	isc->offsets.dma = ISC_SAMA5D2_DMA_OFFSET;
  	isc->offsets.version = ISC_SAMA5D2_VERSION_OFFSET;
@@ -77,6 +69,3 @@ index aebf38dde2d2..ed575eb3726d 100644
  
  	/* sama5d2-isc - 8 bits per beat */
  	isc->dcfg = ISC_DCFG_YMBSIZE_BEATS8 | ISC_DCFG_CMBSIZE_BEATS8;
--- 
-2.32.0
-

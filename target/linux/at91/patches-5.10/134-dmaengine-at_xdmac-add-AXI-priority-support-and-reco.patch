@@ -19,8 +19,6 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  drivers/dma/at_xdmac.c | 47 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 47 insertions(+)
 
-diff --git a/drivers/dma/at_xdmac.c b/drivers/dma/at_xdmac.c
-index 2b096ea04018..8ca86d09b255 100644
 --- a/drivers/dma/at_xdmac.c
 +++ b/drivers/dma/at_xdmac.c
 @@ -30,7 +30,24 @@
@@ -57,7 +55,7 @@ index 2b096ea04018..8ca86d09b255 100644
  };
  
  /* ----- Channels ----- */
-@@ -268,6 +287,7 @@ static const struct at_xdmac_layout at_xdmac_sama5d4_layout = {
+@@ -268,6 +287,7 @@ static const struct at_xdmac_layout at_x
  	.gswf = 0x40,
  	.chan_cc_reg_base = 0x50,
  	.sdif = true,
@@ -65,7 +63,7 @@ index 2b096ea04018..8ca86d09b255 100644
  };
  
  static const struct at_xdmac_layout at_xdmac_sama7g5_layout = {
-@@ -280,6 +300,7 @@ static const struct at_xdmac_layout at_xdmac_sama7g5_layout = {
+@@ -280,6 +300,7 @@ static const struct at_xdmac_layout at_x
  	.gswf = 0x50,
  	.chan_cc_reg_base = 0x60,
  	.sdif = false,
@@ -73,7 +71,7 @@ index 2b096ea04018..8ca86d09b255 100644
  };
  
  static inline void __iomem *at_xdmac_chan_reg_base(struct at_xdmac *atxdmac, unsigned int chan_nb)
-@@ -1996,6 +2017,30 @@ static int atmel_xdmac_resume(struct device *dev)
+@@ -1996,6 +2017,30 @@ static int atmel_xdmac_resume(struct dev
  }
  #endif /* CONFIG_PM_SLEEP */
  
@@ -104,7 +102,7 @@ index 2b096ea04018..8ca86d09b255 100644
  static int at_xdmac_probe(struct platform_device *pdev)
  {
  	struct at_xdmac	*atxdmac;
-@@ -2140,6 +2185,8 @@ static int at_xdmac_probe(struct platform_device *pdev)
+@@ -2140,6 +2185,8 @@ static int at_xdmac_probe(struct platfor
  	dev_info(&pdev->dev, "%d channels, mapped at 0x%p\n",
  		 nr_channels, atxdmac->regs);
  
@@ -113,6 +111,3 @@ index 2b096ea04018..8ca86d09b255 100644
  	return 0;
  
  err_dma_unregister:
--- 
-2.32.0
-

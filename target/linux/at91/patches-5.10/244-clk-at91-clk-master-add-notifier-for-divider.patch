@@ -37,11 +37,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama7g5.c     |   2 +-
  13 files changed, 186 insertions(+), 82 deletions(-)
 
-diff --git a/drivers/clk/at91/at91rm9200.c b/drivers/clk/at91/at91rm9200.c
-index 428a6f4b9ebc..fff4fdda974f 100644
 --- a/drivers/clk/at91/at91rm9200.c
 +++ b/drivers/clk/at91/at91rm9200.c
-@@ -152,7 +152,7 @@ static void __init at91rm9200_pmc_setup(struct device_node *np)
+@@ -152,7 +152,7 @@ static void __init at91rm9200_pmc_setup(
  					  "masterck_pres",
  					  &at91rm9200_master_layout,
  					  &rm9200_mck_characteristics,
@@ -50,11 +48,9 @@ index 428a6f4b9ebc..fff4fdda974f 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/at91sam9260.c b/drivers/clk/at91/at91sam9260.c
-index b29843bea278..79802f864ee5 100644
 --- a/drivers/clk/at91/at91sam9260.c
 +++ b/drivers/clk/at91/at91sam9260.c
-@@ -429,7 +429,7 @@ static void __init at91sam926x_pmc_setup(struct device_node *np,
+@@ -429,7 +429,7 @@ static void __init at91sam926x_pmc_setup
  					  &at91rm9200_master_layout,
  					  data->mck_characteristics,
  					  &at91sam9260_mck_lock,
@@ -63,11 +59,9 @@ index b29843bea278..79802f864ee5 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/at91sam9g45.c b/drivers/clk/at91/at91sam9g45.c
-index 15da0dfe3ef2..7ed984f8058c 100644
 --- a/drivers/clk/at91/at91sam9g45.c
 +++ b/drivers/clk/at91/at91sam9g45.c
-@@ -164,7 +164,7 @@ static void __init at91sam9g45_pmc_setup(struct device_node *np)
+@@ -164,7 +164,7 @@ static void __init at91sam9g45_pmc_setup
  					  &at91rm9200_master_layout,
  					  &mck_characteristics,
  					  &at91sam9g45_mck_lock,
@@ -76,11 +70,9 @@ index 15da0dfe3ef2..7ed984f8058c 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/at91sam9n12.c b/drivers/clk/at91/at91sam9n12.c
-index 7fe435f4b46b..63cc58944b00 100644
 --- a/drivers/clk/at91/at91sam9n12.c
 +++ b/drivers/clk/at91/at91sam9n12.c
-@@ -191,7 +191,7 @@ static void __init at91sam9n12_pmc_setup(struct device_node *np)
+@@ -191,7 +191,7 @@ static void __init at91sam9n12_pmc_setup
  					  &at91sam9x5_master_layout,
  					  &mck_characteristics,
  					  &at91sam9n12_mck_lock,
@@ -89,11 +81,9 @@ index 7fe435f4b46b..63cc58944b00 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/at91sam9rl.c b/drivers/clk/at91/at91sam9rl.c
-index ecbabf5162bd..4d4faf6c61d8 100644
 --- a/drivers/clk/at91/at91sam9rl.c
 +++ b/drivers/clk/at91/at91sam9rl.c
-@@ -132,7 +132,7 @@ static void __init at91sam9rl_pmc_setup(struct device_node *np)
+@@ -132,7 +132,7 @@ static void __init at91sam9rl_pmc_setup(
  					  "masterck_pres",
  					  &at91rm9200_master_layout,
  					  &sam9rl_mck_characteristics,
@@ -102,11 +92,9 @@ index ecbabf5162bd..4d4faf6c61d8 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/at91sam9x5.c b/drivers/clk/at91/at91sam9x5.c
-index 5cce48c64ea2..bd8007b4f3e0 100644
 --- a/drivers/clk/at91/at91sam9x5.c
 +++ b/drivers/clk/at91/at91sam9x5.c
-@@ -210,7 +210,7 @@ static void __init at91sam9x5_pmc_setup(struct device_node *np,
+@@ -210,7 +210,7 @@ static void __init at91sam9x5_pmc_setup(
  					  "masterck_pres",
  					  &at91sam9x5_master_layout,
  					  &mck_characteristics, &mck_lock,
@@ -115,8 +103,6 @@ index 5cce48c64ea2..bd8007b4f3e0 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/clk-master.c b/drivers/clk/at91/clk-master.c
-index e67bcd03a827..b2d0a7f4f7f9 100644
 --- a/drivers/clk/at91/clk-master.c
 +++ b/drivers/clk/at91/clk-master.c
 @@ -5,6 +5,7 @@
@@ -140,7 +126,7 @@ index e67bcd03a827..b2d0a7f4f7f9 100644
  static inline bool clk_master_ready(struct clk_master *master)
  {
  	unsigned int bit = master->id ? AT91_PMC_MCKXRDY : AT91_PMC_MCKRDY;
-@@ -153,107 +158,81 @@ static const struct clk_ops master_div_ops = {
+@@ -153,107 +158,81 @@ static const struct clk_ops master_div_o
  	.restore_context = clk_master_div_restore_context,
  };
  
@@ -242,11 +228,11 @@ index e67bcd03a827..b2d0a7f4f7f9 100644
 -	parent_rate = clk_hw_get_rate(parent);
 -	if (!parent_rate)
 -		return -EINVAL;
--
+ 
 -	for (i = 0; i < ARRAY_SIZE(characteristics->divisors); i++) {
 -		if (!characteristics->divisors[i])
 -			break;
- 
+-
 -		tmp_rate = DIV_ROUND_CLOSEST_ULL(parent_rate,
 -						 characteristics->divisors[i]);
 -		tmp_diff = abs(tmp_rate - req->rate);
@@ -284,7 +270,7 @@ index e67bcd03a827..b2d0a7f4f7f9 100644
  	if (ret)
  		pr_warn("Failed to restore MCK DIV clock\n");
  }
-@@ -261,13 +240,116 @@ static void clk_master_div_restore_context_chg(struct clk_hw *hw)
+@@ -261,13 +240,116 @@ static void clk_master_div_restore_conte
  static const struct clk_ops master_div_ops_chg = {
  	.prepare = clk_master_prepare,
  	.is_prepared = clk_master_is_prepared,
@@ -404,7 +390,7 @@ index e67bcd03a827..b2d0a7f4f7f9 100644
  static void clk_sama7g5_master_best_diff(struct clk_rate_request *req,
  					 struct clk_hw *parent,
  					 unsigned long parent_rate,
-@@ -496,6 +578,8 @@ at91_clk_register_master_internal(struct regmap *regmap,
+@@ -496,6 +578,8 @@ at91_clk_register_master_internal(struct
  	struct clk_master *master;
  	struct clk_init_data init;
  	struct clk_hw *hw;
@@ -413,7 +399,7 @@ index e67bcd03a827..b2d0a7f4f7f9 100644
  	int ret;
  
  	if (!name || !num_parents || !parent_names || !lock)
-@@ -518,6 +602,16 @@ at91_clk_register_master_internal(struct regmap *regmap,
+@@ -518,6 +602,16 @@ at91_clk_register_master_internal(struct
  	master->chg_pid = chg_pid;
  	master->lock = lock;
  
@@ -430,7 +416,7 @@ index e67bcd03a827..b2d0a7f4f7f9 100644
  	hw = &master->hw;
  	ret = clk_hw_register(NULL, &master->hw);
  	if (ret) {
-@@ -554,19 +648,29 @@ at91_clk_register_master_div(struct regmap *regmap,
+@@ -554,19 +648,29 @@ at91_clk_register_master_div(struct regm
  		const char *name, const char *parent_name,
  		const struct clk_master_layout *layout,
  		const struct clk_master_characteristics *characteristics,
@@ -465,11 +451,9 @@ index e67bcd03a827..b2d0a7f4f7f9 100644
  }
  
  static unsigned long
-diff --git a/drivers/clk/at91/dt-compat.c b/drivers/clk/at91/dt-compat.c
-index a97b99c2dc12..ca2dbb65b9df 100644
 --- a/drivers/clk/at91/dt-compat.c
 +++ b/drivers/clk/at91/dt-compat.c
-@@ -399,7 +399,7 @@ of_at91_clk_master_setup(struct device_node *np,
+@@ -399,7 +399,7 @@ of_at91_clk_master_setup(struct device_n
  
  	hw = at91_clk_register_master_div(regmap, name, "masterck_pres",
  					  layout, characteristics,
@@ -478,11 +462,9 @@ index a97b99c2dc12..ca2dbb65b9df 100644
  	if (IS_ERR(hw))
  		goto out_free_characteristics;
  
-diff --git a/drivers/clk/at91/pmc.h b/drivers/clk/at91/pmc.h
-index 207ecccef29f..3a1bf6194c28 100644
 --- a/drivers/clk/at91/pmc.h
 +++ b/drivers/clk/at91/pmc.h
-@@ -182,7 +182,7 @@ at91_clk_register_master_div(struct regmap *regmap, const char *name,
+@@ -182,7 +182,7 @@ at91_clk_register_master_div(struct regm
  			     const char *parent_names,
  			     const struct clk_master_layout *layout,
  			     const struct clk_master_characteristics *characteristics,
@@ -491,11 +473,9 @@ index 207ecccef29f..3a1bf6194c28 100644
  
  struct clk_hw * __init
  at91_clk_sama7g5_register_master(struct regmap *regmap,
-diff --git a/drivers/clk/at91/sama5d2.c b/drivers/clk/at91/sama5d2.c
-index 3d1f78176c3e..d027294a0089 100644
 --- a/drivers/clk/at91/sama5d2.c
 +++ b/drivers/clk/at91/sama5d2.c
-@@ -249,7 +249,7 @@ static void __init sama5d2_pmc_setup(struct device_node *np)
+@@ -249,7 +249,7 @@ static void __init sama5d2_pmc_setup(str
  					  "masterck_pres",
  					  &at91sam9x5_master_layout,
  					  &mck_characteristics, &mck_lock,
@@ -504,11 +484,9 @@ index 3d1f78176c3e..d027294a0089 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/sama5d3.c b/drivers/clk/at91/sama5d3.c
-index d376257807d2..339d0f382ff0 100644
 --- a/drivers/clk/at91/sama5d3.c
 +++ b/drivers/clk/at91/sama5d3.c
-@@ -184,7 +184,7 @@ static void __init sama5d3_pmc_setup(struct device_node *np)
+@@ -184,7 +184,7 @@ static void __init sama5d3_pmc_setup(str
  					  "masterck_pres",
  					  &at91sam9x5_master_layout,
  					  &mck_characteristics, &mck_lock,
@@ -517,11 +495,9 @@ index d376257807d2..339d0f382ff0 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/sama5d4.c b/drivers/clk/at91/sama5d4.c
-index 5cbaac68da44..4af75b1e39e9 100644
 --- a/drivers/clk/at91/sama5d4.c
 +++ b/drivers/clk/at91/sama5d4.c
-@@ -199,7 +199,7 @@ static void __init sama5d4_pmc_setup(struct device_node *np)
+@@ -199,7 +199,7 @@ static void __init sama5d4_pmc_setup(str
  					  "masterck_pres",
  					  &at91sam9x5_master_layout,
  					  &mck_characteristics, &mck_lock,
@@ -530,11 +506,9 @@ index 5cbaac68da44..4af75b1e39e9 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index ae52c10af040..c66bde6f7b47 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
-@@ -1003,7 +1003,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -1003,7 +1003,7 @@ static void __init sama7g5_pmc_setup(str
  
  	hw = at91_clk_register_master_div(regmap, "mck0", "cpuck",
  					  &mck0_layout, &mck0_characteristics,
@@ -543,6 +517,3 @@ index ae52c10af040..c66bde6f7b47 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
--- 
-2.32.0
-

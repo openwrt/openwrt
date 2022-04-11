@@ -17,11 +17,9 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama7g5.c         |  67 +++++++++----
  4 files changed, 197 insertions(+), 41 deletions(-)
 
-diff --git a/drivers/clk/at91/clk-sam9x60-pll.c b/drivers/clk/at91/clk-sam9x60-pll.c
-index 5a9daa3643a7..1f52409475e9 100644
 --- a/drivers/clk/at91/clk-sam9x60-pll.c
 +++ b/drivers/clk/at91/clk-sam9x60-pll.c
-@@ -229,6 +229,57 @@ static int sam9x60_frac_pll_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -229,6 +229,57 @@ static int sam9x60_frac_pll_set_rate(str
  	return sam9x60_frac_pll_compute_mul_frac(core, rate, parent_rate, true);
  }
  
@@ -79,7 +77,7 @@ index 5a9daa3643a7..1f52409475e9 100644
  static const struct clk_ops sam9x60_frac_pll_ops = {
  	.prepare = sam9x60_frac_pll_prepare,
  	.unprepare = sam9x60_frac_pll_unprepare,
-@@ -238,6 +289,15 @@ static const struct clk_ops sam9x60_frac_pll_ops = {
+@@ -238,6 +289,15 @@ static const struct clk_ops sam9x60_frac
  	.set_rate = sam9x60_frac_pll_set_rate,
  };
  
@@ -95,7 +93,7 @@ index 5a9daa3643a7..1f52409475e9 100644
  static int sam9x60_div_pll_prepare(struct clk_hw *hw)
  {
  	struct sam9x60_pll_core *core = to_sam9x60_pll_core(hw);
-@@ -384,6 +444,44 @@ static int sam9x60_div_pll_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -384,6 +444,44 @@ static int sam9x60_div_pll_set_rate(stru
  	return 0;
  }
  
@@ -140,7 +138,7 @@ index 5a9daa3643a7..1f52409475e9 100644
  static const struct clk_ops sam9x60_div_pll_ops = {
  	.prepare = sam9x60_div_pll_prepare,
  	.unprepare = sam9x60_div_pll_unprepare,
-@@ -393,17 +491,26 @@ static const struct clk_ops sam9x60_div_pll_ops = {
+@@ -393,17 +491,26 @@ static const struct clk_ops sam9x60_div_
  	.set_rate = sam9x60_div_pll_set_rate,
  };
  
@@ -169,7 +167,7 @@ index 5a9daa3643a7..1f52409475e9 100644
  	unsigned int val;
  	int ret;
  
-@@ -417,10 +524,12 @@ sam9x60_clk_register_frac_pll(struct regmap *regmap, spinlock_t *lock,
+@@ -417,10 +524,12 @@ sam9x60_clk_register_frac_pll(struct reg
  	init.name = name;
  	init.parent_names = &parent_name;
  	init.num_parents = 1;
@@ -186,7 +184,7 @@ index 5a9daa3643a7..1f52409475e9 100644
  
  	frac->core.id = id;
  	frac->core.hw.init = &init;
-@@ -429,7 +538,7 @@ sam9x60_clk_register_frac_pll(struct regmap *regmap, spinlock_t *lock,
+@@ -429,7 +538,7 @@ sam9x60_clk_register_frac_pll(struct reg
  	frac->core.regmap = regmap;
  	frac->core.lock = lock;
  
@@ -195,7 +193,7 @@ index 5a9daa3643a7..1f52409475e9 100644
  	if (sam9x60_pll_ready(regmap, id)) {
  		regmap_update_bits(regmap, AT91_PMC_PLL_UPDT,
  				   AT91_PMC_PLL_UPDT_ID_MSK, id);
-@@ -457,7 +566,7 @@ sam9x60_clk_register_frac_pll(struct regmap *regmap, spinlock_t *lock,
+@@ -457,7 +566,7 @@ sam9x60_clk_register_frac_pll(struct reg
  			goto free;
  		}
  	}
@@ -204,7 +202,7 @@ index 5a9daa3643a7..1f52409475e9 100644
  
  	hw = &frac->core.hw;
  	ret = clk_hw_register(NULL, hw);
-@@ -469,7 +578,7 @@ sam9x60_clk_register_frac_pll(struct regmap *regmap, spinlock_t *lock,
+@@ -469,7 +578,7 @@ sam9x60_clk_register_frac_pll(struct reg
  	return hw;
  
  free:
@@ -228,7 +226,7 @@ index 5a9daa3643a7..1f52409475e9 100644
  	unsigned int val;
  	int ret;
  
-@@ -497,11 +606,11 @@ sam9x60_clk_register_div_pll(struct regmap *regmap, spinlock_t *lock,
+@@ -497,11 +606,11 @@ sam9x60_clk_register_div_pll(struct regm
  	init.name = name;
  	init.parent_names = &parent_name;
  	init.num_parents = 1;
@@ -245,7 +243,7 @@ index 5a9daa3643a7..1f52409475e9 100644
  
  	div->core.id = id;
  	div->core.hw.init = &init;
-@@ -510,14 +619,14 @@ sam9x60_clk_register_div_pll(struct regmap *regmap, spinlock_t *lock,
+@@ -510,14 +619,14 @@ sam9x60_clk_register_div_pll(struct regm
  	div->core.regmap = regmap;
  	div->core.lock = lock;
  
@@ -262,8 +260,6 @@ index 5a9daa3643a7..1f52409475e9 100644
  
  	hw = &div->core.hw;
  	ret = clk_hw_register(NULL, hw);
-diff --git a/drivers/clk/at91/pmc.h b/drivers/clk/at91/pmc.h
-index 0a9364bde339..bedcd85ad750 100644
 --- a/drivers/clk/at91/pmc.h
 +++ b/drivers/clk/at91/pmc.h
 @@ -190,14 +190,14 @@ struct clk_hw * __init
@@ -283,11 +279,9 @@ index 0a9364bde339..bedcd85ad750 100644
  
  struct clk_hw * __init
  at91_clk_register_programmable(struct regmap *regmap, const char *name,
-diff --git a/drivers/clk/at91/sam9x60.c b/drivers/clk/at91/sam9x60.c
-index c8cbec5308f0..4cb0d31babf7 100644
 --- a/drivers/clk/at91/sam9x60.c
 +++ b/drivers/clk/at91/sam9x60.c
-@@ -224,13 +224,24 @@ static void __init sam9x60_pmc_setup(struct device_node *np)
+@@ -224,13 +224,24 @@ static void __init sam9x60_pmc_setup(str
  	hw = sam9x60_clk_register_frac_pll(regmap, &pmc_pll_lock, "pllack_fracck",
  					   "mainck", sam9x60_pmc->chws[PMC_MAIN],
  					   0, &plla_characteristics,
@@ -314,7 +308,7 @@ index c8cbec5308f0..4cb0d31babf7 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -239,13 +250,16 @@ static void __init sam9x60_pmc_setup(struct device_node *np)
+@@ -239,13 +250,16 @@ static void __init sam9x60_pmc_setup(str
  	hw = sam9x60_clk_register_frac_pll(regmap, &pmc_pll_lock, "upllck_fracck",
  					   "main_osc", main_osc_hw, 1,
  					   &upll_characteristics,
@@ -333,11 +327,9 @@ index c8cbec5308f0..4cb0d31babf7 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index d685e22b2014..d7c2b731ad20 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
-@@ -95,15 +95,15 @@ static const struct clk_pll_layout pll_layout_divio = {
+@@ -95,15 +95,15 @@ static const struct clk_pll_layout pll_l
   * @p:		clock parent
   * @l:		clock layout
   * @t:		clock type
@@ -498,7 +490,7 @@ index d685e22b2014..d7c2b731ad20 100644
  	},
  };
  
-@@ -890,7 +923,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -890,7 +923,7 @@ static void __init sama7g5_pmc_setup(str
  					sama7g5_plls[i][j].p, parent_hw, i,
  					&pll_characteristics,
  					sama7g5_plls[i][j].l,
@@ -507,7 +499,7 @@ index d685e22b2014..d7c2b731ad20 100644
  				break;
  
  			case PLL_TYPE_DIV:
-@@ -899,7 +932,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -899,7 +932,7 @@ static void __init sama7g5_pmc_setup(str
  					sama7g5_plls[i][j].p, i,
  					&pll_characteristics,
  					sama7g5_plls[i][j].l,
@@ -516,6 +508,3 @@ index d685e22b2014..d7c2b731ad20 100644
  				break;
  
  			default:
--- 
-2.32.0
-

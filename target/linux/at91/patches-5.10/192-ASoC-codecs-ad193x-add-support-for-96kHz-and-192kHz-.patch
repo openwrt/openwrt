@@ -16,11 +16,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/codecs/ad193x.h |  4 ++++
  2 files changed, 32 insertions(+), 2 deletions(-)
 
-diff --git a/sound/soc/codecs/ad193x.c b/sound/soc/codecs/ad193x.c
-index f37ab7eda615..278a55af158b 100644
 --- a/sound/soc/codecs/ad193x.c
 +++ b/sound/soc/codecs/ad193x.c
-@@ -316,6 +316,13 @@ static int ad193x_hw_params(struct snd_pcm_substream *substream,
+@@ -316,6 +316,13 @@ static int ad193x_hw_params(struct snd_p
  	int word_len = 0, master_rate = 0;
  	struct snd_soc_component *component = dai->component;
  	struct ad193x_priv *ad193x = snd_soc_component_get_drvdata(component);
@@ -34,7 +32,7 @@ index f37ab7eda615..278a55af158b 100644
  
  	/* bit size */
  	switch (params_width(params)) {
-@@ -346,6 +353,25 @@ static int ad193x_hw_params(struct snd_pcm_substream *substream,
+@@ -346,6 +353,25 @@ static int ad193x_hw_params(struct snd_p
  		break;
  	}
  
@@ -60,7 +58,7 @@ index f37ab7eda615..278a55af158b 100644
  	regmap_update_bits(ad193x->regmap, AD193X_PLL_CLK_CTRL0,
  			    AD193X_PLL_INPUT_MASK, master_rate);
  
-@@ -385,7 +411,7 @@ static struct snd_soc_dai_driver ad193x_dai = {
+@@ -385,7 +411,7 @@ static struct snd_soc_dai_driver ad193x_
  		.stream_name = "Playback",
  		.channels_min = 2,
  		.channels_max = 8,
@@ -69,7 +67,7 @@ index f37ab7eda615..278a55af158b 100644
  		.formats = SNDRV_PCM_FMTBIT_S32_LE | SNDRV_PCM_FMTBIT_S16_LE |
  			SNDRV_PCM_FMTBIT_S20_3LE | SNDRV_PCM_FMTBIT_S24_LE,
  	},
-@@ -407,7 +433,7 @@ static struct snd_soc_dai_driver ad193x_no_adc_dai = {
+@@ -407,7 +433,7 @@ static struct snd_soc_dai_driver ad193x_
  		.stream_name = "Playback",
  		.channels_min = 2,
  		.channels_max = 8,
@@ -78,11 +76,9 @@ index f37ab7eda615..278a55af158b 100644
  		.formats = SNDRV_PCM_FMTBIT_S32_LE | SNDRV_PCM_FMTBIT_S16_LE |
  			SNDRV_PCM_FMTBIT_S20_3LE | SNDRV_PCM_FMTBIT_S24_LE,
  	},
-diff --git a/sound/soc/codecs/ad193x.h b/sound/soc/codecs/ad193x.h
-index 377854712c20..61f4648861d5 100644
 --- a/sound/soc/codecs/ad193x.h
 +++ b/sound/soc/codecs/ad193x.h
-@@ -37,6 +37,10 @@ int ad193x_probe(struct device *dev, struct regmap *regmap,
+@@ -37,6 +37,10 @@ int ad193x_probe(struct device *dev, str
  #define AD193X_PLL_CLK_SRC_MCLK	(1 << 1)
  #define AD193X_DAC_CTRL0        0x02
  #define AD193X_DAC_POWERDOWN           0x01
@@ -93,6 +89,3 @@ index 377854712c20..61f4648861d5 100644
  #define AD193X_DAC_SERFMT_MASK		0xC0
  #define AD193X_DAC_SERFMT_STEREO	(0 << 6)
  #define AD193X_DAC_SERFMT_TDM		(1 << 6)
--- 
-2.32.0
-

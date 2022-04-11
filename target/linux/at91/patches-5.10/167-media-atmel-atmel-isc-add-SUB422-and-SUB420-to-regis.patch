@@ -21,11 +21,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 2 ++
  4 files changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index b7728914fda8..b398cdfdc2c9 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -2326,8 +2326,8 @@ int isc_pipeline_init(struct isc_device *isc)
+@@ -2326,8 +2326,8 @@ int isc_pipeline_init(struct isc_device
  		REG_FIELD(ISC_GAM_CTRL, 3, 3),
  		REG_FIELD(ISC_CSC_CTRL + isc->offsets.csc, 0, 0),
  		REG_FIELD(ISC_CBC_CTRL + isc->offsets.cbc, 0, 0),
@@ -36,8 +34,6 @@ index b7728914fda8..b398cdfdc2c9 100644
  	};
  
  	for (i = 0; i < ISC_PIPE_LINE_NODE_NUM; i++) {
-diff --git a/drivers/media/platform/atmel/atmel-isc-regs.h b/drivers/media/platform/atmel/atmel-isc-regs.h
-index a5e2fe01ba9f..04839def6ef6 100644
 --- a/drivers/media/platform/atmel/atmel-isc-regs.h
 +++ b/drivers/media/platform/atmel/atmel-isc-regs.h
 @@ -194,9 +194,13 @@
@@ -54,8 +50,6 @@ index a5e2fe01ba9f..04839def6ef6 100644
  /* Subsampling 4:2:2 to 4:2:0 Control Register */
  #define ISC_SUB420_CTRL 0x000003cc
  
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index d8b4b1959b94..9eb85540d89d 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -147,10 +147,14 @@ struct isc_ctrls {
@@ -73,11 +67,9 @@ index d8b4b1959b94..9eb85540d89d 100644
  };
  
  /*
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index bb9362093efe..57ea1ae50c44 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -253,6 +253,8 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -253,6 +253,8 @@ static int atmel_isc_probe(struct platfo
  
  	isc->offsets.csc = ISC_SAMA5D2_CSC_OFFSET;
  	isc->offsets.cbc = ISC_SAMA5D2_CBC_OFFSET;
@@ -86,6 +78,3 @@ index bb9362093efe..57ea1ae50c44 100644
  
  	/* sama5d2-isc - 8 bits per beat */
  	isc->dcfg = ISC_DCFG_YMBSIZE_BEATS8 | ISC_DCFG_CMBSIZE_BEATS8;
--- 
-2.32.0
-

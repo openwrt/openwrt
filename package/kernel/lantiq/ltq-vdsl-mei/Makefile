@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9-mei
 PKG_VERSION:=1.5.17.6
-PKG_RELEASE:=4
+PKG_RELEASE:=6
 
 PKG_BASE_NAME:=drv_mei_cpe
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
@@ -29,7 +29,7 @@ define KernelPackage/ltq-vdsl-vr9-mei
   TITLE:=mei driver for vdsl
   SECTION:=sys
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-ifxos
+  DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-ifxos +kmod-ltq-vectoring
   FILES:=$(PKG_BUILD_DIR)/src/drv_mei_cpe.ko
   AUTOLOAD:=$(call AutoLoad,50,drv_mei_cpe)
 endef

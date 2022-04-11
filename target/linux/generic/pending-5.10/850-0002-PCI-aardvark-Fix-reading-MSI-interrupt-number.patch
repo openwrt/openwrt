@@ -27,7 +27,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1393,7 +1393,7 @@ static void advk_pcie_remove_irq_domain(
+@@ -1395,7 +1395,7 @@ static void advk_pcie_remove_irq_domain(
  static void advk_pcie_handle_msi(struct advk_pcie *pcie)
  {
  	u32 msi_val, msi_mask, msi_status, msi_idx;
@@ -36,7 +36,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  
  	msi_mask = advk_readl(pcie, PCIE_MSI_MASK_REG);
  	msi_val = advk_readl(pcie, PCIE_MSI_STATUS_REG);
-@@ -1403,13 +1403,12 @@ static void advk_pcie_handle_msi(struct
+@@ -1405,13 +1405,12 @@ static void advk_pcie_handle_msi(struct
  		if (!(BIT(msi_idx) & msi_status))
  			continue;
  
