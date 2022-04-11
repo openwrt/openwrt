@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: ISC
 // Copyright (c) 2015, The Linux Foundation. All rights reserved.
 // Copyright (c) 2021, Frank Veltmans <veltmans.frank@gmail.com>
-
  
 #include "qcom-ipq4019.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
+#include <dt-bindings/leds/common.h>
 
-/ {
+ / {
 	model = "TP-Link Deco M5";
 	compatible = "tplink,deco-m5", "qcom,ipq4019";
 
@@ -34,25 +34,6 @@
 			label = "key:reset";
 			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_red: rgb_red {
-			label = "rgb:red";
-			gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
-		};
-
-		led_green: rgb_green {
-			label = "rgb:green";
-			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
-		};
-
-		led_blue: rgb_blue {
-			label = "rgb:blue";
-			gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -247,6 +228,35 @@
 			pinctrl-0 = <&i2c_0_pins>;
 			pinctrl-names = "default";
 			status = "okay";
+				lp5521@32 {
+				compatible = "national,lp5521";
+				reg = <0x32>;
+				clock-mode = /bits/ 8 <2>;
+				led_red: led@0 {
+					reg = <0>;
+					chan-name = "fault:red";
+					led-cur = /bits/ 8 <0x2f>;
+					max-cur = /bits/ 8 <0x5f>;
+					color = <LED_COLOR_ID_RED>;
+					function = LED_FUNCTION_FAULT;
+				};
+				led_green: led@1 {
+					reg = <1>;
+					chan-name = "power:green";
+					led-cur = /bits/ 8 <0x2f>;
+					max-cur = /bits/ 8 <0x5f>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_POWER;
+				};
+				led_blue: led@2{
+					reg = <2>;
+					chan-name = "boot:blue";
+					led-cur = /bits/ 8 <0x2f>;
+					max-cur = /bits/ 8 <0x5f>;
+					color = <LED_COLOR_ID_BLUE>;
+				};
+			};
+
 		};
 
 		serial_0: serial@78af000 {

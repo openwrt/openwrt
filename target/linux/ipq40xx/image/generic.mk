@@ -978,6 +978,20 @@ define Device/tplink_deco-m5
 endef
 TARGET_DEVICES += tplink_deco-m5
 
+define Device/tplink_deco-m5-v2
+        $(call Device/FitImage)
+        DEVICE_VENDOR := TP-Link
+        DEVICE_MODEL := Deco-M5
+		DEVICE_VARIANT := v2
+        SOC := qcom-ipq4019
+        DEVICE_PACKAGES := ipq-wifi-tplink_deco-m5
+        TPLINK_BOARD_ID := DECO-M5
+        IMAGE_SIZE := 16640k
+        IMAGES += factory.bin
+        IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+        IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += tplink_deco-m5-v2
 
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)

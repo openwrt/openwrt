@@ -142,7 +142,7 @@ ipq40xx_setup_interfaces()
 	tplink,deco-m5)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		ucidef_add_switch "switch0" \
-			"1" "1"
+		 	"0u@eth0" "1:lan" "4:lan"
 		;;
 	unielec,u4019-32m)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"

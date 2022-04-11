@@ -128,8 +128,7 @@ case "$FIRMWARE" in
 		;;
 	tplink,deco-m5)
 		caldata_extract "0:ART" 0x1000 0x2f20
-		#ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
-		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/dev/mtd10" 0x8) 2)
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "OPAQUE" 0x8) 2)
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
@@ -212,8 +211,8 @@ case "$FIRMWARE" in
 		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0xc)
 		;;
 	tplink,deco-m5)
-		caldata_extract "0:ART" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(get_mac_binary /sys/class/net/eth0/address) -1)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "OPAQUE" 0x8) 3)
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
