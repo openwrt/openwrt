@@ -30,8 +30,8 @@
 	keys {
 		compatible = "gpio-keys";
 
-		key_reset {
-			label = "key:reset";
+		reset {
+			label = "reset";
 			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
