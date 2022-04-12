@@ -57,7 +57,7 @@ define KernelPackage/nf-ipt6
   KCONFIG:=$(KCONFIG_NF_IPT6)
   FILES:=$(foreach mod,$(NF_IPT6-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_IPT6-m)))
-  DEPENDS:=+kmod-nf-ipt
+  DEPENDS:=+kmod-nf-ipt +kmod-nf-log6
 endef
 
 $(eval $(call KernelPackage,nf-ipt6))
@@ -70,7 +70,7 @@ define KernelPackage/ipt-core
   KCONFIG:=$(KCONFIG_IPT_CORE)
   FILES:=$(foreach mod,$(IPT_CORE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_CORE-m)))
-  DEPENDS:=+kmod-nf-reject +kmod-nf-ipt
+  DEPENDS:=+kmod-nf-reject +kmod-nf-ipt +kmod-nf-log
 endef
 
 define KernelPackage/ipt-core/description
@@ -119,6 +119,29 @@ define KernelPackage/nf-conntrack6
 endef
 
 $(eval $(call KernelPackage,nf-conntrack6))
+
+
+define KernelPackage/nf-log
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter Logging
+  KCONFIG:=$(KCONFIG_NF_LOG)
+  FILES:=$(foreach mod,$(NF_LOG-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_LOG-m)))
+endef
+
+$(eval $(call KernelPackage,nf-log))
+
+
+define KernelPackage/nf-log6
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter IPV6 Logging
+  KCONFIG:=$(KCONFIG_NF_LOG6)
+  DEPENDS:=@IPV6 +kmod-nf-log
+  FILES:=$(foreach mod,$(NF_LOG6-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_LOG6-m)))
+endef
+
+$(eval $(call KernelPackage,nf-log6))
 
 
 define KernelPackage/nf-nat
@@ -1089,7 +1112,7 @@ $(eval $(call KernelPackage,ipt-rpfilter))
 define KernelPackage/nft-core
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables support
-  DEPENDS:=+kmod-nfnetlink +kmod-nf-reject +IPV6:kmod-nf-reject6 +IPV6:kmod-nf-conntrack6 +kmod-nf-nat +kmod-lib-crc32c
+  DEPENDS:=+kmod-nfnetlink +kmod-nf-reject +IPV6:kmod-nf-reject6 +IPV6:kmod-nf-conntrack6 +kmod-nf-nat +kmod-nf-log +IPV6:kmod-nf-log6 +kmod-lib-crc32c
   FILES:=$(foreach mod,$(NFT_CORE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_CORE-m)))
   KCONFIG:= \
