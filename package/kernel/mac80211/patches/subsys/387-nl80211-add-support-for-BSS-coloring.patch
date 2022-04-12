@@ -234,7 +234,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -14677,6 +14681,106 @@ bad_tid_conf:
+@@ -14689,6 +14693,106 @@ bad_tid_conf:
  	return ret;
  }
  
@@ -341,7 +341,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #define NL80211_FLAG_NEED_WIPHY		0x01
  #define NL80211_FLAG_NEED_NETDEV	0x02
  #define NL80211_FLAG_NEED_RTNL		0x04
-@@ -15758,6 +15862,14 @@ static const struct genl_small_ops nl802
+@@ -15770,6 +15874,14 @@ static const struct genl_small_ops nl802
  		.internal_flags = NL80211_FLAG_NEED_WIPHY |
  				  NL80211_FLAG_NEED_RTNL,
  	},
@@ -356,7 +356,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  static struct genl_family nl80211_fam __genl_ro_after_init = {
-@@ -17384,6 +17496,51 @@ void cfg80211_ch_switch_started_notify(s
+@@ -17397,6 +17509,51 @@ void cfg80211_ch_switch_started_notify(s
  }
  EXPORT_SYMBOL(cfg80211_ch_switch_started_notify);
  

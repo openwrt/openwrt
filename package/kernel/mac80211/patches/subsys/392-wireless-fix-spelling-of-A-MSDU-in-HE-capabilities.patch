@@ -11,7 +11,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
 +++ b/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
-@@ -598,7 +598,7 @@ static struct ieee80211_sband_iftype_dat
+@@ -597,7 +597,7 @@ static struct ieee80211_sband_iftype_dat
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
  					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
  				.mac_cap_info[4] =
@@ -20,7 +20,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  					IEEE80211_HE_MAC_CAP4_MULTI_TID_AGG_TX_QOS_B39,
  				.mac_cap_info[5] =
  					IEEE80211_HE_MAC_CAP5_MULTI_TID_AGG_TX_QOS_B40 |
-@@ -682,7 +682,7 @@ static struct ieee80211_sband_iftype_dat
+@@ -681,7 +681,7 @@ static struct ieee80211_sband_iftype_dat
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
  					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
  				.mac_cap_info[4] =
@@ -42,7 +42,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			he_cap_elem->phy_cap_info[0] =
 --- a/drivers/net/wireless/mediatek/mt76/mt7915/mcu.c
 +++ b/drivers/net/wireless/mediatek/mt76/mt7915/mcu.c
-@@ -1353,7 +1353,7 @@ mt7915_mcu_sta_he_tlv(struct sk_buff *sk
+@@ -1358,7 +1358,7 @@ mt7915_mcu_sta_he_tlv(struct sk_buff *sk
  	if (elem->mac_cap_info[3] & IEEE80211_HE_MAC_CAP3_OMI_CONTROL)
  		cap |= STA_REC_HE_CAP_OM;
  
@@ -75,7 +75,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/drivers/net/wireless/mac80211_hwsim.c
 +++ b/drivers/net/wireless/mac80211_hwsim.c
-@@ -2748,7 +2748,7 @@ static const struct ieee80211_sband_ifty
+@@ -2757,7 +2757,7 @@ static const struct ieee80211_sband_ifty
  				.mac_cap_info[3] =
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
  					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
@@ -84,7 +84,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				.phy_cap_info[1] =
  					IEEE80211_HE_PHY_CAP1_PREAMBLE_PUNC_RX_MASK |
  					IEEE80211_HE_PHY_CAP1_DEVICE_CLASS_A |
-@@ -2792,7 +2792,7 @@ static const struct ieee80211_sband_ifty
+@@ -2801,7 +2801,7 @@ static const struct ieee80211_sband_ifty
  				.mac_cap_info[3] =
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
  					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
@@ -93,7 +93,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				.phy_cap_info[1] =
  					IEEE80211_HE_PHY_CAP1_PREAMBLE_PUNC_RX_MASK |
  					IEEE80211_HE_PHY_CAP1_DEVICE_CLASS_A |
-@@ -2838,7 +2838,7 @@ static const struct ieee80211_sband_ifty
+@@ -2847,7 +2847,7 @@ static const struct ieee80211_sband_ifty
  				.mac_cap_info[3] =
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
  					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
@@ -102,7 +102,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				.phy_cap_info[0] =
  					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G |
  					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G |
-@@ -2886,7 +2886,7 @@ static const struct ieee80211_sband_ifty
+@@ -2895,7 +2895,7 @@ static const struct ieee80211_sband_ifty
  				.mac_cap_info[3] =
  					IEEE80211_HE_MAC_CAP3_OMI_CONTROL |
  					IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_VHT_2,
