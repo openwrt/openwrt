@@ -1,5 +1,7 @@
 Another Official Openwrt Modified
 
+Official 21.02
+
 IP : 192.168.2.1 
 
 Ubuntu 18.04 and 20.04 is prefred.
