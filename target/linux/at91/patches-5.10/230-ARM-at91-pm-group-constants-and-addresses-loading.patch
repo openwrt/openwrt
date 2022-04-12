@@ -13,8 +13,6 @@ Link: https://lore.kernel.org/r/20210930154219.2214051-3-claudiu.beznea@microchi
  arch/arm/mach-at91/pm_suspend.S | 17 +++++++++--------
  1 file changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
-index cbd61a3bcab1..34f251fdb743 100644
 --- a/arch/arm/mach-at91/pm_suspend.S
 +++ b/arch/arm/mach-at91/pm_suspend.S
 @@ -1014,6 +1014,15 @@ ENTRY(at91_pm_suspend_in_sram)
@@ -48,6 +46,3 @@ index cbd61a3bcab1..34f251fdb743 100644
  	/* Both ldrne below are here to preload their address in the TLB */
  	ldr	tmp1, [r0, #PM_DATA_SHDWC]
  	str	tmp1, .shdwc
--- 
-2.32.0
-

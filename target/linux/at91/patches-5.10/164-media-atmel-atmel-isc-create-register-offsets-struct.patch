@@ -19,11 +19,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  .../media/platform/atmel/atmel-sama5d2-isc.c  | 20 +++++++++++++------
  4 files changed, 30 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index f9190fccb482..18136e58a754 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -2326,7 +2326,7 @@ int isc_pipeline_init(struct isc_device *isc)
+@@ -2326,7 +2326,7 @@ int isc_pipeline_init(struct isc_device
  		REG_FIELD(ISC_GAM_CTRL, 1, 1),
  		REG_FIELD(ISC_GAM_CTRL, 2, 2),
  		REG_FIELD(ISC_GAM_CTRL, 3, 3),
@@ -32,8 +30,6 @@ index f9190fccb482..18136e58a754 100644
  		REG_FIELD(ISC_CBC_CTRL, 0, 0),
  		REG_FIELD(ISC_SUB422_CTRL, 0, 0),
  		REG_FIELD(ISC_SUB420_CTRL, 0, 0),
-diff --git a/drivers/media/platform/atmel/atmel-isc-regs.h b/drivers/media/platform/atmel/atmel-isc-regs.h
-index f1e160ed4351..5a65600c5f88 100644
 --- a/drivers/media/platform/atmel/atmel-isc-regs.h
 +++ b/drivers/media/platform/atmel/atmel-isc-regs.h
 @@ -153,6 +153,9 @@
@@ -46,15 +42,12 @@ index f1e160ed4351..5a65600c5f88 100644
  /* Color Space Conversion Control Register */
  #define ISC_CSC_CTRL    0x00000398
  
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index ebdb9ed791a7..db6b4d469dff 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
-@@ -143,6 +143,14 @@ struct isc_ctrls {
- 
+@@ -144,6 +144,14 @@ struct isc_ctrls {
  #define ISC_PIPE_LINE_NODE_NUM	11
  
-+/*
+ /*
 + * struct isc_reg_offsets - ISC device register offsets
 + * @csc:		Offset for the CSC register
 + */
@@ -62,9 +55,10 @@ index ebdb9ed791a7..db6b4d469dff 100644
 +	u32 csc;
 +};
 +
- /*
++/*
   * struct isc_device - ISC device driver data/config struct
   * @regmap:		Register map
+  * @hclock:		Hclock clock input (refer datasheet)
 @@ -194,6 +202,8 @@ struct isc_ctrls {
   *
   * @config_csc:		pointer to a function that initializes product
@@ -83,11 +77,9 @@ index ebdb9ed791a7..db6b4d469dff 100644
  };
  
  extern struct isc_format formats_list[];
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index 19d0f750636c..2ad6227aa2f5 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -59,12 +59,18 @@ static void isc_sama5d2_config_csc(struct isc_device *isc)
+@@ -59,12 +59,18 @@ static void isc_sama5d2_config_csc(struc
  	struct regmap *regmap = isc->regmap;
  
  	/* Convert RGB to YUV */
@@ -112,7 +104,7 @@ index 19d0f750636c..2ad6227aa2f5 100644
  }
  
  /* Gamma table with gamma 1/2.2 */
-@@ -234,6 +240,8 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -234,6 +240,8 @@ static int atmel_isc_probe(struct platfo
  
  	isc->config_csc = isc_sama5d2_config_csc;
  
@@ -121,6 +113,3 @@ index 19d0f750636c..2ad6227aa2f5 100644
  	/* sama5d2-isc - 8 bits per beat */
  	isc->dcfg = ISC_DCFG_YMBSIZE_BEATS8 | ISC_DCFG_CMBSIZE_BEATS8;
  
--- 
-2.32.0
-

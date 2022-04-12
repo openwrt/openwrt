@@ -28,8 +28,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/at91/sama7g5.c     |  13 +-
  14 files changed, 542 insertions(+), 146 deletions(-)
 
-diff --git a/drivers/clk/at91/at91rm9200.c b/drivers/clk/at91/at91rm9200.c
-index 2c3d8e6ca63c..0fad1009f315 100644
 --- a/drivers/clk/at91/at91rm9200.c
 +++ b/drivers/clk/at91/at91rm9200.c
 @@ -7,6 +7,8 @@
@@ -41,7 +39,7 @@ index 2c3d8e6ca63c..0fad1009f315 100644
  struct sck {
  	char *n;
  	char *p;
-@@ -137,9 +139,20 @@ static void __init at91rm9200_pmc_setup(struct device_node *np)
+@@ -137,9 +139,20 @@ static void __init at91rm9200_pmc_setup(
  	parent_names[1] = "mainck";
  	parent_names[2] = "pllack";
  	parent_names[3] = "pllbck";
@@ -65,7 +63,7 @@ index 2c3d8e6ca63c..0fad1009f315 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -181,7 +194,7 @@ static void __init at91rm9200_pmc_setup(struct device_node *np)
+@@ -181,7 +194,7 @@ static void __init at91rm9200_pmc_setup(
  	for (i = 0; i < ARRAY_SIZE(at91rm9200_periphck); i++) {
  		hw = at91_clk_register_peripheral(regmap,
  						  at91rm9200_periphck[i].n,
@@ -74,8 +72,6 @@ index 2c3d8e6ca63c..0fad1009f315 100644
  						  at91rm9200_periphck[i].id);
  		if (IS_ERR(hw))
  			goto err_free;
-diff --git a/drivers/clk/at91/at91sam9260.c b/drivers/clk/at91/at91sam9260.c
-index bb81ff731ad8..ceb5495f723a 100644
 --- a/drivers/clk/at91/at91sam9260.c
 +++ b/drivers/clk/at91/at91sam9260.c
 @@ -32,6 +32,8 @@ struct at91sam926x_data {
@@ -87,7 +83,7 @@ index bb81ff731ad8..ceb5495f723a 100644
  static const struct clk_master_characteristics sam9260_mck_characteristics = {
  	.output = { .min = 0, .max = 105000000 },
  	.divisors = { 1, 2, 4, 0 },
-@@ -218,8 +220,8 @@ static const struct sck at91sam9261_systemck[] = {
+@@ -218,8 +220,8 @@ static const struct sck at91sam9261_syst
  	{ .n = "pck1",  .p = "prog1",    .id = 9 },
  	{ .n = "pck2",  .p = "prog2",    .id = 10 },
  	{ .n = "pck3",  .p = "prog3",    .id = 11 },
@@ -98,7 +94,7 @@ index bb81ff731ad8..ceb5495f723a 100644
  };
  
  static const struct pck at91sam9261_periphck[] = {
-@@ -413,9 +415,21 @@ static void __init at91sam926x_pmc_setup(struct device_node *np,
+@@ -413,9 +415,21 @@ static void __init at91sam926x_pmc_setup
  	parent_names[1] = "mainck";
  	parent_names[2] = "pllack";
  	parent_names[3] = "pllbck";
@@ -123,7 +119,7 @@ index bb81ff731ad8..ceb5495f723a 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -457,7 +471,7 @@ static void __init at91sam926x_pmc_setup(struct device_node *np,
+@@ -457,7 +471,7 @@ static void __init at91sam926x_pmc_setup
  	for (i = 0; i < data->num_pck; i++) {
  		hw = at91_clk_register_peripheral(regmap,
  						  data->pck[i].n,
@@ -132,8 +128,6 @@ index bb81ff731ad8..ceb5495f723a 100644
  						  data->pck[i].id);
  		if (IS_ERR(hw))
  			goto err_free;
-diff --git a/drivers/clk/at91/at91sam9g45.c b/drivers/clk/at91/at91sam9g45.c
-index cb4a406ed15d..0214333dedd3 100644
 --- a/drivers/clk/at91/at91sam9g45.c
 +++ b/drivers/clk/at91/at91sam9g45.c
 @@ -7,6 +7,8 @@
@@ -160,7 +154,7 @@ index cb4a406ed15d..0214333dedd3 100644
  };
  
  struct pck {
-@@ -148,9 +150,21 @@ static void __init at91sam9g45_pmc_setup(struct device_node *np)
+@@ -148,9 +150,21 @@ static void __init at91sam9g45_pmc_setup
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -185,7 +179,7 @@ index cb4a406ed15d..0214333dedd3 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -166,7 +180,7 @@ static void __init at91sam9g45_pmc_setup(struct device_node *np)
+@@ -166,7 +180,7 @@ static void __init at91sam9g45_pmc_setup
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -194,7 +188,7 @@ index cb4a406ed15d..0214333dedd3 100644
  	for (i = 0; i < 2; i++) {
  		char name[6];
  
-@@ -195,7 +209,7 @@ static void __init at91sam9g45_pmc_setup(struct device_node *np)
+@@ -195,7 +209,7 @@ static void __init at91sam9g45_pmc_setup
  	for (i = 0; i < ARRAY_SIZE(at91sam9g45_periphck); i++) {
  		hw = at91_clk_register_peripheral(regmap,
  						  at91sam9g45_periphck[i].n,
@@ -203,8 +197,6 @@ index cb4a406ed15d..0214333dedd3 100644
  						  at91sam9g45_periphck[i].id);
  		if (IS_ERR(hw))
  			goto err_free;
-diff --git a/drivers/clk/at91/at91sam9n12.c b/drivers/clk/at91/at91sam9n12.c
-index 93f7eb216122..f9db5316a7f1 100644
 --- a/drivers/clk/at91/at91sam9n12.c
 +++ b/drivers/clk/at91/at91sam9n12.c
 @@ -7,6 +7,8 @@
@@ -235,7 +227,7 @@ index 93f7eb216122..f9db5316a7f1 100644
  };
  
  static const struct clk_pcr_layout at91sam9n12_pcr_layout = {
-@@ -175,9 +177,21 @@ static void __init at91sam9n12_pmc_setup(struct device_node *np)
+@@ -175,9 +177,21 @@ static void __init at91sam9n12_pmc_setup
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "pllbck";
@@ -260,7 +252,7 @@ index 93f7eb216122..f9db5316a7f1 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -191,7 +205,7 @@ static void __init at91sam9n12_pmc_setup(struct device_node *np)
+@@ -191,7 +205,7 @@ static void __init at91sam9n12_pmc_setup
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "pllbck";
@@ -269,7 +261,7 @@ index 93f7eb216122..f9db5316a7f1 100644
  	for (i = 0; i < 2; i++) {
  		char name[6];
  
-@@ -221,7 +235,7 @@ static void __init at91sam9n12_pmc_setup(struct device_node *np)
+@@ -221,7 +235,7 @@ static void __init at91sam9n12_pmc_setup
  		hw = at91_clk_register_sam9x5_peripheral(regmap, &pmc_pcr_lock,
  							 &at91sam9n12_pcr_layout,
  							 at91sam9n12_periphck[i].n,
@@ -278,8 +270,6 @@ index 93f7eb216122..f9db5316a7f1 100644
  							 at91sam9n12_periphck[i].id,
  							 &range, INT_MIN);
  		if (IS_ERR(hw))
-diff --git a/drivers/clk/at91/at91sam9rl.c b/drivers/clk/at91/at91sam9rl.c
-index a343eb69bb35..66736e03cfef 100644
 --- a/drivers/clk/at91/at91sam9rl.c
 +++ b/drivers/clk/at91/at91sam9rl.c
 @@ -7,6 +7,8 @@
@@ -291,7 +281,7 @@ index a343eb69bb35..66736e03cfef 100644
  static const struct clk_master_characteristics sam9rl_mck_characteristics = {
  	.output = { .min = 0, .max = 94000000 },
  	.divisors = { 1, 2, 4, 0 },
-@@ -117,9 +119,20 @@ static void __init at91sam9rl_pmc_setup(struct device_node *np)
+@@ -117,9 +119,20 @@ static void __init at91sam9rl_pmc_setup(
  	parent_names[1] = "mainck";
  	parent_names[2] = "pllack";
  	parent_names[3] = "utmick";
@@ -315,7 +305,7 @@ index a343eb69bb35..66736e03cfef 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -129,7 +142,7 @@ static void __init at91sam9rl_pmc_setup(struct device_node *np)
+@@ -129,7 +142,7 @@ static void __init at91sam9rl_pmc_setup(
  	parent_names[1] = "mainck";
  	parent_names[2] = "pllack";
  	parent_names[3] = "utmick";
@@ -324,7 +314,7 @@ index a343eb69bb35..66736e03cfef 100644
  	for (i = 0; i < 2; i++) {
  		char name[6];
  
-@@ -158,7 +171,7 @@ static void __init at91sam9rl_pmc_setup(struct device_node *np)
+@@ -158,7 +171,7 @@ static void __init at91sam9rl_pmc_setup(
  	for (i = 0; i < ARRAY_SIZE(at91sam9rl_periphck); i++) {
  		hw = at91_clk_register_peripheral(regmap,
  						  at91sam9rl_periphck[i].n,
@@ -333,8 +323,6 @@ index a343eb69bb35..66736e03cfef 100644
  						  at91sam9rl_periphck[i].id);
  		if (IS_ERR(hw))
  			goto err_free;
-diff --git a/drivers/clk/at91/at91sam9x5.c b/drivers/clk/at91/at91sam9x5.c
-index 22b9aad9efb8..79b9d3667228 100644
 --- a/drivers/clk/at91/at91sam9x5.c
 +++ b/drivers/clk/at91/at91sam9x5.c
 @@ -7,6 +7,8 @@
@@ -355,7 +343,7 @@ index 22b9aad9efb8..79b9d3667228 100644
  	{ .n = "smdck", .p = "smdclk",   .id = 4 },
  	{ .n = "uhpck", .p = "usbck",    .id = 6 },
  	{ .n = "udpck", .p = "usbck",    .id = 7 },
-@@ -196,9 +198,19 @@ static void __init at91sam9x5_pmc_setup(struct device_node *np,
+@@ -196,9 +198,19 @@ static void __init at91sam9x5_pmc_setup(
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -378,7 +366,7 @@ index 22b9aad9efb8..79b9d3667228 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -218,7 +230,7 @@ static void __init at91sam9x5_pmc_setup(struct device_node *np,
+@@ -218,7 +230,7 @@ static void __init at91sam9x5_pmc_setup(
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -387,7 +375,7 @@ index 22b9aad9efb8..79b9d3667228 100644
  	for (i = 0; i < 2; i++) {
  		char name[6];
  
-@@ -245,7 +257,7 @@ static void __init at91sam9x5_pmc_setup(struct device_node *np,
+@@ -245,7 +257,7 @@ static void __init at91sam9x5_pmc_setup(
  	}
  
  	if (has_lcdck) {
@@ -396,7 +384,7 @@ index 22b9aad9efb8..79b9d3667228 100644
  		if (IS_ERR(hw))
  			goto err_free;
  
-@@ -256,7 +268,7 @@ static void __init at91sam9x5_pmc_setup(struct device_node *np,
+@@ -256,7 +268,7 @@ static void __init at91sam9x5_pmc_setup(
  		hw = at91_clk_register_sam9x5_peripheral(regmap, &pmc_pcr_lock,
  							 &at91sam9x5_pcr_layout,
  							 at91sam9x5_periphck[i].n,
@@ -405,7 +393,7 @@ index 22b9aad9efb8..79b9d3667228 100644
  							 at91sam9x5_periphck[i].id,
  							 &range, INT_MIN);
  		if (IS_ERR(hw))
-@@ -269,7 +281,7 @@ static void __init at91sam9x5_pmc_setup(struct device_node *np,
+@@ -269,7 +281,7 @@ static void __init at91sam9x5_pmc_setup(
  		hw = at91_clk_register_sam9x5_peripheral(regmap, &pmc_pcr_lock,
  							 &at91sam9x5_pcr_layout,
  							 extra_pcks[i].n,
@@ -414,11 +402,9 @@ index 22b9aad9efb8..79b9d3667228 100644
  							 extra_pcks[i].id,
  							 &range, INT_MIN);
  		if (IS_ERR(hw))
-diff --git a/drivers/clk/at91/clk-master.c b/drivers/clk/at91/clk-master.c
-index aafd003b30cf..a80427980bf7 100644
 --- a/drivers/clk/at91/clk-master.c
 +++ b/drivers/clk/at91/clk-master.c
-@@ -58,83 +58,309 @@ static inline bool clk_master_ready(struct clk_master *master)
+@@ -58,83 +58,309 @@ static inline bool clk_master_ready(stru
  static int clk_master_prepare(struct clk_hw *hw)
  {
  	struct clk_master *master = to_clk_master(hw);
@@ -439,12 +425,12 @@ index aafd003b30cf..a80427980bf7 100644
  	struct clk_master *master = to_clk_master(hw);
 +	unsigned long flags;
 +	bool status;
- 
--	return clk_master_ready(master);
++
 +	spin_lock_irqsave(master->lock, flags);
 +	status = clk_master_ready(master);
 +	spin_unlock_irqrestore(master->lock, flags);
-+
+ 
+-	return clk_master_ready(master);
 +	return status;
  }
  
@@ -609,8 +595,8 @@ index aafd003b30cf..a80427980bf7 100644
 +
 +static int clk_master_pres_determine_rate(struct clk_hw *hw,
 +					  struct clk_rate_request *req)
- {
- 	struct clk_master *master = to_clk_master(hw);
++{
++	struct clk_master *master = to_clk_master(hw);
 +	struct clk_rate_request req_parent = *req;
 +	const struct clk_master_characteristics *characteristics =
 +							master->characteristics;
@@ -696,8 +682,8 @@ index aafd003b30cf..a80427980bf7 100644
 +}
 +
 +static u8 clk_master_pres_get_parent(struct clk_hw *hw)
-+{
-+	struct clk_master *master = to_clk_master(hw);
+ {
+ 	struct clk_master *master = to_clk_master(hw);
 +	unsigned long flags;
  	unsigned int mckr;
  
@@ -749,7 +735,7 @@ index aafd003b30cf..a80427980bf7 100644
  		return ERR_PTR(-EINVAL);
  
  	master = kzalloc(sizeof(*master), GFP_KERNEL);
-@@ -142,15 +368,17 @@ at91_clk_register_master(struct regmap *regmap,
+@@ -142,15 +368,17 @@ at91_clk_register_master(struct regmap *
  		return ERR_PTR(-ENOMEM);
  
  	init.name = name;
@@ -769,7 +755,7 @@ index aafd003b30cf..a80427980bf7 100644
  
  	hw = &master->hw;
  	ret = clk_hw_register(NULL, &master->hw);
-@@ -162,37 +390,54 @@ at91_clk_register_master(struct regmap *regmap,
+@@ -162,37 +390,54 @@ at91_clk_register_master(struct regmap *
  	return hw;
  }
  
@@ -846,8 +832,6 @@ index aafd003b30cf..a80427980bf7 100644
  }
  
  static int clk_sama7g5_master_determine_rate(struct clk_hw *hw,
-diff --git a/drivers/clk/at91/dt-compat.c b/drivers/clk/at91/dt-compat.c
-index a50084de97d4..a97b99c2dc12 100644
 --- a/drivers/clk/at91/dt-compat.c
 +++ b/drivers/clk/at91/dt-compat.c
 @@ -24,6 +24,8 @@
@@ -859,7 +843,7 @@ index a50084de97d4..a97b99c2dc12 100644
  #ifdef CONFIG_HAVE_AT91_AUDIO_PLL
  static void __init of_sama5d2_clk_audio_pll_frac_setup(struct device_node *np)
  {
-@@ -388,9 +390,16 @@ of_at91_clk_master_setup(struct device_node *np,
+@@ -388,9 +390,16 @@ of_at91_clk_master_setup(struct device_n
  	if (IS_ERR(regmap))
  		return;
  
@@ -879,11 +863,9 @@ index a50084de97d4..a97b99c2dc12 100644
  	if (IS_ERR(hw))
  		goto out_free_characteristics;
  
-diff --git a/drivers/clk/at91/pmc.h b/drivers/clk/at91/pmc.h
-index bedcd85ad750..a49076c804a9 100644
 --- a/drivers/clk/at91/pmc.h
 +++ b/drivers/clk/at91/pmc.h
-@@ -155,10 +155,18 @@ at91_clk_register_sam9x5_main(struct regmap *regmap, const char *name,
+@@ -155,10 +155,18 @@ at91_clk_register_sam9x5_main(struct reg
  			      const char **parent_names, int num_parents);
  
  struct clk_hw * __init
@@ -906,8 +888,6 @@ index bedcd85ad750..a49076c804a9 100644
  
  struct clk_hw * __init
  at91_clk_sama7g5_register_master(struct regmap *regmap,
-diff --git a/drivers/clk/at91/sam9x60.c b/drivers/clk/at91/sam9x60.c
-index 4cb0d31babf7..5f6fa89571b7 100644
 --- a/drivers/clk/at91/sam9x60.c
 +++ b/drivers/clk/at91/sam9x60.c
 @@ -8,6 +8,7 @@
@@ -932,7 +912,7 @@ index 4cb0d31babf7..5f6fa89571b7 100644
  };
  
  static const struct {
-@@ -268,9 +269,17 @@ static void __init sam9x60_pmc_setup(struct device_node *np)
+@@ -268,9 +269,17 @@ static void __init sam9x60_pmc_setup(str
  	parent_names[0] = md_slck_name;
  	parent_names[1] = "mainck";
  	parent_names[2] = "pllack_divck";
@@ -953,7 +933,7 @@ index 4cb0d31babf7..5f6fa89571b7 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -286,7 +295,7 @@ static void __init sam9x60_pmc_setup(struct device_node *np)
+@@ -286,7 +295,7 @@ static void __init sam9x60_pmc_setup(str
  	parent_names[0] = md_slck_name;
  	parent_names[1] = td_slck_name;
  	parent_names[2] = "mainck";
@@ -962,7 +942,7 @@ index 4cb0d31babf7..5f6fa89571b7 100644
  	parent_names[4] = "pllack_divck";
  	parent_names[5] = "upllck_divck";
  	for (i = 0; i < 2; i++) {
-@@ -318,7 +327,7 @@ static void __init sam9x60_pmc_setup(struct device_node *np)
+@@ -318,7 +327,7 @@ static void __init sam9x60_pmc_setup(str
  		hw = at91_clk_register_sam9x5_peripheral(regmap, &pmc_pcr_lock,
  							 &sam9x60_pcr_layout,
  							 sam9x60_periphck[i].n,
@@ -971,8 +951,6 @@ index 4cb0d31babf7..5f6fa89571b7 100644
  							 sam9x60_periphck[i].id,
  							 &range, INT_MIN);
  		if (IS_ERR(hw))
-diff --git a/drivers/clk/at91/sama5d2.c b/drivers/clk/at91/sama5d2.c
-index 8b220762941a..9a5cbc7cd55a 100644
 --- a/drivers/clk/at91/sama5d2.c
 +++ b/drivers/clk/at91/sama5d2.c
 @@ -7,6 +7,8 @@
@@ -1007,7 +985,7 @@ index 8b220762941a..9a5cbc7cd55a 100644
  };
  
  static const struct {
-@@ -235,15 +237,25 @@ static void __init sama5d2_pmc_setup(struct device_node *np)
+@@ -235,15 +237,25 @@ static void __init sama5d2_pmc_setup(str
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -1037,7 +1015,7 @@ index 8b220762941a..9a5cbc7cd55a 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -259,7 +271,7 @@ static void __init sama5d2_pmc_setup(struct device_node *np)
+@@ -259,7 +271,7 @@ static void __init sama5d2_pmc_setup(str
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -1046,7 +1024,7 @@ index 8b220762941a..9a5cbc7cd55a 100644
  	parent_names[5] = "audiopll_pmcck";
  	for (i = 0; i < 3; i++) {
  		char name[6];
-@@ -290,7 +302,7 @@ static void __init sama5d2_pmc_setup(struct device_node *np)
+@@ -290,7 +302,7 @@ static void __init sama5d2_pmc_setup(str
  		hw = at91_clk_register_sam9x5_peripheral(regmap, &pmc_pcr_lock,
  							 &sama5d2_pcr_layout,
  							 sama5d2_periphck[i].n,
@@ -1055,7 +1033,7 @@ index 8b220762941a..9a5cbc7cd55a 100644
  							 sama5d2_periphck[i].id,
  							 &range, INT_MIN);
  		if (IS_ERR(hw))
-@@ -317,7 +329,7 @@ static void __init sama5d2_pmc_setup(struct device_node *np)
+@@ -317,7 +329,7 @@ static void __init sama5d2_pmc_setup(str
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -1064,8 +1042,6 @@ index 8b220762941a..9a5cbc7cd55a 100644
  	parent_names[5] = "audiopll_pmcck";
  	for (i = 0; i < ARRAY_SIZE(sama5d2_gck); i++) {
  		hw = at91_clk_register_generated(regmap, &pmc_pcr_lock,
-diff --git a/drivers/clk/at91/sama5d3.c b/drivers/clk/at91/sama5d3.c
-index 7c6e0a5b9dc8..87009ee8effc 100644
 --- a/drivers/clk/at91/sama5d3.c
 +++ b/drivers/clk/at91/sama5d3.c
 @@ -7,6 +7,8 @@
@@ -1100,7 +1076,7 @@ index 7c6e0a5b9dc8..87009ee8effc 100644
  };
  
  static const struct {
-@@ -170,9 +172,19 @@ static void __init sama5d3_pmc_setup(struct device_node *np)
+@@ -170,9 +172,19 @@ static void __init sama5d3_pmc_setup(str
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -1123,7 +1099,7 @@ index 7c6e0a5b9dc8..87009ee8effc 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -192,7 +204,7 @@ static void __init sama5d3_pmc_setup(struct device_node *np)
+@@ -192,7 +204,7 @@ static void __init sama5d3_pmc_setup(str
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -1132,7 +1108,7 @@ index 7c6e0a5b9dc8..87009ee8effc 100644
  	for (i = 0; i < 3; i++) {
  		char name[6];
  
-@@ -222,7 +234,7 @@ static void __init sama5d3_pmc_setup(struct device_node *np)
+@@ -222,7 +234,7 @@ static void __init sama5d3_pmc_setup(str
  		hw = at91_clk_register_sam9x5_peripheral(regmap, &pmc_pcr_lock,
  							 &sama5d3_pcr_layout,
  							 sama5d3_periphck[i].n,
@@ -1141,8 +1117,6 @@ index 7c6e0a5b9dc8..87009ee8effc 100644
  							 sama5d3_periphck[i].id,
  							 &sama5d3_periphck[i].r,
  							 INT_MIN);
-diff --git a/drivers/clk/at91/sama5d4.c b/drivers/clk/at91/sama5d4.c
-index 92d8d4141b43..57fff790188b 100644
 --- a/drivers/clk/at91/sama5d4.c
 +++ b/drivers/clk/at91/sama5d4.c
 @@ -7,6 +7,8 @@
@@ -1177,7 +1151,7 @@ index 92d8d4141b43..57fff790188b 100644
  };
  
  static const struct {
-@@ -185,15 +187,25 @@ static void __init sama5d4_pmc_setup(struct device_node *np)
+@@ -185,15 +187,25 @@ static void __init sama5d4_pmc_setup(str
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -1207,7 +1181,7 @@ index 92d8d4141b43..57fff790188b 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
-@@ -215,7 +227,7 @@ static void __init sama5d4_pmc_setup(struct device_node *np)
+@@ -215,7 +227,7 @@ static void __init sama5d4_pmc_setup(str
  	parent_names[1] = "mainck";
  	parent_names[2] = "plladivck";
  	parent_names[3] = "utmick";
@@ -1216,7 +1190,7 @@ index 92d8d4141b43..57fff790188b 100644
  	for (i = 0; i < 3; i++) {
  		char name[6];
  
-@@ -245,7 +257,7 @@ static void __init sama5d4_pmc_setup(struct device_node *np)
+@@ -245,7 +257,7 @@ static void __init sama5d4_pmc_setup(str
  		hw = at91_clk_register_sam9x5_peripheral(regmap, &pmc_pcr_lock,
  							 &sama5d4_pcr_layout,
  							 sama5d4_periphck[i].n,
@@ -1225,8 +1199,6 @@ index 92d8d4141b43..57fff790188b 100644
  							 sama5d4_periphck[i].id,
  							 &range, INT_MIN);
  		if (IS_ERR(hw))
-diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
-index e0c4d2eb9f59..927eb3b2b126 100644
 --- a/drivers/clk/at91/sama7g5.c
 +++ b/drivers/clk/at91/sama7g5.c
 @@ -32,6 +32,7 @@
@@ -1237,7 +1209,7 @@ index e0c4d2eb9f59..927eb3b2b126 100644
  static DEFINE_SPINLOCK(pmc_mckX_lock);
  
  /**
-@@ -984,8 +985,16 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+@@ -984,8 +985,16 @@ static void __init sama7g5_pmc_setup(str
  	parent_names[1] = "mainck";
  	parent_names[2] = "cpupll_divpmcck";
  	parent_names[3] = "syspll_divpmcck";
@@ -1256,6 +1228,3 @@ index e0c4d2eb9f59..927eb3b2b126 100644
  	if (IS_ERR(hw))
  		goto err_free;
  
--- 
-2.32.0
-

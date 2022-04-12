@@ -16,8 +16,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/atmel/mchp-i2s-mcc.c | 3 +++
  2 files changed, 6 insertions(+)
 
-diff --git a/sound/soc/atmel/Kconfig b/sound/soc/atmel/Kconfig
-index 89210048e6c2..802962935df0 100644
 --- a/sound/soc/atmel/Kconfig
 +++ b/sound/soc/atmel/Kconfig
 @@ -126,10 +126,13 @@ config SND_MCHP_SOC_I2S_MCC
@@ -34,11 +32,9 @@ index 89210048e6c2..802962935df0 100644
  
  config SND_MCHP_SOC_SPDIFTX
  	tristate "Microchip ASoC driver for boards using S/PDIF TX"
-diff --git a/sound/soc/atmel/mchp-i2s-mcc.c b/sound/soc/atmel/mchp-i2s-mcc.c
-index 04acc18f2d72..6a754cef9607 100644
 --- a/sound/soc/atmel/mchp-i2s-mcc.c
 +++ b/sound/soc/atmel/mchp-i2s-mcc.c
-@@ -873,6 +873,9 @@ static const struct of_device_id mchp_i2s_mcc_dt_ids[] = {
+@@ -873,6 +873,9 @@ static const struct of_device_id mchp_i2
  	{
  		.compatible = "microchip,sam9x60-i2smcc",
  	},
@@ -48,6 +44,3 @@ index 04acc18f2d72..6a754cef9607 100644
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, mchp_i2s_mcc_dt_ids);
--- 
-2.32.0
-

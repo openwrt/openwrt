@@ -424,8 +424,8 @@ define Device/traverse_ls1043
   DEVICE_DTS = freescale/traverse-ls1043s
   DEVICE_DTS_DIR = $(LINUX_DIR)/arch/arm64/boot/dts
   DEVICE_DTS_CONFIG = ls1043s
-  KERNEL := kernel-bin | gzip | traverse-fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb $$(FDT_LOADADDR)
-  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb $$(FDT_LOADADDR)
+  KERNEL := kernel-bin | gzip | traverse-fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES = root sysupgrade.bin
   IMAGE/root = append-rootfs
   IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata

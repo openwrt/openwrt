@@ -22,11 +22,9 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 6 ++++++
  3 files changed, 10 insertions(+)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
-index 777a5dc19d6e..aef0d6570d39 100644
 --- a/drivers/media/platform/atmel/atmel-isc-base.c
 +++ b/drivers/media/platform/atmel/atmel-isc-base.c
-@@ -663,6 +663,7 @@ static void isc_set_pipeline(struct isc_device *isc, u32 pipeline)
+@@ -663,6 +663,7 @@ static void isc_set_pipeline(struct isc_
  	isc->config_csc(isc);
  	isc->config_cbc(isc);
  	isc->config_cc(isc);
@@ -34,8 +32,6 @@ index 777a5dc19d6e..aef0d6570d39 100644
  }
  
  static int isc_update_profile(struct isc_device *isc)
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index 2f093dc968cd..151997c11f56 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -228,6 +228,8 @@ struct isc_reg_offsets {
@@ -55,11 +51,9 @@ index 2f093dc968cd..151997c11f56 100644
  
  		void (*config_ctrls)(struct isc_device *isc,
  				     const struct v4l2_ctrl_ops *ops);
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index 84d1bf3305f2..b99849ecb8a1 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -112,6 +112,11 @@ static void isc_sama5d2_config_dpc(struct isc_device *isc)
+@@ -112,6 +112,11 @@ static void isc_sama5d2_config_dpc(struc
  	/* This module is not present on sama5d2 pipeline */
  }
  
@@ -71,7 +65,7 @@ index 84d1bf3305f2..b99849ecb8a1 100644
  /* Gamma table with gamma 1/2.2 */
  static const u32 isc_sama5d2_gamma_table[][GAMMA_ENTRIES] = {
  	/* 0 --> gamma 1/1.8 */
-@@ -282,6 +287,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -282,6 +287,7 @@ static int atmel_isc_probe(struct platfo
  	isc->config_csc = isc_sama5d2_config_csc;
  	isc->config_cbc = isc_sama5d2_config_cbc;
  	isc->config_cc = isc_sama5d2_config_cc;
@@ -79,6 +73,3 @@ index 84d1bf3305f2..b99849ecb8a1 100644
  	isc->config_ctrls = isc_sama5d2_config_ctrls;
  
  	isc->offsets.csc = ISC_SAMA5D2_CSC_OFFSET;
--- 
-2.32.0
-

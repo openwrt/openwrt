@@ -23,11 +23,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/atmel/atmel-i2s.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/sound/soc/atmel/atmel-i2s.c b/sound/soc/atmel/atmel-i2s.c
-index 7483c474ccd7..e7169c63becd 100644
 --- a/sound/soc/atmel/atmel-i2s.c
 +++ b/sound/soc/atmel/atmel-i2s.c
-@@ -613,7 +613,7 @@ static int atmel_i2s_probe(struct platform_device *pdev)
+@@ -613,7 +613,7 @@ static int atmel_i2s_probe(struct platfo
  	struct regmap *regmap;
  	void __iomem *base;
  	int irq;
@@ -36,6 +34,3 @@ index 7483c474ccd7..e7169c63becd 100644
  	unsigned int pcm_flags = 0;
  	unsigned int version;
  
--- 
-2.32.0
-

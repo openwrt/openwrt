@@ -80,7 +80,16 @@ endef
 define Build/imx6-sdcard
 	$(Build/imx6-combined-image-prepare)
 
-	$(CP) $(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.img $@.boot/u-boot.img
+	if [ -f $(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.img ]; then \
+		$(CP) $(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.img \
+		$@.boot/u-boot.img; \
+	fi
+
+	if [ -f $(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot-dtb.img ]; then \
+		$(CP) $(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot-dtb.img \
+		$@.boot/u-boot-dtb.img; \
+	fi
+
 	$(Build/imx6-combined-image)
 	dd if=$(STAGING_DIR_IMAGE)/$(UBOOT)-SPL of=$@ bs=1024 seek=1 conv=notrunc
 

@@ -423,6 +423,16 @@
  }
  
  
+@@ -352,6 +355,9 @@ void hostapd_handle_radio_measurement(st
+ 		   mgmt->u.action.u.rrm.action, MAC2STR(mgmt->sa));
+ 
+ 	switch (mgmt->u.action.u.rrm.action) {
++	case WLAN_RRM_LINK_MEASUREMENT_REPORT:
++		hostapd_ubus_handle_link_measurement(hapd, buf, len);
++		break;
+ 	case WLAN_RRM_RADIO_MEASUREMENT_REPORT:
+ 		hostapd_handle_radio_msmt_report(hapd, buf, len);
+ 		break;
 --- a/src/ap/vlan_init.c
 +++ b/src/ap/vlan_init.c
 @@ -22,6 +22,7 @@

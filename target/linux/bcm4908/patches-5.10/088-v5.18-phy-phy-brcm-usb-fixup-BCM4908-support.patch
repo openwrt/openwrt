@@ -120,7 +120,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  void brcm_usb_dvr_init_7211b0(struct brcm_usb_init_params *params);
 --- a/drivers/phy/broadcom/phy-brcm-usb.c
 +++ b/drivers/phy/broadcom/phy-brcm-usb.c
-@@ -253,6 +253,15 @@ static const struct attribute_group brcm
+@@ -283,6 +283,15 @@ static const struct attribute_group brcm
  	.attrs = brcm_usb_phy_attrs,
  };
  
@@ -136,7 +136,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  static const struct match_chip_info chip_info_7216 = {
  	.init_func = &brcm_usb_dvr_init_7216,
  	.required_regs = {
-@@ -288,7 +297,7 @@ static const struct match_chip_info chip
+@@ -318,7 +327,7 @@ static const struct match_chip_info chip
  static const struct of_device_id brcm_usb_dt_ids[] = {
  	{
  		.compatible = "brcm,bcm4908-usb-phy",

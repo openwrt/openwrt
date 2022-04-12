@@ -18,8 +18,6 @@ Link: https://lore.kernel.org/r/20210415105010.569620-5-claudiu.beznea@microchip
  arch/arm/mach-at91/pm.c | 143 +++++++++++++++++++++++++---------------
  1 file changed, 91 insertions(+), 52 deletions(-)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index a060bec77f20..e9f9fb410761 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
 @@ -57,6 +57,18 @@ struct at91_soc_pm {
@@ -41,7 +39,7 @@ index a060bec77f20..e9f9fb410761 100644
  static struct at91_soc_pm soc_pm = {
  	.data = {
  		.standby_mode = AT91_PM_STANDBY,
-@@ -671,24 +683,15 @@ static int __init at91_pm_backup_init(void)
+@@ -671,24 +683,15 @@ static int __init at91_pm_backup_init(vo
  	if (!at91_is_pm_mode_active(AT91_PM_BACKUP))
  		return 0;
  
@@ -68,7 +66,7 @@ index a060bec77f20..e9f9fb410761 100644
  	}
  
  	sram_pool = gen_pool_get(&pdev->dev, NULL);
-@@ -712,64 +715,92 @@ static int __init at91_pm_backup_init(void)
+@@ -712,64 +715,92 @@ static int __init at91_pm_backup_init(vo
  
  securam_fail:
  	put_device(&pdev->dev);
@@ -112,11 +110,7 @@ index a060bec77f20..e9f9fb410761 100644
 +		if (soc_pm.data.suspend_mode == AT91_PM_BACKUP)
 +			soc_pm.data.suspend_mode = AT91_PM_ULP0;
 +	}
- 
--	np = of_find_matching_node(NULL, atmel_shdwc_ids);
--	if (!np) {
--		pr_warn("%s: failed to find shdwc!\n", __func__);
--		goto ulp1_default;
++
 +	if (maps[soc_pm.data.standby_mode] & AT91_PM_IOMAP(SHDWC) ||
 +	    maps[soc_pm.data.suspend_mode] & AT91_PM_IOMAP(SHDWC)) {
 +		np = of_find_matching_node(NULL, atmel_shdwc_ids);
@@ -137,10 +131,12 @@ index a060bec77f20..e9f9fb410761 100644
 +			soc_pm.data.shdwc = of_iomap(np, 0);
 +			of_node_put(np);
 +		}
- 	}
++	}
  
--	soc_pm.data.shdwc = of_iomap(np, 0);
--	of_node_put(np);
+-	np = of_find_matching_node(NULL, atmel_shdwc_ids);
+-	if (!np) {
+-		pr_warn("%s: failed to find shdwc!\n", __func__);
+-		goto ulp1_default;
 +	if (maps[soc_pm.data.standby_mode] & AT91_PM_IOMAP(SFRBU) ||
 +	    maps[soc_pm.data.suspend_mode] & AT91_PM_IOMAP(SFRBU)) {
 +		np = of_find_compatible_node(NULL, NULL, "atmel,sama5d2-sfrbu");
@@ -165,6 +161,16 @@ index a060bec77f20..e9f9fb410761 100644
 +			soc_pm.data.sfrbu = of_iomap(np, 0);
 +			of_node_put(np);
 +		}
+ 	}
+ 
+-	soc_pm.data.shdwc = of_iomap(np, 0);
+-	of_node_put(np);
++	/* Unmap all unnecessary. */
++	if (soc_pm.data.shdwc &&
++	    !(maps[soc_pm.data.standby_mode] & AT91_PM_IOMAP(SHDWC) ||
++	      maps[soc_pm.data.suspend_mode] & AT91_PM_IOMAP(SHDWC))) {
++		iounmap(soc_pm.data.shdwc);
++		soc_pm.data.shdwc = NULL;
 +	}
  
 -	ret = at91_pm_backup_init();
@@ -173,22 +179,15 @@ index a060bec77f20..e9f9fb410761 100644
 -			goto unmap;
 -		else
 -			goto backup_default;
-+	/* Unmap all unnecessary. */
-+	if (soc_pm.data.shdwc &&
-+	    !(maps[soc_pm.data.standby_mode] & AT91_PM_IOMAP(SHDWC) ||
-+	      maps[soc_pm.data.suspend_mode] & AT91_PM_IOMAP(SHDWC))) {
-+		iounmap(soc_pm.data.shdwc);
-+		soc_pm.data.shdwc = NULL;
- 	}
- 
--	return;
 +	if (soc_pm.data.sfrbu &&
 +	    !(maps[soc_pm.data.standby_mode] & AT91_PM_IOMAP(SFRBU) ||
 +	      maps[soc_pm.data.suspend_mode] & AT91_PM_IOMAP(SFRBU))) {
 +		iounmap(soc_pm.data.sfrbu);
 +		soc_pm.data.sfrbu = NULL;
-+	}
+ 	}
  
+ 	return;
+-
 -unmap:
 -	iounmap(soc_pm.data.shdwc);
 -	soc_pm.data.shdwc = NULL;
@@ -196,7 +195,6 @@ index a060bec77f20..e9f9fb410761 100644
 -	at91_pm_use_default_mode(AT91_PM_ULP1);
 -backup_default:
 -	at91_pm_use_default_mode(AT91_PM_BACKUP);
-+	return;
  }
  
  struct pmc_info {
@@ -238,6 +236,3 @@ index a060bec77f20..e9f9fb410761 100644
  	ret = at91_dt_ramc();
  	if (ret)
  		return;
--- 
-2.32.0
-

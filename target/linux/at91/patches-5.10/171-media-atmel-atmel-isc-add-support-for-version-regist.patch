@@ -15,8 +15,6 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
  drivers/media/platform/atmel/atmel-sama5d2-isc.c | 5 +++++
  3 files changed, 12 insertions(+)
 
-diff --git a/drivers/media/platform/atmel/atmel-isc-regs.h b/drivers/media/platform/atmel/atmel-isc-regs.h
-index 4940998c82a2..344668dcfcf4 100644
 --- a/drivers/media/platform/atmel/atmel-isc-regs.h
 +++ b/drivers/media/platform/atmel/atmel-isc-regs.h
 @@ -295,6 +295,11 @@
@@ -31,8 +29,6 @@ index 4940998c82a2..344668dcfcf4 100644
  /* Histogram Entry */
  #define ISC_HIS_ENTRY	0x00000410
  
-diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
-index bea545327d3d..13ee19d99c2e 100644
 --- a/drivers/media/platform/atmel/atmel-isc.h
 +++ b/drivers/media/platform/atmel/atmel-isc.h
 @@ -152,6 +152,7 @@ struct isc_ctrls {
@@ -51,11 +47,9 @@ index bea545327d3d..13ee19d99c2e 100644
  };
  
  /*
-diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-index bfd56ac5c921..aebf38dde2d2 100644
 --- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
 +++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
-@@ -210,6 +210,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -210,6 +210,7 @@ static int atmel_isc_probe(struct platfo
  	struct isc_subdev_entity *subdev_entity;
  	int irq;
  	int ret;
@@ -63,7 +57,7 @@ index bfd56ac5c921..aebf38dde2d2 100644
  
  	isc = devm_kzalloc(dev, sizeof(*isc), GFP_KERNEL);
  	if (!isc)
-@@ -258,6 +259,7 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -258,6 +259,7 @@ static int atmel_isc_probe(struct platfo
  	isc->offsets.rlp = ISC_SAMA5D2_RLP_OFFSET;
  	isc->offsets.his = ISC_SAMA5D2_HIS_OFFSET;
  	isc->offsets.dma = ISC_SAMA5D2_DMA_OFFSET;
@@ -71,7 +65,7 @@ index bfd56ac5c921..aebf38dde2d2 100644
  
  	/* sama5d2-isc - 8 bits per beat */
  	isc->dcfg = ISC_DCFG_YMBSIZE_BEATS8 | ISC_DCFG_CMBSIZE_BEATS8;
-@@ -346,6 +348,9 @@ static int atmel_isc_probe(struct platform_device *pdev)
+@@ -346,6 +348,9 @@ static int atmel_isc_probe(struct platfo
  	pm_runtime_enable(dev);
  	pm_request_idle(dev);
  
@@ -81,6 +75,3 @@ index bfd56ac5c921..aebf38dde2d2 100644
  	return 0;
  
  cleanup_subdev:
--- 
-2.32.0
-

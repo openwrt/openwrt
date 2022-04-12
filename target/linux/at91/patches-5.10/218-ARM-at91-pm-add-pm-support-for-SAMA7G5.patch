@@ -14,11 +14,9 @@ Link: https://lore.kernel.org/r/20210415105010.569620-24-claudiu.beznea@microchi
  arch/arm/mach-at91/sama7.c   |  1 +
  3 files changed, 40 insertions(+)
 
-diff --git a/arch/arm/mach-at91/generic.h b/arch/arm/mach-at91/generic.h
-index 0a4cdcb4985b..0c3960a8b3eb 100644
 --- a/arch/arm/mach-at91/generic.h
 +++ b/arch/arm/mach-at91/generic.h
-@@ -14,12 +14,14 @@ extern void __init at91sam9_pm_init(void);
+@@ -14,12 +14,14 @@ extern void __init at91sam9_pm_init(void
  extern void __init sam9x60_pm_init(void);
  extern void __init sama5_pm_init(void);
  extern void __init sama5d2_pm_init(void);
@@ -33,11 +31,9 @@ index 0a4cdcb4985b..0c3960a8b3eb 100644
  #endif
  
  #endif /* _AT91_GENERIC_H */
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index 687ce8582b4f..9c8c998cf9f4 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
-@@ -152,6 +152,17 @@ static const struct of_device_id sam9x60_ws_ids[] = {
+@@ -152,6 +152,17 @@ static const struct of_device_id sam9x60
  	{ /* sentinel */ }
  };
  
@@ -88,8 +84,6 @@ index 687ce8582b4f..9c8c998cf9f4 100644
  static int __init at91_pm_modes_select(char *str)
  {
  	char *s;
-diff --git a/arch/arm/mach-at91/sama7.c b/arch/arm/mach-at91/sama7.c
-index 19d7bcbc97f1..bd43733ede18 100644
 --- a/arch/arm/mach-at91/sama7.c
 +++ b/arch/arm/mach-at91/sama7.c
 @@ -17,6 +17,7 @@
@@ -100,6 +94,3 @@ index 19d7bcbc97f1..bd43733ede18 100644
  }
  
  static const char *const sama7_dt_board_compat[] __initconst = {
--- 
-2.32.0
-

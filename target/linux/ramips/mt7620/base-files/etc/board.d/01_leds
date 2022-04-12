@@ -81,6 +81,10 @@ dlink,dwr-960)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x2e"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
 	;;
+dlink,dwr-961-a1)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x3c"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x02"
+	;;
 domywifi,dm202|\
 domywifi,dm203|\
 domywifi,dw22d)
@@ -157,7 +161,8 @@ lenovo,newifi-y1s)
 	ucidef_set_led_netdev "wan" "WAN" "blue:internet" "eth0.2" "tx rx"
 	;;
 netgear,ex2700|\
-netgear,wn3000rp-v3)
+netgear,wn3000rp-v3|\
+netgear,wn3100rp-v2)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:router" "wlan0"
 	;;
 netgear,ex3700|\

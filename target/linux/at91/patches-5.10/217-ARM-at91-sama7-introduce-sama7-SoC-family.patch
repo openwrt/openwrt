@@ -16,11 +16,9 @@ Link: https://lore.kernel.org/r/20210415105010.569620-23-claudiu.beznea@microchi
  2 files changed, 33 insertions(+)
  create mode 100644 arch/arm/mach-at91/sama7.c
 
-diff --git a/arch/arm/mach-at91/Makefile b/arch/arm/mach-at91/Makefile
-index f565490f1b70..522b680b6446 100644
 --- a/arch/arm/mach-at91/Makefile
 +++ b/arch/arm/mach-at91/Makefile
-@@ -8,6 +8,7 @@ obj-$(CONFIG_SOC_AT91RM9200)	+= at91rm9200.o
+@@ -8,6 +8,7 @@ obj-$(CONFIG_SOC_AT91RM9200)	+= at91rm92
  obj-$(CONFIG_SOC_AT91SAM9)	+= at91sam9.o
  obj-$(CONFIG_SOC_SAM9X60)	+= sam9x60.o
  obj-$(CONFIG_SOC_SAMA5)		+= sama5.o
@@ -28,9 +26,6 @@ index f565490f1b70..522b680b6446 100644
  obj-$(CONFIG_SOC_SAMV7)		+= samv7.o
  
  # Power Management
-diff --git a/arch/arm/mach-at91/sama7.c b/arch/arm/mach-at91/sama7.c
-new file mode 100644
-index 000000000000..19d7bcbc97f1
 --- /dev/null
 +++ b/arch/arm/mach-at91/sama7.c
 @@ -0,0 +1,32 @@
@@ -66,6 +61,3 @@ index 000000000000..19d7bcbc97f1
 +	.dt_compat	= sama7_dt_board_compat,
 +MACHINE_END
 +
--- 
-2.32.0
-

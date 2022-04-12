@@ -3,6 +3,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+DEVICE_VARS += DTB_SIZE
+
+define Build/dtb
+	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb,,--space $(DTB_SIZE))
+endef
+
 define Device/Default
   PROFILES := Default
   DEVICE_DTS := $(lastword $(subst _, ,$(1)))

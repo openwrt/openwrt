@@ -14,11 +14,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/atmel/atmel-i2s.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/sound/soc/atmel/atmel-i2s.c b/sound/soc/atmel/atmel-i2s.c
-index e7169c63becd..2a5bc7a54e6c 100644
 --- a/sound/soc/atmel/atmel-i2s.c
 +++ b/sound/soc/atmel/atmel-i2s.c
-@@ -560,6 +560,7 @@ static struct snd_soc_dai_driver atmel_i2s_dai = {
+@@ -560,6 +560,7 @@ static struct snd_soc_dai_driver atmel_i
  	},
  	.ops = &atmel_i2s_dai_ops,
  	.symmetric_rates = 1,
@@ -26,6 +24,3 @@ index e7169c63becd..2a5bc7a54e6c 100644
  };
  
  static const struct snd_soc_component_driver atmel_i2s_component = {
--- 
-2.32.0
-

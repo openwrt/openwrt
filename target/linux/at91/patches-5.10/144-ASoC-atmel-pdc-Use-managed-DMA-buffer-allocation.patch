@@ -20,8 +20,6 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  sound/soc/atmel/atmel-pcm-pdc.c | 78 ++-------------------------------
  1 file changed, 4 insertions(+), 74 deletions(-)
 
-diff --git a/sound/soc/atmel/atmel-pcm-pdc.c b/sound/soc/atmel/atmel-pcm-pdc.c
-index 704f700013d3..3e7ea2021b46 100644
 --- a/sound/soc/atmel/atmel-pcm-pdc.c
 +++ b/sound/soc/atmel/atmel-pcm-pdc.c
 @@ -34,86 +34,21 @@
@@ -115,7 +113,7 @@ index 704f700013d3..3e7ea2021b46 100644
  }
  
  /*--------------------------------------------------------------------------*\
-@@ -210,9 +145,6 @@ static int atmel_pcm_hw_params(struct snd_soc_component *component,
+@@ -210,9 +145,6 @@ static int atmel_pcm_hw_params(struct sn
  	/* this may get called several times by oss emulation
  	 * with different params */
  
@@ -125,7 +123,7 @@ index 704f700013d3..3e7ea2021b46 100644
  	prtd->params = snd_soc_dai_get_dma_data(asoc_rtd_to_cpu(rtd, 0), substream);
  	prtd->params->dma_intr_handler = atmel_pcm_dma_irq;
  
-@@ -384,9 +316,7 @@ static const struct snd_soc_component_driver atmel_soc_platform = {
+@@ -384,9 +316,7 @@ static const struct snd_soc_component_dr
  	.prepare	= atmel_pcm_prepare,
  	.trigger	= atmel_pcm_trigger,
  	.pointer	= atmel_pcm_pointer,
@@ -135,6 +133,3 @@ index 704f700013d3..3e7ea2021b46 100644
  };
  
  int atmel_pcm_pdc_platform_register(struct device *dev)
--- 
-2.32.0
-

@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2020.04
+PKG_VERSION:=2022.01
 PKG_RELEASE:=$(AUTORELEASE)
 
-PKG_HASH:=fe732aaf037d9cc3c0909bad8362af366ae964bbdac6913a34081ff4ad565372
+PKG_HASH:=81b4543227db228c03f8a1bf5ddbc813b0bb8f6555ce46064ef721a6fc680413
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -30,8 +30,8 @@ endef
 
 define U-Boot/mx6cuboxi
   NAME:=SolidRun Cubox-i boards
-  UBOOT_IMAGE:=SPL u-boot.img
-  UBOOT_MAKE_FLAGS:=SPL u-boot.img
+  UBOOT_IMAGE:=SPL u-boot-dtb.img
+  UBOOT_MAKE_FLAGS:=SPL u-boot-dtb.img
   BUILD_SUBTARGET:=cortexa9
   BUILD_DEVICES:=solidrun_cubox-i
 endef

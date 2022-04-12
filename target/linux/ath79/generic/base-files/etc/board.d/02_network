@@ -13,6 +13,10 @@ ath79_setup_interfaces()
 	allnet,all-wap02860ac|\
 	alfa-network,ap121f|\
 	alfa-network,pi-wifi4|\
+	alfa-network,tube-2hq|\
+	araknis,an-300-ap-i-n|\
+	araknis,an-500-ap-i-ac|\
+	araknis,an-700-ap-i-ac|\
 	arduino,yun|\
 	aruba,ap-105|\
 	asus,rp-ac66|\
@@ -336,6 +340,7 @@ ath79_setup_interfaces()
 		;;
 	mercury,mw4530r-v1|\
 	tplink,archer-a7-v5|\
+	tplink,archer-a9-v6|\
 	tplink,archer-c6-v2|\
 	tplink,archer-c6-v2-us|\
 	tplink,archer-c7-v4|\
@@ -435,10 +440,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:3" "3:lan:2"
 		;;
-	tplink,tl-wpa8630-v1|\
-	tplink,tl-wpa8630p-v2-int|\
-	tplink,tl-wpa8630p-v2.0-eu|\
-	tplink,tl-wpa8630p-v2.1-eu)
+	tplink,tl-wpa8630-v1)
 		# port 5 (internal) is the power-line port
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "5:lan:4"
@@ -529,6 +531,7 @@ ath79_setup_macs()
 	alfa-network,n5q|\
 	alfa-network,pi-wifi4|\
 	alfa-network,r36a|\
+	alfa-network,tube-2hq|\
 	engenius,eap300-v2|\
 	engenius,ens202ext-v1)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
@@ -689,6 +692,7 @@ ath79_setup_macs()
 		label_mac=$lan_mac
 		;;
 	tplink,archer-a7-v5|\
+	tplink,archer-a9-v6|\
 	tplink,archer-c7-v4|\
 	tplink,archer-c7-v5|\
 	tplink,tl-wr1043nd-v4|\

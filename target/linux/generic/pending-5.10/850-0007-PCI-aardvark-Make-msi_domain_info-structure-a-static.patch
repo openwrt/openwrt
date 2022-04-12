@@ -25,7 +25,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  	DECLARE_BITMAP(msi_used, MSI_IRQ_NUM);
  	struct mutex msi_used_lock;
  	u16 msi_msg;
-@@ -1293,20 +1292,20 @@ static struct irq_chip advk_msi_irq_chip
+@@ -1295,20 +1294,20 @@ static struct irq_chip advk_msi_irq_chip
  	.name = "advk-MSI",
  };
  
@@ -52,7 +52,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  	msi_msg_phys = virt_to_phys(&pcie->msi_msg);
  
  	advk_writel(pcie, lower_32_bits(msi_msg_phys),
-@@ -1322,7 +1321,8 @@ static int advk_pcie_init_msi_irq_domain
+@@ -1324,7 +1323,8 @@ static int advk_pcie_init_msi_irq_domain
  
  	pcie->msi_domain =
  		pci_msi_create_irq_domain(of_node_to_fwnode(node),

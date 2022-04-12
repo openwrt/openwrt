@@ -19,11 +19,9 @@ Link: https://lore.kernel.org/r/20210823131915.23857-2-claudiu.beznea@microchip.
  arch/arm/mach-at91/pm.c | 22 ++++++++++++++++------
  1 file changed, 16 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
-index a07e14d89ba4..d92afca64b49 100644
 --- a/arch/arm/mach-at91/pm.c
 +++ b/arch/arm/mach-at91/pm.c
-@@ -589,7 +589,7 @@ static const struct of_device_id ramc_phy_ids[] __initconst = {
+@@ -589,7 +589,7 @@ static const struct of_device_id ramc_ph
  	{ /* Sentinel. */ },
  };
  
@@ -32,7 +30,7 @@ index a07e14d89ba4..d92afca64b49 100644
  {
  	struct device_node *np;
  	const struct of_device_id *of_id;
-@@ -625,12 +625,18 @@ static __init void at91_dt_ramc(bool phy_mandatory)
+@@ -625,12 +625,18 @@ static __init void at91_dt_ramc(bool phy
  	/* Lookup for DDR PHY node, if any. */
  	for_each_matching_node_and_match(np, ramc_phy_ids, &of_id) {
  		soc_pm.data.ramc_phy = of_iomap(np, 0);
@@ -74,6 +72,3 @@ index a07e14d89ba4..d92afca64b49 100644
  	at91_pm_modes_init(iomaps, ARRAY_SIZE(iomaps));
  	at91_pm_init(NULL);
  
--- 
-2.32.0
-

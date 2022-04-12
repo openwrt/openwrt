@@ -13,11 +13,9 @@ Link: https://lore.kernel.org/r/20210823131915.23857-5-claudiu.beznea@microchip.
  arch/arm/boot/dts/sama7g5.dtsi       | 11 +++++++++++
  2 files changed, 20 insertions(+)
 
-diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
-index 4cbed98cc2f4..8b13b031a167 100644
 --- a/arch/arm/boot/dts/at91-sama7g5ek.dts
 +++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
-@@ -634,6 +634,15 @@ &sdmmc2 {
+@@ -634,6 +634,15 @@
  	pinctrl-0 = <&pinctrl_sdmmc2_default>;
  };
  
@@ -33,11 +31,9 @@ index 4cbed98cc2f4..8b13b031a167 100644
  &spdifrx {
  	pinctrl-names = "default";
  	pinctrl-0 = <&pinctrl_spdifrx_default>;
-diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
-index 3a4315ac0eb0..e50806cf7660 100644
 --- a/arch/arm/boot/dts/sama7g5.dtsi
 +++ b/arch/arm/boot/dts/sama7g5.dtsi
-@@ -122,6 +122,17 @@ pmc: pmc@e0018000 {
+@@ -122,6 +122,17 @@
  			clock-names = "td_slck", "md_slck", "main_xtal";
  		};
  
@@ -55,6 +51,3 @@ index 3a4315ac0eb0..e50806cf7660 100644
  		rtt: rtt@e001d020 {
  			compatible = "microchip,sama7g5-rtt", "microchip,sam9x60-rtt", "atmel,at91sam9260-rtt";
  			reg = <0xe001d020 0x30>;
--- 
-2.32.0
-
