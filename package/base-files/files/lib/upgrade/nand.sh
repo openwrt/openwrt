@@ -143,6 +143,7 @@ nand_upgrade_prepare_ubi() {
 		ubiattach -m "$mtdnum"
 		sync
 		ubidev="$( nand_find_ubi "$CI_UBIPART" )"
+		[ ! "$ubidev" ] && return 1
 		[ "$has_env" -gt 0 ] && {
 			ubimkvol /dev/$ubidev -n 0 -N ubootenv -s 1MiB
 			ubimkvol /dev/$ubidev -n 1 -N ubootenv2 -s 1MiB
@@ -154,8 +155,13 @@ nand_upgrade_prepare_ubi() {
 	local data_ubivol="$( nand_find_volume $ubidev rootfs_data )"
 
 	local ubiblk ubiblkvol
-	for ubiblk in /dev/ubiblock*_? ; do
+	for ubiblk in /dev/ubiblock${ubidev:3}_* ; do
 		[ -e "$ubiblk" ] || continue
+		case "$ubiblk" in
+		/dev/ubiblock*_*p*)
+			continue
+			;;
+		esac
 		echo "removing ubiblock${ubiblk:13}"
 		ubiblkvol=ubi${ubiblk:13}
 		if ! ubiblock -r /dev/$ubiblkvol; then
@@ -165,9 +171,9 @@ nand_upgrade_prepare_ubi() {
 	done
 
 	# kill volumes
-	[ "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_KERNPART || true
-	[ "$root_ubivol" -a "$root_ubivol" != "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_ROOTPART || true
-	[ "$data_ubivol" ] && ubirmvol /dev/$ubidev -N rootfs_data || true
+	[ "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_KERNPART || :
+	[ "$root_ubivol" -a "$root_ubivol" != "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_ROOTPART || :
+	[ "$data_ubivol" ] && ubirmvol /dev/$ubidev -N rootfs_data || :
 
 	# update kernel
 	if [ -n "$kernel_length" ]; then
