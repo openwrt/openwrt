@@ -26,14 +26,31 @@ KERNELSIZE="$2"
 ROOTFSOFFSET="$(($3 / 512))"
 ROOTFSSIZE="$(($4 / 512))"
 
+# Using mcopy -s ... is using READDIR(3) to iterate through the directory
+# entries, hence they end up in the FAT filesystem in traversal order which
+# breaks reproducibility.
+# Implement recursive copy with reproducible order.
+dos_dircopy() {
+  local entry
+  local baseentry
+  for entry in "$1"/* ; do
+    if [ -f "$entry" ]; then
+      mcopy -i "$OUTPUT.kernel" "$entry" ::"$2"
+    elif [ -d "$entry" ]; then
+      baseentry="$(basename "$entry")"
+      mmd -i "$OUTPUT.kernel" ::"$2""$baseentry"
+      dos_dircopy "$entry" "$2""$baseentry"/
+    fi
+  done
+}
+
 [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc count="$ROOTFSSIZE"
 dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
 
 if [ -n "$GUID" ]; then
     [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$((ROOTFSOFFSET + ROOTFSSIZE))" conv=notrunc count="$sect"
     mkfs.fat --invariant -n kernel -C "$OUTPUT.kernel" -S 512 "$((KERNELSIZE / 1024))"
-    [ "$SOURCE_DATE_EPOCH" ] && find "$KERNELDIR"/ -mindepth 1 -execdir touch -hcd "@${SOURCE_DATE_EPOCH}" "{}" +
-    LC_ALL=C mcopy -m -s -i "$OUTPUT.kernel" "$KERNELDIR"/* ::/
+    LC_ALL=C dos_dircopy "$KERNELDIR" /
 else
     make_ext4fs -J -L kernel -l "$KERNELSIZE" ${SOURCE_DATE_EPOCH:+-T ${SOURCE_DATE_EPOCH}} "$OUTPUT.kernel" "$KERNELDIR"
 fi
