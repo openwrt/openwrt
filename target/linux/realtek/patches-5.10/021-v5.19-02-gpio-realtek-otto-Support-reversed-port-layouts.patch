@@ -1,10 +1,22 @@
+From 512c5be35223d9baa2629efa1084cf5210eaee80 Mon Sep 17 00:00:00 2001
+From: Sander Vanheule <sander@svanheule.net>
+Date: Sat, 9 Apr 2022 21:55:47 +0200
+Subject: [PATCH 2/6] gpio: realtek-otto: Support reversed port layouts
+
+The GPIO port layout on the RTL930x SoC series is reversed compared to
+the RTL838x and RTL839x SoC series. Add new port offset calculator
+functions to ensure the correct order is used when reading port IRQ
+data, and ensure bgpio uses the right byte ordering.
+
+Signed-off-by: Sander Vanheule <sander@svanheule.net>
+Signed-off-by: Bartosz Golaszewski <brgl@bgdev.pl>
+---
+ drivers/gpio/gpio-realtek-otto.c | 55 +++++++++++++++++++++++++++++---
+ 1 file changed, 51 insertions(+), 4 deletions(-)
+
 --- a/drivers/gpio/gpio-realtek-otto.c
 +++ b/drivers/gpio/gpio-realtek-otto.c
-@@ -55,9 +55,12 @@
- struct realtek_gpio_ctrl {
- 	struct gpio_chip gc;
- 	void __iomem *base;
-+	void __iomem *cpumap_base;
+@@ -58,6 +58,8 @@ struct realtek_gpio_ctrl {
  	raw_spinlock_t lock;
  	u16 intr_mask[REALTEK_GPIO_PORTS_PER_BANK];
  	u16 intr_type[REALTEK_GPIO_PORTS_PER_BANK];
@@ -13,7 +25,7 @@
  };
  
  /* Expand with more flags as devices with other quirks are added */
-@@ -69,6 +72,16 @@ enum realtek_gpio_flags {
+@@ -69,6 +71,11 @@ enum realtek_gpio_flags {
  	 * line the IRQ handler was assigned to, causing uncaught interrupts.
  	 */
  	GPIO_INTERRUPTS_DISABLED = BIT(0),
@@ -22,15 +34,10 @@
 +	 * fields, and [BA, DC] for 2-bit fields.
 +	 */
 +	GPIO_PORTS_REVERSED = BIT(1),
-+	/*
-+	 * Interrupts can be enabled per cpu. This requires a secondary IO
-+	 * range, where the per-cpu enable masks are located.
-+	 */
-+	GPIO_INTERRUPTS_PER_CPU = BIT(2),
  };
  
  static struct realtek_gpio_ctrl *irq_data_to_ctrl(struct irq_data *data)
-@@ -86,21 +99,50 @@ static struct realtek_gpio_ctrl *irq_dat
+@@ -86,21 +93,50 @@ static struct realtek_gpio_ctrl *irq_dat
   * port. The two interrupt mask registers store two bits per GPIO, so use u16
   * values.
   */
@@ -84,34 +91,7 @@
  }
  
  /* Set the rising and falling edge mask bits for a GPIO port pin */
-@@ -222,6 +264,12 @@ static int realtek_gpio_irq_init(struct
- 	for (port = 0; (port * 8) < gc->ngpio; port++) {
- 		realtek_gpio_write_imr(ctrl, port, 0, 0);
- 		realtek_gpio_clear_isr(ctrl, port, GENMASK(7, 0));
-+
-+		if (ctrl->cpumap_base) {
-+			/* Default CPU affinity to the first CPU */
-+			iowrite8(GENMASK(7, 0),
-+				ctrl->cpumap_base + ctrl->port_offset_u8(port));
-+		}
- 	}
- 
- 	return 0;
-@@ -246,6 +294,13 @@ static const struct of_device_id realtek
- 	{
- 		.compatible = "realtek,rtl8390-gpio",
- 	},
-+	{
-+		.compatible = "realtek,rtl9300-gpio",
-+		.data = (void *)(GPIO_PORTS_REVERSED | GPIO_INTERRUPTS_PER_CPU)
-+	},
-+	{
-+		.compatible = "realtek,rtl9310-gpio",
-+	},
- 	{}
- };
- MODULE_DEVICE_TABLE(of, realtek_gpio_of_match);
-@@ -253,12 +308,14 @@ MODULE_DEVICE_TABLE(of, realtek_gpio_of_
+@@ -253,6 +289,7 @@ MODULE_DEVICE_TABLE(of, realtek_gpio_of_
  static int realtek_gpio_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
@@ -119,14 +99,7 @@
  	unsigned int dev_flags;
  	struct gpio_irq_chip *girq;
  	struct realtek_gpio_ctrl *ctrl;
- 	u32 ngpios;
- 	int err, irq;
- 
-+	pr_info("%s probing RTL GPIO\n", __func__);
- 	ctrl = devm_kzalloc(dev, sizeof(*ctrl), GFP_KERNEL);
- 	if (!ctrl)
- 		return -ENOMEM;
-@@ -280,10 +337,21 @@ static int realtek_gpio_probe(struct pla
+@@ -280,10 +317,20 @@ static int realtek_gpio_probe(struct pla
  
  	raw_spin_lock_init(&ctrl->lock);
  
@@ -134,8 +107,7 @@
 +		bgpio_flags = 0;
 +		ctrl->port_offset_u8 = realtek_gpio_port_offset_u8_rev;
 +		ctrl->port_offset_u16 = realtek_gpio_port_offset_u16_rev;
-+	}
-+	else {
++	} else {
 +		bgpio_flags = BGPIOF_BIG_ENDIAN_BYTE_ORDER;
 +		ctrl->port_offset_u8 = realtek_gpio_port_offset_u8;
 +		ctrl->port_offset_u16 = realtek_gpio_port_offset_u16;
@@ -149,17 +121,3 @@
  	if (err) {
  		dev_err(dev, "unable to init generic GPIO");
  		return err;
-@@ -308,6 +376,13 @@ static int realtek_gpio_probe(struct pla
- 		girq->init_hw = realtek_gpio_irq_init;
- 	}
- 
-+	if (dev_flags & GPIO_INTERRUPTS_PER_CPU) {
-+		ctrl->cpumap_base = devm_platform_ioremap_resource(pdev, 1);
-+		if (IS_ERR(ctrl->cpumap_base))
-+			return dev_err_probe(dev, PTR_ERR(ctrl->cpumap_base),
-+				"IRQ CPU map registers not defined");
-+	}
-+
- 	return devm_gpiochip_add_data(dev, &ctrl->gc, ctrl);
- }
- 
