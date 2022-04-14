@@ -1,0 +1,308 @@
+--- a/drivers/spi/spi-realtek-rtl.c
++++ b/drivers/spi/spi-realtek-rtl.c
+@@ -4,13 +4,18 @@
+ #include <linux/platform_device.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/spi/spi.h>
++#include <linux/property.h>
+ 
+ struct rtspi {
+ 	void __iomem *base;
++	u32 dev_flags;
++	u32 cs_all;
+ };
+ 
+ /* SPI Flash Configuration Register */
+ #define RTL_SPI_SFCR			0x00
++#define RTL_SPI_SFCR_CLK_DIV_BIT	29
++#define RTL_SPI_SFCR_CLK_DIV_MASK	~(0x7 << RTL_SPI_SFCR_CLK_DIV_BIT)
+ #define RTL_SPI_SFCR_RBO		BIT(28)
+ #define RTL_SPI_SFCR_WBO		BIT(27)
+ 
+@@ -18,8 +23,13 @@
+ #define RTL_SPI_SFCSR			0x08
+ #define RTL_SPI_SFCSR_CSB0		BIT(31)
+ #define RTL_SPI_SFCSR_CSB1		BIT(30)
++#define RTL_SPI_SFCSR_CSB2		BIT(15)
++#define RTL_SPI_SFCSR_CSB3		BIT(14)
+ #define RTL_SPI_SFCSR_RDY		BIT(27)
+ #define RTL_SPI_SFCSR_CS		BIT(24)
++#define RTL_SPI_SFCSR_WIDTH_MASK	~(0x03 << 25)
++#define RTL_SPI_SFCSR_WIDTH_DUAL	(0x01 << 25)
++#define RTL_SPI_SFCSR_WIDTH_QUAD	(0x02 << 25)
+ #define RTL_SPI_SFCSR_LEN_MASK		~(0x03 << 28)
+ #define RTL_SPI_SFCSR_LEN1		(0x00 << 28)
+ #define RTL_SPI_SFCSR_LEN4		(0x03 << 28)
+@@ -27,20 +37,53 @@
+ /* SPI Flash Data Register */
+ #define RTL_SPI_SFDR			0x0c
+ 
++#define RTL839X_MAC_IO_DRIV_ABLTY	0xbb000010
++#define SPI_IO_DRIV			BIT(4)
++#define SPI_CLK_DRIV			BIT(2)
++
++/* SoC-specific features */
++#define SPI_CSMAX_3			0x1
++#define SPI_QUAD_SUPPORTED		0x2
++
+ #define REG(x)		(rtspi->base + x)
+ 
++static inline void wait_ready(struct rtspi *rtspi)
++{
++	while (!(readl(REG(RTL_SPI_SFCSR)) & RTL_SPI_SFCSR_RDY))
++		cpu_relax();
++}
+ 
+ static void rt_set_cs(struct spi_device *spi, bool active)
+ {
+ 	struct rtspi *rtspi = spi_controller_get_devdata(spi->controller);
++	int cs = spi->chip_select;
+ 	u32 value;
++	u32 cs_mask;
+ 
+-	/* CS0 bit is active low */
+ 	value = readl(REG(RTL_SPI_SFCSR));
++	value |= rtspi->cs_all | RTL_SPI_SFCSR_CS;
++
++	switch (cs) {
++	case 0:
++		cs_mask = RTL_SPI_SFCSR_CSB0;
++		break;
++	case 1:
++		cs_mask = RTL_SPI_SFCSR_CSB1;
++		break;
++	case 2:
++		cs_mask = RTL_SPI_SFCSR_CSB2;
++		break;
++	case 3:
++		cs_mask = RTL_SPI_SFCSR_CSB3;
++		break;
++	}
++
++	/* CS bits are active low */
+ 	if (active)
+-		value |= RTL_SPI_SFCSR_CSB0;
++		value |= cs_mask;
+ 	else
+-		value &= ~RTL_SPI_SFCSR_CSB0;
++		value &= ~cs_mask;
++
+ 	writel(value, REG(RTL_SPI_SFCSR));
+ }
+ 
+@@ -57,11 +100,6 @@
+ 	writel(value, REG(RTL_SPI_SFCSR));
+ }
+ 
+-static inline void wait_ready(struct rtspi *rtspi)
+-{
+-	while (!(readl(REG(RTL_SPI_SFCSR)) & RTL_SPI_SFCSR_RDY))
+-		cpu_relax();
+-}
+ static void send4(struct rtspi *rtspi, const u32 *buf)
+ {
+ 	wait_ready(rtspi);
+@@ -90,60 +128,123 @@
+ 	*buf = readl(REG(RTL_SPI_SFDR)) >> 24;
+ }
+ 
+-static int transfer_one(struct spi_controller *ctrl, struct spi_device *spi,
+-			struct spi_transfer *xfer)
++static void set_mode(struct rtspi *rtspi, unsigned int mode)
++{
++	u32 value;
++
++	if (mode > 1)
++		pr_info("%s mode: %d\n", __func__, mode);
++	value = readl(REG(RTL_SPI_SFCSR));
++	value &= RTL_SPI_SFCSR_WIDTH_MASK;
++	switch (mode) {
++	case SPI_NBITS_QUAD:
++		value |= RTL_SPI_SFCSR_WIDTH_QUAD;
++		break;
++	case SPI_NBITS_DUAL:
++		value |= RTL_SPI_SFCSR_WIDTH_DUAL;
++		break;
++	default:
++		break;
++	}
++	writel(value, REG(RTL_SPI_SFCSR));
++}
++
++static void raw_write(struct rtspi *rtspi, const void *tx_buf, int cnt)
++{
++	while (cnt >= 4) {
++		send4(rtspi, tx_buf);
++		tx_buf += 4;
++		cnt -= 4;
++	}
++	while (cnt) {
++		send1(rtspi, tx_buf);
++		tx_buf++;
++		cnt--;
++	}
++}
++
++static void raw_read(struct rtspi *rtspi, void *rx_buf, int cnt)
++{
++	while (cnt >= 4) {
++		rcv4(rtspi, rx_buf);
++		rx_buf += 4;
++		cnt -= 4;
++	}
++	while (cnt) {
++		rcv1(rtspi, rx_buf);
++		rx_buf++;
++		cnt--;
++	}
++}
++
++static int transfer_one_message(struct spi_controller *ctrl, struct spi_message *m)
+ {
+ 	struct rtspi *rtspi = spi_controller_get_devdata(ctrl);
+-	void *rx_buf;
+-	const void *tx_buf;
++	struct spi_device *spi = m->spi;
++	struct spi_transfer *xfer = NULL;
++	int status = 0;
+ 	int cnt;
+ 
+-	tx_buf = xfer->tx_buf;
+-	rx_buf = xfer->rx_buf;
+-	cnt = xfer->len;
+-	if (tx_buf) {
+-		while (cnt >= 4) {
+-			send4(rtspi, tx_buf);
+-			tx_buf += 4;
+-			cnt -= 4;
+-		}
+-		while (cnt) {
+-			send1(rtspi, tx_buf);
+-			tx_buf++;
+-			cnt--;
+-		}
+-	} else if (rx_buf) {
+-		while (cnt >= 4) {
+-			rcv4(rtspi, rx_buf);
+-			rx_buf += 4;
+-			cnt -= 4;
+-		}
+-		while (cnt) {
+-			rcv1(rtspi, rx_buf);
+-			rx_buf++;
+-			cnt--;
++	wait_ready(rtspi);
++
++	/* Assert CS */
++	rt_set_cs(spi, false);
++
++	m->actual_length = 0;
++	list_for_each_entry(xfer, &m->transfers, transfer_list) {
++		cnt = xfer->len;
++		if ((xfer->rx_buf) && (xfer->tx_buf)) {
++			if (xfer->len != 2) {
++				pr_info("%s length issue %d\n", __func__, xfer->len);
++				status = -EIO;
++				goto msg_done;
++			}
++			set_mode(rtspi, xfer->tx_nbits);
++			raw_write(rtspi, xfer->tx_buf, cnt / 2);
++
++			set_mode(rtspi, xfer->rx_nbits);
++			raw_read(rtspi, xfer->rx_buf + 1, cnt / 2);
++		} else if (xfer->rx_buf) {
++			set_mode(rtspi, xfer->rx_nbits);
++			raw_read(rtspi, xfer->rx_buf, cnt);
++		} else if (xfer->tx_buf) {
++			set_mode(rtspi, xfer->tx_nbits);
++			raw_write(rtspi, xfer->tx_buf, cnt);
+ 		}
++		m->actual_length += xfer->len;
+ 	}
+ 
+-	spi_finalize_current_transfer(ctrl);
++	/* Wait until transfer finished and de-assert CS */
++	wait_ready(rtspi);
++	rt_set_cs(spi, true);
++
++msg_done:
++	m->status = status;
++	spi_finalize_current_message(ctrl);
+ 
+ 	return 0;
+ }
+ 
++/*
++ * Configure the SPI controller HW. In order to make the SPI pins
++ * work, in addition, the driving current needs to be switched on e.g. via
++ * a pin-control in the .dts (setting SPI_IO_DRIV | SPI_CLK_DRIV in
++ * RTLXXXX_MAC_IO_DRIV_ABLTY) and enable CS2 and CS3 if necessary via
++ * RTL83XX_MAC_IF_CTRL_SPI_CS_IF_SEL
++ */
+ static void init_hw(struct rtspi *rtspi)
+ {
+ 	u32 value;
+ 
+-	/* Turn on big-endian byte ordering */
++	/* Turn on big-endian byte ordering, configure clock divider */
+ 	value = readl(REG(RTL_SPI_SFCR));
+ 	value |= RTL_SPI_SFCR_RBO | RTL_SPI_SFCR_WBO;
++	value &= RTL_SPI_SFCR_CLK_DIV_MASK;
++	value |= 0x7 << RTL_SPI_SFCR_CLK_DIV_BIT;
+ 	writel(value, REG(RTL_SPI_SFCR));
+ 
+-	value = readl(REG(RTL_SPI_SFCSR));
+-	/* Permanently disable CS1, since it's never used */
+-	value |= RTL_SPI_SFCSR_CSB1;
+-	/* Select CS0 for use */
+-	value &= RTL_SPI_SFCSR_CS;
++	/* Disable CS0-CS3, enable CS */
++	value = rtspi->cs_all | RTL_SPI_SFCSR_CS;
+ 	writel(value, REG(RTL_SPI_SFCSR));
+ }
+ 
+@@ -160,6 +261,7 @@
+ 	}
+ 	platform_set_drvdata(pdev, ctrl);
+ 	rtspi = spi_controller_get_devdata(ctrl);
++	rtspi->dev_flags = (u32) device_get_match_data(&pdev->dev);
+ 
+ 	rtspi->base = devm_platform_get_and_ioremap_resource(pdev, 0, NULL);
+ 	if (IS_ERR(rtspi->base)) {
+@@ -170,9 +272,15 @@
+ 	init_hw(rtspi);
+ 
+ 	ctrl->dev.of_node = pdev->dev.of_node;
+-	ctrl->flags = SPI_CONTROLLER_HALF_DUPLEX;
++	ctrl->flags = SPI_TX_DUAL | SPI_RX_DUAL;
++	if (rtspi->dev_flags & SPI_QUAD_SUPPORTED)
++		ctrl->flags |= SPI_TX_QUAD | SPI_RX_QUAD;
+ 	ctrl->set_cs = rt_set_cs;
+-	ctrl->transfer_one = transfer_one;
++	ctrl->transfer_one_message = transfer_one_message;
++	ctrl->num_chipselect = rtspi->dev_flags & SPI_CSMAX_3?4:2;
++	rtspi->cs_all = RTL_SPI_SFCSR_CSB0 | RTL_SPI_SFCSR_CSB1;
++	if (rtspi->dev_flags & SPI_CSMAX_3)
++		rtspi->cs_all |= RTL_SPI_SFCSR_CSB2 | RTL_SPI_SFCSR_CSB3;
+ 
+ 	err = devm_spi_register_controller(&pdev->dev, ctrl);
+ 	if (err) {
+@@ -185,11 +293,13 @@
+ 
+ 
+ static const struct of_device_id realtek_rtl_spi_of_ids[] = {
+-	{ .compatible = "realtek,rtl8380-spi" },
+-	{ .compatible = "realtek,rtl8382-spi" },
+-	{ .compatible = "realtek,rtl8391-spi" },
+-	{ .compatible = "realtek,rtl8392-spi" },
+-	{ .compatible = "realtek,rtl8393-spi" },
++	{ .compatible = "realtek,rtl8380-spi", .data = (void *)SPI_CSMAX_3, },
++	{ .compatible = "realtek,rtl8382-spi", .data = (void *)SPI_CSMAX_3, },
++	{ .compatible = "realtek,rtl8391-spi", .data = (void *)SPI_CSMAX_3, },
++	{ .compatible = "realtek,rtl8392-spi", .data = (void *)SPI_CSMAX_3, },
++	{ .compatible = "realtek,rtl8393-spi", .data = (void *)SPI_CSMAX_3, },
++	{ .compatible = "realtek,rtl9300-spi", .data = (void *)SPI_QUAD_SUPPORTED, },
++	{ .compatible = "realtek,rtl9310-spi", .data = (void *)SPI_QUAD_SUPPORTED, },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, realtek_rtl_spi_of_ids);
