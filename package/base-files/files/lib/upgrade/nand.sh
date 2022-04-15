@@ -114,6 +114,18 @@ nand_restore_config() {
 	rmdir /tmp/new_root
 }
 
+nand_remove_ubiblock() {
+	local ubivol=$1
+	local ubiblk=ubiblock${ubivol:3}
+	if [ -e /dev/$ubiblk ]; then
+		echo "removing $ubiblk"
+		if ! ubiblock -r /dev/$ubivol; then
+			echo "cannot remove $ubiblk"
+			return 1
+		fi
+	fi
+}
+
 nand_upgrade_prepare_ubi() {
 	local rootfs_length="$1"
 	local rootfs_type="$2"
@@ -158,26 +170,16 @@ nand_upgrade_prepare_ubi() {
 	local kern_ubivol="$( nand_find_volume $ubidev $CI_KERNPART )"
 	local root_ubivol="$( nand_find_volume $ubidev $CI_ROOTPART )"
 	local data_ubivol="$( nand_find_volume $ubidev rootfs_data )"
+	[ "$root_ubivol" = "$kern_ubivol" ] && root_ubivol=
 
-	local ubiblk ubiblkvol
-	for ubiblk in /dev/ubiblock${ubidev:3}_* ; do
-		[ -e "$ubiblk" ] || continue
-		case "$ubiblk" in
-		/dev/ubiblock*_*p*)
-			continue
-			;;
-		esac
-		echo "removing ubiblock${ubiblk:13}"
-		ubiblkvol=ubi${ubiblk:13}
-		if ! ubiblock -r /dev/$ubiblkvol; then
-			echo "cannot remove $ubiblk"
-			return 1
-		fi
-	done
+	# remove ubiblocks
+	[ "$kern_ubivol" ] && { nand_remove_ubiblock $kern_ubivol || return 1; }
+	[ "$root_ubivol" ] && { nand_remove_ubiblock $root_ubivol || return 1; }
+	[ "$data_ubivol" ] && { nand_remove_ubiblock $data_ubivol || return 1; }
 
 	# kill volumes
 	[ "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_KERNPART || :
-	[ "$root_ubivol" -a "$root_ubivol" != "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_ROOTPART || :
+	[ "$root_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_ROOTPART || :
 	[ "$data_ubivol" ] && ubirmvol /dev/$ubidev -N rootfs_data || :
 
 	# update kernel
