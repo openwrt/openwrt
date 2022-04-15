@@ -136,18 +136,23 @@ nand_upgrade_prepare_ubi() {
 		ubiattach -m "$mtdnum"
 		sync
 		ubidev="$( nand_find_ubi "$CI_UBIPART" )"
-	fi
 
-	if [ ! "$ubidev" ]; then
-		ubiformat /dev/mtd$mtdnum -y
-		ubiattach -m "$mtdnum"
-		sync
-		ubidev="$( nand_find_ubi "$CI_UBIPART" )"
-		[ ! "$ubidev" ] && return 1
-		[ "$has_env" -gt 0 ] && {
-			ubimkvol /dev/$ubidev -n 0 -N ubootenv -s 1MiB
-			ubimkvol /dev/$ubidev -n 1 -N ubootenv2 -s 1MiB
-		}
+		if [ ! "$ubidev" ]; then
+			ubiformat /dev/mtd$mtdnum -y
+			ubiattach -m "$mtdnum"
+			sync
+			ubidev="$( nand_find_ubi "$CI_UBIPART" )"
+
+			if [ ! "$ubidev" ]; then
+				echo "cannot attach ubi mtd partition $CI_UBIPART"
+				return 1
+			fi
+
+			if [ "$has_env" -gt 0 ]; then
+				ubimkvol /dev/$ubidev -n 0 -N ubootenv -s 1MiB
+				ubimkvol /dev/$ubidev -n 1 -N ubootenv2 -s 1MiB
+			fi
+		fi
 	fi
 
 	local kern_ubivol="$( nand_find_volume $ubidev $CI_KERNPART )"
