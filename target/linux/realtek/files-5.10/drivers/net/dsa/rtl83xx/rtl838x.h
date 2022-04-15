@@ -1089,6 +1089,7 @@ struct rtl838x_switch_priv {
 	u8 port_width;
 	u8 port_ignore;
 	u64 irq_mask;
+	u64 used_ports;
 	u32 fib_entries;
 	int l2_bucket_size;
 	struct dentry *dbgfs_dir;
