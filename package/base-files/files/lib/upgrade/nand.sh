@@ -182,7 +182,7 @@ nand_upgrade_prepare_ubi() {
 	[ "$root_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_ROOTPART || :
 	[ "$data_ubivol" ] && ubirmvol /dev/$ubidev -N rootfs_data || :
 
-	# update kernel
+	# create kernel vol
 	if [ -n "$kernel_length" ]; then
 		if ! ubimkvol /dev/$ubidev -N $CI_KERNPART -s $kernel_length; then
 			echo "cannot create kernel volume"
@@ -190,7 +190,7 @@ nand_upgrade_prepare_ubi() {
 		fi
 	fi
 
-	# update rootfs
+	# create rootfs vol
 	if [ -n "$rootfs_length" ]; then
 		local rootfs_size_param
 		if [ "$rootfs_type" = "ubifs" ]; then
@@ -204,7 +204,7 @@ nand_upgrade_prepare_ubi() {
 		fi
 	fi
 
-	# create rootfs_data for non-ubifs rootfs
+	# create rootfs_data vol for non-ubifs rootfs
 	if [ "$rootfs_type" != "ubifs" ]; then
 		local rootfs_data_size_param="-m"
 		if [ -n "$rootfs_data_max" ]; then
