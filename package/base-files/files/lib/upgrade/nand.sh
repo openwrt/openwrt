@@ -98,10 +98,10 @@ identify_tar() {
 
 nand_restore_config() {
 	sync
-	local ubidev=$( nand_find_ubi $CI_UBIPART )
+	local ubidev=$( nand_find_ubi "$CI_UBIPART" )
 	local ubivol="$( nand_find_volume $ubidev rootfs_data )"
 	[ ! "$ubivol" ] &&
-		ubivol="$( nand_find_volume $ubidev $CI_ROOTPART )"
+		ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
 	mkdir /tmp/new_root
 	if ! mount -t ubifs /dev/$ubivol /tmp/new_root; then
 		echo "mounting ubifs $ubivol failed"
@@ -167,8 +167,8 @@ nand_upgrade_prepare_ubi() {
 		fi
 	fi
 
-	local kern_ubivol="$( nand_find_volume $ubidev $CI_KERNPART )"
-	local root_ubivol="$( nand_find_volume $ubidev $CI_ROOTPART )"
+	local kern_ubivol="$( nand_find_volume $ubidev "$CI_KERNPART" )"
+	local root_ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
 	local data_ubivol="$( nand_find_volume $ubidev rootfs_data )"
 	[ "$root_ubivol" = "$kern_ubivol" ] && root_ubivol=
 
@@ -178,13 +178,13 @@ nand_upgrade_prepare_ubi() {
 	[ "$data_ubivol" ] && { nand_remove_ubiblock $data_ubivol || return 1; }
 
 	# kill volumes
-	[ "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_KERNPART || :
-	[ "$root_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_ROOTPART || :
+	[ "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N "$CI_KERNPART" || :
+	[ "$root_ubivol" ] && ubirmvol /dev/$ubidev -N "$CI_ROOTPART" || :
 	[ "$data_ubivol" ] && ubirmvol /dev/$ubidev -N rootfs_data || :
 
 	# create kernel vol
 	if [ -n "$kernel_length" ]; then
-		if ! ubimkvol /dev/$ubidev -N $CI_KERNPART -s $kernel_length; then
+		if ! ubimkvol /dev/$ubidev -N "$CI_KERNPART" -s $kernel_length; then
 			echo "cannot create kernel volume"
 			return 1;
 		fi
@@ -198,7 +198,7 @@ nand_upgrade_prepare_ubi() {
 		else
 			rootfs_size_param="-s $rootfs_length"
 		fi
-		if ! ubimkvol /dev/$ubidev -N $CI_ROOTPART $rootfs_size_param; then
+		if ! ubimkvol /dev/$ubidev -N "$CI_ROOTPART" $rootfs_size_param; then
 			echo "cannot create rootfs volume"
 			return 1;
 		fi
@@ -258,7 +258,7 @@ nand_upgrade_ubifs() {
 	nand_upgrade_prepare_ubi "$rootfs_length" "ubifs" "" ""
 
 	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
-	local root_ubivol="$(nand_find_volume $ubidev $CI_ROOTPART)"
+	local root_ubivol="$(nand_find_volume $ubidev "$CI_ROOTPART")"
 	ubiupdatevol /dev/$root_ubivol -s $rootfs_length $1
 
 	nand_do_upgrade_success
