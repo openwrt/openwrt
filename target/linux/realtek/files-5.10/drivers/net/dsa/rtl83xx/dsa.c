@@ -28,18 +28,12 @@ static void rtl83xx_init_stats(struct rtl838x_switch_priv *priv)
 
 static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
 {
-	int i;
-	u64 v = 0;
-
+	// Wait until PHY initialization is definitely done
 	msleep(1000);
-	/* Enable all ports with a PHY, including the SFP-ports */
-	for (i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
-			v |= BIT_ULL(i);
-	}
 
-	pr_info("%s: %16llx\n", __func__, v);
-	priv->r->set_port_reg_le(v, priv->r->smi_poll_ctrl);
+	/* Enable all ports with a PHY, including the SFP-ports */
+	pr_info("################# %s: %16llx\n", __func__, priv->used_ports);
+	priv->r->set_port_reg_le(priv->used_ports, priv->r->smi_poll_ctrl);
 
 	/* PHY update complete, there is no global PHY polling enable bit on the 9300 */
 	if (priv->family_id == RTL8390_FAMILY_ID)
@@ -181,11 +175,13 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 	/* Setting bit j in register RTL838X_PORT_ISO_CTRL(i) allows
 	 * traffic from source port i to destination port j
 	 */
+	priv->used_ports = 0;
 	for (i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy) {
 			priv->r->set_port_reg_be(BIT_ULL(priv->cpu_port) | BIT_ULL(i),
 					      priv->r->port_iso_ctrl(i));
 			port_bitmap |= BIT_ULL(i);
+			priv->used_ports |= BIT_ULL(i); // for PHY control, does not include CPU-port
 		}
 	}
 	priv->r->set_port_reg_be(port_bitmap, priv->r->port_iso_ctrl(priv->cpu_port));
@@ -215,9 +211,9 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 		sw_w32(0x2, RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL);
 
 	/* Enable MAC Polling PHY again */
-	rtl83xx_enable_phy_polling(priv);
 	pr_debug("Please wait until PHY is settled\n");
-	msleep(1000);
+	rtl83xx_enable_phy_polling(priv);
+
 	priv->r->pie_init(priv);
 
 	return 0;
@@ -227,7 +223,7 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 {
 	int i;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u32 port_bitmap = BIT(priv->cpu_port);
+	u64 port_bitmap = BIT_ULL(priv->cpu_port);
 
 	pr_info("%s called\n", __func__);
 
@@ -245,10 +241,12 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 		priv->ports[i].enable = false;
 	priv->ports[priv->cpu_port].enable = true;
 
+	priv->used_ports = 0;
 	for (i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy) {
 			priv->r->traffic_set(i, BIT_ULL(priv->cpu_port) | BIT_ULL(i));
 			port_bitmap |= BIT_ULL(i);
+			priv->used_ports |= BIT_ULL(i);  // for PHY control, does not include CPU-port
 		}
 	}
 	priv->r->traffic_set(priv->cpu_port, port_bitmap);
