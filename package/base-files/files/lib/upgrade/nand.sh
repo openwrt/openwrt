@@ -335,15 +335,16 @@ nand_upgrade_tar() {
 
 # Recognize type of passed file and start the upgrade process
 nand_do_upgrade() {
-	local file_type=$(identify $1)
+	local file_type=$(identify "$1")
 
 	[ ! "$(find_mtd_index "$CI_UBIPART")" ] && CI_UBIPART=rootfs
 
+	sync
 	case "$file_type" in
-		"fit")		nand_upgrade_fit $1;;
-		"ubi")		nand_upgrade_ubinized $1;;
-		"ubifs")	nand_upgrade_ubifs $1;;
-		*)		nand_upgrade_tar $1;;
+		"fit")		nand_upgrade_fit "$1";;
+		"ubi")		nand_upgrade_ubinized "$1";;
+		"ubifs")	nand_upgrade_ubifs "$1";;
+		*)		nand_upgrade_tar "$1";;
 	esac
 }
 
