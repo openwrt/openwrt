@@ -47,82 +47,103 @@ import binascii
 
 
 def auto_int(x):
-	return int(x, 0)
+    return int(x, 0)
+
 
 def create_tag(args, in_bytes):
     # JAM CRC32 is bitwise not and unsigned
-    crc = (~binascii.crc32(in_bytes) & 0xFFFFFFFF)
-	tag = struct.pack('>IIIII', crc, args.tag_version, args.chip_id, args.flash_type, args.flags)
-	return tag
+    crc = ~binascii.crc32(in_bytes) & 0xFFFFFFFF
+    tag = struct.pack(
+        ">IIIII",
+        crc,
+        args.tag_version,
+        args.chip_id,
+        args.flash_type,
+        args.flags,
+    )
+    return tag
+
 
 def create_output(args):
-	in_st = os.stat(args.input_file)
-	in_size = in_st.st_size
+    in_st = os.stat(args.input_file)
+    in_size = in_st.st_size
 
-	in_f = open(args.input_file, 'r+b')
-	in_bytes = in_f.read(in_size)
-	in_f.close()
+    in_f = open(args.input_file, "r+b")
+    in_bytes = in_f.read(in_size)
+    in_f.close()
 
-	tag = create_tag(args, in_bytes)
+    tag = create_tag(args, in_bytes)
 
-	out_f = open(args.output_file, 'w+b')
-	out_f.write(in_bytes)
-	out_f.write(tag)
-	out_f.close()
+    out_f = open(args.output_file, "w+b")
+    out_f.write(in_bytes)
+    out_f.write(tag)
+    out_f.close()
+
 
 def main():
-	global args
+    global args
 
-	parser = argparse.ArgumentParser(description='')
+    parser = argparse.ArgumentParser(description="")
 
-	parser.add_argument('--input-file',
-		dest='input_file',
-		action='store',
-		type=str,
-		help='Input file')
+    parser.add_argument(
+        "--input-file",
+        dest="input_file",
+        action="store",
+        type=str,
+        help="Input file",
+    )
 
-	parser.add_argument('--output-file',
-		dest='output_file',
-		action='store',
-		type=str,
-		help='Output file')
+    parser.add_argument(
+        "--output-file",
+        dest="output_file",
+        action="store",
+        type=str,
+        help="Output file",
+    )
 
-	parser.add_argument('--version',
-		dest='tag_version',
-		action='store',
-		type=auto_int,
-		help='WFI Tag Version')
+    parser.add_argument(
+        "--version",
+        dest="tag_version",
+        action="store",
+        type=auto_int,
+        help="WFI Tag Version",
+    )
 
-	parser.add_argument('--chip-id',
-		dest='chip_id',
-		action='store',
-		type=auto_int,
-		help='WFI Chip ID')
+    parser.add_argument(
+        "--chip-id",
+        dest="chip_id",
+        action="store",
+        type=auto_int,
+        help="WFI Chip ID",
+    )
 
-	parser.add_argument('--flash-type',
-		dest='flash_type',
-		action='store',
-		type=auto_int,
-		help='WFI Flash Type')
+    parser.add_argument(
+        "--flash-type",
+        dest="flash_type",
+        action="store",
+        type=auto_int,
+        help="WFI Flash Type",
+    )
 
-	parser.add_argument('--flags',
-		dest='flags',
-		action='store',
-		type=auto_int,
-		help='WFI Flags')
+    parser.add_argument(
+        "--flags", dest="flags", action="store", type=auto_int, help="WFI Flags"
+    )
 
-	args = parser.parse_args()
+    args = parser.parse_args()
 
-	if not args.flags:
-		args.flags = 0
+    if not args.flags:
+        args.flags = 0
 
-	if ((not args.input_file) or
-	    (not args.output_file) or
-	    (not args.tag_version) or
-	    (not args.chip_id) or
-	    (not args.flash_type)):
-		parser.print_help()
-	else:
-		create_output(args)
+    if (
+        (not args.input_file)
+        or (not args.output_file)
+        or (not args.tag_version)
+        or (not args.chip_id)
+        or (not args.flash_type)
+    ):
+        parser.print_help()
+    else:
+        create_output(args)
+
 
 main()
