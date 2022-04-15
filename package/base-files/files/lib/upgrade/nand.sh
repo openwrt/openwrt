@@ -97,21 +97,33 @@ identify_tar() {
 }
 
 nand_restore_config() {
-	sync
 	local ubidev=$( nand_find_ubi "$CI_UBIPART" )
 	local ubivol="$( nand_find_volume $ubidev rootfs_data )"
-	[ ! "$ubivol" ] &&
+	if [ ! "$ubivol" ]; then
 		ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
+		if [ ! "$ubivol" ]; then
+			echo "cannot find ubifs data volume"
+			return 1
+		fi
+	fi
 	mkdir /tmp/new_root
 	if ! mount -t ubifs /dev/$ubivol /tmp/new_root; then
-		echo "mounting ubifs $ubivol failed"
+		echo "cannot mount ubifs volume $ubivol"
 		rmdir /tmp/new_root
 		return 1
 	fi
-	mv "$1" "/tmp/new_root/$BACKUP_FILE"
-	umount /tmp/new_root
-	sync
+	if mv "$1" "/tmp/new_root/$BACKUP_FILE"; then
+		if umount /tmp/new_root; then
+			echo "configuration saved"
+			rmdir /tmp/new_root
+			return 0
+		fi
+	else
+		umount /tmp/new_root
+	fi
+	echo "could not save configuration to ubifs volume $ubivol"
 	rmdir /tmp/new_root
+	return 1
 }
 
 nand_remove_ubiblock() {
@@ -223,10 +235,9 @@ nand_upgrade_prepare_ubi() {
 
 nand_do_upgrade_success() {
 	local conf_tar="/tmp/sysupgrade.tgz"
-
-	sync
-	[ -f "$conf_tar" ] && nand_restore_config "$conf_tar"
-	echo "sysupgrade successful"
+	if { [ ! -f "$conf_tar" ] || nand_restore_config "$conf_tar"; } && sync; then
+		echo "sysupgrade successful"
+	fi
 	umount -a
 	reboot -f
 }
