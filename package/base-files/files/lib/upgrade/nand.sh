@@ -288,7 +288,7 @@ nand_upgrade_tar() {
 	local board_dir=$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')
 	board_dir=${board_dir%/}
 
-	kernel_length=$( (tar xf "$tar_file" ${board_dir}/kernel -O | wc -c) 2> /dev/null)
+	local kernel_length=$( (tar xf "$tar_file" ${board_dir}/kernel -O | wc -c) 2> /dev/null)
 	local has_rootfs=0
 	local rootfs_length
 	local rootfs_type
@@ -311,16 +311,16 @@ nand_upgrade_tar() {
 	nand_upgrade_prepare_ubi "$rootfs_length" "$rootfs_type" "${has_kernel:+$kernel_length}" "$has_env"
 
 	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
-	[ "$has_kernel" = "1" ] && {
-		local kern_ubivol="$( nand_find_volume $ubidev $CI_KERNPART )"
-		tar xf "$tar_file" ${board_dir}/kernel -O | \
-			ubiupdatevol /dev/$kern_ubivol -s $kernel_length -
-	}
-
 	[ "$has_rootfs" = "1" ] && {
 		local root_ubivol="$( nand_find_volume $ubidev $CI_ROOTPART )"
 		tar xf "$tar_file" ${board_dir}/root -O | \
 			ubiupdatevol /dev/$root_ubivol -s $rootfs_length -
+	}
+
+	[ "$has_kernel" = "1" ] && {
+		local kern_ubivol="$( nand_find_volume $ubidev $CI_KERNPART )"
+		tar xf "$tar_file" ${board_dir}/kernel -O | \
+			ubiupdatevol /dev/$kern_ubivol -s $kernel_length -
 	}
 	nand_do_upgrade_success
 }
