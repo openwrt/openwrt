@@ -1,0 +1,17 @@
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+mikrotik,routerboard-sxtr)
+	ucidef_add_gpio_switch "poe_out" "poe_out" "poe_out" "0"
+	ucidef_add_gpio_switch "modem_power" "modem_power" "modem_power" "1"
+	ucidef_add_gpio_switch "sim_select" "sim_select" "sim_select" "0" 
+	;;
+esac
+
+board_config_flush
+
+exit 0

@@ -72,6 +72,15 @@ define Device/mikrotik_routerboard-sxt-5nd-r2
 endef
 TARGET_DEVICES += mikrotik_routerboard-sxt-5nd-r2
 
+define Device/mikrotik_routerboard-sxtr
+  $(Device/mikrotik_nor)
+  SOC := qca9531
+  DEVICE_MODEL := RouterBOARD SXTR (SXT-LTE)
+  DEVICE_PACKAGES += kmod-usb2 kmod-gpio-nxp-74hc164
+  IMAGE_SIZE := 16256k
+endef
+TARGET_DEVICES += mikrotik_routerboard-sxtr
+
 define Device/mikrotik_routerboard-wap-g-5hact2hnd
   $(Device/mikrotik_nor)
   SOC := qca9556

@@ -1,0 +1,189 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9533_mikrotik_routerboard-16m.dtsi"
+
+/ {
+    compatible = "mikrotik,routerboard-sxtr", "qca,qca9533";
+    model = "MikroTik RouterBOARD SXTR (SXT-LTE)";
+
+    aliases {
+        led-boot = &led_power;
+        led-failsafe = &led_power;
+        led-upgrade = &led_power;
+        led-running = &led_power;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        pinctrl-names = "default";
+
+        led_power: power {
+            label = "green:power";
+            gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+        };
+
+        lte {
+            label = "green:lte";
+            gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+        };
+
+        eth1green {
+            label = "green:eth1";
+            gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+        };
+
+        eth2green {
+            label = "green:eth2";
+            gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+        };
+
+        eth2yellow {
+            label = "yellow:eth2";
+            gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+        };
+
+        signal0 {
+            label = "green:rssilow";
+            gpios = <&gpio_ext 2 GPIO_ACTIVE_LOW>;
+        };
+
+        signal1 {
+            label = "green:rssimediumlow";
+            gpios = <&gpio_ext 3 GPIO_ACTIVE_LOW>;
+        };
+
+        signal2 {
+            label = "green:rssimedium";
+            gpios = <&gpio_ext 4 GPIO_ACTIVE_LOW>;
+        };
+
+        signal3 {
+            label = "green:rssimediumhigh";
+            gpios = <&gpio_ext 5 GPIO_ACTIVE_LOW>;
+        };
+
+        signal4 {
+            label = "green:rssihigh";
+            gpios = <&gpio_ext 6 GPIO_ACTIVE_LOW>;
+        };
+
+    };
+
+    gpio-export {
+        compatible = "gpio-export";
+
+        modem_power {
+            gpio-export,name = "modem_power";
+            gpio-export,output = <0>;
+            gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+        };
+
+        poe_out {
+            gpio-export,name = "poe_out";
+            gpio-export,output = <0>;
+            gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+        };
+
+        poe_status {
+            gpio-export,name = "poe_status";
+            gpio-export,input;
+            gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+        };
+
+        sim_select {
+            gpio-export,name = "sim_select";
+            gpio-export,output = <0>;
+            gpios = <&gpio_ext 7 GPIO_ACTIVE_HIGH>;
+        };
+
+        modem_reset {
+            gpio-export,name = "modem_reset";
+            gpio-export,output = <0>;
+            gpios = <&gpio_ext 0 GPIO_ACTIVE_HIGH>;
+        };
+
+        modem_rfkill {
+            gpio-export,name = "modem_rfkill";
+            gpio-export,output = <0>;
+            gpios = <&gpio_ext 1 GPIO_ACTIVE_HIGH>;
+        };
+    };
+
+    keys {
+        compatible = "gpio-keys";
+
+        mode {
+            label = "MODE button";
+            linux,code = <KEY_RFKILL>;
+            gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+            debounce-interval = <60>;
+        };
+    };
+};
+
+&spi {
+    status = "okay";
+    num-cs = <2>;
+    cs-gpios = <0>, <0>;
+
+    pinctrl-names = "default";
+    pinctrl-0 = <&pmx_spi_ext>;
+
+    gpio_ext: gpio_ext@1 {
+        compatible = "fairchild,74hc595";
+        reg = <1>;
+        gpio-controller;
+        #gpio-cells = <2>;
+        registers-number = <1>;
+        spi-max-frequency = <10000000>;
+    };
+};
+
+&pinmux {
+    pmx_spi_ext: spi_ext {
+        pinctrl-single,bits = <0x08 0x0a000000 0xff000000>;  // Route SPI_CS1 to GPIO 11 for 74HC595.
+    };
+
+    pmx_gpios: pmx_gpios {
+        pinctrl-single,bits = <0x00 0x00000000 0x00ff00ff>,  // port green leds normal GPIO
+                        <0x08 0x00001600 0x0000ff00>,  // 10 is serial out -- shared eth1 yellow LED
+                        <0x10 0x00000000 0x0000ff00>;  // i7 normal mode for LED
+    };
+};
+
+&gpio {
+    pinctrl-names = "default";
+    pinctrl-0 = <&pmx_gpios>;
+};
+
+&usb0 {
+    #address-cells = <1>;
+    #size-cells = <0>;
+    status = "okay";
+
+    hub_port: port@1 {
+        eg = <1>;
+        #trigger-source-cells = <0>;
+    };
+};
+
+&usb_phy {
+    status = "okay";
+};
+
+&eth0 {
+    status = "okay";
+    mtd-mac-address = <&hard_config 0x10>;
+    mtd-mac-address-increment = <1>;
+    phy-handle = <&swphy0>;
+
+    gmac-config {
+        device = <&gmac>;
+        switch-phy-swap = <1>;
+    };
+};
+
+&eth1 {
+    status = "okay";
+    mtd-mac-address = <&hard_config 0x10>;
+};
