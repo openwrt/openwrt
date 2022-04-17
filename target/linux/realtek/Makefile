@@ -18,7 +18,7 @@ endef
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += uboot-envtools ethtool kmod-gpio-button-hotplug \
-	dnsmasq firewall ip6tables iptables odhcp6c odhcpd-ipv6only \
-	ip-full ip-bridge tc
+	firewall4 nftables kmod-nft-offload odhcp6c \
+	ip-full ip-bridge tc-bpf
 
 $(eval $(call BuildTarget))

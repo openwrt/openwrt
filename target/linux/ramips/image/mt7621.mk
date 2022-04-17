@@ -9,6 +9,10 @@ DEFAULT_SOC := mt7621
 KERNEL_DTB += -d21
 DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME
 
+ifdef CONFIG_LINUX_5_10
+  DTS_CPPFLAGS += -DDTS_LEGACY
+endif
+
 define Build/beeline-trx
 	echo -ne "hsqs" > $@.hsqs
 	$(STAGING_DIR_HOST)/bin/otrx create $@.trx -M 0x746f435d -f $@ \
@@ -283,6 +287,16 @@ define Device/buffalo_wsr-600dhp
   SUPPORTED_DEVICES += wsr-600
 endef
 TARGET_DEVICES += buffalo_wsr-600dhp
+
+define Device/bolt_arion
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := BOLT
+  DEVICE_MODEL := Arion
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 uboot-envtools
+endef
+TARGET_DEVICES += bolt_arion
 
 define Device/cudy_wr1300
   $(Device/dsa-migration)

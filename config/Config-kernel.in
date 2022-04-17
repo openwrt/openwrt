@@ -422,6 +422,11 @@ config KERNEL_KPROBE_EVENTS
 	bool
 	default y if KERNEL_KPROBES
 
+config KERNEL_BPF_KPROBE_OVERRIDE
+	bool
+	depends on KERNEL_KPROBES
+	default n
+
 config KERNEL_AIO
 	bool "Compile the kernel with asynchronous IO support"
 	default y if !SMALL_FLASH

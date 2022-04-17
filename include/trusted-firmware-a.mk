@@ -68,6 +68,9 @@ define Build/Trusted-Firmware-A/Target
   endef
 endef
 
+define Build/Configure/Trusted-Firmware-A
+	$(INSTALL_DIR) $(STAGING_DIR)/usr/include
+endef
 
 define Build/Compile/Trusted-Firmware-A
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \

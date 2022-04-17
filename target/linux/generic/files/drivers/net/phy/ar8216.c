@@ -2433,7 +2433,9 @@ static int
 ar8xxx_phy_config_init(struct phy_device *phydev)
 {
 	struct ar8xxx_priv *priv = phydev->priv;
+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	struct net_device *dev = phydev->attached_dev;
+#endif
 	int ret;
 
 	if (WARN_ON(!priv))
@@ -2465,7 +2467,11 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	/* VID fixup only needed on ar8216 */
 	if (chip_is_ar8216(priv)) {
 		dev->phy_ptr = priv;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0)
+		dev->extra_priv_flags |= IFF_NO_IP_ALIGN;
+#else
 		dev->priv_flags |= IFF_NO_IP_ALIGN;
+#endif
 		dev->eth_mangle_rx = ar8216_mangle_rx;
 		dev->eth_mangle_tx = ar8216_mangle_tx;
 	}
@@ -2700,7 +2706,11 @@ ar8xxx_phy_detach(struct phy_device *phydev)
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	dev->phy_ptr = NULL;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0)
+	dev->extra_priv_flags &= ~IFF_NO_IP_ALIGN;
+#else
 	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
+#endif
 	dev->eth_mangle_rx = NULL;
 	dev->eth_mangle_tx = NULL;
 #endif

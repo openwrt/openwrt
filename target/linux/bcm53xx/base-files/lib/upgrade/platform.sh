@@ -403,11 +403,3 @@ platform_do_upgrade() {
 		;;
 	esac
 }
-
-platform_nand_pre_upgrade() {
-	case "$(board_name)" in
-	meraki,mr32)
-		CI_KERNPART="part.safe"
-		;;
-	esac
-}

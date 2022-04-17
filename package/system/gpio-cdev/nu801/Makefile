@@ -8,7 +8,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/chunkeey/nu801.git
 PKG_SOURCE_VERSION:=d9942c0ceb949080b93366a9431028de3608e535
-
+PKG_MIRROR_HASH:=859be7dec96d2a0d6ee8b80c6f1a703384940d19caeeb74a4ac0a961b2a985db
 PKG_MAINTAINER:=Christian Lamparter <chunkeey@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=LICENSE
@@ -20,7 +20,7 @@ define Package/nu801
   SECTION:=utils
   CATEGORY:=Utilities
   SUBMENU:=Userspace GPIO Drivers
-  DEPENDS:=@TARGET_x86 +kmod-leds-uleds
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_GPIO_CDEV=y
   TITLE:=NU801 LED Driver
 endef

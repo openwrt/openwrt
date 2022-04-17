@@ -11,9 +11,9 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=qosify
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/qosify.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2022-03-22
-PKG_SOURCE_VERSION:=57c7817f91c2ff2f247b2d7eb8554e861c4aec33
-PKG_MIRROR_HASH:=409f7db13a36334557de861a016a8d9f241070b2bbf6f738e992281b36f41cd4
+PKG_SOURCE_DATE:=2022-04-08
+PKG_SOURCE_VERSION:=ef82defaae26619e5b2ebddfdd86e9de61c399f1
+PKG_MIRROR_HASH:=8e4ca65d23a85aad774af51dc62cfaa4615111ffd2c7922258ac8f026a62b013
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_LICENSE:=GPL-2.0
@@ -31,10 +31,16 @@ define Package/qosify
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=A simple QoS solution based eBPF + CAKE
-  DEPENDS:=+libbpf +libubox +libubus +kmod-sched-cake +kmod-sched-bpf +kmod-ifb +tc-full $(BPF_DEPENDS)
+  DEPENDS:=+libbpf +libubox +libubus +libnl-tiny +kmod-sched-cake +kmod-sched-bpf +kmod-ifb +tc $(BPF_DEPENDS)
 endef
 
-TARGET_CFLAGS += -Wno-error=deprecated-declarations
+TARGET_CFLAGS += \
+	-Wno-error=deprecated-declarations \
+	-I$(STAGING_DIR)/usr/include/libnl-tiny \
+	-I$(STAGING_DIR)/usr/include
+
+CMAKE_OPTIONS += \
+	-DLIBNL_LIBS=-lnl-tiny
 
 define Build/Compile
 	$(call CompileBPF,$(PKG_BUILD_DIR)/qosify-bpf.c)
