@@ -1,0 +1,28 @@
+From 6e8e5ccfbee7a531b035ffce3f95f3901946fa9d Mon Sep 17 00:00:00 2001
+From: Robert Nelson <robertcnelson@gmail.com>
+Date: Wed, 9 Jan 2019 14:33:24 -0600
+Subject: [PATCH] ARM: imx7d-pico-pi.dts: add default stdout-path
+
+Signed-off-by: Robert Nelson <robertcnelson@gmail.com>
+---
+ arch/arm/boot/dts/imx7d-pico-pi.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx7d-pico-pi.dts b/arch/arm/boot/dts/imx7d-pico-pi.dts
+index 70bea95c06d8..a50edba80c3c 100644
+--- a/arch/arm/boot/dts/imx7d-pico-pi.dts
++++ b/arch/arm/boot/dts/imx7d-pico-pi.dts
+@@ -8,6 +8,10 @@
+ 	model = "TechNexion PICO-IMX7D Board and PI baseboard";
+ 	compatible = "technexion,imx7d-pico-pi", "fsl,imx7d";
+ 
++	chosen {
++		stdout-path = "serial4:115200n8";
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";
+-- 
+2.20.1
+
