@@ -15,7 +15,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyS0,57600";
+		bootargs = "console=ttyS0,115200";
 	};
 
 	leds {
@@ -150,15 +150,20 @@
 				reg = <0x30000 0x10000>;
 			};
 
-			factory: partition@40000 {
-				label = "factory";
+			partition@40000 {
+				label = "product";
 				reg = <0x40000 0x10000>;
 			};
 
-			partition@50000 {
+			factory: partition@50000 {
+				label = "factory";
+				reg = <0x50000 0x40000>;
+			};
+
+			partition@90000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x50000 0xfb0000>;
+				reg = <0x90000 0xf70000>;
 			};
 		};
 	};
@@ -215,8 +220,7 @@
 	status = "okay";
 	phy-mode = "rgmii-rxid";
 	label = "eth1";
-	mtd-mac-address = <&factory 0xe000>;
-	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cells = <&macaddr_factory_22>;
 	nvmem-cell-names = "mac-address";
 	mac-address-increment = <5>;
 
@@ -229,8 +233,7 @@
 
 &gmac0 {
 	label = "eth0";
-	mtd-mac-address = <&factory 0xe000>;
-	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cells = <&macaddr_factory_22>;
 	nvmem-cell-names = "mac-address";
 	phy-mode = "trgmii";
 };
@@ -247,7 +250,7 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	macaddr_factory_e000: macaddr@e000 {
-		reg = <0xe000 0x6>;
+	macaddr_factory_22: macaddr@22 {
+		reg = <0x22 0x6>;
 	};
 };
