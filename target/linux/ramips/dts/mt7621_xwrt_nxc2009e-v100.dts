@@ -127,44 +127,38 @@
 	status = "disabled";
 };
 
-&spi0 {
+&nand {
 	status = "okay";
 
-	flash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-		spi-max-frequency = <50000000>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+		partition@0 {
+			label = "Bootloader";
+			reg = <0x0 0x80000>;
+		};
 
-			partition@0 {
-				label = "u-boot";
-				reg = <0x0 0x30000>;
-			};
+		partition@80000 {
+			label = "Config";
+			reg = <0x80000 0x80000>;
+		};
 
-			partition@30000 {
-				label = "u-boot-env";
-				reg = <0x30000 0x10000>;
-			};
+		factory: partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x80000>;
+			read-only;
+		};
 
-			partition@40000 {
-				label = "product";
-				reg = <0x40000 0x10000>;
-			};
+		partition@180000 {
+			label = "kernel";
+			reg = <0x180000 0x400000>;
+		};
 
-			factory: partition@50000 {
-				label = "factory";
-				reg = <0x50000 0x40000>;
-			};
-
-			partition@90000 {
-				compatible = "denx,uimage";
-				label = "firmware";
-				reg = <0x90000 0xf70000>;
-			};
+		partition@580000 {
+			label = "ubi";
+			reg = <0x580000 0x7180000>;
 		};
 	};
 };
@@ -220,7 +214,7 @@
 	status = "okay";
 	phy-mode = "rgmii-rxid";
 	label = "eth1";
-	nvmem-cells = <&macaddr_factory_22>;
+	nvmem-cells = <&macaddr_factory_4>;
 	nvmem-cell-names = "mac-address";
 	mac-address-increment = <5>;
 
@@ -233,7 +227,7 @@
 
 &gmac0 {
 	label = "eth0";
-	nvmem-cells = <&macaddr_factory_22>;
+	nvmem-cells = <&macaddr_factory_4>;
 	nvmem-cell-names = "mac-address";
 	phy-mode = "trgmii";
 };
@@ -250,7 +244,7 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	macaddr_factory_22: macaddr@22 {
-		reg = <0x22 0x6>;
+	macaddr_factory_4: macaddr@4 {
+		reg = <0x4 0x6>;
 	};
 };
