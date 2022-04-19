@@ -43,6 +43,7 @@ PKG_ABI_VERSION:=$(patsubst %-stable,%,$(PKG_VERSION)).$(call version_abbrev,$(c
 
 PKG_CONFIG_DEPENDS+=\
 	CONFIG_WOLFSSL_HAS_AFALG \
+	CONFIG_WOLFSSL_HAS_CPU_CRYPTO \
 	CONFIG_WOLFSSL_HAS_DEVCRYPTO_AES \
 	CONFIG_WOLFSSL_HAS_DEVCRYPTO_CBC \
 	CONFIG_WOLFSSL_HAS_DEVCRYPTO_FULL
@@ -59,6 +60,7 @@ endef
 define Package/libwolfssl
 $(call Package/libwolfssl/Default)
   TITLE:=wolfSSL library
+  PKGFLAGS:=nonshared
   MENU:=1
   PROVIDES:=libcyassl
   DEPENDS:=+WOLFSSL_HAS_DEVCRYPTO:kmod-cryptodev +WOLFSSL_HAS_AFALG:kmod-crypto-user
@@ -131,6 +133,15 @@ endif
 ifeq ($(CONFIG_WOLFSSL_HAS_WPAS),y)
 CONFIGURE_ARGS += \
 	--enable-wpas --enable-fortress --enable-fastmath
+endif
+
+ifdef CONFIG_WOLFSSL_HAS_CPU_CRYPTO
+    ifdef CONFIG_aarch64
+	CONFIGURE_ARGS += --enable-armasm
+	TARGET_CFLAGS:=$(TARGET_CFLAGS:-mcpu%=-mcpu%+crypto)
+    else ifdef CONFIG_TARGET_x86_64
+	CONFIGURE_ARGS += --enable-intelasm
+    endif
 endif
 
 define Build/InstallDev
