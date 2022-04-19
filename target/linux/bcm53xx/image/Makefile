@@ -435,6 +435,15 @@ define Device/tenda_ac9
 endef
 TARGET_DEVICES += tenda_ac9
 
+define Device/ubnt_unifi_switch8
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := Unifi Switch 8
+  DEVICE_DTS := bcm53340-ubnt-unifi-switch8
+  KERNEL_INITRAMFS_SUFFIX := .bin
+  KERNEL_INITRAMFS  := kernel-bin | append-dtb
+endef
+TARGET_DEVICES += ubnt_unifi_switch8
+
 define Device/tplink_archer-c5-v2
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer C5
