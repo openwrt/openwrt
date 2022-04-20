@@ -1,8 +1,6 @@
-Index: linux-5.15.31/net/ethernet/eth.c
-===================================================================
---- linux-5.15.31.orig/net/ethernet/eth.c
-+++ linux-5.15.31/net/ethernet/eth.c
-@@ -544,6 +544,63 @@ int eth_platform_get_mac_address(struct
+--- a/net/ethernet/eth.c
++++ b/net/ethernet/eth.c
+@@ -545,6 +545,63 @@ int eth_platform_get_mac_address(struct
  }
  EXPORT_SYMBOL(eth_platform_get_mac_address);
  
@@ -64,9 +62,9 @@ Index: linux-5.15.31/net/ethernet/eth.c
 +};
 +
  /**
-  * nvmem_get_mac_address - Obtain the MAC address from an nvmem cell named
-  * 'mac-address' associated with given device.
-@@ -557,19 +614,23 @@ int nvmem_get_mac_address(struct device
+  * Obtain the MAC address from an nvmem cell named 'mac-address' associated
+  * with given device.
+@@ -558,19 +615,23 @@ int nvmem_get_mac_address(struct device
  {
  	struct nvmem_cell *cell;
  	const void *mac;
