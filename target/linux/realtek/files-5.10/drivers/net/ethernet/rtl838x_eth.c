@@ -1013,7 +1013,6 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 
 static int rtl838x_eth_stop(struct net_device *ndev)
 {
-	unsigned long flags;
 	int i;
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
@@ -2167,23 +2166,28 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 			smi_addr[0] = 0;
 			smi_addr[1] = pn;
 		}
+		if (smi_addr[0] >= MAX_SMI_BUSSES) {
+			pr_err("%s: illegal SMI bus number %d\n", __func__, smi_addr[0]);
+			return -ENODEV;
+		}
 
 		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
 			priv->sds_id[pn] = -1;
 		else {
 			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
 		}
-
 		if (pn < MAX_PORTS) {
 			priv->smi_bus[pn] = smi_addr[0];
 			priv->smi_addr[pn] = smi_addr[1];
 		} else {
 			pr_err("%s: illegal port number %d\n", __func__, pn);
+			return -ENODEV;
 		}
 
 		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
 			priv->smi_bus_isc45[smi_addr[0]] = true;
 
+		priv->phy_is_internal[pn] = false;
 		if (of_property_read_bool(dn, "phy-is-integrated")) {
 			priv->phy_is_internal[pn] = true;
 		}
@@ -2203,9 +2207,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 			continue;
 		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
 			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
-		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
 	}
-
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
 	ret = of_mdiobus_register(priv->mii_bus, mii_np);
 
