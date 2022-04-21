@@ -508,6 +508,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan"
 		;;
+	tplink,deco-m4r-v1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan:1" "5:lan:2"
+		;;
 	hiwifi,hc6361|\
 	xiaomi,mi-router-4q|\
 	zbtlink,zbt-wd323)
