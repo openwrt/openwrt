@@ -461,12 +461,6 @@ static int rtl83xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	case 2:
 		state->speed = SPEED_1000;
 		break;
-	case 3:
-		if (priv->family_id == RTL9300_FAMILY_ID
-			&& (port == 24 || port == 26)) /* Internal serdes */
-			state->speed = SPEED_2500;
-		else
-			state->speed = SPEED_100; /* Is in fact 500Mbit */
 	}
 
 	state->pause &= (MLO_PAUSE_RX | MLO_PAUSE_TX);
@@ -777,7 +771,7 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 					const struct phylink_link_state *state)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int sds_num, sds_mode;
+	int sds_num, sds_mode, forced_mode;
 	u32 reg;
 
 	pr_info("%s port %d, mode %x, phy-mode: %s, speed %d, link %d\n", __func__,
@@ -838,6 +832,16 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	default:
 		reg |= 2 << 3;
 		break;
+	}
+
+	if (state->interface == PHY_INTERFACE_MODE_HSGMII) {
+		forced_mode = rtl9300_sds_field_r(sds_num, 0x1f, 9, 11, 7);
+		pr_info("%s CURRENT FORCED MODE %d\n", __func__, forced_mode);
+
+		if ((state->speed == SPEED_2500) && (forced_mode != 0x12))
+			rtl9300_rtl8226_mode_set(port, sds_num, PHY_INTERFACE_MODE_HSGMII);
+		if ((state->speed != SPEED_2500) && (forced_mode == 0x12))
+			rtl9300_rtl8226_mode_set(port, sds_num, PHY_INTERFACE_MODE_SGMII);
 	}
 
 	if (state->link)
