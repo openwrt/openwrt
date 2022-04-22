@@ -464,12 +464,6 @@ static int rtl83xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	case 2:
 		state->speed = SPEED_1000;
 		break;
-	case 3:
-		if (priv->family_id == RTL9300_FAMILY_ID
-			&& (port == 24 || port == 26)) /* Internal serdes */
-			state->speed = SPEED_2500;
-		else
-			state->speed = SPEED_100; /* Is in fact 500Mbit */
 	}
 
 	state->pause &= (MLO_PAUSE_RX | MLO_PAUSE_TX);
