@@ -255,6 +255,14 @@ define Device/ubnt_nanobeam-ac-xc
 endef
 TARGET_DEVICES += ubnt_nanobeam-ac-xc
 
+define Device/ubnt_nanobeam-m5
+  $(Device/ubnt-xw)
+  DEVICE_MODEL := NanoBeam M5
+  DEVICE_PACKAGES += rssileds
+  SUPPORTED_DEVICES += loco-m-xw
+endef
+TARGET_DEVICES += ubnt_nanobeam-m5
+
 define Device/ubnt_nanobridge-m
   $(Device/ubnt-xm)
   SOC := ar7241
