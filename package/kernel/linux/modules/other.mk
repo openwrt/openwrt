@@ -64,6 +64,24 @@ endef
 
 $(eval $(call KernelPackage,bluetooth))
 
+define KernelPackage/btsdio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Bluetooth SDIO HCI driver
+  DEPENDS:=+kmod-bluetooth +kmod-mmc
+  KCONFIG:= \
+	CONFIG_BT_HCIBTSDIO \
+  $(call AddDepends/rfkill)
+  FILES:= \
+	$(LINUX_DIR)/drivers/bluetooth/btsdio.ko
+  AUTOLOAD:=$(call AutoProbe,btsdio)
+endef
+
+define KernelPackage/btsdio/description
+ Kernel support for Bluetooth SDIO HCI
+endef
+
+$(eval $(call KernelPackage,btsdio))
+
 define KernelPackage/ath3k
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ATH3K Kernel Module support
