@@ -8,7 +8,11 @@ jobs:
       matrix:
        include:
          - name: armvirt-64
+           target: armvirt
+           subtarget: 64
          - name: malta-32
+           target: malta
+           subtarget: be
 
     steps:
       - name: Check out repository code
@@ -46,23 +50,11 @@ jobs:
             xsltproc \
             zlib1g-dev
 
-      - name: Create config (armvirt-64)
-        if: ${{ matrix.name == 'armvirt-64' }}
+      - name: Create config
         run: |
-          echo CONFIG_TARGET_armvirt=y >> .config
-          echo CONFIG_TARGET_armvirt_64=y >> .config
-          echo CONFIG_TARGET_armvirt_64_Default=y >> .config
-          echo CONFIG_FEED_luci=y >> .config
-          echo CONFIG_FEED_packages=y >> .config
-          echo CONFIG_FEED_routing=y >> .config
-          echo CONFIG_FEED_telephony=y >> .config
-
-      - name: Create config (malta-32)
-        if: ${{ matrix.name == 'malta-32' }}
-        run: |
-          echo CONFIG_TARGET_malta=y >> .config
-          echo CONFIG_TARGET_malta_be=y >> .config
-          echo CONFIG_TARGET_malta_be_Default=y >> .config
+          echo CONFIG_TARGET_${{ matrix.target }}=y >> .config
+          echo CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}=y >> .config
+          echo CONFIG_TARGET_${{ matrix.target }}_${{ matrix.subtarget }}_Default=y >> .config
           echo CONFIG_FEED_luci=y >> .config
           echo CONFIG_FEED_packages=y >> .config
           echo CONFIG_FEED_routing=y >> .config
