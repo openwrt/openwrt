@@ -8,16 +8,40 @@ function init_firewall() {
 	zone_name=$(uci -q get firewall.@zone[1].name)
 	[ "$zone_name" = "wan" ] || return 0
 
+	uci set firewall.@defaults[0].flow_offloading='1'
 	uci set firewall.@zone[1].input='ACCEPT'
 	uci set firewall.@zone[1].output='ACCEPT'
 	uci set firewall.@zone[1].forward='ACCEPT'
 	uci commit firewall
-	fw3 reload
+	fw4 reload
 }
 
 function init_network() {
-	uci set network.globals.ula_prefix='fd00:cc:10::/48'
+	uci set network.globals.ula_prefix='fd00:ab:cd::/48'
 	uci commit network
+}
+
+function init_nft-qos() {
+	uci set nft-qos.default=default
+	uci set nft-qos.default.limit_enable='0'
+	uci set nft-qos.default.limit_mac_enable='0'
+	uci set nft-qos.default.priority_enable='0'
+	uci commit nft-qos
+}
+
+function disable_ipv6() {
+	uci set 'network.lan.ipv6=off'
+	uci set 'network.lan.delegate=0'
+	uci set 'network.lan.force_link=0'
+
+	uci set 'network.wan.ipv6=0'
+	uci set 'network.wan.delegate=0'
+	uci delete 'network.wan6'
+	uci commit network
+
+	uci set 'dhcp.lan.dhcpv6=disabled'
+	uci set 'dhcp.lan.ra=disabled'
+	uci commit dhcp
 }
 
 function init_system() {
@@ -54,7 +78,7 @@ function init_luci_stat() {
 function init_watchcat() {
 	uci -q delete watchcat.@watchcat[-1]
 	uci commit watchcat
-	service watchcat reload
+	/etc/init.d/watchcat reload
 }
 
 function init_openssh() {
@@ -63,7 +87,7 @@ function init_openssh() {
 
 	sed "s/^#PermitRootLogin.*/PermitRootLogin yes/g" $conf -i.orig
 	sed "s/^#\s*Banner/Banner/g" $conf -i
-	service sshd restart
+	/etc/init.d/sshd reload
 }
 
 function init_theme() {
@@ -83,6 +107,17 @@ function init_root_home() {
 	[ -x /bin/bash ] || return 0
 	grep "^root.*bash" /etc/passwd >/dev/null && return 0
 	sed "s/^\(root.*\/\)ash/\1bash/g" /etc/passwd -i-
+}
+
+function init_button() {
+	local CONF=/etc/triggerhappy/triggers.d/example.conf
+	grep "BTN_1" ${CONF} >/dev/null && return 0
+	[ -f ${CONF} ] && echo 'BTN_1 1 /sbin/reboot' >> ${CONF}
+}
+
+function clean_fstab() {
+	while uci -q del fstab.@mount[-1]; do true; done
+	uci commit fstab
 }
 
 # ---------------------------------------------------------
@@ -106,6 +141,7 @@ HOSTNAME="FriendlyWrt"
 
 if [ "${1,,}" = "all" ]; then
 	init_network
+	init_nft-qos
 	init_firewall
 	init_system
 	init_samba4
@@ -115,5 +151,7 @@ if [ "${1,,}" = "all" ]; then
 	init_openssh
 	init_theme
 	init_root_home
+	init_button
+	clean_fstab
 fi
 

@@ -17,8 +17,9 @@ set_interface_core() {
 	[ -z "${device}" ] && device="$interface"
 
 	local irq=$(get_device_irq "$device")
+	[ -z "$irq" ] && return 0
 
-	echo "${core_mask}" > /proc/irq/${irq}/smp_affinity
+	echo -n "${core_mask}" > /proc/irq/${irq}/smp_affinity
 }
 
 case "$(board_name)" in
@@ -26,12 +27,28 @@ friendlyarm,nanopi-r2c|\
 friendlyarm,nanopi-r2s|\
 friendlyelec,nanopi-r2)
 	set_interface_core 2 "eth0"
+	echo d > /sys/class/net/eth0/queues/rx-0/rps_cpus
 	set_interface_core 4 "eth1" "xhci-hcd:usb3"
+	echo b > /sys/class/net/eth1/queues/rx-0/rps_cpus
 	;;
 friendlyarm,nanopi-r4s|\
 friendlyelec,nanopi-r4s)
 	set_interface_core 10 "eth0"
+	echo 3f > /sys/class/net/eth0/queues/rx-0/rps_cpus
 	set_interface_core 20 "eth1"
+	echo 3f > /sys/class/net/eth1/queues/rx-0/rps_cpus
+	;;
+friendlyelec,nanopi-r5s)
+	set_interface_core 8 "eth0"
+	echo f > /sys/class/net/eth0/queues/rx-0/rps_cpus
+	set_interface_core 4 "eth1-0"
+	set_interface_core 4 "eth1-16"
+	set_interface_core 4 "eth1-18"
+	echo b > /sys/class/net/eth1/queues/rx-0/rps_cpus
+	set_interface_core 2 "eth2-0"
+	set_interface_core 2 "eth2-16"
+	set_interface_core 2 "eth2-18"
+	echo d > /sys/class/net/eth2/queues/rx-0/rps_cpus
 	;;
 esac
 
