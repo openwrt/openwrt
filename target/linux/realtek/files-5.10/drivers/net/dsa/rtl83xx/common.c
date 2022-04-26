@@ -1595,11 +1595,11 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		sw_w32_mask(0, BIT(1) | BIT(21) | BIT(17), priv->r->isr_glb_src);
 
 		/* Set IMR mask for each port for link fault/RX error/UPD */
-		sw_w32(priv->irq_mask, RTL930X_IMR_SERDES_LINK_FAULT_P);
+		sw_w32(priv->irq_mask & priv->used_ports, RTL930X_IMR_SERDES_LINK_FAULT_P);
 		sw_w32(priv->irq_mask, RTL930X_ISR_SERDES_LINK_FAULT_P);
-		sw_w32(priv->irq_mask, RTL930X_IMR_SERDES_RX_SYM_ERR);
+		sw_w32(0, RTL930X_IMR_SERDES_RX_SYM_ERR);
 		sw_w32(priv->irq_mask, RTL930X_ISR_SERDES_RX_SYM_ERR);
-		sw_w32(priv->irq_mask, RTL930X_IMR_SDS_UPD_PHYSTS);
+		sw_w32(0, RTL930X_IMR_SDS_UPD_PHYSTS);
 		sw_w32(priv->irq_mask, RTL930X_ISR_SDS_UPD_PHYSTS);
 
 		err = request_irq(priv->link_state_irq, rtl930x_switch_irq,
