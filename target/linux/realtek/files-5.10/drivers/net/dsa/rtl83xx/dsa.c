@@ -479,8 +479,9 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	u64 link;
 	u64 media;
 
-	if (port < 0 || port > priv->cpu_port)
-		return -EINVAL;
+	state->link = 0;
+	state->speed = SPEED_UNKNOWN;
+	state->duplex = DUPLEX_UNKNOWN;
 
 	/*
 	 * On the RTL9300 for at least the RTL8226B PHY, the MAC-side link
@@ -488,7 +489,6 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	 * This would not be necessary for ports connected e.g. to RTL8218D
 	 * PHYs.
 	 */
-	state->link = 0;
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
 	if (link & BIT_ULL(port))
@@ -496,15 +496,13 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 
 	if (priv->family_id == RTL9310_FAMILY_ID)
 		media = priv->r->get_port_reg_le(RTL931X_MAC_LINK_MEDIA_STS);
-
-	if (priv->family_id == RTL9300_FAMILY_ID)
+	else if (priv->family_id == RTL9300_FAMILY_ID)
 		media = sw_r32(RTL930X_MAC_LINK_MEDIA_STS);
-
-	if (media & BIT_ULL(port))
-		state->link = 1;
 
 	pr_debug("%s: link state port %d: %llx, media %llx\n", __func__, port,
 		 link & BIT_ULL(port), media);
+	if (!state->link)
+		return 0;
 
 	state->duplex = 0;
 	if (priv->r->get_port_reg_le(priv->r->mac_link_dup_sts) & BIT_ULL(port))
@@ -537,6 +535,7 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 		pr_err("%s: unknown speed: %d\n", __func__, (u32)speed & 0xf);
 	}
 
+	// TODO: This is only until this is better understood
 	if (priv->family_id == RTL9310_FAMILY_ID
 		&& (port >= 52 || port <= 55)) { /* Internal serdes */
 			state->speed = SPEED_10000;
@@ -786,32 +785,10 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	sds_num = priv->ports[port].sds_num;
 	pr_info("%s SDS is %d\n", __func__, sds_num);
-	if (sds_num >= 0) {
-		switch (state->interface) {
-		case PHY_INTERFACE_MODE_HSGMII:
-			sds_mode = 0x12;
-			break;
-		case PHY_INTERFACE_MODE_1000BASEX:
-			sds_mode = 0x04;
-			break;
-		case PHY_INTERFACE_MODE_XGMII:
-			sds_mode = 0x10;
-			break;
-		case PHY_INTERFACE_MODE_10GBASER:
-		case PHY_INTERFACE_MODE_10GKR:
-			sds_mode = 0x1b; // 10G 1000X Auto
-			break;
-		case PHY_INTERFACE_MODE_USXGMII:
-			sds_mode = 0x0d;
-			break;
-		default:
-			pr_err("%s: unknown serdes mode: %s\n",
-			       __func__, phy_modes(state->interface));
-			return;
-		}
-		if (state->interface == PHY_INTERFACE_MODE_10GBASER)
-			rtl9300_serdes_setup(sds_num, state->interface);
-	}
+
+	if (state->interface == PHY_INTERFACE_MODE_1000BASEX
+		|| state->interface == PHY_INTERFACE_MODE_10GBASER)
+		rtl9300_configure_serdes(port, sds_num, state->interface);
 
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	reg &= ~(0xf << 3);
