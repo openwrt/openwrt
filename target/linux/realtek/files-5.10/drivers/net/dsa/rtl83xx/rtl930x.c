@@ -689,6 +689,7 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
 	u32 ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
+	u32 media = sw_r32(RTL930X_MAC_LINK_MEDIA_STS);
 	static unsigned int irq_retry = 3;
 	u32 link;
 	int i;
@@ -696,12 +697,17 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 	/* Clear status */
 	sw_w32(ports, RTL930X_ISR_PORT_LINK_STS_CHG);
 
+	/*
+	 * It is not uncommon having to read the link status register twice.
+	 * At least the 93xx needs this with an external RTL8226 PHY, but
+	 * likely all configurations.
+	 */
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	pr_debug("%s link status: %08x, media %08x\n", __func__, link, media);
+
 	for (i = 0; i < RTL930X_CPU_PORT; i++) {
 		if (ports & BIT(i)) {
-			/* Read the register twice because of issues with latency at least
-			 * with the external RTL8226 PHY on the XGS1210 */
-			link = sw_r32(RTL930X_MAC_LINK_STS);
-			link = sw_r32(RTL930X_MAC_LINK_STS);
 			if (link & BIT(i))
 				dsa_port_phylink_mac_change(ds, i, true);
 			else
