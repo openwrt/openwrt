@@ -682,7 +682,7 @@ define Device/tplink_tl-wr1043nd-v1
   SOC := ar9132
   DEVICE_MODEL := TL-WR1043N/ND
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-switch-rtl8366rb
   TPLINK_HWID := 0x10430001
   SUPPORTED_DEVICES += tl-wr1043nd
 endef
