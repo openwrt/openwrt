@@ -2898,7 +2898,7 @@ define Device/xwrt_fm10-ax-nand
   DEVICE_VENDOR := XWRT
   DEVICE_MODEL := FM10-AX
   DEVICE_VARIANT := NAND
-  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-ledtrig-usbport lte-modem-xwrt-fm10-ax-nand
 endef
 TARGET_DEVICES += xwrt_fm10-ax-nand
 

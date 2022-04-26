@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+# (C) 2012 Daniel Golle, Allnet GmbH <dgolle@allnet.de>
+
+START=19
+STOP=90
+
+boot() {
+	echo "432" >/sys/class/gpio/export
+	echo "out" >/sys/class/gpio/gpio432/direction
+
+	echo "433" >/sys/class/gpio/export
+	echo "out" >/sys/class/gpio/gpio433/direction
+
+	echo "422" >/sys/class/gpio/export
+	echo "out" >/sys/class/gpio/gpio422/direction
+}
