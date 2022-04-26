@@ -690,17 +690,21 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 	struct dsa_switch *ds = dev_id;
 	u32 ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
 	u32 link;
+	u32 media = sw_r32(RTL930X_MAC_LINK_MEDIA_STS);
 	int i;
+	static int err_cntr = 3;
 
 	/* Clear status */
 	sw_w32(ports, RTL930X_ISR_PORT_LINK_STS_CHG);
 
+	/* Read the register twice because of issues with latency at least
+	 * with the external RTL8226 PHY on the XGS1210 */
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	pr_debug("%s link status: %08x, media %08x\n", __func__, link, media);
+
 	for (i = 0; i < RTL930X_CPU_PORT; i++) {
 		if (ports & BIT(i)) {
-			/* Read the register twice because of issues with latency at least
-			 * with the external RTL8226 PHY on the XGS1210 */
-			link = sw_r32(RTL930X_MAC_LINK_STS);
-			link = sw_r32(RTL930X_MAC_LINK_STS);
 			if (link & BIT(i))
 				dsa_port_phylink_mac_change(ds, i, true);
 			else
@@ -713,6 +717,10 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 	if (ports) {
 		pr_info("%s link faults: %08x\n", __func__, ports);
 		sw_w32(ports, RTL930X_ISR_SERDES_LINK_FAULT_P);
+		if (err_cntr)
+			err_cntr--;
+		if (!err_cntr)
+			sw_w32(0, RTL930X_IMR_SERDES_LINK_FAULT_P);
 	}
 
 	// Handle SDS RX symbol errors
@@ -785,8 +793,6 @@ int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 		err = -EIO;
 	}
 	*val = (sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_2) & 0xffff);
-
-	pr_debug("%s: port %d, page: %d, reg: %x, val: %x\n", __func__, port, page, reg, *val);
 
 	mutex_unlock(&smi_lock);
 
@@ -2431,6 +2437,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	struct device_node *node;
 
 	pr_info("%s called\n", __func__);
+
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
 		pr_info("%s No compatible LED node found\n", __func__);
