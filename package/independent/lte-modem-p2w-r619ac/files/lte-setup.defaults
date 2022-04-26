@@ -1,0 +1,22 @@
+#!/bin/sh
+
+test -f /etc/config/independent && exit 0
+
+uci -q batch <<-EOT
+	set network.ltewan=interface
+	set network.ltewan.proto='dhcp'
+	set network.ltewan.ifname='eth2'
+	set network.ltewan.metric='800'
+	commit network
+	EOT
+
+[ x`uci get firewall.@zone[1].name 2>/dev/null` = xwan ] && {
+	wans="$(uci get firewall.@zone[1].network 2>/dev/null) ltewan"
+	wans=$(for w in $wans; do echo $w; done | sort | uniq)
+	wans=`echo $wans`
+	uci set firewall.@zone[1].network="$wans"
+	uci commit firewall
+}
+
+touch /etc/config/independent
+exit 0
