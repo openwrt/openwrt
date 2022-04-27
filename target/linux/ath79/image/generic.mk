@@ -998,7 +998,7 @@ define Device/dlink_dir-825-b1
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
 	check-size | append-metadata
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-leds-reset kmod-owl-loader
+	kmod-leds-reset kmod-owl-loader kmod-switch-rtl8366s
   SUPPORTED_DEVICES += dir-825-b1
 endef
 TARGET_DEVICES += dlink_dir-825-b1
@@ -1709,7 +1709,7 @@ define Device/netgear_wndr3x00
   $(Device/netgear_generic)
   SOC := ar7161
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-leds-reset kmod-owl-loader
+	kmod-leds-reset kmod-owl-loader kmod-switch-rtl8366s
 endef
 
 define Device/netgear_wndr3700
