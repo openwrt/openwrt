@@ -62,13 +62,6 @@ UBOOT_TARGETS:= \
 	espressobin \
 	uDPU
 
-define Build/Configure
-	# enable additional options beyond <device>_defconfig
-	echo CONFIG_CMD_SETEXPR=y >> $(PKG_BUILD_DIR)/configs/$(UBOOT_CONFIG)_defconfig
-
-	$(call Build/Configure/U-Boot)
-endef
-
 define Package/u-boot/install
 	$(if $(findstring cortexa53,$(BUILD_SUBTARGET)),,$(Package/u-boot/install/default))
 endef
