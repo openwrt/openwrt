@@ -1,3 +1,5 @@
+include common.mk
+
 define Device/Default
   PROFILES := Default
   FILESYSTEMS := squashfs ext4
