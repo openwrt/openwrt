@@ -17,21 +17,6 @@ enable_image_metadata_check() {
 }
 enable_image_metadata_check
 
-apalis_copy_config() {
-	apalis_mount_boot
-	cp -af "$UPGRADE_BACKUP" "/boot/$BACKUP_FILE"
-	sync
-	umount /boot
-}
-
-apalis_do_upgrade() {
-	apalis_mount_boot
-	get_image "$1" | tar Oxf - sysupgrade-apalis/kernel > /boot/uImage
-	get_image "$1" | tar Oxf - sysupgrade-apalis/root > $(rootpart_from_uuid)
-	sync
-	umount /boot
-}
-
 platform_check_image() {
 	local board=$(board_name)
 
@@ -109,7 +94,7 @@ platform_do_upgrade() {
 	toradex,apalis_imx6q-eval|\
 	toradex,apalis_imx6q-ixora|\
 	toradex,apalis_imx6q-ixora-v1.1)
-		apalis_do_upgrade "$1"
+		imx_sdcard_do_upgrade "$1"
 		;;
 	esac
 }
@@ -121,7 +106,7 @@ platform_copy_config() {
 	toradex,apalis_imx6q-eval|\
 	toradex,apalis_imx6q-ixora|\
 	toradex,apalis_imx6q-ixora-v1.1)
-		apalis_copy_config
+		imx_sdcard_copy_config
 		;;
 	esac
 }
@@ -133,10 +118,7 @@ platform_pre_upgrade() {
 	toradex,apalis_imx6q-eval|\
 	toradex,apalis_imx6q-ixora|\
 	toradex,apalis_imx6q-ixora-v1.1)
-		[ -z "$UPGRADE_BACKUP" ] && {
-			jffs2reset -y
-			umount /overlay
-		}
+		imx_sdcard_pre_upgrade
 		;;
 	esac
 }
