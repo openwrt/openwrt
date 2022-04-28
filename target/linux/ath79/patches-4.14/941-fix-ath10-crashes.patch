@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ath/ath10k/pci.c
++++ b/drivers/net/wireless/ath/ath10k/pci.c
+@@ -1940,8 +1940,6 @@ static int ath10k_pci_bmi_wait(struct at
+ 			ret = 0;
+ 			goto out;
+ 		}
+-
+-		schedule();
+ 	}
+ 
+ 	ret = -ETIMEDOUT;
