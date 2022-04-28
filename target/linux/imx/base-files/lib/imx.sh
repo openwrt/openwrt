@@ -41,9 +41,12 @@ imx_sdcard_do_upgrade() {
 	board_dir="${board_dir%/}"
 
 	imx_sdcard_mount_boot
-	get_image "$1" | tar Oxf - ${board_dir}/kernel > /boot/uImage
-	get_image "$1" | tar Oxf - ${board_dir}/root > $(rootpart_from_uuid)
-	sync
+	get_image "$1" | tar Oxf - ${board_dir}/kernel > /boot/uImage-new && \
+		mv /boot/uImage-new /boot/uImage && \
+		sync && \
+		get_image "$1" | tar Oxf - ${board_dir}/root > $(rootpart_from_uuid) && \
+		sync
+
 	umount /boot
 }
 
