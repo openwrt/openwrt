@@ -193,6 +193,27 @@ endef
 $(eval $(call KernelPackage,input-touchscreen-ads7846))
 
 
+define KernelPackage/input-touchscreen-edt-ft5x06
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=EDT FT5x06 and Focaltech FT6236 based touchscreens
+  DEPENDS:=+kmod-i2c-core +kmod-input-core
+  KCONFIG:= \
+	CONFIG_INPUT_TOUCHSCREEN=y \
+	CONFIG_TOUCHSCREEN_PROPERTIES=y@lt5.13 \
+	CONFIG_TOUCHSCREEN_EDT_FT5X06
+  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/edt-ft5x06.ko \
+	$(LINUX_DIR)/drivers/input/touchscreen/of_touchscreen.ko@lt5.13
+  AUTOLOAD:=$(call AutoProbe,edt-ft5x06)
+endef
+
+define KernelPackage/input-touchscreen-edt-ft5x06/description
+  Kernel module for EDT FT5206, FT5306, FT5406, FT5506, Evervision FT5726 \
+  and Focaltech FT6236 based touchscreens
+endef
+
+$(eval $(call KernelPackage,input-touchscreen-edt-ft5x06))
+
+
 define KernelPackage/keyboard-imx
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=IMX keypad support
