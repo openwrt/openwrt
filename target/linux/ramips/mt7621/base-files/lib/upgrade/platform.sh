@@ -113,6 +113,7 @@ platform_do_upgrade() {
 	zyxel,nr7101)
 		fw_setenv CheckBypass 0
 		fw_setenv Image1Stable 0
+		[ "$(fw_printenv -n BootingFlag)" = "0" ] || fw_setenv BootingFlag 0
 		CI_KERNPART="Kernel"
 		nand_do_upgrade "$1"
 		;;
