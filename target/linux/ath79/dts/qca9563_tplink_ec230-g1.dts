@@ -1,0 +1,170 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca956x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "tplink,ec230-g1", "qca,qca9563";
+	model = "TP-Link EC230-G1";
+
+	aliases {
+		label-mac-device = &eth0;
+
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "green:power";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		wlan2g {
+			label = "green:wlan2g";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wlan5g {
+			label = "green:wlan5g";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		lan {
+			label = "green:lan";
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			label = "green:wan";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_fail {
+			label = "amber:wan";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "green:wps";
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "WPS button";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x020000>;
+				read-only;
+			};
+
+			partition@20000 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x020000 0xfa0000>;
+			};
+
+			partition@fc0000 {
+				label = "config";
+				reg = <0xfc0000 0x010000>;
+				read-only;
+			};
+
+			partition@fd0000 {
+				label = "romfile";
+				reg = <0xfd0000 0x010000>;
+				read-only;
+			};
+
+			rom: partition@fe0000 {
+				label = "rom";
+				reg = <0xfe0000 0x010000>;
+				read-only;
+			};
+
+			art: partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x010000>;
+				read-only;
+			};
+		};
+	};
+};
+
+
+&pcie {
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy-mask = <0>;
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "sgmii";
+		qca,mib-poll-interval = <500>;
+
+		qca,ar8327-initvals = <
+			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
+			0x7c 0x0000007e /* PORT0_STATUS */
+			>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+
+	mtd-mac-address = <&rom 0xf100>;
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+	mtd-mac-address = <&rom 0xf100>;
+};
