@@ -148,7 +148,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "3:lan" "4:lan" "6@eth0"
 		;;
-	xiaomi,mi-router-4a-100m)
+	xiaomi,mi-router-4a-100m|\
+	xiaomi,mi-router-4a-100m-intl)
 		ucidef_add_switch "switch0" \
 			"4:lan:1" "2:lan:2" "0:wan" "6@eth0"
 		;;
@@ -272,6 +273,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		;;
 	xiaomi,mi-router-4a-100m|\
+	xiaomi,mi-router-4a-100m-intl|\
 	xiaomi,mi-router-4c)
 		wan_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
