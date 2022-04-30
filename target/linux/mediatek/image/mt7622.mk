@@ -228,7 +228,7 @@ define Device/ubnt_unifi-6-lr
   DEVICE_DTS_CONFIG := config@1
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915e kmod-leds-ubnt-ledbar
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr
 
@@ -238,7 +238,7 @@ define Device/ubnt_unifi-6-lr-ubootmod
   DEVICE_VARIANT := U-Boot mod
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-ubootmod
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915e kmod-leds-ubnt-ledbar
   KERNEL := kernel-bin | lzma
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
