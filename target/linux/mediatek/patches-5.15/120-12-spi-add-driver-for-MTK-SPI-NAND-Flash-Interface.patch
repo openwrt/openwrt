@@ -33,11 +33,9 @@ Changes since v5:
  3 files changed, 1481 insertions(+)
  create mode 100644 drivers/spi/spi-mtk-snfi.c
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 6c28ca232444..83c3c2b57a22 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -590,6 +590,16 @@ config SPI_MTK_NOR
+@@ -530,6 +530,16 @@ config SPI_MTK_NOR
  	  SPI interface as well as several SPI NOR specific instructions
  	  via SPI MEM interface.
  
@@ -54,11 +52,9 @@ index 6c28ca232444..83c3c2b57a22 100644
  config SPI_NPCM_FIU
  	tristate "Nuvoton NPCM FLASH Interface Unit"
  	depends on ARCH_NPCM || COMPILE_TEST
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 3aa28ed3f761..51541ff17e67 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -76,6 +76,7 @@ obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52xx.o
+@@ -71,6 +71,7 @@ obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52x
  obj-$(CONFIG_SPI_MT65XX)                += spi-mt65xx.o
  obj-$(CONFIG_SPI_MT7621)		+= spi-mt7621.o
  obj-$(CONFIG_SPI_MTK_NOR)		+= spi-mtk-nor.o
@@ -66,9 +62,6 @@ index 3aa28ed3f761..51541ff17e67 100644
  obj-$(CONFIG_SPI_MXIC)			+= spi-mxic.o
  obj-$(CONFIG_SPI_MXS)			+= spi-mxs.o
  obj-$(CONFIG_SPI_NPCM_FIU)		+= spi-npcm-fiu.o
-diff --git a/drivers/spi/spi-mtk-snfi.c b/drivers/spi/spi-mtk-snfi.c
-new file mode 100644
-index 000000000000..2c556e304673
 --- /dev/null
 +++ b/drivers/spi/spi-mtk-snfi.c
 @@ -0,0 +1,1470 @@
@@ -1542,6 +1535,3 @@ index 000000000000..2c556e304673
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Chuanhong Guo <gch981213@gmail.com>");
 +MODULE_DESCRIPTION("MeidaTek SPI-NAND Flash Controller Driver");
--- 
-2.35.1
-

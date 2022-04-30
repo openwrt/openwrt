@@ -23,11 +23,9 @@ Link: https://lore.kernel.org/linux-mtd/20220127091808.1043392-6-miquel.raynal@b
  include/linux/spi/spi-mem.h       | 11 -----------
  4 files changed, 2 insertions(+), 34 deletions(-)
 
-diff --git a/drivers/spi/spi-cadence-quadspi.c b/drivers/spi/spi-cadence-quadspi.c
-index 101cc71bffa7..2c98d6a9a2aa 100644
 --- a/drivers/spi/spi-cadence-quadspi.c
 +++ b/drivers/spi/spi-cadence-quadspi.c
-@@ -1252,10 +1252,7 @@ static bool cqspi_supports_mem_op(struct spi_mem *mem,
+@@ -1230,10 +1230,7 @@ static bool cqspi_supports_mem_op(struct
  	if (!(all_true || all_false))
  		return false;
  
@@ -39,11 +37,9 @@ index 101cc71bffa7..2c98d6a9a2aa 100644
  }
  
  static int cqspi_of_get_flash_pdata(struct platform_device *pdev,
-diff --git a/drivers/spi/spi-mem.c b/drivers/spi/spi-mem.c
-index 86e6597bc3dc..ed966d8129eb 100644
 --- a/drivers/spi/spi-mem.c
 +++ b/drivers/spi/spi-mem.c
-@@ -160,16 +160,6 @@ static bool spi_mem_check_buswidth(struct spi_mem *mem,
+@@ -160,16 +160,6 @@ static bool spi_mem_check_buswidth(struc
  	return true;
  }
  
@@ -60,11 +56,9 @@ index 86e6597bc3dc..ed966d8129eb 100644
  bool spi_mem_default_supports_op(struct spi_mem *mem,
  				 const struct spi_mem_op *op)
  {
-diff --git a/drivers/spi/spi-mxic.c b/drivers/spi/spi-mxic.c
-index 45889947afed..e895df09896a 100644
 --- a/drivers/spi/spi-mxic.c
 +++ b/drivers/spi/spi-mxic.c
-@@ -335,8 +335,6 @@ static int mxic_spi_data_xfer(struct mxic_spi *mxic, const void *txbuf,
+@@ -331,8 +331,6 @@ static int mxic_spi_data_xfer(struct mxi
  static bool mxic_spi_mem_supports_op(struct spi_mem *mem,
  				     const struct spi_mem_op *op)
  {
@@ -73,7 +67,7 @@ index 45889947afed..e895df09896a 100644
  	if (op->data.buswidth > 8 || op->addr.buswidth > 8 ||
  	    op->dummy.buswidth > 8 || op->cmd.buswidth > 8)
  		return false;
-@@ -348,13 +346,7 @@ static bool mxic_spi_mem_supports_op(struct spi_mem *mem,
+@@ -344,13 +342,7 @@ static bool mxic_spi_mem_supports_op(str
  	if (op->addr.nbytes > 7)
  		return false;
  
@@ -88,11 +82,9 @@ index 45889947afed..e895df09896a 100644
  }
  
  static int mxic_spi_mem_exec_op(struct spi_mem *mem,
-diff --git a/include/linux/spi/spi-mem.h b/include/linux/spi/spi-mem.h
-index 38e5d45c9842..4a1bfe689872 100644
 --- a/include/linux/spi/spi-mem.h
 +++ b/include/linux/spi/spi-mem.h
-@@ -330,10 +330,6 @@ void spi_controller_dma_unmap_mem_op_data(struct spi_controller *ctlr,
+@@ -330,10 +330,6 @@ void spi_controller_dma_unmap_mem_op_dat
  
  bool spi_mem_default_supports_op(struct spi_mem *mem,
  				 const struct spi_mem_op *op);
@@ -103,7 +95,7 @@ index 38e5d45c9842..4a1bfe689872 100644
  #else
  static inline int
  spi_controller_dma_map_mem_op_data(struct spi_controller *ctlr,
-@@ -356,13 +352,6 @@ bool spi_mem_default_supports_op(struct spi_mem *mem,
+@@ -356,13 +352,6 @@ bool spi_mem_default_supports_op(struct
  {
  	return false;
  }
@@ -117,6 +109,3 @@ index 38e5d45c9842..4a1bfe689872 100644
  #endif /* CONFIG_SPI_MEM */
  
  int spi_mem_adjust_op_size(struct spi_mem *mem, struct spi_mem_op *op);
--- 
-2.35.1
-

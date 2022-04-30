@@ -14,11 +14,9 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  drivers/mtd/nand/ecc-mtk.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/nand/ecc-mtk.c b/drivers/mtd/nand/ecc-mtk.c
-index c64c3c45cdbc..79c7622af563 100644
 --- a/drivers/mtd/nand/ecc-mtk.c
 +++ b/drivers/mtd/nand/ecc-mtk.c
-@@ -279,7 +279,10 @@ struct mtk_ecc *of_mtk_ecc_get(struct device_node *of_node)
+@@ -279,7 +279,10 @@ struct mtk_ecc *of_mtk_ecc_get(struct de
  	struct mtk_ecc *ecc = NULL;
  	struct device_node *np;
  
@@ -30,6 +28,3 @@ index c64c3c45cdbc..79c7622af563 100644
  	if (np) {
  		ecc = mtk_ecc_get(np);
  		of_node_put(np);
--- 
-2.35.1
-

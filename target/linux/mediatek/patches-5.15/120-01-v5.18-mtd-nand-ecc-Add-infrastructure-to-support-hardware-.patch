@@ -24,11 +24,9 @@ Link: https://lore.kernel.org/linux-mtd/20211216111654.238086-13-miquel.raynal@b
  include/linux/mtd/nand.h | 28 +++++++++++++
  3 files changed, 123 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mtd/nand/core.c b/drivers/mtd/nand/core.c
-index 5e13a03d2b32..b228b4d13b7a 100644
 --- a/drivers/mtd/nand/core.c
 +++ b/drivers/mtd/nand/core.c
-@@ -232,7 +232,9 @@ static int nanddev_get_ecc_engine(struct nand_device *nand)
+@@ -232,7 +232,9 @@ static int nanddev_get_ecc_engine(struct
  		nand->ecc.engine = nand_ecc_get_on_die_hw_engine(nand);
  		break;
  	case NAND_ECC_ENGINE_TYPE_ON_HOST:
@@ -39,7 +37,7 @@ index 5e13a03d2b32..b228b4d13b7a 100644
  		break;
  	default:
  		pr_err("Missing ECC engine type\n");
-@@ -252,7 +254,7 @@ static int nanddev_put_ecc_engine(struct nand_device *nand)
+@@ -252,7 +254,7 @@ static int nanddev_put_ecc_engine(struct
  {
  	switch (nand->ecc.ctx.conf.engine_type) {
  	case NAND_ECC_ENGINE_TYPE_ON_HOST:
@@ -48,7 +46,7 @@ index 5e13a03d2b32..b228b4d13b7a 100644
  		break;
  	case NAND_ECC_ENGINE_TYPE_NONE:
  	case NAND_ECC_ENGINE_TYPE_SOFT:
-@@ -297,7 +299,9 @@ int nanddev_ecc_engine_init(struct nand_device *nand)
+@@ -297,7 +299,9 @@ int nanddev_ecc_engine_init(struct nand_
  	/* Look for the ECC engine to use */
  	ret = nanddev_get_ecc_engine(nand);
  	if (ret) {
@@ -59,8 +57,6 @@ index 5e13a03d2b32..b228b4d13b7a 100644
  		return ret;
  	}
  
-diff --git a/drivers/mtd/nand/ecc.c b/drivers/mtd/nand/ecc.c
-index 6c43dfda01d4..078f5ec38de3 100644
 --- a/drivers/mtd/nand/ecc.c
 +++ b/drivers/mtd/nand/ecc.c
 @@ -96,6 +96,12 @@
@@ -76,7 +72,7 @@ index 6c43dfda01d4..078f5ec38de3 100644
  
  /**
   * nand_ecc_init_ctx - Init the ECC engine context
-@@ -611,6 +617,88 @@ struct nand_ecc_engine *nand_ecc_get_on_die_hw_engine(struct nand_device *nand)
+@@ -611,6 +617,88 @@ struct nand_ecc_engine *nand_ecc_get_on_
  }
  EXPORT_SYMBOL(nand_ecc_get_on_die_hw_engine);
  
@@ -165,15 +161,12 @@ index 6c43dfda01d4..078f5ec38de3 100644
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Miquel Raynal <miquel.raynal@bootlin.com>");
  MODULE_DESCRIPTION("Generic ECC engine");
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index 32fc7edf65b3..4ddd20fe9c9e 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -263,12 +263,36 @@ struct nand_ecc_engine_ops {
- 			     struct nand_page_io_req *req);
+@@ -264,11 +264,35 @@ struct nand_ecc_engine_ops {
  };
  
-+/**
+ /**
 + * enum nand_ecc_engine_integration - How the NAND ECC engine is integrated
 + * @NAND_ECC_ENGINE_INTEGRATION_INVALID: Invalid value
 + * @NAND_ECC_ENGINE_INTEGRATION_PIPELINED: Pipelined engine, performs on-the-fly
@@ -188,7 +181,7 @@ index 32fc7edf65b3..4ddd20fe9c9e 100644
 +	NAND_ECC_ENGINE_INTEGRATION_EXTERNAL,
 +};
 +
- /**
++/**
   * struct nand_ecc_engine - ECC engine abstraction for NAND devices
 + * @dev: Host device
 + * @node: Private field for registration time
@@ -206,7 +199,7 @@ index 32fc7edf65b3..4ddd20fe9c9e 100644
  };
  
  void of_get_nand_ecc_user_config(struct nand_device *nand);
-@@ -279,8 +303,12 @@ int nand_ecc_prepare_io_req(struct nand_device *nand,
+@@ -279,8 +303,12 @@ int nand_ecc_prepare_io_req(struct nand_
  int nand_ecc_finish_io_req(struct nand_device *nand,
  			   struct nand_page_io_req *req);
  bool nand_ecc_is_strong_enough(struct nand_device *nand);
@@ -219,6 +212,3 @@ index 32fc7edf65b3..4ddd20fe9c9e 100644
  
  #if IS_ENABLED(CONFIG_MTD_NAND_ECC_SW_HAMMING)
  struct nand_ecc_engine *nand_ecc_sw_hamming_get_engine(void);
--- 
-2.35.1
-

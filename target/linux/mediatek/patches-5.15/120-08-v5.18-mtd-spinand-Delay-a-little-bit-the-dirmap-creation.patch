@@ -16,11 +16,9 @@ Link: https://lore.kernel.org/linux-mtd/20220127091808.1043392-8-miquel.raynal@b
  drivers/mtd/nand/spi/core.c | 16 ++++++++--------
  1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/mtd/nand/spi/core.c b/drivers/mtd/nand/spi/core.c
-index 2c8685f1f2fa..bb6b026b558b 100644
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -1208,14 +1208,6 @@ static int spinand_init(struct spinand_device *spinand)
+@@ -1210,14 +1210,6 @@ static int spinand_init(struct spinand_d
  	if (ret)
  		goto err_free_bufs;
  
@@ -35,7 +33,7 @@ index 2c8685f1f2fa..bb6b026b558b 100644
  	ret = nanddev_init(nand, &spinand_ops, THIS_MODULE);
  	if (ret)
  		goto err_manuf_cleanup;
-@@ -1250,6 +1242,14 @@ static int spinand_init(struct spinand_device *spinand)
+@@ -1252,6 +1244,14 @@ static int spinand_init(struct spinand_d
  	mtd->ecc_strength = nanddev_get_ecc_conf(nand)->strength;
  	mtd->ecc_step_size = nanddev_get_ecc_conf(nand)->step_size;
  
@@ -50,6 +48,3 @@ index 2c8685f1f2fa..bb6b026b558b 100644
  	return 0;
  
  err_cleanup_ecc_engine:
--- 
-2.35.1
-

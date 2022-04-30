@@ -28,8 +28,6 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  drivers/mtd/nand/raw/mtk_ecc.c | 12 ++++++++----
  1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mtd/nand/raw/mtk_ecc.c b/drivers/mtd/nand/raw/mtk_ecc.c
-index c437d97debb8..ec9d1fb07006 100644
 --- a/drivers/mtd/nand/raw/mtk_ecc.c
 +++ b/drivers/mtd/nand/raw/mtk_ecc.c
 @@ -43,6 +43,7 @@
@@ -40,7 +38,7 @@ index c437d97debb8..ec9d1fb07006 100644
  	const u8 *ecc_strength;
  	const u32 *ecc_regs;
  	u8 num_ecc_strength;
-@@ -76,7 +77,7 @@ static const u8 ecc_strength_mt2712[] = {
+@@ -76,7 +77,7 @@ static const u8 ecc_strength_mt2712[] =
  };
  
  static const u8 ecc_strength_mt7622[] = {
@@ -49,7 +47,7 @@ index c437d97debb8..ec9d1fb07006 100644
  };
  
  enum mtk_ecc_regs {
-@@ -221,7 +222,7 @@ void mtk_ecc_get_stats(struct mtk_ecc *ecc, struct mtk_ecc_stats *stats,
+@@ -221,7 +222,7 @@ void mtk_ecc_get_stats(struct mtk_ecc *e
  	for (i = 0; i < sectors; i++) {
  		offset = (i >> 2) << 2;
  		err = readl(ecc->regs + ECC_DECENUM0 + offset);
@@ -66,7 +64,7 @@ index c437d97debb8..ec9d1fb07006 100644
  	.ecc_strength = ecc_strength_mt2701,
  	.ecc_regs = mt2701_ecc_regs,
  	.num_ecc_strength = 20,
-@@ -459,6 +461,7 @@ static const struct mtk_ecc_caps mtk_ecc_caps_mt2701 = {
+@@ -459,6 +461,7 @@ static const struct mtk_ecc_caps mtk_ecc
  
  static const struct mtk_ecc_caps mtk_ecc_caps_mt2712 = {
  	.err_mask = 0x7f,
@@ -74,7 +72,7 @@ index c437d97debb8..ec9d1fb07006 100644
  	.ecc_strength = ecc_strength_mt2712,
  	.ecc_regs = mt2712_ecc_regs,
  	.num_ecc_strength = 23,
-@@ -468,10 +471,11 @@ static const struct mtk_ecc_caps mtk_ecc_caps_mt2712 = {
+@@ -468,10 +471,11 @@ static const struct mtk_ecc_caps mtk_ecc
  };
  
  static const struct mtk_ecc_caps mtk_ecc_caps_mt7622 = {
@@ -88,6 +86,3 @@ index c437d97debb8..ec9d1fb07006 100644
  	.ecc_mode_shift = 4,
  	.parity_bits = 13,
  	.pg_irq_sel = 0,
--- 
-2.35.1
-

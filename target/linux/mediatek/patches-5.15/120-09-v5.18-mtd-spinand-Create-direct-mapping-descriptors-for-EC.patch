@@ -27,11 +27,9 @@ Link: https://lore.kernel.org/linux-mtd/20220127091808.1043392-9-miquel.raynal@b
  include/linux/mtd/spinand.h |  2 ++
  2 files changed, 35 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mtd/nand/spi/core.c b/drivers/mtd/nand/spi/core.c
-index bb6b026b558b..ff8336870bc0 100644
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -381,7 +381,10 @@ static int spinand_read_from_cache_op(struct spinand_device *spinand,
+@@ -381,7 +381,10 @@ static int spinand_read_from_cache_op(st
  		}
  	}
  
@@ -43,7 +41,7 @@ index bb6b026b558b..ff8336870bc0 100644
  
  	while (nbytes) {
  		ret = spi_mem_dirmap_read(rdesc, column, nbytes, buf);
-@@ -452,7 +455,10 @@ static int spinand_write_to_cache_op(struct spinand_device *spinand,
+@@ -452,7 +455,10 @@ static int spinand_write_to_cache_op(str
  			       req->ooblen);
  	}
  
@@ -55,7 +53,7 @@ index bb6b026b558b..ff8336870bc0 100644
  
  	while (nbytes) {
  		ret = spi_mem_dirmap_write(wdesc, column, nbytes, buf);
-@@ -865,6 +871,31 @@ static int spinand_create_dirmap(struct spinand_device *spinand,
+@@ -865,6 +871,31 @@ static int spinand_create_dirmap(struct
  
  	spinand->dirmaps[plane].rdesc = desc;
  
@@ -87,11 +85,9 @@ index bb6b026b558b..ff8336870bc0 100644
  	return 0;
  }
  
-diff --git a/include/linux/mtd/spinand.h b/include/linux/mtd/spinand.h
-index 6988956b8492..3aa28240a77f 100644
 --- a/include/linux/mtd/spinand.h
 +++ b/include/linux/mtd/spinand.h
-@@ -389,6 +389,8 @@ struct spinand_info {
+@@ -391,6 +391,8 @@ struct spinand_info {
  struct spinand_dirmap {
  	struct spi_mem_dirmap_desc *wdesc;
  	struct spi_mem_dirmap_desc *rdesc;
@@ -100,6 +96,3 @@ index 6988956b8492..3aa28240a77f 100644
  };
  
  /**
--- 
-2.35.1
-

@@ -21,11 +21,9 @@ Link: https://lore.kernel.org/linux-mtd/20211216111654.238086-16-miquel.raynal@b
  include/linux/mtd/nand.h |  1 +
  2 files changed, 32 insertions(+)
 
-diff --git a/drivers/mtd/nand/ecc.c b/drivers/mtd/nand/ecc.c
-index 078f5ec38de3..5250764cedee 100644
 --- a/drivers/mtd/nand/ecc.c
 +++ b/drivers/mtd/nand/ecc.c
-@@ -699,6 +699,37 @@ void nand_ecc_put_on_host_hw_engine(struct nand_device *nand)
+@@ -699,6 +699,37 @@ void nand_ecc_put_on_host_hw_engine(stru
  }
  EXPORT_SYMBOL(nand_ecc_put_on_host_hw_engine);
  
@@ -63,11 +61,9 @@ index 078f5ec38de3..5250764cedee 100644
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Miquel Raynal <miquel.raynal@bootlin.com>");
  MODULE_DESCRIPTION("Generic ECC engine");
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index b617efa0a881..615b3e3a3920 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -309,6 +309,7 @@ struct nand_ecc_engine *nand_ecc_get_sw_engine(struct nand_device *nand);
+@@ -309,6 +309,7 @@ struct nand_ecc_engine *nand_ecc_get_sw_
  struct nand_ecc_engine *nand_ecc_get_on_die_hw_engine(struct nand_device *nand);
  struct nand_ecc_engine *nand_ecc_get_on_host_hw_engine(struct nand_device *nand);
  void nand_ecc_put_on_host_hw_engine(struct nand_device *nand);
@@ -75,6 +71,3 @@ index b617efa0a881..615b3e3a3920 100644
  
  #if IS_ENABLED(CONFIG_MTD_NAND_ECC_SW_HAMMING)
  struct nand_ecc_engine *nand_ecc_sw_hamming_get_engine(void);
--- 
-2.35.1
-
