@@ -67,6 +67,24 @@ endef
 $(eval $(call KernelPackage,sp5100-tco))
 
 
+define KernelPackage/ib700-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=IB700 SBC Watchdog Timer
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_IB700_WDT
+  FILES:=$(LINUX_DIR)/drivers/watchdog/ib700wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,ib700wdt,1)
+endef
+
+define KernelPackage/ib700-wdt/description
+  Kernel module for the hardware watchdog on the IB700 Single
+  Board Computer produced by TMC Technology (www.tmc-uk.com).
+  Also used by QEMU/libvirt.
+endef
+
+$(eval $(call KernelPackage,ib700-wdt))
+
+
 define KernelPackage/pcengines-apuv2
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PC Engines APUv2/3 front button and LEDs driver
