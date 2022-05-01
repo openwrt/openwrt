@@ -75,7 +75,6 @@ IP firewall administration tool.
   - mark
   - multiport
   - set
-  - state
   - time
 
  Targets:
