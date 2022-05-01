@@ -1274,6 +1274,24 @@ endef
 $(eval $(call KernelPackage,tpm-i2c-infineon))
 
 
+define KernelPackage/i6300esb-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Intel 6300ESB Timer/Watchdog
+  DEPENDS:=@PCI_SUPPORT @!SMALL_FLASH
+  KCONFIG:=CONFIG_I6300ESB_WDT \
+	   CONFIG_WATCHDOG_CORE=y
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/i6300esb.ko
+  AUTOLOAD:=$(call AutoLoad,50,i6300esb,1)
+endef
+
+define KernelPackage/i6300esb-wdt/description
+  Kernel module for the watchdog timer built into the Intel
+  6300ESB controller hub. Also used by QEMU/libvirt.
+endef
+
+$(eval $(call KernelPackage,i6300esb-wdt))
+
+
 define KernelPackage/w83627hf-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Winbond 83627HF Watchdog Timer
