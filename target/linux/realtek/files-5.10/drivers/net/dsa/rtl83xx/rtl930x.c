@@ -2429,14 +2429,13 @@ void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 
 static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 {
-	int i, pos;
+	int i, j, pos;
 	u32 v, pm = 0, set;
 	u32 setlen;
 	const __be32 *led_set;
 	char set_name[9];
+	u8 led_counts[4];
 	struct device_node *node;
-
-	pr_info("%s called\n", __func__);
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
@@ -2444,22 +2443,13 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		return;
 	}
 
-	for (i= 0; i < priv->cpu_port; i++) {
+	for (i = 0; i < priv->cpu_port; i++) {
 		pos = (i << 1) % 32;
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
 		if (!priv->ports[i].phy)
 			continue;
-
-		v = 0x1;
-		if (priv->ports[i].is10G)
-			v = 0x3;
-		if (priv->ports[i].phy_is_integrated)
-			v = 0x1;
-		if (priv->ports[i].is2G5)
-			v = 0x3;
-		sw_w32_mask(0x3 << pos, v << pos, RTL930X_LED_PORT_NUM_CTRL(i));
 
 		pm |= BIT(i);
 
@@ -2477,6 +2467,22 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32(v, RTL930X_LED_SET0_0_CTRL - 4 - i * 8);
 		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
 		sw_w32(v, RTL930X_LED_SET0_0_CTRL - i * 8);
+
+		led_counts[i] = 0;
+		for (j = 0; j < 4; j++) {
+			if (be32_to_cpup(led_set + j) && be32_to_cpup(led_set + j) != 0xffff)
+				led_counts[i]++;
+		}
+		pr_debug("%s: Led COUNT %d is %d\n", __func__, i, led_counts[i]);
+	}
+
+	for (i = 0; i < priv->cpu_port; i++) {
+		pos = (i << 1) % 32;
+		if (priv->ports[i].phy)
+			v = priv->ports[i].led_set < 4 ? led_counts[priv->ports[i].led_set] - 1:0;
+		else
+			v = 0x2;
+		sw_w32_mask(0x3 << pos, v << pos, RTL930X_LED_PORT_NUM_CTRL(i));
 	}
 
 	// Set LED mode to serial (0x1), color-scan is (0x2), bi-color-scan (0x3)
@@ -2486,9 +2492,6 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	sw_w32(pm, RTL930X_LED_PORT_COPR_MASK_CTRL);
 	sw_w32(pm, RTL930X_LED_PORT_FIB_MASK_CTRL);
 	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
-
-	for (i = 0; i < 24; i++)
-		pr_info("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
 }
 
 const struct rtl838x_reg rtl930x_reg = {
