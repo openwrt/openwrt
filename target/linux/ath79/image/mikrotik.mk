@@ -38,6 +38,16 @@ define Device/mikrotik_routerboard-922uags-5hpacd
 endef
 TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
 
+define Device/mikrotik_routerboard-952ui-5ac2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := RouterBOARD 952Ui-5ac2nD (hAP ac lite)
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct
+  IMAGE_SIZE := 16256k
+  SUPPORTED_DEVICES += rb-952ui-5ac2nd
+endef
+TARGET_DEVICES += mikrotik_routerboard-952ui-5ac2nd
+
 define Device/mikrotik_routerboard-962uigs-5hact2hnt
   $(Device/mikrotik_nor)
   SOC := qca9558
