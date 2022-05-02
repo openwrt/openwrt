@@ -148,7 +148,8 @@ ramips_setup_interfaces()
 		;;
 	engenius,esr600|\
 	lava,lr-25g001|\
-	sitecom,wlr-4100-v1-002)
+	sitecom,wlr-4100-v1-002|\
+	telewell,tw-4g-lte)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "0@eth0"
 		ucidef_add_switch "switch1" \
@@ -312,7 +313,8 @@ ramips_setup_macs()
 	dlink,dwr-922-e2|\
 	dlink,dwr-960|\
 	dlink,dwr-961-a1|\
-	lava,lr-25g001)
+	lava,lr-25g001|\
+	telewell,tw-4g-lte)
 		wan_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
