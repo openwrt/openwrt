@@ -1,0 +1,117 @@
+From 022b0a1161e24278b8c538445f3f8e3adff72eb0 Mon Sep 17 00:00:00 2001
+Message-Id: <022b0a1161e24278b8c538445f3f8e3adff72eb0.1651746923.git.lorenzo@kernel.org>
+In-Reply-To: <38bc29d6262a2f9bb102ad17026a27cc2c82f7d4.1651746923.git.lorenzo@kernel.org>
+References: <38bc29d6262a2f9bb102ad17026a27cc2c82f7d4.1651746923.git.lorenzo@kernel.org>
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 29 Apr 2022 00:56:54 +0200
+Subject: [PATCH net-next 12/12] net: ethernet: mtk_eth_soc: introduce support
+ for mt7986 chipset
+
+Add support for mt7986-eth driver available on mt7986 soc.
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 30 ++++++++++++++++++++-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h | 18 +++++++++++++
+ 2 files changed, 47 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -45,6 +45,17 @@ const static u32 mtk_reg_map[] = {
+ 	[MTK_PDMA_RSS_GLO_BASE]			= 0x3000,
+ };
+ 
++const static u32 mt7986_reg_map[] = {
++	[MTK_PDMA_BASE]				= 0x6000,
++	[MTK_PDMA_LRO_CTRL]			= 0x6408,
++	[MTK_PDMA_ALT_SCORE_DELTA_BASE]		= 0x641c,
++	[MTK_PDMA_LRO_RX_RING_DIP_BASE]		= 0x6414,
++	[MTK_PDMA_LRO_RX_RING_CTRL_BASE]	= 0x6438,
++	[MTK_QDMA_BASE]				= 0x4400,
++	[MTK_GDM1_TX_STAT_BASE]			= 0x1c00,
++	[MTK_PDMA_RSS_GLO_BASE]			= 0x6800,
++};
++
+ /* strings used by ethtool */
+ static const struct mtk_ethtool_stats {
+ 	char str[ETH_GSTRING_LEN];
+@@ -68,7 +79,7 @@ static const char * const mtk_clks_sourc
+ 	"ethif", "sgmiitop", "esw", "gp0", "gp1", "gp2", "fe", "trgpll",
+ 	"sgmii_tx250m", "sgmii_rx250m", "sgmii_cdr_ref", "sgmii_cdr_fb",
+ 	"sgmii2_tx250m", "sgmii2_rx250m", "sgmii2_cdr_ref", "sgmii2_cdr_fb",
+-	"sgmii_ck", "eth2pll",
++	"sgmii_ck", "eth2pll", "wocpu0", "wocpu1", "netsys0", "netsys1"
+ };
+ 
+ void mtk_w32(struct mtk_eth *eth, u32 val, unsigned reg)
+@@ -3694,6 +3705,21 @@ static const struct mtk_soc_data mt7622_
+ 	},
+ };
+ 
++static const struct mtk_soc_data mt7986_data = {
++	.reg_map = mt7986_reg_map,
++	.ana_rgc3 = 0x128,
++	.caps = MT7986_CAPS,
++	.required_clks = MT7986_CLKS_BITMAP,
++	.required_pctl = false,
++	.txrx = {
++		.txd_size = sizeof(struct mtk_tx_dma_v2),
++		.rxd_size = sizeof(struct mtk_rx_dma_v2),
++		.rx_irq_done_mask = MTK_RX_DONE_INT_V2,
++		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
++		.dma_len_offset = 8,
++	},
++};
++
+ static const struct mtk_soc_data mt7623_data = {
+ 	.reg_map = mtk_reg_map,
+ 	.caps = MT7623_CAPS | MTK_HWLRO,
+@@ -3750,6 +3777,7 @@ const struct of_device_id of_mtk_match[]
+ 	{ .compatible = "mediatek,mt7622-eth", .data = &mt7622_data},
+ 	{ .compatible = "mediatek,mt7623-eth", .data = &mt7623_data},
+ 	{ .compatible = "mediatek,mt7629-eth", .data = &mt7629_data},
++	{ .compatible = "mediatek,mt7986-eth", .data = &mt7986_data},
+ 	{ .compatible = "ralink,rt5350-eth", .data = &rt5350_data},
+ 	{},
+ };
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -767,6 +767,10 @@ enum mtk_clks_map {
+ 	MTK_CLK_SGMII2_CDR_FB,
+ 	MTK_CLK_SGMII_CK,
+ 	MTK_CLK_ETH2PLL,
++	MTK_CLK_WOCPU0,
++	MTK_CLK_WOCPU1,
++	MTK_CLK_NETSYS0,
++	MTK_CLK_NETSYS1,
+ 	MTK_CLK_MAX
+ };
+ 
+@@ -797,6 +801,16 @@ enum mtk_clks_map {
+ 				 BIT(MTK_CLK_SGMII2_CDR_FB) | \
+ 				 BIT(MTK_CLK_SGMII_CK) | \
+ 				 BIT(MTK_CLK_ETH2PLL) | BIT(MTK_CLK_SGMIITOP))
++#define MT7986_CLKS_BITMAP	(BIT(MTK_CLK_FE) | BIT(MTK_CLK_GP2) | BIT(MTK_CLK_GP1) | \
++                                 BIT(MTK_CLK_WOCPU1) | BIT(MTK_CLK_WOCPU0) | \
++                                 BIT(MTK_CLK_SGMII_TX_250M) | \
++                                 BIT(MTK_CLK_SGMII_RX_250M) | \
++                                 BIT(MTK_CLK_SGMII_CDR_REF) | \
++                                 BIT(MTK_CLK_SGMII_CDR_FB) | \
++                                 BIT(MTK_CLK_SGMII2_TX_250M) | \
++                                 BIT(MTK_CLK_SGMII2_RX_250M) | \
++                                 BIT(MTK_CLK_SGMII2_CDR_REF) | \
++                                 BIT(MTK_CLK_SGMII2_CDR_FB))
+ 
+ enum mtk_dev_state {
+ 	MTK_HW_INIT,
+@@ -997,6 +1011,10 @@ enum mkt_eth_capabilities {
+ 		      MTK_MUX_U3_GMAC2_TO_QPHY | \
+ 		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA)
+ 
++#define MT7986_CAPS  (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | \
++		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
++		      MTK_SRAM | MTK_NETSYS_V2 | MTK_RSTCTRL_PPE1)
++
+ struct mtk_tx_dma_desc_info {
+ 	dma_addr_t addr;
+ 	u32 size;

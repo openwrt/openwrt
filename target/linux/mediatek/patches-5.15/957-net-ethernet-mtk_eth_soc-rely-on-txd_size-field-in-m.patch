@@ -1,0 +1,50 @@
+From 78ce38d5dcbce2487de385dced7c8784d9d56d0e Mon Sep 17 00:00:00 2001
+Message-Id: <78ce38d5dcbce2487de385dced7c8784d9d56d0e.1651746923.git.lorenzo@kernel.org>
+In-Reply-To: <38bc29d6262a2f9bb102ad17026a27cc2c82f7d4.1651746923.git.lorenzo@kernel.org>
+References: <38bc29d6262a2f9bb102ad17026a27cc2c82f7d4.1651746923.git.lorenzo@kernel.org>
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Mon, 2 May 2022 14:28:57 +0200
+Subject: [PATCH net-next 07/12] net: ethernet: mtk_eth_soc: rely on txd_size
+ field in mtk_poll_tx/mtk_poll_rx
+
+This is a preliminary to ad mt7986 ethernet support.
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1298,9 +1298,12 @@ static struct mtk_rx_ring *mtk_get_rx_ri
+ 		return &eth->rx_ring[0];
+ 
+ 	for (i = 0; i < MTK_MAX_RX_RING_NUM; i++) {
++		struct mtk_rx_dma *rxd;
++
+ 		ring = &eth->rx_ring[i];
+ 		idx = NEXT_DESP_IDX(ring->calc_idx, ring->dma_size);
+-		if (ring->dma[idx].rxd2 & RX_DMA_DONE) {
++		rxd = (void *)ring->dma + idx * eth->soc->txrx.rxd_size;
++		if (rxd->rxd2 & RX_DMA_DONE) {
+ 			ring->calc_idx_update = true;
+ 			return ring;
+ 		}
+@@ -1351,7 +1354,7 @@ static int mtk_poll_rx(struct napi_struc
+ 			goto rx_done;
+ 
+ 		idx = NEXT_DESP_IDX(ring->calc_idx, ring->dma_size);
+-		rxd = &ring->dma[idx];
++		rxd = (void *)ring->dma + idx * eth->soc->txrx.rxd_size;
+ 		data = ring->data[idx];
+ 
+ 		if (!mtk_rx_get_desc(&trxd, rxd))
+@@ -1540,7 +1543,7 @@ static int mtk_poll_tx_pdma(struct mtk_e
+ 
+ 		mtk_tx_unmap(eth, tx_buf, true);
+ 
+-		desc = &ring->dma[cpu];
++		desc = (void *)ring->dma + cpu * eth->soc->txrx.txd_size;
+ 		ring->last_free = desc;
+ 		atomic_inc(&ring->free_count);
+ 

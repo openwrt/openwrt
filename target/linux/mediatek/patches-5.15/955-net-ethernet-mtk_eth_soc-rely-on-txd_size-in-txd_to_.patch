@@ -1,0 +1,44 @@
+From cf4aee5b5e1ef9ffea3eb307b184c85d8821dc45 Mon Sep 17 00:00:00 2001
+Message-Id: <cf4aee5b5e1ef9ffea3eb307b184c85d8821dc45.1651746923.git.lorenzo@kernel.org>
+In-Reply-To: <38bc29d6262a2f9bb102ad17026a27cc2c82f7d4.1651746923.git.lorenzo@kernel.org>
+References: <38bc29d6262a2f9bb102ad17026a27cc2c82f7d4.1651746923.git.lorenzo@kernel.org>
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Thu, 28 Apr 2022 23:15:48 +0200
+Subject: [PATCH net-next 05/12] net: ethernet: mtk_eth_soc: rely on txd_size
+ in txd_to_idx
+
+This is a preliminary patch to add mt7986 ethernet support.
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -939,9 +939,10 @@ static struct mtk_tx_dma *qdma_to_pdma(s
+ 	return ring->dma_pdma - ring->dma + dma;
+ }
+ 
+-static int txd_to_idx(struct mtk_tx_ring *ring, struct mtk_tx_dma *dma)
++static int txd_to_idx(struct mtk_tx_ring *ring, struct mtk_tx_dma *dma,
++		      u32 txd_size)
+ {
+-	return ((void *)dma - (void *)ring->dma) / sizeof(*dma);
++	return ((void *)dma - (void *)ring->dma) / txd_size;
+ }
+ 
+ static void mtk_tx_unmap(struct mtk_eth *eth, struct mtk_tx_buf *tx_buf,
+@@ -1157,8 +1158,10 @@ static int mtk_tx_map(struct sk_buff *sk
+ 		    !netdev_xmit_more())
+ 			mtk_w32(eth, txd->txd2, MTK_QTX_CTX_PTR);
+ 	} else {
+-		int next_idx = NEXT_DESP_IDX(txd_to_idx(ring, txd),
+-					     ring->dma_size);
++		int next_idx;
++
++		next_idx = NEXT_DESP_IDX(txd_to_idx(ring, txd, soc->txrx.txd_size),
++					 ring->dma_size);
+ 		mtk_w32(eth, next_idx, MT7628_TX_CTX_IDX0);
+ 	}
+ 

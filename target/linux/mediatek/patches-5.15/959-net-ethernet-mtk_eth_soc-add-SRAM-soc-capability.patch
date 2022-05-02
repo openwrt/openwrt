@@ -1,0 +1,203 @@
+From e543748ab936a00e116ef88c0119a3b3f6528c87 Mon Sep 17 00:00:00 2001
+Message-Id: <e543748ab936a00e116ef88c0119a3b3f6528c87.1651746923.git.lorenzo@kernel.org>
+In-Reply-To: <38bc29d6262a2f9bb102ad17026a27cc2c82f7d4.1651746923.git.lorenzo@kernel.org>
+References: <38bc29d6262a2f9bb102ad17026a27cc2c82f7d4.1651746923.git.lorenzo@kernel.org>
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Sat, 30 Apr 2022 14:38:03 +0200
+Subject: [PATCH net-next 09/12] net: ethernet: mtk_eth_soc: add SRAM soc
+ capability
+
+Introduce SRAM capabitity for devices that relies on SRAM memory
+for DMA descriptors.
+This is a preliminary patch to add mt7986 ethernet support.
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 71 +++++++++++++++------
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |  5 ++
+ 2 files changed, 57 insertions(+), 19 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -877,10 +877,13 @@ static int mtk_init_fq_dma(struct mtk_et
+ 	dma_addr_t dma_addr;
+ 	int i;
+ 
+-	eth->scratch_ring = dma_alloc_coherent(eth->dma_dev,
+-					       cnt * soc->txrx.txd_size,
+-					       &eth->phy_scratch_ring,
+-					       GFP_ATOMIC);
++	if (MTK_HAS_CAPS(soc->caps, MTK_SRAM))
++		eth->scratch_ring = eth->base + MTK_ETH_SRAM_OFFSET;
++	else
++		eth->scratch_ring = dma_alloc_coherent(eth->dma_dev,
++						       cnt * soc->txrx.txd_size,
++						       &eth->phy_scratch_ring,
++						       GFP_ATOMIC);
+ 	if (unlikely(!eth->scratch_ring))
+ 		return -ENOMEM;
+ 
+@@ -1675,9 +1678,16 @@ static int mtk_tx_alloc(struct mtk_eth *
+ 	if (!ring->buf)
+ 		goto no_tx_mem;
+ 
+-	ring->dma = dma_alloc_coherent(eth->dma_dev,
+-				       MTK_DMA_SIZE * soc->txrx.txd_size,
+-				       &ring->phys, GFP_ATOMIC);
++	if (MTK_HAS_CAPS(soc->caps, MTK_SRAM)) {
++		ring->dma =  (void *)eth->scratch_ring +
++			     MTK_DMA_SIZE * soc->txrx.txd_size;
++		ring->phys = eth->phy_scratch_ring +
++			     MTK_DMA_SIZE * soc->txrx.txd_size;
++	} else {
++		ring->dma = dma_alloc_coherent(eth->dma_dev,
++				MTK_DMA_SIZE * soc->txrx.txd_size,
++				&ring->phys, GFP_ATOMIC);
++	}
+ 	if (!ring->dma)
+ 		goto no_tx_mem;
+ 
+@@ -1756,7 +1766,7 @@ static void mtk_tx_clean(struct mtk_eth
+ 		ring->buf = NULL;
+ 	}
+ 
+-	if (ring->dma) {
++	if (!MTK_HAS_CAPS(soc->caps, MTK_SRAM) && ring->dma) {
+ 		dma_free_coherent(eth->dma_dev,
+ 				  MTK_DMA_SIZE * soc->txrx.txd_size,
+ 				  ring->dma, ring->phys);
+@@ -1773,6 +1783,7 @@ static void mtk_tx_clean(struct mtk_eth
+ 
+ static int mtk_rx_alloc(struct mtk_eth *eth, int ring_no, int rx_flag)
+ {
++	const struct mtk_soc_data *soc = eth->soc;
+ 	struct mtk_rx_ring *ring;
+ 	int rx_data_len, rx_dma_size;
+ 	int i;
+@@ -1808,9 +1819,20 @@ static int mtk_rx_alloc(struct mtk_eth *
+ 			return -ENOMEM;
+ 	}
+ 
+-	ring->dma = dma_alloc_coherent(eth->dma_dev,
+-				       rx_dma_size * eth->soc->txrx.rxd_size,
+-				       &ring->phys, GFP_ATOMIC);
++	if (MTK_HAS_CAPS(soc->caps, MTK_SRAM) &&
++	    rx_flag == MTK_RX_FLAGS_NORMAL) {
++		struct mtk_tx_ring *tx_ring = &eth->tx_ring;
++
++		ring->dma = (void *)tx_ring->dma +
++			    MTK_DMA_SIZE * (ring_no + 1) * soc->txrx.txd_size;
++		ring->phys = tx_ring->phys +
++			     MTK_DMA_SIZE * soc->txrx.txd_size * (ring_no + 1);
++	} else {
++		ring->dma = dma_alloc_coherent(eth->dma_dev,
++					       rx_dma_size * soc->txrx.rxd_size,
++					       &ring->phys, GFP_ATOMIC);
++	}
++
+ 	if (!ring->dma)
+ 		return -ENOMEM;
+ 
+@@ -1824,10 +1846,10 @@ static int mtk_rx_alloc(struct mtk_eth *
+ 		if (unlikely(dma_mapping_error(eth->dma_dev, dma_addr)))
+ 			return -ENOMEM;
+ 
+-		rxd = (void *)ring->dma + i * eth->soc->txrx.rxd_size;
++		rxd = (void *)ring->dma + i * soc->txrx.rxd_size;
+ 		rxd->rxd1 = (unsigned int)dma_addr;
+ 
+-		if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
++		if (MTK_HAS_CAPS(soc->caps, MTK_SOC_MT7628))
+ 			rxd->rxd2 = RX_DMA_LSO;
+ 		else
+ 			rxd->rxd2 = RX_DMA_PLEN0(ring->buf_size);
+@@ -1852,7 +1874,8 @@ static int mtk_rx_alloc(struct mtk_eth *
+ 	return 0;
+ }
+ 
+-static void mtk_rx_clean(struct mtk_eth *eth, struct mtk_rx_ring *ring)
++static void mtk_rx_clean(struct mtk_eth *eth, struct mtk_rx_ring *ring,
++			 bool sram)
+ {
+ 	int i;
+ 
+@@ -1875,7 +1898,7 @@ static void mtk_rx_clean(struct mtk_eth
+ 		ring->data = NULL;
+ 	}
+ 
+-	if (ring->dma) {
++	if (ring->dma && !sram) {
+ 		dma_free_coherent(eth->dma_dev,
+ 				  ring->dma_size * eth->soc->txrx.rxd_size,
+ 				  ring->dma, ring->phys);
+@@ -2228,7 +2251,7 @@ static void mtk_dma_free(struct mtk_eth
+ 	for (i = 0; i < MTK_MAC_COUNT; i++)
+ 		if (eth->netdev[i])
+ 			netdev_reset_queue(eth->netdev[i]);
+-	if (eth->scratch_ring) {
++	if (!MTK_HAS_CAPS(soc->caps, MTK_SRAM) && eth->scratch_ring) {
+ 		dma_free_coherent(eth->dma_dev,
+ 				  MTK_DMA_SIZE * soc->txrx.txd_size,
+ 				  eth->scratch_ring, eth->phy_scratch_ring);
+@@ -2236,13 +2259,13 @@ static void mtk_dma_free(struct mtk_eth
+ 		eth->phy_scratch_ring = 0;
+ 	}
+ 	mtk_tx_clean(eth);
+-	mtk_rx_clean(eth, &eth->rx_ring[0]);
+-	mtk_rx_clean(eth, &eth->rx_ring_qdma);
++	mtk_rx_clean(eth, &eth->rx_ring[0], true);
++	mtk_rx_clean(eth, &eth->rx_ring_qdma, false);
+ 
+ 	if (eth->hwlro) {
+ 		mtk_hwlro_rx_uninit(eth);
+ 		for (i = 1; i < MTK_MAX_RX_RING_NUM; i++)
+-			mtk_rx_clean(eth, &eth->rx_ring[i]);
++			mtk_rx_clean(eth, &eth->rx_ring[i], false);
+ 	}
+ 
+ 	kfree(eth->scratch_head);
+@@ -3196,6 +3219,16 @@ static int mtk_probe(struct platform_dev
+ 	if (IS_ERR(eth->base))
+ 		return PTR_ERR(eth->base);
+ 
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SRAM)) {
++		struct resource *res;
++
++		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++		if (!res)
++			return -EINVAL;
++
++		eth->phy_scratch_ring = res->start + MTK_ETH_SRAM_OFFSET;
++	}
++
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA)) {
+ 		eth->tx_int_mask_reg = MTK_QDMA_INT_MASK;
+ 		eth->tx_int_status_reg = MTK_QDMA_INT_STATUS;
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -100,6 +100,9 @@
+ /* Unicast Filter MAC Address Register - High */
+ #define MTK_GDMA_MAC_ADRH(x)	(0x50C + (x * 0x1000))
+ 
++/* Internal SRAM offset */
++#define MTK_ETH_SRAM_OFFSET	0x40000
++
+ /* PDMA RX Base Pointer Register */
+ #define MTK_PRX_BASE_PTR0	0x900
+ #define MTK_PRX_BASE_PTR_CFG(x)	(MTK_PRX_BASE_PTR0 + (x * 0x10))
+@@ -740,6 +743,7 @@ enum mkt_eth_capabilities {
+ 	MTK_SHARED_INT_BIT,
+ 	MTK_TRGMII_MT7621_CLK_BIT,
+ 	MTK_QDMA_BIT,
++	MTK_SRAM_BIT,
+ 	MTK_SOC_MT7628_BIT,
+ 
+ 	/* MUX BITS*/
+@@ -772,6 +776,7 @@ enum mkt_eth_capabilities {
+ #define MTK_SHARED_INT		BIT(MTK_SHARED_INT_BIT)
+ #define MTK_TRGMII_MT7621_CLK	BIT(MTK_TRGMII_MT7621_CLK_BIT)
+ #define MTK_QDMA		BIT(MTK_QDMA_BIT)
++#define MTK_SRAM		BIT(MTK_SRAM_BIT)
+ #define MTK_SOC_MT7628		BIT(MTK_SOC_MT7628_BIT)
+ 
+ #define MTK_ETH_MUX_GDM1_TO_GMAC1_ESW		\
