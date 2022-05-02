@@ -1138,7 +1138,7 @@ $(eval $(call KernelPackage,usb-net-aqc111))
 
 define KernelPackage/usb-net-asix
   TITLE:=Kernel module for USB-to-Ethernet Asix convertors
-  DEPENDS:=+kmod-libphy
+  DEPENDS:=+kmod-libphy +LINUX_5_15:kmod-net-selftests +LINUX_5_15:kmod-mdio-devres
   KCONFIG:=CONFIG_USB_NET_AX8817X
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/asix.ko
   AUTOLOAD:=$(call AutoProbe,asix)
@@ -1266,7 +1266,7 @@ $(eval $(call KernelPackage,usb-net-smsc75xx))
 
 define KernelPackage/usb-net-smsc95xx
   TITLE:=SMSC LAN95XX based USB 2.0 10/100 ethernet devices
-  DEPENDS:=+LINUX_5_10:kmod-libphy
+  DEPENDS:=+(LINUX_5_10||LINUX_5_15):kmod-libphy
   KCONFIG:=CONFIG_USB_NET_SMSC95XX
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/smsc95xx.ko
   AUTOLOAD:=$(call AutoProbe,smsc95xx)
@@ -1787,8 +1787,10 @@ define KernelPackage/usb-xhci-mtk
   DEPENDS:=+kmod-usb-xhci-hcd
   KCONFIG:=CONFIG_USB_XHCI_MTK
   HIDDEN:=1
-  FILES:=$(LINUX_DIR)/drivers/usb/host/xhci-mtk.ko
-  AUTOLOAD:=$(call AutoLoad,54,xhci-mtk,1)
+  FILES:= \
+	 $(LINUX_DIR)/drivers/usb/host/xhci-mtk.ko@lt5.13 \
+	 $(LINUX_DIR)/drivers/usb/host/xhci-mtk-hcd.ko@ge5.13
+  AUTOLOAD:=$(call AutoLoad,54,xhci-mtk@lt5.13 xhci-mtk-hcd@gt5.13,1)
   $(call AddDepends/usb)
 endef
 

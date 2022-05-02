@@ -78,7 +78,7 @@ Link: https://lore.kernel.org/r/1611061165-30180-1-git-send-email-claudiu.beznea
  static u64 mchp_pit64b_clksrc_read(struct clocksource *cs)
  {
  	return mchp_pit64b_cnt_read(mchp_pit64b_cs_base);
-@@ -128,7 +172,7 @@ static u64 mchp_pit64b_sched_read_clk(vo
+@@ -128,7 +172,7 @@ static u64 notrace mchp_pit64b_sched_rea
  
  static int mchp_pit64b_clkevt_shutdown(struct clock_event_device *cedev)
  {

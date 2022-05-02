@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9558_sophos_ap.dtsi"
+
+/ {
+	compatible = "sophos,ap100", "qca,qca9558";
+	model = "Sophos AP100";
+};
+
+&reg_usb_vbus {
+	status = "okay";
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+	dr_mode = "host";
+};

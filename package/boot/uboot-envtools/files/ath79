@@ -69,6 +69,8 @@ samsung,wam250|\
 ubnt,nanostation-m|\
 yuncore,a770|\
 yuncore,a782|\
+yuncore,a930|\
+yuncore,xd3200|\
 yuncore,xd4200|\
 ziking,cpe46b|\
 zyxel,nbg6616)
@@ -122,6 +124,12 @@ plasmacloud,pa300e)
 	;;
 qihoo,c301)
 	ubootenv_add_uci_config "/dev/mtd9" "0x0" "0x10000" "0x10000"
+	;;
+sophos,ap55|\
+sophos,ap55c|\
+sophos,ap100|\
+sophos,ap100c)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
 	;;
 wallys,dr531)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0xf800" "0x10000"

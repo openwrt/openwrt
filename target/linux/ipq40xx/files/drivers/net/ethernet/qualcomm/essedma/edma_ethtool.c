@@ -244,8 +244,14 @@ static int edma_set_settings(struct net_device *netdev,
 /* edma_get_coalesce
  *	get interrupt mitigation
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0)
+static int edma_get_coalesce(struct net_device *dev, struct ethtool_coalesce *ec,
+			     struct kernel_ethtool_coalesce *kernel_coal,
+			     struct netlink_ext_ack *extack)
+#else
 static int edma_get_coalesce(struct net_device *netdev,
 			     struct ethtool_coalesce *ec)
+#endif
 {
 	u32 reg_val;
 
@@ -266,8 +272,14 @@ static int edma_get_coalesce(struct net_device *netdev,
 /* edma_set_coalesce
  *	set interrupt mitigation
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0)
+static int edma_set_coalesce(struct net_device *dev, struct ethtool_coalesce *ec,
+			     struct kernel_ethtool_coalesce *kernel_coal,
+			     struct netlink_ext_ack *extack)
+#else
 static int edma_set_coalesce(struct net_device *netdev,
 			     struct ethtool_coalesce *ec)
+#endif
 {
 	if (ec->tx_coalesce_usecs)
 		edma_change_tx_coalesce(ec->tx_coalesce_usecs);

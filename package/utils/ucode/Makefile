@@ -12,13 +12,13 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/jow-/ucode.git
-PKG_SOURCE_DATE:=2022-02-11
-PKG_SOURCE_VERSION:=a29bad9454edcc285f7f37410b6822affede44d1
-PKG_MIRROR_HASH:=eaba0f12c469ef82b772a64f8763e8855dbba81551a78d05f547c0922a7dacad
+PKG_SOURCE_DATE:=2022-04-13
+PKG_SOURCE_VERSION:=e14b0993b101839d2d40b5c4f184e6b0c2083b65
+PKG_MIRROR_HASH:=50771ea70be071626cfb682627713f818d740bc91ccadad0ba0aad5bef08a865
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
-PKG_ABI_VERSION:=20220206
+PKG_ABI_VERSION:=20220322
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -152,7 +152,7 @@ endef
 
 define Package/ucode/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/ucode $(1)/usr/bin/ucode
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/u* $(1)/usr/bin/
 endef
 
 define Package/libucode/install
@@ -201,8 +201,8 @@ define Package/ucode-mod-uci/install
 endef
 
 
-$(eval $(call BuildPackage,ucode))
 $(eval $(call BuildPackage,libucode))
+$(eval $(call BuildPackage,ucode))
 $(eval $(call BuildPackage,ucode-mod-fs))
 $(eval $(call BuildPackage,ucode-mod-math))
 $(eval $(call BuildPackage,ucode-mod-nl80211))

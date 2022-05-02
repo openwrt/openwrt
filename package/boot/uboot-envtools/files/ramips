@@ -23,7 +23,8 @@ sitecom,wlr-4100-v1-002)
 	;;
 allnet,all0256n-4m|\
 allnet,all0256n-8m|\
-allnet,all5002)
+allnet,all5002|\
+yuncore,ax820)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
 ampedwireless,ally-00x19k|\
@@ -71,6 +72,7 @@ zyxel,nr7101)
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x80000"
 	;;
+bolt,arion|\
 xiaomi,mi-router-cr6606|\
 xiaomi,mi-router-cr6608|\
 xiaomi,mi-router-cr6609)

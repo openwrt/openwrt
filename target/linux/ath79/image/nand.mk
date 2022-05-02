@@ -334,7 +334,8 @@ TARGET_DEVICES += zte_mf286a
 define Device/zte_mf286r
   $(Device/zte_mf286_common)
   DEVICE_MODEL := MF286R
-  DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-rndis kmod-usb-acm
+  DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-rndis kmod-usb-acm \
+	comgt-ncm
 endef
 TARGET_DEVICES += zte_mf286r
 
