@@ -279,12 +279,12 @@ irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 
 	/* Clear status */
 	rtl839x_set_port_reg_le(ports, RTL931X_ISR_PORT_LINK_STS_CHG);
-	pr_debug("RTL931X Link change: status: %x, ports %016llx\n", status, ports);
+	pr_info("RTL931X Link change: status: %x, ports %016llx\n", status, ports);
 
 	link = rtl839x_get_port_reg_le(RTL931X_MAC_LINK_STS);
 	// Must re-read this to get correct status
 	link = rtl839x_get_port_reg_le(RTL931X_MAC_LINK_STS);
-	pr_debug("RTL931X Link change: status: %x, link status %016llx\n", status, link);
+	pr_info("RTL931X Link change: status: %x, link status %016llx\n", status, link);
 
 	for (i = 0; i < RTL931X_CPU_PORT; i++) {
 		if (ports & BIT_ULL(i)) {
@@ -1643,7 +1643,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL931X_L2_PORT_AGE_CTRL,
 	.set_ageing_time = rtl931x_set_ageing_time,
-	// .smi_poll_ctrl does not exist
+	.smi_poll_ctrl = RTL931X_SMI_PORT_POLLING_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.exec_tbl0_cmd = rtl931x_exec_tbl0_cmd,
 	.exec_tbl1_cmd = rtl931x_exec_tbl1_cmd,
