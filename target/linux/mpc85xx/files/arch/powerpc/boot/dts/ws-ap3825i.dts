@@ -149,12 +149,16 @@
 				interrupts = <3 1 0 0>;
 				reg = <0x5>;
 				reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+				reset-assert-us = <10000>;
+				reset-deassert-us = <10000>;
 			};
 
 			phy2: ethernet-phy@2 {
 				interrupts = <1 1 0 0>;
 				reg = <0x6>;
 				reset-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+				reset-assert-us = <10000>;
+				reset-deassert-us = <10000>;
 			};
 		};
 

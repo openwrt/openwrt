@@ -49,6 +49,7 @@ ath79_setup_interfaces()
 	netgear,ex6400|\
 	netgear,ex7300|\
 	netgear,ex7300-v2|\
+	netgear,wndap360|\
 	ocedo,koala|\
 	ocedo,raccoon|\
 	onion,omega|\
@@ -63,6 +64,10 @@ ath79_setup_interfaces()
 	pisen,wmb001n|\
 	pisen,wmm003n|\
 	siemens,ws-ap3610|\
+	sophos,ap55|\
+	sophos,ap55c|\
+	sophos,ap100|\
+	sophos,ap100c|\
 	tplink,cpe210-v2|\
 	tplink,cpe210-v3|\
 	tplink,cpe510-v2|\
@@ -365,6 +370,7 @@ ath79_setup_interfaces()
 	ubnt,nanobeam-ac-gen2|\
 	ubnt,nanostation-ac|\
 	yuncore,a782|\
+	yuncore,xd3200|\
 	yuncore,xd4200)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:wan"
@@ -503,6 +509,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan"
 		;;
+	tplink,deco-m4r-v1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan:1" "5:lan:2"
+		;;
+	hiwifi,hc6361|\
 	xiaomi,mi-router-4q|\
 	zbtlink,zbt-wd323)
 		ucidef_set_interface_wan "eth1"

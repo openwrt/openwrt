@@ -141,7 +141,7 @@ $(eval $(call KernelPackage,mii))
 define KernelPackage/mdio-devres
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Supports MDIO device registration
-  DEPENDS:=@(LINUX_5_10||LINUX_5_15) +kmod-libphy PACKAGE_kmod-of-mdio:kmod-of-mdio
+  DEPENDS:=@(LINUX_5_10||LINUX_5_15) +kmod-libphy +(TARGET_armvirt||TARGET_bcm27xx_bcm2708||TARGET_tegra):kmod-of-mdio
   KCONFIG:=CONFIG_MDIO_DEVRES
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/net/phy/mdio_devres.ko
@@ -1057,7 +1057,8 @@ define KernelPackage/of-mdio
   KCONFIG:=CONFIG_OF_MDIO
   FILES:= \
 	$(LINUX_DIR)/drivers/of/of_mdio.ko@lt5.10 \
-	$(LINUX_DIR)/drivers/net/mdio/of_mdio.ko@ge5.10
+	$(LINUX_DIR)/drivers/net/mdio/of_mdio.ko@ge5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/fwnode_mdio.ko@ge5.15
   AUTOLOAD:=$(call AutoLoad,41,of_mdio)
 endef
 
@@ -1221,6 +1222,22 @@ define KernelPackage/mlx5-core/description
 endef
 
 $(eval $(call KernelPackage,mlx5-core))
+
+
+define KernelPackage/net-selftests
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=+kmod-libphy
+  TITLE:=Network generic selftest support
+  KCONFIG:=CONFIG_NET_SELFTESTS
+  FILES:=$(LINUX_DIR)/net/core/selftests.ko
+  AUTOLOAD:=$(call AutoLoad,99,selftests)
+endef
+
+define KernelPackage/net-selftests/description
+  Kernel modules for the generic selftest support
+endef
+
+$(eval $(call KernelPackage,net-selftests))
 
 
 define KernelPackage/qlcnic

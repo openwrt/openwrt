@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/jow-/ucode.git
-PKG_SOURCE_DATE:=2022-04-07
-PKG_SOURCE_VERSION:=33f1e0b0926e973fb5ae445e9a995848762143bb
-PKG_MIRROR_HASH:=e419678244c5402c739e3a200d6d1d7cd6989a711c73744bc68b2d5b76bae33a
+PKG_SOURCE_DATE:=2022-04-13
+PKG_SOURCE_VERSION:=e14b0993b101839d2d40b5c4f184e6b0c2083b65
+PKG_MIRROR_HASH:=50771ea70be071626cfb682627713f818d740bc91ccadad0ba0aad5bef08a865
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
@@ -201,8 +201,8 @@ define Package/ucode-mod-uci/install
 endef
 
 
-$(eval $(call BuildPackage,ucode))
 $(eval $(call BuildPackage,libucode))
+$(eval $(call BuildPackage,ucode))
 $(eval $(call BuildPackage,ucode-mod-fs))
 $(eval $(call BuildPackage,ucode-mod-math))
 $(eval $(call BuildPackage,ucode-mod-nl80211))

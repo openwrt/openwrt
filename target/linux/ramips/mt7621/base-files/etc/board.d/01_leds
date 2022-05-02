@@ -103,6 +103,10 @@ netgear,r7450)
 	ucidef_set_led_netdev "lan3" "LAN3" "white:lan3" "lan3"
 	ucidef_set_led_netdev "lan4" "LAN4" "white:lan4" "lan4"
 	;;
+oraybox,x3a)
+	ucidef_set_led_netdev "wan" "wan link" "red:status" "wan"
+	ucidef_set_led_netdev "lan" "lan link" "green:status" "br-lan"
+	;;
 tplink,archer-a6-v3|\
 tplink,archer-c6-v3|\
 tplink,archer-c6u-v1)
@@ -116,7 +120,8 @@ tplink,re350-v1)
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "lan" "link"
 	;;
 tplink,re500-v1|\
-tplink,re650-v1)
+tplink,re650-v1|\
+tplink,re650-v2)
 	ucidef_set_led_netdev "eth_act" "LAN act" "green:eth_act" "lan" "tx rx"
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "lan" "link"
 	;;

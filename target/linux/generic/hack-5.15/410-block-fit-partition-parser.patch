@@ -112,13 +112,12 @@
  	dev->gd = gd;
 --- a/drivers/mtd/mtd_blkdevs.c
 +++ b/drivers/mtd/mtd_blkdevs.c
-@@ -345,6 +345,9 @@ int add_mtd_blktrans_dev(struct mtd_blkt
+@@ -345,6 +345,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
  	gd->first_minor = (new->devnum) << tr->part_bits;
  	gd->minors = 1 << tr->part_bits;
  	gd->fops = &mtd_block_ops;
-+#ifdef CONFIG_FIT_PARTITION
-+	gd->flags |= GENHD_FL_EXT_DEVT;
-+#endif
++	if (IS_ENABLED(CONFIG_FIT_PARTITION) && !mtd_type_is_nand(new->mtd))
++		gd->flags |= GENHD_FL_EXT_DEVT;
  
  	if (tr->part_bits)
  		if (new->devnum < 26)

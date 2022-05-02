@@ -352,12 +352,6 @@
 			perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
 			wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
 		};
-
-		nand: qpic-nand@79b0000 {
-			pinctrl-0 = <&nand_pins>;
-			pinctrl-names = "default";
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -369,6 +363,12 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
+};
+
+&nand {
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gmac0 {

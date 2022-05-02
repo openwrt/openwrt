@@ -1,0 +1,46 @@
+From f056fbeff08d30a6d9acdb9e06704461ceee3500 Mon Sep 17 00:00:00 2001
+From: Jaegeuk Kim <jaegeuk@kernel.org>
+Date: Thu, 1 Apr 2021 20:13:55 -0700
+Subject: resize.f2fs: fix wrong ovp calculation
+
+beroal reported a mount failure due to broken valid_user_blocks.
+[ 6890.647749] F2FS-fs (loop0): Wrong valid_user_blocks: 16040048,
+user_block_count: 10016768
+
+From fsck,
+
+segment_count_main                      [0x    9a95 : 39573]
+-> 39573 * 2MB = 78GB as user space
+
+overprov_segment_count                  [0x    4e29 : 20009]
+-> 20009 * 2MB = 40GB as overprovisioned space which user can't see.
+
+But,
+[FSCK] valid_block_count matching with CP             [Ok..] [0xf4c070]
+-> 0xf4c070 = 16040048
+
+valid_block_count                       [0x  f4c070 : 16040048]
+-> So, this is correct.
+
+It turns out resize.f2fs gave very large and wrong overprovisioning space
+result in shortage of user blocks. The root cause was f2fs_get_usable_segments()
+didn't consider resize case which needs segment_count_main from new superblock.
+
+Fixes: f8410857b7a8 ("f2fs-tools: zns zone-capacity support")
+Signed-off-by: Jaegeuk Kim <jaegeuk@kernel.org>
+---
+ lib/libf2fs_zoned.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/lib/libf2fs_zoned.c
++++ b/lib/libf2fs_zoned.c
+@@ -495,6 +495,9 @@ uint32_t f2fs_get_usable_segments(struct
+ 	int i, j;
+ 	uint32_t usable_segs = 0, zone_segs;
+ 
++	if (c.func == RESIZE)
++		return get_sb(segment_count_main);
++
+ 	for (i = 0; i < c.ndevs; i++) {
+ 		if (c.devices[i].zoned_model != F2FS_ZONED_HM) {
+ 			usable_segs += c.devices[i].total_segments;
