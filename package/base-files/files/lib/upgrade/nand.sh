@@ -127,12 +127,36 @@ nand_restore_config() {
 }
 
 nand_remove_ubiblock() {
-	local ubivol=$1
-	local ubiblk=ubiblock${ubivol:3}
-	if [ -e /dev/$ubiblk ]; then
-		echo "removing $ubiblk"
-		if ! ubiblock -r /dev/$ubivol; then
+	local ubivol="$1"
+
+	local ubiblk="ubiblock${ubivol:3}"
+	if [ -e "/dev/$ubiblk" ]; then
+		umount "/dev/$ubiblk" && echo "unmounted /dev/$ubiblk" || :
+		if ! ubiblock -r "/dev/$ubivol"; then
 			echo "cannot remove $ubiblk"
+			return 1
+		fi
+	fi
+}
+
+nand_detach_ubi() {
+	local ubipart="$1"
+
+	local mtdnum="$( find_mtd_index "$ubipart" )"
+	if [ ! "$mtdnum" ]; then
+		echo "cannot find ubi mtd partition $ubipart"
+		return 1
+	fi
+
+	local ubidev="$( nand_find_ubi "$ubipart" )"
+	if [ "$ubidev" ]; then
+		for ubivol in $(find /dev -name "${ubidev}_*" -maxdepth 1 | sort); do
+			ubivol="${ubivol:5}"
+			nand_remove_ubiblock "$ubivol" || :
+			umount "/dev/$ubivol" && echo "unmounted /dev/$ubivol" || :
+		done
+		if ! ubidetach -m "$mtdnum"; then
+			echo "cannot detach ubi mtd partition $ubipart"
 			return 1
 		fi
 	fi
@@ -235,15 +259,10 @@ nand_upgrade_prepare_ubi() {
 nand_upgrade_ubinized() {
 	local ubi_file="$1"
 
-	local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
-	if [ ! "$mtdnum" ]; then
-		echo "cannot find ubi mtd partition $CI_UBIPART"
-		return 1
-	fi
+	nand_detach_ubi "$CI_UBIPART" || return 1
 
-	local mtddev="/dev/mtd${mtdnum}"
-	ubidetach -p "${mtddev}" || :
-	ubiformat "${mtddev}" -y -f "${ubi_file}" && ubiattach -p "${mtddev}"
+	local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
+	ubiformat "/dev/mtd$mtdnum" -y -f "$ubi_file" && ubiattach -m "$mtdnum"
 }
 
 # Write the UBIFS image to UBI rootfs volume
