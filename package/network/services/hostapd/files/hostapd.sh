@@ -488,11 +488,11 @@ append_hs20_conn_capab() {
 }
 
 append_radius_acct_req_attr() {
-	append bss_conf "radius_acct_req_attr=$1" "$N"
+	[ -n "$1" ] && append bss_conf "radius_acct_req_attr=$1" "$N"
 }
 
 append_radius_auth_req_attr() {
-	append bss_conf "radius_auth_req_attr=$1" "$N"
+	[ -n "$1" ] && append bss_conf "radius_auth_req_attr=$1" "$N"
 }
 
 append_airtime_sta_weight() {

@@ -2242,6 +2242,27 @@ define Device/yuncore_a782
 endef
 TARGET_DEVICES += yuncore_a782
 
+define Device/yuncore_a930
+  SOC := qca9533
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := A930
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
+endef
+TARGET_DEVICES += yuncore_a930
+
+define Device/yuncore_xd3200
+  SOC := qca9563
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := XD3200
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
+endef
+TARGET_DEVICES += yuncore_xd3200
+
 define Device/yuncore_xd4200
   SOC := qca9563
   DEVICE_VENDOR := YunCore

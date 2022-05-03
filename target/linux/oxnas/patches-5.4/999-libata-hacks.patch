@@ -15,7 +15,7 @@
  	/* initialize internal qc */
  	qc = __ata_qc_from_tag(ap, ATA_TAG_INTERNAL);
  
-@@ -5158,6 +5166,9 @@ struct ata_queued_cmd *ata_qc_new_init(s
+@@ -5159,6 +5167,9 @@ struct ata_queued_cmd *ata_qc_new_init(s
  	if (unlikely(ap->pflags & ATA_PFLAG_FROZEN))
  		return NULL;
  
@@ -25,7 +25,7 @@
  	/* libsas case */
  	if (ap->flags & ATA_FLAG_SAS_HOST) {
  		tag = ata_sas_allocate_tag(ap);
-@@ -5203,6 +5214,8 @@ void ata_qc_free(struct ata_queued_cmd *
+@@ -5204,6 +5215,8 @@ void ata_qc_free(struct ata_queued_cmd *
  		qc->tag = ATA_TAG_POISON;
  		if (ap->flags & ATA_FLAG_SAS_HOST)
  			ata_sas_free_tag(tag, ap);

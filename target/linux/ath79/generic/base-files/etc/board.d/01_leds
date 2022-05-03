@@ -220,7 +220,8 @@ glinet,gl-x750)
 hak5,lan-turtle)
 	ucidef_set_led_netdev "wan" "WAN" "orange:system" "eth1"
 	;;
-joyit,jt-or750i)
+joyit,jt-or750i|\
+yuncore,xd3200)
 	ucidef_set_led_default "ath10k" "ath10k-disable" "ath10k-phy0" "0"
 	;;
 meraki,mr12|\
@@ -347,10 +348,7 @@ tplink,tl-mr6400-v1)
 	ucidef_set_led_netdev "wan" "WAN" "white:wan" "eth1"
 	ucidef_set_led_netdev "4g" "4G" "white:4g" "usb0"
 	;;
-tplink,tl-wpa8630-v1|\
-tplink,tl-wpa8630p-v2-int|\
-tplink,tl-wpa8630p-v2.0-eu|\
-tplink,tl-wpa8630p-v2.1-eu)
+tplink,tl-wpa8630-v1)
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x3c"
 	;;
 tplink,tl-wr842n-v2)
