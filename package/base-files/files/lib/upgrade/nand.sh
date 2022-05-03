@@ -231,63 +231,49 @@ nand_upgrade_prepare_ubi() {
 	return 0
 }
 
-nand_do_upgrade_success() {
-	local conf_tar="/tmp/sysupgrade.tgz"
-	if { [ ! -f "$conf_tar" ] || nand_restore_config "$conf_tar"; } && sync; then
-		echo "sysupgrade successful"
-	fi
-	umount -a
-	reboot -f
-}
-
-# Flash the UBI image to MTD partition
+# Write the UBI image to MTD ubi partition
 nand_upgrade_ubinized() {
 	local ubi_file="$1"
-	local mtdnum="$(find_mtd_index "$CI_UBIPART")"
 
+	local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
 	if [ ! "$mtdnum" ]; then
-		echo "cannot find mtd device $CI_UBIPART"
-		umount -a
-		reboot -f
+		echo "cannot find ubi mtd partition $CI_UBIPART"
+		return 1
 	fi
 
 	local mtddev="/dev/mtd${mtdnum}"
 	ubidetach -p "${mtddev}" || :
-	ubiformat "${mtddev}" -y -f "${ubi_file}"
-	ubiattach -p "${mtddev}"
-
-	nand_do_upgrade_success
+	ubiformat "${mtddev}" -y -f "${ubi_file}" && ubiattach -p "${mtddev}"
 }
 
-# Write the UBIFS image to UBI volume
+# Write the UBIFS image to UBI rootfs volume
 nand_upgrade_ubifs() {
 	local rootfs_length=$( (cat $1 | wc -c) 2> /dev/null)
 
-	nand_upgrade_prepare_ubi "$rootfs_length" "ubifs" "" ""
+	nand_upgrade_prepare_ubi "$rootfs_length" "ubifs" "" "" || return 1
 
 	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
 	local root_ubivol="$(nand_find_volume $ubidev "$CI_ROOTPART")"
 	ubiupdatevol /dev/$root_ubivol -s $rootfs_length $1
-
-	nand_do_upgrade_success
 }
 
+# Write the FIT image to UBI kernel volume
 nand_upgrade_fit() {
 	local fit_file="$1"
 	local fit_length="$(wc -c < "$fit_file")"
 
-	nand_upgrade_prepare_ubi "" "" "$fit_length" "1"
+	nand_upgrade_prepare_ubi "" "" "$fit_length" "1" || return 1
 
 	local fit_ubidev="$(nand_find_ubi "$CI_UBIPART")"
 	local fit_ubivol="$(nand_find_volume $fit_ubidev "$CI_KERNPART")"
 	ubiupdatevol /dev/$fit_ubivol -s $fit_length $fit_file
-
-	nand_do_upgrade_success
 }
 
+# Write images in the TAR file to MTD partitions and/or UBI volumes as required
 nand_upgrade_tar() {
 	local tar_file="$1"
 
+	# WARNING: This fails if tar contains more than one 'sysupgrade-*' directory.
 	local board_dir="$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')"
 	board_dir="${board_dir%/}"
 
@@ -315,7 +301,7 @@ nand_upgrade_tar() {
 		fi
 	fi
 	local has_env=0
-	nand_upgrade_prepare_ubi "$rootfs_length" "$rootfs_type" "$ubi_kernel_length" "$has_env"
+	nand_upgrade_prepare_ubi "$rootfs_length" "$rootfs_type" "$ubi_kernel_length" "$has_env" || return 1
 
 	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
 	if [ "$rootfs_length" ]; then
@@ -334,16 +320,14 @@ nand_upgrade_tar() {
 		fi
 	fi
 
-	nand_do_upgrade_success
+	return 0
 }
 
-# Recognize type of passed file and start the upgrade process
-nand_do_upgrade() {
+nand_do_flash_file() {
 	local file_type=$(identify "$1")
 
 	[ ! "$(find_mtd_index "$CI_UBIPART")" ] && CI_UBIPART=rootfs
 
-	sync
 	case "$file_type" in
 		"fit")		nand_upgrade_fit "$1";;
 		"ubi")		nand_upgrade_ubinized "$1";;
@@ -352,14 +336,34 @@ nand_do_upgrade() {
 	esac
 }
 
-# Check if passed file is a valid one for NAND sysupgrade. Currently it accepts
-# 3 types of files:
-# 1) UBI - should contain an ubinized image, header is checked for the proper
-#    MAGIC
-# 2) UBIFS - should contain UBIFS partition that will replace "rootfs" volume,
-#    header is checked for the proper MAGIC
-# 3) TAR - archive has to include "sysupgrade-BOARD" directory with a non-empty
-#    "CONTROL" file (at this point its content isn't verified)
+nand_do_restore_config() {
+	local conf_tar="/tmp/sysupgrade.tgz"
+	[ ! -f "$conf_tar" ] || nand_restore_config "$conf_tar"
+}
+
+# Recognize type of passed file and start the upgrade process
+nand_do_upgrade() {
+	sync
+	if nand_do_flash_file "$1" && nand_do_restore_config && sync; then
+		echo "sysupgrade successful"
+		umount -a
+		reboot -f
+	fi
+
+	sync
+	echo "sysupgrade failed"
+	# Should we reboot or bring up some failsafe mode instead?
+	umount -a
+	reboot -f
+}
+
+# Check if passed file is a valid one for NAND sysupgrade.
+# Currently it accepts 4 types of files:
+# 1) UBI: a ubinized image containing required UBI volumes.
+# 2) UBIFS: a UBIFS rootfs volume image.
+# 3) FIT: a FIT image containing kernel and rootfs.
+# 4) TAR: an archive that includes directory "sysupgrade-${BOARD_NAME}" containing
+#         a non-empty "CONTROL" file and required partition and/or volume images.
 #
 # You usually want to call this function in platform_check_image.
 #
