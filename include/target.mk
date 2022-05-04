@@ -17,7 +17,7 @@ DEFAULT_PACKAGES:=\
 	fstools \
 	libc \
 	libgcc \
-	libustream-wolfssl \
+	libustream-openssl \
 	logd \
 	mtd \
 	netifd \
@@ -43,7 +43,7 @@ DEFAULT_PACKAGES.nas:=\
 	mdadm
 # For router targets
 DEFAULT_PACKAGES.router:=\
-	dnsmasq \
+	dnsmasq-full \
 	firewall \
 	ip6tables \
 	iptables \
@@ -51,7 +51,10 @@ DEFAULT_PACKAGES.router:=\
 	odhcp6c \
 	odhcpd-ipv6only \
 	ppp \
-	ppp-mod-pppoe
+	ppp-mod-pppoe \
+	luci \
+	luci-compat \
+	luci-lib-base
 
 ifneq ($(DUMP),)
   all: dumpinfo
