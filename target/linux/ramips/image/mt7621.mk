@@ -1189,6 +1189,27 @@ define Device/mtc_wr1201
 endef
 TARGET_DEVICES += mtc_wr1201
 
+define Device/mts_wg430223
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := MTS
+  DEVICE_MODEL := WG430223
+  IMAGE_SIZE := 32768k
+  KERNEL_SIZE := 4352k
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none | arcadyan-trx 0x53485231 | pad-to $$(KERNEL_SIZE)
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none
+  IMAGES += factory.trx
+  IMAGE/factory.trx := append-kernel | append-ubi | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware uboot-envtools
+endef
+TARGET_DEVICES += mts_wg430223
+
 define Device/netgear_ex6150
   $(Device/dsa-migration)
   DEVICE_VENDOR := NETGEAR
