@@ -46,14 +46,6 @@ BEGIN {
 	network=and(ipaddr,netmask)
 	broadcast=or(network,compl32(netmask))
 
-	start=or(network,and(ip2int(ARGV[3]),compl32(netmask)))
-	limit=network+1
-	if (start<limit) start=limit
-
-	end=start+ARGV[4]
-	limit=or(network,compl32(netmask))-1
-	if (end>limit) end=limit
-
 	print "IP="int2ip(ipaddr)
 	print "NETMASK="int2ip(netmask)
 	print "BROADCAST="int2ip(broadcast)
@@ -63,9 +55,18 @@ BEGIN {
 	# range calculations:
 	# ipcalc <ip> <netmask> <start> <num>
 
-	if (ARGC > 3) {
-		print "START="int2ip(start)
-		print "END="int2ip(end)
-	}
+	if (ARGC <= 3)
+		exit(0)
+
+	start=or(network,and(ip2int(ARGV[3]),compl32(netmask)))
+	limit=network+1
+	if (start<limit) start=limit
+
+	end=start+ARGV[4]
+	limit=or(network,compl32(netmask))-1
+	if (end>limit) end=limit
+
+	print "START="int2ip(start)
+	print "END="int2ip(end)
 }
 EOF
