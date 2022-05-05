@@ -271,6 +271,16 @@ define Device/netgear_readynas-duo-v2
 endef
 TARGET_DEVICES += netgear_readynas-duo-v2
 
+define Device/netgear_stora
+  DEVICE_VENDOR := Netgear
+  DEVICE_MODEL := Stora (MS2000/2110)
+  DEVICE_DTS := kirkwood-stora
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
+	kmod-rtc-pcf8563 kmod-hwmon-lm75 kmod-hwmon-tc654 \
+	kmod-gpio-button-hotplug
+endef
+TARGET_DEVICES += netgear_stora
+
 define Device/raidsonic_ib-nas62x0
   DEVICE_VENDOR := RaidSonic
   DEVICE_MODEL := ICY BOX IB-NAS62x0
