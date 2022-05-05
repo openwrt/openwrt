@@ -23,6 +23,16 @@ define Device/friendlyarm_nanopi-r4s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r4s
 
+define Device/friendlyarm_nanopi-m4-2gb
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi M4
+  DEVICE_VARIANT := 2GB DDR3
+  SOC := rk3399
+  UBOOT_DEVICE_NAME := nanopi-m4-2gb-rk3399
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r4s | pine64-img | gzip | append-metadata
+endef
+TARGET_DEVICES += friendlyarm_nanopi-m4
+
 define Device/pine64_rockpro64
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := RockPro64
