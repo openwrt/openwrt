@@ -1803,7 +1803,6 @@ $(eval $(call KernelPackage,usb-xhci-mtk))
 
 define KernelPackage/usb-xhci-pci-renesas
   TITLE:=Support for additional Renesas xHCI controller with firmware
-  DEPENDS:=@LINUX_5_10
   KCONFIG:=CONFIG_USB_XHCI_PCI_RENESAS
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/usb/host/xhci-pci-renesas.ko
