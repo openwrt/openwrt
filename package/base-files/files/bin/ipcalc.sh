@@ -61,10 +61,17 @@ BEGIN {
 	start=or(network,and(ip2int(ARGV[3]),compl32(netmask)))
 	limit=network+1
 	if (start<limit) start=limit
+	if (start==ipaddr) start=ipaddr+1
 
 	end=start+ARGV[4]
 	limit=or(network,compl32(netmask))-1
 	if (end>limit) end=limit
+	if (end==ipaddr) end=ipaddr-1
+
+	if (ipaddr > start && ipaddr < end) {
+		print "ipaddr inside range" > "/dev/stderr"
+		exit(1)
+	}
 
 	print "START="int2ip(start)
 	print "END="int2ip(end)
