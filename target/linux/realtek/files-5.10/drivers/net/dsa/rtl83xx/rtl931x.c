@@ -535,13 +535,14 @@ void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 
 u64 rtl931x_traffic_get(int source)
 {
-	u32 v;
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
+	u64 v;
+	// Read PORT_ISO_CTRL table (1) via register RTL9320_TBL_2
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 
 	rtl_table_read(r, source);
-	v = sw_r32(rtl_table_data(r, 0));
+	v = rtl839x_get_port_reg_be(rtl_table_data(r, 0));
 	rtl_table_release(r);
-	return v >> 3;
+	return v >> 7;
 }
 
 /*
@@ -549,27 +550,33 @@ u64 rtl931x_traffic_get(int source)
  */
 void rtl931x_traffic_set(int source, u64 dest_matrix)
 {
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 
-	sw_w32((dest_matrix << 3), rtl_table_data(r, 0));
+	rtl839x_set_port_reg_be((dest_matrix << 7), rtl_table_data(r, 0));
+	pr_debug("%s source %d pmask %016llx\n",
+		__func__, source, rtl839x_get_port_reg_be(rtl_table_data(r, 0)));
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
 
 void rtl931x_traffic_enable(int source, int dest)
 {
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 	rtl_table_read(r, source);
-	sw_w32_mask(0, BIT(dest + 3), rtl_table_data(r, 0));
+	rtl839x_mask_port_reg_be(0, BIT_ULL(dest + 7), rtl_table_data(r, 0));
+	pr_debug("%s source %d pmask %016llx\n",
+		__func__, source, rtl839x_get_port_reg_be(rtl_table_data(r, 0)));
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
 
 void rtl931x_traffic_disable(int source, int dest)
 {
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 	rtl_table_read(r, source);
-	sw_w32_mask(BIT(dest + 3), 0, rtl_table_data(r, 0));
+	rtl839x_mask_port_reg_be(BIT_ULL(dest + 7), 0, rtl_table_data(r, 0));
+	pr_debug("%s source %d pmask %016llx\n",
+		__func__, source, rtl839x_get_port_reg_be(rtl_table_data(r, 0)));
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
@@ -867,6 +874,7 @@ static void rtl931x_vlan_profile_setup(int profile)
 
 static void rtl931x_l2_learning_setup(void)
 {
+	u32 v;
 	// Portmask for flooding broadcast traffic
 	rtl839x_set_port_reg_be(0x1FFFFFFFFFFFFFF, RTL931X_L2_BC_FLD_PMSK);
 
@@ -875,6 +883,13 @@ static void rtl931x_l2_learning_setup(void)
 
 	// Limit learning to maximum: 64k entries, after that just flood (bits 0-2)
 	sw_w32((0xffff << 3) | FORWARD, RTL931X_L2_LRN_CONSTRT_CTRL);
+
+	/* Add CPU port to VLAN 1 */
+	sw_w32(0x118001, 0x8500);
+	v = sw_r32(0x8508);
+	v |= 0x80000000;
+	sw_w32(v, 0x8508);
+	sw_w32(0x198001, 0x8500);
 }
 
 static u64 rtl931x_read_mcast_pmask(int idx)
@@ -1683,6 +1698,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
 	.set_vlan_egr_filter = rtl931x_set_egr_filter,
 	.set_distribution_algorithm = rtl931x_set_distribution_algorithm,
+	.l2_hash_seed = rtl931x_l2_hash_seed,
 	.l2_hash_key = rtl931x_l2_hash_key,
 	.read_mcast_pmask = rtl931x_read_mcast_pmask,
 	.write_mcast_pmask = rtl931x_write_mcast_pmask,
