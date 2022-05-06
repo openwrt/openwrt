@@ -921,10 +921,16 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 static void rtl83xx_get_strings(struct dsa_switch *ds,
 				int port, u32 stringset, u8 *data)
 {
+	struct rtl838x_switch_priv *priv = ds->priv;
 	int i;
 
 	if (stringset != ETH_SS_STATS)
 		return;
+
+	if (priv->family_id == RTL9310_FAMILY_ID) {
+		rtl931x_get_strings(port, stringset, data);
+		return;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++)
 		strncpy(data + i * ETH_GSTRING_LEN, rtl83xx_mib[i].name,
@@ -938,6 +944,10 @@ static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
 	const struct rtl83xx_mib_desc *mib;
 	int i;
 	u64 h;
+	if (priv->family_id == RTL9310_FAMILY_ID) {
+		rtl931x_get_ethtool_stats(priv, port, data);
+		return;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++) {
 		mib = &rtl83xx_mib[i];
@@ -952,8 +962,13 @@ static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
 
 static int rtl83xx_get_sset_count(struct dsa_switch *ds, int port, int sset)
 {
+	struct rtl838x_switch_priv *priv = ds->priv;
+
 	if (sset != ETH_SS_STATS)
 		return 0;
+
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		return rtl931x_get_sset_count(port, sset);
 
 	return ARRAY_SIZE(rtl83xx_mib);
 }

@@ -136,6 +136,9 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode);
 void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode);
 void rtl931x_media_none(int sds);
 void rtl931x_media_set(int sds, phy_interface_t mode);
+void rtl931x_get_strings(int port, u32 stringset, u8 *data);
+void rtl931x_get_ethtool_stats(struct rtl838x_switch_priv *priv, int port, uint64_t *data);
+int rtl931x_get_sset_count(int port, int sset);
 
 int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
 int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
