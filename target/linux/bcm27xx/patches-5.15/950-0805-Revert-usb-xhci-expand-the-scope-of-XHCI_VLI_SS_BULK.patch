@@ -1,0 +1,57 @@
+From 266f8511f55617449883f8057e852053ca939454 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Wed, 23 Mar 2022 14:44:49 +0000
+Subject: [PATCH 805/828] Revert "usb: xhci: expand the scope of
+ XHCI_VLI_SS_BULK_OUT_BUG"
+
+This reverts commit 40686d87f87a46b3abf48a8dcaee5e0a031deafb.
+
+See: https://github.com/raspberrypi/linux/issues/4930
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/usb/host/xhci.c | 16 +---------------
+ 1 file changed, 1 insertion(+), 15 deletions(-)
+
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -1393,12 +1393,9 @@ static void xhci_unmap_temp_buf(struct u
+ static int xhci_map_urb_for_dma(struct usb_hcd *hcd, struct urb *urb,
+ 				gfp_t mem_flags)
+ {
+-	unsigned int i, maxpacket;
+-	struct scatterlist *sg;
+ 	struct xhci_hcd *xhci;
+ 
+ 	xhci = hcd_to_xhci(hcd);
+-	maxpacket = usb_endpoint_maxp(&urb->ep->desc);
+ 
+ 	if (xhci_urb_suitable_for_idt(urb))
+ 		return 0;
+@@ -1407,16 +1404,6 @@ static int xhci_map_urb_for_dma(struct u
+ 		if (xhci_urb_temp_buffer_required(hcd, urb))
+ 			return xhci_map_temp_buffer(hcd, urb);
+ 	}
+-
+-	if (xhci->quirks & XHCI_VLI_SS_BULK_OUT_BUG &&
+-	    usb_endpoint_is_bulk_out(&urb->ep->desc) &&
+-	    urb->dev->speed >= USB_SPEED_SUPER &&
+-	    urb->transfer_buffer_length != 0) {
+-		for_each_sg(urb->sg, sg, urb->num_sgs, i) {
+-			if (sg->length % maxpacket)
+-				return xhci_map_temp_buffer(hcd, urb);
+-		}
+-	}
+ 	return usb_hcd_map_urb_for_dma(hcd, urb, mem_flags);
+ }
+ 
+@@ -1430,8 +1417,7 @@ static void xhci_unmap_urb_for_dma(struc
+ 	if (urb->num_sgs && (urb->transfer_flags & URB_DMA_MAP_SINGLE))
+ 		unmap_temp_buf = true;
+ 
+-	if ((xhci->quirks & (XHCI_SG_TRB_CACHE_SIZE_QUIRK | XHCI_VLI_SS_BULK_OUT_BUG))
+-	     && unmap_temp_buf)
++	if ((xhci->quirks & XHCI_SG_TRB_CACHE_SIZE_QUIRK) && unmap_temp_buf)
+ 		xhci_unmap_temp_buf(hcd, urb);
+ 	else
+ 		usb_hcd_unmap_urb_for_dma(hcd, urb);

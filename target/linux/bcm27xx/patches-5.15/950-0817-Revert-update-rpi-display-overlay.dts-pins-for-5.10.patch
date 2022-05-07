@@ -1,0 +1,32 @@
+From f1443614684f4d4537f981f1a89ea15f9638689b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Sat, 26 Mar 2022 18:59:27 +0100
+Subject: [PATCH 817/828] Revert "update rpi-display-overlay.dts pins for
+ 5.10+"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit 97d1b136be6dbc81316259690fd15b4110a3606f.
+
+The fbtft backlight problem was fixed in 5.15.6 so this workaround has to
+be reverted to make backlight work again.
+
+Ref: https://github.com/notro/fbtft/issues/571
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ arch/arm/boot/dts/overlays/rpi-display-overlay.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/rpi-display-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rpi-display-overlay.dts
+@@ -61,7 +61,7 @@
+ 				buswidth = <8>;
+ 				reset-gpios = <&gpio 23 1>;
+ 				dc-gpios = <&gpio 24 0>;
+-				led-gpios = <&gpio 18 1>;
++				led-gpios = <&gpio 18 0>;
+ 				debug = <0>;
+ 			};
+ 

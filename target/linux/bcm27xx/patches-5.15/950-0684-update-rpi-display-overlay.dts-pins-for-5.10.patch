@@ -1,0 +1,21 @@
+From d5287bddcf0f459ba1dae3b8a585f8f4a722d37b Mon Sep 17 00:00:00 2001
+From: Andreas Watterott <1488433+awatterott@users.noreply.github.com>
+Date: Sat, 22 Jan 2022 12:32:09 +0100
+Subject: [PATCH 684/828] update rpi-display-overlay.dts pins for 5.10+
+
+backlight has been turned off
+---
+ arch/arm/boot/dts/overlays/rpi-display-overlay.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/rpi-display-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rpi-display-overlay.dts
+@@ -61,7 +61,7 @@
+ 				buswidth = <8>;
+ 				reset-gpios = <&gpio 23 1>;
+ 				dc-gpios = <&gpio 24 0>;
+-				led-gpios = <&gpio 18 0>;
++				led-gpios = <&gpio 18 1>;
+ 				debug = <0>;
+ 			};
+ 
