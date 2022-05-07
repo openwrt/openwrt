@@ -1912,12 +1912,12 @@ static int rtl9310_read_status(struct phy_device *phydev, u32 sds)
 	latch_sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
 	sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
 
-	pr_info("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
+	pr_debug("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
 		sds, sts, sts1, latch_sts, latch_sts1);
 
 	if (sts || sts1) {
 		u32 mode = rtl9310_sds_field_r(asds, 0x1F, 0x9, 11, 6);
-		pr_info("%s mode is 0x%x\n", __func__, mode);
+		pr_debug("%s mode is 0x%x\n", __func__, mode);
 
 		phydev->link = true;
 		if (mode != 0x9) {
@@ -2290,6 +2290,28 @@ void rtl9300_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
 	v10 = rtl930x_read_sds_phy(sds, 6, 2);
 	v1 = rtl930x_read_sds_phy(sds, 0, 0);
 	pr_info("%s: registers after %08x %08x\n", __func__, v10, v1);
+}
+
+void rtl9310_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
+{
+	u32 v10, v1;
+	int asds = rtl931x_get_analog_sds(sds);
+
+	v10 = rtl931x_read_sds_phy(asds, 6, 2); // 10GBit, page 6, reg 2
+	v1 = rtl931x_read_sds_phy(asds, 0, 0); // 1GBit, page 0, reg 0
+	pr_info("%s: registers before %08x %08x\n", __func__, v10, v1);
+
+	v10 &= ~(BIT(13) | BIT(14));
+	v1 &= ~(BIT(8) | BIT(9));
+
+	v10 |= rx_normal ? 0 : BIT(13);
+	v1 |= rx_normal ? 0 : BIT(9);
+
+	v10 |= tx_normal ? 0 : BIT(14);
+	v1 |= tx_normal ? 0 : BIT(8);
+
+	rtl931x_write_sds_phy(asds, 6, 2, v10);
+	rtl931x_write_sds_phy(asds, 0, 0, v1);
 }
 
 void rtl9300_sds_rxcal_dcvs_manual(u32 sds_num, u32 dcvs_id, bool manual, u32 dvcs_list[])
@@ -3970,6 +3992,48 @@ int rtl9300_configure_rtl8226(struct phy_device *phydev)
 	return 0;
 }
 
+int rtl93xx_get_sds(struct device *dev)
+{
+	int sds_num;
+	struct device_node *dn;
+
+	if (dev->of_node) {
+		dn = dev->of_node;
+
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			return 0;  // Not the base address
+	} else {
+		dev_err(dev, "No DT node.\n");
+		return -EINVAL;
+	}
+
+	return sds_num;
+}
+
+int configure_rtl8221b(struct phy_device *phydev)
+{
+	int phy_addr = phydev->mdio.addr;
+	int sds;
+	u32 v;
+
+	pr_info("%s configuring RTL8221B on port %d\n", __func__, phy_addr);
+
+	sds = rtl93xx_get_sds(&phydev->mdio.dev);
+	if (sds <= 0)
+		return sds;
+
+	rtl9310_serdes_mac_link_config(sds, true, true);
+
+/*	v = phy_read_paged(phydev, MDIO_MMD_VEND1, 0x697A);
+	pr_info("%s RTL8221B link mode %x\n", __func__, v);
+	v &= ~0x3f;
+	v |= 0x1; // Various functions 0x1 to 0x5. Ox1 enables SGMII/HISGMII
+
+	phy_write_paged(phydev, MDIO_MMD_VEND1, 0x697A, v);
+*/
+	return 0;
+}
+
 int rtl9300_rtl8226_mode_set(int port, int sds_num, phy_interface_t phy_mode)
 {
 	pr_info("%s setting serdes %d to mode %s +++++\n", __func__, sds_num, phy_modes(phy_mode));
@@ -4358,6 +4422,68 @@ static sds_config sds_config_10p3125g_cmu_type1[] = {
 	{ 0x2F, 0x0F, 0xA470 }, { 0x2F, 0x10, 0x8000 }, { 0x2F, 0x11, 0x037B }
 };
 
+void rtl931x_init_leq_dfe(int sds)
+{
+	int asds = rtl931x_get_analog_sds(sds);
+
+	rtl9310_sds_field_w(asds, 0x2e, 0xd, 6, 0, 0x0);
+	rtl9310_sds_field_w(asds, 0x2e, 0xd, 7, 7, 0x1);
+
+	rtl9310_sds_field_w(asds, 0x2e, 0x1c, 5, 0, 0x1E);
+	rtl9310_sds_field_w(asds, 0x2e, 0x1d, 11, 0, 0x00);
+	rtl9310_sds_field_w(asds, 0x2e, 0x1f, 11, 0, 0x00);
+	rtl9310_sds_field_w(asds, 0x2f, 0x0, 11, 0, 0x00);
+	rtl9310_sds_field_w(asds, 0x2f, 0x1, 11, 0, 0x00);
+}
+
+void rtl931x_media_none(int sds)
+{
+	int asds = rtl931x_get_analog_sds(sds);
+	int dsds = (sds < 2)?sds:(sds - 1) * 2;
+
+	rtl9310_sds_field_w(dsds, 31, 1, 0, 0, 0x1);
+
+	rtl931x_init_leq_dfe(sds);
+
+	// Set media non state
+	rtl931x_write_sds_phy(asds, 0x2e, 0x12, 0x2740);
+	rtl931x_write_sds_phy(asds, 0x2f, 0x0, 0x0);
+	rtl931x_write_sds_phy(asds, 0x2f, 0x2, 0x2010);
+	rtl931x_write_sds_phy(asds, 0x20, 0x0, 0xcd1);
+	rtl9310_sds_field_w(asds, 0x2A, 0x12, 7, 6, 0x1);
+
+	// Switch SDS off
+	rtl931x_sds_fiber_mode_set(sds, PHY_INTERFACE_MODE_NA);
+}
+
+void rtl931x_media_set(int sds, phy_interface_t mode)
+{
+	int asds = rtl931x_get_analog_sds(sds);
+
+	rtl931x_sds_rx_rst(sds);
+
+	rtl9310_sds_field_w(asds, 0x2e, 0xe, 13, 11, 0);
+	rtl931x_init_leq_dfe(sds);
+
+	switch(mode){
+	// TODO: Support different DAC modes
+	case PHY_INTERFACE_MODE_10GBASER:
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x0);
+		rtl9310_sds_field_w(asds, 0x2A, 0x7, 15, 15, 0x1);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
+		break;
+
+	case PHY_INTERFACE_MODE_1000BASEX:
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x0);
+		rtl9310_sds_field_w(asds, 0x2A, 0x7, 15, 15, 0x0);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
+		break;
+
+	default:
+		pr_err("%s: unsupported media\n", __func__);
+	}
+}
+
 int rtl931x_sds_init(u32 sds, phy_interface_t mode)
 {
 
@@ -4525,6 +4651,9 @@ int rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		return -EINVAL;
 	}
 
+	// TX Polarity inverted on ports, TODO: this is only true on ECS4125-10P
+	rtl9310_serdes_mac_link_config(sds, false, true);
+
 	rtl931x_cmu_type_set(asds, mode, chiptype);
 
 	if (sds >= 2 && sds <= 13) {
@@ -4549,74 +4678,14 @@ int rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
 	pr_debug("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
 
-	if (mode == PHY_INTERFACE_MODE_XGMII)
+	if (mode == PHY_INTERFACE_MODE_XGMII) {
 		rtl931x_sds_mii_mode_set(sds, mode);
-	else
+	} else {
 		rtl931x_sds_fiber_mode_set(sds, mode);
+		rtl931x_media_set(sds, mode);
+	}
 
 	return 0;
-}
-
-void rtl931x_init_leq_dfe(int sds)
-{
-	int asds = rtl931x_get_analog_sds(sds);
-
-	rtl9310_sds_field_w(asds, 0x2e, 0xd, 6, 0, 0x0);
-	rtl9310_sds_field_w(asds, 0x2e, 0xd, 7, 7, 0x1);
-
-	rtl9310_sds_field_w(asds, 0x2e, 0x1c, 5, 0, 0x1E);
-	rtl9310_sds_field_w(asds, 0x2e, 0x1d, 11, 0, 0x00);
-	rtl9310_sds_field_w(asds, 0x2e, 0x1f, 11, 0, 0x00);
-	rtl9310_sds_field_w(asds, 0x2f, 0x0, 11, 0, 0x00);
-	rtl9310_sds_field_w(asds, 0x2f, 0x1, 11, 0, 0x00);
-}
-
-void rtl931x_media_set(int sds, phy_interface_t mode)
-{
-	int asds = rtl931x_get_analog_sds(sds);
-
-	rtl931x_sds_rx_rst(sds);
-
-	rtl9310_sds_field_w(asds, 0x2e, 0xe, 13, 11, 0);
-	rtl931x_init_leq_dfe(sds);
-
-	switch(mode){
-	// TODO: Support different DAC modes
-	case PHY_INTERFACE_MODE_10GBASER:
-		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x0);
-		rtl9310_sds_field_w(asds, 0x2A, 0x7, 15, 15, 0x1);
-		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
-		break;
-
-	case PHY_INTERFACE_MODE_1000BASEX:
-		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x0);
-		rtl9310_sds_field_w(asds, 0x2A, 0x7, 15, 15, 0x0);
-		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
-		break;
-
-	default:
-		pr_err("%s: unsupported media\n", __func__);
-	}
-}
-
-void rtl931x_media_none(int sds)
-{
-	int asds = rtl931x_get_analog_sds(sds);
-	int dsds = (sds < 2)?sds:(sds - 1) * 2;
-
-	rtl9310_sds_field_w(dsds, 31, 1, 0, 0, 0x1);
-
-	rtl931x_init_leq_dfe(sds);
-
-	// Set media non state
-	rtl931x_write_sds_phy(asds, 0x2e, 0x12, 0x2740);
-	rtl931x_write_sds_phy(asds, 0x2f, 0x0, 0x0);
-	rtl931x_write_sds_phy(asds, 0x2f, 0x2, 0x2010);
-	rtl931x_write_sds_phy(asds, 0x20, 0x0, 0xcd1);
-	rtl9310_sds_field_w(asds, 0x2A, 0x12, 7, 6, 0x1);
-
-	// Switch SDS off
-	rtl931x_sds_fiber_mode_set(sds, PHY_INTERFACE_MODE_NA);
 }
 
 int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mode)
@@ -4663,26 +4732,17 @@ int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode)
 
 int rtl93xx_configure_serdes(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
 	int phy_addr = phydev->mdio.addr;
-	struct device_node *dn;
 	u32 sds_num = 0;
 	int phy_mode = PHY_INTERFACE_MODE_10GBASER;
 
 	if (soc_info.family == RTL9300_FAMILY_ID)
 		return 0;
 
-
 	pr_info("%s configuring RTL931x SerDes on port %d\n", __func__, phy_addr);
-	if (dev->of_node) {
-		dn = dev->of_node;
-
-		if (of_property_read_u32(dn, "sds", &sds_num))
-			return 0;  // Not the base address
-	} else {
-		dev_err(dev, "No DT node.\n");
-		return -EINVAL;
-	}
+	sds_num = rtl93xx_get_sds(&phydev->mdio.dev);
+	if (sds_num <= 0)
+		return sds_num;
 
 	pr_info("%s: port %d, SerDes is %d\n", __func__, phy_addr, sds_num);
 	if (sds_num < 12)
@@ -4950,6 +5010,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.suspend        = genphy_suspend,
 		.resume         = genphy_resume,
 		.set_loopback   = genphy_loopback,
+		.config_init	= configure_rtl8221b,
 		.read_page      = rtl8226_read_page,
 		.write_page     = rtl8226_write_page,
 		.read_status    = rtl8226_read_status,
