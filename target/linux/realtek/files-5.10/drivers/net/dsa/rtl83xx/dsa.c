@@ -1062,11 +1062,14 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 	pr_debug("%s: %x %d", __func__, (u32) priv, port);
 	priv->ports[port].enable = true;
 
-	/* enable inner tagging on egress, do not keep any tags */
+	/* keep inner and outer tags on ingress and egress:
+	 * set IGR_ITAG_KEEP, IGR_OTAG_KEEP, EGR_ITAG_KEEP EGR_OTAG_KEEP (bits 0-3)
+	 * on RTL9300, on RTL9310 these are bits (6-9), on RTL9310 also set
+	 * ITPID_KEEP (bit 0) and OTPID_KEEP (bit 3) */
 	if (priv->family_id == RTL9310_FAMILY_ID)
-		sw_w32(BIT(4), priv->r->vlan_port_tag_sts_ctrl + (port << 2));
+		sw_w32(0x3c9, priv->r->vlan_port_tag_sts_ctrl + (port << 2));
 	else
-		sw_w32(1, priv->r->vlan_port_tag_sts_ctrl + (port << 2));
+		sw_w32(0xf, priv->r->vlan_port_tag_sts_ctrl + (port << 2));
 
 	if (dsa_is_cpu_port(ds, port))
 		return 0;
