@@ -40,6 +40,10 @@ ifeq ($(PKG_VERSION),11.2.0)
   PKG_HASH:=d08edc536b54c372a1010ff6619dd274c0f1603aa49212ba20f7aa2cda36fa8b
 endif
 
+ifeq ($(PKG_VERSION),12.1.0)
+  PKG_HASH:=62fd634889f31c02b64af2c468f064b47ad1ca78411c45abe6ac4b5f8dd19c7b
+endif
+
 PATCH_DIR=../patches/$(GCC_VERSION)
 
 BUGURL=http://bugs.openwrt.org/
@@ -180,6 +184,12 @@ define Host/SetToolchainInfo
 	$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(GCC_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
 
+GCC_VERSION_FILE:=gcc/version.c
+
+ifdef CONFIG_GCC_USE_VERSION_12
+	GCC_VERSION_FILE:=gcc/genversion.cc
+endif
+
 ifneq ($(GCC_PREPARE),)
   define Host/Prepare
 	$(call Host/SetToolchainInfo)
@@ -188,7 +198,7 @@ ifneq ($(GCC_PREPARE),)
 	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_SOURCE_DIR)/
 	$(SED) 's,^MULTILIB_OSDIRNAMES,# MULTILIB_OSDIRNAMES,' $(HOST_SOURCE_DIR)/gcc/config/*/t-*
 	$(SED) 'd' $(HOST_SOURCE_DIR)/gcc/DEV-PHASE
-	$(SED) 's, DATESTAMP,,' $(HOST_SOURCE_DIR)/gcc/version.c
+	$(SED) 's, DATESTAMP,,' $(HOST_SOURCE_DIR)/$(GCC_VERSION_FILE)
 	#(cd $(HOST_SOURCE_DIR)/libstdc++-v3; autoconf;);
 	$(SED) 's,gcc_no_link=yes,gcc_no_link=no,' $(HOST_SOURCE_DIR)/libstdc++-v3/configure
 	mkdir -p $(GCC_BUILD_DIR)
