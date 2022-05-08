@@ -251,6 +251,15 @@ define Device/dlink_dir-885l
 endef
 TARGET_DEVICES += dlink_dir-885l
 
+define Device/iptime_a5004ns
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A5004ns
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  IMAGES := bin
+  IMAGE/bin := append-rootfs | trx-serial
+endef
+TARGET_DEVICES += iptime_a5004ns
+
 define Device/linksys_ea6300-v1
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA6300
