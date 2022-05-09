@@ -205,6 +205,15 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 
 	priv->r->l2_learning_setup();
 
+	/*
+	 *  Make sure all frames sent to the switch's MAC are trapped to the CPU-port
+	 *  0: FWD, 1: DROP, 2: TRAP2CPU
+	 */
+	if (priv->family_id == RTL8380_FAMILY_ID)
+		sw_w32(0x2, RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL);
+	else
+		sw_w32(0x2, RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL);
+
 	/* Enable MAC Polling PHY again */
 	rtl83xx_enable_phy_polling(priv);
 	pr_debug("Please wait until PHY is settled\n");
