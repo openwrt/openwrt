@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static void gswip_xrx200_phylink_validate(struct dsa_switch *ds, int port,
  					  unsigned long *supported,
  					  struct phylink_link_state *state)
-@@ -1832,6 +1873,8 @@ static const struct dsa_switch_ops gswip
+@@ -1829,6 +1870,8 @@ static const struct dsa_switch_ops gswip
  	.port_fdb_add		= gswip_port_fdb_add,
  	.port_fdb_del		= gswip_port_fdb_del,
  	.port_fdb_dump		= gswip_port_fdb_dump,
@@ -116,7 +116,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.phylink_validate	= gswip_xrx200_phylink_validate,
  	.phylink_mac_config	= gswip_phylink_mac_config,
  	.phylink_mac_link_down	= gswip_phylink_mac_link_down,
-@@ -1856,6 +1899,8 @@ static const struct dsa_switch_ops gswip
+@@ -1853,6 +1896,8 @@ static const struct dsa_switch_ops gswip
  	.port_fdb_add		= gswip_port_fdb_add,
  	.port_fdb_del		= gswip_port_fdb_del,
  	.port_fdb_dump		= gswip_port_fdb_dump,
