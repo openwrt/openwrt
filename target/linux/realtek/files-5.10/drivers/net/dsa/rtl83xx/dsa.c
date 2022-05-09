@@ -860,12 +860,21 @@ static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 				     unsigned int mode,
 				     phy_interface_t interface)
 {
+	u32 v;
 	struct rtl838x_switch_priv *priv = ds->priv;
+
 	/* Stop TX/RX to port */
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
 
 	// No longer force link
 	sw_w32_mask(3, 0, priv->r->mac_force_mode_ctrl(port));
+/*
+	if (priv->family_id == RTL9300_FAMILY_ID)
+		v = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN;
+	else if (priv->family_id == RTL9310_FAMILY_ID)
+		v = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN;
+	sw_w32_mask(v, 0, priv->r->mac_port_ctrl(port));
+	*/
 }
 
 static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
@@ -888,10 +897,37 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 				   int speed, int duplex,
 				   bool tx_pause, bool rx_pause)
 {
+	u32 v;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
+
+	if (port == priv->cpu_port) {
+		if (priv->family_id == RTL9300_FAMILY_ID)
+			sw_w32(0x217, priv->r->mac_force_mode_ctrl(port));
+		if (priv->family_id == RTL9310_FAMILY_ID)
+			sw_w32(0x2a1d, priv->r->mac_force_mode_ctrl(port));
+		return;
+	}
+
+	/* Enable Link */
+	if (priv->family_id == RTL9300_FAMILY_ID) {
+		sw_w32_mask(0, RTL930X_FORCE_LINK_EN, priv->r->mac_force_mode_ctrl(port));
+		if (priv->ports[port].phy_is_integrated) // Clear MAC_FORCE_EN to allow SDS-MAC link
+			sw_w32_mask(RTL930X_FORCE_EN, 0, priv->r->mac_force_mode_ctrl(port));
+		else
+			sw_w32_mask(0, RTL930X_FORCE_EN, priv->r->mac_force_mode_ctrl(port));
+	} else if (priv->family_id == RTL9310_FAMILY_ID) {
+		sw_w32_mask(RTL931X_FORCE_EN, 0, priv->r->mac_force_mode_ctrl(port));
+		if (priv->ports[port].phy_is_integrated)
+			sw_w32_mask(0, RTL931X_FORCE_LINK_EN, priv->r->mac_force_mode_ctrl(port));
+		else
+			sw_w32_mask(RTL931X_FORCE_LINK_EN, 0, priv->r->mac_force_mode_ctrl(port));
+		pr_info("%s port %d mac_port_ctrl %08x, mac_force_mode_ctrl %08x\n",
+			__func__, port, sw_r32(priv->r->mac_port_ctrl(port)),
+			sw_r32(priv->r->mac_force_mode_ctrl(port)));
+	}
 	// TODO: Set speed/duplex/pauses
 }
 
