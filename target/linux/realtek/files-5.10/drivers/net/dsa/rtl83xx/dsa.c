@@ -1954,12 +1954,23 @@ static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
 	pr_debug("Using group %d\n", group);
 	mutex_lock(&priv->reg_mutex);
 
-	if (priv->family_id == RTL8380_FAMILY_ID) {
+	switch(priv->family_id) {
+	case RTL8380_FAMILY_ID:
 		/* Enable mirroring to port across VLANs (bit 11) */
 		sw_w32(1 << 11 | (mirror->to_local_port << 4) | 1, ctrl_reg);
-	} else {
+		break;
+	case RTL8390_FAMILY_ID:
 		/* Enable mirroring to destination port */
 		sw_w32((mirror->to_local_port << 4) | 1, ctrl_reg);
+		break;
+	case RTL9300_FAMILY_ID:
+		/* Enable mirroring to destination port */
+		sw_w32((mirror->to_local_port << 9) | 1, ctrl_reg);
+		break;
+	case RTL9310_FAMILY_ID:
+		/* Enable mirroring to destination port */
+		sw_w32((mirror->to_local_port << 9) | 1, ctrl_reg);
+		break;
 	}
 
 	if (ingress && (priv->r->get_port_reg_be(spm_reg) & (1ULL << port))) {
@@ -2298,6 +2309,9 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_mdb_prepare	= rtl83xx_port_mdb_prepare,
 	.port_mdb_add		= rtl83xx_port_mdb_add,
 	.port_mdb_del		= rtl83xx_port_mdb_del,
+
+	.port_mirror_add	= rtl83xx_port_mirror_add,
+	.port_mirror_del	= rtl83xx_port_mirror_del,
 
 	.port_lag_change	= rtl83xx_port_lag_change,
 	.port_lag_join		= rtl83xx_port_lag_join,
