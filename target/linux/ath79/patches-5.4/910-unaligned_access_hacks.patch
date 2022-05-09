@@ -799,7 +799,7 @@
  		*sum = csum_fold(csum_partial(diff, sizeof(diff),
 --- a/include/linux/etherdevice.h
 +++ b/include/linux/etherdevice.h
-@@ -489,7 +489,7 @@ static inline bool is_etherdev_addr(cons
+@@ -488,7 +488,7 @@ static inline bool is_etherdev_addr(cons
   * @b: Pointer to Ethernet header
   *
   * Compare two Ethernet headers, returns 0 if equal.
@@ -808,7 +808,7 @@
   * aligned OR the platform can handle unaligned access.  This is the
   * case for all packets coming into netif_receive_skb or similar
   * entry points.
-@@ -512,11 +512,12 @@ static inline unsigned long compare_ethe
+@@ -511,11 +511,12 @@ static inline unsigned long compare_ethe
  	fold |= *(unsigned long *)(a + 6) ^ *(unsigned long *)(b + 6);
  	return fold;
  #else
