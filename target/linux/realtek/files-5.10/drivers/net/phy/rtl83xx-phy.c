@@ -2586,7 +2586,7 @@ void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 	int tap0_init_val       = 0x1f; // Initial Decision Fed Equalizer 0 tap
 	int vth_min             = 0x0;
 
-	pr_info("start_1.1.1 initial value for sds %d\n", sds);
+	pr_debug("Doing calibration step 1.1.x for sds %d\n", sds);
 	rtl930x_write_sds_phy(sds, 6,  0, 0);
 
 	// FGCAL
@@ -2627,15 +2627,7 @@ void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 	rtl9300_sds_field_w(sds, 0x2e, 0x13, 2, 0, 0x7);
 	rtl9300_sds_field_w(sds, 0x2f, 0x0b, 5, 3, vth_min);
 
-	pr_info("end_1.1.1 --\n");
-
-	pr_info("start_1.1.2 Load DFE init. value\n");
-
 	rtl9300_sds_field_w(sds, 0x2e, 0x0f, 13, 7, 0x7f);
-
-	pr_info("end_1.1.2\n");
-
-	pr_info("start_1.1.3 disable LEQ training,enable DFE clock\n");
 
 	rtl9300_sds_field_w(sds, 0x2e, 0x17, 7, 7, 0x0);
 	rtl9300_sds_field_w(sds, 0x2e, 0x17, 6, 2, 0x0);
@@ -2644,15 +2636,7 @@ void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 	rtl9300_sds_field_w(sds, 0x2e, 0x12, 14, 14, 0x0);
 	rtl9300_sds_field_w(sds, 0x2f, 0x02, 15, 15, 0x0);
 
-	pr_info("end_1.1.3 --\n");
-
-	pr_info("start_1.1.4 offset cali setting\n");
-
 	rtl9300_sds_field_w(sds, 0x2e, 0x0f, 15, 14, 0x3);
-
-	pr_info("end_1.1.4\n");
-
-	pr_info("start_1.1.5 LEQ and DFE setting\n");
 
 	// TODO: make this work for DAC cables of different lengths
 	// For a 10GBit serdes wit Fibre, SDS 8 or 9
@@ -2669,8 +2653,6 @@ void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 	rtl9300_sds_field_w(sds, 0x2e, 0x19, 9, 5, 0x1f);
 	rtl9300_sds_field_w(sds, 0x2f, 0x0b, 15, 9, 0x3c);
 	rtl9300_sds_field_w(sds, 0x2e, 0x0b, 1, 0, 0x3);
-
-	pr_info("end_1.1.5\n");
 }
 
 void rtl9300_do_rx_calibration_2_1(u32 sds_num)
