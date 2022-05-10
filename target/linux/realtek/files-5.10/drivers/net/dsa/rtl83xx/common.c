@@ -1609,18 +1609,21 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	case RTL9310_FAMILY_ID:
 		// Enable SERDES Error/UPD/RXIDLE IRQ for all SERDES 0-13
-		sw_w32_mask(0, BIT(1) | BIT(8) | BIT(15), priv->r->isr_glb_src);
+//		sw_w32_mask(0, BIT(1) | BIT(8) | BIT(15), priv->r->isr_glb_src);
 
 		// Set IMR mask for SDS for SerDes errors and clear ISR
-		sw_w32(0x3fff, RTL931X_IMR_SERDES_ERR);
+//		sw_w32(0x3fff, RTL931X_IMR_SERDES_ERR);
+		sw_w32(0x0, RTL931X_IMR_SERDES_ERR);
 		sw_w32(0x3fff, RTL931X_ISR_SERDES_ERR);
 
-		// Set IMR mask for each port for UPD Phy-Status
+//		// Set IMR mask for each port for UPD Phy-Status
 		priv->r->set_port_reg_le(priv->irq_mask, RTL931X_IMR_SDS_UPD_PHYSTS);
+		priv->r->set_port_reg_le(0, RTL931X_IMR_SDS_UPD_PHYSTS);
 		priv->r->set_port_reg_le(priv->irq_mask, RTL931X_ISR_SDS_UPD_PHYSTS);
 
 		// Set IMR mask for each SDS for RXIDLE
-		sw_w32(0xfff, RTL931X_IMR_SERDES_RXIDLE);
+//		sw_w32(0xfff, RTL931X_IMR_SERDES_RXIDLE);
+		sw_w32(0x0, RTL931X_IMR_SERDES_RXIDLE);
 		sw_w32(0xfff, RTL931X_ISR_SERDES_RXIDLE);
 
 		err = request_irq(priv->link_state_irq, rtl931x_switch_irq,
