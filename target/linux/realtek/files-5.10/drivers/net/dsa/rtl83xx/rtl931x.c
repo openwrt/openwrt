@@ -360,8 +360,6 @@ int rtl931x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 
 int rtl931x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
-	u32 v;
-
 	if (port > 63 || page > 4095 || reg > 31)
 		return -ENOTSUPP;
 
@@ -369,18 +367,16 @@ int rtl931x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 	sw_w32(port << 5, RTL931X_SMI_INDRT_ACCESS_BC_PHYID_CTRL);
 
-	v = reg << 6 | page << 11 | 1;
-	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+	sw_w32(reg << 6 | page << 11 | 1, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
 
 	do {
 	} while (sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0) & 0x1);
 
-	v = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0);
 	*val = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_3);
 	*val = (*val & 0xffff0000) >> 16;
 
-	pr_debug("%s: port %d, page: %d, reg: %x, val: %x, v: %08x\n",
-		__func__, port, page, reg, *val, v);
+	pr_debug("%s: port %d, page: %d, reg: %x, val: %x\n",
+		__func__, port, page, reg, *val);
 
 	mutex_unlock(&smi_lock);
 	return 0;
@@ -399,7 +395,8 @@ int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	 * 0x1: 1G MMD register (MMD via Clause 22 registers 13 and 14)
 	 * 0x2: 10G MMD register (MMD via Clause 45)
 	 */
-	int type = (regnum & MII_ADDR_C45)?2:1;
+//	int type = (regnum & MII_ADDR_C45)?2:1;
+	int type = 2;
 
 	mutex_lock(&smi_lock);
 
@@ -437,15 +434,13 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	int err = 0;
 	u32 v;
-	int type = (regnum & MII_ADDR_C45)?2:1;
-	u64 pm;
+//	int type = (regnum & MII_ADDR_C45)?2:1;
+	int type = 1;
 
 	mutex_lock(&smi_lock);
 
-	// Set PHY to access via port-mask
-	pm = (u64)1 << port;
-	sw_w32((u32)pm, RTL931X_SMI_INDRT_ACCESS_CTRL_2);
-	sw_w32((u32)(pm >> 32), RTL931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
+	// Set PHY to access via port-number
+	sw_w32(port << 5, RTL931X_SMI_INDRT_ACCESS_BC_PHYID_CTRL);
 
 	// Set data to write
 	sw_w32_mask(0xffff, val, RTL931X_SMI_INDRT_ACCESS_CTRL_3);
