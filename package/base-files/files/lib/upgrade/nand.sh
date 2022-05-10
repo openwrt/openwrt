@@ -305,7 +305,11 @@ nand_upgrade_tar() {
 	local ubi_kernel_length
 	if [ "$kernel_length" ]; then
 		if [ "$kernel_mtd" ]; then
-			mtd erase "$CI_KERNPART"
+			# On some devices, the raw kernel and ubi partitions overlap.
+			# These devices brick if the kernel partition is erased.
+			# Hence only invalidate kernel for now.
+			dd if=/dev/zero bs=4096 count=1 2>/dev/null | \
+				mtd write - "$CI_KERNPART"
 		else
 			ubi_kernel_length="$kernel_length"
 		fi
@@ -322,7 +326,7 @@ nand_upgrade_tar() {
 	if [ "$kernel_length" ]; then
 		if [ "$kernel_mtd" ]; then
 			tar xf "$tar_file" "$board_dir/kernel" -O | \
-				mtd -n write - "$CI_KERNPART"
+				mtd write - "$CI_KERNPART"
 		else
 			local kern_ubivol="$( nand_find_volume $ubidev "$CI_KERNPART" )"
 			tar xf "$tar_file" "$board_dir/kernel" -O | \
