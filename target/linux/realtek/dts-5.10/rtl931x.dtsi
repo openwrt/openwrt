@@ -36,15 +36,7 @@
 	lx_clk: lx_clk {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
-		clock-frequency = <200000000>;
-	};
-
-	cpuclock: cpuclock@0 {
-		#clock-cells = <0>;
-		compatible = "fixed-clock";
-
-		/* FIXME: there should be way to detect this */
-		clock-frequency = <1000000000>;
+		clock-frequency = <20000000>;
 	};
 
 	cpuintc: cpuintc {
@@ -72,7 +64,7 @@
 		timer {
 			compatible = "mti,gic-timer";
 			interrupts = <GIC_LOCAL 1 IRQ_TYPE_NONE>;
-			clocks = <&cpuclock>;
+			clocks = <&lx_clk>;
 		};
 	};
 	
