@@ -209,15 +209,15 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			phy-is-integrated;
 			reg = <52>;
-			rtl9300,smi-address = <2 1>;
 			sds = < 10 >;
+			sds-tx-inverted;
 		};
 		phy53: ethernet-phy@9 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			phy-is-integrated;
 			reg = <53>;
-			rtl9300,smi-address = <3 1>;
 			sds = < 11 >;
+			sds-tx-inverted;
 		};
 
 		// These 2 ports exist physically
@@ -225,15 +225,15 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			phy-is-integrated;
 			reg = <54>;
-			rtl9300,smi-address = <2 0>;
 			sds = < 12 >;
+			sds-tx-inverted;
 		};
 		phy55: ethernet-phy@11 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			phy-is-integrated;
 			reg = <55>;
-			rtl9300,smi-address = <3 0>;
 			sds = < 13 >;
+			sds-tx-inverted;
 		};
 
 	};
