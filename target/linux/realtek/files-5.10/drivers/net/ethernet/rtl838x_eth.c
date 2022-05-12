@@ -676,13 +676,12 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 		sw_w32(0xffffffff, priv->r->dma_if_intr_sts);
 	}
 
-	/* Reset NIC (SW_NIC_RST) and queues (SW_Q_RST) */
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
-		reset_mask = 0x6;
+		reset_mask = RTL93XX_RST_GLB_CTRL_SW_NIC_RST | RTL93XX_RST_GLB_CTRL_SW_Q_RST;
 	else
-		reset_mask = 0xc;
+		reset_mask = RTL83XX_RST_GLB_CTRL_SW_NIC_RST | RTL83XX_RST_GLB_CTRL_SW_Q_RST;
 
-	sw_w32(reset_mask, priv->r->rst_glb_ctrl);
+	sw_w32_mask(0, reset_mask, priv->r->rst_glb_ctrl);
 
 	do { /* Wait for reset of NIC and Queues done */
 		udelay(20);
