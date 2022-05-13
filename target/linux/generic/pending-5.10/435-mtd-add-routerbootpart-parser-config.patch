@@ -16,23 +16,26 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -195,3 +195,12 @@ config MTD_REDBOOT_PARTS_READONLY
- 	  'FIS directory' images, enable this option.
+@@ -196,6 +196,15 @@ config MTD_REDBOOT_PARTS_READONLY
  
  endif # MTD_REDBOOT_PARTS
-+
+ 
 +config MTD_ROUTERBOOT_PARTS
 +	tristate "RouterBoot flash partition parser"
 +	depends on MTD && OF
 +	help
-+	 MikroTik RouterBoot is implemented as a multi segment system on the
-+	 flash, some of which are fixed and some of which are located at
-+	 variable offsets. This parser handles both cases via properly
-+	 formatted DTS.
++	  MikroTik RouterBoot is implemented as a multi segment system on the
++	  flash, some of which are fixed and some of which are located at
++	  variable offsets. This parser handles both cases via properly
++	  formatted DTS.
++
+ config MTD_SERCOMM_PARTS
+ 	tristate "Sercomm partition table parser"
+ 	depends on MTD && RALINK
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -13,3 +13,4 @@ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
- obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
+@@ -14,3 +14,4 @@ obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_
+ obj-$(CONFIG_MTD_SERCOMM_PARTS)		+= scpart.o
  obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o
 +obj-$(CONFIG_MTD_ROUTERBOOT_PARTS)		+= routerbootpart.o

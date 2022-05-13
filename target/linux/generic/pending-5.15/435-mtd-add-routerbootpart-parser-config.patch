@@ -16,22 +16,25 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -202,3 +202,12 @@ config MTD_QCOMSMEM_PARTS
- 	help
+@@ -203,6 +203,15 @@ config MTD_QCOMSMEM_PARTS
  	  This provides support for parsing partitions from Shared Memory (SMEM)
  	  for NAND and SPI flash on Qualcomm platforms.
-+
+ 
 +config MTD_ROUTERBOOT_PARTS
 +	tristate "RouterBoot flash partition parser"
 +	depends on MTD && OF
 +	help
-+	 MikroTik RouterBoot is implemented as a multi segment system on the
-+	 flash, some of which are fixed and some of which are located at
-+	 variable offsets. This parser handles both cases via properly
-+	 formatted DTS.
++	  MikroTik RouterBoot is implemented as a multi segment system on the
++	  flash, some of which are fixed and some of which are located at
++	  variable offsets. This parser handles both cases via properly
++	  formatted DTS.
++
+ config MTD_SERCOMM_PARTS
+ 	tristate "Sercomm partition table parser"
+ 	depends on MTD && RALINK
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -14,3 +14,4 @@ obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_
+@@ -15,3 +15,4 @@ obj-$(CONFIG_MTD_SERCOMM_PARTS)		+= scpa
  obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o
  obj-$(CONFIG_MTD_QCOMSMEM_PARTS)	+= qcomsmempart.o
