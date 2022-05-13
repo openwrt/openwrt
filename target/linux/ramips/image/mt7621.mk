@@ -1447,6 +1447,7 @@ TARGET_DEVICES += renkforce_ws-wn530hp3-a
 
 define Device/samknows_whitebox-v8
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := SamKnows
   DEVICE_MODEL := Whitebox 8
