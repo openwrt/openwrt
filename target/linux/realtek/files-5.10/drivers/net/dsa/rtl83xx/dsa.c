@@ -1472,9 +1472,9 @@ void rtl931x_fast_age(struct dsa_switch *ds, int port)
 
 	pr_info("%s port %d\n", __func__, port);
 	mutex_lock(&priv->reg_mutex);
-	sw_w32(port << 11, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+	sw_w32(0, RTL931X_L2_TBL_FLUSH_CTRL + 4);
 
-	sw_w32(BIT(24) | BIT(28), RTL931X_L2_TBL_FLUSH_CTRL);
+	sw_w32(BIT(24) | BIT(28) | port << 11, RTL931X_L2_TBL_FLUSH_CTRL);
 
 	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT (28));
 
