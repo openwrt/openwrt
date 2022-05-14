@@ -79,7 +79,7 @@
 #define RTL930X_IMR_SDS_UPD_PHYSTS		(0xC650)
 #define RTL930X_ISR_SDS_UPD_PHYSTS		(0xC690)
 
-/* Interrupt registers for SDS status on 9310 */
+/* Interrupt and status registers for SDS status on 9310 */
 #define RTL931X_IMR_SERDES_RXIDLE		(0x12A0)
 #define RTL931X_ISR_SERDES_RXIDLE		(0x12F8)
 #define RTL931X_IMR_SDS_UPD_PHYSTS		(0x1290)
@@ -88,6 +88,9 @@
 #define RTL931X_ISR_SERDES_ERR			(0x12C0)
 #define RTL931X_FIB_UNIDIR_CTRL			(0x13C4)
 #define RTL931X_PS_SERDES_OFF_MODE		(0x13F4)
+#define RTL931X_GLB_DEBUG_SELECT		(0x1334)
+#define RTL931X_GLB_DEBUG_DATA			(0x1338)
+#define RTL931X_MAC_DBG_SEL_CTRL		(0x5634)
 
 /* VLAN registers */
 #define RTL838X_VLAN_CTRL			(0x3A74)
@@ -199,7 +202,7 @@
 #define RTL930X_RX_PAUSE_EN			(1 << 8)
 #define RTL930X_MAC_FORCE_FC_EN			(1 << 9)
 
-#define RTL931X_FORCE_EN			(1 << 9)
+#define RTL931X_FORCE_LINK			(1 << 9)
 #define RTL931X_FORCE_LINK_EN			(1 << 0)
 #define RTL931X_DUPLEX_MODE			(1 << 2)
 #define RTL931X_MAC_FORCE_FC_EN			(1 << 4)

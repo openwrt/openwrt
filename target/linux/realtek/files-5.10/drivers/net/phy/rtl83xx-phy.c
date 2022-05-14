@@ -1878,7 +1878,8 @@ static int rtl9300_read_status(struct phy_device *phydev, u32 sds_num)
 		latch_status |= rtl9300_sds_field_r(sds_num, 0x1, 30, 8, 0);
 	}
 
-	pr_debug("%s link status: status: %d, latch %d\n", __func__, status, latch_status);
+	pr_debug("%s link status port %d: status: %d, latch %d\n",
+		 __func__, phydev->mdio.addr, status, latch_status);
 
 	if (latch_status) {
 		phydev->link = true;
@@ -1912,8 +1913,9 @@ static int rtl9310_read_status(struct phy_device *phydev, u32 sds)
 	latch_sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
 	sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
 
-	pr_debug("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
-		sds, sts, sts1, latch_sts, latch_sts1);
+	if (phydev->mdio.addr == 54)
+		pr_debug("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n",
+			 __func__, sds, sts, sts1, latch_sts, latch_sts1);
 
 	if (sts || sts1) {
 		u32 mode = rtl9310_sds_field_r(asds, 0x1F, 0x9, 11, 6);
@@ -4249,21 +4251,24 @@ static int rtl931x_sds_cmu_page_get(phy_interface_t mode)
 {
 	switch (mode) {
 	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_1000BASEX:	// MII_1000BX_FIBER / 100BX_FIBER / 1000BX100BX_AUTO
+	case PHY_INTERFACE_MODE_1000BASEX:
 		return 0x24;
+
 	case PHY_INTERFACE_MODE_HSGMII:
-	case PHY_INTERFACE_MODE_2500BASEX:	// MII_2500Base_X:
+	case PHY_INTERFACE_MODE_2500BASEX:
 		return 0x28;
-//	case MII_HISGMII_5G:
-//		return 0x2a;
+
 	case PHY_INTERFACE_MODE_QSGMII:
 		return 0x2a;			// Code also has 0x34
-	case PHY_INTERFACE_MODE_XAUI:		// MII_RXAUI_LITE:
+
+	case PHY_INTERFACE_MODE_XAUI:
 		return 0x2c;
-	case PHY_INTERFACE_MODE_XGMII:		// MII_XSGMII
+
+	case PHY_INTERFACE_MODE_XGMII:
 	case PHY_INTERFACE_MODE_10GKR:
-	case PHY_INTERFACE_MODE_10GBASER:	// MII_10GR
+	case PHY_INTERFACE_MODE_10GBASER:
 		return 0x2e;
+
 	default:
 		return -1;
 	}
@@ -4286,11 +4291,6 @@ static void rtl931x_cmu_type_set(u32 asds, phy_interface_t mode, int chiptype)
 	case PHY_INTERFACE_MODE_USXGMII:
 		return;
 
-/*	case MII_10GR1000BX_AUTO:
-		if (chiptype)
-			rtl9310_sds_field_w(asds, 0x24, 0xd, 14, 14, 0);
-		return; */
-
 	case PHY_INTERFACE_MODE_QSGMII:
 		cmu_type = 1;
 		frc_cmu_spd = 0;
@@ -4305,11 +4305,6 @@ static void rtl931x_cmu_type_set(u32 asds, phy_interface_t mode, int chiptype)
 		cmu_type = 1;
 		frc_cmu_spd = 0;
 		break;
-
-/*	case MII_1000BX100BX_AUTO:
-		cmu_type = 1;
-		frc_cmu_spd = 0;
-		break; */
 
 	case PHY_INTERFACE_MODE_SGMII:
 		cmu_type = 1;
@@ -4559,7 +4554,7 @@ void rtl931x_media_set(int sds, phy_interface_t mode)
 	}
 }
 
-int rtl931x_sds_init(u32 sds, phy_interface_t mode)
+int rtl9310_configure_serdes(u32 sds, phy_interface_t mode)
 {
 
 	u32 board_sds_tx_type1[] = { 0x1C3, 0x1C3, 0x1C3, 0x1A3, 0x1A3,
@@ -4805,25 +4800,28 @@ int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode)
 	return band;
 }
 
+
+/*
+ * Patch the SerDes behind a given PHY and configure the initial
+ * MAC-SDS link. Note that this is only called by phylink_fwnode_phy_connect
+ * if the link is not fixed and not an 802.3z mode (e.g 1000base-x)
+ */
 int rtl93xx_configure_serdes(struct phy_device *phydev)
 {
 	int phy_addr = phydev->mdio.addr;
 	u32 sds_num = 0;
-	int phy_mode = PHY_INTERFACE_MODE_10GBASER;
 
-	if (soc_info.family == RTL9300_FAMILY_ID)
-		return 0;
-
-	pr_info("%s configuring RTL931x SerDes on port %d\n", __func__, phy_addr);
+	pr_info("%s called for RTL93xx SerDes on port %d\n", __func__, phy_addr);
 	sds_num = rtl93xx_get_sds(&phydev->mdio.dev);
 	if (sds_num <= 0)
-		return sds_num;
-
+		return -ENODEV;
 	pr_info("%s: port %d, SerDes is %d\n", __func__, phy_addr, sds_num);
-	if (sds_num < 12)
-		phy_mode = PHY_INTERFACE_MODE_1000BASEX;
 
-	return rtl931x_sds_init(sds_num, phy_mode);
+	if (soc_info.family == RTL9300_FAMILY_ID)
+		return rtl9300_configure_serdes(phy_addr, sds_num, phydev->interface);
+
+	// interface has been set by phy_attach_direct
+	return rtl9310_configure_serdes(sds_num, phydev->interface);
 }
 
 static int rtl8214fc_phy_probe(struct phy_device *phydev)
@@ -5010,6 +5008,9 @@ static int rtl93xx_serdes_probe(struct phy_device *phydev)
 
 	pr_info("############## Detecting on port %d: %s\n", addr, __func__);
 	if (soc_info.family == RTL9300_FAMILY_ID) {
+		if (addr >= RTL930X_CPU_PORT)
+			return -ENODEV;
+
 		phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
 		return 0;
 	}

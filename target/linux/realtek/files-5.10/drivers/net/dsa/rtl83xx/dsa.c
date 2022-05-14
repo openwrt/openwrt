@@ -509,6 +509,14 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 
 	pr_debug("%s: link state port %d: %llx, media %llx\n", __func__, port,
 		 link & BIT_ULL(port), media);
+
+	/* On the RTL931x, MAC_LINK_STATE does not show a link until the
+	 * link to the remote SFP module has come up. However RTL931X_MAC_LINK_MEDIA_STS
+	 * shows the link to the SerDes already up once the MAC <-> SerDes
+	 * link has been configured */
+	if (priv->family_id == RTL9310_FAMILY_ID && (media & BIT_ULL(port)))
+		state->link = 1;
+
 	if (!state->link)
 		return 0;
 
@@ -541,14 +549,6 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 		break;
 	default:
 		pr_err("%s: unknown speed: %d\n", __func__, (u32)speed & 0xf);
-	}
-
-	// TODO: This is only until this is better understood
-	if (priv->family_id == RTL9310_FAMILY_ID
-		&& (port >= 52 || port <= 55)) { /* Internal serdes */
-			state->speed = SPEED_10000;
-			state->link = 1;
-			state->duplex = 1;
 	}
 
 	pr_debug("%s: speed is: %d %d\n", __func__, (u32)speed & 0xf, state->speed);
@@ -725,8 +725,8 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	case PHY_INTERFACE_MODE_10GBASER:
 		// Set Fibre to unidirectional mode (TX off?)
 		sw_w32_mask(BIT(port % 32), 0, RTL931X_FIB_UNIDIR_CTRL + 4 * (port / 32));
-		// Force link down
-		sw_w32_mask(RTL931X_FORCE_EN, RTL931X_FORCE_LINK_EN,
+		// Force link down FORCE_LINK: bit 9, FORCE_LINK_EN: bit 0
+		sw_w32_mask(RTL931X_FORCE_LINK, RTL931X_FORCE_LINK_EN,
 			    priv->r->mac_force_mode_ctrl(port));
 		msleep(100); // TODO: Can be shortened by _phy_rtl9310_linkDown_chk
 		// SMI_SPD_SEL set to 0
@@ -737,9 +737,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		sw_w32_mask(0, BIT(sds_num), RTL931X_PS_SERDES_OFF_MODE);
 		rtl931x_media_none(sds_num);
 		sw_w32_mask(0, BIT(port % 32), RTL931X_FIB_UNIDIR_CTRL + 4 * (port / 32));
-
-		rtl931x_media_set(sds_num, state->interface);
-		rtl931x_sds_fiber_mode_set(sds_num, state->interface);
+		rtl9310_configure_serdes(sds_num, state->interface);
 		band = rtl931x_sds_cmu_band_get(sds_num, state->interface);
 		// Power on SerDes again
 		sw_w32_mask(BIT(sds_num), 0, RTL931X_PS_SERDES_OFF_MODE);
@@ -747,13 +745,13 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	case PHY_INTERFACE_MODE_XGMII:
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_XGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_XGMII);
+		rtl9310_configure_serdes(sds_num, PHY_INTERFACE_MODE_XGMII);
 		break;
 
 	case PHY_INTERFACE_MODE_USXGMII:
 		// Translates to MII_USXGMII_10GSXGMII
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_USXGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_USXGMII);
+		rtl9310_configure_serdes(sds_num, PHY_INTERFACE_MODE_USXGMII);
 		break;
 
 	case PHY_INTERFACE_MODE_SGMII:
@@ -763,7 +761,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	case PHY_INTERFACE_MODE_QSGMII:
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_QSGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_QSGMII);
+		rtl9310_configure_serdes(sds_num, PHY_INTERFACE_MODE_QSGMII);
 		break;
 
 	default:
@@ -774,7 +772,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 
-	reg &= ~(RTL931X_DUPLEX_MODE | RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN | BIT(3));
+	reg &= ~(RTL931X_DUPLEX_MODE | RTL931X_FORCE_LINK | RTL931X_FORCE_LINK_EN | BIT(3));
 
 	// SMI_SPD_SEL is always 0x2, the meaning of this is unknown
 	reg &= ~(0xf << 12);
@@ -883,21 +881,16 @@ static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 				     unsigned int mode,
 				     phy_interface_t interface)
 {
-	u32 v;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	/* Stop TX/RX to port */
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
 
 	// No longer force link
-	sw_w32_mask(3, 0, priv->r->mac_force_mode_ctrl(port));
-/*
 	if (priv->family_id == RTL9300_FAMILY_ID)
-		v = RTL930X_FORCE_EN | RTL930X_FORCE_LINK_EN;
-	else if (priv->family_id == RTL9310_FAMILY_ID)
-		v = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN;
-	sw_w32_mask(v, 0, priv->r->mac_port_ctrl(port));
-	*/
+		sw_w32_mask(3, 0, priv->r->mac_force_mode_ctrl(port));
+	else
+		sw_w32_mask(0, RTL931X_FORCE_LINK_EN, priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
@@ -913,6 +906,96 @@ static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 	// TODO: Set speed/duplex/pauses
 }
 
+int rtl931x_sds_debug_port_group(int sds, u32 rx_fifo)
+{
+	int port_group = sds - 2;
+	u32 dbg_sel, dbg_data;
+
+	dbg_sel = BIT(16) | port_group << 12 | rx_fifo;
+	sw_w32(dbg_sel, RTL931X_MAC_DBG_SEL_CTRL);
+	dbg_data = sw_r32(RTL931X_GLB_DEBUG_DATA);
+	if (dbg_data & BIT(6) || dbg_data & BIT(0)) {
+		pr_err("%s failed, SDS %d: config 0x%08x, data 0x%08x\n",
+			__func__, sds, dbg_sel, dbg_data);
+		return -1;
+	}
+
+	return 0;
+}
+
+int rtl931x_sds_sts_check(int sds)
+{
+
+	sw_w32(0x000A0000, RTL931X_GLB_DEBUG_SELECT);
+
+	// Can only verify SDS >= 8 (SFP+ ports)
+	if (sds < 8)
+		return 0;
+
+	// Debug 1G, RX-FIFO = 0x800
+	if (rtl931x_sds_debug_port_group(sds, 0x800))
+		return -1;
+
+	// Debug 10G, RX-FIFO = 0x808
+	if (rtl931x_sds_debug_port_group(sds, 0x808))
+		return -1;
+
+	// Debug 1G, RX-FIFO = 0x820
+	if (rtl931x_sds_debug_port_group(sds, 0x820))
+		return -1;
+
+	// Debug 10G, RX-FIFO = 0x828
+	if (rtl931x_sds_debug_port_group(sds, 0x828))
+		return -1;
+
+	return 0;
+}
+
+static int rtl931x_calibrate_link(struct rtl838x_switch_priv *priv,
+				  int port, int speed, phy_interface_t interface)
+{
+	int sds_num = priv->ports[port].sds_num;
+	int dsds = (sds_num < 2)?sds_num:(sds_num - 1) * 2;
+	int err;
+
+	pr_info("%s: speed %d sds_num %d interface %s\n",
+		__func__, speed, sds_num, phy_modes(interface));
+
+	// Disable TX/RX to MAC
+	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
+	mdelay(50);
+
+	// Turn off SDS
+	sw_w32_mask(0, BIT(sds_num), RTL931X_PS_SERDES_OFF_MODE);
+
+	switch (interface){
+	case PHY_INTERFACE_MODE_10GBASER:
+		rtl931x_fiber_adapt(sds_num, interface);
+		break;
+	// TODO: case for DAC
+	default:
+		rtl931x_leq_adapt(sds_num);
+	}
+
+	// Re-enable SDS
+	sw_w32_mask(BIT(sds_num), 0, RTL931X_PS_SERDES_OFF_MODE);
+	mdelay(50);
+
+	// Re-enable TX/RX
+	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
+
+	// Verify link up
+	err = rtl931x_sds_sts_check(sds_num);
+	if (err) {
+		pr_info("%s link is not up according to SDS status\n", __func__);
+		return err;
+	}
+
+	rtl9310_sds_field_w(dsds, 31, 1, 0, 0, 0x0);
+
+	return 0;
+}
+
 static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 				   unsigned int mode,
 				   phy_interface_t interface,
@@ -920,11 +1003,7 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 				   int speed, int duplex,
 				   bool tx_pause, bool rx_pause)
 {
-	u32 v;
 	struct rtl838x_switch_priv *priv = ds->priv;
-
-	/* Restart TX/RX to port */
-	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
 
 	if (port == priv->cpu_port) {
 		if (priv->family_id == RTL9300_FAMILY_ID)
@@ -942,15 +1021,18 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 		else
 			sw_w32_mask(0, RTL930X_FORCE_EN, priv->r->mac_force_mode_ctrl(port));
 	} else if (priv->family_id == RTL9310_FAMILY_ID) {
-		sw_w32_mask(RTL931X_FORCE_EN, 0, priv->r->mac_force_mode_ctrl(port));
 		if (priv->ports[port].phy_is_integrated)
-			sw_w32_mask(0, RTL931X_FORCE_LINK_EN, priv->r->mac_force_mode_ctrl(port));
-		else
+			rtl931x_calibrate_link(priv, port, speed, interface);
+		sw_w32_mask(RTL931X_FORCE_LINK, 0, priv->r->mac_force_mode_ctrl(port));
+		if (priv->ports[port].phy_is_integrated)
 			sw_w32_mask(RTL931X_FORCE_LINK_EN, 0, priv->r->mac_force_mode_ctrl(port));
 		pr_info("%s port %d mac_port_ctrl %08x, mac_force_mode_ctrl %08x\n",
 			__func__, port, sw_r32(priv->r->mac_port_ctrl(port)),
 			sw_r32(priv->r->mac_force_mode_ctrl(port)));
 	}
+
+	/* Restart TX/RX to port */
+	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
 	// TODO: Set speed/duplex/pauses
 }
 
