@@ -18,7 +18,7 @@
  
  #ifdef CONFIG_HS20
  static int hs20_parse_conn_capab(struct hostapd_bss_config *bss, char *buf,
-@@ -4040,10 +4040,10 @@ static int hostapd_config_fill(struct ho
+@@ -4042,10 +4042,10 @@ static int hostapd_config_fill(struct ho
  		bss->gas_frag_limit = val;
  	} else if (os_strcmp(buf, "gas_comeback_delay") == 0) {
  		bss->gas_comeback_delay = atoi(pos);
