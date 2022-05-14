@@ -23,10 +23,33 @@
 #include <asm/time.h>
 #include <asm/prom.h>
 #include <asm/smp-ops.h>
+#include <asm/reboot.h>
 
 #include "mach-rtl83xx.h"
 
 extern struct rtl83xx_soc_info soc_info;
+
+static void rtl931x_restart(char *command)
+{
+	u32 v;
+
+	pr_info("System restart.\n");
+	sw_w32(1, RTL931X_RST_GLB_CTRL);
+	v = sw_r32(RTL931X_RST_GLB_CTRL);
+	sw_w32(0x101, RTL931X_RST_GLB_CTRL);
+	msleep(15);
+	sw_w32(v, RTL931X_RST_GLB_CTRL);
+	msleep(15);
+	sw_w32(0x101, RTL931X_RST_GLB_CTRL);
+
+}
+
+static void rtl931x_halt(void)
+{
+	pr_info("System halted.\n");
+	while
+		(1);
+}
 
 static void __init rtl838x_setup(void)
 {
@@ -50,6 +73,11 @@ static void __init rtl930x_setup(void)
 
 static void __init rtl931x_setup(void)
 {
+	pr_info("Registering _machine_restart\n");
+	_machine_restart = rtl931x_restart;
+	_machine_halt = rtl931x_halt;
+
+	// Enable system LED, no flashing
 	sw_w32_mask(0, 3 << 12, RTL931X_LED_GLB_CTRL);
 }
 
