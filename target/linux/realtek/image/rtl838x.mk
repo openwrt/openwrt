@@ -42,6 +42,19 @@ define Device/d-link_dgs-1210-28
 endef
 TARGET_DEVICES += d-link_dgs-1210-28
 
+# The "IMG-" uImage name allows flashing the iniramfs from the vendor Web UI.
+# Avoided for sysupgrade, as the vendor FW would do an incomplete flash.
+define Device/engenius_ews2910p
+  SOC := rtl8380
+  IMAGE_SIZE := 8192k
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := EWP2910P
+  UIMAGE_MAGIC := 0x03802910
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | \
+	uImage gzip -n 'IMG-0.00.00-c0.0.00'
+endef
+TARGET_DEVICES += engenius_ews2910p
+
 define Device/inaba_aml2-17gp
   SOC := rtl8382
   IMAGE_SIZE := 13504k
