@@ -135,7 +135,10 @@ void __init plat_time_init(void)
 		of_node_put(np);
 	}
 
-	mips_hpt_frequency = freq / 2;
+	if (soc_info.family == RTL9310_FAMILY_ID)
+		mips_hpt_frequency = freq / 4;
+	else
+		mips_hpt_frequency = freq / 2;
 }
 
 void __init arch_init_irq(void)
