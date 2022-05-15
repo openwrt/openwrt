@@ -72,9 +72,6 @@
 	i2c: i2c {
 		compatible = "i2c-gpio";
 
-		pinctrl-names = "default";
-		pinctrl-0 = <&enable_gpio17>;
-
 		sda-gpios = <&gpio 17 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 		scl-gpios = <&gpio 16 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
 	};
@@ -186,6 +183,9 @@
 };
 
 &pinmux {
+	pinctrl-names = "default";
+	pinctrl-0 = <&enable_gpio17>;
+
 	enable_gpio17: pinmux_enable_gpio17 {
 		pinctrl-single,bits = <0x10 0x0000 0xff00>;
 	};
