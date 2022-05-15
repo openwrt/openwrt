@@ -228,3 +228,21 @@
 	nvmem-cells = <&precal_art_5000>;
 	qcom,ath10k-calibration-variant = "EnGenius-EAP1300";
 };
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport0 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&swport5 {
+	status = "okay";
+};
