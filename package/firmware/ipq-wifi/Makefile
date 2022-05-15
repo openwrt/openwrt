@@ -32,6 +32,7 @@ ALLWIFIBOARDS:= \
 	glinet_gl-b2200 \
 	glinet_gl-s1300 \
 	linksys_ea8300 \
+	linksys_whw01-v1 \
 	mikrotik_cap-ac \
 	mikrotik_hap-ac2 \
 	mikrotik_hap-ac3 \
@@ -107,6 +108,7 @@ $(eval $(call generate-ipq-wifi-package,glinet_gl-ap1300,GL.iNet GL-AP1300))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-b2200,GL.iNet GL-B2200))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-s1300,GL.iNet GL-S1300))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
+$(eval $(call generate-ipq-wifi-package,linksys_whw01-v1,Linksys WHW01 v1))
 $(eval $(call generate-ipq-wifi-package,mikrotik_cap-ac,Mikrotik cAP ac))
 $(eval $(call generate-ipq-wifi-package,mikrotik_hap-ac2,Mikrotik hAP ac2))
 $(eval $(call generate-ipq-wifi-package,mikrotik_hap-ac3,Mikrotik hAP ac3))
