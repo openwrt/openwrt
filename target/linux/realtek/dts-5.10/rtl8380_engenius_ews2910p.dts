@@ -42,6 +42,25 @@
 		#gpio-cells = <2>;
 		gpio-controller;
 		indirect-access-bus-id = <0>;
+
+		sff_p9_gpios {
+			gpio-hog;
+			gpios = < 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>,
+				< 11 GPIO_ACTIVE_HIGH>, /* los-gpio */
+				< 12 GPIO_ACTIVE_LOW>;   /* mod-def0-gpio */
+			input;
+			line-name = "sff-p9-gpios";
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		sff-p9-tx-disable {
+			gpio-export,name = "sff-p9-tx-disable";
+			gpio-export,output = <1>;
+			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	gpio-restart {
@@ -71,6 +90,22 @@
 			label = "amber:poe-max";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	i2c1: i2c-gpio-1 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio1 31 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+	sfp1: sfp-p10 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1>;
+		tx-disable-gpio = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 21 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -138,6 +173,9 @@
 		INTERNAL_PHY(13)
 		INTERNAL_PHY(14)
 		INTERNAL_PHY(15)
+
+		INTERNAL_PHY(24)
+		INTERNAL_PHY(26)
 	};
 };
 
@@ -154,6 +192,17 @@
 		SWITCH_PORT(13, 6, internal)
 		SWITCH_PORT(14, 7, internal)
 		SWITCH_PORT(15, 8, internal)
+
+		SWITCH_SFP_PORT(24, 9, 1000base-x)
+
+		port@26 {
+			reg = <26>;
+			label = "lan10";
+			phy-mode = "1000base-x";
+			phy-handle = <&phy26>;
+			managed = "in-band-status";
+			sfp = <&sfp1>;
+		};
 
 		port@28 {
 			ethernet = <&ethernet0>;
