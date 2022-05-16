@@ -85,6 +85,7 @@ enum {
 };
 
 #define REG_ESW_PORT_PCR(x)	(0x2004 | ((x) << 8))
+#define REG_ESW_PORT_PSC(x)	(0x200C | ((x) << 8))
 #define REG_ESW_PORT_PVC(x)	(0x2010 | ((x) << 8))
 #define REG_ESW_PORT_PPBV1(x)	(0x2014 | ((x) << 8))
 
@@ -156,6 +157,7 @@ static const struct mt7xxx_mib_desc mt7620_port_mibs[] = {
 enum {
 	/* Global attributes. */
 	MT7530_ATTR_ENABLE_VLAN,
+	MT7530_ATTR_DISABLE_MAC_LEARN,
 };
 
 struct mt7530_port_entry {
@@ -177,6 +179,7 @@ struct mt7530_priv {
 
 	u8			mirror_dest_port;
 	bool			global_vlan_enable;
+	bool			global_mac_learn_disable;
 	struct mt7530_vlan_entry	vlan_entries[MT7530_NUM_VLANS];
 	struct mt7530_port_entry	port_entries[MT7530_NUM_PORTS];
 	char arl_buf[MT7530_NUM_ARL_RECORDS * ARL_LINE_LENGTH + 1];
@@ -280,6 +283,30 @@ mt7530_set_vlan_enable(struct switch_dev *dev,
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 
 	priv->global_vlan_enable = val->value.i != 0;
+
+	return 0;
+}
+
+static int
+mt7530_get_mac_learn_disable(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+
+	val->value.i = priv->global_mac_learn_disable;
+
+	return 0;
+}
+
+static int
+mt7530_set_mac_learn_disable(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+
+	priv->global_mac_learn_disable = val->value.i != 0;
 
 	return 0;
 }
@@ -597,6 +624,20 @@ mt7530_apply_config(struct switch_dev *dev)
 	u8 tag_ports;
 	u8 untag_ports;
 	bool is_mirror = false;
+
+
+	for (i = 0; i < MT7530_NUM_PORTS; i++) {
+		u32 psc;
+
+		psc = mt7530_r32(priv, REG_ESW_PORT_PSC(i));
+		if ((psc & 0x00000010) && !(priv->global_mac_learn_disable)) {
+			pr_info("mt7530: enabling source MAC address learning on port %d\n", i);
+			mt7530_w32(priv, REG_ESW_PORT_PSC(i), psc & ~0x00000010);
+		} else if (!(psc & 0x00000010) && (priv->global_mac_learn_disable)) {
+			pr_info("mt7530: disabling source MAC address learning on port %d\n", i);
+			mt7530_w32(priv, REG_ESW_PORT_PSC(i), psc | 0x00000010);
+		}
+	}
 
 	if (!priv->global_vlan_enable) {
 		for (i = 0; i < MT7530_NUM_PORTS; i++)
@@ -922,6 +963,14 @@ static const struct switch_attr mt7530_global[] = {
 		.get = mt7530_get_vlan_enable,
 		.set = mt7530_set_vlan_enable,
 	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "disable_mac_learn",
+		.description = "Source MAC Address Learning (1:disable)",
+		.max = 1,
+		.id = MT7530_ATTR_DISABLE_MAC_LEARN,
+		.get = mt7530_get_mac_learn_disable,
+		.set = mt7530_set_mac_learn_disable,
+	}, {
 		.type = SWITCH_TYPE_STRING,
 		.name = "mib",
 		.description = "Get MIB counters for switch",
@@ -1037,10 +1086,13 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 		return ret;
 	}
 
-
 	map = mt7530_find_mapping(dev->of_node);
 	if (map)
 		mt7530_apply_mapping(mt7530, map);
+
+	mt7530->global_mac_learn_disable = of_property_read_bool(dev->of_node,
+			"mediatek,mac-learn-disable");
+
 	mt7530_apply_config(swdev);
 
 	/* magic vodoo */
