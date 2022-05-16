@@ -1,0 +1,35 @@
+From 06c340cc854b1c8c275968c2830fbe8a5c3b0e4e Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Fri, 18 Jun 2021 21:52:28 +0100
+Subject: [PATCH] drm/vc4: Correct DSI divider calculations
+
+The divider calculations tried to find the divider
+just faster than the clock requested. However if
+it required a divider of 7 then the for loop
+aborted without handling the "error" case, and could
+end up with a clock lower than requested.
+
+Correct the loop so that we always have a clock greater
+than requested.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/gpu/drm/vc4/vc4_dsi.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_dsi.c
++++ b/drivers/gpu/drm/vc4/vc4_dsi.c
+@@ -850,11 +850,9 @@ static bool vc4_dsi_encoder_mode_fixup(s
+ 	/* Find what divider gets us a faster clock than the requested
+ 	 * pixel clock.
+ 	 */
+-	for (divider = 1; divider < 8; divider++) {
+-		if (parent_rate / divider < pll_clock) {
+-			divider--;
++	for (divider = 1; divider < 7; divider++) {
++		if (parent_rate / (divider + 1) < pll_clock)
+ 			break;
+-		}
+ 	}
+ 
+ 	/* Now that we've picked a PLL divider, calculate back to its
