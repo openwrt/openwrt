@@ -474,7 +474,7 @@ define Device/Build/initramfs
   $(KDIR)/$$(KERNEL_INITRAMFS_NAME):: image_prepare
   $(1)-images: $$(if $$(KERNEL_INITRAMFS),$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE))
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
-	cp $$^ $$@
+	$$(call locked,cp $$^ $$@,$(BIN_DIR))
 
   $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_NAME) $(CURDIR)/Makefile $$(KERNEL_DEPENDS) image_prepare
 	@rm -f $$@
@@ -547,7 +547,7 @@ define Device/Build/kernel
   $$(_TARGET): $$(if $$(KERNEL_INSTALL),$(BIN_DIR)/$$(KERNEL_IMAGE))
   $(call Device/Export,$$(KDIR_KERNEL_IMAGE),$(1))
   $(BIN_DIR)/$$(KERNEL_IMAGE): $$(KDIR_KERNEL_IMAGE)
-	cp $$^ $$@
+	$$(call locked,cp $$^ $$@,$(BIN_DIR))
   ifndef IB
     ifdef CONFIG_IB
       install: $$(KDIR_KERNEL_IMAGE)
@@ -584,10 +584,10 @@ define Device/Build/image
   .IGNORE: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)).gz: $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
-	gzip -c -9n $$^ > $$@
+	$$(call locked,gzip -c -9n $$^ > $$@,$(BIN_DIR))
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)): $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
-	cp $$^ $$@
+	$$(call locked,cp $$^ $$@,$(BIN_DIR))
 
   $(BUILD_DIR)/json_info_files/$(call DEVICE_IMG_NAME,$(1),$(2)).json: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))$$(GZ_SUFFIX)
 	@mkdir -p $$(shell dirname $$@)
@@ -633,7 +633,7 @@ define Device/Build/artifact
   .IGNORE: $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)
 
   $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1): $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1)
-	cp $$^ $$@
+	$$(call locked,cp $$^ $$@,$(BIN_DIR))
 
   $(BUILD_DIR)/json_info_files/$(DEVICE_IMG_PREFIX)-$(1).json: $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)
 	@mkdir -p $$(shell dirname $$@)

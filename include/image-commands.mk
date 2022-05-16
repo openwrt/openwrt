@@ -53,7 +53,10 @@ define Build/append-image-stage
 	cp "$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)" "$@.stripmeta"
 	fwtool -s /dev/null -t "$@.stripmeta" || :
 	fwtool -i /dev/null -t "$@.stripmeta" || :
-	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)"
+	$(call locked, \
+		dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)", \
+		$(STAGING_DIR) \
+	)
 	dd if="$@.stripmeta" >> "$@"
 	rm "$@.stripmeta"
 endef
@@ -305,13 +308,14 @@ define Build/gzip
 endef
 
 define Build/install-dtb
-	$(call locked, \
-		$(foreach dts,$(DEVICE_DTS), \
+	$(foreach dts,$(DEVICE_DTS), \
+		$(call locked, \
 			$(CP) \
 				$(DTS_DIR)/$(dts).dtb \
-				$(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb; \
-		), \
-		install-dtb-$(IMG_PREFIX) \
+				$(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb \
+			;, \
+			$(BIN_DIR) \
+		) \
 	)
 endef
 

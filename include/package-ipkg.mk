@@ -163,7 +163,10 @@ ifeq ($(DUMP),)
 			cp $(PKG_INFO_DIR)/$(1).version $(PKG_INFO_DIR)/$(pkg).version; \
 		) \
 	} )
-	$(call locked,$(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(STAGING_DIR_ROOT)/,root-copy)
+	$(call locked, \
+		$(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(STAGING_DIR_ROOT)/;, \
+		$(STAGING_DIR_ROOT) \
+	)
 	touch $$@
 
     Package/$(1)/DEPENDS := $$(call mergelist,$$(foreach dep,$$(filter-out @%,$$(IDEPEND_$(1))),$$(dep)$$(call GetABISuffix,$$(dep))))

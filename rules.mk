@@ -361,13 +361,14 @@ endef
 
 # Execute commands under flock
 # $(1) => The shell expression.
-# $(2) => The lock name. If not given, the global lock will be used.
+# $(2) => The lock name. If not given, lock staging_dir
 ifneq ($(wildcard $(STAGING_DIR_HOST)/bin/flock),)
   define locked
 	SHELL= \
 	flock \
-		$(TMP_DIR)/.$(if $(2),$(strip $(2)),global).flock \
-		-c '$(subst ','\'',$(1))'
+		$(if $(2),$(strip $(2)),$(STAGING_DIR)) \
+		-c '$(subst ','\'',$(1))' \
+	$(if $(2),|| (([ -s "$(2)" ] || [ -d "$(2)" ]) || ($(RM) $(2) && exit 1) && exit 1),&& true || false)
   endef
 else
   locked=$(1)

@@ -6,7 +6,10 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Build/copy-kernel.bin
-	$(call locked,$(MAKE) -C copy-kernel CROSS_COMPILE=$(TARGET_CROSS) O=$(KDIR),gemini-copy-kernel.bin)
+	$(call locked, \
+		$(MAKE) -C copy-kernel CROSS_COMPILE=$(TARGET_CROSS) O=$(KDIR);, \
+		$(KDIR) \
+	)
 endef
 
 # Cook a "WRGG" image, this board is apparently one in the D-Link

@@ -159,7 +159,7 @@ endef
 
 define DownloadMethod/cvs
 	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the cvs repository..."; \
+		echo "Checking out files from the cvs repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
@@ -174,7 +174,7 @@ endef
 
 define DownloadMethod/svn
 	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the svn repository..."; \
+		echo "Checking out files from the svn repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
@@ -211,7 +211,7 @@ endef
 
 # Only intends to be called as a submethod from other DownloadMethod
 define DownloadMethod/rawgit
-	echo "Checking out files from the git repository..."; \
+	echo "Checking out files from the git repository..." && \
 	mkdir -p $(TMP_DIR)/dl && \
 	cd $(TMP_DIR)/dl && \
 	rm -rf $(SUBDIR) && \
@@ -229,7 +229,7 @@ endef
 
 define DownloadMethod/bzr
 	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the bzr repository..."; \
+		echo "Checking out files from the bzr repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
@@ -245,7 +245,7 @@ endef
 
 define DownloadMethod/hg
 	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the hg repository..."; \
+		echo "Checking out files from the hg repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
@@ -262,7 +262,7 @@ endef
 
 define DownloadMethod/darcs
 	$(call wrap_mirror, $(1), $(2), \
-		echo "Checking out files from the darcs repository..."; \
+		echo "Checking out files from the darcs repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
@@ -333,7 +333,8 @@ define Download
 		$(if $(DownloadMethod/$(call dl_method,$(URL),$(PROTO))), \
 			$(call DownloadMethod/$(call dl_method,$(URL),$(PROTO)),check,$(if $(filter default,$(1)),PKG_,Download/$(1):)), \
 			$(DownloadMethod/unknown) \
-		),\
-		$(FILE))
+		), \
+		$(DL_DIR) \
+	)
 
 endef
