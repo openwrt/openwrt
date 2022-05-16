@@ -412,14 +412,12 @@ endef
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 
 # Count Git commits of a package
-# $(1) => if non-empty: count commits since last ": [uU]pdate to " or ": [bB]ump to " in commit message
+# $(1) => if non-empty: count commits since last change of PKG_RELEASE, PKG_VERSION or PKG_SOURCE_DATE
 define commitcount
 $(shell \
   if git log -1 >/dev/null 2>/dev/null; then \
     if [ -n "$(1)" ]; then \
-      last_bump="$$(git log --pretty=format:'%h %s' . | \
-        grep --max-count=1 -e ': [uU]pdate to ' -e ': [bB]ump to ' | \
-        cut -f 1 -d ' ')"; \
+      last_bump="$$(git log --format=%h -1 -G '^(PKG_RELEASE|PKG_VERSION|PKG_SOURCE_DATE)' -- Makefile)"; \
     fi; \
     if [ -n "$$last_bump" ]; then \
       echo -n $$(($$(git rev-list --count "$$last_bump..HEAD" .) + 1)); \
