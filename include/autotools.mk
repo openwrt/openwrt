@@ -67,8 +67,8 @@ endef
 
 define set_libtool_abiver
 	sed -i \
-		-e 's,^soname_spec=.*,soname_spec="\\$$$${libname}\\$$$${shared_ext}.$(PKG_ABI_VERSION)",' \
-		-e 's,^library_names_spec=.*,library_names_spec="\\$$$${libname}\\$$$${shared_ext}.$(PKG_ABI_VERSION) \\$$$${libname}\\$$$${shared_ext}",' \
+		-e 's,^soname_spec=.*,$(call sed_escape,soname_spec="\$$$${libname}\$$$${shared_ext}.$(PKG_ABI_VERSION)"),' \
+		-e 's,^library_names_spec=.*,$(call sed_escape,library_names_spec="\$$$${libname}\$$$${shared_ext}.$(PKG_ABI_VERSION) \$$$${libname}\$$$${shared_ext}"),' \
 		$(PKG_BUILD_DIR)/libtool
 endef
 

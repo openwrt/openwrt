@@ -75,14 +75,11 @@ define check_download_integrity
 endef
 
 ifdef CHECK
-check_escape=$(subst ','\'',$(1))
-#')
-
 # $(1): suffix of the F_, C_ variables, e.g. hash_deprecated, hash_mismatch, etc.
 # $(2): filename
 # $(3): expected hash value
 # $(4): var name of the the form: {PKG_,Download/<name>:}{,MIRROR_}{HASH,MIRROR_HASH}
-check_warn_nofix = $(info $(shell printf "$(_R)WARNING: %s$(_N)" '$(call check_escape,$(call C_$(1),$(2),$(3),$(4)))'))
+check_warn_nofix = $(info $(shell printf "$(_R)WARNING: %s$(_N)" '$(call escsq,$(call C_$(1),$(2),$(3),$(4)))'))
 ifndef FIXUP
   check_warn = $(check_warn_nofix)
 else
