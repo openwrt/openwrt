@@ -65,10 +65,6 @@ define RequireHeader
   $$(eval $$(call Require,$(1),$(2)))
 endef
 
-define QuoteHostCommand
-'$(subst ','"'"',$(strip $(1)))'
-endef
-
 # 1: display name
 # 2: failure message
 # 3: test
@@ -86,11 +82,11 @@ endef
 define SetupHostCommand
   define Require/$(1)
 	mkdir -p "$(STAGING_DIR_HOST)/bin"; \
-	for cmd in $(call QuoteHostCommand,$(3)) $(call QuoteHostCommand,$(4)) \
-	           $(call QuoteHostCommand,$(5)) $(call QuoteHostCommand,$(6)) \
-	           $(call QuoteHostCommand,$(7)) $(call QuoteHostCommand,$(8)) \
-	           $(call QuoteHostCommand,$(9)) $(call QuoteHostCommand,$(10)) \
-	           $(call QuoteHostCommand,$(11)) $(call QuoteHostCommand,$(12)); do \
+	for cmd in '$(call aescape,$(3))' '$(call aescape,$(4))' \
+	           '$(call aescape,$(5))' '$(call aescape,$(6))' \
+	           '$(call aescape,$(7))' '$(call aescape,$(8))' \
+	           '$(call aescape,$(9))' '$(call aescape,$(10))' \
+	           '$(call aescape,$(11))' '$(call aescape,$(12))'; do \
 		if [ -n "$$$$$$$$cmd" ]; then \
 			bin="$$$$$$$$(PATH="$(subst $(space),:,$(filter-out $(STAGING_DIR_HOST)/%,$(subst :,$(space),$(PATH))))" \
 				command -v "$$$$$$$${cmd%% *}")"; \

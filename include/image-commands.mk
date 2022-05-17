@@ -62,10 +62,8 @@ define Build/append-image-stage
 endef
 endif
 
-
 compat_version=$(if $(DEVICE_COMPAT_VERSION),$(DEVICE_COMPAT_VERSION),1.0)
-json_quote=$(subst ','\'',$(subst ",\",$(1)))
-#")')
+json_quote=$(call escsq,$(subst $(dquote),\$(dquote),$(1)))
 
 legacy_supported_message=$(SUPPORTED_DEVICES) - Image version mismatch: image $(compat_version), \
 	device 1.0. Please wipe config during upgrade (force required) or reinstall. \
