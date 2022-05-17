@@ -53,3 +53,21 @@ define KernelPackage/smi-bcm2835-dev/description
 endef
 
 $(eval $(call KernelPackage,smi-bcm2835-dev))
+
+ define KernelPackage/pwm-raspberrypi-poe
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Raspberry Pi Firwmware PoE Hat PWM support
+  KCONFIG:= \
+    CONFIG_PWM \
+    CONFIG_PWM_RASPBERRYPI_POE \
+    CONFIG_PWM_SYSFS
+  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-raspberrypi-poe.ko
+  AUTOLOAD:=$(call AutoLoad,20,pwm-raspberrypi-poe)
+  DEPENDS:=@TARGET_bcm27xx @LINUX_5_15 +kmod-hwmon-core
+endef
+
+define KernelPackage/pwm-raspberrypi-poe/description
+  This package provides Raspberry Pi Firwmware PoE Hat PWM support
+endef
+
+$(eval $(call KernelPackage,pwm-raspberrypi-poe))
