@@ -450,4 +450,7 @@ var.%:
 		echo "$*='"'$(subst ','"'\"'\"'"',$($*))'"'" \
 	)
 
+type.%:
+	@echo '$(subst ','"'"',$(origin $*))'
+
 endif #__rules_inc
