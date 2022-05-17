@@ -69,40 +69,16 @@
 				read-only;
 			};
 
-			partition@40000 {
-				label = "Bdata";
+			factory: partition@40000 {
+				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
 			};
 
-			factory: partition@50000 {
-				label = "factory";
-				reg = <0x50000 0x10000>;
-				read-only;
-			};
-
-			partition@60000 {
-				label = "crash";
-				reg = <0x60000 0x10000>;
-				read-only;
-			};
-
-			partition@70000 {
-				label = "cfg_bak";
-				reg = <0x70000 0x10000>;
-				read-only;
-			};
-
-			partition@80000 {
-				label = "overlay";
-				reg = <0x80000 0x100000>;
-				read-only;
-			};
-
-			firmware: partition@180000 {
+			partition@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x180000 0xe80000>;
+				reg = <0x50000 0xfb0000>;
 			};
 		};
 	};
