@@ -179,14 +179,15 @@ define DownloadMethod/svn
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		( svn help export | grep -q trust-server-cert && \
-		svn export --non-interactive --trust-server-cert -r$(VERSION) $(URL) $(SUBDIR) || \
-		svn export --non-interactive -r$(VERSION) $(URL) $(SUBDIR) ) && \
+		( svn export --non-interactive -r$(VERSION) $(URL) $(SUBDIR) || \
+		svn export --non-interactive --trust-server-cert-failures=unknown-ca -r$(VERSION) $(URL) $(SUBDIR) ) && \
 		echo "Packing checkout..." && \
 		export TAR_TIMESTAMP="" && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
+		rm -rf $(SUBDIR) && \
+		[ -f $(DL_DIR)/$(FILE) ] && rm -f $(DL_DIR)/$(FILE) && \
+		mv -f $(TMP_DIR)/dl/$(FILE) $(DL_DIR) || \
+		$(CP) $(TMP_DIR)/dl/$(FILE) $(DL_DIR);
 	)
 endef
 
