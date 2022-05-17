@@ -187,22 +187,41 @@
 			};
 
 			partition@180000 {
-				label = "kernel";
-				reg = <0x00180000 0x00380000>;
+				label = "firmware";
+				reg = <0x00180000 0x01860000>;
+
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "kernel";
+					reg = <0x00000000 0x00380000>;
+
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					/*
+					 * device-tree is @ 0x00180000 - 0x0019ffff
+					 * kernel starts from 0x20000.
+					 * this is coded into netgear's u-boot.
+					 */
+					partition@0 {
+						label = "dtb";
+						reg = <0x00000000 0x20000>;
+					};
 				/*
-				 * device-tree is @ 0x00180000 - 0x001fffff
-				 * kernel starts from 0x200000.
-				 * this is coded into netgear's u-boot.
-				 *
 				 * this partition will also contain a
 				 * fake/empty rootfs at the end to fool
 				 * Netgear's uboot rootfs integrety checks.
 				 */
-			};
+				};
 
-			partition@500000 {
-				label = "ubi";
-				reg = <0x00500000 0x014e0000>;
+				partition@380000 {
+					label = "ubi";
+					reg = <0x00380000 0x014e0000>;
+				};
 			};
 
 

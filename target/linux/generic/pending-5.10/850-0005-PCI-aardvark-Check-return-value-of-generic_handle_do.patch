@@ -18,7 +18,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1441,7 +1441,9 @@ static void advk_pcie_handle_int(struct
+@@ -1438,7 +1438,9 @@ static void advk_pcie_handle_int(struct
  			    PCIE_ISR1_REG);
  
  		virq = irq_find_mapping(pcie->irq_domain, i);
