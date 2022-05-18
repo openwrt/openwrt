@@ -1798,6 +1798,16 @@ define Device/wavlink_wl-wn533a8
 endef
 TARGET_DEVICES += wavlink_wl-wn533a8
 
+define Device/wavlink_wl-wn572hp3
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN572HP3
+  KERNEL_INITRAMFS_SUFFIX := -WN572HP3$$(KERNEL_SUFFIX)
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7663-firmware-ap kmod-mt7615e rssileds
+  IMAGE_SIZE := 15040k
+endef
+TARGET_DEVICES += wavlink_wl-wn572hp3
+
 define Device/wevo_11acnas
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
