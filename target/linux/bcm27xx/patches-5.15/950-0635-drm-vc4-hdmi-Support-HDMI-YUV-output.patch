@@ -19,7 +19,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -102,15 +102,30 @@
+@@ -103,15 +103,30 @@
  
  #define HDMI_14_MAX_TMDS_CLK   (340 * 1000 * 1000)
  
@@ -53,7 +53,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	return clock > HDMI_14_MAX_TMDS_CLK;
  }
-@@ -284,7 +299,7 @@ static int vc4_hdmi_connector_get_modes(
+@@ -285,7 +300,7 @@ static int vc4_hdmi_connector_get_modes(
  		struct drm_display_mode *mode;
  
  		list_for_each_entry(mode, &connector->probed_modes, head) {
@@ -62,7 +62,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  				drm_warn_once(drm, "The core clock cannot reach frequencies high enough to support 4k @ 60Hz.");
  				drm_warn_once(drm, "Please change your config.txt file to add hdmi_enable_4kp60.");
  			}
-@@ -341,6 +356,7 @@ static void vc4_hdmi_connector_reset(str
+@@ -342,6 +357,7 @@ static void vc4_hdmi_connector_reset(str
  
  	new_state->base.max_bpc = 8;
  	new_state->base.max_requested_bpc = 8;
@@ -70,7 +70,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	drm_atomic_helper_connector_tv_reset(connector);
  }
  
-@@ -357,6 +373,7 @@ vc4_hdmi_connector_duplicate_state(struc
+@@ -358,6 +374,7 @@ vc4_hdmi_connector_duplicate_state(struc
  
  	new_state->pixel_rate = vc4_state->pixel_rate;
  	new_state->output_bpc = vc4_state->output_bpc;
@@ -78,7 +78,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	__drm_atomic_helper_connector_duplicate_state(connector, &new_state->base);
  
  	return &new_state->base;
-@@ -510,11 +527,38 @@ static void vc4_hdmi_write_infoframe(str
+@@ -511,11 +528,38 @@ static void vc4_hdmi_write_infoframe(str
  		DRM_ERROR("Failed to wait for infoframe to start: %d\n", ret);
  }
  
@@ -117,7 +117,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	const struct drm_display_mode *mode = &vc4_hdmi->saved_adjusted_mode;
  	union hdmi_infoframe frame;
  	int ret;
-@@ -534,6 +578,7 @@ static void vc4_hdmi_set_avi_infoframe(s
+@@ -535,6 +579,7 @@ static void vc4_hdmi_set_avi_infoframe(s
  					   HDMI_QUANTIZATION_RANGE_FULL :
  					   HDMI_QUANTIZATION_RANGE_LIMITED);
  	drm_hdmi_avi_infoframe_colorimetry(&frame.avi, cstate);
@@ -125,7 +125,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	drm_hdmi_avi_infoframe_bars(&frame.avi, cstate);
  
  	vc4_hdmi_write_infoframe(encoder, &frame);
-@@ -636,7 +681,9 @@ static void vc4_hdmi_enable_scrambling(s
+@@ -637,7 +682,9 @@ static void vc4_hdmi_enable_scrambling(s
  	if (!vc4_hdmi_supports_scrambling(encoder, mode))
  		return;
  
@@ -136,7 +136,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return;
  
  	drm_scdc_set_high_tmds_clock_ratio(vc4_hdmi->ddc, true);
-@@ -824,6 +871,38 @@ static const u16 vc5_hdmi_csc_full_rgb_t
+@@ -825,6 +872,38 @@ static const u16 vc5_hdmi_csc_full_rgb_t
  	{ 0x0000, 0x0000, 0x1b80, 0x0400 },
  };
  
@@ -175,7 +175,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static void vc5_hdmi_set_csc_coeffs(struct vc4_hdmi *vc4_hdmi,
  				    const u16 coeffs[3][4])
  {
-@@ -841,19 +920,53 @@ static void vc5_hdmi_csc_setup(struct vc
+@@ -842,19 +921,53 @@ static void vc5_hdmi_csc_setup(struct vc
  			       struct drm_connector_state *state,
  			       const struct drm_display_mode *mode)
  {
@@ -234,7 +234,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	HDMI_WRITE(HDMI_CSC_CTL, csc_ctl);
  
  	spin_unlock_irqrestore(&vc4_hdmi->hw_lock, flags);
-@@ -979,6 +1092,15 @@ static void vc5_hdmi_set_timings(struct
+@@ -980,6 +1093,15 @@ static void vc5_hdmi_set_timings(struct
  		break;
  	}
  
@@ -250,7 +250,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	reg = HDMI_READ(HDMI_DEEP_COLOR_CONFIG_1);
  	reg &= ~(VC5_HDMI_DEEP_COLOR_CONFIG_1_INIT_PACK_PHASE_MASK |
  		 VC5_HDMI_DEEP_COLOR_CONFIG_1_COLOR_DEPTH_MASK);
-@@ -1258,12 +1380,97 @@ static void vc4_hdmi_encoder_atomic_mode
+@@ -1259,12 +1381,97 @@ static void vc4_hdmi_encoder_atomic_mode
  
  	mutex_lock(&vc4_hdmi->mutex);
  	vc4_hdmi->output_bpc = vc4_state->output_bpc;
@@ -348,7 +348,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static enum drm_mode_status
  vc4_hdmi_encoder_clock_valid(const struct vc4_hdmi *vc4_hdmi,
  			     unsigned long long clock)
-@@ -1285,13 +1492,17 @@ vc4_hdmi_encoder_clock_valid(const struc
+@@ -1286,13 +1493,17 @@ vc4_hdmi_encoder_clock_valid(const struc
  
  static unsigned long long
  vc4_hdmi_encoder_compute_mode_clock(const struct drm_display_mode *mode,
@@ -367,7 +367,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return clock * bpc / 8;
  }
  
-@@ -1299,11 +1510,11 @@ static int
+@@ -1300,11 +1511,11 @@ static int
  vc4_hdmi_encoder_compute_clock(const struct vc4_hdmi *vc4_hdmi,
  			       struct vc4_hdmi_connector_state *vc4_state,
  			       const struct drm_display_mode *mode,
@@ -381,7 +381,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (vc4_hdmi_encoder_clock_valid(vc4_hdmi, clock) != MODE_OK)
  		return -EINVAL;
  
-@@ -1313,10 +1524,55 @@ vc4_hdmi_encoder_compute_clock(const str
+@@ -1314,10 +1525,55 @@ vc4_hdmi_encoder_compute_clock(const str
  }
  
  static int
@@ -437,7 +437,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct drm_connector_state *conn_state = &vc4_state->base;
  	unsigned int max_bpc = clamp_t(unsigned int, conn_state->max_bpc, 8, 12);
  	unsigned int bpc;
-@@ -1325,17 +1581,18 @@ vc4_hdmi_encoder_compute_config(const st
+@@ -1326,17 +1582,18 @@ vc4_hdmi_encoder_compute_config(const st
  	for (bpc = max_bpc; bpc >= 8; bpc -= 2) {
  		drm_dbg(dev, "Trying with a %d bpc output\n", bpc);
  

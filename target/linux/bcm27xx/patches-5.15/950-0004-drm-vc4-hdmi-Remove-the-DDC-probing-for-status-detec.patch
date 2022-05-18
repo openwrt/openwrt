@@ -36,7 +36,7 @@ Link: https://lore.kernel.org/r/20211025152903.1088803-2-maxime@cerno.tech
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -175,8 +175,6 @@ vc4_hdmi_connector_detect(struct drm_con
+@@ -176,8 +176,6 @@ vc4_hdmi_connector_detect(struct drm_con
  	if (vc4_hdmi->hpd_gpio &&
  	    gpiod_get_value_cansleep(vc4_hdmi->hpd_gpio)) {
  		connected = true;

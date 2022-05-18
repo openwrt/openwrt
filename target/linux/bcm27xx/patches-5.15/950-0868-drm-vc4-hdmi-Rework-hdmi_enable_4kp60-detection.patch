@@ -48,7 +48,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  struct vc4_plane {
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -291,6 +291,7 @@ static int vc4_hdmi_connector_get_modes(
+@@ -292,6 +292,7 @@ static int vc4_hdmi_connector_get_modes(
  {
  	struct vc4_hdmi *vc4_hdmi = connector_to_vc4_hdmi(connector);
  	struct vc4_hdmi_encoder *vc4_encoder = &vc4_hdmi->encoder;
@@ -56,7 +56,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	int ret = 0;
  	struct edid *edid;
  
-@@ -309,7 +310,7 @@ static int vc4_hdmi_connector_get_modes(
+@@ -310,7 +311,7 @@ static int vc4_hdmi_connector_get_modes(
  	ret = drm_add_edid_modes(connector, edid);
  	kfree(edid);
  
@@ -65,7 +65,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		struct drm_device *drm = connector->dev;
  		struct drm_display_mode *mode;
  
-@@ -1671,11 +1672,12 @@ vc4_hdmi_encoder_clock_valid(const struc
+@@ -1672,11 +1673,12 @@ vc4_hdmi_encoder_clock_valid(const struc
  {
  	const struct drm_connector *connector = &vc4_hdmi->connector;
  	const struct drm_display_info *info = &connector->display_info;
@@ -79,7 +79,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return MODE_CLOCK_HIGH;
  
  	if (info->max_tmds_clock && clock > (info->max_tmds_clock * 1000))
-@@ -3157,14 +3159,6 @@ static int vc4_hdmi_bind(struct device *
+@@ -3158,14 +3160,6 @@ static int vc4_hdmi_bind(struct device *
  	vc4_hdmi->disable_wifi_frequencies =
  		of_property_read_bool(dev->of_node, "wifi-2.4ghz-coexistence");
  

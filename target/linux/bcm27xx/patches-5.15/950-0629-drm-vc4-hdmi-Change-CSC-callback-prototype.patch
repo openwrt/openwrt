@@ -17,7 +17,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -741,6 +741,7 @@ static void vc4_hdmi_encoder_post_crtc_p
+@@ -742,6 +742,7 @@ static void vc4_hdmi_encoder_post_crtc_p
  }
  
  static void vc4_hdmi_csc_setup(struct vc4_hdmi *vc4_hdmi,
@@ -25,7 +25,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  			       const struct drm_display_mode *mode)
  {
  	unsigned long flags;
-@@ -828,6 +829,7 @@ static void vc5_hdmi_set_csc_coeffs(stru
+@@ -829,6 +830,7 @@ static void vc5_hdmi_set_csc_coeffs(stru
  }
  
  static void vc5_hdmi_csc_setup(struct vc4_hdmi *vc4_hdmi,
@@ -33,7 +33,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  			       const struct drm_display_mode *mode)
  {
  	unsigned long flags;
-@@ -1140,13 +1142,16 @@ static void vc4_hdmi_encoder_pre_crtc_en
+@@ -1141,13 +1143,16 @@ static void vc4_hdmi_encoder_pre_crtc_en
  					     struct drm_atomic_state *state)
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);

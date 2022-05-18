@@ -76,7 +76,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	drm_WARN_ON(encoder->base.dev, crtc_state->limited_color_range &&
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -516,7 +516,7 @@ static void vc4_hdmi_set_avi_infoframe(s
+@@ -517,7 +517,7 @@ static void vc4_hdmi_set_avi_infoframe(s
  					   vc4_encoder->limited_rgb_range ?
  					   HDMI_QUANTIZATION_RANGE_LIMITED :
  					   HDMI_QUANTIZATION_RANGE_FULL);
