@@ -59,7 +59,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	/* Reinitialize TDMA and RDMA and SW housekeeping */
  	ret = bcmgenet_init_dma(priv);
-@@ -4200,7 +4208,7 @@ static int bcmgenet_resume(struct device
+@@ -4204,7 +4212,7 @@ static int bcmgenet_resume(struct device
  			bcmgenet_hfb_create_rxnfc_filter(priv, rule);
  
  	/* Disable RX/TX DMA and flush TX queues */

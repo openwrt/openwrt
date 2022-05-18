@@ -24,8 +24,6 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
  tools/bpf/resolve_btfids/Makefile | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/tools/bpf/resolve_btfids/Makefile b/tools/bpf/resolve_btfids/Makefile
-index af9f9d3534c9..e727058bfe15 100644
 --- a/tools/bpf/resolve_btfids/Makefile
 +++ b/tools/bpf/resolve_btfids/Makefile
 @@ -23,6 +23,8 @@ CC       = $(HOSTCC)
@@ -37,7 +35,7 @@ index af9f9d3534c9..e727058bfe15 100644
  
  OUTPUT ?= $(srctree)/tools/bpf/resolve_btfids/
  
-@@ -45,9 +47,9 @@ $(SUBCMDOBJ): fixdep FORCE | $(OUTPUT)/libsubcmd
+@@ -45,9 +47,9 @@ $(SUBCMDOBJ): fixdep FORCE | $(OUTPUT)/l
  	$(Q)$(MAKE) -C $(SUBCMD_SRC) OUTPUT=$(abspath $(dir $@))/ $(abspath $@)
  
  $(BPFOBJ): $(wildcard $(LIBBPF_SRC)/*.[ch] $(LIBBPF_SRC)/Makefile) | $(OUTPUT)/libbpf
@@ -49,6 +47,3 @@ index af9f9d3534c9..e727058bfe15 100644
            -I$(srctree)/tools/include \
            -I$(srctree)/tools/include/uapi \
            -I$(LIBBPF_SRC) \
--- 
-2.35.1
-

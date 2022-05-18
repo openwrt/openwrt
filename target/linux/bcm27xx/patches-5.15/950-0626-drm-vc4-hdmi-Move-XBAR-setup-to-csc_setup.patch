@@ -15,7 +15,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -791,6 +791,8 @@ static void vc5_hdmi_csc_setup(struct vc
+@@ -792,6 +792,8 @@ static void vc5_hdmi_csc_setup(struct vc
  
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  
@@ -24,7 +24,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (!vc4_hdmi_is_full_range_rgb(vc4_hdmi, mode)) {
  		/* CEA VICs other than #1 requre limited range RGB
  		 * output unless overridden by an AVI infoframe.
-@@ -905,7 +907,6 @@ static void vc5_hdmi_set_timings(struct
+@@ -906,7 +908,6 @@ static void vc5_hdmi_set_timings(struct
  
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  

@@ -19,7 +19,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -78,6 +78,9 @@
+@@ -79,6 +79,9 @@
  #define VC5_HDMI_VERTB_VSPO_SHIFT		16
  #define VC5_HDMI_VERTB_VSPO_MASK		VC4_MASK(29, 16)
  
@@ -29,7 +29,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  #define VC5_HDMI_SCRAMBLER_CTL_ENABLE		BIT(0)
  
  #define VC5_HDMI_DEEP_COLOR_CONFIG_1_INIT_PACK_PHASE_SHIFT	8
-@@ -962,6 +965,11 @@ static void vc5_hdmi_set_timings(struct
+@@ -963,6 +966,11 @@ static void vc5_hdmi_set_timings(struct
  	reg |= gcp_en ? VC5_HDMI_GCP_CONFIG_GCP_ENABLE : 0;
  	HDMI_WRITE(HDMI_GCP_CONFIG, reg);
  
