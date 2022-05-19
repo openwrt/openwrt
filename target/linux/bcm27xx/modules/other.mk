@@ -2,24 +2,6 @@
 #
 # Copyright (C) 2019 OpenWrt.org
 
-define KernelPackage/pwm-bcm2835
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=BCM2835 PWM driver
-  KCONFIG:= \
-    CONFIG_PWM=y \
-    CONFIG_PWM_BCM2835
-  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-bcm2835.ko
-  AUTOLOAD:=$(call AutoLoad,60,pwm-bcm2835)
-  DEPENDS:=@TARGET_bcm27xx
-endef
-
-define KernelPackage/pwm-bcm2835/description
-  This package contains the PWM framework driver for BCM2835 controller (Raspberry Pi)
-endef
-
-$(eval $(call KernelPackage,pwm-bcm2835))
-
-
 define KernelPackage/pwm-raspberrypi-poe
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Raspberry Pi Firwmware PoE Hat PWM support
