@@ -38,6 +38,15 @@ define Device/mikrotik_routerboard-922uags-5hpacd
 endef
 TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
 
+define Device/mikrotik_routerboard-951ui-2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9531
+  DEVICE_MODEL := RouterBOARD 951Ui-2nD (hAP)
+  IMAGE_SIZE := 16256k
+  SUPPORTED_DEVICES += rb-951ui-2nd
+endef
+TARGET_DEVICES += mikrotik_routerboard-951ui-2nd
+
 define Device/mikrotik_routerboard-952ui-5ac2nd
   $(Device/mikrotik_nor)
   SOC := qca9533
