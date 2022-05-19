@@ -6,6 +6,7 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+mikrotik,routerboard-951ui-2nd|\
 mikrotik,routerboard-952ui-5ac2nd)
 	ucidef_set_led_netdev "port1" "port1" "green:port1" "eth1"
 	ucidef_set_led_switch "port2" "port2" "green:port2" "switch0" "0x10"
