@@ -12,6 +12,7 @@ SUBTARGETS:=generic smp
 FEATURES:=squashfs usb atm pci pcmcia usbgadget
 
 KERNEL_PATCHVER:=5.10
+KERNEL_TESTING_PATCHVER:=5.15
 
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers
