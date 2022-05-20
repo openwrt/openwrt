@@ -21,7 +21,6 @@
 #include <linux/pci.h>
 #include <linux/reset.h>
 #include <linux/types.h>
-#include <linux/version.h>
 #include <linux/vmalloc.h>
 
 #include "../pci.h"
@@ -347,9 +346,6 @@ static struct pci_controller bcm6348_pci_controller = {
 	.pci_ops = &bcm6348_pci_ops,
 	.io_resource = &bcm6348_pci_io_resource,
 	.mem_resource = &bcm6348_pci_mem_resource,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,13,0)
-	.busn_resource = &bcm6348_pci_busn_resource,
-#endif
 };
 
 #ifdef CONFIG_CARDBUS
@@ -732,9 +728,7 @@ static int bcm6348_pci_probe(struct platform_device *pdev)
 	struct device_node *np = dev->of_node;
 	struct bcm6348_pci *priv = &bcm6348_pci;
 	struct resource *res;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,13,0)
 	LIST_HEAD(resources);
-#endif
 
 	of_pci_check_probe_only();
 
@@ -777,9 +771,7 @@ static int bcm6348_pci_probe(struct platform_device *pdev)
 		return -EINVAL;
 
 	of_pci_parse_bus_range(np, &bcm6348_pci_busn_resource);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,13,0)
 	pci_add_resource(&resources, &bcm6348_pci_busn_resource);
-#endif
 
 	/*
 	 * Configuration accesses are done through IO space, remap 4

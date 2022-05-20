@@ -227,9 +227,6 @@ static struct pci_controller bcm6318_pcie_controller = {
 	.pci_ops = &bcm6318_pcie_ops,
 	.io_resource = &bcm6318_pcie_io_resource,
 	.mem_resource = &bcm6318_pcie_mem_resource,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,13,0)
-	.busn_resource = &bcm6318_pcie_busn_resource,
-#endif
 };
 
 static void bcm6318_pcie_reset(struct bcm6318_pcie *priv)
@@ -308,9 +305,7 @@ static int bcm6318_pcie_probe(struct platform_device *pdev)
 	struct bcm6318_pcie *priv = &bcm6318_pcie;
 	struct resource *res;
 	int ret;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,13,0)
 	LIST_HEAD(resources);
-#endif
 
 	of_pci_check_probe_only();
 
@@ -376,9 +371,7 @@ static int bcm6318_pcie_probe(struct platform_device *pdev)
 		return -EINVAL;
 
 	of_pci_parse_bus_range(np, &bcm6318_pcie_busn_resource);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,13,0)
 	pci_add_resource(&resources, &bcm6318_pcie_busn_resource);
-#endif
 
 	bcm6318_pcie_reset(priv);
 	bcm6318_pcie_setup(priv);
