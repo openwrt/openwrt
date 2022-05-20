@@ -1849,7 +1849,7 @@ u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
 
 static u32 rtl931x_get_analog_sds(u32 sds)
 {
-	u32 sds_map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
+	u32 sds_map[] = {0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23};
 
 	if (sds < 14)
 		return sds_map[sds];
@@ -2294,6 +2294,9 @@ void rtl9300_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
 	pr_info("%s: registers after %08x %08x\n", __func__, v10, v1);
 }
 
+/*
+ * Configures the polariy of the TX and RX links to the SerDes
+ */
 void rtl9310_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
 {
 	u32 v10, v1;
@@ -3986,12 +3989,32 @@ int rtl93xx_get_sds(struct device *dev)
 
 		if (of_property_read_u32(dn, "sds", &sds_num))
 			return 0;  // Not the base address
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			return 0;
 	} else {
 		dev_err(dev, "No DT node.\n");
 		return -EINVAL;
 	}
 
 	return sds_num;
+}
+
+bool rtl93xx_get_sds_tx_mode(struct device *dev)
+{
+	if (!dev->of_node)
+		return true;
+	if (of_property_read_bool(dev->of_node, "sds-tx-inverted"))
+		return false;
+	return true;
+}
+
+bool rtl93xx_get_sds_rx_mode(struct device *dev)
+{
+	if (!dev->of_node)
+		return true;
+	if (of_property_read_bool(dev->of_node, "sds-rx-inverted"))
+		return false;
+	return true;
 }
 
 int configure_rtl8221b(struct phy_device *phydev)
@@ -4554,7 +4577,7 @@ void rtl931x_media_set(int sds, phy_interface_t mode)
 	}
 }
 
-int rtl9310_configure_serdes(u32 sds, phy_interface_t mode)
+int rtl9310_configure_serdes(u32 sds, phy_interface_t mode, bool tx_normal, bool rx_normal)
 {
 
 	u32 board_sds_tx_type1[] = { 0x1C3, 0x1C3, 0x1C3, 0x1A3, 0x1A3,
@@ -4572,27 +4595,16 @@ int rtl9310_configure_serdes(u32 sds, phy_interface_t mode)
 	u32 asds, dsds, ori, model_info, val;
 	int chiptype = 0;
 
-	asds = rtl931x_get_analog_sds(sds);
-
 	if (sds > 13)
 		return -EINVAL;
+
+	// Get analog SerDes for given normal SerDes
+	asds = rtl931x_get_analog_sds(sds);
 
 	pr_info("%s: set sds %d to mode %d\n", __func__, sds, mode);
 	val = rtl9310_sds_field_r(asds, 0x1F, 0x9, 11, 6);
 
-	pr_info("%s: fibermode %08X stored mode 0x%x analog SDS %d", __func__,
-			rtl931x_read_sds_phy(asds, 0x1f, 0x9), val, asds);
-	pr_info("%s: SGMII mode %08X in 0x24 0x9 analog SDS %d", __func__,
-			rtl931x_read_sds_phy(asds, 0x24, 0x9), asds);
-	pr_info("%s: CMU mode %08X stored even SDS %d", __func__,
-			rtl931x_read_sds_phy(asds & ~1, 0x20, 0x12), asds & ~1);
-	pr_info("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x24, 0x7));
-	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x26, 0x7));
-	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
-	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtl931x_read_sds_phy(dsds, 0x0, 0xe));
-	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtl931x_read_sds_phy(dsds + 1, 0x0, 0xe));
-
+	// Get chiptype from MODEL_CHAR_3RD bits
 	model_info = sw_r32(RTL93XX_MODEL_NAME_INFO);
 	if ((model_info >> 4) & 0x1) {
 		pr_info("detected chiptype 1\n");
@@ -4601,15 +4613,9 @@ int rtl9310_configure_serdes(u32 sds, phy_interface_t mode)
 		pr_info("detected chiptype 0\n");
 	}
 
-	if (sds < 2)
-		dsds = sds;
-	else
-		dsds = (sds - 1) * 2;
+	// Get corresponding XSGMII SerDes for normal SerDes number
+	dsds = sds < 2?sds:(sds - 1) * 2;
 
-	pr_info("%s: 2.5gbit %08X dsds %d", __func__,
-		rtl931x_read_sds_phy(dsds, 0x1, 0x14), dsds);
-
-	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
 	ori = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
 	val = ori | (1 << sds);
 	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
@@ -4619,17 +4625,14 @@ int rtl9310_configure_serdes(u32 sds, phy_interface_t mode)
 		break;
 
 	case PHY_INTERFACE_MODE_XGMII: // MII_XSGMII
-
 		if (chiptype) {
-			u32 xsg_sdsid_1;
-			xsg_sdsid_1 = dsds + 1;
+			u32 xsg_sdsid_1 = dsds + 1;
 			//fifo inv clk
 			rtl9310_sds_field_w(dsds, 0x1, 0x1, 7, 4, 0xf);
 			rtl9310_sds_field_w(dsds, 0x1, 0x1, 3, 0, 0xf);
 
 			rtl9310_sds_field_w(xsg_sdsid_1, 0x1, 0x1, 7, 4, 0xf);
 			rtl9310_sds_field_w(xsg_sdsid_1, 0x1, 0x1, 3, 0, 0xf);
-
 		}
 
 		rtl9310_sds_field_w(dsds, 0x0, 0xE, 12, 12, 1);
@@ -4694,6 +4697,7 @@ int rtl9310_configure_serdes(u32 sds, phy_interface_t mode)
 		rtl9310_sds_field_w(asds, 0x1f, 0x7, 10, 4, 0x7f);
 		break;
 
+	case PHY_INTERFACE_MODE_2500BASEX:
 	case PHY_INTERFACE_MODE_HSGMII:
 		rtl9310_sds_field_w(dsds, 0x1, 0x14, 8, 8, 1);
 		break;
@@ -4710,10 +4714,6 @@ int rtl9310_configure_serdes(u32 sds, phy_interface_t mode)
 		rtl9310_sds_field_w(asds, 0x24, 0x9, 15, 15, 0);
 		break;
 
-	case PHY_INTERFACE_MODE_2500BASEX:
-		rtl9310_sds_field_w(dsds, 0x1, 0x14, 8, 8, 1);
-		break;
-
 	case PHY_INTERFACE_MODE_QSGMII:
 	default:
 		pr_info("%s: PHY mode %s not supported by SerDes %d\n",
@@ -4721,8 +4721,9 @@ int rtl9310_configure_serdes(u32 sds, phy_interface_t mode)
 		return -EINVAL;
 	}
 
-	// TX Polarity inverted on ports, TODO: this is only true on ECS4125-10P
-	rtl9310_serdes_mac_link_config(sds, false, true);
+	// Adjust RX/TX Polarity for SerDes link
+	pr_debug("%s tx_normal %d, rx_normal %d\n", __func__, tx_normal, rx_normal);
+	rtl9310_serdes_mac_link_config(sds, tx_normal, rx_normal);
 
 	rtl931x_cmu_type_set(asds, mode, chiptype);
 
@@ -4730,17 +4731,18 @@ int rtl9310_configure_serdes(u32 sds, phy_interface_t mode)
 		if (chiptype)
 			rtl931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx_type1[sds - 2]);
 		else {
-			val = 0xa0000;
-			sw_w32(val, RTL931X_CHIP_INFO_ADDR);
+			// Enable and read CHIP_INFO register
+			sw_w32(0xa0000, RTL931X_CHIP_INFO_ADDR);
 			val = sw_r32(RTL931X_CHIP_INFO_ADDR);
+
 			if (val & BIT(28)) // consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit))
 			{
 				rtl931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx2[sds - 2]);
 			} else {
 				rtl931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx[sds - 2]);
 			}
-			val = 0;
-			sw_w32(val, RTL931X_CHIP_INFO_ADDR);
+			// Disable CHIP_INFO
+			sw_w32(0x0, RTL931X_CHIP_INFO_ADDR);
 		}
 	}
 
@@ -4810,6 +4812,8 @@ int rtl93xx_configure_serdes(struct phy_device *phydev)
 {
 	int phy_addr = phydev->mdio.addr;
 	u32 sds_num = 0;
+	bool tx_normal = rtl93xx_get_sds_tx_mode(&phydev->mdio.dev);
+	bool rx_normal = rtl93xx_get_sds_rx_mode(&phydev->mdio.dev);
 
 	pr_info("%s called for RTL93xx SerDes on port %d\n", __func__, phy_addr);
 	sds_num = rtl93xx_get_sds(&phydev->mdio.dev);
@@ -4821,7 +4825,7 @@ int rtl93xx_configure_serdes(struct phy_device *phydev)
 		return rtl9300_configure_serdes(phy_addr, sds_num, phydev->interface);
 
 	// interface has been set by phy_attach_direct
-	return rtl9310_configure_serdes(sds_num, phydev->interface);
+	return rtl9310_configure_serdes(sds_num, phydev->interface, tx_normal, rx_normal);
 }
 
 static int rtl8214fc_phy_probe(struct phy_device *phydev)

@@ -347,6 +347,11 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			led_set = 0;
 		priv->ports[pn].led_set = led_set;
 
+		priv->ports[pn].sds_tx_normal = !of_property_read_bool(phy_node,
+								       "sds-tx-inverted");
+		priv->ports[pn].sds_rx_normal = !of_property_read_bool(phy_node,
+								       "sds-rx-inverted");
+
 		// Check for the integrated SerDes of the RTL8380M first
 		if (of_property_read_bool(phy_node, "phy-is-integrated")
 		    && priv->id == 0x8380 && pn >= 24) {

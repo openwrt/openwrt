@@ -142,7 +142,7 @@ int rtl9310_sds_sym_err_get(int sds, phy_interface_t mode);
 void rtl931x_leq_adapt(int sds);
 void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v);
 u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit);
-int rtl9310_configure_serdes(u32 sds, phy_interface_t mode);
+int rtl9310_configure_serdes(u32 sds, phy_interface_t mode, bool tx_normal, bool rx_normal);
 
 int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
 int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);

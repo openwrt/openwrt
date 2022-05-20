@@ -737,21 +737,20 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		sw_w32_mask(0, BIT(sds_num), RTL931X_PS_SERDES_OFF_MODE);
 		rtl931x_media_none(sds_num);
 		sw_w32_mask(0, BIT(port % 32), RTL931X_FIB_UNIDIR_CTRL + 4 * (port / 32));
-		rtl9310_configure_serdes(sds_num, state->interface);
+		rtl9310_configure_serdes(sds_num, state->interface,
+					 priv->ports[port].sds_tx_normal,
+					 priv->ports[port].sds_rx_normal);
 		band = rtl931x_sds_cmu_band_get(sds_num, state->interface);
 		// Power on SerDes again
 		sw_w32_mask(BIT(sds_num), 0, RTL931X_PS_SERDES_OFF_MODE);
 		break;
 
 	case PHY_INTERFACE_MODE_XGMII:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_XGMII);
-		rtl9310_configure_serdes(sds_num, PHY_INTERFACE_MODE_XGMII);
-		break;
-
 	case PHY_INTERFACE_MODE_USXGMII:
-		// Translates to MII_USXGMII_10GSXGMII
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_USXGMII);
-		rtl9310_configure_serdes(sds_num, PHY_INTERFACE_MODE_USXGMII);
+		band = rtl931x_sds_cmu_band_get(sds_num, state->interface);
+		rtl9310_configure_serdes(sds_num, state->interface,
+					 priv->ports[port].sds_tx_normal,
+					 priv->ports[port].sds_rx_normal);
 		break;
 
 	case PHY_INTERFACE_MODE_SGMII:
@@ -761,7 +760,9 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	case PHY_INTERFACE_MODE_QSGMII:
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_QSGMII);
-		rtl9310_configure_serdes(sds_num, PHY_INTERFACE_MODE_QSGMII);
+		rtl9310_configure_serdes(sds_num, PHY_INTERFACE_MODE_QSGMII,
+					 priv->ports[port].sds_tx_normal,
+					 priv->ports[port].sds_rx_normal);
 		break;
 
 	default:
