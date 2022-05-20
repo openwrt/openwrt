@@ -1,0 +1,81 @@
+From 4bb089fbe5b51fd81fa62727c43fffabe71c9215 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Sat, 20 Nov 2021 17:12:49 +0100
+Subject: [PATCH 35/84] clk: starfive: jh7100: Support more clock types
+
+Unlike the system clocks there are audio clocks that combine both
+multiplexer/divider and gate/multiplexer/divider, so add support for
+that.
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ drivers/clk/starfive/clk-starfive-jh7100.c | 26 ++++++++++++++++++++++
+ drivers/clk/starfive/clk-starfive-jh7100.h | 15 +++++++++++++
+ 2 files changed, 41 insertions(+)
+
+--- a/drivers/clk/starfive/clk-starfive-jh7100.c
++++ b/drivers/clk/starfive/clk-starfive-jh7100.c
+@@ -534,6 +534,27 @@ static const struct clk_ops jh7100_clk_g
+ 	.debug_init = jh7100_clk_debug_init,
+ };
+ 
++static const struct clk_ops jh7100_clk_mdiv_ops = {
++	.recalc_rate = jh7100_clk_recalc_rate,
++	.determine_rate = jh7100_clk_determine_rate,
++	.get_parent = jh7100_clk_get_parent,
++	.set_parent = jh7100_clk_set_parent,
++	.set_rate = jh7100_clk_set_rate,
++	.debug_init = jh7100_clk_debug_init,
++};
++
++static const struct clk_ops jh7100_clk_gmd_ops = {
++	.enable = jh7100_clk_enable,
++	.disable = jh7100_clk_disable,
++	.is_enabled = jh7100_clk_is_enabled,
++	.recalc_rate = jh7100_clk_recalc_rate,
++	.determine_rate = jh7100_clk_determine_rate,
++	.get_parent = jh7100_clk_get_parent,
++	.set_parent = jh7100_clk_set_parent,
++	.set_rate = jh7100_clk_set_rate,
++	.debug_init = jh7100_clk_debug_init,
++};
++
+ static const struct clk_ops jh7100_clk_inv_ops = {
+ 	.get_phase = jh7100_clk_get_phase,
+ 	.set_phase = jh7100_clk_set_phase,
+@@ -543,6 +564,11 @@ static const struct clk_ops jh7100_clk_i
+ const struct clk_ops *starfive_jh7100_clk_ops(u32 max)
+ {
+ 	if (max & JH7100_CLK_DIV_MASK) {
++		if (max & JH7100_CLK_MUX_MASK) {
++			if (max & JH7100_CLK_ENABLE)
++				return &jh7100_clk_gmd_ops;
++			return &jh7100_clk_mdiv_ops;
++		}
+ 		if (max & JH7100_CLK_ENABLE)
+ 			return &jh7100_clk_gdiv_ops;
+ 		if (max == JH7100_CLK_FRAC_MAX)
+--- a/drivers/clk/starfive/clk-starfive-jh7100.h
++++ b/drivers/clk/starfive/clk-starfive-jh7100.h
+@@ -76,6 +76,21 @@ struct jh7100_clk_data {
+ 	.parents = { __VA_ARGS__ },						\
+ }
+ 
++#define JH7100_MDIV(_idx, _name, _max, _nparents, ...) [_idx] = {		\
++	.name = _name,								\
++	.flags = 0,								\
++	.max = (((_nparents) - 1) << JH7100_CLK_MUX_SHIFT) | (_max),		\
++	.parents = { __VA_ARGS__ },						\
++}
++
++#define JH7100__GMD(_idx, _name, _flags, _max, _nparents, ...) [_idx] = {	\
++	.name = _name,								\
++	.flags = _flags,							\
++	.max = JH7100_CLK_ENABLE |						\
++		(((_nparents) - 1) << JH7100_CLK_MUX_SHIFT) | (_max),		\
++	.parents = { __VA_ARGS__ },						\
++}
++
+ #define JH7100__INV(_idx, _name, _parent) [_idx] = {				\
+ 	.name = _name,								\
+ 	.flags = CLK_SET_RATE_PARENT,						\

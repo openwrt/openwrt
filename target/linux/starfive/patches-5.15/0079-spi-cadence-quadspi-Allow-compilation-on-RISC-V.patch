@@ -1,0 +1,24 @@
+From ecd7749f5e622f3e1ad3c775781f09bd7b655925 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Tue, 27 Apr 2021 17:05:57 +0200
+Subject: [PATCH 79/84] spi: cadence-quadspi: Allow compilation on RISC-V
+
+This IP is also used on the StarFive JH7100 riscv64 SoC and presumably
+also the upcoming JH7110 SoC.
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ drivers/spi/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -219,7 +219,7 @@ config SPI_CADENCE
+ 
+ config SPI_CADENCE_QUADSPI
+ 	tristate "Cadence Quad SPI controller"
+-	depends on OF && (ARM || ARM64 || X86 || COMPILE_TEST)
++	depends on OF && (ARM || ARM64 || RISCV || X86 || COMPILE_TEST)
+ 	help
+ 	  Enable support for the Cadence Quad SPI Flash controller.
+ 

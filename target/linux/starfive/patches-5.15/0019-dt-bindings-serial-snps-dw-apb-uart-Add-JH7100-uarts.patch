@@ -1,0 +1,30 @@
+From dcab11c76d8545e7c97cae8e20ef3c2f589ff102 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Thu, 7 Oct 2021 14:24:29 +0200
+Subject: [PATCH 19/84] dt-bindings: serial: snps-dw-apb-uart: Add JH7100 uarts
+
+commit d0b65b1500973fef840dbc4bb9f9c237db2b761f upstream.
+
+Add compatibles for the StarFive JH7100 uarts.
+
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ .../devicetree/bindings/serial/snps-dw-apb-uart.yaml         | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/Documentation/devicetree/bindings/serial/snps-dw-apb-uart.yaml
++++ b/Documentation/devicetree/bindings/serial/snps-dw-apb-uart.yaml
+@@ -40,6 +40,11 @@ properties:
+               - brcm,bcm11351-dw-apb-uart
+               - brcm,bcm21664-dw-apb-uart
+           - const: snps,dw-apb-uart
++      - items:
++          - enum:
++              - starfive,jh7100-hsuart
++              - starfive,jh7100-uart
++          - const: snps,dw-apb-uart
+       - const: snps,dw-apb-uart
+ 
+   reg:

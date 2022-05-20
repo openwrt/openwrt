@@ -1,0 +1,32 @@
+From bcc0159d4fc6183f2dbf1132895fff9ec9982841 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 26 Oct 2021 17:56:07 +0200
+Subject: [PATCH 05/84] dmaengine: dw-axi-dmac: Simplify assignment in
+ dma_chan_pause()
+
+commit 2f23355e96b4a5896de2032176197fa0c5c444dd upstream.
+
+Simplify assigning zero and performing a logical OR to a single
+assignment.
+
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Link: https://lore.kernel.org/r/2abd0da35608c14689a919d47dd45898a8ab4297.1635263478.git.geert@linux-m68k.org
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
+@@ -1179,9 +1179,8 @@ static int dma_chan_pause(struct dma_cha
+ 			BIT(chan->id) << DMAC_CHAN_SUSP_WE_SHIFT;
+ 		axi_dma_iowrite32(chan->chip, DMAC_CHEN, val);
+ 	} else {
+-		val = 0;
+-		val |= BIT(chan->id) << DMAC_CHAN_SUSP2_SHIFT |
+-			BIT(chan->id) << DMAC_CHAN_SUSP2_WE_SHIFT;
++		val = BIT(chan->id) << DMAC_CHAN_SUSP2_SHIFT |
++		      BIT(chan->id) << DMAC_CHAN_SUSP2_WE_SHIFT;
+ 		axi_dma_iowrite32(chan->chip, DMAC_CHSUSPREG, val);
+ 	}
+ 

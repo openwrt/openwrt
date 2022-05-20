@@ -1,0 +1,63 @@
+From a3d4bd5e48a3e2211d2f2c83b159a082eefe3d9a Mon Sep 17 00:00:00 2001
+From: Samin Guo <samin.guo@starfivetech.com>
+Date: Wed, 17 Nov 2021 14:50:45 +0800
+Subject: [PATCH 62/84] dmaengine: dw-axi-dmac: Add StarFive JH7100 support
+
+Signed-off-by: Samin Guo <samin.guo@starfivetech.com>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 11 ++++++++++-
+ drivers/dma/dw-axi-dmac/dw-axi-dmac.h          |  4 ++++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
+@@ -86,7 +86,7 @@ static inline void axi_chan_config_write
+ 
+ 	cfg_lo = (config->dst_multblk_type << CH_CFG_L_DST_MULTBLK_TYPE_POS |
+ 		  config->src_multblk_type << CH_CFG_L_SRC_MULTBLK_TYPE_POS);
+-	if (chan->chip->dw->hdata->reg_map_8_channels) {
++	if (!IS_ENABLED(CONFIG_SOC_STARFIVE) && chan->chip->dw->hdata->reg_map_8_channels) {
+ 		cfg_hi = config->tt_fc << CH_CFG_H_TT_FC_POS |
+ 			 config->hs_sel_src << CH_CFG_H_HS_SEL_SRC_POS |
+ 			 config->hs_sel_dst << CH_CFG_H_HS_SEL_DST_POS |
+@@ -670,8 +670,13 @@ static int dw_axi_dma_set_hw_desc(struct
+ 
+ 	hw_desc->lli->block_ts_lo = cpu_to_le32(block_ts - 1);
+ 
++#ifdef CONFIG_SOC_STARFIVE
++	ctllo |= DWAXIDMAC_BURST_TRANS_LEN_16 << CH_CTL_L_DST_MSIZE_POS |
++		 DWAXIDMAC_BURST_TRANS_LEN_16 << CH_CTL_L_SRC_MSIZE_POS;
++#else
+ 	ctllo |= DWAXIDMAC_BURST_TRANS_LEN_4 << CH_CTL_L_DST_MSIZE_POS |
+ 		 DWAXIDMAC_BURST_TRANS_LEN_4 << CH_CTL_L_SRC_MSIZE_POS;
++#endif
+ 	hw_desc->lli->ctl_lo = cpu_to_le32(ctllo);
+ 
+ 	set_desc_src_master(hw_desc);
+@@ -1487,7 +1492,11 @@ static int dw_probe(struct platform_devi
+ 	 * Therefore, set constraint to 1024 * 4.
+ 	 */
+ 	dw->dma.dev->dma_parms = &dw->dma_parms;
++#ifdef CONFIG_SOC_STARFIVE
++	dma_set_max_seg_size(&pdev->dev, DMAC_MAX_BLK_SIZE);
++#else
+ 	dma_set_max_seg_size(&pdev->dev, MAX_BLOCK_SIZE);
++#endif
+ 	platform_set_drvdata(pdev, chip);
+ 
+ 	pm_runtime_enable(chip->dev);
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac.h
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac.h
+@@ -282,7 +282,11 @@ enum {
+ #define CH_CTL_L_SRC_MAST		BIT(0)
+ 
+ /* CH_CFG_H */
++#ifdef CONFIG_SOC_STARFIVE
++#define CH_CFG_H_PRIORITY_POS		15
++#else
+ #define CH_CFG_H_PRIORITY_POS		17
++#endif
+ #define CH_CFG_H_DST_PER_POS		12
+ #define CH_CFG_H_SRC_PER_POS		7
+ #define CH_CFG_H_HS_SEL_DST_POS		4

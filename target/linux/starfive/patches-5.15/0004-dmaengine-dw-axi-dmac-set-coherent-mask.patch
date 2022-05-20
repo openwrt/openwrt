@@ -1,0 +1,37 @@
+From 9bb19d196865ac213d14b79bbacf7aed0d6d2304 Mon Sep 17 00:00:00 2001
+From: Pandith N <pandith.n@intel.com>
+Date: Fri, 1 Oct 2021 19:38:12 +0530
+Subject: [PATCH 04/84] dmaengine: dw-axi-dmac: set coherent mask
+
+commit 2d0f07f888f52532588730aae0241af5c5df393d upstream.
+
+Add support for setting dma coherent mask, dma mask is set to 64 bit
+
+Signed-off-by: Pandith N <pandith.n@intel.com>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+
+Link: https://lore.kernel.org/r/20211001140812.24977-4-pandith.n@intel.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
+@@ -212,12 +212,16 @@ static inline bool axi_chan_is_hw_enable
+ 
+ static void axi_dma_hw_init(struct axi_dma_chip *chip)
+ {
++	int ret;
+ 	u32 i;
+ 
+ 	for (i = 0; i < chip->dw->hdata->nr_channels; i++) {
+ 		axi_chan_irq_disable(&chip->dw->chan[i], DWAXIDMAC_IRQ_ALL);
+ 		axi_chan_disable(&chip->dw->chan[i]);
+ 	}
++	ret = dma_set_mask_and_coherent(chip->dev, DMA_BIT_MASK(64));
++	if (ret)
++		dev_warn(chip->dev, "Unable to set coherent mask\n");
+ }
+ 
+ static u32 axi_chan_get_xfer_width(struct axi_dma_chan *chan, dma_addr_t src,

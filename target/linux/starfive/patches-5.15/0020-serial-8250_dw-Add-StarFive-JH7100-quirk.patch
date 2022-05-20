@@ -1,0 +1,40 @@
+From ead8e09f1dd45dbb714783ec41e7e9a4224fce93 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Mon, 4 Oct 2021 19:40:29 +0200
+Subject: [PATCH 20/84] serial: 8250_dw: Add StarFive JH7100 quirk
+
+commit b0ad20a3b64bf653a717860819691b262c0b2a2b upstream.
+
+On the StarFive JH7100 RISC-V SoC the UART core clocks can't be set to
+exactly 16 * 115200Hz and many other common bitrates. Trying this will
+only result in a higher input clock, but low enough that the UART's
+internal divisor can't come close enough to the baud rate target.
+So rather than try to set the input clock it's better to skip the
+clk_set_rate call and rely solely on the UART's internal divisor.
+
+Reviewed-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ drivers/tty/serial/8250/8250_dw.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/tty/serial/8250/8250_dw.c
++++ b/drivers/tty/serial/8250/8250_dw.c
+@@ -417,6 +417,8 @@ static void dw8250_quirks(struct uart_po
+ 		}
+ 		if (of_device_is_compatible(np, "marvell,armada-38x-uart"))
+ 			p->serial_out = dw8250_serial_out38x;
++		if (of_device_is_compatible(np, "starfive,jh7100-uart"))
++			p->set_termios = dw8250_do_set_termios;
+ 
+ 	} else if (acpi_dev_present("APMC0D08", NULL, -1)) {
+ 		p->iotype = UPIO_MEM32;
+@@ -699,6 +701,7 @@ static const struct of_device_id dw8250_
+ 	{ .compatible = "cavium,octeon-3860-uart" },
+ 	{ .compatible = "marvell,armada-38x-uart" },
+ 	{ .compatible = "renesas,rzn1-uart" },
++	{ .compatible = "starfive,jh7100-uart" },
+ 	{ /* Sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, dw8250_of_match);

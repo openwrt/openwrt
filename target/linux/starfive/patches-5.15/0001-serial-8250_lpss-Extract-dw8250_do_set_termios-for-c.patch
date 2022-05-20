@@ -1,0 +1,79 @@
+From c356e653cf7664c303a70ba0829ab3582494135c Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Date: Tue, 5 Oct 2021 16:30:25 +0300
+Subject: [PATCH 01/84] serial: 8250_lpss: Extract dw8250_do_set_termios() for
+ common use
+
+commit 7c4fc082f50431cc0814b47595ec9f9cca285993 upstream.
+
+Some of the code currently used in dw8250_set_termios(), byt_set_termios()
+may be reused by other methods in the future. Extract it to a common helper
+function.
+
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Link: https://lore.kernel.org/r/20211005133026.21488-1-andriy.shevchenko@linux.intel.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/tty/serial/8250/8250_dw.c    |  6 +-----
+ drivers/tty/serial/8250/8250_dwlib.c | 10 ++++++++++
+ drivers/tty/serial/8250/8250_dwlib.h |  1 +
+ drivers/tty/serial/8250/8250_lpss.c  |  6 +-----
+ 4 files changed, 13 insertions(+), 10 deletions(-)
+
+--- a/drivers/tty/serial/8250/8250_dw.c
++++ b/drivers/tty/serial/8250/8250_dw.c
+@@ -353,11 +353,7 @@ static void dw8250_set_termios(struct ua
+ 	}
+ 	clk_prepare_enable(d->clk);
+ 
+-	p->status &= ~UPSTAT_AUTOCTS;
+-	if (termios->c_cflag & CRTSCTS)
+-		p->status |= UPSTAT_AUTOCTS;
+-
+-	serial8250_do_set_termios(p, termios, old);
++	dw8250_do_set_termios(p, termios, old);
+ }
+ 
+ static void dw8250_set_ldisc(struct uart_port *p, struct ktermios *termios)
+--- a/drivers/tty/serial/8250/8250_dwlib.c
++++ b/drivers/tty/serial/8250/8250_dwlib.c
+@@ -77,6 +77,16 @@ static void dw8250_set_divisor(struct ua
+ 	serial8250_do_set_divisor(p, baud, quot, quot_frac);
+ }
+ 
++void dw8250_do_set_termios(struct uart_port *p, struct ktermios *termios, struct ktermios *old)
++{
++	p->status &= ~UPSTAT_AUTOCTS;
++	if (termios->c_cflag & CRTSCTS)
++		p->status |= UPSTAT_AUTOCTS;
++
++	serial8250_do_set_termios(p, termios, old);
++}
++EXPORT_SYMBOL_GPL(dw8250_do_set_termios);
++
+ void dw8250_setup_port(struct uart_port *p)
+ {
+ 	struct uart_8250_port *up = up_to_u8250p(p);
+--- a/drivers/tty/serial/8250/8250_dwlib.h
++++ b/drivers/tty/serial/8250/8250_dwlib.h
+@@ -16,4 +16,5 @@ struct dw8250_port_data {
+ 	u8			dlf_size;
+ };
+ 
++void dw8250_do_set_termios(struct uart_port *p, struct ktermios *termios, struct ktermios *old);
+ void dw8250_setup_port(struct uart_port *p);
+--- a/drivers/tty/serial/8250/8250_lpss.c
++++ b/drivers/tty/serial/8250/8250_lpss.c
+@@ -100,11 +100,7 @@ static void byt_set_termios(struct uart_
+ 	reg |= BYT_PRV_CLK_EN | BYT_PRV_CLK_UPDATE;
+ 	writel(reg, p->membase + BYT_PRV_CLK);
+ 
+-	p->status &= ~UPSTAT_AUTOCTS;
+-	if (termios->c_cflag & CRTSCTS)
+-		p->status |= UPSTAT_AUTOCTS;
+-
+-	serial8250_do_set_termios(p, termios, old);
++	dw8250_do_set_termios(p, termios, old);
+ }
+ 
+ static unsigned int byt_get_mctrl(struct uart_port *port)

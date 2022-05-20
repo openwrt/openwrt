@@ -1,0 +1,130 @@
+From 6328ac1b79eb6c158b4aa94bc27850517c89972a Mon Sep 17 00:00:00 2001
+From: Atish Patra <atish.patra@wdc.com>
+Date: Sat, 12 Jun 2021 16:48:31 -0700
+Subject: [PATCH 81/84] RISC-V: Support non-coherent DMA operations
+
+** Do not upstream **
+
+This is hacky fix just for testing. The actual patch would read the
+RISCV_UNCACHED_OFFSET from the DT for only the non-coherent devices.
+All other devices on beagleV and all other platform should just set
+dma_default_coherent to true.
+
+[Emil: remove spurious whitespace and fix format string warning]
+
+Signed-off-by: Atish Patra <atish.patra@wdc.com>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ arch/riscv/Kconfig              | 14 ++++++++
+ arch/riscv/Kconfig.socs         |  1 +
+ arch/riscv/mm/Makefile          |  1 +
+ arch/riscv/mm/dma-noncoherent.c | 63 +++++++++++++++++++++++++++++++++
+ 4 files changed, 79 insertions(+)
+ create mode 100644 arch/riscv/mm/dma-noncoherent.c
+
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -217,6 +217,20 @@ config PGTABLE_LEVELS
+ config LOCKDEP_SUPPORT
+ 	def_bool y
+ 
++config RISCV_UNCACHED_OFFSET
++	hex "Base address of uncached alias"
++	default 0xF80000000 if ARCH_HAS_DMA_SET_UNCACHED && SOC_STARFIVE
++	default 0 if !ARCH_HAS_DMA_SET_UNCACHED
++
++config RISCV_DMA_NONCOHERENT
++	bool
++	select ARCH_HAS_DMA_PREP_COHERENT
++	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
++	select ARCH_HAS_SYNC_DMA_FOR_CPU
++	select ARCH_HAS_DMA_SET_UNCACHED
++	select ARCH_HAS_DMA_CLEAR_UNCACHED
++	select ARCH_HAS_SETUP_DMA_OPS
++
+ source "arch/riscv/Kconfig.socs"
+ source "arch/riscv/Kconfig.erratas"
+ 
+--- a/arch/riscv/Kconfig.socs
++++ b/arch/riscv/Kconfig.socs
+@@ -23,6 +23,7 @@ config SOC_STARFIVE
+ 	bool "StarFive SoCs"
+ 	select PINCTRL
+ 	select RESET_CONTROLLER
++	select RISCV_DMA_NONCOHERENT
+ 	select SIFIVE_L2
+ 	select SIFIVE_L2_FLUSH
+ 	select SIFIVE_PLIC
+--- a/arch/riscv/mm/Makefile
++++ b/arch/riscv/mm/Makefile
+@@ -30,3 +30,4 @@ endif
+ endif
+ 
+ obj-$(CONFIG_DEBUG_VIRTUAL) += physaddr.o
++obj-$(CONFIG_RISCV_DMA_NONCOHERENT) += dma-noncoherent.o
+--- /dev/null
++++ b/arch/riscv/mm/dma-noncoherent.c
+@@ -0,0 +1,63 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * DMA mapping implementation inspired from arm/mm/dma-mapping.c
++ *
++ * Copyright (c) 2021 Western Digital Corporation or its affiliates.
++ */
++
++#include <linux/dma-direct.h>
++#include <linux/dma-map-ops.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/mm.h>
++#include <asm/cpu_ops.h>
++#include <asm/sbi.h>
++#include <asm/smp.h>
++
++//TODO Do it through SBI
++#include <soc/sifive/sifive_l2_cache.h>
++
++void arch_sync_dma_for_device(phys_addr_t paddr, size_t size, enum dma_data_direction dir)
++{
++	sifive_l2_flush64_range(paddr, size);
++}
++
++void arch_sync_dma_for_cpu(phys_addr_t paddr, size_t size, enum dma_data_direction dir)
++{
++	sifive_l2_flush64_range(paddr, size);
++}
++
++void arch_setup_dma_ops(struct device *dev, u64 dma_base, u64 size,
++		const struct iommu_ops *iommu, bool coherent)
++{
++	dev_info(dev, "coherent device %d dev->dma_coherent %d\n", coherent, dev->dma_coherent);
++	dev->dma_coherent = coherent;
++}
++
++//TODO: We are supposed to invalidate the cache here
++void arch_dma_prep_coherent(struct page *page, size_t size)
++{
++	void *flush_addr = page_address(page);
++
++	memset(flush_addr, 0, size);
++	sifive_l2_flush64_range(__pa(flush_addr), size);
++}
++
++void arch_dma_clear_uncached(void *addr, size_t size)
++{
++	memunmap(addr);
++}
++
++void *arch_dma_set_uncached(void *addr, size_t size)
++{
++	phys_addr_t phys_addr = __pa(addr) + CONFIG_RISCV_UNCACHED_OFFSET;
++	void *mem_base = NULL;
++
++	mem_base = memremap(phys_addr, size, MEMREMAP_WT);
++	if (!mem_base) {
++		pr_err("%s memremap failed for addr %px\n", __func__, addr);
++		return ERR_PTR(-EINVAL);
++	}
++
++	return mem_base;
++}

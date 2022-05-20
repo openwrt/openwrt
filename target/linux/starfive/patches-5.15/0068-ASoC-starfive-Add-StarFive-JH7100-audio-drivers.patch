@@ -1,0 +1,4370 @@
+From dbb9e602b02acfba1af0d96e953f60256bea7ec5 Mon Sep 17 00:00:00 2001
+From: Walker Chen <walker.chen@starfivetech.com>
+Date: Wed, 17 Nov 2021 15:50:50 +0800
+Subject: [PATCH 68/84] ASoC: starfive: Add StarFive JH7100 audio drivers
+
+Signed-off-by: Michael Yan <michael.yan@starfivetech.com>
+Signed-off-by: Jenny Zhang <jenny.zhang@starfivetech.com>
+Signed-off-by: Walker Chen <walker.chen@starfivetech.com>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ sound/soc/Kconfig                       |    1 +
+ sound/soc/Makefile                      |    1 +
+ sound/soc/starfive/Kconfig              |   59 ++
+ sound/soc/starfive/Makefile             |   24 +
+ sound/soc/starfive/i2svad-pcm.c         |  249 ++++++
+ sound/soc/starfive/i2svad.c             | 1089 +++++++++++++++++++++++
+ sound/soc/starfive/i2svad.h             |  246 +++++
+ sound/soc/starfive/pdm.c                |  362 ++++++++
+ sound/soc/starfive/pdm.h                |   43 +
+ sound/soc/starfive/pwmdac-pcm.c         |  232 +++++
+ sound/soc/starfive/pwmdac-transmitter.c |   82 ++
+ sound/soc/starfive/pwmdac.c             |  901 +++++++++++++++++++
+ sound/soc/starfive/pwmdac.h             |  153 ++++
+ sound/soc/starfive/spdif-pcm.c          |  288 ++++++
+ sound/soc/starfive/spdif.c              |  384 ++++++++
+ sound/soc/starfive/spdif.h              |  154 ++++
+ 16 files changed, 4268 insertions(+)
+ create mode 100644 sound/soc/starfive/Kconfig
+ create mode 100644 sound/soc/starfive/Makefile
+ create mode 100644 sound/soc/starfive/i2svad-pcm.c
+ create mode 100644 sound/soc/starfive/i2svad.c
+ create mode 100644 sound/soc/starfive/i2svad.h
+ create mode 100644 sound/soc/starfive/pdm.c
+ create mode 100644 sound/soc/starfive/pdm.h
+ create mode 100644 sound/soc/starfive/pwmdac-pcm.c
+ create mode 100644 sound/soc/starfive/pwmdac-transmitter.c
+ create mode 100644 sound/soc/starfive/pwmdac.c
+ create mode 100644 sound/soc/starfive/pwmdac.h
+ create mode 100644 sound/soc/starfive/spdif-pcm.c
+ create mode 100644 sound/soc/starfive/spdif.c
+ create mode 100644 sound/soc/starfive/spdif.h
+
+--- a/sound/soc/Kconfig
++++ b/sound/soc/Kconfig
+@@ -83,6 +83,7 @@ source "sound/soc/sh/Kconfig"
+ source "sound/soc/sof/Kconfig"
+ source "sound/soc/spear/Kconfig"
+ source "sound/soc/sprd/Kconfig"
++source "sound/soc/starfive/Kconfig"
+ source "sound/soc/sti/Kconfig"
+ source "sound/soc/stm/Kconfig"
+ source "sound/soc/sunxi/Kconfig"
+--- a/sound/soc/Makefile
++++ b/sound/soc/Makefile
+@@ -49,6 +49,7 @@ obj-$(CONFIG_SND_SOC)	+= pxa/
+ obj-$(CONFIG_SND_SOC)	+= qcom/
+ obj-$(CONFIG_SND_SOC)	+= rockchip/
+ obj-$(CONFIG_SND_SOC)	+= samsung/
++obj-$(CONFIG_SND_SOC)	+= starfive/
+ obj-$(CONFIG_SND_SOC)	+= sh/
+ obj-$(CONFIG_SND_SOC)	+= sof/
+ obj-$(CONFIG_SND_SOC)	+= spear/
+--- /dev/null
++++ b/sound/soc/starfive/Kconfig
+@@ -0,0 +1,59 @@
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2021 StarFive Technology Co., Ltd.
++
++config SND_STARFIVE_SPDIF
++	tristate "starfive spdif"
++	depends on SOC_STARFIVE || COMPILE_TEST
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	select REGMAP_MMIO
++	help
++	  Say Y or M if you want to add support for codecs attached to the
++	  I2S interface on VIC vic_starlight board. You will also need to select
++	  the drivers for the rest of VIC audio subsystem.
++
++config SND_STARFIVE_SPDIF_PCM
++	bool "PCM PIO extension for spdif driver"
++	depends on SND_STARFIVE_SPDIF
++	help
++	 Say Y or N if you want to add a custom ALSA extension that registers
++	 a PCM and uses PIO to transfer data.
++
++config SND_STARFIVE_PWMDAC
++	tristate "starfive pwmdac Device Driver"
++	depends on SOC_STARFIVE || COMPILE_TEST
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	help
++	 Say Y or M if you want to add support for sf pwmdac driver.
++
++config SND_STARFIVE_PWMDAC_PCM
++	bool "PCM PIO extension for pwmdac driver"
++	depends on SND_STARFIVE_PWMDAC
++	help
++	 Say Y or N if you want to add a custom ALSA extension that registers
++	 a PCM and uses PIO to transfer data.
++
++config SND_STARFIVE_PDM
++	tristate "starfive pdm Device Driver"
++	depends on SOC_STARFIVE || COMPILE_TEST
++	select REGMAP_MMIO
++	help
++	 Say Y or M if you want to add support for sf pdm driver.
++
++config SND_STARFIVE_I2SVAD
++	tristate "starfive I2SVAD Device Driver"
++	depends on SOC_STARFIVE || COMPILE_TEST
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	help
++	 Say Y or M if you want to add support for I2SVAD driver for
++	 starfive I2SVAD device.
++
++config SND_STARFIVE_I2SVAD_PCM
++	bool "PCM PIO extension for I2SVAD driver"
++	depends on SND_STARFIVE_I2SVAD
++	help
++	 Say Y or N if you want to add a custom ALSA extension that registers
++	 a PCM and uses PIO to transfer data.
++
++	 This functionality is specially suited for I2SVAD devices that don't have
++	 DMA support.
++
+--- /dev/null
++++ b/sound/soc/starfive/Makefile
+@@ -0,0 +1,24 @@
++# SPDX-License-Identifier: GPL-2.0
++#
++# Copyright (C) 2021 StarFive Technology Co., Ltd.
++#
++snd-soc-starfive-spdif-y := spdif.o
++snd-soc-starfive-spdif-$(CONFIG_SND_STARFIVE_SPDIF_PCM) += spdif-pcm.o
++
++obj-$(CONFIG_SND_STARFIVE_SPDIF) += snd-soc-starfive-spdif.o
++
++snd-soc-starfive-pwmdac-y := pwmdac.o
++snd-soc-starfive-pwmdac-$(CONFIG_SND_STARFIVE_PWMDAC_PCM) += pwmdac-pcm.o
++snd-soc-starfive-pwmdac-transmitter-y := pwmdac-transmitter.o
++
++obj-$(CONFIG_SND_STARFIVE_PWMDAC) += snd-soc-starfive-pwmdac.o
++obj-$(CONFIG_SND_STARFIVE_PWMDAC) += snd-soc-starfive-pwmdac-transmitter.o
++
++snd-soc-starfive-pdm-y := pdm.o
++
++obj-$(CONFIG_SND_STARFIVE_PDM) += snd-soc-starfive-pdm.o
++
++snd-soc-starfive-i2svad-y := i2svad.o
++snd-soc-starfive-i2svad-$(CONFIG_SND_STARFIVE_I2SVAD_PCM) += i2svad-pcm.o
++
++obj-$(CONFIG_SND_STARFIVE_I2SVAD) += snd-soc-starfive-i2svad.o
+--- /dev/null
++++ b/sound/soc/starfive/i2svad-pcm.c
+@@ -0,0 +1,249 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#include <linux/io.h>
++#include <linux/rcupdate.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++
++#include "i2svad.h"
++
++#define BUFFER_BYTES_MAX	(3 * 2 * 8 * PERIOD_BYTES_MIN)
++#define PERIOD_BYTES_MIN	4096
++#define PERIODS_MIN		2
++
++#define i2svad_pcm_tx_fn(sample_bits) \
++static unsigned int i2svad_pcm_tx_##sample_bits(struct i2svad_dev *dev, \
++		struct snd_pcm_runtime *runtime, unsigned int tx_ptr, \
++		bool *period_elapsed) \
++{ \
++	const u##sample_bits (*p)[2] = (void *)runtime->dma_area; \
++	unsigned int period_pos = tx_ptr % runtime->period_size; \
++	int i; \
++\
++	for (i = 0; i < dev->fifo_th; i++) { \
++		iowrite32(p[tx_ptr][0], dev->i2s_base + LRBR_LTHR(0)); \
++		iowrite32(p[tx_ptr][1], dev->i2s_base + RRBR_RTHR(0)); \
++		period_pos++; \
++		if (++tx_ptr >= runtime->buffer_size) \
++			tx_ptr = 0; \
++	} \
++	*period_elapsed = period_pos >= runtime->period_size; \
++	return tx_ptr; \
++}
++
++#define i2svad_pcm_rx_fn(sample_bits) \
++static unsigned int i2svad_pcm_rx_##sample_bits(struct i2svad_dev *dev, \
++		struct snd_pcm_runtime *runtime, unsigned int rx_ptr, \
++		bool *period_elapsed) \
++{ \
++	u##sample_bits (*p)[2] = (void *)runtime->dma_area; \
++	unsigned int period_pos = rx_ptr % runtime->period_size; \
++	int i; \
++\
++	for (i = 0; i < dev->fifo_th; i++) { \
++		p[rx_ptr][0] = ioread32(dev->i2s_base + LRBR_LTHR(0)); \
++		p[rx_ptr][1] = ioread32(dev->i2s_base + RRBR_RTHR(0)); \
++		period_pos++; \
++		if (++rx_ptr >= runtime->buffer_size) \
++			rx_ptr = 0; \
++	} \
++	*period_elapsed = period_pos >= runtime->period_size; \
++	return rx_ptr; \
++}
++
++i2svad_pcm_tx_fn(16);
++i2svad_pcm_rx_fn(16);
++
++#undef i2svad_pcm_tx_fn
++#undef i2svad_pcm_rx_fn
++
++static const struct snd_pcm_hardware i2svad_pcm_hardware = {
++	.info = SNDRV_PCM_INFO_INTERLEAVED |
++		SNDRV_PCM_INFO_MMAP |
++		SNDRV_PCM_INFO_MMAP_VALID |
++		SNDRV_PCM_INFO_BLOCK_TRANSFER,
++	.rates = SNDRV_PCM_RATE_32000 |
++		SNDRV_PCM_RATE_44100 |
++		SNDRV_PCM_RATE_48000,
++	.rate_min = 32000,
++	.rate_max = 48000,
++	.formats = SNDRV_PCM_FMTBIT_S16_LE,
++	.channels_min = 2,
++	.channels_max = 2,
++	.buffer_bytes_max = BUFFER_BYTES_MAX,
++	.period_bytes_min = PERIOD_BYTES_MIN,
++	.period_bytes_max = BUFFER_BYTES_MAX / PERIODS_MIN,
++	.periods_min = PERIODS_MIN,
++	.periods_max = BUFFER_BYTES_MAX / PERIOD_BYTES_MIN,
++	.fifo_size = 16,
++};
++
++static void i2svad_pcm_transfer(struct i2svad_dev *dev, bool push)
++{
++	struct snd_pcm_substream *substream;
++	bool active, period_elapsed;
++
++	rcu_read_lock();
++	if (push)
++		substream = rcu_dereference(dev->tx_substream);
++	else
++		substream = rcu_dereference(dev->rx_substream);
++	active = substream && snd_pcm_running(substream);
++	if (active) {
++		unsigned int ptr;
++		unsigned int new_ptr;
++
++		if (push) {
++			ptr = READ_ONCE(dev->tx_ptr);
++			new_ptr = dev->tx_fn(dev, substream->runtime, ptr,
++					&period_elapsed);
++			cmpxchg(&dev->tx_ptr, ptr, new_ptr);
++		} else {
++			ptr = READ_ONCE(dev->rx_ptr);
++			new_ptr = dev->rx_fn(dev, substream->runtime, ptr,
++					&period_elapsed);
++			cmpxchg(&dev->rx_ptr, ptr, new_ptr);
++		}
++
++		if (period_elapsed)
++			snd_pcm_period_elapsed(substream);
++	}
++	rcu_read_unlock();
++}
++
++void i2svad_pcm_push_tx(struct i2svad_dev *dev)
++{
++	i2svad_pcm_transfer(dev, true);
++}
++
++void i2svad_pcm_pop_rx(struct i2svad_dev *dev)
++{
++	i2svad_pcm_transfer(dev, false);
++}
++
++static int i2svad_pcm_open(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
++	struct i2svad_dev *dev = snd_soc_dai_get_drvdata(asoc_rtd_to_cpu(rtd, 0));
++
++	snd_soc_set_runtime_hwparams(substream, &i2svad_pcm_hardware);
++	snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIODS);
++	runtime->private_data = dev;
++
++	return 0;
++}
++
++static int i2svad_pcm_close(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream)
++{
++	synchronize_rcu();
++	return 0;
++}
++
++static int i2svad_pcm_hw_params(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream,
++			struct snd_pcm_hw_params *hw_params)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct i2svad_dev *dev = runtime->private_data;
++
++	switch (params_channels(hw_params)) {
++	case 2:
++		break;
++	default:
++		dev_err(dev->dev, "invalid channels number\n");
++		return -EINVAL;
++	}
++
++	switch (params_format(hw_params)) {
++	case SNDRV_PCM_FORMAT_S16_LE:
++		dev->tx_fn = i2svad_pcm_tx_16;
++		dev->rx_fn = i2svad_pcm_rx_16;
++		break;
++	default:
++		dev_err(dev->dev, "invalid format\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int i2svad_pcm_trigger(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream, int cmd)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct i2svad_dev *dev = runtime->private_data;
++	int ret = 0;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++			WRITE_ONCE(dev->tx_ptr, 0);
++			rcu_assign_pointer(dev->tx_substream, substream);
++		} else {
++			WRITE_ONCE(dev->rx_ptr, 0);
++			rcu_assign_pointer(dev->rx_substream, substream);
++		}
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++			rcu_assign_pointer(dev->tx_substream, NULL);
++		else
++			rcu_assign_pointer(dev->rx_substream, NULL);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static snd_pcm_uframes_t i2svad_pcm_pointer(struct snd_soc_component *component,
++					struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct i2svad_dev *dev = runtime->private_data;
++	snd_pcm_uframes_t pos;
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		pos = READ_ONCE(dev->tx_ptr);
++	else
++		pos = READ_ONCE(dev->rx_ptr);
++
++	return pos < runtime->buffer_size ? pos : 0;
++}
++
++static int i2svad_pcm_new(struct snd_soc_component *component,
++			struct snd_soc_pcm_runtime *rtd)
++{
++	size_t size = i2svad_pcm_hardware.buffer_bytes_max;
++
++	snd_pcm_set_managed_buffer_all(rtd->pcm,
++			SNDRV_DMA_TYPE_CONTINUOUS,
++			NULL, size, size);
++	return 0;
++}
++
++static const struct snd_soc_component_driver i2svad_pcm_component = {
++	.open		= i2svad_pcm_open,
++	.close		= i2svad_pcm_close,
++	.hw_params	= i2svad_pcm_hw_params,
++	.trigger	= i2svad_pcm_trigger,
++	.pointer	= i2svad_pcm_pointer,
++	.pcm_construct	= i2svad_pcm_new,
++};
++
++int i2svad_pcm_register(struct platform_device *pdev)
++{
++	return devm_snd_soc_register_component(&pdev->dev, &i2svad_pcm_component,
++					NULL, 0);
++}
+--- /dev/null
++++ b/sound/soc/starfive/i2svad.c
+@@ -0,0 +1,1089 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#include <linux/clk.h>
++#include <linux/device.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/interrupt.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/pm_runtime.h>
++#include <sound/designware_i2s.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/dmaengine_pcm.h>
++#include <linux/kthread.h>
++
++#include "i2svad.h"
++
++/* vad control function*/
++static void vad_start(struct vad_params *vad)
++{
++	regmap_update_bits(vad->vad_map, VAD_MEM_SW,
++			VAD_MEM_SW_MASK, VAD_MEM_SW_TO_VAD);
++	regmap_update_bits(vad->vad_map, VAD_SW,
++			VAD_SW_MASK, VAD_SW_VAD_XMEM_ENABLE|VAD_SW_ADC_ENABLE);
++	regmap_update_bits(vad->vad_map, VAD_SPINT_EN,
++			VAD_SPINT_EN_MASK, VAD_SPINT_EN_ENABLE);
++	regmap_update_bits(vad->vad_map, VAD_SLINT_EN,
++			VAD_SLINT_EN_MASK, VAD_SLINT_EN_ENABLE);
++}
++
++static void vad_stop(struct vad_params *vad)
++{
++	regmap_update_bits(vad->vad_map, VAD_SPINT_EN,
++			VAD_SPINT_EN_MASK, VAD_SLINT_EN_DISABLE);
++	regmap_update_bits(vad->vad_map, VAD_SLINT_EN,
++			VAD_SLINT_EN_MASK, VAD_SLINT_EN_DISABLE);
++	regmap_update_bits(vad->vad_map, VAD_SW,
++			VAD_SW_MASK, VAD_SW_VAD_XMEM_DISABLE|VAD_SW_ADC_DISABLE);
++	regmap_update_bits(vad->vad_map, VAD_MEM_SW,
++			VAD_MEM_SW_MASK, VAD_MEM_SW_TO_AXI);
++}
++
++static void vad_status(struct vad_params *vad)
++{
++	u32 sp_value,sp_en;
++	u32 sl_value,sl_en;
++
++	regmap_read(vad->vad_map, VAD_SPINT,&sp_value);
++	regmap_read(vad->vad_map, VAD_SPINT_EN,&sp_en);
++	if (sp_value&sp_en){
++		regmap_update_bits(vad->vad_map, VAD_SPINT_CLR,
++				VAD_SPINT_CLR_MASK, VAD_SPINT_CLR_VAD_SPINT);
++		vad->vstatus = VAD_STATUS_SPINT;
++		vad_stop(vad);
++		vad_start(vad);
++	}
++
++	regmap_read(vad->vad_map, VAD_SLINT,&sl_value);
++	regmap_read(vad->vad_map, VAD_SLINT_EN,&sl_en);
++	if (sl_value&sl_en){
++		regmap_update_bits(vad->vad_map, VAD_SLINT_CLR,
++				VAD_SLINT_CLR_MASK, VAD_SLINT_CLR_VAD_SLINT);
++		vad->vstatus = VAD_STATUS_SLINT;
++	}
++}
++
++static int vad_trigger(struct vad_params *vad,int cmd)
++{
++	int ret = 0;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		if(vad->vswitch)
++		{
++			vad_start(vad);
++		}
++		break;
++
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		vad_stop(vad);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++	return ret;
++}
++
++static void vad_init(struct vad_params *vad)
++{
++	/* left_margin */
++	regmap_update_bits(vad->vad_map, VAD_LEFT_MARGIN,
++			VAD_LEFT_MARGIN_MASK, 0x0);
++	/* right_margin */
++	regmap_update_bits(vad->vad_map, VAD_RIGHT_MARGIN,
++			VAD_RIGHT_MARGIN_MASK, 0x0);
++	/*low-energy transition range threshold ——NL*/
++	regmap_update_bits(vad->vad_map, VAD_N_LOW_CONT_FRAMES,
++			VAD_N_LOW_CONT_FRAMES_MASK, 0x3);
++	/* low-energy transition range */
++	regmap_update_bits(vad->vad_map, VAD_N_LOW_SEEK_FRAMES,
++			VAD_N_LOW_SEEK_FRAMES_MASK, 0x8);
++	/* high-energy transition range threshold——NH */
++	regmap_update_bits(vad->vad_map, VAD_N_HIGH_CONT_FRAMES,
++			VAD_N_HIGH_CONT_FRAMES_MASK, 0x5);
++	/* high-energy transition range */
++	regmap_update_bits(vad->vad_map, VAD_N_HIGH_SEEK_FRAMES,
++			VAD_N_HIGH_SEEK_FRAMES_MASK, 0x1E);
++	/*low-energy voice range threshold——NVL*/
++	regmap_update_bits(vad->vad_map, VAD_N_SPEECH_LOW_HIGH_FRAMES,
++			VAD_N_SPEECH_LOW_HIGH_FRAMES_MASK, 0x2);
++	/*low-energy voice range*/
++	regmap_update_bits(vad->vad_map, VAD_N_SPEECH_LOW_SEEK_FRAMES,
++			VAD_N_SPEECH_LOW_SEEK_FRAMES_MASK, 0x12);
++	/*mean silence frame range*/
++	regmap_update_bits(vad->vad_map, VAD_MEAN_SIL_FRAMES,
++			VAD_MEAN_SIL_FRAMES_MASK, 0xA);
++	/*low-energy threshold scaling factor,12bit(0~0xFFF)*/
++	regmap_update_bits(vad->vad_map, VAD_N_ALPHA,
++			VAD_N_ALPHA_MASK, 0x1A);
++	/*high-energy threshold scaling factor,12bit(0~0xFFF)*/
++	regmap_update_bits(vad->vad_map, VAD_N_BETA,
++			VAD_N_BETA_MASK, 0x34);
++	regmap_update_bits(vad->vad_map, VAD_LEFT_WD,
++			VAD_LEFT_WD_MASK, VAD_LEFT_WD_BIT_15_0);
++	regmap_update_bits(vad->vad_map, VAD_RIGHT_WD,
++			VAD_RIGHT_WD_MASK, VAD_RIGHT_WD_BIT_15_0);
++	regmap_update_bits(vad->vad_map, VAD_LR_SEL,
++			VAD_LR_SEL_MASK, VAD_LR_SEL_L);
++	regmap_update_bits(vad->vad_map, VAD_STOP_DELAY,
++			VAD_STOP_DELAY_MASK, VAD_STOP_DELAY_0_SAMPLE);
++	regmap_update_bits(vad->vad_map, VAD_ADDR_START,
++			VAD_ADDR_START_MASK, 0x0);
++	regmap_update_bits(vad->vad_map, VAD_ADDR_WRAP,
++			VAD_ADDR_WRAP_MASK, 0x2000);
++	regmap_update_bits(vad->vad_map, VAD_MEM_SW,
++			VAD_MEM_SW_MASK, VAD_MEM_SW_TO_AXI);
++	regmap_update_bits(vad->vad_map, VAD_SPINT_CLR,
++			VAD_SPINT_CLR_MASK, VAD_SPINT_CLR_VAD_SPINT);
++	regmap_update_bits(vad->vad_map, VAD_SLINT_CLR,
++			VAD_SLINT_CLR_MASK, VAD_SLINT_CLR_VAD_SLINT);
++}
++
++
++static int vad_switch_info(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_BOOLEAN;
++	uinfo->count = 1;
++	uinfo->value.integer.min = 0;
++	uinfo->value.integer.max = 1;
++
++	return 0;
++}
++
++static int vad_switch_get(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct i2svad_dev *dev = snd_soc_component_get_drvdata(component);
++
++	ucontrol->value.integer.value[0] = dev->vad.vswitch;
++
++	return 0;
++}
++
++static int vad_switch_put(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct i2svad_dev *dev = snd_soc_component_get_drvdata(component);
++	int val;
++
++	val = ucontrol->value.integer.value[0];
++	if (val && !dev->vad.vswitch) {
++		dev->vad.vswitch = true;
++	} else if (!val && dev->vad.vswitch) {
++		dev->vad.vswitch = false;
++		vad_stop(&(dev->vad));
++	}
++
++	return 0;
++}
++
++
++static int vad_status_info(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = 1;
++	uinfo->value.integer.min = 0;
++	uinfo->value.integer.max = 2;
++
++	return 0;
++}
++
++static int vad_status_get(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct i2svad_dev *dev = snd_soc_component_get_drvdata(component);
++
++	ucontrol->value.integer.value[0] = dev->vad.vstatus;
++	dev->vad.vstatus = VAD_STATUS_NORMAL;
++
++	return 0;
++}
++
++
++#define SOC_VAD_SWITCH_DECL(xname) \
++{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
++	.info = vad_switch_info, .get = vad_switch_get, \
++	.put = vad_switch_put, }
++
++#define SOC_VAD_STATUS_DECL(xname) \
++{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
++	.info = vad_status_info, .get = vad_status_get, }
++
++
++static const struct snd_kcontrol_new vad_snd_controls[] = {
++	SOC_VAD_SWITCH_DECL("vad switch"),
++	SOC_VAD_STATUS_DECL("vad status"),
++};
++
++static int vad_probe(struct snd_soc_component *component)
++{
++	struct i2svad_dev *priv = snd_soc_component_get_drvdata(component);
++
++	snd_soc_component_init_regmap(component, priv->vad.vad_map);
++	snd_soc_add_component_controls(component, vad_snd_controls,
++				ARRAY_SIZE(vad_snd_controls));
++
++	return 0;
++}
++
++/* i2s control function*/
++static inline void i2s_write_reg(void __iomem *io_base, int reg, u32 val)
++{
++	writel(val, io_base + reg);
++}
++
++static inline u32 i2s_read_reg(void __iomem *io_base, int reg)
++{
++	return readl(io_base + reg);
++}
++
++static inline void i2s_disable_channels(struct i2svad_dev *dev, u32 stream)
++{
++	u32 i = 0;
++
++	if (stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		for (i = 0; i < ALL_CHANNEL_NUM; i++)
++			i2s_write_reg(dev->i2s_base, TER(i), 0);
++	} else {
++		for (i = 0; i < ALL_CHANNEL_NUM; i++)
++			i2s_write_reg(dev->i2s_base, RER(i), 0);
++	}
++}
++
++static inline void i2s_clear_irqs(struct i2svad_dev *dev, u32 stream)
++{
++	u32 i = 0;
++
++	if (stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		for (i = 0; i < ALL_CHANNEL_NUM; i++)
++			i2s_read_reg(dev->i2s_base, TOR(i));
++	} else {
++		for (i = 0; i < ALL_CHANNEL_NUM; i++)
++			i2s_read_reg(dev->i2s_base, ROR(i));
++	}
++}
++
++static inline void i2s_disable_irqs(struct i2svad_dev *dev, u32 stream,
++				int chan_nr)
++{
++	u32 i, irq;
++
++	if (stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		for (i = 0; i < (chan_nr / 2); i++) {
++			irq = i2s_read_reg(dev->i2s_base, IMR(i));
++			i2s_write_reg(dev->i2s_base, IMR(i), irq | 0x30);
++		}
++	} else {
++		for (i = 0; i < (chan_nr / 2); i++) {
++			irq = i2s_read_reg(dev->i2s_base, IMR(i));
++			i2s_write_reg(dev->i2s_base, IMR(i), irq | 0x03);
++		}
++	}
++}
++
++static inline void i2s_enable_irqs(struct i2svad_dev *dev, u32 stream,
++				int chan_nr)
++{
++	u32 i, irq;
++
++	if (stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		for (i = 0; i < (chan_nr / 2); i++) {
++			irq = i2s_read_reg(dev->i2s_base, IMR(i));
++			i2s_write_reg(dev->i2s_base, IMR(i), irq & ~0x30);
++		}
++	} else {
++		for (i = 0; i < (chan_nr / 2); i++) {
++			irq = i2s_read_reg(dev->i2s_base, IMR(i));
++			i2s_write_reg(dev->i2s_base, IMR(i), irq & ~0x03);
++		}
++	}
++}
++
++static irqreturn_t i2s_irq_handler(int irq, void *dev_id)
++{
++	struct i2svad_dev *dev = dev_id;
++	bool irq_valid = false;
++	u32 isr[4];
++	int i;
++
++	for (i = 0; i < ALL_CHANNEL_NUM; i++)
++		isr[i] = i2s_read_reg(dev->i2s_base, ISR(i));
++
++	i2s_clear_irqs(dev, SNDRV_PCM_STREAM_PLAYBACK);
++	i2s_clear_irqs(dev, SNDRV_PCM_STREAM_CAPTURE);
++
++	for (i = 0; i < 4; i++) {
++		/*
++		 * Check if TX fifo is empty. If empty fill FIFO with samples
++		 * NOTE: Only two channels supported
++		 */
++		if ((isr[i] & ISR_TXFE) && (i == 0) && dev->use_pio) {
++			i2svad_pcm_push_tx(dev);
++			irq_valid = true;
++		}
++
++		/*
++		 * Data available. Retrieve samples from FIFO
++		 * NOTE: Only two channels supported
++		 */
++		if ((isr[i] & ISR_RXDA) && (i == 0) && dev->use_pio) {
++			i2svad_pcm_pop_rx(dev);
++			irq_valid = true;
++		}
++
++		/* Error Handling: TX */
++		if (isr[i] & ISR_TXFO) {
++			//dev_err(dev->dev, "TX overrun (ch_id=%d)\n", i);
++			irq_valid = true;
++		}
++
++		/* Error Handling: TX */
++		if (isr[i] & ISR_RXFO) {
++			//dev_err(dev->dev, "RX overrun (ch_id=%d)\n", i);
++			irq_valid = true;
++		}
++	}
++
++	vad_status(&(dev->vad));
++
++	if (irq_valid)
++		return IRQ_HANDLED;
++	else
++		return IRQ_NONE;
++}
++
++static void i2s_start(struct i2svad_dev *dev,
++			struct snd_pcm_substream *substream)
++{
++	struct i2s_clk_config_data *config = &dev->config;
++
++	i2s_write_reg(dev->i2s_base, IER, 1);
++	i2s_enable_irqs(dev, substream->stream, config->chan_nr);
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		i2s_write_reg(dev->i2s_base, ITER, 1);
++	else
++		i2s_write_reg(dev->i2s_base, IRER, 1);
++
++	i2s_write_reg(dev->i2s_base, CER, 1);
++}
++
++static void i2s_stop(struct i2svad_dev *dev,
++		struct snd_pcm_substream *substream)
++{
++
++	i2s_clear_irqs(dev, substream->stream);
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		i2s_write_reg(dev->i2s_base, ITER, 0);
++	else
++		i2s_write_reg(dev->i2s_base, IRER, 0);
++
++	i2s_disable_irqs(dev, substream->stream, 8);
++
++	if (!dev->active) {
++		i2s_write_reg(dev->i2s_base, CER, 0);
++		i2s_write_reg(dev->i2s_base, IER, 0);
++	}
++}
++
++static int dw_i2s_startup(struct snd_pcm_substream *substream,
++		struct snd_soc_dai *cpu_dai)
++{
++	struct i2svad_dev *dev = snd_soc_dai_get_drvdata(cpu_dai);
++	union dw_i2s_snd_dma_data *dma_data = NULL;
++
++
++	if (!(dev->capability & DWC_I2S_RECORD) &&
++			(substream->stream == SNDRV_PCM_STREAM_CAPTURE))
++		return -EINVAL;
++
++	if (!(dev->capability & DWC_I2S_PLAY) &&
++			(substream->stream == SNDRV_PCM_STREAM_PLAYBACK))
++		return -EINVAL;
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		dma_data = &dev->play_dma_data;
++	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
++		dma_data = &dev->capture_dma_data;
++
++	snd_soc_dai_set_dma_data(cpu_dai, substream, (void *)dma_data);
++
++	return 0;
++}
++
++static void dw_i2s_config(struct i2svad_dev *dev, int stream)
++{
++	u32 ch_reg;
++	struct i2s_clk_config_data *config = &dev->config;
++
++
++	i2s_disable_channels(dev, stream);
++
++	for (ch_reg = 0; ch_reg < (config->chan_nr / 2); ch_reg++) {
++		if (stream == SNDRV_PCM_STREAM_PLAYBACK) {
++			i2s_write_reg(dev->i2s_base, TCR(ch_reg),
++					dev->xfer_resolution);
++			i2s_write_reg(dev->i2s_base, TFCR(ch_reg),
++					dev->fifo_th - 1);
++			i2s_write_reg(dev->i2s_base, TER(ch_reg), 1);
++		} else {
++			i2s_write_reg(dev->i2s_base, RCR(ch_reg),
++					dev->xfer_resolution);
++			i2s_write_reg(dev->i2s_base, RFCR(ch_reg),
++					dev->fifo_th - 1);
++			i2s_write_reg(dev->i2s_base, RER(ch_reg), 1);
++		}
++
++	}
++}
++
++static int i2svad_clks_get(struct platform_device *pdev,
++				struct i2svad_dev *dev)
++{
++	dev->clk_apb_i2svad = devm_clk_get(&pdev->dev, "i2svad_apb");
++	if (IS_ERR(dev->clk_apb_i2svad)) {
++		dev_err(&pdev->dev, "failed to get clk_apb_i2svad: %ld\n",
++				PTR_ERR(dev->clk_apb_i2svad));
++		return PTR_ERR(dev->clk_apb_i2svad);
++        }
++
++	return 0;
++}
++
++static int i2svad_resets_get(struct platform_device *pdev,
++				struct i2svad_dev *dev)
++{
++	struct reset_control_bulk_data resets[] = {
++		{ .id = "apb_i2svad" },
++		{ .id = "i2svad_srst" },
++	};
++        int ret = devm_reset_control_bulk_get_exclusive(&pdev->dev, ARRAY_SIZE(resets), resets);
++	if (ret)
++		return ret;
++
++	dev->rst_apb_i2svad = resets[0].rstc;
++	dev->rst_i2svad_srst = resets[1].rstc;
++
++	return 0;
++}
++
++static int i2svad_clk_init(struct platform_device *pdev,
++				struct i2svad_dev *dev)
++{
++	int ret;
++
++	ret = clk_prepare_enable(dev->clk_apb_i2svad);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to prepare enable clk_audio_root\n");
++		return ret;
++	}
++
++	ret = reset_control_deassert(dev->rst_apb_i2svad);
++        if (ret) {
++                printk(KERN_INFO "failed to deassert apb_i2svad\n");
++                return ret;
++        }
++
++	ret = reset_control_deassert(dev->rst_i2svad_srst);
++        if (ret) {
++                printk(KERN_INFO "failed to deassert i2svad_srst\n");
++                return ret;
++        }
++
++	return 0;
++}
++
++static int dw_i2s_hw_params(struct snd_pcm_substream *substream,
++		struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct i2svad_dev *dev = snd_soc_dai_get_drvdata(dai);
++	struct i2s_clk_config_data *config = &dev->config;
++	int ret;
++
++	switch (params_format(params)) {
++	case SNDRV_PCM_FORMAT_S16_LE:
++		config->data_width = 16;
++		dev->ccr = 0x00;
++		dev->xfer_resolution = 0x02;
++		break;
++
++	case SNDRV_PCM_FORMAT_S24_LE:
++		config->data_width = 24;
++		dev->ccr = 0x08;
++		dev->xfer_resolution = 0x04;
++		break;
++
++	case SNDRV_PCM_FORMAT_S32_LE:
++		config->data_width = 32;
++		dev->ccr = 0x10;
++		dev->xfer_resolution = 0x05;
++		break;
++
++	default:
++		dev_err(dev->dev, "designware-i2s: unsupported PCM fmt");
++		return -EINVAL;
++	}
++
++	config->chan_nr = params_channels(params);
++
++	switch (config->chan_nr) {
++	case EIGHT_CHANNEL_SUPPORT:
++	case SIX_CHANNEL_SUPPORT:
++	case FOUR_CHANNEL_SUPPORT:
++	case TWO_CHANNEL_SUPPORT:
++		break;
++	default:
++		dev_err(dev->dev, "channel not supported\n");
++		return -EINVAL;
++	}
++
++	dw_i2s_config(dev, substream->stream);
++
++	i2s_write_reg(dev->i2s_base, CCR, dev->ccr);
++
++	config->sample_rate = params_rate(params);
++
++	if (dev->capability & DW_I2S_MASTER) {
++		if (dev->i2s_clk_cfg) {
++			ret = dev->i2s_clk_cfg(config);
++			if (ret < 0) {
++				dev_err(dev->dev, "runtime audio clk config fail\n");
++				return ret;
++			}
++		} else {
++			u32 bitclk = config->sample_rate *
++					config->data_width * 2;
++
++			ret = clk_set_rate(dev->clk, bitclk);
++			if (ret) {
++				dev_err(dev->dev, "Can't set I2S clock rate: %d\n",
++					ret);
++				return ret;
++			}
++		}
++	}
++	return 0;
++}
++
++static void dw_i2s_shutdown(struct snd_pcm_substream *substream,
++		struct snd_soc_dai *dai)
++{
++	snd_soc_dai_set_dma_data(dai, substream, NULL);
++}
++
++static int dw_i2s_prepare(struct snd_pcm_substream *substream,
++			struct snd_soc_dai *dai)
++{
++	struct i2svad_dev *dev = snd_soc_dai_get_drvdata(dai);
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		i2s_write_reg(dev->i2s_base, TXFFR, 1);
++	else
++		i2s_write_reg(dev->i2s_base, RXFFR, 1);
++
++	return 0;
++}
++
++static int dw_i2s_trigger(struct snd_pcm_substream *substream,
++		int cmd, struct snd_soc_dai *dai)
++{
++	struct i2svad_dev *dev = snd_soc_dai_get_drvdata(dai);
++	int ret = 0;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		dev->active++;
++		i2s_start(dev, substream);
++		break;
++
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		dev->active--;
++		i2s_stop(dev, substream);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++
++	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
++	{
++		vad_trigger(&(dev->vad),cmd);
++	}
++	return ret;
++}
++
++static int dw_i2s_set_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
++{
++	struct i2svad_dev *dev = snd_soc_dai_get_drvdata(cpu_dai);
++	int ret = 0;
++
++	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
++	case SND_SOC_DAIFMT_CBM_CFM:
++		if (dev->capability & DW_I2S_SLAVE)
++			ret = 0;
++		else
++			ret = -EINVAL;
++		break;
++	case SND_SOC_DAIFMT_CBS_CFS:
++		if (dev->capability & DW_I2S_MASTER)
++			ret = 0;
++		else
++			ret = -EINVAL;
++		break;
++	case SND_SOC_DAIFMT_CBM_CFS:
++	case SND_SOC_DAIFMT_CBS_CFM:
++		ret = -EINVAL;
++		break;
++	default:
++		dev_dbg(dev->dev, "dwc : Invalid master/slave format\n");
++		ret = -EINVAL;
++		break;
++	}
++	return ret;
++}
++
++static const struct snd_soc_dai_ops dw_i2s_dai_ops = {
++	.startup	= dw_i2s_startup,
++	.shutdown	= dw_i2s_shutdown,
++	.hw_params	= dw_i2s_hw_params,
++	.prepare	= dw_i2s_prepare,
++	.trigger	= dw_i2s_trigger,
++	.set_fmt	= dw_i2s_set_fmt,
++};
++
++#ifdef CONFIG_PM
++static int dw_i2s_runtime_suspend(struct device *dev)
++{
++	struct i2svad_dev *dw_dev = dev_get_drvdata(dev);
++
++	if (dw_dev->capability & DW_I2S_MASTER)
++		clk_disable(dw_dev->clk);
++	return 0;
++}
++
++static int dw_i2s_runtime_resume(struct device *dev)
++{
++	struct i2svad_dev *dw_dev = dev_get_drvdata(dev);
++
++	if (dw_dev->capability & DW_I2S_MASTER)
++		clk_enable(dw_dev->clk);
++	return 0;
++}
++
++static int dw_i2s_suspend(struct snd_soc_component *component)
++{
++	struct i2svad_dev *dev = snd_soc_component_get_drvdata(component);
++
++	if (dev->capability & DW_I2S_MASTER)
++		clk_disable(dev->clk);
++	return 0;
++}
++
++static int dw_i2s_resume(struct snd_soc_component *component)
++{
++	struct i2svad_dev *dev = snd_soc_component_get_drvdata(component);
++	struct snd_soc_dai *dai;
++	int stream;
++
++	if (dev->capability & DW_I2S_MASTER)
++		clk_enable(dev->clk);
++
++	for_each_component_dais(component, dai) {
++		for_each_pcm_streams(stream)
++			if (snd_soc_dai_stream_active(dai, stream))
++				dw_i2s_config(dev, stream);
++	}
++
++	return 0;
++}
++
++#else
++#define dw_i2s_suspend	NULL
++#define dw_i2s_resume	NULL
++#endif
++
++static int dw_i2svad_probe(struct snd_soc_component *component)
++{
++	vad_probe(component);
++	return 0;
++}
++
++static const struct snd_soc_component_driver dw_i2s_component = {
++	.name		= "dw-i2s",
++	.probe		= dw_i2svad_probe,
++	.suspend	= dw_i2s_suspend,
++	.resume		= dw_i2s_resume,
++};
++
++/*
++ * The following tables allow a direct lookup of various parameters
++ * defined in the I2S block's configuration in terms of sound system
++ * parameters.  Each table is sized to the number of entries possible
++ * according to the number of configuration bits describing an I2S
++ * block parameter.
++ */
++
++/* Maximum bit resolution of a channel - not uniformly spaced */
++static const u32 fifo_width[COMP_MAX_WORDSIZE] = {
++	12, 16, 20, 24, 32, 0, 0, 0
++};
++
++/* Width of (DMA) bus */
++static const u32 bus_widths[COMP_MAX_DATA_WIDTH] = {
++	DMA_SLAVE_BUSWIDTH_1_BYTE,
++	DMA_SLAVE_BUSWIDTH_2_BYTES,
++	DMA_SLAVE_BUSWIDTH_4_BYTES,
++	DMA_SLAVE_BUSWIDTH_UNDEFINED
++};
++
++/* PCM format to support channel resolution */
++static const u32 formats[COMP_MAX_WORDSIZE] = {
++	SNDRV_PCM_FMTBIT_S16_LE,
++	SNDRV_PCM_FMTBIT_S16_LE,
++	SNDRV_PCM_FMTBIT_S24_LE,
++	SNDRV_PCM_FMTBIT_S24_LE,
++	SNDRV_PCM_FMTBIT_S32_LE,
++	0,
++	0,
++	0
++};
++
++static const struct regmap_config sf_i2s_regmap_cfg = {
++	.reg_bits	= 32,
++	.val_bits	= 32,
++	.reg_stride	= 4,
++	.max_register	= 0x1000,
++};
++
++static int dw_configure_dai(struct i2svad_dev *dev,
++				struct snd_soc_dai_driver *dw_i2s_dai,
++				unsigned int rates)
++{
++	/*
++	 * Read component parameter registers to extract
++	 * the I2S block's configuration.
++	 */
++	u32 comp1 = i2s_read_reg(dev->i2s_base, dev->i2s_reg_comp1);
++	u32 comp2 = i2s_read_reg(dev->i2s_base, dev->i2s_reg_comp2);
++	u32 fifo_depth = 1 << (1 + COMP1_FIFO_DEPTH_GLOBAL(comp1));
++	u32 idx;
++
++	if (dev->capability & DWC_I2S_RECORD &&
++			dev->quirks & DW_I2S_QUIRK_COMP_PARAM1)
++		comp1 = comp1 & ~BIT(5);
++
++	if (dev->capability & DWC_I2S_PLAY &&
++			dev->quirks & DW_I2S_QUIRK_COMP_PARAM1)
++		comp1 = comp1 & ~BIT(6);
++
++	if (COMP1_TX_ENABLED(comp1)) {
++		dev_dbg(dev->dev, " designware: play supported\n");
++		idx = COMP1_TX_WORDSIZE_0(comp1);
++		if (WARN_ON(idx >= ARRAY_SIZE(formats)))
++			return -EINVAL;
++		if (dev->quirks & DW_I2S_QUIRK_16BIT_IDX_OVERRIDE)
++			idx = 1;
++		dw_i2s_dai->playback.channels_min = MIN_CHANNEL_NUM;
++		dw_i2s_dai->playback.channels_max =
++				1 << (COMP1_TX_CHANNELS(comp1) + 1);
++		//dw_i2s_dai->playback.formats = formats[idx];
++		dw_i2s_dai->playback.formats = SNDRV_PCM_FMTBIT_S16_LE;
++		dw_i2s_dai->playback.rates = rates;
++	}
++
++	if (COMP1_RX_ENABLED(comp1)) {
++		dev_dbg(dev->dev, "designware: record supported\n");
++		idx = COMP2_RX_WORDSIZE_0(comp2);
++		if (WARN_ON(idx >= ARRAY_SIZE(formats)))
++			return -EINVAL;
++		if (dev->quirks & DW_I2S_QUIRK_16BIT_IDX_OVERRIDE)
++			idx = 1;
++		dw_i2s_dai->capture.channels_min = MIN_CHANNEL_NUM;
++		dw_i2s_dai->capture.channels_max =
++				1 << (COMP1_RX_CHANNELS(comp1) + 1);
++		//dw_i2s_dai->capture.formats = formats[idx];
++		dw_i2s_dai->capture.formats = SNDRV_PCM_FMTBIT_S16_LE;
++		dw_i2s_dai->capture.rates = rates;
++	}
++
++	if (COMP1_MODE_EN(comp1)) {
++		dev_dbg(dev->dev, "designware: i2s master mode supported\n");
++		dev->capability |= DW_I2S_MASTER;
++	} else {
++		dev_dbg(dev->dev, "designware: i2s slave mode supported\n");
++		dev->capability |= DW_I2S_SLAVE;
++	}
++
++	dev->fifo_th = fifo_depth / 2;
++	return 0;
++}
++
++static int dw_configure_dai_by_pd(struct i2svad_dev *dev,
++				struct snd_soc_dai_driver *dw_i2s_dai,
++				struct resource *res,
++				const struct i2s_platform_data *pdata)
++{
++	u32 comp1 = i2s_read_reg(dev->i2s_base, dev->i2s_reg_comp1);
++	u32 idx = COMP1_APB_DATA_WIDTH(comp1);
++	int ret;
++
++	if (WARN_ON(idx >= ARRAY_SIZE(bus_widths)))
++		return -EINVAL;
++
++	ret = dw_configure_dai(dev, dw_i2s_dai, pdata->snd_rates);
++	if (ret < 0)
++		return ret;
++
++	if (dev->quirks & DW_I2S_QUIRK_16BIT_IDX_OVERRIDE)
++		idx = 1;
++	/* Set DMA slaves info */
++	dev->play_dma_data.pd.data = pdata->play_dma_data;
++	dev->capture_dma_data.pd.data = pdata->capture_dma_data;
++	dev->play_dma_data.pd.addr = res->start + I2S_TXDMA;
++	dev->capture_dma_data.pd.addr = res->start + I2S_RXDMA;
++	dev->play_dma_data.pd.max_burst = 16;
++	dev->capture_dma_data.pd.max_burst = 16;
++	dev->play_dma_data.pd.addr_width = bus_widths[idx];
++	dev->capture_dma_data.pd.addr_width = bus_widths[idx];
++	dev->play_dma_data.pd.filter = pdata->filter;
++	dev->capture_dma_data.pd.filter = pdata->filter;
++
++	return 0;
++}
++
++static int dw_configure_dai_by_dt(struct i2svad_dev *dev,
++				struct snd_soc_dai_driver *dw_i2s_dai,
++				struct resource *res)
++{
++	u32 comp1 = i2s_read_reg(dev->i2s_base, I2S_COMP_PARAM_1);
++	u32 comp2 = i2s_read_reg(dev->i2s_base, I2S_COMP_PARAM_2);
++	u32 fifo_depth = 1 << (1 + COMP1_FIFO_DEPTH_GLOBAL(comp1));
++	u32 idx = COMP1_APB_DATA_WIDTH(comp1);
++	u32 idx2;
++	int ret;
++
++	if (WARN_ON(idx >= ARRAY_SIZE(bus_widths)))
++		return -EINVAL;
++
++	ret = dw_configure_dai(dev, dw_i2s_dai, SNDRV_PCM_RATE_8000_192000);
++	if (ret < 0)
++		return ret;
++
++	if (COMP1_TX_ENABLED(comp1)) {
++		idx2 = COMP1_TX_WORDSIZE_0(comp1);
++
++		dev->capability |= DWC_I2S_PLAY;
++		dev->play_dma_data.dt.addr = res->start + I2S_TXDMA;
++		dev->play_dma_data.dt.addr_width = bus_widths[idx];
++		dev->play_dma_data.dt.fifo_size = fifo_depth *
++			(fifo_width[idx2]) >> 8;
++		dev->play_dma_data.dt.maxburst = 16;
++	}
++	if (COMP1_RX_ENABLED(comp1)) {
++		idx2 = COMP2_RX_WORDSIZE_0(comp2);
++
++		dev->capability |= DWC_I2S_RECORD;
++		dev->capture_dma_data.dt.addr = res->start + I2S_RXDMA;
++		dev->capture_dma_data.dt.addr_width = bus_widths[idx];
++		dev->capture_dma_data.dt.fifo_size = fifo_depth *
++			(fifo_width[idx2] >> 8);
++		dev->capture_dma_data.dt.maxburst = 16;
++	}
++
++	return 0;
++
++}
++
++static int dw_i2s_probe(struct platform_device *pdev)
++{
++	const struct i2s_platform_data *pdata = pdev->dev.platform_data;
++	struct i2svad_dev *dev;
++	struct resource *res;
++	int ret, irq;
++	struct snd_soc_dai_driver *dw_i2s_dai;
++	const char *clk_id;
++
++	dev = devm_kzalloc(&pdev->dev, sizeof(*dev), GFP_KERNEL);
++	if (!dev)
++		return -ENOMEM;
++
++	dw_i2s_dai = devm_kzalloc(&pdev->dev, sizeof(*dw_i2s_dai), GFP_KERNEL);
++	if (!dw_i2s_dai)
++		return -ENOMEM;
++
++	dw_i2s_dai->ops = &dw_i2s_dai_ops;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	dev->i2s_base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(dev->i2s_base))
++		return PTR_ERR(dev->i2s_base);
++
++	dev->vad.vad_base = dev->i2s_base;
++	dev->vad.vad_map = devm_regmap_init_mmio(&pdev->dev, dev->i2s_base, &sf_i2s_regmap_cfg);
++	if (IS_ERR(dev->vad.vad_map)) {
++		dev_err(&pdev->dev, "failed to init regmap: %ld\n",
++			PTR_ERR(dev->vad.vad_map));
++		return PTR_ERR(dev->vad.vad_map);
++	}
++
++	dev->dev = &pdev->dev;
++
++	ret = i2svad_clks_get(pdev, dev);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to get i2svad clock\n");
++		return ret;
++	}
++
++	ret = i2svad_resets_get(pdev, dev);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to get i2svad reset controls\n");
++		return ret;
++        }
++
++	ret = i2svad_clk_init(pdev, dev);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to initialize i2svad clock\n");
++		return ret;
++	}
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq >= 0) {
++		ret = devm_request_irq(&pdev->dev, irq, i2s_irq_handler, 0,
++				pdev->name, dev);
++		if (ret < 0) {
++			dev_err(&pdev->dev, "failed to request irq\n");
++			return ret;
++		}
++	}
++
++	dev->i2s_reg_comp1 = I2S_COMP_PARAM_1;
++	dev->i2s_reg_comp2 = I2S_COMP_PARAM_2;
++	if (pdata) {
++		dev->capability = pdata->cap;
++		clk_id = NULL;
++		dev->quirks = pdata->quirks;
++		if (dev->quirks & DW_I2S_QUIRK_COMP_REG_OFFSET) {
++			dev->i2s_reg_comp1 = pdata->i2s_reg_comp1;
++			dev->i2s_reg_comp2 = pdata->i2s_reg_comp2;
++		}
++		ret = dw_configure_dai_by_pd(dev, dw_i2s_dai, res, pdata);
++	} else {
++		clk_id = "i2sclk";
++		ret = dw_configure_dai_by_dt(dev, dw_i2s_dai, res);
++	}
++	if (ret < 0)
++		return ret;
++
++	if (dev->capability & DW_I2S_MASTER) {
++		if (pdata) {
++			dev->i2s_clk_cfg = pdata->i2s_clk_cfg;
++			if (!dev->i2s_clk_cfg) {
++				dev_err(&pdev->dev, "no clock configure method\n");
++				return -ENODEV;
++			}
++		}
++		dev->clk = devm_clk_get(&pdev->dev, clk_id);
++
++		if (IS_ERR(dev->clk))
++			return PTR_ERR(dev->clk);
++
++		ret = clk_prepare_enable(dev->clk);
++		if (ret < 0)
++			return ret;
++	}
++
++	dev_set_drvdata(&pdev->dev, dev);
++	ret = devm_snd_soc_register_component(&pdev->dev, &dw_i2s_component,
++					 dw_i2s_dai, 1);
++	if (ret != 0) {
++		dev_err(&pdev->dev, "not able to register dai\n");
++		goto err_clk_disable;
++	}
++
++	if (!pdata) {
++		if (irq >= 0) {
++			ret = i2svad_pcm_register(pdev);
++			dev->use_pio = true;
++		} else {
++			ret = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL,
++					0);
++			dev->use_pio = false;
++		}
++
++		if (ret) {
++			dev_err(&pdev->dev, "could not register pcm: %d\n",
++					ret);
++			goto err_clk_disable;
++		}
++	}
++
++	vad_init(&(dev->vad));
++	pm_runtime_enable(&pdev->dev);
++
++	return 0;
++
++err_clk_disable:
++	if (dev->capability & DW_I2S_MASTER)
++		clk_disable_unprepare(dev->clk);
++	return ret;
++}
++
++static int dw_i2s_remove(struct platform_device *pdev)
++{
++	struct i2svad_dev *dev = dev_get_drvdata(&pdev->dev);
++
++	if (dev->capability & DW_I2S_MASTER)
++		clk_disable_unprepare(dev->clk);
++
++	pm_runtime_disable(&pdev->dev);
++	return 0;
++}
++
++#ifdef CONFIG_OF
++static const struct of_device_id dw_i2s_of_match[] = {
++	{ .compatible = "starfive,sf-i2svad", },
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, dw_i2s_of_match);
++#endif
++
++static const struct dev_pm_ops dwc_pm_ops = {
++	SET_RUNTIME_PM_OPS(dw_i2s_runtime_suspend, dw_i2s_runtime_resume, NULL)
++};
++
++static struct platform_driver dw_i2s_driver = {
++	.probe		= dw_i2s_probe,
++	.remove		= dw_i2s_remove,
++	.driver		= {
++		.name	= "sf-i2svad",
++		.of_match_table = of_match_ptr(dw_i2s_of_match),
++		.pm = &dwc_pm_ops,
++	},
++};
++
++module_platform_driver(dw_i2s_driver);
++
++MODULE_AUTHOR("jenny zhang <jenny.zhang@starfivetech.com>");
++MODULE_DESCRIPTION("starfive I2SVAD SoC Interface");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:sf-i2svad");
+--- /dev/null
++++ b/sound/soc/starfive/i2svad.h
+@@ -0,0 +1,246 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#ifndef __SND_SOC_STARFIVE_I2SVAD_H
++#define __SND_SOC_STARFIVE_I2SVAD_H
++
++#include <linux/clk.h>
++#include <linux/device.h>
++#include <linux/reset.h>
++#include <linux/types.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/pcm.h>
++#include <sound/designware_i2s.h>
++
++/* common register for all channel */
++#define IER		0x000
++#define IRER		0x004
++#define ITER		0x008
++#define CER		0x00C
++#define CCR		0x010
++#define RXFFR		0x014
++#define TXFFR		0x018
++
++/* Interrupt status register fields */
++#define ISR_TXFO	BIT(5)
++#define ISR_TXFE	BIT(4)
++#define ISR_RXFO	BIT(1)
++#define ISR_RXDA	BIT(0)
++
++/* I2STxRxRegisters for all channels */
++#define LRBR_LTHR(x)	(0x40 * x + 0x020)
++#define RRBR_RTHR(x)	(0x40 * x + 0x024)
++#define RER(x)		(0x40 * x + 0x028)
++#define TER(x)		(0x40 * x + 0x02C)
++#define RCR(x)		(0x40 * x + 0x030)
++#define TCR(x)		(0x40 * x + 0x034)
++#define ISR(x)		(0x40 * x + 0x038)
++#define IMR(x)		(0x40 * x + 0x03C)
++#define ROR(x)		(0x40 * x + 0x040)
++#define TOR(x)		(0x40 * x + 0x044)
++#define RFCR(x)		(0x40 * x + 0x048)
++#define TFCR(x)		(0x40 * x + 0x04C)
++#define RFF(x)		(0x40 * x + 0x050)
++#define TFF(x)		(0x40 * x + 0x054)
++
++/* I2SCOMPRegisters */
++#define I2S_COMP_PARAM_2	0x01F0
++#define I2S_COMP_PARAM_1	0x01F4
++#define I2S_COMP_VERSION	0x01F8
++#define I2S_COMP_TYPE		0x01FC
++
++/* VAD Registers */
++#define VAD_LEFT_MARGIN				0x800  /* left_margin */
++#define VAD_RIGHT_MARGIN			0x804  /* right_margin */
++#define VAD_N_LOW_CONT_FRAMES			0x808  /* low-energy transition range threshold ——NL*/
++#define VAD_N_LOW_SEEK_FRAMES			0x80C  /* low-energy transition range */
++#define VAD_N_HIGH_CONT_FRAMES			0x810  /* high-energy transition range threshold——NH */
++#define VAD_N_HIGH_SEEK_FRAMES			0x814  /* high-energy transition range */
++#define VAD_N_SPEECH_LOW_HIGH_FRAMES		0x818  /* low-energy voice range threshold——NVL*/
++#define VAD_N_SPEECH_LOW_SEEK_FRAMES		0x81C  /* low-energy voice range*/
++#define VAD_MEAN_SIL_FRAMES			0x820  /* mean silence frame range*/
++#define VAD_N_ALPHA				0x824  /* low-energy threshold scaling factor,12bit(0~0xFFF)*/
++#define VAD_N_BETA				0x828  /* high-energy threshold scaling factor,12bit(0~0xFFF)*/
++#define VAD_FIFO_DEPTH				0x82C  /* status register for VAD */
++#define VAD_LR_SEL				0x840  /* L/R channel data selection for processing */
++#define VAD_SW					0x844  /* push enable signal*/
++#define VAD_LEFT_WD				0x848  /* select left channel*/
++#define VAD_RIGHT_WD				0x84C  /* select right channel*/
++#define VAD_STOP_DELAY				0x850  /* delay stop for 0-3 samples*/
++#define VAD_ADDR_START				0x854  /* vad memory start address, align with 64bit*/
++#define VAD_ADDR_WRAP				0x858  /* vad memory highest address for Push, align with 64bit,(addr_wrap-1) is the max physical address*/
++#define VAD_MEM_SW				0x85C  /* xmem switch */
++#define VAD_SPINT_CLR				0x860  /* clear vad_spint interrup status*/
++#define VAD_SPINT_EN				0x864  /* disable/enable vad_spint from vad_flag rising edge*/
++#define VAD_SLINT_CLR				0x868  /* clear vad_slint interrup status*/
++#define VAD_SLINT_EN				0x86C  /* disable/enable  vad_slint from vad_flag falling edge*/
++#define VAD_RAW_SPINT				0x870  /* status of spint before vad_spint_en*/
++#define VAD_RAW_SLINT				0x874  /* status of slint before vad_slint_en*/
++#define VAD_SPINT				0x878  /* status of spint after vad_spint_en*/
++#define VAD_SLINT				0x87C  /* status of slint before vad_slint_en*/
++#define VAD_XMEM_ADDR				0x880  /* next xmem address ,align to 16bi*/
++#define VAD_I2S_CTRL_REG_ADDR			0x884
++
++/*
++ * vad parameter register fields
++ */
++#define VAD_LEFT_MARGIN_MASK			GENMASK(4, 0)
++#define VAD_RIGHT_MARGIN_MASK			GENMASK(4, 0)
++#define VAD_N_LOW_CONT_FRAMES_MASK		GENMASK(4, 0)
++#define VAD_N_LOW_SEEK_FRAMES_MASK		GENMASK(4, 0)
++#define VAD_N_HIGH_CONT_FRAMES_MASK		GENMASK(4, 0)
++#define VAD_N_HIGH_SEEK_FRAMES_MASK		GENMASK(4, 0)
++#define VAD_N_SPEECH_LOW_HIGH_FRAMES_MASK	GENMASK(4, 0)
++#define VAD_N_SPEECH_LOW_SEEK_FRAMES_MASK	GENMASK(4, 0)
++#define VAD_MEAN_SIL_FRAMES_MASK		GENMASK(4, 0)
++#define VAD_N_ALPHA_MASK			GENMASK(11, 0)
++#define VAD_N_BETA_MASK				GENMASK(11, 0)
++#define VAD_LR_SEL_MASK				GENMASK(0, 0)
++#define VAD_LR_SEL_L				(0 << 0)
++#define VAD_LR_SEL_R				(1 << 0)
++
++#define VAD_SW_MASK				GENMASK(1, 0)
++#define VAD_SW_VAD_XMEM_ENABLE			(1 << 0)
++#define VAD_SW_VAD_XMEM_DISABLE			(0 << 0)
++#define VAD_SW_ADC_ENABLE			(1 << 1)
++#define VAD_SW_ADC_DISABLE			(0 << 1)
++
++
++#define VAD_LEFT_WD_MASK			GENMASK(0, 0)
++#define VAD_LEFT_WD_BIT_31_16			(1 << 1)
++#define VAD_LEFT_WD_BIT_15_0			(0 << 1)
++
++
++#define VAD_RIGHT_WD_MASK			GENMASK(0, 0)
++#define VAD_RIGHT_WD_BIT_31_16			(1 << 1)
++#define VAD_RIGHT_WD_BIT_15_0			(0 << 1)
++
++
++#define VAD_STOP_DELAY_MASK			GENMASK(1, 0)
++#define VAD_STOP_DELAY_0_SAMPLE			0
++#define VAD_STOP_DELAY_1_SAMPLE			1
++#define VAD_STOP_DELAY_2_SAMPLE			2
++#define VAD_STOP_DELAY_3_SAMPLE			3
++
++#define VAD_ADDR_START_MASK			GENMASK(12, 0)
++#define VAD_ADDR_WRAP_MASK			GENMASK(13, 0)
++#define VAD_MEM_SW_MASK				GENMASK(0, 0)
++#define VAD_SPINT_CLR_MASK			GENMASK(0, 0)
++#define VAD_SPINT_EN_MASK			GENMASK(0, 0)
++#define VAD_SLINT_CLR_MASK			GENMASK(0, 0)
++#define VAD_SLINT_EN_MASK			GENMASK(0, 0)
++#define VAD_I2S_CTRL_REG_ADDR_MASK		GENMASK(0, 0)
++
++#define VAD_MEM_SW_TO_VAD			(1 << 0)
++#define VAD_MEM_SW_TO_AXI			(0 << 0)
++
++#define VAD_SPINT_CLR_VAD_SPINT			(1 << 0)
++
++#define VAD_SPINT_EN_ENABLE			(1 << 0)
++#define VAD_SPINT_EN_DISABLE			(0 << 0)
++
++#define VAD_SLINT_CLR_VAD_SLINT			(1 << 0)
++
++#define VAD_SLINT_EN_ENABLE			(1 << 0)
++#define VAD_SLINT_EN_DISABLE			(0 << 0)
++
++#define VAD_STATUS_NORMAL			0
++#define VAD_STATUS_SPINT			1
++#define VAD_STATUS_SLINT			2
++
++/*
++ * Component parameter register fields - define the I2S block's
++ * configuration.
++ */
++#define COMP1_TX_WORDSIZE_3(r)		(((r) & GENMASK(27, 25)) >> 25)
++#define COMP1_TX_WORDSIZE_2(r)		(((r) & GENMASK(24, 22)) >> 22)
++#define COMP1_TX_WORDSIZE_1(r)		(((r) & GENMASK(21, 19)) >> 19)
++#define COMP1_TX_WORDSIZE_0(r)		(((r) & GENMASK(18, 16)) >> 16)
++#define COMP1_TX_CHANNELS(r)		(((r) & GENMASK(10, 9)) >> 9)
++#define COMP1_RX_CHANNELS(r)		(((r) & GENMASK(8, 7)) >> 7)
++#define COMP1_RX_ENABLED(r)		(((r) & BIT(6)) >> 6)
++#define COMP1_TX_ENABLED(r)		(((r) & BIT(5)) >> 5)
++#define COMP1_MODE_EN(r)		(((r) & BIT(4)) >> 4)
++#define COMP1_FIFO_DEPTH_GLOBAL(r)	(((r) & GENMASK(3, 2)) >> 2)
++#define COMP1_APB_DATA_WIDTH(r)		(((r) & GENMASK(1, 0)) >> 0)
++
++#define COMP2_RX_WORDSIZE_3(r)		(((r) & GENMASK(12, 10)) >> 10)
++#define COMP2_RX_WORDSIZE_2(r)		(((r) & GENMASK(9, 7)) >> 7)
++#define COMP2_RX_WORDSIZE_1(r)		(((r) & GENMASK(5, 3)) >> 3)
++#define COMP2_RX_WORDSIZE_0(r)		(((r) & GENMASK(2, 0)) >> 0)
++
++/* Number of entries in WORDSIZE and DATA_WIDTH parameter registers */
++#define COMP_MAX_WORDSIZE		(1 << 3)
++#define COMP_MAX_DATA_WIDTH		(1 << 2)
++
++#define MAX_CHANNEL_NUM		8
++#define MIN_CHANNEL_NUM		2
++#define ALL_CHANNEL_NUM		4
++
++
++union dw_i2s_snd_dma_data {
++	struct i2s_dma_data pd;
++	struct snd_dmaengine_dai_dma_data dt;
++};
++
++struct vad_params {
++	void __iomem *vad_base;
++	struct regmap *vad_map;
++	unsigned int vswitch;
++	unsigned int vstatus; /*vad detect status: 1:SPINT 2:SLINT 0:normal*/
++};
++
++struct i2svad_dev {
++	void __iomem *i2s_base;
++	struct clk *clk;
++	int active;
++	unsigned int capability;
++	unsigned int quirks;
++	unsigned int i2s_reg_comp1;
++	unsigned int i2s_reg_comp2;
++	struct device *dev;
++	u32 ccr;
++	u32 xfer_resolution;
++	u32 fifo_th;
++
++	struct clk *clk_apb_i2svad;
++	struct reset_control *rst_apb_i2svad;
++	struct reset_control *rst_i2svad_srst;
++
++	/* data related to DMA transfers b/w i2s and DMAC */
++	union dw_i2s_snd_dma_data play_dma_data;
++	union dw_i2s_snd_dma_data capture_dma_data;
++	struct i2s_clk_config_data config;
++	int (*i2s_clk_cfg)(struct i2s_clk_config_data *config);
++
++	/* data related to PIO transfers */
++	bool use_pio;
++	struct snd_pcm_substream __rcu *tx_substream;
++	struct snd_pcm_substream __rcu *rx_substream;
++	unsigned int (*tx_fn)(struct i2svad_dev *dev,
++			struct snd_pcm_runtime *runtime, unsigned int tx_ptr,
++			bool *period_elapsed);
++	unsigned int (*rx_fn)(struct i2svad_dev *dev,
++			struct snd_pcm_runtime *runtime, unsigned int rx_ptr,
++			bool *period_elapsed);
++	unsigned int tx_ptr;
++	unsigned int rx_ptr;
++
++	struct vad_params vad;
++};
++
++#if IS_ENABLED(CONFIG_SND_STARFIVE_I2SVAD_PCM)
++void i2svad_pcm_push_tx(struct i2svad_dev *dev);
++void i2svad_pcm_pop_rx(struct i2svad_dev *dev);
++int i2svad_pcm_register(struct platform_device *pdev);
++#else
++void i2svad_pcm_push_tx(struct i2svad_dev *dev) { }
++void i2svad_pcm_pop_rx(struct i2svad_dev *dev) { }
++int i2svad_pcm_register(struct platform_device *pdev)
++{
++	return -EINVAL;
++}
++#endif
++
++#endif
+--- /dev/null
++++ b/sound/soc/starfive/pdm.c
+@@ -0,0 +1,362 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#include <linux/clk.h>
++#include <linux/module.h>
++#include <linux/of_irq.h>
++#include <linux/of_platform.h>
++#include <linux/regmap.h>
++#include <sound/soc.h>
++#include <sound/soc-dai.h>
++#include <sound/pcm_params.h>
++#include <sound/initval.h>
++#include <sound/tlv.h>
++
++#include "pdm.h"
++
++#define AUDIOC_CLK 	(12288000)
++#define PDM_MUL 	(128)
++
++struct sf_pdm {
++	struct regmap *pdm_map;
++	struct regmap *clk_map;
++	struct clk *clk;
++};
++
++static const DECLARE_TLV_DB_SCALE(volume_tlv, -9450, 150, 0);
++
++static const struct snd_kcontrol_new sf_pdm_snd_controls[] = {
++	SOC_SINGLE("DC compensation Control", PDM_DMIC_CTRL0, 30, 1, 0),
++	SOC_SINGLE("High Pass Filter Control", PDM_DMIC_CTRL0, 28, 1, 0),
++	SOC_SINGLE("Left Channel Volume Control", PDM_DMIC_CTRL0, 23, 1, 0),
++	SOC_SINGLE("Right Channel Volume Control", PDM_DMIC_CTRL0, 22, 1, 0),
++	SOC_SINGLE_TLV("Volume", PDM_DMIC_CTRL0, 16, 0x3F, 1, volume_tlv),
++	SOC_SINGLE("Data MSB Shift", PDM_DMIC_CTRL0, 1, 7, 0),
++	SOC_SINGLE("SCALE", PDM_DC_SCALE0, 0, 0x3F, 0),
++	SOC_SINGLE("DC offset", PDM_DC_SCALE0, 8, 0xFFFFF, 0),
++};
++
++static int sf_pdm_set_mclk(struct regmap *map, unsigned int clk, unsigned int weight)
++{
++	int mclk_div,bclk_div,lrclk_div;
++	u32	pdm_div;
++
++	/*
++	audio source clk:12288000, mclk_div:4, mclk:3M
++	support 8K/16K/32K/48K sample reate
++	suapport 16/24/32 bit weight
++	bit weight 32
++	mclk bclk  lrclk
++	3M   1.5M  48K
++	3M   1M    32K
++	3M   0.5M  16K
++	3M   0.25M  8K
++
++	bit weight 24,set lrclk_div as 32
++	mclk bclk  lrclk
++	3M   1.5M  48K
++	3M   1M    32K
++	3M   0.5M  16K
++	3M   0.25M  8K
++
++	bit weight 16
++	mclk bclk   lrclk
++	3M   0.75M  48K
++	3M   0.5M   32K
++	3M   0.25M  16K
++	3M   0.125M 8K
++	*/
++
++	switch (clk) {
++	case 8000:
++	case 16000:
++	case 32000:
++	case 48000:
++		break;
++	default:
++		printk(KERN_ERR "sample rate:%d\n", clk);
++		return -EINVAL;
++	}
++
++	switch (weight) {
++	case 16:
++	case 24:
++	case 32:
++		break;
++	default:
++		printk(KERN_ERR "bit weight:%d\n", weight);
++		return -EINVAL;
++	}
++
++	if (24 == weight) {
++		weight = 32;
++	}
++
++	mclk_div = 4;
++	bclk_div = AUDIOC_CLK/mclk_div/(clk*weight);
++	lrclk_div = weight;
++
++	/* PDM MCLK = 128*LRCLK */
++	pdm_div = AUDIOC_CLK/(PDM_MUL*clk);
++
++	regmap_update_bits(map, AUDIO_CLK_ADC_MCLK, 0x0F, mclk_div);
++	regmap_update_bits(map, AUDIO_CLK_I2SADC_BCLK, 0x1F, bclk_div);
++	regmap_update_bits(map, AUDIO_CLK_ADC_LRCLK, 0x3F, lrclk_div);
++	regmap_update_bits(map, AUDIO_CLK_PDM_CLK, 0x0F, pdm_div);
++
++	return 0;
++}
++
++static void sf_pdm_enable(struct regmap *map)
++{
++	/* Enable PDM */
++	regmap_update_bits(map, PDM_DMIC_CTRL0, 0x01<<PDM_DMIC_RVOL_OFFSET, 0);
++	regmap_update_bits(map, PDM_DMIC_CTRL0, 0x01<<PDM_DMIC_LVOL_OFFSET, 0);
++}
++
++static void sf_pdm_disable(struct regmap *map)
++{
++	regmap_update_bits(map, PDM_DMIC_CTRL0,
++		0x01<<PDM_DMIC_RVOL_OFFSET, 0x01<<PDM_DMIC_RVOL_OFFSET);
++	regmap_update_bits(map, PDM_DMIC_CTRL0,
++		0x01<<PDM_DMIC_LVOL_OFFSET, 0x01<<PDM_DMIC_LVOL_OFFSET);
++}
++
++static int sf_pdm_trigger(struct snd_pcm_substream *substream, int cmd,
++			struct snd_soc_dai *dai)
++{
++	struct sf_pdm *priv = snd_soc_dai_get_drvdata(dai);
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		sf_pdm_enable(priv->pdm_map);
++		return 0;
++
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		sf_pdm_disable(priv->pdm_map);
++		return 0;
++
++	default:
++		return -EINVAL;
++	}
++}
++
++static int sf_pdm_hw_params(struct snd_pcm_substream *substream,
++			struct snd_pcm_hw_params *params,
++			struct snd_soc_dai *dai)
++{
++	struct sf_pdm *priv = snd_soc_dai_get_drvdata(dai);
++	unsigned int rate = params_rate(params);
++	unsigned int width;
++	int ret;
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		return 0;
++
++	width = params_width(params);
++	switch (width) {
++	case 16:
++	case 24:
++	case 32:
++		break;
++	default:
++		dev_err(dai->dev, "unsupported sample width\n");
++		return -EINVAL;
++	}
++
++	ret = sf_pdm_set_mclk(priv->clk_map, rate, width);
++	if (ret < 0) {
++		dev_err(dai->dev, "unsupported sample rate\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static const struct snd_soc_dai_ops sf_pdm_dai_ops = {
++	.trigger	= sf_pdm_trigger,
++	.hw_params	= sf_pdm_hw_params,
++};
++
++static int sf_pdm_dai_probe(struct snd_soc_dai *dai)
++{
++	struct sf_pdm *priv = snd_soc_dai_get_drvdata(dai);
++
++	/* Reset */
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x01<<PDM_DMIC_SW_RSTN_OFFSET, 0x00);
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x01<<PDM_DMIC_SW_RSTN_OFFSET, 0x01<<PDM_DMIC_SW_RSTN_OFFSET);
++
++	/* Make sure the device is initially disabled */
++	sf_pdm_disable(priv->pdm_map);
++
++	/* MUTE */
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x3F<<PDM_DMIC_VOL_OFFSET, 0x3F<<PDM_DMIC_VOL_OFFSET);
++
++	/* UNMUTE */
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x3F<<PDM_DMIC_VOL_OFFSET, 0);
++
++	/* enable high pass filter */
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x01<<PDM_DMIC_ENHPF_OFFSET, 0x01<<PDM_DMIC_ENHPF_OFFSET);
++
++	/* i2s slaver mode */
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x01<<PDM_DMIC_I2SMODE_OFFSET, 0x01<<PDM_DMIC_I2SMODE_OFFSET);
++
++	/* disable fast mode */
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x01<<PDM_DMIC_FASTMODE_OFFSET, 0);
++
++	/* enable dc bypass mode */
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x01<<PDM_DMIC_DCBPS_OFFSET, 0);
++
++	/* dmic msb shift 0 */
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x07<<PDM_DMIC_MSB_SHIFT_OFFSET, 0);
++
++	/* scale:0 */
++	regmap_update_bits(priv->pdm_map, PDM_DC_SCALE0, 0x3F, 0x08);
++
++	/* DC offset:0 */
++	regmap_update_bits(priv->pdm_map, PDM_DC_SCALE0,
++		0xFFFFF<<PDM_DMIC_DCOFF1_OFFSET, 0xC0005<<PDM_DMIC_DCOFF1_OFFSET);
++
++	return 0;
++}
++
++static int sf_pdm_dai_remove(struct snd_soc_dai *dai)
++{
++	struct sf_pdm *priv = snd_soc_dai_get_drvdata(dai);
++
++	/* MUTE */
++	regmap_update_bits(priv->pdm_map, PDM_DMIC_CTRL0,
++		0x3F<<PDM_DMIC_VOL_OFFSET, 0x3F<<PDM_DMIC_VOL_OFFSET);
++
++	return 0;
++}
++
++#define SF_PCM_RATE (SNDRV_PCM_RATE_8000|SNDRV_PCM_RATE_16000|\
++					SNDRV_PCM_RATE_32000|SNDRV_PCM_RATE_48000)
++
++static struct snd_soc_dai_driver sf_pdm_dai_drv = {
++	.name = "PDM",
++	.id = 0,
++	.capture = {
++		.stream_name	= "Capture",
++		.channels_min	= 2,
++		.channels_max	= 2,
++		.rates		= 	SF_PCM_RATE,
++		.formats	= 	SNDRV_PCM_FMTBIT_S16_LE|\
++						SNDRV_PCM_FMTBIT_S24_LE|\
++						SNDRV_PCM_FMTBIT_S32_LE,
++	},
++	.ops		= &sf_pdm_dai_ops,
++	.probe		= sf_pdm_dai_probe,
++	.remove		= sf_pdm_dai_remove,
++	.symmetric_rate = 1,
++};
++
++static int pdm_probe(struct snd_soc_component *component)
++{
++	struct sf_pdm *priv = snd_soc_component_get_drvdata(component);
++
++	snd_soc_component_init_regmap(component, priv->pdm_map);
++	snd_soc_add_component_controls(component, sf_pdm_snd_controls,
++				ARRAY_SIZE(sf_pdm_snd_controls));
++
++	return 0;
++}
++
++static const struct snd_soc_component_driver sf_pdm_component_drv = {
++	.name = "sf-pdm",
++	.probe = pdm_probe,
++};
++
++static const struct regmap_config sf_pdm_regmap_cfg = {
++	.reg_bits	= 32,
++	.val_bits	= 32,
++	.reg_stride	= 4,
++	.max_register	= 0x20,
++};
++
++static const struct regmap_config sf_audio_clk_regmap_cfg = {
++	.reg_bits	= 32,
++	.val_bits	= 32,
++	.reg_stride	= 4,
++	.max_register	= 0x100,
++};
++
++static int sf_pdm_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct sf_pdm *priv;
++	struct resource *res;
++	void __iomem *regs;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++	platform_set_drvdata(pdev, priv);
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "pdm");
++	regs = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(regs))
++		return PTR_ERR(regs);
++
++	priv->pdm_map = devm_regmap_init_mmio(dev, regs, &sf_pdm_regmap_cfg);
++	if (IS_ERR(priv->pdm_map)) {
++		dev_err(dev, "failed to init regmap: %ld\n",
++			PTR_ERR(priv->pdm_map));
++		return PTR_ERR(priv->pdm_map);
++	}
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "audio-clk");
++	regs = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(regs))
++		return PTR_ERR(regs);
++
++	priv->clk_map = devm_regmap_init_mmio(dev, regs, &sf_audio_clk_regmap_cfg);
++	if (IS_ERR(priv->clk_map)) {
++		dev_err(dev, "failed to init regmap: %ld\n",
++			PTR_ERR(priv->clk_map));
++		return PTR_ERR(priv->clk_map);
++	}
++
++	return devm_snd_soc_register_component(dev, &sf_pdm_component_drv,
++					&sf_pdm_dai_drv, 1);
++}
++
++static int sf_pdm_dev_remove(struct platform_device *pdev)
++{
++	return 0;
++}
++static const struct of_device_id sf_pdm_of_match[] = {
++	{.compatible = "starfive,sf-pdm",},
++	{}
++};
++MODULE_DEVICE_TABLE(of, sf_pdm_of_match);
++
++static struct platform_driver sf_pdm_driver = {
++
++	.driver = {
++		.name = "sf-pdm",
++		.of_match_table = sf_pdm_of_match,
++	},
++	.probe = sf_pdm_probe,
++	.remove = sf_pdm_dev_remove,
++};
++module_platform_driver(sf_pdm_driver);
++
++MODULE_AUTHOR("michael.yan <michael.yan@starfivetech.com>");
++MODULE_DESCRIPTION("starfive PDM Controller Driver");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/sound/soc/starfive/pdm.h
+@@ -0,0 +1,43 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#ifndef __SND_SOC_STARFIVE_PDM_H
++#define __SND_SOC_STARFIVE_PDM_H
++
++#include <linux/clk.h>
++#include <linux/device.h>
++#include <linux/types.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/pcm.h>
++#include <linux/dmaengine.h>
++#include <linux/types.h>
++
++#define PDM_DMIC_CTRL0			(0x00)
++#define PDM_DC_SCALE0			(0x04)
++#define PDM_DMIC_CTRL1			(0x10)
++#define PDM_DC_SCALE1			(0x14)
++
++/* PDM CTRL OFFSET */
++#define PDM_DMIC_MSB_SHIFT_OFFSET	(1)
++#define PDM_DMIC_VOL_OFFSET		(16)
++#define PDM_DMIC_RVOL_OFFSET		(22)
++#define PDM_DMIC_LVOL_OFFSET		(23)
++#define PDM_DMIC_I2SMODE_OFFSET		(24)
++#define PDM_DMIC_ENHPF_OFFSET		(28)
++#define PDM_DMIC_FASTMODE_OFFSET	(29)
++#define PDM_DMIC_DCBPS_OFFSET		(30)
++#define PDM_DMIC_SW_RSTN_OFFSET		(31)
++
++/* PDM SCALE OFFSET */
++#define PDM_DMIC_DCOFF3_OFFSET		(24)
++#define PDM_DMIC_DCOFF2_OFFSET		(16)
++#define PDM_DMIC_DCOFF1_OFFSET		(8)
++#define PDM_DMIC_SCALE_OFFSET		(0)
++
++#define AUDIO_CLK_ADC_MCLK		0x0
++#define AUDIO_CLK_I2SADC_BCLK		0xC
++#define AUDIO_CLK_ADC_LRCLK		0x14
++#define AUDIO_CLK_PDM_CLK		0x1C
++
++#endif /* __SND_SOC_STARFIVE_PDM_H */
+--- /dev/null
++++ b/sound/soc/starfive/pwmdac-pcm.c
+@@ -0,0 +1,232 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#include <linux/io.h>
++#include <linux/rcupdate.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include "pwmdac.h"
++
++#define BUFFER_BYTES_MAX	(3 * 2 * 8 * PERIOD_BYTES_MIN)
++#define PERIOD_BYTES_MIN	4096
++#define PERIODS_MIN		2
++
++static unsigned int sf_pwmdac_pcm_tx_8(struct sf_pwmdac_dev *dev,
++		struct snd_pcm_runtime *runtime, unsigned int tx_ptr,
++		bool *period_elapsed)
++{
++	const u8 (*p)[2] = (void *)runtime->dma_area;
++	unsigned int period_pos = tx_ptr % runtime->period_size;
++	int i;
++	u32 basedat = 0;
++
++	for (i = 0; i < dev->fifo_th; i++) {
++		basedat = (p[tx_ptr][0]<<8)|(p[tx_ptr][1] << 24);
++		iowrite32(basedat,dev->pwmdac_base + PWMDAC_WDATA);
++		period_pos++;
++		if (++tx_ptr >= runtime->buffer_size)
++			tx_ptr = 0;
++	}
++
++	*period_elapsed = period_pos >= runtime->period_size;
++
++	return tx_ptr;
++}
++
++
++static unsigned int sf_pwmdac_pcm_tx_16(struct sf_pwmdac_dev *dev,
++		struct snd_pcm_runtime *runtime, unsigned int tx_ptr,
++		bool *period_elapsed)
++{
++	const u16 (*p)[2] = (void *)runtime->dma_area;
++	unsigned int period_pos = tx_ptr % runtime->period_size;
++	int i;
++	u32 basedat = 0;
++
++	for (i = 0; i < dev->fifo_th; i++) {
++		basedat = (p[tx_ptr][0])|(p[tx_ptr][1] << 16);
++		iowrite32(basedat,dev->pwmdac_base + PWMDAC_WDATA);
++		period_pos++;
++		if (++tx_ptr >= runtime->buffer_size)
++			tx_ptr = 0;
++	}
++
++	*period_elapsed = period_pos >= runtime->period_size;
++	return tx_ptr;
++}
++
++static const struct snd_pcm_hardware sf_pcm_hardware = {
++	.info = SNDRV_PCM_INFO_INTERLEAVED |
++		SNDRV_PCM_INFO_MMAP |
++		SNDRV_PCM_INFO_MMAP_VALID |
++		SNDRV_PCM_INFO_BLOCK_TRANSFER,
++	.rates = SNDRV_PCM_RATE_16000,
++	.rate_min = 16000,
++	.rate_max = 16000,
++	.formats = SNDRV_PCM_FMTBIT_S16_LE,
++	.channels_min = 2,
++	.channels_max = 2,
++	.buffer_bytes_max = BUFFER_BYTES_MAX,
++	.period_bytes_min = PERIOD_BYTES_MIN,
++	.period_bytes_max = BUFFER_BYTES_MAX / PERIODS_MIN,
++	.periods_min = PERIODS_MIN,
++	.periods_max = BUFFER_BYTES_MAX / PERIOD_BYTES_MIN,
++	.fifo_size = 2,
++};
++
++static void sf_pcm_transfer(struct sf_pwmdac_dev *dev, bool push)
++{
++	struct snd_pcm_substream *substream;
++	bool active, period_elapsed;
++
++	rcu_read_lock();
++	if (push)
++		substream = rcu_dereference(dev->tx_substream);
++
++	active = substream && snd_pcm_running(substream);
++	if (active) {
++		unsigned int ptr;
++		unsigned int new_ptr;
++
++		if (push) {
++			ptr = READ_ONCE(dev->tx_ptr);
++			new_ptr = dev->tx_fn(dev, substream->runtime, ptr,
++					&period_elapsed);
++			cmpxchg(&dev->tx_ptr, ptr, new_ptr);
++		}
++
++		if (period_elapsed)
++			snd_pcm_period_elapsed(substream);
++	}
++	rcu_read_unlock();
++}
++
++void sf_pwmdac_pcm_push_tx(struct sf_pwmdac_dev *dev)
++{
++	sf_pcm_transfer(dev, true);
++}
++
++
++static int sf_pcm_open(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
++	struct sf_pwmdac_dev *dev = snd_soc_dai_get_drvdata(asoc_rtd_to_cpu(rtd, 0));
++
++	snd_soc_set_runtime_hwparams(substream, &sf_pcm_hardware);
++	snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIODS);
++	runtime->private_data = dev;
++
++	return 0;
++}
++
++
++static int sf_pcm_close(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream)
++{
++	synchronize_rcu();
++	return 0;
++}
++
++static int sf_pcm_hw_params(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream,
++			struct snd_pcm_hw_params *hw_params)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sf_pwmdac_dev *dev = runtime->private_data;
++
++	switch (params_channels(hw_params)) {
++	case 2:
++		break;
++	default:
++		dev_err(dev->dev, "invalid channels number\n");
++		return -EINVAL;
++	}
++
++	switch (params_format(hw_params)) {
++	case SNDRV_PCM_FORMAT_U8:
++	case SNDRV_PCM_FORMAT_S8:
++		dev->tx_fn = sf_pwmdac_pcm_tx_8;
++		break;
++	case SNDRV_PCM_FORMAT_S16_LE:
++		dev->tx_fn = sf_pwmdac_pcm_tx_16;
++		break;
++	default:
++		dev_err(dev->dev, "invalid format\n");
++		return -EINVAL;
++	}
++
++		return 0;
++}
++
++
++static int sf_pcm_trigger(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream, int cmd)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sf_pwmdac_dev *dev = runtime->private_data;
++	int ret = 0;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++			WRITE_ONCE(dev->tx_ptr, 0);
++			rcu_assign_pointer(dev->tx_substream, substream);
++		}
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++			rcu_assign_pointer(dev->tx_substream, NULL);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static snd_pcm_uframes_t sf_pcm_pointer(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sf_pwmdac_dev *dev = runtime->private_data;
++	snd_pcm_uframes_t pos;
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		pos = READ_ONCE(dev->tx_ptr);
++
++	return pos < runtime->buffer_size ? pos : 0;
++}
++
++static int sf_pcm_new(struct snd_soc_component *component,
++			struct snd_soc_pcm_runtime *rtd)
++{
++	size_t size = sf_pcm_hardware.buffer_bytes_max;
++
++	snd_pcm_set_managed_buffer_all(rtd->pcm,
++			SNDRV_DMA_TYPE_CONTINUOUS,
++			NULL, size, size);
++	return 0;
++}
++
++static const struct snd_soc_component_driver dw_pcm_component = {
++	.open		= sf_pcm_open,
++	.close		= sf_pcm_close,
++	.hw_params	= sf_pcm_hw_params,
++	.trigger	= sf_pcm_trigger,
++	.pointer	= sf_pcm_pointer,
++	.pcm_construct	= sf_pcm_new,
++};
++
++int sf_pwmdac_pcm_register(struct platform_device *pdev)
++{
++	return devm_snd_soc_register_component(&pdev->dev, &dw_pcm_component,
++					NULL, 0);
++}
+--- /dev/null
++++ b/sound/soc/starfive/pwmdac-transmitter.c
+@@ -0,0 +1,82 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/slab.h>
++#include <sound/soc.h>
++#include <sound/pcm.h>
++#include <sound/initval.h>
++#include <linux/of.h>
++
++#define DRV_NAME "pwmdac-dit"
++
++#define STUB_RATES	SNDRV_PCM_RATE_8000_192000
++#define STUB_FORMATS	(SNDRV_PCM_FMTBIT_S8|\
++			SNDRV_PCM_FMTBIT_U8      |\
++			SNDRV_PCM_FMTBIT_S16_LE  | \
++			SNDRV_PCM_FMTBIT_S20_3LE | \
++			SNDRV_PCM_FMTBIT_S24_LE  | \
++			SNDRV_PCM_FMTBIT_S32_LE)
++
++static const struct snd_soc_dapm_widget dit_widgets[] = {
++	SND_SOC_DAPM_OUTPUT("pwmdac-out"),
++};
++
++static const struct snd_soc_dapm_route dit_routes[] = {
++	{ "pwmdac-out", NULL, "Playback" },
++};
++
++static struct snd_soc_component_driver soc_codec_pwmdac_dit = {
++	.dapm_widgets		= dit_widgets,
++	.num_dapm_widgets	= ARRAY_SIZE(dit_widgets),
++	.dapm_routes		= dit_routes,
++	.num_dapm_routes	= ARRAY_SIZE(dit_routes),
++	.idle_bias_on		= 1,
++	.use_pmdown_time	= 1,
++	.endianness		= 1,
++	.non_legacy_dai_naming	= 1,
++};
++
++static struct snd_soc_dai_driver dit_stub_dai = {
++	.name		= "pwmdac-dit-hifi",
++	.playback 	= {
++		.stream_name	= "Playback",
++		.channels_min	= 1,
++		.channels_max	= 384,
++		.rates		= STUB_RATES,
++		.formats	= STUB_FORMATS,
++	},
++};
++
++static int pwmdac_dit_probe(struct platform_device *pdev)
++{
++
++	return devm_snd_soc_register_component(&pdev->dev,
++			&soc_codec_pwmdac_dit,
++			&dit_stub_dai, 1);
++}
++
++#ifdef CONFIG_OF
++static const struct of_device_id pwmdac_dit_dt_ids[] = {
++	{ .compatible = "linux,pwmdac-dit", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, pwmdac_dit_dt_ids);
++#endif
++
++static struct platform_driver pwmdac_dit_driver = {
++	.probe		= pwmdac_dit_probe,
++	.driver		= {
++		.name	= DRV_NAME,
++		.of_match_table = of_match_ptr(pwmdac_dit_dt_ids),
++	},
++};
++
++module_platform_driver(pwmdac_dit_driver);
++
++MODULE_AUTHOR("jenny.zhang <jenny.zhang@starfivetech.com>");
++MODULE_DESCRIPTION("pwmdac dummy codec driver");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform: starfive-pwmdac dummy codec");
+--- /dev/null
++++ b/sound/soc/starfive/pwmdac.c
+@@ -0,0 +1,901 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * PWMDAC driver for the StarFive JH7100 SoC
++ *
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#include <linux/clk.h>
++#include <linux/device.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/interrupt.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/pm_runtime.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/dmaengine_pcm.h>
++#include "pwmdac.h"
++#include <linux/kthread.h>
++
++struct ct_pwmdac {
++	char *name;
++	unsigned int vals;
++};
++
++static const struct ct_pwmdac pwmdac_ct_shift_bit[] = {
++	{ .name = "8bit", .vals = PWMDAC_SHIFT_8 },
++	{ .name = "10bit", .vals = PWMDAC_SHIFT_10 }
++};
++
++static const struct ct_pwmdac pwmdac_ct_duty_cycle[] = {
++	{ .name = "left", .vals = PWMDAC_CYCLE_LEFT },
++	{ .name = "right", .vals = PWMDAC_CYCLE_RIGHT },
++	{ .name = "center", .vals = PWMDAC_CYCLE_CENTER }
++};
++
++static const struct ct_pwmdac pwmdac_ct_data_mode[] = {
++	{ .name = "unsinged", .vals = UNSINGED_DATA },
++	{ .name = "inverter", .vals = INVERTER_DATA_MSB }
++};
++
++static const struct ct_pwmdac pwmdac_ct_lr_change[] = {
++	{ .name = "no_change", .vals = NO_CHANGE },
++	{ .name = "change", .vals = CHANGE }
++};
++
++static const struct ct_pwmdac pwmdac_ct_shift[] = {
++	{ .name = "left 0 bit", .vals = PWMDAC_DATA_LEFT_SHIFT_BIT_0 },
++	{ .name = "left 1 bit", .vals = PWMDAC_DATA_LEFT_SHIFT_BIT_1 },
++	{ .name = "left 2 bit", .vals = PWMDAC_DATA_LEFT_SHIFT_BIT_2 },
++	{ .name = "left 3 bit", .vals = PWMDAC_DATA_LEFT_SHIFT_BIT_3 },
++	{ .name = "left 4 bit", .vals = PWMDAC_DATA_LEFT_SHIFT_BIT_4 },
++	{ .name = "left 5 bit", .vals = PWMDAC_DATA_LEFT_SHIFT_BIT_5 },
++	{ .name = "left 6 bit", .vals = PWMDAC_DATA_LEFT_SHIFT_BIT_6 }
++};
++
++static int pwmdac_shift_bit_info(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_info *uinfo)
++{
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_shift_bit);
++
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_ENUMERATED;
++	uinfo->count = 1;
++	uinfo->value.enumerated.items = items;
++	if (uinfo->value.enumerated.item >= items) {
++		uinfo->value.enumerated.item = items - 1;
++	}
++	strcpy(uinfo->value.enumerated.name,
++			pwmdac_ct_shift_bit[uinfo->value.enumerated.item].name);
++
++	return 0;
++}
++static int pwmdac_shift_bit_get(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++	unsigned int item;
++
++	if (dev->shift_bit == pwmdac_ct_shift_bit[0].vals)
++		item = 0;
++	else
++		item = 1;
++
++	ucontrol->value.enumerated.item[0] = item;
++
++	return 0;
++}
++
++static int pwmdac_shift_bit_put(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++	int sel = ucontrol->value.enumerated.item[0];
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_shift_bit);
++
++	if (sel > items)
++		return 0;
++
++	switch (sel) {
++	case 1:
++		dev->shift_bit = pwmdac_ct_shift_bit[1].vals;
++		break;
++	default:
++		dev->shift_bit = pwmdac_ct_shift_bit[0].vals;
++		break;
++	}
++
++	return 0;
++}
++
++static int pwmdac_duty_cycle_info(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_info *uinfo)
++{
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_duty_cycle);
++
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_ENUMERATED;
++	uinfo->count = 1;
++	uinfo->value.enumerated.items = items;
++	if (uinfo->value.enumerated.item >= items)
++		uinfo->value.enumerated.item = items - 1;
++	strcpy(uinfo->value.enumerated.name,
++		pwmdac_ct_duty_cycle[uinfo->value.enumerated.item].name);
++
++	return 0;
++}
++
++static int pwmdac_duty_cycle_get(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++
++	ucontrol->value.enumerated.item[0] = dev->duty_cycle;
++	return 0;
++}
++
++static int pwmdac_duty_cycle_put(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++	int sel = ucontrol->value.enumerated.item[0];
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_duty_cycle);
++
++	if (sel > items)
++		return 0;
++
++	dev->duty_cycle = pwmdac_ct_duty_cycle[sel].vals;
++	return 0;
++}
++
++/*
++static int pwmdac_datan_info(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = 1;
++	uinfo->value.integer.min = 1;
++	uinfo->value.integer.max = PWMDAC_SAMPLE_CNT_511;
++	uinfo->value.integer.step = 1;
++	return 0;
++}
++
++static int pwmdac_datan_get(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++
++	ucontrol->value.integer.value[0] = dev->datan;
++
++	return 0;
++}
++
++static int pwmdac_datan_put(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++	int sel = ucontrol->value.integer.value[0];
++
++	if (sel > PWMDAC_SAMPLE_CNT_511)
++		return 0;
++
++	dev->datan = sel;
++
++	return 0;
++}
++*/
++
++static int pwmdac_data_mode_info(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_info *uinfo)
++{
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_data_mode);
++
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_ENUMERATED;
++	uinfo->count = 1;
++	uinfo->value.enumerated.items = items;
++	if (uinfo->value.enumerated.item >= items)
++		uinfo->value.enumerated.item = items - 1;
++	strcpy(uinfo->value.enumerated.name,
++		pwmdac_ct_data_mode[uinfo->value.enumerated.item].name);
++
++	return 0;
++}
++
++static int pwmdac_data_mode_get(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++
++	ucontrol->value.enumerated.item[0] = dev->data_mode;
++	return 0;
++}
++
++static int pwmdac_data_mode_put(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++	int sel = ucontrol->value.enumerated.item[0];
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_data_mode);
++
++	if (sel > items)
++		return 0;
++
++	dev->data_mode = pwmdac_ct_data_mode[sel].vals;
++	return 0;
++}
++
++static int pwmdac_shift_info(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_info *uinfo)
++{
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_shift);
++
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_ENUMERATED;
++	uinfo->count = 1;
++	uinfo->value.enumerated.items = items;
++	if (uinfo->value.enumerated.item >= items)
++		uinfo->value.enumerated.item = items - 1;
++	strcpy(uinfo->value.enumerated.name,
++		pwmdac_ct_shift[uinfo->value.enumerated.item].name);
++
++	return 0;
++}
++
++static int pwmdac_shift_get(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++	unsigned int item = dev->shift;
++
++	ucontrol->value.enumerated.item[0] = pwmdac_ct_shift[item].vals;
++	return 0;
++}
++
++static int pwmdac_shift_put(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++	int sel = ucontrol->value.enumerated.item[0];
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_shift);
++
++	if (sel > items)
++		return 0;
++
++	dev->shift = pwmdac_ct_shift[sel].vals;
++	return 0;
++}
++
++static int pwmdac_lr_change_info(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_info *uinfo)
++{
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_lr_change);
++
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_ENUMERATED;
++	uinfo->count = 1;
++	uinfo->value.enumerated.items = items;
++	if (uinfo->value.enumerated.item >= items)
++		uinfo->value.enumerated.item = items - 1;
++	strcpy(uinfo->value.enumerated.name,
++		pwmdac_ct_lr_change[uinfo->value.enumerated.item].name);
++
++	return 0;
++}
++
++static int pwmdac_lr_change_get(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++
++	ucontrol->value.enumerated.item[0] = dev->lr_change;
++	return 0;
++}
++
++static int pwmdac_lr_change_put(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_component *component = snd_kcontrol_chip(kcontrol);
++	struct sf_pwmdac_dev *dev = snd_soc_component_get_drvdata(component);
++	int sel = ucontrol->value.enumerated.item[0];
++	unsigned int items = ARRAY_SIZE(pwmdac_ct_lr_change);
++
++	if (sel > items)
++		return 0;
++
++	dev->lr_change = pwmdac_ct_lr_change[sel].vals;
++	return 0;
++}
++
++static inline void pwmdc_write_reg(void __iomem *io_base, int reg, u32 val)
++{
++	writel(val, io_base + reg);
++}
++
++static inline u32 pwmdc_read_reg(void __iomem *io_base, int reg)
++{
++	return readl(io_base + reg);
++}
++
++/*
++ * 32bit-4byte
++*/
++static void pwmdac_set_ctrl_enable(struct sf_pwmdac_dev *dev)
++{
++	u32 date;
++	date = pwmdc_read_reg(dev->pwmdac_base, PWMDAC_CTRL);
++	pwmdc_write_reg(dev->pwmdac_base, PWMDAC_CTRL, date | BIT(0) );
++}
++
++/*
++ * 32bit-4byte
++*/
++static void pwmdac_set_ctrl_disable(struct sf_pwmdac_dev *dev)
++{
++	u32 date;
++	date = pwmdc_read_reg(dev->pwmdac_base, PWMDAC_CTRL);
++	pwmdc_write_reg(dev->pwmdac_base, PWMDAC_CTRL, date & ~ BIT(0));
++}
++
++/*
++ * 8:8-bit
++ * 10:10-bit
++*/
++static void pwmdac_set_ctrl_shift(struct sf_pwmdac_dev *dev, u8 data)
++{
++	u32 value = 0;
++
++	if (data == 8) {
++		value = (~((~value) | 0x02));
++		pwmdc_write_reg(dev->pwmdac_base , PWMDAC_CTRL, value);
++	}
++	else if(data == 10){
++		value |= 0x02;
++		pwmdc_write_reg(dev->pwmdac_base , PWMDAC_CTRL, value);
++	}
++}
++
++/*
++ * 00:left
++ * 01:right
++ * 10:center
++*/
++static void pwmdac_set_ctrl_dutyCycle(struct sf_pwmdac_dev *dev, u8 data)
++{
++	u32 value = 0;
++
++	value = pwmdc_read_reg(dev->pwmdac_base , PWMDAC_CTRL);
++	if (data == 0) { //left
++		value = (~((~value) | (0x03<<2)));
++		pwmdc_write_reg(dev->pwmdac_base , PWMDAC_CTRL, value);
++	}
++	else if (data == 1) { //right
++		value = (~((~value) | (0x01<<3))) | (0x01<<2);
++		pwmdc_write_reg(dev->pwmdac_base , PWMDAC_CTRL, value);
++	}
++	else if (data == 2) { //center
++		value = (~((~value) | (0x01<<2))) | (0x01<<3);
++		pwmdc_write_reg(dev->pwmdac_base , PWMDAC_CTRL, value);
++	}
++}
++
++
++static void pwmdac_set_ctrl_N(struct sf_pwmdac_dev *dev, u16 data)
++{
++	u32 value = 0;
++
++	value = pwmdc_read_reg(dev->pwmdac_base , PWMDAC_CTRL);
++	pwmdc_write_reg(dev->pwmdac_base , PWMDAC_CTRL, (value & 0xF) | ((data - 1) << 4));
++}
++
++
++static void pwmdac_LR_data_change(struct sf_pwmdac_dev *dev, u8 data)
++{
++	u32 value = 0;
++
++	value = pwmdc_read_reg(dev->pwmdac_base , PWMDAC_CTRL);
++	switch (data) {
++	case NO_CHANGE:
++		value &= (~SFC_PWMDAC_LEFT_RIGHT_DATA_CHANGE);
++		break;
++	case CHANGE:
++		value |= SFC_PWMDAC_LEFT_RIGHT_DATA_CHANGE;
++		break;
++	}
++	pwmdc_write_reg(dev->pwmdac_base, PWMDAC_CTRL, value);
++}
++
++static void pwmdac_data_mode(struct sf_pwmdac_dev *dev, u8 data)
++{
++	u32 value = 0;
++
++	value = pwmdc_read_reg(dev->pwmdac_base , PWMDAC_CTRL);
++	if (data == UNSINGED_DATA) {
++		value &= (~SFC_PWMDAC_DATA_MODE);
++	}
++	else if (data == INVERTER_DATA_MSB) {
++		value |= SFC_PWMDAC_DATA_MODE;
++	}
++	pwmdc_write_reg(dev->pwmdac_base,PWMDAC_CTRL, value);
++}
++
++static int pwmdac_data_shift(struct sf_pwmdac_dev *dev,u8 data)
++{
++	u32 value = 0;
++
++	if ((data < PWMDAC_DATA_LEFT_SHIFT_BIT_0) || (data > PWMDAC_DATA_LEFT_SHIFT_BIT_7)) {
++		return -1;
++	}
++
++	value = pwmdc_read_reg(dev->pwmdac_base , PWMDAC_CTRL);
++	value &= ( ~ ( PWMDAC_DATA_LEFT_SHIFT_BIT_ALL << 15 ) );
++	value |= (data<<15);
++	pwmdc_write_reg(dev->pwmdac_base , PWMDAC_CTRL, value);
++	return 0;
++}
++
++static int get_pwmdac_fifo_state(struct sf_pwmdac_dev *dev)
++{
++	u32 value;
++
++	value = pwmdc_read_reg(dev->pwmdac_base , PWMDAC_SATAE);
++	if ((value & 0x02) == 0)
++		return FIFO_UN_FULL;
++
++	return FIFO_FULL;
++}
++
++
++static void pwmdac_set(struct sf_pwmdac_dev *dev)
++{
++	///8-bit + left + N=16
++	pwmdac_set_ctrl_shift(dev, dev->shift_bit);
++	pwmdac_set_ctrl_dutyCycle(dev, dev->duty_cycle);
++	pwmdac_set_ctrl_N(dev, dev->datan);
++	pwmdac_set_ctrl_enable(dev);
++
++	pwmdac_LR_data_change(dev, dev->lr_change);
++	pwmdac_data_mode(dev, dev->data_mode);
++	if (dev->shift) {
++		pwmdac_data_shift(dev, dev->shift);
++	}
++}
++
++static void pwmdac_stop(struct sf_pwmdac_dev *dev)
++{
++	pwmdac_set_ctrl_disable(dev);
++}
++
++static int pwmdac_config(struct sf_pwmdac_dev *dev)
++{
++	switch (dev->mode) {
++	case shift_8Bit_unsigned:
++	case shift_8Bit_unsigned_dataShift:
++		/* 8 bit, unsigned */
++		dev->shift_bit	= PWMDAC_SHIFT_8;
++		dev->duty_cycle	= PWMDAC_CYCLE_CENTER;
++		dev->datan		= PWMDAC_SAMPLE_CNT_8;
++		dev->data_mode	= UNSINGED_DATA;
++		break;
++
++	case shift_8Bit_inverter:
++	case shift_8Bit_inverter_dataShift:
++		/* 8 bit, invert */
++		dev->shift_bit	= PWMDAC_SHIFT_8;
++		dev->duty_cycle	= PWMDAC_CYCLE_CENTER;
++		dev->datan		= PWMDAC_SAMPLE_CNT_8;
++		dev->data_mode	= INVERTER_DATA_MSB;
++		break;
++
++	case shift_10Bit_unsigned:
++	case shift_10Bit_unsigned_dataShift:
++		/* 10 bit, unsigend */
++		dev->shift_bit	= PWMDAC_SHIFT_10;
++		dev->duty_cycle	= PWMDAC_CYCLE_CENTER;
++		dev->datan		= PWMDAC_SAMPLE_CNT_8;
++		dev->data_mode	= UNSINGED_DATA;
++		break;
++
++	case shift_10Bit_inverter:
++	case shift_10Bit_inverter_dataShift:
++		/* 10 bit, invert */
++		dev->shift_bit	= PWMDAC_SHIFT_10;
++		dev->duty_cycle	= PWMDAC_CYCLE_CENTER;
++		dev->datan		= PWMDAC_SAMPLE_CNT_8;
++		dev->data_mode	= INVERTER_DATA_MSB;
++		break;
++
++	default:
++		return -1;
++	}
++
++	if ((dev->mode == shift_8Bit_unsigned_dataShift) || (dev->mode == shift_8Bit_inverter_dataShift)
++		|| (dev->mode == shift_10Bit_unsigned_dataShift) || (dev->mode == shift_10Bit_inverter_dataShift)) {
++		dev->shift = 4; /*0~7*/
++	} else {
++		dev->shift = 0;
++	}
++	dev->lr_change = NO_CHANGE;
++	return 0;
++}
++
++static int sf_pwmdac_prepare(struct snd_pcm_substream *substream,
++			struct snd_soc_dai *dai)
++{
++	//struct sf_pwmdac_dev *dev = snd_soc_dai_get_drvdata(dai);
++	//pwmdac_set(dev);
++	return 0;
++}
++
++static int pwmdac_tx_thread(void *dev)
++{
++	struct sf_pwmdac_dev *pwmdac_dev = (struct sf_pwmdac_dev *)dev;
++
++	set_current_state(TASK_INTERRUPTIBLE);
++	while (!schedule_timeout(usecs_to_jiffies(50))) {
++		if (pwmdac_dev->tx_thread_exit)
++			break;
++		if (get_pwmdac_fifo_state(pwmdac_dev)==0) {
++			sf_pwmdac_pcm_push_tx(pwmdac_dev);
++		}
++
++		set_current_state(TASK_INTERRUPTIBLE);
++	}
++
++	pwmdac_dev->tx_thread = NULL;
++	return 0;
++}
++
++static int sf_pwmdac_trigger(struct snd_pcm_substream *substream,
++		int cmd, struct snd_soc_dai *dai)
++{
++	struct sf_pwmdac_dev *dev = snd_soc_dai_get_drvdata(dai);
++	int ret = 0;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		dev->active++;
++		pwmdac_set(dev);
++		if (dev->use_pio) {
++			dev->tx_thread = kthread_create(pwmdac_tx_thread, (void *)dev, "pwmdac");
++			if (IS_ERR(dev->tx_thread)) {
++				return PTR_ERR(dev->tx_thread);
++			}
++			wake_up_process(dev->tx_thread);
++			dev->tx_thread_exit = 0;
++		}
++		break;
++
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		dev->active--;
++		pwmdac_stop(dev);
++		if (dev->use_pio) {
++			if(dev->tx_thread) {
++				dev->tx_thread_exit = 1;
++			}
++		}
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++	return ret;
++
++	return 0;
++}
++
++static int sf_pwmdac_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct sf_pwmdac_dev *dev = dev_get_drvdata(dai->dev);
++
++	dev->play_dma_data.addr = dev->mapbase + PWMDAC_WDATA;
++
++	switch (params_channels(params)) {
++	case 2:
++		dev->play_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
++		break;
++	case 1:
++		dev->play_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
++		break;
++	default:
++		dev_err(dai->dev, "%d channels not supported\n",
++				params_channels(params));
++		return -EINVAL;
++	}
++
++	dev->play_dma_data.fifo_size = 1;
++	dev->play_dma_data.maxburst = 16;
++
++	snd_soc_dai_init_dma_data(dai, &dev->play_dma_data, NULL);
++	snd_soc_dai_set_drvdata(dai, dev);
++
++	return 0;
++}
++
++static int sf_pwmdac_clks_get(struct platform_device *pdev,
++				struct sf_pwmdac_dev *dev)
++{
++	static struct clk_bulk_data clks[] = {
++		{ .id = "audio_root" },		//clock-names in dts file
++		{ .id = "audio_src" },
++		{ .id = "audio_12288" },
++		{ .id = "dma1p_ahb" },
++		{ .id = "pwmdac_apb" },
++		{ .id = "dac_mclk" },
++	};
++	int ret = devm_clk_bulk_get(&pdev->dev, ARRAY_SIZE(clks), clks);
++	dev->clk_audio_root = clks[0].clk;
++	dev->clk_audio_src = clks[1].clk;
++	dev->clk_audio_12288 = clks[2].clk;
++	dev->clk_dma1p_ahb = clks[3].clk;
++	dev->clk_pwmdac_apb = clks[4].clk;
++	dev->clk_dac_mclk = clks[5].clk;
++
++	return ret;
++}
++
++static int sf_pwmdac_resets_get(struct platform_device *pdev,
++				struct sf_pwmdac_dev *dev)
++{
++	struct reset_control_bulk_data resets[] = {
++		{ .id = "apb_bus" },
++		{ .id = "dma1p_ahb" },
++		{ .id = "apb_pwmdac" },
++	};
++        int ret = devm_reset_control_bulk_get_exclusive(&pdev->dev, ARRAY_SIZE(resets), resets);
++	if (ret)
++		return ret;
++
++	dev->rst_apb_bus = resets[0].rstc;
++	dev->rst_dma1p_ahb = resets[1].rstc;
++	dev->rst_apb_pwmdac = resets[2].rstc;
++	return 0;
++}
++
++static int sf_pwmdac_clk_init(struct platform_device *pdev,
++				struct sf_pwmdac_dev *dev)
++{
++	int ret = 0;
++
++	ret = clk_prepare_enable(dev->clk_audio_root);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to prepare enable clk_audio_root\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = clk_prepare_enable(dev->clk_audio_src);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to prepare enable clk_audio_src\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = clk_prepare_enable(dev->clk_audio_12288);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to prepare enable clk_audio_12288\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = clk_prepare_enable(dev->clk_dma1p_ahb);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to prepare enable clk_dma1p_ahb\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = reset_control_deassert(dev->rst_apb_bus);
++	if (ret) {
++		printk(KERN_INFO "failed to deassert apb_bus\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = reset_control_deassert(dev->rst_dma1p_ahb);
++	if (ret) {
++		printk(KERN_INFO "failed to deassert dma1p_ahb\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = clk_set_rate(dev->clk_audio_src, 12288000);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to set 12.288 MHz rate for clk_audio_src\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = reset_control_assert(dev->rst_apb_pwmdac);
++	if (ret) {
++		printk(KERN_INFO "failed to assert apb_pwmdac\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = clk_prepare_enable(dev->clk_dac_mclk);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to prepare enable clk_dac_mclk\n");
++		goto err_clk_pwmdac;
++	}
++
++	/* we want 4096kHz but the clock driver always rounds down so add a little slack */
++	ret = clk_set_rate(dev->clk_dac_mclk, 4096000 + 64);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to set 4096kHz rate for clk_dac_mclk\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = clk_prepare_enable(dev->clk_pwmdac_apb);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to prepare enable clk_pwmdac_apb\n");
++		goto err_clk_pwmdac;
++	}
++
++	ret = reset_control_deassert(dev->rst_apb_pwmdac);
++	if (ret) {
++		printk(KERN_INFO "failed to deassert apb_pwmdac\n");
++		goto err_clk_pwmdac;
++	}
++	printk(KERN_INFO "Initialize pwmdac...success\n");
++
++err_clk_pwmdac:
++	return ret;
++}
++
++static int sf_pwmdac_dai_probe(struct snd_soc_dai *dai)
++{
++	struct sf_pwmdac_dev *dev = dev_get_drvdata(dai->dev);
++
++	dev->play_dma_data.addr = dev->mapbase + PWMDAC_WDATA;
++	dev->play_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
++	dev->play_dma_data.fifo_size = 1;
++	dev->play_dma_data.maxburst = 16;
++
++	snd_soc_dai_init_dma_data(dai, &dev->play_dma_data, NULL);
++	snd_soc_dai_set_drvdata(dai, dev);
++
++	return 0;
++}
++#define SOC_PWMDAC_ENUM_DECL(xname, xinfo, xget, xput) \
++{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
++	.info = xinfo, .get = xget, \
++	.put = xput,}
++static const struct snd_kcontrol_new pwmdac_snd_controls[] = {
++	SOC_PWMDAC_ENUM_DECL("shift_bit", pwmdac_shift_bit_info,
++		pwmdac_shift_bit_get, pwmdac_shift_bit_put),
++	SOC_PWMDAC_ENUM_DECL("duty_cycle", pwmdac_duty_cycle_info,
++		pwmdac_duty_cycle_get, pwmdac_duty_cycle_put),
++	SOC_PWMDAC_ENUM_DECL("data_mode", pwmdac_data_mode_info,
++		pwmdac_data_mode_get, pwmdac_data_mode_put),
++	SOC_PWMDAC_ENUM_DECL("shift", pwmdac_shift_info,
++		pwmdac_shift_get, pwmdac_shift_put),
++	SOC_PWMDAC_ENUM_DECL("lr_change", pwmdac_lr_change_info,
++		pwmdac_lr_change_get, pwmdac_lr_change_put),
++};
++static int pwmdac_probe(struct snd_soc_component *component)
++{
++//	struct sf_pwmdac_dev *priv = snd_soc_component_get_drvdata(component);
++	snd_soc_add_component_controls(component, pwmdac_snd_controls,
++				ARRAY_SIZE(pwmdac_snd_controls));
++	return 0;
++}
++
++
++static const struct snd_soc_dai_ops sf_pwmdac_dai_ops = {
++	.hw_params	= sf_pwmdac_hw_params,
++	.prepare	= sf_pwmdac_prepare,
++	.trigger	= sf_pwmdac_trigger,
++};
++
++static const struct snd_soc_component_driver sf_pwmdac_component = {
++	.name		= "sf-pwmdac",
++	.probe		= pwmdac_probe,
++};
++
++static struct snd_soc_dai_driver pwmdac_dai = {
++	.name = "pwmdac",
++	.id = 0,
++	.probe	= sf_pwmdac_dai_probe,
++	.playback = {
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = SNDRV_PCM_RATE_16000,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE,
++	},
++	.ops = &sf_pwmdac_dai_ops,
++};
++
++static int sf_pwmdac_probe(struct platform_device *pdev)
++{
++	struct sf_pwmdac_dev *dev;
++	struct resource *res;
++	int ret;
++
++	dev = devm_kzalloc(&pdev->dev, sizeof(*dev), GFP_KERNEL);
++	if (!dev)
++		return -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	dev->mapbase = res->start;
++	dev->pwmdac_base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(dev->pwmdac_base))
++		return PTR_ERR(dev->pwmdac_base);
++
++	ret = sf_pwmdac_clks_get(pdev, dev);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to get audio clock\n");
++		return ret;
++	}
++
++	ret = sf_pwmdac_resets_get(pdev, dev);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to get audio reset controls\n");
++		return ret;
++        }
++
++	ret = sf_pwmdac_clk_init(pdev, dev);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to enable audio clock\n");
++		return ret;
++	}
++
++	dev->dev = &pdev->dev;
++	dev->mode = shift_8Bit_inverter;
++	dev->fifo_th = 1;//8byte
++	pwmdac_config(dev);
++
++	dev->use_pio = false;
++	dev_set_drvdata(&pdev->dev, dev);
++	ret = devm_snd_soc_register_component(&pdev->dev, &sf_pwmdac_component,
++					 &pwmdac_dai, 1);
++	if (ret != 0) {
++		dev_err(&pdev->dev, "not able to register dai\n");
++		return ret;
++	}
++
++	if (dev->use_pio) {
++		ret = sf_pwmdac_pcm_register(pdev);
++	} else {
++		ret = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL,
++				0);
++	}
++	return 0;
++}
++
++
++static int sf_pwmdac_remove(struct platform_device *pdev)
++{
++	return 0;
++}
++
++#ifdef CONFIG_OF
++static const struct of_device_id sf_pwmdac_of_match[] = {
++	{ .compatible = "starfive,pwmdac",	 },
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, sf_pwmdac_of_match);
++#endif
++
++
++static struct platform_driver sf_pwmdac_driver = {
++	.probe		= sf_pwmdac_probe,
++	.remove		= sf_pwmdac_remove,
++	.driver		= {
++		.name	= "sf-pwmdac",
++		.of_match_table = of_match_ptr(sf_pwmdac_of_match),
++	},
++};
++
++module_platform_driver(sf_pwmdac_driver);
++
++MODULE_AUTHOR("jenny.zhang <jenny.zhang@starfivetech.com>");
++MODULE_LICENSE("GPL v2");
++MODULE_DESCRIPTION("starfive pwmdac SoC Interface");
++MODULE_ALIAS("platform:starfive-pwmdac");
+--- /dev/null
++++ b/sound/soc/starfive/pwmdac.h
+@@ -0,0 +1,153 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#ifndef __SND_SOC_STARFIVE_PWMDAC_H
++#define __SND_SOC_STARFIVE_PWMDAC_H
++
++#include <linux/clk.h>
++#include <linux/reset.h>
++#include <linux/device.h>
++#include <linux/types.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/pcm.h>
++
++#define PWMDAC_WDATA	0	// PWMDAC_BASE_ADDR
++#define PWMDAC_CTRL	0x04	// PWMDAC_BASE_ADDR + 0x04
++#define PWMDAC_SATAE	0x08	// PWMDAC_BASE_ADDR + 0x08
++#define PWMDAC_RESERVED	0x0C	// PWMDAC_BASE_ADDR + 0x0C
++
++#define SFC_PWMDAC_SHIFT	BIT(1)
++#define SFC_PWMDAC_DUTY_CYCLE	BIT(2)
++#define SFC_PWMDAC_CNT_N	BIT(4)
++
++#define SFC_PWMDAC_LEFT_RIGHT_DATA_CHANGE	BIT(13)
++#define SFC_PWMDAC_DATA_MODE			BIT(14)
++
++#define FIFO_UN_FULL	0
++#define FIFO_FULL	1
++
++enum pwmdac_lr_change{
++	NO_CHANGE = 0,
++	CHANGE,
++};
++
++enum pwmdac_d_mode{
++	UNSINGED_DATA = 0,
++	INVERTER_DATA_MSB,
++};
++
++enum pwmdac_shift_bit{
++	PWMDAC_SHIFT_8 = 8,	/* pwmdac shift 8 bit */
++	PWMDAC_SHIFT_10 = 10,	/* pwmdac shift 10 bit */
++};
++
++enum pwmdac_duty_cycle{
++	PWMDAC_CYCLE_LEFT = 0,		/* pwmdac duty cycle left */
++	PWMDAC_CYCLE_RIGHT = 1,		/* pwmdac duty cycle right */
++	PWMDAC_CYCLE_CENTER = 2,	/* pwmdac duty cycle center */
++};
++
++/*sample count [12:4] <511*/
++enum pwmdac_sample_count{
++	PWMDAC_SAMPLE_CNT_1 = 1,
++	PWMDAC_SAMPLE_CNT_2,
++	PWMDAC_SAMPLE_CNT_3,
++	PWMDAC_SAMPLE_CNT_4,
++	PWMDAC_SAMPLE_CNT_5,
++	PWMDAC_SAMPLE_CNT_6,
++	PWMDAC_SAMPLE_CNT_7,
++	PWMDAC_SAMPLE_CNT_8 = 1,	//(32.468/8) == (12.288/3) == 4.096
++	PWMDAC_SAMPLE_CNT_9,
++	PWMDAC_SAMPLE_CNT_10,
++	PWMDAC_SAMPLE_CNT_11,
++	PWMDAC_SAMPLE_CNT_12,
++	PWMDAC_SAMPLE_CNT_13,
++	PWMDAC_SAMPLE_CNT_14,
++	PWMDAC_SAMPLE_CNT_15,
++	PWMDAC_SAMPLE_CNT_16,
++	PWMDAC_SAMPLE_CNT_17,
++	PWMDAC_SAMPLE_CNT_18,
++	PWMDAC_SAMPLE_CNT_19,
++	PWMDAC_SAMPLE_CNT_20 = 20,
++	PWMDAC_SAMPLE_CNT_30 = 30,
++	PWMDAC_SAMPLE_CNT_511 = 511,
++};
++
++
++enum data_shift{
++	PWMDAC_DATA_LEFT_SHIFT_BIT_0 = 0,
++	PWMDAC_DATA_LEFT_SHIFT_BIT_1,
++	PWMDAC_DATA_LEFT_SHIFT_BIT_2,
++	PWMDAC_DATA_LEFT_SHIFT_BIT_3,
++	PWMDAC_DATA_LEFT_SHIFT_BIT_4,
++	PWMDAC_DATA_LEFT_SHIFT_BIT_5,
++	PWMDAC_DATA_LEFT_SHIFT_BIT_6,
++	PWMDAC_DATA_LEFT_SHIFT_BIT_7,
++	PWMDAC_DATA_LEFT_SHIFT_BIT_ALL,
++};
++
++enum pwmdac_config_list{
++	shift_8Bit_unsigned = 0,
++	shift_8Bit_unsigned_dataShift,
++	shift_10Bit_unsigned,
++	shift_10Bit_unsigned_dataShift,
++
++	shift_8Bit_inverter,
++	shift_8Bit_inverter_dataShift,
++	shift_10Bit_inverter,
++	shift_10Bit_inverter_dataShift,
++};
++
++struct sf_pwmdac_dev {
++	void __iomem *pwmdac_base;
++	resource_size_t	mapbase;
++	u8  mode;
++	u8 shift_bit;
++	u8 duty_cycle;
++	u8 datan;
++	u8 data_mode;
++	u8 lr_change;
++	u8 shift;
++	u8 fifo_th;
++	bool use_pio;
++	spinlock_t lock;
++	int active;
++
++	struct clk *clk_audio_root;
++	struct clk *clk_audio_src;
++	struct clk *clk_audio_12288;
++	struct clk *clk_dma1p_ahb;
++	struct clk *clk_pwmdac_apb;
++	struct clk *clk_dac_mclk;
++	struct reset_control *rst_apb_bus;
++	struct reset_control *rst_dma1p_ahb;
++	struct reset_control *rst_apb_pwmdac;
++
++	struct device *dev;
++	struct snd_dmaengine_dai_dma_data play_dma_data;
++	struct snd_pcm_substream __rcu *tx_substream;
++	unsigned int (*tx_fn)(struct sf_pwmdac_dev *dev,
++			struct snd_pcm_runtime *runtime, unsigned int tx_ptr,
++			bool *period_elapsed);
++	unsigned int tx_ptr;
++	struct task_struct *tx_thread;
++	bool tx_thread_exit;
++};
++
++
++
++#if IS_ENABLED(CONFIG_SND_STARFIVE_PWMDAC_PCM)
++void sf_pwmdac_pcm_push_tx(struct sf_pwmdac_dev *dev);
++void sf_pwmdac_pcm_pop_rx(struct sf_pwmdac_dev *dev);
++int sf_pwmdac_pcm_register(struct platform_device *pdev);
++#else
++void sf_pwmdac_pcm_push_tx(struct sf_pwmdac_dev *dev) { }
++void sf_pwmdac_pcm_pop_rx(struct sf_pwmdac_dev *dev) { }
++int sf_pwmdac_pcm_register(struct platform_device *pdev)
++{
++	return -EINVAL;
++}
++#endif
++
++#endif
+--- /dev/null
++++ b/sound/soc/starfive/spdif-pcm.c
+@@ -0,0 +1,288 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#include <linux/io.h>
++#include <linux/rcupdate.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++
++#include "spdif.h"
++
++#define BUFFER_BYTES_MAX	(3 * 2 * 8 * PERIOD_BYTES_MIN)
++#define PERIOD_BYTES_MIN	4096
++#define PERIODS_MIN			2
++
++static unsigned int sf_spdif_pcm_tx(struct sf_spdif_dev *dev,
++		struct snd_pcm_runtime *runtime, unsigned int tx_ptr,
++		bool *period_elapsed, snd_pcm_format_t format)
++{
++	const u16 (*p16)[2] = (void *)runtime->dma_area;
++	const u32 (*p32)[2] = (void *)runtime->dma_area;
++	u32 data[2];
++	unsigned int period_pos = tx_ptr % runtime->period_size;
++	int i;
++
++	for (i = 0; i < dev->fifo_th; i++) {
++		if (SNDRV_PCM_FORMAT_S16_LE == format) {
++			data[0] = p16[tx_ptr][0];
++			data[1] = p16[tx_ptr][1];
++			data[0] = data[0]<<8;
++			data[1] = data[1]<<8;
++		} else if (SNDRV_PCM_FORMAT_S24_LE == format) {
++			data[0] = p32[tx_ptr][0];
++			data[1] = p32[tx_ptr][1];
++		} else if (SNDRV_PCM_FORMAT_S32_LE == format) {
++			data[0] = p32[tx_ptr][0];
++			data[1] = p32[tx_ptr][1];
++			data[0] = data[0]>>8;
++			data[1] = data[1]>>8;
++		}
++
++		iowrite32(data[0], dev->spdif_base + SPDIF_FIFO_ADDR);
++		iowrite32(data[1], dev->spdif_base + SPDIF_FIFO_ADDR);
++		period_pos++;
++		if (++tx_ptr >= runtime->buffer_size) {
++			tx_ptr = 0;
++		}
++	}
++
++	*period_elapsed = period_pos >= runtime->period_size;
++	return tx_ptr;
++}
++
++static unsigned int sf_spdif_pcm_rx(struct sf_spdif_dev *dev,
++		struct snd_pcm_runtime *runtime, unsigned int rx_ptr,
++		bool *period_elapsed, snd_pcm_format_t format)
++{
++	u16 (*p16)[2] = (void *)runtime->dma_area;
++	u32 (*p32)[2] = (void *)runtime->dma_area;
++	u32 data[2];
++	unsigned int period_pos = rx_ptr % runtime->period_size;
++	int i;
++
++	for (i = 0; i < dev->fifo_th; i++) {
++		data[0] = ioread32(dev->spdif_base + SPDIF_FIFO_ADDR);
++		data[1] = ioread32(dev->spdif_base + SPDIF_FIFO_ADDR);
++		if (SNDRV_PCM_FORMAT_S16_LE == format) {
++			p16[rx_ptr][0] = data[0]>>8;
++			p16[rx_ptr][1] = data[1]>>8;
++		} else if (SNDRV_PCM_FORMAT_S24_LE == format) {
++			p32[rx_ptr][0] = data[0];
++			p32[rx_ptr][1] = data[1];
++		} else if (SNDRV_PCM_FORMAT_S32_LE == format) {
++			p32[rx_ptr][0] = data[0]<<8;
++			p32[rx_ptr][1] = data[1]<<8;
++		}
++
++		period_pos++;
++		if (++rx_ptr >= runtime->buffer_size)
++			rx_ptr = 0;
++	}
++
++	*period_elapsed = period_pos >= runtime->period_size;
++	return rx_ptr;
++}
++
++static const struct snd_pcm_hardware sf_pcm_hardware = {
++	.info = SNDRV_PCM_INFO_INTERLEAVED |
++		SNDRV_PCM_INFO_MMAP |
++		SNDRV_PCM_INFO_MMAP_VALID |
++		SNDRV_PCM_INFO_BLOCK_TRANSFER,
++	.rates = SNDRV_PCM_RATE_8000 |
++		SNDRV_PCM_RATE_11025 |
++		SNDRV_PCM_RATE_16000 |
++		SNDRV_PCM_RATE_22050 |
++		SNDRV_PCM_RATE_32000 |
++		SNDRV_PCM_RATE_44100 |
++		SNDRV_PCM_RATE_48000,
++	.rate_min = 8000,
++	.rate_max = 48000,
++	.formats = SNDRV_PCM_FMTBIT_S16_LE |
++		SNDRV_PCM_FMTBIT_S24_LE |
++		SNDRV_PCM_FMTBIT_S32_LE,
++	.channels_min = 2,
++	.channels_max = 2,
++	.buffer_bytes_max = BUFFER_BYTES_MAX,
++	.period_bytes_min = PERIOD_BYTES_MIN,
++	.period_bytes_max = BUFFER_BYTES_MAX / PERIODS_MIN,
++	.periods_min = PERIODS_MIN,
++	.periods_max = BUFFER_BYTES_MAX / PERIOD_BYTES_MIN,
++	.fifo_size = 16,
++};
++
++static void sf_spdif_pcm_transfer(struct sf_spdif_dev *dev, bool push)
++{
++	struct snd_pcm_substream *substream;
++	bool active, period_elapsed;
++
++	rcu_read_lock();
++	if (push)
++		substream = rcu_dereference(dev->tx_substream);
++	else
++		substream = rcu_dereference(dev->rx_substream);
++	active = substream && snd_pcm_running(substream);
++	if (active) {
++		unsigned int ptr;
++		unsigned int new_ptr;
++
++		if (push) {
++			ptr = READ_ONCE(dev->tx_ptr);
++			new_ptr = dev->tx_fn(dev, substream->runtime, ptr,
++					&period_elapsed, dev->format);
++			cmpxchg(&dev->tx_ptr, ptr, new_ptr);
++		} else {
++			ptr = READ_ONCE(dev->rx_ptr);
++			new_ptr = dev->rx_fn(dev, substream->runtime, ptr,
++					&period_elapsed, dev->format);
++			cmpxchg(&dev->rx_ptr, ptr, new_ptr);
++		}
++
++		if (period_elapsed)
++			snd_pcm_period_elapsed(substream);
++	}
++	rcu_read_unlock();
++}
++
++void sf_spdif_pcm_push_tx(struct sf_spdif_dev *dev)
++{
++	sf_spdif_pcm_transfer(dev, true);
++}
++
++void sf_spdif_pcm_pop_rx(struct sf_spdif_dev *dev)
++{
++	sf_spdif_pcm_transfer(dev, false);
++}
++
++static int sf_pcm_open(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
++	struct sf_spdif_dev *dev = snd_soc_dai_get_drvdata(asoc_rtd_to_cpu(rtd, 0));
++
++	snd_soc_set_runtime_hwparams(substream, &sf_pcm_hardware);
++	snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIODS);
++	runtime->private_data = dev;
++
++	return 0;
++}
++
++static int sf_pcm_close(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream)
++{
++	synchronize_rcu();
++	return 0;
++}
++
++static int sf_pcm_hw_params(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream,
++			struct snd_pcm_hw_params *hw_params)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sf_spdif_dev *dev = runtime->private_data;
++
++	switch (params_channels(hw_params)) {
++	case 2:
++		break;
++	default:
++		dev_err(dev->dev, "invalid channels number\n");
++		return -EINVAL;
++	}
++
++	dev->format = params_format(hw_params);
++	switch (dev->format) {
++	case SNDRV_PCM_FORMAT_S16_LE:
++	case SNDRV_PCM_FORMAT_S24_LE:
++	case SNDRV_PCM_FORMAT_S32_LE:
++		break;
++	default:
++		dev_err(dev->dev, "invalid format\n");
++		return -EINVAL;
++	}
++
++	dev->tx_fn = sf_spdif_pcm_tx;
++	dev->rx_fn = sf_spdif_pcm_rx;
++
++	return 0;
++}
++
++static int sf_pcm_trigger(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream, int cmd)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sf_spdif_dev *dev = runtime->private_data;
++	int ret = 0;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++			WRITE_ONCE(dev->tx_ptr, 0);
++			rcu_assign_pointer(dev->tx_substream, substream);
++		} else {
++			WRITE_ONCE(dev->rx_ptr, 0);
++			rcu_assign_pointer(dev->rx_substream, substream);
++		}
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++			rcu_assign_pointer(dev->tx_substream, NULL);
++		else
++			rcu_assign_pointer(dev->rx_substream, NULL);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static snd_pcm_uframes_t sf_pcm_pointer(struct snd_soc_component *component,
++					struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sf_spdif_dev *dev = runtime->private_data;
++	snd_pcm_uframes_t pos;
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		pos = READ_ONCE(dev->tx_ptr);
++	}
++	else {
++		pos = READ_ONCE(dev->rx_ptr);
++	}
++
++	return pos < runtime->buffer_size ? pos : 0;
++}
++
++static int sf_pcm_new(struct snd_soc_component *component,
++			struct snd_soc_pcm_runtime *rtd)
++{
++	size_t size = sf_pcm_hardware.buffer_bytes_max;
++
++	snd_pcm_set_managed_buffer_all(rtd->pcm,
++			SNDRV_DMA_TYPE_CONTINUOUS,
++			NULL, size, size);
++
++	return 0;
++}
++
++static const struct snd_soc_component_driver sf_pcm_component = {
++	.open		= sf_pcm_open,
++	.close		= sf_pcm_close,
++	.hw_params	= sf_pcm_hw_params,
++	.trigger	= sf_pcm_trigger,
++	.pointer	= sf_pcm_pointer,
++	.pcm_construct	= sf_pcm_new,
++};
++
++int sf_spdif_pcm_register(struct platform_device *pdev)
++{
++	return devm_snd_soc_register_component(&pdev->dev, &sf_pcm_component,
++					NULL, 0);
++}
++
+--- /dev/null
++++ b/sound/soc/starfive/spdif.c
+@@ -0,0 +1,384 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include <linux/of.h>
++#include <linux/clk.h>
++#include <linux/regmap.h>
++
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/initval.h>
++#include <sound/dmaengine_pcm.h>
++
++#include "spdif.h"
++
++static irqreturn_t spdif_irq_handler(int irq, void *dev_id)
++{
++	struct sf_spdif_dev *dev = dev_id;
++	bool irq_valid = false;
++	unsigned int intr;
++	unsigned int stat;
++
++	regmap_read(dev->regmap, SPDIF_INT_REG, &intr);
++	regmap_read(dev->regmap, SPDIF_STAT_REG, &stat);
++	regmap_update_bits(dev->regmap, SPDIF_CTRL,
++		SPDIF_MASK_ENABLE, 0);
++	regmap_update_bits(dev->regmap, SPDIF_INT_REG,
++		SPDIF_INT_REG_BIT, 0);
++
++	if ((stat & SPDIF_EMPTY_FLAG) || (stat & SPDIF_AEMPTY_FLAG)) {
++		sf_spdif_pcm_push_tx(dev);
++		irq_valid = true;
++	}
++
++	if ((stat & SPDIF_FULL_FLAG) || (stat & SPDIF_AFULL_FLAG)) {
++		sf_spdif_pcm_pop_rx(dev);
++		irq_valid = true;
++	}
++
++	if (stat & SPDIF_PARITY_FLAG) {
++		irq_valid = true;
++	}
++
++	if (stat & SPDIF_UNDERR_FLAG) {
++		irq_valid = true;
++	}
++
++	if (stat & SPDIF_OVRERR_FLAG) {
++		irq_valid = true;
++	}
++
++	if (stat & SPDIF_SYNCERR_FLAG) {
++		irq_valid = true;
++	}
++
++	if (stat & SPDIF_LOCK_FLAG) {
++		irq_valid = true;
++	}
++
++	if (stat & SPDIF_BEGIN_FLAG) {
++		irq_valid = true;
++	}
++
++	if (stat & SPDIF_RIGHT_LEFT) {
++		irq_valid = true;
++	}
++
++	regmap_update_bits(dev->regmap, SPDIF_CTRL,
++		SPDIF_MASK_ENABLE, SPDIF_MASK_ENABLE);
++
++	if (irq_valid)
++		return IRQ_HANDLED;
++	else
++		return IRQ_NONE;
++}
++
++static int sf_spdif_trigger(struct snd_pcm_substream *substream, int cmd,
++	struct snd_soc_dai *dai)
++{
++	struct sf_spdif_dev *spdif = snd_soc_dai_get_drvdata(dai);
++	bool tx;
++
++	tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
++	if (tx) {
++		/* tx mode */
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			SPDIF_TR_MODE, SPDIF_TR_MODE);
++
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			SPDIF_MASK_FIFO, SPDIF_EMPTY_MASK | SPDIF_AEMPTY_MASK);
++	} else {
++		/* rx mode */
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			SPDIF_TR_MODE, 0);
++
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			SPDIF_MASK_FIFO, SPDIF_FULL_MASK | SPDIF_AFULL_MASK);
++	}
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		/* clock recovery form the SPDIF data stream  0:clk_enable */
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			SPDIF_CLK_ENABLE, 0);
++
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			SPDIF_ENABLE, SPDIF_ENABLE);
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		/* clock recovery form the SPDIF data stream  1:power save mode */
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			SPDIF_CLK_ENABLE, SPDIF_CLK_ENABLE);
++
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			SPDIF_ENABLE, 0);
++		break;
++	default:
++		printk(KERN_ERR "%s L.%d cmd:%d\n", __func__, __LINE__, cmd);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int sf_spdif_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct sf_spdif_dev *spdif = snd_soc_dai_get_drvdata(dai);
++	unsigned int channels;
++	unsigned int rate;
++	unsigned int format;
++	unsigned int tsamplerate;
++
++	channels = params_channels(params);
++	rate = params_rate(params);
++	format = params_format(params);
++
++	switch (channels) {
++	case 2:
++		break;
++	default:
++		dev_err(dai->dev, "invalid channels number\n");
++		return -EINVAL;
++	}
++
++	switch (format) {
++	case SNDRV_PCM_FORMAT_S16_LE:
++	case SNDRV_PCM_FORMAT_S24_LE:
++	case SNDRV_PCM_FORMAT_S32_LE:
++		break;
++	default:
++		dev_err(spdif->dev, "invalid format\n");
++		return -EINVAL;
++	}
++
++	switch (rate) {
++	case 8000:
++	case 11025:
++	case 16000:
++	case 22050:
++		break;
++	default:
++		printk(KERN_ERR "channel:%d sample rate:%d\n", channels, rate);
++		return -EINVAL;
++	}
++
++	/* 12288000/128=96000 */
++	tsamplerate = (96000 + rate/2)/rate - 1;
++
++	if (rate < 3) {
++		return -EINVAL;
++	}
++
++	/* transmission sample rate */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL, 0xFF, tsamplerate);
++
++	return 0;
++}
++
++static int sf_spdif_dai_probe(struct snd_soc_dai *dai)
++{
++	struct sf_spdif_dev *spdif = snd_soc_dai_get_drvdata(dai);
++
++	#if 0
++	spdif->play_dma_data.addr = (dma_addr_t)spdif->spdif_base + SPDIF_FIFO_ADDR;
++	spdif->play_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
++	spdif->play_dma_data.fifo_size = 16;
++	spdif->play_dma_data.maxburst = 16;
++	spdif->capture_dma_data.addr = (dma_addr_t)spdif->spdif_base + SPDIF_FIFO_ADDR;
++	spdif->capture_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
++	spdif->capture_dma_data.fifo_size = 16;
++	spdif->capture_dma_data.maxburst = 16;
++	snd_soc_dai_init_dma_data(dai, &spdif->play_dma_data, &spdif->capture_dma_data);
++	snd_soc_dai_set_drvdata(dai, spdif);
++	#endif
++
++	/* reset */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++		SPDIF_ENABLE | SPDIF_SFR_ENABLE | SPDIF_FIFO_ENABLE, 0);
++
++	/* clear irq */
++	regmap_update_bits(spdif->regmap, SPDIF_INT_REG,
++		SPDIF_INT_REG_BIT, 0);
++
++	/* power save mode */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++		SPDIF_CLK_ENABLE, SPDIF_CLK_ENABLE);
++
++	/* power save mode */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++		SPDIF_CLK_ENABLE, SPDIF_CLK_ENABLE);
++
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++		SPDIF_PARITCHECK|SPDIF_VALIDITYCHECK|SPDIF_DUPLICATE,
++		SPDIF_PARITCHECK|SPDIF_VALIDITYCHECK|SPDIF_DUPLICATE);
++
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++		SPDIF_SETPREAMBB, SPDIF_SETPREAMBB);
++
++	regmap_update_bits(spdif->regmap, SPDIF_INT_REG,
++		0x1FFF<<SPDIF_PREAMBLEDEL, 0x3<<SPDIF_PREAMBLEDEL);
++
++	regmap_update_bits(spdif->regmap, SPDIF_FIFO_CTRL,
++		0xFFFFFFFF, 0x20|(0x20<<SPDIF_AFULL_THRESHOLD));
++
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++		SPDIF_PARITYGEN, SPDIF_PARITYGEN);
++
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++		SPDIF_MASK_ENABLE, SPDIF_MASK_ENABLE);
++
++	/* APB access to FIFO enable, disable if use DMA/FIFO */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++		SPDIF_USE_FIFO_IF, 0);
++
++	/* two channel */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++		SPDIF_CHANNEL_MODE, 0);
++
++	return 0;
++}
++
++static const struct snd_soc_dai_ops sf_spdif_dai_ops = {
++	.trigger = sf_spdif_trigger,
++	.hw_params = sf_spdif_hw_params,
++};
++
++#define SF_PCM_RATE_44100_192000  (SNDRV_PCM_RATE_44100 | \
++									SNDRV_PCM_RATE_48000 | \
++									SNDRV_PCM_RATE_96000 | \
++									SNDRV_PCM_RATE_192000)
++
++#define SF_PCM_RATE_8000_22050  (SNDRV_PCM_RATE_8000 | \
++									SNDRV_PCM_RATE_11025 | \
++									SNDRV_PCM_RATE_16000 | \
++									SNDRV_PCM_RATE_22050)
++
++static struct snd_soc_dai_driver sf_spdif_dai = {
++	.name = "spdif",
++	.id = 0,
++	.probe = sf_spdif_dai_probe,
++	.playback = {
++		.stream_name = "Playback",
++		.channels_min = 2,
++		.channels_max = 2,
++		.rates = SF_PCM_RATE_8000_22050,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE \
++					|SNDRV_PCM_FMTBIT_S24_LE \
++					|SNDRV_PCM_FMTBIT_S32_LE,
++	},
++	.capture = {
++		.stream_name = "Capture",
++		.channels_min = 2,
++		.channels_max = 2,
++		.rates = SF_PCM_RATE_8000_22050,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE \
++					|SNDRV_PCM_FMTBIT_S24_LE \
++					|SNDRV_PCM_FMTBIT_S32_LE,
++	},
++	.ops = &sf_spdif_dai_ops,
++	.symmetric_rate = 1,
++};
++
++static const struct snd_soc_component_driver sf_spdif_component = {
++	.name = "sf-spdif",
++};
++
++static const struct regmap_config sf_spdif_regmap_config = {
++	.reg_bits = 32,
++	.reg_stride = 4,
++	.val_bits = 32,
++	.max_register = 0x200,
++};
++
++static int sf_spdif_probe(struct platform_device *pdev)
++{
++	struct sf_spdif_dev *spdif;
++	struct resource *res;
++	void __iomem *base;
++	int ret;
++	int irq;
++
++	spdif = devm_kzalloc(&pdev->dev, sizeof(*spdif), GFP_KERNEL);
++	if (!spdif)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, spdif);
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	spdif->spdif_base = base;
++	spdif->regmap = devm_regmap_init_mmio(&pdev->dev, spdif->spdif_base,
++					&sf_spdif_regmap_config);
++	if (IS_ERR(spdif->regmap))
++		return PTR_ERR(spdif->regmap);
++
++	spdif->dev = &pdev->dev;
++	spdif->fifo_th = 16;
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq >= 0) {
++		ret = devm_request_irq(&pdev->dev, irq, spdif_irq_handler, 0,
++				pdev->name, spdif);
++		if (ret < 0) {
++			dev_err(&pdev->dev, "failed to request irq\n");
++			return ret;
++		}
++	}
++
++	ret = devm_snd_soc_register_component(&pdev->dev, &sf_spdif_component,
++					 &sf_spdif_dai, 1);
++	if (ret)
++		goto err_clk_disable;
++
++	if (irq >= 0) {
++		ret = sf_spdif_pcm_register(pdev);
++		spdif->use_pio = true;
++	} else {
++		ret = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL,
++					0);
++		spdif->use_pio = false;
++	}
++
++	if (ret)
++		goto err_clk_disable;
++
++	return 0;
++
++err_clk_disable:
++	return ret;
++}
++
++static const struct of_device_id sf_spdif_of_match[] = {
++	{ .compatible = "starfive,sf-spdif", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, sf_spdif_of_match);
++
++static struct platform_driver sf_spdif_driver = {
++	.driver = {
++		.name = "sf-spdif",
++		.of_match_table = sf_spdif_of_match,
++	},
++	.probe = sf_spdif_probe,
++};
++module_platform_driver(sf_spdif_driver);
++
++MODULE_AUTHOR("michael.yan <michael.yan@starfive.com>");
++MODULE_DESCRIPTION("starfive SPDIF driver");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/sound/soc/starfive/spdif.h
+@@ -0,0 +1,154 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ */
++#ifndef __SND_SOC_STARFIVE_SPDIF_H
++#define __SND_SOC_STARFIVE_SPDIF_H
++
++#include <linux/clk.h>
++#include <linux/device.h>
++#include <linux/types.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/pcm.h>
++#include <linux/dmaengine.h>
++#include <linux/types.h>
++
++#define SPDIF_CTRL		(0x0)
++#define SPDIF_INT_REG		(0x4)
++#define SPDIF_FIFO_CTRL		(0x8)
++#define SPDIF_STAT_REG		(0xC)
++
++#define SPDIF_FIFO_ADDR		(0x100)
++#define DMAC_SPDIF_POLLING_LEN	(256)
++
++///ctrl: sampled on the rising clock edge
++#define SPDIF_TSAMPLERATE	0///[SRATEW-1:0]
++#define SPDIF_SFR_ENABLE	(1<<8)	///0:SFR reg reset to defualt value; auto set back to '1' after reset
++#define SPDIF_ENABLE		(1<<9)	///0:reset of SPDIF block, SRF bits are unchanged; 1:enables SPDIF module
++#define SPDIF_FIFO_ENABLE	(1<<10)	///0:FIFO pointers are reset to zero,threshold levels for FIFO are unchaned; auto set back to '1'
++#define SPDIF_CLK_ENABLE	(1<<11)	///1:blocked and the modules are in power save mode; 0:block feeds the modules
++#define SPDIF_TR_MODE		(1<<12)	///0:rx; 1:tx
++#define SPDIF_PARITCHECK	(1<<13)	///0:party bit rx in a sub-frame is repeated on the parity; 1:check on a parity error
++#define SPDIF_PARITYGEN		(1<<14)	///0:parity bit from FIFO is transmitted in sub-frame;1:parity bit generated inside the core and added to a transmitted sub-frame
++#define SPDIF_VALIDITYCHECK	(1<<15)	///0:validity bit in frame isn't checked and all frame are written; 1:validity bit rx is checked
++#define SPDIF_CHANNEL_MODE	(1<<16)	///0:two-channel; 1:single-channel
++#define SPDIF_DUPLICATE		(1<<17)	///only tx -single-channel mode; 0:secondary channel; 1: left(primary) channel
++#define SPDIF_SETPREAMBB	(1<<18)	///only tx; 0:first preamble B after reset tx valid sub-frame; 1:first preamble B is tx after preambleddel(INT_REG)
++#define SPDIF_USE_FIFO_IF	(1<<19)	///0:FIFO disabled ,APB accese FIFO; 1:FIFO enable, APB access to FIFO disable;
++///#define RESERVED		(1<<20)
++#define SPDIF_PARITY_MASK	(1<<21)
++#define SPDIF_UNDERR_MASK	(1<<22)
++#define SPDIF_OVRERR_MASK	(1<<23)
++#define SPDIF_EMPTY_MASK	(1<<24)
++#define SPDIF_AEMPTY_MASK	(1<<25)
++#define SPDIF_FULL_MASK		(1<<26)
++#define SPDIF_AFULL_MASK	(1<<27)
++#define SPDIF_SYNCERR_MASK	(1<<28)
++#define SPDIF_LOCK_MASK		(1<<29)
++#define SPDIF_BEGIN_MASK	(1<<30)
++#define SPDIF_INTEREQ_MAKS	(1<<31)
++
++#define SPDIF_MASK_ENABLE	(SPDIF_PARITY_MASK | SPDIF_UNDERR_MASK | SPDIF_OVRERR_MASK | SPDIF_EMPTY_MASK |	\
++							 SPDIF_AEMPTY_MASK | SPDIF_FULL_MASK | SPDIF_AFULL_MASK | SPDIF_SYNCERR_MASK |	\
++							 SPDIF_LOCK_MASK | SPDIF_BEGIN_MASK | SPDIF_INTEREQ_MAKS)
++
++#define SPDIF_MASK_FIFO		(SPDIF_EMPTY_MASK | SPDIF_AEMPTY_MASK | SPDIF_FULL_MASK | SPDIF_AFULL_MASK)
++
++////INT_REG
++#define SPDIF_RSAMPLERATE	0		///[SRATEW-1:0]
++#define SPDIF_PREAMBLEDEL	8		///[PDELAYW+7:8]	first B delay
++#define SPDIF_PARITYO		(1<<21)	///0:clear parity error
++#define SPDIF_TDATA_UNDERR	(1<<22)	///tx data underrun error;0:clear
++#define SPDIF_RDATA_OVRERR	(1<<23)	///rx data overrun error; 0:clear
++#define SPDIF_FIFO_EMPTY	(1<<24)	///empty; 0:clear
++#define SPDIF_FIOF_AEMPTY	(1<<25)	///almost empty; 0:clear
++#define SPDIF_FIFO_FULL		(1<<26)	///FIFO full; 0:clear
++#define SPDIF_FIFO_AFULL	(1<<27)	///FIFO almost full; 0:clear
++#define SPDIF_SYNCERR		(1<<28)	///sync error; 0:clear
++#define SPDIF_LOCK			(1<<29)	///sync; 0:clear
++#define SPDIF_BLOCK_BEGIN	(1<<30)	///new start block rx data
++
++#define SPDIF_INT_REG_BIT	(SPDIF_PARITYO | SPDIF_TDATA_UNDERR | SPDIF_RDATA_OVRERR | SPDIF_FIFO_EMPTY |	\
++							 SPDIF_FIOF_AEMPTY | SPDIF_FIFO_FULL | SPDIF_FIFO_AFULL | SPDIF_SYNCERR | 	\
++							 SPDIF_LOCK | SPDIF_BLOCK_BEGIN)
++
++#define SPDIF_ERROR_INT_STATUS	(SPDIF_PARITYO | SPDIF_TDATA_UNDERR | SPDIF_RDATA_OVRERR)
++#define SPDIF_FIFO_INT_STATUS	(SPDIF_FIFO_EMPTY | SPDIF_FIOF_AEMPTY | SPDIF_FIFO_FULL | SPDIF_FIFO_AFULL)
++
++#define SPDIF_INT_PARITY_ERROR	(-1)
++#define SPDIF_INT_TDATA_UNDERR	(-2)
++#define SPDIF_INT_RDATA_OVRERR	(-3)
++#define SPDIF_INT_FIFO_EMPTY	1
++#define SPDIF_INT_FIFO_AEMPTY	2
++#define SPDIF_INT_FIFO_FULL	3
++#define SPDIF_INT_FIFO_AFULL	4
++#define SPDIF_INT_SYNCERR	(-4)
++#define SPDIF_INT_LOCK		5	// reciever has become synchronized with input data stream
++#define SPDIF_INT_BLOCK_BEGIN	6	// start a new block in recieve data, written into FIFO
++
++///FIFO_CTRL
++#define SPDIF_AEMPTY_THRESHOLD	0	// [depth-1:0]
++#define SPDIF_AFULL_THRESHOLD	16	// [depth+15:16]
++
++///STAT_REG
++#define SPDIF_FIFO_LEVEL	(1<<0)
++#define SPDIF_PARITY_FLAG	(1<<21)	// 1:error; 0:repeated
++#define SPDIF_UNDERR_FLAG	(1<<22)	// 1:error
++#define SPDIF_OVRERR_FLAG	(1<<23)	// 1:error
++#define SPDIF_EMPTY_FLAG	(1<<24)	// 1:fifo empty
++#define SPDIF_AEMPTY_FLAG	(1<<25)	// 1:fifo almost empty
++#define SPDIF_FULL_FLAG		(1<<26)	// 1:fifo full
++#define SPDIF_AFULL_FLAG	(1<<27)	// 1:fifo almost full
++#define SPDIF_SYNCERR_FLAG	(1<<28)	// 1:rx sync error
++#define SPDIF_LOCK_FLAG		(1<<29)	// 1:RX sync
++#define SPDIF_BEGIN_FLAG	(1<<30)	// 1:start a new block
++#define SPDIF_RIGHT_LEFT	(1<<31)	// 1:left channel received and tx into FIFO; 0:right channel received and tx into FIFO
++
++#define SPDIF_STAT		(SPDIF_PARITY_FLAG | SPDIF_UNDERR_FLAG | SPDIF_OVRERR_FLAG | SPDIF_EMPTY_FLAG |		\
++						 SPDIF_AEMPTY_FLAG | SPDIF_FULL_FLAG | SPDIF_AFULL_FLAG | SPDIF_SYNCERR_FLAG | 		\
++						 SPDIF_LOCK_FLAG | SPDIF_BEGIN_FLAG | SPDIF_RIGHT_LEFT)
++struct sf_spdif_dev {
++	void __iomem *spdif_base;
++	struct regmap *regmap;
++	struct device *dev;
++	u32 fifo_th;
++	int active;
++
++	/* data related to DMA transfers b/w i2s and DMAC */
++	struct snd_dmaengine_dai_dma_data play_dma_data;
++	struct snd_dmaengine_dai_dma_data capture_dma_data;
++
++	bool use_pio;
++	struct snd_pcm_substream __rcu *tx_substream;
++	struct snd_pcm_substream __rcu *rx_substream;
++
++	unsigned int (*tx_fn)(struct sf_spdif_dev *dev,
++			struct snd_pcm_runtime *runtime, unsigned int tx_ptr,
++			bool *period_elapsed, snd_pcm_format_t format);
++	unsigned int (*rx_fn)(struct sf_spdif_dev *dev,
++			struct snd_pcm_runtime *runtime, unsigned int rx_ptr,
++			bool *period_elapsed, snd_pcm_format_t format);
++
++	snd_pcm_format_t format;
++	//unsigned int sample_bits;
++	unsigned int tx_ptr;
++	unsigned int rx_ptr;
++
++	struct snd_dmaengine_dai_dma_data dma_data;
++};
++
++#if IS_ENABLED(CONFIG_SND_STARFIVE_SPDIF_PCM)
++void sf_spdif_pcm_push_tx(struct sf_spdif_dev *dev);
++void sf_spdif_pcm_pop_rx(struct sf_spdif_dev *dev);
++int sf_spdif_pcm_register(struct platform_device *pdev);
++#else
++void sf_spdif_pcm_push_tx(struct sf_spdif_dev *dev) { }
++void sf_spdif_pcm_pop_rx(struct sf_spdif_dev *dev) { }
++int sf_spdif_pcm_register(struct platform_device *pdev)
++{
++	return -EINVAL;
++}
++#endif
++
++
++#endif	/* __SND_SOC_STARFIVE_SPDIF_H */

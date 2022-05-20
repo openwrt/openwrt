@@ -1,0 +1,36 @@
+From ee5b1a0313b7eaac59e91640defaed83abd43169 Mon Sep 17 00:00:00 2001
+From: "sw.multimedia" <sw.multimedia@starfivetech.com>
+Date: Tue, 31 Aug 2021 16:48:57 +0800
+Subject: [PATCH 70/84] drm/i2c/tda998x: Hardcode register values for Starlight
+
+A proper solution to this hack should be found.
+
+Signed-off-by: jack.zhu <jack.zhu@starfivetech.com>
+Signed-off-by: keith.zhao <keith.zhao@starfivetech.com>
+---
+ drivers/gpu/drm/i2c/tda998x_drv.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/i2c/tda998x_drv.c
++++ b/drivers/gpu/drm/i2c/tda998x_drv.c
+@@ -1603,7 +1603,9 @@ static void tda998x_bridge_mode_set(stru
+ 		reg |= VIP_CNTRL_3_H_TGL;
+ 	if (mode->flags & DRM_MODE_FLAG_NVSYNC)
+ 		reg |= VIP_CNTRL_3_V_TGL;
+-	reg_write(priv, REG_VIP_CNTRL_3, reg);
++	//reg_write(priv, REG_VIP_CNTRL_3, reg);
++	reg_write(priv, REG_VIP_CNTRL_3, 0x26);
++	reg_write(priv, REG_VIDFORMAT, 0x06);
+ 
+ 	reg_write(priv, REG_VIDFORMAT, 0x00);
+ 	reg_write16(priv, REG_REFPIX_MSB, ref_pix);
+@@ -1641,7 +1643,8 @@ static void tda998x_bridge_mode_set(stru
+ 		reg |= TBG_CNTRL_1_H_TGL;
+ 	if (mode->flags & DRM_MODE_FLAG_NVSYNC)
+ 		reg |= TBG_CNTRL_1_V_TGL;
+-	reg_write(priv, REG_TBG_CNTRL_1, reg);
++	//reg_write(priv, REG_TBG_CNTRL_1, reg);
++	reg_write(priv, REG_TBG_CNTRL_1, 0x46);
+ 
+ 	/* must be last register set: */
+ 	reg_write(priv, REG_TBG_CNTRL_0, 0);

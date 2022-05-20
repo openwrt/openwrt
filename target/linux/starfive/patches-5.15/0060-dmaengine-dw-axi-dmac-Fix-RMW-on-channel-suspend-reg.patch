@@ -1,0 +1,46 @@
+From e2a58411cae031fe061d1de2afe1721a09007d33 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Fri, 17 Dec 2021 14:47:47 +0100
+Subject: [PATCH 60/84] dmaengine: dw-axi-dmac: Fix RMW on channel suspend
+ register
+
+Found by comparing the parallel implementation of more than 8 channel
+support for the StarFive JH7100 SoC by Samin.
+
+Fixes: 824351668a41 ("dmaengine: dw-axi-dmac: support DMAX_NUM_CHANNELS > 8")
+Co-developed-by: Samin Guo <samin.guo@starfivetech.com>
+Signed-off-by: Samin Guo <samin.guo@starfivetech.com>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
+@@ -1179,8 +1179,9 @@ static int dma_chan_pause(struct dma_cha
+ 			BIT(chan->id) << DMAC_CHAN_SUSP_WE_SHIFT;
+ 		axi_dma_iowrite32(chan->chip, DMAC_CHEN, val);
+ 	} else {
+-		val = BIT(chan->id) << DMAC_CHAN_SUSP2_SHIFT |
+-		      BIT(chan->id) << DMAC_CHAN_SUSP2_WE_SHIFT;
++		val = axi_dma_ioread32(chan->chip, DMAC_CHSUSPREG);
++		val |= BIT(chan->id) << DMAC_CHAN_SUSP2_SHIFT |
++			BIT(chan->id) << DMAC_CHAN_SUSP2_WE_SHIFT;
+ 		axi_dma_iowrite32(chan->chip, DMAC_CHSUSPREG, val);
+ 	}
+ 
+@@ -1205,12 +1206,13 @@ static inline void axi_chan_resume(struc
+ {
+ 	u32 val;
+ 
+-	val = axi_dma_ioread32(chan->chip, DMAC_CHEN);
+ 	if (chan->chip->dw->hdata->reg_map_8_channels) {
++		val = axi_dma_ioread32(chan->chip, DMAC_CHEN);
+ 		val &= ~(BIT(chan->id) << DMAC_CHAN_SUSP_SHIFT);
+ 		val |=  (BIT(chan->id) << DMAC_CHAN_SUSP_WE_SHIFT);
+ 		axi_dma_iowrite32(chan->chip, DMAC_CHEN, val);
+ 	} else {
++		val = axi_dma_ioread32(chan->chip, DMAC_CHSUSPREG);
+ 		val &= ~(BIT(chan->id) << DMAC_CHAN_SUSP2_SHIFT);
+ 		val |=  (BIT(chan->id) << DMAC_CHAN_SUSP2_WE_SHIFT);
+ 		axi_dma_iowrite32(chan->chip, DMAC_CHSUSPREG, val);

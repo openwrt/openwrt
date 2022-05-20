@@ -1,0 +1,52 @@
+From 31a06b4aaea7b76da1c3d78b6387b57cbac88542 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Mon, 20 Dec 2021 13:17:59 +0100
+Subject: [PATCH 23/84] reset: starfive-jh7100: Fix 32bit compilation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+commit 299e6f788eab0b0aef97efb29ddc6971e7d0daf3 upstream.
+
+We need to include linux/io-64-nonatomic-lo-hi.h or readq/writeq won't
+be defined when compiling on 32bit architectures:
+
+On i386:
+
+../drivers/reset/reset-starfive-jh7100.c: In function ‘jh7100_reset_update’:
+../drivers/reset/reset-starfive-jh7100.c:81:10: error: implicit declaration of function ‘readq’; did you mean ‘readl’? [-Werror=implicit-function-declaration]
+  value = readq(reg_assert);
+           ^~~~~
+../drivers/reset/reset-starfive-jh7100.c:86:2: error: implicit declaration of function ‘writeq’; did you mean ‘writel’? [-Werror=implicit-function-declaration]
+  writeq(value, reg_assert);
+  ^~~~~~
+
+On m68k:
+
+drivers/reset/reset-starfive-jh7100.c:81:17: error: implicit declaration of function 'readq'; did you mean 'readb'? [-Werror=implicit-function-declaration]
+drivers/reset/reset-starfive-jh7100.c:86:9: error: implicit declaration of function 'writeq'; did you mean 'writel'? [-Werror=implicit-function-declaration]
+cc1: all warnings being treated as errors
+make[3]: *** [scripts/Makefile.build:289: drivers/reset/reset-starfive-jh7100.o] Error 1
+make[2]: *** [scripts/Makefile.build:572: drivers/reset] Error 2
+make[1]: *** [Makefile:1969: drivers] Error 2
+make: *** [Makefile:226: __sub-make] Error 2
+
+Fixes: 0be3a1595bf8 ("reset: starfive-jh7100: Add StarFive JH7100 reset driver")
+Reported-by: Randy Dunlap <rdunlap@infradead.org>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+Link: https://lore.kernel.org/r/20211220121800.760846-1-kernel@esmil.dk'
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ drivers/reset/reset-starfive-jh7100.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/reset/reset-starfive-jh7100.c
++++ b/drivers/reset/reset-starfive-jh7100.c
+@@ -7,6 +7,7 @@
+ 
+ #include <linux/bitmap.h>
+ #include <linux/io.h>
++#include <linux/io-64-nonatomic-lo-hi.h>
+ #include <linux/iopoll.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/platform_device.h>

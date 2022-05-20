@@ -1,0 +1,701 @@
+From b78bf7781920f785e645a60b2038ccfcdbf764b1 Mon Sep 17 00:00:00 2001
+From: Tom <support@vamrs.com>
+Date: Fri, 8 Jan 2021 02:57:50 +0800
+Subject: [PATCH 63/84] dmaengine: Add dw-axi-dmac-starfive driver for JH7100
+
+---
+ drivers/dma/Kconfig                           |   7 +
+ drivers/dma/Makefile                          |   1 +
+ drivers/dma/dw-axi-dmac-starfive/Makefile     |   2 +
+ .../dw-axi-dmac-starfive-misc.c               | 323 ++++++++++++++++++
+ .../starfive_dmaengine_memcpy.c               | 288 ++++++++++++++++
+ include/soc/starfive/jh7100_dma.h             |  31 ++
+ 6 files changed, 652 insertions(+)
+ create mode 100644 drivers/dma/dw-axi-dmac-starfive/Makefile
+ create mode 100644 drivers/dma/dw-axi-dmac-starfive/dw-axi-dmac-starfive-misc.c
+ create mode 100644 drivers/dma/dw-axi-dmac-starfive/starfive_dmaengine_memcpy.c
+ create mode 100644 include/soc/starfive/jh7100_dma.h
+
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -181,6 +181,13 @@ config DW_AXI_DMAC
+ 	  NOTE: This driver wasn't tested on 64 bit platform because
+ 	  of lack 64 bit platform with Synopsys DW AXI DMAC.
+ 
++config DW_AXI_DMAC_STARFIVE
++	tristate "Synopsys DesignWare AXI DMA support for StarFive SOC"
++	depends on SOC_STARFIVE
++	help
++	  Enable support for Synopsys DesignWare AXI DMA controller.
++	  NOTE: It's for StarFive SOC.
++
+ config EP93XX_DMA
+ 	bool "Cirrus Logic EP93xx DMA support"
+ 	depends on ARCH_EP93XX || COMPILE_TEST
+--- a/drivers/dma/Makefile
++++ b/drivers/dma/Makefile
+@@ -27,6 +27,7 @@ obj-$(CONFIG_DMA_SA11X0) += sa11x0-dma.o
+ obj-$(CONFIG_DMA_SUN4I) += sun4i-dma.o
+ obj-$(CONFIG_DMA_SUN6I) += sun6i-dma.o
+ obj-$(CONFIG_DW_AXI_DMAC) += dw-axi-dmac/
++obj-$(CONFIG_DW_AXI_DMAC_STARFIVE) += dw-axi-dmac-starfive/
+ obj-$(CONFIG_DW_DMAC_CORE) += dw/
+ obj-$(CONFIG_DW_EDMA) += dw-edma/
+ obj-$(CONFIG_EP93XX_DMA) += ep93xx_dma.o
+--- /dev/null
++++ b/drivers/dma/dw-axi-dmac-starfive/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0-only
++obj-$(CONFIG_DW_AXI_DMAC_STARFIVE) += starfive_dmaengine_memcpy.o dw-axi-dmac-starfive-misc.o
+\ No newline at end of file
+--- /dev/null
++++ b/drivers/dma/dw-axi-dmac-starfive/dw-axi-dmac-starfive-misc.c
+@@ -0,0 +1,323 @@
++/*
++ * Copyright 2020 StarFive, Inc <samin.guo@starfivetech.com>
++ *
++ * DW AXI dma driver for StarFive SoC VIC7100.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, version 2.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++#include <asm/uaccess.h>
++#include <linux/dmaengine.h>
++#include <linux/fs.h>
++#include <linux/init.h>
++#include <linux/miscdevice.h>
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/string.h>
++#include <linux/types.h>
++#include <linux/uaccess.h>
++
++#include <soc/sifive/sifive_l2_cache.h>
++#include <soc/starfive/jh7100_dma.h>
++
++#define DRIVER_NAME			"dwaxidma"
++#define AXIDMA_IOC_MAGIC		'A'
++#define AXIDMA_IOCGETCHN		_IO(AXIDMA_IOC_MAGIC, 0)
++#define AXIDMA_IOCCFGANDSTART		_IO(AXIDMA_IOC_MAGIC, 1)
++#define AXIDMA_IOCGETSTATUS		_IO(AXIDMA_IOC_MAGIC, 2)
++#define AXIDMA_IOCRELEASECHN		_IO(AXIDMA_IOC_MAGIC, 3)
++
++#define AXI_DMA_MAX_CHANS		20
++
++#define DMA_CHN_UNUSED			0
++#define DMA_CHN_USED			1
++#define DMA_STATUS_UNFINISHED		0
++#define DMA_STATUS_FINISHED		1
++
++/* for DEBUG*/
++//#define DW_DMA_CHECK_RESULTS
++//#define DW_DMA_PRINT_MEM
++//#define DW_DMA_FLUSH_DESC
++
++struct axidma_chncfg {
++	unsigned long src_addr;	/*dma addr*/
++	unsigned long dst_addr;	/*dma addr*/
++	unsigned long virt_src;	/*mmap src addr*/
++	unsigned long virt_dst;	/*mmap dst addr*/
++	unsigned long phys;	/*desc phys addr*/
++	unsigned int len;	/*transport lenth*/
++	int mem_fd;		/*fd*/
++	unsigned char chn_num;	/*dma channels number*/
++	unsigned char status;	/*dma transport status*/
++};
++
++struct axidma_chns {
++	struct dma_chan *dma_chan;
++	unsigned char used;
++	unsigned char status;
++	unsigned char reserve[2];
++};
++
++struct axidma_chns channels[AXI_DMA_MAX_CHANS];
++#ifdef DW_DMA_PRINT_MEM
++void print_in_line_u64(u8 *p_name, u64 *p_buf, u32 len)
++{
++	u32 i, j;
++	u32 line;
++	u32* ptmp;
++	u32 len_tmp;
++	u32 rest = len / 4;
++
++	printk("%s: 0x%#llx, 0x%x\n",
++		p_name, dw_virt_to_phys((void *)p_buf), len);
++
++	if(len >= 0x1000)
++		len_tmp = 0x1000 / 32;	//print 128 size of memory.
++	else
++		len_tmp = len / 8;	//print real 100% size of memory.
++
++	rest = len / 4;			//one line print 8 u32
++
++	for (i = 0; i < len_tmp; i += 4, rest -= line) {
++		if (!(i % 4))
++			printk(KERN_CONT KERN_INFO" %#llx: ",
++				dw_virt_to_phys((void *)(p_buf + i)));
++
++		ptmp = (u32*)(p_buf + i);
++		line = (rest > 8) ? 8 : rest;
++
++		for (j = 0; j < line; j++)
++			printk(KERN_CONT KERN_INFO "%08x ", *(ptmp + j));
++
++		printk(KERN_CONT KERN_INFO"\n");
++	}
++}
++#endif
++
++static int axidma_open(struct inode *inode, struct file *file)
++{
++	/*Open: do nothing*/
++	return 0;
++}
++
++static int axidma_release(struct inode *inode, struct file *file)
++{
++	/* Release: do nothing */
++	return 0;
++}
++
++static ssize_t axidma_write(struct file *file, const char __user *data,
++			size_t len, loff_t *ppos)
++{
++	/* Write: do nothing */
++	return 0;
++}
++
++static void dma_complete_func(void *status)
++{
++	*(char *)status = DMA_STATUS_FINISHED;
++}
++
++static long axidma_unlocked_ioctl(struct file *file, unsigned int cmd,
++				unsigned long arg)
++{
++	int i, ret;
++	dma_cap_mask_t mask;
++	dma_cookie_t cookie;
++	struct dma_device *dma_dev;
++	struct axidma_chncfg chncfg;
++	struct dma_async_tx_descriptor *tx;
++
++#ifdef DW_DMA_FLUSH_DESC
++	void *des_chncfg = &chncfg;
++	chncfg.phys = dw_virt_to_phys(des_chncfg);
++#endif
++	memset(&chncfg, 0, sizeof(struct axidma_chncfg));
++
++	switch(cmd) {
++	case AXIDMA_IOCGETCHN:
++		for(i = 0; i < AXI_DMA_MAX_CHANS; i++) {
++			if(DMA_CHN_UNUSED == channels[i].used)
++				break;
++		}
++		if(AXI_DMA_MAX_CHANS == i) {
++			printk("Get dma chn failed, because no idle channel\n");
++			goto error;
++		} else {
++			channels[i].used = DMA_CHN_USED;
++			channels[i].status = DMA_STATUS_UNFINISHED;
++			chncfg.status = DMA_STATUS_UNFINISHED;
++			chncfg.chn_num = i;
++		}
++		dma_cap_zero(mask);
++		dma_cap_set(DMA_MEMCPY, mask);
++		channels[i].dma_chan = dma_request_channel(mask, NULL, NULL);
++		if(!channels[i].dma_chan) {
++			printk("dma request channel failed\n");
++			channels[i].used = DMA_CHN_UNUSED;
++			goto error;
++		}
++		ret = copy_to_user((void __user *)arg, &chncfg,
++				sizeof(struct axidma_chncfg));
++		if(ret) {
++			printk("Copy to user failed\n");
++			goto error;
++		}
++		break;
++	case AXIDMA_IOCCFGANDSTART:
++#ifdef DW_DMA_CHECK_RESULTS
++		void *src,*dst;
++#endif
++		ret = copy_from_user(&chncfg, (void __user *)arg,
++				     sizeof(struct axidma_chncfg));
++		if(ret) {
++			printk("Copy from user failed\n");
++			goto error;
++		}
++
++		if((chncfg.chn_num >= AXI_DMA_MAX_CHANS) ||
++		   (!channels[chncfg.chn_num].dma_chan)) {
++			printk("chn_num[%d] is invalid\n", chncfg.chn_num);
++			goto error;
++		}
++		dma_dev = channels[chncfg.chn_num].dma_chan->device;
++#ifdef DW_DMA_FLUSH_DESC
++		sifive_l2_flush64_range(chncfg.phys,sizeof(chncfg));
++#endif
++#ifdef DW_DMA_CHECK_RESULTS
++		src = dw_phys_to_virt(chncfg.src_addr);
++		dst = dw_phys_to_virt(chncfg.dst_addr);
++#endif
++		sifive_l2_flush64_range(chncfg.src_addr, chncfg.len);
++
++		tx = dma_dev->device_prep_dma_memcpy(
++			channels[chncfg.chn_num].dma_chan,
++			chncfg.dst_addr, chncfg.src_addr, chncfg.len,
++			DMA_CTRL_ACK | DMA_PREP_INTERRUPT);
++		if(!tx){
++			printk("Failed to prepare DMA memcpy\n");
++			goto error;
++		}
++		channels[chncfg.chn_num].status = DMA_STATUS_UNFINISHED;
++		tx->callback_param = &channels[chncfg.chn_num].status;
++		tx->callback = dma_complete_func;
++		cookie = tx->tx_submit(tx);
++		if(dma_submit_error(cookie)) {
++			printk("Failed to dma tx_submit\n");
++			goto error;
++		}
++		dma_async_issue_pending(channels[chncfg.chn_num].dma_chan);
++		/*flush dcache*/
++		sifive_l2_flush64_range(chncfg.dst_addr, chncfg.len);
++#ifdef DW_DMA_PRINT_MEM
++		print_in_line_u64((u8 *)"src", (u64 *)src, chncfg.len);
++		print_in_line_u64((u8 *)"dst", (u64 *)dst, chncfg.len);
++#endif
++#ifdef DW_DMA_CHECK_RESULTS
++		if(memcmp(src, dst, chncfg.len))
++			printk("check data faild.\n");
++		else
++			printk("check data ok.\n");
++#endif
++		break;
++
++	case AXIDMA_IOCGETSTATUS:
++		ret = copy_from_user(&chncfg, (void __user *)arg,
++			sizeof(struct axidma_chncfg));
++		if(ret) {
++			printk("Copy from user failed\n");
++			goto error;
++		}
++
++		if(chncfg.chn_num >= AXI_DMA_MAX_CHANS) {
++			printk("chn_num[%d] is invalid\n", chncfg.chn_num);
++			goto error;
++		}
++
++		chncfg.status = channels[chncfg.chn_num].status;
++
++		ret = copy_to_user((void __user *)arg, &chncfg,
++				   sizeof(struct axidma_chncfg));
++		if(ret) {
++			printk("Copy to user failed\n");
++			goto error;
++		}
++		break;
++
++	case AXIDMA_IOCRELEASECHN:
++		ret = copy_from_user(&chncfg, (void __user *)arg,
++				     sizeof(struct axidma_chncfg));
++		if(ret) {
++			printk("Copy from user failed\n");
++			goto error;
++		}
++
++		if((chncfg.chn_num >= AXI_DMA_MAX_CHANS) ||
++		   (!channels[chncfg.chn_num].dma_chan)) {
++			printk("chn_num[%d] is invalid\n", chncfg.chn_num);
++			goto error;
++		}
++
++		dma_release_channel(channels[chncfg.chn_num].dma_chan);
++		channels[chncfg.chn_num].used = DMA_CHN_UNUSED;
++		channels[chncfg.chn_num].status = DMA_STATUS_UNFINISHED;
++		break;
++
++	default:
++		printk("Don't support cmd [%d]\n", cmd);
++		break;
++	}
++	return 0;
++
++error:
++	return -EFAULT;
++}
++
++/*
++ *	Kernel Interfaces
++ */
++static struct file_operations axidma_fops = {
++	.owner		= THIS_MODULE,
++	.llseek		= no_llseek,
++	.write		= axidma_write,
++	.unlocked_ioctl	= axidma_unlocked_ioctl,
++	.open		= axidma_open,
++	.release	= axidma_release,
++};
++
++static struct miscdevice axidma_miscdev = {
++	.minor		= MISC_DYNAMIC_MINOR,
++	.name		= DRIVER_NAME,
++	.fops		= &axidma_fops,
++};
++
++static int __init axidma_init(void)
++{
++	int ret = misc_register(&axidma_miscdev);
++	if(ret) {
++		printk (KERN_ERR "cannot register miscdev (err=%d)\n", ret);
++		return ret;
++	}
++
++	memset(&channels, 0, sizeof(channels));
++
++	return 0;
++}
++
++static void __exit axidma_exit(void)
++{
++	misc_deregister(&axidma_miscdev);
++}
++
++module_init(axidma_init);
++module_exit(axidma_exit);
++
++MODULE_AUTHOR("samin.guo");
++MODULE_DESCRIPTION("DW Axi Dmac Driver");
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/drivers/dma/dw-axi-dmac-starfive/starfive_dmaengine_memcpy.c
+@@ -0,0 +1,288 @@
++/*
++ * Copyright 2020 StarFive, Inc <samin.guo@starfivetech.com>
++ *
++ * API for dma mem2mem.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation, version 2.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/acpi_iort.h>
++#include <linux/kernel.h>
++#include <linux/fs.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/device.h>
++#include <linux/cdev.h>
++#include <linux/dmaengine.h>
++#include <linux/wait.h>
++#include <linux/string.h>
++#include <linux/dma-mapping.h>
++#include <linux/dma-map-ops.h>
++#include <linux/slab.h>
++
++#include <soc/sifive/sifive_l2_cache.h>
++#include <soc/starfive/jh7100_dma.h>
++
++static volatile int dma_finished = 0;
++static DECLARE_WAIT_QUEUE_HEAD(wq);
++
++u64 dw_virt_to_phys(void *vaddr)
++{
++	u64 pfn_offset = ((u64)vaddr) & 0xfff;
++
++	return _dw_virt_to_phys((u64 *)vaddr) + pfn_offset;
++}
++EXPORT_SYMBOL(dw_virt_to_phys);
++
++void *dw_phys_to_virt(u64 phys)
++{
++	u64 pfn_offset = phys & 0xfff;
++
++	return (void *)(_dw_phys_to_virt(phys) + pfn_offset);
++}
++EXPORT_SYMBOL(dw_phys_to_virt);
++
++static void tx_callback(void *dma_async_param)
++{
++	dma_finished = 1;
++	wake_up_interruptible(&wq);
++}
++
++static int _dma_async_alloc_buf(struct device *dma_dev,
++				void **src, void **dst, size_t size,
++				dma_addr_t *src_dma, dma_addr_t *dst_dma)
++{
++	*src = dma_alloc_coherent(dma_dev, size, src_dma, GFP_KERNEL);
++	if(!(*src)) {
++		DMA_DEBUG("src alloc err.\n");
++		goto _FAILED_ALLOC_SRC;
++	}
++
++	*dst = dma_alloc_coherent(dma_dev, size, dst_dma, GFP_KERNEL);
++	if(!(*dst)) {
++		DMA_DEBUG("dst alloc err.\n");
++		goto _FAILED_ALLOC_DST;
++	}
++
++	return 0;
++
++_FAILED_ALLOC_DST:
++	dma_free_coherent(dma_dev, size, *src, *src_dma);
++
++_FAILED_ALLOC_SRC:
++	dma_free_coherent(dma_dev, size, *dst, *dst_dma);
++
++	return -1;
++}
++
++static int _dma_async_prebuf(void *src, void *dst, size_t size)
++{
++	memset((u8 *)src, 0xff, size);
++	memset((u8 *)dst, 0x00, size);
++	return 0;
++}
++
++static int _dma_async_check_data(void *src, void *dst, size_t size)
++{
++	return memcmp(src, dst, size);
++}
++
++static void _dma_async_release(struct dma_chan *chan)
++{
++	dma_release_channel(chan);
++}
++
++static struct dma_chan *_dma_get_channel(enum dma_transaction_type tx_type)
++{
++	dma_cap_mask_t dma_mask;
++
++	dma_cap_zero(dma_mask);
++	dma_cap_set(tx_type, dma_mask);
++
++	return dma_request_channel(dma_mask, NULL, NULL);
++}
++
++static struct dma_async_tx_descriptor *_dma_async_get_desc(
++	struct dma_chan *chan,
++	dma_addr_t src_dma, dma_addr_t dst_dma,
++	size_t size)
++{
++	dma_finished = 0;
++	return dmaengine_prep_dma_memcpy(chan, dst_dma, src_dma, size,
++					 DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++}
++
++static void _dma_async_do_start(struct dma_async_tx_descriptor *desc,
++				struct dma_chan *chan)
++{
++	dma_cookie_t dma_cookie = dmaengine_submit(desc);
++	if (dma_submit_error(dma_cookie))
++		DMA_DEBUG("Failed to do DMA tx_submit\n");
++
++	dma_async_issue_pending(chan);
++	wait_event_interruptible(wq, dma_finished);
++}
++
++int dw_dma_async_do_memcpy(void *src, void *dst, size_t size)
++{
++	int ret;
++	struct device *dma_dev;
++	struct dma_chan *chan;
++	dma_addr_t src_dma, dst_dma;
++	struct dma_async_tx_descriptor *desc;
++
++	const struct iommu_ops *iommu;
++	u64 dma_addr = 0, dma_size = 0;
++
++	dma_dev = kzalloc(sizeof(*dma_dev), GFP_KERNEL);
++	if(!dma_dev){
++		dev_err(dma_dev, "kmalloc error.\n");
++		return -ENOMEM;
++	}
++
++	dma_dev->bus = NULL;
++	dma_dev->coherent_dma_mask = 0xffffffff;
++
++	iort_dma_setup(dma_dev, &dma_addr, &dma_size);
++	iommu = iort_iommu_configure_id(dma_dev, NULL);
++	if (PTR_ERR(iommu) == -EPROBE_DEFER)
++		return -EPROBE_DEFER;
++
++	arch_setup_dma_ops(dma_dev, dst_dma, dma_size, iommu, true);
++
++	if(_dma_async_alloc_buf(dma_dev, &src, &dst, size, &src_dma, &dst_dma)) {
++		dev_err(dma_dev, "Err alloc.\n");
++		return -ENOMEM;
++	}
++
++	DMA_DEBUG("src=%#llx, dst=%#llx\n", (u64)src, (u64)dst);
++	DMA_DEBUG("dma_src=%#x dma_dst=%#x\n", (u32)src_dma, (u32)dst_dma);
++
++	_dma_async_prebuf(src, dst, size);
++
++	chan = _dma_get_channel(DMA_MEMCPY);
++	if(!chan ){
++		DMA_PRINTK("Err get chan.\n");
++		return -EBUSY;
++	}
++	DMA_DEBUG("get chan ok.\n");
++
++	desc = _dma_async_get_desc(chan, src_dma, dst_dma, size);
++	if(!desc){
++		DMA_PRINTK("Err get desc.\n");
++		dma_release_channel(chan);
++		return -ENOMEM;
++	}
++	DMA_DEBUG("get desc ok.\n");
++
++	desc->callback = tx_callback;
++
++	sifive_l2_flush64_range(src_dma, size);
++	sifive_l2_flush64_range(dst_dma, size);
++
++	_dma_async_do_start(desc, chan);
++	_dma_async_release(chan);
++
++	ret = _dma_async_check_data(src, dst, size);
++
++	dma_free_coherent(dma_dev, size, src, src_dma);
++	dma_free_coherent(dma_dev, size, dst, dst_dma);
++
++	return ret;
++}
++EXPORT_SYMBOL(dw_dma_async_do_memcpy);
++
++/*
++* phys addr for dma.
++*/
++int dw_dma_memcpy_raw(dma_addr_t src_dma, dma_addr_t dst_dma, size_t size)
++{
++	struct dma_chan *chan;
++	struct device *dma_dev;
++	struct dma_async_tx_descriptor *desc;
++
++	const struct iommu_ops *iommu;
++	u64 dma_addr = 0, dma_size = 0;
++
++	dma_dev = kzalloc(sizeof(*dma_dev), GFP_KERNEL);
++	if(!dma_dev){
++		DMA_PRINTK("kmalloc error.\n");
++		return -ENOMEM;
++	}
++
++	dma_dev->bus = NULL;
++	dma_dev->coherent_dma_mask = 0xffffffff;
++
++	iort_dma_setup(dma_dev, &dma_addr, &dma_size);
++	iommu = iort_iommu_configure_id(dma_dev, NULL);
++	if (PTR_ERR(iommu) == -EPROBE_DEFER)
++		return -EPROBE_DEFER;
++
++	arch_setup_dma_ops(dma_dev, dst_dma, dma_size, iommu, true);
++
++	chan = _dma_get_channel(DMA_MEMCPY);
++	if(!chan){
++		DMA_PRINTK("Error get chan.\n");
++		return -EBUSY;
++	}
++	DMA_DEBUG("get chan ok.\n");
++
++	DMA_DEBUG("src_dma=%#llx, dst_dma=%#llx \n", src_dma, dst_dma);
++	desc = _dma_async_get_desc(chan, src_dma, dst_dma, size);
++	if(!desc){
++		DMA_PRINTK("Error get desc.\n");
++		dma_release_channel(chan);
++		return -ENOMEM;
++	}
++	DMA_DEBUG("get desc ok.\n");
++
++	desc->callback = tx_callback;
++
++	sifive_l2_flush64_range(src_dma, size);
++	sifive_l2_flush64_range(dst_dma, size);
++
++	_dma_async_do_start(desc, chan);
++	_dma_async_release(chan);
++
++	return 0;
++}
++EXPORT_SYMBOL(dw_dma_memcpy_raw);
++
++/*
++*virtl addr for cpu.
++*/
++int dw_dma_memcpy(void *src, void *dst, size_t size)
++{
++	dma_addr_t src_dma, dst_dma;
++
++	src_dma = dw_virt_to_phys(src);
++	dst_dma = dw_virt_to_phys(dst);
++
++	dw_dma_memcpy_raw(src_dma, dst_dma, size);
++	return 0;
++}
++EXPORT_SYMBOL(dw_dma_memcpy);
++
++int dw_dma_mem2mem_test(void)
++{
++	int ret;
++	void *src = NULL;
++	void *dst = NULL;
++	size_t size = 256;
++
++	ret = dw_dma_async_do_memcpy(src, dst, size);
++	if(ret){
++		DMA_PRINTK("memcpy failed.\n");
++	} else {
++		DMA_PRINTK("memcpy ok.\n");
++	}
++
++	return ret;
++}
+--- /dev/null
++++ b/include/soc/starfive/jh7100_dma.h
+@@ -0,0 +1,31 @@
++#ifndef STARFIVE_JH7100_DMA_H
++#define STARFIVE_JH7100_DMA_H
++
++#include <asm/io.h>
++
++#define CONFIG_DW_DEBUG
++
++#define DMA_PRINTK(fmt,...) \
++	printk("[DW_DMA] %s():%d \n" fmt, __func__, __LINE__, ##__VA_ARGS__)
++
++#ifdef CONFIG_DW_DEBUG
++#define DMA_DEBUG(fmt,...) \
++	printk("[DW_DMA_DEBUG] %s():%d \n" fmt, __func__, __LINE__, ##__VA_ARGS__)
++#else
++#define DMA_BEBUG(fmt,...)
++#endif
++
++#define _dw_virt_to_phys(vaddr) (pfn_to_phys(virt_to_pfn(vaddr)))
++#define _dw_phys_to_virt(paddr) (page_to_virt(phys_to_page(paddr)))
++
++void *dw_phys_to_virt(u64 phys);
++u64 dw_virt_to_phys(void *vaddr);
++
++int dw_dma_async_do_memcpy(void *src, void *dst, size_t size);
++int dw_dma_memcpy_raw(dma_addr_t src_dma, dma_addr_t dst_dma, size_t size);
++int dw_dma_memcpy(void *src, void *dst, size_t size);
++
++int dw_dma_mem2mem_arry(void);
++int dw_dma_mem2mem_test(void);
++
++#endif /* STARFIVE_JH7100_DMA_H */

@@ -1,0 +1,49 @@
+From 4a75f8889870a8b461c4f0afb6588a3729017490 Mon Sep 17 00:00:00 2001
+From: Matteo Croce <mcroce@microsoft.com>
+Date: Fri, 21 May 2021 03:26:38 +0200
+Subject: [PATCH 67/84] net: stmmac: use GFP_DMA32
+
+Signed-off-by: Matteo Croce <mcroce@microsoft.com>
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac_main.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -1489,14 +1489,16 @@ static int stmmac_init_rx_buffers(struct
+ 	struct stmmac_rx_buffer *buf = &rx_q->buf_pool[i];
+ 
+ 	if (!buf->page) {
+-		buf->page = page_pool_dev_alloc_pages(rx_q->page_pool);
++		buf->page = page_pool_alloc_pages(rx_q->page_pool,
++						  GFP_ATOMIC | __GFP_NOWARN | GFP_DMA32);
+ 		if (!buf->page)
+ 			return -ENOMEM;
+ 		buf->page_offset = stmmac_rx_offset(priv);
+ 	}
+ 
+ 	if (priv->sph && !buf->sec_page) {
+-		buf->sec_page = page_pool_dev_alloc_pages(rx_q->page_pool);
++		buf->sec_page = page_pool_alloc_pages(rx_q->page_pool,
++						      GFP_ATOMIC | __GFP_NOWARN | GFP_DMA32);
+ 		if (!buf->sec_page)
+ 			return -ENOMEM;
+ 
+@@ -4645,13 +4647,15 @@ static inline void stmmac_rx_refill(stru
+ 			p = rx_q->dma_rx + entry;
+ 
+ 		if (!buf->page) {
+-			buf->page = page_pool_dev_alloc_pages(rx_q->page_pool);
++			buf->page = page_pool_alloc_pages(rx_q->page_pool,
++							  GFP_ATOMIC | __GFP_NOWARN | GFP_DMA32);
+ 			if (!buf->page)
+ 				break;
+ 		}
+ 
+ 		if (priv->sph && !buf->sec_page) {
+-			buf->sec_page = page_pool_dev_alloc_pages(rx_q->page_pool);
++			buf->sec_page = page_pool_alloc_pages(rx_q->page_pool,
++							      GFP_ATOMIC | __GFP_NOWARN | GFP_DMA32);
+ 			if (!buf->sec_page)
+ 				break;
+ 

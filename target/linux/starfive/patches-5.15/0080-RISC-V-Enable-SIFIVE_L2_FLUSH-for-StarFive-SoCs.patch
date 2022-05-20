@@ -1,0 +1,44 @@
+From b6cc26d9da9684b303705343d488cb0250da81cc Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Thu, 14 Oct 2021 20:03:06 +0200
+Subject: [PATCH 80/84] RISC-V: Enable SIFIVE_L2_FLUSH for StarFive SoCs
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ arch/riscv/Kconfig.socs    | 2 ++
+ drivers/soc/Makefile       | 2 +-
+ drivers/soc/sifive/Kconfig | 2 +-
+ 3 files changed, 4 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/Kconfig.socs
++++ b/arch/riscv/Kconfig.socs
+@@ -23,6 +23,8 @@ config SOC_STARFIVE
+ 	bool "StarFive SoCs"
+ 	select PINCTRL
+ 	select RESET_CONTROLLER
++	select SIFIVE_L2
++	select SIFIVE_L2_FLUSH
+ 	select SIFIVE_PLIC
+ 	help
+ 	  This enables support for StarFive SoC platform hardware.
+--- a/drivers/soc/Makefile
++++ b/drivers/soc/Makefile
+@@ -22,7 +22,7 @@ obj-y				+= qcom/
+ obj-y				+= renesas/
+ obj-$(CONFIG_ARCH_ROCKCHIP)	+= rockchip/
+ obj-$(CONFIG_SOC_SAMSUNG)	+= samsung/
+-obj-$(CONFIG_SOC_SIFIVE)	+= sifive/
++obj-y				+= sifive/
+ obj-y				+= sunxi/
+ obj-$(CONFIG_ARCH_TEGRA)	+= tegra/
+ obj-y				+= ti/
+--- a/drivers/soc/sifive/Kconfig
++++ b/drivers/soc/sifive/Kconfig
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-if SOC_SIFIVE
++if SOC_SIFIVE || SOC_STARFIVE
+ 
+ config SIFIVE_L2
+ 	bool "Sifive L2 Cache controller"

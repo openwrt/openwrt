@@ -1,0 +1,27 @@
+From d9a77deebb3620428ddbf97738275ce74cee22ee Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Sun, 10 Oct 2021 16:48:27 +0200
+Subject: [PATCH 09/84] dt-bindings: interrupt-controller: Add StarFive JH7100
+ plic
+
+commit 9ac16169b4d4359d3832669bf06aab9e51184828 upstream.
+
+Add compatible string for StarFive JH7100 plic.
+
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ .../bindings/interrupt-controller/sifive,plic-1.0.0.yaml         | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/interrupt-controller/sifive,plic-1.0.0.yaml
++++ b/Documentation/devicetree/bindings/interrupt-controller/sifive,plic-1.0.0.yaml
+@@ -45,6 +45,7 @@ properties:
+     items:
+       - enum:
+           - sifive,fu540-c000-plic
++          - starfive,jh7100-plic
+           - canaan,k210-plic
+       - const: sifive,plic-1.0.0
+ 

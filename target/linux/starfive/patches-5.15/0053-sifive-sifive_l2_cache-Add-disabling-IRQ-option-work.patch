@@ -1,0 +1,148 @@
+From 90d28a18e7ffc8f832b1e643c9867eee328708f4 Mon Sep 17 00:00:00 2001
+From: Tom <support@vamrs.com>
+Date: Sat, 13 Feb 2021 22:25:17 +0800
+Subject: [PATCH 53/84] sifive/sifive_l2_cache: Add disabling IRQ option
+ (workaround)
+
+---
+ drivers/irqchip/irq-sifive-plic.c    | 41 ++++++++++++++++++++++++++++
+ drivers/soc/sifive/Kconfig           |  4 +++
+ drivers/soc/sifive/sifive_l2_cache.c |  8 ++++++
+ 3 files changed, 53 insertions(+)
+
+--- a/drivers/irqchip/irq-sifive-plic.c
++++ b/drivers/irqchip/irq-sifive-plic.c
+@@ -277,6 +277,44 @@ static int plic_starting_cpu(unsigned in
+ 	return 0;
+ }
+ 
++#if IS_ENABLED(CONFIG_SIFIVE_L2_IRQ_DISABLE)
++#ifdef CONFIG_SOC_STARFIVE
++#define SIFIVE_L2_MAX_ECCINTR 4
++#else
++#define SIFIVE_L2_MAX_ECCINTR 3
++#endif
++static const struct of_device_id sifive_l2_ids[] = {
++	{ .compatible = "sifive,fu540-c000-ccache" },
++	{ .compatible = "starfive,ccache0" },
++	{ /* end of table */ },
++};
++
++static void sifive_l2_irq_disable(struct plic_handler *handler)
++{
++	int i, irq;
++	struct of_phandle_args oirq;
++
++	struct device_node *np = of_find_matching_node(NULL, sifive_l2_ids);
++	if (!np) {
++		pr_err("Can't get L2 cache device node.\n");
++		return;
++	}
++
++	for (i = 0; i < SIFIVE_L2_MAX_ECCINTR; i++) {
++		if (!of_irq_parse_one(np, i, &oirq)) {
++			irq = *oirq.args;
++			if (irq) {
++				pr_info("disable L2 cache irq %d in plic\n", irq);
++				plic_toggle(handler, irq, 0);
++				continue;
++			}
++		}
++		pr_err("Can't get L2 cache irq(#%d).\n", i);
++	}
++}
++#endif
++
++
+ static int __init plic_init(struct device_node *node,
+ 		struct device_node *parent)
+ {
+@@ -370,6 +408,9 @@ static int __init plic_init(struct devic
+ done:
+ 		for (hwirq = 1; hwirq <= nr_irqs; hwirq++)
+ 			plic_toggle(handler, hwirq, 0);
++#if IS_ENABLED(CONFIG_SIFIVE_L2_IRQ_DISABLE)
++		sifive_l2_irq_disable(handler);
++#endif
+ 		nr_handlers++;
+ 	}
+ 
+--- a/drivers/soc/sifive/Kconfig
++++ b/drivers/soc/sifive/Kconfig
+@@ -22,4 +22,8 @@ config SIFIVE_L2_FLUSH_SIZE
+ 
+ endif # SIFIVE_L2_FLUSH
+ 
++config SIFIVE_L2_IRQ_DISABLE
++	bool "Disable Level 2 Cache Controller interrupts"
++	default y if SOC_STARFIVE
++
+ endif
+--- a/drivers/soc/sifive/sifive_l2_cache.c
++++ b/drivers/soc/sifive/sifive_l2_cache.c
+@@ -40,7 +40,9 @@
+ #define SIFIVE_L2_FLUSH64_LINE_LEN 64
+ 
+ static void __iomem *l2_base = NULL;
++#if !IS_ENABLED(CONFIG_SIFIVE_L2_IRQ_DISABLE)
+ static int g_irq[SIFIVE_L2_MAX_ECCINTR];
++#endif
+ static struct riscv_cacheinfo_ops l2_cache_ops;
+ 
+ enum {
+@@ -188,6 +190,7 @@ static const struct attribute_group *l2_
+ 		return NULL;
+ }
+ 
++#if !IS_ENABLED(CONFIG_SIFIVE_L2_IRQ_DISABLE)
+ static irqreturn_t l2_int_handler(int irq, void *device)
+ {
+ 	unsigned int add_h, add_l;
+@@ -231,12 +234,16 @@ static irqreturn_t l2_int_handler(int ir
+ 
+ 	return IRQ_HANDLED;
+ }
++#endif
+ 
+ static int __init sifive_l2_init(void)
+ {
+ 	struct device_node *np;
+ 	struct resource res;
+-	int i, rc, intr_num;
++	int rc;
++#if !IS_ENABLED(CONFIG_SIFIVE_L2_IRQ_DISABLE)
++	int i, intr_num;
++#endif
+ 
+ 	np = of_find_matching_node(NULL, sifive_l2_ids);
+ 	if (!np)
+@@ -253,6 +260,7 @@ static int __init sifive_l2_init(void)
+ 		goto err_node_put;
+ 	}
+ 
++#if !IS_ENABLED(CONFIG_SIFIVE_L2_IRQ_DISABLE)
+ 	intr_num = of_property_count_u32_elems(np, "interrupts");
+ 	if (!intr_num) {
+ 		pr_err("L2CACHE: no interrupts property\n");
+@@ -269,6 +277,7 @@ static int __init sifive_l2_init(void)
+ 		}
+ 	}
+ 	of_node_put(np);
++#endif
+ 
+ 	l2_config_read();
+ 
+@@ -280,11 +289,13 @@ static int __init sifive_l2_init(void)
+ #endif
+ 	return 0;
+ 
++#if !IS_ENABLED(CONFIG_SIFIVE_L2_IRQ_DISABLE)
+ err_free_irq:
+ 	while (--i >= 0)
+ 		free_irq(g_irq[i], NULL);
+ err_unmap:
+ 	iounmap(l2_base);
++#endif
+ err_node_put:
+ 	of_node_put(np);
+ 	return rc;

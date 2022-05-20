@@ -1,0 +1,25 @@
+From 24e2c7bb8713ae3dc6e5cac12970b1c888f3fae6 Mon Sep 17 00:00:00 2001
+From: Atish Patra <atish.patra@wdc.com>
+Date: Sat, 12 Jun 2021 16:52:26 -0700
+Subject: [PATCH 55/84] sifive/sifive_l2_cache: Align the address to cache line
+
+[Emil: fix suggested by Geert Uytterhoeven <geert@linux-m68k.org>]
+
+Signed-off-by: Atish Patra <atish.patra@wdc.com>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ drivers/soc/sifive/sifive_l2_cache.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/soc/sifive/sifive_l2_cache.c
++++ b/drivers/soc/sifive/sifive_l2_cache.c
+@@ -139,6 +139,9 @@ void sifive_l2_flush64_range(unsigned lo
+ 		return;
+ 	}
+ 
++	len = len + (start % SIFIVE_L2_FLUSH64_LINE_LEN);
++	start = ALIGN_DOWN(start, SIFIVE_L2_FLUSH64_LINE_LEN);
++
+ 	/* make sure the address is in the range */
+ 	if(start < CONFIG_SIFIVE_L2_FLUSH_START ||
+ 	   (start + len) > (CONFIG_SIFIVE_L2_FLUSH_START +

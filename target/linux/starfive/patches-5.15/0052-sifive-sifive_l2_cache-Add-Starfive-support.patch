@@ -1,0 +1,19 @@
+From d06f6efc2ea564c27986b9f96d2a6f2eb5869363 Mon Sep 17 00:00:00 2001
+From: Tom <support@vamrs.com>
+Date: Mon, 15 Feb 2021 23:59:46 +0800
+Subject: [PATCH 52/84] sifive/sifive_l2_cache: Add Starfive support
+
+---
+ drivers/soc/sifive/sifive_l2_cache.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/soc/sifive/sifive_l2_cache.c
++++ b/drivers/soc/sifive/sifive_l2_cache.c
+@@ -103,6 +103,7 @@ static void l2_config_read(void)
+ static const struct of_device_id sifive_l2_ids[] = {
+ 	{ .compatible = "sifive,fu540-c000-ccache" },
+ 	{ .compatible = "sifive,fu740-c000-ccache" },
++	{ .compatible = "starfive,ccache0" },
+ 	{ /* end of table */ },
+ };
+ 

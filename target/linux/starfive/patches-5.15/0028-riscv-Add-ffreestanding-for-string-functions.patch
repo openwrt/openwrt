@@ -1,0 +1,29 @@
+From dbdc81084ebfb21f1bb01a711620041e498ebd10 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Mon, 6 Dec 2021 21:27:07 +0100
+Subject: [PATCH 28/84] riscv: Add -ffreestanding for string functions
+
+The string library implements memset, memcpy and other library
+functions, so tell the compiler not to optimise such code to just calls
+to themselves.
+
+This is correct for all compilers, but for some reason only Clang builds
+break without this flag.
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ arch/riscv/lib/Makefile | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/riscv/lib/Makefile
++++ b/arch/riscv/lib/Makefile
+@@ -4,4 +4,9 @@ lib-$(CONFIG_MMU)	+= uaccess.o
+ lib-$(CONFIG_64BIT)	+= tishift.o
+ lib-$(CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE) += string.o
+ 
++# string.o implements standard library functions like memset/memcpy etc.
++# Use -ffreestanding to ensure that the compiler does not try to "optimize"
++# them into calls to themselves.
++CFLAGS_string.o := -ffreestanding
++
+ obj-$(CONFIG_FUNCTION_ERROR_INJECTION) += error-inject.o

@@ -1,0 +1,26 @@
+From 22af1072a98f163008d8084c35425cddb6069372 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Sun, 10 Oct 2021 16:48:27 +0200
+Subject: [PATCH 08/84] dt-bindings: timer: Add StarFive JH7100 clint
+
+commit 3234d3a1374308615c0cde5e83e52f6b644eaf53 upstream.
+
+Add compatible string for the StarFive JH7100 clint.
+
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ Documentation/devicetree/bindings/timer/sifive,clint.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/timer/sifive,clint.yaml
++++ b/Documentation/devicetree/bindings/timer/sifive,clint.yaml
+@@ -25,6 +25,7 @@ properties:
+     items:
+       - enum:
+           - sifive,fu540-c000-clint
++          - starfive,jh7100-clint
+           - canaan,k210-clint
+       - const: sifive,clint0
+ 

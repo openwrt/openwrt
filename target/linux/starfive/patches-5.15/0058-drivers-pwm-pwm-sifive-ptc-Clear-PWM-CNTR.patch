@@ -1,0 +1,23 @@
+From aa2d8aa99a833c08beb7efe05c6a620f35fcd01c Mon Sep 17 00:00:00 2001
+From: "yiming.li" <yiming.li@starfivetech.com>
+Date: Tue, 16 Mar 2021 01:45:19 +0800
+Subject: [PATCH 58/84] drivers/pwm/pwm-sifive-ptc: Clear PWM CNTR
+
+Clear CNTR of PWM after setting period & duty_cycle
+---
+ drivers/pwm/pwm-sifive-ptc.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/pwm/pwm-sifive-ptc.c
++++ b/drivers/pwm/pwm-sifive-ptc.c
+@@ -167,6 +167,10 @@ static int sifive_pwm_ptc_apply(struct p
+ 	printk("[sifive_pwm_ptc_config]lrc ok....\n");
+ #endif
+ 
++	/* Clear REG_RPTC_CNTR after setting period & duty_cycle*/
++	reg_addr = REG_PTC_RPTC_CNTR(pwm->regs, dev->hwpwm);
++	iowrite32(0, reg_addr);
++
+ 	return 0;
+ }
+ 

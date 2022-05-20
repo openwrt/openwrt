@@ -1,0 +1,27 @@
+From bf4c658e0e113518a59beccf2f25c9e78a9e02d5 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 21 May 2021 08:35:33 +0200
+Subject: [PATCH 54/84] sifive/sifive_l2_cache: Print a backtrace on
+ out-of-range flushes
+
+This makes it easier to find out which driver passes a wrong address
+range.
+
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ drivers/soc/sifive/sifive_l2_cache.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/soc/sifive/sifive_l2_cache.c
++++ b/drivers/soc/sifive/sifive_l2_cache.c
+@@ -143,8 +143,8 @@ void sifive_l2_flush64_range(unsigned lo
+ 	if(start < CONFIG_SIFIVE_L2_FLUSH_START ||
+ 	   (start + len) > (CONFIG_SIFIVE_L2_FLUSH_START +
+ 			     CONFIG_SIFIVE_L2_FLUSH_SIZE)) {
+-		pr_warn("L2CACHE: flush64 out of range: %lx(%lx), skip flush\n",
+-			start, len);
++		WARN(1, "L2CACHE: flush64 out of range: %lx(%lx), skip flush\n",
++		     start, len);
+ 		return;
+ 	}
+ 

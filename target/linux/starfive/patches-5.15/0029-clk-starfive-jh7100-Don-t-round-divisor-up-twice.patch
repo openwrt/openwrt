@@ -1,0 +1,66 @@
+From 4718594bed7bb42e154b99db8084715b11cf3bb1 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Fri, 3 Dec 2021 00:36:16 +0100
+Subject: [PATCH 29/84] clk: starfive: jh7100: Don't round divisor up twice
+
+The problem is best illustrated by an example. Suppose a consumer wants
+a 4MHz clock rate from a divider with a 10MHz parent. It would then
+call
+
+  clk_round_rate(clk, 4000000)
+
+which would call into our determine_rate() callback that correctly
+rounds up and finds that a divisor of 3 gives the highest possible
+frequency below the requested 4MHz and returns 10000000 / 3 = 3333333Hz.
+
+However the consumer would then call
+
+  clk_set_rate(clk, 3333333)
+
+but since 3333333 doesn't divide 10000000 evenly our set_rate() callback
+would again round the divisor up and set it to 4 which results in an
+unnecessarily low rate of 2.5MHz.
+
+Fix it by using DIV_ROUND_CLOSEST in the set_rate() callback.
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ drivers/clk/starfive/clk-starfive-jh7100.c | 14 +++-----------
+ 1 file changed, 3 insertions(+), 11 deletions(-)
+
+--- a/drivers/clk/starfive/clk-starfive-jh7100.c
++++ b/drivers/clk/starfive/clk-starfive-jh7100.c
+@@ -399,22 +399,13 @@ static unsigned long jh7100_clk_recalc_r
+ 	return div ? parent_rate / div : 0;
+ }
+ 
+-static unsigned long jh7100_clk_bestdiv(struct jh7100_clk *clk,
+-					unsigned long rate, unsigned long parent)
+-{
+-	unsigned long max = clk->max_div;
+-	unsigned long div = DIV_ROUND_UP(parent, rate);
+-
+-	return min(div, max);
+-}
+-
+ static int jh7100_clk_determine_rate(struct clk_hw *hw,
+ 				     struct clk_rate_request *req)
+ {
+ 	struct jh7100_clk *clk = jh7100_clk_from(hw);
+ 	unsigned long parent = req->best_parent_rate;
+ 	unsigned long rate = clamp(req->rate, req->min_rate, req->max_rate);
+-	unsigned long div = jh7100_clk_bestdiv(clk, rate, parent);
++	unsigned long div = min_t(unsigned long, DIV_ROUND_UP(parent, rate), clk->max_div);
+ 	unsigned long result = parent / div;
+ 
+ 	/*
+@@ -442,7 +433,8 @@ static int jh7100_clk_set_rate(struct cl
+ 			       unsigned long parent_rate)
+ {
+ 	struct jh7100_clk *clk = jh7100_clk_from(hw);
+-	unsigned long div = jh7100_clk_bestdiv(clk, rate, parent_rate);
++	unsigned long div = clamp(DIV_ROUND_CLOSEST(parent_rate, rate),
++				  1UL, (unsigned long)clk->max_div);
+ 
+ 	jh7100_clk_reg_rmw(clk, JH7100_CLK_DIV_MASK, div);
+ 	return 0;

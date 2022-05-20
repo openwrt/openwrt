@@ -1,0 +1,2 @@
+bootcmd=load mmc 0:1 0xa0000000 /uImage; bootm 0xa0000000
+bootargs=earlyprintk console=ttyS0,115200 root=/dev/mmcblk0p2 rootwait

@@ -1,0 +1,231 @@
+From 512d1a891de7ce03ebb92a9f454608592e8eec3e Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Sat, 20 Nov 2021 19:30:49 +0100
+Subject: [PATCH 42/84] reset: starfive: Add JH7100 audio reset driver
+
+The audio resets are almost identical to the system resets, there are
+just fewer of them. So factor out and export a generic probe function,
+so most of the reset controller implementation can be shared.
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ MAINTAINERS                                   |  8 +--
+ drivers/reset/starfive/Kconfig                |  7 +++
+ drivers/reset/starfive/Makefile               |  1 +
+ .../starfive/reset-starfive-jh7100-audio.c    | 58 +++++++++++++++++++
+ .../reset/starfive/reset-starfive-jh7100.c    | 37 ++++++++----
+ .../reset/starfive/reset-starfive-jh7100.h    | 16 +++++
+ 6 files changed, 112 insertions(+), 15 deletions(-)
+ create mode 100644 drivers/reset/starfive/reset-starfive-jh7100-audio.c
+ create mode 100644 drivers/reset/starfive/reset-starfive-jh7100.h
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -17902,12 +17902,12 @@ F:	Documentation/devicetree/bindings/pin
+ F:	drivers/pinctrl/pinctrl-starfive.c
+ F:	include/dt-bindings/pinctrl/pinctrl-starfive.h
+ 
+-STARFIVE JH7100 RESET CONTROLLER DRIVER
++STARFIVE JH7100 RESET CONTROLLER DRIVERS
+ M:	Emil Renner Berthing <kernel@esmil.dk>
+ S:	Maintained
+-F:	Documentation/devicetree/bindings/reset/starfive,jh7100-reset.yaml
+-F:	drivers/reset/starfive/reset-starfive-jh7100.c
+-F:	include/dt-bindings/reset/starfive-jh7100.h
++F:	Documentation/devicetree/bindings/reset/starfive,jh7100-*.yaml
++F:	drivers/reset/starfive/reset-starfive-jh7100*
++F:	include/dt-bindings/reset/starfive-jh7100*.h
+ 
+ STATIC BRANCH/CALL
+ M:	Peter Zijlstra <peterz@infradead.org>
+--- a/drivers/reset/starfive/Kconfig
++++ b/drivers/reset/starfive/Kconfig
+@@ -6,3 +6,10 @@ config RESET_STARFIVE_JH7100
+ 	default SOC_STARFIVE
+ 	help
+ 	  This enables the reset controller driver for the StarFive JH7100 SoC.
++
++config RESET_STARFIVE_JH7100_AUDIO
++	tristate "StarFive JH7100 Audio Reset Driver"
++	depends on RESET_STARFIVE_JH7100
++	default SOC_STARFIVE
++	help
++	  This enables the audio reset driver for the StarFive JH7100 SoC.
+--- a/drivers/reset/starfive/Makefile
++++ b/drivers/reset/starfive/Makefile
+@@ -1,2 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0
+ obj-$(CONFIG_RESET_STARFIVE_JH7100)		+= reset-starfive-jh7100.o
++obj-$(CONFIG_RESET_STARFIVE_JH7100_AUDIO)	+= reset-starfive-jh7100-audio.o
+--- /dev/null
++++ b/drivers/reset/starfive/reset-starfive-jh7100-audio.c
+@@ -0,0 +1,58 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Audio reset driver for the StarFive JH7100 SoC
++ *
++ * Copyright (C) 2021 Emil Renner Berthing <kernel@esmil.dk>
++ */
++
++#include <linux/mod_devicetable.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/reset-controller.h>
++
++#include <dt-bindings/reset/starfive-jh7100-audio.h>
++
++#include "reset-starfive-jh7100.h"
++
++/* register offsets */
++#define JH7100_AUDRST_ASSERT0	0x00
++#define JH7100_AUDRST_STATUS0	0x04
++
++/*
++ * Writing a 1 to the n'th bit of the ASSERT register asserts
++ * line n, and writing a 0 deasserts the same line.
++ * Most reset lines have their status inverted so a 0 bit in the STATUS
++ * register means the line is asserted and a 1 means it's deasserted. A few
++ * lines don't though, so store the expected value of the status registers when
++ * all lines are asserted.
++ */
++static const u32 jh7100_audrst_asserted[1] = {
++	BIT(JH7100_AUDRST_USB_AXI) |
++	BIT(JH7100_AUDRST_USB_PWRUP_RST_N) |
++	BIT(JH7100_AUDRST_USB_PONRST)
++};
++
++static int jh7100_audrst_probe(struct platform_device *pdev)
++{
++	return reset_starfive_jh7100_generic_probe(pdev, jh7100_audrst_asserted,
++						   JH7100_AUDRST_STATUS0, JH7100_AUDRSTN_END);
++}
++
++static const struct of_device_id jh7100_audrst_dt_ids[] = {
++	{ .compatible = "starfive,jh7100-audrst" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, jh7100_audrst_dt_ids);
++
++static struct platform_driver jh7100_audrst_driver = {
++	.probe = jh7100_audrst_probe,
++	.driver = {
++		.name = "jh7100-reset-audio",
++		.of_match_table = jh7100_audrst_dt_ids,
++	},
++};
++module_platform_driver(jh7100_audrst_driver);
++
++MODULE_AUTHOR("Emil Renner Berthing");
++MODULE_DESCRIPTION("StarFive JH7100 audio reset driver");
++MODULE_LICENSE("GPL");
+--- a/drivers/reset/starfive/reset-starfive-jh7100.c
++++ b/drivers/reset/starfive/reset-starfive-jh7100.c
+@@ -16,6 +16,8 @@
+ 
+ #include <dt-bindings/reset/starfive-jh7100.h>
+ 
++#include "reset-starfive-jh7100.h"
++
+ /* register offsets */
+ #define JH7100_RESET_ASSERT0	0x00
+ #define JH7100_RESET_ASSERT1	0x04
+@@ -52,7 +54,9 @@ struct jh7100_reset {
+ 	struct reset_controller_dev rcdev;
+ 	/* protect registers against concurrent read-modify-write */
+ 	spinlock_t lock;
+-	void __iomem *base;
++	void __iomem *assert;
++	void __iomem *status;
++	const u32 *asserted;
+ };
+ 
+ static inline struct jh7100_reset *
+@@ -67,9 +71,9 @@ static int jh7100_reset_update(struct re
+ 	struct jh7100_reset *data = jh7100_reset_from(rcdev);
+ 	unsigned long offset = id / 32;
+ 	u32 mask = BIT(id % 32);
+-	void __iomem *reg_assert = data->base + JH7100_RESET_ASSERT0 + offset * sizeof(u32);
+-	void __iomem *reg_status = data->base + JH7100_RESET_STATUS0 + offset * sizeof(u32);
+-	u32 done = jh7100_reset_asserted[offset] & mask;
++	void __iomem *reg_assert = data->assert + offset * sizeof(u32);
++	void __iomem *reg_status = data->status + offset * sizeof(u32);
++	u32 done = data->asserted[offset] & mask;
+ 	u32 value;
+ 	unsigned long flags;
+ 	int ret;
+@@ -123,10 +127,10 @@ static int jh7100_reset_status(struct re
+ 	struct jh7100_reset *data = jh7100_reset_from(rcdev);
+ 	unsigned long offset = id / 32;
+ 	u32 mask = BIT(id % 32);
+-	void __iomem *reg_status = data->base + JH7100_RESET_STATUS0 + offset * sizeof(u32);
++	void __iomem *reg_status = data->status + offset * sizeof(u32);
+ 	u32 value = readl(reg_status);
+ 
+-	return !((value ^ jh7100_reset_asserted[offset]) & mask);
++	return !((value ^ data->asserted[offset]) & mask);
+ }
+ 
+ static const struct reset_control_ops jh7100_reset_ops = {
+@@ -136,7 +140,8 @@ static const struct reset_control_ops jh
+ 	.status		= jh7100_reset_status,
+ };
+ 
+-static int __init jh7100_reset_probe(struct platform_device *pdev)
++int reset_starfive_jh7100_generic_probe(struct platform_device *pdev, const u32 *asserted,
++					unsigned int status_offset, unsigned int nr_resets)
+ {
+ 	struct jh7100_reset *data;
+ 
+@@ -144,19 +149,29 @@ static int __init jh7100_reset_probe(str
+ 	if (!data)
+ 		return -ENOMEM;
+ 
+-	data->base = devm_platform_ioremap_resource(pdev, 0);
+-	if (IS_ERR(data->base))
+-		return PTR_ERR(data->base);
++	data->assert = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(data->assert))
++		return PTR_ERR(data->assert);
+ 
+ 	data->rcdev.ops = &jh7100_reset_ops;
+ 	data->rcdev.owner = THIS_MODULE;
+-	data->rcdev.nr_resets = JH7100_RSTN_END;
++	data->rcdev.nr_resets = nr_resets;
+ 	data->rcdev.dev = &pdev->dev;
+ 	data->rcdev.of_node = pdev->dev.of_node;
++
+ 	spin_lock_init(&data->lock);
++	data->status = data->assert + status_offset;
++	data->asserted = asserted;
+ 
+ 	return devm_reset_controller_register(&pdev->dev, &data->rcdev);
+ }
++EXPORT_SYMBOL_GPL(reset_starfive_jh7100_generic_probe);
++
++static int __init jh7100_reset_probe(struct platform_device *pdev)
++{
++	return reset_starfive_jh7100_generic_probe(pdev, jh7100_reset_asserted,
++						   JH7100_RESET_STATUS0, JH7100_RSTN_END);
++}
+ 
+ static const struct of_device_id jh7100_reset_dt_ids[] = {
+ 	{ .compatible = "starfive,jh7100-reset" },
+--- /dev/null
++++ b/drivers/reset/starfive/reset-starfive-jh7100.h
+@@ -0,0 +1,16 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Copyright (C) 2021 Emil Renner Berthing <kernel@esmil.dk>
++ */
++
++#ifndef _RESET_STARFIVE_JH7100_H_
++#define _RESET_STARFIVE_JH7100_H_
++
++#include <linux/platform_device.h>
++
++int reset_starfive_jh7100_generic_probe(struct platform_device *pdev,
++					const u32 *asserted,
++					unsigned int status_offset,
++					unsigned int nr_resets);
++
++#endif

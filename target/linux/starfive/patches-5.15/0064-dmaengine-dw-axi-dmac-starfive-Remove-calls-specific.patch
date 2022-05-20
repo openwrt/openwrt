@@ -1,0 +1,90 @@
+From 0ea04cb5659424f37263664ee737c876c44c9ef7 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 29 Jun 2021 16:04:44 +0200
+Subject: [PATCH 64/84] dmaengine: dw-axi-dmac-starfive: Remove calls specific
+ to ARM64 ACPI
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+iort_dma_setup() is being removed by commit db59e1b6e49201be ("ACPI:
+arm64: Move DMA setup operations out of IORT") in iommu/next:
+
+    drivers/dma/dw-axi-dmac-starfive/starfive_dmaengine_memcpy.c: In function ‘dw_dma_async_
+    do_memcpy’:
+    drivers/dma/dw-axi-dmac-starfive/starfive_dmaengine_memcpy.c:152:2: error: implicit decl
+    aration of function ‘iort_dma_setup’ [-Werror=implicit-function-declaration]
+      152 |  iort_dma_setup(dma_dev, &dma_addr, &dma_size);
+	  |  ^~~~~~~~~~~~~~
+    drivers/dma/dw-axi-dmac-starfive/starfive_dmaengine_memcpy.c:153:8: warning: assignment to ‘const struct iommu_ops *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+      153 |  iommu = iort_iommu_configure_id(dma_dev, NULL);
+	  |        ^
+    drivers/dma/dw-axi-dmac-starfive/starfive_dmaengine_memcpy.c: In function ‘dw_dma_memcpy_raw’:
+    drivers/dma/dw-axi-dmac-starfive/starfive_dmaengine_memcpy.c:223:8: warning: assignment to ‘const struct iommu_ops *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+      223 |  iommu = iort_iommu_configure_id(dma_dev, NULL);
+	  |        ^
+
+iort_dma_setup() and iort_iommu_configure_id() are part of the ARM64
+ACPI implementation.  As CONFIG_ACPI_IORT cannot be enabled on RISC-V,
+they were dummies anyway, so these calls can just be removed.
+
+[Emil: remove unused local variables too]
+
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+Boot-tested, but the affected code paths were not exercised.
+---
+ .../starfive_dmaengine_memcpy.c               | 20 ++-----------------
+ 1 file changed, 2 insertions(+), 18 deletions(-)
+
+--- a/drivers/dma/dw-axi-dmac-starfive/starfive_dmaengine_memcpy.c
++++ b/drivers/dma/dw-axi-dmac-starfive/starfive_dmaengine_memcpy.c
+@@ -138,9 +138,6 @@ int dw_dma_async_do_memcpy(void *src, vo
+ 	dma_addr_t src_dma, dst_dma;
+ 	struct dma_async_tx_descriptor *desc;
+ 
+-	const struct iommu_ops *iommu;
+-	u64 dma_addr = 0, dma_size = 0;
+-
+ 	dma_dev = kzalloc(sizeof(*dma_dev), GFP_KERNEL);
+ 	if(!dma_dev){
+ 		dev_err(dma_dev, "kmalloc error.\n");
+@@ -150,12 +147,7 @@ int dw_dma_async_do_memcpy(void *src, vo
+ 	dma_dev->bus = NULL;
+ 	dma_dev->coherent_dma_mask = 0xffffffff;
+ 
+-	iort_dma_setup(dma_dev, &dma_addr, &dma_size);
+-	iommu = iort_iommu_configure_id(dma_dev, NULL);
+-	if (PTR_ERR(iommu) == -EPROBE_DEFER)
+-		return -EPROBE_DEFER;
+-
+-	arch_setup_dma_ops(dma_dev, dst_dma, dma_size, iommu, true);
++	arch_setup_dma_ops(dma_dev, dst_dma, 0, NULL, true);
+ 
+ 	if(_dma_async_alloc_buf(dma_dev, &src, &dst, size, &src_dma, &dst_dma)) {
+ 		dev_err(dma_dev, "Err alloc.\n");
+@@ -208,9 +200,6 @@ int dw_dma_memcpy_raw(dma_addr_t src_dma
+ 	struct device *dma_dev;
+ 	struct dma_async_tx_descriptor *desc;
+ 
+-	const struct iommu_ops *iommu;
+-	u64 dma_addr = 0, dma_size = 0;
+-
+ 	dma_dev = kzalloc(sizeof(*dma_dev), GFP_KERNEL);
+ 	if(!dma_dev){
+ 		DMA_PRINTK("kmalloc error.\n");
+@@ -220,12 +209,7 @@ int dw_dma_memcpy_raw(dma_addr_t src_dma
+ 	dma_dev->bus = NULL;
+ 	dma_dev->coherent_dma_mask = 0xffffffff;
+ 
+-	iort_dma_setup(dma_dev, &dma_addr, &dma_size);
+-	iommu = iort_iommu_configure_id(dma_dev, NULL);
+-	if (PTR_ERR(iommu) == -EPROBE_DEFER)
+-		return -EPROBE_DEFER;
+-
+-	arch_setup_dma_ops(dma_dev, dst_dma, dma_size, iommu, true);
++	arch_setup_dma_ops(dma_dev, dst_dma, 0, NULL, true);
+ 
+ 	chan = _dma_get_channel(DMA_MEMCPY);
+ 	if(!chan){

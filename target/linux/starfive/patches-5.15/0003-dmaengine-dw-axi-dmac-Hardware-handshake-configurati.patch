@@ -1,0 +1,41 @@
+From 4798cbff53d2643971e2eee16391778b96368408 Mon Sep 17 00:00:00 2001
+From: Pandith N <pandith.n@intel.com>
+Date: Fri, 1 Oct 2021 19:38:11 +0530
+Subject: [PATCH 03/84] dmaengine: dw-axi-dmac: Hardware handshake
+ configuration
+
+commit 93a7d32e9f4b8bad722a8c8c83c579a2f6a5aec3 upstream.
+
+Added hardware handshake selection in channel config,
+for mem2per and per2mem case.
+The peripheral specific handshake interface needs to be
+programmed in src_per, dst_per bits of CHx_CFG register.
+
+Signed-off-by: Pandith N <pandith.n@intel.com>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Link: https://lore.kernel.org/r/20211001140812.24977-3-pandith.n@intel.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
+@@ -394,6 +394,8 @@ static void axi_chan_block_xfer_start(st
+ 				DWAXIDMAC_TT_FC_MEM_TO_PER_DMAC;
+ 		if (chan->chip->apb_regs)
+ 			config.dst_per = chan->id;
++		else
++			config.dst_per = chan->hw_handshake_num;
+ 		break;
+ 	case DMA_DEV_TO_MEM:
+ 		config.tt_fc = chan->config.device_fc ?
+@@ -401,6 +403,8 @@ static void axi_chan_block_xfer_start(st
+ 				DWAXIDMAC_TT_FC_PER_TO_MEM_DMAC;
+ 		if (chan->chip->apb_regs)
+ 			config.src_per = chan->id;
++		else
++			config.src_per = chan->hw_handshake_num;
+ 		break;
+ 	default:
+ 		break;

@@ -1,0 +1,110 @@
+From 6e54d45c770d8ade51d13dd3474bce256cf40cc1 Mon Sep 17 00:00:00 2001
+From: Tom <support@vamrs.com>
+Date: Fri, 8 Jan 2021 02:54:51 +0800
+Subject: [PATCH 51/84] sifive/sifive_l2_cache: Add sifive_l2_flush64_range
+ function
+
+---
+ drivers/soc/sifive/Kconfig           | 15 ++++++++++
+ drivers/soc/sifive/sifive_l2_cache.c | 41 +++++++++++++++++++++++++++-
+ include/soc/sifive/sifive_l2_cache.h |  4 +++
+ 3 files changed, 59 insertions(+), 1 deletion(-)
+
+--- a/drivers/soc/sifive/Kconfig
++++ b/drivers/soc/sifive/Kconfig
+@@ -7,4 +7,19 @@ config SIFIVE_L2
+ 	help
+ 	  Support for the L2 cache controller on SiFive platforms.
+ 
++config SIFIVE_L2_FLUSH
++	bool "Support Level 2 Cache Controller Flush operation of SiFive Soc"
++
++if SIFIVE_L2_FLUSH
++
++config SIFIVE_L2_FLUSH_START
++	hex "Level 2 Cache Flush operation start"
++	default 0x80000000
++
++config SIFIVE_L2_FLUSH_SIZE
++	hex "Level 2 Cache Flush operation size"
++	default 0x800000000
++
++endif # SIFIVE_L2_FLUSH
++
+ endif
+--- a/drivers/soc/sifive/sifive_l2_cache.c
++++ b/drivers/soc/sifive/sifive_l2_cache.c
+@@ -29,13 +29,17 @@
+ #define SIFIVE_L2_DATECCFAIL_HIGH 0x164
+ #define SIFIVE_L2_DATECCFAIL_COUNT 0x168
+ 
++#define SIFIVE_L2_FLUSH64 0x200
++
+ #define SIFIVE_L2_CONFIG 0x00
+ #define SIFIVE_L2_WAYENABLE 0x08
+ #define SIFIVE_L2_ECCINJECTERR 0x40
+ 
+ #define SIFIVE_L2_MAX_ECCINTR 4
+ 
+-static void __iomem *l2_base;
++#define SIFIVE_L2_FLUSH64_LINE_LEN 64
++
++static void __iomem *l2_base = NULL;
+ static int g_irq[SIFIVE_L2_MAX_ECCINTR];
+ static struct riscv_cacheinfo_ops l2_cache_ops;
+ 
+@@ -116,6 +120,41 @@ int unregister_sifive_l2_error_notifier(
+ }
+ EXPORT_SYMBOL_GPL(unregister_sifive_l2_error_notifier);
+ 
++#ifdef CONFIG_SIFIVE_L2_FLUSH
++void sifive_l2_flush64_range(unsigned long start, unsigned long len)
++{
++	unsigned long line;
++
++	if(!l2_base) {
++		pr_warn("L2CACHE: base addr invalid, skipping flush\n");
++		return;
++	}
++
++	/* TODO: if (len == 0), skipping flush or going on? */
++	if(!len) {
++		pr_debug("L2CACHE: flush64 range @ 0x%lx(len:0)\n", start);
++		return;
++	}
++
++	/* make sure the address is in the range */
++	if(start < CONFIG_SIFIVE_L2_FLUSH_START ||
++	   (start + len) > (CONFIG_SIFIVE_L2_FLUSH_START +
++			     CONFIG_SIFIVE_L2_FLUSH_SIZE)) {
++		pr_warn("L2CACHE: flush64 out of range: %lx(%lx), skip flush\n",
++			start, len);
++		return;
++	}
++
++	mb();	/* sync */
++	for (line = start; line < start + len;
++	     line += SIFIVE_L2_FLUSH64_LINE_LEN) {
++		writeq(line, l2_base + SIFIVE_L2_FLUSH64);
++		mb();
++	}
++}
++EXPORT_SYMBOL_GPL(sifive_l2_flush64_range);
++#endif
++
+ static int l2_largest_wayenabled(void)
+ {
+ 	return readl(l2_base + SIFIVE_L2_WAYENABLE) & 0xFF;
+--- a/include/soc/sifive/sifive_l2_cache.h
++++ b/include/soc/sifive/sifive_l2_cache.h
+@@ -7,6 +7,10 @@
+ #ifndef __SOC_SIFIVE_L2_CACHE_H
+ #define __SOC_SIFIVE_L2_CACHE_H
+ 
++#ifdef CONFIG_SIFIVE_L2_FLUSH
++extern void sifive_l2_flush64_range(unsigned long start, unsigned long len);
++#endif
++
+ extern int register_sifive_l2_error_notifier(struct notifier_block *nb);
+ extern int unregister_sifive_l2_error_notifier(struct notifier_block *nb);
+ 

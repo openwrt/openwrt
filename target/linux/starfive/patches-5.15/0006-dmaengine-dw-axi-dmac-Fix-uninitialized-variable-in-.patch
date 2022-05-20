@@ -1,0 +1,51 @@
+From 851a492a509a6ff8cf64d8a4f0148f7db4e7d8fd Mon Sep 17 00:00:00 2001
+From: Tim Gardner <tim.gardner@canonical.com>
+Date: Mon, 25 Oct 2021 12:16:56 -0600
+Subject: [PATCH 06/84] dmaengine: dw-axi-dmac: Fix uninitialized variable in
+ axi_chan_block_xfer_start()
+
+commit 885633075847f475f26a29249d772cc0da85d8cd upstream.
+
+Coverity complains of an uninitialized variable:
+
+5. uninit_use_in_call: Using uninitialized value config.dst_per when calling axi_chan_config_write. [show details]
+6. uninit_use_in_call: Using uninitialized value config.hs_sel_src when calling axi_chan_config_write. [show details]
+CID 121164 (#1-3 of 3): Uninitialized scalar variable (UNINIT)
+7. uninit_use_in_call: Using uninitialized value config.src_per when calling axi_chan_config_write. [show details]
+418        axi_chan_config_write(chan, &config);
+
+Fix this by initializing the structure to 0 which should at least be benign in axi_chan_config_write(). Also fix
+what looks like a cut-n-paste error when initializing config.hs_sel_dst.
+
+Fixes: 824351668a413 ("dmaengine: dw-axi-dmac: support DMAX_NUM_CHANNELS > 8")
+Cc: Eugeniy Paltsev <Eugeniy.Paltsev@synopsys.com>
+Cc: Vinod Koul <vkoul@kernel.org>
+Cc: dmaengine@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Tim Gardner <tim.gardner@canonical.com>
+Link: https://lore.kernel.org/r/20211025181656.31658-1-tim.gardner@canonical.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
+@@ -371,7 +371,7 @@ static void axi_chan_block_xfer_start(st
+ 				      struct axi_dma_desc *first)
+ {
+ 	u32 priority = chan->chip->dw->hdata->priority[chan->id];
+-	struct axi_dma_chan_config config;
++	struct axi_dma_chan_config config = {};
+ 	u32 irq_mask;
+ 	u8 lms = 0; /* Select AXI0 master for LLI fetching */
+ 
+@@ -389,7 +389,7 @@ static void axi_chan_block_xfer_start(st
+ 	config.tt_fc = DWAXIDMAC_TT_FC_MEM_TO_MEM_DMAC;
+ 	config.prior = priority;
+ 	config.hs_sel_dst = DWAXIDMAC_HS_SEL_HW;
+-	config.hs_sel_dst = DWAXIDMAC_HS_SEL_HW;
++	config.hs_sel_src = DWAXIDMAC_HS_SEL_HW;
+ 	switch (chan->direction) {
+ 	case DMA_MEM_TO_DEV:
+ 		dw_axi_dma_set_byte_halfword(chan, true);

@@ -1,0 +1,35 @@
+From 7938cac5884184d441d9a469cb085a7122c04922 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Sun, 10 Oct 2021 16:10:32 +0200
+Subject: [PATCH 07/84] RISC-V: Add StarFive SoC Kconfig option
+
+commit 3d24568b01c5a7a9e88f73f917477b60edb35bfe upstream.
+
+Add StarFive Kconfig option to select SoC specific and common drivers
+required for these SoCs. Select subsystems required to boot so the
+required drivers gets enabled by default.
+
+Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ arch/riscv/Kconfig.socs | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/riscv/Kconfig.socs
++++ b/arch/riscv/Kconfig.socs
+@@ -19,6 +19,14 @@ config SOC_SIFIVE
+ 	help
+ 	  This enables support for SiFive SoC platform hardware.
+ 
++config SOC_STARFIVE
++	bool "StarFive SoCs"
++	select PINCTRL
++	select RESET_CONTROLLER
++	select SIFIVE_PLIC
++	help
++	  This enables support for StarFive SoC platform hardware.
++
+ config SOC_VIRT
+ 	bool "QEMU Virt Machine"
+ 	select CLINT_TIMER if RISCV_M_MODE
