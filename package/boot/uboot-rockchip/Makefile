@@ -15,6 +15,8 @@ PKG_MAINTAINER:=Tobias Maedel <openwrt@tbspace.de>
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
 
+PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
+
 define U-Boot/Default
   BUILD_TARGET:=rockchip
   UENV:=default
@@ -29,12 +31,18 @@ define U-Boot/nanopi-r2s-rk3328
   NAME:=NanoPi R2S
   BUILD_DEVICES:= \
     friendlyarm_nanopi-r2s
-  DEPENDS:=+PACKAGE_u-boot-nanopi-r2s-rk3328:arm-trusted-firmware-rockchip
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
   ATF:=rk3328_bl31.elf
   OF_PLATDATA:=$(1)
 endef
 
+define U-Boot/rock64-rk3328
+  BUILD_SUBTARGET:=armv8
+  NAME:=Rock64
+  BUILD_DEVICES:= \
+    pine64_rock64
+  ATF:=rk3328_bl31.elf
+  OF_PLATDATA:=$(1)
+endef
 
 # RK3399 boards
 
@@ -43,8 +51,6 @@ define U-Boot/nanopi-r4s-rk3399
   NAME:=NanoPi R4S
   BUILD_DEVICES:= \
     friendlyarm_nanopi-r4s
-  DEPENDS:=+PACKAGE_u-boot-nanopi-r4s-rk3399:arm-trusted-firmware-rockchip
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
   ATF:=rk3399_bl31.elf
 endef
 
@@ -53,8 +59,6 @@ define U-Boot/rock-pi-4-rk3399
   NAME:=Rock Pi 4
   BUILD_DEVICES:= \
     radxa_rock-pi-4a
-  DEPENDS:=+PACKAGE_u-boot-rock-pi-4-rk3399:arm-trusted-firmware-rockchip
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
   ATF:=rk3399_bl31.elf
 endef
 
@@ -63,14 +67,13 @@ define U-Boot/rockpro64-rk3399
   NAME:=RockPro64
   BUILD_DEVICES:= \
     pine64_rockpro64
-  DEPENDS:=+PACKAGE_u-boot-rockpro64-rk3399:arm-trusted-firmware-rockchip
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
   ATF:=rk3399_bl31.elf
 endef
 
 UBOOT_TARGETS := \
   nanopi-r4s-rk3399 \
   rock-pi-4-rk3399 \
+  rock64-rk3328 \
   rockpro64-rk3399 \
   nanopi-r2s-rk3328
 
@@ -93,6 +96,7 @@ endif
 
 	$(SED) 's#CONFIG_MKIMAGE_DTC_PATH=.*#CONFIG_MKIMAGE_DTC_PATH="$(PKG_BUILD_DIR)/scripts/dtc/dtc"#g' $(PKG_BUILD_DIR)/.config
 	echo 'CONFIG_IDENT_STRING=" OpenWrt"' >> $(PKG_BUILD_DIR)/.config
+	echo 'CONFIG_CMD_SETEXPR=y' >> $(PKG_BUILD_DIR)/.config
 endef
 
 define Build/InstallDev
