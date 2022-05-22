@@ -30,6 +30,8 @@ define Require
 		printf "Checking '$(1)'... "
 		if $(NO_TRACE_MAKE) -f $(firstword $(MAKEFILE_LIST)) check-$(1) >/dev/null 2>/dev/null; then \
 			echo 'ok.'; \
+		elif $(NO_TRACE_MAKE) -f $(firstword $(MAKEFILE_LIST)) check-$(1) >/dev/null 2>/dev/null; then \
+			echo 'updated.'; \
 		else \
 			echo 'failed.'; \
 			echo "$(PKG_NAME): $(strip $(2))" >> $(TMP_DIR)/.prereq-error; \
@@ -95,7 +97,7 @@ endef
 # 3+: candidates
 define SetupHostCommand
   define Require/$(1)
-	[ -f "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0; \
+	mkdir -p "$(STAGING_DIR_HOST)/bin"; \
 	for cmd in $(call QuoteHostCommand,$(3)) $(call QuoteHostCommand,$(4)) \
 	           $(call QuoteHostCommand,$(5)) $(call QuoteHostCommand,$(6)) \
 	           $(call QuoteHostCommand,$(7)) $(call QuoteHostCommand,$(8)) \
@@ -105,9 +107,13 @@ define SetupHostCommand
 			bin="$$$$$$$$(PATH="$(subst $(space),:,$(filter-out $(STAGING_DIR_HOST)/%,$(subst :,$(space),$(PATH))))" \
 				command -v "$$$$$$$${cmd%% *}")"; \
 			if [ -x "$$$$$$$$bin" ] && eval "$$$$$$$$cmd" >/dev/null 2>/dev/null; then \
-				mkdir -p "$(STAGING_DIR_HOST)/bin"; \
+				case "$$$$$$$$(ls -dl -- $(STAGING_DIR_HOST)/bin/$(strip $(1)))" in \
+					*" -> $$$$$$$$bin"*) \
+						[ -x "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0 \
+						;; \
+				esac; \
 				ln -sf "$$$$$$$$bin" "$(STAGING_DIR_HOST)/bin/$(strip $(1))"; \
-				exit 0; \
+				exit 1; \
 			fi; \
 		fi; \
 	done; \
