@@ -1555,9 +1555,6 @@ static unsigned int skb_to_hnat_info(struct sk_buff *skb,
 		else
 			entry.ipv6_5t_route.act_dp = dev->ifindex;
 	} else {
-		printk_ratelimited(KERN_WARNING
-					"Unknown case of dp, iif=%x --> %s\n",
-					skb_hnat_iface(skb), dev->name);
 
 		return 0;
 	}
