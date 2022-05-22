@@ -1179,8 +1179,6 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
 			txd_pdma->txd2 |= TX_DMA_LS1;
 	}
 
-	netdev_sent_queue(dev, skb->len);
-	skb_tx_timestamp(skb);
 
 	ring->next_free = mtk_qdma_phys_to_virt(ring, txd->txd2);
 	atomic_sub(n_desc, &ring->free_count);
@@ -1645,7 +1643,6 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget)
 	for (i = 0; i < MTK_MAC_COUNT; i++) {
 		if (!eth->netdev[i] || !done[i])
 			continue;
-		netdev_completed_queue(eth->netdev[i], done[i], bytes[i]);
 		total += done[i];
 	}
 
@@ -1812,6 +1809,7 @@ static int mtk_tx_alloc(struct mtk_eth *eth)
 		mtk_w32(eth, ring->last_free_ptr, MTK_QTX_DRX_PTR);
 		mtk_w32(eth, (QDMA_RES_THRES << 8) | QDMA_RES_THRES,
 			MTK_QTX_CFG(0));
+		mtk_w32(eth, BIT(31), MTK_QTX_SCH(0));
 	} else {
 		mtk_w32(eth, ring->phys_pdma, MT7628_TX_BASE_PTR0);
 		mtk_w32(eth, MTK_DMA_SIZE, MT7628_TX_MAX_CNT0);
@@ -2581,8 +2579,8 @@ static int mtk_start_dma(struct mtk_eth *eth)
 				MTK_RX_2B_OFFSET, MTK_QDMA_GLO_CFG);
 		else
 			mtk_w32(eth,
-				val | MTK_TX_WB_DDONE | MTK_TX_DMA_EN |
-				MTK_DMA_SIZE_16DWORDS | MTK_NDP_CO_PRO |
+				val  | MTK_TX_DMA_EN |
+				MTK_DMA_SIZE_32DWORDS | MTK_NDP_CO_PRO |
 				MTK_RX_DMA_EN | MTK_RX_2B_OFFSET |
 				MTK_RX_BT_32DWORDS,
 				MTK_QDMA_GLO_CFG);
