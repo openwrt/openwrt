@@ -65,7 +65,15 @@ SUBMAKE:=umask 022; $(SUBMAKE)
 
 ULIMIT_FIX=_limit=`ulimit -n`; [ "$$_limit" = "unlimited" -o "$$_limit" -ge 1024 ] || ulimit -n 1024;
 
-prepare-mk: staging_dir/host/.prereq-build FORCE ;
+prepare prepare-mk prepare-make prepare-build: config-clean prepare-clean tmpinfo-clean prereq-build prepare-tmpinfo FORCE ;
+
+prereq-build: staging_dir/host/.prereq-build FORCE ;
+
+prepare-clean: FORCE
+	@rm -rf $(TOPDIR)/staging_dir/host/.prereq-build
+
+tmpinfo-clean: FORCE
+	@rm -rf $(TOPDIR)/tmp/.*info $(TOPDIR)/tmp/info
 
 ifdef SDK
   IGNORE_PACKAGES = linux
@@ -74,7 +82,7 @@ endif
 _ignore = $(foreach p,$(IGNORE_PACKAGES),--ignore $(p))
 
 prepare-tmpinfo: FORCE
-	@+$(MAKE) -r -s staging_dir/host/.prereq-build $(PREP_MK)
+	@+$(MAKE) -r -s prereq-build $(PREP_MK)
 	mkdir -p tmp/info
 	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPTH=5 SCAN_EXTRA=""
 	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPTH=3 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1"
