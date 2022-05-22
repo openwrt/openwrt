@@ -1,0 +1,100 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-rock64.dts
+@@ -28,7 +28,7 @@
+ 
+ 	vcc_sd: sdmmc-regulator {
+ 		compatible = "regulator-fixed";
+-		gpio = <&gpio0 RK_PD6 GPIO_ACTIVE_LOW>;
++		gpio = <&gpio0 RK_PD6 GPIO_ACTIVE_HIGH>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&sdmmc0m1_pin>;
+ 		regulator-name = "vcc_sd";
+@@ -37,9 +37,9 @@
+ 		vin-supply = <&vcc_io>;
+ 	};
+ 
+-	vcc_host_5v: vcc-host-5v-regulator {
++	vcc_host_5v: vcc_host1_5v: vcc_otg_5v: vcc-host-5v-regulator {
+ 		compatible = "regulator-fixed";
+-		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_LOW>;
++		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&usb20_host_drv>;
+ 		regulator-name = "vcc_host_5v";
+@@ -48,22 +48,9 @@
+ 		vin-supply = <&vcc_sys>;
+ 	};
+ 
+-	vcc_host1_5v: vcc_otg_5v: vcc-host1-5v-regulator {
+-		compatible = "regulator-fixed";
+-		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_LOW>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&usb20_host_drv>;
+-		regulator-name = "vcc_host1_5v";
+-		regulator-always-on;
+-		regulator-boot-on;
+-		vin-supply = <&vcc_sys>;
+-	};
+-
+ 	vcc_sys: vcc-sys {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "vcc_sys";
+-		regulator-always-on;
+-		regulator-boot-on;
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+ 	};
+@@ -149,11 +136,12 @@
+ 	assigned-clocks = <&cru SCLK_MAC2IO>, <&cru SCLK_MAC2IO_EXT>;
+ 	assigned-clock-parents = <&gmac_clkin>, <&gmac_clkin>;
+ 	clock_in_out = "input";
+-	phy-supply = <&vcc_io>;
+ 	phy-mode = "rgmii";
++	phy-supply = <&vcc_io>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&rgmiim1_pins>;
+-	snps,force_thresh_dma_mode;
++	snps,aal;
++	snps,pbl = <0x4>;
+ 	snps,reset-gpio = <&gpio1 RK_PC2 GPIO_ACTIVE_LOW>;
+ 	snps,reset-active-low;
+ 	snps,reset-delays-us = <0 10000 50000>;
+@@ -196,7 +184,7 @@
+ 		vcc3-supply = <&vcc_sys>;
+ 		vcc4-supply = <&vcc_sys>;
+ 		vcc5-supply = <&vcc_io>;
+-		vcc6-supply = <&vcc_sys>;
++		vcc6-supply = <&vcc_io>;
+ 
+ 		regulators {
+ 			vdd_logic: DCDC_REG1 {
+@@ -299,7 +287,7 @@
+ 	vccio1-supply = <&vcc_io>;
+ 	vccio2-supply = <&vcc18_emmc>;
+ 	vccio3-supply = <&vcc_io>;
+-	vccio4-supply = <&vcc_18>;
++	vccio4-supply = <&vcc_io>;
+ 	vccio5-supply = <&vcc_io>;
+ 	vccio6-supply = <&vcc_io>;
+ 	pmuio-supply = <&vcc_io>;
+@@ -366,14 +354,14 @@
+ 
+ &u2phy {
+ 	status = "okay";
++};
+ 
+-	u2phy_host: host-port {
+-		status = "okay";
+-	};
++&u2phy_host {
++	status = "okay";
++};
+ 
+-	u2phy_otg: otg-port {
+-		status = "okay";
+-	};
++&u2phy_otg {
++	status = "okay";
+ };
+ 
+ &usb20_otg {
