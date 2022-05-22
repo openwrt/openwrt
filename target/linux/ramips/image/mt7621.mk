@@ -1410,13 +1410,15 @@ TARGET_DEVICES += oraybox_x3a
 
 define Device/phicomm_k2p
   $(Device/dsa-migration)
-  IMAGE_SIZE := 15744k
+  DEVICE_COMPAT_VERSION := 1.0
+  DEVICE_COMPAT_MESSAGE := Config is compat with swconfig
+  IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Phicomm
   DEVICE_MODEL := K2P
   DEVICE_ALT0_VENDOR := Phicomm
   DEVICE_ALT0_MODEL := KE 2P
   SUPPORTED_DEVICES += k2p
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615d l1profile luci-app-mtwifi wireless-tools
 endef
 TARGET_DEVICES += phicomm_k2p
 
