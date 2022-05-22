@@ -193,24 +193,8 @@
 
 
 &switch0 {
-	ports {
-		port@1 {
-			status = "okay";
-			label = "lan2";
-		};
-
-		port@2 {
-			status = "okay";
-			label = "lan1";
-		};
-
-		port@4 {
-			status = "okay";
-			label = "wan";
-			nvmem-cells = <&macaddr_factory_e006>;
-			nvmem-cell-names = "mac-address";
-		};
-	};
+	/* must delete compatible property */
+	/delete-property/ compatible;
 };
 
 &state_default {
