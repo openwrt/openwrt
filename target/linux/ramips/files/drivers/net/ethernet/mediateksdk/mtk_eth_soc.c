@@ -2559,11 +2559,14 @@ static int mtk_start_dma(struct mtk_eth *eth)
 {
 	u32 rx_2b_offset = (NET_IP_ALIGN == 2) ? MTK_RX_2B_OFFSET : 0;
 	int val, err;
-
+	static int dma_init_flag = 0; 
+	if(dma_init_flag == 0){
 	err = mtk_dma_init(eth);
 	if (err) {
 		mtk_dma_free(eth);
 		return err;
+	}
+	dma_init_flag = 1;
 	}
 
 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA)) {
@@ -2742,7 +2745,7 @@ static int mtk_stop(struct net_device *dev)
 		mtk_stop_dma(eth, MTK_QDMA_GLO_CFG);
 	mtk_stop_dma(eth, MTK_PDMA_GLO_CFG);
 
-	mtk_dma_free(eth);
+	
 
 	return 0;
 }
