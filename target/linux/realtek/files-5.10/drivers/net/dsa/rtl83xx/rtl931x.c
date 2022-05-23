@@ -1540,12 +1540,13 @@ void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 
 static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 {
-	int i, pos;
+	int i, j, pos;
 	u32 v, set;
 	u64 pm_copper = 0, pm_fiber = 0;
 	u32 setlen;
 	const __be32 *led_set;
 	char set_name[9];
+	u8 led_counts[4];
 	struct device_node *node;
 
 	pr_info("%s called\n", __func__);
@@ -1562,9 +1563,6 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 
 		if (!priv->ports[i].phy)
 			continue;
-
-		v = 0x1; // Found on the EdgeCore, but we do not have any HW description
-		sw_w32_mask(0x3 << pos, v << pos, RTL931X_LED_PORT_NUM_CTRL(i));
 
 		if (priv->ports[i].phy_is_integrated)
 		pm_fiber |= BIT_ULL(i);
@@ -1586,6 +1584,22 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32(v, RTL931X_LED_SET0_0_CTRL - 4 - i * 8);
 		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
 		sw_w32(v, RTL931X_LED_SET0_0_CTRL - i * 8);
+
+		led_counts[i] = 0;
+		for (j = 0; j < 4; j++) {
+			if (be32_to_cpup(led_set + j) && be32_to_cpup(led_set + j) != 0xffff)
+				led_counts[i]++;
+		}
+		pr_info("%s: Led COUNT %d is %d\n", __func__, i, led_counts[i]);
+	}
+
+	for (i = 0; i < priv->cpu_port; i++) {
+		pos = (i << 1) % 32;
+		if (priv->ports[i].phy)
+			v = priv->ports[i].led_set < 4 ? led_counts[priv->ports[i].led_set] - 1:0;
+		else
+			v = 0x2;
+		sw_w32_mask(0x3 << pos, v << pos, RTL931X_LED_PORT_NUM_CTRL(i));
 	}
 
 	// Set LED mode to serial (0x1)

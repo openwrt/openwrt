@@ -2005,6 +2005,7 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 	u32 poll_sel[4];
 	u32 poll_ctrl = 0;
 	bool mdc_on[4];
+	bool uses_usxgmii = false; // For the Aquantia PHYs
 
 	pr_info("%s called\n", __func__);
 	// Disable port polling for configuration purposes
@@ -2022,6 +2023,9 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
 		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
 		mdc_on[priv->smi_bus[i]] = true;
+
+		if (priv->interfaces[i] == PHY_INTERFACE_MODE_USXGMII)
+			uses_usxgmii = true;
 	}
 
 	// Configure which SMI bus is behind which port number
@@ -2040,6 +2044,12 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 		// Enable bus access via MDC
 		if (mdc_on[i])
 			sw_w32_mask(0, BIT(9 + i), RTL931X_MAC_L2_GLOBAL_CTRL2);
+	}
+
+	if (uses_usxgmii) {
+		sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
+		sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
+		sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
 	}
 
 	pr_info("%s: RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
