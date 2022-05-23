@@ -18,6 +18,8 @@
 
 	leds {
 		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&enable_wlan_led_gpio>;
 
 		/* Hidden SMD LED below signal strength LEDs.
 		 * Visible through slits underside of the case,
@@ -134,6 +136,12 @@
 	wifi_ath10k: wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0 0 0 0 0>;
+	};
+};
+
+&pinmux {
+	enable_wlan_led_gpio: pinmux_wlan_led_gpio {
+		pinctrl-single,bits = <0x10 0x0 0xff000000>;
 	};
 };
 
