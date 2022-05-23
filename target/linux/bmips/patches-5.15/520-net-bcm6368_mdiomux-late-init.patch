@@ -1,0 +1,19 @@
+--- a/drivers/net/mdio/mdio-mux-bcm6368.c
++++ b/drivers/net/mdio/mdio-mux-bcm6368.c
+@@ -177,7 +177,15 @@ static struct platform_driver bcm6368_md
+ 	.probe	= bcm6368_mdiomux_probe,
+ 	.remove	= bcm6368_mdiomux_remove,
+ };
+-module_platform_driver(bcm6368_mdiomux_driver);
++
++int __init bcm6368_mdiomux_init(void)
++{
++	int ret = platform_driver_register(&bcm6368_mdiomux_driver);
++	if (ret)
++		pr_err("bcm6368_mdiomux: Error registering platform driver!\n");
++	return ret;
++}
++late_initcall(bcm6368_mdiomux_init);
+ 
+ MODULE_AUTHOR("Álvaro Fernández Rojas <noltari@gmail.com>");
+ MODULE_DESCRIPTION("BCM6368 mdiomux bus controller driver");
