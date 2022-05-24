@@ -1,0 +1,83 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+case "$1" in
+	list)
+		json_init
+		json_add_object "get_config"
+		json_close_object
+		json_add_object "get_status"
+		json_close_object
+		json_dump
+		json_cleanup
+	;;
+
+	call)
+		case "$2" in
+			get_config)
+				governors="$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors 2>/dev/null)"
+				frequencies="$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies 2>/dev/null)"
+
+				json_init
+
+				OIFS=$IFS
+				IFS=' '
+
+				json_add_array governors
+				for governor in $governors
+				do
+					json_add_string "" "$governor"
+				done
+				json_close_array
+
+				json_add_array frequencies
+				for frequency in $frequencies
+				do
+					json_add_string "" "$frequency"
+				done
+				json_close_array
+
+				IFS=$OFS
+
+				json_dump
+				json_cleanup
+			;;
+
+			get_status)
+				cores="$(ls -lh /sys/devices/system/cpu/ | grep 'cpu[0-9]' | wc -l)"
+				governor="$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_governor 2>/dev/null)"
+				minfreq="$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq 2>/dev/null)"
+				maxfreq="$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq 2>/dev/null)"
+				upthreshold="$(cat /sys/devices/system/cpu/cpufreq/ondemand/up_threshold 2>/dev/null)"
+				samplingrate="$(cat /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate 2>/dev/null)"
+				stats="$(cat /proc/stat 2>/dev/null | grep 'cpu')"
+
+				json_init
+				json_add_string "governor" "$governor"
+				json_add_string "minfreq" "$minfreq"
+				json_add_string "maxfreq" "$maxfreq"
+				json_add_string "upthreshold" "$upthreshold"
+				json_add_string "samplingrate" "$upthreshold"
+
+				json_add_array "stats"
+				for core in $(seq 0 `expr ${cores} - 1`)
+				do
+					json_add_string "" "$(echo "$stats" | grep "cpu$core") $(cat /sys/devices/system/cpu/cpu${core}/cpufreq/cpuinfo_cur_freq)"
+				done
+				json_close_array
+
+				json_add_array "frequency"
+				for core in $(seq 0 `expr ${cores} - 1`)
+				do
+					json_add_string "" "$(cat /sys/devices/system/cpu/cpu${core}/cpufreq/cpuinfo_cur_freq)"
+				done
+				json_close_array
+
+				json_dump
+				json_cleanup
+			;;
+		esac
+	;;
+esac

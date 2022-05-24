@@ -1,0 +1,20 @@
+{
+	"luci-app-cpufreq": {
+		"description": "Grant UCI access for luci-app-cpufreq",
+		"read": {
+			"file": {
+				"/proc/stat": [ "read" ]
+			},
+			"ubus": {
+				"luci.cpu": [ "*" ]
+			},
+			"uci": [ "cpufreq" ]
+		},
+		"write": {
+			"file": {
+				"/etc/init.d/cpufreq *" : [ "exec" ]
+			},
+			"uci": [ "cpufreq" ]
+		}
+	}
+}

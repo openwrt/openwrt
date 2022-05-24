@@ -1,0 +1,37 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=50
+
+cpufreq_config()
+{
+	local governor minfreq maxfreq up_threshold sampling_rate
+
+	config_load cpufreq
+	config_get governor settings governor
+	config_get minfreq settings minfreq
+	config_get maxfreq settings maxfreq
+	config_get up_threshold settings up_threshold
+	config_get sampling_rate settings sampling_rate
+
+	[ -n "$governor" ] && echo $governor > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+	[ -n "$minfreq" ] && echo $minfreq > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+	[ -n "$maxfreq" ] && echo $maxfreq > /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq
+	if [ "$governor" == "ondemand" ]; then
+		[ -n "$up_threshold" ] && echo $up_threshold > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+		[ -n "$sampling_rate" ] && echo $sampling_rate > /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate
+	fi
+}
+
+start_service() {
+	cpufreq_config
+}
+
+reload_service() {
+	cpufreq_config
+}
+
+service_triggers() {
+	procd_add_reload_trigger "cpufreq"
+	cpufreq_config
+}
