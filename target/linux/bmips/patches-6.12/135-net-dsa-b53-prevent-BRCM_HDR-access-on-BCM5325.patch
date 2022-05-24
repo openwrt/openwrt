@@ -1,0 +1,30 @@
+From 171f3a42be30e2a62c6590ec2b0e5a96ddad57a0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Fri, 30 May 2025 23:18:03 +0200
+Subject: [PATCH] net: dsa: b53: prevent BRCM_HDR access on BCM5325
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BCM5325 doesn't implement BRCM_HDR register so we should avoid reading or
+writing it.
+
+Fixes: b409a9efa183 ("net: dsa: b53: Move Broadcom header setup to b53")
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -730,6 +730,10 @@ void b53_brcm_hdr_setup(struct dsa_switc
+ 		hdr_ctl |= GC_FRM_MGMT_PORT_M;
+ 	b53_write8(dev, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, hdr_ctl);
+ 
++	/* B53_BRCM_HDR not present on BCM5325 */
++	if (is5325(dev))
++		return;
++
+ 	/* Enable Broadcom tags for IMP port */
+ 	b53_read8(dev, B53_MGMT_PAGE, B53_BRCM_HDR, &hdr_ctl);
+ 	if (tag_en)

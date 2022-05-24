@@ -1,0 +1,96 @@
+From f4ed3dc77c598151a892b3c7622da4e8313bde2c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Fri, 30 May 2025 17:10:11 +0200
+Subject: [PATCH] net: dsa: tag_brcm: legacy: reorganize functions
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Move brcm_leg_tag_rcv() definition to top.
+This function is going to be shared between two different tags.
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ net/dsa/tag_brcm.c | 64 +++++++++++++++++++++++-----------------------
+ 1 file changed, 32 insertions(+), 32 deletions(-)
+
+--- a/net/dsa/tag_brcm.c
++++ b/net/dsa/tag_brcm.c
+@@ -213,6 +213,38 @@ MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROT
+ #endif
+ 
+ #if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM_LEGACY)
++static struct sk_buff *brcm_leg_tag_rcv(struct sk_buff *skb,
++					struct net_device *dev)
++{
++	int len = BRCM_LEG_TAG_LEN;
++	int source_port;
++	u8 *brcm_tag;
++
++	if (unlikely(!pskb_may_pull(skb, BRCM_LEG_TAG_LEN + VLAN_HLEN)))
++		return NULL;
++
++	brcm_tag = dsa_etype_header_pos_rx(skb);
++
++	source_port = brcm_tag[5] & BRCM_LEG_PORT_ID;
++
++	skb->dev = dsa_conduit_find_user(dev, 0, source_port);
++	if (!skb->dev)
++		return NULL;
++
++	/* VLAN tag is added by BCM63xx internal switch */
++	if (netdev_uses_dsa(skb->dev))
++		len += VLAN_HLEN;
++
++	/* Remove Broadcom tag and update checksum */
++	skb_pull_rcsum(skb, len);
++
++	dsa_default_offload_fwd_mark(skb);
++
++	dsa_strip_etype_header(skb, len);
++
++	return skb;
++}
++
+ static struct sk_buff *brcm_leg_tag_xmit(struct sk_buff *skb,
+ 					 struct net_device *dev)
+ {
+@@ -249,38 +281,6 @@ static struct sk_buff *brcm_leg_tag_xmit
+ 
+ 	return skb;
+ }
+-
+-static struct sk_buff *brcm_leg_tag_rcv(struct sk_buff *skb,
+-					struct net_device *dev)
+-{
+-	int len = BRCM_LEG_TAG_LEN;
+-	int source_port;
+-	u8 *brcm_tag;
+-
+-	if (unlikely(!pskb_may_pull(skb, BRCM_LEG_TAG_LEN + VLAN_HLEN)))
+-		return NULL;
+-
+-	brcm_tag = dsa_etype_header_pos_rx(skb);
+-
+-	source_port = brcm_tag[5] & BRCM_LEG_PORT_ID;
+-
+-	skb->dev = dsa_conduit_find_user(dev, 0, source_port);
+-	if (!skb->dev)
+-		return NULL;
+-
+-	/* VLAN tag is added by BCM63xx internal switch */
+-	if (netdev_uses_dsa(skb->dev))
+-		len += VLAN_HLEN;
+-
+-	/* Remove Broadcom tag and update checksum */
+-	skb_pull_rcsum(skb, len);
+-
+-	dsa_default_offload_fwd_mark(skb);
+-
+-	dsa_strip_etype_header(skb, len);
+-
+-	return skb;
+-}
+ 
+ static const struct dsa_device_ops brcm_legacy_netdev_ops = {
+ 	.name = BRCM_LEGACY_NAME,

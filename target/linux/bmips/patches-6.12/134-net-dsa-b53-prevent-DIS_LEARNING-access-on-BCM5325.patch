@@ -1,0 +1,29 @@
+From 077a4a60a89a0423295a8e5684f7f36bc4b0bc72 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Fri, 30 May 2025 23:13:01 +0200
+Subject: [PATCH] net: dsa: b53: prevent DIS_LEARNING access on BCM5325
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BCM5325 doesn't implement DIS_LEARNING register so we should avoid reading
+or writing it.
+
+Fixes: f9b3827ee66c ("net: dsa: b53: Support setting learning on port")
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -593,6 +593,9 @@ static void b53_port_set_learning(struct
+ {
+ 	u16 reg;
+ 
++	if (is5325(dev))
++		return;
++
+ 	b53_read16(dev, B53_CTRL_PAGE, B53_DIS_LEARNING, &reg);
+ 	if (learning)
+ 		reg &= ~BIT(port);
