@@ -130,26 +130,51 @@
 };
 
 &switch0 {
-	ports {
-		port@1 {
-			status = "okay";
-			label = "lan1";
-		};
+	/* must delete compatible property */
+	/delete-property/ compatible;
+};
 
-		port@2 {
-			status = "okay";
-			label = "lan2";
-		};
+&hnat {
+        mtketh-wan = "eth1";
+        mtketh-ppd = "eth0";
+        mtketh-lan = "eth0";
+	ext-devices = "wlan0","wlan1","rax0","ra0", "rai0","apclii0","apclix0", "apcli0";
+        mtketh-max-gmac = <2>;
+        status = "okay";
+};
 
-		port@3 {
-			status = "okay";
-			label = "lan3";
-		};
+&gsw {
+	mediatek,mdio = <&mdio>;
+	mediatek,portmap = "llllw";
+	mediatek,mcm;
+	mt7530,direct-phy-access;
 
-		port@4 {
-			status = "okay";
-			label = "wan";
+	resets = <&rstctrl 2>;
+	reset-names = "mcm";
+
+	port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "rgmii";
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
 		};
+	};
+
+	port6: port@6 {
+		compatible = "mediatek,mt753x-port";
+		reg = <6>;
+		phy-mode = "rgmii";
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+
+	mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 };
 
