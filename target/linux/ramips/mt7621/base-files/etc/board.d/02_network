@@ -135,7 +135,7 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-ac2100|\
 	xiaomi,redmi-router-ac2100)
 		ucidef_add_switch "switch0" \
-			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6u@eth0" "5u@eth1"
+			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6u@eth0" "5u@eth1"
 		;;
 	xiaomi,mi-router-cr660x)
 		ucidef_add_switch "switch0" \
@@ -168,7 +168,7 @@ ramips_setup_interfaces()
 		;;
 	youhua,wr1200js)
 	ucidef_add_switch "switch0" \
-			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6u@eth0" "5u@eth1"
+			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6u@eth0" "5u@eth1"
 	;;
 	lenovo,newifi-d1)
 		ucidef_add_switch "switch0" \
