@@ -1,0 +1,26 @@
+From c6272e55d72b56b8c35da3ba6df459e415f12b1b Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Thu, 26 May 2022 13:34:59 +0800
+Subject: [PATCH] fw4: add pppoe device for flow offloading
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ root/usr/share/ucode/fw4.uc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/root/usr/share/ucode/fw4.uc b/root/usr/share/ucode/fw4.uc
+index cfef69c..81605fe 100644
+--- a/root/usr/share/ucode/fw4.uc
++++ b/root/usr/share/ucode/fw4.uc
+@@ -476,7 +476,7 @@ return {
+ 		}
+ 
+ 		for (let zone in this.zones())
+-			for (let device in zone.related_physdevs)
++			for (let device in zone.match_devices)
+ 				push(devices, ...resolve_lower_devices(devstatus, device, false));
+ 
+ 		return sort(uniq(devices));
+-- 
+2.35.3
+
