@@ -26,6 +26,12 @@ qstrip=$(strip $(subst ",,$(1)))
 empty:=
 space:= $(empty) $(empty)
 comma:=,
+squote:='
+dquote:="
+
+escsq=$(strip $(subst $(squote),'\$(squote)',$(1)))
+escdq=$(strip $(subst $(dquote),"\$(dquote)",$(1)))
+
 merge=$(subst $(space),,$(1))
 confvar=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(MKHASH) md5)
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
@@ -393,6 +399,22 @@ ifneq ($(wildcard $(STAGING_DIR_HOST)/bin/flock),)
 else
   locked=$(1)
 endif
+
+# adapted from Kbuild.include
+dot-target = $(dir $@).$(notdir $@)
+define filechk
+	$(Q)printf "Checking '$@'...";				\
+	set -e;							\
+	mkdir -p $(dir $@);					\
+	trap "rm -f $(dot-target).tmp" EXIT;			\
+	{ $(filechk_$(1)); } > $(dot-target).tmp;		\
+	if [ ! -r $@ ] || ! cmp -s $@ $(dot-target).tmp; then	\
+		printf '%s\n' " updated";			\
+		mv -f $(dot-target).tmp $@;			\
+	else 							\
+		printf '%s\n' " done";				\
+	fi;
+endef
 
 # Recursively copy paths into another directory, purge dangling
 # symlinks before.
