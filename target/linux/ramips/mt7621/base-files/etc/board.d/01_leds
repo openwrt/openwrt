@@ -7,6 +7,11 @@ board=$(board_name)
 board_config_update
 
 case $board in
+asus,rt-ac65p|\
+asus,rt-ac85p)
+	ucidef_set_led_wlan "wlan2g" "wlan2g" "blue:wlan2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "wlan5g" "blue:wlan5g" "phy1tpt"
+	;;
 asus,rt-n56u-b1)
 	ucidef_set_led_netdev "lan" "LAN link" "blue:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN link" "blue:wan" "wan"
