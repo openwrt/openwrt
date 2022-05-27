@@ -30,6 +30,10 @@ merge=$(subst $(space),,$(1))
 confvar=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(MKHASH) md5)
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
 
+replace_script= $(FIND) $(1) -name $(2) | $(XARGS) chmod u+wx; \
+		$(FIND) $(1) -name $(2) | $(XARGS) -n 1 cp --remove-destination $(3)/$(2); \
+		$(CP) $(3)/$(2) $(1);
+
 paren_left = (
 paren_right = )
 chars_lower = a b c d e f g h i j k l m n o p q r s t u v w x y z

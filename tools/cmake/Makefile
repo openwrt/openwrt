@@ -34,7 +34,7 @@ HOST_CONFIGURE_ARGS := \
 	--generator=Ninja
 
 define Host/Compile/Default
-	+$(NINJA) -C $(HOST_BUILD_DIR) $(1)
+	$(NINJA) -C $(HOST_BUILD_DIR) $(1)
 endef
 
 define Host/Install/Default

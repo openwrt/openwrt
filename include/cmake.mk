@@ -58,15 +58,15 @@ ifeq ($(HOST_USE_NINJA),1)
   CMAKE_HOST_OPTIONS += -DCMAKE_GENERATOR="Ninja"
 
   define Host/Compile/Default
-	+$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) $(1)
+	$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) $(1)
   endef
 
   define Host/Install/Default
-	+$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) install
+	$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) install
   endef
 
   define Host/Uninstall/Default
-	+$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) uninstall
+	$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) uninstall
   endef
 endif
 
@@ -74,20 +74,23 @@ ifeq ($(PKG_USE_NINJA),1)
   CMAKE_OPTIONS += -DCMAKE_GENERATOR="Ninja"
 
   define Build/Compile/Default
-	+$(NINJA) -C $(CMAKE_BINARY_DIR) $(1)
+	$(NINJA) -C $(CMAKE_BINARY_DIR) $(1)
   endef
 
   define Build/Install/Default
-	+DESTDIR="$(PKG_INSTALL_DIR)" $(NINJA) -C $(CMAKE_BINARY_DIR) install
+	DESTDIR="$(PKG_INSTALL_DIR)" $(NINJA) -C $(CMAKE_BINARY_DIR) install
   endef
 endif
 
+define Build/Prepare
+  mkdir -p $(CMAKE_BINARY_DIR); \
+  $(call Build/Prepare/Default)
+endef
+
 define Build/Configure/Default
-	mkdir -p $(CMAKE_BINARY_DIR)
-	(cd $(CMAKE_BINARY_DIR); \
-		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
-		CXXFLAGS="$(TARGET_CXXFLAGS) $(EXTRA_CXXFLAGS)" \
-		LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)" \
+	( \
+		cd $(CMAKE_BINARY_DIR); \
+		$(CONFIGURE_VARS) \
 		cmake \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
@@ -134,12 +137,15 @@ endef
 
 Build/InstallDev = $(if $(CMAKE_INSTALL),$(Build/InstallDev/cmake))
 
+define Host/Prepare
+  mkdir -p $(HOST_CMAKE_BINARY_DIR); \
+  $(call Host/Prepare/Default)
+endef
+
 define Host/Configure/Default
-	mkdir -p "$(HOST_CMAKE_BINARY_DIR)"
-	(cd $(HOST_CMAKE_BINARY_DIR); \
-		CFLAGS="$(HOST_CFLAGS)" \
-		CXXFLAGS="$(HOST_CFLAGS)" \
-		LDFLAGS="$(HOST_LDFLAGS)" \
+	( \
+		cd $(HOST_CMAKE_BINARY_DIR); \
+		$(HOST_CONFIGURE_VARS) \
 		cmake \
 			-DCMAKE_BUILD_TYPE=Release \
 			-DCMAKE_C_COMPILER_LAUNCHER="$(CMAKE_C_COMPILER_LAUNCHER)" \

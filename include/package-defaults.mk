@@ -105,15 +105,12 @@ CONFIGURE_VARS = \
 CONFIGURE_PATH = .
 CONFIGURE_CMD = ./configure
 
-replace_script=$(FIND) $(1) -name $(2) | $(XARGS) chmod u+w; \
-	       $(FIND) $(1) -name $(2) | $(XARGS) -n1 cp --remove-destination \
-	       $(SCRIPT_DIR)/$(2);
-
 define Build/Configure/Default
-	(cd $(PKG_BUILD_DIR)/$(CONFIGURE_PATH)/$(strip $(3)); \
+	( \
+	cd $(PKG_BUILD_DIR)/$(CONFIGURE_PATH)/$(strip $(3)); \
 	if [ -x $(CONFIGURE_CMD) ]; then \
-		$(call replace_script,$(PKG_BUILD_DIR)/$(3),config.guess) \
-		$(call replace_script,$(PKG_BUILD_DIR)/$(3),config.sub) \
+		$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(SCRIPT_DIR)) \
+		$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.sub,$(SCRIPT_DIR)) \
 		$(CONFIGURE_VARS) \
 		$(2) \
 		$(CONFIGURE_CMD) \
@@ -140,17 +137,17 @@ MAKE_INSTALL_FLAGS = \
 MAKE_PATH ?= .
 
 define Build/Compile/Default
-	+$(MAKE_VARS) \
+	$(MAKE_VARS) \
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
 		$(MAKE_FLAGS) \
-		$(1);
+		$(1)
 endef
 
 define Build/Install/Default
 	$(MAKE_VARS) \
 	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
 		$(MAKE_INSTALL_FLAGS) \
-		$(if $(1), $(1), install);
+		$(if $(1), $(1), install)
 endef
 
 define Build/Dist/Default

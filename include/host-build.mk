@@ -75,16 +75,19 @@ HOST_MAKE_VARS = \
 
 HOST_MAKE_FLAGS =
 
-HOST_CONFIGURE_CMD = $(BASH) ./configure
-
 ifeq ($(HOST_OS),Darwin)
   HOST_CONFIG_SITE:=$(INCLUDE_DIR)/site/darwin
 endif
 
+HOST_CONFIGURE_PATH = .
+HOST_CONFIGURE_CMD = ./configure
+
 define Host/Configure/Default
-	$(if $(HOST_CONFIGURE_PARALLEL),+)(cd $(HOST_BUILD_DIR)/$(3); \
-		if [ -x configure ]; then \
-			$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
+	( \
+		cd $(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)/$(strip $(3)); \
+		if [ -x $(HOST_CONFIGURE_CMD) ]; then \
+			$(call replace_script,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(SCRIPT_DIR)) \
+			$(call replace_script,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.sub,$(SCRIPT_DIR)) \
 			$(HOST_CONFIGURE_VARS) \
 			$(2) \
 			$(HOST_CONFIGURE_CMD) \
@@ -95,18 +98,18 @@ define Host/Configure/Default
 endef
 
 define Host/Configure
-  $(call Host/Configure/Default)
+  $(if $(HOST_CONFIGURE_PARALLEL),+)$(call Host/Configure/Default)
 endef
 
 define Host/Compile/Default
-	+$(HOST_MAKE_VARS) \
+	$(HOST_MAKE_VARS) \
 	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) \
 		$(HOST_MAKE_FLAGS) \
 		$(1)
 endef
 
 define Host/Compile
-  $(call Host/Compile/Default)
+  +$(call Host/Compile/Default)
 endef
 
 define Host/Install/Default
@@ -114,7 +117,7 @@ define Host/Install/Default
 endef
 
 define Host/Install
-  $(call Host/Install/Default,$(HOST_BUILD_PREFIX))
+  +$(call Host/Install/Default,$(HOST_BUILD_PREFIX))
 endef
 
 
