@@ -88,6 +88,11 @@ define Host/Configure/Default
 		if [ -x $(HOST_CONFIGURE_CMD) ]; then \
 			$(call replace_script,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(SCRIPT_DIR)) \
 			$(call replace_script,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.sub,$(SCRIPT_DIR)) \
+			$(if $(HOST_ARCH_GNU), \
+				echo "echo $(GNU_HOST_NAME)" > \
+					$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3)))/config.guess ; \
+				$(call replace_script,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3)))) \
+			) \
 			$(HOST_CONFIGURE_VARS) \
 			$(2) \
 			$(HOST_CONFIGURE_CMD) \
