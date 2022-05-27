@@ -597,6 +597,7 @@ ath79_setup_macs()
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
 		wan_mac=$(mtd_get_mac_text "caldata" 0xffb4)
+		label_mac=$wan_mac
 		;;
 	dlink,dir-505)
 		lan_mac=$(mtd_get_mac_text "mac" 0x4)
