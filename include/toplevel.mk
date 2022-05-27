@@ -20,9 +20,8 @@ export SOURCE_DATE_EPOCH
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
 export GIT_ASKPASS:=/bin/true
 export MAKE_JOBSERVER=$(filter --jobserver%,$(MAKEFLAGS))
-export GNU_HOST_NAME:=$(shell $(TOPDIR)/scripts/config.guess)
+export GNU_HOST_NAME_GUESS:=$(shell $(TOPDIR)/scripts/config.guess)
 export HOST_OS:=$(shell uname)
-export HOST_ARCH:=$(shell uname -m)
 
 ifeq ($(HOST_OS),Darwin)
   ifneq ($(filter /Applications/Xcode.app/% /Library/Developer/%,$(MAKE)),)

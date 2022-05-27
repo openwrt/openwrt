@@ -127,6 +127,40 @@ menuconfig DEVEL
 		  Store build logs in this directory.
 		  If not set, uses './logs'
 
+	config HOST_ARCH_GNU
+		string "Override the detection of host system GNU name" if DEVEL
+		default ""
+		help
+		  the GNU host name for building is automatically detected
+		  with the script config.guess
+
+		  building may fail if one is running a system
+		  with differing kernel and userspace,
+		  for example, a 64 bit kernel and 32 bit userspace programs
+
+		  this option allows overriding the detection of system arch
+		  in order to match the arch that the local system compiler is built for
+
+		  the input should match whatever config.guess would output as the arch
+		  for example, i386, x86_64, arm, aarch64
+
+	config HOST_ARCH_UNAME
+		string "Override the detection of host system arch/machine name" if DEVEL
+		default ""
+		help
+		  the host arch for building is automatically detected
+		  with the command uname
+
+		  building may fail if one is running a system
+		  with differing kernel and userspace,
+		  for example, a 64 bit kernel and 32 bit userspace programs
+
+		  this option allows overriding the detection of system arch
+		  in order to match the arch that the local system compiler is built for
+
+		  the input should match whatever uname would output as the arch
+		  for example, i586, amd64, armv7l, arm64
+
 	config SRC_TREE_OVERRIDE
 		bool "Enable package source tree override" if DEVEL
 		help

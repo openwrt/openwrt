@@ -59,6 +59,21 @@ $(eval tolower = $(call __tr_template,$(chars_upper),$(chars_lower)))
 
 version_abbrev = $(if $(if $(CHECK),,$(DUMP)),$(1),$(shell printf '%.8s' $(1)))
 
+HOST_ARCH_GNU:=$(call qstrip,$(CONFIG_HOST_ARCH_GNU))
+HOST_ARCH_UNAME:=$(call qstrip,$(CONFIG_HOST_ARCH_UNAME))
+
+ifeq ($(HOST_ARCH_GNU),)
+  export GNU_HOST_NAME:=$(GNU_HOST_NAME_GUESS)
+else
+  export GNU_HOST_NAME:=$(subst $(firstword $(subst -, ,$(GNU_HOST_NAME_GUESS))),$(HOST_ARCH_GNU),$(GNU_HOST_NAME_GUESS))
+endif
+
+ifeq ($(HOST_ARCH_UNAME),)
+  export HOST_ARCH:=$(shell uname -m)
+else
+  export HOST_ARCH:=$(HOST_ARCH_UNAME)
+endif
+
 _SINGLE=export MAKEFLAGS=$(space);
 CFLAGS:=
 ARCH:=$(subst i486,i386,$(subst i586,i386,$(subst i686,i386,$(call qstrip,$(CONFIG_ARCH)))))

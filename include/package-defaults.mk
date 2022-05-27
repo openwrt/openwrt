@@ -111,6 +111,11 @@ define Build/Configure/Default
 	if [ -x $(CONFIGURE_CMD) ]; then \
 		$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(SCRIPT_DIR)) \
 		$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.sub,$(SCRIPT_DIR)) \
+		$(if $(HOST_ARCH_GNU), \
+			echo "echo $(GNU_HOST_NAME)" > \
+				$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3)))/config.guess ; \
+			$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3)))) \
+		) \
 		$(CONFIGURE_VARS) \
 		$(2) \
 		$(CONFIGURE_CMD) \
