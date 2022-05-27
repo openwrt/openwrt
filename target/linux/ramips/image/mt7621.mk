@@ -90,6 +90,13 @@ define Build/zytrx-header
 	mv $@.new $@
 endef
 
+define Build/zyxel-nwa-fit
+	$(TOPDIR)/scripts/mkits-zyxel-fit.sh \
+		$@.its $@ "6b e1 6f e1 ff ff ff ff ff ff"
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
@@ -2192,6 +2199,33 @@ define Device/zyxel_nr7101
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zyxel_nr7101
+
+define Device/zyxel_nwa-ax
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := ZyXEL
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 8192k
+  UBINIZE_OPTS := -E 5
+  DEVICE_PACKAGES := kmod-mt7915e uboot-envtools zyxel-bootconfig
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += factory.bin ramboot-factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | zyxel-nwa-fit
+  IMAGE/ramboot-factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/zyxel_nwa50ax
+  $(Device/zyxel_nwa-ax)
+  DEVICE_MODEL := NWA50AX
+endef
+TARGET_DEVICES += zyxel_nwa50ax
+
+define Device/zyxel_nwa55axe
+  $(Device/zyxel_nwa-ax)
+  DEVICE_MODEL := NWA55AXE
+endef
+TARGET_DEVICES += zyxel_nwa55axe
 
 define Device/zyxel_wap6805
   $(Device/dsa-migration)
