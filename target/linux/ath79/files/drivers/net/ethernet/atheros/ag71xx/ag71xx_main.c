@@ -867,6 +867,7 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 	u32 cfg2;
 	u32 ifctl;
 	u32 fifo5;
+	unsigned int speed;
 
 	if (!ag->link && update) {
 		ag71xx_hw_stop(ag);
@@ -882,7 +883,7 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 
 	cfg2 = ag71xx_rr(ag, AG71XX_REG_MAC_CFG2);
 	cfg2 &= ~(MAC_CFG2_IF_1000 | MAC_CFG2_IF_10_100 | MAC_CFG2_FDX);
-	cfg2 |= (ag->duplex) ? MAC_CFG2_FDX : 0;
+	cfg2 |= (ag->duplex || ag->builtin_switch) ? MAC_CFG2_FDX : 0;
 
 	ifctl = ag71xx_rr(ag, AG71XX_REG_MAC_IFCTL);
 	ifctl &= ~(MAC_IFCTL_SPEED);
@@ -890,7 +891,11 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 	fifo5 = ag71xx_rr(ag, AG71XX_REG_FIFO_CFG5);
 	fifo5 &= ~FIFO_CFG5_BM;
 
-	switch (ag->speed) {
+	speed = ag->speed;
+	if (ag->builtin_switch)
+		speed = SPEED_1000;
+
+	switch (speed) {
 	case SPEED_1000:
 		cfg2 |= MAC_CFG2_IF_1000;
 		fifo5 |= FIFO_CFG5_BM;
@@ -1557,6 +1562,10 @@ static int ag71xx_probe(struct platform_device *pdev)
 	if (IS_ERR(ag->pllregmap)) {
 		dev_dbg(&pdev->dev, "failed to read pll-handle property\n");
 		ag->pllregmap = NULL;
+	}
+
+	if (of_property_read_bool(np, "builtin-switch")) {
+		ag->builtin_switch = 1;
 	}
 
 	ag->mac_base = devm_ioremap(&pdev->dev, res->start,
