@@ -53,7 +53,7 @@ endef
 
 # 1: build dir
 define patch_libtool
-	@(cd $(1); \
+	$(Q)(cd $(1); \
 		for lt in $$$$($$(STAGING_DIR_HOST)/bin/find . -name ltmain.sh); do \
 			lt_version="$$$$($$(STAGING_DIR_HOST)/bin/sed -ne 's,^[[:space:]]*VERSION="\?\([0-9]\.[0-9]\+\).*,\1,p' $$$$lt)"; \
 			case "$$$$lt_version" in \

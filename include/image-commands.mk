@@ -299,12 +299,12 @@ define Build/fit
 		-A $(LINUX_KARCH) -v $(LINUX_VERSION)
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage $(if $(findstring external,$(word 3,$(1))),\
 		-E -B 0x1000 $(if $(findstring static,$(word 3,$(1))),-p 0x1000)) -f $@.its $@.new
-	@mv $@.new $@
+	$(Q)mv $@.new $@
 endef
 
 define Build/gzip
 	gzip -f -9n -c $@ $(1) > $@.new
-	@mv $@.new $@
+	$(Q)mv $@.new $@
 endef
 
 define Build/install-dtb
@@ -341,7 +341,7 @@ define Build/jffs2
 			2>&1 1>/dev/null | awk '/^.+$$$$/' && \
 		$(STAGING_DIR_HOST)/bin/padjffs2 $@.new -J $(patsubst %k,,$(BLOCKSIZE))
 	-rm -rf $(KDIR_TMP)/$(DEVICE_NAME)/jffs2/
-	@mv $@.new $@
+	$(Q)mv $@.new $@
 endef
 
 define Build/kernel2minor
@@ -370,7 +370,7 @@ endef
 
 define Build/lzma-no-dict
 	$(STAGING_DIR_HOST)/bin/lzma e $@ $(1) $@.new
-	@mv $@.new $@
+	$(Q)mv $@.new $@
 endef
 
 define Build/netgear-chk
@@ -460,14 +460,14 @@ define Build/qsdk-ipq-factory-nand
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
 		$@.its ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
-	@mv $@.new $@
+	$(Q)mv $@.new $@
 endef
 
 define Build/qsdk-ipq-factory-nor
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
 		$@.its hlos $(IMAGE_KERNEL) rootfs $(IMAGE_ROOTFS)
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
-	@mv $@.new $@
+	$(Q)mv $@.new $@
 endef
 
 define Build/seama
@@ -513,7 +513,7 @@ define Build/tplink-v1-header
 		-E $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		-m $(TPLINK_HEADER_VERSION) -N "$(VERSION_DIST)" -V $(REVISION) \
 		-k $@ -o $@.new $(1)
-	@mv $@.new $@
+	$(Q)mv $@.new $@
 endef
 
 # combine kernel and rootfs into one image
@@ -541,7 +541,7 @@ define Build/tplink-v2-header
 		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
 		-T $(TPLINK_HVERSION) -V "ver. 2.0" \
 		-k $@ -o $@.new $(1)
-	@mv $@.new $@
+	$(Q)mv $@.new $@
 endef
 
 define Build/tplink-v2-image

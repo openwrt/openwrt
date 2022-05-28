@@ -120,7 +120,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		$(KDIR_BASE) \
 		-type f | $(BUNDLER_COMMAND))
 
-	@-( \
+	$(Q)-( \
 		find \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/bin \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/usr/bin \

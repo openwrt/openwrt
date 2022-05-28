@@ -53,7 +53,7 @@ lzma.o: decompress.o LzmaDecode.o kernel.o
 	sed -e 's,@LOADADDR@,$(LOADADDR),g' -e 's,@ENTRY@,entry,g' lzma.lds.in >lzma-stage2.lds
 	$(LD) -static --no-warn-mismatch -e entry -Tlzma-stage2.lds -o temp-$@ $^
 	$(OBJCOPY) temp-$@ lzma.tmp
-	@echo "SECTIONS { .data : { code_start = .; *(.data) code_stop = .; }}" > lzma-data.lds
+	$(Q)echo "SECTIONS { .data : { code_start = .; *(.data) code_stop = .; }}" > lzma-data.lds
 	$(LD) -no-warn-mismatch -T lzma-data.lds -r -o $@ -b binary lzma.tmp --oformat $(O_FORMAT)
 	
 lzma.elf: start.o lzma.o

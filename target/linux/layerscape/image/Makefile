@@ -61,7 +61,7 @@ define Build/traverse-fit
 		-d $(DEVICE_DTS_DIR)/freescale/traverse-ls1043v.dtb \
 		-D "Traverse_LS1043V" -n "ls1043v" -a $(FDT_LOADADDR) -c 2
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
-	@mv -f $@.new $@
+	mv -f $@.new $@
 endef
 
 define Device/fix-sysupgrade

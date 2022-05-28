@@ -48,7 +48,7 @@ $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.xz: clean
 		done; \
 	)
 
-	@-( \
+	$(Q)-( \
 		find \
 			$(TOOLCHAIN_BUILD_DIR)/*/bin \
 			$(TOOLCHAIN_BUILD_DIR)/*/*/bin \

@@ -16,8 +16,14 @@ ifeq ($(OPENWRT_VERBOSE),99)
   OPENWRT_VERBOSE:=s
 endif
 
+# suppress echo of command if not verbose (command setting)
+Q:=$(if $(findstring c,$(OPENWRT_VERBOSE)),,@)
+
+# set make to be silent if not verbose (command setting)
+S:=$(if $(findstring c,$(OPENWRT_VERBOSE)),,-s --no-print-directory)
+
 ifeq ($(NO_TRACE_MAKE),)
-NO_TRACE_MAKE := $(MAKE) $(if $(findstring s,$(OPENWRT_VERBOSE)),OPENWRT_VERBOSE=$(OPENWRT_VERBOSE),OPENWRT_VERBOSE=s$(OPENWRT_VERBOSE))
+NO_TRACE_MAKE := $(MAKE) $(S) $(if $(findstring s,$(OPENWRT_VERBOSE)),OPENWRT_VERBOSE=$(OPENWRT_VERBOSE),OPENWRT_VERBOSE=s$(OPENWRT_VERBOSE))
 export NO_TRACE_MAKE
 endif
 
@@ -53,11 +59,11 @@ ifeq ($(findstring s,$(OPENWRT_VERBOSE)),)
     _NULL:=$(if $(MAKECMDGOALS),$(shell \
 		$(call MESSAGE, make[$(MAKELEVEL)]$(if $(_DIR), -C $(_DIR)) $(MAKECMDGOALS)); \
     ))
-    SUBMAKE=$(MAKE)
+    SUBMAKE=$(MAKE) $(S)
   else
     SILENT:=>/dev/null $(if $(findstring w,$(OPENWRT_VERBOSE)),,2>&1)
     export QUIET:=1
-    SUBMAKE=cmd() { $(SILENT) $(MAKE) -s "$$@" < /dev/null || { echo "make $$*: build failed. Please re-run make with -j1 V=s or V=sc for a higher verbosity level to see what's going on"; false; } } 8>&1 9>&2; cmd
+    SUBMAKE=cmd() { $(SILENT) $(MAKE) $(S) "$$@" < /dev/null || { echo "make $$*: build failed. Please re-run make with -j1 V=s or V=sc for a higher verbosity level to see what's going on"; false; } } 8>&1 9>&2; cmd
   endif
 
   .SILENT: $(MAKECMDGOALS)

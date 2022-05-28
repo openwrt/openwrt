@@ -30,7 +30,7 @@ KERNEL_DTB = kernel-bin | append-dtb | lzma
 
 define Build/edimax-header
 	$(STAGING_DIR_HOST)/bin/mkedimaximg -i $@ -o $@.new $(1)
-	@mv $@.new $@
+	mv $@.new $@
 endef
 
 define Build/jcg-header

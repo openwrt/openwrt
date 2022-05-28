@@ -22,7 +22,7 @@ endef
 
 ### Kernel scripts ###
 define Build/loader-lzma
-	@rm -rf $@.src
+	$(Q)rm -rf $@.src
 	$(MAKE) -C lzma-loader \
 		CHIP_ID=$(CHIP_ID) \
 		KERNEL_ADDR=$(KERNEL_LOADADDR) \
@@ -35,8 +35,8 @@ define Build/loader-lzma
 		RAMSIZE=$(RAMSIZE) \
 		TARGET_DIR="$(dir $@)" \
 		compile loader.$(1)
-	@mv "$@.$(1)" "$@"
-	@rm -rf $@.src
+	$(Q)mv "$@.$(1)" "$@"
+	$(Q)rm -rf $@.src
 endef
 
 define Build/lzma-cfe
@@ -48,7 +48,7 @@ define Build/lzma-cfe
 	# Strip out the length, CFE doesn't like this
 	dd if=$@ of=$@.new bs=5 count=1
 	dd if=$@ of=$@.new ibs=13 obs=5 skip=1 seek=1 conv=notrunc
-	@mv $@.new $@
+	$(Q)mv $@.new $@
 endef
 
 define Build/relocate-kernel
@@ -61,7 +61,7 @@ define Build/relocate-kernel
 		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
 		cat $@ \
 	) > $@.relocate
-	@mv $@.relocate $@
+	$(Q)mv $@.relocate $@
 endef
 
 ### Image scripts ###

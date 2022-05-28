@@ -53,7 +53,7 @@ endif
 ifndef DUMP_TARGET_DB
 ifneq ($(ARCH),)
   $(TOOLCHAIN_DIR)/info.mk: .config
-	@for dir in $(TOOLCHAIN_DIR); do ( \
+	$(Q)for dir in $(TOOLCHAIN_DIR); do ( \
 		$(if $(QUIET),,set -x;) \
 		mkdir -p "$$dir"; \
 		cd "$$dir"; \
@@ -61,8 +61,8 @@ ifneq ($(ARCH),)
 		ln -nsf lib lib32; \
 		mkdir -p stamp lib usr/include usr/lib ; \
 	); done
-	@grep GCC_VERSION $@ >/dev/null 2>&1 || $(INSTALL_DATA) $(TOPDIR)/toolchain/info.mk $@
-	@touch $@
+	$(Q)grep GCC_VERSION $@ >/dev/null 2>&1 || $(INSTALL_DATA) $(TOPDIR)/toolchain/info.mk $@
+	$(Q)touch $@
 endif
 endif
 

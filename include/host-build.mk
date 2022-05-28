@@ -143,8 +143,8 @@ ifndef DUMP
   $(if $(DUMP),,$(call HostHost/Autoclean))
 
   $(HOST_STAMP_PREPARED):
-	@-rm -rf $(HOST_BUILD_DIR)
-	@mkdir -p $(HOST_BUILD_DIR)
+	$(Q)-rm -rf $(HOST_BUILD_DIR)
+	$(Q)mkdir -p $(HOST_BUILD_DIR)
 	$(foreach hook,$(Hooks/HostPrepare/Pre),$(call $(hook))$(sep))
 	$(call Host/Prepare)
 	$(foreach hook,$(Hooks/HostPrepare/Post),$(call $(hook))$(sep))

@@ -96,7 +96,7 @@ STAGING_FILES_LIST:=$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).lis
 
 define CleanStaging
 	rm -f $(STAMP_INSTALLED)
-	@-(\
+	$(Q)-(\
 		if [ -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) ]; then \
 			$(SCRIPT_DIR)/clean-package.sh \
 				"$(STAGING_DIR)/packages/$(STAGING_FILES_LIST)" \
@@ -160,7 +160,7 @@ endif
 ifdef USE_SOURCE_DIR
   define Build/Prepare/Default
 	rm -rf $(PKG_BUILD_DIR)
-	$(if $(wildcard $(USE_SOURCE_DIR)/*),,@echo "Error: USE_SOURCE_DIR=$(USE_SOURCE_DIR) path not found"; false)
+	$(if $(wildcard $(USE_SOURCE_DIR)/*),,$(Q)echo "Error: USE_SOURCE_DIR=$(USE_SOURCE_DIR) path not found"; false)
 	ln -snf $(USE_SOURCE_DIR) $(PKG_BUILD_DIR)
 	touch $(PKG_BUILD_DIR)/.source_dir
   endef
@@ -193,8 +193,8 @@ define Build/CoreTargets
 
   $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)
-	@-rm -rf $(PKG_BUILD_DIR)
-	@mkdir -p $(PKG_BUILD_DIR)
+	$(Q)-rm -rf $(PKG_BUILD_DIR)
+	$(Q)mkdir -p $(PKG_BUILD_DIR)
 	touch $$@_check
 	$(foreach hook,$(Hooks/Prepare/Pre),$(call $(hook))$(sep))
 	$(Build/Prepare)
@@ -328,9 +328,9 @@ Build/DistCheck=$(call Build/DistCheck/Default,)
 
 .PHONY: prepare-package-install
 prepare-package-install:
-	@mkdir -p $(PKG_INFO_DIR)
-	@rm -f $(PKG_INSTALL_STAMP)
-	@echo "$(filter-out essential nonshared,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
+	$(Q)mkdir -p $(PKG_INFO_DIR)
+	$(Q)rm -f $(PKG_INSTALL_STAMP)
+	$(Q)echo "$(filter-out essential nonshared,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
 
 $(PACKAGE_DIR):
 	mkdir -p $@

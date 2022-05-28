@@ -46,12 +46,12 @@ sed -e s,\\\#.*,, $(1) | grep -E \[a-zA-Z0-9\]
 endef
 
 define PatchDir/Quilt
-	@mkdir -p "$(1)/patches$(if $(3),/$(patsubst %/,%,$(3)))"
-	@if [ -s "$(2)/series" ]; then \
+	$(Q)mkdir -p "$(1)/patches$(if $(3),/$(patsubst %/,%,$(3)))"
+	$(Q)if [ -s "$(2)/series" ]; then \
 		mkdir -p "$(1)/patches/$(3)"; \
 		cp "$(2)/series" "$(1)/patches/$(3)"; \
 	fi
-	@for patch in $$$$( (cd "$(2)" && if [ -f series ]; then $(call filter_series,series); else ls | sort; fi; ) 2>/dev/null ); do ( \
+	$(Q)for patch in $$$$( (cd "$(2)" && if [ -f series ]; then $(call filter_series,series); else ls | sort; fi; ) 2>/dev/null ); do ( \
 		cp "$(2)/$$$$patch" "$(1)/patches/$(3)"; \
 		echo "$(3)$$$$patch" >> "$(1)/patches/series"; \
 	); done
@@ -59,7 +59,7 @@ define PatchDir/Quilt
 endef
 
 define PatchDir/Default
-	@if [ -d "$(2)" ] && [ "$$$$(ls $(2) | wc -l)" -gt 0 ]; then \
+	$(Q)if [ -d "$(2)" ] && [ "$$$$(ls $(2) | wc -l)" -gt 0 ]; then \
 		export PATCH="$(PATCH)"; \
 		if [ -s "$(2)/series" ]; then \
 			$(call filter_series,$(2)/series) | xargs -n1 \
@@ -108,7 +108,7 @@ endef
 define Quilt/RefreshDir
 	mkdir -p $(2)
 	-rm -f $(2)/* 2>/dev/null >/dev/null
-	@( \
+	$(Q)( \
 		for patch in $$$$($(if $(3),grep "^$(3)",cat) $(1)/patches/series | awk '{print $$$$1}'); do \
 			$(CP) -v "$(1)/patches/$$$$patch" $(2); \
 		done; \
@@ -124,7 +124,7 @@ define Quilt/Refresh/Package
 endef
 
 define Quilt/Refresh/Kernel
-	@[ -z "$$(grep -v '^generic/' $(PKG_BUILD_DIR)/patches/series | grep -v '^platform/')" ] || { \
+	$(Q)[ -z "$$(grep -v '^generic/' $(PKG_BUILD_DIR)/patches/series | grep -v '^platform/')" ] || { \
 		echo "All kernel patches must start with either generic/ or platform/"; \
 		false; \
 	}
@@ -150,23 +150,23 @@ define Quilt/Template
 	touch "$$@"
 
   $(3)quilt-check: $($(2)STAMP_PREPARED) FORCE
-	@[ -f "$(1)/.quilt_used" ] || { \
+	$(Q)[ -f "$(1)/.quilt_used" ] || { \
 		echo "The source directory was not unpacked using quilt. Please rebuild with QUILT=1"; \
 		false; \
 	}
-	@[ -f "$(1)/patches/series" ] || { \
+	$(Q)[ -f "$(1)/patches/series" ] || { \
 		echo "The source directory contains no quilt patches."; \
 		false; \
 	}
-	@[ -n "$$$$(ls $(1)/patches/series)" -o \
+	$(Q)[ -n "$$$$(ls $(1)/patches/series)" -o \
 	   "$$$$(cat $(1)/patches/series | $(MKHASH) md5)" = "$$(sort $(1)/patches/series | $(MKHASH) md5)" ] || { \
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}
 
   $(3)refresh: $(3)quilt-check
-	@cd "$(1)"; $(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null
-	@cd "$(1)"; while $(QUILT_CMD) next 2>/dev/null >/dev/null && $(QUILT_CMD) push; do \
+	$(Q)cd "$(1)"; $(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null
+	$(Q)cd "$(1)"; while $(QUILT_CMD) next 2>/dev/null >/dev/null && $(QUILT_CMD) push; do \
 		QUILT_DIFF_OPTS="-p" $(QUILT_CMD) refresh -p ab --no-index --no-timestamps; \
 	done; ! $(QUILT_CMD) next 2>/dev/null >/dev/null
 	$(Quilt/Refresh/$(4))

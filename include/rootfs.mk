@@ -64,9 +64,9 @@ define prepare_rootfs
 	$(if $(2),@if [ -d '$(2)' ]; then \
 		$(call file_copy,$(2)/.,$(1)); \
 	fi)
-	@mkdir -p $(1)/etc/rc.d
-	@mkdir -p $(1)/var/lock
-	@( \
+	$(Q)mkdir -p $(1)/etc/rc.d
+	$(Q)mkdir -p $(1)/var/lock
+	$(Q)( \
 		cd $(1); \
 		for script in ./usr/lib/opkg/info/*.postinst; do \
 			IPKG_INSTROOT=$(1) $$(command -v bash) $$script; \
@@ -88,7 +88,7 @@ define prepare_rootfs
 		done || true \
 	)
 	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
-	@-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
+	$(Q)-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
 	rm -rf \
 		$(1)/boot \
 		$(1)/tmp/* \

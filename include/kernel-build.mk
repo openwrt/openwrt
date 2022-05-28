@@ -176,7 +176,7 @@ define BuildKernel
 	rm -rf $(KERNEL_BUILD_DIR)
 
   image-prereq:
-	@+$(NO_TRACE_MAKE) -s -C image prereq TARGET_BUILD=
+	$(Q)+$(NO_TRACE_MAKE) -C image prereq TARGET_BUILD=
 
   prereq: image-prereq
 
