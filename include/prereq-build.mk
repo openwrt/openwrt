@@ -219,12 +219,11 @@ $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 $(eval $(call FindHostCommand,which,Please install 'which', \
 	which which))
 
+$(eval $(call TestHostCommand,ldconfig,Failed to link ldconfig, \
+	$(LN) true $(STAGING_DIR_HOST)/bin/ldconfig))
+
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
 	$(CC) -O2 -I$(TOPDIR)/tools/include -o $@ $<
 
 prereq: $(STAGING_DIR_HOST)/bin/mkhash
-
-# Install ldconfig stub
-$(eval $(call TestHostCommand,ldconfig-stub,Failed to install stub, \
-	$(LN) /bin/true $(STAGING_DIR_HOST)/bin/ldconfig))
