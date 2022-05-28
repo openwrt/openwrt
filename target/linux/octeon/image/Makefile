@@ -84,4 +84,14 @@ define Device/ubnt_edgerouter-lite
 endef
 TARGET_DEVICES += ubnt_edgerouter-lite
 
+define Device/ubnt_unifi-usg
+  $(Device/ubnt_edgerouter-lite)
+  DEVICE_MODEL := UniFi Security Gateway
+  BOARD_NAME := ubnt,usg
+  DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio
+  DEVICE_DTS := cn5020_ubnt_usg
+  KERNEL += | append-dtb-to-elf
+endef
+TARGET_DEVICES += ubnt_unifi-usg
+
 $(eval $(call BuildImage))
