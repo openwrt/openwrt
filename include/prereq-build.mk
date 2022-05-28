@@ -10,6 +10,19 @@ PKG_NAME:=Build dependency
 
 MAC_HOST_PATHS:=/opt/local/bin /usr/local/opt
 
+# an easy way to check for GNU coreutils
+$(eval $(call FindHostCommand,*[,Please install GNU coreutils, \
+	g[ --version | grep GNU, \
+	[ --version | grep GNU))
+
+$(eval $(call FindHostCommand,*true,Please install GNU coreutils, \
+	gtrue --version | grep GNU, \
+	true --version | grep GNU))
+
+$(eval $(call FindHostCommand,*false,Please install GNU coreutils, \
+	gfalse --version | grep GNU, \
+	false --version | grep GNU))
+
 # Required for the toolchain
 $(eval $(call TestHostCommand,working-make, \
 	Please install GNU make v4.1 or later., \
