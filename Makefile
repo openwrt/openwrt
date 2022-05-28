@@ -43,31 +43,31 @@ $(target/stamp-compile): $(toolchain/stamp-compile) $(tools/stamp-compile) $(BUI
 $(package/stamp-compile): $(target/stamp-compile) $(package/stamp-cleanup)
 $(package/stamp-install): $(package/stamp-compile)
 $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
-check: $(tools/stamp-check) $(toolchain/stamp-check) $(package/stamp-check)
+check: $(tools/stamp-check) $(toolchain/stamp-check) $(package/stamp-check) FORCE
 
-printdb:
+printdb: FORCE
 	@true
 
-prepare: $(target/stamp-compile)
+prepare: $(target/stamp-compile) FORCE
 
 _clean: FORCE
 	rm -rf $(BUILD_DIR) $(STAGING_DIR) $(BIN_DIR) $(OUTPUT_DIR)/packages/$(ARCH_PACKAGES) $(TOPDIR)/staging_dir/packages
 
-clean: _clean
+clean: _clean FORCE
 	rm -rf $(BUILD_LOG_DIR)
 
-targetclean: _clean
+targetclean: _clean FORCE
 	rm -rf $(TOOLCHAIN_DIR) $(BUILD_DIR_BASE)/hostpkg $(BUILD_DIR_TOOLCHAIN)
 
-dirclean: targetclean clean
+dirclean: targetclean clean FORCE
 	rm -rf $(STAGING_DIR_HOST) $(STAGING_DIR_HOSTPKG) $(BUILD_DIR_BASE)/host
 	rm -rf $(TMP_DIR)
 	$(MAKE) -C $(TOPDIR)/scripts/config clean
 
-toolchain_rebuild_check:
+toolchain_rebuild_check: FORCE
 	$(SCRIPT_DIR)/check-toolchain-clean.sh
 
-cacheclean:
+cacheclean: FORCE
 ifneq ($(CONFIG_CCACHE),)
 	$(STAGING_DIR_HOST)/bin/ccache -C
 endif
@@ -90,7 +90,7 @@ tmp/.prereq_packages: .config
 endif
 
 # check prerequisites before starting to build
-prereq: $(target/stamp-prereq) tmp/.prereq_packages
+prereq: $(target/stamp-prereq) tmp/.prereq_packages FORCE
 	$(Q)if [ ! -f "$(INCLUDE_DIR)/site/$(ARCH)" ]; then \
 		echo 'ERROR: Missing site config for architecture "$(ARCH)" !'; \
 		echo '       The missing file will cause configure scripts to fail during compilation.'; \
@@ -104,7 +104,7 @@ $(BIN_DIR)/profiles.json: FORCE
 			$(SCRIPT_DIR)/json_overview_image_info.py $@ \
 	)
 
-json_overview_image_info: $(BIN_DIR)/profiles.json
+json_overview_image_info: $(BIN_DIR)/profiles.json FORCE
 
 checksum: FORCE
 	$(call sha256sums,$(BIN_DIR),$(CONFIG_BUILDBOT))
@@ -122,7 +122,7 @@ diffconfig: FORCE
 buildinfo: FORCE
 	$(_SINGLE)$(SUBMAKE) -r diffconfig buildversion feedsversion
 
-prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
+prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile) FORCE
 	$(_SINGLE)$(SUBMAKE) -r buildinfo
 
 world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
@@ -132,7 +132,5 @@ world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-
 ifneq ($(CONFIG_CCACHE),)
 	$(STAGING_DIR_HOST)/bin/ccache -s
 endif
-
-.PHONY: clean dirclean prereq prepare world package/symlinks package/symlinks-install package/symlinks-clean
 
 endif

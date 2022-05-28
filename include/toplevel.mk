@@ -167,7 +167,7 @@ else
   prepare_kernel_conf: ;
 endif
 
-kernel_oldconfig: prepare_kernel_conf
+kernel_oldconfig: prepare_kernel_conf FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux oldconfig
 
 ifneq ($(DISTRO_PKG_CONFIG),)
@@ -175,13 +175,13 @@ kernel_menuconfig: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
 kernel_nconfig: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
 kernel_xconfig: export PATH:=$(dir $(DISTRO_PKG_CONFIG)):$(PATH)
 endif
-kernel_menuconfig: prepare_kernel_conf
+kernel_menuconfig: prepare_kernel_conf FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux menuconfig
 
-kernel_nconfig: prepare_kernel_conf
+kernel_nconfig: prepare_kernel_conf FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux nconfig
 
-kernel_xconfig: prepare_kernel_conf
+kernel_xconfig: prepare_kernel_conf FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux xconfig
 
 staging_dir/host/.prereq-build: include/prereq-build.mk
@@ -210,10 +210,10 @@ endif
 download: .config FORCE $(if $(wildcard $(TOPDIR)/staging_dir/host/bin/flock),,tools/flock/compile)
 	$(Q)+$(foreach dir,$(DOWNLOAD_DIRS),$(SUBMAKE) $(S) $(dir);)
 
-clean dirclean: .config
+clean dirclean: .config FORCE
 	$(Q)+$(SUBMAKE) $(S) -r $@
 
-prereq:: prepare-tmpinfo .config
+prereq:: prepare-tmpinfo .config FORCE
 	$(Q)+$(NO_TRACE_MAKE) -r $@
 
 check: .config FORCE
@@ -256,29 +256,31 @@ else
 endif
 
 # update all feeds, re-create index files, install symlinks
-package/symlinks:
+package/symlinks: FORCE
 	./scripts/feeds update -a
 	./scripts/feeds install -a
 
 # re-create index files, install symlinks
-package/symlinks-install:
+package/symlinks-install: FORCE
 	./scripts/feeds update -i
 	./scripts/feeds install -a
 
 # remove all symlinks, don't touch ./feeds
-package/symlinks-clean:
+package/symlinks-clean: FORCE
 	./scripts/feeds uninstall -a
 
-help:
+help: FORCE
 	cat README.md
 
-distclean:
+distclean: FORCE
 	rm -rf bin build_dir .ccache .config* dl feeds key-build* logs package/feeds staging_dir tmp
 	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)
   .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig staging_dir/host/.prereq-build tmp/.prereq-package prepare-tmpinfo
 endif
-.PHONY: help FORCE
+
 .NOTPARALLEL:
 
+FORCE: ;
+.PHONY: FORCE

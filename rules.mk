@@ -154,9 +154,8 @@ DEFAULT_SUBDIR_TARGETS:=clean download prepare compile update refresh prereq dis
 
 define DefaultTargets
 $(foreach t,$(DEFAULT_SUBDIR_TARGETS) $(1),
-  .$(t):
-  $(t): .$(t)
-  .PHONY: $(t) .$(t)
+  .$(t): FORCE
+  $(t): .$(t) FORCE
 )
 endef
 
@@ -506,19 +505,19 @@ FORCE: ;
 check: FORCE
 	@true
 
-val.%:
+val.%: FORCE
 	@$(if $(filter undefined,$(origin $*)),\
 		echo "$* undefined" >&2, \
 		echo '$(call aescape,$($*))' \
 	)
 
-var.%:
+var.%: FORCE
 	@$(if $(filter undefined,$(origin $*)),\
 		echo "$* undefined" >&2, \
 		echo "$(call qescape,$*='$(call aescape,$($*))')" \
 	)
 
-type.%:
+type.%: FORCE
 	@echo '$(call aescape,$(origin $*))'
 
 endif #__rules_inc

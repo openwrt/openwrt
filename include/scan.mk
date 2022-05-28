@@ -115,6 +115,4 @@ $(TMP_DIR)/.$(SCAN_TARGET): $(TARGET_STAMP)
 	$(call progress,Collecting $(SCAN_NAME) info: done)
 	echo
 
-FORCE:
-.PHONY: FORCE
 .NOTPARALLEL:
