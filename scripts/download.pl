@@ -271,7 +271,7 @@ push @mirrors, 'https://sources.cdn.openwrt.org';
 push @mirrors, 'https://sources.openwrt.org';
 push @mirrors, 'https://mirror2.openwrt.org/sources';
 
-if (-f "$target/$filename") {
+if (-s "$target/$filename") {
 	$hash_cmd and do {
 		if (system("cat '$target/$filename' | $hash_cmd > '$target/$filename.hash'")) {
 			die "Failed to generate hash for $filename\n";
@@ -289,12 +289,12 @@ if (-f "$target/$filename") {
 	};
 }
 
-while (!-f "$target/$filename") {
+while (! -s "$target/$filename") {
 	my $mirror = shift @mirrors;
 	$mirror or die "No more mirrors to try - giving up.\n";
 
 	download($mirror, $url_filename);
-	if (!-f "$target/$filename" && $url_filename ne $filename) {
+	if (! -s "$target/$filename" && $url_filename ne $filename) {
 		download($mirror, $filename);
 	}
 }
