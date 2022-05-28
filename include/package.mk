@@ -326,8 +326,7 @@ Build/DistCheck=+$(call Build/DistCheck/Default,)
 
 .NOTPARALLEL:
 
-.PHONY: prepare-package-install
-prepare-package-install:
+prepare-package-install: FORCE
 	$(Q)mkdir -p $(PKG_INFO_DIR)
 	$(Q)rm -f $(PKG_INSTALL_STAMP)
 	$(Q)echo "$(filter-out essential nonshared,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
