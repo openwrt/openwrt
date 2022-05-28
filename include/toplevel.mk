@@ -99,7 +99,7 @@ prepare-tmpinfo: FORCE
 	./scripts/package-metadata.pl usergroup tmp/.packageinfo > tmp/.packageusergroup || { rm -f tmp/.packageusergroup; false; }
 	touch $(TOPDIR)/tmp/.build
 
-.config: ./scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo)
+.config: ./scripts/config/conf
 	@+if [ \! -e .config ] || ! grep CONFIG_HAVE_DOT_CONFIG .config >/dev/null; then \
 		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
 		$(_SINGLE)$(NO_TRACE_MAKE) menuconfig $(PREP_MK); \
@@ -118,14 +118,14 @@ scripts/config/%onf: FORCE
 
 $(eval $(call rdep,scripts/config,scripts/config/mconf))
 
-config: scripts/config/conf prepare-tmpinfo FORCE
+config: scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo) FORCE
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
 		$< $(KCONF_FLAGS) Config.in
 
 config-clean: FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -C scripts/config clean
 
-defconfig: scripts/config/conf prepare-tmpinfo FORCE
+defconfig: scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo) FORCE
 	touch .config
 	@if [ ! -s .config -a -e $(HOME)/.openwrt/defconfig ]; then cp $(HOME)/.openwrt/defconfig .config; fi
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
@@ -136,25 +136,25 @@ confdefault-m=allmod
 confdefault-n=allno
 confdefault:=$(confdefault-$(CONFDEFAULT))
 
-oldconfig: scripts/config/conf prepare-tmpinfo FORCE
+oldconfig: scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo) FORCE
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
 		$< $(KCONF_FLAGS) --$(if $(confdefault),$(confdefault),old)config Config.in
 
-menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
+menuconfig: scripts/config/mconf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo) FORCE
 	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 	fi
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
 		$< Config.in
 
-nconfig: scripts/config/nconf prepare-tmpinfo FORCE
+nconfig: scripts/config/nconf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo) FORCE
 	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 	fi
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
 		$< Config.in
 
-xconfig: scripts/config/qconf prepare-tmpinfo FORCE
+xconfig: scripts/config/qconf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo) FORCE
 	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 	fi
