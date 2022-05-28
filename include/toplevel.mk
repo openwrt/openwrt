@@ -201,7 +201,7 @@ staging_dir/host/.prereq-build: include/prereq-build.mk
 	touch $@
 
 printdb: FORCE
-	@$(_SINGLE)$(NO_TRACE_MAKE) -p $@ V=99 DUMP_TARGET_DB=1 2>&1
+	@$(_SINGLE)$(NO_TRACE_MAKE) -p $@ OPENWRT_VERBOSE=s DUMP_TARGET_DB=1 2>&1
 
 ifndef SDK
   DOWNLOAD_DIRS = tools/download toolchain/download package/download target/download
@@ -219,16 +219,16 @@ prereq:: prepare-tmpinfo .config
 	@+$(NO_TRACE_MAKE) -r -s $@
 
 check: .config FORCE
-	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= V=s
+	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= OPENWRT_VERBOSE=s
 
 val.%: FORCE
-	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= V=s
+	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= OPENWRT_VERBOSE=s
 
 var.%: FORCE
-	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= V=s
+	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= OPENWRT_VERBOSE=s
 
 type.%: FORCE
-	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= V=s
+	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= OPENWRT_VERBOSE=s
 
 WARN_PARALLEL_ERROR = $(if $(BUILD_LOG),,$(and $(filter -j,$(MAKEFLAGS)),$(findstring s,$(OPENWRT_VERBOSE))))
 
