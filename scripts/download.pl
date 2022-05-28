@@ -156,7 +156,7 @@ sub download
 
 		if ($? >> 8) {
 			print STDERR "Download failed.\n";
-			cleanup();
+			trash();
 			return;
 		}
 	}
@@ -168,13 +168,12 @@ sub download
 
 		if ($sum ne $file_hash) {
 			print STDERR "Hash of the downloaded file does not match (file: $sum, requested: $file_hash) - deleting download.\n";
-			cleanup();
+			trash();
 			return;
 		}
 	};
 
-	unlink "$target/$filename";
-	system("mv", "$target/$filename.dl", "$target/$filename");
+	system("mv", "-f", "$target/$filename.dl", "$target/$filename");
 	cleanup();
 }
 
@@ -182,6 +181,12 @@ sub cleanup
 {
 	unlink "$target/$filename.dl";
 	unlink "$target/$filename.hash";
+}
+
+sub trash
+{
+	cleanup();
+	unlink "$target/$filename";
 }
 
 @mirrors = localmirrors();
@@ -278,9 +283,9 @@ if (-f "$target/$filename") {
 
 		cleanup();
 		exit 0 if $sum eq $file_hash;
+		trash();
 
 		die "Hash of the local file $filename does not match (file: $sum, requested: $file_hash) - deleting download.\n";
-		unlink "$target/$filename";
 	};
 }
 
