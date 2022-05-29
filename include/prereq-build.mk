@@ -173,12 +173,26 @@ $(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
 	python3.7 -V 2>&1 | grep 'Python 3', \
 	python3 -V 2>&1 | grep -E 'Python 3\.([7-9]|10)\.?'))
 
+$(eval $(call SetupHostCommand,python-config,Please install python-dev tools >= 3.7, \
+	python3.10-config --help | grep config, \
+	python3.9-config --help | grep config, \
+	python3.8-config --help | grep config, \
+	python3.7-config --help | grep config, \
+	python3-config --configdir | grep -E '3\.([7-9]|10)\.?'))
+
 $(eval $(call SetupHostCommand,python3,Please install Python >= 3.7, \
 	python3.10 -V 2>&1 | grep 'Python 3', \
 	python3.9 -V 2>&1 | grep 'Python 3', \
 	python3.8 -V 2>&1 | grep 'Python 3', \
 	python3.7 -V 2>&1 | grep 'Python 3', \
 	python3 -V 2>&1 | grep -E 'Python 3\.([7-9]|10)\.?'))
+
+$(eval $(call SetupHostCommand,python3-config,Please install python-dev tools >= 3.7, \
+	python3.10-config --help | grep config, \
+	python3.9-config --help | grep config, \
+	python3.8-config --help | grep config, \
+	python3.7-config --help | grep config, \
+	python3-config --configdir | grep -E '3\.([7-9]|10)\.?'))
 
 $(eval $(call TestHostCommand,python3-distutils, \
 	Please install the Python3 distutils module, \
