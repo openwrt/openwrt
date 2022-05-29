@@ -1,0 +1,40 @@
+From e10daad6d7da1417cdaf67757f605178c41b44d2 Mon Sep 17 00:00:00 2001
+From: Lasse Collin <lasse.collin@tukaani.org>
+Date: Wed, 22 Sep 2021 22:59:58 +0800
+Subject: [PATCH 1008/1012] lib/xz: Move s->lzma.len = 0 initialization to
+ lzma_reset()
+
+It's a more logical place even if the resetting needs to be done
+only once per LZMA2 stream (if lzma_reset() called in the middle
+of an LZMA2 stream, .len will already be 0).
+
+Signed-off-by: Lasse Collin <lasse.collin@tukaani.org>
+Signed-off-by: Gao Xiang <hsiangkao@linux.alibaba.com>
+---
+ lib/xz/xz_dec_lzma2.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/lib/xz/xz_dec_lzma2.c b/lib/xz/xz_dec_lzma2.c
+index d548cf0e5..22b789645 100644
+--- a/lib/xz/xz_dec_lzma2.c
++++ b/lib/xz/xz_dec_lzma2.c
+@@ -791,6 +791,7 @@ static void lzma_reset(struct xz_dec_lzma2 *s)
+ 	s->lzma.rep1 = 0;
+ 	s->lzma.rep2 = 0;
+ 	s->lzma.rep3 = 0;
++	s->lzma.len = 0;
+ 
+ 	/*
+ 	 * All probabilities are initialized to the same value. This hack
+@@ -1174,8 +1175,6 @@ XZ_EXTERN enum xz_ret xz_dec_lzma2_reset(struct xz_dec_lzma2 *s, uint8_t props)
+ 		}
+ 	}
+ 
+-	s->lzma.len = 0;
+-
+ 	s->lzma2.sequence = SEQ_CONTROL;
+ 	s->lzma2.need_dict_reset = true;
+ 
+-- 
+2.32.0
+

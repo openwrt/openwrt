@@ -1,0 +1,110 @@
+From 5b6e7e120e716231a0bf9ad201438d72473e396d Mon Sep 17 00:00:00 2001
+From: Yue Hu <huyue2@yulong.com>
+Date: Thu, 14 Oct 2021 14:57:44 +0800
+Subject: [PATCH 1000/1012] erofs: remove the fast path of per-CPU buffer
+ decompression
+
+As Xiang mentioned, such path has no real impact to our current
+decompression strategy, remove it directly. Also, update the return
+value of z_erofs_lz4_decompress() to 0 if success to keep consistent
+with LZMA which will return 0 as well for that case.
+
+Link: https://lore.kernel.org/r/20211014065744.1787-1-zbestahu@gmail.com
+Reviewed-by: Gao Xiang <hsiangkao@linux.alibaba.com>
+Signed-off-by: Yue Hu <huyue2@yulong.com>
+Signed-off-by: Gao Xiang <hsiangkao@linux.alibaba.com>
+---
+ fs/erofs/decompressor.c | 63 ++++++-----------------------------------
+ 1 file changed, 8 insertions(+), 55 deletions(-)
+
+diff --git a/fs/erofs/decompressor.c b/fs/erofs/decompressor.c
+index a5bc4b1b7..dce06ac61 100644
+--- a/fs/erofs/decompressor.c
++++ b/fs/erofs/decompressor.c
+@@ -242,6 +242,8 @@ static int z_erofs_lz4_decompress(struct z_erofs_decompress_req *rq, u8 *out)
+ 		if (ret >= 0)
+ 			memset(out + ret, 0, rq->outputsize - ret);
+ 		ret = -EIO;
++	} else {
++		ret = 0;
+ 	}
+ 
+ 	if (maptype == 0) {
+@@ -268,33 +270,6 @@ static struct z_erofs_decompressor decompressors[] = {
+ 	},
+ };
+ 
+-static void copy_from_pcpubuf(struct page **out, const char *dst,
+-			      unsigned short pageofs_out,
+-			      unsigned int outputsize)
+-{
+-	const char *end = dst + outputsize;
+-	const unsigned int righthalf = PAGE_SIZE - pageofs_out;
+-	const char *cur = dst - pageofs_out;
+-
+-	while (cur < end) {
+-		struct page *const page = *out++;
+-
+-		if (page) {
+-			char *buf = kmap_atomic(page);
+-
+-			if (cur >= dst) {
+-				memcpy(buf, cur, min_t(uint, PAGE_SIZE,
+-						       end - cur));
+-			} else {
+-				memcpy(buf + pageofs_out, cur + pageofs_out,
+-				       min_t(uint, righthalf, end - cur));
+-			}
+-			kunmap_atomic(buf);
+-		}
+-		cur += PAGE_SIZE;
+-	}
+-}
+-
+ static int z_erofs_decompress_generic(struct z_erofs_decompress_req *rq,
+ 				      struct list_head *pagepool)
+ {
+@@ -305,34 +280,12 @@ static int z_erofs_decompress_generic(struct z_erofs_decompress_req *rq,
+ 	void *dst;
+ 	int ret;
+ 
+-	/* two optimized fast paths only for non bigpcluster cases yet */
+-	if (rq->inputsize <= PAGE_SIZE) {
+-		if (nrpages_out == 1 && !rq->inplace_io) {
+-			DBG_BUGON(!*rq->out);
+-			dst = kmap_atomic(*rq->out);
+-			dst_maptype = 0;
+-			goto dstmap_out;
+-		}
+-
+-		/*
+-		 * For the case of small output size (especially much less
+-		 * than PAGE_SIZE), memcpy the decompressed data rather than
+-		 * compressed data is preferred.
+-		 */
+-		if (rq->outputsize <= PAGE_SIZE * 7 / 8) {
+-			dst = erofs_get_pcpubuf(1);
+-			if (IS_ERR(dst))
+-				return PTR_ERR(dst);
+-
+-			rq->inplace_io = false;
+-			ret = alg->decompress(rq, dst);
+-			if (!ret)
+-				copy_from_pcpubuf(rq->out, dst, rq->pageofs_out,
+-						  rq->outputsize);
+-
+-			erofs_put_pcpubuf(dst);
+-			return ret;
+-		}
++	/* one optimized fast path only for non bigpcluster cases yet */
++	if (rq->inputsize <= PAGE_SIZE && nrpages_out == 1 && !rq->inplace_io) {
++		DBG_BUGON(!*rq->out);
++		dst = kmap_atomic(*rq->out);
++		dst_maptype = 0;
++		goto dstmap_out;
+ 	}
+ 
+ 	/* general decoding path which can be used for all cases */
+-- 
+2.32.0
+
