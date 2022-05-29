@@ -89,6 +89,9 @@ endef
 
 define Build/Configure/Default
 	( \
+		$(if $(CMAKE_ALLOW_WERROR),, \
+			$(call replace_string,$(CMAKE_SOURCE_DIR),'CMakeList*',\(-Werror\)\([^=].*$$$$\),-Wextra\2) \
+		) \
 		cd $(CMAKE_BINARY_DIR); \
 		$(CONFIGURE_VARS) \
 		cmake \
@@ -144,6 +147,9 @@ endef
 
 define Host/Configure/Default
 	( \
+		$(if $(HOST_CMAKE_ALLOW_WERROR),, \
+			$(call replace_string,$(HOST_CMAKE_SOURCE_DIR),'CMakeList*',\(-Werror\)\([^=].*$$$$\),-Wextra\2) \
+		) \
 		cd $(HOST_CMAKE_BINARY_DIR); \
 		$(HOST_CONFIGURE_VARS) \
 		cmake \

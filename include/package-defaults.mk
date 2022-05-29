@@ -111,6 +111,9 @@ define Build/Configure/Default
 	if [ -x $(CONFIGURE_CMD) ]; then \
 		$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(SCRIPT_DIR)) \
 		$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.sub,$(SCRIPT_DIR)) \
+		$(if $(BUILD_ALLOW_WERROR),, \
+			$(call replace_string,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),'Makefile*',\(-Werror\)\([^=].*$$$$\),-Wextra\2) \
+		) \
 		$(if $(HOST_ARCH_GNU), \
 			echo "echo $(GNU_HOST_NAME)" > \
 				$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3)))/config.guess ; \
