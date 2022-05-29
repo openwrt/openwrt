@@ -817,7 +817,8 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 			       __func__, phy_modes(state->interface));
 			return;
 		}
-		rtl9300_sds_rst(sds_num, sds_mode);
+		if (state->interface == PHY_INTERFACE_MODE_10GBASER)
+			rtl9300_serdes_setup(sds_num, state->interface);
 	}
 
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));

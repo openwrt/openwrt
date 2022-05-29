@@ -1,0 +1,76 @@
+From 9e26092eb098dec04ece28c05f859bc4add249c0 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Thu, 30 Sep 2021 17:51:16 +0100
+Subject: [PATCH] drm/vc4: Rename bridge to out_bridge
+
+In preparation for converting the encoder to being a bridge,
+rename the variable holding the next bridge in the chain to
+out_bridge, so that our bridge can be called bridge.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/gpu/drm/vc4/vc4_dsi.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_dsi.c
++++ b/drivers/gpu/drm/vc4/vc4_dsi.c
+@@ -553,7 +553,7 @@ struct vc4_dsi {
+ 
+ 	struct mipi_dsi_host dsi_host;
+ 	struct drm_encoder *encoder;
+-	struct drm_bridge *bridge;
++	struct drm_bridge *out_bridge;
+ 	struct list_head bridge_chain;
+ 
+ 	void __iomem *regs;
+@@ -804,7 +804,7 @@ static void vc4_dsi_encoder_disable(stru
+ 		if (iter->funcs->disable)
+ 			iter->funcs->disable(iter);
+ 
+-		if (iter == dsi->bridge)
++		if (iter == dsi->out_bridge)
+ 			break;
+ 	}
+ 
+@@ -1667,7 +1667,7 @@ static int vc4_dsi_bind(struct device *d
+ 	}
+ 
+ 	ret = drm_of_find_panel_or_bridge(dev->of_node, 0, 0,
+-					  &panel, &dsi->bridge);
++					  &panel, &dsi->out_bridge);
+ 	if (ret) {
+ 		/* If the bridge or panel pointed by dev->of_node is not
+ 		 * enabled, just return 0 here so that we don't prevent the DRM
+@@ -1682,10 +1682,10 @@ static int vc4_dsi_bind(struct device *d
+ 	}
+ 
+ 	if (panel) {
+-		dsi->bridge = devm_drm_panel_bridge_add_typed(dev, panel,
+-							      DRM_MODE_CONNECTOR_DSI);
+-		if (IS_ERR(dsi->bridge)) {
+-			ret = PTR_ERR(dsi->bridge);
++		dsi->out_bridge = devm_drm_panel_bridge_add_typed(dev, panel,
++								  DRM_MODE_CONNECTOR_DSI);
++		if (IS_ERR(dsi->out_bridge)) {
++			ret = PTR_ERR(dsi->out_bridge);
+ 			goto err_free_dma;
+ 		}
+ 	}
+@@ -1704,7 +1704,7 @@ static int vc4_dsi_bind(struct device *d
+ 	drm_simple_encoder_init(drm, dsi->encoder, DRM_MODE_ENCODER_DSI);
+ 	drm_encoder_helper_add(dsi->encoder, &vc4_dsi_encoder_helper_funcs);
+ 
+-	ret = drm_bridge_attach(dsi->encoder, dsi->bridge, NULL, 0);
++	ret = drm_bridge_attach(dsi->encoder, dsi->out_bridge, NULL, 0);
+ 	if (ret) {
+ 		dev_err(dev, "bridge attach failed: %d\n", ret);
+ 		goto err_free_dma;
+@@ -1741,7 +1741,7 @@ static void vc4_dsi_unbind(struct device
+ {
+ 	struct vc4_dsi *dsi = dev_get_drvdata(dev);
+ 
+-	if (dsi->bridge)
++	if (dsi->out_bridge)
+ 		pm_runtime_disable(dev);
+ 
+ 	/*

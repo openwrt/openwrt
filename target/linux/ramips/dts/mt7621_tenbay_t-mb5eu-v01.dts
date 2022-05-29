@@ -103,8 +103,10 @@
 
 &pcie1 {
 	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0>;
+		mediatek,disable-radar-background;
 	};
 };
 

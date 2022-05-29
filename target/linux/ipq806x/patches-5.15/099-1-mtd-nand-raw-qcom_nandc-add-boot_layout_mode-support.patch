@@ -204,7 +204,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	host->use_ecc = true;
  	clear_bam_transaction(nandc);
  
-@@ -2899,6 +2958,7 @@ static int qcom_nand_host_init_and_regis
+@@ -2912,6 +2971,7 @@ static int qcom_nand_host_init_and_regis
  	struct nand_chip *chip = &host->chip;
  	struct mtd_info *mtd = nand_to_mtd(chip);
  	struct device *dev = nandc->dev;
@@ -212,7 +212,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	int ret;
  
  	ret = of_property_read_u32(dn, "reg", &host->cs);
-@@ -2960,6 +3020,17 @@ static int qcom_nand_host_init_and_regis
+@@ -2962,6 +3022,17 @@ static int qcom_nand_host_init_and_regis
  	if (ret)
  		nand_cleanup(chip);
  
@@ -230,7 +230,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	return ret;
  }
  
-@@ -3125,6 +3196,7 @@ static int qcom_nandc_remove(struct plat
+@@ -3127,6 +3198,7 @@ static int qcom_nandc_remove(struct plat
  static const struct qcom_nandc_props ipq806x_nandc_props = {
  	.ecc_modes = (ECC_RS_4BIT | ECC_BCH_8BIT),
  	.is_bam = false,

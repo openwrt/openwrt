@@ -30,7 +30,7 @@ define Device/google_wifi
 	KERNEL_NAME := zImage
 	IMAGES += factory.bin
 	IMAGE/factory.bin := cros-gpt | append-kernel-part | append-rootfs
-	DEVICE_PACKAGES := ipq-wifi-google_wifi partx-utils mkf2fs e2fsprogs \
+	DEVICE_PACKAGES := partx-utils mkf2fs e2fsprogs \
 			   kmod-fs-ext4 kmod-fs-f2fs kmod-google-firmware
 endef
 TARGET_DEVICES += google_wifi

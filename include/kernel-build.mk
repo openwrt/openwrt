@@ -162,7 +162,6 @@ define BuildKernel
 	$(LINUX_RECONF_CMD) > $(LINUX_DIR)/.config
 	$(_SINGLE)$(KERNEL_MAKE) \
 		$(if $(findstring Darwin,$(HOST_OS)), \
-			HOST_LOADLIBES="-L$(STAGING_DIR_HOST)/lib -lncurses" \
 			HOSTLDLIBS_mconf="-L$(STAGING_DIR_HOST)/lib -lncurses" \
 			filechk_conf_cfg="	:" \
 		) \

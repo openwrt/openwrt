@@ -9,7 +9,7 @@ set_state() {
 	case "$(board_name)" in
 	raspberrypi,2-model-b |\
 	raspberrypi,2-model-b-rev2 |\
-	raspberrypi,3-model-b |\
+	raspberrypi,3-model-b |\
 	raspberrypi,3-model-b-plus |\
 	raspberrypi,400 |\
 	raspberrypi,4-compute-module |\

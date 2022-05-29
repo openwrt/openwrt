@@ -1,0 +1,31 @@
+From b93868be23764905325c200832d58c4f2c0dda7a Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime@cerno.tech>
+Date: Fri, 4 Mar 2022 15:55:25 +0100
+Subject: [PATCH] drm/vc4: txp: Don't set TXP_VSTART_AT_EOF
+
+The TXP_VSTART_AT_EOF will generate a second VSTART signal to the HVS.
+However, the HVS waits for VSTART to enable the FIFO and will thus start
+filling the FIFO before the start of the frame.
+
+This leads to corruption at the beginning of the first frame, and
+content from the previous frame at the beginning of the next frames.
+
+Since one VSTART is enough, let's get rid of it.
+
+Fixes: 008095e065a8 ("drm/vc4: Add support for the transposer block")
+Signed-off-by: Maxime Ripard <maxime@cerno.tech>
+---
+ drivers/gpu/drm/vc4/vc4_txp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_txp.c
++++ b/drivers/gpu/drm/vc4/vc4_txp.c
+@@ -298,7 +298,7 @@ static void vc4_txp_connector_atomic_com
+ 	if (WARN_ON(i == ARRAY_SIZE(drm_fmts)))
+ 		return;
+ 
+-	ctrl = TXP_GO | TXP_VSTART_AT_EOF | TXP_EI |
++	ctrl = TXP_GO | TXP_EI |
+ 	       VC4_SET_FIELD(0xf, TXP_BYTE_ENABLE) |
+ 	       VC4_SET_FIELD(txp_fmts[i], TXP_FORMAT);
+ 
