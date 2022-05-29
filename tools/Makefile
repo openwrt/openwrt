@@ -22,7 +22,7 @@ ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmwar
 endif
 
 tools-y += autoconf autoconf-archive automake bc bison cmake cpio dosfstools
-tools-y += e2fsprogs fakeroot findutils firmware-utils flex gengetopt
+tools-y += e2fsprogs erofs-utils fakeroot findutils firmware-utils flex gengetopt
 tools-y += libressl libtool lzma m4 make-ext4fs meson missing-macros mkimage
 tools-y += mklibs mtd-utils mtools ninja padjffs2 patch-image
 tools-y += patchelf pkgconf quilt squashfskit4 sstrip xxd zip zlib zstd
@@ -48,6 +48,7 @@ $(curdir)/cmake/compile += $(curdir)/libressl/compile $(curdir)/ninja/compile
 $(curdir)/dosfstools/compile := $(curdir)/autoconf/compile $(curdir)/automake/compile
 $(curdir)/expat/compile := $(curdir)/cmake/compile
 $(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
+$(curdir)/erofs-utils/compile := $(curdir)/automake/compile
 $(curdir)/fakeroot/compile := $(curdir)/libtool/compile
 $(curdir)/findutils/compile := $(curdir)/bison/compile
 $(curdir)/firmware-utils/compile += $(curdir)/libressl/compile $(curdir)/zlib/compile
