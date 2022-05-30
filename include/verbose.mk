@@ -16,11 +16,20 @@ ifeq ($(OPENWRT_VERBOSE),99)
   OPENWRT_VERBOSE:=s
 endif
 
+# if verbose debug, override $(V)
+ifneq ($(findstring v,$(DEBUG)),)
+  OPENWRT_VERBOSE:=scw
+endif
+
 # suppress echo of command if not verbose (command setting)
-Q:=$(if $(findstring c,$(OPENWRT_VERBOSE)),,@)
+ifndef Q
+  Q:=$(if $(findstring c,$(OPENWRT_VERBOSE)),,@)
+endif
 
 # set make to be silent if not verbose (command setting)
-S:=$(if $(findstring c,$(OPENWRT_VERBOSE)),,-s --no-print-directory)
+ifndef S
+  S:=$(if $(findstring c,$(OPENWRT_VERBOSE)),,-s --no-print-directory)
+endif
 
 ifeq ($(NO_TRACE_MAKE),)
 NO_TRACE_MAKE := $(MAKE) $(S) $(if $(findstring s,$(OPENWRT_VERBOSE)),OPENWRT_VERBOSE=$(OPENWRT_VERBOSE),OPENWRT_VERBOSE=s$(OPENWRT_VERBOSE))
