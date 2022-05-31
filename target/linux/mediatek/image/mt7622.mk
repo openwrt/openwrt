@@ -254,11 +254,11 @@ define Device/ubnt_unifi-6-lr-v1
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr-v1
 
-define Device/ubnt_unifi-6-lr-ubootmod
+define Device/ubnt_unifi-6-lr-v1-ubootmod
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi 6 LR
-  DEVICE_VARIANT := U-Boot mod
-  DEVICE_DTS := mt7622-ubnt-unifi-6-lr-ubootmod
+  DEVICE_VARIANT := v1 U-Boot mod
+  DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-leds-ubnt-ledbar
   KERNEL := kernel-bin | lzma
@@ -269,8 +269,9 @@ define Device/ubnt_unifi-6-lr-ubootmod
   ARTIFACTS := preloader.bin bl31-uboot.fip
   ARTIFACT/preloader.bin := bl2 nor-2ddr
   ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr
+  SUPPORTED_DEVICES += ubnt,unifi-6-lr-ubootmod
 endef
-TARGET_DEVICES += ubnt_unifi-6-lr-ubootmod
+TARGET_DEVICES += ubnt_unifi-6-lr-v1-ubootmod
 
 define Device/xiaomi_redmi-router-ax6s
   DEVICE_VENDOR := Xiaomi
