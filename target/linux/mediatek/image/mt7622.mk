@@ -242,15 +242,17 @@ define Device/totolink_a8000ru
 endef
 TARGET_DEVICES += totolink_a8000ru
 
-define Device/ubnt_unifi-6-lr
+define Device/ubnt_unifi-6-lr-v1
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi 6 LR
+  DEVICE_VARIANT := v1
   DEVICE_DTS_CONFIG := config@1
-  DEVICE_DTS := mt7622-ubnt-unifi-6-lr
+  DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v1
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-leds-ubnt-ledbar
+  SUPPORTED_DEVICES += ubnt,unifi-6-lr
 endef
-TARGET_DEVICES += ubnt_unifi-6-lr
+TARGET_DEVICES += ubnt_unifi-6-lr-v1
 
 define Device/ubnt_unifi-6-lr-ubootmod
   DEVICE_VENDOR := Ubiquiti
