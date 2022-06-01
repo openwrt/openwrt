@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/rpcd.git
-PKG_MIRROR_HASH:=186a7246c610fecc282b0966213350ff4508b0db88739345e7c79792db0423ce
-PKG_SOURCE_DATE:=2022-02-07
-PKG_SOURCE_VERSION:=909f2a04763dbc745488384b24281eca180452d6
+PKG_MIRROR_HASH:=f5a8f4342ef581fb8750fc41c4e7dfee808a97b3e2a53dbf9d7f51e48b35bae6
+PKG_SOURCE_DATE:=2022-05-31
+PKG_SOURCE_VERSION:=1c4825739b3cf19fe429c19eafa82a7f27aa99b3
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 
 PKG_LICENSE:=ISC
@@ -52,6 +52,10 @@ define Package/rpcd/conffiles
 endef
 
 TARGET_LDFLAGS += -lcrypt
+# TARGET_CFLAGS += \
+# 	-I$(STAGING_DIR)/usr/include/libnl-tiny
+# -I$(STAGING_DIR)/usr/include \
+# -D_GNU_SOURCE
 
 define Package/rpcd/install
 	$(INSTALL_DIR) $(1)/etc/init.d
@@ -103,3 +107,4 @@ $(eval $(call BuildPlugin,file,,Provides ubus calls for file and directory opera
 $(eval $(call BuildPlugin,rpcsys,,Provides ubus calls for sysupgrade and password changing.))
 $(eval $(call BuildPlugin,iwinfo,+libiwinfo,Provides ubus calls for accessing iwinfo data.))
 $(eval $(call BuildPlugin,ucode,+libucode,Allows implementing plugins using ucode scripts.))
+$(eval $(call BuildPlugin,nl80211,+libnl-tiny,Provides ubus calls for accessing nl80211 data.))
