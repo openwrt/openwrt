@@ -46,6 +46,7 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	u32 bar0;
 	u32 val;
 	unsigned i;
+	int rc;
 
 	for (i = 0; i < ath9k_num_fixups; i++) {
 		if (ath9k_fixups[i]->pci_dev != PCI_SLOT(dev->devfn))
@@ -74,8 +75,11 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 		return;
 	}
 
-	if (bridge)
-		pci_enable_device(bridge);
+	if (bridge) {
+		rc = pci_enable_device(bridge);
+		if (rc < 0)
+			pr_err("pci %s: bridge enable error\n", pci_name(dev));
+	}
 
 	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
 	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);

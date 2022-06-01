@@ -215,6 +215,29 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
+"ath10k/QCA4019/hw1.0/board-ahb-a000000.wifi.bin")
+	case "$board" in
+	mikrotik,cap-ac |\
+	mikrotik,hap-ac2 |\
+	mikrotik,hap-ac3)
+		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
+		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x2f20 0x2f20 ) || \
+		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x2f20 0x2f20 )
+		;;
+	esac
+	;;
+"ath10k/QCA4019/hw1.0/board-ahb-a800000.wifi.bin")
+	case "$board" in
+	mikrotik,cap-ac |\
+	mikrotik,hap-ac2 |\
+	mikrotik,hap-ac3 |\
+	mikrotik,sxtsq-5-ac)
+		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
+		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0xaf20 0x2f20 ) || \
+		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x2f20 0x2f20 )
+		;;
+	esac
+	;;
 *)
 	exit 1
 	;;

@@ -1,0 +1,29 @@
+From f605781b135e2ebe98aba1d569167bb0d0886930 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime@cerno.tech>
+Date: Fri, 4 Mar 2022 16:00:16 +0100
+Subject: [PATCH] drm/vc4: txp: Force alpha to be 0xff if it's disabled
+
+If we use a format that has padding instead of the alpha component (such
+as XRGB8888), it appears that the Transposer will fill the padding to 0,
+disregarding what was stored in the input buffer padding.
+
+This leads to issues with IGT, since it will set the padding to 0xff,
+but will then compare the CRC of the two frames which will thus fail.
+
+Fixes: 008095e065a8 ("drm/vc4: Add support for the transposer block")
+Signed-off-by: Maxime Ripard <maxime@cerno.tech>
+---
+ drivers/gpu/drm/vc4/vc4_txp.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_txp.c
++++ b/drivers/gpu/drm/vc4/vc4_txp.c
+@@ -304,6 +304,8 @@ static void vc4_txp_connector_atomic_com
+ 
+ 	if (fb->format->has_alpha)
+ 		ctrl |= TXP_ALPHA_ENABLE;
++	else
++		ctrl |= TXP_ALPHA_INVERT;
+ 
+ 	gem = drm_fb_cma_get_gem_obj(fb, 0);
+ 	TXP_WRITE(TXP_DST_PTR, gem->paddr + fb->offsets[0]);

@@ -1,0 +1,26 @@
+From 916c79dc5a1df708d6984f5e964eaa3de7e130f2 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Fri, 22 Oct 2021 16:48:50 +0100
+Subject: [PATCH] drm/vc4: dsi: Correct max divider to 255 (not 7)
+
+The integer divider from parent PLL to DSI clock is capable
+of going up to /255, not just /7 that the driver was trying.
+This allows for slower link frequencies on the DSI bus where
+the resolution permits.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/gpu/drm/vc4/vc4_dsi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_dsi.c
++++ b/drivers/gpu/drm/vc4/vc4_dsi.c
+@@ -850,7 +850,7 @@ static bool vc4_dsi_encoder_mode_fixup(s
+ 	/* Find what divider gets us a faster clock than the requested
+ 	 * pixel clock.
+ 	 */
+-	for (divider = 1; divider < 7; divider++) {
++	for (divider = 1; divider < 255; divider++) {
+ 		if (parent_rate / (divider + 1) < pll_clock)
+ 			break;
+ 	}

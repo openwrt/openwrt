@@ -1,0 +1,78 @@
+From d2a60430df21f213b9b9d2eb46d2f4afbbea3213 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime@cerno.tech>
+Date: Fri, 4 Mar 2022 16:24:00 +0100
+Subject: [PATCH] drm/vc4: hvs: Reset muxes at probe time
+
+By default, the HVS driver will force the HVS output 3 to be muxed to
+the HVS channel 2. However, the Transposer can only be assigned to the
+HVS channel 2, so whenever we try to use the writeback connector, we'll
+mux its associated output (Output 2) to the channel 2.
+
+This leads to both the output 2 and 3 feeding from the same channel,
+which is explicitly discouraged in the documentation.
+
+In order to avoid this, let's reset all the output muxes to their reset
+value.
+
+Fixes: 87ebcd42fb7b ("drm/vc4: crtc: Assign output to channel automatically")
+Signed-off-by: Maxime Ripard <maxime@cerno.tech>
+---
+ drivers/gpu/drm/vc4/vc4_hvs.c | 26 +++++++++++++++++++++-----
+ 1 file changed, 21 insertions(+), 5 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hvs.c
++++ b/drivers/gpu/drm/vc4/vc4_hvs.c
+@@ -1017,6 +1017,7 @@ static int vc4_hvs_bind(struct device *d
+ 	struct vc4_hvs *hvs = NULL;
+ 	int ret;
+ 	u32 dispctrl;
++	u32 reg;
+ 
+ 	hvs = devm_kzalloc(&pdev->dev, sizeof(*hvs), GFP_KERNEL);
+ 	if (!hvs)
+@@ -1090,6 +1091,26 @@ static int vc4_hvs_bind(struct device *d
+ 
+ 	vc4->hvs = hvs;
+ 
++	reg = HVS_READ(SCALER_DISPECTRL);
++	reg &= ~SCALER_DISPECTRL_DSP2_MUX_MASK;
++	HVS_WRITE(SCALER_DISPECTRL,
++		  reg | VC4_SET_FIELD(0, SCALER_DISPECTRL_DSP2_MUX));
++
++	reg = HVS_READ(SCALER_DISPCTRL);
++	reg &= ~SCALER_DISPCTRL_DSP3_MUX_MASK;
++	HVS_WRITE(SCALER_DISPCTRL,
++		  reg | VC4_SET_FIELD(3, SCALER_DISPCTRL_DSP3_MUX));
++
++	reg = HVS_READ(SCALER_DISPEOLN);
++	reg &= ~SCALER_DISPEOLN_DSP4_MUX_MASK;
++	HVS_WRITE(SCALER_DISPEOLN,
++		  reg | VC4_SET_FIELD(3, SCALER_DISPEOLN_DSP4_MUX));
++
++	reg = HVS_READ(SCALER_DISPDITHER);
++	reg &= ~SCALER_DISPDITHER_DSP5_MUX_MASK;
++	HVS_WRITE(SCALER_DISPDITHER,
++		  reg | VC4_SET_FIELD(3, SCALER_DISPDITHER_DSP5_MUX));
++
+ 	dispctrl = HVS_READ(SCALER_DISPCTRL);
+ 
+ 	dispctrl |= SCALER_DISPCTRL_ENABLE;
+@@ -1097,10 +1118,6 @@ static int vc4_hvs_bind(struct device *d
+ 		    SCALER_DISPCTRL_DISPEIRQ(1) |
+ 		    SCALER_DISPCTRL_DISPEIRQ(2);
+ 
+-	/* Set DSP3 (PV1) to use HVS channel 2, which would otherwise
+-	 * be unused.
+-	 */
+-	dispctrl &= ~SCALER_DISPCTRL_DSP3_MUX_MASK;
+ 	dispctrl &= ~(SCALER_DISPCTRL_DMAEIRQ |
+ 		      SCALER_DISPCTRL_SLVWREIRQ |
+ 		      SCALER_DISPCTRL_SLVRDEIRQ |
+@@ -1114,7 +1131,6 @@ static int vc4_hvs_bind(struct device *d
+ 		      SCALER_DISPCTRL_DSPEISLUR(1) |
+ 		      SCALER_DISPCTRL_DSPEISLUR(2) |
+ 		      SCALER_DISPCTRL_SCLEIRQ);
+-	dispctrl |= VC4_SET_FIELD(2, SCALER_DISPCTRL_DSP3_MUX);
+ 
+ 	HVS_WRITE(SCALER_DISPCTRL, dispctrl);
+ 
