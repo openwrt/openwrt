@@ -11,7 +11,7 @@ Submitted-by: Yousong Zhou <yszhou4tech@gmail.com>
 
 --- a/net/ethernet/eth.c
 +++ b/net/ethernet/eth.c
-@@ -545,6 +545,63 @@ int eth_platform_get_mac_address(struct
+@@ -538,6 +538,63 @@ int eth_platform_get_mac_address(struct
  }
  EXPORT_SYMBOL(eth_platform_get_mac_address);
  
@@ -73,9 +73,9 @@ Submitted-by: Yousong Zhou <yszhou4tech@gmail.com>
 +};
 +
  /**
-  * Obtain the MAC address from an nvmem cell named 'mac-address' associated
-  * with given device.
-@@ -558,19 +615,23 @@ int nvmem_get_mac_address(struct device
+  * nvmem_get_mac_address - Obtain the MAC address from an nvmem cell named
+  * 'mac-address' associated with given device.
+@@ -551,19 +608,23 @@ int nvmem_get_mac_address(struct device
  {
  	struct nvmem_cell *cell;
  	const void *mac;
