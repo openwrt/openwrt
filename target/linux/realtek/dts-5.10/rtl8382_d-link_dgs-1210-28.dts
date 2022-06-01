@@ -6,6 +6,12 @@
 	compatible = "d-link,dgs-1210-28", "realtek,rtl838x-soc";
 	model = "D-Link DGS-1210-28";
 
+	gpio-restart {
+		compatible = "gpio-restart";
+		gpios = <&gpio1 34 GPIO_ACTIVE_LOW>;
+		open-source;
+	};
+
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
