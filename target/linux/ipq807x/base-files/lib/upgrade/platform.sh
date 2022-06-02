@@ -66,7 +66,8 @@ platform_do_upgrade() {
 		fw_setenv upgrade_available 1
 		nand_do_upgrade "$1"
 		;;
-	edimax,cax1800)
+	edimax,cax1800|\
+	netgear,wax218)
 		nand_do_upgrade "$1"
 		;;
 	qnap,301w)

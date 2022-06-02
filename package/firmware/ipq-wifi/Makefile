@@ -44,6 +44,7 @@ ALLWIFIBOARDS:= \
 	glinet_gl-s1300 \
 	linksys_ea8300 \
 	linksys_whw03v2 \
+	netgear_wax218 \
 	nokia_ac400i \
 	p2w_r619ac \
 	pakedge_wr-1 \
@@ -147,6 +148,7 @@ $(eval $(call generate-ipq-wifi-package,glinet_gl-ap1300,GL.iNet GL-AP1300))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-s1300,GL.iNet GL-S1300))
 $(eval $(call generate-ipq-wifi-package,linksys_ea8300,Linksys EA8300))
 $(eval $(call generate-ipq-wifi-package,linksys_whw03v2,Linksys WHW03 V2))
+$(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
 $(eval $(call generate-ipq-wifi-package,nokia_ac400i,Nokia AC400i))
 $(eval $(call generate-ipq-wifi-package,p2w_r619ac,P&W R619AC))
 $(eval $(call generate-ipq-wifi-package,pakedge_wr-1,Pakedge WR-1))
