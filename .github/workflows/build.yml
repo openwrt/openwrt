@@ -1,0 +1,56 @@
+name: build
+
+env:
+  TARGET: ipq40xx
+  DEVICE: engenius_eap1300
+
+on:
+  pull_request:
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install build-essential ccache ecj fastjar file g++ gawk \
+            gettext git java-propose-classpath libelf-dev libncurses5-dev \
+            libncursesw5-dev libssl-dev python python2.7-dev python3 unzip \
+            wget python3-distutils python3-setuptools rsync subversion swig \
+            time xsltproc zlib1g-dev
+
+      - name: Install feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Add UCI defaults to enable WiFi by default
+        run: |
+          cat << "EOF" > package/base-files/files/etc/uci-defaults/99-enable-wifi
+          uci -q batch << EOI
+          set wireless.@wifi-device[0].disabled='0'
+          commit wireless
+          EOI
+          EOF
+
+      - name: Prepare Config
+        run: |
+          echo CONFIG_TARGET_${{ env.TARGET }}=y > .config
+          echo CONFIG_TARGET_ipq40xx_generic=y >> .config
+          echo CONFIG_TARGET_ipq40xx_generic_DEVICE_${{ env.DEVICE }}=y >> .config
+          make defconfig
+
+      - name: Build Image
+        run: make -j2
+
+      - name: Store build output
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ env.DEVICE }}_img
+          path: bin/targets
