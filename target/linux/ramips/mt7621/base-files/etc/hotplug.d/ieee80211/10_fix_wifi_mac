@@ -81,6 +81,11 @@ case "$board" in
 			macaddr_setbit_la "$(macaddr_add $hw_mac_addr 0x100000)" > /sys${DEVPATH}/macaddress
 		fi
 		;;
+	mercusys,mr70x)
+		hw_mac_addr="$(mtd_get_mac_binary factory 0x8)"
+		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr -1 > /sys${DEVPATH}/macaddress
+		;;
 	raisecom,msg1500-x-00)
 		[ "$PHYNBR" = "0" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_ascii Config protest_lan_mac)" \
