@@ -106,18 +106,11 @@
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
-
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-	};
 };
 
 &eth0 {
 	status = "okay";
 
-	phy-handle = <&phy4>;
-	phy-mode = "sgmii";
 	pll-data = <0x03000000 0x00000101 0x00001313>;
 
 	nvmem-cells = <&macaddr_info_8>;

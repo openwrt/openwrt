@@ -56,6 +56,18 @@
 	};
 };
 
+&eth0 {
+	phy-handle = <&phy4>;
+	phy-mode = "sgmii";
+};
+
+&mdio0 {
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+	};
+};
+
 &pcie {
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
