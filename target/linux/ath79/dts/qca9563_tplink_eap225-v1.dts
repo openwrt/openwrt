@@ -49,3 +49,21 @@
 		};
 	};
 };
+
+&art {
+	calibration_ath10k: calibration@5000 {
+		reg = <0x5000 0x844>;
+	};
+};
+
+&pcie {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+
+		mac-address-increment = <1>;
+
+		nvmem-cells = <&macaddr_info_8>, <&calibration_ath10k>;
+		nvmem-cell-names = "mac-address", "calibration";
+	};
+};
