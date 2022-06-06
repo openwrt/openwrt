@@ -1,0 +1,16 @@
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case $board in
+iptime,a6004mx)
+	ucidef_set_led_netdev "wan" "WAN" "orange:wan" "eth1"
+	;;
+esac
+
+board_config_flush
+
+exit 0
