@@ -29,7 +29,7 @@ drv_mac80211_init_device_config() {
 	config_add_string distance
 	config_add_int beacon_int chanbw frag rts
 	config_add_int rxantenna txantenna antenna_gain txpower
-	config_add_boolean noscan ht_coex acs_exclude_dfs
+	config_add_boolean noscan ht_coex acs_exclude_dfs background_radar
 	config_add_array ht_capab
 	config_add_array channels
 	config_add_array scan_list
@@ -273,6 +273,11 @@ mac80211_hostapd_setup_base() {
 			vht_center_seg0=$idx
 		;;
 	esac
+	[ "$band" = "5g" ] && {
+		json_get_vars background_radar:0
+
+		[ "$background_radar" -eq 1 ] && append base_cfg "enable_background_radar=1" "$N"
+	}
 	[ "$band" = "6g" ] && {
 		op_class=
 		case "$htmode" in
