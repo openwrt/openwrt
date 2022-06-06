@@ -304,7 +304,7 @@ hostapd_common_add_bss_config() {
 	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
 	config_add_string multi_ap_backhaul_ssid multi_ap_backhaul_key
 
-	config_add_boolean wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition
+	config_add_boolean wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition mbo
 	config_add_int time_advertisement
 	config_add_string time_zone
 	config_add_string vendor_elements
@@ -825,10 +825,16 @@ hostapd_set_bss_options() {
 		append bss_conf "iapp_interface=$ifname" "$N"
 	}
 
-	json_get_vars time_advertisement time_zone wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition
+	json_get_vars time_advertisement time_zone wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition mbo
 	set_default bss_transition 0
 	set_default wnm_sleep_mode 0
 	set_default wnm_sleep_mode_no_keys 0
+
+	if [ "$enable_ax" -eq 1 ]; then
+		set_default mbo 1
+	else
+		set_default mbo 0
+	fi
 
 	[ -n "$time_advertisement" ] && append bss_conf "time_advertisement=$time_advertisement" "$N"
 	[ -n "$time_zone" ] && append bss_conf "time_zone=$time_zone" "$N"
@@ -837,6 +843,7 @@ hostapd_set_bss_options() {
 		[ "$wnm_sleep_mode_no_keys" -eq "1" ] && append bss_conf "wnm_sleep_mode_no_keys=1" "$N"
 	fi
 	[ "$bss_transition" -eq "1" ] && append bss_conf "bss_transition=1" "$N"
+	[ "$mbo" -eq 1 ] && append bss_conf "mbo=1" "$N"
 
 	json_get_vars ieee80211k rrm_neighbor_report rrm_beacon_report
 	set_default ieee80211k 0
