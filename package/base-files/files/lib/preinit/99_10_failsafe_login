@@ -2,14 +2,22 @@
 # Copyright (C) 2010 Vertical Communications
 
 failsafe_shell() {
-	local consoles="$(sed -e 's/ /\n/g' /proc/cmdline | grep '^console=' | sed -e 's/^console=//' -e 's/,.*//')"
+	local consoles="$(cat /sys/class/tty/console/active)"
 	[ -n "$consoles" ] || consoles=console
 	for console in $consoles; do
-		[ -c "/dev/$console" ] && while true; do
-			ash --login <"/dev/$console" >"/dev/$console" 2>"/dev/$console"
-			sleep 1
-		done &
+		case "$console" in
+			console|tty[0-9]*)
+				term=${TERM:-linux}
+				;;
+			*)
+				term=vt102
+				;;
+		esac
+		# Running asynchronously via the shell's & would ignore SIGINT,
+		# breaking ^C. Use start-stop-daemon instead.
+		[ -c "/dev/$console" ] && start-stop-daemon -Sb -p /dev/null -- env -i ash -c "while true; do setsid -c env -i USER=root LOGNAME=root SHELL=/bin/ash TERM="$term" ash --login <\"/dev/$console\" >\"/dev/$console\" 2>\"/dev/$console\"; sleep 1; done"
 	done
+
 }
 
 boot_hook_add failsafe failsafe_shell
