@@ -209,7 +209,7 @@ define Device/adtran_bsap1880
   IMAGE_SIZE := 11200k
   IMAGES += kernel.bin rootfs.bin
   IMAGE/kernel.bin := append-kernel
-  IMAGE/rootfs.bin := append-rootfs | pad-rootfs
+  IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to $$(BLOCKSIZE)
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
 	check-size | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
