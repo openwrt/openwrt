@@ -48,6 +48,7 @@ define Device/ubnt_edgerouter
   DEVICE_MODEL := EdgeRouter
   BOARD_NAME := er
   CMDLINE := $(ER_CMDLINE)
+  SUPPORTED_DEVICES += er
 endef
 TARGET_DEVICES += ubnt_edgerouter
 
@@ -79,6 +80,7 @@ define Device/ubnt_edgerouter-lite
   DEVICE_MODEL := EdgeRouter Lite
   BOARD_NAME := erlite
   CMDLINE := $(ERLITE_CMDLINE)
+  SUPPORTED_DEVICES += erlite
 endef
 TARGET_DEVICES += ubnt_edgerouter-lite
 
