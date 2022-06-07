@@ -276,7 +276,7 @@ distclean: config-clean FORCE
 	rm -rf bin build_dir .ccache .config* dl feeds key-build* logs package/feeds staging_dir tmp
 
 ifeq ($(findstring v,$(DEBUG)),)
-  .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig staging_dir/host/.prereq-build tmp/.prereq-package prepare-tmpinfo
+  .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean prepare-clean .config scripts/config/mconf scripts/config/conf menuconfig staging_dir/host/.prereq-build prepare-tmpinfo
 endif
 
 .NOTPARALLEL:
