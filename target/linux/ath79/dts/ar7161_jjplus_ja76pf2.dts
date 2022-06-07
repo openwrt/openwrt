@@ -32,6 +32,19 @@
 		clock-frequency = <40000000>;
 	};
 
+	i2c {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+		scl-gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sensor@48 {
+			compatible = "microchip,tcn75";
+			reg = <0x48>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
