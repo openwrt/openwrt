@@ -38,7 +38,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -188,6 +188,8 @@ vc4_hdmi_connector_detect(struct drm_con
+@@ -189,6 +189,8 @@ vc4_hdmi_connector_detect(struct drm_con
  	struct vc4_hdmi *vc4_hdmi = connector_to_vc4_hdmi(connector);
  	bool connected = false;
  
@@ -47,7 +47,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	WARN_ON(pm_runtime_resume_and_get(&vc4_hdmi->pdev->dev));
  
  	if (vc4_hdmi->hpd_gpio) {
-@@ -218,11 +220,13 @@ vc4_hdmi_connector_detect(struct drm_con
+@@ -219,11 +221,13 @@ vc4_hdmi_connector_detect(struct drm_con
  
  		vc4_hdmi_enable_scrambling(&vc4_hdmi->encoder.base.base);
  		pm_runtime_put(&vc4_hdmi->pdev->dev);
@@ -61,7 +61,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return connector_status_disconnected;
  }
  
-@@ -239,10 +243,14 @@ static int vc4_hdmi_connector_get_modes(
+@@ -240,10 +244,14 @@ static int vc4_hdmi_connector_get_modes(
  	int ret = 0;
  	struct edid *edid;
  
@@ -78,7 +78,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	vc4_encoder->hdmi_monitor = drm_detect_hdmi_monitor(edid);
  
-@@ -262,6 +270,9 @@ static int vc4_hdmi_connector_get_modes(
+@@ -263,6 +271,9 @@ static int vc4_hdmi_connector_get_modes(
  		}
  	}
  
@@ -88,7 +88,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return ret;
  }
  
-@@ -478,6 +489,8 @@ static void vc4_hdmi_set_avi_infoframe(s
+@@ -479,6 +490,8 @@ static void vc4_hdmi_set_avi_infoframe(s
  	union hdmi_infoframe frame;
  	int ret;
  
@@ -97,7 +97,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	ret = drm_hdmi_avi_infoframe_from_display_mode(&frame.avi,
  						       connector, mode);
  	if (ret < 0) {
-@@ -529,6 +542,8 @@ static void vc4_hdmi_set_hdr_infoframe(s
+@@ -530,6 +543,8 @@ static void vc4_hdmi_set_hdr_infoframe(s
  	struct drm_connector_state *conn_state = connector->state;
  	union hdmi_infoframe frame;
  
@@ -106,7 +106,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (!vc4_hdmi->variant->supports_hdr)
  		return;
  
-@@ -545,6 +560,8 @@ static void vc4_hdmi_set_infoframes(stru
+@@ -546,6 +561,8 @@ static void vc4_hdmi_set_infoframes(stru
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  
@@ -115,7 +115,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	vc4_hdmi_set_avi_infoframe(encoder);
  	vc4_hdmi_set_spd_infoframe(encoder);
  	/*
-@@ -564,6 +581,8 @@ static bool vc4_hdmi_supports_scrambling
+@@ -565,6 +582,8 @@ static bool vc4_hdmi_supports_scrambling
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  	struct drm_display_info *display = &vc4_hdmi->connector.display_info;
  
@@ -124,7 +124,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (!vc4_encoder->hdmi_monitor)
  		return false;
  
-@@ -582,6 +601,8 @@ static void vc4_hdmi_enable_scrambling(s
+@@ -583,6 +602,8 @@ static void vc4_hdmi_enable_scrambling(s
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  	unsigned long flags;
  
@@ -133,7 +133,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (!vc4_hdmi_supports_scrambling(encoder, mode))
  		return;
  
-@@ -651,6 +672,8 @@ static void vc4_hdmi_encoder_post_crtc_d
+@@ -652,6 +673,8 @@ static void vc4_hdmi_encoder_post_crtc_d
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  	unsigned long flags;
  
@@ -142,7 +142,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  
  	HDMI_WRITE(HDMI_RAM_PACKET_CONFIG, 0);
-@@ -667,6 +690,8 @@ static void vc4_hdmi_encoder_post_crtc_d
+@@ -668,6 +691,8 @@ static void vc4_hdmi_encoder_post_crtc_d
  	spin_unlock_irqrestore(&vc4_hdmi->hw_lock, flags);
  
  	vc4_hdmi_disable_scrambling(encoder);
@@ -151,7 +151,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  }
  
  static void vc4_hdmi_encoder_post_crtc_powerdown(struct drm_encoder *encoder,
-@@ -676,6 +701,8 @@ static void vc4_hdmi_encoder_post_crtc_p
+@@ -677,6 +702,8 @@ static void vc4_hdmi_encoder_post_crtc_p
  	unsigned long flags;
  	int ret;
  
@@ -160,7 +160,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  	HDMI_WRITE(HDMI_VID_CTL,
  		   HDMI_READ(HDMI_VID_CTL) | VC4_HD_VID_CTL_BLANKPIX);
-@@ -690,6 +717,8 @@ static void vc4_hdmi_encoder_post_crtc_p
+@@ -691,6 +718,8 @@ static void vc4_hdmi_encoder_post_crtc_p
  	ret = pm_runtime_put(&vc4_hdmi->pdev->dev);
  	if (ret < 0)
  		DRM_ERROR("Failed to release power domain: %d\n", ret);
@@ -169,7 +169,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  }
  
  static void vc4_hdmi_encoder_disable(struct drm_encoder *encoder)
-@@ -986,6 +1015,8 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -987,6 +1016,8 @@ static void vc4_hdmi_encoder_pre_crtc_co
  	unsigned long flags;
  	int ret;
  
@@ -178,7 +178,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	/*
  	 * As stated in RPi's vc4 firmware "HDMI state machine (HSM) clock must
  	 * be faster than pixel clock, infinitesimally faster, tested in
-@@ -1006,13 +1037,13 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -1007,13 +1038,13 @@ static void vc4_hdmi_encoder_pre_crtc_co
  	ret = clk_set_min_rate(vc4_hdmi->hsm_clock, hsm_rate);
  	if (ret) {
  		DRM_ERROR("Failed to set HSM clock rate: %d\n", ret);
@@ -194,7 +194,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	}
  
  	ret = clk_set_rate(vc4_hdmi->pixel_clock, pixel_rate);
-@@ -1064,13 +1095,16 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -1065,13 +1096,16 @@ static void vc4_hdmi_encoder_pre_crtc_co
  	if (vc4_hdmi->variant->set_timings)
  		vc4_hdmi->variant->set_timings(vc4_hdmi, conn_state, mode);
  
@@ -212,7 +212,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return;
  }
  
-@@ -1082,6 +1116,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
+@@ -1083,6 +1117,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  	unsigned long flags;
  
@@ -221,7 +221,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (vc4_encoder->hdmi_monitor &&
  	    drm_default_rgb_quant_range(mode) == HDMI_QUANTIZATION_RANGE_LIMITED) {
  		if (vc4_hdmi->variant->csc_setup)
-@@ -1098,6 +1134,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
+@@ -1099,6 +1135,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  	HDMI_WRITE(HDMI_FIFO_CTL, VC4_HDMI_FIFO_CTL_MASTER_SLAVE_N);
  	spin_unlock_irqrestore(&vc4_hdmi->hw_lock, flags);
@@ -230,7 +230,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  }
  
  static void vc4_hdmi_encoder_post_crtc_enable(struct drm_encoder *encoder,
-@@ -1111,6 +1149,8 @@ static void vc4_hdmi_encoder_post_crtc_e
+@@ -1112,6 +1150,8 @@ static void vc4_hdmi_encoder_post_crtc_e
  	unsigned long flags;
  	int ret;
  
@@ -239,7 +239,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  
  	HDMI_WRITE(HDMI_VID_CTL,
-@@ -1170,6 +1210,8 @@ static void vc4_hdmi_encoder_post_crtc_e
+@@ -1171,6 +1211,8 @@ static void vc4_hdmi_encoder_post_crtc_e
  
  	vc4_hdmi_recenter_fifo(vc4_hdmi);
  	vc4_hdmi_enable_scrambling(encoder);
@@ -248,7 +248,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  }
  
  static void vc4_hdmi_encoder_enable(struct drm_encoder *encoder)
-@@ -1313,6 +1355,7 @@ static void vc4_hdmi_set_n_cts(struct vc
+@@ -1314,6 +1356,7 @@ static void vc4_hdmi_set_n_cts(struct vc
  	u32 n, cts;
  	u64 tmp;
  
@@ -256,7 +256,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	lockdep_assert_held(&vc4_hdmi->hw_lock);
  
  	n = 128 * samplerate / 1000;
-@@ -1346,13 +1389,17 @@ static int vc4_hdmi_audio_startup(struct
+@@ -1347,13 +1390,17 @@ static int vc4_hdmi_audio_startup(struct
  	struct drm_encoder *encoder = &vc4_hdmi->encoder.base.base;
  	unsigned long flags;
  
@@ -275,7 +275,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	vc4_hdmi->audio.streaming = true;
  
-@@ -1368,6 +1415,8 @@ static int vc4_hdmi_audio_startup(struct
+@@ -1369,6 +1416,8 @@ static int vc4_hdmi_audio_startup(struct
  	if (vc4_hdmi->variant->phy_rng_enable)
  		vc4_hdmi->variant->phy_rng_enable(vc4_hdmi);
  
@@ -284,7 +284,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return 0;
  }
  
-@@ -1378,6 +1427,8 @@ static void vc4_hdmi_audio_reset(struct
+@@ -1379,6 +1428,8 @@ static void vc4_hdmi_audio_reset(struct
  	unsigned long flags;
  	int ret;
  
@@ -293,7 +293,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	vc4_hdmi->audio.streaming = false;
  	ret = vc4_hdmi_stop_packet(encoder, HDMI_INFOFRAME_TYPE_AUDIO, false);
  	if (ret)
-@@ -1397,6 +1448,8 @@ static void vc4_hdmi_audio_shutdown(stru
+@@ -1398,6 +1449,8 @@ static void vc4_hdmi_audio_shutdown(stru
  	struct vc4_hdmi *vc4_hdmi = dev_get_drvdata(dev);
  	unsigned long flags;
  
@@ -302,7 +302,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  
  	HDMI_WRITE(HDMI_MAI_CTL,
-@@ -1411,6 +1464,8 @@ static void vc4_hdmi_audio_shutdown(stru
+@@ -1412,6 +1465,8 @@ static void vc4_hdmi_audio_shutdown(stru
  
  	vc4_hdmi->audio.streaming = false;
  	vc4_hdmi_audio_reset(vc4_hdmi);
@@ -311,7 +311,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  }
  
  static int sample_rate_to_mai_fmt(int samplerate)
-@@ -1469,6 +1524,8 @@ static int vc4_hdmi_audio_prepare(struct
+@@ -1470,6 +1525,8 @@ static int vc4_hdmi_audio_prepare(struct
  	dev_dbg(dev, "%s: %u Hz, %d bit, %d channels\n", __func__,
  		sample_rate, params->sample_width, channels);
  
@@ -320,7 +320,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	vc4_hdmi_audio_set_mai_clock(vc4_hdmi, sample_rate);
  
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
-@@ -1523,6 +1580,8 @@ static int vc4_hdmi_audio_prepare(struct
+@@ -1524,6 +1581,8 @@ static int vc4_hdmi_audio_prepare(struct
  	memcpy(&vc4_hdmi->audio.infoframe, &params->cea, sizeof(params->cea));
  	vc4_hdmi_set_audio_infoframe(encoder);
  
@@ -329,7 +329,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return 0;
  }
  
-@@ -1565,7 +1624,9 @@ static int vc4_hdmi_audio_get_eld(struct
+@@ -1566,7 +1625,9 @@ static int vc4_hdmi_audio_get_eld(struct
  	struct vc4_hdmi *vc4_hdmi = dev_get_drvdata(dev);
  	struct drm_connector *connector = &vc4_hdmi->connector;
  
@@ -339,7 +339,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	return 0;
  }
-@@ -1902,6 +1963,17 @@ static int vc4_hdmi_cec_enable(struct ce
+@@ -1903,6 +1964,17 @@ static int vc4_hdmi_cec_enable(struct ce
  	u32 val;
  	int ret;
  
@@ -357,7 +357,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	ret = pm_runtime_resume_and_get(&vc4_hdmi->pdev->dev);
  	if (ret)
  		return ret;
-@@ -1948,6 +2020,17 @@ static int vc4_hdmi_cec_disable(struct c
+@@ -1949,6 +2021,17 @@ static int vc4_hdmi_cec_disable(struct c
  	struct vc4_hdmi *vc4_hdmi = cec_get_drvdata(adap);
  	unsigned long flags;
  
@@ -375,7 +375,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  
  	if (!vc4_hdmi->variant->external_irq_controller)
-@@ -1976,6 +2059,17 @@ static int vc4_hdmi_cec_adap_log_addr(st
+@@ -1977,6 +2060,17 @@ static int vc4_hdmi_cec_adap_log_addr(st
  	struct vc4_hdmi *vc4_hdmi = cec_get_drvdata(adap);
  	unsigned long flags;
  
@@ -393,7 +393,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  	HDMI_WRITE(HDMI_CEC_CNTRL_1,
  		   (HDMI_READ(HDMI_CEC_CNTRL_1) & ~VC4_HDMI_CEC_ADDR_MASK) |
-@@ -1994,6 +2088,17 @@ static int vc4_hdmi_cec_adap_transmit(st
+@@ -1995,6 +2089,17 @@ static int vc4_hdmi_cec_adap_transmit(st
  	u32 val;
  	unsigned int i;
  
@@ -411,7 +411,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (msg->len > 16) {
  		drm_err(dev, "Attempting to transmit too much data (%d)\n", msg->len);
  		return -ENOMEM;
-@@ -2349,6 +2454,7 @@ static int vc4_hdmi_bind(struct device *
+@@ -2350,6 +2455,7 @@ static int vc4_hdmi_bind(struct device *
  	vc4_hdmi = devm_kzalloc(dev, sizeof(*vc4_hdmi), GFP_KERNEL);
  	if (!vc4_hdmi)
  		return -ENOMEM;

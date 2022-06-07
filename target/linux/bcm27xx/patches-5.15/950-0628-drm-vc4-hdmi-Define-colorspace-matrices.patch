@@ -20,7 +20,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -781,6 +781,52 @@ static void vc4_hdmi_csc_setup(struct vc
+@@ -782,6 +782,52 @@ static void vc4_hdmi_csc_setup(struct vc
  	spin_unlock_irqrestore(&vc4_hdmi->hw_lock, flags);
  }
  
@@ -73,7 +73,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static void vc5_hdmi_csc_setup(struct vc4_hdmi *vc4_hdmi,
  			       const struct drm_display_mode *mode)
  {
-@@ -792,35 +838,10 @@ static void vc5_hdmi_csc_setup(struct vc
+@@ -793,35 +839,10 @@ static void vc5_hdmi_csc_setup(struct vc
  
  	HDMI_WRITE(HDMI_VEC_INTERFACE_XBAR, 0x354021);
  

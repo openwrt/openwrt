@@ -18,7 +18,7 @@ Signed-off-by: Matthias Reichl <hias@horus.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -242,7 +242,6 @@ vc4_hdmi_connector_detect(struct drm_con
+@@ -243,7 +243,6 @@ vc4_hdmi_connector_detect(struct drm_con
  			connected = true;
  	}
  
@@ -26,7 +26,7 @@ Signed-off-by: Matthias Reichl <hias@horus.com>
  	if (connected) {
  		if (connector->status != connector_status_connected) {
  			struct edid *edid = drm_get_edid(connector, vc4_hdmi->ddc);
-@@ -251,6 +250,8 @@ vc4_hdmi_connector_detect(struct drm_con
+@@ -252,6 +251,8 @@ vc4_hdmi_connector_detect(struct drm_con
  				cec_s_phys_addr_from_edid(vc4_hdmi->cec_adap, edid);
  				vc4_hdmi->encoder.hdmi_monitor = drm_detect_hdmi_monitor(edid);
  				kfree(edid);
@@ -35,7 +35,7 @@ Signed-off-by: Matthias Reichl <hias@horus.com>
  			}
  		}
  
-@@ -260,6 +261,8 @@ vc4_hdmi_connector_detect(struct drm_con
+@@ -261,6 +262,8 @@ vc4_hdmi_connector_detect(struct drm_con
  		return connector_status_connected;
  	}
  

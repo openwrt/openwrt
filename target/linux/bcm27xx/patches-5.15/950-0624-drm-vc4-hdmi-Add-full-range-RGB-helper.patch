@@ -15,7 +15,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -107,6 +107,15 @@ static bool vc4_hdmi_mode_needs_scrambli
+@@ -108,6 +108,15 @@ static bool vc4_hdmi_mode_needs_scrambli
  	return (mode->clock * 1000) > HDMI_14_MAX_TMDS_CLK;
  }
  
@@ -31,7 +31,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static int vc4_hdmi_debugfs_regs(struct seq_file *m, void *unused)
  {
  	struct drm_info_node *node = (struct drm_info_node *)m->private;
-@@ -1115,8 +1124,7 @@ static void vc4_hdmi_encoder_pre_crtc_en
+@@ -1116,8 +1125,7 @@ static void vc4_hdmi_encoder_pre_crtc_en
  
  	mutex_lock(&vc4_hdmi->mutex);
  

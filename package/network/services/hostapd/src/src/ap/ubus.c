@@ -1570,50 +1570,6 @@ hostapd_bss_transition_request(struct ubus_context *ctx, struct ubus_object *obj
 	return hostapd_bss_tr_send(hapd, addr, da_imminent, abridged, da_timer, valid_period,
 				   dialog_token, tb[BSS_TR_NEIGHBORS]);
 }
-
-enum {
-	WNM_DISASSOC_ADDR,
-	WNM_DISASSOC_DURATION,
-	WNM_DISASSOC_NEIGHBORS,
-	WNM_DISASSOC_ABRIDGED,
-	__WNM_DISASSOC_MAX,
-};
-
-static const struct blobmsg_policy wnm_disassoc_policy[__WNM_DISASSOC_MAX] = {
-	[WNM_DISASSOC_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
-	[WNM_DISASSOC_DURATION] { "duration", BLOBMSG_TYPE_INT32 },
-	[WNM_DISASSOC_NEIGHBORS] { "neighbors", BLOBMSG_TYPE_ARRAY },
-	[WNM_DISASSOC_ABRIDGED] { "abridged", BLOBMSG_TYPE_BOOL },
-};
-
-static int
-hostapd_wnm_disassoc_imminent(struct ubus_context *ctx, struct ubus_object *obj,
-			      struct ubus_request_data *ureq, const char *method,
-			      struct blob_attr *msg)
-{
-	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
-	struct blob_attr *tb[__WNM_DISASSOC_MAX];
-	struct sta_info *sta;
-	int duration = 10;
-	u8 addr[ETH_ALEN];
-	bool abridged;
-
-	blobmsg_parse(wnm_disassoc_policy, __WNM_DISASSOC_MAX, tb, blob_data(msg), blob_len(msg));
-
-	if (!tb[WNM_DISASSOC_ADDR])
-		return UBUS_STATUS_INVALID_ARGUMENT;
-
-	if (hwaddr_aton(blobmsg_data(tb[WNM_DISASSOC_ADDR]), addr))
-		return UBUS_STATUS_INVALID_ARGUMENT;
-
-	if (tb[WNM_DISASSOC_DURATION])
-		duration = blobmsg_get_u32(tb[WNM_DISASSOC_DURATION]);
-
-	abridged = !!(tb[WNM_DISASSOC_ABRIDGED] && blobmsg_get_bool(tb[WNM_DISASSOC_ABRIDGED]));
-
-	return hostapd_bss_tr_send(hapd, addr, true, abridged, duration, duration,
-				   1, tb[WNM_DISASSOC_NEIGHBORS]);
-}
 #endif
 
 #ifdef CONFIG_AIRTIME_POLICY
@@ -1698,7 +1654,6 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD("rrm_beacon_req", hostapd_rrm_beacon_req, beacon_req_policy),
 	UBUS_METHOD("link_measurement_req", hostapd_rrm_lm_req, lm_req_policy),
 #ifdef CONFIG_WNM_AP
-	UBUS_METHOD("wnm_disassoc_imminent", hostapd_wnm_disassoc_imminent, wnm_disassoc_policy),
 	UBUS_METHOD("bss_transition_request", hostapd_bss_transition_request, bss_tr_policy),
 #endif
 };

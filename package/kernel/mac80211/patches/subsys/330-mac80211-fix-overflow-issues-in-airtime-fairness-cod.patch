@@ -1,0 +1,132 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 28 May 2022 16:44:53 +0200
+Subject: [PATCH] mac80211: fix overflow issues in airtime fairness code
+
+The airtime weight calculation overflows with a default weight value of 256
+whenever more than 8ms worth of airtime is reported.
+Bigger weight values impose even smaller limits on maximum airtime values.
+This can mess up airtime based calculations for drivers that don't report
+per-PPDU airtime values, but batch up values instead.
+
+Fix this by reordering multiplications/shifts and by reducing unnecessary
+intermediate precision (which was lost in a later stage anyway).
+
+The new shift value limits the maximum weight to 4096, which should be more
+than enough. Any values bigger than that will be clamped to the upper limit.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1666,50 +1666,34 @@ static inline struct airtime_info *to_ai
+ /* To avoid divisions in the fast path, we keep pre-computed reciprocals for
+  * airtime weight calculations. There are two different weights to keep track
+  * of: The per-station weight and the sum of weights per phy.
+- *
+- * For the per-station weights (kept in airtime_info below), we use 32-bit
+- * reciprocals with a devisor of 2^19. This lets us keep the multiplications and
+- * divisions for the station weights as 32-bit operations at the cost of a bit
+- * of rounding error for high weights; but the choice of divisor keeps rounding
+- * errors <10% for weights <2^15, assuming no more than 8ms of airtime is
+- * reported at a time.
+- *
+- * For the per-phy sum of weights the values can get higher, so we use 64-bit
+- * operations for those with a 32-bit divisor, which should avoid any
+- * significant rounding errors.
++ * The per-sta shift value supports weight values of 1-4096
+  */
+-#define IEEE80211_RECIPROCAL_DIVISOR_64 0x100000000ULL
+-#define IEEE80211_RECIPROCAL_SHIFT_64 32
+-#define IEEE80211_RECIPROCAL_DIVISOR_32 0x80000U
+-#define IEEE80211_RECIPROCAL_SHIFT_32 19
++#define IEEE80211_RECIPROCAL_SHIFT_SUM	24
++#define IEEE80211_RECIPROCAL_SHIFT_STA	12
++#define IEEE80211_WEIGHT_SHIFT		8
+ 
+-static inline void airtime_weight_set(struct airtime_info *air_info, u16 weight)
++static inline void airtime_weight_set(struct airtime_info *air_info, u32 weight)
+ {
++	weight = min_t(u32, weight, BIT(IEEE80211_RECIPROCAL_SHIFT_STA));
+ 	if (air_info->weight == weight)
+ 		return;
+ 
+ 	air_info->weight = weight;
+-	if (weight) {
+-		air_info->weight_reciprocal =
+-			IEEE80211_RECIPROCAL_DIVISOR_32 / weight;
+-	} else {
+-		air_info->weight_reciprocal = 0;
+-	}
++	if (weight)
++		weight = BIT(IEEE80211_RECIPROCAL_SHIFT_STA) / weight;
++	air_info->weight_reciprocal = weight;
+ }
+ 
+ static inline void airtime_weight_sum_set(struct airtime_sched_info *air_sched,
+-					  int weight_sum)
++					  u32 weight_sum)
+ {
+ 	if (air_sched->weight_sum == weight_sum)
+ 		return;
+ 
+ 	air_sched->weight_sum = weight_sum;
+-	if (air_sched->weight_sum) {
+-		air_sched->weight_sum_reciprocal = IEEE80211_RECIPROCAL_DIVISOR_64;
+-		do_div(air_sched->weight_sum_reciprocal, air_sched->weight_sum);
+-	} else {
+-		air_sched->weight_sum_reciprocal = 0;
+-	}
++	if (weight_sum)
++		weight_sum = BIT(IEEE80211_RECIPROCAL_SHIFT_SUM) / weight_sum;
++	air_sched->weight_sum_reciprocal = weight_sum;
+ }
+ 
+ /* A problem when trying to enforce airtime fairness is that we want to divide
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -1894,9 +1894,9 @@ void ieee80211_register_airtime(struct i
+ {
+ 	struct ieee80211_sub_if_data *sdata = vif_to_sdata(txq->vif);
+ 	struct ieee80211_local *local = sdata->local;
+-	u64 weight_sum, weight_sum_reciprocal;
+ 	struct airtime_sched_info *air_sched;
+ 	struct airtime_info *air_info;
++	u64 weight_sum_reciprocal;
+ 	u32 airtime = 0;
+ 
+ 	air_sched = &local->airtime[txq->ac];
+@@ -1907,27 +1907,21 @@ void ieee80211_register_airtime(struct i
+ 	if (local->airtime_flags & AIRTIME_USE_RX)
+ 		airtime += rx_airtime;
+ 
+-	/* Weights scale so the unit weight is 256 */
+-	airtime <<= 8;
+-
+ 	spin_lock_bh(&air_sched->lock);
+ 
+ 	air_info->tx_airtime += tx_airtime;
+ 	air_info->rx_airtime += rx_airtime;
+ 
+-	if (air_sched->weight_sum) {
+-		weight_sum = air_sched->weight_sum;
++	if (air_sched->weight_sum)
+ 		weight_sum_reciprocal = air_sched->weight_sum_reciprocal;
+-	} else {
+-		weight_sum = air_info->weight;
++	else
+ 		weight_sum_reciprocal = air_info->weight_reciprocal;
+-	}
+ 
+ 	/* Round the calculation of global vt */
+-	air_sched->v_t += (u64)((airtime + (weight_sum >> 1)) *
+-				weight_sum_reciprocal) >> IEEE80211_RECIPROCAL_SHIFT_64;
+-	air_info->v_t += (u32)((airtime + (air_info->weight >> 1)) *
+-			       air_info->weight_reciprocal) >> IEEE80211_RECIPROCAL_SHIFT_32;
++	air_sched->v_t += ((u64)airtime * weight_sum_reciprocal) >>
++			  (IEEE80211_RECIPROCAL_SHIFT_SUM - IEEE80211_WEIGHT_SHIFT);
++	air_info->v_t += (airtime * air_info->weight_reciprocal) >>
++			 (IEEE80211_RECIPROCAL_SHIFT_STA - IEEE80211_WEIGHT_SHIFT);
+ 	ieee80211_resort_txq(&local->hw, txq);
+ 
+ 	spin_unlock_bh(&air_sched->lock);
