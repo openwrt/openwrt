@@ -161,7 +161,9 @@ static int rtl8231_pin_set(struct rtl8231_gpios *gpios, u32 gpio, u32 data)
 		pr_err("Error reading RTL8231\n");
 		return -1;
 	}
-	v = (v & ~(1 << (gpio % 16))) | (data << (gpio % 16));
+	v = v & ~BIT(gpio % 16);
+	if (data)
+		v |= BIT(gpio % 16);
 	rtl8231_write(gpios, RTL8231_GPIO_DATA(gpio), v);
 	gpios->reg_shadow[RTL8231_GPIO_DATA(gpio)] = v;
 	gpios->reg_cached |= 1 << RTL8231_GPIO_DATA(gpio);
