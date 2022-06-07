@@ -1141,9 +1141,9 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 	len = skb->len;
 
 	/* Check for DSA tagging at the end of the buffer */
-	if (netdev_uses_dsa(dev) && skb->data[len-4] == 0x80 && skb->data[len-3] > 0
-			&& skb->data[len-3] < priv->cpu_port &&  skb->data[len-2] == 0x10
-			&&  skb->data[len-1] == 0x00) {
+	if (netdev_uses_dsa(dev) && skb->data[len-4] == 0x80
+		&& skb->data[len-3] < priv->cpu_port && skb->data[len-2] == 0x10
+		&& skb->data[len-1] == 0x00) {
 		/* Reuse tag space for CRC if possible */
 		dest_port = skb->data[len-3];
 		skb->data[len-4] = skb->data[len-3] = skb->data[len-2] = skb->data[len-1] = 0x00;
@@ -2258,13 +2258,13 @@ static int rtl83xx_set_features(struct net_device *dev, netdev_features_t featur
 		if (!(features & NETIF_F_RXCSUM))
 			sw_w32_mask(BIT(3), 0, priv->r->mac_port_ctrl(priv->cpu_port));
 		else
-			sw_w32_mask(0, BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
+			sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
 	}
 
 	return 0;
 }
 
-static int rtl93xx_set_features(struct net_device *dev, netdev_features_t features)
+static int rtl930x_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 
@@ -2275,6 +2275,12 @@ static int rtl93xx_set_features(struct net_device *dev, netdev_features_t featur
 			sw_w32_mask(0, BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
 	}
 
+	return 0;
+}
+
+static int rtl931x_set_features(struct net_device *dev, netdev_features_t features)
+{
+	// Not clear how to set this, RX_CHK_CRC_EN disappeared from MAC_L2_PORT_CTRL
 	return 0;
 }
 
@@ -2315,7 +2321,7 @@ static const struct net_device_ops rtl930x_eth_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl930x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
-	.ndo_set_features = rtl93xx_set_features,
+	.ndo_set_features = rtl930x_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
@@ -2329,7 +2335,7 @@ static const struct net_device_ops rtl931x_eth_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl931x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
-	.ndo_set_features = rtl93xx_set_features,
+	.ndo_set_features = rtl931x_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 };
 
@@ -2419,7 +2425,6 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	dev->min_mtu = ETH_ZLEN;
 	dev->max_mtu = 1536;
 	dev->features = NETIF_F_RXCSUM | NETIF_F_HW_CSUM;
-	dev->hw_features = NETIF_F_RXCSUM;
 
 	priv->id = soc_info.id;
 	priv->family_id = soc_info.family;
@@ -2436,16 +2441,19 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		priv->cpu_port = RTL838X_CPU_PORT;
 		priv->r = &rtl838x_reg;
 		dev->netdev_ops = &rtl838x_eth_netdev_ops;
+		dev->hw_features = NETIF_F_RXCSUM;
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->cpu_port = RTL839X_CPU_PORT;
 		priv->r = &rtl839x_reg;
 		dev->netdev_ops = &rtl839x_eth_netdev_ops;
+		dev->hw_features = NETIF_F_RXCSUM;
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->cpu_port = RTL930X_CPU_PORT;
 		priv->r = &rtl930x_reg;
 		dev->netdev_ops = &rtl930x_eth_netdev_ops;
+		dev->hw_features = NETIF_F_RXCSUM;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->cpu_port = RTL931X_CPU_PORT;
