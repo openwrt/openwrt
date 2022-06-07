@@ -101,12 +101,16 @@
 &eth0 {
 	status = "okay";
 
+	nvmem-cells = <&macaddr_lan>;
+	nvmem-cell-names = "mac-address";
 	phy-handle = <&phy0>;
 };
 
 &eth1 {
 	status = "okay";
 
+	nvmem-cells = <&macaddr_wan>;
+	nvmem-cell-names = "mac-address";
 	phy-handle = <&phy4>;
 };
 
@@ -161,6 +165,17 @@
 				label = "Atheros Board Data";
 				reg = <0xff0000 0x10000>;
 				read-only;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_wan: macaddr@1000 {
+					reg = <0x1000 0x6>;
+				};
+
+				macaddr_lan: macaddr@1006 {
+					reg = <0x1006 0x6>;
+				};
 			};
 		};
 	};
