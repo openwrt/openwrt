@@ -3,15 +3,31 @@
 # ---------------------------------------------------------
 # put to /etc/uci-defaults/
 # see default_postinst() in lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+board=$(board_name)
+boardname="${board##*,}"
 
 function init_firewall() {
-	zone_name=$(uci -q get firewall.@zone[1].name)
-	[ "$zone_name" = "wan" ] || return 0
+	uci set firewall.@defaults[0].input='ACCEPT'
+	uci set firewall.@defaults[0].output='ACCEPT'
+	uci set firewall.@defaults[0].forward='ACCEPT'
 
-	uci set firewall.@defaults[0].flow_offloading='1'
-	uci set firewall.@zone[1].input='ACCEPT'
-	uci set firewall.@zone[1].output='ACCEPT'
-	uci set firewall.@zone[1].forward='ACCEPT'
+	case "$boardname" in
+	nanopi-r5s)
+		uci set firewall.@defaults[0].flow_offloading='1'
+		;;
+	*)
+		uci set firewall.@defaults[0].flow_offloading='0'
+		;;
+	esac
+
+	zone_name=$(uci -q get firewall.@zone[1].name)
+	if [ "$zone_name" = "wan" ]; then
+		uci set firewall.@zone[1].input='ACCEPT'
+		uci set firewall.@zone[1].output='ACCEPT'
+		uci set firewall.@zone[1].forward='ACCEPT'
+	fi
 	uci commit firewall
 	fw4 reload
 }
