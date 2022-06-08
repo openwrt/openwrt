@@ -5,25 +5,26 @@
 rockchip_setup_interfaces()
 {
 	local board="$1"
+	local boardname="${board##*,}"
 
-	case "$board" in
-	friendlyarm,nanopi-r2s | \
-	friendlyarm,nanopi-r2c | \
-	friendlyarm,nanopi-r4s | \
-	friendlyelec,nanopi-r2 | \
-	friendlyelec,nanopi-r4s)
+	case "$boardname" in
+	nanopi-r2s | \
+	nanopi-r2c | \
+	nanopi-r4s | \
+	nanopi-r2 | \
+	nanopi-r4s)
 		ucidef_set_interface_wan 'eth0'
 		ucidef_set_interface "lan" device  "eth1" protocol "static" ipaddr "192.168.2.1"
 		;;
-	friendlyelec,nanopi-neo3 | \
-	friendlyelec,nanopc-t4 | \
-	friendlyelec,nanopi-m4 | \
-	friendlyelec,nanopi-neo4 | \
-	friendlyelec,som-rk3399)
+	nanopi-neo3 | \
+	nanopc-t4 | \
+	nanopi-m4 | \
+	nanopi-neo4 | \
+	som-rk3399)
 		ucidef_set_interface_wan 'eth0'
 		ucidef_set_interface "lan" device "wlan0" protocol "static" ipaddr "192.168.2.1"
 		;;
-	friendlyelec,nanopi-r5s)
+	nanopi-r5s)
 		ucidef_set_interface_wan 'eth0'
 		ucidef_set_interface "lan" device  "eth1 eth2" protocol "static" ipaddr "192.168.2.1"
 		;;
@@ -47,30 +48,24 @@ rockchip_setup_macs()
 	local wan_mac=""
 	local label_mac=""
 
-	case "$board" in
-	friendlyarm,nanopi-r2c | \
-	friendlyelec,nanopi-r2c)
-		wan_mac=$(nanopi_r2s_generate_mac mmcblk1)
-		lan_mac=$(macaddr_add "$wan_mac" 1)
-		;;
-	friendlyarm,nanopi-r2s | \
-	friendlyelec,nanopi-r2s)
-		wan_mac=$(nanopi_r2s_generate_mac mmcblk0)
-		lan_mac=$(macaddr_add "$wan_mac" 1)
-		;;
-	friendlyarm,nanopi-r4s | \
-	friendlyelec,nanopi-r4s)
+	# local vendor=$(echo ${board}|cut -d ',' -f1)	
+	local boardname="${board##*,}"
+
+	case "$boardname" in
+	nanopi-r4s)
 		if [ -f /sys/bus/i2c/devices/2-0051/eeprom ]; then
 			wan_mac=$(get_mac_binary "/sys/bus/i2c/devices/2-0051/eeprom" 0xfa)
 			lan_mac=$(macaddr_setbit_la "$wan_mac")
 		else
-			wan_mac=$(nanopi_r2s_generate_mac mmcblk1)
+			wan_mac=$(nanopi_r2s_generate_mac "$root_dev")
 			lan_mac=$(macaddr_add "$wan_mac" 1)
 		fi
 		;;
-	friendlyelec,nanopi-r5s)
-		wan_mac=$(nanopi_r2s_generate_mac mmcblk2)
-		lan_mac=$(macaddr_add "$wan_mac" 1)
+	*)
+		if [ -f /sys/class/block/${root_dev}/device/cid ]; then
+			wan_mac=$(nanopi_r2s_generate_mac "$root_dev")
+			lan_mac=$(macaddr_add "$wan_mac" 1)
+		fi
 		;;
 	esac
 
@@ -79,8 +74,36 @@ rockchip_setup_macs()
 	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 }
 
+function find_root_dev() {
+	local pname=""
+	set -- $(cat /proc/cmdline)
+	for x in "$@"; do
+	    case "$x" in
+		root=*)
+		pname="${x#root=}"
+		;;
+		esac
+	done
+
+	if [ ! -z $pname ]; then
+		for d in `fdisk -l 2>/dev/null | grep "^Disk " | cut -d":" -f1 | cut -f2`
+		do
+			if [ `fdisk -l $d 2>/dev/null | grep -c "${pname}"` -gt 0 ]
+			then
+				echo $d
+			fi
+		done
+	fi
+}
+
 board_config_update
 board=$(board_name)
+root_dev=$(find_root_dev)
+if [ ! -z $root_dev ]; then
+	root_dev=$(basename $root_dev)
+else
+	printf "root_dev is empty, why?, please check /etc/board.d/02_network.\n" > /tmp/config_generate_error.txt
+fi
 rockchip_setup_interfaces $board
 rockchip_setup_macs $board
 board_config_flush
