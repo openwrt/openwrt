@@ -126,8 +126,8 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -236,6 +236,80 @@ static void vc4_hvs_update_gamma_lut(str
- 	vc4_hvs_lut_load(crtc);
+@@ -259,6 +259,80 @@ u8 vc4_hvs_get_fifo_frame_count(struct d
+ 	return field;
  }
  
 +static void vc5_hvs_write_gamma_entry(struct vc4_dev *vc4,
@@ -207,7 +207,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  int vc4_hvs_get_fifo_from_output(struct drm_device *dev, unsigned int output)
  {
  	struct vc4_dev *vc4 = to_vc4_dev(dev);
-@@ -329,14 +403,16 @@ static int vc4_hvs_init_channel(struct v
+@@ -352,14 +426,16 @@ static int vc4_hvs_init_channel(struct v
  	dispbkgndx &= ~SCALER_DISPBKGND_INTERLACE;
  
  	HVS_WRITE(SCALER_DISPBKGNDX(chan), dispbkgndx |
@@ -227,7 +227,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	return 0;
  }
-@@ -534,7 +610,10 @@ void vc4_hvs_atomic_flush(struct drm_crt
+@@ -557,7 +633,10 @@ void vc4_hvs_atomic_flush(struct drm_crt
  		u32 dispbkgndx = HVS_READ(SCALER_DISPBKGNDX(vc4_state->assigned_channel));
  
  		if (crtc->state->gamma_lut) {
@@ -241,7 +241,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  			/* Unsetting DISPBKGND_GAMMA skips the gamma lut step
 --- a/drivers/gpu/drm/vc4/vc4_regs.h
 +++ b/drivers/gpu/drm/vc4/vc4_regs.h
-@@ -491,6 +491,28 @@
+@@ -499,6 +499,28 @@
  #define SCALER_DLIST_START                      0x00002000
  #define SCALER_DLIST_SIZE                       0x00004000
  

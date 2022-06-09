@@ -72,8 +72,8 @@ This reverts commit e99a1b69da07ee3b89a6b8005b854e6c04bfb450.
  void vc4_hvs_atomic_enable(struct drm_crtc *crtc, struct drm_atomic_state *state);
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -389,150 +389,6 @@ static void vc5_hvs_update_gamma_lut(str
- 	vc5_hvs_lut_load(hvs, vc4_crtc);
+@@ -315,150 +315,6 @@ static void vc4_hvs_update_gamma_lut(str
+ 	vc4_hvs_lut_load(hvs, vc4_crtc);
  }
  
 -static void vc4_hvs_irq_enable_eof(const struct vc4_hvs *hvs,
