@@ -177,7 +177,8 @@ $(eval $(call TestHostCommand,python3-distutils, \
 	$(STAGING_DIR_HOST)/bin/python3 -c 'import distutils'))
 
 $(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
-	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule))
+	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule, \
+	git submodule --help | grep -- --recursive))
 
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))
