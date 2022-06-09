@@ -19,7 +19,6 @@ else
 endif
 
 PKG_CONFIG_DEPENDS += CONFIG_BUILD_NLS
-PKG_BUILD_DEPENDS += !BUILD_NLS:libiconv
 
 ICONV_DEPENDS:=+BUILD_NLS:libiconv-full
 ifeq ($(CONFIG_BUILD_NLS),y)
