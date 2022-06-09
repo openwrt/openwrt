@@ -240,6 +240,10 @@ xwrt,wr1800k-ax-nand)
 	ucidef_set_led_netdev "wan" "wan" "ether:blue" "wan" "link"
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "wlan:green" "wlan0" "link"
 	;;
+xwrt,dm2-t-mb2ep-v02-nor)
+	ucidef_set_led_netdev "internet" "Internet" "ether:blue" "eth1"
+	;;
+xwrt,ms1800k-ax-nor|\
 xwrt,wr1800k-ax-norplusemmc|\
 xwrt,wr1800k-ax-nor)
 	ucidef_set_led_netdev "wan" "wan" "ether:blue" "eth1"
