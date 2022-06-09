@@ -68,8 +68,16 @@ prepare prepare-mk prepare-make prepare-build: config-clean prepare-clean tmpinf
 
 prereq-build: staging_dir/host/.prereq-build FORCE ;
 
+ifneq ($(SDK),1)
+prepare-clean: tools-clean
+endif
+
 prepare-clean: FORCE
 	$(Q)rm -rf $(TOPDIR)/staging_dir/host/.prereq-build
+
+tools-clean: FORCE
+	$(Q)rm -rf $(TOPDIR)/staging_dir/host/.prereq-tools
+	$(Q)$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r tools/mkhash/clean
 
 tmpinfo-clean: FORCE
 	$(Q)rm -rf $(TOPDIR)/tmp/.*info $(TOPDIR)/tmp/info
@@ -184,6 +192,10 @@ kernel_nconfig: prepare_kernel_conf FORCE
 kernel_xconfig: prepare_kernel_conf FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux xconfig
 
+ifneq ($(SDK),1)
+staging_dir/host/.prereq-build: staging_dir/host/.prereq-tools
+endif
+
 staging_dir/host/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
 	$(Q)$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
@@ -197,6 +209,11 @@ staging_dir/host/.prereq-build: include/prereq-build.mk
 	}
   endif
 	touch $@
+
+staging_dir/host/.prereq-tools:
+	$(Q)mkdir -p tmp
+	$(Q)$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r tools/mkhash/compile
+	$(Q)touch $@
 
 printdb: FORCE
 	@$(_SINGLE)$(NO_TRACE_MAKE) -p $@ OPENWRT_VERBOSE=s DUMP_TARGET_DB=1 2>&1

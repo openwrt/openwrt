@@ -221,9 +221,3 @@ $(eval $(call FindHostCommand,which,Please install 'which', \
 
 $(eval $(call TestHostCommand,ldconfig,Failed to link ldconfig, \
 	$(LN) true $(STAGING_DIR_HOST)/bin/ldconfig))
-
-$(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
-	mkdir -p $(dir $@)
-	$(CC) -O2 -I$(TOPDIR)/tools/include -o $@ $<
-
-prereq: $(STAGING_DIR_HOST)/bin/mkhash
