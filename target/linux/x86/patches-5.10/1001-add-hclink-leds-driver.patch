@@ -1,0 +1,130 @@
+From d85ea0c7ec1a267301363fe3ded0cb6ab506bd8d Mon Sep 17 00:00:00 2001
+From: jialelux <jialex.lu@intel.com>
+Date: Mon, 22 Feb 2021 15:53:47 +0800
+Subject: [PATCH] add hclink leds driver
+
+---
+ drivers/leds/Kconfig       |  7 +++++
+ drivers/leds/Makefile      |  2 ++
+ drivers/leds/leds-hclink.c | 78 ++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 87 insertions(+)
+ create mode 100644 drivers/leds/leds-hclink.c
+
+diff --git a/drivers/leds/Kconfig b/drivers/leds/Kconfig
+index 1988de1..a13d857 100644
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -822,6 +822,13 @@ config LEDS_LM36274
+ 	help
+ 	  Say Y to enable the LM36274 LED driver for TI LMU devices.
+ 	  This supports the LED device LM36274.
++config LEDS_HCLINK
++        tristate "LED support for hclink devices"
++        depends on LEDS_CLASS
++        depends on X86
++        help
++          This option enables support for HCLINK LEDS devices.
++
+ 
+ comment "LED Triggers"
+ source "drivers/leds/trigger/Kconfig"
+diff --git a/drivers/leds/Makefile b/drivers/leds/Makefile
+index 41fb073..029ca42 100644
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -86,6 +86,8 @@ obj-$(CONFIG_LEDS_TI_LMU_COMMON)	+= leds-ti-lmu-common.o
+ obj-$(CONFIG_LEDS_LM3697)		+= leds-lm3697.o
+ obj-$(CONFIG_LEDS_LM36274)		+= leds-lm36274.o
+ 
++obj-$(CONFIG_LEDS_HCLINK)		+= leds-hclink.o
++
+ # LED SPI Drivers
+ obj-$(CONFIG_LEDS_CR0014114)		+= leds-cr0014114.o
+ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-dac124s085.o
+diff --git a/drivers/leds/leds-hclink.c b/drivers/leds/leds-hclink.c
+new file mode 100644
+index 0000000..b571814
+--- /dev/null
++++ b/drivers/leds/leds-hclink.c
+@@ -0,0 +1,78 @@
++/*
++ * GPIO LEDS driver for Atom C3000 
++ * 
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#include<linux/module.h>
++#include<linux/init.h>
++
++#include <linux/miscdevice.h>
++#include <linux/fs.h>
++#include <linux/mm.h>
++#include <linux/slab.h>
++#include <asm/uaccess.h>
++#include <linux/io.h>
++#include <linux/delay.h>
++
++#include <linux/kernel.h>      
++#include <linux/platform_device.h>
++#include <linux/cdev.h>         
++#include <linux/types.h>       
++#include <linux/errno.h>       
++#include <linux/string.h>
++#include <linux/ctype.h>
++
++#include <linux/gpio.h>
++#include <linux/leds.h>
++
++#define GPIO30		374
++#define CPU_LED		GPIO30
++
++static struct gpio_led gpio_leds[] = {
++    {
++        .name = "sys",
++	.default_trigger = "timer",
++        .gpio = CPU_LED, 
++        .default_state = LEDS_GPIO_DEFSTATE_ON, // default open led
++        .active_low = 1, // led active low
++    },   
++};
++
++static struct gpio_led_platform_data gpio_led_info = {
++     .leds          = gpio_leds,
++     .num_leds     = ARRAY_SIZE(gpio_leds),
++};
++
++static struct platform_device hclink_leds = {
++    .name = "hclink-leds",
++    .id = -1,
++    .dev = {
++        .platform_data = &gpio_led_info,      
++        //.release = hclink_led_drv_release, //old kernel do not need,but 4.14 need
++    },    
++};
++
++static int __init hclink_led_drv_init(void)
++{	
++	platform_device_register(&hclink_leds);
++
++	return 0;
++}
++
++static void __exit hclink_led_drv_exit(void)
++{	
++	platform_device_unregister(&hclink_leds);	
++}
++
++module_init(hclink_led_drv_init);
++module_exit(hclink_led_drv_exit);
++
++MODULE_AUTHOR("liji");
++MODULE_DESCRIPTION("hclink led ctrl");
++MODULE_LICENSE("GPL");
++
+-- 
+2.9.5
+
