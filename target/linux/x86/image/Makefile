@@ -44,6 +44,13 @@ define Build/combined
 	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.boot/boot/grub/
 	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img \
 		$@.boot/boot/grub/core.img
+
+       $(if $(filter $(1),uboot),
+                $(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/openwrt-x86-c3000-vmlinuz
+                $(CP) $(STAGING_DIR_IMAGE)/intel-c3000-u-boot-payload.efi $@.boot/u-boot-payload.efi
+                echo "FS0:u-boot-payload.efi" > $@.boot/startup.nsh
+        )
+	
 	$(if $(filter $(1),efi),
 		$(INSTALL_DIR) $@.boot/efi/boot
 		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi $@.boot/efi/boot/
@@ -113,8 +120,13 @@ define Device/Default
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
   IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
   ARTIFACT/image-efi.iso := grub-config iso | iso efi
-  IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi | append-metadata
-  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip | append-metadata
+  ifneq ($(CONFIG_PACKAGE_u-boot-intel-c3000),)
+    IMAGE/combined-efi.img := grub-config efi | combined efi uboot | grub-install efi | uppend-metadata
+    IMAGE/combined-efi.img.gz := grub-config efi | combined efi uboot | grub-install efi | gzip | append-metadata
+  else
+    IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi | append-metadata
+    IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip | append-metadata
+  endif
   IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-image vdi
   IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image vmdk
   IMAGE/combined-efi.vhdx := grub-config efi | combined efi | grub-install efi | qemu-image vhdx -o subformat=dynamic
