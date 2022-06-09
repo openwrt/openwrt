@@ -111,15 +111,14 @@ tools-y += $(tools-core)
 
 # make core tools depend on sed and flock
 $(foreach tool, $(filter-out xz,$(tools-core)), $(eval $(curdir)/$(tool)/compile += $(curdir)/sed/compile))
-$(curdir)/xz/compile += $(curdir)/flock/compile
 
-$(curdir)/sed/compile := $(curdir)/flock/compile $(curdir)/xz/compile
-tools-y += flock sed
+$(curdir)/sed/compile := $(curdir)/xz/compile
+tools-y += sed
 
 # tools that can be built without any build preparation
 # and with no other tools as prerequisites
 # good for single C file programs
-tools-simple := mkhash
+tools-simple := mkhash flock
 
 $(curdir)/autoremove := 1
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-) $(tools-simple)

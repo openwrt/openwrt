@@ -64,20 +64,24 @@ SUBMAKE:=umask 022; $(SUBMAKE)
 
 ULIMIT_FIX=_limit=`ulimit -n`; [ "$$_limit" = "unlimited" -o "$$_limit" -ge 1024 ] || ulimit -n 1024;
 
+ifdef SDK
+  export IGNORE_PACKAGES = linux
+  export DOWNLOAD_DIRS = package/download
+else
+  export DOWNLOAD_DIRS = tools/download toolchain/download target/download package/download
+endif
+
 prepare prepare-mk prepare-make prepare-build: config-clean prepare-clean tmpinfo-clean prereq-build prepare-tmpinfo FORCE ;
 
 prereq-build: staging_dir/host/.prereq-build FORCE ;
 
 prepare-clean: FORCE
 	$(Q)rm -rf $(TOPDIR)/staging_dir/host/.prereq-build
+	$(Q)$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r tools/flock/clean
 	$(Q)$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r tools/mkhash/clean
 
 tmpinfo-clean: FORCE
 	$(Q)rm -rf $(TOPDIR)/tmp/.*info $(TOPDIR)/tmp/info
-
-ifdef SDK
-  IGNORE_PACKAGES = linux
-endif
 
 _ignore = $(foreach p,$(IGNORE_PACKAGES),--ignore $(p))
 
@@ -187,6 +191,7 @@ kernel_xconfig: prepare_kernel_conf FORCE
 
 staging_dir/host/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
+	$(Q)$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r tools/flock/compile
 	$(Q)$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r tools/mkhash/compile
 	$(Q)$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
@@ -203,17 +208,11 @@ staging_dir/host/.prereq-build: include/prereq-build.mk
 printdb: FORCE
 	@$(_SINGLE)$(NO_TRACE_MAKE) -p $@ OPENWRT_VERBOSE=s DUMP_TARGET_DB=1 2>&1
 
-ifndef SDK
-  DOWNLOAD_DIRS = tools/download toolchain/download package/download target/download
-else
-  DOWNLOAD_DIRS = package/download
-endif
-
-download: .config FORCE $(if $(wildcard $(TOPDIR)/staging_dir/host/bin/flock),,tools/flock/compile)
-	$(Q)+$(foreach dir,$(DOWNLOAD_DIRS),$(SUBMAKE) $(S) $(dir);)
-
 clean dirclean: .config config-clean FORCE
 	$(Q)+$(SUBMAKE) $(S) -r $@
+
+download: prepare-tmpinfo .config FORCE
+	$(Q)+$(foreach dir,$(DOWNLOAD_DIRS),$(SUBMAKE) $(S) $(dir);)
 
 prereq:: prepare-tmpinfo .config FORCE
 	$(Q)+$(NO_TRACE_MAKE) -r $@
