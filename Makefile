@@ -62,7 +62,6 @@ targetclean: _clean FORCE
 dirclean: targetclean clean FORCE
 	rm -rf $(STAGING_DIR_HOST) $(STAGING_DIR_HOSTPKG) $(BUILD_DIR_BASE)/host
 	rm -rf $(TMP_DIR)
-	$(MAKE) -C $(TOPDIR)/scripts/config clean
 
 toolchain_rebuild_check: FORCE
 	$(SCRIPT_DIR)/check-toolchain-clean.sh

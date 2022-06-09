@@ -210,7 +210,7 @@ endif
 download: .config FORCE $(if $(wildcard $(TOPDIR)/staging_dir/host/bin/flock),,tools/flock/compile)
 	$(Q)+$(foreach dir,$(DOWNLOAD_DIRS),$(SUBMAKE) $(S) $(dir);)
 
-clean dirclean: .config FORCE
+clean dirclean: .config config-clean FORCE
 	$(Q)+$(SUBMAKE) $(S) -r $@
 
 prereq:: prepare-tmpinfo .config FORCE
@@ -256,25 +256,24 @@ else
 endif
 
 # update all feeds, re-create index files, install symlinks
-package/symlinks: FORCE
+package/symlinks update: FORCE
 	./scripts/feeds update -a
 	./scripts/feeds install -a
 
 # re-create index files, install symlinks
-package/symlinks-install: FORCE
+package/symlinks-install symlinkinstall: FORCE
 	./scripts/feeds update -i
 	./scripts/feeds install -a
 
 # remove all symlinks, don't touch ./feeds
-package/symlinks-clean: FORCE
+package/symlinks-clean symlinkclean: FORCE
 	./scripts/feeds uninstall -a
 
 help: FORCE
 	cat README.md
 
-distclean: FORCE
+distclean: config-clean FORCE
 	rm -rf bin build_dir .ccache .config* dl feeds key-build* logs package/feeds staging_dir tmp
-	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)
   .SILENT: symlinkclean clean dirclean distclean config-clean download help tmpinfo-clean .config scripts/config/mconf scripts/config/conf menuconfig staging_dir/host/.prereq-build tmp/.prereq-package prepare-tmpinfo
