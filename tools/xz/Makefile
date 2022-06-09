@@ -24,7 +24,7 @@ HOSTCXX := $(HOSTCXX_NOCACHE)
 
 HOST_CONFIGURE_ARGS += \
 	--enable-static=yes \
-	--enable-shared=no \
+	--enable-shared=yes \
 	--disable-doc \
 	--disable-nls \
 	--with-pic
