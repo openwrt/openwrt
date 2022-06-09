@@ -1,0 +1,42 @@
+Index: u-boot-2020.04/include/configs/efi-x86_payload.h
+===================================================================
+--- u-boot-2020.04.orig/include/configs/efi-x86_payload.h	2020-04-13 23:02:18.000000000 +0800
++++ u-boot-2020.04/include/configs/efi-x86_payload.h	2021-03-08 17:27:16.829113001 +0800
+@@ -29,4 +29,23 @@
+ #define CONFIG_SYS_ATA_IDE1_OFFSET	0x170
+ #define CONFIG_ATAPI
+ 
++#define INTEL_BOOTARGS_CMD \
++	"bootargs_goupdate=root=/dev/mmcblk0p3 rootfstype=ext4 rw rootwait console=tty0 console=ttyS0,115200n8 noinitrd status=go_update\0" \
++	"bootargs_gorecovery=root=/dev/mmcblk0p3 rootfstype=ext4 rw rootwait console=tty0 console=ttyS0,115200n8 noinitrd status=go_recovery\0" \
++	"bootargs_goback=root=/dev/mmcblk0p3 rootfstype=ext4 rw rootwait console=tty0 console=ttyS0,115200n8 noinitrd status=go_back\0" \
++	"bootargs_mmcblk0p2=root=/dev/mmcblk0p2 rootfstype=ext4 rw rootwait console=tty0 console=ttyS0,115200n8 noinitrd\0" \
++	"bootargs_mmcblk0p3=root=/dev/mmcblk0p3 rootfstype=ext4 rw rootwait console=tty0 console=ttyS0,115200n8 noinitrd\0" \
++	\
++	"bootcmd_mmcblk0p2=fatload mmc 0:1 01000000 openwrt-x86-c3000-vmlinuz;zboot 01000000\0" \
++	"bootcmd_mmcblk0p3=ext4load mmc 0:3 01000000 intel-x86-c3000-vmlinuz;zboot 01000000\0" \
++	"bootcmd_common=setenv bootargs $bootargs_mmcblk0p2; run bootcmd_mmcblk0p2\0" \
++	\
++	"intel_need_update=if fatload mmc 0:1 01000000 /need_update; then setenv bootargs $bootargs_goupdate; run bootcmd_mmcblk0p3; fi\0" \
++	"intel_need_gorecovery=if fatload mmc 0:1 01000000 /need_gorecovery; then setenv bootargs $bootargs_gorecovery; run bootcmd_mmcblk0p3; fi\0" \
++	"intel_need_goback=if fatload mmc 0:1 01000000 /device_wrong; then setenv bootargs $bootargs_goback; run bootcmd_mmcblk0p3; fi\0" \
++	"intel_prepare_for_boot=fatload mmc 0:1 01000000 openwrt-x86-c3000-vmlinuz; fatwrite mmc 0:1 01000000 device_wrong 10\0" \
++	\
++	"intel_boot_from_mmcblk0p3=setenv bootargs $bootargs_mmcblk0p3; run bootcmd_mmcblk0p3\0" \
++	"bootcmd=run intel_need_update; run intel_need_gorecovery; run intel_need_goback; run intel_prepare_for_boot; run bootcmd_common\0"
++
+ #endif	/* __CONFIG_H */
+Index: u-boot-2020.04/include/configs/x86-common.h
+===================================================================
+--- u-boot-2020.04.orig/include/configs/x86-common.h	2020-04-13 23:02:18.000000000 +0800
++++ u-boot-2020.04/include/configs/x86-common.h	2021-03-08 17:28:26.492748279 +0800
+@@ -120,7 +120,8 @@
+ 	"scriptaddr=0x7000000\0"			\
+ 	"kernel_addr_r=0x1000000\0"			\
+ 	"ramdisk_addr_r=0x4000000\0"			\
+-	"ramdiskfile=initramfs.gz\0"
++	"ramdiskfile=initramfs.gz\0"			\
++	INTEL_BOOTARGS_CMD 
+ 
+ 
+ #define CONFIG_RAMBOOTCOMMAND				\

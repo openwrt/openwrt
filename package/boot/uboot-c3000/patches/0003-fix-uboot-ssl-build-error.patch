@@ -1,0 +1,13 @@
+Index: u-boot-2020.07-rc5/tools/Makefile
+===================================================================
+--- u-boot-2020.07-rc5.orig/tools/Makefile	2020-06-23 08:49:04.000000000 +0800
++++ u-boot-2020.07-rc5/tools/Makefile	2021-03-09 15:28:45.658866726 +0800
+@@ -157,7 +157,7 @@
+ HOSTCFLAGS_kwbimage.o += \
+ 	$(shell pkg-config --cflags libssl libcrypto 2> /dev/null || echo "")
+ HOSTLDLIBS_mkimage += \
+-	$(shell pkg-config --libs libssl libcrypto 2> /dev/null || echo "-lssl -lcrypto")
++	$(shell pkg-config --libs --static libssl libcrypto 2> /dev/null || echo "-lssl -lpthread -lcrypto")
+ 
+ # OS X deprecate openssl in favour of CommonCrypto, supress deprecation
+ # warnings on those systems
