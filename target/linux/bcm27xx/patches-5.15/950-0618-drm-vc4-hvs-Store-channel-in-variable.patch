@@ -14,7 +14,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -674,6 +674,7 @@ void vc4_hvs_atomic_flush(struct drm_crt
+@@ -697,6 +697,7 @@ void vc4_hvs_atomic_flush(struct drm_crt
  	struct drm_device *dev = crtc->dev;
  	struct vc4_dev *vc4 = to_vc4_dev(dev);
  	struct vc4_crtc_state *vc4_state = to_vc4_crtc_state(crtc->state);
@@ -22,7 +22,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct drm_plane *plane;
  	struct vc4_plane_state *vc4_plane_state;
  	bool debug_dump_regs = false;
-@@ -714,8 +715,8 @@ void vc4_hvs_atomic_flush(struct drm_crt
+@@ -737,8 +738,8 @@ void vc4_hvs_atomic_flush(struct drm_crt
  		/* This sets a black background color fill, as is the case
  		 * with other DRM drivers.
  		 */
@@ -33,7 +33,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  			  SCALER_DISPBKGND_FILL);
  
  	/* Only update DISPLIST if the CRTC was already running and is not
-@@ -729,7 +730,7 @@ void vc4_hvs_atomic_flush(struct drm_crt
+@@ -752,7 +753,7 @@ void vc4_hvs_atomic_flush(struct drm_crt
  		vc4_hvs_update_dlist(crtc);
  
  	if (crtc->state->color_mgmt_changed) {
@@ -42,7 +42,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  		if (crtc->state->gamma_lut) {
  			if (!vc4->hvs->hvs5) {
-@@ -752,7 +753,7 @@ void vc4_hvs_atomic_flush(struct drm_crt
+@@ -775,7 +776,7 @@ void vc4_hvs_atomic_flush(struct drm_crt
  			if (!vc4->hvs->hvs5)
  				dispbkgndx &= ~SCALER_DISPBKGND_GAMMA;
  		}

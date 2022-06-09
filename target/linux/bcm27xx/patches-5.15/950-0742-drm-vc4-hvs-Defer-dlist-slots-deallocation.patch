@@ -139,8 +139,8 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  void vc4_hvs_atomic_enable(struct drm_crtc *crtc, struct drm_atomic_state *state);
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -389,6 +389,150 @@ static void vc5_hvs_update_gamma_lut(str
- 	vc5_hvs_lut_load(hvs, vc4_crtc);
+@@ -315,6 +315,150 @@ static void vc4_hvs_update_gamma_lut(str
+ 	vc4_hvs_lut_load(hvs, vc4_crtc);
  }
  
 +static void vc4_hvs_irq_enable_eof(const struct vc4_hvs *hvs,
@@ -388,7 +388,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	}
  
  	/* Clear every per-channel interrupt flag. */
-@@ -902,6 +1055,8 @@ static int vc4_hvs_bind(struct device *d
+@@ -903,6 +1056,8 @@ static int vc4_hvs_bind(struct device *d
  		hvs->dlist = hvs->regs + SCALER5_DLIST_START;
  
  	spin_lock_init(&hvs->mm_lock);
