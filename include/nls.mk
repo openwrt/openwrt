@@ -10,9 +10,8 @@ ifeq ($(CONFIG_BUILD_NLS),y)
 	INTL_PREFIX:=$(STAGING_DIR)/usr/lib/libintl-full
 	INTL_FULL:=1
 
-# iconv stub
 else
-	ICONV_PREFIX:=$(STAGING_DIR)/usr/lib/libiconv-stub
+	ICONV_PREFIX:=
 	ICONV_FULL:=
 
 	INTL_PREFIX:=
@@ -23,9 +22,15 @@ PKG_CONFIG_DEPENDS += CONFIG_BUILD_NLS
 PKG_BUILD_DEPENDS += !BUILD_NLS:libiconv
 
 ICONV_DEPENDS:=+BUILD_NLS:libiconv-full
-ICONV_CFLAGS:=-I$(ICONV_PREFIX)/include
-ICONV_CPPFLAGS:=-I$(ICONV_PREFIX)/include
-ICONV_LDFLAGS:=-L$(ICONV_PREFIX)/lib -Wl,-rpath-link=$(ICONV_PREFIX)/lib
+ifeq ($(CONFIG_BUILD_NLS),y)
+	ICONV_CFLAGS:=-I$(ICONV_PREFIX)/include
+	ICONV_CPPFLAGS:=-I$(ICONV_PREFIX)/include
+	ICONV_LDFLAGS:=-L$(ICONV_PREFIX)/lib -Wl,-rpath-link=$(ICONV_PREFIX)/lib
+else
+	ICONV_CFLAGS:=
+	ICONV_CPPFLAGS:=
+	ICONV_LDFLAGS:=
+endif
 
 INTL_DEPENDS:=+BUILD_NLS:libintl-full
 ifeq ($(CONFIG_BUILD_NLS),y)
