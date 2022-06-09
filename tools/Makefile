@@ -116,8 +116,13 @@ $(curdir)/xz/compile += $(curdir)/flock/compile
 $(curdir)/sed/compile := $(curdir)/flock/compile $(curdir)/xz/compile
 tools-y += flock sed
 
+# tools that can be built without any build preparation
+# and with no other tools as prerequisites
+# good for single C file programs
+tools-simple := mkhash
+
 $(curdir)/autoremove := 1
-$(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
+$(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-) $(tools-simple)
 $(curdir)/builddirs-default := $(tools-y)
 
 ifdef CHECK_ALL
@@ -158,13 +163,16 @@ endif
 
 endif
 
-$(curdir)//prepare = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $(BIN_DIR)
-$(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $(BIN_DIR)
-
-# prerequisites for the individual targets
-$(curdir)/ := .config prereq
+# prerequisites for individual targets
+$(foreach tool, $(tools-y), \
+	$(eval $(curdir)/$(tool)/prepare += $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $(BIN_DIR)) \
+	$(eval $(curdir)/$(tool)/compile += $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $(BIN_DIR)) \
+)
 
 $(curdir)/install: $(curdir)/compile
+
+# prerequisites for all targets
+$(curdir)/ := .config prereq
 
 tools_enabled = $(foreach tool,$(sort $(tools-y) $(tools-)),$(if $(filter $(tool),$(tools-y)),y,n))
 $(eval $(call stampfile,$(curdir),tools,compile,,_$(subst $(space),,$(tools_enabled)),$(STAGING_DIR_HOST)))
