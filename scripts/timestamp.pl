@@ -14,7 +14,7 @@ sub get_ts($$) {
 	my $options = shift;
 	my $ts = 0;
 	my $fn = "";
-	open FIND, "find $path -and -not -path \\*/.svn\\* -and -not -path \\*CVS\\* $options 2>/dev/null |";
+	open FIND, "find -L $path '!' -path \\*/.svn\\* '!' -path \\*CVS\\* $options 2>/dev/null |";
 	while (<FIND>) {
 		chomp;
 		my $file = $_;
@@ -35,7 +35,7 @@ sub get_fnames($$) {
 	my $options = shift;
 	my $ts = 0;
 	my @fns = ();
-	open FIND, "find $path -and -not -path \\*/.svn\\* -and -not -path \\*CVS\\* $options 2>/dev/null |";
+	open FIND, "find -L $path '!' -path \\*/.svn\\* '!' -path \\*CVS\\* $options 2>/dev/null |";
 	while (<FIND>) {
 		chomp;
 		my $file = $_;
@@ -60,7 +60,7 @@ while (@ARGV > 0) {
 	$path = shift @ARGV;
 	if ($path =~ /^-x/) {
 		my $arg = shift @ARGV;
-		$options{-findopts} .= " -and -not -path '" . $arg . "'"
+		$options{-findopts} .= " '!' -path '" . $arg . "'"
 	} elsif ($path =~ /^-a/) {
 		my $arg = shift @ARGV;
 		$options{-findopts} .= " " . $arg;

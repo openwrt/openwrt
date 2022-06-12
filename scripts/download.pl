@@ -106,7 +106,7 @@ sub download
 			system("mkdir", "-p", "$target/");
 		}
 
-		if (! open TMPDLS, "find $mirror -follow -name $filename 2>/dev/null |") {
+		if (! open TMPDLS, "find -L $mirror -name $filename 2>/dev/null |") {
 			print("Failed to search for $filename in $mirror\n");
 			return;
 		}

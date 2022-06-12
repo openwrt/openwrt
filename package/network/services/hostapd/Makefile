@@ -482,7 +482,7 @@ endef
 
 ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   define Build/Configure/rebuild
-	$(FIND) $(PKG_BUILD_DIR) -name \*.o -or -name \*.a | $(XARGS) rm -f
+	$(FIND) $(PKG_BUILD_DIR) -name \*.o -o -name \*.a | $(XARGS) rm -f
 	rm -f $(PKG_BUILD_DIR)/hostapd/hostapd
 	rm -f $(PKG_BUILD_DIR)/wpa_supplicant/wpa_supplicant
 	rm -f $(PKG_BUILD_DIR)/.config_*

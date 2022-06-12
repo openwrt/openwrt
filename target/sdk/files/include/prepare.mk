@@ -11,7 +11,8 @@ prepare: .git/config
 	@( \
 		printf "Initializing SDK ... "; \
 		git init -q .; \
-		find . -mindepth 1 -maxdepth 1 -not -name feeds | xargs git add; \
+		find * -prune '!' -name 'feeds' | \
+			xargs git add; \
 		git commit -q -m "Initial state"; \
 		echo "ok."; \
 	)

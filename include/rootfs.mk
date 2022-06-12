@@ -47,7 +47,7 @@ TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 
 ifdef CONFIG_CLEAN_IPKG
   define clean_ipkg
-	-find $(1)/usr/lib/opkg/info -type f -and -not -name '*.control' -delete
+	-find $(1)/usr/lib/opkg/info -type f '!' -name '*.control' | $(XARGS) $(RM)
 	-sed -i -ne '/^Require-User: /p' $(1)/usr/lib/opkg/info/*.control
 	awk ' \
 		BEGIN { conffiles = 0; print "Conffiles:" } \
@@ -56,7 +56,7 @@ ifdef CONFIG_CLEAN_IPKG
 		conffiles == 1 { print } \
 	' $(1)/usr/lib/opkg/status >$(1)/usr/lib/opkg/status.new
 	mv $(1)/usr/lib/opkg/status.new $(1)/usr/lib/opkg/status
-	-find $(1)/usr/lib/opkg -empty -delete
+	-find $(1)/usr/lib/opkg -type f -size 0 | $(XARGS) $(RM)
   endef
 endif
 
@@ -97,5 +97,5 @@ define prepare_rootfs
 		$(1)/var/lock/*.lock
 	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
-	$(if $(SOURCE_DATE_EPOCH),find $(1)/ -mindepth 1 -execdir touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +)
+	$(if $(SOURCE_DATE_EPOCH),$(call find_depth,$(1),,1,,-exec touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +,1))
 endef

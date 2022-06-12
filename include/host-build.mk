@@ -206,7 +206,7 @@ ifndef DUMP
 
     ifneq ($(CONFIG_AUTOREMOVE),)
       host-compile:
-		$(FIND) $(HOST_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' | \
+		$$(call find_depth,$(HOST_BUILD_DIR),'!' '(' -type f -name '.*' -size 0 ')',1,1) | \
 			$(XARGS) rm -rf
     endif
   endef
