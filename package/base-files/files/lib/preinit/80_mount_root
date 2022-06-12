@@ -30,6 +30,8 @@ do_mount_root() {
 		# Prevent configuration corruption on a power loss
 		sync
 	}
+	mount_root done
+	sync
 }
 
 [ "$INITRAMFS" = "1" ] || boot_hook_add preinit_main do_mount_root
