@@ -66,6 +66,9 @@ replace_script= $(FIND) $(1) -name $(2) | $(XARGS) chmod u+wx; \
 
 paren_left = (
 paren_right = )
+
+dir_depth=	$(shell i=$(if $(1),$(1),10); if [ "$$i" -eq 0 ]; then printf '*'; else while [ "$$i" -ne 0 ]; do printf '/*'; i=$$$(paren_left)$(paren_left)i - 1$(paren_right)$(paren_right); done; fi)
+
 chars_lower = a b c d e f g h i j k l m n o p q r s t u v w x y z
 chars_upper = A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 
@@ -447,7 +450,7 @@ endef
 # $(2) => Destination directory
 define file_copy
 	for src_dir in $(sort $(foreach d,$(wildcard $(1)),$(dir $(d)))); do \
-		( cd $$src_dir; find -type f -or -type d ) | \
+		( cd $$src_dir; find -type f -o -type d ) | \
 			( cd $(2); while :; do \
 				read FILE; \
 				[ -z "$$FILE" ] && break; \
@@ -459,12 +462,27 @@ define file_copy
 	$(CP) $(1) $(2)
 endef
 
+# POSIX usage of find with -mindepth and -maxdepth
+# $(1) => set of paths to recurse
+# $(2) => conditional statement(s)
+# $(3) => mindepth #
+# $(4) => maxdepth #
+# $(5) => eval expression (-exec)
+# $(6) => if set, do not follow links
+define find_depth
+	( \
+		for path in $(if $(word 2,$(1)),$(wildcard $(1)),$(1)); do \
+			$(FIND) $(if $(6),,-L) $$path '(' '!' -path "$(strip $$path$(call dir_depth,$(4)))" -o -prune ')' $(2) '(' '!' -path "$(if $(3),$(strip $$path$(call dir_depth,$(3))),*)" -o $(if $(5),$(5),-print) ')' ; \
+		done ; \
+	)
+endef
+
 # Calculate sha256sum of any plain file within a given directory
 # $(1) => Input directory
 # $(2) => If set, recurse into subdirectories
 define sha256sums
-	(cd $(1); find . $(if $(2),,-maxdepth 1) -type f -not -name 'sha256sums' -printf "%P\n" | sort | \
-		xargs -r $(MKHASH) -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
+	(cd $(1); find * $(if $(2),,-prune) -type f '!' -name 'sha256sums' | sort | \
+		$(XARGS) $(MKHASH) -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
 endef
 
 # file extension
