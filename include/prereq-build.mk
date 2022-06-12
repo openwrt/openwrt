@@ -8,6 +8,7 @@ include $(INCLUDE_DIR)/prereq.mk
 SHELL:=sh
 PKG_NAME:=Build dependency
 
+MAC_HOST_PATHS:=/opt/local/bin /usr/local/opt
 
 # Required for the toolchain
 $(eval $(call TestHostCommand,working-make, \
@@ -133,12 +134,10 @@ $(eval $(call SetupHostCommand,egrep,Please install GNU 'grep', \
 	gegrep --version 2>&1 | grep GNU, \
 	egrep --version 2>&1 | grep GNU))
 
-$(eval $(call SetupHostCommand,getopt, \
+$(eval $(call FindHostCommand,*getopt, \
 	Please install an extended getopt version that supports --long, \
 	gnugetopt -o t --long test -- --test | grep '^ *--test *--', \
-	getopt -o t --long test -- --test | grep '^ *--test *--', \
-	/usr/local/opt/gnu-getopt/bin/getopt -o t --long test -- --test | grep '^ *--test *--', \
-	/opt/local/bin/getopt -o t --long test -- --test | grep '^ *--test *--'))
+	getopt -o t --long test -- --test | grep '^ *--test *--'))
 
 $(eval $(call SetupHostCommand,realpath,Please install a 'realpath' utility, \
 	grealpath /, \
@@ -149,8 +148,7 @@ $(eval $(call SetupHostCommand,stat,Cannot find a file stat utility, \
 	gstat -c%s $(TOPDIR)/Makefile, \
 	stat -c%s $(TOPDIR)/Makefile))
 
-$(eval $(call SetupHostCommand,unzip,Please install 'unzip', \
-	unzip 2>&1 | grep zipfile, \
+$(eval $(call FindHostCommand,unzip,Please install 'unzip', \
 	unzip))
 
 $(eval $(call SetupHostCommand,bzip2,Please install 'bzip2', \
@@ -159,7 +157,7 @@ $(eval $(call SetupHostCommand,bzip2,Please install 'bzip2', \
 $(eval $(call SetupHostCommand,wget,Please install GNU 'wget', \
 	wget --version | grep GNU))
 
-$(eval $(call SetupHostCommand,install,Please install GNU 'install', \
+$(eval $(call FindHostCommand,*install,Please install GNU 'install', \
 	install --version | grep GNU, \
 	ginstall --version | grep GNU))
 
@@ -201,9 +199,7 @@ $(eval $(call TestHostCommand,python3-distutils, \
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))
 
-$(eval $(call SetupHostCommand,which,Please install 'which', \
-	/usr/bin/which which, \
-	/bin/which which, \
+$(eval $(call FindHostCommand,which,Please install 'which', \
 	which which))
 
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
