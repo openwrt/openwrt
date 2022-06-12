@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
+START=11
+
+# To support LEDs on boards that have drivers loaded after rootfs, let's
+# re-run diag.sh AFTER kmodloader has finished, but before boot is complete.
+# This is useful for userspace LED drivers, LEDs that rely on i2c, etc.
+
+boot() {
+    case $(board_name) in
+    netgear,pgzng1)
+        . /etc/diag.sh
+        set_led_state preinit_regular
+        ;;
+    esac
+}
