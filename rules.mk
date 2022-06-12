@@ -69,6 +69,8 @@ paren_right = )
 
 dir_depth=	$(shell i=$(if $(1),$(1),10); if [ "$$i" -eq 0 ]; then printf '*'; else while [ "$$i" -ne 0 ]; do printf '/*'; i=$$$(paren_left)$(paren_left)i - 1$(paren_right)$(paren_right); done; fi)
 
+find_bin=	find $(if $(3),-L) $(wildcard $(subst :, ,$(2) $(PATH))) -name $(1) -type f '$(paren_left)' -perm -1 -o -perm -10 -o -perm -100 '$(paren_right)' 2>/dev/null ;
+
 chars_lower = a b c d e f g h i j k l m n o p q r s t u v w x y z
 chars_upper = A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 

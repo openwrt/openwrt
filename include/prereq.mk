@@ -27,7 +27,7 @@ define Require
     prereq: prereq-$(1)
 
     prereq-$(1): $(if $(PREREQ_PREV),prereq-$(PREREQ_PREV)) FORCE
-		printf "Checking '$(1)'... "
+		printf "Checking '$(subst *,,$(1))'... "
 		if $(NO_TRACE_MAKE) -f $(firstword $(MAKEFILE_LIST)) check-$(1) >/dev/null 2>/dev/null; then \
 			echo 'ok.'; \
 		elif $(NO_TRACE_MAKE) -f $(firstword $(MAKEFILE_LIST)) check-$(1) >/dev/null 2>/dev/null; then \
@@ -100,6 +100,37 @@ define SetupHostCommand
 				exit 1; \
 			fi; \
 		fi; \
+	done; \
+	exit 1
+  endef
+
+  $$(eval $$(call Require,$(1),$(if $(2),$(2),Missing $(1) command)))
+endef
+
+# 1: canonical name
+# 2: failure message
+# 3+: candidates
+define FindHostCommand
+  define Require/$(1)
+	mkdir -p "$(STAGING_DIR_HOST)/bin"; \
+	for bin in $$$$$$$$($(call find_bin,'$(1)',$(MAC_HOST_PATHS))); do \
+		for cmd in '$(call aescape,$(3))' '$(call aescape,$(4))' \
+		           '$(call aescape,$(5))' '$(call aescape,$(6))'; do \
+			if [ -n "$$$$$$$$cmd" ]; then \
+				cmd="$$$$$$$${bin%/*}/$$$$$$$${cmd#$$$$$$$${cmd%%[! ]*}}"; \
+				bin="$$$$$$$${cmd%% *}"; \
+				if [ -x "$$$$$$$$bin" ] && [ ! -L "$$$$$$$$bin" ] && \
+					eval "$$$$$$$$cmd" >/dev/null 2>/dev/null; then \
+					case "$$$$$$$$(ls -dl -- $(STAGING_DIR_HOST)/bin/$(strip $(subst *,,$(1))))" in \
+						*" -> $$$$$$$$bin"*) \
+							[ -x "$(STAGING_DIR_HOST)/bin/$(strip $(subst *,,$(1)))" ] && exit 0 \
+							;; \
+					esac; \
+					ln -sf "$$$$$$$$bin" "$(STAGING_DIR_HOST)/bin/$(strip $(subst *,,$(1)))"; \
+					exit 1; \
+				fi; \
+			fi; \
+		done; \
 	done; \
 	exit 1
   endef
