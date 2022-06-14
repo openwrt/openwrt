@@ -244,6 +244,9 @@ var.%: FORCE
 type.%: FORCE
 	@+$(NO_TRACE_MAKE) -r $@ OPENWRT_VERBOSE=s
 
+host.%: FORCE
+	@+$(NO_TRACE_MAKE) -r $@ OPENWRT_VERBOSE=s
+
 WARN_PARALLEL_ERROR = $(if $(BUILD_LOG),,$(and $(filter -j,$(MAKEFLAGS)),$(findstring s,$(OPENWRT_VERBOSE))))
 
 ifeq ($(SDK),1)
