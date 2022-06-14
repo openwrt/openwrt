@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar934x_ruckus_zf73xx.dtsi"
+
+/ {
+	model = "Ruckus ZoneFlex 7321[-U]";
+	compatible = "ruckus,zf7321", "qca,ar9342";
+
+	leds {
+		air-green {
+			label = "green:air";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		dir-green {
+			label = "green:dir";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		power_red: power-red {
+			label = "red:power";
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		wlan2g-green {
+			label = "green:wlan2g";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0assoc";
+		};
+
+		wlan2g-yellow {
+			label = "yellow:wlan2g";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan5g-green {
+			label = "green:wlan5g";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0assoc";
+		};
+
+		wlan5g-yellow {
+			label = "yellow:wlan5g";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_board_data_66>;
+};
