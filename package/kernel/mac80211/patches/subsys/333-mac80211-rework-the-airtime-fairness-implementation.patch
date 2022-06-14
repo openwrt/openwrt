@@ -375,7 +375,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* To avoid divisions in the fast path, we keep pre-computed reciprocals for
   * airtime weight calculations. There are two different weights to keep track
   * of: The per-station weight and the sum of weights per phy.
-@@ -1750,6 +1764,7 @@ static inline void init_airtime_info(str
+@@ -1749,6 +1763,7 @@ static inline void init_airtime_info(str
  	air_info->aql_limit_high = air_sched->aql_txq_limit_high;
  	airtime_weight_set(air_info, IEEE80211_DEFAULT_AIRTIME_WEIGHT);
  	INIT_LIST_HEAD(&air_info->list);
@@ -487,7 +487,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	WARN_ON_ONCE(softirq_count() == 0);
  
-@@ -3791,21 +3801,26 @@ begin:
+@@ -3791,20 +3801,35 @@ begin:
  encap_out:
  	IEEE80211_SKB_CB(skb)->control.vif = vif;
  
@@ -498,13 +498,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -
 -		airtime = ieee80211_calc_expected_tx_airtime(hw, vif, txq->sta,
 -							     skb->len, ampdu);
--		if (airtime) {
--			airtime = ieee80211_info_set_tx_time_est(info, airtime);
--			ieee80211_sta_update_pending_airtime(local, tx.sta,
--							     txq->ac,
--							     airtime,
--							     false);
--		}
+-		if (!airtime)
+-			airtime = IEEE80211_TX_TIME_EST_UNIT;
+-
+-		airtime = ieee80211_info_set_tx_time_est(info, airtime);
+-		ieee80211_sta_update_pending_airtime(local, tx.sta, txq->ac,
+-						     airtime, false);
 -	}
 +	if (!vif)
 +		return skb;
@@ -513,8 +512,17 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	airtime = ieee80211_calc_expected_tx_airtime(hw, vif, txq->sta,
 +						     skb->len, ampdu);
 +	if (!airtime)
-+		return skb;
++		airtime = IEEE80211_TX_TIME_EST_UNIT;
 +
++	/*
++	 * Tx queue scheduling always happens in airtime order and queues are
++	 * sorted by virtual time + pending AQL budget.
++	 * If AQL is not supported, pending AQL budget is always zero.
++	 * If airtime fairness is not supported, virtual time won't be directly
++	 * increased by driver tx completion.
++	 * Because of that, we register estimated tx time as airtime if either
++	 * AQL or ATF support is missing.
++	 */
 +	if (!wiphy_ext_feature_isset(local->hw.wiphy, NL80211_EXT_FEATURE_AQL) ||
 +	    !wiphy_ext_feature_isset(local->hw.wiphy,
 +				     NL80211_EXT_FEATURE_AIRTIME_FAIRNESS))
@@ -529,17 +537,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	return skb;
  
-@@ -3816,85 +3831,95 @@ out:
+@@ -3815,85 +3840,92 @@ out:
  }
  EXPORT_SYMBOL(ieee80211_tx_dequeue);
  
-+static void
++static struct ieee80211_txq *
 +airtime_info_next_txq_idx(struct airtime_info *air_info)
 +{
 +	air_info->txq_idx++;
 +	if (air_info->txq_idx >= ARRAY_SIZE(air_info->txq) ||
 +	    !air_info->txq[air_info->txq_idx])
 +		air_info->txq_idx = 0;
++	return air_info->txq[air_info->txq_idx];
 +}
 +
  struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
@@ -587,10 +596,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -
 -	if (!ieee80211_txq_airtime_check(hw, &txqi->txq)) {
 -		first = false;
-+	airtime_info_next_txq_idx(air_info);
++	txq = airtime_info_next_txq_idx(air_info);
 +	txq_idx = air_info->txq_idx;
-+	txq = air_info->txq[txq_idx];
-+	if (!txq || !ieee80211_txq_airtime_check(hw, txq))
++	if (!ieee80211_txq_airtime_check(hw, txq))
  		goto begin;
 +
 +	while (1) {
@@ -601,17 +609,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		if (txq_has_queue(txq))
 +			break;
 +
-+		airtime_info_next_txq_idx(air_info);
-+		txq = air_info->txq[air_info->txq_idx];
++		txq = airtime_info_next_txq_idx(air_info);
 +		if (txq_idx == air_info->txq_idx)
 +			goto begin;
-+	}
-+
-+	if (air_info->v_t_cur > air_sched->v_t) {
-+		if (node == airtime_sched_peek(&air_sched->active_txqs))
-+			airtime_catchup_v_t(air_sched, air_info->v_t_cur, now);
  	}
  
++	if (air_info->v_t_cur > air_sched->v_t)
++		airtime_catchup_v_t(air_sched, air_info->v_t_cur, now);
++
  	air_sched->schedule_pos = node;
  	air_sched->last_schedule_activity = now;
 -	ret = &txqi->txq;
@@ -667,7 +672,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_local *local = hw_to_local(hw);
  	struct txq_info *txqi = to_txq_info(txq);
  	struct airtime_sched_info *air_sched;
-@@ -3902,41 +3927,7 @@ void ieee80211_resort_txq(struct ieee802
+@@ -3901,41 +3933,7 @@ void ieee80211_resort_txq(struct ieee802
  	air_sched = &local->airtime[txq->ac];
  
  	lockdep_assert_held(&air_sched->lock);
@@ -710,7 +715,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  void ieee80211_update_airtime_weight(struct ieee80211_local *local,
-@@ -3985,7 +3976,7 @@ void ieee80211_schedule_txq(struct ieee8
+@@ -3984,7 +3982,7 @@ void ieee80211_schedule_txq(struct ieee8
  	was_active = airtime_is_active(air_info, now);
  	airtime_set_active(air_sched, air_info, now);
  
@@ -719,7 +724,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto out;
  
  	/* If the station has been inactive for a while, catch up its v_t so it
-@@ -3997,7 +3988,7 @@ void ieee80211_schedule_txq(struct ieee8
+@@ -3996,7 +3994,7 @@ void ieee80211_schedule_txq(struct ieee8
  		air_info->v_t = air_sched->v_t;
  
  	ieee80211_update_airtime_weight(local, air_sched, now, !was_active);
@@ -728,28 +733,35 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  out:
  	spin_unlock_bh(&air_sched->lock);
-@@ -4023,19 +4014,10 @@ static void __ieee80211_unschedule_txq(s
- 		ieee80211_update_airtime_weight(local, air_sched, 0, true);
- 	}
+@@ -4017,24 +4015,14 @@ static void __ieee80211_unschedule_txq(s
  
+ 	lockdep_assert_held(&air_sched->lock);
+ 
++	airtime_sched_delete(&air_sched->active_txqs, &air_info->schedule_order);
+ 	if (purge) {
+ 		list_del_init(&air_info->list);
+ 		ieee80211_update_airtime_weight(local, air_sched, 0, true);
+-	}
+-
 -	if (RB_EMPTY_NODE(&txqi->schedule_order))
 -		return;
 -
 -	if (air_sched->schedule_pos == &txqi->schedule_order)
 -		air_sched->schedule_pos = rb_prev(&txqi->schedule_order);
 -
-+	airtime_sched_delete(&air_sched->active_txqs, &air_info->schedule_order);
- 	if (!purge)
+-	if (!purge)
++	} else {
  		airtime_set_active(air_sched, air_info,
  				   ktime_get_coarse_boottime_ns());
 -
 -	rb_erase_cached(&txqi->schedule_order,
 -			&air_sched->active_txqs);
 -	RB_CLEAR_NODE(&txqi->schedule_order);
++	}
  }
  
  void ieee80211_unschedule_txq(struct ieee80211_hw *hw,
-@@ -4055,14 +4037,24 @@ void ieee80211_return_txq(struct ieee802
+@@ -4054,14 +4042,22 @@ void ieee80211_return_txq(struct ieee802
  {
  	struct ieee80211_local *local = hw_to_local(hw);
  	struct txq_info *txqi = to_txq_info(txq);
@@ -768,10 +780,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 -	spin_unlock_bh(&local->airtime[txq->ac].lock);
 +	spin_lock_bh(&air_sched->lock);
-+	if (!ieee80211_txq_airtime_check(hw, &txqi->txq))
-+	    airtime_sched_delete(&air_sched->active_txqs,
-+				 &air_info->schedule_order);
-+	else if (txq_has_queue(txq) || force)
++	if (force || (txq_has_queue(txq) &&
++		      ieee80211_txq_airtime_check(hw, &txqi->txq)))
 +		__ieee80211_insert_txq(local, air_sched, txqi);
 +	else
 +		__ieee80211_unschedule_txq(hw, txq, false);
@@ -779,25 +789,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  EXPORT_SYMBOL(ieee80211_return_txq);
  
-@@ -4101,46 +4093,48 @@ EXPORT_SYMBOL(ieee80211_txq_airtime_chec
- bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
- 				struct ieee80211_txq *txq)
- {
--	struct txq_info *first_txqi = NULL, *txqi = to_txq_info(txq);
-+	struct txq_info *txqi = to_txq_info(txq);
- 	struct ieee80211_local *local = hw_to_local(hw);
- 	struct airtime_sched_info *air_sched;
-+	struct airtime_sched_node *node = NULL;
- 	struct airtime_info *air_info;
--	struct rb_node *node = NULL;
- 	bool ret = false;
-+	u32 aql_slack;
- 	u64 now;
- 
--
- 	if (!ieee80211_txq_airtime_check(hw, txq))
- 		return false;
- 
+@@ -4113,9 +4109,6 @@ bool ieee80211_txq_may_transmit(struct i
  	air_sched = &local->airtime[txq->ac];
  	spin_lock_bh(&air_sched->lock);
  
@@ -806,33 +798,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -
  	now = ktime_get_coarse_boottime_ns();
  
- 	/* Like in ieee80211_next_txq(), make sure the first station in the
- 	 * scheduling order is eligible for transmission to avoid starvation.
- 	 */
--	node = rb_first_cached(&air_sched->active_txqs);
-+	node = airtime_sched_peek(&air_sched->active_txqs);
- 	if (node) {
--		first_txqi = container_of(node, struct txq_info,
--					  schedule_order);
--		air_info = to_airtime_info(&first_txqi->txq);
-+		air_info = container_of(node, struct airtime_info,
-+					schedule_order);
- 
- 		if (air_sched->v_t < air_info->v_t)
- 			airtime_catchup_v_t(air_sched, air_info->v_t, now);
- 	}
- 
  	air_info = to_airtime_info(&txqi->txq);
--	if (air_info->v_t <= air_sched->v_t) {
-+	aql_slack = air_info->aql_limit_low;
-+	aql_slack *= air_info->weight_reciprocal;
-+	aql_slack >>= IEEE80211_RECIPROCAL_SHIFT_STA - IEEE80211_WEIGHT_SHIFT;
-+	/*
-+	 * add extra slack of aql_limit_low in order to avoid queue
-+	 * starvation when bypassing normal scheduling order
-+	 */
-+	if (air_info->v_t <= air_sched->v_t + aql_slack) {
- 		air_sched->last_schedule_activity = now;
+@@ -4124,7 +4117,6 @@ bool ieee80211_txq_may_transmit(struct i
  		ret = true;
  	}
  
@@ -840,7 +807,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spin_unlock_bh(&air_sched->lock);
  	return ret;
  }
-@@ -4151,9 +4145,7 @@ void ieee80211_txq_schedule_start(struct
+@@ -4135,9 +4127,7 @@ void ieee80211_txq_schedule_start(struct
  	struct ieee80211_local *local = hw_to_local(hw);
  	struct airtime_sched_info *air_sched = &local->airtime[ac];
  
