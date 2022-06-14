@@ -313,15 +313,16 @@ SED:=$(STAGING_DIR_HOST)/bin/sed -i -e
 ESED:=$(STAGING_DIR_HOST)/bin/sed -E -i -e
 FLOCK:=$(STAGING_DIR_HOST)/bin/flock
 MKHASH:=$(STAGING_DIR_HOST)/bin/mkhash
-# MKHASH is used in /scripts, so we export it here.
-export MKHASH
+FIND:=$(STAGING_DIR_HOST)/bin/find
+TAR:=$(STAGING_DIR_HOST)/bin/tar
 CP:=cp -fpR
 LN:=ln -sf
 XARGS:=xargs -r
 
+# these are used in scripts/, so we export it here.
+export MKHASH FIND TAR
+
 BASH:=bash
-TAR:=tar
-FIND:=find
 PATCH:=patch
 PYTHON:=python3
 PYTHON_CONFIG:=python3-config

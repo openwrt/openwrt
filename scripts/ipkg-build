@@ -10,9 +10,6 @@
 set -e
 
 version=1.0
-FIND="$(command -v find)"
-FIND="${FIND:-$(command -v gfind)}"
-TAR="${TAR:-$(command -v tar)}"
 
 # try to use fixed source epoch
 if [ -n "$PKG_SOURCE_DATE_EPOCH" ]; then
