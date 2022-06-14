@@ -165,7 +165,8 @@ platform_do_upgrade() {
 	linksys,whw01-v1)
 		platform_do_upgrade_linksys "$1"
 		;;
-	meraki,mr33)
+	meraki,mr33 |\
+	meraki,mr74)
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
