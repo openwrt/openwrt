@@ -52,13 +52,6 @@ sub localmirrors {
 	return @mlist;
 }
 
-sub which($) {
-	my $prog = shift;
-	my $res = `command -v $prog`;
-	$res or return undef;
-	return $res;
-}
-
 sub hash_cmd() {
 	my $len = length($file_hash);
 	my $cmd;

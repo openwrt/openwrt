@@ -7,5 +7,5 @@ case $PATH in
 esac
 
 for ELEMENT in $(echo $PATH | tr ":" "\n"); do
-        PATH=$ELEMENT command -v "$@"
+	find -L $ELEMENT -name "$@" -type f '(' -perm -1 -o -perm -10 -o -perm -100 ')' 2> /dev/null
 done
