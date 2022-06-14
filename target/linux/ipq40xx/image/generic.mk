@@ -704,6 +704,18 @@ define Device/meraki_mr33
 endef
 TARGET_DEVICES += meraki_mr33
 
+define Device/meraki_mr74
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Cisco Meraki
+	DEVICE_MODEL := MR74
+	SOC := qcom-ipq4029
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
+	DEVICE_DTS_CONFIG := config@3
+endef
+TARGET_DEVICES += meraki_mr74
+
 define Device/mobipromo_cm520-79f
 	$(call Device/FitzImage)
 	$(call Device/UbiFit)
