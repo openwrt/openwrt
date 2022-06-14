@@ -539,4 +539,7 @@ var.%: FORCE
 type.%: FORCE
 	@echo '$(call aescape,$(origin $*))'
 
+host.%: FORCE
+	@echo '$(firstword $(shell $(call find_bin,'$*',$(STAGING_DIR_HOST),1)))'
+
 endif #__rules_inc
