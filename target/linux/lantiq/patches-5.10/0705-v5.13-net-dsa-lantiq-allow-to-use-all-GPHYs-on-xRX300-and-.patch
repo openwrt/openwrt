@@ -244,7 +244,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.phylink_mac_config	= gswip_phylink_mac_config,
  	.phylink_mac_link_down	= gswip_phylink_mac_link_down,
  	.phylink_mac_link_up	= gswip_phylink_mac_link_up,
-@@ -2040,7 +2115,7 @@ static int gswip_probe(struct platform_d
+@@ -2042,7 +2117,7 @@ static int gswip_probe(struct platform_d
  	priv->ds->dev = dev;
  	priv->ds->num_ports = priv->hw_info->max_ports;
  	priv->ds->priv = priv;
@@ -253,7 +253,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	priv->dev = dev;
  	version = gswip_switch_r(priv, GSWIP_VERSION);
  
-@@ -2124,10 +2199,19 @@ static int gswip_remove(struct platform_
+@@ -2126,10 +2201,19 @@ static int gswip_remove(struct platform_
  static const struct gswip_hw_info gswip_xrx200 = {
  	.max_ports = 7,
  	.cpu_port = 6,
