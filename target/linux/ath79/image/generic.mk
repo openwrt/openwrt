@@ -2389,6 +2389,13 @@ define Device/ruckus_zf73xx_common
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
 endef
 
+define Device/ruckus_zf7321
+  $(Device/ruckus_zf73xx_common)
+  SOC := ar9342
+  DEVICE_MODEL := ZoneFlex 7321[-U]
+endef
+TARGET_DEVICES += ruckus_zf7321
+
 define Device/ruckus_zf7372
   $(Device/ruckus_zf73xx_common)
   SOC := ar9344
