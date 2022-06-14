@@ -68,7 +68,11 @@ $(eval $(call TestHostCommand,ncurses, \
 	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
 		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses))
 
-$(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
+$(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 2.10, \
+	git --version | grep '2.[1-9][0-9].', \
+	git --version | grep '3.[0-9][0-9].'))
+
+$(eval $(call TestHostCommand,git-submodule,git-submodule is missing --recursive support, \
 	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule, \
 	git submodule --help | grep -- --recursive))
 
