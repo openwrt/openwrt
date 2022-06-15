@@ -14,18 +14,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/Makefile
 +++ b/Makefile
-@@ -752,11 +752,11 @@ KBUILD_CFLAGS	+= $(call cc-disable-warni
- KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
- 
- ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE
--KBUILD_CFLAGS += -O2
-+KBUILD_CFLAGS += -O2 $(EXTRA_OPTIMIZATION)
+@@ -756,7 +756,7 @@ KBUILD_CFLAGS += -O2
  else ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3
--KBUILD_CFLAGS += -O3
-+KBUILD_CFLAGS += -O3 $(EXTRA_OPTIMIZATION)
+ KBUILD_CFLAGS += -O3
  else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 -KBUILD_CFLAGS += -Os
-+KBUILD_CFLAGS += -Os -fno-reorder-blocks -fno-tree-ch $(EXTRA_OPTIMIZATION)
++KBUILD_CFLAGS += -Os -fno-reorder-blocks -fno-tree-ch
  endif
  
  # Tell gcc to never replace conditional load with a non-conditional one
