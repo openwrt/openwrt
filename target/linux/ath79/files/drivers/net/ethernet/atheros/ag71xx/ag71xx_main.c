@@ -1278,7 +1278,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag, bool flush)
 		if (!skb)
 			continue;
 
-		dev_kfree_skb_any(skb);
+		napi_consume_skb(skb, !flush);
 		ring->buf[i].skb = NULL;
 
 		bytes_compl += ring->buf[i].len;
@@ -1352,7 +1352,11 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += pktlen;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,12,0)
 		skb = build_skb(ring->buf[i].rx_buf, ag71xx_buffer_size(ag));
+#else
+		skb = napi_build_skb(ring->buf[i].rx_buf, ag71xx_buffer_size(ag));
+#endif
 		if (!skb) {
 			skb_free_frag(ring->buf[i].rx_buf);
 			goto next;
