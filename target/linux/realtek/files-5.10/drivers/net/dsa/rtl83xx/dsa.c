@@ -1251,6 +1251,7 @@ static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port,
 	if (e->eee_enabled && !priv->eee_enabled) {
 		pr_info("Globally enabling EEE\n");
 		priv->r->init_eee(priv, true);
+		priv->eee_enabled = e->eee_enabled;
 	}
 
 	priv->r->port_eee_set(priv, port, e->eee_enabled);
@@ -1267,13 +1268,9 @@ static int rtl83xx_get_mac_eee(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	e->supported = SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full;
-
 	priv->r->eee_port_ability(priv, e, port);
 
 	e->eee_enabled = priv->ports[port].eee_enabled;
-
-	e->eee_active = !!(e->advertised & e->lp_advertised);
 
 	return 0;
 }

@@ -915,7 +915,9 @@ void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
 	if (port >= 26)
 		return;
 
-	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+	pr_info("In %s: setting port %d to %d\n", __func__, port, enable);
+	priv->ports[port].eee_enabled = enable;
+
 	v = enable ? 0x3f : 0x0;
 
 	// Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit
@@ -924,8 +926,6 @@ void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
 	// Set TX/RX EEE state
 	v = enable ? 0x3 : 0x0;
 	sw_w32(v, RTL930X_EEE_CTRL(port));
-
-	priv->ports[port].eee_enabled = enable;
 }
 
 /*
@@ -933,7 +933,7 @@ void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
  */
 int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
 {
-	u32 link, a;
+	u32 link, a, speed, v;
 
 	if (port >= 26)
 		return -ENOTSUPP;
@@ -944,31 +944,36 @@ int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 	if (!(link & BIT(port)))
 		return 0;
 
-	pr_info("Setting advertised\n");
-	if (sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(10))
-		e->advertised |= ADVERTISED_100baseT_Full;
-
-	if (sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(12))
-		e->advertised |= ADVERTISED_1000baseT_Full;
-
-	if (priv->ports[port].is2G5 && sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(13)) {
-		pr_info("ADVERTISING 2.5G EEE\n");
-		e->advertised |= ADVERTISED_2500baseX_Full;
-	}
-
-	if (priv->ports[port].is10G && sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(15))
-		e->advertised |= ADVERTISED_10000baseT_Full;
-
 	a = sw_r32(RTL930X_MAC_EEE_ABLTY);
 	a = sw_r32(RTL930X_MAC_EEE_ABLTY);
-	pr_info("Link partner: %08x\n", a);
+	pr_info("Link partner negotiated result: %08x\n", a);
 	if (a & BIT(port)) {
-		e->lp_advertised = ADVERTISED_100baseT_Full;
-		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-		if (priv->ports[port].is2G5)
-			e->lp_advertised |= ADVERTISED_2500baseX_Full;
-		if (priv->ports[port].is10G)
-			e->lp_advertised |= ADVERTISED_10000baseT_Full;
+		speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
+		speed >>= (port % 8) << 2;
+		switch (speed & 0xf) {
+		case 1:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL0) & 0xffff;
+			break;
+		case 2:
+		case 7:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL1) & 0xffff;
+			break;
+		case 4:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL1) >> 16;
+			break;
+		case 5:
+		case 8:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL2) & 0xffff;
+			break;
+		case 6:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL2) >> 16;
+			break;
+		default:
+			v = 0;
+		}
+		e->tx_lpi_timer = v;
+		if (v)
+			e->tx_lpi_enabled = true;
 	}
 
 	// Read 2x to clear latched state
@@ -981,18 +986,9 @@ int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 
 static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
-	int i;
-
 	pr_info("Setting up EEE, state: %d\n", enable);
-
-	// Setup EEE on all ports
-	for (i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
-			rtl930x_port_eee_set(priv, i, enable);
-	}
-
-	priv->eee_enabled = enable;
 }
+
 #define HASH_PICK(val, lsb, len)   ((val & (((1 << len) - 1) << lsb)) >> lsb)
 
 static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
@@ -2348,7 +2344,7 @@ void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0x3, mode, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
 	else
-		sw_w32_mask(0x3 << 14, mode << 14 ,RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+		sw_w32_mask(0x3 << 14, mode << 14, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
 void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)

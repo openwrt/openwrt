@@ -628,30 +628,34 @@ static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, boo
 
 
 /*
- * Get EEE own capabilities and negotiation result
+ * Get EEE own capabilities and negotiation result for MAC
  */
 static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
 				    struct ethtool_eee *e, int port)
 {
-	u64 link;
+	u32 v, speed;
+	bool lp_active;
 
 	if (port >= 24)
 		return 0;
 
-	link = rtl839x_get_port_reg_le(RTL838X_MAC_LINK_STS);
-	if (!(link & BIT(port)))
-		return 0;
+	v = sw_r32(RTL838X_MAC_EEE_ABLTY); // The EEE negotiation result
+	lp_active = !!(v & BIT(port));
+	pr_debug("%s EEE active according to MAC: %d\n", __func__, lp_active);
 
-	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(9))
-		e->advertised |= ADVERTISED_100baseT_Full;
-
-	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(10))
-		e->advertised |= ADVERTISED_1000baseT_Full;
-
-	if (sw_r32(RTL838X_MAC_EEE_ABLTY) & BIT(port)) {
-		e->lp_advertised = ADVERTISED_100baseT_Full;
-		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-		return 1;
+	v = sw_r32(RTL838X_EEE_EEEP_PORT_TX_STS);
+	v = sw_r32(RTL838X_EEE_EEEP_PORT_TX_STS); // Latched: read 2x
+	if (v & BIT(port)) {
+		speed = sw_r32(RTL838X_MAC_LINK_SPD_STS(port));
+		speed >>= (port % 16) << 1;
+		speed &= 0x3;
+		if (speed == 0x2) // 1G
+			v = sw_r32(RTL838X_EEE_TX_SEL_CTRL1) & 0xffff;
+		else // 100M and lower
+			v = sw_r32(RTL838X_EEE_TX_SEL_CTRL0) >> 16;
+		e->tx_lpi_timer = v;
+		if (v)
+			e->tx_lpi_enabled = true;
 	}
 
 	return 0;
@@ -659,21 +663,13 @@ static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
 
 static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
-	int i;
-
 	pr_info("Setting up EEE, state: %d\n", enable);
-	sw_w32_mask(0x4, 0, RTL838X_SMI_GLB_CTRL);
+	// To enable clear SMI_DISEEE_ALLPORT
+	sw_w32_mask(BIT(2), enable ? 0 : BIT(2), RTL838X_SMI_GLB_CTRL);
 
 	/* Set timers for EEE */
 	sw_w32(0x5001411, RTL838X_EEE_TX_TIMER_GIGA_CTRL);
 	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
-
-	// Enable EEE MAC support on ports
-	for (i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
-			rtl838x_port_eee_set(priv, i, enable);
-	}
-	priv->eee_enabled = enable;
 }
 
 static void rtl838x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int index)
