@@ -576,6 +576,110 @@ void rtl931x_traffic_disable(int source, int dest)
 	rtl_table_release(r);
 }
 
+/*
+ * Enables or disables the EEE/EEEP capability of a port
+ */
+void rtl931x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+{
+	u32 v;
+
+	// We do not support the SFP+ ports where the internal PHY is used
+	if (priv->ports[port].phy_is_integrated)
+		return;
+
+	pr_info("In %s: setting port %d to %d\n", __func__, port, enable);
+	v = enable ? 0x3f : 0x0;
+
+	// Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit
+	sw_w32_mask(0, v << 18, rtl931x_mac_force_mode_ctrl(port));
+
+	pr_info("%s RTL9310_MAC_FORCE_MODE_CTRL for port %d is 0x%08x\n",
+		__func__, port, sw_r32(rtl931x_mac_force_mode_ctrl(port)));
+
+	v = enable ? BIT(port % 32) : 0;
+	sw_w32_mask(BIT(port % 32), v, RTL931X_EEE_PORT_TX_EN + 4 * (port >> 5));
+	sw_w32_mask(BIT(port % 32), v, RTL931X_EEE_PORT_RX_EN + 4 * (port >> 5));
+
+	priv->ports[port].eee_enabled = enable;
+}
+
+/*
+ * Get EEE own capabilities and negotiation result
+ */
+int rtl931x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
+{
+	u64 link, a, speed;
+	u32 v;
+
+	// We do not support the SFP+ ports where the internal PHY is used
+	if (priv->ports[port].phy_is_integrated)
+		return -ENOTSUPP;
+
+	pr_info("In %s, port %d\n", __func__, port);
+	link = rtl839x_get_port_reg_le(RTL931X_MAC_LINK_STS);
+	link = rtl839x_get_port_reg_le(RTL931X_MAC_LINK_STS); // Read twice because of latching
+	if (!(link & BIT_ULL(port)))
+		return 0;
+
+	a = rtl839x_get_port_reg_le(RTL931X_MAC_EEE_ABLTY);
+	a = rtl839x_get_port_reg_le(RTL931X_MAC_EEE_ABLTY);
+	pr_info("Link partner: %016llx\n", a);
+	if (a & BIT_ULL(port)) {
+		speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
+		speed >>= (port % 8) << 2;
+		switch (speed & 0xf) {
+		case 1:
+			v = sw_r32(RTL931X_EEE_TX_MINIFG_CTRL0) & 0xffff;
+			break;
+		case 2:
+		case 7:
+			v = sw_r32(RTL931X_EEE_TX_MINIFG_CTRL1) & 0xffff;
+			break;
+		case 4:
+			v = sw_r32(RTL931X_EEE_TX_MINIFG_CTRL1) >> 16;
+			break;
+		case 5:
+		case 8:
+			v = sw_r32(RTL931X_EEE_TX_MINIFG_CTRL2) & 0xffff;
+			break;
+		case 6:
+			v = sw_r32(RTL931X_EEE_TX_MINIFG_CTRL2) >> 16;
+			break;
+		default:
+			v = 0;
+		}
+		e->tx_lpi_timer = v;
+		if (v)
+			e->tx_lpi_enabled = true;
+	}
+
+	// Read 2x to clear latched state
+	a = rtl839x_get_port_reg_le(RTL931X_EEE_PORT_TX_STS);
+	a = rtl839x_get_port_reg_le(RTL931X_EEE_PORT_TX_STS);
+	pr_info("%s RTL931X_EEE_PORT_TX_STS: %016llx\n", __func__, a);
+
+	a = rtl839x_get_port_reg_le(RTL931X_EEE_PORT_RX_STS);
+	a = rtl839x_get_port_reg_le(RTL931X_EEE_PORT_RX_STS);
+	pr_info("%s RTL931X_EEE_PORT_RX_STS: %016llx\n", __func__, a);
+
+	return 0;
+}
+
+static void rtl931x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+{
+	int i;
+
+	pr_info("Setting up EEE, state: %d\n", enable);
+
+	// Setup EEE on all ports
+	for (i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy)
+			rtl931x_port_eee_set(priv, i, enable);
+	}
+
+	priv->eee_enabled = enable;
+}
+
 static u64 rtl931x_l2_hash_seed(u64 mac, u32 vid)
 {
 	u64 v = vid;
@@ -1790,6 +1894,9 @@ const struct rtl838x_reg rtl931x_reg = {
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
 	.set_vlan_egr_filter = rtl931x_set_egr_filter,
 	.set_distribution_algorithm = rtl931x_set_distribution_algorithm,
+	.init_eee = rtl931x_init_eee,
+	.port_eee_set = rtl931x_port_eee_set,
+	.eee_port_ability = rtl931x_eee_port_ability,
 	.l2_hash_seed = rtl931x_l2_hash_seed,
 	.l2_hash_key = rtl931x_l2_hash_key,
 	.read_mcast_pmask = rtl931x_read_mcast_pmask,
