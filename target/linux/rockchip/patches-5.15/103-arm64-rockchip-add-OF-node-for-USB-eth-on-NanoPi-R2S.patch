@@ -10,19 +10,15 @@ register to match the blink behavior of the other port on the device.
 Signed-off-by: David Bauer <mail@david-bauer.net>
 ---
  arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts | 7 +++++++
- 1 file changed, 7 insertions(+)
+ 1 file changed, 1 insertions(+)
 
 --- a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
-@@ -403,4 +403,11 @@
- &usbdrd_dwc3 {
- 	dr_mode = "host";
- 	status = "okay";
-+
-+	usb-eth@2 {
-+		compatible = "realtek,rtl8153";
-+		reg = <2>;
-+
+@@ -404,6 +404,7 @@
+ 	rtl8153: device@2 {
+ 		compatible = "usbbda,8153";
+ 		reg = <2>;
 +		realtek,led-data = <0x87>;
-+	};
+ 	};
  };
+ 
