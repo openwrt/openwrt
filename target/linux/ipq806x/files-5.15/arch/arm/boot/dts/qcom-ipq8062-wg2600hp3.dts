@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "qcom-ipq8062.dtsi"
+#include "qcom-ipq8062-smb208.dtsi"
 #include <dt-bindings/input/input.h>
 
 /delete-node/ &nand_pins;
@@ -132,6 +132,15 @@
 			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
+
+/* nand_pins are used for leds_pins, empty the node
+ * from ipq8064.dtsi
+ */
+&nand_pins {
+	/delete-property/ disable;
+	/delete-property/ pullups;
+	/delete-property/ hold;
 };
 
 &qcom_pinmux {

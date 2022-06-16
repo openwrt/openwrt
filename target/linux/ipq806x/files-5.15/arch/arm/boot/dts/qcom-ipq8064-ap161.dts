@@ -25,7 +25,7 @@
 };
 
 &qcom_pinmux {
-	rgmii2_pins: rgmii2_pins {
+	rgmii2_pins: rgmii2-pins {
 		mux {
 			pins = "gpio27", "gpio28", "gpio29",
 			       "gpio30", "gpio31", "gpio32",
@@ -65,9 +65,6 @@
 
 &nand {
 	status = "okay";
-
-	pinctrl-0 = <&nand_pins>;
-	pinctrl-names = "default";
 
 	nand@0 {
 		reg = <0>;

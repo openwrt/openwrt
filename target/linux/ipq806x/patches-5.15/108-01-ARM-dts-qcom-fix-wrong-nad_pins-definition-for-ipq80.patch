@@ -1,0 +1,29 @@
+From 6c94e0184e56f9e9f1f5d5f54b20758433e498d2 Mon Sep 17 00:00:00 2001
+From: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+Date: Wed, 15 Jun 2022 16:47:09 +0200
+Subject: [PATCH 1/2] ARM: dts: qcom: fix wrong nad_pins definition for ipq806x
+
+Fix wrong nand_pings definition for bias-disable pins.
+
+Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+---
+ arch/arm/boot/dts/qcom-ipq8064.dtsi | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -559,12 +559,9 @@
+ 			};
+ 
+ 			nand_pins: nand_pins {
+-				mux {
++				disable {
+ 					pins = "gpio34", "gpio35", "gpio36",
+-					       "gpio37", "gpio38", "gpio39",
+-					       "gpio40", "gpio41", "gpio42",
+-					       "gpio43", "gpio44", "gpio45",
+-					       "gpio46", "gpio47";
++					       "gpio37", "gpio38";
+ 					function = "nand";
+ 					drive-strength = <10>;
+ 					bias-disable;

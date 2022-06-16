@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "qcom-ipq8065.dtsi"
+#include "qcom-ipq8065-smb208.dtsi"
 #include <dt-bindings/input/input.h>
 
 / {
@@ -82,7 +82,7 @@
 		};
 	};
 
-	rgmii2_pins: rgmii2_pins {
+	rgmii2_pins: rgmii2-pins {
 		mux {
 			pins = "gpio27", "gpio28", "gpio29", "gpio30", "gpio31",
 				"gpio51", "gpio52", "gpio59", "gpio60", "gpio61", "gpio62";
@@ -129,9 +129,6 @@
 
 &nand {
 	status = "okay";
-
-	pinctrl-0 = <&nand_pins>;
-	pinctrl-names = "default";
 
 	nand@0 {
 		reg = <0>;
