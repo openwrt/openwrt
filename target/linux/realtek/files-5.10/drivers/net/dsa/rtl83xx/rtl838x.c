@@ -1905,26 +1905,26 @@ timeout:
 int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 {
 	u32 v;
+	u32 park_page;
 
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(10000))
-		goto timeout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+	reg = mdiobus_c45_regad(reg);
+	pr_debug("%s port %d, addr %d, reg %d\n", __func__, port, addr, reg);
+	sw_w32(port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
 	v = addr << 16 | reg;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_3);
 
-	/* mmd-access | read | cmd-start */
-	v = 1 << 1 | 0 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
+	/* mmd-access | read: BIT(2) not set | cmd-start */
+	v = BIT(1) | BIT(0);
+	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(10000))
 		goto timeout;
+
+	sw_w32(park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
 
@@ -1942,29 +1942,31 @@ timeout:
 int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 {
 	u32 v;
+	u32 park_page;
 
 	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
 	val &= 0xffff;
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(10000))
-		goto timeout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
+	reg = mdiobus_c45_regad(reg);
 	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
 	sw_w32_mask(0x1f << 16, addr << 16, RTL838X_SMI_ACCESS_PHY_CTRL_3);
 	sw_w32_mask(0xffff, reg, RTL838X_SMI_ACCESS_PHY_CTRL_3);
+
+	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
+
 	/* mmd-access | write | cmd-start */
-	v = 1 << 1 | 1 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	v = BIT(1) | BIT(2) | BIT(0);
+	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(10000))
 		goto timeout;
 
+	sw_w32(park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+
 	mutex_unlock(&smi_lock);
+
 	return 0;
 
 timeout:
