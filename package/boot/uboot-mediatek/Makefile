@@ -68,7 +68,7 @@ endef
 define U-Boot/mt7622_ubnt_unifi-6-lr
   NAME:=Ubiquiti UniFi 6 LR
   UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr
-  BUILD_DEVICES:=ubnt_unifi-6-lr-ubootmod
+  BUILD_DEVICES:=ubnt_unifi-6-lr-v1-ubootmod ubnt_unifi-6-lr-v2-ubootmod
   BUILD_SUBTARGET:=mt7622
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=nor
