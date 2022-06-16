@@ -1843,6 +1843,8 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
+	sw_w32(park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & RTL838X_SMI_ACCESS_PHY_CTRL_2_DATA;
 
 	mutex_unlock(&smi_lock);
@@ -1888,6 +1890,8 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
+	sw_w32(park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+
 	mutex_unlock(&smi_lock);
 	return 0;
 
@@ -1901,6 +1905,7 @@ timeout:
  */
 int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 {
+	u32 park_page;
 	u32 v;
 
 	mutex_lock(&smi_lock);
@@ -1920,12 +1925,15 @@ int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 	       FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_MMD_REGAD, reg),
 	       RTL838X_SMI_ACCESS_PHY_CTRL_3);
 
+	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & RTL838X_SMI_ACCESS_PHY_CTRL_1_PARK_PAGE;
 	v = RTL838X_SMI_ACCESS_PHY_CTRL_1_TYPE |
 	    RTL838X_SMI_ACCESS_PHY_CTRL_1_CMD;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
+
+	sw_w32(park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & RTL838X_SMI_ACCESS_PHY_CTRL_2_DATA;
 
@@ -1942,6 +1950,7 @@ timeout:
  */
 int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 {
+	u32 park_page;
 	u32 v;
 
 	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
@@ -1966,13 +1975,16 @@ int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	       FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_MMD_REGAD, reg),
 	       RTL838X_SMI_ACCESS_PHY_CTRL_3);
 
+	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & RTL838X_SMI_ACCESS_PHY_CTRL_1_PARK_PAGE;
 	v = RTL838X_SMI_ACCESS_PHY_CTRL_1_RWOP |
 	    RTL838X_SMI_ACCESS_PHY_CTRL_1_TYPE |
 	    RTL838X_SMI_ACCESS_PHY_CTRL_1_CMD;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
+
+	sw_w32(park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	mutex_unlock(&smi_lock);
 	return 0;
