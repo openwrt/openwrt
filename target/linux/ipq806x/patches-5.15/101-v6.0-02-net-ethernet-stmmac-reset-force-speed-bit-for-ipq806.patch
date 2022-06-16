@@ -1,0 +1,110 @@
+From 8bca458990dd8c6d001b2fb52063aa18e8ca7444 Mon Sep 17 00:00:00 2001
+From: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+Date: Tue, 14 Jun 2022 13:22:28 +0200
+Subject: [PATCH 2/2] net: ethernet: stmmac: reset force speed bit for ipq806x
+
+Some bootloader may set the force speed regs even if the actual
+interface should use autonegotiation between PCS and PHY.
+This cause the complete malfuction of the interface.
+
+To fix this correctly reset the force speed regs if a fixed-link is not
+defined in the DTS. With a fixed-link node correctly configure the
+forced speed regs to handle any misconfiguration by the bootloader.
+
+Reported-by: Mark Mentovai <mark@moxienet.com>
+Co-developed-by: Mark Mentovai <mark@moxienet.com>
+Signed-off-by: Mark Mentovai <mark@moxienet.com>
+Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20220614112228.1998-2-ansuelsmth@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ .../ethernet/stmicro/stmmac/dwmac-ipq806x.c   | 64 +++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.c
+@@ -66,6 +66,17 @@
+ #define NSS_COMMON_CLK_DIV_SGMII_100		4
+ #define NSS_COMMON_CLK_DIV_SGMII_10		49
+ 
++#define QSGMII_PCS_ALL_CH_CTL			0x80
++#define QSGMII_PCS_CH_SPEED_FORCE		BIT(1)
++#define QSGMII_PCS_CH_SPEED_10			0x0
++#define QSGMII_PCS_CH_SPEED_100			BIT(2)
++#define QSGMII_PCS_CH_SPEED_1000		BIT(3)
++#define QSGMII_PCS_CH_SPEED_MASK		(QSGMII_PCS_CH_SPEED_FORCE | \
++						 QSGMII_PCS_CH_SPEED_10 | \
++						 QSGMII_PCS_CH_SPEED_100 | \
++						 QSGMII_PCS_CH_SPEED_1000)
++#define QSGMII_PCS_CH_SPEED_SHIFT(x)		((x) * 4)
++
+ #define QSGMII_PCS_CAL_LCKDT_CTL		0x120
+ #define QSGMII_PCS_CAL_LCKDT_CTL_RST		BIT(19)
+ 
+@@ -253,6 +264,55 @@ static void ipq806x_gmac_fix_mac_speed(v
+ 	ipq806x_gmac_set_speed(gmac, speed);
+ }
+ 
++static int
++ipq806x_gmac_configure_qsgmii_pcs_speed(struct ipq806x_gmac *gmac)
++{
++	struct platform_device *pdev = gmac->pdev;
++	struct device *dev = &pdev->dev;
++	struct device_node *dn;
++	int link_speed;
++	int val = 0;
++	int ret;
++
++	/* Some bootloader may apply wrong configuration and cause
++	 * not functioning port. If fixed link is not set,
++	 * reset the force speed bit.
++	 */
++	if (!of_phy_is_fixed_link(pdev->dev.of_node))
++		goto write;
++
++	dn = of_get_child_by_name(pdev->dev.of_node, "fixed-link");
++	ret = of_property_read_u32(dn, "speed", &link_speed);
++	of_node_put(dn);
++	if (ret) {
++		dev_err(dev, "found fixed-link node with no speed");
++		return ret;
++	}
++
++	val = QSGMII_PCS_CH_SPEED_FORCE;
++
++	switch (link_speed) {
++	case SPEED_1000:
++		val |= QSGMII_PCS_CH_SPEED_1000;
++		break;
++	case SPEED_100:
++		val |= QSGMII_PCS_CH_SPEED_100;
++		break;
++	case SPEED_10:
++		val |= QSGMII_PCS_CH_SPEED_10;
++		break;
++	}
++
++write:
++	regmap_update_bits(gmac->qsgmii_csr, QSGMII_PCS_ALL_CH_CTL,
++			   QSGMII_PCS_CH_SPEED_MASK <<
++			   QSGMII_PCS_CH_SPEED_SHIFT(gmac->id),
++			   val <<
++			   QSGMII_PCS_CH_SPEED_SHIFT(gmac->id));
++
++	return 0;
++}
++
+ static const struct soc_device_attribute ipq806x_gmac_soc_v1[] = {
+ 	{
+ 		.revision = "1.*",
+@@ -400,6 +460,10 @@ static int ipq806x_gmac_probe(struct pla
+ 		err = ipq806x_gmac_configure_qsgmii_params(gmac);
+ 		if (err)
+ 			goto err_remove_config_dt;
++
++		err = ipq806x_gmac_configure_qsgmii_pcs_speed(gmac);
++		if (err)
++			goto err_remove_config_dt;
+ 	}
+ 
+ 	plat_dat->has_gmac = true;
