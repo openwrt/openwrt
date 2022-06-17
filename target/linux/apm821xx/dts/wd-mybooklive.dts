@@ -116,7 +116,7 @@
 		poll-interval = <60>;	/* 3 * 20 = 60ms */
 		autorepeat;
 
-		reset-button {
+		button-restart {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
 			gpios = <&GPIO2 2 GPIO_ACTIVE_LOW>;
