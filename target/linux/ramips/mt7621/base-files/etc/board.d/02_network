@@ -76,7 +76,8 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
 	linksys,re6500|\
-	netgear,wac104)
+	netgear,wac104|\
+	zyxel,lte3301-plus)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	mikrotik,routerboard-750gr3)

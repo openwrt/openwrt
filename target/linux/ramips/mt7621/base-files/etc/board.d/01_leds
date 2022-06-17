@@ -168,6 +168,9 @@ zbtlink,zbt-wg1608-16m)
 	ucidef_set_led_netdev "lan4" "LAN4" "green:lan-4" "lan4"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
+zyxel,lte3301-plus)
+	ucidef_set_led_netdev "internet" "internet" "white:internet" "wwan0"
+	;;
 esac
 
 board_config_flush

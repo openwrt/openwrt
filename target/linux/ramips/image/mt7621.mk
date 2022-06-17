@@ -2259,6 +2259,25 @@ define Device/zio_freezio
 endef
 TARGET_DEVICES += zio_freezio
 
+define Device/zyxel_lte3301-plus
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := LTE3301-PLUS
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
+	uboot-envtools kmod-usb-ledtrig-usbport kmod-usb-net-qmi-wwan \
+	kmod-usb-serial-option uqmi
+  KERNEL := $(KERNEL_DTB) | uImage lzma | \
+	zytrx-header $$(DEVICE_MODEL) $$(VERSION_DIST)-$$(REVISION)
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma | \
+	zytrx-header $$(DEVICE_MODEL) 9.99(ABQU.1)$$(VERSION_DIST)-recovery
+  KERNEL_INITRAMFS_SUFFIX := -recovery.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zyxel_lte3301-plus
+
 define Device/zyxel_nr7101
   $(Device/dsa-migration)
   BLOCKSIZE := 128k
