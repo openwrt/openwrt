@@ -68,6 +68,9 @@ xiaomi,mi-router-ac2100|\
 xiaomi,redmi-router-ac2100)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
 	;;
+zyxel,lte3301-plus)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x80000"
+	;;
 zyxel,nr7101)
 	idx="$(find_mtd_index Config)"
 	[ -n "$idx" ] && \
