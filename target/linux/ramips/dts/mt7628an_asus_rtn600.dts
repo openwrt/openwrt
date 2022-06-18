@@ -52,14 +52,6 @@
 	};
 };
 
-&gpio {
-	gpio_modem_reset {
-		gpio-hog;
-		gpios = <45 GPIO_ACTIVE_HIGH>;
-		output-high;
-		line-name = "modem-reset";
-	};
-};
 
 &state_default {
 	gpio {
