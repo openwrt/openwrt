@@ -12,26 +12,14 @@ Fix this by reordering multiplications/shifts and by reducing unnecessary
 intermediate precision (which was lost in a later stage anyway).
 
 The new shift value limits the maximum weight to 4096, which should be more
-than enough. Any values bigger than that will be rejected.
+than enough. Any values bigger than that will be clamped to the upper limit.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
---- a/net/mac80211/cfg.c
-+++ b/net/mac80211/cfg.c
-@@ -1602,6 +1602,9 @@ static int sta_apply_parameters(struct i
- 	mask = params->sta_flags_mask;
- 	set = params->sta_flags_set;
- 
-+	if (params->airtime_weight > BIT(IEEE80211_RECIPROCAL_SHIFT_STA))
-+		return -EINVAL;
-+
- 	if (ieee80211_vif_is_mesh(&sdata->vif)) {
- 		/*
- 		 * In mesh mode, ASSOCIATED isn't part of the nl80211
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1666,50 +1666,33 @@ static inline struct airtime_info *to_ai
+@@ -1666,50 +1666,34 @@ static inline struct airtime_info *to_ai
  /* To avoid divisions in the fast path, we keep pre-computed reciprocals for
   * airtime weight calculations. There are two different weights to keep track
   * of: The per-station weight and the sum of weights per phy.
@@ -59,6 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -static inline void airtime_weight_set(struct airtime_info *air_info, u16 weight)
 +static inline void airtime_weight_set(struct airtime_info *air_info, u32 weight)
  {
++	weight = min_t(u32, weight, BIT(IEEE80211_RECIPROCAL_SHIFT_STA));
  	if (air_info->weight == weight)
  		return;
  
