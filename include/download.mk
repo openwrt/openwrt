@@ -64,7 +64,7 @@ gen_sha256sum = $(shell $(MKHASH) sha256 $(DL_DIR)/$(1))
 # Used in Build/CoreTargets and HostBuild/Core as an integrity check for
 # downloaded files.  It will add a FORCE rule if the sha256 hash does not
 # match, so that the download can be more thoroughly handled by download.pl.
-define check_download_integrity
+define Download/Check
   expected_hash:=$(strip $(if $(filter-out x,$(HASH)),$(HASH),$(MIRROR_HASH)))
   $$(if $$(and $(FILE),$$(wildcard $(DL_DIR)/$(FILE)), \
 	       $$(filter undefined,$$(flavor DownloadChecked/$(FILE)))), \

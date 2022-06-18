@@ -181,8 +181,6 @@ ifndef DUMP
     clean-build: host-clean-build
   endif
 
-  $(call check_download_integrity)
-
   $(_host_target)host-prepare: $(HOST_STAMP_PREPARED)
   $(_host_target)host-configure: $(HOST_STAMP_CONFIGURED)
   $(_host_target)host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED)
@@ -202,9 +200,14 @@ ifndef DUMP
 			$(XARGS) rm -rf
     endif
   endef
+
+  define HostBuild/Download
+  $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
+  $(call Download/Check)
+  endef
 endif
 
 define HostBuild
+  $(HostBuild/Download)
   $(HostBuild/Core)
-  $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
 endef
