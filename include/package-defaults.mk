@@ -59,11 +59,13 @@ define Package/Default
   FILE_MODES:=$(PKG_FILE_MODES)
 endef
 
+PKG_SRC_DIR ?= src
+
 Build/Patch:=$(Build/Patch/Default)
 ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
 	$(PKG_UNPACK)
-	[ ! -d ./src/ ] || $(CP) ./src/. $(PKG_BUILD_DIR)
+	[ ! -d ./$(PKG_SRC_DIR)/ ] || $(CP) ./$(PKG_SRC_DIR)/. $(PKG_BUILD_DIR)
 	$(Build/Patch)
   endef
 endif
