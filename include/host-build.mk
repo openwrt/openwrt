@@ -33,11 +33,13 @@ include $(INCLUDE_DIR)/autotools.mk
 
 _host_target:=$(if $(HOST_QUILT),,.)
 
+HOST_SRC_DIR ?= src
+
 Host/Patch:=$(Host/Patch/Default)
 ifneq ($(strip $(HOST_UNPACK)),)
   define Host/Prepare/Default
 	$(HOST_UNPACK)
-	[ ! -d ./src/ ] || $(CP) ./src/* $(HOST_BUILD_DIR)
+	[ ! -d ./$(HOST_SRC_DIR)/ ] || $(CP) ./$(HOST_SRC_DIR)/* $(HOST_BUILD_DIR)
 	$(Host/Patch)
   endef
 endif
