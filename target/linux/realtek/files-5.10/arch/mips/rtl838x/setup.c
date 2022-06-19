@@ -61,7 +61,7 @@ void __init plat_mem_setup(void)
 
 	if (fw_passed_dtb) /* UHI interface */
 		dtb = (void *)fw_passed_dtb;
-	else if (__dtb_start != __dtb_end)
+	else if (&__dtb_start[0] != &__dtb_end[0])
 		dtb = (void *)__dtb_start;
 	else
 		panic("no dtb found");
