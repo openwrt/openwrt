@@ -436,7 +436,7 @@ struct rtl838x_eth_reg {
 	int mac;
 	int l2_tbl_flush_ctrl;
 	void (*update_cntr)(int r, int work_done);
-	void (*create_tx_header)(struct p_hdr *h, int dest_port, int prio);
+	void (*create_tx_header)(struct p_hdr *h, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct p_hdr *h, struct dsa_tag *tag);
 };
 
