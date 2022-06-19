@@ -70,6 +70,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
+    asus,rtn600)
+        ucidef_add_switch "switch0" \
+                "0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6@eth0"
+        ;;
 	buffalo,wcr-1166ds|\
 	elecom,wrc-1167fs|\
 	wavlink,wl-wn577a2|\
