@@ -34,7 +34,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		ring->dma = NULL;
  	}
  }
-@@ -3383,6 +3382,7 @@ static const struct mtk_soc_data mt2701_
+@@ -3386,6 +3385,7 @@ static const struct mtk_soc_data mt2701_
  	.required_pctl = true,
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
@@ -42,7 +42,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3394,6 +3394,7 @@ static const struct mtk_soc_data mt7621_
+@@ -3397,6 +3397,7 @@ static const struct mtk_soc_data mt7621_
  	.offload_version = 2,
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
@@ -50,7 +50,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3406,6 +3407,7 @@ static const struct mtk_soc_data mt7622_
+@@ -3409,6 +3410,7 @@ static const struct mtk_soc_data mt7622_
  	.offload_version = 2,
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
@@ -58,7 +58,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3417,6 +3419,7 @@ static const struct mtk_soc_data mt7623_
+@@ -3420,6 +3422,7 @@ static const struct mtk_soc_data mt7623_
  	.offload_version = 2,
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
@@ -66,7 +66,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3428,6 +3431,7 @@ static const struct mtk_soc_data mt7629_
+@@ -3431,6 +3434,7 @@ static const struct mtk_soc_data mt7629_
  	.required_pctl = false,
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
@@ -74,7 +74,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3438,6 +3442,7 @@ static const struct mtk_soc_data rt5350_
+@@ -3441,6 +3445,7 @@ static const struct mtk_soc_data rt5350_
  	.required_pctl = false,
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
