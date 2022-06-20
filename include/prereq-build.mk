@@ -183,8 +183,8 @@ $(eval $(call FindHostCommand,*readlink,Please install GNU 'readlink', \
 	readlink --version | grep GNU, \
 	greadlink --version | grep GNU))
 
-$(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
-	perl --version | grep "perl.*v5"))
+$(eval $(call SetupHostCommand,perl,Please install Perl >= 5.20, \
+	perl --version | grep 'perl.*v5.[2-9][0-9]'))
 
 $(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
 	python3.10 -V 2>&1 | grep 'Python 3', \
