@@ -7,6 +7,18 @@ board=$(board_name)
 board_config_update
 
 case $board in
+asus,rp-ac87)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_rssimon "wlan1" "200000" "1"
+	ucidef_set_led_rssi "rssilow-wlan0" "RSSILOW" "green:rssilow-wlan0" "wlan0" "1" "100"
+	ucidef_set_led_rssi "rssimedlow-wlan0" "RSSIMEDLOW" "green:rssimedlow-wlan0" "wlan0" "20" "100"
+	ucidef_set_led_rssi "rssimed-wlan0" "RSSIMED" "green:rssimed-wlan0" "wlan0" "40" "100"
+	ucidef_set_led_rssi "rssihigh-wlan0" "RSSIHIGH" "green:rssihigh-wlan0" "wlan0" "70" "100"
+	ucidef_set_led_rssi "rssilow-wlan1" "RSSILOW" "green:rssilow-wlan1" "wlan1" "1" "100"
+	ucidef_set_led_rssi "rssimedlow-wlan1" "RSSIMEDLOW" "green:rssimedlow-wlan1" "wlan1" "20" "100"
+	ucidef_set_led_rssi "rssimed-wlan1" "RSSIMED" "green:rssimed-wlan1" "wlan1" "40" "100"
+	ucidef_set_led_rssi "rssihigh-wlan1" "RSSIHIGH" "green:rssihigh-wlan1" "wlan1" "70" "100"
+	;;
 asus,rt-n56u-b1)
 	ucidef_set_led_netdev "lan" "LAN link" "blue:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN link" "blue:wan" "wan"
