@@ -103,12 +103,12 @@ define Build/append-rootfs
 	dd if=$(IMAGE_ROOTFS) >> $@
 endef
 
-define Build/append-squashfs-fakeroot-be
+define Build/append-squashfs-fakeroot
 	rm -rf $@.fakefs $@.fakesquashfs
 	mkdir $@.fakefs
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
 		$@.fakefs $@.fakesquashfs \
-		-noappend -root-owned -be -nopad -b 65536 \
+		-noappend -root-owned $(1) -nopad -b 65536 \
 		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
 	cat $@.fakesquashfs >> $@
 endef

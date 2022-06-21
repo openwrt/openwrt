@@ -435,7 +435,7 @@ define Device/avm
   KERNEL := kernel-bin | append-dtb | lzma | eva-image
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
-	append-squashfs-fakeroot-be | pad-to 256 | append-rootfs | pad-rootfs | \
+	append-squashfs-fakeroot -be | pad-to 256 | append-rootfs | pad-rootfs | \
 	check-size | append-metadata
   DEVICE_PACKAGES := fritz-tffs
 endef
