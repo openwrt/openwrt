@@ -48,7 +48,7 @@ BPF_KERNEL_INCLUDE := \
 	-include linux/kconfig.h -include asm_goto_workaround.h
 
 BPF_CFLAGS := \
-	$(BPF_KERNEL_INCLUDE) -I$(PKG_BUILD_DIR) \
+	$(BPF_KERNEL_INCLUDE) -I$(PKG_SOURCE_DIR) \
 	-D__KERNEL__ -D__BPF_TRACING__ -DCONFIG_GENERIC_CSUM \
 	-D__TARGET_ARCH_${BPF_KARCH} \
 	-m$(if $(CONFIG_BIG_ENDIAN),big,little)-endian \
