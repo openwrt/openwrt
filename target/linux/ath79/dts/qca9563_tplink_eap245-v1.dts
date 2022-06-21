@@ -42,3 +42,33 @@
 		};
 	};
 };
+
+&art {
+	calibration_ath10k: calibration@5000 {
+		reg = <0x5000 0x844>;
+	};
+};
+
+&eth0 {
+	phy-handle = <&phy4>;
+	phy-mode = "sgmii";
+};
+
+&mdio0 {
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pcie {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+
+		mac-address-increment = <1>;
+
+		nvmem-cells = <&macaddr_info_8>, <&calibration_ath10k>;
+		nvmem-cell-names = "mac-address", "calibration";
+	};
+};

@@ -13,9 +13,10 @@ ifdef CONFIG_LINUX_5_10
   DTS_CPPFLAGS += -DDTS_LEGACY
 endif
 
-define Build/beeline-trx
+define Build/arcadyan-trx
 	echo -ne "hsqs" > $@.hsqs
-	$(STAGING_DIR_HOST)/bin/otrx create $@.trx -M 0x746f435d -f $@ \
+	$(eval trx_magic=$(word 1,$(1)))
+	$(STAGING_DIR_HOST)/bin/otrx create $@.trx -M $(trx_magic) -f $@ \
 		-a 0x20000 -b 0x420000 -f $@.hsqs -a 1000
 	mv $@.trx $@
 	dd if=/dev/zero bs=1024 count=1 >> $@.tail
@@ -242,7 +243,7 @@ define Device/beeline_smartbox-flash
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
-	uImage none | beeline-trx | pad-to $$(KERNEL_SIZE)
+	uImage none | arcadyan-trx 0x746f435d | pad-to $$(KERNEL_SIZE)
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
 	uImage none
   IMAGES += factory.trx
@@ -1187,6 +1188,27 @@ define Device/mtc_wr1201
 	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += mtc_wr1201
+
+define Device/mts_wg430223
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := MTS
+  DEVICE_MODEL := WG430223
+  IMAGE_SIZE := 32768k
+  KERNEL_SIZE := 4352k
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none | arcadyan-trx 0x53485231 | pad-to $$(KERNEL_SIZE)
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none
+  IMAGES += factory.trx
+  IMAGE/factory.trx := append-kernel | append-ubi | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware uboot-envtools
+endef
+TARGET_DEVICES += mts_wg430223
 
 define Device/netgear_ex6150
   $(Device/dsa-migration)

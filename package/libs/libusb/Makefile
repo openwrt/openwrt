@@ -56,7 +56,7 @@ endef
 
 define Package/libusb-1.0/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libusb-1.0.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libusb-1.0.so* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libusb-1.0))

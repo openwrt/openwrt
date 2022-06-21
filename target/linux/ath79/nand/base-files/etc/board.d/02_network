@@ -30,6 +30,9 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "4:lan"
 		;;
+	netgear,pgzng1)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
 	netgear,r6100)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
