@@ -5,7 +5,8 @@
 include $(INCLUDE_DIR)/download.mk
 
 HOST_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
-HOST_INSTALL_DIR ?= $(HOST_BUILD_DIR)/host-install
+HOST_SOURCE_DIR ?= $(HOST_BUILD_DIR)
+HOST_INSTALL_DIR ?= $(HOST_SOURCE_DIR)/host-install
 HOST_BUILD_PARALLEL ?=
 
 HOST_MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) $(if $(filter 3.% 4.0 4.1,$(MAKE_VERSION)),-j))
@@ -39,7 +40,7 @@ Host/Patch:=$(Host/Patch/Default)
 ifneq ($(strip $(HOST_UNPACK)),)
   define Host/Prepare/Default
 	$(HOST_UNPACK)
-	[ ! -d ./$(HOST_SRC_DIR)/ ] || $(CP) ./$(HOST_SRC_DIR)/* $(HOST_BUILD_DIR)
+	[ ! -d ./$(HOST_SRC_DIR)/ ] || $(CP) ./$(HOST_SRC_DIR)/* $(HOST_SOURCE_DIR)
 	$(Host/Patch)
   endef
 endif
@@ -134,7 +135,7 @@ endef
 ifneq ($(if $(HOST_QUILT),,$(CONFIG_AUTOREBUILD)),)
   define HostHost/Autoclean
     $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(HOST_STAMP_PREPARED))
-    $(if $(if $(Host/Compile),$(filter prepare,$(MAKECMDGOALS)),1),,$(call rdep,$(HOST_BUILD_DIR),$(HOST_STAMP_BUILT)))
+    $(if $(if $(Host/Compile),$(filter prepare,$(MAKECMDGOALS)),1),,$(call rdep,$(HOST_SOURCE_DIR),$(HOST_STAMP_BUILT)))
   endef
 endif
 
@@ -158,6 +159,7 @@ ifndef DUMP
   $(HOST_STAMP_PREPARED):
 	$(Q)-rm -rf $(HOST_BUILD_DIR)
 	$(Q)mkdir -p $(HOST_BUILD_DIR)
+	$(Q)mkdir -p $(HOST_SOURCE_DIR)
 	$(foreach hook,$(Hooks/HostPrepare/Pre),$(call $(hook))$(sep))
 	$(call Host/Prepare)
 	$(foreach hook,$(Hooks/HostPrepare/Post),$(call $(hook))$(sep))
@@ -203,7 +205,7 @@ ifndef DUMP
 
   host-clean-build: FORCE
 	$(call Host/Uninstall)
-	rm -rf $(HOST_BUILD_DIR) $(HOST_STAMP_BUILT)
+	rm -rf $(HOST_BUILD_DIR) $(HOST_INSTALL_DIR) $(HOST_STAMP_BUILT)
 
   host-clean: host-clean-build
 	$(call Host/Clean)
@@ -211,7 +213,7 @@ ifndef DUMP
 
     ifneq ($(CONFIG_AUTOREMOVE),)
       host-compile:
-		$(call find_depth,$(HOST_BUILD_DIR),'!' '(' -type f -name '.*' -size 0 ')',1,1) | \
+		$(call find_depth,$(HOST_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')',1,1) | \
 			$(XARGS) rm -rf
     endif
   endef

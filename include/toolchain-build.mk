@@ -11,7 +11,7 @@ BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/hardening.mk
 
-HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared
+HOST_STAMP_PREPARED=$(HOST_SOURCE_DIR)/.prepared
 
 define FixupLibdir
 	if [ -d $(1)/lib64 -a \! -L $(1)/lib64 ]; then \

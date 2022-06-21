@@ -3,7 +3,7 @@
 # Copyright (C) 2007-2020 OpenWrt.org
 
 ifeq ($(TARGET_BUILD),1)
-  PKG_BUILD_DIR:=$(LINUX_DIR)
+  PKG_SOURCE_DIR:=$(LINUX_DIR)
 endif
 
 ifneq ($(filter host-refresh refresh,$(MAKECMDGOALS)),)
@@ -11,20 +11,20 @@ ifneq ($(filter host-refresh refresh,$(MAKECMDGOALS)),)
   override HOST_QUILT=1
 endif
 
-ifneq ($(PKG_BUILD_DIR),)
-  QUILT?=$(if $(wildcard $(PKG_BUILD_DIR)/.quilt_used),y)
+ifneq ($(PKG_SOURCE_DIR),)
+  QUILT?=$(if $(wildcard $(PKG_SOURCE_DIR)/.quilt_used),y)
   ifneq ($(QUILT),)
-    STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
+    STAMP_CHECKED:=$(PKG_SOURCE_DIR)/.quilt_checked
     override CONFIG_AUTOREBUILD=
     override CONFIG_AUTOREMOVE=
     quilt-check: $(STAMP_CHECKED)
   endif
 endif
 
-ifneq ($(HOST_BUILD_DIR),)
-  HOST_QUILT?=$(if $(findstring command,$(origin QUILT)),$(QUILT),$(if $(wildcard $(HOST_BUILD_DIR)/.quilt_used),y))
+ifneq ($(HOST_SOURCE_DIR),)
+  HOST_QUILT?=$(if $(findstring command,$(origin QUILT)),$(QUILT),$(if $(wildcard $(HOST_SOURCE_DIR)/.quilt_used),y))
   ifneq ($(HOST_QUILT),)
-    HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked
+    HOST_STAMP_CHECKED:=$(HOST_SOURCE_DIR)/.quilt_checked
     override CONFIG_AUTOREBUILD=
     override CONFIG_AUTOREMOVE=
     host-quilt-check: $(HOST_STAMP_CHECKED)
@@ -79,15 +79,15 @@ $(call PatchDir/$(if $(strip $(HOST_QUILT)),Quilt,Default),$(strip $(1)),$(strip
 endef
 
 define Host/Patch/Default
-	$(if $(HOST_QUILT),rm -rf $(HOST_BUILD_DIR)/patches; mkdir -p $(HOST_BUILD_DIR)/patches)
-	$(call HostPatchDir,$(HOST_BUILD_DIR),$(HOST_PATCH_DIR),)
-	$(if $(HOST_QUILT),touch $(HOST_BUILD_DIR)/.quilt_used)
+	$(if $(HOST_QUILT),rm -rf $(HOST_SOURCE_DIR)/patches; mkdir -p $(HOST_SOURCE_DIR)/patches)
+	$(call HostPatchDir,$(HOST_SOURCE_DIR),$(HOST_PATCH_DIR),)
+	$(if $(HOST_QUILT),touch $(HOST_SOURCE_DIR)/.quilt_used)
 endef
 
 define Build/Patch/Default
-	$(if $(QUILT),rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches)
-	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR),)
-	$(if $(QUILT),touch $(PKG_BUILD_DIR)/.quilt_used)
+	$(if $(QUILT),rm -rf $(PKG_SOURCE_DIR)/patches; mkdir -p $(PKG_SOURCE_DIR)/patches)
+	$(call PatchDir,$(PKG_SOURCE_DIR),$(PATCH_DIR),)
+	$(if $(QUILT),touch $(PKG_SOURCE_DIR)/.quilt_used)
 endef
 
 kernel_files=$(foreach fdir,$(GENERIC_FILES_DIR) $(FILES_DIR),$(fdir)/.)
@@ -116,22 +116,22 @@ define Quilt/RefreshDir
 endef
 
 define Quilt/Refresh/Host
-	$(call Quilt/RefreshDir,$(HOST_BUILD_DIR),$(HOST_PATCH_DIR))
+	$(call Quilt/RefreshDir,$(HOST_SOURCE_DIR),$(HOST_PATCH_DIR))
 endef
 
 define Quilt/Refresh/Package
-	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR))
+	$(call Quilt/RefreshDir,$(PKG_SOURCE_DIR),$(PATCH_DIR))
 endef
 
 define Quilt/Refresh/Kernel
-	$(Q)[ -z "$$(grep -v '^generic/' $(PKG_BUILD_DIR)/patches/series | grep -v '^platform/')" ] || { \
+	$(Q)[ -z "$$(grep -v '^generic/' $(PKG_SOURCE_DIR)/patches/series | grep -v '^platform/')" ] || { \
 		echo "All kernel patches must start with either generic/ or platform/"; \
 		false; \
 	}
-	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(GENERIC_BACKPORT_DIR),generic-backport/)
-	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(GENERIC_PATCH_DIR),generic/)
-	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(GENERIC_HACK_DIR),generic-hack/)
-	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR),platform/)
+	$(call Quilt/RefreshDir,$(PKG_SOURCE_DIR),$(GENERIC_BACKPORT_DIR),generic-backport/)
+	$(call Quilt/RefreshDir,$(PKG_SOURCE_DIR),$(GENERIC_PATCH_DIR),generic/)
+	$(call Quilt/RefreshDir,$(PKG_SOURCE_DIR),$(GENERIC_HACK_DIR),generic-hack/)
+	$(call Quilt/RefreshDir,$(PKG_SOURCE_DIR),$(PATCH_DIR),platform/)
 endef
 
 define Quilt/Template
@@ -175,7 +175,7 @@ define Quilt/Template
 	$(Quilt/Refresh/$(4))
 endef
 
-Build/Quilt=$(call Quilt/Template,$(PKG_BUILD_DIR),,,$(if $(TARGET_BUILD),Kernel,Package))
-Host/Quilt=$(call Quilt/Template,$(HOST_BUILD_DIR),HOST_,host-,Host)
+Build/Quilt=$(call Quilt/Template,$(PKG_SOURCE_DIR),,,$(if $(TARGET_BUILD),Kernel,Package))
+Host/Quilt=$(call Quilt/Template,$(HOST_SOURCE_DIR),HOST_,host-,Host)
 
 endif

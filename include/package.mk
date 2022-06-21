@@ -9,7 +9,8 @@ all: $(if $(DUMP),dumpinfo,$(if $(CHECK),check,compile))
 include $(INCLUDE_DIR)/download.mk
 
 PKG_BUILD_DIR ?= $(BUILD_DIR)/$(if $(BUILD_VARIANT),$(PKG_NAME)-$(BUILD_VARIANT)/)$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
-PKG_INSTALL_DIR ?= $(PKG_BUILD_DIR)/ipkg-install
+PKG_SOURCE_DIR ?= $(PKG_BUILD_DIR)
+PKG_INSTALL_DIR ?= $(PKG_SOURCE_DIR)/ipkg-install
 PKG_BUILD_PARALLEL ?=
 PKG_USE_MIPS16 ?= 1
 PKG_IREMAP ?= 1
@@ -31,7 +32,7 @@ ifdef CONFIG_USE_MIPS16
   endif
 endif
 ifeq ($(strip $(PKG_IREMAP)),1)
-  IREMAP_CFLAGS = $(call iremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR)))
+  IREMAP_CFLAGS = $(call iremap,$(PKG_SOURCE_DIR),$(notdir $(PKG_SOURCE_DIR)))
   TARGET_CFLAGS += $(IREMAP_CFLAGS)
 endif
 
@@ -51,7 +52,7 @@ endif
 ifdef USE_SOURCE_DIR
   QUILT:=1
 endif
-ifneq ($(wildcard $(PKG_BUILD_DIR)/.source_dir),)
+ifneq ($(wildcard $(PKG_SOURCE_DIR)/.source_dir),)
   QUILT:=1
 endif
 
@@ -126,18 +127,19 @@ unexport QUIET CONFIG_SITE
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Build/Autoclean
-      $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
-      $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "*/.dep_*")
-      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),,-x "*/.dep_*" -x "*/ipkg*"))
+      $(PKG_SOURCE_DIR)/.dep_files: $(STAMP_PREPARED)
+      $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_SOURCE_DIR)/.dep_files,-x "*/.dep_*")
+      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_SOURCE_DIR),$(STAMP_BUILT),,-x "*/.dep_*" -x "*/ipkg*"))
     endef
   endif
 endif
 
 ifdef USE_GIT_SRC_CHECKOUT
   define Build/Prepare/Default
+	mkdir -p $(PKG_SOURCE_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
-	ln -s $(TOPDIR)/git-src/$(PKG_NAME)/.git $(PKG_BUILD_DIR)/.git
-	( cd $(PKG_BUILD_DIR); \
+	ln -s $(TOPDIR)/git-src/$(PKG_NAME)/.git $(PKG_SOURCE_DIR)/.git
+	( cd $(PKG_SOURCE_DIR); \
 		git checkout .; \
 		git submodule update --recursive; \
 		git submodule foreach git config --unset core.worktree; \
@@ -147,9 +149,10 @@ ifdef USE_GIT_SRC_CHECKOUT
 endif
 ifdef USE_GIT_TREE
   define Build/Prepare/Default
+	mkdir -p $(PKG_SOURCE_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
-	ln -s $(CURDIR)/git-src $(PKG_BUILD_DIR)/.git
-	( cd $(PKG_BUILD_DIR); \
+	ln -s $(CURDIR)/git-src $(PKG_SOURCE_DIR)/.git
+	( cd $(PKG_SOURCE_DIR); \
 		git checkout .; \
 		git submodule update --recursive; \
 		git submodule foreach git config --unset core.worktree; \
@@ -159,10 +162,10 @@ ifdef USE_GIT_TREE
 endif
 ifdef USE_SOURCE_DIR
   define Build/Prepare/Default
-	rm -rf $(PKG_BUILD_DIR)
+	rm -rf $(PKG_SOURCE_DIR)
 	$(if $(wildcard $(USE_SOURCE_DIR)/*),,$(Q)echo "Error: USE_SOURCE_DIR=$(USE_SOURCE_DIR) path not found"; false)
-	ln -snf $(USE_SOURCE_DIR) $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.source_dir
+	ln -snf $(USE_SOURCE_DIR) $(PKG_SOURCE_DIR)
+	touch $(PKG_SOURCE_DIR)/.source_dir
   endef
 endif
 
@@ -195,6 +198,7 @@ define Build/CoreTargets
   $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)
 	$(Q)-rm -rf $(PKG_BUILD_DIR)
 	$(Q)mkdir -p $(PKG_BUILD_DIR)
+	$(Q)mkdir -p $(PKG_SOURCE_DIR)
 	touch $$@_check
 	$(foreach hook,$(Hooks/Prepare/Pre),$(call $(hook))$(sep))
 	$(Build/Prepare)
@@ -261,8 +265,8 @@ define Build/CoreTargets
 
   ifneq ($(CONFIG_AUTOREMOVE),)
     compile:
-		-touch -r $(PKG_BUILD_DIR)/.built $(PKG_BUILD_DIR)/.autoremove 2>/dev/null >/dev/null
-		$(call find_depth,$(PKG_BUILD_DIR),'!' '(' -type f -name '.*' -size 0 ')' ! -name '.pkgdir',1,1) | \
+		-touch -r $(PKG_SOURCE_DIR)/.built $(PKG_SOURCE_DIR)/.autoremove 2>/dev/null >/dev/null
+		$(call find_depth,$(PKG_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')' ! -name '.pkgdir',1,1) | \
 			$(XARGS) rm -rf
   endif
 endef
@@ -339,9 +343,9 @@ compile:
 install: compile
 
 force-clean-build: FORCE
-	rm -rf $(PKG_BUILD_DIR)
+	rm -rf $(PKG_BUILD_DIR) $(PKG_INSTALL_DIR) $(STAMP_BUILT)
 
-clean-build: $(if $(wildcard $(PKG_BUILD_DIR)/.autoremove),force-clean-build)
+clean-build: $(if $(wildcard $(PKG_SOURCE_DIR)/.autoremove),force-clean-build)
 
 clean: force-clean-build
 	$(CleanStaging)
