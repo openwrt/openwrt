@@ -163,13 +163,13 @@ define Download/mv-ddr-marvell
 endef
 
 MOX_BB_NAME:=mox-boot-builder
-MOX_BB_RELEASE:=v2021.09.07
+MOX_BB_RELEASE:=v2022.06.11
 MOX_BB_SOURCE:=$(MOX_BB_NAME)-$(MOX_BB_RELEASE).tar.bz2
 
 define Download/mox-boot-builder
   FILE:=$(MOX_BB_SOURCE)
   URL:=https://gitlab.nic.cz/turris/mox-boot-builder/-/archive/$(MOX_BB_RELEASE)
-  HASH:=fd5fe276a3b0dee3177d61c017907a8eb23cd2169478fa78e9a3a836cfe3a4a8
+  HASH:=75e7661c38f4f5e6d8910dd789d6d9ffd8652455548b68c98e5bf45eaab5b6eb
 endef
 
 CM3_GCC_NAME:=gcc-arm
