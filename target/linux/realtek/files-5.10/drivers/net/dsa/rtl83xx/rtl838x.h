@@ -957,6 +957,13 @@ struct rtl83xx_flow {
 	u32 flags;
 };
 
+enum route_type {
+	ROUTE_TYPE_IPV4UC = 0,
+	ROUTE_TYPE_IPV4MC = 1,
+	ROUTE_TYPE_IPV6UC = 2,
+	ROUTE_TYPE_IPV6MC = 3
+};
+
 struct rtl93xx_route_attr {
 	bool valid;
 	bool hit;
