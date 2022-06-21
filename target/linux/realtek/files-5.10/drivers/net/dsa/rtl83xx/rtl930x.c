@@ -1270,16 +1270,19 @@ static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
 	struct in6_addr ip6_m;
 	int i;
 
-	if (rt->attr.type == 1 || rt->attr.type == 3) // Hardware only supports UC routes
+	// Verify hardware limitations: only unicast supported
+	if (rt->attr.type == ROUTE_TYPE_IPV4MC || rt->attr.type == ROUTE_TYPE_IPV6MC)
 		return -1;
 
-	sw_w32_mask(0x3 << 19, rt->attr.type, RTL930X_L3_HW_LU_KEY_CTRL);
-	if (rt->attr.type) { // IPv6
+	// Set entry type being searched, all other fields are 0
+	sw_w32(rt->attr.type << 19, RTL930X_L3_HW_LU_KEY_CTRL);
+
+	if (rt->attr.type == ROUTE_TYPE_IPV6UC) {
 		rtl930x_net6_mask(rt->prefix_len, &ip6_m);
 		for (i = 0; i < 4; i++)
-			sw_w32(rt->dst_ip6.s6_addr32[0] & ip6_m.s6_addr32[0],
+			sw_w32(rt->dst_ip6.s6_addr32[i] & ip6_m.s6_addr32[i],
 			       RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2));
-	} else { // IPv4
+	} else { // ROUTE_TYPE_IPV4UC
 		ip4_m = inet_make_mask(rt->prefix_len);
 		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL);
 		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 4);
