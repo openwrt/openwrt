@@ -13,7 +13,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -2233,6 +2233,9 @@ static int mtk_hwlro_get_fdir_entry(stru
+@@ -2250,6 +2250,9 @@ static int mtk_hwlro_get_fdir_entry(stru
  	if (fsp->location >= ARRAY_SIZE(mac->hwlro_ip))
  		return -EINVAL;
  

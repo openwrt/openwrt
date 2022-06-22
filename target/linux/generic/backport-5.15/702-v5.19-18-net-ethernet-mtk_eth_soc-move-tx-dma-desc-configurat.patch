@@ -14,7 +14,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -960,18 +960,51 @@ static void setup_tx_buf(struct mtk_eth
+@@ -971,18 +971,51 @@ static void setup_tx_buf(struct mtk_eth
  	}
  }
  
@@ -69,7 +69,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int k = 0;
  
  	itxd = ring->next_free;
-@@ -979,49 +1012,32 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -990,49 +1023,32 @@ static int mtk_tx_map(struct sk_buff *sk
  	if (itxd == ring->last_free)
  		return -ENOMEM;
  
@@ -126,7 +126,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			bool new_desc = true;
  
  			if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA) ||
-@@ -1036,23 +1052,17 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1047,23 +1063,17 @@ static int mtk_tx_map(struct sk_buff *sk
  				new_desc = false;
  			}
  
@@ -159,7 +159,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  			tx_buf = mtk_desc_to_tx_buf(ring, txd);
  			if (new_desc)
-@@ -1062,20 +1072,17 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1073,20 +1083,17 @@ static int mtk_tx_map(struct sk_buff *sk
  			tx_buf->flags |= (!mac->id) ? MTK_TX_FLAGS_FPORT0 :
  					 MTK_TX_FLAGS_FPORT1;
  
