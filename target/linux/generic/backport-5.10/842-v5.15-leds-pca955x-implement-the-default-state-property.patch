@@ -13,8 +13,6 @@ Signed-off-by: Pavel Machek <pavel@ucw.cz>
  drivers/leds/leds-pca955x.c | 54 +++++++++++++++++++++++++++++++------
  1 file changed, 46 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/leds/leds-pca955x.c b/drivers/leds/leds-pca955x.c
-index e47ba7c3b7c7d8..fa1d77d86ef67b 100644
 --- a/drivers/leds/leds-pca955x.c
 +++ b/drivers/leds/leds-pca955x.c
 @@ -129,6 +129,7 @@ struct pca955x_led {
@@ -25,7 +23,7 @@ index e47ba7c3b7c7d8..fa1d77d86ef67b 100644
  	const char		*default_trigger;
  };
  
-@@ -439,6 +440,7 @@ pca955x_get_pdata(struct i2c_client *client, struct pca955x_chipdef *chip)
+@@ -439,6 +440,7 @@ pca955x_get_pdata(struct i2c_client *cli
  
  	device_for_each_child_node(&client->dev, child) {
  		const char *name;
@@ -33,7 +31,7 @@ index e47ba7c3b7c7d8..fa1d77d86ef67b 100644
  		u32 reg;
  		int res;
  
-@@ -457,6 +459,18 @@ pca955x_get_pdata(struct i2c_client *client, struct pca955x_chipdef *chip)
+@@ -457,6 +459,18 @@ pca955x_get_pdata(struct i2c_client *cli
  		fwnode_property_read_u32(child, "type", &led->type);
  		fwnode_property_read_string(child, "linux,default-trigger",
  					    &led->default_trigger);
@@ -52,7 +50,7 @@ index e47ba7c3b7c7d8..fa1d77d86ef67b 100644
  	}
  
  	pdata->num_leds = chip->bits;
-@@ -485,6 +499,7 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -485,6 +499,7 @@ static int pca955x_probe(struct i2c_clie
  	int i, err;
  	struct pca955x_platform_data *pdata;
  	int ngpios = 0;
@@ -60,7 +58,7 @@ index e47ba7c3b7c7d8..fa1d77d86ef67b 100644
  
  	chip = &pca955x_chipdefs[id->driver_data];
  	adapter = client->adapter;
-@@ -565,14 +580,35 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -565,14 +580,35 @@ static int pca955x_probe(struct i2c_clie
  			led->brightness_set_blocking = pca955x_led_set;
  			led->brightness_get = pca955x_led_get;
  
@@ -100,7 +98,7 @@ index e47ba7c3b7c7d8..fa1d77d86ef67b 100644
  		}
  	}
  
-@@ -581,10 +617,12 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -581,10 +617,12 @@ static int pca955x_probe(struct i2c_clie
  	if (err)
  		return err;
  
