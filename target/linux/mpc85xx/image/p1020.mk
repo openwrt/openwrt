@@ -1,13 +1,13 @@
 define Build/MultiImage
-        rm -rf $@.fakerd $@.new
+        $(RM) -r $@.fakerd $@.new
 
         dd if=/dev/zero of=$@.fakerd bs=32 count=1 conv=sync
 
         -$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) -O linux -T multi -C $(1)  \
 		-a $(KERNEL_LOADADDR) -e $(KERNEL_ENTRY) -n '$(BOARD_NAME) initramfs' \
 		-d $@:$@.fakerd:$(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@.new
-        mv $@.new $@
-        rm -rf $@.fakerd
+        $(MV) $@.new $@
+        $(RM) -r $@.fakerd
 endef
 
 define Device/aerohive_hiveap-330

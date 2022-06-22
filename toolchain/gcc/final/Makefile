@@ -27,9 +27,9 @@ endif
 define CleanupToolchain
 	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)
 	# Important!  Required for limits.h to be fixed.
-	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
+	$(RM) -r $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
 	ln -sf ../include $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
-	rm -rf $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
+	$(RM) -r $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 	ln -sf ../lib $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 	$(if $(CONFIG_ARCH_64BIT),ln -sf ../lib64 $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)/lib64)
 endef
@@ -37,7 +37,7 @@ endef
 define Host/Configure
 	$(CleanupToolchain)
 	mkdir -p $(GCC_BUILD_DIR)
-	(cd $(GCC_BUILD_DIR) && rm -f config.cache; \
+	(cd $(GCC_BUILD_DIR) && $(RM) config.cache; \
 		$(GCC_CONFIGURE) \
 	);
 endef

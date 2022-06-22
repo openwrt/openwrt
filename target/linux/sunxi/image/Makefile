@@ -13,7 +13,7 @@ DEVICE_VARS := SUNXI_DTS SUNXI_DTS_DIR
 KERNEL_LOADADDR:=0x40008000
 
 define Build/sunxi-sdcard
-	rm -f $@.boot
+	$(RM) $@.boot
 	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
 
 	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot.scr ::boot.scr
@@ -25,7 +25,7 @@ define Build/sunxi-sdcard
 		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
 		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin
-	rm -f $@.boot
+	$(RM) $@.boot
 endef
 
 # why \x00\x00\x00\x00 for zImage-initramfs

@@ -47,7 +47,7 @@ clean: FORCE
 dirclean: clean
 	git reset --hard HEAD
 	git clean -f -d
-	rm -rf feeds/
+	$(RM) -r feeds/
 
 # check prerequisites before starting to build
 prereq: $(package/stamp-prereq) ;

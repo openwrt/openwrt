@@ -35,4 +35,4 @@ $(OUT_DIR)%.bin: $(OUT_DIR)%.o
 mrproper: clean
 
 clean:
-	rm -f $(OUT_DIR)copy-kernel.bin $(OUT_DIR)copy-kernel.o
+	$(RM) $(OUT_DIR)copy-kernel.bin $(OUT_DIR)copy-kernel.o

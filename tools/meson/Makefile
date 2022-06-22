@@ -29,7 +29,7 @@ endef
 
 define Host/Clean
 	$(call Host/Clean/Default)
-	rm -rf $(STAGING_DIR_HOST)/lib/meson
+	$(RM) -r $(STAGING_DIR_HOST)/lib/meson
 endef
 
 $(eval $(call HostBuild))

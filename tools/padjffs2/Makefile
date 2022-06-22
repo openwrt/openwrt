@@ -15,7 +15,7 @@ include $(INCLUDE_DIR)/host-build.mk
 define Host/Prepare
 	mkdir -p $(HOST_BUILD_DIR)
 	$(CP) ./src/* $(HOST_BUILD_DIR)/
-	find $(HOST_BUILD_DIR) -name .svn | $(XARGS) rm -rf
+	find $(HOST_BUILD_DIR) -name .svn | $(XARGS) $(RM) -r
 endef
 
 define Host/Compile
@@ -30,7 +30,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/padjffs2
+	$(RM) $(STAGING_DIR_HOST)/bin/padjffs2
 endef
 
 $(eval $(call HostBuild))

@@ -42,13 +42,13 @@ MUSL_CONFIGURE:= \
 
 define Host/Configure
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
-	( cd $(HOST_BUILD_DIR); rm -f config.cache; \
+	( cd $(HOST_BUILD_DIR); $(RM) config.cache; \
 		$(MUSL_CONFIGURE) \
 	);
 endef
 
 define Host/Clean
-	rm -rf \
+	$(RM) -r \
 		$(HOST_BUILD_DIR) \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME) \
 		$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev

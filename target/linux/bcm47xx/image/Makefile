@@ -24,13 +24,13 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	cat $(KDIR)/vmlinux-initramfs | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux-initramfs.lzma
 	$(STAGING_DIR_HOST)/bin/lzma e -so -d16 $(KDIR)/vmlinux-initramfs > $(KDIR)/vmlinux-initramfs-nodictionary.lzma
 endif
-	rm -f $(KDIR)/loader.gz
+	$(RM) $(KDIR)/loader.gz
 	$(MAKE) -C lzma-loader \
 		BUILD_DIR="$(KDIR)" \
 		TARGET="$(KDIR)" \
 		clean install
 	echo -ne "\\x00" >> $(KDIR)/loader.gz
-	rm -f $(KDIR)/fs_mark
+	$(RM) $(KDIR)/fs_mark
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/fs_mark
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
@@ -56,7 +56,7 @@ define Build/trx-with-loader
 		-f $(KDIR)/loader.gz \
 		-f $(IMAGE_KERNEL) \
 		$(call trxalign/$(FILESYSTEM),$@)
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/trx-v2-with-loader
@@ -67,7 +67,7 @@ define Build/trx-v2-with-loader
 		-f $(KDIR)/loader.gz \
 		-f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(FILESYSTEM),$@,$@.pattern)
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/trx-without-loader
@@ -76,29 +76,29 @@ define Build/trx-without-loader
 		-o $@.new \
 		-f $(IMAGE_KERNEL) \
 		$(call trxalign/$(FILESYSTEM),$@)
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/asus-trx
 	$(STAGING_DIR_HOST)/bin/asustrx -p $(PRODUCTID) -i $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/edimax-bin
 	$(STAGING_DIR_HOST)/bin/trx2edips $@ $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/huawei-bin
 	dd if=/dev/zero of=$@.new bs=92 count=1
 	echo -ne 'HDR0\x08\x00\x00\x00' >> $@.new
 	cat $@ >> $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/linksys-bin
 	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(DEVICE_ID) -v v$(VERSION) $(if $(SERIAL),-s $(SERIAL)) -i $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/linksys-pattern-partition
@@ -107,11 +107,11 @@ endef
 
 define Build/motorola-bin
 	$(STAGING_DIR_HOST)/bin/motorola-bin -$(MOTOROLA_DEVICE) $@ $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/prepend-with-elf
-	mv $@ $@.old
+	$(MV) $@ $@.old
 	dd if=$(KDIR)/loader.elf of=$@ bs=131072 conv=sync
 	cat $@.old >> $@
 endef
@@ -122,7 +122,7 @@ endef
 
 define Build/usrobotics-bin
 	$(STAGING_DIR_HOST)/bin/trx2usr $@ $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 #################################################

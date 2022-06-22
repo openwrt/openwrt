@@ -4,7 +4,7 @@ define Build/cros-gpt
 		-T cros_kernel	-N kernel -p $(CONFIG_TARGET_KERNEL_PARTSIZE)m \
 				-N rootfs -p $(CONFIG_TARGET_ROOTFS_PARTSIZE)m
 	cat $@.tmp >> $@
-	rm $@.tmp
+	$(RM) $@.tmp
 endef
 
 define Build/append-kernel-part
@@ -18,7 +18,7 @@ endef
 define Build/cros-vboot
 	$(STAGING_DIR_HOST)/bin/cros-vbutil \
 		-k $@ -c "root=PARTUUID=%U/PARTNROFF=1" -o $@.new
-	@mv $@.new $@
+	@$(MV) $@.new $@
 endef
 
 define Device/google_wifi

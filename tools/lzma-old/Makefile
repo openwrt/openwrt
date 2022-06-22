@@ -32,7 +32,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/lib/liblzma-old.a
+	$(RM) $(STAGING_DIR_HOST)/lib/liblzma-old.a
 endef
 
 $(eval $(call HostBuild))

@@ -104,14 +104,14 @@ define Build/Configure
 	     { print } \
 	     END { exit(rc) }' $(PKG_BUILD_DIR)/include/mbedtls/config.h \
 	     >$(PKG_BUILD_DIR)/include/mbedtls/config.h.new && \
-	mv $(PKG_BUILD_DIR)/include/mbedtls/config.h.new $(PKG_BUILD_DIR)/include/mbedtls/config.h
+	$(MV) $(PKG_BUILD_DIR)/include/mbedtls/config.h.new $(PKG_BUILD_DIR)/include/mbedtls/config.h
 
 	awk 'BEGIN { rc = 1 } \
 	     /#define MBEDTLS_HKDF_C/ { $$$$0 = "$(if $(CONFIG_LIBMBEDTLS_HKDF_C),,// )#define MBEDTLS_HKDF_C"; rc = 0 } \
 	     { print } \
 	     END { exit(rc) }' $(PKG_BUILD_DIR)/include/mbedtls/config.h \
 	     >$(PKG_BUILD_DIR)/include/mbedtls/config.h.new && \
-	mv $(PKG_BUILD_DIR)/include/mbedtls/config.h.new $(PKG_BUILD_DIR)/include/mbedtls/config.h
+	$(MV) $(PKG_BUILD_DIR)/include/mbedtls/config.h.new $(PKG_BUILD_DIR)/include/mbedtls/config.h
 
 	sed -i '/fuzz/d' $(PKG_BUILD_DIR)/programs/CMakeLists.txt
 	sed -i '/test/d' $(PKG_BUILD_DIR)/programs/CMakeLists.txt

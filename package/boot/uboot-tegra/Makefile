@@ -41,7 +41,7 @@ define Build/bct-image
 		cbootimage -s $(SOC) \
 			$(STAGING_DIR_HOST)/share/cbootimage-configs/$(SOC)/$(VENDOR)/$(VARIANT)/$(bct).img.cfg \
 			$(PKG_BUILD_DIR)/$(bct).img; \
-		rm -f $(bct).bct; \
+		$(RM) $(bct).bct; \
 	)
 endef
 

@@ -22,7 +22,7 @@ define Image/Prepare
 endef
 
 define Build/ls-clean
-	rm -f $@
+	$(RM) $@
 endef
 
 define Build/ls-append
@@ -40,8 +40,8 @@ define Build/ls-append-kernel
 		$(if $(SOURCE_DATE_EPOCH),-T $(SOURCE_DATE_EPOCH)) \
 		"$@.kernel.part" "$@.tmp" && \
 	dd if=$@.kernel.part >> $@ && \
-	rm -rf $@.tmp && \
-	rm -f $@.kernel.part
+	$(RM) -r $@.tmp && \
+	$(RM) $@.kernel.part
 endef
 
 define Build/ls-append-sdhead
@@ -61,7 +61,7 @@ define Build/traverse-fit
 		-d $(DEVICE_DTS_DIR)/freescale/traverse-ls1043v.dtb \
 		-D "Traverse_LS1043V" -n "ls1043v" -a $(FDT_LOADADDR) -c 2
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
-	mv -f $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Device/fix-sysupgrade

@@ -44,7 +44,7 @@ else
 	fi
 	ln -s $(CONFIG_EXTERNAL_KERNEL_TREE) $(LINUX_DIR)
 	if [ -d $(LINUX_DIR)/user_headers ]; then \
-		rm -rf $(LINUX_DIR)/user_headers; \
+		$(RM) -r $(LINUX_DIR)/user_headers; \
 	fi
   endef
 endif
@@ -72,8 +72,8 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 endif
 
   define Kernel/SetInitramfs
-	rm -f $(LINUX_DIR)/.config.prev
-	mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
+	$(RM) $(LINUX_DIR)/.config.prev
+	$(MV) $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
 	$(call Kernel/SetInitramfs/PreConfigure)
   ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
 	echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
@@ -95,14 +95,14 @@ else
 endif
 
 define Kernel/SetNoInitramfs
-	mv $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.old
+	$(MV) $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.old
 	grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config.set
 	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config.set
 	echo '# CONFIG_INITRAMFS_FORCE is not set' >> $(LINUX_DIR)/.config.set
 endef
 
 define Kernel/Configure/Default
-	rm -f $(LINUX_DIR)/localversion
+	$(RM) $(LINUX_DIR)/localversion
 	$(LINUX_CONF_CMD) > $(LINUX_DIR)/.config.target
 # copy CONFIG_KERNEL_* settings over to .config.target
 	awk '/^(#[[:space:]]+)?CONFIG_KERNEL/{sub("CONFIG_KERNEL_","CONFIG_");print}' $(TOPDIR)/.config >> $(LINUX_DIR)/.config.target
@@ -112,7 +112,7 @@ define Kernel/Configure/Default
 	$(SCRIPT_DIR)/package-metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config $(KERNEL_PATCHVER) > $(LINUX_DIR)/.config.override
 	$(SCRIPT_DIR)/kconfig.pl 'm+' '+' $(LINUX_DIR)/.config.target /dev/null $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config.set
 	$(call Kernel/SetNoInitramfs)
-	rm -rf $(KERNEL_BUILD_DIR)/modules
+	$(RM) -r $(KERNEL_BUILD_DIR)/modules
 	cmp -s $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.prev || { \
 		cp $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config; \
 		cp $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.prev; \
@@ -126,11 +126,11 @@ define Kernel/Configure/Initramfs
 endef
 
 define Kernel/CompileModules/Default
-	rm -f $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map
+	$(RM) $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map
 	+$(KERNEL_MAKE) $(if $(KERNELNAME),$(KERNELNAME),all) modules
 	# If .config did not change, use the previous timestamp to avoid package rebuilds
 	cmp -s $(LINUX_DIR)/.config $(LINUX_DIR)/.config.modules.save && \
-		mv $(LINUX_DIR)/.config.modules.save $(LINUX_DIR)/.config; \
+		$(MV) $(LINUX_DIR)/.config.modules.save $(LINUX_DIR)/.config; \
 	$(CP) $(LINUX_DIR)/.config $(LINUX_DIR)/.config.modules.save
 endef
 
@@ -158,7 +158,7 @@ endef
 # external packages that depend on exported symbols from kernel modules
 # will fail to build.
 define Kernel/CompileImage/Default
-	rm -f $(TARGET_DIR)/init
+	$(RM) $(TARGET_DIR)/init
 	+$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all) modules
 	$(call Kernel/CopyImage)
 endef
@@ -169,7 +169,7 @@ define Kernel/CompileImage/Initramfs
 	$(call Kernel/Configure/Initramfs)
 	$(CP) $(GENERIC_PLATFORM_DIR)/other-files/init $(TARGET_DIR)/init
 	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(TARGET_DIR) $(TARGET_DIR)/init)
-	rm -rf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
+	$(RM) -r $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
 ifneq ($(qstrip $(CONFIG_EXTERNAL_CPIO)),)
 	$(CP) $(CONFIG_EXTERNAL_CPIO) $(KERNEL_BUILD_DIR)/initrd.cpio
@@ -194,7 +194,7 @@ endef
 endif
 
 define Kernel/Clean/Default
-	rm -f $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/.configured
-	rm -f $(LINUX_KERNEL)
+	$(RM) $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/.configured
+	$(RM) $(LINUX_KERNEL)
 	$(_SINGLE)$(MAKE) -C $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) clean
 endef

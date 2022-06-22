@@ -7,7 +7,7 @@ DEFAULT_SOC := rt2880
 define Build/gemtek-header
 	if [ -f $@ ]; then \
 		mkheader_gemtek $@ $@.new $(1) && \
-		mv $@.new $@; \
+		$(MV) $@.new $@; \
 	fi
 endef
 

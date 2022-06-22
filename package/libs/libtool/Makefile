@@ -42,8 +42,8 @@ define Build/InstallDev
 		exec_prefix="$(2)/libltdl" \
 		install
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/include
-	mv $(2)/libltdl/lib/* $(1)/usr/lib/
-	mv $(2)/libltdl/include/* $(1)/usr/include/
+	$(MV) $(2)/libltdl/lib/* $(1)/usr/lib/
+	$(MV) $(2)/libltdl/include/* $(1)/usr/include/
 endef
 
 define Package/libltdl/install

@@ -9,7 +9,7 @@ prereq:
 	if [ -f $(TMP_DIR)/.prereq-error ]; then \
 		echo; \
 		cat $(TMP_DIR)/.prereq-error; \
-		rm -f $(TMP_DIR)/.prereq-error; \
+		$(RM) $(TMP_DIR)/.prereq-error; \
 		echo; \
 		false; \
 	fi

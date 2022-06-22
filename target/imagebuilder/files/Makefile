@@ -118,7 +118,7 @@ _call_image: staging_dir/host/.prereq-build
 	echo 'Building images for $(BOARD)$(if $($(USER_PROFILE)_NAME), - $($(USER_PROFILE)_NAME))'
 	echo 'Packages: $(BUILD_PACKAGES)'
 	echo
-	rm -rf $(TARGET_DIR) $(TARGET_DIR_ORIG)
+	$(RM) -r $(TARGET_DIR) $(TARGET_DIR_ORIG)
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
 	$(MAKE) package_reload
 	$(MAKE) package_install
@@ -128,7 +128,7 @@ _call_image: staging_dir/host/.prereq-build
 	$(MAKE) -s checksum
 
 _call_manifest: FORCE
-	rm -rf $(TARGET_DIR)
+	$(RM) -r $(TARGET_DIR)
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
 	$(MAKE) package_reload >/dev/null
 	$(MAKE) package_install >/dev/null
@@ -184,7 +184,7 @@ prepare_rootfs: FORCE
 build_image: FORCE
 	@echo
 	@echo Building images...
-	rm -rf $(BUILD_DIR)/json_info_files/
+	$(RM) -r $(BUILD_DIR)/json_info_files/
 	$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
 		$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)")
 
@@ -202,7 +202,7 @@ checksum: FORCE
 	@$(call sha256sums,$(BIN_DIR))
 
 clean:
-	rm -rf $(TMP_DIR) $(DL_DIR) $(TARGET_DIR) $(BIN_DIR)
+	$(RM) -r $(TMP_DIR) $(DL_DIR) $(TARGET_DIR) $(BIN_DIR)
 
 
 info:

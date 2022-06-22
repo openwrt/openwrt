@@ -33,7 +33,7 @@ endef
 
 define Host/Clean
 	$(call Host/Clean/Default)
-	rm -f $(STAGING_DIR_HOST)/bin/ninja
+	$(RM) $(STAGING_DIR_HOST)/bin/ninja
 endef
 
 $(eval $(call HostBuild))

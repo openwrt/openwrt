@@ -8,17 +8,17 @@ define Build/buffalo-tftp-header
 		dd if=$@; \
 	) > $@.tmp && \
 	$(STAGING_DIR_HOST)/bin/buffalo-tftp -i $@.tmp -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/dap-header
 	$(STAGING_DIR_HOST)/bin/mkdapimg $(1) -i $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/hilink-header
 	$(STAGING_DIR_HOST)/bin/mkhilinkfw -e -i $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Device/7links_px-4885-4m

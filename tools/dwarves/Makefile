@@ -27,8 +27,8 @@ define Host/Clean
 	$(RM) $(STAGING_DIR_HOST)/bin/{ostra-cg,btfdiff,fullcircle}
 	$(RM) $(STAGING_DIR_HOST)/lib/libdwarves*.so*
 	$(RM) $(STAGING_DIR_HOST)/share/man/man1/pahole.1
-	rm -rf $(STAGING_DIR_HOST)/include/dwarves
-	rm -rf $(STAGING_DIR_HOST)/share/dwarves
+	$(RM) -r $(STAGING_DIR_HOST)/include/dwarves
+	$(RM) -r $(STAGING_DIR_HOST)/share/dwarves
 	$(call Host/Clean/Default)
 endef
 

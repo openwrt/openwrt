@@ -159,13 +159,13 @@ define DownloadMethod/cvs
 		echo "Checking out files from the cvs repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
+		$(RM) -r $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
 		cvs -d $(URL) export $(VERSION) $(SUBDIR) && \
 		echo "Packing checkout..." && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
+		$(MV) $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		$(RM) -r $(SUBDIR); \
 	)
 endef
 
@@ -174,16 +174,16 @@ define DownloadMethod/svn
 		echo "Checking out files from the svn repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
+		$(RM) -r $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
 		( svn export --non-interactive -r$(VERSION) $(URL) $(SUBDIR) || \
 		svn export --non-interactive --trust-server-cert-failures=unknown-ca -r$(VERSION) $(URL) $(SUBDIR) ) && \
 		echo "Packing checkout..." && \
 		export TAR_TIMESTAMP="" && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		rm -rf $(SUBDIR) && \
-		[ -f $(DL_DIR)/$(FILE) ] && rm -f $(DL_DIR)/$(FILE) && \
-		mv -f $(TMP_DIR)/dl/$(FILE) $(DL_DIR) || \
+		$(RM) -r $(SUBDIR) && \
+		[ -f $(DL_DIR)/$(FILE) ] && $(RM) $(DL_DIR)/$(FILE) && \
+		$(MV) $(TMP_DIR)/dl/$(FILE) $(DL_DIR) || \
 		$(CP) $(TMP_DIR)/dl/$(FILE) $(DL_DIR);
 	)
 endef
@@ -212,17 +212,17 @@ define DownloadMethod/rawgit
 	echo "Checking out files from the git repository..." && \
 	mkdir -p $(TMP_DIR)/dl && \
 	cd $(TMP_DIR)/dl && \
-	rm -rf $(SUBDIR) && \
+	$(RM) -r $(SUBDIR) && \
 	[ \! -d $(SUBDIR) ] && \
 	git clone $(OPTS) $(URL) $(SUBDIR) && \
 	(cd $(SUBDIR) && git checkout $(VERSION) && \
 	git submodule update --init --recursive) && \
 	echo "Packing checkout..." && \
 	export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --format='@%ct'` && \
-	rm -rf $(SUBDIR)/.git && \
+	$(RM) -r $(SUBDIR)/.git && \
 	$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-	mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-	rm -rf $(SUBDIR);
+	$(MV) $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+	$(RM) -r $(SUBDIR);
 endef
 
 define DownloadMethod/bzr
@@ -230,14 +230,14 @@ define DownloadMethod/bzr
 		echo "Checking out files from the bzr repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
+		$(RM) -r $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
 		bzr export --per-file-timestamps -r$(VERSION) $(SUBDIR) $(URL) && \
 		echo "Packing checkout..." && \
 		export TAR_TIMESTAMP="" && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
+		$(MV) $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		$(RM) -r $(SUBDIR); \
 	)
 endef
 
@@ -246,15 +246,15 @@ define DownloadMethod/hg
 		echo "Checking out files from the hg repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
+		$(RM) -r $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
 		hg clone -r $(VERSION) $(URL) $(SUBDIR) && \
 		export TAR_TIMESTAMP=`cd $(SUBDIR) && hg log --template '@{date}' -l 1` && \
-		find $(SUBDIR) -name .hg | xargs rm -rf && \
+		find $(SUBDIR) -name .hg | xargs $(RM) -r && \
 		echo "Packing checkout..." && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
+		$(MV) $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		$(RM) -r $(SUBDIR); \
 	)
 endef
 
@@ -263,15 +263,15 @@ define DownloadMethod/darcs
 		echo "Checking out files from the darcs repository..." && \
 		mkdir -p $(TMP_DIR)/dl && \
 		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
+		$(RM) -r $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
 		darcs get -t $(VERSION) $(URL) $(SUBDIR) && \
 		export TAR_TIMESTAMP=`cd $(SUBDIR) && LC_ALL=C darcs log --last 1 | sed -ne 's!^Date: \+!!p'` && \
-		find $(SUBDIR) -name _darcs | xargs rm -rf && \
+		find $(SUBDIR) -name _darcs | xargs $(RM) -r && \
 		echo "Packing checkout..." && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
+		$(MV) $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		$(RM) -r $(SUBDIR); \
 	)
 endef
 

@@ -29,7 +29,7 @@ define Image/InstallKernel
 endef
 
 define Image/Build/SDCard-vfat-ext4
-	rm -f $(KDIR)/boot.img
+	$(RM) $(KDIR)/boot.img
 	mkfs.fat $(KDIR)/boot.img -C $(FAT32_BLOCKS)
 
 	mcopy -i $(KDIR)/boot.img $(DTS_DIR)/$(3).dtb ::$(3).dtb

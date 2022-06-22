@@ -11,7 +11,7 @@ define Build/mkfwimage
 		-k $(IMAGE_KERNEL) \
 		-r $(IMAGE_ROOTFS) \
 		-o $@.new && \
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/combined-image
@@ -19,7 +19,7 @@ define Build/combined-image
 		"$(IMAGE_KERNEL)" \
 		"$(IMAGE_ROOTFS)" \
 		"$@.new" && \
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/mkmylofw
@@ -27,7 +27,7 @@ define Build/mkmylofw
 		-p0x020000:0x130000:ah:0x80041000:linux:$(IMAGE_KERNEL) \
 		-p0x150000:0x2a0000:::rootfs:$(IMAGE_ROOTFS) \
 		$@.new && \
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/gzip-kernel
@@ -41,7 +41,7 @@ define Build/lzma-kernel
 endef
 
 define Build/copy-kernel
-	rm -f $@ $@.elf
+	$(RM) $@ $@.elf
 	cp $< $@
 	cp $< $@.elf
 endef

@@ -109,7 +109,7 @@ define stampfile
 
   $(1)//clean:=$(1)/stamp-$(3)/clean
   $(1)/stamp-$(3)/clean: FORCE
-	$(Q)rm -f $$($(1)/stamp-$(3))
+	$(Q)$(RM) $$($(1)/stamp-$(3))
 
 endef
 endif

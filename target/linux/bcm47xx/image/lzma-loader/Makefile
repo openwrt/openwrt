@@ -30,4 +30,4 @@ install: compile
 endif
 
 clean:
-	rm -rf $(PKG_BUILD_DIR)
+	$(RM) -r $(PKG_BUILD_DIR)

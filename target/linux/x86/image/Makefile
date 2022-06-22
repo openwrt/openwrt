@@ -57,7 +57,7 @@ define Build/combined
 endef
 
 define Build/grub-config
-	rm -fR $@.boot
+	$(RM)R $@.boot
 	$(INSTALL_DIR) $@.boot/boot/grub
 	sed \
 		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
@@ -71,7 +71,7 @@ define Build/grub-config
 endef
 
 define Build/grub-install
-	rm -fR $@.grub2
+	$(RM)R $@.grub2
 	$(INSTALL_DIR) $@.grub2
 	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.grub2/
 	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img $@.grub2/core.img

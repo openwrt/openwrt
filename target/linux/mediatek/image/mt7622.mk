@@ -8,7 +8,7 @@ endif
 
 define Image/Prepare
 	# For UBI we want only one extra block
-	rm -f $(KDIR)/ubi_mark
+	$(RM) $(KDIR)/ubi_mark
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
 endef
 
@@ -25,7 +25,7 @@ define Build/buffalo-kernel-trx
 			-a 0x20000 \
 			-b $$(( $(subst k, * 1024,$(kern_size)) )) \
 			-f $(dummy),)
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/bl2
@@ -54,7 +54,7 @@ define Build/mt7622-gpt
 			-t 0x2e -N production		-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@40M \
 		)
 	cat $@.tmp >> $@
-	rm $@.tmp
+	$(RM) $@.tmp
 endef
 
 define Build/trx-nand
@@ -67,7 +67,7 @@ define Build/trx-nand
 		-f $(IMAGE_KERNEL) -a 0x20000 -b 0x400000 \
 		-f $@ \
 		-A $(KDIR)/ubi_mark -a 0x20000
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Device/bananapi_bpi-r64

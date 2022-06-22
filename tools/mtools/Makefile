@@ -32,8 +32,8 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/mcopy
-	rm -f $(STAGING_DIR_HOST)/bin/mmd
+	$(RM) $(STAGING_DIR_HOST)/bin/mcopy
+	$(RM) $(STAGING_DIR_HOST)/bin/mmd
 endef
 
 $(eval $(call HostBuild))

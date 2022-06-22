@@ -24,7 +24,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/gengetopt
+	$(RM) $(STAGING_DIR_HOST)/bin/gengetopt
 endef
 
 $(eval $(call HostBuild))
