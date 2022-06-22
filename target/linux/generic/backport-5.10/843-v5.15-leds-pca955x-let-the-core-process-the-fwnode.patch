@@ -14,8 +14,6 @@ Signed-off-by: Pavel Machek <pavel@ucw.cz>
  drivers/leds/leds-pca955x.c | 58 +++++++++++++++++++------------------
  1 file changed, 30 insertions(+), 28 deletions(-)
 
-diff --git a/drivers/leds/leds-pca955x.c b/drivers/leds/leds-pca955x.c
-index fa1d77d86ef67b..a6aa4b9abde8c4 100644
 --- a/drivers/leds/leds-pca955x.c
 +++ b/drivers/leds/leds-pca955x.c
 @@ -127,10 +127,9 @@ struct pca955x_led {
@@ -30,7 +28,7 @@ index fa1d77d86ef67b..a6aa4b9abde8c4 100644
  };
  
  struct pca955x_platform_data {
-@@ -439,7 +438,6 @@ pca955x_get_pdata(struct i2c_client *client, struct pca955x_chipdef *chip)
+@@ -439,7 +438,6 @@ pca955x_get_pdata(struct i2c_client *cli
  		return ERR_PTR(-ENOMEM);
  
  	device_for_each_child_node(&client->dev, child) {
@@ -38,7 +36,7 @@ index fa1d77d86ef67b..a6aa4b9abde8c4 100644
  		const char *state;
  		u32 reg;
  		int res;
-@@ -448,17 +446,10 @@ pca955x_get_pdata(struct i2c_client *client, struct pca955x_chipdef *chip)
+@@ -448,17 +446,10 @@ pca955x_get_pdata(struct i2c_client *cli
  		if ((res != 0) || (reg >= chip->bits))
  			continue;
  
@@ -57,7 +55,7 @@ index fa1d77d86ef67b..a6aa4b9abde8c4 100644
  
  		if (!fwnode_property_read_string(child, "default-state",
  						 &state)) {
-@@ -495,11 +486,14 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -495,11 +486,14 @@ static int pca955x_probe(struct i2c_clie
  	struct pca955x_led *pca955x_led;
  	struct pca955x_chipdef *chip;
  	struct led_classdev *led;
@@ -72,7 +70,7 @@ index fa1d77d86ef67b..a6aa4b9abde8c4 100644
  
  	chip = &pca955x_chipdefs[id->driver_data];
  	adapter = client->adapter;
-@@ -547,6 +541,9 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -547,6 +541,9 @@ static int pca955x_probe(struct i2c_clie
  	pca955x->client = client;
  	pca955x->chipdef = chip;
  
@@ -82,7 +80,7 @@ index fa1d77d86ef67b..a6aa4b9abde8c4 100644
  	for (i = 0; i < chip->bits; i++) {
  		pca955x_led = &pca955x->leds[i];
  		pca955x_led->led_num = i;
-@@ -560,23 +557,7 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -560,23 +557,7 @@ static int pca955x_probe(struct i2c_clie
  			ngpios++;
  			break;
  		case PCA955X_TYPE_LED:
@@ -106,7 +104,7 @@ index fa1d77d86ef67b..a6aa4b9abde8c4 100644
  			led->brightness_set_blocking = pca955x_led_set;
  			led->brightness_get = pca955x_led_get;
  
-@@ -592,7 +573,28 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -592,7 +573,28 @@ static int pca955x_probe(struct i2c_clie
  					return err;
  			}
  

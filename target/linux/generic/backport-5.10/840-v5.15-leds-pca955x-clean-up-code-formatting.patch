@@ -11,11 +11,9 @@ Signed-off-by: Pavel Machek <pavel@ucw.cz>
  drivers/leds/leds-pca955x.c | 63 ++++++++++++++++++-------------------
  1 file changed, 30 insertions(+), 33 deletions(-)
 
-diff --git a/drivers/leds/leds-pca955x.c b/drivers/leds/leds-pca955x.c
-index 7087ca4592fc96..f0d841cb59fcc8 100644
 --- a/drivers/leds/leds-pca955x.c
 +++ b/drivers/leds/leds-pca955x.c
-@@ -166,11 +166,10 @@ static inline u8 pca955x_ledsel(u8 oldval, int led_num, int state)
+@@ -166,11 +166,10 @@ static inline u8 pca955x_ledsel(u8 oldva
  static int pca955x_write_psc(struct i2c_client *client, int n, u8 val)
  {
  	struct pca955x *pca955x = i2c_get_clientdata(client);
@@ -29,7 +27,7 @@ index 7087ca4592fc96..f0d841cb59fcc8 100644
  	if (ret < 0)
  		dev_err(&client->dev, "%s: reg 0x%x, val 0x%x, err %d\n",
  			__func__, n, val, ret);
-@@ -187,11 +186,10 @@ static int pca955x_write_psc(struct i2c_client *client, int n, u8 val)
+@@ -187,11 +186,10 @@ static int pca955x_write_psc(struct i2c_
  static int pca955x_write_pwm(struct i2c_client *client, int n, u8 val)
  {
  	struct pca955x *pca955x = i2c_get_clientdata(client);
@@ -43,7 +41,7 @@ index 7087ca4592fc96..f0d841cb59fcc8 100644
  	if (ret < 0)
  		dev_err(&client->dev, "%s: reg 0x%x, val 0x%x, err %d\n",
  			__func__, n, val, ret);
-@@ -205,11 +203,10 @@ static int pca955x_write_pwm(struct i2c_client *client, int n, u8 val)
+@@ -205,11 +203,10 @@ static int pca955x_write_pwm(struct i2c_
  static int pca955x_write_ls(struct i2c_client *client, int n, u8 val)
  {
  	struct pca955x *pca955x = i2c_get_clientdata(client);
@@ -57,7 +55,7 @@ index 7087ca4592fc96..f0d841cb59fcc8 100644
  	if (ret < 0)
  		dev_err(&client->dev, "%s: reg 0x%x, val 0x%x, err %d\n",
  			__func__, n, val, ret);
-@@ -223,10 +220,10 @@ static int pca955x_write_ls(struct i2c_client *client, int n, u8 val)
+@@ -223,10 +220,10 @@ static int pca955x_write_ls(struct i2c_c
  static int pca955x_read_ls(struct i2c_client *client, int n, u8 *val)
  {
  	struct pca955x *pca955x = i2c_get_clientdata(client);
@@ -78,7 +76,7 @@ index 7087ca4592fc96..f0d841cb59fcc8 100644
  	struct fwnode_handle *child;
  	int count;
  
-@@ -401,13 +399,13 @@ pca955x_get_pdata(struct i2c_client *client, struct pca955x_chipdef *chip)
+@@ -401,13 +399,13 @@ pca955x_get_pdata(struct i2c_client *cli
  		if ((res != 0) && is_of_node(child))
  			name = to_of_node(child)->name;
  
@@ -97,7 +95,7 @@ index 7087ca4592fc96..f0d841cb59fcc8 100644
  	}
  
  	pdata->num_leds = chip->bits;
-@@ -426,11 +424,12 @@ static const struct of_device_id of_pca955x_match[] = {
+@@ -426,11 +424,12 @@ static const struct of_device_id of_pca9
  MODULE_DEVICE_TABLE(of, of_pca955x_match);
  
  static int pca955x_probe(struct i2c_client *client,
@@ -111,7 +109,7 @@ index 7087ca4592fc96..f0d841cb59fcc8 100644
  	struct i2c_adapter *adapter;
  	int i, err;
  	struct pca955x_platform_data *pdata;
-@@ -449,13 +448,13 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -449,13 +448,13 @@ static int pca955x_probe(struct i2c_clie
  	if ((client->addr & ~((1 << chip->slv_addr_shift) - 1)) !=
  	    chip->slv_addr) {
  		dev_err(&client->dev, "invalid slave address %02x\n",
@@ -128,7 +126,7 @@ index 7087ca4592fc96..f0d841cb59fcc8 100644
  
  	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA))
  		return -EIO;
-@@ -471,8 +470,8 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -471,8 +470,8 @@ static int pca955x_probe(struct i2c_clie
  	if (!pca955x)
  		return -ENOMEM;
  
@@ -139,7 +137,7 @@ index 7087ca4592fc96..f0d841cb59fcc8 100644
  	if (!pca955x->leds)
  		return -ENOMEM;
  
-@@ -501,27 +500,25 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -501,27 +500,25 @@ static int pca955x_probe(struct i2c_clie
  			 */
  			if (pdata->leds[i].name[0] == '\0')
  				snprintf(pdata->leds[i].name,

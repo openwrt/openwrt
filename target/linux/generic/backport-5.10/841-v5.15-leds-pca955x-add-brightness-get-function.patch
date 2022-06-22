@@ -11,11 +11,9 @@ Signed-off-by: Pavel Machek <pavel@ucw.cz>
  drivers/leds/leds-pca955x.c | 52 +++++++++++++++++++++++++++++++++++++
  1 file changed, 52 insertions(+)
 
-diff --git a/drivers/leds/leds-pca955x.c b/drivers/leds/leds-pca955x.c
-index f0d841cb59fcc8..e47ba7c3b7c7d8 100644
 --- a/drivers/leds/leds-pca955x.c
 +++ b/drivers/leds/leds-pca955x.c
-@@ -233,6 +233,57 @@ static int pca955x_read_ls(struct i2c_client *client, int n, u8 *val)
+@@ -233,6 +233,57 @@ static int pca955x_read_ls(struct i2c_cl
  	return 0;
  }
  
@@ -73,7 +71,7 @@ index f0d841cb59fcc8..e47ba7c3b7c7d8 100644
  static int pca955x_led_set(struct led_classdev *led_cdev,
  			    enum led_brightness value)
  {
-@@ -512,6 +563,7 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -512,6 +563,7 @@ static int pca955x_probe(struct i2c_clie
  
  			led->name = pca955x_led->name;
  			led->brightness_set_blocking = pca955x_led_set;

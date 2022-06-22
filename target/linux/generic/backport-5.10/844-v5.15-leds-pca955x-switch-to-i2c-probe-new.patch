@@ -14,11 +14,9 @@ Signed-off-by: Pavel Machek <pavel@ucw.cz>
  drivers/leds/leds-pca955x.c | 23 +++++++++++++++++++----
  1 file changed, 19 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/leds/leds-pca955x.c b/drivers/leds/leds-pca955x.c
-index a6aa4b9abde8c4..a6b5699aeae4fe 100644
 --- a/drivers/leds/leds-pca955x.c
 +++ b/drivers/leds/leds-pca955x.c
-@@ -479,8 +479,7 @@ static const struct of_device_id of_pca955x_match[] = {
+@@ -479,8 +479,7 @@ static const struct of_device_id of_pca9
  };
  MODULE_DEVICE_TABLE(of, of_pca955x_match);
  
@@ -28,7 +26,7 @@ index a6aa4b9abde8c4..a6b5699aeae4fe 100644
  {
  	struct pca955x *pca955x;
  	struct pca955x_led *pca955x_led;
-@@ -494,8 +493,24 @@ static int pca955x_probe(struct i2c_client *client,
+@@ -494,8 +493,24 @@ static int pca955x_probe(struct i2c_clie
  	bool set_default_label = false;
  	bool keep_pwm = false;
  	char default_label[8];
@@ -54,7 +52,7 @@ index a6aa4b9abde8c4..a6b5699aeae4fe 100644
  	adapter = client->adapter;
  	pdata = dev_get_platdata(&client->dev);
  	if (!pdata) {
-@@ -670,7 +685,7 @@ static struct i2c_driver pca955x_driver = {
+@@ -670,7 +685,7 @@ static struct i2c_driver pca955x_driver
  		.name	= "leds-pca955x",
  		.of_match_table = of_pca955x_match,
  	},
@@ -62,3 +60,4 @@ index a6aa4b9abde8c4..a6b5699aeae4fe 100644
 +	.probe_new = pca955x_probe,
  	.id_table = pca955x_id,
  };
+ 
