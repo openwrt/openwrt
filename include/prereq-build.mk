@@ -30,7 +30,7 @@ $(eval $(call SetupHostCommand,make, \
 
 $(eval $(call TestHostCommand,case-sensitive-fs, \
 	OpenWrt can only be built on a case-sensitive filesystem, \
-	rm -f $(TMP_DIR)/test.*; touch $(TMP_DIR)/test.fs; \
+	$(RM) $(TMP_DIR)/test.*; touch $(TMP_DIR)/test.fs; \
 		test ! -f $(TMP_DIR)/test.FS))
 
 $(eval $(call TestHostCommand,proper-umask, \

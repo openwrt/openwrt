@@ -5,11 +5,11 @@ define Build/netgear-rootfs
 		-n '$(VERSION_DIST) filesystem' \
 		-d $(IMAGE_ROOTFS) $@.fs
 	cat $@.fs >> $@
-	rm -rf $@.fs
+	$(RM) -r $@.fs
 endef
 
 define Build/netgear-squashfs
-	rm -rf $@.fs $@.squashfs
+	$(RM) -r $@.fs $@.squashfs
 	mkdir -p $@.fs/image
 	cp $@ $@.fs/image/uImage
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma  \
@@ -24,7 +24,7 @@ define Build/netgear-squashfs
 		-a 0xbf070000 -e 0xbf070000 \
 		-n 'MIPS $(VERSION_DIST) Linux-$(LINUX_VERSION)' \
 		-d $@.squashfs $@
-	rm -rf $@.squashfs $@.fs
+	$(RM) -r $@.squashfs $@.fs
 endef
 
 define Device/netgear_generic

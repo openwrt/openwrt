@@ -6,18 +6,18 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/Prepare
-	rm -f $(KDIR)/fs_mark
+	$(RM) $(KDIR)/fs_mark
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/fs_mark
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 
 	# For UBI we want only one extra block
-	rm -f $(KDIR)/ubi_mark
+	$(RM) $(KDIR)/ubi_mark
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
 endef
 
 define Build/lzma-d16
 	$(STAGING_DIR_HOST)/bin/lzma e $@ -d16 $(1) $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 # Similar to Build/tplink-safeloader but uses TRX instead of clean kernel
@@ -32,8 +32,8 @@ define Build/bcm53xx-tplink-safeloader
 		-r $@ \
 		-j \
 		-o $@.new
-	mv $@.new $@
-	rm $@.trx
+	$(MV) $@.new $@
+	$(RM) $@.trx
 endef
 
 define Build/buffalo-wzr-header
@@ -44,7 +44,7 @@ define Build/buffalo-wzr-header
 		echo filelen=$$(stat -c%s $@); \
 		cat $@ \
 	) > $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 # TRX with only one (kernel) partition
@@ -53,14 +53,14 @@ define Build/trx
 		-o $@.new \
 		-m 33554432 \
 		-f $@
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/trx-serial
 	$(STAGING_DIR_HOST)/bin/otrx create $@.new \
 		-f $(IMAGE_KERNEL) -a 1024 \
 		-f $@ -a 0x10000 -A $(KDIR)/fs_mark
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/trx-nand
@@ -72,20 +72,20 @@ define Build/trx-nand
 		-f $(IMAGE_KERNEL) -a 0x20000 -b 0x400000 \
 		-f $@ \
 		-A $(KDIR)/ubi_mark -a 0x20000
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/asus-trx
 	$(STAGING_DIR_HOST)/bin/asustrx \
 		-p $(ASUS_PRODUCTID) -i $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/luxul-lxl
 	$(STAGING_DIR_HOST)/bin/lxlfw create $@.new \
 		-i $@ \
 		-b $(LUXUL_BOARD)
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/seama-nand

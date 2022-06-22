@@ -48,10 +48,10 @@ PACKAGE_INSTALL_FILES:= \
 	)
 
 $(curdir)/cleanup: $(TMP_DIR)/.build
-	rm -rf $(STAGING_DIR_ROOT)
+	$(RM) -r $(STAGING_DIR_ROOT)
 
 $(curdir)/merge:
-	rm -rf $(PACKAGE_DIR_ALL)
+	$(RM) -r $(PACKAGE_DIR_ALL)
 	mkdir -p $(PACKAGE_DIR_ALL)
 	-$(foreach pdir,$(PACKAGE_SUBDIRS),$(if $(wildcard $(pdir)/*.ipk),ln -s $(pdir)/*.ipk $(PACKAGE_DIR_ALL);))
 
@@ -64,7 +64,7 @@ endif
 
 $(curdir)/install: $(TMP_DIR)/.build $(curdir)/merge $(if $(CONFIG_TARGET_PER_DEVICE_ROOTFS),$(curdir)/merge-index)
 	- find $(STAGING_DIR_ROOT) -type d | $(XARGS) chmod 0755
-	rm -rf $(TARGET_DIR) $(TARGET_DIR_ORIG)
+	$(RM) -r $(TARGET_DIR) $(TARGET_DIR_ORIG)
 	mkdir -p $(TARGET_DIR)/tmp
 	$(file >$(TMP_DIR)/opkg_install_list,\
 	  $(call opkg_package_files,\

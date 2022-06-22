@@ -1,6 +1,6 @@
 ifdef CONFIG_USE_MKLIBS
   define mklibs
-	rm -rf $(TMP_DIR)/mklibs-progs $(TMP_DIR)/mklibs-out
+	$(RM) -r $(TMP_DIR)/mklibs-progs $(TMP_DIR)/mklibs-out
 	# first find all programs and add them to the mklibs list
 	find $(STAGING_DIR_ROOT) -type f -perm /100 -exec \
 		file -r -N -F '' {} + | \
@@ -55,7 +55,7 @@ ifdef CONFIG_CLEAN_IPKG
 		!/^ / { conffiles = 0; next } \
 		conffiles == 1 { print } \
 	' $(1)/usr/lib/opkg/status >$(1)/usr/lib/opkg/status.new
-	mv $(1)/usr/lib/opkg/status.new $(1)/usr/lib/opkg/status
+	$(MV) $(1)/usr/lib/opkg/status.new $(1)/usr/lib/opkg/status
 	-find $(1)/usr/lib/opkg -type f -size 0 | $(XARGS) $(RM)
   endef
 endif
@@ -88,8 +88,8 @@ define prepare_rootfs
 		done || true \
 	)
 	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
-	$(Q)-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
-	rm -rf \
+	$(Q)-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) $(RM) -r
+	$(Q) -r \
 		$(1)/boot \
 		$(1)/tmp/* \
 		$(1)/usr/lib/opkg/info/*.postinst* \

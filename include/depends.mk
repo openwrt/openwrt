@@ -28,7 +28,7 @@ ifneq ($(wildcard $(2)),)
 		{ [ \! -f "$(3)" ] || diff $(3) $(3).1 >/dev/null; } && \
 	) \
 	{ \
-		[ -f "$(2)_check.1" ] && mv "$(2)_check.1"; \
+		[ -f "$(2)_check.1" ] && $(MV) "$(2)_check.1"; \
 		$(foreach depfile,$(1) $(2),$(TOPDIR)/scripts/timestamp.pl $(DEP_FINDPARAMS) $(4) -n $(depfile) &&) { \
 			$(call debug_eval,$(SUBDIR),r,echo "No need to rebuild $(2)";) \
 			touch -r "$(2)" "$(2)_check"; \
@@ -37,10 +37,10 @@ ifneq ($(wildcard $(2)),)
 		$(call debug_eval,$(SUBDIR),r,echo "Need to rebuild $(2)";) \
 		touch "$(2)_check"; \
 	}
-	$(if $(3), mv $(3).1 $(3))
+	$(if $(3), $(MV) $(3).1 $(3))
 else
   $(2)_check::
-	$(if $(3), rm -f $(3) $(3).1)
+	$(if $(3), $(RM) $(3) $(3).1)
 	$(call debug_eval,$(SUBDIR),r,echo "Target $(2) not built")
 endif
 

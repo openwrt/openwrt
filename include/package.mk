@@ -96,7 +96,7 @@ STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(B
 STAGING_FILES_LIST:=$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).list
 
 define CleanStaging
-	rm -f $(STAMP_INSTALLED)
+	$(RM) $(STAMP_INSTALLED)
 	$(Q)-(\
 		if [ -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) ]; then \
 			$(SCRIPT_DIR)/clean-package.sh \
@@ -162,7 +162,7 @@ ifdef USE_GIT_TREE
 endif
 ifdef USE_SOURCE_DIR
   define Build/Prepare/Default
-	rm -rf $(PKG_SOURCE_DIR)
+	$(RM) -r $(PKG_SOURCE_DIR)
 	$(if $(wildcard $(USE_SOURCE_DIR)/*),,$(Q)echo "Error: USE_SOURCE_DIR=$(USE_SOURCE_DIR) path not found"; false)
 	ln -snf $(USE_SOURCE_DIR) $(PKG_SOURCE_DIR)
 	touch $(PKG_SOURCE_DIR)/.source_dir
@@ -196,7 +196,7 @@ define Build/CoreTargets
 
   $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)
-	$(Q)-rm -rf $(PKG_BUILD_DIR)
+	$(Q)-$(RM) -r $(PKG_BUILD_DIR)
 	$(Q)mkdir -p $(PKG_BUILD_DIR)
 	$(Q)mkdir -p $(PKG_SOURCE_DIR)
 	touch $$@_check
@@ -207,7 +207,7 @@ define Build/CoreTargets
 
   $(call Build/Exports,$(STAMP_CONFIGURED))
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(STAMP_CONFIGURED_DEPENDS)
-	rm -f $(STAMP_CONFIGURED_WILDCARD)
+	$(RM) $(STAMP_CONFIGURED_WILDCARD)
 	$(CleanStaging)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
@@ -216,7 +216,7 @@ define Build/CoreTargets
 
   $(call Build/Exports,$(STAMP_BUILT))
   $(STAMP_BUILT): $(STAMP_CONFIGURED) $(STAMP_BUILT_DEPENDS)
-	rm -f $$@
+	$(RM) $$@
 	touch $$@_check
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
 	$(Build/Compile)
@@ -227,7 +227,7 @@ define Build/CoreTargets
 
   $(STAMP_INSTALLED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_INSTALLED): $(STAMP_BUILT)
-	rm -rf $(TMP_DIR)/stage-$(PKG_DIR_NAME)
+	$(RM) -r $(TMP_DIR)/stage-$(PKG_DIR_NAME)
 	mkdir -p $(TMP_DIR)/stage-$(PKG_DIR_NAME)/host $(STAGING_DIR)/packages
 	$(foreach hook,$(Hooks/InstallDev/Pre),\
 		$(call $(hook),$(TMP_DIR)/stage-$(PKG_DIR_NAME),$(TMP_DIR)/stage-$(PKG_DIR_NAME)/host)$(sep)\
@@ -244,14 +244,14 @@ define Build/CoreTargets
 	if [ -d $(TMP_DIR)/stage-$(PKG_DIR_NAME) ]; then \
 		$(call locked, \
 			(cd $(TMP_DIR)/stage-$(PKG_DIR_NAME); find ./ > $(TMP_DIR)/stage-$(PKG_DIR_NAME).files) && \
-				rm -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) && \
+				$(RM) $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) && \
 				$(CP) $(TMP_DIR)/stage-$(PKG_DIR_NAME).files $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) && \
 				$(CP) $(TMP_DIR)/stage-$(PKG_DIR_NAME)/* $(STAGING_DIR)/ \
 			;, \
 			$(STAGING_DIR) \
 		); \
 	fi
-	rm -rf $(TMP_DIR)/stage-$(PKG_DIR_NAME)
+	$(RM) -r $(TMP_DIR)/stage-$(PKG_DIR_NAME)
 	touch $$@
 
   ifdef Build/InstallDev
@@ -267,7 +267,7 @@ define Build/CoreTargets
     compile:
 		-touch -r $(PKG_SOURCE_DIR)/.built $(PKG_SOURCE_DIR)/.autoremove 2>/dev/null >/dev/null
 		$$(call find_depth,$(PKG_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')' ! -name '.pkgdir',1,1) | \
-			$(XARGS) rm -rf
+			$(XARGS) $(RM) -r
   endif
 endef
 
@@ -332,7 +332,7 @@ Build/DistCheck=+$(call Build/DistCheck/Default,)
 
 prepare-package-install: FORCE
 	$(Q)mkdir -p $(PKG_INFO_DIR)
-	$(Q)rm -f $(PKG_INSTALL_STAMP)
+	$(Q)$(RM) $(PKG_INSTALL_STAMP)
 	$(Q)echo "$(filter-out essential nonshared,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
 
 $(PACKAGE_DIR):
@@ -343,7 +343,7 @@ compile:
 install: compile
 
 force-clean-build: FORCE
-	rm -rf $(PKG_BUILD_DIR) $(PKG_INSTALL_DIR) $(STAMP_BUILT)
+	$(RM) -r $(PKG_BUILD_DIR) $(PKG_INSTALL_DIR) $(STAMP_BUILT)
 
 clean-build: $(if $(wildcard $(PKG_SOURCE_DIR)/.autoremove),force-clean-build)
 
@@ -351,7 +351,7 @@ clean: force-clean-build
 	$(CleanStaging)
 	$(call Build/UninstallDev,$(STAGING_DIR),$(STAGING_DIR)/host)
 	$(Build/Clean)
-	rm -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST)
+	$(RM) $(STAGING_DIR)/packages/$(STAGING_FILES_LIST)
 
 dist:
 	$(Build/Dist)

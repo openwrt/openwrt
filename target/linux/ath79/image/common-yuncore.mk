@@ -8,5 +8,5 @@ define Build/yuncore-tftp-header-16m
 		dd bs=192 count=1 conv=sync; \
 		dd if=$@; \
 	) > $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef

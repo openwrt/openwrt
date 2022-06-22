@@ -12,7 +12,7 @@ define Build/MerakiAdd-dtb
 		dd if=$@.dtb bs=$(DTB_SIZE) conv=sync; \
 		cat $@ ; \
 	) > $@.new
-	@mv $@.new $@
+	@$(MV) $@.new $@
 endef
 
 define Build/MerakiNAND

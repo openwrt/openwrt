@@ -41,6 +41,6 @@ compile: $(KDIR)/loader$(LOADER_TYPE).elf $(KDIR)/loader$(LOADER_TYPE).bin
 install:
 
 clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(KDIR)/loader.elf
-	rm -f $(KDIR)/loader.bin
+	$(RM) -r $(PKG_BUILD_DIR)
+	$(RM) $(KDIR)/loader.elf
+	$(RM) $(KDIR)/loader.bin

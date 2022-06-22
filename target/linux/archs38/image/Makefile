@@ -46,7 +46,7 @@ define Image/Prepare
 endef
 
 define Image/Build/SDCard
-	rm -f $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img
+	$(RM) $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img
 	mkfs.fat $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img -C $(FAT32_BLOCKS)
 	mkimage -C none -A arc -T script -d uEnv.txt $(BIN_DIR)/uEnv.scr
 	mkenvimage -s 0x4000 -o $(BIN_DIR)/uboot.env ./uboot.env.txt

@@ -6,7 +6,7 @@ include $(INCLUDE_DIR)/image.mk
 SQUASHFSCOMP := xz $(LZMA_XZ_OPTIONS)
 
 define Build/sdcard-img
-        rm -fR $@.boot
+        $(RM)R $@.boot
         mkdir -p $@.boot
         $(CP) $(KDIR)/$(DEVICE_NAME)$(KERNEL_SUFFIX) $@.boot
         $(if $(DEVICE_DTS),\

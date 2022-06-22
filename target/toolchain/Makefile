@@ -43,7 +43,7 @@ $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.xz: clean
 	chmod +x $(TOOLCHAIN_PREFIX)/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
 	(cd $(TOOLCHAIN_PREFIX)/bin; \
 		for app in cc gcc g++ c++ cpp ld as ; do \
-			[ -f $(REAL_GNU_TARGET_NAME)-$${app} ] && mv $(REAL_GNU_TARGET_NAME)-$${app} $(REAL_GNU_TARGET_NAME)-$${app}.bin ; \
+			[ -f $(REAL_GNU_TARGET_NAME)-$${app} ] && $(MV) $(REAL_GNU_TARGET_NAME)-$${app} $(REAL_GNU_TARGET_NAME)-$${app}.bin ; \
 			ln -sf $(REAL_GNU_TARGET_NAME)-wrapper.sh $(REAL_GNU_TARGET_NAME)-$${app} ; \
 		done; \
 	)
@@ -57,9 +57,9 @@ $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.xz: clean
 	) | xargs strip 2>/dev/null >/dev/null
 
 	echo REVISION:="$(REVISION)" > $(TOOLCHAIN_BUILD_DIR)/version.mk
-	find $(TOOLCHAIN_BUILD_DIR) -name .git | $(XARGS) rm -rf
-	find $(TOOLCHAIN_BUILD_DIR) -name .svn | $(XARGS) rm -rf
-	find $(TOOLCHAIN_BUILD_DIR) -name CVS | $(XARGS) rm -rf
+	find $(TOOLCHAIN_BUILD_DIR) -name .git | $(XARGS) $(RM) -r
+	find $(TOOLCHAIN_BUILD_DIR) -name .svn | $(XARGS) $(RM) -r
+	find $(TOOLCHAIN_BUILD_DIR) -name CVS | $(XARGS) $(RM) -r
 	mkdir -p $(BIN_DIR)
 	(cd $(BUILD_DIR); \
 		tar -I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' -cf $@ $(TOOLCHAIN_NAME) \
@@ -72,4 +72,4 @@ compile: $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.xz
 install: compile
 
 clean:
-	rm -rf $(TOOLCHAIN_BUILD_DIR) $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.xz
+	$(RM) -r $(TOOLCHAIN_BUILD_DIR) $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.xz

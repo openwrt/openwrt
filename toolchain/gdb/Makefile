@@ -64,7 +64,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -rf \
+	$(RM) -r \
 		$(HOST_BUILD_DIR) \
 		$(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)gdb \
 		$(TOOLCHAIN_DIR)/bin/$(GNU_TARGET_NAME)-gdb

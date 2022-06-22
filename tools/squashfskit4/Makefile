@@ -34,8 +34,8 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/mksquashfs4
-	rm -f $(STAGING_DIR_HOST)/bin/unsquashfs4
+	$(RM) $(STAGING_DIR_HOST)/bin/mksquashfs4
+	$(RM) $(STAGING_DIR_HOST)/bin/unsquashfs4
 endef
 
 $(eval $(call HostBuild))

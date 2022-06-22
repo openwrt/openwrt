@@ -24,7 +24,7 @@ define Build/senao-tar-gz
 	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-C $@.tmp . | gzip -9n > $@ && \
-	rm -rf $@.tmp $@.len $@.md5
+	$(RM) -r $@.tmp $@.len $@.md5
 endef
 
 define Device/senao_loader_okli

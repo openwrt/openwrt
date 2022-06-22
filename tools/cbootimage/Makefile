@@ -24,7 +24,7 @@ define Host/Configure
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/$(PKG_NAME) \
+	$(RM) $(STAGING_DIR_HOST)/bin/$(PKG_NAME) \
 		$(STAGING_DIR_HOST)/share/man/man1/$(PKG_NAME).1
 endef
 

@@ -18,7 +18,7 @@ RELOCATE_MAKEOPTS= \
 		LZMA_TEXT_START=$(LOADER_ENTRY)
 
 define Build/Compile
-	rm -rf $(KDIR)/relocate
+	$(RM) -r $(KDIR)/relocate
 	$(CP) ../../generic/image/relocate $(KDIR)
 	$(MAKE) -C $(KDIR)/relocate $(RELOCATE_MAKEOPTS)
 endef
@@ -28,11 +28,11 @@ define Build/hcs-initramfs
 	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_bytes=$(HCS_MAGIC_BYTES) \
 		--rev_maj=$(HCS_REV_MAJ) --rev_min=$(HCS_REV_MIN) --input_file=$@ \
 		--output_file=$@.hcs --ldaddress=$(KERNEL_LOADADDR)
-	mv $@.hcs $@
+	$(MV) $@.hcs $@
 endef
 
 define Build/loader-lzma
-	rm -rf $@.src
+	$(RM) -r $@.src
 	$(MAKE) -C lzma-loader \
 		KDIR=$(KDIR) \
 		LOADER_ADDR=$(if $(DEVICE_LOADADDR),$(DEVICE_LOADADDR),$(LOADER_ENTRY)) \
@@ -45,8 +45,8 @@ define Build/loader-lzma
 		LOADER_DATA="$@" \
 		LOADER_NAME="$(notdir $@)" \
 		compile loader.$(1)
-	mv "$@.$(1)" "$@"
-	rm -rf $@.src
+	$(MV) "$@.$(1)" "$@"
+	$(RM) -r $@.src
 endef
 
 define Build/lzma-cfe
@@ -58,7 +58,7 @@ define Build/lzma-cfe
 	# Strip out the length, CFE doesn't like this
 	dd if=$@ of=$@.new bs=5 count=1
 	dd if=$@ of=$@.new ibs=13 obs=5 skip=1 seek=1 conv=notrunc
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/relocate-kernel
@@ -71,7 +71,7 @@ define Build/relocate-kernel
 		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
 		cat $@ \
 	) > $@.relocate
-	mv $@.relocate $@
+	$(MV) $@.relocate $@
 endef
 
 ### Image scripts ###
@@ -112,9 +112,9 @@ define Build/cfe-jffs2
 endef
 
 define Build/cfe-jffs2-cferam
-	mv $@ $@.kernel
+	$(MV) $@ $@.kernel
 
-	rm -rf $@-cferam
+	$(RM) -r $@-cferam
 	mkdir -p $@-cferam
 
 	# CFE ROM checks JFFS2 dirent version of cferam.
@@ -140,11 +140,11 @@ define Build/cfe-jffs2-cferam
 
 	# Append kernel
 	dd if=$@.kernel >> $@
-	rm -f $@.kernel
+	$(RM) $@.kernel
 endef
 
 define Build/cfe-jffs2-kernel
-	rm -rf $@-kernel
+	$(RM) -r $@-kernel
 	mkdir -p $@-kernel
 
 	# CFE RAM checks JFFS2 dirent version of vmlinux.
@@ -175,7 +175,7 @@ define Build/cfe-jffs2-kernel
 endef
 
 define Build/cfe-part-tag
-	mv $@ $@.part
+	$(MV) $@ $@.part
 
 	$(TOPDIR)/scripts/cfe-partition-tag.py \
 		--input-file $@.part \
@@ -198,7 +198,7 @@ define Build/cfe-sercomm-part
 		--part-version OpenWrt \
 		--rootfs-version $(SERCOMM_VERSION)
 
-	rm -rf $@-rootfs_lib
+	$(RM) -r $@-rootfs_lib
 	mkdir -p $@-rootfs_lib
 	echo $(SERCOMM_VERSION) > $@-rootfs_lib/lib_ver
 	$(call Build/cfe-jffs2,$@-rootfs_lib)
@@ -209,7 +209,7 @@ define Build/cfe-sercomm-part
 		--part-name rootfs_lib \
 		--part-version $(SERCOMM_VERSION)
 
-	mv $@.kernel_rootfs $@
+	$(MV) $@.kernel_rootfs $@
 	dd if=$@.rootfs_lib >> $@
 endef
 
@@ -219,7 +219,7 @@ define Build/cfe-sercomm-load
 		--output-file $@.new \
 		--pid "$(SERCOMM_PID)"
 
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/cfe-sercomm-crypto
@@ -233,8 +233,8 @@ define Build/cfe-sercomm-crypto
 		-K `cat $@.key` \
 		-iv 00000000000000000000000000000000
 	dd if=$@.enc >> $@.ser
-	mv $@.ser $@
-	rm -f $@.enc $@.key
+	$(MV) $@.ser $@
+	$(RM) $@.enc $@.key
 endef
 
 define Build/cfe-old-bin
@@ -261,17 +261,17 @@ define Build/cfe-wfi-tag
 		--chip-id $(CFE_WFI_CHIP_ID) \
 		--flash-type $(CFE_WFI_FLASH_TYPE) \
 		$(if $(CFE_WFI_FLAGS),--flags $(CFE_WFI_FLAGS))
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/spw303v-bin
 	$(STAGING_DIR_HOST)/bin/spw303v -i $@ -o $@.spw303v
-	mv $@.spw303v $@
+	$(MV) $@.spw303v $@
 endef
 
 define Build/zyxel-bin
 	$(STAGING_DIR_HOST)/bin/zyxbcm -i $@ -o $@.zyxel
-	mv $@.zyxel $@
+	$(MV) $@.zyxel $@
 endef
 
 define Build/redboot-bin

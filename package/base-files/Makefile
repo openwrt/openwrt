@@ -121,19 +121,19 @@ endif
 
 ifeq ($(CONFIG_NAND_SUPPORT),)
   define Package/base-files/nand-support
-	rm -f $(1)/lib/upgrade/nand.sh
+	$(RM) $(1)/lib/upgrade/nand.sh
   endef
 endif
 
 ifeq ($(CONFIG_EMMC_SUPPORT),)
   define Package/base-files/emmc-support
-	rm -f $(1)/lib/upgrade/emmc.sh
+	$(RM) $(1)/lib/upgrade/emmc.sh
   endef
 endif
 
 ifeq ($(CONFIG_LEGACY_SDCARD_SUPPORT),)
   define Package/base-files/legacy-sdcard-support
-	rm -f $(1)/lib/upgrade/legacy-sdcard.sh
+	$(RM) $(1)/lib/upgrade/legacy-sdcard.sh
   endef
 endif
 
@@ -191,7 +191,7 @@ define Package/base-files/install
 	$(if $(LIB_SUFFIX),-$(LN) lib $(1)/usr/lib$(LIB_SUFFIX))
 
 ifneq ($(CONFIG_TARGET_ROOTFS_PERSIST_VAR),y)
-	rm -f $(1)/var
+	$(RM) $(1)/var
 	$(LN) tmp $(1)/var
 else
 	mkdir -p $(1)/var
@@ -222,10 +222,10 @@ endif
 		$(call FeedSourcesAppend,$(1)/etc/opkg/distfeeds.conf); \
 		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
 	$(if $(CONFIG_IPK_FILES_CHECKSUMS),, \
-		rm -f $(1)/sbin/pkg_check)
+		$(RM) $(1)/sbin/pkg_check)
 
 	$(if $(CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE), \
-		rm -f $(1)/etc/banner.failsafe,)
+		$(RM) $(1)/etc/banner.failsafe,)
 endef
 
 ifneq ($(DUMP),1)

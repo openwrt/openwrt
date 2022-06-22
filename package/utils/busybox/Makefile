@@ -118,7 +118,7 @@ ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
 endif
 
 define Build/Configure
-	rm -f $(PKG_BUILD_DIR)/.config
+	$(RM) $(PKG_BUILD_DIR)/.config
 	touch $(PKG_BUILD_DIR)/.config
 ifeq ($(DEVICE_TYPE),nas)
 	echo "CONFIG_HDPARM=y" >> $(PKG_BUILD_DIR)/.config
@@ -155,7 +155,7 @@ ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_NTPD),)
 	$(INSTALL_DATA) ./files/ntpd.capabilities $(1)/etc/capabilities/ntpd.json
 	$(INSTALL_DATA) ./files/ntpd_acl.json $(1)/usr/share/acl.d/ntpd.json
 endif
-	-rm -rf $(1)/lib64
+	-$(RM) -r $(1)/lib64
 endef
 
 Package/busybox-selinux/install = $(Package/busybox/install)

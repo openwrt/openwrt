@@ -22,7 +22,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/make_ext4fs
+	$(RM) $(STAGING_DIR_HOST)/bin/make_ext4fs
 endef
 
 $(eval $(call HostBuild))

@@ -53,15 +53,15 @@ define PackageDir
 			mkdir -p "$(TOPDIR)/logs/$(SCAN_DIR)/$(2)"; \
 			$(NO_TRACE_MAKE) -r DUMP=1 FEED="$(call feedname,$(2))" -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) > $(TOPDIR)/logs/$(SCAN_DIR)/$(2)/dump.txt 2>&1; \
 			$$(call progress,ERROR: please fix $(SCAN_DIR)/$(2)/Makefile - see logs/$(SCAN_DIR)/$(2)/dump.txt for details\n) \
-			rm -f $$@; \
+			$(RM) $$@; \
 		}; \
 		echo; \
 	} > $$@.tmp
-	mv $$@.tmp $$@
+	$(MV) $$@.tmp $$@
 endef
 
 $(OVERRIDELIST):
-	rm -f $(TMP_DIR)/info/.overrides-$(SCAN_TARGET)-*
+	$(RM) $(TMP_DIR)/info/.overrides-$(SCAN_TARGET)-*
 	touch $@
 
 ifeq ($(SCAN_NAME),target)
@@ -71,7 +71,7 @@ else
 endif
 
 $(FILELIST): $(OVERRIDELIST)
-	rm -f $(TMP_DIR)/info/.files-$(SCAN_TARGET)-*
+	$(RM) $(TMP_DIR)/info/.files-$(SCAN_TARGET)-*
 	$(call find_depth,$(SCAN_DIR),$(SCAN_EXTRA) -name 'Makefile',1,$(if $(SCAN_DEPTH),$(SCAN_DEPTH))) | \
 		xargs grep -aHE 'call $(GREP_STRING)' | \
 		sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq | \
@@ -97,7 +97,7 @@ $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 		} ' < $<; \
 		true; \
 	) > $@.tmp
-	mv $@.tmp $@
+	$(MV) $@.tmp $@
 
 -include $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk
 
@@ -106,7 +106,7 @@ $(TARGET_STAMP)::
 		$(NO_TRACE_MAKE) $(FILELIST); \
 		MD5SUM=$$(cat $(FILELIST) $(OVERRIDELIST) | $(MKHASH) md5 | awk '{print $$1}'); \
 		[ -f "$@.$$MD5SUM" ] || { \
-			rm -f $@.*; \
+			$(RM) $@.*; \
 			touch $@.$$MD5SUM; \
 			touch $@; \
 		} \

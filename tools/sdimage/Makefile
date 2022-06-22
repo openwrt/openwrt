@@ -28,7 +28,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/sdimage
+	$(RM) $(STAGING_DIR_HOST)/bin/sdimage
 endef
 
 $(eval $(call HostBuild))

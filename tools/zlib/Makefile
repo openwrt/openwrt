@@ -33,10 +33,10 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/lib/libz.a
-	rm -f $(STAGING_DIR_HOST)/include/zconf.h
-	rm -f $(STAGING_DIR_HOST)/include/zlib.h
-	rm -f $(STAGING_DIR_HOST)/lib/pkgconfig//zlib.pc
+	$(RM) $(STAGING_DIR_HOST)/lib/libz.a
+	$(RM) $(STAGING_DIR_HOST)/include/zconf.h
+	$(RM) $(STAGING_DIR_HOST)/include/zlib.h
+	$(RM) $(STAGING_DIR_HOST)/lib/pkgconfig//zlib.pc
 endef
 
 $(eval $(call HostBuild))

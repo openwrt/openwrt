@@ -3,7 +3,7 @@ DEVICE_VARS += MKUBIFS_OPTS UBOOT
 include common.mk
 
 define Build/boot-overlay
-	rm -rf $@.boot
+	$(RM) -r $@.boot
 	mkdir -p $@.boot
 
 	$(CP) $@ $@.boot/$(IMG_PREFIX)-uImage
@@ -31,7 +31,7 @@ define Build/boot-overlay
 endef
 
 define Build/bootfs.tar.gz
-	rm -rf $@.boot
+	$(RM) -r $@.boot
 	mkdir -p $@.boot
 
 	$(TAR) -C $@.boot -xf $(IMAGE_KERNEL).boot.tar

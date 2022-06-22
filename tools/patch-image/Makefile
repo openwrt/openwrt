@@ -22,8 +22,8 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/patch-cmdline
-	rm -f $(STAGING_DIR_HOST)/bin/patch-dtb
+	$(RM) $(STAGING_DIR_HOST)/bin/patch-cmdline
+	$(RM) $(STAGING_DIR_HOST)/bin/patch-dtb
 endef
 
 $(eval $(call HostBuild))

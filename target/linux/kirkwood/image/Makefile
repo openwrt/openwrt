@@ -49,7 +49,7 @@ define Build/ctera-firmware
 	echo "date=$$(date $(if $(SOURCE_DATE_EPOCH),-d@$(SOURCE_DATE_EPOCH)))" \
 		>> $@.tmp/header
 
-	rm -f $@
+	$(RM) $@
 	touch $@
 	$(call Build/append-uImage-fakehdr, ramdisk)
 	cp $@ $@.tmp/romdisk
@@ -60,8 +60,8 @@ define Build/ctera-firmware
 	tar $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-H gnu -C $@.tmp -rf $@.tar header romdisk trailer
 
-	mv $@.tar $@
-	rm -rf $@.tmp
+	$(MV) $@.tar $@
+	$(RM) -r $@.tmp
 endef
 
 define Device/kernel-size-migration

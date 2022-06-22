@@ -70,7 +70,7 @@ endef
 ifneq ($(PKG_NAME),toolchain)
   define CheckDependencies
 	$(Q)( \
-		rm -f $(PKG_INFO_DIR)/$(1).missing; \
+		$(RM) $(PKG_INFO_DIR)/$(1).missing; \
 		( \
 			export \
 				READELF=$(TARGET_CROSS)readelf \
@@ -149,7 +149,7 @@ ifeq ($(DUMP),)
 
     $(PKG_SOURCE_DIR)/.pkgdir/$(1).installed: export PATH=$$(TARGET_PATH_PKG)
     $(PKG_SOURCE_DIR)/.pkgdir/$(1).installed: $(STAMP_BUILT)
-	rm -rf $$@ $(PKG_SOURCE_DIR)/.pkgdir/$(1)
+	$(RM) -r $$@ $(PKG_SOURCE_DIR)/.pkgdir/$(1)
 	mkdir -p $(PKG_SOURCE_DIR)/.pkgdir/$(1)
 	$(call Package/$(1)/install,$(PKG_SOURCE_DIR)/.pkgdir/$(1))
 	$(call Package/$(1)/install_lib,$(PKG_SOURCE_DIR)/.pkgdir/$(1))
@@ -202,13 +202,13 @@ $(_endef)
     $$(IPKG_$(1)) : export PATH=$$(TARGET_PATH_PKG)
     $$(IPKG_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
     $(PKG_INFO_DIR)/$(1).provides $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
-	$(Q)rm -rf $$(IDIR_$(1)); \
+	$(Q)$(RM) -r $$(IDIR_$(1)); \
 		$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	$(if $(Package/$(1)/install-overlay),mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/rootfs-overlay)
 	$(call Package/$(1)/install-overlay,$$(IDIR_$(1))/rootfs-overlay)
-	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' -o -name '*~'| $(XARGS) rm -rf
+	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' -o -name '*~'| $(XARGS) $(RM) -r
 	$(Q)( \
 		find $$(IDIR_$(1)) -name lib\*.so\* -o -name \*.ko | awk -F/ '{ print $$$$NF }'; \
 		for file in $$(patsubst %,$(PKG_INFO_DIR)/%.provides,$$(IDEPEND_$(1))); do \

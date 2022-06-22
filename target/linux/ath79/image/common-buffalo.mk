@@ -9,7 +9,7 @@ define Build/buffalo-tag
 		-b $(product) -p $(product) \
 		-r M_ -l mlang8 \
 		-i $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/buffalo-tftp-header
@@ -17,7 +17,7 @@ define Build/buffalo-tftp-header
 		echo -n -e "# Airstation Public Fmt1" | dd bs=32 count=1 conv=sync; \
 		dd if=$@; \
 	) > $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 

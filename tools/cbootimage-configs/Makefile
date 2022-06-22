@@ -26,7 +26,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -fR $(STAGING_DIR_HOST)/share/$(PKG_NAME)
+	$(RM)R $(STAGING_DIR_HOST)/share/$(PKG_NAME)
 endef
 
 $(eval $(call HostBuild))

@@ -79,22 +79,22 @@ $(call PatchDir/$(if $(strip $(HOST_QUILT)),Quilt,Default),$(strip $(1)),$(strip
 endef
 
 define Host/Patch/Default
-	$(if $(HOST_QUILT),rm -rf $(HOST_SOURCE_DIR)/patches; mkdir -p $(HOST_SOURCE_DIR)/patches)
+	$(if $(HOST_QUILT),$(RM) -r $(HOST_SOURCE_DIR)/patches; mkdir -p $(HOST_SOURCE_DIR)/patches)
 	$(call HostPatchDir,$(HOST_SOURCE_DIR),$(HOST_PATCH_DIR),)
 	$(if $(HOST_QUILT),touch $(HOST_SOURCE_DIR)/.quilt_used)
 endef
 
 define Build/Patch/Default
-	$(if $(QUILT),rm -rf $(PKG_SOURCE_DIR)/patches; mkdir -p $(PKG_SOURCE_DIR)/patches)
+	$(if $(QUILT),$(RM) -r $(PKG_SOURCE_DIR)/patches; mkdir -p $(PKG_SOURCE_DIR)/patches)
 	$(call PatchDir,$(PKG_SOURCE_DIR),$(PATCH_DIR),)
 	$(if $(QUILT),touch $(PKG_SOURCE_DIR)/.quilt_used)
 endef
 
 kernel_files=$(foreach fdir,$(GENERIC_FILES_DIR) $(FILES_DIR),$(fdir)/.)
 define Kernel/Patch/Default
-	$(if $(QUILT),rm -rf $(LINUX_DIR)/patches; mkdir -p $(LINUX_DIR)/patches)
+	$(if $(QUILT),$(RM) -r $(LINUX_DIR)/patches; mkdir -p $(LINUX_DIR)/patches)
 	$(if $(kernel_files),$(CP) $(kernel_files) $(LINUX_DIR)/)
-	find $(LINUX_DIR)/ -name \*.rej -o -name \*.orig | $(XARGS) rm -f
+	find $(LINUX_DIR)/ -name \*.rej -o -name \*.orig | $(XARGS) $(RM)
 	if [ -d $(GENERIC_PLATFORM_DIR)/patches$(if $(wildcard $(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER)) ]; then \
 		echo "generic patches directory is present. please move your patches to the pending directory" ; \
 		exit 1; \
@@ -107,7 +107,7 @@ endef
 
 define Quilt/RefreshDir
 	mkdir -p $(2)
-	-rm -f $(2)/* 2>/dev/null >/dev/null
+	-$(RM) $(2)/* 2>/dev/null >/dev/null
 	$(Q)( \
 		for patch in $$$$($(if $(3),grep "^$(3)",cat) $(1)/patches/series | awk '{print $$$$1}'); do \
 			$(CP) -v "$(1)/patches/$$$$patch" $(2); \

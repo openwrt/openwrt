@@ -12,7 +12,7 @@ DEVICE_VARS += BOOT_SCRIPT UBOOT
 KERNEL_LOADADDR := 0x00008000
 
 define Build/boot-scr
-	rm -f $@-boot.scr
+	$(RM) $@-boot.scr
 	sed \
 		-e 's#@ROOT@#$(IMG_PART_SIGNATURE)#g' \
 		-e 's#@DTB@#$(firstword $(DEVICE_DTS))#g' \
@@ -21,7 +21,7 @@ define Build/boot-scr
 endef
 
 define Build/boot-img
-	rm -f $@.boot
+	$(RM) $@.boot
 	mkfs.fat -C $@.boot $$(( $(CONFIG_TARGET_KERNEL_PARTSIZE) * 1024 ))
 	$(foreach dts,$(DEVICE_DTS), mcopy -i $@.boot $(KDIR)/image-$(dts).dtb ::$(dts).dtb;)
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(KERNEL_NAME)
@@ -29,7 +29,7 @@ define Build/boot-img
 endef
 
 define Build/boot-img-ext4
-	rm -fR $@.boot
+	$(RM)R $@.boot
 	mkdir -p $@.boot
 	$(foreach dts,$(DEVICE_DTS), $(CP) $(KDIR)/image-$(dts).dtb $@.boot/$(dts).dtb;)
 	$(CP) $(IMAGE_KERNEL) $@.boot/$(KERNEL_NAME)
@@ -40,7 +40,7 @@ define Build/boot-img-ext4
 endef
 
 define Build/buffalo-kernel-jffs2
-	rm -rf $(KDIR)/kernel_jffs2 $@.fakerd
+	$(RM) -r $(KDIR)/kernel_jffs2 $@.fakerd
 	mkdir -p $(KDIR)/kernel_jffs2
 	dd if=/dev/zero of=$@.fakerd bs=131008 count=1 conv=sync
 	$(STAGING_DIR_HOST)/bin/mkimage \
@@ -50,7 +50,7 @@ define Build/buffalo-kernel-jffs2
 	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
 		--little-endian -v --squash-uids -q -f -n -x lzma -x rtime -m none \
 		--eraseblock=128KiB --pad=$(KERNEL_SIZE) -d $(KDIR)/kernel_jffs2 -o $@
-	rm -rf $(KDIR)/kernel_jffs2 $@.fakerd
+	$(RM) -r $(KDIR)/kernel_jffs2 $@.fakerd
 endef
 
 # Some info about Ctera firmware:
@@ -95,7 +95,7 @@ define Build/ctera-firmware
 	echo "date=$$(date $(if $(SOURCE_DATE_EPOCH),-d@$(SOURCE_DATE_EPOCH)))" \
 		>> $@.tmp/header
 
-	rm -f $@
+	$(RM) $@
 	touch $@
 	$(call Build/append-uImage-fakehdr, ramdisk)
 	cp $@ $@.tmp/romdisk
@@ -106,8 +106,8 @@ define Build/ctera-firmware
 	tar $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-H gnu -C $@.tmp -rf $@.tar header romdisk trailer
 
-	mv $@.tar $@
-	rm -rf $@.tmp
+	$(MV) $@.tar $@
+	$(RM) -r $@.tmp
 endef
 
 define Build/sdcard-img
@@ -128,7 +128,7 @@ endef
 
 define Build/omnia-medkit-initramfs
 	$(TAR) -c -T /dev/null -f $@
-	rm -rf $(dir $(IMAGE_KERNEL))boot
+	$(RM) -r $(dir $(IMAGE_KERNEL))boot
 	mkdir -p $(dir $(IMAGE_KERNEL))boot/boot/
 	cp $(KDIR)/zImage-initramfs $(dir $(IMAGE_KERNEL))boot/boot/zImage
 	cp $(KDIR)/image-$(DEVICE_DTS).dtb $(dir $(IMAGE_KERNEL))boot/boot/dtb
@@ -138,7 +138,7 @@ define Build/omnia-medkit-initramfs
 endef
 
 define Build/uDPU-firmware
-	(rm -fR $@-fw; mkdir -p $@-fw)
+	($(RM)R $@-fw; mkdir -p $@-fw)
 	$(CP) $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-initramfs.itb $@-fw/recovery.itb
 	$(CP) $@-boot.scr $@-fw/boot.scr
 	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \

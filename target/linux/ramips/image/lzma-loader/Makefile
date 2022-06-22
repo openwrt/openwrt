@@ -64,5 +64,5 @@ compile: loader-compile
 install:
 
 clean:
-	rm -rf $(PKG_BUILD_DIR)
+	$(RM) -r $(PKG_BUILD_DIR)
 

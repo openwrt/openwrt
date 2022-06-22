@@ -72,4 +72,4 @@ loader.bin: loader
 mrproper: clean
 
 clean:
-	rm -f loader *.elf *.bin *.o
+	$(RM) loader *.elf *.bin *.o

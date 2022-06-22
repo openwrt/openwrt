@@ -34,7 +34,7 @@ HOST_CONFIGURE_ARGS += \
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
-	rm -rf $(HOST_BUILD_DIR)/doc
+	$(RM) -r $(HOST_BUILD_DIR)/doc
 endef
 
 define Host/Install
@@ -42,13 +42,13 @@ define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR)/lib/uuid install
 	mkdir -p $(STAGING_DIR_HOST)/include/e2fsprogs
 	$(CP) $(STAGING_DIR_HOST)/include/uuid $(STAGING_DIR_HOST)/include/e2fsprogs/
-	rm -rf $(STAGING_DIR_HOST)/include/uuid
+	$(RM) -r $(STAGING_DIR_HOST)/include/uuid
 	$(INSTALL_DATA) $(HOST_BUILD_DIR)/lib/uuid/libuuid.a $(STAGING_DIR_HOST)/lib/
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/e2fsck
-	rm -f $(STAGING_DIR_HOST)/bin/tune2fs
+	$(RM) $(STAGING_DIR_HOST)/bin/e2fsck
+	$(RM) $(STAGING_DIR_HOST)/bin/tune2fs
 endef
 
 $(eval $(call HostBuild))

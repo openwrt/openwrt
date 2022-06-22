@@ -45,7 +45,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/genext2fs
+	$(RM) $(STAGING_DIR_HOST)/bin/genext2fs
 endef
 
 $(eval $(call HostBuild))

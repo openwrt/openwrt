@@ -481,7 +481,7 @@ endef
 
 
 define KernelPackage/b43/install
-	rm -rf $(1)/lib/firmware/
+	$(RM) -r $(1)/lib/firmware/
 ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
 	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
 else

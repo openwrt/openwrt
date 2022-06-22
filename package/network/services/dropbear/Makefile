@@ -172,7 +172,7 @@ define Build/Configure
 	$(Build/Configure/dropbear_headers)
 
 	# Enforce rebuild of svr-chansession.c
-	rm -f $(PKG_BUILD_DIR)/svr-chansession.o
+	$(RM) $(PKG_BUILD_DIR)/svr-chansession.o
 
 	# Rebuild them on config change
 	+$(MAKE) -C $(PKG_BUILD_DIR)/libtomcrypt clean

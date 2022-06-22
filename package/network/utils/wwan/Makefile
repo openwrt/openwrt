@@ -38,7 +38,7 @@ define Package/wwan/install
 	do \
 		FILENAME=$$$$(basename $$$$filevar) ; \
 		NEWNAME=$$$${FILENAME//-/:} ; \
-		mv "$(1)/lib/network/wwan/$$$$FILENAME" "$(1)/lib/network/wwan/$$$$NEWNAME" ; \
+		$(MV) "$(1)/lib/network/wwan/$$$$FILENAME" "$(1)/lib/network/wwan/$$$$NEWNAME" ; \
 	done
 endef
 

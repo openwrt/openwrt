@@ -45,7 +45,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -rf \
+	$(RM) -r \
 		$(HOST_BUILD_DIR) \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 endef

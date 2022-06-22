@@ -490,7 +490,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/libstdcpp/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/libstdc++.so.* $(1)/usr/lib/
-	rm -rf $(1)/usr/lib/*-gdb.py
+	$(RM) -r $(1)/usr/lib/*-gdb.py
   endef
 
   define Package/libasan/install
@@ -515,7 +515,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/glibc/install
 	$(CP) ./glibc-files/* $(1)/
-	rm -f $(1)/etc/localtime
+	$(RM) $(1)/etc/localtime
 	$(LN) /tmp/localtime $(1)/etc/localtime
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \

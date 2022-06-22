@@ -19,13 +19,13 @@ ifeq ($(DUMP),)
     endif
 
     $(PKG_SOURCE_DIR)/.pkgdir/$(1).installed: $(STAMP_BUILT)
-		rm -rf $(PKG_SOURCE_DIR)/.pkgdir/$(1) $$@
+		$(RM) -r $(PKG_SOURCE_DIR)/.pkgdir/$(1) $$@
 		mkdir -p $(PKG_SOURCE_DIR)/.pkgdir/$(1)
 		$(call Package/$(1)/install,$(PKG_SOURCE_DIR)/.pkgdir/$(1))
 		touch $$@
 
     install-bin-$(1): $(PKG_SOURCE_DIR)/.pkgdir/$(1).installed
-	rm -rf $(BIN_DIR)/$(1)
+	$(RM) -r $(BIN_DIR)/$(1)
 	-rmdir $(PKG_SOURCE_DIR)/.pkgdir/$(1) >/dev/null 2>/dev/null
 	if [ -d $(PKG_SOURCE_DIR)/.pkgdir/$(1) ]; then \
 		$(INSTALL_DIR) $(BIN_DIR)/$(1) && \
@@ -33,7 +33,7 @@ ifeq ($(DUMP),)
 	fi
 
     clean-$(1):
-	  rm -rf $(BIN_DIR)/$(1)
+	  $(RM) -r $(BIN_DIR)/$(1)
 
     clean: clean-$(1)
     .PHONY: install-bin-$(1)

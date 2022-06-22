@@ -269,7 +269,7 @@ ifeq ($(DUMP),1)
   ifneq ($(BOARD),)
     TMP_CONFIG:=$(TMP_DIR)/.kconfig-$(call target_conf,$(TARGETID))
     $(TMP_CONFIG): $(LINUX_KCONFIG_LIST)
-		$(LINUX_CONF_CMD) > $@ || rm -f $@
+		$(LINUX_CONF_CMD) > $@ || $(RM) $@
     -include $(TMP_CONFIG)
     .SILENT: $(TMP_CONFIG)
     .PRECIOUS: $(TMP_CONFIG)

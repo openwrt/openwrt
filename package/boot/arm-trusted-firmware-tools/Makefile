@@ -48,9 +48,9 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/fiptool
-	rm -f $(STAGING_DIR_HOST)/bin/sptool
-	rm -f $(STAGING_DIR_HOST)/bin/sp_mk_generator.py
+	$(RM) $(STAGING_DIR_HOST)/bin/fiptool
+	$(RM) $(STAGING_DIR_HOST)/bin/sptool
+	$(RM) $(STAGING_DIR_HOST)/bin/sp_mk_generator.py
 endef
 
 $(eval $(call BuildPackage,arm-trusted-firmware-tools))

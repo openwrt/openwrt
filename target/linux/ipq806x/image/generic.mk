@@ -22,7 +22,7 @@ define Build/edimax-header
 	-b -s CSYS -m $(edimax_model) \
 	-f 0x70000 -S 0x1200000 \
 	-i $@ -o $@.new
-	@mv $@.new $@
+	@$(MV) $@.new $@
 endef
 
 define Device/DniImage

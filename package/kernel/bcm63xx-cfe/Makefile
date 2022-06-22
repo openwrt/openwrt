@@ -35,7 +35,7 @@ define Package/bcm63xx-cfe/install
 endef
 
 define Build/InstallDev
-	rm -rf $(KERNEL_BUILD_DIR)/$(PKG_NAME)
+	$(RM) -r $(KERNEL_BUILD_DIR)/$(PKG_NAME)
 	mkdir -p $(KERNEL_BUILD_DIR)/$(PKG_NAME)
 	$(CP) -r $(PKG_BUILD_DIR)/* $(KERNEL_BUILD_DIR)/$(PKG_NAME)
 endef

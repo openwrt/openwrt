@@ -9,13 +9,13 @@ DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 
 define Build/loader-common
-	rm -rf $@.src
+	$(RM) -r $@.src
 	$(MAKE) -C lzma-loader \
 		PKG_BUILD_DIR="$@.src" \
 		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
 		$(1) compile loader.$(LOADER_TYPE)
-	mv "$@.$(LOADER_TYPE)" "$@"
-	rm -rf $@.src
+	$(MV) "$@.$(LOADER_TYPE)" "$@"
+	$(RM) -r $@.src
 endef
 
 define Build/loader-kernel
@@ -36,7 +36,7 @@ endef
 define Build/loader-okli
 	dd if=$(KDIR)/loader-$(word 1,$(1)).$(LOADER_TYPE) bs=$(word 2,$(1)) conv=sync of="$@.new"
 	cat "$@" >> "$@.new"
-	mv "$@.new" "$@"
+	$(MV) "$@.new" "$@"
 endef
 
 define Build/append-loader-okli
@@ -48,7 +48,7 @@ define Build/append-loader-okli-uimage
 endef
 
 define Build/relocate-kernel
-	rm -rf $@.relocate
+	$(RM) -r $@.relocate
 	$(CP) ../../generic/image/relocate $@.relocate
 	$(MAKE) -j1 -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
 	( \
@@ -56,8 +56,8 @@ define Build/relocate-kernel
 		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
 		cat "$@" \
 	) > "$@.new"
-	mv "$@.new" "$@"
-	rm -rf $@.relocate
+	$(MV) "$@.new" "$@"
+	$(RM) -r $@.relocate
 endef
 
 

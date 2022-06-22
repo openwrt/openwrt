@@ -157,7 +157,7 @@ ifndef DUMP
   $(if $(DUMP),,$(call HostHost/Autoclean))
 
   $(HOST_STAMP_PREPARED):
-	$(Q)-rm -rf $(HOST_BUILD_DIR)
+	$(Q)-$(RM) -r $(HOST_BUILD_DIR)
 	$(Q)mkdir -p $(HOST_BUILD_DIR)
 	$(Q)mkdir -p $(HOST_SOURCE_DIR)
 	$(foreach hook,$(Hooks/HostPrepare/Pre),$(call $(hook))$(sep))
@@ -205,16 +205,16 @@ ifndef DUMP
 
   host-clean-build: FORCE
 	$(call Host/Uninstall)
-	rm -rf $(HOST_BUILD_DIR) $(HOST_INSTALL_DIR) $(HOST_STAMP_BUILT)
+	$(RM) -r $(HOST_BUILD_DIR) $(HOST_INSTALL_DIR) $(HOST_STAMP_BUILT)
 
   host-clean: host-clean-build
 	$(call Host/Clean)
-	rm -rf $(HOST_STAMP_INSTALLED)
+	$(RM) -r $(HOST_STAMP_INSTALLED)
 
     ifneq ($(CONFIG_AUTOREMOVE),)
       host-compile:
 		$$(call find_depth,$(HOST_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')',1,1) | \
-			$(XARGS) rm -rf
+			$(XARGS) $(RM) -r
     endif
   endef
 endif

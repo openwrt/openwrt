@@ -74,17 +74,17 @@ define Build/mkmylofw_32m
 		-B WPE72 -i 0x11f6:$(device_id):0x11f6:$(device_id) -r $(revision) \
 		-s 0x2000000 -p0x180000:$$newsize:al:0x80208000:"OpenWrt":$@ \
 		$@.new
-	@mv $@.new $@
+	@$(MV) $@.new $@
 endef
 
 define Build/wac5xx-netgear-tar
 	mkdir $@.tmp
-	mv $@ $@.tmp/wac5xx-ubifs-root.img
+	$(MV) $@ $@.tmp/wac5xx-ubifs-root.img
 	md5sum $@.tmp/wac5xx-ubifs-root.img > $@.tmp/wac5xx-ubifs-root.md5sum
 	echo "WAC505 WAC510" > $@.tmp/metadata.txt
 	echo "WAC505_V9.9.9.9" > $@.tmp/version
 	tar -C $@.tmp/ -cf $@ .
-	rm -rf $@.tmp
+	$(RM) -r $@.tmp
 endef
 
 define Build/qsdk-ipq-factory-nand-askey
@@ -93,7 +93,7 @@ define Build/qsdk-ipq-factory-nand-askey
 		askey_fs $(IMAGE_ROOTFS) \
 		ubifs $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
-	@mv $@.new $@
+	@$(MV) $@.new $@
 endef
 
 define Build/qsdk-ipq-app-gpt
@@ -103,7 +103,7 @@ define Build/qsdk-ipq-app-gpt
 			-t 0x83 -N rootfs -r -p 128M \
 				-N rootfs_data -p 512M
 	cat $@.tmp >> $@
-	rm $@.tmp
+	$(RM) $@.tmp
 endef
 
 define Build/SenaoFW
@@ -121,7 +121,7 @@ define Build/wrgg-image
 	-d "$(WRGG_DEVNAME)" \
 	-s "$(WRGG_SIGNATURE)" \
 	-v "" -m "" -B ""
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Device/8dev_habanero-dvk

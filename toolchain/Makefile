@@ -71,9 +71,9 @@ ifneq ($(wildcard $(TOPDIR)/.git),)
   $(TOOLCHAIN_DIR)/stamp/.ver_check: $(TMP_DIR)/.build
 	cd "$(TOPDIR)"; git log --format=%h -1 toolchain > $(TMP_DIR)/.ver_check
 	cmp -s $(TMP_DIR)/.ver_check $@ || { \
-		rm -rf $(BUILD_DIR) $(STAGING_DIR) $(TOOLCHAIN_DIR) $(BUILD_DIR_TOOLCHAIN); \
+		$(RM) -r $(BUILD_DIR) $(STAGING_DIR) $(TOOLCHAIN_DIR) $(BUILD_DIR_TOOLCHAIN); \
 		mkdir -p $(TOOLCHAIN_DIR)/stamp; \
-		mv $(TMP_DIR)/.ver_check $@; \
+		$(MV) $(TMP_DIR)/.ver_check $@; \
 	}
 
 $(TOOLCHAIN_DIR)/info.mk $(STAGING_DIR)/.prepared: $(TOOLCHAIN_DIR)/stamp/.ver_check

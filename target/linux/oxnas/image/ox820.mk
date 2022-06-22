@@ -18,7 +18,7 @@ define Device/Default
 endef
 
 define Build/omninas-factory
-	rm -rf $@.tmp $@.dummy $@.dummy.gz
+	$(RM) -r $@.tmp $@.dummy $@.dummy.gz
 	mkdir -p $@.tmp
 	$(CP) $@ $@.tmp/uImage
 	dd if=/dev/zero bs=64k count=4 of=$@.dummy
@@ -33,7 +33,7 @@ define Build/omninas-factory
 endef
 
 define Build/encrypt-3des
-	openssl enc -des3 -a -k $(1) -in $@ -out $@.new && mv $@.new $@
+	openssl enc -des3 -a -k $(1) -in $@ -out $@.new && $(MV) $@.new $@
 endef
 
 define Device/akitio_mycloud

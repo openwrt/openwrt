@@ -19,7 +19,7 @@ $(LLVM_TAR): $(STAGING_DIR_HOST)/llvm-bpf/.llvm-version
 		-I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-cf $@.tmp llvm-bpf $(LLVM_BPF_PREFIX)
-	mv $@.tmp $@
+	$(MV) $@.tmp $@
 
 download:
 prepare:
@@ -27,4 +27,4 @@ compile: $(LLVM_TAR)
 install: compile
 
 clean:
-	rm -f $(LLVM_TAR)
+	$(RM) $(LLVM_TAR)
