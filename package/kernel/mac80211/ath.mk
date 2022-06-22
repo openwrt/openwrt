@@ -307,6 +307,9 @@ define KernelPackage/ath11k
   +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core +ATH11K_THERMAL:kmod-thermal
   FILES:=$(PKG_BUILD_DIR)/drivers/soc/qcom/qmi_helpers.ko \
   $(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k.ko
+  AUTOLOAD:=$(call AutoProbe,ath11k)
+  # Enable encapsulation/decapsulation offload by default
+  MODPARAMS.ath11k:=frame_mode=2
 endef
 
 define KernelPackage/ath11k/description
