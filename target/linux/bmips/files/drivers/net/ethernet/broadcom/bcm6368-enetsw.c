@@ -256,7 +256,7 @@ static inline void dmas_writel(struct bcm6368_enetsw *priv, u32 val,
 /*
  * refill rx queue
  */
-static int bcm6368_enetsw_refill_rx(struct net_device *dev)
+static int bcm6368_enetsw_refill_rx(struct net_device *dev, bool napi_mode)
 {
 	struct bcm6368_enetsw *priv = netdev_priv(dev);
 
@@ -269,8 +269,12 @@ static int bcm6368_enetsw_refill_rx(struct net_device *dev)
 		desc = &priv->rx_desc_cpu[desc_idx];
 
 		if (!priv->rx_buf[desc_idx]) {
-			unsigned char *buf =
-				netdev_alloc_frag(priv->rx_frag_size);
+			unsigned char *buf;
+
+			if (likely(napi_mode))
+				buf = napi_alloc_frag(priv->rx_frag_size);
+			else
+				buf = netdev_alloc_frag(priv->rx_frag_size);
 
 			if (unlikely(!buf))
 				break;
@@ -319,7 +323,7 @@ static void bcm6368_enetsw_refill_rx_timer(struct timer_list *t)
 	struct net_device *dev = priv->net_dev;
 
 	spin_lock(&priv->rx_lock);
-	bcm6368_enetsw_refill_rx(dev);
+	bcm6368_enetsw_refill_rx(dev, false);
 	spin_unlock(&priv->rx_lock);
 }
 
@@ -419,7 +423,7 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 	} while (--budget > 0);
 
 	if (processed || !priv->rx_desc_count) {
-		bcm6368_enetsw_refill_rx(dev);
+		bcm6368_enetsw_refill_rx(dev, true);
 
 		/* kick rx dma */
 		dmac_writel(priv, priv->dma_chan_en_mask,
@@ -725,7 +729,7 @@ static int bcm6368_enetsw_open(struct net_device *dev)
 	dma_writel(priv, DMA_BUFALLOC_FORCE_MASK | 0,
 		   DMA_BUFALLOC_REG(priv->rx_chan));
 
-	if (bcm6368_enetsw_refill_rx(dev)) {
+	if (bcm6368_enetsw_refill_rx(dev, false)) {
 		dev_err(kdev, "cannot allocate rx buffer queue\n");
 		ret = -ENOMEM;
 		goto out;
