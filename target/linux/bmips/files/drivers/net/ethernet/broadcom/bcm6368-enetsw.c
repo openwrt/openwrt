@@ -25,6 +25,8 @@
 #define ENETSW_TAG_SIZE			6
 #define ENETSW_MTU_OVERHEAD		(VLAN_ETH_HLEN + VLAN_HLEN + \
 					 ENETSW_TAG_SIZE)
+#define ENETSW_FRAG_SIZE(x)		(SKB_DATA_ALIGN(NET_SKB_PAD + x + \
+					 SKB_DATA_ALIGN(sizeof(struct skb_shared_info))))
 
 /* default number of descriptor */
 #define ENETSW_DEF_RX_DESC		64
@@ -170,13 +172,16 @@ struct bcm6368_enetsw {
 	/* next dirty rx descriptor to refill */
 	int rx_dirty_desc;
 
-	/* size of allocated rx skbs */
-	unsigned int rx_skb_size;
+	/* size of allocated rx buffer */
+	unsigned int rx_buf_size;
 
-	/* list of skb given to hw for rx */
-	struct sk_buff **rx_skb;
+	/* size of allocated rx frag */
+	unsigned int rx_frag_size;
 
-	/* used when rx skb allocation failed, so we defer rx queue
+	/* list of buffer given to hw for rx */
+	unsigned char **rx_buf;
+
+	/* used when rx buffer allocation failed, so we defer rx queue
 	 * refill */
 	struct timer_list rx_timeout;
 
@@ -257,26 +262,27 @@ static int bcm6368_enetsw_refill_rx(struct net_device *dev)
 
 	while (priv->rx_desc_count < priv->rx_ring_size) {
 		struct bcm6368_enetsw_desc *desc;
-		struct sk_buff *skb;
-		dma_addr_t p;
 		int desc_idx;
 		u32 len_stat;
 
 		desc_idx = priv->rx_dirty_desc;
 		desc = &priv->rx_desc_cpu[desc_idx];
 
-		if (!priv->rx_skb[desc_idx]) {
-			skb = netdev_alloc_skb(dev, priv->rx_skb_size);
-			if (!skb)
+		if (!priv->rx_buf[desc_idx]) {
+			unsigned char *buf =
+				netdev_alloc_frag(priv->rx_frag_size);
+
+			if (unlikely(!buf))
 				break;
-			priv->rx_skb[desc_idx] = skb;
-			p = dma_map_single(&priv->pdev->dev, skb->data,
-					   priv->rx_skb_size,
-					   DMA_FROM_DEVICE);
-			desc->address = p;
+
+			priv->rx_buf[desc_idx] = buf;
+			desc->address = dma_map_single(&priv->pdev->dev,
+						       buf + NET_SKB_PAD,
+						       priv->rx_buf_size,
+						       DMA_FROM_DEVICE);
 		}
 
-		len_stat = priv->rx_skb_size << DMADESC_LENGTH_SHIFT;
+		len_stat = priv->rx_buf_size << DMADESC_LENGTH_SHIFT;
 		len_stat |= DMADESC_OWNER_MASK;
 		if (priv->rx_dirty_desc == priv->rx_ring_size - 1) {
 			len_stat |= DMADESC_WRAP_MASK;
@@ -333,7 +339,9 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 
 	do {
 		struct bcm6368_enetsw_desc *desc;
+		unsigned int frag_size;
 		struct sk_buff *skb;
+		unsigned char *buf;
 		int desc_idx;
 		u32 len_stat;
 		unsigned int len;
@@ -365,17 +373,17 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 		}
 
 		/* valid packet */
-		skb = priv->rx_skb[desc_idx];
+		buf = priv->rx_buf[desc_idx];
 		len = (len_stat & DMADESC_LENGTH_MASK)
 		      >> DMADESC_LENGTH_SHIFT;
 		/* don't include FCS */
 		len -= 4;
 
 		if (len < priv->copybreak) {
-			struct sk_buff *nskb;
+			unsigned int nfrag_size = ENETSW_FRAG_SIZE(len);
+			unsigned char *nbuf = napi_alloc_frag(nfrag_size);
 
-			nskb = netdev_alloc_skb(dev, len);
-			if (!nskb) {
+			if (unlikely(!nbuf)) {
 				/* forget packet, just rearm desc */
 				dev->stats.rx_dropped++;
 				continue;
@@ -383,16 +391,26 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 
 			dma_sync_single_for_cpu(kdev, desc->address,
 						len, DMA_FROM_DEVICE);
-			memcpy(nskb->data, skb->data, len);
+			memcpy(nbuf + NET_SKB_PAD, buf + NET_SKB_PAD, len);
 			dma_sync_single_for_device(kdev, desc->address,
 						   len, DMA_FROM_DEVICE);
-			skb = nskb;
+			buf = nbuf;
+			frag_size = nfrag_size;
 		} else {
-			dma_unmap_single(&priv->pdev->dev, desc->address,
-					 priv->rx_skb_size, DMA_FROM_DEVICE);
-			priv->rx_skb[desc_idx] = NULL;
+			dma_unmap_single(kdev, desc->address,
+					 priv->rx_buf_size, DMA_FROM_DEVICE);
+			priv->rx_buf[desc_idx] = NULL;
+			frag_size = priv->rx_frag_size;
 		}
 
+		skb = build_skb(buf, frag_size);
+		if (unlikely(!skb)) {
+			skb_free_frag(buf);
+			dev->stats.rx_dropped++;
+			continue;
+		}
+
+		skb_reserve(skb, NET_SKB_PAD);
 		skb_put(skb, len);
 		skb->protocol = eth_type_trans(skb, dev);
 		dev->stats.rx_packets++;
@@ -680,7 +698,7 @@ static int bcm6368_enetsw_open(struct net_device *dev)
 	priv->tx_skb = kzalloc(sizeof(struct sk_buff *) * priv->tx_ring_size,
 			       GFP_KERNEL);
 	if (!priv->tx_skb) {
-		dev_err(kdev, "cannot allocate rx skb queue\n");
+		dev_err(kdev, "cannot allocate tx skb queue\n");
 		ret = -ENOMEM;
 		goto out_free_tx_ring;
 	}
@@ -690,11 +708,11 @@ static int bcm6368_enetsw_open(struct net_device *dev)
 	priv->tx_curr_desc = 0;
 	spin_lock_init(&priv->tx_lock);
 
-	/* init & fill rx ring with skbs */
-	priv->rx_skb = kzalloc(sizeof(struct sk_buff *) * priv->rx_ring_size,
+	/* init & fill rx ring with buffers */
+	priv->rx_buf = kzalloc(sizeof(unsigned char *) * priv->rx_ring_size,
 			       GFP_KERNEL);
-	if (!priv->rx_skb) {
-		dev_err(kdev, "cannot allocate rx skb queue\n");
+	if (!priv->rx_buf) {
+		dev_err(kdev, "cannot allocate rx buffer queue\n");
 		ret = -ENOMEM;
 		goto out_free_tx_skb;
 	}
@@ -708,7 +726,7 @@ static int bcm6368_enetsw_open(struct net_device *dev)
 		   DMA_BUFALLOC_REG(priv->rx_chan));
 
 	if (bcm6368_enetsw_refill_rx(dev)) {
-		dev_err(kdev, "cannot allocate rx skb queue\n");
+		dev_err(kdev, "cannot allocate rx buffer queue\n");
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -770,15 +788,15 @@ out:
 	for (i = 0; i < priv->rx_ring_size; i++) {
 		struct bcm6368_enetsw_desc *desc;
 
-		if (!priv->rx_skb[i])
+		if (!priv->rx_buf[i])
 			continue;
 
 		desc = &priv->rx_desc_cpu[i];
-		dma_unmap_single(kdev, desc->address, priv->rx_skb_size,
+		dma_unmap_single(kdev, desc->address, priv->rx_buf_size,
 				 DMA_FROM_DEVICE);
-		kfree_skb(priv->rx_skb[i]);
+		skb_free_frag(priv->rx_buf[i]);
 	}
-	kfree(priv->rx_skb);
+	kfree(priv->rx_buf);
 
 out_free_tx_skb:
 	kfree(priv->tx_skb);
@@ -823,22 +841,22 @@ static int bcm6368_enetsw_stop(struct net_device *dev)
 	/* force reclaim of all tx buffers */
 	bcm6368_enetsw_tx_reclaim(dev, 1);
 
-	/* free the rx skb ring */
+	/* free the rx buffer ring */
 	for (i = 0; i < priv->rx_ring_size; i++) {
 		struct bcm6368_enetsw_desc *desc;
 
-		if (!priv->rx_skb[i])
+		if (!priv->rx_buf[i])
 			continue;
 
 		desc = &priv->rx_desc_cpu[i];
-		dma_unmap_single_attrs(kdev, desc->address, priv->rx_skb_size,
+		dma_unmap_single_attrs(kdev, desc->address, priv->rx_buf_size,
 				       DMA_FROM_DEVICE,
 				       DMA_ATTR_SKIP_CPU_SYNC);
-		kfree_skb(priv->rx_skb[i]);
+		skb_free_frag(priv->rx_buf[i]);
 	}
 
 	/* free remaining allocated memory */
-	kfree(priv->rx_skb);
+	kfree(priv->rx_buf);
 	kfree(priv->tx_skb);
 	dma_free_coherent(kdev, priv->rx_desc_alloc_size,
 			  priv->rx_desc_cpu, priv->rx_desc_dma);
@@ -960,8 +978,10 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 		dev_info(dev, "random mac %pM\n", ndev->dev_addr);
 	}
 
-	priv->rx_skb_size = ALIGN(ndev->mtu + ENETSW_MTU_OVERHEAD,
+	priv->rx_buf_size = ALIGN(ndev->mtu + ENETSW_MTU_OVERHEAD,
 				  priv->dma_maxburst * 4);
+
+	priv->rx_frag_size = ENETSW_FRAG_SIZE(priv->rx_buf_size);
 
 	priv->num_clocks = of_clk_get_parent_count(node);
 	if (priv->num_clocks) {
