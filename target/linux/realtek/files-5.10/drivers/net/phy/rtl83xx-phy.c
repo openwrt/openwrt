@@ -625,6 +625,24 @@ out:
 	return ret;
 }
 
+// Configures Link Down Power Saving, which makes the PHY sleep when there is no link
+static int rtl8226_config_LDPS(struct phy_device *phydev, bool enable)
+{
+	u32 val;
+
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA430);
+	if (val < 0)
+		return val;
+	pr_info("%s current value is: %08x\n", __func__, val);
+	if (enable)
+		val |= BIT(2);
+	else
+		val &= ~BIT(2);
+	phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA430, val);
+
+	return 0;
+}
+
 static int rtl8226_get_eee(struct phy_device *phydev,
 				     struct ethtool_eee *e)
 {
@@ -1391,6 +1409,27 @@ void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 }
 
+// Configures Link Down Power Saving, which makes the PHY sleep when there is no link
+static int rtl8218b_config_LDPS(struct phy_device *phydev, bool enable)
+{
+	u32 val;
+
+	/* TODO: In principle, the medium could be fiber. We should then refuse
+	 * to do something, here. With this check we can reuse the function also for
+	 * the RTL8214FC */
+
+	val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 24);
+
+	pr_info("%s current value is: %08x\n", __func__, val);
+	if (enable)
+		val |= BIT(2);
+	else
+		val &= ~BIT(2);
+	val = phy_write_paged(phydev, RTL821X_PAGE_MAC, 24, val);
+
+	return 0;
+}
+
 static int rtl8218b_get_eee(struct phy_device *phydev, struct ethtool_eee *e)
 {
 	int addr = phydev->mdio.addr, ret;
@@ -1406,6 +1445,23 @@ static int rtl8218b_get_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	return ret;
+}
+
+// Configures Link Down Power Saving, which makes the PHY sleep when there is no link
+static int rtl8218d_config_LDPS(struct phy_device *phydev, bool enable)
+{
+	u32 val;
+
+	val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 24);
+
+	pr_info("%s current value is: %08x\n", __func__, val);
+	if (enable)
+		val |= BIT(2);
+	else
+		val &= ~BIT(2);
+	val = phy_write_paged(phydev, RTL821X_PAGE_MAC, 24, val);
+
+	return 0;
 }
 
 static int rtl8218d_get_eee(struct phy_device *phydev, struct ethtool_eee *e)
@@ -3847,6 +3903,9 @@ int rtl9300_configure_8218d(struct phy_device *phydev)
 
 	// The clock needs only to be configured on the FPGA implementation
 
+	// Enable Link Down Power Saving
+	rtl8218d_config_LDPS(phydev, true);
+
 	return 0;
 }
 
@@ -3978,6 +4037,9 @@ static int rtl9300_rtl8226_phy_setup(struct phy_device *phydev)
 	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2);
 	v &= ~MDIO_EEE_2_5GT;
 	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2, v);
+
+	// Enable Link Down Power Saving
+	rtl8226_config_LDPS(phydev, true);
 
 	return 0;
 }
