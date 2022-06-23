@@ -37,9 +37,13 @@ extern struct mutex smi_lock;
 #define RTL821X_PAGE_POWER		0x0a40
 #define RTL821X_PAGE_GPHY		0x0a42
 #define RTL821X_PAGE_MAC		0x0a43
+#define RTL821X_PAGE_MAC_LDPS_REG       24
+#define RTL82XX_PAGE_MAC_LDPS_EN                BIT(2)
 #define RTL821X_PAGE_STATE		0x0b80
 #define RTL821X_PAGE_PATCH		0x0b82
 #define RTL93XX_PAGE_PATCH              0xffff
+
+#define RTL8226_MMD_MAC                 0xa430
 
 /*
  * The RTL8214QF is a variant of the RTL8295 and RTL8295R (the internal SerDes
@@ -3905,7 +3909,10 @@ int rtl9300_configure_8218d(struct phy_device *phydev)
 	resume_polling(saved_state);
 
 	/* The clock needs only to be configured on the FPGA implementation */
-	return 0;
+
+	/* Enable Link Down Power Saving */
+	/* TODO: Replace with phy_set_bits_paged */
+	return phy_modify_paged(phydev, RTL821X_PAGE_MAC, RTL821X_PAGE_MAC_LDPS_REG, 0, RTL82XX_PAGE_MAC_LDPS_EN);
 }
 
 int rtl8266_wait_ready(struct phy_device *phydev)
@@ -4031,6 +4038,9 @@ static int rtl9300_rtl8226_phy_setup(struct phy_device *phydev)
 	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2);
 	v &= ~MDIO_EEE_2_5GT;
 	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2, v);
+
+	/* Enable Link Down Power Saving */
+	phy_set_bits_mmd(phydev, MDIO_MMD_VEND2, RTL8226_MMD_MAC, RTL82XX_PAGE_MAC_LDPS_EN);
 
 	return 0;
 }
