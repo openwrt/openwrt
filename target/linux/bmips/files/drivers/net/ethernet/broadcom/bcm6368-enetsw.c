@@ -367,7 +367,6 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 		priv->rx_curr_desc++;
 		if (priv->rx_curr_desc == priv->rx_ring_size)
 			priv->rx_curr_desc = 0;
-		priv->rx_desc_count--;
 
 		/* if the packet does not have start of packet _and_
 		 * end of packet flag set, then just recycle it */
@@ -420,7 +419,9 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += len;
 		netif_receive_skb(skb);
-	} while (--budget > 0);
+	} while (processed < budget);
+
+	priv->rx_desc_count -= processed;
 
 	if (processed || !priv->rx_desc_count) {
 		bcm6368_enetsw_refill_rx(dev, true);
