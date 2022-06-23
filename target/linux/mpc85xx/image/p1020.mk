@@ -94,3 +94,13 @@ define Device/ocedo_panda
 endef
 TARGET_DEVICES += ocedo_panda
 
+define Device/sophos_red-50-rev1
+  DEVICE_VENDOR := Sophos
+  DEVICE_MODEL := RED 50
+  DEVICE_VARIANT := Rev.1
+  DEVICE_PACKAGES := kmod-crypto-hw-talitos 
+  KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += sophos_red-50-rev1

@@ -14,7 +14,8 @@ platform_do_upgrade() {
 
 	case "$board" in
 	ocedo,panda|\
-	sophos,red-15w-rev1)
+	sophos,red-15w-rev1|\
+	sophos,red-50-rev1)
 		nand_do_upgrade "$1"
 		;;
 	*)
