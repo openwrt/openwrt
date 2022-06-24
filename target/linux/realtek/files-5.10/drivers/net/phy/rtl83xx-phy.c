@@ -1489,59 +1489,6 @@ static int rtl8218d_get_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	return ret;
 }
 
-static int rtl8214fc_set_eee(struct phy_device *phydev,
-				     struct ethtool_eee *e)
-{
-	u32 poll_state;
-	int port = phydev->mdio.addr;
-	bool an_enabled;
-	u32 val;
-
-	pr_debug("In %s port %d, enabled %d\n", __func__, port, e->eee_enabled);
-
-	if (rtl8380_rtl8214fc_media_is_fibre(phydev)) {
-		netdev_err(phydev->attached_dev, "Port %d configured for FIBRE", port);
-		return -ENOTSUPP;
-	}
-
-	poll_state = disable_polling(port);
-
-	/* Set GPHY page to copper */
-	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
-
-	// Get auto-negotiation status
-	val = phy_read(phydev, 0);
-	an_enabled = val & BIT(12);
-
-	pr_info("%s: aneg: %d\n", __func__, an_enabled);
-	val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
-	val &= ~BIT(5);  // Use MAC-based EEE
-	phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
-
-	/* Enable 100M (bit 1) / 1000M (bit 2) EEE */
-	phy_write_paged(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, e->eee_enabled ? 0x6 : 0);
-
-	/* 500M EEE ability */
-	val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
-	if (e->eee_enabled)
-		val |= BIT(7);
-	else
-		val &= ~BIT(7);
-
-	phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
-
-	/* Restart AN if enabled */
-	if (an_enabled)
-		phy_restart_aneg(phydev);
-
-	/* GPHY page back to auto*/
-	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
-
-	resume_polling(poll_state);
-
-	return 0;
-}
-
 static int rtl8214fc_get_eee(struct phy_device *phydev,
 				      struct ethtool_eee *e)
 {
@@ -1633,6 +1580,20 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	resume_polling(poll_state);
 
 	return 0;
+}
+
+static int rtl8214fc_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
+{
+	int port = phydev->mdio.addr;
+
+	pr_info("In %s port %d, enabled %d\n", __func__, port, e->eee_enabled);
+
+	if (rtl8380_rtl8214fc_media_is_fibre(phydev)) {
+		netdev_err(phydev->attached_dev, "Port %d configured for FIBRE", port);
+		return -ENOTSUPP;
+	}
+
+	return rtl8218b_set_eee(phydev, e);
 }
 
 static int rtl8218d_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
