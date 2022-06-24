@@ -39,14 +39,14 @@ $(BASENAME): $(OBJS)
 	$(OBJDUMP) -h -s $(OUTNAME) > $(LSSNAME)
 	$(NM) -n $(OUTNAME) | grep -v '\( [aUw] \)\|\(__crc_\)\|\( \$[adt]\)' > $(MAPNAME)
 	cp $(BINNAME) binary
-	
+
 $(BASENAME2): $(OBJS2)
 	$(LINK) -n -o $(OUTNAME2) $(OBJS2)
 	$(OBJCOPY) $(OUTNAME2) -O binary $(BINNAME2)
 	$(OBJDUMP) -h -s $(OUTNAME2) > $(LSSNAME2)
 	$(NM) -n $(OUTNAME2) | grep -v '\( [aUw] \)\|\(__crc_\)\|\( \$[adt]\)' > $(MAPNAME2)
 	cp $(BINNAME2) binary
-	
+
 # C objects here
 objs/at45.o: at45.c	$(I)
 	$(BUILD) -c -o objs/at45.o		at45.c

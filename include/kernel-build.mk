@@ -144,7 +144,7 @@ define BuildKernel
 	$(Kernel/CompileImage)
 	$(Kernel/CollectDebug)
 	touch $$@
-	
+
   mostlyclean: FORCE
 	$(Kernel/Clean)
 
