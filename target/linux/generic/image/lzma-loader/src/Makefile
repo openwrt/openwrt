@@ -55,7 +55,7 @@ lzma.o: decompress.o LzmaDecode.o kernel.o
 	$(OBJCOPY) temp-$@ lzma.tmp
 	$(Q)echo "SECTIONS { .data : { code_start = .; *(.data) code_stop = .; }}" > lzma-data.lds
 	$(LD) -no-warn-mismatch -T lzma-data.lds -r -o $@ -b binary lzma.tmp --oformat $(O_FORMAT)
-	
+
 lzma.elf: start.o lzma.o
 	sed -e 's,@LOADADDR@,$(LOADER_ENTRY),g' lzma-copy.lds.in >lzma-copy.lds
 	$(LD) -s -Tlzma-copy.lds -o $@ $^
