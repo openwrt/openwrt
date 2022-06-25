@@ -36,7 +36,7 @@
 	lx_clk: lx_clk {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
-		clock-frequency = <20000000>;
+		clock-frequency = <200000000>;
 	};
 
 	cpuintc: cpuintc {
@@ -85,7 +85,7 @@
 		};
 
 		watchdog0: watchdog@3260 {
-			compatible = "realtek,rtl9310-wdt";
+			compatible = "realtek,rtl9300-wdt";
 			reg = <0x3260 0xc>;
 
 			realtek,reset-mode = "soc";
