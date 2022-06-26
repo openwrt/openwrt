@@ -17,10 +17,6 @@ define Build/elecom-header
 		--owner=0 --group=0 -f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
-define Build/tbs_dlink
-  $(STAGING_DIR_HOST)/bin/tbs_dlink $(1) $@
-endef
-
 define Device/aigale_ai-br100
   SOC := mt7620a
   IMAGE_SIZE := 7936k
@@ -223,6 +219,10 @@ define Device/dlink_dir-810l
   SUPPORTED_DEVICES += dir-810l
 endef
 TARGET_DEVICES += dlink_dir-810l
+
+define Build/tbs_dlink
+  $(STAGING_DIR_HOST)/bin/tbs_dlink $(1) $@
+endef
 
 define Device/dlink_dir-819-a1
   SOC := mt7620a
