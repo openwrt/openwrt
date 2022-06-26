@@ -225,18 +225,18 @@ endef
 TARGET_DEVICES += dlink_dir-810l
 
 define Device/dlink_dir-819-a1
-	SOC := mt7620a
+  SOC := mt7620a
   IMAGE_SIZE := 6720k
   BLOCKSIZE := 4k
-	DEVICE_PACKAGES := kmod-mt76x0e
-	DEVICE_VENDOR := D-Link
+  DEVICE_PACKAGES := kmod-mt76x0e
+  DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-819 A1
   KERNEL := $(KERNEL_DTB)
   DEVICE_TITLE := D-Link DIR-819 A1
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to 1900544 | append-rootfs | pad-rootfs | tbs_dlink -g CA -m DIR819 -p DIR-819
   IMAGE/sysupgrade.bin := append-kernel | pad-to 1900544 | append-rootfs | pad-rootfs | append-metadata
-	SUPPORTED_DEVICES += dir-819-a1
+  SUPPORTED_DEVICES += dir-819-a1
 endef
 TARGET_DEVICES += dlink_dir-819-a1
 
