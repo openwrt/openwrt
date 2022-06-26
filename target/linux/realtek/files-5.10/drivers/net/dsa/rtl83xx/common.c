@@ -431,17 +431,19 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 	int i;
 	u32 algomsk = 0;
 	u32 algoidx = 0;
+
 	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH) {
+		pr_err("%s: Only mode LACP 802.3ad (4) allowed.\n", __func__);
 		return -EINVAL;
 	}
-	pr_info("%s: Adding port %d to LA-group %d\n", __func__, port, group);
+
 	if (group >= priv->n_lags) {
-		pr_err("Link Agrregation group too large.\n");
+		pr_err("%s: LAG %d invalid.\n", __func__, group);
 		return -EINVAL;
 	}
 
 	if (port >= priv->cpu_port) {
-		pr_err("Invalid port number.\n");
+		pr_err("%s: Port %d invalid.\n", __func__, port);
 		return -EINVAL;
 	}
 
@@ -450,7 +452,7 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 			break;
 	}
 	if (i != priv->n_lags) {
-		pr_err("%s: Port already member of LAG: %d\n", __func__, i);
+		pr_err("%s: Port %d already member of LAG %d.\n", __func__, port, i);
 		return -ENOSPC;
 	}
 	switch(info->hash_type) {
@@ -479,7 +481,8 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 	priv->r->mask_port_reg_be(0, BIT_ULL(port), priv->r->trk_mbr_ctr(group));
 	priv->lags_port_members[group] |= BIT_ULL(port);
 
-	pr_debug("lags_port_members %d now %016llx\n", group, priv->lags_port_members[group]);
+	pr_info("%s: Added port %d to LAG %d. Members now %016llx.\n",
+		 __func__, port, group, priv->lags_port_members[group]);
 	return 0;
 }
 
@@ -488,28 +491,27 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	pr_info("%s: Removing port %d from LA-group %d\n", __func__, port, group);
-
 	if (group >= priv->n_lags) {
-		pr_err("Link Agrregation group too large.\n");
+		pr_err("%s: LAG %d invalid.\n", __func__, group);
 		return -EINVAL;
 	}
 
 	if (port >= priv->cpu_port) {
-		pr_err("Invalid port number.\n");
+		pr_err("%s: Port %d invalid.\n", __func__, port);
 		return -EINVAL;
 	}
 
-
 	if (!(priv->lags_port_members[group] & BIT_ULL(port))) {
-		pr_err("%s: Port not member of LAG: %d\n", __func__, group);
+		pr_err("%s: Port %d not member of LAG %d.\n", __func__, port, group);
 		return -ENOSPC;
 	}
+
 	// 0x7f algo mask all
 	priv->r->mask_port_reg_be(BIT_ULL(port), 0, priv->r->trk_mbr_ctr(group));
 	priv->lags_port_members[group] &= ~BIT_ULL(port);
 
-	pr_info("lags_port_members %d now %016llx\n", group, priv->lags_port_members[group]);
+	pr_info("%s: Removed port %d from LAG %d. Members now %016llx.\n",
+		 __func__, port, group, priv->lags_port_members[group]);
 	return 0;
 }
 
