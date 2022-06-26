@@ -1786,10 +1786,13 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 
 	/* Clear status */
 	sw_w32(ports, RTL838X_ISR_PORT_LINK_STS_CHG);
-	pr_info("RTL8380 Link change: status: %x, ports %x\n", status, ports);
+	pr_info("RTL8380 Link change: status: %x, ports %x polling %08x\n",
+		status, ports, sw_r32(RTL838X_SMI_POLL_CTRL));
 
 	for (i = 0; i < RTL838X_CPU_PORT; i++) {
 		if (ports & BIT(i)) {
+			// Read link state 2x because of latching on e.g. RTL8214FC
+			link = sw_r32(RTL838X_MAC_LINK_STS);
 			link = sw_r32(RTL838X_MAC_LINK_STS);
 			if (link & BIT(i))
 				dsa_port_phylink_mac_change(ds, i, true);

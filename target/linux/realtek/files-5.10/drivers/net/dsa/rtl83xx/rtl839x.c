@@ -614,6 +614,7 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	pr_debug("RTL8390 Link change: status: %x, ports %llx\n", status, ports);
 
 	link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
+	link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
 	for (i = 0; i < RTL839X_CPU_PORT; i++) {
 		if (ports & BIT_ULL(i))
 			dsa_port_phylink_mac_change(ds, i, !!(link & BIT_ULL(i)));
