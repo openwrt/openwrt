@@ -30,6 +30,14 @@ platform_do_upgrade() {
 		}
 		default_do_upgrade "$1"
 		;;
+	dir-819-a1|dlink,dir-819-a1)
+		if [ "${magic::2}" = "6d" ] || [ "${magic::2}" = "5d" ]
+		then
+		   return 0
+		fi
+		echo "Invalid image type."
+		return 1
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;

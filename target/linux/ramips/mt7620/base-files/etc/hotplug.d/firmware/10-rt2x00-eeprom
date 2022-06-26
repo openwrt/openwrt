@@ -41,6 +41,13 @@ case "$FIRMWARE" in
 		caldata_extract "factory" 0x0 0x200
 		caldata_patch_mac $wifi_mac 0x4
 		;;
+	dir-819-a1|dlink,dir-819-a1)
+		rt2x00_eeprom_extract "u-boot" 66080 512
+		offset=$(strings -t x "$(find_mtd_part u-boot)" | grep llconfig | head -n 1 | awk '{ print "0x"$1 }') 
+		offset=$((offset+53))
+		wan_mac=$(mtd_get_mac_binary u-boot $offset)
+		rt2x00_eeprom_set_macaddr $(macaddr_add "$wan_mac" 2)
+		;;
 	*)
 		caldata_die "Please define mtd-eeprom in $board DTS file!"
 		;;
