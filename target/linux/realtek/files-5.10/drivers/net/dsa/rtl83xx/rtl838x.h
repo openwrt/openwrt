@@ -591,6 +591,8 @@ typedef enum {
 
 /* L3 Routing */
 #define RTL839X_ROUTING_SA_CTRL 		0x6afc
+
+#define RTL930X_L3_IP_ROUTE_CTRL		(0xAB44)
 #define RTL930X_L3_HOST_TBL_CTRL		(0xAB48)
 #define RTL930X_L3_IPUC_ROUTE_CTRL		(0xAB4C)
 #define RTL930X_L3_IP6UC_ROUTE_CTRL		(0xAB50)
@@ -601,7 +603,19 @@ typedef enum {
 #define RTL930X_L3_HW_LU_KEY_CTRL		(0xAC9C)
 #define RTL930X_L3_HW_LU_KEY_IP_CTRL		(0xACA0)
 #define RTL930X_L3_HW_LU_CTRL			(0xACC0)
-#define RTL930X_L3_IP_ROUTE_CTRL		0xab44
+
+#define RTL931X_L3_IP_ROUTE_CTRL		(0xf000)
+#define RTL931X_L3_HOST_TBL_CTRL		(0xf004)
+#define RTL931X_L3_IPUC_ROUTE_CTRL		(0xf008)
+#define RTL931X_L3_IP6UC_ROUTE_CTRL		(0xf00c)
+#define RTL931X_L3_IPMC_ROUTE_CTRL		(0xf010)
+#define RTL931X_L3_IP6MC_ROUTE_CTRL		(0xf014)
+#define RTL931X_L3_INTF_IP_MTU(i)		(0xF1E0 + (i << 2))
+#define RTL931X_L3_INTF_IP6_MTU(i)		(0xF1E0 + (i << 2))
+#define RTL931X_L3_HW_LU_KEY_CTRL		(0xf29c)
+#define RTL931X_L3_HW_LU_KEY_SIP_CTRL		(0xf2a0)
+#define RTL931X_L3_HW_LU_KEY_DIP_CTRL		(0xf2b0)
+#define RTL931X_L3_HW_LU_CTRL			(0xf2c0)
 
 /* Port LED Control */
 #define RTL839X_LED_SET0_0_CTRL			(0x00ec)
@@ -915,6 +929,7 @@ struct pie_rule {
 struct rtl838x_l3_intf {
 	u16 vid;
 	u8 smac_idx;
+	u64 smac;	// Interface MAC address
 	u8 ip4_mtu_id;
 	u8 ip6_mtu_id;
 	u16 ip4_mtu;
@@ -925,6 +940,9 @@ struct rtl838x_l3_intf {
 	u8 ip6_icmp_redirect;
 	u8 ip4_pbr_icmp_redirect;
 	u8 ip6_pbr_icmp_redirect;
+	// Applicable to RTL9310 only
+	bool is_tunnel;
+	u16 tunnel_idx;
 };
 
 /*
@@ -941,8 +959,8 @@ struct rtl93xx_rt_mac {
 	u8 p_id_mask;	// Mask for the port
 	u8 action;	// Routing action performed: 0: FORWARD, 1: DROP, 2: TRAP2CPU
 			//   3: COPY2CPU, 4: TRAP2MASTERCPU, 5: COPY2MASTERCPU, 6: HARDDROP
-	u16 vid;
-	u16 vid_mask;
+	u16 intf_id;
+	u16 intf_id_mask;
 	u64 mac;	// MAC address used as source MAC in the routed packet
 	u64 mac_mask;
 };
@@ -971,6 +989,13 @@ struct rtl83xx_flow {
 	u32 flags;
 };
 
+enum route_type {
+	ROUTE_TYPE_IPV4UC = 0,
+	ROUTE_TYPE_IPV4MC = 1,
+	ROUTE_TYPE_IPV6UC = 2,
+	ROUTE_TYPE_IPV6MC = 3
+};
+
 struct rtl93xx_route_attr {
 	bool valid;
 	bool hit;
@@ -979,8 +1004,11 @@ struct rtl93xx_route_attr {
 	bool dst_null;
 	bool qos_as;
 	u8 qos_prio;
-	u8 type;
+	enum route_type type;
 	u8 action;
+	// RTL9310 specific
+	u32 vrf_id;
+	bool ecmp_en;
 };
 
 struct rtl83xx_route {
@@ -1084,13 +1112,12 @@ struct rtl838x_reg {
 	int (*l3_setup)(struct rtl838x_switch_priv *priv);
 	void (*set_l3_nexthop)(int idx, u16 dmac_id, u16 interface);
 	void (*get_l3_nexthop)(int idx, u16 *dmac_id, u16 *interface);
-	u64 (*get_l3_egress_mac)(u32 idx);
-	void (*set_l3_egress_mac)(u32 idx, u64 mac);
 	int (*find_l3_slot)(struct rtl83xx_route *rt, bool must_exist);
 	int (*route_lookup_hw)(struct rtl83xx_route *rt);
 	void (*get_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
-	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
+	int (*l3_mtu_add)(struct rtl838x_switch_priv *priv, int mtu);
+	int (*alloc_egress_intf)(struct rtl838x_switch_priv *priv, u64 mac, int vlan);
 	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);

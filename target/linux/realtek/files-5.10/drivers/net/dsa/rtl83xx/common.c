@@ -807,8 +807,8 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 		r->nh.id = r->id;
 
 		// Do we need to explicitly add a DMAC entry with the route's nh index?
-		if (priv->r->set_l3_egress_mac)
-			priv->r->set_l3_egress_mac(r->id, mac);
+//		if (priv->r->set_l3_egress_mac)
+//			priv->r->set_l3_egress_mac(r->id, mac);
 
 		// Update ROUTING table: map gateway-mac and switch-mac id to route id
 		rtl83xx_l2_nexthop_add(priv, &r->nh);
@@ -1074,7 +1074,7 @@ static int rtl83xx_fib4_del(struct rtl838x_switch_priv *priv,
  * On the RTL93xx, an L3 termination endpoint MAC address on which the router waits
  * for packets to be routed needs to be allocated.
  */
-static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
+static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac, int intf_id)
 {
 	int i, free_mac = -1;
 	struct rtl93xx_rt_mac m;
@@ -1103,8 +1103,8 @@ static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 	m.p_type = 0; // An individual port, not a trunk port
 	m.p_id = 0x3f;			// Listen on any port
 	m.p_id_mask = 0;
-	m.vid = 0;			// Listen on any VLAN...
-	m.vid_mask = 0; 		// ... so mask needs to be 0
+	m.intf_id = intf_id;
+	m.intf_id_mask = 0xffff;
 	m.mac_mask = 0xffffffffffffULL;	// We want an exact match of the interface MAC
 	m.action = L3_FORWARD;		// Route the packet
 	priv->r->set_l3_router_mac(free_mac, &m);
@@ -1114,46 +1114,57 @@ static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 	return 0;
 }
 
-static int rtl83xx_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, int vlan)
+/*
+ * Deletes an allocation for one of the MTUs stored in HW
+ */
+static int rtl83xx_l3_mtu_del(struct rtl838x_switch_priv *priv, int mtu)
 {
-	int i, free_mac = -1;
-	struct rtl838x_l3_intf intf;
-	u64 m;
+	int i;
 
-	mutex_lock(&priv->reg_mutex);
-	for (i = 0; i < MAX_SMACS; i++) {
-		m = priv->r->get_l3_egress_mac(L3_EGRESS_DMACS + i);
-		if (free_mac < 0 && !m) {
-			free_mac = i;
-			continue;
-		}
-		if (m == mac) {
-			mutex_unlock(&priv->reg_mutex);
-			return i;
-		}
+	for (i = 0; i < MAX_INTF_MTUS; i++) {
+		if (mtu == priv->intf_mtus[i])
+			break;
+	}
+	if (i >= MAX_INTF_MTUS || !priv->intf_mtu_count[i]) {
+		pr_err("%s: No MTU slot found for MTU: %d\n", __func__, mtu);
+		return -EINVAL;
 	}
 
-	if (free_mac < 0) {
-		pr_err("No free egress interface, cannot offload\n");
-		return -1;
+	priv->intf_mtu_count[i]--;
+}
+
+/*
+ * Creates an interface for a route by setting up the HW tables in the SoC
+ */
+static int rtl83xx_l3_intf_add(struct rtl838x_switch_priv *priv, struct rtl838x_l3_intf *intf)
+{
+	int i, intf_id, mtu_id;
+	// number of MTU-values < 16384
+
+	// Use the same IPv6 mtu as the ip4 mtu for this route if unset
+	intf->ip6_mtu = intf->ip6_mtu ? intf->ip6_mtu : intf->ip4_mtu;
+
+	mtu_id = priv->r->l3_mtu_add(priv, intf->ip4_mtu);
+	pr_info("%s: added mtu %d with mtu-id %d\n", __func__, intf->ip4_mtu, mtu_id);
+	if (mtu_id < 0)
+		return -ENOSPC;
+	intf->ip4_mtu_id = mtu_id;
+	intf->ip6_mtu_id = mtu_id;
+
+	for (i = 0; i < MAX_INTERFACES; i++) {
+		if (!priv->interfaces[i])
+			break;
 	}
-
-	// Set up default egress interface 1
-	intf.vid = vlan;
-	intf.smac_idx = free_mac;
-	intf.ip4_mtu_id = 1;
-	intf.ip6_mtu_id = 1;
-	intf.ttl_scope = 1; // TTL
-	intf.hl_scope = 1;  // Hop Limit
-	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  // FORWARD
-	intf.ip4_pbr_icmp_redirect = intf.ip6_pbr_icmp_redirect = 2; // FORWARD;
-	priv->r->set_l3_egress_intf(free_mac, &intf);
-
-	priv->r->set_l3_egress_mac(L3_EGRESS_DMACS + free_mac, mac);
-
-	mutex_unlock(&priv->reg_mutex);
-
-	return free_mac;
+	if (i >= MAX_INTERFACES) {
+		pr_err("%s: cannot find free interface entry\n", __func__);
+		return -EINVAL;
+	}
+	intf_id = i;
+	priv->interfaces[i] = kzalloc(sizeof(struct rtl838x_l3_intf), GFP_KERNEL);
+	if (!priv->interfaces[i]) {
+		pr_err("%s: no memory to allocate new interface\n", __func__);
+		return -ENOMEM;
+	}
 }
 
 static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
@@ -1216,13 +1227,13 @@ static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
 
 		pr_debug("Local route and router mac %016llx\n", mac);
 
-		if (rtl83xx_alloc_router_mac(priv, mac))
-			goto out_free_rt;
-
 		// vid = 0: Do not care about VID
-		r->nh.if_id = rtl83xx_alloc_egress_intf(priv, mac, vlan);
+		r->nh.if_id = priv->r->alloc_egress_intf(priv, mac, vlan);
 		if (r->nh.if_id < 0)
 			goto out_free_rmac;
+
+		if (rtl83xx_alloc_router_mac(priv, mac, r->nh.if_id))
+			goto out_free_rt;
 
 		if (to_localhost) {
 			int slot;

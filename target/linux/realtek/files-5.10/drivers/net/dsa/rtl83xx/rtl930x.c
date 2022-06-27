@@ -1096,7 +1096,7 @@ static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
 	pr_info("%s: host route %d, default_route %d\n", __func__, host_route, default_route);
 
 	switch (rt->attr.type) {
-	case 0: // IPv4 Unicast route
+	case ROUTE_TYPE_IPV4UC:
 		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
 		ip4_m = sw_r32(rtl_table_data(r, 9));
 		pr_info("%s: Read ip4 mask: %08x\n", __func__, ip4_m);
@@ -1105,7 +1105,8 @@ static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
 		if (rt->prefix_len < 0)
 			rt->prefix_len = inet_mask_len(ip4_m);
 		break;
-	case 2: // IPv6 Unicast route
+
+	case ROUTE_TYPE_IPV6UC:
 		ipv6_addr_set(&rt->dst_ip6,
 			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
 			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)));
@@ -1118,8 +1119,9 @@ static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
 			rt->prefix_len = find_last_bit((unsigned long int *)&ip6_m.s6_addr32,
 							 128);
 		break;
-	case 1: // IPv4 Multicast route
-	case 3: // IPv6 Multicast route
+
+	case ROUTE_TYPE_IPV4MC:
+	case ROUTE_TYPE_IPV6MC:
 		pr_warn("%s: route type not supported\n", __func__);
 		goto out;
 	}
@@ -1172,16 +1174,16 @@ static void rtl930x_host_route_read(int idx, struct rtl83xx_route *rt)
 		goto out;
 	rt->attr.type = (v >> 29) & 0x3;
 	switch (rt->attr.type) {
-	case 0: // IPv4 Unicast route
+	case ROUTE_TYPE_IPV4UC:
 		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
 		break;
-	case 2: // IPv6 Unicast route
+	case ROUTE_TYPE_IPV6UC:
 		ipv6_addr_set(&rt->dst_ip6,
 			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 2)),
 			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 0)));
 		break;
-	case 1: // IPv4 Multicast route
-	case 3: // IPv6 Multicast route
+	case ROUTE_TYPE_IPV4MC:
+	case ROUTE_TYPE_IPV6MC:
 		pr_warn("%s: route type not supported\n", __func__);
 		goto out;
 	}
@@ -1236,20 +1238,20 @@ static void rtl930x_host_route_write(int idx, struct rtl83xx_route *rt)
 
 	sw_w32(v, rtl_table_data(r, 0));
 	switch (rt->attr.type) {
-	case 0: // IPv4 Unicast route
+	case ROUTE_TYPE_IPV4UC:
 		sw_w32(0, rtl_table_data(r, 1));
 		sw_w32(0, rtl_table_data(r, 2));
 		sw_w32(0, rtl_table_data(r, 3));
 		sw_w32(rt->dst_ip, rtl_table_data(r, 4));
 		break;
-	case 2: // IPv6 Unicast route
+	case ROUTE_TYPE_IPV6UC:
 		sw_w32(rt->dst_ip6.s6_addr32[0], rtl_table_data(r, 1));
 		sw_w32(rt->dst_ip6.s6_addr32[1], rtl_table_data(r, 2));
 		sw_w32(rt->dst_ip6.s6_addr32[2], rtl_table_data(r, 3));
 		sw_w32(rt->dst_ip6.s6_addr32[3], rtl_table_data(r, 4));
 		break;
-	case 1: // IPv4 Multicast route
-	case 3: // IPv6 Multicast route
+	case ROUTE_TYPE_IPV4MC:
+	case ROUTE_TYPE_IPV6MC:
 		pr_warn("%s: route type not supported\n", __func__);
 		goto out;
 	}
@@ -1379,7 +1381,7 @@ static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
 	sw_w32(0x3 << 29, rtl_table_data(r, 5));
 
 	switch (rt->attr.type) {
-	case 0: // IPv4 Unicast route
+	case ROUTE_TYPE_IPV4UC:
 		sw_w32(0, rtl_table_data(r, 1));
 		sw_w32(0, rtl_table_data(r, 2));
 		sw_w32(0, rtl_table_data(r, 3));
@@ -1392,7 +1394,7 @@ static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
 		sw_w32(0, rtl_table_data(r, 8));
 		sw_w32(ip4_m, rtl_table_data(r, 9));
 		break;
-	case 2: // IPv6 Unicast route
+	case ROUTE_TYPE_IPV6UC: // IPv6 Unicast route
 		sw_w32(rt->dst_ip6.s6_addr32[0], rtl_table_data(r, 1));
 		sw_w32(rt->dst_ip6.s6_addr32[1], rtl_table_data(r, 2));
 		sw_w32(rt->dst_ip6.s6_addr32[2], rtl_table_data(r, 3));
@@ -1407,8 +1409,8 @@ static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
 		sw_w32(ip6_m.s6_addr32[2], rtl_table_data(r, 8));
 		sw_w32(ip6_m.s6_addr32[3], rtl_table_data(r, 9));
 		break;
-	case 1: // IPv4 Multicast route
-	case 3: // IPv6 Multicast route
+	case ROUTE_TYPE_IPV4MC:
+	case ROUTE_TYPE_IPV6MC:
 		pr_warn("%s: route type not supported\n", __func__);
 		rtl_table_release(r);
 		return;
@@ -1445,22 +1447,6 @@ static void rtl930x_get_l3_nexthop(int idx, u16 *dmac_id, u16 *interface)
 	*interface = v & 0x7f;
 }
 
-static int rtl930x_l3_mtu_del(struct rtl838x_switch_priv *priv, int mtu)
-{
-	int i;
-
-	for (i = 0; i < MAX_INTF_MTUS; i++) {
-		if (mtu == priv->intf_mtus[i])
-			break;
-	}
-	if (i >= MAX_INTF_MTUS || !priv->intf_mtu_count[i]) {
-		pr_err("%s: No MTU slot found for MTU: %d\n", __func__, mtu);
-		return -EINVAL;
-	}
-
-	priv->intf_mtu_count[i]--;
-}
-
 static int rtl930x_l3_mtu_add(struct rtl838x_switch_priv *priv, int mtu)
 {
 	int i, free_mtu;
@@ -1491,40 +1477,6 @@ static int rtl930x_l3_mtu_add(struct rtl838x_switch_priv *priv, int mtu)
 	priv->intf_mtu_count[i]++;
 
 	return mtu_id;
-}
-
-/*
- * Creates an interface for a route by setting up the HW tables in the SoC
- */
-static int rtl930x_l3_intf_add(struct rtl838x_switch_priv *priv, struct rtl838x_l3_intf *intf)
-{
-	int i, intf_id, mtu_id;
-	// number of MTU-values < 16384
-
-	// Use the same IPv6 mtu as the ip4 mtu for this route if unset
-	intf->ip6_mtu = intf->ip6_mtu ? intf->ip6_mtu : intf->ip4_mtu;
-
-	mtu_id = rtl930x_l3_mtu_add(priv, intf->ip4_mtu);
-	pr_info("%s: added mtu %d with mtu-id %d\n", __func__, intf->ip4_mtu, mtu_id);
-	if (mtu_id < 0)
-		return -ENOSPC;
-	intf->ip4_mtu_id = mtu_id;
-	intf->ip6_mtu_id = mtu_id;
-
-	for (i = 0; i < MAX_INTERFACES; i++) {
-		if (!priv->interfaces[i])
-			break;
-	}
-	if (i >= MAX_INTERFACES) {
-		pr_err("%s: cannot find free interface entry\n", __func__);
-		return -EINVAL;
-	}
-	intf_id = i;
-	priv->interfaces[i] = kzalloc(sizeof(struct rtl838x_l3_intf), GFP_KERNEL);
-	if (!priv->interfaces[i]) {
-		pr_err("%s: no memory to allocate new interface\n", __func__);
-		return -ENOMEM;
-	}
 }
 
 /*
@@ -2144,8 +2096,8 @@ static void rtl930x_get_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
 
 	m->p_type = !!(v & BIT(19));
 	m->p_id = (v >> 13) & 0x3f;  // trunk id of port
-	m->vid = v & 0xfff;
-	m->vid_mask = w & 0xfff;
+	m->intf_id = v & 0xfff;
+	m->intf_id_mask = w & 0xfff;
 	m->action = sw_r32(rtl_table_data(r, 6)) & 0x7;
 	m->mac_mask = ((((u64)sw_r32(rtl_table_data(r, 5))) << 32) & 0xffffffffffffULL)
 			| (sw_r32(rtl_table_data(r, 4)));
@@ -2171,9 +2123,9 @@ static void rtl930x_set_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
 	// The table has a size of 7 registers, 64 entries
 	v = BIT(20); // mac entry valid, port type is 0: individual
 	v |= (m->p_id & 0x3f) << 13;
-	v |= (m->vid & 0xfff); // Set the interface_id to the vlan id
+	v |= (m->intf_id & 0xfff);
 
-	w = m->vid_mask;
+	w = m->intf_id_mask & 0xfff;
 	w |= (m->p_id_mask & 0x3f) << 13;
 
 	sw_w32(v, rtl_table_data(r, 0));
@@ -2218,6 +2170,7 @@ static u64 rtl930x_get_l3_egress_mac(u32 idx)
 
 	return mac;
 }
+
 /*
  * Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
  * in the SoC's L3_EGR_INTF_MAC table
@@ -2235,6 +2188,48 @@ static void rtl930x_set_l3_egress_mac(u32 idx, u64 mac)
 	pr_debug("%s: setting index %d to %016llx\n", __func__, idx, mac);
 	rtl_table_write(r, idx);
 	rtl_table_release(r);
+}
+
+static int rtl930x_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, int vlan)
+{
+	int i, free_mac = -1;
+	struct rtl838x_l3_intf intf;
+	u64 m;
+
+	mutex_lock(&priv->reg_mutex);
+	for (i = 0; i < MAX_SMACS; i++) {
+		m = rtl930x_get_l3_egress_mac(L3_EGRESS_DMACS + i);
+		if (free_mac < 0 && !m) {
+			free_mac = i;
+			continue;
+		}
+		if (m == mac) {
+			mutex_unlock(&priv->reg_mutex);
+			return i;
+		}
+	}
+
+	if (free_mac < 0) {
+		pr_err("No free egress interface, cannot offload\n");
+		return -1;
+	}
+
+	// Set up default egress interface 1
+	intf.vid = vlan;
+	intf.smac_idx = free_mac;
+	intf.ip4_mtu_id = 1;
+	intf.ip6_mtu_id = 1;
+	intf.ttl_scope = 1; // TTL
+	intf.hl_scope = 1;  // Hop Limit
+	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  // FORWARD
+	intf.ip4_pbr_icmp_redirect = intf.ip6_pbr_icmp_redirect = 2; // FORWARD;
+	rtl930x_set_l3_egress_intf(free_mac, &intf);
+
+	rtl930x_set_l3_egress_mac(L3_EGRESS_DMACS + free_mac, mac);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return free_mac;
 }
 
 /*
@@ -2571,13 +2566,12 @@ const struct rtl838x_reg rtl930x_reg = {
 	.l3_setup = rtl930x_l3_setup,
 	.set_l3_nexthop = rtl930x_set_l3_nexthop,
 	.get_l3_nexthop = rtl930x_get_l3_nexthop,
-	.get_l3_egress_mac = rtl930x_get_l3_egress_mac,
-	.set_l3_egress_mac = rtl930x_set_l3_egress_mac,
 	.find_l3_slot = rtl930x_find_l3_slot,
 	.route_lookup_hw = rtl930x_route_lookup_hw,
 	.get_l3_router_mac = rtl930x_get_l3_router_mac,
 	.set_l3_router_mac = rtl930x_set_l3_router_mac,
-	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
+	.l3_mtu_add = rtl930x_l3_mtu_add,
+	.alloc_egress_intf = rtl930x_alloc_egress_intf,
 	.set_distribution_algorithm = rtl930x_set_distribution_algorithm,
 	.led_init = rtl930x_led_init,
 };
