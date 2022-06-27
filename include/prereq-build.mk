@@ -26,7 +26,7 @@ $(eval $(call FindHostCommand,*false,Please install GNU coreutils, \
 # Required for the toolchain
 $(eval $(call SetupHostCommand,make, \
 	Please install GNU make v4.1 or later., \
-	$(MAKE) -v | grep -E 'Make (4\.[1-9]|[5-9]\.)'))
+	$(MAKE) -v | grep GNU | grep -E 'Make (4\.[1-9]|[5-9]\.)'))
 
 $(eval $(call TestHostCommand,case-sensitive-fs, \
 	OpenWrt can only be built on a case-sensitive filesystem, \
@@ -124,20 +124,20 @@ $(eval $(call SetupHostCommand,xargs, \
 	xargs -r --version))
 
 $(eval $(call SetupHostCommand,patch,Please install GNU 'patch', \
-	gpatch --version 2>&1 | grep 'Free Software Foundation', \
-	patch --version 2>&1 | grep 'Free Software Foundation'))
+	gpatch --version 2>&1 | grep GNU, \
+	patch --version 2>&1 | grep GNU))
 
 $(eval $(call SetupHostCommand,diff,Please install GNU diffutils, \
 	gdiff --version 2>&1 | grep GNU, \
 	diff --version 2>&1 | grep GNU))
 
 $(eval $(call SetupHostCommand,cp,Please install GNU fileutils, \
-	gcp --help 2>&1 | grep 'Copy SOURCE', \
-	cp --help 2>&1 | grep 'Copy SOURCE'))
+	gcp --version 2>&1 | grep GNU, \
+	cp --version 2>&1 | grep GNU))
 
-$(eval $(call SetupHostCommand,seq,Please install seq, \
-	gseq --version, \
-	seq --version 2>&1 | grep seq))
+$(eval $(call SetupHostCommand,seq,Please install GNU 'seq', \
+	gseq --version 2>&1 | grep GNU, \
+	seq --version 2>&1 | grep GNU))
 
 $(eval $(call SetupHostCommand,awk,Please install GNU 'awk', \
 	gawk --version 2>&1 | grep GNU, \
@@ -156,14 +156,14 @@ $(eval $(call FindHostCommand,*getopt, \
 	gnugetopt -o t --long test -- --test | grep '^ *--test *--', \
 	getopt -o t --long test -- --test | grep '^ *--test *--'))
 
-$(eval $(call SetupHostCommand,realpath,Please install a 'realpath' utility, \
-	grealpath /, \
-	realpath /))
+$(eval $(call SetupHostCommand,realpath,Please install GNU 'realpath' utility, \
+	grealpath --version 2>&1 | grep GNU, \
+	realpath --version 2>&1 | grep GNU))
 
-$(eval $(call SetupHostCommand,stat,Cannot find a file stat utility, \
-	gnustat -c%s $(TOPDIR)/Makefile, \
-	gstat -c%s $(TOPDIR)/Makefile, \
-	stat -c%s $(TOPDIR)/Makefile))
+$(eval $(call SetupHostCommand,stat,Please install GNU 'stat', \
+	gnustat --version 2>&1 | grep GNU, \
+	gstat --version 2>&1 | grep GNU, \
+	stat --version 2>&1 | grep GNU))
 
 $(eval $(call FindHostCommand,unzip,Please install 'unzip', \
 	unzip))
