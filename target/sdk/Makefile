@@ -106,8 +106,9 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	$(CP) -L $(INCLUDE_DIR) $(SCRIPT_DIR) $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) \
 		`cd $(TOPDIR); find $(KDIR_BASE)/ -name \*.ko` \
-		`cd $(TOPDIR); find $(KDIR_BASE)/firmware/ -newer $(KDIR_BASE)/firmware/Makefile \
-			-type f -name '*.bin' -or -name '*.cis' -or -name '*.csp' -or -name '*.dsp' -or -name '*.fw'` \
+		`cd $(TOPDIR); $(SCRIPT_DIR)/timestamp.pl -p -cnewer $(KDIR_BASE)/firmware/Makefile \
+			-a "-type f -name '*.bin' -o -name '*.cis' -o -name '*.csp' -o -name '*.dsp' -o -name '*.fw'" \
+			-- $(KDIR_BASE)/firmware` \
 		$(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
 		$(SDK_DIRS) $(KERNEL_FILES) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
