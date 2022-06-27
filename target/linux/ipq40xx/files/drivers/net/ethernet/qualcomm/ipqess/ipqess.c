@@ -542,10 +542,10 @@ static irqreturn_t ipqess_interrupt_tx(int irq, void *priv)
 	struct ipqess_tx_ring *tx_ring = (struct ipqess_tx_ring *) priv;
 
 	if (likely(napi_schedule_prep(&tx_ring->napi_tx))) {
-		__napi_schedule(&tx_ring->napi_tx);
 		ipqess_w32(tx_ring->ess,
 			 IPQESS_REG_TX_INT_MASK_Q(tx_ring->idx),
 			 0x0);
+		__napi_schedule(&tx_ring->napi_tx);
 	}
 
 	return IRQ_HANDLED;
@@ -556,10 +556,10 @@ static irqreturn_t ipqess_interrupt_rx(int irq, void *priv)
 	struct ipqess_rx_ring *rx_ring = (struct ipqess_rx_ring *) priv;
 
 	if (likely(napi_schedule_prep(&rx_ring->napi_rx))) {
-		__napi_schedule(&rx_ring->napi_rx);
 		ipqess_w32(rx_ring->ess,
 			 IPQESS_REG_RX_INT_MASK_Q(rx_ring->idx),
 			 0x0);
+		__napi_schedule(&rx_ring->napi_rx);
 	}
 
 	return IRQ_HANDLED;
@@ -1268,6 +1268,8 @@ static int ipqess_axi_probe(struct platform_device *pdev)
 	err = ipqess_hw_init(ess);
 	if (err)
 		goto err_out;
+
+	dev_set_threaded(netdev, true);
 
 	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
 		int qid;
