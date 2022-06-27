@@ -43,9 +43,7 @@ int tbs_crc_file(FILE *fp , unsigned int offset , unsigned long *checksum) {
 }
 
 int CreateImgFile(const unsigned char *fileRead, unsigned long ksize, unsigned long rsize, int board_endian, const unsigned char *region, const unsigned char *model, const unsigned char *product) {
-  char *img_orig;
   update_hdr_t image_header;
-
   unsigned long checksum_result;
   /* count how many bytes have been write to IMG file */
   int iImgFileLength = 0;
@@ -67,10 +65,10 @@ int CreateImgFile(const unsigned char *fileRead, unsigned long ksize, unsigned l
   image_header.kernel_size = ksize;
   image_header.rootfs_size = rsize;
 
-  int imageHerdersPlusSizes = image_header.kernel_size + image_header.rootfs_size;
-  // Alloc memory to read file (*pt-BR*: Mutiplicamos por 8 para não quebra a leitura do arquivo).
-  img_orig = (unsigned char *) malloc(imageHerdersPlusSizes*8);
-  memset(img_orig, 0xffff, imageHerdersPlusSizes);
+  long imageHerdersPlusSizes = (image_header.kernel_size + image_header.rootfs_size);
+  // Alloc memory to read file.
+  char *imgAlloc = (unsigned char *) malloc(imageHerdersPlusSizes * 32);
+  memset(imgAlloc, 0xffff, imageHerdersPlusSizes);
 
   FILE *pfin;
   pfin = fopen(fileRead, "rb");
@@ -81,7 +79,7 @@ int CreateImgFile(const unsigned char *fileRead, unsigned long ksize, unsigned l
 
   iWriteCount = 0;
   while(!feof(pfin)) {
-    iReadCount = fread(img_orig+iWriteCount, 1, 4096, pfin);
+    iReadCount = fread(imgAlloc+iWriteCount, 1, 4096, pfin);
     iWriteCount += iReadCount;
   }
   fclose(pfin);
@@ -102,8 +100,8 @@ int CreateImgFile(const unsigned char *fileRead, unsigned long ksize, unsigned l
   image_header.rootfs_offset = image_header.kernel_size + image_header.kernel_offset;
   image_header.image_len = imageHerdersPlusSizes;
 
-  fwrite(img_orig, 1, imageHerdersPlusSizes, pfout);
-  free(img_orig);
+  fwrite(imgAlloc, 1, imageHerdersPlusSizes, pfout);
+  free(imgAlloc);
 
   /******************************************************************
                         Deal with image header
