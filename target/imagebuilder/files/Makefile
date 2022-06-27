@@ -149,7 +149,7 @@ package_reload:
 	if [ -d "$(PACKAGE_DIR)" ] && ( \
 			[ ! -f "$(PACKAGE_DIR)/Packages" ] || \
 			[ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || \
-			[ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ] ); then \
+			[ "$$($(SCRIPT_DIR)/timestamp.pl -a "-type f" -cnewer $(PACKAGE_DIR)/Packages.gz -- $(PACKAGE_DIR))" ] ); then \
 		echo "Package list missing or not up-to-date, generating it." >&2 ;\
 		$(MAKE) package_index; \
 	else \
