@@ -9,6 +9,7 @@ ramips_setup_interfaces()
 
 	case $board in
 	alfa-network,awusfree1|\
+	creality,wb-01|\
 	d-team,pbr-d1|\
 	dlink,dap-1325-a1|\
 	glinet,microuter-n300|\
@@ -191,6 +192,14 @@ ramips_setup_macs()
 		lan_mac=$wan_mac
 		label_mac=$wan_mac
 		;;
+	creality,wb-01|\
+	onion,omega2|\
+	onion,omega2p|\
+	vocore,vocore2|\
+	vocore,vocore2-lite|\
+	wavlink,wl-wn576a2)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
 	cudy,wr1000|\
 	hilink,hlk-7628n|\
 	hilink,hlk-7688a|\
@@ -235,13 +244,6 @@ ramips_setup_macs()
 	motorola,mwr03)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		wan_mac=$(macaddr_add "$label_mac" 2)
-		;;
-	onion,omega2|\
-	onion,omega2p|\
-	vocore,vocore2|\
-	vocore,vocore2-lite|\
-	wavlink,wl-wn576a2)
-		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	rakwireless,rak633|\
 	unielec,u7628-01-16m|\
