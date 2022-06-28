@@ -389,6 +389,17 @@ define Device/asus_pl-ac56
 endef
 TARGET_DEVICES += asus_pl-ac56
 
+define Device/asus_rp-ac51
+  SOC := qca9531
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RP-AC51
+  IMAGE_SIZE := 16000k
+  IMAGES += factory.bin
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct \
+	-swconfig
+endef
+TARGET_DEVICES += asus_rp-ac51
+
 define Device/asus_rp-ac66
   SOC := qca9563
   DEVICE_VENDOR := ASUS
