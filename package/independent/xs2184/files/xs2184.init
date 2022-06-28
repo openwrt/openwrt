@@ -1,0 +1,128 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+USE_PROCD=1
+NAME=xs2184
+PROG=/usr/sbin/xs2184
+
+START=97
+
+# Bus define ...
+BUS_NUM=0
+
+# chip addr define ...
+DEV_1_ADDR=0x20
+DEV_2_ADDR=0x28
+
+CHIP_ID_REG=0x1b
+
+# register define ...
+INTERRUPT_MASK_REG=0x01
+GLOPUSH_BUTTON_REG=0x1a
+POWER_EN_REG=0x19
+OPER_MODE_REG=0x12
+CLASS5_EN_REG=0x1c
+HIGH_POWER_EN_REG=0x44
+PORT1_GPMD_REG=0x46
+PORT2_GPMD_REG=0x4b
+PORT3_GPMD_REG=0x50
+PORT4_GPMD_REG=0x55
+PORT12_TLIM_REG=0x1e
+PORT34_TLIM_REG=0x1f
+DISCON_EN_REG=0x13
+DETECT_CLASS_EN_REG=0x14
+POWER_EN_REG=0x19
+PORT1_ILIM_REG=0x48
+PORT1_ICUT_REG=0x47
+PORT2_ILIM_REG=0x4d
+PORT2_ICUT_REG=0x4c
+PORT3_ILIM_REG=0x52
+PORT3_ICUT_REG=0x51
+PORT4_ILIM_REG=0x57
+PORT4_ICUT_REG=0x56
+
+# cmd templete
+i2c_set(){          #1:chip_addr 2:reg_addr 3:vel
+    i2cset -y ${BUS_NUM} $1 $2 $3
+}
+
+chip_init(){          #1:chip_addr
+    echo "xs2184 init on bus ${BUS_NUM}, addr $1"
+
+    i2c_set $1 $INTERRUPT_MASK_REG 0x92 #0x83
+    i2c_set $1 $GLOPUSH_BUTTON_REG 0xc0
+    i2c_set $1 $POWER_EN_REG 0xf0
+    i2c_set $1 $OPER_MODE_REG 0xff      #工作模式：自动
+    i2c_set $1 $CLASS5_EN_REG 0x0
+    i2c_set $1 $HIGH_POWER_EN_REG 0x0f
+    i2c_set $1 $PORT1_GPMD_REG 0x01
+    i2c_set $1 $PORT2_GPMD_REG 0x01
+    i2c_set $1 $PORT3_GPMD_REG 0x01
+    i2c_set $1 $PORT4_GPMD_REG 0x01
+    i2c_set $1 $PORT12_TLIM_REG 0x77
+    i2c_set $1 $PORT34_TLIM_REG 0x77
+    i2c_set $1 $DISCON_EN_REG 0x0f      #打开断开检测
+    i2c_set $1 $DETECT_CLASS_EN_REG 0xff
+    i2c_set $1 $PORT1_ILIM_REG 0x80
+    i2c_set $1 $PORT1_ICUT_REG 0x14
+    i2c_set $1 $PORT2_ILIM_REG 0x80
+    i2c_set $1 $PORT2_ICUT_REG 0x14
+    i2c_set $1 $PORT3_ILIM_REG 0x80
+    i2c_set $1 $PORT3_ICUT_REG 0x14
+    i2c_set $1 $PORT4_ILIM_REG 0x80
+    i2c_set $1 $PORT4_ICUT_REG 0x14
+    i2c_set $1 0x1e 0x77
+    i2c_set $1 0x1f 0x77
+    i2c_set $1 $POWER_EN_REG 0x0f
+}
+
+chip_power_off() {
+    echo "xs2184 power off on bus ${BUS_NUM}, addr $1"
+    i2c_set $1 $POWER_EN_REG 0xf0
+}
+
+init_chips() {
+    i2cget -y ${BUS_NUM} ${DEV_1_ADDR} ${CHIP_ID_REG} 2>/dev/null && {
+        chip_init ${DEV_1_ADDR}
+    }
+
+    i2cget -y ${BUS_NUM} ${DEV_2_ADDR} ${CHIP_ID_REG} 2>/dev/null && {
+        chip_init ${DEV_2_ADDR}
+    }
+}
+
+close_chips() {
+    i2cget -y ${BUS_NUM} ${DEV_1_ADDR} ${CHIP_ID_REG} 2>/dev/null && {
+        chip_power_off ${DEV_1_ADDR}
+    }
+
+    i2cget -y ${BUS_NUM} ${DEV_2_ADDR} ${CHIP_ID_REG} 2>/dev/null && {
+        chip_power_off ${DEV_2_ADDR}
+    }
+}
+
+start_service() {
+    echo "start xs2184 PSE"
+
+    init_chips
+
+    procd_open_instance
+    procd_set_param command "$PROG"
+    procd_append_param command "-m 1100"
+    # procd_set_param stdout 1
+    procd_set_param stderr 1
+    procd_set_param respawn
+    procd_close_instance
+}
+
+stop() {
+    echo "stop xs2184 PSE"
+
+    service_stop $PROG
+    init_chips
+}
+
+reload() {
+    service_reload $PROG
+    close_chips
+}
