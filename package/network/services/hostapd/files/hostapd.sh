@@ -829,12 +829,7 @@ hostapd_set_bss_options() {
 	set_default bss_transition 0
 	set_default wnm_sleep_mode 0
 	set_default wnm_sleep_mode_no_keys 0
-
-	if [ "$enable_ax" -eq 1 ]; then
-		set_default mbo 1
-	else
-		set_default mbo 0
-	fi
+	set_default mbo 0
 
 	[ -n "$time_advertisement" ] && append bss_conf "time_advertisement=$time_advertisement" "$N"
 	[ -n "$time_zone" ] && append bss_conf "time_zone=$time_zone" "$N"
