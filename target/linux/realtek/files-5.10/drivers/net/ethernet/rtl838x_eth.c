@@ -127,7 +127,7 @@ static void rtl839x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 			h->cpu_tag[5] = BIT(dest_port) & 0xffff;
 		}
 		h->cpu_tag[2] |= BIT(4); // Enable destination port mask use
-		h->cpu_tag[2] |= BIT(8); // Enable L2 Learning
+		h->cpu_tag[2] |= BIT(7); // Enable L2 Learning
 		// Set internal priority and AS_PRIO
 		if (prio >= 0)
 			h->cpu_tag[1] |= prio | BIT(3);
