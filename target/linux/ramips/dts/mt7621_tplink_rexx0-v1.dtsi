@@ -113,7 +113,7 @@
 				reg = <0x20000 0xde0000>;
 			};
 
-			config: partition@e00000 {
+			config: partition-config@e00000 {
 				label = "config";
 				reg = <0xe00000 0x50000>;
 				read-only;
@@ -123,7 +123,7 @@
 			 * firmware, so we do not use it either
 			 */
 
-			radio: partition@ff0000 {
+			radio: partition-radio@ff0000 {
 				label = "radio";
 				reg = <0xff0000 0x10000>;
 				read-only;
