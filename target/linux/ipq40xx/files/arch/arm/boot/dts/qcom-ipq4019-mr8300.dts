@@ -65,16 +65,25 @@
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "linksys-mr8300-v0-fcc";
+
+	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration";
 };
 
 &wifi1 {
 	status = "okay";
 	ieee80211-freq-limit = <5170000 5330000>;
 	qcom,ath10k-calibration-variant = "linksys-mr8300-v0-fcc";
+
+	nvmem-cells = <&precal_art_5000>;
+	nvmem-cell-names = "pre-calibration";
 };
 
 &wifi2 {
 	status = "okay";
 	ieee80211-freq-limit = <5490000 5835000>;
 	qcom,ath10k-calibration-variant = "linksys-mr8300-v0-fcc";
+
+	nvmem-cells = <&precal_art_9000>;
+	nvmem-cell-names = "pre-calibration";
 };

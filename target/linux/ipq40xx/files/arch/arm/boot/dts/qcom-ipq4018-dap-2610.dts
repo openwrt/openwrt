@@ -143,6 +143,18 @@
 				label = "ART";
 				reg = <0x170000 0x10000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				precal_art_1000: precal@1000 {
+					reg = <0x1000 0x2f20>;
+				};
+
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
 			};
 			partition@180000 {
 				compatible = "wrg";
@@ -233,9 +245,15 @@
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "dlink,dap-2610";
+
+	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration";
 };
 
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "dlink,dap-2610";
+
+	nvmem-cells = <&precal_art_5000>;
+	nvmem-cell-names = "pre-calibration";
 };

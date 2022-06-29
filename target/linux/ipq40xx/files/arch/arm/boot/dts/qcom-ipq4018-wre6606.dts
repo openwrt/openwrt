@@ -221,6 +221,18 @@
 				label = "ART";
 				reg = <0x00170000 0x00010000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				precal_art_1000: precal@1000 {
+					reg = <0x1000 0x2f20>;
+				};
+
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
 			};
 
 			partition8@180000 {
@@ -257,9 +269,15 @@
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "ZyXEL-WRE6606";
+
+	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration";
 };
 
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "ZyXEL-WRE6606";
+
+	nvmem-cells = <&precal_art_5000>;
+	nvmem-cell-names = "pre-calibration";
 };
