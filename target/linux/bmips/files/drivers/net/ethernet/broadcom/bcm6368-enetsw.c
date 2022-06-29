@@ -445,6 +445,7 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 static int bcm6368_enetsw_tx_reclaim(struct net_device *dev, int force)
 {
 	struct bcm6368_enetsw *priv = netdev_priv(dev);
+	unsigned int bytes = 0;
 	int released = 0;
 
 	while (priv->tx_desc_count < priv->tx_ring_size) {
@@ -481,9 +482,12 @@ static int bcm6368_enetsw_tx_reclaim(struct net_device *dev, int force)
 		if (desc->len_stat & DMADESC_UNDER_MASK)
 			dev->stats.tx_errors++;
 
+		bytes += skb->len;
 		napi_consume_skb(skb, !force);
 		released++;
 	}
+
+	netdev_completed_queue(dev, released, bytes);
 
 	if (netif_queue_stopped(dev) && released)
 		netif_wake_queue(dev);
@@ -616,6 +620,8 @@ bcm6368_enetsw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	wmb();
 	desc->len_stat = len_stat;
 	wmb();
+
+	netdev_sent_queue(dev, skb->len);
 
 	/* kick tx dma */
 	dmac_writel(priv, priv->dma_chan_en_mask, DMAC_CHANCFG_REG,
@@ -875,6 +881,8 @@ static int bcm6368_enetsw_stop(struct net_device *dev)
 	if (priv->irq_tx != -1)
 		free_irq(priv->irq_tx, dev);
 	free_irq(priv->irq_rx, dev);
+
+	netdev_reset_queue(dev);
 
 	return 0;
 }
