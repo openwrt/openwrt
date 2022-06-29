@@ -109,7 +109,7 @@ config BUSYBOX_CONFIG_ASH_OPTIMIZE_FOR_SIZE
 
 config BUSYBOX_CONFIG_ASH_INTERNAL_GLOB
 	bool "Use internal glob() implementation"
-	default BUSYBOX_DEFAULT_ASH_INTERNAL_GLOB	# Y is bigger, but because of uclibc glob() bug, let Y be default for now
+	default BUSYBOX_DEFAULT_ASH_INTERNAL_GLOB	# previously needed for uClibc
 	depends on BUSYBOX_CONFIG_SHELL_ASH
 	help
 	Do not use glob() function from libc, use internal implementation.
