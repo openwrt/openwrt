@@ -92,7 +92,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			uboot: partition-uboot@0 {
 				label = "u-boot";
 				reg = <0x000000 0x040000>;
 				read-only;
@@ -103,7 +103,7 @@
 				reg = <0x040000 0x010000>;
 			};
 
-			art: partition@50000 {
+			art: partition-art@50000 {
 				label = "art";
 				reg = <0x050000 0x010000>;
 				read-only;

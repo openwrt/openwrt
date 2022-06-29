@@ -97,19 +97,19 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			uboot: partition-uboot@0 {
 				reg = <0x0 0x20000>;
 				label = "u-boot";
 				read-only;
 			};
 
-			firmware: partition@20000 {
+			firmware: partition-firmware@20000 {
 				compatible = "tplink,firmware";
 				reg = <0x20000 0x3d0000>;
 				label = "firmware";
 			};
 
-			art: partition@3f0000 {
+			art: partition-art@3f0000 {
 				reg = <0x3f0000 0x10000>;
 				label = "art";
 				read-only;

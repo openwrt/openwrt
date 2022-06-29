@@ -94,7 +94,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			uboot: partition-uboot@0 {
 				label = "u-boot";
 				reg = <0x0 0x040000>;
 				read-only;
@@ -106,12 +106,12 @@
 				compatible = "cybertan,trx";
 			};
 
-			nvram: partition@7e0000 {
+			nvram: partition-nvram@7e0000 {
 				label = "nvram";
 				reg = <0x7e0000 0x10000>;
 			};
 
-			art: partition@7f0000 {
+			art: partition-art@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x10000>;
 				read-only;

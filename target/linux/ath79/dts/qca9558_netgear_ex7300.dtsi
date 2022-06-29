@@ -137,7 +137,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			uboot: partition-uboot@0 {
 				label = "u-boot";
 				reg = <0x000000 0x040000>;
 				read-only;
@@ -148,7 +148,7 @@
 				reg = <0x040000 0x010000>;
 			};
 
-			caldata: partition@50000 {
+			caldata: partition-caldata@50000 {
 				label = "caldata";
 				reg = <0x050000 0x010000>;
 				read-only;

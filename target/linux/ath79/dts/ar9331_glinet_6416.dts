@@ -24,7 +24,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			uboot: partition-uboot@0 {
 				reg = <0x0 0x20000>;
 				label = "u-boot";
 				read-only;
@@ -36,7 +36,7 @@
 				label = "firmware";
 			};
 
-			art: partition@ff0000 {
+			art: partition-art@ff0000 {
 				reg = <0xff0000 0x10000>;
 				label = "art";
 				read-only;
