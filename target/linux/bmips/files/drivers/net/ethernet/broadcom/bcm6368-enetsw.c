@@ -335,6 +335,7 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 	struct bcm6368_enetsw *priv = netdev_priv(dev);
 	struct device *kdev = &priv->pdev->dev;
 	struct list_head rx_list;
+	struct sk_buff *skb;
 	int processed = 0;
 
 	INIT_LIST_HEAD(&rx_list);
@@ -347,7 +348,6 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 	do {
 		struct bcm6368_enetsw_desc *desc;
 		unsigned int frag_size;
-		struct sk_buff *skb;
 		unsigned char *buf;
 		int desc_idx;
 		u32 len_stat;
@@ -418,12 +418,13 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 
 		skb_reserve(skb, NET_SKB_PAD);
 		skb_put(skb, len);
-		skb->protocol = eth_type_trans(skb, dev);
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += len;
 		list_add_tail(&skb->list, &rx_list);
 	} while (processed < budget);
 
+	list_for_each_entry(skb, &rx_list, list)
+		skb->protocol = eth_type_trans(skb, dev);
 	netif_receive_skb_list(&rx_list);
 	priv->rx_desc_count -= processed;
 
