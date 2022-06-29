@@ -146,7 +146,7 @@ static inline void m_bool(const char *id, bool value) {
 }
 
 static inline void m_u32(const char *id, uint32_t value) {
-	blobmsg_add_u32(&b, id, value);
+	blobmsg_add_u64(&b, id, value);
 }
 
 static inline void m_str(const char *id, const char *value) {
