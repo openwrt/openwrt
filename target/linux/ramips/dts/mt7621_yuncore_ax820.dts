@@ -10,10 +10,10 @@
 	model = "YunCore AX820";
 
 	aliases {
-		led-boot = &led_status_green;
-		led-failsafe = &led_status_green;
-		led-running = &led_status_green;
-		led-upgrade = &led_status_green;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
 	};
 
 	chosen {
@@ -23,9 +23,29 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_status_green: status_green {
-			label = "green:status";
+		/* At least 2 AX820 variants are known and cannot be distinguished (same hw rev):
+		   - System LED green GPIO 15; red and blue apparently not connected
+		   - System LED red GPIO 15, WLAN2G LED green GPIO 14, WLAN5G LED blue GPIO 16
+		   The canonical values taken from a Yuncore datasheet are:
+		   - System LED green GPIO 15, WLAN2G LED blue GPIO 14, WLAN5G LED red GPIO 16
+		   All 3 colors relate to the same single RGB LED showing up on the front lightpipe.
+		   As a result, all 3 LEDs are defined even if only one may be available, and
+		   the color information is absent as it is not reliable */
+		wlan2g {
+			label = "wlan2g";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		led_system: system {
+			label = "system";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5g {
+			label = "wlan5g";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1radio";
 		};
 	};
 
