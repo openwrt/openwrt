@@ -1,0 +1,163 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "xwrt,ac8000p", "mediatek,mt7621-soc";
+	model = "AC8000P";
+
+	aliases {
+		led-status = &led_sys;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: sys {
+			label = "green:sys";
+			gpios = <&gpio 12 1>;
+			default-state = "on";
+		};
+	};
+
+	i2c-gpio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "i2c-gpio";
+		gpios = <&gpio 3 GPIO_ACTIVE_HIGH &gpio 4 GPIO_ACTIVE_HIGH>;
+		i2c-gpio,delay-us = <2>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 1>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&sdhci {
+	status = "disabled";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "w25q128";
+		reg = <0>;
+		linux,modalias = "m25p80";
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xfb0000>;
+			};
+		};
+	};
+};
+
+&gmac0 {
+	mtd-mac-address = <&factory 0xe000>;
+	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	/* must delete compatible property */
+	/delete-property/ compatible;
+};
+
+&ethernet {
+	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
+};
+
+&gsw {
+	compatible = "mediatek,mt753x";
+	status = "okay";
+
+	mediatek,mdio = <&mdio>;
+	mediatek,portmap = "llllw";
+	mt7530,direct-phy-access;
+	resets = <&rstctrl 2>;
+	reset-names = "mcm";
+	mediatek,mcm;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "rgmii";
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+	*/
+
+	port6: port@6 {
+		compatible = "mediatek,mt753x-port";
+		reg = <6>;
+		phy-mode = "rgmii";
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "wdt", "i2c", "uart2";
+		function = "gpio";
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_e000: macaddr@e000 {
+		reg = <0xe000 0x6>;
+	};
+};

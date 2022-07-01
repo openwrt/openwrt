@@ -1,0 +1,43 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=70
+
+MAX_NUM=10
+
+set_vaule_to_reg() {
+	i=0
+	while [ $i -lt $MAX_NUM ]; do
+		i2cset -f -y 0 0x54 $1 $2
+		reg=`i2cget -f -y 0 0x54 $1`
+		ret=$((reg&$2))
+		value=$2
+		if [ $ret -eq $((value)) ]; then
+			break
+		fi
+
+		i=$((i+1))
+	done
+}
+
+start() {
+	set_vaule_to_reg 0x00 0x40
+	set_vaule_to_reg 0x98 0x01
+	set_vaule_to_reg 0x99 0x01
+	set_vaule_to_reg 0x9a 0x01
+	set_vaule_to_reg 0x9b 0x01
+	set_vaule_to_reg 0x9c 0x01
+	set_vaule_to_reg 0x9d 0x01
+	set_vaule_to_reg 0x9e 0x01
+	set_vaule_to_reg 0x9f 0x01
+	set_vaule_to_reg 0x90 0x80
+	set_vaule_to_reg 0x91 0x80
+	set_vaule_to_reg 0x92 0x80
+	set_vaule_to_reg 0x93 0x80
+	set_vaule_to_reg 0x94 0x80
+	set_vaule_to_reg 0x95 0x80
+	set_vaule_to_reg 0x96 0x80
+	set_vaule_to_reg 0x97 0x80
+	set_vaule_to_reg 0x00 0x00
+	set_vaule_to_reg 0x25 0xff
+}

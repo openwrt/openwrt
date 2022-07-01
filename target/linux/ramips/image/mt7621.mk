@@ -2828,6 +2828,18 @@ define Device/xwrt_mac500f
 endef
 TARGET_DEVICES += xwrt_mac500f
 
+define Device/xwrt_ac8000p
+  $(Device/uimage-lzma-loader)
+  SOC := mt7621
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := AC8000P
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | xwrt_nxc200p-factory $(1)
+  DEVICE_PACKAGES := uboot-envtools kmod-i2c-gpio i2c-tools poe-controller
+endef
+TARGET_DEVICES += xwrt_ac8000p
+
 define Device/xwrt_nxc200p
   $(Device/uimage-lzma-loader)
   SOC := mt7621

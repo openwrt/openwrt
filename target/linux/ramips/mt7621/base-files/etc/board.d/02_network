@@ -168,6 +168,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
+	xwrt,ac8000p)
+		ucidef_add_switch "switch0" \
+			"0:lan" "3:wan" "6@eth0"
+		;;
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3g-nor)
 		ucidef_add_switch "switch0" \
@@ -377,6 +381,7 @@ ramips_setup_macs()
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(mtd_get_mac_binary factory 0xe000)
 		;;
+	xwrt,ac8000p|\
 	xwrt,nxc200p|\
 	xwrt,puppies|\
 	xwrt,t-cpe1200k-v01|\
