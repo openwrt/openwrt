@@ -1689,6 +1689,77 @@ void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	}
 }
 
+static void rtl838x_led_init(struct rtl838x_switch_priv *priv)
+{
+	int i;
+	u32 led_mask_l = 0, led_mask_h = 0, pm = 0, v, combo_led_mode;
+	u32 setlen;
+	const __be32 *led_set;
+	char set_name[9];
+	struct device_node *node;
+	const char *mode;
+
+	node = of_find_compatible_node(NULL, NULL, "realtek,rtl8380-leds");
+	if (!node) {
+		pr_info("%s No compatible LED node found\n", __func__);
+		return;
+	}
+
+	for (i = 0; i < priv->cpu_port; i++) {
+		if (!priv->ports[i].phy)
+			continue;
+
+		pm |= BIT(i);
+
+		if (i < 24)
+			led_mask_l |= BIT( priv->ports[i].led_num) - 1;
+		else
+			led_mask_h |= BIT( priv->ports[i].led_num) - 1;
+	}
+	// LED-mask for ports 24-27 must be the same as for lower ports when not used
+	led_mask_h = led_mask_h ? led_mask_h : led_mask_l;
+	sw_w32_mask(0x7, led_mask_l, RTL838X_LED_GLB_CTRL);
+	sw_w32_mask(0x7 << 3, led_mask_h << 3, RTL838X_LED_GLB_CTRL);
+
+	if (of_property_read_u32(node, "combo_led_mode", &combo_led_mode))
+		combo_led_mode = 0;  // Default is no combo leds
+	sw_w32_mask(0x3 << 7, combo_led_mode << 7, RTL838X_LED_GLB_CTRL);
+
+	v = 0;
+	for (i = 0; i < 3; i++) {
+		sprintf(set_name, "led_set%d", i);
+		led_set = of_get_property(node, set_name, &setlen);
+		if (!led_set)
+			break;
+		v |= (be32_to_cpup(led_set) << (i * 5)) | (be32_to_cpup(led_set + 1) << (i * 5 + 15));
+	}
+	sw_w32(v, RTL838X_LED_MODE_CTRL);
+
+	// Enable per port LED control by SoC
+	sw_w32(pm, RTL838X_LED_P_EN_CTRL);
+
+	// Flash all LEDs once for 800ms
+	sw_w32_mask(0x3 << 2, 0x1 << 2, RTL838X_LED_MODE_SEL);
+
+	// Set LED mode
+	v = 0x0; // Default LED mode is serial
+	if (of_property_read_string(node, "led_mode", &mode) == 0) {
+		if (strcmp(mode, "serial") == 0)
+			v = 0x0;
+		else if (strcmp(mode, "color-scan") == 0)
+			v = 0x1;
+		else if (strcmp(mode, "bi-color-scan") == 0)
+			v = 0x2;
+		else
+			pr_err("%s invalid led_mode\n", __func__);
+	}
+	sw_w32_mask(0x3, v, RTL838X_LED_MODE_SEL);
+
+	pr_info("%s RTL838X_LED_GLB_CTRL %08x, RTL838X_LED_MODE_CTRL %08x, RTL838X_LED_MODE_SEL %08x, RTL838X_LED_P_EN_CTRL %08x\n",
+		__func__, sw_r32(RTL838X_LED_GLB_CTRL), sw_r32(RTL838X_LED_MODE_CTRL),
+		sw_r32(RTL838X_LED_MODE_SEL), sw_r32(RTL838X_LED_P_EN_CTRL));
+}
+
 const struct rtl838x_reg rtl838x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -1773,6 +1844,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.l3_setup = rtl838x_l3_setup,
 	.set_distribution_algorithm = rtl838x_set_distribution_algorithm,
 	.set_receive_management_action = rtl838x_set_receive_management_action,
+	.led_init = rtl838x_led_init,
 };
 
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)

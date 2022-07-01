@@ -222,6 +222,8 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 
 	priv->r->pie_init(priv);
 
+	priv->r->led_init(priv);
+
 	return 0;
 }
 
