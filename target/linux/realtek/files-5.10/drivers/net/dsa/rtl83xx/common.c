@@ -315,7 +315,7 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 	for_each_node_by_name(dn, "port") {
 		phy_interface_t interface;
-		u32 led_set;
+		u32 led_set, led_num;
 
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
@@ -346,9 +346,15 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		if (interface == PHY_INTERFACE_MODE_10GBASER)
 			priv->ports[pn].is10G = true;
 
-		if (of_property_read_u32(dn, "led-set", &led_set))
-			led_set = 0;
-		priv->ports[pn].led_set = led_set;
+		if (priv->family_id == RTL8380_FAMILY_ID) {
+			if (of_property_read_u32(dn, "led-num", &led_num))
+				led_num = 2;  // Default for 100/1000M for backward compatibility
+			priv->ports[pn].led_num = led_num;
+		} else {
+			if (of_property_read_u32(dn, "led-set", &led_set))
+				led_set = 0;
+			priv->ports[pn].led_set = led_set;
+		}
 
 		// Check for the integrated SerDes of the RTL8380M first
 		if (of_property_read_bool(phy_node, "phy-is-integrated")
