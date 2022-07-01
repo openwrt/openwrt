@@ -30,9 +30,9 @@ define KernelPackage/net-rtl8192su
   DEPENDS:=@USB_SUPPORT +@DRIVER_WEXT_SUPPORT +kmod-usb-core +rtl8192su-firmware
   KCONFIG:=\
 	CONFIG_STAGING=y \
-	CONFIG_R8712U
-  FILES:=$(LINUX_DIR)/drivers/staging/rtl8712/r8712u.ko
-  AUTOLOAD:=$(call AutoProbe,r8712u)
+	CONFIG_RTL8192U
+  FILES:=$(LINUX_DIR)/drivers/staging/rtl8192u/r8192u_usb.ko
+  AUTOLOAD:=$(call AutoProbe,r8192u_usb)
 endef
 
 define KernelPackage/net-rtl8192su/description
