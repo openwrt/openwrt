@@ -692,7 +692,8 @@ struct rtl838x_port {
 	bool is10G;
 	bool is2G5;
 	int sds_num;
-	int led_set;
+	int led_set;	// Used for >= RTL8390
+	int led_num;	// Used by RTL8380
 	bool sds_tx_normal;
 	bool sds_rx_normal;
 	const struct dsa_port *dp;

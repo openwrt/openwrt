@@ -6,6 +6,13 @@
 	compatible = "zyxel,gs1900-10hp", "realtek,rtl838x-soc";
 	model = "ZyXEL GS1900-10HP Switch";
 
+	led_set: led_set@0 {
+		compatible = "realtek,rtl8380-leds";
+		led_mode = "serial";
+		led_set0 = <0x0a 0x0b>;  // 10/100 (yellow) and 1000MBit (green)
+		led_set1 = <0x0f 0x0a>;  // 10/100 (yellow) and 1000MBit (green)
+	};
+
 	/* i2c of the left SFP cage: port 9 */
 	i2c0: i2c-gpio-0 {
 		compatible = "i2c-gpio";
@@ -60,6 +67,7 @@
 			reg = <24>;
 			label = "lan9";
 			phy-mode = "1000base-x";
+			phy-handle = <&phy24>;
 			managed = "in-band-status";
 			sfp = <&sfp0>;
 		};
@@ -68,6 +76,7 @@
 			reg = <26>;
 			label = "lan10";
 			phy-mode = "1000base-x";
+			phy-handle = <&phy26>;
 			managed = "in-band-status";
 			sfp = <&sfp1>;
 		};
