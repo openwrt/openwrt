@@ -26,6 +26,7 @@ ramips_setup_interfaces()
 	ampedwireless,ally-r1900k|\
 	gehua,ghl-r-001|\
 	hiwifi,hc5962|\
+	netgear,wax202|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-ac2100|\
 	xiaomi,mi-router-cr6606|\
@@ -192,6 +193,11 @@ ramips_setup_macs()
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add $label_mac 1)
+		;;
+	netgear,wax202)
+		lan_mac=$(mtd_get_mac_ascii Config mac)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		label_mac=$lan_mac
 		;;
 	raisecom,msg1500-x-00)
 		lan_mac=$(mtd_get_mac_ascii Config protest_lan_mac)
