@@ -1,0 +1,28 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 2 Jul 2022 16:41:32 +0200
+Subject: [PATCH] mac80211: fix queue selection for mesh/OCB interfaces
+
+When using iTXQ, the code assumes that there is only one vif queue for
+broadcast packets, using the BE queue. Allowing non-BE queue marking
+violates that assumption and txq->ac == skb_queue_mapping is no longer
+guaranteed. This can cause issues with queue handling in the driver and
+also causes issues with the recent ATF change, resulting in an AQL
+underflow warning.
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/wme.c
++++ b/net/mac80211/wme.c
+@@ -147,8 +147,8 @@ u16 __ieee80211_select_queue(struct ieee
+ 	bool qos;
+ 
+ 	/* all mesh/ocb stations are required to support WME */
+-	if (sdata->vif.type == NL80211_IFTYPE_MESH_POINT ||
+-	    sdata->vif.type == NL80211_IFTYPE_OCB)
++	if (sta && (sdata->vif.type == NL80211_IFTYPE_MESH_POINT ||
++		    sdata->vif.type == NL80211_IFTYPE_OCB))
+ 		qos = true;
+ 	else if (sta)
+ 		qos = sta->sta.wme;
