@@ -10,12 +10,13 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=jansson
 PKG_VERSION:=2.13.1
 PKG_RELEASE:=2
+
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/akheron/$(PKG_NAME)/tar.gz/v$(PKG_VERSION)?
+PKG_HASH:=f22901582138e3203959c9257cf83eba9929ac41d7be4a42557213a22ebcc7a0
+
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
-
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.digip.org/jansson/releases/
-PKG_HASH:=ee90a0f879d2b7b7159124ff22b937a2a9a8c36d3bb65d1da7dd3f04370a10bd
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
