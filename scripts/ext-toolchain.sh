@@ -281,8 +281,11 @@ print_config() {
 	local mksubtarget
 
 	local target="$("$CC" $CFLAGS -dumpmachine)"
+	local version="$("$CC" $CFLAGS -dumpversion)"
 	local cpuarch="${target%%-*}"
-	local prefix="${CC##*/}"; prefix="${prefix%-*}-"
+
+	# get CC; strip version; strip gcc and add - suffix
+	local prefix="${CC##*/}"; prefix="${prefix%-$version}"; prefix="${prefix%-*}-"
 	local config="${0%/scripts/*}/.config"
 
 	# if no target specified, print choice list and exit
