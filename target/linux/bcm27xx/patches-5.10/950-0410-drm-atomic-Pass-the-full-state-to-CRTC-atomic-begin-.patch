@@ -385,7 +385,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  }
 --- a/drivers/gpu/drm/drm_atomic_helper.c
 +++ b/drivers/gpu/drm/drm_atomic_helper.c
-@@ -2507,7 +2507,7 @@ void drm_atomic_helper_commit_planes(str
+@@ -2517,7 +2517,7 @@ void drm_atomic_helper_commit_planes(str
  		if (active_only && !new_crtc_state->active)
  			continue;
  
@@ -394,7 +394,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  	}
  
  	for_each_oldnew_plane_in_state(old_state, plane, old_plane_state, new_plane_state, i) {
-@@ -2565,7 +2565,7 @@ void drm_atomic_helper_commit_planes(str
+@@ -2575,7 +2575,7 @@ void drm_atomic_helper_commit_planes(str
  		if (active_only && !new_crtc_state->active)
  			continue;
  
@@ -403,7 +403,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  	}
  }
  EXPORT_SYMBOL(drm_atomic_helper_commit_planes);
-@@ -2603,7 +2603,7 @@ drm_atomic_helper_commit_planes_on_crtc(
+@@ -2613,7 +2613,7 @@ drm_atomic_helper_commit_planes_on_crtc(
  
  	crtc_funcs = crtc->helper_private;
  	if (crtc_funcs && crtc_funcs->atomic_begin)
@@ -412,7 +412,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  
  	drm_for_each_plane_mask(plane, crtc->dev, plane_mask) {
  		struct drm_plane_state *old_plane_state =
-@@ -2629,7 +2629,7 @@ drm_atomic_helper_commit_planes_on_crtc(
+@@ -2639,7 +2639,7 @@ drm_atomic_helper_commit_planes_on_crtc(
  	}
  
  	if (crtc_funcs && crtc_funcs->atomic_flush)
@@ -530,7 +530,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  	if (crtc->state->event) {
 --- a/drivers/gpu/drm/ingenic/ingenic-drm-drv.c
 +++ b/drivers/gpu/drm/ingenic/ingenic-drm-drv.c
-@@ -253,7 +253,7 @@ ingenic_drm_crtc_mode_valid(struct drm_c
+@@ -292,7 +292,7 @@ ingenic_drm_crtc_mode_valid(struct drm_c
  }
  
  static void ingenic_drm_crtc_atomic_begin(struct drm_crtc *crtc,
@@ -539,7 +539,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  {
  	struct ingenic_drm *priv = drm_crtc_get_priv(crtc);
  	u32 ctrl = 0;
-@@ -273,20 +273,20 @@ static void ingenic_drm_crtc_atomic_begi
+@@ -312,26 +312,26 @@ static void ingenic_drm_crtc_atomic_begi
  }
  
  static void ingenic_drm_crtc_atomic_flush(struct drm_crtc *crtc,
@@ -553,11 +553,17 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
 +	struct drm_pending_vblank_event *event = crtc_state->event;
  
 -	if (drm_atomic_crtc_needs_modeset(state)) {
--		ingenic_drm_crtc_update_timings(priv, &state->mode);
 +	if (drm_atomic_crtc_needs_modeset(crtc_state)) {
-+		ingenic_drm_crtc_update_timings(priv, &crtc_state->mode);
+ 		ingenic_drm_crtc_update_timings(priv, &state->mode);
+ 		priv->update_clk_rate = true;
+ 	}
  
- 		clk_set_rate(priv->pix_clk, state->adjusted_mode.clock * 1000);
+ 	if (priv->update_clk_rate) {
+ 		mutex_lock(&priv->clk_mutex);
+-		clk_set_rate(priv->pix_clk, state->adjusted_mode.clock * 1000);
++		clk_set_rate(priv->pix_clk, crtc_state->adjusted_mode.clock * 1000);
+ 		priv->update_clk_rate = false;
+ 		mutex_unlock(&priv->clk_mutex);
  	}
  
  	if (event) {
@@ -662,7 +668,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  	struct drm_device *dev = crtc->dev;
 --- a/drivers/gpu/drm/msm/disp/mdp5/mdp5_crtc.c
 +++ b/drivers/gpu/drm/msm/disp/mdp5/mdp5_crtc.c
-@@ -772,13 +772,13 @@ static int mdp5_crtc_atomic_check(struct
+@@ -778,13 +778,13 @@ static int mdp5_crtc_atomic_check(struct
  }
  
  static void mdp5_crtc_atomic_begin(struct drm_crtc *crtc,
@@ -776,7 +782,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  	struct sti_mixer *mixer = to_sti_mixer(crtc);
 --- a/drivers/gpu/drm/stm/ltdc.c
 +++ b/drivers/gpu/drm/stm/ltdc.c
-@@ -625,7 +625,7 @@ static void ltdc_crtc_mode_set_nofb(stru
+@@ -629,7 +629,7 @@ static void ltdc_crtc_mode_set_nofb(stru
  }
  
  static void ltdc_crtc_atomic_flush(struct drm_crtc *crtc,

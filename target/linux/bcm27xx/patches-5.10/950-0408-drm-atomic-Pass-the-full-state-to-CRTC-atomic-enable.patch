@@ -367,7 +367,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  	struct atmel_hlcdc_crtc *crtc = drm_crtc_to_atmel_hlcdc_crtc(c);
 --- a/drivers/gpu/drm/drm_atomic_helper.c
 +++ b/drivers/gpu/drm/drm_atomic_helper.c
-@@ -1093,7 +1093,7 @@ disable_outputs(struct drm_device *dev,
+@@ -1103,7 +1103,7 @@ disable_outputs(struct drm_device *dev,
  		if (new_crtc_state->enable && funcs->prepare)
  			funcs->prepare(crtc);
  		else if (funcs->atomic_disable)
@@ -376,7 +376,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  		else if (funcs->disable)
  			funcs->disable(crtc);
  		else if (funcs->dpms)
-@@ -1358,7 +1358,7 @@ void drm_atomic_helper_commit_modeset_en
+@@ -1368,7 +1368,7 @@ void drm_atomic_helper_commit_modeset_en
  			DRM_DEBUG_ATOMIC("enabling [CRTC:%d:%s]\n",
  					 crtc->base.id, crtc->name);
  			if (funcs->atomic_enable)
@@ -547,7 +547,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  
 --- a/drivers/gpu/drm/ingenic/ingenic-drm-drv.c
 +++ b/drivers/gpu/drm/ingenic/ingenic-drm-drv.c
-@@ -112,7 +112,7 @@ static inline struct ingenic_drm *drm_cr
+@@ -151,7 +151,7 @@ static int ingenic_drm_update_pixclk(str
  }
  
  static void ingenic_drm_crtc_atomic_enable(struct drm_crtc *crtc,
@@ -556,7 +556,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  {
  	struct ingenic_drm *priv = drm_crtc_get_priv(crtc);
  
-@@ -126,7 +126,7 @@ static void ingenic_drm_crtc_atomic_enab
+@@ -165,7 +165,7 @@ static void ingenic_drm_crtc_atomic_enab
  }
  
  static void ingenic_drm_crtc_atomic_disable(struct drm_crtc *crtc,
@@ -989,7 +989,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  #include <drm/drm_atomic_helper.h>
  #include <drm/drm_edid.h>
  #include <drm/drm_fb_cma_helper.h>
-@@ -401,15 +402,19 @@ static int vc4_txp_atomic_check(struct d
+@@ -407,15 +408,19 @@ static int vc4_txp_atomic_check(struct d
  }
  
  static void vc4_txp_atomic_enable(struct drm_crtc *crtc,
