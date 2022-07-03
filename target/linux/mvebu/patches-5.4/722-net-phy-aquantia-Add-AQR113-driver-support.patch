@@ -18,7 +18,7 @@ Add a new entry for AQR113 PHY_ID
  #define PHY_ID_AQCS109	0x03a1b5c2
  #define PHY_ID_AQR405	0x03a1b4b0
  #define PHY_ID_AQR412	0x03a1b712
-@@ -762,6 +763,14 @@ static struct phy_driver aqr_driver[] =
+@@ -775,6 +776,14 @@ static struct phy_driver aqr_driver[] =
  	.read_status	= aqr107_read_status,
  },
  {
@@ -33,7 +33,7 @@ Add a new entry for AQR113 PHY_ID
  	PHY_ID_MATCH_MODEL(PHY_ID_AQR412),
  	.name		= "Aquantia AQR412",
  	.config_aneg    = aqr_config_aneg_set_prot,
-@@ -780,6 +789,7 @@ static struct mdio_device_id __maybe_unu
+@@ -793,6 +802,7 @@ static struct mdio_device_id __maybe_unu
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR106) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR107) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112) },

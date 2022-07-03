@@ -266,7 +266,7 @@ This reverts commit cf9441adb1a35506d7606866c382b9d8614169b5.
  	if (ret) {
 --- a/sound/soc/mxs/mxs-saif.c
 +++ b/sound/soc/mxs/mxs-saif.c
-@@ -793,8 +793,12 @@ static int mxs_saif_probe(struct platfor
+@@ -794,8 +794,12 @@ static int mxs_saif_probe(struct platfor
  		return PTR_ERR(saif->base);
  
  	irq = platform_get_irq(pdev, 0);

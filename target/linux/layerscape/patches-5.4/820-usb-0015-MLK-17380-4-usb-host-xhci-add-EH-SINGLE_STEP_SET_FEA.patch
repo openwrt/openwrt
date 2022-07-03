@@ -174,7 +174,7 @@ Signed-off-by: Peter Chen <peter.chen@nxp.com>
   * bursts that are required to move all packets in this TD.  Only SuperSpeed
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -5412,6 +5412,7 @@ static const struct hc_driver xhci_hc_dr
+@@ -5423,6 +5423,7 @@ static const struct hc_driver xhci_hc_dr
  	.disable_usb3_lpm_timeout =	xhci_disable_usb3_lpm_timeout,
  	.find_raw_port_number =	xhci_find_raw_port_number,
  	.clear_tt_buffer_complete = xhci_clear_tt_buffer_complete,
@@ -184,8 +184,8 @@ Signed-off-by: Peter Chen <peter.chen@nxp.com>
  void xhci_init_driver(struct hc_driver *drv,
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -2157,6 +2157,16 @@ int xhci_find_raw_port_number(struct usb
- struct xhci_hub *xhci_get_rhub(struct usb_hcd *hcd);
+@@ -2159,6 +2159,16 @@ void xhci_set_port_power(struct xhci_hcd
+ 			 bool on, unsigned long *flags);
  
  void xhci_hc_died(struct xhci_hcd *xhci);
 +#ifdef CONFIG_USB_HCD_TEST_MODE
