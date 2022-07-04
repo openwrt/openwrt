@@ -50,6 +50,7 @@ BIN_SPECS="
 	gdbserver: gdbserver
 "
 
+OVERWRITE_CONFIG=""
 
 test_c() {
 	cat <<-EOT | "${CC:-false}" $CFLAGS -o /dev/null -x c - 2>/dev/null
@@ -320,9 +321,13 @@ print_config() {
 	fi
 
 	# bail out if there is a .config already
-	if [ -f "${0%/scripts/*}/.config" ]; then
-		echo "There already is a .config file, refusing to overwrite!" >&2
-		return 1
+	if [ -f "$config" ]; then
+		if [ "$OVERWRITE_CONFIG" == "" ]; then
+			echo "There already is a .config file, refusing to overwrite!" >&2
+			return 1
+		else
+			echo "There already is a .config file, trying to overwrite!"
+		fi
 	fi
 
 	case "$mktarget" in */*)
@@ -330,8 +335,11 @@ print_config() {
 		mktarget="${mktarget%/*}"
 	;; esac
 
+	if [ ! -f "$config" ]; then
+		touch "$config"
+	fi
 
-	echo "CONFIG_TARGET_${mktarget}=y" > "$config"
+	echo "CONFIG_TARGET_${mktarget}=y" >> "$config"
 
 	if [ -n "$mksubtarget" ]; then
 		echo "CONFIG_TARGET_${mktarget}_${mksubtarget}=y" >> "$config"
@@ -532,6 +540,10 @@ while [ -n "$1" ]; do
 			exit $?
 		;;
 
+		--overwrite-config)
+			OVERWRITE_CONFIG=y
+		;;
+
 		--config)
 			if probe_cc; then
 				print_config "$1"
@@ -573,6 +585,8 @@ while [ -n "$1" ]; do
 			echo -e "  is used to specify C flags to be passed to the "     >&2
 			echo -e "  cross compiler when performing tests."               >&2
 			echo -e "  This parameter may be repeated multiple times."      >&2
+			echo -e "  Use --overwrite-config before --config to overwrite" >&2
+			echo -e "  an already present config with the required changes.">&2
 			exit 1
 		;;
 
