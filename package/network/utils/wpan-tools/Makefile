@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wpan-tools
-PKG_VERSION:=0.8
+PKG_VERSION:=0.9
 PKG_RELEASE=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/linux-wpan/wpan-tools/releases/download/$(PKG_NAME)-$(PKG_VERSION)/$(PKG_NAME)-$(PKG_VERSION).tar.gz?
-PKG_HASH:=0e22cadbc40d4c12d0a66e8175bda12046f03237ce6da23d4fd26fd3ab557d8b
+PKG_HASH:=fa76d9c1874220e4b1f91c226f42baf1e372ea8ccf4b892effaf0d164448f608
 
 include $(INCLUDE_DIR)/package.mk
 
