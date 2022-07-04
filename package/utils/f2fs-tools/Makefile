@@ -99,7 +99,9 @@ endef
 
 CONFIGURE_ARGS += \
 	--disable-static \
-	--without-blkid
+	--without-blkid \
+	--without-lzo2 \
+	--without-lz4
 
 ifneq ($(BUILD_VARIANT),selinux)
   CONFIGURE_ARGS += --without-selinux
