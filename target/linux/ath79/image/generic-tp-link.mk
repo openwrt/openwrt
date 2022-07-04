@@ -543,6 +543,15 @@ define Device/tplink_re455-v1
 endef
 TARGET_DEVICES += tplink_re455-v1
 
+define Device/tplink_tl-ap301c-v4
+  SOC := qca9533
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := TL-AP301C
+  DEVICE_VARIANT := v4
+  IMAGE_SIZE := 7936k
+endef
+TARGET_DEVICES += tplink_tl-ap301c-v4
+
 define Device/tplink_tl-mr6400-v1
   $(Device/tplink-8mlzma)
   SOC := qca9531

@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca953x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "tplink,tl-ap301c-v4", "qca,qca9533";
+	model = "TP-Link TL-AP301C v4";
+
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+		label-mac-device = &eth0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: status {
+			label = "blue:status";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		fit-fat-switch {
+			label = "fit-fat-switch";
+			linux,input-type = <EV_SW>;
+			linux,code = <BTN_0>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "factoryBoot";
+				reg = <0x000000 0x020000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "factoryInfo";
+				reg = <0x020000 0x010000>;
+				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_factoryInfo_4: macaddr@4 {
+					reg = <0x4 0xc>;
+				};
+			};
+
+			art: partition@30000 {
+				label = "art";
+				reg = <0x030000 0x010000>;
+				read-only;
+			};
+
+			partition@40000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x40000 0x7c0000>;
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+
+	nvmem-cells = <&macaddr_factoryInfo_4>;
+	nvmem-cell-names = "mac-address-ascii";
+};
+
+&eth1 {
+	compatible = "syscon", "simple-mfd";
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+	nvmem-cells = <&macaddr_factoryInfo_4>;
+	nvmem-cell-names = "mac-address-ascii";
+};
