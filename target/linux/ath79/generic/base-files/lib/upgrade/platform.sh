@@ -14,21 +14,21 @@ redboot_fis_do_upgrade() {
 	local kern_part="$2"
 	local magic=$(get_magic_word "$sysup_file")
 
-	if [ "$magic" = "4349" ]; then
-		local kern_length=0x$(dd if="$sysup_file" bs=2 skip=1 count=4 2>/dev/null)
-
-		[ -f "$UPGRADE_BACKUP" ] && append="-j $UPGRADE_BACKUP"
-		dd if="$sysup_file" bs=64k skip=1 2>/dev/null | \
-			mtd -r $append -F$kern_part:$kern_length:0x80060000,rootfs write - $kern_part:rootfs
-
-	elif [ "$magic" = "7379" ]; then
+	if [ "$magic" = "7379" ]; then
 		local board_dir=$(tar tf $sysup_file | grep -m 1 '^sysupgrade-.*/$')
-		local kern_length=$(tar xf $sysup_file ${board_dir}kernel -O | wc -c)
 
 		[ -f "$UPGRADE_BACKUP" ] && append="-j $UPGRADE_BACKUP"
-		tar xf $sysup_file ${board_dir}kernel ${board_dir}root -O | \
-			mtd -r $append -F$kern_part:$kern_length:0x80060000,rootfs write - $kern_part:rootfs
 
+		if grep -q "mtd1.*loader" /proc/mtd; then
+			tar xf $sysup_file ${board_dir}kernel ${board_dir}root -O | \
+				mtd -r $append write - loader:firmware
+
+		else
+			local kern_length=$(tar xf $sysup_file ${board_dir}kernel -O | wc -c)
+
+			tar xf $sysup_file ${board_dir}kernel ${board_dir}root -O | \
+				mtd -r $append -F$kern_part:$kern_length:0x80060000,rootfs write - $kern_part:rootfs
+		fi
 	else
 		echo "Unknown image, aborting!"
 		return 1
