@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=json-c
 PKG_VERSION:=0.16
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-nodoc.tar.gz
 PKG_SOURCE_URL:=https://s3.amazonaws.com/json-c_releases/releases/
@@ -27,7 +27,11 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 CMAKE_HOST_OPTIONS += \
+	-DDISABLE_EXTRA_LIBS=TRUE \
 	-DBUILD_SHARED_LIBS=FALSE
+
+CMAKE_OPTIONS += \
+	-DDISABLE_EXTRA_LIBS=TRUE
 
 define Package/libjson-c
   SECTION:=libs
