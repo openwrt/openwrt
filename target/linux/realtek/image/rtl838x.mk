@@ -16,6 +16,7 @@ define Device/d-link_dgs-1210
   IMAGE_SIZE := 13824k
   DEVICE_VENDOR := D-Link
   DLINK_KERNEL_PART_SIZE := 1572864
+  KERNEL := kernel-bin | append-dtb | gzip | uImage gzip | dlink-cameo
 endef
 
 define Device/d-link_dgs-1210-10p
