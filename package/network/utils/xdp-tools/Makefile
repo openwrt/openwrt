@@ -12,6 +12,7 @@ PKG_ABI_VERSION:=$(call abi_version_str,$(PKG_VERSION))
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
 PKG_BUILD_DEPENDS:=bpf-headers
+PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/bpf.mk
