@@ -16,6 +16,7 @@ PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/bpf.mk
+include $(INCLUDE_DIR)/nls.mk
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -75,6 +76,8 @@ endef
 define Package/xdpdump/description
 xdpdump - a simple tcpdump like tool for capturing packets at the XDP layer
 endef
+
+TARGET_LDFLAGS += $(INTL_LDFLAGS)
 
 CONFIGURE_VARS += \
 	FORCE_SYSTEM_LIBBPF=1 \
