@@ -21,6 +21,8 @@ PKG_LICENSE_FILES:=LICENSE
 
 PKG_ASLR_PIE_REGULAR:=1
 
+PKG_CONFIG_DEPENDS := CONFIG_PACKAGE_rpcapd
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
