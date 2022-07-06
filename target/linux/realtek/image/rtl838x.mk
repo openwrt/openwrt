@@ -17,6 +17,13 @@ define Device/d-link_dgs-1210
   DEVICE_VENDOR := D-Link
   DLINK_KERNEL_PART_SIZE := 1572864
   KERNEL := kernel-bin | append-dtb | gzip | uImage gzip | dlink-cameo
+  CAMEO_KERNEL_PART := 2
+  CAMEO_ROOTFS_PART := 3
+  CAMEO_CUSTOMER_SIGNATURE := 2
+  CAMEO_BOARD_VERSION := 32
+  IMAGES += factory_image1.bin
+  IMAGE/factory_image1.bin := append-kernel | pad-to 64k | \
+	append-rootfs | pad-rootfs | pad-to 16 | check-size | dlink-headers
 endef
 
 define Device/d-link_dgs-1210-10p
@@ -41,13 +48,6 @@ TARGET_DEVICES += d-link_dgs-1210-20
 define Device/d-link_dgs-1210-28
   $(Device/d-link_dgs-1210)
   DEVICE_MODEL := DGS-1210-28
-  CAMEO_KERNEL_PART := 2
-  CAMEO_ROOTFS_PART := 3
-  CAMEO_CUSTOMER_SIGNATURE := 2
-  CAMEO_BOARD_VERSION := 32
-  IMAGES += factory_image1.bin
-  IMAGE/factory_image1.bin := append-kernel | pad-to 64k | \
-        append-rootfs | pad-rootfs | pad-to 16 | check-size | dlink-headers
 endef
 TARGET_DEVICES += d-link_dgs-1210-28
 
