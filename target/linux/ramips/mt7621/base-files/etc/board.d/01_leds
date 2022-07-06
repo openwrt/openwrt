@@ -27,6 +27,21 @@ beeline,smartbox-flash|\
 beeline,smartbox-giga)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
+beeline,smartbox-pro|\
+wifire,s1500-nbn)
+	ucidef_set_led_wlan "wlan2g" "Wi-Fi 2.4 GHz" "white:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "Wi-Fi 5 GHz" "white:wlan5g" "phy0tpt"
+	ucidef_set_led_netdev "wan_act" "WAN Link/Act" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "lan1_act" "LAN1 Link/Act" "green:lan1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2_act" "LAN2 Link/Act" "green:lan2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3_act" "LAN3 Link/Act" "green:lan3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "lan4_act" "LAN4 Link/Act" "green:lan4" "lan4" "link tx rx"
+	ucidef_set_led_wlan "wan_speed" "WAN 1Gb/s" "amber:wan" "mt7530-0:04:1Gbps"
+	ucidef_set_led_wlan "lan1_speed" "LAN1 1Gb/s" "amber:lan1" "mt7530-0:03:1Gbps"
+	ucidef_set_led_wlan "lan2_speed" "LAN2 1Gb/s" "amber:lan2" "mt7530-0:02:1Gbps"
+	ucidef_set_led_wlan "lan3_speed" "LAN3 1Gb/s" "amber:lan3" "mt7530-0:01:1Gbps"
+	ucidef_set_led_wlan "lan4_speed" "LAN4 1Gb/s" "amber:lan4" "mt7530-0:00:1Gbps"
+	;;
 cudy,wr2100)
 	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1"
 	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2"

@@ -299,6 +299,19 @@ define Device/beeline_smartbox-giga
 endef
 TARGET_DEVICES += beeline_smartbox-giga
 
+define Device/beeline_smartbox-pro
+  $(Device/sercomm-s1500-common)
+  DEVICE_VENDOR := Beeline
+  DEVICE_MODEL := SmartBox PRO
+  SERCOMM_HWID := AWI
+  SERCOMM_HWVER := 10000
+  SERCOMM_SWVER := 2020
+  IMAGE/factory.img := append-ubi | sercomm-tag-factory-img-pro 0x1700100 0x1f00000 0x1b00100 0x3d00000
+  DEVICE_ALT0_VENDOR := Sercomm
+  DEVICE_ALT0_MODEL := S1500 AWI
+endef
+TARGET_DEVICES += beeline_smartbox-pro
+
 define Device/buffalo_wsr-1166dhp
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1891,6 +1904,21 @@ define Device/wevo_w2914ns-v2
   SUPPORTED_DEVICES += w2914nsv2
 endef
 TARGET_DEVICES += wevo_w2914ns-v2
+
+define Device/wifire_s1500-nbn
+  $(Device/sercomm-s1500-common)
+  DEVICE_VENDOR := WiFire
+  DEVICE_MODEL := S1500.NBN
+  SERCOMM_HWVER := 10000
+  SERCOMM_0x10str := 0001
+  SERCOMM_SWVER := 2015
+  SERCOMM_HWID := BUC
+  IMAGE/factory.img := append-ubi | sercomm-tag-factory-type-AB-nbn | \
+    sercomm-crypto
+  DEVICE_ALT0_VENDOR := Sercomm
+  DEVICE_ALT0_MODEL := S1500 BUC
+endef
+TARGET_DEVICES += wifire_s1500-nbn
 
 define Device/winstars_ws-wn583a6
   $(Device/dsa-migration)

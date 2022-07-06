@@ -34,6 +34,12 @@ ampedwireless,ally-r1900k)
 beeline,smartbox-giga)
 	ubootenv_add_uci_config "/dev/mtd0" "0x80000" "0x1000" "0x20000"
 	;;
+beeline,smartbox-pro|\
+wifire,s1500-nbn)
+	idx="$(find_mtd_index BootLoad-Env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x20000"
+	;;
 buffalo,wsr-1166dhp|\
 buffalo,wsr-600dhp|\
 mediatek,linkit-smart-7688|\

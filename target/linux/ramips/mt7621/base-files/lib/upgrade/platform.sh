@@ -56,6 +56,7 @@ platform_do_upgrade() {
 	asus,rt-ax53u|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
+	beeline,smartbox-pro|\
 	dlink,dir-1960-a1|\
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
@@ -88,6 +89,7 @@ platform_do_upgrade() {
 	raisecom,msg1500-x-00|\
 	sercomm,na502|\
 	sercomm,na502s|\
+	wifire,s1500-nbn|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
