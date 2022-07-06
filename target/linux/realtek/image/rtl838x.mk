@@ -23,7 +23,8 @@ define Device/d-link_dgs-1210
   CAMEO_BOARD_VERSION := 32
   IMAGES += factory_image1.bin
   IMAGE/factory_image1.bin := append-kernel | pad-to 64k | \
-	append-rootfs | pad-rootfs | pad-to 16 | check-size | dlink-headers
+	append-rootfs | pad-rootfs | pad-to 16 | check-size | \
+	dlink-version | dlink-headers
 endef
 
 define Device/d-link_dgs-1210-10p

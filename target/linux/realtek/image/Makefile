@@ -21,6 +21,11 @@ define Build/dlink-cameo
 	$(SCRIPT_DIR)/cameo-tag.py $@ $(DLINK_KERNEL_PART_SIZE)
 endef
 
+define Build/dlink-version
+	echo -n "OpenWrt" >> $@
+	dd if=/dev/zero bs=25 count=1 >> $@
+endef
+
 define Build/dlink-headers
         dd if=$@ bs=$(DLINK_KERNEL_PART_SIZE) count=1 of=$@.kernel_part; \
         dd if=$@ bs=$(DLINK_KERNEL_PART_SIZE) skip=1 of=$@.rootfs_part; \
