@@ -442,7 +442,8 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 /*
  * try to or force reclaim of transmitted buffers
  */
-static int bcm6368_enetsw_tx_reclaim(struct net_device *dev, int force)
+static int bcm6368_enetsw_tx_reclaim(struct net_device *dev, int force,
+				     int budget)
 {
 	struct bcm6368_enetsw *priv = netdev_priv(dev);
 	unsigned int bytes = 0;
@@ -483,7 +484,7 @@ static int bcm6368_enetsw_tx_reclaim(struct net_device *dev, int force)
 			dev->stats.tx_errors++;
 
 		bytes += skb->len;
-		napi_consume_skb(skb, !force);
+		napi_consume_skb(skb, budget);
 		released++;
 	}
 
@@ -511,7 +512,7 @@ static int bcm6368_enetsw_poll(struct napi_struct *napi, int budget)
 			 DMAC_IR_REG, priv->tx_chan);
 
 	/* reclaim sent skb */
-	bcm6368_enetsw_tx_reclaim(dev, 0);
+	bcm6368_enetsw_tx_reclaim(dev, 0, budget);
 
 	spin_lock(&priv->rx_lock);
 	rx_work_done = bcm6368_enetsw_receive_queue(dev, budget);
@@ -855,7 +856,7 @@ static int bcm6368_enetsw_stop(struct net_device *dev)
 	bcm6368_enetsw_disable_dma(priv, priv->rx_chan);
 
 	/* force reclaim of all tx buffers */
-	bcm6368_enetsw_tx_reclaim(dev, 1);
+	bcm6368_enetsw_tx_reclaim(dev, 1, 0);
 
 	/* free the rx buffer ring */
 	for (i = 0; i < priv->rx_ring_size; i++) {
