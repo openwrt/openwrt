@@ -106,7 +106,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  	&dev_attr_oobsize.attr,
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -40,6 +40,7 @@ static struct mtd_info *allocate_partiti
+@@ -41,6 +41,7 @@ static struct mtd_info *allocate_partiti
  	struct mtd_info *master = mtd_get_master(parent);
  	int wr_alignment = (parent->flags & MTD_NO_ERASE) ?
  			   master->writesize : master->erasesize;
@@ -114,7 +114,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  	u64 parent_size = mtd_is_partition(parent) ?
  			  parent->part.size : parent->size;
  	struct mtd_info *child;
-@@ -164,6 +165,7 @@ static struct mtd_info *allocate_partiti
+@@ -165,6 +166,7 @@ static struct mtd_info *allocate_partiti
  	} else {
  		/* Single erase size */
  		child->erasesize = master->erasesize;
@@ -122,7 +122,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  	}
  
  	/*
-@@ -171,26 +173,39 @@ static struct mtd_info *allocate_partiti
+@@ -172,26 +174,39 @@ static struct mtd_info *allocate_partiti
  	 * exposes several regions with different erasesize. Adjust
  	 * wr_alignment accordingly.
  	 */
