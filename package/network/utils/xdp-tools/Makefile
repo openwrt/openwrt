@@ -85,11 +85,11 @@ CONFIGURE_VARS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	CLANG="$(CLANG)" \
-	BPF_CFLAGS="$(BPF_CFLAGS)" \
 	BPF_TARGET="$(BPF_TARGET)" \
 	LLC="$(LLVM_LLC)"
 
 MAKE_VARS += \
+	BPF_CFLAGS="-I$(STAGING_DIR)/bpf-headers/tools/lib/" \
 	PREFIX=/usr \
 	RUNDIR=/tmp/run
 
