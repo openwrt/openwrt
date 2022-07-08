@@ -37,20 +37,21 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	depends on m
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -15,10 +15,12 @@
+@@ -15,11 +15,13 @@
  #include <linux/kmod.h>
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
 +#include <linux/magic.h>
  #include <linux/err.h>
  #include <linux/of.h>
+ #include <linux/of_platform.h>
  
  #include "mtdcore.h"
 +#include "mtdsplit/mtdsplit.h"
  
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
-@@ -38,6 +40,8 @@ struct mtd_part {
+@@ -39,6 +41,8 @@ struct mtd_part {
  	struct list_head list;
  };
  
@@ -59,7 +60,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /*
   * Given a pointer to the MTD object in the mtd_part structure, we can retrieve
   * the pointer to that structure.
-@@ -612,6 +616,7 @@ int mtd_add_partition(struct mtd_info *p
+@@ -613,6 +617,7 @@ int mtd_add_partition(struct mtd_info *p
  	if (ret)
  		goto err_remove_part;
  
@@ -67,7 +68,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	mtd_add_partition_attrs(new);
  
  	return 0;
-@@ -698,6 +703,29 @@ int mtd_del_partition(struct mtd_info *m
+@@ -699,6 +704,29 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -97,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -738,6 +766,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -739,6 +767,7 @@ int add_mtd_partitions(struct mtd_info *
  			goto err_del_partitions;
  		}
  

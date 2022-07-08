@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -22,6 +22,8 @@
+@@ -23,6 +23,8 @@
  #include "mtdcore.h"
  #include "mtdsplit/mtdsplit.h"
  
@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
  static DEFINE_MUTEX(mtd_partitions_mutex);
-@@ -206,11 +208,77 @@ static int part_erase(struct mtd_info *m
+@@ -207,11 +209,77 @@ static int part_erase(struct mtd_info *m
  {
  	struct mtd_part *part = mtd_to_part(mtd);
  	int ret;
@@ -97,7 +97,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	instr->addr -= part->offset;
  
  	return ret;
-@@ -525,19 +593,22 @@ static struct mtd_part *allocate_partiti
+@@ -526,19 +594,22 @@ static struct mtd_part *allocate_partiti
  	remainder = do_div(tmp, wr_alignment);
  	if ((slave->mtd.flags & MTD_WRITEABLE) && remainder) {
  		/* Doesn't start on a boundary of major erase size */
