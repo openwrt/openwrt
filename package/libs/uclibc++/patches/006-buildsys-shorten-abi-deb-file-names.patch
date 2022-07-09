@@ -1,0 +1,86 @@
+From 6687fc9276fa52defaf8592f2001c19b826aec93 Mon Sep 17 00:00:00 2001
+From: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+Date: Thu, 4 Jun 2020 10:21:43 +0200
+Subject: buildsys: shorten abi dep-file names
+
+certain crypto-layers encode required information in the
+filename hence crippling NAME_MAX from 255 down to about 143
+ascii chars.
+
+Since the dependency files of libgcc_eh and libsupc encode the full
+path to the corresponding libraries, the names of the dep files can
+get quite large. Shorten them by some (arbitrary, short) hash.
+
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+ Rules.mak                     | 2 ++
+ src/abi/libgcc_eh/Makefile.in | 4 ++--
+ src/abi/libsupc/Makefile.in   | 4 ++--
+ 3 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/Rules.mak b/Rules.mak
+index 1b5ed30..9162c64 100644
+--- a/Rules.mak
++++ b/Rules.mak
+@@ -50,6 +50,7 @@ RM      = rm -f
+ TAR     = tar
+ SED     = sed
+ AWK     = awk
++MD5SUM  = md5sum
+ 
+ ARFLAGS:= cr
+ 
+@@ -249,6 +250,7 @@ endif
+ 
+ list-archive-members = $(if $(1),$(shell $(AR) t $(1)))
+ variablify = $(strip $(subst /,_,$(subst :,_,$(subst ;,_,$(subst |,_,$(subst >,_,$(subst <,_,$(1))))))))
++print-hash = $(strip $(if $(1),$(shell printf "%s" "$(1)" | $(MD5SUM) | $(SED) 's/[^0-9a-zA-Z]//g')))
+ 
+ GEN_LIBS:= -lc
+ ifneq ($(LIBGCC_DIR),$(UCLIBCXX_RUNTIME_LIBDIR))
+diff --git a/src/abi/libgcc_eh/Makefile.in b/src/abi/libgcc_eh/Makefile.in
+index 46b0017..1553b34 100644
+--- a/src/abi/libgcc_eh/Makefile.in
++++ b/src/abi/libgcc_eh/Makefile.in
+@@ -4,7 +4,7 @@ OBJS = $(call list-archive-members,$(LIBGCC_EH))
+ libgcc_eh-$(IMPORT_LIBGCC_EH) := $(OBJS)
+ 
+ LIBGCC_EH_VAR := $(call variablify,$(LIBGCC_EH))
+-LIBGCC_EH_DEP := $(LIBGCC_EH_OUT).$(LIBGCC_EH_VAR).dep
++LIBGCC_EH_DEP := $(LIBGCC_EH_OUT).$(call print-hash,$(LIBGCC_EH_VAR)).dep
+ 
+ ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
+ -include $(LIBGCC_EH_DEP)
+@@ -17,7 +17,7 @@ endif
+ $(LIBGCC_EH_DEP): $(LIBGCC_EH)
+ 	$(Q)$(RM) $(LIBGCC_EH_OUT).*dep $(LIBGCC_EH_OUT)*.o
+ 	$(Q)$(if $(LIBGCC_EH),(cd $(LIBGCC_EH_OUT) && $(AR) x $(LIBGCC_EH)))
+-	$(Q)echo "libgcc_eh-y := \$$(addprefix \$$(LIBGCC_EH_OUT),$(libgcc_eh-y))" > $@
++	$(Q)printf "# %s\n\n%s\n" "$(LIBGCC_EH)" "libgcc_eh-y := \$$(addprefix \$$(LIBGCC_EH_OUT),$(libgcc_eh-y))" > $@
+ 
+ CLEAN_src/abi/libgcc_eh: ;
+ DISTCLEAN_src/abi/libgcc_eh:
+diff --git a/src/abi/libsupc/Makefile.in b/src/abi/libsupc/Makefile.in
+index 89e0e8a..9c00df0 100644
+--- a/src/abi/libsupc/Makefile.in
++++ b/src/abi/libsupc/Makefile.in
+@@ -5,7 +5,7 @@ OBJS-OMIT = $(filter new_op%.o del_op%.o pure.o new_handler.o eh_alloc.o eh_glob
+ libsupc-$(IMPORT_LIBSUP) := $(filter-out $(OBJS-OMIT),$(OBJS))
+ 
+ LIBSUP_VAR := $(call variablify,$(LIBSUP))
+-LIBSUP_DEP :=$(LIBSUPC_OUT).$(LIBSUP_VAR).dep
++LIBSUP_DEP := $(LIBSUPC_OUT).$(call print-hash,$(LIBSUP_VAR)).dep
+ 
+ ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
+ -include $(LIBSUP_DEP)
+@@ -17,7 +17,7 @@ endif
+ $(LIBSUP_DEP): $(LIBSUP) $(LIBSUPC_OUT)Makefile.in
+ 	$(Q)$(RM) $(LIBSUPC_OUT).*dep $(LIBSUPC_OUT)*.o
+ 	$(Q)$(if $(LIBSUP),(cd $(LIBSUPC_OUT) && $(AR) x $(LIBSUP) && $(RM) $(OBJS-OMIT)))
+-	$(Q)echo "libsupc-y := \$$(addprefix \$$(LIBSUPC_OUT),$(libsupc-y))" > $@
++	$(Q)printf "# %s\n\n%s\n" "$(LIBSUP)" "libsupc-y := \$$(addprefix \$$(LIBSUPC_OUT),$(libsupc-y))" > $@
+ 
+ CLEAN_src/abi/libsupc: ;
+ DISTCLEAN_src/abi/libsupc:
+-- 
+cgit v1.2.3
