@@ -1,0 +1,35 @@
+From 32614090bbd77ced96ba71e355b936f8edee4b1d Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 9 Jul 2022 07:08:40 +0200
+Subject: [PATCH 1/2] util: use pid_t to avoid 64bit datatype fixing cross
+ platform
+
+The pid_t is a data type representing a process ID. In GNUC C this is an
+int. This commit replaces the long unsigned because it avoids using a
+64bit data type improving cross platorm usage.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ lib/util/util.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/lib/util/util.c
++++ b/lib/util/util.c
+@@ -793,7 +793,7 @@ int prog_lock_get(const char *progname)
+ 	if (prog_lock_fd < 0) {
+ 		err = -errno;
+ 		if (err == -EEXIST) {
+-			unsigned long pid = 0;
++			pid_t pid = 0;
+ 			char buf[100];
+ 			ssize_t len;
+ 			int fd;
+@@ -818,7 +818,7 @@ int prog_lock_get(const char *progname)
+ 					strerror(-err));
+ 				return err;
+ 			}
+-			pr_warn("Unable to get program lock: Already held by pid %lu\n",
++			pr_warn("Unable to get program lock: Already held by pid %d\n",
+ 				pid);
+ 		} else {
+ 			pr_warn("Unable to get program lock: %s\n", strerror(-err));

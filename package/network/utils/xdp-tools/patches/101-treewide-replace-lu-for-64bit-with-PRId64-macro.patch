@@ -1,0 +1,54 @@
+From 342392dc1ae4b9c67bab463e044673e4066f667e Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 9 Jul 2022 07:14:24 +0200
+Subject: [PATCH 2/2] treewide: replace %lu for 64bit with PRId64 macro fixing
+ cross platform
+
+PRId64 is a macro helping to handle cross platform prints of 64bit
+datatypes. This commit replaces the %lu for 64bit data types.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ lib/util/stats.c   | 3 ++-
+ xdp-dump/xdpdump.c | 4 ++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+--- a/lib/util/stats.c
++++ b/lib/util/stats.c
+@@ -6,6 +6,7 @@
+ #include <errno.h>
+ #include <getopt.h>
+ 
++#include <inttypes.h>
+ #include <locale.h>
+ #include <unistd.h>
+ #include <time.h>
+@@ -107,7 +108,7 @@ int stats_print(struct stats_record *sta
+ 			return 0;
+ 
+ 		if (first) {
+-			printf("Period of %fs ending at %lu.%06lu\n", period,
++			printf("Period of %fs ending at %" PRId64 ".%06lu\n", period,
+ 			       t.tv_sec, t.tv_nsec / 1000);
+ 			first = false;
+ 		}
+--- a/xdp-dump/xdpdump.c
++++ b/xdp-dump/xdpdump.c
+@@ -644,7 +644,7 @@ static bool capture_on_legacy_interface(
+ 			char hline[SNPRINTH_MIN_BUFFER_SIZE];
+ 
+ 			if (cfg->hex_dump) {
+-				printf("%lu.%06lu: packet size %u bytes, "
++				printf( PRId64 ".%06" PRId64 ": packet size %u bytes, "
+ 				       "captured %u bytes on if_name \"%s\"\n",
+ 				       h.ts.tv_sec, h.ts.tv_usec,
+ 				       h.len, h.caplen, cfg->iface.ifname);
+@@ -655,7 +655,7 @@ static bool capture_on_legacy_interface(
+ 					printf("  %s\n", hline);
+ 				}
+ 			} else {
+-				printf("%lu.%06lu: packet size %u bytes on "
++				printf( PRId64 ".%06" PRId64 ": packet size %u bytes on "
+ 				       "if_name \"%s\"\n",
+ 				       h.ts.tv_sec, h.ts.tv_usec,
+ 				       h.len, cfg->iface.ifname);
