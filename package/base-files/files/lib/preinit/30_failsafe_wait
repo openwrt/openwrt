@@ -87,6 +87,7 @@ fs_wait_for_key () {
 
 failsafe_wait() {
 	FAILSAFE=
+	[ "$fs_failsafe_wait_timeout" -eq 0 ] && return
 	[ "$pi_preinit_no_failsafe" = "y" ] && {
 		fs_wait_for_key "" "" $fs_failsafe_wait_timeout
 		return
