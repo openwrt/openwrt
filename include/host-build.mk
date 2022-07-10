@@ -165,7 +165,15 @@ ifndef DUMP
 		touch $$@
 
   $(call Host/Exports,$(HOST_STAMP_INSTALLED))
-  $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
+  ifeq ($(CONFIG_IN_SDK),y)
+    # if we're in SDK, don't re-install host tools if the stamp already exists,
+    # as newly compiled host tools might not be compatible with the SDK libs
+    $(HOST_STAMP_INSTALLED): \
+      $(if $(wildcard $(HOST_STAMP_INSTALLED)),$$(warning $(PKG_NAME) host part is already built, to force re-compilation remove $(HOST_STAMP_INSTALLED)),$(HOST_STAMP_BUILT)) \
+      $(if $(FORCE_HOST_INSTALL),FORCE)
+  else
+    $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
+  endif
 		$(call Host/Install,$(HOST_BUILD_PREFIX))
 		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		mkdir -p $$(shell dirname $$@)
@@ -185,7 +193,7 @@ ifndef DUMP
 
   $(_host_target)host-prepare: $(HOST_STAMP_PREPARED)
   $(_host_target)host-configure: $(HOST_STAMP_CONFIGURED)
-  $(_host_target)host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED)
+  $(_host_target)host-compile: $(HOST_STAMP_INSTALLED)
   host-install: host-compile
 
   host-clean-build: FORCE
