@@ -93,14 +93,6 @@ define Device/asus_rt-n12-vp-b1
 endef
 TARGET_DEVICES += asus_rt-n12-vp-b1
 
-define Device/asus_rtn600
-  IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := ASUS
-  DEVICE_MODEL := RTN600
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 
-endef
-TARGET_DEVICES += asus_rtn600
-
 define Device/buffalo_wcr-1166ds
   IMAGE_SIZE := 7936k
   BUFFALO_TAG_PLATFORM := MTK
