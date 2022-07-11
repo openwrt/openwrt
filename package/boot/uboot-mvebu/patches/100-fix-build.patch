@@ -1,0 +1,20 @@
+The build fails on a sunxi tool:
+
+/usr/bin/ld: tools/sunxi_toc0.o: in function `toc0_set_header':
+sunxi_toc0.c:(.text+0x363): undefined reference to `RSA_get0_d'
+
+The missing function was added in libressl v3.5.0. We don't
+really care, so just cut it out for now.
+
+--- a/tools/Makefile
++++ b/tools/Makefile
+@@ -96,8 +96,7 @@ AES_OBJS-$(CONFIG_TOOLS_LIBCRYPTO) := $(
+ 
+ # Cryptographic helpers and image types that depend on openssl/libcrypto
+ LIBCRYPTO_OBJS-$(CONFIG_TOOLS_LIBCRYPTO) := \
+-			lib/fdt-libcrypto.o \
+-			sunxi_toc0.o
++			lib/fdt-libcrypto.o
+ 
+ ROCKCHIP_OBS = lib/rc4.o rkcommon.o rkimage.o rksd.o rkspi.o
+ 
