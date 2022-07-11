@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=strace
 PKG_VERSION:=5.18
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://strace.io/files/$(PKG_VERSION)
@@ -29,6 +29,7 @@ PKG_CONFIG_DEPENDS := \
 	CONFIG_STRACE_LIBUNWIND
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/nls.mk
 
 HOST_CFLAGS += -I$(LINUX_DIR)/user_headers/include
 
