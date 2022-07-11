@@ -60,48 +60,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		status = "okay";
  	};
  
-@@ -78,31 +64,15 @@
- 	status = "okay";
- };
- 
--&firmware {
--	firmware_clocks: clocks {
--		compatible = "raspberrypi,firmware-clocks";
--		#clock-cells = <1>;
--	};
--
--	expgpio: gpio {
--		compatible = "raspberrypi,firmware-gpio";
--		gpio-controller;
--		#gpio-cells = <2>;
--		gpio-line-names = "BT_ON",
--				  "WL_ON",
--				  "PWR_LED_OFF",
--				  "GLOBAL_RESET",
--				  "VDD_SD_IO_SEL",
--				  "CAM_GPIO",
--				  "SD_PWR_ON",
--				  "SD_OC_N";
--		status = "okay";
--	};
--
--	reset: reset {
--		compatible = "raspberrypi,firmware-reset";
--		#reset-cells = <1>;
--	};
-+&expgpio {
-+	gpio-line-names = "BT_ON",
-+			  "WL_ON",
-+			  "PWR_LED_OFF",
-+			  "GLOBAL_RESET",
-+			  "VDD_SD_IO_SEL",
-+			  "GLOBAL_SHUTDOWN",
-+			  "SD_PWR_ON",
-+			  "SHUTDOWN_REQUEST";
- };
- 
- &gpio {
-@@ -179,23 +149,13 @@
+@@ -179,23 +165,13 @@
  };
  
  &hdmi0 {
@@ -125,7 +84,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  &pixelvalve0 {
  	status = "okay";
  };
-@@ -218,22 +178,6 @@
+@@ -218,22 +194,6 @@
  	status = "okay";
  };
  
@@ -148,7 +107,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  /* SDHCI is used to control the SDIO for wireless */
  &sdhci {
  	#address-cells = <1>;
-@@ -274,7 +218,7 @@
+@@ -274,7 +234,7 @@
  
  &pcie0 {
  	pci@0,0 {
@@ -157,7 +116,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		#address-cells = <3>;
  		#size-cells = <2>;
  		ranges;
-@@ -282,7 +226,7 @@
+@@ -282,7 +242,7 @@
  		reg = <0 0 0 0 0>;
  
  		usb@0,0 {
@@ -166,7 +125,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  			resets = <&reset RASPBERRYPI_FIRMWARE_RESET_ID_USB>;
  		};
  	};
-@@ -309,10 +253,6 @@
+@@ -309,10 +269,6 @@
  	status = "okay";
  };
  
