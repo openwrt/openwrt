@@ -420,7 +420,7 @@
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -392,6 +393,21 @@ static int initr_onenand(void)
+@@ -392,6 +393,20 @@ static int initr_onenand(void)
  }
  #endif
  
@@ -430,11 +430,10 @@
 +{
 +	struct udevice *new;
 +
-+	spi_flash_probe_bus_cs(CONFIG_SF_DEFAULT_BUS,
-+				CONFIG_SF_DEFAULT_CS,
-+				CONFIG_SF_DEFAULT_SPEED,
-+				CONFIG_SF_DEFAULT_MODE,
-+				&new);
++spi_flash_probe_bus_cs(CONFIG_SF_DEFAULT_BUS,
++			CONFIG_SF_DEFAULT_CS,
++			&new);
++
 +	return 0;
 +}
 +#endif
