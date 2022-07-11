@@ -210,12 +210,12 @@ define Device/ubnt_routerstation-pro
 endef
 TARGET_DEVICES += ubnt_routerstation-pro
 
-define Device/ubnt_unifi
+define Device/ubnt_unifi-ap
   $(Device/ubnt-bz)
   DEVICE_MODEL := UniFi AP
-  SUPPORTED_DEVICES += unifi
+  SUPPORTED_DEVICES += unifi ubnt,unifi
 endef
-TARGET_DEVICES += ubnt_unifi
+TARGET_DEVICES += ubnt_unifi-ap
 
 define Device/ubnt_unifiac
   DEVICE_VENDOR := Ubiquiti
