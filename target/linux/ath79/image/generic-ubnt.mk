@@ -217,6 +217,14 @@ define Device/ubnt_unifi-ap
 endef
 TARGET_DEVICES += ubnt_unifi-ap
 
+define Device/ubnt_unifi-ap-lr
+  $(Device/ubnt-bz)
+  DEVICE_MODEL := UniFi AP
+  DEVICE_VARIANT := LR
+  SUPPORTED_DEVICES += unifi ubnt,unifi ubnt,unifi-ap
+endef
+TARGET_DEVICES += ubnt_unifi-ap-lr
+
 define Device/ubnt_unifiac
   DEVICE_VENDOR := Ubiquiti
   SOC := qca9563
