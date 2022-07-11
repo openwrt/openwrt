@@ -376,6 +376,30 @@ define Device/aruba_ap-105
 endef
 TARGET_DEVICES += aruba_ap-105
 
+define Device/asus_pl-ac56
+  SOC := qca9563
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := PL-AC56
+  DEVICE_VARIANT := A1
+  IMAGE_SIZE := 15488k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += asus_pl-ac56
+
+define Device/asus_rp-ac51
+  SOC := qca9531
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RP-AC51
+  IMAGE_SIZE := 16000k
+  IMAGES += factory.bin
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct \
+	-swconfig
+endef
+TARGET_DEVICES += asus_rp-ac51
+
 define Device/asus_rp-ac66
   SOC := qca9563
   DEVICE_VENDOR := ASUS
@@ -557,6 +581,7 @@ TARGET_DEVICES += buffalo_wzr-hp-g300nh-rb
 define Device/buffalo_wzr-hp-g300nh-s
   $(Device/buffalo_wzr-hp-g300nh)
   DEVICE_MODEL := WZR-HP-G300NH (RTL8366S switch)
+  DEVICE_PACKAGES += kmod-switch-rtl8366rb
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g300nh-s
 
@@ -973,7 +998,7 @@ define Device/dlink_dir-825-b1
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
 	check-size | append-metadata
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-leds-reset kmod-owl-loader
+	kmod-leds-reset kmod-owl-loader kmod-switch-rtl8366s
   SUPPORTED_DEVICES += dir-825-b1
 endef
 TARGET_DEVICES += dlink_dir-825-b1
@@ -1684,7 +1709,7 @@ define Device/netgear_wndr3x00
   $(Device/netgear_generic)
   SOC := ar7161
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
-	kmod-leds-reset kmod-owl-loader
+	kmod-leds-reset kmod-owl-loader kmod-switch-rtl8366s
 endef
 
 define Device/netgear_wndr3700

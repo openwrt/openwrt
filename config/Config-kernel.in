@@ -414,6 +414,14 @@ config KERNEL_DEBUG_LL
 	help
 	  ARM low level debugging.
 
+config KERNEL_DEBUG_VIRTUAL
+	bool "Compile the kernel with VM translations debugging"
+	select KERNEL_DEBUG_KERNEL
+	default n
+	help
+	  Enable checks sanity checks to catch invalid uses of
+	  virt_to_phys()/phys_to_virt() against the non-linear address space.
+
 config KERNEL_DYNAMIC_DEBUG
 	bool "Compile the kernel with dynamic printk"
 	select KERNEL_DEBUG_FS

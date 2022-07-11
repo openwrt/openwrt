@@ -161,12 +161,11 @@
 			pinctrl-single,bits = <0x0 0x0 0x8000>;
 		};
 
-		/* Enables a yet unknown GPIO */
+		/* Controls GPIO0 */
 		pinmux_disable_sys_led: disable_sys_led {
 			pinctrl-single,bits = <0x0 0x0 0x100>;
 		};
 	};
-
 
 	ethernet0: ethernet@1b00a300 {
 		status = "okay";

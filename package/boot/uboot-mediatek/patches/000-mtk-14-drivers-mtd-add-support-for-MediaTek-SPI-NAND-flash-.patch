@@ -38,9 +38,9 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -116,6 +116,8 @@ config STM32_FLASH
- 	 This is the driver of embedded flash for some STMicroelectronics
- 	 STM32 MCU.
+@@ -158,6 +158,8 @@ config SYS_MAX_FLASH_BANKS_DETECT
+ 	 to reduce the effective number of flash bank, between 0 and
+ 	 CONFIG_SYS_MAX_FLASH_BANKS
  
 +source "drivers/mtd/mtk-snand/Kconfig"
 +

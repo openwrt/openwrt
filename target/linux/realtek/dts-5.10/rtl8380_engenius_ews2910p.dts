@@ -43,6 +43,13 @@
 		gpio-controller;
 		indirect-access-bus-id = <0>;
 
+		poe_enable {
+			gpio-hog;
+			gpios = <1 GPIO_ACTIVE_HIGH>;
+			output-high;
+			line-name = "poe-enable";
+		};
+
 		sff_p9_gpios {
 			gpio-hog;
 			gpios = < 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>,

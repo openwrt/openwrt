@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=f2fs-tools
-PKG_VERSION:=1.14.0
-PKG_RELEASE:=3
+PKG_VERSION:=1.15.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/
-PKG_HASH:=619263d4e2022152a1472c1d912eaae104f20bd227ce0bb9d41d1d6608094bd1
+PKG_HASH:=147d471040b44900283ce2c935f1d35d13d7f40008e7cb8fab2b69f54da01a4f
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0-only
@@ -99,7 +99,9 @@ endef
 
 CONFIGURE_ARGS += \
 	--disable-static \
-	--without-blkid
+	--without-blkid \
+	--without-lzo2 \
+	--without-lz4
 
 ifneq ($(BUILD_VARIANT),selinux)
   CONFIGURE_ARGS += --without-selinux

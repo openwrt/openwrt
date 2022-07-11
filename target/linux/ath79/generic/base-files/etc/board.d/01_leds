@@ -56,6 +56,16 @@ alfa-network,tube-2hq)
 	ucidef_set_led_rssi "signal3" "SIGNAL3" "green:signal3" "wlan0" "50" "100"
 	ucidef_set_led_rssi "signal4" "SIGNAL4" "green:signal4" "wlan0" "75" "100"
 	;;
+asus,pl-ac56)
+	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x3e"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan2g" "wlan1" "link"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan5g" "wlan0" "link"
+	;;
+asus,rp-ac51)
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan2G" "wlan1" "link"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan5G" "wlan0" "link"
+	;;
 asus,rp-ac66)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_rssimon "wlan1" "200000" "1"

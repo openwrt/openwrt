@@ -29,58 +29,6 @@
 
 extern struct rtl83xx_soc_info soc_info;
 
-static void rtl931x_restart(char *command)
-{
-	u32 v;
-
-	pr_info("System restart.\n");
-	sw_w32(1, RTL931X_RST_GLB_CTRL);
-	v = sw_r32(RTL931X_RST_GLB_CTRL);
-	sw_w32(0x101, RTL931X_RST_GLB_CTRL);
-	msleep(15);
-	sw_w32(v, RTL931X_RST_GLB_CTRL);
-	msleep(15);
-	sw_w32(0x101, RTL931X_RST_GLB_CTRL);
-
-}
-
-static void rtl931x_halt(void)
-{
-	pr_info("System halted.\n");
-	while
-		(1);
-}
-
-static void __init rtl838x_setup(void)
-{
-	/* Setup System LED. Bit 15 then allows to toggle it */
-	sw_w32_mask(0, 3 << 16, RTL838X_LED_GLB_CTRL);
-}
-
-static void __init rtl839x_setup(void)
-{
-	/* Setup System LED. Bit 14 of RTL839X_LED_GLB_CTRL then allows to toggle it */
-	sw_w32_mask(0, 3 << 15, RTL839X_LED_GLB_CTRL);
-}
-
-static void __init rtl930x_setup(void)
-{
-	if (soc_info.id == 0x9302)
-		sw_w32_mask(0, 3 << 13, RTL9302_LED_GLB_CTRL);
-	else
-		sw_w32_mask(0, 3 << 13, RTL930X_LED_GLB_CTRL);
-}
-
-static void __init rtl931x_setup(void)
-{
-	pr_info("Registering _machine_restart\n");
-	_machine_restart = rtl931x_restart;
-	_machine_halt = rtl931x_halt;
-
-	// Enable system LED, no flashing
-	sw_w32_mask(0, 3 << 12, RTL931X_LED_GLB_CTRL);
-}
-
 void __init plat_mem_setup(void)
 {
 	void *dtb;
@@ -99,21 +47,6 @@ void __init plat_mem_setup(void)
 	 * parsed resulting in our memory appearing
 	 */
 	__dt_setup_arch(dtb);
-
-	switch (soc_info.family) {
-	case RTL8380_FAMILY_ID:
-		rtl838x_setup();
-		break;
-	case RTL8390_FAMILY_ID:
-		rtl839x_setup();
-		break;
-	case RTL9300_FAMILY_ID:
-		rtl930x_setup();
-		break;
-	case RTL9310_FAMILY_ID:
-		rtl931x_setup();
-		break;
-	}
 }
 
 void __init plat_time_init(void)

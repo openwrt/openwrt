@@ -304,7 +304,7 @@ hostapd_common_add_bss_config() {
 	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
 	config_add_string multi_ap_backhaul_ssid multi_ap_backhaul_key
 
-	config_add_boolean wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition
+	config_add_boolean wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition mbo
 	config_add_int time_advertisement
 	config_add_string time_zone
 	config_add_string vendor_elements
@@ -372,6 +372,8 @@ hostapd_common_add_bss_config() {
 
 	config_add_boolean fils
 	config_add_string fils_dhcp
+
+	config_add_int ocv
 }
 
 hostapd_set_vlan_file() {
@@ -544,7 +546,7 @@ hostapd_set_bss_options() {
 		airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast proxy_arp per_sta_vif \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id \
-		vendor_elements fils
+		vendor_elements fils ocv
 
 	set_default fils 0
 	set_default isolate 0
@@ -616,6 +618,8 @@ hostapd_set_bss_options() {
 			append bss_conf "radius_acct_interim_interval=$acct_interval" "$N"
 		json_for_each_item append_radius_acct_req_attr radius_acct_req_attr
 	}
+
+	[ -n "$ocv" ] && append bss_conf "ocv=$ocv" "$N"
 
 	case "$auth_type" in
 		sae|owe|eap192|eap-eap192)
@@ -825,10 +829,11 @@ hostapd_set_bss_options() {
 		append bss_conf "iapp_interface=$ifname" "$N"
 	}
 
-	json_get_vars time_advertisement time_zone wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition
+	json_get_vars time_advertisement time_zone wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition mbo
 	set_default bss_transition 0
 	set_default wnm_sleep_mode 0
 	set_default wnm_sleep_mode_no_keys 0
+	set_default mbo 0
 
 	[ -n "$time_advertisement" ] && append bss_conf "time_advertisement=$time_advertisement" "$N"
 	[ -n "$time_zone" ] && append bss_conf "time_zone=$time_zone" "$N"
@@ -837,6 +842,7 @@ hostapd_set_bss_options() {
 		[ "$wnm_sleep_mode_no_keys" -eq "1" ] && append bss_conf "wnm_sleep_mode_no_keys=1" "$N"
 	fi
 	[ "$bss_transition" -eq "1" ] && append bss_conf "bss_transition=1" "$N"
+	[ "$mbo" -eq 1 ] && append bss_conf "mbo=1" "$N"
 
 	json_get_vars ieee80211k rrm_neighbor_report rrm_beacon_report
 	set_default ieee80211k 0
@@ -1266,7 +1272,7 @@ wpa_supplicant_add_network() {
 	json_get_vars \
 		ssid bssid key \
 		basic_rate mcast_rate \
-		ieee80211w ieee80211r fils \
+		ieee80211w ieee80211r fils ocv \
 		multi_ap \
 		default_disabled
 
@@ -1317,6 +1323,8 @@ wpa_supplicant_add_network() {
 		[ "$multi_ap" = 1 ] && append network_data "multi_ap_backhaul_sta=1" "$N$T"
 		[ "$default_disabled" = 1 ] && append network_data "disabled=1" "$N$T"
 	}
+
+	[ -n "$ocv" ] && append network_data "ocv=$ocv" "$N$T"
 
 	case "$auth_type" in
 		none) ;;

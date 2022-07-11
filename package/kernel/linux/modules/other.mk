@@ -119,6 +119,24 @@ endef
 $(eval $(call KernelPackage,btmrvl))
 
 
+define KernelPackage/btsdio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Bluetooth HCI SDIO driver
+  DEPENDS:=+kmod-bluetooth +kmod-mmc
+  KCONFIG:= \
+	CONFIG_BT_HCIBTSDIO
+  FILES:= \
+	$(LINUX_DIR)/drivers/bluetooth/btsdio.ko
+  AUTOLOAD:=$(call AutoProbe,btsdio)
+endef
+
+define KernelPackage/btsdio/description
+ Kernel support for Bluetooth device with SDIO interface
+endef
+
+$(eval $(call KernelPackage,btsdio))
+
+
 define KernelPackage/dma-buf
   SUBMENU:=$(OTHER_MENU)
   TITLE:=DMA shared buffer support
