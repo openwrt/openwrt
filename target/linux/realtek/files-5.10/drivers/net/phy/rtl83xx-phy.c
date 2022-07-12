@@ -452,20 +452,20 @@ static int rtl8226_read_status(struct phy_device *phydev)
 
 	// Link status must be read twice
 	for (i = 0; i < 2; i++) {
-		val = phy_read_mmd(phydev, MMD_VEND2, 0xA402);
+		val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA402);
 	}
 	phydev->link = val & BIT(2) ? 1 : 0;
 	if (!phydev->link)
 		goto out;
 
 	// Read duplex status
-	val = phy_read_mmd(phydev, MMD_VEND2, 0xA434);
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA434);
 	if (val < 0)
 		goto out;
 	phydev->duplex = !!(val & BIT(3));
 
 	// Read speed
-	val = phy_read_mmd(phydev, MMD_VEND2, 0xA434);
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA434);
 	switch (val & 0x0630) {
 	case 0x0000:
 		phydev->speed = SPEED_10;
@@ -499,7 +499,7 @@ static int rtl8226_advertise_aneg(struct phy_device *phydev)
 
 	pr_info("In %s\n", __func__);
 
-	v = phy_read_mmd(phydev, MMD_AN, 16);
+	v = phy_read_mmd(phydev, MDIO_MMD_AN, 16);
 	if (v < 0)
 		goto out;
 
@@ -508,25 +508,25 @@ static int rtl8226_advertise_aneg(struct phy_device *phydev)
 	v |= BIT(7); // HD 100M
 	v |= BIT(8); // FD 100M
 
-	ret = phy_write_mmd(phydev, MMD_AN, 16, v);
+	ret = phy_write_mmd(phydev, MDIO_MMD_AN, 16, v);
 
 	// Allow 1GBit
-	v = phy_read_mmd(phydev, MMD_VEND2, 0xA412);
+	v = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA412);
 	if (v < 0)
 		goto out;
 	v |= BIT(9); // FD 1000M
 
-	ret = phy_write_mmd(phydev, MMD_VEND2, 0xA412, v);
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA412, v);
 	if (ret < 0)
 		goto out;
 
 	// Allow 2.5G
-	v = phy_read_mmd(phydev, MMD_AN, 32);
+	v = phy_read_mmd(phydev, MDIO_MMD_AN, 32);
 	if (v < 0)
 		goto out;
 
 	v |= BIT(7);
-	ret = phy_write_mmd(phydev, MMD_AN, 32, v);
+	ret = phy_write_mmd(phydev, MDIO_MMD_AN, 32, v);
 
 out:
 	return ret;
@@ -543,22 +543,22 @@ static int rtl8226_config_aneg(struct phy_device *phydev)
 		if (ret)
 			goto out;
 		// AutoNegotiationEnable
-		v = phy_read_mmd(phydev, MMD_AN, 0);
+		v = phy_read_mmd(phydev, MDIO_MMD_AN, 0);
 		if (v < 0)
 			goto out;
 
 		v |= BIT(12); // Enable AN
-		ret = phy_write_mmd(phydev, MMD_AN, 0, v);
+		ret = phy_write_mmd(phydev, MDIO_MMD_AN, 0, v);
 		if (ret < 0)
 			goto out;
 
 		// RestartAutoNegotiation
-		v = phy_read_mmd(phydev, MMD_VEND2, 0xA400);
+		v = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
 		if (v < 0)
 			goto out;
 		v |= BIT(9);
 
-		ret = phy_write_mmd(phydev, MMD_VEND2, 0xA400, v);
+		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, v);
 	}
 
 //	TODO: ret = __genphy_config_aneg(phydev, ret);
@@ -575,11 +575,11 @@ static int rtl8226_get_eee(struct phy_device *phydev,
 
 	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
 
-	val = phy_read_mmd(phydev, MMD_AN, 60);
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, 60);
 	if (e->eee_enabled) {
 		e->eee_enabled = !!(val & BIT(1));
 		if (!e->eee_enabled) {
-			val = phy_read_mmd(phydev, MMD_AN, 62);
+			val = phy_read_mmd(phydev, MDIO_MMD_AN, 62);
 			e->eee_enabled = !!(val & BIT(0));
 		}
 	}
@@ -600,29 +600,29 @@ static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	poll_state = disable_polling(port);
 
 	// Remember aneg state
-	val = phy_read_mmd(phydev, MMD_AN, 0);
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, 0);
 	an_enabled = !!(val & BIT(12));
 
 	// Setup 100/1000MBit
-	val = phy_read_mmd(phydev, MMD_AN, 60);
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, 60);
 	if (e->eee_enabled)
 		val |= 0x6;
 	else
 		val &= 0x6;
-	phy_write_mmd(phydev, MMD_AN, 60, val);
+	phy_write_mmd(phydev, MDIO_MMD_AN, 60, val);
 
 	// Setup 2.5GBit
-	val = phy_read_mmd(phydev, MMD_AN, 62);
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, 62);
 	if (e->eee_enabled)
 		val |= 0x1;
 	else
 		val &= 0x1;
-	phy_write_mmd(phydev, MMD_AN, 62, val);
+	phy_write_mmd(phydev, MDIO_MMD_AN, 62, val);
 
 	// RestartAutoNegotiation
-	val = phy_read_mmd(phydev, MMD_VEND2, 0xA400);
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
 	val |= BIT(9);
-	phy_write_mmd(phydev, MMD_VEND2, 0xA400, val);
+	phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, val);
 
 	resume_polling(poll_state);
 
