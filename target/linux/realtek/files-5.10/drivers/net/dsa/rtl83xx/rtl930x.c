@@ -765,8 +765,6 @@ int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	}
 	*val = (sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_2) & 0xffff);
 
-	pr_debug("%s: port %d, page: %d, reg: %x, val: %x\n", __func__, port, page, reg, *val);
-
 	mutex_unlock(&smi_lock);
 
 	return err;
@@ -2409,7 +2407,6 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	char set_name[9];
 	struct device_node *node;
 
-	pr_info("%s called\n", __func__);
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
 		pr_info("%s No compatible LED node found\n", __func__);
@@ -2456,9 +2453,6 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	sw_w32(pm, RTL930X_LED_PORT_COPR_MASK_CTRL);
 	sw_w32(pm, RTL930X_LED_PORT_FIB_MASK_CTRL);
 	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
-
-	for (i = 0; i < 24; i++)
-		pr_info("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
 }
 
 const struct rtl838x_reg rtl930x_reg = {

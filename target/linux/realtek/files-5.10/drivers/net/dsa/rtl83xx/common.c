@@ -323,7 +323,6 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
-		pr_info("%s found port %d\n", __func__, pn);
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
 		if (!phy_node) {
 			if (pn != priv->cpu_port)
@@ -331,14 +330,18 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			continue;
 		}
 
-		pr_info("%s port %d has phandle\n", __func__, pn);
 		if (of_property_read_u32(phy_node, "sds", &priv->ports[pn].sds_num))
 			priv->ports[pn].sds_num = -1;
 		else {
-			pr_info("%s sds port %d is %d\n", __func__, pn,
+			pr_info("%s port %d is sds %d\n", __func__, pn,
 				priv->ports[pn].sds_num);
 		}
-		pr_info("%s port %d has SDS\n", __func__, priv->ports[pn].sds_num);
+		/*
+		 * The pr_debug below adds a lot of overhead, so as long as
+		 * this pr is here, we need a reschedule
+		 */
+		cond_resched();
+		pr_debug("%s port %d has SDS %d\n", __func__, pn, priv->ports[pn].sds_num);
 
 		if (of_get_phy_mode(dn, &interface))
 			interface = PHY_INTERFACE_MODE_NA;

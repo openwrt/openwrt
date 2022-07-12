@@ -2100,7 +2100,6 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	u32 pn;
 	int ret;
 
-	pr_debug("%s called\n", __func__);
 	mii_np = of_get_child_by_name(priv->pdev->dev.of_node, "mdio-bus");
 
 	if (!mii_np) {
@@ -2172,9 +2171,6 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 
 		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
 			priv->sds_id[pn] = -1;
-		else {
-			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
-		}
 
 		if (pn < MAX_PORTS) {
 			priv->smi_bus[pn] = smi_addr[0];
@@ -2205,9 +2201,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 			continue;
 		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
 			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
-		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
 	}
-
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
 	ret = of_mdiobus_register(priv->mii_bus, mii_np);
 
