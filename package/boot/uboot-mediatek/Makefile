@@ -33,6 +33,7 @@ define U-Boot/mt7620_rfb
   BUILD_TARGET:=ramips
   BUILD_SUBTARGET:=mt7620
   UBOOT_IMAGE:=u-boot-with-spl.bin
+  DEPENDS:=@BROKEN
 endef
 
 define U-Boot/mt7620_mt7530_rfb
@@ -42,6 +43,7 @@ define U-Boot/mt7620_mt7530_rfb
   BUILD_TARGET:=ramips
   BUILD_SUBTARGET:=mt7620
   UBOOT_IMAGE:=u-boot-with-spl.bin
+  DEPENDS:=@BROKEN
 endef
 
 define U-Boot/mt7621_rfb
