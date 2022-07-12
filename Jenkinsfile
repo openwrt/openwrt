@@ -1,6 +1,4 @@
 def devices = ['x86_64',
-               'wrt3200',
-               'wrt32x',
                'espressobin']
 
 def regions = ['us',
