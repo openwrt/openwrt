@@ -4694,18 +4694,19 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
 	int addr = phydev->mdio.addr;
+	int ret = 0;
 
 	/* All base addresses of the PHYs start at multiples of 8 */
 	devm_phy_package_join(dev, phydev, addr & (~7),
 				sizeof(struct rtl83xx_shared_private));
 
-	if (!(addr % 8)) {
+	if (!(addr % 8) && soc_info.family == RTL8380_FAMILY_ID) {
 		struct rtl83xx_shared_private *shared = phydev->shared->priv;
 		shared->name = "RTL8218B (external)";
-		if (soc_info.family == RTL8380_FAMILY_ID) {
-			/* Configuration must be done while patching still possible */
-			return rtl8380_configure_ext_rtl8218b(phydev);
-		}
+		/* Configuration must be done while patching still possible */
+		ret = rtl8380_configure_ext_rtl8218b(phydev);
+		if (ret)
+			return ret;
 	}
 
 	return 0;
@@ -4731,7 +4732,7 @@ static int rtl8218b_int_phy_probe(struct phy_device *phydev)
 		struct rtl83xx_shared_private *shared = phydev->shared->priv;
 		shared->name = "RTL8218B (internal)";
 		/* Configuration must be done while patching still possible */
-		return rtl8380_configure_int_rtl8218b(phydev);
+		ret = rtl8380_configure_int_rtl8218b(phydev);
 	}
 
 	return 0;
@@ -4875,6 +4876,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.features	= PHY_GBIT_FEATURES,
 		.flags		= PHY_HAS_REALTEK_PAGES,
 		.probe		= rtl8218d_phy_probe,
+		.config_init	= rtl9300_configure_8218d,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
