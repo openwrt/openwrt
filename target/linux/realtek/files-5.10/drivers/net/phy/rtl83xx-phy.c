@@ -13,8 +13,10 @@
 #include <linux/netdevice.h>
 #include <linux/firmware.h>
 #include <linux/crc32.h>
+#include <linux/mdio.h>
 #include <linux/sfp.h>
 #include <uapi/linux/ethtool.h>
+#include <uapi/linux/mii.h>
 
 #include "rtl83xx-phy.h"
 
@@ -38,6 +40,54 @@ extern struct mutex smi_lock;
 #define RTL821X_PAGE_STATE		0x0b80
 #define RTL821X_PAGE_PATCH		0x0b82
 #define RTL93XX_PAGE_PATCH              0xffff
+
+/*
+ * The RTL8214QF is a variant of the RTL8295 and RTL8295R (the internal SerDes
+ * for the 10GBit ports of the RTL8396) with the same internal register layout
+ */
+#define RTL8295_PAGE_SDS_CTRL_S0        0x0005
+#define RTL8295_PAGE_SDS_CTRL_S0_RX_DISABLE             BIT(14)
+#define RTL8295_PAGE_SDS_CTRL_S0_RX_ENSELF              BIT(9)
+#define RTL8295_SDS_CTRL_REG_S0    17
+#define RTL8295_SDS_CTRL_REG_S0_MODE_MASK               GENMASK(4, 0)
+#define RTL8295_SDS_CTRL_REG_S0_MODE_SGMII                      0x2
+#define RTL8295_SDS_CTRL_REG_S0_MODE_FIB1G                      0x4
+#define RTL8295_SDS_CTRL_REG_S0_MODE_FIB100M                    0x5
+#define RTL8295_SDS_CTRL_REG_S0_MODE_QSGMII                     0x6
+
+int rtl8295_sds_ctrl_regs[] = { 17, 18, 19, 0, 20, 21, 22, 23 };
+#define PHY_8295_PAGE_BASE_OFFSET_S0	256
+
+static u32  rtl8295_sds_page_offset[] = {
+	PHY_8295_PAGE_BASE_OFFSET_S0,   /* Serdes S0 */
+	768,                            /* Serdes S1 */
+	512,                            /* S0_SLV    */
+	2304,                           /* S1_SLV    */
+	1024,                           /* Serdes S4 */
+	1280,                           /* Serdes S5 */
+	1536,                           /* Serdes S6 */
+	1792,                           /* Serdes S7 */
+	2048,                           /* Broadcast */
+};
+
+#define RTL8295_SDS0_ANA_SPD_5G_REG21_PAGE      (426 - PHY_8295_PAGE_BASE_OFFSET_S0)
+#define RTL8295_SDS0_ANA_SPD_5G_REG21_REG       21
+#define RTL8295_SDS0_ANA_SPD_5G_REG21_RX_EN_SELF                BIT(4)
+
+#define RTL8295_SDS0_ANA_MISC_REG02_PAGE        (384 - PHY_8295_PAGE_BASE_OFFSET_S0)
+#define RTL8295_SDS0_ANA_MISC_REG02_REG         18
+#define RTL8295_SDS0_ANA_MISC_REG02_FRC_BER_NOTIFY_ON           BIT(12)
+#define RTL8295_SDS0_ANA_MISC_REG02_FRC_CKRDY_ON                BIT(10)
+
+#define RTL8295_SDS0_ANA_SPD_1P25G_REG08_PAGE   (401 - PHY_8295_PAGE_BASE_OFFSET_S0)
+#define RTL8295_SDS0_ANA_SPD_1P25G_REG08_REG    16
+
+#define RTL8295_SDS0_SDS_EXT_REG00_PAGE         (260 - PHY_8295_PAGE_BASE_OFFSET_S0)
+#define RTL8295_SDS0_SDS_EXT_REG00_REG          16
+
+#define RTL8295_SDS0_SDS_REG14_PAGE             (257 - PHY_8295_PAGE_BASE_OFFSET_S0)
+#define RTL8295_SDS0_SDS_REG14_REG              22
+#define RTL8295_SDS0_SDS_REG14_SP_SEL_CALIBOK                   BIT(12)
 
 /*
  * Using the special page 0xfff with the MDIO controller found in
@@ -749,23 +799,162 @@ static void rtl821x_phy_setup_package_broadcast(struct phy_device *phydev, bool 
 	mdelay(1);
 }
 
-static int rtl8390_configure_generic(struct phy_device *phydev)
+static int rtl8214qf_sds_mode_set(struct phy_device *phydev, int mode)
 {
-	int mac = phydev->mdio.addr;
-	u32 val, phy_id;
+	u32 v, w;
+	int m, p = 0;
+	int port = phydev->mdio.addr;
+	int sds = 4 + (port % 4);
+	int base_port = port - (port % 4);
+	int reg = rtl8295_sds_ctrl_regs[sds]; /* RTL8295_SDS_CTRL_SDS_CTRL_Sx_REG of SDS */
 
-	val = phy_read(phydev, 2);
-	phy_id = val << 16;
-	val = phy_read(phydev, 3);
-	phy_id |= val;
-	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
+	switch (mode) {
+	case PHY_INTERFACE_MODE_SGMII:
+		m = RTL8295_SDS_CTRL_REG_S0_MODE_SGMII;
+		break;
+	case PHY_INTERFACE_MODE_1000BASEX:
+		m = RTL8295_SDS_CTRL_REG_S0_MODE_FIB1G;
+		break;
+	default:
+		return -ENOTSUPP;
+	}
 
-	/* Read internal PHY ID */
-	phy_write_paged(phydev, 31, 27, 0x0002);
-	val = phy_read_paged(phydev, 31, 28);
+	pr_debug("%s port %d, sds %d, base port %d, reg 0x%x\n", __func__, port, sds, base_port, reg);
 
-	/* Internal RTL8218B, version 2 */
-	phydev_info(phydev, "Detected unknown %x\n", val);
+	v = phy_package_port_read_paged(phydev, p, RTL8295_PAGE_SDS_CTRL_S0, reg);
+	pr_debug("%s port %d, ctrl reg is 0x%x, current mode is 0x%x\n", __func__, port, v, v & RTL8295_SDS_CTRL_REG_S0_MODE_MASK);
+
+	v |= RTL8295_SDS_CTRL_REG_S0_MODE_MASK;
+
+	phy_package_port_write_paged(phydev, p, RTL8295_PAGE_SDS_CTRL_S0, reg, v);
+	v = (v & (~RTL8295_SDS_CTRL_REG_S0_MODE_MASK)) | m;
+
+	msleep(1);
+
+	phy_package_port_write_paged(phydev, p, RTL8295_PAGE_SDS_CTRL_S0, reg, v);
+
+	/* Enable SerDes */
+	v = phy_package_port_read_paged(phydev, p,
+	                                rtl8295_sds_page_offset[sds] + RTL8295_SDS0_ANA_MISC_REG02_PAGE,
+	                                RTL8295_SDS0_ANA_MISC_REG02_REG);
+
+	v &= ~RTL8295_SDS0_ANA_MISC_REG02_FRC_BER_NOTIFY_ON;
+	phy_package_port_write_paged(phydev, p,
+	                             rtl8295_sds_page_offset[sds] + RTL8295_SDS0_ANA_MISC_REG02_PAGE,
+	                             RTL8295_SDS0_ANA_MISC_REG02_REG, v);
+
+	/* Setup 1.25G mode */
+	v = phy_package_port_read_paged(phydev, p,
+	                                rtl8295_sds_page_offset[sds] + RTL8295_SDS0_SDS_REG14_PAGE,
+	                                RTL8295_SDS0_SDS_REG14_REG);
+	v &= ~RTL8295_SDS0_SDS_REG14_SP_SEL_CALIBOK;
+	phy_package_port_write_paged(phydev, p,
+	                             rtl8295_sds_page_offset[sds] + RTL8295_SDS0_SDS_REG14_PAGE,
+	                             RTL8295_SDS0_SDS_REG14_REG, v);
+
+	v = phy_package_port_read_paged(phydev, p,
+	                                rtl8295_sds_page_offset[sds] +RTL8295_SDS0_ANA_MISC_REG02_PAGE,
+	                                RTL8295_SDS0_ANA_MISC_REG02_REG);
+	v &= ~RTL8295_SDS0_ANA_MISC_REG02_FRC_BER_NOTIFY_ON;
+	phy_package_port_write_paged(phydev, p,
+	                             rtl8295_sds_page_offset[sds] + RTL8295_SDS0_ANA_MISC_REG02_PAGE,
+	                             RTL8295_SDS0_ANA_MISC_REG02_REG, v);
+
+	/* Reset the port-side SerDes */
+	v = phy_package_port_read_paged(phydev, p,
+	                                rtl8295_sds_page_offset[sds] + RTL8295_SDS0_ANA_MISC_REG02_PAGE,
+	                                RTL8295_SDS0_ANA_MISC_REG02_REG);
+	v |= RTL8295_SDS0_ANA_MISC_REG02_FRC_CKRDY_ON;
+	phy_package_port_write_paged(phydev, p,
+	                             rtl8295_sds_page_offset[sds] + RTL8295_SDS0_ANA_MISC_REG02_PAGE,
+	                             RTL8295_SDS0_ANA_MISC_REG02_REG, v);
+	msleep(1);
+
+	v &= ~RTL8295_SDS0_ANA_MISC_REG02_FRC_CKRDY_ON;
+	phy_package_port_write_paged(phydev, p,
+	                             rtl8295_sds_page_offset[sds] + RTL8295_SDS0_ANA_MISC_REG02_PAGE,
+	                             RTL8295_SDS0_ANA_MISC_REG02_REG, v);
+
+	/* Reset RX (fiber): RX_DISABLE: 1 >> RX_ENSELF: 1 >> RX_ENSELF: 0 >> RX_DISABLE: 0 */
+	v = phy_package_port_read_paged(phydev, p, RTL8295_PAGE_SDS_CTRL_S0, reg);
+	w = phy_package_port_read_paged(phydev, p,
+	                                rtl8295_sds_page_offset[sds] + RTL8295_SDS0_ANA_SPD_1P25G_REG08_PAGE,
+	                                RTL8295_SDS0_ANA_SPD_1P25G_REG08_REG);
+
+	pr_debug("%s port %d, RTL8295_SDS0_ANA_SPD_1P25G_REG08_REG is %x\n", __func__, port, w);
+
+	phy_package_port_write_paged(phydev, p, RTL8295_PAGE_SDS_CTRL_S0, reg,
+	                             v | RTL8295_PAGE_SDS_CTRL_S0_RX_DISABLE);
+
+	phy_package_port_write_paged(phydev, p,
+	                             rtl8295_sds_page_offset[sds] + RTL8295_SDS0_ANA_SPD_1P25G_REG08_PAGE,
+	                             RTL8295_SDS0_ANA_SPD_1P25G_REG08_REG,
+	                             w | RTL8295_PAGE_SDS_CTRL_S0_RX_ENSELF);
+
+	phy_package_port_write_paged(phydev, p,
+	                             rtl8295_sds_page_offset[sds] + RTL8295_SDS0_ANA_SPD_1P25G_REG08_PAGE,
+	                             RTL8295_SDS0_ANA_SPD_1P25G_REG08_REG,
+	                             w & ~RTL8295_PAGE_SDS_CTRL_S0_RX_ENSELF);
+
+	phy_package_port_write_paged(phydev, p, RTL8295_PAGE_SDS_CTRL_S0, reg,
+	                             v & ~RTL8295_PAGE_SDS_CTRL_S0_RX_DISABLE);
+
+	/* Clear Counter */
+	phy_package_port_write_paged(phydev, p,
+	                             rtl8295_sds_page_offset[sds] + RTL8295_SDS0_SDS_EXT_REG00_PAGE,
+	                             RTL8295_SDS0_SDS_EXT_REG00_REG, 0);
+
+	/* Restart PHY */
+	phy_set_bits(phydev, MII_BMCR, BMCR_RESET);
+	msleep(1);
+	phy_clear_bits(phydev, MII_BMCR, BMCR_RESET);
+
+	return 0;
+}
+
+/*
+ * The RTL8214QF is a quad 1000BaseX/100FX PHY
+ * It is connected via 5GBit/s QSGMII link to the MAC and provides
+ * up to 4 SGMII links to Ethernet SFP modules and
+ * up to 4 1GBit 100FX/1000Base-X links
+ * It provides 6 SerDes, SerDes 0 being the one facing the MAC,
+ * and SerDes 4 to 7 being the ones facing the PHY
+ */
+static int rtl8214qf_configure(struct phy_device *phydev)
+{
+	int port = phydev->mdio.addr;
+	u32 val;
+
+	/* We only need to configure the package for the base port */
+	if (port % 4)
+		return rtl8214qf_sds_mode_set(phydev, PHY_INTERFACE_MODE_1000BASEX);
+
+	/* Get S0 interface mode (MAC <-> PHY) */
+	val = phy_read_paged(phydev, RTL8295_PAGE_SDS_CTRL_S0, RTL8295_SDS_CTRL_REG_S0);
+	pr_info("%s port %d read control register %x\n", __func__, port, val);
+	val &= RTL8295_SDS_CTRL_REG_S0_MODE_MASK;
+	pr_info("%s port %d serdes mode: %x\n", __func__, port, val);
+
+	if (val != RTL8295_SDS_CTRL_REG_S0_MODE_QSGMII)
+		return -ENOTSUPP;
+
+	/* Reset the 5G serdes */
+	val = phy_read_paged(phydev,
+	                     rtl8295_sds_page_offset[0] + RTL8295_SDS0_ANA_SPD_5G_REG21_PAGE,
+	                     RTL8295_SDS0_ANA_SPD_5G_REG21_REG);
+	pr_info("%s port %d RTL8295_SDS0_ANA_SPD_5G_REG21_REG: %x\n", __func__, port, val);
+	val |= RTL8295_SDS0_ANA_SPD_5G_REG21_RX_EN_SELF;
+	phy_write_paged(phydev,
+	                rtl8295_sds_page_offset[0] + RTL8295_SDS0_ANA_SPD_5G_REG21_PAGE,
+	                RTL8295_SDS0_ANA_SPD_5G_REG21_REG, val);
+	msleep(1);
+	val &= ~RTL8295_SDS0_ANA_SPD_5G_REG21_RX_EN_SELF;
+	val = phy_write_paged(phydev,
+	                      rtl8295_sds_page_offset[0] + RTL8295_SDS0_ANA_SPD_5G_REG21_PAGE,
+	                      RTL8295_SDS0_ANA_SPD_5G_REG21_REG, val);
+
+	rtl8214qf_sds_mode_set(phydev, PHY_INTERFACE_MODE_1000BASEX);
+
 	return 0;
 }
 
@@ -4723,6 +4912,7 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
 	int addr = phydev->mdio.addr;
+	int ret = 0;
 
 	/* All base addresses of the PHYs start at multiples of 8 */
 	devm_phy_package_join(dev, phydev, addr & (~7),
@@ -4732,7 +4922,9 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 		struct rtl83xx_shared_private *shared = phydev->shared->priv;
 		shared->name = "RTL8214C";
 		/* Configuration must be done whil patching still possible */
-		return rtl8380_configure_rtl8214c(phydev);
+		ret = rtl8380_configure_rtl8214c(phydev);
+		if (ret)
+			return ret;
 	}
 	return 0;
 }
@@ -4841,17 +5033,39 @@ static int rtl8393_serdes_probe(struct phy_device *phydev)
 	return rtl8390_configure_serdes(phydev);
 }
 
-static int rtl8390_serdes_probe(struct phy_device *phydev)
+static int rtl8214qf_phy_probe(struct phy_device *phydev)
 {
+	struct device *dev = &phydev->mdio.dev;
 	int addr = phydev->mdio.addr;
+	u32 val;
 
-	if (soc_info.family != RTL8390_FAMILY_ID)
+	/* All base addresses of the PHYs start at multiples of 4 */
+	devm_phy_package_join(dev, phydev, addr & (~7),
+				sizeof(struct rtl83xx_shared_private));
+
+	if (addr % 4)
+		return 0;
+
+	/* Read internal PHY ID */
+	phy_write_paged(phydev, 0, 30, 8);
+	val = phy_read_paged(phydev, 0x279, 16);
+
+	/* Is 8214? */
+	phydev_info(phydev, "Detected internal version %x\n", val);
+	if (val != 0x8214)
 		return -ENODEV;
 
-	if (addr < 24)
+	/* Check minor version: */
+	val = phy_read_paged(phydev, 0x278, 22);
+	phydev_info(phydev, "Detected minor %x\n", val);
+	if ((val & GENMASK(15, 6)) != 0x8980)
 		return -ENODEV;
 
-	return rtl8390_configure_generic(phydev);
+	phydev_info(phydev, "Identified RTL8214QF PHY\n");
+	struct rtl83xx_shared_private *shared = phydev->shared->priv;
+	shared->name = "RTL8214QF";
+
+	return 0;
 }
 
 static int rtl9300_serdes_probe(struct phy_device *phydev)
@@ -4983,11 +5197,13 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.read_status	= rtl8393_read_status,
 	},
 	{
-		PHY_ID_MATCH_MODEL(PHY_ID_RTL8390_GENERIC),
-		.name		= "Realtek RTL8390 Generic",
+		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214QF),
+		.name		= "REALTEK RTL8214QF",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
 		.flags		= PHY_HAS_REALTEK_PAGES,
-		.probe		= rtl8390_serdes_probe,
+		.probe		= rtl8214qf_phy_probe,
+		.config_init	= rtl8214qf_configure,
+		.read_status	= genphy_read_status,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
