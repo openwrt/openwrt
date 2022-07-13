@@ -17,8 +17,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  5 files changed, 330 insertions(+), 2 deletions(-)
  create mode 100644 drivers/pinctrl/mtmips/pinctrl-mt7621.c
 
-diff --git a/drivers/pinctrl/mtmips/Kconfig b/drivers/pinctrl/mtmips/Kconfig
-index 844d5b743f..456f3ea25d 100644
 --- a/drivers/pinctrl/mtmips/Kconfig
 +++ b/drivers/pinctrl/mtmips/Kconfig
 @@ -12,6 +12,15 @@ config PINCTRL_MT7620
@@ -37,19 +35,14 @@ index 844d5b743f..456f3ea25d 100644
  config PINCTRL_MT7628
  	bool "MediaTek MT7628 pin control driver"
  	select PINCTRL_MTMIPS
-diff --git a/drivers/pinctrl/mtmips/Makefile b/drivers/pinctrl/mtmips/Makefile
-index ba945a89a7..8fece4f5fa 100644
 --- a/drivers/pinctrl/mtmips/Makefile
 +++ b/drivers/pinctrl/mtmips/Makefile
-@@ -5,4 +5,5 @@ obj-$(CONFIG_PINCTRL_MTMIPS) += pinctrl-mtmips-common.o
+@@ -5,4 +5,5 @@ obj-$(CONFIG_PINCTRL_MTMIPS) += pinctrl-
  
  # SoC Drivers
  obj-$(CONFIG_PINCTRL_MT7620) += pinctrl-mt7620.o
 +obj-$(CONFIG_PINCTRL_MT7621) += pinctrl-mt7621.o
  obj-$(CONFIG_PINCTRL_MT7628) += pinctrl-mt7628.o
-diff --git a/drivers/pinctrl/mtmips/pinctrl-mt7621.c b/drivers/pinctrl/mtmips/pinctrl-mt7621.c
-new file mode 100644
-index 0000000000..3e98a01bad
 --- /dev/null
 +++ b/drivers/pinctrl/mtmips/pinctrl-mt7621.c
 @@ -0,0 +1,306 @@
@@ -359,8 +352,6 @@ index 0000000000..3e98a01bad
 +	.probe = mt7621_pinctrl_probe,
 +	.priv_auto = sizeof(struct mt7621_pinctrl_priv),
 +};
-diff --git a/drivers/pinctrl/mtmips/pinctrl-mtmips-common.c b/drivers/pinctrl/mtmips/pinctrl-mtmips-common.c
-index e361916eb2..869b781068 100644
 --- a/drivers/pinctrl/mtmips/pinctrl-mtmips-common.c
 +++ b/drivers/pinctrl/mtmips/pinctrl-mtmips-common.c
 @@ -13,8 +13,8 @@
@@ -374,8 +365,6 @@ index e361916eb2..869b781068 100644
  {
  	u32 val;
  
-diff --git a/drivers/pinctrl/mtmips/pinctrl-mtmips-common.h b/drivers/pinctrl/mtmips/pinctrl-mtmips-common.h
-index b51d8f009c..1f1023ef42 100644
 --- a/drivers/pinctrl/mtmips/pinctrl-mtmips-common.h
 +++ b/drivers/pinctrl/mtmips/pinctrl-mtmips-common.h
 @@ -22,6 +22,10 @@ struct mtmips_pmx_group {
@@ -404,6 +393,3 @@ index b51d8f009c..1f1023ef42 100644
  int mtmips_get_functions_count(struct udevice *dev);
  const char *mtmips_get_function_name(struct udevice *dev,
  				     unsigned int selector);
--- 
-2.36.1
-

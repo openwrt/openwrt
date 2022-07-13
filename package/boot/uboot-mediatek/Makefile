@@ -33,7 +33,6 @@ define U-Boot/mt7620_rfb
   BUILD_TARGET:=ramips
   BUILD_SUBTARGET:=mt7620
   UBOOT_IMAGE:=u-boot-with-spl.bin
-  DEPENDS:=@BROKEN
 endef
 
 define U-Boot/mt7620_mt7530_rfb
@@ -43,7 +42,6 @@ define U-Boot/mt7620_mt7530_rfb
   BUILD_TARGET:=ramips
   BUILD_SUBTARGET:=mt7620
   UBOOT_IMAGE:=u-boot-with-spl.bin
-  DEPENDS:=@BROKEN
 endef
 
 define U-Boot/mt7621_rfb
@@ -53,7 +51,6 @@ define U-Boot/mt7621_rfb
   BUILD_TARGET:=ramips
   BUILD_SUBTARGET:=mt7621
   UBOOT_IMAGE:=u-boot-mt7621.bin
-  DEPENDS:=@BROKEN
 endef
 
 define U-Boot/mt7621_nand_rfb
@@ -63,7 +60,6 @@ define U-Boot/mt7621_nand_rfb
   BUILD_TARGET:=ramips
   BUILD_SUBTARGET:=mt7621
   UBOOT_IMAGE:=u-boot-mt7621.bin
-  DEPENDS:=@BROKEN
 endef
 
 define U-Boot/mt7622_rfb1

@@ -122,7 +122,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  /*
   * An iterator function for menu items. callback will be called for each item
   * in m, with m, a pointer to the item, and extra being passed to callback. If
-@@ -426,7 +445,7 @@ int menu_destroy(struct menu *m)
+@@ -426,7 +438,7 @@ int menu_destroy(struct menu *m)
  }
  
  void bootmenu_autoboot_loop(struct bootmenu_data *menu,
@@ -131,7 +131,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  {
  	int i, c;
  
-@@ -456,6 +475,19 @@ void bootmenu_autoboot_loop(struct bootm
+@@ -456,6 +468,19 @@ void bootmenu_autoboot_loop(struct bootm
  				break;
  			default:
  				*key = KEY_NONE;
@@ -151,7 +151,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  				break;
  			}
  
-@@ -475,10 +507,16 @@ void bootmenu_autoboot_loop(struct bootm
+@@ -475,10 +500,16 @@ void bootmenu_autoboot_loop(struct bootm
  }
  
  void bootmenu_loop(struct bootmenu_data *menu,
@@ -169,7 +169,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	if (*esc == 1) {
  		if (tstc()) {
  			c = getchar();
-@@ -504,6 +542,14 @@ void bootmenu_loop(struct bootmenu_data
+@@ -504,6 +535,14 @@ void bootmenu_loop(struct bootmenu_data
  		if (c == '\e') {
  			*esc = 1;
  			*key = KEY_NONE;

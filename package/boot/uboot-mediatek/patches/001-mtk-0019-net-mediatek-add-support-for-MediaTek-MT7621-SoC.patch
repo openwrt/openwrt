@@ -12,8 +12,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  drivers/net/mtk_eth.c | 21 +++++++++++++++------
  1 file changed, 15 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/net/mtk_eth.c b/drivers/net/mtk_eth.c
-index ac1e8abd71..4fe7ee0d36 100644
 --- a/drivers/net/mtk_eth.c
 +++ b/drivers/net/mtk_eth.c
 @@ -145,7 +145,8 @@ enum mtk_switch {
@@ -26,7 +24,7 @@ index ac1e8abd71..4fe7ee0d36 100644
  };
  
  struct mtk_eth_priv {
-@@ -675,12 +676,18 @@ static int mt7530_pad_clk_setup(struct mtk_eth_priv *priv, int mode)
+@@ -675,12 +676,18 @@ static int mt7530_pad_clk_setup(struct m
  static int mt7530_setup(struct mtk_eth_priv *priv)
  {
  	u16 phy_addr, phy_val;
@@ -49,7 +47,7 @@ index ac1e8abd71..4fe7ee0d36 100644
  
  	/* Modify HWTRAP first to allow direct access to internal PHYs */
  	mt753x_reg_read(priv, HWTRAP_REG, &val);
-@@ -738,7 +745,8 @@ static int mt7530_setup(struct mtk_eth_priv *priv)
+@@ -738,7 +745,8 @@ static int mt7530_setup(struct mtk_eth_p
  	/* Lower Tx Driving for TRGMII path */
  	for (i = 0 ; i < NUM_TRGMII_CTRL ; i++)
  		mt753x_reg_write(priv, MT7530_TRGMII_TD_ODT(i),
@@ -59,7 +57,7 @@ index ac1e8abd71..4fe7ee0d36 100644
  
  	for (i = 0 ; i < NUM_TRGMII_CTRL; i++)
  		mt753x_reg_rmw(priv, MT7530_TRGMII_RD(i), RD_TAP_M, 16);
-@@ -1540,6 +1548,7 @@ static const struct udevice_id mtk_eth_ids[] = {
+@@ -1540,6 +1548,7 @@ static const struct udevice_id mtk_eth_i
  	{ .compatible = "mediatek,mt7629-eth", .data = SOC_MT7629 },
  	{ .compatible = "mediatek,mt7623-eth", .data = SOC_MT7623 },
  	{ .compatible = "mediatek,mt7622-eth", .data = SOC_MT7622 },
@@ -67,6 +65,3 @@ index ac1e8abd71..4fe7ee0d36 100644
  	{}
  };
  
--- 
-2.36.1
-

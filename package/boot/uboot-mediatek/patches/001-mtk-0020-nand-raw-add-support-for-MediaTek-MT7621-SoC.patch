@@ -19,8 +19,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  create mode 100644 drivers/mtd/nand/raw/mt7621_nand.h
  create mode 100644 drivers/mtd/nand/raw/mt7621_nand_spl.c
 
-diff --git a/drivers/mtd/nand/raw/Kconfig b/drivers/mtd/nand/raw/Kconfig
-index d75f371c95..1663f1941c 100644
 --- a/drivers/mtd/nand/raw/Kconfig
 +++ b/drivers/mtd/nand/raw/Kconfig
 @@ -521,12 +521,25 @@ config TEGRA_NAND
@@ -59,8 +57,6 @@ index d75f371c95..1663f1941c 100644
  	help
  	  Number of data bytes in one page for the NAND chip on the
  	  board, not including the OOB area.
-diff --git a/drivers/mtd/nand/raw/Makefile b/drivers/mtd/nand/raw/Makefile
-index 6ec3581d20..cfc9c0fff0 100644
 --- a/drivers/mtd/nand/raw/Makefile
 +++ b/drivers/mtd/nand/raw/Makefile
 @@ -72,6 +72,7 @@ obj-$(CONFIG_NAND_ZYNQ) += zynq_nand.o
@@ -71,16 +67,13 @@ index 6ec3581d20..cfc9c0fff0 100644
  
  else  # minimal SPL drivers
  
-@@ -80,5 +81,6 @@ obj-$(CONFIG_NAND_FSL_IFC) += fsl_ifc_spl.o
+@@ -80,5 +81,6 @@ obj-$(CONFIG_NAND_FSL_IFC) += fsl_ifc_sp
  obj-$(CONFIG_NAND_MXC) += mxc_nand_spl.o
  obj-$(CONFIG_NAND_MXS) += mxs_nand_spl.o mxs_nand.o
  obj-$(CONFIG_NAND_SUNXI) += sunxi_nand_spl.o
 +obj-$(CONFIG_NAND_MT7621) += mt7621_nand_spl.o mt7621_nand.o
  
  endif # drivers
-diff --git a/drivers/mtd/nand/raw/mt7621_nand.c b/drivers/mtd/nand/raw/mt7621_nand.c
-new file mode 100644
-index 0000000000..2fd8934939
 --- /dev/null
 +++ b/drivers/mtd/nand/raw/mt7621_nand.c
 @@ -0,0 +1,1205 @@
@@ -1289,9 +1282,6 @@ index 0000000000..2fd8934939
 +	mt7621_nfc_set_regs(&nfc_dev);
 +	mt7621_nfc_init_chip(&nfc_dev);
 +}
-diff --git a/drivers/mtd/nand/raw/mt7621_nand.h b/drivers/mtd/nand/raw/mt7621_nand.h
-new file mode 100644
-index 0000000000..af4bc55961
 --- /dev/null
 +++ b/drivers/mtd/nand/raw/mt7621_nand.h
 @@ -0,0 +1,29 @@
@@ -1324,9 +1314,6 @@ index 0000000000..af4bc55961
 +int mt7621_nfc_spl_post_init(struct mt7621_nfc *nfc);
 +
 +#endif /* _MT7621_NAND_H_ */
-diff --git a/drivers/mtd/nand/raw/mt7621_nand_spl.c b/drivers/mtd/nand/raw/mt7621_nand_spl.c
-new file mode 100644
-index 0000000000..114fc8b7ce
 --- /dev/null
 +++ b/drivers/mtd/nand/raw/mt7621_nand_spl.c
 @@ -0,0 +1,237 @@
@@ -1567,6 +1554,3 @@ index 0000000000..114fc8b7ce
 +
 +	nand_valid = 1;
 +}
--- 
-2.36.1
-

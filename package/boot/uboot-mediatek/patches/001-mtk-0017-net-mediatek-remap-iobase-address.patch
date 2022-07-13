@@ -20,11 +20,9 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  drivers/net/mtk_eth.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/mtk_eth.c b/drivers/net/mtk_eth.c
-index 666ddeb10d..caa83b7cec 100644
 --- a/drivers/net/mtk_eth.c
 +++ b/drivers/net/mtk_eth.c
-@@ -1419,7 +1419,7 @@ static int mtk_eth_of_to_plat(struct udevice *dev)
+@@ -1419,7 +1419,7 @@ static int mtk_eth_of_to_plat(struct ude
  
  	priv->soc = dev_get_driver_data(dev);
  
@@ -33,6 +31,3 @@ index 666ddeb10d..caa83b7cec 100644
  
  	/* get corresponding ethsys phandle */
  	ret = dev_read_phandle_with_args(dev, "mediatek,ethsys", NULL, 0, 0,
--- 
-2.36.1
-

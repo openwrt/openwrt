@@ -17,8 +17,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  create mode 100644 drivers/clk/mtmips/clk-mt7621.c
  create mode 100644 include/dt-bindings/clock/mt7621-clk.h
 
-diff --git a/drivers/clk/mtmips/Makefile b/drivers/clk/mtmips/Makefile
-index 732e7f2545..ee8b5afe87 100644
 --- a/drivers/clk/mtmips/Makefile
 +++ b/drivers/clk/mtmips/Makefile
 @@ -1,4 +1,5 @@
@@ -27,9 +25,6 @@ index 732e7f2545..ee8b5afe87 100644
  obj-$(CONFIG_SOC_MT7620) += clk-mt7620.o
 +obj-$(CONFIG_SOC_MT7621) += clk-mt7621.o
  obj-$(CONFIG_SOC_MT7628) += clk-mt7628.o
-diff --git a/drivers/clk/mtmips/clk-mt7621.c b/drivers/clk/mtmips/clk-mt7621.c
-new file mode 100644
-index 0000000000..03363b70d7
 --- /dev/null
 +++ b/drivers/clk/mtmips/clk-mt7621.c
 @@ -0,0 +1,288 @@
@@ -321,9 +316,6 @@ index 0000000000..03363b70d7
 +	.priv_auto = sizeof(struct mt7621_clk_priv),
 +	.ops = &mt7621_clk_ops,
 +};
-diff --git a/include/dt-bindings/clock/mt7621-clk.h b/include/dt-bindings/clock/mt7621-clk.h
-new file mode 100644
-index 0000000000..978c67951b
 --- /dev/null
 +++ b/include/dt-bindings/clock/mt7621-clk.h
 @@ -0,0 +1,46 @@
@@ -373,6 +365,3 @@ index 0000000000..978c67951b
 +#define MT7621_CLK_DDR		29
 +
 +#endif /* _DT_BINDINGS_MT7621_CLK_H_ */
--- 
-2.36.1
-

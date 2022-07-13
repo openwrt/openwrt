@@ -18,8 +18,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  drivers/net/mtk_eth.c | 22 +++++++++++-----------
  1 file changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/net/mtk_eth.c b/drivers/net/mtk_eth.c
-index caa83b7cec..ac1e8abd71 100644
 --- a/drivers/net/mtk_eth.c
 +++ b/drivers/net/mtk_eth.c
 @@ -159,9 +159,10 @@ struct mtk_eth_priv {
@@ -34,7 +32,7 @@ index caa83b7cec..ac1e8abd71 100644
  	struct mii_dev *mdio_bus;
  	int (*mii_read)(struct mtk_eth_priv *priv, u8 phy, u8 reg);
  	int (*mii_write)(struct mtk_eth_priv *priv, u8 phy, u8 reg, u16 val);
-@@ -233,7 +234,12 @@ static void mtk_gmac_rmw(struct mtk_eth_priv *priv, u32 reg, u32 clr, u32 set)
+@@ -233,7 +234,12 @@ static void mtk_gmac_rmw(struct mtk_eth_
  static void mtk_ethsys_rmw(struct mtk_eth_priv *priv, u32 reg, u32 clr,
  			   u32 set)
  {
@@ -48,7 +46,7 @@ index caa83b7cec..ac1e8abd71 100644
  }
  
  /* Direct MDIO clause 22/45 access via SoC */
-@@ -1427,15 +1433,9 @@ static int mtk_eth_of_to_plat(struct udevice *dev)
+@@ -1427,15 +1433,9 @@ static int mtk_eth_of_to_plat(struct ude
  	if (ret)
  		return ret;
  
@@ -67,6 +65,3 @@ index caa83b7cec..ac1e8abd71 100644
  
  	/* Reset controllers */
  	ret = reset_get_by_name(dev, "fe", &priv->rst_fe);
--- 
-2.36.1
-

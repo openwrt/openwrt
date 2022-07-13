@@ -11,11 +11,9 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  drivers/mmc/mtk-sd.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
-diff --git a/drivers/mmc/mtk-sd.c b/drivers/mmc/mtk-sd.c
-index 97182ffd7f..e61e8cf4b9 100644
 --- a/drivers/mmc/mtk-sd.c
 +++ b/drivers/mmc/mtk-sd.c
-@@ -1761,6 +1761,18 @@ static const struct msdc_compatible mt7620_compat = {
+@@ -1761,6 +1761,18 @@ static const struct msdc_compatible mt76
  	.default_pad_dly = true,
  };
  
@@ -34,7 +32,7 @@ index 97182ffd7f..e61e8cf4b9 100644
  static const struct msdc_compatible mt7622_compat = {
  	.clk_div_bits = 12,
  	.pad_tune0 = true,
-@@ -1809,6 +1821,7 @@ static const struct msdc_compatible mt8183_compat = {
+@@ -1809,6 +1821,7 @@ static const struct msdc_compatible mt81
  
  static const struct udevice_id msdc_ids[] = {
  	{ .compatible = "mediatek,mt7620-mmc", .data = (ulong)&mt7620_compat },
@@ -42,6 +40,3 @@ index 97182ffd7f..e61e8cf4b9 100644
  	{ .compatible = "mediatek,mt7622-mmc", .data = (ulong)&mt7622_compat },
  	{ .compatible = "mediatek,mt7623-mmc", .data = (ulong)&mt7623_compat },
  	{ .compatible = "mediatek,mt8512-mmc", .data = (ulong)&mt8512_compat },
--- 
-2.36.1
-

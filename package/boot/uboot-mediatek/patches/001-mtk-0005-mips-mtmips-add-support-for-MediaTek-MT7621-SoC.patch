@@ -63,9 +63,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  create mode 100644 arch/mips/mach-mtmips/mt7621/tpl/tpl.c
  create mode 100644 include/configs/mt7621.h
 
-diff --git a/arch/mips/dts/mt7621-u-boot.dtsi b/arch/mips/dts/mt7621-u-boot.dtsi
-new file mode 100644
-index 0000000000..c5a8aa357f
 --- /dev/null
 +++ b/arch/mips/dts/mt7621-u-boot.dtsi
 @@ -0,0 +1,111 @@
@@ -180,9 +177,6 @@ index 0000000000..c5a8aa357f
 +		};
 +	};
 +};
-diff --git a/arch/mips/dts/mt7621.dtsi b/arch/mips/dts/mt7621.dtsi
-new file mode 100644
-index 0000000000..c32b6095e9
 --- /dev/null
 +++ b/arch/mips/dts/mt7621.dtsi
 @@ -0,0 +1,349 @@
@@ -535,8 +529,6 @@ index 0000000000..c32b6095e9
 +		#size-cells = <0>;
 +	};
 +};
-diff --git a/arch/mips/mach-mtmips/Kconfig b/arch/mips/mach-mtmips/Kconfig
-index 151b004603..d46be503a2 100644
 --- a/arch/mips/mach-mtmips/Kconfig
 +++ b/arch/mips/mach-mtmips/Kconfig
 @@ -9,6 +9,7 @@ config SYS_MALLOC_F_LEN
@@ -630,8 +622,6 @@ index 151b004603..d46be503a2 100644
  source "arch/mips/mach-mtmips/mt7628/Kconfig"
  
  endmenu
-diff --git a/arch/mips/mach-mtmips/Makefile b/arch/mips/mach-mtmips/Makefile
-index 4909b47ef2..19f1e07033 100644
 --- a/arch/mips/mach-mtmips/Makefile
 +++ b/arch/mips/mach-mtmips/Makefile
 @@ -1,9 +1,13 @@
@@ -648,8 +638,6 @@ index 4909b47ef2..19f1e07033 100644
  obj-$(CONFIG_SOC_MT7620) += mt7620/
 +obj-$(CONFIG_SOC_MT7621) += mt7621/
  obj-$(CONFIG_SOC_MT7628) += mt7628/
-diff --git a/arch/mips/mach-mtmips/cpu.c b/arch/mips/mach-mtmips/cpu.c
-index a4b5cff61d..f1e9022738 100644
 --- a/arch/mips/mach-mtmips/cpu.c
 +++ b/arch/mips/mach-mtmips/cpu.c
 @@ -16,7 +16,7 @@ DECLARE_GLOBAL_DATA_PTR;
@@ -661,9 +649,6 @@ index a4b5cff61d..f1e9022738 100644
  
  	return 0;
  }
-diff --git a/arch/mips/mach-mtmips/mt7621/Kconfig b/arch/mips/mach-mtmips/mt7621/Kconfig
-new file mode 100644
-index 0000000000..37d512c68f
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/Kconfig
 @@ -0,0 +1,95 @@
@@ -762,9 +747,6 @@ index 0000000000..37d512c68f
 +	default "mediatek" if BOARD_MT7621_RFB || BOARD_MT7621_NAND_RFB
 +
 +endif
-diff --git a/arch/mips/mach-mtmips/mt7621/Makefile b/arch/mips/mach-mtmips/mt7621/Makefile
-new file mode 100644
-index 0000000000..bf1b0bb688
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/Makefile
 @@ -0,0 +1,14 @@
@@ -782,9 +764,6 @@ index 0000000000..bf1b0bb688
 +
 +obj-y += sram_init.o
 +endif
-diff --git a/arch/mips/mach-mtmips/mt7621/init.c b/arch/mips/mach-mtmips/mt7621/init.c
-new file mode 100644
-index 0000000000..d21848ad23
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/init.c
 @@ -0,0 +1,246 @@
@@ -1034,9 +1013,6 @@ index 0000000000..d21848ad23
 +	while (1)
 +		writel(SYS_RST, sysc + SYSCTL_RSTCTL_REG);
 +}
-diff --git a/arch/mips/mach-mtmips/mt7621/mt7621.h b/arch/mips/mach-mtmips/mt7621/mt7621.h
-new file mode 100644
-index 0000000000..916cc993b4
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/mt7621.h
 @@ -0,0 +1,229 @@
@@ -1269,9 +1245,6 @@ index 0000000000..916cc993b4
 +#endif
 +
 +#endif /* _MT7621_H_ */
-diff --git a/arch/mips/mach-mtmips/mt7621/serial.c b/arch/mips/mach-mtmips/mt7621/serial.c
-new file mode 100644
-index 0000000000..0ccc71dc75
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/serial.c
 @@ -0,0 +1,23 @@
@@ -1298,9 +1271,6 @@ index 0000000000..0ccc71dc75
 +	clrbits_32(base + SYSCTL_GPIOMODE_REG, UART3_MODE_M);
 +#endif
 +}
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/Makefile b/arch/mips/mach-mtmips/mt7621/spl/Makefile
-new file mode 100644
-index 0000000000..ebe54e79b9
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/Makefile
 @@ -0,0 +1,9 @@
@@ -1313,9 +1283,6 @@ index 0000000000..ebe54e79b9
 +obj-y += serial.o
 +obj-y += launch.o
 +obj-y += launch_ll.o
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/cps.c b/arch/mips/mach-mtmips/mt7621/spl/cps.c
-new file mode 100644
-index 0000000000..779e646c12
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/cps.c
 @@ -0,0 +1,153 @@
@@ -1472,9 +1439,6 @@ index 0000000000..779e646c12
 +	gic_init();
 +	cm_init(cm_base);
 +}
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/dram.c b/arch/mips/mach-mtmips/mt7621/spl/dram.c
-new file mode 100644
-index 0000000000..100adfb93a
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/dram.c
 @@ -0,0 +1,153 @@
@@ -1631,9 +1595,6 @@ index 0000000000..100adfb93a
 +	new_stage_bin->ddr_pll_cfg = DDR_FREQ_PARAM;
 +	new_stage_bin->baudrate = CONFIG_BAUDRATE;
 +}
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/dram.h b/arch/mips/mach-mtmips/mt7621/spl/dram.h
-new file mode 100644
-index 0000000000..7322c58276
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/dram.h
 @@ -0,0 +1,39 @@
@@ -1676,9 +1637,6 @@ index 0000000000..7322c58276
 +#endif
 +
 +#endif /* _MT7621_DRAM_H_ */
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/launch.c b/arch/mips/mach-mtmips/mt7621/spl/launch.c
-new file mode 100644
-index 0000000000..37c20a5f56
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/launch.c
 @@ -0,0 +1,100 @@
@@ -1782,9 +1740,6 @@ index 0000000000..37c20a5f56
 +			break;
 +	}
 +}
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/launch.h b/arch/mips/mach-mtmips/mt7621/spl/launch.h
-new file mode 100644
-index 0000000000..f34250d605
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/launch.h
 @@ -0,0 +1,52 @@
@@ -1840,9 +1795,6 @@ index 0000000000..f34250d605
 +#define LAUNCHPERIOD		10000
 +
 +#endif /* _LAUNCH_H_ */
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/launch_ll.S b/arch/mips/mach-mtmips/mt7621/spl/launch_ll.S
-new file mode 100644
-index 0000000000..32d28c7539
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/launch_ll.S
 @@ -0,0 +1,339 @@
@@ -2185,9 +2137,6 @@ index 0000000000..32d28c7539
 +_vpe1_init_done:
 +	jr	ra
 +	END(boot_vpe1)
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/serial.c b/arch/mips/mach-mtmips/mt7621/spl/serial.c
-new file mode 100644
-index 0000000000..5cf093a078
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/serial.c
 @@ -0,0 +1,24 @@
@@ -2215,9 +2164,6 @@ index 0000000000..5cf093a078
 +#endif /* CONFIG_CONS_INDEX */
 +#endif /* CONFIG_SPL_SERIAL */
 +}
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/spl.c b/arch/mips/mach-mtmips/mt7621/spl/spl.c
-new file mode 100644
-index 0000000000..71d01aa7f5
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/spl.c
 @@ -0,0 +1,95 @@
@@ -2316,9 +2262,6 @@ index 0000000000..71d01aa7f5
 +
 +	return addr;
 +}
-diff --git a/arch/mips/mach-mtmips/mt7621/spl/start.S b/arch/mips/mach-mtmips/mt7621/spl/start.S
-new file mode 100644
-index 0000000000..3cad3567e7
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/spl/start.S
 @@ -0,0 +1,226 @@
@@ -2548,9 +2491,6 @@ index 0000000000..3cad3567e7
 +	 move	ra, zero
 +
 +	END(_start)
-diff --git a/arch/mips/mach-mtmips/mt7621/sram_init.S b/arch/mips/mach-mtmips/mt7621/sram_init.S
-new file mode 100644
-index 0000000000..03b9eab10b
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/sram_init.S
 @@ -0,0 +1,22 @@
@@ -2576,9 +2516,6 @@ index 0000000000..03b9eab10b
 +
 +	jr	ra
 +	END(mips_sram_init)
-diff --git a/arch/mips/mach-mtmips/mt7621/tpl/Makefile b/arch/mips/mach-mtmips/mt7621/tpl/Makefile
-new file mode 100644
-index 0000000000..471ad74249
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/tpl/Makefile
 @@ -0,0 +1,4 @@
@@ -2586,9 +2523,6 @@ index 0000000000..471ad74249
 +extra-y += start.o
 +
 +obj-y += tpl.o
-diff --git a/arch/mips/mach-mtmips/mt7621/tpl/start.S b/arch/mips/mach-mtmips/mt7621/tpl/start.S
-new file mode 100644
-index 0000000000..19b09f7251
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/tpl/start.S
 @@ -0,0 +1,161 @@
@@ -2753,9 +2687,6 @@ index 0000000000..19b09f7251
 +	 nop
 +
 +	END(_start)
-diff --git a/arch/mips/mach-mtmips/mt7621/tpl/tpl.c b/arch/mips/mach-mtmips/mt7621/tpl/tpl.c
-new file mode 100644
-index 0000000000..2a828907a3
 --- /dev/null
 +++ b/arch/mips/mach-mtmips/mt7621/tpl/tpl.c
 @@ -0,0 +1,144 @@
@@ -2903,9 +2834,6 @@ index 0000000000..2a828907a3
 +	for (;;)
 +		;
 +}
-diff --git a/include/configs/mt7621.h b/include/configs/mt7621.h
-new file mode 100644
-index 0000000000..dac6aa4afb
 --- /dev/null
 +++ b/include/configs/mt7621.h
 @@ -0,0 +1,65 @@
@@ -2974,6 +2902,3 @@ index 0000000000..dac6aa4afb
 +#define CONFIG_SYS_UBOOT_BASE		0
 +
 +#endif /* __CONFIG_MT7621_H */
--- 
-2.36.1
-

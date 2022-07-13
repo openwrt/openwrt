@@ -18,11 +18,9 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  common/spl/spl_legacy.c | 21 +++++++++++++++++++--
  1 file changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/common/spl/spl_legacy.c b/common/spl/spl_legacy.c
-index 2ec7154423..ae8731c782 100644
 --- a/common/spl/spl_legacy.c
 +++ b/common/spl/spl_legacy.c
-@@ -88,15 +88,29 @@ int spl_load_legacy_img(struct spl_image_info *spl_image,
+@@ -88,15 +88,29 @@ int spl_load_legacy_img(struct spl_image
  	/* Read header into local struct */
  	load->read(load, header, sizeof(hdr), &hdr);
  
@@ -54,7 +52,7 @@ index 2ec7154423..ae8731c782 100644
  		load->read(load, dataptr, spl_image->size,
  			   (void *)(unsigned long)spl_image->load_addr);
  		break;
-@@ -104,6 +118,9 @@ int spl_load_legacy_img(struct spl_image_info *spl_image,
+@@ -104,6 +118,9 @@ int spl_load_legacy_img(struct spl_image
  	case IH_COMP_LZMA:
  		lzma_len = LZMA_LEN;
  
@@ -64,6 +62,3 @@ index 2ec7154423..ae8731c782 100644
  		debug("LZMA: Decompressing %08lx to %08lx\n",
  		      dataptr, spl_image->load_addr);
  		src = malloc(spl_image->size);
--- 
-2.36.1
-

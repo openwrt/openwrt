@@ -17,8 +17,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  tools/mtk_image.h |  24 ++++++
  2 files changed, 206 insertions(+)
 
-diff --git a/tools/mtk_image.c b/tools/mtk_image.c
-index 418c5fd54b..de5ce4d964 100644
 --- a/tools/mtk_image.c
 +++ b/tools/mtk_image.c
 @@ -6,7 +6,9 @@
@@ -77,7 +75,7 @@ index 418c5fd54b..de5ce4d964 100644
  static int mtk_image_check_image_types(uint8_t type)
  {
  	if (type == IH_TYPE_MTKIMAGE)
-@@ -283,6 +313,7 @@ static int mtk_brom_parse_imagename(const char *imagename)
+@@ -283,6 +313,7 @@ static int mtk_brom_parse_imagename(cons
  	static const char *hdr_offs = "";
  	static const char *nandinfo = "";
  	static const char *lk = "";
@@ -85,7 +83,7 @@ index 418c5fd54b..de5ce4d964 100644
  	static const char *arm64_param = "";
  
  	key = buf;
-@@ -332,6 +363,9 @@ static int mtk_brom_parse_imagename(const char *imagename)
+@@ -332,6 +363,9 @@ static int mtk_brom_parse_imagename(cons
  			if (!strcmp(key, "lk"))
  				lk = val;
  
@@ -95,7 +93,7 @@ index 418c5fd54b..de5ce4d964 100644
  			if (!strcmp(key, "lkname"))
  				snprintf(lk_name, sizeof(lk_name), "%s", val);
  
-@@ -352,6 +386,13 @@ static int mtk_brom_parse_imagename(const char *imagename)
+@@ -352,6 +386,13 @@ static int mtk_brom_parse_imagename(cons
  		return 0;
  	}
  
@@ -109,7 +107,7 @@ index 418c5fd54b..de5ce4d964 100644
  	/* parse media type */
  	for (i = 0; i < ARRAY_SIZE(brom_images); i++) {
  		if (!strcmp(brom_images[i].name, media)) {
-@@ -419,6 +460,13 @@ static int mtk_image_vrec_header(struct image_tool_params *params,
+@@ -419,6 +460,13 @@ static int mtk_image_vrec_header(struct
  		return 0;
  	}
  
@@ -123,7 +121,7 @@ index 418c5fd54b..de5ce4d964 100644
  	if (hdr_media == BRLYT_TYPE_NAND || hdr_media == BRLYT_TYPE_SNAND)
  		tparams->header_size = 2 * le16_to_cpu(hdr_nand->pagesize);
  	else
-@@ -579,9 +627,90 @@ static int mtk_image_verify_nand_header(const uint8_t *ptr, int print)
+@@ -579,9 +627,90 @@ static int mtk_image_verify_nand_header(
  	return 0;
  }
  
@@ -214,7 +212,7 @@ index 418c5fd54b..de5ce4d964 100644
  	union lk_hdr *lk = (union lk_hdr *)ptr;
  
  	/* nothing to verify for LK image header */
-@@ -590,6 +719,9 @@ static int mtk_image_verify_header(unsigned char *ptr, int image_size,
+@@ -590,6 +719,9 @@ static int mtk_image_verify_header(unsig
  
  	img_size = image_size;
  
@@ -224,7 +222,7 @@ index 418c5fd54b..de5ce4d964 100644
  	if (!strcmp((char *)ptr, NAND_BOOT_NAME))
  		return mtk_image_verify_nand_header(ptr, 0);
  	else
-@@ -600,6 +732,7 @@ static int mtk_image_verify_header(unsigned char *ptr, int image_size,
+@@ -600,6 +732,7 @@ static int mtk_image_verify_header(unsig
  
  static void mtk_image_print_header(const void *ptr)
  {
@@ -232,7 +230,7 @@ index 418c5fd54b..de5ce4d964 100644
  	union lk_hdr *lk = (union lk_hdr *)ptr;
  
  	if (le32_to_cpu(lk->magic) == LK_PART_MAGIC) {
-@@ -610,6 +743,11 @@ static void mtk_image_print_header(const void *ptr)
+@@ -610,6 +743,11 @@ static void mtk_image_print_header(const
  
  	printf("Image Type:   MediaTek BootROM Loadable Image\n");
  
@@ -244,7 +242,7 @@ index 418c5fd54b..de5ce4d964 100644
  	if (!strcmp((char *)ptr, NAND_BOOT_NAME))
  		mtk_image_verify_nand_header(ptr, 1);
  	else
-@@ -773,6 +911,45 @@ static void mtk_image_set_nand_header(void *ptr, off_t filesize,
+@@ -773,6 +911,45 @@ static void mtk_image_set_nand_header(vo
  		 filesize - 2 * le16_to_cpu(hdr_nand->pagesize) - SHA256_SUM_LEN);
  }
  
@@ -290,7 +288,7 @@ index 418c5fd54b..de5ce4d964 100644
  static void mtk_image_set_header(void *ptr, struct stat *sbuf, int ifd,
  				 struct image_tool_params *params)
  {
-@@ -791,6 +968,11 @@ static void mtk_image_set_header(void *ptr, struct stat *sbuf, int ifd,
+@@ -791,6 +968,11 @@ static void mtk_image_set_header(void *p
  	img_gen = true;
  	img_size = sbuf->st_size;
  
@@ -302,8 +300,6 @@ index 418c5fd54b..de5ce4d964 100644
  	if (hdr_media == BRLYT_TYPE_NAND || hdr_media == BRLYT_TYPE_SNAND)
  		mtk_image_set_nand_header(ptr, sbuf->st_size, params->addr);
  	else
-diff --git a/tools/mtk_image.h b/tools/mtk_image.h
-index 7dda71ce88..d868545a33 100644
 --- a/tools/mtk_image.h
 +++ b/tools/mtk_image.h
 @@ -200,4 +200,28 @@ union lk_hdr {
@@ -335,6 +331,3 @@ index 7dda71ce88..d868545a33 100644
 +};
 +
  #endif /* _MTK_IMAGE_H */
--- 
-2.36.1
-

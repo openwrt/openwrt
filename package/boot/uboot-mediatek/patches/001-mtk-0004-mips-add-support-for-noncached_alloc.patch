@@ -19,11 +19,9 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  arch/mips/lib/cache.c          | 43 ++++++++++++++++++++++++++++++++++
  2 files changed, 63 insertions(+)
 
-diff --git a/arch/mips/include/asm/system.h b/arch/mips/include/asm/system.h
-index 79e638844b..89a2ac209f 100644
 --- a/arch/mips/include/asm/system.h
 +++ b/arch/mips/include/asm/system.h
-@@ -282,4 +282,24 @@ static inline void instruction_hazard_barrier(void)
+@@ -282,4 +282,24 @@ static inline void instruction_hazard_ba
  	: "=&r"(tmp));
  }
  
@@ -48,8 +46,6 @@ index 79e638844b..89a2ac209f 100644
 +#endif /* CONFIG_SYS_NONCACHED_MEMORY */
 +
  #endif /* _ASM_SYSTEM_H */
-diff --git a/arch/mips/lib/cache.c b/arch/mips/lib/cache.c
-index ec652f0fba..d23b38d6b9 100644
 --- a/arch/mips/lib/cache.c
 +++ b/arch/mips/lib/cache.c
 @@ -6,6 +6,7 @@
@@ -106,6 +102,3 @@ index ec652f0fba..d23b38d6b9 100644
 +	return CKSEG1ADDR(next);
 +}
 +#endif /* CONFIG_SYS_NONCACHED_MEMORY */
--- 
-2.36.1
-

@@ -32,11 +32,9 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  create mode 100644 configs/mt7621_nand_rfb_defconfig
  create mode 100644 configs/mt7621_rfb_defconfig
 
-diff --git a/arch/mips/dts/Makefile b/arch/mips/dts/Makefile
-index 95144b24dc..1b179116c9 100644
 --- a/arch/mips/dts/Makefile
 +++ b/arch/mips/dts/Makefile
-@@ -16,6 +16,8 @@ dtb-$(CONFIG_BOARD_COMTREND_WAP5813N) += comtrend,wap-5813n.dtb
+@@ -16,6 +16,8 @@ dtb-$(CONFIG_BOARD_COMTREND_WAP5813N) +=
  dtb-$(CONFIG_BOARD_HUAWEI_HG556A) += huawei,hg556a.dtb
  dtb-$(CONFIG_BOARD_MT7620_RFB) += mediatek,mt7620-rfb.dtb
  dtb-$(CONFIG_BOARD_MT7620_MT7530_RFB) += mediatek,mt7620-mt7530-rfb.dtb
@@ -45,9 +43,6 @@ index 95144b24dc..1b179116c9 100644
  dtb-$(CONFIG_BOARD_MT7628_RFB) += mediatek,mt7628-rfb.dtb
  dtb-$(CONFIG_BOARD_GARDENA_SMART_GATEWAY_MT7688) += gardena-smart-gateway-mt7688.dtb
  dtb-$(CONFIG_BOARD_LINKIT_SMART_7688) += linkit-smart-7688.dtb
-diff --git a/arch/mips/dts/mediatek,mt7621-nand-rfb.dts b/arch/mips/dts/mediatek,mt7621-nand-rfb.dts
-new file mode 100644
-index 0000000000..67ba298b0a
 --- /dev/null
 +++ b/arch/mips/dts/mediatek,mt7621-nand-rfb.dts
 @@ -0,0 +1,67 @@
@@ -118,9 +113,6 @@ index 0000000000..67ba298b0a
 +&u3phy {
 +	status = "okay";
 +};
-diff --git a/arch/mips/dts/mediatek,mt7621-rfb.dts b/arch/mips/dts/mediatek,mt7621-rfb.dts
-new file mode 100644
-index 0000000000..ff7eaf0f20
 --- /dev/null
 +++ b/arch/mips/dts/mediatek,mt7621-rfb.dts
 @@ -0,0 +1,82 @@
@@ -206,8 +198,6 @@ index 0000000000..ff7eaf0f20
 +&u3phy {
 +	status = "okay";
 +};
-diff --git a/arch/mips/mach-mtmips/mt7621/Kconfig b/arch/mips/mach-mtmips/mt7621/Kconfig
-index 37d512c68f..008a28f991 100644
 --- a/arch/mips/mach-mtmips/mt7621/Kconfig
 +++ b/arch/mips/mach-mtmips/mt7621/Kconfig
 @@ -79,6 +79,26 @@ config MT7621_BOOT_FROM_NAND
@@ -237,9 +227,6 @@ index 37d512c68f..008a28f991 100644
  endchoice
  
  config SYS_CONFIG_NAME
-diff --git a/board/mediatek/mt7621/MAINTAINERS b/board/mediatek/mt7621/MAINTAINERS
-new file mode 100644
-index 0000000000..f83141cea1
 --- /dev/null
 +++ b/board/mediatek/mt7621/MAINTAINERS
 @@ -0,0 +1,8 @@
@@ -251,18 +238,12 @@ index 0000000000..f83141cea1
 +F:	configs/mt7621_nand_rfb_defconfig
 +F:	arch/mips/dts/mediatek,mt7621-rfb.dts
 +F:	arch/mips/dts/mediatek,mt7621-nand-rfb.dts
-diff --git a/board/mediatek/mt7621/Makefile b/board/mediatek/mt7621/Makefile
-new file mode 100644
-index 0000000000..db129c5aba
 --- /dev/null
 +++ b/board/mediatek/mt7621/Makefile
 @@ -0,0 +1,3 @@
 +# SPDX-License-Identifier: GPL-2.0
 +
 +obj-y += board.o
-diff --git a/board/mediatek/mt7621/board.c b/board/mediatek/mt7621/board.c
-new file mode 100644
-index 0000000000..0496f3f806
 --- /dev/null
 +++ b/board/mediatek/mt7621/board.c
 @@ -0,0 +1,6 @@
@@ -272,9 +253,6 @@ index 0000000000..0496f3f806
 + *
 + * Author: Weijie Gao <weijie.gao@mediatek.com>
 + */
-diff --git a/configs/mt7621_nand_rfb_defconfig b/configs/mt7621_nand_rfb_defconfig
-new file mode 100644
-index 0000000000..fe8543df49
 --- /dev/null
 +++ b/configs/mt7621_nand_rfb_defconfig
 @@ -0,0 +1,85 @@
@@ -363,9 +341,6 @@ index 0000000000..fe8543df49
 +CONFIG_LZMA=y
 +# CONFIG_GZIP is not set
 +CONFIG_SPL_LZMA=y
-diff --git a/configs/mt7621_rfb_defconfig b/configs/mt7621_rfb_defconfig
-new file mode 100644
-index 0000000000..ae62360e63
 --- /dev/null
 +++ b/configs/mt7621_rfb_defconfig
 @@ -0,0 +1,82 @@
@@ -451,6 +426,3 @@ index 0000000000..ae62360e63
 +CONFIG_LZMA=y
 +# CONFIG_GZIP is not set
 +CONFIG_SPL_LZMA=y
--- 
-2.36.1
-
