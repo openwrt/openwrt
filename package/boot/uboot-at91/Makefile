@@ -175,7 +175,8 @@ define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CROSS_COMPILE=$(TARGET_CROSS) \
 		KCFLAGS="$(filter-out -fstack-protector \
-		-mfloat-abi=hard, $(TARGET_CFLAGS)) -mfloat-abi=soft"
+		-mfloat-abi=hard, $(TARGET_CFLAGS)) -mfloat-abi=soft" \
+		$(UBOOT_MAKE_FLAGS)
 endef
 
 $(eval $(call BuildPackage/U-Boot))
