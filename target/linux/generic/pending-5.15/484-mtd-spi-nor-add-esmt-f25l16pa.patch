@@ -1,3 +1,17 @@
+From 87363cc0e522de3294ea6ae10fb468d2a8d6fb2f Mon Sep 17 00:00:00 2001
+From: OpenWrt community <openwrt-devel@lists.openwrt.org>
+Date: Wed, 13 Jul 2022 12:17:21 +0200
+Subject: [PATCH] spi-nor/esmt.c: add esmt f25l16pa
+
+This fixes support for Dongwon T&I DW02-412H which uses F25L16PA(2S)
+flash.
+
+---
+ drivers/mtd/spi-nor/esmt.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/mtd/spi-nor/esmt.c b/drivers/mtd/spi-nor/esmt.c
+index cfc9218c1053..d1750807f005 100644
 --- a/drivers/mtd/spi-nor/esmt.c
 +++ b/drivers/mtd/spi-nor/esmt.c
 @@ -10,6 +10,8 @@
@@ -9,3 +23,5 @@
  	{ "f25l32pa", INFO(0x8c2016, 0, 64 * 1024, 64,
  			   SECT_4K | SPI_NOR_HAS_LOCK | SPI_NOR_SWP_IS_VOLATILE) },
  	{ "f25l32qa", INFO(0x8c4116, 0, 64 * 1024, 64,
+-- 
+
