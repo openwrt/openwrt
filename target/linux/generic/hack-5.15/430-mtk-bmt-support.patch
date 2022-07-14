@@ -1,3 +1,15 @@
+From ac84397efb3b3868c71c10ad7521161773228a17 Mon Sep 17 00:00:00 2001
+From: OpenWrt community <openwrt-devel@lists.openwrt.org>
+Date: Wed, 13 Jul 2022 13:41:44 +0200
+Subject: [PATCH] mtd/nand: add MediaTek NAND bad block managment table
+
+---
+ drivers/mtd/nand/Kconfig  | 4 ++++
+ drivers/mtd/nand/Makefile | 1 +
+ 2 files changed, 5 insertions(+)
+
+diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
+index b40455234cbd..72ef18c59cee 100644
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
 @@ -46,6 +46,10 @@ config MTD_NAND_ECC_SW_BCH
@@ -11,6 +23,8 @@
  endmenu
  
  endmenu
+diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
+index 1c0b46960eb1..b9d97626bb47 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
 @@ -2,6 +2,7 @@
@@ -21,3 +35,5 @@
  
  obj-y	+= onenand/
  obj-y	+= raw/
+-- 
+
