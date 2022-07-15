@@ -23,8 +23,6 @@ Subject: [PATCH] net/bridge: add bridge offload
  create mode 100644 net/bridge/br_offload.c
  create mode 100644 net/bridge/br_private_offload.h
 
-diff --git a/include/linux/if_bridge.h b/include/linux/if_bridge.h
-index 18d3b264b754..944630df0ec3 100644
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
 @@ -59,6 +59,7 @@ struct br_ip_list {
@@ -35,8 +33,6 @@ index 18d3b264b754..944630df0ec3 100644
  
  #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
  
-diff --git a/net/bridge/Makefile b/net/bridge/Makefile
-index 7fb9a021873b..0ebf3665c216 100644
 --- a/net/bridge/Makefile
 +++ b/net/bridge/Makefile
 @@ -5,7 +5,7 @@
@@ -48,8 +44,6 @@ index 7fb9a021873b..0ebf3665c216 100644
  			br_ioctl.o br_stp.o br_stp_bpdu.o \
  			br_stp_if.o br_stp_timer.o br_netlink.o \
  			br_netlink_tunnel.o br_arp_nd_proxy.o
-diff --git a/net/bridge/br.c b/net/bridge/br.c
-index d3a32c6813e0..42e4d4fec604 100644
 --- a/net/bridge/br.c
 +++ b/net/bridge/br.c
 @@ -18,6 +18,7 @@
@@ -71,7 +65,7 @@ index d3a32c6813e0..42e4d4fec604 100644
  	err = register_pernet_subsys(&br_net_ops);
  	if (err)
  		goto err_out1;
-@@ -430,6 +435,8 @@ static int __init br_init(void)
+@@ -430,6 +435,8 @@ err_out3:
  err_out2:
  	unregister_pernet_subsys(&br_net_ops);
  err_out1:
@@ -88,11 +82,9 @@ index d3a32c6813e0..42e4d4fec604 100644
  	br_fdb_fini();
  }
  
-diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
-index 8d6bab244c4a..d69d8e9ed7aa 100644
 --- a/net/bridge/br_device.c
 +++ b/net/bridge/br_device.c
-@@ -524,6 +524,8 @@ void br_dev_setup(struct net_device *dev)
+@@ -524,6 +524,8 @@ void br_dev_setup(struct net_device *dev
  	br->bridge_hello_time = br->hello_time = 2 * HZ;
  	br->bridge_forward_delay = br->forward_delay = 15 * HZ;
  	br->bridge_ageing_time = br->ageing_time = BR_DEFAULT_AGEING_TIME;
@@ -101,8 +93,6 @@ index 8d6bab244c4a..d69d8e9ed7aa 100644
  	dev->max_mtu = ETH_MAX_MTU;
  
  	br_netfilter_rtable_init(br);
-diff --git a/net/bridge/br_fdb.c b/net/bridge/br_fdb.c
-index 46812b659710..20ea8f75d140 100644
 --- a/net/bridge/br_fdb.c
 +++ b/net/bridge/br_fdb.c
 @@ -23,6 +23,7 @@
@@ -113,7 +103,7 @@ index 46812b659710..20ea8f75d140 100644
  
  static const struct rhashtable_params br_fdb_rht_params = {
  	.head_offset = offsetof(struct net_bridge_fdb_entry, rhnode),
-@@ -518,6 +519,8 @@ static struct net_bridge_fdb_entry *fdb_create(struct net_bridge *br,
+@@ -518,6 +519,8 @@ static struct net_bridge_fdb_entry *fdb_
  		fdb->key.vlan_id = vid;
  		fdb->flags = flags;
  		fdb->updated = fdb->used = jiffies;
@@ -122,7 +112,7 @@ index 46812b659710..20ea8f75d140 100644
  		if (rhashtable_lookup_insert_fast(&br->fdb_hash_tbl,
  						  &fdb->rhnode,
  						  br_fdb_rht_params)) {
-@@ -794,6 +797,8 @@ static void fdb_notify(struct net_bridge *br,
+@@ -794,6 +797,8 @@ static void fdb_notify(struct net_bridge
  	struct sk_buff *skb;
  	int err = -ENOBUFS;
  
@@ -131,8 +121,6 @@ index 46812b659710..20ea8f75d140 100644
  	if (swdev_notify)
  		br_switchdev_fdb_notify(br, fdb, type);
  
-diff --git a/net/bridge/br_forward.c b/net/bridge/br_forward.c
-index 9fe5c888f27d..6d9025106d9d 100644
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
 @@ -16,6 +16,7 @@
@@ -143,7 +131,7 @@ index 9fe5c888f27d..6d9025106d9d 100644
  
  /* Don't forward packets to originating port or forwarding disabled */
  static inline int should_deliver(const struct net_bridge_port *p,
-@@ -32,6 +33,8 @@ static inline int should_deliver(const struct net_bridge_port *p,
+@@ -32,6 +33,8 @@ static inline int should_deliver(const s
  
  int br_dev_queue_push_xmit(struct net *net, struct sock *sk, struct sk_buff *skb)
  {
@@ -152,8 +140,6 @@ index 9fe5c888f27d..6d9025106d9d 100644
  	skb_push(skb, ETH_HLEN);
  	if (!is_skb_forwardable(skb->dev, skb))
  		goto drop;
-diff --git a/net/bridge/br_if.c b/net/bridge/br_if.c
-index 4a02f8bb278a..b1d3295b861c 100644
 --- a/net/bridge/br_if.c
 +++ b/net/bridge/br_if.c
 @@ -25,6 +25,7 @@
@@ -164,7 +150,7 @@ index 4a02f8bb278a..b1d3295b861c 100644
  
  /*
   * Determine initial path cost based on speed.
-@@ -428,7 +429,7 @@ static struct net_bridge_port *new_nbp(struct net_bridge *br,
+@@ -428,7 +429,7 @@ static struct net_bridge_port *new_nbp(s
  	p->path_cost = port_cost(dev);
  	p->priority = 0x8000 >> BR_PORT_BITS;
  	p->port_no = index;
@@ -173,7 +159,7 @@ index 4a02f8bb278a..b1d3295b861c 100644
  	br_init_port(p);
  	br_set_state(p, BR_STATE_DISABLED);
  	br_stp_port_timer_init(p);
-@@ -771,6 +772,9 @@ void br_port_flags_change(struct net_bridge_port *p, unsigned long mask)
+@@ -771,6 +772,9 @@ void br_port_flags_change(struct net_bri
  
  	if (mask & BR_NEIGH_SUPPRESS)
  		br_recalculate_neigh_suppress_enabled(br);
@@ -183,8 +169,6 @@ index 4a02f8bb278a..b1d3295b861c 100644
  }
  
  bool br_port_flag_is_set(const struct net_device *dev, unsigned long flag)
-diff --git a/net/bridge/br_input.c b/net/bridge/br_input.c
-index 65416af73714..b0601e6aed8c 100644
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
 @@ -22,6 +22,7 @@
@@ -195,7 +179,7 @@ index 65416af73714..b0601e6aed8c 100644
  
  static int
  br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
-@@ -171,6 +172,7 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
+@@ -171,6 +172,7 @@ int br_handle_frame_finish(struct net *n
  			dst->used = now;
  		br_forward(dst->dst, skb, local_rcv, false);
  	} else {
@@ -203,7 +187,7 @@ index 65416af73714..b0601e6aed8c 100644
  		if (!mcast_hit)
  			br_flood(br, skb, pkt_type, local_rcv, false);
  		else
-@@ -304,6 +306,9 @@ static rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
+@@ -304,6 +306,9 @@ static rx_handler_result_t br_handle_fra
  	memset(skb->cb, 0, sizeof(struct br_input_skb_cb));
  
  	p = br_port_get_rcu(skb->dev);
@@ -213,9 +197,6 @@ index 65416af73714..b0601e6aed8c 100644
  	if (p->flags & BR_VLAN_TUNNEL)
  		br_handle_ingress_vlan_tunnel(skb, p, nbp_vlan_group_rcu(p));
  
-diff --git a/net/bridge/br_offload.c b/net/bridge/br_offload.c
-new file mode 100644
-index 000000000000..88173ed11093
 --- /dev/null
 +++ b/net/bridge/br_offload.c
 @@ -0,0 +1,438 @@
@@ -657,8 +638,6 @@ index 000000000000..88173ed11093
 +{
 +	kmem_cache_destroy(offload_cache);
 +}
-diff --git a/net/bridge/br_private.h b/net/bridge/br_private.h
-index bd218c2b2cd9..951ba1d993ca 100644
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
 @@ -268,7 +268,13 @@ struct net_bridge_fdb_entry {
@@ -718,9 +697,6 @@ index bd218c2b2cd9..951ba1d993ca 100644
  
  #ifdef CONFIG_NET_SWITCHDEV
  	/* Set if TX data plane offloading is used towards at least one
-diff --git a/net/bridge/br_private_offload.h b/net/bridge/br_private_offload.h
-new file mode 100644
-index 000000000000..97c13af2866b
 --- /dev/null
 +++ b/net/bridge/br_private_offload.h
 @@ -0,0 +1,23 @@
@@ -747,8 +723,6 @@ index 000000000000..97c13af2866b
 +}
 +
 +#endif
-diff --git a/net/bridge/br_stp.c b/net/bridge/br_stp.c
-index 1d80f34a139c..b57788b53d24 100644
 --- a/net/bridge/br_stp.c
 +++ b/net/bridge/br_stp.c
 @@ -12,6 +12,7 @@
@@ -759,7 +733,7 @@ index 1d80f34a139c..b57788b53d24 100644
  
  /* since time values in bpdu are in jiffies and then scaled (1/256)
   * before sending, make sure that is at least one STP tick.
-@@ -52,6 +53,8 @@ void br_set_state(struct net_bridge_port *p, unsigned int state)
+@@ -52,6 +53,8 @@ void br_set_state(struct net_bridge_port
  				(unsigned int) p->port_no, p->dev->name,
  				br_port_state_names[p->state]);
  
@@ -768,8 +742,6 @@ index 1d80f34a139c..b57788b53d24 100644
  	if (p->br->stp_enabled == BR_KERNEL_STP) {
  		switch (p->state) {
  		case BR_STATE_BLOCKING:
-diff --git a/net/bridge/br_sysfs_br.c b/net/bridge/br_sysfs_br.c
-index 7b0c19772111..814cbfb77d25 100644
 --- a/net/bridge/br_sysfs_br.c
 +++ b/net/bridge/br_sysfs_br.c
 @@ -18,6 +18,7 @@
@@ -780,7 +752,7 @@ index 7b0c19772111..814cbfb77d25 100644
  
  /* IMPORTANT: new bridge options must be added with netlink support only
   *            please do not add new sysfs entries
-@@ -930,6 +931,38 @@ static ssize_t vlan_stats_per_port_store(struct device *d,
+@@ -930,6 +931,38 @@ static ssize_t vlan_stats_per_port_store
  static DEVICE_ATTR_RW(vlan_stats_per_port);
  #endif
  
@@ -819,7 +791,7 @@ index 7b0c19772111..814cbfb77d25 100644
  static struct attribute *bridge_attrs[] = {
  	&dev_attr_forward_delay.attr,
  	&dev_attr_hello_time.attr,
-@@ -984,6 +1017,8 @@ static struct attribute *bridge_attrs[] = {
+@@ -984,6 +1017,8 @@ static struct attribute *bridge_attrs[]
  	&dev_attr_vlan_stats_enabled.attr,
  	&dev_attr_vlan_stats_per_port.attr,
  #endif
@@ -828,11 +800,9 @@ index 7b0c19772111..814cbfb77d25 100644
  	NULL
  };
  
-diff --git a/net/bridge/br_sysfs_if.c b/net/bridge/br_sysfs_if.c
-index 9ee9c60738e2..2b44e5fb19e4 100644
 --- a/net/bridge/br_sysfs_if.c
 +++ b/net/bridge/br_sysfs_if.c
-@@ -241,6 +241,7 @@ BRPORT_ATTR_FLAG(broadcast_flood, BR_BCAST_FLOOD);
+@@ -241,6 +241,7 @@ BRPORT_ATTR_FLAG(broadcast_flood, BR_BCA
  BRPORT_ATTR_FLAG(neigh_suppress, BR_NEIGH_SUPPRESS);
  BRPORT_ATTR_FLAG(isolated, BR_ISOLATED);
  BRPORT_ATTR_FLAG(bpdu_filter, BR_BPDU_FILTER);
@@ -840,7 +810,7 @@ index 9ee9c60738e2..2b44e5fb19e4 100644
  
  #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
  static ssize_t show_multicast_router(struct net_bridge_port *p, char *buf)
-@@ -295,6 +296,7 @@ static const struct brport_attribute *brport_attrs[] = {
+@@ -295,6 +296,7 @@ static const struct brport_attribute *br
  	&brport_attr_isolated,
  	&brport_attr_bpdu_filter,
  	&brport_attr_backup_port,
@@ -848,8 +818,6 @@ index 9ee9c60738e2..2b44e5fb19e4 100644
  	NULL
  };
  
-diff --git a/net/bridge/br_vlan_tunnel.c b/net/bridge/br_vlan_tunnel.c
-index 6399a8a69d07..ffc65dc4eea8 100644
 --- a/net/bridge/br_vlan_tunnel.c
 +++ b/net/bridge/br_vlan_tunnel.c
 @@ -15,6 +15,7 @@
@@ -860,7 +828,7 @@ index 6399a8a69d07..ffc65dc4eea8 100644
  
  static inline int br_vlan_tunid_cmp(struct rhashtable_compare_arg *arg,
  				    const void *ptr)
-@@ -180,6 +181,7 @@ void br_handle_ingress_vlan_tunnel(struct sk_buff *skb,
+@@ -180,6 +181,7 @@ void br_handle_ingress_vlan_tunnel(struc
  	skb_dst_drop(skb);
  
  	__vlan_hwaccel_put_tag(skb, p->br->vlan_proto, vlan->vid);
@@ -868,7 +836,7 @@ index 6399a8a69d07..ffc65dc4eea8 100644
  }
  
  int br_handle_egress_vlan_tunnel(struct sk_buff *skb,
-@@ -201,6 +203,7 @@ int br_handle_egress_vlan_tunnel(struct sk_buff *skb,
+@@ -201,6 +203,7 @@ int br_handle_egress_vlan_tunnel(struct
  	if (err)
  		return err;
  
@@ -876,5 +844,3 @@ index 6399a8a69d07..ffc65dc4eea8 100644
  	tunnel_dst = rcu_dereference(vlan->tinfo.tunnel_dst);
  	if (tunnel_dst && dst_hold_safe(&tunnel_dst->dst))
  		skb_dst_set(skb, &tunnel_dst->dst);
--- 
-

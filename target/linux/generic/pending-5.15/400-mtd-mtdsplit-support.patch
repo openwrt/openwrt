@@ -11,8 +11,6 @@ Subject: [PATCH] mtd: mtdsplit support
  include/linux/mtd/partitions.h |   7 ++
  5 files changed, 197 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/mtd/Kconfig b/drivers/mtd/Kconfig
-index 796a2eccbef0..f9ed93c4cf0f 100644
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -12,6 +12,25 @@ menuconfig MTD
@@ -41,11 +39,9 @@ index 796a2eccbef0..f9ed93c4cf0f 100644
  config MTD_TESTS
  	tristate "MTD tests support (DANGEROUS)"
  	depends on m
-diff --git a/drivers/mtd/Makefile b/drivers/mtd/Makefile
-index 593d0593a038..b14b7fe0f597 100644
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -9,6 +9,8 @@ mtd-y				:= mtdcore.o mtdsuper.o mtdconcat.o mtdpart.o mtdchar.o
+@@ -9,6 +9,8 @@ mtd-y				:= mtdcore.o mtdsuper.o mtdconc
  
  obj-y				+= parsers/
  
@@ -54,8 +50,6 @@ index 593d0593a038..b14b7fe0f597 100644
  # 'Users' - code which presents functionality to userspace.
  obj-$(CONFIG_MTD_BLKDEVS)	+= mtd_blkdevs.o
  obj-$(CONFIG_MTD_BLOCK)		+= mtdblock.o
-diff --git a/drivers/mtd/mtdpart.c b/drivers/mtd/mtdpart.c
-index d442fa94c872..f1ed12aae1fe 100644
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
 @@ -15,11 +15,13 @@
@@ -72,7 +66,7 @@ index d442fa94c872..f1ed12aae1fe 100644
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -236,6 +238,146 @@ static int mtd_add_partition_attrs(struct mtd_info *new)
+@@ -236,6 +238,146 @@ static int mtd_add_partition_attrs(struc
  	return ret;
  }
  
@@ -219,7 +213,7 @@ index d442fa94c872..f1ed12aae1fe 100644
  int mtd_add_partition(struct mtd_info *parent, const char *name,
  		      long long offset, long long length)
  {
-@@ -274,6 +416,7 @@ int mtd_add_partition(struct mtd_info *parent, const char *name,
+@@ -274,6 +416,7 @@ int mtd_add_partition(struct mtd_info *p
  	if (ret)
  		goto err_remove_part;
  
@@ -227,7 +221,7 @@ index d442fa94c872..f1ed12aae1fe 100644
  	mtd_add_partition_attrs(child);
  
  	return 0;
-@@ -422,6 +565,7 @@ int add_mtd_partitions(struct mtd_info *parent,
+@@ -422,6 +565,7 @@ int add_mtd_partitions(struct mtd_info *
  			goto err_del_partitions;
  		}
  
@@ -235,7 +229,7 @@ index d442fa94c872..f1ed12aae1fe 100644
  		mtd_add_partition_attrs(child);
  
  		/* Look for subpartitions */
-@@ -438,31 +582,6 @@ int add_mtd_partitions(struct mtd_info *parent,
+@@ -438,31 +582,6 @@ err_del_partitions:
  	return ret;
  }
  
@@ -267,11 +261,9 @@ index d442fa94c872..f1ed12aae1fe 100644
  /*
   * Many partition parsers just expected the core to kfree() all their data in
   * one chunk. Do that by default.
-diff --git a/include/linux/mtd/mtd.h b/include/linux/mtd/mtd.h
-index 8a2c60235ebb..b092bf6ff97d 100644
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -613,6 +613,24 @@ static inline void mtd_align_erase_req(struct mtd_info *mtd,
+@@ -613,6 +613,24 @@ static inline void mtd_align_erase_req(s
  		req->len += mtd->erasesize - mod;
  }
  
@@ -296,7 +288,7 @@ index 8a2c60235ebb..b092bf6ff97d 100644
  static inline uint32_t mtd_div_by_ws(uint64_t sz, struct mtd_info *mtd)
  {
  	if (mtd->writesize_shift)
-@@ -685,6 +703,13 @@ extern void __put_mtd_device(struct mtd_info *mtd);
+@@ -685,6 +703,13 @@ extern void __put_mtd_device(struct mtd_
  extern struct mtd_info *get_mtd_device_nm(const char *name);
  extern void put_mtd_device(struct mtd_info *mtd);
  
@@ -310,8 +302,6 @@ index 8a2c60235ebb..b092bf6ff97d 100644
  
  struct mtd_notifier {
  	void (*add)(struct mtd_info *mtd);
-diff --git a/include/linux/mtd/partitions.h b/include/linux/mtd/partitions.h
-index b74a539ec581..65ba0dbf961d 100644
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
 @@ -75,6 +75,12 @@ struct mtd_part_parser_data {
@@ -335,5 +325,3 @@ index b74a539ec581..65ba0dbf961d 100644
  };
  
  /* Container for passing around a set of parsed partitions */
--- 
-

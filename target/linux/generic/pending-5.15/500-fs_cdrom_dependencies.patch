@@ -10,8 +10,6 @@ Subject: [PATCH] fs: add cdrom dependency
  fs/udf/Kconfig     | 1 +
  4 files changed, 4 insertions(+)
 
-diff --git a/fs/hfs/Kconfig b/fs/hfs/Kconfig
-index 129926b5142d..e0d2c647aa07 100644
 --- a/fs/hfs/Kconfig
 +++ b/fs/hfs/Kconfig
 @@ -2,6 +2,7 @@
@@ -22,8 +20,6 @@ index 129926b5142d..e0d2c647aa07 100644
  	select NLS
  	help
  	  If you say Y here, you will be able to mount Macintosh-formatted
-diff --git a/fs/hfsplus/Kconfig b/fs/hfsplus/Kconfig
-index 7d4229aecec0..648d91d1881f 100644
 --- a/fs/hfsplus/Kconfig
 +++ b/fs/hfsplus/Kconfig
 @@ -2,6 +2,7 @@
@@ -34,8 +30,6 @@ index 7d4229aecec0..648d91d1881f 100644
  	select NLS
  	select NLS_UTF8
  	help
-diff --git a/fs/isofs/Kconfig b/fs/isofs/Kconfig
-index 08ffd37b9bb8..f74680379207 100644
 --- a/fs/isofs/Kconfig
 +++ b/fs/isofs/Kconfig
 @@ -1,6 +1,7 @@
@@ -46,8 +40,6 @@ index 08ffd37b9bb8..f74680379207 100644
  	help
  	  This is the standard file system used on CD-ROMs.  It was previously
  	  known as "High Sierra File System" and is called "hsfs" on other
-diff --git a/fs/udf/Kconfig b/fs/udf/Kconfig
-index 26e1a49f3ba7..3f85a084d2b5 100644
 --- a/fs/udf/Kconfig
 +++ b/fs/udf/Kconfig
 @@ -1,6 +1,7 @@
@@ -58,5 +50,3 @@ index 26e1a49f3ba7..3f85a084d2b5 100644
  	select CRC_ITU_T
  	select NLS
  	help
--- 
-
