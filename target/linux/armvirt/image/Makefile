@@ -107,7 +107,10 @@ define Device/generic
   FILESYSTEMS := ext4 squashfs
   DEVICE_PACKAGES += kmod-amazon-ena kmod-e1000e kmod-vmxnet3 kmod-rtc-rx8025 \
 	kmod-i2c-mux-pca954x kmod-gpio-pca953x partx-utils kmod-wdt-sp805 \
-	kmod-fsl-dpaa2-net
+	kmod-mvneta kmod-mvpp2 kmod-fsl-dpaa1-net kmod-fsl-dpaa2-net \
+	kmod-fsl-enetc-net \
+	kmod-phy-aquantia kmod-phy-broadcom kmod-phy-marvell \
+	kmod-phy-marvell-10g kmod-atlantic
 endef
 TARGET_DEVICES += generic
 
