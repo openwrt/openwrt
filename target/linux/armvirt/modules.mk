@@ -48,6 +48,44 @@ endef
 
 $(eval $(call KernelPackage,fsl-mc-dpio))
 
+define KernelPackage/fsl-enetc-net
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=:NXP ENETC (LS1028A) Ethernet
+  DEPENDS:=@(TARGET_armvirt_64) +kmod-phylink +kmod-fsl-pcs-lynx
+  KCONFIG:= \
+    CONFIG_FSL_ENETC \
+    CONFIG_FSL_ENETC_VF \
+    CONFIG_FSL_ENETC_QOS
+  FILES:= \
+    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-vf.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-mdio.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-ierb.ko
+  AUTOLOAD=$(call AutoLoad,35,fsl-enetc)
+endef
+
+$(eval $(call KernelPackage,fsl-enetc-net))
+
+define KernelPackage/fsl-dpaa1-net
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=NXP DPAA1 (LS1043/LS1046) Ethernet
+  DEPENDS:=@(TARGET_armvirt_64) +kmod-fsl-xgmac-mdio +kmod-libphy +kmod-crypto-crc32
+  KCONFIG:= \
+    CONFIG_FSL_DPAA=y \
+    CONFIG_FSL_DPAA_ETH \
+    CONFIG_FSL_FMAN \
+    CONFIG_FSL_DPAA_CHECKING=n \
+    CONFIG_FSL_BMAN_TEST=n \
+    CONFIG_FSL_QMAN_TEST=n
+  MODULES:= \
+    $(LINUX_DIR)/drivers/net/ethernet/freescale/dpaa/fsl_dpa.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/freescale/fman/fsl_dpaa_fman.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/freescale/fman/fsl_dpaa_mac.ko
+  AUTOLOAD=$(call AutoLoad,35,fsl-dpa)
+endef
+
+$(eval $(call KernelPackage,fsl-dpaa1-net))
+
 define KernelPackage/fsl-dpaa2-net
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=NXP DPAA2 Ethernet
@@ -79,6 +117,51 @@ endef
 
 $(eval $(call KernelPackage,fsl-dpaa2-console))
 
+define KernelPackage/marvell-mdio
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell Armada platform MDIO driver
+  DEPENDS:=@(TARGET_armvirt_64) +kmod-libphy +kmod-of-mdio +kmod-acpi-mdio
+  KCONFIG:=CONFIG_MVMDIO
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/marvell/mvmdio.ko
+  AUTOLOAD=$(call AutoLoad,30,marvell-mdio)
+endef
+
+$(eval $(call KernelPackage,marvell-mdio))
+
+define KernelPackage/phy-marvell-10g
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell Alaska 10G PHY driver
+  DEPENDS:=@(TARGET_armvirt_64) +kmod-libphy
+  KCONFIG:=CONFIG_MARVELL_10G_PHY
+  FILES=$(LINUX_DIR)/drivers/net/phy/marvell10g.ko
+  AUTOLOAD=$(call AutoLoad,35,marvell10g)
+endef
+
+$(eval $(call KernelPackage,phy-marvell-10g))
+
+define KernelPackage/mvneta
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell Armada 370/38x/XP/37xx network driver
+  DEPENDS:=@(TARGET_armvirt_64) +kmod-marvell-mdio +kmod-phylink
+  KCONFIG:=CONFIG_MVNETA
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/marvell/mvneta.ko
+  AUTOLOAD=$(call AutoLoad,40,mvneta)
+endef
+
+$(eval $(call KernelPackage,mvneta))
+
+define KernelPackage/mvpp2
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell Armada 375/7K/8K network driver
+  DEPENDS:=@(TARGET_armvirt_64) +kmod-marvell-mdio +kmod-phylink
+  KCONFIG:=CONFIG_MVPP2 \
+    CONFIG_MVPP2_PTP=n
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/marvell/mvpp2/mvpp2.ko
+  AUTOLOAD=$(call AutoLoad,40,mvpp2)
+endef
+
+$(eval $(call KernelPackage,mvpp2))
+
 define KernelPackage/wdt-sp805
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ARM SP805 Watchdog
@@ -94,3 +177,4 @@ define KernelPackage/wdt-sp805/description
 endef
 
 $(eval $(call KernelPackage,wdt-sp805))
+
