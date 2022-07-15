@@ -7,11 +7,9 @@ Subject: [PATCH] of/ftd: add device tree cmdline
  drivers/of/fdt.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
-index 59a7a9ee58ef..3b0b62b410dd 100644
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
-@@ -1158,6 +1158,9 @@ int __init early_init_dt_scan_chosen(unsigned long node, const char *uname,
+@@ -1158,6 +1158,9 @@ int __init early_init_dt_scan_chosen(uns
  	p = of_get_flat_dt_prop(node, "bootargs", &l);
  	if (p != NULL && l > 0)
  		strlcpy(data, p, min(l, COMMAND_LINE_SIZE));
@@ -21,5 +19,3 @@ index 59a7a9ee58ef..3b0b62b410dd 100644
  
  	/*
  	 * CONFIG_CMDLINE is meant to be a default in case nothing else
--- 
-

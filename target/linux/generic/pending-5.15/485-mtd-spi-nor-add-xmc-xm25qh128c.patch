@@ -11,11 +11,9 @@ Datasheet available at https://www.xmcwh.com/uploads/435/XM25QH128C.pdf
  drivers/mtd/spi-nor/xmc.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/mtd/spi-nor/xmc.c b/drivers/mtd/spi-nor/xmc.c
-index 2c7773b68993..99ee43a654c4 100644
 --- a/drivers/mtd/spi-nor/xmc.c
 +++ b/drivers/mtd/spi-nor/xmc.c
-@@ -14,6 +14,8 @@ static const struct flash_info xmc_parts[] = {
+@@ -14,6 +14,8 @@ static const struct flash_info xmc_parts
  			    SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
  	{ "XM25QH128A", INFO(0x207018, 0, 64 * 1024, 256,
  			     SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
@@ -24,5 +22,3 @@ index 2c7773b68993..99ee43a654c4 100644
  };
  
  const struct spi_nor_manufacturer spi_nor_xmc = {
--- 
-

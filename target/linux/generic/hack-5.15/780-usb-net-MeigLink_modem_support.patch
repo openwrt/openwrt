@@ -8,11 +8,9 @@ Subject: [PATCH] net/usb/qmi_wwan: add MeigLink modem support
  drivers/usb/serial/option.c | 7 +++++++
  2 files changed, 8 insertions(+)
 
-diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
-index 8f1487f41085..d992985d599e 100644
 --- a/drivers/net/usb/qmi_wwan.c
 +++ b/drivers/net/usb/qmi_wwan.c
-@@ -1085,6 +1085,7 @@ static const struct usb_device_id products[] = {
+@@ -1085,6 +1085,7 @@ static const struct usb_device_id produc
  	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0512)},	/* Quectel EG12/EM12 */
  	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0620)},	/* Quectel EM160R-GL */
  	{QMI_MATCH_FF_FF_FF(0x2c7c, 0x0800)},	/* Quectel RM500Q-GL */
@@ -20,11 +18,9 @@ index 8f1487f41085..d992985d599e 100644
  
  	/* 3. Combined interface devices matching on interface number */
  	{QMI_FIXED_INTF(0x0408, 0xea42, 4)},	/* Yota / Megafon M100-1 */
-diff --git a/drivers/usb/serial/option.c b/drivers/usb/serial/option.c
-index de59fa919540..9f00d047f5e9 100644
 --- a/drivers/usb/serial/option.c
 +++ b/drivers/usb/serial/option.c
-@@ -243,6 +243,8 @@ static void option_instat_callback(struct urb *urb);
+@@ -243,6 +243,8 @@ static void option_instat_callback(struc
  #define UBLOX_PRODUCT_R6XX			0x90fa
  /* These Yuga products use Qualcomm's vendor ID */
  #define YUGA_PRODUCT_CLM920_NC5			0x9625
@@ -33,7 +29,7 @@ index de59fa919540..9f00d047f5e9 100644
  
  #define QUECTEL_VENDOR_ID			0x2c7c
  /* These Quectel products use Quectel's vendor ID */
-@@ -1133,6 +1135,11 @@ static const struct usb_device_id option_ids[] = {
+@@ -1133,6 +1135,11 @@ static const struct usb_device_id option
  	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EG95, 0xff, 0, 0) },
  	{ USB_DEVICE(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_BG96),
  	  .driver_info = RSVD(4) },
@@ -45,5 +41,3 @@ index de59fa919540..9f00d047f5e9 100644
  	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EP06, 0xff, 0xff, 0xff),
  	  .driver_info = RSVD(1) | RSVD(2) | RSVD(3) | RSVD(4) | NUMEP2 },
  	{ USB_DEVICE_AND_INTERFACE_INFO(QUECTEL_VENDOR_ID, QUECTEL_PRODUCT_EP06, 0xff, 0, 0) },
--- 
-
