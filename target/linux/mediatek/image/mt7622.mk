@@ -45,6 +45,7 @@ define Build/mt7622-gpt
 		) \
 			-t 0xef	-N fip		-r	-p 2M@2M \
 			-t 0x83	-N ubootenv	-r	-p 1M@4M \
+				-N factory	-r	-p 1M@5M \
 				-N recovery	-r	-p 32M@6M \
 		$(if $(findstring sdmmc,$1), \
 				-N install	-r	-p 7M@38M \
@@ -321,3 +322,34 @@ define Device/xiaomi_redmi-router-ax6s
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += xiaomi_redmi-router-ax6s
+
+define Device/unielec_u7622-02
+  DEVICE_VENDOR := Unielec
+  DEVICE_MODEL := u7622-02 V2.1
+  DEVICE_DTS := mt7622-unielec-u7622-02
+  DEVICE_DTS_DIR := ../dts
+  BOARD_NAME := Unielec,u7622-02
+  DEVICE_DTS_OVERLAY := mt7622-unielec-u7622-02
+  DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
+  ARTIFACTS := emmc-preloader.bin emmc-bl31-uboot.fip sdcard.img.gz nor-preloader.bin nor-bl31-uboot.fip
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  ARTIFACT/emmc-preloader.bin   := bl2 emmc-1ddr
+  ARTIFACT/emmc-bl31-uboot.fip  := bl31-uboot unielec_u7622-02-emmc
+  ARTIFACT/nor-preloader.bin  := bl2 nor-1ddr
+  ARTIFACT/nor-bl31-uboot.fip := bl31-uboot unielec_u7622-02-nor
+  ARTIFACT/sdcard.img.gz        := mt7622-gpt sdmmc |\
+                                   pad-to 512k | bl2 sdmmc-1ddr |\
+                                   pad-to 2048k | bl31-uboot unielec_u7622-02-sdmmc |\
+                                   pad-to 6144k | append-image-stage initramfs-recovery.itb |\
+                                   pad-to 38912k | mt7622-gpt emmc |\
+                                   pad-to 39424k | bl2 emmc-1ddr |\
+                                   pad-to 40960k | bl31-uboot unielec_u7622-02-emmc |\
+                                   pad-to 43008k | bl2 nor-1ddr |\
+                                   pad-to 43520k | bl31-uboot unielec_u7622-02-nor |\
+                                   pad-to 46080k | append-image squashfs-sysupgrade.itb | gzip
+  KERNEL                        := kernel-bin | gzip
+  KERNEL_INITRAMFS              := kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb external-static-with-initrd | pad-to 128k
+  IMAGE/sysupgrade.itb          := append-kernel | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb external-static-with-rootfs | append-metadata
+endef
+TARGET_DEVICES += unielec_u7622-02

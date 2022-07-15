@@ -124,6 +124,39 @@ define U-Boot/mt7622_ubnt_unifi-6-lr
   DEPENDS:=+trusted-firmware-a-mt7622-nor-2ddr
 endef
 
+define U-Boot/mt7622_unielec_u7622-02-nor
+  NAME:=Unielec U7622 (nor)
+  UBOOT_CONFIG:=mt7622_unielec_u7622-02-nor
+  BUILD_DEVICES:=unielec_u7622-02
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_DDRBLOB:=1
+  DEPENDS:=+trusted-firmware-a-mt7622-nor-1ddr
+endef
+
+define U-Boot/mt7622_unielec_u7622-02-emmc
+  NAME:=Unielec U7622 (eMMC)
+  UBOOT_CONFIG:=mt7622_unielec_u7622-02-emmc
+  BUILD_DEVICES:=unielec_u7622-02
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_DDRBLOB:=1
+  DEPENDS:=+trusted-firmware-a-mt7622-emmc-1ddr
+endef
+
+define U-Boot/mt7622_unielec_u7622-02-sdmmc
+  NAME:=Unielec U7622 (SDMMC)
+  UBOOT_CONFIG:=mt7622_unielec_u7622-02-sdmmc
+  BUILD_DEVICES:=unielec_u7622-02
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=sdmmc
+  BL2_DDRBLOB:=1
+  DEPENDS:=+trusted-firmware-a-mt7622-sdmmc-1ddr
+endef
+
 define U-Boot/mt7623a_unielec_u7623
   NAME:=UniElec U7623 (mt7623)
   BUILD_DEVICES:=unielec_u7623-02
@@ -175,6 +208,9 @@ UBOOT_TARGETS := \
 	mt7622_linksys_e8450 \
 	mt7622_rfb1 \
 	mt7622_ubnt_unifi-6-lr \
+	mt7622_unielec_u7622-02-nor \
+	mt7622_unielec_u7622-02-emmc \
+	mt7622_unielec_u7622-02-sdmmc \
 	mt7623n_bpir2 \
 	mt7623a_unielec_u7623 \
 	mt7628_rfb \
