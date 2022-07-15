@@ -1,0 +1,142 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4018-rutx.dtsi"
+
+/ {
+	model = "Teltonika RUTX11";
+	compatible = "teltonika,rutx11";
+	
+	aliases {
+		led-boot = &led_rssi;
+		led-failsafe = &led_rssi;
+		led-upgrade = &led_rssi;
+	};
+
+	soc {
+		
+		usb3: usb3@8af8800 {
+			dwc3@8a00000 {
+				snps,dis_u2_susphy_quirk;
+				snps,dis_u3_susphy_quirk;
+			};
+		};
+
+		usb2: usb2@60f8800 {
+			dwc3@6000000 {
+				snps,dis_u2_susphy_quirk;
+			};
+		};
+
+		gpio-export {
+			compatible = "gpio-export";
+			#size-cells = <0>;
+
+			gpio_modem_reset {
+				gpio-export,name = "modem_reset";
+				gpio-export,output = <0>;
+				gpios = <&stm32_io 21 GPIO_ACTIVE_HIGH>;
+			};
+
+			gpio_modem_power {
+				gpio-export,name = "modem_power";
+				gpio-export,output = <0>;
+				gpios = <&stm32_io 20 GPIO_ACTIVE_HIGH>;
+			};
+
+			gpio_modem2_reset {
+				gpio-export,name = "modem2_reset";
+				gpio-export,output = <0>;
+				gpios = <&stm32_io 13 GPIO_ACTIVE_HIGH>;
+			};
+
+			gpio_modem2_power {
+				gpio-export,name = "modem2_power";
+				gpio-export,output = <0>;
+				gpios = <&stm32_io 14 GPIO_ACTIVE_HIGH>;
+			};
+
+			gpio_sim_select {
+				gpio-export,name = "sim_sel";
+				gpio-export,output = <1>;
+				gpios = <&stm32_io 22 GPIO_ACTIVE_LOW>;
+			};
+		};
+
+		leds {
+			compatible = "gpio-leds";
+
+			wlan2g {
+				label = "green:wlan2g";
+				gpios = <&stm32_io 19 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy0tpt";
+			};
+
+			wlan5g {
+				label = "green:wlan5g";
+				gpios = <&stm32_io 18 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy1tpt";
+			};
+
+			sim1 {
+				label = "green:sim1";
+				gpios = <&stm32_io 0 GPIO_ACTIVE_HIGH>;
+			};
+
+			sim2 {
+				label = "green:sim2";
+				gpios = <&stm32_io 1 GPIO_ACTIVE_HIGH>;
+			};
+
+			wanwifi {
+				label = "green:wanwifi";
+				gpios = <&stm32_io 3 GPIO_ACTIVE_HIGH>;
+			};
+
+			waneth {
+				label = "green:waneth";
+				gpios = <&stm32_io 2 GPIO_ACTIVE_HIGH>;
+			};
+
+			wan2g {
+				label = "green:wan2g";
+				gpios = <&stm32_io 4 GPIO_ACTIVE_HIGH>;
+			};
+
+			wan3g {
+				label = "green:wan3g";
+				gpios = <&stm32_io 5 GPIO_ACTIVE_HIGH>;
+			};
+
+			wan4g {
+				label = "green:wan4g";
+				gpios = <&stm32_io 6 GPIO_ACTIVE_HIGH>;
+			};
+
+			led_rssi: rssilow {
+				label = "green:rssilow";
+				gpios = <&stm32_io 7 GPIO_ACTIVE_HIGH>;
+			};
+
+			rssimediumlow {
+				label = "green:rssimediumlow";
+				gpios = <&stm32_io 8 GPIO_ACTIVE_HIGH>;
+			};
+
+			rssimedium {
+				label = "green:rssimedium";
+				gpios = <&stm32_io 9 GPIO_ACTIVE_HIGH>;
+			};
+
+			rssimediumhigh {
+				label = "green:rssimediumhigh";
+				gpios = <&stm32_io 10 GPIO_ACTIVE_HIGH>;
+			};
+
+			rssihigh {
+				label = "green:rssihigh";
+				gpios = <&stm32_io 11 GPIO_ACTIVE_HIGH>;
+				panic-indicator;
+			};
+		};
+	};
+};

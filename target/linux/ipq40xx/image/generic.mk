@@ -979,6 +979,22 @@ define Device/teltonika_rutx10
 endef
 TARGET_DEVICES += teltonika_rutx10
 
+define Device/teltonika_rutx11
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Teltonika
+	DEVICE_MODEL := RUTX11
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@5
+	KERNEL_INSTALL := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	FILESYSTEMS := squashfs
+	IMAGE/nand-factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
+	DEVICE_PACKAGES := ipq-wifi-teltonika_rutx kmod-bluetooth
+endef
+TARGET_DEVICES += teltonika_rutx11
+
 define Device/tel_x1pro
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Telco
