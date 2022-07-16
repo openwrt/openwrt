@@ -14,7 +14,6 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
-		label-mac-device = &gmac0;
 	};
 
 	memory {
@@ -92,13 +91,13 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
+			label = "white:power";
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		wan {
-			label = "green:wan";
+			label = "white:wan";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -180,6 +179,14 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
+				macaddr_art_0: mac-address@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_art_6: mac-address@6 {
+					reg = <0x6 0x6>;
+				};
+
 				precal_art_1000: precal@1000 {
 					reg = <0x1000 0x2f20>;
 				};
@@ -254,6 +261,30 @@
 
 &usb3_ss_phy {
 	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan";
+
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&swport5 {
+	status = "okay";
+	label = "wan";
+
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wifi0 {
