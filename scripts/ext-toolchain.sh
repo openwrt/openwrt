@@ -546,6 +546,7 @@ while [ -n "$1" ]; do
 
 		--config)
 			if probe_cc; then
+				probe_libc
 				print_config "$1"
 				exit $?
 			fi
