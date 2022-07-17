@@ -463,6 +463,13 @@ probe_cpp() {
 }
 
 probe_libc() {
+	if [ -f $TOOLCHAIN/info.mk ]; then
+		LIBC_TYPE=$(grep LIBC_TYPE $TOOLCHAIN/info.mk | sed 's/LIBC_TYPE=//')
+		return 0
+	fi
+
+	echo "Warning! Can't find info.mk, trying to detect with alternative way."
+
 	if [ -z "$LIBC_TYPE" ]; then
 		if test_uclibc; then
 			LIBC_TYPE="uclibc"
