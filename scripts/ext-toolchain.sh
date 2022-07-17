@@ -369,8 +369,18 @@ print_config() {
 	echo "CONFIG_TOOLCHAIN_PREFIX=\"$prefix\"" >> "$config"
 	echo "CONFIG_TARGET_NAME=\"$target\"" >> "$config"
 
-	if [ "$LIBC_TYPE" != glibc ]; then
-		echo "CONFIG_TOOLCHAIN_LIBC=\"$LIBC_TYPE\"" >> "$config"
+	if [ -f "$config" ]; then
+		sed -i '/CONFIG_EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL/d' "$config"
+		sed -i '/CONFIG_EXTERNAL_TOOLCHAIN_LIBC_USE_GLIBC/d' "$config"
+	fi
+
+	if [ "$LIBC_TYPE" == glibc ]; then
+		echo "CONFIG_EXTERNAL_TOOLCHAIN_LIBC_USE_GLIBC=y" >> "$config"
+	elif [ "$LIBC_TYPE" == musl ]; then
+		echo "CONFIG_EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL=y" >> "$config"
+	else
+		echo "Can't detect LIBC type. Aborting!" >&2
+		return 1
 	fi
 
 	local lib
