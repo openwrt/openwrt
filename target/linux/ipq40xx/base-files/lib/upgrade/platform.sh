@@ -194,6 +194,7 @@ platform_do_upgrade() {
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
 	teltonika,rutx10 |\
+	teltonika,rutx11 |\
 	zte,mf286d)
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
