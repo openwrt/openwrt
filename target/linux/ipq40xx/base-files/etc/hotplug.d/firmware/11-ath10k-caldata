@@ -127,6 +127,10 @@ case "$FIRMWARE" in
 		caldata_extract_mmc "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0x0)
 		;;
+	teltonika,rutx10)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 2)
+		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
 		caldata_extract "ART" 0x1000 0x2f20
@@ -207,6 +211,10 @@ case "$FIRMWARE" in
 	netgear,srs60)
 		caldata_extract_mmc "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0xc)
+		;;
+	teltonika,rutx10)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 3)
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
