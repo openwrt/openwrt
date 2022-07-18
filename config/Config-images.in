@@ -160,6 +160,12 @@ menu "Target Images"
 			default 1024 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 			default 256
 
+	menuconfig TARGET_ROOTFS_EROFS
+		bool "erofs"
+		help
+		  Build a erofs-lzma root filesystem.
+		depends on LINUX_5_15
+
 	menuconfig TARGET_ROOTFS_UBIFS
 		bool "ubifs"
 		default y if USES_UBIFS
