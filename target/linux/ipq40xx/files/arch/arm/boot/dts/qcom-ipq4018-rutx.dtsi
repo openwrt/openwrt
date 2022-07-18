@@ -188,30 +188,12 @@
 				label = "0:ART";
 				reg = <0x2e0000 0x10000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
-
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
-				};
 			};
 
 			config: partition@2f0000 {
 				label = "0:CONFIG";
 				reg = <0x2f0000 0x10000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				macaddr_config_0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
 			};
 
 			partition@300000 {
@@ -266,16 +248,4 @@
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
 	phy-reset-gpio = <&tlmm 62 0>;
-};
-
-&wifi0 {
-	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_config_0>;
-	mac-address-increment = <2>;
-};
-
-&wifi1 {
-	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_config_0>;
-	mac-address-increment = <3>;
 };
