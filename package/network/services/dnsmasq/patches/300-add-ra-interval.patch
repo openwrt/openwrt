@@ -1,0 +1,59 @@
+--- ./src/radv.c.orig	2022-07-08 18:22:33.002095667 -0500
++++ ./src/radv.c	2022-07-08 18:26:41.982091680 -0500
+@@ -22,6 +22,8 @@
+ 
+ #include "dnsmasq.h"
+ 
++unsigned short g_ra_interval;
++
+ #ifdef HAVE_DHCP6
+ 
+ #include <netinet/icmp6.h>
+@@ -967,6 +969,9 @@
+ {
+   int interval = 600;
+   
++  if( g_ra_interval != 0 )
++      interval = g_ra_interval;
++
+   if (ra && ra->interval != 0)
+     {
+       interval = ra->interval;
+--- ./src/option.c.orig	2022-07-08 18:16:10.354101794 -0500
++++ ./src/option.c	2022-07-08 18:21:48.010096387 -0500
+@@ -22,6 +22,7 @@
+ static volatile int mem_recover = 0;
+ static jmp_buf mem_jmp;
+ static int one_file(char *file, int hard_opt);
++extern unsigned short g_ra_interval;
+ 
+ /* Solaris headers don't have facility names. */
+ #ifdef HAVE_SOLARIS_NETWORK
+@@ -4026,6 +4027,7 @@
+ 	      comma = split(comma);
+ 	    }
+ 	   arg = split(comma);
++#if 0
+ 	   if (!atoi_check(comma, &new->interval) || 
+ 	      (arg && !atoi_check(arg, &new->lifetime)))
+              {
+@@ -4033,6 +4035,19 @@
+ 	       free(new->name);
+ 	       ret_err_free(_("bad RA-params"), new);
+              }
++#else
++	   if (atoi_check(comma, &new->interval) &&
++              (arg && atoi_check(arg, &new->lifetime)))
++           {
++              g_ra_interval = new->interval;
++              goto ok;
++           }
++err:
++           free(new->name);
++           ret_err_free(_("bad RA-params"), new);
++ok:
++
++#endif
+ 	  
+ 	  new->next = daemon->ra_interfaces;
+ 	  daemon->ra_interfaces = new;
