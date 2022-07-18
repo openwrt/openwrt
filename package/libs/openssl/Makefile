@@ -63,6 +63,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_OPENSSL_WITH_TLS13 \
 	CONFIG_OPENSSL_WITH_WHIRLPOOL
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/openssl-engine.mk
 
@@ -321,6 +322,39 @@ ifdef CONFIG_i386
   endif
 endif
 
+define Host/Configure
+	(cd $(HOST_BUILD_DIR); \
+		MACHINE="$(HOST_ARCH_UNAME)" \
+		./config \
+			--prefix=$(STAGING_DIR_HOSTPKG)/usr \
+			--libdir=lib \
+			--openssldir=$(STAGING_DIR_HOSTPKG)/etc/ssl \
+			$(HOST_CPPFLAGS) \
+			$(HOST_LDFLAGS) \
+			shared \
+			no-dynamic-engine \
+			no-engine \
+		&& { [ -f $(HOST_STAMP_CONFIGURED) ] || $(MAKE) clean; } \
+	)
+endef
+
+define Host/Compile
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) \
+		CC="$(HOSTCC)" \
+		SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
+		OPENWRT_OPTIMIZATION_FLAGS="$(HOST_CFLAGS)" \
+		$(OPENSSL_MAKEFLAGS) \
+		all
+endef
+
+define Host/Install
+	$(MAKE) -C $(HOST_BUILD_DIR) \
+		CC="$(HOSTCC)" \
+		$(OPENSSL_MAKEFLAGS) \
+		install_sw \
+		install_ssldirs
+endef
+
 OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt
 
 STAMP_CONFIGURED := $(STAMP_CONFIGURED)_$(shell echo $(OPENSSL_OPTIONS) | $(MKHASH) md5)
@@ -394,6 +428,8 @@ define Package/openssl-util/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/openssl $(1)/usr/bin/
 endef
+
+$(eval $(call HostBuild))
 
 $(eval $(call BuildPackage,libopenssl))
 $(eval $(call BuildPackage,libopenssl-conf))
