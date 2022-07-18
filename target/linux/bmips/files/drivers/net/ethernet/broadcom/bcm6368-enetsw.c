@@ -269,10 +269,11 @@ static int bcm6368_enetsw_refill_rx(struct net_device *dev, bool napi_mode)
 		if (!priv->rx_buf[desc_idx]) {
 			unsigned char *buf;
 
-			if(likely(napi_mode))
+			if (likely(napi_mode))
 				buf = napi_alloc_frag(priv->rx_frag_size);
 			else
 				buf = netdev_alloc_frag(priv->rx_frag_size);
+
 			if (unlikely(!buf))
 				break;
 			priv->rx_buf[desc_idx] = buf;
@@ -383,7 +384,7 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 
 		if (len < priv->copybreak) {
 			unsigned int nfrag_size = SKB_DATA_ALIGN(NET_SKB_PAD + len +
-													 SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
+								 SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
 			unsigned char *nbuf = napi_alloc_frag(nfrag_size);
 			if (unlikely(!nbuf)) {
 				/* forget packet, just rearm desc */
@@ -400,7 +401,7 @@ static int bcm6368_enetsw_receive_queue(struct net_device *dev, int budget)
 			frag_size = nfrag_size;
 		} else {
 			dma_unmap_single(kdev, desc->address,
-							 priv->rx_buf_size, DMA_FROM_DEVICE);
+					 priv->rx_buf_size, DMA_FROM_DEVICE);
 			priv->rx_buf[desc_idx] = NULL;
 			frag_size = priv->rx_frag_size;
 		}
@@ -996,7 +997,7 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 				  priv->dma_maxburst * 4);
 
 	priv->rx_frag_size = SKB_DATA_ALIGN(NET_SKB_PAD + priv->rx_buf_size +
-										SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
+					    SKB_DATA_ALIGN(sizeof(struct skb_shared_info)));
 
 	priv->num_clocks = of_clk_get_parent_count(node);
 	if (priv->num_clocks) {
