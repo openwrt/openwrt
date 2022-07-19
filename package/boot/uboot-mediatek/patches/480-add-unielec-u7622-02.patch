@@ -878,7 +878,7 @@
 +# CONFIG_CMD_ITEST is not set
 +# CONFIG_CMD_SOURCE is not set
 +CONFIG_CMD_SETEXPR=y
-+# CONFIG_CMD_SETEXPR_FMT is not set
++CONFIG_CMD_SETEXPR_FMT=y
 +
 +#
 +# Android support commands
@@ -2061,7 +2061,7 @@
 +CONFIG_USB_STORAGE=y
 --- a/unielec_u7622-02-emmc_env
 +++ b/unielec_u7622-02-emmc_env
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,46 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x48000000
@@ -2079,8 +2079,8 @@
 +bootmenu_3=Reboot.=reset
 +boot_first=if button reset ; then setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ;
-+boot_production=run env_load_wifi_eeprom_data; run emmc_read_production && run dts_add_wifi_eeprom_data && bootm $loadaddr;
-+boot_recovery=run env_load_wifi_eeprom_data; run emmc_read_recovery && run dts_add_wifi_eeprom_data && bootm $loadaddr;
++boot_production=run env_load_wifi_eeprom_data; run emmc_read_production && run modify_kernel_dts && bootm $loadaddr;
++boot_recovery=run env_load_wifi_eeprom_data; run emmc_read_recovery && run modify_kernel_dts && bootm $loadaddr;
 +boot_emmc=run boot_production ; run boot_recovery
 +emmc_write_production=mmc dev 0 && part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
@@ -2090,11 +2090,19 @@
 +emmc_read_recovery=mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_read_vol
 +mmc_write_vol=imszb $fileaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$part_size && mmc write $fileaddr 0x$part_addr 0x$image_size
 +mmc_read_vol=mmc read $loadaddr $part_addr 0x8 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size
++
 +mmc_read_factory=mmc dev 0 && part start mmc 0 factory part_addr && mmc read $loadaddr $part_addr 1
 +read_wifi_eeprom_data=setenv i 0; setenv eeprom; setenv address $loadaddr; while test $i != 200; do run bytes_swap; setenv eeprom "$eeprom 0x$value"; setexpr i ${i} + 4; done
-+dts_add_wifi_eeprom_data=fdt addr $loadaddr; fdt get addr dts_pos_addr /images/fdt-1 data-position; setenv address $dts_pos_addr; run bytes_swap; setenv dts_pos $value; setexpr dts_base $dts_pos + $loadaddr; fdt addr $dts_base; fdt resize 8000; fdt set /wmac@18000000 mediatek,eeprom-data <$eeprom>; fdt rm /wmac@18000000 mediatek,mtd-eeprom; fdt resize; setexpr address ${dts_base} + 4; run bytes_swap; setenv dts_size $value; fdt addr $loadaddr; fdt set /images/fdt-1 data-size <0x$dts_size>; fdt get value kernel_loadaddr /images/kernel-1 load; setexpr dts_loadaddr ${kernel_loadaddr} - ${dts_size}; fdt set /images/fdt-1 load <0x$dts_loadaddr>; fdt rm /images/fdt-1/hash@1; fdt rm /images/fdt-1/hash@2
 +env_load_wifi_eeprom_data=run mmc_read_factory; run read_wifi_eeprom_data;
++
++use_sata=0
 +bytes_swap=setenv j 0; setenv value; while test $j != 4; do setexpr.b byte *$address; setexpr byte fmt %02x $byte; setenv value "$value$byte"; setexpr address ${address} + 1; setexpr j ${j} + 1; done
++load_kernel_dts_base=fdt addr $loadaddr; fdt get addr dts_pos_addr /images/fdt-1 data-position; setenv address $dts_pos_addr; run bytes_swap; setenv dts_pos $value; setexpr kernel_dts_base $dts_pos + $loadaddr; fdt addr $kernel_dts_base; fdt resize 8000;
++kernel_dts_add_wifi_eeprom_data=fdt set /wmac@18000000 mediatek,eeprom-data <$eeprom>; fdt rm /wmac@18000000 mediatek,mtd-eeprom;
++kernel_dts_use_sata=fdt set /sata@1a200000 status okay; fdt set /t-phy@1a243000 status okay; fdt set /pcie@1a145000 status disabled; fdt set /gpio-export/power-M2-up gpio-export,output <0>
++fix_fit_dts=fdt resize; setexpr address ${kernel_dts_base} + 4; run bytes_swap; setenv kernel_dts_size $value; fdt addr $loadaddr; fdt set /images/fdt-1 data-size <0x$kernel_dts_size>; fdt get value kernel_loadaddr /images/kernel-1 load; setexpr kernel_dts_loadaddr ${kernel_loadaddr} - ${kernel_dts_size}; fdt set /images/fdt-1 load <0x$kernel_dts_loadaddr>; fdt rm /images/fdt-1/hash@1; fdt rm /images/fdt-1/hash@2
++modify_kernel_dts=run load_kernel_dts_base; run kernel_dts_add_wifi_eeprom_data; if test $use_sata = 1; then run kernel_dts_use_sata; fi; run fix_fit_dts;
++
 +part_default=production
 +part_recovery=recovery
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
@@ -2102,7 +2110,7 @@
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d
 --- a/unielec_u7622-02-nor_env
 +++ b/unielec_u7622-02-nor_env
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,21 @@
 +loadaddr=0x48000000
 +bootdelay=3
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
@@ -2111,12 +2119,19 @@
 +bootmenu_title=      ( ( ( OpenWrt-NOR ) ) )
 +bootmenu_0=Boot production system from flash.=run boot_production ; run bootmenu_confirm_return
 +bootmenu_1=Reboot.=reset
-+boot_production=run nor_read_production && bootm $loadaddr
++boot_production=run nor_read_production && run modify_kernel_dts && bootm $loadaddr
 +boot_serial_write_bl2=loadx $loadaddr 115200 && run nor_write_bl2
 +boot_serial_write_fip=loadx $loadaddr 115200 && run nor_write_fip
 +nor_read_production=mtd read nor0 $loadaddr 0xe0000 0x1000 && imsz $loadaddr image_size && mtd read nor0 $loadaddr 0xe0000 $image_size
 +nor_write_bl2=mtd erase nor0 0x0 0x20000 && mtd write nor0 $loadaddr 0x0 0x20000
 +nor_write_fip=mtd erase nor0 0x20000 0x80000 && mtd write nor0 $loadaddr 0x20000 0x80000
++
++use_sata=0
++bytes_swap=setenv j 0; setenv value; while test $j != 4; do setexpr.b byte *$address; setexpr byte fmt %02x $byte; setenv value "$value$byte"; setexpr address ${address} + 1; setexpr j ${j} + 1; done
++load_kernel_dts_base=fdt addr $loadaddr; fdt get addr dts_pos_addr /images/fdt-1 data-position; setenv address $dts_pos_addr; run bytes_swap; setenv dts_pos $value; setexpr kernel_dts_base $dts_pos + $loadaddr; fdt addr $kernel_dts_base; fdt resize 8000;
++kernel_dts_use_sata=fdt set /sata@1a200000 status okay; fdt set /t-phy@1a243000 status okay; fdt set /pcie@1a145000 status disabled; fdt set /gpio-export/power-M2-up gpio-export,output <0>
++fix_fit_dts=fdt resize; setexpr address ${kernel_dts_base} + 4; run bytes_swap; setenv kernel_dts_size $value; fdt addr $loadaddr; fdt set /images/fdt-1 data-size <0x$kernel_dts_size>; fdt get value kernel_loadaddr /images/kernel-1 load; setexpr kernel_dts_loadaddr ${kernel_loadaddr} - ${kernel_dts_size}; fdt set /images/fdt-1 load <0x$kernel_dts_loadaddr>; fdt rm /images/fdt-1/hash@1; fdt rm /images/fdt-1/hash@2
++modify_kernel_dts=if test $use_sata = 1; then run load_kernel_dts_base; run kernel_dts_use_sata; run fix_fit_dts; fi
 --- a/unielec_u7622-02-sdmmc_env
 +++ b/unielec_u7622-02-sdmmc_env
 @@ -0,0 +1,51 @@
