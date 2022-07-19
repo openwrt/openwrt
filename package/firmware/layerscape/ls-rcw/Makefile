@@ -31,6 +31,8 @@ BOARDS := \
   ls1012a-rdb \
   ls1012a-frdm \
   ls1012a-frwy-sdboot \
+  ls1028a-rdb \
+  ls1028a-rdb-sdboot \
   ls1043a-rdb \
   ls1043a-rdb-sdboot \
   ls1046a-frwy \
@@ -47,6 +49,8 @@ BOARDS := \
 RCW_ls1012a-rdb         :=ls1012ardb/R_SPNH_3508/rcw_1000_default.bin
 RCW_ls1012a-frdm        :=ls1012afrdm/N_SSNP_3305/rcw_800.bin
 RCW_ls1012a-frwy-sdboot :=ls1012afrwy/N_SSNP_3305/rcw_1000_default.bin
+RCW_ls1028a-rdb         :=ls1028ardb/R_SQPP_0x85bb/rcw_1300.bin
+RCW_ls1028a-rdb-sdboot  :=ls1028ardb/R_SQPP_0x85bb/rcw_1500_sdboot.bin
 RCW_ls1043a-rdb         :=ls1043ardb/RR_FQPP_1455/rcw_1600.bin
 RCW_ls1043a-rdb-sdboot  :=ls1043ardb/RR_FQPP_1455/rcw_1600_sdboot.bin
 RCW_ls1046a-frwy        :=ls1046afrwy/NN_NNQNNPNP_3040_0506/rcw_1600_qspiboot.bin
