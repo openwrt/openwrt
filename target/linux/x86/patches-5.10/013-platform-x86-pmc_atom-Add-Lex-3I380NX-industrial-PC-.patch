@@ -1,0 +1,41 @@
+From 3b0819cf99b2304f1aab8ec188611c8289dbb935 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <paul.spooren@rhebo.com>
+Date: Tue, 19 Jul 2022 09:41:11 +0200
+Subject: [PATCH] platform/x86: pmc_atom: Add Lex 3I380NX industrial PC to
+ critclk_systems DMI table
+
+The Lex 3I380NX industrial PC has 4 ethernet controllers on board
+which need pmc_plt_clk0 - 3 to function, add it to the critclk_systems
+DMI table, so that drivers/clk/x86/clk-pmc-atom.c will mark the clocks
+as CLK_CRITICAL and they will not get turned off.
+
+This commit is nearly redundant to 3d0818f5eba8 ("platform/x86:
+pmc_atom: Add Lex 3I380D industrial PC to critclk_systems DMI table")
+but for the 3I380NX device.
+
+The original vendor firmware is only available using the WaybackMachine:
+http://www.lex.com.tw/products/3I380NX.html
+
+Signed-off-by: Michael Schöne <michael.schoene@rhebo.com>
+Signed-off-by: Paul Spooren <paul.spooren@rhebo.com>
+---
+ drivers/platform/x86/pmc_atom.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/drivers/platform/x86/pmc_atom.c
++++ b/drivers/platform/x86/pmc_atom.c
+@@ -384,6 +384,14 @@ static const struct dmi_system_id critcl
+ 		},
+ 	},
+ 	{
++		/* pmc_plt_clk0 - 3 are used for the 4 ethernet controllers */
++		.ident = "Lex 3I380NX",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "Lex BayTrail"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "3I380NX"),
++		},
++	},
++	{
+ 		/* pmc_plt_clk* - are used for ethernet controllers */
+ 		.ident = "Lex 2I385SW",
+ 		.matches = {
