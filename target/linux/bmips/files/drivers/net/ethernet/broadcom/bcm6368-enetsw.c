@@ -270,6 +270,7 @@ static int bcm6368_enetsw_refill_rx(struct net_device *dev, bool napi_mode)
 
 		if (!priv->rx_buf[desc_idx]) {
 			unsigned char *buf;
+			dma_addr_t p;
 
 			if (likely(napi_mode))
 				buf = napi_alloc_frag(priv->rx_frag_size);
@@ -279,11 +280,15 @@ static int bcm6368_enetsw_refill_rx(struct net_device *dev, bool napi_mode)
 			if (unlikely(!buf))
 				break;
 
+			p = dma_map_single(&priv->pdev->dev, buf + NET_SKB_PAD,
+					   priv->rx_buf_size, DMA_FROM_DEVICE);
+			if (unlikely(dma_mapping_error(&priv->pdev->dev, p))) {
+				skb_free_frag(buf);
+				break;
+			}
+
 			priv->rx_buf[desc_idx] = buf;
-			desc->address = dma_map_single(&priv->pdev->dev,
-						       buf + NET_SKB_PAD,
-						       priv->rx_buf_size,
-						       DMA_FROM_DEVICE);
+			desc->address = p;
 		}
 
 		len_stat = priv->rx_buf_size << DMADESC_LENGTH_SHIFT;
@@ -563,6 +568,7 @@ bcm6368_enetsw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct bcm6368_enetsw_desc *desc;
 	u32 len_stat;
 	netdev_tx_t ret;
+	dma_addr_t p;
 
 	/* lock against tx reclaim */
 	spin_lock(&priv->tx_lock);
@@ -597,13 +603,19 @@ bcm6368_enetsw_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		data = skb_put_zero(skb, needed);
 	}
 
+	/* fill descriptor */
+	p = dma_map_single(&priv->pdev->dev, skb->data, skb->len,
+			   DMA_TO_DEVICE);
+	if (unlikely(dma_mapping_error(&priv->pdev->dev, p))) {
+		dev_kfree_skb(skb);
+		ret = NETDEV_TX_OK;
+		goto out_unlock;
+	}
+
 	/* point to the next available desc */
 	desc = &priv->tx_desc_cpu[priv->tx_curr_desc];
 	priv->tx_skb[priv->tx_curr_desc] = skb;
-
-	/* fill descriptor */
-	desc->address = dma_map_single(&priv->pdev->dev, skb->data, skb->len,
-				       DMA_TO_DEVICE);
+	desc->address = p;
 
 	len_stat = (skb->len << DMADESC_LENGTH_SHIFT) & DMADESC_LENGTH_MASK;
 	len_stat |= DMADESC_ESOP_MASK | DMADESC_APPEND_CRC |
