@@ -1,9 +1,9 @@
-name: Build IPQ807x
+name: Build IPQ807x NSS
 on: [push]
 
 jobs:
     build:
-        name: Prepare and build IPQ807x generic images
+        name: Prepare and build IPQ807x NSS generic images
         runs-on: ubuntu-latest
 
         steps:
@@ -15,7 +15,7 @@ jobs:
                 ./scripts/feeds update -a
                 ./scripts/feeds install -a
 
-            - name: Generate config for IPQ807x Generic
+            - name: Generate config for IPQ807x NSS Generic
               run: |
                 echo "CONFIG_TARGET_ipq807x=y" > .config
                 echo "CONFIG_TARGET_ipq807x_generic=y\n" >> .config
@@ -25,6 +25,15 @@ jobs:
                 echo "CONFIG_TARGET_ROOTFS_INITRAMFS=y\n" >> .config
                 echo "CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD=y\n" >> .config
                 echo "CONFIG_PACKAGE_luci=y\n" >> .config
+                echo "CONFIG_PACKAGE_kmod-qca-nss-crypto=y\n" >> .config
+                echo "CONFIG_PACKAGE_kmod-qca-nss-dp=y\n" >> .config
+                echo "CONFIG_PACKAGE_kmod-qca-nss-drv=y\n" >> .config
+                echo "CONFIG_PACKAGE_kmod-qca-nss-drv-pppoe=y\n" >> .config
+                echo "CONFIG_PACKAGE_kmod-qca-nss-drv-vlan-mgr=y\n" >> .config
+                echo "CONFIG_PACKAGE_kmod-qca-nss-ecm=y\n" >> .config
+                echo "CONFIG_PACKAGE_kmod-qca-ssdk-nohnat=y\n" >> .config
+                echo "CONFIG_PACKAGE_kmod-wireguard=y\n" >> .config
+                echo "CONFIG_PACKAGE_qca-ssdk-shell=y\n" >> .config
                 echo "CONFIG_PACKAGE_wpad-basic-wolfssl=m\n" >> .config
                 echo "CONFIG_PACKAGE_wpad-wolfssl=y\n" >> .config
                 make defconfig
