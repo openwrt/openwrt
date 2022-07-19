@@ -168,6 +168,17 @@ define Device/panasonic_m8eg-pn28080k
 endef
 TARGET_DEVICES += panasonic_m8eg-pn28080k
 
+define Device/tplink_sg2008p-v1
+  SOC := rtl8380
+  KERNEL_SIZE := 6m
+  IMAGE_SIZE := 26m
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := SG2008P
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-hwmon-tps23861
+endef
+TARGET_DEVICES += tplink_sg2008p-v1
+
 define Device/zyxel_gs1900
   SOC := rtl8380
   IMAGE_SIZE := 6976k
