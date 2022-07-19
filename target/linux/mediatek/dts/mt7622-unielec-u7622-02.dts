@@ -12,7 +12,6 @@
 #include "mt7622.dtsi"
 #include "mt6380.dtsi"
 
-//#define USE_PCIE1
 
 / {
 	model = "UniElec U7622-02 V2.1";
@@ -74,11 +73,7 @@
 
 		power-M2-up {
 			gpio-export,name = "power-M2-up";
-#ifdef USE_PCIE1
 			gpio-export,output = <1>; /* always power up for PCIE1 */
-#else
-			gpio-export,output = <0>;
-#endif
 			gpios = <&pio 52 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -180,22 +175,11 @@
 	};
 };
 
-/* PCIE1 share pins with SATA */
-#ifdef USE_PCIE1
 &pcie1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie1_pins>;
 	status = "okay";
 };
-#else
-&sata {
-	status = "okay";
-};
-
-&sata_phy {
-	status = "okay";
-};
-#endif
 
 &pio {
 	/* eMMC is shared pin with parallel NAND */
