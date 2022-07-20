@@ -175,6 +175,14 @@
 	};
 };
 
+/* mt7622 PCIE1 share pins with SATA.
+ * U7622-02 use 4 capacitors to switch the signals between
+ * the M.2 PCIE sockcet and the SATA3.0 port.
+ * After moving 4 capacitors to connected to SATA3.0, set
+ * uboot env variable use_sata to 1. So during kernel boot
+ * setting, a uboot script will disable pcie1 and enable
+ * sata in the kernel dtb.
+ */
 &pcie1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie1_pins>;
