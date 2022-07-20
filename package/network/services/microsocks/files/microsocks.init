@@ -1,0 +1,38 @@
+#!/bin/sh /etc/rc.common
+USE_PROCD=1
+START=95
+STOP=01
+start_service() {
+    procd_open_instance
+
+    port="$(uci_get "microsocks.microsocks.port")"
+    listenip="$(uci_get "microsocks.microsocks.listenip")"
+    bindaddr="$(uci_get "microsocks.microsocks.bindaddr")"
+    user="$(uci_get "microsocks.microsocks.user")"
+    password="$(uci_get "microsocks.microsocks.password")"
+    auth_once="$(uci_get "microsocks.microsocks.auth_once")"
+
+    # logger -t microsocks -p notice "bindaddr=${bindaddr} port=${port} listenip=${listenip} user=${user} password=${password} auth_once=${auth_once}"
+    if [ ! -z "$port" ]; then
+    	port="-p ${port}"
+    fi
+    if [ ! -z "$listenip" ]; then
+    	listenip="-i ${listenip}"
+    fi
+    if [ ! -z "$bindaddr" ]; then
+    	bindaddr="-b ${bindaddr}"
+    fi
+    if [ ! -z "$user" ]; then
+    	user="-u \"${user}\""
+    fi
+    if [ ! -z "$password" ]; then
+    	password="-P \"${password}\""
+    fi
+    if [ ! -z "$auth_once" ]; then
+    	auth_once="-1"
+    fi
+
+    # logger -t microsocks -p notice "after processing: bindaddr=${bindaddr} port=${port} listenip=${listenip} user=${user} password=${password} auth_once=${auth_once}"
+    procd_set_param command /usr/bin/microsocks ${listenip} ${port} ${bindaddr} ${user} ${password} ${auth_once}
+    procd_close_instance
+}
