@@ -24,7 +24,6 @@
 
 		uboot {
 			description = "U-Boot";
-			data = /incbin/("${images_dir}/u-boot/u-boot-nodtb.bin");
 			os = "U-Boot";
 			arch = "arm64";
 			compression = "none";
@@ -53,43 +52,12 @@
 
 		fdt_uboot {
 			description = "dtb";
-			data = /incbin/("${images_dir}/u-boot/u-boot.dtb");
 			type = "flat_dt";
 			compression = "none";
 
 			hash-1 {
 				algo = "sha256";
 			};
-		};
-
-		fdt_GTAX6000 {
-			description = "dtb";
-			data = /incbin/("${images_dir}/u-boot/GTAX6000.dtb");
-			type = "flat_dt";
-			compression = "none";
-
-			hash-1 {
-				algo = "sha256";
-			};
-		};
-
-		fdt_uboot_RAX220 {
-			description = "dtb";
-			data = /incbin/("${images_dir}/u-boot/RAX220.dtb");
-			type = "flat_dt";
-			compression = "none";
-
-			hash-1 {
-				algo = "sha256";
-			};
-		};
-
-		fdt_linux_RAX220 {
-			description = "dtb";
-			data = /incbin/("${dts_dir}/broadcom/bcm4908/bcm4908-netgear-raxe500.dtb");
-			arch = "arm64";
-			type = "flat_dt";
-			compression = "none";
 		};
 	};
 
@@ -100,24 +68,6 @@
 			description = "BRCM 63xxx with uboot";
 			fdt = "fdt_uboot";
 			loadables = "atf", "uboot";
-		};
-
-		conf_ub_GTAX6000 {
-			description = "GTAX6000";
-			fdt = "fdt_GTAX6000";
-			loadables = "atf", "uboot";
-		};
-
-		conf_ub_RAX220 {
-			description = "RAX220";
-			fdt = "fdt_uboot_RAX220";
-			loadables = "atf", "uboot";
-		};
-
-		conf_lx_RAX220 {
-			description = "BRCM 63xxx linux";
-			kernel = "kernel";
-			fdt = "fdt_linux_RAX220";
 		};
 	};
 };
