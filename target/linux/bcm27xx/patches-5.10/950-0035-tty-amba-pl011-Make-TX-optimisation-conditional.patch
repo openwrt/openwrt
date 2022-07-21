@@ -58,7 +58,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	spin_unlock(&uap->port.lock);
  	dev_vdbg(uap->port.dev,
  		 "Took %d chars from DMA buffer and %d chars from the FIFO\n",
-@@ -1341,6 +1344,7 @@ __acquires(&uap->port.lock)
+@@ -1350,6 +1353,7 @@ __acquires(&uap->port.lock)
  {
  	pl011_fifo_to_tty(uap);
  
@@ -66,7 +66,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	spin_unlock(&uap->port.lock);
  	tty_flip_buffer_push(&uap->port.state->port);
  	/*
-@@ -1474,6 +1478,7 @@ static irqreturn_t pl011_int(int irq, vo
+@@ -1483,6 +1487,7 @@ static irqreturn_t pl011_int(int irq, vo
  	int handled = 0;
  
  	spin_lock_irqsave(&uap->port.lock, flags);
@@ -74,7 +74,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	status = pl011_read(uap, REG_RIS) & uap->im;
  	if (status) {
  		do {
-@@ -1493,7 +1498,7 @@ static irqreturn_t pl011_int(int irq, vo
+@@ -1502,7 +1507,7 @@ static irqreturn_t pl011_int(int irq, vo
  				      UART011_CTSMIS|UART011_RIMIS))
  				pl011_modem_status(uap);
  			if (status & UART011_TXIS)
