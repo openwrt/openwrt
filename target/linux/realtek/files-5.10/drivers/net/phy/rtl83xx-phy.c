@@ -613,16 +613,50 @@ static int rtl8226_get_eee(struct phy_device *phydev,
 	u32 val;
 	int addr = phydev->mdio.addr;
 
-	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
+	pr_info("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
+	// Get supported EEE modes
+	val = phy_read_mmd(phydev, MDIO_MMD_PCS, MDIO_PCS_EEE_ABLE);
+	if (val < 0)
+		return val;
+	pr_info("%s way 3: %08x\n", __func__, val);
+	e->supported = mmd_eee_cap_to_ethtool_sup_t(val);
 
-	val = phy_read_mmd(phydev, MDIO_MMD_AN, 60);
-	if (e->eee_enabled) {
-		e->eee_enabled = !!(val & BIT(1));
-		if (!e->eee_enabled) {
-			val = phy_read_mmd(phydev, MDIO_MMD_AN, 62);
-			e->eee_enabled = !!(val & BIT(0));
-		}
-	}
+	// Get supported EEE modes (2.5G)
+	val = phy_read_mmd(phydev, MDIO_MMD_PCS, MDIO_PCS_EEE_ABLE2);
+	if (val < 0)
+		return val;
+	if (val & MDIO_EEE_2_5GT)
+		e->supported |= ADVERTISED_2500baseX_Full;
+
+	// Get advertised EEE modes
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
+	if (val < 0)
+		return val;
+	e->advertised = mmd_eee_adv_to_ethtool_adv_t(val);
+	pr_info("%s got val advertised: %08x\n", __func__, val);
+
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2);
+	if (val < 0)
+		return val;
+	if (val & MDIO_EEE_2_5GT)
+		e->advertised |= ADVERTISED_2500baseX_Full;
+	pr_info("%s got val advertised 2: %08x\n", __func__, val);
+
+	e->eee_enabled = !!e->advertised;
+
+	// Get LP advertised EEE modes
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_LPABLE);
+	if (val < 0)
+		return val;
+	e->lp_advertised = mmd_eee_adv_to_ethtool_adv_t(val);
+
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_LPABLE2);
+	if (val < 0)
+		return val;
+	if (val & MDIO_EEE_2_5GT)
+		e->lp_advertised |= ADVERTISED_2500baseX_Full;
+
+	e->eee_active = !!(e->advertised & e->lp_advertised);
 	pr_debug("%s: enabled: %d\n", __func__, e->eee_enabled);
 
 	return 0;
@@ -644,25 +678,28 @@ static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	an_enabled = !!(val & BIT(12));
 
 	// Setup 100/1000MBit
-	val = phy_read_mmd(phydev, MDIO_MMD_AN, 60);
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
 	if (e->eee_enabled)
-		val |= 0x6;
+		val |= MDIO_AN_EEE_ADV_100TX | MDIO_AN_EEE_ADV_1000T;
 	else
-		val &= 0x6;
-	phy_write_mmd(phydev, MDIO_MMD_AN, 60, val);
+		val &= ~(MDIO_AN_EEE_ADV_100TX | MDIO_AN_EEE_ADV_1000T);
+	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, val);
 
 	// Setup 2.5GBit
-	val = phy_read_mmd(phydev, MDIO_MMD_AN, 62);
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2);
 	if (e->eee_enabled)
-		val |= 0x1;
+		val |= MDIO_EEE_2_5GT;
 	else
-		val &= 0x1;
-	phy_write_mmd(phydev, MDIO_MMD_AN, 62, val);
+		val &= ~MDIO_EEE_2_5GT;
+	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2, val);
 
+	pr_info("%s restarting ANEG\n", __func__);
 	// RestartAutoNegotiation
-	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
-	val |= BIT(9);
-	phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, val);
+	if (an_enabled) {
+		val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
+		val |= BIT(9);
+		phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, val);
+	}
 
 	resume_polling(poll_state);
 
@@ -1003,6 +1040,7 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 				rtl838x_6275B_intPhy_perport[i * 2 + 1]);
 			i++;
 		}
+		pr_info("%s PATCH LENGTH %d\n", __func__, i);
 		i = 0;
 		while (rtl8218b_6276B_hwEsd_perport[i * 2]) {
 			phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW,
@@ -1266,17 +1304,17 @@ static int rtl8214fc_get_port(struct phy_device *phydev)
 }
 
 /*
- * Enable EEE on the RTL8218B PHYs
- * The method used is not the preferred way (which would be based on the MAC-EEE state,
- * but the only way that works since the kernel first enables EEE in the MAC
- * and then sets up the PHY. The MAC-based approach would require the oppsite.
+ * Enable EEE on the RTL8218D PHYs
  */
 void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 {
 	u32 val;
 	bool an_enabled;
 
-	pr_debug("In %s %d, enable %d\n", __func__, phydev->mdio.addr, enable);
+	pr_info("In %s %d, enable %d\n", __func__, phydev->mdio.addr, enable);
+	if (!enable) // MAC controlled EEE, no need to switch off actively
+		return;
+
 	/* Set GPHY page to copper */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
@@ -1284,9 +1322,12 @@ void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 	an_enabled = val & BIT(12);
 
 	/* Enable 100M (bit 1) / 1000M (bit 2) EEE */
-	val = phy_read_mmd(phydev, 7, 60);
-	val |= BIT(2) | BIT(1);
-	phy_write_mmd(phydev, 7, 60, enable ? 0x6 : 0);
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
+	if (enable)
+		val |= MDIO_AN_EEE_ADV_100TX | MDIO_AN_EEE_ADV_1000T;
+	else
+		val &= ~(MDIO_AN_EEE_ADV_100TX | MDIO_AN_EEE_ADV_1000T);
+	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, val);
 
 	/* 500M EEE ability */
 	val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
@@ -1297,64 +1338,53 @@ void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
 
 	/* Restart AN if enabled */
-	if (an_enabled) {
-		val = phy_read(phydev, 0);
-		val |= BIT(9);
-		phy_write(phydev, 0, val);
-	}
+	if (an_enabled)
+		phy_restart_aneg(phydev);
 
 	/* GPHY page back to auto*/
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 }
 
-static int rtl8218b_get_eee(struct phy_device *phydev,
-				     struct ethtool_eee *e)
+static int rtl8218b_get_eee(struct phy_device *phydev, struct ethtool_eee *e)
 {
-	u32 val;
-	int addr = phydev->mdio.addr;
+	int addr = phydev->mdio.addr, ret;
 
-	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
+	pr_info("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
 
 	/* Set GPHY page to copper */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
-	val = phy_read_paged(phydev, 7, 60);
-	if (e->eee_enabled) {
-		// Verify vs MAC-based EEE
-		e->eee_enabled = !!(val & BIT(7));
-		if (!e->eee_enabled) {
-			val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
-			e->eee_enabled = !!(val & BIT(4));
-		}
-	}
-	pr_debug("%s: enabled: %d\n", __func__, e->eee_enabled);
+	ret = phy_ethtool_get_eee(phydev, e);
 
 	/* GPHY page to auto */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
-	return 0;
+	return ret;
 }
 
-static int rtl8218d_get_eee(struct phy_device *phydev,
-				     struct ethtool_eee *e)
+static int rtl8218d_get_eee(struct phy_device *phydev, struct ethtool_eee *e)
 {
-	u32 val;
 	int addr = phydev->mdio.addr;
+	int ret;
+	bool enabled;
 
-	pr_debug("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
+	pr_info("In %s, port %d, was enabled: %d\n", __func__, addr, e->eee_enabled);
 
 	/* Set GPHY page to copper */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
-	val = phy_read_paged(phydev, 7, 60);
-	if (e->eee_enabled)
-		e->eee_enabled = !!(val & BIT(7));
-	pr_debug("%s: enabled: %d\n", __func__, e->eee_enabled);
+	/* The RTL8218D always advertises EEE modes, which phy_ethtool_get_eee
+	 * interprets as EEE enabled. Instead use the value returned from the
+	 * MAC-layer/DSA
+	 */
+	enabled = e->eee_enabled;
+	ret = phy_ethtool_get_eee(phydev, e);
+	e->eee_enabled = enabled;
 
 	/* GPHY page to auto */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
-	return 0;
+	return ret;
 }
 
 static int rtl8214fc_set_eee(struct phy_device *phydev,
@@ -1387,7 +1417,7 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 	phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
 
 	/* Enable 100M (bit 1) / 1000M (bit 2) EEE */
-	phy_write_paged(phydev, 7, 60, e->eee_enabled ? 0x6 : 0);
+	phy_write_paged(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, e->eee_enabled ? 0x6 : 0);
 
 	/* 500M EEE ability */
 	val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
@@ -1399,12 +1429,8 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
 
 	/* Restart AN if enabled */
-	if (an_enabled) {
-		pr_info("%s: doing aneg\n", __func__);
-		val = phy_read(phydev, 0);
-		val |= BIT(9);
-		phy_write(phydev, 0, val);
-	}
+	if (an_enabled)
+		phy_restart_aneg(phydev);
 
 	/* GPHY page back to auto*/
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
@@ -1428,6 +1454,12 @@ static int rtl8214fc_get_eee(struct phy_device *phydev,
 	return rtl8218b_get_eee(phydev, e);
 }
 
+/*
+ * Enable/Disable EEE on RTL8218B
+ * The method used is not the preferred way (which would be based on the MAC-EEE state,
+ * but the only way that works, since the kernel first enables EEE in the MAC
+ * and then sets up the PHY. The MAC-based approach would require the oppsite.
+ * */
 static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 {
 	int port = phydev->mdio.addr;
@@ -1440,40 +1472,59 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	poll_state = disable_polling(port);
 
 	/* Set GPHY page to copper */
-	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+	phy_write_paged(phydev, 0, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+
 	val = phy_read(phydev, 0);
 	an_enabled = val & BIT(12);
 
 	if (e->eee_enabled) {
-		/* 100/1000M EEE Capability */
-		phy_write(phydev, 13, 0x0007);
-		phy_write(phydev, 14, 0x003C);
-		phy_write(phydev, 13, 0x4007);
-		phy_write(phydev, 14, 0x0006);
+		// Enable EEE auto-off
+		phy_write(phydev, 31, 0x0005); // switch to page 5
+		phy_write(phydev, 5, 0x8B85); // set Micro-C memory address
+		phy_write(phydev, 6, 0xE286); // set Micro-C data: enable: 0xE286, disable: 0xC286
+		phy_write(phydev, 31, 0x0008); // back to page 8
 
 		val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
 		val |= BIT(4);
 		phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
+
+		// Advertise 100/1G EEE
+		val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
+		val |= MDIO_AN_EEE_ADV_100TX | MDIO_AN_EEE_ADV_1000T;
+		phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, val);
+
+		// 500M EEE Capability
+		val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
+		val |= BIT(7);
+		phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
+
 	} else {
-		/* 100/1000M EEE Capability */
-		phy_write(phydev, 13, 0x0007);
-		phy_write(phydev, 14, 0x003C);
-		phy_write(phydev, 13, 0x0007);
-		phy_write(phydev, 14, 0x0000);
+		// Disable EEE auto-off
+		phy_write(phydev, 31, 0x0005); // switch to page 5
+		phy_write(phydev, 5, 0x8B85); // set Micro-C memory address
+		phy_write(phydev, 6, 0xC286); // set Micro-C data: enable: 0xE286, disable: 0xC286
+		phy_write(phydev, 31, 0x0008); // back to page 8
 
 		val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
 		val &= ~BIT(4);
 		phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
+
+		// Stop advertising 100M/1G EEE
+		val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
+		val &= ~(MDIO_AN_EEE_ADV_100TX | MDIO_AN_EEE_ADV_1000T);
+		phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, val);
+
+		// 500M EEE Capability
+		val = phy_read_paged(phydev, RTL821X_PAGE_GPHY, 20);
+		val &= ~BIT(7);
+		phy_write_paged(phydev, RTL821X_PAGE_GPHY, 20, val);
 	}
 
 	/* Restart AN if enabled */
-	if (an_enabled) {
-		val = phy_read(phydev, 0);
-		val |= BIT(9);
-		phy_write(phydev, 0, val);
-	}
+	if (an_enabled)
+		phy_restart_aneg(phydev);
 
-	/* GPHY page back to auto*/
+	/* GPHY page back to auto */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	pr_info("%s done\n", __func__);
@@ -3713,6 +3764,17 @@ static int rtl9300_rtl8226_phy_setup(struct phy_device *phydev)
 	v |= 0x1; // Various functions 0x1 to 0x5. Ox1 enables SGMII/HISGMII
 
 	phy_write_paged(phydev, MDIO_MMD_VEND1, 0x697A, v);
+
+	// Initially disable EEE advertisement, so we can properly turn it on later
+	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV);
+	v &= ~(MDIO_AN_EEE_ADV_100TX | MDIO_AN_EEE_ADV_1000T);
+	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, v);
+
+	// Disable 2.5GBit EEE advertisement
+	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2);
+	v &= ~MDIO_EEE_2_5GT;
+	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV2, v);
+
 	return 0;
 }
 
