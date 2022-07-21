@@ -21,8 +21,8 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
 
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1779,7 +1779,7 @@ config BCM7038_WDT
- 	tristate "BCM63xx/BCM7038 Watchdog"
+@@ -1800,7 +1800,7 @@ config BCM7038_WDT
+ 	tristate "BCM7038 Watchdog"
  	select WATCHDOG_CORE
  	depends on HAS_IOMEM
 -	depends on ARCH_BRCMSTB || BMIPS_GENERIC || COMPILE_TEST
