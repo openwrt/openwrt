@@ -2173,6 +2173,16 @@ define Device/zio_freezio
 endef
 TARGET_DEVICES += zio_freezio
 
+define Device/sztozed_zlt-s12-pro
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := ZLT
+  DEVICE_MODEL := S12 PRO
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-serial-option comgt-ncm
+endef
+TARGET_DEVICES += sztozed_zlt-s12-pro
+
 define Device/zyxel_nr7101
   $(Device/dsa-migration)
   BLOCKSIZE := 128k
