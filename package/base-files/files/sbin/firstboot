@@ -1,3 +1,47 @@
-#!/bin/sh
+#!/bin/bash
 
-/sbin/jffs2reset $@
+function find_data_partition() {
+	local pname=""
+	set -- $(cat /proc/cmdline)
+	for x in "$@"; do
+	    case "$x" in
+		data=*)
+		pname="${x#data=}"
+		;;
+		esac
+	done
+	echo $pname
+}
+
+# friendlyelec boards uses overlayfs, which has a data partition
+part=$(find_data_partition)
+if [ ! -z $part ]; then
+	ret=1
+	tmp_mnt=$(mktemp -d -t mnt-XXXXXXXXXX)
+	mount ${part} ${tmp_mnt}
+	if [ $? -eq 0 ]; then
+		cd ${tmp_mnt}/root && {
+			[ -d var ] || mkdir var
+			echo wipedata=yes > ./var/.init_wipedata
+			ret=0
+		}
+		cd --
+		umount ${tmp_mnt}
+	fi
+	rm -rf ${tmp_mnt}
+
+	if [ ${ret} -eq 0 ]; then
+		Args=( "$@" )
+		for (( i=0; i<${#Args[@]}; i++ ));
+		do
+			if [ "${Args[$i]}" = "-r" ]; then
+				reboot
+			fi
+		done
+	fi
+
+	exit ${ret}
+else
+	/sbin/jffs2reset $@
+fi
+
