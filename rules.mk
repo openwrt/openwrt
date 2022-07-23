@@ -265,6 +265,9 @@ TARGET_CXX:=$(TARGET_CROSS)g++
 KPATCH:=$(SCRIPT_DIR)/patch-kernel.sh
 SED:=$(STAGING_DIR_HOST)/bin/sed -i -e
 ESED:=$(STAGING_DIR_HOST)/bin/sed -E -i -e
+# DOWNLOAD_CHECK_CERTIFICATE is used in /scripts, so we export it here.
+DOWNLOAD_CHECK_CERTIFICATE:=$(CONFIG_DOWNLOAD_CHECK_CERTIFICATE)
+export DOWNLOAD_CHECK_CERTIFICATE
 CP:=cp -fpR
 LN:=ln -sf
 XARGS:=xargs -r
