@@ -10,6 +10,7 @@
 #include <linux/netdevice.h>
 #include <linux/firmware.h>
 #include <linux/crc32.h>
+#include <linux/sfp.h>
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl83xx-phy.h"
@@ -3676,6 +3677,29 @@ int rtl931x_link_sts_get(u32 sds)
 	return sts1;
 }
 
+static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
+{
+	struct phy_device *phydev = upstream;
+
+	rtl8214fc_media_set(phydev, true);
+
+	return 0;
+}
+
+static void rtl8214fc_sfp_remove(void *upstream)
+{
+	struct phy_device *phydev = upstream;
+
+	rtl8214fc_media_set(phydev, false);
+}
+
+static const struct sfp_upstream_ops rtl8214fc_sfp_ops = {
+	.attach = phy_sfp_attach,
+	.detach = phy_sfp_detach,
+	.module_insert = rtl8214fc_sfp_insert,
+	.module_remove = rtl8214fc_sfp_remove,
+};
+
 static int rtl8214fc_phy_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
@@ -3699,7 +3723,7 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 			return ret;
 	}
 
-	return 0;
+	return phy_sfp_probe(phydev, &rtl8214fc_sfp_ops);
 }
 
 static int rtl8214c_phy_probe(struct phy_device *phydev)
