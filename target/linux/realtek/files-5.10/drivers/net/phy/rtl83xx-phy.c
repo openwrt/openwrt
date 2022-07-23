@@ -949,19 +949,20 @@ static void rtl8380_rtl8214fc_media_set(struct phy_device *phydev, bool set_fibr
 	pr_info("Current media %x\n", media);
 	if (media & 0x2) {
 		pr_info("Powering off COPPER\n");
-		phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 		/* Ensure power is off */
-		power = phy_package_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
+		power = phy_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
 		if (!(power & (1 << 11)))
-			phy_package_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power | (1 << 11));
+			phy_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power | (1 << 11));
 	} else {
-		pr_info("Powering off FIBRE");
-		phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
+		pr_info("Powering off FIBRE\n");
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
 		/* Ensure power is off */
-		power = phy_package_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
+		power = phy_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
 		if (!(power & (1 << 11)))
-			phy_package_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power | (1 << 11));
+			phy_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power | (1 << 11));
 	}
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	if (set_fibre) {
 		val |= 1 << 10;
@@ -975,22 +976,21 @@ static void rtl8380_rtl8214fc_media_set(struct phy_device *phydev, bool set_fibr
 	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	if (set_fibre) {
-		pr_info("Powering on FIBRE");
-		phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
+		pr_info("Powering on FIBRE\n");
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
 		/* Ensure power is off */
-		power = phy_package_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
+		power = phy_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
 		if (power & (1 << 11))
-			phy_package_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power & ~(1 << 11));
+			phy_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power & ~(1 << 11));
 	} else {
 		pr_info("Powering on COPPER\n");
-		phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 		/* Ensure power is off */
-		power = phy_package_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
+		power = phy_read_paged(phydev, RTL821X_PAGE_POWER, 0x10);
 		if (power & (1 << 11))
-			phy_package_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power & ~(1 << 11));
+			phy_write_paged(phydev, RTL821X_PAGE_POWER, 0x10, power & ~(1 << 11));
 	}
-
-	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 }
 
 static bool rtl8380_rtl8214fc_media_is_fibre(struct phy_device *phydev)
