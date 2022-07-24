@@ -8,6 +8,19 @@
 board=$(board_name)
 boardname="${board##*,}"
 
+function custom_menu() {
+    nas+=("/usr/share/luci/menu.d/luci-app-hd-idle.json")
+    nas+=("/usr/share/luci/menu.d/luci-app-minidlna.json")
+    nas+=("/usr/share/luci/menu.d/luci-app-samba4.json")
+    nas+=("/usr/share/luci/menu.d/luci-app-aria2.json")
+    for (( i=0; i<${#nas[@]}; i++ ));
+    do
+        if [ -f ${nas[$i]} ]; then
+            sed -i 's/services/nas/g' ${nas[$i]}
+        fi
+    done
+}
+
 function init_firewall() {
 	uci set firewall.@defaults[0].input='ACCEPT'
 	uci set firewall.@defaults[0].output='ACCEPT'
@@ -72,6 +85,7 @@ EOL
 }
 
 function init_system() {
+	[ -e /usr/bin/ip ] || ln -sf /sbin/ip /usr/bin/ip
 	uci -q batch <<-EOF
 		set system.@system[-1].hostname='$HOSTNAME'
 		set system.@system[-1].ttylogin='1'
@@ -169,6 +183,7 @@ function add_static_host() {
 HOSTNAME="FriendlyWrt"
 
 if [ "${1,,}" = "all" ]; then
+	custom_menu
 	init_network
 	init_nft-qos
 	init_firewall
