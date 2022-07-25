@@ -128,7 +128,7 @@ define Build/Configure
 		| sort | uniq > FEATURE-DUMP.openwrt)
 	$(SED) 's/feature-libbfd=1/feature-libbfd=$(HAVE_LIBBFD)/' \
 		-e 's/feature-libcap=1/feature-libcap=$(HAVE_LIBCAP)/' \
-		-e 's/feature-clang-bpf-global-var=1/feature-clang-bpf-global-var=$(HAVE_CLANG)/' \
+		-e 's/feature-clang-bpf-co-re=1/feature-clang-bpf-co-re=$(HAVE_CLANG)/' \
 		$(PKG_BUILD_DIR)/FEATURE-DUMP.openwrt
 endef
 

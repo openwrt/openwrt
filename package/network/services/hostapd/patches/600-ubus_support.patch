@@ -424,9 +424,19 @@
  }
  
  
+@@ -350,6 +353,9 @@ void hostapd_handle_radio_measurement(st
+ 		   mgmt->u.action.u.rrm.action, MAC2STR(mgmt->sa));
+ 
+ 	switch (mgmt->u.action.u.rrm.action) {
++	case WLAN_RRM_LINK_MEASUREMENT_REPORT:
++		hostapd_ubus_handle_link_measurement(hapd, buf, len);
++		break;
+ 	case WLAN_RRM_RADIO_MEASUREMENT_REPORT:
+ 		hostapd_handle_radio_msmt_report(hapd, buf, len);
+ 		break;
 --- a/src/ap/wnm_ap.c
 +++ b/src/ap/wnm_ap.c
-@@ -463,7 +463,7 @@ static void ieee802_11_rx_bss_trans_mgmt
+@@ -461,7 +461,7 @@ static void ieee802_11_rx_bss_trans_mgmt
  					      size_t len)
  {
  	u8 dialog_token, status_code, bss_termination_delay;
@@ -435,7 +445,7 @@
  	int enabled = hapd->conf->bss_transition;
  	struct sta_info *sta;
  
-@@ -510,6 +510,7 @@ static void ieee802_11_rx_bss_trans_mgmt
+@@ -508,6 +508,7 @@ static void ieee802_11_rx_bss_trans_mgmt
  			wpa_printf(MSG_DEBUG, "WNM: not enough room for Target BSSID field");
  			return;
  		}
@@ -443,7 +453,7 @@
  		sta->agreed_to_steer = 1;
  		eloop_cancel_timeout(ap_sta_reset_steer_flag_timer, hapd, sta);
  		eloop_register_timeout(2, 0, ap_sta_reset_steer_flag_timer,
-@@ -529,6 +530,10 @@ static void ieee802_11_rx_bss_trans_mgmt
+@@ -527,6 +528,10 @@ static void ieee802_11_rx_bss_trans_mgmt
  			MAC2STR(addr), status_code, bss_termination_delay);
  	}
  

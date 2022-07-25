@@ -896,6 +896,7 @@ hostapd_rrm_print_nr(struct hostapd_neighbor_entry *nr)
 enum {
 	BSS_MGMT_EN_NEIGHBOR,
 	BSS_MGMT_EN_BEACON,
+	BSS_MGMT_EN_LINK_MEASUREMENT,
 #ifdef CONFIG_WNM_AP
 	BSS_MGMT_EN_BSS_TRANSITION,
 #endif
@@ -922,6 +923,14 @@ __hostapd_bss_mgmt_enable_f(struct hostapd_data *hapd, int flag)
 		flags = WLAN_RRM_CAPS_BEACON_REPORT_PASSIVE |
 			WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE |
 			WLAN_RRM_CAPS_BEACON_REPORT_TABLE;
+
+		if (bss->radio_measurements[0] & flags == flags)
+			return false;
+
+		bss->radio_measurements[0] |= (u8) flags;
+		return true;
+	case BSS_MGMT_EN_LINK_MEASUREMENT:
+		flags = WLAN_RRM_CAPS_LINK_MEASUREMENT;
 
 		if (bss->radio_measurements[0] & flags == flags)
 			return false;
@@ -960,6 +969,7 @@ __hostapd_bss_mgmt_enable(struct hostapd_data *hapd, uint32_t flags)
 static const struct blobmsg_policy bss_mgmt_enable_policy[__BSS_MGMT_EN_MAX] = {
 	[BSS_MGMT_EN_NEIGHBOR] = { "neighbor_report", BLOBMSG_TYPE_BOOL },
 	[BSS_MGMT_EN_BEACON] = { "beacon_report", BLOBMSG_TYPE_BOOL },
+	[BSS_MGMT_EN_LINK_MEASUREMENT] = { "link_measurement", BLOBMSG_TYPE_BOOL },
 #ifdef CONFIG_WNM_AP
 	[BSS_MGMT_EN_BSS_TRANSITION] = { "bss_transition", BLOBMSG_TYPE_BOOL },
 #endif
@@ -1238,6 +1248,98 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
+enum {
+	LM_REQ_ADDR,
+	LM_REQ_TX_POWER_USED,
+	LM_REQ_TX_POWER_MAX,
+	__LM_REQ_MAX,
+};
+
+static const struct blobmsg_policy lm_req_policy[__LM_REQ_MAX] = {
+	[LM_REQ_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
+	[LM_REQ_TX_POWER_USED] = { "tx-power-used", BLOBMSG_TYPE_INT32 },
+	[LM_REQ_TX_POWER_MAX] = { "tx-power-max", BLOBMSG_TYPE_INT32 },
+};
+
+static int
+hostapd_rrm_lm_req(struct ubus_context *ctx, struct ubus_object *obj,
+		   struct ubus_request_data *ureq, const char *method,
+		   struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct blob_attr *tb[__LM_REQ_MAX];
+	struct wpabuf *buf;
+	u8 addr[ETH_ALEN];
+	int ret;
+	int8_t txp_used, txp_max;
+
+	txp_used = 0;
+	txp_max = 0;
+
+	blobmsg_parse(lm_req_policy, __LM_REQ_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[LM_REQ_ADDR])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (tb[LM_REQ_TX_POWER_USED])
+		txp_used = (int8_t) blobmsg_get_u32(tb[LM_REQ_TX_POWER_USED]);
+
+	if (tb[LM_REQ_TX_POWER_MAX])
+		txp_max = (int8_t) blobmsg_get_u32(tb[LM_REQ_TX_POWER_MAX]);
+
+	if (hwaddr_aton(blobmsg_data(tb[LM_REQ_ADDR]), addr))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	buf = wpabuf_alloc(5);
+	if (!buf)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+	wpabuf_put_u8(buf, WLAN_ACTION_RADIO_MEASUREMENT);
+	wpabuf_put_u8(buf, WLAN_RRM_LINK_MEASUREMENT_REQUEST);
+	wpabuf_put_u8(buf, 1);
+	/* TX-Power used */
+	wpabuf_put_u8(buf, txp_used);
+	/* Max TX Power */
+	wpabuf_put_u8(buf, txp_max);
+
+	ret = hostapd_drv_send_action(hapd, hapd->iface->freq, 0, addr,
+				      wpabuf_head(buf), wpabuf_len(buf));
+
+	wpabuf_free(buf);
+	if (ret < 0)
+		return -ret;
+
+	return 0;
+}
+
+
+void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len)
+{
+	const struct ieee80211_mgmt *mgmt = (const struct ieee80211_mgmt *) data;
+	const u8 *pos, *end;
+	u8 token;
+
+	end = data + len;
+	token = mgmt->u.action.u.rrm.dialog_token;
+	pos = mgmt->u.action.u.rrm.variable;
+
+	if (end - pos < 8)
+		return;
+
+	if (!hapd->ubus.obj.has_subscribers)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", mgmt->sa);
+	blobmsg_add_u16(&b, "dialog-token", token);
+	blobmsg_add_u16(&b, "rx-antenna-id", pos[4]);
+	blobmsg_add_u16(&b, "tx-antenna-id", pos[5]);
+	blobmsg_add_u16(&b, "rcpi", pos[6]);
+	blobmsg_add_u16(&b, "rsni", pos[7]);
+
+	ubus_notify(ctx, &hapd->ubus.obj, "link-measurement-report", b.head, -1);
+}
+
 
 #ifdef CONFIG_WNM_AP
 
@@ -1431,6 +1533,7 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("rrm_nr_list", hostapd_rrm_nr_list),
 	UBUS_METHOD("rrm_nr_set", hostapd_rrm_nr_set, nr_set_policy),
 	UBUS_METHOD("rrm_beacon_req", hostapd_rrm_beacon_req, beacon_req_policy),
+	UBUS_METHOD("link_measurement_req", hostapd_rrm_lm_req, lm_req_policy),
 #ifdef CONFIG_WNM_AP
 	UBUS_METHOD("wnm_disassoc_imminent", hostapd_wnm_disassoc_imminent, wnm_disassoc_policy),
 	UBUS_METHOD("bss_transition_request", hostapd_bss_transition_request, bss_tr_policy),
