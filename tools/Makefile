@@ -22,7 +22,7 @@ ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmwar
 endif
 
 tools-y += autoconf autoconf-archive automake bc bison cmake cpio dosfstools
-tools-y += e2fsprogs expat fakeroot findutils firmware-utils flex gengetopt
+tools-y += e2fsprogs expat fakeroot findutils firmware-utils flex gengetopt libdeflate
 tools-y += libressl libtool lzma m4 make-ext4fs meson missing-macros mkimage
 tools-y += mklibs mtd-utils mtools ninja padjffs2 patch-image
 tools-y += patchelf pkgconf quilt squashfskit4 sstrip zip zlib zstd
