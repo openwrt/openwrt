@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later or MIT)
+/dts-v1/;
+
+#include "rtl9302_zyxel_xgs1210-12.dts"
+
+/ {
+	compatible = "zyxel,xgs1010-12", "realtek,rtl838x-soc";
+	model = "Zyxel XGS1010-12 Switch";
+};
+
+&partitions {
+	compatible = "fixed-partitions";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	partition@300000 {
+		label = "firmware";
+		reg = <0x300000 0x680000>;
+		compatible = "openwrt,uimage", "denx,uimage";
+		openwrt,ih-magic = <0x93001010>;
+	};
+	/delete-node/ partition@fe0000;
+	partition@980000 {
+		label = "firmware2";
+		reg = <0x980000 0x680000>;
+	};
+};
