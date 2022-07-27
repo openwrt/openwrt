@@ -134,28 +134,25 @@ ramips_setup_interfaces()
 		;;
 	xiaomi,mi-router-cr660x)
 		ucidef_add_switch "switch0" \
-			"0:lan:1" "1:lan:2" "2:lan:3" "4:wan" "6@eth0"
+			"0:lan:1" "1:lan:2" "2:lan:3" "4:wan" "6@eth0" "5@eth1"
 		;;
 	d-team,newifi-d2)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
 	gehua,ghl-r-001)
-		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "6@eth0"
+			"0:lan" "1:lan" "2:lan" "4:wan" "6@eth0" "5@eth1"
 		;;
 	jcg,y2|\
 	netgear,r6220|\
 	netgear,wndr3700-v5)
-		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
-			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "6@eth0"
+			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0" "5@eth1"
 		;;
 	phicomm,k2p)
-		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "3:lan" "6@eth0"
+			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0" "5@eth1"
 		;;
 	xwrt,nxc2009e-v100)
 		ucidef_add_switch "switch0" \
@@ -175,18 +172,16 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3g-nor)
 		ucidef_add_switch "switch0" \
-			"2:lan:2" "3:lan:1" "1:wan" "6t@eth0"
+			"2:lan:2" "3:lan:1" "1:wan" "6@eth0" "5@eth1"
 		;;
 	xiaomi,mi-router-4)
-		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
-			"1:lan:2" "2:lan:1" "6t@eth0"
+			"1:lan:2" "2:lan:1" "4:wan" "6@eth0" "5@eth1"
 		;;
 	xiaomi,mi-router-ac2100|\
 	xiaomi,redmi-router-ac2100)
-		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
-			"2:lan:1" "3:lan:2" "4:lan:3" "6@eth0"
+			"2:lan:1" "3:lan:2" "4:lan:3" "0:wan" "6@eth0" "5@eth1"
 		;;
 	xwrt,t-cpe1201k-v01)
 		ucidef_add_switch "switch0" \
@@ -209,12 +204,15 @@ ramips_setup_interfaces()
 			"0:lan" "4:wan" "6@eth0"
 		;;
 	xwrt,dm2-t-mb2ep-v02-nor|\
-	xwrt,ms1800k-ax-nor|\
-	xwrt,wr1800k-ax-norplusemmc|\
-	xwrt,wr1800k-ax-nor)
+	xwrt,ms1800k-ax-nor)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"1:lan:1" "2:lan:2" "3:lan:3" "6@eth0"
+		;;
+	xwrt,wr1800k-ax-norplusemmc|\
+	xwrt,wr1800k-ax-nor)
+		ucidef_add_switch "switch0" \
+			"1:lan:1" "2:lan:2" "3:lan:3" "4:wan" "6@eth0" "5@eth1"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
@@ -371,15 +369,6 @@ ramips_setup_macs()
 		;;
 	yuncore,ax820)
 		label_mac=$(mtd_get_mac_binary Factory 0x4)
-		;;
-	xiaomi,mi-router-cr660x)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(mtd_get_mac_binary factory 0x3fff4)
-		;;
-	xiaomi,mi-router-3g|\
-	xiaomi,mi-router-3g-nor)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(mtd_get_mac_binary factory 0xe000)
 		;;
 	xwrt,ac8000p|\
 	xwrt,nxc200p|\

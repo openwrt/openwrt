@@ -91,7 +91,7 @@ dlink,dir-882-r1)
 	;;
 gehua,ghl-r-001|\
 jcg,y2)
-	ucidef_set_led_netdev "internet" "Internet" "blue:internet" "eth1"
+	ucidef_set_led_switch "internet" "Internet" "blue:internet" "switch0" "0x10"
 	;;
 gnubee,gb-pc2)
 	ucidef_set_led_netdev "ethyellow" "ethyellow" "orange:ethyellow" "ethyellow" "link tx rx"
@@ -140,7 +140,7 @@ netgear,wac124)
 	;;
 netgear,r6220|\
 netgear,wndr3700-v5)
-	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
 	;;
 netgear,r6700-v2|\
 netgear,r6800|\
@@ -243,14 +243,17 @@ xwrt,wr1800k-ax-nand)
 xwrt,dm2-t-mb2ep-v02-nor)
 	ucidef_set_led_netdev "internet" "Internet" "ether:blue" "eth1"
 	;;
-xwrt,ms1800k-ax-nor|\
-xwrt,wr1800k-ax-norplusemmc|\
-xwrt,wr1800k-ax-nor)
+xwrt,ms1800k-ax-nor)
 	ucidef_set_led_netdev "wan" "wan" "ether:blue" "eth1"
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "wlan:green" "wlan0" "link"
 	;;
+xwrt,wr1800k-ax-norplusemmc|\
+xwrt,wr1800k-ax-nor)
+	ucidef_set_led_switch "wan" "wan" "ether:blue" "switch0" "0x10"
+	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "wlan:green" "wlan0" "link"
+	;;
 xiaomi,mi-router-ac2100)
-	ucidef_set_led_netdev "wan-blue" "WAN (blue)" "blue:wan" "eth1"
+	ucidef_set_led_switch "wan-blue" "WAN (blue)" "blue:wan" "switch0" "0x01"
 	;;
 xiaomi,mi-router-cr6606|\
 xiaomi,mi-router-cr6608|\
@@ -261,7 +264,7 @@ xiaomi,mi-router-cr660x)
 	ucidef_set_led_switch "wan" "wan" "blue:net" "switch0" "0x10"
 	;;
 xiaomi,redmi-router-ac2100)
-	ucidef_set_led_netdev "wan" "wan" "white:wan" "eth1"
+	ucidef_set_led_switch "wan" "wan" "white:wan" "switch0" "0x01"
 	;;
 youhua,wr1200js)
 	ucidef_set_led_netdev "internet" "INTERNET" "green:wan" "wan"

@@ -72,11 +72,15 @@
 
 &gmac1 {
 	status = "okay";
-	phy-handle = <&ethphy4>;
 	phy-mode = "rgmii";
 
 	nvmem-cells = <&macaddr_factory_e006>;
 	nvmem-cell-names = "mac-address";
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+	};
 };
 
 &mdio {
@@ -108,7 +112,10 @@
 		compatible = "mediatek,mt753x-port";
 		reg = <5>;
 		phy-mode = "rgmii";
-		phy-address = <0x4>;
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
 	};
 
 	port6: port@6 {

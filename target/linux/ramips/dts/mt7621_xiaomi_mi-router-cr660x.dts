@@ -14,6 +14,7 @@
 		led-failsafe = &led_sys_yellow;
 		led-running = &led_sys_blue;
 		led-upgrade = &led_sys_yellow;
+		label-mac-device = &gmac1;
 	};
 
 	chosen {
@@ -136,6 +137,18 @@
 	phy-mode = "trgmii";
 };
 
+&gmac1 {
+	status = "okay";
+	phy-mode = "rgmii";
+	nvmem-cells = <&macaddr_factory_3fff4>;
+	nvmem-cell-names = "mac-address";
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+	};
+};
+
 &switch0 {
 	/* must delete compatible property */
 	/delete-property/ compatible;
@@ -155,7 +168,6 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	/*
 	port5: port@5 {
 		compatible = "mediatek,mt753x-port";
 		reg = <5>;
@@ -165,7 +177,6 @@
 			full-duplex;
 		};
 	};
-	*/
 
 	port6: port@6 {
 		compatible = "mediatek,mt753x-port";
