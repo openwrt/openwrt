@@ -1,0 +1,423 @@
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 12 Sep 2022 21:33:13 +0100
+Subject: [PATCH] rt2x00: various experimental fixes for MT7620
+
+Serge Vasilugin reports:
+
+To improve mt7620 built-in wifi performance some changes:
+1. Correct BW20/BW40 switching (see comments with mark see commets with mark (1))
+2. Correct TX_SW_CFG1 MAC reg from v3 of vendor driver see
+        https://gitlab.com/dm38/padavan-ng/-/blob/master/trunk/proprietary/rt_wifi/rtpci/3.0.X.X/mt76x2/chips/rt6352.c#L531
+3. Set bbp66 for all chains.
+4. US_CYC_CNT init based on Programming guide, default value was 33 (pci),
+   set chipset bus clock with fallback to cpu clock/3.
+5. Don't overwrite default values for mt7620.
+6. Correct some typos.
+7. Add support for external LNA:
+    a) RF and BBP regs never be corrected for this mode
+    b) eLNA is driven the same way as ePA with mt7620's pin PA
+        but vendor driver explicitly pin PA to gpio mode (for forrect calibration?)
+        so I'm not sure that request for pa_pin in dts-file will be enough
+
+First 5 changes (really 2) improve performance for boards w/o eLNA/ePA.
+Changes 7 add support for eLNA
+
+Configuration w/o eLAN/ePA and with eLNA show results
+tx/rx (from router point of view) for each stream:
+ 35-40/30-35 Mbps for HT20
+ 65-70/60-65 Mbps for HT40
+
+Yes. Max results for 2T2R client is 140-145/135-140
+with peaks 160/150, It correspond to mediatek driver results.
+Boards with ePA untested.
+
+Reported-by: Serge Vasilugin <vasilugin@yandex.ru>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -137,6 +137,26 @@ static u8 rt2800_bbp_read(struct rt2x00_
+ 
+ 	return value;
+ }
++//serge: move here for use in test
++static void rt2800_bbp_glrt_write(struct rt2x00_dev *rt2x00dev,
++				  const u8 reg, const u8 value)
++{
++	rt2800_bbp_write(rt2x00dev, 195, reg);
++	rt2800_bbp_write(rt2x00dev, 196, value);
++}
++
++static void rt2800_bbp_dcoc_write(struct rt2x00_dev *rt2x00dev,
++				  const u8 reg, const u8 value)
++{
++	rt2800_bbp_write(rt2x00dev, 158, reg);
++	rt2800_bbp_write(rt2x00dev, 159, value);
++}
++
++static u8 rt2800_bbp_dcoc_read(struct rt2x00_dev *rt2x00dev, const u8 reg)
++{
++	rt2800_bbp_write(rt2x00dev, 158, reg);
++	return rt2800_bbp_read(rt2x00dev, 159);
++}
+ 
+ static void rt2800_rfcsr_write(struct rt2x00_dev *rt2x00dev,
+ 			       const unsigned int word, const u8 value)
+@@ -284,6 +304,28 @@ static void rt2800_rf_write(struct rt2x0
+ 	mutex_unlock(&rt2x00dev->csr_mutex);
+ }
+ 
++void rt6352_enable_pa_pin(struct rt2x00_dev *rt2x00dev, int enable)
++{
++	if (!rt2x00dev->pinctrl)
++		return;
++
++	if (enable) {
++		if (!rt2x00dev->pins_default) {
++			rt2x00_warn(rt2x00dev, "cannot enable PA pin! no default pinctrl\n");
++			return;
++		}
++
++		pinctrl_select_state(rt2x00dev->pinctrl, rt2x00dev->pins_default);
++	} else {
++		if (!rt2x00dev->pins_pa_gpio) {
++			rt2x00_warn(rt2x00dev, "cannot disable PA pin! no pa_gpio pinctrl\n");
++			return;
++		}
++
++		pinctrl_select_state(rt2x00dev->pinctrl, rt2x00dev->pins_pa_gpio);
++	}
++}
++
+ static const unsigned int rt2800_eeprom_map[EEPROM_WORD_COUNT] = {
+ 	[EEPROM_CHIP_ID]		= 0x0000,
+ 	[EEPROM_VERSION]		= 0x0001,
+@@ -3801,6 +3843,20 @@ static void rt2800_config_channel_rf7620
+ 		rfcsr |= tx_agc_fc;
+ 		rt2800_rfcsr_write_bank(rt2x00dev, 7, 59, rfcsr);
+ 	}
++
++	if (conf_is_ht40(conf)) {//serge:skipped this step (1)
++		rt2800_bbp_write(rt2x00dev, 195, 141);
++		rt2800_bbp_write(rt2x00dev, 196, 0x10);
++		rt2800_bbp_write(rt2x00dev, 195, 157);
++		rt2800_bbp_write(rt2x00dev, 196, 0x2f);
++		//rt2800_bbp_write(rt2x00dev, 105, 0x3C);
++	} else {
++		rt2800_bbp_write(rt2x00dev, 195, 141);
++		rt2800_bbp_write(rt2x00dev, 196, 0x1a);
++		rt2800_bbp_write(rt2x00dev, 195, 157);
++		rt2800_bbp_write(rt2x00dev, 196, 0x40);
++		//rt2800_bbp_write(rt2x00dev, 105, 0x1C);
++	}
+ }
+ 
+ static void rt2800_config_alc(struct rt2x00_dev *rt2x00dev,
+@@ -4172,6 +4228,11 @@ static void rt2800_config_channel(struct
+ 			rt2800_bbp_write(rt2x00dev, 86, 0x46);
+ 		else
+ 			rt2800_bbp_write(rt2x00dev, 86, 0);
++	} else if (rt2x00_rt(rt2x00dev, RT6352)) {//serge: don't overwite bbp r86 (5)
++		rt2800_bbp_write(rt2x00dev, 62, 0x37 - rt2x00dev->lna_gain);
++		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
++		rt2800_bbp_write(rt2x00dev, 64, 0x37 - rt2x00dev->lna_gain);
++		rt2800_bbp_write(rt2x00dev, 86, 0x38);
+ 	} else {
+ 		rt2800_bbp_write(rt2x00dev, 62, 0x37 - rt2x00dev->lna_gain);
+ 		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
+@@ -4377,7 +4438,8 @@ static void rt2800_config_channel(struct
+ 		reg = (rf->channel <= 14 ? 0x1c : 0x24) + 2*rt2x00dev->lna_gain;
+ 		rt2800_bbp_write_with_rx_chain(rt2x00dev, 66, reg);
+ 
+-		rt2800_iq_calibrate(rt2x00dev, rf->channel);
++		if (!rt2x00_rt(rt2x00dev, RT6352))//serge: this function for rt5592 only, for rt6352 it switch off compensations (5)
++		    rt2800_iq_calibrate(rt2x00dev, rf->channel);
+ 	}
+ 
+ 	if (rt2x00_rt(rt2x00dev, RT6352)) {
+@@ -4417,6 +4479,31 @@ static void rt2800_config_channel(struct
+ 			rt2800_register_write(rt2x00dev, TX1_RF_GAIN_ATTEN,
+ 					      0x6C6C6B6C);
+ 		}
++
++		if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {//serge: for support eLNA (7a)
++			rt2x00_warn(rt2x00dev, "Correct RF/BBP for eLNA!\n");
++			reg = rt2800_register_read(rt2x00dev, RF_CONTROL3);
++			reg |= 0x00000101;
++			rt2800_register_write(rt2x00dev, RF_CONTROL3, reg);
++
++			reg = rt2800_register_read(rt2x00dev, RF_BYPASS3);
++			reg |= 0x00000101;
++			rt2800_register_write(rt2x00dev, RF_BYPASS3, reg);
++
++			rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x66);
++			rt2800_rfcsr_write_chanreg(rt2x00dev, 17, 0x20);
++			rt2800_rfcsr_write_chanreg(rt2x00dev, 18, 0x42);
++			rt2800_bbp_write(rt2x00dev, 75, 0x68);//serge: move bbp eLNA init here?
++			rt2800_bbp_write(rt2x00dev, 76, 0x4C);
++			rt2800_bbp_write(rt2x00dev, 79, 0x1C);
++			rt2800_bbp_write(rt2x00dev, 80, 0x0C);
++			rt2800_bbp_write(rt2x00dev, 82, 0xB6);
++			/* bank 0 RF reg 42 and glrt BBP reg 141
++			will be set in config channel function
++			in dependence of channel and HT20/HT40
++			so don't touch it
++			*/
++		}
+ 	}
+ 
+ 	bbp = rt2800_bbp_read(rt2x00dev, 4);
+@@ -4457,6 +4544,9 @@ static void rt2800_config_channel(struct
+ 		rt2x00_set_field8(&bbp, BBP49_UPDATE_FLAG, 0);
+ 		rt2800_bbp_write(rt2x00dev, 49, bbp);
+ 	}
++//serge:just print results after config channel - don't forget to remove nahren (c) <- this is copyright, not ref to comments :)
++	bbp = rt2800_bbp_dcoc_read(rt2x00dev, 0x03);
++	pr_info("BBP tx/rx compensation control=0x%02x\n", bbp);
+ }
+ 
+ static int rt2800_get_gain_calibration_delta(struct rt2x00_dev *rt2x00dev)
+@@ -5527,7 +5617,7 @@ void rt2800_vco_calibration(struct rt2x0
+ 	}
+ 	rt2800_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
+ 
+-	if (rt2x00_rt(rt2x00dev, RT6352)) {
++	if (rt2x00_rt(rt2x00dev, RT6352)) {//serge:remark - move all this code to rfcsr_6352 init?
+ 		if (rt2x00dev->default_ant.rx_chain_num == 1) {
+ 			rt2800_bbp_write(rt2x00dev, 91, 0x07);
+ 			rt2800_bbp_write(rt2x00dev, 95, 0x1A);
+@@ -5695,7 +5785,8 @@ static inline void rt2800_set_vgc(struct
+ 	if (qual->vgc_level != vgc_level) {
+ 		if (rt2x00_rt(rt2x00dev, RT3572) ||
+ 		    rt2x00_rt(rt2x00dev, RT3593) ||
+-		    rt2x00_rt(rt2x00dev, RT3883)) {
++		    rt2x00_rt(rt2x00dev, RT3883) ||
++		    rt2x00_rt(rt2x00dev, RT6352)) {//serge: rt6352 too (3)
+ 			rt2800_bbp_write_with_rx_chain(rt2x00dev, 66,
+ 						       vgc_level);
+ 		} else if (rt2x00_rt(rt2x00dev, RT5592)) {
+@@ -5930,7 +6021,7 @@ static int rt2800_init_registers(struct
+ 					      0x00550055);
+ 		} else {
+ 			rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000401);
+-			rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x000C0000);
++			rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x000C0001);//serge:was 0x000C0000 (2)
+ 			rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
+ 			rt2800_register_write(rt2x00dev, TX_ALC_VGA3, 0x00000000);
+ 			rt2800_register_write(rt2x00dev, TX0_BB_GAIN_ATTEN, 0x0);
+@@ -6195,6 +6286,29 @@ static int rt2800_init_registers(struct
+ 		reg = rt2800_register_read(rt2x00dev, US_CYC_CNT);
+ 		rt2x00_set_field32(&reg, US_CYC_CNT_CLOCK_CYCLE, 125);
+ 		rt2800_register_write(rt2x00dev, US_CYC_CNT, reg);
++	} else if (rt2x00_is_soc(rt2x00dev)) {//serge:which value correct? (4)
++		struct clk *clk = clk_get_sys("bus", NULL);
++		int rate;
++
++		if (IS_ERR(clk)) {
++			rt2x00_warn(rt2x00dev, "system bus clock undefined\n");
++			clk = clk_get_sys("cpu", NULL);
++
++			if (IS_ERR(clk))
++			    rate = 125;
++			else {
++			    rate = clk_get_rate(clk) / 3000000;
++			    clk_put(clk);
++			}
++		} else {
++			rate = clk_get_rate(clk) / 1000000;
++			clk_put(clk);
++		}
++
++		rt2x00_info(rt2x00dev, "set US_CYC=%dMHz\n", rate);
++		reg = rt2800_register_read(rt2x00dev, US_CYC_CNT);
++		rt2x00_set_field32(&reg, US_CYC_CNT_CLOCK_CYCLE, rate);
++		rt2800_register_write(rt2x00dev, US_CYC_CNT, reg);
+ 	}
+ 
+ 	reg = rt2800_register_read(rt2x00dev, HT_FBK_CFG0);
+@@ -6981,26 +7095,7 @@ static void rt2800_init_bbp_5592(struct
+ 	if (rt2x00_rt_rev_gte(rt2x00dev, RT5592, REV_RT5592C))
+ 		rt2800_bbp_write(rt2x00dev, 103, 0xc0);
+ }
+-
+-static void rt2800_bbp_glrt_write(struct rt2x00_dev *rt2x00dev,
+-				  const u8 reg, const u8 value)
+-{
+-	rt2800_bbp_write(rt2x00dev, 195, reg);
+-	rt2800_bbp_write(rt2x00dev, 196, value);
+-}
+-
+-static void rt2800_bbp_dcoc_write(struct rt2x00_dev *rt2x00dev,
+-				  const u8 reg, const u8 value)
+-{
+-	rt2800_bbp_write(rt2x00dev, 158, reg);
+-	rt2800_bbp_write(rt2x00dev, 159, value);
+-}
+-
+-static u8 rt2800_bbp_dcoc_read(struct rt2x00_dev *rt2x00dev, const u8 reg)
+-{
+-	rt2800_bbp_write(rt2x00dev, 158, reg);
+-	return rt2800_bbp_read(rt2x00dev, 159);
+-}
++//serge: move these function upper
+ 
+ static void rt2800_init_bbp_6352(struct rt2x00_dev *rt2x00dev)
+ {
+@@ -8635,7 +8730,7 @@ static void rt2800_r_calibration(struct
+ 		r_cal_code = (u8)rcalcode;
+ 
+ 	rt2800_rfcsr_write_bank(rt2x00dev, 0, 7, r_cal_code);
+-
++	pr_info("RF bank 0 reg 5=0x%02x\n", r_cal_code);//serge: just for info to compare with vendor driver
+ 	rt2800_bbp_write(rt2x00dev, 22, 0x0);
+ 
+ 	bytevalue = rt2800_bbp_read(rt2x00dev, 21);
+@@ -8693,7 +8788,7 @@ static void rt2800_rxdcoc_calibration(st
+ 			break;
+ 	}
+ 
+-	saverfb5r4 = rt2800_rfcsr_read_bank(rt2x00dev, 5, 0);
++	saverfb5r4 = rt2800_rfcsr_read_bank(rt2x00dev, 5, 4);//serge: was 0 - typo? (6)
+ 	saverfb7r4 = rt2800_rfcsr_read_bank(rt2x00dev, 7, 4);
+ 	saverfb5r4 = saverfb5r4 & (~0x40);
+ 	saverfb7r4 = saverfb7r4 & (~0x40);
+@@ -9022,13 +9117,15 @@ static void rt2800_rxiq_calibration(stru
+ 				rt2x00_info(rt2x00dev, "RXIQ G_imb=%d, Ph_rx=%d\n", g_imb, ph_rx);
+ 
+ 				if ((ph_rx > 20) || (ph_rx < -20)) {
++					rt2x00_warn(rt2x00dev, "RXIQ calibration FAIL(ph_rx=%d out of [-20..20]", ph_rx);//serge:just to see value
+ 					ph_rx = 0;
+-					rt2x00_warn(rt2x00dev, "RXIQ calibration FAIL");
++					//rt2x00_warn(rt2x00dev, "RXIQ calibration FAIL");
+ 				}
+ 
+ 				if ((g_imb > 12) || (g_imb < -12)) {
++					rt2x00_warn(rt2x00dev, "RXIQ calibration FAIL(g_imb=%d out of (-12..12]", g_imb);//serge:just to see the reason
+ 					g_imb = 0;
+-					rt2x00_warn(rt2x00dev, "RXIQ calibration FAIL");
++					//rt2x00_warn(rt2x00dev, "RXIQ calibration FAIL");
+ 				}
+ 			}
+ 		else {
+@@ -9039,11 +9136,21 @@ static void rt2800_rxiq_calibration(stru
+ 		}
+ 
+ 		if (ch_idx == 0) {
++			//serge: just to see values
++			pr_info("RXIQ RX0 g_imb (0x37, %2x) ph_rx (0x35, %2x)\n",
++			    g_imb & 0x3f,
++			    ph_rx & 0x3f
++			);
+ 			rt2800_bbp_write(rt2x00dev, 158, 0x37);
+ 			rt2800_bbp_write(rt2x00dev, 159, g_imb & 0x3f);
+ 			rt2800_bbp_write(rt2x00dev, 158, 0x35);
+ 			rt2800_bbp_write(rt2x00dev, 159, ph_rx & 0x3f);
+ 		} else {
++			//serge: just to see values
++			pr_info("RXIQ RX1 g_imb (0x55, %2x) ph_rx (0x53, %2x)\n",
++			    g_imb & 0x3f,
++			    ph_rx & 0x3f
++			);
+ 			rt2800_bbp_write(rt2x00dev, 158, 0x55);
+ 			rt2800_bbp_write(rt2x00dev, 159, g_imb & 0x3f);
+ 			rt2800_bbp_write(rt2x00dev, 158, 0x53);
+@@ -9745,6 +9852,15 @@ void rt2800_loft_iq_calibration(struct r
+ 	}
+ 
+ 	for (rf_alc_idx = 0; rf_alc_idx < 3; rf_alc_idx++) {
++		//serge: just to see values
++		pr_info("LOFT ALC (0xb0, %2x) I0 (0xb1, %2x) Q0 (0xb2, %2x) I1 (0xb8, %2x) Q1 (0xb9, %2x)\n",
++		    rf_alc_idx,
++		    loft_dc_search_result[CHAIN_0][rf_alc_idx][0x00] & 0x3F,
++		    loft_dc_search_result[CHAIN_0][rf_alc_idx][0x01] & 0x3F,
++		    loft_dc_search_result[CHAIN_1][rf_alc_idx][0x00] & 0x3F,
++		    loft_dc_search_result[CHAIN_1][rf_alc_idx][0x01] & 0x3F
++		);
++
+ 		for (idx = 0; idx < 4; idx++) {
+ 			rt2800_bbp_write(rt2x00dev, 158, 0xB0);
+ 			bbp = (idx<<2) + rf_alc_idx;
+@@ -10669,6 +10785,7 @@ static void rt2800_init_rfcsr_6352(struc
+ 		rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
+ 	}
+ 
++	rt6352_enable_pa_pin(rt2x00dev, 0);//serge: vendor driver do it before calibration (7b)
+ 	rt2800_r_calibration(rt2x00dev);
+ 	rt2800_rf_self_txdc_cal(rt2x00dev);
+ 	rt2800_rxdcoc_calibration(rt2x00dev);
+@@ -10676,6 +10793,29 @@ static void rt2800_init_rfcsr_6352(struc
+ 	rt2800_bw_filter_calibration(rt2x00dev, false);
+ 	rt2800_loft_iq_calibration(rt2x00dev);
+ 	rt2800_rxiq_calibration(rt2x00dev);
++	rt6352_enable_pa_pin(rt2x00dev, 1);//serge: vendor driver do it after calibration (7b)
++	/* Vendor driver restore iLNA/iPA before
++	recalibration and set correct values after.
++	Openwrt driver init iLNA and iPA but restore only
++	ePA values after recalibration.
++	So set eLNA values only
++	*/
++	if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {//serge: rf regs never corrected for eLNA (7a)
++		rt2x00_info(rt2x00dev, "Correct RF/BBP for eLNA!\n");
++		rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x66);
++		rt2800_rfcsr_write_chanreg(rt2x00dev, 17, 0x20);
++		rt2800_rfcsr_write_chanreg(rt2x00dev, 18, 0x42);
++		rt2800_bbp_write(rt2x00dev, 75, 0x68);//serge: move bbp eLNA init here?
++		rt2800_bbp_write(rt2x00dev, 76, 0x4C);
++		rt2800_bbp_write(rt2x00dev, 79, 0x1C);
++		rt2800_bbp_write(rt2x00dev, 80, 0x0C);
++		rt2800_bbp_write(rt2x00dev, 82, 0xB6);
++		/* bank 0 RF reg 42 and glrt BBP reg 141
++		will be set in config channel function
++		in dependence of channel and HT20/HT40
++		so don't touch it
++		*/
++	}
+ }
+ 
+ static void rt2800_init_rfcsr(struct rt2x00_dev *rt2x00dev)
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+@@ -28,6 +28,7 @@
+ #include <linux/average.h>
+ #include <linux/usb.h>
+ #include <linux/clk.h>
++#include <linux/pinctrl/consumer.h>
+ #include <linux/rt2x00_platform.h>
+ 
+ #include <net/mac80211.h>
+@@ -1029,6 +1030,11 @@ struct rt2x00_dev {
+ 
+ 	/* Clock for System On Chip devices. */
+ 	struct clk *clk;
++
++	/* pinctrl and states for System On Chip devices with PA/LNA. */
++	struct pinctrl *pinctrl;
++	struct pinctrl_state *pins_default;
++	struct pinctrl_state *pins_pa_gpio;
+ };
+ 
+ struct rt2x00_bar_list_entry {
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
+@@ -97,6 +97,21 @@ int rt2x00soc_probe(struct platform_devi
+ 	if (retval)
+ 		goto exit_free_reg;
+ 
++	rt2x00dev->pinctrl = devm_pinctrl_get(&pdev->dev);
++	if (IS_ERR(rt2x00dev->pinctrl)) {
++		rt2x00dev->pinctrl = NULL;
++		rt2x00dev->pins_default = NULL;
++		rt2x00dev->pins_pa_gpio = NULL;
++	} else {
++		rt2x00dev->pins_default = pinctrl_lookup_state(rt2x00dev->pinctrl, "default");
++		if (IS_ERR(rt2x00dev->pins_default))
++			rt2x00dev->pins_default = NULL;
++
++		rt2x00dev->pins_pa_gpio = pinctrl_lookup_state(rt2x00dev->pinctrl, "pa_gpio");
++		if (IS_ERR(rt2x00dev->pins_pa_gpio))
++			rt2x00dev->pins_pa_gpio = NULL;
++	}
++
+ 	return 0;
+ 
+ exit_free_reg:
