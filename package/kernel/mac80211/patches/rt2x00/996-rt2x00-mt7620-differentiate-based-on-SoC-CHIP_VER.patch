@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
-@@ -1042,6 +1042,11 @@
+@@ -1044,6 +1044,11 @@
  #define MIMO_PS_CFG_RX_STBY_POL		FIELD32(0x00000010)
  #define MIMO_PS_CFG_RX_RX_STBY0		FIELD32(0x00000020)
  
@@ -14,7 +14,7 @@
   */
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -3698,14 +3698,16 @@ static void rt2800_config_channel_rf7620
+@@ -3778,14 +3778,16 @@ static void rt2800_config_channel_rf7620
  	rt2x00_set_field8(&rfcsr, RFCSR19_K, rf->rf4);
  	rt2800_rfcsr_write(rt2x00dev, 19, rfcsr);
  
@@ -39,7 +39,7 @@
  
  	rfcsr = rt2800_rfcsr_read(rt2x00dev, 1);
  	rt2x00_set_field8(&rfcsr, RFCSR1_TX2_EN_MT7620,
-@@ -3739,18 +3741,23 @@ static void rt2800_config_channel_rf7620
+@@ -3819,18 +3821,23 @@ static void rt2800_config_channel_rf7620
  		rt2800_rfcsr_write_dccal(rt2x00dev, 59, 0x20);
  	}
  
@@ -73,9 +73,9 @@
  
  	if (!test_bit(DEVICE_STATE_SCANNING, &rt2x00dev->flags)) {
  		if (conf_is_ht40(conf)) {
-@@ -3850,25 +3857,29 @@ static void rt2800_config_alc(struct rt2
- 	if (i == 10000)
- 		rt2x00_warn(rt2x00dev, "Wait MAC Status to MAX !!!\n");
+@@ -3929,25 +3936,29 @@ static void rt2800_config_alc(struct rt2
+ 	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY)))
+ 		rt2x00_warn(rt2x00dev, "RF busy while configuring ALC\n");
  
 -	if (chan->center_freq > 2457) {
 -		bbp = rt2800_bbp_read(rt2x00dev, 30);
@@ -121,12 +121,12 @@
  	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, mac_sys_ctrl);
  
  	rt2800_vco_calibration(rt2x00dev);
-@@ -5906,18 +5917,33 @@ static int rt2800_init_registers(struct
+@@ -6011,18 +6022,33 @@ static int rt2800_init_registers(struct
  	} else if (rt2x00_rt(rt2x00dev, RT5350)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  	} else if (rt2x00_rt(rt2x00dev, RT6352)) {
 -		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000401);
--		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x000C0000);
+-		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x000C0001);
 -		rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
 -		rt2800_register_write(rt2x00dev, TX_ALC_VGA3, 0x00000000);
 -		rt2800_register_write(rt2x00dev, TX0_BB_GAIN_ATTEN, 0x0);
@@ -150,7 +150,7 @@
 +					      0x00550055);
 +		} else {
 +			rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000401);
-+			rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x000C0000);
++			rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x000C0001);
 +			rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
 +			rt2800_register_write(rt2x00dev, TX_ALC_VGA3, 0x00000000);
 +			rt2800_register_write(rt2x00dev, TX0_BB_GAIN_ATTEN, 0x0);
@@ -167,7 +167,7 @@
  		reg = rt2800_register_read(rt2x00dev, TX_ALC_CFG_1);
  		rt2x00_set_field32(&reg, TX_ALC_CFG_1_ROS_BUSY_EN, 0);
  		rt2800_register_write(rt2x00dev, TX_ALC_CFG_1, reg);
-@@ -7061,14 +7087,16 @@ static void rt2800_init_bbp_6352(struct
+@@ -7127,14 +7153,16 @@ static void rt2800_init_bbp_6352(struct
  	rt2800_bbp_write(rt2x00dev, 188, 0x00);
  	rt2800_bbp_write(rt2x00dev, 189, 0x00);
  
@@ -192,7 +192,7 @@
  
  	/* BBP for G band GLRT function (BBP_128 ~ BBP_221) */
  	rt2800_bbp_glrt_write(rt2x00dev, 0, 0x00);
-@@ -10407,31 +10435,36 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10408,31 +10436,36 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write(rt2x00dev, 42, 0x5B);
  	rt2800_rfcsr_write(rt2x00dev, 43, 0x00);
  
@@ -254,7 +254,7 @@
  
  	/* Initialize RF channel register to default value */
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 0, 0x03);
-@@ -10497,63 +10530,71 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10498,63 +10531,71 @@ static void rt2800_init_rfcsr_6352(struc
  
  	rt2800_rfcsr_write_bank(rt2x00dev, 6, 45, 0xC5);
  
@@ -383,7 +383,7 @@
  
  	/* Initialize RF DC calibration register to default value */
  	rt2800_rfcsr_write_dccal(rt2x00dev, 0, 0x47);
-@@ -10616,12 +10657,17 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10617,12 +10658,17 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_dccal(rt2x00dev, 62, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 63, 0x00);
  
@@ -404,5 +404,5 @@
 +		rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
 +	}
  
+ 	rt6352_enable_pa_pin(rt2x00dev, 0);
  	rt2800_r_calibration(rt2x00dev);
- 	rt2800_rf_self_txdc_cal(rt2x00dev);
