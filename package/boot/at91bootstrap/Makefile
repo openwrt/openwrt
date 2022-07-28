@@ -193,7 +193,7 @@ AT91BOOTSTRAP_TARGETS := \
 	sama5d4_xplainednf_uboot_secure \
 	sama5d4_xplaineddf_uboot_secure \
 	sama5d4_xplainedsd_uboot_secure \
-	sama5d27_som1_eksd1_uboot \
+	sama5d27_som1_eksd_uboot \
 	sama5d27_som1_ekqspi_uboot \
 	sama5d27_wlsom1_eksd_uboot \
 	sama5d27_wlsom1_ekdf_qspi_uboot \
