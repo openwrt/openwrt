@@ -15,16 +15,10 @@ define Build/at91-sdcard
 	$(KDIR)/$(DEVICE_NAME)-fit-zImage.itb \
 	::$(DEVICE_NAME)-fit.itb
 
-  $(if $(findstring sama5d27-som1-ek,$@), \
-      mcopy -i $@.boot \
-          $(BIN_DIR)/u-boot-$(DEVICE_DTS:at91-%=%)_mmc1/u-boot.bin \
-          ::u-boot.bin
-      mcopy -i $@.boot \
-          $(BIN_DIR)/at91bootstrap-$(DEVICE_DTS:at91-%=%)sd1_uboot/at91bootstrap.bin \
-          ::BOOT.bin,
-      mcopy -i $@.boot \
-          $(BIN_DIR)/u-boot-$(DEVICE_DTS:at91-%=%)_mmc/u-boot.bin \
-          ::u-boot.bin
+  mcopy -i $@.boot \
+	$(BIN_DIR)/u-boot-$(DEVICE_DTS:at91-%=%)_mmc/u-boot.bin \
+	::u-boot.bin
+
       $(if $(findstring sama5d4-xplained,$@), \
           mcopy -i $@.boot \
               $(BIN_DIR)/at91bootstrap-$(DEVICE_DTS:at91-%=%)sd_uboot_secure/at91bootstrap.bin \

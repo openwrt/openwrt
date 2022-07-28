@@ -107,6 +107,12 @@ define U-Boot/sama5d4_xplained_nandflash
   BUILD_DEVICES:=microchip_sama5d3-xplained
 endef
 
+define U-Boot/sama5d27_som1_ek_mmc
+  NAME:=SAMA5D27 SOM1 Ek (SDCard0)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=microchip_sama5d27-som1-ek
+endef
+
 define U-Boot/sama5d27_som1_ek_mmc1
   NAME:=SAMA5D27 SOM1 Ek (SDCard1)
   BUILD_SUBTARGET:=sama5
@@ -163,7 +169,7 @@ UBOOT_TARGETS := \
 	sama5d4_xplained_mmc \
 	sama5d4_xplained_spiflash \
 	sama5d4_xplained_nandflash\
-	sama5d27_som1_ek_mmc1 \
+	sama5d27_som1_ek_mmc \
 	sama5d27_som1_ek_qspiflash \
 	sama5d27_wlsom1_ek_mmc \
 	sama5d27_wlsom1_ek_qspiflash \
