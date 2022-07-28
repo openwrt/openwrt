@@ -155,6 +155,7 @@ define Package/hostapd
 $(call Package/hostapd/Default,$(1))
   TITLE+= (built-in full)
   VARIANT:=full-internal
+  DEPENDS+=+libpcsclite
 endef
 
 define Package/hostapd/description
@@ -166,7 +167,7 @@ define Package/hostapd-openssl
 $(call Package/hostapd/Default,$(1))
   TITLE+= (OpenSSL full)
   VARIANT:=full-openssl
-  DEPENDS+=+libopenssl
+  DEPENDS+=+libopenssl +libpcsclite
 endef
 
 Package/hostapd-openssl/description = $(Package/hostapd/description)
@@ -175,7 +176,7 @@ define Package/hostapd-wolfssl
 $(call Package/hostapd/Default,$(1))
   TITLE+= (wolfSSL full)
   VARIANT:=full-wolfssl
-  DEPENDS+=+libwolfssl
+  DEPENDS+=+libwolfssl +libpcsclite
 endef
 
 Package/hostapd-wolfssl/description = $(Package/hostapd/description)
@@ -242,6 +243,7 @@ define Package/wpad
 $(call Package/wpad/Default,$(1))
   TITLE+= (built-in full)
   VARIANT:=wpad-full-internal
+  DEPENDS+=+libpcsclite
 endef
 
 define Package/wpad/description
@@ -253,7 +255,7 @@ define Package/wpad-openssl
 $(call Package/wpad/Default,$(1))
   TITLE+= (OpenSSL full)
   VARIANT:=wpad-full-openssl
-  DEPENDS+=+libopenssl
+  DEPENDS+=+libopenssl +libpcsclite
 endef
 
 Package/wpad-openssl/description = $(Package/wpad/description)
@@ -262,7 +264,7 @@ define Package/wpad-wolfssl
 $(call Package/wpad/Default,$(1))
   TITLE+= (wolfSSL full)
   VARIANT:=wpad-full-wolfssl
-  DEPENDS+=+libwolfssl
+  DEPENDS+=+libwolfssl +libpcsclite
 endef
 
 Package/wpad-wolfssl/description = $(Package/wpad/description)
@@ -322,7 +324,7 @@ endef
 define Package/wpad-mesh-openssl
 $(call Package/wpad-mesh,$(1))
   TITLE+= (OpenSSL, 11s, SAE)
-  DEPENDS+=+libopenssl
+  DEPENDS+=+libopenssl +libpcsclite
   VARIANT:=wpad-mesh-openssl
 endef
 
@@ -331,7 +333,7 @@ Package/wpad-mesh-openssl/description = $(Package/wpad-mesh/description)
 define Package/wpad-mesh-wolfssl
 $(call Package/wpad-mesh,$(1))
   TITLE+= (wolfSSL, 11s, SAE)
-  DEPENDS+=+libwolfssl
+  DEPENDS+=+libwolfssl +libpcsclite
   VARIANT:=wpad-mesh-wolfssl
 endef
 
@@ -356,20 +358,21 @@ define Package/wpa-supplicant
 $(call Package/wpa-supplicant/Default,$(1))
   TITLE+= (built-in full)
   VARIANT:=supplicant-full-internal
+  DEPENDS+=+libpcsclite
 endef
 
 define Package/wpa-supplicant-openssl
 $(call Package/wpa-supplicant/Default,$(1))
   TITLE+= (OpenSSL full)
   VARIANT:=supplicant-full-openssl
-  DEPENDS+=+libopenssl
+  DEPENDS+=+libopenssl +libpcsclite
 endef
 
 define Package/wpa-supplicant-wolfssl
 $(call Package/wpa-supplicant/Default,$(1))
   TITLE+= (wolfSSL full)
   VARIANT:=supplicant-full-wolfssl
-  DEPENDS+=+libwolfssl
+  DEPENDS+=+libwolfssl +libpcsclite
 endef
 
 define Package/wpa-supplicant/config
@@ -393,14 +396,14 @@ define Package/wpa-supplicant-mesh-openssl
 $(call Package/wpa-supplicant-mesh/Default,$(1))
   TITLE+= (OpenSSL, 11s, SAE)
   VARIANT:=supplicant-mesh-openssl
-  DEPENDS+=+libopenssl
+  DEPENDS+=+libopenssl +libpcsclite
 endef
 
 define Package/wpa-supplicant-mesh-wolfssl
 $(call Package/wpa-supplicant-mesh/Default,$(1))
   TITLE+= (wolfSSL, 11s, SAE)
   VARIANT:=supplicant-mesh-wolfssl
-  DEPENDS+=+libwolfssl
+  DEPENDS+=+libwolfssl +libpcsclite
 endef
 
 define Package/wpa-supplicant-basic
@@ -459,6 +462,7 @@ define Package/eapol-test
   $(call Package/eapol-test/Default,$(1))
   TITLE+= (built-in full)
   VARIANT:=supplicant-full-internal
+  DEPENDS+=+libpcsclite
 endef
 
 define Package/eapol-test-openssl
@@ -466,7 +470,7 @@ define Package/eapol-test-openssl
   TITLE+= (OpenSSL full)
   VARIANT:=supplicant-full-openssl
   CONFLICTS:=$(filter-out eapol-test-openssl ,$(EAPOL_TEST_PROVIDERS))
-  DEPENDS+=+libopenssl
+  DEPENDS+=+libopenssl +libpcsclite
   PROVIDES:=eapol-test
 endef
 
@@ -475,7 +479,7 @@ define Package/eapol-test-wolfssl
   TITLE+= (wolfSSL full)
   VARIANT:=supplicant-full-wolfssl
   CONFLICTS:=$(filter-out eapol-test-openssl ,$(filter-out eapol-test-wolfssl ,$(EAPOL_TEST_PROVIDERS)))
-  DEPENDS+=+libwolfssl
+  DEPENDS+=+libwolfssl +libpcsclite
   PROVIDES:=eapol-test
 endef
 
@@ -510,6 +514,11 @@ TARGET_CPPFLAGS := \
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections -flto
 TARGET_LDFLAGS += -Wl,--gc-sections -flto=jobserver -fuse-linker-plugin -lubox -lubus
+
+ifeq ($(CONFIG_VARIANT),full)
+  TARGET_LDFLAGS += -lpcsclite
+  TARGET_CPPFLAGS += -I$(STAGING_DIR)/usr/include/PCSC
+endif
 
 ifdef CONFIG_PACKAGE_kmod-cfg80211
   TARGET_LDFLAGS += -lm -lnl-tiny
