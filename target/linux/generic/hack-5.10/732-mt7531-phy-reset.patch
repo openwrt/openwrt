@@ -1,0 +1,23 @@
+From: Alexander Couzens <lynxis@fe80.eu>
+Date: Tue, 26 Jul 2022 02:07:44 +0200
+Subject: [PATCH] mt7531: do not reset PHY_RST on mt7531
+
+Neither the datasheet [1] nor the related u-boot source code
+describe a PHY_RST on the mt7531.
+
+[1] MT7531 Reference Manual for Development Board 1.0 2019-09-05
+
+Index: linux-5.15.53/drivers/net/dsa/mt7530.c
+===================================================================
+--- linux-5.15.53.orig/drivers/net/dsa/mt7530.c
++++ linux-5.15.53/drivers/net/dsa/mt7530.c
+@@ -2298,8 +2298,7 @@ mt7531_setup(struct dsa_switch *ds)
+ 
+ 	/* Reset the switch through internal reset */
+ 	mt7530_write(priv, MT7530_SYS_CTRL,
+-		     SYS_CTRL_PHY_RST | SYS_CTRL_SW_RST |
+-		     SYS_CTRL_REG_RST);
++		     SYS_CTRL_SW_RST | SYS_CTRL_REG_RST);
+ 
+ 	mt7531_pll_setup(priv);
+ 

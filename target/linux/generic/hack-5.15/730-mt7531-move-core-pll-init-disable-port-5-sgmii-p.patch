@@ -1,0 +1,50 @@
+From 61bc085c21ba4dfd4f841308dc3030afe94bb1b4 Mon Sep 17 00:00:00 2001
+From: Alexander Couzens <lynxis@fe80.eu>
+Date: Tue, 26 Jul 2022 02:07:44 +0200
+Subject: [PATCH] mt7531: move pll init to setup
+
+The plls shouldn't be reset twice after the reset.
+The pad_setup should only change settings of the specified port.
+Fixes a 100mbit limit on traffic from a switch port towards SoC via port 5 in rgmii.
+
+---
+ drivers/net/dsa/mt7530.c | 22 ++++++++++++++++++----
+ drivers/net/dsa/mt7530.h |  4 ++++
+ 2 files changed, 22 insertions(+), 4 deletions(-)
+
+Index: linux-5.15.53/drivers/net/dsa/mt7530.c
+===================================================================
+--- linux-5.15.53.orig/drivers/net/dsa/mt7530.c
++++ linux-5.15.53/drivers/net/dsa/mt7530.c
+@@ -501,7 +501,12 @@ static bool mt7531_dual_sgmii_supported(
+ static int
+ mt7531_pad_setup(struct dsa_switch *ds, phy_interface_t interface)
+ {
+-	struct mt7530_priv *priv = ds->priv;
++	return 0;
++}
++
++static int
++mt7531_pll_setup(struct mt7530_priv *priv)
++{
+ 	u32 top_sig;
+ 	u32 hwstrap;
+ 	u32 xtal;
+@@ -2292,6 +2297,8 @@ mt7531_setup(struct dsa_switch *ds)
+ 		     SYS_CTRL_PHY_RST | SYS_CTRL_SW_RST |
+ 		     SYS_CTRL_REG_RST);
+ 
++	mt7531_pll_setup(priv);
++
+ 	if (mt7531_dual_sgmii_supported(priv)) {
+ 		priv->p5_intf_sel = P5_INTF_SEL_GMAC5_SGMII;
+ 
+@@ -2867,8 +2874,6 @@ mt7531_cpu_port_config(struct dsa_switch
+ 	case 6:
+ 		interface = PHY_INTERFACE_MODE_2500BASEX;
+ 
+-		mt7531_pad_setup(ds, interface);
+-
+ 		priv->p6_interface = interface;
+ 		break;
+ 	default:

@@ -1,0 +1,24 @@
+From: Alexander Couzens <lynxis@fe80.eu>
+Date: Tue, 26 Jul 2022 02:07:44 +0200
+Subject: [PATCH] mt7531: shutdown the port 5 and 6 before resetting
+
+All MACs should be shutdown before calling the soft reset registers
+according to the datasheet MT7531 Reference Manual for
+Development Board revision 1.0 2019-09-05"
+Also u-boot source code does it similar.
+
+Index: linux-5.15.53/drivers/net/dsa/mt7530.c
+===================================================================
+--- linux-5.15.53.orig/drivers/net/dsa/mt7530.c
++++ linux-5.15.53/drivers/net/dsa/mt7530.c
+@@ -2292,6 +2292,10 @@ mt7531_setup(struct dsa_switch *ds)
+ 		return -ENODEV;
+ 	}
+ 
++	/* shutdown port 5 & 6 before initiating a reset */
++	mt7530_write(priv, MT7530_PMCR_P(5), MT7531_FORCE_LNK);
++	mt7530_write(priv, MT7530_PMCR_P(6), MT7531_FORCE_LNK);
++
+ 	/* Reset the switch through internal reset */
+ 	mt7530_write(priv, MT7530_SYS_CTRL,
+ 		     SYS_CTRL_PHY_RST | SYS_CTRL_SW_RST |
