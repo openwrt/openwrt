@@ -844,6 +844,22 @@ endef
 $(eval $(call KernelPackage,sched-ctinfo))
 
 
+define KernelPackage/sched-drr
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Deficit Round Robin scheduler (DRR)
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_DRR
+  FILES:=$(LINUX_DIR)/net/sched/sch_drr.ko
+  AUTOLOAD:=$(call AutoProbe,sch_drr)
+endef
+
+define KernelPackage/sched-drr/description
+ DRR algorithm Configuration
+endef
+
+$(eval $(call KernelPackage,sched-drr))
+
+
 define KernelPackage/sched-flower
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Flower traffic classifier
