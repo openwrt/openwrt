@@ -1,0 +1,89 @@
+From 317331b3d7ddcf2a5e7b5a9002ac559627000032 Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Sat, 19 Dec 2020 20:39:29 +0800
+Subject: [PATCH 4/4] board: nanopi4: unify 1GB/4GB variants of R4S
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ .../arm/dts/rk3399-nanopi-r4s-4gb-u-boot.dtsi |   8 --
+ arch/arm/dts/rk3399-nanopi-r4s-4gb.dts        | 114 ------------------
+ arch/arm/dts/rk3399-nanopi-r4s-u-boot.dtsi    |   2 +
+ board/friendlyarm/nanopi4/hwrev.c             |  36 ++++++
+ configs/nanopi-r4s-4gb-rk3399_defconfig       |  63 ----------
+ configs/nanopi-r4s-rk3399_defconfig           |   1 +
+ 6 files changed, 39 insertions(+), 185 deletions(-)
+ delete mode 100644 arch/arm/dts/rk3399-nanopi-r4s-4gb-u-boot.dtsi
+ delete mode 100644 arch/arm/dts/rk3399-nanopi-r4s-4gb.dts
+ delete mode 100644 configs/nanopi-r4s-4gb-rk3399_defconfig
+
+diff --git a/arch/arm/dts/rk3399-nanopi-r4s-u-boot.dtsi b/arch/arm/dts/rk3399-nanopi-r4s-u-boot.dtsi
+index eb0aca4758..9369a7022a 100644
+--- a/arch/arm/dts/rk3399-nanopi-r4s-u-boot.dtsi
++++ b/arch/arm/dts/rk3399-nanopi-r4s-u-boot.dtsi
+@@ -4,4 +4,6 @@
+  */
+ 
+ #include "rk3399-nanopi4-u-boot.dtsi"
+ #include "rk3399-sdram-lpddr4-100.dtsi"
++#include "rk3399-sdram-lpddr3-samsung-4GB-1866.dtsi"
++#include "rk3399-sdram-ddr3-1866.dtsi"
+diff --git a/board/friendlyarm/nanopi4/hwrev.c b/board/friendlyarm/nanopi4/hwrev.c
+index 9199a927ee..812fcef9c7 100644
+--- a/board/friendlyarm/nanopi4/hwrev.c
++++ b/board/friendlyarm/nanopi4/hwrev.c
+@@ -101,9 +101,13 @@ static uint32_t get_adc_index(int chn)
+  * Group A:
+  *  0x04 - NanoPi NEO4
+  *  0x06 - SOC-RK3399
++ *  0x07 - SOC-RK3399 V2
++ *  0x09 - NanoPi R4S 1GB
++ *  0x0A - NanoPi R4S 4GB
+  *
+  * Group B:
+  *  0x21 - NanoPi M4 Ver2.0
++ *  0x22 - NanoPi M4B
+  */
+ static int pcb_rev = -1;
+ 
+@@ -141,6 +145,38 @@ void bd_hwrev_init(void)
+ 	}
+ }
+ 
++#ifdef CONFIG_SPL_BUILD
++static struct board_ddrtype {
++	int rev;
++	const char *type;
++} ddrtypes[] = {
++	{ 0x00, "lpddr3-samsung-4GB-1866" },
++	{ 0x01, "lpddr3-samsung-4GB-1866" },
++	{ 0x04,   "ddr3-1866" },
++	{ 0x06,   "ddr3-1866" },
++	{ 0x07, "lpddr4-100"  },
++	{ 0x09,   "ddr3-1866" },
++	{ 0x0a, "lpddr4-100"  },
++	{ 0x21, "lpddr4-100"  },
++	{ 0x22,   "ddr3-1866" },
++};
++
++const char *rk3399_get_ddrtype(void) {
++	int i;
++
++	bd_hwrev_init();
++	printf("Board: rev%02x\n", pcb_rev);
++
++	for (i = 0; i < ARRAY_SIZE(ddrtypes); i++) {
++		if (ddrtypes[i].rev == pcb_rev)
++			return ddrtypes[i].type;
++	}
++
++	/* fallback to first subnode (ie, first included dtsi) */
++	return NULL;
++}
++#endif
++
+ /* To override __weak symbols */
+ u32 get_board_rev(void)
+ {
+-- 
+2.25.1
+
