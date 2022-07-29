@@ -906,6 +906,38 @@ endef
 $(eval $(call KernelPackage,sched-mqprio))
 
 
+define KernelPackage/sched-prio
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Multi Band Priority Queueing (PRIO)
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_PRIO
+  FILES:=$(LINUX_DIR)/net/sched/sch_prio.ko
+  AUTOLOAD:=$(call AutoProbe,sch_prio)
+endef
+
+define KernelPackage/sched-prio/description
+ PRIO algorithm Configuration
+endef
+
+$(eval $(call KernelPackage,sched-prio))
+
+
+define KernelPackage/sched-red
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Random Early Detection (RED)
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_SCH_RED
+  FILES:=$(LINUX_DIR)/net/sched/sch_red.ko
+  AUTOLOAD:=$(call AutoProbe,sch_red)
+endef
+
+define KernelPackage/sched-red/description
+ Random Early Detection (RED) algorithm Configuration
+endef
+
+$(eval $(call KernelPackage,sched-red))
+
+
 define KernelPackage/bpf-test
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Test Berkeley Packet Filter functionality
@@ -916,7 +948,7 @@ endef
 $(eval $(call KernelPackage,bpf-test))
 
 
-SCHED_MODULES_EXTRA = sch_codel sch_dsmark sch_gred sch_multiq sch_prio sch_red sch_sfq sch_teql sch_fq sch_pie act_police act_ipt act_pedit act_simple act_csum em_cmp em_nbyte em_meta em_text
+SCHED_MODULES_EXTRA = sch_codel sch_dsmark sch_gred sch_multiq sch_sfq sch_teql sch_fq sch_pie act_police act_ipt act_pedit act_simple act_csum em_cmp em_nbyte em_meta em_text
 SCHED_FILES_EXTRA = $(foreach mod,$(SCHED_MODULES_EXTRA),$(LINUX_DIR)/net/sched/$(mod).ko)
 
 define KernelPackage/sched
@@ -928,8 +960,6 @@ define KernelPackage/sched
 	CONFIG_NET_SCH_DSMARK \
 	CONFIG_NET_SCH_GRED \
 	CONFIG_NET_SCH_MULTIQ \
-	CONFIG_NET_SCH_PRIO \
-	CONFIG_NET_SCH_RED \
 	CONFIG_NET_SCH_SFQ \
 	CONFIG_NET_SCH_TEQL \
 	CONFIG_NET_SCH_FQ \
