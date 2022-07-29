@@ -1,0 +1,29 @@
+From b8d642fadf95508f3a728a995b6892467deb1097 Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Tue, 4 Jan 2022 14:54:20 +0800
+Subject: [PATCH 303/308] rockchip: rk3328: add mmc aliases for nanopi-r2s
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ arch/arm/dts/rk3328-nanopi-r2s-u-boot.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/dts/rk3328-nanopi-r2s-u-boot.dtsi b/arch/arm/dts/rk3328-nanopi-r2s-u-boot.dtsi
+index 9e2ced1541..df692ec30a 100644
+--- a/arch/arm/dts/rk3328-nanopi-r2s-u-boot.dtsi
++++ b/arch/arm/dts/rk3328-nanopi-r2s-u-boot.dtsi
+@@ -7,6 +7,11 @@
+ #include "rk3328-u-boot.dtsi"
+ #include "rk3328-sdram-ddr4-666.dtsi"
+ / {
++	aliases {
++		mmc0 = &sdmmc;
++		mmc1 = &emmc;
++	};
++
+ 	chosen {
+ 		u-boot,spl-boot-order = "same-as-spl", &sdmmc, &emmc;
+ 	};
+-- 
+2.34.1
+

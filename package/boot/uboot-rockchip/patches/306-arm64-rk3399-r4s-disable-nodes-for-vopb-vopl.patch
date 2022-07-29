@@ -1,0 +1,41 @@
+From 8a8b3ef12c68ad662223aefb4a46b1ca43e23482 Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Wed, 12 Jan 2022 11:00:08 +0800
+Subject: [PATCH 306/308] arm64: rk3399: r4s: disable nodes for vopb/vopl
+
+Disable vopb and vopl to fix:
+  rk3399_vop vop@ff8f0000: failed to get ahb reset (ret=-524)
+  rk3399_vop vop@ff8f0000: failed to get ahb reset (ret=-524)
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ arch/arm/dts/rk3399-nanopi-r4s.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm/dts/rk3399-nanopi-r4s.dts b/arch/arm/dts/rk3399-nanopi-r4s.dts
+index 6f2cf17bf1..e7c6daddd5 100644
+--- a/arch/arm/dts/rk3399-nanopi-r4s.dts
++++ b/arch/arm/dts/rk3399-nanopi-r4s.dts
+@@ -136,3 +136,19 @@
+ &vcc3v3_sys {
+ 	vin-supply = <&vcc5v0_sys>;
+ };
++
++&vopb {
++	status = "disabled";
++};
++
++&vopb_mmu {
++	status = "disabled";
++};
++
++&vopl {
++	status = "disabled";
++};
++
++&vopl_mmu {
++	status = "disabled";
++};
+-- 
+2.34.1
+

@@ -1,0 +1,24 @@
+From c608d2fd04cb4973f75082807e5df0653fc6e819 Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Wed, 1 Dec 2021 18:20:37 +0800
+Subject: [PATCH 302/308] arm64: dts: rk3399-nanopi4: Add u-boot,spl-broken-hs
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ arch/arm/dts/rk3399-nanopi4-u-boot.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/dts/rk3399-nanopi4-u-boot.dtsi b/arch/arm/dts/rk3399-nanopi4-u-boot.dtsi
+index a9d10592d5..53c4f17ac8 100644
+--- a/arch/arm/dts/rk3399-nanopi4-u-boot.dtsi
++++ b/arch/arm/dts/rk3399-nanopi4-u-boot.dtsi
+@@ -13,4 +13,6 @@
+ 
+ &sdmmc {
+ 	pinctrl-0 = <&sdmmc_bus4 &sdmmc_clk &sdmmc_cmd &sdmmc_cd>;
++
++	u-boot,spl-broken-hs;
+ };
+-- 
+2.34.1
+

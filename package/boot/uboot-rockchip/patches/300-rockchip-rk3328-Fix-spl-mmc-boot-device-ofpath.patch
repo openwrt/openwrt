@@ -1,0 +1,28 @@
+From e14e93922a39e5950c8b042aefd0c9869ee3a259 Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Sat, 1 Jan 2022 18:41:34 +0800
+Subject: [PATCH 300/308] rockchip: rk3328: Fix spl mmc boot device ofpath
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ arch/arm/mach-rockchip/rk3328/rk3328.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-rockchip/rk3328/rk3328.c b/arch/arm/mach-rockchip/rk3328/rk3328.c
+index ec3336cb49..de17b88682 100644
+--- a/arch/arm/mach-rockchip/rk3328/rk3328.c
++++ b/arch/arm/mach-rockchip/rk3328/rk3328.c
+@@ -21,8 +21,8 @@ DECLARE_GLOBAL_DATA_PTR;
+ #define FW_DDR_CON_REG		0xFF7C0040
+ 
+ const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
+-	[BROM_BOOTSOURCE_EMMC] = "/rksdmmc@ff520000",
+-	[BROM_BOOTSOURCE_SD] = "/rksdmmc@ff500000",
++	[BROM_BOOTSOURCE_EMMC] = "/mmc@ff520000",
++	[BROM_BOOTSOURCE_SD] = "/mmc@ff500000",
+ };
+ 
+ static struct mm_region rk3328_mem_map[] = {
+-- 
+2.34.1
+

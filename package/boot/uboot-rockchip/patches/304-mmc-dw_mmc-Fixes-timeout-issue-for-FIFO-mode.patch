@@ -1,0 +1,36 @@
+From 6a662654973ff75baa44288829142eed4ed5a411 Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Tue, 11 Jan 2022 16:22:04 +0800
+Subject: [PATCH 304/308] mmc: dw_mmc: Fixes timeout issue for FIFO mode
+
+Clearing the DTO interrupt should be unnecessary, and it would
+potentially result in never receiving this interrupt again.
+
+Do power-on or reset from uboot for a while can reproduce the issue:
+  dwmci_data_transfer: Timeout waiting for data!
+  mmc_load_image_raw_sector: mmc block read error
+
+Tested on NanoPi R4S with SanDisk Extreme PRO 32GB.
+
+Fixes: 8cb9d3ed3a ("mmc: dw_mmc: Fixes data read when receiving DTO interrupt in FIFO mode")
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ drivers/mmc/dw_mmc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/dw_mmc.c b/drivers/mmc/dw_mmc.c
+index a949dad574..8fa26b340b 100644
+--- a/drivers/mmc/dw_mmc.c
++++ b/drivers/mmc/dw_mmc.c
+@@ -168,7 +168,7 @@ static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
+ 			if (data->flags == MMC_DATA_READ &&
+ 			    (mask & (DWMCI_INTMSK_RXDR | DWMCI_INTMSK_DTO))) {
+ 				dwmci_writel(host, DWMCI_RINTSTS,
+-					     DWMCI_INTMSK_RXDR | DWMCI_INTMSK_DTO);
++					     DWMCI_INTMSK_RXDR);
+ 				while (size) {
+ 					ret = dwmci_fifo_ready(host,
+ 							DWMCI_FIFO_EMPTY,
+-- 
+2.34.1
+

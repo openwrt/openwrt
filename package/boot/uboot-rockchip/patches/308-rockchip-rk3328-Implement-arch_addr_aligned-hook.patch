@@ -1,0 +1,59 @@
+From 886a84ea1a0e501fd168ad779ca54aecc70f8f4d Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Wed, 12 Jan 2022 11:21:37 +0800
+Subject: [PATCH 308/308] rockchip: rk3328: Implement arch_addr_aligned() hook
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ arch/arm/dts/rk3328-u-boot.dtsi        |  6 ------
+ arch/arm/mach-rockchip/rk3328/rk3328.c | 13 +++++++++++++
+ 2 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/dts/rk3328-u-boot.dtsi b/arch/arm/dts/rk3328-u-boot.dtsi
+index 1633558264..d6b7f3e30a 100644
+--- a/arch/arm/dts/rk3328-u-boot.dtsi
++++ b/arch/arm/dts/rk3328-u-boot.dtsi
+@@ -52,16 +52,10 @@
+ 
+ &emmc {
+ 	u-boot,dm-pre-reloc;
+-
+-	/* mmc to sram can't do dma, prevent aborts transfering TF-A parts */
+-	u-boot,spl-fifo-mode;
+ };
+ 
+ &sdmmc {
+ 	u-boot,dm-pre-reloc;
+-
+-	/* mmc to sram can't do dma, prevent aborts transfering TF-A parts */
+-	u-boot,spl-fifo-mode;
+ };
+ 
+ &usb20_otg {
+diff --git a/arch/arm/mach-rockchip/rk3328/rk3328.c b/arch/arm/mach-rockchip/rk3328/rk3328.c
+index de17b88682..60e0b6134f 100644
+--- a/arch/arm/mach-rockchip/rk3328/rk3328.c
++++ b/arch/arm/mach-rockchip/rk3328/rk3328.c
+@@ -58,6 +58,19 @@ int arch_cpu_init(void)
+ 	return 0;
+ }
+ 
++int arch_addr_aligned(void *ubuf)
++{
++#define DRAM_END	0xff000000
++
++	if ((uintptr_t)ubuf < DRAM_END) {
++		/* Aligned for DRAM area */
++		return 1;
++	}
++
++	debug("Unsupported buffer for DMA transfer\n");
++	return 0;
++}
++
+ void board_debug_uart_init(void)
+ {
+ 	struct rk3328_grf_regs * const grf = (void *)GRF_BASE;
+-- 
+2.34.1
+
