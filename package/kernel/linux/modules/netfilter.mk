@@ -348,6 +348,7 @@ IPSET_MODULES:= \
 	ipset/ip_set_bitmap_ipmac \
 	ipset/ip_set_bitmap_port \
 	ipset/ip_set_hash_ip \
+	ipset/ip_set_hash_ipmac \
 	ipset/ip_set_hash_ipmark \
 	ipset/ip_set_hash_ipport \
 	ipset/ip_set_hash_ipportip \
