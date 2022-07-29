@@ -775,6 +775,37 @@ endef
 $(eval $(call KernelPackage,sched-core))
 
 
+define KernelPackage/sched-act-vlan
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic VLAN manipulation
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:=CONFIG_NET_ACT_VLAN
+  FILES:=$(LINUX_DIR)/net/sched/act_vlan.ko
+  AUTOLOAD:=$(call AutoProbe, act_vlan)
+endef
+
+define KernelPackage/sched-act-vlan/description
+ Allows to configure rules to push or pop vlan headers.
+endef
+
+$(eval $(call KernelPackage,sched-act-vlan))
+
+
+define KernelPackage/sched-bpf
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper support for Berkeley Packet Filter
+  KCONFIG:= \
+	CONFIG_NET_CLS_BPF \
+	CONFIG_NET_ACT_BPF
+  FILES:= \
+	$(LINUX_DIR)/net/sched/cls_bpf.ko \
+	$(LINUX_DIR)/net/sched/act_bpf.ko
+  AUTOLOAD:=$(call AutoLoad,72,cls_bpf act_bpf)
+endef
+
+$(eval $(call KernelPackage,sched-bpf))
+
+
 define KernelPackage/sched-cake
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Cake fq_codel/blue derived shaper
@@ -789,6 +820,29 @@ define KernelPackage/sched-cake/description
 endef
 
 $(eval $(call KernelPackage,sched-cake))
+
+
+define KernelPackage/sched-connmark
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper conntrack mark support
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
+  KCONFIG:=CONFIG_NET_ACT_CONNMARK
+  FILES:=$(LINUX_DIR)/net/sched/act_connmark.ko
+  AUTOLOAD:=$(call AutoLoad,71, act_connmark)
+endef
+$(eval $(call KernelPackage,sched-connmark))
+
+
+define KernelPackage/sched-ctinfo
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic shaper ctinfo support
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
+  KCONFIG:=CONFIG_NET_ACT_CTINFO
+  FILES:=$(LINUX_DIR)/net/sched/act_ctinfo.ko
+  AUTOLOAD:=$(call AutoLoad,71, act_ctinfo)
+endef
+$(eval $(call KernelPackage,sched-ctinfo))
+
 
 define KernelPackage/sched-flower
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -806,20 +860,18 @@ endef
 $(eval $(call KernelPackage,sched-flower))
 
 
-define KernelPackage/sched-act-vlan
+define KernelPackage/sched-ipset
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=Traffic VLAN manipulation
-  DEPENDS:=+kmod-sched-core
-  KCONFIG:=CONFIG_NET_ACT_VLAN
-  FILES:=$(LINUX_DIR)/net/sched/act_vlan.ko
-  AUTOLOAD:=$(call AutoProbe, act_vlan)
+  TITLE:=Traffic shaper ipset support
+  DEPENDS:=+kmod-sched-core +kmod-ipt-ipset
+  KCONFIG:= \
+	CONFIG_NET_EMATCH_IPSET
+  FILES:= \
+	$(LINUX_DIR)/net/sched/em_ipset.ko
+  AUTOLOAD:=$(call AutoLoad,72,em_ipset)
 endef
 
-define KernelPackage/sched-act-vlan/description
- Allows to configure rules to push or pop vlan headers.
-endef
-
-$(eval $(call KernelPackage,sched-act-vlan))
+$(eval $(call KernelPackage,sched-ipset))
 
 
 define KernelPackage/sched-mqprio
@@ -836,54 +888,6 @@ define KernelPackage/sched-mqprio/description
 endef
 
 $(eval $(call KernelPackage,sched-mqprio))
-
-define KernelPackage/sched-connmark
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=Traffic shaper conntrack mark support
-  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
-  KCONFIG:=CONFIG_NET_ACT_CONNMARK
-  FILES:=$(LINUX_DIR)/net/sched/act_connmark.ko
-  AUTOLOAD:=$(call AutoLoad,71, act_connmark)
-endef
-$(eval $(call KernelPackage,sched-connmark))
-
-define KernelPackage/sched-ctinfo
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=Traffic shaper ctinfo support
-  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-ipt-conntrack-extra
-  KCONFIG:=CONFIG_NET_ACT_CTINFO
-  FILES:=$(LINUX_DIR)/net/sched/act_ctinfo.ko
-  AUTOLOAD:=$(call AutoLoad,71, act_ctinfo)
-endef
-$(eval $(call KernelPackage,sched-ctinfo))
-
-define KernelPackage/sched-ipset
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=Traffic shaper ipset support
-  DEPENDS:=+kmod-sched-core +kmod-ipt-ipset
-  KCONFIG:= \
-	CONFIG_NET_EMATCH_IPSET
-  FILES:= \
-	$(LINUX_DIR)/net/sched/em_ipset.ko
-  AUTOLOAD:=$(call AutoLoad,72,em_ipset)
-endef
-
-$(eval $(call KernelPackage,sched-ipset))
-
-
-define KernelPackage/sched-bpf
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=Traffic shaper support for Berkeley Packet Filter
-  KCONFIG:= \
-	CONFIG_NET_CLS_BPF \
-	CONFIG_NET_ACT_BPF
-  FILES:= \
-	$(LINUX_DIR)/net/sched/cls_bpf.ko \
-	$(LINUX_DIR)/net/sched/act_bpf.ko
-  AUTOLOAD:=$(call AutoLoad,72,cls_bpf act_bpf)
-endef
-
-$(eval $(call KernelPackage,sched-bpf))
 
 
 define KernelPackage/bpf-test
