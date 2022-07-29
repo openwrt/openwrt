@@ -775,6 +775,26 @@ endef
 $(eval $(call KernelPackage,sched-core))
 
 
+define KernelPackage/sched-act-sample
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic Sampling
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:= \
+	CONFIG_NET_ACT_SAMPLE \
+	CONFIG_PSAMPLE
+  FILES:= \
+	$(LINUX_DIR)/net/psample/psample.ko \
+	$(LINUX_DIR)/net/sched/act_sample.ko
+  AUTOLOAD:=$(call AutoProbe,act_sample psample)
+endef
+
+define KernelPackage/sched-act-sample/description
+ Packet sampling tc action.
+endef
+
+$(eval $(call KernelPackage,sched-act-sample))
+
+
 define KernelPackage/sched-act-vlan
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic VLAN manipulation
