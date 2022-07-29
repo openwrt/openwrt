@@ -903,7 +903,7 @@ $(eval $(call KernelPackage,bpf-test))
 define KernelPackage/sched
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Extra traffic schedulers
-  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-lib-crc32c
+  DEPENDS:=+kmod-sched-core +kmod-ipt-core +kmod-lib-crc32c +kmod-lib-textsearch
   KCONFIG:= \
 	CONFIG_NET_SCH_CODEL \
 	CONFIG_NET_SCH_DSMARK \
