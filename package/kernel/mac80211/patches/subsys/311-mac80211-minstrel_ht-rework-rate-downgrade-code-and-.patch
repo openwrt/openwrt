@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/rc80211_minstrel_ht.c
 +++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -511,6 +511,14 @@ minstrel_ht_set_best_prob_rate(struct mi
+@@ -514,6 +514,14 @@ minstrel_ht_set_best_prob_rate(struct mi
  	int cur_tp_avg, cur_group, cur_idx;
  	int max_gpr_group, max_gpr_idx;
  	int max_gpr_tp_avg, max_gpr_prob;
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	cur_group = MI_RATE_GROUP(index);
  	cur_idx = MI_RATE_IDX(index);
-@@ -532,11 +540,6 @@ minstrel_ht_set_best_prob_rate(struct mi
+@@ -535,11 +543,6 @@ minstrel_ht_set_best_prob_rate(struct mi
  	    !minstrel_ht_is_legacy_group(max_tp_group))
  		return;
  
@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	max_gpr_group = MI_RATE_GROUP(mg->max_group_prob_rate);
  	max_gpr_idx = MI_RATE_IDX(mg->max_group_prob_rate);
  	max_gpr_prob = mi->groups[max_gpr_group].rates[max_gpr_idx].prob_avg;
-@@ -594,40 +597,6 @@ minstrel_ht_assign_best_tp_rates(struct
+@@ -597,40 +600,6 @@ minstrel_ht_assign_best_tp_rates(struct
  
  }
  
@@ -86,7 +86,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static u16
  __minstrel_ht_get_sample_rate(struct minstrel_ht_sta *mi,
  			      enum minstrel_sample_type type)
-@@ -1107,8 +1076,6 @@ minstrel_ht_update_stats(struct minstrel
+@@ -1110,8 +1079,6 @@ minstrel_ht_update_stats(struct minstrel
  
  	mi->max_prob_rate = tmp_max_prob_rate;
  
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	minstrel_ht_refill_sample_rates(mi);
  
  #ifdef CPTCFG_MAC80211_DEBUGFS
-@@ -1153,7 +1120,7 @@ minstrel_ht_txstat_valid(struct minstrel
+@@ -1156,7 +1123,7 @@ minstrel_ht_txstat_valid(struct minstrel
  }
  
  static void
@@ -104,7 +104,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	int group, orig_group;
  
-@@ -1168,11 +1135,7 @@ minstrel_downgrade_rate(struct minstrel_
+@@ -1171,11 +1138,7 @@ minstrel_downgrade_rate(struct minstrel_
  		    minstrel_mcs_groups[orig_group].streams)
  			continue;
  
@@ -117,7 +117,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -1183,7 +1146,7 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1186,7 +1149,7 @@ minstrel_ht_tx_status(void *priv, struct
  	struct ieee80211_tx_info *info = st->info;
  	struct minstrel_ht_sta *mi = priv_sta;
  	struct ieee80211_tx_rate *ar = info->status.rates;
@@ -126,7 +126,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct minstrel_priv *mp = priv;
  	u32 update_interval = mp->update_interval;
  	bool last, update = false;
-@@ -1233,18 +1196,13 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -1236,18 +1199,13 @@ minstrel_ht_tx_status(void *priv, struct
  		/*
  		 * check for sudden death of spatial multiplexing,
  		 * downgrade to a lower number of streams if necessary.

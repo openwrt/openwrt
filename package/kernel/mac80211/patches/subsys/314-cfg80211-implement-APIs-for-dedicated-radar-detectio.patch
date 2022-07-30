@@ -286,7 +286,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 +}
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -796,6 +796,7 @@ static const struct nla_policy nl80211_p
+@@ -801,6 +801,7 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_MBSSID_CONFIG] =
  			NLA_POLICY_NESTED(nl80211_mbssid_config_policy),
  	[NL80211_ATTR_MBSSID_ELEMS] = { .type = NLA_NESTED },
@@ -294,7 +294,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -9272,12 +9273,6 @@ static int nl80211_start_radar_detection
+@@ -9287,12 +9288,6 @@ static int nl80211_start_radar_detection
  	if (err)
  		return err;
  
@@ -307,7 +307,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	err = cfg80211_chandef_dfs_required(wiphy, &chandef, wdev->iftype);
  	if (err < 0)
  		return err;
-@@ -9288,6 +9283,16 @@ static int nl80211_start_radar_detection
+@@ -9303,6 +9298,16 @@ static int nl80211_start_radar_detection
  	if (!cfg80211_chandef_dfs_usable(wiphy, &chandef))
  		return -EINVAL;
  
