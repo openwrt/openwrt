@@ -1,26 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "mt7622-ubnt-unifi-6-lr.dtsi"
+#include "mt7622-ubnt-unifi-6-lr-v2.dtsi"
 
 / {
-	model = "Ubiquiti UniFi 6 LR";
-	compatible = "ubnt,unifi-6-lr", "mediatek,mt7622";
+	model = "Ubiquiti UniFi 6 LR v2 (U-Boot mod)";
+	compatible = "ubnt,unifi-6-lr-ubootmod-v2", "mediatek,mt7622";
 };
 
 &nor_partitions {
 	partition@0 {
-		label = "preloader";
-		reg = <0x0 0x40000>;
+		label = "bl2";
+		reg = <0x0 0x20000>;
 	};
 
-	partition@40000 {
-		label = "atf";
-		reg = <0x40000 0x20000>;
-	};
-
-	partition@60000 {
-		label = "u-boot";
-		reg = <0x60000 0x60000>;
+	partition@20000 {
+		label = "fip";
+		reg = <0x20000 0xa0000>;
 	};
 
 	partition@c0000 {
@@ -41,25 +36,14 @@
 	};
 
 	partition@120000 {
-		label = "bs";
-		reg = <0x120000 0x10000>;
+		label = "recovery";
+		reg = <0x120000 0xee0000>;
 	};
 
-	partition@130000 {
-		label = "cfg";
-		reg = <0x130000 0x100000>;
-		read-only;
-	};
-
-	partition@230000 {
+	partition@1000000 {
 		compatible = "denx,fit";
 		label = "firmware";
-		reg = <0x230000 0x1ee0000>;
-	};
-
-	partition@2110000 {
-		label = "kernel1";
-		reg = <0x2110000 0x1ee0000>;
+		reg = <0x1000000 0x3000000>;
 	};
 };
 

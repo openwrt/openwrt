@@ -85,6 +85,15 @@ define Device/mikrotik_routerboard-lhg-5nd
 endef
 TARGET_DEVICES += mikrotik_routerboard-lhg-5nd
 
+define Device/mikrotik_routerboard-map-2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := RouterBOARD mAP-2nD (mAP)
+  DEVICE_PACKAGES += kmod-usb2 kmod-ledtrig-gpio
+  IMAGE_SIZE := 16256k
+endef
+TARGET_DEVICES += mikrotik_routerboard-map-2nd
+
 define Device/mikrotik_routerboard-mapl-2nd
   $(Device/mikrotik_nor)
   SOC := qca9533

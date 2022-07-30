@@ -130,7 +130,12 @@ $(eval $(call SetupHostCommand,getopt, \
 	Please install an extended getopt version that supports --long, \
 	gnugetopt -o t --long test -- --test | grep '^ *--test *--', \
 	getopt -o t --long test -- --test | grep '^ *--test *--', \
-	/usr/local/opt/gnu-getopt/bin/getopt -o t --long test -- --test | grep '^ *--test *--'))
+	/usr/local/opt/gnu-getopt/bin/getopt -o t --long test -- --test | grep '^ *--test *--', \
+	/opt/local/bin/getopt -o t --long test -- --test | grep '^ *--test *--'))
+
+$(eval $(call SetupHostCommand,realpath,Please install a 'realpath' utility, \
+	grealpath /, \
+	realpath /))
 
 $(eval $(call SetupHostCommand,stat,Cannot find a file stat utility, \
 	gnustat -c%s $(TOPDIR)/Makefile, \
@@ -177,7 +182,8 @@ $(eval $(call TestHostCommand,python3-distutils, \
 	$(STAGING_DIR_HOST)/bin/python3 -c 'import distutils'))
 
 $(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
-	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule))
+	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule, \
+	git submodule --help | grep -- --recursive))
 
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))

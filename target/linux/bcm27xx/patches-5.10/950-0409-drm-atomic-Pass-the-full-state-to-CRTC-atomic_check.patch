@@ -468,7 +468,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  	return 0;
 --- a/drivers/gpu/drm/ingenic/ingenic-drm-drv.c
 +++ b/drivers/gpu/drm/ingenic/ingenic-drm-drv.c
-@@ -195,22 +195,27 @@ static void ingenic_drm_crtc_update_timi
+@@ -234,22 +234,27 @@ static void ingenic_drm_crtc_update_timi
  }
  
  static int ingenic_drm_crtc_atomic_check(struct drm_crtc *crtc,
@@ -589,7 +589,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  #include <drm/drm_mode.h>
  #include <drm/drm_crtc.h>
  #include <drm/drm_flip_work.h>
-@@ -682,15 +683,17 @@ static enum mdp_mixer_stage_id get_start
+@@ -688,15 +689,17 @@ static enum mdp_mixer_stage_id get_start
  }
  
  static int mdp5_crtc_atomic_check(struct drm_crtc *crtc,
@@ -609,7 +609,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  	bool cursor_plane = false;
  	bool need_right_mixer = false;
  	int cnt = 0, i;
-@@ -699,7 +702,7 @@ static int mdp5_crtc_atomic_check(struct
+@@ -705,7 +708,7 @@ static int mdp5_crtc_atomic_check(struct
  
  	DBG("%s: check", crtc->name);
  
@@ -618,7 +618,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  		if (!pstate->visible)
  			continue;
  
-@@ -731,7 +734,7 @@ static int mdp5_crtc_atomic_check(struct
+@@ -737,7 +740,7 @@ static int mdp5_crtc_atomic_check(struct
  	if (mode->hdisplay > hw_cfg->lm.max_width)
  		need_right_mixer = true;
  
@@ -627,7 +627,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  	if (ret) {
  		DRM_DEV_ERROR(dev->dev, "couldn't assign mixers %d\n", ret);
  		return ret;
-@@ -744,7 +747,7 @@ static int mdp5_crtc_atomic_check(struct
+@@ -750,7 +753,7 @@ static int mdp5_crtc_atomic_check(struct
  	WARN_ON(cursor_plane &&
  		(pstates[cnt - 1].plane->type != DRM_PLANE_TYPE_CURSOR));
  
@@ -886,7 +886,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  
 --- a/drivers/gpu/drm/vc4/vc4_txp.c
 +++ b/drivers/gpu/drm/vc4/vc4_txp.c
-@@ -386,16 +386,18 @@ static const struct drm_crtc_funcs vc4_t
+@@ -392,16 +392,18 @@ static const struct drm_crtc_funcs vc4_t
  };
  
  static int vc4_txp_atomic_check(struct drm_crtc *crtc,

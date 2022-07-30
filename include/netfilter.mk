@@ -360,6 +360,8 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NFT_TPROXY,CONFIG_NFT_TPROXY, $(P_XT)nft_tp
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_COMPAT,CONFIG_NFT_COMPAT, $(P_XT)nft_compat),))
 
+$(eval $(if $(NF_KMOD),$(call nf_add,NFT_XFRM,CONFIG_NFT_XFRM, $(P_XT)nft_xfrm),))
+
 # userland only
 IPT_BUILTIN += $(NF_IPT-y) $(NF_IPT-m)
 IPT_BUILTIN += $(IPT_CORE-y) $(IPT_CORE-m)

@@ -224,7 +224,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201118094758.506730-1-maxi
  	else if (funcs->best_encoder)
  		new_encoder = funcs->best_encoder(connector);
  	else
-@@ -1318,7 +1318,7 @@ static void drm_atomic_helper_commit_wri
+@@ -1328,7 +1328,7 @@ static void drm_atomic_helper_commit_wri
  
  		if (new_conn_state->writeback_job && new_conn_state->writeback_job->fb) {
  			WARN_ON(connector->connector_type != DRM_MODE_CONNECTOR_WRITEBACK);

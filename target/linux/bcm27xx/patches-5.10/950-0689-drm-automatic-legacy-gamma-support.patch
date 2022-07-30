@@ -62,7 +62,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201211114237.213288-2-tomi
  	.page_flip		= drm_atomic_helper_page_flip,
 --- a/drivers/gpu/drm/arm/malidp_crtc.c
 +++ b/drivers/gpu/drm/arm/malidp_crtc.c
-@@ -510,7 +510,6 @@ static void malidp_crtc_disable_vblank(s
+@@ -513,7 +513,6 @@ static void malidp_crtc_disable_vblank(s
  }
  
  static const struct drm_crtc_funcs malidp_crtc_funcs = {
@@ -102,7 +102,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201211114237.213288-2-tomi
  int atmel_hlcdc_crtc_create(struct drm_device *dev)
 --- a/drivers/gpu/drm/drm_atomic_helper.c
 +++ b/drivers/gpu/drm/drm_atomic_helper.c
-@@ -3500,76 +3500,6 @@ fail:
+@@ -3510,76 +3510,6 @@ fail:
  EXPORT_SYMBOL(drm_atomic_helper_page_flip_target);
  
  /**
@@ -346,7 +346,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201211114237.213288-2-tomi
  	.page_flip = drm_atomic_helper_page_flip, \
 --- a/drivers/gpu/drm/ingenic/ingenic-drm-drv.c
 +++ b/drivers/gpu/drm/ingenic/ingenic-drm-drv.c
-@@ -647,8 +647,6 @@ static const struct drm_crtc_funcs ingen
+@@ -692,8 +692,6 @@ static const struct drm_crtc_funcs ingen
  
  	.enable_vblank		= ingenic_drm_enable_vblank,
  	.disable_vblank		= ingenic_drm_disable_vblank,
@@ -415,7 +415,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201211114237.213288-2-tomi
  static void vop_fb_unref_worker(struct drm_flip_work *work, void *val)
 --- a/drivers/gpu/drm/stm/ltdc.c
 +++ b/drivers/gpu/drm/stm/ltdc.c
-@@ -742,7 +742,6 @@ static const struct drm_crtc_funcs ltdc_
+@@ -746,7 +746,6 @@ static const struct drm_crtc_funcs ltdc_
  	.enable_vblank = ltdc_crtc_enable_vblank,
  	.disable_vblank = ltdc_crtc_disable_vblank,
  	.get_vblank_timestamp = drm_crtc_vblank_helper_get_vblank_timestamp,
@@ -435,7 +435,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201211114237.213288-2-tomi
  	.get_vblank_timestamp = drm_crtc_vblank_helper_get_vblank_timestamp,
 --- a/drivers/gpu/drm/vc4/vc4_txp.c
 +++ b/drivers/gpu/drm/vc4/vc4_txp.c
-@@ -380,7 +380,6 @@ static const struct drm_crtc_funcs vc4_t
+@@ -386,7 +386,6 @@ static const struct drm_crtc_funcs vc4_t
  	.reset			= vc4_crtc_reset,
  	.atomic_duplicate_state	= vc4_crtc_duplicate_state,
  	.atomic_destroy_state	= vc4_crtc_destroy_state,

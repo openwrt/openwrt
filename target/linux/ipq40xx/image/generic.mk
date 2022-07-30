@@ -187,7 +187,7 @@ TARGET_DEVICES += aruba_ap-303h
 define Device/aruba_ap-365
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-365
-	DEVICE_PACKAGES += kmod-hwmon-ad7418
+	DEVICE_PACKAGES := kmod-hwmon-ad7418 ipq-wifi-aruba_ap-365
 endef
 TARGET_DEVICES += aruba_ap-365
 
