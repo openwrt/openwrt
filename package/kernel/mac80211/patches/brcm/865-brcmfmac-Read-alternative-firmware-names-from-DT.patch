@@ -14,11 +14,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  .../broadcom/brcm80211/brcmfmac/sdio.c        | 47 +++++++++++++++++--
  3 files changed, 87 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c
-index 2f7bc3a70c65..c2d6b8a22858 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c
-@@ -10,6 +10,7 @@
+@@ -11,6 +11,7 @@
  #include "debug.h"
  #include "core.h"
  #include "common.h"
@@ -26,7 +24,7 @@ index 2f7bc3a70c65..c2d6b8a22858 100644
  #include "of.h"
  
  static int brcmf_of_get_country_codes(struct device *dev,
-@@ -118,3 +119,38 @@ void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
+@@ -153,3 +154,38 @@ void brcmf_of_probe(struct device *dev,
  	sdio->oob_irq_nr = irq;
  	sdio->oob_irq_flags = irqf;
  }
@@ -65,8 +63,6 @@ index 2f7bc3a70c65..c2d6b8a22858 100644
 +
 +	return count ? fwnames : NULL;
 +}
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h
-index 10bf52253337..5b39a39812d0 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h
 @@ -5,9 +5,16 @@
@@ -86,8 +82,6 @@ index 10bf52253337..5b39a39812d0 100644
 +	return NULL;
 +}
  #endif /* CONFIG_OF */
-diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
-index 89de65d32ed5..88c08fee58f6 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
 @@ -35,6 +35,7 @@
@@ -98,7 +92,7 @@ index 89de65d32ed5..88c08fee58f6 100644
  
  #define DCMD_RESP_TIMEOUT	msecs_to_jiffies(2500)
  #define CTL_DONE_TIMEOUT	msecs_to_jiffies(2500)
-@@ -634,7 +635,7 @@ MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH "brcmfmac*-sdio.*.txt");
+@@ -633,7 +634,7 @@ MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH "b
  /* per-board firmware binaries */
  MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH "brcmfmac*-sdio.*.bin");
  
@@ -107,7 +101,7 @@ index 89de65d32ed5..88c08fee58f6 100644
  	BRCMF_FW_ENTRY(BRCM_CC_43143_CHIP_ID, 0xFFFFFFFF, 43143),
  	BRCMF_FW_ENTRY(BRCM_CC_43241_CHIP_ID, 0x0000001F, 43241B0),
  	BRCMF_FW_ENTRY(BRCM_CC_43241_CHIP_ID, 0x00000020, 43241B4),
-@@ -660,6 +661,9 @@ static const struct brcmf_firmware_mapping brcmf_sdio_fwnames[] = {
+@@ -659,6 +660,9 @@ static const struct brcmf_firmware_mappi
  	BRCMF_FW_ENTRY(CY_CC_43752_CHIP_ID, 0xFFFFFFFF, 43752)
  };
  
@@ -117,8 +111,8 @@ index 89de65d32ed5..88c08fee58f6 100644
  #define TXCTL_CREDITS	2
  
  static void pkt_align(struct sk_buff *p, int len, int align)
-@@ -4151,7 +4155,7 @@ int brcmf_sdio_get_fwname(struct device *dev, const char *ext, u8 *fw_name,
- 	}
+@@ -4140,7 +4144,7 @@ int brcmf_sdio_get_fwname(struct device
+ 
  	fwreq = brcmf_fw_alloc_request(bus_if->chip, bus_if->chiprev,
  				       brcmf_sdio_fwnames,
 -				       ARRAY_SIZE(brcmf_sdio_fwnames),
@@ -126,7 +120,7 @@ index 89de65d32ed5..88c08fee58f6 100644
  				       fwnames, ARRAY_SIZE(fwnames));
  	if (!fwreq)
  		return -ENOMEM;
-@@ -4207,6 +4211,9 @@ static const struct brcmf_bus_ops brcmf_sdio_bus_ops = {
+@@ -4196,6 +4200,9 @@ static const struct brcmf_bus_ops brcmf_
  #define BRCMF_SDIO_FW_CODE	0
  #define BRCMF_SDIO_FW_NVRAM	1
  
@@ -136,7 +130,7 @@ index 89de65d32ed5..88c08fee58f6 100644
  static void brcmf_sdio_firmware_callback(struct device *dev, int err,
  					 struct brcmf_fw_request *fwreq)
  {
-@@ -4222,6 +4229,22 @@ static void brcmf_sdio_firmware_callback(struct device *dev, int err,
+@@ -4211,6 +4218,22 @@ static void brcmf_sdio_firmware_callback
  
  	brcmf_dbg(TRACE, "Enter: dev=%s, err=%d\n", dev_name(dev), err);
  
@@ -159,7 +153,7 @@ index 89de65d32ed5..88c08fee58f6 100644
  	if (err)
  		goto fail;
  
-@@ -4430,7 +4453,7 @@ brcmf_sdio_prepare_fw_request(struct brcmf_sdio *bus)
+@@ -4419,7 +4442,7 @@ brcmf_sdio_prepare_fw_request(struct brc
  
  	fwreq = brcmf_fw_alloc_request(bus->ci->chip, bus->ci->chiprev,
  				       brcmf_sdio_fwnames,
@@ -168,7 +162,7 @@ index 89de65d32ed5..88c08fee58f6 100644
  				       fwnames, ARRAY_SIZE(fwnames));
  	if (!fwreq)
  		return NULL;
-@@ -4448,6 +4471,9 @@ struct brcmf_sdio *brcmf_sdio_probe(struct brcmf_sdio_dev *sdiodev)
+@@ -4437,6 +4460,9 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
  	struct brcmf_sdio *bus;
  	struct workqueue_struct *wq;
  	struct brcmf_fw_request *fwreq;
@@ -178,7 +172,7 @@ index 89de65d32ed5..88c08fee58f6 100644
  
  	brcmf_dbg(TRACE, "Enter\n");
  
-@@ -4530,6 +4556,21 @@ struct brcmf_sdio *brcmf_sdio_probe(struct brcmf_sdio_dev *sdiodev)
+@@ -4519,6 +4545,21 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
  
  	brcmf_dbg(INFO, "completed!!\n");
  
@@ -200,6 +194,3 @@ index 89de65d32ed5..88c08fee58f6 100644
  	fwreq = brcmf_sdio_prepare_fw_request(bus);
  	if (!fwreq) {
  		ret = -ENOMEM;
--- 
-2.30.2
-

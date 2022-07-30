@@ -123,7 +123,7 @@ Link: https://lore.kernel.org/r/20220516032519.29831-5-ryazanov.s.a@gmail.com
  
  		ret = ath10k_htt_tx_inc_pending(htt);
  		if (ret) {
-@@ -5447,6 +5465,30 @@ static int ath10k_mac_set_txbf_conf(stru
+@@ -5463,6 +5481,30 @@ static int ath10k_mac_set_txbf_conf(stru
  					 ar->wmi.vdev_param->txbf, value);
  }
  
@@ -154,7 +154,7 @@ Link: https://lore.kernel.org/r/20220516032519.29831-5-ryazanov.s.a@gmail.com
  /*
   * TODO:
   * Figure out how to handle WMI_VDEV_SUBTYPE_P2P_DEVICE,
-@@ -5656,15 +5698,7 @@ static int ath10k_add_interface(struct i
+@@ -5672,15 +5714,7 @@ static int ath10k_add_interface(struct i
  
  	arvif->def_wep_key_idx = -1;
  
@@ -171,7 +171,7 @@ Link: https://lore.kernel.org/r/20220516032519.29831-5-ryazanov.s.a@gmail.com
  
  	/* Configuring number of spatial stream for monitor interface is causing
  	 * target assert in qca9888 and qca6174.
-@@ -9352,6 +9386,7 @@ static const struct ieee80211_ops ath10k
+@@ -9368,6 +9402,7 @@ static const struct ieee80211_ops ath10k
  	.stop				= ath10k_stop,
  	.config				= ath10k_config,
  	.add_interface			= ath10k_add_interface,
@@ -179,7 +179,7 @@ Link: https://lore.kernel.org/r/20220516032519.29831-5-ryazanov.s.a@gmail.com
  	.remove_interface		= ath10k_remove_interface,
  	.configure_filter		= ath10k_configure_filter,
  	.bss_info_changed		= ath10k_bss_info_changed,
-@@ -10021,6 +10056,12 @@ int ath10k_mac_register(struct ath10k *a
+@@ -10037,6 +10072,12 @@ int ath10k_mac_register(struct ath10k *a
  	if (test_bit(WMI_SERVICE_TDLS_UAPSD_BUFFER_STA, ar->wmi.svc_map))
  		ieee80211_hw_set(ar->hw, SUPPORTS_TDLS_BUFFER_STA);
  

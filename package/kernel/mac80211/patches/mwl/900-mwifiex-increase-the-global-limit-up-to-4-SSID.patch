@@ -19,28 +19,23 @@ the card-specific structure.
  drivers/net/wireless/marvell/mwifiex/decl.h | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/wireless/marvell/mwifiex/decl.h b/drivers/net/wireless/marvell/mwifiex/decl.h
-index cdc9972..f9bcbf5 100644
 --- a/drivers/net/wireless/marvell/mwifiex/decl.h
 +++ b/drivers/net/wireless/marvell/mwifiex/decl.h
 @@ -30,7 +30,7 @@
  #include <net/cfg80211.h>
-
+ 
  #define MWIFIEX_BSS_COEX_COUNT	     2
 -#define MWIFIEX_MAX_BSS_NUM         (3)
 +#define MWIFIEX_MAX_BSS_NUM         (4)
-
+ 
  #define MWIFIEX_DMA_ALIGN_SZ	    64
  #define MWIFIEX_RX_HEADROOM	    64
 @@ -112,7 +112,7 @@
  #define MWIFIEX_RATE_INDEX_OFDM0   4
-
+ 
  #define MWIFIEX_MAX_STA_NUM		3
 -#define MWIFIEX_MAX_UAP_NUM		3
 +#define MWIFIEX_MAX_UAP_NUM		4
  #define MWIFIEX_MAX_P2P_NUM		3
-
+ 
  #define MWIFIEX_A_BAND_START_FREQ	5000
---
-2.30.2
-
