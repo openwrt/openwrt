@@ -225,6 +225,9 @@ xwrt,ms1201k)
 	ucidef_set_led_netdev "wlan5g" "WiFi 5.8GHz" "wifi_5g:status" "wlan1"
 	ucidef_set_led_switch "eth" "eth" "eth:status" "switch0" "0x11"
 	;;
+xwrt,nxc2005ex)
+	ucidef_set_led_switch "internet" "Internet" "green:link" "switch0" "0x10"
+	;;
 xwrt,nxc2009e-v100)
 	ucidef_set_led_switch "port0_M_led" "port0_M_led" "port0_M_led" "switch1" "0x01" "0x0e" "link"
 	ucidef_set_led_switch "port1_M_led" "port1_M_led" "port1_M_led" "switch1" "0x02" "0x0e" "link"
