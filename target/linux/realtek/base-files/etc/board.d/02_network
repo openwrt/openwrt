@@ -8,6 +8,9 @@ ucidef_set_poe() {
 		json_add_string "budget" "$1"
 		json_select_array ports
 			for port in $2; do
+				if [ -n "$3" -a -n "$(expr "$3" : "\(.\+[[:space:]]\)\{0,1\}$port\([[:space:]].*\|\$\)")" ]; then
+					continue # skip ports passed via $3
+				fi
 				json_add_string "" "$port"
 			done
 		json_select ..
@@ -57,13 +60,13 @@ done
 
 case $board in
 netgear,gs110tpp-v1)
-	ucidef_set_poe 130 "$lan_list"
+	ucidef_set_poe 130 "$lan_list" "lan9 lan10"
 	;;
 netgear,gs310tp-v1)
-	ucidef_set_poe 55 "$lan_list"
+	ucidef_set_poe 55 "$lan_list" "lan9 lan10"
 	;;
 zyxel,gs1900-10hp)
-	ucidef_set_poe 77 "$lan_list"
+	ucidef_set_poe 77 "$lan_list" "lan9 lan10"
 	;;
 zyxel,gs1900-8hp-v1|\
 zyxel,gs1900-8hp-v2)
@@ -71,7 +74,7 @@ zyxel,gs1900-8hp-v2)
 	;;
 zyxel,gs1900-24hp-v1|\
 zyxel,gs1900-24hp-v2)
-	ucidef_set_poe 170 "$lan_list"
+	ucidef_set_poe 170 "$lan_list" "lan25 lan26"
 	;;
 esac
 
