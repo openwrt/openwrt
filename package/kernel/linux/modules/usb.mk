@@ -1555,6 +1555,23 @@ endef
 $(eval $(call KernelPackage,usb-hid-cp2112))
 
 
+define KernelPackage/usb-hid-mcp2221
+  SUBMENU:=$(USB_MENU)
+  TITLE:=Microchip USB 2.0 to I2C/UART Protocol Converter with GPIO
+  KCONFIG:=CONFIG_HID_MCP2221
+  DEPENDS:=@GPIO_SUPPORT +kmod-usb-hid +kmod-i2c-core
+  FILES:=$(LINUX_DIR)/drivers/hid/hid-mcp2221.ko
+  AUTOLOAD:=$(call AutoProbe,hid-mcp2221)
+endef
+
+define KernelPackage/usb-hid-mcp2221/description
+ HID device driver which registers as an i2c adapter and gpiochip to expose
+ these functions of the MCP2221.
+endef
+
+$(eval $(call KernelPackage,usb-hid-mcp2221))
+
+
 define KernelPackage/usb-yealink
   TITLE:=USB Yealink VOIP phone
   DEPENDS:=+kmod-input-evdev
