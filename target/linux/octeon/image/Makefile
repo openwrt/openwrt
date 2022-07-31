@@ -49,6 +49,8 @@ define Device/ubnt_edgerouter
   BOARD_NAME := er
   CMDLINE := $(ER_CMDLINE)
   SUPPORTED_DEVICES += er
+  DEVICE_DTS := ubnt_e200
+  KERNEL += | append-dtb-to-elf
 endef
 TARGET_DEVICES += ubnt_edgerouter
 

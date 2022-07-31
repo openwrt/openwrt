@@ -1,0 +1,388 @@
+/dts-v1/;
+
+/ {
+	compatible = "ubnt,e200";
+	interrupt-parent = <0x01>;
+	model = "ubnt,e200";
+	#address-cells = <0x02>;
+	#size-cells = <0x02>;
+
+	memory {
+		reg = <0x00 0x00 0x00 0x10000000 0x00 0x20000000 0x00 0x70000000>;
+		device_type = "memory";
+	};
+
+	soc@0 {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <0x02>;
+		#size-cells = <0x02>;
+
+		dma-engine@1180000000108 {
+			interrupts = <0x00 0x3f>;
+			compatible = "cavium,octeon-5750-bootbus-dma";
+			reg = <0x11800 0x108 0x00 0x08>;
+		};
+
+		interrupt-controller@1070000000000 {
+			interrupt-controller;
+			compatible = "cavium,octeon-3860-ciu";
+			reg = <0x10700 0x00 0x00 0x7000>;
+			#interrupt-cells = <0x02>;
+			phandle = <0x01>;
+			linux,phandle = <0x01>;
+		};
+
+		pip@11800a0000000 {
+			compatible = "cavium,octeon-3860-pip";
+			reg = <0x11800 0xa0000000 0x00 0x2000>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+
+			interface@1 {
+				compatible = "cavium,octeon-3860-pip-interface";
+				reg = <0x01>;
+				#address-cells = <0x01>;
+				#size-cells = <0x00>;
+
+				ethernet@0 {
+					compatible = "cavium,octeon-3860-pip-port";
+					phy-handle = <0x09>;
+					reg = <0x00>;
+					local-mac-address = [00 00 00 00 00 00];
+				};
+
+				ethernet@2 {
+					compatible = "cavium,octeon-3860-pip-port";
+					phy-handle = <0x0b>;
+					reg = <0x02>;
+					local-mac-address = [00 00 00 00 00 00];
+				};
+
+				ethernet@1 {
+					compatible = "cavium,octeon-3860-pip-port";
+					phy-handle = <0x0a>;
+					reg = <0x01>;
+					local-mac-address = [00 00 00 00 00 00];
+				};
+
+				ethernet@3 {
+					compatible = "cavium,octeon-3860-pip-port";
+					phy-handle = <0x0c>;
+					reg = <0x03>;
+					local-mac-address = [00 00 00 00 00 00];
+				};
+			};
+
+			interface@0 {
+				compatible = "cavium,octeon-3860-pip-interface";
+				reg = <0x00>;
+				#address-cells = <0x01>;
+				#size-cells = <0x00>;
+
+				ethernet@0 {
+					compatible = "cavium,octeon-3860-pip-port";
+					phy-handle = <0x03>;
+					reg = <0x00>;
+					local-mac-address = [00 00 00 00 00 00];
+				};
+
+				ethernet@2 {
+					compatible = "cavium,octeon-3860-pip-port";
+					phy-handle = <0x07>;
+					reg = <0x02>;
+					local-mac-address = [00 00 00 00 00 00];
+				};
+
+				ethernet@1 {
+					compatible = "cavium,octeon-3860-pip-port";
+					phy-handle = <0x04>;
+					reg = <0x01>;
+					local-mac-address = [00 00 00 00 00 00];
+				};
+
+				ethernet@3 {
+					compatible = "cavium,octeon-3860-pip-port";
+					phy-handle = <0x08>;
+					reg = <0x03>;
+					local-mac-address = [00 00 00 00 00 00];
+				};
+			};
+		};
+
+		mmc@1180000002000 {
+			interrupts = <0x01 0x13 0x00 0x3f>;
+			compatible = "cavium,octeon-6130-mmc";
+			reg = <0x11800 0x2000 0x00 0x100 0x11800 0x168 0x00 0x20>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+
+			mmc-slot@0 {
+				cavium,bus-max-width = <0x08>;
+				compatible = "cavium,octeon-6130-mmc-slot\0mmc-spi-slot";
+				voltage-ranges = <0xce4 0xce4>;
+				reg = <0x00>;
+				spi-max-frequency = <0x18cba80>;
+			};
+		};
+
+		mdio@1180000001800 {
+			compatible = "cavium,octeon-3860-mdio";
+			reg = <0x11800 0x1800 0x00 0x40>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+
+			ethernet-phy@2 {
+				compatible = "broadcom,bcm\0ethernet-phy-ieee802.3-c22";
+				reg = <0x02>;
+				interrupt-parent = <0x02>;
+				phandle = <0x0b>;
+				linux,phandle = <0x0b>;
+			};
+
+			ethernet-phy@1 {
+				compatible = "broadcom,bcm\0ethernet-phy-ieee802.3-c22";
+				reg = <0x01>;
+				interrupt-parent = <0x02>;
+				phandle = <0x0a>;
+				linux,phandle = <0x0a>;
+			};
+
+			ethernet-phy@7 {
+				compatible = "broadcom,bcm\0ethernet-phy-ieee802.3-c22";
+				reg = <0x07>;
+				interrupt-parent = <0x02>;
+				phandle = <0x08>;
+				linux,phandle = <0x08>;
+			};
+
+			ethernet-phy@5 {
+				compatible = "broadcom,bcm\0ethernet-phy-ieee802.3-c22";
+				reg = <0x05>;
+				interrupt-parent = <0x02>;
+				phandle = <0x04>;
+				linux,phandle = <0x04>;
+			};
+
+			ethernet-phy@4 {
+				compatible = "broadcom,bcm\0ethernet-phy-ieee802.3-c22";
+				reg = <0x04>;
+				interrupt-parent = <0x02>;
+				phandle = <0x03>;
+				linux,phandle = <0x03>;
+			};
+
+			ethernet-phy@0 {
+				compatible = "broadcom,bcm\0ethernet-phy-ieee802.3-c22";
+				reg = <0x00>;
+				interrupt-parent = <0x02>;
+				phandle = <0x09>;
+				linux,phandle = <0x09>;
+			};
+
+			ethernet-phy@3 {
+				compatible = "broadcom,bcm\0ethernet-phy-ieee802.3-c22";
+				reg = <0x03>;
+				interrupt-parent = <0x02>;
+				phandle = <0x0c>;
+				linux,phandle = <0x0c>;
+			};
+
+			ethernet-phy@6 {
+				compatible = "broadcom,bcm\0ethernet-phy-ieee802.3-c22";
+				reg = <0x06>;
+				interrupt-parent = <0x02>;
+				phandle = <0x07>;
+				linux,phandle = <0x07>;
+			};
+		};
+
+		bootbus@1180000000000 {
+			compatible = "cavium,octeon-3860-bootbus";
+			reg = <0x11800 0x00 0x00 0x200>;
+			ranges = <0x00 0x00 0x00 0x1f400000 0xc00000 0x01 0x00 0x10000 0x30000000 0x00 0x02 0x00 0x00 0x1d040000 0x10000 0x03 0x00 0x00 0x1d050000 0x10000 0x04 0x00 0x00 0x1d020000 0x10000 0x05 0x00 0x10000 0x40000000 0x00 0x06 0x00 0x10000 0x50000000 0x00 0x07 0x00 0x10000 0x90000000 0x00>;
+			#address-cells = <0x02>;
+			#size-cells = <0x01>;
+
+			cavium,cs-config@4 {
+				cavium,t-wr-hld = <0x00>;
+				compatible = "cavium,octeon-3860-bootbus-config";
+				cavium,t-ce = <0x0a>;
+				cavium,t-we = <0x64>;
+				cavium,t-rd-dly = <0x0a>;
+				cavium,t-rd-hld = <0x00>;
+				cavium,t-adr = <0x0a>;
+				cavium,pages = <0x00>;
+				cavium,t-page = <0x12c>;
+				cavium,t-pause = <0x32>;
+				cavium,cs-index = <0x04>;
+				cavium,bus-width = <0x08>;
+				cavium,t-oe = <0xa0>;
+				cavium,t-wait = <0x12c>;
+			};
+
+			cavium,cs-config@3 {
+				cavium,t-wr-hld = <0x1e>;
+				compatible = "cavium,octeon-3860-bootbus-config";
+				cavium,t-ce = <0x1e>;
+				cavium,t-we = <0x96>;
+				cavium,wait-mode;
+				cavium,t-rd-dly = <0x00>;
+				cavium,t-rd-hld = <0x64>;
+				cavium,t-adr = <0x00>;
+				cavium,pages = <0x00>;
+				cavium,t-page = <0x12c>;
+				cavium,t-pause = <0x00>;
+				cavium,cs-index = <0x03>;
+				cavium,bus-width = <0x10>;
+				cavium,t-oe = <0x7d>;
+				cavium,t-wait = <0x1e>;
+			};
+
+			cavium,cs-config@2 {
+				cavium,t-wr-hld = <0x12c>;
+				compatible = "cavium,octeon-3860-bootbus-config";
+				cavium,t-ce = <0x12c>;
+				cavium,t-we = <0x96>;
+				cavium,t-rd-dly = <0x00>;
+				cavium,t-rd-hld = <0x64>;
+				cavium,t-adr = <0x00>;
+				cavium,pages = <0x00>;
+				cavium,t-page = <0x12c>;
+				cavium,t-pause = <0x00>;
+				cavium,cs-index = <0x02>;
+				cavium,bus-width = <0x10>;
+				cavium,t-oe = <0x7d>;
+				cavium,t-wait = <0x12c>;
+			};
+
+			nor@0,0 {
+				compatible = "cfi-flash";
+				reg = <0x00 0x00 0x800000>;
+				#address-cells = <0x01>;
+				#size-cells = <0x01>;
+			};
+
+			cavium,cs-config@0 {
+				cavium,t-wr-hld = <0x23>;
+				compatible = "cavium,octeon-3860-bootbus-config";
+				cavium,t-ce = <0x32>;
+				cavium,t-we = <0x23>;
+				cavium,t-rd-dly = <0x00>;
+				cavium,t-rd-hld = <0x19>;
+				cavium,t-adr = <0x0a>;
+				cavium,pages = <0x00>;
+				cavium,t-page = <0x19>;
+				cavium,t-pause = <0x00>;
+				cavium,cs-index = <0x00>;
+				cavium,bus-width = <0x08>;
+				cavium,t-oe = <0x32>;
+				cavium,t-wait = <0x12c>;
+			};
+		};
+
+		mdio@1180000001900 {
+			compatible = "cavium,octeon-3860-mdio";
+			reg = <0x11800 0x1900 0x00 0x40>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+		};
+
+		spi@1070000001000 {
+			interrupts = <0x00 0x3a>;
+			compatible = "cavium,octeon-3010-spi";
+			reg = <0x10700 0x1000 0x00 0x100>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+		};
+
+		gpio-controller@1070000000800 {
+			interrupt-controller;
+			interrupts = <0x00 0x10>;
+			compatible = "cavium,octeon-3860-gpio";
+			gpio-controller;
+			reg = <0x10700 0x800 0x00 0x100>;
+			#gpio-cells = <0x02>;
+			#interrupt-cells = <0x02>;
+			phandle = <0x02>;
+			linux,phandle = <0x02>;
+		};
+
+		i2c@1180000001000 {
+			interrupts = <0x00 0x2d>;
+			compatible = "cavium,octeon-3860-twsi";
+			reg = <0x11800 0x1000 0x00 0x200>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+			clock-frequency = <0x186a0>;
+		};
+
+		serial@1180000000800 {
+			interrupts = <0x00 0x22>;
+			compatible = "cavium,octeon-3860-uart\0ns16550";
+			reg = <0x11800 0x800 0x00 0x400>;
+			current-speed = <0x1c200>;
+			reg-shift = <0x03>;
+			clock-frequency = <0x23c34600>;
+		};
+
+		serial@1180000000c00 {
+			interrupts = <0x00 0x23>;
+			compatible = "cavium,octeon-3860-uart\0ns16550";
+			reg = <0x11800 0xc00 0x00 0x400>;
+			current-speed = <0x1c200>;
+			reg-shift = <0x03>;
+			clock-frequency = <0x23c34600>;
+		};
+
+		i2c@1180000001200 {
+			interrupts = <0x00 0x3b>;
+			compatible = "cavium,octeon-3860-twsi";
+			reg = <0x11800 0x1200 0x00 0x200>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+			clock-frequency = <0x186a0>;
+		};
+
+		uctl@118006f000000 {
+			compatible = "cavium,octeon-6335-uctl";
+			reg = <0x11800 0x6f000000 0x00 0x100>;
+			refclk-type = "crystal";
+			refclk-frequency = <0xb71b00>;
+			ranges;
+			#address-cells = <0x02>;
+			#size-cells = <0x02>;
+
+			ehci@16f0000000000 {
+				interrupts = <0x00 0x38>;
+				compatible = "cavium,octeon-6335-ehci\0usb-ehci";
+				reg = <0x16f00 0x00 0x00 0x100>;
+				big-endian-regs;
+			};
+
+			ohci@16f0000000400 {
+				interrupts = <0x00 0x38>;
+				compatible = "cavium,octeon-6335-ohci\0usb-ohci";
+				reg = <0x16f00 0x400 0x00 0x100>;
+				big-endian-regs;
+			};
+		};
+
+		dma-engine@1180000000100 {
+			interrupts = <0x00 0x3f>;
+			compatible = "cavium,octeon-5750-bootbus-dma";
+			reg = <0x11800 0x100 0x00 0x08>;
+		};
+	};
+
+	aliases {
+		smi1 = "/soc@0/mdio@1180000001900";
+		uart1 = "/soc@0/serial@1180000000c00";
+		twsi1 = "/soc@0/i2c@1180000001200";
+		twsi0 = "/soc@0/i2c@1180000001000";
+		uart0 = "/soc@0/serial@1180000000800";
+		pip = "/soc@0/pip@11800a0000000";
+		smi0 = "/soc@0/mdio@1180000001800";
+		flash0 = "/soc@0/bootbus@1180000000000/nor@0,0";
+	};
+};
