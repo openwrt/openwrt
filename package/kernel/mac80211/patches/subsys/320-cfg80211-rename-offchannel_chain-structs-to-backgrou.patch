@@ -472,7 +472,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -796,7 +796,7 @@ static const struct nla_policy nl80211_p
+@@ -801,7 +801,7 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_MBSSID_CONFIG] =
  			NLA_POLICY_NESTED(nl80211_mbssid_config_policy),
  	[NL80211_ATTR_MBSSID_ELEMS] = { .type = NLA_NESTED },
@@ -481,7 +481,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -9291,9 +9291,9 @@ static int nl80211_start_radar_detection
+@@ -9306,9 +9306,9 @@ static int nl80211_start_radar_detection
  		goto unlock;
  	}
  

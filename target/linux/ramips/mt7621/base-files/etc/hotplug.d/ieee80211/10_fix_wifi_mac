@@ -68,6 +68,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
+	netgear,wax202)
+		hw_mac_addr=$(mtd_get_mac_ascii Config mac)
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
+		;;
 	oraybox,x3a)
 		if [ "$PHYNBR" = "1" ]; then
 			hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"

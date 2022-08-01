@@ -394,14 +394,24 @@ define Device/ubnt_routerstation_common
 	kmod-usb2 fconfig
   DEVICE_VENDOR := Ubiquiti
   SOC := ar7161
-  IMAGE_SIZE := 16128k
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x50000
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile | lzma | pad-to 128k
+  IMAGE_SIZE := 16000k
   IMAGES += factory.bin
-  IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage | \
-	check-size
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | \
-	check-size | append-metadata
-  KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
+  IMAGE/factory.bin := append-kernel | uImage lzma -M 0x4f4b4c49 | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | pad-to $$$$(BLOCKSIZE) | \
+	mkubntimage $$$$(KDIR)/loader-$(1).bin | check-size
+  IMAGE/sysupgrade.bin := append-kernel | uImage lzma -M 0x4f4b4c49 | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | pad-to $$$$(BLOCKSIZE) | check-size | \
+	sysupgrade-tar kernel=$$$$(KDIR)/loader-$(1).bin rootfs=$$$$@ | append-metadata
+  KERNEL := kernel-bin | append-dtb | lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition design has changed compared to older versions (19.07 and 21.02) \
+	due to kernel drivers restrictions. Upgrade via sysupgrade mechanism is one way operation. \
+	Downgrading OpenWrt version will involve usage of TFTP recovery or bootloader command line interface.
 endef
 
 define Device/ubnt_routerstation
@@ -411,7 +421,6 @@ define Device/ubnt_routerstation
   UBNT_TYPE := RSx
   UBNT_CHIP := ar7100
   DEVICE_PACKAGES += -swconfig
-  SUPPORTED_DEVICES += routerstation
 endef
 TARGET_DEVICES += ubnt_routerstation
 
@@ -421,7 +430,6 @@ define Device/ubnt_routerstation-pro
   UBNT_BOARD := RSPRO
   UBNT_TYPE := RSPRO
   UBNT_CHIP := ar7100pro
-  SUPPORTED_DEVICES += routerstation-pro
 endef
 TARGET_DEVICES += ubnt_routerstation-pro
 

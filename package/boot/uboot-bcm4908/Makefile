@@ -23,11 +23,13 @@ endef
 define U-Boot/bcm4908
   NAME:=Broadcom's BCM4908
   UBOOT_CONFIG:=bcm94908
+  SOC:=bcm4908
 endef
 
 define U-Boot/bcm4912
   NAME:=Broadcom's BCM4912
   UBOOT_CONFIG:=bcm94912
+  SOC:=bcm4912
 endef
 
 UBOOT_TARGETS := \
@@ -46,8 +48,8 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/u-boot
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/u-boot/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/u-boot.dtb $(STAGING_DIR_IMAGE)/u-boot/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/u-boot/u-boot-$(SOC).bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/u-boot.dtb $(STAGING_DIR_IMAGE)/u-boot/u-boot-$(SOC).dtb
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/arch/arm/dts/*.dtb $(STAGING_DIR_IMAGE)/u-boot/
 endef
 

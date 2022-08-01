@@ -149,12 +149,12 @@
 &gswip_mdio {
 	phy0: ethernet-phy@0 {
 		reg = <0x0>;
-		gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 	};
 
 	phy1: ethernet-phy@1 {
 		reg = <0x1>;
-		gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 	};
 
 	phy11: ethernet-phy@11 {

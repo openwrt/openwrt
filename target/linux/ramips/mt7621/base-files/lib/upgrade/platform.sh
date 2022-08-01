@@ -81,6 +81,7 @@ platform_do_upgrade() {
 	netgear,r7450|\
 	netgear,wac104|\
 	netgear,wac124|\
+	netgear,wax202|\
 	netis,wf2881|\
 	raisecom,msg1500-x-00|\
 	sercomm,na502|\

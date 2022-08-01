@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	model = "jjPlus JA76PF2";
@@ -89,12 +90,16 @@
 &eth0 {
 	status = "okay";
 
+	nvmem-cells = <&macaddr_lan>;
+	nvmem-cell-names = "mac-address";
 	phy-handle = <&phy0>;
 };
 
 &eth1 {
 	status = "okay";
 
+	nvmem-cells = <&macaddr_wan>;
+	nvmem-cell-names = "mac-address";
 	phy-handle = <&phy4>;
 };
 
@@ -111,9 +116,56 @@
 		spi-max-frequency = <25000000>;
 
 		partitions {
+			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			compatible = "ecoscentric,redboot-fis-partitions";
+
+			partition@0 {
+				label = "RedBoot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "loader";
+				reg = <0x040000 0x020000>;
+			};
+
+			partition@60000 {
+				label = "firmware";
+				reg = <0x060000 0xf80000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <IH_MAGIC_OKLI>;
+			};
+
+			partition@fe0000 {
+				label = "FIS directory";
+				reg = <0xfe0000 0x00f000>;
+				read-only;
+			};
+
+			partition@fef000 {
+				label = "RedBoot config";
+				reg = <0xfef000 0x001000>;
+				read-only;
+			};
+
+			partition@ff0000 {
+				label = "Atheros Board Data";
+				reg = <0xff0000 0x10000>;
+				read-only;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_wan: macaddr@1000 {
+					reg = <0x1000 0x6>;
+				};
+
+				macaddr_lan: macaddr@1006 {
+					reg = <0x1006 0x6>;
+				};
+			};
 		};
 	};
 };

@@ -1,5 +1,6 @@
+From 2dd441f16d6ad6104d85c4e5dfeb6dde4df26869 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Wed, 16 Feb 2022 07:28:34 +0100
+Date: Wed, 16 Feb 2022 07:34:08 +0100
 Subject: [PATCH] watchdog: bcm7038_wdt: Support BCM6345 compatible string
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -12,6 +13,11 @@ programmed just like the 7038 one.
 
 Cc: Florian Fainelli <f.fainelli@gmail.com>
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+Link: https://lore.kernel.org/r/20220216063408.23168-1-zajec5@gmail.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
 ---
  drivers/watchdog/bcm7038_wdt.c | 1 +
  1 file changed, 1 insertion(+)
