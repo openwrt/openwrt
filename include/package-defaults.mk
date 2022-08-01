@@ -153,6 +153,11 @@ define Build/Compile/Default
 		$(1);
 endef
 
+define Build/Compile/Fixup
+	$(call autoreconf_target) \
+	$(call Build/Compile/Default);
+endef
+
 define Build/Install/Default
 	$(MAKE_VARS) \
 	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
