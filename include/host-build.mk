@@ -119,8 +119,14 @@ define Host/Compile/Default
 		$(1)
 endef
 
+define Host/Compile/Fixup
+	$(call autoreconf_host) \
+	$(call Host/Configure/Default); \
+	$(call Host/Compile/Default)
+endef
+
 define Host/Compile
-  +$(call Host/Compile/Default)
+  +{ $(call Host/Compile/Default) ; } || { $(call Host/Compile/Fixup) ; }
 endef
 
 define Host/Install/Default
