@@ -37,7 +37,7 @@ pipeline {
     choice(name:'libc', choices:['musl', 'glibc'], description:'libc to link against')
     string(name:'buildBranch', defaultValue:env.BRANCH_NAME, description:'branch to use for feeds.git and mfw_build.git')
     choice(name:'startClean', choices:['false', 'true'], description:'start clean')
-    string(name:'makeOptions', defaultValue:'-j32 V=s', description:'options passed directly to make')
+    string(name:'makeOptions', defaultValue:'-j32', description:'options passed directly to make')
   }
 
   stages {
