@@ -39,7 +39,9 @@ define KernelPackage/f71808e-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Fintek F718xx/F818xx Watchdog Timer
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_F71808E_WDT
+  KCONFIG:=\
+	CONFIG_F71808E_WDT \
+	CONFIG_WATCHDOG_CORE=y
   FILES:=$(LINUX_DIR)/drivers/watchdog/f71808e_wdt.ko
   AUTOLOAD:=$(call AutoProbe,f71808e-wdt,1)
 endef
@@ -123,8 +125,10 @@ define KernelPackage/itco-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intel iTCO Watchdog Timer
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_ITCO_WDT \
-           CONFIG_ITCO_VENDOR_SUPPORT=y
+  KCONFIG:=\
+	CONFIG_ITCO_WDT \
+	CONFIG_ITCO_VENDOR_SUPPORT=y \
+	CONFIG_WATCHDOG_CORE=y
   FILES:=$(LINUX_DIR)/drivers/watchdog/iTCO_wdt.ko \
          $(LINUX_DIR)/drivers/watchdog/iTCO_vendor_support.ko
   AUTOLOAD:=$(call AutoLoad,50,iTCO_vendor_support iTCO_wdt,1)
@@ -178,7 +182,9 @@ define KernelPackage/w83627hf-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Winbond 83627HF Watchdog Timer
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_W83627HF_WDT
+  KCONFIG:=\
+	CONFIG_W83627HF_WDT \
+	ONFIG_WATCHDOG_CORE=y
   FILES:=$(LINUX_DIR)/drivers/watchdog/w83627hf_wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,w83627hf-wdt,1)
 endef
