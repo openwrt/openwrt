@@ -55,22 +55,22 @@ pipeline {
 		    def artifactsDir = "tmp/artifacts"
 
 		    // default values for US build
-		    def buildDir = "${env.HOME}/build-mfw-${env.BRANCH_NAME}-${myDevice}"
-		    def toolsDir = "${env.HOME}/tools-mfw-${env.BRANCH_NAME}-${myDevice}"
+		    def buildDir = "${env.HOME}/build-mfw-${buildBranch}-${myDevice}"
+		    def toolsDir = "${env.HOME}/tools-mfw-${buildBranch}-${myDevice}"
 
                     if (myRegion != 'us') {
 		      buildDir = buildDir + "-" + myRegion
 		      toolsDir = toolsDir + "-" + myRegion
 		    }
 
-		    if (env.BRANCH_NAME =~ /^mfw\+owrt/) {
+		    if (buildBranch =~ /^mfw\+owrt/) {
 		       // force master
 		       branch = 'master'
 		    } else {
-		       branch = "${buildBranch}"
+		       branch = buildBranch
 		    }
 
-		    dir(toolsDir) { 
+		    dir(toolsDir) {
 		      git url:"git@github.com:untangle/mfw_build", branch:branch, credentialsId:credentialsId
 		    }
 		    dir(buildDir) {
@@ -114,7 +114,7 @@ pipeline {
 
           environment {
             device = 'x86_64'
-            toolsDir = "${env.HOME}/tools-mfw-${env.BRANCH_NAME}-${device}"
+            toolsDir = "${env.HOME}/tools-mfw-${buildBranch}-${device}"
 	    rootfsTarballName = 'mfw-x86-64-generic-rootfs.tar.gz'
 	    rootfsTarballPath = "bin/targets/x86/64/${rootfsTarballName}"
 	    dockerfile = "${toolsDir}/docker-compose.test.yml"
@@ -123,9 +123,16 @@ pipeline {
           stages {
             stage('Prep x86_64') {
               steps {
-                dir(toolsDir) { 
-                  git url:"git@github.com:untangle/mfw_build", branch:"${env.BRANCH_NAME}", credentialsId: 'buildbot'
-                }
+		if (buildBranch =~ /^mfw\+owrt/) {
+		   // force master
+		   branch = 'master'
+		} else {
+		   branch = buildBranch
+		}
+
+		dir(toolsDir) {
+		  git url:"git@github.com:untangle/mfw_build", branch:branch, credentialsId:credentialsId
+		}
 
                 unstash(name:"rootfs-${device}")
                 sh("test -f ${rootfsTarballPath}")
