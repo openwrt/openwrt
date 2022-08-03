@@ -75,6 +75,10 @@ define Package/snapshot-tool
   DEPENDS:=+libubox +fstools
 endef
 
+define Package/block-mount/conffiles
+/etc/config/fstab
+endef
+
 define Package/block-mount
   SECTION:=base
   CATEGORY:=Base system
