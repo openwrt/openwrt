@@ -701,6 +701,21 @@ define Device/tplink_tl-wr840n-v5
 endef
 TARGET_DEVICES += tplink_tl-wr840n-v5
 
+define Device/tplink_tl-wr841hp-v5
+  $(Device/tplink-v2)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := TL-WR841HP
+  DEVICE_VARIANT := v5
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x08411005
+  TPLINK_HWREV := 0x269
+  TPLINK_HWREVADD := 0x5
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  SUPPORTED_DEVICES += tl-wr841hp-v5
+endef
+TARGET_DEVICES += tplink_tl-wr841hp-v5
+
 define Device/tplink_tl-wr841n-v13
   $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
