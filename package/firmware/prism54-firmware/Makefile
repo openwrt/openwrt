@@ -3,10 +3,12 @@
 # See /LICENSE for more information.
 #
 
-include $(TOPDIR)/rules.mk
-
 PKG_NAME:=prism54-firmware
 PKG_RELEASE:=1
+
+DL_MKDIR:=1
+
+include $(TOPDIR)/rules.mk
 
 # P54 SoftMAC firmware (jbnore.free.fr seems to be rather slow, so we use daemonizer.de)
 PRG_URL:=https://daemonizer.de/prism54/prism54-fw/
