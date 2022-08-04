@@ -208,13 +208,13 @@
 				compatible = "denx,uimage";
 			};
 
-			info: partition@f00000 {
+			info: partition-info@f00000 {
 				label = "info";
 				reg = <0xf00000 0x0f0000>;
 				read-only;
 			};
 
-			art: partition@ff0000 {
+			art: partition-art@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;

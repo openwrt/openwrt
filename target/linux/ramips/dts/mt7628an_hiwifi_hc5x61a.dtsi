@@ -56,7 +56,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			factory: partition-factory@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
@@ -74,7 +74,7 @@
 				read-only;
 			};
 
-			bdinfo: partition@fe0000 {
+			bdinfo: partition-bdinfo@fe0000 {
 				label = "bdinfo";
 				reg = <0xfe0000 0x10000>;
 				read-only;

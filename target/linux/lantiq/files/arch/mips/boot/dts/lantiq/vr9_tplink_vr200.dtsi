@@ -241,7 +241,7 @@
 				read-only;
 			};
 
-			romfile: partition@fd0000 {
+			romfile: partition-romfile@fd0000 {
 				reg = <0xfd0000 0x10000>;
 				label = "romfile";
 				read-only;
@@ -253,7 +253,7 @@
 				read-only;
 			};
 
-			radio: partition@ff0000 {
+			radio: partition-radio@ff0000 {
 				reg = <0xff0000 0x10000>;
 				label = "radio";
 				read-only;

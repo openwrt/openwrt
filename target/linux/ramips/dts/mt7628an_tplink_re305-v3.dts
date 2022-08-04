@@ -32,13 +32,13 @@
 				reg = <0x20000 0x7a0000>;
 			};
 
-			config: partition@7c0000 {
+			config: partition-config@7c0000 {
 				label = "config";
 				reg = <0x7c0000 0x30000>;
 				read-only;
 			};
 
-			radio: partition@7f0000 {
+			radio: partition-radio@7f0000 {
 				label = "radio";
 				reg = <0x7f0000 0x10000>;
 				read-only;

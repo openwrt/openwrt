@@ -36,13 +36,13 @@
 				read-only;
 			};
 
-			factory: partition@70000 {
+			factory: partition-factory@70000 {
 				label = "factory";
 				reg = <0x70000 0x40000>;
 				read-only;
 			};
 
-			eeprom: partition@b0000 {
+			eeprom: partition-eeprom@b0000 {
 				label = "eeprom";
 				reg = <0xb0000 0x10000>;
 				read-only;

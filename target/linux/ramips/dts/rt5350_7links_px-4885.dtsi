@@ -66,13 +66,13 @@
 				read-only;
 			};
 
-			devconf: partition@40000 {
+			devconf: partition-devconf@40000 {
 				label = "devconf";
 				reg = <0x40000 0x10000>;
 				read-only;
 			};
 
-			firmware: partition@50000 {
+			firmware: partition-firmware@50000 {
 				compatible = "denx,uimage";
 				label = "firmware";
 				/* reg property is set based on flash size in DTS files */

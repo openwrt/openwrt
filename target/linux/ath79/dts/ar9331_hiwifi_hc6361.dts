@@ -70,31 +70,31 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			uboot: partition-uboot@0 {
 				reg = <0x0 0x10000>;
 				label = "u-boot";
 				read-only;
 			};
 
-			bdinfo: partition@10000 {
+			bdinfo: partition-bdinfo@10000 {
 				reg = <0x10000 0x10000>;
 				label = "bdinfo";
 				read-only;
 			};
 
-			firmware: partition@20000 {
+			firmware: partition-firmware@20000 {
 				compatible = "denx,uimage";
 				reg = <0x20000 0xfc0000>;
 				label = "firmware";
 			};
 
-			backup: partition@fe0000 {
+			backup: partition-backup@fe0000 {
 				reg = <0xfe0000 0x10000>;
 				label = "backup";
 				read-only;
 			};
 
-			art: partition@ff0000 {
+			art: partition-art@ff0000 {
 				reg = <0xff0000 0x10000>;
 				label = "art";
 				read-only;

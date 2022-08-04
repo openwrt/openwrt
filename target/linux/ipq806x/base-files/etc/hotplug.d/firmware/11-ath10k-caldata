@@ -17,12 +17,8 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0000:01:00.0.bin")
 	case $board in
-	asrock,g10)
-		caldata_extract "0:art" 0x1000 0x2f20
-		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
-		caldata_extract "art" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 1)
 		;;
 	meraki,mr42)
@@ -30,22 +26,14 @@ case "$FIRMWARE" in
 		caldata_extract_ubi "ART" 0x1000 0x2f20
 		;;
 	zyxel,nbg6817)
-		caldata_extract "0:art" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 1)
 		;;
 	esac
 	;;
 "ath10k/pre-cal-pci-0001:01:00.0.bin")
 	case $board in
-	asrock,g10)
-		caldata_extract "0:art" 0x5000 0x2f20
-		;;
-	edgecore,ecw5410)
-		caldata_extract "0:art" 0x1000 0x2f20
-		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
-		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 2)
 		;;
 	meraki,mr42 |\
@@ -54,7 +42,6 @@ case "$FIRMWARE" in
 		caldata_extract_ubi "ART" 0x5000 0x2f20
 		;;
 	zyxel,nbg6817)
-		caldata_extract "0:art" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii 0:appsblenv ethaddr)
 		;;
 	esac
@@ -69,9 +56,6 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0002:01:00.0.bin")
 	case $board in
-	edgecore,ecw5410)
-		caldata_extract "0:art" 0x5000 0x2f20
-		;;
 	meraki,mr52)
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x9000 0x2f20

@@ -64,7 +64,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			uboot: partition-uboot@0 {
 				label = "u-boot";
 				reg = <0x000000 0x020000>;
 				read-only;
@@ -76,7 +76,7 @@
 				read-only;
 			};
 
-			info: partition@30000 {
+			info: partition-info@30000 {
 				label = "info";
 				reg = <0x030000 0x010000>;
 				read-only;
@@ -88,13 +88,13 @@
 				compatible = "tplink,firmware";
 			};
 
-			config: partition@7c0000 {
+			config: partition-config@7c0000 {
 				label = "config";
 				reg = <0x7c0000 0x030000>;
 				read-only;
 			};
 
-			art: partition@7f0000 {
+			art: partition-art@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;

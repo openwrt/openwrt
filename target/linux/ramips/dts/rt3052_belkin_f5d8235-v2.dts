@@ -25,7 +25,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			uboot: partition-uboot@0 {
 				label = "uboot";
 				reg = <0x0 0x50000>;
 				read-only;
@@ -42,7 +42,7 @@
 				reg = <0x7e0000 0x10000>;
 			};
 
-			factory: partition@7f0000 {
+			factory: partition-factory@7f0000 {
 				label = "factory";
 				reg = <0x7f0000 0x10000>;
 			};

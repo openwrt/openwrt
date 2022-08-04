@@ -28,13 +28,13 @@
 		reg = <0xc0000 0x10000>;
 	};
 
-	factory: partition@d0000 {
+	factory: partition-factory@d0000 {
 		label = "factory";
 		reg = <0xd0000 0x40000>;
 		read-only;
 	};
 
-	eeprom: partition@110000 {
+	eeprom: partition-eeprom@110000 {
 		label = "eeprom";
 		reg = <0x110000 0x10000>;
 		read-only;
