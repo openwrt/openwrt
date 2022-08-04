@@ -4,19 +4,18 @@
 
 include $(TOPDIR)/rules.mk
 
-ARCH:=aarch64
+ARCH:=arm
 BOARD:=meson
 BOARDNAME:=Amlogic Meson family
-CPU_TYPE:=cortex-a53
-DEVICE_TYPE:=other
 FEATURES:=audio boot-part ext4 fpu legacy-sdcard squashfs usbgadget
 MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>
-SUBTARGETS:=mesongx
+SUBTARGETS:=meson8b mesongx
 
 KERNEL_PATCHVER:=5.10
 
 define Target/Description
-	Build firmware image for Amlogic S9 SoC devices.
+	Build firmware image for Amlogic Meson SoC devices.
+	Currently produces SD Card/USB disk image.
 endef
 
 include $(INCLUDE_DIR)/target.mk
