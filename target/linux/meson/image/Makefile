@@ -1,67 +1,113 @@
 #
-# Copyright (C) 2017-2019 Stijn Tintel <stijn@linux-ipv6.be>
-#
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/bootloader-odroid-c2
-	fip_create \
-		--bl30  $(STAGING_DIR_IMAGE)/odroidc2/bl30.bin \
-		--bl301 $(STAGING_DIR_IMAGE)/odroidc2/bl301.bin \
-		--bl31  $(STAGING_DIR_IMAGE)/bl31_gxbb.bin \
-		--bl33  $(BIN_DIR)/u-boot-odroid-c2/u-boot.bin \
-		$(STAGING_DIR_IMAGE)/odroidc2/fip.bin
-
-	cat $(STAGING_DIR_IMAGE)/odroidc2/bl2.package $(STAGING_DIR_IMAGE)/odroidc2/fip.bin > $(STAGING_DIR_IMAGE)/odroidc2/boot_new.bin
-
-	amlbootsig $(STAGING_DIR_IMAGE)/odroidc2/boot_new.bin $(STAGING_DIR_IMAGE)/odroidc2/boot_new.bin.signed
-
-	dd if=$(STAGING_DIR_IMAGE)/odroidc2/boot_new.bin.signed of=$(STAGING_DIR_IMAGE)/odroidc2/u-boot.gxbb bs=512 skip=96
-	dd if=$(STAGING_DIR_IMAGE)/odroidc2/bl1.bin.hardkernel of=$@ conv=fsync,notrunc bs=1 count=440
-	dd if=$(STAGING_DIR_IMAGE)/odroidc2/bl1.bin.hardkernel of=$@ conv=fsync,notrunc bs=512 skip=1 seek=1
-	dd if=$(STAGING_DIR_IMAGE)/odroidc2/u-boot.gxbb of=$@ conv=fsync,notrunc bs=512 seek=97
-endef
+FAT32_BLOCK_SIZE=1024
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_TARGET_KERNEL_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
 define Build/sdcard-img
-	$(INSTALL_DIR) $(KDIR)/boot.ext4
-	$(CP) $(KDIR)/boot.$1.scr $(KDIR)/boot.ext4/boot.scr
-	$(CP) $(KDIR_KERNEL_IMAGE) $(KDIR)/boot.ext4/uImage
-	$(foreach dts,$(DEVICE_DTS),$(CP) $(DTS_DIR)/$(dts).dtb $(KDIR)/boot.ext4/)
-	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" \
-	PATH="$(TARGET_PATH)" \
-	$(SCRIPT_DIR)/gen_image_generic.sh $@ \
-		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(KDIR)/boot.ext4 \
-		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
-		4096
-	$(RM) -rf $(KDIR)/boot.ext4
+	$(RM) -f $@.boot
+	mkfs.fat -C $@.boot $(FAT32_BLOCKS)
+	mkdir -p $(KDIR)/boot.fat
+#For S805
+	mcopy -i $@.boot $(KDIR)/uInitrd ::
+	mcopy -i $@.boot $(KDIR)/s805_autoscript ::
+	mcopy -i $@.boot $(KDIR)/s805_autoscript.txt ::
+#For S905
+	mcopy -i $@.boot $(KDIR)/uEnv.ini ::
+	mcopy -i $@.boot $(KDIR)/s905_autoscript ::
+	mcopy -i $@.boot $(KDIR)/s905_autoscript.txt ::
+
+	$(CP) $(IMAGE_KERNEL) $(KDIR)/boot.fat/uImage
+	mcopy -i $@.boot $(KDIR)/boot.fat/uImage ::
+
+	$(foreach dts,$(shell echo $(DEVICE_DTS)),$(CP) $(DTS_DIR)/$(dts).dtb $(KDIR)/boot.fat/dtb;)
+	mcopy -i $@.boot $(KDIR)/boot.fat/dtb ::
+
+	$(RM) -rf $(KDIR)/boot.fat
+
+	./gen_aml_sdcard_img.sh $@ $@.boot $(IMAGE_ROOTFS) \
+		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+
 endef
 
 define Build/uImage-meson
+#For S805 autoscript
+	$(RM) -rf $(KDIR)/uInitrd
+	$(RM) -rf $(KDIR)/s805_autoscript
+	$(RM) -rf $(KDIR)/s805_autoscript.txt
+
+#For S905 autoscript
+	$(RM) -rf $(KDIR)/s905_autoscript
+	$(RM) -rf $(KDIR)/s905_autoscript.txt
+	$(RM) -rf $(KDIR)/uEnv.ini
+
 	$(call Build/uImage,none)
-	mkimage -A arm64 -T script -C none -n "boot.scr uImage" -d boot.$1.txt $(KDIR)/boot.$1.scr
+
+#For S805 autoscript
+	touch $(KDIR)/uInitrd
+	$(CP) s805_autoscript.txt  $(KDIR)/s805_autoscript.txt
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n "s805_autoscript" -d s805_autoscript.txt  $(KDIR)/s805_autoscript
+
+#For S905 autoscript
+	$(CP) uEnv.ini  $(KDIR)/uEnv.ini
+	$(CP) s905_autoscript.txt  $(KDIR)/s905_autoscript.txt
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n "s905_autoscript" -d s905_autoscript.txt  $(KDIR)/s905_autoscript
+
 endef
 
 ### Devices ###
 define Device/Default
-  FILESYSTEMS := ext4 squashfs
-  IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := sdcard-img $$(DEVICE_NAME) | bootloader-$$(DEVICE_NAME) | gzip | append-metadata
+  FILESYSTEMS := ext4
+  IMAGES := sdcard.img
+  IMAGE/sdcard.img := sdcard-img $$(DEVICE_NAME)
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL_LOADADDR := 0x01080000
   KERNEL_NAME := Image
+  KERNEL := kernel-bin | uImage-meson none
   PROFILES = Default $$(DEVICE_NAME)
 endef
 
+define Device/odroid-c1
+  DEVICE_DTS := meson8b-odroidc1
+  DEVICE_PACKAGES +=
+  DEVICE_TITLE := ODROID C1
+  KERNEL_LOADADDR := 0x00208000
+endef
+ifeq ($(SUBTARGET),meson8b)
+  TARGET_DEVICES += odroid-c1
+endif
+
 define Device/odroid-c2
   DEVICE_DTS := amlogic/meson-gxbb-odroidc2
-  DEVICE_PACKAGES += odroid-firmware-c2 u-boot-odroid-c2
+  DEVICE_PACKAGES +=
   DEVICE_TITLE := ODROID C2
-  KERNEL := kernel-bin | uImage-meson $$(DEVICE_NAME)
-  SUPPORTED_DEVICES += hardkernel,odroid-c2
 endef
-TARGET_DEVICES += odroid-c2
+ifeq ($(SUBTARGET),mesongx)
+  TARGET_DEVICES += odroid-c2
+endif
+
+define Device/gxl-s905x-p212
+  DEVICE_DTS := amlogic/meson-gxl-s905x-p212
+  DEVICE_PACKAGES +=
+  DEVICE_TITLE := S905X Design Reference Board
+endef
+ifeq ($(SUBTARGET),mesongx)
+  TARGET_DEVICES += gxl-s905x-p212
+endif
+
+define Device/khadas-vim1
+  DEVICE_DTS := amlogic/meson-gxl-s905x-khadas-vim
+  DEVICE_PACKAGES += \
+	cypress-firmware-43455-sdio \
+	kmod-brcmfmac wpad-basic
+  DEVICE_TITLE := Khadas VIM1 Development Board
+endef
+ifeq ($(SUBTARGET),mesongx)
+  TARGET_DEVICES += khadas-vim1
+endif
 
 $(eval $(call BuildImage))
