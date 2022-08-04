@@ -15,7 +15,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/thermal/broadcom/bcm2711_thermal.c
 +++ b/drivers/thermal/broadcom/bcm2711_thermal.c
-@@ -95,7 +95,7 @@ static int bcm2711_thermal_probe(struct
+@@ -92,7 +92,7 @@ static int bcm2711_thermal_probe(struct
  						       &bcm2711_thermal_of_ops);
  	if (IS_ERR(thermal)) {
  		ret = PTR_ERR(thermal);

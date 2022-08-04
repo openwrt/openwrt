@@ -41,6 +41,20 @@
 				reg = <0x60000 0x10000>;
 				read-only;
 			};
+
+			art: partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x10000>;
+				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_ath9k: calibration@1000 {
+					reg = <0x1000 0x440>;
+				};
+			};
 		};
 	};
 };
@@ -48,5 +62,6 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
+	nvmem-cells = <&cal_ath9k>;
+	nvmem-cell-names = "calibration";
 };

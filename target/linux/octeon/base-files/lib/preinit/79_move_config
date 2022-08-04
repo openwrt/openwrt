@@ -15,7 +15,8 @@ octeon_move_config() {
 	. /lib/functions.sh
 
 	case "$(board_name)" in
-		erlite)
+		erlite|\
+		ubnt,usg)
 			move_config "/dev/sda1"
 			;;
 		itus,shield-router)

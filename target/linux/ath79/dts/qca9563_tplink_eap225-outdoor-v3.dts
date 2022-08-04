@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9563_tplink_eap2x5-1port.dtsi"
+
+/ {
+	compatible = "tplink,eap225-outdoor-v3", "qca,qca9563";
+	model = "TP-Link EAP225-Outdoor v3";
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_amber;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_amber;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: status_green {
+			label = "green:status";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_status_amber: status_amber {
+			label = "amber:status";
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&art {
+	precalibration_ath10k: pre-calibration@5000 {
+		reg = <0x5000 0x2f20>;
+	};
+};
+
+&eth0 {
+	phy-handle = <&phy6>;
+	phy-mode = "sgmii";
+};
+
+&mdio0 {
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+	};
+};
+
+&pcie {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+
+		mac-address-increment = <1>;
+
+		nvmem-cells = <&macaddr_info_8>, <&precalibration_ath10k>;
+		nvmem-cell-names = "mac-address", "pre-calibration";
+	};
+};

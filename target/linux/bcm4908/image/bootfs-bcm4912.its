@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/include/ "bootfs.itsi"
+
+/ {
+	images {
+		uboot {
+			data = /incbin/("${images_dir}/u-boot/u-boot-bcm4912.bin");
+		};
+
+		fdt_uboot {
+			data = /incbin/("${images_dir}/u-boot/u-boot-bcm4912.dtb");
+		};
+
+		fdt_GTAX6000 {
+			description = "dtb";
+			data = /incbin/("${images_dir}/u-boot/GTAX6000.dtb");
+			type = "flat_dt";
+			compression = "none";
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+	};
+
+	configurations {
+		conf_ub_GTAX6000 {
+			description = "GTAX6000";
+			fdt = "fdt_GTAX6000";
+			loadables = "atf", "uboot";
+		};
+	};
+};

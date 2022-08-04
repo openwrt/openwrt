@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
-PKG_VERSION:=1.8.7
-PKG_RELEASE:=6
+PKG_VERSION:=1.8.8
+PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://netfilter.org/projects/iptables/files
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_HASH:=c109c96bb04998cd44156622d36f8e04b140701ec60531a10668cfdff5e8d8f0
+PKG_HASH:=71c75889dc710676631553eb1511da0177bbaaf1b551265b912d236c3f51859f
 
 PKG_FIXUP:=autoreconf
 PKG_FLAGS:=nonshared
@@ -50,18 +50,18 @@ $(call Package/iptables/Default)
   DEPENDS+= +kmod-ipt-core +libip4tc +IPV6:libip6tc +libiptext +IPV6:libiptext6 +libxtables
 endef
 
-define Package/iptables-legacy
+define Package/iptables-zz-legacy
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool
   DEPENDS+= +xtables-legacy
-  PROVIDES:=iptables
+  PROVIDES:=iptables iptables-legacy
   ALTERNATIVES:=\
     200:/usr/sbin/iptables:/usr/sbin/xtables-legacy-multi \
     200:/usr/sbin/iptables-restore:/usr/sbin/xtables-legacy-multi \
     200:/usr/sbin/iptables-save:/usr/sbin/xtables-legacy-multi
 endef
 
-define Package/iptables-legacy/description
+define Package/iptables-zz-legacy/description
 IP firewall administration tool.
 
  Matches:
@@ -104,7 +104,7 @@ endef
 define Package/xtables-nft
 $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool nft
-  DEPENDS:=@IPTABLES_NFTABLES +libnftnl +libiptext +IPV6:libiptext6 +libiptext-nft +kmod-nft-compat
+  DEPENDS:=+libnftnl +libiptext +IPV6:libiptext6 +libiptext-nft +kmod-nft-compat
 endef
 
 define Package/arptables-nft
@@ -483,12 +483,12 @@ define Package/iptables-mod-checksum/description
 iptables extension for the CHECKSUM calculation target
 endef
 
-define Package/ip6tables-legacy
+define Package/ip6tables-zz-legacy
 $(call Package/iptables/Default)
   DEPENDS:=@IPV6 +kmod-ip6tables +xtables-legacy
   CATEGORY:=Network
   TITLE:=IPv6 firewall administration tool
-  PROVIDES:=ip6tables
+  PROVIDES:=ip6tables ip6tables-legacy
   ALTERNATIVES:=\
     200:/usr/sbin/ip6tables:/usr/sbin/xtables-legacy-multi \
     200:/usr/sbin/ip6tables-restore:/usr/sbin/xtables-legacy-multi \
@@ -575,7 +575,7 @@ define Package/libiptext-nft
  CATEGORY:=Libraries
  TITLE:=IPv4/IPv6 firewall - shared libiptext nft library
  ABI_VERSION:=0
- DEPENDS:=@IPTABLES_NFTABLES +libxtables
+ DEPENDS:=+libxtables
 endef
 
 define Package/libxtables
@@ -594,12 +594,6 @@ define Package/libxtables/config
 	default n
 	help
 		This enable connlabel support in iptables.
-
-  config IPTABLES_NFTABLES
-	bool "Enable Nftables support"
-	default y
-	help
-		This enable nftables support in iptables.
 endef
 
 TARGET_CPPFLAGS := \
@@ -624,7 +618,6 @@ CONFIGURE_ARGS += \
 	--with-xtlibdir=/usr/lib/iptables \
 	--with-xt-lock-name=/var/run/xtables.lock \
 	$(if $(CONFIG_IPTABLES_CONNLABEL),,--disable-connlabel) \
-	$(if $(CONFIG_IPTABLES_NFTABLES),,--disable-nftables) \
 	$(if $(CONFIG_IPV6),,--disable-ipv6)
 
 MAKE_FLAGS := \
@@ -657,7 +650,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/include/iptables/*.h $(1)/usr/include/iptables/
 	$(CP) $(PKG_BUILD_DIR)/include/iptables.h $(1)/usr/include/
 	$(CP) $(PKG_BUILD_DIR)/include/ip6tables.h $(1)/usr/include/
-	$(CP) $(PKG_BUILD_DIR)/include/libipulog $(1)/usr/include/
 	$(CP) $(PKG_BUILD_DIR)/include/libiptc $(1)/usr/include/
 
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
@@ -677,7 +669,7 @@ define Package/xtables-legacy/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/xtables-legacy-multi $(1)/usr/sbin/
 endef
 
-define Package/iptables-legacy/install
+define Package/iptables-zz-legacy/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables-legacy{,-restore,-save} $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/lib/iptables
@@ -708,7 +700,7 @@ define Package/iptables-nft/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables{,-restore}-translate $(1)/usr/sbin/
 endef
 
-define Package/ip6tables-legacy/install
+define Package/ip6tables-zz-legacy/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables-legacy{,-restore,-save} $(1)/usr/sbin/
 endef
@@ -771,7 +763,7 @@ $(eval $(call BuildPackage,libiptext))
 $(eval $(call BuildPackage,libiptext6))
 $(eval $(call BuildPackage,libiptext-nft))
 $(eval $(call BuildPackage,xtables-legacy))
-$(eval $(call BuildPackage,iptables-legacy))
+$(eval $(call BuildPackage,iptables-zz-legacy))
 $(eval $(call BuildPackage,xtables-nft))
 $(eval $(call BuildPackage,arptables-nft))
 $(eval $(call BuildPackage,ebtables-nft))
@@ -799,7 +791,7 @@ $(eval $(call BuildPlugin,iptables-mod-nflog,$(IPT_NFLOG-m)))
 $(eval $(call BuildPlugin,iptables-mod-trace,$(IPT_DEBUG-m)))
 $(eval $(call BuildPlugin,iptables-mod-nfqueue,$(IPT_NFQUEUE-m)))
 $(eval $(call BuildPlugin,iptables-mod-checksum,$(IPT_CHECKSUM-m)))
-$(eval $(call BuildPackage,ip6tables-legacy))
+$(eval $(call BuildPackage,ip6tables-zz-legacy))
 $(eval $(call BuildPackage,ip6tables-nft))
 $(eval $(call BuildPlugin,ip6tables-extra,$(IPT_IPV6_EXTRA-m)))
 $(eval $(call BuildPlugin,ip6tables-mod-nat,$(IPT_NAT6-m)))

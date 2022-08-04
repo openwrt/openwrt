@@ -119,6 +119,24 @@ endef
 $(eval $(call KernelPackage,btmrvl))
 
 
+define KernelPackage/btsdio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Bluetooth HCI SDIO driver
+  DEPENDS:=+kmod-bluetooth +kmod-mmc
+  KCONFIG:= \
+	CONFIG_BT_HCIBTSDIO
+  FILES:= \
+	$(LINUX_DIR)/drivers/bluetooth/btsdio.ko
+  AUTOLOAD:=$(call AutoProbe,btsdio)
+endef
+
+define KernelPackage/btsdio/description
+ Kernel support for Bluetooth device with SDIO interface
+endef
+
+$(eval $(call KernelPackage,btsdio))
+
+
 define KernelPackage/dma-buf
   SUBMENU:=$(OTHER_MENU)
   TITLE:=DMA shared buffer support
@@ -1190,9 +1208,7 @@ define KernelPackage/keys-trusted
   TITLE:=TPM trusted keys on kernel keyring
   DEPENDS:=@KERNEL_KEYS +kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha1 +kmod-tpm
   KCONFIG:=CONFIG_TRUSTED_KEYS
-  FILES:= \
-	  $(LINUX_DIR)/security/keys/trusted.ko@lt5.10 \
-	  $(LINUX_DIR)/security/keys/trusted-keys/trusted.ko@ge5.10
+  FILES:= $(LINUX_DIR)/security/keys/trusted-keys/trusted.ko
   AUTOLOAD:=$(call AutoLoad,01,trusted-keys,1)
 endef
 

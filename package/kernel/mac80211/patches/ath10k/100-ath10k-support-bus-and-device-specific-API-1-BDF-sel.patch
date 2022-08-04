@@ -34,7 +34,7 @@ Link: https://lore.kernel.org/r/20211009221711.2315352-1-robimarko@gmail.com
 
 --- a/drivers/net/wireless/ath/ath10k/core.c
 +++ b/drivers/net/wireless/ath/ath10k/core.c
-@@ -1199,6 +1199,7 @@ success:
+@@ -1202,6 +1202,7 @@ success:
  static int ath10k_core_fetch_board_data_api_1(struct ath10k *ar, int bd_ie_type)
  {
  	const struct firmware *fw;
@@ -42,7 +42,7 @@ Link: https://lore.kernel.org/r/20211009221711.2315352-1-robimarko@gmail.com
  
  	if (bd_ie_type == ATH10K_BD_IE_BOARD) {
  		if (!ar->hw_params.fw.board) {
-@@ -1206,9 +1207,19 @@ static int ath10k_core_fetch_board_data_
+@@ -1209,9 +1210,19 @@ static int ath10k_core_fetch_board_data_
  			return -EINVAL;
  		}
  

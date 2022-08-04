@@ -1,3 +1,15 @@
+From af7b91bcecce0eae24e90acd35d96ecee73e1407 Mon Sep 17 00:00:00 2001
+From: OpenWrt community <openwrt-devel@lists.openwrt.org>
+Date: Wed, 13 Jul 2022 12:21:15 +0200
+Subject: [PATCH] fs: add cdrom dependency
+
+---
+ fs/hfs/Kconfig     | 1 +
+ fs/hfsplus/Kconfig | 1 +
+ fs/isofs/Kconfig   | 1 +
+ fs/udf/Kconfig     | 1 +
+ 4 files changed, 4 insertions(+)
+
 --- a/fs/hfs/Kconfig
 +++ b/fs/hfs/Kconfig
 @@ -2,6 +2,7 @@

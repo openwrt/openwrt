@@ -260,7 +260,8 @@ define KernelPackage/ath10k
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath10k/ath10k_core.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath10k/ath10k_pci.ko
-  AUTOLOAD:=$(call AutoProbe,ath10k_pci)
+  AUTOLOAD:=$(call AutoProbe,ath10k_core ath10k_pci)
+  MODPARAMS.ath10k_core:=frame_mode=2
   VARIANT:=regular
 endef
 

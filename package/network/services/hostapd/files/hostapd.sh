@@ -246,7 +246,7 @@ EOF
 
 hostapd_common_add_bss_config() {
 	config_add_string 'bssid:macaddr' 'ssid:string'
-	config_add_boolean wds wmm uapsd hidden utf8_ssid
+	config_add_boolean wds wmm uapsd hidden utf8_ssid ppsk
 
 	config_add_int maxassoc max_inactivity
 	config_add_boolean disassoc_low_ack isolate short_preamble skip_inactivity_poll
@@ -304,7 +304,7 @@ hostapd_common_add_bss_config() {
 	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
 	config_add_string multi_ap_backhaul_ssid multi_ap_backhaul_key
 
-	config_add_boolean wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition
+	config_add_boolean wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition mbo
 	config_add_int time_advertisement
 	config_add_string time_zone
 	config_add_string vendor_elements
@@ -335,6 +335,7 @@ hostapd_common_add_bss_config() {
 	config_add_int sae_pwe
 
 	config_add_string 'owe_transition_bssid:macaddr' 'owe_transition_ssid:string'
+	config_add_string owe_transition_ifname
 
 	config_add_boolean iw_enabled iw_internet iw_asra iw_esr iw_uesa
 	config_add_int iw_access_network_type iw_venue_group iw_venue_type
@@ -371,6 +372,8 @@ hostapd_common_add_bss_config() {
 
 	config_add_boolean fils
 	config_add_string fils_dhcp
+
+	config_add_int ocv
 }
 
 hostapd_set_vlan_file() {
@@ -540,10 +543,10 @@ hostapd_set_bss_options() {
 		acct_server acct_secret acct_port acct_interval \
 		bss_load_update_period chan_util_avg_period sae_require_mfp sae_pwe \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
-		airtime_bss_weight airtime_bss_limit airtime_sta_weight \
+		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast proxy_arp per_sta_vif \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id \
-		vendor_elements fils
+		vendor_elements fils ocv
 
 	set_default fils 0
 	set_default isolate 0
@@ -563,6 +566,7 @@ hostapd_set_bss_options() {
 	set_default chan_util_avg_period 600
 	set_default utf8_ssid 1
 	set_default multi_ap 0
+	set_default ppsk 0
 	set_default airtime_bss_weight 0
 	set_default airtime_bss_limit 0
 	set_default eap_server 0
@@ -616,6 +620,8 @@ hostapd_set_bss_options() {
 		json_for_each_item append_radius_acct_req_attr radius_acct_req_attr
 	}
 
+	[ -n "$ocv" ] && append bss_conf "ocv=$ocv" "$N"
+
 	case "$auth_type" in
 		sae|owe|eap192|eap-eap192)
 			set_default ieee80211w 2
@@ -635,10 +641,11 @@ hostapd_set_bss_options() {
 
 	case "$auth_type" in
 		none|owe)
-			json_get_vars owe_transition_bssid owe_transition_ssid
+			json_get_vars owe_transition_bssid owe_transition_ssid owe_transition_ifname
 
 			[ -n "$owe_transition_ssid" ] && append bss_conf "owe_transition_ssid=\"$owe_transition_ssid\"" "$N"
 			[ -n "$owe_transition_bssid" ] && append bss_conf "owe_transition_bssid=$owe_transition_bssid" "$N"
+			[ -n "$owe_transition_ifname" ] && append bss_conf "owe_transition_ifname=$owe_transition_ifname" "$N"
 
 			wps_possible=1
 			# Here we make the assumption that if we're in open mode
@@ -647,7 +654,15 @@ hostapd_set_bss_options() {
 		;;
 		psk|sae|psk-sae)
 			json_get_vars key wpa_psk_file
-			if [ ${#key} -eq 64 ]; then
+			if [ "$auth_type" = "psk" ] && [ "$ppsk" -ne 0 ] ; then
+				json_get_vars auth_server auth_secret auth_port
+				set_default auth_port 1812
+				append bss_conf "auth_server_addr=$auth_server" "$N"
+				append bss_conf "auth_server_port=$auth_port" "$N"
+				append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+				append bss_conf "macaddr_acl=2" "$N"
+				append bss_conf "wpa_psk_radius=2" "$N"
+			elif [ ${#key} -eq 64 ]; then
 				append bss_conf "wpa_psk=$key" "$N"
 			elif [ ${#key} -ge 8 ] && [ ${#key} -le 63 ]; then
 				append bss_conf "wpa_passphrase=$key" "$N"
@@ -742,6 +757,25 @@ hostapd_set_bss_options() {
 		;;
 	esac
 
+	case "$auth_type" in
+		none|owe|psk|sae|psk-sae|wep)
+			json_get_vars \
+			auth_server auth_port auth_secret \
+			ownip radius_client_addr
+
+			[ -n "$auth_server" ] &&  {
+				set_default auth_port 1812
+
+				append bss_conf "auth_server_addr=$auth_server" "$N"
+				append bss_conf "auth_server_port=$auth_port" "$N"
+				[ -n "$auth_secret" ] && append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+				[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
+				[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
+				append bss_conf "macaddr_acl=2" "$N"
+			}
+		;;
+	esac
+
 	local auth_algs=$((($auth_mode_shared << 1) | $auth_mode_open))
 	append bss_conf "auth_algs=${auth_algs:-1}" "$N"
 	append bss_conf "wpa=$wpa" "$N"
@@ -804,10 +838,11 @@ hostapd_set_bss_options() {
 		append bss_conf "iapp_interface=$ifname" "$N"
 	}
 
-	json_get_vars time_advertisement time_zone wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition
+	json_get_vars time_advertisement time_zone wnm_sleep_mode wnm_sleep_mode_no_keys bss_transition mbo
 	set_default bss_transition 0
 	set_default wnm_sleep_mode 0
 	set_default wnm_sleep_mode_no_keys 0
+	set_default mbo 0
 
 	[ -n "$time_advertisement" ] && append bss_conf "time_advertisement=$time_advertisement" "$N"
 	[ -n "$time_zone" ] && append bss_conf "time_zone=$time_zone" "$N"
@@ -816,6 +851,7 @@ hostapd_set_bss_options() {
 		[ "$wnm_sleep_mode_no_keys" -eq "1" ] && append bss_conf "wnm_sleep_mode_no_keys=1" "$N"
 	fi
 	[ "$bss_transition" -eq "1" ] && append bss_conf "bss_transition=1" "$N"
+	[ "$mbo" -eq 1 ] && append bss_conf "mbo=1" "$N"
 
 	json_get_vars ieee80211k rrm_neighbor_report rrm_beacon_report
 	set_default ieee80211k 0
@@ -1245,7 +1281,7 @@ wpa_supplicant_add_network() {
 	json_get_vars \
 		ssid bssid key \
 		basic_rate mcast_rate \
-		ieee80211w ieee80211r fils \
+		ieee80211w ieee80211r fils ocv \
 		multi_ap \
 		default_disabled
 
@@ -1296,6 +1332,8 @@ wpa_supplicant_add_network() {
 		[ "$multi_ap" = 1 ] && append network_data "multi_ap_backhaul_sta=1" "$N$T"
 		[ "$default_disabled" = 1 ] && append network_data "disabled=1" "$N$T"
 	}
+
+	[ -n "$ocv" ] && append network_data "ocv=$ocv" "$N$T"
 
 	case "$auth_type" in
 		none) ;;

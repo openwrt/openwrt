@@ -53,6 +53,13 @@ $(eval $(call TestHostCommand,ncurses, \
 	Please install ncurses. (Missing libncurses.so or ncurses.h), \
 	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
 		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses))
+
+$(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
+	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule, \
+	git submodule --help | grep -- --recursive))
+
+$(eval $(call SetupHostCommand,rsync,Please install 'rsync', \
+	rsync --version </dev/null))
 endif # IB
 
 ifeq ($(HOST_OS),Linux)
@@ -130,7 +137,12 @@ $(eval $(call SetupHostCommand,getopt, \
 	Please install an extended getopt version that supports --long, \
 	gnugetopt -o t --long test -- --test | grep '^ *--test *--', \
 	getopt -o t --long test -- --test | grep '^ *--test *--', \
-	/usr/local/opt/gnu-getopt/bin/getopt -o t --long test -- --test | grep '^ *--test *--'))
+	/usr/local/opt/gnu-getopt/bin/getopt -o t --long test -- --test | grep '^ *--test *--', \
+	/opt/local/bin/getopt -o t --long test -- --test | grep '^ *--test *--'))
+
+$(eval $(call SetupHostCommand,realpath,Please install a 'realpath' utility, \
+	grealpath /, \
+	realpath /))
 
 $(eval $(call SetupHostCommand,stat,Cannot find a file stat utility, \
 	gnustat -c%s $(TOPDIR)/Makefile, \
@@ -176,14 +188,8 @@ $(eval $(call TestHostCommand,python3-distutils, \
 	Please install the Python3 distutils module, \
 	$(STAGING_DIR_HOST)/bin/python3 -c 'import distutils'))
 
-$(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
-	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule))
-
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))
-
-$(eval $(call SetupHostCommand,rsync,Please install 'rsync', \
-	rsync --version </dev/null))
 
 $(eval $(call SetupHostCommand,which,Please install 'which', \
 	/usr/bin/which which, \

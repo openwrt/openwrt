@@ -19,6 +19,7 @@ ath79_setup_interfaces()
 	araknis,an-700-ap-i-ac|\
 	arduino,yun|\
 	aruba,ap-105|\
+	asus,rp-ac51|\
 	asus,rp-ac66|\
 	avm,fritz1750e|\
 	avm,fritz300e|\
@@ -76,8 +77,10 @@ ath79_setup_interfaces()
 	tplink,cpe610-v2|\
 	tplink,cpe710-v1|\
 	tplink,eap225-outdoor-v1|\
+	tplink,eap225-outdoor-v3|\
 	tplink,eap225-v1|\
 	tplink,eap225-v3|\
+	tplink,eap225-v4|\
 	tplink,eap245-v1|\
 	tplink,re350k-v1|\
 	tplink,re355-v1|\
@@ -88,25 +91,18 @@ ath79_setup_interfaces()
 	tplink,tl-wa1201-v2|\
 	tplink,tl-wr902ac-v1|\
 	ubnt,bullet-ac|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
 	ubnt,bullet-m-xw|\
 	ubnt,lap-120|\
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac|\
 	ubnt,nanobeam-ac-xc|\
-	ubnt,nanobridge-m|\
 	ubnt,nanostation-ac-loco|\
-	ubnt,nanostation-loco-m|\
 	ubnt,nanostation-loco-m-xw|\
-	ubnt,picostation-m|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2|\
 	ubnt,powerbeam-m2-xw|\
 	ubnt,powerbeam-m5-xw|\
-	ubnt,powerbridge-m|\
 	ubnt,rocket-5ac-lite|\
-	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-lr|\
 	ubnt,unifiac-mesh|\
@@ -131,6 +127,11 @@ ath79_setup_interfaces()
 	ocedo,ursus|\
 	ubnt,unifi-ap-outdoor-plus)
 		ucidef_set_interface_lan "eth0 eth1"
+		;;
+	asus,pl-ac56)
+		# port 6 (internal) is the power-line port
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:1" "2:lan:2" "3:lan:3" "6:lan:4"
 		;;
 	atheros,db120)
 		ucidef_add_switch "switch0" \
@@ -176,8 +177,7 @@ ath79_setup_interfaces()
 	tplink,archer-c60-v3|\
 	tplink,tl-wdr3500-v1|\
 	tplink,tl-wr842n-v1|\
-	tplink,tl-wr842n-v3|\
-	ubnt,airrouter)
+	tplink,tl-wr842n-v3)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
@@ -212,7 +212,6 @@ ath79_setup_interfaces()
 	tplink,wbs210-v2|\
 	tplink,wbs510-v1|\
 	tplink,wbs510-v2|\
-	ubnt,nanostation-m|\
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
@@ -660,10 +659,6 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
-	jjplus,ja76pf2)
-		wan_mac=$(fconfig -s -r -d $(find_mtd_part "RedBoot config") -n alias/ethaddr)
-		lan_mac=$(macaddr_add "$wan_mac" 1)
-		;;
 	mercury,mw4530r-v1|\
 	tplink,tl-wdr3600-v1|\
 	tplink,tl-wdr4300-v1|\
@@ -717,15 +712,6 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_text mac 0x18)
 		label_mac=$wan_mac
 		;;
-	ubnt,airrouter|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
-	ubnt,nanobridge-m|\
-	ubnt,nanostation-loco-m|\
-	ubnt,nanostation-m|\
-	ubnt,picostation-m|\
-	ubnt,powerbridge-m|\
-	ubnt,rocket-m|\
 	ubnt,unifi)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;

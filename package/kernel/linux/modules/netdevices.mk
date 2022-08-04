@@ -141,7 +141,7 @@ $(eval $(call KernelPackage,mii))
 define KernelPackage/mdio-devres
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Supports MDIO device registration
-  DEPENDS:=@(LINUX_5_10||LINUX_5_15) +kmod-libphy +(TARGET_armvirt||TARGET_bcm27xx_bcm2708||TARGET_tegra):kmod-of-mdio
+  DEPENDS:=+kmod-libphy +(TARGET_armvirt||TARGET_bcm27xx_bcm2708||TARGET_tegra):kmod-of-mdio
   KCONFIG:=CONFIG_MDIO_DEVRES
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/net/phy/mdio_devres.ko
@@ -163,10 +163,8 @@ define KernelPackage/mdio-gpio
 	CONFIG_MDIO_BITBANG \
 	CONFIG_MDIO_GPIO
   FILES:= \
-	$(LINUX_DIR)/drivers/net/phy/mdio-gpio.ko@lt5.10 \
-	$(LINUX_DIR)/drivers/net/phy/mdio-bitbang.ko@lt5.10 \
-	$(LINUX_DIR)/drivers/net/mdio/mdio-gpio.ko@ge5.10 \
-	$(LINUX_DIR)/drivers/net/mdio/mdio-bitbang.ko@ge5.10
+	$(LINUX_DIR)/drivers/net/mdio/mdio-gpio.ko \
+	$(LINUX_DIR)/drivers/net/mdio/mdio-bitbang.ko
   AUTOLOAD:=$(call AutoProbe,mdio-gpio)
 endef
 
@@ -375,7 +373,7 @@ define KernelPackage/switch-rtl8366rb
   DEPENDS:=+kmod-switch-rtl8366-smi
   KCONFIG:=CONFIG_RTL8366RB_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8366rb.ko
-  AUTOLOAD:=$(call AutoLoad,43,rtl8366rb)
+  AUTOLOAD:=$(call AutoLoad,43,rtl8366rb,1)
 endef
 
 define KernelPackage/switch-rtl8366rb/description
@@ -391,7 +389,7 @@ define KernelPackage/switch-rtl8366s
   DEPENDS:=+kmod-switch-rtl8366-smi
   KCONFIG:=CONFIG_RTL8366S_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8366s.ko
-  AUTOLOAD:=$(call AutoLoad,43,rtl8366s)
+  AUTOLOAD:=$(call AutoLoad,43,rtl8366s,1)
 endef
 
 define KernelPackage/switch-rtl8366s/description
@@ -399,6 +397,22 @@ define KernelPackage/switch-rtl8366s/description
 endef
 
 $(eval $(call KernelPackage,switch-rtl8366s))
+
+
+define KernelPackage/switch-rtl8367
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Realtek RTL8367 switch support
+  DEPENDS:=+kmod-switch-rtl8366-smi
+  KCONFIG:=CONFIG_RTL8367_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8367.ko
+  AUTOLOAD:=$(call AutoLoad,43,rtl8367,1)
+endef
+
+define KernelPackage/switch-rtl8367/description
+ Realtek RTL8367 switch support
+endef
+
+$(eval $(call KernelPackage,switch-rtl8367))
 
 
 define KernelPackage/switch-rtl8367b
@@ -593,7 +607,7 @@ $(eval $(call KernelPackage,8139cp))
 define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek +(LINUX_5_10||LINUX_5_15):kmod-mdio-devres
+  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek +kmod-mdio-devres
   KCONFIG:= \
     CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
@@ -719,7 +733,7 @@ $(eval $(call KernelPackage,igbvf))
 define KernelPackage/ixgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +(LINUX_5_10||LINUX_5_15):kmod-mdio-devres
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +kmod-mdio-devres
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=y \
@@ -1072,8 +1086,7 @@ define KernelPackage/of-mdio
   DEPENDS:=+kmod-libphy +kmod-fixed-phy @!TARGET_x86
   KCONFIG:=CONFIG_OF_MDIO
   FILES:= \
-	$(LINUX_DIR)/drivers/of/of_mdio.ko@lt5.10 \
-	$(LINUX_DIR)/drivers/net/mdio/of_mdio.ko@ge5.10 \
+	$(LINUX_DIR)/drivers/net/mdio/of_mdio.ko \
 	$(LINUX_DIR)/drivers/net/mdio/fwnode_mdio.ko@ge5.15
   AUTOLOAD:=$(call AutoLoad,41,of_mdio)
 endef
@@ -1285,8 +1298,7 @@ define KernelPackage/sfp
 	CONFIG_MDIO_I2C
   FILES:= \
 	$(LINUX_DIR)/drivers/net/phy/sfp.ko \
-	$(LINUX_DIR)/drivers/net/phy/mdio-i2c.ko@lt5.10 \
-	$(LINUX_DIR)/drivers/net/mdio/mdio-i2c.ko@ge5.10
+	$(LINUX_DIR)/drivers/net/mdio/mdio-i2c.ko
   AUTOLOAD:=$(call AutoProbe,mdio-i2c sfp)
 endef
 

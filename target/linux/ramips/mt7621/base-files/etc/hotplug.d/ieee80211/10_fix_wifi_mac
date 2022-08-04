@@ -10,7 +10,8 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
-	beeline,smartbox-flash)
+	beeline,smartbox-flash|\
+	mts,wg430223)
 		hw_mac_addr_ra0="$(mtd_get_mac_ascii u-boot-env ra0macaddr)"
 		hw_mac_addr_rax0="$(mtd_get_mac_ascii u-boot-env rax0macaddr)"
 		[ "$PHYNBR" = "0" ] && echo -n $hw_mac_addr_ra0 > /sys${DEVPATH}/macaddress
@@ -35,6 +36,13 @@ case "$board" in
 	glinet,gl-mt1300)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1 > /sys${DEVPATH}/macaddress
+		;;
+	h3c,tx1800-plus|\
+	h3c,tx1801-plus|\
+	h3c,tx1806)
+		addr=$(macaddr_setbit $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 2) 7)
+		[ "$PHYNBR" = "0" ] && echo -n ${addr:0:9}'1'${addr:10:7} > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && echo -n ${addr:0:9}'7'${addr:10:7} > /sys${DEVPATH}/macaddress
 		;;
 	hiwifi,hc5962)
 		label_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")
@@ -75,6 +83,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
+	netgear,wax202)
+		hw_mac_addr=$(mtd_get_mac_ascii Config mac)
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
+		;;
 	oraybox,x3a)
 		if [ "$PHYNBR" = "1" ]; then
 			hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
@@ -97,5 +110,11 @@ case "$board" in
 	yuncore,ax820)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0xe000)" > /sys${DEVPATH}/macaddress
+		;;
+	zyxel,nwa50ax|\
+	zyxel,nwa55axe)
+		hw_mac_addr="$(mtd_get_mac_binary mrd 0x1fff8)"
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
 esac

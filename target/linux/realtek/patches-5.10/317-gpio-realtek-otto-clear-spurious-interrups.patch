@@ -1,0 +1,30 @@
+realtek: clear spurious GPIO interrupts
+
+The interrupt controller in the internal GPIO peripheral will sometimes
+generate spurious interrupts. If these are not properly acknowledged, the
+system will be held busy until reboot. These spurious interrupts are identified
+by the fact that there is no system IRQ number associated, since the interrupt
+line was never allocated. Although most prevalent on RTL839x, RTL838x SoCs have
+also displayed this behaviour.
+
+Reported-by: Luiz Angelo Daros de Luca <luizluca@gmail.com> # DGS-1210-52
+Reported-by: Birger Koblitz <mail@birger-koblitz.de> # Netgear GS724TP v2
+Reported-by: Jan Hoffmann <jan@3e8.eu> # HPE 1920-16G
+Signed-off-by: Sander Vanheule <sander@svanheule.net>
+---
+ drivers/gpio/gpio-realtek-otto.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -251,6 +251,10 @@ static void realtek_gpio_irq_handler(str
+ 		port_pin_count = min(gc->ngpio - lines_done, 8U);
+ 		for_each_set_bit(offset, &status, port_pin_count) {
+ 			irq = irq_find_mapping(gc->irq.domain, offset + lines_done);
++			if (unlikely(!irq)) {
++				realtek_gpio_clear_isr(ctrl, lines_done / 8, BIT(offset));
++				continue;
++			}
+ 			generic_handle_irq(irq);
+ 		}
+ 	}

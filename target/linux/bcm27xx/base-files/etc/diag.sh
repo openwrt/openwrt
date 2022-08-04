@@ -20,6 +20,7 @@ set_state() {
 	raspberrypi,3-compute-module |\
 	raspberrypi,model-b |\
 	raspberrypi,model-zero |\
+	raspberrypi,model-zero-2 |\
 	raspberrypi,model-zero-w)
 		status_led="led0"
 		;;

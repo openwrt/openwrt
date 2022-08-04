@@ -1,20 +1,21 @@
-# Copyright (C) 2015 OpenWrt.org
+# SPDX-License-Identifier: GPL-2.0-only
 #
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
+# Copyright (C) 2015 OpenWrt.org
 #
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nftables
-PKG_VERSION:=1.0.2
-PKG_RELEASE:=2
+PKG_VERSION:=1.0.4
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://netfilter.org/projects/$(PKG_NAME)/files
-PKG_HASH:=0b28a36ffcf4567b841de7bd3f37918b1fed27859eb48bdec51e1f7a83954c02
+PKG_HASH:=927fb1fea1f685a328c10cf791eb655d7e1ed49d310eea5cb3101dfd8d6cba35
+
 PKG_MAINTAINER:=
 PKG_LICENSE:=GPL-2.0
+PKG_LICENSE_FILES:=COPYING
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1

@@ -15,6 +15,16 @@ define Device/d-link_dgs-1210
   SOC := rtl8382
   IMAGE_SIZE := 13824k
   DEVICE_VENDOR := D-Link
+  DLINK_KERNEL_PART_SIZE := 1572864
+  KERNEL := kernel-bin | append-dtb | gzip | uImage gzip | dlink-cameo
+  CAMEO_KERNEL_PART := 2
+  CAMEO_ROOTFS_PART := 3
+  CAMEO_CUSTOMER_SIGNATURE := 2
+  CAMEO_BOARD_VERSION := 32
+  IMAGES += factory_image1.bin
+  IMAGE/factory_image1.bin := append-kernel | pad-to 64k | \
+	append-rootfs | pad-rootfs | pad-to 16 | check-size | \
+	dlink-version | dlink-headers
 endef
 
 define Device/d-link_dgs-1210-10p
@@ -30,11 +40,54 @@ define Device/d-link_dgs-1210-16
 endef
 TARGET_DEVICES += d-link_dgs-1210-16
 
+define Device/d-link_dgs-1210-20
+  $(Device/d-link_dgs-1210)
+  DEVICE_MODEL := DGS-1210-20
+endef
+TARGET_DEVICES += d-link_dgs-1210-20
+
 define Device/d-link_dgs-1210-28
   $(Device/d-link_dgs-1210)
   DEVICE_MODEL := DGS-1210-28
 endef
 TARGET_DEVICES += d-link_dgs-1210-28
+
+# The "IMG-" uImage name allows flashing the iniramfs from the vendor Web UI.
+# Avoided for sysupgrade, as the vendor FW would do an incomplete flash.
+define Device/engenius_ews2910p
+  SOC := rtl8380
+  IMAGE_SIZE := 8192k
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := EWP2910P
+  UIMAGE_MAGIC := 0x03802910
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | \
+	uImage gzip -n 'IMG-0.00.00-c0.0.00'
+endef
+TARGET_DEVICES += engenius_ews2910p
+
+define Device/hpe_1920-8g
+  $(Device/hpe_1920)
+  SOC := rtl8380
+  DEVICE_MODEL := 1920-8G (JG920A)
+  H3C_DEVICE_ID := 0x00010023
+endef
+TARGET_DEVICES += hpe_1920-8g
+
+define Device/hpe_1920-16g
+  $(Device/hpe_1920)
+  SOC := rtl8382
+  DEVICE_MODEL := 1920-16G (JG923A)
+  H3C_DEVICE_ID := 0x00010026
+endef
+TARGET_DEVICES += hpe_1920-16g
+
+define Device/hpe_1920-24g
+  $(Device/hpe_1920)
+  SOC := rtl8382
+  DEVICE_MODEL := 1920-24G (JG924A)
+  H3C_DEVICE_ID := 0x00010027
+endef
+TARGET_DEVICES += hpe_1920-24g
 
 define Device/inaba_aml2-17gp
   SOC := rtl8382

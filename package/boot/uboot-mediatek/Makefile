@@ -1,17 +1,65 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2022.01
-PKG_HASH:=81b4543227db228c03f8a1bf5ddbc813b0bb8f6555ce46064ef721a6fc680413
+PKG_VERSION:=2022.07
+PKG_HASH:=92b08eb49c24da14c1adbf70a71ae8f37cc53eeb4230e859ad8b6733d13dcf5e
 PKG_BUILD_DEPENDS:=arm-trusted-firmware-tools/host
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 
+MT7621_LOWLEVEL_PRELOADER_URL:=https://raw.githubusercontent.com/mtk-openwrt/mt7621-lowlevel-preloader/master/
+
+define Download/mt7621-stage-sram
+  FILE:=mt7621_stage_sram.bin
+  URL:=$(MT7621_LOWLEVEL_PRELOADER_URL)
+  HASH:=1dda68aa089f0ff262e01539b990dea478952e9fb68bcc0a8cd6f76f0135c62e
+endef
+
+ifdef CONFIG_TARGET_ramips_mt7621
+$(eval $(call Download,mt7621-stage-sram))
+endif
+
 define U-Boot/Default
   BUILD_TARGET:=mediatek
   UBOOT_IMAGE:=u-boot-mtk.bin
+endef
+
+define U-Boot/mt7620_rfb
+  NAME:=MT7620 Reference Board
+  UBOOT_CONFIG:=mt7620_rfb
+  BUILD_DEVICES:=ralink_mt7620a-evb
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7620
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+endef
+
+define U-Boot/mt7620_mt7530_rfb
+  NAME:=MT7620+MT7530 Reference Board
+  UBOOT_CONFIG:=mt7620_mt7530_rfb
+  BUILD_DEVICES:=ralink_mt7620a-mt7530-evb
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7620
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+endef
+
+define U-Boot/mt7621_rfb
+  NAME:=MT7621 Reference Board
+  UBOOT_CONFIG:=mt7621_rfb
+  BUILD_DEVICES:=mediatek_mt7621-eval-board
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7621
+  UBOOT_IMAGE:=u-boot-mt7621.bin
+endef
+
+define U-Boot/mt7621_nand_rfb
+  NAME:=MT7621 Reference Board (NAND)
+  UBOOT_CONFIG:=mt7621_nand_rfb
+  BUILD_DEVICES:=mediatek_mt7621-eval-board
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7621
+  UBOOT_IMAGE:=u-boot-mt7621.bin
 endef
 
 define U-Boot/mt7622_rfb1
@@ -68,7 +116,7 @@ endef
 define U-Boot/mt7622_ubnt_unifi-6-lr
   NAME:=Ubiquiti UniFi 6 LR
   UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr
-  BUILD_DEVICES:=ubnt_unifi-6-lr-ubootmod
+  BUILD_DEVICES:=ubnt_unifi-6-lr-v1-ubootmod ubnt_unifi-6-lr-v2-ubootmod
   BUILD_SUBTARGET:=mt7622
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=nor
@@ -91,6 +139,24 @@ define U-Boot/mt7623n_bpir2
   UBOOT_CONFIG:=mt7623n_bpir2
 endef
 
+define U-Boot/mt7628_rfb
+  NAME:=MT7628 Reference Board
+  BUILD_DEVICES:=mediatek_mt7628an-eval-board
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt76x8
+  UBOOT_CONFIG:=mt7628_rfb
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+endef
+
+define U-Boot/ravpower_rp-wd009
+  NAME:=RAVPower RP-WD009
+  BUILD_TARGET:=ramips
+  BUILD_DEVICES:=ravpower_rp-wd009
+  BUILD_SUBTARGET:=mt76x8
+  UBOOT_CONFIG:=ravpower-rp-wd009-ram
+  UBOOT_IMAGE:=u-boot.bin
+endef
+
 define U-Boot/mt7629_rfb
   NAME:=MT7629 Reference Board
   BUILD_SUBTARGET:=mt7629
@@ -99,6 +165,10 @@ define U-Boot/mt7629_rfb
 endef
 
 UBOOT_TARGETS := \
+	mt7620_mt7530_rfb \
+	mt7620_rfb \
+	mt7621_nand_rfb \
+	mt7621_rfb \
 	mt7622_bananapi_bpi-r64-emmc \
 	mt7622_bananapi_bpi-r64-sdmmc \
 	mt7622_bananapi_bpi-r64-snand \
@@ -107,9 +177,13 @@ UBOOT_TARGETS := \
 	mt7622_ubnt_unifi-6-lr \
 	mt7623n_bpir2 \
 	mt7623a_unielec_u7623 \
+	mt7628_rfb \
+	ravpower_rp-wd009 \
 	mt7629_rfb
 
+ifdef CONFIG_TARGET_mediatek
 UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE:.fip=.bin)
+endif
 
 define Build/fip-image
 	$(STAGING_DIR_HOST)/bin/fiptool create \
@@ -117,6 +191,13 @@ define Build/fip-image
 		--nt-fw $(PKG_BUILD_DIR)/u-boot.bin \
 		$(PKG_BUILD_DIR)/u-boot.fip
 endef
+
+ifdef CONFIG_TARGET_ramips_mt7621
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) $(DL_DIR)/mt7621_stage_sram.bin $(PKG_BUILD_DIR)/
+endef
+endif
 
 define Build/Configure
 	$(call Build/Configure/U-Boot)
@@ -131,8 +212,10 @@ endif
 endef
 
 # don't stage files to bindir, let target/linux/mediatek/image/*.mk do that
+ifdef CONFIG_TARGET_mediatek
 define Package/u-boot/install
 endef
+endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)

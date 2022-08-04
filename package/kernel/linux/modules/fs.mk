@@ -98,13 +98,13 @@ define KernelPackage/fs-cifs
   AUTOLOAD:=$(call AutoLoad,30,cifs)
   $(call AddDepends/nls)
   DEPENDS+= \
-    +(LINUX_5_4||LINUX_5_10):kmod-crypto-md4\
+    +LINUX_5_10:kmod-crypto-md4\
     +kmod-crypto-md5 \
     +kmod-crypto-sha256 \
     +kmod-crypto-sha512 \
     +kmod-crypto-cmac \
     +kmod-crypto-hmac \
-    +(LINUX_5_4||LINUX_5_10):kmod-crypto-arc4 \
+    +LINUX_5_10:kmod-crypto-arc4 \
     +kmod-crypto-aead \
     +kmod-crypto-ccm \
     +kmod-crypto-ecb \
@@ -176,9 +176,7 @@ define KernelPackage/fs-exfat
   KCONFIG:= \
 	CONFIG_EXFAT_FS \
 	CONFIG_EXFAT_DEFAULT_IOCHARSET="utf8"
-  FILES:= \
-	$(LINUX_DIR)/drivers/staging/exfat/exfat.ko@lt5.7 \
-	$(LINUX_DIR)/fs/exfat/exfat.ko@ge5.7
+  FILES:= $(LINUX_DIR)/fs/exfat/exfat.ko
   AUTOLOAD:=$(call AutoLoad,30,exfat,1)
   DEPENDS:=+kmod-nls-base
 endef
@@ -413,7 +411,7 @@ define KernelPackage/fs-nfs-common
 	$(LINUX_DIR)/fs/lockd/lockd.ko \
 	$(LINUX_DIR)/net/sunrpc/sunrpc.ko \
 	$(LINUX_DIR)/fs/nfs_common/grace.ko \
-	$(LINUX_DIR)/fs/nfs_common/nfs_ssc.ko@ge5.10
+	$(LINUX_DIR)/fs/nfs_common/nfs_ssc.ko
   AUTOLOAD:=$(call AutoLoad,30,grace sunrpc lockd)
 endef
 

@@ -121,7 +121,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	 * rate higher than 297MHz, it needs some adjustments in the
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -413,10 +413,11 @@ u8 vc4_hvs_get_fifo_frame_count(struct v
+@@ -413,10 +413,11 @@ static void vc5_hvs_update_gamma_lut(str
  
  int vc4_hvs_get_fifo_from_output(struct vc4_hvs *hvs, unsigned int output)
  {

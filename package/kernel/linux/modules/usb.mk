@@ -1250,7 +1250,7 @@ $(eval $(call KernelPackage,usb-net-mcs7830))
 
 define KernelPackage/usb-net-smsc75xx
   TITLE:=SMSC LAN75XX based USB 2.0 Gigabit ethernet devices
-  DEPENDS:=+!LINUX_5_4:kmod-libphy
+  DEPENDS:=+kmod-libphy
   KCONFIG:=CONFIG_USB_NET_SMSC75XX
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/smsc75xx.ko
   AUTOLOAD:=$(call AutoProbe,smsc75xx)
@@ -1266,7 +1266,7 @@ $(eval $(call KernelPackage,usb-net-smsc75xx))
 
 define KernelPackage/usb-net-smsc95xx
   TITLE:=SMSC LAN95XX based USB 2.0 10/100 ethernet devices
-  DEPENDS:=+(LINUX_5_10||LINUX_5_15):kmod-libphy
+  DEPENDS:=+kmod-libphy
   KCONFIG:=CONFIG_USB_NET_SMSC95XX
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/smsc95xx.ko
   AUTOLOAD:=$(call AutoProbe,smsc95xx)
@@ -1439,7 +1439,7 @@ define KernelPackage/usb-net-cdc-ncm
   KCONFIG:=CONFIG_USB_NET_CDC_NCM
   FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_ncm.ko
   AUTOLOAD:=$(call AutoProbe,cdc_ncm)
-  $(call AddDepends/usb-net,+!LINUX_5_4:kmod-usb-net-cdc-ether)
+  $(call AddDepends/usb-net,+kmod-usb-net-cdc-ether)
 endef
 
 define KernelPackage/usb-net-cdc-ncm/description

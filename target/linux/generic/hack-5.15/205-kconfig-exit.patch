@@ -1,3 +1,12 @@
+From 300d26562ce4dc427154cb247beb75db4b1f0774 Mon Sep 17 00:00:00 2001
+From: OpenWrt community <openwrt-devel@lists.openwrt.org>
+Date: Wed, 13 Jul 2022 13:29:57 +0200
+Subject: [PATCH] scripts/Kconfig: Kconfig exit
+
+---
+ scripts/kconfig/conf.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
 --- a/scripts/kconfig/conf.c
 +++ b/scripts/kconfig/conf.c
 @@ -435,6 +435,8 @@ static int conf_sym(struct menu *menu)

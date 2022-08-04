@@ -576,7 +576,7 @@ define Device/glinet_gl-b2200
 		pad-to 33792k | append-rootfs |\
 		append-metadata | gzip
 	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-glinet_gl-b2200 \
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct \
 		kmod-fs-ext4 kmod-mmc kmod-spi-dev mkf2fs e2fsprogs kmod-fs-f2fs
 endef
 TARGET_DEVICES += glinet_gl-b2200
@@ -703,6 +703,18 @@ define Device/meraki_mr33
 	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
 endef
 TARGET_DEVICES += meraki_mr33
+
+define Device/meraki_mr74
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Cisco Meraki
+	DEVICE_MODEL := MR74
+	SOC := qcom-ipq4029
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
+	DEVICE_DTS_CONFIG := config@3
+endef
+TARGET_DEVICES += meraki_mr74
 
 define Device/mobipromo_cm520-79f
 	$(call Device/FitzImage)

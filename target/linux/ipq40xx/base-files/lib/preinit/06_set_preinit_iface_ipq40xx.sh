@@ -11,6 +11,7 @@ set_preinit_iface() {
 	linksys,ea8300| \
 	linksys,mr8300| \
 	meraki,mr33| \
+	meraki,mr74| \
 	zyxel,nbg6617)
 		ifname=eth0
 		;;

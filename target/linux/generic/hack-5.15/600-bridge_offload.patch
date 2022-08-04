@@ -1,3 +1,28 @@
+From 11c3fae5afa6cac444d12622e2cf5af60a99c1ef Mon Sep 17 00:00:00 2001
+From: OpenWrt community <openwrt-devel@lists.openwrt.org>
+Date: Wed, 13 Jul 2022 13:43:15 +0200
+Subject: [PATCH] net/bridge: add bridge offload
+
+---
+ include/linux/if_bridge.h       |   1 +
+ net/bridge/Makefile             |   2 +-
+ net/bridge/br.c                 |   8 +
+ net/bridge/br_device.c          |   2 +
+ net/bridge/br_fdb.c             |   5 +
+ net/bridge/br_forward.c         |   3 +
+ net/bridge/br_if.c              |   6 +-
+ net/bridge/br_input.c           |   5 +
+ net/bridge/br_offload.c         | 438 ++++++++++++++++++++++++++++++++
+ net/bridge/br_private.h         |  22 +-
+ net/bridge/br_private_offload.h |  23 ++
+ net/bridge/br_stp.c             |   3 +
+ net/bridge/br_sysfs_br.c        |  35 +++
+ net/bridge/br_sysfs_if.c        |   2 +
+ net/bridge/br_vlan_tunnel.c     |   3 +
+ 15 files changed, 555 insertions(+), 3 deletions(-)
+ create mode 100644 net/bridge/br_offload.c
+ create mode 100644 net/bridge/br_private_offload.h
+
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
 @@ -59,6 +59,7 @@ struct br_ip_list {

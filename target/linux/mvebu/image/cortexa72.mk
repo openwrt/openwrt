@@ -52,12 +52,22 @@ define Device/marvell_macchiatobin-singleshot
 endef
 TARGET_DEVICES += marvell_macchiatobin-singleshot
 
+define Device/marvell_clearfog-gt-8k
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := SolidRun
+  DEVICE_MODEL := Clearfog
+  DEVICE_VARIANT := GT-8K
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x kmod-crypto-hw-safexcel
+  DEVICE_DTS := armada-8040-clearfog-gt-8k
+  SUPPORTED_DEVICES := marvell,armada8040-clearfog-gt-8k
+endef
+TARGET_DEVICES += marvell_clearfog-gt-8k
+
 define Device/iei_puzzle-m901
   $(call Device/Default-arm64)
   DEVICE_VENDOR := iEi
   DEVICE_MODEL := Puzzle-M901
   SOC := cn9131
-  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
 endef
 TARGET_DEVICES += iei_puzzle-m901
 
@@ -66,6 +76,5 @@ define Device/iei_puzzle-m902
   DEVICE_VENDOR := iEi
   DEVICE_MODEL := Puzzle-M902
   SOC := cn9132
-  IMAGE/sdcard.img.gz := boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
 endef
 TARGET_DEVICES += iei_puzzle-m902

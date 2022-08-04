@@ -21,6 +21,6 @@ include $(INCLUDE_DIR)/target.mk
 KERNELNAME:=uImage
 
 DEFAULT_PACKAGES += \
-	kmod-leds-gpio kmod-i2c-core kmod-gpio-button-hotplug
+	kmod-leds-gpio kmod-i2c-core kmod-gpio-button-hotplug uboot-envtools
 
 $(eval $(call BuildTarget))

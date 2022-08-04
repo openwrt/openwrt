@@ -8,14 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=jansson
-PKG_VERSION:=2.13.1
+PKG_VERSION:=2.14
 PKG_RELEASE:=2
+
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/akheron/$(PKG_NAME)/tar.gz/v$(PKG_VERSION)?
+PKG_HASH:=c739578bf6b764aa0752db9a2fdadcfe921c78f1228c7ec0bb47fa804c55d17b
+
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
-
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.digip.org/jansson/releases/
-PKG_HASH:=ee90a0f879d2b7b7159124ff22b937a2a9a8c36d3bb65d1da7dd3f04370a10bd
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -32,7 +33,7 @@ define Package/jansson
   CATEGORY:=Libraries
   TITLE:=Jansson library
   URL:=http://www.digip.org/jansson/
-  ABI_VERSION:=4
+  ABI_VERSION:=5
 endef
 
 define Package/jansson/description

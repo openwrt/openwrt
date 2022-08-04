@@ -20,7 +20,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -480,8 +480,12 @@ static int vc4_hvs_init_channel(struct v
+@@ -503,8 +503,12 @@ static int vc4_hvs_init_channel(struct v
  	dispbkgndx &= ~SCALER_DISPBKGND_GAMMA;
  	dispbkgndx &= ~SCALER_DISPBKGND_INTERLACE;
  
@@ -34,7 +34,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		  (interlace ? SCALER_DISPBKGND_INTERLACE : 0));
  
  	/* Reload the LUT, since the SRAMs would have been disabled if
-@@ -718,17 +722,25 @@ void vc4_hvs_atomic_flush(struct drm_crt
+@@ -741,17 +745,25 @@ void vc4_hvs_atomic_flush(struct drm_crt
  		u32 dispbkgndx = HVS_READ(SCALER_DISPBKGNDX(vc4_state->assigned_channel));
  
  		if (crtc->state->gamma_lut) {

@@ -77,6 +77,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
 		;;
+	comfast,cf-wr617ac)
+		ucidef_add_switch "switch0" \
+			"1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
+		;;
 	comfast,cf-wr758ac-v1|\
 	comfast,cf-wr758ac-v2|\
 	tplink,tl-wr902ac-v3|\
@@ -148,7 +152,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "3:lan" "4:lan" "6@eth0"
 		;;
-	xiaomi,mi-router-4a-100m)
+	xiaomi,mi-router-4a-100m|\
+	xiaomi,mi-router-4a-100m-intl)
 		ucidef_add_switch "switch0" \
 			"4:lan:1" "2:lan:2" "0:wan" "6@eth0"
 		;;
@@ -191,6 +196,10 @@ ramips_setup_macs()
 		lan_mac=$wan_mac
 		label_mac=$wan_mac
 		;;
+	comfast,cf-wr617ac)
+		lan_mac=$(mtd_get_mac_binary factory 0xe000)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+                ;;
 	cudy,wr1000|\
 	hilink,hlk-7628n|\
 	hilink,hlk-7688a|\
@@ -272,6 +281,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		;;
 	xiaomi,mi-router-4a-100m|\
+	xiaomi,mi-router-4a-100m-intl|\
 	xiaomi,mi-router-4c)
 		wan_mac=$(mtd_get_mac_binary factory 0x4)
 		;;

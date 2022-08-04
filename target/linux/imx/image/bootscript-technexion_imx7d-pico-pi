@@ -1,0 +1,18 @@
+echo "PICO-PI-IMX7 OpenWrt boot script"
+
+# Initial setup, avoid overwriting environment every boot
+if test ${bootm_boot_mode} != nonsec; then setenv bootm_boot_mode nonsec; setenv bootcmd run bootcmd_mmc0; saveenv; fi
+
+# Set console variable for both UART and HDMI
+setenv console "console=ttymxc4,115200 console=tty0 video=DPI-1:800x480-32"
+setenv fdt_name imx7d-pico-pi.dtb
+setenv mmcdev 0
+setenv mmcrootpart 2
+part uuid mmc ${mmcdev}:${mmcrootpart} uuid
+
+# Boot from eMMC is the only supported option
+setenv bootargs "${console} root=PARTUUID=${uuid} rw rootwait"
+mmc dev ${mmcdev}
+load ${devtype} ${mmcdev}:${devplist} ${kernel_addr_r} /uImage
+load ${devtype} ${mmcdev}:${devplist} ${fdt_addr_r} /${fdt_name}
+bootm ${kernel_addr_r} - ${fdt_addr_r}

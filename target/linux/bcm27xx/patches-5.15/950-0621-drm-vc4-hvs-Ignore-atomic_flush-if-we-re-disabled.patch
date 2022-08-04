@@ -15,7 +15,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -686,6 +686,9 @@ void vc4_hvs_atomic_flush(struct drm_crt
+@@ -709,6 +709,9 @@ void vc4_hvs_atomic_flush(struct drm_crt
  	u32 __iomem *dlist_start = vc4->hvs->dlist + vc4_state->mm.start;
  	u32 __iomem *dlist_next = dlist_start;
  

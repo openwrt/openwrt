@@ -117,8 +117,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
 
-	phy-mask = <0x10>;
-
 	phy4: ethernet-phy@4 {
 		reg = <4>;
 		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;

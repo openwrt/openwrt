@@ -9,7 +9,8 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case "$board" in
-	meraki,mr33)
+	meraki,mr33 |\
+	meraki,mr74)
 		caldata_extract_ubi "ART" 0x9000 0x844
 		caldata_valid "4408" || caldata_extract "ART" 0x9000 0x844
 		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 1)
@@ -108,14 +109,16 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
 		;;
-	meraki,mr33)
+	meraki,mr33 |\
+	meraki,mr74)
 		caldata_extract_ubi "ART" 0x1000 0x2f20
 		caldata_valid "202f" || caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 2)
 		;;
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
-	mikrotik,hap-ac3)
+	mikrotik,hap-ac3 |\
+	mikrotik,wap-ac)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x0 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x0 0x2f20 )
@@ -188,7 +191,8 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 3)
 		;;
-	meraki,mr33)
+	meraki,mr33 |\
+	meraki,mr74)
 		caldata_extract_ubi "ART" 0x5000 0x2f20
 		caldata_valid "202f" || caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 3)
@@ -196,7 +200,8 @@ case "$FIRMWARE" in
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
 	mikrotik,hap-ac3 |\
-	mikrotik,sxtsq-5-ac)
+	mikrotik,sxtsq-5-ac |\
+	mikrotik,wap-ac)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x8000 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x0 0x2f20 )
@@ -219,7 +224,8 @@ case "$FIRMWARE" in
 	case "$board" in
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
-	mikrotik,hap-ac3)
+	mikrotik,hap-ac3 |\
+	mikrotik,wap-ac)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x2f20 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x2f20 0x2f20 )
@@ -231,7 +237,8 @@ case "$FIRMWARE" in
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
 	mikrotik,hap-ac3 |\
-	mikrotik,sxtsq-5-ac)
+	mikrotik,sxtsq-5-ac |\
+	mikrotik,wap-ac)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0xaf20 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x2f20 0x2f20 )

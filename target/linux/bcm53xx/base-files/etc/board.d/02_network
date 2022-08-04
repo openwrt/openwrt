@@ -22,6 +22,7 @@ bcm53xx_setup_interfaces()
 	luxul,xap-1610-v1)
 		ucidef_set_interface_lan "poe lan" "dhcp"
 		;;
+	meraki,mr26 | \
 	meraki,mr32)
 		ucidef_set_interface_lan "poe" "dhcp"
 		;;
@@ -57,6 +58,11 @@ bcm53xx_setup_macs()
 	luxul,xwr-3150-v1)
 		etXmacaddr=$(nvram get et0macaddr)
 		offset=5
+		;;
+	meraki,mr26)
+		label_mac="$(mtd_get_mac_binary_ubi board-config 0x66)"
+		ucidef_set_interface_macaddr "lan" "$label_mac"
+		ucidef_set_label_macaddr "$label_mac"
 		;;
 	*)
 		etXmacaddr=$(nvram get et0macaddr)

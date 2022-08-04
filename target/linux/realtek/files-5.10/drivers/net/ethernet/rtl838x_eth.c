@@ -92,67 +92,60 @@ struct notify_b {
 	u32			reserved2[8];
 };
 
-static void rtl838x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
-	prio &= 0x7;
+	// cpu_tag[0] is reserved on the RTL83XX SoCs
+	h->cpu_tag[1] = 0x0401;  // BIT 10: RTL8380_CPU_TAG, BIT0: L2LEARNING on
+	h->cpu_tag[2] = 0x0200;  // Set only AS_DPM, to enable DPM settings below
+	h->cpu_tag[3] = 0x0000;
+	h->cpu_tag[4] = BIT(dest_port) >> 16;
+	h->cpu_tag[5] = BIT(dest_port) & 0xffff;
 
-	if (dest_port > 0) {
-		// cpu_tag[0] is reserved on the RTL83XX SoCs
-		h->cpu_tag[1] = 0x0401;  // BIT 10: RTL8380_CPU_TAG, BIT0: L2LEARNING on
-		h->cpu_tag[2] = 0x0200;  // Set only AS_DPM, to enable DPM settings below
-		h->cpu_tag[3] = 0x0000;
+	/* Set internal priority (PRI) and enable (AS_PRI) */
+	if (prio >= 0)
+		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 12;
+}
+
+static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+{
+	// cpu_tag[0] is reserved on the RTL83XX SoCs
+	h->cpu_tag[1] = 0x0100; // RTL8390_CPU_TAG marker
+	h->cpu_tag[2] = BIT(4) | BIT(7); /* AS_DPM (4) and L2LEARNING (7) flags */
+	h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
+	// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
+	if (dest_port >= 32) {
+		dest_port -= 32;
+		h->cpu_tag[2] = BIT(dest_port) >> 16;
+		h->cpu_tag[3] = BIT(dest_port) & 0xffff;
+	} else {
 		h->cpu_tag[4] = BIT(dest_port) >> 16;
 		h->cpu_tag[5] = BIT(dest_port) & 0xffff;
-		// Set internal priority and AS_PRIO
-		if (prio >= 0)
-			h->cpu_tag[2] |= (prio | 0x8) << 12;
 	}
+
+	/* Set internal priority (PRI) and enable (AS_PRI) */
+	if (prio >= 0)
+		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
 }
 
-static void rtl839x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
-{
-	prio &= 0x7;
-
-	if (dest_port > 0) {
-		// cpu_tag[0] is reserved on the RTL83XX SoCs
-		h->cpu_tag[1] = 0x0100; // RTL8390_CPU_TAG marker
-		h->cpu_tag[2] = h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
-		// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
-		if (dest_port >= 32) {
-			dest_port -= 32;
-			h->cpu_tag[2] = BIT(dest_port) >> 16;
-			h->cpu_tag[3] = BIT(dest_port) & 0xffff;
-		} else {
-			h->cpu_tag[4] = BIT(dest_port) >> 16;
-			h->cpu_tag[5] = BIT(dest_port) & 0xffff;
-		}
-		h->cpu_tag[2] |= BIT(5); // Enable destination port mask use
-		h->cpu_tag[2] |= BIT(8); // Enable L2 Learning
-		// Set internal priority and AS_PRIO
-		if (prio >= 0)
-			h->cpu_tag[1] |= prio | BIT(3);
-	}
-}
-
-static void rtl930x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  // CPU tag marker
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
-	if (prio >= 0)
-		h->cpu_tag[2] = BIT(13) | prio << 8; // Enable and set Priority Queue
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = 0;
 	h->cpu_tag[5] = 0;
 	h->cpu_tag[6] = BIT(dest_port) >> 16;
 	h->cpu_tag[7] = BIT(dest_port) & 0xffff;
+
+	/* Enable (AS_QID) and set priority queue (QID) */
+	if (prio >= 0)
+		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
-static void rtl931x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  // CPU tag marker
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
-	if (prio >= 0)
-		h->cpu_tag[2] = BIT(13) | prio << 8; // Enable and set Priority Queue
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = h->cpu_tag[5] = h->cpu_tag[6] = h->cpu_tag[7] = 0;
 	if (dest_port >= 32) {
@@ -163,6 +156,10 @@ static void rtl931x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 		h->cpu_tag[6] = BIT(dest_port) >> 16;
 		h->cpu_tag[7] = BIT(dest_port) & 0xffff;
 	}
+
+	/* Enable (AS_QID) and set priority queue (QID) */
+	if (prio >= 0)
+		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
 static void rtl93xx_header_vlan_set(struct p_hdr *h, int vlan)
@@ -1142,9 +1139,10 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 	len = skb->len;
 
 	/* Check for DSA tagging at the end of the buffer */
-	if (netdev_uses_dsa(dev) && skb->data[len-4] == 0x80 && skb->data[len-3] > 0
-			&& skb->data[len-3] < priv->cpu_port &&  skb->data[len-2] == 0x10
-			&&  skb->data[len-1] == 0x00) {
+	if (netdev_uses_dsa(dev) && skb->data[len-4] == 0x80
+			&& skb->data[len-3] < priv->cpu_port
+			&& skb->data[len-2] == 0x10
+			&& skb->data[len-1] == 0x00) {
 		/* Reuse tag space for CRC if possible */
 		dest_port = skb->data[len-3];
 		skb->data[len-4] = skb->data[len-3] = skb->data[len-2] = skb->data[len-1] = 0x00;
@@ -1171,7 +1169,8 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 				h->len -= 4;
 		}
 
-		priv->r->create_tx_header(h, dest_port, skb->priority >> 1);
+		if (dest_port >= 0)
+			priv->r->create_tx_header(h, dest_port, skb->priority >> 1);
 
 		/* Copy packet data to tx buffer */
 		memcpy((void *)KSEG1ADDR(h->buf), skb->data, len);
