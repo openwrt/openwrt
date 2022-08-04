@@ -13,7 +13,7 @@ FEATURES:=audio boot-part ext4 fpu legacy-sdcard squashfs usbgadget
 MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>
 SUBTARGETS:=mesongx
 
-KERNEL_PATCHVER:=5.4
+KERNEL_PATCHVER:=5.10
 
 define Target/Description
 	Build firmware image for Amlogic S9 SoC devices.
