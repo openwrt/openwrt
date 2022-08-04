@@ -5,12 +5,13 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=aarch64
-BOARD:=mesongx
-BOARDNAME:=Amlogic S9 family
+BOARD:=meson
+BOARDNAME:=Amlogic Meson family
 CPU_TYPE:=cortex-a53
 DEVICE_TYPE:=other
 FEATURES:=audio boot-part ext4 fpu legacy-sdcard squashfs usbgadget
 MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>
+SUBTARGETS:=mesongx
 
 KERNEL_PATCHVER:=5.4
 
