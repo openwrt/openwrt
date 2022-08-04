@@ -37,9 +37,18 @@ function init_firewall() {
 
 	zone_name=$(uci -q get firewall.@zone[1].name)
 	if [ "$zone_name" = "wan" ]; then
-		uci set firewall.@zone[1].input='REJECT'
-		uci set firewall.@zone[1].output='ACCEPT'
-		uci set firewall.@zone[1].forward='REJECT'
+		INTERFACES=$(ip address | grep ^[0-9] | awk -F: '{print $2}' | sed "s/ //g" | grep '^[e]' | grep -v "@" | grep -v "\.")
+		IFCOUNT=$(echo "${INTERFACES}" | wc -l)
+		if [ ${IFCOUNT} -eq 1 ]; then
+			# INSECURE!!! only for single-port device
+			uci set firewall.@zone[1].input='ACCEPT'
+			uci set firewall.@zone[1].output='ACCEPT'
+			uci set firewall.@zone[1].forward='ACCEPT'
+		else
+			uci set firewall.@zone[1].input='REJECT'
+			uci set firewall.@zone[1].output='ACCEPT'
+			uci set firewall.@zone[1].forward='REJECT'
+		fi
 	fi
 	uci commit firewall
 	fw4 reload
