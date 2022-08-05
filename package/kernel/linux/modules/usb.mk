@@ -1541,8 +1541,8 @@ $(eval $(call KernelPackage,usb-hid))
 define KernelPackage/usb-hid-cp2112
   SUBMENU:=$(USB_MENU)
   TITLE:=Silicon Labs CP2112 HID USB to SMBus Master Bridge
-  KCONFIG:=CONFIG_GPIOLIB=y CONFIG_HID_CP2112
-  DEPENDS:=+kmod-usb-hid +kmod-i2c-core
+  KCONFIG:=CONFIG_HID_CP2112
+  DEPENDS:=@GPIO_SUPPORT +kmod-usb-hid +kmod-i2c-core
   FILES:=$(LINUX_DIR)/drivers/hid/hid-cp2112.ko
   AUTOLOAD:=$(call AutoProbe,hid-cp2112)
 endef
