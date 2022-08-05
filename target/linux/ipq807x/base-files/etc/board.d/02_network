@@ -11,6 +11,9 @@ ipq807x_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	dynalink,dl-wrx36)
+		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
+		;;
 	edgecore,eap102)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
