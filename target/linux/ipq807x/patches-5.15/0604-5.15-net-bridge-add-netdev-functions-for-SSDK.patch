@@ -1,22 +1,24 @@
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
-@@ -237,4 +237,8 @@ extern br_get_dst_hook_t __rcu *br_get_d
- extern struct net_device *br_fdb_bridge_dev_get_and_hold(struct net_bridge *br);
- /* QCA NSS bridge-mgr support - End */
+@@ -233,4 +233,11 @@ typedef struct net_bridge_port *br_get_d
+ extern br_get_dst_hook_t __rcu *br_get_dst_hook;
+ /* QCA NSS ECM support - End */
 
++/* QCA SSDK support - Start */
 +extern int br_fdb_delete_by_netdev(struct net_device *dev,
-+                 const unsigned char *addr, u16 vid);
++                 			const unsigned char *addr, u16 vid);
 +extern int br_fdb_add_or_refresh_by_netdev(struct net_device *dev,
 +                            const unsigned char *addr, u16 vid, u16 state);
++/* QCA SSDK support - End */
++
  #endif
-diff --git a/net/bridge/br_fdb.c b/net/bridge/br_fdb.c
-index 48cd57a..fa74a00 100644
 --- a/net/bridge/br_fdb.c
 +++ b/net/bridge/br_fdb.c
-@@ -1520,3 +1520,102 @@ struct net_bridge_fdb_entry *br_fdb_has_
+@@ -1503,3 +1503,104 @@ struct net_bridge_fdb_entry *br_fdb_has_
  EXPORT_SYMBOL_GPL(br_fdb_has_entry);
  /* QCA NSS ECM support - End */
 
++/* QCA SSDK support - Start */
 +/* This function creates a new FDB entry.
 + * The caller can specify the FDB entry type like static,
 + * local or external entry.
@@ -116,3 +118,4 @@ index 48cd57a..fa74a00 100644
 +	return err;
 +}
 +EXPORT_SYMBOL_GPL(br_fdb_delete_by_netdev);
++/* QCA SSDK support - End */
