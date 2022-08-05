@@ -1,0 +1,30 @@
+From d097e51a8056af603e6fccf0a85e8b17ad998647 Mon Sep 17 00:00:00 2001
+From: Ken Zhu <quic_guigenz@quicinc.com>
+Date: Thu, 14 Oct 2021 08:50:03 -0700
+Subject: [PATCH] net: fix potential memory leak
+
+When A packets come from a disabled port, if it is not a accepted
+EAPOL, it has no chance to get freed.
+
+Change-Id: Ib2bddeb53f2117bcc803d11912471a8456a3148a
+Signed-off-by: Ken Zhu <quic_guigenz@quicinc.com>
+---
+ net/bridge/br_input.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/bridge/br_input.c b/net/bridge/br_input.c
+index 26dc637ad564b..6d3ce7699b9b1 100644
+--- a/net/bridge/br_input.c
++++ b/net/bridge/br_input.c
+@@ -386,7 +386,7 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
+ 				return RX_HANDLER_PASS;
+ 			}
+ 		}
+-		break;
++		goto drop;
+ 
+ 	case BR_STATE_FORWARDING:
+ 	case BR_STATE_LEARNING:
+-- 
+GitLab
+
