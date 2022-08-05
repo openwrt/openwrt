@@ -260,16 +260,18 @@ define KernelPackage/fs-fscache
   TITLE:=General filesystem local cache manager
   DEPENDS:=+kmod-fs-netfs
   KCONFIG:=\
-	CONFIG_FSCACHE=m \
+	CONFIG_FSCACHE \
 	CONFIG_FSCACHE_STATS=y \
 	CONFIG_FSCACHE_HISTOGRAM=n \
 	CONFIG_FSCACHE_DEBUG=n \
 	CONFIG_FSCACHE_OBJECT_LIST=n \
-	CONFIG_CACHEFILES=y \
+	CONFIG_CACHEFILES \
 	CONFIG_CACHEFILES_DEBUG=n \
 	CONFIG_CACHEFILES_HISTOGRAM=n
-  FILES:=$(LINUX_DIR)/fs/fscache/fscache.ko
-  AUTOLOAD:=$(call AutoLoad,29,fscache)
+  FILES:= \
+	$(LINUX_DIR)/fs/fscache/fscache.ko \
+	$(LINUX_DIR)/fs/cachefiles/cachefiles.ko
+  AUTOLOAD:=$(call AutoLoad,29,fscache cachefiles)
 endef
 
 $(eval $(call KernelPackage,fs-fscache))
