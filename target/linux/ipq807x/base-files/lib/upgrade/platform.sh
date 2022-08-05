@@ -43,6 +43,9 @@ platform_pre_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	dynalink,dl-wrx36)
+		nand_do_upgrade "$1"
+		;;
 	edgecore,eap102)
 		active="$(fw_printenv -n active)"
 		if [ "$active" -eq "1" ]; then

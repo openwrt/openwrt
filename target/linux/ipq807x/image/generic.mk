@@ -17,6 +17,19 @@ define Device/UbiFit
 	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+define Device/dynalink_dl-wrx36
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Dynalink
+	DEVICE_MODEL := DL-WRX36
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@rt5010w-d350-rev0
+	SOC := ipq8072
+	DEVICE_PACKAGES := ipq-wifi-dynalink_dl-wrx36
+endef
+TARGET_DEVICES += dynalink_dl-wrx36
+
 define Device/edgecore_eap102
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
