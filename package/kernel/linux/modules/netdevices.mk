@@ -434,7 +434,7 @@ $(eval $(call KernelPackage,switch-rtl8367b))
 define KernelPackage/switch-ar8xxx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros AR8216/8327 switch support
-  DEPENDS:=+kmod-swconfig
+  DEPENDS:=+kmod-swconfig +kmod-mdio-devres
   KCONFIG:=CONFIG_AR8216_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/ar8xxx.ko
   AUTOLOAD:=$(call AutoLoad,43,ar8xxx,1)
