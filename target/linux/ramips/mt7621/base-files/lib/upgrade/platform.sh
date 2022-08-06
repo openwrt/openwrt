@@ -33,6 +33,7 @@ platform_do_upgrade() {
 			fw_setenv --lock / bootImage 0 || exit 1
 		fi
 		;;
+	mikrotik,ltap-2hnd|\
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
