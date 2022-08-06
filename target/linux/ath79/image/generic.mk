@@ -2708,6 +2708,14 @@ define Device/zyxel_nwa11xx
 	vmlinux_mi124_f1e mi124_f1e-jffs2 | append-md5sum-bin
 endef
 
+define Device/zyxel_nwa1100-nh
+  $(Device/zyxel_nwa11xx)
+  DEVICE_MODEL := NWA1100
+  DEVICE_VARIANT := NH
+  ZYXEL_MODEL_STRING := AASI
+endef
+TARGET_DEVICES += zyxel_nwa1100-nh
+
 define Device/zyxel_nwa1121-ni
   $(Device/zyxel_nwa11xx)
   DEVICE_MODEL := NWA1121
