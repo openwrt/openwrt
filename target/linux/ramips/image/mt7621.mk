@@ -1350,6 +1350,13 @@ define Device/MikroTik
 	append-metadata
 endef
 
+define Device/mikrotik_ltap-2hnd
+  $(Device/MikroTik)
+  DEVICE_MODEL := LtAP-2HnD
+  DEVICE_PACKAGES += kmod-ath9k kmod-pps-gpio rssileds
+endef
+TARGET_DEVICES += mikrotik_ltap-2hnd
+
 define Device/mikrotik_routerboard-750gr3
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD 750Gr3
