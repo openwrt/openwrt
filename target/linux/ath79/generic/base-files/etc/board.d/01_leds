@@ -484,6 +484,9 @@ zbtlink,zbt-wd323)
 	ucidef_set_led_switch "lan1" "LAN1" "orange:lan1" "switch0" "0x10"
 	ucidef_set_led_switch "lan2" "LAN2" "orange:lan2" "switch0" "0x08"
 	;;
+zyxel,nwa1100-nh)
+	ucidef_set_led_netdev "lan_data" "LAN_DATA" "amber:lan" "eth0" "tx rx"
+	ucidef_set_led_netdev "lan_link" "LAN_LINK" "green:lan" "eth0" "link"
 esac
 
 board_config_flush
