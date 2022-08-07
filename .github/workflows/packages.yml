@@ -1,0 +1,151 @@
+name: Build all core packages
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/packages.yml'
+      - 'config/**'
+      - 'include/**'
+      - 'package/**'
+      - 'target/linux/generic/**'
+      - 'toolchain/**'
+  push:
+    paths:
+      - '.github/workflows/packages.yml'
+      - 'config/**'
+      - 'include/**'
+      - 'package/**'
+      - 'target/linux/generic/**'
+      - 'toolchain/**'
+
+permissions:
+  contents: read
+
+jobs:
+  setup_build:
+    name: Setup build
+    runs-on: ubuntu-latest
+    outputs:
+      owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
+
+    steps:
+      - name: Set lower case owner name
+        id: lower_owner
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" \
+            | tr '[:upper:]' '[:lower:]')
+          echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build all core packages
+    needs: setup_build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: False
+      matrix:
+        include:
+          - name: malta-be
+            target: malta
+            subtarget: be
+          - name: x86-64
+            target: x86
+            subtarget: 64
+
+    container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/tools:latest
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout master directory
+        uses: actions/checkout@v3
+        with:
+          path: openwrt
+
+      - name: Fix permission
+        run: |
+          chown -R buildbot:buildbot openwrt
+
+      - name: Initialization environment
+        run: |
+          TARGET=$(echo ${{ matrix.target }})
+          SUBTARGET=$(echo ${{ matrix.subtarget }})
+          echo "TARGET=$TARGET" >> "$GITHUB_ENV"
+          echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
+
+      - name: Parse toolchain file
+        working-directory: openwrt
+        run: |
+          TOOLCHAIN_STRING="$(curl "https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
+            | grep ".*openwrt-toolchain.*tar.xz")"
+          TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
+          TOOLCHAIN_SHA256=$(echo "$TOOLCHAIN_STRING" | cut -d ' ' -f 1)
+
+          echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
+          echo "TOOLCHAIN_SHA256=$TOOLCHAIN_SHA256" >> "$GITHUB_ENV"
+
+      - name: Cache external toolchain
+        id: cache-external-toolchain
+        uses: actions/cache@v3
+        with:
+          path: openwrt/${{ env.TOOLCHAIN_FILE }}
+          key: ${{ env.TOOLCHAIN_FILE }}-${{ env.TOOLCHAIN_SHA256 }}
+
+      - name: Download external toolchain
+        if: ${{ steps.cache-external-toolchain.outputs.cache-hit != 'true' }}
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          wget -O - https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/${TOOLCHAIN_FILE}.tar.xz \
+            | tar --xz -xf -
+
+      - name: Extract prebuilt tools
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: ./scripts/ext-tools.sh --tools /tools.tar
+
+      - name: Create configuration
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          echo CONFIG_ALL=y >> .config
+          echo CONFIG_ALL_KMODS=y >> .config
+          echo CONFIG_ALL_NONSHARED=y >> .config
+
+          ./scripts/ext-toolchain.sh \
+            --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
+            --overwrite-config \
+            --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
+
+      - name: Show configuration
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: ./scripts/diffconfig.sh
+
+      - name: Build tools
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make tools/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
+
+      - name: Build toolchain
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make toolchain/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
+
+      - name: Build Kernel
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make target/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
+
+      - name: Build everything
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.TARGET }}-${{ env.SUBTARGET }}-logs
+          path: "openwrt/logs"
