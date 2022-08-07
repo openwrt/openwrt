@@ -1381,7 +1381,7 @@ define KernelPackage/mhi-wwan-ctrl
   TITLE:=MHI WWAN Control
   DEPENDS:=@LINUX_5_15 @PCI_SUPPORT +kmod-mhi-bus
   KCONFIG:=CONFIG_MHI_WWAN_CTRL
-  FILES:=$(LINUX_DIR)/drivers/net/mhi_wwan_ctrl.ko
+  FILES:=$(LINUX_DIR)/drivers/net/wwan/mhi_wwan_ctrl.ko
   AUTOLOAD:=$(call AutoProbe,mhi_wwan_ctrl)
 endef
 
@@ -1397,7 +1397,7 @@ define KernelPackage/mhi-wwan-mbim
   TITLE:=MHI MBIM
   DEPENDS:=@LINUX_5_15 @PCI_SUPPORT +kmod-mhi-bus
   KCONFIG:=CONFIG_MHI_WWAN_MBIM
-  FILES:=$(LINUX_DIR)/drivers/net/mhi_wwan_mbim.ko
+  FILES:=$(LINUX_DIR)/drivers/net/wwan/mhi_wwan_mbim.ko
   AUTOLOAD:=$(call AutoProbe,mhi_wwan_mbim)
 endef
 
