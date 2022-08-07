@@ -18,6 +18,7 @@
 #include <asm/addrspace.h>
 #include <asm/page.h>
 #include <asm/cpu.h>
+#include <asm/fw/fw.h>
 #include <asm/smp-ops.h>
 #include <asm/mips-cps.h>
 
@@ -76,25 +77,6 @@ void __init device_tree_init(void)
 	}
 	initial_boot_params = (void *)fdt;
 	unflatten_and_copy_device_tree();
-}
-
-static void __init prom_init_cmdline(void)
-{
-	int argc = fw_arg0;
-	char **argv = (char **) KSEG1ADDR(fw_arg1);
-	int i;
-
-	arcs_cmdline[0] = '\0';
-
-	for (i = 0; i < argc; i++) {
-		char *p = (char *) KSEG1ADDR(argv[i]);
-
-		if (CPHYSADDR(p) && *p) {
-			strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
-			strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
-		}
-	}
-	pr_info("Kernel command line: %s\n", arcs_cmdline);
 }
 
 void __init identify_rtl9302(void)
@@ -214,7 +196,7 @@ void __init prom_init(void)
 
 	pr_info("SoC Type: %s\n", get_system_type());
 
-	prom_init_cmdline();
+	fw_init_cmdline();
 
 	mips_cpc_probe();
 
