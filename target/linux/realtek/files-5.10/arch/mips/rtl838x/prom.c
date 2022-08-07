@@ -214,13 +214,9 @@ void __init prom_init(void)
 
 	pr_info("SoC Type: %s\n", get_system_type());
 
-	/* Early detection of CMP support */
-	if(soc_info.family == RTL9310_FAMILY_ID) {
-		mips_cm_probe();
-		mips_cpc_probe();
-	}
-
 	prom_init_cmdline();
+
+	mips_cpc_probe();
 
 	if (!register_cps_smp_ops())
 		return;
