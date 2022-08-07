@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=trace-cmd
 PKG_VERSION:=v3.1.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/utils/trace-cmd/trace-cmd.git/snapshot/
@@ -34,6 +34,7 @@ endef
 MAKE_FLAGS += \
 	NO_PYTHON=1 \
 	NO_AUDIT=1 \
+	NO_LIBZSTD=1 \
 	prefix=/usr
 
 TARGET_CFLAGS += --std=gnu99 -D_GNU_SOURCE
