@@ -100,6 +100,11 @@ jobs:
 
           make defconfig
 
+      - name: Show configuration
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: ./scripts/diffconfig.sh
+
       - name: Build tools
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
