@@ -6,9 +6,9 @@ PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2024-03-04
-PKG_SOURCE_VERSION:=38c02ae4302f9cb73f6914574239fe84799caa84
-PKG_MIRROR_HASH:=1e84f576d4161ea932b45a651abebdc05ff3c261ef25fc13d3d68cf9b624abb3
+PKG_SOURCE_DATE:=2024-03-20
+PKG_SOURCE_VERSION:=87717baa8a7c922942f4202a0ec3de3cb5643941
+PKG_MIRROR_HASH:=5f05f922780b55c0069c4ee9725f2b1aa857f3bc841bec71a44e997ece9cea15
 
 PKG_FLAGS:=nonshared
 
@@ -47,6 +47,7 @@ ALLWIFIBOARDS:= \
 	prpl_haze \
 	qnap_301w \
 	redmi_ax6 \
+	tplink_eap610-outdoor \
 	wallys_dr40x9 \
 	xiaomi_ax3600 \
 	xiaomi_ax9000 \
@@ -164,6 +165,7 @@ $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
 $(eval $(call generate-ipq-wifi-package,qnap_301w,QNAP 301w))
 $(eval $(call generate-ipq-wifi-package,prpl_haze,prpl Haze))
 $(eval $(call generate-ipq-wifi-package,redmi_ax6,Redmi AX6))
+$(eval $(call generate-ipq-wifi-package,tplink_eap610-outdoor,TPLink EAP610-Outdoor))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
