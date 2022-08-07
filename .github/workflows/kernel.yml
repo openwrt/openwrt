@@ -78,7 +78,7 @@ jobs:
       - name: Parse toolchain file
         working-directory: openwrt
         run: |
-          TOOLCHAIN_FILE=$(curl "https://downloads.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
+          TOOLCHAIN_FILE=$(curl "https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
             | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
 
           echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
@@ -87,7 +87,7 @@ jobs:
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
-          wget -O - https://downloads.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/${TOOLCHAIN_FILE}.tar.xz \
+          wget -O - https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/${TOOLCHAIN_FILE}.tar.xz \
             | tar --xz -xf -
 
       - name: Configure external toolchain
