@@ -3,8 +3,10 @@ name: Build Kernel
 on:
   pull_request:
     paths:
+      - '.github/workflows/kernel.yml'
       - 'include/kernel-*'
       - 'package/kernel/**'
+      - 'target/linux/generic/**'
 jobs:
   determine_targets:
     name: Set targets
