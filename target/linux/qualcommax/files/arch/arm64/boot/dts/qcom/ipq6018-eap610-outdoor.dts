@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link EAP610-Outdoor";
+	compatible = "tplink,eap610-outdoor", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		led-boot = &led_sys_green;
+		led-failsafe = &led_sys_amber;
+		led-running = &led_sys_green;
+		led-upgrade = &led_sys_amber;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " ubi.block=0,rootfs root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys_amber: led-0 {
+			function = "system";
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_sys_green: led-1 {
+			function = "system";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-restart {
+		compatible = "gpio-restart";
+		gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
+		open-source;
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	led_enable {
+		gpio-hog;
+		output-high;
+		gpios = <36 GPIO_ACTIVE_HIGH>;
+		line-name = "enable-leds";
+	};
+};
+
+&dp5 {
+	phy-handle = <&rtl8211f_4>;
+	phy-mode = "sgmii";
+	label = "lan";
+	status = "okay";
+};
+
+&edma {
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+	status = "okay";
+
+	rtl8211f_4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&switch {
+	switch_lan_bmp = <ESS_PORT5>;
+	switch_mac_mode1 = <MAC_MODE_SGMII_CHANNEL0>;
+	status = "okay";
+
+	qcom,port_phyinfo {
+		port@4 {
+			port_id = <5>;
+			phy_address = <4>;
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+	};
+};
+
+&wifi {
+	ieee80211-freq-limit = <2402000 5835000>;
+	qcom,ath11k-calibration-variant = "TP-Link-EAP610-Outdoor";
+	status = "okay";
+};

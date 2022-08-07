@@ -23,6 +23,9 @@ ipq60xx_setup_interfaces()
 	qihoo,360v6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
+	tplink,eap610-outdoor)
+		ucidef_set_interface_lan "lan" "dhcp"
+		;;
 	linksys,mr7350|\
 	yuncore,fap650)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
@@ -50,6 +53,10 @@ ipq60xx_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$lan_mac
+		;;
+	tplink,eap610-outdoor)
+		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
+		lan_mac=$label_mac
 		;;
 	esac
 
