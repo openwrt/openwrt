@@ -146,7 +146,7 @@ static inline void m_bool(const char *id, bool value) {
 }
 
 static inline void m_u32(const char *id, uint32_t value) {
-	blobmsg_add_u32(&b, id, value);
+	blobmsg_add_u64(&b, id, value);
 }
 
 static inline void m_str(const char *id, const char *value) {
@@ -157,10 +157,20 @@ static inline void m_db(const char *id, int value) {
 	m_double(id, (double)value / 10);
 }
 
-static inline void m_array(const char *id, const uint8_t *value, uint8_t len) {
+static inline void m_array(const char *id, const uint8_t *value, uint16_t len) {
 	void *c = blobmsg_open_array(&b, id);
 
-	for (uint8_t i = 0; i < len; ++i)
+	for (uint16_t i = 0; i < len; ++i)
+		blobmsg_add_u16(&b, "", value[i]);
+
+	blobmsg_close_array(&b, c);
+}
+
+
+static inline void m_array_dlt_16(const char *id, const uint16_t *value, uint16_t len) {
+	void *c = blobmsg_open_array(&b, id);
+
+	for (uint16_t i = 0; i < len; ++i)
 		blobmsg_add_u16(&b, "", value[i]);
 
 	blobmsg_close_array(&b, c);
@@ -412,6 +422,37 @@ static void g997_line_inventory(int fd) {
 	m_array("version", out.data.VersionNumber, DSL_G997_LI_MAXLEN_VERSION);
 	m_array("serial", out.data.SerialNumber, DSL_G997_LI_MAXLEN_SERIAL);
 }
+
+static void g977_get_bit_allocation(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR(DSL_G997_BitAllocationNsc_t, DSL_FIO_G997_BIT_ALLOCATION_NSC_GET, direction);
+	m_u32("groupsize", 1);  // create default value to obtain consistent JSON structure
+	m_u32("groups", out.data.bitAllocationNsc.nNumData);
+	m_array("data", &out.data.bitAllocationNsc.nNSCData, out.data.bitAllocationNsc.nNumData);
+}
+
+
+static void g977_get_snr(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR_DELT(DSL_G997_DeltSnr_t, DSL_FIO_G997_DELT_SNR_GET, direction, DSL_DELT_DATA_SHOWTIME);
+	m_u32("groupsize", out.data.nGroupSize);
+	m_u32("groups", out.data.deltSnr.nNumData);
+	m_array("data", &out.data.deltSnr.nNSCData, out.data.deltSnr.nNumData);
+}
+
+static void g977_get_qln(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR_DELT(DSL_G997_DeltQln_t, DSL_FIO_G997_DELT_QLN_GET, direction, DSL_DELT_DATA_SHOWTIME);
+	m_u32("groupsize", out.data.nGroupSize);
+	m_u32("groups", out.data.deltQln.nNumData);
+	m_array("data", &out.data.deltQln.nNSCData, out.data.deltQln.nNumData);
+}
+
+
+static void g977_get_hlog(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR_DELT(DSL_G997_DeltHlog_t, DSL_FIO_G997_DELT_HLOG_GET, direction, DSL_DELT_DATA_SHOWTIME);
+	m_u32("groupsize", out.data.nGroupSize);
+	m_u32("groups", out.data.deltHlog.nNumData);
+	m_array_dlt_16("data", &out.data.deltHlog.nNSCData, out.data.deltHlog.nNumData);
+}
+
 
 static void g997_power_management_status(int fd) {
 	IOCTL(DSL_G997_PowerManagementStatus_t, DSL_FIO_G997_POWER_MANAGEMENT_STATUS_GET)
@@ -724,6 +765,76 @@ static void describe_mode(standard_t standard, profile_t profile, vector_t vecto
 	m_str("mode", buf);
 }
 
+static int statistics(struct ubus_context *ctx, struct ubus_object *obj,
+                   struct ubus_request_data *req, const char *method,
+                   struct blob_attr *msg)
+{
+        int fd, fd_mei;
+        void *c, *c2;
+
+	 
+#ifndef INCLUDE_DSL_CPE_API_DANUBE
+	fd = open(DSL_CPE_DEVICE_NAME "/0", O_RDWR, 0644);
+#else
+	fd = open(DSL_CPE_DEVICE_NAME, O_RDWR, 0644);
+#endif
+	if (fd < 0)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+#ifdef INCLUDE_DSL_CPE_API_VRX
+	fd_mei = open(DSL_CPE_DSL_LOW_DEV "/0", O_RDWR, 0644);
+#else
+	fd_mei = -1;
+#endif
+
+	blob_buf_init(&b, 0);
+		
+	c = blobmsg_open_table(&b, "bits");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_bit_allocation(fd,DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_bit_allocation(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+		
+	c = blobmsg_open_table(&b, "snr");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_snr(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_snr(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "qln");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_qln(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_qln(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+		
+	c = blobmsg_open_table(&b, "hlog");		
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_hlog(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_hlog(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);		
+		
+	ubus_send_reply(ctx, req, b.head);
+
+	if (fd_mei >= 0)
+		close(fd_mei);
+	close(fd);
+
+	return 0;
+}
+
 static int metrics(struct ubus_context *ctx, struct ubus_object *obj,
 		   struct ubus_request_data *req, const char *method,
 		   struct blob_attr *msg)
@@ -837,6 +948,7 @@ static int metrics(struct ubus_context *ctx, struct ubus_object *obj,
 
 static const struct ubus_method dsl_methods[] = {
 	UBUS_METHOD_NOARG("metrics", metrics),
+	UBUS_METHOD_NOARG("statistics", statistics)
 };
 
 static struct ubus_object_type dsl_object_type =
