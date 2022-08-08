@@ -2131,7 +2131,7 @@
 +load_kernel_dts_base=fdt addr $loadaddr; fdt get addr dts_pos_addr /images/fdt-1 data-position; setenv address $dts_pos_addr; run bytes_swap; setenv dts_pos $value; setexpr kernel_dts_base $dts_pos + $loadaddr; fdt addr $kernel_dts_base; fdt resize 8000;
 +kernel_dts_use_sata=fdt set /sata@1a200000 status okay; fdt set /t-phy@1a243000 status okay; fdt set /pcie@1a145000 status disabled; fdt set /gpio-export/power-M2-up gpio-export,output <0>
 +fix_fit_dts=fdt resize; setexpr address ${kernel_dts_base} + 4; run bytes_swap; setenv kernel_dts_size $value; fdt addr $loadaddr; fdt set /images/fdt-1 data-size <0x$kernel_dts_size>; fdt get value kernel_loadaddr /images/kernel-1 load; setexpr kernel_dts_loadaddr ${kernel_loadaddr} - ${kernel_dts_size}; fdt set /images/fdt-1 load <0x$kernel_dts_loadaddr>; fdt rm /images/fdt-1/hash@1; fdt rm /images/fdt-1/hash@2
-+modify_kernel_dts=if test $use_sata = 1; then run load_kernel_dts_base; run kernel_dts_use_sata; run fix_fit_dts; fi
++modify_kernel_dts=if test $use_sata = 1; then run load_kernel_dts_base; run kernel_dts_use_sata; run fix_fit_dts; fi; echo Using SATA: $use_sata
 --- a/unielec_u7622-02-sdmmc_env
 +++ b/unielec_u7622-02-sdmmc_env
 @@ -0,0 +1,51 @@
