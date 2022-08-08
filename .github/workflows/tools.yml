@@ -5,12 +5,17 @@ on:
     paths:
       - 'tools/**'
       - '.github/workflows/tools.yml'
+  push:
+    paths:
+      - 'tools/**'
+      - '.github/workflows/tools.yml'
 
 permissions:
   contents: read
 
 jobs:
   build-macos-latest:
+    if: github.event_name != 'push'
     runs-on: macos-latest
 
     steps:
@@ -105,6 +110,15 @@ jobs:
         run: |
           chown -R buildbot:buildbot openwrt
 
+      - name: Set AUTOREMOVE config for tools container
+        if: github.event_name == 'push'
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          touch .config
+          echo CONFIG_DEVEL=y >> .config
+          echo CONFIG_AUTOREMOVE=y >> .config
+
       - name: Make prereq
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
@@ -128,3 +142,53 @@ jobs:
         with:
           name: linux-buildbot-config
           path: openwrt/.config
+
+      - name: Archive prebuilt tools
+        if: github.event_name == 'push'
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: tar --mtime=now -cf tools.tar staging_dir/host build_dir/host dl
+
+      - name: Upload prebuilt tools
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-buildbot-prebuilt-tools
+          path: openwrt/tools.tar
+          retention-days: 1
+
+  push-tools-container:
+    needs: build-linux-buildbot
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: 'openwrt'
+
+      - name: Download prebuilt tools from build job
+        uses: actions/download-artifact@v2
+        with:
+          name: linux-buildbot-prebuilt-tools
+          path: openwrt
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: openwrt
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/tools:latest
+          file: openwrt/.github/workflows/Dockerfile.tools
