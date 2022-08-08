@@ -118,8 +118,11 @@ jobs:
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
+          echo CONFIG_ALL_KMODS=y >> .config
+
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
+            --overwrite-config \
             --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
 
           make defconfig
