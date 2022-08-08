@@ -57,6 +57,30 @@ jobs:
         with:
           path: openwrt
 
+      - name: Checkout packages feed
+        uses: actions/checkout@v2
+        with:
+          repository: openwrt/packages
+          path: openwrt/feeds/packages
+
+      - name: Checkout luci feed
+        uses: actions/checkout@v2
+        with:
+          repository: openwrt/luci
+          path: openwrt/feeds/luci
+
+      - name: Checkout routing feed
+        uses: actions/checkout@v2
+        with:
+          repository: openwrt/routing
+          path: openwrt/feeds/routing
+
+      - name: Checkout telephony feed
+        uses: actions/checkout@v2
+        with:
+          repository: openwrt/telephony
+          path: openwrt/feeds/telephony
+
       - name: Fix permission
         run: |
           chown -R buildbot:buildbot openwrt
