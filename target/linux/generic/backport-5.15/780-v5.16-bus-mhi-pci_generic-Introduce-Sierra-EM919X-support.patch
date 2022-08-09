@@ -1,7 +1,26 @@
-Index: linux-5.15.58/drivers/bus/mhi/pci_generic.c
-===================================================================
---- linux-5.15.58.orig/drivers/bus/mhi/pci_generic.c
-+++ linux-5.15.58/drivers/bus/mhi/pci_generic.c
+From 789d3eeb2367f92193a0882f7cdab03f0f9d6930 Mon Sep 17 00:00:00 2001
+From: Thomas Perrot <thomas.perrot@bootlin.com>
+Date: Thu, 16 Dec 2021 13:42:27 +0530
+Subject: [PATCH] bus: mhi: pci_generic: Introduce Sierra EM919X support
+
+Add support for EM919X modems, this modem series is based on SDX55
+qcom chip.
+
+It is mandatory to use the same ring for control+data and diag events.
+
+Link: https://lore.kernel.org/r/20211123081541.648426-1-thomas.perrot@bootlin.com
+Tested-by: Aleksander Morgado <aleksander@aleksander.es>
+Reviewed-by: Manivannan Sadhasivam <mani@kernel.org>
+Signed-off-by: Thomas Perrot <thomas.perrot@bootlin.com>
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Link: https://lore.kernel.org/r/20211216081227.237749-11-manivannan.sadhasivam@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/bus/mhi/pci_generic.c | 43 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+
+--- a/drivers/bus/mhi/pci_generic.c
++++ b/drivers/bus/mhi/pci_generic.c
 @@ -406,6 +406,46 @@ static const struct mhi_pci_dev_info mhi
  	.mru_default = 32768,
  };
