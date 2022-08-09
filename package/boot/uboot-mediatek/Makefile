@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 
-MT7621_LOWLEVEL_PRELOADER_URL:=https://raw.githubusercontent.com/mtk-openwrt/mt7621-lowlevel-preloader/master/
+MT7621_LOWLEVEL_PRELOADER_URL:=https://raw.githubusercontent.com/mtk-openwrt/mt7621-lowlevel-preloader/a03b07c60bf1ba4add9b671d32caa102fe948180/
 
 define Download/mt7621-stage-sram
   FILE:=mt7621_stage_sram.bin
@@ -17,8 +17,18 @@ define Download/mt7621-stage-sram
   HASH:=1dda68aa089f0ff262e01539b990dea478952e9fb68bcc0a8cd6f76f0135c62e
 endef
 
+define Download/mt7621-stage-sram-noprint
+  FILE:=mt7621_stage_sram_noprint.bin
+  URL:=$(MT7621_LOWLEVEL_PRELOADER_URL)
+  HASH:=8ee419275144fc298e9444d413d98e965a55d283152a74ea6a1f8de79eb516b6
+endef
+
 ifdef CONFIG_TARGET_ramips_mt7621
+ifdef CONFIG_DEBUG
 $(eval $(call Download,mt7621-stage-sram))
+else
+$(eval $(call Download,mt7621-stage-sram-noprint))
+endif
 endif
 
 define U-Boot/Default
@@ -195,7 +205,11 @@ endef
 ifdef CONFIG_TARGET_ramips_mt7621
 define Build/Prepare
 	$(call Build/Prepare/Default)
+ifdef CONFIG_DEBUG
 	$(CP) $(DL_DIR)/mt7621_stage_sram.bin $(PKG_BUILD_DIR)/
+else
+	$(CP) $(DL_DIR)/mt7621_stage_sram_noprint.bin $(PKG_BUILD_DIR)/mt7621_stage_sram.bin
+endif
 endef
 endif
 
