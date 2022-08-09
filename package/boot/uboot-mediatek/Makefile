@@ -75,6 +75,15 @@ define U-Boot/mt7621_nand_rfb
   UBOOT_IMAGE:=u-boot-mt7621.bin
 endef
 
+define U-Boot/mt7621_zbtlink_zbt-wg3526-16m
+  NAME:=Zbtlink ZBT-WG3526-16m
+  UBOOT_CONFIG:=mt7621_zbtlink_zbt-wg3526-16m
+  BUILD_DEVICES:=zbtlink_zbt-wg3526-16m
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7621
+  UBOOT_IMAGE:=u-boot-mt7621.bin
+endef
+
 define U-Boot/mt7622_rfb1
   NAME:=MT7622 Reference Board 1
   UBOOT_CONFIG:=mt7622_rfb
@@ -186,7 +195,7 @@ define U-Boot/mt7628_rfb
   UBOOT_IMAGE:=u-boot-with-spl.bin
 endef
 
-define U-Boot/ravpower_rp-wd009
+define U-Boot/mt7628_ravpower_rp-wd009
   NAME:=RAVPower RP-WD009
   BUILD_TARGET:=ramips
   BUILD_DEVICES:=ravpower_rp-wd009
@@ -557,6 +566,7 @@ UBOOT_TARGETS := \
 	mt7620_rfb \
 	mt7621_nand_rfb \
 	mt7621_rfb \
+	mt7621_zbtlink_zbt-wg3526-16m \
 	mt7622_bananapi_bpi-r64-emmc \
 	mt7622_bananapi_bpi-r64-sdmmc \
 	mt7622_bananapi_bpi-r64-snand \
@@ -568,7 +578,7 @@ UBOOT_TARGETS := \
 	mt7623n_bpir2 \
 	mt7623a_unielec_u7623 \
 	mt7628_rfb \
-	ravpower_rp-wd009 \
+	mt7628_ravpower_rp-wd009 \
 	mt7629_rfb \
 	mt7981_cmcc_rax3000m-emmc \
 	mt7981_cmcc_rax3000m-nand \
