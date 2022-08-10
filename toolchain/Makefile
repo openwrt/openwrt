@@ -34,8 +34,8 @@ $(curdir)/builddirs := $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_EXTERNAL_TOOLCHAIN)
 # builddir dependencies
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   ifdef CONFIG_USE_MUSL
+    $(curdir)/gcc/initial/compile:=$(curdir)/binutils/compile
     $(curdir)/kernel-headers/compile:=$(curdir)/gcc/initial/compile
-    $(curdir)/$(LIBC)/compile:=$(curdir)/kernel-headers/compile
   else
     $(curdir)/builddirs += $(LIBC)/headers gcc/minimal
     $(curdir)/gcc/minimal/compile:=$(curdir)/binutils/compile
@@ -44,9 +44,8 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
     $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/headers/compile
   endif
 
-  $(curdir)/gcc/initial/compile+=$(curdir)/binutils/compile
-  $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/compile
-  $(curdir)/gcc/final/compile:=$(curdir)/$(LIBC)/compile $(curdir)/kernel-headers/compile
+  $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/compile $(curdir)/kernel-headers/compile
+  $(curdir)/gcc/final/compile:=$(curdir)/$(LIBC)/compile
   $(curdir)/$(LIBC)/utils/compile:=$(curdir)/gcc/final/compile
 endif
 
@@ -85,12 +84,12 @@ $(curdir)/ := .config prereq
 $(curdir)//compile = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk $(tools/stamp-compile)
 
 ifndef DUMP_TARGET_DB
-$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed:
+$(TOOLCHAIN_DIR)/stamp/.gcc_final_installed:
 endif
 
 $(curdir)/install: $(curdir)/compile
 
-$(eval $(call stampfile,$(curdir),toolchain,compile,$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed,,$(TOOLCHAIN_DIR)))
+$(eval $(call stampfile,$(curdir),toolchain,compile,$(TOOLCHAIN_DIR)/stamp/.gcc_final_installed,,$(TOOLCHAIN_DIR)))
 $(eval $(call stampfile,$(curdir),toolchain,check,$(TMP_DIR)/.build))
 $(eval $(call subdir,$(curdir)))
 
