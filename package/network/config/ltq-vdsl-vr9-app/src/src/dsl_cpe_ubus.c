@@ -153,8 +153,9 @@ static inline void m_str(const char *id, const char *value) {
 	blobmsg_add_string(&b, id, value);
 }
 
-static inline void m_db(const char *id, int value) {
-	m_double(id, (double)value / 10);
+static inline void m_db(const char *id, int value, int invalid) {
+	if (value != invalid)
+		m_double(id, (double)value / 10);
 }
 
 static inline void m_array(const char *id, const uint8_t *value, uint8_t len) {
@@ -595,11 +596,12 @@ static void g997_channel_status(int fd, DSL_AccessDir_t direction) {
 static void g997_line_status(int fd, DSL_AccessDir_t direction) {
 	IOCTL_DIR_DELT(DSL_G997_LineStatus_t, DSL_FIO_G997_LINE_STATUS_GET, direction, DSL_DELT_DATA_SHOWTIME);
 
-	m_db("latn", out.data.LATN);
-	m_db("satn", out.data.SATN);
-	m_db("snr", out.data.SNR);
-	m_db("actps", out.data.ACTPS);
-	m_db("actatp", out.data.ACTATP);
+	// invalid value indicators taken from drv_dsl_cpe_api_g997.h
+	m_db("latn", out.data.LATN, 1271);
+	m_db("satn", out.data.SATN, 1271);
+	m_db("snr", out.data.SNR, -641);
+	m_db("actps", out.data.ACTPS, -901);
+	m_db("actatp", out.data.ACTATP, -512);
 	m_u32("attndr", out.data.ATTNDR);
 }
 
