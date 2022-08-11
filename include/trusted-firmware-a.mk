@@ -72,10 +72,13 @@ define Build/Configure/Trusted-Firmware-A
 	$(INSTALL_DIR) $(STAGING_DIR)/usr/include
 endef
 
+DTC=$(wildcard $(LINUX_DIR)/scripts/dtc/dtc)
+
 define Build/Compile/Trusted-Firmware-A
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CROSS_COMPILE=$(TARGET_CROSS) \
 		OPENSSL_DIR=$(STAGING_DIR_HOST) \
+		$(if $(DTC),DTC="$(DTC)") \
 		PLAT=$(PLAT) \
 		BUILD_STRING="OpenWrt v$(PKG_VERSION)-$(PKG_RELEASE) ($(VARIANT))" \
 		$(TFA_MAKE_FLAGS)
