@@ -27,6 +27,14 @@ define Device/d-link_dgs-1210
 	dlink-version | dlink-headers
 endef
 
+define Device/d-link_dgs-1210-10mp
+  $(Device/d-link_dgs-1210)
+  SOC := rtl8380
+  DEVICE_MODEL := DGS-1210-10MP
+  DEVICE_PACKAGES += realtek-poe
+endef
+TARGET_DEVICES += d-link_dgs-1210-10mp
+
 define Device/d-link_dgs-1210-10p
   $(Device/d-link_dgs-1210)
   DEVICE_MODEL := DGS-1210-10P
