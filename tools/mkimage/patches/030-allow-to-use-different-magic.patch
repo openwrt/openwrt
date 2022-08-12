@@ -50,6 +50,15 @@ This patch makes it possible to set a custom image magic.
  			break;
 --- a/tools/default_image.c
 +++ b/tools/default_image.c
+@@ -56,7 +56,7 @@ static int image_verify_header(unsigned
+ 	 */
+ 	memcpy(hdr, ptr, sizeof(image_header_t));
+ 
+-	if (be32_to_cpu(hdr->ih_magic) != IH_MAGIC) {
++	if (be32_to_cpu(hdr->ih_magic) != params->magic) {
+ 		debug("%s: Bad Magic Number: \"%s\" is no valid image\n",
+ 		      params->cmdname, params->imagefile);
+ 		return -FDT_ERR_BADMAGIC;
 @@ -120,7 +120,7 @@ static void image_set_header(void *ptr,
  	}
  
