@@ -92,7 +92,7 @@ $(eval $(call KernelPackage,input-gpio-keys))
 define KernelPackage/input-gpio-keys-polled
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Polled GPIO key support
-  DEPENDS:=@GPIO_SUPPORT +LINUX_5_10:kmod-input-polldev
+  DEPENDS:=@GPIO_SUPPORT +kmod-input-core +LINUX_5_10:kmod-input-polldev
   KCONFIG:= \
 	CONFIG_KEYBOARD_GPIO_POLLED \
 	CONFIG_INPUT_KEYBOARD=y
