@@ -6,6 +6,7 @@
 #
 include $(TOPDIR)/rules.mk
 
+# when bumping major version, also update cmake_minimum_required() in CMakeLists.txt
 PKG_NAME:=cmake
 PKG_VERSION:=3.22.3
 PKG_RELEASE:=1

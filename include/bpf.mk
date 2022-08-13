@@ -6,11 +6,11 @@ CLANG_MIN_VER:=12
 ifneq ($(CONFIG_USE_LLVM_HOST),)
   BPF_TOOLCHAIN_HOST_PATH:=$(call qstrip,$(CONFIG_BPF_TOOLCHAIN_HOST_PATH))
   ifneq ($(BPF_TOOLCHAIN_HOST_PATH),)
-    BPF_PATH:=$(BPF_TOOLCHAIN_HOST_PATH)/bin:$(PATH)
+    BPF_PATH:=$(BPF_TOOLCHAIN_HOST_PATH)/bin
   else
     BPF_PATH:=$(PATH)
   endif
-  CLANG:=$(firstword $(shell PATH='$(BPF_PATH)' command -v clang clang-13 clang-12 clang-11))
+  CLANG:=$(firstword $(shell $(call find_bin,'clang*',$(BPF_PATH))))
   LLVM_VER:=$(subst clang,,$(notdir $(CLANG)))
 endif
 ifneq ($(CONFIG_USE_LLVM_PREBUILT),)
@@ -48,7 +48,7 @@ BPF_KERNEL_INCLUDE := \
 	-include linux/kconfig.h -include asm_goto_workaround.h
 
 BPF_CFLAGS := \
-	$(BPF_KERNEL_INCLUDE) -I$(PKG_BUILD_DIR) \
+	$(BPF_KERNEL_INCLUDE) -I$(PKG_SOURCE_DIR) \
 	-D__KERNEL__ -D__BPF_TRACING__ -DCONFIG_GENERIC_CSUM \
 	-D__TARGET_ARCH_${BPF_KARCH} \
 	-m$(if $(CONFIG_BIG_ENDIAN),big,little)-endian \

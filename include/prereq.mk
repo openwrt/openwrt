@@ -9,7 +9,7 @@ prereq:
 	if [ -f $(TMP_DIR)/.prereq-error ]; then \
 		echo; \
 		cat $(TMP_DIR)/.prereq-error; \
-		rm -f $(TMP_DIR)/.prereq-error; \
+		$(RM) $(TMP_DIR)/.prereq-error; \
 		echo; \
 		false; \
 	fi
@@ -27,9 +27,11 @@ define Require
     prereq: prereq-$(1)
 
     prereq-$(1): $(if $(PREREQ_PREV),prereq-$(PREREQ_PREV)) FORCE
-		printf "Checking '$(1)'... "
+		printf "Checking '$(subst *,,$(1))'... "
 		if $(NO_TRACE_MAKE) -f $(firstword $(MAKEFILE_LIST)) check-$(1) >/dev/null 2>/dev/null; then \
 			echo 'ok.'; \
+		elif $(NO_TRACE_MAKE) -f $(firstword $(MAKEFILE_LIST)) check-$(1) >/dev/null 2>/dev/null; then \
+			echo 'updated.'; \
 		else \
 			echo 'failed.'; \
 			echo "$(PKG_NAME): $(strip $(2))" >> $(TMP_DIR)/.prereq-error; \
@@ -63,28 +65,25 @@ define RequireHeader
   $$(eval $$(call Require,$(1),$(2)))
 endef
 
-define CleanupPython2
-  define Require/python2-cleanup
-	if [ -f "$(STAGING_DIR_HOST)/bin/python" ] && \
-		$(STAGING_DIR_HOST)/bin/python -V 2>&1 | \
-		grep -q 'Python 2'; then \
-			rm $(STAGING_DIR_HOST)/bin/python; \
-	fi
-  endef
-
-  $$(eval $$(call Require,python2-cleanup))
-endef
-
-define QuoteHostCommand
-'$(subst ','"'"',$(strip $(1)))'
-endef
-
 # 1: display name
 # 2: failure message
 # 3: test
+# 4+ alternatives (optional)
 define TestHostCommand
   define Require/$(1)
-	($(3)) >/dev/null 2>/dev/null
+	$(if $(8),($(8) || $(7) || $(6) || $(5) || $(4) || $(3)), \
+		$(if $(7),($(7) || $(6) || $(5) || $(4) || $(3)), \
+			$(if $(6),($(6) || $(5) || $(4) || $(3)), \
+				$(if $(5),($(5) || $(4) || $(3)), \
+					$(if $(4),($(4) || $(3)), \
+						$(if $(3),($(3)), \
+							 exit 1 ; \
+						) \
+					) \
+				) \
+			) \
+		) \
+	) >/dev/null 2>/dev/null
   endef
 
   $$(eval $$(call Require,$(1),$(2)))
@@ -95,21 +94,56 @@ endef
 # 3+: candidates
 define SetupHostCommand
   define Require/$(1)
-	[ -f "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0; \
-	for cmd in $(call QuoteHostCommand,$(3)) $(call QuoteHostCommand,$(4)) \
-	           $(call QuoteHostCommand,$(5)) $(call QuoteHostCommand,$(6)) \
-	           $(call QuoteHostCommand,$(7)) $(call QuoteHostCommand,$(8)) \
-	           $(call QuoteHostCommand,$(9)) $(call QuoteHostCommand,$(10)) \
-	           $(call QuoteHostCommand,$(11)) $(call QuoteHostCommand,$(12)); do \
+	mkdir -p "$(STAGING_DIR_HOST)/bin"; \
+	for cmd in '$(call aescape,$(3))' '$(call aescape,$(4))' \
+	           '$(call aescape,$(5))' '$(call aescape,$(6))' \
+	           '$(call aescape,$(7))' '$(call aescape,$(8))' \
+	           '$(call aescape,$(9))' '$(call aescape,$(10))' \
+	           '$(call aescape,$(11))' '$(call aescape,$(12))'; do \
 		if [ -n "$$$$$$$$cmd" ]; then \
 			bin="$$$$$$$$(PATH="$(subst $(space),:,$(filter-out $(STAGING_DIR_HOST)/%,$(subst :,$(space),$(PATH))))" \
 				command -v "$$$$$$$${cmd%% *}")"; \
 			if [ -x "$$$$$$$$bin" ] && eval "$$$$$$$$cmd" >/dev/null 2>/dev/null; then \
-				mkdir -p "$(STAGING_DIR_HOST)/bin"; \
+				case "$$$$$$$$(ls -dl -- $(STAGING_DIR_HOST)/bin/$(strip $(1)))" in \
+					*" -> $$$$$$$$bin"*) \
+						[ -x "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0 \
+						;; \
+				esac; \
 				ln -sf "$$$$$$$$bin" "$(STAGING_DIR_HOST)/bin/$(strip $(1))"; \
-				exit 0; \
+				exit 1; \
 			fi; \
 		fi; \
+	done; \
+	exit 1
+  endef
+
+  $$(eval $$(call Require,$(1),$(if $(2),$(2),Missing $(1) command)))
+endef
+
+# 1: canonical name
+# 2: failure message
+# 3+: candidates
+define FindHostCommand
+  define Require/$(1)
+	mkdir -p "$(STAGING_DIR_HOST)/bin"; \
+	for bin in $$$$$$$$($(call find_bin,'$(1)',$(MAC_HOST_PATHS))); do \
+		for cmd in '$(call aescape,$(3))' '$(call aescape,$(4))' \
+		           '$(call aescape,$(5))' '$(call aescape,$(6))'; do \
+			if [ -n "$$$$$$$$cmd" ]; then \
+				cmd="$$$$$$$${bin%/*}/$$$$$$$${cmd#$$$$$$$${cmd%%[! ]*}}"; \
+				bin="$$$$$$$${cmd%% *}"; \
+				if [ -x "$$$$$$$$bin" ] && [ ! -L "$$$$$$$$bin" ] && \
+					eval "$$$$$$$$cmd" >/dev/null 2>/dev/null; then \
+					case "$$$$$$$$(ls -dl -- $(STAGING_DIR_HOST)/bin/$(strip $(subst *,,$(1))))" in \
+						*" -> $$$$$$$$bin"*) \
+							[ -x "$(STAGING_DIR_HOST)/bin/$(strip $(subst *,,$(1)))" ] && exit 0 \
+							;; \
+					esac; \
+					ln -sf "$$$$$$$$bin" "$(STAGING_DIR_HOST)/bin/$(strip $(subst *,,$(1)))"; \
+					exit 1; \
+				fi; \
+			fi; \
+		done; \
 	done; \
 	exit 1
   endef

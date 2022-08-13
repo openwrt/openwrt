@@ -20,18 +20,59 @@ endif
 export TMP_DIR:=$(TOPDIR)/tmp
 export TMPDIR:=$(TMP_DIR)
 
-qstrip=$(strip $(subst ",,$(1)))
-#"))
-
 empty:=
-space:= $(empty) $(empty)
+space:=$(empty) $(empty)
+tab:=$(empty)	$(empty)
+under:=_
+
 comma:=,
-merge=$(subst $(space),,$(1))
-confvar=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(MKHASH) md5)
+amper:=&
+aster:=\*
+perct:=\%
+pound:=\#
+slash:=\\
+squote:='
+dquote:="
+
+astrip=$(strip $(subst $(squote),,$(1)))
+qstrip=$(strip $(subst $(dquote),,$(1)))
+
+aescape=$(strip $(subst ','"'"',$(1)))
+qescape=$(strip $(subst ","'"'",$(1)))
+
+cescape=$(strip $(subst $(comma),\$(comma),$(1)))
+eescape=$(strip $(subst $(amper),\$(amper),$(1)))
+
+sescape=$(strip $(subst \,$(slash),$(1)))
+pescape=$(strip $(subst #,$(pound),$(1)))
+
+escsq=$(strip $(subst $(squote),'\$(squote)',$(1)))
+escdq=$(strip $(subst $(dquote),"\$(dquote)",$(1)))
+
+merge=$(strip $(subst $(space),,$(1)))
+escsp=$(strip $(subst $(space),$(under),$(1)))
+esctb=$(strip $(subst $(tab),$(under),$(1)))
+
+# escape ampersand (et), comma, single quote, and backslash for sed
+sed_escape=$(call eescape,$(call cescape,$(call escsq,$(call sescape,$(1)))))
+
+confvar=$(shell echo '$(foreach v,$(1),$(v)=$(call escsq,$($(v))))' | $(MKHASH) md5)
+
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
+
+replace_script= $(FIND) $(1) -name $(2) | $(XARGS) chmod u+wx; \
+		$(FIND) $(1) -name $(2) | $(XARGS) -n 1 cp --remove-destination $(3)/$(2); \
+		$(CP) $(3)/$(2) $(1);
+
+replace_string= $(FIND) $(1) -name $(2) | $(XARGS) -I {} sh -c "grep -q '$(3)' '{}' && $(SED) 's/$(3)/$(4)/g' '{}' || true ;" ;
 
 paren_left = (
 paren_right = )
+
+dir_depth=	$(shell i=$(if $(1),$(1),10); if [ "$$i" -eq 0 ]; then printf '*'; else while [ "$$i" -ne 0 ]; do printf '/*'; i=$$$(paren_left)$(paren_left)i - 1$(paren_right)$(paren_right); done; fi)
+
+find_bin=	find $(if $(3),-L) $(wildcard $(subst :, ,$(2) $(PATH))) -name $(1) -type f '$(paren_left)' -perm -1 -o -perm -10 -o -perm -100 '$(paren_right)' 2>/dev/null ;
+
 chars_lower = a b c d e f g h i j k l m n o p q r s t u v w x y z
 chars_upper = A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 
@@ -53,7 +94,24 @@ __tr_template = $(__tr_head)$$(1)$(__tr_tail)
 $(eval toupper = $(call __tr_template,$(chars_lower),$(chars_upper)))
 $(eval tolower = $(call __tr_template,$(chars_upper),$(chars_lower)))
 
+reverse = $(if $(word 2,$(1)),$(call reverse,$(wordlist 2,$(words $(1)),$(1))) $(firstword $(1)),$(1))
+
 version_abbrev = $(if $(if $(CHECK),,$(DUMP)),$(1),$(shell printf '%.8s' $(1)))
+
+HOST_ARCH_GNU:=$(call qstrip,$(CONFIG_HOST_ARCH_GNU))
+HOST_ARCH_UNAME:=$(call qstrip,$(CONFIG_HOST_ARCH_UNAME))
+
+ifeq ($(HOST_ARCH_GNU),)
+  export GNU_HOST_NAME:=$(GNU_HOST_NAME_GUESS)
+else
+  export GNU_HOST_NAME:=$(subst $(firstword $(subst -, ,$(GNU_HOST_NAME_GUESS))),$(HOST_ARCH_GNU),$(GNU_HOST_NAME_GUESS))
+endif
+
+ifeq ($(HOST_ARCH_UNAME),)
+  export HOST_ARCH:=$(shell uname -m)
+else
+  export HOST_ARCH:=$(HOST_ARCH_UNAME)
+endif
 
 _SINGLE=export MAKEFLAGS=$(space);
 CFLAGS:=
@@ -103,13 +161,12 @@ DEFAULT_SUBDIR_TARGETS:=clean download prepare compile update refresh prereq dis
 
 define DefaultTargets
 $(foreach t,$(DEFAULT_SUBDIR_TARGETS) $(1),
-  .$(t):
-  $(t): .$(t)
-  .PHONY: $(t) .$(t)
+  .$(t): FORCE
+  $(t): .$(t) FORCE
 )
 endef
 
-DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)
+DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)$(if $(DL_MKDIR),/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))$(if $(PKG_RELEASE),-$(PKG_RELEASE)))
 OUTPUT_DIR:=$(if $(call qstrip,$(CONFIG_BINARY_FOLDER)),$(call qstrip,$(CONFIG_BINARY_FOLDER)),$(TOPDIR)/bin)
 BIN_DIR:=$(OUTPUT_DIR)/targets/$(BOARD)/$(SUBTARGET)
 INCLUDE_DIR:=$(TOPDIR)/include
@@ -254,18 +311,23 @@ TARGET_CXX:=$(TARGET_CROSS)g++
 KPATCH:=$(SCRIPT_DIR)/patch-kernel.sh
 SED:=$(STAGING_DIR_HOST)/bin/sed -i -e
 ESED:=$(STAGING_DIR_HOST)/bin/sed -E -i -e
+FLOCK:=$(STAGING_DIR_HOST)/bin/flock
 MKHASH:=$(STAGING_DIR_HOST)/bin/mkhash
-# MKHASH is used in /scripts, so we export it here.
-export MKHASH
+FIND:=$(STAGING_DIR_HOST)/bin/find
+TAR:=$(STAGING_DIR_HOST)/bin/tar
+BASH:=$(STAGING_DIR_HOST)/bin/bash
 CP:=cp -fpR
+MV:=mv -f
+RM:=rm -f
 LN:=ln -sf
 XARGS:=xargs -r
 
-BASH:=bash
-TAR:=tar
-FIND:=find
+# these are used in scripts/, so we export it here.
+export MKHASH FIND TAR
+
 PATCH:=patch
 PYTHON:=python3
+PYTHON_CONFIG:=python3-config
 
 INSTALL_BIN:=install -m0755
 INSTALL_SUID:=install -m4755
@@ -361,17 +423,30 @@ endef
 
 # Execute commands under flock
 # $(1) => The shell expression.
-# $(2) => The lock name. If not given, the global lock will be used.
-ifneq ($(wildcard $(STAGING_DIR_HOST)/bin/flock),)
-  define locked
+# $(2) => The lock name. If not given, lock staging_dir
+define locked
 	SHELL= \
-	flock \
-		$(TMP_DIR)/.$(if $(2),$(strip $(2)),global).flock \
-		-c '$(subst ','\'',$(1))'
-  endef
-else
-  locked=$(1)
-endif
+	$(FLOCK) \
+		$(if $(2),$(strip $(2)),$(STAGING_DIR)) \
+		-c '$(call escsq,$(1))' \
+	$(if $(2),|| (([ -s "$(2)" ] || [ -d "$(2)" ]) || ($(RM) $(2) && exit 1) && exit 1),&& true || false)
+endef
+
+# adapted from Kbuild.include
+dot-target = $(dir $@).$(notdir $@)
+define filechk
+	$(Q)printf "Checking '$@'...";				\
+	set -e;							\
+	mkdir -p $(dir $@);					\
+	trap "$(RM) $(dot-target).tmp" EXIT;			\
+	{ $(filechk_$(1)); } > $(dot-target).tmp;		\
+	if [ ! -r $@ ] || ! cmp -s $@ $(dot-target).tmp; then	\
+		printf '%s\n' " updated";			\
+		$(MV) $(dot-target).tmp $@;			\
+	else 							\
+		printf '%s\n' " done";				\
+	fi;
+endef
 
 # Recursively copy paths into another directory, purge dangling
 # symlinks before.
@@ -379,24 +454,39 @@ endif
 # $(2) => Destination directory
 define file_copy
 	for src_dir in $(sort $(foreach d,$(wildcard $(1)),$(dir $(d)))); do \
-		( cd $$src_dir; find -type f -or -type d ) | \
+		( cd $$src_dir; find -type f -o -type d ) | \
 			( cd $(2); while :; do \
 				read FILE; \
 				[ -z "$$FILE" ] && break; \
 				[ -L "$$FILE" ] || continue; \
 				echo "Removing symlink $(2)/$$FILE"; \
-				rm -f "$$FILE"; \
+				$(RM) "$$FILE"; \
 			done; ); \
 	done; \
 	$(CP) $(1) $(2)
+endef
+
+# POSIX usage of find with -mindepth and -maxdepth
+# $(1) => set of paths to recurse
+# $(2) => conditional statement(s)
+# $(3) => mindepth #
+# $(4) => maxdepth #
+# $(5) => eval expression (-exec)
+# $(6) => if set, do not follow links
+define find_depth
+	( \
+		for path in $(if $(word 2,$(1)),$(wildcard $(1)),$(1)); do \
+			$(FIND) $(if $(6),,-L) $$path '(' '!' -path "$(strip $$path$(call dir_depth,$(4)))" -o -prune ')' $(2) '(' '!' -path "$(if $(3),$(strip $$path$(call dir_depth,$(3))),*)" -o $(if $(5),$(5),-print) ')' ; \
+		done ; \
+	)
 endef
 
 # Calculate sha256sum of any plain file within a given directory
 # $(1) => Input directory
 # $(2) => If set, recurse into subdirectories
 define sha256sums
-	(cd $(1); find . $(if $(2),,-maxdepth 1) -type f -not -name 'sha256sums' -printf "%P\n" | sort | \
-		xargs -r $(MKHASH) -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
+	(cd $(1); find * $(if $(2),,-prune) -type f '!' -name 'sha256sums' | sort | \
+		$(XARGS) $(MKHASH) -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
 endef
 
 # file extension
@@ -437,16 +527,22 @@ FORCE: ;
 check: FORCE
 	@true
 
-val.%:
+val.%: FORCE
 	@$(if $(filter undefined,$(origin $*)),\
 		echo "$* undefined" >&2, \
-		echo '$(subst ','"'"',$($*))' \
+		echo '$(call aescape,$($*))' \
 	)
 
-var.%:
+var.%: FORCE
 	@$(if $(filter undefined,$(origin $*)),\
 		echo "$* undefined" >&2, \
-		echo "$*='"'$(subst ','"'\"'\"'"',$($*))'"'" \
+		echo "$(call qescape,$*='$(call aescape,$($*))')" \
 	)
+
+type.%: FORCE
+	@echo '$(call aescape,$(origin $*))'
+
+host.%: FORCE
+	@echo '$(firstword $(shell $(call find_bin,'$*',$(STAGING_DIR_HOST),1)))'
 
 endif #__rules_inc

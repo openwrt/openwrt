@@ -269,7 +269,7 @@ ifeq ($(DUMP),1)
   ifneq ($(BOARD),)
     TMP_CONFIG:=$(TMP_DIR)/.kconfig-$(call target_conf,$(TARGETID))
     $(TMP_CONFIG): $(LINUX_KCONFIG_LIST)
-		$(LINUX_CONF_CMD) > $@ || rm -f $@
+		$(LINUX_CONF_CMD) > $@ || $(RM) $@
     -include $(TMP_CONFIG)
     .SILENT: $(TMP_CONFIG)
     .PRECIOUS: $(TMP_CONFIG)
@@ -346,8 +346,8 @@ define BuildTargets/DumpCurrent
 	 echo '@@'; \
 	 echo 'Default-Packages: $(DEFAULT_PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES))'; \
 	 $(DUMPINFO)
-	$(if $(CUR_SUBTARGET),$(SUBMAKE) -r --no-print-directory -C image -s DUMP=1 SUBTARGET=$(CUR_SUBTARGET))
-	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) -s DUMP=1 SUBTARGET=$(SUBTARGET); ))
+	$(if $(CUR_SUBTARGET),$(SUBMAKE) -r $(S) -C image DUMP=1 SUBTARGET=$(CUR_SUBTARGET))
+	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) $(S) DUMP=1 SUBTARGET=$(SUBTARGET); ))
 endef
 
 include $(INCLUDE_DIR)/kernel.mk

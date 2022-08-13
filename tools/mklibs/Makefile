@@ -29,7 +29,7 @@ define Host/Install
 endef
 
 define Host/Clean
-       rm -f $(STAGING_DIR_HOST)/bin/mklibs*
+       $(RM) $(STAGING_DIR_HOST)/bin/mklibs*
 endef
 
 $(eval $(call HostBuild))

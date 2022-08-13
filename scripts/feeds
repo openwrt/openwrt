@@ -14,20 +14,20 @@ chdir $ENV{TOPDIR};
 $ENV{GIT_CONFIG_PARAMETERS}="'core.autocrlf=false'";
 $ENV{GREP_OPTIONS}="";
 
-my $mk=`command -v gmake 2>/dev/null`;	# select the right 'make' program
-chomp($mk);		# trim trailing newline
-$mk or $mk = "make";	# default to 'make'
+my $make=`(command -v gmake || command -v make) 2>/dev/null | grep '.*make'`;
+chomp($make);					# trim trailing newline
+$make or $make = "make";			# default to 'make'
+my $mk = $make;					# PATH or name as default make
+
+if ("$ARGV[0]" eq "update" || "$ARGV[0]" eq "install" || "$ARGV[0]" eq "uninstall") {
+	0 == system("$make -s prereq-build OPENWRT_BUILD=") or die "check build prerequisites with 'make prereq-build'";
+	$mk=`$make -s host.make`;		# use symlink for make
+	chomp($mk);				# trim trailing newline
+}
 
 # check version of make
 my @mkver = split /\s+/, `$mk -v`, 4;
-my $valid_mk = 1;
-$mkver[0] =~ /^GNU/ or $valid_mk = 0;
-$mkver[1] =~ /^Make/ or $valid_mk = 0;
-
-my ($mkv1, $mkv2) = split /\./, $mkver[2];
-($mkv1 >= 4 || ($mkv1 == 3 && $mkv2 >= 81)) or $valid_mk = 0;
-
-$valid_mk or die "Unsupported version of make found: $mk\n";
+$mkver[0] =~ /^GNU/ or die "Unsupported version of make found: $mk\n";
 
 my @feeds;
 my %build_packages;
@@ -127,7 +127,6 @@ sub update_index($)
 	-d "./feeds/$name.tmp" or mkdir "./feeds/$name.tmp" or return 1;
 	-d "./feeds/$name.tmp/info" or mkdir "./feeds/$name.tmp/info" or return 1;
 
-	system("$mk -s prepare-mk OPENWRT_BUILD= TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
 	system("$mk -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"packageinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"package\" SCAN_DEPTH=5 SCAN_EXTRA=\"\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
 	system("$mk -s -f include/scan.mk IS_TTY=1 SCAN_TARGET=\"targetinfo\" SCAN_DIR=\"feeds/$name\" SCAN_NAME=\"target\" SCAN_DEPTH=5 SCAN_EXTRA=\"\" SCAN_MAKEOPTS=\"TARGET_BUILD=1\" TMP_DIR=\"$ENV{TOPDIR}/feeds/$name.tmp\"");
 	system("ln -sf $name.tmp/.packageinfo ./feeds/$name.index");

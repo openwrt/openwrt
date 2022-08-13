@@ -10,7 +10,7 @@ autoconf_bool = $(patsubst %,$(if $($(1)),--enable,--disable)-%,$(2))
 # delete *.la-files from staging_dir - we can not yet remove respective lines within all package
 # Makefiles, since backfire still uses libtool v1.5.x which (may) require those files
 define libtool_remove_files
-	find $(1) -name '*.la' | $(XARGS) rm -f;
+	find $(1) -name '*.la' | $(XARGS) $(RM);
 endef
 
 
@@ -32,10 +32,10 @@ AM_TOOL_PATHS:= \
 # 5: extra m4 dirs
 define autoreconf
 	(cd $(1); \
-		$(patsubst %,rm -f %;,$(2)) \
+		$(patsubst %,$(RM) %;,$(2)) \
 		$(foreach p,$(3), \
 			if [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
-				[ -d $(p)/autom4te.cache ] && rm -rf $(p)/autom4te.cache; \
+				[ -d $(p)/autom4te.cache ] && $(RM) -r $(p)/autom4te.cache; \
 				[ -e $(p)/config.rpath ] || \
 						ln -s $(SCRIPT_DIR)/config.rpath $(p)/config.rpath; \
 				touch NEWS AUTHORS COPYING ABOUT-NLS ChangeLog; \
@@ -53,8 +53,8 @@ endef
 
 # 1: build dir
 define patch_libtool
-	@(cd $(1); \
-		for lt in $$$$($$(STAGING_DIR_HOST)/bin/find . -name ltmain.sh); do \
+	$(Q)(cd $(1); \
+		for lt in $$$$(find . -name ltmain.sh); do \
 			lt_version="$$$$($$(STAGING_DIR_HOST)/bin/sed -ne 's,^[[:space:]]*VERSION="\?\([0-9]\.[0-9]\+\).*,\1,p' $$$$lt)"; \
 			case "$$$$lt_version" in \
 				1.5|2.2|2.4) echo "autotools.mk: Found libtool v$$$$lt_version - applying patch to $$$$lt"; \
@@ -67,8 +67,8 @@ endef
 
 define set_libtool_abiver
 	sed -i \
-		-e 's,^soname_spec=.*,soname_spec="\\$$$${libname}\\$$$${shared_ext}.$(PKG_ABI_VERSION)",' \
-		-e 's,^library_names_spec=.*,library_names_spec="\\$$$${libname}\\$$$${shared_ext}.$(PKG_ABI_VERSION) \\$$$${libname}\\$$$${shared_ext}",' \
+		-e 's,^soname_spec=.*,$(call sed_escape,soname_spec="\$$$${libname}\$$$${shared_ext}.$(PKG_ABI_VERSION)"),' \
+		-e 's,^library_names_spec=.*,$(call sed_escape,library_names_spec="\$$$${libname}\$$$${shared_ext}.$(PKG_ABI_VERSION) \$$$${libname}\$$$${shared_ext}"),' \
 		$(PKG_BUILD_DIR)/libtool
 endef
 

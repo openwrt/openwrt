@@ -11,7 +11,7 @@ LZMA_TEXT_START := 0x81800000		# 32MB - 8MB
 DEVICE_VARS += CHIP_ID DEVICE_LOADADDR
 
 define Build/Compile
-	rm -rf $(KDIR)/relocate
+	$(RM) -r $(KDIR)/relocate
 	$(CP) ../../generic/image/relocate $(KDIR)
 	$(MAKE) -C $(KDIR)/relocate \
 		CACHELINE_SIZE=16 \
@@ -22,7 +22,7 @@ endef
 
 ### Kernel scripts ###
 define Build/loader-lzma
-	@rm -rf $@.src
+	$(Q)$(RM) -r $@.src
 	$(MAKE) -C lzma-loader \
 		CHIP_ID=$(CHIP_ID) \
 		KERNEL_ADDR=$(KERNEL_LOADADDR) \
@@ -35,8 +35,8 @@ define Build/loader-lzma
 		RAMSIZE=$(RAMSIZE) \
 		TARGET_DIR="$(dir $@)" \
 		compile loader.$(1)
-	@mv "$@.$(1)" "$@"
-	@rm -rf $@.src
+	$(Q)$(MV) "$@.$(1)" "$@"
+	$(Q)$(RM) -r $@.src
 endef
 
 define Build/lzma-cfe
@@ -48,7 +48,7 @@ define Build/lzma-cfe
 	# Strip out the length, CFE doesn't like this
 	dd if=$@ of=$@.new bs=5 count=1
 	dd if=$@ of=$@.new ibs=13 obs=5 skip=1 seek=1 conv=notrunc
-	@mv $@.new $@
+	$(Q)$(MV) $@.new $@
 endef
 
 define Build/relocate-kernel
@@ -61,7 +61,7 @@ define Build/relocate-kernel
 		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
 		cat $@ \
 	) > $@.relocate
-	@mv $@.relocate $@
+	$(Q)$(MV) $@.relocate $@
 endef
 
 ### Image scripts ###
@@ -102,9 +102,9 @@ define Build/cfe-jffs2
 endef
 
 define Build/cfe-jffs2-cferam
-	mv $@ $@.kernel
+	$(MV) $@ $@.kernel
 
-	rm -rf $@-cferam
+	$(RM) -r $@-cferam
 	mkdir -p $@-cferam
 
 	# CFE ROM checks JFFS2 dirent version of cferam.
@@ -130,11 +130,11 @@ define Build/cfe-jffs2-cferam
 
 	# Append kernel
 	dd if=$@.kernel >> $@
-	rm -f $@.kernel
+	$(RM) $@.kernel
 endef
 
 define Build/cfe-jffs2-kernel
-	rm -rf $@-kernel
+	$(RM) -r $@-kernel
 	mkdir -p $@-kernel
 
 	# CFE RAM checks JFFS2 dirent version of vmlinux.
@@ -165,7 +165,7 @@ define Build/cfe-jffs2-kernel
 endef
 
 define Build/cfe-part-tag
-	mv $@ $@.part
+	$(MV) $@ $@.part
 
 	$(TOPDIR)/scripts/cfe-partition-tag.py \
 		--input-file $@.part \
@@ -191,8 +191,8 @@ define Build/cfe-sercomm-crypto
 		-K `cat $@.key` \
 		-iv 00000000000000000000000000000000
 	dd if=$@.enc >> $@.ser
-	mv $@.ser $@
-	rm -f $@.enc $@.key
+	$(MV) $@.ser $@
+	$(RM) $@.enc $@.key
 endef
 
 define Build/cfe-sercomm-load
@@ -201,7 +201,7 @@ define Build/cfe-sercomm-load
 		--output-file $@.new \
 		--pid "$(SERCOMM_PID)"
 
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/cfe-sercomm-part
@@ -212,7 +212,7 @@ define Build/cfe-sercomm-part
 		--part-version OpenWrt \
 		--rootfs-version $(SERCOMM_VERSION)
 
-	rm -rf $@-rootfs_lib
+	$(RM) -r $@-rootfs_lib
 	mkdir -p $@-rootfs_lib
 	echo $(SERCOMM_VERSION) > $@-rootfs_lib/lib_ver
 	$(call Build/cfe-jffs2,$@-rootfs_lib)
@@ -223,7 +223,7 @@ define Build/cfe-sercomm-part
 		--part-name rootfs_lib \
 		--part-version $(SERCOMM_VERSION)
 
-	mv $@.kernel_rootfs $@
+	$(MV) $@.kernel_rootfs $@
 	dd if=$@.rootfs_lib >> $@
 endef
 
@@ -235,7 +235,7 @@ define Build/cfe-wfi-tag
 		--chip-id $(CFE_WFI_CHIP_ID) \
 		--flash-type $(CFE_WFI_FLASH_TYPE) \
 		$(if $(CFE_WFI_FLAGS),--flags $(CFE_WFI_FLAGS))
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 ### Device scripts ###

@@ -69,8 +69,8 @@ endef
 
 ifneq ($(PKG_NAME),toolchain)
   define CheckDependencies
-	@( \
-		rm -f $(PKG_INFO_DIR)/$(1).missing; \
+	$(Q)( \
+		$(RM) $(PKG_INFO_DIR)/$(1).missing; \
 		( \
 			export \
 				READELF=$(TARGET_CROSS)readelf \
@@ -102,7 +102,7 @@ ifeq ($(DUMP),)
     ABIV_$(1):=$(call FormatABISuffix,$(1),$(ABI_VERSION))
     PDIR_$(1):=$(call FeedPackageDir,$(1))
     IPKG_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).ipk
-    IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
+    IDIR_$(1):=$(PKG_SOURCE_DIR)/ipkg-$(PKGARCH)/$(1)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
 
     TARGET_VARIANT:=$$(if $(ALL_VARIANTS),$$(if $$(VARIANT),$$(filter-out *,$$(VARIANT)),$(firstword $(ALL_VARIANTS))))
@@ -117,7 +117,7 @@ ifeq ($(DUMP),)
     ifdef do_install
       ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
         IPKGS += $(1)
-        $(_pkg_target)compile: $$(IPKG_$(1)) $(PKG_INFO_DIR)/$(1).provides $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
+        $(_pkg_target)compile: $$(IPKG_$(1)) $(PKG_INFO_DIR)/$(1).provides $(PKG_SOURCE_DIR)/.pkgdir/$(1).installed
         prepare-package-install: $$(IPKG_$(1))
         compile: $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
       else
@@ -147,15 +147,15 @@ ifeq ($(DUMP),)
     $(eval $(call BuildIPKGVariable,$(1),prerm,-pkg,1))
     $(eval $(call BuildIPKGVariable,$(1),postrm,,1))
 
-    $(PKG_BUILD_DIR)/.pkgdir/$(1).installed : export PATH=$$(TARGET_PATH_PKG)
-    $(PKG_BUILD_DIR)/.pkgdir/$(1).installed: $(STAMP_BUILT)
-	rm -rf $$@ $(PKG_BUILD_DIR)/.pkgdir/$(1)
-	mkdir -p $(PKG_BUILD_DIR)/.pkgdir/$(1)
-	$(call Package/$(1)/install,$(PKG_BUILD_DIR)/.pkgdir/$(1))
-	$(call Package/$(1)/install_lib,$(PKG_BUILD_DIR)/.pkgdir/$(1))
+    $(PKG_SOURCE_DIR)/.pkgdir/$(1).installed: export PATH=$$(TARGET_PATH_PKG)
+    $(PKG_SOURCE_DIR)/.pkgdir/$(1).installed: $(STAMP_BUILT)
+	$(RM) -r $$@ $(PKG_SOURCE_DIR)/.pkgdir/$(1)
+	mkdir -p $(PKG_SOURCE_DIR)/.pkgdir/$(1)
+	$(call Package/$(1)/install,$(PKG_SOURCE_DIR)/.pkgdir/$(1))
+	$(call Package/$(1)/install_lib,$(PKG_SOURCE_DIR)/.pkgdir/$(1))
 	touch $$@
 
-    $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
+    $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(PKG_SOURCE_DIR)/.pkgdir/$(1).installed
 	mkdir -p $(STAGING_DIR_ROOT)/stamp
 	$(if $(ABI_VERSION),echo '$(ABI_VERSION)' | cmp -s - $(PKG_INFO_DIR)/$(1).version || { \
 		echo '$(ABI_VERSION)' > $(PKG_INFO_DIR)/$(1).version; \
@@ -163,7 +163,10 @@ ifeq ($(DUMP),)
 			cp $(PKG_INFO_DIR)/$(1).version $(PKG_INFO_DIR)/$(pkg).version; \
 		) \
 	} )
-	$(call locked,$(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(STAGING_DIR_ROOT)/,root-copy)
+	$(call locked, \
+		$(CP) $(PKG_SOURCE_DIR)/.pkgdir/$(1)/. $(STAGING_DIR_ROOT)/;, \
+		$(STAGING_DIR_ROOT) \
+	)
 	touch $$@
 
     Package/$(1)/DEPENDS := $$(call mergelist,$$(foreach dep,$$(filter-out @%,$$(IDEPEND_$(1))),$$(dep)$$(call GetABISuffix,$$(dep))))
@@ -199,15 +202,15 @@ $(_endef)
     $$(IPKG_$(1)) : export PATH=$$(TARGET_PATH_PKG)
     $$(IPKG_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
     $(PKG_INFO_DIR)/$(1).provides $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
-	@rm -rf $$(IDIR_$(1)); \
+	$(Q)$(RM) -r $$(IDIR_$(1)); \
 		$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	$(if $(Package/$(1)/install-overlay),mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/rootfs-overlay)
 	$(call Package/$(1)/install-overlay,$$(IDIR_$(1))/rootfs-overlay)
-	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' -o -name '*~'| $(XARGS) rm -rf
-	@( \
-		find $$(IDIR_$(1)) -name lib\*.so\* -or -name \*.ko | awk -F/ '{ print $$$$NF }'; \
+	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' -o -name '*~'| $(XARGS) $(RM) -r
+	$(Q)( \
+		find $$(IDIR_$(1)) -name lib\*.so\* -o -name \*.ko | awk -F/ '{ print $$$$NF }'; \
 		for file in $$(patsubst %,$(PKG_INFO_DIR)/%.provides,$$(IDEPEND_$(1))); do \
 			if [ -f "$$$$file" ]; then \
 				cat $$$$file; \
@@ -251,7 +254,7 @@ $(_endef)
 	)
 
     ifneq ($$(KEEP_$(1)),)
-		@( \
+		$(Q)( \
 			keepfiles=""; \
 			for x in $$(KEEP_$(1)); do \
 				[ -f "$$(IDIR_$(1))/$$$$x" ] || keepfiles="$$$${keepfiles:+$$$$keepfiles }$$$$x"; \
@@ -265,7 +268,7 @@ $(_endef)
 
 	$(INSTALL_DIR) $$(PDIR_$(1))
 	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/bash $(SCRIPT_DIR)/ipkg-build -m "$(FILE_MODES)" $$(IDIR_$(1)) $$(PDIR_$(1))
-	@[ -f $$(IPKG_$(1)) ]
+	$(Q)[ -f $$(IPKG_$(1)) ]
 
     $(1)-clean:
 	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))

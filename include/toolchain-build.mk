@@ -11,13 +11,13 @@ BUILD_DIR_HOST:=$(BUILD_DIR_TOOLCHAIN)
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/hardening.mk
 
-HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared
+HOST_STAMP_PREPARED=$(HOST_SOURCE_DIR)/.prepared
 
 define FixupLibdir
 	if [ -d $(1)/lib64 -a \! -L $(1)/lib64 ]; then \
 		mkdir -p $(1)/lib; \
-		mv $(1)/lib64/* $(1)/lib/; \
-		rm -rf $(1)/lib64; \
+		$(MV) $(1)/lib64/* $(1)/lib/; \
+		$(RM) -r $(1)/lib64; \
 		ln -sf lib $(1)/lib64; \
 	fi
 endef

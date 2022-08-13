@@ -46,8 +46,8 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/mkimage
-	rm -f $(STAGING_DIR_HOST)/bin/mkenvimage
+	$(RM) $(STAGING_DIR_HOST)/bin/mkimage
+	$(RM) $(STAGING_DIR_HOST)/bin/mkenvimage
 endef
 
 $(eval $(call HostBuild))

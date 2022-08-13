@@ -8,7 +8,7 @@ endef
 
 define Build/at91-sdcard
   $(if $(findstring ext4,$@), \
-  rm -f $@.boot
+  $(RM) $@.boot
   mkfs.fat -C $@.boot $(FAT32_BLOCKS)
 
   mcopy -i $@.boot \
@@ -51,7 +51,7 @@ define Build/at91-sdcard
 
   gzip -nc9 $@.img > $@
 
-  rm -f $@.img $@.boot $@-uboot.env $@-uboot-env.txt)
+  $(RM) $@.img $@.boot $@-uboot.env $@-uboot-env.txt)
 endef
 
 define Device/microchip_sama5d2-icp

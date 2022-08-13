@@ -27,7 +27,7 @@ endef
 
 define Build/mkbrncmdline
 	mkbrncmdline -i $@ -o $@.new BRN-BOOT
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/mkbrnimg
@@ -45,12 +45,12 @@ define Build/fullimage
 		-e 0x00 -n 'OpenWrt fullimage' \
 		-d $@.tmp $@
 
-	rm $(IMAGE_ROOTFS).new
-	rm $@.tmp
+	$(RM) $(IMAGE_ROOTFS).new
+	$(RM) $@.tmp
 endef
 
 define Build/loader-okli-compile
-	rm -rf $@.src
+	$(RM) -r $@.src
 	$(MAKE) -C lzma-loader \
 		PKG_BUILD_DIR="$@.src" \
 		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
@@ -61,13 +61,13 @@ define Build/loader-okli-compile
 		FLASH_OFFS=$(LOADER_FLASH_OFFS) \
 		FLASH_MAX=0x0 \
 		$(1) compile loader.bin
-	mv "$@.bin" "$@"
-	rm -rf $@.src
+	$(MV) "$@.bin" "$@"
+	$(RM) -r $@.src
 endef
 
 define Build/prepend-loader-okli
 	cat "$(KDIR)/loader-$(word 1,$(1)).bin" "$@" >> "$@.new"
-	mv "$@.new" "$@"
+	$(MV) "$@.new" "$@"
 endef
 
 DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY LOADER_FLASH_OFFS

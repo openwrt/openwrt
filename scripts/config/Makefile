@@ -2,6 +2,8 @@
 # ===========================================================================
 # OpenWrt configuration targets
 
+include $(TOPDIR)/rules.mk
+
 .PHONY: clean all
 all: conf mconf
 clean:
@@ -15,30 +17,13 @@ clean-files	:= zconf.tab.c zconf.lex.c zconf.hash.c .tmp_qtcheck
 # ===========================================================================
 # Variables needed by the upstream Makefile
 
-# Avoids displaying 'UPD mconf-cfg' in an otherwise quiet make menuconfig
-kecho:=true
-
 CONFIG_SHELL:=$(SHELL)
 srctree:=.
 src:=.
 obj:=.
-Q:=$(if $V,,@)
 cmd = $(cmd_$(1))
 
 # some definitions taken from ../Kbuild.include
-dot-target = $(dir $@).$(notdir $@)
-squote  := '
-escsq = $(subst $(squote),'\$(squote)',$1)
-define filechk
-	$(Q)set -e;						\
-	mkdir -p $(dir $@);					\
-	trap "rm -f $(dot-target).tmp" EXIT;			\
-	{ $(filechk_$(1)); } > $(dot-target).tmp;		\
-	if [ ! -r $@ ] || ! cmp -s $@ $(dot-target).tmp; then	\
-		$(kecho) '  UPD     $@';			\
-		mv -f $(dot-target).tmp $@;			\
-	fi
-endef
 cmd-check = $(if $(strip $(cmd_$@)),,1)
 make-cmd = $(call escsq,$(subst $(pound),$$(pound),$(subst $$,$$$$,$(cmd_$(1)))))
 newer-prereqs = $(filter-out $(PHONY),$?)
@@ -114,8 +99,6 @@ clean-files += *conf-cfg
 # full upstream Makefile
 
 clean-files += $(targets) $(hostprogs)
-
-FORCE:
 
 ifdef BUILD_SHIPPED_FILES
 shipped-files := lexer.lex.c parser.tab.c parser.tab.h

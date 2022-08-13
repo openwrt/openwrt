@@ -25,7 +25,7 @@ BUNDLER_COMMAND := PATH=$(BUNDLER_PATH) $(XARGS) $(SCRIPT_DIR)/bundle-libraries.
 all: compile
 
 $(BIN_DIR)/$(IB_NAME).tar.xz: clean
-	rm -rf $(PKG_BUILD_DIR)
+	$(RM) -r $(PKG_BUILD_DIR)
 	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host/lib \
 		$(PKG_BUILD_DIR)/target $(PKG_BUILD_DIR)/scripts $(IB_DTSDIR)
 	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
@@ -58,7 +58,7 @@ endif
 ifeq ($(CONFIG_BUILDBOT),)
   ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.ipk' -or -name 'kernel_*.ipk' -or -name 'kmod-*.ipk' \) \
+		'(' -name 'libc_*.ipk' -o -name 'kernel_*.ipk' -o -name 'kmod-*.ipk' ')' \
 		-exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
   else
 	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.ipk' \
@@ -66,7 +66,7 @@ ifeq ($(CONFIG_BUILDBOT),)
   endif
 else
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.ipk' -or -name 'kernel_*.ipk' \) \
+		'(' -name 'libc_*.ipk' -o -name 'kernel_*.ipk' ')' \
 		-exec $(CP) -t $(IB_LDIR)/ {} +
 endif
 
@@ -82,14 +82,14 @@ endif
 	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
 		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
 	fi
-	rm -rf \
+	$(RM) -r \
 		$(PKG_BUILD_DIR)/target/linux/*/files{,-*} \
 		$(PKG_BUILD_DIR)/target/linux/*/patches{,-*} \
 		$(PKG_BUILD_DIR)/target/linux/generic/{pending,backport,hack}{,-*}
 	-cp $(KERNEL_BUILD_DIR)/* $(IB_KDIR)/ # don't copy subdirectories here
 	-cp $(LINUX_DIR)/.config $(IB_LDIR)/
-	rm -f $(IB_KDIR)/root.*
-	rm -f $(IB_KDIR)/vmlinux.debug
+	$(RM) $(IB_KDIR)/root.*
+	$(RM) $(IB_KDIR)/vmlinux.debug
 	if [ -x $(LINUX_DIR)/scripts/dtc/dtc ]; then \
 		$(INSTALL_DIR) $(IB_LDIR)/scripts/dtc; \
 		$(INSTALL_BIN) $(LINUX_DIR)/scripts/dtc/dtc $(IB_LDIR)/scripts/dtc/dtc; \
@@ -100,8 +100,8 @@ endif
 	$(SED) 's,^# REVISION:=.*,REVISION:=$(REVISION),g' $(PKG_BUILD_DIR)/include/version.mk
 	$(SED) 's,^# SOURCE_DATE_EPOCH:=.*,SOURCE_DATE_EPOCH:=$(SOURCE_DATE_EPOCH),g' $(PKG_BUILD_DIR)/include/version.mk
 	$(SED) '/LINUX_VERMAGIC:=/ { s,unknown,$(LINUX_VERMAGIC),g }' $(PKG_BUILD_DIR)/include/kernel.mk
-	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn \
-	  | $(XARGS) rm -rf
+	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn | \
+	  $(XARGS) $(RM) -r
 	$(INSTALL_DIR) $(IB_IDIR)
 	-$(CP) $(STAGING_DIR_IMAGE)/* $(IB_IDIR)/
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/staging_dir/host/bin
@@ -121,4 +121,4 @@ compile: $(BIN_DIR)/$(IB_NAME).tar.xz
 install: compile
 
 clean: FORCE
-	rm -rf $(PKG_BUILD_DIR) $(BIN_DIR)/$(IB_NAME).tar.xz
+	$(RM) -r $(PKG_BUILD_DIR) $(BIN_DIR)/$(IB_NAME).tar.xz

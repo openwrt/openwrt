@@ -37,7 +37,7 @@ define Build/export-dtb
 endef
 
 define Build/MuImage-initramfs
-	rm -rf $@.fakerd $@.new
+	$(RM) -r $@.fakerd $@.new
 
 	dd if=/dev/zero of=$@.fakerd bs=32 count=1 conv=sync
 
@@ -61,13 +61,13 @@ define Build/MuImage-initramfs
 	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) -O linux -T multi \
 		-C $(1) -a $(KERNEL_LOADADDR) -e $(KERNEL_ENTRY) \
 		-n '$(BOARD_NAME) initramfs' -d $@:$@.fakerd:$@.dtb $@.new
-	mv $@.new $@
-	rm -rf $@.fakerd
+	$(MV) $@.new $@
+	$(RM) -r $@.fakerd
 endef
 
 define Build/prepend-dtb
 	cat "$@.dtb.uimage" "$@" > "$@.new"
-	mv "$@.new" "$@"
+	$(MV) "$@.new" "$@"
 endef
 
 define Image/cpiogz

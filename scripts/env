@@ -53,15 +53,18 @@ ask_bool() {
 }
 
 env_init() {
+	make prereq-build >/dev/null 2>/dev/null || {
+		echo "check build prerequisites from top directory with 'make prereq-build'"
+		error "must be run from top directory of openwrt ($ scripts/env ...)"
+	}
 	local CREATE="$1"
 	if [ -z "$CREATE" ]; then
 		[ -d "$ENVDIR" ] || exit 0
 	fi
-	command -v git >/dev/null || error "Git is not installed"
 	mkdir -p "$ENVDIR" || error "Failed to create the environment directory"
 	cd "$ENVDIR" || error "Failed to switch to the environment directory"
 	[ -d .git ] || { 
-		git init -b master &&
+		[ -n "$(git config --get init.defaultBranch)" ] && git init -b master || git init &&
 		touch .config &&
 		mkdir files &&
 		git add . && 

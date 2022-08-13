@@ -36,8 +36,8 @@ else
 
 $(package/stamp-compile): $(BUILD_DIR)/.prepared
 $(BUILD_DIR)/.prepared: Makefile
-	@mkdir -p $$(dirname $@)
-	@touch $@
+	$(Q)mkdir -p $$(dirname $@)
+	$(Q)touch $@
 
 clean: FORCE
 	git clean -f -d $(STAGING_DIR); true
@@ -47,13 +47,13 @@ clean: FORCE
 dirclean: clean
 	git reset --hard HEAD
 	git clean -f -d
-	rm -rf feeds/
+	$(RM) -r feeds/
 
 # check prerequisites before starting to build
 prereq: $(package/stamp-prereq) ;
 
 world: prepare $(package/stamp-compile) FORCE
-	@$(MAKE) package/index
+	$(Q)$(MAKE) package/index
 
 .PHONY: clean dirclean prereq prepare world
 

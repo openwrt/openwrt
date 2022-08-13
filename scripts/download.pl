@@ -52,13 +52,6 @@ sub localmirrors {
 	return @mlist;
 }
 
-sub which($) {
-	my $prog = shift;
-	my $res = `command -v $prog`;
-	$res or return undef;
-	return $res;
-}
-
 sub hash_cmd() {
 	my $len = length($file_hash);
 	my $cmd;
@@ -106,7 +99,7 @@ sub download
 			system("mkdir", "-p", "$target/");
 		}
 
-		if (! open TMPDLS, "find $mirror -follow -name $filename 2>/dev/null |") {
+		if (! open TMPDLS, "find -L $mirror -name $filename 2>/dev/null |") {
 			print("Failed to search for $filename in $mirror\n");
 			return;
 		}

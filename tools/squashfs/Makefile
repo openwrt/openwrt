@@ -34,8 +34,8 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/mksquashfs-lzma
-	rm -f $(STAGING_DIR_HOST)/bin/unsquashfs-lzma
+	$(RM) $(STAGING_DIR_HOST)/bin/mksquashfs-lzma
+	$(RM) $(STAGING_DIR_HOST)/bin/unsquashfs-lzma
 endef
 
 $(eval $(call HostBuild))

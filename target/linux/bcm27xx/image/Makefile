@@ -15,7 +15,7 @@ endef
 
 ### Image scripts ###
 define Build/boot-common
-	rm -f $@.boot
+	$(RM) $@.boot
 	mkfs.fat -n boot -C $@.boot $(FAT32_BLOCKS)
 	mcopy -i $@.boot $(KDIR)/COPYING.linux ::
 	mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::

@@ -5,7 +5,8 @@
 include $(INCLUDE_DIR)/download.mk
 
 HOST_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
-HOST_INSTALL_DIR ?= $(HOST_BUILD_DIR)/host-install
+HOST_SOURCE_DIR ?= $(HOST_BUILD_DIR)
+HOST_INSTALL_DIR ?= $(HOST_SOURCE_DIR)/host-install
 HOST_BUILD_PARALLEL ?=
 
 HOST_MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) $(if $(filter 3.% 4.0 4.1,$(MAKE_VERSION)),-j))
@@ -33,11 +34,13 @@ include $(INCLUDE_DIR)/autotools.mk
 
 _host_target:=$(if $(HOST_QUILT),,.)
 
+HOST_SRC_DIR ?= src
+
 Host/Patch:=$(Host/Patch/Default)
 ifneq ($(strip $(HOST_UNPACK)),)
   define Host/Prepare/Default
 	$(HOST_UNPACK)
-	[ ! -d ./src/ ] || $(CP) ./src/* $(HOST_BUILD_DIR)
+	[ ! -d ./$(HOST_SRC_DIR)/ ] || $(CP) ./$(HOST_SRC_DIR)/* $(HOST_SOURCE_DIR)
 	$(Host/Patch)
   endef
 endif
@@ -75,16 +78,27 @@ HOST_MAKE_VARS = \
 
 HOST_MAKE_FLAGS =
 
-HOST_CONFIGURE_CMD = $(BASH) ./configure
-
 ifeq ($(HOST_OS),Darwin)
   HOST_CONFIG_SITE:=$(INCLUDE_DIR)/site/darwin
 endif
 
+HOST_CONFIGURE_PATH = .
+HOST_CONFIGURE_CMD = ./configure
+
 define Host/Configure/Default
-	$(if $(HOST_CONFIGURE_PARALLEL),+)(cd $(HOST_BUILD_DIR)/$(3); \
-		if [ -x configure ]; then \
-			$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
+	( \
+		cd $(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)/$(strip $(3)); \
+		if [ -x $(HOST_CONFIGURE_CMD) ]; then \
+			$(call replace_script,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(SCRIPT_DIR)) \
+			$(call replace_script,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.sub,$(SCRIPT_DIR)) \
+			$(if $(HOST_BUILD_ALLOW_WERROR),, \
+				$(call replace_string,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3))),'Makefile*',\(-Werror\)\([^=].*$$$$\),-Wextra\2) \
+			) \
+			$(if $(HOST_ARCH_GNU), \
+				echo "echo $(GNU_HOST_NAME)" > \
+					$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3)))/config.guess ; \
+				$(call replace_script,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(HOST_BUILD_DIR)/$(HOST_CONFIGURE_PATH)$(if $(3),/$(strip $(3)))) \
+			) \
 			$(HOST_CONFIGURE_VARS) \
 			$(2) \
 			$(HOST_CONFIGURE_CMD) \
@@ -95,18 +109,23 @@ define Host/Configure/Default
 endef
 
 define Host/Configure
-  $(call Host/Configure/Default)
+  $(if $(HOST_CONFIGURE_PARALLEL),+)$(call Host/Configure/Default)
 endef
 
 define Host/Compile/Default
-	+$(HOST_MAKE_VARS) \
+	$(HOST_MAKE_VARS) \
 	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) \
 		$(HOST_MAKE_FLAGS) \
 		$(1)
 endef
 
+define Host/Compile/Fixup
+	$(call autoreconf_host) \
+	$(call Host/Compile/Default);
+endef
+
 define Host/Compile
-  $(call Host/Compile/Default)
+  +$(call Host/Compile/Default) || { $(call Host/Compile/Fixup) }
 endef
 
 define Host/Install/Default
@@ -121,7 +140,7 @@ endef
 ifneq ($(if $(HOST_QUILT),,$(CONFIG_AUTOREBUILD)),)
   define HostHost/Autoclean
     $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(HOST_STAMP_PREPARED))
-    $(if $(if $(Host/Compile),$(filter prepare,$(MAKECMDGOALS)),1),,$(call rdep,$(HOST_BUILD_DIR),$(HOST_STAMP_BUILT)))
+    $(if $(if $(Host/Compile),$(filter prepare,$(MAKECMDGOALS)),1),,$(call rdep,$(HOST_SOURCE_DIR),$(HOST_STAMP_BUILT)))
   endef
 endif
 
@@ -143,8 +162,9 @@ ifndef DUMP
   $(if $(DUMP),,$(call HostHost/Autoclean))
 
   $(HOST_STAMP_PREPARED):
-	@-rm -rf $(HOST_BUILD_DIR)
-	@mkdir -p $(HOST_BUILD_DIR)
+	$(Q)-$(RM) -r $(HOST_BUILD_DIR)
+	$(Q)mkdir -p $(HOST_BUILD_DIR)
+	$(Q)mkdir -p $(HOST_SOURCE_DIR)
 	$(foreach hook,$(Hooks/HostPrepare/Pre),$(call $(hook))$(sep))
 	$(call Host/Prepare)
 	$(foreach hook,$(Hooks/HostPrepare/Post),$(call $(hook))$(sep))
@@ -190,16 +210,16 @@ ifndef DUMP
 
   host-clean-build: FORCE
 	$(call Host/Uninstall)
-	rm -rf $(HOST_BUILD_DIR) $(HOST_STAMP_BUILT)
+	$(RM) -r $(HOST_BUILD_DIR) $(HOST_INSTALL_DIR) $(HOST_STAMP_BUILT)
 
   host-clean: host-clean-build
 	$(call Host/Clean)
-	rm -rf $(HOST_STAMP_INSTALLED)
+	$(RM) -r $(HOST_STAMP_INSTALLED)
 
     ifneq ($(CONFIG_AUTOREMOVE),)
       host-compile:
-		$(FIND) $(HOST_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' | \
-			$(XARGS) rm -rf
+		$(call find_depth,$(HOST_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')',1,1) | \
+			$(XARGS) $(RM) -r
     endif
   endef
 endif

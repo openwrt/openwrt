@@ -18,14 +18,14 @@ define Build/elecom-header
 		echo -ne "$$(echo "$${data_crc}00000000" | sed 's/../\\x&/g')"; \
 		dd if=$@; \
 	) > $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/ravpower-wd009-factory
 	mkimage -A mips -T standalone -C none -a 0x80010000 -e 0x80010000 \
 		-n "OpenWrt Bootloader" -d $(UBOOT_PATH) $@.new
 	cat $@ >> $@.new
-	@mv $@.new $@
+	@$(MV) $@.new $@
 endef
 
 

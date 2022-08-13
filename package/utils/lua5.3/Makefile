@@ -87,7 +87,7 @@ define Build/Compile
 		CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
 		PKG_VERSION=$(PKG_VERSION) \
 		linux
-	rm -rf $(PKG_INSTALL_DIR)
+	$(RM) -r $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		INSTALL_TOP="$(PKG_INSTALL_DIR)/usr" \

@@ -52,7 +52,7 @@ define Package/mt7623n-preloader/description
 endef
 
 define Build/Prepare
-	rm -rf $(PKG_BUILD_DIR)
+	$(RM) -r $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
 	cp $(DL_DIR)/$(BPI_PRELOADER_PREFIX)-BPI-R2-preloader-DDR1600-20191024-2k.img.gz $(PKG_BUILD_DIR)/mt7623n_bpir2-preloader.bin.gz
 endef

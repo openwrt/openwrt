@@ -68,7 +68,7 @@ define Build/mt7623-mbr
 		| dd bs=1 of="$@.tmp" seek=512 conv=notrunc
 
 	cat $@.tmp >> $@
-	rm $@.tmp
+	$(RM) $@.tmp
 endef
 
 define Build/append-preloader
@@ -148,7 +148,7 @@ TARGET_DEVICES += unielec_u7623-02
 
 # Legacy helper for U7623 board
 define Build/fat-recovery-fs
-	rm -f $@.recovery
+	$(RM) $@.recovery
 	mkfs.fat -C $@.recovery 3070
 	cat $@.recovery >> $@
 endef

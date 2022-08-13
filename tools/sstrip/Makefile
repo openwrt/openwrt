@@ -23,7 +23,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/sstrip
+	$(RM) $(STAGING_DIR_HOST)/bin/sstrip
 endef
 
 $(eval $(call HostBuild))

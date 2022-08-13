@@ -5,15 +5,19 @@
 # See /LICENSE for more information.
 #
 
-include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
-
 PKG_NAME:=acx-mac80211
+PKG_VERSION:=2014-02-16
 PKG_RELEASE:=1
+
+DL_MKDIR:=1
+
+include $(TOPDIR)/rules.mk
+
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_SOURCE_URL:=http://git.code.sf.net/p/acx100/acx-mac80211
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2014-02-16
+PKG_SOURCE_DATE:=$(PKG_VERSION)
 PKG_SOURCE_VERSION:=b6fc31491020cb01d2cd1acc170cfa03ced7e726
 PKG_MIRROR_HASH:=58590245715f0e5fb4b57aab6d91071dfb6a97d3273f5aee0b97b1edee030ed0
 

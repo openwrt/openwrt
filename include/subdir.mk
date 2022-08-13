@@ -48,7 +48,7 @@ log_make = \
 
 ifdef CONFIG_AUTOREMOVE
 rebuild_check = \
-	@-$$(NO_TRACE_MAKE) $(subdir_make_opts) check-depends >/dev/null 2>/dev/null; \
+	$(Q)-$$(NO_TRACE_MAKE) $(subdir_make_opts) check-depends >/dev/null 2>/dev/null; \
 		$(if $(BUILD_LOG),mkdir -p $(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4));) \
 		$$(NO_TRACE_MAKE) $(if $(BUILD_LOG),-d) -q $(subdir_make_opts) .$(if $(3),$(3)-)$(2) \
 			> $(if $(BUILD_LOG),$(BUILD_LOG_DIR)/$(1)$(if $(4),/$(4))/check-$(if $(3),$(3)-)$(2).txt,/dev/null) 2>&1 || \
@@ -70,7 +70,7 @@ define subdir
       )
       $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(target): $(if $(NO_DEPS)$(QUILT),,$($(1)/$(bd)/$(target)) $(call $(1)//$(target),$(1)/$(bd))))
         $(foreach variant,$(filter-out *,$(if $(BUILD_VARIANT),$(BUILD_VARIANT),$(if $(strip $($(1)/$(bd)/variants)),$($(1)/$(bd)/variants),$(if $($(1)/$(bd)/default-variant),$($(1)/$(bd)/default-variant),__default)))),
-			$(if $(BUILD_LOG),@mkdir -p $(BUILD_LOG_DIR)/$(1)/$(bd)/$(filter-out __default,$(variant)))
+			$(if $(BUILD_LOG),$(Q)mkdir -p $(BUILD_LOG_DIR)/$(1)/$(bd)/$(filter-out __default,$(variant)))
 			$(if $($(1)/autoremove),$(call rebuild_check,$(1)/$(bd),$(target),,$(filter-out __default,$(variant)),$($(1)/$(bd)/variants)))
 			$(call log_make,$(1)/$(bd),$(target),,$(filter-out __default,$(variant)),$($(1)/$(bd)/variants)) \
 				|| $(call ERROR,$(1),   ERROR: $(1)/$(bd) failed to build$(if $(filter-out __default,$(variant)), (build variant: $(variant))).,$(findstring $(bd),$($(1)/builddirs-ignore-$(target)))) 
@@ -89,10 +89,19 @@ ifndef DUMP_TARGET_DB
 define stampfile
   $(1)/stamp-$(3):=$(if $(6),$(6),$(STAGING_DIR))/stamp/.$(2)_$(3)$(5)
   $$($(1)/stamp-$(3)): $(TMP_DIR)/.build $(4)
-	@+$(SCRIPT_DIR)/timestamp.pl -n $$($(1)/stamp-$(3)) $(1) $(4) || \
-		$(MAKE) $(if $(QUIET),--no-print-directory) $$($(1)/flags-$(3)) $(1)/$(3)
-	@mkdir -p $$$$(dirname $$($(1)/stamp-$(3)))
-	@touch $$($(1)/stamp-$(3))
+	$(Q)+ \
+		{ \
+			$(if $(4),$(SCRIPT_DIR)/timestamp.pl -n $(4) &&) \
+			$(SCRIPT_DIR)/timestamp.pl -n $$($(1)/stamp-$(3)) \
+			; \
+		} || \
+		{ \
+			$(SCRIPT_DIR)/timestamp.pl -n $(1) && \
+			$(MAKE) $(S) $$($(1)/flags-$(3)) $(1)/$(3) \
+			; \
+		}
+	$(Q)mkdir -p $$$$(dirname $$($(1)/stamp-$(3)))
+	$(Q)touch $$($(1)/stamp-$(3))
 
   $$(if $(call debug,$(1),v),,.SILENT: $$($(1)/stamp-$(3)))
 
@@ -100,7 +109,7 @@ define stampfile
 
   $(1)//clean:=$(1)/stamp-$(3)/clean
   $(1)/stamp-$(3)/clean: FORCE
-	@rm -f $$($(1)/stamp-$(3))
+	$(Q)$(RM) $$($(1)/stamp-$(3))
 
 endef
 endif

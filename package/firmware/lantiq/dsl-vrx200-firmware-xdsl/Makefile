@@ -82,7 +82,7 @@ define Package/dsl-vrx200-firmware-xdsl-b-patch/description
 endef
 
 define Build/Prepare
-	rm -rf $(PKG_BUILD_DIR)
+	$(RM) -r $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(PKG_SOURCE)
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(PKG_B_SOURCE)

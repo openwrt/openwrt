@@ -5,11 +5,13 @@
 # See /LICENSE for more information.
 #
 
-include $(TOPDIR)/rules.mk
-
 PKG_NAME:=b43legacy-firmware
 PKG_VERSION:=3.130.20.0
 PKG_RELEASE:=1
+
+DL_MKDIR:=1
+
+include $(TOPDIR)/rules.mk
 
 PKG_SOURCE:=wl_apsta-$(PKG_VERSION).o
 PKG_SOURCE_URL:=@OPENWRT

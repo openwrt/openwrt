@@ -9,7 +9,8 @@ all: $(if $(DUMP),dumpinfo,$(if $(CHECK),check,compile))
 include $(INCLUDE_DIR)/download.mk
 
 PKG_BUILD_DIR ?= $(BUILD_DIR)/$(if $(BUILD_VARIANT),$(PKG_NAME)-$(BUILD_VARIANT)/)$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
-PKG_INSTALL_DIR ?= $(PKG_BUILD_DIR)/ipkg-install
+PKG_SOURCE_DIR ?= $(PKG_BUILD_DIR)
+PKG_INSTALL_DIR ?= $(PKG_SOURCE_DIR)/ipkg-install
 PKG_BUILD_PARALLEL ?=
 PKG_USE_MIPS16 ?= 1
 PKG_IREMAP ?= 1
@@ -31,7 +32,7 @@ ifdef CONFIG_USE_MIPS16
   endif
 endif
 ifeq ($(strip $(PKG_IREMAP)),1)
-  IREMAP_CFLAGS = $(call iremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR)))
+  IREMAP_CFLAGS = $(call iremap,$(PKG_SOURCE_DIR),$(notdir $(PKG_SOURCE_DIR)))
   TARGET_CFLAGS += $(IREMAP_CFLAGS)
 endif
 
@@ -51,7 +52,7 @@ endif
 ifdef USE_SOURCE_DIR
   QUILT:=1
 endif
-ifneq ($(wildcard $(PKG_BUILD_DIR)/.source_dir),)
+ifneq ($(wildcard $(PKG_SOURCE_DIR)/.source_dir),)
   QUILT:=1
 endif
 
@@ -92,11 +93,15 @@ STAMP_CONFIGURED_WILDCARD=$(PKG_BUILD_DIR)/.configured_*
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),)_installed
 
+PKG_INSTALL_STAMP:=$(PKG_INFO_DIR)/$(PKG_DIR_NAME).$(if $(BUILD_VARIANT),$(BUILD_VARIANT),default).install
+
+include $(INCLUDE_DIR)/autotools.mk
+
 STAGING_FILES_LIST:=$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).list
 
 define CleanStaging
-	rm -f $(STAMP_INSTALLED)
-	@-(\
+	$(RM) $(STAMP_INSTALLED)
+	$(Q)-(\
 		if [ -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) ]; then \
 			$(SCRIPT_DIR)/clean-package.sh \
 				"$(STAGING_DIR)/packages/$(STAGING_FILES_LIST)" \
@@ -105,14 +110,10 @@ define CleanStaging
 	)
 endef
 
-
-PKG_INSTALL_STAMP:=$(PKG_INFO_DIR)/$(PKG_DIR_NAME).$(if $(BUILD_VARIANT),$(BUILD_VARIANT),default).install
-
 include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
 include $(INCLUDE_DIR)/package-ipkg.mk
 include $(INCLUDE_DIR)/package-bin.mk
-include $(INCLUDE_DIR)/autotools.mk
 
 _pkg_target:=$(if $(QUILT),,.)
 
@@ -126,18 +127,19 @@ unexport QUIET CONFIG_SITE
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Build/Autoclean
-      $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
-      $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "*/.dep_*")
-      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),,-x "*/.dep_*" -x "*/ipkg*"))
+      $(PKG_SOURCE_DIR)/.dep_files: $(STAMP_PREPARED)
+      $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_SOURCE_DIR)/.dep_files,-x "*/.dep_*")
+      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_SOURCE_DIR),$(STAMP_BUILT),,-x "*/.dep_*" -x "*/ipkg*"))
     endef
   endif
 endif
 
 ifdef USE_GIT_SRC_CHECKOUT
   define Build/Prepare/Default
+	mkdir -p $(PKG_SOURCE_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
-	ln -s $(TOPDIR)/git-src/$(PKG_NAME)/.git $(PKG_BUILD_DIR)/.git
-	( cd $(PKG_BUILD_DIR); \
+	ln -s $(TOPDIR)/git-src/$(PKG_NAME)/.git $(PKG_SOURCE_DIR)/.git
+	( cd $(PKG_SOURCE_DIR); \
 		git checkout .; \
 		git submodule update --recursive; \
 		git submodule foreach git config --unset core.worktree; \
@@ -147,9 +149,10 @@ ifdef USE_GIT_SRC_CHECKOUT
 endif
 ifdef USE_GIT_TREE
   define Build/Prepare/Default
+	mkdir -p $(PKG_SOURCE_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
-	ln -s $(CURDIR)/git-src $(PKG_BUILD_DIR)/.git
-	( cd $(PKG_BUILD_DIR); \
+	ln -s $(CURDIR)/git-src $(PKG_SOURCE_DIR)/.git
+	( cd $(PKG_SOURCE_DIR); \
 		git checkout .; \
 		git submodule update --recursive; \
 		git submodule foreach git config --unset core.worktree; \
@@ -159,10 +162,10 @@ ifdef USE_GIT_TREE
 endif
 ifdef USE_SOURCE_DIR
   define Build/Prepare/Default
-	rm -rf $(PKG_BUILD_DIR)
-	$(if $(wildcard $(USE_SOURCE_DIR)/*),,@echo "Error: USE_SOURCE_DIR=$(USE_SOURCE_DIR) path not found"; false)
-	ln -snf $(USE_SOURCE_DIR) $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.source_dir
+	$(RM) -r $(PKG_SOURCE_DIR)
+	$(if $(wildcard $(USE_SOURCE_DIR)/*),,$(Q)echo "Error: USE_SOURCE_DIR=$(USE_SOURCE_DIR) path not found"; false)
+	ln -snf $(USE_SOURCE_DIR) $(PKG_SOURCE_DIR)
+	touch $(PKG_SOURCE_DIR)/.source_dir
   endef
 endif
 
@@ -193,8 +196,9 @@ define Build/CoreTargets
 
   $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)
-	@-rm -rf $(PKG_BUILD_DIR)
-	@mkdir -p $(PKG_BUILD_DIR)
+	$(Q)-$(RM) -r $(PKG_BUILD_DIR)
+	$(Q)mkdir -p $(PKG_BUILD_DIR)
+	$(Q)mkdir -p $(PKG_SOURCE_DIR)
 	touch $$@_check
 	$(foreach hook,$(Hooks/Prepare/Pre),$(call $(hook))$(sep))
 	$(Build/Prepare)
@@ -203,7 +207,7 @@ define Build/CoreTargets
 
   $(call Build/Exports,$(STAMP_CONFIGURED))
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(STAMP_CONFIGURED_DEPENDS)
-	rm -f $(STAMP_CONFIGURED_WILDCARD)
+	$(RM) $(STAMP_CONFIGURED_WILDCARD)
 	$(CleanStaging)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
@@ -212,7 +216,7 @@ define Build/CoreTargets
 
   $(call Build/Exports,$(STAMP_BUILT))
   $(STAMP_BUILT): $(STAMP_CONFIGURED) $(STAMP_BUILT_DEPENDS)
-	rm -f $$@
+	$(RM) $$@
 	touch $$@_check
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
 	$(Build/Compile)
@@ -223,7 +227,7 @@ define Build/CoreTargets
 
   $(STAMP_INSTALLED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_INSTALLED): $(STAMP_BUILT)
-	rm -rf $(TMP_DIR)/stage-$(PKG_DIR_NAME)
+	$(RM) -r $(TMP_DIR)/stage-$(PKG_DIR_NAME)
 	mkdir -p $(TMP_DIR)/stage-$(PKG_DIR_NAME)/host $(STAGING_DIR)/packages
 	$(foreach hook,$(Hooks/InstallDev/Pre),\
 		$(call $(hook),$(TMP_DIR)/stage-$(PKG_DIR_NAME),$(TMP_DIR)/stage-$(PKG_DIR_NAME)/host)$(sep)\
@@ -238,13 +242,16 @@ define Build/CoreTargets
 			"$(STAGING_DIR)"; \
 	fi
 	if [ -d $(TMP_DIR)/stage-$(PKG_DIR_NAME) ]; then \
-		(cd $(TMP_DIR)/stage-$(PKG_DIR_NAME); find ./ > $(TMP_DIR)/stage-$(PKG_DIR_NAME).files); \
 		$(call locked, \
-			mv $(TMP_DIR)/stage-$(PKG_DIR_NAME).files $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) && \
-			$(CP) $(TMP_DIR)/stage-$(PKG_DIR_NAME)/* $(STAGING_DIR)/; \
-		,staging-dir); \
+			(cd $(TMP_DIR)/stage-$(PKG_DIR_NAME); find ./ > $(TMP_DIR)/stage-$(PKG_DIR_NAME).files) && \
+				$(RM) $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) && \
+				$(CP) $(TMP_DIR)/stage-$(PKG_DIR_NAME).files $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) && \
+				$(CP) $(TMP_DIR)/stage-$(PKG_DIR_NAME)/* $(STAGING_DIR)/ \
+			;, \
+			$(STAGING_DIR) \
+		); \
 	fi
-	rm -rf $(TMP_DIR)/stage-$(PKG_DIR_NAME)
+	$(RM) -r $(TMP_DIR)/stage-$(PKG_DIR_NAME)
 	touch $$@
 
   ifdef Build/InstallDev
@@ -258,9 +265,9 @@ define Build/CoreTargets
 
   ifneq ($(CONFIG_AUTOREMOVE),)
     compile:
-		-touch -r $(PKG_BUILD_DIR)/.built $(PKG_BUILD_DIR)/.autoremove 2>/dev/null >/dev/null
-		$(FIND) $(PKG_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -and -not -name '.pkgdir' | \
-			$(XARGS) rm -rf
+		-touch -r $(PKG_SOURCE_DIR)/.built $(PKG_SOURCE_DIR)/.autoremove 2>/dev/null >/dev/null
+		$(call find_depth,$(PKG_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')' ! -name '.pkgdir',1,1) | \
+			$(XARGS) $(RM) -r
   endif
 endef
 
@@ -316,18 +323,17 @@ endef
 
 Build/Prepare=$(call Build/Prepare/Default,)
 Build/Configure=$(call Build/Configure/Default,)
-Build/Compile=$(call Build/Compile/Default,)
+Build/Compile=+$(call Build/Compile/Default,) || { $(call Build/Compile/Fixup) }
 Build/Install=$(if $(PKG_INSTALL),$(call Build/Install/Default,))
-Build/Dist=$(call Build/Dist/Default,)
-Build/DistCheck=$(call Build/DistCheck/Default,)
+Build/Dist=+$(call Build/Dist/Default,)
+Build/DistCheck=+$(call Build/DistCheck/Default,)
 
 .NOTPARALLEL:
 
-.PHONY: prepare-package-install
-prepare-package-install:
-	@mkdir -p $(PKG_INFO_DIR)
-	@rm -f $(PKG_INSTALL_STAMP)
-	@echo "$(filter-out essential nonshared,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
+prepare-package-install: FORCE
+	$(Q)mkdir -p $(PKG_INFO_DIR)
+	$(Q)$(RM) $(PKG_INSTALL_STAMP)
+	$(Q)echo "$(filter-out essential nonshared,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
 
 $(PACKAGE_DIR):
 	mkdir -p $@
@@ -337,15 +343,15 @@ compile:
 install: compile
 
 force-clean-build: FORCE
-	rm -rf $(PKG_BUILD_DIR)
+	$(RM) -r $(PKG_BUILD_DIR) $(PKG_INSTALL_DIR) $(STAMP_BUILT)
 
-clean-build: $(if $(wildcard $(PKG_BUILD_DIR)/.autoremove),force-clean-build)
+clean-build: $(if $(wildcard $(PKG_SOURCE_DIR)/.autoremove),force-clean-build)
 
 clean: force-clean-build
 	$(CleanStaging)
 	$(call Build/UninstallDev,$(STAGING_DIR),$(STAGING_DIR)/host)
 	$(Build/Clean)
-	rm -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST)
+	$(RM) $(STAGING_DIR)/packages/$(STAGING_FILES_LIST)
 
 dist:
 	$(Build/Dist)

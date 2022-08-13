@@ -106,8 +106,9 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	$(CP) -L $(INCLUDE_DIR) $(SCRIPT_DIR) $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) \
 		`cd $(TOPDIR); find $(KDIR_BASE)/ -name \*.ko` \
-		`cd $(TOPDIR); find $(KDIR_BASE)/firmware/ -newer $(KDIR_BASE)/firmware/Makefile \
-			-type f -name '*.bin' -or -name '*.cis' -or -name '*.csp' -or -name '*.dsp' -or -name '*.fw'` \
+		`cd $(TOPDIR); $(SCRIPT_DIR)/timestamp.pl -p -cnewer $(KDIR_BASE)/firmware/Makefile \
+			-a "-type f -name '*.bin' -o -name '*.cis' -o -name '*.csp' -o -name '*.dsp' -o -name '*.fw'" \
+			-- $(KDIR_BASE)/firmware`
 		$(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
 		$(SDK_DIRS) $(KERNEL_FILES) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
@@ -120,7 +121,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		$(KDIR_BASE) \
 		-type f | $(BUNDLER_COMMAND))
 
-	@-( \
+	$(Q)-( \
 		find \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/bin \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/usr/bin \
@@ -136,7 +137,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 
 	mkdir -p $(SDK_BUILD_DIR)/target/linux
 	$(CP) $(GENERIC_PLATFORM_DIR) $(PLATFORM_DIR) $(SDK_BUILD_DIR)/target/linux/
-	rm -rf \
+	$(RM) -r \
 		$(SDK_BUILD_DIR)/target/linux/*/files* \
 		$(SDK_BUILD_DIR)/target/linux/*/patches*
 	./convert-config.pl $(TOPDIR)/.config > $(SDK_BUILD_DIR)/Config-build.in
@@ -158,9 +159,9 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		$(TOPDIR)/package/kernel/linux \
 		$(SDK_BUILD_DIR)/package/kernel/
 
-	-rm -rf $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/.prereq-build
+	-$(RM) -r $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/.prereq-build
 
-	-rm -f $(SDK_BUILD_DIR)/feeds.conf.default
+	-$(RM) $(SDK_BUILD_DIR)/feeds.conf.default
 	$(if $(BASE_FEED),echo "$(BASE_FEED)" > $(SDK_BUILD_DIR)/feeds.conf.default)
 	if [ -f $(TOPDIR)/feeds.conf ]; then \
 		cat $(TOPDIR)/feeds.conf >> $(SDK_BUILD_DIR)/feeds.conf.default; \
@@ -170,9 +171,9 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	$(SED) 's,^# REVISION:=.*,REVISION:=$(REVISION),g' $(SDK_BUILD_DIR)/include/version.mk
 	$(SED) 's,^# SOURCE_DATE_EPOCH:=.*,SOURCE_DATE_EPOCH:=$(SOURCE_DATE_EPOCH),g' $(SDK_BUILD_DIR)/include/version.mk
 	$(SED) '/LINUX_VERMAGIC:=/ { s,unknown,$(LINUX_VERMAGIC),g }' $(SDK_BUILD_DIR)/include/kernel.mk
-	find $(SDK_BUILD_DIR) -name .git | $(XARGS) rm -rf
-	find $(SDK_BUILD_DIR) -name .svn | $(XARGS) rm -rf
-	find $(SDK_BUILD_DIR) -name CVS | $(XARGS) rm -rf
+	find $(SDK_BUILD_DIR) -name .git | $(XARGS) $(RM) -r
+	find $(SDK_BUILD_DIR) -name .svn | $(XARGS) $(RM) -r
+	find $(SDK_BUILD_DIR) -name CVS | $(XARGS) $(RM) -r
 	-make -C $(SDK_BUILD_DIR)/scripts/config clean
 	(cd $(BUILD_DIR); \
 		tar -I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' -cf $@ $(SDK_NAME) \
@@ -185,4 +186,4 @@ compile: $(BIN_DIR)/$(SDK_NAME).tar.xz
 install: compile
 
 clean:
-	rm -rf $(SDK_BUILD_DIR) $(BIN_DIR)/$(SDK_NAME).tar.xz
+	$(RM) -r $(SDK_BUILD_DIR) $(BIN_DIR)/$(SDK_NAME).tar.xz

@@ -55,13 +55,13 @@ loader.o: loader.lds $(OBJECTS)
 	$(LD) -static --gc-sections -no-warn-mismatch -T loader.lds -o $@ $(OBJECTS)
 
 loader.lds: loader.lds.in Makefile
-	@sed "$(SEDFLAGS)" < $< > $@
+	$(Q)sed "$(SEDFLAGS)" < $< > $@
 
 data.o: data.lds decompress.image
 	$(LD) -no-warn-mismatch -T data.lds -r -o $@ -b binary decompress.image -b elf32-tradlittlemips
 
 data.lds:
-	@echo "SECTIONS { .data : { code_start = .; *(.data) code_stop = .; }}" > $@
+	$(Q)echo "SECTIONS { .data : { code_start = .; *(.data) code_stop = .; }}" > $@
 
 decompress.image: decompress
 	$(OBJCOPY) $< $@
@@ -70,7 +70,7 @@ decompress: decompress.lds decompress.o LzmaDecode.o
 	$(LD) -static --gc-sections -no-warn-mismatch -T decompress.lds -o $@ decompress.o LzmaDecode.o
 
 decompress.lds: decompress.lds.in Makefile
-	@sed "$(SEDFLAGS)" < $< > $@
+	$(Q)sed "$(SEDFLAGS)" < $< > $@
 
 mrproper: clean
 

@@ -42,7 +42,7 @@ CMAKE_HOST_OPTIONS += \
 	-DCMAKE_SKIP_RPATH=OFF
 
 define Host/Install
-	rm -rf $(STAGING_DIR_HOST)/llvm-bpf*
+	$(RM) -r $(STAGING_DIR_HOST)/llvm-bpf*
 	$(Host/Install/Default)
 	ln -s $(LLVM_BPF_PREFIX) $(STAGING_DIR_HOST)/llvm-bpf
 	STRIP_KMOD= PATCHELF= STRIP=strip $(SCRIPT_DIR)/rstrip.sh $(STAGING_DIR_HOST)/llvm-bpf
@@ -50,7 +50,7 @@ define Host/Install
 endef
 
 define Host/Uninstall
-	rm -rf $(STAGING_DIR_HOST)/llvm-bpf*
+	$(RM) -r $(STAGING_DIR_HOST)/llvm-bpf*
 endef
 
 $(eval $(call HostBuild))

@@ -12,7 +12,7 @@ UBIFS_OPTS = -F -m 2048 -e 124KiB -c 4096 -U
 UBI_OPTS = -m 2048 -p 128KiB -s 512 -O 2048
 
 define Build/omap-sdcard
-	rm -f $@.boot
+	$(RM) $@.boot
 	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
 
 	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)/MLO ::MLO
@@ -26,7 +26,7 @@ define Build/omap-sdcard
 		$(IMAGE_ROOTFS) \
 		$(CONFIG_OMAP_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
-	rm -f $@.boot
+	$(RM) $@.boot
 endef
 
 define Device/Default

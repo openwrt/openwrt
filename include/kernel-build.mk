@@ -59,7 +59,7 @@ endef
 
 ifdef CONFIG_COLLECT_KERNEL_DEBUG
   define Kernel/CollectDebug
-	rm -rf $(KERNEL_BUILD_DIR)/debug
+	$(RM) -r $(KERNEL_BUILD_DIR)/debug
 	mkdir -p $(KERNEL_BUILD_DIR)/debug/modules
 	$(CP) $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/debug/
 	-$(CP) \
@@ -75,8 +75,8 @@ endif
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Kernel/Autoclean
-      $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
-      $(call rdep,$(KERNEL_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "*/.dep_*")
+      $(PKG_SOURCE_DIR)/.dep_files: $(STAMP_PREPARED)
+      $(call rdep,$(KERNEL_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_SOURCE_DIR)/.dep_files,-x "*/.dep_*")
     endef
   endif
 endif
@@ -90,13 +90,13 @@ define BuildKernel
 
   $(Kernel/Autoclean)
   $(STAMP_PREPARED): $(if $(LINUX_SITE),$(DL_DIR)/$(LINUX_SOURCE))
-	-rm -rf $(KERNEL_BUILD_DIR)
+	-$(RM) -r $(KERNEL_BUILD_DIR)
 	-mkdir -p $(KERNEL_BUILD_DIR)
 	$(Kernel/Prepare)
 	touch $$@
 
   $(KERNEL_BUILD_DIR)/symtab.h: FORCE
-	rm -f $(KERNEL_BUILD_DIR)/symtab.h
+	$(RM) $(KERNEL_BUILD_DIR)/symtab.h
 	touch $(KERNEL_BUILD_DIR)/symtab.h
 	+$(KERNEL_MAKE) vmlinux
 	find $(LINUX_DIR) $(STAGING_DIR_ROOT)/lib/modules -name \*.ko | \
@@ -144,7 +144,7 @@ define BuildKernel
 	$(Kernel/CompileImage)
 	$(Kernel/CollectDebug)
 	touch $$@
-	
+
   mostlyclean: FORCE
 	$(Kernel/Clean)
 
@@ -157,8 +157,8 @@ define BuildKernel
 	$(MAKE) -C image compile TARGET_BUILD=
 
   oldconfig menuconfig nconfig xconfig: $(STAMP_PREPARED) $(STAMP_CHECKED) FORCE
-	rm -f $(LINUX_DIR)/.config.prev
-	rm -f $(STAMP_CONFIGURED)
+	$(RM) $(LINUX_DIR)/.config.prev
+	$(RM) $(STAMP_CONFIGURED)
 	$(LINUX_RECONF_CMD) > $(LINUX_DIR)/.config
 	$(_SINGLE)$(KERNEL_MAKE) \
 		$(if $(findstring Darwin,$(HOST_OS)), \
@@ -173,10 +173,10 @@ define BuildKernel
 	+$(MAKE) -C image compile install TARGET_BUILD=
 
   clean: FORCE
-	rm -rf $(KERNEL_BUILD_DIR)
+	$(RM) -r $(KERNEL_BUILD_DIR)
 
   image-prereq:
-	@+$(NO_TRACE_MAKE) -s -C image prereq TARGET_BUILD=
+	$(Q)+$(NO_TRACE_MAKE) -C image prereq TARGET_BUILD=
 
   prereq: image-prereq
 

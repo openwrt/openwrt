@@ -34,7 +34,7 @@ TARGET_LDFLAGS += -flto -fuse-linker-plugin
 
 define Package/ustp/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ipkg-install/sbin/* $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/* $(1)/sbin/
 	$(INSTALL_BIN) ./files/ustpd.init $(1)/etc/init.d/ustpd
 endef
 

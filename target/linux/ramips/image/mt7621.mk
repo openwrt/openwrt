@@ -19,12 +19,12 @@ define Build/arcadyan-trx
 	$(eval trx_magic=$(word 1,$(1)))
 	$(STAGING_DIR_HOST)/bin/otrx create $@.trx -M $(trx_magic) -f $@ \
 		-a 0x20000 -b 0x420000 -f $@.hsqs -a 1000
-	mv $@.trx $@
+	$(MV) $@.trx $@
 	dd if=/dev/zero bs=1024 count=1 >> $@.tail
 	echo -ne "HDR0" | dd of=$@.tail bs=1 seek=$$((0x10c)) count=4 \
 		conv=notrunc 2>/dev/null
 	dd if=$@.tail >> $@ 2>/dev/null
-	rm $@.hsqs $@.tail
+	$(RM) $@.hsqs $@.tail
 endef
 
 define Build/gemtek-trailer
@@ -47,7 +47,7 @@ define Build/iodata-factory
 		$(STAGING_DIR_HOST)/bin/mksenaofw \
 			-r 0x30a -p $(product) -t $(fw_type) \
 			-e $(factory_bin) -o $(factory_bin).new; \
-		mv $(factory_bin).new $(factory_bin); \
+		$(MV) $(factory_bin).new $(factory_bin); \
 		$(CP) $(factory_bin) $(BIN_DIR)/; \
 	else \
 		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(fw_size))" >&2; \
@@ -98,7 +98,7 @@ define Build/zytrx-header
 	$(eval board=$(word 1,$(1)))
 	$(eval version=$(word 2,$(1)))
 	$(STAGING_DIR_HOST)/bin/zytrx -B '$(board)' -v '$(version)' -i $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/zyxel-nwa-fit

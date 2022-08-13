@@ -56,7 +56,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -rf $(TOOLCHAIN_DIR)/bin
+	$(RM) -r $(TOOLCHAIN_DIR)/bin
 endef
 
 $(eval $(call HostBuild))

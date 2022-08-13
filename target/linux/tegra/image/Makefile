@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Build/tegra-sdcard
-	rm -fR $@.boot
+	$(RM)R $@.boot
 	mkdir -p $@.boot
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot
 	$(if $(DEVICE_DTS),\

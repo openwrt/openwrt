@@ -21,7 +21,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -rf \
+	$(RM) -r \
 		$(HOST_BUILD_DIR) \
 		$(GCC_BUILD_DIR)
 endef

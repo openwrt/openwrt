@@ -23,7 +23,7 @@ define Build/add-elecom-factory-initramfs
   $(call Build/elecom-product-header,$(product) $@.factory)
 
   if [ "$$(stat -c%s $@.factory)" -le $$(($(subst k,* 1024,$(subst m, * 1024k,$(IMAGE_SIZE))))) ]; then \
-	mv $@.factory $(BIN_DIR)/$(KERNEL_INITRAMFS_PREFIX)-factory.bin; \
+	$(MV) $@.factory $(BIN_DIR)/$(KERNEL_INITRAMFS_PREFIX)-factory.bin; \
   else \
 	echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
   fi
@@ -32,7 +32,7 @@ endef
 define Build/addpattern
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(ADDPATTERN_ID) \
 		-v v$(ADDPATTERN_VERSION) -i $@ -o $@.new
-	-mv "$@.new" "$@"
+	-$(MV) "$@.new" "$@"
 endef
 
 define Build/append-md5sum-bin
@@ -45,8 +45,8 @@ define Build/cybertan-trx
 	-$(STAGING_DIR_HOST)/bin/trx -o $@.new \
 		-f $(IMAGE_KERNEL) -F $@-empty.bin \
 		-x 32 -a 0x10000 -x -32 -f $@
-	-mv "$@.new" "$@"
-	-rm $@-empty.bin
+	-$(MV) "$@.new" "$@"
+	-$(RM) $@-empty.bin
 endef
 
 define Build/edimax-headers
@@ -64,7 +64,7 @@ define Build/edimax-headers
 		-i $@ \
 		-o $@.rootfs
 	cat $@.uImage $@.rootfs > $@
-	rm -rf $@.uImage $@.rootfs
+	$(RM) -r $@.uImage $@.rootfs
 endef
 
 define Build/mkdapimg2
@@ -75,7 +75,7 @@ define Build/mkdapimg2
 			$(firstword $(subst -, ,$(REVISION))))) \
 		-r Default \
 		$(if $(1),-k $(1))
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/mkmylofw_16m
@@ -98,7 +98,7 @@ define Build/mkmylofw_16m
 			-B WPE72 -i 0x11f6:$(device_id):0x11f6:$(device_id) -r $(revision) \
 			-s 0x1000000 -p0x30000:$$newsize:al:0x80060000:"OpenWRT":$@ \
 			$@.new
-		@mv $@.new $@
+		@$(MV) $@.new $@
 endef
 
 define Build/mkwrggimg
@@ -106,13 +106,13 @@ define Build/mkwrggimg
 		-i $@ -o $@.imghdr -d /dev/mtdblock/1 \
 		-m $(DEVICE_MODEL)-$(DEVICE_VARIANT) -s $(DAP_SIGNATURE) \
 		-v $(VERSION_DIST) -B $(REVISION)
-	mv $@.imghdr $@
+	$(MV) $@.imghdr $@
 endef
 
 define Build/nec-enc
   $(STAGING_DIR_HOST)/bin/nec-enc \
     -i $@ -o $@.new -k $(1)
-  mv $@.new $@
+  $(MV) $@.new $@
 endef
 
 define Build/nec-fw
@@ -122,19 +122,19 @@ define Build/nec-fw
     echo -n "0.0.00" | dd bs=16 count=1 conv=sync; \
     dd if=$@; \
   ) > $@.new
-  mv $@.new $@
+  $(MV) $@.new $@
 endef
 
 define Build/pisen_wmb001n-factory
   -[ -f "$@" ] && \
   mkdir -p "$@.tmp" && \
   cp "$(KDIR)/loader-$(word 1,$(1)).uImage" "$@.tmp/uImage" && \
-  mv "$@" "$@.tmp/rootfs" && \
+  $(MV) "$@" "$@.tmp/rootfs" && \
   cp "bin/pisen_wmb001n_factory-header.bin" "$@" && \
   $(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
     $(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
     -C "$@.tmp" . | gzip -9n >> "$@" && \
-  rm -rf "$@.tmp"
+  $(RM) -r "$@.tmp"
 endef
 
 define Build/teltonika-fw-fake-checksum
@@ -154,7 +154,7 @@ define Build/teltonika-v1-header
 		-E $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		-m $(TPLINK_HEADER_VERSION) -N "$(VERSION_DIST)" -V "RUT2xx      " \
 		-k $@ -o $@.new $(1)
-	@mv $@.new $@
+	@$(MV) $@.new $@
 endef
 
 define Build/wrgg-pad-rootfs
@@ -435,7 +435,7 @@ define Device/avm
   KERNEL := kernel-bin | append-dtb | lzma | eva-image
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
-	append-squashfs-fakeroot-be | pad-to 256 | append-rootfs | pad-rootfs | \
+	append-squashfs-fakeroot -be | pad-to 256 | append-rootfs | pad-rootfs | \
 	check-size | append-metadata
   DEVICE_PACKAGES := fritz-tffs
 endef

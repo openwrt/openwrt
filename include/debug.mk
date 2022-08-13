@@ -18,6 +18,13 @@ ifeq ($(DUMP),)
   endif
 endif
 
+# if debug verbose, do not silence make
+ifneq ($(findstring v,$(build_debug)),)
+  Q:=
+  S:=-w
+  QUIET:=1
+endif
+
 ifneq ($(DEBUG),)
 
 define debug

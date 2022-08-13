@@ -8,7 +8,7 @@ define Build/dongwon-header
 		printf "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
 			dd of=$@.tmp bs=4 count=1 seek=1 conv=notrunc \
 	)
-	mv $@.tmp $@
+	$(MV) $@.tmp $@
 endef
 
 # attention: only zlib compression is allowed for the boot fs
@@ -19,7 +19,7 @@ define Build/zyxel-buildkerneljffs
 		--big-endian --squash-uids -v -e 128KiB -q -f -n -x lzma -x rtime \
 		-o $@ \
 		-d $@.tmp
-	rm -rf $@.tmp
+	$(RM) -r $@.tmp
 endef
 
 define Build/zyxel-factory
@@ -34,7 +34,7 @@ define Build/zyxel-factory
 				-s $$maxsize \
 				-o $@.new \
 				-l 131072 \
-			&& mv $@.new $@ ; \
+			&& $(MV) $@.new $@ ; \
 		fi
 endef
 

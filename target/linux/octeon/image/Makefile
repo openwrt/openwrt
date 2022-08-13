@@ -11,7 +11,7 @@ endef
 
 define Build/strip-kernel
 	# Workaround pre-SDK-1.9.0 u-boot versions not handling the .notes section
-	$(TARGET_CROSS)strip -R .notes $@ -o $@.stripped && mv $@.stripped $@
+	$(TARGET_CROSS)strip -R .notes $@ -o $@.stripped && $(MV) $@.stripped $@
 endef
 
 DTS_DIR := $(DTS_DIR)/cavium-octeon

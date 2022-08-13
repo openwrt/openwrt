@@ -15,10 +15,10 @@ ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
   HOST_MAKE_FLAGS+=VERBOSE=1
 endif
 
-CMAKE_BINARY_DIR = $(PKG_BUILD_DIR)$(if $(CMAKE_BINARY_SUBDIR),/$(CMAKE_BINARY_SUBDIR))
-CMAKE_SOURCE_DIR = $(PKG_BUILD_DIR)$(if $(CMAKE_SOURCE_SUBDIR),/$(CMAKE_SOURCE_SUBDIR))
-HOST_CMAKE_SOURCE_DIR = $(HOST_BUILD_DIR)$(if $(CMAKE_SOURCE_SUBDIR),/$(CMAKE_SOURCE_SUBDIR))
-HOST_CMAKE_BINARY_DIR = $(HOST_BUILD_DIR)$(if $(CMAKE_BINARY_SUBDIR),/$(CMAKE_BINARY_SUBDIR))
+CMAKE_BINARY_DIR = $(PKG_SOURCE_DIR)$(if $(CMAKE_BINARY_SUBDIR),/$(CMAKE_BINARY_SUBDIR))
+CMAKE_SOURCE_DIR = $(PKG_SOURCE_DIR)$(if $(CMAKE_SOURCE_SUBDIR),/$(CMAKE_SOURCE_SUBDIR))
+HOST_CMAKE_SOURCE_DIR = $(HOST_SOURCE_DIR)$(if $(CMAKE_SOURCE_SUBDIR),/$(CMAKE_SOURCE_SUBDIR))
+HOST_CMAKE_BINARY_DIR = $(HOST_SOURCE_DIR)$(if $(CMAKE_BINARY_SUBDIR),/$(CMAKE_BINARY_SUBDIR))
 MAKE_PATH = $(firstword $(CMAKE_BINARY_SUBDIR) .)
 
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
@@ -82,12 +82,18 @@ ifeq ($(PKG_USE_NINJA),1)
   endef
 endif
 
+define Build/Prepare
+  mkdir -p $(CMAKE_BINARY_DIR); \
+  $(call Build/Prepare/Default)
+endef
+
 define Build/Configure/Default
-	mkdir -p $(CMAKE_BINARY_DIR)
-	(cd $(CMAKE_BINARY_DIR); \
-		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
-		CXXFLAGS="$(TARGET_CXXFLAGS) $(EXTRA_CXXFLAGS)" \
-		LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)" \
+	( \
+		$(if $(CMAKE_ALLOW_WERROR),, \
+			$(call replace_string,$(CMAKE_SOURCE_DIR),'CMakeList*',\(-Werror\)\([^=].*$$$$\),-Wextra\2) \
+		) \
+		cd $(CMAKE_BINARY_DIR); \
+		$(CONFIGURE_VARS) \
 		cmake \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
@@ -134,12 +140,18 @@ endef
 
 Build/InstallDev = $(if $(CMAKE_INSTALL),$(Build/InstallDev/cmake))
 
+define Host/Prepare
+  mkdir -p $(HOST_CMAKE_BINARY_DIR); \
+  $(call Host/Prepare/Default)
+endef
+
 define Host/Configure/Default
-	mkdir -p "$(HOST_CMAKE_BINARY_DIR)"
-	(cd $(HOST_CMAKE_BINARY_DIR); \
-		CFLAGS="$(HOST_CFLAGS)" \
-		CXXFLAGS="$(HOST_CFLAGS)" \
-		LDFLAGS="$(HOST_LDFLAGS)" \
+	( \
+		$(if $(HOST_CMAKE_ALLOW_WERROR),, \
+			$(call replace_string,$(HOST_CMAKE_SOURCE_DIR),'CMakeList*',\(-Werror\)\([^=].*$$$$\),-Wextra\2) \
+		) \
+		cd $(HOST_CMAKE_BINARY_DIR); \
+		$(HOST_CONFIGURE_VARS) \
 		cmake \
 			-DCMAKE_BUILD_TYPE=Release \
 			-DCMAKE_C_COMPILER_LAUNCHER="$(CMAKE_C_COMPILER_LAUNCHER)" \

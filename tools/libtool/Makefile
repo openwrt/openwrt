@@ -23,7 +23,7 @@ HOST_CONFIGURE_VARS += \
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
-	(cd $(STAGING_DIR_HOST)/share/aclocal/ && rm -f libtool.m4 ltdl.m4 lt~obsolete.m4 ltoptions.m4 ltsugar.m4 ltversion.m4)
+	(cd $(STAGING_DIR_HOST)/share/aclocal/ && $(RM) libtool.m4 ltdl.m4 lt~obsolete.m4 ltoptions.m4 ltsugar.m4 ltversion.m4)
 	(cd $(HOST_BUILD_DIR); $(AM_TOOL_PATHS) ./bootstrap)
 endef
 

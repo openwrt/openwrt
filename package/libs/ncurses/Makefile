@@ -117,7 +117,7 @@ ifneq ($(HOST_OS),FreeBSD)
 	(cd $(PKG_INSTALL_DIR)/usr/share/terminfo; \
 		for dir in ??; do \
 			[ -d "$$$$dir" ] || continue; \
-			mv $$$$dir $$$$(echo -ne "\x$$$$dir"); \
+			$(MV) $$$$dir $$$$(echo -ne "\x$$$$dir"); \
 		done \
 	)
 	for file in \

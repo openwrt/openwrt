@@ -210,13 +210,13 @@ else
 endif
 
 define Host/Configure
-	(cd $(GCC_BUILD_DIR) && rm -f config.cache; \
+	(cd $(GCC_BUILD_DIR) && $(RM) config.cache; \
 		$(GCC_CONFIGURE) \
 	);
 endef
 
 define Host/Clean
-	rm -rf $(if $(GCC_PREPARE),$(HOST_SOURCE_DIR)) \
+	$(RM) -r $(if $(GCC_PREPARE),$(HOST_SOURCE_DIR)) \
 		$(HOST_BUILD_PREFIX)/stamp/.gcc_* \
 		$(HOST_BUILD_PREFIX)/stamp/.binutils_* \
 		$(GCC_BUILD_DIR) \

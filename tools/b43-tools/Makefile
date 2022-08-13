@@ -41,10 +41,10 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/b43-fwcutter
-	rm -f $(STAGING_DIR_HOST)/bin/b43-asm
-	rm -f $(STAGING_DIR_HOST)/bin/b43-asm.bin
-	rm -f $(STAGING_DIR_HOST)/bin/b43-fwsquash.py
+	$(RM) $(STAGING_DIR_HOST)/bin/b43-fwcutter
+	$(RM) $(STAGING_DIR_HOST)/bin/b43-asm
+	$(RM) $(STAGING_DIR_HOST)/bin/b43-asm.bin
+	$(RM) $(STAGING_DIR_HOST)/bin/b43-fwsquash.py
 endef
 
 $(eval $(call HostBuild))

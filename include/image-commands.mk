@@ -33,7 +33,7 @@ define Build/package-kernel-ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 		$(KERNEL_UBIFS_OPTS) \
 		-r $@.kernelubifs $@
-	rm -r $@.kernelubifs
+	$(RM) -r $@.kernelubifs
 endef
 
 define Build/append-image
@@ -41,7 +41,7 @@ define Build/append-image
 	fwtool -s /dev/null -t "$@.stripmeta" || :
 	fwtool -i /dev/null -t "$@.stripmeta" || :
 	dd if="$@.stripmeta" >> "$@"
-	rm "$@.stripmeta"
+	$(RM) "$@.stripmeta"
 endef
 
 ifdef IB
@@ -53,16 +53,17 @@ define Build/append-image-stage
 	cp "$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)" "$@.stripmeta"
 	fwtool -s /dev/null -t "$@.stripmeta" || :
 	fwtool -i /dev/null -t "$@.stripmeta" || :
-	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)"
+	$(call locked, \
+		dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)", \
+		$(STAGING_DIR) \
+	)
 	dd if="$@.stripmeta" >> "$@"
-	rm "$@.stripmeta"
+	$(RM) "$@.stripmeta"
 endef
 endif
 
-
 compat_version=$(if $(DEVICE_COMPAT_VERSION),$(DEVICE_COMPAT_VERSION),1.0)
-json_quote=$(subst ','\'',$(subst ",\",$(1)))
-#")')
+json_quote=$(call escsq,$(subst $(dquote),\$(dquote),$(1)))
 
 legacy_supported_message=$(SUPPORTED_DEVICES) - Image version mismatch: image $(compat_version), \
 	device 1.0. Please wipe config during upgrade (force required) or reinstall. \
@@ -102,12 +103,12 @@ define Build/append-rootfs
 	dd if=$(IMAGE_ROOTFS) >> $@
 endef
 
-define Build/append-squashfs-fakeroot-be
-	rm -rf $@.fakefs $@.fakesquashfs
+define Build/append-squashfs-fakeroot
+	$(RM) -r $@.fakefs $@.fakesquashfs
 	mkdir $@.fakefs
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
 		$@.fakefs $@.fakesquashfs \
-		-noappend -root-owned -be -nopad -b 65536 \
+		-noappend -root-owned $(1) -nopad -b 65536 \
 		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
 	cat $@.fakesquashfs >> $@
 endef
@@ -137,7 +138,7 @@ define Build/append-ubi
 		$(if $(VID_HDR_OFFSET),-O $(VID_HDR_OFFSET)) \
 		$(UBINIZE_OPTS)
 	cat $@.tmp >> $@
-	rm $@.tmp
+	$(RM) $@.tmp
 endef
 
 define Build/ubinize-kernel
@@ -149,7 +150,7 @@ define Build/ubinize-kernel
 		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE)) \
 		$(if $(VID_HDR_OFFSET),-O $(VID_HDR_OFFSET)) \
 		$(UBINIZE_OPTS)
-	rm $@.tmp
+	$(RM) $@.tmp
 endef
 
 define Build/append-uboot
@@ -174,7 +175,7 @@ endef
 
 define Build/buffalo-dhp-image
 	$(STAGING_DIR_HOST)/bin/mkdhpimg $@ $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/buffalo-enc
@@ -184,7 +185,7 @@ define Build/buffalo-enc
 	$(STAGING_DIR_HOST)/bin/buffalo-enc \
 		-p $(product) -v $(version) $(args) \
 		-i $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/buffalo-enc-tag
@@ -202,7 +203,7 @@ define Build/buffalo-tag-dhp
 		-b $(product) -p $(product) \
 		-r $(region) -r $(region) -l $(language) \
 		-I $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/check-size
@@ -210,7 +211,7 @@ define Build/check-size
 	limitsize="$$(($(subst k,* 1024,$(subst m, * 1024k,$(if $(1),$(1),$(IMAGE_SIZE))))))"; \
 	[ $$limitsize -ge $$imagesize ] || { \
 		$(call ERROR_MESSAGE,    WARNING: Image file $@ is too big: $$imagesize > $$limitsize); \
-		rm -f $@; \
+		$(RM) $@; \
 	}
 endef
 
@@ -227,7 +228,7 @@ define Build/elecom-product-header
 		echo -n "0.00" | dd bs=16 count=1 conv=sync; \
 		dd if=$(fw); \
 	) > $(fw).new
-	mv $(fw).new $(fw)
+	$(MV) $(fw).new $(fw)
 endef
 
 define Build/elecom-wrc-gs-factory
@@ -240,7 +241,7 @@ define Build/elecom-wrc-gs-factory
 			dd bs=32 count=1 conv=sync; \
 		dd if=$@; \
 	) > $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/elx-header
@@ -259,13 +260,13 @@ define Build/elx-header
 	) > $(KDIR)/tmp/$(DEVICE_NAME).header
 	$(call Build/xor-image,-p $(xor_pattern) -x)
 	cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new
-	mv $@.new $@
-	rm -rf $(KDIR)/tmp/$(DEVICE_NAME).header
+	$(MV) $@.new $@
+	$(RM) -r $(KDIR)/tmp/$(DEVICE_NAME).header
 endef
 
 define Build/eva-image
 	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_LOADADDR) $(KERNEL_LOADADDR) $@ $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/initrd_compression
@@ -296,37 +297,38 @@ define Build/fit
 		-A $(LINUX_KARCH) -v $(LINUX_VERSION)
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage $(if $(findstring external,$(word 3,$(1))),\
 		-E -B 0x1000 $(if $(findstring static,$(word 3,$(1))),-p 0x1000)) -f $@.its $@.new
-	@mv $@.new $@
+	$(Q)$(MV) $@.new $@
 endef
 
 define Build/gzip
 	gzip -f -9n -c $@ $(1) > $@.new
-	@mv $@.new $@
+	$(Q)$(MV) $@.new $@
 endef
 
 define Build/install-dtb
-	$(call locked, \
-		$(foreach dts,$(DEVICE_DTS), \
+	$(foreach dts,$(DEVICE_DTS), \
+		$(call locked, \
 			$(CP) \
 				$(DTS_DIR)/$(dts).dtb \
-				$(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb; \
-		), \
-		install-dtb-$(IMG_PREFIX) \
+				$(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb \
+			;, \
+			$(BIN_DIR) \
+		) \
 	)
 endef
 
 define Build/iptime-crc32
 	$(STAGING_DIR_HOST)/bin/iptime-crc32 $(1) $@ $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/iptime-naspkg
 	$(STAGING_DIR_HOST)/bin/iptime-naspkg $(1) $@ $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/jffs2
-	rm -rf $(KDIR_TMP)/$(DEVICE_NAME)/jffs2 && \
+	$(RM) -r $(KDIR_TMP)/$(DEVICE_NAME)/jffs2 && \
 		mkdir -p $(KDIR_TMP)/$(DEVICE_NAME)/jffs2/$$(dirname $(1)) && \
 		cp $@ $(KDIR_TMP)/$(DEVICE_NAME)/jffs2/$(1) && \
 		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 --pad \
@@ -336,20 +338,20 @@ define Build/jffs2
 			-d $(KDIR_TMP)/$(DEVICE_NAME)/jffs2 \
 			2>&1 1>/dev/null | awk '/^.+$$$$/' && \
 		$(STAGING_DIR_HOST)/bin/padjffs2 $@.new -J $(patsubst %k,,$(BLOCKSIZE))
-	-rm -rf $(KDIR_TMP)/$(DEVICE_NAME)/jffs2/
-	@mv $@.new $@
+	-$(RM) -r $(KDIR_TMP)/$(DEVICE_NAME)/jffs2/
+	$(Q)$(MV) $@.new $@
 endef
 
 define Build/kernel2minor
 	$(eval temp_file := $(shell mktemp))
 	cp $@ $(temp_file)
 	kernel2minor -k $(temp_file) -r $(temp_file).new $(1)
-	mv $(temp_file).new $@
-	rm -f $(temp_file)
+	$(MV) $(temp_file).new $@
+	$(RM) $(temp_file)
 endef
 
 define Build/kernel-bin
-	rm -f $@
+	$(RM) $@
 	cp $< $@
 endef
 
@@ -357,7 +359,7 @@ define Build/linksys-image
 	$(TOPDIR)/scripts/linksys-image.sh \
 		"$(call param_get_default,type,$(1),$(DEVICE_NAME))" \
 		$@ $@.new
-		mv $@.new $@
+		$(MV) $@.new $@
 endef
 
 define Build/lzma
@@ -366,7 +368,7 @@ endef
 
 define Build/lzma-no-dict
 	$(STAGING_DIR_HOST)/bin/lzma e $@ $(1) $@.new
-	@mv $@.new $@
+	$(Q)$(MV) $@.new $@
 endef
 
 define Build/netgear-chk
@@ -375,7 +377,7 @@ define Build/netgear-chk
 		-k $@ \
 		-b $(NETGEAR_BOARD_ID) \
 		$(if $(NETGEAR_REGION),-r $(NETGEAR_REGION),)
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/netgear-dni
@@ -384,7 +386,7 @@ define Build/netgear-dni
 		$(if $(NETGEAR_HW_ID),-H $(NETGEAR_HW_ID)) \
 		-r "$(1)" \
 		-i $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/netgear-encrypted-factory
@@ -425,7 +427,7 @@ define Build/pad-offset
 		pad="(pad - ((size + offset) % pad)) % pad" \
 		newsize='size + pad'; \
 		dd if=$@ of=$@.new bs=$$newsize count=1 conv=sync
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/pad-rootfs
@@ -446,7 +448,7 @@ endef
 define Build/qemu-image
 	if command -v qemu-img; then \
 		qemu-img convert -f raw -O $1 $@ $@.new; \
-		mv $@.new $@; \
+		$(MV) $@.new $@; \
 	else \
 		echo "WARNING: Install qemu-img to create VDI/VMDK images" >&2; exit 1; \
 	fi
@@ -456,31 +458,31 @@ define Build/qsdk-ipq-factory-nand
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
 		$@.its ubi $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
-	@mv $@.new $@
+	$(Q)$(MV) $@.new $@
 endef
 
 define Build/qsdk-ipq-factory-nor
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
 		$@.its hlos $(IMAGE_KERNEL) rootfs $(IMAGE_ROOTFS)
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
-	@mv $@.new $@
+	$(Q)$(MV) $@.new $@
 endef
 
 define Build/seama
 	$(STAGING_DIR_HOST)/bin/seama -i $@ \
 		-m "dev=/dev/mtdblock/$(SEAMA_MTDBLOCK)" -m "type=firmware"
-	mv $@.seama $@
+	$(MV) $@.seama $@
 endef
 
 define Build/seama-seal
 	$(STAGING_DIR_HOST)/bin/seama -i $@ -s $@.seama \
 		-m "signature=$(SEAMA_SIGNATURE)"
-	mv $@.seama $@
+	$(MV) $@.seama $@
 endef
 
 define Build/senao-header
 	$(STAGING_DIR_HOST)/bin/mksenaofw $(1) -e $@ -o $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/sysupgrade-tar
@@ -500,7 +502,7 @@ define Build/tplink-safeloader
 		-o $@.new \
 		-j \
 		$(wordlist 2,$(words $(1)),$(1)) \
-		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && mv $@.new $@ || rm -f $@
+		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && $(MV) $@.new $@ || $(RM) $@
 endef
 
 define Build/tplink-v1-header
@@ -509,7 +511,7 @@ define Build/tplink-v1-header
 		-E $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		-m $(TPLINK_HEADER_VERSION) -N "$(VERSION_DIST)" -V $(REVISION) \
 		-k $@ -o $@.new $(1)
-	@mv $@.new $@
+	$(Q)$(MV) $@.new $@
 endef
 
 # combine kernel and rootfs into one image
@@ -527,7 +529,7 @@ define Build/tplink-v1-image
 		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new -j -X 0x40000 \
 		-a $(call rootfs_align,$(FILESYSTEM)) \
 		$(wordlist 2,$(words $(1)),$(1)) \
-		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && mv $@.new $@ || rm -f $@
+		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && $(MV) $@.new $@ || $(RM) $@
 endef
 
 define Build/tplink-v2-header
@@ -537,7 +539,7 @@ define Build/tplink-v2-header
 		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
 		-T $(TPLINK_HVERSION) -V "ver. 2.0" \
 		-k $@ -o $@.new $(1)
-	@mv $@.new $@
+	$(Q)$(MV) $@.new $@
 endef
 
 define Build/tplink-v2-image
@@ -547,7 +549,7 @@ define Build/tplink-v2-image
 		-T $(TPLINK_HVERSION) -V "ver. 2.0" -a 0x4 -j \
 		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new $(1)
 	cat $@.new >> $@
-	rm -rf $@.new
+	$(RM) -r $@.new
 endef
 
 define Build/uImage
@@ -562,22 +564,22 @@ define Build/uImage
 		$(if $(UIMAGE_MAGIC),-M $(UIMAGE_MAGIC)) \
 		$(wordlist 2,$(words $(1)),$(1)) \
 		-d $@ $@.new
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 define Build/xor-image
 	$(STAGING_DIR_HOST)/bin/xorimage -i $@ -o $@.xor $(1)
-	mv $@.xor $@
+	$(MV) $@.xor $@
 endef
 
 define Build/zip
-	rm -rf $@.tmp
+	$(RM) -r $@.tmp
 	mkdir $@.tmp
-	mv $@ $@.tmp/$(word 1,$(1))
+	$(MV) $@ $@.tmp/$(word 1,$(1))
 	TZ=UTC $(STAGING_DIR_HOST)/bin/zip -j -X \
 		$(wordlist 2,$(words $(1)),$(1)) \
 		$@ $@.tmp/$(if $(word 1,$(1)),$(word 1,$(1)),$$(basename $@))
-	rm -rf $@.tmp
+	$(RM) -r $@.tmp
 endef
 
 define Build/zyxel-ras-image
@@ -590,5 +592,5 @@ define Build/zyxel-ras-image
 			-s $$newsize \
 			-o $@.new \
 			$(if $(findstring separate-kernel,$(word 1,$(1))),-k $(IMAGE_KERNEL)) \
-		&& mv $@.new $@
+		&& $(MV) $@.new $@
 endef

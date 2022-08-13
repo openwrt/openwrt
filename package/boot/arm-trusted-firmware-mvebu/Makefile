@@ -188,7 +188,7 @@ endif
 endef
 
 define Build/Clean
-	rm -rf \
+	$(RM) -r \
 		$(STAGING_DIR_IMAGE)/$(CRYPTOPP_NAME) \
 		$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
 		$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \

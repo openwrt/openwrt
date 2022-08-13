@@ -50,7 +50,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/{mkfs.jffs2,mkfs.ubifs,ubinize}
+	$(RM) $(STAGING_DIR_HOST)/bin/{mkfs.jffs2,mkfs.ubifs,ubinize}
 endef
 
 $(eval $(call HostBuild))

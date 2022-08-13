@@ -149,7 +149,7 @@ define collect_module_symvers
 	done; \
 	sort -u $(PKG_BUILD_DIR)/Module.symvers.tmp > $(PKG_BUILD_DIR)/Module.symvers; \
 	mkdir -p $(PKG_SYMVERS_DIR); \
-	mv $(PKG_BUILD_DIR)/Module.symvers $(PKG_SYMVERS_DIR)/$(PKG_NAME).symvers
+	$(MV) $(PKG_BUILD_DIR)/Module.symvers $(PKG_SYMVERS_DIR)/$(PKG_NAME).symvers
 endef
 
 define KernelPackage/hooks
@@ -236,7 +236,7 @@ $(call KernelPackage/$(1)/config)
 
   ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m y,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     define Package/kmod-$(1)/install
-		  @for mod in $$(call version_filter,$$(FILES)); do \
+		  $(Q)for mod in $$(call version_filter,$$(FILES)); do \
 			if grep -q "$$$$$$$${mod##$(LINUX_DIR)/}" "$(LINUX_DIR)/modules.builtin"; then \
 				echo "NOTICE: module '$$$$$$$$mod' is built-in."; \
 			elif [ -e $$$$$$$$mod ]; then \

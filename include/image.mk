@@ -139,7 +139,7 @@ endef
 
 ifdef CONFIG_TARGET_IMAGES_GZIP
   define Image/Gzip
-	rm -f $(1).gz
+	$(RM) $(1).gz
 	gzip -9n $(1)
   endef
 endif
@@ -161,7 +161,7 @@ DTC_FLAGS += \
 
 define Image/pad-to
 	dd if=$(1) of=$(1).new bs=$(2) conv=sync
-	mv $(1).new $(1)
+	$(MV) $(1).new $(1)
 endef
 
 ROOTFS_PARTSIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024)))
@@ -309,9 +309,9 @@ opkg_target = \
 		-f $(mkfs_cur_target_dir).conf
 
 target-dir-%: FORCE
-	rm -rf $(mkfs_cur_target_dir) $(mkfs_cur_target_dir).opkg
+	$(RM) -r $(mkfs_cur_target_dir) $(mkfs_cur_target_dir).opkg
 	$(CP) $(TARGET_DIR_ORIG) $(mkfs_cur_target_dir)
-	-mv $(mkfs_cur_target_dir)/etc/opkg $(mkfs_cur_target_dir).opkg
+	-$(MV) $(mkfs_cur_target_dir)/etc/opkg $(mkfs_cur_target_dir).opkg
 	echo 'src default file://$(PACKAGE_DIR_ALL)' > $(mkfs_cur_target_dir).conf
 	$(if $(mkfs_packages_remove), \
 		-$(call opkg,$(mkfs_cur_target_dir)) remove \
@@ -321,7 +321,7 @@ target-dir-%: FORCE
 		$(opkg_target) install \
 			$(call opkg_package_files,$(mkfs_packages_add)))
 	-$(CP) -T $(mkfs_cur_target_dir).opkg/ $(mkfs_cur_target_dir)/etc/opkg/
-	rm -rf $(mkfs_cur_target_dir).opkg $(mkfs_cur_target_dir).conf
+	$(RM) -r $(mkfs_cur_target_dir).opkg $(mkfs_cur_target_dir).conf
 	$(call prepare_rootfs,$(mkfs_cur_target_dir),$(TOPDIR)/files)
 
 $(KDIR)/root.%: kernel_prepare
@@ -474,16 +474,16 @@ define Device/Build/initramfs
   $(KDIR)/$$(KERNEL_INITRAMFS_NAME):: image_prepare
   $(1)-images: $$(if $$(KERNEL_INITRAMFS),$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE))
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
-	cp $$^ $$@
+	$$(call locked,cp $$^ $$@,$(BIN_DIR))
 
   $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_NAME) $(CURDIR)/Makefile $$(KERNEL_DEPENDS) image_prepare
-	@rm -f $$@
+	$(Q)$(RM) $$@
 	$$(call concat_cmd,$$(KERNEL_INITRAMFS))
 
   $(call Device/Export,$(BUILD_DIR)/json_info_files/$$(KERNEL_INITRAMFS_IMAGE).json,$(1))
 
   $(BUILD_DIR)/json_info_files/$$(KERNEL_INITRAMFS_IMAGE).json: $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
-	@mkdir -p $$(shell dirname $$@)
+	$(Q)mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(1)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	FILE_NAME="$$(notdir $$^)" \
@@ -547,13 +547,13 @@ define Device/Build/kernel
   $$(_TARGET): $$(if $$(KERNEL_INSTALL),$(BIN_DIR)/$$(KERNEL_IMAGE))
   $(call Device/Export,$$(KDIR_KERNEL_IMAGE),$(1))
   $(BIN_DIR)/$$(KERNEL_IMAGE): $$(KDIR_KERNEL_IMAGE)
-	cp $$^ $$@
+	$$(call locked,cp $$^ $$@,$(BIN_DIR))
   ifndef IB
     ifdef CONFIG_IB
       install: $$(KDIR_KERNEL_IMAGE)
     endif
     $$(KDIR_KERNEL_IMAGE): $(KDIR)/$$(KERNEL_NAME) $(CURDIR)/Makefile $$(KERNEL_DEPENDS) image_prepare
-	@rm -f $$@
+	$(Q)$(RM) $$@
 	$$(call concat_cmd,$$(KERNEL))
 	$$(if $$(KERNEL_SIZE),$$(call Build/check-size,$$(KERNEL_SIZE)))
   endif
@@ -577,20 +577,20 @@ define Device/Build/image
     $$(ROOTFS/$(1)/$(3)): $(if $(TARGET_PER_DEVICE_ROOTFS),target-dir-$$(ROOTFS_ID/$(3)))
   endif
   $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2)): $$(KDIR_KERNEL_IMAGE) $$(ROOTFS/$(1)/$(3))
-	@rm -f $$@
+	$(Q)$(RM) $$@
 	[ -f $$(word 1,$$^) -a -f $$(word 2,$$^) ]
 	$$(call concat_cmd,$(if $(IMAGE/$(2)/$(1)),$(IMAGE/$(2)/$(1)),$(IMAGE/$(2))))
 
   .IGNORE: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)).gz: $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
-	gzip -c -9n $$^ > $$@
+	$$(call locked,gzip -c -9n $$^ > $$@,$(BIN_DIR))
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)): $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
-	cp $$^ $$@
+	$$(call locked,cp $$^ $$@,$(BIN_DIR))
 
   $(BUILD_DIR)/json_info_files/$(call DEVICE_IMG_NAME,$(1),$(2)).json: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))$$(GZ_SUFFIX)
-	@mkdir -p $$(shell dirname $$@)
+	$(Q)mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(DEVICE_NAME)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	FILE_NAME="$(DEVICE_IMG_NAME)" \
@@ -627,16 +627,16 @@ define Device/Build/artifact
 	  $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1)))
   $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1): $$(KDIR_KERNEL_IMAGE) $(2)-images
-	@rm -f $$@
+	$(Q)$(RM) $$@
 	$$(call concat_cmd,$(ARTIFACT/$(1)))
 
   .IGNORE: $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)
 
   $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1): $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1)
-	cp $$^ $$@
+	$$(call locked,cp $$^ $$@,$(BIN_DIR))
 
   $(BUILD_DIR)/json_info_files/$(DEVICE_IMG_PREFIX)-$(1).json: $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)
-	@mkdir -p $$(shell dirname $$@)
+	$(Q)mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(DEVICE_NAME)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	FILE_NAME="$(DEVICE_IMG_PREFIX)-$(1)" \
@@ -751,7 +751,7 @@ define BuildImage
 
     image_prepare: compile
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
-		rm -rf $(BUILD_DIR)/json_info_files
+		$(RM) -r $(BUILD_DIR)/json_info_files
 		$(call Image/Prepare)
 
   else

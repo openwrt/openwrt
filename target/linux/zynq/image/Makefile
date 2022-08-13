@@ -9,7 +9,7 @@ FAT32_BLOCK_SIZE=1024
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_TARGET_KERNEL_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
 define Build/zynq-sdcard
-	rm -f $@.boot
+	$(RM) $@.boot
 	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
 	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot.bin ::boot.bin
 	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot.img ::u-boot.img
@@ -20,7 +20,7 @@ define Build/zynq-sdcard
 		$(IMAGE_ROOTFS) \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
-	rm -f $@.boot
+	$(RM) $@.boot
 endef
 
 #################################################

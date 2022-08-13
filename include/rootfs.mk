@@ -1,6 +1,6 @@
 ifdef CONFIG_USE_MKLIBS
   define mklibs
-	rm -rf $(TMP_DIR)/mklibs-progs $(TMP_DIR)/mklibs-out
+	$(RM) -r $(TMP_DIR)/mklibs-progs $(TMP_DIR)/mklibs-out
 	# first find all programs and add them to the mklibs list
 	find $(STAGING_DIR_ROOT) -type f -perm /100 -exec \
 		file -r -N -F '' {} + | \
@@ -47,7 +47,7 @@ TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 
 ifdef CONFIG_CLEAN_IPKG
   define clean_ipkg
-	-find $(1)/usr/lib/opkg/info -type f -and -not -name '*.control' -delete
+	-find $(1)/usr/lib/opkg/info -type f '!' -name '*.control' | $(XARGS) $(RM)
 	-sed -i -ne '/^Require-User: /p' $(1)/usr/lib/opkg/info/*.control
 	awk ' \
 		BEGIN { conffiles = 0; print "Conffiles:" } \
@@ -55,8 +55,8 @@ ifdef CONFIG_CLEAN_IPKG
 		!/^ / { conffiles = 0; next } \
 		conffiles == 1 { print } \
 	' $(1)/usr/lib/opkg/status >$(1)/usr/lib/opkg/status.new
-	mv $(1)/usr/lib/opkg/status.new $(1)/usr/lib/opkg/status
-	-find $(1)/usr/lib/opkg -empty -delete
+	$(MV) $(1)/usr/lib/opkg/status.new $(1)/usr/lib/opkg/status
+	-find $(1)/usr/lib/opkg -type f -size 0 | $(XARGS) $(RM)
   endef
 endif
 
@@ -64,12 +64,12 @@ define prepare_rootfs
 	$(if $(2),@if [ -d '$(2)' ]; then \
 		$(call file_copy,$(2)/.,$(1)); \
 	fi)
-	@mkdir -p $(1)/etc/rc.d
-	@mkdir -p $(1)/var/lock
-	@( \
+	$(Q)mkdir -p $(1)/etc/rc.d
+	$(Q)mkdir -p $(1)/var/lock
+	$(Q)( \
 		cd $(1); \
 		for script in ./usr/lib/opkg/info/*.postinst; do \
-			IPKG_INSTROOT=$(1) $$(command -v bash) $$script; \
+			IPKG_INSTROOT=$(1) $(BASH) $$script; \
 			ret=$$?; \
 			if [ $$ret -ne 0 ]; then \
 				echo "postinst script $$script has failed with exit code $$ret" >&2; \
@@ -79,17 +79,17 @@ define prepare_rootfs
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
 			if ! echo " $(3) " | grep -q " $$(basename $$script) "; then \
-				IPKG_INSTROOT=$(1) $$(command -v bash) ./etc/rc.common $$script enable; \
+				IPKG_INSTROOT=$(1) $(BASH) ./etc/rc.common $$script enable; \
 				echo "Enabling" $$(basename $$script); \
 			else \
-				IPKG_INSTROOT=$(1) $$(command -v bash) ./etc/rc.common $$script disable; \
+				IPKG_INSTROOT=$(1) $(BASH) ./etc/rc.common $$script disable; \
 				echo "Disabling" $$(basename $$script); \
 			fi; \
 		done || true \
 	)
 	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
-	@-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
-	rm -rf \
+	$(Q)-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) $(RM) -r
+	$(Q) -r \
 		$(1)/boot \
 		$(1)/tmp/* \
 		$(1)/usr/lib/opkg/info/*.postinst* \
@@ -97,5 +97,5 @@ define prepare_rootfs
 		$(1)/var/lock/*.lock
 	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
-	$(if $(SOURCE_DATE_EPOCH),find $(1)/ -mindepth 1 -execdir touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +)
+	$(if $(SOURCE_DATE_EPOCH),$(call find_depth,$(1),,1,,-exec touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +,1))
 endef

@@ -81,9 +81,9 @@ define Host/Configure/post/mipsel
 endef
 
 define Host/Prepare
-	rm -rf $(BUILD_DIR_TOOLCHAIN)/linux-*
+	$(RM) -r $(BUILD_DIR_TOOLCHAIN)/linux-*
 	$(call Kernel/Prepare/Default)
-	rm -f $(BUILD_DIR_TOOLCHAIN)/linux
+	$(RM) $(BUILD_DIR_TOOLCHAIN)/linux
 	ln -s linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
 	$(SED) 's/@expr length/@-expr length/' $(HOST_BUILD_DIR)/Makefile
 endef
@@ -103,7 +103,7 @@ define Host/Install
 endef
 
 define Host/Clean
-	rm -rf \
+	$(RM) -r \
 		$(HOST_BUILD_DIR) \
 		$(BUILD_DIR_TOOLCHAIN)/linux \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev

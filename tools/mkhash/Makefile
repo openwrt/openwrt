@@ -6,8 +6,8 @@
 #
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := flock
-PKG_VERSION := 2.18
+PKG_NAME := mkhash
+PKG_VERSION := 1
 PKG_RELEASE := 1
 PKG_HOST_ONLY := 1
 
@@ -34,12 +34,12 @@ endef
 
 define Host/Compile
 	mkdir -p $(HOST_BUILD_DIR)
-	$(HOSTCC) $(HOST_CFLAGS) -o $(HOST_BUILD_DIR)/flock src/flock.c
+	$(HOSTCC) $(HOST_CFLAGS) -o $(HOST_BUILD_DIR)/mkhash src/mkhash.c
 endef
 
 define Host/Install
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/flock $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/mkhash $(STAGING_DIR_HOST)/bin/
 endef
 
 define HostBuild

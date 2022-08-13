@@ -13,7 +13,7 @@ endef
 define Build/boot-common
 	# This creates a new folder copies the dtb (as rockchip.dtb) 
 	# and the kernel image (as kernel.img)
-	rm -fR $@.boot
+	$(RM)R $@.boot
 	mkdir -p $@.boot
 
 	$(CP) $(DTS_DIR)/$(DEVICE_DTS).dtb $@.boot/rockchip.dtb

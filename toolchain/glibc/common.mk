@@ -85,7 +85,7 @@ define Host/Configure
 		touch $(HOST_BUILD_DIR)/.autoconf; \
 	}
 	mkdir -p $(CUR_BUILD_DIR)
-	( cd $(CUR_BUILD_DIR); rm -f config.cache; \
+	( cd $(CUR_BUILD_DIR); $(RM) config.cache; \
 		$(GLIBC_CONFIGURE) \
 	);
 endef
@@ -96,7 +96,7 @@ define Host/Prepare
 endef
 
 define Host/Clean
-	rm -rf $(CUR_BUILD_DIR)* \
+	$(RM) -r $(CUR_BUILD_DIR)* \
 		$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 endef

@@ -6,7 +6,10 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Build/copy-kernel.bin
-	$(call locked,$(MAKE) -C copy-kernel CROSS_COMPILE=$(TARGET_CROSS) O=$(KDIR),gemini-copy-kernel.bin)
+	$(call locked, \
+		$(MAKE) -C copy-kernel CROSS_COMPILE=$(TARGET_CROSS) O=$(KDIR);, \
+		$(KDIR) \
+	)
 endef
 
 # Cook a "WRGG" image, this board is apparently one in the D-Link
@@ -21,7 +24,7 @@ define Build/dir685-image
 	-m dir685 \
 	-B 96bb
 
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 # Padding added after the rootfs to an even 128k boundary
@@ -47,7 +50,7 @@ define Build/dns313-images
 	dns313-header $(IMAGE_KERNEL) \
 		$@.tmp/.boot/zImage
 
-	rm $@.tmp/dummyfile
+	$(RM) $@.tmp/dummyfile
 
 	genext2fs --block-size $(BLOCKSIZE:%k=%Ki) \
 		--size-in-blocks $$((1024 * $(CONFIG_TARGET_KERNEL_PARTSIZE))) \
@@ -62,7 +65,7 @@ define Build/dns313-images
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 
-	rm -rf $@.tmp
+	$(RM) -r $@.tmp
 endef
 
 define Build/wiligear-image
@@ -73,7 +76,7 @@ define Build/wiligear-image
 		-p Ramdisk:0x120000:0x500000:0:0:$@ \
 		-o $@.new
 
-	mv $@.new $@
+	$(MV) $@.new $@
 endef
 
 # Create the default image format used by the StorLink reference design
@@ -92,7 +95,7 @@ define Build/storlink-default-images
 	mkdir -p $@.tmp
 
 	# "App" partition is the rootfs
-	mv $@ $@.tmp/hddapp.tgz
+	$(MV) $@ $@.tmp/hddapp.tgz
 	# 256 bytes copy routine
 	dd if=$(KDIR)/copy-kernel.bin of=$@.tmp/zImage
 	$(call Image/pad-to,$@.tmp/zImage,512)
@@ -107,7 +110,7 @@ define Build/storlink-default-images
 	(cd $@.tmp; tar --sort=name --owner=0 --group=0 --numeric-owner -czf $@ * \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)"))
 
-	rm -rf $@.tmp
+	$(RM) -r $@.tmp
 endef
 
 # WBD-111 and WBD-222:
@@ -115,10 +118,10 @@ endef
 # FIXME: is this really needed now that we no longer append the code
 # to change the machine ID number? Needs testing on Wiliboard.
 define Build/wbd-nops
-	mv $@ $@.tmp
+	$(MV) $@ $@.tmp
 	echo -en "\x00\x00\xa0\xe1\x00\x00\xa0\xe1\x00\x00\xa0\xe1\x00\x00\xa0\xe1" > $@
 	cat $@.tmp >> $@
-	rm -f $@.tmp
+	$(RM) $@.tmp
 endef
 
 # All DTB files are prefixed with "gemini-"

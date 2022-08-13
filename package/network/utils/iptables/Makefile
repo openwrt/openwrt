@@ -616,9 +616,9 @@ MAKE_FLAGS := \
 
 ifneq ($(wildcard $(PKG_BUILD_DIR)/.config_*),$(subst .configured_,.config_,$(STAMP_CONFIGURED)))
   define Build/Configure/rebuild
-	$(FIND) $(PKG_BUILD_DIR) -name \*.o -or -name \*.\?o -or -name \*.a | $(XARGS) rm -f
-	rm -f $(PKG_BUILD_DIR)/.config_*
-	rm -f $(PKG_BUILD_DIR)/.configured_*
+	$(FIND) $(PKG_BUILD_DIR) -name \*.o -o -name \*.\?o -o -name \*.a | $(XARGS) $(RM)
+	$(RM) $(PKG_BUILD_DIR)/.config_*
+	$(RM) $(PKG_BUILD_DIR)/.configured_*
 	touch $(subst .configured_,.config_,$(STAMP_CONFIGURED))
   endef
 endif

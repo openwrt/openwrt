@@ -152,7 +152,7 @@ endef
 $(eval $(if $(COEF_DOWNLOAD),$(call Download,coef)))
 
 define Build/Configure
-	rm -rf \
+	$(RM) -r \
 		$(PKG_BUILD_DIR)/coef \
 		$(PKG_BUILD_DIR)/firmware
 	mkdir -p \

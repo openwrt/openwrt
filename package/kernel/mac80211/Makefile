@@ -445,19 +445,19 @@ endef
 $(eval $(call shexport,mac80211_config))
 
 define Build/Prepare
-	rm -rf $(PKG_BUILD_DIR)
+	$(RM) -r $(PKG_BUILD_DIR)
 	mkdir -p $(PKG_BUILD_DIR)
 	$(PKG_UNPACK)
 	$(Build/Patch)
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2100_NAME)-$(IPW2100_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
-	rm -rf \
+	$(RM) -r \
 		$(PKG_BUILD_DIR)/include/linux/ssb \
 		$(PKG_BUILD_DIR)/include/linux/bcma \
 		$(PKG_BUILD_DIR)/include/net/bluetooth
 
-	rm -f \
+	$(RM) \
 		$(PKG_BUILD_DIR)/include/linux/cordic.h \
 		$(PKG_BUILD_DIR)/include/linux/crc8.h \
 		$(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h \
@@ -471,7 +471,7 @@ endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-cfg80211)$(CONFIG_PACKAGE_kmod-lib80211),)
  define Build/Compile/kmod
-	rm -rf $(PKG_BUILD_DIR)/modules
+	$(RM) -r $(PKG_BUILD_DIR)/modules
 	+$(MAKE) $(PKG_JOBS) $(MAKE_OPTS) modules
  endef
 endif
@@ -488,7 +488,7 @@ ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
 endif
 
 define Build/Patch
-	$(if $(QUILT),rm -rf $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches)
+	$(if $(QUILT),$(RM) -r $(PKG_BUILD_DIR)/patches; mkdir -p $(PKG_BUILD_DIR)/patches)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/build,build/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/subsys,subsys/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath,ath/)
@@ -533,7 +533,7 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/backport-include/* $(1)/usr/include/mac80211-backport/
 	$(CP) $(PKG_BUILD_DIR)/net/mac80211/rate.h $(1)/usr/include/net/mac80211/
 	$(CP) $(PKG_BUILD_DIR)/drivers/net/wireless/ath/*.h $(1)/usr/include/mac80211/ath/
-	rm -f $(1)/usr/include/mac80211-backport/linux/module.h
+	$(RM) $(1)/usr/include/mac80211-backport/linux/module.h
 endef
 
 

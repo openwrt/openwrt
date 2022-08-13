@@ -59,11 +59,13 @@ define Package/Default
   FILE_MODES:=$(PKG_FILE_MODES)
 endef
 
+PKG_SRC_DIR ?= src
+
 Build/Patch:=$(Build/Patch/Default)
 ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
 	$(PKG_UNPACK)
-	[ ! -d ./src/ ] || $(CP) ./src/. $(PKG_BUILD_DIR)
+	[ ! -d ./$(PKG_SRC_DIR)/ ] || $(CP) ./$(PKG_SRC_DIR)/. $(PKG_SOURCE_DIR)
 	$(Build/Patch)
   endef
 endif
@@ -105,15 +107,20 @@ CONFIGURE_VARS = \
 CONFIGURE_PATH = .
 CONFIGURE_CMD = ./configure
 
-replace_script=$(FIND) $(1) -name $(2) | $(XARGS) chmod u+w; \
-	       $(FIND) $(1) -name $(2) | $(XARGS) -n1 cp --remove-destination \
-	       $(SCRIPT_DIR)/$(2);
-
 define Build/Configure/Default
-	(cd $(PKG_BUILD_DIR)/$(CONFIGURE_PATH)/$(strip $(3)); \
+	( \
+	cd $(PKG_BUILD_DIR)/$(CONFIGURE_PATH)/$(strip $(3)); \
 	if [ -x $(CONFIGURE_CMD) ]; then \
-		$(call replace_script,$(PKG_BUILD_DIR)/$(3),config.guess) \
-		$(call replace_script,$(PKG_BUILD_DIR)/$(3),config.sub) \
+		$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(SCRIPT_DIR)) \
+		$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.sub,$(SCRIPT_DIR)) \
+		$(if $(BUILD_ALLOW_WERROR),, \
+			$(call replace_string,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),'Makefile*',\(-Werror\)\([^=].*$$$$\),-Wextra\2) \
+		) \
+		$(if $(HOST_ARCH_GNU), \
+			echo "echo $(GNU_HOST_NAME)" > \
+				$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3)))/config.guess ; \
+			$(call replace_script,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3))),config.guess,$(PKG_BUILD_DIR)/$(CONFIGURE_PATH)$(if $(3),/$(strip $(3)))) \
+		) \
 		$(CONFIGURE_VARS) \
 		$(2) \
 		$(CONFIGURE_CMD) \
@@ -140,10 +147,15 @@ MAKE_INSTALL_FLAGS = \
 MAKE_PATH ?= .
 
 define Build/Compile/Default
-	+$(MAKE_VARS) \
+	$(MAKE_VARS) \
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
 		$(MAKE_FLAGS) \
 		$(1);
+endef
+
+define Build/Compile/Fixup
+	$(call autoreconf_target) \
+	$(call Build/Compile/Default);
 endef
 
 define Build/Install/Default
