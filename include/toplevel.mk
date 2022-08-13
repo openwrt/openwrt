@@ -57,6 +57,7 @@ ifeq ($(FORCE),)
   .config scripts/config/conf scripts/config/mconf: staging_dir/host/.prereq-build
 endif
 
+SCAN_COOKIE?=$(shell echo $$PPID)
 SCAN_COOKIE?=$(shell echo $$$$)
 export SCAN_COOKIE
 

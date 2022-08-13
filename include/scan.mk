@@ -8,8 +8,10 @@ SCAN_TARGET ?= packageinfo
 SCAN_NAME ?= package
 SCAN_DIR ?= package
 TARGET_STAMP:=$(TMP_DIR)/info/.files-$(SCAN_TARGET).stamp
-FILELIST:=$(TMP_DIR)/info/.files-$(SCAN_TARGET)-$(SCAN_COOKIE)
-OVERRIDELIST:=$(TMP_DIR)/info/.overrides-$(SCAN_TARGET)-$(SCAN_COOKIE)
+TARGET_FILELIST:=$(TMP_DIR)/info/.files-$(SCAN_TARGET)-$(SCAN_COOKIE)
+TARGET_OVERRIDELIST:=$(TMP_DIR)/info/.overrides-$(SCAN_TARGET)-$(SCAN_COOKIE)
+FILELIST:=$(TMP_DIR)/info/.files-$(SCAN_TARGET)-$${SCAN_COOKIE}
+OVERRIDELIST:=$(TMP_DIR)/info/.overrides-$(SCAN_TARGET)-$${SCAN_COOKIE}
 
 export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
 
@@ -60,9 +62,9 @@ define PackageDir
 	$(MV) $$@.tmp $$@
 endef
 
-$(OVERRIDELIST):
+$(TARGET_OVERRIDELIST):
 	$(RM) $(TMP_DIR)/info/.overrides-$(SCAN_TARGET)-*
-	touch $@
+	touch $(OVERRIDELIST)
 
 ifeq ($(SCAN_NAME),target)
   GREP_STRING=BuildTarget
@@ -70,16 +72,16 @@ else
   GREP_STRING=(Build/DefaultTargets|BuildPackage|KernelPackage)
 endif
 
-$(FILELIST): $(OVERRIDELIST)
+$(TARGET_FILELIST): $(TARGET_OVERRIDELIST)
 	$(RM) $(TMP_DIR)/info/.files-$(SCAN_TARGET)-*
 	$(call find_depth,$(SCAN_DIR),$(SCAN_EXTRA) -name 'Makefile',1,$(if $(SCAN_DEPTH),$(SCAN_DEPTH))) | \
 		xargs grep -aHE 'call $(GREP_STRING)' | \
 		sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq | \
-		awk -v of=$(OVERRIDELIST) -f include/scan.awk > $@
+		awk -v of=$(OVERRIDELIST) -f include/scan.awk > $(FILELIST)
 
-$(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
+$(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(TARGET_FILELIST)
 	( \
-		cat $< | awk '{print "$(SCAN_DIR)/" $$0 "/Makefile" }' | xargs grep -HE '^ *SCAN_DEPS *= *' | awk -F: '{ gsub(/^.*DEPS *= */, "", $$2); print "DEPS_" $$1 "=" $$2 }'; \
+		cat $(FILELIST) | awk '{print "$(SCAN_DIR)/" $$0 "/Makefile" }' | xargs grep -HE '^ *SCAN_DEPS *= *' | awk -F: '{ gsub(/^.*DEPS *= */, "", $$2); print "DEPS_" $$1 "=" $$2 }'; \
 		awk -F/ -v deps="$$DEPS" -v of="$(OVERRIDELIST)" ' \
 		BEGIN { \
 			while (getline < (of)) \
@@ -94,7 +96,7 @@ $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 			if($$NF in override) \
 				pkg=override[$$NF]; \
 			print "$$(eval $$(call PackageDir," info "," dir "," pkg "))"; \
-		} ' < $<; \
+		} ' < $(FILELIST); \
 		true; \
 	) > $@.tmp
 	$(MV) $@.tmp $@
@@ -103,7 +105,7 @@ $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 
 $(TARGET_STAMP)::
 	+( \
-		$(NO_TRACE_MAKE) $(FILELIST); \
+		$(MAKE) -s --no-print-directory $(FILELIST); \
 		MD5SUM=$$(cat $(FILELIST) $(OVERRIDELIST) | $(MKHASH) md5 | awk '{print $$1}'); \
 		[ -f "$@.$$MD5SUM" ] || { \
 			$(RM) $@.*; \
