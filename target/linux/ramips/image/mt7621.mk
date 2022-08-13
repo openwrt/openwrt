@@ -442,6 +442,14 @@ define Device/dlink_dir-xx60-a1
 	check-size
 endef
 
+define Device/dlink_dir-1260-a1
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7663-firmware-ap
+  DEVICE_MODEL := DIR-1260
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-1260-a1
+
 define Device/dlink_dir-1960-a1
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-1960
