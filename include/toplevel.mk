@@ -199,6 +199,8 @@ kernel_xconfig: prepare_kernel_conf FORCE
 
 ifneq ($(SDK),1)
 staging_dir/host/.prereq-build: staging_dir/host/.prereq-tools
+else
+staging_dir/host/.prereq-build: include/prepare.mk
 endif
 
 staging_dir/host/.prereq-build: include/prereq-build.mk

@@ -11,8 +11,14 @@ prepare: .git/config
 	@( \
 		printf "Initializing SDK ... "; \
 		git init -q .; \
-		find * -prune '!' -name 'feeds' | \
-			xargs git add; \
+		find * -prune \
+			'!' -name 'dl' \
+			'!' -name 'feeds' \
+			'!' -name 'tmp' \
+				| xargs git add -f \
+			.gitattributes \
+			.gitignore \
+		; \
 		git commit -q -m "Initial state"; \
 		echo "ok."; \
 	)
