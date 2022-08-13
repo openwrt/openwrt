@@ -524,7 +524,7 @@ define KernelPackage/hwmon-tps23861
   KCONFIG:=CONFIG_SENSORS_TPS23861
   FILES:=$(LINUX_DIR)/drivers/hwmon/tps23861.ko
   AUTOLOAD:=$(call AutoProbe,tps23861)
-  $(call AddDepends/hwmon,+kmod-i2c-core)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
 endef
 
 define KernelPackage/hwmon-tps23861/description
