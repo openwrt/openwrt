@@ -263,6 +263,13 @@ case "$FIRMWARE" in
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
+	tplink,deco-s4-v2)
+		caldata_extract "art" 0x5000 0x2f20
+		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		ath10k_patch_mac $(macaddr_add $base_mac 2)
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		;;
 	esac
 	;;
 *)

@@ -110,6 +110,25 @@ mtd_get_mac_encrypted_arcadyan() {
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
 }
 
+mtd_get_mac_encrypted_deco() {
+	local mtdname="$1"
+
+	if ! [ -e "$mtdname" ]; then
+		echo "mtd_get_mac_encrypted_deco: file $mtdname not found!" >&2
+		return
+	fi
+
+	tplink_key="3336303032384339"
+
+	key=$(dd if=$mtdname bs=1 skip=16 count=8 2>/dev/null | \
+		uencrypt -n -d -k $tplink_key -c des-ecb | hexdump -v -n 8 -e '1/1 "%02x"')
+
+	macaddr=$(dd if=$mtdname bs=1 skip=32 count=8 2>/dev/null | \
+		uencrypt -n -d -k $key -c des-ecb | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"')
+
+	echo $macaddr
+}
+
 mtd_get_mac_text() {
 	local mtdname=$1
 	local offset=$(($2))

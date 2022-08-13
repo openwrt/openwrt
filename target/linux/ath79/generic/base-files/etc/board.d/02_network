@@ -519,7 +519,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan"
 		;;
-	tplink,deco-m4r-v1)
+	tplink,deco-m4r-v1|\
+	tplink,deco-s4-v2)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan:1" "5:lan:2"
 		;;
@@ -676,6 +677,10 @@ ath79_setup_macs()
 	tplink,tl-wdr4300-v1-il)
 		base_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
 		wan_mac=$(macaddr_add "$base_mac" 1)
+		;;
+	tplink,deco-s4-v2)
+		lan_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		label_mac=$lan_mac
 		;;
 	nec,wf1200cr|\
 	nec,wg1200cr)
