@@ -1,0 +1,103 @@
+--- a/src/jit_disasm.c
++++ b/src/jit_disasm.c
+@@ -28,6 +28,32 @@
+ #include "json_writer.h"
+ #include "main.h"
+ 
++static inline int fprintf_styled(void *out,
++				 enum disassembler_style style,
++				 const char *fmt, ...)
++{
++	va_list args;
++	int r;
++
++	(void)style;
++
++	va_start(args, fmt);
++	r = vfprintf(out, fmt, args);
++	va_end(args);
++
++	return r;
++}
++
++static inline void init_disassemble_info_compat(struct disassemble_info *info,
++						void *stream,
++						fprintf_ftype unstyled_func,
++						fprintf_styled_ftype styled_func)
++{
++	init_disassemble_info(info, stream,
++			      unstyled_func,
++			      styled_func);
++}
++
+ static void get_exec_path(char *tpath, size_t size)
+ {
+ 	const char *path = "/proc/self/exe";
+@@ -39,15 +65,12 @@ static void get_exec_path(char *tpath, s
+ }
+ 
+ static int oper_count;
+-static int fprintf_json(void *out, const char *fmt, ...)
++static int printf_json(void *out, const char *fmt, va_list ap)
+ {
+-	va_list ap;
+ 	char *s;
+ 	int err;
+ 
+-	va_start(ap, fmt);
+ 	err = vasprintf(&s, fmt, ap);
+-	va_end(ap);
+ 	if (err < 0)
+ 		return -1;
+ 
+@@ -73,6 +96,32 @@ static int fprintf_json(void *out, const
+ 	return 0;
+ }
+ 
++static int fprintf_json(void *out, const char *fmt, ...)
++{
++	va_list ap;
++	int r;
++
++	va_start(ap, fmt);
++	r = printf_json(out, fmt, ap);
++	va_end(ap);
++
++	return r;
++}
++
++static int fprintf_json_styled(void *out,
++			       enum disassembler_style style __maybe_unused,
++			       const char *fmt, ...)
++{
++	va_list ap;
++	int r;
++
++	va_start(ap, fmt);
++	r = printf_json(out, fmt, ap);
++	va_end(ap);
++
++	return r;
++}
++
+ void disasm_print_insn(unsigned char *image, ssize_t len, int opcodes,
+ 		       const char *arch, const char *disassembler_options,
+ 		       const struct btf *btf,
+@@ -99,11 +148,13 @@ void disasm_print_insn(unsigned char *im
+ 	assert(bfd_check_format(bfdf, bfd_object));
+ 
+ 	if (json_output)
+-		init_disassemble_info(&info, stdout,
+-				      (fprintf_ftype) fprintf_json);
++		init_disassemble_info_compat(&info, stdout,
++				      (fprintf_ftype) fprintf_json,
++					  fprintf_json_styled);
+ 	else
+-		init_disassemble_info(&info, stdout,
+-				      (fprintf_ftype) fprintf);
++		init_disassemble_info_compat(&info, stdout,
++				      (fprintf_ftype) fprintf,
++					  fprintf_styled);
+ 
+ 	/* Update architecture info for offload. */
+ 	if (arch) {
