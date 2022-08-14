@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
 PKG_VERSION:=2.39
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=@GNU/binutils
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -84,6 +84,7 @@ TARGET_LDFLAGS += $(if $(INTL_FULL),-lintl)
 CONFIGURE_ARGS += \
 	--host=$(REAL_GNU_TARGET_NAME) \
 	--target=$(REAL_GNU_TARGET_NAME) \
+	--disable-gprofng \
 	--enable-shared \
 	--enable-install-libiberty \
 	--enable-install-libbfd \
