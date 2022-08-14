@@ -148,10 +148,6 @@
 	};
 };
 
-&ethernet {
-	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
-};
-
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_e000>;
 	nvmem-cell-names = "mac-address";
@@ -190,7 +186,7 @@
 
 &state_default {
 	gpio {
-		groups = "i2c", "rgmii2", "uart2", "wdt";
+		groups = "i2c", "uart2", "wdt";
 		function = "gpio";
 	};
 };
