@@ -1,0 +1,26 @@
+From b4b84e5cbd237347756e6c043d123065a62d4a84 Mon Sep 17 00:00:00 2001
+From: alealexpro100 <alealexn@gmail.com>
+Date: Sun, 14 Aug 2022 10:14:03 +0000
+Subject: [PATCH] ARM: dts: bcm4708: Specify all RAM for linksys ea6500 v2
+
+---
+ arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts b/arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts
+index f1412ba83def..0454423fe166 100644
+--- a/arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts
++++ b/arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts
+@@ -19,7 +19,8 @@ chosen {
+ 
+ 	memory@0 {
+ 		device_type = "memory";
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000>,
++		      <0x88000000 0x08000000>;
+ 	};
+ 
+ 	gpio-keys {
+-- 
+2.37.1
+
