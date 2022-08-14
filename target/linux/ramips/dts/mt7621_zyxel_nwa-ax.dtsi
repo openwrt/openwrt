@@ -141,11 +141,7 @@
 
 &state_default {
 	gpio {
-		groups = "uart3", "rgmii2";
+		groups = "uart3";
 		function = "gpio";
 	};
-};
-
-&ethernet {
-	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
 };
