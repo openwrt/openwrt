@@ -81,6 +81,24 @@ ifeq ($(SUBTARGET),cortexa5)
   TARGET_DEVICES += odroid-c1
 endif
 
+define Device/gxbb-p200
+  DEVICE_DTS := amlogic/meson-gxbb-p200
+  DEVICE_PACKAGES +=
+  DEVICE_TITLE := S905 P200 Board
+endef
+ifeq ($(SUBTARGET),cortexa53)
+  TARGET_DEVICES += gxbb-p200
+endif
+
+define Device/gxbb-p201
+  DEVICE_DTS := amlogic/meson-gxbb-p201
+  DEVICE_PACKAGES +=
+  DEVICE_TITLE := S905/H/M P201 Board
+endef
+ifeq ($(SUBTARGET),cortexa53)
+  TARGET_DEVICES += gxbb-p201
+endif
+
 define Device/odroid-c2
   DEVICE_DTS := amlogic/meson-gxbb-odroidc2
   DEVICE_PACKAGES +=
@@ -99,6 +117,33 @@ ifeq ($(SUBTARGET),cortexa53)
   TARGET_DEVICES += gxl-s905x-p212
 endif
 
+define Device/gxl-s905d-p230
+  DEVICE_DTS := amlogic/meson-gxl-s905d-p230
+  DEVICE_PACKAGES +=
+  DEVICE_TITLE := S905D p230 Design Reference Board
+endef
+ifeq ($(SUBTARGET),cortexa53)
+  TARGET_DEVICES += gxl-s905d-p230
+endif
+
+define Device/gxl-s905d-p231
+  DEVICE_DTS := amlogic/meson-gxl-s905d-p231
+  DEVICE_PACKAGES +=
+  DEVICE_TITLE := S905D p231 Design Reference Board
+endef
+ifeq ($(SUBTARGET),cortexa53)
+  TARGET_DEVICES += gxl-s905d-p231
+endif
+
+define Device/gxl-s905w-p281
+  DEVICE_DTS := amlogic/meson-gxl-s905w-p281
+  DEVICE_PACKAGES +=
+  DEVICE_TITLE := S905W p281 Design Reference Board
+endef
+ifeq ($(SUBTARGET),cortexa53)
+  TARGET_DEVICES += gxl-s905w-p281
+endif
+
 define Device/khadas-vim1
   DEVICE_DTS := amlogic/meson-gxl-s905x-khadas-vim
   DEVICE_PACKAGES += \
@@ -108,6 +153,24 @@ define Device/khadas-vim1
 endef
 ifeq ($(SUBTARGET),cortexa53)
   TARGET_DEVICES += khadas-vim1
+endif
+
+define Device/libretech-cc
+  DEVICE_DTS := amlogic/meson-gxl-s905x-libretech-cc
+  DEVICE_PACKAGES +=
+  DEVICE_TITLE := Libretech CC
+endef
+ifeq ($(SUBTARGET),cortexa53)
+  TARGET_DEVICES += libretech-cc
+endif
+
+define Device/libretech-pc-s905d
+  DEVICE_DTS := amlogic/meson-gxl-s905d-libretech-pc
+  DEVICE_PACKAGES +=
+  DEVICE_TITLE := Libretech PC (S905D)
+endef
+ifeq ($(SUBTARGET),cortexa53)
+  TARGET_DEVICES += libretech-pc-s905d
 endif
 
 $(eval $(call BuildImage))
