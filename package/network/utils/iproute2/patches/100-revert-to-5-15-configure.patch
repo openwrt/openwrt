@@ -1,0 +1,136 @@
+--- a/configure
++++ b/configure
+@@ -3,8 +3,6 @@
+ # This is not an autoconf generated configure
+ 
+ INCLUDE="$PWD/include"
+-PREFIX="/usr"
+-LIBDIR="\${prefix}/lib"
+ 
+ # Output file which is input to Makefile
+ CONFIG=config.mk
+@@ -150,15 +148,6 @@ EOF
+ 	rm -f $TMPDIR/ipttest.c $TMPDIR/ipttest
+ }
+ 
+-check_lib_dir()
+-{
+-	LIBDIR=$(echo $LIBDIR | sed "s|\${prefix}|$PREFIX|")
+-
+-	echo -n "lib directory: "
+-	echo "$LIBDIR"
+-	echo "LIBDIR:=$LIBDIR" >> $CONFIG
+-}
+-
+ check_ipt()
+ {
+ 	if ! grep TC_CONFIG_XT $CONFIG > /dev/null; then
+@@ -509,14 +498,12 @@ usage()
+ {
+ 	cat <<EOF
+ Usage: $0 [OPTIONS]
+-	--include_dir <dir>		Path to iproute2 include dir
+-	--libdir <dir>			Path to iproute2 lib dir
+-	--libbpf_dir <dir>		Path to libbpf DESTDIR
+-	--libbpf_force <on|off>		Enable/disable libbpf by force. Available options:
+-					  on: require link against libbpf, quit config if no libbpf support
+-					  off: disable libbpf probing
+-	--prefix <dir>			Path prefix of the lib files to install
+-	-h | --help			Show this usage info
++	--include_dir		Path to iproute2 include dir
++	--libbpf_dir		Path to libbpf DESTDIR
++	--libbpf_force		Enable/disable libbpf by force. Available options:
++				  on: require link against libbpf, quit config if no libbpf support
++				  off: disable libbpf probing
++	-h | --help		Show this usage info
+ EOF
+ 	exit $1
+ }
+@@ -525,56 +512,30 @@ EOF
+ if [ $# -eq 1 ] && [ "$(echo $1 | cut -c 1)" != '-' ]; then
+ 	INCLUDE="$1"
+ else
+-	while [ "$#" -gt 0 ]; do
++	while true; do
+ 		case "$1" in
+ 			--include_dir)
+-				shift
+-				INCLUDE="$1" ;;
+-			--include_dir=*)
+-				INCLUDE="${1#*=}" ;;
+-			--libdir)
+-				shift
+-				LIBDIR="$1" ;;
+-			--libdir=*)
+-				LIBDIR="${1#*=}" ;;
++				INCLUDE=$2
++				shift 2 ;;
+ 			--libbpf_dir)
+-				shift
+-				LIBBPF_DIR="$1" ;;
+-			--libbpf_dir=*)
+-				LIBBPF_DIR="${1#*=}" ;;
++				LIBBPF_DIR="$2"
++				shift 2 ;;
+ 			--libbpf_force)
+-				shift
+-				LIBBPF_FORCE="$1" ;;
+-			--libbpf_force=*)
+-				LIBBPF_FORCE="${1#*=}" ;;
+-			--prefix)
+-				shift
+-				PREFIX="$1" ;;
+-			--prefix=*)
+-				PREFIX="${1#*=}" ;;
++				if [ "$2" != 'on' ] && [ "$2" != 'off' ]; then
++					usage 1
++				fi
++				LIBBPF_FORCE=$2
++				shift 2 ;;
+ 			-h | --help)
+ 				usage 0 ;;
+-			--*)
+-				;;
++			"")
++				break ;;
+ 			*)
+-				usage 1 ;;
++				shift 1 ;;
+ 		esac
+-		[ "$#" -gt 0 ] && shift
+ 	done
+ fi
+ 
+-[ -d "$INCLUDE" ] || usage 1
+-if [ "${LIBBPF_DIR-unused}" != "unused" ]; then
+-	[ -d "$LIBBPF_DIR" ] || usage 1
+-fi
+-if [ "${LIBBPF_FORCE-unused}" != "unused" ]; then
+-	if [ "$LIBBPF_FORCE" != 'on' ] && [ "$LIBBPF_FORCE" != 'off' ]; then
+-		usage 1
+-	fi
+-fi
+-[ -z "$PREFIX" ] && usage 1
+-[ -z "$LIBDIR" ] && usage 1
+-
+ echo "# Generated config based on" $INCLUDE >$CONFIG
+ quiet_config >> $CONFIG
+ 
+@@ -598,7 +559,6 @@ if ! grep -q TC_CONFIG_NO_XT $CONFIG; th
+ fi
+ 
+ echo
+-check_lib_dir
+ if ! grep -q TC_CONFIG_NO_XT $CONFIG; then
+ 	echo -n "iptables modules directory: "
+ 	check_ipt_lib_dir
+@@ -613,9 +573,6 @@ check_name_to_handle_at
+ echo -n "SELinux support: "
+ check_selinux
+ 
+-echo -n "libtirpc support: "
+-check_tirpc
+-
+ echo -n "libbpf support: "
+ check_libbpf
+ 
