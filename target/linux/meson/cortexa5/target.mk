@@ -7,7 +7,7 @@
 #
 
 ARCH:=arm
-SUBTARGET:=meson8b
+SUBTARGET:=cortexa5
 BOARDNAME:=Amlogic S805 boards (32 bit)
 CPU_TYPE:=cortex-a5
 CPU_SUBTYPE:=vfpv4

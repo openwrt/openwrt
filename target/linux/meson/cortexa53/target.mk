@@ -5,7 +5,7 @@
 #
 
 ARCH:=aarch64
-SUBTARGET:=mesongx
+SUBTARGET:=cortexa53
 BOARDNAME:=Amlogic S9 SoC family (64 bit)
 CPU_TYPE:=cortex-a53
 MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>

@@ -77,7 +77,7 @@ define Device/odroid-c1
   DEVICE_TITLE := ODROID C1
   KERNEL_LOADADDR := 0x00208000
 endef
-ifeq ($(SUBTARGET),meson8b)
+ifeq ($(SUBTARGET),cortexa5)
   TARGET_DEVICES += odroid-c1
 endif
 
@@ -86,7 +86,7 @@ define Device/odroid-c2
   DEVICE_PACKAGES +=
   DEVICE_TITLE := ODROID C2
 endef
-ifeq ($(SUBTARGET),mesongx)
+ifeq ($(SUBTARGET),cortexa53)
   TARGET_DEVICES += odroid-c2
 endif
 
@@ -95,7 +95,7 @@ define Device/gxl-s905x-p212
   DEVICE_PACKAGES +=
   DEVICE_TITLE := S905X Design Reference Board
 endef
-ifeq ($(SUBTARGET),mesongx)
+ifeq ($(SUBTARGET),cortexa53)
   TARGET_DEVICES += gxl-s905x-p212
 endif
 
@@ -106,7 +106,7 @@ define Device/khadas-vim1
 	kmod-brcmfmac wpad-basic
   DEVICE_TITLE := Khadas VIM1 Development Board
 endef
-ifeq ($(SUBTARGET),mesongx)
+ifeq ($(SUBTARGET),cortexa53)
   TARGET_DEVICES += khadas-vim1
 endif
 

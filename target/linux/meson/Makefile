@@ -9,7 +9,7 @@ BOARD:=meson
 BOARDNAME:=Amlogic Meson family
 FEATURES:=audio boot-part ext4 fpu legacy-sdcard squashfs usbgadget
 MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>
-SUBTARGETS:=meson8b mesongx
+SUBTARGETS:=cortexa5 cortexa53
 
 KERNEL_PATCHVER:=5.10
 
