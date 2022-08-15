@@ -1200,7 +1200,8 @@ TARGET_DEVICES += h3c_tx1801-plus
 
 define Device/h3c_tx1806
   $(Device/h3c_tx180x)
-  DEVICE_MODEL := TX1806
+  DEVICE_MODEL := TX1806/TX1801 Plus/TX1800 Plus
+  SUPPORTED_DEVICES += h3c,tx1800-plus h3c,tx1801-plus
 endef
 TARGET_DEVICES += h3c_tx1806
 
