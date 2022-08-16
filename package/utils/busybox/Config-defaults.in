@@ -2552,7 +2552,7 @@ config BUSYBOX_DEFAULT_UDPSVD
 	default n
 config BUSYBOX_DEFAULT_TELNET
 	bool
-	default n
+	default y if !SMALL_FLASH
 config BUSYBOX_DEFAULT_FEATURE_TELNET_TTYPE
 	bool
 	default n
