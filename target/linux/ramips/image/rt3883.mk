@@ -108,6 +108,7 @@ endef
 TARGET_DEVICES += samsung_cy-swr1100
 
 define Device/sitecom_wlr-6000
+  $(Device/uimage-lzma-loader)
   SOC := rt3883
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7244k
