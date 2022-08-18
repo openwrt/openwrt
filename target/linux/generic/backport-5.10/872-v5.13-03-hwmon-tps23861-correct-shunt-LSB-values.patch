@@ -1,0 +1,34 @@
+From b447e689a26614ce08a431e8000e8a650a63dcb3 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Thu, 10 Jun 2021 00:07:28 +0200
+Subject: [PATCH 4/4] hwmon: (tps23861) correct shunt LSB values
+
+Current shunt LSB values got reversed during in the
+original driver commit.
+
+So, correct the current shunt LSB values according to
+the datasheet.
+
+This caused reading slightly skewed current values.
+
+Fixes: fff7b8ab2255 ("hwmon: add Texas Instruments TPS23861 driver")
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Link: https://lore.kernel.org/r/20210609220728.499879-3-robert.marko@sartura.hr
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ drivers/hwmon/tps23861.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/hwmon/tps23861.c
++++ b/drivers/hwmon/tps23861.c
+@@ -105,8 +105,8 @@
+ #define TEMPERATURE_LSB			652 /* 0.652 degrees Celsius */
+ #define VOLTAGE_LSB			3662 /* 3.662 mV */
+ #define SHUNT_RESISTOR_DEFAULT		255000 /* 255 mOhm */
+-#define CURRENT_LSB_255			62260 /* 62.260 uA */
+-#define CURRENT_LSB_250			61039 /* 61.039 uA */
++#define CURRENT_LSB_250			62260 /* 62.260 uA */
++#define CURRENT_LSB_255			61039 /* 61.039 uA */
+ #define RESISTANCE_LSB			110966 /* 11.0966 Ohm*/
+ #define RESISTANCE_LSB_LOW		157216 /* 15.7216 Ohm*/
+ 

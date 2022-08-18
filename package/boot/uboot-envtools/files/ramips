@@ -31,27 +31,32 @@ ampedwireless,ally-00x19k|\
 ampedwireless,ally-r1900k)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000" "4"
 	;;
+beeline,smartbox-giga|\
+beeline,smartbox-turbo)
+	ubootenv_add_uci_config "/dev/mtd0" "0x80000" "0x1000" "0x20000"
+	;;
 buffalo,wsr-1166dhp|\
 buffalo,wsr-600dhp|\
 mediatek,linkit-smart-7688|\
 samknows,whitebox-v8|\
-xiaomi,mi-router-3g-v2|\
-xiaomi,mi-router-4a-gigabit|\
 xiaomi,mi-router-4c|\
-xiaomi,miwifi-3c|\
 xiaomi,miwifi-nano|\
 zbtlink,zbt-wg2626|\
 zte,mf283plus)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
+	;;
+h3c,tx1800-plus|\
+h3c,tx1801-plus|\
+h3c,tx1806|\
+jcg,q20|\
+netgear,wax202)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 hootoo,ht-tm05|\
 ravpower,rp-wd03)
 	idx="$(find_mtd_index u-boot-env)"
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x4000" "0x1000" "0x1000"
-	;;
-jcg,q20)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 beeline,smartbox-flash|\
 linksys,ea6350-v4|\
@@ -60,12 +65,25 @@ linksys,ea7300-v2|\
 linksys,ea7500-v2|\
 linksys,ea8100-v1|\
 linksys,ea8100-v2|\
+mts,wg430223)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
+	;;
+xiaomi,mi-router-3g-v2|\
+xiaomi,mi-router-4a-gigabit|\
+xiaomi,miwifi-3c)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
+	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x4000" "0x10000"
+	;;
 xiaomi,mi-router-3g|\
 xiaomi,mi-router-3-pro|\
 xiaomi,mi-router-4|\
 xiaomi,mi-router-ac2100|\
 xiaomi,redmi-router-ac2100)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
+	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x4000" "0x20000"
+	;;
+zyxel,lte3301-plus)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x80000"
 	;;
 zyxel,nr7101)
 	idx="$(find_mtd_index Config)"
@@ -81,6 +99,6 @@ xiaomi,mi-router-cr6609)
 esac
 
 config_load ubootenv
-config_foreach ubootenv_add_app_config ubootenv
+config_foreach ubootenv_add_app_config
 
 exit 0

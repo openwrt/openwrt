@@ -78,6 +78,7 @@ config DRIVER_11AC_SUPPORT
 config DRIVER_11AX_SUPPORT
 	bool
 	default n
+	select WPA_MBO_SUPPORT
 
 config WPA_ENABLE_WEP
 	bool "Enable support for unsecure and obsolete WEP"
@@ -87,3 +88,17 @@ config WPA_ENABLE_WEP
 	  for anything anymore. The functionality needed to use WEP is available in the
 	  current hostapd release under this optional build parameter and completely
 	  removed in a future release.
+
+config WPA_MBO_SUPPORT
+	bool "Multi Band Operation (Agile Multiband)"
+	default PACKAGE_wpa-supplicant || \
+		PACKAGE_wpa-supplicant-openssl || \
+		PACKAGE_wpa-supplicant-wolfssl || \
+		PACKAGE_wpad || \
+		PACKAGE_wpad-openssl || \
+		PACKAGE_wpad-wolfssl
+	help
+	  Multi Band Operation aka (Agile Multiband) enables features
+	  that facilitate efficient use of multiple frequency bands.
+	  Enabling MBO on an AP using RSN requires 802.11w to be enabled.
+	  Hostapd will refuse to start if MBO and RSN are enabled without 11w.

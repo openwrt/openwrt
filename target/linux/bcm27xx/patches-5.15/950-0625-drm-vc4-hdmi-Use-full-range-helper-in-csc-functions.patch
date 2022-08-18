@@ -20,7 +20,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -504,7 +504,6 @@ static void vc4_hdmi_write_infoframe(str
+@@ -505,7 +505,6 @@ static void vc4_hdmi_write_infoframe(str
  static void vc4_hdmi_set_avi_infoframe(struct drm_encoder *encoder)
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
@@ -28,7 +28,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct drm_connector *connector = &vc4_hdmi->connector;
  	struct drm_connector_state *cstate = connector->state;
  	const struct drm_display_mode *mode = &vc4_hdmi->saved_adjusted_mode;
-@@ -522,9 +521,9 @@ static void vc4_hdmi_set_avi_infoframe(s
+@@ -523,9 +522,9 @@ static void vc4_hdmi_set_avi_infoframe(s
  
  	drm_hdmi_avi_infoframe_quant_range(&frame.avi,
  					   connector, mode,
@@ -41,7 +41,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	drm_hdmi_avi_infoframe_colorimetry(&frame.avi, cstate);
  	drm_hdmi_avi_infoframe_bars(&frame.avi, cstate);
  
-@@ -741,7 +740,8 @@ static void vc4_hdmi_encoder_post_crtc_p
+@@ -742,7 +741,8 @@ static void vc4_hdmi_encoder_post_crtc_p
  	mutex_unlock(&vc4_hdmi->mutex);
  }
  
@@ -51,7 +51,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	unsigned long flags;
  	u32 csc_ctl;
-@@ -751,7 +751,7 @@ static void vc4_hdmi_csc_setup(struct vc
+@@ -752,7 +752,7 @@ static void vc4_hdmi_csc_setup(struct vc
  	csc_ctl = VC4_SET_FIELD(VC4_HD_CSC_CTL_ORDER_BGR,
  				VC4_HD_CSC_CTL_ORDER);
  
@@ -60,7 +60,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		/* CEA VICs other than #1 requre limited range RGB
  		 * output unless overridden by an AVI infoframe.
  		 * Apply a colorspace conversion to squash 0-255 down
-@@ -781,7 +781,8 @@ static void vc4_hdmi_csc_setup(struct vc
+@@ -782,7 +782,8 @@ static void vc4_hdmi_csc_setup(struct vc
  	spin_unlock_irqrestore(&vc4_hdmi->hw_lock, flags);
  }
  
@@ -70,7 +70,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	unsigned long flags;
  	u32 csc_ctl;
-@@ -790,7 +791,7 @@ static void vc5_hdmi_csc_setup(struct vc
+@@ -791,7 +792,7 @@ static void vc5_hdmi_csc_setup(struct vc
  
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  
@@ -79,7 +79,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		/* CEA VICs other than #1 requre limited range RGB
  		 * output unless overridden by an AVI infoframe.
  		 * Apply a colorspace conversion to squash 0-255 down
-@@ -1119,22 +1120,12 @@ static void vc4_hdmi_encoder_pre_crtc_en
+@@ -1120,22 +1121,12 @@ static void vc4_hdmi_encoder_pre_crtc_en
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  	struct drm_display_mode *mode = &vc4_hdmi->saved_adjusted_mode;

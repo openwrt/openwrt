@@ -73,6 +73,12 @@ define Device/asus_rt-n11p-b1
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-N11P
   DEVICE_VARIANT := B1
+  DEVICE_ALT0_VENDOR := ASUS
+  DEVICE_ALT0_MODEL := RT-N12+
+  DEVICE_ALT0_VARIANT := B1
+  DEVICE_ALT1_VENDOR := ASUS
+  DEVICE_ALT1_MODEL := RT-N300
+  DEVICE_ALT1_VARIANT := B1
 endef
 TARGET_DEVICES += asus_rt-n11p-b1
 
@@ -100,6 +106,15 @@ define Device/buffalo_wcr-1166ds
   SUPPORTED_DEVICES += wcr-1166ds
 endef
 TARGET_DEVICES += buffalo_wcr-1166ds
+
+define Device/comfast_cf-wr617ac
+  IMAGE_SIZE := 7872k
+  DTS := CF-WR617AC
+  DEVICE_VENDOR := Comfast
+  DEVICE_MODEL := CF-WR617AC
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-rt2800-pci
+endef
+TARGET_DEVICES += comfast_cf-wr617ac
 
 define Device/comfast_cf-wr758ac
   IMAGE_SIZE := 7872k
@@ -901,6 +916,16 @@ define Device/xiaomi_mi-router-4a-100m
   SUPPORTED_DEVICES += xiaomi,mir4a-100m
 endef
 TARGET_DEVICES += xiaomi_mi-router-4a-100m
+
+define Device/xiaomi_mi-router-4a-100m-intl
+  IMAGE_SIZE := 14976k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4A
+  DEVICE_VARIANT := 100M International Edition
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += xiaomi,mir4a-100m-intl
+endef
+TARGET_DEVICES += xiaomi_mi-router-4a-100m-intl
 
 define Device/xiaomi_mi-router-4c
   IMAGE_SIZE := 14976k

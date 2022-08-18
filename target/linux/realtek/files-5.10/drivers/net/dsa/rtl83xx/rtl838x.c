@@ -1805,13 +1805,20 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 
 int rtl838x_smi_wait_op(int timeout)
 {
-	do {
-		timeout--;
-		udelay(10);
-	} while ((sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & 0x1) && (timeout >= 0));
-	if (timeout <= 0)
-		return -1;
-	return 0;
+	unsigned long end = jiffies + usecs_to_jiffies(timeout);
+
+	while (1) {
+		if (!(sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & 0x1))
+			return 0;
+
+		if (time_after(jiffies, end))
+			break;
+
+		usleep_range(10, 20);
+	}
+
+	pr_err("rtl838x_smi_wait_op: timeout\n");
+	return -1;
 }
 
 /*
@@ -1832,7 +1839,7 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
@@ -1842,7 +1849,7 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
@@ -1868,7 +1875,7 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 		return -ENOTSUPP;
 
 	mutex_lock(&smi_lock);
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	sw_w32(BIT(port), RTL838X_SMI_ACCESS_PHY_CTRL_0);
@@ -1881,7 +1888,7 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	mutex_unlock(&smi_lock);
@@ -1901,7 +1908,7 @@ int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
@@ -1916,7 +1923,7 @@ int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 	v = 1 << 1 | 0 << 2 | 1;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
@@ -1940,7 +1947,7 @@ int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	val &= 0xffff;
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
@@ -1954,7 +1961,7 @@ int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	v = 1 << 1 | 1 << 2 | 1;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	mutex_unlock(&smi_lock);

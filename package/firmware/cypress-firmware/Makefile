@@ -81,21 +81,6 @@ endef
 
 $(eval $(call BuildPackage,cypress-firmware-43362-sdio))
 
-# Cypress 4339 SDIO Firmware
-define Package/cypress-firmware-4339-sdio
-  $(Package/cypress-firmware-default)
-  TITLE:=CYW4339 FullMac SDIO firmware
-endef
-
-define Package/cypress-firmware-4339-sdio/install
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/firmware/cyfmac4339-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac4339-sdio.bin
-endef
-
-$(eval $(call BuildPackage,cypress-firmware-4339-sdio))
-
 # Cypress 43430 SDIO Firmware
 define Package/cypress-firmware-43430-sdio
   $(Package/cypress-firmware-default)

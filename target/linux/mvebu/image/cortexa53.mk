@@ -92,3 +92,11 @@ define Device/methode_udpu
   BOOT_SCRIPT := udpu
 endef
 TARGET_DEVICES += methode_udpu
+
+define Device/methode_edpu
+  $(call Device/methode_udpu)
+  DEVICE_MODEL := eDPU
+  DEVICE_DTS := armada-3720-eDPU
+  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+endef
+TARGET_DEVICES += methode_edpu

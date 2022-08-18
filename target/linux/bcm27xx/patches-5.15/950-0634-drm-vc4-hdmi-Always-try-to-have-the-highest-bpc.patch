@@ -21,7 +21,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -356,6 +356,7 @@ vc4_hdmi_connector_duplicate_state(struc
+@@ -357,6 +357,7 @@ vc4_hdmi_connector_duplicate_state(struc
  		return NULL;
  
  	new_state->pixel_rate = vc4_state->pixel_rate;
@@ -29,7 +29,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	__drm_atomic_helper_connector_duplicate_state(connector, &new_state->base);
  
  	return &new_state->base;
-@@ -913,6 +914,8 @@ static void vc5_hdmi_set_timings(struct
+@@ -914,6 +915,8 @@ static void vc5_hdmi_set_timings(struct
  				 struct drm_connector_state *state,
  				 struct drm_display_mode *mode)
  {
@@ -38,7 +38,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	bool hsync_pos = mode->flags & DRM_MODE_FLAG_PHSYNC;
  	bool vsync_pos = mode->flags & DRM_MODE_FLAG_PVSYNC;
  	bool interlaced = mode->flags & DRM_MODE_FLAG_INTERLACE;
-@@ -960,7 +963,7 @@ static void vc5_hdmi_set_timings(struct
+@@ -961,7 +964,7 @@ static void vc5_hdmi_set_timings(struct
  	HDMI_WRITE(HDMI_VERTB0, vertb_even);
  	HDMI_WRITE(HDMI_VERTB1, vertb);
  
@@ -47,7 +47,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	case 12:
  		gcp = 6;
  		gcp_en = true;
-@@ -1250,9 +1253,11 @@ static void vc4_hdmi_encoder_atomic_mode
+@@ -1251,9 +1254,11 @@ static void vc4_hdmi_encoder_atomic_mode
  					     struct drm_connector_state *conn_state)
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
@@ -60,7 +60,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	memcpy(&vc4_hdmi->saved_adjusted_mode,
  	       &crtc_state->adjusted_mode,
  	       sizeof(vc4_hdmi->saved_adjusted_mode));
-@@ -1307,6 +1312,38 @@ vc4_hdmi_encoder_compute_clock(const str
+@@ -1308,6 +1313,38 @@ vc4_hdmi_encoder_compute_clock(const str
  	return 0;
  }
  
@@ -99,7 +99,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  #define WIFI_2_4GHz_CH1_MIN_FREQ	2400000000ULL
  #define WIFI_2_4GHz_CH1_MAX_FREQ	2422000000ULL
  
-@@ -1341,8 +1378,7 @@ static int vc4_hdmi_encoder_atomic_check
+@@ -1342,8 +1379,7 @@ static int vc4_hdmi_encoder_atomic_check
  		pixel_rate = mode->clock * 1000;
  	}
  

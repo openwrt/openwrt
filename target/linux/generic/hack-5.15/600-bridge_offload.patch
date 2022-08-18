@@ -1,3 +1,28 @@
+From 11c3fae5afa6cac444d12622e2cf5af60a99c1ef Mon Sep 17 00:00:00 2001
+From: OpenWrt community <openwrt-devel@lists.openwrt.org>
+Date: Wed, 13 Jul 2022 13:43:15 +0200
+Subject: [PATCH] net/bridge: add bridge offload
+
+---
+ include/linux/if_bridge.h       |   1 +
+ net/bridge/Makefile             |   2 +-
+ net/bridge/br.c                 |   8 +
+ net/bridge/br_device.c          |   2 +
+ net/bridge/br_fdb.c             |   5 +
+ net/bridge/br_forward.c         |   3 +
+ net/bridge/br_if.c              |   6 +-
+ net/bridge/br_input.c           |   5 +
+ net/bridge/br_offload.c         | 438 ++++++++++++++++++++++++++++++++
+ net/bridge/br_private.h         |  22 +-
+ net/bridge/br_private_offload.h |  23 ++
+ net/bridge/br_stp.c             |   3 +
+ net/bridge/br_sysfs_br.c        |  35 +++
+ net/bridge/br_sysfs_if.c        |   2 +
+ net/bridge/br_vlan_tunnel.c     |   3 +
+ 15 files changed, 555 insertions(+), 3 deletions(-)
+ create mode 100644 net/bridge/br_offload.c
+ create mode 100644 net/bridge/br_private_offload.h
+
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
 @@ -59,6 +59,7 @@ struct br_ip_list {
@@ -154,7 +179,7 @@
  
  static int
  br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
-@@ -164,6 +165,7 @@ int br_handle_frame_finish(struct net *n
+@@ -171,6 +172,7 @@ int br_handle_frame_finish(struct net *n
  			dst->used = now;
  		br_forward(dst->dst, skb, local_rcv, false);
  	} else {
@@ -162,7 +187,7 @@
  		if (!mcast_hit)
  			br_flood(br, skb, pkt_type, local_rcv, false);
  		else
-@@ -297,6 +299,9 @@ static rx_handler_result_t br_handle_fra
+@@ -304,6 +306,9 @@ static rx_handler_result_t br_handle_fra
  	memset(skb->cb, 0, sizeof(struct br_input_skb_cb));
  
  	p = br_port_get_rcu(skb->dev);
@@ -434,13 +459,13 @@
 +	vg = nbp_vlan_group_rcu(inp);
 +	vlan = cb->input_vlan_present ? cb->input_vlan_tag : br_get_pvid(vg);
 +	fdb_in = br_fdb_find_rcu(p->br, eth_hdr(skb)->h_source, vlan);
-+	if (!fdb_in)
++	if (!fdb_in || !fdb_in->dst)
 +		goto out;
 +
 +	vg = nbp_vlan_group_rcu(p);
 +	vlan = skb_vlan_tag_present(skb) ? skb_vlan_tag_get_id(skb) : br_get_pvid(vg);
 +	fdb_out = br_fdb_find_rcu(p->br, eth_hdr(skb)->h_dest, vlan);
-+	if (!fdb_out)
++	if (!fdb_out || !fdb_out->dst)
 +		goto out;
 +
 +	br_offload_prepare_key(p, &key, skb);
@@ -450,7 +475,7 @@
 +#endif
 +
 +	flow = kmem_cache_alloc(offload_cache, GFP_ATOMIC);
-+	flow->port = fdb_in->dst;
++	flow->port = inp;
 +	memcpy(&flow->key, &key, sizeof(key));
 +
 +#ifdef CONFIG_BRIDGE_VLAN_FILTERING
@@ -465,7 +490,7 @@
 +	spin_lock_bh(&offload_lock);
 +	if (!o->enabled ||
 +	    atomic_read(&p->offload.rht.nelems) >= p->br->offload_cache_size ||
-+	    rhashtable_insert_fast(&flow->port->offload.rht, &flow->node, flow_params)) {
++	    rhashtable_insert_fast(&inp->offload.rht, &flow->node, flow_params)) {
 +		kmem_cache_free(offload_cache, flow);
 +		goto out_unlock;
 +	}
@@ -511,8 +536,8 @@
 +#ifdef CONFIG_BRIDGE_VLAN_FILTERING
 +		cb->input_vlan_present = key.vlan_present != 0;
 +		cb->input_vlan_tag = key.vlan_tag;
-+		cb->input_ifindex = p->dev->ifindex;
 +#endif
++		cb->input_ifindex = p->dev->ifindex;
 +		goto out;
 +	}
 +

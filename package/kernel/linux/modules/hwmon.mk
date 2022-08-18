@@ -519,6 +519,20 @@ endef
 $(eval $(call KernelPackage,hwmon-tmp421))
 
 
+define KernelPackage/hwmon-tps23861
+  TITLE:=Texas Instruments TPS23861 PoE PSE
+  KCONFIG:=CONFIG_SENSORS_TPS23861
+  FILES:=$(LINUX_DIR)/drivers/hwmon/tps23861.ko
+  AUTOLOAD:=$(call AutoProbe,tps23861)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
+endef
+
+define KernelPackage/hwmon-tps23861/description
+  Kernel module for the Texas Instruments TPS23861 802.3at PoE PSE chips.
+endef
+
+$(eval $(call KernelPackage,hwmon-tps23861))
+
 define KernelPackage/hwmon-vid
   TITLE:=VID/VRM/VRD voltage conversion module.
   KCONFIG:=CONFIG_HWMON_VID

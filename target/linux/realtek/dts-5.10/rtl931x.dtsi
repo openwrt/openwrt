@@ -155,6 +155,25 @@
 		};
 	};
 
+	pinmux: pinmux@1b001358 {
+		compatible = "pinctrl-single";
+		reg = <0x1b001358 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		/* Enable GPIO6 and GPIO7, possibly unknown others */
+		pinmux_disable_jtag: disable_jtag {
+			pinctrl-single,bits = <0x0 0x0 0x8000>;
+		};
+
+		/* Controls GPIO0 */
+		pinmux_disable_sys_led: disable_sys_led {
+			pinctrl-single,bits = <0x0 0x0 0x100>;
+		};
+	};
 
 	ethernet0: ethernet@1b00a300 {
 		status = "okay";

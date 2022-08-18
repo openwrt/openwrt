@@ -1,6 +1,6 @@
 --- a/driver/wl_linux.c
 +++ b/driver/wl_linux.c
-@@ -235,7 +235,11 @@
+@@ -235,7 +235,11 @@ struct wl_info {
  
  };
  
@@ -12,7 +12,7 @@
  static void _wl_timer(wl_timer_t *t);
  
  #ifdef WLC_HIGH_ONLY
-@@ -2512,6 +2517,18 @@
+@@ -2512,6 +2516,18 @@ wl_timer_task(wl_task_t *task)
  }
  #endif /* WLC_HIGH_ONLY */
  
@@ -31,7 +31,7 @@
  static void
  wl_timer(ulong data)
  {
-@@ -2522,6 +2539,7 @@
+@@ -2522,6 +2538,7 @@ wl_timer(ulong data)
  	wl_schedule_task(t->wl, wl_timer_task, t);
  #endif /* WLC_HIGH_ONLY */
  }
@@ -39,7 +39,7 @@
  
  static void
  _wl_timer(wl_timer_t *t)
-@@ -2573,9 +2591,13 @@
+@@ -2573,9 +2590,13 @@ wl_init_timer(wl_info_t *wl, void (*fn)(
  
  	bzero(t, sizeof(wl_timer_t));
  

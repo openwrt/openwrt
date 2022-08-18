@@ -1,0 +1,29 @@
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -304,6 +304,7 @@ static int realtek_gpio_irq_set_affinity
+ static int realtek_gpio_irq_init(struct gpio_chip *gc)
+ {
+ 	struct realtek_gpio_ctrl *ctrl = gpiochip_get_data(gc);
++	void __iomem *irq_cpu_mask;
+ 	unsigned int port;
+ 	int cpu;
+ 
+@@ -311,8 +312,16 @@ static int realtek_gpio_irq_init(struct
+ 		realtek_gpio_write_imr(ctrl, port, 0, 0);
+ 		realtek_gpio_clear_isr(ctrl, port, GENMASK(7, 0));
+ 
+-		for_each_cpu(cpu, &ctrl->cpu_irq_maskable)
+-			iowrite8(GENMASK(7, 0), realtek_gpio_irq_cpu_mask(ctrl, port, cpu));
++		/*
++		 * Uniprocessor builds assume a mask always contains one CPU,
++		 * so only start the loop if we have at least one maskable CPU.
++		 */
++		if(!cpumask_empty(&ctrl->cpu_irq_maskable)) {
++			for_each_cpu(cpu, &ctrl->cpu_irq_maskable) {
++				irq_cpu_mask = realtek_gpio_irq_cpu_mask(ctrl, port, cpu);
++				iowrite8(GENMASK(7, 0), irq_cpu_mask);
++			}
++		}
+ 	}
+ 
+ 	return 0;

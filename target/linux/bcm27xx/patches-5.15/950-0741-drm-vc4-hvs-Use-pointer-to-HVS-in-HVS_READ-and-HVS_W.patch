@@ -221,7 +221,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	u32 i;
  
  	for (i = 0; i < length; i++) {
-@@ -311,10 +312,10 @@ static void vc4_hvs_update_gamma_lut(str
+@@ -311,12 +312,11 @@ static void vc4_hvs_update_gamma_lut(str
  		vc4_crtc->lut_b[i] = drm_color_lut_extract(lut[i].blue, 8);
  	}
  
@@ -229,12 +229,23 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 +	vc4_hvs_lut_load(hvs, vc4_crtc);
  }
  
+-u8 vc4_hvs_get_fifo_frame_count(struct drm_device *dev, unsigned int fifo)
++u8 vc4_hvs_get_fifo_frame_count(struct vc4_hvs *hvs, unsigned int fifo)
+ {
+-	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	u8 field = 0;
+ 
+ 	switch (fifo) {
+@@ -337,7 +337,7 @@ u8 vc4_hvs_get_fifo_frame_count(struct d
+ 	return field;
+ }
+ 
 -static void vc5_hvs_write_gamma_entry(struct vc4_dev *vc4,
 +static void vc5_hvs_write_gamma_entry(struct vc4_hvs *hvs,
  				      u32 offset,
  				      struct vc5_gamma_entry *gamma)
  {
-@@ -322,33 +323,33 @@ static void vc5_hvs_write_gamma_entry(st
+@@ -345,33 +345,33 @@ static void vc5_hvs_write_gamma_entry(st
  	HVS_WRITE(offset + 4, gamma->grad_term);
  }
  
@@ -279,23 +290,12 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct drm_color_lut *lut = crtc->state->gamma_lut->data;
  	unsigned int step, i;
  	u32 start, end;
-@@ -385,12 +386,11 @@ static void vc5_hvs_update_gamma_lut(str
+@@ -408,16 +408,15 @@ static void vc5_hvs_update_gamma_lut(str
  		VC5_HVS_UPDATE_GAMMA_ENTRY_FROM_LUT(pwl_b, blue);
  	}
  
 -	vc5_hvs_lut_load(crtc);
 +	vc5_hvs_lut_load(hvs, vc4_crtc);
- }
- 
--u8 vc4_hvs_get_fifo_frame_count(struct drm_device *dev, unsigned int fifo)
-+u8 vc4_hvs_get_fifo_frame_count(struct vc4_hvs *hvs, unsigned int fifo)
- {
--	struct vc4_dev *vc4 = to_vc4_dev(dev);
- 	u8 field = 0;
- 
- 	switch (fifo) {
-@@ -411,13 +411,12 @@ u8 vc4_hvs_get_fifo_frame_count(struct d
- 	return field;
  }
  
 -int vc4_hvs_get_fifo_from_output(struct drm_device *dev, unsigned int output)

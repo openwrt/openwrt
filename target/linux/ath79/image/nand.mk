@@ -231,6 +231,23 @@ define Device/netgear_ath79_nand
   UBINIZE_OPTS := -E 5
 endef
 
+define Device/netgear_pgzng1
+  SOC := ar9344
+  DEVICE_MODEL := PGZNG1
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_ALT0_MODEL := Pulse Gateway
+  DEVICE_ALT0_VENDOR := ADT
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-i2c-gpio \
+    kmod-leds-pca955x kmod-rtc-isl1208 kmod-spi-dev
+  KERNEL_SIZE := 5120k
+  IMAGE_SIZE := 83968k
+  PAGESIZE := 2048
+  BLOCKSIZE := 128k
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
+endef
+TARGET_DEVICES += netgear_pgzng1
+
 define Device/netgear_r6100
   SOC := ar9344
   DEVICE_MODEL := R6100

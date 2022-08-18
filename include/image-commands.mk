@@ -112,6 +112,15 @@ define Build/append-squashfs-fakeroot-be
 	cat $@.fakesquashfs >> $@
 endef
 
+define Build/append-squashfs4-fakeroot
+	rm -rf $@.fakefs $@.fakesquashfs
+	mkdir $@.fakefs
+	$(STAGING_DIR_HOST)/bin/mksquashfs4 \
+		$@.fakefs $@.fakesquashfs \
+		-nopad -noappend -root-owned
+	cat $@.fakesquashfs >> $@
+endef
+
 define Build/append-string
 	echo -n $(1) >> $@
 endef
@@ -270,9 +279,11 @@ endef
 define Build/fit
 	$(TOPDIR)/scripts/mkits.sh \
 		-D $(DEVICE_NAME) -o $@.its -k $@ \
-		-C $(word 1,$(1)) $(if $(word 2,$(1)),\
-		$(if $(DEVICE_DTS_OVERLAY),-d $(KERNEL_BUILD_DIR)/image-$$(basename $(word 2,$(1))),\
-			-d $(word 2,$(1)))) \
+		-C $(word 1,$(1)) \
+		$(if $(word 2,$(1)),\
+			$(if $(findstring 11,$(if $(DEVICE_DTS_OVERLAY),1)$(if $(findstring $(KERNEL_BUILD_DIR)/image-,$(word 2,$(1))),,1)), \
+				-d $(KERNEL_BUILD_DIR)/image-$$(basename $(word 2,$(1))), \
+				-d $(word 2,$(1)))) \
 		$(if $(findstring with-rootfs,$(word 3,$(1))),-r $(IMAGE_ROOTFS)) \
 		$(if $(findstring with-initrd,$(word 3,$(1))), \
 			$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
@@ -374,6 +385,19 @@ define Build/netgear-dni
 		-r "$(1)" \
 		-i $@ -o $@.new
 	mv $@.new $@
+endef
+
+define Build/netgear-encrypted-factory
+	$(TOPDIR)/scripts/netgear-encrypted-factory.py \
+		--input-file $@ \
+		--output-file $@ \
+		--model $(NETGEAR_ENC_MODEL) \
+		--region $(NETGEAR_ENC_REGION) \
+		--version V1.0.0.0.$(VERSION_DIST).$(firstword $(subst -, ,$(REVISION))) \
+		--encryption-block-size 0x20000 \
+		--openssl-bin "$(STAGING_DIR_HOST)/bin/openssl" \
+		--key 6865392d342b4d212964363d6d7e7765312c7132613364316e26322a5a5e2538 \
+		--iv 4a253169516c38243d6c6d2d3b384145
 endef
 
 define Build/openmesh-image

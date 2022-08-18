@@ -22,6 +22,10 @@ ubnt,edgerouter-x-sfp)
 	ucidef_add_gpio_switch "poe_power_port3" "PoE Power Port3" "403"
 	ucidef_add_gpio_switch "poe_power_port4" "PoE Power Port4" "404"
 	;;
+zyxel,lte3301-plus)
+	ucidef_add_gpio_switch "usb_power" "Power USB Port" "usb_power" "1"
+	ucidef_add_gpio_switch "lte_power" "Power LTE modem" "lte_power" "1"
+	;;
 zyxel,nr7101)
 	ucidef_add_gpio_switch "lte_reset" "Reset LTE/5G modem" "483"
 	;;

@@ -1,6 +1,6 @@
 --- a/local-symbols
 +++ b/local-symbols
-@@ -428,43 +428,6 @@ USB_VL600=
+@@ -451,43 +451,6 @@ USB_VL600=
  USB_NET_CH9200=
  USB_NET_AQC111=
  USB_RTL8153_ECM=
@@ -192,7 +192,7 @@
  	select BRCMUTIL
 --- a/Kconfig.local
 +++ b/Kconfig.local
-@@ -1288,117 +1288,6 @@ config BACKPORTED_USB_NET_AQC111
+@@ -1357,117 +1357,6 @@ config BACKPORTED_USB_NET_AQC111
  config BACKPORTED_USB_RTL8153_ECM
  	tristate
  	default USB_RTL8153_ECM
@@ -312,7 +312,7 @@
  	default USB_ACM
 --- a/Kconfig.sources
 +++ b/Kconfig.sources
-@@ -9,9 +9,6 @@ source "$BACKPORT_DIR/drivers/bus/mhi/Kc
+@@ -10,9 +10,6 @@ source "$BACKPORT_DIR/drivers/soc/qcom/K
  source "$BACKPORT_DIR/drivers/net/wireless/Kconfig"
  source "$BACKPORT_DIR/drivers/net/usb/Kconfig"
  
@@ -324,8 +324,8 @@
  source "$BACKPORT_DIR/drivers/staging/Kconfig"
 --- a/Makefile.kernel
 +++ b/Makefile.kernel
-@@ -42,8 +42,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
- obj-$(CPTCFG_QRTR) += net/qrtr/
+@@ -43,8 +43,6 @@ obj-$(CPTCFG_QRTR) += net/qrtr/
+ obj-$(CPTCFG_QCOM_QMI_HELPERS) += drivers/soc/qcom/
  obj-$(CPTCFG_MHI_BUS) += drivers/bus/mhi/
  obj-$(CPTCFG_WLAN) += drivers/net/wireless/
 -obj-$(CPTCFG_SSB) += drivers/ssb/

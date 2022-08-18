@@ -55,6 +55,10 @@ static inline int has_feature(const char *feat)
 	if (!strcmp(feat, "fils"))
 		return 1;
 #endif
+#ifdef CONFIG_OCV
+	if (!strcmp(feat, "ocv"))
+		return 1;
+#endif
 	return 0;
 }
 

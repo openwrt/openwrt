@@ -185,7 +185,7 @@ TARGET_DEVICES += aruba_ap-303h
 define Device/aruba_ap-365
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-365
-	DEVICE_PACKAGES += kmod-hwmon-ad7418
+	DEVICE_PACKAGES := kmod-hwmon-ad7418 ipq-wifi-aruba_ap-365
 endef
 TARGET_DEVICES += aruba_ap-365
 
@@ -576,7 +576,7 @@ define Device/glinet_gl-b2200
 		pad-to 33792k | append-rootfs |\
 		append-metadata | gzip
 	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-glinet_gl-b2200 \
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct \
 		kmod-fs-ext4 kmod-mmc kmod-spi-dev mkf2fs e2fsprogs kmod-fs-f2fs
 endef
 TARGET_DEVICES += glinet_gl-b2200
@@ -662,6 +662,25 @@ define Device/linksys_mr8300
 endef
 TARGET_DEVICES += linksys_mr8300
 
+define Device/linksys_whw01-v1
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := WHW01
+	DEVICE_VARIANT := v1
+	KERNEL_SIZE := 6144k
+	IMAGE_SIZE := 28704512  # 28032k minus linksys signature (256-bytes).
+	SOC := qcom-ipq4018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+		append-ubi | linksys-image type=WHW01 | pad-to $$$$(PAGESIZE) | \
+		check-size
+	DEVICE_PACKAGES := uboot-envtools kmod-leds-pca963x
+endef
+TARGET_DEVICES += linksys_whw01-v1
+
 define Device/luma_wrtq-329acn
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Luma Home
@@ -684,6 +703,18 @@ define Device/meraki_mr33
 	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
 endef
 TARGET_DEVICES += meraki_mr33
+
+define Device/meraki_mr74
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Cisco Meraki
+	DEVICE_MODEL := MR74
+	SOC := qcom-ipq4029
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
+	DEVICE_DTS_CONFIG := config@3
+endef
+TARGET_DEVICES += meraki_mr74
 
 define Device/mobipromo_cm520-79f
 	$(call Device/FitzImage)

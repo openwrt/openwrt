@@ -49,7 +49,7 @@ Signed-off-by: Mateusz Kwiatkowski <kfyatek+publicgit@gmail.com>
  	} else {
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -840,12 +840,12 @@ static void vc4_hdmi_set_timings(struct
+@@ -841,12 +841,12 @@ static void vc4_hdmi_set_timings(struct
  				   VC4_HDMI_VERTA_VFP) |
  		     VC4_SET_FIELD(mode->crtc_vdisplay, VC4_HDMI_VERTA_VAL));
  	u32 vertb = (VC4_SET_FIELD(0, VC4_HDMI_VERTB_VSPO) |
@@ -65,7 +65,7 @@ Signed-off-by: Mateusz Kwiatkowski <kfyatek+publicgit@gmail.com>
  					VC4_HDMI_VERTB_VBP));
  	unsigned long flags;
  
-@@ -891,12 +891,12 @@ static void vc5_hdmi_set_timings(struct
+@@ -892,12 +892,12 @@ static void vc5_hdmi_set_timings(struct
  				   VC5_HDMI_VERTA_VFP) |
  		     VC4_SET_FIELD(mode->crtc_vdisplay, VC5_HDMI_VERTA_VAL));
  	u32 vertb = (VC4_SET_FIELD(0, VC5_HDMI_VERTB_VSPO) |

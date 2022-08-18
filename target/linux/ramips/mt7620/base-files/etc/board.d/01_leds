@@ -160,6 +160,14 @@ lenovo,newifi-y1s)
 	ucidef_set_led_netdev "wifi5g" "WIFI5G" "blue:wifi" "wlan0"
 	ucidef_set_led_netdev "wan" "WAN" "blue:internet" "eth0.2" "tx rx"
 	;;
+netcore,nw5212|\
+netgear,jwnr2010-v5)
+	ucidef_set_led_switch "lan1" "lan1" "green:lan1" "switch0" "0x08"
+	ucidef_set_led_switch "lan2" "lan2" "green:lan2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "lan3" "green:lan3" "switch0" "0x02"
+	ucidef_set_led_switch "lan4" "lan4" "green:lan4" "switch0" "0x01"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
+	;;
 netgear,ex2700|\
 netgear,wn3000rp-v3|\
 netgear,wn3100rp-v2)
@@ -170,12 +178,8 @@ netgear,ex6130)
 	ucidef_set_led_netdev "wlan5g" "ROUTER (green)" "green:router" "wlan0"
 	ucidef_set_led_netdev "wlan2g" "DEVICE (green)" "green:device" "wlan1"
 	;;
-netgear,jwnr2010-v5)
-	ucidef_set_led_switch "lan1" "lan1" "green:lan1" "switch0" "0x08"
-	ucidef_set_led_switch "lan2" "lan2" "green:lan2" "switch0" "0x04"
-	ucidef_set_led_switch "lan3" "lan3" "green:lan3" "switch0" "0x02"
-	ucidef_set_led_switch "lan4" "lan4" "green:lan4" "switch0" "0x01"
-	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
+netgear,pr2000)
+	ucidef_set_led_switch "internet" "internet" "green:internet" "switch0" "0x01"
 	;;
 phicomm,psg1208)
 	ucidef_set_led_netdev "wifi_led" "wifi" "white:wlan2g" "wlan0"

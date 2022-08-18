@@ -115,7 +115,7 @@ Link: https://lore.kernel.org/r/20211215091739.135042-4-maxime@cerno.tech
  
 --- a/drivers/gpu/drm/vc4/vc4_regs.h
 +++ b/drivers/gpu/drm/vc4/vc4_regs.h
-@@ -975,7 +975,10 @@ enum hvs_pixel_format {
+@@ -983,7 +983,10 @@ enum hvs_pixel_format {
  #define SCALER_CSC0_COEF_CR_OFS_SHIFT		0
  #define SCALER_CSC0_ITR_R_601_5			0x00f00000
  #define SCALER_CSC0_ITR_R_709_3			0x00f00000
@@ -126,7 +126,7 @@ Link: https://lore.kernel.org/r/20211215091739.135042-4-maxime@cerno.tech
  
  /* S2.8 contribution of Cb to Green */
  #define SCALER_CSC1_COEF_CB_GRN_MASK		VC4_MASK(31, 22)
-@@ -990,8 +993,11 @@ enum hvs_pixel_format {
+@@ -998,8 +1001,11 @@ enum hvs_pixel_format {
  #define SCALER_CSC1_COEF_CR_BLU_MASK		VC4_MASK(1, 0)
  #define SCALER_CSC1_COEF_CR_BLU_SHIFT		0
  #define SCALER_CSC1_ITR_R_601_5			0xe73304a8
@@ -140,7 +140,7 @@ Link: https://lore.kernel.org/r/20211215091739.135042-4-maxime@cerno.tech
  
  /* S2.8 contribution of Cb to Red */
  #define SCALER_CSC2_COEF_CB_RED_MASK		VC4_MASK(29, 20)
-@@ -1002,9 +1008,12 @@ enum hvs_pixel_format {
+@@ -1010,9 +1016,12 @@ enum hvs_pixel_format {
  /* S2.8 contribution of Cb to Blue */
  #define SCALER_CSC2_COEF_CB_BLU_MASK		VC4_MASK(19, 10)
  #define SCALER_CSC2_COEF_CB_BLU_SHIFT		10

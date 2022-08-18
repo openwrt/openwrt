@@ -29,6 +29,7 @@ ipq40xx_setup_interfaces()
 	engenius,eap1300|\
 	engenius,emd1|\
 	meraki,mr33|\
+	meraki,mr74|\
 	mikrotik,lhgg-60ad|\
 	mikrotik,sxtsq-5-ac|\
 	netgear,ex6100v2|\
@@ -82,13 +83,15 @@ ipq40xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
-	avm,fritzrepeater-3000)
+	avm,fritzrepeater-3000|\
+	linksys,whw01-v1)
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "4:lan:1" "5:lan:2"
 		;;
 	compex,wpj419|\
 	compex,wpj428|\
-	engenius,eap2200)
+	engenius,eap2200|\
+	mikrotik,wap-ac)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	buffalo,wtr-m2133hp)

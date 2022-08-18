@@ -729,6 +729,16 @@ define Device/microduino_microwrt
 endef
 TARGET_DEVICES += microduino_microwrt
 
+define Device/netcore_nw5212
+  SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  BLOCKSIZE := 4k
+  DEVICE_VENDOR := Netcore
+  DEVICE_MODEL := NW5212
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += netcore_nw5212
+
 define Device/netgear_ex2700
   SOC := mt7620a
   NETGEAR_HW_ID := 29764623+4+0+32+2x2+0
@@ -801,6 +811,21 @@ define Device/netgear_jwnr2010-v5
   DEFAULT := n
 endef
 TARGET_DEVICES += netgear_jwnr2010-v5
+
+define Device/netgear_pr2000
+  $(Device/netgear_sercomm_nor)
+  SOC := mt7620n
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 15488k
+  DEVICE_MODEL := PR2000
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SERCOMM_HWNAME := PR2000
+  SERCOMM_HWID := AQ7
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0000
+  SERCOMM_PAD := 640k
+endef
+TARGET_DEVICES += netgear_pr2000
 
 define Device/netgear_wn3000rp-v3
   SOC := mt7620a
