@@ -22,7 +22,7 @@ config KERNEL_BUILD_DOMAIN
 
 config KERNEL_PRINTK
 	bool "Enable support for printk"
-	default y
+	default y if !SMALL_FLASH
 
 config KERNEL_SWAP
 	bool "Support for paging of anonymous memory (swap)"
@@ -34,7 +34,7 @@ config KERNEL_PROC_STRIPPED
 
 config KERNEL_DEBUG_FS
 	bool "Compile the kernel with debug filesystem enabled"
-	default y
+	default y if !SMALL_FLASH
 	help
 	  debugfs is a virtual file system that kernel developers use to put
 	  debugging files into. Enable this option to be able to read and
@@ -524,7 +524,7 @@ config KERNEL_HUGETLB_PAGE
 
 config KERNEL_MAGIC_SYSRQ
 	bool "Compile the kernel with SysRq support"
-	default y
+	default y if !SMALL_FLASH
 
 config KERNEL_DEBUG_PINCTRL
 	bool "Compile the kernel with pinctrl debugging"
@@ -605,7 +605,7 @@ config KERNEL_DEBUG_VM
 
 config KERNEL_PRINTK_TIME
 	bool "Enable printk timestamps"
-	default y
+	default y if !SMALL_FLASH
 
 config KERNEL_SLUB_DEBUG
 	bool
