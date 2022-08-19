@@ -1,5 +1,5 @@
 BOARDNAME:=Devices with small flash
-FEATURES += small_flash
+FEATURES += low_mem small_flash
 
 DEFAULT_PACKAGES += wpad-basic-wolfssl
 
