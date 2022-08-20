@@ -82,11 +82,11 @@ udpu_do_misc_prep() {
 udpu_do_initial_setup() {
 	# Prepare /recovery parition
 	udpu_part_prep ${emmc_dev}p2
-	mkfs.ext4 -q ${emmc_dev}p2 | echo y &> /dev/null
+	mkfs.ext4 -qF ${emmc_dev}p2 2>&1 /dev/null
 
 	# Prepare /boot partition
 	udpu_part_prep ${emmc_dev}p1
-	mkfs.ext4 -q ${emmc_dev}p1 | echo y &> /dev/null
+	mkfs.ext4 -qF ${emmc_dev}p1 2>&1 /dev/null
 
 	# Prepare /root partition
 	printf "Formating /root partition, this may take a while..\n"
