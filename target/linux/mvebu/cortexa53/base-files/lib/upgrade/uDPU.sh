@@ -42,8 +42,11 @@ udpu_do_part_check() {
 		# Format the /misc part right away as we will need it for the firmware
 		printf "Formating /misc partition, this make take a while..\n"
 		udpu_part_prep ${emmc_dev}p4
-		mkfs.f2fs -q -l misc ${emmc_dev}p4
-		[ $? -eq 0 ] && printf "/misc partition formated successfully\n" || printf "/misc partition formatting failed\n"
+		if mkfs.f2fs -q -l misc ${emmc_dev}p4; then
+			printf "/misc partition formated successfully\n"
+		else
+			printf "/misc partition formatting failed\n"
+		fi
 
 		udpu_do_initial_setup
 	else
@@ -54,19 +57,17 @@ udpu_do_part_check() {
 udpu_do_misc_prep() {
 	if ! grep -woq /misc /proc/mounts; then
 		mkdir -p /misc
-		mount ${emmc_dev}p4 /misc
 
 		# If the mount fails, try to reformat partition
 		# Leaving possiblity for multiple iterations
-		if [ $? -ne 0 ]; then
+		if ! mount ${emmc_dev}p4 /misc; then
 			printf "Error while mounting /misc, trying to reformat..\n"
 
 			format_count=0
 			while [ "$format_count" -lt "1" ]; do
 				udpu_part_prep ${emmc_dev}p4
 				mkfs.f2fs -q -l misc ${emmc_dev}p4
-				mount ${emmc_dev}p4 /misc
-				if [ $? -ne 0 ]; then
+				if ! mount ${emmc_dev}p4 /misc; then
 					umount -l /misc
 					printf "Failed while mounting /misc\n"
 					format_count=$((format_count +1))
@@ -91,8 +92,7 @@ udpu_do_initial_setup() {
 	# Prepare /root partition
 	printf "Formating /root partition, this may take a while..\n"
 	udpu_part_prep ${emmc_dev}p3
-	mkfs.f2fs -q -l rootfs ${emmc_dev}p3
-	[ $? -eq 0 ] && printf "/root partition reformated\n"
+	mkfs.f2fs -q -l rootfs ${emmc_dev}p3 && printf "/root partition reformated\n"
 }
 
 udpu_do_regular_upgrade() {
@@ -122,13 +122,19 @@ platform_do_upgrade_uDPU() {
 	udpu_do_regular_upgrade
 
 	printf "Updating /boot partition\n"
-	tar xzf /misc/firmware/boot.tgz -C /tmp/boot
-	[ $? -eq 0 ] && printf "/boot partition updated successfully\n" || printf "/boot partition update failed\n"
+	if tar xzf /misc/firmware/boot.tgz -C /tmp/boot; then
+		printf "/boot partition updated successfully\n"
+	else
+		printf "/boot partition update failed\n"
+	fi
 	sync
 
 	printf "Updating /root partition\n"
-	tar xzf /misc/firmware/rootfs.tgz -C /tmp/rootpart
-	[ $? -eq 0 ] && printf "/root partition updated successfully\n" || printf "/root partition update failed\n"
+	if tar xzf /misc/firmware/rootfs.tgz -C /tmp/rootpart; then
+		printf "/root partition updated successfully\n"
+	else
+		printf "/root partition update failed\n"
+	fi
 	sync
 
 	# Saving configuration files over sysupgrade
