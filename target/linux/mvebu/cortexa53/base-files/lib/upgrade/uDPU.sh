@@ -18,10 +18,10 @@ udpu_check_emmc() {
 }
 
 udpu_part_prep() {
-	 if [ "$(grep $1 /proc/mounts)" ]; then
-		mounted_part="$(grep $1 /proc/mounts | awk '{print $2}' | head -1)"
+	 if grep -q "$1" /proc/mounts; then
+		mounted_part="$(grep -m 1 $1 /proc/mounts | awk '{print $2}')"
 		umount $mounted_part
-		[ "$(grep -wo $mounted_part /proc/mounts)" ] && umount -l $mounted_part
+		grep -woq "$mounted_part" /proc/mounts && umount -l "$mounted_part"
 	fi
 }
 
@@ -52,7 +52,7 @@ udpu_do_part_check() {
 }
 
 udpu_do_misc_prep() {
-	if [ ! "$(grep -wo /misc /proc/mounts)" ]; then
+	if ! grep -woq /misc /proc/mounts; then
 		mkdir -p /misc
 		mount ${emmc_dev}p4 /misc
 
@@ -97,13 +97,13 @@ udpu_do_initial_setup() {
 
 udpu_do_regular_upgrade() {
 	# Clean /boot partition - mfks.ext4 is not available in chroot
-	[ "$(grep -wo /boot /proc/mounts)" ] && umount /boot
+	grep -woq /boot /proc/mounts && umount /boot
 	mkdir -p /tmp/boot
 	mount ${emmc_dev}p1 /tmp/boot
 	rm -rf /tmp/boot/*
 
 	# Clean /root partition - mkfs.f2fs is not available in chroot
-	[ "$(grep -wo /dev/root /proc/mounts)" ] && umount /
+	grep -woq /dev/root /proc/mounts && umount /
 	mkdir -p /tmp/rootpart
 	mount ${emmc_dev}p3 /tmp/rootpart
 	rm -rf /tmp/rootpart/*
@@ -139,7 +139,7 @@ platform_do_upgrade_uDPU() {
 	for part in ${tmp_parts}; do
 		umount $part
 		# Force umount is necessary
-		[ "$(grep "${part}" /proc/mounts)" ] && umount -l $part
+		grep -q "${part}" /proc/mounts && umount -l "$part"
 	done
 
 	# Sysupgrade complains about /tmp and /dev, so we can detach them here
