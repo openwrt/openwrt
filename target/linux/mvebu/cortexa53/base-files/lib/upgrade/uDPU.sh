@@ -20,7 +20,7 @@ udpu_check_emmc() {
 udpu_part_prep() {
 	 if grep -q "$1" /proc/mounts; then
 		mounted_part="$(grep -m 1 $1 /proc/mounts | awk '{print $2}')"
-		umount $mounted_part
+		umount "$mounted_part"
 		grep -woq "$mounted_part" /proc/mounts && umount -l "$mounted_part"
 	fi
 }
@@ -143,7 +143,7 @@ platform_do_upgrade_uDPU() {
 	# Remove tmp mounts
 	tmp_parts=$(grep "${emmc_dev}" /proc/mounts | awk '{print $2}')
 	for part in ${tmp_parts}; do
-		umount $part
+		umount "$part"
 		# Force umount is necessary
 		grep -q "${part}" /proc/mounts && umount -l "$part"
 	done
