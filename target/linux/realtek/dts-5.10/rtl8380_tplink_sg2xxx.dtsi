@@ -51,7 +51,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		tps23861@28 {
+		tps23861_20: tps23861@20 {
+			compatible = "ti,tps23861";
+			reg = <0x20>;
+			shunt-resistor-micro-ohms = <255000>;
+		};
+
+		tps23861_28: tps23861@28 {
 			compatible = "ti,tps23861";
 			reg = <0x28>;
 			shunt-resistor-micro-ohms = <255000>;
@@ -140,6 +146,9 @@
 		INTERNAL_PHY(13)
 		INTERNAL_PHY(14)
 		INTERNAL_PHY(15)
+
+		INTERNAL_PHY(24)
+		INTERNAL_PHY(26)
 	};
 };
 
@@ -156,6 +165,9 @@
 		SWITCH_PORT(10, 6, internal)
 		SWITCH_PORT(9, 7, internal)
 		SWITCH_PORT(8, 8, internal)
+
+		SWITCH_SFP_PORT(24, 9, 1000base-x)
+		SWITCH_SFP_PORT(26, 10, 1000base-x)
 
 		port@28 {
 			ethernet = <&ethernet0>;
