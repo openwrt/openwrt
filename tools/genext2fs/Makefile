@@ -11,8 +11,8 @@ PKG_NAME:=genext2fs
 PKG_VERSION:=1.4.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/genext2fs
-PKG_HASH:=404dbbfa7a86a6c3de8225c8da254d026b17fd288e05cec4df2cc7e1f4feecfc
+PKG_SOURCE_URL:=https://codeload.github.com/bestouff/$(PKG_NAME)/tar.gz/v$(PKG_VERSION)?
+PKG_HASH:=0d706f08b11051aae00fe67d88b7aac1fdd0d5d96163704508e21fb6460f899d
 
 include $(INCLUDE_DIR)/host-build.mk
 
