@@ -1244,6 +1244,16 @@ define Device/mediatek_mt7621-eval-board
 endef
 TARGET_DEVICES += mediatek_mt7621-eval-board
 
+define Device/midea_morr-qr011
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := MIDEA
+  DEVICE_MODEL := MORR-QR011
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_PACKAGES := -wpad-openssl
+  SUPPORTED_DEVICES += mt7621
+endef
+TARGET_DEVICES += midea_morr-qr011
+
 define Device/MikroTik
   $(Device/dsa-migration)
   DEVICE_VENDOR := MikroTik
