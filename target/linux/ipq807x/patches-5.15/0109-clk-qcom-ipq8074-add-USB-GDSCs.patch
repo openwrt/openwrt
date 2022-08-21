@@ -34,7 +34,7 @@ Changes in v2:
  #include "reset.h"
  
  enum {
-@@ -4407,6 +4408,22 @@ static struct clk_branch gcc_pcie0_axi_s
+@@ -4389,6 +4390,22 @@ static struct clk_branch gcc_pcie0_axi_s_bridge_clk = {
  	},
  };
  
@@ -54,9 +54,9 @@ Changes in v2:
 +	.pwrsts = PWRSTS_OFF_ON,
 +};
 +
- static const struct alpha_pll_config ubi32_pll_config = {
- 	.l = 0x4e,
- 	.config_ctl_val = 0x200d4aa8,
+ static struct clk_hw *gcc_ipq8074_hws[] = {
+ 	&gpll0_out_main_div2.hw,
+ 	&gpll6_out_main_div2.hw,
 @@ -4810,6 +4827,11 @@ static const struct qcom_reset_map gcc_i
  	[GCC_PCIE1_AXI_MASTER_STICKY_ARES] = { 0x76040, 6 },
  };
