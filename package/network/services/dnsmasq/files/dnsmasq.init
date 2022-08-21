@@ -8,6 +8,8 @@ PROG=/usr/sbin/dnsmasq
 
 ADD_LOCAL_DOMAIN=1
 ADD_LOCAL_HOSTNAME=1
+ADD_LOCAL_IPV4_NAMESERVER=1
+ADD_LOCAL_IPV6_NAMESERVER=0
 ADD_WAN_FQDN=0
 ADD_LOCAL_FQDN=""
 
@@ -1031,6 +1033,8 @@ dnsmasq_start()
 
 	config_get_bool ADD_LOCAL_DOMAIN "$cfg" add_local_domain 1
 	config_get_bool ADD_LOCAL_HOSTNAME "$cfg" add_local_hostname 1
+	config_get_bool ADD_LOCAL_IPV4_NAMESERVER "$cfg" add_local_ipv4_nameserver 1
+	config_get_bool ADD_LOCAL_IPV6_NAMESERVER "$cfg" add_local_ipv6_nameserver 0
 	config_get ADD_LOCAL_FQDN "$cfg" add_local_fqdn ""
 	config_get ADD_WAN_FQDN "$cfg" add_wan_fqdn 0
 
@@ -1187,8 +1191,12 @@ dnsmasq_start()
 		[ $ADD_LOCAL_DOMAIN -eq 1 ] && [ -n "$DOMAIN" ] && {
 			echo "search $DOMAIN" >> /tmp/resolv.conf
 		}
-		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
-		[ -e /proc/sys/net/ipv6 ] && DNS_SERVERS="$DNS_SERVERS ::1"
+		[ "$ADD_LOCAL_IPV4_NAMESERVER" -eq 1 ] && {
+			DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
+		}
+		[ -e /proc/sys/net/ipv6 ] && [ "$ADD_LOCAL_IPV6_NAMESERVER" -eq 1 ] && {
+			DNS_SERVERS="$DNS_SERVERS ::1"
+		}
 		for DNS_SERVER in $DNS_SERVERS ; do
 			echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
 		done
