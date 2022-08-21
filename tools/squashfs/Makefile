@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=squashfs
 PKG_CPE_ID:=cpe:/a:phillip_lougher:squashfs
-PKG_VERSION:=3.0
+PKG_VERSION:=4.5.1
 
 PKG_SOURCE:=$(PKG_NAME)$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/squashfs
-PKG_HASH:=39dbda43cf118536deb746c7730b468702d514a19f4cfab73b710e32908ddf20
+PKG_HASH:=d7f6af5ddb900d5b89912c0fc2b7689549604aff33fd3694da320150662a6ba3
 PKG_CAT:=zcat
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)$(PKG_VERSION)
@@ -21,16 +21,15 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR)/squashfs-tools \
-		CC="$(HOSTCC)" \
-		CFLAGS="$(HOST_CFLAGS) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -I." \
-		CXX="$(CXX)" \
+		CPPFLAGS="$(HOST_CFLAGS)" \
+		LDFLAGS="$(HOST_LDFLAGS)" \
 		LZMAPATH=$(STAGING_DIR_HOST)/lib \
-		mksquashfs-lzma unsquashfs-lzma 
+		mksquashfs unsquashfs
 endef
 
 define Host/Install
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/squashfs-tools/mksquashfs-lzma $(STAGING_DIR_HOST)/bin/
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/squashfs-tools/unsquashfs-lzma $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/squashfs-tools/mksquashfs $(STAGING_DIR_HOST)/bin/mksquashfs-lzma
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/squashfs-tools/unsquashfs $(STAGING_DIR_HOST)/bin/unsquashfs-lzma
 endef
 
 define Host/Clean

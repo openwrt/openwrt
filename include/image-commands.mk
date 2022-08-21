@@ -108,7 +108,7 @@ define Build/append-squashfs-fakeroot-be
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
 		$@.fakefs $@.fakesquashfs \
 		-noappend -root-owned -be -nopad -b 65536 \
-		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
+		$(if $(SOURCE_DATE_EPOCH),-all-time $(SOURCE_DATE_EPOCH))
 	cat $@.fakesquashfs >> $@
 endef
 

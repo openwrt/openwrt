@@ -15,7 +15,7 @@ define Build/netgear-squashfs
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma  \
 		$@.fs $@.squashfs -be \
 		-noappend -root-owned -b 65536 \
-		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
+		$(if $(SOURCE_DATE_EPOCH),-all-time $(SOURCE_DATE_EPOCH))
 
 	dd if=/dev/zero bs=1k count=1 >> $@.squashfs
 	mkimage \

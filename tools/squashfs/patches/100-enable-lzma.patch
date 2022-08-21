@@ -1,0 +1,29 @@
+--- a/squashfs-tools/Makefile
++++ b/squashfs-tools/Makefile
+@@ -19,7 +19,7 @@ RELEASE_DATE = 2022/03/17
+ # Obviously, you must select at least one of the available gzip, lzma, lzo
+ # compression types.
+ #
+-GZIP_SUPPORT = 1
++# GZIP_SUPPORT = 1
+ 
+ ########### Building XZ support #############
+ #
+@@ -89,7 +89,7 @@ GZIP_SUPPORT = 1
+ # in Mksquashfs.  Obviously the compression algorithm must have been
+ # selected to be built
+ #
+-COMP_DEFAULT = gzip
++COMP_DEFAULT = lzma
+ 
+ 
+ ###############################################
+@@ -157,7 +157,7 @@ INSTALL_MANPAGES_DIR = $(INSTALL_PREFIX)
+ # work) - download and unpack it, uncomment and set LZMA_DIR to unpacked source,
+ # and uncomment the LZMA_SUPPORT line below.
+ #
+-#LZMA_XZ_SUPPORT = 1
++LZMA_XZ_SUPPORT = 1
+ #LZMA_SUPPORT = 1
+ #LZMA_DIR = ../../../../LZMA/lzma465
+ 
