@@ -29,7 +29,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20211215095117.176435-5-maxi
  #include "uapi/drm/vc4_drm.h"
  
  #include "vc4_drv.h"
-@@ -217,6 +219,7 @@ static void vc4_match_add_drivers(struct
+@@ -226,6 +228,7 @@ static const struct of_device_id vc4_dma
  static int vc4_drm_bind(struct device *dev)
  {
  	struct platform_device *pdev = to_platform_device(dev);
@@ -37,7 +37,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20211215095117.176435-5-maxi
  	struct drm_device *drm;
  	struct vc4_dev *vc4;
  	struct device_node *node;
-@@ -253,10 +256,29 @@ static int vc4_drm_bind(struct device *d
+@@ -272,10 +275,29 @@ static int vc4_drm_bind(struct device *d
  	if (ret)
  		return ret;
  

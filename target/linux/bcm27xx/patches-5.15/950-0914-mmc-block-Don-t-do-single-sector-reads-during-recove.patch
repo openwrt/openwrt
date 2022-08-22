@@ -24,15 +24,15 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 --- a/drivers/mmc/core/block.c
 +++ b/drivers/mmc/core/block.c
 @@ -1870,7 +1870,11 @@ static void mmc_blk_mq_rw_recovery(struc
+ 		return;
  	}
  
- 	/* FIXME: Missing single sector read for large sector size */
--	if (!mmc_large_sector(card) && rq_data_dir(req) == READ &&
+-	if (rq_data_dir(req) == READ && brq->data.blocks >
 +	/*
 +	 * XXX: don't do single-sector reads, as it leaks a SG DMA
 +	 * mapping when reusing the still-pending req.
 +	 */
-+	if (0 && !mmc_large_sector(card) && rq_data_dir(req) == READ &&
- 	    brq->data.blocks > 1) {
- 		/* Read one sector at a time */
++	if (0 && rq_data_dir(req) == READ && brq->data.blocks >
+ 			queue_physical_block_size(mq->queue) >> 9) {
+ 		/* Read one (native) sector at a time */
  		mmc_blk_read_single(mq, req);

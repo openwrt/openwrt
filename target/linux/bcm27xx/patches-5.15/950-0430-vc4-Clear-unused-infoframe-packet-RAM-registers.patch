@@ -16,7 +16,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -437,9 +437,11 @@ static void vc4_hdmi_write_infoframe(str
+@@ -440,9 +440,11 @@ static void vc4_hdmi_write_infoframe(str
  	const struct vc4_hdmi_register *ram_packet_start =
  		&vc4_hdmi->variant->registers[HDMI_RAM_PACKET_START];
  	u32 packet_reg = ram_packet_start->offset + VC4_HDMI_PACKET_STRIDE * packet_id;
@@ -29,7 +29,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  	unsigned long flags;
  	ssize_t len, i;
  	int ret;
-@@ -475,6 +477,13 @@ static void vc4_hdmi_write_infoframe(str
+@@ -478,6 +480,13 @@ static void vc4_hdmi_write_infoframe(str
  		packet_reg += 4;
  	}
  

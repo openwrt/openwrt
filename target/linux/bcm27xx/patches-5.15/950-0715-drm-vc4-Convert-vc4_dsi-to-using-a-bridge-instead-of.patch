@@ -240,18 +240,18 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  };
  
  static const struct vc4_dsi_variant bcm2711_dsi1_variant = {
-@@ -1691,9 +1744,8 @@ static int vc4_dsi_bind(struct device *d
- 		goto err_free_dma;
+@@ -1692,9 +1745,8 @@ static int vc4_dsi_bind(struct device *d
+ 		return ret;
  
  	drm_simple_encoder_init(drm, dsi->encoder, DRM_MODE_ENCODER_DSI);
 -	drm_encoder_helper_add(dsi->encoder, &vc4_dsi_encoder_helper_funcs);
  
 -	ret = drm_bridge_attach(dsi->encoder, dsi->out_bridge, NULL, 0);
 +	ret = drm_bridge_attach(dsi->encoder, &dsi->bridge, NULL, 0);
- 	if (ret) {
- 		dev_err(dev, "bridge attach failed: %d\n", ret);
- 		goto err_free_dma;
-@@ -1755,6 +1807,10 @@ static int vc4_dsi_dev_probe(struct plat
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1730,6 +1782,10 @@ static int vc4_dsi_dev_probe(struct plat
  		return -ENOMEM;
  	dev_set_drvdata(dev, dsi);
  
