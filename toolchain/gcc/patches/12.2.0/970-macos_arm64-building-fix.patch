@@ -17,7 +17,7 @@ Date:   Mon Aug 16 13:16:21 2021 +0100
 
 --- a/gcc/config/aarch64/aarch64.h
 +++ b/gcc/config/aarch64/aarch64.h
-@@ -1236,7 +1236,7 @@ extern const char *aarch64_rewrite_mcpu
+@@ -1290,7 +1290,7 @@ extern const char *aarch64_rewrite_mcpu
  #define MCPU_TO_MARCH_SPEC_FUNCTIONS \
    { "rewrite_mcpu", aarch64_rewrite_mcpu },
  
@@ -28,8 +28,8 @@ Date:   Mon Aug 16 13:16:21 2021 +0100
  # define EXTRA_SPEC_FUNCTIONS						\
 --- a/gcc/config/host-darwin.cc
 +++ b/gcc/config/host-darwin.cc
-@@ -22,6 +22,8 @@
- #include "coretypes.h"
+@@ -23,6 +23,8 @@
+ #include "options.h"
  #include "diagnostic-core.h"
  #include "config/host-darwin.h"
 +#include "hosthooks.h"
@@ -37,9 +37,9 @@ Date:   Mon Aug 16 13:16:21 2021 +0100
  #include <errno.h>
  
  /* For Darwin (macOS only) platforms, without ASLR (PIE) enabled on the
-@@ -79,3 +81,5 @@ darwin_gt_pch_use_address (void *addr, s
+@@ -181,3 +183,5 @@ darwin_gt_pch_use_address (void *&addr,
  
-   return ret;
+   return 1;
  }
 +
 +const struct host_hooks host_hooks = HOST_HOOKS_INITIALIZER;
