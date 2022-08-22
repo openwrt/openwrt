@@ -9,6 +9,7 @@ on:
       - 'package/kernel/**'
       - 'target/linux/**'
       - '!target/linux/**/*-5.15'
+      - '!target/linux/**/*-5.15/**'
 jobs:
   build_kernel:
     uses: ./.github/workflows/kernel-reusable.yml

@@ -8,6 +8,7 @@ on:
       - 'include/kernel-5.15'
       - 'package/kernel/**'
       - 'target/linux/**'
+      - '!target/linux/**/*-5.10/**'
       - '!target/linux/**/*-5.10'
 jobs:
   build_testing_kernel:
