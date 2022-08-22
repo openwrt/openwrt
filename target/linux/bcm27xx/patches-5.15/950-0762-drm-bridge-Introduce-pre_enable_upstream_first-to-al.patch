@@ -36,7 +36,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/drm_bridge.c
 +++ b/drivers/gpu/drm/drm_bridge.c
-@@ -463,20 +463,15 @@ EXPORT_SYMBOL(drm_bridge_chain_disable);
+@@ -462,20 +462,15 @@ EXPORT_SYMBOL(drm_bridge_chain_disable);
   * encoder chain, starting from the first bridge to the last. These are called
   * after completing the encoder's prepare op.
   *
@@ -62,7 +62,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  }
  EXPORT_SYMBOL(drm_bridge_chain_post_disable);
  
-@@ -518,24 +513,14 @@ EXPORT_SYMBOL(drm_bridge_chain_mode_set)
+@@ -517,24 +512,14 @@ EXPORT_SYMBOL(drm_bridge_chain_mode_set)
   * chain, starting from the last bridge to the first. These are called
   * before calling the encoder's commit op.
   *
@@ -91,7 +91,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  }
  EXPORT_SYMBOL(drm_bridge_chain_pre_enable);
  
-@@ -607,6 +592,25 @@ void drm_atomic_bridge_chain_disable(str
+@@ -606,6 +591,25 @@ void drm_atomic_bridge_chain_disable(str
  }
  EXPORT_SYMBOL(drm_atomic_bridge_chain_disable);
  
@@ -117,7 +117,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  /**
   * drm_atomic_bridge_chain_post_disable - cleans up after disabling all bridges
   *					  in the encoder chain
-@@ -617,6 +621,9 @@ EXPORT_SYMBOL(drm_atomic_bridge_chain_di
+@@ -616,6 +620,9 @@ EXPORT_SYMBOL(drm_atomic_bridge_chain_di
   * &drm_bridge_funcs.post_disable) op for all the bridges in the encoder chain,
   * starting from the first bridge to the last. These are called after completing
   * &drm_encoder_helper_funcs.atomic_disable
@@ -127,7 +127,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
   *
   * Note: the bridge passed should be the one closest to the encoder
   */
-@@ -624,30 +631,75 @@ void drm_atomic_bridge_chain_post_disabl
+@@ -623,30 +630,75 @@ void drm_atomic_bridge_chain_post_disabl
  					  struct drm_atomic_state *old_state)
  {
  	struct drm_encoder *encoder;
@@ -214,7 +214,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  /**
   * drm_atomic_bridge_chain_pre_enable - prepares for enabling all bridges in
   *					the encoder chain
-@@ -659,33 +711,62 @@ EXPORT_SYMBOL(drm_atomic_bridge_chain_po
+@@ -658,33 +710,62 @@ EXPORT_SYMBOL(drm_atomic_bridge_chain_po
   * starting from the last bridge to the first. These are called before calling
   * &drm_encoder_helper_funcs.atomic_enable
   *

@@ -29,7 +29,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -485,8 +485,7 @@ static void vc4_hdmi_set_avi_infoframe(s
+@@ -488,8 +488,7 @@ static void vc4_hdmi_set_avi_infoframe(s
  	struct vc4_hdmi_encoder *vc4_encoder = to_vc4_hdmi_encoder(encoder);
  	struct drm_connector *connector = &vc4_hdmi->connector;
  	struct drm_connector_state *cstate = connector->state;
@@ -39,7 +39,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	union hdmi_infoframe frame;
  	int ret;
  
-@@ -598,8 +597,8 @@ static bool vc4_hdmi_supports_scrambling
+@@ -601,8 +600,8 @@ static bool vc4_hdmi_supports_scrambling
  
  static void vc4_hdmi_enable_scrambling(struct drm_encoder *encoder)
  {
@@ -49,7 +49,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	unsigned long flags;
  
  	lockdep_assert_held(&vc4_hdmi->mutex);
-@@ -625,18 +624,21 @@ static void vc4_hdmi_enable_scrambling(s
+@@ -628,18 +627,21 @@ static void vc4_hdmi_enable_scrambling(s
  static void vc4_hdmi_disable_scrambling(struct drm_encoder *encoder)
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
@@ -73,7 +73,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return;
  
  	if (delayed_work_pending(&vc4_hdmi->scrambling_work))
-@@ -1009,8 +1011,8 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -1017,8 +1019,8 @@ static void vc4_hdmi_encoder_pre_crtc_co
  		vc4_hdmi_encoder_get_connector_state(encoder, state);
  	struct vc4_hdmi_connector_state *vc4_conn_state =
  		conn_state_to_vc4_hdmi_conn_state(conn_state);
@@ -83,7 +83,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	unsigned long pixel_rate = vc4_conn_state->pixel_rate;
  	unsigned long bvb_rate, hsm_rate;
  	unsigned long flags;
-@@ -1112,9 +1114,9 @@ out:
+@@ -1120,9 +1122,9 @@ out:
  static void vc4_hdmi_encoder_pre_crtc_enable(struct drm_encoder *encoder,
  					     struct drm_atomic_state *state)
  {
@@ -95,7 +95,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	unsigned long flags;
  
  	mutex_lock(&vc4_hdmi->mutex);
-@@ -1142,8 +1144,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
+@@ -1150,8 +1152,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
  static void vc4_hdmi_encoder_post_crtc_enable(struct drm_encoder *encoder,
  					      struct drm_atomic_state *state)
  {
@@ -105,7 +105,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct vc4_hdmi_encoder *vc4_encoder = to_vc4_hdmi_encoder(encoder);
  	bool hsync_pos = mode->flags & DRM_MODE_FLAG_PHSYNC;
  	bool vsync_pos = mode->flags & DRM_MODE_FLAG_PVSYNC;
-@@ -1219,6 +1221,19 @@ static void vc4_hdmi_encoder_enable(stru
+@@ -1227,6 +1229,19 @@ static void vc4_hdmi_encoder_enable(stru
  {
  }
  
@@ -125,7 +125,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  #define WIFI_2_4GHz_CH1_MIN_FREQ	2400000000ULL
  #define WIFI_2_4GHz_CH1_MAX_FREQ	2422000000ULL
  
-@@ -1297,6 +1312,7 @@ vc4_hdmi_encoder_mode_valid(struct drm_e
+@@ -1305,6 +1320,7 @@ vc4_hdmi_encoder_mode_valid(struct drm_e
  
  static const struct drm_encoder_helper_funcs vc4_hdmi_encoder_helper_funcs = {
  	.atomic_check = vc4_hdmi_encoder_atomic_check,
@@ -133,7 +133,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	.mode_valid = vc4_hdmi_encoder_mode_valid,
  	.disable = vc4_hdmi_encoder_disable,
  	.enable = vc4_hdmi_encoder_enable,
-@@ -1350,9 +1366,7 @@ static void vc4_hdmi_audio_set_mai_clock
+@@ -1358,9 +1374,7 @@ static void vc4_hdmi_audio_set_mai_clock
  
  static void vc4_hdmi_set_n_cts(struct vc4_hdmi *vc4_hdmi, unsigned int samplerate)
  {

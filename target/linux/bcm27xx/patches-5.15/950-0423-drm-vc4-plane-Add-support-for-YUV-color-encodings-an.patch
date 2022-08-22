@@ -21,7 +21,7 @@ Link: https://lore.kernel.org/r/20211215091739.135042-4-maxime@cerno.tech
 
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -623,6 +623,51 @@ static int vc4_plane_allocate_lbm(struct
+@@ -619,6 +619,51 @@ static int vc4_plane_allocate_lbm(struct
  	return 0;
  }
  
@@ -73,7 +73,7 @@ Link: https://lore.kernel.org/r/20211215091739.135042-4-maxime@cerno.tech
  /* Writes out a full display list for an active plane to the plane's
   * private dlist state.
   */
-@@ -1017,9 +1062,20 @@ static int vc4_plane_mode_set(struct drm
+@@ -1013,9 +1058,20 @@ static int vc4_plane_mode_set(struct drm
  
  	/* Colorspace conversion words */
  	if (vc4_state->is_yuv) {
@@ -97,7 +97,7 @@ Link: https://lore.kernel.org/r/20211215091739.135042-4-maxime@cerno.tech
  	}
  
  	vc4_state->lbm_offset = 0;
-@@ -1448,6 +1504,15 @@ struct drm_plane *vc4_plane_init(struct
+@@ -1444,6 +1500,15 @@ struct drm_plane *vc4_plane_init(struct
  					   DRM_MODE_REFLECT_X |
  					   DRM_MODE_REFLECT_Y);
  
