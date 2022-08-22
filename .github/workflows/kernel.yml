@@ -23,7 +23,8 @@ jobs:
         run: |
           export TARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null \
             | sort -u -t '/' -k1,1 \
-            | awk '{ print $1 }')"
+            | awk '{ print $1 }') \
+            | sed 's/mt7620/mt7621/'"
 
           JSON='['
           FIRST=1
