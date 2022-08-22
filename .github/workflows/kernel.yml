@@ -147,6 +147,18 @@ jobs:
         working-directory: openwrt
         run: make target/compile -j$(nproc) BUILD_LOG=1
 
+      - name: Show build failures
+        if: failure()
+        working-directory: openwrt
+        run: |
+          if grep -qr 'make\[[[:digit:]]\].*Error [[:digit:]]$' logs; then
+            printf "\n====== Showing Make errors found in the log files ======";
+            for file in $(grep -lr 'make\[[[:digit:]]\].*Error [[:digit:]]$' logs); do
+              printf "\n====== Make errors from $file ======\n" ;
+              grep -r -C10 'make\[[[:digit:]]\].*Error [[:digit:]]$' $file ;
+            done
+          fi
+
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@v2
