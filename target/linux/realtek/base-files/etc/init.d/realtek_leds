@@ -1,0 +1,71 @@
+#!/bin/sh /etc/rc.common
+
+START=11
+
+# Enable hardware LED controller on tplink SG2000 series switches
+#         ___________________________________________________________
+#        |                                                           |
+#        | This is a temporary stand-in for an RTL LED controller    |
+#        | driver. It will be obsolete once a kernel driver becomes  |
+#        | available.                                                |
+#        |___________________________________________________________|
+#
+# Crash course on LED controller:
+# -------------------------------
+#
+# From a software perspective, the device has 11 groups with (3) LEDs each.
+# We're trying to map the network ports to the LEDs:
+#  ______
+# |      |
+# | 20-1 |
+# |______|                    ______ ______ ______ ______ ______ ______ ______ ______
+# |      |                   |      |      |      |      |      |      |      |      |
+# | 20-0 |                   | 15-2 | 14-2 | 13-2 | 12-2 | 11-2 | 10-2 |  9-2 |  8-2 |
+# |______|      ______ ______|______|______|______|______|______|______|______|______|
+# |      |     | 26-1 | 24-1 | 15-1 | 14-1 | 13-1 | 12-1 | 11-1 | 10-1 |  9-1 |  8-1 |
+# | N/A  |     | 26-0 | 24-0 | 15-0 | 14-0 | 13-0 | 12-0 | 11-0 | 10-0 |  9-0 |  8-0 |
+# |______|     |______|______|______|______|______|______|______|______|______|______|
+#
+# The port numbering is flexible, but the ordering is fixed. The 'led_p_en_ctrl'
+# register is a bitmask that controls which switch ports send status data.
+# In this example, Enabling the desired ports results in the bitmask 0x0510ff00
+# If there are more bits set than LED groups the extra (LSB) bits are discarded.
+#
+# LED[0] and LED[1] are bi-color LEDS
+#     - LED[0] = amber, LED[1] = green
+#     - Both on or both off turns off the LED
+# 0xef: Turn LED1 on 1G, LED 0 on 100M.
+#
+# Switch port 20 is not used. The LEDs for port 20 are thus switched to manual
+# mode by writing (1 << 20) bitmask in led0_sw_p_en_ctrl, and led0_sw_p_en_ctrl.
+#
+# LED[2] in each group is used for PoE or other functions, so they are all set
+# to manual mode via the 'led2_sw_p_en_ctrl' register.
+#
+tplink_sg2xxx_init_leds()
+{
+	local leds="/sys/kernel/debug/rtl838x/led"
+
+	if [ ! -d "$leds" ]; then
+		echo "tplink_sg2xxx_init_leds: Could not find $leds in sysfs" > /dev/kmsg
+		return
+	fi
+
+	echo 0x00a4014f > "$leds"/led_mode_ctrl
+	echo 0x0510ff00 > "$leds"/led_p_en_ctrl
+	echo 0x00100000 > "$leds"/led0_sw_p_en_ctrl
+	echo 0x00100000 > "$leds"/led1_sw_p_en_ctrl
+	echo 0x0fffffff > "$leds"/led2_sw_p_en_ctrl
+
+	# Turn on system LED to confirm this script is running
+	echo 0x005 > "$leds"/led_sw_p_ctrl.20
+}
+
+boot() {
+	case $(board_name) in
+	tplink,sg2008p-v1|\
+	tplink,sg2210p-v3)
+		tplink_sg2xxx_init_leds
+		;;
+	esac
+}
