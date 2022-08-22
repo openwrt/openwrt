@@ -1,0 +1,16 @@
+name: Build Testing Kernel
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kernel-reusable.yml'
+      - '.github/workflows/kernel-testing.yml'
+      - 'include/kernel-5.15'
+      - 'package/kernel/**'
+      - 'target/linux/**'
+      - '!target/linux/**/*-5.10'
+jobs:
+  build_testing_kernel:
+    uses: ./.github/workflows/kernel-reusable.yml
+    with:
+      config_seed: 'CONFIG_ALL_KMODS=y\nCONFIG_TESTING_KERNEL=y\n'
