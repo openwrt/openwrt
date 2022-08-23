@@ -77,7 +77,7 @@ TARGET_CFLAGS += -I$(LINUX_DIR)/include
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	$(CP) ../ltq-vdsl-app/src/src/dsl_cpe_ubus.c $(PKG_BUILD_DIR)/src/
+	$(CP) ../ltq-vdsl-vr9-app/src/src/dsl_cpe_ubus.c $(PKG_BUILD_DIR)/src/
 endef
 
 define Package/ltq-adsl-app/install
