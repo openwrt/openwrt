@@ -56,10 +56,10 @@ MAKE_FLAGS += \
 	$(KERNEL_MAKE_FLAGS) \
 	SHELL="$(BASH)"
 
-# ltq-vdsl-app uses a header provided by the MEI driver which has some
+# ltq-vdsl-vr9-app uses a header provided by the MEI driver which has some
 # conditionals.
 # Define the conditionals here to have the same view on both sides. If you
-# change them, you need to change them for the ltq-vdsl-app as well
+# change them, you need to change them for the ltq-vdsl-vr9-app as well
 MEI_DRV_CFLAGS = \
 	-DMEI_DRV_ATM_PTM_INTERFACE_ENABLE=1 \
 	-DMEI_SUPPORT_DEBUG_STREAMS=1 \

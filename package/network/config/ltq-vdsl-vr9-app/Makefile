@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=ltq-vdsl-app
+PKG_NAME:=ltq-vdsl-vr9-app
 PKG_VERSION:=4.17.18.6
 PKG_RELEASE:=$(AUTORELEASE)
 PKG_BASE_NAME:=dsl_cpe_control
@@ -24,7 +24,7 @@ PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ltq-vdsl-app
+define Package/ltq-vdsl-vr9-app
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Lantiq VDSL userland tool
@@ -32,17 +32,17 @@ define Package/ltq-vdsl-app
   DEPENDS:=@TARGET_lantiq_xrx200 +libpthread +librt +ltq-dsl-base +libubox +libubus
 endef
 
-define Package/ltq-vdsl-app/description
+define Package/ltq-vdsl-vr9-app/description
   Userland tool needed to control Lantiq VDSL CPE
 endef
 
-# ltq-vdsl-app uses a header provided by the MEI driver which has some
+# ltq-vdsl-vr9-app uses a header provided by the MEI driver which has some
 # conditionals.
 #
 # Define them here with the default values they would get in the MEI driver,
 # have the same view on both sides.
 #
-# If you change them, you need to change them for the ltq-vdsl-app as well
+# If you change them, you need to change them for the ltq-vdsl-vr9-app as well
 VDSL_APP_CFLAGS = \
 	-DMAX_CLI_PIPES=1 \
 	-DMEI_SUPPORT_DEBUG_STREAMS=1 \
@@ -69,7 +69,7 @@ CONFIGURE_ARGS += \
 #CONFIGURE_ARGS += --enable-model=typical
 #CONFIGURE_ARGS += --enable-model=debug
 
-define Package/ltq-vdsl-app/install
+define Package/ltq-vdsl-vr9-app/install
 	$(INSTALL_DIR) $(1)/etc/init.d $(1)/sbin $(1)/etc/hotplug.d/dsl
 	$(INSTALL_BIN) ./files/dsl_control $(1)/etc/init.d/
 	$(INSTALL_BIN) ./files/10_atm.sh $(1)/etc/hotplug.d/dsl
@@ -79,4 +79,4 @@ define Package/ltq-vdsl-app/install
 	$(INSTALL_BIN) ./files/dsl_cpe_pipe.sh $(1)/sbin/
 endef
 
-$(eval $(call BuildPackage,ltq-vdsl-app))
+$(eval $(call BuildPackage,ltq-vdsl-vr9-app))
