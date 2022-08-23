@@ -1,0 +1,29 @@
+From f3c1cbacf4ef37d6b370a80754692b2c5d9b1b4e Mon Sep 17 00:00:00 2001
+From: Jason Hung <jhung@globalscaletechnologies.com>
+Date: Fri, 19 Aug 2022 13:05:44 +0800
+Subject: [PATCH] fix kernel panic during driver loading
+
+Skip the print message when pci_bus_to_OF_node() get NULL pointer
+return.
+---
+ hif/pcie/pcie.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/hif/pcie/pcie.c b/hif/pcie/pcie.c
+index 3fbb170..ab755df 100644
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -571,7 +571,9 @@ static struct device_node *pcie_get_device_node(struct ieee80211_hw *hw)
+ 	struct device_node *dev_node;
+ 
+ 	dev_node = pci_bus_to_OF_node(pcie_priv->pdev->bus);
+-	wiphy_info(priv->hw->wiphy, "device node: %s\n", dev_node->full_name);
++	if (dev_node) {
++		wiphy_info(priv->hw->wiphy, "device node: %s\n", dev_node->full_name);
++	}
+ 
+ 	return dev_node;
+ }
+-- 
+2.25.1
+
