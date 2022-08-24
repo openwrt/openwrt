@@ -22,9 +22,9 @@ Subject: [PATCH] fix: Fix build with musl when using GCC 12 (#1145)
  #include <limits>
 --- a/src/core/Statistics.hpp
 +++ b/src/core/Statistics.hpp
-@@ -21,6 +21,7 @@
- #include <core/StatisticsCounters.hpp>
+@@ -22,6 +22,7 @@
  
+ #include <cstdint>
  #include <string>
 +#include <ctime>
  #include <unordered_map>
