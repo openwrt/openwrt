@@ -59,6 +59,7 @@ HOST_CONFIGURE_ARGS = \
 	--target=$(GNU_HOST_NAME) \
 	--host=$(GNU_HOST_NAME) \
 	--build=$(GNU_HOST_NAME) \
+	--disable-dependency-tracking \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=$(HOST_BUILD_PREFIX) \
