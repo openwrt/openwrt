@@ -188,7 +188,7 @@ default_prerm() {
 	fi
 
 	local shell="$(command -v bash)"
-	for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
+	for i in $(grep -s "^/etc/init.d/." "$root/usr/lib/opkg/info/${pkgname}.list"); do
 		if [ -n "$root" ]; then
 			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" disable
 		else
@@ -293,7 +293,7 @@ default_postinst() {
 	fi
 
 	local shell="$(command -v bash)"
-	for i in $(grep -s "^/etc/init.d/" "$root$filelist"); do
+	for i in $(grep -s "^/etc/init.d/." "$root$filelist"); do
 		if [ -n "$root" ]; then
 			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
 		else
