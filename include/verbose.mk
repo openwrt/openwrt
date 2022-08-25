@@ -66,7 +66,7 @@ ifeq ($(findstring s,$(OPENWRT_VERBOSE)),)
       _DIR:=
     endif
     _NULL:=$(if $(MAKECMDGOALS),$(shell \
-		$(call MESSAGE, make[$(MAKELEVEL)]$(if $(_DIR), -C $(_DIR)) $(MAKECMDGOALS)); \
+		$(call MESSAGE, make[$(MAKELEVEL)]$(if $(_DIR), -C $(_DIR))$(if $(BUILD_VARIANT), <$(BUILD_VARIANT)>) $(MAKECMDGOALS)); \
     ))
     SUBMAKE=$(MAKE) $(S)
   else
