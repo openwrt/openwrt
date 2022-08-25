@@ -29,7 +29,7 @@ pipeline {
   }
 
   triggers {
-    upstream(upstreamProjects:"packetd/${env.BRANCH_NAME}, reportd/${env.BRANCH_NAME}, restd/${env.BRANCH_NAME}, sync-settings/${env.BRANCH_NAME}, classd/${env.BRANCH_NAME}, bctid/${env.BRANCH_NAME}, feeds/${env.BRANCH_NAME}, admin/${env.BRANCH_NAME}, mfw_ui/${env.BRANCH_NAME}, mfw_build/${env.BRANCH_NAME}, bpfgen/${env.BRANCH_NAME}, client-license-service/${env.BRANCH_NAME}, support-diagnostics/${env.BRANCH_NAME}, discoverd/${env.BRANCH_NAME}",
+    upstream(upstreamProjects:"packetd/${env.BRANCH_NAME}, reportd/${env.BRANCH_NAME}, restd/${env.BRANCH_NAME}, sync-settings/${env.BRANCH_NAME}, classd/${env.BRANCH_NAME}, bctid/${env.BRANCH_NAME}, feeds/${env.BRANCH_NAME}, admin/${env.BRANCH_NAME}, mfw_ui/${env.BRANCH_NAME}, mfw_build/${env.BRANCH_NAME}, bpfgen/${env.BRANCH_NAME}, client-license-service/${env.BRANCH_NAME}, support-diagnostics/${env.BRANCH_NAME}, discoverd/${env.BRANCH_NAME}, wan-utils/${env.BRANCH_NAME}",
              threshold: hudson.model.Result.SUCCESS)
   }
 
