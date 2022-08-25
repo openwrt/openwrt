@@ -26,7 +26,7 @@ define Device/google_wifi
 	DEVICE_MODEL := WiFi (Gale)
 	SOC := qcom-ipq4019
 	KERNEL_SUFFIX := -fit-zImage.itb.vboot
-	KERNEL = kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb | cros-vboot
+	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb | cros-vboot
 	KERNEL_NAME := zImage
 	IMAGES += factory.bin
 	IMAGE/factory.bin := cros-gpt | append-kernel-part | append-rootfs
