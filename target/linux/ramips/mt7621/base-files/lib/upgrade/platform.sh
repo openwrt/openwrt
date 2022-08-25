@@ -62,6 +62,7 @@ platform_do_upgrade() {
 	dlink,dir-1960-a1|\
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
+	dlink,dir-3060-a1|\
 	dlink,dir-853-a3|\
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
