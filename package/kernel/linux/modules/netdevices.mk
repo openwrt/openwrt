@@ -1457,3 +1457,19 @@ define KernelPackage/mhi-wwan-mbim/description
 endef
 
 $(eval $(call KernelPackage,mhi-wwan-mbim))
+
+define KernelPackage/atlantic
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Aquantia AQtion 10Gbps Ethernet NIC
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp
+  KCONFIG:=CONFIG_AQTION
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/aquantia/atlantic/atlantic.ko
+  AUTOLOAD:=$(call AutoProbe,atlantic)
+endef
+
+define KernelPackage/atlantic/description
+  Kernel modules for Aquantia AQtion 10Gbps Ethernet NIC
+endef
+
+$(eval $(call KernelPackage,atlantic))
+
