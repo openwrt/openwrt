@@ -1,0 +1,73 @@
+From cd2e300ba16cce7b6bb86d7003044269a82e1d96 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Fri, 26 Aug 2022 18:54:21 +0200
+Subject: [PATCH] configure: add a --disable-werror option
+
+This patch is based on a previous patch on the elfutils mailinglist:
+https://sourceware.org/legacy-ml/elfutils-devel/imported/msg00994.html
+
+Elfutils does not build with gcc-12.2.0:
+
+  In function 'bigger_buffer',
+       inlined from '__libdw_gunzip' at gzip.c:376:12:
+  gzip.c:98:9: error: pointer may be used after 'realloc'
+  [-Werror=use-after-free]
+      98 |     b = realloc (state->buffer, more -= 1024);
+         |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  gzip.c:96:13: note: call to 'realloc' here
+      96 |   char *b = realloc (state->buffer, more);
+         |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  cc1: all warnings being treated as errors
+
+I already sent the error to the elfutils mailinglist and they say it is
+a false positive:
+https://sourceware.org/pipermail/elfutils-devel/2022q3/005342.html
+
+This commit adds an option to disable werror like already done in
+binutils, gdb, glibc, grub2, nasm. This allows us to bump the version
+until the error is fixed upstream.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ config/eu.am | 4 ++--
+ configure.ac | 8 ++++++++
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+--- a/config/eu.am
++++ b/config/eu.am
+@@ -91,7 +91,7 @@ AM_CFLAGS = -std=gnu99 -Wall -Wshadow -W
+ 	    -Wold-style-definition -Wstrict-prototypes $(TRAMPOLINES_WARNING) \
+ 	    $(LOGICAL_OP_WARNING) $(DUPLICATED_COND_WARNING) \
+ 	    $(NULL_DEREFERENCE_WARNING) $(IMPLICIT_FALLTHROUGH_WARNING) \
+-	    $(if $($(*F)_no_Werror),,-Werror) \
++	    $(if $($(*F)_no_Werror),,$(WERROR)) \
+ 	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+ 	    $(if $($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
+ 	    $(if $($(*F)_no_Wpacked_not_aligned),$(NO_PACKED_NOT_ALIGNED_WARNING),) \
+@@ -101,7 +101,7 @@ AM_CXXFLAGS = -std=c++11 -Wall -Wshadow
+ 	   $(TRAMPOLINES_WARNING) \
+ 	   $(LOGICAL_OP_WARNING) $(DUPLICATED_COND_WARNING) \
+ 	   $(NULL_DEREFERENCE_WARNING) $(IMPLICIT_FALLTHROUGH_WARNING) \
+-	   $(if $($(*F)_no_Werror),,-Werror) \
++	   $(if $($(*F)_no_Werror),,$(WERROR)) \
+ 	   $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+ 	   $(if $($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
+ 	   $(if $($(*F)_no_Wpacked_not_aligned),$(NO_PACKED_NOT_ALIGNED_WARNING),) \
+--- a/configure.ac
++++ b/configure.ac
+@@ -66,6 +66,14 @@ AC_CONFIG_FILES([debuginfod/Makefile deb
+ 
+ AC_CANONICAL_HOST
+ 
++AC_ARG_ENABLE(werror,
++[AS_HELP_STRING([--disable-werror],
++    [turn off -Werror @<:@default=enabled@:>@])])
++if test "x$enable_werror" != "xno"; then
++    WERROR="-Werror"
++fi
++AC_SUBST(WERROR)
++
+ AC_ARG_ENABLE(deterministic-archives,
+ [AS_HELP_STRING([--enable-deterministic-archives],
+ 		[ar and ranlib default to -D behavior])], [

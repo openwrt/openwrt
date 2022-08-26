@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
 PKG_VERSION:=0.187
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION)
@@ -65,6 +65,7 @@ HOST_CONFIGURE_ARGS += \
 	--disable-nls \
 	--disable-debuginfod \
 	--disable-libdebuginfod \
+	--disable-werror \
 	--without-lzma \
 	--without-zstd
 
@@ -73,6 +74,7 @@ CONFIGURE_ARGS += \
 	--disable-debuginfod \
 	--disable-libdebuginfod \
 	--without-lzma \
+	--disable-werror \
 	--without-zstd
 
 HOST_CONFIGURE_VARS += \
