@@ -11,6 +11,17 @@ define Device/panasonic_m48eg-pn28480k
 endef
 TARGET_DEVICES += panasonic_m48eg-pn28480k
 
+define Device/tplink_sg2452p-v4
+  SOC := rtl8393
+  KERNEL_SIZE := 6m
+  IMAGE_SIZE := 26m
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := SG2452P
+  DEVICE_VARIANT := v4
+  DEVICE_PACKAGES := kmod-hwmon-gpiofan kmod-hwmon-tps23861
+endef
+TARGET_DEVICES += tplink_sg2452p-v4
+
 define Device/zyxel_gs1900-48
   SOC := rtl8393
   IMAGE_SIZE := 13952k

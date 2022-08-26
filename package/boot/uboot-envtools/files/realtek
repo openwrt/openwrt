@@ -29,7 +29,8 @@ zyxel,gs1900-24hp-v2)
 	[ -n "$idx2" ] && \
 		ubootenv_add_uci_sys_config "/dev/mtd$idx2" "0x0" "0x1000" "0x10000"
 	;;
-tplink,sg2008p-v1)
+tplink,sg2008p-v1|\
+tplink,sg2452p-v4)
 	idx="$(find_mtd_index u-boot-env)"
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x20000" "0x10000"
