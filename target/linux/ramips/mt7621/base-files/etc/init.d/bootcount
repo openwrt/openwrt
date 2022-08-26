@@ -25,6 +25,17 @@ boot() {
 	samknows,whitebox-v8)
 		fw_setenv bootcount 0
 		;;
+	zyxel,keenetic-giga-iii)
+		local data
+		local part=$(find_mtd_part "u-state")
+		if [ -n "$part" ]; then
+			data=$(hexdump -v -s 6 -n 2 -e '2/1 "%02x"' $part 2>/dev/null)
+			if [ "$data" != "0000" ]; then
+				logger -p notice -t init.d "Reset U-State boot_fails counter and set boot_backup=0."
+				printf '\x00\x00' | dd of="$part" bs=1 seek=6 count=2 conv=notrunc 2>/dev/null
+			fi
+		fi
+		;;
 	zyxel,lte3301-plus)
 		[ $(printf %d $(fw_printenv -n DebugFlag)) -gt 0 ] || fw_setenv DebugFlag 1
 		[ $(printf %d $(fw_printenv -n Image1Stable)) -gt 0 ] || fw_setenv Image1Stable 1

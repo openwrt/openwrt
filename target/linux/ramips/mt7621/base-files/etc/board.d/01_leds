@@ -169,6 +169,11 @@ zbtlink,zbt-wg1608-16m)
 	ucidef_set_led_netdev "lan4" "LAN4" "green:lan-4" "lan4"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
+zyxel,keenetic-giga-iii)
+	ucidef_set_led_netdev "internet" "Internet" "green:internet" "wan"
+	ucidef_set_led_netdev "wifi2g" "WiFi 2.4G" "green:wifi2g" "wlan1"
+	ucidef_set_led_netdev "wifi5g" "WiFi 5G" "green:wifi5g" "wlan0"
+	;;
 zyxel,lte3301-plus)
 	ucidef_set_led_netdev "internet" "internet" "white:internet" "wwan0"
 	;;

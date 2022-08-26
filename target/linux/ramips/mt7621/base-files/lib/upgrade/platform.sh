@@ -120,6 +120,21 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
 		;;
+	zyxel,keenetic-giga-iii)
+		local magic=$( nand_get_magic_long "$1" 0 )
+		echo "Firmware image $1 contain magic $magic"
+		if [ "$magic" == "27051956" ]; then
+			echo "Forced upgrade firmware partition..." 
+			mtd -f write $1 firmware
+			echo "uImage-firmware write successful! Reboot..."
+			sync
+			umount -a
+			reboot -f
+			exit 1
+		fi
+		CI_KERNPART="kernel"
+		nand_do_upgrade "$1"
+		;;
 	zyxel,lte3301-plus|\
 	zyxel,nr7101)
 		fw_setenv CheckBypass 0

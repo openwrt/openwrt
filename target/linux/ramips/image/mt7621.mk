@@ -2274,6 +2274,24 @@ define Device/zio_freezio
 endef
 TARGET_DEVICES += zio_freezio
 
+define Device/zyxel_keenetic-giga-iii
+  $(Device/dsa-migration)
+  KERNEL_SIZE := 4096k  # kernel partition size
+  IMAGE_SIZE := 51000k
+  BLOCKSIZE := 128k     # NAND erase size
+  PAGESIZE := 2048      # NAND page size
+  UBINIZE_OPTS := -E 5  # EOD marks to "hide" factory sig at EOF
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := Keenetic Giga III
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb3 kmod-usb-ledtrig-usbport
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage-with-distver none KN-GIGA3
+  IMAGES := sysupgrade.tar factory.bin
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+		check-size | pad-to $$(BLOCKSIZE) | zyimage-with-distver 0x2880
+endef
+TARGET_DEVICES += zyxel_keenetic-giga-iii
+
 define Device/zyxel_lte3301-plus
   $(Device/dsa-migration)
   BLOCKSIZE := 128k

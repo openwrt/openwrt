@@ -174,6 +174,25 @@ define Build/zyimage
 	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
 endef
 
+define Build/zyimage-with-distver
+	$(eval hwid=$(word 1,$(1)))
+	$(eval repo_ver=$$(shell cut -d '-' -f 1 <<< "$$(VERSION_NUMBER)"))
+	$(eval repo_date=$$(shell date --utc -d @$$(SOURCE_DATE_EPOCH) +%y%m%d))
+	$(eval full_ver=$(DEVICE_VENDOR) $(DEVICE_MODEL) $(VERSION_DIST) $(repo_ver) $(repo_date))
+	$(STAGING_DIR_HOST)/bin/zyimage -d $(hwid) -v '$(full_ver)' $@
+endef
+
+define Build/uImage-with-distver
+	$(eval comp_type=$(word 1,$(1)))
+	$(eval prefix=$(word 2,$(1)))
+	$(eval args=$(wordlist 3,$(words $(1)),$(1)))
+	$(eval repo_ver=$$(shell cut -d '-' -f 1 <<< "$$(VERSION_NUMBER)"))
+	$(eval repo_date=$$(shell date --utc -d @$$(SOURCE_DATE_EPOCH) +%y%m%d))
+	$(eval full_ver=$(VERSION_DIST) $(repo_ver) $(repo_date))
+	$(eval img_name=$(prefix) $(full_ver))
+	$(call Build/uImage, $(comp_type) -n '$(img_name)' $(args))
+endef
+
 define Device/Default
   PROFILES = Default
   KERNEL := $(KERNEL_DTB) | uImage lzma
