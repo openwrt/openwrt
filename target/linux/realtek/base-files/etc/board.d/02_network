@@ -39,7 +39,8 @@ hpe,1920-24g)
 	lan_mac_start=$(macaddr_add $lan_mac 2)
 	lan_mac_end=$(macaddr_add $lan_mac $((mac_count2-mac_count1)))
 	;;
-tplink,sg2008p-v1)
+tplink,sg2008p-v1|\
+tplink,sg2452p-v4)
 	label_mac=$(mtd_get_mac_binary para 0xfdff4)
 	lan_mac="$label_mac"
 	;;
